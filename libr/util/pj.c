@@ -64,7 +64,7 @@ static PJ *pj_begin(PJ *j, char type) {
 }
 
 R_API PJ *pj_o(PJ *j) {
-	r_return_val_if_fail (j, NULL);
+	r_return_val_if_fail (j, j);
 	pj_comma (j);
 	return pj_begin (j, '{');
 }
@@ -76,7 +76,10 @@ R_API PJ *pj_a(PJ *j) {
 }
 
 R_API PJ *pj_end(PJ *j) {
-	r_return_val_if_fail (j && j->level > 0, j);
+	r_return_val_if_fail (j, j);
+	if (j->level < 1) {
+		return j;
+	}
 	if (--j->level < 1) {
 		char msg[2] = { j->braces[j->level], 0 };
 		pj_raw (j, msg);
@@ -100,7 +103,7 @@ R_API PJ *pj_k(PJ *j, const char *k) {
 }
 
 R_API PJ *pj_kn(PJ *j, const char *k, ut64 n) {
-	r_return_val_if_fail (j && k, NULL);
+	r_return_val_if_fail (j && k, j);
 	pj_k (j, k);
 	pj_n (j, n);
 	return j;
@@ -115,43 +118,42 @@ R_API PJ *pj_kN(PJ *j, const char *k, st64 n) {
 }
 
 R_API PJ *pj_kd(PJ *j, const char *k, double d) {
-	r_return_val_if_fail (j && k, NULL);
+	r_return_val_if_fail (j && k, j);
 	pj_k (j, k);
 	pj_d (j, d);
 	return j;
 }
 
 R_API PJ *pj_kf(PJ *j, const char *k, float d) {
-	r_return_val_if_fail (j && k, NULL);
+	r_return_val_if_fail (j && k, j);
 	pj_k (j, k);
 	pj_f (j, d);
 	return j;
 }
 R_API PJ *pj_ki(PJ *j, const char *k, int i) {
-	r_return_val_if_fail (j && k, NULL);
+	r_return_val_if_fail (j && k, j);
 	pj_k (j, k);
 	pj_i (j, i);
 	return j;
 }
 
 R_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
-	r_return_val_if_fail (j && k && v, NULL);
-	if (*k && *v) {
-		pj_k (j, k);
-		pj_s (j, v);
-	}
+	r_return_val_if_fail (j && k && v, j);
+	//if (*k && *v) 
+	pj_k (j, k);
+	pj_s (j, v);
 	return j;
 }
 
 R_API PJ *pj_kb(PJ *j, const char *k, bool v) {
-	r_return_val_if_fail (j && k, NULL);
+	r_return_val_if_fail (j && k, j);
 	pj_k (j, k);
 	pj_b (j, v);
 	return j;
 }
 
 R_API PJ *pj_b(PJ *j, bool v) {
-	r_return_val_if_fail (j, NULL);
+	r_return_val_if_fail (j, j);
 	pj_comma (j);
 	pj_raw (j, r_str_bool (v));
 	return j;
@@ -165,13 +167,16 @@ R_API PJ *pj_s(PJ *j, const char *k) {
 	if (ek) {
 		pj_raw (j, ek);
 		free (ek);
+	} else {
+		eprintf ("damn\n");
 	}
 	pj_raw (j, "\"");
 	return j;
 }
 
 R_API PJ *pj_j(PJ *j, const char *k) {
-	if (j && k && *k) {
+	r_return_val_if_fail (j && k, j);
+	if (*k) {
 		pj_comma (j);
 		pj_raw (j, k);
 	}
@@ -179,34 +184,30 @@ R_API PJ *pj_j(PJ *j, const char *k) {
 }
 
 R_API PJ *pj_n(PJ *j, ut64 n) {
-	if (j) {
-		pj_comma (j);
-		pj_raw (j, sdb_fmt ("%" PFMT64u, n));
-	}
+	r_return_val_if_fail (j, j);
+	pj_comma (j);
+	pj_raw (j, sdb_fmt ("%" PFMT64u, n));
 	return j;
 }
 
 R_API PJ *pj_N(PJ *j, st64 n) {
-	if (j) {
-		pj_comma (j);
-		pj_raw (j, sdb_fmt ("%"PFMT64d, n));
-	}
+	r_return_val_if_fail (j, NULL);
+	pj_comma (j);
+	pj_raw (j, sdb_fmt ("%"PFMT64d, n));
 	return j;
 }
 
 R_API PJ *pj_f(PJ *j, float f) {
-	if (j) {
-		pj_comma (j);
-		pj_raw (j, sdb_fmt ("%f", f));
-	}
+	r_return_val_if_fail (j, NULL);
+	pj_comma (j);
+	pj_raw (j, sdb_fmt ("%f", f));
 	return j;
 }
 
 R_API PJ *pj_d(PJ *j, double d) {
-	if (j) {
-		pj_comma (j);
-		pj_raw (j, sdb_fmt ("%lf", d));
-	}
+	r_return_val_if_fail (j, NULL);
+	pj_comma (j);
+	pj_raw (j, sdb_fmt ("%lf", d));
 	return j;
 }
 

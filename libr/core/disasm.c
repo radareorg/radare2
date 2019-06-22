@@ -1184,7 +1184,7 @@ static void ds_begin_line(RDisasmState *ds) {
 		pj_k (ds->pj, "text");
 	}
 	ds->buf_line_begin = r_cons_get_buffer_len ();
-	if (ds->asm_hint_pos == -1) {
+	if (!ds->pj && ds->asm_hint_pos == -1) {
 		if (!ds_print_core_vmode (ds, ds->asm_hint_pos)) {
 			r_cons_printf ("    ");
 		}
@@ -2456,7 +2456,6 @@ static void ds_print_lines_left(RDisasmState *ds) {
 	if (ds->linesright) {
 		return;
 	}
-
 	RCore *core = ds->core;
 	if (ds->show_section) {
 		char *str = NULL;
@@ -2493,7 +2492,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 			delta = ds->at - ds->lastflag->offset;
 		}
 		{
-			char * str = r_str_newf ("%s + %-4d", name, delta);
+			char *str = r_str_newf ("%s + %-4d", name, delta);
 			printCol (ds, str, ds->show_symbols_col, ds->color_num);
 			free (str);
 		}
