@@ -322,10 +322,16 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 	//	RtlpQueryProcessDebugInformationFromWow64
 	//	RtlpQueryProcessDebugInformationRemote
 	PDEBUG_BUFFER db = RtlCreateQueryDebugBuffer (0, FALSE);
+	if (!db) {
+		return NULL;
+	}
 	th_query_params params = { dbg, mask, db, 0, false };
 	HANDLE th = CreateThread (NULL, 0, __th_QueryDebugBuffer, &params, 0, NULL);
 	if (th) {
 		WaitForSingleObject (th, 10000);
+	} else {
+		RtlDestroyQueryDebugBuffer (db);
+		return NULL;
 	}
 	if (!params.fin) {
 		// why after it fails the first time it blocks on the second? That's annoying
@@ -340,9 +346,7 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 		db = NULL;
 		r_sys_perror ("InitHeapInfo");
 	}
-	if (th) {
-		CloseHandle (th);
-	}
+	CloseHandle (th);
 	return db;
 }
 
