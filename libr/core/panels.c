@@ -3588,11 +3588,11 @@ bool __initPanelsMenu(RCore *core) {
 	i = 0;
 	while (menus_Emulate[i]) {
 		if (!strcmp (menus_Emulate[i], "Step From")) {
-			__addMenu (core, parent, menus_Emulate[i], __esil_init_cb);
+			__addMenu (core, parent, menus_Emulate[i], __esil_init_cb, __get_name_cb);
 		} else if (!strcmp (menus_Emulate[i], "Step To")) {
-			__addMenu (core, parent, menus_Emulate[i], __esil_step_to_cb);
+			__addMenu (core, parent, menus_Emulate[i], __esil_step_to_cb, __get_name_cb);
 		} else if (!strcmp (menus_Emulate[i], "Step Range")) {
-			__addMenu (core, parent, menus_Emulate[i], __esil_step_range_cb);
+			__addMenu (core, parent, menus_Emulate[i], __esil_step_range_cb, __get_name_cb);
 		}
 		i++;
 	}
