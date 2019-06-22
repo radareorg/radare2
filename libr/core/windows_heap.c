@@ -659,6 +659,10 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 						break;
 					}
 
+					if (!subsegment.UserBlocks || !subsegment.BlockSize) {
+						goto next_subsegment;
+					}
+
 					size_t sz = subsegment.BlockSize * sizeof (HEAP_ENTRY);
 					ReadProcessMemory (h_proc, subsegment.UserBlocks, &userdata, sizeof (HEAP_USERDATA_HEADER), &bytesRead);
 					userdata.EncodedOffsets.StrideAndOffset ^= PtrToInt (subsegment.UserBlocks) ^ PtrToInt (heapHeader.FrontEndHeap) ^ (WPARAM)lfhKey;
@@ -697,6 +701,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 						mask <<= 1;
 					}
 					free (bitmap);
+next_subsegment:
 					curSubsegment += sizeof (HEAP_SUBSEGMENT);
 					next++;
 				} while (next < blockZone.NextIndex || subsegment.BlockSize);
