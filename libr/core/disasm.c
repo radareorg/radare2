@@ -2915,9 +2915,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					item = r_flag_get_i (core->flags, off);
 					//TODO: introduce env for this print?
 					ds_begin_comment (ds);
-					ds_align_comment (ds);
-					ds->cmtcount++;
-					r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x"%s%s\n",
+					ds_comment (ds, true, "; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x"%s%s",
 							dst->reg->name, ptr, off, item?" ": "", item?item->name: "");
 					if (ds->asm_anal) {
 						if (r_io_is_valid_offset (core->io, off, 0)) {
@@ -3454,34 +3452,13 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 }
 
 static void ds_begin_nl_comment(RDisasmState *ds) {
-	bool lastnl = true;
-	const char *p = r_cons_get_buffer ();
-	if (p) {
-		int l = strlen (p);
-		lastnl = l> 0? (p[l - 1] == '\n'): 0;
+	if (!ds->show_comment_right || ds->cmtcount > 0) {
+		ds_newline (ds);
+		ds_begin_line (ds);
+		ds_pre_xrefs (ds, false);
 	}
-
-	if (ds->show_comment_right) {
-		if (!lastnl && ds->cmtcount > 0) {
-			ds_newline (ds);
-		}
-		if (lastnl || ds->cmtcount > 0) {
-			ds_begin_line (ds);
-			ds_pre_xrefs (ds, false);
-		}
-		if (ds->show_color) {
-			r_cons_printf (ds->pal_comment);
-		}
-	} else {
-		if (lastnl) {
-			ds_begin_line (ds);
-			ds_pre_xrefs (ds, false);
-		} else {
-			ds_newline (ds);
-			ds_begin_line (ds);
-			ds_pre_xrefs (ds, false);
-			//r_cons_printf ("%s", r_str_pad (' ',  ds->cmtcol));
-		}
+	if (ds->show_color) {
+		r_cons_printf (ds->pal_comment);
 	}
 }
 
