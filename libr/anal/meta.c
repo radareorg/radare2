@@ -228,19 +228,13 @@ static bool mustDeleteMetaEntry(RAnal *a, ut64 addr) {
 	return (count == 0);
 }
 
+// delete all the metas of a specific type, addr is ignored,
 static void r_meta_del_cb (RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
 	if (rad == 'j') {
 		a->cb_printf ("[");
 	}
 
 	RAnalMetaUserItem ui = { a, type, rad, cb, user, 0, NULL };
-
-	if (addr != UT64_MAX) {
-		ui.fcn = r_anal_get_fcn_in (a, addr, 0);
-		if (!ui.fcn) {
-			goto beach;
-		}
-	}
 
 	SdbList *ls = sdb_foreach_list (DB, true);
 	SdbListIter *lsi;
@@ -253,7 +247,6 @@ static void r_meta_del_cb (RAnal *a, int type, int rad, SdbForeachCallback cb, v
 	}
 	ls_free (ls);
 
-beach:
 	if (rad == 'j') {
 		a->cb_printf ("]\n");
 	}
