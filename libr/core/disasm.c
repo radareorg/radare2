@@ -1201,6 +1201,15 @@ static void ds_newline(RDisasmState *ds) {
 	}
 }
 
+static void ds_begin_comment(RDisasmState *ds) {
+	if (ds->show_comment_right) {
+		_ALIGN;
+	} else {
+		ds_begin_line (ds);
+		ds_pre_xrefs (ds, false);
+	}
+}
+
 static void ds_show_refs(RDisasmState *ds) {
 	RAnalRef *ref;
 	RListIter *iter;
@@ -1220,11 +1229,11 @@ static void ds_show_refs(RDisasmState *ds) {
 			r_cons_strcat (ds->color_comment);
 		}
 		if (flagi && flagat && (strcmp (flagi->name, flagat->name) != 0)) {
-			_ds_comment_align_ (ds, true, false);
+			ds_begin_comment (ds);
 			ds_comment (ds, true, "; (%s)", flagi->name);
 		}
 		if (cmt) {
-			_ds_comment_align_ (ds, true, false);
+			ds_begin_comment (ds);
 			ds_comment (ds, true, "; (%s)", cmt);
 			free (cmt);
 		}
@@ -1236,7 +1245,7 @@ static void ds_show_refs(RDisasmState *ds) {
 			if ((aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
 				RAnalFunction * fcn = r_anal_get_fcn_at (ds->core->anal,
 					ref->addr, R_ANAL_FCN_TYPE_NULL);
-				_ds_comment_align_ (ds, true, false);
+				ds_begin_comment (ds);
 				if (fcn) {
 					ds_comment (ds, true, "; %s", fcn->name);
 				} else {
@@ -1567,15 +1576,6 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 	}
 	ds->line = tmp;
 	ds->line_col = tmp_col;
-}
-
-static void ds_begin_comment(RDisasmState *ds) {
-	if (ds->show_comment_right) {
-		_ALIGN;
-	} else {
-		ds_begin_line (ds);
-		ds_pre_xrefs (ds, false);
-	}
 }
 
 //TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
