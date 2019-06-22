@@ -177,6 +177,7 @@ static bool print_meta_offset(RCore *core, ut64 addr) {
 	return ret;
 }
 
+#if 0
 static int remove_meta_fileline(RCore *core, const char *file_line) {
 	return sdb_unset (core->bin->cur->sdb_addrinfo, file_line, 0);
 }
@@ -190,6 +191,7 @@ static int print_meta_fileline(RCore *core, const char *file_line) {
 	}
 	return 0;
 }
+#endif
 
 static ut64 filter_offset = UT64_MAX;
 static int filter_format = 0;

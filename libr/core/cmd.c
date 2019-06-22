@@ -93,9 +93,9 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_magic.c"
 #include "cmd_mount.c"
 #include "cmd_seek.c"
+#include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
 #include "cmd_help.c"
-#include "cmd_search.c"
 #include "cmd_colon.c"
 
 static const char *help_msg_dollar[] = {
@@ -1829,10 +1829,6 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		arg[end - input] = 0;
 		RCoreAutocomplete* a = r_core_autocomplete_find (b, arg, true);
 		input = r_str_trim_ro (end);
-		if (!b->cmd) {
-			eprintf ("Invalid command. See usage via !!!?\n");
-			return;
-		}
 		if (input && *input && !a) {
 			if (b->type == R_CORE_AUTOCMPLT_DFLT && !(b = r_core_autocomplete_add (b, arg, R_CORE_AUTOCMPLT_DFLT, false))) {
 				eprintf ("ENOMEM\n");
@@ -1847,6 +1843,9 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 				if (type != R_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
 					b->type = type;
 				} else if (b->locked || b->n_subcmds) {
+					if (!b->cmd) {
+						return;
+					}
 					eprintf ("Changing type of '%s' is forbidden.\n", b->cmd);
 				}
 			} else {

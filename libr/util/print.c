@@ -389,6 +389,17 @@ R_API bool r_print_have_cursor(RPrint *p, int cur, int len) {
 	return false;
 }
 
+R_API bool r_print_cursor_pointer(RPrint *p, int cur, int len) {
+	r_return_val_if_fail (p && p->cur_enabled, false);
+	int to = p->cur;
+	do {
+		if (cur + len - 1 == to) {
+			return true;
+		}
+	} while (--len);
+	return false;
+}
+
 R_API void r_print_cursor(RPrint *p, int cur, int len, int set) {
 	if (r_print_have_cursor (p, cur, len)) {
 		p->cb_printf ("%s", R_CONS_INVERT (set, 1));
@@ -801,7 +812,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool use_hexa = true;
 	bool use_align = false;
 	bool use_unalloc = false;
-	bool use_section = false;
 	const char *a, *b;
 	int K = 0;
 	bool hex_style = false;
@@ -816,7 +826,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
 		use_align = p->flags & R_PRINT_FLAGS_ALIGN;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
-		use_section = p->flags & R_PRINT_FLAGS_SECTION;
 		hex_style = p->flags & R_PRINT_FLAGS_STYLE;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
 		use_unalloc = p->flags & R_PRINT_FLAGS_UNALLOC;
@@ -1044,7 +1053,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 				}
 				if (row_have_cursor == -1) {
-					if (r_print_have_cursor (p, j, 1)) {
+					if (r_print_cursor_pointer (p, j, 1)) {
 						row_have_cursor = j - i;
 						row_have_addr = addr + j;
 					}
@@ -1298,7 +1307,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		rows++;
 		bytes = 0;
-
 		if (p && p->cfmt && *p->cfmt) {
 			if (row_have_cursor != -1) {
 				int i = 0;

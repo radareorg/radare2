@@ -53,7 +53,7 @@ static const char *panels_static [] = {
 };
 
 static const char *menus[] = {
-	"File", "Settings", "Edit", "View", "Tools", "Search", "Debug", "Analyze", "Fun", "About", "Help",
+	"File", "Settings", "Edit", "View", "Tools", "Search", "Emulate", "Debug", "Analyze", "Fun", "About", "Help",
 	NULL
 };
 
@@ -100,6 +100,11 @@ static const char *menus_Tools[] = {
 
 static const char *menus_Search[] = {
 	"String (Whole Bin)", "String (Data Sections)", "ROP", "Code", "Hexpairs",
+	NULL
+};
+
+static const char *menus_Emulate[] = {
+	"Step From", "Step To", "Step Range",
 	NULL
 };
 
@@ -427,6 +432,9 @@ static int __ropCb(void *user);
 static int __codeCb(void *user);
 static int __hexpairsCb(void *user);
 static int __continueCb(void *user);
+static int __esil_init_cb(void *user);
+static int __esil_step_to_cb(void *user);
+static int __esil_step_range_cb(void *user);
 static int __stepCb(void *user);
 static int __stepoverCb(void *user);
 static int __reloadCb(void *user);
@@ -505,6 +513,10 @@ static int __file_history_down(RLine *line);
 
 /* hud */
 static void __hudstuff(RCore *core);
+
+/* esil */
+static void __esil_init(RCore *core);
+static void __esil_step_to(RCore *core, ut64 end);
 
 /* debug */
 static void __panelBreakpoint(RCore *core);
@@ -2558,6 +2570,43 @@ int __continueCb(void *user) {
 	return 0;
 }
 
+int __esil_init_cb(void *user) {
+	RCore *core = (RCore *)user;
+	__esil_init (core);
+	__setRefreshAll (core, false);
+	return 0;
+}
+
+int __esil_step_to_cb(void *user) {
+	RCore *core = (RCore *)user;
+	char *end = __show_status_input (core, "target addr: ");
+	__esil_step_to (core, r_num_math (core->num, end));
+	__setRefreshAll (core, false);
+	return 0;
+}
+
+int __esil_step_range_cb(void *user) {
+	RStrBuf *rsb = r_strbuf_new (NULL);
+	RCore *core = (RCore *)user;
+	r_strbuf_append (rsb, "start addr: ");
+	char *s = __show_status_input (core, r_strbuf_get (rsb));
+	r_strbuf_append (rsb, s);
+	r_strbuf_append (rsb, " end addr: ");
+	char *d = __show_status_input (core, r_strbuf_drain (rsb));
+	ut64 s_a = r_num_math (core->num, s);
+	ut64 d_a = r_num_math (core->num, d);
+	if (s_a >= d_a) {
+		return 0;
+	}
+	ut64 tmp = core->offset;
+	core->offset = s_a;
+	__esil_init (core);
+	__esil_step_to (core, d_a);
+	core->offset = tmp;
+	__setRefreshAll ((RCore *)user, false);
+	return 0;
+}
+
 int __stepCb(void *user) {
 	RCore *core = (RCore *)user;
 	__panelSingleStepIn (core);
@@ -3253,6 +3302,15 @@ void __hudstuff(RCore *core) {
 	__setRefreshAll (core, true);
 }
 
+void __esil_init(RCore *core) {
+	r_core_cmd (core, "aeim", 0);
+	r_core_cmd (core, "aeip", 0);
+}
+
+void __esil_step_to(RCore *core, ut64 end) {
+	r_core_cmdf (core, "aesu 0x%08"PFMT64x, end);
+}
+
 void __printSnow(RPanels *panels) {
 	if (!panels->snows) {
 		panels->snows = r_list_newf (free);
@@ -3522,6 +3580,19 @@ bool __initPanelsMenu(RCore *core) {
 			__addMenu (core, parent, menus_Search[i], __codeCb, __get_name_cb);
 		} else if (!strcmp (menus_Search[i], "Hexpairs")) {
 			__addMenu (core, parent, menus_Search[i], __hexpairsCb, __get_name_cb);
+		}
+		i++;
+	}
+
+	parent = "Emulate";
+	i = 0;
+	while (menus_Emulate[i]) {
+		if (!strcmp (menus_Emulate[i], "Step From")) {
+			__addMenu (core, parent, menus_Emulate[i], __esil_init_cb);
+		} else if (!strcmp (menus_Emulate[i], "Step To")) {
+			__addMenu (core, parent, menus_Emulate[i], __esil_step_to_cb);
+		} else if (!strcmp (menus_Emulate[i], "Step Range")) {
+			__addMenu (core, parent, menus_Emulate[i], __esil_step_range_cb);
 		}
 		i++;
 	}

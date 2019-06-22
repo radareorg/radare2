@@ -98,7 +98,7 @@ typedef struct {
 	bool show_lines_ret;
 	bool show_lines_call;
 	bool show_lines_fcn;
-	int linesright;
+	bool linesright;
 	int tracespace;
 	int cyclespace;
 	int cmtfold;
@@ -460,7 +460,6 @@ R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
 // up means if this lines go up, it controls whether to insert `_
 // nl if we have to insert new line, it controls whether to insert \n
 static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
-	ds->cmtcount ++;
 	if (ds->show_comment_right) {
 		if (ds->show_color) {
 			r_cons_printf (ds->pal_comment);
@@ -528,6 +527,7 @@ static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *forma
 static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
+	ds->cmtcount++;
 	ds_comment_ (ds, align, align, format, ap);
 	va_end (ap);
 }
@@ -1184,7 +1184,7 @@ static void ds_begin_line(RDisasmState *ds) {
 		pj_k (ds->pj, "text");
 	}
 	ds->buf_line_begin = r_cons_get_buffer_len ();
-	if (ds->asm_hint_pos == -1) {
+	if (!ds->pj && ds->asm_hint_pos == -1) {
 		if (!ds_print_core_vmode (ds, ds->asm_hint_pos)) {
 			r_cons_printf ("    ");
 		}
@@ -2453,8 +2453,10 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 }
 
 static void ds_print_lines_left(RDisasmState *ds) {
+	if (ds->linesright) {
+		return;
+	}
 	RCore *core = ds->core;
-
 	if (ds->show_section) {
 		char *str = NULL;
 		if (ds->show_section_perm) {
@@ -2490,7 +2492,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 			delta = ds->at - ds->lastflag->offset;
 		}
 		{
-			char * str = r_str_newf ("%s + %-4d", name, delta);
+			char *str = r_str_newf ("%s + %-4d", name, delta);
 			printCol (ds, str, ds->show_symbols_col, ds->color_num);
 			free (str);
 		}
@@ -2859,24 +2861,25 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 				R_FREE (ds->prev_line_col);
 				ret = true;
 				break;
-			case R_META_TYPE_FORMAT: {
-				r_cons_printf ("pf %s # size=%d\n", mi->str, mi->size);
-				int len_before = r_cons_get_buffer_len ();
-				r_print_format (core->print, ds->at, buf + idx,
-					len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
-				int len_after = r_cons_get_buffer_len ();
-				const char *cons_buf = r_cons_get_buffer ();
-				if (len_after > len_before && buf && cons_buf[len_after - 1] == '\n') {
-					r_cons_drop (1);
+			case R_META_TYPE_FORMAT:
+				{
+					r_cons_printf ("pf %s # size=%d\n", mi->str, mi->size);
+					int len_before = r_cons_get_buffer_len ();
+					r_print_format (core->print, ds->at, buf + idx,
+							len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
+					int len_after = r_cons_get_buffer_len ();
+					const char *cons_buf = r_cons_get_buffer ();
+					if (len_after > len_before && buf && cons_buf[len_after - 1] == '\n') {
+						r_cons_drop (1);
+					}
+					ds->oplen = ds->asmop.size = (int)mi->size;
+					R_FREE (ds->line);
+					R_FREE (ds->refline);
+					R_FREE (ds->refline2);
+					R_FREE (ds->prev_line_col);
+					ret = true;
 				}
-				ds->oplen = ds->asmop.size = (int)mi->size;
-				R_FREE (ds->line);
-				R_FREE (ds->refline);
-				R_FREE (ds->refline2);
-				R_FREE (ds->prev_line_col);
-				ret = true;
 				break;
-			}
 			}
 		}
 	}
@@ -2911,8 +2914,11 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					off = r_mem_get_num (b, src->memref);
 					item = r_flag_get_i (core->flags, off);
 					//TODO: introduce env for this print?
-					r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
-							dst->reg->name, ptr, off, item?item->name: "");
+					ds_begin_comment (ds);
+					ds_align_comment (ds);
+					ds->cmtcount++;
+					r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x"%s%s\n",
+							dst->reg->name, ptr, off, item?" ": "", item?item->name: "");
 					if (ds->asm_anal) {
 						if (r_io_is_valid_offset (core->io, off, 0)) {
 							r_anal_xrefs_set (core->anal, off, ds->addr, R_ANAL_REF_TYPE_DATA);
@@ -3073,7 +3079,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			} else {
 				k = ds->nb - r_str_ansi_len (nstr) + 1;
 			}
-			if (k > 0) {
+  			if (k > 0) {
 				// setting to sizeof screw up the disasm
 				if (k > sizeof (pad)) {
 					k = 18;
@@ -3447,6 +3453,38 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	return gotShortcut;
 }
 
+static void ds_begin_nl_comment(RDisasmState *ds) {
+	bool lastnl = true;
+	const char *p = r_cons_get_buffer ();
+	if (p) {
+		int l = strlen (p);
+		lastnl = l> 0? (p[l - 1] == '\n'): 0;
+	}
+
+	if (ds->show_comment_right) {
+		if (!lastnl && ds->cmtcount > 0) {
+			ds_newline (ds);
+		}
+		if (lastnl || ds->cmtcount > 0) {
+			ds_begin_line (ds);
+			ds_pre_xrefs (ds, false);
+		}
+		if (ds->show_color) {
+			r_cons_printf (ds->pal_comment);
+		}
+	} else {
+		if (lastnl) {
+			ds_begin_line (ds);
+			ds_pre_xrefs (ds, false);
+		} else {
+			ds_newline (ds);
+			ds_begin_line (ds);
+			ds_pre_xrefs (ds, false);
+			//r_cons_printf ("%s", r_str_pad (' ',  ds->cmtcol));
+		}
+	}
+}
+
 // align for comment
 static void ds_align_comment(RDisasmState *ds) {
 	if (!ds->show_comment_right_default) {
@@ -3763,11 +3801,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 			} else {
 				if (n == UT32_MAX || n == UT64_MAX) {
-					ds_begin_comment (ds);
+					ds_begin_nl_comment (ds);
 					ds_comment (ds, true, "; [0x%" PFMT64x":%d]=-1",
 							refaddr, refptr);
 				} else if (n == n32 && (n32 > -512 && n32 < 512)) {
-					ds_begin_comment (ds);
+					ds_begin_nl_comment (ds);
 					ds_comment (ds, true, "; [0x%" PFMT64x
 							  ":%d]=%"PFMT64d, refaddr, refptr, n);
 				} else {
@@ -3790,7 +3828,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							}
 						}
 					}
-					ds_begin_comment (ds);
+					//ds_align_comment (ds);
 					{
 						const char *refptrstr = "";
 						if (core->print->flags & R_PRINT_FLAGS_SECSUB) {
@@ -3800,6 +3838,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 								refptrstr = s->name;
 							}
 						}
+						ds_begin_nl_comment (ds);
 						ds_comment_start (ds, "; [");
 						if (f && f2_in_opstr) {
 							ds_comment_middle (ds, "%s", f->name);
@@ -3835,7 +3874,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 					if (print_refaddr) {
 						if (!aligned) {
-							ds_begin_comment (ds);
+							ds_begin_nl_comment (ds);
 						}
 						ds_comment (ds, true, "; 0x%" PFMT64x, refaddr);
 						refaddr_printed = true;
@@ -3869,7 +3908,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					string_printed = true;
 				}
 			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
-				ds_begin_comment (ds);
+				ds_begin_nl_comment (ds);
 				ds_comment (ds, true, "; %s", f->name);
 				ds->printed_flag_addr = refaddr;
 				flag_printed = true;
@@ -3937,14 +3976,18 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	} else {
 		ds_print_as_string (ds);
 	}
-#if 0
 	if (!ds->show_comment_right && ds->cmtcount > 0) {
-		ds_newline (ds);
+		const char *p = r_cons_get_buffer ();
+		if (p) {
+			int l = strlen (p);
+			if (p[l - 1] != '\n') {
+				ds_newline (ds);
+			}
+		}
 	}
-#endif
 #if DEADCODE
 	if (aligned && ds->show_color) {
-		r_cons_printf (Color_RESET);
+		r_cons_strcat (Color_RESET);
 	}
 #endif
 }
@@ -5143,7 +5186,7 @@ toro:
 				free (locase);
 			}
 			if (desc && *desc) {
-				ds_begin_comment(ds);
+				ds_begin_comment (ds);
 				ds_align_comment (ds);
 				if (ds->show_color) {
 					r_cons_strcat (ds->color_comment);
@@ -5326,6 +5369,9 @@ toro:
 		buf = nbuf = malloc (len);
 		if (ds->tries > 0) {
 			if (r_io_read_at (core->io, ds->addr, buf, len)) {
+				if (ds->pj) {
+				//	pj_end (ds->pj);
+				}
 				goto toro;
 			}
 		}
@@ -5334,9 +5380,15 @@ toro:
 			if (!r_io_read_at (core->io, ds->addr, buf, len)) {
 				//ds->tries = -1;
 			}
+			if (ds->pj) {
+				//pj_end (ds->pj);
+			}
 			goto toro;
 		}
 		if (continueoninvbreak) {
+			if (ds->pj) {
+				//pj_end (ds->pj);
+			}
 			goto toro;
 		}
 		R_FREE (nbuf);
