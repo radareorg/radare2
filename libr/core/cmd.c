@@ -93,9 +93,9 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_magic.c"
 #include "cmd_mount.c"
 #include "cmd_seek.c"
+#include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
 #include "cmd_help.c"
-#include "cmd_search.c"
 #include "cmd_colon.c"
 
 static const char *help_msg_dollar[] = {

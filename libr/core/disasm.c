@@ -5369,6 +5369,9 @@ toro:
 		buf = nbuf = malloc (len);
 		if (ds->tries > 0) {
 			if (r_io_read_at (core->io, ds->addr, buf, len)) {
+				if (ds->pj) {
+				//	pj_end (ds->pj);
+				}
 				goto toro;
 			}
 		}
@@ -5377,9 +5380,15 @@ toro:
 			if (!r_io_read_at (core->io, ds->addr, buf, len)) {
 				//ds->tries = -1;
 			}
+			if (ds->pj) {
+				//pj_end (ds->pj);
+			}
 			goto toro;
 		}
 		if (continueoninvbreak) {
+			if (ds->pj) {
+				//pj_end (ds->pj);
+			}
 			goto toro;
 		}
 		R_FREE (nbuf);

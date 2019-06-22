@@ -28,6 +28,20 @@ static const char *help_msg_pdf[] = {
 	NULL
 };
 
+static const char *help_msg_pp[] = {
+	"Usage: pp[d]", "", "print patterns",
+	"ppd", "", "print debruijn pattern (see ragg2 -P, -q and wopD)",
+	"pp0", "", "print buffer filled with zeros",
+	"pp1", "", "print incremental byte pattern (honor lower bits of cur address and bsize)",
+	"pp2", "", "print incremental word pattern",
+	"pp4", "", "print incremental dword pattern",
+	"pp8", "", "print incremental qword pattern",
+	"ppf", "", "print buffer filled with 0xff",
+	"ppa", "[lu]", "latin alphabet (lowercase, uppercases restrictions)",
+	"ppn", "", "numeric pin patterns",
+	NULL
+};
+
 static const char *help_msg_p6[] = {
 	"Usage: p6[de]", "[len]", "base64 decoding/encoding",
 	"p6d", "[len]", "decode base64",
@@ -3762,6 +3776,130 @@ static ut32 tmp_get_contsize(RAnalFunction *f) {
 	return (size < 0)? 0: size;
 }
 
+static void __printPattern(RCore *core, const char *_input) {
+	char *input = strdup (_input);
+	const char *arg = r_str_nextword (input, ' ');
+	size_t i, j;
+	ut64 len = arg? r_num_math (core->num, arg): core->blocksize;
+	switch (input[0]) {
+	case 'd': // "ppd"
+		// debruijn pattern
+		{
+			ut8 *buf = (ut8*)r_debruijn_pattern (len, 0, NULL);
+			for (i = 0; i < len; i++) {
+				r_cons_printf ("%02x", buf[i]);
+			}
+			r_cons_newline ();
+			free (buf);
+		}
+		break;
+	case '1': // "pp1"
+		// incremental byte sequence
+		{
+			int min = (core->offset & 0xff);
+			for (i = 0; i < len; i++) {
+				r_cons_printf ("%02x", i + min);
+			}
+			r_cons_newline ();
+		}
+		break;
+	case '2': // "pp2"
+		// incremental half word sequences
+		{
+			// TODO: honor cfg.bigendian
+			int min = (core->offset & 0xffff);
+			for (i = 0; i < len; i++) {
+				r_cons_printf ("%04x", i + min);
+			}
+			r_cons_newline ();
+		}
+		break;
+	case '4': // "pp4"
+		// incremental half word sequences
+		{
+			// TODO: honor cfg.bigendian
+			int min = (core->offset & UT32_MAX);
+			for (i = 0; i < len; i++) {
+				r_cons_printf ("%08x", i + min);
+			}
+			r_cons_newline ();
+		}
+		break;
+	case '8': // "pp8"
+		// incremental half word sequences
+		{
+			// TODO: honor cfg.bigendian
+			ut64 min = (core->offset);
+			for (i = 0; i < len; i++) {
+				r_cons_printf ("%016"PFMT64x, i + min);
+			}
+			r_cons_newline ();
+		}
+		break;
+	case 'f': // "ppf"
+		// zero ssled
+		{
+			ut8 *buf = (ut8*)r_debruijn_pattern (len, 0, NULL);
+			for (i = 0; i < len; i++) {
+				r_cons_printf ("%02x", 0xff);
+			}
+			r_cons_newline ();
+			free (buf);
+		}
+		break;
+	case '0': // "pp0"
+		// zero ssled
+		{
+			ut8 *buf = (ut8*)r_debruijn_pattern (len, 0, NULL);
+			for (i = 0; i < len; i++) {
+				r_cons_printf ("%02x", 0);
+			}
+			r_cons_newline ();
+			free (buf);
+		}
+		break;
+	case 'a':
+		// TODO
+		{
+			i = core->offset;
+			size_t bs = 4; // XXX hardcoded
+			ut8 *buf = calloc (bs, 1);
+			// for (;i>0;i--) { incDigitBuffer (buf, bs); }
+			for (i = 0; i < len; i++) {
+				incAlphaBuffer (buf, bs);
+				for (j = 0; j < bs; j++) {
+					r_cons_printf ("%c", buf[j]?buf[j]:'A');
+				}
+				r_cons_printf (" ");
+			}
+			r_cons_newline ();
+			free (buf);
+		}
+		break;
+	case 'n': // "ppn"
+		{
+			i = core->offset;
+			size_t bs = 4; // XXX hardcoded
+			ut8 *buf = calloc (bs, 1);
+			// for (;i>0;i--) { incDigitBuffer (buf, bs); }
+			for (i = 0; i < len; i++) {
+				incDigitBuffer (buf, bs);
+				for (j = 0; j < bs; j++) {
+					r_cons_printf ("%c", buf[j]?buf[j]:'0');
+				}
+				r_cons_printf (" ");
+			}
+			r_cons_newline ();
+			free (buf);
+		}
+		break;
+	default:
+		r_core_cmd_help (core, help_msg_pp);
+		break;
+	}
+	free (input);
+}
+
 static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type, bool fromHere) {
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	const char *orig_bb_middle = r_config_get (core->config, "asm.bb.middle");
@@ -5537,9 +5675,12 @@ l = use_blocksize;
 		}
 	}
 	break;
+	case 'p': // "pp"
+		__printPattern (core, input + 1);
+		break;
 	case 's': // "ps"
 		switch (input[1]) {
-		case '?':
+		case '?': // "ps?"
 			r_core_cmd_help (core, help_msg_ps);
 			break;
 		case 'j': // "psj"
