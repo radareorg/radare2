@@ -3591,9 +3591,7 @@ bool __initPanelsMenu(RCore *core) {
 	parent = "Help";
 	i = 0;
 	while (menus_Help[i]) {
-		if (!strcmp (menus_Help[i], "Toggle Help")) {
-			__addMenu (core, parent, menus_Help[i], __helpCb, __get_name_cb);
-		}
+		__addMenu (core, parent, menus_Help[i], __helpCb, __get_name_cb);
 		i++;
 	}
 
