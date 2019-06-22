@@ -1554,7 +1554,6 @@ R_API int r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType 
 R_API int r_anal_xref_del(RAnal *anal, ut64 at, ut64 addr);
 
 R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal);
-R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal);
 R_API RList* r_anal_get_fcns (RAnal *anal);
 
 /* type.c */

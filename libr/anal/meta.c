@@ -30,6 +30,8 @@ Keys:
 #undef DB
 #define DB a->sdb_meta
 
+static bool isFirst = true;
+
 static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
 	if (size <= 0) {
 		return NULL;
@@ -205,7 +207,7 @@ R_API char *r_meta_get_var_comment (RAnal *a, int type, ut64 idx, ut64 addr) {
 	if (!p) {
 		return NULL;
 	}
-	k = p+1;
+	k = p + 1;
 	p2 = strchr (k, SDB_RS);
 	if (!p2) {
 		return (char *)sdb_decode (k, NULL);
@@ -226,10 +228,33 @@ static bool mustDeleteMetaEntry(RAnal *a, ut64 addr) {
 	return (count == 0);
 }
 
+// delete all the metas of a specific type, addr is ignored,
+static void r_meta_del_cb (RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
+	if (rad == 'j') {
+		a->cb_printf ("[");
+	}
+
+	RAnalMetaUserItem ui = { a, type, rad, cb, user, 0, NULL };
+
+	SdbList *ls = sdb_foreach_list (DB, true);
+	SdbListIter *lsi;
+	SdbKv *kv;
+	isFirst = true; // TODO: kill global
+	ls_foreach (ls, lsi, kv) {
+		if (type == R_META_TYPE_ANY || (strlen (sdbkv_key (kv)) > 5 && sdbkv_key (kv)[5] == type)) {
+			sdb_set (DB, sdbkv_key (kv), NULL, 0);
+		}
+	}
+	ls_free (ls);
+
+	if (rad == 'j') {
+		a->cb_printf ("]\n");
+	}
+}
+
 R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
-	char key[100], *dtr, *s, *p, *next;
+	char key[100];
 	const char *val;
-	int i;
 	/* send event */
 	REventMeta rems = {
 		.type = type,
@@ -243,23 +268,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 		if (type == R_META_TYPE_ANY) {
 			sdb_reset (DB);
 		} else {
-			snprintf (key, sizeof (key)-1, "meta.%c.count", type);
-			int last = (ut64)sdb_num_get (DB, key, NULL)/K;
-			for (i = 0; i < last; i++) {
-				snprintf (key, sizeof (key)-1, "meta.%c.%d", type, i);
-				dtr = sdb_get (DB, key, 0);
-				for (p = dtr; p; p = next) {
-					s = sdb_anext (p, &next);
-					snprintf (key, sizeof (key)-1,
-						"meta.%c.0x%"PFMT64x,
-						type, sdb_atoi (s));
-					sdb_unset (DB, key, 0);
-					if (!next) {
-						break;
-					}
-				}
-				free (dtr);
-			}
+			r_meta_del_cb (a, type, type, NULL, NULL, UT64_MAX);
 		}
 		return false;
 	}
@@ -572,7 +581,6 @@ R_API const char *r_meta_type_to_string(int type) {
 	return "# unknown meta # ";
 }
 
-static bool isFirst = true;
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 	char *pstr, *str, *base64_str;
 	RCore *core = a->coreb.core;
@@ -830,6 +838,7 @@ R_API void r_meta_list_offset(RAnal *a, ut64 addr, char input) {
 		meta_print_item ((void *)&ui, key, k);
 	}
 }
+
 
 R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
 	if (rad == 'j') {

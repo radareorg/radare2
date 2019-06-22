@@ -2325,13 +2325,6 @@ R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr) {
 	return closer;
 }
 
-R_API RList *r_anal_fcn_get_bbs(RAnalFunction *anal) {
-	// avoid received to free this thing
-	// anal->bbs->rc++;
-	anal->bbs->free = NULL;
-	return anal->bbs;
-}
-
 R_API int r_anal_fcn_is_in_offset(RAnalFunction *fcn, ut64 addr) {
 	if (r_list_empty (fcn->bbs)) {
 		// r_anal_fcn_size (fcn);
