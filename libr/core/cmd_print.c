@@ -212,6 +212,7 @@ static const char *help_msg_p[] = {
 	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
 	"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
+	"pp", "[?][sz] [len]", "print patterns, see pp? for more help",
 	"pq", "[?][is] [len]", "print QR code with the first Nbytes",
 	"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
 	"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
@@ -2819,10 +2820,14 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	return handled_cmd;
 }
 
-static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
+// XXX blocksize is missing
+static void cmd_print_pv(RCore *core, const char *input) {
 	const char *stack[] = {
 		"ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL
 	};
+	ut8 *block = core->block;
+	int blocksize = core->blocksize;
+	ut8 *block_end = core->block + blocksize;
 	int i, n = core->assembler->bits / 8;
 	int type = 'v';
 	bool fixed_size = true;
@@ -2850,6 +2855,10 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 		fixed_size = false;
 		break;
 	}
+	st64 repeat = r_num_math (core->num, input);
+	if (repeat < 0) {
+		repeat = 1;
+	}
 	// variables can be
 	switch (input[0]) {
 	case 'z': // "pvz"
@@ -2861,7 +2870,7 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 			break;
 		}
 	/* fallthrough */
-	case ' ': // "pv "
+	// case ' ': // "pv "
 		for (i = 0; stack[i]; i++) {
 			if (!strcmp (input + 1, stack[i])) {
 				if (type == 'z') {
@@ -2915,7 +2924,12 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 		r_core_cmd_help (core, help_msg_pv);
 		break;
 	default:
-	{
+	do {
+		repeat--;
+		if (block + 8 >= block_end) {
+			eprintf ("Truncated. TODO: use r_io_read apis insgtead of depending on blocksize\n");
+			break;
+		}
 		ut64 v;
 		if (!fixed_size) {
 			n = 0;
@@ -2924,18 +2938,22 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 		case 1:
 			v = r_read_ble8 (block);
 			r_cons_printf ("0x%02" PFMT64x "\n", v);
+			block += 1;
 			break;
 		case 2:
 			v = r_read_ble16 (block, core->print->big_endian);
 			r_cons_printf ("0x%04" PFMT64x "\n", v);
+			block += 2;
 			break;
 		case 4:
 			v = r_read_ble32 (block, core->print->big_endian);
 			r_cons_printf ("0x%08" PFMT64x "\n", v);
+			block += 4;
 			break;
 		case 8:
 			v = r_read_ble64 (block, core->print->big_endian);
 			r_cons_printf ("0x%016" PFMT64x "\n", v);
+			block += 8;
 			break;
 		default:
 			v = r_read_ble64 (block, core->print->big_endian);
@@ -2946,10 +2964,10 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 			case 8: r_cons_printf ("0x%016" PFMT64x "\n", v & UT64_MAX); break;
 			default: break;
 			}
+			block += core->assembler->bits / 8;
 			break;
 		}
-	}
-		// r_core_cmd0 (core, "?v [$$]");
+	} while (repeat > 0);
 	break;
 	}
 }
@@ -4826,7 +4844,7 @@ static int cmd_print(void *data, const char *input) {
 		cmd_print_ph (core, input + 1);
 		break;
 	case 'v': // "pv"
-		cmd_print_pv (core, input + 1, block);
+		cmd_print_pv (core, input + 1);
 		break;
 	case '-': // "p-"
 		return cmd_print_blocks (core, input + 1);
