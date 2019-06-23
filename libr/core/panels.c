@@ -388,12 +388,12 @@ static void __rotatePanelCmds(RCore *core, const char **cmds, const int cmdslen,
 static void __rotateAsmemu(RCore *core, RPanel *p);
 
 /* mode */
-static void __setMode(RPanels *panels, RPanelsMode mode);
+static void __setMode(RCore *core, RPanelsMode mode);
 static bool __handleZoomMode(RCore *core, const int key);
 static bool __handleWindowMode(RCore *core, const int key);
 static bool __handleCursorMode(RCore *core, const int key);
 static void __toggleZoomMode(RCore *core);
-static void __toggleWindowMode(RPanels *panels);
+static void __toggleWindowMode(RCore *core);
 
 /* modal */
 static void __exec_almighty(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db, RPanelLayout dir);
@@ -936,7 +936,7 @@ int __addCmdPanel(void *user) {
 	__set_geometry (&p0->view->pos, 0, 1, PANEL_CONFIG_SIDEPANEL_W, h - 1);
 	__set_curnode (core, 0);
 	__setRefreshAll (core, false);
-	__setMode (panels, PANEL_MODE_DEFAULT);
+	__setMode (core, PANEL_MODE_DEFAULT);
 	return 0;
 }
 
@@ -982,7 +982,7 @@ int __addCmdfPanel(RCore *core, char *input, char *str) {
 	__setCmdStrCache (core, p0, __loadCmdf (core, p0, input, str));
 	__set_curnode (core, 0);
 	__setRefreshAll (core, false);
-	__setMode (panels, PANEL_MODE_DEFAULT);
+	__setMode (core, PANEL_MODE_DEFAULT);
 	return 0;
 }
 
@@ -1323,7 +1323,7 @@ bool __handleWindowMode(RCore *core, const int key) {
 	case 'Q':
 	case 'q':
 	case 'w':
-		__toggleWindowMode (panels);
+		__toggleWindowMode (core);
 		break;
 	case 0x0d:
 		__toggleZoomMode (core);
@@ -1421,6 +1421,9 @@ bool __handleCursorMode(RCore *core, const int key) {
 	case 'j':
 	case 'k':
 	case 'l':
+	case 'm':
+	case '"':
+	case 9:
 		return false;
 	case 'Q':
 	case 'q':
@@ -1429,7 +1432,7 @@ bool __handleCursorMode(RCore *core, const int key) {
 		cur->view->refresh = true;
 		break;
 	case 'w':
-		__toggleWindowMode (core->panels);
+		__toggleWindowMode (core);
 		__setCursor (core, false);
 		cur->view->refresh = true;
 		break;
@@ -2376,7 +2379,7 @@ int __decompiler_cb(void *user) {
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	r_config_set (core->config, "cmd.pdc", child->get_name_cb (core, child->base_name));
 	__setRefreshAll (core, false);
-	__setMode (core->panels, PANEL_MODE_DEFAULT);
+	__setMode (core, PANEL_MODE_DEFAULT);
 	return 0;
 }
 
@@ -2388,7 +2391,7 @@ int __loadLayoutSavedCb(void *user) {
 	}
 	__set_curnode (core, 0);
 	core->panels->panelsMenu->depth = 1;
-	__setMode (core->panels, PANEL_MODE_DEFAULT);
+	__setMode (core, PANEL_MODE_DEFAULT);
 	return 0;
 }
 
@@ -2399,7 +2402,7 @@ int __loadLayoutDefaultCb(void *user) {
 	__panels_layout (core->panels);
 	__setRefreshAll (core, false);
 	core->panels->panelsMenu->depth = 1;
-	__setMode (core->panels, PANEL_MODE_DEFAULT);
+	__setMode (core, PANEL_MODE_DEFAULT);
 	return 0;
 }
 
@@ -2625,7 +2628,7 @@ int __ioCacheOnCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_config_set_i (core->config, "io.cache", 1);
 	(void)__show_status (core, "io.cache is on");
-	__setMode (core->panels, PANEL_MODE_DEFAULT);
+	__setMode (core, PANEL_MODE_DEFAULT);
 	return 0;
 }
 
@@ -2633,7 +2636,7 @@ int __ioCacheOffCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_config_set_i (core->config, "io.cache", 0);
 	(void)__show_status (core, "io.cache is off");
-	__setMode (core->panels, PANEL_MODE_DEFAULT);
+	__setMode (core, PANEL_MODE_DEFAULT);
 	return 0;
 }
 
@@ -2705,7 +2708,9 @@ void __set_curnode(RCore *core, int idx) {
 	panels->curnode = idx;
 }
 
-void __setMode(RPanels *panels, RPanelsMode mode) {
+void __setMode(RCore *core, RPanelsMode mode) {
+	RPanels *panels = core->panels;
+	__setCursor (core, false);
 	panels->mode = mode;
 	__updateHelp (panels);
 }
@@ -4168,7 +4173,6 @@ bool __init(RCore *core, RPanels *panels, int w, int h) {
 	panels->rotate_db = sdb_new0 ();
 	panels->almighty_db = sdb_new0 ();
 	panels->mht = ht_pp_new (NULL, (HtPPKvFreeFunc)__mht_free_kv, (HtPPCalcSizeV)strlen);
-	__setMode (panels, PANEL_MODE_DEFAULT);
 	panels->fun = PANEL_FUN_NOFUN;
 	panels->prevMode = PANEL_MODE_DEFAULT;
 	panels->name = NULL;
@@ -4291,7 +4295,7 @@ void __handleMenu(RCore *core, const int key) {
 		if (panels->panelsMenu->depth > 1) {
 			__del_menu (core);
 		} else {
-			__setMode (panels, PANEL_MODE_DEFAULT);
+			__setMode (core, PANEL_MODE_DEFAULT);
 			__getCurPanel (panels)->view->refresh = true;
 		}
 		break;
@@ -4316,7 +4320,7 @@ void __handleMenu(RCore *core, const int key) {
 		__toggleHelp (core);
 	case '"':
 		__create_almighty (core, __getPanel (panels, 0), panels->almighty_db);
-		__setMode (panels, PANEL_MODE_DEFAULT);
+		__setMode (core, PANEL_MODE_DEFAULT);
 		break;
 	}
 }
@@ -4355,6 +4359,7 @@ bool __handle_console(RCore *core, RPanel *panel, const int key) {
 }
 
 void __handleTabKey(RCore *core, bool shift) {
+	__setCursor (core, false);
 	RPanels *panels = core->panels;
 	RPanel *cur = __getCurPanel (panels);
 	r_cons_switchbuf (false);
@@ -4362,7 +4367,7 @@ void __handleTabKey(RCore *core, bool shift) {
 	if (!shift) {
 		if (panels->mode == PANEL_MODE_MENU) {
 			__set_curnode (core, 0);
-			__setMode (panels, PANEL_MODE_DEFAULT);
+			__setMode (core, PANEL_MODE_DEFAULT);
 		} else if (panels->mode == PANEL_MODE_ZOOM) {
 			__set_curnode (core, ++panels->curnode);
 		} else {
@@ -4371,7 +4376,7 @@ void __handleTabKey(RCore *core, bool shift) {
 	} else {
 		if (panels->mode == PANEL_MODE_MENU) {
 			__set_curnode (core, panels->n_panels - 1);
-			__setMode (panels, PANEL_MODE_DEFAULT);
+			__setMode (core, PANEL_MODE_DEFAULT);
 		} else if (panels->mode == PANEL_MODE_ZOOM) {
 			__set_curnode (core, --panels->curnode);
 		} else {
@@ -4539,11 +4544,11 @@ void __toggleZoomMode(RCore *core) {
 	RPanel *cur = __getCurPanel (panels);
 	if (panels->mode != PANEL_MODE_ZOOM) {
 		panels->prevMode = panels->mode;
-		__setMode (panels, PANEL_MODE_ZOOM);
+		__setMode (core, PANEL_MODE_ZOOM);
 		__savePanelPos (cur);
 		__maximizePanelSize (panels);
 	} else {
-		__setMode (panels, panels->prevMode);
+		__setMode (core, panels->prevMode);
 		panels->prevMode = PANEL_MODE_DEFAULT;
 		__restorePanelPos (cur);
 		__setRefreshAll (core, false);
@@ -4553,12 +4558,13 @@ void __toggleZoomMode(RCore *core) {
 	}
 }
 
-void __toggleWindowMode(RPanels *panels) {
+void __toggleWindowMode(RCore *core) {
+	RPanels *panels = core->panels;
 	if (panels->mode != PANEL_MODE_WINDOW) {
 		panels->prevMode = panels->mode;
-		__setMode (panels, PANEL_MODE_WINDOW);
+		__setMode (core, PANEL_MODE_WINDOW);
 	} else {
-		__setMode (panels, panels->prevMode);
+		__setMode (core, panels->prevMode);
 		panels->prevMode = PANEL_MODE_DEFAULT;
 	}
 }
@@ -4577,7 +4583,7 @@ void __toggleHelp(RCore *core) {
 		if (r_str_endswith (p->model->cmd, "Help")) {
 			__dismantleDelPanel (core, p, i);
 			if (ps->mode == PANEL_MODE_MENU) {
-				__setMode (ps, PANEL_MODE_DEFAULT);
+				__setMode (core, PANEL_MODE_DEFAULT);
 			}
 			__setRefreshAll (core, false);
 			return;
@@ -4585,7 +4591,7 @@ void __toggleHelp(RCore *core) {
 	}
 	__addHelpPanel (core);
 	if (ps->mode == PANEL_MODE_MENU) {
-		__setMode (ps, PANEL_MODE_DEFAULT);
+		__setMode (core, PANEL_MODE_DEFAULT);
 	}
 	__updateHelp (ps);
 }
@@ -4782,6 +4788,7 @@ bool __draw_modal (RCore *core, RModal *modal, int range_end, int start, const c
 }
 
 void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db) {
+	__setCursor (core, false);
 	const int w = 40;
 	const int h = 20;
 	const int x = (core->panels->can->w - w) / 2;
@@ -5204,6 +5211,7 @@ void __handle_tab_new_with_cur_panel (RCore *core) {
 
 	RPanels *prev = core->panels;
 	core->panels = new_panels;
+	__setMode (core, PANEL_MODE_DEFAULT);
 
 	if (!__initPanelsMenu (core) || !__initPanels (core, new_panels)) {
 		core->panels = prev;
@@ -5256,6 +5264,7 @@ void __panels_process(RCore *core, RPanels **r_panels) {
 			return;
 		}
 		*r_panels = panels;
+		__setMode (core, PANEL_MODE_DEFAULT);
 	} else {
 		prev = core->panels;
 		panels = *r_panels;
@@ -5565,7 +5574,7 @@ repeat:
 	}
 		break;
 	case 'm':
-		__setMode (panels, PANEL_MODE_MENU);
+		__setMode (core, PANEL_MODE_MENU);
 		__clearPanelsMenu (core);
 		__getCurPanel (panels)->view->refresh = true;
 		break;
@@ -5642,7 +5651,7 @@ repeat:
 		}
 		break;
 	case 'w':
-		__toggleWindowMode (panels);
+		__toggleWindowMode (core);
 		__setRefreshAll (core, false);
 		break;
 	case 0x0d: // "\\n"
