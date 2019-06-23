@@ -93,6 +93,7 @@ typedef struct {
 	int interactive;
 	bool jmpsub;
 	bool varsub;
+	bool show_movlea;
 	bool show_lines;
 	bool show_lines_bb;
 	bool show_lines_ret;
@@ -736,6 +737,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
 	ds->show_reloff_flags = r_config_get_i (core->config, "asm.reloff.flags");
 	ds->show_lines_fcn = ds->show_lines ? r_config_get_i (core->config, "asm.lines.fcn") : false;
+	ds->show_movlea = r_config_get_i (core->config, "asm.movlea");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_usercomments = r_config_get_i (core->config, "asm.usercomments");
 	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
@@ -2891,6 +2893,9 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 	RCore *core = ds->core;
 	RAnalValue *src;
 	const int addrbytes = core->io->addrbytes;
+	if (!ds->show_movlea) {
+		return;
+	}
 
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_LENGTH:
