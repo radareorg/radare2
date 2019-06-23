@@ -589,12 +589,17 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 	int cols = r_config_get_i (core->config, "hex.cols");
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
+	bool show_section = r_config_get_i (core->config, "hex.section");
 	bool show_cursor = core->print->cur_enabled;
 	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	if (cols < 1 || cols > 0xfffff) {
 		cols = 32;
 	}
 	for (i = 0; i < len; i += cols) {
+		if (show_section) {
+			const char * name = r_core_get_section_name (core, core->offset + i);
+			r_cons_printf ("%20s ", name? name: "");
+		}
 		r_print_addr (core->print, core->offset + i);
 		for (j = i; j < i + cols; j ++) {
 			if (j >= len) {
@@ -1585,6 +1590,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	int nb_cols = r_config_get_i (core->config, "hex.cols");
 	core->print->use_comments = r_config_get_i (core->config, "hex.comments");
 	int flagsz = r_config_get_i (core->config, "hex.flagsz");
+	bool showSection = r_config_get_i (core->config, "hex.section");
 	const ut8 *buf = core->block;
 	ut64 addr = core->offset;
 	int color_idx = 0;
@@ -1683,6 +1689,12 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		if (usecolor) {
 			append (ebytes, core->cons->context->pal.offset);
 		}
+		if (showSection) {
+			const char * name = r_core_get_section_name (core, ea);
+			char *s = r_str_newf ("%20s ", name);
+			append (ebytes, s);
+			free (s);
+		}
 		ebytes += sprintf (ebytes, "0x%08"PFMT64x, ea);
 		if (usecolor) {
 			append (ebytes, Color_RESET);
@@ -1725,6 +1737,9 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				color_idx++;
 				color_idx %= 10;
 				current_flag = flag;
+				if (showSection) {
+					r_cons_printf ("%20s ", "");
+				}
 				if (flag->offset == addr + j) {
 					append (ebytes, Color_INVERT);
 					append (echars, Color_INVERT);

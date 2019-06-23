@@ -436,7 +436,7 @@ R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
 	}
 	RBinObject *bo = r_bin_cur_object (core->bin);
 	RBinSection *s = bo? r_bin_get_section_at (bo, addr, core->io->va): NULL;
-	if (s) {
+	if (s && s->name && *s->name) {
 		snprintf (section, sizeof (section) - 1, "%10s ", s->name);
 	} else {
 		RListIter *iter;
@@ -467,12 +467,8 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 		}
 		return;
 	}
-	//XXX fix this generate many dupes with section name
 	const char *sn = ds->show_section ? r_core_get_section_name (ds->core, ds->at) : "";
-	// if (ds->cmtcount == 0) {
-		ds_align_comment (ds);
-	// }
-	sn = ds->show_section ? r_core_get_section_name (ds->core, ds->at) : "";
+	ds_align_comment (ds);
 	ds_align_comment (ds);
 	r_cons_print (COLOR_RESET (ds));
 	ds_print_pre (ds);
