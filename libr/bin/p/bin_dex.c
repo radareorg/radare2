@@ -1351,7 +1351,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 					bin->code_from = sym->paddr;
 				}
 				if (bin->code_to < sym->paddr) {
-					bin->code_to = sym->paddr;
+					bin->code_to = sym->paddr + sym->size;
 				}
 
 				if (!mdb) {
@@ -1977,7 +1977,7 @@ static RList *sections(RBinFile *bf) {
 	if ((ptr = R_NEW0 (RBinSection))) {
 		ptr->name = strdup ("constpool");
 		//ptr->size = ptr->vsize = fsym;
-		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
+		ptr->paddr = ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
 		ptr->vsize = ptr->size;
 		ptr->format = r_str_newf ("Cd %d[%d]", 4, ptr->vsize / 4);
@@ -2017,6 +2017,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->size = r_buf_size (bf->buf);
 		ptr->vsize = ptr->size;
 		ptr->perm = R_PERM_R;
+		// ptr->format = strdup ("Cs 4");
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
