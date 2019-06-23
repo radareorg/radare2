@@ -366,6 +366,7 @@ static void __fix_cursor_down(RCore *core);
 static void __jmp_to_cursor_addr(RCore *core, RPanel *panel);
 static void __cursor_del_breakpoints(RCore *core, RPanel *panel);
 static void __insertValue(RCore *core);
+static void __set_breakpoints_on_cursor(RCore *core, RPanel *panel);
 
 /* filter */
 static void __set_filter(RCore *core, RPanel *panel);
@@ -1416,7 +1417,6 @@ bool __handleCursorMode(RCore *core, const int key) {
 	case ':':
 	case ';':
 	case 'd':
-	case 'b':
 	case 'h':
 	case 'j':
 	case 'k':
@@ -1456,6 +1456,9 @@ bool __handleCursorMode(RCore *core, const int key) {
 		break;
 	case 0x0d:
 		__jmp_to_cursor_addr (core, cur);
+		break;
+	case 'b':
+		__set_breakpoints_on_cursor (core, cur);
 		break;
 	}
 	return true;
@@ -4596,6 +4599,16 @@ void __toggleHelp(RCore *core) {
 	__updateHelp (ps);
 }
 
+void __set_breakpoints_on_cursor(RCore *core, RPanel *panel) {
+	if (!r_config_get_i (core->config, "cfg.debug")) {
+		return;
+	}
+	if (__check_panel_type (panel, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
+		r_core_cmdf (core, "dbs 0x%08"PFMT64x, core->offset + core->print->cur);
+		panel->view->refresh = true;
+	}
+}
+
 void __insertValue(RCore *core) {
 	if (!r_config_get_i (core->config, "io.cache")) {
 		if (__show_status_yesno (core, 'y', "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
@@ -4622,8 +4635,7 @@ void __insertValue(RCore *core) {
 			r_core_cmdf (core, "dr %s = %s", creg, buf);
 			cur->view->refresh = true;
 		}
-	} else if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (cur->model->cmd, PANEL_CMD_DECOMPILER)) {
+	} else if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		const char *prompt = "insert hex: ";
 		__panelPrompt (prompt, buf, sizeof (buf));
 		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, core->offset + core->print->cur);
