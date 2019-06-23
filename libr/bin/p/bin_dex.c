@@ -951,8 +951,13 @@ static char *dex_field_name(RBinDexObj *bin, int fid) {
 		return NULL;
 	}
 	tid = bin->fields[fid].name_id;
-	return r_str_newf ("%s->%s %s", getstr (bin, bin->types[cid].descriptor_id),
-		getstr (bin, tid), getstr (bin, bin->types[type_id].descriptor_id));
+	const char *a = getstr (bin, bin->types[cid].descriptor_id);
+	const char *b = getstr (bin, tid);
+	const char *c = getstr (bin, bin->types[type_id].descriptor_id);
+	if (a && b && c) {
+		return r_str_newf ("%s->%s %s", a, b, c);
+	}
+	return r_str_newf ("%d->%d %d", bin->types[cid].descriptor_id, tid, bin->types[type_id].descriptor_id);
 }
 
 static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {

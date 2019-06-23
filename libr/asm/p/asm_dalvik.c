@@ -320,16 +320,14 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				flag_str = R_ASM_GET_NAME (a, 'c', vC);
 				if (flag_str) {
 					snprintf (str, sizeof (str), " v%i, v%i, %s", vA, vB, flag_str);
-				}
-				else {
+				} else {
 					snprintf (str, sizeof (str), " v%i, v%i, class+%i", vA, vB, vC);
 				}
 			} else {
 				flag_str = R_ASM_GET_NAME (a, 'f', vC);
 				if (flag_str) {
 					snprintf (str, sizeof (str), " v%i, v%i, %s", vA, vB, flag_str);
-				}
-				else {
+				} else {
 					snprintf (str, sizeof (str), " v%i, v%i, field+%i", vA, vB, vC);
 				}
 			}
