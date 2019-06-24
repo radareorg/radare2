@@ -620,7 +620,7 @@ R_API bool r_bin_list_plugin(RBin *bin, const char* name, int json) {
 		return true;
 	}
 
-	eprintf ("cannot find plugin %s\n", name);
+	eprintf ("Cannot find plugin %s\n", name);
 	return false;
 }
 
@@ -834,32 +834,31 @@ R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 }
 
 R_API RList *r_bin_reset_strings(RBin *bin) {
-	RBinFile *a = r_bin_cur (bin);
-	RBinObject *o = r_bin_cur_object (bin);
-	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
+	RBinFile *bf = r_bin_cur (bin);
 
-	if (!a || !o) {
+	if (!bf || !bf->o) {
 		return NULL;
 	}
-	if (o->strings) {
-		r_list_free (o->strings);
-		o->strings = NULL;
+	if (bf->o->strings) {
+		r_list_free (bf->o->strings);
+		bf->o->strings = NULL;
 	}
 
 	if (bin->minstrlen <= 0) {
 		return NULL;
 	}
-	a->rawstr = bin->rawstr;
+	bf->rawstr = bin->rawstr;
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 
 	if (plugin && plugin->strings) {
-		o->strings = plugin->strings (a);
+		bf->o->strings = plugin->strings (bf);
 	} else {
-		o->strings = r_bin_file_get_strings (a, bin->minstrlen, 0, a->rawstr);
+		bf->o->strings = r_bin_file_get_strings (bf, bin->minstrlen, 0, bf->rawstr);
 	}
 	if (bin->debase64) {
-		r_bin_object_filter_strings (o);
+		r_bin_object_filter_strings (bf->o);
 	}
-	return o->strings;
+	return bf->o->strings;
 }
 
 R_API RList *r_bin_get_strings(RBin *bin) {
@@ -1300,8 +1299,6 @@ R_API RList * /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->classes : NULL;
 }
-
-
 
 /* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
  * paddr otherwise */
