@@ -2365,6 +2365,13 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 				eprintf ("Sandbox restricts search range\n");
 				break;
 			}
+			if (!core->search->bckwrds) {
+				RListIter* it;
+				RSearchKeyword* kw;
+				r_list_foreach (core->search->kws, it, kw) {
+					kw->last = 0;
+				}
+			}
 
 			const ut64 from = itv.addr, to = r_itv_end (itv),
 					from1 = search->bckwrds ? to : from,
