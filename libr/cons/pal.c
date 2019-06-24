@@ -381,13 +381,13 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			if (!strncmp(p, "bold", 4)) {
 				rcolor.attr |= R_CONS_ATTR_BOLD;
 			} else if (!strncmp(p, "dim", 3)) {
-				rcolor.attr |= 1u << 2;
+				rcolor.attr |= R_CONS_ATTR_DIM;
 			} else if (!strncmp(p, "italic", 6)) {
-				rcolor.attr |= 1u << 3;
+				rcolor.attr |= R_CONS_ATTR_ITALIC;
 			} else if (!strncmp(p, "underline", 9)) {
-				rcolor.attr |= 1u << 4;
+				rcolor.attr |= R_CONS_ATTR_UNDERLINE;
 			} else if (!strncmp(p, "blink", 5)) {
-				rcolor.attr |= 1u << 5;
+				rcolor.attr |= R_CONS_ATTR_BLINK;
 			} else {
 				eprintf ("Failed to parse terminal attributes: %s\n", p);
 				break;

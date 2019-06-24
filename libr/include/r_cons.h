@@ -157,7 +157,12 @@ enum {
 #endif
 
 enum { ALPHA_RESET = 0x00, ALPHA_FG = 0x01, ALPHA_BG = 0x02, ALPHA_FGBG = 0x03 };
-enum { R_CONS_ATTR_BOLD = 1 << 1 };
+enum { R_CONS_ATTR_BOLD = 1u << 1,
+       R_CONS_ATTR_DIM = 1u << 2,
+       R_CONS_ATTR_ITALIC = 1u << 3,
+       R_CONS_ATTR_UNDERLINE = 1u << 4,
+       R_CONS_ATTR_BLINK = 1u << 5
+};
 
 typedef struct rcolor_t {
 	// bold, italic, underline, ...

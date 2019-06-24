@@ -203,11 +203,11 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 			return;
 		}
 		switch (attr & -attr) {
-		case 1u << 1: outstr[i] = '1'; break;
-		case 1u << 2: outstr[i] = '2'; break;
-		case 1u << 3: outstr[i] = '3'; break;
-		case 1u << 4: outstr[i] = '4'; break;
-		case 1u << 5: outstr[i] = '5'; break;
+		case R_CONS_ATTR_BOLD: outstr[i] = '1'; break;
+		case R_CONS_ATTR_DIM: outstr[i] = '2'; break;
+		case R_CONS_ATTR_ITALIC: outstr[i] = '3'; break;
+		case R_CONS_ATTR_UNDERLINE: outstr[i] = '4'; break;
+		case R_CONS_ATTR_BLINK: outstr[i] = '5'; break;
 		}
 		outstr[i + 1] = ';';
 		i += 2;
