@@ -216,9 +216,9 @@ R_API const char *r_bin_lang_tostring(int lang) {
 	case R_BIN_NM_JAVA:
 		return "java";
 	case R_BIN_NM_C:
-		return (lang&R_BIN_NM_BLOCKS)? "c with blocks": "c";
+		return (lang & R_BIN_NM_BLOCKS)? "c with blocks": "c";
 	case R_BIN_NM_CXX:
-		return (lang&R_BIN_NM_BLOCKS)? "c++ with blocks": "c++";
+		return (lang & R_BIN_NM_BLOCKS)? "c++ with blocks": "c++";
 	case R_BIN_NM_DLANG:
 		return "d";
 	case R_BIN_NM_OBJC:
