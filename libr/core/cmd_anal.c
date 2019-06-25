@@ -618,6 +618,7 @@ static const char *help_msg_as[] = {
 	"as", " 4", "show syscall 4 based on asm.os and current regs/mem",
 	"asc[a]", " 4", "dump syscall info in .asm or .h",
 	"asf", " [k[=[v]]]", "list/set/unset pf function signatures (see fcnsign)",
+	"asfr", " [function_name] [new_type]", "change type for given function",
 	"asj", "", "list of syscalls in JSON",
 	"asl", "", "list of syscalls by asm.os and asm.arch",
 	"asl", " close", "returns the syscall number for close",
@@ -5976,7 +5977,39 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		}
 		break;
 	case 'f': // "asf"
-		cmd_asf (core, input + 1);
+		if (input[i] == ' ') {
+			cmd_asf (core, input + 1);
+		}
+		else if (input[1] == 'r') { // "asfr"
+			/*
+				case 't':{ // "afvt"
+				p = strchr (ostr, ' ');
+				if (!p++) {
+				free (ostr);
+				return false;
+				}
+
+				char *type = strchr (p, ' ');
+				if (!type) {
+				free (ostr);
+				return false;
+				}
+			 *type++ = 0;
+			 v1 = r_anal_var_get_byname (core->anal, fcn->addr, p);
+			 if (!v1) {
+			 eprintf ("Cant find get by name %s\n", p);
+			 free (ostr);
+			 return false;
+			 }
+			 r_anal_var_retype (core->anal, fcn->addr,
+			 R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, v1->isarg, p);
+			 r_anal_var_free (v1);
+			 free (ostr);
+			 return true;
+
+			 }
+			 */
+		}
 		break;
 	case 'l': // "asl"
 		if (input[1] == ' ') {
