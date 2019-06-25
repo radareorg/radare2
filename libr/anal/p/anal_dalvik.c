@@ -47,7 +47,7 @@ static const char *getCondz(ut8 cond) {
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	int sz = dalvik_opcodes[data[0]].len;
 	if (!op || sz >= len) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (op && (mask & R_ANAL_OP_MASK_DISASM)) {
 			op->mnemonic = strdup ("invalid");
 		}
 		return -1;
