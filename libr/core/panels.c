@@ -669,7 +669,7 @@ void __set_panel_addr(RCore *core, RPanel *panel, ut64 addr) {
 }
 
 RPanel *__getPanel(RPanels *panels, int i) {
-	if (i >= PANEL_NUM_LIMIT) {
+	if (!panels || (i >= PANEL_NUM_LIMIT)) {
 		return NULL;
 	}
 	return panels->panel[i];
@@ -5099,7 +5099,7 @@ void __del_panels(RCore *core) {
 }
 
 RPanels *__get_panels(RPanelsRoot *panels_root, int i) {
-	if (i >= PANEL_NUM_LIMIT) {
+	if (!panels_root || (i >= PANEL_NUM_LIMIT)) {
 		return NULL;
 	}
 	return panels_root->panels[i];

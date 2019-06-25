@@ -424,7 +424,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	if (p && p->flags & R_PRINT_FLAGS_COMPACT && p->col == 1) {
 		ch = '|';
 	}
-	if (p->pava) {
+	if (p && p->pava) {
 		ut64 va = p->iob.p2v (p->iob.io, addr);
 		if (va != UT64_MAX) {
 			addr = va;
