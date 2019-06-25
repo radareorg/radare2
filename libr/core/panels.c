@@ -13,7 +13,7 @@
 #define PANEL_TITLE_DECOMPILER   "Decompiler"
 #define PANEL_TITLE_GRAPH        "Graph"
 #define PANEL_TITLE_FUNCTIONS    "Functions"
-#define PANEL_TITLE_FUNCTIONS    "Functions"
+#define PANEL_TITLE_BREAKPOINTS  "Breakpoints"
 #define PANEL_TITLE_STRINGS_DATA "Strings in data sections"
 #define PANEL_TITLE_STRINGS_BIN  "Strings in the whole bin"
 
@@ -564,6 +564,9 @@ static void __redoSeek(RCore *core);
 
 char *__search_db(RCore *core, const char *title) {
 	RPanels *panels = core->panels;
+	if (!panels->db) {
+		return NULL;
+	}
 	char *out = sdb_get (panels->db, title, 0);
 	if (out) {
 		return out;
@@ -594,7 +597,7 @@ char *__show_status_input(RCore *core, const char *msg) {
 }
 
 bool __check_panel_type(RPanel *panel, const char *type, int len) {
-	if (!panel->model->cmd) {
+	if (!panel->model->cmd || !type) {
 		return false;
 	}
 	if (!strcmp (type, PANEL_CMD_DISASSEMBLY)) {
@@ -612,11 +615,21 @@ bool __check_root_state(RCore *core, RPanelsRootState state) {
 }
 
 bool __is_abnormal_cursor_type(RCore *core, RPanel *panel) {
+	char *str;
 	if (__check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS)) ||
-			__check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) ||
-			__check_panel_type (panel, __search_db (core, PANEL_TITLE_STRINGS_DATA), strlen (__search_db (core, PANEL_TITLE_STRINGS_DATA))) ||
-			__check_panel_type (panel, __search_db (core, PANEL_TITLE_STRINGS_BIN), strlen (__search_db (core, PANEL_TITLE_STRINGS_BIN))) ||
-			__check_panel_type (panel, __search_db (core, "Breakpoints"), strlen (__search_db (core, "Breakpoints")))) {
+			__check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
+		return true;
+	}
+	str = __search_db (core, PANEL_TITLE_STRINGS_DATA);
+	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_STRINGS_DATA), strlen (__search_db (core, PANEL_TITLE_STRINGS_DATA)))) {
+		return true;
+	}
+	str = __search_db (core, PANEL_TITLE_STRINGS_BIN);
+	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_STRINGS_BIN), strlen (__search_db (core, PANEL_TITLE_STRINGS_BIN)))) {
+		return true;
+	}
+	str = __search_db (core, PANEL_TITLE_BREAKPOINTS);
+	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_BREAKPOINTS), strlen (__search_db (core, PANEL_TITLE_BREAKPOINTS)))) {
 		return true;
 	}
 	return false;
@@ -5215,17 +5228,18 @@ void __handle_tab_new_with_cur_panel (RCore *core) {
 
 	RPanels *prev = core->panels;
 	core->panels = new_panels;
-	__setMode (core, PANEL_MODE_DEFAULT);
 
 	if (!__initPanelsMenu (core) || !__initPanels (core, new_panels)) {
 		core->panels = prev;
 		return;
 	}
+	__setMode (core, PANEL_MODE_DEFAULT);
 	__init_all_dbs (core);
 
 	RPanel *new_panel = __getPanel (new_panels, 0);
 	__init_panel_param (core, new_panel, cur->model->title, cur->model->cmd, false);
 	__maximizePanelSize (new_panels);
+
 
 	core->panels = prev;
 	__dismantleDelPanel (core, cur, panels->curnode);
