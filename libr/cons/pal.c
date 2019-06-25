@@ -513,6 +513,11 @@ R_API void r_cons_pal_show() {
 	}
 }
 
+typedef struct {
+	int val;
+	const char *str;
+} RAttrStr;
+
 R_API void r_cons_pal_list(int rad, const char *arg) {
 	char *name, **color;
 	const char *hasnext;
@@ -563,6 +568,24 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 			if (rcolor->a == ALPHA_FGBG) {
 				r_cons_printf (" rgb:%02x%02x%02x",
 					rcolor->r2, rcolor->g2, rcolor->b2);
+			}
+			if (rcolor->attr) {
+				const RAttrStr attrs[] = {
+				    { R_CONS_ATTR_BOLD, "bold" },
+				    { R_CONS_ATTR_DIM, "dim" },
+				    { R_CONS_ATTR_ITALIC, "italic" },
+				    { R_CONS_ATTR_UNDERLINE, "underline" },
+				    { R_CONS_ATTR_BLINK, "blink" }
+				};
+				int j;
+				if (rcolor->a != ALPHA_FGBG) {
+					r_cons_strcat (" .");
+				}
+				for (j = 0; j < R_ARRAY_SIZE (attrs); j++) {
+					if (rcolor->attr & attrs[j].val) {
+						r_cons_printf (" %s", attrs[j].str);
+					}
+				}
 			}
 			r_cons_newline ();
 			break;
