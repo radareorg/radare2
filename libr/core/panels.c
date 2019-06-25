@@ -552,7 +552,6 @@ static bool __moveToDirection(RCore *core, Direction direction);
 static void __toggleHelp(RCore *core);
 static void __checkEdge(RPanels *panels);
 static void __callVisualGraph(RCore *core);
-static void __fixBlockSize(RCore *core);
 static void __refreshCoreOffset (RCore *core);
 static char *__search_db(RCore *core, const char *title);
 static void __handle_visual_mark(RCore *core);
@@ -1017,7 +1016,6 @@ void __splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char
 }
 
 void __panels_layout_refresh(RCore *core) {
-	__fixBlockSize (core);
 	__delInvalidPanels (core);
 	__checkEdge (core->panels);
 	__panels_check_stackbase (core);
@@ -1970,11 +1968,6 @@ void __dismantleDelPanel(RCore *core, RPanel *p, int pi) {
 	}
 	__dismantlePanel (panels, p);
 	__delPanel (core, pi);
-}
-
-void __fixBlockSize(RCore *core) {
-	int cols = r_config_get_i (core->config, "hex.cols");
-	r_core_block_size (core, (int)(core->cons->rows * cols * 3.5));
 }
 
 void __delInvalidPanels(RCore *core) {
@@ -2959,7 +2952,6 @@ void __directionDisassemblyCb(void *user, int direction) {
 			RAsmOp op;
 			r_core_visual_disasm_down (core, &op, &cols);
 			r_core_seek (core, core->offset + cols, 1);
-			r_core_block_read (core);
 			__set_panel_addr (core, cur, core->offset);
 		}
 		return;
