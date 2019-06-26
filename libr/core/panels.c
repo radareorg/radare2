@@ -4166,7 +4166,7 @@ bool __init(RCore *core, RPanels *panels, int w, int h) {
 		panels->layout = PANEL_LAYOUT_DEFAULT_STATIC;
 	}
 	panels->isResizing = false;
-	panels->autoUpdate = true;
+	panels->autoUpdate = false;
 	panels->can = __createNewCanvas (core, w, h);
 	panels->db = sdb_new0 ();
 	panels->rotate_db = sdb_new0 ();
@@ -5255,7 +5255,8 @@ void __handle_tab_new_with_cur_panel (RCore *core) {
 	__init_all_dbs (core);
 
 	RPanel *new_panel = __getPanel (new_panels, 0);
-	__init_panel_param (core, new_panel, cur->model->title, cur->model->cmd, false);
+	__init_panel_param (core, new_panel, cur->model->title, cur->model->cmd, cur->model->cache);
+	__setCmdStrCache (core, new_panel, r_str_new (cur->model->cmdStrCache));
 	__maximizePanelSize (new_panels);
 
 
@@ -5283,6 +5284,8 @@ void __panels_process(RCore *core, RPanels *panels) {
 	RPanels *prev;
 	prev = core->panels;
 	core->panels = panels;
+	core->offset = panels->addr;
+	panels->autoUpdate = true;
 	int h, w = r_cons_get_size (&h);
 	panels->can = __createNewCanvas (core, w, h);
 	__setRefreshAll (core, false);
