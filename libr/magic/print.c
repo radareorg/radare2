@@ -48,8 +48,7 @@ void file_mdump(struct r_magic *m) {
 	static const char optyp[] = { FILE_OPS };
 
 	(void) eprintf ("[%u", m->lineno);
-	(void) eprintf (">>>>>>>> %u" + 8 - (m->cont_level & 7),
-		       m->offset);
+	(void) eprintf ("%.*s %u", m->cont_level & 7, ">>>>>>>>", m->offset);
 
 	if (m->flag & INDIR) {
 		(void) eprintf ("(%s,",
