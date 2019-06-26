@@ -1115,6 +1115,7 @@ typedef struct r_panels_t {
 	RPanelsLayout layout;
 	RList *snows;
 	char *name;
+	ut64 addr;
 } RPanels;
 
 typedef enum {
