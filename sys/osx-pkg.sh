@@ -13,13 +13,14 @@ if [ -n "$1" ]; then
 	VERSION="$1"
 else
 	VERSION="`./configure --version| head -n 1|awk '{print $1}'|cut -d - -f 2`"
-	[ -z "${VERSION}" ] && VERSION=1.1.0
+	[ -z "${VERSION}" ] && VERSION=3.6.0
 fi
 [ -z "${MAKE}" ] && MAKE=make
 
 rm -rf "${SRC}"
 ${MAKE} mrproper 2>/dev/null
-./configure --prefix="${PREFIX}" || exit 1
+export CFLAGS=-O2
+./configure --prefix="${PREFIX}" --without-libuv || exit 1
 ${MAKE} -j4 || exit 1
 # TODO: run sys/install.sh
 ${MAKE} install PREFIX="${PREFIX}" DESTDIR=${SRC} || exit 1
