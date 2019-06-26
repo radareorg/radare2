@@ -234,8 +234,6 @@ static void r_meta_del_cb (RAnal *a, int type, int rad, SdbForeachCallback cb, v
 		a->cb_printf ("[");
 	}
 
-	RAnalMetaUserItem ui = { a, type, rad, cb, user, 0, NULL };
-
 	SdbList *ls = sdb_foreach_list (DB, true);
 	SdbListIter *lsi;
 	SdbKv *kv;
