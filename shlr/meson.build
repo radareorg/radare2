@@ -211,10 +211,10 @@ outfile = sys.argv[1]
 infiles = sys.argv[2:]
 if os.name == 'nt':
     infiles = ','.join(infiles)
-    os.system(f'powershell -c "Get-Content {infiles} | {sdb_exe} {outfile} ="')
+    os.system('powershell -c "Get-Content {} | {} {} ="'.format(infiles, sdb_exe, outfile))
 else:
     infiles = ' '.join(infiles)
-    os.system(f'cat {infiles} | {sdb_exe} {outfile} =')
+    os.system('cat {} | {} {} ='.format(infiles, sdb_exe, outfile))
 '''.format(sdb_exe.full_path())
 
 sdb_gen_cmd = [
