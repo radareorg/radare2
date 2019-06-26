@@ -264,6 +264,7 @@ static bool __initPanels(RCore *core, RPanels *panels);
 static void __init_all_dbs(RCore *core);
 static void __init_panel_param(RCore *core, RPanel *p, const char *title, const char *cmd, bool cache);
 static RPanels *__panels_new(RCore *core);
+static void __init_new_panels_root(RCore *core);
 
 /* create */
 static void __createDefaultPanels(RCore *core);
@@ -303,7 +304,6 @@ static void __resetScrollPos(RPanel *p);
 
 /* update */
 static void __update_disassembly_or_open(RCore *core);
-static void __updateAddr (RCore *core);
 static void __updateHelp(RPanels *ps);
 
 /* check */
@@ -545,7 +545,7 @@ static void __printSnow(RPanels *panels);
 static void __resetSnow(RPanels *panels);
 
 /* other */
-static void __panels_process(RCore *core, RPanels **r_panels);
+static void __panels_process(RCore *core, RPanels *panels);
 static bool __handle_console(RCore *core, RPanel *panel, const int key);
 static void __toggleCache (RCore *core, RPanel *p);
 static bool __moveToDirection(RCore *core, Direction direction);
@@ -1433,6 +1433,7 @@ bool __handleCursorMode(RCore *core, const int key) {
 	case 'k':
 	case 'l':
 	case 'm':
+	case 'Z':
 	case '"':
 	case 9:
 		return false;
@@ -2694,16 +2695,6 @@ void __update_disassembly_or_open (RCore *core) {
 		__set_curnode (core, 0);
 	}
 	__setRefreshAll (core, false);
-}
-
-void __updateAddr (RCore *core) {
-	RPanels *panels = core->panels;
-	int i;
-	for (i = 0; i < panels->n_panels; i++) {
-		RPanel *p = __getPanel (panels, i);
-		__set_panel_addr (core, p, core->offset);
-	}
-	__setRefreshAll (core, true);
 }
 
 void __set_curnode(RCore *core, int idx) {
@@ -5068,18 +5059,20 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 		core->panels_root = panels_root;
 		panels_root->panels = calloc (sizeof (RPanels *), PANEL_NUM_LIMIT);
-		panels_root->n_panels = 1;
+		panels_root->n_panels = 0;
 		panels_root->cur_panels = 0;
 		__set_root_state (core, DEFAULT);
+		__init_new_panels_root (core);
 	} else {
 		if (!panels_root->n_panels) {
-			panels_root->n_panels = 1;
+			panels_root->n_panels = 0;
 			panels_root->cur_panels = 0;
+			__init_new_panels_root (core);
 		}
 	}
 	while (panels_root->n_panels) {
 		__set_root_state (core, DEFAULT);
-		__panels_process (core, &(panels_root->panels[panels_root->cur_panels]));
+		__panels_process (core, panels_root->panels[panels_root->cur_panels]);
 		if (__check_root_state (core, DEL)) {
 			__del_panels (core);
 		}
@@ -5088,6 +5081,30 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 	}
 	return true;
+}
+
+void __init_new_panels_root(RCore *core) {
+	RPanelsRoot *panels_root = core->panels_root;
+	RPanels *panels = __panels_new (core);
+	if (!panels) {
+		return;
+	}
+	RPanels *prev = core->panels;
+	core->panels = panels;
+	panels_root->panels[panels_root->n_panels++] = panels;
+	if (!__initPanelsMenu (core)) {
+		core->panels = prev;
+		return;
+	}
+	if (!__initPanels (core, panels)) {
+		core->panels = prev;
+		return;
+	}
+	__init_all_dbs (core);
+	__setMode (core, PANEL_MODE_DEFAULT);
+	__createDefaultPanels (core);
+	__panels_layout (panels);
+	core->panels = prev;
 }
 
 void __set_root_state(RCore *core, RPanelsRootState state) {
@@ -5204,7 +5221,7 @@ void __handle_tab_new(RCore *core) {
 	if (core->panels_root->n_panels >= PANEL_NUM_LIMIT) {
 		return;
 	}
-	core->panels_root->n_panels++;
+	__init_new_panels_root(core);
 }
 
 void __handle_tab_new_with_cur_panel (RCore *core) {
@@ -5224,6 +5241,7 @@ void __handle_tab_new_with_cur_panel (RCore *core) {
 	if (!new_panels) {
 		return;
 	}
+	new_panels->addr = core->offset;
 	root->panels[root->n_panels] = new_panels;
 
 	RPanels *prev = core->panels;
@@ -5256,41 +5274,18 @@ void __panelPrompt(const char *prompt, char *buf, int len) {
 	r_cons_fgets (buf, len, 0, NULL);
 }
 
-void __panels_process(RCore *core, RPanels **r_panels) {
-	int i, okey, key;
-	bool first_load = !*r_panels;
-	RPanelsRoot *panels_root = core->panels_root;
-	RPanels *panels;
-	RPanels *prev;
-	if (!*r_panels) {
-		panels = __panels_new (core);
-		if (!panels) {
-			__set_root_state (core, QUIT);
-			return;
-		}
-		prev = core->panels;
-		core->panels = panels;
-		__init_all_dbs (core);
-		if (!__initPanelsMenu (core)) {
-			__set_root_state (core, QUIT);
-			core->panels = prev;
-			return;
-		}
-		if (!__initPanels (core, panels)) {
-			__set_root_state (core, QUIT);
-			core->panels = prev;
-			return;
-		}
-		*r_panels = panels;
-		__setMode (core, PANEL_MODE_DEFAULT);
-	} else {
-		prev = core->panels;
-		panels = *r_panels;
-		core->panels = panels;
-		int h, w = r_cons_get_size (&h);
-		panels->can = __createNewCanvas (core, w, h);
-		__updateAddr (core);
+void __panels_process(RCore *core, RPanels *panels) {
+	if (!panels) {
+		return;
 	}
+	int i, okey, key;
+	RPanelsRoot *panels_root = core->panels_root;
+	RPanels *prev;
+	prev = core->panels;
+	core->panels = panels;
+	int h, w = r_cons_get_size (&h);
+	panels->can = __createNewCanvas (core, w, h);
+	__setRefreshAll (core, false);
 
 	r_cons_switchbuf (false);
 
@@ -5303,11 +5298,6 @@ void __panels_process(RCore *core, RPanels **r_panels) {
 	core->vmode = true;
 
 	r_cons_enable_mouse (false);
-
-	if (first_load) {
-		__createDefaultPanels (core);
-		__panels_layout (panels);
-	}
 repeat:
 	r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
 	core->panels = panels;
