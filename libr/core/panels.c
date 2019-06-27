@@ -5256,6 +5256,7 @@ void __handle_tab_new_with_cur_panel (RCore *core) {
 
 	RPanel *new_panel = __getPanel (new_panels, 0);
 	__init_panel_param (core, new_panel, cur->model->title, cur->model->cmd, cur->model->cache);
+	new_panel->model->funcName = r_str_new (cur->model->funcName);
 	__setCmdStrCache (core, new_panel, r_str_new (cur->model->cmdStrCache));
 	__maximizePanelSize (new_panels);
 
