@@ -34,6 +34,8 @@ static void __clear_w32() {
 	}
 	FillConsoleOutputCharacter (hStdout, ' ',
 		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
+	FillConsoleOutputAttribute (hStdout, 0,
+		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
 }
 
 R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
