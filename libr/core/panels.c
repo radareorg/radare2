@@ -5817,6 +5817,7 @@ repeat:
 	}
 	goto repeat;
 exit:
+	core->panels->addr = core->offset;
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
 	core->print->cur = originCursor;
