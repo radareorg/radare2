@@ -34,7 +34,8 @@ static void __clear_w32() {
 	}
 	FillConsoleOutputCharacter (hStdout, ' ',
 		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
-	FillConsoleOutputAttribute (hStdout, 0,
+	FillConsoleOutputAttribute (hStdout,
+		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
 		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
 }
 
