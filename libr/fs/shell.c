@@ -4,7 +4,7 @@
 
 #define PROMPT_PATH_BUFSIZE 1024
 
-static bool handlePipes(RFS *fs, char *msg, const char *cwd) {
+static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 	char *red = strchr (msg, '>');
 	if (red) {
 		*red++ = 0;
@@ -15,10 +15,14 @@ static bool handlePipes(RFS *fs, char *msg, const char *cwd) {
 			free (red);
 			red = blu;
 		} else {
-		
 		}
 		RFSFile *f = r_fs_open (fs, red, true);
-		r_fs_write (fs, f, 0, (const ut8 *)msg, strlen (msg));
+		if (!f) {
+			eprintf ("Cannot open %s for writing\n", red);
+			free (red);
+			return true;
+		}
+		r_fs_write (fs, f, 0, data == NULL ? (const ut8 *) msg : data, strlen (msg));
 		free (red);
 		r_fs_close (fs, f);
 		r_fs_file_free (f);
@@ -107,7 +111,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			r_sandbox_system (buf + 1, 1);
 		} else if (!strncmp (buf, "echo", 4)) {
 			char *msg = r_str_trim_dup (buf + 4);
-			if (!handlePipes (fs, msg, path)) {
+			if (!handlePipes (fs, msg, NULL, path)) {
 				printf ("%s\n", msg);
 			}
 			free (msg);
@@ -216,7 +220,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					*p = '>';
 				}
 				r_fs_read (fs, file, 0, file->size);
-				if (!handlePipes (fs, (char *)file->data, path)) {
+				if (!handlePipes (fs, str, file->data, path)) {
 					write (1, file->data, file->size);
 				}
 				write (1, "\n", 1);
