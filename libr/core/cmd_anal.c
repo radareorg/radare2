@@ -6382,7 +6382,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						char *op = get_buf_asm (core, core->offset, addr, fcn, true);
 						r_cons_printf ("%s 0x%"PFMT64x" [DATA] %s\n", fcn?  fcn->name : "(nofunc)", addr, op);
 						free (op);
-
 					}
 					free (res);
 					free (res1);
