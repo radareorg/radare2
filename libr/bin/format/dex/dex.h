@@ -108,6 +108,7 @@ typedef struct r_bin_dex_obj_t {
 	struct dex_method_t *methods;
 	struct dex_class_t *classes;
 	RList *methods_list;
+	RList *trycatch_list;
 	RList *imports_list;
 	RList *classes_list;
 	RList *lines_list;

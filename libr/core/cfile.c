@@ -559,9 +559,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		binfile->fd = desc->fd;
 	}
 	binfile = r_bin_cur (r->bin);
-	if (r->bin->cur && r->bin->cur->curplugin && r->bin->cur->curplugin->strfilter) {
+	if (r->bin->cur && r->bin->cur->o && r->bin->cur->o->plugin && r->bin->cur->o->plugin->strfilter) {
 		char msg[2];
-		msg[0] = r->bin->cur->curplugin->strfilter;
+		msg[0] = r->bin->cur->o->plugin->strfilter;
 		msg[1] = 0;
 		r_config_set (r->config, "bin.str.filter", msg);
 	}
