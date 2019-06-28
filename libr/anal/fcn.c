@@ -5,7 +5,6 @@
 #include <r_util.h>
 #include <r_list.h>
 
-#define USE_FCN_RECURSE 1
 #define USE_SDB_CACHE 0
 #define READ_AHEAD 1
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
@@ -460,6 +459,14 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 	}
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth);
+
+static int fcn_recurse_at(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
+	int ret = fcn_recurse (anal, fcn, addr, anal->opt.bb_max_size, depth - 1);
+	r_anal_fcn_update_tinyrange_bbs (fcn);
+	r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));
+	return ret;
+}
+
 #define recurseAt(x) {\
 	ret = fcn_recurse (anal, fcn, x, anal->opt.bb_max_size, depth - 1);\
 	r_anal_fcn_update_tinyrange_bbs (fcn);\
@@ -1135,6 +1142,25 @@ repeat:
 			fcn->ninstr++;
 			// FITFCNSZ(); // defer this, in case this instruction is a branch delay entry
 			// fcn->size += oplen; /// XXX. must be the sum of all the bblocks
+		}
+		if (anal->opt.trycatch) {
+			const char *name = anal->coreb.getName (anal->coreb.core, at);
+			if (name) {
+				if (r_str_startswith (name, "try.") && r_str_endswith (name, ".from")) {
+					char *handle = strdup (name);
+					// handle = r_str_replace (handle, ".from", ".to", 0);
+					ut64 from_addr = anal->coreb.numGet (anal->coreb.core, handle);
+					handle = r_str_replace (handle, ".from", ".catch", 0);
+					ut64 handle_addr = anal->coreb.numGet (anal->coreb.core, handle);
+					bb->jump = at + oplen;
+					if (from_addr != bb->addr) {
+						bb->fail = handle_addr;
+						recurseAt (handle_addr);
+						eprintf ("(%s)\n", handle);
+						bb = appendBasicBlock (anal, fcn, addr);
+					}
+				}
+			}
 		}
 		idx += oplen;
 		delay.un_idx = idx;
@@ -1818,7 +1844,6 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 
 /* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
-	int ret;
 	r_anal_fcn_set_size (NULL, fcn, 0); // fcn is not yet in anal => pass NULL
 	/* defines fcn. or loc. prefix */
 	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE) ? R_ANAL_FCN_TYPE_LOC : R_ANAL_FCN_TYPE_FCN;
@@ -1833,12 +1858,11 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	}
 	fcn->maxstack = 0;
 #if USE_FCN_RECURSE
-	ret = fcn_recurse (anal, fcn, addr, len, anal->opt.depth);
+	int ret = fcn_recurse (anal, fcn, addr, len, anal->opt.depth);
 	// update tinyrange for the function
 	r_anal_fcn_update_tinyrange_bbs (fcn);
 #else
-	int depth = anal->opt.depth;
-	recurseAt (addr)
+	int ret = fcn_recurse_at (anal, fcn, addr, len, anal->opt.depth);
 #endif
 	if (anal->opt.endsize && ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {   // cfg analysis completed
 		RListIter *iter;
