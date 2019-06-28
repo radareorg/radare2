@@ -960,15 +960,15 @@ R_API RBinField *r_bin_file_add_field(RBinFile *binfile, const char *classname, 
 /* returns vaddr, rebased with the baseaddr of binfile, if va is enabled for
  * bin, paddr otherwise */
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr) {
-	r_return_val_if_fail (bf, paddr);
-	if (bf->o && bf->o->info && bf->o->info->has_va) {
+	r_return_val_if_fail (bf && bf->o, paddr);
+	if (bf->o->info && bf->o->info->has_va) {
 		return binobj_a2b (bf->o, vaddr);
 	}
 	return paddr;
 }
 
 R_API RList *r_bin_file_get_trycatch(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o->plugin, NULL);
+	r_return_val_if_fail (bf && bf->o && bf->o->plugin, NULL);
 	if (bf->o->plugin->trycatch) {
 		return bf->o->plugin->trycatch (bf);
 	}
