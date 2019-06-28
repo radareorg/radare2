@@ -2788,9 +2788,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				if (ntype) {
 					char *sig = r_core_cmd_str (core, "afs");
 					char *sig_notype = strchr (sig, ' ');
-					char *data = (char *)malloc (strlen (ntype) + strlen (sig_notype) + 1);
-					strcpy (data, ntype);
-					strcat (data, sig_notype);
+					char *data = r_str_newf ("%s%s", ntype, sig_notype);
 					strtok (data, "\n");
 					r_core_cmdf (core, "\"afs %s\"", data);
 					free (sig);
