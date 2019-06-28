@@ -31,8 +31,15 @@ static RFSFile *fs_io_open(RFSRoot *root, const char *path, bool create) {
 
 static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 	RFSRoot *root = file->root;
-	// char *cmd = r_str_newf ("mg %s %"PFMT64x" %d", file->path, addr, len);
-	char *cmd = r_str_newf ("mg %s", file->name);
+	char *abs_path = r_fs_file_copy_abs_path (file);
+	if (!abs_path) {
+		return false;
+	}
+	char *cmd = r_str_newf ("mg %s", abs_path);
+	R_FREE (abs_path);
+	if (!cmd) {
+		return false;
+	}
 	char *res = root->iob.system (root->iob.io, cmd);
 	R_FREE (cmd);
 	if (res) {
@@ -40,12 +47,12 @@ static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 		if (encoded_size != len * 2) {
 			eprintf ("Wrong size\n");
 			R_FREE (res);
-			return NULL;
+			return false;
 		}
 		file->data = (ut8 *) calloc (1, len);
 		if (!file->data) {
 			R_FREE (res);
-			return NULL;
+			return false;
 		}
 		int ret = r_hex_str2bin (res, file->data);
 		if (ret != len) {
@@ -54,7 +61,7 @@ static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 		}
 		R_FREE (res);
 	}
-	return NULL;
+	return false;
 }
 
 static void fs_io_close(RFSFile *file) {

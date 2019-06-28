@@ -130,11 +130,12 @@ R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
 R_API char *r_fs_name(RFS *fs, ut64 offset);
 R_API int r_fs_prompt(RFS *fs, const char *root);
 R_API bool r_fs_check(RFS *fs, const char *p);
-R_API int r_fs_shell_prompt(RFSShell *shell, RFS *fs, const char *root); 
+R_API int r_fs_shell_prompt(RFSShell *shell, RFS *fs, const char *root);
 
 /* file.c */
 R_API RFSFile *r_fs_file_new(RFSRoot *root, const char *path);
 R_API void r_fs_file_free(RFSFile *file);
+R_API char* r_fs_file_copy_abs_path(RFSFile* file);
 R_API RFSRoot *r_fs_root_new(const char *path, ut64 delta);
 R_API void r_fs_root_free(RFSRoot *root);
 R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length);

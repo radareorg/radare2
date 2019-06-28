@@ -24,10 +24,21 @@ R_API RFSFile* r_fs_file_new(RFSRoot* root, const char* path) {
 
 R_API void r_fs_file_free(RFSFile* file) {
 	if (file) {
+		free (file->path);
 		free (file->name);
 		free (file->data);
 		free (file);
 	}
+}
+
+R_API char* r_fs_file_copy_abs_path(RFSFile* file) {
+	if (!file) {
+		return NULL;
+	}
+	if (!strcmp (file->path, file->name)) {
+		return strdup (file->path);
+	}
+	return r_str_newf ("%s/%s", file->path, file->name);
 }
 
 // TODO: Use RFSRoot and pass it in the stack instead of heap? problematic with bindings
