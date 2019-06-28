@@ -870,3 +870,11 @@ R_API void *r_num_dup(ut64 n) {
 	*hn = n;
 	return (void*)hn;
 }
+
+R_API double r_num_cos(double a) {
+	return cos (a);
+}
+
+R_API double r_num_sin(double a) {
+	return sin(a);
+}

@@ -3363,6 +3363,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("graph.scroll", 5, "Scroll speed in ascii-art graph");
 	SETPREF ("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
 	SETPREF ("graph.title", "", "Title of the graph");
+	SETPREF ("graph.body", "true", "Show body of the nodes in the graph");
+	SETPREF ("graph.bubble", "false", "Show nodes as bubbles");
 	SETPREF ("graph.ntitles", "true", "Display title of node");
 	SETPREF ("graph.gv.node", "", "Graphviz node style. (color=gray, style=filled shape=box)");
 	SETPREF ("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");
