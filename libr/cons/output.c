@@ -34,6 +34,9 @@ static void __clear_w32() {
 	}
 	FillConsoleOutputCharacter (hStdout, ' ',
 		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
+	FillConsoleOutputAttribute (hStdout,
+		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
 }
 
 R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
