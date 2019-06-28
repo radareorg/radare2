@@ -2784,6 +2784,83 @@ static char *get_rp(const char *rtype) {
 	return rp;
 }
 
+static int bin_trycatch(RCore *core, int mode) {
+	RBinFile *bf = r_bin_cur (core->bin);
+	RListIter *iter;
+	RBinTrycatch *tc;
+	RList *trycatch = r_bin_file_get_trycatch (bf);
+	int idx = 0;
+eprintf ("(%d\n", r_list_length (trycatch));
+	r_list_foreach (trycatch, iter, tc) {
+		r_cons_printf ("f try.%d.%"PFMT64x".from=0x%08"PFMT64x"\n", idx, tc->source, tc->from);
+		r_cons_printf ("f try.%d.%"PFMT64x".to=0x%08"PFMT64x"\n", idx, tc->source, tc->to);
+		r_cons_printf ("f try.%d.%"PFMT64x".catch=0x%08"PFMT64x"\n", idx, tc->source, tc->handler);
+		idx++;
+	}
+#if 0
+		if (IS_MODE_SET (mode)) {
+			const char *classname = sdb_fmt ("class.%s", name);
+			r_flag_set (r->flags, classname, c->addr, 1);
+			r_list_foreach (c->methods, iter2, sym) {
+				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
+				char *method = sdb_fmt ("method%s.%s.%s",
+					mflags, c->name, sym->name);
+				R_FREE (mflags);
+				r_name_filter (method, -1);
+				r_flag_set (r->flags, method, sym->vaddr, 1);
+			}
+		} else if (IS_MODE_SIMPLEST (mode)) {
+		} else if (IS_MODE_SIMPLE (mode)) {
+		} else if (IS_MODE_RAD (mode)) {
+		} else if (IS_MODE_JSON (mode)) {
+		} else if (IS_MODE_CLASSDUMP (mode)) {
+			char *rp = NULL;
+			if (c) {
+				//TODO -> Print Superclass
+				r_cons_printf ("@interface %s :  \n{\n", c->name);
+				r_list_foreach (c->fields, iter2, f) {
+					if (f->name && r_regex_match ("ivar","e", f->name)) {
+						r_cons_printf ("  %s %s\n", f->type, f->name);
+					}
+				}
+				r_cons_printf ("}\n");
+				r_list_foreach (c->methods, iter3, sym) {
+					if (sym->rtype && sym->rtype[0] != '@') {
+						rp = get_rp (sym->rtype);
+						r_cons_printf ("%s (%s) %s\n",
+							strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
+							rp, sym->dname? sym->dname: sym->name);
+					}
+				}
+				r_cons_printf ("@end\n");
+			}
+		} else {
+			int m = 0;
+			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %6"PFMT64d" class %d %s",
+				c->addr, at_min, at_max, (at_max - at_min), c->index, c->name);
+			if (c->super) {
+				r_cons_printf (" super: %s\n", c->super);
+			} else {
+				r_cons_newline ();
+			}
+			r_list_foreach (c->methods, iter2, sym) {
+				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
+				r_cons_printf ("0x%08"PFMT64x" method %d %s %s\n",
+					sym->vaddr, m, mflags, sym->dname? sym->dname: sym->name);
+				R_FREE (mflags);
+				m++;
+			}
+		}
+		free (name);
+	}
+	if (IS_MODE_JSON (mode)) {
+		r_cons_print ("]");
+	}
+
+#endif
+	return true;
+}
+
 static int bin_classes(RCore *r, int mode) {
 	RListIter *iter, *iter2, *iter3;
 	RBinSymbol *sym;
@@ -3630,6 +3707,9 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	}
 	if ((action & R_CORE_BIN_ACC_CLASSES)) { // 6s
 		ret &= bin_classes (core, mode);
+	}
+	if ((action & R_CORE_BIN_ACC_TRYCATCH)) {
+		ret &= bin_trycatch (core, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_SIZE)) {
 		ret &= bin_size (core, mode);

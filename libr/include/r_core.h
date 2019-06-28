@@ -655,6 +655,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd);
 R_API void r_core_sysenv_end(RCore *core, const char *cmd);
 
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
+// XXX dupe from r_bin.h
 /* bin.c */
 #define R_CORE_BIN_ACC_STRINGS	0x001
 #define R_CORE_BIN_ACC_INFO	0x002
@@ -681,6 +682,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
 #define R_CORE_BIN_ACC_SEGMENTS 0x400000
 #define R_CORE_BIN_ACC_SOURCE 0x800000
 #define R_CORE_BIN_ACC_HASHES 0x10000000
+#define R_CORE_BIN_ACC_TRYCATCH 0x20000000
 #define R_CORE_BIN_ACC_ALL	0x504FFF
 
 #define R_CORE_PRJ_FLAGS	0x0001

@@ -15,7 +15,6 @@ char* r_bin_dex_get_version(RBinDexObj *bin) {
 	return NULL;
 }
 
-#define FAIL(x) { eprintf(x"\n"); goto fail; }
 RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	r_return_val_if_fail (buf, NULL);
 	RBinDexObj *bin = R_NEW0 (RBinDexObj);
