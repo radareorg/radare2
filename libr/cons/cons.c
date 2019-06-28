@@ -354,7 +354,7 @@ R_API bool r_cons_is_breaked() {
 	return I.context->breaked;
 }
 
-R_API int r_cons_get_cur_line () {
+R_API int r_cons_get_cur_line() {
 	int curline = 0;
 #if __WINDOWS__
 	POINT point;
