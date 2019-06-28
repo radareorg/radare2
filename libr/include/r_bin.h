@@ -60,10 +60,11 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_HEADER    0x2000000
 #define R_BIN_REQ_LISTPLUGINS 0x4000000
 #define R_BIN_REQ_RESOURCES 0x8000000
-#define R_BIN_REQ_INITFINI 0x10000000
-#define R_BIN_REQ_SEGMENTS 0x20000000
-#define R_BIN_REQ_HASHES 0x40000000
+#define R_BIN_REQ_INITFINI  0x10000000
+#define R_BIN_REQ_SEGMENTS  0x20000000
+#define R_BIN_REQ_HASHES    0x40000000
 #define R_BIN_REQ_SIGNATURE 0x80000000
+#define R_BIN_REQ_TRYCATCH 0x100000000
 
 /* RBinSymbol->method_flags : */
 #define R_BIN_METH_CLASS 0x0000000000000001L
@@ -280,7 +281,7 @@ typedef struct r_bin_file_t {
 	int maxstrlen;
 	int narch;
 	struct r_bin_xtr_plugin_t *curxtr;
-	struct r_bin_plugin_t *curplugin;
+	// struct r_bin_plugin_t *curplugin; // use o->plugin
 	RList *xtr_data;
 	Sdb *sdb;
 	Sdb *sdb_info;
@@ -369,12 +370,12 @@ typedef struct r_bin_xtr_plugin_t {
 	int (*fini)(void *user);
 	bool (*check_buffer)(RBuffer *b);
 
-	RBinXtrData * (*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
-	RBinXtrData * (*extract_from_buffer)(RBin *bin, RBuffer *buf, int idx);
-	RList * (*extractall_from_bytes)(RBin *bin, const ut8 *buf, ut64 size);
-	RList * (*extractall_from_buffer)(RBin *bin, RBuffer *buf);
-	RBinXtrData * (*extract)(RBin *bin, int idx);
-	RList * (*extractall)(RBin *bin);
+	RBinXtrData *(*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
+	RBinXtrData *(*extract_from_buffer)(RBin *bin, RBuffer *buf, int idx);
+	RList *(*extractall_from_bytes)(RBin *bin, const ut8 *buf, ut64 size);
+	RList *(*extractall_from_buffer)(RBin *bin, RBuffer *buf);
+	RBinXtrData *(*extract)(RBin *bin, int idx);
+	RList *(*extractall)(RBin *bin);
 
 	bool (*load)(RBin *bin);
 	int (*size)(RBin *bin);
@@ -396,6 +397,17 @@ typedef struct r_bin_arch_options_t {
 	int bits;
 } RBinArchOptions;
 
+typedef struct r_bin_trycatch_t {
+	ut64 source;
+	ut64 from;
+	ut64 to;
+	ut64 handler;
+	// TODO: add type/name of exception
+} RBinTrycatch;
+
+R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler);
+R_API void r_bin_trycatch_free(RBinTrycatch *tc);
+
 typedef struct r_bin_plugin_t {
 	char *name;
 	char *desc;
@@ -407,38 +419,39 @@ typedef struct r_bin_plugin_t {
 	Sdb * (*get_sdb)(RBinFile *obj);
 	bool (*load_buffer)(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
-	void (*destroy)(RBinFile *arch);
+	void (*destroy)(RBinFile *bf);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
 	bool (*check_buffer)(RBuffer *buf);
-	ut64 (*baddr)(RBinFile *arch);
-	ut64 (*boffset)(RBinFile *arch);
-	RBinAddr* (*binsym)(RBinFile *arch, int num);
-	RList/*<RBinAddr>*/* (*entries)(RBinFile *arch);
-	RList/*<RBinSection>*/* (*sections)(RBinFile *arch);
-	RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *arch);
-	RList/*<RBinSymbol>*/* (*symbols)(RBinFile *arch);
-	RList/*<RBinImport>*/* (*imports)(RBinFile *arch);
-	RList/*<RBinString>*/* (*strings)(RBinFile *arch);
-	RBinInfo/*<RBinInfo>*/* (*info)(RBinFile *arch);
-	RList/*<RBinField>*/* (*fields)(RBinFile *arch);
-	RList/*<char *>*/* (*libs)(RBinFile *arch);
-	RList/*<RBinReloc>*/* (*relocs)(RBinFile *arch);
-	RList/*<RBinClass>*/* (*classes)(RBinFile *arch);
-	RList/*<RBinMem>*/* (*mem)(RBinFile *arch);
+	ut64 (*baddr)(RBinFile *bf);
+	ut64 (*boffset)(RBinFile *bf);
+	RBinAddr* (*binsym)(RBinFile *bf, int num);
+	RList/*<RBinAddr>*/* (*entries)(RBinFile *bf);
+	RList/*<RBinSection>*/* (*sections)(RBinFile *bf);
+	RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
+	RList/*<RBinSymbol>*/* (*symbols)(RBinFile *bf);
+	RList/*<RBinImport>*/* (*imports)(RBinFile *bf);
+	RList/*<RBinString>*/* (*strings)(RBinFile *bf);
+	RBinInfo/*<RBinInfo>*/* (*info)(RBinFile *bf);
+	RList/*<RBinField>*/* (*fields)(RBinFile *bf);
+	RList/*<char *>*/* (*libs)(RBinFile *bf);
+	RList/*<RBinReloc>*/* (*relocs)(RBinFile *bf);
+	RList/*<RBinTrycatch>*/* (*trycatch)(RBinFile *bf);
+	RList/*<RBinClass>*/* (*classes)(RBinFile *bf);
+	RList/*<RBinMem>*/* (*mem)(RBinFile *bf);
 	RList/*<RBinReloc>*/* (*patch_relocs)(RBin *bin);
-	RList/*<RBinMap>*/* (*maps)(RBinFile *arch);
-	void (*header)(RBinFile *arch);
-	char* (*signature)(RBinFile *arch, bool json);
+	RList/*<RBinMap>*/* (*maps)(RBinFile *bf);
+	void (*header)(RBinFile *bf);
+	char* (*signature)(RBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
 	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
-	int (*get_offset)(RBinFile *arch, int type, int idx);
-	char* (*get_name)(RBinFile *arch, int type, int idx);
-	ut64 (*get_vaddr)(RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
+	int (*get_offset)(RBinFile *bf, int type, int idx);
+	char* (*get_name)(RBinFile *bf, int type, int idx);
+	ut64 (*get_vaddr)(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt);
 	char* (*demangle)(const char *str);
-	char* (*regstate)(RBinFile *arch);
-	int (*file_type)(RBinFile *arch);
+	char* (*regstate)(RBinFile *bf);
+	int (*file_type)(RBinFile *bf);
 	/* default value if not specified by user */
 	int minstrlen;
 	char strfilter;
@@ -662,6 +675,8 @@ R_API ut64 r_bin_get_size(RBin *bin);
 R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym);
 R_API RList *r_bin_raw_strings(RBinFile *a, int min);
 R_API RList *r_bin_dump_strings(RBinFile *a, int min, int raw);
+
+// use RBinFile instead
 R_API RList *r_bin_get_entries(RBin *bin);
 R_API RList *r_bin_get_fields(RBin *bin);
 R_API RList *r_bin_get_imports(RBin *bin);
@@ -673,6 +688,7 @@ R_API RList *r_bin_get_relocs_list(RBin *bin);
 R_API RList *r_bin_get_sections(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
 R_API RList *r_bin_get_strings(RBin *bin);
+R_API RList *r_bin_file_get_trycatch(RBinFile *bf);
 R_API RList *r_bin_get_symbols(RBin *bin);
 R_API RList *r_bin_reset_strings(RBin *bin);
 R_API int r_bin_is_string(RBin *bin, ut64 va);

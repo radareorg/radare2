@@ -1152,6 +1152,9 @@ static const ut8 *parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClas
 	ut32 debug_info_off = 0, insns_size = 0;
 	const ut8 *encoded_method_addr = NULL;
 
+	if (!bin->trycatch_list) {
+		bin->trycatch_list = r_list_newf ((RListFree)r_bin_trycatch_free);
+	}
 	if (DM > 4096) {
 		eprintf ("This DEX is probably corrupted. Chopping DM from %d to 4KB\n", (int)DM);
 		DM = 4096;
@@ -1269,12 +1272,8 @@ static const ut8 *parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClas
 					if (dexdump) {
 						cb_printf ("        0x%04x - 0x%04x\n", start_addr, (start_addr + insn_count));
 					}
-#if 0
-					// TODO: expose the try/catch info somehow into r2 and use it from the analysis loop
-					eprintf ("f try.%"PFMT64x".%d.from=0x%"PFMT64x"\n", method_offset, j, try_from);
-					eprintf ("f try.%"PFMT64x".%d.to=0x%"PFMT64x"\n", method_offset, j, try_to);
-					eprintf ("f try.%"PFMT64x".%d.catch=0x%"PFMT64x"\n", method_offset, j, try_catch);
-#endif
+					RBinTrycatch *tc = r_bin_trycatch_new (method_offset, try_from, try_to, try_catch);
+					r_list_append (bin->trycatch_list, tc);
 
 					//XXX tries_size is tainted and oob here
 					int off = MC + t + tries_size * 8 + handler_off;
@@ -1789,6 +1788,15 @@ static RList* imports(RBinFile *bf) {
 	return bin->imports_list;
 }
 
+static RList *trycatch(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
+	if (!bin->trycatch_list) {
+		dex_loadcode (bf);
+	}
+	return bin->trycatch_list;
+}
+
 static RList *methods(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
@@ -2115,6 +2123,7 @@ RBinPlugin r_bin_plugin_dex = {
 	.classes = classes,
 	.sections = sections,
 	.symbols = methods,
+	.trycatch = trycatch,
 	.imports = imports,
 	.strings = strings,
 	.info = &info,
