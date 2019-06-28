@@ -323,7 +323,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	char *body;
 	int x, y;
 	const bool showTitle = g->show_node_titles;
-	const bool showBody = true; // g->show_node_body
+	const bool showBody = g->show_node_body;
 
 	x = n->x + g->can->sx;
 	y = n->y + g->can->sy;
@@ -400,10 +400,18 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RANode* from RCore*
 	RCons *cons = r_cons_singleton ();
-	if (cur) {
-		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box2);
+	if (g->show_node_bubble) {
+		if (cur) {
+			r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box2);
+		} else {
+			r_cons_canvas_circle(g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box);
+		}
 	} else {
-		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box);
+		if (cur) {
+			r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box2);
+		} else {
+			r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box);
+		}
 	}
 }
 
@@ -3545,6 +3553,7 @@ static void agraph_init(RAGraph *g) {
 	g->is_instep = false;
 	g->need_reload_nodes = true;
 	g->show_node_titles = true;
+	g->show_node_body = true;
 	g->force_update_seek = true;
 	g->graph = r_graph_new ();
 	g->nodes = sdb_new0 ();
@@ -4079,6 +4088,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->can = can;
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
 	g->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
+	g->show_node_body = r_config_get_i (core->config, "graph.body");
+	g->show_node_bubble = r_config_get_i (core->config, "graph.bubble");
 	g->on_curnode_change = (RANodeCallback) seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = r_config_get_i (core->config, "graph.edges");
