@@ -1186,7 +1186,7 @@ static int cmd_interpret(void *data, const char *input) {
 	return 0;
 }
 
-static int callback_foreach_kv (void *user, const char *k, const char *v) {
+static int callback_foreach_kv(void *user, const char *k, const char *v) {
 	r_cons_printf ("%s=%s\n", k, v);
 	return 1;
 }
@@ -3428,7 +3428,7 @@ static bool exec_command_on_flag(RFlagItem *flg, void *u) {
 	return true;
 }
 
-static void foreach_pairs (RCore *core, const char *cmd, const char *each) {
+static void foreach_pairs(RCore *core, const char *cmd, const char *each) {
 	const char *arg;
 	int pair = 0;
 	for (arg = each ; ; ) {
@@ -3699,7 +3699,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	return 0;
 }
 
-static void foreachOffset (RCore *core, const char *_cmd, const char *each) {
+static void foreachOffset(RCore *core, const char *_cmd, const char *each) {
 	char *cmd = strdup (_cmd);
 	char *nextLine = NULL;
 	ut64 addr;
