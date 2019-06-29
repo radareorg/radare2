@@ -2782,17 +2782,20 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			free (data);
 		} else if (input[2] == 'r') { // "afsr"
 			if (input[3] == ' ') {
-				const char *ntype = ((input[4]) != '\0')
-					? (input + 4)
+				const char *ntype = (input[4])
+					? input + 4
 					: NULL;
 				if (ntype) {
 					char *sig = r_core_cmd_str (core, "afs");
-					char *sig_notype = strchr (sig, ' ');
-					char *data = r_str_newf ("%s%s", ntype, sig_notype);
-					strtok (data, "\n");
-					r_core_cmdf (core, "\"afs %s\"", data);
+					char *sig_notype = strchr (sig, '('); 
+					strtok (sig_notype, "\n");
+					sig_notype -= 2;
+					while (*sig_notype != ' ' && sig_notype > sig) {
+						--sig_notype;
+					}
+					// TODO: Use API instead of r2 command
+					r_core_cmdf (core, "\"afs %s%s\"", ntype, sig_notype);;
 					free (sig);
-					free (data);
 				}
 			}
 		} else {
