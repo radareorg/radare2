@@ -11,7 +11,7 @@
 static ut64 r_num_tailff(RNum *num, const char *hex);
 
 //  TODO: rename to r_num_srand()
-static void r_srand (int seed) {
+static void r_srand(int seed) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	// no-op
 	(void)seed;
@@ -20,7 +20,7 @@ static void r_srand (int seed) {
 #endif
 }
 
-static int r_rand (int mod) {
+static int r_rand(int mod) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	return (int)arc4random_uniform (mod);
 #else
@@ -488,7 +488,7 @@ R_API double r_num_get_float(RNum *num, const char *str) {
 	return d;
 }
 
-R_API int r_num_to_bits (char *out, ut64 num) {
+R_API int r_num_to_bits(char *out, ut64 num) {
 	int size = 64, i;
 
 	if (num >> 32) {
@@ -524,7 +524,7 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 	return size;
 }
 
-R_API int r_num_to_trits (char *out, ut64 num) {
+R_API int r_num_to_trits(char *out, ut64 num) {
 	if (out == NULL) {
 		return false;
 	}
@@ -542,7 +542,7 @@ R_API int r_num_to_trits (char *out, ut64 num) {
 	return true;
 }
 
-R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize) {
+R_API ut64 r_num_chs(int cylinder, int head, int sector, int sectorsize) {
 	if (sectorsize < 1) {
 		sectorsize = 512;
 	}
@@ -693,7 +693,7 @@ R_API ut64 r_get_input_num_value(RNum *num, const char *str) {
 }
 
 // SHITTY API
-static inline ut64 __nth_nibble (ut64 n, ut32 i) {
+static inline ut64 __nth_nibble(ut64 n, ut32 i) {
 	int sz = (sizeof (n) << 1) - 1;
 	int s = (sz - i) * 4;
 	return (n >> s) & 0xf;
@@ -800,7 +800,7 @@ R_API bool r_num_is_op(const char c) {
 }
 
 //Assumed *str is parsed as an expression correctly
-R_API int r_num_str_len (const char *str) {
+R_API int r_num_str_len(const char *str) {
 	int i = 0, len = 0, st;
 	st = 0;//0: number, 1: op
 	if (str[0] == '(') {
