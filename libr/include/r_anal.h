@@ -298,6 +298,7 @@ typedef struct r_anal_function_t {
 	RRangeTiny bbr;
 	RBNode rb;
 	RBNode addr_rb;
+	RList *imports; // maybe bound to class?
 } RAnalFunction;
 
 typedef struct r_anal_func_arg_t {
