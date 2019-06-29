@@ -3816,7 +3816,11 @@ static void __printPattern(RCore *core, const char *_input) {
 	char *input = strdup (_input);
 	const char *arg = r_str_nextword (input, ' ');
 	size_t i, j;
-	ut64 len = arg? r_num_math (core->num, arg): core->blocksize;
+	st64 len = arg? r_num_math (core->num, arg): core->blocksize;
+	if (len < 1) {
+		eprintf ("Invalid length\n");
+		return;
+	}
 	switch (input[0]) {
 	case 'd': // "ppd"
 		// debruijn pattern
