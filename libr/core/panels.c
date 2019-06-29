@@ -2193,6 +2193,9 @@ void __setRefreshAll(RCore *core, bool clearCache) {
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = __getPanel (panels, i);
+		if (__check_panel_type (panel, PANEL_CMD_CONSOLE, strlen (PANEL_CMD_CONSOLE))) {
+			continue;
+		}
 		panel->view->refresh = true;
 		if (clearCache) {
 			__setCmdStrCache (core, panel, NULL);
