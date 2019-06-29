@@ -156,7 +156,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	if (!str) {
 		return 0;
 	}
-	for (; *str==' '; ) {
+	for (; *str == ' '; ) {
 		str++;
 	}
 	if (!*str) {
@@ -183,7 +183,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	}
 
 	if (str[0] && str[1] && str[2]) {
-		if (str[0]=='\'' && str[2]=='\'') {
+		if (str[0] == '\'' && str[2] == '\'') {
 			return (ut64)str[1];
 		}
 	}
@@ -191,7 +191,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	len = strlen (str);
 	if (len > 3 && str[4] == ':') {
 		if (sscanf (str, "%04x", &s) == 1) {
-			if (sscanf (str + 5, "%04x", &a)==1) {
+			if (sscanf (str + 5, "%04x", &a) == 1) {
 				return (ut64) ((s<<4) + a);
 			}
 		}
@@ -436,7 +436,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 
 	s = os;
 	memcpy (s, str, len);
-	for (; *s==' '; s++);
+	for (; *s == ' '; s++);
 	p = s;
 
 	do {
@@ -508,10 +508,10 @@ R_API int r_num_to_bits(char *out, ut64 num) {
 		int hasbit = 0;
 		for (i=0; i<size; i++) {
 			char bit = ((num>>(size-i-1))&1)? '1': '0';
-			if (hasbit || bit=='1') {
+			if (hasbit || bit == '1') {
 				out[pos++] = bit;//size-1-i] = bit;
 			}
-			if (!hasbit && bit=='1') {
+			if (!hasbit && bit == '1') {
 				hasbit=1;
 				realsize = size-i;
 			}
@@ -563,7 +563,7 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 		if (lgt) {
 			*lgt = 0;
 			a = r_num_math (num, p);
-			if (lgt[1]=='=') {
+			if (lgt[1] == '=') {
 				b = r_num_math (num, lgt+2);
 				if (a > b) {
 					goto fail;
@@ -579,7 +579,7 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 			if (lgt) {
 				*lgt = 0;
 				a = r_num_math (num, p);
-				if (lgt[1]=='=') {
+				if (lgt[1] == '=') {
 					b = r_num_math (num, lgt+2);
 					if (a < b) {
 						goto fail;
@@ -727,7 +727,7 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	char *p;
 	int i;
 
-	while (*hex && (*hex == ' ' || *hex=='.')) {
+	while (*hex && (*hex == ' ' || *hex == '.')) {
 		hex++;
 	}
 	i = strlen (hex) * 4;
@@ -751,7 +751,7 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 static ut64 r_num_tailff(RNum *num, const char *hex) {
 	ut64 n = 0;
 
-	while (*hex && (*hex == ' ' || *hex=='.')) {
+	while (*hex && (*hex == ' ' || *hex == '.')) {
 		hex++;
 	}
 	int i = strlen (hex) * 4;
