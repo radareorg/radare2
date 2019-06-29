@@ -876,5 +876,5 @@ R_API double r_num_cos(double a) {
 }
 
 R_API double r_num_sin(double a) {
-	return sin(a);
+	return sin (a);
 }
