@@ -938,7 +938,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 			break;
 		}
 		slen += vlen - klen;
-		newstr = realloc (str, slen);
+		newstr = realloc (str, slen + 1);
 		if (!newstr) {
 			eprintf ("alloc fail\n");
 			R_FREE (str);
