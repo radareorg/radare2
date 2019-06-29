@@ -375,15 +375,15 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 #if !R_NUM_USE_CALC
 static ut64 r_num_op(RNum *num, char op, ut64 a, ut64 b) {
 	switch (op) {
-	case '+': return a+b;
-	case '-': return a-b;
-	case '*': return a*b;
+	case '+': return a + b;
+	case '-': return a - b;
+	case '*': return a * b;
 	case '/':
 		if (!b && num) num->dbz = 1;
-		return b?a/b:0;
-	case '&': return a&b;
-	case '|': return a|b;
-	case '^': return a^b;
+		return b ? a / b : 0;
+	case '&': return a & b;
+	case '|': return a | b;
+	case '^': return a ^ b;
 	}
 	return b;
 }
