@@ -638,12 +638,12 @@ static int cmd_info(void *data, const char *input) {
 				}
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (mode == R_MODE_RADARE || mode == R_MODE_JSON || mode == R_MODE_SIMPLE) {
-					RBININFO (name, action, input + 2 + param_shift,
-						(obj && obj->sections)? r_list_length (obj->sections): 0);
-				} else {
-					RBININFO (name, action, input + 1 + param_shift,
-						(obj && obj->sections)? r_list_length (obj->sections): 0);
+					if (input[param_shift + 1]) {
+						param_shift ++;
+					}
 				}
+				RBININFO (name, action, input + 1 + param_shift,
+					(obj && obj->sections)? r_list_length (obj->sections): 0);
 			}
 			//we move input until get '\0'
 			while (*(++input)) ;
