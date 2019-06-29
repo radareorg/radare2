@@ -909,12 +909,15 @@ R_API char *r_str_appendch(char *x, char y) {
 }
 
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
+	if (g == 'i') {
+		return r_str_replace_icase (str, key, val, g, true);
+	}
 	r_return_val_if_fail (str && key && val, NULL);
 
-	int off, i, klen, vlen, slen;
+	int off, i, slen;
 	char *newstr, *scnd, *p = str;
-	klen = strlen (key);
-	vlen = strlen (val);
+	int klen = strlen (key);
+	int vlen = strlen (val);
 	if (klen == 1 && vlen < 2) {
 		r_str_replace_char (str, *key, *val);
 		return str;
@@ -923,10 +926,8 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		return str;
 	}
 	slen = strlen (str);
-	for (i = 0; i < slen; ) {
-		p = (char *)r_mem_mem (
-			(const ut8*)str + i, slen - i,
-			(const ut8*)key, klen);
+	for (;;) {
+		p = strstr (str, key);
 		if (!p) {
 			break;
 		}
@@ -937,7 +938,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 			break;
 		}
 		slen += vlen - klen;
-		newstr = realloc (str, slen + klen + 1);
+		newstr = realloc (str, slen);
 		if (!newstr) {
 			eprintf ("alloc fail\n");
 			R_FREE (str);

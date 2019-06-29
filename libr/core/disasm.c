@@ -1008,6 +1008,13 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			r_list_free (list);
 		}
 	}
+	if (ds->fcn && ds->fcn->imports) {
+		char *imp;
+		RListIter *iter;
+		r_list_foreach (ds->fcn->imports, iter, imp) {
+			ds->opstr = r_str_replace (ds->opstr, imp,  ".", 1);
+		}
+	}
 	char *asm_str = colorize_asm_string (core, ds, print_color);
 	if (ds->pseudo) {
 		const char *opstr = ds->opstr ? ds->opstr : r_asm_op_get_asm (&ds->asmop);
@@ -1764,6 +1771,14 @@ static void ds_show_functions(RDisasmState *ds) {
 		}
 		r_cons_printf ("%s(%s) %s%s%s %d", COLOR (ds, color_fname),
 			fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
+		if (ds->fcn && ds->fcn->imports) {
+			RListIter *iter;
+			char *imp;
+			r_list_foreach (ds->fcn->imports, iter, imp) {
+				ds_newline (ds);
+				r_cons_printf (".import %s", imp);
+			}
+		}
 	}
 	ds_newline (ds);
 	if (sign) {
