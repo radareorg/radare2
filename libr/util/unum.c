@@ -24,7 +24,7 @@ static int r_rand(int mod) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	return (int)arc4random_uniform (mod);
 #else
-	return rand ()%mod;
+	return rand () % mod;
 #endif
 }
 
