@@ -506,14 +506,14 @@ R_API int r_num_to_bits(char *out, ut64 num) {
 		int pos = 0;
 		int realsize = 0;
 		int hasbit = 0;
-		for (i=0; i<size; i++) {
-			char bit = ((num>>(size-i-1))&1)? '1': '0';
+		for (i = 0; i < size; i++) {
+			char bit = ((num >> (size - i - 1)) & 1) ? '1': '0';
 			if (hasbit || bit == '1') {
-				out[pos++] = bit;//size-1-i] = bit;
+				out[pos++] = bit; //size - 1 - i] = bit;
 			}
 			if (!hasbit && bit == '1') {
-				hasbit=1;
-				realsize = size-i;
+				hasbit = 1;
+				realsize = size - i;
 			}
 		}
 		if (realsize == 0) {
