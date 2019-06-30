@@ -2810,21 +2810,25 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case 's': // "afs"
-		if (input [2] == '!') {
+		switch (input[2]) {
+		case '!': { // "afs!"
 			char *sig = r_core_cmd_str (core, "afs");
 			char *data = r_core_editor (core, NULL, sig);
 			r_core_cmdf (core, "\"afs %s\"", data);
 			free (sig);
 			free (data);
-		} else if (input[2] == 'r') { // "afsr"
-			if (input[3] == ' ') {
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-				const char *query = r_str_newf ("anal/types/func.%s.ret=%s", fcn->name, input + 4);
-				sdb_querys (core->sdb, NULL, 0, query);
-			}
-		} else if (input[2] == '?') {
+			break;
+		}
+		case 'r': { // "afsr"
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+			const char *query = r_str_newf ("anal/types/func.%s.ret=%s", fcn->name, input + 4);
+			sdb_querys (core->sdb, NULL, 0, query);
+			break;
+		}
+		case '?': // "afs?"
 			r_core_cmd_help (core, help_msg_afs);
-		}else {
+			break;
+		default: { // "afs"
 			ut64 addr = core->offset;
 			RAnalFunction *f;
 			const char *arg = r_str_trim_ro (input + 2);
@@ -2851,6 +2855,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			} else {
 				eprintf ("No function defined at 0x%08" PFMT64x "\n", addr);
 			}
+			break;
+		}
 		}
 		break;
 	case 'm': // "afm" - merge two functions
