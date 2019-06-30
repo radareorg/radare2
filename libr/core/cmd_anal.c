@@ -403,6 +403,13 @@ static const char *help_msg_afn[] = {
 	NULL
 };
 
+static const char *help_msg_afs[] = {
+	"Usage:", "afs[r]", " Analyze function signatures",
+	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
+	"afsr", " [function_name] [new_type]", "change type for given function",
+	NULL
+};
+
 static const char *help_msg_aft[] = {
 	"Usage:", "aft", "",
 	"aft", "", "type matching analysis for current function",
@@ -2815,7 +2822,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				const char *query = r_str_newf ("anal/types/func.%s.ret=%s", fcn->name, input + 4);
 				sdb_querys (core->sdb, NULL, 0, query);
 			}
-		} else {
+		} else if (input[2] == '?') {
+			r_core_cmd_help (core, help_msg_afs);
+		}else {
 			ut64 addr = core->offset;
 			RAnalFunction *f;
 			const char *arg = r_str_trim_ro (input + 2);
