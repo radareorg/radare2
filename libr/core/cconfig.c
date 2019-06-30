@@ -2537,6 +2537,13 @@ static bool cb_anal_brokenrefs(void *user, void *data) {
 	return true;
 }
 
+static bool cb_anal_trycatch(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.trycatch = node->i_value;
+	return true;
+}
+
 static bool cb_anal_bb_max_size(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2821,6 +2828,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.jmp.mid", "true", &cb_anal_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
 
 	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "Search string references in data references");
+	SETCB ("anal.trycatch", "false", &cb_anal_trycatch, "Honor try.X.Y.{from,to,catch} flags");
 	SETCB ("anal.bb.maxsize", "512K", &cb_anal_bb_max_size, "Maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
 
@@ -3355,6 +3363,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("graph.scroll", 5, "Scroll speed in ascii-art graph");
 	SETPREF ("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
 	SETPREF ("graph.title", "", "Title of the graph");
+	SETPREF ("graph.body", "true", "Show body of the nodes in the graph");
+	SETPREF ("graph.bubble", "false", "Show nodes as bubbles");
 	SETPREF ("graph.ntitles", "true", "Display title of node");
 	SETPREF ("graph.gv.node", "", "Graphviz node style. (color=gray, style=filled shape=box)");
 	SETPREF ("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");

@@ -157,7 +157,12 @@ enum {
 #endif
 
 enum { ALPHA_RESET = 0x00, ALPHA_FG = 0x01, ALPHA_BG = 0x02, ALPHA_FGBG = 0x03 };
-enum { R_CONS_ATTR_BOLD = 1 << 1 };
+enum { R_CONS_ATTR_BOLD = 1u << 1,
+       R_CONS_ATTR_DIM = 1u << 2,
+       R_CONS_ATTR_ITALIC = 1u << 3,
+       R_CONS_ATTR_UNDERLINE = 1u << 4,
+       R_CONS_ATTR_BLINK = 1u << 5
+};
 
 typedef struct rcolor_t {
 	// bold, italic, underline, ...
@@ -750,6 +755,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
 R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);
 R_API void r_cons_canvas_goto_write(RConsCanvas *c,int x,int y, const char * s);
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color);
+R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, const char *color);
 R_API void r_cons_canvas_line(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style);
 R_API void r_cons_canvas_line_diagonal(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style);
 R_API void r_cons_canvas_line_square(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style);
@@ -782,6 +788,8 @@ R_API bool r_cons_is_ansicon(void);
 R_API void r_cons_w32_gotoxy(int fd, int x, int y);
 R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode);
 R_API int r_cons_win_printf(bool vmode, const char *fmt, ...);
+R_API int r_cons_win_eprintf(bool vmode, const char *fmt, ...);
+R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap);
 #endif
 
 R_API void r_cons_push(void);
@@ -1110,6 +1118,7 @@ typedef struct r_panels_t {
 	RPanelsLayout layout;
 	RList *snows;
 	char *name;
+	ut64 addr;
 } RPanels;
 
 typedef enum {

@@ -191,8 +191,10 @@ R_API void r_bin_symbol_free(void *_sym) {
 
 R_API void r_bin_string_free(void *_str) {
 	RBinString *str = (RBinString *)_str;
-	free (str->string);
-	free (str);
+	if (str) {
+		free (str->string);
+		free (str);
+	}
 }
 
 // XXX - change this to RBinObject instead of RBinFile
@@ -220,7 +222,6 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
 // XXX this function is full of mess, shuold be rewritten after the refactorings
 R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	RIOBind *iob = &(bin->iob);
-	ut8 *buf_bytes = NULL;
 
 	r_return_val_if_fail (bin && iob && iob->io, false);
 
@@ -228,7 +229,7 @@ R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	RBinFile *bf = r_bin_file_find_by_name (bin, name);
 	if (!bf) {
 		eprintf ("r_bin_reload: No file to reopen\n");
-		goto error;
+		return false;
 	}
 	RBinOptions opt;
 	r_bin_options_init (&opt, fd, baseaddr, bf->loadaddr, bin->rawstr);
@@ -247,7 +248,7 @@ R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		if (!iob->fd_is_dbg (iob->io, fd)) {
 			// too big, probably wrong
 			eprintf ("Warning: file is too big and not in debugger\n");
-			goto error;
+			return false;
 		}
 		// attempt a local open and read
 		// This happens when a plugin like debugger does not have a
@@ -259,31 +260,26 @@ R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		// stream based loaders
 		int tfd = iob->fd_open (iob->io, name, R_PERM_R, 0);
 		if (tfd < 0) {
-			goto error;
+			return false;
 		}
 		sz = iob->fd_size (iob->io, tfd);
 		if (sz == UT64_MAX) {
 			iob->fd_close (iob->io, tfd);
-			goto error;
+			return false;
 		}
 		iob->fd_close (iob->io, tfd);
-		goto error;
-	} else {
-		buf_bytes = calloc (1, sz + 1);
-		if (!buf_bytes) {
-			goto error;
-		}
-		if (!iob->fd_read_at (iob->io, fd, 0LL, buf_bytes, sz)) {
-			free (buf_bytes);
-			goto error;
-		}
+		return false;
 	}
-	r_bin_file_set_bytes (bf, buf_bytes, sz, false);
-	free (buf_bytes);
-
-	return r_bin_open_io (bin, &opt);
-error:
-	return false;
+	bool res = false;
+	ut8 *buf_bytes = calloc (1, sz + 1);
+	if (buf_bytes) {
+		if (iob->fd_read_at (iob->io, fd, 0LL, buf_bytes, sz)) {
+			r_bin_file_set_bytes (bf, buf_bytes, sz, false);
+			res = true;
+		}
+		free (buf_bytes);
+	}
+	return res && r_bin_open_io (bin, &opt);
 }
 
 R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
@@ -620,7 +616,7 @@ R_API bool r_bin_list_plugin(RBin *bin, const char* name, int json) {
 		return true;
 	}
 
-	eprintf ("cannot find plugin %s\n", name);
+	eprintf ("Cannot find plugin %s\n", name);
 	return false;
 }
 
@@ -834,32 +830,31 @@ R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 }
 
 R_API RList *r_bin_reset_strings(RBin *bin) {
-	RBinFile *a = r_bin_cur (bin);
-	RBinObject *o = r_bin_cur_object (bin);
-	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
+	RBinFile *bf = r_bin_cur (bin);
 
-	if (!a || !o) {
+	if (!bf || !bf->o) {
 		return NULL;
 	}
-	if (o->strings) {
-		r_list_free (o->strings);
-		o->strings = NULL;
+	if (bf->o->strings) {
+		r_list_free (bf->o->strings);
+		bf->o->strings = NULL;
 	}
 
 	if (bin->minstrlen <= 0) {
 		return NULL;
 	}
-	a->rawstr = bin->rawstr;
+	bf->rawstr = bin->rawstr;
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 
 	if (plugin && plugin->strings) {
-		o->strings = plugin->strings (a);
+		bf->o->strings = plugin->strings (bf);
 	} else {
-		o->strings = r_bin_file_get_strings (a, bin->minstrlen, 0, a->rawstr);
+		bf->o->strings = r_bin_file_get_strings (bf, bin->minstrlen, 0, bf->rawstr);
 	}
 	if (bin->debase64) {
-		r_bin_object_filter_strings (o);
+		r_bin_object_filter_strings (bf->o);
 	}
-	return o->strings;
+	return bf->o->strings;
 }
 
 R_API RList *r_bin_get_strings(RBin *bin) {
@@ -1301,8 +1296,6 @@ R_API RList * /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
 	return o ? o->classes : NULL;
 }
 
-
-
 /* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
  * paddr otherwise */
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
@@ -1476,4 +1469,17 @@ R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
 		}
 	}
 	return NULL;
+}
+
+R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler) {
+	RBinTrycatch *tc = R_NEW0 (RBinTrycatch);
+	tc->source = source;
+	tc->from = from;
+	tc->to = to ;
+	tc->handler = handler;
+	return tc;
+}
+
+R_API void r_bin_trycatch_free(RBinTrycatch *tc) {
+	free (tc);
 }

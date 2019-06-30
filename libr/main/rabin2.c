@@ -17,7 +17,6 @@ static ut64 laddr = UT64_MAX;
 static ut64 baddr = UT64_MAX;
 static char* file = NULL;
 static char *name = NULL;
-static int rw = false;
 static int va = true;
 static char *stdin_buf = NULL;
 static const char *do_demangle = NULL;
@@ -74,10 +73,12 @@ static int rabin_show_help(int v) {
 		" -S              sections\n"
 		" -SS             segments\n"
 		" -t              display file hashes\n"
+		" -T              display file signature\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -U              resoUrces\n"
 		" -v              display version and quit\n"
 		" -V              Show binary version information\n"
+		" -w              display try/catch blocks\n"
 		" -x              extract bins contained in file\n"
 		" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
 		" -z              strings (from data section)\n"
@@ -648,6 +649,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		case 'V': set_action (R_BIN_REQ_VERSIONINFO); break;
 		case 'T': set_action (R_BIN_REQ_SIGNATURE); break;
 		case 't': set_action (R_BIN_REQ_HASHES); break;
+		case 'w': set_action (R_BIN_REQ_TRYCATCH); break;
 		case 'q':
 			rad = (rad & R_MODE_SIMPLE ?
 				R_MODE_SIMPLEST : R_MODE_SIMPLE);
@@ -738,7 +740,6 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		case 'R': set_action (R_BIN_REQ_RELOCS); break;
 		case 'x': set_action (R_BIN_REQ_EXTRACT); break;
 		case 'X': set_action (R_BIN_REQ_PACKAGE); break;
-		case 'w': rw = true; break;
 		case 'O':
 			op = r_optarg;
 			set_action (R_BIN_REQ_OPERATION);

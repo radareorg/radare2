@@ -534,6 +534,34 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	return true;
 }
 
+#include <math.h>
+#define PI 3.1415
+R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
+	if (color) {
+		c->attr = color;
+	}
+	double xfactor = 1; //(double)w / (double)h;
+	double yfactor = (double)h / 24; // 0.8; // 24  10
+	double size = w;
+	float a = 0.0;
+	double s = size / 2;
+	while (a < (2 * PI)) {
+		double sa = r_num_sin (a);
+		double ca = r_num_cos (a);
+		double cx = s * ca + (size / 2);
+		double cy = s * sa + (size / 4);
+		int X = x + (xfactor * cx) - 2;
+		int Y = y + ((yfactor/2) * cy);
+		if (G (X, Y)) {
+			W ("=");
+		}
+		a += 0.1;
+	}
+	if (color) {
+		c->attr = Color_RESET;
+	}
+}
+
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
 	const char *hline = useUtf8? RUNECODESTR_LINE_HORIZ : "-";
 	const char *vtmp = useUtf8? RUNECODESTR_LINE_VERT : "|";

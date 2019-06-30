@@ -67,6 +67,8 @@ typedef struct r_ascii_graph_t {
 	void *on_curnode_change_data;
 	bool dummy; // enable the dummy nodes for better layouting
 	bool show_node_titles;
+	bool show_node_body;
+	bool show_node_bubble;
 
 	int x, y;
 	int w, h;

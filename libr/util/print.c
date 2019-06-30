@@ -23,6 +23,14 @@ static int libc_printf(const char *format, ...) {
 	return 0;
 }
 
+static int libc_eprintf(const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
+	vfprintf (stderr, format, ap);
+	va_end (ap);
+	return 0;
+}
+
 static RPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
@@ -294,6 +302,7 @@ R_API RPrint* r_print_new() {
 	p->pairs = true;
 	p->resetbg = true;
 	p->cb_printf = libc_printf;
+	p->cb_eprintf = libc_eprintf;
 	p->oprintf = nullprinter;
 	p->bits = 32;
 	p->stride = 0;
@@ -424,7 +433,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	if (p && p->flags & R_PRINT_FLAGS_COMPACT && p->col == 1) {
 		ch = '|';
 	}
-	if (p->pava) {
+	if (p && p->pava) {
 		ut64 va = p->iob.p2v (p->iob.io, addr);
 		if (va != UT64_MAX) {
 			addr = va;
@@ -2243,17 +2252,14 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 R_API const char* r_print_rowlog(RPrint *print, const char *str) {
 	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
 	bool verbose = print->scr_prompt;
+	r_return_val_if_fail (print->cb_eprintf, NULL);
 	if (!verbose) {
 		return NULL;
 	}
-	if (use_color
-#if __WINDOWS__
-	    && print->cons && print->cons->ansicon
-#endif
-	    ) {
-		eprintf ("[ ] "Color_YELLOW"%s\r["Color_RESET, str);
+	if (use_color) {
+		print->cb_eprintf ("[ ] "Color_YELLOW"%s\r["Color_RESET, str);
 	} else {
-		eprintf ("[ ] %s\r[", str);
+		print->cb_eprintf ("[ ] %s\r[", str);
 	}
 	return str;
 }
@@ -2261,15 +2267,12 @@ R_API const char* r_print_rowlog(RPrint *print, const char *str) {
 R_API void r_print_rowlog_done(RPrint *print, const char *str) {
 	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
 	bool verbose =  print->scr_prompt;
+	r_return_if_fail (print->cb_eprintf);
 	if (verbose) {
-		if (use_color
-#if __WINDOWS__
-		    && print->cons && print->cons->ansicon
-#endif
-		    ) {
-			eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", str);
+		if (use_color) {
+			print->cb_eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", str);
 		} else {
-			eprintf ("\r[x] %s\n", str);
+			print->cb_eprintf ("\r[x] %s\n", str);
 		}
 	}
 }

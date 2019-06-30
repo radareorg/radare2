@@ -344,6 +344,7 @@ static const char *help_msg_afC[] = {
 static const char *help_msg_afi[] = {
 	"Usage:", "afi[jlp*]", " <addr>",
 	"afi", "", "show information of the function",
+	"afii", "[-][import]", "show/add/delete imports used in function",
 	"afi.", "", "show function name in current offset",
 	"afi*", "", "function, variables and arguments",
 	"afij", "", "function info in json format",
@@ -2698,6 +2699,34 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				break;
 			}
 			/* fallthrough */
+		case 'i': // "afii"
+			if (input[3] == '-') {
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+				if (fcn) {
+					r_list_free (fcn->imports);
+					fcn->imports = NULL;
+				}
+			} else if (input[3] == ' ') {
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+				if (fcn) {
+					if (!fcn->imports) {
+						fcn->imports = r_list_newf ((RListFree)free);
+					}
+					r_list_append (fcn->imports, r_str_trim_dup (input + 4));
+				} else {
+					eprintf ("No function found\n");
+				}
+			} else {
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+				if (fcn && fcn->imports) {
+					char *imp;
+					RListIter *iter;
+					r_list_foreach (fcn->imports, iter, imp) {
+						r_cons_printf ("%s\n", imp);
+					}
+				}
+			}
+			break;
 		case 'j': // "afij"
 		case '*': // "afi*"
 			r_core_anal_fcn_list (core, input + 3, input + 2);
@@ -6401,7 +6430,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						char *op = get_buf_asm (core, core->offset, addr, fcn, true);
 						r_cons_printf ("%s 0x%"PFMT64x" [DATA] %s\n", fcn?  fcn->name : "(nofunc)", addr, op);
 						free (op);
-
 					}
 					free (res);
 					free (res1);

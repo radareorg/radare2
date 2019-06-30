@@ -3,21 +3,20 @@
 #include <r_types.h>
 #include <r_util.h>
 #include "dex.h"
+#include "./dex_uleb128.inc"
 
 char* r_bin_dex_get_version(RBinDexObj *bin) {
-	if (bin) {
-		ut8* version = calloc (1, 8);
-		r_buf_read_at (bin->b, 4, version, 3);
-		return (char *)version;
+	r_return_val_if_fail (bin, NULL);
+	char* version = calloc (1, 8);
+	if (version) {
+		r_buf_read_at (bin->b, 4, (ut8*)version, 3);
+		return version;
 	}
 	return NULL;
 }
 
-#define FAIL(x) { eprintf(x"\n"); goto fail; }
 RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
-	if (!buf) {
-		return NULL;
-	}
+	r_return_val_if_fail (buf, NULL);
 	RBinDexObj *bin = R_NEW0 (RBinDexObj);
 	int i;
 	struct dex_header_t *dexhdr;
@@ -210,83 +209,11 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		bin->protos[i].return_type_id = r_buf_read_le32 (bin->b);
 		bin->protos[i].parameters_off = r_buf_read_le32 (bin->b);
 	}
-
 	return bin;
-
 fail:
 	if (bin) {
 		r_buf_free (bin->b);
 		free (bin);
 	}
 	return NULL;
-}
-
-// Move to r_util ??
-int dex_read_uleb128(const ut8 *ptr, int size) {
-	ut8 len = dex_uleb128_len (ptr, size);
-	if (len > size) {
-		return 0;
-	}
-	const ut8 *in = ptr + len - 1;
-	ut32 result = 0;
-	ut8 shift = 0;
-	ut8 byte;
-
-	while(shift < 29 && len > 0) {
-		byte = *(in--);
-		result |= (byte & 0x7f << shift);
-		if (byte > 0x7f) {
-			break;
-		}
-		shift += 7;
-		len--;
-	}
-	return result;
-}
-
-#define LEB_MAX_SIZE 6
-int dex_uleb128_len(const ut8 *ptr, int size) {
-	int i = 1, result = *(ptr++);
-	while (result > 0x7f && i <= LEB_MAX_SIZE && i < size) {
-		result = *(ptr++);
-		i++;
-	}
-	return i;
-}
-
-#define SIG_EXTEND(X,Y) X = ((X) << (Y)) >> Y
-int dex_read_sleb128(const char *ptr, int size) {
-	int cur, result;
-	ut8 len = dex_uleb128_len ((const ut8*)ptr, size);
-	if (len > size) {
-		return 0;
-	}
-	ptr += len - 1;
-	result = *(ptr--);
-
-	if (result <= 0x7f) {
-		SIG_EXTEND (result, 25);
-	} else {
-		cur = *(ptr--);
-		result = (result & 0x7f) | ((cur & 0x7f) << 7);
-		if (cur <= 0x7f) {
-			SIG_EXTEND (result, 18);
-		} else {
-			cur = *(ptr--);
-			result |= (cur & 0x7f) << 14;
-			if (cur <= 0x7f) {
-				SIG_EXTEND (result, 11);
-			} else {
-				cur = *(ptr--);
-				result |= (cur & 0x7f) << 21;
-				if (cur <= 0x7f) {
-					SIG_EXTEND (result, 4);
-				} else {
-					cur = *(ptr--);
-					result |= cur << 28;
-				}
-			}
-		}
-	}
-	return result;
 }

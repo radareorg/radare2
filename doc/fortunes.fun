@@ -276,3 +276,5 @@ Use rabin2 to discover the real TRUTH
 **** COMMODORE 64 RADARE V2 ****  64K RAM SYSTEM  38911 DISASM BYTES FREE  READY.
 Most likely your core dump fell into a blackhole, can't see it.
 Long time no C
+radare2 is power, France is pancake.
+Come to C me!

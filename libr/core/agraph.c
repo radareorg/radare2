@@ -323,6 +323,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	char *body;
 	int x, y;
 	const bool showTitle = g->show_node_titles;
+	const bool showBody = g->show_node_body;
 
 	x = n->x + g->can->sx;
 	y = n->y + g->can->sy;
@@ -358,38 +359,39 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		delta_txt_x = R_MIN (delta_x, center_x);
 		delta_txt_y = R_MIN (delta_y, center_y);
 	}
+	if (showBody) {
+		if (G (n->x + MARGIN_TEXT_X + delta_x + center_x - delta_txt_x,
+					n->y + MARGIN_TEXT_Y + delta_y + center_y - delta_txt_y)) {
+			ut32 body_x = center_x >= delta_x? 0: delta_x - center_x;
+			ut32 body_y = center_y >= delta_y? 0: delta_y - center_y;
+			ut32 body_h = BORDER_HEIGHT >= n->h? 1: n->h - BORDER_HEIGHT;
 
-	if (G (n->x + MARGIN_TEXT_X + delta_x + center_x - delta_txt_x,
-		    n->y + MARGIN_TEXT_Y + delta_y + center_y - delta_txt_y)) {
-		ut32 body_x = center_x >= delta_x? 0: delta_x - center_x;
-		ut32 body_y = center_y >= delta_y? 0: delta_y - center_y;
-		ut32 body_h = BORDER_HEIGHT >= n->h? 1: n->h - BORDER_HEIGHT;
-
-		if (g->zoom < ZOOM_DEFAULT) {
-			body_h--;
-		}
-		if (body_y + 1 <= body_h) {
-			body = r_str_ansi_crop (n->body,
-				body_x, body_y,
-				n->w - BORDER_WIDTH,
-				body_h);
-			if (body) {
-				W (body);
-				if (g->zoom < ZOOM_DEFAULT) {
-					W ("\n");
-				}
-				free (body);
-			} else {
-				W (n->body);
+			if (g->zoom < ZOOM_DEFAULT) {
+				body_h--;
 			}
-		}
-		/* print some dots when the body is cropped because of zoom */
-		if (n->body && *n->body) {
-			if (body_y <= body_h && g->zoom < ZOOM_DEFAULT) {
-				char *dots = "...";
-				if (delta_x < strlen (dots)) {
-					dots += delta_x;
-					W (dots);
+			if (body_y + 1 <= body_h) {
+				body = r_str_ansi_crop (n->body,
+						body_x, body_y,
+						n->w - BORDER_WIDTH,
+						body_h);
+				if (body) {
+					W (body);
+					if (g->zoom < ZOOM_DEFAULT) {
+						W ("\n");
+					}
+					free (body);
+				} else {
+					W (n->body);
+				}
+			}
+			/* print some dots when the body is cropped because of zoom */
+			if (n->body && *n->body) {
+				if (body_y <= body_h && g->zoom < ZOOM_DEFAULT) {
+					char *dots = "...";
+					if (delta_x < strlen (dots)) {
+						dots += delta_x;
+						W (dots);
+					}
 				}
 			}
 		}
@@ -398,10 +400,18 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RANode* from RCore*
 	RCons *cons = r_cons_singleton ();
-	if (cur) {
-		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box2);
+	if (g->show_node_bubble) {
+		if (cur) {
+			r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box2);
+		} else {
+			r_cons_canvas_circle(g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box);
+		}
 	} else {
-		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box);
+		if (cur) {
+			r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box2);
+		} else {
+			r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box);
+		}
 	}
 }
 
@@ -3543,6 +3553,7 @@ static void agraph_init(RAGraph *g) {
 	g->is_instep = false;
 	g->need_reload_nodes = true;
 	g->show_node_titles = true;
+	g->show_node_body = true;
 	g->force_update_seek = true;
 	g->graph = r_graph_new ();
 	g->nodes = sdb_new0 ();
@@ -4077,6 +4088,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->can = can;
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
 	g->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
+	g->show_node_body = r_config_get_i (core->config, "graph.body");
+	g->show_node_bubble = r_config_get_i (core->config, "graph.bubble");
 	g->on_curnode_change = (RANodeCallback) seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = r_config_get_i (core->config, "graph.edges");

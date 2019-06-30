@@ -11,7 +11,7 @@
 static ut64 r_num_tailff(RNum *num, const char *hex);
 
 //  TODO: rename to r_num_srand()
-static void r_srand (int seed) {
+static void r_srand(int seed) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	// no-op
 	(void)seed;
@@ -20,11 +20,11 @@ static void r_srand (int seed) {
 #endif
 }
 
-static int r_rand (int mod) {
+static int r_rand(int mod) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	return (int)arc4random_uniform (mod);
 #else
-	return rand ()%mod;
+	return rand () % mod;
 #endif
 }
 
@@ -156,7 +156,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	if (!str) {
 		return 0;
 	}
-	for (; *str==' '; ) {
+	for (; *str == ' '; ) {
 		str++;
 	}
 	if (!*str) {
@@ -183,7 +183,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	}
 
 	if (str[0] && str[1] && str[2]) {
-		if (str[0]=='\'' && str[2]=='\'') {
+		if (str[0] == '\'' && str[2] == '\'') {
 			return (ut64)str[1];
 		}
 	}
@@ -191,7 +191,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	len = strlen (str);
 	if (len > 3 && str[4] == ':') {
 		if (sscanf (str, "%04x", &s) == 1) {
-			if (sscanf (str + 5, "%04x", &a)==1) {
+			if (sscanf (str + 5, "%04x", &a) == 1) {
 				return (ut64) ((s<<4) + a);
 			}
 		}
@@ -375,15 +375,15 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 #if !R_NUM_USE_CALC
 static ut64 r_num_op(RNum *num, char op, ut64 a, ut64 b) {
 	switch (op) {
-	case '+': return a+b;
-	case '-': return a-b;
-	case '*': return a*b;
+	case '+': return a + b;
+	case '-': return a - b;
+	case '*': return a * b;
 	case '/':
 		if (!b && num) num->dbz = 1;
-		return b?a/b:0;
-	case '&': return a&b;
-	case '|': return a|b;
-	case '^': return a^b;
+		return b ? a / b : 0;
+	case '&': return a & b;
+	case '|': return a | b;
+	case '^': return a ^ b;
 	}
 	return b;
 }
@@ -436,7 +436,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 
 	s = os;
 	memcpy (s, str, len);
-	for (; *s==' '; s++);
+	for (; *s == ' '; s++);
 	p = s;
 
 	do {
@@ -488,7 +488,7 @@ R_API double r_num_get_float(RNum *num, const char *str) {
 	return d;
 }
 
-R_API int r_num_to_bits (char *out, ut64 num) {
+R_API int r_num_to_bits(char *out, ut64 num) {
 	int size = 64, i;
 
 	if (num >> 32) {
@@ -506,14 +506,14 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 		int pos = 0;
 		int realsize = 0;
 		int hasbit = 0;
-		for (i=0; i<size; i++) {
-			char bit = ((num>>(size-i-1))&1)? '1': '0';
-			if (hasbit || bit=='1') {
-				out[pos++] = bit;//size-1-i] = bit;
+		for (i = 0; i < size; i++) {
+			char bit = ((num >> (size - i - 1)) & 1) ? '1': '0';
+			if (hasbit || bit == '1') {
+				out[pos++] = bit; //size - 1 - i] = bit;
 			}
-			if (!hasbit && bit=='1') {
-				hasbit=1;
-				realsize = size-i;
+			if (!hasbit && bit == '1') {
+				hasbit = 1;
+				realsize = size - i;
 			}
 		}
 		if (realsize == 0) {
@@ -524,7 +524,7 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 	return size;
 }
 
-R_API int r_num_to_trits (char *out, ut64 num) {
+R_API int r_num_to_trits(char *out, ut64 num) {
 	if (out == NULL) {
 		return false;
 	}
@@ -542,7 +542,7 @@ R_API int r_num_to_trits (char *out, ut64 num) {
 	return true;
 }
 
-R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize) {
+R_API ut64 r_num_chs(int cylinder, int head, int sector, int sectorsize) {
 	if (sectorsize < 1) {
 		sectorsize = 512;
 	}
@@ -563,13 +563,13 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 		if (lgt) {
 			*lgt = 0;
 			a = r_num_math (num, p);
-			if (lgt[1]=='=') {
-				b = r_num_math (num, lgt+2);
+			if (lgt[1] == '=') {
+				b = r_num_math (num, lgt + 2);
 				if (a > b) {
 					goto fail;
 				}
 			} else {
-				b = r_num_math (num, lgt+1);
+				b = r_num_math (num, lgt + 1);
 				if (a >= b) {
 					goto fail;
 				}
@@ -579,13 +579,13 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 			if (lgt) {
 				*lgt = 0;
 				a = r_num_math (num, p);
-				if (lgt[1]=='=') {
-					b = r_num_math (num, lgt+2);
+				if (lgt[1] == '=') {
+					b = r_num_math (num, lgt + 2);
 					if (a < b) {
 						goto fail;
 					}
 				} else {
-					b = r_num_math (num, lgt+1);
+					b = r_num_math (num, lgt + 1);
 					if (a <= b) {
 						goto fail;
 					}
@@ -614,7 +614,7 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 				}
 			}
 		}
-		p = t+1;
+		p = t + 1;
 	} while (t);
 	res = 1;
 fail:
@@ -693,7 +693,7 @@ R_API ut64 r_get_input_num_value(RNum *num, const char *str) {
 }
 
 // SHITTY API
-static inline ut64 __nth_nibble (ut64 n, ut32 i) {
+static inline ut64 __nth_nibble(ut64 n, ut32 i) {
 	int sz = (sizeof (n) << 1) - 1;
 	int s = (sz - i) * 4;
 	return (n >> s) & 0xf;
@@ -727,7 +727,7 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	char *p;
 	int i;
 
-	while (*hex && (*hex == ' ' || *hex=='.')) {
+	while (*hex && (*hex == ' ' || *hex == '.')) {
 		hex++;
 	}
 	i = strlen (hex) * 4;
@@ -751,7 +751,7 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 static ut64 r_num_tailff(RNum *num, const char *hex) {
 	ut64 n = 0;
 
-	while (*hex && (*hex == ' ' || *hex=='.')) {
+	while (*hex && (*hex == ' ' || *hex == '.')) {
 		hex++;
 	}
 	int i = strlen (hex) * 4;
@@ -800,7 +800,7 @@ R_API bool r_num_is_op(const char c) {
 }
 
 //Assumed *str is parsed as an expression correctly
-R_API int r_num_str_len (const char *str) {
+R_API int r_num_str_len(const char *str) {
 	int i = 0, len = 0, st;
 	st = 0;//0: number, 1: op
 	if (str[0] == '(') {
@@ -869,4 +869,12 @@ R_API void *r_num_dup(ut64 n) {
 	}
 	*hn = n;
 	return (void*)hn;
+}
+
+R_API double r_num_cos(double a) {
+	return cos (a);
+}
+
+R_API double r_num_sin(double a) {
+	return sin (a);
 }

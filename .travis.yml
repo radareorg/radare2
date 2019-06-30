@@ -20,23 +20,23 @@ matrix:
   include:
     # Linux with GCC
     - os: linux
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with clang
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with meson and coverage and asserts
     - os: linux
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1 CFLAGS="-DR2_ASSERT_STDOUT=1"
     # OS X with clang
     - os: osx
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Run Fuzzing Sanity Test on every push
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang R2_TESTS_DISABLE=1 FUZZIT=1 INSTALL_SYSTEM=static CXXFLAGS="-fsanitize=fuzzer"
     # ASAN as a best effort on every push
     - if: (not head_branch =~ ^release-* AND not head_branch =~ ^prerelease-* AND not branch =~ ^release-* AND not branch =~ ^prerelease-*) AND (head_branch =~ ^asan-* OR type = push)
       os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DR2_ASSERT_STDOUT=1"
     # release-only: meson build with system libraries
     - if: head_branch =~ ^release-* OR head_branch =~ ^prerelease-* OR branch =~ ^release-* OR branch =~ ^prerelease-*
       os: linux
@@ -63,7 +63,7 @@ matrix:
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_TESTS_DISABLE=1
   allow_failures:
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DR2_ASSERT_STDOUT=1"
 
 cache:
   - ccache

@@ -48,7 +48,9 @@ static const char *help_msg_i[] = {
 	"iS=", "", "Show ascii-art color bars with the section ranges",
 	"iSS", "", "List memory segments (maps with om)",
 	"it", "", "File hashes",
+	"iT", "", "File signature",
 	"iV", "", "Display file version info",
+	"iw", "", "try/catch blocks",
 	"iX", "", "Display source files used (via dwarf)",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
@@ -636,12 +638,12 @@ static int cmd_info(void *data, const char *input) {
 				}
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (mode == R_MODE_RADARE || mode == R_MODE_JSON || mode == R_MODE_SIMPLE) {
-					RBININFO (name, action, input + 2 + param_shift,
-						(obj && obj->sections)? r_list_length (obj->sections): 0);
-				} else {
-					RBININFO (name, action, input + 1 + param_shift,
-						(obj && obj->sections)? r_list_length (obj->sections): 0);
+					if (input[param_shift + 1]) {
+						param_shift ++;
+					}
 				}
+				RBININFO (name, action, input + 1 + param_shift,
+					(obj && obj->sections)? r_list_length (obj->sections): 0);
 			}
 			//we move input until get '\0'
 			while (*(++input)) ;
@@ -832,10 +834,14 @@ static int cmd_info(void *data, const char *input) {
 		case 'm': // "im"
 			RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL, 0);
 			break;
+		case 'w': // "iw"
+			RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
+			break;
 		case 'V': // "iV"
 			RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
 			break;
-		case 'C': // "iC"
+		case 'T': // "iT"
+		case 'C': // "iC" // rabin2 -C create
 			RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL, 0);
 			break;
 		case 'z': // "iz"
