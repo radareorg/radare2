@@ -2442,12 +2442,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_showcursor (core, true);
 			r_cons_flush ();
 			r_cons_set_raw (false);
-			strcpy (buf, "wa ");
+			strcpy (buf, "\"wa ");
 			r_line_set_prompt (":> ");
 			r_cons_enable_mouse (false);
-			if (r_cons_fgets (buf + 3, 1000, 0, NULL) < 0) {
+			if (r_cons_fgets (buf + 4, sizeof (buf) - 5, 0, NULL) < 0) {
 				buf[0] = '\0';
 			}
+			strcat (buf, "\"");
 			int wheel = r_config_get_i (core->config, "scr.wheel");
 			if (wheel) {
 				r_cons_enable_mouse (true);
