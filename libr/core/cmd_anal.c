@@ -2811,21 +2811,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			free (data);
 		} else if (input[2] == 'r') { // "afsr"
 			if (input[3] == ' ') {
-				const char *ntype = (input[4])
-					? input + 4
-					: NULL;
-				if (ntype) {
-					char *sig = r_core_cmd_str (core, "afs");
-					char *sig_notype = strchr (sig, '('); 
-					strtok (sig_notype, "\n");
-					sig_notype -= 2;
-					while (*sig_notype != ' ' && sig_notype > sig) {
-						--sig_notype;
-					}
-					// TODO: Use API instead of r2 command
-					r_core_cmdf (core, "\"afs %s%s\"", ntype, sig_notype);;
-					free (sig);
-				}
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+				const char *query = r_str_newf ("anal/types/func.%s.ret=%s", fcn->name, input + 4);
+				sdb_querys (core->sdb, NULL, 0, query);
 			}
 		} else {
 			ut64 addr = core->offset;
