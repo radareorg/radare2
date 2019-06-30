@@ -564,12 +564,12 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 			*lgt = 0;
 			a = r_num_math (num, p);
 			if (lgt[1] == '=') {
-				b = r_num_math (num, lgt+2);
+				b = r_num_math (num, lgt + 2);
 				if (a > b) {
 					goto fail;
 				}
 			} else {
-				b = r_num_math (num, lgt+1);
+				b = r_num_math (num, lgt + 1);
 				if (a >= b) {
 					goto fail;
 				}
@@ -580,12 +580,12 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 				*lgt = 0;
 				a = r_num_math (num, p);
 				if (lgt[1] == '=') {
-					b = r_num_math (num, lgt+2);
+					b = r_num_math (num, lgt + 2);
 					if (a < b) {
 						goto fail;
 					}
 				} else {
-					b = r_num_math (num, lgt+1);
+					b = r_num_math (num, lgt + 1);
 					if (a <= b) {
 						goto fail;
 					}
@@ -614,7 +614,7 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 				}
 			}
 		}
-		p = t+1;
+		p = t + 1;
 	} while (t);
 	res = 1;
 fail:
