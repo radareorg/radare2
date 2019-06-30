@@ -2371,6 +2371,16 @@ R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off) {
 		NULL);
 }
 
+#if __WINDOWS__
+static int win_eprintf(const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
+	r_cons_win_vhprintf (STD_ERROR_HANDLE, false, format, ap);
+	va_end (ap);
+	return 0;
+}
+#endif
+
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -2402,6 +2412,9 @@ R_API bool r_core_init(RCore *core) {
 	core->print->offname = r_core_print_offname;
 	core->print->offsize = r_core_print_offsize;
 	core->print->cb_printf = r_cons_printf;
+#if __WINDOWS__
+	core->print->cb_eprintf = win_eprintf;
+#endif
 	core->print->cb_color = r_cons_rainbow_get;
 	core->print->write = mywrite;
 	core->print->exists_var = exists_var;

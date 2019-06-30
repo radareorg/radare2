@@ -389,7 +389,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 	return r_cons_w32_hprint (STD_OUTPUT_HANDLE, ptr, len, vmode);
 }
 
-static int r_cons_win_hprintf_(DWORD hdl, bool vmode, const char *fmt, va_list ap) {
+R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap) {
 	va_list ap2;
 	int ret = -1;
 	FILE *con = hdl == STD_OUTPUT_HANDLE ? stdout : stderr;
@@ -423,7 +423,7 @@ R_API int r_cons_win_printf(bool vmode, const char *fmt, ...) {
 	r_return_val_if_fail (fmt, -1);
 
 	va_start (ap, fmt);
-	ret = r_cons_win_hprintf_ (STD_OUTPUT_HANDLE, vmode, fmt, ap);
+	ret = r_cons_win_vhprintf (STD_OUTPUT_HANDLE, vmode, fmt, ap);
 	va_end (ap);
 	return ret;
 }
@@ -434,7 +434,7 @@ R_API int r_cons_win_eprintf(bool vmode, const char *fmt, ...) {
 	r_return_val_if_fail (fmt, -1);
 
 	va_start (ap, fmt);
-	ret = r_cons_win_hprintf_ (STD_ERROR_HANDLE, vmode, fmt, ap);
+	ret = r_cons_win_vhprintf (STD_ERROR_HANDLE, vmode, fmt, ap);
 	va_end (ap);
 	return ret;
 }
