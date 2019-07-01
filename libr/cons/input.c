@@ -6,9 +6,6 @@
 #include <errno.h>
 #endif
 
-/* experimental support for x/y click */
-#define USE_CLICK 0
-
 #define I r_cons_singleton ()
 
 // TODO: Support binary, use RBuffer and remove globals
@@ -47,43 +44,55 @@ R_API int r_cons_controlz(int ch) {
 	return ch;
 }
 
-static int __parseMouseEvent() {
-	int ch = r_cons_readchar ();
-	/* Skip the x/y coordinates */
-#if USE_CLICK
-	int x = r_cons_readchar () - 33;
-	int y = r_cons_readchar () - 33;
-#else
-	(void) r_cons_readchar ();
-	(void) r_cons_readchar ();
-#endif
-#if USE_CLICK
-	if (ch == 35) {
-		/* handle click  */
-#define CLICK_DEBUG 1
-#if CLICK_DEBUG
-		r_cons_gotoxy (0, 0);
-		r_cons_printf ("Click at %d %d\n", x, y);
-		r_cons_flush ();
-#endif
-		RCons *cons = r_cons_singleton ();
-		if (cons->onclick) {
-			cons->onclick (cons->data, x, y);
-		}
-		r_cons_enable_mouse (false);
-		(void)r_cons_readchar ();
-		return 0;
-	}
-#endif
-	if (ch != 0x20 && ch >= 64 + 32) {
-		/* Grab wheel events only */
-		I->mouse_event = 1;
-		return "kj"[(ch - (64 + 32))&1];
-	}
+// 96 - wheel up
+// 97 - wheel down
+// 95 - mouse up
+// 92 - mouse down
 
-	// temporary disable the mouse wheel to allow select
-	r_cons_enable_mouse (false);
-	(void)r_cons_readchar ();
+static int __parseMouseEvent() {
+	char xpos[32];
+	char ypos[32];
+	int ch = r_cons_readchar ();
+	int ch2 = r_cons_readchar ();
+
+	// [32M - mousedown
+	// [35M - mouseup
+	if (ch2 == ';') {
+		int i;
+repeat:
+		// read until next ;
+		for (i = 0; i < sizeof (xpos); i++) {
+			char ch = r_cons_readchar ();
+			if (ch == ';' || ch == 'M') {
+				break;
+			}
+			xpos[i] = ch;
+		}
+		xpos[i] = 0;
+		for (i = 0; i < sizeof (ypos); i++) {
+			char ch = r_cons_readchar ();
+			if (ch == ';' || ch == 'M') {
+				break;
+			}
+			ypos[i] = ch;
+		}
+		ypos[i] = 0;
+		eprintf ("CLICK (%s) (%s)\n", xpos, ypos);
+		ch = r_cons_readchar ();
+		// ignored
+		int ch = r_cons_readchar ();
+		if (ch == 27) {
+			ch = r_cons_readchar (); // '['
+			eprintf ("CH %c\n", ch);
+			ch = r_cons_readchar (); // '3'
+			eprintf ("CH %c\n", ch);
+			ch = r_cons_readchar (); // '0'
+			eprintf ("CH %c\n", ch);
+			ch = r_cons_readchar (); // ';'
+			eprintf ("CH %c\n", ch);
+			goto repeat;
+		}
+	}
 	return 0;
 }
 
@@ -141,6 +150,30 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			case 'C': ch = R_CONS_KEY_F3; break;
 			case 'D': ch = R_CONS_KEY_F4; break;
 			}
+			break;
+		case '9':
+			// handle mouse wheel
+	//		__parseWheelEvent();
+			ch = r_cons_readchar ();
+			// 6 is up
+			// 7 is down
+			if (ch == '6') {
+				ch = 'k';
+			} else if (ch == '7') {
+				ch = 'j';
+			} else {
+				// unhandled case
+				ch = 0;
+			}
+			int ch2;
+			do {
+				ch2 = r_cons_readchar ();
+			} while (ch2 != 'M');
+			break;
+		case '3':
+			// handle mouse down /up events (35 vs 32)
+			__parseMouseEvent();
+			return 0;
 			break;
 		case '2':
 			ch = r_cons_readchar ();
