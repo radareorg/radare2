@@ -114,26 +114,6 @@ static char **getFilesFor(RCore *core, const char *path, int *ac) {
 	return av;
 }
 
-static int ms_autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user) {
-	const char *data = buf->data;
-	r_line_completion_set (completion, ms_argc, ms_argv);
-	if (!strncmp (data, "ls ", 3)
-		|| !strncmp (data, "cd ", 3)
-		|| !strncmp (data, "cat ", 4)
-	 	|| !strncmp (data, "get ", 4)) {
-		const char *file = strchr (data, ' ');
-		if (file++) {
-			//eprintf ("FILE (%s)\n", file);
-			int tmp_argc = 0;
-			// TODO: handle abs vs rel
-			char **tmp_argv = getFilesFor (user, file, &tmp_argc);
-			r_line_completion_set (completion, tmp_argc, (const char **)tmp_argv);
-		}
-		return true;
-	}
-	return false;
-}
-
 static const char *t2s(const char ch) {
 	switch (ch) {
 	case 'f': return "file";
@@ -264,7 +244,6 @@ static int cmd_mount(void *data, const char *_input) {
 				pj_end (pj);
 			}
 			pj_end (pj);
-//
 			pj_k (pj, "plugins");
 			pj_a (pj);
 			r_list_foreach (core->fs->plugins, iter, plug) {
@@ -298,7 +277,7 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'l': // "ml"
-	case 'd': // "md" // should be deprecated. ls is better than dir :P
+	case 'd': // "md" 
 		cmd_mount_ls (core, input + 1);
 		break;
 	case 'p':
@@ -463,17 +442,13 @@ static int cmd_mount(void *data, const char *_input) {
 				.readline = r_line_readline,
 				.hist_add = r_line_hist_add
 			};
-			RLine *rli = r_line_singleton ();
-			RLineCompletion c;
-			memcpy (&c, &rli->completion, sizeof (c));
-			r_pvector_init (&rli->completion.args, free);  // UGLY HACK
-			rli->completion.run = ms_autocomplete;
-			rli->completion.run_user = rli->user;
-			r_line_completion_set (&rli->completion, ms_argc, ms_argv);
+			core->rfs = &shell;
+			core->autocomplete_type = AUTOCOMPLETE_MS;
+			r_core_autocomplete_reload (core);
 			r_fs_shell_prompt (&shell, core->fs, input);
+			core->autocomplete_type = AUTOCOMPLETE_DEFAULT;
+			r_core_autocomplete_reload (core);
 			R_FREE (cwd);
-			r_pvector_clear (&rli->completion.args);
-			memcpy (&rli->completion, &c, sizeof (c));
 		}
 		break;
 	case 'w':
