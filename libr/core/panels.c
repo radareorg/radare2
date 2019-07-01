@@ -329,7 +329,7 @@ static void __panelPrompt(const char *prompt, char *buf, int len);
 static void __panels_layout_refresh(RCore *core);
 static void __panels_layout(RPanels *panels);
 static void __layoutDefault(RPanels *panels);
-static void __savePanelsLayout(RPanels* panels);
+static void __savePanelsLayout(RCore *core);
 static int __loadSavedPanelsLayout(RCore *core);
 static void __splitPanelVertical(RCore *core, RPanel *p, const char *name, const char *cmd, bool cache);
 static void __splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char *cmd, bool cache);
@@ -2427,7 +2427,7 @@ int __closeFileCb(void *user) {
 
 int __saveLayoutCb(void *user) {
 	RCore *core = (RCore *)user;
-	__savePanelsLayout (core->panels);
+	__savePanelsLayout (core);
 	(void)__show_status (core, "Panels layout saved!");
 	return 0;
 }
@@ -4416,36 +4416,42 @@ char *__getPanelsConfigPath() {
 	return newPath;
 }
 
-void __savePanelsLayout(RPanels* panels) {
+void __savePanelsLayout(RCore *core) {
 	int i;
-	PJ *pj = NULL;
-	pj = pj_new ();
-	pj_a (pj);
+	char *name = __show_status_input (core, "Name for the layout: ");
+	RPanels *panels = core->panels;
+	PJ *pj_tmp = NULL;
+	pj_tmp = pj_new ();
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = __getPanel (panels, i);
-		pj_o (pj);
-		pj_ks (pj, "Title", panel->model->title);
-		pj_ks (pj, "Cmd", panel->model->cmd);
-		pj_kn (pj, "x", panel->view->pos.x);
-		pj_kn (pj, "y", panel->view->pos.y);
-		pj_kn (pj, "w", panel->view->pos.w);
-		pj_kn (pj, "h", panel->view->pos.h);
-		pj_kb (pj, "cache", panel->model->cache);
-		pj_end (pj);
+		pj_o (pj_tmp);
+		pj_ks (pj_tmp, "Title", panel->model->title);
+		pj_ks (pj_tmp, "Cmd", panel->model->cmd);
+		pj_kn (pj_tmp, "x", panel->view->pos.x);
+		pj_kn (pj_tmp, "y", panel->view->pos.y);
+		pj_kn (pj_tmp, "w", panel->view->pos.w);
+		pj_kn (pj_tmp, "h", panel->view->pos.h);
+		pj_kb (pj_tmp, "cache", panel->model->cache);
+		pj_end (pj_tmp);
 	}
+
+	PJ *pj = NULL;
+	pj = pj_new ();
+	pj_o (pj);
+	pj_ks (pj, name, pj_drain (pj_tmp));
 	pj_end (pj);
+
 	char *configPath = __getPanelsConfigPath ();
 	FILE *panelsConfig = r_sandbox_fopen (configPath, "w");
 	free (configPath);
 	if (panelsConfig) {
-		fprintf (panelsConfig, "%s", pj_string (pj));
+		fprintf (panelsConfig, "%s", pj_drain (pj));
 		fclose (panelsConfig);
 	}
-	pj_free (pj);
 }
 
 char *__parsePanelsConfig(const char *cfg, int len) {
-	if (!cfg || !*cfg || len < 2 || *cfg != '[') {
+	if (!cfg || !*cfg || len < 2) {
 		eprintf ("Not valid config!\n");
 		return NULL;
 	}
@@ -4456,10 +4462,6 @@ char *__parsePanelsConfig(const char *cfg, int len) {
 			if (tmp[i + 1] == ',') {
 				tmp[i + 1] = '\n';
 				continue;
-			}
-			if (tmp[i + 1] == ']') {
-				tmp[i + 1] = '\n';
-				break;
 			}
 			eprintf ("Not valid config!\n");
 			free (tmp);
@@ -4490,6 +4492,10 @@ int __loadSavedPanelsLayout(RCore *core) {
 		free (panelsConfig);
 		return 0;
 	}
+	panelsConfig = sdb_json_get_str (panelsConfig, "d");
+	(void)r_str_arg_unescape (panelsConfig);
+	r_cons_any_key (panelsConfig);
+
 	char *parsedConfig = __parsePanelsConfig (panelsConfig, strlen (panelsConfig));
 	free (panelsConfig);
 	if (!parsedConfig) {
