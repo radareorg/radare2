@@ -1037,11 +1037,11 @@ static const char *radare_argv[] = {
 static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const char *str, const char *path) {
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
 	char *home = NULL, *p = NULL;
-  char *pwd = *(core->rfs->cwd);
+  	char *pwd = *(core->rfs->cwd);
 	int n = 0;
 	RList *list;
 	RListIter *iter;
-  RFSFile *file;
+	RFSFile *file;
 
 	if (!path) {
 		goto out;
@@ -1064,21 +1064,21 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 		} else if (lpath[0] == '.') { // ./xxx/yyy 
 			dirname = r_str_newf ("%s%s%s%s", pwd, R_SYS_DIR, lpath, R_SYS_DIR);
 		} else if (lpath[0] == '/') { // /xxx/yyy
-      dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
-    } else { // xxx/yyy
-      if (strlen (pwd) == 1) { // if pwd is root
-        dirname = r_str_newf ("%s%s%s", R_SYS_DIR, lpath, R_SYS_DIR);
-      } else {
-			  dirname = r_str_newf ("%s%s%s%s", pwd, R_SYS_DIR, lpath, R_SYS_DIR);
-      }
+      			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
+    		} else { // xxx/yyy
+      			if (strlen (pwd) == 1) { // if pwd is root
+        			dirname = r_str_newf ("%s%s%s", R_SYS_DIR, lpath, R_SYS_DIR);
+      			} else {
+				dirname = r_str_newf ("%s%s%s%s", pwd, R_SYS_DIR, lpath, R_SYS_DIR);
+      			}
 		}
 		basename = r_str_new (p + 1);
 	} else { // xxx
-    if (strlen (pwd) == 1) {
-      dirname = r_str_newf ("%s", R_SYS_DIR);
-    } else {
-      dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
-    }
+    		if (strlen (pwd) == 1) {
+      			dirname = r_str_newf ("%s", R_SYS_DIR);
+    		} else {
+      			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
+    		}
 		basename = r_str_new (lpath);
 	}
 
@@ -1107,7 +1107,7 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 		}
 		r_list_free (list);
 	}
-  RFSRoot *r;
+  	RFSRoot *r;
 	r_list_foreach (core->fs->roots, iter, r) {
 		char *base = strdup (r->path);
 		char *ls = (char *) r_str_lchr (base, '/');
