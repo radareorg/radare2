@@ -4277,7 +4277,7 @@ dodo:
 			arg[0] = ch;
 			arg[1] = 0;
 		}
-	} while (skip || r_core_visual_cmd (core, arg));
+	} while (skip || (*arg && r_core_visual_cmd (core, arg)));
 
 	r_cons_enable_mouse (false);
 	if (color) {
