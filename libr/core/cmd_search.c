@@ -253,7 +253,6 @@ hell:
 }
 
 static void cmd_search_bin(RCore *core, RInterval itv) {
-	ut8 buf[1024];
 	ut64 from = itv.addr, to = r_itv_end (itv);
 	int size; // , sz = sizeof (buf);
 
@@ -264,9 +263,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		RBuffer *ref = r_buf_new_slice (b, from, UT64_MAX);
-		// thats slow we probably dont need 1024 to detect filetype
-		// but macho requires 4096 :/
+		RBuffer *ref = r_buf_new_slice (b, from, to);
 		RBinPlugin *plug = r_bin_get_binplugin_by_buffer (core->bin, ref);
 		if (plug) {
 			r_cons_printf ("0x%08" PFMT64x "  %s\n", from, plug->name);
@@ -288,6 +285,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 				}
 			}
 		}
+		r_buf_free (ref);
 		from++;
 	}
 	r_buf_free (b);
