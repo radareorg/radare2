@@ -16,6 +16,8 @@
 #define PANEL_TITLE_BREAKPOINTS  "Breakpoints"
 #define PANEL_TITLE_STRINGS_DATA "Strings in data sections"
 #define PANEL_TITLE_STRINGS_BIN  "Strings in the whole bin"
+#define PANEL_TITLE_SECTIONS     "Sections"
+#define PANEL_TITLE_SEGMENTS     "Segments"
 
 #define PANEL_CMD_SYMBOLS        "isq"
 #define PANEL_CMD_STACK          "px"
@@ -58,7 +60,7 @@ static const char *menus[] = {
 };
 
 static const char *menus_File[] = {
-	"New", "Open", "ReOpen", "Close", "Sections", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports", "Info", "Database", "Save Layout", "Load Layout", "Quit",
+	"New", "Open", "ReOpen", "Close", "Save Layout", "Load Layout", "Quit",
 	NULL
 };
 
@@ -88,7 +90,7 @@ static const char *menus_iocache[] = {
 };
 
 static const char *menus_View[] = {
-	"Console", "Hexdump", "Disassembly", "Decompiler", "Graph", "Functions", "Breakpoints", "Comments", "Entropy", "Entropy Fire",
+	"Console", "Hexdump", "Disassembly", "Decompiler", "Graph", "Functions", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports", "Info", "Database",  "Breakpoints", "Comments", "Entropy", "Entropy Fire",
 	"Stack", "Var READ address", "Var WRITE address", "Summary",
 	NULL
 };
@@ -614,6 +616,7 @@ bool __check_root_state(RCore *core, RPanelsRootState state) {
 	return core->panels_root->root_state == state;
 }
 
+//TODO: Refactroing
 bool __is_abnormal_cursor_type(RCore *core, RPanel *panel) {
 	char *str;
 	if (__check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS)) ||
@@ -630,6 +633,14 @@ bool __is_abnormal_cursor_type(RCore *core, RPanel *panel) {
 	}
 	str = __search_db (core, PANEL_TITLE_BREAKPOINTS);
 	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_BREAKPOINTS), strlen (__search_db (core, PANEL_TITLE_BREAKPOINTS)))) {
+		return true;
+	}
+	str = __search_db (core, PANEL_TITLE_SECTIONS);
+	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_SECTIONS), strlen (__search_db (core, PANEL_TITLE_SECTIONS)))) {
+		return true;
+	}
+	str = __search_db (core, PANEL_TITLE_SEGMENTS);
+	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_SEGMENTS), strlen (__search_db (core, PANEL_TITLE_SEGMENTS)))) {
 		return true;
 	}
 	return false;
@@ -4044,6 +4055,7 @@ void __initSdb(RCore *core) {
 	sdb_set (panels->db, "Entropy Fire", "p==e", 0);
 	sdb_set (panels->db, "DRX", "drx", 0);
 	sdb_set (panels->db, "Sections", "iSq", 0);
+	sdb_set (panels->db, "Segments", "iSSq", 0);
 	sdb_set (panels->db, PANEL_TITLE_STRINGS_DATA, "izq", 0);
 	sdb_set (panels->db, PANEL_TITLE_STRINGS_BIN, "izzq", 0);
 	sdb_set (panels->db, "Maps", "dm", 0);
