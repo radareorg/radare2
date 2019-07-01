@@ -399,31 +399,6 @@ R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
 	return NULL;
 }
 
-// XXX this api must die. See #11920
-R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64 sz) {
-	RBinPlugin *plugin;
-	RListIter *it;
-
-eprintf ("r_bin_get_binplugin_by_bytes is deprecated. Use r_bin_get_binplugin_by_buffer instead\n");
-	r_return_val_if_fail (bin && bytes, NULL);
-
-	r_list_foreach (bin->plugins, it, plugin) {
-		if (plugin->check_buffer) {
-			RBuffer *b = r_buf_new_with_pointers (bytes, sz, false);
-			if (b) {
-				bool ok = plugin->check_buffer (b);
-				r_buf_free (b);
-				if (ok) {
-					return plugin;
-				}
-			}
-		} else if (plugin->check_bytes && plugin->check_bytes (bytes, sz)) {
-			return plugin;
-		}
-	}
-	return NULL;
-}
-
 R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf) {
 	RBinPlugin *plugin;
 	RListIter *it;
@@ -433,13 +408,6 @@ R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf) {
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->check_buffer) {
 			if (plugin->check_buffer (buf)) {
-				return plugin;
-			}
-		} else if (plugin->check_bytes) {
-			eprintf ("Deprecate plugin->check_bytes for '%s' please\n", plugin->name);
-			ut64 sz;
-			const ut8 *bytes = r_buf_data (buf, &sz);
-			if (plugin->check_bytes (bytes, sz)) {
 				return plugin;
 			}
 		}

@@ -253,18 +253,18 @@ hell:
 }
 
 static void cmd_search_bin(RCore *core, RInterval itv) {
-	RBinPlugin *plug;
-	ut8 buf[1024];
 	ut64 from = itv.addr, to = r_itv_end (itv);
-	int size, sz = sizeof (buf);
+	int size; // , sz = sizeof (buf);
 
+	int fd = core->file->fd;
+	RBuffer *b = r_buf_new_with_io (&core->anal->iob, fd);
 	r_cons_break_push (NULL, NULL);
 	while (from < to) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		r_io_read_at (core->io, from, buf, sz);
-		plug = r_bin_get_binplugin_by_bytes (core->bin, buf, sz);
+		RBuffer *ref = r_buf_new_slice (b, from, to);
+		RBinPlugin *plug = r_bin_get_binplugin_by_buffer (core->bin, ref);
 		if (plug) {
 			r_cons_printf ("0x%08" PFMT64x "  %s\n", from, plug->name);
 			if (plug->size) {
@@ -276,7 +276,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 					.sz = 4096,
 					.xtr_idx = 0,
 					.rawstr = core->bin->rawstr,
-					.fd = core->file->fd,
+					.fd = fd,
 				};
 				r_bin_open_io (core->bin, &opt);
 				size = plug->size (core->bin->cur);
@@ -285,8 +285,10 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 				}
 			}
 		}
+		r_buf_free (ref);
 		from++;
 	}
+	r_buf_free (b);
 	r_cons_break_pop ();
 }
 
