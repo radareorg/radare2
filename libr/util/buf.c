@@ -60,8 +60,11 @@ static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
 	if (b->methods->get_whole_buf) {
 		return b->methods->get_whole_buf (b, sz);
 	}
-
 	ut64 bsz = r_buf_size (b);
+	// bsz = 4096; // FAKE MINIMUM SIZE TO READ THE BIN HEADER
+	if (bsz == UT64_MAX) {
+		return NULL;
+	}
 	free (b->whole_buf);
 	b->whole_buf = R_NEWS (ut8, bsz);
 	if (!b->whole_buf) {

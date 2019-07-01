@@ -175,6 +175,9 @@ static RBinInfo *info(RBinFile *bf) {
 
 static ut64 size(RBinFile *bf) {
 	ut64 text, data, syms, spsz;
+	if (!bf) {
+		return 0;
+	}
 	if (!bf->o->info) {
 		bf->o->info = info (bf);
 	}
