@@ -114,28 +114,6 @@ static char **getFilesFor(RCore *core, const char *path, int *ac) {
 	return av;
 }
 
-static int ms_autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user) {
-	const char *data = buf->data;
-
-	// oh crwap automplete shit is happening here
-	r_line_completion_set (completion, ms_argc, ms_argv);
-	if (!strncmp (data, "ls ", 3)
-		|| !strncmp (data, "cd ", 3)
-		|| !strncmp (data, "cat ", 4)
-	 	|| !strncmp (data, "get ", 4)) {
-		const char *file = strchr (data, ' ');
-		if (file++) {
-			//eprintf ("FILE (%s)\n", file);
-			int tmp_argc = 0;
-			// TODO: handle abs vs rel
-			char **tmp_argv = getFilesFor (user, file, &tmp_argc);
-			r_line_completion_set (completion, tmp_argc, (const char **)tmp_argv);
-		}
-		return true;
-	}
-	return false;
-}
-
 static const char *t2s(const char ch) {
 	switch (ch) {
 	case 'f': return "file";
