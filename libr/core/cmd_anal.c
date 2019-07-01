@@ -2814,15 +2814,22 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '!': { // "afs!"
 			char *sig = r_core_cmd_str (core, "afs");
 			char *data = r_core_editor (core, NULL, sig);
-			r_core_cmdf (core, "\"afs %s\"", data);
+			if (sig && data) {
+				r_core_cmdf (core, "\"afs %s\"", data);
+			}
 			free (sig);
 			free (data);
 			break;
 		}
 		case 'r': { // "afsr"
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-			const char *query = r_str_newf ("anal/types/func.%s.ret=%s", fcn->name, input + 4);
-			sdb_querys (core->sdb, NULL, 0, query);
+			if (fcn) {
+				char *query = r_str_newf ("anal/types/func.%s.ret=%s", fcn->name, input + 4);
+				sdb_querys (core->sdb, NULL, 0, query);
+				free (query);
+			} else {
+				eprintf ("There's no function defined in here.\n");
+			}
 			break;
 		}
 		case '?': // "afs?"
@@ -7931,7 +7938,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	ut64 o_align = geti ("search.align");
 	const char *analin =  r_config_get (core->config, "anal.in");
 	char *tmp = strdup (analin);
-	bool asterisk = strchr (input, '*');;
+	bool asterisk = strchr (input, '*');
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 	// pre
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
