@@ -4455,17 +4455,17 @@ char *__parsePanelsConfig(const char *cfg, int len) {
 		eprintf ("Not valid config!\n");
 		return NULL;
 	}
-	char *tmp = r_str_new (cfg + 1);
+	char *tmp = r_str_newlen (cfg, len + 1);
 	int i = 0;
 	for (; i < len; i++) {
-		if (tmp[i] == '}' && i + 1 < len) {
-			if (tmp[i + 1] == ',') {
-				tmp[i + 1] = '\n';
+		if (tmp[i] == '}') {
+			if (i + 1 < len) {
+				if (tmp[i + 1] == ',') {
+					tmp[i + 1] = '\n';
+				}
 				continue;
 			}
-			eprintf ("Not valid config!\n");
-			free (tmp);
-			return NULL;
+			tmp[i + 1] = '\n';
 		}
 	}
 	return tmp;
@@ -4494,7 +4494,6 @@ int __loadSavedPanelsLayout(RCore *core) {
 	}
 	panelsConfig = sdb_json_get_str (panelsConfig, "d");
 	(void)r_str_arg_unescape (panelsConfig);
-	r_cons_any_key (panelsConfig);
 
 	char *parsedConfig = __parsePanelsConfig (panelsConfig, strlen (panelsConfig));
 	free (panelsConfig);
