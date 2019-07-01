@@ -24,6 +24,7 @@ static bool threaded = false;
 static bool haveRarunProfile = false;
 static struct r_core_t r;
 static int do_analysis = 0;
+static bool forcequit = false;
 
 static bool is_valid_gdb_file(RCoreFile *fh) {
 	RIODesc *d = fh && fh->core ? r_io_desc_get (fh->core->io, fh->fd) : NULL;
@@ -158,6 +159,7 @@ static int main_help(int line) {
 		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
 		" -N           do not load user settings and scripts\n"
 		" -q           quiet mode (no prompt) and quit after -i\n"
+		" -qq          quit after running all -c and -i\n"
 		" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
 		" -p [prj]     use project, list if no arg, load if no file\n"
 		" -P [file]    apply rapatch file and quit\n"
@@ -667,6 +669,9 @@ R_API int r_main_radare2(int argc, char **argv) {
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
 			r_config_set (r.config, "cfg.fortunes", "false");
+			if (quiet) {
+				forcequit = true;
+			}
 			quiet = true;
 			break;
 		case 'r':
@@ -1412,6 +1417,9 @@ R_API int r_main_radare2(int argc, char **argv) {
 	r_list_free (evals);
 	r_list_free (files);
 	cmds = evals = files = NULL;
+	if (forcequit) {
+		ret = 1;
+	}
 	if (ret) {
 		ret = 0;
 		goto beach;
