@@ -5354,10 +5354,10 @@ repeat:
 				__clearPanelsMenu (core);
 				__getCurPanel (panels)->view->refresh = true;
 				key = 'j';
-			} else if (x < 20) {
-				key = 'c';
 			} else {
-				goto repeat;
+				key = 'c';
+			// } else {
+			//	goto repeat;
 			}
 		} else {
 			goto repeat;
