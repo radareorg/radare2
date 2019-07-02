@@ -331,6 +331,7 @@ static void __panels_layout(RPanels *panels);
 static void __layoutDefault(RPanels *panels);
 static void __savePanelsLayout(RCore *core);
 static int __loadSavedPanelsLayout(RCore *core);
+static bool __check_config_dup(RCore *core, const char *json, const char *check);
 static void __splitPanelVertical(RCore *core, RPanel *p, const char *name, const char *cmd, bool cache);
 static void __splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char *cmd, bool cache);
 static void __panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
@@ -4417,8 +4418,17 @@ char *__getPanelsConfigPath() {
 }
 
 void __savePanelsLayout(RCore *core) {
-	int i;
+	int i, s;
+	char *configPath = __getPanelsConfigPath ();
+	char *panelsConfig = r_file_slurp (configPath, &s);
 	char *name = __show_status_input (core, "Name for the layout: ");
+	if (__check_config_dup (core, panelsConfig, name)) {
+		RStrBuf *rsb = r_strbuf_new (NULL);
+		r_strbuf_appendf (rsb, "%s already exists. Override %s?(y/n): ", name, name);
+		if (!__show_status_yesno (core, 'y', r_strbuf_drain (rsb))) {
+			return;
+		}
+	}
 	RPanels *panels = core->panels;
 	PJ *pj_tmp = NULL;
 	pj_tmp = pj_new ();
@@ -4441,12 +4451,11 @@ void __savePanelsLayout(RCore *core) {
 	pj_ks (pj, name, pj_drain (pj_tmp));
 	pj_end (pj);
 
-	char *configPath = __getPanelsConfigPath ();
-	FILE *panelsConfig = r_sandbox_fopen (configPath, "w");
+	FILE *file = r_sandbox_fopen (configPath, "w");
 	free (configPath);
-	if (panelsConfig) {
-		fprintf (panelsConfig, "%s", pj_drain (pj));
-		fclose (panelsConfig);
+	if (file) {
+		fprintf (file, "%s", pj_drain (pj));
+		fclose (file);
 	}
 }
 
@@ -4483,10 +4492,9 @@ void __load_config_menu(RCore *core) {
 
 int __loadSavedPanelsLayout(RCore *core) {
 	int i, s;
-	char *panelsConfig;
 
 	char *configPath = __getPanelsConfigPath ();
-	panelsConfig = r_file_slurp (configPath, &s);
+	char *panelsConfig = r_file_slurp (configPath, &s);
 	free (configPath);
 	if (!panelsConfig) {
 		free (panelsConfig);
@@ -4538,6 +4546,13 @@ int __loadSavedPanelsLayout(RCore *core) {
 	}
 	__setRefreshAll (core, true);
 	return 1;
+}
+
+static bool __check_config_dup(RCore *core, const char *json, const char *check) {
+	if (!sdb_json_get_str (json, check)) {
+		return false;
+	}
+	return true;
 }
 
 void __maximizePanelSize(RPanels *panels) {
