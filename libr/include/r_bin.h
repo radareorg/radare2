@@ -357,10 +357,6 @@ typedef struct r_bin_xtr_extract_t {
 
 R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata);
 R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data);
-R_API void r_bin_info_free(RBinInfo *rb);
-R_API void r_bin_import_free(void *_imp);
-R_API void r_bin_symbol_free(void *_sym);
-R_API void r_bin_string_free(void *_str);
 
 typedef struct r_bin_xtr_plugin_t {
 	char *name;
@@ -625,6 +621,14 @@ typedef struct r_bin_bind_t {
 	RBinGetSectionAt get_vsect_at;
 	ut32 visibility;
 } RBinBind;
+
+R_IPI RBinSection *r_bin_section_new(const char *name);
+R_IPI void r_bin_section_free(RBinSection *bs);
+R_API void r_bin_info_free(RBinInfo *rb);
+R_API void r_bin_import_free(void *_imp);
+R_API void r_bin_symbol_free(void *_sym);
+R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr);
+R_API void r_bin_string_free(void *_str);
 
 #ifdef R_API
 

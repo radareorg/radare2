@@ -180,6 +180,16 @@ R_API const char *r_bin_symbol_name(RBinSymbol *s) {
 	return s->name;
 }
 
+R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	if (sym) {
+		sym->name = name? strdup (name): NULL;
+		sym->paddr = paddr;
+		sym->vaddr = vaddr;
+	}
+	return sym;
+}
+
 R_API void r_bin_symbol_free(void *_sym) {
 	RBinSymbol *sym = (RBinSymbol *)_sym;
 	if (sym) {
@@ -1415,6 +1425,14 @@ R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	default:
 		return NULL;
 	}
+}
+
+R_IPI RBinSection *r_bin_section_new(const char *name) {
+	RBinSection *s = R_NEW0 (RBinSection);
+	if (s) {
+		s->name = name? strdup (name): NULL;
+	}
+	return s;
 }
 
 R_IPI void r_bin_section_free(RBinSection *bs) {
