@@ -390,11 +390,7 @@ static const char *rotateAsmemu(RCore *core) {
 R_API void r_core_visual_showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
-		if (!x) {
-			r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
-		} else {
-			r_cons_enable_mouse (false);
-		}
+		r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
 	} else {
 		r_cons_enable_mouse (false);
 	}
