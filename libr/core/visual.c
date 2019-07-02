@@ -2242,8 +2242,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	if (ch < 2) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			if (y == 1 && x < 20) {
+			if (y == 1 && x < 40) {
 				ch = ':';
+			} else if (y == 2) {
+				if (x < 2) {
+					visual_closetab (core);
+				} else if (x < 5) {
+					visual_newtab (core);
+				} else {
+					visual_nexttab (core);
+				}
+				return 1;
 			} else {
 				ch = 'c';
 			}
