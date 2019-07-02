@@ -2868,7 +2868,7 @@ int __helpCb(void *user) {
 }
 
 int __licenseCb(void *user) {
-	r_cons_message ("Copyright 2006-2018 - pancake - LGPL");
+	r_cons_message ("Copyright 2006-2019 - pancake - LGPL");
 	return 0;
 }
 

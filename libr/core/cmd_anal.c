@@ -6,6 +6,7 @@
 
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
+	"a", "", "alias for aai - analysis information",
 	"a*", "", "same as afl*;ah*;ax*",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
@@ -22,6 +23,7 @@ static const char *help_msg_a[] = {
 	"ag", "[?] [options]", "draw graphs in various formats",
 	"ah", "[?]", "analysis hints (force opcode size, ...)",
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
+	"aj", "", "same as a* but in json (aflj)",
 	"aL", "", "list all asm/anal plugins (e asm.arch=?)",
 	"an"," [name] [@addr]","show/rename/create whatever flag/function is used at addr",
 	"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
@@ -9206,6 +9208,12 @@ static int cmd_anal(void *data, const char *input) {
 		} else {
 			r_cons_printf ("No plugins for this analysis plugin\n");
 		}
+		break;
+	case 'j': // "aj"
+		r_core_cmd0 (core, "aflj");
+		break;
+	case 0: // "a"
+		r_core_cmd0 (core, "aai");
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_a);
