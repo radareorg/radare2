@@ -446,24 +446,34 @@ void resizeWin(void) {
 	}
 }
 
+R_API void r_cons_set_click(int x, int y) {
+	I.click_x = x;
+	I.click_y = y;
+	I.click_set = true;;
+}
+
 R_API bool r_cons_get_click(int *x, int *y) {
 	if (x) {
-		*x = 0;
+		*x = I.click_x;
 	}
 	if (y) {
-		*y = 0;
+		*y = I.click_y;
 	}
-	return false;
+	bool set = I.click_set;
+	I.click_set = false;;
+	return set;
 }
 
 R_API bool r_cons_enable_mouse(const bool enable) {
 #if __UNIX__
 	const char *click = enable
 		? "\x1b[?1000;1006;1015h"
-		: "\x1b[?1000;1006;1015l";
+		: "\x1b[?1001r" "\x1b[?1000l";
+		// : "\x1b[?1000;1006;1015l";
+	// const char *old = enable ? "\x1b[?1001s" "\x1b[?1000h" : "\x1b[?1001r" "\x1b[?1000l";
 	bool enabled = I.mouse;
 	I.mouse = enable;
-	write (1, click, strlen (click));
+	write (2, click, strlen (click));
 	return enabled;
 #elif __WINDOWS__
 	DWORD mode, mouse;

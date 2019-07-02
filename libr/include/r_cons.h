@@ -500,6 +500,9 @@ typedef struct r_cons_t {
 	bool use_tts;
 	bool filter;
 	char* (*rgbstr)(char *str, size_t sz, ut64 addr);
+	bool click_set;
+	int click_x;
+	int click_y;
 	// TODO: move into instance? + avoid unnecessary copies
 } RCons;
 
@@ -768,6 +771,8 @@ R_API RCons *r_cons_singleton(void);
 R_API RCons *r_cons_free(void);
 R_API char *r_cons_lastline(int *size);
 R_API char *r_cons_lastline_utf8_ansi_len(int *len);
+R_API void r_cons_set_click(int x, int y);
+R_API bool r_cons_get_click(int *x, int *y);
 
 typedef void (*RConsBreak)(void *);
 R_API void r_cons_break_end(void);
