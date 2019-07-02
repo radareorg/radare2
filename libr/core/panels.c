@@ -5347,17 +5347,15 @@ repeat:
 	if (key == 0) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			if (y == 1) {
-		if (panels->mode == PANEL_MODE_MENU) {
+			if (panels->mode == PANEL_MODE_MENU) {
 				key = '\n';
-} else {
+			} else if (y == 1) { // click on first line (The menu
 				__setMode (core, PANEL_MODE_MENU);
 				__clearPanelsMenu (core);
 				__getCurPanel (panels)->view->refresh = true;
 				key = 'j';
-}
 			} else if (x < 20) {
-				key = 9;
+				key = 'c';
 			} else {
 				goto repeat;
 			}
