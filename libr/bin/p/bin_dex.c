@@ -1364,6 +1364,7 @@ static const ut8 *parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClas
 				sym->paddr = encoded_method_addr - bufbuf;
 				sym->vaddr = encoded_method_addr - bufbuf;
 			}
+			bin->code_from = R_MIN (bin->code_from, sym->paddr);
 			if ((MA & 1) == 1) {
 				sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
 			} else {
@@ -1396,7 +1397,7 @@ static const ut8 *parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClas
 				r_list_append (bin->methods_list, sym);
 				r_list_append (cls->methods, sym);
 
-				if (bin->code_from > sym->paddr) {
+				if (bin->code_from == UT64_MAX || bin->code_from > sym->paddr) {
 					bin->code_from = sym->paddr;
 				}
 				if (bin->code_to < sym->paddr) {
@@ -1717,7 +1718,7 @@ static bool dex_loadcode(RBinFile *bf) {
 			if (bin->methods[i].class_id >= bin->header.types_size) {
 				continue;
 			}
-			if (is_class_idx_in_code_classes(bin, bin->methods[i].class_id)) {
+			if (is_class_idx_in_code_classes (bin, bin->methods[i].class_id)) {
 				continue;
 			}
 			const char *className = getstr (bin, bin->types[bin->methods[i].class_id].descriptor_id);
@@ -1969,7 +1970,12 @@ static RList *sections(RBinFile *bf) {
 		ptr->name = strdup ("constpool");
 		//ptr->size = ptr->vsize = fsym;
 		ptr->paddr = ptr->vaddr = sizeof (struct dex_header_t);
-		ptr->size = bin->code_from - ptr->vaddr; // fix size
+		if (bin->code_from != UT64_MAX) {
+			ptr->size = bin->code_from - ptr->vaddr; // fix size
+		} else {
+			eprintf ("Warning: Invalid code size\n");
+			ptr->size = ptr->vaddr; // fix size
+		}
 		ptr->vsize = ptr->size;
 		ptr->format = r_str_newf ("Cd %d[%d]", 4, ptr->vsize / 4);
 		ptr->perm = R_PERM_R;
