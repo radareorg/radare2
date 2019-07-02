@@ -1034,35 +1034,40 @@ static const char *radare_argv[] = {
 	NULL
 };
 
+static void autocomplete_mount_point (RLineCompletion *completion, RCore *core, const char *path) {
+	RFSRoot *r;
+	RListIter *iter;
+	r_list_foreach (core->fs->roots, iter, r) {
+		char *base = strdup (r->path);
+		char *ls = (char *) r_str_lchr (base, '/');
+		if (ls) {
+			ls++;
+			*ls = 0;
+		}
+		if (!strcmp (path, base)) {
+			r_line_completion_push (completion, r->path);
+		}
+		free (base);
+	}
+}
+
 static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const char *str, const char *path) {
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
-	char *home = NULL, *p = NULL;
-  	char *pwd = *(core->rfs->cwd);
+	char *p = NULL;
+	char *pwd = (core->rfs && *(core->rfs->cwd)) ? *(core->rfs->cwd): ".";
 	int n = 0;
 	RList *list;
 	RListIter *iter;
 	RFSFile *file;
-
-	if (!path) {
-		goto out;
-	}
-
+	r_return_if_fail (path);
 	lpath = r_str_new (path);
 	p = (char *)r_str_last (lpath, R_SYS_DIR);
 	if (p) {
 		*p = 0;
 		if (p == lpath) { // /xxx
 			dirname  = r_str_new ("/");
-		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
-			dirname = r_str_home (lpath + 2);
-		} else if (lpath[0] == '~') { // ~/xxx
-			if (!(home = r_str_home (NULL))) {
-				goto out;
-			}
-			dirname = r_str_newf ("%s%s", home, R_SYS_DIR);
-			free (home);
 		} else if (lpath[0] == '.') { // ./xxx/yyy 
-			dirname = r_str_newf ("%s%s%s%s", pwd, R_SYS_DIR, lpath, R_SYS_DIR);
+			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
 		} else if (lpath[0] == '/') { // /xxx/yyy
       			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
     		} else { // xxx/yyy
@@ -1107,19 +1112,7 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 		}
 		r_list_free (list);
 	}
-  	RFSRoot *r;
-	r_list_foreach (core->fs->roots, iter, r) {
-		char *base = strdup (r->path);
-		char *ls = (char *) r_str_lchr (base, '/');
-		if (ls) {
-			ls++;
-			*ls = 0;
-		}
-		if (!strcmp (path, base)) {
-			r_line_completion_push (completion, r->path);
-		}
-		free (base);
-	}
+	autocomplete_mount_point (completion, core, path);
 out:
 	free (lpath);
 	free (dirname);
@@ -1447,7 +1440,7 @@ static void autocomplete_file(RLineCompletion *completion, const char *str) {
 static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const char *str) {
 	r_return_if_fail (str);
 	char *pipe = strchr (str, '>');
-  char *path = *(core->rfs->cwd);
+	char *path = (core->rfs && *(core->rfs->cwd)) ? *(core->rfs->cwd): "/";
 	if (pipe) {
 		str = r_str_trim_ro (pipe + 1);
 	}
@@ -1456,7 +1449,6 @@ static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const
 	} else {
 		autocomplete_ms_path (completion, core, str, str);
 	}
-
 }
 
 static void autocomplete_theme(RCore *core, RLineCompletion *completion, const char *str) {
@@ -1581,8 +1573,8 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 	case R_CORE_AUTOCMPLT_MACR:
 		autocomplete_macro (core, completion, p);
 		break;
-  case R_CORE_AUTOCMPLT_MS:
-    autocomplete_ms_file(core, completion, p);
+	case R_CORE_AUTOCMPLT_MS:
+		autocomplete_ms_file(core, completion, p);
 		break;
 	case R_CORE_AUTOCMPLT_FILE:
 		autocomplete_file (completion, p);
@@ -2241,149 +2233,161 @@ static void r_core_sleep_end (RCore *core, void *user) {
 	r_core_task_sleep_end (task);
 }
 
-static void init_autocomplete (RCore* core) {
+static void __init_autocomplete_default (RCore* core) {
+	int i;
+	r_core_autocomplete_add (core->autocomplete, "*", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "s", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "s+", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "b", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "f", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "fg", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "?", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "?v", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "ad", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "bf", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "c1", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "db", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "dbw", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "f-", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "fr", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "tf", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "/a", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "/v", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "/r", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "/re", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "aav", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "aep", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "aef", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "afb", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "afc", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "axg", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "axt", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "axf", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "dcu", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "ag", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "agfl", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "aecu", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "aesu", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "aeim", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "afi", R_CORE_AUTOCMPLT_FCN, true);
+	r_core_autocomplete_add (core->autocomplete, "afcf", R_CORE_AUTOCMPLT_FCN, true);
+	r_core_autocomplete_add (core->autocomplete, "afn", R_CORE_AUTOCMPLT_FCN, true);
+	/* evars */
+	r_core_autocomplete_add (core->autocomplete, "e", R_CORE_AUTOCMPLT_EVAL, true);
+	r_core_autocomplete_add (core->autocomplete, "ee", R_CORE_AUTOCMPLT_EVAL, true);
+	r_core_autocomplete_add (core->autocomplete, "et", R_CORE_AUTOCMPLT_EVAL, true);
+	r_core_autocomplete_add (core->autocomplete, "e?", R_CORE_AUTOCMPLT_EVAL, true);
+	r_core_autocomplete_add (core->autocomplete, "e!", R_CORE_AUTOCMPLT_EVAL, true);
+	r_core_autocomplete_add (core->autocomplete, "ev", R_CORE_AUTOCMPLT_EVAL, true);
+	r_core_autocomplete_add (core->autocomplete, "evj", R_CORE_AUTOCMPLT_EVAL, true);
+	/* cfg.editor */
+	r_core_autocomplete_add (core->autocomplete, "-", R_CORE_AUTOCMPLT_MINS, true);
+	/* breakpoints */
+	r_core_autocomplete_add (core->autocomplete, "db-", R_CORE_AUTOCMPLT_BRKP, true);
+	r_core_autocomplete_add (core->autocomplete, "dbc", R_CORE_AUTOCMPLT_BRKP, true);
+	r_core_autocomplete_add (core->autocomplete, "dbC", R_CORE_AUTOCMPLT_BRKP, true);
+	r_core_autocomplete_add (core->autocomplete, "dbd", R_CORE_AUTOCMPLT_BRKP, true);
+	r_core_autocomplete_add (core->autocomplete, "dbe", R_CORE_AUTOCMPLT_BRKP, true);
+	r_core_autocomplete_add (core->autocomplete, "dbs", R_CORE_AUTOCMPLT_BRKP, true);
+	r_core_autocomplete_add (core->autocomplete, "dbi", R_CORE_AUTOCMPLT_BRKP, true);
+	r_core_autocomplete_add (core->autocomplete, "dbte", R_CORE_AUTOCMPLT_BRKP, true);
+	r_core_autocomplete_add (core->autocomplete, "dbtd", R_CORE_AUTOCMPLT_BRKP, true);
+	r_core_autocomplete_add (core->autocomplete, "dbts", R_CORE_AUTOCMPLT_BRKP, true);
+	/* Project */
+	r_core_autocomplete_add (core->autocomplete, "Pc", R_CORE_AUTOCMPLT_PRJT, true);
+	r_core_autocomplete_add (core->autocomplete, "Pd", R_CORE_AUTOCMPLT_PRJT, true);
+	r_core_autocomplete_add (core->autocomplete, "Pi", R_CORE_AUTOCMPLT_PRJT, true);
+	r_core_autocomplete_add (core->autocomplete, "Po", R_CORE_AUTOCMPLT_PRJT, true);
+	r_core_autocomplete_add (core->autocomplete, "Ps", R_CORE_AUTOCMPLT_PRJT, true);
+	r_core_autocomplete_add (core->autocomplete, "P-", R_CORE_AUTOCMPLT_PRJT, true);
+	/* zignatures */
+	r_core_autocomplete_add (core->autocomplete, "zs", R_CORE_AUTOCMPLT_ZIGN, true);
+	/* flag spaces */
+	r_core_autocomplete_add (core->autocomplete, "fs", R_CORE_AUTOCMPLT_FLSP, true);
+	/* file path */
+	r_core_autocomplete_add (core->autocomplete, ".", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "..", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, ".*", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "/F", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "/m", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "!", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "!!", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "#!c", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "#!cpipe", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "#!vala", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "#!rust", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "#!zig", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "#!pipe", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "#!python", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "aeli", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "arp", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "cf", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "dg", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "dmd", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "drp", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "o", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "idp", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "idpi", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "L", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "obf", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "o+", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "oc", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "r2", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "rabin2", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "rasm2", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "rahash2", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "rax2", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "rafind2", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "cd", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "on", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "op", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "wf", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "rm", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "wF", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "wp", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "Sd", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "Sl", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "to", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "pm", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "/m", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "zos", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "zfd", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "zfs", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "zfz", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "cat", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "wta", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "wtf", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "wxf", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "dml", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "vim", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "less", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (r_core_autocomplete_add (core->autocomplete, "ls", R_CORE_AUTOCMPLT_DFLT, true), "-l", R_CORE_AUTOCMPLT_FILE, true);
+	/* macros */
+	r_core_autocomplete_add (core->autocomplete, ".(", R_CORE_AUTOCMPLT_MACR, true);
+	r_core_autocomplete_add (core->autocomplete, "(-", R_CORE_AUTOCMPLT_MACR, true);
+	/* cmd_mount */
+	r_core_autocomplete_add (core->autocomplete, "md", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "mg", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "mo", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "ms", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "mc", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "mi", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "mw", R_CORE_AUTOCMPLT_MS, true);
+	/* theme */
+	r_core_autocomplete_add (core->autocomplete, "eco", R_CORE_AUTOCMPLT_THME, true);
+	/* just for hints */
+	for (i = 0; i < radare_argc && radare_argv[i]; i++) {
+		if (!r_core_autocomplete_find (core->autocomplete, radare_argv[i], true)) {
+			r_core_autocomplete_add (core->autocomplete, radare_argv[i], R_CORE_AUTOCMPLT_DFLT, true);
+		}
+	}
+}
+
+static void __init_autocomplete (RCore* core) {
 	int i;
 	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
-		/* flags */
-		r_core_autocomplete_add (core->autocomplete, "*", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "s", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "s+", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "b", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "f", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "fg", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "?", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "?v", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "ad", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "bf", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "c1", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "db", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "dbw", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "f-", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "fr", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "tf", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "/a", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "/v", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "/r", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "/re", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "aav", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "aep", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "aef", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "afb", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "afc", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "axg", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "axt", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "axf", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "dcu", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "ag", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "agfl", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "aecu", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "aesu", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "aeim", R_CORE_AUTOCMPLT_FLAG, true);
-		r_core_autocomplete_add (core->autocomplete, "afi", R_CORE_AUTOCMPLT_FCN, true);
-		r_core_autocomplete_add (core->autocomplete, "afcf", R_CORE_AUTOCMPLT_FCN, true);
-		r_core_autocomplete_add (core->autocomplete, "afn", R_CORE_AUTOCMPLT_FCN, true);
-		/* evars */
-		r_core_autocomplete_add (core->autocomplete, "e", R_CORE_AUTOCMPLT_EVAL, true);
-		r_core_autocomplete_add (core->autocomplete, "ee", R_CORE_AUTOCMPLT_EVAL, true);
-		r_core_autocomplete_add (core->autocomplete, "et", R_CORE_AUTOCMPLT_EVAL, true);
-		r_core_autocomplete_add (core->autocomplete, "e?", R_CORE_AUTOCMPLT_EVAL, true);
-		r_core_autocomplete_add (core->autocomplete, "e!", R_CORE_AUTOCMPLT_EVAL, true);
-		r_core_autocomplete_add (core->autocomplete, "ev", R_CORE_AUTOCMPLT_EVAL, true);
-		r_core_autocomplete_add (core->autocomplete, "evj", R_CORE_AUTOCMPLT_EVAL, true);
-		/* cfg.editor */
-		r_core_autocomplete_add (core->autocomplete, "-", R_CORE_AUTOCMPLT_MINS, true);
-		/* breakpoints */
-		r_core_autocomplete_add (core->autocomplete, "db-", R_CORE_AUTOCMPLT_BRKP, true);
-		r_core_autocomplete_add (core->autocomplete, "dbc", R_CORE_AUTOCMPLT_BRKP, true);
-		r_core_autocomplete_add (core->autocomplete, "dbC", R_CORE_AUTOCMPLT_BRKP, true);
-		r_core_autocomplete_add (core->autocomplete, "dbd", R_CORE_AUTOCMPLT_BRKP, true);
-		r_core_autocomplete_add (core->autocomplete, "dbe", R_CORE_AUTOCMPLT_BRKP, true);
-		r_core_autocomplete_add (core->autocomplete, "dbs", R_CORE_AUTOCMPLT_BRKP, true);
-		r_core_autocomplete_add (core->autocomplete, "dbi", R_CORE_AUTOCMPLT_BRKP, true);
-		r_core_autocomplete_add (core->autocomplete, "dbte", R_CORE_AUTOCMPLT_BRKP, true);
-		r_core_autocomplete_add (core->autocomplete, "dbtd", R_CORE_AUTOCMPLT_BRKP, true);
-		r_core_autocomplete_add (core->autocomplete, "dbts", R_CORE_AUTOCMPLT_BRKP, true);
-		/* Project */
-		r_core_autocomplete_add (core->autocomplete, "Pc", R_CORE_AUTOCMPLT_PRJT, true);
-		r_core_autocomplete_add (core->autocomplete, "Pd", R_CORE_AUTOCMPLT_PRJT, true);
-		r_core_autocomplete_add (core->autocomplete, "Pi", R_CORE_AUTOCMPLT_PRJT, true);
-		r_core_autocomplete_add (core->autocomplete, "Po", R_CORE_AUTOCMPLT_PRJT, true);
-		r_core_autocomplete_add (core->autocomplete, "Ps", R_CORE_AUTOCMPLT_PRJT, true);
-		r_core_autocomplete_add (core->autocomplete, "P-", R_CORE_AUTOCMPLT_PRJT, true);
-		/* zignatures */
-		r_core_autocomplete_add (core->autocomplete, "zs", R_CORE_AUTOCMPLT_ZIGN, true);
-		/* flag spaces */
-		r_core_autocomplete_add (core->autocomplete, "fs", R_CORE_AUTOCMPLT_FLSP, true);
-		/* file path */
-		r_core_autocomplete_add (core->autocomplete, ".", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "..", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, ".*", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "/F", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "/m", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "!", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "!!", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "#!c", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "#!cpipe", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "#!vala", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "#!rust", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "#!zig", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "#!pipe", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "#!python", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "aeli", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "arp", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "cf", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "dg", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "dmd", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "drp", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "o", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "idp", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "idpi", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "L", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "obf", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "o+", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "oc", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "r2", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "rabin2", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "rasm2", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "rahash2", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "rax2", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "rafind2", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "cd", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "on", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "op", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "wf", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "rm", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "wF", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "wp", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "Sd", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "Sl", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "to", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "pm", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "/m", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "zos", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "zfd", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "zfs", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "zfz", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "cat", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "wta", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "wtf", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "wxf", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "dml", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "vim", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (core->autocomplete, "less", R_CORE_AUTOCMPLT_FILE, true);
-		r_core_autocomplete_add (r_core_autocomplete_add (core->autocomplete, "ls", R_CORE_AUTOCMPLT_DFLT, true), "-l", R_CORE_AUTOCMPLT_FILE, true);
-		/* macros */
-		r_core_autocomplete_add (core->autocomplete, ".(", R_CORE_AUTOCMPLT_MACR, true);
-		r_core_autocomplete_add (core->autocomplete, "(-", R_CORE_AUTOCMPLT_MACR, true);
-		/* theme */
-		r_core_autocomplete_add (core->autocomplete, "eco", R_CORE_AUTOCMPLT_THME, true);
-		/* just for hints */
-		for (i = 0; i < radare_argc && radare_argv[i]; i++) {
-			if (!r_core_autocomplete_find (core->autocomplete, radare_argv[i], true)) {
-				r_core_autocomplete_add (core->autocomplete, radare_argv[i], R_CORE_AUTOCMPLT_DFLT, true);
-			}
-		}
+		__init_autocomplete_default (core);
 	} else if (core->autocomplete_type == AUTOCOMPLETE_MS) {
 		r_core_autocomplete_add (core->autocomplete, "ls", R_CORE_AUTOCMPLT_MS, true);
 		r_core_autocomplete_add (core->autocomplete, "cd", R_CORE_AUTOCMPLT_MS, true);
@@ -2483,7 +2487,7 @@ static RFlagItem *core_flg_fcn_set(RFlag *f, const char *name, ut64 addr, ut32 s
 R_API void r_core_autocomplete_reload (RCore *core) {
 	r_return_if_fail (core);
 	r_core_autocomplete_free (core->autocomplete);
-	init_autocomplete (core);
+	__init_autocomplete (core);
 }
 
 R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off) {
@@ -2731,7 +2735,7 @@ R_API bool r_core_init(RCore *core) {
 		}
 	}
 	r_core_anal_type_init (core);
-	init_autocomplete (core);
+	__init_autocomplete (core);
 	return 0;
 }
 
