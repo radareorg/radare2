@@ -3408,6 +3408,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		,"[Vd]- Define current block as:"
 		," $    define flag size"
 		," 1    edit bits"
+		," a    assembly"
 		," b    set as byte"
 		," B    set as short word (2 bytes)"
 		," c    set as code"
@@ -3506,6 +3507,9 @@ onemoretime:
 				r_core_cmdf (core, "ahi1 %s @ 0x%"PFMT64x, str, off);
 			}
 		}
+		break;
+	case 'a':
+		r_core_visual_asm (core, off);
 		break;
 	case 'b':
 		if (plen != core->blocksize) {
