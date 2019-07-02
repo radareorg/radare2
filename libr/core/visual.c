@@ -2246,11 +2246,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	if (ch < 2) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			eprintf ("CLICK %d %d\n", x, y);
 			if (y == 1 && x < 20) {
 				ch = ':';
 			} else {
-				return 1;
+				ch = 'c';
 			}
 		} else {
 			return 1;
@@ -2434,7 +2433,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				}
 				if (!canWrite (core, addr)) {
-					r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
+					r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
 					r_cons_any_key (NULL);
 					return true;
 				}
@@ -2707,7 +2706,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			if (!canWrite (core, addr)) {
-				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
+				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
 				r_cons_any_key (NULL);
 				return true;
 			}
