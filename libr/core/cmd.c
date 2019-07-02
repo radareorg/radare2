@@ -1749,6 +1749,7 @@ static struct autocomplete_flag_map_t {
 	{ "$file", "hints file paths", R_CORE_AUTOCMPLT_FILE },
 	{ "$thme", "shows known themes hints", R_CORE_AUTOCMPLT_THME },
 	{ "$optn", "allows the selection for multiple options", R_CORE_AUTOCMPLT_OPTN },
+	{ "$ms", "shows mount hints", R_CORE_AUTOCMPLT_MS},
 	{ NULL, NULL, 0 }
 };
 
