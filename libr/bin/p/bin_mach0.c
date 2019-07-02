@@ -8,6 +8,8 @@
 #include "mach0/mach0.h"
 #include "objc/mach0_classes.h"
 
+// wip settings
+
 extern RBinWrite r_bin_write_mach0;
 
 static RBinInfo *info(RBinFile *bf);
@@ -165,10 +167,16 @@ static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
 	}
 }
 
+#if FEATURE_SYMLIST
+static RList *symbols(RBinFile *bf) {
+	RBinObject *obj = bf? bf->o: NULL;
+	return (RList *)MACH0_(get_symbols_list) (obj->bin_obj);
+}
+#else
 static RList *symbols(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin;
 	int i;
-	const struct symbol_t *symbols = NULL;
+	const struct symbol_t *syms = NULL;
 	RBinSymbol *ptr = NULL;
 	RBinObject *obj = bf? bf->o: NULL;
 	RList *ret = r_list_newf (free);
@@ -187,19 +195,19 @@ static RList *symbols(RBinFile *bf) {
 	wordsize = MACH0_(get_bits) (obj->bin_obj);
 
 	// OLD CODE
-	if (!(symbols = MACH0_(get_symbols) (obj->bin_obj))) {
+	if (!(syms = MACH0_(get_symbols) (obj->bin_obj))) {
 		return ret;
 	}
 	Sdb *symcache = sdb_new0 ();
 	bin = (struct MACH0_(obj_t) *) obj->bin_obj;
-	for (i = 0; !symbols[i].last; i++) {
-		if (!symbols[i].name[0] || symbols[i].addr < 100) {
+	for (i = 0; !syms[i].last; i++) {
+		if (!syms[i].name[0] || syms[i].addr < 100) {
 			continue;
 		}
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			break;
 		}
-		ptr->name = strdup ((char*)symbols[i].name);
+		ptr->name = strdup ((char*)syms[i].name);
 		if (ptr->name[0] == '_' && strncmp (ptr->name, "imp.", 4)) {
 			char *dn = r_bin_demangle (bf, ptr->name, ptr->name, ptr->vaddr);
 			if (dn) {
@@ -220,12 +228,12 @@ static RList *symbols(RBinFile *bf) {
 			}
 		}
 		ptr->forwarder = r_str_const ("NONE");
-		ptr->bind = r_str_const ((symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
+		ptr->bind = r_str_const ((syms[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
 				R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR);
 		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
-		ptr->vaddr = symbols[i].addr;
-		ptr->paddr = symbols[i].offset + obj->boffset;
-		ptr->size = symbols[i].size;
+		ptr->vaddr = syms[i].addr;
+		ptr->paddr = syms[i].offset + obj->boffset;
+		ptr->size = syms[i].size;
 		if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 			_handle_arm_thumb (bin, &ptr);
 		}
@@ -270,7 +278,7 @@ static RList *symbols(RBinFile *bf) {
 				_handle_arm_thumb (bin, &ptr);
 			}
 			r_list_append (ret, ptr);
-			// if any func is not found in symbols then we can consider it is stripped
+			// if any func is not found in syms then we can consider it is stripped
 			if (!isStripped) {
 				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, ptr->vaddr);
 				if (!sdb_const_get (symcache, symstr, 0)) {
@@ -292,6 +300,7 @@ static RList *symbols(RBinFile *bf) {
 	sdb_free (symcache);
 	return ret;
 }
+#endif // FEATURE_SYMLIST
 
 static RBinImport *import_from_name(const char *orig_name, HtPP *imports_by_name) {
 	if (imports_by_name) {
