@@ -48,7 +48,6 @@ R_API int r_cons_controlz(int ch) {
 // 97 - wheel down
 // 95 - mouse up
 // 92 - mouse down
-
 static int __parseMouseEvent() {
 	char xpos[32];
 	char ypos[32];
@@ -59,7 +58,6 @@ static int __parseMouseEvent() {
 	// [35M - mouseup
 	if (ch2 == ';') {
 		int i;
-repeat:
 		// read until next ;
 		for (i = 0; i < sizeof (xpos); i++) {
 			char ch = r_cons_readchar ();
@@ -77,20 +75,17 @@ repeat:
 			ypos[i] = ch;
 		}
 		ypos[i] = 0;
-		eprintf ("CLICK (%s) (%s)\n", xpos, ypos);
+		r_cons_set_click (atoi (xpos), atoi (ypos));
 		ch = r_cons_readchar ();
 		// ignored
 		int ch = r_cons_readchar ();
 		if (ch == 27) {
 			ch = r_cons_readchar (); // '['
-			eprintf ("CH %c\n", ch);
-			ch = r_cons_readchar (); // '3'
-			eprintf ("CH %c\n", ch);
-			ch = r_cons_readchar (); // '0'
-			eprintf ("CH %c\n", ch);
-			ch = r_cons_readchar (); // ';'
-			eprintf ("CH %c\n", ch);
-			goto repeat;
+		}
+		if (ch == '[') {
+			do {
+				ch = r_cons_readchar (); // '3'
+			} while (ch != 'M');
 		}
 	}
 	return 0;

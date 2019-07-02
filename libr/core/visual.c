@@ -391,13 +391,7 @@ R_API void r_core_visual_showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
 		if (!x) {
-			// TODO: cache this
-			int wheel = r_config_get_i (core->config, "scr.wheel");
-			if (wheel) {
-				r_cons_enable_mouse (true);
-			} else {
-				r_cons_enable_mouse (false);
-			}
+			r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
 		} else {
 			r_cons_enable_mouse (false);
 		}
@@ -1473,10 +1467,7 @@ repeat:
 		r_config_set_i (core->config, "asm.bytes", asm_bytes);
 	}
 	r_cons_flush ();
-	int wheel = r_config_get_i (core->config, "scr.wheel");
-	if (wheel > 0) {
-		r_cons_enable_mouse (true);
-	}
+	r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
 	ch = r_cons_readchar ();
 	ch = r_cons_arrow_to_hjkl (ch);
 	if (ch == ':') {
@@ -2253,7 +2244,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ch = r_cons_arrow_to_hjkl (ch);
 	ch = visual_nkey (core, ch);
 	if (ch < 2) {
-		return 1;
+		int x, y;
+		if (r_cons_get_click (&x, &y)) {
+			eprintf ("CLICK %d %d\n", x, y);
+			if (y == 1 && x < 20) {
+				ch = ':';
+			} else {
+				return 1;
+			}
+		} else {
+			return 1;
+		}
 	}
 	if (r_cons_singleton ()->mouse_event) {
 		wheelspeed = r_config_get_i (core->config, "scr.wheel.speed");
@@ -2518,9 +2519,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'A':
 		{
-			int oce = core->print->cur_enabled;
-			int oco = core->print->ocur;
-			int occ = core->print->cur;
+			const int oce = core->print->cur_enabled;
+			const int oco = core->print->ocur;
+			const int occ = core->print->cur;
 			ut64 off = oce? core->offset + core->print->cur: core->offset;
 			core->print->cur_enabled = 0;
 			r_cons_enable_mouse (false);
@@ -2528,8 +2529,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			core->print->cur_enabled = oce;
 			core->print->cur = occ;
 			core->print->ocur = oco;
-			int wheel = r_config_get_i (core->config, "scr.wheel");
-			if (wheel) {
+			if (r_config_get_i (core->config, "scr.wheel")) {
 				r_cons_enable_mouse (true);
 			}
 		}
@@ -4123,7 +4123,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *teefile;
 	ut64 scrseek;
-	int wheel, flags, ch;
+	int flags, ch;
 	bool skip;
 	char arg[2] = {
 		input[0], 0
@@ -4170,7 +4170,6 @@ dodo:
 		r_cons_show_cursor (false);
 		r_cons_set_raw (1);
 		const int ref = r_config_get_i (core->config, "dbg.slow");
-
 #if 1
 		// This is why multiple debug views dont work
 		if (core->printidx == R_CORE_VISUAL_MODE_DB) {
@@ -4200,11 +4199,8 @@ dodo:
 			printfmtSingle[2] = debugstr;
 		}
 #endif
-		wheel = r_config_get_i (core->config, "scr.wheel");
 		r_cons_show_cursor (false);
-		if (wheel) {
-			r_cons_enable_mouse (true);
-		}
+		r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;
 		core->cons->event_resize = (RConsEvent) visual_refresh_oneshot;

@@ -1938,6 +1938,12 @@ static bool cb_fps(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scrwheel(void* user, void* data) {
+	RConfigNode *node = (RConfigNode*) data;
+	r_cons_enable_mouse (node->i_value);
+	return true;
+}
+
 static bool cb_scrbreakword(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value) {
@@ -3410,7 +3416,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("scr.wheel.speed", 4, "Mouse wheel speed");
 #endif
 	SETPREF ("scr.wheel.nkey", "false", "Use sn/sp and scr.nkey on wheel instead of scroll");
-	SETPREF ("scr.wheel", "true", "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
+	// RENAME TO scr.mouse
+	SETCB ("scr.wheel", "true", &cb_scrwheel, "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
 	// DEPRECATED: USES hex.cols now SETI ("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "Emulate console break (^C) when a word is printed (useful for pD)");
 	SETCB ("scr.breaklines", "false", &cb_breaklines, "Break lines in Visual instead of truncating them");

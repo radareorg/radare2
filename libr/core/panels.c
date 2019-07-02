@@ -5329,22 +5329,42 @@ repeat:
 	__panels_layout_refresh (core);
 	RPanel *cur = __getCurPanel (panels);
 	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-		if (panels->mode != PANEL_MODE_MENU) {
-			okey = r_cons_readchar_timeout (300);
-			if (okey == -1) {
-				cur->view->refresh = true;
-				goto repeat;
-			}
-		} else {
+		if (panels->mode == PANEL_MODE_MENU) {
 			panels->fun = PANEL_FUN_NOFUN;
 			__resetSnow (panels);
 			__setRefreshAll (core, false, false);
+			goto repeat;
+		}
+		okey = r_cons_readchar_timeout (300);
+		if (okey == -1) {
+			cur->view->refresh = true;
 			goto repeat;
 		}
 	} else {
 		okey = r_cons_readchar ();
 	}
 	key = r_cons_arrow_to_hjkl (okey);
+	if (key == 0) {
+		int x, y;
+		if (r_cons_get_click (&x, &y)) {
+			if (y == 1) {
+		if (panels->mode == PANEL_MODE_MENU) {
+				key = '\n';
+} else {
+				__setMode (core, PANEL_MODE_MENU);
+				__clearPanelsMenu (core);
+				__getCurPanel (panels)->view->refresh = true;
+				key = 'j';
+}
+			} else if (x < 20) {
+				key = 9;
+			} else {
+				goto repeat;
+			}
+		} else {
+			goto repeat;
+		}
+	}
 	r_cons_switchbuf (true);
 
 	if (panels->mode == PANEL_MODE_MENU) {
