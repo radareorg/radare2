@@ -1,10 +1,5 @@
 /* radare - LGPL - Copyright 2009-2019 // pancake */
 
-#define ms_argc (sizeof (ms_argv) / sizeof(const char*) - 1)
-static const char *ms_argv[] = {
-	"?", "!", "ls", "cd", "cat", "get", "mount", "help", "q", "exit", NULL
-};
-
 static const char *help_msg_m[] = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
 	"m", "", "List all mountpoints in human readable format",
@@ -14,7 +9,7 @@ static const char *help_msg_m[] = {
 	"m", " /mnt", "Mount fs at /mnt with autodetect fs and current offset",
 	"m", " /mnt ext2 0", "Mount ext2 fs at /mnt with delta 0 on IO",
 	"m-/", "", "Umount given path (/)",
-	"mc", "[file]", "Cat: Show the contents of the given file",
+	"mc", " [file]", "Cat: Show the contents of the given file",
 	"md", " /", "List directory contents for path",
 	"mf", "[?] [o|n]", "Search files for given filename or for offset",
 	"mg", " /foo", "Get fs file/dir and dump it to disk",
@@ -47,72 +42,7 @@ static int cmd_mv(void *data, const char *input) {
 }
 
 static char *cwd = NULL;
-static char * av[1024] = {NULL};
 #define av_max 1024
-
-static char **getFilesFor(RCore *core, const char *path, int *ac) {
-	RFS *fs = core->fs;
-	RListIter *iter;
-	RFSFile *file;
-	char *full_path;
-	char *lpath = strdup (path);
-	
-	if (!lpath) {
-		return NULL;
-	}
-
-	r_str_trim_head (lpath);
-	if (lpath[0] != '/') {
-		full_path = r_str_newf ("%s/%s", cwd, lpath);
-	} else {
-		full_path = strdup (lpath);
-	}
-	free (lpath);
-
-	//eprintf ("autocompleting for path '%s'\n", full_path);
-
-	RList *list = r_fs_dir (fs, full_path);
-	int count = 0;
-	if (list) {
-		r_list_foreach (list, iter, file) {
-			eprintf ("==> %c %s\n", file->type, file->name);
-			if (count >= av_max) {
-				break;
-			}
-			av[count++] = file->name;
-		}
-		r_list_free (list);
-	}
-	// autocomplete mountpoints
-	// mountpoints if any
-	RFSRoot *r;
-	char *me = strdup (full_path);
-	r_list_foreach (fs->roots, iter, r) {
-		char *base = strdup (r->path);
-		char *ls = (char *) r_str_lchr (base, '/');
-		if (ls) {
-			ls++;
-			*ls = 0;
-		}
-		// TODO: adjust contents between //
-		if (!strcmp (me, base)) {
-			//eprintf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
-			if (count >= av_max) {
-				break;
-			}
-			av[count++] = r->path;
-		}
-		free (base);
-	}
-	free (me);
-	free (full_path);
-	av[count] = NULL;
-	if (ac) {
-		*ac = count;
-	}
-	av[3] = NULL;
-	return av;
-}
 
 static const char *t2s(const char ch) {
 	switch (ch) {
