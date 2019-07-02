@@ -75,7 +75,7 @@ static RBinXtrData *extract(RBin* bin, int idx) {
 		free (arch);
 		return NULL;
 	}
-	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr_from_buffer) (arch->b);
+	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (arch->b);
 	if (!hdr) {
 		free (metadata);
 		free (arch);
@@ -102,7 +102,7 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	if (arch) {
 		RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
 		if (metadata) {
-			struct MACH0_(mach_header) *hdr = MACH0_(get_hdr_from_buffer) (arch->b);
+			struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (arch->b);
 			if (hdr) {
 				fill_metadata_info_from_hdr (metadata, hdr);
 				RBinXtrData *res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);

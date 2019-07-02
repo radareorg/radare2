@@ -2550,10 +2550,12 @@ beach:
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin && bin->sects, NULL);
 
+#if 0
 	/* it's probably a dylib */
 	if (!bin->entry) {
 		return NULL;
 	}
+#endif
 
 	struct addr_t *entry = R_NEW0 (struct addr_t);
 	if (!entry) {
@@ -2991,7 +2993,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 	RBuffer *buf = bf->buf;
 	ut64 length = r_buf_size (buf);
 	int n = 0;
-	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_buffer)(buf);
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf);
 	if (!mh) {
 		return;
 	}
@@ -3129,7 +3131,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 }
 
 RList *MACH0_(mach_fields)(RBinFile *bf) {
-	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_buffer)(bf->buf);
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(bf->buf);
 	if (!mh) {
 		return NULL;
 	}
@@ -3140,6 +3142,11 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 	}
 	ret->free = free;
 	ut64 addr = 0;
+
+#if 0
+	RBinField *field = r_binfield_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt);
+	r_binfile_add_field (bf, field);
+#endif
 
 #define ROW(nam,siz,val,fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt)); \
@@ -3154,7 +3161,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 	return ret;
 }
 
-struct MACH0_(mach_header) *MACH0_(get_hdr_from_buffer)(RBuffer *buf) {
+struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf) {
 	ut8 magicbytes[sizeof (ut32)] = {0};
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = {0};
 	int len;

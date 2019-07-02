@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2018 - pancake */
+/* radare - LGPL - Copyright 2011-2019 - pancake */
 
 #include <r_bin.h>
 #include "i/private.h"
@@ -13,11 +13,11 @@ R_API void r_bin_demangle_list(RBin *bin) {
 		return;
 	}
 	for (i = 0; langs[i]; i++) {
-		eprintf ("%s\n", langs[i]);
+		bin->cb_printf ("%s\n", langs[i]);
 	}
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->demangle) {
-			eprintf ("%s\n", plugin->name);
+			bin->cb_printf ("%s\n", plugin->name);
 		}
 	}
 }
@@ -36,40 +36,39 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 }
 
 R_API int r_bin_demangle_type(const char *str) {
-	if (!str || !*str) {
-		return R_BIN_NM_NONE;
-	}
-	if (!strcmp (str, "swift")) {
-		return R_BIN_NM_SWIFT;
-	}
-	if (!strcmp (str, "java")) {
-		return R_BIN_NM_JAVA;
-	}
-	if (!strcmp (str, "objc")) {
-		return R_BIN_NM_OBJC;
-	}
-	if (!strcmp (str, "cxx") || !strcmp (str, "c++")) {
-		return R_BIN_NM_CXX;
-	}
-	if (!strcmp (str, "dlang")) {
-		return R_BIN_NM_DLANG;
-	}
-	if (!strcmp (str, "msvc")) {
-		return R_BIN_NM_MSVC;
-	}
-	if (!strcmp (str, "rust")) {
-		return R_BIN_NM_RUST;
+	if (str && *str) {
+		if (!strcmp (str, "swift")) {
+			return R_BIN_NM_SWIFT;
+		}
+		if (!strcmp (str, "java")) {
+			return R_BIN_NM_JAVA;
+		}
+		if (!strcmp (str, "objc")) {
+			return R_BIN_NM_OBJC;
+		}
+		if (!strcmp (str, "cxx") || !strcmp (str, "c++")) {
+			return R_BIN_NM_CXX;
+		}
+		if (!strcmp (str, "dlang")) {
+			return R_BIN_NM_DLANG;
+		}
+		if (!strcmp (str, "msvc")) {
+			return R_BIN_NM_MSVC;
+		}
+		if (!strcmp (str, "rust")) {
+			return R_BIN_NM_RUST;
+		}
 	}
 	return R_BIN_NM_NONE;
 }
 
-R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str, ut64 vaddr) {
+R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 vaddr) {
 	int type = -1;
 	if (!str || !*str) {
 		return NULL;
 	}
-	RBin *bin = binfile? binfile->rbin: NULL;
-	RBinObject *o = binfile? binfile->o: NULL;
+	RBin *bin = bf? bf->rbin: NULL;
+	RBinObject *o = bf? bf->o: NULL;
 	RListIter *iter;
 	const char *lib;
 	if (!strncmp (str, "reloc.", 6)) {
@@ -106,14 +105,14 @@ R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str, 
 		return NULL;
 	}
 	if (type == -1) {
-		type = r_bin_lang_type (binfile, def, str);
+		type = r_bin_lang_type (bf, def, str);
 	}
 	switch (type) {
 	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);
-	case R_BIN_NM_RUST: return r_bin_demangle_rust (binfile, str, vaddr);
+	case R_BIN_NM_RUST: return r_bin_demangle_rust (bf, str, vaddr);
 	case R_BIN_NM_OBJC: return r_bin_demangle_objc (NULL, str);
 	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str, bin? bin->demanglercmd: false);
-	case R_BIN_NM_CXX: return r_bin_demangle_cxx (binfile, str, vaddr);
+	case R_BIN_NM_CXX: return r_bin_demangle_cxx (bf, str, vaddr);
 	case R_BIN_NM_MSVC: return r_bin_demangle_msvc (str);
 	case R_BIN_NM_DLANG: return r_bin_demangle_plugin (bin, "dlang", str);
 	}
