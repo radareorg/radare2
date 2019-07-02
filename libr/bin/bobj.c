@@ -471,7 +471,7 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
 }
 
 R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
-	r_return_if_fail (bo);
+	r_return_if_fail (bo && bo->strings);
 
 	RList *strings = bo->strings;
 	RBinString *ptr;

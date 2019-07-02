@@ -3,7 +3,7 @@
 #include <r_bin.h>
 #include "i/private.h"
 
-static char *hashify(char *s, ut64 vaddr) {
+static char *__hashify(char *s, ut64 vaddr) {
 	r_return_val_if_fail (s, NULL);
 
 	char *os = s;
@@ -44,7 +44,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 	}
 	sdb_num_set (db, sdb_fmt ("%x", vhash), 1, 0);
 	if (vaddr) {
-		char *p = hashify (resname, vaddr);
+		char *p = __hashify (resname, vaddr);
 		if (p) {
 			resname = p;
 		}
@@ -158,7 +158,7 @@ static bool false_positive(const char *str) {
 		bo[i] = 0;
 	}
 	for (i = 0; str[i]; i++) {
-		if (IS_DIGIT(str[i])) {
+		if (IS_DIGIT (str[i])) {
 			nm++;
 		} else if (str[i]>='a' && str[i]<='z') {
 			lo++;
