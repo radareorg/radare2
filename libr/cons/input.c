@@ -185,6 +185,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			ch = r_cons_readchar ();
 			// 6 is up
 			// 7 is down
+			I->mouse_event = 1;
 			if (ch == '6') {
 				ch = 'k';
 			} else if (ch == '7') {
