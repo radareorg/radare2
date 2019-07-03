@@ -1362,8 +1362,6 @@ static void ds_atabs_option(RDisasmState *ds) {
 	if (size < 1 || size < bufasm_len) {
 		return;
 	}
-	free (ds->opstr);
-	ds->opstr = b = malloc (size + 1);
 	if (!b) {
 		return;
 	}
