@@ -33,7 +33,7 @@ static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
 
-static int getoffset(RBin *bin, int type, int idx) {
+static int __getoffset(RBin *bin, int type, int idx) {
 	RBinFile *a = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
 	if (plugin && plugin->get_offset) {
@@ -42,7 +42,7 @@ static int getoffset(RBin *bin, int type, int idx) {
 	return -1;
 }
 
-static const char *getname(RBin *bin, int type, int idx) {
+static const char *__getname(RBin *bin, int type, int idx) {
 	RBinFile *a = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
 	if (plugin && plugin->get_name) {
@@ -178,6 +178,16 @@ R_API const char *r_bin_symbol_name(RBinSymbol *s) {
 		return sdb_fmt ("%s_%d", s->name, s->dup_count);
 	}
 	return s->name;
+}
+
+R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	if (sym) {
+		sym->name = name? strdup (name): NULL;
+		sym->paddr = paddr;
+		sym->vaddr = vaddr;
+	}
+	return sym;
 }
 
 R_API void r_bin_symbol_free(void *_sym) {
@@ -399,31 +409,6 @@ R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
 	return NULL;
 }
 
-// XXX this api must die. See #11920
-R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64 sz) {
-	RBinPlugin *plugin;
-	RListIter *it;
-
-eprintf ("r_bin_get_binplugin_by_bytes is deprecated. Use r_bin_get_binplugin_by_buffer instead\n");
-	r_return_val_if_fail (bin && bytes, NULL);
-
-	r_list_foreach (bin->plugins, it, plugin) {
-		if (plugin->check_buffer) {
-			RBuffer *b = r_buf_new_with_pointers (bytes, sz, false);
-			if (b) {
-				bool ok = plugin->check_buffer (b);
-				r_buf_free (b);
-				if (ok) {
-					return plugin;
-				}
-			}
-		} else if (plugin->check_bytes && plugin->check_bytes (bytes, sz)) {
-			return plugin;
-		}
-	}
-	return NULL;
-}
-
 R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf) {
 	RBinPlugin *plugin;
 	RListIter *it;
@@ -433,13 +418,6 @@ R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf) {
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->check_buffer) {
 			if (plugin->check_buffer (buf)) {
-				return plugin;
-			}
-		} else if (plugin->check_bytes) {
-			eprintf ("Deprecate plugin->check_bytes for '%s' please\n", plugin->name);
-			ut64 sz;
-			const ut8 *bytes = r_buf_data (buf, &sz);
-			if (plugin->check_bytes (bytes, sz)) {
 				return plugin;
 			}
 		}
@@ -462,14 +440,6 @@ R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 		xtr = NULL;
 	}
 	return NULL;
-}
-
-// TODO: deprecate
-R_IPI RBinPlugin *r_bin_get_binplugin_any(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
-	RBinPlugin *res = r_bin_get_binplugin_by_name (bin, "any");
-	r_warn_if_fail (res);
-	return res;
 }
 
 static void r_bin_plugin_free(RBinPlugin *p) {
@@ -1179,47 +1149,42 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
 	bin->user = user;
 }
 
-static RBinSection* _get_vsection_at(RBin *bin, ut64 vaddr) {
+static RBinSection* __get_vsection_at(RBin *bin, ut64 vaddr) {
 	r_return_val_if_fail (bin, NULL);
 	if (!bin->cur) {
 		return NULL;
 	}
-	RBinObject *cur = bin->cur->o;
-	return r_bin_get_section_at (cur, vaddr, true);
+	return r_bin_get_section_at (bin->cur->o, vaddr, true);
 }
 
 R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 	if (b) {
 		b->bin = bin;
-		b->get_offset = getoffset;
-		b->get_name = getname;
+		b->get_offset = __getoffset;
+		b->get_name = __getname;
 		b->get_sections = r_bin_get_sections;
-		b->get_vsect_at = _get_vsection_at;
+		b->get_vsect_at = __get_vsection_at;
 	}
 }
 
-R_API RBuffer *r_bin_create(RBin *bin, const char *plugin_name,
-	const ut8 *code, int codelen, const ut8 *data, int datalen,
+R_API RBuffer *r_bin_create(RBin *bin, const char *p,
+	const ut8 *code, int codelen,
+	const ut8 *data, int datalen,
 	RBinArchOptions *opt) {
 
-	r_return_val_if_fail (bin && plugin_name && opt, NULL);
+	r_return_val_if_fail (bin && p && opt, NULL);
 
-	RBinPlugin *plugin = r_bin_get_binplugin_by_name (bin, plugin_name);
+	RBinPlugin *plugin = r_bin_get_binplugin_by_name (bin, p);
 	if (!plugin) {
-		R_LOG_WARN ("Cannot find RBin plugin named '%s'.\n", plugin_name);
+		R_LOG_WARN ("Cannot find RBin plugin named '%s'.\n", p);
 		return NULL;
 	}
 	if (!plugin->create) {
-		R_LOG_WARN ("RBin plugin '%s' does not implement \"create\" method.\n", plugin_name);
+		R_LOG_WARN ("RBin plugin '%s' does not implement \"create\" method.\n", p);
 		return NULL;
 	}
-
-	if (codelen < 0) {
-		codelen = 0;
-	}
-	if (datalen < 0) {
-		datalen = 0;
-	}
+	codelen = R_MAX (codelen, 0);
+	datalen = R_MAX (datalen, 0);
 	return plugin->create (bin, code, codelen, data, datalen, opt);
 }
 
@@ -1449,6 +1414,14 @@ R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	}
 }
 
+R_IPI RBinSection *r_bin_section_new(const char *name) {
+	RBinSection *s = R_NEW0 (RBinSection);
+	if (s) {
+		s->name = name? strdup (name): NULL;
+	}
+	return s;
+}
+
 R_IPI void r_bin_section_free(RBinSection *bs) {
 	if (bs) {
 		free (bs->name);
@@ -1473,10 +1446,12 @@ R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
 
 R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler) {
 	RBinTrycatch *tc = R_NEW0 (RBinTrycatch);
-	tc->source = source;
-	tc->from = from;
-	tc->to = to ;
-	tc->handler = handler;
+	if (tc) {
+		tc->source = source;
+		tc->from = from;
+		tc->to = to ;
+		tc->handler = handler;
+	}
 	return tc;
 }
 

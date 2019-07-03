@@ -837,6 +837,11 @@ R_API RCore *r_core_new() {
 
 /*-----------------------------------*/
 #define radare_argc (sizeof (radare_argv) / sizeof(const char*) - 1)
+#define ms_argc (sizeof (ms_argv) / sizeof (const char*) - 1)
+static const char *ms_argv[] = {
+	"?", "!", "ls", "cd", "cat", "get", "mount", "help", "q", "exit", NULL
+};
+
 static const char *radare_argv[] = {
 	"whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "sort", "uniq", "join", "less", "exit", "quit",
 	"#?", "#!", "#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
@@ -1029,6 +1034,90 @@ static const char *radare_argv[] = {
 	NULL
 };
 
+static void autocomplete_mount_point (RLineCompletion *completion, RCore *core, const char *path) {
+	RFSRoot *r;
+	RListIter *iter;
+	r_list_foreach (core->fs->roots, iter, r) {
+		char *base = strdup (r->path);
+		char *ls = (char *) r_str_lchr (base, '/');
+		if (ls) {
+			ls++;
+			*ls = 0;
+		}
+		if (!strcmp (path, base)) {
+			r_line_completion_push (completion, r->path);
+		}
+		free (base);
+	}
+}
+
+static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const char *str, const char *path) {
+	char *lpath = NULL, *dirname = NULL , *basename = NULL;
+	char *p = NULL;
+	char *pwd = (core->rfs && *(core->rfs->cwd)) ? *(core->rfs->cwd): ".";
+	int n = 0;
+	RList *list;
+	RListIter *iter;
+	RFSFile *file;
+	r_return_if_fail (path);
+	lpath = r_str_new (path);
+	p = (char *)r_str_last (lpath, R_SYS_DIR);
+	if (p) {
+		*p = 0;
+		if (p == lpath) { // /xxx
+			dirname  = r_str_new ("/");
+		} else if (lpath[0] == '.') { // ./xxx/yyy 
+			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
+		} else if (lpath[0] == '/') { // /xxx/yyy
+      			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
+    		} else { // xxx/yyy
+      			if (strlen (pwd) == 1) { // if pwd is root
+        			dirname = r_str_newf ("%s%s%s", R_SYS_DIR, lpath, R_SYS_DIR);
+      			} else {
+				dirname = r_str_newf ("%s%s%s%s", pwd, R_SYS_DIR, lpath, R_SYS_DIR);
+      			}
+		}
+		basename = r_str_new (p + 1);
+	} else { // xxx
+    		if (strlen (pwd) == 1) {
+      			dirname = r_str_newf ("%s", R_SYS_DIR);
+    		} else {
+      			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
+    		}
+		basename = r_str_new (lpath);
+	}
+
+	if (!dirname || !basename) {
+		goto out;
+	}
+	list= r_fs_dir (core->fs, dirname);
+	n = strlen (basename);
+	bool chgdir = !strncmp (str, "cd  ", 3);
+	if (list) {
+		r_list_foreach (list, iter, file) {
+			if (!file) {
+				continue;
+			}
+			if (!basename[0] || !strncmp (file->name, basename, n))  {
+				char *tmpstring = r_str_newf ("%s%s", dirname, file->name);
+				if (r_file_is_directory (tmpstring)) {
+					char *s = r_str_newf ("%s/", tmpstring);
+					r_line_completion_push (completion, s);
+					free (s);
+				} else if (!chgdir) {
+					r_line_completion_push (completion, tmpstring);
+				}
+				free (tmpstring);
+			}
+		}
+		r_list_free (list);
+	}
+	autocomplete_mount_point (completion, core, path);
+out:
+	free (lpath);
+	free (dirname);
+	free (basename);
+}
 
 
 static void autocomplete_process_path(RLineCompletion *completion, const char *str, const char *path) {
@@ -1348,6 +1437,20 @@ static void autocomplete_file(RLineCompletion *completion, const char *str) {
 
 }
 
+static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const char *str) {
+	r_return_if_fail (str);
+	char *pipe = strchr (str, '>');
+	char *path = (core->rfs && *(core->rfs->cwd)) ? *(core->rfs->cwd): "/";
+	if (pipe) {
+		str = r_str_trim_ro (pipe + 1);
+	}
+	if (str && !*str) {
+		autocomplete_ms_path (completion, core, str, path);
+	} else {
+		autocomplete_ms_path (completion, core, str, str);
+	}
+}
+
 static void autocomplete_theme(RCore *core, RLineCompletion *completion, const char *str) {
 	r_return_if_fail (str);
 	int len = strlen (str);
@@ -1469,6 +1572,9 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 		break;
 	case R_CORE_AUTOCMPLT_MACR:
 		autocomplete_macro (core, completion, p);
+		break;
+	case R_CORE_AUTOCMPLT_MS:
+		autocomplete_ms_file(core, completion, p);
 		break;
 	case R_CORE_AUTOCMPLT_FILE:
 		autocomplete_file (completion, p);
@@ -2127,9 +2233,8 @@ static void r_core_sleep_end (RCore *core, void *user) {
 	r_core_task_sleep_end (task);
 }
 
-static void init_autocomplete (RCore* core) {
-	core->autocomplete = R_NEW0 (RCoreAutocomplete);
-	/* flags */
+static void __init_autocomplete_default (RCore* core) {
+	int i;
 	r_core_autocomplete_add (core->autocomplete, "*", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "s", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "s+", R_CORE_AUTOCMPLT_FLAG, true);
@@ -2250,9 +2355,6 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "zfs", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "zfz", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "cat", R_CORE_AUTOCMPLT_FILE, true);
-	r_core_autocomplete_add (core->autocomplete, "join", R_CORE_AUTOCMPLT_FILE, true);
-	r_core_autocomplete_add (core->autocomplete, "uniq", R_CORE_AUTOCMPLT_FILE, true);
-	r_core_autocomplete_add (core->autocomplete, "sort", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "wta", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "wtf", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "wxf", R_CORE_AUTOCMPLT_FILE, true);
@@ -2263,15 +2365,42 @@ static void init_autocomplete (RCore* core) {
 	/* macros */
 	r_core_autocomplete_add (core->autocomplete, ".(", R_CORE_AUTOCMPLT_MACR, true);
 	r_core_autocomplete_add (core->autocomplete, "(-", R_CORE_AUTOCMPLT_MACR, true);
+	/* cmd_mount */
+	r_core_autocomplete_add (core->autocomplete, "md", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "mg", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "mo", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "ms", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "mc", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "mi", R_CORE_AUTOCMPLT_MS, true);
+	r_core_autocomplete_add (core->autocomplete, "mw", R_CORE_AUTOCMPLT_MS, true);
 	/* theme */
 	r_core_autocomplete_add (core->autocomplete, "eco", R_CORE_AUTOCMPLT_THME, true);
 	/* just for hints */
-	int i;
 	for (i = 0; i < radare_argc && radare_argv[i]; i++) {
 		if (!r_core_autocomplete_find (core->autocomplete, radare_argv[i], true)) {
 			r_core_autocomplete_add (core->autocomplete, radare_argv[i], R_CORE_AUTOCMPLT_DFLT, true);
 		}
 	}
+}
+
+static void __init_autocomplete (RCore* core) {
+	int i;
+	core->autocomplete = R_NEW0 (RCoreAutocomplete);
+	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
+		__init_autocomplete_default (core);
+	} else if (core->autocomplete_type == AUTOCOMPLETE_MS) {
+		r_core_autocomplete_add (core->autocomplete, "ls", R_CORE_AUTOCMPLT_MS, true);
+		r_core_autocomplete_add (core->autocomplete, "cd", R_CORE_AUTOCMPLT_MS, true);
+		r_core_autocomplete_add (core->autocomplete, "cat", R_CORE_AUTOCMPLT_MS, true);
+		r_core_autocomplete_add (core->autocomplete, "get", R_CORE_AUTOCMPLT_MS, true);
+		r_core_autocomplete_add (core->autocomplete, "mount", R_CORE_AUTOCMPLT_MS, true);
+		for (i = 0; i < ms_argc && ms_argv[i]; i++) {
+			if (!r_core_autocomplete_find (core->autocomplete, ms_argv[i], true)) {
+				r_core_autocomplete_add (core->autocomplete, ms_argv[i], R_CORE_AUTOCMPLT_MS, true);
+			}
+		}
+	}
+	
 }
 
 static const char *colorfor_cb(void *user, ut64 addr, bool verbose) {
@@ -2355,6 +2484,12 @@ static RFlagItem *core_flg_fcn_set(RFlag *f, const char *name, ut64 addr, ut32 s
 	return res;
 }
 
+R_API void r_core_autocomplete_reload (RCore *core) {
+	r_return_if_fail (core);
+	r_core_autocomplete_free (core->autocomplete);
+	__init_autocomplete (core);
+}
+
 R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off) {
 	return r_flag_get_by_spaces (f, off,
 		R_FLAGS_FS_FUNCTIONS,
@@ -2370,6 +2505,16 @@ R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off) {
 		R_FLAGS_FS_SEGMENTS,
 		NULL);
 }
+
+#if __WINDOWS__
+static int win_eprintf(const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
+	r_cons_win_vhprintf (STD_ERROR_HANDLE, false, format, ap);
+	va_end (ap);
+	return 0;
+}
+#endif
 
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
@@ -2402,6 +2547,9 @@ R_API bool r_core_init(RCore *core) {
 	core->print->offname = r_core_print_offname;
 	core->print->offsize = r_core_print_offsize;
 	core->print->cb_printf = r_cons_printf;
+#if __WINDOWS__
+	core->print->cb_eprintf = win_eprintf;
+#endif
 	core->print->cb_color = r_cons_rainbow_get;
 	core->print->write = mywrite;
 	core->print->exists_var = exists_var;
@@ -2587,7 +2735,7 @@ R_API bool r_core_init(RCore *core) {
 		}
 	}
 	r_core_anal_type_init (core);
-	init_autocomplete (core);
+	__init_autocomplete (core);
 	return 0;
 }
 

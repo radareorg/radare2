@@ -388,7 +388,7 @@ static RBinPlugin *get_plugin_from_buffer(RBin *bin, const char *pluginname, RBu
 	if (plugin) {
 		return plugin;
 	}
-	return r_bin_get_binplugin_any (bin);
+	return r_bin_get_binplugin_by_name (bin, "any");
 }
 
 R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data) {
@@ -437,7 +437,7 @@ static bool xtr_metadata_match(RBinXtrData *xtr_data, const char *arch, int bits
 }
 
 R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, ut64 offset) {
-	r_return_val_if_fail (file_sz != UT64_MAX, NULL);
+	r_return_val_if_fail (bin && file && buf && file_sz != UT64_MAX, NULL);
 
 	RBinFile *bf = r_bin_file_new (bin, file, file_sz, rawstr, fd, pluginname, NULL, false);
 	if (bf) {
@@ -485,8 +485,8 @@ R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bi
 }
 
 R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 bf_id) {
-	RBinFile *bf = NULL;
-	RListIter *iter = NULL;
+	RBinFile *bf;
+	RListIter *iter;
 	r_list_foreach (bin->binfiles, iter, bf) {
 		if (bf->id == bf_id) {
 			return bf;

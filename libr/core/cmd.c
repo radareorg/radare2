@@ -829,6 +829,9 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 			ret = r_core_cmd_lines (core, out);
 			free (out);
 		}
+	} else if (r_str_endswith (file, ".c")) {
+		r_core_cmd_strf (core, "#!c %s", file);
+		ret = true;
 	} else if (r_file_is_c (file)) {
 		const char *dir = r_config_get (core->config, "dir.types");
 		char *out = r_parse_c_file (core->anal, file, dir, NULL);
@@ -1746,6 +1749,7 @@ static struct autocomplete_flag_map_t {
 	{ "$file", "hints file paths", R_CORE_AUTOCMPLT_FILE },
 	{ "$thme", "shows known themes hints", R_CORE_AUTOCMPLT_THME },
 	{ "$optn", "allows the selection for multiple options", R_CORE_AUTOCMPLT_OPTN },
+	{ "$ms", "shows mount hints", R_CORE_AUTOCMPLT_MS},
 	{ NULL, NULL, 0 }
 };
 

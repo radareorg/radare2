@@ -16,6 +16,7 @@
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 static bool dexdump = false;
 static Sdb *mdb = NULL;
+static const char *dexSubsystem = NULL;
 
 static ut64 get_method_flags(ut64 MA) {
 	ut64 flags = 0;
@@ -838,28 +839,21 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->bclass = r_bin_dex_get_version (bf->o->bin_obj);
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
-	const char *kw = "Landroid/support/wearable/view";
-	ut64 tmpsz;
-	const ut8 *tmp = r_buf_data (bf->buf, &tmpsz);
-	if (r_mem_mem (tmp, tmpsz, (const ut8 *)kw, strlen (kw))) {
-		ret->subsystem = strdup ("android-wear");
-	} else {
-		ret->subsystem = strdup ("android");
-	}
+	ret->subsystem = strdup (dexSubsystem? dexSubsystem: "java");
 	ret->machine = strdup ("Dalvik VM");
 	h = &ret->sum[0];
 	h->type = "sha1";
 	h->len = 20;
 	h->addr = 12;
 	h->from = 12;
-	h->to = r_buf_size (bf->buf)-32;
+	h->to = r_buf_size (bf->buf) - 32;
 	r_buf_read_at (bf->buf, 12, h->buf, 20);
 	h = &ret->sum[1];
 	h->type = "adler32";
 	h->len = 4;
 	h->addr = 0x8;
 	h->from = 12;
-	h->to = r_buf_size (bf->buf)-h->from;
+	h->to = r_buf_size (bf->buf) - h->from;
 	h = &ret->sum[2];
 	h->type = 0;
 	r_buf_read_at (bf->buf, 8, h->buf, 4);
@@ -882,16 +876,13 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static RList *strings(RBinFile *bf) {
-	struct r_bin_dex_obj_t *bin = NULL;
+	r_return_val_if_fail (bf && bf->o, NULL);
 	RBinString *ptr = NULL;
 	RList *ret = NULL;
 	int i, len;
 	ut8 buf[6];
 	ut64 off;
-	if (!bf || !bf->o) {
-		return NULL;
-	}
-	bin = (struct r_bin_dex_obj_t *)bf->o->bin_obj;
+	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *)bf->o->bin_obj;
 	if (!bin || !bin->strings) {
 		return NULL;
 	}
@@ -1002,9 +993,7 @@ static char *dex_field_name(RBinDexObj *bin, int fid) {
 }
 
 static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
-	if (!bin || !bin->types) {
-		return NULL;
-	}
+	r_return_val_if_fail (bin && bin->types, NULL);
 	if (method_idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
 	}
@@ -1364,6 +1353,7 @@ static const ut8 *parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClas
 				sym->paddr = encoded_method_addr - bufbuf;
 				sym->vaddr = encoded_method_addr - bufbuf;
 			}
+			bin->code_from = R_MIN (bin->code_from, sym->paddr);
 			if ((MA & 1) == 1) {
 				sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
 			} else {
@@ -1396,7 +1386,7 @@ static const ut8 *parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClas
 				r_list_append (bin->methods_list, sym);
 				r_list_append (cls->methods, sym);
 
-				if (bin->code_from > sym->paddr) {
+				if (bin->code_from == UT64_MAX || bin->code_from > sym->paddr) {
 					bin->code_from = sym->paddr;
 				}
 				if (bin->code_to < sym->paddr) {
@@ -1690,6 +1680,7 @@ static bool dex_loadcode(RBinFile *bf) {
 		eprintf ("Invalid strings size\n");
 		return false;
 	}
+	dexSubsystem = NULL;
 
 	if (bin->classes) {
 		ut64 amount = sizeof (int) * bin->header.method_size;
@@ -1717,7 +1708,7 @@ static bool dex_loadcode(RBinFile *bf) {
 			if (bin->methods[i].class_id >= bin->header.types_size) {
 				continue;
 			}
-			if (is_class_idx_in_code_classes(bin, bin->methods[i].class_id)) {
+			if (is_class_idx_in_code_classes (bin, bin->methods[i].class_id)) {
 				continue;
 			}
 			const char *className = getstr (bin, bin->types[bin->methods[i].class_id].descriptor_id);
@@ -1728,6 +1719,13 @@ static bool dex_loadcode(RBinFile *bf) {
 			if (!class_name) {
 				free (class_name);
 				continue;
+			}
+			if (!dexSubsystem) {
+				if (strstr (class_name, "wearable/view")) {
+					dexSubsystem = "android-wear";
+				} else if (strstr (class_name, "android/view/View")) {
+					dexSubsystem = "android";
+				}
 			}
 			len = strlen (class_name);
 			if (len < 1) {
@@ -1969,7 +1967,12 @@ static RList *sections(RBinFile *bf) {
 		ptr->name = strdup ("constpool");
 		//ptr->size = ptr->vsize = fsym;
 		ptr->paddr = ptr->vaddr = sizeof (struct dex_header_t);
-		ptr->size = bin->code_from - ptr->vaddr; // fix size
+		if (bin->code_from != UT64_MAX) {
+			ptr->size = bin->code_from - ptr->vaddr; // fix size
+		} else {
+			eprintf ("Warning: Invalid code size\n");
+			ptr->size = ptr->vaddr; // fix size
+		}
 		ptr->vsize = ptr->size;
 		ptr->format = r_str_newf ("Cd %d[%d]", 4, ptr->vsize / 4);
 		ptr->perm = R_PERM_R;

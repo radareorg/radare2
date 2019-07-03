@@ -6,9 +6,6 @@
 #include <errno.h>
 #endif
 
-/* experimental support for x/y click */
-#define USE_CLICK 0
-
 #define I r_cons_singleton ()
 
 // TODO: Support binary, use RBuffer and remove globals
@@ -47,43 +44,50 @@ R_API int r_cons_controlz(int ch) {
 	return ch;
 }
 
+// 96 - wheel up
+// 97 - wheel down
+// 95 - mouse up
+// 92 - mouse down
 static int __parseMouseEvent() {
+	char xpos[32];
+	char ypos[32];
 	int ch = r_cons_readchar ();
-	/* Skip the x/y coordinates */
-#if USE_CLICK
-	int x = r_cons_readchar () - 33;
-	int y = r_cons_readchar () - 33;
-#else
-	(void) r_cons_readchar ();
-	(void) r_cons_readchar ();
-#endif
-#if USE_CLICK
-	if (ch == 35) {
-		/* handle click  */
-#define CLICK_DEBUG 1
-#if CLICK_DEBUG
-		r_cons_gotoxy (0, 0);
-		r_cons_printf ("Click at %d %d\n", x, y);
-		r_cons_flush ();
-#endif
-		RCons *cons = r_cons_singleton ();
-		if (cons->onclick) {
-			cons->onclick (cons->data, x, y);
-		}
-		r_cons_enable_mouse (false);
-		(void)r_cons_readchar ();
-		return 0;
-	}
-#endif
-	if (ch != 0x20 && ch >= 64 + 32) {
-		/* Grab wheel events only */
-		I->mouse_event = 1;
-		return "kj"[(ch - (64 + 32))&1];
-	}
+	int ch2 = r_cons_readchar ();
 
-	// temporary disable the mouse wheel to allow select
-	r_cons_enable_mouse (false);
-	(void)r_cons_readchar ();
+	// [32M - mousedown
+	// [35M - mouseup
+	if (ch2 == ';') {
+		int i;
+		// read until next ;
+		for (i = 0; i < sizeof (xpos); i++) {
+			char ch = r_cons_readchar ();
+			if (ch == ';' || ch == 'M') {
+				break;
+			}
+			xpos[i] = ch;
+		}
+		xpos[i] = 0;
+		for (i = 0; i < sizeof (ypos); i++) {
+			char ch = r_cons_readchar ();
+			if (ch == ';' || ch == 'M') {
+				break;
+			}
+			ypos[i] = ch;
+		}
+		ypos[i] = 0;
+		r_cons_set_click (atoi (xpos), atoi (ypos));
+		ch = r_cons_readchar ();
+		// ignored
+		int ch = r_cons_readchar ();
+		if (ch == 27) {
+			ch = r_cons_readchar (); // '['
+		}
+		if (ch == '[') {
+			do {
+				ch = r_cons_readchar (); // '3'
+			} while (ch != 'M');
+		}
+	}
 	return 0;
 }
 
@@ -132,6 +136,39 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		ch = r_cons_readchar ();
 #endif
 		switch (ch) {
+		case '<':
+			{
+				char pos[8] = {0};
+				int p = 0;
+				int x = 0;
+				int y = 0;
+				int sc = 0;
+				do {
+					ch = r_cons_readchar ();
+					eprintf ( "%c", ch);
+					if (sc > 0) {
+						if (ch >= '0'&& ch <= '9') {
+							pos[p++] = ch;
+						}
+					}
+					if (ch == ';') {
+						if (sc == 1) {
+							pos[p++] = 0;
+							x = atoi (pos);
+						}
+						sc++;
+						p = 0;
+					}	
+				} while (ch != 'M' && ch != 'm');
+				pos[p++] = 0;
+				y = atoi (pos);
+				// M is mouse down , m is mouse up
+				if (ch == 'M') {
+					r_cons_set_click (x, y);
+				}
+			}
+			return 0;
+			break;
 		case '[':
 			ch = r_cons_readchar ();
 			switch (ch) {
@@ -141,6 +178,30 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			case 'C': ch = R_CONS_KEY_F3; break;
 			case 'D': ch = R_CONS_KEY_F4; break;
 			}
+			break;
+		case '9':
+			// handle mouse wheel
+	//		__parseWheelEvent();
+			ch = r_cons_readchar ();
+			// 6 is up
+			// 7 is down
+			if (ch == '6') {
+				ch = 'k';
+			} else if (ch == '7') {
+				ch = 'j';
+			} else {
+				// unhandled case
+				ch = 0;
+			}
+			int ch2;
+			do {
+				ch2 = r_cons_readchar ();
+			} while (ch2 != 'M');
+			break;
+		case '3':
+			// handle mouse down /up events (35 vs 32)
+			__parseMouseEvent();
+			return 0;
 			break;
 		case '2':
 			ch = r_cons_readchar ();

@@ -1225,6 +1225,7 @@ void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		return;
 	}
 
+	// const RList*symbols = MACH0_(get_symbols_list) (mach0);
 	const struct symbol_t *symbols = MACH0_(get_symbols) (mach0);
 	if (!symbols) {
 		return;
@@ -1274,18 +1275,23 @@ void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 	MACH0_(mach0_free) (mach0);
 }
 
-static void handle_data_sections(RBinSection *sect) {
-	if (strstr (sect->name, "_cstring")) {
-		sect->is_data = true;
-	} else if (strstr (sect->name, "_os_log")) {
-		sect->is_data = true;
-	} else if (strstr (sect->name, "_objc_methname")) {
-		sect->is_data = true;
-	} else if (strstr (sect->name, "_objc_classname")) {
-		sect->is_data = true;
-	} else if (strstr (sect->name, "_objc_methtype")) {
-		sect->is_data = true;
+static bool __is_data_section(const char *name) {
+	if (strstr (name, "_cstring")) {
+		return true;
 	}
+	if (strstr (name, "_os_log")) {
+		return true;
+	}
+	if (strstr (name, "_objc_methname")) {
+		return true;
+	}
+	if (strstr (name, "_objc_classname")) {
+		return true;
+	}
+	if (strstr (name, "_objc_methtype")) {
+		return true;
+	}
+	return false;
 }
 
 static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
@@ -1301,8 +1307,8 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 
 	int i;
 	for (i = 0; !sections[i].last; i++) {
-		RBinSection *ptr;
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		RBinSection *ptr = R_NEW0 (RBinSection);
+		if (!ptr) {
 			break;
 		}
 		if (bin->file) {
@@ -1314,7 +1320,7 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 			int len = sections[i].size / 8;
 			ptr->format = r_str_newf ("Cd %d[%d]", 8, len);
 		}
-		handle_data_sections (ptr);
+		ptr->is_data = __is_data_section (ptr->name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].offset + bf->o->boffset;
@@ -1355,7 +1361,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->name = r_str_newf ("cache_map.%d", i);
 		ptr->size = cache->maps[i].size;
 		ptr->vsize = ptr->size;
-		ptr->paddr = cache->maps[i].fileOffset;// + bf->o->boffset;
+		ptr->paddr = cache->maps[i].fileOffset;
 		ptr->vaddr = cache->maps[i].address;
 		ptr->add = true;
 		ptr->is_segment = true;

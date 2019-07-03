@@ -116,6 +116,11 @@ typedef struct r_core_undo_t {
 	ut64 offset;
 } RCoreUndo;
 
+typedef enum {
+	AUTOCOMPLETE_DEFAULT,
+	AUTOCOMPLETE_MS
+} RAutocompleteType;
+
 typedef struct {
 	ut64 addr;
 	const char *glob;
@@ -166,6 +171,7 @@ typedef enum r_core_autocomplete_types_t {
 	R_CORE_AUTOCMPLT_FILE,
 	R_CORE_AUTOCMPLT_THME,
 	R_CORE_AUTOCMPLT_OPTN,
+	R_CORE_AUTOCMPLT_MS,
 // --- left as last always
 	R_CORE_AUTOCMPLT_END,
 } RCoreAutocompleteType;
@@ -255,6 +261,7 @@ typedef struct r_core_t {
 	RFlag *flags;
 	RSearch *search;
 	RFS *fs;
+	RFSShell *rfs;
 	REgg *egg;
 	RCoreLog *log;
 	RAGraph *graph;
@@ -317,6 +324,7 @@ typedef struct r_core_t {
 	int sync_index; // used for http.sync and T=
 	struct r_core_t *c2;
 	RCoreAutocomplete *autocomplete;
+	int autocomplete_type;
 	REvent *ev;
 	RList *gadgets;
 	bool scr_gadgets;
@@ -879,6 +887,7 @@ R_API int r_core_search_value_in_range (RCore *core, RInterval search_itv,
 
 R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd, int type, bool lock);
 R_API void r_core_autocomplete_free(RCoreAutocomplete *obj);
+R_API void r_core_autocomplete_reload (RCore *core);
 R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd, bool exact);
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd);
 

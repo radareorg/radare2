@@ -926,8 +926,9 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		return str;
 	}
 	slen = strlen (str);
+	char *q = str;
 	for (;;) {
-		p = strstr (str, key);
+		p = strstr (q, key);
 		if (!p) {
 			break;
 		}
@@ -950,6 +951,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		memcpy (p, val, vlen);
 		memcpy (p + vlen, scnd, strlen (scnd) + 1);
 		i = off + vlen;
+		q = str + i;
 		free (scnd);
 		if (!g) {
 			break;

@@ -326,12 +326,12 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 		Eprintf ("Error: read (symtab)\n");
 		return false;
 	}
-	st.cmd = r_read_ble32 (&symt[0], be);
-	st.cmdsize = r_read_ble32 (&symt[4], be);
-	st.symoff = r_read_ble32 (&symt[8], be);
-	st.nsyms = r_read_ble32 (&symt[12], be);
-	st.stroff = r_read_ble32 (&symt[16], be);
-	st.strsize = r_read_ble32 (&symt[20], be);
+	st.cmd = r_read_ble32 (symt, be);
+	st.cmdsize = r_read_ble32 (symt+4, be);
+	st.symoff = r_read_ble32 (symt + 8, be);
+	st.nsyms = r_read_ble32 (symt+12, be);
+	st.stroff = r_read_ble32 (symt+16, be);
+	st.strsize = r_read_ble32 (symt+20, be);
 
 	mo->symtab = NULL;
 	mo->nsymtab = 0;
@@ -361,16 +361,16 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 			goto error;
 		}
 		for (i = 0; i < mo->nsymtab; i++) {
-			len = r_buf_read_at (mo->b, st.symoff + (i * sizeof (struct MACH0_(nlist))),
-								nlst, sizeof (struct MACH0_(nlist)));
+			ut64 at = st.symoff + (i * sizeof (struct MACH0_(nlist)));
+			len = r_buf_read_at (mo->b, at, nlst, sizeof (struct MACH0_(nlist)));
 			if (len != sizeof (struct MACH0_(nlist))) {
 				Error ("read (nlist)");
 			}
 			//XXX not very safe what if is n_un.n_name instead?
-			mo->symtab[i].n_strx = r_read_ble32 (&nlst[0], be);
-			mo->symtab[i].n_type = r_read_ble8 (&nlst[4]);
-			mo->symtab[i].n_sect = r_read_ble8 (&nlst[5]);
-			mo->symtab[i].n_desc = r_read_ble16 (&nlst[6], be);
+			mo->symtab[i].n_strx = r_read_ble32 (nlst, be);
+			mo->symtab[i].n_type = r_read_ble8 (nlst + 4);
+			mo->symtab[i].n_sect = r_read_ble8 (nlst + 5);
+			mo->symtab[i].n_desc = r_read_ble16 (nlst + 6, be);
 #if R_BIN_MACH064
 			mo->symtab[i].n_value = r_read_ble64 (&nlst[8], be);
 #else
@@ -1641,7 +1641,7 @@ static bool __isDataSection(RBinSection *sect) {
 RList *MACH0_(get_segments)(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	
-	RList *list = r_list_newf (free); // r_bin_section_free);
+	RList *list = r_list_newf ((RListFree)r_bin_section_free);
 
 	int i, j;
 
@@ -1653,7 +1653,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 			if (!seg->initprot) {
 				continue;
 			}
-			RBinSection *s = R_NEW0 (RBinSection);
+			RBinSection *s = r_bin_section_new (NULL);
 			if (!s) {
 				break;
 			}
@@ -1788,11 +1788,11 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 	return sections;
 }
 
-static int parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol, int idx) {
+static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol, int idx) {
 	int i, j, nsyms, stridx;
 	const char *symstr;
 	if (idx < 0) {
-		return 0;
+		return false;
 	}
 	symbol->offset = 0LL;
 	symbol->addr = 0LL;
@@ -1887,6 +1887,174 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 		return res;
 	}
 	return NULL;
+}
+
+
+// TODO: Return RList<RBinSymbol> // 2x speedup
+const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
+	static RList * cache = NULL; // XXX DONT COMMIT WITH THIS
+	struct symbol_t *symbols;
+	int j, s, stridx, symbols_size, symbols_count;
+	ut32 to, from, i;
+
+	r_return_val_if_fail (bin, NULL);
+	if (!bin->symtab || !bin->symstr) {
+		return NULL;
+	}
+	if (cache) {
+		return cache;
+	}
+	RList *list = r_list_newf ((RListFree)r_bin_symbol_free);
+	cache = list;
+
+	/* parse dynamic symbol table */
+	symbols_count = (bin->dysymtab.nextdefsym + \
+			bin->dysymtab.nlocalsym + \
+			bin->dysymtab.nundefsym );
+	symbols_count += bin->nsymtab;
+	symbols_size = (symbols_count + 1) * 2 * sizeof (struct symbol_t);
+
+	if (symbols_size < 1) {
+		return NULL;
+	}
+	if (!(symbols = calloc (1, symbols_size))) {
+		return NULL;
+	}
+	HtPP *hash = ht_pp_new0 ();
+	if (!hash) {
+		free (symbols);
+		return NULL;
+	}
+	j = 0; // symbol_idx
+	bin->main_addr = 0;
+	for (s = 0; s < 2; s++) {
+		switch (s) {
+		case 0:
+			from = bin->dysymtab.iextdefsym;
+			to = from + bin->dysymtab.nextdefsym;
+			break;
+		case 1:
+			from = bin->dysymtab.ilocalsym;
+			to = from + bin->dysymtab.nlocalsym;
+			break;
+#if NOT_USED
+		case 2:
+			from = bin->dysymtab.iundefsym;
+			to = from + bin->dysymtab.nundefsym;
+			break;
+#endif
+		}
+		if (from == to) {
+			continue;
+		}
+
+		from = R_MIN (R_MAX (0, from), symbols_size / sizeof (struct symbol_t));
+		to = R_MIN (R_MIN (to, bin->nsymtab), symbols_size / sizeof (struct symbol_t));
+
+		ut32 maxsymbols = symbols_size / sizeof (struct symbol_t);
+		if (symbols_count >= maxsymbols) {
+			symbols_count = maxsymbols - 1;
+			eprintf ("macho warning: Symbol table truncated\n");
+		}
+		for (i = from; i < to && j < symbols_count; i++, j++) {
+			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			sym->vaddr = bin->symtab[i].n_value;
+			sym->paddr = addr_to_offset (bin, sym->vaddr);
+			symbols[j].size = 0; /* TODO: Is it anywhere? */
+		
+			if (bin->symtab[i].n_type & N_EXT) {
+				sym->type = "EXT";
+			} else {
+				sym->type = "LOCAL";
+			}
+			int stridx = bin->symtab[i].n_strx;
+			char *sym_name = get_name (bin, stridx, false);
+			if (sym_name) {
+				sym->name = sym_name;
+				if (!bin->main_addr || bin->main_addr == UT64_MAX) {
+					const char *name = sym->name;
+					if (!strcmp (name, "__Dmain")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (!strcmp (name, "_main")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (!strcmp (name, "main")) {
+						bin->main_addr = symbols[j].addr;
+					}
+				}
+			} else {
+				sym->name = r_str_newf ("unk%d", i);
+			}
+			if (!inSymtab (hash, sym->name, sym->vaddr)) {
+				r_list_append (list, sym);
+			}
+		}
+	}
+	to = R_MIN ((ut32)bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
+	for (i = bin->dysymtab.iundefsym; i < to; i++) {
+		struct symbol_t symbol;
+		if (j > symbols_count) {
+			bprintf ("mach0-get-symbols: error\n");
+			break;
+		}
+		if (parse_import_stub (bin, &symbol, i)) {
+			j++;
+			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			sym->vaddr = symbol.addr;
+			sym->paddr = symbol.offset;
+			sym->name = strdup (symbol.name);
+			if (!sym->name) {
+				sym->name = r_str_newf ("unk%d", i);
+			}
+			r_list_append (list, sym);
+		}
+	}
+
+	for (i = 0; i < bin->nsymtab; i++) {
+		struct MACH0_(nlist) *st = &bin->symtab[i];
+		stridx = st->n_strx;
+		// 0 is for imports
+		// 1 is for symbols
+		// 2 is for func.eh (exception handlers?)
+		int section = st->n_sect;
+		if (section == 1 && j < symbols_count) { // text ??st->n_type == 1) maybe wrong
+			RBinSymbol *sym = R_NEW0(RBinSymbol);
+			/* is symbol */
+			sym->vaddr = st->n_value;
+			sym->paddr = addr_to_offset (bin, symbols[j].addr);
+			if (st->n_type & N_EXT) {
+				sym->type = "EXT";
+			} else {
+				sym->type = "LOCAL";
+			}
+			char *sym_name = get_name (bin, stridx, false);
+			if (sym_name) {
+				sym->name = sym_name;
+				if (inSymtab (hash, sym->name, sym->vaddr)) {
+					r_bin_symbol_free (sym);
+					continue;
+				}
+				if (!bin->main_addr || bin->main_addr == UT64_MAX) {
+					const char *name = sym->name;
+					if (!strcmp (name, "__Dmain")) {
+						bin->main_addr = symbols[i].addr;
+					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+						bin->main_addr = symbols[i].addr;
+					} else if (!strcmp (symbols[i].name, "_main")) {
+						bin->main_addr = symbols[i].addr;
+					}
+				}
+			} else {
+				sym->name = r_str_newf ("unk%d", i);
+			}
+			r_list_append (list, sym);
+			j++;
+		}
+	}
+	ht_pp_free (hash);
+	// bin->symbols = symbols;
+	return list;
 }
 
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
@@ -2007,6 +2175,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 		// 2 is for func.eh (exception handlers?)
 		int section = st->n_sect;
 		if (section == 1 && j < symbols_count) { // text ??st->n_type == 1)
+		//if (j < symbols_count) { // text ??st->n_type == 1)
 			/* is symbol */
 			symbols[j].addr = st->n_value;
 			symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
@@ -2021,7 +2190,8 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
 				free (sym_name);
 			} else {
-				symbols[j].name[0] = 0;
+				sprintf (symbols[j].name, "entry%d\n", i);
+				//symbols[j].name[0] = 0;
 			}
 			symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 1] = 0;
 			symbols[j].last = 0;
@@ -2380,10 +2550,12 @@ beach:
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin && bin->sects, NULL);
 
+#if 0
 	/* it's probably a dylib */
 	if (!bin->entry) {
 		return NULL;
 	}
+#endif
 
 	struct addr_t *entry = R_NEW0 (struct addr_t);
 	if (!entry) {
@@ -2770,7 +2942,11 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin) {
 	// -1 = not scanned, so no main
 	// other = valid main addr
 	if (bin->main_addr == UT64_MAX) {
-		MACH0_(get_symbols) (bin);
+#if FEATURE_SYMLIST
+		 (void)MACH0_(get_symbols_list) (bin);
+#else
+		 (void)MACH0_(get_symbols) (bin);
+#endif
 	}
 	if (bin->main_addr != 0 && bin->main_addr != UT64_MAX) {
 		return bin->main_addr;
@@ -2817,7 +2993,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 	RBuffer *buf = bf->buf;
 	ut64 length = r_buf_size (buf);
 	int n = 0;
-	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_buffer)(buf);
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf);
 	if (!mh) {
 		return;
 	}
@@ -2955,7 +3131,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 }
 
 RList *MACH0_(mach_fields)(RBinFile *bf) {
-	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_buffer)(bf->buf);
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(bf->buf);
 	if (!mh) {
 		return NULL;
 	}
@@ -2966,6 +3142,11 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 	}
 	ret->free = free;
 	ut64 addr = 0;
+
+#if 0
+	RBinField *field = r_binfield_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt);
+	r_binfile_add_field (bf, field);
+#endif
 
 #define ROW(nam,siz,val,fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt)); \
@@ -2980,7 +3161,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 	return ret;
 }
 
-struct MACH0_(mach_header) *MACH0_(get_hdr_from_buffer)(RBuffer *buf) {
+struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf) {
 	ut8 magicbytes[sizeof (ut32)] = {0};
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = {0};
 	int len;
