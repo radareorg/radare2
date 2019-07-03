@@ -58,7 +58,7 @@ static const char *menus[] = {
 };
 
 static const char *menus_File[] = {
-	"New", "Open", "ReOpen", "Close", "Sections", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports", "Info", "Database", "Save Layout", "Load Layout", "Quit",
+	"New", "Open", "ReOpen", "Close", "Sections", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports", "Info", "Database", "Save Layout", "Load Layout", "Clear Saved Layouts", "Quit",
 	NULL
 };
 
@@ -330,8 +330,7 @@ static void __panels_layout_refresh(RCore *core);
 static void __panels_layout(RPanels *panels);
 static void __layoutDefault(RPanels *panels);
 static void __savePanelsLayout(RCore *core);
-static int __loadSavedPanelsLayout(RCore *core);
-static bool __check_config_dup(RCore *core, const char *json, const char *check);
+static int __loadSavedPanelsLayout(RCore *core, const char *name);
 static void __splitPanelVertical(RCore *core, RPanel *p, const char *name, const char *cmd, bool cache);
 static void __splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char *cmd, bool cache);
 static void __panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
@@ -416,6 +415,7 @@ static int __loadLayoutSavedCb(void *user);
 static int __loadLayoutDefaultCb(void *user);
 static int __closeFileCb(void *user);
 static int __saveLayoutCb(void *user);
+static int __clearLayoutsCb(void *user);
 static int __copyCb(void *user);
 static int __pasteCb(void *user);
 static int __writeStrCb(void *user);
@@ -2399,7 +2399,10 @@ int __decompiler_cb(void *user) {
 
 int __loadLayoutSavedCb(void *user) {
 	RCore *core = (RCore *)user;
-	if (!__loadSavedPanelsLayout (core)) {
+	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+	if (!__loadSavedPanelsLayout (core, child->get_name_cb (core, child->base_name))) {
 		__createDefaultPanels (core);
 		__panels_layout (core->panels);
 	}
@@ -2430,6 +2433,12 @@ int __saveLayoutCb(void *user) {
 	RCore *core = (RCore *)user;
 	__savePanelsLayout (core);
 	(void)__show_status (core, "Panels layout saved!");
+	return 0;
+}
+
+int __clearLayoutsCb(void *user) {
+	__show_status_yesno ((RCore *)user, 'n', "Clear all the saved layouts?(y/n): ");
+	r_file_rm (__getPanelsConfigPath ());
 	return 0;
 }
 
@@ -3517,6 +3526,8 @@ bool __initPanelsMenu(RCore *core) {
 			__addMenu (core, parent, menus_File[i], __saveLayoutCb, __get_name_cb);
 		} else if (!strcmp (menus_File[i], "Load Layout")) {
 			__addMenu (core, parent, menus_File[i], __openMenuCb, __get_name_cb);
+		} else if (!strcmp (menus_File[i], "Clear Saved Layouts")) {
+			__addMenu (core, parent, menus_File[i], __clearLayoutsCb, __get_name_cb);
 		} else if (!strcmp (menus_File[i], "Quit")) {
 			__addMenu (core, parent, menus_File[i], __quitCb, __get_name_cb);
 		} else {
@@ -3689,11 +3700,39 @@ bool __initPanelsMenu(RCore *core) {
 	i = 0;
 	while (menus_loadLayout[i]) {
 		if (!strcmp (menus_loadLayout[i], "Saved")) {
-			__addMenu (core, parent, menus_loadLayout[i], __loadLayoutSavedCb, __get_name_cb);
+			__addMenu (core, parent, menus_loadLayout[i], __openMenuCb, __get_name_cb);
 		} else if (!strcmp (menus_loadLayout[i], "Default")) {
 			__addMenu (core, parent, menus_loadLayout[i], __loadLayoutDefaultCb, __get_name_cb);
 		}
 		i++;
+	}
+
+	parent = "File.Load Layout.Saved";
+	int s;
+	i = 0;
+	char *config_path = __getPanelsConfigPath();
+	char *panels_config = r_file_slurp (config_path, &s);
+	if (panels_config) {
+		char *tmp = panels_config;
+		free (config_path);
+		if (!panels_config) {
+			return 0;
+		}
+		char *names = NULL;
+		int len = 0;
+		while (*(panels_config + 1) != '{') {
+			len++;
+			panels_config++;
+		}
+		names = r_str_newlen (tmp, len + 1);
+		int count = r_str_split (names, ',');
+		i = 0;
+		for (; i < count - 1; i++) {
+			__addMenu (core, parent, names, __loadLayoutSavedCb, __get_name_cb);
+			names += strlen (names) + 1;
+		}
+	} else {
+		__addMenu (core, parent, "Default", __loadLayoutDefaultCb, __get_name_cb);
 	}
 
 	parent = "Settings.Colors";
@@ -4419,16 +4458,36 @@ char *__getPanelsConfigPath() {
 
 void __savePanelsLayout(RCore *core) {
 	int i, s;
-	char *configPath = __getPanelsConfigPath ();
-	char *panelsConfig = r_file_slurp (configPath, &s);
-	char *name = __show_status_input (core, "Name for the layout: ");
-	if (__check_config_dup (core, panelsConfig, name)) {
-		RStrBuf *rsb = r_strbuf_new (NULL);
-		r_strbuf_appendf (rsb, "%s already exists. Override %s?(y/n): ", name, name);
-		if (!__show_status_yesno (core, 'y', r_strbuf_drain (rsb))) {
-			return;
+	char *config_path = __getPanelsConfigPath ();
+	char *tmp_config = r_file_slurp (config_path, &s);
+	char *tmp_tmp_config = tmp_config;
+
+	char *names = NULL;
+
+	if (tmp_config) {
+		int len = 0;
+		while (*(tmp_config + 1) != '{') {
+			len++;
+			tmp_config++;
 		}
+		names = r_str_newlen (tmp_tmp_config, len + 1);
+		tmp_config++;
 	}
+
+	char *panels_config = NULL;
+	if (tmp_config) {
+		panels_config = r_str_newlen (tmp_config + 1, strlen (tmp_config) - 2);
+	}
+	free (tmp_tmp_config);
+
+	char *name = __show_status_input (core, "Name for the layout: ");
+	if (names) {
+		r_str_append (names, name);
+	} else {
+		names = r_str_new (name);
+	}
+	r_str_append (names, ",");
+
 	RPanels *panels = core->panels;
 	PJ *pj_tmp = NULL;
 	pj_tmp = pj_new ();
@@ -4449,11 +4508,19 @@ void __savePanelsLayout(RCore *core) {
 	pj = pj_new ();
 	pj_o (pj);
 	pj_ks (pj, name, pj_drain (pj_tmp));
+	if (panels_config) {
+		pj_j (pj, panels_config);
+	}
 	pj_end (pj);
 
-	FILE *file = r_sandbox_fopen (configPath, "w");
-	free (configPath);
+	FILE *file = r_sandbox_fopen (config_path, "w");
+	if (!file) {
+		free (config_path);
+		return;
+	}
+
 	if (file) {
+		fprintf (file, "%s", names);
 		fprintf (file, "%s", pj_drain (pj));
 		fclose (file);
 	}
@@ -4490,21 +4557,27 @@ void __load_config_menu(RCore *core) {
 	}
 }
 
-int __loadSavedPanelsLayout(RCore *core) {
+int __loadSavedPanelsLayout(RCore *core, const char *name) {
 	int i, s;
 
-	char *configPath = __getPanelsConfigPath ();
-	char *panelsConfig = r_file_slurp (configPath, &s);
-	free (configPath);
-	if (!panelsConfig) {
-		free (panelsConfig);
+	char *config_path = __getPanelsConfigPath();
+	char *panels_config = r_file_slurp (config_path, &s);
+	free (config_path);
+	if (!panels_config) {
 		return 0;
 	}
-	panelsConfig = sdb_json_get_str (panelsConfig, "d");
-	(void)r_str_arg_unescape (panelsConfig);
 
-	char *parsedConfig = __parsePanelsConfig (panelsConfig, strlen (panelsConfig));
-	free (panelsConfig);
+	int len = 0;
+	while (*(panels_config + 1) != '{') {
+		len++;
+		panels_config++;
+	}
+	panels_config++;
+
+	panels_config = sdb_json_get_str (panels_config, name);
+	(void)r_str_arg_unescape (panels_config);
+	char *parsedConfig = __parsePanelsConfig (panels_config, strlen (panels_config));
+	free (panels_config);
 	if (!parsedConfig) {
 		return 0;
 	}
@@ -4546,13 +4619,6 @@ int __loadSavedPanelsLayout(RCore *core) {
 	}
 	__setRefreshAll (core, true);
 	return 1;
-}
-
-static bool __check_config_dup(RCore *core, const char *json, const char *check) {
-	if (!sdb_json_get_str (json, check)) {
-		return false;
-	}
-	return true;
 }
 
 void __maximizePanelSize(RPanels *panels) {
