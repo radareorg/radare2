@@ -13,9 +13,9 @@ static int disMode = 0;
 static int hexMode = 0;
 static int printMode = 0;
 static void visual_refresh(RCore *core);
-
 static bool snowMode = false;
 static RList *snows = NULL;
+
 typedef struct {
 	int x;
 	int y;
@@ -1076,10 +1076,7 @@ static void setprintmode(RCore *core, int n) {
 		r_asm_op_fini (&op);
 		break;
 	case 5:
-		{
-			int cols = r_config_get_i (core->config, "hex.cols");
-			core->inc = cols;
-		}
+		core->inc = r_config_get_i (core->config, "hex.cols");
 		break;
 	}
 }

@@ -1039,8 +1039,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			r_list_free (list);
 		}
 	}
-	// updates ds->opstr
-	//__replaceImports (ds);
 
 	if (ds->pseudo) {
 		const char *opstr = ds->opstr ? ds->opstr : r_asm_op_get_asm (&ds->asmop);
