@@ -5404,6 +5404,33 @@ void __panelPrompt(const char *prompt, char *buf, int len) {
 	r_cons_fgets (buf, len, 0, NULL);
 }
 
+static char *getWordFromCanvas(RCore *core, RPanels *panels, int x, int y) {
+	char *s = r_cons_canvas_to_string (panels->can);
+	char *R = r_str_ansi_crop (s, 0, y - 1, x + 1024, y);
+	r_str_ansi_filter (R, NULL, NULL, -1);
+	char *r = r_str_ansi_crop (s, x - 1, y - 1, x + 1024, y);
+	r_str_ansi_filter (r, NULL, NULL, -1);
+	char *pos = strstr (R, r);
+	if (!pos) {
+		pos = R;
+	}
+	const char *sp = r_str_rchr (R, pos, ' ');
+	if (sp) {
+		sp++;
+	} else {
+		sp = pos;
+	}
+	//eprintf ("JIJI %d (%s)\n", (int)strlen (s), pos?pos:"noname");
+	char *sp2 = strchr (sp, ' ');
+	if (sp2) {
+		*sp2 = 0;
+	}
+	char * res = strdup (sp);
+	free (r);
+	free (R);
+	return strdup (sp);
+}
+
 void __panels_process(RCore *core, RPanels *panels) {
 	if (!panels) {
 		return;
@@ -5457,6 +5484,11 @@ repeat:
 	if (key == 0) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
+			char *word = getWordFromCanvas (core, panels, x, y);
+			if (word) {
+				r_config_set (core->config, "scr.highlight", word);
+				free (word);
+			}
 			if (panels->mode == PANEL_MODE_MENU) {
 				key = '\n';
 			} else if (y == 1) { // click on first line (The menu
@@ -5465,6 +5497,7 @@ repeat:
 				__getCurPanel (panels)->view->refresh = true;
 				key = 'j';
 			} else {
+				goto repeat;
 				key = 'c';
 			// } else {
 			//	goto repeat;

@@ -1719,7 +1719,6 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
  */
 R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	int i, j, *cps;
-	char *tmp;
 
 	if (len == 0) {
 		return 0;
@@ -1727,7 +1726,7 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	if (len < 0) {
 		len = strlen (str);
 	}
-	tmp = malloc (len + 1);
+	char *tmp = malloc (len + 1);
 	if (!tmp) {
 		return -1;
 	}
