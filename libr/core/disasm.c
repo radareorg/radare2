@@ -1362,10 +1362,17 @@ static void ds_atabs_option(RDisasmState *ds) {
 	if (size < 1 || size < bufasm_len) {
 		return;
 	}
+	b = malloc (size + 1);
+	if (ds->opstr) {
+		strcpy (b, ds->opstr);
+	} else {
+		strcpy (b, r_asm_op_get_asm (&ds->asmop));
+	}
 	if (!b) {
 		return;
 	}
-	strcpy (b, r_asm_op_get_asm (&ds->asmop));
+	free (ds->opstr);
+	ds->opstr = b;
 	for (; *b; b++, i++) {
 		if (*b == '(' || *b == '[') {
 			brackets++;
