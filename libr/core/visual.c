@@ -46,7 +46,8 @@ static const char *printfmtColumns[NPF] = {
 #define PRINT_4_FORMATS 7
 #define PRINT_5_FORMATS 8
 
-static int currentHexFormat = 0;
+static int currentFormat = 0;
+static int current0format = 0;
 static const char *printHexFormats[PRINT_HEX_FORMATS] = {
 	"px", "pxa", "pxr", "prx", "pxb", "pxh", "pxw", "pxq", "pxd", "pxr",
 };
@@ -64,7 +65,8 @@ static const char *print5Formats[PRINT_5_FORMATS] = {
 	"pca", "pcA", "p8", "pcc", "pss", "pcp", "pcd", "pcj"
 };
 static void applyHexMode(RCore *core, int hexMode) {
-	switch (R_ABS(hexMode) % 3) {
+	currentFormat = R_ABS(hexMode) % 3;
+	switch (currentFormat) {
 	case 0:
 		r_config_set (core->config, "hex.compact", "false");
 		r_config_set (core->config, "hex.comments", "true");
@@ -113,7 +115,8 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 }
 
 R_API void r_core_visual_applyDisMode(RCore *core, int disMode) {
-	switch (disMode % 5) {
+	currentFormat = R_ABS(disMode) % 5;
+	switch (currentFormat) {
 	case 0:
 		r_config_set (core->config, "asm.pseudo", "false");
 		r_config_set (core->config, "asm.bytes", "true");
@@ -153,18 +156,21 @@ R_API void r_core_visual_applyDisMode(RCore *core, int disMode) {
 }
 
 static void nextPrintCommand() {
-	currentHexFormat++;
-	currentHexFormat %= PRINT_HEX_FORMATS;
+	current0format++;
+	current0format %= PRINT_HEX_FORMATS;
+	currentFormat = current0format;
 }
+
 static void prevPrintCommand() {
-	currentHexFormat--;
-	if (currentHexFormat < 0) {
-		currentHexFormat = 0;
+	current0format--;
+	if (current0format < 0) {
+		current0format = 0;
 	}
+	currentFormat = current0format;
 }
 
 static const char *stackPrintCommand(RCore *core) {
-	if (currentHexFormat == 0) {
+	if (current0format == 0) {
 		if (r_config_get_i (core->config, "dbg.slow")) {
 			return "pxr";
 		}
@@ -177,7 +183,7 @@ static const char *stackPrintCommand(RCore *core) {
 		}
 		return "px";
 	}
-	return printHexFormats[currentHexFormat % PRINT_HEX_FORMATS];
+	return printHexFormats[current0format % PRINT_HEX_FORMATS];
 }
 
 static const char *__core_visual_print_command (RCore *core) {
@@ -663,9 +669,9 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	int ret, h;
 	(void) r_cons_get_size (&h);
 	r_cons_enable_mouse (false);
-	r_cons_gotoxy (0, h - 2);
+	r_cons_gotoxy (0, h);
 	r_cons_reset_colors ();
-	r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
+	//r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
 	r_cons_show_cursor (true);
 	core->vmode = false;
 
@@ -2239,8 +2245,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	if (ch < 2) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			if (y == 1 && x < 40) {
-				ch = ':';
+			if (y == 1) {
+				if (x < 15) {
+					ch = ':';
+				} else if (x < 20) {
+					ch = 'p';
+				} else if (x < 24) {
+					ch = 9;
+				}
 			} else if (y == 2) {
 				if (x < 2) {
 					visual_closetab (core);
@@ -2332,8 +2344,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			{
 				switch (core->printidx) {
 				case R_CORE_VISUAL_MODE_PX: // 0 // xc
-					hexMode--;
-					applyHexMode (core, hexMode);
+					applyHexMode (core, --hexMode);
 					printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 					break;
 				case R_CORE_VISUAL_MODE_PD: // pd
@@ -2343,16 +2354,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				case R_CORE_VISUAL_MODE_DB: // debugger
 					r_core_visual_applyDisMode (core, --disMode);
 					printfmtSingle[1] = rotateAsmemu (core);
-					current3format = current3format + 1;
-					printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
+					current3format++;
+					printfmtSingle[2] = print3Formats[R_ABS (current3format) % PRINT_3_FORMATS];
 					break;
 				case R_CORE_VISUAL_MODE_OV: // overview
-					current4format = current4format - 1;
-					printfmtSingle[3] = print4Formats[R_ABS(current4format) % PRINT_4_FORMATS];
+					current4format--;
+					printfmtSingle[3] = print4Formats[R_ABS (current4format) % PRINT_4_FORMATS];
 					break;
 				case R_CORE_VISUAL_MODE_CD: // code
-					current5format = current5format - 1;
-					printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
+					current5format--;
+					printfmtSingle[4] = print5Formats[R_ABS (current5format) % PRINT_5_FORMATS];
 					break;
 				}
 			}
@@ -2396,8 +2407,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					switch (core->printidx) {
 					case R_CORE_VISUAL_MODE_PX: // 0 // xc
-						hexMode++;
-						applyHexMode (core, hexMode);
+						applyHexMode (core, ++hexMode);
 						printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_PD: // pd
@@ -2407,15 +2417,15 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					case R_CORE_VISUAL_MODE_DB: // debugger
 						r_core_visual_applyDisMode (core, ++disMode);
 						printfmtSingle[1] = rotateAsmemu (core);
-						current3format = current3format + 1;
+						currentFormat = ++current3format;
 						printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_OV: // overview
-						current4format = current4format + 1;
+						currentFormat = ++current4format;
 						printfmtSingle[3] = print4Formats[R_ABS(current4format) % PRINT_4_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_CD: // code
-						current5format = current5format + 1;
+						currentFormat = ++current5format;
 						printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
 						break;
 					}
@@ -3500,17 +3510,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						r_core_visual_applyDisMode (core, --disMode);
 						break;
 					case R_CORE_VISUAL_MODE_DB: // debugger
-						//printfmtSingle[1] = rotateAsmemu (core);
-						current3format = current3format - 1;
+						currentFormat = --current3format;
 						printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
 						r_core_visual_applyDisMode (core, --disMode);
 						break;
 					case R_CORE_VISUAL_MODE_OV: // overview
-						current4format = current4format-1;
+						currentFormat = --current4format;
 						printfmtSingle[3] = print4Formats[R_ABS(current4format)% PRINT_4_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_CD: // code
-						current5format = current5format-1;
+						currentFormat = --current5format;
 						printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
 						break;
 					}
@@ -3715,20 +3724,20 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			}
 			if (core->print->cur_enabled) {
 				if (core->print->ocur == -1) {
-					title = r_str_newf ("[%s *0x%08"PFMT64x" %s ($$+0x%x)]> %s %s\n",
+					title = r_str_newf ("[%s *0x%08"PFMT64x" %s%d ($$+0x%x)]> %s %s\n",
 						address, core->offset + core->print->cur,
-						pm, core->print->cur,
+						pm, currentFormat, core->print->cur,
 						bar, pos);
 				} else {
-					title = r_str_newf ("[%s 0x%08"PFMT64x" %s [0x%x..0x%x] %d]> %s %s\n",
+					title = r_str_newf ("[%s 0x%08"PFMT64x" %s%d [0x%x..0x%x] %d]> %s %s\n",
 						address, core->offset + core->print->cur,
-						pm, core->print->ocur, core->print->cur,
+						pm, currentFormat, core->print->ocur, core->print->cur,
 						R_ABS (core->print->cur - core->print->ocur) + 1,
 						bar, pos);
 				}
 			} else {
-				title = r_str_newf ("[%s %s %s%d %s]> %s %s\n",
-					address, pm, pcs, core->blocksize, filename, bar, pos);
+				title = r_str_newf ("[%s %s%d %s%d %s]> %s %s\n",
+					address, pm, currentFormat, pcs, core->blocksize, filename, bar, pos);
 			}
 		}
 		const int tabsCount = __core_visual_tab_count (core);
