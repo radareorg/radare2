@@ -5420,15 +5420,14 @@ static char *getWordFromCanvas(RCore *core, RPanels *panels, int x, int y) {
 	} else {
 		sp = pos;
 	}
-	//eprintf ("JIJI %d (%s)\n", (int)strlen (s), pos?pos:"noname");
 	char *sp2 = strchr (sp, ' ');
 	if (sp2) {
 		*sp2 = 0;
 	}
-	char * res = strdup (sp);
+	char *res = strdup (sp);
 	free (r);
 	free (R);
-	return strdup (sp);
+	return res;
 }
 
 void __panels_process(RCore *core, RPanels *panels) {

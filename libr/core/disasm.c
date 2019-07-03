@@ -1110,6 +1110,11 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		core->parser->flagspace = ofs;
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
+	} else {
+		r_str_trim (ds->opstr); // trim before coloring git
+		char *asm_str = colorize_asm_string (core, ds, print_color);
+		free (ds->opstr);
+		ds->opstr = asm_str;
 	}
 	r_str_trim (ds->opstr);
 	// updates ds->opstr
