@@ -6,28 +6,30 @@
 
 #define PANEL_NUM_LIMIT 64
 
-#define PANEL_TITLE_SYMBOLS      "Symbols"
-#define PANEL_TITLE_STACK        "Stack"
-#define PANEL_TITLE_REGISTERS    "Registers"
-#define PANEL_TITLE_DISASSEMBLY  "Disassembly"
-#define PANEL_TITLE_DECOMPILER   "Decompiler"
-#define PANEL_TITLE_GRAPH        "Graph"
-#define PANEL_TITLE_FUNCTIONS    "Functions"
-#define PANEL_TITLE_BREAKPOINTS  "Breakpoints"
-#define PANEL_TITLE_STRINGS_DATA "Strings in data sections"
-#define PANEL_TITLE_STRINGS_BIN  "Strings in the whole bin"
-#define PANEL_TITLE_SECTIONS     "Sections"
-#define PANEL_TITLE_SEGMENTS     "Segments"
+#define PANEL_TITLE_SYMBOLS       "Symbols"
+#define PANEL_TITLE_STACK         "Stack"
+#define PANEL_TITLE_REGISTERS     "Registers"
+#define PANEL_TITLE_DISASSEMBLY   "Disassembly"
+#define PANEL_TITLE_DISASMSUMMARY "Disassemble Summary"
+#define PANEL_TITLE_DECOMPILER    "Decompiler"
+#define PANEL_TITLE_GRAPH         "Graph"
+#define PANEL_TITLE_FUNCTIONS     "Functions"
+#define PANEL_TITLE_BREAKPOINTS   "Breakpoints"
+#define PANEL_TITLE_STRINGS_DATA  "Strings in data sections"
+#define PANEL_TITLE_STRINGS_BIN   "Strings in the whole bin"
+#define PANEL_TITLE_SECTIONS      "Sections"
+#define PANEL_TITLE_SEGMENTS      "Segments"
 
-#define PANEL_CMD_SYMBOLS        "isq"
-#define PANEL_CMD_STACK          "px"
-#define PANEL_CMD_REGISTERS      "dr"
-#define PANEL_CMD_DISASSEMBLY    "pd"
-#define PANEL_CMD_DECOMPILER     "pdc"
-#define PANEL_CMD_FUNCTION       "afl"
-#define PANEL_CMD_GRAPH          "agf"
-#define PANEL_CMD_HEXDUMP        "xc"
-#define PANEL_CMD_CONSOLE        "$console"
+#define PANEL_CMD_SYMBOLS         "isq"
+#define PANEL_CMD_STACK           "px"
+#define PANEL_CMD_REGISTERS       "dr"
+#define PANEL_CMD_DISASSEMBLY     "pd"
+#define PANEL_CMD_DISASMSUMMARY   "pdsf"
+#define PANEL_CMD_DECOMPILER      "pdc"
+#define PANEL_CMD_FUNCTION        "afl"
+#define PANEL_CMD_GRAPH           "agf"
+#define PANEL_CMD_HEXDUMP         "xc"
+#define PANEL_CMD_CONSOLE         "$console"
 
 #define PANEL_CONFIG_MENU_MAX    64
 #define PANEL_CONFIG_PAGE        10
@@ -90,7 +92,7 @@ static const char *menus_iocache[] = {
 };
 
 static const char *menus_View[] = {
-	"Console", "Hexdump", "Disassembly", "Decompiler", "Graph", "Functions", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports", "Info", "Database",  "Breakpoints", "Comments", "Entropy", "Entropy Fire",
+	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Graph", "Functions", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports", "Info", "Database",  "Breakpoints", "Comments", "Entropy", "Entropy Fire",
 	"Stack", "Var READ address", "Var WRITE address", "Summary",
 	NULL
 };
@@ -482,6 +484,7 @@ static void __rotateFunctionCb (void *user, bool rev);
 static char *__print_default_cb(void *user, void *p);
 static char *__print_decompiler_cb(void *user, void *p);
 static char *__print_disassembly_cb(void *user, void *p);
+static char *__print_disasmsummary_cb (void *user, void *p);
 static char *__print_graph_cb(void *user, void *p);
 static char *__print_stack_cb(void *user, void *p);
 static char *__print_hexdump_cb(void *user, void *p);
@@ -605,7 +608,8 @@ bool __check_panel_type(RPanel *panel, const char *type, int len) {
 	}
 	if (!strcmp (type, PANEL_CMD_DISASSEMBLY)) {
 		if (!strncmp (panel->model->cmd, type, len) &&
-				strcmp (panel->model->cmd, PANEL_CMD_DECOMPILER)) {
+				strcmp (panel->model->cmd, PANEL_CMD_DECOMPILER) &&
+				strcmp (panel->model->cmd, PANEL_CMD_DISASMSUMMARY)) {
 			return true;
 		}
 		return false;
@@ -622,6 +626,10 @@ bool __is_abnormal_cursor_type(RCore *core, RPanel *panel) {
 	char *str;
 	if (__check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS)) ||
 			__check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
+		return true;
+	}
+	str = __search_db (core, PANEL_TITLE_DISASMSUMMARY);
+	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_DISASMSUMMARY), strlen (__search_db (core, PANEL_TITLE_DISASMSUMMARY)))) {
 		return true;
 	}
 	str = __search_db (core, PANEL_TITLE_STRINGS_DATA);
@@ -2372,6 +2380,10 @@ void __setpcb(RPanel *p) {
 		p->model->print_cb = __print_graph_cb;
 		return;
 	}
+	if (__check_panel_type (p, PANEL_CMD_DISASMSUMMARY, strlen (PANEL_CMD_DISASMSUMMARY))) {
+		p->model->print_cb = __print_disasmsummary_cb;
+		return;
+	}
 	p->model->print_cb = __print_default_cb;
 }
 
@@ -3244,6 +3256,20 @@ char *__print_decompiler_cb(void *user, void *p) {
 	return cmdstr;
 }
 
+char *__print_disasmsummary_cb (void *user, void *p) {
+	RCore *core = (RCore *)user;
+	RPanel *panel = (RPanel *)p;
+	bool update = core->panels->autoUpdate && __checkFuncDiff (core, panel);
+	char *cmdstr = __findCmdStrCache (core, panel);
+	if (update || !cmdstr) {
+		cmdstr = __handleCmdStrCache (core, panel, true);
+		if (panel->model->cache && panel->model->cmdStrCache) {
+			__resetScrollPos (panel);
+		}
+	}
+	return cmdstr;
+}
+
 char *__print_disassembly_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
@@ -4083,6 +4109,7 @@ void __initSdb(RCore *core) {
 	sdb_set (panels->db, "Registers", "dr", 0);
 	sdb_set (panels->db, "RegisterRefs", "drr", 0);
 	sdb_set (panels->db, "Disassembly", "pd", 0);
+	sdb_set (panels->db, "Disassemble Summary", "pdsf", 0);
 	sdb_set (panels->db, "Decompiler", "pdc", 0);
 	sdb_set (panels->db, "Graph", "agf", 0);
 	sdb_set (panels->db, "Info", "i", 0);
