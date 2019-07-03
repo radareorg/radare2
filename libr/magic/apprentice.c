@@ -1801,7 +1801,10 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 	}
 
 #ifdef QUICK
-	if ((mm = mmap (0, (size_t)st.st_size, PROT_READ, //OPENBSDBUG  |PROT_WRITE,
+#ifndef PROT_MAX
+#define PROT_MAX(p) 0
+#endif
+	if ((mm = mmap (0, (size_t)st.st_size, PROT_READ|PROT_MAX(PROT_READ), //OPENBSDBUG  |PROT_WRITE,
 	    MAP_PRIVATE|MAP_FILE, fd, (off_t)0)) == MAP_FAILED) {
 		file_error (ms, errno, "cannot map `%s'", dbname);
 		goto error1;
