@@ -718,6 +718,7 @@ typedef struct r_anal_t {
 	RFlagGetAtAddr flag_get;
 	REvent *ev;
 	bool use_ex;
+	RList *imports; // global imports
 } RAnal;
 
 typedef struct r_anal_hint_t {
