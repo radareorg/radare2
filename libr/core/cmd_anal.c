@@ -1616,7 +1616,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (mask);
 				free (maskstr);
 			}
-			if (hint) {
+			if (hint && hint->opcode) {
 				pj_ks (pj, "ophint", hint->opcode);
 			}
 			if (hint && hint->jump != UT64_MAX) {
