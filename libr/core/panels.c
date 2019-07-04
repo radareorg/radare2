@@ -5038,8 +5038,7 @@ void __rotatePanels(RCore *core, bool rev) {
 		}
 		first->model = tmp_model;
 	}
-	//__setRefreshAll (core, false, false);
-	__setRefreshAll (core, true, true);
+	__setRefreshAll (core, false, true);
 }
 
 void __rotateDisasCb(void *user, bool rev) {
@@ -5315,7 +5314,6 @@ void __handle_tab_nth(RCore *core, int ch) {
 	if (ch != core->panels_root->cur_panels && ch < core->panels_root->n_panels) {
 		core->panels_root->cur_panels = ch;
 		__set_root_state (core, ROTATE);
-		return;
 	}
 }
 
@@ -5339,7 +5337,6 @@ void __handle_tab_prev(RCore *core) {
 		core->panels_root->cur_panels = core->panels_root->n_panels - 1;
 	}
 	__set_root_state (core, ROTATE);
-	return;
 }
 
 void __handle_tab_name(RCore *core) {
@@ -5388,7 +5385,6 @@ void __handle_tab_new_with_cur_panel (RCore *core) {
 	new_panel->model->funcName = r_str_new (cur->model->funcName);
 	__setCmdStrCache (core, new_panel, r_str_new (cur->model->cmdStrCache));
 	__maximizePanelSize (new_panels);
-
 
 	core->panels = prev;
 	__dismantleDelPanel (core, cur, panels->curnode);
@@ -5488,15 +5484,53 @@ repeat:
 			if (panels->mode == PANEL_MODE_MENU) {
 				key = '\n';
 			} else if (y == 1) { // click on first line (The menu
+				if (!strcmp (word, "Tab")) {
+					__handle_tab_new (core);
+					free (word);
+					goto repeat;
+				}
+				if (word[0] == '[' && word[1] && word[2] == ']') {
+					// do nothing
+					goto repeat;
+				}
+				if (atoi (word)) {
+					// XXX doesnt seems to update anything else than the selected tab
+					__handle_tab_nth (core, word[0]);
+					// __getCurPanel (panels)->view->refresh = true;
+					__set_root_state (core, ROTATE);
+					__panels_layout_refresh (core);
+					goto repeat;
+				}
 				__setMode (core, PANEL_MODE_MENU);
 				__clearPanelsMenu (core);
 				__getCurPanel (panels)->view->refresh = true;
 				key = 'j';
 			} else {
 				// TODO: select nth panel here
+				if (r_str_endswith (word, "X]")) {
+					key = 'X';
+					free (word);
+					goto skip;
+				}
 				if (word) {
 					r_config_set (core->config, "scr.highlight", word);
 					free (word);
+				}
+				int i;
+				for (i = 0; i < panels->n_panels; i++) {
+					RPanel *p = __getPanel (panels, i);
+					if (x >= p->view->pos.x && x < p->view->pos.x + p->view->pos.w) {
+						if (y >= p->view->pos.y && y < p->view->pos.y + p->view->pos.h) {
+							if (x >= p->view->pos.x && x < p->view->pos.x + 4) {
+								key = 'c';
+								goto skip;
+							}
+							panels->curnode = i;
+							__set_curnode(core, i);
+							__setRefreshAll (core, true, true);
+						}
+						break;
+					}
 				}
 				goto repeat;
 				key = 'c'; // toggle cursor
@@ -5505,6 +5539,7 @@ repeat:
 			goto repeat;
 		}
 	}
+skip:
 	r_cons_switchbuf (true);
 
 	if (panels->mode == PANEL_MODE_MENU) {
@@ -6012,5 +6047,4 @@ exit:
 	core->print->col = 0;
 	core->vmode = originVmode;
 	core->panels = prev;
-	return;
 }
