@@ -3002,7 +3002,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "Specify supported features by the target CPU");
 	update_asmfeatures_options (core, n);
 	SETCB ("asm.parser", "x86.pseudo", &cb_asmparser, "Set the asm parser to use");
-	SETPREF ("asm.movlea", "true", "Show hint comments for MOV and LEA instructions");
 	SETCB ("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
 	SETCB ("asm.decoff", "false", &cb_decoff, "Show segmented address in prompt (x86-16)");
 	SETICB ("asm.seggrn", 4, &cb_seggrn, "Segment granularity in bits (x86-16)");

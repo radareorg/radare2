@@ -93,7 +93,6 @@ typedef struct {
 	int interactive;
 	bool jmpsub;
 	bool varsub;
-	bool show_movlea;
 	bool show_lines;
 	bool show_lines_bb;
 	bool show_lines_ret;
@@ -733,7 +732,6 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
 	ds->show_reloff_flags = r_config_get_i (core->config, "asm.reloff.flags");
 	ds->show_lines_fcn = ds->show_lines ? r_config_get_i (core->config, "asm.lines.fcn") : false;
-	ds->show_movlea = r_config_get_i (core->config, "asm.movlea");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_usercomments = r_config_get_i (core->config, "asm.usercomments");
 	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
@@ -2926,82 +2924,6 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 	return ret;
 }
 
-static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
-	RCore *core = ds->core;
-	RAnalValue *src;
-	const int addrbytes = core->io->addrbytes;
-	if (!ds->show_movlea) {
-		return;
-	}
-
-	switch (ds->analop.type) {
-	case R_ANAL_OP_TYPE_LENGTH:
-	case R_ANAL_OP_TYPE_CAST:
-	case R_ANAL_OP_TYPE_CMOV:
-	case R_ANAL_OP_TYPE_MOV:
-		src = ds->analop.src[0];
-		if (src && src->memref > 0 && src->reg && core->anal->reg) {
-			const char *pc = core->anal->reg->name[R_REG_NAME_PC];
-			RAnalValue *dst = ds->analop.dst;
-			if (dst && dst->reg && dst->reg->name) {
-				if (src->memref < 0 || src->memref > 8) {
-					break;
-				}
-				if (src->reg->name && pc && !strcmp (src->reg->name, pc)) {
-					RFlagItem *item;
-					ut8 b[8];
-					ut64 ptr = addrbytes * idx + ds->addr + src->delta + ds->analop.size;
-					ut64 off = 0LL;
-					r_io_read_at (core->io, ptr, b, src->memref);
-					off = r_mem_get_num (b, src->memref);
-					item = r_flag_get_i (core->flags, off);
-					//TODO: introduce env for this print?
-					ds_begin_comment (ds);
-					ds_comment (ds, true, "; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x"%s%s",
-							dst->reg->name, ptr, off, item?" ": "", item?item->name: "");
-					if (ds->asm_anal) {
-						if (r_io_is_valid_offset (core->io, off, 0)) {
-							r_anal_xrefs_set (core->anal, off, ds->addr, R_ANAL_REF_TYPE_DATA);
-						}
-					}
-				}
-			}
-		}
-		break;
-// TODO: get from meta anal?
-	case R_ANAL_OP_TYPE_LEA:
-		src = ds->analop.src[0];
-		if (src && src->reg && core->anal->reg && *(core->anal->reg->name)) {
-			const char *pc = core->anal->reg->name[R_REG_NAME_PC];
-			RAnalValue *dst = ds->analop.dst;
-			if (dst && dst->reg && src->reg->name && pc && !strcmp (src->reg->name, pc)) {
-				int index = 0;
-				int memref = core->assembler->bits / 8;
-				RFlagItem *item;
-				ut8 b[64];
-				ut64 ptr = index + ds->addr + src->delta + ds->analop.size;
-				ut64 off = 0LL;
-				r_io_read_at (core->io, ptr, b, sizeof (b)); //memref);
-				off = r_mem_get_num (b, memref);
-				item = r_flag_get_i (core->flags, off);
-				if (ds->asm_hint_lea) {
-					char s[64];
-					r_str_ncpy (s, (const char *)b, sizeof (s));
-					r_str_filter (s, -1);
-					ds_begin_comment (ds);
-					ds_comment (ds, true, "; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"",
-					            dst->reg->name, ptr, off, item?item->name: s);
-					if (ds->asm_anal) {
-						if (r_io_is_valid_offset (core->io, off, 0)) {
-							r_anal_xrefs_set (core->anal, ptr, ds->addr, R_ANAL_REF_TYPE_DATA);
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
 static st64 revert_cdiv_magic(st64 magic) {
 	ut64 amagic = llabs (magic);
 	const st64 N = ST64_MAX;
@@ -5175,7 +5097,6 @@ toro:
 		ds_show_xrefs (ds);
 
 		if (ds->show_comments && !ds->show_comment_right) {
-			ds_instruction_mov_lea (ds, idx);
 			ds_show_refs (ds);
 			ds_build_op_str (ds, false);
 			ds_print_ptr (ds, len + 256, idx);
@@ -5315,7 +5236,6 @@ toro:
 
 			ds_cdiv_optimization (ds);
 			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
-				ds_instruction_mov_lea (ds, idx);
 				ds_print_ptr (ds, len + 256, idx);
 				ds_print_sysregs (ds);
 				ds_print_fcn_name (ds);
