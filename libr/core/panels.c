@@ -4118,8 +4118,8 @@ void __initSdb(RCore *core) {
 	sdb_set (panels->db, "Hexdump", "xc", 0);
 	sdb_set (panels->db, "Functions", "afl", 0);
 	sdb_set (panels->db, "Comments", "CC", 0);
-	sdb_set (panels->db, "Entropy", "p=e", 0);
-	sdb_set (panels->db, "Entropy Fire", "p==e", 0);
+	sdb_set (panels->db, "Entropy", "p=e 100", 0);
+	sdb_set (panels->db, "Entropy Fire", "p==e 100", 0);
 	sdb_set (panels->db, "DRX", "drx", 0);
 	sdb_set (panels->db, "Sections", "iSq", 0);
 	sdb_set (panels->db, "Segments", "iSSq", 0);
@@ -5038,7 +5038,8 @@ void __rotatePanels(RCore *core, bool rev) {
 		}
 		first->model = tmp_model;
 	}
-	__setRefreshAll (core, false, false);
+	//__setRefreshAll (core, false, false);
+	__setRefreshAll (core, true, true);
 }
 
 void __rotateDisasCb(void *user, bool rev) {
@@ -5484,10 +5485,6 @@ repeat:
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
 			char *word = getWordFromCanvas (core, panels, x, y);
-			if (word) {
-				r_config_set (core->config, "scr.highlight", word);
-				free (word);
-			}
 			if (panels->mode == PANEL_MODE_MENU) {
 				key = '\n';
 			} else if (y == 1) { // click on first line (The menu
@@ -5496,10 +5493,13 @@ repeat:
 				__getCurPanel (panels)->view->refresh = true;
 				key = 'j';
 			} else {
+				// TODO: select nth panel here
+				if (word) {
+					r_config_set (core->config, "scr.highlight", word);
+					free (word);
+				}
 				goto repeat;
-				key = 'c';
-			// } else {
-			//	goto repeat;
+				key = 'c'; // toggle cursor
 			}
 		} else {
 			goto repeat;
@@ -5769,10 +5769,19 @@ repeat:
 		__getCurPanel (panels)->view->refresh = true;
 		break;
 	case 'g':
-		r_core_visual_showcursor (core, true);
-		r_core_visual_offset (core);
-		r_core_visual_showcursor (core, false);
-		__set_panel_addr (core, cur, core->offset);
+		{
+			const char *hl = r_config_get (core->config, "scr.highlight");
+			if (hl) {
+				ut64 addr = r_num_math (core->num, hl);
+				__set_panel_addr (core, cur, addr);
+				// r_io_sundo_push (core->io, addr, false); // doesnt seems to work
+			} else {
+				r_core_visual_showcursor (core, true);
+				r_core_visual_offset (core);
+				r_core_visual_showcursor (core, false);
+				__set_panel_addr (core, cur, core->offset);
+			}
+		}
 		break;
 	case 'G':
 		if (__checkFunc (core)) {
