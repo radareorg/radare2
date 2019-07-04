@@ -12,6 +12,7 @@
 #define PANEL_TITLE_DISASSEMBLY   "Disassembly"
 #define PANEL_TITLE_DISASMSUMMARY "Disassemble Summary"
 #define PANEL_TITLE_DECOMPILER    "Decompiler"
+#define PANEL_TITLE_DECOMPILER_O  "Decompiler With Offsets"
 #define PANEL_TITLE_GRAPH         "Graph"
 #define PANEL_TITLE_FUNCTIONS     "Functions"
 #define PANEL_TITLE_BREAKPOINTS   "Breakpoints"
@@ -26,6 +27,7 @@
 #define PANEL_CMD_DISASSEMBLY     "pd"
 #define PANEL_CMD_DISASMSUMMARY   "pdsf"
 #define PANEL_CMD_DECOMPILER      "pdc"
+#define PANEL_CMD_DECOMPILER_O    "pddo"
 #define PANEL_CMD_FUNCTION        "afl"
 #define PANEL_CMD_GRAPH           "agf"
 #define PANEL_CMD_HEXDUMP         "xc"
@@ -92,7 +94,7 @@ static const char *menus_iocache[] = {
 };
 
 static const char *menus_View[] = {
-	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Graph", "Functions", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports", "Info", "Database",  "Breakpoints", "Comments", "Entropy", "Entropy Fire",
+	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets", "Graph", "Functions", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports", "Info", "Database",  "Breakpoints", "Comments", "Entropy", "Entropy Fire",
 	"Stack", "Var READ address", "Var WRITE address", "Summary",
 	NULL
 };
@@ -196,7 +198,7 @@ static const char *help_msg_panels[] = {
 	"f",        "set/add filter keywords",
 	"F",        "remove all the filters",
 	"g",        "go/seek to given offset",
-	"G",        "show graph in the current panel",
+	"G",        "go/seek to highlight",
 	"i",        "insert hex",
 	"hjkl",     "move around (left-down-up-right)",
 	"HJKL",     "move around (left-down-up-right) by page",
@@ -609,6 +611,7 @@ bool __check_panel_type(RPanel *panel, const char *type, int len) {
 	if (!strcmp (type, PANEL_CMD_DISASSEMBLY)) {
 		if (!strncmp (panel->model->cmd, type, len) &&
 				strcmp (panel->model->cmd, PANEL_CMD_DECOMPILER) &&
+				strcmp (panel->model->cmd, PANEL_CMD_DECOMPILER_O) &&
 				strcmp (panel->model->cmd, PANEL_CMD_DISASMSUMMARY)) {
 			return true;
 		}
@@ -1030,7 +1033,7 @@ void __splitPanelVertical(RCore *core, RPanel *p, const char *name, const char *
 	p->view->pos.w = owidth / 2 + 1;
 	__set_geometry (&next->view->pos, p->view->pos.x + p->view->pos.w - 1,
 			p->view->pos.y, owidth - p->view->pos.w + 1, p->view->pos.h);
-	__setRefreshAll (core, false, false);
+	__setRefreshAll (core, false, true);
 }
 
 void __splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char *cmd, bool cache) {
@@ -1045,7 +1048,7 @@ void __splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char
 	p->view->pos.h = oheight / 2 + 1;
 	__set_geometry (&next->view->pos, p->view->pos.x, p->view->pos.y + p->view->pos.h - 1,
 			p->view->pos.w, oheight - p->view->pos.h + 1);
-	__setRefreshAll (core, false, false);
+	__setRefreshAll (core, false, true);
 }
 
 void __panels_layout_refresh(RCore *core) {
@@ -2149,7 +2152,7 @@ void __replaceCmd(RCore *core, const char *title, const char *cmd, const bool ca
 	__setdcb (core, cur);
 	__setpcb (cur);
 	__setrcb (panels, cur);
-	__setRefreshAll (core, false, false);
+	__setRefreshAll (core, false, true);
 }
 
 void __swapPanels(RPanels *panels, int p0, int p1) {
@@ -4111,6 +4114,7 @@ void __initSdb(RCore *core) {
 	sdb_set (panels->db, "Disassembly", "pd", 0);
 	sdb_set (panels->db, "Disassemble Summary", "pdsf", 0);
 	sdb_set (panels->db, "Decompiler", "pdc", 0);
+	sdb_set (panels->db, "Decompiler With Offsets", "pddo", 0);
 	sdb_set (panels->db, "Graph", "agf", 0);
 	sdb_set (panels->db, "Info", "i", 0);
 	sdb_set (panels->db, "Database", "k ***", 0);
@@ -4195,7 +4199,7 @@ void __create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R_NULLAB
 		__splitPanelHorizontal (core, panel, title, cmd, cache);
 		break;
 	case NONE:
-		__replaceCmd (core, title, cmd, false);
+		__replaceCmd (core, title, cmd, cache);
 		break;
 	}
 }
@@ -5046,7 +5050,8 @@ void __rotateDisasCb(void *user, bool rev) {
 	RPanel *p = __getCurPanel (core->panels);
 
 	//TODO: need to come up with a better solution but okay for now
-	if (!strcmp (p->model->cmd, PANEL_CMD_DECOMPILER)) {
+	if (!strcmp (p->model->cmd, PANEL_CMD_DECOMPILER) ||
+			!strcmp (p->model->cmd, PANEL_CMD_DECOMPILER_O)) {
 		return;
 	}
 
@@ -5804,23 +5809,19 @@ skip:
 		__getCurPanel (panels)->view->refresh = true;
 		break;
 	case 'g':
+		r_core_visual_showcursor (core, true);
+		r_core_visual_offset (core);
+		r_core_visual_showcursor (core, false);
+		__set_panel_addr (core, cur, core->offset);
+		break;
+	case 'G':
 		{
 			const char *hl = r_config_get (core->config, "scr.highlight");
 			if (hl) {
 				ut64 addr = r_num_math (core->num, hl);
 				__set_panel_addr (core, cur, addr);
 				// r_io_sundo_push (core->io, addr, false); // doesnt seems to work
-			} else {
-				r_core_visual_showcursor (core, true);
-				r_core_visual_offset (core);
-				r_core_visual_showcursor (core, false);
-				__set_panel_addr (core, cur, core->offset);
 			}
-		}
-		break;
-	case 'G':
-		if (__checkFunc (core)) {
-			__replaceCmd (core, PANEL_TITLE_GRAPH, PANEL_CMD_GRAPH, 1);
 		}
 		break;
 	case 'h':
