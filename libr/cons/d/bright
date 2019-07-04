@@ -32,7 +32,7 @@ ec other rgb:ffffff
 ec pop rgb:ff00ff . bold
 ec prompt rgb:ffff00
 ec push rgb:ff00ff
-ec crypto rgb:0000ff
+ec crypto rgb:ffff00
 ec reg rgb:00ffff
 ec ret rgb:ff0000
 ec swi rgb:ff00ff
@@ -55,14 +55,14 @@ ec wordhl rgb:ff0000
 ec linehl rgb:000080
 
 ec func_var rgb:ffffff
-ec func_var_type rgb:0000ff
+ec func_var_type rgb:ffff00
 ec func_var_addr rgb:00ffff
 
 ec widget_bg rgb:303030
 ec widget_sel rgb:ff0000
 
-ec graph.box null
-ec graph.box2 rgb:0000ff
+ec graph.box rgb:0000ff
+ec graph.box2 rgb:00ff00
 ec graph.box3 rgb:ff00ff
 ec graph.box4 rgb:808080
 ec graph.true rgb:00ff00
