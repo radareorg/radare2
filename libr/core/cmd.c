@@ -1750,6 +1750,7 @@ static struct autocomplete_flag_map_t {
 	{ "$thme", "shows known themes hints", R_CORE_AUTOCMPLT_THME },
 	{ "$optn", "allows the selection for multiple options", R_CORE_AUTOCMPLT_OPTN },
 	{ "$ms", "shows mount hints", R_CORE_AUTOCMPLT_MS},
+	{ "$sdb", "shows sdb hints", R_CORE_AUTOCMPLT_SDB},
 	{ NULL, NULL, 0 }
 };
 
