@@ -2114,6 +2114,32 @@ static RList *dex_fields(RBinFile *bf) {
 	return ret;
 }
 
+static RList* libs(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	char *path = r_file_dirname (bf->file);
+	RList *files = r_sys_dir (path);
+	RList *ret = r_list_newf (free);
+	if (!ret) {
+		return NULL;
+	}
+	RListIter *iter;
+	char *file;
+	r_list_foreach (files, iter, file) {
+		if (!r_str_startswith (file, "classes")) {
+			continue;
+		}
+		if (r_str_endswith (file, ".dex")) {
+			char *n = r_str_newf ("%s%s%s", path, R_SYS_DIR, file);
+			if (strcmp (n, bf->file)) {
+				r_list_append (ret, n);
+			}
+		}
+	}
+	r_list_free (files);
+	free (path);
+	return ret;
+}
+
 RBinPlugin r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
@@ -2132,6 +2158,7 @@ RBinPlugin r_bin_plugin_dex = {
 	.info = &info,
 	.header = dex_header,
 	.fields = dex_fields,
+	.libs = &libs,
 	.size = &size,
 	.get_offset = &getoffset,
 	.get_name = &getname,
