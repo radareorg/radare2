@@ -5501,9 +5501,9 @@ repeat:
 				if (atoi (word)) {
 					// XXX doesnt seems to update anything else than the selected tab
 					__handle_tab_nth (core, word[0]);
-					// __getCurPanel (panels)->view->refresh = true;
-					__set_root_state (core, ROTATE);
-					__panels_layout_refresh (core);
+					if (panels_root->root_state != DEFAULT) {
+						goto exit;
+					}
 					goto repeat;
 				}
 				__setMode (core, PANEL_MODE_MENU);
