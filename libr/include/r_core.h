@@ -473,7 +473,6 @@ R_API int r_core_file_set_by_name(RCore *core, const char * name);
 R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf);
 R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach);
 
-R_API int r_core_files_free(const RCore *core, RCoreFile *cf);
 R_API void r_core_file_free(RCoreFile *cf);
 R_API RCoreFile *r_core_file_open(RCore *core, const char *file, int flags, ut64 loadaddr);
 R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr);

@@ -670,9 +670,10 @@ R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf);
 R_API void r_bin_force_plugin(RBin *bin, const char *pname);
 
 // get/set various bin information
+R_API ut64 r_bin_get_baddr(RBin *bin);
+R_API ut64 r_bin_file_get_baddr(RBinFile *bf);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 R_API RBinInfo *r_bin_get_info(RBin *bin);
-R_API ut64 r_bin_get_baddr(RBin *bin);
 R_API void r_bin_set_baddr(RBin *bin, ut64 baddr);
 R_API ut64 r_bin_get_laddr(RBin *bin);
 R_API ut64 r_bin_get_size(RBin *bin);

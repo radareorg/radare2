@@ -79,20 +79,16 @@ R_API bool r_io_fd_is_dbg(RIO *io, int fd) {
 }
 
 R_API int r_io_fd_get_pid(RIO *io, int fd) {
-	RIODesc *desc;
 	if (!io || !io->files) {
 		return -2;
 	}
- 	desc = r_io_desc_get (io, fd);
+	RIODesc *desc = r_io_desc_get (io, fd);
 	return r_io_desc_get_pid (desc);
 }
 
 R_API int r_io_fd_get_tid(RIO *io, int fd) {
-	RIODesc *desc;
-	if (!io || !io->files) {
-		return -2;
-	}
- 	desc = r_io_desc_get (io, fd);
+	r_return_val_if_fail (io && io->files, -2);
+	RIODesc *desc = r_io_desc_get (io, fd);
 	return r_io_desc_get_tid (desc);
 }
 
