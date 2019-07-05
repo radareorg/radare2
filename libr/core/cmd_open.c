@@ -535,7 +535,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 	const char *P;
 
 	switch (input[1]) {
-	case '.':
+	case '.': // "om."
 		map = r_io_map_get (core->io, core->offset);
 		if (map) {
 			core->print->cb_printf ("map: %i fd: %i +0x%"PFMT64x" 0x%"PFMT64x

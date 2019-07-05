@@ -435,22 +435,16 @@ R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
 
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch, int bits, const char *name) {
 	r_return_val_if_fail (bf && arch && name, NULL);
-	if (!bf->o) {
-		return NULL;
-	}
-	RBinInfo *info = bf->o->info;
-	if (info && info->arch && info->file &&
-			(bits == info->bits) &&
-			!strcmp (info->arch, arch) &&
-			!strcmp (info->file, name)) {
-		return bf->o;
+	if (bf->o) {
+		RBinInfo *info = bf->o->info;
+		if (info && info->arch && info->file &&
+				(bits == info->bits) &&
+				!strcmp (info->arch, arch) &&
+				!strcmp (info->file, name)) {
+			return bf->o;
+		}
 	}
 	return NULL;
-}
-
-R_IPI ut64 r_bin_object_get_baddr(RBinObject *o) {
-	r_return_val_if_fail (o, UT64_MAX);
-	return o->baddr; //  + o->baddr_shift;
 }
 
 R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {

@@ -3778,9 +3778,6 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, int mode) {
 	ut32 bin_sz = bf ? bf->size : 0;
 	// TODO: handle mode to print in json and r2 commands
 
-	if (!bf) {
-		return false;
-	}
 	switch (mode) {
 	case '*':
 		r_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", bf->o->boffset, name, bf->id);

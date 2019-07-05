@@ -295,6 +295,7 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 		if (bf) {
 			core->bin->cur = bf;
 			r_bin_select_bfid (core->bin, bf->id);
+			// XXX r_core_cmdf (core, "obb %d", bf->id);
 		} else {
 			core->bin->cur = NULL;
 		}
@@ -304,7 +305,6 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 
 R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	ut64 tmp = core->offset;
-	int ret;
 	if (addr == 0) {
 		return true;
 	}
@@ -320,12 +320,7 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 		}
 	}
 	core->offset = addr;
-	ret = r_core_seek (core, addr, 1);
-	//ret = r_core_block_read (core);
-	//if (ret == -1)
-	//	memset (core->block, 0xff, core->blocksize);
-	//	core->offset = tmp;
-	return ret;
+	return r_core_seek (core, addr, 1);
 }
 
 // TODO: kill this wrapper

@@ -659,8 +659,7 @@ R_API void r_bin_list(RBin *bin, int format) {
 /* returns the base address of bin or UT64_MAX in case of errors */
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	r_return_val_if_fail (bin, UT64_MAX);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? r_bin_object_get_baddr (o) : UT64_MAX;
+	return r_bin_file_get_baddr (bin->cur);
 }
 
 /* returns the load address of bin or UT64_MAX in case of errors */
@@ -1435,10 +1434,15 @@ R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
 	RBinFile *bf;
 	RBinSection *s;
 	r_list_foreach (bin->binfiles, it, bf) {
+		// chk for baddr + size of no section is covering anything
+		// we should honor maps not sections imho
 		r_list_foreach (bf->o->sections, it2, s) {
 			if (at >= s->vaddr  && at < (s->vaddr + s->vsize)) {
 				return bf;
 			}
+		}
+		if (at >= bf->o->baddr && at < (bf->o->baddr + bf->size)) {
+			return bf;
 		}
 	}
 	return NULL;

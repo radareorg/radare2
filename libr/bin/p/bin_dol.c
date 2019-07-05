@@ -44,6 +44,9 @@ static bool check_buffer(RBuffer *buf) {
 	bool one = r == sizeof (tmp) && !memcmp (tmp, "\x00\x00\x01\x00\x00\x00", sizeof (tmp));
 	if (one) {
 		int r = r_buf_read_at (buf, 6, tmp, sizeof (tmp));
+		if (r != 6) {
+			return false;
+		}
 		return sizeof (tmp) && !memcmp (tmp, "\x00\x00\x00\x00\x00\x00", sizeof (tmp));
 	}
 	return false;
