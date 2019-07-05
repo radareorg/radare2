@@ -636,7 +636,11 @@ R_API int r_cons_eof() {
 }
 
 R_API void r_cons_gotoxy(int x, int y) {
+#if __WINDOWS__
+	r_cons_w32_gotoxy (1, x, y);
+#else
 	r_cons_printf ("\x1b[%d;%dH", y, x);
+#endif
 }
 
 R_API void r_cons_print_clear() {
@@ -693,8 +697,12 @@ R_API void r_cons_reset_colors() {
 }
 
 R_API void r_cons_clear() {
-	r_cons_strcat (Color_RESET R_CONS_CLEAR_SCREEN);
 	I.lines = 0;
+#if __WINDOWS__
+	r_cons_w32_clear ();
+#else
+	r_cons_strcat (Color_RESET R_CONS_CLEAR_SCREEN);
+#endif
 }
 
 static void cons_grep_reset(RConsGrep *grep) {
@@ -1277,8 +1285,8 @@ R_API int r_cons_get_size(int *rows) {
 #if __WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	bool ret = GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
-	I.columns = (csbi.srWindow.Right - csbi.srWindow.Left) - 1;
-	I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top; // last row empty
+	I.columns = (csbi.srWindow.Right - csbi.srWindow.Left) + 1;
+	I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
  	if (!ret || I.columns == -1 && I.rows == 0) {
 		// Stdout is probably redirected so we set default values
 		I.columns = 80;

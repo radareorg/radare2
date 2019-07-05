@@ -5533,8 +5533,8 @@ repeat:
 							panels->curnode = i;
 							__set_curnode(core, i);
 							__setRefreshAll (core, true, true);
+							break;
 						}
-						break;
 					}
 				}
 				goto repeat;
