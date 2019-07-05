@@ -93,7 +93,7 @@ static int __parseMouseEvent() {
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
 #if __WINDOWS__
-	return ch;
+	return ch < 2 ? 0 : ch;
 #endif
 	I->mouse_event = 0;
 	/* emacs */
@@ -369,47 +369,54 @@ static int __cons_readchar_w32 (ut32 usec) {
 	BOOL bCtrl = FALSE;
 	DWORD mode, out;
 	HANDLE h;
-	INPUT_RECORD irInBuf[128];
+	INPUT_RECORD irInBuf;
 	int i, o;
 	bool resize = false;
 	void *bed;
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS);
-do_it_again:
-	bed = r_cons_sleep_begin ();
-	if (usec) {
-		if (WaitForSingleObject (h, usec) == WAIT_TIMEOUT) {
-			r_cons_sleep_end (bed);
-			return -1;
+	do {
+		bed = r_cons_sleep_begin ();
+		if (usec) {
+			if (WaitForSingleObject (h, usec) == WAIT_TIMEOUT) {
+				r_cons_sleep_end (bed);
+				return -1;
+			}
 		}
-	}
-	ret = ReadConsoleInput (h, irInBuf, 128, &out);
-	r_cons_enable_mouse (true);
-	r_cons_sleep_end (bed);
-	if (ret) {
-		for (i = 0; i < out; i++) {
-			if (irInBuf[i].EventType == MOUSE_EVENT) {
-				if (irInBuf[i].Event.MouseEvent.dwEventFlags == MOUSE_WHEELED) {
-					if (irInBuf[i].Event.MouseEvent.dwButtonState & 0xFF000000) {
+		ret = ReadConsoleInput (h, &irInBuf, 1, &out);
+		r_cons_enable_mouse (true);
+		r_cons_sleep_end (bed);
+		if (ret) {
+			if (irInBuf.EventType == MOUSE_EVENT) {
+				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_MOVED) {
+					continue;
+				}
+				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_WHEELED) {
+					if (irInBuf.Event.MouseEvent.dwButtonState & 0xFF000000) {
 						ch = bCtrl ? 'J' : 'j';
 					} else {
 						ch = bCtrl ? 'K' : 'k';
 					}
-					break;
+					I->mouse_event = 1;
 				}
-				switch (irInBuf[i].Event.MouseEvent.dwButtonState) {
+				switch (irInBuf.Event.MouseEvent.dwButtonState) {
 				case FROM_LEFT_1ST_BUTTON_PRESSED:
+					r_cons_set_click (irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1);
+					ch = 1;
+					break;
+				case RIGHTMOST_BUTTON_PRESSED:
 					r_cons_enable_mouse (false);
+					break;
 				} // TODO: Handle more buttons?
 			}
-			if (irInBuf[i].EventType == KEY_EVENT) {
-				if (irInBuf[i].Event.KeyEvent.bKeyDown) {
-					ch = irInBuf[i].Event.KeyEvent.uChar.AsciiChar;
-					bCtrl=irInBuf[i].Event.KeyEvent.dwControlKeyState & 8;
-					if (irInBuf[i].Event.KeyEvent.uChar.AsciiChar == 0) {
+			if (irInBuf.EventType == KEY_EVENT) {
+				if (irInBuf.Event.KeyEvent.bKeyDown) {
+					ch = irInBuf.Event.KeyEvent.uChar.AsciiChar;
+					bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
+					if (irInBuf.Event.KeyEvent.uChar.AsciiChar == 0) {
 						ch = 0;
-						switch (irInBuf[i].Event.KeyEvent.wVirtualKeyCode) {
+						switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
 						case VK_DOWN: // key down
 							ch = bCtrl ? 'J' : 'j';
 							break;
@@ -471,27 +478,18 @@ do_it_again:
 					}
 				}
 			}
-			if (irInBuf[i].EventType == WINDOW_BUFFER_SIZE_EVENT) {
+			if (irInBuf.EventType == WINDOW_BUFFER_SIZE_EVENT) {
 				resize = true;
 			}
+			if (resize) {
+				resizeWin ();
+				resize = false;
+			}
 		}
-		if (resize) {
-			resizeWin ();
-			resize = false;
-		}
-	}
-	FlushConsoleInputBuffer (h);
-	if (ch == 0) {
-		goto do_it_again;
-	}
+		FlushConsoleInputBuffer (h);
+	} while (ch == 0);
 	SetConsoleMode (h, mode);
-	/*r_cons_gotoxy (1, 2);
-	r_cons_printf ("\n");
-	r_cons_printf ("| buf = %x |\n", ch);
-	r_cons_printf ("\n");
-	r_cons_flush ();
-	r_sys_sleep (1);*/
-	return  ch;
+	return ch;
 }
 #endif
 
