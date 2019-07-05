@@ -1285,7 +1285,7 @@ R_API int r_cons_get_size(int *rows) {
 #if __WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	bool ret = GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
-	I.columns = (csbi.srWindow.Right - csbi.srWindow.Left) + 1;
+	I.columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 	I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
  	if (!ret || I.columns == -1 && I.rows == 0) {
 		// Stdout is probably redirected so we set default values

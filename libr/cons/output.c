@@ -116,7 +116,7 @@ static int r_cons_w32_hprint(DWORD hdl, const ut8 *ptr, int len, bool vmode) {
 			raw_ll = (size_t)(ptr - str);
 			ll = utf8len_fixed (str, raw_ll);
 			lines--;
-			if (vmode && lines < 0) {
+			if (vmode && lines < 1) {
 				break;
 			}
 			if (raw_ll < 1) {
