@@ -97,16 +97,16 @@ typedef struct _OBJECT_TYPE_INFORMATION {
 } OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
 
 typedef struct {
-	// bool dbgpriv;
-	HANDLE ph;
-	bool debug;
+	ut64 winbase;
+	PROCESS_INFORMATION pi;
 } RIOW32Dbg;
 
 // thread list
 typedef struct {
 	int pid;
 	int tid;
-	BOOL bFinished;
+	bool bFinished;
+	bool bSuspended;
 	HANDLE hThread;
 	LPVOID lpThreadLocalBase;
 	LPVOID lpStartAddress;

@@ -26,10 +26,11 @@ bool setup_debug_privileges(bool b) {
 }
 
 int w32_init(RDebug *dbg) {
-	RIOW32Dbg *rio = dbg->user = R_NEW (RIOW32Dbg);
-	if (!rio) {
-		eprintf ("w32_init: failed to allocate memory\n");
-		return false;
+	if (dbg->iob.io->desc && dbg->iob.io->desc->data) {
+		RIOW32Dbg* rio = dbg->iob.io->desc->data;
+		dbg->user = rio;
+		dbg->pid = rio->pi.dwProcessId;
+		dbg->tid = rio->pi.dwThreadId;
 	}
 
 	// escalate privs (required for win7/vista)
@@ -129,9 +130,39 @@ int w32_init(RDebug *dbg) {
 	}
 
 	// rio->dbgpriv = setup_debug_privileges (true);
-	rio->ph = (HANDLE)NULL;
-	rio->debug = false;
 	return true;
+}
+
+static void __r_debug_thread_add(RDebug *dbg, DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
+	r_return_if_fail (dbg);
+	PVOID startAddress = 0;
+	if (!dbg->threads) {
+		dbg->threads = r_list_newf (free);
+	}
+	RListIter *it;
+	THREAD_ITEM th = {
+			pid,
+			tid,
+			bFinished,
+			false,
+			hThread,
+			lpThreadLocalBase,
+			lpStartAddress
+	};
+	PTHREAD_ITEM pthread;
+	r_list_foreach (dbg->threads, it, pthread) {
+		if (pthread->tid == tid) {
+			*pthread = th;
+			return;
+		}
+	}
+	pthread = R_NEW0 (THREAD_ITEM);
+	if (!pthread) {
+		R_LOG_ERROR ("__r_debug_thread_add: Memory allocation failed.\n");
+		return;
+	}
+	*pthread = th;
+	r_list_append (dbg->threads, pthread);
 }
 
 static int __suspend_thread(HANDLE th, int bits) {
@@ -160,6 +191,22 @@ static int __resume_thread(HANDLE th, int bits) {
 		}
 	}*/
 	return ret;
+}
+
+static bool __w32_findthread_cmp(int *tid, PTHREAD_ITEM th) {
+	return !(*tid == th->tid);
+}
+
+static bool __is_thread_alive(RDebug *dbg, int tid) {
+	RListIter *it = r_list_find (dbg->threads, &tid, __w32_findthread_cmp);
+	if (!it) {
+		return false;
+	}
+	return !((PTHREAD_ITEM)it->data)->bFinished;
+}
+
+static bool __sort_threads(PTHREAD_ITEM t1, PTHREAD_ITEM t2) {
+	return t1->bFinished > t2->bFinished;
 }
 
 static int __set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
@@ -373,13 +420,17 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	if (dbg->bits == R_SYS_BITS_64) {
 		flags |= THREAD_QUERY_INFORMATION;
 	}
+	
+	bool alive = __is_thread_alive (dbg, dbg->tid);
 	HANDLE th = OpenThread (flags, FALSE, dbg->tid);
 	if (!th) {
-		r_sys_perror ("w32_reg_read/OpenThread");
+		if (alive) {
+			r_sys_perror ("w32_reg_read/OpenThread");
+		}
 		return 0;
 	}
 	// Always suspend
-	if (__suspend_thread (th, dbg->bits) == -1) {
+	if (alive && __suspend_thread (th, dbg->bits) == -1) {
 		CloseHandle (th);
 		return 0;
 	}
@@ -388,7 +439,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		__printwincontext (th, (CONTEXT *)buf);
 	}
 	// Always resume
-	if (__resume_thread (th, dbg->bits) == -1) {
+	if (alive && __resume_thread (th, dbg->bits) == -1) {
 		size = 0;
 	}
 	CloseHandle (th);
@@ -405,14 +456,15 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		r_sys_perror ("w32_reg_write/OpenThread");
 		return false;
 	}
+	bool alive = __is_thread_alive (dbg, dbg->tid);
 	// Always suspend
-	if (__suspend_thread (th, dbg->bits) == -1) {
+	if (alive && __suspend_thread (th, dbg->bits) == -1) {
 		CloseHandle (th);
 		return false;
 	}
 	bool ret = __set_thread_context (th, buf, size, dbg->bits);
 	// Always resume
-	if (__resume_thread (th, dbg->bits) == -1) {
+	if (alive && __resume_thread (th, dbg->bits) == -1) {
 		ret = false;
 	}
 	CloseHandle (th);
@@ -421,6 +473,9 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 
 int w32_attach(RDebug *dbg, int pid) {
 	RIOW32Dbg *rio = dbg->user;
+	if (rio->pi.hProcess) {
+		return rio->pi.dwThreadId;
+	}
 	HANDLE ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (!ph) {
 		return -1;
@@ -442,8 +497,8 @@ int w32_attach(RDebug *dbg, int pid) {
 	}
 	int tid = ((RDebugPid *)threads->head->data)->pid;
 	r_list_free (threads);
-	rio->ph = ph;
-	rio->debug = true;
+	rio->pi.hProcess = ph;
+
 	return tid;
 }
 
@@ -453,58 +508,194 @@ int w32_detach(RDebug *dbg, int pid) {
 	}
 	RIOW32Dbg *rio = dbg->user;
 	bool ret = false;
-	if (rio->debug) {
+	if (rio->pi.hProcess) {
 		ret = DebugActiveProcessStop (pid);
 	}
-	CloseHandle (rio->ph);
-	rio->ph = NULL;
-	rio->debug = false;
+	if (rio->pi.hProcess) {
+		CloseHandle (rio->pi.hProcess);
+		rio->pi.hProcess = NULL;
+	}
 	return ret;
 }
 
-int w32_select(RDebug *dbg, int pid, int tid) {
-	RIOW32Dbg *rio = dbg->user;
-	if (rio->ph) {
-		return true;
+static char *__get_file_name_from_handle(HANDLE handle_file) {
+	HANDLE handle_file_map = NULL;
+	LPTSTR filename = NULL;
+	DWORD file_size_high = 0;
+	LPVOID map = NULL;
+	DWORD file_size_low = GetFileSize (handle_file, &file_size_high);
+
+	if (file_size_low == 0 && file_size_high == 0) {
+		return NULL;
 	}
-	// hack to support w32dbg:// and attach://
-	DEBUG_EVENT de;
-	de.dwProcessId = pid;
-	de.dwThreadId = tid;
-	bool cont = true;
-	do {
-		if ((cont = ContinueDebugEvent (de.dwProcessId, de.dwThreadId, DBG_CONTINUE))) {
-			if ((cont = WaitForDebugEvent (&de, wait_time))) {
-				switch (de.dwDebugEventCode) {
-				//case CREATE_PROCESS_DEBUG_EVENT:
-				case CREATE_THREAD_DEBUG_EVENT:
-					cont = false;
-					break;
-				case LOAD_DLL_DEBUG_EVENT:
-					{
-						HANDLE hf = de.u.LoadDll.hFile;
-						if (hf && hf != INVALID_HANDLE_VALUE) {
-							CloseHandle (hf);
-						}
-					} break;
-				case EXCEPTION_DEBUG_EVENT:
-					if (de.u.Exception.ExceptionRecord.ExceptionCode != EXCEPTION_BREAKPOINT) {
-						eprintf ("w32_select/Unhandled exception %d\n", de.u.Exception.ExceptionRecord.ExceptionCode);
-					}
-					cont = false;
-					break;
-				default:
-					eprintf ("w32_select/Unhandled debug event %d\n", de.dwDebugEventCode);
+	handle_file_map = CreateFileMapping (handle_file, NULL, PAGE_READONLY, 0, 1, NULL);
+	if (!handle_file_map) {
+		goto err_get_file_name_from_handle;
+	}
+	filename = malloc ((MAX_PATH + 1) * sizeof (TCHAR));
+	if (!filename) {
+		goto err_get_file_name_from_handle;
+	}
+	/* Create a file mapping to get the file name. */
+	map = MapViewOfFile (handle_file_map, FILE_MAP_READ, 0, 0, 1);
+	if (!map || !GetMappedFileName (GetCurrentProcess (), map, filename, MAX_PATH)) {
+		goto err_get_file_name_from_handle;
+	}
+	TCHAR temp_buffer[512];
+	/* Translate path with device name to drive letters. */
+	if (!GetLogicalDriveStrings (_countof (temp_buffer) - 1, temp_buffer)) {
+		goto err_get_file_name_from_handle;
+	}
+	TCHAR name[MAX_PATH];
+	TCHAR drive[3] = TEXT (" :");
+	LPTSTR cur_drive = temp_buffer;
+	while (*cur_drive) {
+		/* Look up each device name */
+		*drive = *cur_drive;
+		if (QueryDosDevice (drive, name, MAX_PATH)) {
+			size_t name_length = _tcslen (name);
+
+			if (name_length < MAX_PATH) {
+				if (_tcsnicmp (filename, name, name_length) == 0
+					&& *(filename + name_length) == TEXT ('\\')) {
+					TCHAR temp_filename[MAX_PATH];
+					_sntprintf (temp_filename, MAX_PATH, TEXT ("%s%s"),
+						drive, filename + name_length);
+					_tcsncpy (filename, temp_filename,
+						_tcslen (temp_filename) + 1);
+					filename[MAX_PATH] = (TCHAR)'\0';
 					break;
 				}
 			}
 		}
-	} while (cont);
-	rio->ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-	if (!rio->ph) {
-		return false;
+		cur_drive++;
+	} 
+err_get_file_name_from_handle:
+	if (map) {
+		UnmapViewOfFile (map);
 	}
-	rio->debug = true;
+	if (handle_file_map) {
+		CloseHandle (handle_file_map);
+	}
+	if (filename) {
+		char *ret = r_sys_conv_win_to_utf8 (filename);
+		free (filename);
+		return ret;
+	}	
+	return NULL;
+}
+
+static const char *__resolve_path(HANDLE ph, HANDLE mh) {
+	// TODO: add maximum path length support
+	const DWORD maxlength = MAX_PATH;
+	TCHAR filename[MAX_PATH];
+	DWORD length = GetModuleFileNameEx (ph, mh, filename, maxlength);
+	if (length > 0) {
+		return r_sys_conv_win_to_utf8 (filename);
+	}
+	char *name = __get_file_name_from_handle (mh);
+	if (name) {
+		return name;
+	}
+	// Upon failure fallback to GetProcessImageFileName
+	length = GetProcessImageFileName (mh, filename, maxlength);
+	if (length == 0) {
+		return NULL;
+	}
+	// Convert NT path to win32 path
+	TCHAR *tmp = _tcschr (filename + 1, '\\');
+	if (!tmp) {
+		return NULL;
+	}
+	tmp = _tcschr (tmp + 1, '\\');
+	if (!tmp) {
+		return NULL;
+	}
+	length = tmp - filename;
+	TCHAR device[MAX_PATH];
+	const char *ret = NULL;
+	for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT ('Z'); drv[0]++) {
+		if (QueryDosDevice (drv, device, maxlength) > 0) {
+			if (!_tcsncmp (filename, device, length)) {
+				TCHAR path[MAX_PATH];
+				_sntprintf (path, maxlength, TEXT ("%s%s"), drv, tmp);
+				ret = r_sys_conv_win_to_utf8 (path);
+				break;
+			}
+		}
+	}
+	return ret;
+}
+
+LPVOID lstLib = 0;
+PLIB_ITEM lstLibPtr = 0;
+static void *__r_debug_findlib(void *BaseOfDll) {
+	PLIB_ITEM libPtr = NULL;
+	if (lstLib) {
+		libPtr = (PLIB_ITEM)lstLib;
+		while (libPtr->hFile != NULL) {
+			if (libPtr->hFile != INVALID_HANDLE_VALUE)
+				if (libPtr->BaseOfDll == BaseOfDll)
+					return ((void*)libPtr);
+			libPtr = (PLIB_ITEM)((ULONG_PTR)libPtr + sizeof (LIB_ITEM));
+		}
+	}
+	return NULL;
+}
+
+#define PLIB_MAX 512
+
+static void __r_debug_lstLibAdd(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllname) {
+	if (lstLib == 0) {
+		lstLib = VirtualAlloc (0, PLIB_MAX * sizeof (LIB_ITEM), MEM_COMMIT, PAGE_READWRITE);
+	}
+	lstLibPtr = (PLIB_ITEM)lstLib;
+	for (int x = 0; x < PLIB_MAX; x++) {
+		if (lstLibPtr->hFile == hFile) {
+			return;
+		}
+		if (!lstLibPtr->hFile) {
+			lstLibPtr->pid = pid;
+			lstLibPtr->hFile = hFile; //DBGEvent->u.LoadDll.hFile;
+			lstLibPtr->BaseOfDll = lpBaseOfDll;//DBGEvent->u.LoadDll.lpBaseOfDll;
+			strncpy (lstLibPtr->Path, dllname, MAX_PATH - 1);
+			int i = strlen (dllname);
+			int n = i;
+			while (dllname[i] != '\\' && i >= 0) {
+				i--;
+			}
+			strncpy (lstLibPtr->Name, dllname + i + 1, n - i);
+			return;
+		}
+		lstLibPtr++;
+	}
+	eprintf ("__r_debug_lstLibAdd: Cannot find slot\n");
+}
+
+int w32_select(RDebug* dbg, int pid, int tid) {
+	RIOW32Dbg* rio = dbg->user;
+	if (!dbg->threads || !r_list_find (dbg->threads, &tid, __w32_findthread_cmp)) {
+		__r_debug_thread_add (dbg, pid, tid, OpenThread (THREAD_ALL_ACCESS, FALSE, tid), 0, 0, __is_thread_alive (dbg, tid));
+	}
+
+	if (rio->pi.dwProcessId == tid) {
+		return true;
+	}
+
+	// Switch active threads
+	RListIter* it;
+	PTHREAD_ITEM th;
+	r_list_foreach (dbg->threads, it, th) {
+		if (th->bFinished) {
+			continue;
+		}
+		if (th->tid == tid) {
+			__resume_thread (th->hThread, dbg->bits);
+		} else if (!th->bSuspended) {
+			__suspend_thread (th->hThread, dbg->bits);
+		}
+	}
+
 	return true;
 }
 
@@ -513,19 +704,22 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 		return true;
 	}
 	RIOW32Dbg *rio = dbg->user;
-	if (rio->debug) {
+	if (!rio->pi.hProcess) {
+		return true;
+	}
+	if (rio->pi.hProcess) {
 		DebugActiveProcessStop (pid);
 	}
 	bool ret = false;
-	if (TerminateProcess (rio->ph, 1)) {
-		if (WaitForSingleObject (rio->ph, wait_time) != WAIT_OBJECT_0) {
+	if (TerminateProcess (rio->pi.hProcess, 1)) {
+		if (WaitForSingleObject (rio->pi.hProcess, wait_time) != WAIT_OBJECT_0) {
 			r_sys_perror ("w32_kill/WaitForSingleObject");
 		} else {
 			ret = true;
 		}
 	}
-	CloseHandle (rio->ph);
-	rio->ph = NULL;
+	CloseHandle (rio->pi.hProcess);
+	rio->pi.hProcess = NULL;
 	return ret;
 }
 
@@ -535,7 +729,7 @@ void w32_break_process_wrapper(void *d) {
 
 void w32_break_process(RDebug *dbg) {
 	RIOW32Dbg *rio = dbg->user;
-	if (!DebugBreakProcess (rio->ph)) {
+	if (!DebugBreakProcess (rio->pi.hProcess)) {
 		r_sys_perror ("w32_break_process/DebugBreakProcess");
 	}
 }
@@ -585,75 +779,6 @@ static int __debug_exception_event(DEBUG_EVENT *de) {
 	return 0;
 }
 
-static char *__get_file_name_from_handle(HANDLE handle_file) {
-	HANDLE handle_file_map = NULL;
-	LPTSTR filename = NULL;
-	DWORD file_size_high = 0;
-	LPVOID map = NULL;
-	DWORD file_size_low = GetFileSize (handle_file, &file_size_high);
-
-	if (file_size_low == 0 && file_size_high == 0) {
-		return NULL;
-	}
-	handle_file_map = CreateFileMapping (handle_file, NULL, PAGE_READONLY, 0, 1, NULL);
-	if (!handle_file_map) {
-		goto err_get_file_name_from_handle;
-	}
-	filename = malloc ((MAX_PATH + 1) * sizeof (TCHAR));
-	if (!filename) {
-		goto err_get_file_name_from_handle;
-	}
-	/* Create a file mapping to get the file name. */
-	map = MapViewOfFile (handle_file_map, FILE_MAP_READ, 0, 0, 1);
-	if (!map || !GetMappedFileName (GetCurrentProcess (), map, filename, MAX_PATH)) {
-		goto err_get_file_name_from_handle;
-	}
-	TCHAR temp_buffer[512];
-	/* Translate path with device name to drive letters. */
-	if (!GetLogicalDriveStrings (sizeof (temp_buffer) - 1, temp_buffer)) {
-		goto err_get_file_name_from_handle;
-	}
-	TCHAR name[MAX_PATH];
-	TCHAR drive[3] = TEXT (" :");
-	LPTSTR cur_drive = temp_buffer;
-	while (*cur_drive) {
-		/* Look up each device name */
-		*drive = *cur_drive;
-		if (QueryDosDevice (drive, name, MAX_PATH)) {
-			size_t name_length = _tcslen (name);
-
-			if (name_length < MAX_PATH) {
-				if (_tcsnicmp (filename, name, name_length) == 0
-					&& *(filename + name_length) == TEXT ('\\')) {
-					TCHAR temp_filename[MAX_PATH];
-					_sntprintf (temp_filename, MAX_PATH, TEXT ("%s%s"),
-						drive, filename + name_length);
-					_tcsncpy (filename, temp_filename,
-						_tcslen (temp_filename) + 1);
-					break;
-				}
-			}
-		}
-		cur_drive++;
-	} 
-err_get_file_name_from_handle:
-	if (map) {
-		UnmapViewOfFile (map);
-	}
-	if (handle_file_map) {
-		CloseHandle (handle_file_map);
-	}
-	if (filename) {
-		char *ret = r_sys_conv_win_to_utf8 (filename);
-		free (filename);
-		return ret;
-	}	
-	return NULL;
-}
-
-LPVOID lstLib = 0;
-PLIB_ITEM lstLibPtr = 0;
-
 #if 0
 static char *__r_debug_get_dll() {
 	return lstLibPtr->Path;
@@ -664,133 +789,8 @@ static PLIB_ITEM __r_debug_get_lib_item() {
 	return lstLibPtr;
 }
 
-#define PLIB_MAX 512
-
-static void __r_debug_lstLibAdd(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllname) {
-	if (lstLib == 0) {
-		lstLib = VirtualAlloc (0, PLIB_MAX * sizeof (LIB_ITEM), MEM_COMMIT, PAGE_READWRITE);
-	}
-	lstLibPtr = (PLIB_ITEM)lstLib;
-	for (int x = 0; x < PLIB_MAX; x++) {
-		if (!lstLibPtr->hFile) {
-			lstLibPtr->pid = pid;
-			lstLibPtr->hFile = hFile; //DBGEvent->u.LoadDll.hFile;
-			lstLibPtr->BaseOfDll = lpBaseOfDll;//DBGEvent->u.LoadDll.lpBaseOfDll;
-			strncpy (lstLibPtr->Path, dllname, MAX_PATH - 1);
-			int i = strlen (dllname);
-			int n = i;
-			while (dllname[i] != '\\' && i >= 0) {
-				i--;
-			}
-			strncpy (lstLibPtr->Name, dllname + i + 1, n - i);
-			return;
-		}
-		lstLibPtr++;
-	}
-	eprintf ("__r_debug_lstLibAdd: Cannot find slot\n");
-}
-
-static void *__r_debug_findlib(void *BaseOfDll) {
-	PLIB_ITEM libPtr = NULL;
-	if (lstLib) {
-		libPtr = (PLIB_ITEM)lstLib;
-		while (libPtr->hFile != NULL) {
-			if (libPtr->hFile != INVALID_HANDLE_VALUE)
-				if (libPtr->BaseOfDll == BaseOfDll)
-					return ((void*)libPtr);
-			libPtr = (PLIB_ITEM)((ULONG_PTR)libPtr + sizeof (LIB_ITEM));
-		}
-	}
-	return NULL;
-}
-
-LPVOID lstThread = 0;
-PTHREAD_ITEM lstThreadPtr = 0;
-static PTHREAD_ITEM __r_debug_get_thread_item() {
-	return lstThreadPtr;
-}
-
-#define PTHREAD_MAX 1024
-
-static void __r_debug_lstThreadAdd(DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
-	PVOID startAddress = 0;
-	if (lstThread == 0) {
-		lstThread = VirtualAlloc (0, PTHREAD_MAX * sizeof (THREAD_ITEM), MEM_COMMIT, PAGE_READWRITE);
-	}
-	lstThreadPtr = (PTHREAD_ITEM)lstThread;
-	for (int x = 0; x < PTHREAD_MAX; x++) {
-		if (!lstThreadPtr->tid) {
-			lstThreadPtr->pid = pid;
-			lstThreadPtr->tid = tid;
-			lstThreadPtr->bFinished = bFinished;
-			lstThreadPtr->hThread = hThread;
-			lstThreadPtr->lpThreadLocalBase = lpThreadLocalBase;
-			lstThreadPtr->lpStartAddress = lpStartAddress;
-			if (w32_NtQueryInformationThread (hThread, 0x9 /*ThreadQuerySetWin32StartAddress*/, &startAddress, sizeof (PVOID), NULL) == 0) {
-				lstThreadPtr->lpThreadEntryPoint = startAddress;
-			}
-			return;
-		}
-		lstThreadPtr++;
-	}
-	eprintf ("__r_debug_lstThreadAdd: Cannot find slot\n");
-}
-
-static void *__r_debug_findthread(int pid, int tid) {
-	PTHREAD_ITEM threadPtr = NULL;
-	if (lstThread) {
-		threadPtr = (PTHREAD_ITEM)lstThread;
-		while (threadPtr->tid != 0) {
-			if (threadPtr->pid == pid) {
-				if (threadPtr->tid == tid) {
-					return ((void*)threadPtr);
-				}
-			}
-			threadPtr = (PTHREAD_ITEM)((ULONG_PTR)threadPtr + sizeof (THREAD_ITEM));
-		}
-	}
-	return NULL;
-}
-
-static const char *__resolve_path(HANDLE ph) {
-	// TODO: add maximum path length support
-	const DWORD maxlength = MAX_PATH;
-	TCHAR filename[MAX_PATH];
-	DWORD length = GetModuleFileNameEx (ph, NULL, filename, maxlength);
-	if (length > 0) {
-		return r_sys_conv_win_to_utf8 (filename);
-	}
-	// Upon failure fallback to GetProcessImageFileName
-	length = GetProcessImageFileName (ph, filename, maxlength);
-	if (length == 0) {
-		return NULL;
-	}
-	// Convert NT path to win32 path
-	TCHAR *tmp = _tcschr (filename + 1, '\\');
-	if (!tmp) {
-		return NULL;
-	}
-	tmp = _tcschr (tmp + 1, '\\');
-	if (!tmp) {
-		return NULL;
-	}
-	length = tmp - filename;
-	TCHAR device[MAX_PATH];
-	const char *ret = NULL;
-	for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
-		if (QueryDosDevice (drv, device, maxlength) > 0) {
-			if (!_tcsncmp (filename, device, length)) {
-				TCHAR path[MAX_PATH];
-				_sntprintf (path, maxlength, "%s%s", drv, &tmp[1]);
-				ret = r_sys_conv_win_to_utf8 (path);
-				break;
-			}
-		}
-	}
-	return ret;
-}
-
 int w32_dbg_wait(RDebug *dbg, int pid) {
+	RIOW32Dbg* rio = dbg->user;
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
 	char *dllname = NULL;
@@ -803,65 +803,63 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			return -1;
 		}
 		memset (&de, 0, sizeof (DEBUG_EVENT));
+
 		if (!WaitForDebugEvent (&de, INFINITE)) {
 			r_sys_perror ("w32_dbg_wait/WaitForDebugEvent");
 			return -1;
 		}
+
 		tid = de.dwThreadId;
 		pid = de.dwProcessId;
 		dbg->tid = tid;
 		dbg->pid = pid;
+
 		/* TODO: DEBUG_CONTROL_C */
 		switch (de.dwDebugEventCode) {
 		case CREATE_PROCESS_DEBUG_EVENT:
-			//TODO: replace w32_h2t calls to w32_thread_list to get tid
-			/*eprintf ("(%d) created process (%d:%p)\n",
-				pid, w32_h2t (de.u.CreateProcessInfo.hProcess),
-				de.u.CreateProcessInfo.lpStartAddress);*/
 			w32_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			ret = R_DEBUG_REASON_NEW_PID;
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT:
-			eprintf ("(%d) Process %d exited with exit code %d\n", (int)de.dwProcessId, (int)de.dwProcessId,
-				(int)de.u.ExitProcess.dwExitCode);
-			//debug_load();
 			next_event = 0;
 			exited_already = pid;
+			PTHREAD_ITEM thread = r_list_first (dbg->threads);
+			thread->hThread = INVALID_HANDLE_VALUE;
+			thread->bFinished = TRUE;
+			thread->dwExitCode = de.u.ExitProcess.dwExitCode;
 			ret = R_DEBUG_REASON_EXIT_PID;
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
-			//eprintf ("(%d) Created thread %d (start @ %p)\n", pid, tid, de.u.CreateThread.lpStartAddress);
-			__r_debug_lstThreadAdd (pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, FALSE);
-			//w32_continue (dbg, pid, tid, -1);
+			__r_debug_thread_add (dbg, pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, FALSE);
 			ret = R_DEBUG_REASON_NEW_TID;
 			next_event = 0;
 			break;
 		case EXIT_THREAD_DEBUG_EVENT:
-			//eprintf ("(%d) Finished thread %d\n", pid, tid);
-			lstThreadPtr = (PTHREAD_ITEM)__r_debug_findthread (pid, tid);
-			if (lstThreadPtr) {
-				lstThreadPtr->bFinished = TRUE;
-				lstThreadPtr->dwExitCode = de.u.ExitThread.dwExitCode;
+		{
+			RListIter *it = (PTHREAD_ITEM)r_list_find (dbg->threads, &tid, __w32_findthread_cmp);
+			if (it) {
+				PTHREAD_ITEM th = it->data;
+				th->bFinished = TRUE;
+				th->hThread = INVALID_HANDLE_VALUE;
+				th->dwExitCode = de.u.ExitThread.dwExitCode;
 			} else {
-				__r_debug_lstThreadAdd (pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, TRUE);
+				__r_debug_thread_add (dbg, pid, tid, INVALID_HANDLE_VALUE, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, TRUE);
 			}
-			//w32_continue (dbg, pid, tid, -1);
 			next_event = 0;
 			ret = R_DEBUG_REASON_EXIT_TID;
 			break;
+		}
 		case LOAD_DLL_DEBUG_EVENT:
-			dllname = __resolve_path (de.u.LoadDll.hFile); //__get_file_name_from_handle
-			//eprintf ("(%d) Loading library at %p (%s)\n",pid, de.u.LoadDll.lpBaseOfDll, dllname ? dllname : "no name");
-			__r_debug_lstLibAdd (pid,de.u.LoadDll.lpBaseOfDll, de.u.LoadDll.hFile, dllname);
+			dllname = __resolve_path (((RIOW32Dbg *)dbg->user)->pi.hProcess, de.u.LoadDll.hFile); //__get_file_name_from_handle
 			if (dllname) {
+				__r_debug_lstLibAdd (pid,de.u.LoadDll.lpBaseOfDll, de.u.LoadDll.hFile, dllname);
 				free (dllname);
 			}
 			next_event = 0;
 			ret = R_DEBUG_REASON_NEW_LIB;
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
-			//eprintf ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
 			lstLibPtr = (PLIB_ITEM)__r_debug_findlib (de.u.UnloadDll.lpBaseOfDll);
 			if (lstLibPtr != NULL) {
 				lstLibPtr->hFile = INVALID_HANDLE_VALUE;
@@ -875,7 +873,6 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
 			eprintf ("(%d) Debug string\n", pid);
-
 			w32_continue (dbg, pid, tid, -1);
 			next_event = 1;
 			break;
@@ -887,6 +884,10 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		case EXCEPTION_DEBUG_EVENT:
 			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
+			case DBG_CONTROL_C:
+				ret = R_DEBUG_REASON_BREAKPOINT;
+				next_event = 0;
+				break;
 #if _WIN64
 			case 0x4000001f: /* STATUS_WX86_BREAKPOINT */
 #endif
@@ -910,12 +911,23 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 					w32_continue (dbg, pid, tid, -1);
 				}
 			}
+			dbg->reason.signum = de.u.Exception.ExceptionRecord.ExceptionCode;
 			break;
 		default:
 			eprintf ("(%d) unknown event: %d\n", pid, de.dwDebugEventCode);
 			return -1;
 		}
 	} while (next_event);
+
+	if (rio->pi.dwThreadId != de.dwThreadId) {
+		rio->pi.dwThreadId = de.dwThreadId;
+		RListIter *it = (PTHREAD_ITEM)r_list_find (dbg->threads, &tid, __w32_findthread_cmp);
+		if (it) {
+			PTHREAD_ITEM th = it->data;
+			rio->pi.hThread = th->hThread;
+		}
+	}
+
 	return ret;
 }
 
@@ -935,9 +947,10 @@ int w32_step(RDebug *dbg) {
 
 int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 	/* Honor the Windows-specific signal that instructs threads to process exceptions */
+	RIOW32Dbg *rio = dbg->user;
 	DWORD continue_status = (sig == DBG_EXCEPTION_NOT_HANDLED)
 		? DBG_EXCEPTION_NOT_HANDLED : DBG_CONTINUE;
-	if (!ContinueDebugEvent (pid, tid, continue_status)) {
+	if (!ContinueDebugEvent (pid, rio->pi.dwThreadId, continue_status)) {
 		r_sys_perror ("w32_continue/ContinueDebugEvent");
 		return false;
 	}
@@ -946,7 +959,7 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 
 RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	RIOW32Dbg *rio = dbg->user;
-	LPVOID base = VirtualAllocEx (rio->ph, (LPVOID)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
+	LPVOID base = VirtualAllocEx (rio->pi.hProcess, (LPVOID)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
 	if (!base) {
 		r_sys_perror ("w32_map_alloc/VirtualAllocEx\n");
 		return NULL;
@@ -957,7 +970,7 @@ RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
 
 int w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	RIOW32Dbg *rio = dbg->user;
-	if (!VirtualFreeEx (rio->ph, (LPVOID)addr, (SIZE_T)size, MEM_DECOMMIT)) {
+	if (!VirtualFreeEx (rio->pi.hProcess, (LPVOID)addr, (SIZE_T)size, MEM_DECOMMIT)) {
 		r_sys_perror ("w32_map_dealloc/VirtualFreeEx\n");
 		return false;
 	}
@@ -990,7 +1003,7 @@ static int __io_perms_to_prot(int io_perms) {
 int w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 	DWORD old;
 	RIOW32Dbg *rio = dbg->user;
-	return VirtualProtectEx (rio->ph, (LPVOID)(size_t)addr,
+	return VirtualProtectEx (rio->pi.hProcess, (LPVOID)(size_t)addr,
 		size, __io_perms_to_prot (perms), &old);
 }
 
@@ -1003,33 +1016,31 @@ RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
 	}
 	THREADENTRY32 te;
 	te.dwSize = sizeof (te);
+	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (Thread32First (th, &te)) {
 		// TODO: export this code to its own function?
-		HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 		char *path = NULL;
 		int uid = -1;
-		if (!ph) {
-			path = __resolve_path (ph);
+		if (!te.th32ThreadID) {
+			path = __resolve_path (ph, NULL);
 			DWORD sid;
 			if (ProcessIdToSessionId (pid, &sid)) {
 				uid = sid;
 			}
-			CloseHandle (ph);
 		}
 		if (!path) {
 			// TODO: enum processes to get binary's name
-			path = _tcsdup ("???");
+			path = _tcsdup (TEXT ("???"));
 		}
 		do {
 			if (te.th32OwnerProcessID == pid) {
-				// TODO: add pc if process is debugged
-				/*ut64 pc;
+				ut64 pc;
 				if (dbg->pid == pid) {
 					CONTEXT ctx = {0};
 					w32_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx));
-					pc = ctx->eip;
-				}*/
-				r_list_append (list, r_debug_pid_new (path, te.th32ThreadID, uid, 's', 0));
+					pc = ctx.Rip;
+				}
+				r_list_append (list, r_debug_pid_new (path, te.th32ThreadID, uid, 's', pc));
 			}
 		} while (Thread32Next (th, &te));
 		free (path);
@@ -1050,7 +1061,7 @@ static void __w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 	SID_NAME_USE snu = {0};
 	RIOW32Dbg *rio = dbg->user;
 
-	if (!OpenProcessToken (rio->ph, TOKEN_QUERY, &h_tok)) {
+	if (!OpenProcessToken (rio->pi.hProcess, TOKEN_QUERY, &h_tok)) {
 		r_sys_perror ("__w32_info_user/OpenProcessToken");
 		goto err___w32_info_user;
 	}
@@ -1067,13 +1078,13 @@ static void __w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 		r_sys_perror ("__w32_info_user/GetTokenInformation");
 		goto err___w32_info_user;
 	}
-	usr = (LPTSTR)malloc (usr_len);
+	usr = (LPTSTR)malloc (usr_len * sizeof (TCHAR));
 	if (!usr) {
 		perror ("__w32_info_user/malloc usr");
 		goto err___w32_info_user;
 	}
 	*usr = '\0';
-	usr_dom = (LPTSTR)malloc (usr_dom_len);
+	usr_dom = (LPTSTR)malloc (usr_dom_len * sizeof (TCHAR));
 	if (!usr_dom) {
 		perror ("__w32_info_user/malloc usr_dom");
 		goto err___w32_info_user;
@@ -1099,14 +1110,14 @@ err___w32_info_user:
 
 static void __w32_info_exe(RDebug *dbg, RDebugInfo *rdi) {
 	RIOW32Dbg *rio = dbg->user;
-	rdi->exe = __resolve_path (rio->ph);
+	rdi->exe = __resolve_path (rio->pi.hProcess, NULL);
 #if 0
 	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION, FALSE, dbg->pid);
 	if (!ph) {
 		r_sys_perror ("__w32_info_exe/OpenProcess");
 		return;
 	}
-	rdi->exe = __resolve_path (ph);
+	rdi->exe = __resolve_path (ph, NULL);
 	CloseHandle (ph);
 #endif
 }
@@ -1116,11 +1127,12 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	if (!rdi) {
 		return NULL;
 	}
+	RListIter *th;
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
-	rdi->lib = (void *) __r_debug_get_lib_item();
-	rdi->thread = (void *)__r_debug_get_thread_item ();
+	rdi->lib = (void *) __r_debug_get_lib_item ();
+	rdi->thread = (th = r_list_find (dbg->threads, &dbg->tid, __w32_findthread_cmp)) ? th->data : NULL;
 	rdi->uid = -1;
 	rdi->gid = -1;
 	rdi->cwd = NULL;
@@ -1138,7 +1150,7 @@ static RDebugPid *__build_debug_pid(int pid, HANDLE ph, const TCHAR* name) {
 	if (!ph) {
 		ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 		if (ph) {
-			path = __resolve_path (ph);
+			path = __resolve_path (ph, NULL);
 			DWORD sid;
 			if (ProcessIdToSessionId (pid, &sid)) {
 				uid = sid;
@@ -1148,7 +1160,7 @@ static RDebugPid *__build_debug_pid(int pid, HANDLE ph, const TCHAR* name) {
 			return NULL;
 		}
 	} else {
-		path = __resolve_path (ph);
+		path = __resolve_path (ph, NULL);
 		DWORD sid;
 		if (ProcessIdToSessionId (pid, &sid)) {
 			uid = sid;
@@ -1177,7 +1189,7 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 		do {
 			if (all || pe.th32ProcessID == pid || (b = pe.th32ParentProcessID == pid)) {
 				// Returns NULL if process is inaccessible unless if its a child process of debugged process
-				RDebugPid *dbg_pid = __build_debug_pid (pe.th32ProcessID, b ? rio->ph : NULL, pe.szExeFile);
+				RDebugPid *dbg_pid = __build_debug_pid (pe.th32ProcessID, b ? rio->pi.hProcess : NULL, pe.szExeFile);
 				if (dbg_pid) {
 					r_list_append (list, dbg_pid);
 				}

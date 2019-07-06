@@ -71,6 +71,9 @@ static inline RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC
 }
 
 R_API RList *r_w32_dbg_modules(RDebug *dbg) {
+	if (dbg->main_pid == -1) {
+		return NULL;
+	}
 	MODULEENTRY32 me;
 	RList *list = r_list_newf (free);
 	DWORD flags = TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32;
@@ -248,14 +251,14 @@ R_API RList *r_w32_dbg_maps(RDebug *dbg) {
 	mod_list = r_w32_dbg_modules (dbg);
 	/* process memory map */
 	while (cur_addr < si.lpMaximumApplicationAddress &&
-		VirtualQueryEx (rio->ph, cur_addr, &mbi, sizeof (mbi)) != 0) {
+		VirtualQueryEx (rio->pi.hProcess, cur_addr, &mbi, sizeof (mbi)) != 0) {
 		if (mbi.State != MEM_FREE) {
 			switch (mbi.Type) {
 			case MEM_IMAGE:
-				proc_mem_img (rio->ph, map_list, mod_list, &mod_inf, &si, &mbi);
+				proc_mem_img (rio->pi.hProcess, map_list, mod_list, &mod_inf, &si, &mbi);
 				break;
 			case MEM_MAPPED:
-				proc_mem_map (rio->ph, map_list, &mbi);
+				proc_mem_map (rio->pi.hProcess, map_list, &mbi);
 				break;
 			default:
 				add_map_reg (map_list, "", &mbi);
