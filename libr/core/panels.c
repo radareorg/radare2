@@ -271,6 +271,7 @@ static void __init_all_dbs(RCore *core);
 static void __init_panel_param(RCore *core, RPanel *p, const char *title, const char *cmd, bool cache);
 static RPanels *__panels_new(RCore *core);
 static void __init_new_panels_root(RCore *core);
+static void __init_menu_saved_layout (RCore *core);
 
 /* create */
 static void __createDefaultPanels(RCore *core);
@@ -324,6 +325,7 @@ static bool __check_root_state(RCore *core, RPanelsRootState state);
 static void __addHelpPanel(RCore *core);
 static void __add_visual_mark(RCore *core);
 static void __addMenu(RCore *core, const char *parent, const char *base_name, RPanelsMenuCallback cb, RPanelsMenuGetName get_name_cb);
+void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenuUpdateCallback cb);
 
 /* user input */
 static int __show_status(RCore *core, const char *msg);
@@ -464,6 +466,7 @@ static int __ioCacheOnCb(void *user);
 static int __ioCacheOffCb(void *user);
 static char *__get_name_cb (R_NULLABLE void *user, char *base_name);
 static char *__get_config_name_cb (R_NULLABLE void *user, char *base_name);
+static void __init_menu_saved_layout_cb (void *user);
 
 /* direction callback */
 static void __directionDefaultCb(void *user, int direction);
@@ -2463,8 +2466,10 @@ int __saveLayoutCb(void *user) {
 }
 
 int __clearLayoutsCb(void *user) {
-	__show_status_yesno ((RCore *)user, 'n', "Clear all the saved layouts?(y/n): ");
+	RCore *core = (RCore *)user;
+	__show_status_yesno (core, 'n', "Clear all the saved layouts?(y/n): ");
 	r_file_rm (__getPanelsConfigPath ());
+	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout_cb);
 	return 0;
 }
 
@@ -3480,6 +3485,21 @@ void __addMenu(RCore *core, const char *parent, const char *base_name, RPanelsMe
 	}
 }
 
+void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenuUpdateCallback cb) {
+	RPanels *panels = core->panels;
+	void *addr = ht_pp_find (panels->mht, parent, NULL);
+	RPanelsMenuItem *p_item = (RPanelsMenuItem *)addr;
+	int i;
+	for (i = 0; i < p_item->n_sub; i++) {
+		RPanelsMenuItem *sub = p_item->sub[i];
+		ht_pp_delete (core->panels->mht, sdb_fmt ("%s.%s", parent, sub->get_name_cb (core, sub->base_name)));
+	}
+	p_item->n_sub = 0;
+	if (cb) {
+		cb (core);
+	}
+}
+
 void __del_menu(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanelsMenu *menu = panels->panelsMenu;
@@ -3527,6 +3547,39 @@ void __moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent) {
 	p->model->type = PANEL_TYPE_MENU;
 	p->view->refresh = true;
 	menu->refreshPanels[menu->n_refresh++] = p;
+}
+
+static void __init_menu_saved_layout_cb (void *user) {
+	__init_menu_saved_layout ((RCore *)user );
+}
+
+static void __init_menu_saved_layout (RCore *core) {
+	const char *parent = "File.Load Layout.Saved";
+	int s, i = 0;
+	char *config_path = __getPanelsConfigPath();
+	char *panels_config = r_file_slurp (config_path, &s);
+	if (panels_config) {
+		char *tmp = panels_config;
+		free (config_path);
+		if (!panels_config) {
+			return;
+		}
+		char *names = NULL;
+		int len = 0;
+		while (*(panels_config + 1) != '{') {
+			len++;
+			panels_config++;
+		}
+		names = r_str_newlen (tmp, len + 1);
+		int count = r_str_split (names, ',');
+		i = 0;
+		for (; i < count - 1; i++) {
+			__addMenu (core, parent, names, __loadLayoutSavedCb, __get_name_cb);
+			names += strlen (names) + 1;
+		}
+	} else {
+		__addMenu (core, parent, "Default", __loadLayoutDefaultCb, __get_name_cb);
+	}
 }
 
 bool __initPanelsMenu(RCore *core) {
@@ -4567,6 +4620,8 @@ void __savePanelsLayout(RCore *core) {
 		fprintf (file, "%s", pj_drain (pj));
 		fclose (file);
 	}
+
+	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout_cb);
 }
 
 char *__parsePanelsConfig(const char *cfg, int len) {
