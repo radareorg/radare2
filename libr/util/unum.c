@@ -431,8 +431,8 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	char *group;
 	if (!str) return 0LL;
 
-	len = strlen (str)+1;
-	os = malloc (len+1);
+	len = strlen (str) + 1;
+	os = malloc (len + 1);
 
 	s = os;
 	memcpy (s, str, len);
@@ -451,14 +451,14 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 				}
 			}
 			group[0] = '(';
-			p = group+1;
+			p = group + 1;
 			if (r_str_delta (p, '(', ')') < 0) {
 				char *p2 = strchr (p, '(');
 				if (p2 != NULL) {
 					*p2 = '\0';
 					ret = r_num_op (op, ret, r_num_math_internal (num, p));
-					ret = r_num_op (op, ret, r_num_math (num, p2+1));
-					p = p2+1;
+					ret = r_num_op (op, ret, r_num_math (num, p2 + 1));
+					p = p2 + 1;
 					continue;
 				}
 				eprintf ("WTF!\n");
