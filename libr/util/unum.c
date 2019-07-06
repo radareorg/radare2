@@ -444,7 +444,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 		if (group) {
 			group[0] = '\0';
 			ret = r_num_op (op, ret, r_num_math_internal (num, p));
-			for (; p<group; p+=1) {
+			for (; p<group; p += 1) {
 				if (r_num_is_op (*p)) {
 					op = *p;
 					break;
