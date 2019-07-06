@@ -1668,11 +1668,11 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 	int row, sz, delta;
 	RAsmOp op;
 
+	cursor_ocur (core, use_ocur);
 	if (PIDX == 1) { // DISASM
 		nextOpcode (core);
 		return;
 	}
-	cursor_ocur (core, use_ocur);
 
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
 		p->cur += r_config_get_i (core->config, "hex.cols");
@@ -1747,6 +1747,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 	ut32 roff, prev_roff;
 	int row;
 
+	cursor_ocur (core, use_ocur);
 	if (PIDX == 1) { // DISASM
 		prevOpcode (core);
 		return;
@@ -1757,7 +1758,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 		p->cur -= R_MAX (cols, 0);
 		return;
 	}
-	cursor_ocur (core, use_ocur);
+
 	if (splitView) {
 		int w = r_config_get_i (core->config, "hex.cols");
 		if (w < 1) {
