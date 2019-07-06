@@ -5180,7 +5180,7 @@ void __rotateFunctionCb (void *user, bool rev) {
 
 void __undoSeek(RCore *core) {
 	RPanel *cur = __getCurPanel (core->panels);
-	if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
+	if (!__check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		return;
 	}
 	RIOUndos *undo = r_io_sundo (core->io, core->offset);
@@ -5214,7 +5214,7 @@ void __reset_filter(RCore *core, RPanel *panel) {
 
 void __redoSeek(RCore *core) {
 	RPanel *cur = __getCurPanel (core->panels);
-	if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
+	if (!__check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		return;
 	}
 	RIOUndos *undo = r_io_sundo_redo (core->io);
