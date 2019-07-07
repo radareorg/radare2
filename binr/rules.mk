@@ -8,7 +8,15 @@ endif
 CFLAGS+=-I$(LTOP)/include
 
 ifeq (${COMPILER},emscripten)
-EXT_EXE=.js
+LINK+=../../libr/libr.a
+LINK+=../../shlr/sdb/src/libsdb.a
+LINK+=../../shlr/capstone/libcapstone.a
+CFLAGS+= -s SIDE_MODULE=1
+#CFLAGS+=-s ERROR_ON_UNDEFINED_SYMBOLS=0
+#EXT_EXE=.js
+#EXT_EXE=.html
+EXT_EXE=.bc
+#EXT_EXE=.wasm
 endif
 
 ifeq ($(USE_RPATH),1)

@@ -5,7 +5,7 @@
 #include <r_util.h>
 #include "./x509.h"
 
-extern void *r_x509_name_json (PJ *pj, RX509Name *name);
+extern void r_x509_name_json (PJ *pj, RX509Name *name);
 extern void r_x509_free_crl (RX509CertificateRevocationList *crl);
 extern void r_x509_crlentry_dump (RX509CRLEntry *crle, const char *pad, RStrBuf *sb);
 static bool r_pkcs7_parse_attributes(RPKCS7Attributes *attribute, RASN1Object *object);
