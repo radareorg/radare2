@@ -478,6 +478,8 @@ static void queue_case(RAnal *anal, ut64 switch_addr, int offset_sz, ut64 case_a
 	anal->cmdtail = r_str_appendf (anal->cmdtail,
 		"Cd %d @ 0x%08"PFMT64x"\n", offset_sz, case_addr_loc);
 	anal->cmdtail = r_str_appendf (anal->cmdtail,
+		"ahi 10 @ 0x%08"PFMT64x"\n", case_addr_loc);
+	anal->cmdtail = r_str_appendf (anal->cmdtail,
 		"axc 0x%"PFMT64x " 0x%"PFMT64x "\n",
 		(ut64)case_addr, (ut64)switch_addr);
 	anal->cmdtail = r_str_appendf (anal->cmdtail,
