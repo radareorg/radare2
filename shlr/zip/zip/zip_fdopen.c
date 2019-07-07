@@ -33,6 +33,7 @@
 
 
 
+#include <unistd.h>
 #include "zipint.h"
 
 

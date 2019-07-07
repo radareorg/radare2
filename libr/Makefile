@@ -95,7 +95,7 @@ _libr.${EXT_AR}: .libr
 		BN=`basename $$LIB` ; \
 		echo $$BN ; \
 		mkdir -p .libr2/$$BN ; \
-		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ar x ../../$$LIB ) ; \
+		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} x ../../$$LIB ) ; \
 	done
 
 libr.${EXT_AR}: .libr2
@@ -122,10 +122,14 @@ E+=../shlr/capstone/libcapstone.${EXT_AR}
 endif
 
 libr.${EXT_SO}: .libr2
+ifeq (${COMPILER},emscripten)
+	echo nothing to do here
+else
 	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -shared -dynamiclib -o libr.${EXT_SO}  \
 		.libr2/*/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
 		../shlr/libr_shlr.${EXT_AR} $(E)
+endif
 
 #libr.${EXT_SO}: .libr
 #	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -shared -dynamiclib -o libr.${EXT_SO}  \

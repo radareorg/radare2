@@ -99,8 +99,6 @@ R_API void r_fs_del(RFS* fs, RFSPlugin* p) {
 R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 delta) {
 	RFSPlugin* p;
 	RFSRoot* root;
-	RFSFile* file;
-	RList* list;
 	RListIter* iter;
 	char* str;
 	int len, lenstr;
@@ -147,7 +145,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 			return NULL;
 		}
 	}
-	file = r_fs_open (fs, str, false);
+	RFSFile* file = r_fs_open (fs, str, false);
 	if (file) {
 		r_fs_close (fs, file);
 		eprintf ("r_fs_mount: Invalid mount point\n");
@@ -155,7 +153,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		free (str);
 		return NULL;
 	}
-	list = r_fs_dir (fs, str);
+	RList *list = r_fs_dir (fs, str);
 	if (!r_list_empty (list)) {
 		//XXX: list need free ??
 		eprintf ("r_fs_mount: Invalid mount point\n");
@@ -552,7 +550,10 @@ static RFSPartitionType partitions[] = {
 	{"dos", &fs_part_dos, fs_parhook},
 #if USE_GRUB
 	/* WARNING GPL code */
+#if !__EMSCRIPTEN__
+// wtf for some reason is not available on emscripten
 	{"msdos", &grub_msdos_partition_map, grub_parhook},
+#endif
 	{"apple", &grub_apple_partition_map, grub_parhook},
 	{"sun", &grub_sun_partition_map, grub_parhook},
 	{"sunpc", &grub_sun_pc_partition_map, grub_parhook},

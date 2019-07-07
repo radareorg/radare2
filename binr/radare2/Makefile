@@ -19,7 +19,7 @@ ifeq (${COMPILER},emscripten)
 # https://kripken.github.io/emscripten-site/docs/optimizing/Optimizing-Code.html
 # -s INLINING_LIMIT=1
 # --memory-init-file 0
-CFLAGS+=-s EXPORTED_FUNCTIONS='["_r2_asmjs_new", "_r2_asmjs_cmd", "_r2_asmjs_free", "_r2_asmjs_openurl"]'
+CFLAGS+=-s EXPORTED_FUNCTIONS='["_r_core_new", "_r_core_free", "_r_cmd_str"]'
 CFLAGS+=-s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap", "addOnInit"]'
 CFLAGS+=-s TOTAL_MEMORY=33554432
 CFLAGS+=-s ALLOW_MEMORY_GROWTH=1

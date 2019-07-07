@@ -947,7 +947,7 @@ SDB_API bool sdb_dump_dupnext(Sdb* s, char *key, char **value, int *_vlen) {
 	}
 	if (value) {
 		*value = 0;
-		if (vlen >= SDB_MIN_VALUE && vlen < SDB_MAX_VALUE) {
+		if (vlen < SDB_MAX_VALUE) {
 			*value = malloc (vlen + 10);
 			if (!*value) {
 				return false;
