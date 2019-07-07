@@ -308,6 +308,7 @@ typedef struct r_bin_t {
 	int minstrlen;
 	int maxstrlen;
 	ut64 maxstrbuf;
+	int strvalidchars;
 	int rawstr;
 	Sdb *sdb;
 	RIDStorage *ids;

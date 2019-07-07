@@ -2329,6 +2329,25 @@ static bool cb_binprefix(void *user, void *data) {
 	return true;
 }
 
+static bool cb_strvalidchars(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->value[0] == '?') {
+		print_node_options (node);
+		return false;
+	}
+	if (core->bin) {
+		int v = !strcmp (node->value, "ascii") ? R_STRING_VALID_ASCII : R_STRING_VALID_ALL;
+		ut64 old_v = core->bin->strvalidchars;
+		core->bin->strvalidchars = v;
+		if (v != old_v) {
+			r_core_bin_refresh_strings (core);
+		}
+		return true;
+	}
+	return true;
+}
+
 static bool cb_binmaxstrbuf(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3034,8 +3053,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("bin.b64str", "false", "Try to debase64 the strings");
 	SETCB ("bin.at", "false", &cb_binat, "RBin.cur depends on RCore.offset");
 	SETPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
+	n = NODECB ("bin.str.validchars", "all", &cb_strvalidchars);
+	SETDESC (n, "Valid string chars during string detection");
+	SETOPTIONS (n, "ascii", "all", NULL);
 	n = NODECB ("bin.str.filter", "", &cb_strfilter);
-	SETDESC (n, "Filter strings");
+	SETDESC (n, "Filter strings (after string detection)");
 	SETOPTIONS (n, "a", "8", "p", "e", "u", "i", "U", "f", NULL);
 	SETCB ("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB ("bin.force", "", &cb_binforce, "Force that rbin plugin");

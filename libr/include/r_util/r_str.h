@@ -17,6 +17,11 @@ typedef enum {
 	R_STRING_ENC_GUESS = 'g',
 } RStrEnc;
 
+enum {
+	R_STRING_VALID_ALL = 0,
+	R_STRING_VALID_ASCII = 'A'
+};
+
 typedef int (*RStrRangeCallback) (void *, int);
 
 static inline void r_str_rmch(char *s, char ch) {
