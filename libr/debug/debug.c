@@ -912,6 +912,17 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 	return steps_taken;
 }
 
+static bool isStepOverable(ut64 opType) {
+	switch (opType & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_SWI:
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_RCALL:
+		return true;
+	}
+	return false;
+}
+
 R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	RAnalOp op;
 	ut64 buf_pc, pc, ins_size;
@@ -962,8 +973,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			ins_size = op.fail;
 		}
 		// Skip over all the subroutine calls
-		if ((op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_CALL ||
-			(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
+		if (isStepOverable (op.type)) {
 			if (!r_debug_continue_until (dbg, ins_size)) {
 				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
 				return steps_taken;
