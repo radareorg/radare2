@@ -1554,6 +1554,9 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 						data[l] = 0x60;
 					}
 					data[l++] |= op->operands[0].regs[0];
+					if (op->operands[0].regs[0] == X86R_ESP) {
+						data[l++] = 0x24;
+					}
 					data[l++] = offset;
 					if (op->operands[0].offset >= 0x80) {
 						data[l++] = offset >> 8;
