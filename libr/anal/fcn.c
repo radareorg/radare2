@@ -1595,7 +1595,6 @@ repeat:
 			// switch statement
 			if (anal->opt.jmptbl) {
 				// op.ireg since rip relative addressing produces way too many false positives otherwise
-cmpval = 6;
 				// op.ireg is 0 for rip relative, "rax", etc otherwise
 				if (op.ptr != UT64_MAX && op.ireg) { // direct jump
 					ut64 table_size, default_case;
