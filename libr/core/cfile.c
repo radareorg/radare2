@@ -528,6 +528,32 @@ static bool filecb(void *user, void *data, ut32 id) {
 	return true;
 }
 
+typedef struct {
+	const char *name;
+	ut64 addr;
+	RBin *bin;
+} RCoreLinkData;
+
+static bool linkcb(void *user, void *data, ut32 id) {
+	RCoreLinkData *ld = user;
+	RIODesc *desc = (RIODesc *)data;
+
+	RBinFile *bf = r_bin_file_find_by_fd (ld->bin, desc->fd);
+	if (bf) {
+		RListIter *iter;
+		RBinSymbol *sym;
+		RList *symbols = r_bin_file_get_symbols (bf);
+		r_list_foreach (symbols, iter, sym) {
+			if (!strcmp (sym->name, ld->name)) {
+				ld->addr = sym->vaddr;
+				return false;
+			}
+		}
+	} 
+	return true;
+}
+
+
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
@@ -654,13 +680,35 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				continue;
 			}
 			ut64 baddr = r_io_map_location (r->io, 0x200000);
-if (r_io_map_get (r->io, baddr)) {
-eprintf ("WTF\n");
-}
-			r_core_file_loadlib (r, lib, baddr);
+			if (baddr != UT64_MAX) {
+				r_core_file_loadlib (r, lib, baddr);
+			}
 		}
 		r_core_cmd0 (r, "obb 0;s entry0");
 		r_config_set_i (r->config, "bin.at", true);
+		eprintf ("[bin.libs] Linking imports...\n");
+		RBinImport *imp;
+		RList *imports = r_bin_get_imports (r->bin);
+		r_list_foreach (imports, iter, imp) {
+			// PLT finding
+			RFlagItem *impsym = r_flag_get (r->flags, sdb_fmt ("sym.imp.%s", imp->name));
+			if (!impsym) {
+				eprintf ("Cannot find '%s' import in the PLT\n", imp->name);
+				continue;
+			}
+			ut64 imp_addr = impsym->offset;
+			eprintf ("Resolving %s... ", imp->name);
+			RCoreLinkData linkdata = {imp->name, UT64_MAX, r->bin};
+			r_id_storage_foreach (r->io->files, linkcb, &linkdata);
+			if (linkdata.addr != UT64_MAX) {
+				eprintf ("0x%08"PFMT64x"\n", linkdata.addr);
+				ut64 a = linkdata.addr;
+				ut64 b = imp_addr;
+				r_core_cmdf (r, "ax 0x%08"PFMT64x" 0x%08"PFMT64x, a, b);
+			} else {
+				eprintf ("NO\n");
+			}
+		}
 	}
 
 	//If type == R_BIN_TYPE_CORE, we need to create all the maps

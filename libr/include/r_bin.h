@@ -728,6 +728,7 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_);
 // RBinFile.get
 R_API RBinFile *r_bin_file_at(RBin *bin, ut64 addr);
 R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
+R_API RList *r_bin_file_get_symbols(RBinFile *bf);
 //
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 // RBinFile.add
