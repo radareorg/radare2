@@ -848,6 +848,16 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	anal->iob.read_at (anal->iob.io, prev_bb->addr, (ut8 *) bb_buf, prev_bb->size);
 	isValid = false;
 
+	RAnalHint *hint = r_anal_hint_get (anal, addr);
+	if (hint) {
+		if (hint->val != UT64_MAX) {
+			*table_size = hint->val;
+		}
+		eprintf ("TMPAPVAL %llx, %llx\n", addr, tmp_aop.val);
+		r_anal_hint_free (hint);
+		return true;
+	}
+
 	for (i = 0; i < prev_bb->op_pos_size; i++) {
 		ut64 prev_pos = prev_bb->op_pos[i];
 		ut64 op_addr = prev_bb->addr + prev_pos;
@@ -857,7 +867,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 		int buflen = prev_bb->size - prev_pos;
 		int len = r_anal_op (anal, &tmp_aop, op_addr,
 			bb_buf + prev_pos, buflen,
-			R_ANAL_OP_MASK_BASIC);
+			R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 		ut32 type = tmp_aop.type & R_ANAL_OP_TYPE_MASK;
 		if (len < 1 || type != R_ANAL_OP_TYPE_CMP) {
 			r_anal_op_fini (&tmp_aop);

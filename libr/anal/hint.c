@@ -130,6 +130,10 @@ R_API void r_anal_hint_set_stackframe(RAnal *a, ut64 addr, ut64 size) {
 	setHint (a, "Frame:", addr, NULL, size);
 }
 
+R_API void r_anal_hint_set_val(RAnal *a, ut64 addr, ut64 v) {
+	setHint (a, "val:", addr, NULL, v);
+}
+
 R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr) {
 	unsetHint(a, "size:", addr);
 }
@@ -184,6 +188,10 @@ R_API void r_anal_hint_unset_jump(RAnal *a, ut64 addr) {
 
 R_API void r_anal_hint_unset_fail(RAnal *a, ut64 addr) {
 	unsetHint (a, "fail:", addr);
+}
+
+R_API void r_anal_hint_unset_val (RAnal *a, ut64 v) {
+	unsetHint (a, "val:", v);
 }
 
 R_API void r_anal_hint_unset_type (RAnal *a, ut64 addr) {
@@ -249,6 +257,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 	hint->jump = UT64_MAX;
 	hint->fail = UT64_MAX;
 	hint->ret = UT64_MAX;
+	hint->val = UT64_MAX;
 	hint->stackframe = UT64_MAX;
 	char *s = strdup (str);
 	if (!s) {
@@ -282,6 +291,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 			case 'e': hint->esil = (char*)sdb_decode (nxt, 0); break;
 			case 'a': hint->arch = (char*)sdb_decode (nxt, 0); break;
 			case 'h': hint->high = sdb_atoi (nxt); break;
+			case 'v': hint->val = sdb_atoi (nxt); break;
 			}
 		}
 		if (!nxt || !nxt2) {

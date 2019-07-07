@@ -743,6 +743,10 @@ R_API int r_anal_op_family_from_string(const char *f) {
 R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
 	int changes = 0;
 	if (hint) {
+		if (hint->val != UT64_MAX) {
+			op->val = hint->val;
+			changes++;
+		}
 		if (hint->type > 0) {
 			op->type = hint->type;
 			changes++;

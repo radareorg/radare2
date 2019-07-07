@@ -724,6 +724,7 @@ typedef struct r_anal_t {
 typedef struct r_anal_hint_t {
 	ut64 addr;
 	ut64 ptr;
+	ut64 val; // used to hint jmp rax
 	ut64 jump;
 	ut64 fail;
 	ut64 ret; // hint for function ret values
@@ -1739,6 +1740,8 @@ R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 jump);
 R_API void r_anal_hint_set_ret(RAnal *a, ut64 addr, ut64 val);
 R_API void r_anal_hint_set_high(RAnal *a, ut64 addr);
 R_API void r_anal_hint_set_stackframe(RAnal *a, ut64 addr, ut64 size);
+R_API void r_anal_hint_set_val (RAnal *a, ut64 addr, ut64 v);
+R_API void r_anal_hint_unset_val (RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_high(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr);

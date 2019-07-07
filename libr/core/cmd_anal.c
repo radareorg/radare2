@@ -555,6 +555,7 @@ static const char *help_msg_ah[] = {
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
 	"aht", " call", "change opcode type (see aht?)",
+	"ahv", " val", "change opcode's val field (useful to set jmptbl sizes in jmp rax)",
 	NULL
 };
 
@@ -1642,7 +1643,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			pj_j (pj, opexstr);
 			pj_kn (pj, "addr", core->offset + idx);
 			pj_ks (pj, "bytes", r_hex_bin2strdup (buf, ret));
-			if (op.ptr != UT64_MAX) {
+			if (op.val != UT64_MAX) {
 				pj_kn (pj, "val", op.val);
 			}
 			if (op.ptr != UT64_MAX) {
@@ -6965,6 +6966,15 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_core_anal_hint_print (core->anal, addr, input[0]);
 		} else {
 			r_core_anal_hint_list (core->anal, input[0]);
+		}
+		break;
+	case 'v': // "ahv"
+		if (input[1] == ' ') {
+			r_anal_hint_set_val (
+				core->anal, core->offset,
+				r_num_math (core->num, input + 1));
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_val (core->anal, core->offset);
 		}
 		break;
 	case '-': // "ah-"
