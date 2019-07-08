@@ -1009,6 +1009,7 @@ struct r_line_t {
 	int (*hist_down)(void *user);
 	char *contents;
 	bool zerosep;
+	bool vi_mode;
 	RLinePromptType prompt_type;
 	int offset_hist_index;
 	int file_hist_index;

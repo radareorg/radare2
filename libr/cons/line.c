@@ -15,6 +15,7 @@ R_API RLine *r_line_new(void) {
 	I.hist_down = NULL;
 	I.prompt = strdup ("> ");
 	I.contents = NULL;
+	I.vi_mode = false;
 #if __WINDOWS__
 	I.ansicon = r_cons_is_ansicon ();
 #endif
