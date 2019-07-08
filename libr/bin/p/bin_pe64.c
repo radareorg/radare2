@@ -71,6 +71,12 @@ static void header(RBinFile *bf) {
 	rbin->cb_printf ("\tSizeOfHeapCommit : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeapCommit);
 	rbin->cb_printf ("\tLoaderFlags : 0x%x\n", bin->nt_headers->optional_header.LoaderFlags);
 	rbin->cb_printf ("\tNumberOfRvaAndSizes : 0x%x\n", bin->nt_headers->optional_header.NumberOfRvaAndSizes);
+	RListIter *it;
+	Pe_image_rich_entry *entry;
+	rbin->cb_printf ("RICH_FIELDS\n");
+	r_list_foreach (bin->rich_entries, it, entry) {
+		rbin->cb_printf ("\tProduct: %d Name: %s Version: %d Times: %d\n", entry->productId, entry->productName, entry->minVersion, entry->timesUsed);
+	}
 	int i;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
 		if (bin->nt_headers->optional_header.DataDirectory[i].Size > 0) {

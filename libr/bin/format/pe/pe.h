@@ -117,6 +117,7 @@ struct PE_(r_bin_pe_obj_t) {
 	int endian;
 	bool verbose;
 	int big_endian;
+	RList* rich_entries;
 	RList* relocs;
 	RList* resources; //RList of r_pe_resources
 	const char* file;
