@@ -20,6 +20,7 @@
 #define PANEL_TITLE_STRINGS_BIN   "Strings in the whole bin"
 #define PANEL_TITLE_SECTIONS      "Sections"
 #define PANEL_TITLE_SEGMENTS      "Segments"
+#define PANEL_TITLE_COMMENTS      "Comments"
 
 #define PANEL_CMD_SYMBOLS         "isq"
 #define PANEL_CMD_STACK           "px"
@@ -656,6 +657,11 @@ bool __is_abnormal_cursor_type(RCore *core, RPanel *panel) {
 	}
 	str = __search_db (core, PANEL_TITLE_SEGMENTS);
 	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_SEGMENTS), strlen (__search_db (core, PANEL_TITLE_SEGMENTS)))) {
+		return true;
+	}
+
+	str = __search_db (core, PANEL_TITLE_COMMENTS);
+	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_COMMENTS), strlen (__search_db (core, PANEL_TITLE_COMMENTS)))) {
 		return true;
 	}
 	return false;
