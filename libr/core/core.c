@@ -2291,18 +2291,24 @@ static bool r_core_anal_read_at(struct r_anal_t *anal, ut64 addr, ut8 *buf, int 
 static void r_core_break (RCore *core) {
 	// if we are not in the main thread we hold in a lock
 	RCoreTask *task = r_core_task_self (core);
-	r_core_task_continue (task);
+	if (task) {
+		r_core_task_continue (task);
+	}
 }
 
 static void *r_core_sleep_begin (RCore *core) {
 	RCoreTask *task = r_core_task_self (core);
-	r_core_task_sleep_begin (task);
+	if (task) {
+		r_core_task_sleep_begin (task);
+	}
 	return task;
 }
 
 static void r_core_sleep_end (RCore *core, void *user) {
 	RCoreTask *task = (RCoreTask *)user;
-	r_core_task_sleep_end (task);
+	if (task) {
+		r_core_task_sleep_end (task);
+	}
 }
 
 static void __init_autocomplete_default (RCore* core) {

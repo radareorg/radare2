@@ -13,6 +13,8 @@ typedef struct r_main_t {
 	// stdin/stdout
 } RMain;
 
+typedef int (*RMainCallback)(int argc, char **argv);
+
 R_API RMain *r_main_new(const char *name);
 R_API void r_main_free(RMain *m);
 R_API int r_main_run(RMain *m, int argc, char **argv);
