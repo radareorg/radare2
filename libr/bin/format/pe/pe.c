@@ -2313,8 +2313,8 @@ static char* _known_product_ids(int id) {
 	case 268: return  "Utc1900_POGO_I_CPP";
 	case 269: return  "Utc1900_POGO_O_C";
 	case 270: return  "Utc1900_POGO_O_CPP";
+	default: return "Unknown";
 	}
-	return "Unknown";
 }
 
 static void bin_pe_init_rich_info(struct PE_(r_bin_pe_obj_t) *bin) {
@@ -2349,10 +2349,8 @@ static void bin_pe_init_rich_info(struct PE_(r_bin_pe_obj_t) *bin) {
 	}
 }
 
-
-
 static char* _resource_lang_str(int id) {
-	switch(id) {
+	switch (id) {
 	case 0x00: return "LANG_NEUTRAL";
 	case 0x7f: return "LANG_INVARIANT";
 	case 0x36: return "LANG_AFRIKAANS";
