@@ -33,8 +33,13 @@
 
 
 
-#include <unistd.h>
 #include "zipint.h"
+#ifdef __WINDOWS__
+#include <io.h>
+#include <fcntl.h>
+#else
+#include <unistd.h>
+#endif
 
 
 
