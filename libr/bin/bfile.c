@@ -216,6 +216,10 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 
 		tmp[i++] = '\0';
 
+		if (runes < min && runes >= 2 && str_type == R_STRING_TYPE_ASCII && needle < to) {
+			// back up past the \0 to the last char just in case it starts a wide string
+			needle -= 2;
+		}
 		if (runes >= min) {
 			// reduce false positives
 			int j, num_blocks, *block_list;
