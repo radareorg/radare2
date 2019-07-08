@@ -2321,6 +2321,7 @@ static void bin_pe_init_rich_info(struct PE_(r_bin_pe_obj_t) *bin) {
 	if (!bin->rich_entries) {
 		bin->rich_entries = r_list_newf (free);
 	}
+	bin->rich_header_offset = bin->nt_header_offset;
 	ut64 off = bin->nt_header_offset - sizeof (ut32);
 	ut32 magic = 0x68636952; // Rich
 	while ((r_buf_read_le32_at (bin->b, off) != magic) && off) {
@@ -2347,6 +2348,7 @@ static void bin_pe_init_rich_info(struct PE_(r_bin_pe_obj_t) *bin) {
 		off -= sizeof (ut32);
 		r_list_append (bin->rich_entries, entry);
 	}
+	bin->rich_header_offset = off + sizeof (ut32);
 }
 
 static char* _resource_lang_str(int id) {
