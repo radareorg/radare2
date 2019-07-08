@@ -335,7 +335,7 @@ static void header(RBinFile *bf) {
 	Pe_image_rich_entry *entry;
 	rbin->cb_printf ("RICH_FIELDS\n");
 	r_list_foreach (bin->rich_entries, it, entry) {
-		rbin->cb_printf ("\tProduct: %d Name: %s Version: %d Times: %d\n", entry->productId, entry->productName, entry->minVersion, entry->timesUsed);
+		rbin->cb_printf ("  Product: %d Name: %s Version: %d Times: %d\n", entry->productId, entry->productName, entry->minVersion, entry->timesUsed);
 	}
 	int i;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
