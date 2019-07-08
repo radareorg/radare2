@@ -738,7 +738,7 @@ R_API int *r_utf_block_list(const ut8 *str, int len) {
 	if (len < 0) {
 		len = strlen ((const char *)str);
 	}
-	static bool has_block[r_utf_blocks_count] = {0};
+	static int block_freq[r_utf_blocks_count] = {0};
 	int *list = R_NEWS (int, len + 1);
 	if (!list) {
 		return NULL;
@@ -756,16 +756,16 @@ R_API int *r_utf_block_list(const ut8 *str, int len) {
 		} else {
 			block_idx = r_utf_block_idx (ch);
 		}
-		if (!has_block[block_idx]) {
-			has_block[block_idx] = true;
+		if (!block_freq[block_idx]) {
 			*list_ptr = block_idx;
 			list_ptr++;
 		}
+		block_freq[block_idx]++;
 		str_ptr += ch_bytes;
 	}
 	*list_ptr = -1;
 	for (list_ptr = list; *list_ptr != -1; list_ptr++) {
-		has_block[*list_ptr] = false;
+		block_freq[*list_ptr] = 0;
 	}
 	return list;
 }
