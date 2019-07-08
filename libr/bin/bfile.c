@@ -238,7 +238,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
 				num_blocks = 0;
-				block_list = r_utf_block_list ((const ut8*)tmp, i - 1);
+				block_list = r_utf_block_list ((const ut8*)tmp, i - 1, NULL);
 				if (block_list) {
 					for (j = 0; block_list[j] != -1; j++) {
 						num_blocks++;
