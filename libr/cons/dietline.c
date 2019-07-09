@@ -50,7 +50,7 @@ static inline bool is_word_break_char(char ch, bool mode) {
 static void backward_kill_word() {
 	int i, len;
 	if (I.buffer.index > 0) {
-		for (i = I.buffer.index - 1; i > 0 && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
+		for (i = I.buffer.index; i > 0 && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
 			/* Move the cursor index back until we hit a non-word-break-character */
 		}
 		for (; i > 0 && !is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
@@ -77,7 +77,7 @@ static void backward_kill_word() {
 static void backward_kill_Word() {
 	int i, len;
 	if (I.buffer.index > 0) {
-		for (i = I.buffer.index - 1; i > 0 && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
+		for (i = I.buffer.index; i > 0 && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
 			/* Move the cursor index back until we hit a non-word-break-character */
 		}
 		for (; i > 0 && !is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
@@ -103,7 +103,7 @@ static void backward_kill_Word() {
 
 static void kill_word() {
 	int i, len;
-	for (i = I.buffer.index + 1; i < I.buffer.length && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i++) {
+	for (i = I.buffer.index; i < I.buffer.length && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i++) {
 		/* Move the cursor index forward until we hit a non-word-break-character */
 	}
 	for (; i < I.buffer.length && !is_word_break_char (I.buffer.data[i], MINOR_BREAK); i++) {
@@ -121,7 +121,7 @@ static void kill_word() {
 
 static void kill_Word() {
 	int i, len;
-	for (i = I.buffer.index + 1; i < I.buffer.length && is_word_break_char (I.buffer.data[i], MAJOR_BREAK); i++) {
+	for (i = I.buffer.index; i < I.buffer.length && is_word_break_char (I.buffer.data[i], MAJOR_BREAK); i++) {
 		/* Move the cursor index forward until we hit a non-word-break-character */
 	}
 	for (; i < I.buffer.length && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK); i++) {
@@ -1497,12 +1497,10 @@ static void __vi_mode () {
 					char t = r_cons_readchar ();
 					if (t == 'w') {		// diw
 						kill_word ();
-					} else if (t == 'b') {  // dib
 						backward_kill_word ();
 					} else if (t == 'W') {  // diW
 						kill_Word ();
-					} else if (t == 'B') {  // diB
-						backward_kill_Word ();
+						backward_kill_word ();
 					}
 					} break;
 				case 'W':
