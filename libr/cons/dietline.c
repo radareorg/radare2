@@ -1315,10 +1315,10 @@ static void __move_cursor_right () {
 	{
 		char *s = I.buffer.data + I.buffer.index + 1;
 		utflen = 1;
-			while ((*s & 0xc0) == 0x80) {
-				utflen++;
-				s++;
-			}
+		while ((*s & 0xc0) == 0x80) {
+			utflen++;
+			s++;
+		}
 	}
 	I.buffer.index = I.buffer.index < I.buffer.length
 		 ? I.buffer.index + utflen
@@ -1355,9 +1355,9 @@ static inline vi_cmd_b () {
 	int i;
 	for (i = I.buffer.index - 2; i >= 0; i--) {
 		if ((is_word_break_char (I.buffer.data[i], MINOR_BREAK) 
-		  && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK))
-		  || (is_word_break_char (I.buffer.data[i - 1], MINOR_BREAK) 
-		  && !is_word_break_char (I.buffer.data[i], MINOR_BREAK))) {
+		 && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK))
+		 || (is_word_break_char (I.buffer.data[i - 1], MINOR_BREAK) 
+		 && !is_word_break_char (I.buffer.data[i], MINOR_BREAK))) {
 			I.buffer.index = i;
 			break;
 		}
@@ -1371,7 +1371,7 @@ static inline vi_cmd_B () {
 	int i;
 	for (i = I.buffer.index - 2; i >= 0; i--) {
 		if ((!is_word_break_char (I.buffer.data[i], MAJOR_BREAK)
-		  && is_word_break_char (I.buffer.data[i-1], MAJOR_BREAK))) {
+		 && is_word_break_char (I.buffer.data[i-1], MAJOR_BREAK))) {
 			I.buffer.index = i;
 			break;
 		}
@@ -1385,7 +1385,7 @@ static inline vi_cmd_W () {
 	int i;
 	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
 		if ((!is_word_break_char (I.buffer.data[i], MAJOR_BREAK)
-		  && is_word_break_char (I.buffer.data[i-1], MAJOR_BREAK))) {
+		 && is_word_break_char (I.buffer.data[i-1], MAJOR_BREAK))) {
 			I.buffer.index = i;
 			break;
 		}
@@ -1399,9 +1399,9 @@ static inline vi_cmd_w () {
 	int i;
 	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
 		if ((!is_word_break_char (I.buffer.data[i], MINOR_BREAK)
-		  && is_word_break_char (I.buffer.data[i - 1], MINOR_BREAK))
-		  || (is_word_break_char (I.buffer.data[i], MINOR_BREAK)
-		  && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK))) {
+		 && is_word_break_char (I.buffer.data[i - 1], MINOR_BREAK))
+		 || (is_word_break_char (I.buffer.data[i], MINOR_BREAK)
+		 && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK))) {
 			I.buffer.index = i;
 			break;
 		}
@@ -1415,7 +1415,7 @@ static inline vi_cmd_E () {
 	int i;
 	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
 		if ((!is_word_break_char (I.buffer.data[i], MAJOR_BREAK)
-		  && is_word_break_char (I.buffer.data[i+1], MAJOR_BREAK))) {
+		 && is_word_break_char (I.buffer.data[i+1], MAJOR_BREAK))) {
 			I.buffer.index = i;
 			break;
 		}
@@ -1429,9 +1429,9 @@ static inline vi_cmd_e () {
 	int i;
 	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
 		if ((!is_word_break_char (I.buffer.data[i], MINOR_BREAK)
-		  && is_word_break_char (I.buffer.data[i+1], MINOR_BREAK))
-		  || (is_word_break_char (I.buffer.data[i], MINOR_BREAK)
-		  && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK))) {
+		 && is_word_break_char (I.buffer.data[i+1], MINOR_BREAK))
+		 || (is_word_break_char (I.buffer.data[i], MINOR_BREAK)
+		 && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK))) {
 			I.buffer.index = i;
 			break;
 		}
@@ -1920,7 +1920,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			case 'B':
 			case 'b':
 				for (i = I.buffer.index - 2; i >= 0; i--) {
-					if (is_word_break_char (I.buffer.data[i], MINOR_BREAK) && !is_word_break_char (I.buffer.data[i + 1], MINOR_BREAK)) {
+					if (is_word_break_char (I.buffer.data[i], MINOR_BREAK)
+					 && !is_word_break_char (I.buffer.data[i + 1], MINOR_BREAK)) {
 						I.buffer.index = i + 1;
 						break;
 					}
@@ -1937,7 +1938,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			case 'f':
 				// next word
 				for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-					if (!is_word_break_char (I.buffer.data[i], MINOR_BREAK) && is_word_break_char (I.buffer.data[i - 1], MINOR_BREAK)) {
+					if (!is_word_break_char (I.buffer.data[i], MINOR_BREAK)
+					 && is_word_break_char (I.buffer.data[i - 1], MINOR_BREAK)) {
 						I.buffer.index = i;
 						break;
 					}
