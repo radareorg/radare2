@@ -127,6 +127,7 @@ R_API bool r_sandbox_enable (bool e) {
 #endif
 #if HAVE_CAPSICUM
 	if (enabled) {
+#if __FreeBSD_version >= 1000000
 		cap_rights_t wrt, rdr;
 
 		if (!cap_rights_init (&wrt, CAP_READ, CAP_WRITE)) {
@@ -153,6 +154,7 @@ R_API bool r_sandbox_enable (bool e) {
 			eprintf ("sandbox: stderr protection failed\n");
 			return false;
 		}
+#endif
 
 		if (cap_enter () != 0) {
 			eprintf ("sandbox: call_enter failed\n");
