@@ -1443,7 +1443,7 @@ static inline void vi_cmd_e () {
 
 static void __vi_mode () {
 	char ch;
-	int i, utflen, mode = CONTROL_MODE;
+	int mode = CONTROL_MODE;
 	const char *gcomp_line = "";
 	static int gcomp = 0;
 	for (;;) {
@@ -1642,7 +1642,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	return r_line_readline_cb_win (cb, user);
 #endif
 	int columns = r_cons_get_size (NULL) - 2;
-	RCore *core = (RCore *) I.user;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;
 	static int gcomp = 0;
