@@ -126,9 +126,19 @@ static RList *fields(RBinFile *bf) {
 
 	#define ROWL(nam,siz,val,fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt));
-	ut64 addr = 128;
 
 	struct PE_(r_bin_pe_obj_t) * bin = bf->o->bin_obj;
+	ut64 addr = bin->rich_header_offset ? bin->rich_header_offset : 128;
+
+	RListIter *it;
+	Pe_image_rich_entry *rich;
+	r_list_foreach (bin->rich_entries, it, rich) {
+		r_list_append (ret, r_bin_field_new (addr, addr, 0, "RICH_ENTRY_NAME", strdup (rich->productName), "s"));
+		ROWL ("RICH_ENTRY_ID", 2, rich->productId, "x"); addr += 2;
+		ROWL ("RICH_ENTRY_VERSION", 2, rich->minVersion, "x"); addr += 2;
+		ROWL ("RICH_ENTRY_TIMES", 4, rich->timesUsed, "x"); addr += 4;
+	}
+
 	ROWL ("Signature", 4, bin->nt_headers->Signature, "x"); addr += 4;
 	ROWL ("Machine", 2, bin->nt_headers->file_header.Machine, "x"); addr += 2;
 	ROWL ("NumberOfSections", 2, bin->nt_headers->file_header.NumberOfSections, "x"); addr += 2;
@@ -331,6 +341,12 @@ static void header(RBinFile *bf) {
 	rbin->cb_printf ("  SizeOfHeapCommit : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeapCommit);
 	rbin->cb_printf ("  LoaderFlags : 0x%x\n", bin->nt_headers->optional_header.LoaderFlags);
 	rbin->cb_printf ("  NumberOfRvaAndSizes : 0x%x\n", bin->nt_headers->optional_header.NumberOfRvaAndSizes);
+	RListIter *it;
+	Pe_image_rich_entry *entry;
+	rbin->cb_printf ("RICH_FIELDS\n");
+	r_list_foreach (bin->rich_entries, it, entry) {
+		rbin->cb_printf ("  Product: %d Name: %s Version: %d Times: %d\n", entry->productId, entry->productName, entry->minVersion, entry->timesUsed);
+	}
 	int i;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
 		if (bin->nt_headers->optional_header.DataDirectory[i].Size > 0) {
