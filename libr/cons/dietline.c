@@ -1474,7 +1474,6 @@ static void __vi_mode () {
 		case 'x':
 			while (rep--) {
 				delete_next_char (); 
-				__print_prompt ();
 			} break;
 		case 'c': 
 			mode = INSERT_MODE;			// goto insert mode
@@ -1556,12 +1555,10 @@ static void __vi_mode () {
 		case 'i': 
 			mode = INSERT_MODE;
 			break;
-		case 75:
 		case 'h': 
 			while (rep--) {
 				__move_cursor_left ();
 			} break;
-		case 77:
 		case 'l': 
 			while (rep--) {
 				__move_cursor_right ();
@@ -1590,8 +1587,8 @@ static void __vi_mode () {
 			while (rep--) {
 				vi_cmd_w ();
 			} break;
-		default: {
-			char tmp = r_cons_readchar ();
+		case 27: {					// escape key
+			char tmp = r_cons_readchar_timeout (50);
 			if (tmp == 0x5b) {	
 				char cmd = r_cons_readchar ();	
 				switch (cmd) {
