@@ -1560,43 +1560,35 @@ static void __vi_mode () {
 		case 'h': 
 			while (rep--) {
 				__move_cursor_left ();
-				__print_prompt ();
 			} break;
 		case 77:
 		case 'l': 
 			while (rep--) {
 				__move_cursor_right ();
-				__print_prompt ();
 			} break;
 		case 'E':
 			while (rep--) {
 				vi_cmd_E ();
-				__print_prompt();
 			} break;
 		case 'e':
 			while (rep--) {
 				vi_cmd_e ();
-				__print_prompt();
 			} break;
 		case 'B': 
 			while (rep--) {
 				vi_cmd_B ();
-				__print_prompt();
 			} break;
 		case 'b': 
 			while (rep--) {
 				vi_cmd_b ();
-				__print_prompt();
 			} break;
 		case 'W': 
 			while (rep--) {
 				vi_cmd_W ();
-				__print_prompt();
 			} break;
 		case 'w': 
 			while (rep--) {
 				vi_cmd_w ();
-				__print_prompt();
 			} break;
 		default: {
 			char tmp = r_cons_readchar ();
