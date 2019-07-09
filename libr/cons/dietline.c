@@ -1351,7 +1351,7 @@ static void __move_cursor_left () {
 #endif
 }
 
-static inline vi_cmd_b () {
+static inline void vi_cmd_b () {
 	int i;
 	for (i = I.buffer.index - 2; i >= 0; i--) {
 		if ((is_word_break_char (I.buffer.data[i], MINOR_BREAK) 
@@ -1367,7 +1367,7 @@ static inline vi_cmd_b () {
 	}
 }
 
-static inline vi_cmd_B () {
+static inline void vi_cmd_B () {
 	int i;
 	for (i = I.buffer.index - 2; i >= 0; i--) {
 		if ((!is_word_break_char (I.buffer.data[i], MAJOR_BREAK)
@@ -1381,7 +1381,7 @@ static inline vi_cmd_B () {
 	}
 }
 
-static inline vi_cmd_W () {
+static inline void vi_cmd_W () {
 	int i;
 	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
 		if ((!is_word_break_char (I.buffer.data[i], MAJOR_BREAK)
@@ -1395,7 +1395,7 @@ static inline vi_cmd_W () {
 	}
 }
 
-static inline vi_cmd_w () {
+static inline void vi_cmd_w () {
 	int i;
 	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
 		if ((!is_word_break_char (I.buffer.data[i], MINOR_BREAK)
@@ -1411,7 +1411,7 @@ static inline vi_cmd_w () {
 	}
 }
 
-static inline vi_cmd_E () {
+static inline void vi_cmd_E () {
 	int i;
 	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
 		if ((!is_word_break_char (I.buffer.data[i], MAJOR_BREAK)
@@ -1425,7 +1425,7 @@ static inline vi_cmd_E () {
 	}
 }
 
-static inline vi_cmd_e () {
+static inline void vi_cmd_e () {
 	int i;
 	for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
 		if ((!is_word_break_char (I.buffer.data[i], MINOR_BREAK)
@@ -1481,8 +1481,8 @@ static void __vi_mode () {
 		case 'd': {
 			int rep1 = 0;
 			char c = r_cons_readchar ();
-			while (IS_DIGIT (c) && ch != '0') {	// handle commands like d3w
-				if (ch == '0' && rep == 0) {	// to handle the command 0
+			while (IS_DIGIT (c) && c != '0') {	// handle commands like d3w
+				if (c == '0' && rep1 == 0) {	// to handle the command 0
 					break;
 				}
 				int tmp = c - '0';
