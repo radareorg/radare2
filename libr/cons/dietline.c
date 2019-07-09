@@ -1479,19 +1479,8 @@ static void __vi_mode () {
 		case 'c': 
 			mode = INSERT_MODE;			// goto insert mode
 		case 'd': {
-			int rep1 = 0;
 			char c = r_cons_readchar ();
-			while (IS_DIGIT (c) && c != '0') {	// handle commands like d3w
-				if (c == '0' && rep1 == 0) {	// to handle the command 0
-					break;
-				}
-				int tmp = c - '0';
-				rep1 = (rep1 * 10) + tmp;
-				c = r_cons_readchar ();
-			}
-			rep1 = rep1 > 0 ? rep1 : 1;
-
-			while (rep1--) {
+			while (rep--) {
 				switch (c) {
 				case 'i': {
 					char t = r_cons_readchar ();
