@@ -1907,6 +1907,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				if (I.vi_mode) {
 					__vi_mode ();
 				};
+				if (I.sel_widget) {
+					selection_widget_erase ();
+				}
 				break;
 			case 1:	// begin
 				I.buffer.index = 0;
