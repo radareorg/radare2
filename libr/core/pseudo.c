@@ -169,6 +169,15 @@ static void find_and_change (char* in, int len) {
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
+		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
+			if (!strcmp (input, "*")) {
+				input = " -r2";
+			} else if (!strcmp (input, "=")) {
+				input = " -a";
+			} else if (!strcmp (input, "?")) {
+				input = " -h";
+			}
+		}
 		return r_core_cmdf (core, "%s%s", cmdPdc, input);
 	}
 
