@@ -130,6 +130,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	}
 	st64 vdelta = 0, pdelta = 0;
 	RBinSection *s = NULL;
+	bool ascii_only = false;
 	r_buf_read_at (bf->buf, from, buf, len);
 	// may oobread
 	while (needle < to) {
@@ -179,7 +180,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			}
 
 			/* Invalid sequence detected */
-			if (!rc) {
+			if (!rc || (ascii_only && r > 0x7f)) {
 				needle++;
 				break;
 			}
@@ -216,9 +217,14 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 
 		tmp[i++] = '\0';
 
+		if (runes < min && runes >= 2 && str_type == R_STRING_TYPE_ASCII && needle < to) {
+			// back up past the \0 to the last char just in case it starts a wide string
+			needle -= 2;
+		}
 		if (runes >= min) {
 			// reduce false positives
 			int j, num_blocks, *block_list;
+			int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
 			if (str_type == R_STRING_TYPE_ASCII) {
 				for (j = 0; j < i; j++) {
 					char ch = tmp[j];
@@ -234,10 +240,29 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
 				num_blocks = 0;
-				block_list = r_utf_block_list ((const ut8*)tmp, i - 1);
+				block_list = r_utf_block_list ((const ut8*)tmp, i - 1,
+				                               str_type == R_STRING_TYPE_WIDE ? &freq_list : NULL);
 				if (block_list) {
 					for (j = 0; block_list[j] != -1; j++) {
 						num_blocks++;
+					}
+				}
+				if (freq_list) {
+					num_chars = 0;
+					actual_ascii = 0;
+					for (j = 0; freq_list[j] != -1; j++) {
+						num_chars += freq_list[j];
+						if (!block_list[j]) { // ASCII
+							actual_ascii = freq_list[j];
+						}
+					}
+					free (freq_list);
+					expected_ascii = num_blocks ? num_chars / num_blocks : 0;
+					if (actual_ascii > expected_ascii) {
+						ascii_only = true;
+						needle = str_start;
+						free (block_list);
+						continue;
 					}
 				}
 				free (block_list);
@@ -300,6 +325,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				s = NULL;
 			}
 		}
+		ascii_only = false;
 	}
 	free (buf);
 	return count;
