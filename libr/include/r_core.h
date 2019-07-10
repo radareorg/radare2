@@ -3,6 +3,7 @@
 #ifndef R2_CORE_H
 #define R2_CORE_H
 
+#include <r_main.h>
 #include "r_socket.h"
 #include "r_types.h"
 #include "r_magic.h"
@@ -332,6 +333,16 @@ typedef struct r_core_t {
 	bool scr_gadgets;
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RList *ropchain;
+
+	RMainCallback r_main_radare2;
+	// int (*r_main_radare2)(int argc, char **argv);
+	int (*r_main_rafind2)(int argc, char **argv);
+	int (*r_main_radiff2)(int argc, char **argv);
+	int (*r_main_rabin2)(int argc, char **argv);
+	int (*r_main_rarun2)(int argc, char **argv);
+	int (*r_main_ragg2)(int argc, char **argv);
+	int (*r_main_rasm2)(int argc, char **argv);
+	int (*r_main_rax2)(int argc, char **argv);
 } RCore;
 
 // maybe move into RAnal

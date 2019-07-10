@@ -508,7 +508,15 @@ R_API int r_main_radare2(int argc, char **argv) {
 		LISTS_FREE ();
 		return main_help (1);
 	}
-	r_core_init (&r);
+	r_core_init (&r); // TODO: use r_core_new() for simplicity
+	r.r_main_radare2 = r_main_radare2;
+	r.r_main_radiff2 = r_main_radiff2;
+	r.r_main_rafind2 = r_main_rafind2;
+	r.r_main_rabin2 = r_main_rabin2;
+	r.r_main_ragg2 = r_main_ragg2;
+	r.r_main_rasm2 = r_main_rasm2;
+	r.r_main_rax2 = r_main_rax2;
+
 	r_core_task_sync_begin (&r);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (&r, 0);

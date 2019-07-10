@@ -1480,19 +1480,54 @@ static int cmd_bsize(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_r2cmd(RCore *core, const char *input) {
-	const char *r2cmds[] = {
-		"rax2", "r2pm", "rasm2", "rabin2", "rahash2", "rafind2", "rarun2", "ragg2",
-		NULL
-	};
-	int i;
-	for (i = 0; r2cmds[i]; i++) {
-		if (r_str_startswith (input, r2cmds[i])) {
-			r_sys_cmdf ("r%s", input);
-			return true;
+static int __runMain(RMainCallback cb, const char *arg) {
+	char *a = r_str_trim_dup (arg);
+	int argc = 0;
+	char **args = r_str_argv (a, &argc);
+	int res = cb (argc, args);
+	free (args);
+	free (a);
+	return res;
+}
+
+static bool cmd_r2cmd(RCore *core, const char *_input) {
+	char *input = r_str_newf ("r%s", _input);
+	int rc = 0;
+	if (r_str_startswith (input, "rax2")) {
+		rc = __runMain (core->r_main_rax2, input);
+	} else if (r_str_startswith (input, "radare2")) {
+		r_sys_cmdf ("%s", input);
+		// rc = __runMain (core->r_main_radare2, input);
+	} else if (r_str_startswith (input, "rasm2")) {
+		r_sys_cmdf ("%s", input);
+		// rc = __runMain (core->r_main_rasm2, input);
+	} else if (r_str_startswith (input, "rabin2")) {
+		r_sys_cmdf ("%s", input);
+		// rc = __runMain (core->r_main_rabin2, input);
+	} else if (r_str_startswith (input, "ragg2")) {
+		r_sys_cmdf ("%s", input);
+		// rc = __runMain (core->r_main_ragg2, input);
+	} else if (r_str_startswith (input, "r2pm")) {
+		r_sys_cmdf ("%s", input);
+		// rc = __runMain (core->r_main_r2pm, input);
+	} else if (r_str_startswith (input, "radiff2")) {
+		rc = __runMain (core->r_main_radiff2, input);
+	} else {
+		const char *r2cmds[] = {
+			"rax2", "r2pm", "rasm2", "rabin2", "rahash2", "rafind2", "rarun2", "ragg2", "radare2", "r2", NULL
+		};
+		int i;
+		for (i = 0; r2cmds[i]; i++) {
+			if (r_str_startswith (input, r2cmds[i])) {
+				free (input);
+				return true;
+			}
 		}
+		return false;
 	}
-	return false;
+	free (input);
+	core->num->value = rc;
+	return true;
 }
 
 static int cmd_resize(void *data, const char *input) {
@@ -1507,7 +1542,12 @@ static int cmd_resize(void *data, const char *input) {
 
 	ut64 oldsize = (core->file) ? r_io_fd_size (core->io, core->file->fd): 0;
 	switch (*input) {
-	case '2': // "r2"
+	case 'a': // "r..."
+		if (r_str_startswith (input, "adare2")) {
+			__runMain (core->r_main_radare2, input - 1); 
+		}
+		return true;
+	case '2': // "r2" // XXX should be handled already in cmd_r2cmd()
 		// TODO: use argv[0] instead of 'radare2'
 		r_sys_cmdf ("radare%s", input);
 		return true;
