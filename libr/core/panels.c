@@ -94,9 +94,11 @@ static const char *menus_iocache[] = {
 	NULL
 };
 
-static const char *menus_View[] = {
-	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets", "Graph", "Functions", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports", "Info", "Database",  "Breakpoints", "Comments", "Entropy", "Entropy Fire",
-	"Stack", "Var READ address", "Var WRITE address", "Summary",
+static char *menus_View[] = {
+	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets", "Graph",
+	"Functions", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports",
+	"Info", "Database",  "Breakpoints", "Comments", "Classes", "Entropy", "Entropy Fire", "Stack", "Methods",
+	"Var READ address", "Var WRITE address", "Summary", "Relocs", "Headers", "File Hashes",
 	NULL
 };
 
@@ -115,7 +117,7 @@ static const char *menus_Emulate[] = {
 	NULL
 };
 
-static const char *menus_Debug[] = {
+static char *menus_Debug[] = {
 	"Registers", "RegisterRefs", "DRX", "Breakpoints", "Watchpoints",
 	"Maps", "Modules", "Backtrace", "Locals", "Continue",
 	"Step", "Step Over", "Reload",
@@ -137,7 +139,7 @@ static const char *menus_About[] = {
 	NULL
 };
 
-static const char *menus_Colors[128];
+static char *menus_Colors[128];
 
 static const char *menus_settings_disassembly[] = {
 	"asm.bytes", "asm.section", "hex.section", "asm.cmt.right", "io.cache", "hex.pairs", "emu.str",
@@ -514,6 +516,8 @@ static void __clearPanelsMenuRec(RPanelsMenuItem *pmi);
 static RStrBuf *__drawMenu(RCore *core, RPanelsMenuItem *item);
 static void __moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
 static void __handleMenu(RCore *core, const int key);
+static int cmpstr(const void *_a, const void *_b);
+static RList *__sorted_list(RCore *core, char *menu[], int count);
 
 /* config */
 static char *__getPanelsConfigPath();
@@ -3666,10 +3670,15 @@ bool __initPanelsMenu(RCore *core) {
 		i++;
 	}
 
-	parent = "View";
-	i = 0;
-	while (menus_View[i]) {
-		__addMenu (core, parent, menus_View[i++], __addCmdPanel, __get_name_cb);
+	{
+		parent = "View";
+		i = 0;
+		RList *list = __sorted_list (core, menus_View, COUNT (menus_View));
+		char *pos;
+		RListIter* iter;
+		r_list_foreach (list, iter, pos) {
+			__addMenu (core, parent, pos, __addCmdPanel, __get_name_cb);
+		}
 	}
 
 	parent = "Tools";
@@ -3715,25 +3724,29 @@ bool __initPanelsMenu(RCore *core) {
 		i++;
 	}
 
-	parent = "Debug";
-	i = 0;
-	while (menus_Debug[i]) {
-		if (!strcmp (menus_Debug[i], "Breakpoints")) {
-			__addMenu (core, parent, menus_Debug[i], __breakpointsCb, __get_name_cb);
-		} else if (!strcmp (menus_Debug[i], "Watchpoints")) {
-			__addMenu (core, parent, menus_Debug[i], __watchpointsCb, __get_name_cb);
-		} else if (!strcmp (menus_Debug[i], "Continue")) {
-			__addMenu (core, parent, menus_Debug[i], __continueCb, __get_name_cb);
-		} else if (!strcmp (menus_Debug[i], "Step")) {
-			__addMenu (core, parent, menus_Debug[i], __stepCb, __get_name_cb);
-		} else if (!strcmp (menus_Debug[i], "Step Over")) {
-			__addMenu (core, parent, menus_Debug[i], __stepoverCb, __get_name_cb);
-		} else if (!strcmp (menus_Debug[i], "Reload")) {
-			__addMenu (core, parent, menus_Debug[i], __reloadCb, __get_name_cb);
-		} else {
-			__addMenu (core, parent, menus_Debug[i], __addCmdPanel, __get_name_cb);
+	{
+		parent = "Debug";
+		i = 0;
+		RList *list = __sorted_list (core, menus_Debug, COUNT (menus_Debug));
+		char *pos;
+		RListIter* iter;
+		r_list_foreach (list, iter, pos) {
+			if (!strcmp (pos, "Breakpoints")) {
+				__addMenu (core, parent, pos, __breakpointsCb, __get_name_cb);
+			} else if (!strcmp (pos, "Watchpoints")) {
+				__addMenu (core, parent, pos, __watchpointsCb, __get_name_cb);
+			} else if (!strcmp (pos, "Continue")) {
+				__addMenu (core, parent, pos, __continueCb, __get_name_cb);
+			} else if (!strcmp (pos, "Step")) {
+				__addMenu (core, parent, pos, __stepCb, __get_name_cb);
+			} else if (!strcmp (pos, "Step Over")) {
+				__addMenu (core, parent, pos, __stepoverCb, __get_name_cb);
+			} else if (!strcmp (pos, "Reload")) {
+				__addMenu (core, parent, pos, __reloadCb, __get_name_cb);
+			} else {
+				__addMenu (core, parent, pos, __addCmdPanel, __get_name_cb);
+			}
 		}
-		i++;
 	}
 
 	parent = "Analyze";
@@ -3834,23 +3847,29 @@ bool __initPanelsMenu(RCore *core) {
 		__addMenu (core, parent, "Default", __loadLayoutDefaultCb, __get_name_cb);
 	}
 
-	parent = "Settings.Colors";
-	i = 0;
-	while (menus_Colors[i]) {
-		__addMenu (core, parent, menus_Colors[i], __colorsCb, __get_name_cb);
-		i++;
+	{
+		parent = "Settings.Colors";
+		i = 0;
+		RList *list = __sorted_list (core, menus_Colors, COUNT (menus_Colors));
+		char *pos;
+		RListIter* iter;
+		r_list_foreach (list, iter, pos) {
+			__addMenu (core, parent, pos, __colorsCb, __get_name_cb);
+		}
 	}
 
-	parent = "Settings.Decompiler";
-	char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
-	RList *optl = r_str_split_list (opts, "\n");
-	RListIter *iter;
-	char *opt;
-	r_list_foreach (optl, iter, opt) {
-		__addMenu (core, parent, strdup (opt), __decompiler_cb, __get_name_cb);
+	{
+		parent = "Settings.Decompiler";
+		char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
+		RList *optl = r_str_split_list (opts, "\n");
+		RListIter *iter;
+		char *opt;
+		r_list_foreach (optl, iter, opt) {
+			__addMenu (core, parent, strdup (opt), __decompiler_cb, __get_name_cb);
+		}
+		r_list_free (optl);
+		free (opts);
 	}
-	r_list_free (optl);
-	free (opts);
 
 	parent = "Settings.Disassembly";
 	i = 0;
@@ -3878,6 +3897,21 @@ bool __initPanelsMenu(RCore *core) {
 	__clearPanelsMenu (core);
 	panelsMenu->refreshPanels = calloc (8, sizeof (RPanel *));
 	return true;
+}
+
+int cmpstr(const void *_a, const void *_b) {
+	char *a = (char *)_a, *b = (char *)_b;
+	return strcmp (a, b);
+}
+
+RList *__sorted_list(RCore *core, char *menu[], int count) {
+	RList *list = r_list_new ();
+	int i;
+	for (i = 0; i < count; i++) {
+		(void)r_list_append (list, menu[i]);
+	}
+	r_list_sort (list, cmpstr);
+	return list;
 }
 
 void __clearPanelsMenuRec(RPanelsMenuItem *pmi) {
@@ -4198,6 +4232,11 @@ void __initSdb(RCore *core) {
 	sdb_set (panels->db, "Var READ address", "afvR", 0);
 	sdb_set (panels->db, "Var WRITE address", "afvW", 0);
 	sdb_set (panels->db, "Summary", "pdsf", 0);
+	sdb_set (panels->db, "Classes", "icq", 0);
+	sdb_set (panels->db, "Methods", "ic", 0);
+	sdb_set (panels->db, "Relocs", "iR", 0);
+	sdb_set (panels->db, "Headers", "iH", 0);
+	sdb_set (panels->db, "File Hashes", "it", 0);
 }
 
 void __init_almighty_db(RCore *core) {
@@ -4654,7 +4693,7 @@ char *__parsePanelsConfig(const char *cfg, int len) {
 void __load_config_menu(RCore *core) {
 	RList *themes_list = r_core_list_themes (core);
 	RListIter *th_iter;
-	const char *th;
+	char *th;
 	int i = 0;
 	r_list_foreach (themes_list, th_iter, th) {
 		menus_Colors[i++] = th;
