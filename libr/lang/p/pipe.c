@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2018 pancake */
+/* radare2 - LGPL - Copyright 2015-2019 pancake */
 
 #include "r_lib.h"
 #include "r_core.h"
@@ -162,7 +162,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		return false;
 	} else {
 		/* parent */
-		char *res, buf[1024];
+		char *res, buf[8192]; // TODO: use the heap?
 		/* Close pipe ends not required in the parent */
 		close (output[1]);
 		close (input[0]);
@@ -175,8 +175,11 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			void *bed = r_cons_sleep_begin ();
 			ret = read (output[0], buf, sizeof (buf) - 1);
 			r_cons_sleep_end (bed);
-			if (ret < 1 || !buf[0]) {
+			if (ret < 1) {
 				break;
+			}
+			if (!buf[0]) {
+				continue;
 			}
 			buf[sizeof (buf) - 1] = 0;
 			res = lang->cmd_str ((RCore*)lang->user, buf);
