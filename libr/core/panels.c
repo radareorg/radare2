@@ -2209,16 +2209,16 @@ bool __checkFunc(RCore *core) {
 }
 
 bool __checkFuncDiff(RCore *core, RPanel *p) {
-	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-	if (!fun) {
+	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	if (!func) {
 		if (R_STR_ISEMPTY (p->model->funcName)) {
 			return false;
 		}
 		p->model->funcName = r_str_dup (p->model->funcName, "");
 		return true;
 	}
-	if (!p->model->funcName || strcmp (p->model->funcName, fun->name)) {
-		p->model->funcName = r_str_dup (p->model->funcName, fun->name);
+	if (!p->model->funcName || strcmp (p->model->funcName, func->name)) {
+		p->model->funcName = r_str_dup (p->model->funcName, func->name);
 		return true;
 	}
 	return false;
@@ -3261,12 +3261,25 @@ char *__print_default_cb(void *user, void *p) {
 }
 
 char *__print_decompiler_cb(void *user, void *p) {
+	//TODO: Refactoring
+	//TODO: Also, __checkFuncDiff should use addr not name
 	RCore *core = (RCore *)user;
+	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	char *cmdstr = NULL;
+	if (func) {
+		cmdstr = (char *)sdb_ptr_get (core->panels_root->pdc_cache, r_num_as_string (NULL, func->addr, false), 0);
+	}
+	if (cmdstr) {
+		return cmdstr;
+	}
 	RPanel *panel = (RPanel *)p;
 	bool update = core->panels->autoUpdate && __checkFuncDiff (core, panel);
-	char *cmdstr = __findCmdStrCache (core, panel);
+	cmdstr = __findCmdStrCache (core, panel);
 	if (update || !cmdstr) {
 		cmdstr = __handleCmdStrCache (core, panel, true);
+		if (func) {
+			sdb_ptr_set (core->panels_root->pdc_cache, r_num_as_string (NULL, func->addr, false), r_str_new (cmdstr), 0);
+		}
 		if (panel->model->cmdStrCache) {
 			__resetScrollPos (panel);
 		}
@@ -5294,6 +5307,7 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		panels_root->panels = calloc (sizeof (RPanels *), PANEL_NUM_LIMIT);
 		panels_root->n_panels = 0;
 		panels_root->cur_panels = 0;
+		panels_root->pdc_cache = sdb_new0 ();
 		__set_root_state (core, DEFAULT);
 		__init_new_panels_root (core);
 	} else {
