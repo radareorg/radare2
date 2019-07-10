@@ -238,6 +238,9 @@ static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATIO
 }
 
 R_API RList *r_w32_dbg_maps(RDebug *dbg) {
+	if (dbg->pid == -1) {
+		return NULL;
+	}
 	SYSTEM_INFO si = {0};
 	LPVOID cur_addr;
 	MEMORY_BASIC_INFORMATION mbi;
