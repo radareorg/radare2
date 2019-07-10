@@ -50,7 +50,7 @@ static inline bool is_word_break_char(char ch, bool mode) {
 static void backward_kill_word() {
 	int i, len;
 	if (I.buffer.index > 0) {
-		for (i = I.buffer.index - 1; i > 0 && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
+		for (i = I.buffer.index; i > 0 && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
 			/* Move the cursor index back until we hit a non-word-break-character */
 		}
 		for (; i > 0 && !is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
@@ -77,7 +77,7 @@ static void backward_kill_word() {
 static void backward_kill_Word() {
 	int i, len;
 	if (I.buffer.index > 0) {
-		for (i = I.buffer.index - 1; i > 0 && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
+		for (i = I.buffer.index; i > 0 && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
 			/* Move the cursor index back until we hit a non-word-break-character */
 		}
 		for (; i > 0 && !is_word_break_char (I.buffer.data[i], MINOR_BREAK); i--) {
@@ -103,7 +103,7 @@ static void backward_kill_Word() {
 
 static void kill_word() {
 	int i, len;
-	for (i = I.buffer.index + 1; i < I.buffer.length && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i++) {
+	for (i = I.buffer.index; i < I.buffer.length && is_word_break_char (I.buffer.data[i], MINOR_BREAK); i++) {
 		/* Move the cursor index forward until we hit a non-word-break-character */
 	}
 	for (; i < I.buffer.length && !is_word_break_char (I.buffer.data[i], MINOR_BREAK); i++) {
@@ -121,7 +121,7 @@ static void kill_word() {
 
 static void kill_Word() {
 	int i, len;
-	for (i = I.buffer.index + 1; i < I.buffer.length && is_word_break_char (I.buffer.data[i], MAJOR_BREAK); i++) {
+	for (i = I.buffer.index; i < I.buffer.length && is_word_break_char (I.buffer.data[i], MAJOR_BREAK); i++) {
 		/* Move the cursor index forward until we hit a non-word-break-character */
 	}
 	for (; i < I.buffer.length && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK); i++) {
@@ -150,7 +150,7 @@ static void paste() {
 }
 
 static void unix_word_rubout() {
-	int i;
+	int i, len;
 	if (I.buffer.index > 0) {
 		for (i = I.buffer.index - 1; i > 0 && I.buffer.data[i] == ' '; i--) {
 			/* Move cursor backwards until we hit a non-space character or EOL */
@@ -168,6 +168,9 @@ static void unix_word_rubout() {
 		if (I.buffer.index > I.buffer.length) {
 			I.buffer.length = I.buffer.index;
 		}
+		len = I.buffer.index - i + 1;
+		free (I.clipboard);
+		I.clipboard = r_str_ndup (I.buffer.data + i, len);
 		memmove (I.buffer.data + i,
 			I.buffer.data + I.buffer.index,
 			I.buffer.length - I.buffer.index + 1);
@@ -1443,7 +1446,7 @@ static inline void vi_cmd_e () {
 
 static void __vi_mode () {
 	char ch;
-	int i, utflen, mode = CONTROL_MODE;
+	int mode = CONTROL_MODE;
 	const char *gcomp_line = "";
 	static int gcomp = 0;
 	for (;;) {
@@ -1474,35 +1477,21 @@ static void __vi_mode () {
 		case 'x':
 			while (rep--) {
 				delete_next_char (); 
-				__print_prompt ();
 			} break;
 		case 'c': 
 			mode = INSERT_MODE;			// goto insert mode
 		case 'd': {
-			int rep1 = 0;
 			char c = r_cons_readchar ();
-			while (IS_DIGIT (c) && c != '0') {	// handle commands like d3w
-				if (c == '0' && rep1 == 0) {	// to handle the command 0
-					break;
-				}
-				int tmp = c - '0';
-				rep1 = (rep1 * 10) + tmp;
-				c = r_cons_readchar ();
-			}
-			rep1 = rep1 > 0 ? rep1 : 1;
-
-			while (rep1--) {
+			while (rep--) {
 				switch (c) {
 				case 'i': {
 					char t = r_cons_readchar ();
 					if (t == 'w') {		// diw
 						kill_word ();
-					} else if (t == 'b') {  // dib
 						backward_kill_word ();
 					} else if (t == 'W') {  // diW
 						kill_Word ();
-					} else if (t == 'B') {  // diB
-						backward_kill_Word ();
+						backward_kill_word ();
 					}
 					} break;
 				case 'W':
@@ -1569,50 +1558,40 @@ static void __vi_mode () {
 		case 'i': 
 			mode = INSERT_MODE;
 			break;
-		case 75:
 		case 'h': 
 			while (rep--) {
 				__move_cursor_left ();
-				__print_prompt ();
 			} break;
-		case 77:
 		case 'l': 
 			while (rep--) {
 				__move_cursor_right ();
-				__print_prompt ();
 			} break;
 		case 'E':
 			while (rep--) {
 				vi_cmd_E ();
-				__print_prompt();
 			} break;
 		case 'e':
 			while (rep--) {
 				vi_cmd_e ();
-				__print_prompt();
 			} break;
 		case 'B': 
 			while (rep--) {
 				vi_cmd_B ();
-				__print_prompt();
 			} break;
 		case 'b': 
 			while (rep--) {
 				vi_cmd_b ();
-				__print_prompt();
 			} break;
 		case 'W': 
 			while (rep--) {
 				vi_cmd_W ();
-				__print_prompt();
 			} break;
 		case 'w': 
 			while (rep--) {
 				vi_cmd_w ();
-				__print_prompt();
 			} break;
-		default: {
-			char tmp = r_cons_readchar ();
+		case 27: {					// escape key
+			char tmp = r_cons_readchar_timeout (50);
 			if (tmp == 0x5b) {	
 				char cmd = r_cons_readchar ();	
 				switch (cmd) {
@@ -1642,7 +1621,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	return r_line_readline_cb_win (cb, user);
 #endif
 	int columns = r_cons_get_size (NULL) - 2;
-	RCore *core = (RCore *) I.user;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;
 	static int gcomp = 0;
