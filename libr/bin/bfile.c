@@ -240,30 +240,32 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
 				num_blocks = 0;
-				block_list = r_utf_block_list ((const ut8*)tmp, i - 1, &freq_list);
+				block_list = r_utf_block_list ((const ut8*)tmp, i - 1,
+				                               str_type == R_STRING_TYPE_WIDE ? &freq_list : NULL);
 				if (block_list) {
 					for (j = 0; block_list[j] != -1; j++) {
 						num_blocks++;
 					}
 				}
-				num_chars = 0;
-				actual_ascii = 0;
 				if (freq_list) {
+					num_chars = 0;
+					actual_ascii = 0;
 					for (j = 0; freq_list[j] != -1; j++) {
 						num_chars += freq_list[j];
 						if (!block_list[j]) { // ASCII
 							actual_ascii = freq_list[j];
 						}
 					}
+					free (freq_list);
+					expected_ascii = num_blocks ? num_chars / num_blocks : 0;
+					if (actual_ascii > expected_ascii) {
+						ascii_only = true;
+						needle = str_start;
+						free (block_list);
+						continue;
+					}
 				}
 				free (block_list);
-				free (freq_list);
-				expected_ascii = num_blocks ? num_chars / num_blocks : 0;
-				if (actual_ascii > expected_ascii) {
-					ascii_only = true;
-					needle = str_start;
-					continue;
-				}
 				if (num_blocks > R_STRING_MAX_UNI_BLOCKS) {
 					continue;
 				}
