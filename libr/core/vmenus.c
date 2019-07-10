@@ -937,17 +937,19 @@ static bool r_core_visual_config_hud(RCore *core) {
 // TODO: show only N elements of the list
 // TODO: wrap index when out of boundaries
 // TODO: Add support to show class fields too
-static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const char *grep, RList *list) {
+static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const char *grep, RList *list) {
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	RListIter *iter;
 	RBinClass *c, *cur = NULL;
 	RBinSymbol *m, *mur = NULL;
+	RBinField *f, *fur = NULL;
 	int i = 0;
-	int skip = idx - 10;
+	int skip = *idx - 10;
+	bool found = false;
 
 	switch (mode) {
 	case 'c':
-		r_cons_printf ("Classes:\n\n");
+		r_cons_printf ("[hjkl_/Cfm]> classes:\n\n");
 		r_list_foreach (list, iter, c) {
 			if (grep) {
 				if (!r_str_casestr (c->name, grep)) {
@@ -955,7 +957,7 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 					continue;
 				}
 			} else {
-				if (idx > 10) {
+				if (*idx > 10) {
 					skip--;
 					if (skip > 0) {
 						i++;
@@ -964,7 +966,7 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 				}
 			}
 			if (show_color) {
-				if (i == idx) {
+				if (i == *idx) {
 					const char *clr = Color_BLUE;
 					r_cons_printf (Color_GREEN ">>" Color_RESET " %02d %s0x%08"
 							PFMT64x Color_YELLOW "  %s\n" Color_RESET,
@@ -975,24 +977,86 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 				}
 			} else {
 				r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
-					(i==idx)?">>":"- ", i, c->addr, c->name);
+					(i==*idx)?">>":"- ", i, c->addr, c->name);
 			}
-			if (i++ == idx) {
+			if (i++ == *idx) {
 				cur = c;
 			}
+		}
+		if (!cur) {
+			*idx = i - 1;
+			if (r_list_empty (list)) {
+				return NULL;
+			}
+			r_cons_clear00 ();
+			return show_class (core, mode, idx, _c, grep, list);
 		}
 		return cur;
 	case 'f':
 		// show fields
-		r_cons_printf ("Fields:\n\n");
+		r_cons_printf ("[hjkl_/cFm]> fields of %s:\n\n", _c->name);
+		r_list_foreach (_c->fields, iter, f) {
+			const char *name = f->name;
+			if (grep) {
+				if (!r_str_casestr (name, grep)) {
+					i++;
+					continue;
+				}
+			} else {
+				if (*idx > 10) {
+					skip--;
+					if (skip > 0) {
+						i++;
+						continue;
+					}
+				}
+			}
+
+			char *mflags = strdup ("");
+
+			if (r_str_startswith (name, _c->name)) {
+				name += strlen (_c->name);
+			}
+			if (show_color) {
+				if (i == *idx) {
+					found = true;
+					const char *clr = Color_BLUE;
+					r_cons_printf (Color_GREEN ">>" Color_RESET " %02d %s0x%08"
+							PFMT64x Color_YELLOW " %s %s\n" Color_RESET,
+						i, clr, f->vaddr, mflags, name);
+				} else {
+					r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET" %s %s\n",
+						i, core->cons->context->pal.offset, f->vaddr, mflags, name);
+				}
+			} else {
+				r_cons_printf ("%s %02d 0x%08"PFMT64x" %s %s\n",
+					(i==*idx)? ">>": "- ", i, f->vaddr, mflags, name);
+			}
+
+			R_FREE (mflags);
+
+			if (i++ == *idx) {
+				fur = f;
+			}
+		}
+		if (!fur) {
+			*idx = i - 1;
+			if (r_list_empty (_c->fields)) {
+				return NULL;
+			}
+			r_cons_clear00 ();
+			return show_class (core, mode, idx, _c, grep, list);
+		}
+		return fur;
 		break;
 	case 'm':
 		// show methods
 		if (!_c) {
-			eprintf ("No class defined\n");
+			eprintf ("No class selected.\n");
 			return mur;
 		}
-		r_cons_printf ("MethodsFor: %s\n\n", _c->name);
+		r_cons_printf ("[hjkl_/cfM]> methods of %s\n\n", _c->name);
+		found = false;
 		r_list_foreach (_c->methods, iter, m) {
 			const char *name = m->dname? m->dname: m->name;
 			char *mflags;
@@ -1002,7 +1066,7 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 					continue;
 				}
 			} else {
-				if (idx > 10) {
+				if (*idx > 10) {
 					skip--;
 					if (skip > 0) {
 						i++;
@@ -1014,7 +1078,11 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 			mflags = r_core_bin_method_flags_str (m->method_flags, 0);
 
 			if (show_color) {
-				if (i == idx) {
+				if (r_str_startswith (name, _c->name)) {
+					name += strlen (_c->name);
+				}
+				if (i == *idx) {
+					found = true;
 					const char *clr = Color_BLUE;
 					r_cons_printf (Color_GREEN ">>" Color_RESET " %02d %s0x%08"
 							PFMT64x Color_YELLOW " %s %s\n" Color_RESET,
@@ -1025,14 +1093,22 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 				}
 			} else {
 				r_cons_printf ("%s %02d 0x%08"PFMT64x" %s %s\n",
-					(i==idx)? ">>": "- ", i, m->vaddr, mflags, name);
+					(i==*idx)? ">>": "- ", i, m->vaddr, mflags, name);
 			}
 
 			R_FREE (mflags);
 
-			if (i++ == idx) {
+			if (i++ == *idx) {
 				mur = m;
 			}
+		}
+		if (!mur) {
+			*idx = i - 1;
+			if (r_list_empty (_c->methods)) {
+				return NULL;
+			}
+			r_cons_clear00 ();
+			return show_class (core, mode, idx, _c, grep, list);
 		}
 		return mur;
 	}
@@ -1043,6 +1119,7 @@ R_API int r_core_visual_classes(RCore *core) {
 	int ch, index = 0;
 	char cmd[1024];
 	int mode = 'c';
+	RBinField *fur = NULL;
 	RBinClass *cur = NULL;
 	RBinSymbol *mur = NULL;
 	void *ptr;
@@ -1060,8 +1137,11 @@ R_API int r_core_visual_classes(RCore *core) {
 		if (grepmode) {
 			r_cons_printf ("Grep: %s\n", grep? grep: "");
 		}
-		ptr = show_class (core, mode, index, cur, grep, list);
+		ptr = show_class (core, mode, &index, cur, grep, list);
 		switch (mode) {
+		case 'f':
+			fur = (RBinField*)ptr;
+			break;
 		case 'm':
 			mur = (RBinSymbol*)ptr;
 			break;
@@ -1150,10 +1230,17 @@ R_API int r_core_visual_classes(RCore *core) {
 				r_core_cmd0 (core, "af;pdf~..");
 			}
 			break;
+		case 'm': // methods
+			mode = 'm';
+			break;
+		case 'f': // fields
+			mode = 'f';
+			break;
 		case 'h':
 		case 127: // backspace
 		case 'b': // back
 		case 'Q':
+		case 'c':
 		case 'q':
 			if (mode == 'c') {
 				return true;
@@ -1189,6 +1276,8 @@ R_API int r_core_visual_classes(RCore *core) {
 			" i     - specify index"
 			" /     - grep mode\n"
 			" C     - toggle colors\n"
+			" f     - show class fields\n"
+			" m     - show class methods\n"
 			" l/' ' - accept current selection\n"
 			" p     - preview method disasm with less\n"
 			" :     - enter command\n");
