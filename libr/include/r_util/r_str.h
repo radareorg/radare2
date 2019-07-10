@@ -192,6 +192,9 @@ R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted);
 R_API char *r_str_from_ut64(ut64 val);
 R_API void r_str_stripLine(char *str, const char *key);
 R_API char *r_str_list_join(RList *str, const char *sep);
+
+R_API const char *r_str_sep(const char *base, const char *sep);
+R_API const char *r_str_rsep(const char *base, const char *p, const char *sep);
 #ifdef __cplusplus
 }
 #endif

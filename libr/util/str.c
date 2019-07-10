@@ -619,6 +619,32 @@ R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr) 
 	return str[start] == chr ? &str[start] : NULL;
 }
 
+R_API const char *r_str_sep(const char *base, const char *sep) {
+	int i;
+	while (*base) {
+		for (i = 0; sep[i]; i++) {
+			if (*base == sep[i]) {
+				return base;
+			}
+		}
+		base++;
+	}
+	return NULL;
+}
+
+R_API const char *r_str_rsep(const char *base, const char *p, const char *sep) {
+	int i;
+	while (p >= base) {
+		for (i = 0; sep[i]; i++) {
+			if (*p == sep[i]) {
+				return p;
+			}
+		}
+		p--;
+	}
+	return NULL;
+}
+
 R_API const char *r_str_rstr(const char *base, const char *p) {
 	char *s = strdup (base);
 	char *k = strdup (p);

@@ -5530,13 +5530,13 @@ static char *getWordFromCanvas(RCore *core, RPanels *panels, int x, int y) {
 	if (!pos) {
 		pos = R;
 	}
-	const char *sp = r_str_rchr (R, pos, ' ');
+	const char *sp = r_str_rsep (R, pos, "*+-/[,] ");
 	if (sp) {
 		sp++;
 	} else {
 		sp = pos;
 	}
-	char *sp2 = strchr (sp, ' ');
+	char *sp2 = r_str_sep (sp, "*+-,][ ");
 	if (sp2) {
 		*sp2 = 0;
 	}
