@@ -155,15 +155,17 @@ static void r_core_file_info(RCore *core, int mode) {
 	if (mode == R_MODE_SIMPLE) {
 		return;
 	}
+	const char *comma = "";
 	if (info) {
 		fn = info->file;
 		if (mode == R_MODE_JSON) {
-			r_cons_printf ("\"type\":\"%s\",", STR (info->type));
+			comma = ",";
+			r_cons_printf ("\"type\":\"%s\"", STR (info->type));
 		}
 	} else {
 		fn = desc ? desc->name: NULL;
 	}
-	if (desc && mode == R_MODE_JSON) {
+	if (mode == R_MODE_JSON) {
 		const char *uri = fn;
 		if (!uri) {
 			if (desc && desc->uri && *desc->uri) {
@@ -174,7 +176,8 @@ static void r_core_file_info(RCore *core, int mode) {
 		}
 		{
 			char *escapedFile = r_str_escape_utf8_for_json (uri, -1);
-			r_cons_printf ("\"file\":\"%s\"", escapedFile);
+			r_cons_printf ("%s\"file\":\"%s\"", comma, escapedFile);
+			comma = ",";
 			free (escapedFile);
 		}
 		if (dbg) {
@@ -182,7 +185,8 @@ static void r_core_file_info(RCore *core, int mode) {
 		}
 		if (desc) {
 			ut64 fsz = r_io_desc_size (desc);
-			r_cons_printf (",\"fd\":%d", desc->fd);
+			r_cons_printf ("%s\"fd\":%d", comma, desc->fd);
+			comma = ",";
 			if (fsz != UT64_MAX) {
 				char humansz[8];
 				r_cons_printf (",\"size\":%"PFMT64d, fsz);
@@ -196,7 +200,7 @@ static void r_core_file_info(RCore *core, int mode) {
 				r_cons_printf (",\"referer\":\"%s\"", desc->referer);
 			}
 		}
-		r_cons_printf (",\"block\":%d", core->blocksize);
+		r_cons_printf ("%s\"block\":%d", comma, core->blocksize);
 		if (binfile) {
 			if (binfile->curxtr) {
 				r_cons_printf (",\"packet\":\"%s\"",
@@ -291,7 +295,7 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 			}
 			r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
 		}
-		if (mode == R_MODE_JSON && array == 0) {
+		if ((mode & R_MODE_JSON) && array == 0) {
 			r_cons_strcat ("}\n");
 		}
 	} else {

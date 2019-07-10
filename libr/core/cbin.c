@@ -1521,7 +1521,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				// check if name is available
 				pj_ks (pj, "name", (relname && strcmp (relname, "")) ? relname : "N/A");
 				pj_ks (pj, "demname", mn ? mn : "");
-				pj_ks (pj, "type",bin_reloc_type_name (reloc));
+				pj_ks (pj, "type", bin_reloc_type_name (reloc));
 				pj_kn (pj, "vaddr", reloc->vaddr);
 				pj_kn (pj, "paddr", reloc->paddr);
 				if (reloc->symbol) {
