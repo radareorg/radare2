@@ -1966,16 +1966,17 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			ut64 flags = ULEB();
 			ut64 offset = ULEB();
 			if (iterator) {
-				char name[R_BIN_MACH0_STRING_LENGTH] = {0};
+				char * name = NULL;
 				RListIter *iter;
 				RTrieState *s;
 				r_list_foreach (states, iter, s) {
 					if (!s->label) {
 						continue;
 					}
-					strlcat (name, s->label, R_BIN_MACH0_STRING_LENGTH);
+					name = r_str_append (name, s->label);
 				}
 				iterator (bin, name, flags, offset, ctx);
+				R_FREE (name);
 			}
 			count++;
 		}
@@ -2220,7 +2221,7 @@ static void assign_export_symbol_t(struct MACH0_(obj_t) *bin, const char *name, 
 		}
 		sym_ctx->symbols[j].size = 0;
 		sym_ctx->symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
-		strlcpy (sym_ctx->symbols[j].name, name, R_BIN_MACH0_STRING_LENGTH);
+		r_str_ncpy (sym_ctx->symbols[j].name, name, R_BIN_MACH0_STRING_LENGTH);
 		sym_ctx->j++;
 	}
 }
