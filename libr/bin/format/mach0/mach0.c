@@ -1924,7 +1924,10 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 
 static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void * ctx) {
 #define ULEB(at) read_uleb128 (&ur, end)
-	r_return_val_if_fail (bin && bin->dyld_info, 0);
+	r_return_val_if_fail (bin, 0);
+	if (!bin->dyld_info) {
+		return 0;
+	}
 
 	int count = 0;
 	ulebr ur = {NULL};
