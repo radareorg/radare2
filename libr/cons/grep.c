@@ -34,9 +34,13 @@ static const char *help_detail_tilde[] = {
 	" :s..e",    "", "show lines s-e",
 	" ..",       "", "internal 'less'",
 	" ...",      "", "internal 'hud' (like V_)",
+	" {:",       "", "human friendly indentation (yes, it's a smiley)",
+	" {:..",     "", "less the output of {:",
+	" {:...",    "", "hud the output of {:",
 	" {}",       "", "json indentation",
-	" {path}",   "", "json grep",
 	" {}..",     "", "less json indentation",
+	" {}...",    "", "hud json indentation",
+	" {path}",   "", "json path grep",
 	"endmodifier:", "", "",
 	" $",        "", "words must be placed at the end of line",
 	"column:", "", "",
@@ -95,9 +99,20 @@ static void parse_grep_expression(const char *str) {
 			str++;
 			break;
 		case '{':
-			if (str[1] == '}') {
+			if (str[1] == ':') {
+				grep->human = true; // human friendly indentation ij~{:
 				grep->json = 1;
-				if (!strncmp (str, "{}..", 4)) {
+				if (!strncmp (str, "{:...", 5)) {
+					grep->hud = true;
+				} else if (!strncmp (str, "{:..", 4)) {
+					grep->less = 1;
+				}
+			} else if (str[1] == '}') {
+				// standard json indentation
+				grep->json = 1;
+				if (!strncmp (str, "{}...", 5)) {
+					grep->hud = true;
+				} else if (!strncmp (str, "{}..", 4)) {
 					grep->less = 1;
 				}
 			} else {
@@ -457,6 +472,7 @@ R_API void r_cons_grepbuf() {
 	if ((!len || !buf || buf[0] == '\0') && (grep->json || grep->less)) {
 		grep->json = 0;
 		grep->less = 0;
+		grep->hud = 0;
 		return;
 	}
 	if (grep->json) {
@@ -479,7 +495,9 @@ R_API void r_cons_grepbuf() {
 				Color_RESET,
 				NULL
 			};
-			char *out = r_print_json_indent (buf, I (context->color_mode), "  ", palette);
+			char *out = (cons->context->grep.human)
+				? r_print_json_human (buf)
+				: r_print_json_indent (buf, I (context->color_mode), "  ", palette);
 			if (!out) {
 				return;
 			}
@@ -488,7 +506,10 @@ R_API void r_cons_grepbuf() {
 			cons->context->buffer_len = strlen (out);
 			cons->context->buffer_sz = cons->context->buffer_len + 1;
 			grep->json = 0;
-			if (grep->less) {
+			if (grep->hud) {
+				grep->hud = false;
+				r_cons_hud_string (cons->context->buffer);
+			} else if (grep->less) {
 				grep->less = 0;
 				r_cons_less_str (cons->context->buffer, NULL);
 			}

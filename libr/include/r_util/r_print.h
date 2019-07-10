@@ -224,6 +224,7 @@ R_API void r_print_stereogram_print(RPrint *p, const char *buf);
 R_API void r_print_set_screenbounds(RPrint *p, ut64 addr);
 R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off);
 R_API char* r_print_json_indent(const char* s, bool color, const char *tab, const char **colors);
+R_API char* r_print_json_human(const char* s);
 R_API char* r_print_json_path(const char* s, int pos);
 
 #endif
