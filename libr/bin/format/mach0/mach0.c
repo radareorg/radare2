@@ -14,6 +14,22 @@ typedef struct _ulebr {
 	ut8 *p;
 } ulebr;
 
+typedef struct {
+	struct symbol_t *symbols;
+	int j;
+	int symbols_count;
+	HtPP *hash;
+} RSymCtx;
+
+typedef void (*RExportsIterator)(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx);
+
+typedef struct {
+	ut8 *node;
+	char *label;
+	int i;
+	ut8 *next_child;
+} RTrieState;
+
 // OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
 // USE THIS: int ws = bf->o->info->big_endian;
 #define mach0_endian 1
@@ -86,6 +102,23 @@ static ut64 addr_to_offset(struct MACH0_(obj_t) *bin, ut64 addr) {
 		segment_size = (ut64)bin->segs[i].vmsize;
 		if (addr >= segment_base && addr < segment_base + segment_size) {
 			return bin->segs[i].fileoff + (addr - segment_base);
+		}
+	}
+	return 0;
+}
+
+static ut64 offset_to_vaddr(struct MACH0_(obj_t) *bin, ut64 offset) {
+	ut64 segment_base, segment_size;
+	int i;
+
+	if (!bin->segs) {
+		return 0;
+	}
+	for (i = 0; i < bin->nsegs; i++) {
+		segment_base = (ut64)bin->segs[i].fileoff;
+		segment_size = (ut64)bin->segs[i].filesize;
+		if (offset >= segment_base && offset < segment_base + segment_size) {
+			return bin->segs[i].vmaddr + (offset - segment_base);
 		}
 	}
 	return 0;
@@ -1640,7 +1673,7 @@ static bool __isDataSection(RBinSection *sect) {
 
 RList *MACH0_(get_segments)(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-	
+
 	RList *list = r_list_newf ((RListFree)r_bin_section_free);
 
 	int i, j;
@@ -1889,6 +1922,128 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 	return NULL;
 }
 
+static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void * ctx) {
+#define ULEB(at) read_uleb128 (&ur, end)
+	r_return_val_if_fail (bin, 0);
+	if (!bin->dyld_info) {
+		return 0;
+	}
+
+	int count = 0;
+	ulebr ur = {NULL};
+	ut8 * trie = NULL;
+	RList * states = NULL;
+	ut64 size = bin->dyld_info->export_size;
+	if (!size) {
+		return count;
+	}
+	trie = malloc (size);
+	if (!trie) {
+		return count;
+	}
+	ut8 * end = trie + size;
+
+	if (r_buf_read_at (bin->b, bin->dyld_info->export_off, trie, bin->dyld_info->export_size) != size) {
+		goto beach;
+	}
+
+	states = r_list_newf ((RListFree)free);
+	if (!states) {
+		goto beach;
+	}
+
+	RTrieState * root = R_NEW0 (RTrieState);
+	if (!root) {
+		goto beach;
+	}
+	root->node = trie;
+	root->i = 0;
+	root->label = NULL;
+	r_list_push (states, root);
+
+	do {
+		RTrieState * state = r_list_get_top (states);
+		ur.p = state->node;
+		ut64 len = ULEB();
+		if (len) {
+			ut64 flags = ULEB();
+			ut64 offset = ULEB();
+			if (iterator) {
+				char * name = NULL;
+				RListIter *iter;
+				RTrieState *s;
+				r_list_foreach (states, iter, s) {
+					if (!s->label) {
+						continue;
+					}
+					name = r_str_append (name, s->label);
+				}
+				if (name == NULL) {
+					eprintf ("malformed export trie\n");
+					goto beach;
+				}
+				iterator (bin, name, flags, offset, ctx);
+				R_FREE (name);
+			}
+			count++;
+		}
+		ut64 child_count = ULEB();
+		if ((len && child_count) || (!len && !child_count)) {
+			eprintf ("malformed export trie\n");
+			goto beach;
+		}
+		if (state->i == child_count) {
+			r_list_pop (states);
+			continue;
+		}
+		if (!state->next_child) {
+			state->next_child = ur.p;
+		} else {
+			ur.p = state->next_child;
+		}
+		RTrieState * next = R_NEW0 (RTrieState);
+		if (!next) {
+			goto beach;
+		}
+		next->label = (char *) ur.p;
+		ur.p += strlen (next->label) + 1;
+		if (ur.p >= end) {
+			eprintf ("malformed export trie\n");
+			R_FREE (next);
+			goto beach;
+		}
+		next->node = ULEB() + trie;
+		if (next->node >= end) {
+			eprintf ("malformed export trie\n");
+			R_FREE (next);
+			goto beach;
+		}
+		next->i = 0;
+		state->i++;
+		state->next_child = ur.p;
+		r_list_push (states, next);
+	} while (r_list_length (states));
+#undef ULEB
+
+beach:
+	r_list_free (states);
+	R_FREE (trie);
+	return count;
+}
+
+static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void * ctx) {
+	RList *list = (RList*) ctx;
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	if (!sym) {
+		return;
+	}
+	sym->vaddr = offset_to_vaddr (bin, offset);
+	sym->paddr = offset;
+	sym->type = "EXT";
+	sym->name = strdup (name);
+	sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
+	r_list_append (list, sym);
+}
 
 // TODO: Return RList<RBinSymbol> // 2x speedup
 const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
@@ -1898,15 +2053,29 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	ut32 to, from, i;
 
 	r_return_val_if_fail (bin, NULL);
-	if (!bin->symtab || !bin->symstr) {
-		return NULL;
-	}
 	if (cache) {
 		return cache;
 	}
 	RList *list = r_list_newf ((RListFree)r_bin_symbol_free);
 	cache = list;
 
+	HtPP *hash = ht_pp_new0 ();
+	if (!hash) {
+		return NULL;
+	}
+
+	walk_exports (bin, fill_exports_list, list);
+	if (r_list_length (list)) {
+		RListIter *it;
+		RBinSymbol *s;
+		r_list_foreach (list, it, s) {
+			inSymtab (hash, s->name, s->vaddr);
+		}
+	}
+
+	if (!bin->symtab || !bin->symstr) {
+		return list;
+	}
 	/* parse dynamic symbol table */
 	symbols_count = (bin->dysymtab.nextdefsym + \
 			bin->dysymtab.nlocalsym + \
@@ -1918,11 +2087,6 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 		return NULL;
 	}
 	if (!(symbols = calloc (1, symbols_size))) {
-		return NULL;
-	}
-	HtPP *hash = ht_pp_new0 ();
-	if (!hash) {
-		free (symbols);
 		return NULL;
 	}
 	j = 0; // symbol_idx
@@ -1961,7 +2125,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			sym->vaddr = bin->symtab[i].n_value;
 			sym->paddr = addr_to_offset (bin, sym->vaddr);
 			symbols[j].size = 0; /* TODO: Is it anywhere? */
-		
+
 			if (bin->symtab[i].n_type & N_EXT) {
 				sym->type = "EXT";
 			} else {
@@ -2057,6 +2221,22 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	return list;
 }
 
+static void assign_export_symbol_t(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx) {
+	RSymCtx *sym_ctx = (RSymCtx*) ctx;
+	int j = sym_ctx->j;
+	if (j < sym_ctx->symbols_count) {
+		sym_ctx->symbols[j].offset = offset;
+		sym_ctx->symbols[j].addr = offset_to_vaddr (bin, offset);
+		if (inSymtab (sym_ctx->hash, name, sym_ctx->symbols[j].addr)) {
+			return;
+		}
+		sym_ctx->symbols[j].size = 0;
+		sym_ctx->symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
+		r_str_ncpy (sym_ctx->symbols[j].name, name, R_BIN_MACH0_STRING_LENGTH);
+		sym_ctx->j++;
+	}
+}
+
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 	struct symbol_t *symbols;
 	int j, s, stridx, symbols_size, symbols_count;
@@ -2066,151 +2246,173 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 		return bin->symbols;
 	}
 
-	r_return_val_if_fail (bin, NULL);
-	if (!bin->symtab || !bin->symstr) {
-		return NULL;
-	}
-
-	/* parse dynamic symbol table */
-	symbols_count = (bin->dysymtab.nextdefsym + \
-			bin->dysymtab.nlocalsym + \
-			bin->dysymtab.nundefsym );
-	symbols_count += bin->nsymtab;
-	symbols_size = (symbols_count + 1) * 2 * sizeof (struct symbol_t);
-
-	if (symbols_size < 1) {
-		return NULL;
-	}
-	if (!(symbols = calloc (1, symbols_size))) {
-		return NULL;
-	}
 	HtPP *hash = ht_pp_new0 ();
 	if (!hash) {
-		free (symbols);
 		return NULL;
 	}
+
+	r_return_val_if_fail (bin, NULL);
+	int n_exports = walk_exports (bin, NULL, NULL);
+
+	symbols_count = n_exports;
 	j = 0; // symbol_idx
-	bin->main_addr = 0;
-	for (s = 0; s < 2; s++) {
-		switch (s) {
-		case 0:
-			from = bin->dysymtab.iextdefsym;
-			to = from + bin->dysymtab.nextdefsym;
-			break;
-		case 1:
-			from = bin->dysymtab.ilocalsym;
-			to = from + bin->dysymtab.nlocalsym;
-			break;
+
+	if (bin->symtab && bin->symstr) {
+		/* parse dynamic symbol table */
+		symbols_count = (bin->dysymtab.nextdefsym + \
+				bin->dysymtab.nlocalsym + \
+				bin->dysymtab.nundefsym );
+		symbols_count += bin->nsymtab;
+		symbols_size = (symbols_count + 1) * 2 * sizeof (struct symbol_t);
+
+		if (symbols_size < 1) {
+			return NULL;
+		}
+		if (!(symbols = calloc (1, symbols_size))) {
+			return NULL;
+		}
+		bin->main_addr = 0;
+		for (s = 0; s < 2; s++) {
+			switch (s) {
+			case 0:
+				from = bin->dysymtab.iextdefsym;
+				to = from + bin->dysymtab.nextdefsym;
+				break;
+			case 1:
+				from = bin->dysymtab.ilocalsym;
+				to = from + bin->dysymtab.nlocalsym;
+				break;
 #if NOT_USED
-		case 2:
-			from = bin->dysymtab.iundefsym;
-			to = from + bin->dysymtab.nundefsym;
-			break;
+			case 2:
+				from = bin->dysymtab.iundefsym;
+				to = from + bin->dysymtab.nundefsym;
+				break;
 #endif
-		}
-		if (from == to) {
-			continue;
-		}
-
-		from = R_MIN (R_MAX (0, from), symbols_size / sizeof (struct symbol_t));
-		to = R_MIN (R_MIN (to, bin->nsymtab), symbols_size / sizeof (struct symbol_t));
-
-		ut32 maxsymbols = symbols_size / sizeof (struct symbol_t);
-		if (symbols_count >= maxsymbols) {
-			symbols_count = maxsymbols - 1;
-			eprintf ("macho warning: Symbol table truncated\n");
-		}
-		for (i = from; i < to && j < symbols_count; i++, j++) {
-			symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
-			symbols[j].addr = bin->symtab[i].n_value;
-			symbols[j].size = 0; /* TODO: Is it anywhere? */
-			if (bin->symtab[i].n_type & N_EXT) {
-				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
-			} else {
-				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+			}
+			if (from == to) {
+				continue;
 			}
 
-			stridx = bin->symtab[i].n_strx;
-			char *sym_name = get_name (bin, stridx, false);
-			if (sym_name) {
-				r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
-				free (sym_name);
+			from = R_MIN (R_MAX (0, from), symbols_size / sizeof (struct symbol_t));
+			to = R_MIN (R_MIN (to, bin->nsymtab), symbols_size / sizeof (struct symbol_t));
+
+			ut32 maxsymbols = symbols_size / sizeof (struct symbol_t);
+			if (symbols_count >= maxsymbols) {
+				symbols_count = maxsymbols - 1;
+				eprintf ("macho warning: Symbol table truncated\n");
 			}
-			symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
-			symbols[j].last = 0;
-			if (bin->main_addr == 0) {
-				const char *name = symbols[j].name;
-				if (!strcmp (name, "__Dmain")) {
-					bin->main_addr = symbols[j].addr;
-				} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
-					bin->main_addr = symbols[j].addr;
-				} else if (!strcmp (name, "_main")) {
-					bin->main_addr = symbols[j].addr;
-				} else if (!strcmp (name, "main")) {
-					bin->main_addr = symbols[j].addr;
+			for (i = from; i < to && j < symbols_count; i++, j++) {
+				symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
+				symbols[j].addr = bin->symtab[i].n_value;
+				symbols[j].size = 0; /* TODO: Is it anywhere? */
+				if (bin->symtab[i].n_type & N_EXT) {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
+				} else {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
 				}
-			}
-			if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
-				symbols[j].name[0] = 0;
-				j--;
-			}
-		}
-	}
-	to = R_MIN ((ut32)bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
-	for (i = bin->dysymtab.iundefsym; i < to; i++) {
-		if (j > symbols_count) {
-			bprintf ("mach0-get-symbols: error\n");
-			break;
-		}
-		if (parse_import_stub (bin, &symbols[j], i)) {
-			symbols[j++].last = 0;
-		}
-	}
 
-	for (i = 0; i < bin->nsymtab; i++) {
-		struct MACH0_(nlist) *st = &bin->symtab[i];
-		stridx = st->n_strx;
-		// 0 is for imports
-		// 1 is for symbols
-		// 2 is for func.eh (exception handlers?)
-		int section = st->n_sect;
-		if (section == 1 && j < symbols_count) { // text ??st->n_type == 1)
-		//if (j < symbols_count) { // text ??st->n_type == 1)
-			/* is symbol */
-			symbols[j].addr = st->n_value;
-			symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
-			symbols[j].size = 0; /* find next symbol and crop */
-			if (st->n_type & N_EXT) {
-				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
-			} else {
-				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-			}
-			char *sym_name = get_name (bin, stridx, false);
-			if (sym_name) {
-				r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
-				free (sym_name);
-			} else {
-				sprintf (symbols[j].name, "entry%d\n", i);
-				//symbols[j].name[0] = 0;
-			}
-			symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 1] = 0;
-			symbols[j].last = 0;
-			if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
-				symbols[j].name[0] = 0;
-			} else {
-				j++;
-			}
-			if (bin->main_addr == 0) {
-				const char *name = symbols[j-1].name;
-				if (!strcmp (name, "__Dmain")) {
-					bin->main_addr = symbols[i].addr;
-				} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
-					bin->main_addr = symbols[i].addr;
-				} else if (!strcmp (symbols[i].name, "_main")) {
-					bin->main_addr = symbols[i].addr;
+				stridx = bin->symtab[i].n_strx;
+				char *sym_name = get_name (bin, stridx, false);
+				if (sym_name) {
+					r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
+					free (sym_name);
+				}
+				symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
+				symbols[j].last = 0;
+				if (bin->main_addr == 0) {
+					const char *name = symbols[j].name;
+					if (!strcmp (name, "__Dmain")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (!strcmp (name, "_main")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (!strcmp (name, "main")) {
+						bin->main_addr = symbols[j].addr;
+					}
+				}
+				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
+					symbols[j].name[0] = 0;
+					j--;
 				}
 			}
 		}
+		to = R_MIN ((ut32)bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
+		for (i = bin->dysymtab.iundefsym; i < to; i++) {
+			if (j > symbols_count) {
+				bprintf ("mach0-get-symbols: error\n");
+				break;
+			}
+			if (parse_import_stub (bin, &symbols[j], i)) {
+				symbols[j++].last = 0;
+			}
+		}
+
+		for (i = 0; i < bin->nsymtab; i++) {
+			struct MACH0_(nlist) *st = &bin->symtab[i];
+			stridx = st->n_strx;
+			// 0 is for imports
+			// 1 is for symbols
+			// 2 is for func.eh (exception handlers?)
+			int section = st->n_sect;
+			if (section == 1 && j < symbols_count) { // text ??st->n_type == 1)
+			//if (j < symbols_count) { // text ??st->n_type == 1)
+				/* is symbol */
+				symbols[j].addr = st->n_value;
+				symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
+				symbols[j].size = 0; /* find next symbol and crop */
+				if (st->n_type & N_EXT) {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
+				} else {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+				}
+				char *sym_name = get_name (bin, stridx, false);
+				if (sym_name) {
+					r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
+					free (sym_name);
+				} else {
+					sprintf (symbols[j].name, "entry%d\n", i);
+					//symbols[j].name[0] = 0;
+				}
+				symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 1] = 0;
+				symbols[j].last = 0;
+				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
+					symbols[j].name[0] = 0;
+				} else {
+					j++;
+				}
+				if (bin->main_addr == 0) {
+					const char *name = symbols[j-1].name;
+					if (!strcmp (name, "__Dmain")) {
+						bin->main_addr = symbols[i].addr;
+					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+						bin->main_addr = symbols[i].addr;
+					} else if (!strcmp (symbols[i].name, "_main")) {
+						bin->main_addr = symbols[i].addr;
+					}
+				}
+			}
+		}
+	} else if (!n_exports) {
+		ht_pp_free (hash);
+		return NULL;
+	} else {
+		symbols_size = (symbols_count + 1) * sizeof (struct symbol_t);
+		if (symbols_size < 1) {
+			return NULL;
+		}
+		if (!(symbols = calloc (1, symbols_size))) {
+			return NULL;
+		}
+	}
+	if (n_exports && (symbols_count - j) >= n_exports) {
+		RSymCtx sym_ctx;
+		sym_ctx.symbols = symbols;
+		sym_ctx.j = j;
+		sym_ctx.symbols_count = symbols_count;
+		sym_ctx.hash = hash;
+		walk_exports (bin, assign_export_symbol_t, &sym_ctx);
+		j = sym_ctx.j;
 	}
 	ht_pp_free (hash);
 	symbols[j].last = 1;
