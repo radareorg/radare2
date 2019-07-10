@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2008-2018 - nibble, pancake */
 
-// TODO: rename to r_anal_meta_get() ??
 #if 0
     TODO
     ====

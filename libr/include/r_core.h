@@ -141,6 +141,7 @@ typedef struct r_core_file_t {
 	ut8 alive;
 } RCoreFile;
 
+
 typedef struct r_core_times_t {
 	ut64 loadlibs_init_time;
 	ut64 loadlibs_time;
@@ -332,6 +333,24 @@ typedef struct r_core_t {
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RList *ropchain;
 } RCore;
+
+// maybe move into RAnal
+typedef struct r_core_item_t {
+	const char *type;
+	ut64 addr;
+	ut64 next;
+	ut64 prev;
+	int size;
+	int perm;
+	char *data;
+	char *comment;
+	char *sectname;
+	char *fcnname;
+} RCoreItem;
+
+
+R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr);
+R_API void r_core_item_free (RCoreItem *ci);
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
 

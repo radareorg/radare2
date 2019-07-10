@@ -903,10 +903,10 @@ static void ds_free(RDisasmState *ds) {
 
 /* XXX move to r_print */
 static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color) {
-	char *spacer = NULL;
 	char *source = ds->opstr? ds->opstr: r_asm_op_get_asm (&ds->asmop);
 	char *hlstr = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
 	bool partial_reset = line_highlighted (ds) ? true : ((hlstr && *hlstr) ? true : false);
+	free (hlstr);
 	RAnalFunction *f = ds->show_color_args ? fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL) : NULL;
 
 	if (!ds->show_color || !ds->colorop) {
@@ -917,7 +917,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 		r_cons_strcat (r_print_color_op_type (core->print, ds->analop.type));
 	}
 	// workaround dummy colorizer in case of paired commands (tms320 & friends)
-	spacer = strstr (source, "||");
+	char *spacer = strstr (source, "||");
 	if (spacer) {
 		char *scol1, *s1 = r_str_ndup (source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
@@ -2701,6 +2701,7 @@ static void ds_adistrick_comments(RDisasmState *ds) {
 	}
 }
 
+// TODO move into RAnal.meta
 static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int size) {
 	RCore *core = ds->core;
 	const char *type = NULL;
@@ -2717,7 +2718,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	// adjust alignment
 	r_cons_printf ("  ");
 	ut64 n = r_read_ble (buf, core->print->big_endian, size * 8);
-	{
+	if (r_config_get_i (core->config, "scr.interactive")) {
 		int q = core->print->cur_enabled &&
 			ds->cursor >= ds->index &&
 			ds->cursor < (ds->index + size);
@@ -6090,6 +6091,34 @@ toro:
 			case R_META_TYPE_DATA:
 				//r_cons_printf (".data: %s\n", meta->str);
 				i += meta->size;
+				{
+					int idx = i;
+					ut64 at = core->offset + i;
+					int hexlen = len - idx;
+					int delta = at - meta->from;
+					if (meta->size < hexlen) {
+						hexlen = meta->size;
+					}
+					// int oplen = meta->size - delta;
+					core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+					// TODO do not pass a copy in parameter buf that is possibly to small for this
+					// print operation
+					int size = R_MIN (meta->size, len - idx);
+					ut8 *buf = calloc (size, 1);
+					if (buf) {
+						r_io_read_at (core->io, at, buf, size);
+						RDisasmState ds = {0};
+						ds.core = core;
+						if (!ds_print_data_type (&ds, buf, 0, size)) {
+							r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", size , delta);
+							r_print_hexdump (core->print, at, buf+idx, hexlen-delta, 16, 1, 1);
+						} else {
+							r_cons_newline ();
+						}
+						free (buf);
+					}
+					ret = true;
+				}
 				continue;
 			case R_META_TYPE_STRING:
 				//r_cons_printf (".string: %s\n", meta->str);
