@@ -1,0 +1,484 @@
+#include "ne.h"
+
+static char *__get_target_os(r_bin_ne_obj_t *bin) {
+	switch (bin->ne_header->targOS) {
+	case 1:
+		return "OS/2";
+	case 2:
+		return "Windows";
+	case 3:
+		return "European MS-DOS 4.x";
+	case 4:
+		return "Windows 386";
+	case 5:
+		return "BOSS (Borland Operating System Services)";
+	default:
+		return "Unknown";
+	}
+}
+
+int __translate_perms(int flags) {
+	int perms = 0;
+	if (flags & IS_RX) {
+		if (flags & IS_DATA) {
+			perms = R_PERM_R;
+		} else {
+			perms = R_PERM_X;
+		}
+	}
+	if (!perms) {
+		perms = R_PERM_RWX;
+	}
+	return perms;
+}
+
+static char *__read_nonnull_str_at(RBuffer *buf, ut64 offset) {
+	ut8 sz = r_buf_read8_at (buf, offset);
+	if (!sz) {
+		return NULL;
+	}
+	char *str = malloc ((ut64)sz + 1);
+	if (!str) {
+		return NULL;
+	}
+	r_buf_read_at (buf, offset + 1, str, sz);
+	str[sz] = '\0';
+	return str;
+}
+
+RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
+	if (!bin) {
+		return NULL;
+	}
+	RList *segments = r_list_newf (free);
+	for (int i = 0; i < bin->ne_header->SegCount; i++) {
+		RBinSection *bs = R_NEW0 (RBinSection);
+		NE_image_segment_entry *se = &bin->segment_entries[i];
+		if (!bs) {
+			return segments;
+		}
+		bs->size = se->length;
+		bs->vsize = se->minAllocSz ? se->minAllocSz : 64000;
+		bs->bits = 16;
+		bs->is_data = se->flags & IS_DATA;
+		bs->perm = __translate_perms (se->flags);
+		bs->paddr = (ut64)se->offset * bin->alignment;
+		bs->name = r_str_newf ("%s.%d", se->flags & IS_MOVEABLE ? "MOVEABLE" : "FIXED", bs->paddr);
+		bs->is_segment = true;
+		r_list_append (segments, bs);
+	}
+	return segments;
+}
+
+RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
+	RBinSymbol *sym;
+	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
+	RList *symbols = r_list_newf (free);
+	if (!symbols) {
+		return NULL;
+	}
+	RList *entries = r_bin_ne_get_entrypoints (bin);
+	bool resident = true;
+	while (true) {
+		ut8 sz = r_buf_read8_at (bin->buf, off);
+		if (!sz) {
+			if (resident) {
+				resident = false;
+				off = bin->ne_header->OffStartNonResTab;
+				sz = r_buf_read8_at (bin->buf, off);
+				if (!sz) {
+					break;
+				}
+			} else {
+				break;
+			}
+		}
+		char *name = malloc ((ut64)sz + 1);
+		if (!name) {
+			break;
+		}
+		off++;
+		r_buf_read_at (bin->buf, off, name, sz);
+		name[sz] = '\0';
+		off += sz;
+		sym = R_NEW0 (RBinSymbol);
+		if (!sym) {
+			break;
+		}
+		sym->name = name;
+
+		ut16 entry_off = r_buf_read8_at (bin->buf, off);
+		off += 2;
+		if (resident) {
+			sym->paddr = ((RBinAddr *)r_list_get_n (entries, entry_off))->paddr;
+		} else {
+			sym->paddr = (ut64)off - sz - 1;
+		}
+		r_list_append (symbols, sym);
+	}
+	return symbols;
+}
+
+static char *__resource_type_str(int type) {
+	char *typeName;
+	switch (type) {
+	case 1:
+		typeName = "CURSOR";
+		break;
+	case 2:
+		typeName = "BITMAP";
+		break;
+	case 3:
+		typeName = "ICON";
+		break;
+	case 4:
+		typeName = "MENU";
+		break;
+	case 5:
+		typeName = "DIALOG";
+		break;
+	case 6:
+		typeName = "STRING";
+		break;
+	case 7:
+		typeName = "FONTDIR";
+		break;
+	case 8:
+		typeName = "FONT";
+		break;
+	case 9:
+		typeName = "ACCELERATOR";
+		break;
+	case 10:
+		typeName = "RCDATA";
+		break;
+	case 11:
+		typeName = "MESSAGETABLE";
+		break;
+	case 12:
+		typeName = "GROUP_CURSOR";
+		break;
+	case 14:
+		typeName = "GROUP_ICON";
+		break;
+	case 16:
+		typeName = "VERSION";
+		break;
+	case 17:
+		typeName = "DLGINCLUDE";
+		break;
+	case 19:
+		typeName = "PLUGPLAY";
+		break;
+	case 20:
+		typeName = "VXD";
+		break;
+	case 21:
+		typeName = "ANICURSOR";
+		break;
+	case 22:
+		typeName = "ANIICON";
+		break;
+	case 23:
+		typeName = "HTML";
+		break;
+	case 24:
+		typeName = "MANIFEST";
+		break;
+	default: 
+		return r_str_newf ("UNKNOWN (%d)", type);
+	}
+	return strdup (typeName);
+}
+
+void __free_resource_entry(r_ne_resource_entry *entry) {
+	free (entry->name);
+	free (entry);
+}
+
+void __free_resource(r_ne_resource *resource) {
+	free (resource->name);
+	r_list_free (resource->entry);
+	free (resource);
+}
+
+bool __ne_get_resources(r_bin_ne_obj_t *bin) {
+	if (!bin->resources) {
+		bin->resources = r_list_newf (__free_resource);
+	}
+	ut16 resoff = bin->ne_header->ResTableOffset + bin->header_offset;
+	ut16 alignment = r_buf_read_le16_at (bin->buf, resoff);
+	ut32 off = resoff + 2;
+	while (true) {
+		NE_image_typeinfo_entry ti = {0};
+		r_ne_resource *res = R_NEW0 (r_ne_resource);
+		if (!res) {
+			break;
+		}
+		res->entry = r_list_newf (__free_resource_entry);
+		if (!res->entry) {
+			break;
+		}
+		r_buf_read_at (bin->buf, off, &ti, sizeof (ti));
+		if (!ti.rtTypeID) {
+			break;
+		} else if (ti.rtTypeID & 0x8000) {
+			res->name = __resource_type_str (ti.rtTypeID & ~0x8000);
+		} else { 
+			// Offset to resident name table
+			res->name = __read_nonnull_str_at (bin->buf, (ut64)resoff + ti.rtTypeID);
+		}
+		off += sizeof (NE_image_typeinfo_entry);
+		int i;
+		for (i = 0; i < ti.rtResourceCount; i++) {
+			NE_image_nameinfo_entry ni;
+			r_ne_resource_entry *ren = R_NEW0 (r_ne_resource_entry);
+			if (!ren) {
+				break;
+			}
+			r_buf_read_at (bin->buf, off, &ni, sizeof (NE_image_nameinfo_entry));
+			ren->offset = ni.rnOffset << alignment;
+			ren->size = ni.rnLength;
+			if (ni.rnID & 0x8000) {
+				ren->name = r_str_newf ("%d", ni.rnID & ~0x8000);
+			} else {
+				// Offset to resident name table
+				ren->name = __read_nonnull_str_at (bin->buf, (ut64)resoff + ni.rnID);
+			}
+			r_list_append (res->entry, ren);
+			off += sizeof (NE_image_nameinfo_entry);
+		}
+		r_list_append (bin->resources, res);
+	}
+}
+
+RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
+	RList *imports = r_list_newf (free);
+	if (!imports) {
+		return NULL;
+	}
+	ut16 off = bin->ne_header->ImportNameTable + bin->header_offset + 1;
+	int i;
+	for (i = 0; i < bin->ne_header->ModRefs; i++) {
+		RBinImport *imp = R_NEW0 (RBinImport);
+		if (!imp) {
+			break;
+		}
+		ut8 sz = r_buf_read8_at (bin->buf, off);
+		if (!sz) {
+			break;
+		}
+		off++;
+		char *name = malloc ((ut64)sz + 1);
+		if (!name) {
+			break;
+		}
+		r_buf_read_at (bin->buf, off, name, sz);
+		name[sz] = '\0';
+		imp->name = name;
+		imp->ordinal = i + 1;
+		r_list_append (imports, imp);
+		off += sz;
+	}
+	return imports;
+}
+
+RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
+	RList *entries = r_list_newf (free);
+	if (!entries) {
+		return NULL;
+	}
+	RBinAddr *entry = R_NEW0 (RBinAddr);
+	if (!entry) {
+		r_list_free (entries);
+		return NULL;
+	}
+	RList *segments = r_bin_ne_get_segments (bin);
+	if (!segments) {
+		r_list_free (entries);
+		return NULL;
+	}
+	entry->bits = 16;
+	entry->paddr = bin->ne_header->ipEntryPoint + ((RBinSection *)r_list_get_n (segments, bin->ne_header->csEntryPoint - 1))->paddr;
+	r_list_append (entries, entry);
+	
+	int off = 0;
+	while (off < bin->ne_header->EntryTableLength) {
+		ut8 bundle_length = *(ut8 *)(bin->entry_table + off);
+		if (!bundle_length) {
+			break;
+		}
+		off++;
+		ut8 bundle_type = *(ut8 *)(bin->entry_table + off);
+		off++;
+		int i;
+		for (i = 0; i < bundle_length; i++) {
+			entry = R_NEW0 (RBinAddr);
+			if (!entry) {
+				r_list_free (entries);
+				return NULL;
+			}
+			off++;
+			if (!bundle_type) { // Skip
+				off--;
+				free (entry);
+				break;
+			} else if (bundle_type == 0xFF) { // Moveable
+				off += 2;
+				ut8 segnum = *(bin->entry_table + off);
+				off++;
+				ut16 segoff = *(ut16 *)(bin->entry_table + off);
+				entry->paddr = (ut64)segnum * bin->alignment + segoff;
+			} else { // Fixed
+				entry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset * bin->alignment + *(ut16 *)(bin->entry_table + off);
+			}
+			off += 2;
+			r_list_append (entries, entry);
+		}
+	}
+	return entries;
+}
+
+RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
+	ut16 *modref = malloc (bin->ne_header->ModRefs * sizeof (ut16));
+	if (!modref) {
+		return NULL;
+	}
+	r_buf_read_at (bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, modref, bin->ne_header->ModRefs * sizeof (ut16));
+	RList *relocs = r_list_newf (free);
+	if (!relocs) {
+		return NULL;
+	}
+	RList *segments = r_bin_ne_get_segments (bin);
+	if (!segments) {
+		r_list_free (relocs);
+		return NULL;
+	}
+	RList *entries = r_bin_ne_get_entrypoints (bin);
+	if (!entries) {
+		r_list_free (relocs);
+		r_list_free (segments);
+		return NULL;
+	}
+	RListIter *it;
+	RBinSection *seg;
+	int index = -1;
+	r_list_foreach (segments, it, seg) {
+		index++;
+		if (!(bin->segment_entries[index].flags & RELOCINFO)) {
+			continue;
+		}
+		ut32 off, start = off = seg->paddr + seg->size;
+		ut16 length = r_buf_read_le16_at (bin->buf, off);
+		if (!length) {
+			continue;
+		}
+		off += 2;
+		while (off < start + length * sizeof (NE_image_reloc_item)) {
+			RBinReloc *reloc = R_NEW0 (RBinReloc);
+			if (!reloc) {
+				return NULL;
+			}
+			NE_image_reloc_item rel;
+			r_buf_read_at (bin->buf, off, &rel, sizeof (rel));
+			reloc->paddr = rel.offset + seg->paddr;
+			switch (rel.type) {
+			case LOBYTE:
+				reloc->type = R_BIN_RELOC_8;
+				break;
+			case SEL_16:
+			case OFF_16:
+				reloc->type = R_BIN_RELOC_16;
+				break;
+			case OFF_32:
+				reloc->type = R_BIN_RELOC_32;
+				break;
+			case POI_48:
+				reloc->type = R_BIN_RELOC_64;
+				break;
+			}
+
+			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
+				RBinImport *imp = R_NEW0 (RBinImport);
+				if (!imp) {
+					break;
+				}
+				ut32 offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
+				char *name = __read_nonnull_str_at (bin->buf, offset);
+				if (rel.flags & IMPORTED_ORD) {
+					imp->ordinal = rel.func_ord;
+					imp->name = r_str_newf ("%s.%d", name, rel.func_ord);
+				} else {
+					offset = bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;
+					char *func = __read_nonnull_str_at (bin->buf, offset);
+					imp->name = r_str_newf ("%s.%s", name, func);
+					free (func);
+				}
+				free (name);
+				reloc->import = imp;
+			} else if (rel.flags & OSFIXUP ) {
+			} else {
+				ut32 offset;
+				if (strstr (seg->name, "FIXED")) {
+					offset = ((RBinSection *)r_list_get_n (segments, rel.segnum))->paddr + rel.segoff;
+				} else {
+					offset = ((RBinAddr *)r_list_get_n (entries, rel.entry_ordinal - 1))->paddr;
+				}
+				if (rel.flags & ADDITIVE) {
+					reloc->additive = 1;
+				}
+				reloc->addend = offset;
+			}
+			off += sizeof (NE_image_reloc_item);
+			r_list_append (relocs, reloc);
+		}
+	}
+	r_list_free (segments);
+	r_list_free (entries);
+	return relocs;
+}
+
+void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
+	bin->header_offset = r_buf_read_le16_at (buf, 0x3c);
+	bin->ne_header = R_NEW0 (NE_image_header);
+	if (!bin->ne_header) {
+		return;
+	}
+	bin->buf = buf;
+	r_buf_read_at (buf, bin->header_offset, bin->ne_header, sizeof (NE_image_header));
+	bin->alignment = 1 << bin->ne_header->FileAlnSzShftCnt;
+	if (!bin->alignment) {
+		bin->alignment = 1 << 9;
+	}
+	bin->os = __get_target_os (bin);
+
+	ut16 offset = bin->ne_header->SegTableOffset + bin->header_offset;
+	ut16 size = bin->ne_header->SegCount * sizeof (NE_image_segment_entry);
+	bin->segment_entries = calloc (1, size);
+	if (!bin->segment_entries) {
+		return NULL;
+	}
+	r_buf_read_at (buf, offset, bin->segment_entries, size);
+	bin->entry_table = calloc (1, bin->ne_header->EntryTableLength);
+	r_buf_read_at (buf, (ut64)bin->header_offset + bin->ne_header->EntryTableOffset, bin->entry_table, bin->ne_header->EntryTableLength);
+	bin->imports = r_bin_ne_get_imports (bin);
+	__ne_get_resources (bin);
+}
+
+void r_bin_ne_free(r_bin_ne_obj_t *bin) {
+	r_list_free (bin->imports);
+	r_list_free (bin->resources);
+	free (bin->entry_table);
+	free (bin->ne_header);
+	free (bin->resident_name_table);
+	free (bin->segment_entries);
+}
+
+r_bin_ne_obj_t *r_bin_ne_new_buf(RBuffer *buf, bool verbose) {
+	r_bin_ne_obj_t *bin = R_NEW0 (r_bin_ne_obj_t);
+	if (!bin) {
+		return NULL;
+	}
+	__init(buf, bin);
+	return bin;
+}

@@ -137,6 +137,7 @@ bin_plugins = [
   'mdmp',
   'menuet',
   'mz',
+  'ne',
   'nes',
   'nin3ds',
   'ninds',
