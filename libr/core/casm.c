@@ -468,14 +468,13 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 
 R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	RAsmOp op;
-	// len = n * 32;
 	// if (n > core->blocksize) n = core->blocksize;
 	ut64 at;
 	ut32 idx = 0, hit_count;
 	int numinstr, asmlen, ii;
 	const int addrbytes = core->io->addrbytes;
 	RAsmCode *c;
-	RList *hits = r_core_asm_hit_list_new();
+	RList *hits = r_core_asm_hit_list_new ();
 	if (!hits) {
 		return NULL;
 	}
@@ -504,14 +503,14 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		c = r_asm_mdisassemble (core->assembler, buf+(len-idx), idx);
+		c = r_asm_mdisassemble (core->assembler, buf + len - idx, idx);
 		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte")) {
 			r_asm_code_free(c);
 			continue;
 		}
 		numinstr = 0;
 		asmlen = strlen (c->assembly);
-		for(ii = 0; ii < asmlen; ++ii) {
+		for (ii = 0; ii < asmlen; ++ii) {
 			if (c->assembly[ii] == '\n') {
 				++numinstr;
 			}

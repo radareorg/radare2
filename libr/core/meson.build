@@ -4,6 +4,7 @@ r_core_sources = [
   'esil_data_flow.c',
   'casm.c',
   'blaze.c',
+  'citem.c',
   'canal.c',
   'carg.c',
   'cbin.c',

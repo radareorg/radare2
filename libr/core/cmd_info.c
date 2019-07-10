@@ -117,23 +117,85 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	return true;
 }
 
-static int demangle(RCore *core, const char *s) {
-	char *p, *q;
+static bool demangle(RCore *core, const char *s) {
+	r_return_val_if_fail (core && s, false);
 	const char *ss = strchr (s, ' ');
 	if (!*s) {
-		return 0;
+		return false;
 	}
 	if (!ss) {
 		const char *lang = r_config_get (core->config, "bin.lang");
 		demangle_internal (core, lang, s);
-		return 1;
+		return true;
 	}
-	p = strdup (s);
-	q = p + (ss - s);
+	char *p = strdup (s);
+	char *q = p + (ss - s);
 	*q = 0;
 	demangle_internal (core, p, q + 1);
 	free (p);
-	return 1;
+	return true;
+}
+
+static void cmd_info_here(RCore *core, int mode) {
+	RCoreItem *item = r_core_item_at (core, core->offset);
+	if (item) {
+		PJ *pj = pj_new ();
+		pj_o (pj);
+
+		pj_ks (pj, "type", item->type);
+		pj_ks (pj, "perm", r_str_rwx_i (item->perm));
+		pj_kn (pj, "size", item->size);
+		pj_kn (pj, "addr", item->addr);
+		pj_kn (pj, "next", item->next);
+		pj_kn (pj, "prev", item->prev);
+		if (item->fcnname) {
+			pj_ks (pj, "fcnname", item->fcnname);
+		}
+		if (item->sectname) {
+			pj_ks (pj, "sectname", item->sectname);
+		}
+		if (item->comment) {
+			pj_ks (pj, "comment", item->comment);
+		}
+		RListIter *iter;
+		RAnalRef *ref;
+		if (item->data) {
+			pj_ks (pj, "data", item->data);
+		}
+		{
+			RList *refs = r_anal_refs_get (core->anal, core->offset);
+			if (refs && r_list_length (refs) > 0) {
+				pj_k (pj, "refs");
+				pj_a (pj);
+				r_list_foreach (refs, iter, ref) {
+					pj_o (pj);
+					pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
+					pj_kn (pj, "addr", ref->addr);
+					pj_end (pj);
+				}
+				pj_end (pj);
+			}
+		}
+		{
+			RList *refs = r_anal_xrefs_get (core->anal, core->offset);
+			if (refs && r_list_length (refs) > 0) {
+				pj_k (pj, "xrefs");
+				pj_a (pj);
+				r_list_foreach (refs, iter, ref) {
+					pj_o (pj);
+					pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
+					pj_kn (pj, "addr", ref->addr);
+					pj_end (pj);
+				}
+				pj_end (pj);
+			}
+		}
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_printf ("%s\n", s);
+		free (s);
+		r_core_item_free (item);
+	}
 }
 
 #define STR(x) (x)? (x): ""
@@ -1073,6 +1135,9 @@ static int cmd_info(void *data, const char *input) {
 				mode |= R_MODE_ARRAY;
 			}
 			cmd_info_bin (core, va, mode);
+			goto done;
+		case '.': // "i."
+			cmd_info_here (core, input[1]);
 			goto done;
 		default:
 			cmd_info_bin (core, va, mode);
