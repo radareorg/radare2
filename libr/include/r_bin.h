@@ -477,11 +477,12 @@ typedef struct r_bin_class_t {
 	char *name;
 	// TODO: char *module;
 	char *super;
-	char *visibility_str;
+	char *visibility_str; // XXX only used by java
 	int index;
 	ut64 addr;
 	RList *methods; // <RBinSymbol>
 	RList *fields; // <RBinField>
+	// RList *interfaces; // <char *>
 	int visibility;
 } RBinClass;
 

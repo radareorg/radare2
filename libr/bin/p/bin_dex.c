@@ -1482,6 +1482,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		free (cls);
 		return;
 	}
+	cls->visibility_str = strdup (createAccessFlagStr (c->access_flags, kAccessForClass));
 	r_list_append (dex->classes_list, cls);
 	if (dexdump) {
 		rbin->cb_printf ("  Class descriptor  : '%s;'\n", class_name);

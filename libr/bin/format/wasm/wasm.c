@@ -445,7 +445,6 @@ static bool parse_namemap (RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
 
 	for (size_t i = 0; i < *count; i++) {
 		struct r_bin_wasm_name_t *name = R_NEW0 (struct r_bin_wasm_name_t);
-
 		if (!name) {
 			return false;
 		}
@@ -459,7 +458,7 @@ static bool parse_namemap (RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
 			return false;
 		}
 
-		if (!(consume_str_r (b, max, name->len, name->name))) {
+		if (!(consume_str_r (b, max, name->len, (char *)name->name))) {
 			return false;
 		}
 		name->name[name->len] = 0;
@@ -496,7 +495,7 @@ static void *parse_custom_name_entry (RBuffer *b, ut64 max) {
 			goto beach;
 		}
 
-		if (!(consume_str_r (b, max, ptr->mod_name->len, ptr->mod_name->name))) {
+		if (!(consume_str_r (b, max, ptr->mod_name->len, (char *)ptr->mod_name->name))) {
 			goto beach;
 		}
 
@@ -862,7 +861,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 			if (!(consume_u32_r (b, max, &ptr->name_len))) {
 				goto beach;
 			}
-			if (consume_str_r (b, max, ptr->name_len, ptr->name) < ptr->name_len) {
+			if (consume_str_r (b, max, ptr->name_len, (char *)ptr->name) < ptr->name_len) {
 				goto beach;
 			}
 			// eprintf("name: %s\n", ptr->name);
@@ -1235,7 +1234,7 @@ const char *r_bin_wasm_get_function_name (RBinWasmObj *bin, ut32 idx) {
 		if (nam->type == R_BIN_WASM_NAMETYPE_Function) {
 			struct r_bin_wasm_name_t *n = NULL;
 
-			if (n = r_id_storage_get (nam->func->names, idx)) {
+			if ((n = r_id_storage_get (nam->func->names, idx))) {
 				return (const char *)n->name;
 			}
 		}
