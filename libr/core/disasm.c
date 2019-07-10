@@ -859,7 +859,7 @@ static void ds_reflines_init(RDisasmState *ds) {
 
 	lastaddr = UT64_MAX;
 
-	if (ds->show_lines_bb) {
+	if (ds->show_lines_bb || ds->pj) {
 		ds_reflines_fini (ds);
 		anal->reflines = r_anal_reflines_get (anal,
 			ds->addr, ds->buf, ds->len, ds->l,
@@ -1195,6 +1195,17 @@ static void ds_begin_line(RDisasmState *ds) {
 	if (ds->pj) {
 		pj_o (ds->pj);
 		pj_kn (ds->pj, "offset", ds->vat);
+		if (ds->core->anal->reflines) {
+			RAnalRefline *ref;
+			RListIter *iter;
+			// XXX Probably expensive
+			r_list_foreach (ds->core->anal->reflines, iter, ref) {
+				if (ref->from == ds->vat) {
+					pj_kn (ds->pj, "arrow", ref->to);
+					break;
+				}
+			}
+		}
 		pj_k (ds->pj, "text");
 	}
 	ds->buf_line_begin = r_cons_get_buffer_len ();
