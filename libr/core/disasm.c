@@ -1545,14 +1545,13 @@ R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen) {
 static void ds_print_show_cursor(RDisasmState *ds) {
 	RCore *core = ds->core;
 	char res[] = "     ";
-	void *p;
 	if (!ds->show_marks) {
 		return;
 	}
 	int q = core->print->cur_enabled &&
 		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index + ds->asmop.size);
-	p = r_bp_get_at (core->dbg->bp, ds->at);
+	RBreakpointItem *p = r_bp_get_at (core->dbg->bp, ds->at);
 	if (ds->midflags) {
 		(void)handleMidFlags (core, ds, false);
 	}
@@ -2718,7 +2717,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	// adjust alignment
 	r_cons_printf ("  ");
 	ut64 n = r_read_ble (buf, core->print->big_endian, size * 8);
-	if (r_config_get_i (core->config, "scr.interactive")) {
+	if (r_config_get_i (core->config, "asm.marks")) {
 		int q = core->print->cur_enabled &&
 			ds->cursor >= ds->index &&
 			ds->cursor < (ds->index + size);
