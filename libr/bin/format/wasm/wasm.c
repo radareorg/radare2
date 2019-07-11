@@ -439,11 +439,12 @@ beach:
 }
 
 static bool parse_namemap (RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
+	size_t i;
 	if (!(consume_u32_r (b, max, count))) {
 		return false;
 	}
 
-	for (size_t i = 0; i < *count; i++) {
+	for (i = 0; i < *count; i++) {
 		struct r_bin_wasm_name_t *name = R_NEW0 (struct r_bin_wasm_name_t);
 		if (!name) {
 			return false;
@@ -473,6 +474,7 @@ static bool parse_namemap (RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
 
 static void *parse_custom_name_entry (RBuffer *b, ut64 max) {
 	RBinWasmCustomNameEntry *ptr = NULL;
+	size_t i;
 	if (!(ptr = R_NEW0 (RBinWasmCustomNameEntry))) {
 		return NULL;
 	}
@@ -528,7 +530,7 @@ static void *parse_custom_name_entry (RBuffer *b, ut64 max) {
 
 		ptr->local->locals = r_list_new ();
 
-		for (size_t i = 0; i < ptr->local->count; i++) {
+		for (i = 0; i < ptr->local->count; i++) {
 			RBinWasmCustomNameLocalName *local_name = R_NEW0 (RBinWasmCustomNameLocalName);
 			if (!local_name) {
 				return NULL;
