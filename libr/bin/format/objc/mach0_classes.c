@@ -1327,14 +1327,19 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipLis
 		name_field += 4;
 #endif
 		mach0_ut name_at;
-		if (!read_ptr_va (bf, name_field, &name_at)) {
+		if (!read_ptr_va (bf, name_field & ~1, &name_at)) {
 			R_FREE (category_name);
 			return;
 		}
 
 		target_class_name = read_str (bf, name_at, &offset, &left);
-		klass->name = r_str_newf ("%s(%s)", target_class_name, category_name);
+		char *demangled = NULL;
+		if (target_class_name) {
+			demangled = demangle_classname (target_class_name);
+		}
+		klass->name = r_str_newf ("%s(%s)", demangled ? demangled : "(null)", category_name);
 		R_FREE (target_class_name);
+		R_FREE (demangled);
 	}
 
 	klass->addr = p;
