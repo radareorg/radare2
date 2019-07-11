@@ -3458,9 +3458,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("scr.color.args", "true", "Colorize arguments and variables of functions");
 	SETPREF ("scr.color.bytes", "true", "Colorize bytes that represent the opcodes of the instruction");
 	SETCB ("scr.null", "false", &cb_scrnull, "Show no output");
-	SETCB ("scr.utf8", r_cons_is_utf8()?"true":"false",
-		&cb_utf8, "Show UTF-8 characters instead of ANSI");
+	SETCB ("scr.utf8", r_str_bool (r_cons_is_utf8()), &cb_utf8, "Show UTF-8 characters instead of ANSI");
 	SETCB ("scr.utf8.curvy", "false", &cb_utf8_curvy, "Show curved UTF-8 corners (requires scr.utf8)");
+	SETPREF ("scr.demo", "false", "Use demoscene effects if available");
 	SETPREF ("scr.histsave", "true", "Always save history on exit");
 	n = NODECB ("scr.strconv", "asciiesc", &cb_scrstrconv);
 	SETDESC (n, "Convert string before display");

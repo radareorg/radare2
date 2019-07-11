@@ -42,6 +42,8 @@
 
 #define COUNT(x) (sizeof((x)) / sizeof((*x)) - 1)
 
+static bool firstRun = true;
+
 typedef enum {
 	LEFT,
 	RIGHT,
@@ -3921,7 +3923,9 @@ RList *__sorted_list(RCore *core, char *menu[], int count) {
 	RList *list = r_list_new ();
 	int i;
 	for (i = 0; i < count; i++) {
-		(void)r_list_append (list, menu[i]);
+		if (menu[i]) {
+			(void)r_list_append (list, menu[i]);
+		}
 	}
 	r_list_sort (list, cmpstr);
 	return list;
@@ -4017,6 +4021,56 @@ void __refreshCoreOffset (RCore *core) {
 	}
 }
 
+static void demo_begin (RCore *core, RConsCanvas *can) {
+	char *s = r_cons_canvas_to_string (can);
+	if (s) {
+		// TODO drop utf8!!
+		r_str_ansi_filter (s, NULL, NULL, -1);
+		int i, h, w = r_cons_get_size (&h);
+		for (i = 0; i < 40; i+= (1 + (i/30))) {
+			int H = i * ((double)h / 40);
+			char *r = r_str_scale (s, w, H);
+			r_cons_clear00 ();
+			r_cons_gotoxy (0, (h / 2) - (H / 2));
+			r_cons_strcat (r);
+			r_cons_flush ();
+			free (r);
+			r_sys_usleep (3000);
+		}
+		free (s);
+	}
+}
+
+static void demo_end (RCore *core, RConsCanvas *can) {
+	bool utf8 = r_config_get_i (core->config, "scr.utf8");
+	r_config_set_i (core->config, "scr.utf8", 0);
+	RPanel *cur = __getCurPanel (core->panels);
+	cur->view->refresh = true;
+	firstRun= false;
+	__panels_refresh (core);
+	firstRun= true;
+	r_config_set_i (core->config, "scr.utf8", utf8);
+	char *s = r_cons_canvas_to_string (can);
+	if (s) {
+		// TODO drop utf8!!
+		r_str_ansi_filter (s, NULL, NULL, -1);
+		int i, h, w = r_cons_get_size (&h);
+		for (i = h; i > 0; i--) {
+			int H = i;
+			char *r = r_str_scale (s, w, H);
+			r_cons_clear00 ();
+			r_cons_gotoxy (0, (h / 2) - (H / 2)); // center
+			//r_cons_gotoxy (0, h-H); // bottom
+			r_cons_strcat (r);
+			r_cons_flush ();
+			free (r);
+			r_sys_usleep (3000);
+		}
+		r_sys_usleep (100000);
+		free (s);
+	}
+}
+
 void __panels_refresh(RCore *core) {
 	RPanels *panels = core->panels;
 	if (!panels) {
@@ -4029,6 +4083,10 @@ void __panels_refresh(RCore *core) {
 	char title[1024];
 	char str[1024];
 	int i, h, w = r_cons_get_size (&h);
+	bool utf8 = r_config_get_i (core->config, "scr.utf8");
+	if (firstRun) {
+		r_config_set_i (core->config, "scr.utf8", 0);
+	}
 	__refreshCoreOffset (core);
 	r_cons_gotoxy (0, 0);
 	if (panels->isResizing || (can->w != w || can->h != h)) {
@@ -4128,6 +4186,19 @@ void __panels_refresh(RCore *core) {
 		__printSnow (panels);
 	}
 
+	if (firstRun) {
+		if (core->panels_root->n_panels < 2) {
+			if (r_config_get_i (core->config, "scr.demo")) {
+				demo_begin (core, can);
+			}
+		}
+		firstRun = false;
+		r_config_set_i (core->config, "scr.utf8", utf8);
+		RPanel *cur = __getCurPanel (core->panels);
+		cur->view->refresh = true;
+		__panels_refresh (core);
+		return;
+	}
 	r_cons_canvas_print (can);
 	if (core->scr_gadgets) {
 		r_core_cmd0 (core, "pg");
@@ -4895,6 +4966,7 @@ RPanels *__panels_new(RCore *core) {
 		return NULL;
 	}
 	int h, w = r_cons_get_size (&h);
+	firstRun = true;
 	if (!__init (core, panels, w, h)) {
 		free (panels);
 		return NULL;
@@ -5466,7 +5538,7 @@ void __handle_tab_new(RCore *core) {
 	if (core->panels_root->n_panels >= PANEL_NUM_LIMIT) {
 		return;
 	}
-	__init_new_panels_root(core);
+	__init_new_panels_root (core);
 }
 
 void __handle_tab_new_with_cur_panel (RCore *core) {
@@ -5536,7 +5608,7 @@ static char *getWordFromCanvas(RCore *core, RPanels *panels, int x, int y) {
 	} else {
 		sp = pos;
 	}
-	char *sp2 = r_str_sep (sp, "*+-,][ ");
+	char *sp2 = (char *)r_str_sep (sp, "*+-,][ ");
 	if (sp2) {
 		*sp2 = 0;
 	}
@@ -6139,6 +6211,11 @@ skip:
 	case 'q':
 	case -1: // EOF
 		__set_root_state (core, DEL);
+		if (core->panels_root->n_panels < 2) {
+			if (r_config_get_i (core->config, "scr.demo")) {
+				demo_end (core, can);
+			}
+		}
 		goto exit;
 #if 0
 	case 27: // ESC

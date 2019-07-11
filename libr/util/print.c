@@ -1538,7 +1538,8 @@ static RPrint staticp = {
 };
 
 /* TODO: handle screen width */
-R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
+R_API void r_print_progressbar(RPrint *p, int _pc, int _cols) {
+	double pc = _pc;
 	// TODO: add support for colors
 	int i, cols = (_cols == -1)? 78: _cols;
 	if (!p) {
