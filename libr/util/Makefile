@@ -13,7 +13,7 @@ endif
 
 OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o tinyrange.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
-OBJS+=list.o flist.o chmod.o graph.o event.o alloc.o
+OBJS+=list.o flist.o chmod.o graph.o event.o alloc.o donut.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
 OBJS+=sandbox.o calc.o thread.o thread_sem.o thread_lock.o thread_cond.o
 OBJS+=strpool.o bitmap.o date.o format.o pie.o print.o ctype.o
