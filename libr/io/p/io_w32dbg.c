@@ -166,8 +166,9 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __close(RIODesc *fd) {
-	// TODO: detach
-	return true;
+	RIOW32Dbg *iop = fd->data;
+	DebugActiveProcessStop (iop->pi.dwProcessId);
+	return false;
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {

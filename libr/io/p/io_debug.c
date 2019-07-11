@@ -593,6 +593,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				RIOW32Dbg *w32 = (RIOW32Dbg *)ret->data;
 				w32->winbase = winbase;
 				w32->pi.dwThreadId = wintid;
+				*(RIOW32Dbg *)((RCore *)io->user)->dbg->user = *w32;
 			}
 #elif __APPLE__
 			sprintf (uri, "smach://%d", pid);		//s is for spawn

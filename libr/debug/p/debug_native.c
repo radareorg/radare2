@@ -433,7 +433,6 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			}
 			r_debug_info_free (r);
 		} else {
-			//eprintf ("Unloading unknown library.\n");
 			r_cons_printf ("Unloading unknown library.\n");
 			r_cons_flush ();
 
@@ -442,7 +441,6 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			//eprintf ("(%d) Created thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
 			r_cons_printf ("(%d) Created thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
 			r_cons_flush ();
 
@@ -453,12 +451,21 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			//eprintf ("(%d) Finished thread %d Exit code %d\n", (ut32)item->pid, (ut32)item->tid, (ut32)item->dwExitCode);
 			r_cons_printf ("(%d) Finished thread %d Exit code %d\n", (ut32)item->pid, (ut32)item->tid, (ut32)item->dwExitCode);
 			r_cons_flush ();
 
 			r_debug_info_free (r);
 		}
+	} else if (reason == R_DEBUG_REASON_DEAD) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r && r->thread) {
+			PTHREAD_ITEM item = r->thread;
+			r_cons_printf ("(%d) Finished process with exit code %d\n", dbg->main_pid, item->dwExitCode);
+			r_cons_flush ();
+			r_debug_info_free (r);
+		}
+		dbg->pid = -1;
+		dbg->tid = -1;
 	}
 #else
 	if (pid == -1) {

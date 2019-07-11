@@ -63,7 +63,7 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	if (dbg->anal->esil && dbg->trace->enabled) {
 		r_anal_esil_trace (dbg->anal->esil, &op);
 	} else {
-		if (dbg->verbose) {
+		if (dbg->verbose && dbg->trace->enabled) {
 			eprintf ("Run aeim to get dbg->anal->esil initialized\n");
 		}
 	}
