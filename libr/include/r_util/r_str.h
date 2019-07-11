@@ -196,6 +196,7 @@ R_API char *r_str_list_join(RList *str, const char *sep);
 
 R_API const char *r_str_sep(const char *base, const char *sep);
 R_API const char *r_str_rsep(const char *base, const char *p, const char *sep);
+R_API char *r_str_donut(int size);
 #ifdef __cplusplus
 }
 #endif
