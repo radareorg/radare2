@@ -1333,8 +1333,11 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipLis
 		}
 
 		target_class_name = read_str (bf, name_at, &offset, &left);
-		char *demangled = demangle_classname (target_class_name);
-		klass->name = r_str_newf ("%s(%s)", demangled, category_name);
+		char *demangled = NULL;
+		if (target_class_name) {
+			demangled = demangle_classname (target_class_name);
+		}
+		klass->name = r_str_newf ("%s(%s)", demangled ? demangled : "(null)", category_name);
 		R_FREE (target_class_name);
 		R_FREE (demangled);
 	}
