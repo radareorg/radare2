@@ -62,6 +62,7 @@ static const char *help_msg_pF[] = {
 static const char* help_msg_pr[] = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
 	"prc", "[=fep..]", "print bytes as colors in palette",
+	"pri", "[aA2r]", "print raw image, honor hex.cols",
 	"prl", "", "print raw with lines offsets",
 	"prx", "", "printable chars with real offset (hyew)",
 	"prg", "[?]", "print raw GUNZIPped block",
@@ -6051,6 +6052,17 @@ l = use_blocksize;
 		break;
 	case 'r': // "pr"
 		switch (input[1]) {
+		case 'i': // "pri" // color raw image
+			{
+				// TODO: do colormap and palette conversions here
+				int mode = 0;
+				if (r_config_get (core->config, "scr.color") == 0) {
+					mode = 'a';
+				}
+				int cols = r_config_get_i (core->config, "hex.cols");
+				r_cons_image (core->block, core->blocksize, cols, mode);
+			}
+			break;
 		case 'c': // "prc" // color raw dump
 			if (input[2] == '?') {
 				r_cons_printf ("prc=e # colorblocks of entropy\n");
