@@ -1988,10 +1988,6 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			count++;
 		}
 		ut64 child_count = ULEB();
-		if ((len && child_count) || (!len && !child_count)) {
-			eprintf ("malformed export trie\n");
-			goto beach;
-		}
 		if (state->i == child_count) {
 			r_list_pop (states);
 			continue;
@@ -2017,6 +2013,18 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			eprintf ("malformed export trie\n");
 			R_FREE (next);
 			goto beach;
+		}
+		{
+			// avoid loops
+			RListIter *it;
+			RTrieState *s;
+			r_list_foreach (states, it, s) {
+				if (s->node == next->node) {
+					eprintf ("malformed export trie\n");
+					R_FREE (next);
+					goto beach;
+				}
+			}
 		}
 		next->i = 0;
 		state->i++;
