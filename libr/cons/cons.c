@@ -707,7 +707,7 @@ R_API void r_cons_clear() {
 
 static void cons_grep_reset(RConsGrep *grep) {
 	R_FREE (grep->str);
-	ZERO_FILL(*grep);
+	ZERO_FILL (*grep);
 	grep->line = -1;
 	grep->sort = -1;
 	grep->sort_invert = false;
