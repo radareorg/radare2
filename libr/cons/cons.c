@@ -706,14 +706,11 @@ R_API void r_cons_clear() {
 }
 
 static void cons_grep_reset(RConsGrep *grep) {
-	grep->strings[0][0] = '\0';
-	grep->nstrings = 0; // XXX
+	R_FREE (grep->str);
+	ZERO_FILL(*grep);
 	grep->line = -1;
 	grep->sort = -1;
 	grep->sort_invert = false;
-	R_FREE (grep->str);
-	ZERO_FILL (grep->tokens);
-	grep->tokens_used = 0;
 }
 
 R_API void r_cons_reset() {
