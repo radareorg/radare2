@@ -1150,10 +1150,21 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			if (I.sel_widget) {
 				I.sel_widget->complete_common = true;
 			}
-			r_line_autocomplete ();
+			if (I.hud) {
+				if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
+					I.hud->top_entry_n++;
+				} else {
+					I.hud->top_entry_n = 0;
+				}
+			} else {
+				r_line_autocomplete ();
+			}
 			break;
 		/* enter */
 		case 13:
+			if (I.hud) {
+				I.hud->activate = false;
+			}
 			if (I.sel_widget) {
 				selection_widget_select ();
 				break;
@@ -1621,6 +1632,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	return r_line_readline_cb_win (cb, user);
 #endif
 	int columns = r_cons_get_size (NULL) - 2;
+	int rows;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;
 	static int gcomp = 0;
@@ -1631,9 +1643,15 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int ch, i = 0;	/* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
-
-	I.buffer.index = I.buffer.length = 0;
-	I.buffer.data[0] = '\0';
+	(void) r_cons_get_size (&rows);
+	
+	if (!I.hud || (I.hud && !I.hud->activate)) {
+		I.buffer.index = I.buffer.length = 0;
+		I.buffer.data[0] = '\0';
+		if (I.hud) {
+			I.hud->activate = true;
+		}
+	}
 	if (I.contents) {
 		memmove (I.buffer.data, I.contents,
 			R_MIN (strlen (I.contents) + 1, R_LINE_BUFSIZE - 1));
@@ -1652,9 +1670,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	r_cons_set_raw (1);
 
 	if (I.echo) {
-		r_cons_clear_line (0);
-		printf ("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
-		fflush (stdout);
+		__print_prompt ();
 	}
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
@@ -1962,7 +1978,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						break;
 					/* arrows */
 					case 'A':	// up arrow
-						if (I.sel_widget) {
+						if (I.hud) {
+							if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
+								I.hud->top_entry_n++;
+							}
+						} else if (I.sel_widget) {
 							selection_widget_up (1);
 							selection_widget_draw ();
 						} else if (gcomp) {
@@ -1970,10 +1990,14 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						} else if (r_line_hist_up () == -1) {
 							r_cons_break_pop ();
 							return NULL;
-						}
+						} 
 						break;
 					case 'B':	// down arrow
-						if (I.sel_widget) {
+						if (I.hud) {
+							if (I.hud->top_entry_n >= 0) {
+								I.hud->top_entry_n--;
+							}
+						} else if (I.sel_widget) {
 							selection_widget_down (1);
 							selection_widget_draw ();
 						} else if (gcomp) {
@@ -2153,9 +2177,21 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			if (I.sel_widget) {
 				I.sel_widget->complete_common = true;
 			}
-			r_line_autocomplete ();
+			if (I.hud) {
+				if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
+					I.hud->top_entry_n++;
+				} else {
+					I.hud->top_entry_n = 0;
+				}
+			} else {
+				r_line_autocomplete ();
+			}
 			break;
 		case 13: // enter
+			if (I.hud) {
+				I.hud->activate = false;
+				break;
+			}
 			if (I.sel_widget) {
 				selection_widget_select ();
 				break;
@@ -2262,6 +2298,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				}
 			}
 			fflush (stdout);
+		}
+		if (I.hud) {
+			goto _end;
 		}
 	}
 _end:

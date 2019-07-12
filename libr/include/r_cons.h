@@ -432,6 +432,10 @@ typedef struct r_cons_context_t {
 	RConsPrintablePalette pal;
 } RConsContext;
 
+#define HUD_BUF_SIZE 512
+
+
+
 typedef struct r_cons_t {
 	RConsContext *context;
 	char *lastline;
@@ -970,6 +974,12 @@ typedef struct r_line_buffer_t {
 	int length;
 } RLineBuffer;
 
+typedef struct r_hud_t{
+	int current_entry_n;
+	int top_entry_n;
+	char activate;
+} RLineHud;
+
 typedef struct r_line_t RLine; // forward declaration
 typedef struct r_line_comp_t RLineCompletion;
 
@@ -1013,6 +1023,7 @@ struct r_line_t {
 	RLinePromptType prompt_type;
 	int offset_hist_index;
 	int file_hist_index;
+	RLineHud *hud;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
 #if __WINDOWS__

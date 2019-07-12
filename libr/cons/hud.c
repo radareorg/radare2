@@ -95,7 +95,6 @@ static bool __matchString(char *entry, char *filter, char *mask, const int mask_
 	return true;
 }
 
-#define HUD_BUF_SIZE 512
 
 static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry) {
 	RListIter *iter;
@@ -105,6 +104,8 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 	int j, rows;
 	(void) r_cons_get_size (&rows);
 	int counter = 0;
+	RLineHud *hud = (RLineHud *) R_NEW (RLineHud);
+
 	bool first_line = true;
 	RList *res = r_list_newf (free);
 	r_list_foreach (list, iter, current_entry) {
@@ -190,28 +191,33 @@ static void mht_free_kv(HtPPKv *kv) {
 #define HUD_CACHE 0
 R_API char *r_cons_hud(RList *list, const char *prompt) {
 	int ch, nch, current_entry_n, i = 0;
-	char user_input[HUD_BUF_SIZE];
+	char user_input [HUD_BUF_SIZE];
 	int top_entry_n = 0;
 	char *selected_entry = NULL;
 	RListIter *iter;
 
 	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
-
+	RLineHud *hud = (RLineHud*) R_NEW (RLineHud);
+	I(line)->echo = true;
+	I(line)->hud = hud;
 	user_input[0] = 0;
+	hud->top_entry_n = 0;
 	r_cons_clear ();
+	//r_cons_show_cursor (false);
 	// Repeat until the user exits the hud
 	for (;;) {
-		r_cons_gotoxy (0, 0);
-		current_entry_n = 0;
-		if (top_entry_n < 0) {
-			top_entry_n = 0;
+		hud->current_entry_n = 0;
+		
+		if (hud->top_entry_n < 0) {
+			hud->top_entry_n = 0;
 		}
 		selected_entry = NULL;
+		r_cons_visual_flush ();
 		if (prompt && *prompt) {
-			r_cons_print (">> ");
-			r_cons_println (prompt);
+			printf (">> %s\n", prompt);
 		}
-		r_cons_printf ("%d> %s|\n", top_entry_n, user_input);
+		
+		//r_cons_printf ("%d> %s|\n", hud->top_entry_n, user_input);
 		char *row;
 		RList *filtered_list = NULL;
 
@@ -219,92 +225,39 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		filtered_list = ht_pp_find (ht, user_input, &found);
 		if (!found) {
 			filtered_list = hud_filter (list, user_input,
-				top_entry_n, &current_entry_n, &selected_entry);
+				hud->top_entry_n, &(hud->current_entry_n), &selected_entry);
 #if HUD_CACHE
 			ht_pp_insert (ht, user_input, filtered_list);
 #endif
 		}
 		r_list_foreach (filtered_list, iter, row) {
-			r_cons_printf ("%s\n", row);
+			printf ("%s\n", row);
 		}
 #if !HUD_CACHE
 		r_list_free (filtered_list);
 #endif
-
-		r_cons_visual_flush ();
-		ch = r_cons_readchar ();
-		nch = r_cons_arrow_to_hjkl (ch);
-		int rows;
-		(void) r_cons_get_size (&rows);
-		if (nch == 'J' && ch != 'J') {
-			top_entry_n += (rows - 1);
-			if (top_entry_n + 1 >= current_entry_n) {
-				top_entry_n = current_entry_n;
-			}
-		} else if (nch == 'K' && ch != 'K') {
-			top_entry_n -= (rows - 1);
-			if (top_entry_n < 0) {
-				top_entry_n = 0;
-			}
-		} else if (nch == 'j' && ch != 'j') {
-			if (top_entry_n + 1 < current_entry_n) {
-				top_entry_n++;
-			}
-		} else if (nch == 'k' && ch != 'k') {
-			if (top_entry_n >= 0) {
-				top_entry_n--;
-			}
-		} else {
-			switch (ch) {
-			case 9:	// \t
-				if (top_entry_n + 1 < current_entry_n) {
-					top_entry_n++;
-				} else {
-					top_entry_n = 0;
-				}
-				break;
-			case 10:// \n
-			case 13:// \r
-				top_entry_n = 0;
-				// if (!*buf)
-				// return NULL;
-				if (current_entry_n >= 1) {
-					// eprintf ("%s\n", buf);
-					// i = buf[0] = 0;
+		char *pro = r_str_newf ("%d > ", hud->top_entry_n);
+		r_line_set_prompt (pro);
+		R_FREE (pro);
+		(void) r_line_readline ();
+		strcpy (user_input, I(line)->buffer.data);
+		if (!hud->activate) {
+			hud->top_entry_n = 0;
+			if (hud->current_entry_n >= 1 ) {
+				R_FREE (I(line)->hud);
+				if (selected_entry) {
 					return strdup (selected_entry);
-				}	// no match!
-				break;
-			case 23:// ^w
-				top_entry_n = 0;
-				i = user_input[0] = 0;
-				break;
-			case 0x1b:	// ESC
-				return NULL;
-			case 8:		// bs
-			case 127:	// bs
-				top_entry_n = 0;
-				if (i < 1) {
+				} else {
 					return NULL;
 				}
-				user_input[--i] = 0;
-				break;
-			default:
-				if (IS_PRINTABLE (ch)) {
-					if (i >= HUD_BUF_SIZE) {
-						break;
-					}
-					top_entry_n = 0;
-					if (i + 1 >= HUD_BUF_SIZE) {
-						// too many
-						break;
-					}
-					user_input[i++] = ch;
-					user_input[i] = 0;
-				}
-				break;
+				
 			}
+			
 		}
 	}
+	r_cons_show_cursor (true);
+	free (I(line)->contents);
+	R_FREE (I(line)->hud);
 	ht_pp_free (ht);
 	return NULL;
 }
@@ -351,7 +304,7 @@ R_API char *r_cons_message(const char *msg) {
 	int rows, cols = r_cons_get_size (&rows);
 	r_cons_clear ();
 	r_cons_gotoxy ((cols - len) / 2, rows / 2);
-	r_cons_println (msg);
+	printf ("%s\n", msg);
 	r_cons_flush ();
 	r_cons_gotoxy (0, rows - 2);
 	r_cons_any_key (NULL);
