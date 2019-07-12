@@ -1968,7 +1968,17 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		if (len) {
 			ut64 flags = ULEB();
 			ut64 offset = ULEB();
-			if (iterator) {
+			bool skip = false;
+			if (flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER) {
+				ULEB();
+				skip = true;
+				// TODO: handle this
+			} else if (flags & EXPORT_SYMBOL_FLAGS_REEXPORT) {
+				skip = true;
+				ur.p += strlen ((char*) ur.p) + 1;
+				// TODO: handle this
+			}
+			if (iterator && !skip) {
 				char * name = NULL;
 				RListIter *iter;
 				RTrieState *s;
@@ -1985,7 +1995,9 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 				iterator (bin, name, flags, offset, ctx);
 				R_FREE (name);
 			}
-			count++;
+			if (!skip) {
+				count++;
+			}
 		}
 		ut64 child_count = ULEB();
 		if (state->i == child_count) {
