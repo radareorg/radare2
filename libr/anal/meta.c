@@ -624,7 +624,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 //		r_str_sanitize (str);
 		switch (rad) {
 		case 'j':
-			a->cb_printf ("%s{\"offset\":%"PFMT64d", \"type\":\"%s\", \"name\":",
+			a->cb_printf ("%s{\"offset\":%"PFMT64d",\"type\":\"%s\",\"name\":",
 				isFirst? "": ",",
 				d->from, r_meta_type_to_string (d->type));
 			if (d->type == 's' && (base64_str = r_base64_encode_dyn (d->str, -1))) {
@@ -634,7 +634,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 				a->cb_printf ("\"%s\"", str);
 			}
 			if (d->type == 'd') {
-				a->cb_printf (", \"size\":%d",(int)d->size);
+				a->cb_printf (",\"size\":%d",(int)d->size);
 			} else if (d->type == 's') {
 				const char *enc;
 				switch (d->subtype) {
@@ -647,7 +647,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 				default:
 					enc = "latin1";
 				}
-				a->cb_printf (", \"enc\":\"%s\", \"ascii\":%s",
+				a->cb_printf (",\"enc\":\"%s\",\"ascii\":%s",
 				              enc, r_str_bool (r_str_is_ascii (d->str)));
 			}
 			a->cb_printf ("}");
