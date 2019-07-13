@@ -20,6 +20,7 @@ extern "C" {
 #include <r_util/r_file.h>
 #include <r_vector.h>
 #include <sdb.h>
+#include <sdb/ht_up.h>
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -329,11 +330,6 @@ typedef struct r_cons_printable_palette_t {
 typedef void (*RConsEvent)(void *);
 
 #define CONS_MAX_ATTR_SZ 16
-typedef struct r_cons_canvas_attr_t {
-	//TODO add support for 256 colors.
-	int loc;
-	const char * a;
-} RConsCanvasAttr;
 
 typedef struct r_cons_canvas_t {
 	int w;
@@ -343,9 +339,8 @@ typedef struct r_cons_canvas_t {
 	char **b;
 	int *blen;
 	int *bsize;
-	const char * attr;//The current attr (inserted on each write)
-	RConsCanvasAttr * attrs;// all the different attributes
-	int attrslen;
+	const char *attr; //The current attr (inserted on each write)
+	HtUP *attrs; // all the different attributes <key: unsigned int loc, const char *attr>
 	int sx; // scrollx
 	int sy; // scrolly
 	int color;
