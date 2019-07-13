@@ -428,7 +428,6 @@ static int __openMenuCb(void *user);
 static int __openFileCb(void *user);
 static int __rwCb(void *user);
 static int __debuggerCb(void *user);
-static int __decompiler_cb(void *user);
 static int __loadLayoutSavedCb(void *user);
 static int __loadLayoutDefaultCb(void *user);
 static int __closeFileCb(void *user);
@@ -440,7 +439,6 @@ static int __writeStrCb(void *user);
 static int __writeHexCb(void *user);
 static int __assembleCb(void *user);
 static int __fillCb(void *user);
-static int __colorsCb(void *user);
 static int __config_toggle_cb(void *user);
 static int __config_value_cb(void *user);
 static int __calculatorCb(void *user);
@@ -474,6 +472,8 @@ static int __versionCb(void *user);
 static int __quitCb(void *user);
 static int __ioCacheOnCb(void *user);
 static int __ioCacheOffCb(void *user);
+static int __settings_colors_cb(void *user);
+static int __settings_decompiler_cb(void *user);
 static char *__get_name_cb (R_NULLABLE void *user, char *base_name);
 static char *__get_config_name_cb (R_NULLABLE void *user, char *base_name);
 static void __init_menu_saved_layout_cb (void *user);
@@ -2443,12 +2443,24 @@ int __debuggerCb(void *user) {
 	return 0;
 }
 
-int __decompiler_cb(void *user) {
+int __settings_decompiler_cb(void *user) {
 	RCore *core = (RCore *)user;
+	RPanelsRoot *root = core->panels_root;
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	r_config_set (core->config, "cmd.pdc", child->get_name_cb (core, child->base_name));
+	const char *pdc_next = child->get_name_cb (core, child->base_name);
+	const char *pdc_now = r_config_get (core->config, "cmd.pdc");
+	if (!strcmp (pdc_next, pdc_now)) {
+		return 0;
+	}
+	r_config_set (core->config, "cmd.pdc", pdc_next);
+	root->cur_pdc_cache = sdb_ptr_get (root->pdc_caches, pdc_next, 0);
+	if (!root->cur_pdc_cache) {
+		Sdb *sdb = sdb_new0 ();
+		sdb_ptr_set (root->pdc_caches, pdc_next, sdb, 0);
+		root->cur_pdc_cache = sdb;
+	}
 	__setRefreshAll (core, false, false);
 	__setMode (core, PANEL_MODE_DEFAULT);
 	return 0;
@@ -2537,7 +2549,7 @@ int __fillCb(void *user) {
 	return 0;
 }
 
-int __colorsCb(void *user) {
+int __settings_colors_cb(void *user) {
 	RCore *core = (RCore *)user;
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
@@ -3282,21 +3294,31 @@ char *__print_decompiler_cb(void *user, void *p) {
 	//TODO: Refactoring
 	//TODO: Also, __checkFuncDiff should use addr not name
 	RCore *core = (RCore *)user;
+	RPanel *panel = (RPanel *)p;
 	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	char *cmdstr = NULL;
-	if (func) {
-		cmdstr = (char *)sdb_ptr_get (core->panels_root->pdc_cache, r_num_as_string (NULL, func->addr, false), 0);
+	if (func && core->panels_root->cur_pdc_cache) {
+		cmdstr = (char *)sdb_ptr_get (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), 0);
 	}
 	if (cmdstr) {
 		return cmdstr;
 	}
-	RPanel *panel = (RPanel *)p;
 	bool update = core->panels->autoUpdate && __checkFuncDiff (core, panel);
 	cmdstr = __findCmdStrCache (core, panel);
 	if (update || !cmdstr) {
 		cmdstr = __handleCmdStrCache (core, panel, true);
 		if (func) {
-			sdb_ptr_set (core->panels_root->pdc_cache, r_num_as_string (NULL, func->addr, false), r_str_new (cmdstr), 0);
+			if (core->panels_root->cur_pdc_cache) {
+				sdb_ptr_set (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), r_str_new (cmdstr), 0);
+			} else {
+				Sdb *sdb = sdb_new0 ();
+				const char *pdc_now = r_config_get (core->config, "cmd.pdc");
+				sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), r_str_new (cmdstr), 0);
+				core->panels_root->cur_pdc_cache = sdb;
+				if (!sdb_exists (core->panels_root->pdc_caches, pdc_now)) {
+					sdb_ptr_set (core->panels_root->pdc_caches, pdc_now, sdb, 0);
+				}
+			}
 		}
 		if (panel->model->cmdStrCache) {
 			__resetScrollPos (panel);
@@ -3885,7 +3907,7 @@ bool __initPanelsMenu(RCore *core) {
 		char *pos;
 		RListIter* iter;
 		r_list_foreach (list, iter, pos) {
-			__addMenu (core, parent, pos, __colorsCb, __get_name_cb);
+			__addMenu (core, parent, pos, __settings_colors_cb, __get_name_cb);
 		}
 	}
 
@@ -3896,7 +3918,7 @@ bool __initPanelsMenu(RCore *core) {
 		RListIter *iter;
 		char *opt;
 		r_list_foreach (optl, iter, opt) {
-			__addMenu (core, parent, strdup (opt), __decompiler_cb, __get_name_cb);
+			__addMenu (core, parent, strdup (opt), __settings_decompiler_cb, __get_name_cb);
 		}
 		r_list_free (optl);
 		free (opts);
@@ -5400,7 +5422,8 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		panels_root->panels = calloc (sizeof (RPanels *), PANEL_NUM_LIMIT);
 		panels_root->n_panels = 0;
 		panels_root->cur_panels = 0;
-		panels_root->pdc_cache = sdb_new0 ();
+		panels_root->pdc_caches = sdb_new0 ();
+		panels_root->cur_pdc_cache = NULL;
 		__set_root_state (core, DEFAULT);
 		__init_new_panels_root (core);
 	} else {
@@ -5408,6 +5431,14 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 			panels_root->n_panels = 0;
 			panels_root->cur_panels = 0;
 			__init_new_panels_root (core);
+		}
+		const char *pdc_now = r_config_get (core->config, "cmd.pdc");
+		if (sdb_exists (panels_root->pdc_caches, pdc_now)) {
+			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, pdc_now, 0);
+		} else {
+			Sdb *sdb = sdb_new0();
+			sdb_ptr_set (panels_root->pdc_caches, pdc_now, sdb, 0);
+			panels_root->cur_pdc_cache = sdb;
 		}
 	}
 	while (panels_root->n_panels) {

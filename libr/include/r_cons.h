@@ -1143,7 +1143,8 @@ typedef enum {
 typedef struct r_panels_root_t {
 	int n_panels;
 	int cur_panels;
-	Sdb *pdc_cache;
+	Sdb *pdc_caches;
+	Sdb *cur_pdc_cache;
 	RPanels **panels;
 	RPanelsRootState root_state;
 } RPanelsRoot;
