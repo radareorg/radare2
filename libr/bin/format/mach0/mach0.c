@@ -1968,17 +1968,19 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		if (len) {
 			ut64 flags = ULEB();
 			ut64 offset = ULEB();
-			bool skip = false;
-			if (flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER) {
-				ULEB();
-				skip = true;
-				// TODO: handle this
-			} else if (flags & EXPORT_SYMBOL_FLAGS_REEXPORT) {
-				skip = true;
+			ut64 resolver = 0;
+			bool isReexport = flags & EXPORT_SYMBOL_FLAGS_REEXPORT;
+			bool hasResolver = flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER;
+			if (hasResolver) {
+				resolver = ULEB() + bin->header_at;
+			} else if (isReexport) {
 				ur.p += strlen ((char*) ur.p) + 1;
 				// TODO: handle this
 			}
-			if (iterator && !skip) {
+			if (!isReexport) {
+				offset += bin->header_at;
+			}
+			if (iterator && !isReexport) {
 				char * name = NULL;
 				RListIter *iter;
 				RTrieState *s;
@@ -1992,10 +1994,20 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 					eprintf ("malformed export trie\n");
 					goto beach;
 				}
-				iterator (bin, name, flags, offset, ctx);
+				if (hasResolver) {
+					char * stub_name = r_str_newf ("stub.%s", name);
+					iterator (bin, stub_name, flags, offset, ctx);
+					iterator (bin, name, flags, resolver, ctx);
+					R_FREE (stub_name);
+				} else {
+					iterator (bin, name, flags, offset, ctx);
+				}
 				R_FREE (name);
 			}
-			if (!skip) {
+			if (!isReexport) {
+				if (hasResolver) {
+					count++;
+				}
 				count++;
 			}
 		}
