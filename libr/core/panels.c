@@ -587,7 +587,7 @@ static void __redoSeek(RCore *core);
 static void __cache_white_list(RCore *core, RPanel *panel);
 
 void __cache_white_list(RCore *core, RPanel *panel) {
-	int i;
+	int i = 0;
 	for (; i < COUNT (cache_white_list_cmds); i++) {
 		if (!strcmp (panel->model->cmd, cache_white_list_cmds[i])) {
 			panel->model->cache = true;
