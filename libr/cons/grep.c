@@ -82,10 +82,7 @@ static void parse_grep_expression(const char *str) {
 	}
 	RCons *cons = r_cons_singleton ();
 	RConsGrep *grep = &cons->context->grep;
-	memset (grep, 0, sizeof (RConsGrep));
 	sorted_column = 0;
-	grep->sort = -1;
-	grep->line = -1;
 	bool first = true;
 	while (*str) {
 		switch (*str) {
