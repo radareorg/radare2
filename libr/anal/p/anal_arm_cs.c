@@ -4780,7 +4780,8 @@ static char *get_reg_profile(RAnal *anal) {
 		"fpu	q15	.128	308	0\n"
 		;
 	}
-	return strdup (p);
+	const char *snReg = (!strcmp (anal->os, "android") || !strcmp (anal->os, "linux"))? "x8": "x16";
+	return r_str_newf (p, snReg);
 }
 
 static int archinfo(RAnal *anal, int q) {
