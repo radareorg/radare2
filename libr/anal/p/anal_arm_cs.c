@@ -3612,7 +3612,8 @@ static char *get_reg_profile(RAnal *anal) {
 		"flg	nf	.1	.543	0	negative\n" // +31
 		;
 	}
-	return strdup (p);
+	const char *snReg = (!strcmp (anal->os, "android") || !strcmp (anal->os, "linux"))? "x8": "x16";
+	return r_str_newf (p, snReg);
 }
 
 static int archinfo(RAnal *anal, int q) {
