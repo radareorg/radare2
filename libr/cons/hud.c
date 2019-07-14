@@ -104,7 +104,6 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 	int j, rows;
 	(void) r_cons_get_size (&rows);
 	int counter = 0;
-	RLineHud *hud = (RLineHud *) R_NEW (RLineHud);
 
 	bool first_line = true;
 	RList *res = r_list_newf (free);
@@ -190,9 +189,7 @@ static void mht_free_kv(HtPPKv *kv) {
 
 #define HUD_CACHE 0
 R_API char *r_cons_hud(RList *list, const char *prompt) {
-	int ch, nch, current_entry_n, i = 0;
 	char user_input [HUD_BUF_SIZE];
-	int top_entry_n = 0;
 	char *selected_entry = NULL;
 	RListIter *iter;
 
