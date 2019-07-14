@@ -3448,10 +3448,7 @@ char *__print_graph_cb(void *user, void *p) {
 	bool update = core->panels->autoUpdate && __checkFuncDiff (core, panel);
 	char *cmdstr = __findCmdStrCache (core, panel);
 	if (update || !cmdstr) {
-		cmdstr = __handleCmdStrCache (core, panel, true);
-		if (panel->model->cmdStrCache) {
-			__resetScrollPos (panel);
-		}
+		cmdstr = __handleCmdStrCache (core, panel, false);
 	}
 	core->cons->event_resize = NULL;
 	core->cons->event_data = core;
@@ -6247,7 +6244,6 @@ skip:
 		break;
 	case '&':
 		__toggleCache (core, __getCurPanel (panels));
-		__resetScrollPos (__getCurPanel (panels));
 		break;
 	case R_CONS_KEY_F1:
 		cmd = r_config_get (core->config, "key.f1");
