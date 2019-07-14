@@ -581,6 +581,9 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 	char str[R_FLAG_NAME_SIZE];
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *bf = r_bin_cur (r->bin);
+	if (!bf) {
+		return false;
+	}
 	RBinObject *obj = bf->o;
 	const char *compiled = NULL;
 	bool havecode;
@@ -1703,6 +1706,10 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	bool lit = info ? info->has_lit: false;
 	char *str;
 	int i = 0;
+
+	if (!info) {
+		return false;
+	}
 
 	RList *imports = r_bin_get_imports (r->bin);
 	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
