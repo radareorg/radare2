@@ -1898,6 +1898,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				backward_kill_word ();
 				break;
 			case -1:  // escape key, goto vi mode
+				if (I.hud) {
+					I.hud->activate = false;
+					I.hud->current_entry_n = -1;
+					break;
+				}
 				if (I.vi_mode) {
 					__vi_mode ();
 				};
@@ -1964,13 +1969,25 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						break;
 					case '5': // pag up
 						buf[1] = r_cons_readchar ();
+						if (I.hud) {
+							I.hud->top_entry_n += (rows - 1);
+							if (I.hud->top_entry_n + 1 >= I.hud->current_entry_n) {
+								I.hud->top_entry_n = I.hud->current_entry_n;
+							}
+						}
 						if (I.sel_widget) {
 							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
 							selection_widget_draw ();
-						}
+						} 
 						break;
 					case '6': // pag down
 						buf[1] = r_cons_readchar ();
+						if (I.hud) {
+							I.hud->top_entry_n -= (rows - 1);
+							if (I.hud->top_entry_n < 0) {
+								I.hud->top_entry_n = 0;
+							}
+						}
 						if (I.sel_widget) {
 							selection_widget_down (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
 							selection_widget_draw ();

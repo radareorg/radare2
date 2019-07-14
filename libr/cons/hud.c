@@ -244,19 +244,16 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		if (!hud->activate) {
 			hud->top_entry_n = 0;
 			if (hud->current_entry_n >= 1 ) {
-				R_FREE (I(line)->hud);
 				if (selected_entry) {
+					R_FREE (I(line)->hud);
 					return strdup (selected_entry);
-				} else {
-					return NULL;
-				}
-				
+				} 
+			} else {
+				goto _beach;
 			}
-			
 		}
 	}
-	r_cons_show_cursor (true);
-	free (I(line)->contents);
+_beach:
 	R_FREE (I(line)->hud);
 	ht_pp_free (ht);
 	return NULL;
