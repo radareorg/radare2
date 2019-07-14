@@ -330,6 +330,7 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf);
 static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
+static void ds_print_demangled(RDisasmState *ds);
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr);
 static char *ds_sub_jumps(RDisasmState *ds, char *str);
 static void ds_start_line_highlight(RDisasmState *ds);
@@ -3946,6 +3947,25 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 #endif
 }
 
+static void ds_print_demangled(RDisasmState *ds) {
+	if (!ds->show_comments || !ds->asm_demangle) {
+		return;
+	}
+	RCore *core = ds->core;
+	RFlagItem *f = NULL;
+	int optype = ds->analop.type & 0xFFFF;
+	switch (optype) {
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_CALL:
+		f = r_flag_get_by_spaces (core->flags, ds->analop.jump, "symbols", NULL);
+		if (f && f->demangled && f->realname) {
+			ds_begin_nl_comment (ds);
+			ds_comment (ds, true, "; %s", f->realname);
+		}
+	}
+}
+
 static void ds_print_relocs(RDisasmState *ds) {
 	char *demname = NULL;
 	if (!ds->showrelocs || !ds->show_slow) {
@@ -5114,6 +5134,7 @@ toro:
 			if (!ds->pseudo) {
 				R_FREE (ds->opstr);
 			}
+			ds_print_demangled (ds);
 			ds_print_sysregs (ds);
 			ds_print_fcn_name (ds);
 			ds_print_color_reset (ds);
@@ -5248,6 +5269,7 @@ toro:
 			ds_cdiv_optimization (ds);
 			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 				ds_print_ptr (ds, len + 256, idx);
+				ds_print_demangled (ds);
 				ds_print_sysregs (ds);
 				ds_print_fcn_name (ds);
 				ds_print_color_reset (ds);
