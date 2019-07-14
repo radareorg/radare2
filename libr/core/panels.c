@@ -5801,29 +5801,45 @@ repeat:
 		if (r_cons_get_click (&x, &y)) {
 			char *word = getWordFromCanvas (core, panels, x, y);
 			if (panels->mode == PANEL_MODE_MENU) {
-				key = '\n';
+				RPanelsMenu *menu = panels->panelsMenu;
+				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+				for (i = 0; i < parent->n_sub; i++) {
+					if (!strcmp (word, parent->sub[i]->get_name_cb (core, parent->sub[i]->base_name))) {
+						parent->selectedIndex = i;
+						(void)(parent->sub[parent->selectedIndex]->cb (core));
+						free (word);
+					}
+				}
+				goto repeat;
 			} else if (y == 1) { // click on first line (The menu
+				for (i = 0; i < COUNT (menus); i++) {
+					if (!strcmp (word, menus[i])) {
+						__setMode (core, PANEL_MODE_MENU);
+						__clearPanelsMenu (core);
+						RPanelsMenu *menu = panels->panelsMenu;
+						RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+						parent->selectedIndex = i;
+						RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+						(void)(child->cb (core));
+						free (word);
+						goto repeat;
+					}
+				}
 				if (!strcmp (word, "Tab")) {
 					__handle_tab_new (core);
 					free (word);
 					goto repeat;
 				}
 				if (word[0] == '[' && word[1] && word[2] == ']') {
-					// do nothing
 					goto repeat;
 				}
 				if (atoi (word)) {
-					// XXX doesnt seems to update anything else than the selected tab
 					__handle_tab_nth (core, word[0]);
 					if (panels_root->root_state != DEFAULT) {
 						goto exit;
 					}
 					goto repeat;
 				}
-				__setMode (core, PANEL_MODE_MENU);
-				__clearPanelsMenu (core);
-				__getCurPanel (panels)->view->refresh = true;
-				key = 'j';
 			} else {
 				// TODO: select nth panel here
 				if (r_str_endswith (word, "X]")) {
