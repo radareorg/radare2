@@ -702,13 +702,13 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		if (input[2] == '.') { // "Cs.."
 			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
 			if (mi) {
-				r_meta_print (core->anal, mi, input[3], false);
+				r_meta_print (core->anal, mi, input[3], NULL, false);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
 			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
 			if (mi) {
-				r_meta_print (core->anal, mi, input[2], false);
+				r_meta_print (core->anal, mi, input[2], NULL, false);
 				r_cons_newline ();
 			}
 			break;
