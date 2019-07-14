@@ -39,6 +39,7 @@ typedef struct r_flags_at_offset_t {
 typedef struct r_flag_item_t {
 	char *name;     /* unique name, escaped to avoid issues with r2 shell */
 	char *realname; /* real name, without any escaping */
+	bool demangled; /* real name from demangling? */
 	ut64 offset;    /* offset flagged by this item */
 	ut64 size;      /* size of the flag item */
 	RSpace *space;  /* flag space this item belongs to */
