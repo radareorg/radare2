@@ -369,6 +369,11 @@ static void __panelAllClear(RPanels *panels);
 static void __delPanel(RCore *core, int pi);
 static void __delInvalidPanels(RCore *core);
 static void __swapPanels(RPanels *panels, int p0, int p1);
+static void __move_panel_to_dir(RCore *core, RPanel *panel, int src);
+static void __move_panel_to_left(RCore *core, RPanel *panel, int src);
+static void __move_panel_to_right(RCore *core, RPanel *panel, int src);
+static void __shrink_panels_forward(RCore *core, int target);
+static void __shrink_panels_backward(RCore *core, int target);
 
 /* cursor */
 static bool __is_abnormal_cursor_type(RCore *core, RPanel *panel);
@@ -585,6 +590,22 @@ static void __handle_refs(RCore *core, RPanel *panel, ut64 tmp);
 static void __undoSeek(RCore *core);
 static void __redoSeek(RCore *core);
 static void __cache_white_list(RCore *core, RPanel *panel);
+
+void __shrink_panels_forward(RCore *core, int target) {
+	RPanels *panels = core->panels;
+	int i = target;
+	for (; i < panels->n_panels - 1; i++) {
+		panels->panel[i] = panels->panel[i + 1];
+	}
+}
+
+void __shrink_panels_backward(RCore *core, int target) {
+	RPanels *panels = core->panels;
+	int i = target;
+	for (; i > 0; i--) {
+		panels->panel[i] = panels->panel[i - 1];
+	}
+}
 
 void __cache_white_list(RCore *core, RPanel *panel) {
 	int i = 0;
@@ -1868,6 +1889,63 @@ beach:
 	free (targets2);
 	free (targets3);
 	free (targets4);
+}
+
+void __move_panel_to_dir(RCore *core, RPanel *panel, int src) {
+	RPanels *panels = core->panels;
+	__dismantlePanel (panels, panel);
+	int key = __show_status (core, "Move the current panel to direction (h/l): ");
+	key = r_cons_arrow_to_hjkl (key);
+	__setRefreshAll (core, false, true);
+	switch (key) {
+		case 'h':
+			__move_panel_to_left (core, panel, src);
+			break;
+		case 'l':
+			__move_panel_to_right (core, panel, src);
+			break;
+		default:
+			break;
+	}
+}
+
+void __move_panel_to_left(RCore *core, RPanel *panel, int src) {
+	RPanels *panels = core->panels;
+	__shrink_panels_backward(core, src);
+	panels->panel[0] = panel;
+	int h, w = r_cons_get_size (&h);
+	int p_w = w - panels->columnWidth;
+	p_w /= 2;
+	int new_w = w - p_w;
+	__set_geometry (&panel->view->pos, 0, 1, p_w + 1, h - 1);
+	int i = 1;
+	for (; i < panels->n_panels; i++) {
+		RPanel *tmp = __getPanel (panels, i);
+		int t_x = ((double)tmp->view->pos.x / (double)w) * (double)new_w + p_w;
+		int t_w = ((double)tmp->view->pos.w / (double)w) * (double)new_w + 1;
+		__set_geometry (&tmp->view->pos, t_x, tmp->view->pos.y, t_w, tmp->view->pos.h);
+	}
+	__set_curnode (core, 0);
+}
+
+void __move_panel_to_right(RCore *core, RPanel *panel, int src) {
+	RPanels *panels = core->panels;
+	__shrink_panels_forward(core, src);
+	panels->panel[panels->n_panels - 1] = panel;
+	int h, w = r_cons_get_size (&h);
+	int p_w = w - panels->columnWidth;
+	p_w /= 2;
+	int p_x = w - p_w;
+	__set_geometry (&panel->view->pos, p_x - 1, 1, p_w + 1, h - 1);
+	int new_w = w - p_w;
+	int i = 0;
+	for (; i < panels->n_panels - 1; i++) {
+		RPanel *tmp = __getPanel (panels, i);
+		int t_x = ((double)tmp->view->pos.x / (double)w) * (double)new_w;
+		int t_w = ((double)tmp->view->pos.w / (double)w) * (double)new_w + 1;
+		__set_geometry (&tmp->view->pos, t_x, tmp->view->pos.y, t_w, tmp->view->pos.h);
+	}
+	__set_curnode (core, panels->n_panels - 1);
 }
 
 void __resizePanelDown(RPanels *panels) {
@@ -6124,6 +6202,9 @@ skip:
 	case 'w':
 		__toggleWindowMode (core);
 		__setRefreshAll (core, false, false);
+		break;
+	case 'W':
+		__move_panel_to_dir(core, cur, panels->curnode);
 		break;
 	case 0x0d: // "\\n"
 		__toggleZoomMode (core);
