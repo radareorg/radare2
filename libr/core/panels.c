@@ -299,7 +299,8 @@ static RPanel *__getPanel(RPanels *panels, int i);
 static RPanel *__getCurPanel(RPanels *panels);
 static RPanels *__get_panels(RPanelsRoot *panels_root, int i);
 static RPanels *__get_cur_panels(RPanelsRoot *panels_root);
-static char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y, const char *sep1, const char *sep2);
+static char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y);
+static char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y);
 
 /* set */
 static void __set_curnode(RCore *core, int idx);
@@ -5721,7 +5722,7 @@ void __panelPrompt(const char *prompt, char *buf, int len) {
 	r_cons_fgets (buf, len, 0, NULL);
 }
 
-char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y, const char *sep1, const char *sep2) {
+char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y) {
 	char *s = r_cons_canvas_to_string (panels->can);
 	char *R = r_str_ansi_crop (s, 0, y - 1, x + 1024, y);
 	r_str_ansi_filter (R, NULL, NULL, -1);
@@ -5731,7 +5732,7 @@ char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y, const cha
 	if (!pos) {
 		pos = R;
 	}
-	const char *sp = r_str_rsep (R, pos, sep1);
+	const char *sp = r_str_rsep (R, pos, "*+-/[,] ");
 	if (sp) {
 		sp++;
 	} else {
@@ -5747,7 +5748,7 @@ char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y, const cha
 	return res;
 }
 
-char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y, const char *sep1, const char *sep2) {
+char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y) {
 	char *s = r_cons_canvas_to_string (panels->can);
 	char *R = r_str_ansi_crop (s, 0, y - 1, x + 1024, y);
 	r_str_ansi_filter (R, NULL, NULL, -1);
@@ -5768,17 +5769,13 @@ char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y, 
 		tmp++;
 		i++;
 	}
-	const char *sp = r_str_newlen (pos, i);
-	if (sp) {
-		sp += 2;
-	} else {
-		sp = pos;
+	char *ret = r_str_newlen (pos += strlen (padding), i - strlen (padding));
+	if (!ret) {
+		ret = pos;
 	}
-	char *res = strdup (sp);
-	r_cons_any_key (res);
 	free (r);
 	free (R);
-	return res;
+	return ret;
 }
 
 void __panels_process(RCore *core, RPanels *panels) {
@@ -5835,8 +5832,7 @@ repeat:
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
 			if (panels->mode == PANEL_MODE_MENU) {
-				char *word = get_word_from_canvas_for_menu (core, panels, x, y, "*+-/[,] ", "*+-,][ ");
-				r_cons_any_key (word);
+				char *word = get_word_from_canvas_for_menu (core, panels, x, y);
 				RPanelsMenu *menu = panels->panelsMenu;
 				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 				for (i = 0; i < parent->n_sub; i++) {
@@ -5844,11 +5840,12 @@ repeat:
 						parent->selectedIndex = i;
 						(void)(parent->sub[parent->selectedIndex]->cb (core));
 						free (word);
+						break;
 					}
 				}
 				goto repeat;
 			}
-			char *word = get_word_from_canvas (core, panels, x, y, "*+-/[,] ", "*+-,][ ");
+			char *word = get_word_from_canvas (core, panels, x, y);
 			if (y == 1) { // click on first line (The menu
 				for (i = 0; i < COUNT (menus); i++) {
 					if (!strcmp (word, menus[i])) {
