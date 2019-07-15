@@ -299,6 +299,8 @@ static RPanel *__getPanel(RPanels *panels, int i);
 static RPanel *__getCurPanel(RPanels *panels);
 static RPanels *__get_panels(RPanelsRoot *panels_root, int i);
 static RPanels *__get_cur_panels(RPanelsRoot *panels_root);
+static char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y);
+static char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y);
 
 /* set */
 static void __set_curnode(RCore *core, int idx);
@@ -5720,7 +5722,7 @@ void __panelPrompt(const char *prompt, char *buf, int len) {
 	r_cons_fgets (buf, len, 0, NULL);
 }
 
-static char *getWordFromCanvas(RCore *core, RPanels *panels, int x, int y) {
+char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y) {
 	char *s = r_cons_canvas_to_string (panels->can);
 	char *R = r_str_ansi_crop (s, 0, y - 1, x + 1024, y);
 	r_str_ansi_filter (R, NULL, NULL, -1);
@@ -5744,6 +5746,36 @@ static char *getWordFromCanvas(RCore *core, RPanels *panels, int x, int y) {
 	free (r);
 	free (R);
 	return res;
+}
+
+char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y) {
+	char *s = r_cons_canvas_to_string (panels->can);
+	char *R = r_str_ansi_crop (s, 0, y - 1, x + 1024, y);
+	r_str_ansi_filter (R, NULL, NULL, -1);
+	char *r = r_str_ansi_crop (s, x - 1, y - 1, x + 1024, y);
+	r_str_ansi_filter (r, NULL, NULL, -1);
+	char *pos = strstr (R, r);
+	char *tmp = pos;
+	const char *padding = "  ";
+	if (!pos) {
+		pos = R;
+	}
+	int i = 0;
+	while (pos && strncmp (padding, pos, strlen (padding))) {
+		pos--;
+		i++;
+	}
+	while (tmp && strncmp (padding, tmp, strlen (padding))) {
+		tmp++;
+		i++;
+	}
+	char *ret = r_str_newlen (pos += strlen (padding), i - strlen (padding));
+	if (!ret) {
+		ret = pos;
+	}
+	free (r);
+	free (R);
+	return ret;
 }
 
 void __panels_process(RCore *core, RPanels *panels) {
@@ -5799,8 +5831,8 @@ repeat:
 	if (key == 0) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			char *word = getWordFromCanvas (core, panels, x, y);
 			if (panels->mode == PANEL_MODE_MENU) {
+				char *word = get_word_from_canvas_for_menu (core, panels, x, y);
 				RPanelsMenu *menu = panels->panelsMenu;
 				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 				for (i = 0; i < parent->n_sub; i++) {
@@ -5808,10 +5840,13 @@ repeat:
 						parent->selectedIndex = i;
 						(void)(parent->sub[parent->selectedIndex]->cb (core));
 						free (word);
+						break;
 					}
 				}
 				goto repeat;
-			} else if (y == 1) { // click on first line (The menu
+			}
+			char *word = get_word_from_canvas (core, panels, x, y);
+			if (y == 1) { // click on first line (The menu
 				for (i = 0; i < COUNT (menus); i++) {
 					if (!strcmp (word, menus[i])) {
 						__setMode (core, PANEL_MODE_MENU);
