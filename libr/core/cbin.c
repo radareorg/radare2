@@ -2074,7 +2074,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 				if (fi) {
 					r_flag_item_set_realname (fi, n);
-					fi->demangled = !!sn.demname;
+					fi->demangled = (bool)(size_t)sn.demname;
 				} else {
 					if (fn) {
 						eprintf ("[Warning] Can't find flag (%s)\n", fn);

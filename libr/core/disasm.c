@@ -3952,7 +3952,7 @@ static void ds_print_demangled(RDisasmState *ds) {
 		return;
 	}
 	RCore *core = ds->core;
-	RFlagItem *f = NULL;
+	RFlagItem *f;
 	int optype = ds->analop.type & 0xFFFF;
 	switch (optype) {
 	case R_ANAL_OP_TYPE_JMP:
