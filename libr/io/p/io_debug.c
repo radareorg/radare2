@@ -226,7 +226,7 @@ static void trace_me (void) {
 }
 #endif
 
-void handle_posix_error(int err) {
+static void handle_posix_error(int err) {
 	switch (err) {
 	case 0:
 		// eprintf ("Success\n");
@@ -288,7 +288,7 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 
 #if __APPLE__ && !__POWERPC__
 
-static void handle_redirection(char *path, int flag, posix_spawn_file_actions_t *fileActions, int fd) {
+static void handle_redirection(const char *path, int flag, posix_spawn_file_actions_t *fileActions, int fd) {
 	int mode = S_IRUSR | S_IWUSR;
 	posix_spawn_file_actions_addopen (fileActions, fd, path, flag, mode);
 }
