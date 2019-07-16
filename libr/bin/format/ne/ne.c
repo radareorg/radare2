@@ -71,8 +71,8 @@ RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 	return segments;
 }
 
-static RListComparator __find_symbol_by_paddr (const void *paddr, const void *sym) {
-	return !(*(ut64 *)paddr == ((RBinSymbol *)sym)->paddr);
+static int __find_symbol_by_paddr (const void *paddr, const void *sym) {
+	return (int)!(*(ut64 *)paddr == ((RBinSymbol *)sym)->paddr);
 }
 
 RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
@@ -223,20 +223,20 @@ static char *__resource_type_str(int type) {
 	return strdup (typeName);
 }
 
-RListFree __free_resource_entry(void *entry) {
+static void __free_resource_entry(void *entry) {
 	r_ne_resource_entry *en = (r_ne_resource_entry *)entry;
 	free (en->name);
 	free (en);
 }
 
-RListFree __free_resource(void *resource) {
+static void __free_resource(void *resource) {
 	r_ne_resource *res = (r_ne_resource *)resource;
 	free (res->name);
 	r_list_free (res->entry);
 	free (res);
 }
 
-bool __ne_get_resources(r_bin_ne_obj_t *bin) {
+static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 	if (!bin->resources) {
 		bin->resources = r_list_newf (__free_resource);
 	}
@@ -470,9 +470,19 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				// TODO
 			} else {
 				if (strstr (seg->name, "FIXED")) {
-					offset = ((RBinSection *)r_list_get_n (segments, rel.segnum - 1))->paddr + rel.segoff;
+					RBinSection *s = r_list_get_n (segments, rel.segnum - 1);
+					if (s) {
+						offset = s->paddr + rel.segoff;
+					} else {
+						offset = -1;
+					}
 				} else {
-					offset = ((RBinAddr *)r_list_get_n (entries, rel.entry_ordinal - 1))->paddr;
+					RBinAddr *entry = r_list_get_n (entries, rel.entry_ordinal - 1);
+					if (entry) {
+						offset = entry->paddr;
+					} else {
+						offset = -1;
+					}
 				}
 				reloc->addend = offset;
 				RBinSymbol *sym = NULL;
