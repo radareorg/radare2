@@ -189,8 +189,7 @@ static void mht_free_kv(HtPPKv *kv) {
 
 #define HUD_CACHE 0
 R_API char *r_cons_hud(RList *list, const char *prompt) {
-	char user_input [HUD_BUF_SIZE];
-	char hud_prompt [HUD_BUF_SIZE + 1];
+	char user_input[HUD_BUF_SIZE], hud_prompt[HUD_BUF_SIZE + 1];
 	char *selected_entry = NULL;
 	RListIter *iter;
 
@@ -198,11 +197,10 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	RLineHud *hud = (RLineHud*) R_NEW (RLineHud);
 	I(line)->echo = false;
 	I(line)->hud = hud;
-	user_input[0] = 0;
-	hud_prompt[0] = 0;
 	hud->top_entry_n = 0;
+	r_cons_show_cursor (false);
 	r_cons_clear ();
-	r_cons_show_cursor (true);
+
 	// Repeat until the user exits the hud
 	for (;;) {
 		hud->current_entry_n = 0;
@@ -235,8 +233,10 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 #endif
 		r_cons_visual_flush ();
 		(void) r_line_readline ();
-		strcpy (user_input, I(line)->buffer.data); // to search
-		strcpy (hud_prompt, I(line)->buffer.data); // to display
+		memset (user_input, 0, HUD_BUF_SIZE);
+		memset (hud_prompt, 0, HUD_BUF_SIZE + 1);
+		strcpy (user_input, I(line)->buffer.data); 				// to search
+		strcpy (hud_prompt, user_input); 					// to display
 		for (int i = I(line)->buffer.length; i > I(line)->buffer.index; i--) {
 			hud_prompt[i] = hud_prompt[i - 1];
 		}
@@ -247,6 +247,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 				if (selected_entry) {
 					R_FREE (I(line)->hud);
 					I(line)->echo = true;
+					r_cons_show_cursor (true);
 					return strdup (selected_entry);
 				} 
 			} else {
@@ -257,6 +258,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 _beach:
 	R_FREE (I(line)->hud);
 	I(line)->echo = true;
+	r_cons_show_cursor (true);
 	ht_pp_free (ht);
 	return NULL;
 }
@@ -303,7 +305,7 @@ R_API char *r_cons_message(const char *msg) {
 	int rows, cols = r_cons_get_size (&rows);
 	r_cons_clear ();
 	r_cons_gotoxy ((cols - len) / 2, rows / 2);
-	r_cons_printf ("%s\n", msg);
+	r_cons_println (msg);
 	r_cons_flush ();
 	r_cons_gotoxy (0, rows - 2);
 	r_cons_any_key (NULL);

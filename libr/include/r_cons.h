@@ -434,8 +434,6 @@ typedef struct r_cons_context_t {
 
 #define HUD_BUF_SIZE 512
 
-
-
 typedef struct r_cons_t {
 	RConsContext *context;
 	char *lastline;
@@ -974,7 +972,7 @@ typedef struct r_line_buffer_t {
 	int length;
 } RLineBuffer;
 
-typedef struct r_hud_t{
+typedef struct r_hud_t {
 	int current_entry_n;
 	int top_entry_n;
 	char activate;

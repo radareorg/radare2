@@ -1631,8 +1631,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	// new implementation for read input at windows by skuater. If something fail set this to 0
 	return r_line_readline_cb_win (cb, user);
 #endif
-	int columns = r_cons_get_size (NULL) - 2;
-	int rows;
+	int rows, columns = r_cons_get_size (&rows) - 2;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;
 	static int gcomp = 0;
@@ -1643,7 +1642,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int ch, i = 0;	/* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
-	(void) r_cons_get_size (&rows);
 	
 	if (!I.hud || (I.hud && !I.hud->activate)) {
 		I.buffer.index = I.buffer.length = 0;
@@ -1978,7 +1976,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						if (I.sel_widget) {
 							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
 							selection_widget_draw ();
-						} 
+						}
 						break;
 					case '6': // pag down
 						buf[1] = r_cons_readchar ();
