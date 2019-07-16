@@ -75,7 +75,6 @@ static void header(RBinFile *bf) {
 }
 
 RBinInfo *info(RBinFile *bf) {
-	struct r_bin_t *rbin = bf->rbin;
 	r_bin_ne_obj_t *ne = bf->o->bin_obj;
 	RBinInfo *i = R_NEW0 (RBinInfo);
 	if (!i) {
@@ -88,7 +87,7 @@ RBinInfo *info(RBinFile *bf) {
 	return i;
 }
 
-RBinAddr *entries(RBinFile *bf) {
+RList *entries(RBinFile *bf) {
 	return r_bin_ne_get_entrypoints (bf->o->bin_obj);
 }
 

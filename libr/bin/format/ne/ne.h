@@ -1,3 +1,5 @@
+#ifndef NE_H
+#define NE_H
 #include <r_types.h>
 #include <r_list.h>
 #include <r_util.h>
@@ -38,3 +40,5 @@ RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin);
 RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin);
 RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin);
 RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin);
+
+#endif

@@ -41,7 +41,7 @@ static char *__read_nonnull_str_at(RBuffer *buf, ut64 offset) {
 	if (!str) {
 		return NULL;
 	}
-	r_buf_read_at (buf, offset + 1, str, sz);
+	r_buf_read_at (buf, offset + 1, (ut8 *)str, sz);
 	str[sz] = '\0';
 	return str;
 }
@@ -71,8 +71,8 @@ RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 	return segments;
 }
 
-static int __find_symbol_by_paddr (ut64 *paddr, RBinSymbol *sym) {
-	return !(*paddr == sym->paddr);
+static RListComparator __find_symbol_by_paddr (const void *paddr, const void *sym) {
+	return !(*(ut64 *)paddr == ((RBinSymbol *)sym)->paddr);
 }
 
 RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
@@ -104,7 +104,7 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 			break;
 		}
 		off++;
-		r_buf_read_at (bin->buf, off, name, sz);
+		r_buf_read_at (bin->buf, off, (ut8 *)name, sz);
 		name[sz] = '\0';
 		off += sz;
 		sym = R_NEW0 (RBinSymbol);
@@ -192,6 +192,7 @@ static char *__resource_type_str(int type) {
 		break;
 	case 15:
 		typeName = "NAMETABLE";
+		break;
 	case 16:
 		typeName = "VERSION";
 		break;
@@ -222,15 +223,17 @@ static char *__resource_type_str(int type) {
 	return strdup (typeName);
 }
 
-void __free_resource_entry(r_ne_resource_entry *entry) {
-	free (entry->name);
-	free (entry);
+RListFree __free_resource_entry(void *entry) {
+	r_ne_resource_entry *en = (r_ne_resource_entry *)entry;
+	free (en->name);
+	free (en);
 }
 
-void __free_resource(r_ne_resource *resource) {
-	free (resource->name);
-	r_list_free (resource->entry);
-	free (resource);
+RListFree __free_resource(void *resource) {
+	r_ne_resource *res = (r_ne_resource *)resource;
+	free (res->name);
+	r_list_free (res->entry);
+	free (res);
 }
 
 bool __ne_get_resources(r_bin_ne_obj_t *bin) {
@@ -250,7 +253,7 @@ bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 		if (!res->entry) {
 			break;
 		}
-		r_buf_read_at (bin->buf, off, &ti, sizeof (ti));
+		r_buf_read_at (bin->buf, off, (ut8 *)&ti, sizeof (ti));
 		if (!ti.rtTypeID) {
 			break;
 		} else if (ti.rtTypeID & 0x8000) {
@@ -267,7 +270,7 @@ bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 			if (!ren) {
 				break;
 			}
-			r_buf_read_at (bin->buf, off, &ni, sizeof (NE_image_nameinfo_entry));
+			r_buf_read_at (bin->buf, off, (ut8 *)&ni, sizeof (NE_image_nameinfo_entry));
 			ren->offset = ni.rnOffset << alignment;
 			ren->size = ni.rnLength;
 			if (ni.rnID & 0x8000) {
@@ -281,6 +284,7 @@ bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 		}
 		r_list_append (bin->resources, res);
 	}
+	return true;
 }
 
 RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
@@ -391,7 +395,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 	if (!modref) {
 		return NULL;
 	}
-	r_buf_read_at (bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, modref, bin->ne_header->ModRefs * sizeof (ut16));
+	r_buf_read_at (bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, (ut8 *)modref, bin->ne_header->ModRefs * sizeof (ut16));
 
 	RList *relocs = r_list_newf (free);
 	if (!relocs) {
@@ -419,7 +423,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				return NULL;
 			}
 			NE_image_reloc_item rel;
-			r_buf_read_at (bin->buf, off, &rel, sizeof (rel));
+			r_buf_read_at (bin->buf, off, (ut8 *)&rel, sizeof (rel));
 			reloc->paddr = seg->paddr + rel.offset;
 			switch (rel.type) {
 			case LOBYTE:
@@ -463,6 +467,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				free (name);
 				reloc->import = imp;
 			} else if (rel.flags & OSFIXUP) {
+				// TODO
 			} else {
 				if (strstr (seg->name, "FIXED")) {
 					offset = ((RBinSection *)r_list_get_n (segments, rel.segnum - 1))->paddr + rel.segoff;
@@ -513,7 +518,7 @@ void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 		return;
 	}
 	bin->buf = buf;
-	r_buf_read_at (buf, bin->header_offset, bin->ne_header, sizeof (NE_image_header));
+	r_buf_read_at (buf, bin->header_offset, (ut8 *)bin->ne_header, sizeof (NE_image_header));
 	bin->alignment = 1 << bin->ne_header->FileAlnSzShftCnt;
 	if (!bin->alignment) {
 		bin->alignment = 1 << 9;
@@ -526,7 +531,7 @@ void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 	if (!bin->segment_entries) {
 		return;
 	}
-	r_buf_read_at (buf, offset, bin->segment_entries, size);
+	r_buf_read_at (buf, offset, (ut8 *)bin->segment_entries, size);
 	bin->entry_table = calloc (1, bin->ne_header->EntryTableLength);
 	r_buf_read_at (buf, (ut64)bin->header_offset + bin->ne_header->EntryTableOffset, bin->entry_table, bin->ne_header->EntryTableLength);
 	bin->imports = r_bin_ne_get_imports (bin);
