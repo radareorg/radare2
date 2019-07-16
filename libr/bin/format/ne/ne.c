@@ -308,7 +308,7 @@ RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
 		if (!name) {
 			break;
 		}
-		r_buf_read_at (bin->buf, off, name, sz);
+		r_buf_read_at (bin->buf, off, (ut8)name, sz);
 		name[sz] = '\0';
 		imp->name = name;
 		imp->ordinal = i + 1;
