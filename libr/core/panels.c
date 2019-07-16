@@ -5831,20 +5831,6 @@ repeat:
 	if (key == 0) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			if (panels->mode == PANEL_MODE_MENU) {
-				char *word = get_word_from_canvas_for_menu (core, panels, x, y);
-				RPanelsMenu *menu = panels->panelsMenu;
-				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
-				for (i = 0; i < parent->n_sub; i++) {
-					if (!strcmp (word, parent->sub[i]->get_name_cb (core, parent->sub[i]->base_name))) {
-						parent->selectedIndex = i;
-						(void)(parent->sub[parent->selectedIndex]->cb (core));
-						free (word);
-						break;
-					}
-				}
-				goto repeat;
-			}
 			char *word = get_word_from_canvas (core, panels, x, y);
 			if (y == 1) { // click on first line (The menu
 				for (i = 0; i < COUNT (menus); i++) {
@@ -5856,6 +5842,7 @@ repeat:
 						parent->selectedIndex = i;
 						RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 						(void)(child->cb (core));
+						__setRefreshAll (core, false, false);
 						free (word);
 						goto repeat;
 					}
@@ -5875,6 +5862,23 @@ repeat:
 					}
 					goto repeat;
 				}
+			} else if (panels->mode == PANEL_MODE_MENU) {
+				char *word = get_word_from_canvas_for_menu (core, panels, x, y);
+				RPanelsMenu *menu = panels->panelsMenu;
+				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+				for (i = 0; i < parent->n_sub; i++) {
+					if (!strcmp (word, parent->sub[i]->get_name_cb (core, parent->sub[i]->base_name))) {
+						parent->selectedIndex = i;
+						(void)(parent->sub[parent->selectedIndex]->cb (core));
+						__moveMenuCursor (core, menu, parent);
+						free (word);
+						goto repeat;
+					}
+				}
+				__clearPanelsMenu (core);
+				__setMode (core, PANEL_MODE_DEFAULT);
+				__getCurPanel (panels)->view->refresh = true;
+				goto repeat;
 			} else {
 				// TODO: select nth panel here
 				if (r_str_endswith (word, "X]")) {
