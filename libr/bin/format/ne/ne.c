@@ -67,7 +67,12 @@ RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 		bs->is_segment = true;
 		r_list_append (segments, bs);
 	}
+	bin->segments = segments;
 	return segments;
+}
+
+bool __find_symbol_by_paddr (ut64 *paddr, RBinSymbol *sym) {
+	return !(*paddr == sym->paddr);
 }
 
 RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
@@ -78,10 +83,11 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 		return NULL;
 	}
 	RList *entries = r_bin_ne_get_entrypoints (bin);
-	bool resident = true;
+	bool resident = true, first = true;
 	while (true) {
 		ut8 sz = r_buf_read8_at (bin->buf, off);
 		if (!sz) {
+			first = true;
 			if (resident) {
 				resident = false;
 				off = bin->ne_header->OffStartNonResTab;
@@ -106,16 +112,39 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 			break;
 		}
 		sym->name = name;
-
-		ut16 entry_off = r_buf_read8_at (bin->buf, off);
-		off += 2;
-		if (resident) {
-			sym->paddr = ((RBinAddr *)r_list_get_n (entries, entry_off))->paddr;
-		} else {
-			sym->paddr = (ut64)off - sz - 1;
+		if (!first) {
+			sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
 		}
+		ut16 entry_off = r_buf_read_le16_at (bin->buf, off);
+		off += 2;
+		RBinAddr *entry = r_list_get_n (entries, entry_off);
+		if (entry) {
+			sym->paddr = entry->paddr;
+		} else {
+			sym->paddr = -1;
+		}
+		sym->ordinal = entry_off;
 		r_list_append (symbols, sym);
+		first = false;
 	}
+	RListIter *it;
+	RBinAddr *en;
+	int i = 1;
+	r_list_foreach (entries, it, en) {
+		if (!r_list_find (symbols, &en->paddr, __find_symbol_by_paddr)) {
+			sym = R_NEW0 (RBinSymbol);
+			if (!sym) {
+				break;
+			}
+			sym->name = r_str_newf ("entry%d", i - 1);
+			sym->paddr = en->paddr;
+			sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
+			sym->ordinal = i;
+			r_list_append (symbols, sym);
+		}
+		i++;
+	}
+	bin->symbols = symbols;
 	return symbols;
 }
 
@@ -161,6 +190,8 @@ static char *__resource_type_str(int type) {
 	case 14:
 		typeName = "GROUP_ICON";
 		break;
+	case 15:
+		typeName = "NAMETABLE";
 	case 16:
 		typeName = "VERSION";
 		break;
@@ -280,6 +311,7 @@ RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
 		r_list_append (imports, imp);
 		off += sz;
 	}
+	bin->imports = imports;
 	return imports;
 }
 
@@ -328,7 +360,7 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 				ut8 segnum = *(bin->entry_table + off);
 				off++;
 				ut16 segoff = *(ut16 *)(bin->entry_table + off);
-				entry->paddr = (ut64)segnum * bin->alignment + segoff;
+				entry->paddr = (ut64)bin->segment_entries[segnum - 1].offset * bin->alignment + segoff;
 			} else { // Fixed
 				entry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset * bin->alignment + *(ut16 *)(bin->entry_table + off);
 			}
@@ -336,30 +368,37 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 			r_list_append (entries, entry);
 		}
 	}
+	r_list_free (segments);
+	bin->entries = entries;
 	return entries;
 }
 
 RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
+	RList *segments = bin->segments;
+	if (!segments) {
+		return NULL;
+	}
+	RList *entries = bin->entries;
+	if (!entries) {
+		return NULL;
+	}
+	RList *symbols = bin->symbols;
+	if (!symbols) {
+		return NULL;
+	}
+
 	ut16 *modref = malloc (bin->ne_header->ModRefs * sizeof (ut16));
 	if (!modref) {
 		return NULL;
 	}
 	r_buf_read_at (bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, modref, bin->ne_header->ModRefs * sizeof (ut16));
+
 	RList *relocs = r_list_newf (free);
 	if (!relocs) {
+		free (modref);
 		return NULL;
 	}
-	RList *segments = r_bin_ne_get_segments (bin);
-	if (!segments) {
-		r_list_free (relocs);
-		return NULL;
-	}
-	RList *entries = r_bin_ne_get_entrypoints (bin);
-	if (!entries) {
-		r_list_free (relocs);
-		r_list_free (segments);
-		return NULL;
-	}
+
 	RListIter *it;
 	RBinSection *seg;
 	int index = -1;
@@ -381,7 +420,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 			}
 			NE_image_reloc_item rel;
 			r_buf_read_at (bin->buf, off, &rel, sizeof (rel));
-			reloc->paddr = rel.offset + seg->paddr;
+			reloc->paddr = seg->paddr + rel.offset;
 			switch (rel.type) {
 			case LOBYTE:
 				reloc->type = R_BIN_RELOC_8;
@@ -390,6 +429,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 			case OFF_16:
 				reloc->type = R_BIN_RELOC_16;
 				break;
+			case POI_32:
 			case OFF_32:
 				reloc->type = R_BIN_RELOC_32;
 				break;
@@ -397,14 +437,20 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				reloc->type = R_BIN_RELOC_64;
 				break;
 			}
-
+			
+			ut32 offset;
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
 				RBinImport *imp = R_NEW0 (RBinImport);
 				if (!imp) {
 					break;
 				}
-				ut32 offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
-				char *name = __read_nonnull_str_at (bin->buf, offset);
+				char *name;
+				if (rel.index > bin->ne_header->ModRefs) {
+					name = r_str_newf ("UnknownModule%d_%x", rel.index, off); // ????
+				} else {
+					offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
+					name = __read_nonnull_str_at (bin->buf, offset);
+				}
 				if (rel.flags & IMPORTED_ORD) {
 					imp->ordinal = rel.func_ord;
 					imp->name = r_str_newf ("%s.%d", name, rel.func_ord);
@@ -416,25 +462,47 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				}
 				free (name);
 				reloc->import = imp;
-			} else if (rel.flags & OSFIXUP ) {
+			} else if (rel.flags & OSFIXUP) {
 			} else {
-				ut32 offset;
 				if (strstr (seg->name, "FIXED")) {
-					offset = ((RBinSection *)r_list_get_n (segments, rel.segnum))->paddr + rel.segoff;
+					offset = ((RBinSection *)r_list_get_n (segments, rel.segnum - 1))->paddr + rel.segoff;
 				} else {
 					offset = ((RBinAddr *)r_list_get_n (entries, rel.entry_ordinal - 1))->paddr;
 				}
-				if (rel.flags & ADDITIVE) {
-					reloc->additive = 1;
-				}
 				reloc->addend = offset;
+				RBinSymbol *sym = NULL;
+				RListIter *sit;
+				r_list_foreach (symbols, sit, sym) {
+					if (sym->paddr == reloc->addend) {
+						reloc->symbol = sym;
+						break;
+					}
+				}
 			}
+
+			if (rel.flags & ADDITIVE) {
+				reloc->additive = 1;
+				r_list_append (relocs, reloc);
+			} else {
+				do {
+					r_list_append (relocs, reloc);
+					
+					offset = r_buf_read_le16_at (bin->buf, reloc->paddr);
+					RBinReloc *tmp = reloc;
+					reloc = R_NEW0 (RBinReloc);
+					if (!reloc) {
+						break;
+					}
+					*reloc = *tmp;
+					reloc->paddr = seg->paddr + offset;
+				} while (offset != 0xFFFF);
+				free (reloc);
+			}
+
 			off += sizeof (NE_image_reloc_item);
-			r_list_append (relocs, reloc);
 		}
 	}
-	r_list_free (segments);
-	r_list_free (entries);
+	free (modref);
 	return relocs;
 }
 

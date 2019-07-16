@@ -23,8 +23,11 @@ typedef struct {
 	ut8 *entry_table;
 	ut8 *resident_name_table;
 	RBuffer *buf;
+	RList *segments;
+	RList *entries;
 	RList *resources;
 	RList *imports;
+	RList *symbols;
 	char *os;
 } r_bin_ne_obj_t;
 
