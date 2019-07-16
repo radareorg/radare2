@@ -41,12 +41,12 @@ static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut8 *p = r->p;
 	do {
 		if (p == end) {
-			eprintf ("malformed uleb128");
+			eprintf ("malformed uleb128\n");
 			break;
 		}
 		slice = *p & 0x7f;
 		if (bit > 63) {
-			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x, bit, result);
+			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x"\n", bit, result);
 		} else {
 			result |= (slice << bit);
 			bit += 7;
@@ -63,12 +63,16 @@ static st64 read_sleb128(ulebr *r, ut8 *end) {
 	ut8 *p = r->p;
 	do {
 		if (p == end) {
-			eprintf ("malformed sleb128");
+			eprintf ("malformed sleb128\n");
 			break;
 		}
 		byte = *p++;
 		result |= (((st64)(byte & 0x7f)) << bit);
 		bit += 7;
+		if (bit > 63) {
+			eprintf ("too large sleb128 shift\n");
+			return result;
+		}
 	} while (byte & 0x80);
 	// sign extend negative numbers
 	if ((byte & 0x40)) {
