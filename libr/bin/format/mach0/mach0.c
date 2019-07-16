@@ -3353,6 +3353,17 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 			free (rpath);
 			break;
 		}
+		case LC_ENCRYPTION_INFO:
+		case LC_ENCRYPTION_INFO_64:
+			{
+			ut32 word = r_buf_read_le32_at (buf, addr);
+			cb_printf ("0x%08"PFMT64x"  cryptoff   0x%08x\n", addr, word);
+			word = r_buf_read_le32_at (buf, addr + 4);
+			cb_printf ("0x%08"PFMT64x"  cryptsize  %d\n", addr + 4, word);
+			word = r_buf_read_le32_at (buf, addr + 8);
+			cb_printf ("0x%08"PFMT64x"  cryptid    %d\n", addr + 8, word);
+			}
+			break;
 		case LC_CODE_SIGNATURE:
 			{
 			ut32 words[2];
