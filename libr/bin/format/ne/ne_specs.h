@@ -24,20 +24,20 @@ typedef struct _RELOC {
 	ut16 offset;
 	union {
 		ut16 index;
-		struct internal_fixed {
+		struct { // internal_fixed
 			ut8 segnum;
 			ut8 zero;
 			ut16 segoff;
 		};
-		struct internal_moveable {
+		struct { // internal_moveable
 			ut16 ignore;
 			ut16 entry_ordinal;
 		};
-		struct import_ordinal {
+		struct { // import_ordinal
 			ut16 align1;
 			ut16 func_ord;
 		};
-		struct import_name {
+		struct { // import_name
 			ut16 align2;
 			ut16 name_off;
 		};

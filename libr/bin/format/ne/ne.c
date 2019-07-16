@@ -17,7 +17,7 @@ static char *__get_target_os(r_bin_ne_obj_t *bin) {
 	}
 }
 
-int __translate_perms(int flags) {
+static int __translate_perms(int flags) {
 	int perms = 0;
 	if (flags & IS_RX) {
 		if (flags & IS_DATA) {
@@ -524,7 +524,7 @@ void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 	ut16 size = bin->ne_header->SegCount * sizeof (NE_image_segment_entry);
 	bin->segment_entries = calloc (1, size);
 	if (!bin->segment_entries) {
-		return NULL;
+		return;
 	}
 	r_buf_read_at (buf, offset, bin->segment_entries, size);
 	bin->entry_table = calloc (1, bin->ne_header->EntryTableLength);
