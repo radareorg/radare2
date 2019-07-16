@@ -2005,7 +2005,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						} else if (r_line_hist_up () == -1) {
 							r_cons_break_pop ();
 							return NULL;
-						} 
+						}
 						break;
 					case 'B':	// down arrow
 						if (I.hud) {

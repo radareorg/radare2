@@ -196,6 +196,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	RLineHud *hud = (RLineHud*) R_NEW (RLineHud);
 	I(line)->echo = false;
 	I(line)->hud = hud;
+	hud_prompt [0] = 0;
 	hud->top_entry_n = 0;
 	r_cons_clear ();
 
