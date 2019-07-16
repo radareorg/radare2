@@ -71,7 +71,7 @@ RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 	return segments;
 }
 
-bool __find_symbol_by_paddr (ut64 *paddr, RBinSymbol *sym) {
+static int __find_symbol_by_paddr (ut64 *paddr, RBinSymbol *sym) {
 	return !(*paddr == sym->paddr);
 }
 
