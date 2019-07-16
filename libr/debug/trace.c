@@ -60,11 +60,13 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
 		return false;
 	}
-	if (dbg->anal->esil && dbg->trace->enabled) {
-		r_anal_esil_trace (dbg->anal->esil, &op);
-	} else {
-		if (dbg->verbose) {
-			eprintf ("Run aeim to get dbg->anal->esil initialized\n");
+	if (dbg->trace->enabled) {
+		if (dbg->anal->esil) {
+			r_anal_esil_trace (dbg->anal->esil, &op);
+		} else {
+			if (dbg->verbose) {
+				eprintf ("Run aeim to get dbg->anal->esil initialized\n");
+			}
 		}
 	}
 	if (oldpc != UT64_MAX) {
