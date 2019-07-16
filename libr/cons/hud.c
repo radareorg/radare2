@@ -190,17 +190,19 @@ static void mht_free_kv(HtPPKv *kv) {
 #define HUD_CACHE 0
 R_API char *r_cons_hud(RList *list, const char *prompt) {
 	char user_input [HUD_BUF_SIZE];
+	char hud_prompt [HUD_BUF_SIZE + 1];
 	char *selected_entry = NULL;
 	RListIter *iter;
 
 	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
 	RLineHud *hud = (RLineHud*) R_NEW (RLineHud);
-	I(line)->echo = true;
+	I(line)->echo = false;
 	I(line)->hud = hud;
 	user_input[0] = 0;
+	hud_prompt[0] = 0;
 	hud->top_entry_n = 0;
 	r_cons_clear ();
-	//r_cons_show_cursor (false);
+	r_cons_show_cursor (true);
 	// Repeat until the user exits the hud
 	for (;;) {
 		hud->current_entry_n = 0;
@@ -209,12 +211,10 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 			hud->top_entry_n = 0;
 		}
 		selected_entry = NULL;
-		r_cons_visual_flush ();
 		if (prompt && *prompt) {
-			printf (">> %s\n", prompt);
+			r_cons_printf (">> %s\n", prompt);
 		}
-		
-		//r_cons_printf ("%d> %s|\n", hud->top_entry_n, user_input);
+		r_cons_printf ("%d> %s\n", hud->top_entry_n, hud_prompt);
 		char *row;
 		RList *filtered_list = NULL;
 
@@ -228,21 +228,25 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 #endif
 		}
 		r_list_foreach (filtered_list, iter, row) {
-			printf ("%s\n", row);
+			r_cons_printf ("%s\n", row);
 		}
 #if !HUD_CACHE
 		r_list_free (filtered_list);
 #endif
-		char *pro = r_str_newf ("%d > ", hud->top_entry_n);
-		r_line_set_prompt (pro);
-		R_FREE (pro);
+		r_cons_visual_flush ();
 		(void) r_line_readline ();
-		strcpy (user_input, I(line)->buffer.data);
+		strcpy (user_input, I(line)->buffer.data); // to search
+		strcpy (hud_prompt, I(line)->buffer.data); // to display
+		for (int i = I(line)->buffer.length; i > I(line)->buffer.index; i--) {
+			hud_prompt[i] = hud_prompt[i - 1];
+		}
+		memcpy (hud_prompt + I(line)->buffer.index, "|", 1);
 		if (!hud->activate) {
 			hud->top_entry_n = 0;
 			if (hud->current_entry_n >= 1 ) {
 				if (selected_entry) {
 					R_FREE (I(line)->hud);
+					I(line)->echo = true;
 					return strdup (selected_entry);
 				} 
 			} else {
@@ -252,6 +256,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	}
 _beach:
 	R_FREE (I(line)->hud);
+	I(line)->echo = true;
 	ht_pp_free (ht);
 	return NULL;
 }
@@ -298,7 +303,7 @@ R_API char *r_cons_message(const char *msg) {
 	int rows, cols = r_cons_get_size (&rows);
 	r_cons_clear ();
 	r_cons_gotoxy ((cols - len) / 2, rows / 2);
-	printf ("%s\n", msg);
+	r_cons_printf ("%s\n", msg);
 	r_cons_flush ();
 	r_cons_gotoxy (0, rows - 2);
 	r_cons_any_key (NULL);
