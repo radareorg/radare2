@@ -46,6 +46,26 @@ static char *__read_nonnull_str_at(RBuffer *buf, ut64 offset) {
 	return str;
 }
 
+static char *__func_name_from_ord(char *module, ut16 ordinal) {
+	char *path = r_str_newf ("%s/%s/format/dll/%s.sdb", r_sys_prefix (NULL), R2_SDB, module);
+	char *ord = r_str_newf ("%d", ordinal);
+	char *name;
+	if (r_file_exists (path)) {
+		Sdb *sdb = sdb_new (NULL, path, 0);
+		name = sdb_get (sdb, ord, NULL);
+		if (!name) {
+			name = ord;
+		} else {
+			free (ord);
+		}
+		sdb_close (sdb);
+		free (sdb);
+	} else {
+		name = ord;
+	}
+	return name;
+}
+
 RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 	if (!bin) {
 		return NULL;
@@ -457,7 +477,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				}
 				if (rel.flags & IMPORTED_ORD) {
 					imp->ordinal = rel.func_ord;
-					imp->name = r_str_newf ("%s.%d", name, rel.func_ord);
+					imp->name = r_str_newf ("%s.%s", name, __func_name_from_ord(name, rel.func_ord));
 				} else {
 					offset = bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;
 					char *func = __read_nonnull_str_at (bin->buf, offset);
