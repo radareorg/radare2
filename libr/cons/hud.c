@@ -104,7 +104,6 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 	int j, rows;
 	(void) r_cons_get_size (&rows);
 	int counter = 0;
-
 	bool first_line = true;
 	RList *res = r_list_newf (free);
 	r_list_foreach (list, iter, current_entry) {
@@ -198,11 +197,11 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	I(line)->echo = false;
 	I(line)->hud = hud;
 	hud->top_entry_n = 0;
-	r_cons_show_cursor (false);
 	r_cons_clear ();
 
 	// Repeat until the user exits the hud
 	for (;;) {
+		r_cons_gotoxy (0, 0);
 		hud->current_entry_n = 0;
 		
 		if (hud->top_entry_n < 0) {
@@ -247,7 +246,6 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 				if (selected_entry) {
 					R_FREE (I(line)->hud);
 					I(line)->echo = true;
-					r_cons_show_cursor (true);
 					return strdup (selected_entry);
 				} 
 			} else {
@@ -258,7 +256,6 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 _beach:
 	R_FREE (I(line)->hud);
 	I(line)->echo = true;
-	r_cons_show_cursor (true);
 	ht_pp_free (ht);
 	return NULL;
 }
