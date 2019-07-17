@@ -67,11 +67,12 @@ static char *__func_name_from_ord(char *module, ut16 ordinal) {
 }
 
 RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
+	int i;
 	if (!bin) {
 		return NULL;
 	}
 	RList *segments = r_list_newf (free);
-	for (int i = 0; i < bin->ne_header->SegCount; i++) {
+	for (i = 0; i < bin->ne_header->SegCount; i++) {
 		RBinSection *bs = R_NEW0 (RBinSection);
 		NE_image_segment_entry *se = &bin->segment_entries[i];
 		if (!bs) {
