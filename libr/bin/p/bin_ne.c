@@ -45,7 +45,7 @@ static void header(RBinFile *bf) {
 	rbin->cb_printf ("MinLinkerVersion: %d\n", ne->ne_header->MinLinkerVersion);
 	rbin->cb_printf ("EntryTableOffset: 0x%04x\n", ne->ne_header->EntryTableOffset);
 	rbin->cb_printf ("EntryTableLength: %d\n", ne->ne_header->EntryTableLength);
-	rbin->cb_printf ("FileLoadCRC: %x\n", ne->ne_header->FileLoadCRC);
+	rbin->cb_printf ("FileLoadCRC: %08x\n", ne->ne_header->FileLoadCRC);
 	rbin->cb_printf ("ProgFlags: %d\n", ne->ne_header->ProgFlags);
 	rbin->cb_printf ("ApplFlags: %d\n", ne->ne_header->ApplFlags);
 	rbin->cb_printf ("AutoDataSegIndex: %d\n", ne->ne_header->AutoDataSegIndex);
@@ -77,13 +77,12 @@ static void header(RBinFile *bf) {
 RBinInfo *info(RBinFile *bf) {
 	r_bin_ne_obj_t *ne = bf->o->bin_obj;
 	RBinInfo *i = R_NEW0 (RBinInfo);
-	if (!i) {
-		return NULL;
+	if (i) {
+		i->bits = 16;
+		i->arch = strdup ("x86");
+		i->os = strdup (ne->os);
+		i->claimed_checksum = r_str_newf ("%08x", ne->ne_header->FileLoadCRC);
 	}
-	i->bits = 16;
-	i->arch = strdup ("x86");
-	i->os = strdup (ne->os);
-	i->claimed_checksum = r_str_newf ("%d", ne->ne_header->FileLoadCRC);
 	return i;
 }
 
