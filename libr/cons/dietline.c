@@ -1480,6 +1480,18 @@ static void __vi_mode () {
 		rep = rep > 0 ? rep : 1;
 
 		switch (ch) {
+		case 3:
+			if (I.hud) {
+				I.hud->activate = false;
+				I.hud->current_entry_n = -1;
+			}
+			if (I.echo) {
+				eprintf ("^C\n");
+			}
+			I.buffer.index = I.buffer.length = 0;
+			*I.buffer.data = '\0';
+			gcomp = 0;
+			return;
 		case 'D':  
 			delete_till_end ();
 			break;
