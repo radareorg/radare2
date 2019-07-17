@@ -4434,7 +4434,7 @@ void __initSdb(RCore *core) {
 	sdb_set (panels->db, "Summary", "pdsf", 0);
 	sdb_set (panels->db, "Classes", "icq", 0);
 	sdb_set (panels->db, "Methods", "ic", 0);
-	sdb_set (panels->db, "Relocs", "iR", 0);
+	sdb_set (panels->db, "Relocs", "ir", 0);
 	sdb_set (panels->db, "Headers", "iH", 0);
 	sdb_set (panels->db, "File Hashes", "it", 0);
 }
