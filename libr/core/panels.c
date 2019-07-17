@@ -5246,6 +5246,9 @@ void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db) {
 	while (modal) {
 		okey = r_cons_readchar ();
 		key = r_cons_arrow_to_hjkl (okey);
+		if (key == 0 || key == INT8_MAX) {
+			key = 'q';
+		}
 		switch (key) {
 		case 'j':
 			modal->idx++;
@@ -5913,6 +5916,9 @@ repeat:
 		} else {
 			goto repeat;
 		}
+	}
+	if (key == INT8_MAX) {
+		key = '"';
 	}
 skip:
 	r_cons_switchbuf (true);
