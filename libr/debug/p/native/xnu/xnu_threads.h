@@ -50,6 +50,7 @@ typedef struct _xnu_thread {
 #if __arm || __arm64 || __aarch64
 	union {
 		arm_debug_state32_t drx32;
+		arm_debug_state64_t drx64;
 		arm_debug_state_t drx;
 	} debug;
 #elif __x86_64__ || __i386__

@@ -24,10 +24,8 @@ static void xnu_thread_free (xnu_thread_t *thread) {
 
 // XXX this should work as long as in arm trace bit relies on this
 static bool xnu_thread_get_drx (RDebug *dbg, xnu_thread_t *thread) {
+	r_return_val_if_fail (dbg && thread, false);
 	kern_return_t rc;
-	if (!dbg || !thread) {
-		return false;
-	}
 #if __x86_64__ || __i386__
 	thread->flavor = x86_DEBUG_STATE;
 	thread->count = x86_DEBUG_STATE_COUNT;
@@ -37,24 +35,33 @@ static bool xnu_thread_get_drx (RDebug *dbg, xnu_thread_t *thread) {
 	thread->state = &thread->drx.uds;
 	rc = thread_get_state (thread->port, thread->flavor,
 	       (thread_state_t)&thread->drx, &thread->count);
-#elif __arm__ || __arm64__ || __arm || __arm64 || __aarch64
-#if defined(ARM_DEBUG_STATE32) && (defined(__arm64__) || defined(__aarch64__))
-	thread->count = ARM_DEBUG_STATE32_COUNT;
-	thread->flavor = ARM_DEBUG_STATE32;
-	rc = thread_get_state (thread->port, thread->flavor,
-			       (thread_state_t)&thread->debug.drx32,
-			       &thread->count);
-#else
+#elif __arm64__ || __arm64 || __aarch64 || __aarch64__
+	if (dbg->bits == 32) {
+		thread->count = ARM_DEBUG_STATE32_COUNT;
+		thread->flavor = ARM_DEBUG_STATE32;
+		rc = thread_get_state (thread->port, thread->flavor,
+				       (thread_state_t)&thread->debug.drx32,
+				       &thread->count);
+	} else {
+		thread->count = ARM_DEBUG_STATE64_COUNT;
+		thread->flavor = ARM_DEBUG_STATE64;
+		rc = thread_get_state (thread->port, thread->flavor,
+				       (thread_state_t)&thread->debug.drx64,
+				       &thread->count);
+	}
+#elif __arm__ || __arm || __armv7__
 	thread->count = ARM_DEBUG_STATE_COUNT;
 	thread->flavor = ARM_DEBUG_STATE;
 	rc = thread_get_state (thread->port, thread->flavor,
 			       (thread_state_t)&thread->debug.drx,
 			       &thread->count);
-#endif
+#else
+#warning xnu_thread_get_drx: Unsupported architecture
+	rc = KERN_FAILURE;
 #endif
 	if (rc != KERN_SUCCESS) {
 		thread->count = 0;
-		perror ("xnu_thread_get_drx");
+		perror (__FUNCTION__);
 		return false;
 	}
 	return true;
