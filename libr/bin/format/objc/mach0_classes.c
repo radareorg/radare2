@@ -822,10 +822,10 @@ static char *demangle_classname(const char *s) {
 		int skip = (skipnum (s + off) - s) + len;
 		if (s[skip] == 'P') {
 			skip++;
-			len = atoi (&s[skip]);
-			skip = (skipnum(s + skip) - s) + len;
+			len = atoi (s + skip);
+			skip = (skipnum (s + skip) - s) + len;
 		}
-		kstr = &s[skip];
+		kstr = s + skip;
 		len = atoi (kstr);
 		modlen = strlen (kstr);
 		if (!len || len >= modlen) {
