@@ -201,6 +201,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	hud_prompt [0] = 0;
 	user_input [0] = 0;
 	hud->top_entry_n = 0;
+	r_cons_show_cursor (false);
 	r_cons_clear ();
 
 	// Repeat until the user exits the hud
@@ -231,6 +232,9 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		r_list_foreach (filtered_list, iter, row) {
 			r_cons_printf ("%s\n", row);
 		}
+		if (!filtered_list->length) {				// hack to remove garbage value when list is empty
+			printf ("%s", R_CONS_CLEAR_LINE);
+		}
 #if !HUD_CACHE
 		r_list_free (filtered_list);
 #endif
@@ -250,6 +254,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 				if (selected_entry) {
 					R_FREE (I(line)->hud);
 					I(line)->echo = true;
+					r_cons_show_cursor (true);
 					return strdup (selected_entry);
 				} 
 			} else {
@@ -260,6 +265,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 _beach:
 	R_FREE (I(line)->hud);
 	I(line)->echo = true;
+	r_cons_show_cursor (true);
 	ht_pp_free (ht);
 	return NULL;
 }
