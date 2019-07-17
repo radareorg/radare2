@@ -1642,7 +1642,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int ch, i = 0;	/* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
-	
+
 	if (!I.hud || (I.hud && !I.hud->activate)) {
 		I.buffer.index = I.buffer.length = 0;
 		I.buffer.data[0] = '\0';
@@ -1994,8 +1994,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					/* arrows */
 					case 'A':	// up arrow
 						if (I.hud) {
-							if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
-								I.hud->top_entry_n++;
+							if (I.hud->top_entry_n >= 0) {
+								I.hud->top_entry_n--;
 							}
 						} else if (I.sel_widget) {
 							selection_widget_up (1);
@@ -2009,8 +2009,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						break;
 					case 'B':	// down arrow
 						if (I.hud) {
-							if (I.hud->top_entry_n >= 0) {
-								I.hud->top_entry_n--;
+							if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
+								I.hud->top_entry_n++;
 							}
 						} else if (I.sel_widget) {
 							selection_widget_down (1);
