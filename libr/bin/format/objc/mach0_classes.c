@@ -987,7 +987,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe) 
 	if ((r + left) < r || (r + size) < r) {
 		return;
 	}
-	if (r > bf->size || r + size >= bf->size) {
+	if (r > bf->size) {
 		return;
 	}
 	if (r + size > bf->size) {
