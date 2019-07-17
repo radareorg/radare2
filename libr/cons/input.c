@@ -151,7 +151,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 					// just for debugging
 					//eprintf ( "%c", ch);
 					if (sc > 0) {
-						if (ch >= '0'&& ch <= '9') {
+						if (ch >= '0' && ch <= '9') {
 							pos[p++] = ch;
 						}
 					}
@@ -167,19 +167,16 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 						p = 0;
 					}	
 				} while (ch != 'M' && ch != 'm');
-				// right click
-				if (atoi (vel) == 2) {
+				int nvel = atoi (vel);
+				switch (nvel) {
+				case 2: // right click
 					if (ch == 'M') {
 						return INT8_MAX;
 					}
 					return -INT8_MAX;
-				}
-				// wheel up
-				if (atoi (vel) == 64) {
+				case 64: // wheel up
 					return 'k';
-				}
-				// wheel down
-				if (atoi (vel) == 65) {
+				case 65: // wheel down
 					return 'j';
 				}
 				pos[p++] = 0;
