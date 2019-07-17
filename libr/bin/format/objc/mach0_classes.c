@@ -515,7 +515,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 	if (r + left < r || r + sizeof (struct MACH0_(SMethodList)) < r) {
 		return;
 	}
-	if (r > bf->size || r + left > bf->size) {
+	if (r > bf->size) {
 		return;
 	}
 	if (r + sizeof (struct MACH0_(SMethodList)) > bf->size) {
@@ -551,7 +551,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 		if (r + left < r || r + sizeof (struct MACH0_(SMethod)) < r) {
 			goto error;
 		}
-		if (r > bf->size || r + left > bf->size) {
+		if (r > bf->size) {
 			goto error;
 		}
 		if (r + sizeof (struct MACH0_(SMethod)) > bf->size) {
@@ -577,7 +577,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 			if (r + left < r) {
 				goto error;
 			}
-			if (r > bf->size || r + left > bf->size) {
+			if (r > bf->size || r + MAX_CLASS_NAME_LEN > bf->size) {
 				goto error;
 			}
 			if (bin->has_crypto) {
@@ -599,7 +599,9 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 		r = va2pa (m.types, NULL, &left, bf);
 		if (r != 0) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->o->bin_obj;
-
+			if (r + left > bf->size) {
+				left = bf->size - r;
+			}
 			if (r + left < r || r > bf->size || r + left > bf->size) {
 				goto error;
 			}
@@ -807,16 +809,26 @@ static char *demangle_classname(const char *s) {
 	const char *kstr;
 	char *ret, *klass, *module;
 	if (!strncmp (s, "_TtC", 4)) {
-		len = atoi (s + 4);
-		modlen = strlen (s + 4);
-		if (len >= modlen) {
+		int off = 4;
+		while (s[off] && (s[off] < '0' || s[off] > '9')) {
+			off++;
+		}
+		len = atoi (s + off);
+		modlen = strlen (s + off);
+		if (!len || len >= modlen) {
 			return strdup (s);
 		}
-		module = r_str_ndup (skipnum (s + 4), len);
-		kstr = skipnum (s + 4) + len;
+		module = r_str_ndup (skipnum (s + off), len);
+		int skip = (skipnum (s + off) - s) + len;
+		if (s[skip] == 'P') {
+			skip++;
+			len = atoi (&s[skip]);
+			skip = (skipnum(s + skip) - s) + len;
+		}
+		kstr = &s[skip];
 		len = atoi (kstr);
 		modlen = strlen (kstr);
-		if (len >= modlen) {
+		if (!len || len >= modlen) {
 			free (module);
 			return strdup (s);
 		}
@@ -854,7 +866,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 	if (r + left < r || r + sizeof (cro) < r) {
 		return;
 	}
-	if (r > bf->size || r + left > bf->size) {
+	if (r > bf->size || r + sizeof (cro) >= bf->size) {
 		return;
 	}
 	if (r + sizeof (cro) > bf->size) {
@@ -975,7 +987,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe) 
 	if ((r + left) < r || (r + size) < r) {
 		return;
 	}
-	if (r > bf->size || r + left > bf->size) {
+	if (r > bf->size || r + size >= bf->size) {
 		return;
 	}
 	if (r + size > bf->size) {
