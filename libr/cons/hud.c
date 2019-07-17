@@ -195,6 +195,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
 	RLineHud *hud = (RLineHud*) R_NEW (RLineHud);
 	hud->activate = 0;
+	hud->vi = 0;
 	I(line)->echo = false;
 	I(line)->hud = hud;
 	hud_prompt [0] = 0;

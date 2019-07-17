@@ -976,6 +976,7 @@ typedef struct r_hud_t {
 	int current_entry_n;
 	int top_entry_n;
 	char activate;
+	int vi;
 } RLineHud;
 
 typedef struct r_line_t RLine; // forward declaration

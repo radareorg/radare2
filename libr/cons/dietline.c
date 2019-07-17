@@ -1462,7 +1462,9 @@ static void __vi_mode () {
 	static int gcomp = 0;
 	for (;;) {
 		int rep = 0;
-		__print_prompt ();
+		if (I.echo) {
+			__print_prompt ();
+		}
 		if (mode != CONTROL_MODE) {		// exit if insert mode is selected
 			break;
 		}
@@ -1504,6 +1506,9 @@ static void __vi_mode () {
 						kill_Word ();
 						backward_kill_word ();
 					}
+					if (I.hud) {
+						I.hud->vi = false;
+					}
 					} break;
 				case 'W':
 					kill_Word ();
@@ -1536,6 +1541,9 @@ static void __vi_mode () {
 			}
 			} break;
 		case 'I':
+			if (I.hud) {
+				I.hud->vi = false;
+			}
 			mode = INSERT_MODE;
 		case '^':
 		case '0': 
@@ -1561,13 +1569,14 @@ static void __vi_mode () {
 		case 'p': 
 			while (rep--) {
 				paste ();
-				__print_prompt();
 			} break;
 		case 'a':
 			__move_cursor_right ();
-			__print_prompt ();
 		case 'i': 
 			mode = INSERT_MODE;
+			if (I.hud) {
+				I.hud->vi = false;
+			}
 			break;
 		case 'h': 
 			while (rep--) {
@@ -1623,6 +1632,9 @@ static void __vi_mode () {
 			}
 		} break;
 		}
+		if (I.hud) {
+			return;
+		}
 	}
 }
 
@@ -1650,6 +1662,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.hud->activate = true;
 		}
 	}
+	if (I.hud && I.hud->vi) {
+		__vi_mode ();
+		goto _end;
+	} 
 	if (I.contents) {
 		memmove (I.buffer.data, I.contents,
 			R_MIN (strlen (I.contents) + 1, R_LINE_BUFSIZE - 1));
@@ -1771,6 +1787,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 3:	// ^C
+			if (I.hud) {
+				I.hud->activate = false;
+				I.hud->current_entry_n = -1;
+			}
 			if (I.echo) {
 				eprintf ("^C\n");
 			}
@@ -1896,12 +1916,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				backward_kill_word ();
 				break;
 			case -1:  // escape key, goto vi mode
-				if (I.hud) {
-					I.hud->activate = false;
-					I.hud->current_entry_n = -1;
-					break;
-				}
 				if (I.vi_mode) {
+					if (I.hud) {
+						I.hud->vi = true;
+					}
 					__vi_mode ();
 				};
 				if (I.sel_widget) {
@@ -2134,6 +2152,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 8:
 		case 127:
+			if (I.hud && (I.buffer.index == 0)) {
+				I.hud->activate = false;
+				I.hud->current_entry_n = -1;
+			}
 			if (I.buffer.index < I.buffer.length) {
 				if (I.buffer.index > 0) {
 					int len = 0;
