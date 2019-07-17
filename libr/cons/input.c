@@ -143,13 +143,19 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				int x = 0;
 				int y = 0;
 				int sc = 0;
+
+				char vel[8] = {0};
+				int vn = 0;
 				do {
 					ch = r_cons_readchar ();
-					eprintf ( "%c", ch);
+					//eprintf ( "%c", ch);
 					if (sc > 0) {
 						if (ch >= '0'&& ch <= '9') {
 							pos[p++] = ch;
 						}
+					}
+					if (sc < 1) {
+						vel[vn++] = ch;
 					}
 					if (ch == ';') {
 						if (sc == 1) {
@@ -160,6 +166,12 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 						p = 0;
 					}	
 				} while (ch != 'M' && ch != 'm');
+				if (atoi (vel) == 64) {
+					return 'k';
+				}
+				if (atoi (vel) == 65) {
+					return 'j';
+				}
 				pos[p++] = 0;
 				y = atoi (pos);
 				// M is mouse down , m is mouse up

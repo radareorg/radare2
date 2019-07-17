@@ -3378,7 +3378,8 @@ char *__print_decompiler_cb(void *user, void *p) {
 	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	char *cmdstr = NULL;
 	if (func && core->panels_root->cur_pdc_cache) {
-		cmdstr = (char *)sdb_ptr_get (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), 0);
+		cmdstr = r_str_new ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
+					r_num_as_string (NULL, func->addr, false), 0));
 	}
 	if (cmdstr) {
 		return cmdstr;
@@ -3396,7 +3397,7 @@ char *__print_decompiler_cb(void *user, void *p) {
 				sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), r_str_new (cmdstr), 0);
 				core->panels_root->cur_pdc_cache = sdb;
 				if (!sdb_exists (core->panels_root->pdc_caches, pdc_now)) {
-					sdb_ptr_set (core->panels_root->pdc_caches, pdc_now, sdb, 0);
+					sdb_ptr_set (core->panels_root->pdc_caches, r_str_new (pdc_now), sdb, 0);
 				}
 			}
 		}
@@ -5511,10 +5512,10 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 		const char *pdc_now = r_config_get (core->config, "cmd.pdc");
 		if (sdb_exists (panels_root->pdc_caches, pdc_now)) {
-			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, pdc_now, 0);
+			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, r_str_new (pdc_now), 0);
 		} else {
 			Sdb *sdb = sdb_new0();
-			sdb_ptr_set (panels_root->pdc_caches, pdc_now, sdb, 0);
+			sdb_ptr_set (panels_root->pdc_caches, r_str_new (pdc_now), sdb, 0);
 			panels_root->cur_pdc_cache = sdb;
 		}
 	}
