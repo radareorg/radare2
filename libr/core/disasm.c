@@ -4782,7 +4782,11 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	if (fcn) {
 		name = fcn->name;
 	} else if (f) {
-		RBinReloc *rel = r_core_getreloc (ds->core, addr, ds->analop.size);
+		RBinReloc *rel;
+		rel = r_core_getreloc (ds->core, ds->analop.addr, ds->analop.size);
+		if (!rel) {
+			rel = r_core_getreloc (ds->core, addr, ds->analop.size);
+		}
 		if (rel) {
 			if (rel && rel->import && rel->import->name) {
 				name = rel->import->name;
