@@ -5138,9 +5138,9 @@ toro:
 			if (!ds->pseudo) {
 				R_FREE (ds->opstr);
 			}
-			ds_print_demangled (ds);
 			ds_print_sysregs (ds);
 			ds_print_fcn_name (ds);
+			ds_print_demangled (ds);
 			ds_print_color_reset (ds);
 			if (ds->show_emu) {
 				ds_print_esil_anal (ds);
@@ -5273,9 +5273,9 @@ toro:
 			ds_cdiv_optimization (ds);
 			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 				ds_print_ptr (ds, len + 256, idx);
-				ds_print_demangled (ds);
 				ds_print_sysregs (ds);
 				ds_print_fcn_name (ds);
+				ds_print_demangled (ds);
 				ds_print_color_reset (ds);
 				ds_print_comments_right (ds);
 				ds_print_esil_anal (ds);
