@@ -41,13 +41,14 @@ endif
 
 RANLIB=${CROSS}ranlib
 AR=${CROSS}ar
-CC_AR=${AR} -r ${LIBAR}
-PARTIALLD=${CROSS}ld -r --whole-archive
+CC_AR=${CROSS}ar -r ${LIBAR}
+PARTIALLD=${CROSS}ld -r -all_load
 ONELIB=0
 OSTYPE=android
 LINK=
 #CC_AR=ndk-ar -r ${LIBAR}
 PICFLAGS=-fPIC -fpic
+LDFLAGS_LIB=-shared
 CFLAGS+=${PICFLAGS}
 CC_LIB=${CC} -shared -o
 CFLAGS_INCLUDE=-I
