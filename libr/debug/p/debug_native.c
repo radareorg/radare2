@@ -580,7 +580,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			 *
 			 * this might modify dbg->reason.signum
 			 */
-#if __OpenBSD__ || __NetBSD__
+#if __FreeBSD__ || __OpenBSD__ || __NetBSD__
 			reason = R_DEBUG_REASON_BREAKPOINT;
 #elif __KFBSD__
 			// Trying to figure out a bit by the signal
