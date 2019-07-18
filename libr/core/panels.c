@@ -332,6 +332,7 @@ static bool __checkPanelNum(RCore *core);
 static bool __checkFunc(RCore *core);
 static bool __checkFuncDiff(RCore *core, RPanel *p);
 static bool __check_root_state(RCore *core, RPanelsRootState state);
+static bool __check_if_addr(const char *c, int len);
 
 /* add */
 static void __addHelpPanel(RCore *core);
@@ -592,6 +593,20 @@ static void __handle_refs(RCore *core, RPanel *panel, ut64 tmp);
 static void __undoSeek(RCore *core);
 static void __redoSeek(RCore *core);
 static void __cache_white_list(RCore *core, RPanel *panel);
+
+bool __check_if_addr(const char *c, int len) {
+	if (len < 2) {
+		return false;
+	}
+	int i = 0;
+	for (; i < len; i++) {
+		if (R_STR_ISNOTEMPTY (c + i) && R_STR_ISNOTEMPTY (c+ i + 1) &&
+				c[i] == '0' && c[i + 1] == 'x') {
+			return true;
+		}
+	}
+	return false;
+}
 
 void __shrink_panels_forward(RCore *core, int target) {
 	RPanels *panels = core->panels;
@@ -5891,6 +5906,12 @@ repeat:
 					goto skip;
 				}
 				if (word) {
+					if (__check_panel_type (cur, PANEL_CMD_FUNCTION , strlen (PANEL_CMD_FUNCTION)) &&
+							__check_if_addr(word, strlen (word))) {
+						const ut64 addr = r_num_math (core->num, word);
+						r_core_seek (core, addr, 1);
+						__setAddrByType (core, PANEL_CMD_DISASSEMBLY, addr);
+					}
 					r_config_set (core->config, "scr.highlight", word);
 					free (word);
 				}
@@ -5911,7 +5932,6 @@ repeat:
 					}
 				}
 				goto repeat;
-				key = 'c'; // toggle cursor
 			}
 		} else {
 			goto repeat;
