@@ -1614,7 +1614,7 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 	/* if something went wrong this will prevent bad behavior */
 	r_line_completion_clear (completion);
 	switch (parent->type) {
-	case R_CORE_AUTOCMPLT_S:
+	case R_CORE_AUTOCMPLT_SEEK:
 		autocomplete_functions (core, completion, p);
 	case R_CORE_AUTOCMPLT_FLAG:
 		autocomplete_flags (core, completion, p);
@@ -2315,7 +2315,7 @@ static void r_core_sleep_end (RCore *core, void *user) {
 static void __init_autocomplete_default (RCore* core) {
 	int i;
 	r_core_autocomplete_add (core->autocomplete, "*", R_CORE_AUTOCMPLT_FLAG, true);
-	r_core_autocomplete_add (core->autocomplete, "s", R_CORE_AUTOCMPLT_S, true);
+	r_core_autocomplete_add (core->autocomplete, "s", R_CORE_AUTOCMPLT_SEEK, true);
 	r_core_autocomplete_add (core->autocomplete, "s+", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "b", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "f", R_CORE_AUTOCMPLT_FLAG, true);
