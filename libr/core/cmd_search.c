@@ -2192,10 +2192,10 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	bool everyByte = regexp && input[2] == 'a';
 	char *end_cmd = strstr (input, " ");
 	int outmode;
-	if (!regexp && input[1] == 'a') {
+	if (mode == 'o') {
 		everyByte = true;
 	}
-	if (regexp && input[2] == 'j') {
+	if (input[0] && input[1] && input[2] == 'j') {
 		json = true;
 	}
 	if (input[1] && input[2] == 'j') {
@@ -3204,6 +3204,9 @@ reread:
 		} else if (input[1] == 'c') { // "/ac"
 			dosearch = 0;
 			do_asm_search (core, &param, input + 2, 'c', search_itv);
+		} else if (input[1] == 'o') { // "/ao"
+			dosearch = 0;
+			do_asm_search (core, &param, input + 2, 'o', search_itv);
 		} else if (input[1] == 'a') { // "/aa"
 			dosearch = 0;
 			do_asm_search (core, &param, input + 2, 'i', search_itv);
