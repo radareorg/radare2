@@ -3011,7 +3011,8 @@ reread:
 		goto reread;
 	case 'o': { // "/o" print the offset of the Previous opcode
 		ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
-		if (!n) {
+		n = R_ABS((st64)n);
+		if (((st64)n) < 1) {
 			n = 1;
 		}
 		if (!r_core_prevop_addr (core, core->offset, n, &addr)) {
