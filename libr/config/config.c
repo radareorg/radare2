@@ -573,14 +573,47 @@ static void __evalString(RConfig *cfg, char *name) {
 	if (!*name) {
 		return;
 	}
-	char *eq = strchr (name, '=');
-	if (eq) {
-		*eq++ = 0;
-		r_str_trim (name);
-		r_str_trim (eq);
-		if (*name) {
-			(void) r_config_set (cfg, name, eq);
+	r_str_trim (name);
+	char *eq = NULL;
+	if (r_str_endswith (name, "\"")) {
+		char *startquote = strchr (name, '\"');
+		bool valid = false;
+		if (startquote - name != strlen (name) - 1) {
+			int i;
+			for (i = 1; i < startquote - name; i++) {
+				char *ch = startquote - i;
+				if (*ch == '=') {
+					*ch = '\0';
+					valid = true;
+					break;
+				} else if (*ch != ' ') {
+					// `e something = other"thing"`
+					break;
+				}
+			}
+			if (valid) {
+				// If we have `e something = "oth=er " w=h"onows  "`
+				eq = startquote;
+				*eq++ = 0;
+				eq[strlen (eq) - 1] = '\0';
+			}
 		}
+	}
+	if (!eq) {
+		eq = strrchr (name, '=');
+		if (eq) {
+			*eq++ = 0;
+			r_str_trim (eq);
+		}
+	}
+	if (eq) {
+		char *tok = strtok (name, "=");
+		do {
+			r_str_trim (name);
+			if (*name) {
+				(void)r_config_set (cfg, name, eq);
+			}
+		} while (name = strtok (NULL, "="));
 	} else {
 		if (r_str_endswith (name, ".")) {
 			r_config_list (cfg, name, 0);
