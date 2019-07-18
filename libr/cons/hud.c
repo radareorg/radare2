@@ -244,7 +244,8 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		memset (hud_prompt, 0, HUD_BUF_SIZE + 1);
 		strcpy (user_input, I(line)->buffer.data); 				// to search
 		strcpy (hud_prompt, user_input); 					// to display
-		for (int i = I(line)->buffer.length; i > I(line)->buffer.index; i--) {
+		int i;
+		for (i = I(line)->buffer.length; i > I(line)->buffer.index; i--) {
 			hud_prompt[i] = hud_prompt[i - 1];
 		}
 		memcpy (hud_prompt + I(line)->buffer.index, "|", 1);
