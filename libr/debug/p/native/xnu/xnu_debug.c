@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2017 - pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2015-2019 - pancake, alvaro_fe */
 
 #include <r_userconf.h>
 #if DEBUGGER
@@ -84,7 +84,6 @@ static thread_t getcurthread (RDebug *dbg) {
 }
 
 static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
-	RListIter *it = NULL;
 	if (!dbg || tid < 0) {
 		return NULL;
 	}
@@ -93,7 +92,7 @@ static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 		return NULL;
 	}
 	//TODO get the current thread
-	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
+	RListIter *it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
 			  (RListComparator)&thread_find);
 	if (!it) {
 		tid = getcurthread (dbg);
@@ -175,7 +174,6 @@ bool xnu_step(RDebug *dbg) {
 	}
 	return ret;
 #else
-	int ret = 0;
 	//we must find a way to get the current thread not just the first one
 	task_t task = pid_to_task (dbg->pid);
 	if (!task) {
@@ -186,7 +184,7 @@ bool xnu_step(RDebug *dbg) {
 	if (!th) {
 		return false;
 	}
-	ret = set_trace_bit (dbg, th);
+	int ret = set_trace_bit (dbg, th);
 	if (!ret) {
 		eprintf ("xnu_step modificy_trace_bit error\n");
 		return false;
@@ -199,11 +197,11 @@ bool xnu_step(RDebug *dbg) {
 
 int xnu_attach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
-#if PT_ATTACHEXC
+  #if PT_ATTACHEXC
 	if (r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0) == -1) {
-#else
+  #else
 	if (r_debug_ptrace (dbg, PT_ATTACH, pid, 0, 0) == -1) {
-#endif
+  #endif
 		perror ("ptrace (PT_ATTACH)");
 		return -1;
 	}
@@ -257,16 +255,12 @@ int xnu_stop(RDebug *dbg, int pid) {
 	eprintf ("xnu_stop: not implemented\n");
 	return false;
 #else
-	kern_return_t kr;
-	task_t task;
-	int suspend_count;
-
-	task = pid_to_task (pid);
+	task_t task = pid_to_task (pid);
 	if (!task) {
 		return false;
 	}
 
-	suspend_count = task_suspend_count (task);
+	int suspend_count = task_suspend_count (task);
 	if (suspend_count == -1) {
 		return false;
 	}
@@ -279,7 +273,7 @@ int xnu_stop(RDebug *dbg, int pid) {
 		return false;
 	}
 
-	kr = task_suspend (task);
+	kern_return_t kr = task_suspend (task);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("failed to suspend task\n");
 		return false;
@@ -302,7 +296,6 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 			(int)(size_t)data) == 0;
 #else
 	task_t task = pid_to_task (pid);
-	kern_return_t kr;
 	if (!task) {
 		return false;
 	}
@@ -319,14 +312,10 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 			return false;
 		}
 	}
-	kr = task_resume (task);
-#if 0
-// it fails because the process is in a syscall like read() waiting to finish
-// so it cant resume
+	kern_return_t kr = task_resume (task);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Failed to resume task xnu_continue\n");
+		eprintf ("xnu_continue: Warning: Failed to resume task\n");
 	}
-#endif
 	return true;
 #endif
 }
@@ -370,12 +359,14 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		memcpy (&th->drx.uds.ds32, buf, R_MIN (size, sizeof (th->drx)));
 #elif __i386__
 		memcpy (&th->drx.uds.ds64, buf, R_MIN (size, sizeof (th->drx)));
-#elif __arm || __arm64 || __aarch64
-#if defined (ARM_DEBUG_STATE32) && (defined (__arm64__) || defined (__aarch64__))
-		memcpy (&th->debug.drx32, buf, R_MIN (size, sizeof (th->debug.drx32)));
-#else
+#elif __arm64 || __aarch64
+		if (dbg->bits == R_SYS_BITS_64) {
+			memcpy (&th->debug.drx64, buf, R_MIN (size, sizeof (th->debug.drx64)));
+		} else {
+			memcpy (&th->debug.drx32, buf, R_MIN (size, sizeof (th->debug.drx32)));
+		}
+#elif __arm || __armv7 || __arm__ || __armv7__
 		memcpy (&th->debug.drx, buf, R_MIN (size, sizeof (th->debug.drx)));
-#endif
 #endif
 		ret = xnu_thread_set_drx (dbg, th);
 		break;

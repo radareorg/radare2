@@ -74,10 +74,12 @@ if [ $onlymakedeb = 1 ]; then
 	makeDeb
 else
 	if [ $fromscratch = 1 ]; then
-		make clean
-		./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
-			--with-compiler=ios-sdk --target=arm-unknown-darwin
-		RV=$?
+		(cd libr/debug ; make clean)
+		#make clean
+		#./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
+		#	--with-compiler=ios-sdk --target=arm-unknown-darwin
+		#RV=$?
+RV=0
 	else
 		RV=0
 	fi
