@@ -63,6 +63,39 @@ static bool is_qualifier_const(mpc_ast_t *a) {
 		&& strcmp (a->contents, "const") == 0;
 }
 
+static bool is_identifier_string(mpc_ast_t *a) {
+	return strcmp (a->tag, "identifier|regex") == 0
+		&& a->contents;
+}
+
+static bool is_non_const_pointer(mpc_ast_t *a) {
+	return strcmp (a->tag, "pointer|char") == 0
+		&& a->contents
+		&& strcmp (a->contents, "*") == 0;
+}
+
+static bool is_const_pointer(mpc_ast_t *a) {
+	return strcmp (a->tag, "pointer|>") == 0
+		&& a->children_num == 2
+		&& is_qualifier_const (a->children[0])
+		&& strcmp (a->children[1]->tag, "char") == 0
+		&& a->children[1]->contents
+		&& strcmp (a->children[1]->contents, "*") == 0;
+}
+
+static bool is_array(mpc_ast_t *a) {
+	return strcmp (a->tag, "array|>") == 0
+		&& a->children_num == 3
+		&& strcmp (a->children[0]->tag, "char") == 0
+		&& a->children[0]->contents
+		&& strcmp (a->children[0]->contents, "[") == 0
+		&& strcmp (a->children[1]->tag, "integerlit|regex") == 0
+		&& a->children[1]->contents
+		&& strcmp (a->children[2]->tag, "char") == 0
+		&& a->children[2]->contents
+		&& strcmp (a->children[2]->contents, "]") == 0;
+}
+
 static RParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 	bool is_const = false;
 	RParseCTypeType *cur = NULL;
@@ -76,8 +109,7 @@ static RParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 		}
 
 		// <identifier>
-		else if (strcmp (child->tag, "identifier|regex") == 0
-			&& child->contents) {
+		else if (is_identifier_string (child)) {
 			if (cur) {
 				// identifier should always be the innermost type
 				goto beach;
@@ -96,9 +128,7 @@ static RParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 		}
 
 		// *
-		else if (strcmp (child->tag, "pointer|char") == 0
-				&& child->contents
-				&& strcmp (child->contents, "*") == 0) { // *
+		else if (is_non_const_pointer (child)) {
 			RParseCTypeType *pointer = R_NEW0 (RParseCTypeType);
 			if (!pointer) {
 				goto beach;
@@ -110,12 +140,7 @@ static RParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 		}
 
 		// const *
-		else if (strcmp (child->tag, "pointer|>") == 0
-				&& child->children_num == 2
-				&& is_qualifier_const (child->children[0])
-				&& strcmp (child->children[1]->tag, "char") == 0
-				&& child->children[1]->contents
-				&& strcmp (child->children[1]->contents, "*") == 0) {
+		else if (is_const_pointer (child)) {
 			RParseCTypeType *pointer = R_NEW0 (RParseCTypeType);
 			if (!pointer) {
 				goto beach;
@@ -127,16 +152,7 @@ static RParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 		}
 
 		// <array>
-		else if (strcmp (child->tag, "array|>") == 0
-				&& child->children_num == 3
-				&& strcmp (child->children[0]->tag, "char") == 0
-				&& child->children[0]->contents
-				&& strcmp (child->children[0]->contents, "[") == 0
-				&& strcmp (child->children[1]->tag, "integerlit|regex") == 0
-				&& child->children[1]->contents
-				&& strcmp (child->children[2]->tag, "char") == 0
-				&& child->children[2]->contents
-				&& strcmp (child->children[2]->contents, "]") == 0) {
+		else if (is_array (child)) {
 			RParseCTypeType *array = R_NEW0 (RParseCTypeType);
 			if (!array) {
 				goto beach;
