@@ -956,40 +956,41 @@ static bool parseOpcode(const char *str, ArmOp *op) {
 static bool handlePAC(ut32 *op, const char *str) {
 	if (!strcmp (str, "autiasp")) {
 		*op = 0xbf2303d5;
-		return *op != -1;
+		return true;
 	}
 	if (!strcmp (str, "autiaz")) {
 		*op = 0x9f2303d5;
-		return *op != -1;
+		return true;
 	}
 	if (!strcmp (str, "autibsp")) {
 		*op = 0xff2303d5;
-		return *op != -1;
+		return true;
 	}
 	if (!strcmp (str, "autibz")) {
 		*op = 0xdf2303d5;
-		return *op != -1;
+		return true;
 	}
 	if (!strcmp (str, "paciaz")) {
 		*op = 0x1f2303d5;
-		return *op != -1;
+		return true;
 	}
 	if (!strcmp (str, "pacibz")) {
 		*op = 0x5f2303d5;
-		return *op != -1;
+		return true;
 	}
 	if (!strcmp (str, "paciasp")) {
 		*op = 0x3f2303d5;
-		return *op != -1;
+		return true;
 	}
 	if (!strcmp (str, "pacibsp")) {
 		*op = 0x7f2303d5;
-		return *op != -1;
+		return true;
 	}
 	if (!strcmp (str, "retab")) {
 		*op = 0xff0f5fd6;
-		return *op != -1;
+		return true;
 	}
+	return false;
 }
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
