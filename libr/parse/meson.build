@@ -2,6 +2,7 @@ r_parse_sources = [
   'code.c',
   'filter.c',
   'parse.c',
+  'ctype.c',
   'p/parse_6502_pseudo.c',
   'p/parse_arm_pseudo.c',
   'p/parse_att2intel.c',
@@ -27,7 +28,8 @@ r_parse = library('r_parse', r_parse_sources,
     r_reg_dep,
     r_cons_dep,
     sdb_dep,
-    tcc_dep
+    tcc_dep,
+    mpc_dep
   ],
   install: true,
   implicit_include_directories: false,
