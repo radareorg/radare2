@@ -8,6 +8,9 @@ DEPS+=r_cons
 LINK+=$(STOP)/tcc/libr_tcc.a
 CFLAGS+=-I$(STOP)/tcc/
 
+LINK+=$(STOP)/mpc/libmpc.a
+CFLAGS+=-I$(STOP)/mpc/
+
 include $(SHLR)/zip/deps.mk
 
 foo:
