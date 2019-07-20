@@ -297,6 +297,7 @@ static void __freeAllPanels(RPanels *panels);
 /* get */
 static RPanel *__getPanel(RPanels *panels, int i);
 static RPanel *__getCurPanel(RPanels *panels);
+static int __get_panel_idx_in_pos(RCore *core, int x, int y);
 static RPanels *__get_panels(RPanelsRoot *panels_root, int i);
 static RPanels *__get_cur_panels(RPanelsRoot *panels_root);
 static char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y);
@@ -786,6 +787,20 @@ RPanel *__getCurPanel(RPanels *panels) {
 	return __getPanel (panels, panels->curnode);
 }
 
+int __get_panel_idx_in_pos(RCore *core, int x, int y) {
+	RPanels *panels = core->panels;
+	int i = -1;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p = __getPanel (panels, i);
+		if (x >= p->view->pos.x && x < p->view->pos.x + p->view->pos.w) {
+			if (y >= p->view->pos.y && y < p->view->pos.y + p->view->pos.h) {
+				break;
+			}
+		}
+	}
+	return i;
+}
+
 void __handlePrompt(RCore *core, RPanels *panels) {
 	r_core_visual_prompt_input (core);
 	int i;
@@ -896,10 +911,10 @@ void __defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int w, in
 	} else {
 		if (!strcmp (panel->model->title, cmd_title)) {
 			snprintf (title, sizeof (title) - 1,
-					"   %s   ", panel->model->title);
+					"[X]   %s   ", panel->model->title);
 		} else {
 			snprintf (title, sizeof (title) - 1,
-					"   %s (%s)  ", panel->model->title, cmd_title);
+					"[X]   %s (%s)  ", panel->model->title, cmd_title);
 		}
 		snprintf (cache_title, sizeof (cache_title) - 1,
 				"[Cache] %s", readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
@@ -1571,7 +1586,6 @@ bool __handleCursorMode(RCore *core, const int key) {
 
 bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	const int MENU_Y = 1;
-	RPanelsRoot *panels_root = core->panels_root;
 	RPanels *panels = core->panels;
 	int i;
 	if (*key == 0) {
@@ -1603,7 +1617,6 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 				}
 				if (atoi (word)) {
 					__handle_tab_nth (core, word[0]);
-					panels_root->root_state = QUIT;
 					return true;
 				}
 			} else if (panels->mode == PANEL_MODE_MENU) {
@@ -1625,10 +1638,17 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 				return true;
 			} else {
 				// TODO: select nth panel here
-				if (r_str_endswith (word, "X]")) {
-					*key = 'X';
-					free (word);
+				const int idx = __get_panel_idx_in_pos (core, x, y);
+				if (idx == -1) {
 					return false;
+				}
+				RPanel *ppos = __getPanel(panels, idx);
+				const int TITLE_Y = ppos->view->pos.y + 2;
+				if (y == TITLE_Y && strcmp (word, " X ")) {
+					__dismantleDelPanel (core, ppos, idx);
+					__setRefreshAll (core, false, false);
+					free (word);
+					return true;
 				}
 				if (word) {
 					if (__check_panel_type (panel, PANEL_CMD_FUNCTION , strlen (PANEL_CMD_FUNCTION)) &&
@@ -1640,22 +1660,12 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 					r_config_set (core->config, "scr.highlight", word);
 					free (word);
 				}
-				int i;
-				for (i = 0; i < panels->n_panels; i++) {
-					RPanel *p = __getPanel (panels, i);
-					if (x >= p->view->pos.x && x < p->view->pos.x + p->view->pos.w) {
-						if (y >= p->view->pos.y && y < p->view->pos.y + p->view->pos.h) {
-							if (x >= p->view->pos.x && x < p->view->pos.x + 4) {
-								*key = 'c';
-								return false;
-							}
-							panels->curnode = i;
-							__set_curnode(core, i);
-							__setRefreshAll (core, true, true);
-							break;
-						}
-					}
+				if (x >= ppos->view->pos.x && x < ppos->view->pos.x + 4) {
+					*key = 'c';
+					return false;
 				}
+				__set_curnode(core, idx);
+				__setRefreshAll (core, true, true);
 				return true;
 			}
 		} else {
