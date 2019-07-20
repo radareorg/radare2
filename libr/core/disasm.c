@@ -3234,7 +3234,8 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 	if (!f && ds->core->flags) {
 		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
 		                                        R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
-		if (flag && flag->name && ds->opstr && !strstr (ds->opstr, flag->name)) {
+		if (flag && flag->name && ds->opstr && !strstr (ds->opstr, flag->name)
+		    && (r_str_startswith (flag->name, "sym.") || r_str_startswith (flag->name, "method."))) {
 			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s", flag->name);
 			return;
