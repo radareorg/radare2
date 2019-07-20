@@ -419,6 +419,7 @@ static void __setMode(RCore *core, RPanelsMode mode);
 static bool __handleZoomMode(RCore *core, const int key);
 static bool __handleWindowMode(RCore *core, const int key);
 static bool __handleCursorMode(RCore *core, const int key);
+static bool __handle_mouse(RCore *core, RPanel *panel, int *key);
 static void __toggleZoomMode(RCore *core);
 static void __toggleWindowMode(RCore *core);
 
@@ -1566,6 +1567,106 @@ bool __handleCursorMode(RCore *core, const int key) {
 		break;
 	}
 	return true;
+}
+
+bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
+	const int MENU_Y = 1;
+	RPanelsRoot *panels_root = core->panels_root;
+	RPanels *panels = core->panels;
+	int i;
+	if (*key == 0) {
+		int x, y;
+		if (r_cons_get_click (&x, &y)) {
+			char *word = get_word_from_canvas (core, panels, x, y);
+			if (y == MENU_Y) {
+				for (i = 0; i < COUNT (menus); i++) {
+					if (!strcmp (word, menus[i])) {
+						__setMode (core, PANEL_MODE_MENU);
+						__clearPanelsMenu (core);
+						RPanelsMenu *menu = panels->panelsMenu;
+						RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+						parent->selectedIndex = i;
+						RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+						(void)(child->cb (core));
+						__setRefreshAll (core, false, false);
+						free (word);
+						return true;
+					}
+				}
+				if (!strcmp (word, "Tab")) {
+					__handle_tab_new (core);
+					free (word);
+					return true;
+				}
+				if (word[0] == '[' && word[1] && word[2] == ']') {
+					return true;
+				}
+				if (atoi (word)) {
+					__handle_tab_nth (core, word[0]);
+					panels_root->root_state = QUIT;
+					return true;
+				}
+			} else if (panels->mode == PANEL_MODE_MENU) {
+				char *word = get_word_from_canvas_for_menu (core, panels, x, y);
+				RPanelsMenu *menu = panels->panelsMenu;
+				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+				for (i = 0; i < parent->n_sub; i++) {
+					if (!strcmp (word, parent->sub[i]->get_name_cb (core, parent->sub[i]->base_name))) {
+						parent->selectedIndex = i;
+						(void)(parent->sub[parent->selectedIndex]->cb (core));
+						__moveMenuCursor (core, menu, parent);
+						free (word);
+						return true;
+					}
+				}
+				__clearPanelsMenu (core);
+				__setMode (core, PANEL_MODE_DEFAULT);
+				__getCurPanel (panels)->view->refresh = true;
+				return true;
+			} else {
+				// TODO: select nth panel here
+				if (r_str_endswith (word, "X]")) {
+					*key = 'X';
+					free (word);
+					return false;
+				}
+				if (word) {
+					if (__check_panel_type (panel, PANEL_CMD_FUNCTION , strlen (PANEL_CMD_FUNCTION)) &&
+							__check_if_addr(word, strlen (word))) {
+						const ut64 addr = r_num_math (core->num, word);
+						r_core_seek (core, addr, 1);
+						__setAddrByType (core, PANEL_CMD_DISASSEMBLY, addr);
+					}
+					r_config_set (core->config, "scr.highlight", word);
+					free (word);
+				}
+				int i;
+				for (i = 0; i < panels->n_panels; i++) {
+					RPanel *p = __getPanel (panels, i);
+					if (x >= p->view->pos.x && x < p->view->pos.x + p->view->pos.w) {
+						if (y >= p->view->pos.y && y < p->view->pos.y + p->view->pos.h) {
+							if (x >= p->view->pos.x && x < p->view->pos.x + 4) {
+								*key = 'c';
+								return false;
+							}
+							panels->curnode = i;
+							__set_curnode(core, i);
+							__setRefreshAll (core, true, true);
+							break;
+						}
+					}
+				}
+				return true;
+			}
+		} else {
+			return false;
+		}
+	}
+	if (*key == INT8_MAX) {
+		*key = '"';
+		return false;
+	}
+	return false;
 }
 
 void __jmp_to_cursor_addr(RCore *core, RPanel *panel) {
@@ -5861,101 +5962,15 @@ repeat:
 	} else {
 		okey = r_cons_readchar ();
 	}
+
 	key = r_cons_arrow_to_hjkl (okey);
-	if (key == 0) {
-		int x, y;
-		if (r_cons_get_click (&x, &y)) {
-			char *word = get_word_from_canvas (core, panels, x, y);
-			if (y == 1) { // click on first line (The menu
-				for (i = 0; i < COUNT (menus); i++) {
-					if (!strcmp (word, menus[i])) {
-						__setMode (core, PANEL_MODE_MENU);
-						__clearPanelsMenu (core);
-						RPanelsMenu *menu = panels->panelsMenu;
-						RPanelsMenuItem *parent = menu->history[menu->depth - 1];
-						parent->selectedIndex = i;
-						RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-						(void)(child->cb (core));
-						__setRefreshAll (core, false, false);
-						free (word);
-						goto repeat;
-					}
-				}
-				if (!strcmp (word, "Tab")) {
-					__handle_tab_new (core);
-					free (word);
-					goto repeat;
-				}
-				if (word[0] == '[' && word[1] && word[2] == ']') {
-					goto repeat;
-				}
-				if (atoi (word)) {
-					__handle_tab_nth (core, word[0]);
-					if (panels_root->root_state != DEFAULT) {
-						goto exit;
-					}
-					goto repeat;
-				}
-			} else if (panels->mode == PANEL_MODE_MENU) {
-				char *word = get_word_from_canvas_for_menu (core, panels, x, y);
-				RPanelsMenu *menu = panels->panelsMenu;
-				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
-				for (i = 0; i < parent->n_sub; i++) {
-					if (!strcmp (word, parent->sub[i]->get_name_cb (core, parent->sub[i]->base_name))) {
-						parent->selectedIndex = i;
-						(void)(parent->sub[parent->selectedIndex]->cb (core));
-						__moveMenuCursor (core, menu, parent);
-						free (word);
-						goto repeat;
-					}
-				}
-				__clearPanelsMenu (core);
-				__setMode (core, PANEL_MODE_DEFAULT);
-				__getCurPanel (panels)->view->refresh = true;
-				goto repeat;
-			} else {
-				// TODO: select nth panel here
-				if (r_str_endswith (word, "X]")) {
-					key = 'X';
-					free (word);
-					goto skip;
-				}
-				if (word) {
-					if (__check_panel_type (cur, PANEL_CMD_FUNCTION , strlen (PANEL_CMD_FUNCTION)) &&
-							__check_if_addr(word, strlen (word))) {
-						const ut64 addr = r_num_math (core->num, word);
-						r_core_seek (core, addr, 1);
-						__setAddrByType (core, PANEL_CMD_DISASSEMBLY, addr);
-					}
-					r_config_set (core->config, "scr.highlight", word);
-					free (word);
-				}
-				int i;
-				for (i = 0; i < panels->n_panels; i++) {
-					RPanel *p = __getPanel (panels, i);
-					if (x >= p->view->pos.x && x < p->view->pos.x + p->view->pos.w) {
-						if (y >= p->view->pos.y && y < p->view->pos.y + p->view->pos.h) {
-							if (x >= p->view->pos.x && x < p->view->pos.x + 4) {
-								key = 'c';
-								goto skip;
-							}
-							panels->curnode = i;
-							__set_curnode(core, i);
-							__setRefreshAll (core, true, true);
-							break;
-						}
-					}
-				}
-				goto repeat;
-			}
-		} else {
-			goto repeat;
+	if (__handle_mouse (core, cur, &key)) {
+		if (panels_root->root_state != DEFAULT) {
+			goto exit;
 		}
+		goto repeat;
 	}
-	if (key == INT8_MAX) {
-		key = '"';
-	}
-skip:
+
 	r_cons_switchbuf (true);
 
 	if (panels->mode == PANEL_MODE_MENU) {
