@@ -62,7 +62,7 @@ HOST_CC?=gcc
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb zip java tcc
+MODS=sdb zip java tcc mpc
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
@@ -374,3 +374,10 @@ libr_shlr.${EXT_AR}:
 	${AR} crs $@ .libr/*.o
 
 .PHONY: spp
+
+.PHONY: mpc mpc-clean clean-mpc
+mpc:
+	$(MAKE) -C mpc all
+
+mpc-clean clean-mpc:
+	$(MAKE) -C mpc clean
