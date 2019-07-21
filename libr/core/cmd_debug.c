@@ -773,7 +773,6 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 
 static bool is_repeatable_inst(RCore *core, ut64 addr) {
 	RAnalOp *op = NULL;
-	ut8 buf[32];
 	bool ret = false;
 
 	if (strcmp (r_config_get (core->config, "asm.arch"), "x86")) {
