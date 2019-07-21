@@ -5,9 +5,9 @@
 #include <r_flag.h>
 #include <r_cons.h>
 
-#define vmi_class_type_info_name "obj.vtablefor__cxxabiv1::__vmi_class_type_info"
-#define class_type_info_name "obj.vtablefor__cxxabiv1::__class_type_info"
-#define si_class_type_info_name "obj.vtablefor__cxxabiv1::__si_class_type_info"
+#define vmi_class_type_info_name "obj.vtable_for___cxxabiv1::__vmi_class_type_info"
+#define class_type_info_name "obj.vtable_for___cxxabiv1::__class_type_info"
+#define si_class_type_info_name "obj.vtable_for___cxxabiv1::__si_class_type_info"
 #define NAME_BUF_SIZE 64
 
 typedef struct class_type_info_t {
