@@ -2507,6 +2507,7 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDRSB:
 	case ARM64_INS_LDRSH:
 	case ARM64_INS_LDR:
+	case ARM64_INS_LDURSW:
 	case ARM64_INS_LDP:
 	case ARM64_INS_LDNP:
 	case ARM64_INS_LDPSW:
@@ -2551,16 +2552,19 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BLRAB:
 	case ARM64_INS_BLRABZ:
 		op->family = R_ANAL_OP_FAMILY_PAC;
+		op->type = R_ANAL_OP_TYPE_RCALL;
 		break;
 	case ARM64_INS_BRAA:
 	case ARM64_INS_BRAAZ:
 	case ARM64_INS_BRAB:
 	case ARM64_INS_BRABZ:
 		op->family = R_ANAL_OP_FAMILY_PAC;
+		op->type = R_ANAL_OP_TYPE_RJMP;
 		break;
 	case ARM64_INS_LDRAA:
 	case ARM64_INS_LDRAB:
 		op->family = R_ANAL_OP_FAMILY_PAC;
+		op->type = R_ANAL_OP_TYPE_LOAD;
 		break;
 	case ARM64_INS_RETAA:
 	case ARM64_INS_RETAB:

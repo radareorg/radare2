@@ -385,6 +385,8 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 			case 64:
 				r_core_search_prelude (core, from, to, (const ut8 *) "\xf0\x00\x00\xd1", 4, (const ut8*)"\xf0\x00\x00\xff", 4);
 				r_core_search_prelude (core, from, to, (const ut8 *) "\xf0\x00\x00\xa9", 4, (const ut8*)"\xf0\x00\x00\xff", 4);
+				// PACISB : 7f2303d5 ff
+				r_core_search_prelude (core, from, to, (const ut8 *) "\x7f\x23\x03\xd5\xff", 5, NULL, 0);
 				break;
 			default:
 				if (log) {
