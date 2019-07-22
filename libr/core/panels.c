@@ -334,6 +334,7 @@ static bool __checkFunc(RCore *core);
 static bool __checkFuncDiff(RCore *core, RPanel *p);
 static bool __check_root_state(RCore *core, RPanelsRootState state);
 static bool __check_if_addr(const char *c, int len);
+static bool __check_if_cur_panel(RCore *core, RPanel *panel);
 
 /* add */
 static void __addHelpPanel(RCore *core);
@@ -357,7 +358,10 @@ static void __splitPanelVertical(RCore *core, RPanel *p, const char *name, const
 static void __splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char *cmd);
 static void __panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void __menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h);
-static void __defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int w, int h, int color);
+static void __update_help_contents(RCore *core, RPanel *panel);
+static void __update_panel_contents(RCore *core, RPanel *panel, const char *cmdstr);
+static void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr);
+static void __defaultPanelPrint(RCore *core, RPanel *panel);
 static void __resizePanelLeft(RPanels *panels);
 static void __resizePanelRight(RPanels *panels);
 static void __resizePanelUp(RPanels *panels);
@@ -506,13 +510,13 @@ static void __rotateRegisterCb (void *user, bool rev);
 static void __rotateFunctionCb (void *user, bool rev);
 
 /* print callback */
-static char *__print_default_cb(void *user, void *p);
-static char *__print_decompiler_cb(void *user, void *p);
-static char *__print_disassembly_cb(void *user, void *p);
-static char *__print_disasmsummary_cb (void *user, void *p);
-static char *__print_graph_cb(void *user, void *p);
-static char *__print_stack_cb(void *user, void *p);
-static char *__print_hexdump_cb(void *user, void *p);
+static void __print_default_cb(void *user, void *p);
+static void __print_decompiler_cb(void *user, void *p);
+static void __print_disassembly_cb(void *user, void *p);
+static void __print_disasmsummary_cb (void *user, void *p);
+static void __print_graph_cb(void *user, void *p);
+static void __print_stack_cb(void *user, void *p);
+static void __print_hexdump_cb(void *user, void *p);
 
 /* almighty callback */
 static void __create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char* title, const char *cmd);
@@ -595,6 +599,10 @@ static void __handle_refs(RCore *core, RPanel *panel, ut64 tmp);
 static void __undoSeek(RCore *core);
 static void __redoSeek(RCore *core);
 static void __cache_white_list(RCore *core, RPanel *panel);
+
+bool __check_if_cur_panel(RCore *core, RPanel *panel) {
+	return __getCurPanel (core->panels) == panel;
+}
 
 bool __check_if_addr(const char *c, int len) {
 	if (len < 2) {
@@ -827,7 +835,7 @@ void __panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
 	if (panel->model->type == PANEL_TYPE_MENU) {
 		__menuPanelPrint (can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h);
 	} else {
-		__defaultPanelPrint (core, can, panel, panel->view->pos.w, panel->view->pos.h, color);
+		__defaultPanelPrint (core, panel);
 	}
 	if (color) {
 		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, core->cons->context->pal.graph_box2);
@@ -847,44 +855,62 @@ void __menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int 
 	}
 }
 
-void __defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int w, int h, int color) {
-	char title[128], cache_title[128], *text, *cmdStr = NULL;
-	char *readOnly = panel->model->readOnly;
-	char *cmd_title  = __apply_filter_cmd (core, panel);
-	int graph_pad = __check_panel_type (panel, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH)) ? 1 : 0;
-	bool o_cur = core->print->cur_enabled;
-	core->print->cur_enabled = o_cur & (__getCurPanel (core->panels) == panel);
+void __update_help_contents(RCore *core, RPanel *panel) {
+	char *read_only = panel->model->readOnly;
+	char *text = NULL;
+	int sx = panel->view->sx;
+	int sy = R_MAX (panel->view->sy, 0);
+	int w = panel->view->pos.w;
+	int h = panel->view->pos.h;
+	RPanels *panels = core->panels;
+	RConsCanvas *can = panels->can;
 	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
-	if (readOnly) {
-		cmdStr = readOnly;
-	} else {
-		if (panel->model->cmd) {
-			cmdStr = panel->model->print_cb (core, panel);
-		}
-	}
-	int x = panel->view->sx;
-	int y = panel->view->sy;
-	if (y < 0) {
-		y = 0;
-	}
-	bool b = __is_abnormal_cursor_type (core, panel) && core->print->cur_enabled;
-	if (b) {
-		x = -2;
-	}
-	if (x < 0) {
+	if (sx < 0) {
 		char *white = (char*)r_str_pad (' ', 128);
-		int idx = R_MIN (-x, strlen (white) - 1);
+		int idx = R_MIN (-sx, strlen (white) - 1);
 		white[idx] = 0;
-		text = r_str_ansi_crop (cmdStr,
-				0, y + graph_pad, w + x - 3, h - 2 + y);
+		text = r_str_ansi_crop (read_only,
+				0, sy, w + sx - 3, h - 2 + sy);
 		char *newText = r_str_prefix_all (text, white);
 		if (newText) {
 			free (text);
 			text = newText;
 		}
 	} else {
-		text = r_str_ansi_crop (cmdStr,
-				x, y + graph_pad, w + x - 3, h - 2 + y);
+		text = r_str_ansi_crop (read_only,
+				sx, sy, w + sx - 3, h - 2 + sy);
+	}
+	if (text) {
+		r_cons_canvas_write (can, text);
+		free (text);
+	}
+}
+
+void __update_panel_contents(RCore *core, RPanel *panel, const char *cmdstr) {
+	bool b = __is_abnormal_cursor_type (core, panel) && core->print->cur_enabled;
+	int sx = b ? -2 :panel->view->sx;
+	int sy = R_MAX (panel->view->sy, 0);
+	int w = panel->view->pos.w;
+	int h = panel->view->pos.h;
+	int graph_pad = __check_panel_type (panel, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH)) ? 1 : 0;
+	char *text = NULL;
+	RPanels *panels = core->panels;
+	RConsCanvas *can = panels->can;
+	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
+	if (sx < 0) {
+		char *white = (char*)r_str_pad (' ', 128);
+		int idx = R_MIN (-sx, strlen (white) - 1);
+		white[idx] = 0;
+		text = r_str_ansi_crop (cmdstr,
+				0, sy + graph_pad, w + sx - 3, h - 2 + sy);
+		char *newText = r_str_prefix_all (text, white);
+		if (newText) {
+			free (text);
+			text = newText;
+		}
+	} else {
+		text = r_str_ansi_crop (cmdstr,
+				sx, sy + graph_pad, w + sx - 3, h - 2 + sy);
 	}
 	if (text) {
 		r_cons_canvas_write (can, text);
@@ -895,10 +921,73 @@ void __defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int w, in
 		(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2 + sub);
 		r_cons_canvas_write (can, "*");
 	}
-	if (!panel->model->cmdStrCache && !readOnly) {
-		free (cmdStr);
+}
+
+//TODO: make this a task
+void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
+	RPanels *panels = core->panels;
+	RConsCanvas *can = panels->can;
+	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	int sx = panel->view->sx;
+	int sy = R_MAX (panel->view->sy, 0);
+	int w = panel->view->pos.w;
+	int h = panel->view->pos.h;
+	char *text = NULL;
+
+	if (func) {
+		if (core->panels_root->cur_pdc_cache) {
+			sdb_ptr_set (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), r_str_new (cmdstr), 0);
+		} else {
+			Sdb *sdb = sdb_new0 ();
+			const char *pdc_now = r_config_get (core->config, "cmd.pdc");
+			sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), r_str_new (cmdstr), 0);
+			core->panels_root->cur_pdc_cache = sdb;
+			if (!sdb_exists (core->panels_root->pdc_caches, pdc_now)) {
+				sdb_ptr_set (core->panels_root->pdc_caches, r_str_new (pdc_now), sdb, 0);
+			}
+		}
 	}
-	if (color) {
+
+	if (panel->model->cmdStrCache) {
+		__resetScrollPos (panel);
+	}
+
+	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
+
+	if (sx < 0) {
+		char *white = (char*)r_str_pad (' ', 128);
+		int idx = R_MIN (-sx, strlen (white) - 1);
+		white[idx] = 0;
+		text = r_str_ansi_crop (r_str_new (cmdstr),
+				0, sy, w + sx - 3, h - 2 + sy);
+		char *newText = r_str_prefix_all (text, white);
+		if (newText) {
+			free (text);
+			text = newText;
+		}
+	} else {
+		text = r_str_ansi_crop (r_str_new (cmdstr),
+				sx, sy, w + sx - 3, h - 2 + sy);
+	}
+	if (text) {
+		r_cons_canvas_write (can, text);
+		free (text);
+	}
+}
+
+void __defaultPanelPrint(RCore *core, RPanel *panel) {
+	RPanels *panels = core->panels;
+	RConsCanvas *can = panels->can;
+	char title[128], cache_title[128];
+	char *cmd_title  = __apply_filter_cmd (core, panel);
+	bool o_cur = core->print->cur_enabled;
+	core->print->cur_enabled = o_cur & (__getCurPanel (core->panels) == panel);
+	if (panel->model->readOnly) {
+		__update_help_contents (core, panel);
+	} else if (panel->model->cmd) {
+		panel->model->print_cb (core, panel);
+	}
+	if (__check_if_cur_panel (core, panel)) {
 		if (!strcmp (panel->model->title, cmd_title)) {
 			snprintf (title, sizeof (title) - 1,
 					"%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
@@ -907,7 +996,7 @@ void __defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int w, in
 					"%s[X] %s (%s)"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title, cmd_title);
 		}
 		snprintf (cache_title, sizeof (cache_title) - 1,
-				"%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
+				"%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
 	} else {
 		if (!strcmp (panel->model->title, cmd_title)) {
 			snprintf (title, sizeof (title) - 1,
@@ -917,7 +1006,7 @@ void __defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int w, in
 					"[X]   %s (%s)  ", panel->model->title, cmd_title);
 		}
 		snprintf (cache_title, sizeof (cache_title) - 1,
-				"[Cache] %s", readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
+				"[Cache] %s", panel->model->readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
 	}
 	free (cmd_title);
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
@@ -3482,7 +3571,7 @@ void __direction_panels_cursor_cb(void *user, int direction) {
 	}
 }
 
-char *__print_default_cb(void *user, void *p) {
+void __print_default_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
 	bool update = core->panels->autoUpdate && __checkFuncDiff (core, panel);
@@ -3493,10 +3582,10 @@ char *__print_default_cb(void *user, void *p) {
 			__resetScrollPos (panel);
 		}
 	}
-	return cmdstr;
+	__update_panel_contents (core, panel, cmdstr);
 }
 
-char *__print_decompiler_cb(void *user, void *p) {
+void __print_decompiler_cb(void *user, void *p) {
 	//TODO: Refactoring
 	//TODO: Also, __checkFuncDiff should use addr not name
 	RCore *core = (RCore *)user;
@@ -3508,33 +3597,22 @@ char *__print_decompiler_cb(void *user, void *p) {
 					r_num_as_string (NULL, func->addr, false), 0));
 	}
 	if (cmdstr) {
-		return cmdstr;
+		__update_panel_contents (core, panel, cmdstr);
+		return;
 	}
 	bool update = core->panels->autoUpdate && __checkFuncDiff (core, panel);
-	cmdstr = __findCmdStrCache (core, panel);
-	if (update || !cmdstr) {
-		cmdstr = __handleCmdStrCache (core, panel, true);
-		if (func) {
-			if (core->panels_root->cur_pdc_cache) {
-				sdb_ptr_set (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), r_str_new (cmdstr), 0);
-			} else {
-				Sdb *sdb = sdb_new0 ();
-				const char *pdc_now = r_config_get (core->config, "cmd.pdc");
-				sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), r_str_new (cmdstr), 0);
-				core->panels_root->cur_pdc_cache = sdb;
-				if (!sdb_exists (core->panels_root->pdc_caches, pdc_now)) {
-					sdb_ptr_set (core->panels_root->pdc_caches, r_str_new (pdc_now), sdb, 0);
-				}
-			}
-		}
-		if (panel->model->cmdStrCache) {
-			__resetScrollPos (panel);
-		}
+	if (update) {
+		cmdstr = __handleCmdStrCache (core, panel, false);
+		__update_pdc_contents (core, panel, cmdstr);
+		return;
 	}
-	return cmdstr;
+	cmdstr = __findCmdStrCache (core, panel);
+	if (cmdstr) {
+		__update_panel_contents (core, panel, cmdstr);
+	}
 }
 
-char *__print_disasmsummary_cb (void *user, void *p) {
+void __print_disasmsummary_cb (void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
 	bool update = core->panels->autoUpdate && __checkFuncDiff (core, panel);
@@ -3545,16 +3623,17 @@ char *__print_disasmsummary_cb (void *user, void *p) {
 			__resetScrollPos (panel);
 		}
 	}
-	return cmdstr;
+	__update_panel_contents (core, panel, cmdstr);
 }
 
-char *__print_disassembly_cb(void *user, void *p) {
+void __print_disassembly_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
 	core->print->screen_bounds = 1LL;
 	char *cmdstr = __findCmdStrCache (core, panel);
 	if (cmdstr) {
-		return cmdstr;
+		__update_panel_contents (core, panel, cmdstr);
+		return;
 	}
 	char *ocmd = panel->model->cmd;
 	panel->model->cmd = r_str_newf ("%s %d", panel->model->cmd, panel->view->pos.h - 3);
@@ -3568,10 +3647,10 @@ char *__print_disassembly_cb(void *user, void *p) {
 	core->offset = o_offset;
 	free (panel->model->cmd);
 	panel->model->cmd = ocmd;
-	return cmdstr;
+	__update_panel_contents (core, panel, cmdstr);
 }
 
-char *__print_graph_cb(void *user, void *p) {
+void __print_graph_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
 	bool update = core->panels->autoUpdate && __checkFuncDiff (core, panel);
@@ -3582,19 +3661,20 @@ char *__print_graph_cb(void *user, void *p) {
 	core->cons->event_resize = NULL;
 	core->cons->event_data = core;
 	core->cons->event_resize = (RConsEvent) __doPanelsRefreshOneShot;
-	return cmdstr;
+	__update_panel_contents (core, panel, cmdstr);
 }
 
-char *__print_stack_cb(void *user, void *p) {
+void __print_stack_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
 	const int delta = r_config_get_i (core->config, "stack.delta");
 	const char sign = (delta < 0)? '+': '-';
 	const int absdelta = R_ABS (delta);
-	return r_core_cmd_strf (core, "%s%c%d", panel->model->cmd, sign, absdelta);
+	const char *cmdstr = r_core_cmd_strf (core, "%s%c%d", panel->model->cmd, sign, absdelta);
+	__update_panel_contents (core, panel, cmdstr);
 }
 
-char *__print_hexdump_cb(void *user, void *p) {
+void __print_hexdump_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
 	char *cmdstr = __findCmdStrCache (core, panel);
@@ -3608,7 +3688,7 @@ char *__print_hexdump_cb(void *user, void *p) {
 		cmdstr = __handleCmdStrCache (core, panel, false);
 		core->offset = o_offset;
 	}
-	return cmdstr;
+	__update_panel_contents (core, panel, cmdstr);
 }
 
 void __hudstuff(RCore *core) {
