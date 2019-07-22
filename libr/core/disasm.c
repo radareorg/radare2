@@ -1995,6 +1995,36 @@ static void ds_print_pre(RDisasmState *ds) {
 		COLOR_RESET (ds));
 }
 
+static void ds_show_comments_describe(RDisasmState *ds) {
+	/* respect asm.describe */
+	char *desc = NULL;
+	if (ds->asm_describe && !ds->has_description) {
+		char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
+		if (!locase) {
+			return;
+		}
+		op = strchr (locase, ' ');
+		if (op) {
+			*op = 0;
+		}
+		r_str_case (locase, 0);
+		desc = r_asm_describe (ds->core->assembler, locase);
+		free (locase);
+	}
+	if (desc && *desc) {
+		ds_begin_comment (ds);
+		ds_align_comment (ds);
+		if (ds->show_color) {
+			r_cons_strcat (ds->color_comment);
+		}
+		r_cons_strcat ("; ");
+		r_cons_strcat (desc);
+		ds_print_color_reset (ds);
+		ds_newline (ds);
+		free (desc);
+	}
+}
+
 //XXX review this with asm.cmt.right
 static void ds_show_comments_right(RDisasmState *ds) {
 	int linelen;
@@ -4651,7 +4681,12 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	char *desc = NULL;
 	RCore *core = ds->core;
 	ds_print_relocs (ds);
-	if (ds->asm_describe && !ds->has_description) {
+	bool is_code = (!ds->hint) || (ds->hint && ds->hint->type != 'd');
+	RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
+	if (mi) {
+		is_code = mi->type != 'd';
+	}
+	if (is_code && ds->asm_describe && !ds->has_description) {
 		char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
 		if (!locase) {
 			return;
@@ -5185,33 +5220,7 @@ toro:
 			if ((ds->analop.type == R_ANAL_OP_TYPE_CALL || ds->analop.type & R_ANAL_OP_TYPE_UCALL) && ds->show_calls) {
 				ds_print_calls_hints (ds);
 			}
-			/* respect asm.describe */
-			char *desc = NULL;
-			if (ds->asm_describe && !ds->has_description) {
-				char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
-				if (!locase) {
-					break;
-				}
-				op = strchr (locase, ' ');
-				if (op) {
-					*op = 0;
-				}
-				r_str_case (locase, 0);
-				desc = r_asm_describe (core->assembler, locase);
-				free (locase);
-			}
-			if (desc && *desc) {
-				ds_begin_comment (ds);
-				ds_align_comment (ds);
-				if (ds->show_color) {
-					r_cons_strcat (ds->color_comment);
-				}
-				r_cons_strcat ("; ");
-				r_cons_strcat (desc);
-				ds_print_color_reset (ds);
-				ds_newline (ds);
-				free (desc);
-			}
+			ds_show_comments_describe (ds);
 		}
 
 		f = fcnIn (ds, ds->addr, 0);
