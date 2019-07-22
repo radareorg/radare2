@@ -2807,6 +2807,59 @@ static int bin_trycatch(RCore *core, int mode) {
 	return true;
 }
 
+static void classdump_objc(RCore *r, RBinClass *c) {
+	r_cons_printf ("@interface %s :\n{\n", c->name);
+	RListIter *iter2, *iter3;
+	RBinField *f;
+	RBinSymbol *sym;
+	r_list_foreach (c->fields, iter2, f) {
+		if (f->name && r_regex_match ("ivar","e", f->name)) {
+			r_cons_printf ("  %s %s\n", f->type, f->name);
+		}
+	}
+	r_cons_printf ("}\n");
+	r_list_foreach (c->methods, iter3, sym) {
+		if (sym->rtype && sym->rtype[0] != '@') {
+			char *rp = get_rp (sym->rtype);
+			r_cons_printf ("%s (%s) %s\n",
+					strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
+					rp, sym->dname? sym->dname: sym->name);
+			free (rp);
+		}
+	}
+	r_cons_printf ("@end\n");
+}
+
+static void classdump_java(RCore *r, RBinClass *c) {
+	RBinField *f;
+	RListIter *iter2, *iter3;
+	RBinSymbol *sym;
+	char *pn = strdup (c->name);
+	char *cn = (char *)r_str_rchr (pn, NULL, '/');
+	if (cn) {
+		*cn = 0;
+		cn++;
+		r_str_replace_char (pn, '/', '.');
+	}
+	r_cons_printf ("package %s;\n\n", pn);
+	r_cons_printf ("public class %s {\n", cn);
+	free (pn);
+	r_list_foreach (c->fields, iter2, f) {
+		if (f->name && r_regex_match ("ivar","e", f->name)) {
+			r_cons_printf ("  public %s %s\n", f->type, f->name);
+		}
+	}
+	r_list_foreach (c->methods, iter3, sym) {
+		const char *mn = sym->dname? sym->dname: sym->name;
+		const char *ms = strstr (mn, "method.");
+		if (ms) {
+			mn = ms + strlen ("method.");
+		}
+		r_cons_printf ("  public %s ();\n", mn);
+	}
+	r_cons_printf ("}\n\n");
+}
+
 static int bin_classes(RCore *r, int mode) {
 	RListIter *iter, *iter2, *iter3;
 	RBinSymbol *sym;
@@ -2933,25 +2986,17 @@ static int bin_classes(RCore *r, int mode) {
 			}
 			r_cons_printf ("]}");
 		} else if (IS_MODE_CLASSDUMP (mode)) {
-			char *rp = NULL;
 			if (c) {
-				//TODO -> Print Superclass
-				r_cons_printf ("@interface %s :  \n{\n", c->name);
-				r_list_foreach (c->fields, iter2, f) {
-					if (f->name && r_regex_match ("ivar","e", f->name)) {
-						r_cons_printf ("  %s %s\n", f->type, f->name);
+				RBinFile *bf = r_bin_cur (r->bin);
+				if (bf && bf->o) {
+					if (bf->o->lang == R_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr (bf->o->info->lang, "dalvik"))) {
+						classdump_java (r, c);
+					} else {
+						classdump_objc (r, c);
 					}
+				} else {
+					classdump_objc (r, c);
 				}
-				r_cons_printf ("}\n");
-				r_list_foreach (c->methods, iter3, sym) {
-					if (sym->rtype && sym->rtype[0] != '@') {
-						rp = get_rp (sym->rtype);
-						r_cons_printf ("%s (%s) %s\n",
-							strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
-							rp, sym->dname? sym->dname: sym->name);
-					}
-				}
-				r_cons_printf ("@end\n");
 			}
 		} else {
 			int m = 0;
