@@ -51,7 +51,6 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 #endif
 	free (tmpstr);
 	if (out) {
-		r_str_replace_char (out, ' ', 0);
 		char *sign = (char *)strchr (out, '(');
 		if (sign) {
 			char *str = out;
