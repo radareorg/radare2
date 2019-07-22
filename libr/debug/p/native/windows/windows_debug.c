@@ -730,6 +730,7 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 	if (sig == 0) {
 		if (!__is_proc_alive (rio->pi.hProcess)) {
 			r_list_purge (dbg->threads);
+			return false;
 		}
 		return true;
 	}
