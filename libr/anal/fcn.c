@@ -460,21 +460,6 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 		return R_ANAL_RET_ERROR;\
 	}
 
-static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth);
-R_API int r_anal_fcn_bb (RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth) {
-	int ret = fcn_recurse (anal, fcn, addr, anal->opt.bb_max_size, depth - 1);
-	r_anal_fcn_update_tinyrange_bbs (fcn);
-	r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));
-	return ret;
-}
-
-static int fcn_recurse_at(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
-	int ret = fcn_recurse (anal, fcn, addr, anal->opt.bb_max_size, depth - 1);
-	r_anal_fcn_update_tinyrange_bbs (fcn);
-	r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));
-	return ret;
-}
-
 #define gotoBeach(x) ret = x; goto beach;
 
 static bool isInvalidMemory(const ut8 *buf, int len) {
@@ -841,7 +826,7 @@ repeat:
 					bb->jump = at + oplen;
 					if (from_addr != bb->addr) {
 						bb->fail = handle_addr;
-						r_anal_fcn_bb (anal, fcn, handle_addr, depth);
+						ret = r_anal_fcn_bb (anal, fcn, handle_addr, depth);
 						eprintf ("(%s) 0x%08"PFMT64x"\n", handle, handle_addr);
 						bb = appendBasicBlock (anal, fcn, addr);
 					}
@@ -1121,7 +1106,7 @@ repeat:
 				bb->jump = op.jump;
 				bb->fail = UT64_MAX;
 			}
-			r_anal_fcn_bb (anal, fcn, op.jump, depth);
+			ret = r_anal_fcn_bb (anal, fcn, op.jump, depth);
 			FITFCNSZ ();
 
 			goto beach;
@@ -1175,7 +1160,7 @@ repeat:
 			}
 			if (continue_after_jump) {
 				r_anal_fcn_bb (anal, fcn, op.jump, depth);
-				r_anal_fcn_bb (anal, fcn, op.fail, depth);
+				ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
 			} else {
 				// This code seems to break #1519
 				if (anal->opt.eobjmp) {
@@ -1186,13 +1171,13 @@ repeat:
 					}
 					FITFCNSZ ();
 					r_anal_fcn_bb (anal, fcn, op.jump, depth);
-					r_anal_fcn_bb (anal, fcn, op.fail, depth);
+					ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
 					return R_ANAL_RET_END;
 #else
 					// hardcoded jmp size // must be checked at the end wtf?
 					// always fitfcnsz and retend
 					if (op.jump > fcn->addr + JMP_IS_EOB_RANGE) {
-						r_anal_fcn_bb (anal, fcn, op.fail, depth);
+						ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
 						/* jump inside the same function */
 						FITFCNSZ ();
 						return R_ANAL_RET_END;
@@ -1208,11 +1193,11 @@ repeat:
 					}
 #endif
 					r_anal_fcn_bb (anal, fcn, op.jump, depth);
-					r_anal_fcn_bb (anal, fcn, op.fail, depth);
+					ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
 				} else {
 					/* if not eobjmp. a jump will break the function if jumps before the beginning of the function */
 					r_anal_fcn_bb (anal, fcn, op.jump, depth);
-					r_anal_fcn_bb (anal, fcn, op.fail, depth);
+					ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
 					if (op.jump < fcn->addr) {
 						if (!overlapped) {
 							bb->jump = op.jump;
@@ -1349,7 +1334,7 @@ repeat:
 			if (anal->opt.ijmp) {
 				if (continue_after_jump) {
 					r_anal_fcn_bb (anal, fcn, op.jump, depth);
-					r_anal_fcn_bb (anal, fcn, op.fail, depth);
+					ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
 					if (overlapped) {
 						goto analopfinish;
 					}
@@ -1388,7 +1373,7 @@ analopfinish:
 				op.type = R_ANAL_OP_TYPE_JMP;
 				op.jump = last_push_addr;
 				bb->jump = op.jump;
-				r_anal_fcn_bb (anal, fcn, op.jump, depth);
+				ret = r_anal_fcn_bb (anal, fcn, op.jump, depth);
 				goto beach;
 			} else {
 				if (!op.cond) {
@@ -1416,6 +1401,13 @@ beach:
 	r_anal_op_fini (&op);
 	FITFCNSZ ();
 	free (last_reg_mov_lea_name);
+	return ret;
+}
+
+R_API int r_anal_fcn_bb (RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth) {
+	int ret = fcn_recurse (anal, fcn, addr, anal->opt.bb_max_size, depth - 1);
+	r_anal_fcn_update_tinyrange_bbs (fcn);
+	r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));
 	return ret;
 }
 
@@ -1548,7 +1540,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	// update tinyrange for the function
 	r_anal_fcn_update_tinyrange_bbs (fcn);
 #else
-	int ret = fcn_recurse_at (anal, fcn, addr, len, anal->opt.depth);
+	int ret = r_anal_fcn_bb (anal, fcn, addr, anal->opt.depth);
 #endif
 	if (anal->opt.endsize && ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {   // cfg analysis completed
 		RListIter *iter;
