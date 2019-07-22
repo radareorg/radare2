@@ -2890,7 +2890,7 @@ static int bin_classes(RCore *r, int mode) {
 					}
 					char *eq = (char *)r_str_rchr (cmd, NULL, '=');
 					if (eq && eq != cmd) {
-						*(eq - 1) = *(eq + 1) = ' ';
+						eq[-1] = eq[1] = ' ';
 					}
 					r_str_replace_char (cmd, '\n', 0);
 					r_cons_printf ("%s\n", cmd);
