@@ -41,12 +41,12 @@ static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut8 *p = r->p;
 	do {
 		if (p == end) {
-			eprintf ("malformed uleb128");
+			eprintf ("malformed uleb128\n");
 			break;
 		}
 		slice = *p & 0x7f;
 		if (bit > 63) {
-			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x, bit, result);
+			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x"\n", bit, result);
 		} else {
 			result |= (slice << bit);
 			bit += 7;
@@ -63,12 +63,16 @@ static st64 read_sleb128(ulebr *r, ut8 *end) {
 	ut8 *p = r->p;
 	do {
 		if (p == end) {
-			eprintf ("malformed sleb128");
+			eprintf ("malformed sleb128\n");
 			break;
 		}
 		byte = *p++;
 		result |= (((st64)(byte & 0x7f)) << bit);
 		bit += 7;
+		if (bit > 63) {
+			eprintf ("too large sleb128 shift\n");
+			return result;
+		}
 	} while (byte & 0x80);
 	// sign extend negative numbers
 	if ((byte & 0x40)) {
@@ -1968,7 +1972,19 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		if (len) {
 			ut64 flags = ULEB();
 			ut64 offset = ULEB();
-			if (iterator) {
+			ut64 resolver = 0;
+			bool isReexport = flags & EXPORT_SYMBOL_FLAGS_REEXPORT;
+			bool hasResolver = flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER;
+			if (hasResolver) {
+				resolver = ULEB() + bin->header_at;
+			} else if (isReexport) {
+				ur.p += strlen ((char*) ur.p) + 1;
+				// TODO: handle this
+			}
+			if (!isReexport) {
+				offset += bin->header_at;
+			}
+			if (iterator && !isReexport) {
 				char * name = NULL;
 				RListIter *iter;
 				RTrieState *s;
@@ -1982,10 +1998,22 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 					eprintf ("malformed export trie\n");
 					goto beach;
 				}
-				iterator (bin, name, flags, offset, ctx);
+				if (hasResolver) {
+					char * stub_name = r_str_newf ("stub.%s", name);
+					iterator (bin, stub_name, flags, offset, ctx);
+					iterator (bin, name, flags, resolver, ctx);
+					R_FREE (stub_name);
+				} else {
+					iterator (bin, name, flags, offset, ctx);
+				}
 				R_FREE (name);
 			}
-			count++;
+			if (!isReexport) {
+				if (hasResolver) {
+					count++;
+				}
+				count++;
+			}
 		}
 		ut64 child_count = ULEB();
 		if (state->i == child_count) {
@@ -3325,6 +3353,17 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 			free (rpath);
 			break;
 		}
+		case LC_ENCRYPTION_INFO:
+		case LC_ENCRYPTION_INFO_64:
+			{
+			ut32 word = r_buf_read_le32_at (buf, addr);
+			cb_printf ("0x%08"PFMT64x"  cryptoff   0x%08x\n", addr, word);
+			word = r_buf_read_le32_at (buf, addr + 4);
+			cb_printf ("0x%08"PFMT64x"  cryptsize  %d\n", addr + 4, word);
+			word = r_buf_read_le32_at (buf, addr + 8);
+			cb_printf ("0x%08"PFMT64x"  cryptid    %d\n", addr + 8, word);
+			}
+			break;
 		case LC_CODE_SIGNATURE:
 			{
 			ut32 words[2];

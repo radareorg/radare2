@@ -37,10 +37,10 @@ CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
 CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20190515
 ifeq ($(CS_NEXT),1)
-CS_TIP=cd59edaa420e8c5af1e946249da2177c1eaf4ff3
+CS_TIP=ec6390f9404bd7725bf8169d59861994a148100c
 CS_BRA=next
 else
-CS_TIP=fbceb8427198412aec1807f67c2d95396ebed3cc
+CS_TIP=1ccf14960fd38f0e4d2ed6f315c10ef7dcdb4b7c
 CS_BRA=v4
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)
@@ -62,7 +62,7 @@ HOST_CC?=gcc
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb zip java tcc
+MODS=sdb zip java tcc mpc
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
@@ -374,3 +374,10 @@ libr_shlr.${EXT_AR}:
 	${AR} crs $@ .libr/*.o
 
 .PHONY: spp
+
+.PHONY: mpc mpc-clean clean-mpc
+mpc:
+	$(MAKE) -C mpc all
+
+mpc-clean clean-mpc:
+	$(MAKE) -C mpc clean

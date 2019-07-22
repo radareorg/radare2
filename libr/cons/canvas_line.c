@@ -329,7 +329,27 @@ loop:
 	if (!(x == x2 && y == y2)) {
 		int i = (*chizzle == '_' && sy < 0) ? 1 : 0;
 		if (G(x, y - i)) {
-			W(chizzle);
+			if (useUtf8) {
+				switch (*chizzle) {
+				case '/':
+					W("╯");
+					break;
+				case '\\':
+					W("└");
+					break;
+				case '|':
+					W("│");
+					break;
+				case '_':
+					W("─");
+					break;
+				default:
+					W("?");
+					break;
+				}
+			} else {
+				W(chizzle);
+			}
 		}
 		goto loop;
 	}

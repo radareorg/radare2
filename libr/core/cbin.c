@@ -581,6 +581,9 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 	char str[R_FLAG_NAME_SIZE];
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *bf = r_bin_cur (r->bin);
+	if (!bf) {
+		return false;
+	}
 	RBinObject *obj = bf->o;
 	const char *compiled = NULL;
 	bool havecode;
@@ -1704,6 +1707,10 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	char *str;
 	int i = 0;
 
+	if (!info) {
+		return false;
+	}
+
 	RList *imports = r_bin_get_imports (r->bin);
 	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	if (IS_MODE_JSON (mode)) {
@@ -2067,6 +2074,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 				if (fi) {
 					r_flag_item_set_realname (fi, n);
+					fi->demangled = (bool)(size_t)sn.demname;
 				} else {
 					if (fn) {
 						eprintf ("[Warning] Can't find flag (%s)\n", fn);
@@ -2875,10 +2883,20 @@ static int bin_classes(RCore *r, int mode) {
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
 				char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, c->name, sym->name, sym->vaddr);
-				r_str_replace_char (cmd, '\n', 0);
-				r_cons_printf ("%s\n", cmd);
+				if (cmd) {
+					r_str_replace_char (cmd, ' ', '_');
+					if (strlen (cmd) > 2) {
+						cmd[2] = ' ';
+					}
+					char *eq = (char *)r_str_rchr (cmd, NULL, '=');
+					if (eq && eq != cmd) {
+						eq[-1] = eq[1] = ' ';
+					}
+					r_str_replace_char (cmd, '\n', 0);
+					r_cons_printf ("%s\n", cmd);
+					free (cmd);
+				}
 				R_FREE (mflags);
-				free (cmd);
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			if (c->super) {

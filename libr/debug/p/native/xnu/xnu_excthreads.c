@@ -105,9 +105,11 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 // (SS bit in the MDSCR_EL1 register)
 #define SS_ENABLE ((uint32_t)(1u))
 
+#if __arm || __arm__ || __armv7 || __armv7__
 static bool is_thumb_32(ut16 op) {
 	return (((op & 0xE000) == 0xE000) && (op & 0x1800));
 }
+#endif
 
 static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	int i = 0;
@@ -116,10 +118,24 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		eprintf ("error to get drx registers modificy_trace_bit arm\n");
 		return false;
 	}
+#if __arm64 || __arm64__ || __aarch64 || __aarch64__
 	if (th->flavor == ARM_DEBUG_STATE32) {
 		arm_debug_state32_t *state = &th->debug.drx32;
-		state->__mdscr_el1 = (state->__mdscr_el1 & SS_ENABLE) & (enable ? SS_ENABLE : 0);
-	} else if (th->flavor == ARM_DEBUG_STATE) {
+		if (enable) {
+			state->__mdscr_el1 = state->__mdscr_el1 | SS_ENABLE;
+		} else {
+			state->__mdscr_el1 = state->__mdscr_el1 & ~SS_ENABLE;
+		}
+	} else if (th->flavor == ARM_DEBUG_STATE64) {
+		arm_debug_state64_t *state = &th->debug.drx64;
+		if (enable) {
+			state->__mdscr_el1 = state->__mdscr_el1 | SS_ENABLE;
+		} else {
+			state->__mdscr_el1 = state->__mdscr_el1 & ~SS_ENABLE;
+		}
+	} else
+#elif __arm || __arm__ || __armv7 || __armv7__
+	if (th->flavor == ARM_DEBUG_STATE) {
 		arm_debug_state_t *state = &th->debug.drx;
 		R_REG_T *regs;
 		ret = xnu_thread_get_gpr (dbg, th);
@@ -178,7 +194,9 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 				state->__bcr[i] = 0;
 			}
 		}
-	} else {
+	} else
+#endif
+	{
 		eprintf ("Bad flavor modificy_trace_bit arm\n");
 		return false;
 	}

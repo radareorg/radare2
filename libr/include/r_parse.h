@@ -73,6 +73,40 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg);
 R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
 R_API void r_parse_c_reset(RParse *p);
 
+/* ctype */
+// Parses strings like "const char * [0x42] const * [23]" to RParseCTypeType
+
+typedef struct r_parse_ctype_t RParseCType;
+
+typedef struct r_parse_ctype_type_t RParseCTypeType;
+struct r_parse_ctype_type_t {
+	enum {
+		R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER,
+		R_PARSE_CTYPE_TYPE_KIND_POINTER,
+		R_PARSE_CTYPE_TYPE_KIND_ARRAY
+	} kind;
+
+	union {
+		struct {
+			char *name;
+			bool is_const;
+		} identifier;
+		struct {
+			RParseCTypeType *type;
+			bool is_const;
+		} pointer;
+		struct {
+			RParseCTypeType *type;
+			ut64 count;
+		} array;
+	};
+};
+
+R_API RParseCType *r_parse_ctype_new();
+R_API void r_parse_ctype_free(RParseCType *ctype);
+R_API RParseCTypeType *r_parse_ctype_parse(RParseCType *ctype, const char *str, char **error);
+R_API void r_parse_ctype_type_free(RParseCTypeType *type);
+
 /* plugin pointers */
 extern RParsePlugin r_parse_plugin_6502_pseudo;
 extern RParsePlugin r_parse_plugin_arm_pseudo;

@@ -431,7 +431,7 @@ enum {
 	SELF_LIBRARY_ORDINAL   = 0x0,
 	MAX_LIBRARY_ORDINAL    = 0xfd,
 	DYNAMIC_LOOKUP_ORDINAL = 0xfe,
-	EXECUTABLE_ORDINAL     = 0xff 
+	EXECUTABLE_ORDINAL     = 0xff
 };
 
 enum StabType {
@@ -1420,5 +1420,13 @@ sizeof(struct x86_thread_state_t) / sizeof(uint32_t);
 sizeof(struct x86_float_state_t) / sizeof(uint32_t);
 #define x86_EXCEPTION_STATE_COUNT \
 sizeof(struct x86_exception_state_t) / sizeof(uint32_t);
+
+#define EXPORT_SYMBOL_FLAGS_KIND_MASK 0x03
+#define EXPORT_SYMBOL_FLAGS_KIND_REGULAR 0x00
+#define EXPORT_SYMBOL_FLAGS_KIND_THREAD_LOCAL 0x01
+#define EXPORT_SYMBOL_FLAGS_KIND_ABSOLUTE 0x02
+#define EXPORT_SYMBOL_FLAGS_WEAK_DEFINITION 0x04
+#define EXPORT_SYMBOL_FLAGS_REEXPORT 0x08
+#define EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER 0x10
 
 #endif

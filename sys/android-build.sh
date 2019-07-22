@@ -128,7 +128,7 @@ if [ "${BUILD}" = 1 ]; then
 			--with-ostype=android \
 			--without-libuv \
 			--prefix=${PREFIX} ${CFGFLAGS}
-
+		cp -f plugins.android.cfg plugins.cfg
 		./configure --with-compiler=android --without-libuv \
 			--with-ostype=android \
 			--prefix=${PREFIX} ${CFGFLAGS} || exit 1

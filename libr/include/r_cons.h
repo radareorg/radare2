@@ -20,6 +20,7 @@ extern "C" {
 #include <r_util/r_file.h>
 #include <r_vector.h>
 #include <sdb.h>
+#include <sdb/ht_up.h>
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -329,11 +330,6 @@ typedef struct r_cons_printable_palette_t {
 typedef void (*RConsEvent)(void *);
 
 #define CONS_MAX_ATTR_SZ 16
-typedef struct r_cons_canvas_attr_t {
-	//TODO add support for 256 colors.
-	int loc;
-	const char * a;
-} RConsCanvasAttr;
 
 typedef struct r_cons_canvas_t {
 	int w;
@@ -343,9 +339,8 @@ typedef struct r_cons_canvas_t {
 	char **b;
 	int *blen;
 	int *bsize;
-	const char * attr;//The current attr (inserted on each write)
-	RConsCanvasAttr * attrs;// all the different attributes
-	int attrslen;
+	const char *attr; //The current attr (inserted on each write)
+	HtUP *attrs; // all the different attributes <key: unsigned int loc, const char *attr>
 	int sx; // scrollx
 	int sy; // scrolly
 	int color;
@@ -436,6 +431,8 @@ typedef struct r_cons_context_t {
 	RConsPalette cpal;
 	RConsPrintablePalette pal;
 } RConsContext;
+
+#define HUD_BUF_SIZE 512
 
 typedef struct r_cons_t {
 	RConsContext *context;
@@ -975,6 +972,13 @@ typedef struct r_line_buffer_t {
 	int length;
 } RLineBuffer;
 
+typedef struct r_hud_t {
+	int current_entry_n;
+	int top_entry_n;
+	char activate;
+	int vi;
+} RLineHud;
+
 typedef struct r_line_t RLine; // forward declaration
 typedef struct r_line_comp_t RLineCompletion;
 
@@ -1018,6 +1022,7 @@ struct r_line_t {
 	RLinePromptType prompt_type;
 	int offset_hist_index;
 	int file_hist_index;
+	RLineHud *hud;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
 #if __WINDOWS__
@@ -1143,7 +1148,8 @@ typedef enum {
 typedef struct r_panels_root_t {
 	int n_panels;
 	int cur_panels;
-	Sdb *pdc_cache;
+	Sdb *pdc_caches;
+	Sdb *cur_pdc_cache;
 	RPanels **panels;
 	RPanelsRootState root_state;
 } RPanelsRoot;

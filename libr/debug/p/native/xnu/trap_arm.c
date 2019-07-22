@@ -9,8 +9,7 @@ static bool ios_hwstep_enable64(RDebug *dbg, bool enable) {
 	thread_t th = getcurthread (dbg, NULL);
 
 	mach_msg_type_number_t count = ARM_DEBUG_STATE64_COUNT;
-	if (thread_get_state (th, ARM_DEBUG_STATE64,
-			(thread_state_t)&ds, &count)) {
+	if (thread_get_state (th, ARM_DEBUG_STATE64, (thread_state_t)&ds, &count)) {
 		perror ("thread-get-state");
 		return false;
 	}
@@ -25,8 +24,7 @@ static bool ios_hwstep_enable64(RDebug *dbg, bool enable) {
 	} else {
 		ds.mdscr_el1 &= ~(1ULL);
 	}
-	if (thread_set_state (th, ARM_DEBUG_STATE64,
-			(thread_state_t)&ds, count)) {
+	if (thread_set_state (th, ARM_DEBUG_STATE64, (thread_state_t)&ds, count)) {
 		perror ("thread-set-state");
 	}
 	return true;
@@ -82,15 +80,16 @@ static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
 		}
 	}
 	if (thread_set_state (th, ARM_DEBUG_STATE32, (thread_state_t)&ds, ARM_DEBUG_STATE32_COUNT)) {
-		perror ("thread_set_state");
+		perror ("ios_hwstep_enable32");
 		return false;
 	}
 	return true;
 }
 
 bool xnu_native_hwstep_enable(RDebug *dbg, bool enable) {
-	if (dbg->bits == R_SYS_BITS_64)
+	if (dbg->bits == R_SYS_BITS_64 || dbg->bits == 64) {
 		return ios_hwstep_enable64 (dbg, enable);
+	}
 	return ios_hwstep_enable32 (dbg, enable);
 }
 #endif

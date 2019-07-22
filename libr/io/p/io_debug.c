@@ -226,7 +226,7 @@ static void trace_me (void) {
 }
 #endif
 
-void handle_posix_error(int err) {
+static void handle_posix_error(int err) {
 	switch (err) {
 	case 0:
 		// eprintf ("Success\n");
@@ -288,24 +288,16 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 
 #if __APPLE__ && !__POWERPC__
 
-static void handle_redirection(char *path, int flag, posix_spawn_file_actions_t *fileActions, int fd) {
-	int mode = S_IRUSR | S_IWUSR;
-	posix_spawn_file_actions_addopen (fileActions, fd, path, flag, mode);
-}
-
 static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t *fileActions) {
-	int flag = 0;
+	const int mode = S_IRUSR | S_IWUSR;
 	if (rp->_stdin) {
-		flag |= O_RDONLY;
-		handle_redirection (rp->_stdin, flag, fileActions, STDIN_FILENO);
+		posix_spawn_file_actions_addopen (fileActions, STDIN_FILENO, rp->_stdin, O_RDONLY, mode);
 	}
 	if (rp->_stdout) {
-		flag |= O_WRONLY;
-		handle_redirection (rp->_stdout, flag, fileActions, STDOUT_FILENO);
+		posix_spawn_file_actions_addopen (fileActions, STDOUT_FILENO, rp->_stdout, O_WRONLY, mode);
 	}
 	if (rp->_stderr) {
-		flag |= O_WRONLY;
-		handle_redirection (rp->_stderr, flag, fileActions, STDERR_FILENO);
+		posix_spawn_file_actions_addopen (fileActions, STDERR_FILENO, rp->_stderr, O_WRONLY, mode);
 	}
 }
 
@@ -469,12 +461,8 @@ static void fork_child_callback(void *user) {
 		free (_cmd);
 	}
 }
-#endif
 
-static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
-#if __APPLE__ && !__POWERPC__
-	return fork_and_ptraceme_for_mac (io, bits, cmd);
-#else
+static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 	int ret, status, child_pid;
 	bool runprofile = io->runprofile && *(io->runprofile);
 	fork_child_data child_data;
@@ -511,6 +499,18 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		break;
 	}
 	return child_pid;
+}
+#endif
+
+static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
+#if __APPLE__
+#  if __POWERPC__
+	return fork_and_ptraceme_for_unix (io, bits, cmd);
+#  else
+	return fork_and_ptraceme_for_mac (io, bits, cmd);
+#  endif
+#else
+	return fork_and_ptraceme_for_unix (io, bits, cmd);
 #endif
 }
 #endif
