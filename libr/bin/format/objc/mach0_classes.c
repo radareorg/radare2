@@ -626,6 +626,10 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 		}
 
 		method->vaddr = m.imp;
+		if (!method->vaddr) {
+			R_FREE (method);
+			goto next;
+		}
 		method->type = is_static? R_BIN_TYPE_FUNC_STR: R_BIN_TYPE_METH_STR;
 		if (is_static) {
 			method->method_flags |= R_BIN_METH_CLASS;
@@ -638,6 +642,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 			}
 		}
 		r_list_append (klass->methods, method);
+next:
 		p += sizeof (struct MACH0_(SMethod));
 		offset += sizeof (struct MACH0_(SMethod));
 	}

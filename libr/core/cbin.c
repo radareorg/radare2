@@ -2808,7 +2808,11 @@ static int bin_trycatch(RCore *core, int mode) {
 }
 
 static void classdump_objc(RCore *r, RBinClass *c) {
-	r_cons_printf ("@interface %s :\n{\n", c->name);
+	if (c->super) {
+		r_cons_printf ("@interface %s : %s\n{\n", c->name, c->super);
+	} else {
+		r_cons_printf ("@interface %s\n{\n", c->name);
+	}
 	RListIter *iter2, *iter3;
 	RBinField *f;
 	RBinSymbol *sym;
@@ -2825,6 +2829,10 @@ static void classdump_objc(RCore *r, RBinClass *c) {
 					strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
 					rp, sym->dname? sym->dname: sym->name);
 			free (rp);
+		} else {
+			r_cons_printf ("%s (id) %s\n",
+					strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
+					sym->dname? sym->dname: sym->name);
 		}
 	}
 	r_cons_printf ("@end\n");
