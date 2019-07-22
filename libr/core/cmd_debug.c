@@ -816,6 +816,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 		else {
 			r_debug_step (core->dbg, 1);
 		}
+		pc = r_debug_reg_get (core->dbg, "PC");
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 		/* TODO: disassemble instruction and strstr */
 		r_asm_set_pc (core->assembler, pc);
