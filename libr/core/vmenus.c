@@ -523,10 +523,10 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 					pre = ">";
 				}
 				if (use_color && *pre == '>') {
-					r_cons_printf ("%s %s %s  %s\n", color_sel,
+					r_cons_printf ("%s %s %s  %s %10s\n", color_sel,
 						Color_RESET, pre, k+strlen (s), v);
 				} else {
-					r_cons_printf (" %s %s  %s\n",
+					r_cons_printf ("   %s %s %10s\n",
 						pre, k + strlen (s), v);
 				}
 				vt->t_ctr ++;
