@@ -166,7 +166,9 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 	ut64 stride = R_MIN (context->word_size, 4);
 
 	if (num_base_classes > BASE_CLASSES_MAX) {
-		eprintf ("WARNING: Length of base class array at 0x%08"PFMT64x" exceeds %d.\n", addr, BASE_CLASSES_MAX);
+		if (context->anal->verbose) {
+			eprintf ("WARNING: Length of base class array at 0x%08"PFMT64x" exceeds %d.\n", addr, BASE_CLASSES_MAX);
+		}
 		num_base_classes = BASE_CLASSES_MAX;
 	}
 
@@ -735,7 +737,9 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 			continue;
 		}
 		if (!td->valid) {
-			eprintf("Warning: type descriptor of base is invalid.\n");
+			if (context->vt_context->anal->verbose) {
+				eprintf ("Warning: type descriptor of base is invalid.\n");
+			}
 			continue;
 		}
 		RecoveryBaseDescriptor *base_desc = r_vector_push (&col->base_td, NULL);
@@ -779,7 +783,9 @@ static char *unique_class_name(RAnal *anal, const char *original_name) {
 	}
 
 	char *name = NULL;
-	eprintf ("Warning: class name %s already taken!\n", original_name);
+	if (anal->verbose) {
+		eprintf ("Warning: class name %s already taken!\n", original_name);
+	}
 	int i = 1;
 
 	do {
@@ -830,14 +836,18 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 
 		const char *base_class_name;
 		if (!base_td->col) {
-			eprintf ("Warning: Base td %s has no col. Falling back to recovery from td only.\n", base_td->td.name);
+			if (context->vt_context->anal->verbose) {
+				eprintf ("Warning: Base td %s has no col. Falling back to recovery from td only.\n", base_td->td.name);
+			}
 			base_class_name = recovery_apply_type_descriptor (context, base_td);
 		} else {
 			base_class_name = recovery_apply_complete_object_locator (context, base_td->col);
 		}
 
 		if (!base_class_name) {
-			eprintf ("Failed to convert !base td->col or td to a class\n");
+			if (context->vt_context->anal->verbose) {
+				eprintf ("Failed to convert !base td->col or td to a class\n");
+			}
 			continue;
 		}
 
@@ -857,7 +867,9 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	}
 
 	if (!col->td) {
-		eprintf ("Warning: no td for col at 0x%"PFMT64x"\n", col->addr);
+		if (context->vt_context->anal->verbose) {
+			eprintf ("Warning: no td for col at 0x%"PFMT64x"\n", col->addr);
+		}
 		return NULL;
 	}
 
@@ -870,7 +882,9 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 
 	char *name = r_anal_rtti_msvc_demangle_class_name (col->td->td.name);
 	if (!name) {
-		eprintf ("Failed to demangle a class name: \"%s\"\n", col->td->td.name);
+		if (context->vt_context->anal->verbose) {
+			eprintf ("Failed to demangle a class name: \"%s\"\n", col->td->td.name);
+		}
 		name = strdup (col->td->td.name);
 		if (!name) {
 			return NULL;
@@ -909,7 +923,9 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 
 	char *name = r_anal_rtti_msvc_demangle_class_name (td->td.name);
 	if (!name) {
-		eprintf("Failed to demangle a class name: \"%s\"\n", td->td.name);
+		if (context->vt_context->anal->verbose) {
+			eprintf("Failed to demangle a class name: \"%s\"\n", td->td.name);
+		}
 		name = strdup (td->td.name);
 		if (!name) {
 			return NULL;
