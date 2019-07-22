@@ -774,14 +774,14 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 static bool is_repeatable_inst(RCore *core, ut64 addr) {
 	bool ret = false;
 
-	if (strcmp (r_config_get (core->config, "asm.arch"), "x86")) {
-		goto end;
+	if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
+		return false;
 	}
 
 	RAnalOp *op = r_core_op_anal (core, addr);
 	if (!op) {
 		eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
-		goto end;
+		return false;
 	}
 
 	ret = (op->prefix & R_ANAL_OP_PREFIX_REP) || (op->prefix & R_ANAL_OP_PREFIX_REPNE);
