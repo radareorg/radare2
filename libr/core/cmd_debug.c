@@ -812,8 +812,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 		pc = r_debug_reg_get (core->dbg, "PC");
 		if (is_repeatable_inst (core, pc)) {
 			r_debug_step_over (core->dbg, 1);
-		}
-		else {
+		} else {
 			r_debug_step (core->dbg, 1);
 		}
 		pc = r_debug_reg_get (core->dbg, "PC");
