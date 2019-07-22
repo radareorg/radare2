@@ -2058,8 +2058,6 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 				outputs ++;
 			}
 			if (b->switch_op) {
-				RAnalCaseOp *cop;
-				RListIter *iter;
 				RList *unique_cases = r_list_uniq (b->switch_op->cases, casecmp);
 				outputs += r_list_length (unique_cases);
 				r_list_free (unique_cases);
