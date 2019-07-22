@@ -738,7 +738,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 		}
 		if (!td->valid) {
 			if (context->vt_context->anal->verbose) {
-				eprintf("Warning: type descriptor of base is invalid.\n");
+				eprintf ("Warning: type descriptor of base is invalid.\n");
 			}
 			continue;
 		}
