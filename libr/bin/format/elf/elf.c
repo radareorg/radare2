@@ -2135,8 +2135,9 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_LANAI:
 		return strdup ("lanai");
 	case EM_VIDEOCORE3:
-	case EM_VIDEOCORE4:
-		return strdup ("vc4");
+		return strdup ("vc3");
+	// case EM_VIDEOCORE4:
+		// return strdup ("vc4");
 	case EM_MSP430:
 		return strdup ("msp430");
 	case EM_SH:
@@ -2148,6 +2149,8 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	default: return strdup ("x86");
 	}
 }
+
+// http://www.sco.com/developers/gabi/latest/ch4.eheader.html
 
 char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	switch (bin->ehdr.e_machine) {
@@ -2198,8 +2201,8 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	case EM_X86_64:        return strdup ("AMD x86-64 architecture");
 	case EM_LANAI:         return strdup ("32bit LANAI architecture");
 	case EM_PDSP:          return strdup ("Sony DSP Processor");
-	case EM_PDP10          return strdup ("Digital Equipment Corp. PDP-10");
-	case EM_PDP11          return strdup ("Digital Equipment Corp. PDP-11");
+	case EM_PDP10:         return strdup ("Digital Equipment Corp. PDP-10");
+	case EM_PDP11:         return strdup ("Digital Equipment Corp. PDP-11");
 	case EM_FX66:          return strdup ("Siemens FX66 microcontroller");
 	case EM_ST9PLUS:       return strdup ("STMicroelectronics ST9+ 8/16 mc");
 	case EM_ST7:           return strdup ("STmicroelectronics ST7 8 bit mc");
@@ -2251,7 +2254,7 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	case EM_STXP7X:        return strdup ("STMicroelectronics STxP7x family of configurable and extensible RISC processors");
 	case EM_NDS32:         return strdup ("Andes Technology compact code size embedded RISC processor family");
 	case EM_ECOG1:         return strdup ("Cyan Technology eCOG1X family");
-	case EM_ECOG1X:        return strdup ("Cyan Technology eCOG1X family");
+	// case EM_ECOG1X:        return strdup ("Cyan Technology eCOG1X family");
 	case EM_MAXQ30:        return strdup ("Dallas Semiconductor MAXQ30 Core Micro-controllers");
 	case EM_XIMO16:        return strdup ("New Japan Radio (NJR) 16-bit DSP Processor");
 	case EM_MANIK:         return strdup ("M2000 Reconfigurable RISC Microprocessor");
@@ -2265,14 +2268,12 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	case EM_SLE9X:         return strdup ("Infineon Technologies SLE9X core");
 	case EM_L10M:          return strdup ("Intel L10M");
 	case EM_K10M:          return strdup ("Intel K10M");
-	case reserved:         return strdup ("Reserved for future Intel use");
-	case EM_AARCH64:       return strdup ("ARM 64-bit architecture (AARCH64)");
-	case reserved:         return strdup ("Reserved for future ARM use");
+	// case EM_AARCH64:       return strdup ("ARM 64-bit architecture (AARCH64)");
 	case EM_AVR32:         return strdup ("Atmel Corporation 32-bit microprocessor family");
 	case EM_STM8:          return strdup ("STMicroeletronics STM8 8-bit microcontroller");
 	case EM_TILE64:        return strdup ("Tilera TILE64 multicore architecture family");
 	case EM_TILEPRO:       return strdup ("Tilera TILEPro multicore architecture family");
-	case EM_MICROBLAZE:    return strdup ("Xilinx MicroBlaze 32-bit RISC soft processor core");
+	// case EM_MICROBLAZE:    return strdup ("Xilinx MicroBlaze 32-bit RISC soft processor core");
 	case EM_CUDA:          return strdup ("NVIDIA CUDA architecture");
 	case EM_TILEGX:        return strdup ("Tilera TILE-Gx multicore architecture family");
 	case EM_CLOUDSHIELD:   return strdup ("CloudShield architecture family");
@@ -2308,7 +2309,6 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	case EM_FT32:          return strdup ("FTDI Chip FT32 high performance 32-bit RISC architecture");
 	case EM_MOXIE:         return strdup ("Moxie processor family");
 	case EM_AMDGPU:        return strdup ("AMD GPU architecture");
-	case EM_RISCV:         return strdup ("RISC-V");
 
 	default:             return r_str_newf ("<unknown>: 0x%x", bin->ehdr.e_machine);
 	}

@@ -222,6 +222,8 @@ typedef struct
 #define EM_X86_64	62		/* AMD x86-64 architecture */
 #define EM_PDSP		63		/* Sony DSP Processor */
 
+// http://www.sco.com/developers/gabi/2003-12-17/ch4.eheader.html
+
 #define EM_FX66		66		/* Siemens FX66 microcontroller */
 #define EM_ST9PLUS	67		/* STMicroelectronics ST9+ 8/16 mc */
 #define EM_ST7		68		/* STmicroelectronics ST7 8 bit mc */

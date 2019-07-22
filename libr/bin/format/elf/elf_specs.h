@@ -95,6 +95,8 @@
 #define EM_EXCESS              111        /* eXcess: 16/32/64-bit configurable embedded CPU */
 #define EM_DXP                 112        /* Icera Semiconductor Inc. Deep Execution Processor */
 
+// http://www.sco.com/developers/gabi/latest/ch4.eheader.html
+
 #define EM_CRX                 114        /* National Semiconductor CompactRISC CRX microprocessor */
 #define EM_XGATE               115        /* Motorola XGATE embedded processor */
 #define EM_C166                116        /* Infineon C16x/XC16x processor */
