@@ -1125,6 +1125,13 @@ static bool cb_cmdpdc(void *user, void *data) {
 			r_cons_printf ("!*r2retdec\n");
 			free (retdec);
 		}
+		RListIter *iter;
+		RCorePlugin *cp;
+		r_list_foreach (core->rcmd->plist, iter, cp) {
+			if (!strcmp (cp->name, "r2ghidra")) {
+				r_cons_printf ("pdg\n");
+			}
+		}
 		char *ghidra = r_file_path ("r2ghidra");
 		if (ghidra && *ghidra == '/') {
 			r_cons_printf ("!*r2ghidra\n");
