@@ -1870,6 +1870,12 @@ static int bb_cmp(const void *a, const void *b) {
 	return ba->addr - bb->addr;
 }
 
+static int casecmp(const void* _a, const void * _b) {
+	const RAnalCaseOp* a = _a;
+	const RAnalCaseOp* b = _b;
+	return a->addr != b->addr;
+}
+
 static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	RDebugTracepoint *tp = NULL;
 	RListIter *iter;
@@ -2050,6 +2056,13 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			if (b->fail != UT64_MAX) {
 				outputs ++;
 			}
+			if (b->switch_op) {
+				RAnalCaseOp *cop;
+				RListIter *iter;
+				RList *unique_cases = r_list_uniq (b->switch_op->cases, casecmp);
+				outputs += r_list_length (unique_cases);
+				r_list_free (unique_cases);
+			}
 			if (b->jump != UT64_MAX) {
 				r_cons_printf ("jump: 0x%08"PFMT64x"\n", b->jump);
 			}
@@ -2071,6 +2084,15 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			}
 			if (b->fail != UT64_MAX) {
 				r_cons_printf (" f 0x%08" PFMT64x, b->fail);
+			}
+			if (b->switch_op) {
+				RAnalCaseOp *cop;
+				RListIter *iter;
+				RList *unique_cases = r_list_uniq (b->switch_op->cases, casecmp);
+				r_list_foreach (unique_cases, iter, cop) {
+					r_cons_printf (" s 0x%08" PFMT64x, cop->addr);
+				}
+				r_list_free (unique_cases);
 			}
 			r_cons_newline ();
 			break;
