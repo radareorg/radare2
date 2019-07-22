@@ -2187,7 +2187,7 @@ R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
 	return totalCycles;
 }
 
-R_API int r_anal_fcn_count_edges(RAnalFunction *fcn, int *ebbs) {
+R_API int r_anal_fcn_count_edges(const RAnalFunction *fcn, int *ebbs) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	int edges = 0;

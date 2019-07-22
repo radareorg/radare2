@@ -35,6 +35,70 @@ static void loganal(ut64 from, ut64 to, int depth) {
 	eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x" %d\r", from, to, depth);
 }
 
+static int cmpsize (const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	ut64 as = r_anal_fcn_size (a);
+	ut64 bs = r_anal_fcn_size (b);
+	return (as> bs)? 1: (as< bs)? -1: 0;
+}
+
+static int cmpfcncc(const void *_a, const void *_b) {
+	RAnalFunction *a = (RAnalFunction *)_a;
+	RAnalFunction *b = (RAnalFunction *)_b;
+	ut64 as = r_anal_fcn_cc (NULL, a);
+	ut64 bs = r_anal_fcn_cc (NULL, b);
+	return (as > bs)? 1: (as < bs)? -1: 0;
+}
+
+static int cmpedges(const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	int as, bs;
+	r_anal_fcn_count_edges (a, &as);
+	r_anal_fcn_count_edges (b, &bs);
+	return (as > bs)? 1: (as < bs)? -1: 0;
+}
+
+static int cmpframe(const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	int as = a->maxstack;
+	int bs = b->maxstack;
+	return (as > bs)? 1: (as < bs)? -1: 0;
+}
+
+static int cmpxrefs(const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	int as = a->meta.numrefs;
+	int bs = b->meta.numrefs;
+	return (as > bs)? 1: (as < bs)? -1: 0;
+}
+
+static int cmpname(const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	int as = strcmp (a->name, b->name);
+	int bs = strcmp (b->name, a->name);
+	return (as > bs)? 1: (as < bs)? -1: 0;
+}
+
+static int cmpcalls(const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	int as = a->meta.numcallrefs;
+	int bs = b->meta.numcallrefs;
+	return (as > bs)? 1: (as < bs)? -1: 0;
+}
+
+static int cmpnbbs (const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	ut64 as = r_list_length (a->bbs);
+	ut64 bs = r_list_length (b->bbs);
+	return (as> bs)? 1: (as< bs)? -1: 0;
+}
+
+static int cmpaddr (const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
+}
+
+
 static char *getFunctionName(RCore *core, ut64 addr) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (bf && bf->o) {
@@ -2449,7 +2513,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	return 0;
 }
 
-static int fcn_list_verbose(RCore *core, RList *fcns) {
+static int fcn_list_verbose(RCore *core, RList *fcns, const char *sortby) {
 	bool use_color = r_config_get_i (core->config, "scr.color");
 	int headeraddr_width = 10;
 	char *headeraddr = "==========";
@@ -2457,6 +2521,28 @@ static int fcn_list_verbose(RCore *core, RList *fcns) {
 	if (core->anal->bits == 64) {
 		headeraddr_width = 18;
 		headeraddr = "==================";
+	}
+
+	if (sortby) {
+		if (!strcmp (sortby, "size")) {
+			r_list_sort (fcns, cmpsize);
+		} else if (!strcmp (sortby, "addr")) {
+			r_list_sort (fcns, cmpaddr);
+		} else if (!strcmp (sortby, "cc")) {
+			r_list_sort (fcns, cmpfcncc);
+		} else if (!strcmp (sortby, "edges")) {
+			r_list_sort (fcns, cmpedges);
+		} else if (!strcmp (sortby, "calls")) {
+			r_list_sort (fcns, cmpcalls);
+		} else if (strstr (sortby, "name")) {
+			r_list_sort (fcns, cmpname);
+		} else if (strstr (sortby, "frame")) {
+			r_list_sort (fcns, cmpframe);
+		} else if (strstr (sortby, "ref")) {
+			r_list_sort (fcns, cmpxrefs);
+		} else if (!strcmp (sortby, "nbbs")) {
+			r_list_sort (fcns, cmpnbbs);
+		}
 	}
 
 	r_cons_printf ("%-*s %4s %5s %5s %5s %4s %*s range %-*s %s %s %s %s %s %s\n",
@@ -2944,11 +3030,6 @@ static int fcn_list_legacy(RCore *core, RList *fcns)
 	return 0;
 }
 
-static int cmpaddr (const void *_a, const void *_b) {
-	const RAnalFunction *a = _a, *b = _b;
-	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
-}
-
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
 	r_return_val_if_fail (core && core->anal, 0);
 	if (r_list_empty (core->anal->fcns)) {
@@ -3017,7 +3098,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		if (rad[1] == 'j') {
 			fcn_list_verbose_json (core, fcns);
 		} else {
-			fcn_list_verbose (core, fcns);
+			char *sp = strchr (rad, ' ');
+			fcn_list_verbose (core, fcns, sp?sp+1: NULL);
 		}
 		break;
 	case 'q':
