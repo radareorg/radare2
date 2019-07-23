@@ -220,12 +220,12 @@ func.user_from_uid.arg.1=int,nouser
 func.user_from_uid.ret=char *
 func.user_from_uid.include=pwd.h
 
-user_from_gid=func
-func.user_from_gid.args=2
-func.user_from_gid.arg.0=gid_t,gid
-func.user_from_gid.arg.1=int,nogroup
-func.user_from_gid.ret=char *
-func.user_from_uid.include=grp.h
+group_from_gid=func
+func.group_from_gid.args=2
+func.group_from_gid.arg.0=gid_t,gid
+func.group_from_gid.arg.1=int,nogroup
+func.group_from_gid.ret=char *
+func.group_from_uid.include=grp.h
 
 setlocale=func
 func.setlocale.args=2
@@ -473,6 +473,18 @@ tolower=func
 func.tolower.args=1
 func.tolower.arg.0=int,c
 func.tolower.ret=int
+
+maskrune=func
+func.maskrune.args=2
+func.maskrune.arg.0=long,c
+func.maskrune.arg.1=long,f
+func.maskrune.ret=int
+
+__maskrune=func
+func.__maskrune.args=2
+func.__maskrune.arg.0=long,c
+func.__maskrune.arg.1=long,f
+func.__maskrune.ret=int
 
 toupper=func
 func.toupper.args=1
