@@ -286,7 +286,7 @@ R_API int r_sandbox_close(int fd) {
 }
 
 /* perm <-> mode */
-R_API int r_sandbox_open(const char *path, int mode, int perm) {
+R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	if (!path) {
 		return -1;
 	}
@@ -313,11 +313,11 @@ R_API int r_sandbox_open(const char *path, int mode, int perm) {
 			free (epath);
 			return -1;
 		}
-		ret = _wopen (wepath, mode, perm);
+		ret = _wopen (wepath, perm, mode);
 		free (wepath);
 	}
 #else // __WINDOWS__
-	ret = open (epath, mode, perm);
+	ret = open (epath, perm, mode);
 #endif // __WINDOWS__
 	free (epath);
 	return ret;
