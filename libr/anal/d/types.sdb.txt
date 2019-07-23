@@ -207,6 +207,26 @@ func.realloc.arg.0=void *,ptr
 func.realloc.arg.1=size_t,size
 func.realloc.ret=void *
 
+reallocf=func
+func.reallocf.args=2
+func.reallocf.arg.0=void *,ptr
+func.reallocf.arg.1=size_t,size
+func.reallocf.ret=void *
+
+user_from_uid=func
+func.user_from_uid.args=2
+func.user_from_uid.arg.0=uid_t,uid
+func.user_from_uid.arg.1=int,nouser
+func.user_from_uid.ret=char *
+func.user_from_uid.include=pwd.h
+
+group_from_gid=func
+func.group_from_gid.args=2
+func.group_from_gid.arg.0=gid_t,gid
+func.group_from_gid.arg.1=int,nogroup
+func.group_from_gid.ret=char *
+func.group_from_uid.include=grp.h
+
 setlocale=func
 func.setlocale.args=2
 func.setlocale.arg.0=int,category
@@ -275,6 +295,20 @@ usleep=func
 func.usleep.args=1
 func.usleep.arg.0=int,s
 func.usleep.ret=int
+
+bind=func
+func.bind.args=3
+func.bind.arg.0=int,socket
+func.bind.arg.1=struct sockaddr*,address
+func.bind.arg.2=socklen_t,address_len
+func.bind.ret=int
+
+socket=func
+func.socket.args=3
+func.socket.arg.0=int,domain
+func.socket.arg.1=int,type
+func.socket.arg.2=int,protocol
+func.socket.ret=int
 
 close=func
 func.close.args=1
@@ -454,10 +488,38 @@ func.tolower.args=1
 func.tolower.arg.0=int,c
 func.tolower.ret=int
 
+maskrune=func
+func.maskrune.args=2
+func.maskrune.arg.0=long,c
+func.maskrune.arg.1=long,f
+func.maskrune.ret=int
+
+__maskrune=func
+func.__maskrune.args=2
+func.__maskrune.arg.0=long,c
+func.__maskrune.arg.1=long,f
+func.__maskrune.ret=int
+
 toupper=func
 func.toupper.args=1
 func.toupper.arg.0=int,c
 func.toupper.ret=int
+
+__tolower=func
+func.__tolower.args=1
+func.__tolower.arg.0=int,c
+func.__tolower.ret=int
+
+__toupper=func
+func.__toupper.args=1
+func.__toupper.arg.0=int,c
+func.__toupper.ret=int
+
+kill=func
+func.kill.args=2
+func.kill.arg.0=pid_t,pid
+func.kill.arg.1=int,sig
+func.kill.ret=int
 
 feclearexcept=func
 func.feclearexcept.args=1
@@ -1707,6 +1769,18 @@ func.*aligned_alloc.arg.0=size_t,alignment
 func.*aligned_alloc.arg.1=size_t,size
 func.*aligned_alloc.ret=void
 
+bzero=func
+func.bzero.args=2
+func.bzero.arg.0=void *,s
+func.bzero.arg.1=size_t,n
+func.bzero.ret=void
+
+__bzero=func
+func.__bzero.args=2
+func.__bzero.arg.0=void *,s
+func.__bzero.arg.1=size_t,n
+func.__bzero.ret=void
+
 memcpy=func
 func.memcpy.args=3
 func.memcpy.arg.0=void *,s1
@@ -2720,6 +2794,13 @@ func.send.arg.1=void *,buffer
 func.send.arg.2=size_t,length
 func.send.arg.3=int,flags
 func.send.ret=ssize_t
+recv=func
+func.recv.args=4
+func.recv.arg.0=int,socket
+func.recv.arg.1=void *,buffer
+func.recv.arg.2=size_t,length
+func.recv.arg.3=int,flags
+func.recv.ret=ssize_t
 
 write=func
 func.write.args=3
@@ -2877,6 +2958,13 @@ func.error.arg.0=int,status
 func.error.arg.1=int,errname
 func.error.arg.2=char *,format
 func.error.ret=void
+
+__error=func
+func.__error.args=3
+func.__error.arg.0=int,status
+func.__error.arg.1=int,errname
+func.__error.arg.2=char *,format
+func.__error.ret=void
 
 nl_langinfo=func
 func.nl_langinfo.args=1
