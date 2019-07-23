@@ -786,7 +786,7 @@ static bool is_repeatable_inst(RCore *core, ut64 addr) {
 
 	ret = (op->prefix & R_ANAL_OP_PREFIX_REP) || (op->prefix & R_ANAL_OP_PREFIX_REPNE);
 
-end:
+    r_anal_op_free (op);
 	return ret;
 }
 
