@@ -201,3 +201,11 @@ acl_free=func
 func.acl_free.args=1
 func.acl_free.arg.0=void *,obj_p
 func.acl_free.ret=int
+
+recvfrom=func
+func.recvfrom.args=4
+func.recvfrom.arg.0=int,socket
+func.recvfrom.arg.1=void *,buffer
+func.recvfrom.arg.2=size_t,length
+func.recvfrom.arg.3=int,flags
+func.recvfrom.ret=ssize_t
