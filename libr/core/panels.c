@@ -359,7 +359,9 @@ static void __splitPanelHorizontal(RCore *core, RPanel *p, const char *name, con
 static void __panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void __menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h);
 static void __update_help_contents(RCore *core, RPanel *panel);
+static void __update_help_title(RCore *core, RPanel *panel);
 static void __update_panel_contents(RCore *core, RPanel *panel, const char *cmdstr);
+static void __update_panel_title(RCore *core, RPanel *panel);
 static void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr);
 static void __defaultPanelPrint(RCore *core, RPanel *panel);
 static void __resizePanelLeft(RPanels *panels);
@@ -860,11 +862,13 @@ void __update_help_contents(RCore *core, RPanel *panel) {
 	char *text = NULL;
 	int sx = panel->view->sx;
 	int sy = R_MAX (panel->view->sy, 0);
+	int x = panel->view->pos.x;
+	int y = panel->view->pos.y;
 	int w = panel->view->pos.w;
 	int h = panel->view->pos.h;
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
-	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
+	(void) r_cons_canvas_gotoxy (can, x + 2, y + 2);
 	if (sx < 0) {
 		char *white = (char*)r_str_pad (' ', 128);
 		int idx = R_MIN (-sx, strlen (white) - 1);
@@ -886,17 +890,41 @@ void __update_help_contents(RCore *core, RPanel *panel) {
 	}
 }
 
+void __update_help_title(RCore *core, RPanel *panel) {
+	RConsCanvas *can = core->panels->can;
+	RStrBuf *title = r_strbuf_new (NULL);
+	RStrBuf *cache_title = r_strbuf_new (NULL);
+	if (__check_if_cur_panel (core, panel)) {
+		r_strbuf_setf (title, "%s[X] %s"Color_RESET,
+				core->cons->context->pal.graph_box2, panel->model->title);
+		r_strbuf_setf (cache_title, "%s[Cache] N/A"Color_RESET,
+				core->cons->context->pal.graph_box2);
+	} else {
+		r_strbuf_setf (title, "[X]   %s   ", panel->model->title);
+		r_strbuf_setf (cache_title, "[Cache] N/A");
+	}
+	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
+		r_cons_canvas_write (can, r_strbuf_drain (title));
+	}
+	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w
+				- r_str_ansi_len (r_strbuf_get (cache_title)) - 2, panel->view->pos.y + 1)) {
+		r_cons_canvas_write (can, r_strbuf_drain (cache_title));
+	}
+}
+
 void __update_panel_contents(RCore *core, RPanel *panel, const char *cmdstr) {
 	bool b = __is_abnormal_cursor_type (core, panel) && core->print->cur_enabled;
 	int sx = b ? -2 :panel->view->sx;
 	int sy = R_MAX (panel->view->sy, 0);
+	int x = panel->view->pos.x;
+	int y = panel->view->pos.y;
 	int w = panel->view->pos.w;
 	int h = panel->view->pos.h;
 	int graph_pad = __check_panel_type (panel, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH)) ? 1 : 0;
 	char *text = NULL;
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
-	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
+	(void) r_cons_canvas_gotoxy (can, x + 2, y + 2);
 	if (sx < 0) {
 		char *white = (char*)r_str_pad (' ', 128);
 		int idx = R_MIN (-sx, strlen (white) - 1);
@@ -923,6 +951,34 @@ void __update_panel_contents(RCore *core, RPanel *panel, const char *cmdstr) {
 	}
 }
 
+void __update_panel_title(RCore *core, RPanel *panel) {
+	RConsCanvas *can = core->panels->can;
+	RStrBuf *title = r_strbuf_new (NULL);
+	RStrBuf *cache_title = r_strbuf_new (NULL);
+	char *cmd_title  = __apply_filter_cmd (core, panel);
+	if (__check_if_cur_panel (core, panel)) {
+		if (!strcmp (panel->model->title, cmd_title)) {
+			r_strbuf_setf (title, "%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
+		}  else {
+			r_strbuf_setf (title, "%s[X] %s (%s)"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title, cmd_title);
+		}
+		r_strbuf_setf (cache_title, "%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "On" : "Off");
+	} else {
+		if (!strcmp (panel->model->title, cmd_title)) {
+			r_strbuf_setf (title, "[X]   %s   ", panel->model->title);
+		} else {
+			r_strbuf_setf (title, "[X]   %s (%s)  ", panel->model->title, cmd_title);
+		}
+		r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
+	}
+	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
+		r_cons_canvas_write (can, r_strbuf_drain (title));
+	}
+	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w - r_str_ansi_len (r_strbuf_get (cache_title)) - 2, panel->view->pos.y + 1)) {
+		r_cons_canvas_write (can, r_strbuf_drain (cache_title));
+	}
+}
+
 //TODO: make this a task
 void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
 	RPanels *panels = core->panels;
@@ -930,6 +986,8 @@ void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
 	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	int sx = panel->view->sx;
 	int sy = R_MAX (panel->view->sy, 0);
+	int x = panel->view->pos.x;
+	int y = panel->view->pos.y;
 	int w = panel->view->pos.w;
 	int h = panel->view->pos.h;
 	char *text = NULL;
@@ -952,7 +1010,7 @@ void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
 		__resetScrollPos (panel);
 	}
 
-	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
+	(void) r_cons_canvas_gotoxy (can, x + 2, y + 2);
 
 	if (sx < 0) {
 		char *white = (char*)r_str_pad (' ', 128);
@@ -976,44 +1034,14 @@ void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
 }
 
 void __defaultPanelPrint(RCore *core, RPanel *panel) {
-	RPanels *panels = core->panels;
-	RConsCanvas *can = panels->can;
-	char title[128], cache_title[128];
-	char *cmd_title  = __apply_filter_cmd (core, panel);
 	bool o_cur = core->print->cur_enabled;
 	core->print->cur_enabled = o_cur & (__getCurPanel (core->panels) == panel);
 	if (panel->model->readOnly) {
 		__update_help_contents (core, panel);
+		__update_help_title (core, panel);
 	} else if (panel->model->cmd) {
 		panel->model->print_cb (core, panel);
-	}
-	if (__check_if_cur_panel (core, panel)) {
-		if (!strcmp (panel->model->title, cmd_title)) {
-			snprintf (title, sizeof (title) - 1,
-					"%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
-		}  else {
-			snprintf (title, sizeof (title) - 1,
-					"%s[X] %s (%s)"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title, cmd_title);
-		}
-		snprintf (cache_title, sizeof (cache_title) - 1,
-				"%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
-	} else {
-		if (!strcmp (panel->model->title, cmd_title)) {
-			snprintf (title, sizeof (title) - 1,
-					"[X]   %s   ", panel->model->title);
-		} else {
-			snprintf (title, sizeof (title) - 1,
-					"[X]   %s (%s)  ", panel->model->title, cmd_title);
-		}
-		snprintf (cache_title, sizeof (cache_title) - 1,
-				"[Cache] %s", panel->model->readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
-	}
-	free (cmd_title);
-	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, title);
-	}
-	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w - r_str_ansi_len (cache_title) - 2, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, cache_title);
+		__update_panel_title (core, panel);
 	}
 	core->print->cur_enabled = o_cur;
 }
