@@ -7866,6 +7866,7 @@ static int compute_coverage(RCore *core) {
 	RAnalFunction *fcn;
 	RIOMap *map;
 	int cov = 0;
+	cov += r_meta_get_size(core->anal, R_META_TYPE_DATA);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		ls_foreach (core->io->maps, iter2, map) {
 			if (map->perm & R_PERM_X) {

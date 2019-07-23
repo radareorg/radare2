@@ -1704,6 +1704,7 @@ R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr);
 R_API char *r_meta_get_var_comment (RAnal *a, int type, ut64 idx, ut64 addr);
 R_API int r_meta_set_string(RAnal *m, int type, ut64 addr, const char *s);
 R_API int r_meta_set_var_comment (RAnal *a, int type, ut64 idx, ut64 addr, const char *s);
+R_API int r_meta_get_size(RAnal *a, int type);
 R_API int r_meta_del(RAnal *m, int type, ut64 from, ut64 size);
 R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr);
 R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str);

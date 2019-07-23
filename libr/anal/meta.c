@@ -949,6 +949,46 @@ static int meta_count_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
+static int get_meta_size(void *user, const char *k, const char *v) {
+	RAnalMetaUserItem *ui = user;
+	RAnalMetaItem it;
+	if (!meta_deserialize (ui->anal, &it, k, v)) {
+		return -1;
+	}
+	if (ui->fcn && !r_anal_fcn_in (ui->fcn, it.from)) {
+		goto beach;
+	}
+	if (!it.str) {
+		it.str = strdup (""); // don't break in free
+		if (!it.str) {
+			goto beach;
+		}
+	}
+	return it.size;
+beach:
+	free (it.str);
+	return -1;
+}
+
+R_API int r_meta_get_size(RAnal *a, int type) {
+	RAnalMetaUserItem ui = { a, type, 0, NULL, NULL, 0, NULL };
+	SdbList *ls = sdb_foreach_list (DB, true);
+	SdbListIter *lsi;
+	SdbKv *kv;
+	int tot_size = 0;
+	int meta_size;
+	ls_foreach (ls, lsi, kv) {
+		if ((strlen (sdbkv_key (kv)) > 5 && sdbkv_key (kv)[5] == type)) {
+
+			meta_size = get_meta_size ((void *)&ui, sdbkv_key (kv), sdbkv_value (kv));
+			tot_size += meta_size > -1 ? meta_size : 0;
+		}
+	}
+	ls_free (ls);
+	return tot_size;
+}
+
+
 R_API int r_meta_space_count_for(RAnal *a, const RSpace *space) {
 	myMetaUser mu = { .ctx = space };
 	r_meta_list_cb (a, R_META_TYPE_ANY, 0, meta_count_cb, &mu, UT64_MAX);
