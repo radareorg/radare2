@@ -771,6 +771,25 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 	return true;
 }
 
+static bool is_repeatable_inst(RCore *core, ut64 addr) {
+	bool ret = false;
+
+	if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
+		return false;
+	}
+
+	RAnalOp *op = r_core_op_anal (core, addr);
+	if (!op) {
+		eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+		return false;
+	}
+
+	ret = (op->prefix & R_ANAL_OP_PREFIX_REP) || (op->prefix & R_ANAL_OP_PREFIX_REPNE);
+
+    r_anal_op_free (op);
+	return ret;
+}
+
 static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	RAsmOp asmop;
 	ut8 buf[32];
@@ -790,10 +809,15 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 		if (r_debug_is_dead (core->dbg)) {
 			break;
 		}
-		r_debug_step (core->dbg, 1);
+		pc = r_debug_reg_get (core->dbg, "PC");
+		if (is_repeatable_inst (core, pc)) {
+			r_debug_step_over (core->dbg, 1);
+		} else {
+			r_debug_step (core->dbg, 1);
+		}
+		pc = r_debug_reg_get (core->dbg, "PC");
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 		/* TODO: disassemble instruction and strstr */
-		pc = r_debug_reg_get (core->dbg, "PC");
 		r_asm_set_pc (core->assembler, pc);
 		// TODO: speedup if instructions are in the same block as the previous
 		r_io_read_at (core->io, pc, buf, sizeof (buf));
