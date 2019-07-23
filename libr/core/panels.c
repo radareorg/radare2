@@ -1571,6 +1571,15 @@ bool __handleWindowMode(RCore *core, const int key) {
 	case 'Z': // shift-tab
 		__handleTabKey (core, true);
 		break;
+	case 'e':
+	{
+		char *cmd = __show_status_input (core, "New command: ");
+		if (R_STR_ISNOTEMPTY (cmd)) {
+			__replaceCmd (core, cmd, cmd);
+		}
+		free (cmd);
+	}
+		break;
 	case 'h':
 		if (__moveToDirection (core, LEFT)) {
 			__setRefreshAll (core, false, false);
