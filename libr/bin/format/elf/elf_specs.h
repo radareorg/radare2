@@ -122,7 +122,7 @@
 #define EM_CYPRESS_M8C         161        /* Cypress M8C microprocessor */
 #define EM_R32C                162        /* Renesas R32C series microprocessors */
 #define EM_TRIMEDIA            163        /* NXP Semiconductors TriMedia architecture family */
-// #define EM_QDSP6               164        /* QUALCOMM DSP6 Processor */  // Nonstandard
+#define EM_QDSP6               164        /* QUALCOMM DSP6 Processor */  // Nonstandard
 #define EM_8051                165        /* Intel 8051 and variants */
 #define EM_STXP7X              166        /* STMicroelectronics STxP7x family of configurable and extensible RISC processors */
 #define EM_NDS32               167        /* Andes Technology compact code size embedded RISC processor family */
