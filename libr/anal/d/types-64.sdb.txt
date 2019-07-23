@@ -4,3 +4,15 @@ type.char *.size=64
 size_t=type
 type.size_t=x
 type.size_t.size=64
+
+pid_t=type
+type.pid_t=d
+type.pid_t.pid=64
+
+uid_t=type
+type.uid_t=d
+type.uid_t.uid=64
+
+gid_t=type
+type.gid_t=d
+type.gid_t.uid=64

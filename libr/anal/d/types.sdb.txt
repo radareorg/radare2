@@ -207,6 +207,26 @@ func.realloc.arg.0=void *,ptr
 func.realloc.arg.1=size_t,size
 func.realloc.ret=void *
 
+reallocf=func
+func.reallocf.args=2
+func.reallocf.arg.0=void *,ptr
+func.reallocf.arg.1=size_t,size
+func.reallocf.ret=void *
+
+user_from_uid=func
+func.user_from_uid.args=2
+func.user_from_uid.arg.0=uid_t,uid
+func.user_from_uid.arg.1=int,nouser
+func.user_from_uid.ret=char *
+func.user_from_uid.include=pwd.h
+
+user_from_gid=func
+func.user_from_gid.args=2
+func.user_from_gid.arg.0=gid_t,gid
+func.user_from_gid.arg.1=int,nogroup
+func.user_from_gid.ret=char *
+func.user_from_uid.include=grp.h
+
 setlocale=func
 func.setlocale.args=2
 func.setlocale.arg.0=int,category
@@ -458,6 +478,22 @@ toupper=func
 func.toupper.args=1
 func.toupper.arg.0=int,c
 func.toupper.ret=int
+
+__tolower=func
+func.__tolower.args=1
+func.__tolower.arg.0=int,c
+func.__tolower.ret=int
+
+__toupper=func
+func.__toupper.args=1
+func.__toupper.arg.0=int,c
+func.__toupper.ret=int
+
+kill=func
+func.kill.args=2
+func.kill.arg.0=pid_t,pid
+func.kill.arg.1=int,sig
+func.kill.ret=int
 
 feclearexcept=func
 func.feclearexcept.args=1
@@ -1706,6 +1742,18 @@ func.*aligned_alloc.args=2
 func.*aligned_alloc.arg.0=size_t,alignment
 func.*aligned_alloc.arg.1=size_t,size
 func.*aligned_alloc.ret=void
+
+bzero=func
+func.bzero.args=2
+func.bzero.arg.0=void *,s
+func.bzero.arg.1=size_t,n
+func.bzero.ret=void
+
+__bzero=func
+func.__bzero.args=2
+func.__bzero.arg.0=void *,s
+func.__bzero.arg.1=size_t,n
+func.__bzero.ret=void
 
 memcpy=func
 func.memcpy.args=3
