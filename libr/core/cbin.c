@@ -2829,7 +2829,7 @@ static void classdump_objc(RCore *r, RBinClass *c) {
 					strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
 					rp, sym->dname? sym->dname: sym->name);
 			free (rp);
-		} else {
+		} else if (sym->type) {
 			r_cons_printf ("%s (id) %s\n",
 					strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
 					sym->dname? sym->dname: sym->name);
