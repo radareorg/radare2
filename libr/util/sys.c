@@ -947,7 +947,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API int r_is_heap (void *p) {
+R_API bool r_is_heap (void *p) {
 	void *q = malloc (8);
 	ut64 mask = UT64_MAX;
 	ut64 addr = (ut64)(size_t)q;
