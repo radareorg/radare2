@@ -71,7 +71,7 @@
 
 #define EM_PROPELLER           0x5072
 #define EM_LANAI               0x8123
-// #define EM_VIDEOCORE4          200  // Nonstandard
+#define EM_VIDEOCORE4          200
 
 #define EM_PDP10               64         /* Digital Equipment Corp. PDP-10 */
 #define EM_PDP11               65         /* Digital Equipment Corp. PDP-11 */

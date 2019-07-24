@@ -1992,7 +1992,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	}
 #endif
 	/* linux64 pie main -- probably buggy in some cases */
-	int bo = 29; // Begin offset may vary depending on the entry prelude 
+	int bo = 29; // Begin offset may vary depending on the entry prelude
 	if (buf[0] == 0xf3 && buf[1] == 0x0f && buf[2] == 0x1e && buf[3] == 0xfa) {
 		// Change begin offset if binary starts with 'endbr64'
 		bo = 33;
@@ -2135,9 +2135,8 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_LANAI:
 		return strdup ("lanai");
 	case EM_VIDEOCORE3:
-		return strdup ("vc3");
-	// case EM_VIDEOCORE4:
-		// return strdup ("vc4");
+	case EM_VIDEOCORE4:
+		return strdup ("vc4");
 	case EM_MSP430:
 		return strdup ("msp430");
 	case EM_SH:
@@ -2237,7 +2236,7 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	case EM_MICROBLAZE:    return strdup ("Xilinx MicroBlaze");
 	case EM_RISCV:         return strdup ("RISC V");
 	case EM_VIDEOCORE3:    return strdup ("VideoCore III");
-	// case EM_VIDEOCORE4:    return strdup ("VideoCore IV");  // Nonstandard
+	case EM_VIDEOCORE4:    return strdup ("VideoCore IV");
 	case EM_LATTICEMICO32: return strdup ("RISC processor for Lattice FPGA architecture");
 	case EM_SE_C17:        return strdup ("Seiko Epson C17 family");
 	case EM_TI_C6000:      return strdup ("The Texas Instruments TMS320C6000 DSP family");
@@ -2249,12 +2248,12 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	case EM_CYPRESS_M8C:   return strdup ("Cypress M8C microprocessor");
 	case EM_R32C:          return strdup ("Renesas R32C series microprocessors");
 	case EM_TRIMEDIA:      return strdup ("NXP Semiconductors TriMedia architecture family");
-	// case EM_QDSP6:         return strdup ("QUALCOMM DSP6 Processor");  // Nonstandard
+	case EM_QDSP6:         return strdup ("QUALCOMM DSP6 Processor");  // Nonstandard
 	case EM_8051:          return strdup ("Intel 8051 and variants");
 	case EM_STXP7X:        return strdup ("STMicroelectronics STxP7x family of configurable and extensible RISC processors");
 	case EM_NDS32:         return strdup ("Andes Technology compact code size embedded RISC processor family");
 	case EM_ECOG1:         return strdup ("Cyan Technology eCOG1X family");
-	// case EM_ECOG1X:        return strdup ("Cyan Technology eCOG1X family");
+	// case EM_ECOG1X:        return strdup ("Cyan Technology eCOG1X family");  // Nonstandard
 	case EM_MAXQ30:        return strdup ("Dallas Semiconductor MAXQ30 Core Micro-controllers");
 	case EM_XIMO16:        return strdup ("New Japan Radio (NJR) 16-bit DSP Processor");
 	case EM_MANIK:         return strdup ("M2000 Reconfigurable RISC Microprocessor");
@@ -2268,12 +2267,12 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	case EM_SLE9X:         return strdup ("Infineon Technologies SLE9X core");
 	case EM_L10M:          return strdup ("Intel L10M");
 	case EM_K10M:          return strdup ("Intel K10M");
-	// case EM_AARCH64:       return strdup ("ARM 64-bit architecture (AARCH64)");
+	// case EM_AARCH64:       return strdup ("ARM 64-bit architecture (AARCH64)");  // Nonstandard
 	case EM_AVR32:         return strdup ("Atmel Corporation 32-bit microprocessor family");
 	case EM_STM8:          return strdup ("STMicroeletronics STM8 8-bit microcontroller");
 	case EM_TILE64:        return strdup ("Tilera TILE64 multicore architecture family");
 	case EM_TILEPRO:       return strdup ("Tilera TILEPro multicore architecture family");
-	// case EM_MICROBLAZE:    return strdup ("Xilinx MicroBlaze 32-bit RISC soft processor core");
+	// case EM_MICROBLAZE:    return strdup ("Xilinx MicroBlaze 32-bit RISC soft processor core");  // Nonstandard
 	case EM_CUDA:          return strdup ("NVIDIA CUDA architecture");
 	case EM_TILEGX:        return strdup ("Tilera TILE-Gx multicore architecture family");
 	case EM_CLOUDSHIELD:   return strdup ("CloudShield architecture family");
@@ -2284,7 +2283,7 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	case EM_RL78:          return strdup ("Renesas RL78 family");
 	case EM_VIDEOCORE5:    return strdup ("Broadcom VideoCore V processor");
 	case EM_78KOR:         return strdup ("Renesas 78KOR family");
-	case EM_56800EX:       return strdup ("Freescale 56800EX Digital Signal Controller (DSC)");
+	// case EM_56800EX:       return strdup ("Freescale 56800EX Digital Signal Controller (DSC)");  // Nonstandard
 	case EM_BA1:           return strdup ("Beyond BA1 CPU architecture");
 	case EM_BA2:           return strdup ("Beyond BA2 CPU architecture");
 	case EM_XCORE:         return strdup ("XMOS xCORE processor family");
