@@ -541,6 +541,7 @@ static RStrBuf *__drawMenu(RCore *core, RPanelsMenuItem *item);
 static void __moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
 static void __handleMenu(RCore *core, const int key);
 static int cmpstr(const void *_a, const void *_b);
+static int cmpint(const void *_a, const void *_b);
 static RList *__sorted_list(RCore *core, char *menu[], int count);
 
 /* config */
@@ -2193,11 +2194,43 @@ void __move_panel_to_right(RCore *core, RPanel *panel, int src) {
 	__set_geometry (&panel->view->pos, p_x - 1, 1, p_w + 1, h - 1);
 	int new_w = w - p_w;
 	int i = 0;
+	RList *list = r_list_new ();
 	for (; i < panels->n_panels - 1; i++) {
 		RPanel *tmp = __getPanel (panels, i);
 		int t_x = ((double)tmp->view->pos.x / (double)w) * (double)new_w;
 		int t_w = ((double)tmp->view->pos.w / (double)w) * (double)new_w + 1;
 		__set_geometry (&tmp->view->pos, t_x, tmp->view->pos.y, t_w, tmp->view->pos.h);
+		int64_t t = t_x + t_w;
+		r_list_append (list, (void *)(t));
+	}
+	r_list_sort (list, cmpint);
+	RListIter *iter;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p = __getPanel (panels, i);
+		int tx = p->view->pos.x;
+		if (tx == 0) {
+			continue;
+		}
+		int min = INT8_MAX;
+		int target_num = INT8_MAX;
+		bool found = false;
+		void *num = NULL;
+		r_list_foreach (list, iter, num) {
+			if ((int64_t)num - 1 == tx) {
+				found = true;
+				break;
+			}
+			int sub = (int64_t)num - tx;
+			if (min > R_ABS (sub)) {
+				min = R_ABS (sub);
+				target_num = (int64_t)num;
+			}
+		}
+		if (!found) {
+			int t = p->view->pos.x - target_num + 1;
+			p->view->pos.x = target_num - 1;
+			p->view->pos.w += t;
+		}
 	}
 	__set_curnode (core, panels->n_panels - 1);
 }
@@ -4276,6 +4309,16 @@ bool __initPanelsMenu(RCore *core) {
 int cmpstr(const void *_a, const void *_b) {
 	char *a = (char *)_a, *b = (char *)_b;
 	return strcmp (a, b);
+}
+
+int cmpint(const void *_a, const void *_b) {
+	if ((int64_t)_a > (int64_t)_b) {
+		return 1;
+	}
+	if ((int64_t)_a < (int64_t)_b) {
+		return -1;
+	}
+	return 0;
 }
 
 RList *__sorted_list(RCore *core, char *menu[], int count) {
