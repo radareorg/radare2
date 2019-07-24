@@ -384,6 +384,7 @@ static void __move_panel_to_left(RCore *core, RPanel *panel, int src);
 static void __move_panel_to_right(RCore *core, RPanel *panel, int src);
 static void __shrink_panels_forward(RCore *core, int target);
 static void __shrink_panels_backward(RCore *core, int target);
+static void __fix_layout_w (RCore *core);
 
 /* cursor */
 static bool __is_abnormal_cursor_type(RCore *core, RPanel *panel);
@@ -541,7 +542,6 @@ static RStrBuf *__drawMenu(RCore *core, RPanelsMenuItem *item);
 static void __moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
 static void __handleMenu(RCore *core, const int key);
 static int cmpstr(const void *_a, const void *_b);
-static int cmpint(const void *_a, const void *_b);
 static RList *__sorted_list(RCore *core, char *menu[], int count);
 
 /* config */
@@ -1236,6 +1236,7 @@ void __splitPanelVertical(RCore *core, RPanel *p, const char *name, const char *
 	p->view->pos.w = owidth / 2 + 1;
 	__set_geometry (&next->view->pos, p->view->pos.x + p->view->pos.w - 1,
 			p->view->pos.y, owidth - p->view->pos.w + 1, p->view->pos.h);
+	__fix_layout_w (core);
 	__setRefreshAll (core, false, true);
 }
 
@@ -1251,6 +1252,7 @@ void __splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char
 	p->view->pos.h = oheight / 2 + 1;
 	__set_geometry (&next->view->pos, p->view->pos.x, p->view->pos.y + p->view->pos.h - 1,
 			p->view->pos.w, oheight - p->view->pos.h + 1);
+	__fix_layout_w (core);
 	__setRefreshAll (core, false, true);
 }
 
@@ -2180,6 +2182,7 @@ void __move_panel_to_left(RCore *core, RPanel *panel, int src) {
 		int t_w = ((double)tmp->view->pos.w / (double)w) * (double)new_w + 1;
 		__set_geometry (&tmp->view->pos, t_x, tmp->view->pos.y, t_w, tmp->view->pos.h);
 	}
+	__fix_layout_w (core);
 	__set_curnode (core, 0);
 }
 
@@ -2194,16 +2197,25 @@ void __move_panel_to_right(RCore *core, RPanel *panel, int src) {
 	__set_geometry (&panel->view->pos, p_x - 1, 1, p_w + 1, h - 1);
 	int new_w = w - p_w;
 	int i = 0;
-	RList *list = r_list_new ();
 	for (; i < panels->n_panels - 1; i++) {
 		RPanel *tmp = __getPanel (panels, i);
 		int t_x = ((double)tmp->view->pos.x / (double)w) * (double)new_w;
 		int t_w = ((double)tmp->view->pos.w / (double)w) * (double)new_w + 1;
 		__set_geometry (&tmp->view->pos, t_x, tmp->view->pos.y, t_w, tmp->view->pos.h);
-		int64_t t = t_x + t_w;
+	}
+	__fix_layout_w (core);
+	__set_curnode (core, panels->n_panels - 1);
+}
+
+void __fix_layout_w (RCore *core) {
+	RPanels *panels = core->panels;
+	RList *list = r_list_new ();
+	int i = 0;
+	for (; i < panels->n_panels - 1; i++) {
+		RPanel *p = __getPanel (panels, i);
+		int64_t t = p->view->pos.x + p->view->pos.w;
 		r_list_append (list, (void *)(t));
 	}
-	r_list_sort (list, cmpint);
 	RListIter *iter;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = __getPanel (panels, i);
@@ -2232,7 +2244,6 @@ void __move_panel_to_right(RCore *core, RPanel *panel, int src) {
 			p->view->pos.w += t;
 		}
 	}
-	__set_curnode (core, panels->n_panels - 1);
 }
 
 void __resizePanelDown(RPanels *panels) {
@@ -4309,16 +4320,6 @@ bool __initPanelsMenu(RCore *core) {
 int cmpstr(const void *_a, const void *_b) {
 	char *a = (char *)_a, *b = (char *)_b;
 	return strcmp (a, b);
-}
-
-int cmpint(const void *_a, const void *_b) {
-	if ((int64_t)_a > (int64_t)_b) {
-		return 1;
-	}
-	if ((int64_t)_a < (int64_t)_b) {
-		return -1;
-	}
-	return 0;
 }
 
 RList *__sorted_list(RCore *core, char *menu[], int count) {
