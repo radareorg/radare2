@@ -1403,12 +1403,11 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			RAnalOp end_gadget = R_EMPTY;
 			// Disassemble one.
 			if (r_anal_op (core->anal, &end_gadget, from + i, buf + i,
-				    delta - i, R_ANAL_OP_MASK_BASIC) <= 0) {
+				    delta - i, R_ANAL_OP_MASK_BASIC) < 1) {
 				r_anal_op_fini (&end_gadget);
 				continue;
 			}
 			if (is_end_gadget (&end_gadget, crop)) {
-				struct endlist_pair *epair;
 #if 0
 				if (search->maxhits && r_list_length (end_list) >= search->maxhits) {
 					// limit number of high level rop gadget results
@@ -1416,7 +1415,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 					break;
 				}
 #endif
-				epair = R_NEW0 (struct endlist_pair);
+				struct endlist_pair *epair = R_NEW0 (struct endlist_pair);
 				if (epair) {
 					// If this arch has branch delay slots, add the next instr as well
 					if (end_gadget.delay) {
@@ -1438,7 +1437,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		}
 		r_list_reverse (end_list);
 		// If we have no end gadgets, just skip all of this search nonsense.
-		if (r_list_length (end_list) > 0) {
+		if (!r_list_empty (end_list)) {
 			int prev, next, ropdepth;
 			const int max_inst_size_x86 = 15;
 			// Get the depth of rop search, should just be max_instr

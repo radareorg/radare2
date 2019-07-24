@@ -171,7 +171,10 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 	}
 
 	if (*s != 'T' && strncmp (s, "_T", 2) && strncmp (s, "__T", 3)) {
-		return NULL;
+		// modern swift symbols
+		if (strncmp (s, "$s", 2)) {
+			return NULL;
+		}
 	}
 
 	if (!strncmp (s, "__", 2)) {
@@ -704,7 +707,7 @@ int main(int argc, char **argv) {
 		}
 	} else {
 		int i = 0;
-		for (i=0; swift_tests[i].sym; i++) {
+		for (i = 0; swift_tests[i].sym; i++) {
 			Test *test = &swift_tests[i];
 			printf ("[>>] %s\n", test->sym);
 			ret = r_bin_demangle_swift (test->sym, 0);
