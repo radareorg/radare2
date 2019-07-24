@@ -190,7 +190,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				matches = strcmp (opst, "invalid") && strcmp (opst, "unaligned");
 			}
 			if (matches && tokens[matchcount]) {
-				if (mode == 'c') { // check for case insensitivity
+				if (mode == 'a') { // check for case sensitive
 					matches = !r_str_ncasecmp (opst, tokens[matchcount], strlen (tokens[matchcount]));
 				} else if (!regexp) {
 					matches = strstr (opst, tokens[matchcount]) != NULL;

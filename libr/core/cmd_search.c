@@ -3211,7 +3211,7 @@ reread:
 			do_asm_search (core, &param, input + 2, 'o', search_itv);
 		} else if (input[1] == 'a') { // "/aa"
 			dosearch = 0;
-			do_asm_search (core, &param, input + 2, 'i', search_itv);
+			do_asm_search (core, &param, input + 2, 'a', search_itv);
 		} else if (input[1] == '1') {
 			__core_cmd_search_asm_byteswap (core, (int)r_num_math (core->num, input + 2));
 		} else if (input[1] == 'i') {
