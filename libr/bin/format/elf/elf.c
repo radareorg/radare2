@@ -1992,7 +1992,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	}
 #endif
 	/* linux64 pie main -- probably buggy in some cases */
-	int bo = 29; // Begin offset may vary depending on the entry prelude
+	int bo = 29; // Begin offset may vary depending on the entry prelude 
 	if (buf[0] == 0xf3 && buf[1] == 0x0f && buf[2] == 0x1e && buf[3] == 0xfa) {
 		// Change begin offset if binary starts with 'endbr64'
 		bo = 33;
@@ -2486,7 +2486,7 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 				continue;
 			}
 			int bits = Elf_(r_bin_elf_get_bits)(bin);
-			int elf_nhdr_size = (bits == 64) ? sizeof (Elf64_Nhdr): sizeof (Elf32_Nhdr);
+			int elf_nhdr_size = (bits == 64) ? sizeof (Elf64_Nhdr) : sizeof (Elf32_Nhdr);
 			void *elf_nhdr = calloc (elf_nhdr_size, 1);
 			bool regs_found = false;
 			ut64 offset = 0;
@@ -2597,7 +2597,7 @@ static size_t get_relocs_num(ELFOBJ *bin) {
 	if (!bin->g_sections) {
 		return 0;
 	}
-	size = bin->is_rela == DT_REL ? sizeof (Elf_(Rel)): sizeof (Elf_(Rela));
+	size = bin->is_rela == DT_REL ? sizeof (Elf_(Rel)) : sizeof (Elf_(Rela));
 	for (i = 0; !bin->g_sections[i].last; i++) {
 		if (sectionIsInvalid (bin, &bin->g_sections[i])) {
 			continue;
@@ -2700,7 +2700,7 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 				break;
 			}
 			if (!bin->is_rela) {
-				rela = is_rela? DT_RELA: DT_REL;
+				rela = is_rela? DT_RELA : DT_REL;
 			} else {
 				rela = bin->is_rela;
 			}
@@ -3262,7 +3262,7 @@ static void _set_arm_thumb_bits(struct Elf_(r_bin_elf_obj_t) *bin, RBinSymbol **
 	int len = strlen (ptr->name);
 	if (ptr->name[0] == '$' && (len >= 2 && !ptr->name[2])) {
 		switch (ptr->name[1]) {
-		case 'a': //arm
+		case 'a' : //arm
 			ptr->bits = 32;
 			break;
 		case 't': //thumb
@@ -3314,7 +3314,7 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 	if (!(ptr = R_NEW0 (RBinSymbol))) {
 		return NULL;
 	}
-	ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]): strdup ("");
+	ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup ("");
 	ptr->forwarder = r_str_const ("NONE");
 	ptr->bind = r_str_const (symbol->bind);
 	ptr->type = r_str_const (symbol->type);
@@ -3538,7 +3538,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	if (!ret) {
 		return Elf_(get_phdr_symbols) (bin, type);
 	}
-	ret[ret_ctr].last = 1; // ugly dirty hack:D
+	ret[ret_ctr].last = 1; // ugly dirty hack :D
 	int max = -1;
 	RBinElfSymbol *aux = NULL;
 	nsym = Elf_(fix_symbols) (bin, ret_ctr, type, &ret);
@@ -3787,8 +3787,8 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 		Elf_(Phdr) *p = &bin->phdr[ph];
 		if (p->p_type == PT_NOTE) {
 			int bits = Elf_(r_bin_elf_get_bits)(bin);
-			int elf_nhdr_size = (bits == 64) ? sizeof (Elf64_Nhdr): sizeof (Elf32_Nhdr);
-			int size_of = (bits == 64) ? sizeof (ut64): sizeof (ut32);
+			int elf_nhdr_size = (bits == 64) ? sizeof (Elf64_Nhdr) : sizeof (Elf32_Nhdr);
+			int size_of = (bits == 64) ? sizeof (ut64) : sizeof (ut32);
 			void *elf_nhdr = calloc (elf_nhdr_size, 1);
 			ut64 offset = 0;
 			bool found = false;
