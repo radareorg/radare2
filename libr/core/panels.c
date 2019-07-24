@@ -1077,13 +1077,13 @@ char *__apply_filter_cmd(RCore *core, RPanel *panel) {
 }
 
 char *__handleCmdStrCache(RCore *core, RPanel *panel, bool force_cache) {
-	char *out;
 	char *cmd = __apply_filter_cmd (core, panel);
 	bool b = core->print->cur_enabled && __getCurPanel (core->panels) != panel;
 	if (b) {
 		core->print->cur_enabled = false;
 	}
-	out = r_core_cmd_str (core, cmd);
+	char *out = r_core_cmd_str (core, cmd);
+	r_cons_echo (NULL);
 	if (force_cache) {
 		panel->model->cache = true;
 	}

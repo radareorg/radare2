@@ -19,7 +19,6 @@ static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS
 };
 
-extern int r_is_heap (void *p);
 extern bool r_core_is_project (RCore *core, const char *name);
 
 static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
@@ -3069,6 +3068,8 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	return true;
 }
 
+extern void r_core_echo(RCore *core, const char *input);
+
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = r_core_cmd (r, r->cmdqueue, true);
 	//int ret = r_core_cmd (r, r->cmdqueue, true);
@@ -3077,6 +3078,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 		r_sys_tts (buf, true);
 		r->cons->use_tts = false;
 	}
+	r_cons_echo (NULL);
 	r_cons_flush ();
 	if (r->cons && r->cons->line && r->cons->line->zerosep) {
 		r_cons_zero ();

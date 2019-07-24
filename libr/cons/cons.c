@@ -838,6 +838,26 @@ static bool lastMatters() {
 		!I.context->grep.json && !I.is_html);
 }
 
+R_API void r_cons_echo(const char *msg) {
+	static RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
+	if (msg) {
+		if (echodata) {
+			r_strbuf_append (echodata, msg);
+			r_strbuf_append (echodata, "\n");
+		} else {
+			echodata = r_strbuf_new (msg);
+		}
+	} else {
+		if (echodata) {
+			char *data = r_strbuf_drain (echodata);
+			r_cons_strcat (data);
+			r_cons_newline ();
+			echodata = NULL;
+			free (data);
+		}
+	}
+}
+
 R_API void r_cons_flush(void) {
 	const char *tee = I.teefile;
 	if (I.noflush) {

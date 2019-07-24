@@ -704,6 +704,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 	} else if (*buf) {
 		r_line_hist_add (buf);
 		r_core_cmd (core, buf, 0);
+		r_cons_echo (NULL);
 		r_cons_flush ();
 		ret = true;
 	} else {

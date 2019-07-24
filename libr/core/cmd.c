@@ -1949,6 +1949,10 @@ static int cmd_system(void *data, const char *input) {
 			cmd_autocomplete (core, input + 2);
 		} else if (input[1] == '?') {
 			cmd_help_exclamation (core);
+		} else if (input[1] == '*') {
+			char *cmd = r_str_trim_dup (input + 1);
+			(void)r_core_cmdf (core, "\"#!pipe %s\"", cmd);
+			free (cmd);
 		} else {
 			if (r_sandbox_enable (0)) {
 				eprintf ("This command is disabled in sandbox mode\n");
@@ -4509,6 +4513,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	static_str = r_cons_get_buffer ();
 	retstr = strdup (static_str? static_str: "");
 	r_cons_pop ();
+	r_cons_echo (NULL);
 	return retstr;
 }
 

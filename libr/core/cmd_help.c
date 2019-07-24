@@ -382,6 +382,7 @@ R_API void r_core_clippy(const char *msg) {
 	free (s);
 }
 
+
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RIOMap *map;
