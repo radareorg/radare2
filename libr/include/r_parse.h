@@ -88,6 +88,12 @@ struct r_parse_ctype_type_t {
 
 	union {
 		struct {
+			enum {
+				R_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED,
+				R_PARSE_CTYPE_IDENTIFIER_KIND_STRUCT,
+				R_PARSE_CTYPE_IDENTIFIER_KIND_UNION,
+				R_PARSE_CTYPE_IDENTIFIER_KIND_ENUM
+			} kind;
 			char *name;
 			bool is_const;
 		} identifier;
