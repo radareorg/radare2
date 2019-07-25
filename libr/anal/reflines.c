@@ -117,6 +117,10 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			}
 			nlines--;
 		}
+		if (anal->maxreflines && count > anal->maxreflines) {
+			break;
+		}
+		addr += sz;
 		{
 			const RAnalMetaItem *mi = r_meta_find_any_except (anal, addr, R_META_TYPE_COMMENT, 0);
 			if (mi) {
@@ -132,9 +136,6 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			addr += size;
 			continue;
 		}
-		if (anal->maxreflines && count > anal->maxreflines) {
-			break;
-		}
 
 		// This can segfault if opcode length and buffer check fails
 		r_anal_op_fini (&op);
@@ -143,7 +144,6 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			sz = 1;
 			goto __next;
 		}
-		addr += sz;
 
 		/* store data */
 		switch (op.type) {
