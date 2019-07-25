@@ -20,6 +20,7 @@ static const char *help_msg_i[] = {
 	"ib", "", "Reload the current buffer for setting of the bin (use once only)",
 	"ic", "", "List classes, methods and fields",
 	"icc", "", "List classes, methods and fields in Header Format",
+	"icg", "", "List classes as agn/age commands to create class hirearchy graphs",
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
 	"iC", "", "Show signature info (entitlements, ...)",
@@ -1011,8 +1012,37 @@ static int cmd_info(void *data, const char *input) {
 		case 'c': // "ic"
 		// XXX this is dupe of cbin.c:bin_classes()
 			if (input[1] == '?') {
-				eprintf ("Usage: ic[ljqc**] [class-index or name]\n");
-			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
+				eprintf ("Usage: ic[gljqc**] [class-index or name]\n");
+			} else if (input[1] == 'g') {
+				RBinClass *cls;
+				RBinSymbol *sym;
+				RListIter *iter, *iter2;
+				RBinObject *obj = r_bin_cur_object (core->bin);
+				if (!obj) {
+					break;
+				}
+				bool fullGraph = true;
+				if (fullGraph) {
+					r_list_foreach (obj->classes, iter, cls) {
+						if (cls->super) {
+							r_cons_printf ("agn %s\n", cls->super);
+							r_cons_printf ("agn %s\n", cls->name);
+							r_cons_printf ("age %s %s\n", cls->super, cls->name);
+						} else {
+							r_cons_printf ("agn %s\n", cls->name);
+						}
+					}
+				} else {
+					r_list_foreach (obj->classes, iter, cls) {
+						if (cls->super && !strstr (cls->super, "NSObject")) {
+							r_cons_printf ("agn %s\n", cls->super);
+							r_cons_printf ("agn %s\n", cls->name);
+							r_cons_printf ("age %s %s\n", cls->super, cls->name);
+						}
+					}
+				}
+				goto done;
+			} else if (input[1] == ' ' || input[1] == 'g' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
 				RBinClass *cls;
 				RBinSymbol *sym;
 				RListIter *iter, *iter2;
