@@ -270,22 +270,19 @@ static int samefile(const char *a, const char *b) {
 }
 
 R_API int r_lib_open(RLib *lib, const char *file) {
-	RLibStruct *stru;
-	void *handler;
-
 	/* ignored by filename */
 	if (!r_lib_dl_check_filename (file)) {
 		eprintf ("Invalid library extension: %s\n", file);
 		return R_FAIL;
 	}
 
-	handler = r_lib_dl_open (file);
+	void *handler = r_lib_dl_open (file);
 	if (!handler) {
 		IFDBG eprintf ("Cannot open library: '%s'\n", file);
 		return R_FAIL;
 	}
 
-	stru = (RLibStruct *) r_lib_dl_sym (handler, lib->symname);
+	RLibStruct *stru = (RLibStruct *) r_lib_dl_sym (handler, lib->symname);
 	if (!stru) {
 		IFDBG eprintf ("Cannot find symbol '%s' in library '%s'\n",
 			lib->symname, file);
