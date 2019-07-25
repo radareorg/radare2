@@ -286,6 +286,54 @@ R_API char *r_syscmd_sort(const char *file) {
 	return NULL;
 }
 
+R_API char *r_syscmd_head(const char *file, int count) {
+	const char *p = NULL;
+	if (file) {
+		if ((p = strchr (file, ' '))) {
+			p = p + 1;
+		} else {
+			p = file;
+		}
+	} 
+	if (p && *p) {
+		char *filename = strdup (p);
+		r_str_trim (filename);
+		char *data = r_file_slurp_lines (filename, 1, count);
+		if (!data) {
+			eprintf ("No such file or directory\n");
+		}
+		free (filename);
+		return data;
+	} else {
+		eprintf ("Usage: head 7 [file]\n");
+	}
+	return NULL;
+}
+
+R_API char *r_syscmd_tail(const char *file, int count) {
+	const char *p = NULL;
+	if (file) {
+		if ((p = strchr (file, ' '))) {
+			p = p + 1;
+		} else {
+			p = file;
+		}
+	}
+	if (p && *p) {
+		char *filename = strdup (p);
+		r_str_trim (filename);
+		char *data = r_file_slurp_lines_from_bottom (filename, count);
+		if (!data) {
+			eprintf ("No such file or directory\n");
+		}
+		free (filename);
+		return data;
+	} else {
+		eprintf ("Usage: tail 7 [file]\n");
+	}
+	return NULL;
+}
+
 R_API char *r_syscmd_uniq(const char *file) {
 	int sz;
 	const char *p = NULL;

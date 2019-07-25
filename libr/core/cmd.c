@@ -381,6 +381,43 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 	return 0;
 }
 
+static int cmd_head (void *data, const char *input) { // "head"
+	RCore *core = (RCore *)data;
+	int lines = 5;
+	char *arg = strchr (input, ' ');
+	char *tmp, *count;
+	if (arg) {
+		arg = r_str_trim_ro (arg + 1); 	// contains "count filename"
+		count = strchr (arg, ' ');
+		if (count) {
+			*count = 0;	// split the count and file name
+			tmp = r_str_trim_ro (count + 1); 
+			lines = atoi (arg);
+			arg = tmp;
+		}
+	}
+	switch (*input) {
+	case '?': // "head?"
+		eprintf ("Usage: head [file] # to list first n lines in file\n");
+		break;
+	default: // "head"
+		if (!arg) {
+			arg = "";
+		}
+		if (r_fs_check (core->fs, arg)) {
+			r_core_cmdf (core, "md %s", arg);
+		} else {
+			char *res = r_syscmd_head (arg, lines);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+		}
+		break;
+	}
+	return 0;
+}
+
 static int cmd_uname(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -4650,6 +4687,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"kuery",    "perform sdb query", cmd_kuery},
 		{"l",       "list files and directories", cmd_ls},
 		{"join",    "join the contents of the two files", cmd_join},
+		{"head",    "show the top n number of line in file", cmd_head},
 		{"L",        "manage dynamically loaded plugins", cmd_plugins},
 		{"mount",    "mount filesystem", cmd_mount, cmd_mount_init},
 		{"open",     "open or map file", cmd_open, cmd_open_init},

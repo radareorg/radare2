@@ -133,6 +133,8 @@ R_API char *r_syscmd_cat(const char *file);
 R_API char *r_syscmd_mkdir(const char *dir);
 R_API bool r_syscmd_mv(const char *input);
 R_API char *r_syscmd_uniq(const char *file);
+R_API char *r_syscmd_head(const char *file, int count);
+R_API char *r_syscmd_tail(const char *file, int count);
 R_API char *r_syscmd_join(const char *file1, const char *file2);
 R_API char *r_syscmd_sort(const char *file);
 
