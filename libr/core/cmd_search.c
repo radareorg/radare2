@@ -1016,7 +1016,7 @@ static bool insert_into(void *user, const ut64 k, const ut64 v) {
 }
 
 // TODO: follow unconditional jumps
-static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
+static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RAsmOp asmop;
@@ -1056,19 +1056,21 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		valid = false;
 		goto ret;
 	}
-	int opsz = 0;
-	char *opst = NULL;
-
 	while (nb_instr < max_instr) {
 		ht_uu_insert (localbadstart, idx, 1);
 		r_asm_set_pc (core->assembler, addr);
-		if (!r_asm_disassemble (core->assembler, &asmop, buf + idx, 15)) {
+		if (!r_asm_disassemble (core->assembler, &asmop, buf + idx, buflen - idx)) {
 			goto ret;
-		} else {
-			opsz = asmop.size;
-			// opsz = r_strbuf_length (asmop.buf);
-			opst = r_asm_op_get_asm (&asmop);
 		}
+		RAnalOp aop;
+		r_anal_op (core->anal, &aop, addr, buf + idx, buflen - idx, R_ANAL_OP_MASK_BASIC);
+		if (nb_instr == 0 && is_end_gadget (&aop, 0)) {
+			valid = false;
+			goto ret;
+		}
+		const int opsz = asmop.size;
+		// opsz = r_strbuf_length (asmop.buf);
+		char *opst = r_asm_op_get_asm (&asmop);
 		if (!r_str_ncasecmp (opst, "invalid", strlen ("invalid")) ||
 		    !r_str_ncasecmp (opst, ".byte", strlen (".byte"))) {
 			valid = false;
@@ -1076,9 +1078,11 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		}
 
 		hit = r_core_asm_hit_new ();
-		hit->addr = addr;
-		hit->len = opsz;
-		r_list_append (hitlist, hit);
+		if (hit) {
+			hit->addr = addr;
+			hit->len = opsz;
+			r_list_append (hitlist, hit);
+		}
 
 		// Move on to the next instruction
 		idx += opsz;
@@ -1098,7 +1102,9 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 				end = end? end: start + strlen (start); // latest field?
 				free (grep_str);
 				grep_str = calloc (1, end - start + 1);
-				strncpy (grep_str, start, end - start);
+				if (grep_str) {
+					strncpy (grep_str, start, end - start);
+				}
 			} else {
 				end = NULL;
 			}
@@ -1106,7 +1112,6 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 				rx = r_list_get_n (rx_list, count++);
 			}
 		}
-
 		if (endaddr <= (idx - opsz)) {
 			valid = (endaddr == idx - opsz);
 			goto ret;
@@ -1494,10 +1499,9 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 				}
 				ret = r_asm_disassemble (core->assembler, &asmop, buf + i, delta - i);
 				if (ret) {
-					RList *hitlist;
 					r_asm_set_pc (core->assembler, from + i);
-					hitlist = construct_rop_gadget (core,
-						from + i, buf, i, grep, regexp,
+					RList *hitlist = construct_rop_gadget (core,
+						from + i, buf, delta, i, grep, regexp,
 						rx_list, end_gadget, badstart);
 					if (!hitlist) {
 						continue;
