@@ -303,9 +303,18 @@ static void showFormat(RCore *core, const char *name, int mode) {
 
 static int cmd_tail (void *data, const char *input) { // "tail"
 	RCore *core = (RCore *)data;
-	const char *arg = strchr (input, ' ');
+	int lines = 5;
+	char *arg = strchr (input, ' ');
+	char *tmp, *count;
 	if (arg) {
-		arg = r_str_trim_ro (arg + 1);
+		arg = r_str_trim_ro (arg + 1); 	// contains "count filename"
+		count = strchr (arg, ' ');
+		if (count) {
+			*count = 0;	// split the count and file name
+			tmp = r_str_trim_ro (count + 1); 
+			lines = atoi (arg);
+			arg = tmp;
+		}
 	}
 	switch (*input) {
 	case '?': // "tail?"
@@ -318,7 +327,7 @@ static int cmd_tail (void *data, const char *input) { // "tail"
 		if (r_fs_check (core->fs, arg)) {
 			r_core_cmdf (core, "md %s", arg);
 		} else {
-			char *res = r_syscmd_tail (arg, 5);
+			char *res = r_syscmd_tail (arg, lines);
 			if (res) {
 				r_cons_print (res);
 				free (res);

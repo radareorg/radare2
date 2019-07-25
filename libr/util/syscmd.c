@@ -305,7 +305,7 @@ R_API char *r_syscmd_head(const char *file, int count) {
 		free (filename);
 		return data;
 	} else {
-		eprintf ("Usage: head -n 7 [file]\n");
+		eprintf ("Usage: head 7 [file]\n");
 	}
 	return NULL;
 }
@@ -329,7 +329,7 @@ R_API char *r_syscmd_tail(const char *file, int count) {
 		free (filename);
 		return data;
 	} else {
-		eprintf ("Usage: head -n 7 [file]\n");
+		eprintf ("Usage: tail 7 [file]\n");
 	}
 	return NULL;
 }

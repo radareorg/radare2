@@ -571,8 +571,7 @@ R_API char *r_file_slurp_lines_from_bottom(const char *file, int line) {
 			}
 		}
 		if (line > lines) {
-			free (str);
-			return NULL;
+			return strdup (str);	// number of lines requested in more than present, return all
 		}
 		i--;
 		for (; str[i] && line; i--) {
