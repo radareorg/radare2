@@ -318,12 +318,16 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 			}
 		} else {
 			if (bin->verbose) {
-				eprintf ("r_bin_open_io: unknown filesize may fail here..\n");
+				eprintf ("r_bin_open_io: unknown file size, Loading from memory..\n");
 			}
-			return false;
+		//	return false;
+			// Seems like thanks to the new IO buf doesnt really matters how big is this
+			file_sz = 1024 * 1024 * 1024;
 		}
 	}
-	if (!opt->sz) {
+	if (opt->sz) {
+		opt->sz = R_MIN (file_sz, opt->sz);
+	} else {
 		opt->sz = file_sz;
 	}
 	// check if blockdevice?
@@ -335,7 +339,6 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		return false;
 	}
 	bin->file = fname;
-	opt->sz = R_MIN (file_sz, opt->sz);
 	ut64 seekaddr = opt->loadaddr;
 
 	if (!is_debugger && seekaddr > 0 && seekaddr != UT64_MAX) {
