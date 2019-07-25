@@ -9,29 +9,29 @@
 
 static const char *help_msg_o[] = {
 	"Usage: o","[com- ] [file] ([offset])","",
+	"o"," [file] 0x4000 rwx", "map file at 0x4000",
+	"o"," [file]","open [file] file in read-only",
 	"o","","list opened files",
 	"o","-1","close file descriptor 1",
-	"o"," [file]","open [file] file in read-only",
-	"o"," [file] 0x4000 rwx", "map file at 0x4000",
-	"o.","","show current filename (or o.q/oq to get the fd)",
-	"o:"," [len]","open a malloc://[len] copying the bytes from current offset",
+	"o*","","list opened files in r2 commands",
+	"o+"," [file]","open file in read-write mode",
 	"o-","!*","close all opened files",
 	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
-	"o+"," [file]","open file in read-write mode",
-	"oa","[-] [A] [B] [filename]","Specify arch and bits for given file",
-	"oq","","list all open files",
-	"o*","","list opened files in r2 commands",
+	"o.","","show current filename (or o.q/oq to get the fd)",
+	"o:"," [len]","open a malloc://[len] copying the bytes from current offset",
 	"o=","","list opened files (ascii-art bars)",
+	"oL","","list all IO plugins registered",
+	"oa","[-] [A] [B] [filename]","Specify arch and bits for given file",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
 	"of"," [file]","open file and map it at addr 0 as read-only",
 	"oi","[-|idx]","alias for o, but using index instead of fd",
 	"oj","[?]	","list opened files in JSON format",
-	"oL","","list all IO plugins registered",
 	"om","[?]","create, list, remove IO maps",
 	"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"oo","[?+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
 	"op"," [fd]", "select the given fd as current file (see also ob)",
+	"oq","","list all open files",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	NULL
 };
@@ -59,23 +59,23 @@ static const char *help_msg_oa[] = {
 
 static const char *help_msg_ob[] = {
 	"Usage:", "ob", " # List open binary files backed by fd",
+	"ob", " [bfid]", "Switch to open given objid",
 	"ob", "", "List opened binary files and objid",
 	"ob*", "", "List opened binary files and objid (r2 commands)",
-	"ob", " [bfid]", "Switch to open given objid",
+	"ob-", "*", "Delete all binfiles",
+	"ob-", "[objid]", "Delete binfile by binobjid",
 	"ob.", " ([addr])", "Show bfid at current address",
-	"obo", " [iofd]", "Switch to open binary file by objid (DEPRECATED)",
-	"obb", " [bfid]", "Switch to open binfile by fd number (Same as op)",
-	"oba", " [addr]", "Open bin info from the given address",
-	"obn", " [name]", "Select binfile by name",
+	"ob=", "", "Show ascii art table having the list of open files",
+	"obL", "", "Same as iL or Li",
 	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
+	"oba", " [addr]", "Open bin info from the given address",
+	"obb", " [bfid]", "Switch to open binfile by fd number (Same as op)",
 	"obf", " ([file])", "Load bininfo for current file (useful for r2 -n)",
 	"obj", "", "List opened binary files and objid (JSON format)",
+	"obn", " [name]", "Select binfile by name",
+	"obo", " [iofd]", "Switch to open binary file by objid (DEPRECATED)",
 	"obr", " [baddr]", "Rebase current bin object",
-	"obL", "", "Same as iL or Li",
-	"ob-", "[objid]", "Delete binfile by binobjid",
-	"ob-", "*", "Delete all binfiles",
-	"ob=", "", "Show ascii art table having the list of open files",
 	NULL
 };
 
@@ -86,33 +86,33 @@ static const char *help_msg_oj[] = {
 
 static const char *help_msg_om[] = {
 	"Usage:", "om[-] [arg]", " # map opened files",
-	"om", "", "list all defined IO maps",
-	"omq", "", "list all maps and their fds",
-	"omqq", "", "list all maps addresses (See $MM to get the size)",
-	"om*", "", "list all maps in r2 commands format",
-	"om=", "", "list all maps in ascii art",
-	"omj", "", "list all maps in json format",
 	"om", " [fd]", "list all defined IO maps for a specific fd",
-	"om-", "mapid", "remove the map with corresponding id",
-	"om-..", "", "hud view of all the maps to select the one to remove",
-	"om-*", "", "remove all maps",
 	"om", " fd vaddr [size] [paddr] [rwx] [name]", "create new io map",
-	"oma"," [fd]", "create a map covering all VA for given fd",
-	"omm"," [fd]", "create default map for given fd. (omm `oq`)",
+	"om", "", "list all defined IO maps",
+	"om*", "", "list all maps in r2 commands format",
+	"om-", "mapid", "remove the map with corresponding id",
+	"om-*", "", "remove all maps",
+	"om-..", "", "hud view of all the maps to select the one to remove",
 	"om.", "", "show map, that is mapped to current offset",
-	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
-	"omni", " mapid [name]", "set/delete name for map with mapid",
-	"omn.", "([-|name])", "show/set/delete name for current map",
-	"omf", " [mapid] rwx", "change flags/perms for current/given map",
-	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
+	"om=", "", "list all maps in ascii art",
+	"oma"," [fd]", "create a map covering all VA for given fd",
 	"omb", " mapid addr", "relocate map with corresponding id",
 	"omb.", " addr", "relocate current map",
-	"omr", " mapid newsize", "resize map with corresponding id",
+	"omf", " [mapid] rwx", "change flags/perms for current/given map",
+	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
+	"omj", "", "list all maps in json format",
+	"omm"," [fd]", "create default map for given fd. (omm `oq`)",
+	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
+	"omn.", "([-|name])", "show/set/delete name for current map",
+	"omni", " mapid [name]", "set/delete name for map with mapid",
 	"omo", " fd", "map the given fd with lowest priority",
 	"omp", " mapid", "prioritize map with corresponding id",
+	"ompb", " [fd]", "prioritize maps of the bin associated with the binid",
 	"ompd", " mapid", "deprioritize map with corresponding id",
 	"ompf", " [fd]", "prioritize map by fd",
-	"ompb", " [fd]", "prioritize maps of the bin associated with the binid",
+	"omq", "", "list all maps and their fds",
+	"omqq", "", "list all maps addresses (See $MM to get the size)",
+	"omr", " mapid newsize", "resize map with corresponding id",
 	NULL
 };
 
@@ -263,7 +263,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					opt.offset = addr;
 					opt.baseaddr = addr;
 					opt.loadaddr = addr;
-					opt.sz = 1024*1024*1;
+					opt.sz = 1024 * 1024 * 1;
 					r_bin_options_init (&opt, desc->fd, addr, addr, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
