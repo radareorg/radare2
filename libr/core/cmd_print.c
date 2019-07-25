@@ -3551,7 +3551,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "p=j" cjmp and jmp
-	case 'A': // "p=A" anal info 
+	case 'A': // "p=A" anal info
 	case 'a': // "p=a" bb info
 	case 'c': // "p=c" calls
 	case 'i': // "p=i" invalid
@@ -5277,6 +5277,9 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		break;
+		case '.': // "pi."
+			r_core_print_disasm_instructions (core, 0, 1);
+			break;
 		default: // "pi"
 			if (l != 0) {
 				r_core_print_disasm_instructions (core, 0, l);
@@ -5317,18 +5320,12 @@ static int cmd_print(void *data, const char *input) {
 				goto beach;
 			}
 		}
-		
-		const char *sp = NULL;
+
 		if (input[1] == '.') {
-			sp = input + 2;
-		} else {
-			sp = strchr (input + 1, ' ');
+			use_blocksize = 1;
 		}
-		if (!sp && (input[1] == '-' || IS_DIGIT (input[1]))) {
-			sp = input + 1;
-		}
-		if (sp) {
-			int n = (int) r_num_math (core->num, r_str_trim_ro (sp));
+		if (input[1] == ' ' || input[1] == '-' || IS_DIGIT (input[1])) {
+			int n = (int) r_num_math (core->num, r_str_trim_ro (input + 1));
 			if (!n) {
 				goto beach;
 			}
