@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_types.h>
 #include <r_io.h>
+#include <r_cons.h>
 #include <r_list.h>
 #include <r_bin_dwarf.h>
 #include <r_pdb.h>
@@ -319,6 +320,7 @@ typedef struct r_bin_t {
 	PrintfCallback cb_printf;
 	int loadany;
 	RIOBind iob;
+	RConsBind consb;
 	char *force;
 	int is_debugger;
 	bool want_dbginfo;

@@ -2727,6 +2727,8 @@ R_API bool r_core_init(RCore *core) {
 	/// XXX shouhld be using coreb
 	r_parse_set_user_ptr (core->parser, core);
 	core->bin = r_bin_new ();
+	r_cons_bind (&core->bin->consb);
+	// XXX we shuold use RConsBind instead of this hardcoded pointer
 	core->bin->cb_printf = (PrintfCallback) r_cons_printf;
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();

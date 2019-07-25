@@ -60,10 +60,13 @@ R_LIB_VERSION_HEADER(r_cons);
 
 typedef int (*RConsGetSize)(int *rows);
 typedef int (*RConsGetCursor)(int *rows);
+typedef bool (*RConsIsBreaked)(void);
 
 typedef struct r_cons_bind_t {
 	RConsGetSize get_size;
 	RConsGetCursor get_cursor;
+	PrintfCallback cb_printf;
+	RConsIsBreaked is_breaked;
 } RConsBind;
 
 typedef struct r_cons_grep_t {
