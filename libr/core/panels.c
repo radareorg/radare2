@@ -6038,13 +6038,14 @@ char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y) {
 	if (!pos) {
 		pos = R;
 	}
-	const char *sp = r_str_rsep (R, pos, "*+-/[,] ");
+#define TOkENs "=*+-/()[,] "
+	const char *sp = r_str_rsep (R, pos, TOkENs);
 	if (sp) {
 		sp++;
 	} else {
 		sp = pos;
 	}
-	char *sp2 = (char *)r_str_sep (sp, "*+-,][ ");
+	char *sp2 = (char *)r_str_sep (sp, TOkENs);
 	if (sp2) {
 		*sp2 = 0;
 	}
