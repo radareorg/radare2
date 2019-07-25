@@ -2178,7 +2178,7 @@ void __move_panel_to_dir(RCore *core, RPanel *panel, int src) {
 
 void __move_panel_to_left(RCore *core, RPanel *panel, int src) {
 	RPanels *panels = core->panels;
-	__shrink_panels_backward(core, src);
+	__shrink_panels_backward (core, src);
 	panels->panel[0] = panel;
 	int h, w = r_cons_get_size (&h);
 	int p_w = w - panels->columnWidth;
@@ -2198,7 +2198,7 @@ void __move_panel_to_left(RCore *core, RPanel *panel, int src) {
 
 void __move_panel_to_right(RCore *core, RPanel *panel, int src) {
 	RPanels *panels = core->panels;
-	__shrink_panels_forward(core, src);
+	__shrink_panels_forward (core, src);
 	panels->panel[panels->n_panels - 1] = panel;
 	int h, w = r_cons_get_size (&h);
 	int p_w = w - panels->columnWidth;
@@ -2219,7 +2219,7 @@ void __move_panel_to_right(RCore *core, RPanel *panel, int src) {
 
 void __move_panel_to_up(RCore *core, RPanel *panel, int src) {
 	RPanels *panels = core->panels;
-	__shrink_panels_backward(core, src);
+	__shrink_panels_backward (core, src);
 	panels->panel[0] = panel;
 	int h, w = r_cons_get_size (&h);
 	int p_h = h / 2;
@@ -2238,21 +2238,21 @@ void __move_panel_to_up(RCore *core, RPanel *panel, int src) {
 
 void __move_panel_to_down(RCore *core, RPanel *panel, int src) {
 	RPanels *panels = core->panels;
-	__shrink_panels_forward(core, src);
+	__shrink_panels_forward (core, src);
 	panels->panel[panels->n_panels - 1] = panel;
 	int h, w = r_cons_get_size (&h);
 	int p_h = h / 2;
 	int new_h = h - p_h;
 	__set_geometry (&panel->view->pos, 0, p_h - 1, w, p_h - 1);
-	int i = 1;
-	for (; i < panels->n_panels; i++) {
+	int i = 0;
+	for (; i < panels->n_panels - 1; i++) {
 		RPanel *tmp = __getPanel (panels, i);
 		int t_y = ((double)tmp->view->pos.y / (double)h) * (double)new_h + 1;
 		int t_h = ((double)tmp->view->pos.h / (double)h) * (double)new_h + 1;
 		__set_geometry (&tmp->view->pos, tmp->view->pos.x, t_y, tmp->view->pos.w, t_h);
 	}
 	__fix_layout (core);
-	__set_curnode (core, 0);
+	__set_curnode (core, panels->n_panels - 1);
 }
 
 void __fix_layout (RCore *core) {
