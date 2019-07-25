@@ -382,9 +382,13 @@ static void __swapPanels(RPanels *panels, int p0, int p1);
 static void __move_panel_to_dir(RCore *core, RPanel *panel, int src);
 static void __move_panel_to_left(RCore *core, RPanel *panel, int src);
 static void __move_panel_to_right(RCore *core, RPanel *panel, int src);
+static void __move_panel_to_up(RCore *core, RPanel *panel, int src);
+static void __move_panel_to_down(RCore *core, RPanel *panel, int src);
 static void __shrink_panels_forward(RCore *core, int target);
 static void __shrink_panels_backward(RCore *core, int target);
+static void __fix_layout (RCore *core);
 static void __fix_layout_w (RCore *core);
+static void __fix_layout_h (RCore *core);
 
 /* cursor */
 static bool __is_abnormal_cursor_type(RCore *core, RPanel *panel);
@@ -1236,7 +1240,7 @@ void __splitPanelVertical(RCore *core, RPanel *p, const char *name, const char *
 	p->view->pos.w = owidth / 2 + 1;
 	__set_geometry (&next->view->pos, p->view->pos.x + p->view->pos.w - 1,
 			p->view->pos.y, owidth - p->view->pos.w + 1, p->view->pos.h);
-	__fix_layout_w (core);
+	__fix_layout (core);
 	__setRefreshAll (core, false, true);
 }
 
@@ -1252,7 +1256,7 @@ void __splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char
 	p->view->pos.h = oheight / 2 + 1;
 	__set_geometry (&next->view->pos, p->view->pos.x, p->view->pos.y + p->view->pos.h - 1,
 			p->view->pos.w, oheight - p->view->pos.h + 1);
-	__fix_layout_w (core);
+	__fix_layout (core);
 	__setRefreshAll (core, false, true);
 }
 
@@ -2161,6 +2165,12 @@ void __move_panel_to_dir(RCore *core, RPanel *panel, int src) {
 		case 'l':
 			__move_panel_to_right (core, panel, src);
 			break;
+		case 'k':
+			__move_panel_to_up (core, panel, src);
+			break;
+		case 'j':
+			__move_panel_to_down (core, panel, src);
+			break;
 		default:
 			break;
 	}
@@ -2182,7 +2192,7 @@ void __move_panel_to_left(RCore *core, RPanel *panel, int src) {
 		int t_w = ((double)tmp->view->pos.w / (double)w) * (double)new_w + 1;
 		__set_geometry (&tmp->view->pos, t_x, tmp->view->pos.y, t_w, tmp->view->pos.h);
 	}
-	__fix_layout_w (core);
+	__fix_layout (core);
 	__set_curnode (core, 0);
 }
 
@@ -2203,8 +2213,51 @@ void __move_panel_to_right(RCore *core, RPanel *panel, int src) {
 		int t_w = ((double)tmp->view->pos.w / (double)w) * (double)new_w + 1;
 		__set_geometry (&tmp->view->pos, t_x, tmp->view->pos.y, t_w, tmp->view->pos.h);
 	}
-	__fix_layout_w (core);
+	__fix_layout (core);
 	__set_curnode (core, panels->n_panels - 1);
+}
+
+void __move_panel_to_up(RCore *core, RPanel *panel, int src) {
+	RPanels *panels = core->panels;
+	__shrink_panels_backward(core, src);
+	panels->panel[0] = panel;
+	int h, w = r_cons_get_size (&h);
+	int p_h = h / 2;
+	int new_h = h - p_h;
+	__set_geometry (&panel->view->pos, 0, 1, w, p_h - 1);
+	int i = 1;
+	for (; i < panels->n_panels; i++) {
+		RPanel *tmp = __getPanel (panels, i);
+		int t_y = ((double)tmp->view->pos.y / (double)h) * (double)new_h + p_h;
+		int t_h = ((double)tmp->view->pos.h / (double)h) * (double)new_h + 1;
+		__set_geometry (&tmp->view->pos, tmp->view->pos.x, t_y, tmp->view->pos.w, t_h);
+	}
+	__fix_layout (core);
+	__set_curnode (core, 0);
+}
+
+void __move_panel_to_down(RCore *core, RPanel *panel, int src) {
+	RPanels *panels = core->panels;
+	__shrink_panels_forward(core, src);
+	panels->panel[panels->n_panels - 1] = panel;
+	int h, w = r_cons_get_size (&h);
+	int p_h = h / 2;
+	int new_h = h - p_h;
+	__set_geometry (&panel->view->pos, 0, p_h - 1, w, p_h - 1);
+	int i = 1;
+	for (; i < panels->n_panels; i++) {
+		RPanel *tmp = __getPanel (panels, i);
+		int t_y = ((double)tmp->view->pos.y / (double)h) * (double)new_h + 1;
+		int t_h = ((double)tmp->view->pos.h / (double)h) * (double)new_h + 1;
+		__set_geometry (&tmp->view->pos, tmp->view->pos.x, t_y, tmp->view->pos.w, t_h);
+	}
+	__fix_layout (core);
+	__set_curnode (core, 0);
+}
+
+void __fix_layout (RCore *core) {
+	__fix_layout_w (core);
+	__fix_layout_h (core);
 }
 
 void __fix_layout_w (RCore *core) {
@@ -2220,7 +2273,7 @@ void __fix_layout_w (RCore *core) {
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = __getPanel (panels, i);
 		int tx = p->view->pos.x;
-		if (tx == 0) {
+		if (!tx) {
 			continue;
 		}
 		int min = INT8_MAX;
@@ -2242,6 +2295,48 @@ void __fix_layout_w (RCore *core) {
 			int t = p->view->pos.x - target_num + 1;
 			p->view->pos.x = target_num - 1;
 			p->view->pos.w += t;
+		}
+	}
+}
+
+void __fix_layout_h (RCore *core) {
+	RPanels *panels = core->panels;
+	RList *list = r_list_new ();
+	int h;
+	(void)r_cons_get_size (&h);
+	int i = 0;
+	for (; i < panels->n_panels - 1; i++) {
+		RPanel *p = __getPanel (panels, i);
+		int64_t t = p->view->pos.y + p->view->pos.h;
+		r_list_append (list, (void *)(t));
+	}
+	RListIter *iter;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p = __getPanel (panels, i);
+		int ty = p->view->pos.y;
+		int th = p->view->pos.h;
+		if (ty == 1 || th == (h - 1)) {
+			continue;
+		}
+		int min = INT8_MAX;
+		int target_num = INT8_MAX;
+		bool found = false;
+		void *num = NULL;
+		r_list_foreach (list, iter, num) {
+			if ((int64_t)num - 1 == ty) {
+				found = true;
+				break;
+			}
+			int sub = (int64_t)num - ty;
+			if (min > R_ABS (sub)) {
+				min = R_ABS (sub);
+				target_num = (int64_t)num;
+			}
+		}
+		if (!found) {
+			int t = p->view->pos.y - target_num + 1;
+			p->view->pos.y = target_num - 1;
+			p->view->pos.h += t;
 		}
 	}
 }
