@@ -858,10 +858,14 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		case CSSLOT_RESOURCEDIR: // 3;
 		case CSSLOT_APPLICATION: // 4;
 			// TODO: parse those codesign slots
-			eprintf ("TODO: Some codesign slots are not yet supported\n");
+			if (bin->verbose) {
+				eprintf ("TODO: Some codesign slots are not yet supported\n");
+			}
 			break;
 		default:
-			eprintf ("Unknown Code signature slot %d\n", idx.type);
+			if (bin->verbose) {
+				eprintf ("Unknown Code signature slot %d\n", idx.type);
+			}
 			break;
 		}
 	}
