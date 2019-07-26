@@ -1015,8 +1015,7 @@ static int cmd_info(void *data, const char *input) {
 				eprintf ("Usage: ic[gljqc**] [class-index or name]\n");
 			} else if (input[1] == 'g') {
 				RBinClass *cls;
-				RBinSymbol *sym;
-				RListIter *iter, *iter2;
+				RListIter *iter;
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (!obj) {
 					break;

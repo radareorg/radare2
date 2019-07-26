@@ -301,17 +301,18 @@ static void showFormat(RCore *core, const char *name, int mode) {
 	}
 }
 
-static int cmd_tail (void *data, const char *input) { // "tail"
+static int cmd_tail(void *data, const char *_input) { // "tail"
+	char *input = strdup (_input);
 	RCore *core = (RCore *)data;
 	int lines = 5;
 	char *arg = strchr (input, ' ');
 	char *tmp, *count;
 	if (arg) {
-		arg = r_str_trim_ro (arg + 1); 	// contains "count filename"
+		arg = (char *)r_str_trim_ro (arg + 1); 	// contains "count filename"
 		count = strchr (arg, ' ');
 		if (count) {
 			*count = 0;	// split the count and file name
-			tmp = r_str_trim_ro (count + 1); 
+			tmp = (char *)r_str_trim_ro (count + 1);
 			lines = atoi (arg);
 			arg = tmp;
 		}
@@ -335,6 +336,7 @@ static int cmd_tail (void *data, const char *input) { // "tail"
 		}
 		break;
 	}
+	free (input);
 	return 0;
 }
 
