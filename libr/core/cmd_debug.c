@@ -1469,12 +1469,12 @@ static ut64 addroflib(RCore *core, const char *libname) {
 	// RList *list = r_debug_native_modules_get (core->dbg);
 	RList *list = r_debug_modules_list (core->dbg);
 	r_list_foreach (list, iter, map) {
-		if (strstr (map->name, libname)) {
+		if (strstr (r_file_basename(map->name), libname)) {
 			return map->addr;
 		}
 	}
 	r_list_foreach (core->dbg->maps, iter, map) {
-		if (strstr (map->name, libname)) {
+		if (strstr (r_file_basename(map->name), libname)) {
 			return map->addr;
 		}
 	}
