@@ -259,3 +259,4 @@
 >24	belong	1		SHA-1 checksum
 >24	belong	2		MD5 checksum
 
+0	lelong 0x0a02d40a	protobuf: Google's protocol-buffer file
