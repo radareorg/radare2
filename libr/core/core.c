@@ -1457,7 +1457,10 @@ static void autocomplete_flagspaces(RCore *core, RLineCompletion *completion, co
 			r_line_completion_push (completion, s->name);
 		}
 	}
-	r_line_completion_push (completion, "*");
+
+	if (strlen (msg) == 0) {
+		r_line_completion_push (completion, "*");
+	}
 }
 
 static void autocomplete_functions (RCore *core, RLineCompletion *completion, const char* str) {
