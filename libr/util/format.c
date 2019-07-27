@@ -1880,7 +1880,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	const char *argend;
 	int viewflags = 0;
 	char *oarg = NULL;
-    char *internal_format = NULL;
+	char *internal_format = NULL;
 
 	/* Load format from name into fmt */
 	if (!formatname) {
