@@ -353,7 +353,7 @@ static void __panels_layout_refresh(RCore *core);
 static void __panels_layout(RPanels *panels);
 static void __layoutDefault(RPanels *panels);
 static void __savePanelsLayout(RCore *core);
-static int __loadSavedPanelsLayout(RCore *core, const char *name);
+static int __loadSavedPanelsLayout(RCore *core, const char *_name);
 static void __splitPanelVertical(RCore *core, RPanel *p, const char *name, const char *cmd);
 static void __splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char *cmd);
 static void __panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
@@ -4081,28 +4081,25 @@ static void __init_menu_saved_layout (RCore *core) {
 	int s, i = 0;
 	char *config_path = __getPanelsConfigPath();
 	char *panels_config = r_file_slurp (config_path, &s);
-	if (panels_config) {
-		char *tmp = panels_config;
-		free (config_path);
-		if (!panels_config) {
-			return;
-		}
-		char *names = NULL;
-		int len = 0;
-		while (*(panels_config + 1) != '{') {
-			len++;
-			panels_config++;
-		}
-		names = r_str_newlen (tmp, len + 1);
-		int count = r_str_split (names, ',');
-		i = 0;
-		for (; i < count - 1; i++) {
-			__addMenu (core, parent, names, __loadLayoutSavedCb, __get_name_cb);
-			names += strlen (names) + 1;
-		}
-	} else {
+	if (!panels_config) {
 		__addMenu (core, parent, "Default", __loadLayoutDefaultCb, __get_name_cb);
+		return;
 	}
+	int count = r_str_split (panels_config, '\n');
+	char *name, *p_cfg = panels_config, *tmp_cfg;
+	for (i = 0; i < count; i++) {
+		if (R_STR_ISEMPTY (p_cfg)) {
+			break;
+		}
+		tmp_cfg = __parsePanelsConfig (p_cfg, strlen (p_cfg));
+		name = sdb_json_get_str (tmp_cfg, "Name");
+		if (!name) {
+			break;
+		}
+		__addMenu (core, parent, name, __loadLayoutSavedCb, __get_name_cb);
+		p_cfg += strlen (p_cfg) + 1;
+	}
+	free (panels_config);
 }
 
 bool __initPanelsMenu(RCore *core) {
@@ -4332,33 +4329,7 @@ bool __initPanelsMenu(RCore *core) {
 		i++;
 	}
 
-	parent = "File.Load Layout.Saved";
-	int s;
-	i = 0;
-	char *config_path = __getPanelsConfigPath();
-	char *panels_config = r_file_slurp (config_path, &s);
-	if (panels_config) {
-		char *tmp = panels_config;
-		free (config_path);
-		if (!panels_config) {
-			return 0;
-		}
-		char *names = NULL;
-		int len = 0;
-		while (*(panels_config + 1) != '{') {
-			len++;
-			panels_config++;
-		}
-		names = r_str_newlen (tmp, len + 1);
-		int count = r_str_split (names, ',');
-		i = 0;
-		for (; i < count - 1; i++) {
-			__addMenu (core, parent, names, __loadLayoutSavedCb, __get_name_cb);
-			names += strlen (names) + 1;
-		}
-	} else {
-		__addMenu (core, parent, "Default", __loadLayoutDefaultCb, __get_name_cb);
-	}
+	__init_menu_saved_layout (core);
 
 	{
 		parent = "Settings.Colors";
@@ -5188,78 +5159,37 @@ char *__getPanelsConfigPath() {
 }
 
 void __savePanelsLayout(RCore *core) {
-	int i, s;
+	int i;
 	char *config_path = __getPanelsConfigPath ();
-	char *tmp_config = r_file_slurp (config_path, &s);
-	char *tmp_tmp_config = tmp_config;
-
-	char *names = NULL;
-
-	if (tmp_config) {
-		int len = 0;
-		while (*(tmp_config + 1) != '{') {
-			len++;
-			tmp_config++;
-		}
-		names = r_str_newlen (tmp_tmp_config, len + 1);
-		tmp_config++;
-	}
-
-	char *panels_config = NULL;
-	if (tmp_config) {
-		panels_config = r_str_newlen (tmp_config + 1, strlen (tmp_config) - 2);
-	}
-	free (tmp_tmp_config);
-
 	char *name = __show_status_input (core, "Name for the layout: ");
-	if (names) {
-		r_str_append (names, name);
-	} else {
-		names = r_str_new (name);
-	}
-	r_str_append (names, ",");
-
 	RPanels *panels = core->panels;
-	PJ *pj_tmp = NULL;
-	pj_tmp = pj_new ();
-	for (i = 0; i < panels->n_panels; i++) {
-		RPanel *panel = __getPanel (panels, i);
-		pj_o (pj_tmp);
-		pj_ks (pj_tmp, "Title", panel->model->title);
-		pj_ks (pj_tmp, "Cmd", panel->model->cmd);
-		pj_kn (pj_tmp, "x", panel->view->pos.x);
-		pj_kn (pj_tmp, "y", panel->view->pos.y);
-		pj_kn (pj_tmp, "w", panel->view->pos.w);
-		pj_kn (pj_tmp, "h", panel->view->pos.h);
-		pj_end (pj_tmp);
-	}
-
 	PJ *pj = NULL;
 	pj = pj_new ();
-	pj_o (pj);
-	pj_ks (pj, name, pj_drain (pj_tmp));
-	if (panels_config) {
-		pj_j (pj, panels_config);
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = __getPanel (panels, i);
+		pj_o (pj);
+		pj_ks (pj, "Name", name);
+		pj_ks (pj, "Title", panel->model->title);
+		pj_ks (pj, "Cmd", panel->model->cmd);
+		pj_kn (pj, "x", panel->view->pos.x);
+		pj_kn (pj, "y", panel->view->pos.y);
+		pj_kn (pj, "w", panel->view->pos.w);
+		pj_kn (pj, "h", panel->view->pos.h);
+		pj_end (pj);
 	}
-	pj_end (pj);
-
-	FILE *file = r_sandbox_fopen (config_path, "w");
+	FILE *file = fopen (config_path, "a");
 	if (!file) {
 		free (config_path);
 		return;
 	}
-
-	if (file) {
-		fprintf (file, "%s", names);
-		fprintf (file, "%s", pj_drain (pj));
-		fclose (file);
-	}
-
+	fprintf (file, "%s", pj_drain (pj));
+	fprintf (file, "\n");
+	fclose (file);
 	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout_cb);
 }
 
 char *__parsePanelsConfig(const char *cfg, int len) {
-	if (!cfg || !*cfg || len < 2) {
+	if (R_STR_ISEMPTY (cfg) || len < 2) {
 		eprintf ("Not valid config!\n");
 		return NULL;
 	}
@@ -5289,61 +5219,62 @@ void __load_config_menu(RCore *core) {
 	}
 }
 
-int __loadSavedPanelsLayout(RCore *core, const char *name) {
-	int i, s;
-
+int __loadSavedPanelsLayout(RCore *core, const char *_name) {
 	char *config_path = __getPanelsConfigPath();
-	char *panels_config = r_file_slurp (config_path, &s);
-	free (config_path);
+	char *panels_config = r_file_slurp (config_path, NULL);
 	if (!panels_config) {
 		return 0;
 	}
-
-	int len = 0;
-	while (*(panels_config + 1) != '{') {
-		len++;
-		panels_config++;
-	}
-	panels_config++;
-
-	panels_config = sdb_json_get_str (panels_config, name);
-	(void)r_str_arg_unescape (panels_config);
-	char *parsedConfig = __parsePanelsConfig (panels_config, strlen (panels_config));
-	free (panels_config);
-	if (!parsedConfig) {
-		return 0;
-	}
-	int count = r_str_split (parsedConfig, '\n');
 	RPanels *panels = core->panels;
-	__panelAllClear (panels);
-	panels->n_panels = 0;
-	__set_curnode (core, 0);
-	char *title, *cmd, *x, *y, *w, *h, *p_cfg = parsedConfig;
-	for (i = 1; i < count; i++) {
-		title = sdb_json_get_str (p_cfg, "Title");
-		cmd = sdb_json_get_str (p_cfg, "Cmd");
-		(void)r_str_arg_unescape (cmd);
-		x = sdb_json_get_str (p_cfg, "x");
-		y = sdb_json_get_str (p_cfg, "y");
-		w = sdb_json_get_str (p_cfg, "w");
-		h = sdb_json_get_str (p_cfg, "h");
-		RPanel *p = __getPanel (panels, panels->n_panels);
-		__set_geometry (&p->view->pos, atoi (x), atoi (y), atoi (w),atoi (h));
-		__init_panel_param (core, p, title, cmd);
-		//TODO: Super hacky and refactoring is needed
-		if (r_str_endswith (cmd, "Help")) {
-			p->model->title = r_str_dup (p->model->title, "Help");
-			p->model->cmd = r_str_dup (p->model->cmd, "Help");
-			RStrBuf *rsb = r_strbuf_new (NULL);
-			r_core_visual_append_help (rsb, "Visual Ascii Art Panels", help_msg_panels);
-			if (!rsb) {
-				return 0;
+	int count = r_str_split (panels_config, '\n');
+	char *name, *title, *cmd, *x, *y, *w, *h, *p_cfg = panels_config, *tmp_cfg;
+	bool found = false;
+	int i, j, tmp_count;
+	for (i = 0; i < count; i++) {
+		tmp_cfg = __parsePanelsConfig (p_cfg, strlen (p_cfg));
+		tmp_count = r_str_split (tmp_cfg, '\n');
+		for (j = 0; j < tmp_count; j++) {
+			if (R_STR_ISEMPTY (tmp_cfg)) {
+				break;
 			}
-			__setReadOnly (p, r_strbuf_drain (rsb));
+			name = sdb_json_get_str (tmp_cfg, "Name");
+			if (strcmp (name, _name)) {
+				break;
+			}
+			if (!found) {
+				__panelAllClear (panels);
+				panels->n_panels = 0;
+				__set_curnode (core, 0);
+				found = true;
+			}
+			title = sdb_json_get_str (tmp_cfg, "Title");
+			cmd = sdb_json_get_str (tmp_cfg, "Cmd");
+			(void)r_str_arg_unescape (cmd);
+			x = sdb_json_get_str (tmp_cfg, "x");
+			y = sdb_json_get_str (tmp_cfg, "y");
+			w = sdb_json_get_str (tmp_cfg, "w");
+			h = sdb_json_get_str (tmp_cfg, "h");
+			RPanel *p = __getPanel (panels, panels->n_panels);
+			__set_geometry (&p->view->pos, atoi (x), atoi (y), atoi (w),atoi (h));
+			__init_panel_param (core, p, title, cmd);
+			if (r_str_endswith (cmd, "Help")) {
+				p->model->title = r_str_dup (p->model->title, "Help");
+				p->model->cmd = r_str_dup (p->model->cmd, "Help");
+				RStrBuf *rsb = r_strbuf_new (NULL);
+				r_core_visual_append_help (rsb, "Visual Ascii Art Panels", help_msg_panels);
+				if (!rsb) {
+					return 0;
+				}
+				__setReadOnly (p, r_strbuf_drain (rsb));
+			}
+			tmp_cfg += strlen (tmp_cfg) + 1;
+		}
+		if (found) {
+			break;
 		}
 		p_cfg += strlen (p_cfg) + 1;
 	}
-	free (parsedConfig);
+	free (panels_config);
 	if (!panels->n_panels) {
 		return 0;
 	}
