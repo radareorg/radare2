@@ -16,6 +16,9 @@ R_API RLine *r_line_new(void) {
 	I.prompt = strdup ("> ");
 	I.contents = NULL;
 	I.vi_mode = false;
+	I.clipboard = NULL;
+	I.kill_ring = r_list_newf (NULL);
+	I.kill_ring_ptr = -1;
 #if __WINDOWS__
 	I.ansicon = r_cons_is_ansicon ();
 #endif
@@ -32,6 +35,11 @@ R_API void r_line_free(void) {
 	I.prompt = NULL;
 	r_line_hist_free ();
 	r_line_completion_fini (&I.completion);
+}
+
+R_API void r_line_clipboard_push (const char *str) {
+	I.kill_ring_ptr += 1;
+	r_list_insert (I.kill_ring, I.kill_ring_ptr, strdup (str));
 }
 
 // handle const or dynamic prompts?

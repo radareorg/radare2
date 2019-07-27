@@ -1015,6 +1015,8 @@ struct r_line_t {
 	int echo;
 	int has_echo;
 	char *prompt;
+	RList/*<str>*/ *kill_ring;
+	int kill_ring_ptr;
 	char *clipboard;
 	int disable;
 	void *user;
@@ -1042,6 +1044,7 @@ R_API void r_line_free(void);
 R_API char *r_line_get_prompt(void);
 R_API void r_line_set_prompt(const char *prompt);
 R_API int r_line_dietline_init(void);
+R_API void r_line_clipboard_push (const char *str);
 R_API void r_line_hist_free(void);
 
 typedef int (RLineReadCallback)(void *user, const char *line);
