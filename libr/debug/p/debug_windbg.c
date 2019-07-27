@@ -72,7 +72,7 @@ static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 		if (dbreak) {
 			dbreak = false;
 			windbg_break (wctx);
-			free (pkt);
+			R_FREE (pkt);
 			continue;
 		}
 		if (ret != KD_E_OK || !pkt) {
@@ -80,15 +80,20 @@ static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 			break;
 		}
 		stc = (kd_stc_64 *) pkt->data;
+		dbg->reason.addr = stc->pc;
+		dbg->reason.tid = stc->kthread;
+		dbg->reason.signum = stc->state;
+		windbg_set_cpu (wctx, stc->cpu);
 		if (stc->state == DbgKdExceptionStateChange) {
-			windbg_set_cpu (wctx, stc->cpu);
 			dbg->reason.type = R_DEBUG_REASON_INT;
-			dbg->reason.addr = stc->pc;
-			dbg->reason.tid = stc->kthread;
-			dbg->reason.signum = stc->state;
 			reason = R_DEBUG_REASON_INT;
 			break;
+		} else if (stc->state == DbgKdLoadSymbolsStateChange) {
+			dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
+			reason = R_DEBUG_REASON_NEW_LIB;
+			break;
 		}
+		R_FREE (pkt);
 	}
 	free (pkt);
 	return reason;
@@ -111,14 +116,14 @@ static int r_debug_windbg_attach(RDebug *dbg, int pid) {
 	// Handshake
 	if (!windbg_sync (wctx)) {
 		eprintf ("Could not connect to windbg\n");
-		windbg_ctx_free (wctx);
+		windbg_ctx_free (&desc->data);
 		return false;
 	}
 	if (!windbg_read_ver (wctx)) {
-		windbg_ctx_free (wctx);
+		windbg_ctx_free (&desc->data);
 		return false;
 	}
-
+	dbg->bits = windbg_get_bits (wctx);
 	// Make r_debug_is_dead happy
 	dbg->pid = 0;
 	return true;
@@ -136,6 +141,7 @@ static char *r_debug_windbg_reg_profile(RDebug *dbg) {
 	if (dbg->arch && strcmp (dbg->arch, "x86")) {
 		return NULL;
 	}
+	r_debug_windbg_attach (dbg, 0);
 	if (dbg->bits == R_SYS_BITS_32) {
 #include "native/reg/windows-x86.h"
 	} else if (dbg->bits == R_SYS_BITS_64) {
@@ -150,7 +156,13 @@ static int r_debug_windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool s
 		return false;
 	}
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
-	tag = (int *)&b->data;
+	if (!b->data) {
+		b->data = R_NEW0 (int);
+		if (!b->data) {
+			return 0;
+		}
+	}
+	tag = b->data;
 	return windbg_bkpt (wctx, b->addr, set, b->hw, tag);
 }
 
