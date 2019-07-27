@@ -282,6 +282,7 @@ static void __init_panel_param(RCore *core, RPanel *p, const char *title, const 
 static RPanels *__panels_new(RCore *core);
 static void __init_new_panels_root(RCore *core);
 static void __init_menu_saved_layout (RCore *core);
+static void __init_menu_disasm_settings_layout (void *_core);
 
 /* create */
 static void __createDefaultPanels(RCore *core);
@@ -325,6 +326,7 @@ static void __resetScrollPos(RPanel *p);
 /* update */
 static void __update_disassembly_or_open(RCore *core);
 static void __updateHelp(RPanels *ps);
+static void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
 
 /* check */
 static bool __check_panel_type(RPanel *panel, const char *type, int len);
@@ -339,7 +341,7 @@ static bool __check_if_cur_panel(RCore *core, RPanel *panel);
 /* add */
 static void __addHelpPanel(RCore *core);
 static void __add_visual_mark(RCore *core);
-static void __addMenu(RCore *core, const char *parent, const char *base_name, RPanelsMenuCallback cb, RPanelsMenuGetName get_name_cb);
+static void __addMenu(RCore *core, const char *parent, const char *base_name, RPanelsMenuCallback cb);
 void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenuUpdateCallback cb);
 
 /* user input */
@@ -495,8 +497,6 @@ static int __ioCacheOnCb(void *user);
 static int __ioCacheOffCb(void *user);
 static int __settings_colors_cb(void *user);
 static int __settings_decompiler_cb(void *user);
-static char *__get_name_cb (R_NULLABLE void *user, char *base_name);
-static char *__get_config_name_cb (R_NULLABLE void *user, char *base_name);
 static void __init_menu_saved_layout_cb (void *user);
 
 /* direction callback */
@@ -543,7 +543,6 @@ static void __del_menu(RCore *core);
 static void __clearPanelsMenu(RCore *core);
 static void __clearPanelsMenuRec(RPanelsMenuItem *pmi);
 static RStrBuf *__drawMenu(RCore *core, RPanelsMenuItem *item);
-static void __moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
 static void __handleMenu(RCore *core, const int key);
 static int cmpstr(const void *_a, const void *_b);
 static RList *__sorted_list(RCore *core, char *menu[], int count);
@@ -1167,14 +1166,14 @@ int __addCmdPanel(void *user) {
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	const char *cmd = __search_db (core, child->get_name_cb (core, child->base_name));
+	const char *cmd = __search_db (core, child->name);
 	if (!cmd) {
 		return 0;
 	}
 	int h;
 	(void)r_cons_get_size (&h);
 	__adjustSidePanels (core);
-	__insertPanel (core, 0, child->base_name, cmd);
+	__insertPanel (core, 0, child->name, cmd);
 	RPanel *p0 = __getPanel (panels, 0);
 	__set_geometry (&p0->view->pos, 0, 1, PANEL_CONFIG_SIDEPANEL_W, h - 1);
 	__set_curnode (core, 0);
@@ -1219,7 +1218,7 @@ int __addCmdfPanel(RCore *core, char *input, char *str) {
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	__adjustSidePanels (core);
-	__insertPanel (core, 0, child->get_name_cb (core, child->base_name), "");
+	__insertPanel (core, 0, child->name, "");
 	RPanel *p0 = __getPanel (panels, 0);
 	__set_geometry (&p0->view->pos, 0, 1, PANEL_CONFIG_SIDEPANEL_W, h - 1);
 	__setCmdStrCache (core, p0, __loadCmdf (core, p0, input, str));
@@ -1757,10 +1756,10 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 				RPanelsMenu *menu = panels->panelsMenu;
 				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 				for (i = 0; i < parent->n_sub; i++) {
-					if (!strcmp (word, parent->sub[i]->get_name_cb (core, parent->sub[i]->base_name))) {
+					if (!strcmp (word, parent->sub[i]->name)) {
 						parent->selectedIndex = i;
 						(void)(parent->sub[parent->selectedIndex]->cb (core));
-						__moveMenuCursor (core, menu, parent);
+						__update_menu_contents (core, menu, parent);
 						free (word);
 						return true;
 					}
@@ -2920,7 +2919,7 @@ int __settings_decompiler_cb(void *user) {
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	const char *pdc_next = child->get_name_cb (core, child->base_name);
+	const char *pdc_next = child->name;
 	const char *pdc_now = r_config_get (core->config, "cmd.pdc");
 	if (!strcmp (pdc_next, pdc_now)) {
 		return 0;
@@ -2942,7 +2941,7 @@ int __loadLayoutSavedCb(void *user) {
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	if (!__loadSavedPanelsLayout (core, child->get_name_cb (core, child->base_name))) {
+	if (!__loadSavedPanelsLayout (core, child->name)) {
 		__createDefaultPanels (core);
 		__panels_layout (core->panels);
 	}
@@ -3025,7 +3024,7 @@ int __settings_colors_cb(void *user) {
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	r_core_cmdf (core, "eco %s", child->get_name_cb (core, child->base_name));
+	r_core_cmdf (core, "eco %s", child->name);
 	__setRefreshAll (core, false, false);
 	int i;
 	for (i = 1; i < menu->depth; i++) {
@@ -3041,7 +3040,9 @@ int __config_toggle_cb(void *user) {
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	r_config_toggle (core->config, child->base_name);
+	RStrBuf *tmp = r_strbuf_new (child->name);
+	(void)r_str_split (r_strbuf_get(tmp), ':');
+	r_config_toggle (core->config, r_strbuf_drain (tmp));
 	__setRefreshAll (core, false, false);
 	parent->p->model->title = r_strbuf_drain (__drawMenu (core, parent));
 	int i;
@@ -3050,6 +3051,7 @@ int __config_toggle_cb(void *user) {
 		p->view->refresh = true;
 		menu->refreshPanels[menu->n_refresh++] = p;
 	}
+	__update_menu(core, "Settings.Disassembly", __init_menu_disasm_settings_layout);
 	return 0;
 }
 
@@ -3058,8 +3060,10 @@ int __config_value_cb(void *user) {
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+	RStrBuf *tmp = r_strbuf_new (child->name);
+	(void)r_str_split (r_strbuf_get(tmp), ':');
 	const char *v = __show_status_input (core, "New value: ");
-	r_config_set_i (core->config, child->base_name, r_num_math (core->num, v));
+	r_config_set_i (core->config, r_strbuf_drain (tmp), r_num_math (core->num, v));
 	__setRefreshAll (core, false, false);
 	parent->p->model->title = r_strbuf_drain (__drawMenu (core, parent));
 	int i;
@@ -3068,6 +3072,7 @@ int __config_value_cb(void *user) {
 		p->view->refresh = true;
 		menu->refreshPanels[menu->n_refresh++] = p;
 	}
+	__update_menu(core, "Settings.Disassembly", __init_menu_disasm_settings_layout);
 	return 0;
 }
 
@@ -3203,19 +3208,6 @@ int __ioCacheOffCb(void *user) {
 	(void)__show_status (core, "io.cache is off");
 	__setMode (core, PANEL_MODE_DEFAULT);
 	return 0;
-}
-
-char *__get_name_cb (R_NULLABLE void *user, char *base_name) {
-	return base_name;
-}
-
-char *__get_config_name_cb (R_NULLABLE void *user, char *base_name) {
-	RCore *core = (RCore *)user;
-	RStrBuf *rsb = r_strbuf_new (NULL);
-	r_strbuf_append (rsb, base_name);
-	r_strbuf_append (rsb, ": ");
-	r_strbuf_append (rsb, r_config_get (core->config, base_name));
-	return r_strbuf_drain (rsb);
 }
 
 void __update_disassembly_or_open (RCore *core) {
@@ -3968,7 +3960,7 @@ int __openMenuCb (void *user) {
 	return 0;
 }
 
-void __addMenu(RCore *core, const char *parent, const char *base_name, RPanelsMenuCallback cb, RPanelsMenuGetName get_name_cb) {
+void __addMenu(RCore *core, const char *parent, const char *name, RPanelsMenuCallback cb) {
 	RPanels *panels = core->panels;
 	RPanelsMenuItem *p_item, *item = R_NEW0 (RPanelsMenuItem);
 	if (!item) {
@@ -3977,17 +3969,16 @@ void __addMenu(RCore *core, const char *parent, const char *base_name, RPanelsMe
 	if (parent) {
 		void *addr = ht_pp_find (panels->mht, parent, NULL);
 		p_item = (RPanelsMenuItem *)addr;
-		ht_pp_insert (panels->mht, sdb_fmt ("%s.%s", parent, base_name), item);
+		ht_pp_insert (panels->mht, sdb_fmt ("%s.%s", parent, name), item);
 	} else {
 		p_item = panels->panelsMenu->root;
-		ht_pp_insert (panels->mht, sdb_fmt ("%s", base_name), item);
+		ht_pp_insert (panels->mht, sdb_fmt ("%s", name), item);
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
-	item->base_name = base_name ? r_str_new (base_name) : NULL;
+	item->name = name ? r_str_new (name) : NULL;
 	item->sub = NULL;
 	item->cb = cb;
-	item->get_name_cb = get_name_cb;
 	item->p = R_NEW0 (RPanel);
 	if (!item->p) {
 		free (item);
@@ -4015,12 +4006,14 @@ void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenuUpdateC
 	int i;
 	for (i = 0; i < p_item->n_sub; i++) {
 		RPanelsMenuItem *sub = p_item->sub[i];
-		ht_pp_delete (core->panels->mht, sdb_fmt ("%s.%s", parent, sub->get_name_cb (core, sub->base_name)));
+		ht_pp_delete (core->panels->mht, sdb_fmt ("%s.%s", parent, sub->name));
 	}
 	p_item->n_sub = 0;
 	if (cb) {
 		cb (core);
 	}
+	RPanelsMenu *menu = panels->panelsMenu;
+	__update_menu_contents (core, menu, p_item);
 }
 
 void __del_menu(RCore *core) {
@@ -4045,16 +4038,16 @@ RStrBuf *__drawMenu(RCore *core, RPanelsMenuItem *item) {
 	for (i = 0; i < item->n_sub; i++) {
 		if (i == item->selectedIndex) {
 			r_strbuf_appendf (buf, "> %s %s"Color_RESET,
-					core->cons->context->pal.graph_box2, item->sub[i]->get_name_cb (core, item->sub[i]->base_name));
+					core->cons->context->pal.graph_box2, item->sub[i]->name);
 		} else {
-			r_strbuf_appendf (buf, "   %s", item->sub[i]->get_name_cb (core, item->sub[i]->base_name));
+			r_strbuf_appendf (buf, "   %s", item->sub[i]->name);
 		}
 		r_strbuf_append (buf, "          \n");
 	}
 	return buf;
 }
 
-void __moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent) {
+void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent) {
 	RPanel *p = parent->p;
 	RStrBuf *buf = __drawMenu (core, parent);
 	if (!buf) {
@@ -4072,17 +4065,17 @@ void __moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent) {
 	menu->refreshPanels[menu->n_refresh++] = p;
 }
 
-static void __init_menu_saved_layout_cb (void *user) {
+void __init_menu_saved_layout_cb (void *user) {
 	__init_menu_saved_layout ((RCore *)user );
 }
 
-static void __init_menu_saved_layout (RCore *core) {
+void __init_menu_saved_layout (RCore *core) {
 	const char *parent = "File.Load Layout.Saved";
 	int s, i = 0;
 	char *config_path = __getPanelsConfigPath();
 	char *panels_config = r_file_slurp (config_path, &s);
 	if (!panels_config) {
-		__addMenu (core, parent, "Default", __loadLayoutDefaultCb, __get_name_cb);
+		__addMenu (core, parent, "Default", __loadLayoutDefaultCb);
 		return;
 	}
 	int count = r_str_split (panels_config, '\n');
@@ -4096,10 +4089,29 @@ static void __init_menu_saved_layout (RCore *core) {
 		if (!name) {
 			break;
 		}
-		__addMenu (core, parent, name, __loadLayoutSavedCb, __get_name_cb);
+		__addMenu (core, parent, name, __loadLayoutSavedCb);
 		p_cfg += strlen (p_cfg) + 1;
 	}
 	free (panels_config);
+}
+
+void __init_menu_disasm_settings_layout (void *_core) {
+	RCore *core = (RCore *)_core;
+	const char *parent = "Settings.Disassembly";
+	int i = 0;
+	while (menus_settings_disassembly[i]) {
+		RStrBuf *rsb = r_strbuf_new (NULL);
+		const char *menu = menus_settings_disassembly[i];
+		r_strbuf_append (rsb, menu);
+		r_strbuf_append (rsb, ": ");
+		r_strbuf_append (rsb, r_config_get (core->config, menu));
+		if (!strcmp (menus_settings_disassembly[i], "asm.var.summary")) {
+			__addMenu (core, parent, r_strbuf_drain (rsb), __config_value_cb);
+		} else {
+			__addMenu (core, parent, r_strbuf_drain (rsb), __config_toggle_cb);
+		}
+		i++;
+	}
 }
 
 bool __initPanelsMenu(RCore *core) {
@@ -4116,35 +4128,35 @@ bool __initPanelsMenu(RCore *core) {
 	panels->panelsMenu = panelsMenu;
 	panelsMenu->root = root;
 	root->n_sub = 0;
-	root->base_name = NULL;
+	root->name = NULL;
 	root->sub = NULL;
 
 	__load_config_menu (core);
 
 	int i = 0;
 	while (menus[i]) {
-		__addMenu (core, NULL, menus[i], __openMenuCb, __get_name_cb);
+		__addMenu (core, NULL, menus[i], __openMenuCb);
 		i++;
 	}
 	char *parent = "File";
 	i = 0;
 	while (menus_File[i]) {
 		if (!strcmp (menus_File[i], "Open")) {
-			__addMenu (core, parent, menus_File[i], __openFileCb, __get_name_cb);
+			__addMenu (core, parent, menus_File[i], __openFileCb);
 		} else if (!strcmp (menus_File[i], "ReOpen")) {
-			__addMenu (core, parent, menus_File[i], __openMenuCb, __get_name_cb);
+			__addMenu (core, parent, menus_File[i], __openMenuCb);
 		} else if (!strcmp (menus_File[i], "Close")) {
-			__addMenu (core, parent, menus_File[i], __closeFileCb, __get_name_cb);
+			__addMenu (core, parent, menus_File[i], __closeFileCb);
 		} else if (!strcmp (menus_File[i], "Save Layout")) {
-			__addMenu (core, parent, menus_File[i], __saveLayoutCb, __get_name_cb);
+			__addMenu (core, parent, menus_File[i], __saveLayoutCb);
 		} else if (!strcmp (menus_File[i], "Load Layout")) {
-			__addMenu (core, parent, menus_File[i], __openMenuCb, __get_name_cb);
+			__addMenu (core, parent, menus_File[i], __openMenuCb);
 		} else if (!strcmp (menus_File[i], "Clear Saved Layouts")) {
-			__addMenu (core, parent, menus_File[i], __clearLayoutsCb, __get_name_cb);
+			__addMenu (core, parent, menus_File[i], __clearLayoutsCb);
 		} else if (!strcmp (menus_File[i], "Quit")) {
-			__addMenu (core, parent, menus_File[i], __quitCb, __get_name_cb);
+			__addMenu (core, parent, menus_File[i], __quitCb);
 		} else {
-			__addMenu (core, parent, menus_File[i], __addCmdPanel, __get_name_cb);
+			__addMenu (core, parent, menus_File[i], __addCmdPanel);
 		}
 		i++;
 	}
@@ -4152,30 +4164,30 @@ bool __initPanelsMenu(RCore *core) {
 	parent = "Settings";
 	i = 0;
 	while (menus_Settings[i]) {
-		__addMenu (core, parent, menus_Settings[i++], __openMenuCb, __get_name_cb);
+		__addMenu (core, parent, menus_Settings[i++], __openMenuCb);
 	}
 
 	parent = "Edit";
 	i = 0;
 	while (menus_Edit[i]) {
 		if (!strcmp (menus_Edit[i], "Copy")) {
-			__addMenu (core, parent, menus_Edit[i], __copyCb, __get_name_cb);
+			__addMenu (core, parent, menus_Edit[i], __copyCb);
 		} else if (!strcmp (menus_Edit[i], "Paste")) {
-			__addMenu (core, parent, menus_Edit[i], __pasteCb, __get_name_cb);
+			__addMenu (core, parent, menus_Edit[i], __pasteCb);
 		} else if (!strcmp (menus_Edit[i], "Write String")) {
-			__addMenu (core, parent, menus_Edit[i], __writeStrCb, __get_name_cb);
+			__addMenu (core, parent, menus_Edit[i], __writeStrCb);
 		} else if (!strcmp (menus_Edit[i], "Write Hex")) {
-			__addMenu (core, parent, menus_Edit[i], __writeHexCb, __get_name_cb);
+			__addMenu (core, parent, menus_Edit[i], __writeHexCb);
 		} else if (!strcmp (menus_Edit[i], "Write Value")) {
-			__addMenu (core, parent, menus_Edit[i], __writeValueCb, __get_name_cb);
+			__addMenu (core, parent, menus_Edit[i], __writeValueCb);
 		} else if (!strcmp (menus_Edit[i], "Assemble")) {
-			__addMenu (core, parent, menus_Edit[i], __assembleCb, __get_name_cb);
+			__addMenu (core, parent, menus_Edit[i], __assembleCb);
 		} else if (!strcmp (menus_Edit[i], "Fill")) {
-			__addMenu (core, parent, menus_Edit[i], __fillCb, __get_name_cb);
+			__addMenu (core, parent, menus_Edit[i], __fillCb);
 		} else if (!strcmp (menus_Edit[i], "io.cache")) {
-			__addMenu (core, parent, menus_Edit[i], __openMenuCb, __get_name_cb);
+			__addMenu (core, parent, menus_Edit[i], __openMenuCb);
 		} else {
-			__addMenu (core, parent, menus_Edit[i], __addCmdPanel, __get_name_cb);
+			__addMenu (core, parent, menus_Edit[i], __addCmdPanel);
 		}
 		i++;
 	}
@@ -4187,7 +4199,7 @@ bool __initPanelsMenu(RCore *core) {
 		char *pos;
 		RListIter* iter;
 		r_list_foreach (list, iter, pos) {
-			__addMenu (core, parent, pos, __addCmdPanel, __get_name_cb);
+			__addMenu (core, parent, pos, __addCmdPanel);
 		}
 	}
 
@@ -4195,11 +4207,11 @@ bool __initPanelsMenu(RCore *core) {
 	i = 0;
 	while (menus_Tools[i]) {
 		if (!strcmp (menus_Tools[i], "Calculator")) {
-			__addMenu (core, parent, menus_Tools[i], __calculatorCb, __get_name_cb);
+			__addMenu (core, parent, menus_Tools[i], __calculatorCb);
 		} else if (!strcmp (menus_Tools[i], "R2 Shell")) {
-			__addMenu (core, parent, menus_Tools[i], __r2shellCb, __get_name_cb);
+			__addMenu (core, parent, menus_Tools[i], __r2shellCb);
 		} else if (!strcmp (menus_Tools[i], "System Shell")) {
-			__addMenu (core, parent, menus_Tools[i], __systemShellCb, __get_name_cb);
+			__addMenu (core, parent, menus_Tools[i], __systemShellCb);
 		}
 		i++;
 	}
@@ -4208,15 +4220,15 @@ bool __initPanelsMenu(RCore *core) {
 	i = 0;
 	while (menus_Search[i]) {
 		if (!strcmp (menus_Search[i], "String (Whole Bin)")) {
-			__addMenu (core, parent, menus_Search[i], __string_whole_bin_Cb, __get_name_cb);
+			__addMenu (core, parent, menus_Search[i], __string_whole_bin_Cb);
 		} else if (!strcmp (menus_Search[i], "String (Data Sections)")) {
-			__addMenu (core, parent, menus_Search[i], __string_data_sec_Cb, __get_name_cb);
+			__addMenu (core, parent, menus_Search[i], __string_data_sec_Cb);
 		} else if (!strcmp (menus_Search[i], "ROP")) {
-			__addMenu (core, parent, menus_Search[i], __ropCb, __get_name_cb);
+			__addMenu (core, parent, menus_Search[i], __ropCb);
 		} else if (!strcmp (menus_Search[i], "Code")) {
-			__addMenu (core, parent, menus_Search[i], __codeCb, __get_name_cb);
+			__addMenu (core, parent, menus_Search[i], __codeCb);
 		} else if (!strcmp (menus_Search[i], "Hexpairs")) {
-			__addMenu (core, parent, menus_Search[i], __hexpairsCb, __get_name_cb);
+			__addMenu (core, parent, menus_Search[i], __hexpairsCb);
 		}
 		i++;
 	}
@@ -4225,11 +4237,11 @@ bool __initPanelsMenu(RCore *core) {
 	i = 0;
 	while (menus_Emulate[i]) {
 		if (!strcmp (menus_Emulate[i], "Step From")) {
-			__addMenu (core, parent, menus_Emulate[i], __esil_init_cb, __get_name_cb);
+			__addMenu (core, parent, menus_Emulate[i], __esil_init_cb);
 		} else if (!strcmp (menus_Emulate[i], "Step To")) {
-			__addMenu (core, parent, menus_Emulate[i], __esil_step_to_cb, __get_name_cb);
+			__addMenu (core, parent, menus_Emulate[i], __esil_step_to_cb);
 		} else if (!strcmp (menus_Emulate[i], "Step Range")) {
-			__addMenu (core, parent, menus_Emulate[i], __esil_step_range_cb, __get_name_cb);
+			__addMenu (core, parent, menus_Emulate[i], __esil_step_range_cb);
 		}
 		i++;
 	}
@@ -4242,19 +4254,19 @@ bool __initPanelsMenu(RCore *core) {
 		RListIter* iter;
 		r_list_foreach (list, iter, pos) {
 			if (!strcmp (pos, "Breakpoints")) {
-				__addMenu (core, parent, pos, __breakpointsCb, __get_name_cb);
+				__addMenu (core, parent, pos, __breakpointsCb);
 			} else if (!strcmp (pos, "Watchpoints")) {
-				__addMenu (core, parent, pos, __watchpointsCb, __get_name_cb);
+				__addMenu (core, parent, pos, __watchpointsCb);
 			} else if (!strcmp (pos, "Continue")) {
-				__addMenu (core, parent, pos, __continueCb, __get_name_cb);
+				__addMenu (core, parent, pos, __continueCb);
 			} else if (!strcmp (pos, "Step")) {
-				__addMenu (core, parent, pos, __stepCb, __get_name_cb);
+				__addMenu (core, parent, pos, __stepCb);
 			} else if (!strcmp (pos, "Step Over")) {
-				__addMenu (core, parent, pos, __stepoverCb, __get_name_cb);
+				__addMenu (core, parent, pos, __stepoverCb);
 			} else if (!strcmp (pos, "Reload")) {
-				__addMenu (core, parent, pos, __reloadCb, __get_name_cb);
+				__addMenu (core, parent, pos, __reloadCb);
 			} else {
-				__addMenu (core, parent, pos, __addCmdPanel, __get_name_cb);
+				__addMenu (core, parent, pos, __addCmdPanel);
 			}
 		}
 	}
@@ -4263,17 +4275,17 @@ bool __initPanelsMenu(RCore *core) {
 	i = 0;
 	while (menus_Analyze[i]) {
 		if (!strcmp (menus_Analyze[i], "Function")) {
-			__addMenu (core, parent, menus_Analyze[i], __functionCb, __get_name_cb);
+			__addMenu (core, parent, menus_Analyze[i], __functionCb);
 		} else if (!strcmp (menus_Analyze[i], "Symbols")) {
-			__addMenu (core, parent, menus_Analyze[i], __symbolsCb, __get_name_cb);
+			__addMenu (core, parent, menus_Analyze[i], __symbolsCb);
 		} else if (!strcmp (menus_Analyze[i], "Program")) {
-			__addMenu (core, parent, menus_Analyze[i], __programCb, __get_name_cb);
+			__addMenu (core, parent, menus_Analyze[i], __programCb);
 		} else if (!strcmp (menus_Analyze[i], "BasicBlocks")) {
-			__addMenu (core, parent, menus_Analyze[i], __basicblocksCb, __get_name_cb);
+			__addMenu (core, parent, menus_Analyze[i], __basicblocksCb);
 		} else if (!strcmp (menus_Analyze[i], "Calls")) {
-			__addMenu (core, parent, menus_Analyze[i], __callsCb, __get_name_cb);
+			__addMenu (core, parent, menus_Analyze[i], __callsCb);
 		} else if (!strcmp (menus_Analyze[i], "References")) {
-			__addMenu (core, parent, menus_Analyze[i], __referencesCb, __get_name_cb);
+			__addMenu (core, parent, menus_Analyze[i], __referencesCb);
 		}
 		i++;
 	}
@@ -4282,9 +4294,9 @@ bool __initPanelsMenu(RCore *core) {
 	i = 0;
 	while (menus_Fun[i]) {
 		if (!strcmp (menus_Fun[i], "Fortune")) {
-			__addMenu (core, parent, menus_Fun[i], __fortuneCb, __get_name_cb);
+			__addMenu (core, parent, menus_Fun[i], __fortuneCb);
 		} else if (!strcmp (menus_Fun[i], "2048")) {
-			__addMenu (core, parent, menus_Fun[i], __gameCb, __get_name_cb);
+			__addMenu (core, parent, menus_Fun[i], __gameCb);
 		}
 		i++;
 	}
@@ -4293,9 +4305,9 @@ bool __initPanelsMenu(RCore *core) {
 	i = 0;
 	while (menus_About[i]) {
 		if (!strcmp (menus_About[i], "License")) {
-			__addMenu (core, parent, menus_About[i], __licenseCb, __get_name_cb);
+			__addMenu (core, parent, menus_About[i], __licenseCb);
 		} else if (!strcmp (menus_About[i], "Version")) {
-			__addMenu (core, parent, menus_About[i], __versionCb, __get_name_cb);
+			__addMenu (core, parent, menus_About[i], __versionCb);
 		}
 		i++;
 	}
@@ -4303,7 +4315,7 @@ bool __initPanelsMenu(RCore *core) {
 	parent = "Help";
 	i = 0;
 	while (menus_Help[i]) {
-		__addMenu (core, parent, menus_Help[i], __helpCb, __get_name_cb);
+		__addMenu (core, parent, menus_Help[i], __helpCb);
 		i++;
 	}
 
@@ -4311,9 +4323,9 @@ bool __initPanelsMenu(RCore *core) {
 	i = 0;
 	while (menus_ReOpen[i]) {
 		if (!strcmp (menus_ReOpen[i], "In RW")) {
-			__addMenu (core, parent, menus_ReOpen[i], __rwCb, __get_name_cb);
+			__addMenu (core, parent, menus_ReOpen[i], __rwCb);
 		} else if (!strcmp (menus_ReOpen[i], "In Debugger")) {
-			__addMenu (core, parent, menus_ReOpen[i], __debuggerCb, __get_name_cb);
+			__addMenu (core, parent, menus_ReOpen[i], __debuggerCb);
 		}
 		i++;
 	}
@@ -4322,9 +4334,9 @@ bool __initPanelsMenu(RCore *core) {
 	i = 0;
 	while (menus_loadLayout[i]) {
 		if (!strcmp (menus_loadLayout[i], "Saved")) {
-			__addMenu (core, parent, menus_loadLayout[i], __openMenuCb, __get_name_cb);
+			__addMenu (core, parent, menus_loadLayout[i], __openMenuCb);
 		} else if (!strcmp (menus_loadLayout[i], "Default")) {
-			__addMenu (core, parent, menus_loadLayout[i], __loadLayoutDefaultCb, __get_name_cb);
+			__addMenu (core, parent, menus_loadLayout[i], __loadLayoutDefaultCb);
 		}
 		i++;
 	}
@@ -4338,7 +4350,7 @@ bool __initPanelsMenu(RCore *core) {
 		char *pos;
 		RListIter* iter;
 		r_list_foreach (list, iter, pos) {
-			__addMenu (core, parent, pos, __settings_colors_cb, __get_name_cb);
+			__addMenu (core, parent, pos, __settings_colors_cb);
 		}
 	}
 
@@ -4349,30 +4361,21 @@ bool __initPanelsMenu(RCore *core) {
 		RListIter *iter;
 		char *opt;
 		r_list_foreach (optl, iter, opt) {
-			__addMenu (core, parent, strdup (opt), __settings_decompiler_cb, __get_name_cb);
+			__addMenu (core, parent, strdup (opt), __settings_decompiler_cb);
 		}
 		r_list_free (optl);
 		free (opts);
 	}
 
-	parent = "Settings.Disassembly";
-	i = 0;
-	while (menus_settings_disassembly[i]) {
-		if (!strcmp (menus_settings_disassembly[i], "asm.var.summary")) {
-			__addMenu (core, parent, menus_settings_disassembly[i], __config_value_cb, __get_config_name_cb);
-		} else {
-			__addMenu (core, parent, menus_settings_disassembly[i], __config_toggle_cb, __get_config_name_cb);
-		}
-		i++;
-	}
+	__init_menu_disasm_settings_layout (core);
 
 	parent = "Edit.io.cache";
 	i = 0;
 	while (menus_iocache[i]) {
 		if (!strcmp (menus_iocache[i], "On")) {
-			__addMenu (core, parent, menus_iocache[i], __ioCacheOnCb, __get_name_cb);
+			__addMenu (core, parent, menus_iocache[i], __ioCacheOnCb);
 		} else if (!strcmp (menus_iocache[i], "Off")) {
-			__addMenu (core, parent, menus_iocache[i], __ioCacheOffCb, __get_name_cb);
+			__addMenu (core, parent, menus_iocache[i], __ioCacheOffCb);
 		}
 		i++;
 	}
@@ -4599,9 +4602,9 @@ void __panels_refresh(RCore *core) {
 		for (i = 0; i < parent->n_sub; i++) {
 			RPanelsMenuItem *item = parent->sub[i];
 			if (panels->mode == PANEL_MODE_MENU && i == parent->selectedIndex) {
-				snprintf (str, sizeof (title) - 1, "%s[%s] "Color_RESET, color, item->get_name_cb (core, item->base_name));
+				snprintf (str, sizeof (title) - 1, "%s[%s] "Color_RESET, color, item->name);
 			} else {
-				snprintf (str, sizeof (title) - 1, "%s  ", item->get_name_cb (core, item->base_name));
+				snprintf (str, sizeof (title) - 1, "%s  ", item->name);
 			}
 			strcat (title, str);
 		}
@@ -4995,7 +4998,7 @@ void __handleMenu(RCore *core, const int key) {
 				(void)(child->cb (core));
 			} else {
 				parent->selectedIndex = R_MIN (parent->n_sub - 1, parent->selectedIndex + 1);
-				__moveMenuCursor (core, menu, parent);
+				__update_menu_contents (core, menu, parent);
 			}
 		}
 		break;
@@ -5007,7 +5010,7 @@ void __handleMenu(RCore *core, const int key) {
 			RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 			if (parent->selectedIndex > 0) {
 				parent->selectedIndex--;
-				__moveMenuCursor (core, menu, parent);
+				__update_menu_contents (core, menu, parent);
 			} else if (menu->depth == 2) {
 				menu->depth--;
 				__setRefreshAll (core, false, false);

@@ -1076,13 +1076,11 @@ R_API void r_line_completion_clear(RLineCompletion *completion);
 #endif
 
 typedef int (*RPanelsMenuCallback)(void *user);
-typedef char *(*RPanelsMenuGetName)(R_NULLABLE void *user, char *base_name);
 typedef struct r_panels_menu_item {
 	int n_sub, selectedIndex;
-	char *base_name;
+	char *name;
 	struct r_panels_menu_item **sub;
 	RPanelsMenuCallback cb;
-	RPanelsMenuGetName get_name_cb;
 	RPanel *p;
 } RPanelsMenuItem;
 
