@@ -72,6 +72,7 @@ typedef struct {
 } Profile;
 
 // grep -e "^windbg_" shlr/wind/wind.c | sed -e 's/ {$/;/' -e 's/^/int /'
+int windbg_get_bits(WindCtx *ctx);
 ut64 windbg_get_target_base (WindCtx *ctx);
 ut32 windbg_get_target (WindCtx *ctx);
 bool windbg_set_target (WindCtx *ctx, ut32 pid);
@@ -81,7 +82,7 @@ int windbg_get_cpus (WindCtx *ctx);
 bool windbg_set_cpu (WindCtx *ctx, int cpu);
 int windbg_get_cpu (WindCtx *ctx);
 WindCtx * windbg_ctx_new (void *io_ptr);
-void windbg_ctx_free (WindCtx *ctx);
+void windbg_ctx_free (WindCtx **ctx);
 int windbg_wait_packet (WindCtx *ctx, const ut32 type, kd_packet_t **p);
 int windbg_sync (WindCtx *ctx);
 bool windbg_read_ver (WindCtx *ctx);
