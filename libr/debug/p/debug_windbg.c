@@ -63,7 +63,7 @@ static void wstatic_debug_break(void *u) {
 
 static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
-	kd_packet_t *pkt;
+	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
 	dbreak = false;
 
@@ -116,11 +116,11 @@ static int r_debug_windbg_attach(RDebug *dbg, int pid) {
 	// Handshake
 	if (!windbg_sync (wctx)) {
 		eprintf ("Could not connect to windbg\n");
-		windbg_ctx_free (&desc->data);
+		windbg_ctx_free ((WindCtx **)&desc->data);
 		return false;
 	}
 	if (!windbg_read_ver (wctx)) {
-		windbg_ctx_free (&desc->data);
+		windbg_ctx_free ((WindCtx **)&desc->data);
 		return false;
 	}
 	dbg->bits = windbg_get_bits (wctx);
@@ -157,12 +157,12 @@ static int r_debug_windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool s
 	}
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
 	if (!b->data) {
-		b->data = R_NEW0 (int);
+		b->data = (char *)R_NEW0 (int);
 		if (!b->data) {
 			return 0;
 		}
 	}
-	tag = b->data;
+	tag = (int *)b->data;
 	return windbg_bkpt (wctx, b->addr, set, b->hw, tag);
 }
 

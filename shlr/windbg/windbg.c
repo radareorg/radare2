@@ -229,9 +229,6 @@ int windbg_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 		if (pkt->type != type) {
 			eprintf ("We were not waiting for this... %08x\n", pkt->type);
 		}
-		if (pkt->leader == KD_PACKET_DATA) {
-			kd_send_ctrl_packet (ctx->io_ptr, KD_PACKET_TYPE_ACKNOWLEDGE, 0);
-		}
 		if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_STATE_CHANGE64) {
 			// dump_stc (pkt);
 			eprintf ("State64\n");
