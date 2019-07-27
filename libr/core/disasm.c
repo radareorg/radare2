@@ -1409,7 +1409,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					ds_comment (ds, false, "%s%s0x%"PFMT64x, it == addrs->head ? "" : ", ", plus, *addrptr);
 				}
 			}
-			if (realname) {
+			if (realname && (!fun || r_anal_get_fcn_at (core->anal, ds->at, R_ANAL_FCN_TYPE_ROOT))) {
 				ds_comment (ds, false, " ; %s", name);
 			}
 			ds_comment (ds, false, "%s", COLOR_RESET (ds));
