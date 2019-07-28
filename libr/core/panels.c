@@ -281,9 +281,9 @@ static void __init_all_dbs(RCore *core);
 static void __init_panel_param(RCore *core, RPanel *p, const char *title, const char *cmd);
 static RPanels *__panels_new(RCore *core);
 static void __init_new_panels_root(RCore *core);
-static void __init_menu_saved_layout (void *core, const char *parent);
-static void __init_menu_color_settings_layout (void *core, const char *parent);
-static void __init_menu_disasm_settings_layout (void *_core, const char *parent);
+static void __init_menu_saved_layout(void *core, const char *parent);
+static void __init_menu_color_settings_layout(void *core, const char *parent);
+static void __init_menu_disasm_settings_layout(void *_core, const char *parent);
 
 /* create */
 static void __createDefaultPanels(RCore *core);
