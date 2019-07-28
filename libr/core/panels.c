@@ -281,8 +281,9 @@ static void __init_all_dbs(RCore *core);
 static void __init_panel_param(RCore *core, RPanel *p, const char *title, const char *cmd);
 static RPanels *__panels_new(RCore *core);
 static void __init_new_panels_root(RCore *core);
-static void __init_menu_saved_layout (RCore *core);
-static void __init_menu_disasm_settings_layout (void *_core);
+static void __init_menu_saved_layout(void *core, const char *parent);
+static void __init_menu_color_settings_layout(void *core, const char *parent);
+static void __init_menu_disasm_settings_layout(void *_core, const char *parent);
 
 /* create */
 static void __createDefaultPanels(RCore *core);
@@ -497,7 +498,6 @@ static int __ioCacheOnCb(void *user);
 static int __ioCacheOffCb(void *user);
 static int __settings_colors_cb(void *user);
 static int __settings_decompiler_cb(void *user);
-static void __init_menu_saved_layout_cb (void *user);
 
 /* direction callback */
 static void __directionDefaultCb(void *user, int direction);
@@ -2979,7 +2979,7 @@ int __clearLayoutsCb(void *user) {
 	RCore *core = (RCore *)user;
 	__show_status_yesno (core, 'n', "Clear all the saved layouts?(y/n): ");
 	r_file_rm (__getPanelsConfigPath ());
-	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout_cb);
+	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
 	return 0;
 }
 
@@ -3024,6 +3024,7 @@ int __settings_colors_cb(void *user) {
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+	r_str_ansi_filter (child->name, NULL, NULL, -1);
 	r_core_cmdf (core, "eco %s", child->name);
 	__setRefreshAll (core, false, false);
 	int i;
@@ -3032,6 +3033,7 @@ int __settings_colors_cb(void *user) {
 		p->view->refresh = true;
 		menu->refreshPanels[menu->n_refresh++] = p;
 	}
+	__update_menu(core, "Settings.Colors", __init_menu_color_settings_layout);
 	return 0;
 }
 
@@ -4010,7 +4012,7 @@ void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenuUpdateC
 	}
 	p_item->n_sub = 0;
 	if (cb) {
-		cb (core);
+		cb (core, parent);
 	}
 	RPanelsMenu *menu = panels->panelsMenu;
 	__update_menu_contents (core, menu, p_item);
@@ -4065,12 +4067,8 @@ void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *par
 	menu->refreshPanels[menu->n_refresh++] = p;
 }
 
-void __init_menu_saved_layout_cb (void *user) {
-	__init_menu_saved_layout ((RCore *)user );
-}
-
-void __init_menu_saved_layout (RCore *core) {
-	const char *parent = "File.Load Layout.Saved";
+void __init_menu_saved_layout (void *_core, const char *parent) {
+	RCore *core = (RCore *)_core;
 	int s, i = 0;
 	char *config_path = __getPanelsConfigPath();
 	char *panels_config = r_file_slurp (config_path, &s);
@@ -4095,9 +4093,28 @@ void __init_menu_saved_layout (RCore *core) {
 	free (panels_config);
 }
 
-void __init_menu_disasm_settings_layout (void *_core) {
+void __init_menu_color_settings_layout (void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
-	const char *parent = "Settings.Disassembly";
+	const char *color = core->cons->context->pal.graph_box2;
+	char *now = r_core_cmd_str (core, "eco.");
+	r_str_split (now, '\n');
+	parent = "Settings.Colors";
+	RList *list = __sorted_list (core, menus_Colors, COUNT (menus_Colors));
+	char *pos;
+	RListIter* iter;
+	r_list_foreach (list, iter, pos) {
+		if (pos && !strcmp (now, pos)) {
+            RStrBuf *buf = r_strbuf_new (NULL);
+			r_strbuf_setf (buf, "%s%s", color, pos);
+			__addMenu (core, parent, r_strbuf_drain (buf), __settings_colors_cb);
+			continue;
+		}
+		__addMenu (core, parent, pos, __settings_colors_cb);
+	}
+}
+
+void __init_menu_disasm_settings_layout (void *_core, const char *parent) {
+	RCore *core = (RCore *)_core;
 	int i = 0;
 	while (menus_settings_disassembly[i]) {
 		RStrBuf *rsb = r_strbuf_new (NULL);
@@ -4341,18 +4358,9 @@ bool __initPanelsMenu(RCore *core) {
 		i++;
 	}
 
-	__init_menu_saved_layout (core);
+	__init_menu_saved_layout (core, "File.Load Layout.Saved");
 
-	{
-		parent = "Settings.Colors";
-		i = 0;
-		RList *list = __sorted_list (core, menus_Colors, COUNT (menus_Colors));
-		char *pos;
-		RListIter* iter;
-		r_list_foreach (list, iter, pos) {
-			__addMenu (core, parent, pos, __settings_colors_cb);
-		}
-	}
+	__init_menu_color_settings_layout (core, "Settings.Colors");
 
 	{
 		parent = "Settings.Decompiler";
@@ -4367,7 +4375,7 @@ bool __initPanelsMenu(RCore *core) {
 		free (opts);
 	}
 
-	__init_menu_disasm_settings_layout (core);
+	__init_menu_disasm_settings_layout (core, "Settings.Disassembly");
 
 	parent = "Edit.io.cache";
 	i = 0;
@@ -5188,7 +5196,7 @@ void __savePanelsLayout(RCore *core) {
 	fprintf (file, "%s", pj_drain (pj));
 	fprintf (file, "\n");
 	fclose (file);
-	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout_cb);
+	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
 }
 
 char *__parsePanelsConfig(const char *cfg, int len) {
