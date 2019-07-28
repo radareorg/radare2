@@ -1410,7 +1410,13 @@ static void ds_show_xrefs(RDisasmState *ds) {
 				}
 			}
 			if (realname && (!fun || r_anal_get_fcn_at (core->anal, ds->at, R_ANAL_FCN_TYPE_ROOT))) {
-				ds_comment (ds, false, " ; %s", name);
+				const char *pad = ds->show_comment_right ? "" : " ";
+				if (!ds->show_comment_right) {
+					ds_newline (ds);
+					ds_begin_line (ds);
+					ds_pre_xrefs (ds, false);
+				}
+				ds_comment (ds, false, " %s; %s", pad, name);
 			}
 			ds_comment (ds, false, "%s", COLOR_RESET (ds));
 			ds_newline (ds);
