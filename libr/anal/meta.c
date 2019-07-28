@@ -901,7 +901,7 @@ beach:
 }
 
 R_API RList *r_meta_enumerate(RAnal *a, int type) {
-	RList *list = r_list_new ();
+	RList *list = r_list_newf (r_meta_item_free);
 	r_meta_list_cb (a, type, 0, meta_enumerate_cb, list, UT64_MAX);
 	return list;
 }

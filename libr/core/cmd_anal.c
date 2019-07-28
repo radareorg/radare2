@@ -7354,10 +7354,6 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 }
 
 static void cmd_anal_graph(RCore *core, const char *input) {
-	// Honor asm.graph=false in json as well
-	RConfigHold *hc = r_config_hold_new (core->config);
-	r_config_hold_i (hc, "asm.offset", NULL);
-	const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
 	core->graph->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
 	switch (input[0]) {
 	case 'f': // "agf"
@@ -7399,13 +7395,18 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'j': // "agfj"
 			r_core_anal_graph (core, r_num_math (core->num, input + 2), R_CORE_ANAL_JSON);
 			break;
-		case 'J': // "agfJ"
+		case 'J': {// "agfJ"
+			// Honor asm.graph=false in json as well
+			RConfigHold *hc = r_config_hold_new (core->config);
+			r_config_hold_i (hc, "asm.offset", NULL);
+			const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
 			r_config_set_i (core->config, "asm.offset", o_graph_offset);
 			r_core_anal_graph (core, r_num_math (core->num, input + 2),
 				R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
 			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
 			break;
+			}
 		case 'g':{ // "agfg"
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			r_core_print_bb_gml (core, fcn);

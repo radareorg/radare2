@@ -624,6 +624,7 @@ R_API bool r_config_eval(RConfig *cfg, const char *str, bool many) {
 		return true;
 	}
 	__evalString (cfg, s);
+	free (s);
 	return true;
 }
 
