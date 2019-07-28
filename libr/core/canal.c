@@ -4072,7 +4072,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 			break;
 		}
 	}
-	r_list_free(metas);
+	r_list_free (metas);
 	// iter all comments
 	// iter all strings
 	return as;

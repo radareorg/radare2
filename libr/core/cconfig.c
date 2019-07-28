@@ -1129,7 +1129,7 @@ static bool cb_cmdpdc(void *user, void *data) {
 	if (node->value[0] == '?') {
 		r_cons_printf ("pdc\n");
 		// spaguetti
-		check_decompiler("r2retdec");
+		check_decompiler ("r2retdec");
 		RListIter *iter;
 		RCorePlugin *cp;
 		r_list_foreach (core->rcmd->plist, iter, cp) {
@@ -1137,9 +1137,9 @@ static bool cb_cmdpdc(void *user, void *data) {
 				r_cons_printf ("pdg\n");
 			}
 		}
-		check_decompiler("r2ghidra");
-		check_decompiler("r2jadx");
-		check_decompiler("r2snow");
+		check_decompiler ("r2ghidra");
+		check_decompiler ("r2jadx");
+		check_decompiler ("r2snow");
 		RConfigNode *r2dec = r_config_node_get (core->config, "r2dec.asm");
 		if (r2dec) {
 			r_cons_printf ("pdd\n");
