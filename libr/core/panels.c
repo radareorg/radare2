@@ -6067,6 +6067,9 @@ void __panelPrompt(const char *prompt, char *buf, int len) {
 
 char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y) {
 	char *s = r_cons_canvas_to_string (panels->can);
+	char *tmp = s;
+	s = r_str_newf (" %s", tmp);
+	free (tmp);
 	char *R = r_str_ansi_crop (s, 0, y - 1, x + 1024, y);
 	r_str_ansi_filter (R, NULL, NULL, -1);
 	char *r = r_str_ansi_crop (s, x - 1, y - 1, x + 1024, y);
