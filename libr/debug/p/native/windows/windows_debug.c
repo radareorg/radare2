@@ -720,11 +720,13 @@ int w32_select(RDebug* dbg, int pid, int tid) {
 		}	
 	}
 
-	// Suspend all other threads
-	r_list_foreach (dbg->threads, it, th) {
-		if (!th->bFinished && !th->bSuspended && th->tid != selected) {
-			__suspend_thread (th->hThread, dbg->bits);
-			th->bSuspended = true;
+	if (dbg->corebind.cfggeti (dbg->corebind.core, "dbg.threads")) {
+		// Suspend all other threads
+		r_list_foreach (dbg->threads, it, th) {
+			if (!th->bFinished && !th->bSuspended && th->tid != selected) {
+				__suspend_thread (th->hThread, dbg->bits);
+				th->bSuspended = true;
+			}
 		}
 	}
 
@@ -764,13 +766,15 @@ void w32_break_process_wrapper(void *d) {
 
 void w32_break_process(RDebug *dbg) {
 	RIOW32Dbg *rio = dbg->user;
-	w32_select (dbg, rio->pi.dwProcessId, 0); // Suspend all threads
-	breaked = true;
-#if 0
-	if (!w32_DebugBreakProcess (rio->pi.hProcess)) {
-		r_sys_perror ("w32_break_process/DebugBreakProcess");
+	if (dbg->corebind.cfggeti (dbg->corebind.core, "dbg.threads")) {
+		w32_select (dbg, rio->pi.dwProcessId, 0); // Suspend all threads
+		breaked = true;
+	} else {
+		if (!w32_DebugBreakProcess (rio->pi.hProcess)) {
+			r_sys_perror ("w32_break_process/DebugBreakProcess");
+		}
 	}
-#endif
+
 }
 
 static const char *__get_w32_excep_name(DWORD code) {
@@ -802,7 +806,7 @@ static int __debug_exception_event(DEBUG_EVENT *de) {
 	case EXCEPTION_STACK_OVERFLOW:
 		eprintf ("(%d) Fatal exception (%s) in thread %d\n",
 			(int)de->dwProcessId, 
-			__get_w32_excep_name(code),
+			__get_w32_excep_name (code),
 			(int)de->dwThreadId);
 		break;
 	/* MS_VC_EXCEPTION */
@@ -976,7 +980,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 					next_event = 0;
 				} else {
 					next_event = 1;
-					w32_continue (dbg, pid, tid, -1);
+					w32_continue (dbg, pid, tid, DBG_EXCEPTION_NOT_HANDLED);
 				}
 			}
 			dbg->reason.signum = de.u.Exception.ExceptionRecord.ExceptionCode;
