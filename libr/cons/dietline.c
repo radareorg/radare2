@@ -890,7 +890,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 38:	// up arrow
 			if (I.hud) {
 				if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
-					I.hud->top_entry_n++;
+					I.hud->top_entry_n--;
 				}
 			} else if (I.sel_widget) {
 				selection_widget_up (1);
@@ -910,7 +910,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 40:// down arrow
 			if (I.hud) {
 				if (I.hud->top_entry_n >= 0) {
-					I.hud->top_entry_n--;
+					I.hud->top_entry_n++;
 				}
 			} else if (I.sel_widget) {
 				selection_widget_down (1);
@@ -2064,19 +2064,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					case '5': // pag up
 						buf[1] = r_cons_readchar ();
 						if (I.hud) {
-							I.hud->top_entry_n += (rows - 1);
-							if (I.hud->top_entry_n >= I.hud->current_entry_n) {
-								I.hud->top_entry_n = I.hud->current_entry_n - 1;
-							}
-						}
-						if (I.sel_widget) {
-							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
-							selection_widget_draw ();
-						}
-						break;
-					case '6': // pag down
-						buf[1] = r_cons_readchar ();
-						if (I.hud) {
 							I.hud->top_entry_n -= (rows - 1);
 							if (I.hud->top_entry_n < 0) {
 								I.hud->top_entry_n = 0;
@@ -2087,11 +2074,24 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							selection_widget_draw ();
 						}
 						break;
+					case '6': // pag down
+						buf[1] = r_cons_readchar ();
+						if (I.hud) {
+							I.hud->top_entry_n += (rows - 1);
+							if (I.hud->top_entry_n >= I.hud->current_entry_n) {
+								I.hud->top_entry_n = I.hud->current_entry_n - 1;
+							}
+						}
+						if (I.sel_widget) {
+							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
+							selection_widget_draw ();
+						}
+						break;
 					/* arrows */
 					case 'A':	// up arrow
 						if (I.hud) {
 							if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
-								I.hud->top_entry_n++;
+								I.hud->top_entry_n--;
 							}
 						} else if (I.sel_widget) {
 							selection_widget_up (1);
@@ -2106,7 +2106,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					case 'B':	// down arrow
 						if (I.hud) {
 							if (I.hud->top_entry_n >= 0) {
-								I.hud->top_entry_n--;
+								I.hud->top_entry_n++;
 							}
 						} else if (I.sel_widget) {
 							selection_widget_down (1);
