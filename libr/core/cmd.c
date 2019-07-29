@@ -1940,7 +1940,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 			}
 			return;
 		} else if ((!input || !*input) && a) {
-			eprintf ("Cannot add '%s'. Already exists.\n", arg);
+			// eprintf ("Cannot add '%s'. Already exists.\n", arg);
 			return;
 		} else {
 			b = a;
