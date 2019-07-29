@@ -91,6 +91,13 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 				break;
 			}
 		}
+		size_t len = strlen (bin->file);
+		if (!r_str_ncasecmp (str, bin->file, len)) {
+			str += len;
+			if (*str == '_') {
+				str++;
+			}
+		}
 	}
 	if (!strncmp (str, "__", 2)) {
 		if (str[2] == 'T') {
