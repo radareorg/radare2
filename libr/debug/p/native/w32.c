@@ -39,9 +39,9 @@ static bool w32dbg_SeDebugPrivilege() {
 int w32_dbg_init() {
 	HANDLE lib;
 
-	/* escalate privs (required for win7/vista) */
+	// escalate privs (required for win7/vista)
 	w32dbg_SeDebugPrivilege ();
-	/* lookup function pointers for portability */
+	// lookup function pointers for portability
 	w32_DebugActiveProcessStop = (BOOL (WINAPI *)(DWORD))
 		GetProcAddress (GetModuleHandle (TEXT ("kernel32")),
 				"DebugActiveProcessStop");
@@ -211,7 +211,7 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
 	case EXCEPTION_STACK_OVERFLOW:
 		eprintf ("(%d) Fatal exception (%s) in thread %d\n",
-			(int)de->dwProcessId, 
+			(int)de->dwProcessId,
 			get_w32_excep_name(code),
 			(int)de->dwThreadId);
 		break;
@@ -278,7 +278,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 			}
 		}
 		cur_drive++;
-	} 
+	}
 err_get_file_name_from_handle:
 	if (map) {
 		UnmapViewOfFile (map);
@@ -291,7 +291,7 @@ err_get_file_name_from_handle:
 		free (filename);
 		return filename_;
 
-	}	
+	}
 	return NULL;
 }
 LPVOID lstLib = 0;
@@ -531,10 +531,11 @@ bool is_pe_hdr(unsigned char *pe_hdr) {
 	IMAGE_DOS_HEADER *dos_header = (IMAGE_DOS_HEADER *)pe_hdr;
 	IMAGE_NT_HEADERS *nt_headers;
 
-	if (dos_header->e_magic==IMAGE_DOS_SIGNATURE) {
+	if (dos_header->e_magic == IMAGE_DOS_SIGNATURE) {
 		nt_headers = (IMAGE_NT_HEADERS *)((char *)dos_header
 				+ dos_header->e_lfanew);
-		if (nt_headers->Signature==IMAGE_NT_SIGNATURE)
+		// TODO: Check boundaries first, before the dereference
+		if (nt_headers->Signature == IMAGE_NT_SIGNATURE)
 			return true;
 	}
 	return false;
@@ -555,40 +556,40 @@ RList *w32_thread_list(int pid, RList *list) {
 
         te32.dwSize = sizeof(THREADENTRY32);
 
-	if (!w32_OpenThread) {
-		eprintf("w32_thread_list: no w32_OpenThread?\n");
-		return list;
-	}
+		if (!w32_OpenThread) {
+			eprintf("w32_thread_list: no w32_OpenThread?\n");
+			return list;
+		}
         th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid);
         if(th == INVALID_HANDLE_VALUE || !Thread32First (th, &te32))
                 goto err_load_th;
         do {
-                /* get all threads of process */
-                if (te32.th32OwnerProcessID == pid) {
-			//te32.dwFlags);
-                        /* open a new handler */
-			// XXX: fd leak?
+			// get all threads of process
+            if (te32.th32OwnerProcessID == pid) {
+				// open a new handler
+				// XXX: fd leak?
 #if 0
- 75 typedef struct tagTHREADENTRY32 {
- 76         DWORD dwSize;
- 77         DWORD cntUsage;
- 78         DWORD th32ThreadID;
- 79         DWORD th32OwnerProcessID;
- 80         LONG tpBasePri;
- 81         LONG tpDeltaPri;
- 82         DWORD dwFlags;
+				 75 typedef struct tagTHREADENTRY32 {
+				 76         DWORD dwSize;
+				 77         DWORD cntUsage;
+				 78         DWORD th32ThreadID;
+				 79         DWORD th32OwnerProcessID;
+				 80         LONG tpBasePri;
+				 81         LONG tpDeltaPri;
+				 82         DWORD dwFlags;
+				 83 };
 #endif
-			thid = w32_OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
-			if (!thid) {
-				r_sys_perror ("w32_thread_list/OpenThread");
-                                goto err_load_th;
-			}
-			r_list_append (list, r_debug_pid_new ("???", te32.th32ThreadID, 0, 's', 0));
-                }
+				thid = w32_OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
+				if (!thid) {
+					r_sys_perror ("w32_thread_list/OpenThread");
+					goto err_load_th;
+				}
+				r_list_append (list, r_debug_pid_new ("???", te32.th32ThreadID, 0, 's', 0));
+            }
         } while (Thread32Next (th, &te32));
 err_load_th:
         if(th != INVALID_HANDLE_VALUE)
-                CloseHandle (th);
+            CloseHandle (th);
 	return list;
 }
 
@@ -957,7 +958,7 @@ static void w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 		goto err_w32_info_user;
 	}
 	if (*usr_dom) {
-		rdi->usr = r_str_newf (W32_TCHAR_FSTR"\\"W32_TCHAR_FSTR, usr_dom, usr);		
+		rdi->usr = r_str_newf (W32_TCHAR_FSTR"\\"W32_TCHAR_FSTR, usr_dom, usr);
 	} else {
 		rdi->usr = r_sys_conv_win_to_utf8 (usr);
 	}
@@ -1022,3 +1023,5 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	w32_info_exe (dbg, rdi);
 	return rdi;
 }
+
+#include "maps/windows.c"

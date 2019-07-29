@@ -44,26 +44,26 @@
 #include <mach-o/nlist.h>
 #endif
 
+#if __WINDOWS__
+#include <windows.h>
+#include <tlhelp32.h>
+#include <winbase.h>
+#include <psapi.h>
+#endif
 
 /*
  * Creates a new process and returns the result:
  * -1 : error
  *  0 : ok
  */
-#if __WINDOWS__
-#include <windows.h>
-#include <tlhelp32.h>
-#include <winbase.h>
-#include <psapi.h>
 
+#if __WINDOWS__
 typedef struct {
 	HANDLE hnd;
 	ut64 winbase;
 } RIOW32;
 
 typedef struct {
-	int pid;
-	int tid;
 	ut64 winbase;
 	PROCESS_INFORMATION pi;
 } RIOW32Dbg;
@@ -592,7 +592,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			if ((ret = _plugin->open (io, uri, rw, mode))) {
 				RIOW32Dbg *w32 = (RIOW32Dbg *)ret->data;
 				w32->winbase = winbase;
-				w32->tid = wintid;
+				w32->pi.dwThreadId = wintid;
+				*(RIOW32Dbg *)((RCore *)io->user)->dbg->user = *w32;
 			}
 #elif __APPLE__
 			sprintf (uri, "smach://%d", pid);		//s is for spawn

@@ -62,14 +62,15 @@ endif
 
 if host_machine.system() == 'windows'
  r_debug_sources += [
-  'p/native/maps/windows_maps.c'
+  'p/native/maps/windows_maps.c',
+  'p/native/windows/windows_debug.c',
  ]
 endif
 
 if host_machine.system() != 'windows'
- r_debug_sources += [
-  'p/native/procfs.c'
- ]
+  r_debug_sources += [
+    'p/native/procfs.c'
+  ]
 endif
 
 if host_machine.system() == 'darwin'
