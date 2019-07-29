@@ -2137,11 +2137,11 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					lastfs = 's';
 				}
 				if (r->bin->prefix) {
-					r_cons_printf ("f %s.sym.%s %u 0x%08" PFMT64x "\n",
+					r_cons_printf ("\"f %s.sym.%s %u 0x%08" PFMT64x "\"\n",
 						r->bin->prefix, r_bin_symbol_name (symbol), symbol->size, addr);
 				} else {
 					if (*name) {
-						r_cons_printf ("f sym.%s %u 0x%08" PFMT64x "\n",
+						r_cons_printf ("\"f sym.%s %u 0x%08" PFMT64x "\"\n",
 							r_bin_symbol_name (symbol), symbol->size, addr);
 					} else {
 						// we don't want unnamed symbol flags
