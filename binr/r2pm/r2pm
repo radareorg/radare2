@@ -405,8 +405,9 @@ pkgFilePath() {
 }
 
 r2pm_doc() {
-	if [ -z "$1" ]; then
-		R2PM_Info
+	if [ -z "$2" ]; then
+		echo "Usage: r2pm -d [package]  # show docs on [package]"
+		exit 1
 	else
 		FILE="$(pkgFilePath "$1")"
 		if [ -f "${FILE}" ]; then
@@ -417,27 +418,24 @@ r2pm_doc() {
 }
 
 r2pm_install() {
-	if [ -z "$2" ]; then
-		R2PM_Info
+	FILE="$(pkgFilePath "$2")"
+	if [ -f "${FILE}" ]; then
+		NAME="$2"
+		ACTION=Install
+		export PATH="${R2PM_HOMEBINDIR}:${PATH}"
+		. "${FILE}"
+		R2PM_INSTALL
+		R2PM_REGISTER
 	else
-		FILE="$(pkgFilePath "$2")"
-		if [ -f "${FILE}" ]; then
-			NAME="$2"
-			ACTION=Install
-			export PATH="${R2PM_HOMEBINDIR}:${PATH}"
-			. "${FILE}"
-			R2PM_INSTALL
-			R2PM_REGISTER
-		else
-			echo "Cannot find $FILE"
-			exit 1
-		fi
+		echo "Cannot find $2"
+		exit 1
 	fi
 }
 
 r2pm_uninstall() {
 	if [ -z "$2" ]; then
-		R2PM_Info
+		echo "Usage: r2pm -u [package]  # uninstall [package]"
+		exit 1
 	else
 		FILE="`pkgFilePath $2`"
 		if [ -f "${FILE}" ]; then
@@ -460,8 +458,14 @@ r2pm_uninstall() {
 export PYTHON_PATH="${R2PM_PYPATH}:${PYTHON_PATH}"
 
 case "$1" in
+-I|info)
+	R2PM_Info
+	;;
 -i|install)
-	if [ "$2" = "all" ]; then
+	if [ -z "$2" ]; then
+		echo "Usage: r2pm -i [package]  # install [package]"
+		exit 1
+	elif [ "$2" = "all" ]; then
 		for a in `cd ${R2PM_DBDIR} && ls` ; do
 			r2pm_install "$a"
 			if [ "$?" != 0 ]; then
@@ -687,7 +691,7 @@ suicide)
 	cat <<HELP
 Usage: r2pm [init|update|cmd] [...]
 Commands:
- -i,info                     show information about a package
+ -I,info                     information about repository and installed packages
  -i,install <pkgname>        install package in your home (pkgname=all)
  -gi,global-install <pkg>    install package system-wide
  -gu,global-uninstall <pkg>  uninstall pkg from systemdir
