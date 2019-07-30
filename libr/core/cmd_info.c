@@ -1049,7 +1049,7 @@ static int cmd_info(void *data, const char *input) {
 				if (!obj) {
 					break;
 				}
-				if (input[2] != 'j' && !strstr (input, "qq")) {
+				if (input[2] && input[2] != 'j' && !strstr (input, "qq")) {
 					bool radare2 = strstr (input, "**") != NULL;
 					int idx = -1;
 					const char * cls_name = NULL;
