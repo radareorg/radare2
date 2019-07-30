@@ -989,7 +989,9 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 						free (ident);
 					}
 				} else {
-					eprintf ("Invalid code slot size\n");
+					if (bin->verbose) {
+						eprintf ("Invalid code slot size\n");
+					}
 				}
 			}
 			break;
