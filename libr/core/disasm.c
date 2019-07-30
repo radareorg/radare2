@@ -160,7 +160,7 @@ typedef struct {
 	int stackFd;
 	bool show_xrefs;
 	bool show_cmtrefs;
-	const char *show_cmtfunrefs;
+	const char *show_cmtfcnrefs;
 	const char *show_cmtoff;
 	bool show_functions;
 	bool show_marks;
@@ -753,7 +753,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
 	ds->show_cmtrefs = r_config_get_i (core->config, "asm.cmt.refs");
 	ds->cmtfold = r_config_get_i (core->config, "asm.cmt.fold");
-	ds->show_cmtfunrefs = r_config_get (core->config, "asm.cmt.funrefs");
+	ds->show_cmtfcnrefs = r_config_get (core->config, "asm.cmt.fcnrefs");
 	ds->show_cmtoff = r_config_get (core->config, "asm.cmt.off");
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
@@ -3283,12 +3283,12 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		return;
 	}
 	RAnalFunction *f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
-	if (!f && ds->core->flags && strcmp (ds->show_cmtfunrefs, "false")) {
+	if (!f && ds->core->flags && strcmp (ds->show_cmtfcnrefs, "false")) {
 		const char *arch;
 		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
 		                                        R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
 		if (flag && flag->name
-		    && (!strcmp (ds->show_cmtfunrefs, "true") || (ds->opstr && !strstr (ds->opstr, flag->name)))
+		    && (!strcmp (ds->show_cmtfcnrefs, "true") || (ds->opstr && !strstr (ds->opstr, flag->name)))
 		    && (r_str_startswith (flag->name, "sym.") || r_str_startswith (flag->name, "method."))
 		    && (arch = r_config_get (ds->core->config, "asm.arch")) && strcmp (arch, "dalvik")) {
 			ds_begin_comment (ds);
@@ -3315,8 +3315,8 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		} else if (delta < 0) {
 			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s-0x%x", f->name, -delta);
-		} else if (strcmp (ds->show_cmtfunrefs, "false")
-		           && (!strcmp (ds->show_cmtfunrefs, "true")
+		} else if (strcmp (ds->show_cmtfcnrefs, "false")
+		           && (!strcmp (ds->show_cmtfcnrefs, "true")
 		               || (ds->opstr && !strstr (ds->opstr, f->name)))) {
 			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s", f->name);
