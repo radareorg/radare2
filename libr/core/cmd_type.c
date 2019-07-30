@@ -123,12 +123,14 @@ static const char *help_msg_tl[] = {
 	"Usage: tl[...]", "[typename] [[=] address]", "# Type link commands",
 	"tl", "", "list all links.",
 	"tll", "", "list all links in readable format.",
+	"tllj", "", "list all links in readable JSON format.",
 	"tl", " [typename]", "link a type to current address.",
 	"tl", " [typename] = [address]", "link type to given address.",
 	"tls", " [address]", "show link at given address.",
 	"tl-*", "", "delete all links.",
 	"tl-", " [address]", "delete link at given address.",
 	"tl*", "", "list all links in radare2 command format.",
+	"tlj", "", "list all links in JSON format.",
 	NULL
 };
 
@@ -659,6 +661,11 @@ static int print_link_cb(void *p, const char *k, const char *v) {
 	return 1;
 }
 
+static int print_link_json_cb(void *p, const char *k, const char *v) {
+	r_cons_printf ("{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
+	return 1;
+}
+
 static int print_link_r_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("tl %s = 0x%s\n", v, k + strlen ("link."));
 	return 1;
@@ -673,6 +680,19 @@ static int print_link_readable_cb(void *p, const char *k, const char *v) {
 	}
 	r_cons_printf ("(%s)\n", v);
 	r_core_cmdf (core, "pf %s @ 0x%s\n", fmt, k + strlen ("link."));
+	return 1;
+}
+
+static int print_link_readable_json_cb(void *p, const char *k, const char *v) {
+	RCore *core = (RCore *)p;
+	char *fmt = r_type_format (core->anal->sdb_types, v);
+	if (!fmt) {
+		eprintf ("Can't fint type %s", v);
+		return 1;
+	}
+	r_cons_printf ("{\"%s\":", v);
+	r_core_cmdf (core, "pfj %s @ 0x%s\n", fmt, k + strlen ("link."));
+	r_cons_printf ("}");
 	return 1;
 }
 
@@ -1655,7 +1675,17 @@ static int cmd_type(void *data, const char *input) {
 			print_keys (TDB, core, stdiflink, print_link_r_cb, false);
 			break;
 		case 'l':
-			print_keys (TDB, core, stdiflink, print_link_readable_cb, false);
+			switch (input[2]) {
+			case 'j':
+				print_keys (TDB, core, stdiflink, print_link_readable_json_cb, true);
+				break;
+			default:
+				print_keys (TDB, core, stdiflink, print_link_readable_cb, false);
+				break;
+			}
+			break;
+		case 'j':
+			print_keys (TDB, core, stdiflink, print_link_json_cb, true);
 			break;
 		case '\0':
 			print_keys (TDB, core, stdiflink, print_link_cb, false);
