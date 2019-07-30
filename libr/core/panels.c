@@ -6,33 +6,34 @@
 
 #define PANEL_NUM_LIMIT 64
 
-#define PANEL_TITLE_SYMBOLS       "Symbols"
-#define PANEL_TITLE_STACK         "Stack"
-#define PANEL_TITLE_REGISTERS     "Registers"
-#define PANEL_TITLE_DISASSEMBLY   "Disassembly"
-#define PANEL_TITLE_DISASMSUMMARY "Disassemble Summary"
-#define PANEL_TITLE_DECOMPILER    "Decompiler"
-#define PANEL_TITLE_DECOMPILER_O  "Decompiler With Offsets"
-#define PANEL_TITLE_GRAPH         "Graph"
-#define PANEL_TITLE_FUNCTIONS     "Functions"
-#define PANEL_TITLE_BREAKPOINTS   "Breakpoints"
-#define PANEL_TITLE_STRINGS_DATA  "Strings in data sections"
-#define PANEL_TITLE_STRINGS_BIN   "Strings in the whole bin"
-#define PANEL_TITLE_SECTIONS      "Sections"
-#define PANEL_TITLE_SEGMENTS      "Segments"
-#define PANEL_TITLE_COMMENTS      "Comments"
+#define PANEL_TITLE_SYMBOLS          "Symbols"
+#define PANEL_TITLE_STACK            "Stack"
+#define PANEL_TITLE_REGISTERS        "Registers"
+#define PANEL_TITLE_DISASSEMBLY      "Disassembly"
+#define PANEL_TITLE_DISASMSUMMARY    "Disassemble Summary"
+#define PANEL_TITLE_ALL_DECOMPILER   "Show All Decompiler Output"
+#define PANEL_TITLE_DECOMPILER       "Decompiler"
+#define PANEL_TITLE_DECOMPILER_O     "Decompiler With Offsets"
+#define PANEL_TITLE_GRAPH            "Graph"
+#define PANEL_TITLE_FUNCTIONS        "Functions"
+#define PANEL_TITLE_BREAKPOINTS      "Breakpoints"
+#define PANEL_TITLE_STRINGS_DATA     "Strings in data sections"
+#define PANEL_TITLE_STRINGS_BIN      "Strings in the whole bin"
+#define PANEL_TITLE_SECTIONS         "Sections"
+#define PANEL_TITLE_SEGMENTS         "Segments"
+#define PANEL_TITLE_COMMENTS         "Comments"
 
-#define PANEL_CMD_SYMBOLS         "isq"
-#define PANEL_CMD_STACK           "px"
-#define PANEL_CMD_REGISTERS       "dr"
-#define PANEL_CMD_DISASSEMBLY     "pd"
-#define PANEL_CMD_DISASMSUMMARY   "pdsf"
-#define PANEL_CMD_DECOMPILER      "pdc"
-#define PANEL_CMD_DECOMPILER_O    "pddo"
-#define PANEL_CMD_FUNCTION        "afl"
-#define PANEL_CMD_GRAPH           "agf"
-#define PANEL_CMD_HEXDUMP         "xc"
-#define PANEL_CMD_CONSOLE         "$console"
+#define PANEL_CMD_SYMBOLS            "isq"
+#define PANEL_CMD_STACK              "px"
+#define PANEL_CMD_REGISTERS          "dr"
+#define PANEL_CMD_DISASSEMBLY        "pd"
+#define PANEL_CMD_DISASMSUMMARY      "pdsf"
+#define PANEL_CMD_DECOMPILER         "pdc"
+#define PANEL_CMD_DECOMPILER_O       "pddo"
+#define PANEL_CMD_FUNCTION           "afl"
+#define PANEL_CMD_GRAPH              "agf"
+#define PANEL_CMD_HEXDUMP            "xc"
+#define PANEL_CMD_CONSOLE            "$console"
 
 #define PANEL_CONFIG_MENU_MAX    64
 #define PANEL_CONFIG_PAGE        10
@@ -100,7 +101,7 @@ static char *menus_View[] = {
 	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets", "Graph",
 	"Functions", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports",
 	"Info", "Database",  "Breakpoints", "Comments", "Classes", "Entropy", "Entropy Fire", "Stack", "Methods",
-	"Var READ address", "Var WRITE address", "Summary", "Relocs", "Headers", "File Hashes",
+	"Var READ address", "Var WRITE address", "Summary", "Relocs", "Headers", "File Hashes", PANEL_TITLE_ALL_DECOMPILER,
 	NULL
 };
 
@@ -355,6 +356,7 @@ static void __panel_prompt(const char *prompt, char *buf, int len);
 static void __panels_layout_refresh(RCore *core);
 static void __panels_layout(RPanels *panels);
 static void __layout_default(RPanels *panels);
+static void __layout_equal_hor(RPanels *panels);
 static void __save_panels_layout(RCore *core);
 static int __load_saved_panels_layout(RCore *core, const char *_name);
 static void __split_panel_vertical(RCore *core, RPanel *p, const char *name, const char *cmd);
@@ -498,6 +500,7 @@ static int __io_cache_on_cb(void *user);
 static int __io_cache_off_cb(void *user);
 static int __settings_colors_cb(void *user);
 static int __settings_decompiler_cb(void *user);
+static int __show_all_decompiler_cb(void *user);
 
 /* direction callback */
 static void __direction_default_cb(void *user, int direction);
@@ -537,6 +540,7 @@ static void __put_breakpoints_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED co
 static void __continue_almighty_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title);
 static void __step_almighty_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title);
 static void __step_over_almighty_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title);
+static void __delegate_show_all_decompiler_cb(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
 
 /* menu */
 static void __del_menu(RCore *core);
@@ -1139,6 +1143,20 @@ void __layout_default(RPanels *panels) {
 		int tmp_w = R_MAX (w - colpos, 0);
 		int tmp_h = (i + 1) == panels->n_panels ? h - p->view->pos.y : ph;
 		__set_geometry(&p->view->pos, pos_x, 2 + (ph * (i - 1)) - 1, tmp_w, tmp_h + 1);
+	}
+}
+
+void __layout_equal_hor(RPanels *panels) {
+	int h, w = r_cons_get_size (&h);
+	int pw = w / panels->n_panels;
+	int i, cw = 0;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p = __get_panel (panels, i);
+		__set_geometry(&p->view->pos, cw, 1, pw, h - 2);
+		cw += pw - 1;
+		if (i == panels->n_panels - 2) {
+			pw = w - cw;
+		}
 	}
 }
 
@@ -2936,6 +2954,39 @@ int __settings_decompiler_cb(void *user) {
 	return 0;
 }
 
+int __show_all_decompiler_cb(void *user) {
+	RCore *core = (RCore *)user;
+	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	if (!func) {
+		return 0;
+	}
+	RPanelsRoot *root = core->panels_root;
+	const char *pdc_now = r_config_get (core->config, "cmd.pdc");
+	char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
+	RList *optl = r_str_split_list (opts, "\n");
+	RListIter *iter;
+	char *opt;
+	int i = 0;
+	__handle_tab_new (core);
+	RPanels *panels = __get_panels (root, root->n_panels - 1);
+	r_list_foreach (optl, iter, opt) {
+		r_config_set (core->config, "cmd.pdc", opt);
+		if (panels->n_panels <= i) {
+			panels->n_panels++;
+		}
+		RPanel *panel = __get_panel (panels, i++);
+		panel->model->title = r_str_new (opt);
+		panel->model->readOnly = r_core_cmd_str (core, opt);
+	}
+	__layout_equal_hor (panels);
+	r_list_free (optl);
+	free (opts);
+	r_config_set (core->config, "cmd.pdc", pdc_now);
+	root->cur_panels = root->n_panels - 1;
+	__set_root_state (core, ROTATE);
+	return 0;
+}
+
 int __load_layout_saved_cb(void *user) {
 	RCore *core = (RCore *)user;
 	RPanelsMenu *menu = core->panels->panelsMenu;
@@ -4216,7 +4267,11 @@ bool __init_panels_menu(RCore *core) {
 		char *pos;
 		RListIter* iter;
 		r_list_foreach (list, iter, pos) {
-			__add_menu (core, parent, pos, __add_cmd_panel);
+			if (!strcmp (pos, PANEL_TITLE_ALL_DECOMPILER)) {
+				__add_menu (core, parent, pos, __show_all_decompiler_cb);
+			} else {
+				__add_menu (core, parent, pos, __add_cmd_panel);
+			}
 		}
 	}
 
@@ -4816,6 +4871,7 @@ void __init_almighty_db(RCore *core) {
 	sdb_ptr_set (panels->almighty_db, "Search strings in the whole bin", &__search_strings_bin_create, 0);
 	sdb_ptr_set (panels->almighty_db, "Create New", &__create_panel_input, 0);
 	sdb_ptr_set (panels->almighty_db, "Change Command of Current Panel", &__replace_current_panel_input, 0);
+	sdb_ptr_set (panels->almighty_db, PANEL_TITLE_ALL_DECOMPILER, &__delegate_show_all_decompiler_cb, 0);
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		sdb_ptr_set (panels->almighty_db, "Put Breakpoints", &__put_breakpoints_cb, 0);
 		sdb_ptr_set (panels->almighty_db, "Continue", &__continue_almighty_cb, 0);
@@ -4828,6 +4884,10 @@ void __init_all_dbs(RCore *core) {
 	__init_sdb (core);
 	__init_almighty_db (core);
 	__init_rotate_db (core);
+}
+
+static void __delegate_show_all_decompiler_cb(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
+	(void)__show_all_decompiler_cb ((RCore *)user);
 }
 
 void __create_panel_db(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
@@ -6187,7 +6247,8 @@ repeat:
 
 	if (panels->mode == PANEL_MODE_MENU) {
 		__handle_menu (core, key);
-		if (__check_root_state (core, QUIT)) {
+		if (__check_root_state (core, QUIT) ||
+				__check_root_state (core, ROTATE)) {
 			goto exit;
 		}
 		goto repeat;
@@ -6391,8 +6452,9 @@ repeat:
 		break;
 	case '"':
 		r_cons_switchbuf (false);
-		{
-			__create_almighty (core, cur, panels->almighty_db);
+		__create_almighty (core, cur, panels->almighty_db);
+		if (__check_root_state (core, ROTATE)) {
+			goto exit;
 		}
 		break;
 	case 'n':
