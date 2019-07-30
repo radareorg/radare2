@@ -1353,7 +1353,9 @@ static HtUP *rel_cache_new(ELFOBJ *bin) {
 			goto out;
 		}
 
-		ht_up_insert (rel_cache, REL_SYM, rel);
+		if (!ht_up_insert (rel_cache, REL_SYM, rel)) {
+			free (rel);
+		}
 	}
 	return rel_cache;
 out:
