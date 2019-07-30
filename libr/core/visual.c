@@ -1928,14 +1928,14 @@ static bool insert_mode_enabled(RCore *core) {
 	if (!__ime) {
 		return false;
 	}
-	int ch = r_cons_readchar ();
+	char ch = (ut8)r_cons_readchar ();
 	if ((ut8)ch == KEY_ALTQ) {
 		(void)r_cons_readchar ();
 		__ime = false;
 		return true;
 	}
 	char arrows = r_cons_arrow_to_hjkl (ch);
-	switch ((ut8)ch) {
+	switch (ch) {
 	case 127:
 		core->print->cur = R_MAX (0, core->print->cur - 1);
 		return true;
@@ -1966,7 +1966,7 @@ static bool insert_mode_enabled(RCore *core) {
 	}
 	ch = arrows;
 	/* hex column */
-	switch ((ut8)ch) {
+	switch (ch) {
 	case '0':
 	case '1':
 	case '2':

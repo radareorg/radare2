@@ -91,10 +91,14 @@ static int __parseMouseEvent() {
 	return 0;
 }
 
+#if __WINDOWS__
+bool bCtrl;
+bool is_special;
+#endif
+
 R_API int r_cons_arrow_to_hjkl(int ch) {
 #if __WINDOWS__
-	bool bCtrl = ch & (8 << 16);
-	if (ch & ~ST32_MAX) {
+	if (is_special) {
 		switch ((ut8)ch) {
 		case VK_DOWN: // key down
 			ch = bCtrl ? 'J' : 'j';
@@ -445,7 +449,8 @@ extern void resizeWin(void);
 static int __cons_readchar_w32 (ut32 usec) {
 	int ch = 0;
 	BOOL ret;
-	BOOL bCtrl = FALSE;
+	bCtrl = false;
+	is_special = false;
 	DWORD mode, out;
 	HANDLE h;
 	INPUT_RECORD irInBuf;
@@ -492,9 +497,10 @@ static int __cons_readchar_w32 (ut32 usec) {
 			if (irInBuf.EventType == KEY_EVENT) {
 				if (irInBuf.Event.KeyEvent.bKeyDown) {
 					ch = irInBuf.Event.KeyEvent.uChar.AsciiChar;
-					bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
+					bCtrl = (bool)(irInBuf.Event.KeyEvent.dwControlKeyState & 8);
 					if (irInBuf.Event.KeyEvent.uChar.AsciiChar == 0) {
-						ch = irInBuf.Event.KeyEvent.wVirtualKeyCode | 1 << 31 | bCtrl << 16;
+						is_special = true;
+						ch = irInBuf.Event.KeyEvent.wVirtualKeyCode;
 					}
 				}
 			}
