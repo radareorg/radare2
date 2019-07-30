@@ -4140,6 +4140,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *teefile;
+	const char *orig_cmtfunrefs;
 	ut64 scrseek;
 	int flags, ch;
 	bool skip;
@@ -4173,6 +4174,8 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		input += len;
 	}
 	core->vmode = true;
+	orig_cmtfunrefs = r_config_get (core->config, "asm.cmt.funrefs");
+	r_config_set (core->config, "asm.cmt.funrefs", "false");
 
 	// disable tee in cons
 	teefile = r_cons_singleton ()->teefile;
@@ -4303,6 +4306,7 @@ dodo:
 		r_core_block_size (core, obs);
 	}
 	r_cons_singleton ()->teefile = teefile;
+	r_config_set (core->config, "asm.cmt.funrefs", orig_cmtfunrefs);
 	r_cons_set_cup (false);
 	r_cons_clear00 ();
 	core->vmode = false;

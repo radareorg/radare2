@@ -3038,6 +3038,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.marks", "true", "Show marks before the disassembly");
 	SETPREF ("asm.cmt.refs", "false", "Show flag and comments from refs in disasm");
 	SETPREF ("asm.cmt.patch", "false", "Show patch comments in disasm");
+	SETPREF ("asm.cmt.funrefs", "nodup", "Show name/flag of function ref in disasm (true, false, nodup)");
 	SETPREF ("asm.cmt.off", "nodup", "Show offset comment in disasm (true, false, nodup)");
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
 
