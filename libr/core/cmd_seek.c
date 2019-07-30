@@ -142,7 +142,6 @@ R_API int r_core_lines_currline(RCore *core) {  // make priv8 again
 R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 	int i, line_count;
 	int bsz = core->blocksize;
-	char *buf;
 	ut64 off = start_addr;
 	ut64 baddr;
 	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
@@ -159,7 +158,7 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 
 	line_count = start_addr? 0: 1;
 	core->print->lines_cache[0] = start_addr? 0: baddr;
-	buf = malloc (bsz);
+	char *buf = malloc (bsz);
 	if (!buf) {
 		return -1;
 	}
@@ -171,7 +170,7 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 		r_io_read_at (core->io, off, (ut8 *) buf, bsz);
 		for (i = 0; i < bsz; i++) {
 			if (buf[i] == '\n') {
-				core->print->lines_cache[line_count] = start_addr? off + i + 1: off + i + 1 + baddr;
+				core->print->lines_cache[line_count % bsz] = start_addr? off + i + 1: off + i + 1 + baddr;
 				line_count++;
 				if (line_count % bsz == 0) {
 					ut64 *tmp = realloc (core->print->lines_cache,
