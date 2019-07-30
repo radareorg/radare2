@@ -17,6 +17,7 @@ extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 static bool dexdump = false;
 static Sdb *mdb = NULL;
 static const char *dexSubsystem = NULL;
+static bool simplifiedDemangling = false; // depends on asm.pseudo 
 
 static ut64 get_method_flags(ut64 MA) {
 	ut64 flags = 0;
@@ -951,6 +952,15 @@ static char *dex_method_name(RBinDexObj *bin, int idx) {
 	return getstr (bin, tid);
 }
 
+static char *simplify(char *s) {
+	char *p = (char *)r_str_rchr (s, NULL, '/');
+	if (p) {
+		r_str_cpy (s, p + 1);
+	}
+	r_str_replace_char (s, '/', '.');
+	return s;
+}
+
 static char *dex_class_name_byid(RBinDexObj *bin, int cid) {
 	int tid;
 	if (!bin || !bin->types) {
@@ -960,11 +970,22 @@ static char *dex_class_name_byid(RBinDexObj *bin, int cid) {
 		return NULL;
 	}
 	tid = bin->types[cid].descriptor_id;
-	return getstr (bin, tid);
+	char *s = getstr (bin, tid);
+	if (simplifiedDemangling) {
+		simplify (s);
+	}
+	return s;
 }
 
 static char *dex_class_name(RBinDexObj *bin, RBinDexClass *c) {
-	return dex_class_name_byid (bin, c->class_id);
+	char *s = dex_class_name_byid (bin, c->class_id);
+	if (simplifiedDemangling) {
+		simplify (s);
+		if (*s == 'L') {
+			r_str_cpy (s, s + 1);
+		}
+	}
+	return s;
 }
 
 static char *dex_field_name(RBinDexObj *bin, int fid) {
@@ -986,10 +1007,26 @@ static char *dex_field_name(RBinDexObj *bin, int fid) {
 	const char *a = getstr (bin, bin->types[cid].descriptor_id);
 	const char *b = getstr (bin, tid);
 	const char *c = getstr (bin, bin->types[type_id].descriptor_id);
-	if (a && b && c) {
-		return r_str_newf ("%s->%s %s", a, b, c);
+	if (simplifiedDemangling) {
+		if (a && b && c) {
+			char *_a = simplify(strdup (a));
+			char *_b = simplify(strdup (b));
+			char *_c = simplify(strdup (c));
+			char *str =  r_str_newf ("(%s) %s.%s", _c, _a, _b);
+			free (_a);
+			free (_b);
+			free (_c);
+			return str;
+		}
+		return r_str_newf ("(%d) %d.%d",
+				bin->types[type_id].descriptor_id,
+				tid,
+				bin->types[cid].descriptor_id
+			     );
 	}
-	return r_str_newf ("%d->%d %d", bin->types[cid].descriptor_id, tid, bin->types[type_id].descriptor_id);
+	return (a && b && c) 
+		? r_str_newf ("%s->%s %s", a, b, c)
+		: r_str_newf ("%d->%d %d", bin->types[cid].descriptor_id, tid, bin->types[type_id].descriptor_id);
 }
 
 static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
@@ -1028,6 +1065,19 @@ static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
 			free (signature);
 		}
 	}
+	if (flagname && simplifiedDemangling) {
+		char *p = strchr (flagname, '(');
+		if (p) {
+			*p = 0;
+			char *q = strchr (p + 1, ')');
+			if (q) {
+				simplify (q + 1);
+				r_str_cpy (p, q + 1);
+			}
+			simplify (flagname);
+		}
+	}
+	
 	return flagname;
 }
 
@@ -1911,7 +1961,8 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 	return -1;
 }
 
-static char *getname(RBinFile *bf, int type, int idx) {
+static char *getname(RBinFile *bf, int type, int idx, bool sd) {
+	simplifiedDemangling = sd; // XXX kill globals
 	struct r_bin_dex_obj_t *dex = bf->o->bin_obj;
 	switch (type) {
 	case 'm': // methods

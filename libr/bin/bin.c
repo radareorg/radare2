@@ -42,11 +42,11 @@ static int __getoffset(RBin *bin, int type, int idx) {
 	return -1;
 }
 
-static const char *__getname(RBin *bin, int type, int idx) {
+static const char *__getname(RBin *bin, int type, int idx, bool sd) {
 	RBinFile *a = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
 	if (plugin && plugin->get_name) {
-		return plugin->get_name (a, type, idx);
+		return plugin->get_name (a, type, idx, sd);
 	}
 	return NULL;
 }

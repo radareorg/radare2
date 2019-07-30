@@ -41,7 +41,7 @@ R_LIB_VERSION_HEADER(r_asm);
 
 #define R_ASM_GET_NAME(x,y,z) \
 	(x && x->binb.bin && x->binb.get_name)? \
-		x->binb.get_name (x->binb.bin, y, z): NULL
+		x->binb.get_name (x->binb.bin, y, z, x->pseudo): NULL
 
 enum {
 	R_ASM_SYNTAX_NONE = 0,
@@ -116,6 +116,7 @@ typedef struct r_asm_t {
 	bool immdisp; // Display immediates with # symbol (for arm stuff).
 	HtPP *flags;
 	int seggrn;
+	bool pseudo;
 } RAsm;
 
 typedef bool (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
