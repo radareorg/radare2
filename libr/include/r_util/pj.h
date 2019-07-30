@@ -13,7 +13,7 @@ typedef struct pj_t {
 } PJ;
 
 /* lifecycle */
-R_API PJ *pj_new();
+R_API PJ *pj_new(void);
 R_API void pj_free(PJ *j);
 R_API char *pj_drain(PJ *j);
 R_API const char *pj_string(PJ *pj);

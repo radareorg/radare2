@@ -111,7 +111,7 @@ struct r_parse_ctype_type_t {
 	};
 };
 
-R_API RParseCType *r_parse_ctype_new();
+R_API RParseCType *r_parse_ctype_new(void);
 R_API void r_parse_ctype_free(RParseCType *ctype);
 R_API RParseCTypeType *r_parse_ctype_parse(RParseCType *ctype, const char *str, char **error);
 R_API void r_parse_ctype_type_free(RParseCTypeType *type);
