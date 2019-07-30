@@ -60,10 +60,13 @@ R_LIB_VERSION_HEADER(r_cons);
 
 typedef int (*RConsGetSize)(int *rows);
 typedef int (*RConsGetCursor)(int *rows);
+typedef bool (*RConsIsBreaked)(void);
 
 typedef struct r_cons_bind_t {
 	RConsGetSize get_size;
 	RConsGetCursor get_cursor;
+	PrintfCallback cb_printf;
+	RConsIsBreaked is_breaked;
 } RConsBind;
 
 typedef struct r_cons_grep_t {
@@ -395,6 +398,8 @@ typedef struct r_cons_canvas_t {
 #define RUNE_CURVE_CORNER_TR "╮"
 #define RUNE_CURVE_CORNER_BR "╯"
 #define RUNE_CURVE_CORNER_BL "╰"
+
+#define UTF_CIRCLE "\u25EF"
 
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
@@ -819,6 +824,7 @@ R_API char *r_cons_editor(const char *file, const char *str);
 R_API void r_cons_reset(void);
 R_API void r_cons_reset_colors(void);
 R_API void r_cons_print_clear(void);
+R_API void r_cons_echo(const char *msg);
 R_API void r_cons_zero(void);
 R_API void r_cons_highlight(const char *word);
 R_API void r_cons_clear(void);
@@ -1011,6 +1017,8 @@ struct r_line_t {
 	int echo;
 	int has_echo;
 	char *prompt;
+	RList/*<str>*/ *kill_ring;
+	int kill_ring_ptr;
 	char *clipboard;
 	int disable;
 	void *user;
@@ -1038,6 +1046,7 @@ R_API void r_line_free(void);
 R_API char *r_line_get_prompt(void);
 R_API void r_line_set_prompt(const char *prompt);
 R_API int r_line_dietline_init(void);
+R_API void r_line_clipboard_push (const char *str);
 R_API void r_line_hist_free(void);
 
 typedef int (RLineReadCallback)(void *user, const char *line);
@@ -1067,13 +1076,11 @@ R_API void r_line_completion_clear(RLineCompletion *completion);
 #endif
 
 typedef int (*RPanelsMenuCallback)(void *user);
-typedef char *(*RPanelsMenuGetName)(R_NULLABLE void *user, char *base_name);
 typedef struct r_panels_menu_item {
 	int n_sub, selectedIndex;
-	char *base_name;
+	char *name;
 	struct r_panels_menu_item **sub;
 	RPanelsMenuCallback cb;
-	RPanelsMenuGetName get_name_cb;
 	RPanel *p;
 } RPanelsMenuItem;
 

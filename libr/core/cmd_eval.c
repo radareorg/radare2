@@ -288,6 +288,23 @@ done:
 	}
 }
 
+R_API void r_core_echo(RCore *core, const char *input) {
+	if (!strncmp (input, "64 ", 3)) {
+		char *buf = strdup (input);
+		r_base64_decode ((ut8*)buf, input + 3, -1);
+		if (*buf) {
+			r_cons_echo (buf);
+		}
+		free (buf);
+	} else {
+		char *p = strchr (input, ' ');
+		if (p) {
+			r_cons_strcat (p + 1);
+			r_cons_newline ();
+		}
+	}
+}
+
 static int cmd_eval(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -399,11 +416,7 @@ static int cmd_eval(void *data, const char *input) {
 		case '*': r_cons_pal_list (1, NULL); break; // "ec*"
 		case 'h': // echo
 			if (input[2] == 'o') {
-				char *p = strchr (input, ' ');
-				if (p) {
-					r_cons_strcat (p + 1);
-					r_cons_newline ();
-				}
+				r_core_echo (core, input + 3);
 			} else {
 				r_cons_pal_list ('h', NULL);
 			}

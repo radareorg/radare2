@@ -523,10 +523,10 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 					pre = ">";
 				}
 				if (use_color && *pre == '>') {
-					r_cons_printf ("%s %s %s  %s\n", color_sel,
+					r_cons_printf ("%s %s %s  %s %10s\n", color_sel,
 						Color_RESET, pre, k+strlen (s), v);
 				} else {
-					r_cons_printf (" %s %s  %s\n",
+					r_cons_printf ("   %s %s %10s\n",
 						pre, k + strlen (s), v);
 				}
 				vt->t_ctr ++;
@@ -2850,11 +2850,63 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 	free (cmdf);
 }
 
+static const char *help_fun_visual[] = {
+	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs ", "(X)", "refs   j/k next/prev\n",
+	"(r)", "rename ",  "(c)", "calls ", "(d)", "definetab column (_) hud\n",
+	"(d)", "define ",  "(v)", "vars ", "(?)"," help ", "(:)", "shell " ,"(q)", "quit\n",
+	"(s)", "edit function signature.  \n\n",
+	NULL
+};
+
+static const char *help_var_visual[] = {
+	"(a)", "add " ,"(x)", "xrefs ", "(r)", "rename\n",
+	"(t)", "type ", "(g)", "go ", "(-)" ,"delete\n",
+	"(q)", "quit ", "(s)", "signature\n\n",
+	NULL
+};
+
+static const char *help_vv_visual[] = {
+	"j,k", "select next/prev item or scroll if tab pressed",
+	"J,K", "scroll next/prev page \"\"",
+	"h,q", "go back, quit",
+	"p,P", "switch next/prev print mode",
+	"v", "view selected function arguments and variables",
+	"x,X", "see xrefs to the selected function",
+	"tab", "toggle disasm column selection (to scroll in code)",
+	"!", "run 'afls' to sort all functions by address",
+	".", "seek to current function address",
+	":", "run r2 commands",
+	"_", "hud mode. same as: s $(afl~...)",
+	"enter", "enter function view (variables), xrefs",
+	NULL
+};
+
+static const char *help_vv_actions_visual[] = {
+	" functions:", "Add, Modify, Delete, Xrefs Calls Vars",
+	" variables:", "Add, Modify, Delete",
+	NULL
+};
+
+static void r_core_vmenu_append_help (RStrBuf *p, const char **help) {
+	int i;
+	RConsContext *cons_ctx = r_cons_singleton ()->context;
+	const char *pal_args_color = cons_ctx->color_mode ? cons_ctx->pal.args : "",
+		   *pal_help_color = cons_ctx->color_mode ? cons_ctx->pal.help : "",
+		   *pal_reset = cons_ctx->color_mode ? cons_ctx->pal.reset : "";
+
+	for (i = 0; help[i]; i += 2) {
+		r_strbuf_appendf (p, "%s%s %s%s%s",
+			 pal_args_color, help[i],
+			 pal_help_color, help[i + 1], pal_reset);
+	}
+}
+
 static ut64 r_core_visual_anal_refresh (RCore *core) {
 	if (!core) {
 		return 0LL;
 	}
 	ut64 addr;
+	RStrBuf *buf;
 	char old[1024];
 	bool color = r_config_get_i (core->config, "scr.color");
 	int cols = r_cons_get_size (NULL);
@@ -2873,6 +2925,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 	switch (level) {
 	// Show functions list help in visual mode
 	case 0:
+		buf = r_strbuf_new ("");
 		if (color) {
 			r_cons_strcat (core->cons->context->pal.prompt);
 		}
@@ -2884,25 +2937,33 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 		if (color) {
 			r_cons_strcat ("\n" Color_RESET);
 		}
-		r_cons_printf (
-			"(a) analyze (-) delete (x) xrefs (X) refs   j/k next/prev\n"
-			"(r) rename  (c) calls  (d) definetab column (_) hud\n"
-			"(d) define  (v) vars   (?) help  (:) shell  (q) quit\n"
-			"(s) edit function signature.  \n\n");
+		r_core_vmenu_append_help (buf, help_fun_visual);
+		r_cons_printf ("%s", r_strbuf_drain (buf));
 		addr = var_functions_show (core, option, 1);
 		break;
 	case 1:
-		r_cons_printf (
-			"-[ variables ]----- 0x%08"PFMT64x"\n"
-			"(a) add    (x) xrefs     (r) rename\n"
-			"(t) type   (g) go        (-) delete\n"
-			"(q) quit   (s) signature\n\n", addr);
+		buf = r_strbuf_new ("");
+		if (color) {
+			r_cons_strcat (core->cons->context->pal.prompt);
+		}
+		r_cons_printf ("-[ variables ]----- 0x%08"PFMT64x"", addr);
+		if (color) {
+			r_cons_strcat ("\n" Color_RESET);
+		}
+		r_core_vmenu_append_help (buf, help_var_visual);
+		r_cons_printf ("%s", r_strbuf_drain (buf));
 		addr = var_variables_show (core, option, &variable_option, 1);
 		// var_index_show (core->anal, fcn, addr, option);
 		break;
 	case 2:
 		r_cons_printf ("Press 'q' to quit call refs\n");
+		if (color) {
+			r_cons_strcat (core->cons->context->pal.prompt);
+		}
 		r_cons_printf ("-[ calls ]----------------------- 0x%08"PFMT64x" (TODO)\n", addr);
+		if (color) {
+			r_cons_strcat ("\n" Color_RESET);
+		}
 		// TODO: filter only the callrefs. but we cant grep here
 		sprintf (old, "afi @ 0x%08"PFMT64x, addr);
 		r_core_cmd0 (core, old);
@@ -3073,25 +3134,11 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		switch (ch) {
 		case '?':
 			r_cons_clear00 ();
-			r_cons_printf (
-				"Usage: vv\n"
-				"Actions supported:\n"
-				" functions: Add, Modify, Delete, Xrefs Calls Vars\n"
-				" variables: Add, Modify, Delete\n"
-				"Keys:\n"
-				" j,k     select next/prev item or scroll if tab pressed\n"
-				" J,K     scroll next/prev page \"\"\n"
-				" h,q     go back, quit\n"
-				" p,P     switch next/prev print mode\n"
-				" v       view selected function arguments and variables\n"
-				" x,X     see xrefs to the selected function\n"
-				" tab     toggle disasm column selection (to scroll in code)\n"
-				" !       run 'afls' to sort all functions by address\n"
-				" .       seek to current function address\n"
-				" :       run r2 commands\n"
-				" _       hud mode. same as: s $(afl~...)\n"
-				" enter   enter function view (variables), xrefs\n"
-			);
+			RStrBuf *buf = r_strbuf_new ("");
+			r_cons_println ("|Usage: vv");
+			r_core_visual_append_help (buf, "Actions supported", help_vv_actions_visual);
+			r_core_visual_append_help (buf, "Keys", help_vv_visual);
+			r_cons_printf ("%s", r_strbuf_drain (buf));
 			r_cons_flush ();
 			r_cons_any_key (NULL);
 			break;

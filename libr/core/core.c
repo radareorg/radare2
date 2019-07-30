@@ -19,7 +19,6 @@ static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS
 };
 
-extern int r_is_heap (void *p);
 extern bool r_core_is_project (RCore *core, const char *name);
 
 static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
@@ -1458,7 +1457,10 @@ static void autocomplete_flagspaces(RCore *core, RLineCompletion *completion, co
 			r_line_completion_push (completion, s->name);
 		}
 	}
-	r_line_completion_push (completion, "*");
+
+	if (strlen (msg) == 0) {
+		r_line_completion_push (completion, "*");
+	}
 }
 
 static void autocomplete_functions (RCore *core, RLineCompletion *completion, const char* str) {
@@ -2440,6 +2442,8 @@ static void __init_autocomplete_default (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "dml", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "vim", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "less", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "head", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "tail", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (r_core_autocomplete_add (core->autocomplete, "ls", R_CORE_AUTOCMPLT_DFLT, true), "-l", R_CORE_AUTOCMPLT_FILE, true);
 	/* macros */
 	r_core_autocomplete_add (core->autocomplete, ".(", R_CORE_AUTOCMPLT_MACR, true);
@@ -2728,6 +2732,8 @@ R_API bool r_core_init(RCore *core) {
 	/// XXX shouhld be using coreb
 	r_parse_set_user_ptr (core->parser, core);
 	core->bin = r_bin_new ();
+	r_cons_bind (&core->bin->consb);
+	// XXX we shuold use RConsBind instead of this hardcoded pointer
 	core->bin->cb_printf = (PrintfCallback) r_cons_printf;
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();
@@ -3069,6 +3075,8 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	return true;
 }
 
+extern void r_core_echo(RCore *core, const char *input);
+
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = r_core_cmd (r, r->cmdqueue, true);
 	//int ret = r_core_cmd (r, r->cmdqueue, true);
@@ -3077,6 +3085,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 		r_sys_tts (buf, true);
 		r->cons->use_tts = false;
 	}
+	r_cons_echo (NULL);
 	r_cons_flush ();
 	if (r->cons && r->cons->line && r->cons->line->zerosep) {
 		r_cons_zero ();

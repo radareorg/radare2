@@ -4,6 +4,11 @@ cdecl=cc
 cc.cdecl.argn=stack
 cc.cdecl.ret=eax
 
+cdecl-thiscall-ms=cc
+cc.cdecl-thiscall-ms.arg0=ecx
+cc.cdecl-fastcall-ms.argn=stack
+cc.cdecl-fastcall-ms.ret=eax
+
 optlink=cc
 cc.optlink.arg0=eax
 cc.optlink.arg1=edx

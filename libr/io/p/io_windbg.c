@@ -66,7 +66,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
 	case R_IO_SEEK_SET:
-		return offset;
+		return io->off = offset;
 	case R_IO_SEEK_CUR:
 		return io->off + offset;
 	case R_IO_SEEK_END:
@@ -93,7 +93,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static int __close(RIODesc *fd) {
-	windbg_ctx_free (fd->data);
+	windbg_ctx_free (&fd->data);
 	return true;
 }
 

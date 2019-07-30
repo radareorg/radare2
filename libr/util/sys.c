@@ -74,10 +74,6 @@ extern char **environ;
 #endif
 
 R_LIB_VERSION(r_util);
-#ifdef _MSC_VER
-// Required for GetModuleFileNameEx and GetProcessImageFileName linking
-#pragma comment(lib, "psapi.lib")
-#endif
 
 static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"x86", R_SYS_ARCH_X86},
@@ -947,7 +943,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API int r_is_heap (void *p) {
+R_API bool r_is_heap (void *p) {
 	void *q = malloc (8);
 	ut64 mask = UT64_MAX;
 	ut64 addr = (ut64)(size_t)q;

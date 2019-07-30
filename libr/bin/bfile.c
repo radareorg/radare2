@@ -107,6 +107,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw) {
 
 static int string_scan_range(RList *list, RBinFile *bf, int min,
 			      const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
+	RBin *bin = bf->rbin;
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
@@ -134,6 +135,11 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	r_buf_read_at (bf->buf, from, buf, len);
 	// may oobread
 	while (needle < to) {
+		if (bin && bin->consb.is_breaked) {
+			if (bin->consb.is_breaked ()) {
+				break;
+			}
+		}
 		rc = r_utf8_decode (buf + needle - from, to - needle, NULL);
 		if (!rc) {
 			needle++;

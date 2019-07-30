@@ -78,16 +78,25 @@ R_API void r_parse_c_reset(RParse *p);
 
 typedef struct r_parse_ctype_t RParseCType;
 
+typedef enum {
+	R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER,
+	R_PARSE_CTYPE_TYPE_KIND_POINTER,
+	R_PARSE_CTYPE_TYPE_KIND_ARRAY
+} RParseCTypeTypeKind;
+
+typedef enum {
+	R_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED,
+	R_PARSE_CTYPE_IDENTIFIER_KIND_STRUCT,
+	R_PARSE_CTYPE_IDENTIFIER_KIND_UNION,
+	R_PARSE_CTYPE_IDENTIFIER_KIND_ENUM
+} RParseCTypeTypeIdentifierKind;
+
 typedef struct r_parse_ctype_type_t RParseCTypeType;
 struct r_parse_ctype_type_t {
-	enum {
-		R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER,
-		R_PARSE_CTYPE_TYPE_KIND_POINTER,
-		R_PARSE_CTYPE_TYPE_KIND_ARRAY
-	} kind;
-
+	RParseCTypeTypeKind kind;
 	union {
 		struct {
+			RParseCTypeTypeIdentifierKind kind;
 			char *name;
 			bool is_const;
 		} identifier;
@@ -102,7 +111,7 @@ struct r_parse_ctype_type_t {
 	};
 };
 
-R_API RParseCType *r_parse_ctype_new();
+R_API RParseCType *r_parse_ctype_new(void);
 R_API void r_parse_ctype_free(RParseCType *ctype);
 R_API RParseCTypeType *r_parse_ctype_parse(RParseCType *ctype, const char *str, char **error);
 R_API void r_parse_ctype_type_free(RParseCTypeType *type);

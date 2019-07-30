@@ -847,8 +847,17 @@ rep:
 					}
 				}
 			}
-
-			bsze = s[1] == '=' ? 1 : r_num_math (core->num, s + 1);
+#if 1
+			bsze = (s[1] == '=') ? 1 : r_num_math (core->num, s + 1);
+#else
+			if (*s && s[1]) {
+				if (s[1] != '=') {
+					bsze = r_num_math (core->num, s + 1);
+				} else {
+					bsze = 1;
+				}
+			}
+#endif
 		}
 
 		bool addFlag = true;

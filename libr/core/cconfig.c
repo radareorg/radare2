@@ -115,11 +115,12 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 	char bits[32];
 	RAsmPlugin *h;
 	RListIter *iter;
-	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
+	PJ *pj = NULL;
 	if (fmt == 'j') {
+		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
 		pj_o (pj);
 	}
 	r_list_foreach (a->plugins, iter, h) {
@@ -401,6 +402,13 @@ static bool cb_scrrainbow(void *user, void *data) {
 		r_core_cmd0 (core, "ecoo");
 	}
 	r_print_set_flags (core->print, core->print->flags);
+	return true;
+}
+
+static bool cb_asmpseudo (void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->assembler->pseudo = node->i_value;
 	return true;
 }
 
@@ -1114,32 +1122,31 @@ static bool cb_cfg_fortunes_type(void *user, void *data) {
 	return true;
 }
 
+static void check_decompiler(const char* name) {
+	char *path = r_file_path (name);
+	if (path && path[0] == '/') {
+		r_cons_printf ("!*%s\n", name);
+	}
+	free (path);
+}
+
 static bool cb_cmdpdc(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		r_cons_printf ("pdc\n");
 		// spaguetti
-		char *retdec = r_file_path ("r2retdec");
-		if (retdec && *retdec == '/') {
-			r_cons_printf ("!*r2retdec\n");
-			free (retdec);
+		check_decompiler ("r2retdec");
+		RListIter *iter;
+		RCorePlugin *cp;
+		r_list_foreach (core->rcmd->plist, iter, cp) {
+			if (!strcmp (cp->name, "r2ghidra")) {
+				r_cons_printf ("pdg\n");
+			}
 		}
-		char *ghidra = r_file_path ("r2ghidra");
-		if (ghidra && *ghidra == '/') {
-			r_cons_printf ("!*r2ghidra\n");
-			free (ghidra);
-		}
-		char *r2jadx = r_file_path ("r2jadx");
-		if (r2jadx && *r2jadx == '/') {
-			r_cons_printf ("!*r2jadx\n");
-			free (r2jadx);
-		}
-		char *r2snow = r_file_path ("r2snow");
-		if (r2snow && *r2snow == '/') {
-			r_cons_printf (".!r2snow\n");
-			free (r2snow);
-		}
+		check_decompiler ("r2ghidra");
+		check_decompiler ("r2jadx");
+		check_decompiler ("r2snow");
 		RConfigNode *r2dec = r_config_node_get (core->config, "r2dec.asm");
 		if (r2dec) {
 			r_cons_printf ("pdd\n");
@@ -2973,7 +2980,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.section.name", "true", "Show section name in the disasm");
 	SETI ("asm.section.col", 20, "Columns width to show asm.section");
 	SETCB ("asm.section.sub", "false", &cb_asmsecsub, "Show offsets in disasm prefixed with section/map name");
-	SETPREF ("asm.pseudo", "false", "Enable pseudo syntax");
+	SETCB ("asm.pseudo", "false", &cb_asmpseudo, "Enable pseudo syntax");
 	SETPREF ("asm.size", "false", "Show size of opcodes in disassembly (pd)");
 	SETPREF ("asm.stackptr", "false", "Show stack pointer at disassembly");
 	SETPREF ("asm.cyclespace", "false", "Indent instructions depending on CPU-cycles");

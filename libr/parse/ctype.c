@@ -18,7 +18,7 @@ typedef struct r_parse_ctype_t {
 
 static const char *lang =
 	"integerlit : /0x[0-9A-Fa-f]+/ | /[0-9]+/;"
-	"identifier : /[a-zA-Z_][0-9a-zA-Z_]+/;"
+	"identifier : (\"struct\" | \"union\" | \"enum\")? /[a-zA-Z_][0-9a-zA-Z_]+/;"
 	"qualifier  : \"const\";"
 	"pointer    : <qualifier>? '*';"
 	"array      : '[' <integerlit> ']';"
@@ -68,6 +68,15 @@ static bool is_identifier_string(mpc_ast_t *a) {
 		&& a->contents;
 }
 
+static bool is_identifier_kind(mpc_ast_t *a) {
+	return strcmp (a->tag, "identifier|>") == 0
+		&& a->children_num == 2
+		&& strcmp (a->children[0]->tag, "string") == 0
+		&& a->children[0]->contents
+		&& strcmp (a->children[1]->tag, "regex") == 0
+		&& a->children[1]->contents;
+}
+
 static bool is_non_const_pointer(mpc_ast_t *a) {
 	return strcmp (a->tag, "pointer|char") == 0
 		&& a->contents
@@ -108,6 +117,39 @@ static RParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 			is_const = true;
 		}
 
+		// (struct|union|enum)? <identifier>
+		else if (r_str_startswith (child->tag, "identifier|")) {
+			if (cur) {
+				// identifier should always be the innermost type
+				goto beach;
+			}
+			cur = R_NEW0 (RParseCTypeType);
+			if (!cur) {
+				goto beach;
+			}
+			cur->kind = R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER;
+			cur->identifier.is_const = is_const;
+			cur->identifier.kind = R_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED;
+			if (is_identifier_string (child)) {
+				cur->identifier.name = strdup (child->contents);
+			} else if (is_identifier_kind (child)) {
+				if (strcmp (child->children[0]->contents, "struct") == 0) {
+					cur->identifier.kind = R_PARSE_CTYPE_IDENTIFIER_KIND_STRUCT;
+				} else if (strcmp (child->children[0]->contents, "union") == 0) {
+					cur->identifier.kind = R_PARSE_CTYPE_IDENTIFIER_KIND_UNION;
+				} else if (strcmp (child->children[0]->contents, "enum") == 0) {
+					cur->identifier.kind = R_PARSE_CTYPE_IDENTIFIER_KIND_ENUM;
+				}
+				cur->identifier.name = strdup (child->children[1]->contents);
+			} else {
+				goto beach;
+			}
+			if (!cur->identifier.name) {
+				goto beach;
+			}
+			is_const = false;
+		}
+
 		// <identifier>
 		else if (is_identifier_string (child)) {
 			if (cur) {
@@ -119,6 +161,7 @@ static RParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 				goto beach;
 			}
 			cur->kind = R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER;
+			cur->identifier.kind = R_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED;
 			cur->identifier.is_const = is_const;
 			cur->identifier.name = strdup (child->contents);
 			if (!cur->identifier.name) {

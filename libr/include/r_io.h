@@ -164,8 +164,8 @@ typedef struct r_io_plugin_t {
 	bool isdbg;
 	// int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
 	char *(*system)(RIO *io, RIODesc *fd, const char *);
-	RIODesc* (*open)(RIO *io, const char *, int rw, int mode);
-	RList* /*RIODesc* */ (*open_many)(RIO *io, const char *, int rw, int mode);
+	RIODesc* (*open)(RIO *io, const char *, int perm, int mode);
+	RList* /*RIODesc* */ (*open_many)(RIO *io, const char *, int perm, int mode);
 	int (*read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	ut64 (*lseek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
 	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);

@@ -30,6 +30,8 @@ typedef enum {
 	CONTROL_MODE
 } RViMode; 
 
+bool enable_yank_pop = false;
+
 static inline bool is_word_break_char(char ch, bool mode) {
 	int i;
 	if (mode == MAJOR_BREAK) {
@@ -67,6 +69,7 @@ static void backward_kill_word() {
 		len = I.buffer.index - i + 1;
 		free (I.clipboard);
 		I.clipboard = r_str_ndup (I.buffer.data + i, len);
+		r_line_clipboard_push (I.clipboard);
 		memmove (I.buffer.data + i, I.buffer.data + I.buffer.index,
 				I.buffer.length - I.buffer.index + 1);
 		I.buffer.length = strlen (I.buffer.data);
@@ -94,6 +97,7 @@ static void backward_kill_Word() {
 		len = I.buffer.index - i + 1;
 		free (I.clipboard);
 		I.clipboard = r_str_ndup (I.buffer.data + i, len);
+		r_line_clipboard_push (I.clipboard);
 		memmove (I.buffer.data + i, I.buffer.data + I.buffer.index,
 				I.buffer.length - I.buffer.index + 1);
 		I.buffer.length = strlen (I.buffer.data);
@@ -115,6 +119,7 @@ static void kill_word() {
 	len = i - I.buffer.index + 1;
 	free (I.clipboard);
 	I.clipboard = r_str_ndup (I.buffer.data + I.buffer.index, len);
+	r_line_clipboard_push (I.clipboard);
 	memmove (I.buffer.data + I.buffer.index, I.buffer.data + i, len);
 	I.buffer.length = strlen (I.buffer.data);
 }
@@ -133,6 +138,7 @@ static void kill_Word() {
 	len = i - I.buffer.index + 1;
 	free (I.clipboard);
 	I.clipboard = r_str_ndup (I.buffer.data + I.buffer.index, len);
+	r_line_clipboard_push (I.clipboard);
 	memmove (I.buffer.data + I.buffer.index, I.buffer.data + i, len);
 	I.buffer.length = strlen (I.buffer.data);
 }
@@ -146,6 +152,7 @@ static void paste() {
 		memmove (cursor + len, cursor, dist);
 		memcpy (cursor, I.clipboard, len);
 		I.buffer.index += len;
+		enable_yank_pop = true;
 	}
 }
 
@@ -171,6 +178,7 @@ static void unix_word_rubout() {
 		len = I.buffer.index - i + 1;
 		free (I.clipboard);
 		I.clipboard = r_str_ndup (I.buffer.data + i, len);
+		r_line_clipboard_push (I.clipboard);
 		memmove (I.buffer.data + i,
 			I.buffer.data + I.buffer.index,
 			I.buffer.length - I.buffer.index + 1);
@@ -880,7 +888,11 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				: 0;
 			break;
 		case 38:	// up arrow
-			if (I.sel_widget) {
+			if (I.hud) {
+				if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
+					I.hud->top_entry_n--;
+				}
+			} else if (I.sel_widget) {
 				selection_widget_up (1);
 				selection_widget_draw ();
 			} else if (gcomp) {
@@ -896,7 +908,11 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				: I.buffer.length;
 			break;
 		case 40:// down arrow
-			if (I.sel_widget) {
+			if (I.hud) {
+				if (I.hud->top_entry_n >= 0) {
+					I.hud->top_entry_n++;
+				}
+			} else if (I.sel_widget) {
 				selection_widget_down (1);
 				selection_widget_draw ();
 			} else if (gcomp) {
@@ -1055,6 +1071,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 21:// ^U - cut
 			free (I.clipboard);
 			I.clipboard = strdup (I.buffer.data);
+			r_line_clipboard_push (I.clipboard);
 			I.buffer.data[0] = '\0';
 			I.buffer.length = 0;
 			I.buffer.index = 0;
@@ -1093,12 +1110,19 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			unix_word_rubout ();
 			break;
 		case 24:// ^X -- do nothing but store in prev = *buf
+			strncpy (I.buffer.data, I.buffer.data + I.buffer.index, I.buffer.length);
+			I.buffer.length -= I.buffer.index;
+			I.buffer.index = 0;
 			break;
 		case 25:// ^Y - paste
 			paste ();
 			break;
 		case 14:// ^n
-			if (I.sel_widget) {
+			if (I.hud) {
+				if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
+					I.hud->top_entry_n++;
+				}
+			} else if (I.sel_widget) {
 				selection_widget_down (1);
 				selection_widget_draw ();
 			} else if (gcomp) {
@@ -1110,7 +1134,11 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 16:// ^p
-			if (I.sel_widget) {
+			if (I.hud) {
+				if (I.hud->top_entry_n >= 0) {
+					I.hud->top_entry_n--;
+				}
+			} else if (I.sel_widget) {
 				selection_widget_down (1);
 				selection_widget_draw ();
 			} else if (gcomp) {
@@ -1268,6 +1296,19 @@ _end:
 	return I.buffer.data[0] != '\0'? I.buffer.data: r_line_nullstr;
 }
 #endif
+
+static inline void rotate_kill_ring () {
+	if (enable_yank_pop) {
+		I.buffer.index -= strlen (r_list_get_n (I.kill_ring, I.kill_ring_ptr));
+		I.buffer.data[I.buffer.index] = 0;
+		I.kill_ring_ptr -= 1;
+		if (I.kill_ring_ptr < 0) {
+			I.kill_ring_ptr = I.kill_ring->length - 1;
+		}
+		I.clipboard = r_list_get_n (I.kill_ring, I.kill_ring_ptr);
+		paste ();
+	}
+}
 
 static inline void delete_next_char () {
 	if (I.buffer.length == I.buffer.index) {
@@ -1658,6 +1699,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int rows, columns = r_cons_get_size (&rows) - 2;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;
+	static bool yank_flag = 0;
 	static int gcomp = 0;
 	signed char buf[10];
 #if USE_UTF8
@@ -1700,6 +1742,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	}
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
+		yank_flag = 0;
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -1886,6 +1929,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 21:// ^U - cut
 			free (I.clipboard);
 			I.clipboard = strdup (I.buffer.data);
+			r_line_clipboard_push (I.clipboard);
 			I.buffer.data[0] = '\0';
 			I.buffer.length = 0;
 			I.buffer.index = 0;
@@ -1893,13 +1937,31 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 23:// ^W ^w unix-word-rubout
 			unix_word_rubout ();
 			break;
-		case 24:// ^X -- do nothing but store in prev = *buf
+		case 24:// ^X
+			strncpy (I.buffer.data, I.buffer.data + I.buffer.index, I.buffer.length);
+			I.buffer.length -= I.buffer.index;
+			I.buffer.index = 0;
 			break;
 		case 25:// ^Y - paste
 			paste ();
+			yank_flag = 1;
+			break;
+		case 29:  // ^^ - rotate kill ring 
+			rotate_kill_ring ();
+			yank_flag = enable_yank_pop ? 1 : 0;
+			break;
+		case 20:  // ^t Kill from point to the end of the current word,
+			kill_word ();
+			break;
+		case 15: // ^o kill backward
+			backward_kill_word ();	
 			break;
 		case 14:// ^n
-			if (I.sel_widget) {
+			if (I.hud) {
+				if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
+					I.hud->top_entry_n++;
+				}
+			} else if (I.sel_widget) {
 				selection_widget_down (1);
 				selection_widget_draw ();
 			} else if (gcomp) {
@@ -1911,7 +1973,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 16:// ^p
-			if (I.sel_widget) {
+			if (I.hud) {
+				if (I.hud->top_entry_n >= 0) {
+					I.hud->top_entry_n--;
+				}
+			} else if (I.sel_widget) {
 				selection_widget_up (1);
 				selection_widget_draw ();
 			} else if (gcomp) {
@@ -1998,19 +2064,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					case '5': // pag up
 						buf[1] = r_cons_readchar ();
 						if (I.hud) {
-							I.hud->top_entry_n += (rows - 1);
-							if (I.hud->top_entry_n + 1 >= I.hud->current_entry_n) {
-								I.hud->top_entry_n = I.hud->current_entry_n;
-							}
-						}
-						if (I.sel_widget) {
-							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
-							selection_widget_draw ();
-						}
-						break;
-					case '6': // pag down
-						buf[1] = r_cons_readchar ();
-						if (I.hud) {
 							I.hud->top_entry_n -= (rows - 1);
 							if (I.hud->top_entry_n < 0) {
 								I.hud->top_entry_n = 0;
@@ -2021,10 +2074,23 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							selection_widget_draw ();
 						}
 						break;
+					case '6': // pag down
+						buf[1] = r_cons_readchar ();
+						if (I.hud) {
+							I.hud->top_entry_n += (rows - 1);
+							if (I.hud->top_entry_n >= I.hud->current_entry_n) {
+								I.hud->top_entry_n = I.hud->current_entry_n - 1;
+							}
+						}
+						if (I.sel_widget) {
+							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
+							selection_widget_draw ();
+						}
+						break;
 					/* arrows */
 					case 'A':	// up arrow
 						if (I.hud) {
-							if (I.hud->top_entry_n >= 0) {
+							if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
 								I.hud->top_entry_n--;
 							}
 						} else if (I.sel_widget) {
@@ -2039,7 +2105,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						break;
 					case 'B':	// down arrow
 						if (I.hud) {
-							if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
+							if (I.hud->top_entry_n >= 0) {
 								I.hud->top_entry_n++;
 							}
 						} else if (I.sel_widget) {
@@ -2348,6 +2414,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			fflush (stdout);
 		}
+		enable_yank_pop = yank_flag ? 1 : 0;
 		if (I.hud) {
 			goto _end;
 		}

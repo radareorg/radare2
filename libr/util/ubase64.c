@@ -43,12 +43,12 @@ static int local_b64_decode(const char in[4], ut8 out[3]) {
 }
 
 R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
-	int in, out, ret;
+	int in, out;
 	if (len < 0) {
 		len = strlen (bin);
 	}
 	for (in = out = 0; in + 3 < len; in += 4) {
-		ret = local_b64_decode (bin + in, bout + out);
+		int ret = local_b64_decode (bin + in, bout + out);
 		if (ret < 1) {
 			return -1;
 		}

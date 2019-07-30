@@ -29,13 +29,13 @@ static int __io_posix_open(const char *file, int perm, int mode) {
 #if __WINDOWS__
 	// probably unnecessary to have this ifdef nowadays windows is posix enough
 	if (perm & R_PERM_W) {
-		fd = r_sandbox_open (file, O_BINARY | O_RDWR, 0);
-		if (fd == -1 && perm & R_PERM_CREAT) {
+		fd = r_sandbox_open (file, O_RDWR, 0);
+		if (fd == -1 && (perm & R_PERM_CREAT)) {
 			r_sandbox_creat (file, 0644);
-			fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT, 0);
+			fd = r_sandbox_open (file, O_RDWR | O_CREAT, 0);
 		}
 	} else {
-		fd = r_sandbox_open (file, O_BINARY, 0);
+		fd = r_sandbox_open (file, O_RDONLY | O_BINARY, 0);
 	}
 #else
 	const int posixFlags = (perm & R_PERM_W) ? (perm & R_PERM_CREAT)
@@ -102,17 +102,16 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 }
 
 static void r_io_def_mmap_free (RIOMMapFileObj *mmo) {
-	free (mmo->filename);
-	r_buf_free (mmo->buf);
-	close (mmo->fd);
-	memset (mmo, 0, sizeof (RIOMMapFileObj));
-	free (mmo);
+	if (mmo) {
+		free (mmo->filename);
+		r_buf_free (mmo->buf);
+		close (mmo->fd);
+		free (mmo);
+	}
 }
 
-RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int mode, int perm) {
-	if (!io) {
-		return NULL;
-	}
+RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int perm, int mode) {
+	r_return_val_if_fail (io && filename, NULL);
 	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
 	if (!mmo) {
 		return NULL;
@@ -125,11 +124,15 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 		filename += strlen ("nocache://");;
 	}
 	mmo->filename = strdup (filename);
-	mmo->mode = mode;
 	mmo->perm = perm;
+	mmo->mode = mode;
 	mmo->io_backref = io;
-	const int posixFlags = (perm & R_PERM_W) ? (perm & R_PERM_CREAT)
-			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
+	const int posixFlags = (perm & R_PERM_W)
+			?(
+				(perm & R_PERM_CREAT)
+					? (O_RDWR | O_CREAT)
+					: O_RDWR
+			): O_RDONLY;
 	mmo->fd = r_sandbox_open (filename, posixFlags, mode);
 	if (mmo->fd == -1) {
 		free (mmo->filename);
@@ -147,9 +150,7 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 }
 
 static int r_io_def_mmap_close(RIODesc *fd) {
-	if (!fd || !fd->data) {
-		return -1;
-	}
+	r_return_val_if_fail (fd && fd->data, -1);
 	r_io_def_mmap_free ((RIOMMapFileObj *) fd->data);
 	fd->data = NULL;
 	return 0;
@@ -169,23 +170,18 @@ static bool r_io_def_mmap_check_default (const char *filename) {
 }
 
 static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	RIOMMapFileObj *mmo = NULL;
-	if (!fd || !fd->data || !buf) {
-		// in this case we fallback reopening in raw mode
-		return -1;
-	}
+	r_return_val_if_fail (fd && fd->data && buf, -1);
 	if (io->off == UT64_MAX) {
 		memset (buf, 0xff, count);
 		return count;
 	}
-	mmo = fd->data;
+	// TODO : unbox magic
+	RIOMMapFileObj *mmo = fd->data;
 	if (!mmo) {
 		return -1;
 	}
 	if (mmo->rawio) {
 		if (fd->obsz) {
-			char *a_buf;
-			int a_count;
 			// only do aligned reads in aligned offsets
 			const int aligned = fd->obsz;
 			ut64 a_off = io->off - (io->off % aligned);
@@ -194,9 +190,9 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 				memset (buf, 0xff, count);
 				return -1;
 			}
-			a_count = count + (aligned - (count % aligned));
+			int a_count = count + (aligned - (count % aligned));
 
-			a_buf = malloc (a_count + aligned);
+			char *a_buf = malloc (a_count + aligned);
 			if (a_buf) {
 				int i;
 				memset (a_buf, 0xff, a_count + aligned);
@@ -231,11 +227,10 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	int len = -1;
-	ut64 addr = io->off;
-
 	r_return_val_if_fail (io && fd && fd->data && buf, -1);
 
+	int len = -1;
+	ut64 addr = io->off;
 	RIOMMapFileObj *mmo = fd->data;
 	if (mmo->rawio) {
 		if (fd->obsz) {
@@ -304,7 +299,8 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 }
 
 static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode) {
-	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, mode, perm);
+	r_return_val_if_fail (io && file, NULL);
+	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, perm, mode);
 	if (!mmo) {
 		return NULL;
 	}
@@ -319,7 +315,6 @@ static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode
 	}
 	return d;
 }
-
 
 static ut64 r_io_def_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return (fd && fd->data)

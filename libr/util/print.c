@@ -1659,6 +1659,12 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	r_return_if_fail (p && arr);
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	const bool bgFill = (p && (p->flags & R_PRINT_FLAGS_BGFILL));
+	bool useUtf8 = p->cons->use_utf8;
+	bool useUtf8Curvy = p->cons->use_utf8_curvy;
+	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
+	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BR : RUNECODESTR_CORNER_BR) : "'";
+	const char *v_line = useUtf8 ? RUNECODESTR_LINE_VERT : "|";
+	const char *h_line = useUtf8 ? RUNECODESTR_LINE_HORIZ : "_";
 	char *firebow[6];
 	int i = 0, j;
 
@@ -1674,7 +1680,7 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		}
 		if (arr[0] > 1) {
 			for (i = 0; i < arr[0]; i += INC) {
-				p->cb_printf ("_");
+				p->cb_printf (h_line);
 			}
 		}
 		p->cb_printf ("\n");
@@ -1697,9 +1703,9 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 			} else {
 				p->cb_printf ("0x%08" PFMT64x " ", at);
 			}
-			p->cb_printf ("%02x %04x |", i, arr[i]);
+			p->cb_printf ("%02x %04x %s", i, arr[i], v_line);
 		} else {
-			p->cb_printf ("|");
+			p->cb_printf (v_line);
 		}
 		if (show_colors) {
 			int idx = (int) (arr[i] * 5 / 255);
@@ -1713,38 +1719,38 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 			if (arr[i] > INC) {
 				for (j = 0; j < next + base; j += INC) {
 					if (bgFill) {
-						p->cb_printf (i ? " " : "'");
+						p->cb_printf (i ? " " : br_corner);
 					} else {
-						p->cb_printf (i ? "." : "'");
+						p->cb_printf (i ? tr_corner : br_corner);
 					}
 				}
 			}
 			for (j = next + INC; j + base < arr[i]; j += INC) {
-				p->cb_printf ("_");
+				p->cb_printf (h_line);
 			}
 		} else {
 			if (i == 0) {
 				for (j = INC; j < arr[i] + base; j += INC) {
-					p->cb_printf ("'");
+					p->cb_printf (br_corner);
 				}
 			} else {
 				for (j = INC; j < arr[i] + base; j += INC) {
-					p->cb_printf (".");
+					p->cb_printf (tr_corner);
 				}
 			}
 		}
 		if (show_colors) {
-			p->cb_printf ("|" Color_RESET);
+			p->cb_printf ("%s%s", v_line, Color_RESET);
 		} else {
-			p->cb_printf ("|");
+			p->cb_printf (v_line);
 		}
 		if (i + 1 == size) {
 			for (j = arr[i] + INC + base; j + base < next; j += INC) {
-				p->cb_printf ("_");
+				p->cb_printf (h_line);
 			}
 		} else if (arr[i + 1] > arr[i]) {
 			for (j = arr[i] + INC + base; j + base < next; j += INC) {
-				p->cb_printf ("_");
+				p->cb_printf (h_line);
 			}
 		}
 		p->cb_printf ("\n");

@@ -70,7 +70,11 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 		ptr->type = r_str_const (R_BIN_TYPE_SECTION_STR);
 		break;
 	case COFF_SYM_CLASS_EXTERNAL: // should be prefixed with sym.imp
-		ptr->type = r_str_const ("EXTERNAL");
+		if (bin->symbols[idx].n_scnum) {
+			ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+		} else {
+			ptr->type = r_str_const ("EXTERNAL");
+		}
 		break;
 	case COFF_SYM_CLASS_STATIC:
 		ptr->type = r_str_const ("STATIC");
@@ -79,7 +83,7 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 		ptr->type = r_str_const (sdb_fmt ("%i", s->n_sclass));
 		break;
 	}
-	if (bin->symbols[idx].n_scnum < bin->hdr.f_nscns &&
+	if (bin->symbols[idx].n_scnum < bin->hdr.f_nscns + 1 &&
 	    bin->symbols[idx].n_scnum > 0) {
 		//first index is 0 that is why -1
 		ptr->paddr = bin->scn_hdrs[s->n_scnum - 1].s_scnptr + s->n_value;
@@ -186,9 +190,6 @@ static RList *symbols(RBinFile *bf) {
 	if (obj->symbols) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			s = &obj->symbols[i];
-			if (s->n_sclass == COFF_SYM_CLASS_EXTERNAL) {
-				continue;
-			}
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}

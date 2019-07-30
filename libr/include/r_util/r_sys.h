@@ -31,12 +31,13 @@ typedef struct _os_info {
 
 R_API char **r_sys_get_environ(void);
 R_API void r_sys_set_environ(char **e);
-R_API os_info *r_sys_get_osinfo();
+R_API os_info *r_sys_get_osinfo(void);
 R_API ut64 r_sys_now(void);
 R_API const char *r_time_to_string (ut64 ts);
 R_API int r_sys_fork(void);
 // nocleanup = false => exit(); true => _exit()
 R_API void r_sys_exit(int status, bool nocleanup);
+R_API bool r_is_heap (void *p);
 R_API bool r_sys_stop(void);
 R_API char *r_sys_pid_to_path(int pid);
 R_API int r_sys_run(const ut8 *buf, int len);
@@ -81,8 +82,8 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #define r_sys_conv_win_to_utf8(buf) r_acp_to_utf8 (buf)
 #define r_sys_conv_win_to_utf8_l(buf, len) r_acp_to_utf8_l (buf, len)
 #endif
-R_API os_info *r_sys_get_winver();
-R_API char *r_sys_get_src_dir_w32();
+R_API os_info *r_sys_get_winver(void);
+R_API char *r_sys_get_src_dir_w32(void);
 R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr);
 R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err);
 #endif
@@ -132,6 +133,8 @@ R_API char *r_syscmd_cat(const char *file);
 R_API char *r_syscmd_mkdir(const char *dir);
 R_API bool r_syscmd_mv(const char *input);
 R_API char *r_syscmd_uniq(const char *file);
+R_API char *r_syscmd_head(const char *file, int count);
+R_API char *r_syscmd_tail(const char *file, int count);
 R_API char *r_syscmd_join(const char *file1, const char *file2);
 R_API char *r_syscmd_sort(const char *file);
 

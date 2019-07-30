@@ -669,6 +669,7 @@ R_API void r_cons_grepbuf() {
 		snprintf (cons->context->buffer, cons->context->buffer_len, "%d\n", cnt);
 		cons->context->buffer_len = strlen (cons->context->buffer);
 		cons->num->value = cons->lines;
+		r_strbuf_free (ob);
 		return;
 	}
 	

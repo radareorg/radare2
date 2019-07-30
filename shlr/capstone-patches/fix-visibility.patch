@@ -1,0 +1,13 @@
+diff --git a/include/capstone/capstone.h b/include/capstone/capstone.h
+index 23c13d5..a395251 100644
+--- a/include/capstone/capstone.h
++++ b/include/capstone/capstone.h
+@@ -31,7 +31,7 @@ extern "C" {
+ #else
+ #define CAPSTONE_API
+ #if defined(__GNUC__) && !defined(CAPSTONE_STATIC)
+-#define CAPSTONE_EXPORT __attribute__((visibility("default")))
++#define CAPSTONE_EXPORT __attribute__((visibility("hidden")))
+ #else    // defined(CAPSTONE_STATIC)
+ #define CAPSTONE_EXPORT
+ #endif

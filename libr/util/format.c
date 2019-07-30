@@ -1344,11 +1344,7 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 		char *fieldname, ut64 addr, int mode, int size) {
 	char *bitfield = NULL;
-	switch (size) {
-	case 1: addr &= UT8_MAX; break;
-	case 2: addr &= UT16_MAX; break;
-	case 4: addr &= UT32_MAX; break;
-	}
+	addr &= (1ULL << (size * 8)) - 1;
 	if (MUSTSEE && !SEEVALUE) {
 		p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 	}
@@ -1357,13 +1353,13 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 		if (MUSTSEEJSON) {
 			p->cb_printf ("\"%s\"}", bitfield);
 		} else if (MUSTSEE) {
-			p->cb_printf (" %s (bitfield) = %s\n", fieldname, bitfield);
+			p->cb_printf ("%s (bitfield) = %s\n", fieldname, bitfield);
 		}
 	} else {
 		if (MUSTSEEJSON) {
 			p->cb_printf ("\"`tb %s 0x%x`\"}", fmtname, addr);
 		} else if (MUSTSEE) {
-			p->cb_printf (" %s (bitfield) = `tb %s 0x%x`\n",
+			p->cb_printf ("%s (bitfield) = `tb %s 0x%x`\n",
 				fieldname, fmtname, addr);
 		}
 	}
@@ -1373,11 +1369,7 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 static void r_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
 		char *fieldname, ut64 addr, int mode, int size) {
 	char *enumvalue = NULL;
-	switch (size) {
-	case 1: addr &= UT8_MAX; break;
-	case 2: addr &= UT16_MAX; break;
-	case 4: addr &= UT32_MAX; break;
-	}
+	addr &= (1ULL << (size * 8)) - 1;
 	if (MUSTSEE && !SEEVALUE) {
 		p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 	}
@@ -1536,7 +1528,11 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 	if (n >= 5) {  // This is the nesting level, is this not a bit arbitrary?!
 		return 0;
 	}
-	char *o = strdup (f);
+	const char *fmt2 = sdb_get (p->formats, f, NULL);
+	if (!fmt2) {
+		fmt2 = f;
+	}
+	char *o = strdup (fmt2);
 	if (!o) {
 		return -1;
 	}
@@ -1633,15 +1629,11 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 		case 'B':
 		case 'E':
 			if (tabsize_set) {
-				switch (tabsize) {
-				case 1: size += 1; break;
-				case 2: size += 2; break;
-				case 4: size += 4; break;
-				case 8: size += 8; break;
-				default:
+				if (tabsize < 1 || tabsize > 8) {
 					eprintf ("Unknown enum format size: %d\n", tabsize);
 					break;
 				}
+				size += tabsize;
 			} else {
 				size += 4; // Assuming by default enum as int
 			}
@@ -1892,6 +1884,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	const char *argend;
 	int viewflags = 0;
 	char *oarg = NULL;
+	char *internal_format = NULL;
 
 	/* Load format from name into fmt */
 	if (!formatname) {
@@ -1901,6 +1894,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (!fmt) {
 		fmt = formatname;
 	}
+	internal_format = strdup (fmt);
+	fmt = internal_format;
 	while (*fmt && IS_WHITECHAR (*fmt)) {
 		fmt++;
 	}
@@ -1910,11 +1905,13 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	nexti = nargs = i = j = 0;
 
 	if (len < 1) {
+		free (internal_format);
 		return 0;
 	}
 	// len+2 to save space for the null termination in wide strings
 	ut8 *buf = calloc (1, len + 2);
 	if (!buf) {
+		free (internal_format);
 		return 0;
 	}
 	memcpy (buf, b, len);
@@ -2685,6 +2682,7 @@ beach:
 	if (slide == 0) {
 		oldslide = 0;
 	}
+	free (internal_format);
 	free (oarg);
 	free (buf);
 	free (field);

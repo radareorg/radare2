@@ -1488,7 +1488,7 @@ static RList *classes(RBinFile *bf) {
 				bf->o->bin_obj = mach0;
 				bf->buf = cache->buf;
 				if (is_classlist) {
-					MACH0_(get_class_t) ((ut64) pointer_to_class, bf, klass, false);
+					MACH0_(get_class_t) ((ut64) pointer_to_class, bf, klass, false, NULL);
 				} else {
 					MACH0_(get_category_t) ((ut64) pointer_to_class, bf, klass, NULL);
 				}

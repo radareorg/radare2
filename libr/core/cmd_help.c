@@ -382,6 +382,7 @@ R_API void r_core_clippy(const char *msg) {
 	free (s);
 }
 
+
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RIOMap *map;
@@ -438,9 +439,9 @@ static int cmd_help(void *data, const char *input) {
 				return false;
 			}
 			if (input[3] == '-') {
-				r_base64_decode ((ut8*)buf, input + 5, strlen (input + 5));
-			} else {
-				r_base64_encode (buf, (const ut8*)input + 4, strlen (input + 4));
+				r_base64_decode ((ut8*)buf, input + 4, -1);
+			} else if (input[3] == ' ') {
+				r_base64_encode (buf, (const ut8*)input + 4, -1);
 			}
 			r_cons_println (buf);
 			free (buf);

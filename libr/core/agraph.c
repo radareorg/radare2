@@ -308,10 +308,12 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 
 static void tiny_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	G (n->x, n->y);
+	RCons *cons = r_cons_singleton ();
+	char *circle = cons->use_utf8 ? UTF_CIRCLE :"()";
 	if (cur) {
 		W ("##");
 	} else {
-		W ("()");
+		W (circle);
 	}
 }
 
@@ -4232,11 +4234,12 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case '>':
 			if (fcn && r_cons_yesno ('y', "Compute function callgraph? (Y/n)")) {
-				r_core_cmd0 (core, "ag-;.agc* @$FB;.axtg @$FB;aggi");
+				// r_core_cmd0 (core, "ag-;.agc* @$FB;.axtg @$FB;aggi");
+				r_core_cmd0 (core, "ag-;.agc* @$FB;.axfg @$FB;aggi");
 			}
 			break;
 		case '<':
-			// r_core_visual_refs (core, true);
+			// r_core_visual_refs (core, true, false);
 			if (fcn) {
 				r_core_cmd0 (core, "ag-;.axtg $FB;aggi");
 			}

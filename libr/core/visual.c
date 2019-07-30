@@ -248,6 +248,20 @@ static bool __core_visual_gogo (RCore *core, int ch) {
 	return false;
 }
 
+static const char *help_visual[] = {
+	"?", "full help",
+	"!", "enter panels",
+	"a", "code analysis",
+	"c", "toggle cursor",
+	"d", "debugger / emulator",
+	"e", "toggle configurations",
+	"i", "insert / write",
+	"m", "moving around (seeking)",
+	"p", "print commands and modes",
+	"v", "view management",
+	NULL
+};
+
 static const char *help_msg_visual[] = {
 	"?", "show visual help menu",
 	"??", "show this help",
@@ -489,25 +503,16 @@ R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char *
 
 static int visual_help() {
 	int ret = 0;
-	RStrBuf *p;
+	RStrBuf *p, *q;
 repeat:
 	p = r_strbuf_new (NULL);
+	q = r_strbuf_new (NULL);
 	if (!p) {
 		return 0;
 	}
 	r_cons_clear00 ();
-	r_cons_printf ("Visual Help:\n\n"
-	" (?) full help\n"
-	" (!) enter panels\n"
-	" (a) code analysis\n"
-	" (c) toggle cursor\n"
-	" (d) debugger / emulator\n"
-	" (e) toggle configurations\n"
-	" (i) insert / write\n"
-	" (m) moving around (seeking)\n"
-	" (p) print commands and modes\n"
-	" (v) view management\n"
-	);
+	r_core_visual_append_help (q, "Visual Help", help_visual);
+	r_cons_printf ("%s", r_strbuf_get (q));
 	r_cons_flush ();
 	switch (r_cons_readchar ()) {
 	case 'q':
@@ -600,6 +605,7 @@ repeat:
 		break;
 	}
 	r_strbuf_free (p);
+	r_strbuf_free (q);
 	goto repeat;
 	return ret;
 }
@@ -704,6 +710,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 	} else if (*buf) {
 		r_line_hist_add (buf);
 		r_core_cmd (core, buf, 0);
+		r_cons_echo (NULL);
 		r_cons_flush ();
 		ret = true;
 	} else {

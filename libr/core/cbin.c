@@ -2137,11 +2137,11 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					lastfs = 's';
 				}
 				if (r->bin->prefix) {
-					r_cons_printf ("f %s.sym.%s %u 0x%08" PFMT64x "\n",
+					r_cons_printf ("\"f %s.sym.%s %u 0x%08" PFMT64x "\"\n",
 						r->bin->prefix, r_bin_symbol_name (symbol), symbol->size, addr);
 				} else {
 					if (*name) {
-						r_cons_printf ("f sym.%s %u 0x%08" PFMT64x "\n",
+						r_cons_printf ("\"f sym.%s %u 0x%08" PFMT64x "\"\n",
 							r_bin_symbol_name (symbol), symbol->size, addr);
 					} else {
 						// we don't want unnamed symbol flags
@@ -2807,6 +2807,67 @@ static int bin_trycatch(RCore *core, int mode) {
 	return true;
 }
 
+static void classdump_objc(RCore *r, RBinClass *c) {
+	if (c->super) {
+		r_cons_printf ("@interface %s : %s\n{\n", c->name, c->super);
+	} else {
+		r_cons_printf ("@interface %s\n{\n", c->name);
+	}
+	RListIter *iter2, *iter3;
+	RBinField *f;
+	RBinSymbol *sym;
+	r_list_foreach (c->fields, iter2, f) {
+		if (f->name && r_regex_match ("ivar","e", f->name)) {
+			r_cons_printf ("  %s %s\n", f->type, f->name);
+		}
+	}
+	r_cons_printf ("}\n");
+	r_list_foreach (c->methods, iter3, sym) {
+		if (sym->rtype && sym->rtype[0] != '@') {
+			char *rp = get_rp (sym->rtype);
+			r_cons_printf ("%s (%s) %s\n",
+					strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
+					rp, sym->dname? sym->dname: sym->name);
+			free (rp);
+		} else if (sym->type) {
+			r_cons_printf ("%s (id) %s\n",
+					strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
+					sym->dname? sym->dname: sym->name);
+		}
+	}
+	r_cons_printf ("@end\n");
+}
+
+static void classdump_java(RCore *r, RBinClass *c) {
+	RBinField *f;
+	RListIter *iter2, *iter3;
+	RBinSymbol *sym;
+	char *pn = strdup (c->name);
+	char *cn = (char *)r_str_rchr (pn, NULL, '/');
+	if (cn) {
+		*cn = 0;
+		cn++;
+		r_str_replace_char (pn, '/', '.');
+	}
+	r_cons_printf ("package %s;\n\n", pn);
+	r_cons_printf ("public class %s {\n", cn);
+	free (pn);
+	r_list_foreach (c->fields, iter2, f) {
+		if (f->name && r_regex_match ("ivar","e", f->name)) {
+			r_cons_printf ("  public %s %s\n", f->type, f->name);
+		}
+	}
+	r_list_foreach (c->methods, iter3, sym) {
+		const char *mn = sym->dname? sym->dname: sym->name;
+		const char *ms = strstr (mn, "method.");
+		if (ms) {
+			mn = ms + strlen ("method.");
+		}
+		r_cons_printf ("  public %s ();\n", mn);
+	}
+	r_cons_printf ("}\n\n");
+}
+
 static int bin_classes(RCore *r, int mode) {
 	RListIter *iter, *iter2, *iter3;
 	RBinSymbol *sym;
@@ -2883,10 +2944,20 @@ static int bin_classes(RCore *r, int mode) {
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
 				char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, c->name, sym->name, sym->vaddr);
-				r_str_replace_char (cmd, '\n', 0);
-				r_cons_printf ("%s\n", cmd);
+				if (cmd) {
+					r_str_replace_char (cmd, ' ', '_');
+					if (strlen (cmd) > 2) {
+						cmd[2] = ' ';
+					}
+					char *eq = (char *)r_str_rchr (cmd, NULL, '=');
+					if (eq && eq != cmd) {
+						eq[-1] = eq[1] = ' ';
+					}
+					r_str_replace_char (cmd, '\n', 0);
+					r_cons_printf ("%s\n", cmd);
+					free (cmd);
+				}
 				R_FREE (mflags);
-				free (cmd);
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			if (c->super) {
@@ -2923,25 +2994,17 @@ static int bin_classes(RCore *r, int mode) {
 			}
 			r_cons_printf ("]}");
 		} else if (IS_MODE_CLASSDUMP (mode)) {
-			char *rp = NULL;
 			if (c) {
-				//TODO -> Print Superclass
-				r_cons_printf ("@interface %s :  \n{\n", c->name);
-				r_list_foreach (c->fields, iter2, f) {
-					if (f->name && r_regex_match ("ivar","e", f->name)) {
-						r_cons_printf ("  %s %s\n", f->type, f->name);
+				RBinFile *bf = r_bin_cur (r->bin);
+				if (bf && bf->o) {
+					if (bf->o->lang == R_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr (bf->o->info->lang, "dalvik"))) {
+						classdump_java (r, c);
+					} else {
+						classdump_objc (r, c);
 					}
+				} else {
+					classdump_objc (r, c);
 				}
-				r_cons_printf ("}\n");
-				r_list_foreach (c->methods, iter3, sym) {
-					if (sym->rtype && sym->rtype[0] != '@') {
-						rp = get_rp (sym->rtype);
-						r_cons_printf ("%s (%s) %s\n",
-							strncmp (sym->type, R_BIN_TYPE_METH_STR, 4)? "+": "-",
-							rp, sym->dname? sym->dname: sym->name);
-					}
-				}
-				r_cons_printf ("@end\n");
 			}
 		} else {
 			int m = 0;

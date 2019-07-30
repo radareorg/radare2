@@ -202,6 +202,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	user_input [0] = 0;
 	hud->top_entry_n = 0;
 	r_cons_show_cursor (false);
+	r_cons_enable_mouse (false);
 	r_cons_clear ();
 
 	// Repeat until the user exits the hud
@@ -255,6 +256,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 				if (selected_entry) {
 					R_FREE (I(line)->hud);
 					I(line)->echo = true;
+					r_cons_enable_mouse (true);
 					r_cons_show_cursor (true);
 					return strdup (selected_entry);
 				} 
@@ -267,6 +269,7 @@ _beach:
 	R_FREE (I(line)->hud);
 	I(line)->echo = true;
 	r_cons_show_cursor (true);
+	r_cons_enable_mouse (true);
 	ht_pp_free (ht);
 	return NULL;
 }

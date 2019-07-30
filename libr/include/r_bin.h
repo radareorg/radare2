@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_types.h>
 #include <r_io.h>
+#include <r_cons.h>
 #include <r_list.h>
 #include <r_bin_dwarf.h>
 #include <r_pdb.h>
@@ -138,6 +139,7 @@ enum {
 	R_BIN_NM_DLANG = 1<<6,
 	R_BIN_NM_MSVC = 1<<7,
 	R_BIN_NM_RUST = 1<<8,
+	R_BIN_NM_KOTLIN = 1<<9,
 	R_BIN_NM_BLOCKS = 1<<31,
 	R_BIN_NM_ANY = -1,
 };
@@ -318,6 +320,7 @@ typedef struct r_bin_t {
 	PrintfCallback cb_printf;
 	int loadany;
 	RIOBind iob;
+	RConsBind consb;
 	char *force;
 	int is_debugger;
 	bool want_dbginfo;
@@ -442,7 +445,7 @@ typedef struct r_bin_plugin_t {
 	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
 	int (*get_offset)(RBinFile *bf, int type, int idx);
-	char* (*get_name)(RBinFile *bf, int type, int idx);
+	char* (*get_name)(RBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt);
 	char* (*demangle)(const char *str);
@@ -610,7 +613,7 @@ typedef struct r_bin_write_t {
 // TODO: has_dbg_syms... maybe flags?
 
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
-typedef const char *(*RBinGetName)(RBin *bin, int type, int idx);
+typedef const char *(*RBinGetName)(RBin *bin, int type, int idx, bool sd);
 typedef RList *(*RBinGetSections)(RBin *bin);
 typedef RBinSection *(*RBinGetSectionAt)(RBin *bin, ut64 addr);
 

@@ -23,10 +23,10 @@ typedef enum {
 } RPanelEdge;
 
 
-typedef void (*RPanelMenuUpdateCallback)(void *user);
+typedef void (*RPanelMenuUpdateCallback)(void *user, const char *parent);
 typedef void (*RPanelDirectionCallback)(void *user, int direction);
 typedef void (*RPanelRotateCallback)(void *user, bool rev);
-typedef char *(*RPanelPrintCallback)(void *user, void *p);
+typedef void (*RPanelPrintCallback)(void *user, void *p);
 
 typedef struct r_panel_pos_t {
 	int x;

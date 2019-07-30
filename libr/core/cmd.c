@@ -206,30 +206,30 @@ static const char *help_msg_equalg[] = {
 
 static const char *help_msg_b[] = {
 	"Usage:",  "b[f] [arg]\n", "Get/Set block size",
-	"b", "", "display current block size",
 	"b", " 33", "set block size to 33",
+	"b", " eip+4", "numeric argument can be an expression",
+	"b", "", "display current block size",
 	"b", "+3", "increase blocksize by 3",
 	"b", "-16", "decrease blocksize by 16",
-	"b", " eip+4", "numeric argument can be an expression",
 	"b*", "", "display current block size in r2 command",
-	"bj", "", "display block size information in JSON",
 	"bf", " foo", "set block size to flag size",
+	"bj", "", "display block size information in JSON",
 	"bm", " 1M", "set max block size",
 	NULL
 };
 
 static const char *help_msg_k[] = {
 	"Usage:", "k[s] [key[=value]]", "Sdb Query",
-	"k", " foo=bar", "set value",
-	"k", " foo", "show value",
-	"k", "", "list keys",
-	"ko", " [file.sdb] [ns]", "open file into namespace",
-	"kd", " [file.sdb] [ns]", "dump namespace to disk",
-	"ks", " [ns]", "enter the sdb query shell",
-	"k", " anal/meta/*", "list kv from anal > meta namespaces",
 	"k", " anal/**", "list namespaces under anal",
+	"k", " anal/meta/*", "list kv from anal > meta namespaces",
 	"k", " anal/meta/meta.0x80404", "get value for meta.0x80404 key",
+	"k", " foo", "show value",
+	"k", " foo=bar", "set value",
+	"k", "", "list keys",
+	"kd", " [file.sdb] [ns]", "dump namespace to disk",
 	"kj", "", "List all namespaces and sdb databases in JSON format",
+	"ko", " [file.sdb] [ns]", "open file into namespace",
+	"ks", " [ns]", "enter the sdb query shell",
 	//"kl", " ha.sdb", "load keyvalue from ha.sdb",
 	//"ks", " ha.sdb", "save keyvalue to ha.sdb",
 	NULL,
@@ -259,26 +259,26 @@ static const char *help_msg_u[] = {
 
 static const char *help_msg_y[] = {
 	"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
-	"y", "", "show yank buffer information (srcoff len bytes)",
-	"y", " 16", "copy 16 bytes into clipboard",
+	"y!", "", "open cfg.editor to edit the clipboard",
 	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
-	"y!", "", "open cfg.editor to edit the clipboard",
+	"y", " 16", "copy 16 bytes into clipboard",
+	"y", "", "show yank buffer information (srcoff len bytes)",
 	"y*", "", "print in r2 commands what's been yanked",
-	"yj", "", "print in JSON commands what's been yanked",
-	"yz", " [len]", "copy nul-terminated string (up to blocksize) into clipboard",
-	"yp", "", "print contents of clipboard",
-	"yq", "", "print contents of clipboard in hexpairs",
-	"yx", "", "print contents of clipboard in hexadecimal",
-	"ys", "", "print contents of clipboard as string",
-	"yt", " 64 0x200", "copy 64 bytes from current seek to 0x200",
-	"ytf", " file", "dump the clipboard to given file",
 	"yf", " 64 0x200", "copy file 64 bytes from 0x200 from file",
 	"yfa", " file copy", "copy all bytes from file (opens w/ io)",
 	"yfx", " 10203040", "yank from hexpairs (same as ywx)",
+	"yj", "", "print in JSON commands what's been yanked",
+	"yp", "", "print contents of clipboard",
+	"yq", "", "print contents of clipboard in hexpairs",
+	"ys", "", "print contents of clipboard as string",
+	"yt", " 64 0x200", "copy 64 bytes from current seek to 0x200",
+	"ytf", " file", "dump the clipboard to given file",
 	"yw", " hello world", "yank from string",
 	"ywx", " 10203040", "yank from hexpairs (same as yfx)",
+	"yx", "", "print contents of clipboard in hexadecimal",
 	"yy", " 0x3344", "paste clipboard",
+	"yz", " [len]", "copy nul-terminated string (up to blocksize) into clipboard",
 	NULL
 };
 
@@ -378,6 +378,45 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 		}
 		break;
 	}
+	return 0;
+}
+
+static int cmd_head (void *data, const char *_input) { // "head"
+	RCore *core = (RCore *)data;
+	int lines = 5;
+	char *input = strdup (_input);
+	char *arg = strchr (input, ' ');
+	char *tmp, *count;
+	if (arg) {
+		arg = (char *)r_str_trim_ro (arg + 1); 	// contains "count filename"
+		count = strchr (arg, ' ');
+		if (count) {
+			*count = 0;	// split the count and file name
+			tmp = (char *)r_str_trim_ro (count + 1);
+			lines = atoi (arg);
+			arg = tmp;
+		}
+	}
+	switch (*input) {
+	case '?': // "head?"
+		eprintf ("Usage: head [file] # to list first n lines in file\n");
+		break;
+	default: // "head"
+		if (!arg) {
+			arg = "";
+		}
+		if (r_fs_check (core->fs, arg)) {
+			r_core_cmdf (core, "md %s", arg);
+		} else {
+			char *res = r_syscmd_head (arg, lines);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+		}
+		break;
+	}
+	free (input);
 	return 0;
 }
 
@@ -1901,7 +1940,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 			}
 			return;
 		} else if ((!input || !*input) && a) {
-			eprintf ("Cannot add '%s'. Already exists.\n", arg);
+			// eprintf ("Cannot add '%s'. Already exists.\n", arg);
 			return;
 		} else {
 			b = a;
@@ -1949,6 +1988,10 @@ static int cmd_system(void *data, const char *input) {
 			cmd_autocomplete (core, input + 2);
 		} else if (input[1] == '?') {
 			cmd_help_exclamation (core);
+		} else if (input[1] == '*') {
+			char *cmd = r_str_trim_dup (input + 1);
+			(void)r_core_cmdf (core, "\"#!pipe %s\"", cmd);
+			free (cmd);
 		} else {
 			if (r_sandbox_enable (0)) {
 				eprintf ("This command is disabled in sandbox mode\n");
@@ -4509,6 +4552,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	static_str = r_cons_get_buffer ();
 	retstr = strdup (static_str? static_str: "");
 	r_cons_pop ();
+	r_cons_echo (NULL);
 	return retstr;
 }
 
@@ -4645,6 +4689,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"kuery",    "perform sdb query", cmd_kuery},
 		{"l",       "list files and directories", cmd_ls},
 		{"join",    "join the contents of the two files", cmd_join},
+		{"head",    "show the top n number of line in file", cmd_head},
 		{"L",        "manage dynamically loaded plugins", cmd_plugins},
 		{"mount",    "mount filesystem", cmd_mount, cmd_mount_init},
 		{"open",     "open or map file", cmd_open, cmd_open_init},
