@@ -3309,14 +3309,16 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		if (f == f2) {
 			return;
 		}
-		ds_begin_comment (ds);
 		if (delta > 0) {
+			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s+0x%x", f->name, delta);
 		} else if (delta < 0) {
+			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s-0x%x", f->name, -delta);
 		} else if (strcmp (ds->show_cmtfunrefs, "false")
 		           && (!strcmp (ds->show_cmtfunrefs, "true")
 		               || (ds->opstr && !strstr (ds->opstr, f->name)))) {
+			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s", f->name);
 		}
 	}
