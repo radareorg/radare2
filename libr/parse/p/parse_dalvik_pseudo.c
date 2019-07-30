@@ -121,14 +121,14 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "sput-char", "2[3] = (char) 1"},
 		{ "iput-int", "2[3] = (int) 1"},
 		{ "iget", "1 = 2[3]"},
-		{ "sget-byte", "1 = (byte) 2[3]"},
-		{ "iget-byte", "1 = (byte) 2[3]"},
-		{ "iget-char", "1 = (char) 2[3]"},
-		{ "iget-short", "1 = (short) 2[3]"},
-		{ "iget-wide", "1 = (wide) 2[3]"},
-		{ "iget-object", "1 = (object) 2[3]"},
-		{ "iget-boolean", "1 = (bool) 2[3]"},
-		{ "+iget-wide-volatile", "1 = (wide-volatile) 2[3]"},
+		{ "sget-byte", "1 = (byte) 2 [3]"},
+		{ "iget-byte", "1 = (byte) 2 [3]"},
+		{ "iget-char", "1 = (char) 2 [3]"},
+		{ "iget-short", "1 = (short) 2 [3]"},
+		{ "iget-wide", "1 = (wide) 2 [3]"},
+		{ "iget-object", "1 = (2) 3"},
+		{ "iget-boolean", "1 = (bool) 2 [3]"},
+		{ "+iget-wide-volatile", "1 = (wide-volatile) 2 [3]"},
 		{ "if-eq", "if (1 == 2) goto 3"},
 		{ "if-lt", "if (1 < 2) goto 3"},
 		{ "if-ne", "if (1 != 2) goto 3"},
@@ -246,7 +246,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	if (!(buf = malloc (len + 1))) {
 		return false;
 	}
-	memcpy (buf, data, len+1);
+	memcpy (buf, data, len + 1);
 
 	r_str_trim (buf);
 

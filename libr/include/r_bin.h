@@ -445,7 +445,7 @@ typedef struct r_bin_plugin_t {
 	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
 	int (*get_offset)(RBinFile *bf, int type, int idx);
-	char* (*get_name)(RBinFile *bf, int type, int idx);
+	char* (*get_name)(RBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt);
 	char* (*demangle)(const char *str);
@@ -613,7 +613,7 @@ typedef struct r_bin_write_t {
 // TODO: has_dbg_syms... maybe flags?
 
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
-typedef const char *(*RBinGetName)(RBin *bin, int type, int idx);
+typedef const char *(*RBinGetName)(RBin *bin, int type, int idx, bool sd);
 typedef RList *(*RBinGetSections)(RBin *bin);
 typedef RBinSection *(*RBinGetSectionAt)(RBin *bin, ut64 addr);
 
