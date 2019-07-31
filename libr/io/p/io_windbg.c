@@ -93,7 +93,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static int __close(RIODesc *fd) {
-	windbg_ctx_free (&fd->data);
+	windbg_ctx_free ((WindCtx**)&fd->data);
 	return true;
 }
 
