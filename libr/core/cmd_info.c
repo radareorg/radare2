@@ -1041,7 +1041,7 @@ static int cmd_info(void *data, const char *input) {
 					}
 				}
 				goto done;
-			} else if (input[1] == ' ' || input[1] == 'g' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
+			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
 				RBinClass *cls;
 				RBinSymbol *sym;
 				RListIter *iter, *iter2;
@@ -1049,7 +1049,7 @@ static int cmd_info(void *data, const char *input) {
 				if (!obj) {
 					break;
 				}
-				if (input[2] && !strstr (input, "qq")) {
+				if (input[2] && input[2] != 'j' && !strstr (input, "qq")) {
 					bool radare2 = strstr (input, "**") != NULL;
 					int idx = -1;
 					const char * cls_name = NULL;
@@ -1152,12 +1152,15 @@ static int cmd_info(void *data, const char *input) {
 						mode = R_MODE_CLASSDUMP;
 						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 						input = " ";
-					} else {
+					} else { // "icq"
+						if (input[2] == 'j') {
+							mode |= R_MODE_JSON; // default mode is R_MODE_SIMPLE
+						}
 						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 					}
 					goto done;
 				}
-			} else {
+			} else { // "ic"
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (obj && obj->classes) {
 					int len = r_list_length (obj->classes);
