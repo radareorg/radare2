@@ -353,7 +353,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	for (y = 0; y < c->h; y++) {
 		olen += c->blen[y] + 1;
 	}
-	char *o = calloc (1, olen * 2 * CONS_MAX_ATTR_SZ);
+	char *o = calloc (1, olen * 4 * CONS_MAX_ATTR_SZ);
 	if (!o) {
 		return NULL;
 	}
