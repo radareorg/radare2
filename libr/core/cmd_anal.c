@@ -2872,9 +2872,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'r': { // "afsr"
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 			if (fcn) {
-				char *query = r_str_newf ("anal/types/func.%s.ret=%s", fcn->name, input + 4);
-				sdb_querys (core->sdb, NULL, 0, query);
-				free (query);
+				char *type = r_str_newf ("type.%s", input + 4);
+				if (sdb_exists (core->anal->sdb_types, type)) {
+					char *query = r_str_newf ("anal/types/func.%s.ret=%s", fcn->name, input + 4);
+					sdb_querys (core->sdb, NULL, 0, query);
+					free (query);
+				}
+				free (type);
 			} else {
 				eprintf ("There's no function defined in here.\n");
 			}
