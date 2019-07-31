@@ -1153,8 +1153,7 @@ static int cmd_info(void *data, const char *input) {
 						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 						input = " ";
 					} else { // "icq"
-						if (input[2] == 'j')
-						{
+						if (input[2] == 'j') {
 							mode |= R_MODE_JSON; // default mode is R_MODE_SIMPLE
 						}
 						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
