@@ -3015,7 +3015,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 		} else {
 			ch = r_cons_readchar ();
 		}
-		if (ch == 4 || ch == -1) {
+		if (ch == 4 || ch == (char)-1) {
 			if (level == 0) {
 				goto beach;
 			}

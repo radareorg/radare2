@@ -120,6 +120,8 @@ if [ "${BUILD}" = 1 ]; then
 
 	if [ 1 = 1 ]; then
 		${MAKE} mrproper
+		rm -rf shlr/capstone
+		rm -rf libr/.li*
 		if [ $STATIC_BUILD = 1 ]; then
 			CFGFLAGS="--with-libr"
 		fi
@@ -132,7 +134,7 @@ if [ "${BUILD}" = 1 ]; then
 		./configure --with-compiler=android --without-libuv \
 			--with-ostype=android \
 			--prefix=${PREFIX} ${CFGFLAGS} || exit 1
-		${MAKE} -s -j 4 || exit 1
+		${MAKE} V=1 -s -j 4 || exit 1
 	fi
 fi
 rm -rf $D
