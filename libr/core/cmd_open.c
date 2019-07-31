@@ -1111,15 +1111,10 @@ static int cmd_open(void *data, const char *input) {
 #if 1
 	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
 	case 'f': // "of"
-		if (input[1] == ' ') {
-			ptr = input + 2;
-		} else {
-			eprintf ("wrong\n");
-			return 0;
-		}
+		ptr = r_str_trim_ro (input + 2);
 		argv = r_str_argv (ptr, &argc);
 		if (argc == 0) {
-			eprintf ("wrong\n");
+			eprintf ("Usage: of [filename] (rwx)\n");
 			r_str_argv_free (argv);
 			return 0;
 		} else if (argc == 2) {
@@ -1183,7 +1178,7 @@ static int cmd_open(void *data, const char *input) {
 		ptr = input + 1;
 		argv = r_str_argv (ptr, &argc);
 		if (argc == 0) {
-			eprintf ("wrong\n");
+			eprintf ("Usage: o (uri://)[/path/to/file] (addr)\n");
 			r_str_argv_free (argv);
 			return 0;
 		}
