@@ -449,7 +449,6 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 		r_bin_file_delete_all (core->bin);
 		// open new file
 		// TODO: handle read/read-write mode
-		r_io_close_all (core->io);
 		if (filepath[0]) {
 			/* Old-style project without embedded on commands to open all files.  */
 			if (!r_core_file_open (core, filepath, 0, UT64_MAX)) {
