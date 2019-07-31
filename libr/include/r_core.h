@@ -250,6 +250,7 @@ typedef struct r_core_t {
 	RCoreFile *file;
 	RList *files;
 	RNum *num;
+	ut64 rc; // command's return code .. related to num->value;
 	RLib *lib;
 	RCmd *rcmd;
 	RCmdDescriptor root_cmd_descriptor;
