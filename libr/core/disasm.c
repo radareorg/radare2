@@ -3281,13 +3281,21 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		return;
 	}
 	RAnalFunction *f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
-	if (!f && ds->core->flags && !ds->core->vmode) {
+	if (!f && ds->core->flags && (!ds->core->vmode || (!ds->jmpsub && !ds->filter))) {
 		const char *arch;
 		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
 		                                        R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
 		if (flag && flag->name && ds->opstr && !strstr (ds->opstr, flag->name)
 		    && (r_str_startswith (flag->name, "sym.") || r_str_startswith (flag->name, "method."))
 		    && (arch = r_config_get (ds->core->config, "asm.arch")) && strcmp (arch, "dalvik")) {
+			RFlagItem *flag_sym = flag;
+			if (ds->core->vmode && ds->asm_demangle
+			    && (r_str_startswith (flag->name, "sym.")
+			        || (flag_sym = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
+			                                             R_FLAGS_FS_SYMBOLS, NULL)))
+			    && flag_sym->demangled) {
+				return;
+			}
 			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s", flag->name);
 			return;
@@ -3312,7 +3320,15 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		} else if (delta < 0) {
 			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s-0x%x", f->name, -delta);
-		} else if (!ds->core->vmode && (!ds->opstr || !strstr (ds->opstr, f->name))) {
+		} else if ((!ds->core->vmode || (!ds->jmpsub && !ds->filter))
+			   && (!ds->opstr || !strstr (ds->opstr, f->name))) {
+			RFlagItem *flag_sym;
+			if (ds->core->vmode && ds->asm_demangle
+			    && (flag_sym = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
+			                                         R_FLAGS_FS_SYMBOLS, NULL))
+			    && flag_sym->demangled) {
+				return;
+			}
 			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s", f->name);
 		}
