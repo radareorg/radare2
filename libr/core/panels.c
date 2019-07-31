@@ -1740,8 +1740,15 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	if (*key == 0) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
+			int h, w = r_cons_get_size (&h);
 			char *word = get_word_from_canvas (core, panels, x, y);
-			if (y == MENU_Y) {
+			if (y == h) {
+				RPanel *p = __get_cur_panel (panels);
+				__split_panel_horizontal (core, p, p->model->title, p->model->cmd);
+			} else if (x == w) {
+				RPanel *p = __get_cur_panel (panels);
+				__split_panel_vertical (core, p, p->model->title, p->model->cmd);
+			} else if (y == MENU_Y) {
 				for (i = 0; i < COUNT (menus); i++) {
 					if (!strcmp (word, menus[i])) {
 						__set_mode (core, PANEL_MODE_MENU);
@@ -1794,7 +1801,18 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 				RPanel *ppos = __get_panel(panels, idx);
 				const int TITLE_Y = ppos->view->pos.y + 2;
 				if (y == TITLE_Y && strcmp (word, " X ")) {
-					__dismantle_del_panel (core, ppos, idx);
+					int fx = ppos->view->pos.x;
+					int fX = fx + ppos->view->pos.w;
+					__set_curnode (core, idx);
+					__set_refresh_all (core, true, true);
+					if (x > (fX - 13) && x < fX) {
+						__toggle_cache (core, __get_cur_panel (panels));
+					} else if (x > fx && x < (fx + 5)) {
+						__dismantle_del_panel (core, ppos, idx);
+					} else {
+						__create_almighty (core, __get_panel (panels, 0), panels->almighty_db);
+						__set_mode (core, PANEL_MODE_DEFAULT);
+					}
 					__set_refresh_all (core, false, false);
 					free (word);
 					return true;
