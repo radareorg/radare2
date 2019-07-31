@@ -403,6 +403,7 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 	}
 	RList *l = r_bin_raw_strings (bf, 0);
 	_print_strings (r, l, mode, va);
+	r_list_free (l);
 	if (new_bf) {
 		r_buf_free (bf->buf);
 		bf->buf = NULL;

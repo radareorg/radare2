@@ -96,23 +96,19 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 	if (!res) {
 		return;
 	}
+	sym->dup_count = 0;
 
 	const char *oname = sdb_fmt ("o.%" PFMT64x ".%s", 0, name);
-	ut32 *dup_count = ht_pp_find (ht, oname, NULL);
-	if (!dup_count) {
-		dup_count = R_NEW0 (ut32);
-		if (!dup_count) {
-			return;
-		}
-		if (!ht_pp_insert (ht, oname, dup_count)) {
-			R_FREE (dup_count);
+	RBinSymbol *prev_sym = ht_pp_find (ht, oname, NULL);
+	if (!prev_sym) {
+		if (!ht_pp_insert (ht, oname, sym)) {
 			R_LOG_WARN ("Failed to insert dup_count in ht");
 			return;
 		}
-		*dup_count = -1;
+	} else {
+		sym->dup_count = prev_sym->dup_count + 1;
+		ht_pp_update (ht, oname, sym);
 	}
-	*dup_count += 1;
-	sym->dup_count = *dup_count;
 }
 
 R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {

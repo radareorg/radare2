@@ -154,9 +154,11 @@ R_API bool r_core_visual_esil(RCore *core) {
 		r_cons_printf ("r2's esil debugger:\n\n");
 		r_cons_printf ("pos: %d\n", x);
 		{
-			char *res = r_print_hexpair (core->print, r_asm_op_get_hex (&asmop), -1);
+			char *op_hex = r_asm_op_get_hex (&asmop);
+			char *res = r_print_hexpair (core->print, op_hex, -1);
 			r_cons_printf ("hex: %s\n"Color_RESET, res);
 			free (res);
+			free (op_hex);
 		}
 		{
 			char *op = colorize_asm_string (core, r_asm_op_get_asm (&asmop), analopType, core->offset);
@@ -297,9 +299,11 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		r_cons_printf ("r2's bit editor:\n\n");
 		r_cons_printf ("offset: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
 		{
-			char *res = r_print_hexpair (core->print, r_asm_op_get_hex (&asmop), -1);
+			char *op_hex = r_asm_op_get_hex (&asmop);
+			char *res = r_print_hexpair (core->print, op_hex, -1);
 			r_cons_printf ("hex: %s\n"Color_RESET, res);
 			free (res);
+			free (op_hex);
 		}
 		r_cons_printf ("len: %d\n", asmop.size);
 		{
@@ -395,9 +399,11 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		case 'Q':
 		case 'q':
 			{
-				char *res = r_print_hexpair (core->print, r_asm_op_get_hex (&asmop), -1);
+				char *op_hex = r_asm_op_get_hex (&asmop);
+				char *res = r_print_hexpair (core->print, op_hex, -1);
 				r_core_cmdf (core, "wx %02x%02x%02x%02x", buf[0], buf[1], buf[2], buf[3]);
 				free (res);
+				free (op_hex);
 			}
 			return false;
 		case 'H':

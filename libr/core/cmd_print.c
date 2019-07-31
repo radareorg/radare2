@@ -3031,6 +3031,8 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 			to = t;
 		}
 	}
+	r_list_free (list);
+	list = NULL;
 	ut64 piece = R_MAX ((to - from) / R_MAX (cols, w), 1);
 	RCoreAnalStats *as = r_core_anal_get_stats (core, from, to, piece);
 	if (!as) {

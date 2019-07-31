@@ -2412,9 +2412,12 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				break;
 			// case R_META_TYPE_DATA:
 			//	break;
-			default:
-				r_asm_op_set_asm (&ds->asmop, sdb_fmt (".hex %s", r_asm_op_get_hex (&ds->asmop)));
+			default: {
+				char *op_hex = r_asm_op_get_hex (&ds->asmop);
+				r_asm_op_set_asm (&ds->asmop, sdb_fmt (".hex %s", op_hex));
+				free (op_hex);
 				break;
+			}
 			}
 			ds->oplen = sz; //ds->asmop.size;
 			return i;
@@ -3088,7 +3091,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			pad[j] = '\0';
 			str = strdup ("");
 		} else {
-			str = strdup (r_asm_op_get_hex (&ds->asmop));
+			str = r_asm_op_get_hex (&ds->asmop);
 			if (r_str_ansi_len (str) > ds->nb) {
 				char *p = (char *)r_str_ansi_chrn (str, ds->nb);
 				if (p)  {
@@ -4615,8 +4618,10 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					}
 				}
 				ds_comment_end (ds, "");
+				r_list_free (list);
 				break;
 			} else {
+				r_list_free (list);
 				// function name not resolved
 				nargs = DEFAULT_NARGS;
 				if (fcn) {
@@ -5890,7 +5895,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		pj_ki (pj, "size", ds->analop.size);
 		pj_ks (pj, "opcode", opstr);
 		pj_ks (pj, "disasm", str);
-		pj_ks (pj, "bytes", r_asm_op_get_hex (&asmop));
+		{
+			char *hex = r_asm_op_get_hex (&asmop);
+			pj_ks (pj, "bytes", hex);
+			free (hex);
+		}
 		pj_ks (pj, "family", r_anal_op_family_to_string (ds->analop.family));
 		pj_ks (pj, "type", r_anal_optype_to_string (ds->analop.type));
 		// indicate a relocated address
@@ -6075,7 +6084,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 					char *sp = strchr (str, ' ');
 					if (sp) {
 						char *end = sp + 60 + 1;
-						const char *src = r_asm_op_get_hex (&asmop);
+						char *src = r_asm_op_get_hex (&asmop);
 						char *dst = sp + 1 + (i * 2);
 						int len = strlen (src);
 						if (dst < end) {
@@ -6085,19 +6094,26 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 							}
 							memcpy (dst, src, len);
 						}
+						free (src);
 					}
 					r_cons_strcat (str);
 					free (str);
 				}
 				break;
-			case 'j':
+			case 'j': {
+				char *op_hex = r_asm_op_get_hex (&asmop);
 				r_cons_printf ("{\"addr\":%08"PFMT64d",\"bytes\":\"%s\",\"inst\":\"%s\"}%s",
-					addr + i, r_asm_op_get_hex (&asmop), r_asm_op_get_asm (&asmop), ",");
+					addr + i, op_hex, r_asm_op_get_asm (&asmop), ",");
+				free (op_hex);
 				break;
-			default:
+			}
+			default: {
+				char *op_hex = r_asm_op_get_hex (&asmop);
 				r_cons_printf ("0x%08"PFMT64x" %20s  %s\n",
-						addr + i, r_asm_op_get_hex (&asmop),
+						addr + i, op_hex,
 						r_asm_op_get_asm (&asmop));
+				free (op_hex);
+			}
 			}
 		}
 	}
@@ -6321,7 +6337,9 @@ toro:
 			r_cons_println ("invalid"); // ???");
 		} else {
 			if (show_bytes) {
-				r_cons_printf ("%20s  ", r_asm_op_get_hex (&asmop));
+				char *op_hex = r_asm_op_get_hex (&asmop);
+				r_cons_printf ("%20s  ", op_hex);
+				free (op_hex);
 			}
 			ret = asmop.size;
 			if (!asm_immtrim && (decode || esil)) {

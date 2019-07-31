@@ -1262,27 +1262,29 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
 				r_list_append (ropList, (void *) opstr_n);
 			}
+			char *asm_op_hex = r_asm_op_get_hex (&asmop);
 			if (colorize) {
 				char *buf_asm = r_print_colorize_opcode (core->print, r_asm_op_get_asm (&asmop),
 					core->cons->context->pal.reg, core->cons->context->pal.num, false, 0);
 				otype = r_print_color_op_type (core->print, analop.type);
 				if (comment) {
 					r_cons_printf ("  0x%08"PFMT64x " %18s%s  %s%s ; %s\n",
-						hit->addr, r_asm_op_get_hex (&asmop), otype, buf_asm, Color_RESET, comment);
+						hit->addr, asm_op_hex, otype, buf_asm, Color_RESET, comment);
 				} else {
 					r_cons_printf ("  0x%08"PFMT64x " %18s%s  %s%s\n",
-						hit->addr, r_asm_op_get_hex (&asmop), otype, buf_asm, Color_RESET);
+						hit->addr, asm_op_hex, otype, buf_asm, Color_RESET);
 				}
 				free (buf_asm);
 			} else {
 				if (comment) {
 					r_cons_printf ("  0x%08"PFMT64x " %18s  %s ; %s\n",
-						hit->addr, r_asm_op_get_hex (&asmop), r_asm_op_get_asm (&asmop), comment);
+						hit->addr, asm_op_hex, r_asm_op_get_asm (&asmop), comment);
 				} else {
 					r_cons_printf ("  0x%08"PFMT64x " %18s  %s\n",
-						hit->addr, r_asm_op_get_hex (&asmop), r_asm_op_get_asm (&asmop));
+						hit->addr, asm_op_hex, r_asm_op_get_asm (&asmop));
 				}
 			}
+			free (asm_op_hex);
 			free (buf);
 		}
 		if (db && hit) {

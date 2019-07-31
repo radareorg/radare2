@@ -3171,8 +3171,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dir.source", "", &cb_dirsrc, "Path to find source files");
 	SETPREF ("dir.types", "/usr/include", "Default path to look for cparse type files");
 	SETPREF ("dir.libs", "", "Specify path to find libraries to load when bin.libs=true");
-	SETCB ("dir.home", r_sys_getenv (R_SYS_HOME), &cb_dirhome, "Path for the home directory");
-	SETCB ("dir.tmp", r_sys_getenv (R_SYS_TMP), &cb_dirtmp, "Path of the tmp directory");
+	p = r_sys_getenv (R_SYS_HOME);
+	SETCB ("dir.home", p, &cb_dirhome, "Path for the home directory");
+	free (p);
+	p = r_sys_getenv (R_SYS_TMP);
+	SETCB ("dir.tmp", p, &cb_dirtmp, "Path of the tmp directory");
+	free (p);
 #if __ANDROID__
 	SETPREF ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", "Default path for projects");
 #else
