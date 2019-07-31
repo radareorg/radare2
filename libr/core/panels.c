@@ -66,7 +66,8 @@ static const char *panels_static [] = {
 };
 
 static const char *menus[] = {
-	"File", "Settings", "Edit", "View", "Tools", "Search", "Emulate", "Debug", "Analyze", "Fun", "About", "Help",
+	"File", "Settings", "Edit", "View", "Tools", "Search", "Emulate", "Debug", "Analyze", "Help",
+// "Fun", "About", "Help",
 	NULL
 };
 
@@ -135,16 +136,6 @@ static const char *menus_Analyze[] = {
 	NULL
 };
 
-static const char *menus_Fun[] = {
-	"Fortune", "2048",
-	NULL
-};
-
-static const char *menus_About[] = {
-	"License", "Version",
-	NULL
-};
-
 static char *menus_Colors[128];
 
 static const char *menus_settings_disassembly[] = {
@@ -155,6 +146,8 @@ static const char *menus_settings_disassembly[] = {
 
 static const char *menus_Help[] = {
 	"Toggle Help",
+	"License", "Version",
+	"Fortune", "2048",
 	NULL
 };
 
@@ -4383,33 +4376,20 @@ bool __init_panels_menu(RCore *core) {
 		}
 		i++;
 	}
-
-	parent = "Fun";
-	i = 0;
-	while (menus_Fun[i]) {
-		if (!strcmp (menus_Fun[i], "Fortune")) {
-			__add_menu (core, parent, menus_Fun[i], __fortune_cb);
-		} else if (!strcmp (menus_Fun[i], "2048")) {
-			__add_menu (core, parent, menus_Fun[i], __game_cb);
-		}
-		i++;
-	}
-
-	parent = "About";
-	i = 0;
-	while (menus_About[i]) {
-		if (!strcmp (menus_About[i], "License")) {
-			__add_menu (core, parent, menus_About[i], __license_cb);
-		} else if (!strcmp (menus_About[i], "Version")) {
-			__add_menu (core, parent, menus_About[i], __version_cb);
-		}
-		i++;
-	}
-
 	parent = "Help";
 	i = 0;
 	while (menus_Help[i]) {
-		__add_menu (core, parent, menus_Help[i], __help_cb);
+		if (!strcmp (menus_Help[i], "License")) {
+			__add_menu (core, parent, menus_Help[i], __license_cb);
+		} else if (!strcmp (menus_Help[i], "Version")) {
+			__add_menu (core, parent, menus_Help[i], __version_cb);
+		} else if (!strcmp (menus_Help[i], "Fortune")) {
+			__add_menu (core, parent, menus_Help[i], __fortune_cb);
+		} else if (!strcmp (menus_Help[i], "2048")) {
+			__add_menu (core, parent, menus_Help[i], __game_cb);
+		} else {
+			__add_menu (core, parent, menus_Help[i], __help_cb);
+		}
 		i++;
 	}
 
