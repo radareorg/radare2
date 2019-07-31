@@ -157,7 +157,7 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
-	if (__check (io, pathname,0)) {
+	if (__check (io, pathname, 0)) {
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
 		if (!strncmp (pathname, "hex://", 6)) {
 			mal->size = strlen (pathname);

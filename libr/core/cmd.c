@@ -1190,7 +1190,6 @@ static int cmd_interpret(void *data, const char *input) {
 		if (filter) {
 			*filter = 0;
 		}
-
 		int tmp_html = r_cons_singleton ()->is_html;
 		r_cons_singleton ()->is_html = 0;
 		ptr = str = r_core_cmd_str (core, inp);
@@ -1657,7 +1656,6 @@ static int cmd_resize(void *data, const char *input) {
 			eprintf ("r_io_resize: cannot resize\n");
 		}
 	}
-
 	if (newsize < core->offset+core->blocksize || oldsize < core->offset + core->blocksize) {
 		r_core_block_read (core);
 	}
@@ -2354,6 +2352,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 					core->print->cur_enabled = true;
 				}
 			}
+		}
+		if (r_cons_is_breaked ()) {
+			break;
 		}
 		char *cr = strdup (cmdrep);
 		core->break_loop = false;
