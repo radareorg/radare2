@@ -88,7 +88,11 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 				int realJ = j * len / cols;
 	 			if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
 					int koli = i * 5 / rows;
-					p->cb_printf ("%s|" Color_RESET, kol[koli]);
+					if (p->cons->use_utf8) {
+						p->cb_printf ("%s%s%s", kol[koli], RUNE_LINE_VERT, Color_RESET);
+					} else {
+					 	p->cb_printf ("%s|" Color_RESET, kol[koli]);
+					}
 				} else {
 					p->cb_printf (" ");
 				}
@@ -103,7 +107,11 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 		for (j = 0; j < cols; j++) {
 			int realJ = j * len / cols;
 			if (255 - buf[realJ] < threshold) {
-				p->cb_printf ("|");
+				if (p->cons->use_utf8) {
+					p->cb_printf (RUNE_LINE_VERT);
+				} else {
+					p->cb_printf ("|");
+				}
 			} else if (i + 1 == rows) {
 				p->cb_printf ("_");
 			} else {
@@ -1661,10 +1669,10 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	const bool bgFill = (p && (p->flags & R_PRINT_FLAGS_BGFILL));
 	bool useUtf8 = p->cons->use_utf8;
 	bool useUtf8Curvy = p->cons->use_utf8_curvy;
-	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
-	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BR : RUNECODESTR_CORNER_BR) : "'";
-	const char *v_line = useUtf8 ? RUNECODESTR_LINE_VERT : "|";
-	const char *h_line = useUtf8 ? RUNECODESTR_LINE_HORIZ : "_";
+	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNE_CORNER_TR) : ".";
+	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BR : RUNE_CORNER_BR) : "'";
+	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
+	const char *h_line = useUtf8 ? RUNE_LINE_HORIZ : "_";
 	char *firebow[6];
 	int i = 0, j;
 
