@@ -119,7 +119,10 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	if (type == -1) {
 		type = R_STRING_TYPE_DETECT;
 	}
-	if (from >= to) {
+	if (from == to) {
+		return 0;
+	}
+	if (from > to) {
 		eprintf ("Invalid range to find strings 0x%"PFMT64x" .. 0x%"PFMT64x"\n", from, to);
 		return -1;
 	}
