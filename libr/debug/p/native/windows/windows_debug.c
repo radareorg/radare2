@@ -1114,7 +1114,12 @@ RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
 				if (dbg->pid == pid) {
 					CONTEXT ctx = {0};
 					w32_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx));
+					// TODO: is needed check context for x32 and x64??
+#if _WIN64
 					pc = ctx.Rip;
+#else
+					pc = ctx.Eip;
+#endif
 				}
 				r_list_append (list, r_debug_pid_new (path, te.th32ThreadID, uid, 's', pc));
 			}
