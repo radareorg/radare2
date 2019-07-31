@@ -344,10 +344,12 @@ static bool desc_fini_cb(void* user, void* data, ut32 id) {
 
 //closes all descs and frees all descs and io->files
 R_IPI bool r_io_desc_fini(RIO* io) {
-	r_return_val_if_fail (io && io->files, NULL);
-	r_id_storage_foreach (io->files, desc_fini_cb, io);
-	r_id_storage_free (io->files);
-	io->files = NULL;
+	r_return_val_if_fail (io, NULL);
+	if (io->files) {
+		r_id_storage_foreach (io->files, desc_fini_cb, io);
+		r_id_storage_free (io->files);
+		io->files = NULL;
+	}
 	//no map-cleanup here, to keep it modular useable
 	io->desc = NULL;
 	return true;
