@@ -4618,10 +4618,10 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					}
 				}
 				ds_comment_end (ds, "");
-				r_list_free(list);
+				r_list_free (list);
 				break;
 			} else {
-				r_list_free(list);
+				r_list_free (list);
 				// function name not resolved
 				nargs = DEFAULT_NARGS;
 				if (fcn) {
