@@ -147,7 +147,6 @@ static void __cons_pal_update_event(RConsContext *ctx) {
 
 R_API void r_cons_pal_init(RConsContext *ctx) {
 	memset (&ctx->cpal, 0, sizeof (ctx->cpal));
-	memset (&ctx->pal, 0, sizeof (ctx->pal));
 
 	ctx->cpal.b0x00              = (RColor) RColor_GREEN;
 	ctx->cpal.b0x7f              = (RColor) RColor_CYAN;
