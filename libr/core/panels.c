@@ -332,6 +332,8 @@ static void __reset_scroll_pos(RPanel *p);
 static void __update_disassembly_or_open(RCore *core);
 static void __update_help(RPanels *ps);
 static void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
+static void __update_edge_x(RCore *core, int x);
+static void __update_edge_y(RCore *core, int y);
 
 /* check */
 static bool __check_panel_type(RPanel *panel, const char *type);
@@ -342,6 +344,7 @@ static bool __check_func_diff(RCore *core, RPanel *p);
 static bool __check_root_state(RCore *core, RPanelsRootState state);
 static bool __check_if_addr(const char *c, int len);
 static bool __check_if_cur_panel(RCore *core, RPanel *panel);
+static int __check_if_mouse_on_edge(RCore *core, int x, int y);
 
 /* add */
 static void __add_help_panel(RCore *core);
@@ -612,6 +615,63 @@ static void __handle_refs(RCore *core, RPanel *panel, ut64 tmp);
 static void __undo_seek(RCore *core);
 static void __redo_seek(RCore *core);
 static void __cache_white_list(RCore *core, RPanel *panel);
+
+void __update_edge_x(RCore *core, int x) {
+	RPanels *panels = core->panels;
+	int i, j;
+	int tmp_x = 0;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p0 = __get_panel (panels, i);
+		if (p0->view->pos.x - 2 <= panels->mouse_orig_x &&
+				panels->mouse_orig_x <= p0->view->pos.x + 2) {
+			tmp_x = p0->view->pos.x;
+			p0->view->pos.x += x;
+			p0->view->pos.w -= x;
+			for (j = 0; j < panels->n_panels; j++) {
+				RPanel *p1 = __get_panel (panels, j);
+				if (p1->view->pos.x + p1->view->pos.w - 1 == tmp_x) {
+					p1->view->pos.w += x;
+				}
+			}
+		}
+	}
+}
+
+void __update_edge_y(RCore *core, int y) {
+	RPanels *panels = core->panels;
+	int i, j;
+	int tmp_y = 0;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p0 = __get_panel (panels, i);
+		if (p0->view->pos.y - 2 <= panels->mouse_orig_y &&
+				panels->mouse_orig_y <= p0->view->pos.y + 2) {
+			tmp_y = p0->view->pos.y;
+			p0->view->pos.y += y;
+			p0->view->pos.h -= y;
+			for (j = 0; j < panels->n_panels; j++) {
+				RPanel *p1 = __get_panel (panels, j);
+				if (p1->view->pos.y + p1->view->pos.h - 1 == tmp_y) {
+					p1->view->pos.h += y;
+				}
+			}
+		}
+	}
+}
+
+int __check_if_mouse_on_edge(RCore *core, int x, int y) {
+	RPanels *panels = core->panels;
+	int i = 0;
+	for (; i < panels->n_panels; i++) {
+		RPanel *panel = __get_panel (panels, i);
+		if (panel->view->pos.x - 1 <= x || x <= panel->view->pos.x + 1) {
+			return 1;
+		}
+		if (panel->view->pos.y - 1 <= y || y <= panel->view->pos.y + 1) {
+			return 2;
+		}
+	}
+	return 0;
+}
 
 bool __check_if_cur_panel(RCore *core, RPanel *panel) {
 	return __get_cur_panel (core->panels) == panel;
@@ -1738,9 +1798,24 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	const int MENU_Y = 1;
 	RPanels *panels = core->panels;
 	int i;
-	if (*key == 0) {
+	if (panels->mouse_on_edge) {
+		panels->mouse_on_edge = false;
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
+			__update_edge_x (core, x - panels->mouse_orig_x);
+			__set_refresh_all (core, false, false);
+			return true;
+		}
+	}
+	if (*key == INT8_MAX - 1) {
+		int x, y;
+		if (r_cons_get_click (&x, &y)) {
+			if (__check_if_mouse_on_edge (core, x, y) == 1) {
+				panels->mouse_on_edge = true;
+				panels->mouse_orig_x = x;
+				panels->mouse_orig_y = y;
+				return true;
+			}
 			int h, w = r_cons_get_size (&h);
 			char *word = get_word_from_canvas (core, panels, x, y);
 			if (y == h) {
@@ -5007,6 +5082,9 @@ bool __init(RCore *core, RPanels *panels, int w, int h) {
 	}
 	panels->isResizing = false;
 	panels->autoUpdate = false;
+	panels->mouse_on_edge = false;
+	panels->mouse_orig_x = 0;
+	panels->mouse_orig_y = 0;
 	panels->can = __create_new_canvas (core, w, h);
 	panels->db = sdb_new0 ();
 	panels->rotate_db = sdb_new0 ();

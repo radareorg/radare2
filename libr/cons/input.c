@@ -214,7 +214,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				do {
 					ch = r_cons_readchar ();
 					// just for debugging
-					//eprintf ( "%c", ch);
+					eprintf ( "%c", ch);
 					if (sc > 0) {
 						if (ch >= '0' && ch <= '9') {
 							pos[p++] = ch;
@@ -249,6 +249,11 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				// M is mouse down , m is mouse up
 				if (ch == 'M') {
 					r_cons_set_click (x, y);
+					return INT8_MAX - 1;
+				}
+				if (ch == 'm') {
+					r_cons_set_click (x, y);
+					return INT8_MAX - 2;
 				}
 			}
 			return 0;
