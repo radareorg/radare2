@@ -332,6 +332,17 @@ R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
 	return (int)ret;
 }
 
+R_API int r_debug_map_thp(RDebug *dbg, RDebugMap *map) {
+	bool ret = false;
+	ut64 addr = map->addr;
+	if (dbg && dbg->h && dbg->h->map_thp) {
+		if (dbg->h->map_thp (dbg, addr, map->size)) {
+			ret = true;
+		}
+	}
+	return (int)ret;
+}
+
 R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
 	RDebugMap *map, *ret = NULL;
 	RListIter *iter;

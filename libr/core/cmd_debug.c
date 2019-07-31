@@ -226,6 +226,7 @@ static const char *help_msg_dm[] = {
 	"dms-", " <id> <mapaddr>", "Restore memory snapshot",
 	"dmS", " [addr|libname] [sectname]", "List sections of target lib",
 	"dmS*", " [addr|libname] [sectname]", "List sections of target lib in radare commands",
+	"dmL", " address", "Promote the memory map to transparent huge page",
 	//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
 	"TODO:", "", "map files in process memory. (dmf file @ [addr])",
 	NULL
@@ -1842,6 +1843,21 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				r_debug_map_dealloc(core->dbg, map);
+				r_debug_map_sync (core->dbg);
+				return true;
+			}
+		}
+		eprintf ("The address doesn't match with any map.\n");
+		break;
+	case 'L': // "dmL"
+		if (input[1] != ' ') {
+			eprintf ("|ERROR| Usage: dmL [addr]\n");
+			break;
+		}
+		addr = r_num_math (core->num, input + 2);
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				r_debug_map_thp(core->dbg, map);
 				r_debug_map_sync (core->dbg);
 				return true;
 			}

@@ -1157,6 +1157,65 @@ static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 err_linux_map_dealloc:
 	return ret;
 }
+
+static int linux_map_thp (RDebug *dbg, ut64 addr, int size) {
+#ifndef __ANDROID__
+	RBuffer *buf = NULL;
+	char code[1024];
+	int ret = 0;
+	char *asm_list[] = {
+		"x86", "x86.as",
+		"x64", "x86.as",
+		NULL
+	};
+	// In architectures where radare is supported, arm and x86, it is 2MB
+	const size_t thpsize = 1<<21;
+
+	if ((size%thpsize)) {
+		eprintf ("size not a power of huge pages size\n");
+		return NULL;
+	}
+
+	// In always mode, is more into mmap syscall level
+	// even though the address might not have the 'hg'
+	// vmflags
+	if (r_sys_thp_mode() != 1) {
+		eprintf ("transparent huge page mode is not in madvise mode\n");
+		return NULL;
+	}
+
+	int num = r_syscall_get_num (dbg->anal->syscall, "madvise");
+
+	snprintf (code, sizeof (code),
+		"sc_madvise@syscall(%d);\n"
+		"main@naked(0) { .rarg0 = sc_madvise(0x%08" PFMT64x ",%d, %d);break;\n"
+		"}\n",
+		num, addr, size, MADV_HUGEPAGE);
+	r_egg_reset (dbg->egg);
+	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
+	r_egg_load (dbg->egg, code, 0);
+	if (!r_egg_compile (dbg->egg)) {
+		eprintf ("Cannot compile.\n");
+		goto err_linux_map_thp;
+	}
+	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
+		eprintf ("r_egg_assemble: invalid assembly\n");
+		goto err_linux_map_thp;
+	}
+	buf = r_egg_get_bin (dbg->egg);
+	if (buf) {
+		r_reg_arena_push (dbg->reg);
+		ut64 tmpsz;
+		const ut8 *tmp = r_buf_data (buf, &tmpsz);
+		ret = r_debug_execute (dbg, tmp, tmpsz, 1) == 0;
+		r_reg_arena_pop (dbg->reg);
+	}
+err_linux_map_thp:
+	return ret;
+#else
+	return false;
+#endif
+}
 #endif
 
 static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
@@ -1181,6 +1240,14 @@ static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	return linux_map_dealloc (dbg, addr, size);
 #else
     // mdealloc not implemented for this platform
+	return false;
+#endif
+}
+
+static int r_debug_native_map_thp (RDebug *dbg, ut64 addr, int size) {
+#if __linux__
+	return linux_map_thp (dbg, addr, size);
+#else
 	return false;
 #endif
 }
@@ -1964,6 +2031,7 @@ RDebugPlugin r_debug_plugin_native = {
 	.reg_write = (void *)&r_debug_native_reg_write,
 	.map_alloc = r_debug_native_map_alloc,
 	.map_dealloc = r_debug_native_map_dealloc,
+	.map_thp = r_debug_native_map_thp,
 	.map_get = r_debug_native_map_get,
 	.modules_get = r_debug_native_modules_get,
 	.map_protect = r_debug_native_map_protect,
