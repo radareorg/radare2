@@ -1823,7 +1823,7 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 		panels->mouse_on_edge_y = false;
 		return true;
 	}
-	if (*key == INT8_MAX - 1) {
+	if (*key == 0) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
 			if (__check_if_mouse_on_edge_x (core, x)) {
