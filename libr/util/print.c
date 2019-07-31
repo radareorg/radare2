@@ -1668,11 +1668,11 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	const bool bgFill = (p && (p->flags & R_PRINT_FLAGS_BGFILL));
 	bool useUtf8 = p->cons->use_utf8;
-	bool useUtf8Curvy = p->cons->use_utf8_curvy;
-	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNE_CORNER_TR) : ".";
-	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BR : RUNE_CORNER_BR) : "'";
+	// bool useUtf8Curvy = p->cons->use_utf8_curvy;
+	const char *tr_corner = "."; // useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNE_CORNER_TR) : ".";
+	const char *br_corner = "'"; // useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BR : RUNE_CORNER_BR) : "'";
 	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
-	const char *h_line = useUtf8 ? RUNE_LINE_HORIZ : "_";
+	const char *h_line = "_"; // useUtf8 ? RUNE_LINE_HORIZ : "_";
 	char *firebow[6];
 	int i = 0, j;
 
