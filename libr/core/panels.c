@@ -5653,6 +5653,17 @@ void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db) {
 			}
 		}
 		switch (key) {
+		case 'e':
+			{
+				__free_modal (&modal);
+				__set_refresh_all (core, false, false);
+				char *cmd = __show_status_input (core, "New command: ");
+				if (R_STR_ISNOTEMPTY (cmd)) {
+					__replace_cmd (core, cmd, cmd);
+				}
+				free (cmd);
+			}
+		break;
 		case 'j':
 			modal->idx++;
 			__update_modal (core, menu_db, modal);
