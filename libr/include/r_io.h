@@ -393,7 +393,6 @@ R_API void r_io_wundo_set_all(RIO *io, int set);
 R_API int r_io_wundo_set(RIO *io, int n, int set);
 
 //desc.c
-R_API bool r_io_desc_init (RIO *io);
 R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
 R_API RIODesc *r_io_desc_open (RIO *io, const char *uri, int flags, int mode);
 R_API RIODesc *r_io_desc_open_plugin (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode);
@@ -416,7 +415,10 @@ R_API int r_io_desc_get_tid (RIODesc *desc);
 R_API bool r_io_desc_get_base (RIODesc *desc, ut64 *base);
 R_API int r_io_desc_read_at (RIODesc *desc, ut64 addr, ut8 *buf, int len);
 R_API int r_io_desc_write_at (RIODesc *desc, ut64 addr, const ut8 *buf, int len);
-R_API bool r_io_desc_fini (RIO *io);
+
+/* lifecycle */
+R_IPI bool r_io_desc_init (RIO *io);
+R_IPI bool r_io_desc_fini (RIO *io);
 
 /* io/cache.c */
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);
