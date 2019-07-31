@@ -104,8 +104,6 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 			while (name - 1 >= type && *(name - 1) != '\n') {
 				name--;
 			}
-		}
-		if (name) {
 			r_anal_remove_parsed_type (anal, name);
 			// Now add the type to sdb.
 			sdb_query_lines (anal->sdb_types, parsed);
