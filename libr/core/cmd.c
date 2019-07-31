@@ -2343,6 +2343,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	const char *cmdrep = core->cmdtimes ? core->cmdtimes: "";
 	orep = rep;
 
+	r_cons_break_push (NULL, NULL);
+
 	int ocur_enabled = core->print && core->print->cur_enabled;
 	while (rep-- && *cmd) {
 		if (core->print) {
@@ -2376,6 +2378,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 		free (cr);
 	}
+
+	r_cons_break_pop ();
+
 	if (tmpseek) {
 		r_core_seek (core, orig_offset, 1);
 		core->tmpseek = original_tmpseek;
