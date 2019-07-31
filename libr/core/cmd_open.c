@@ -1001,7 +1001,6 @@ static int cmd_open(void *data, const char *input) {
 	int argc, fd = -1;
 	RCoreFile *file;
 	RIODesc *desc;
-	bool silence = false;
 	bool write = false;
 	const char *ptr = NULL;
 	char **argv = NULL;
@@ -1063,7 +1062,8 @@ static int cmd_open(void *data, const char *input) {
 		if (input[1] == '*') {
 			r_core_file_list (core, 'n');
 			return 0;
-		} else if (input[1] == '+') { // "on+"
+		}
+		if (input[1] == '+') { // "on+"
 			write = true;
 			perms |= R_PERM_W;
 			if (input[2] != ' ') {
@@ -1071,22 +1071,6 @@ static int cmd_open(void *data, const char *input) {
 				return 0;
 			}
 			ptr = input + 3;
-		} else if (input[1] == 's') { // "ons"
-			silence = true;
-			if (input[2] == '+') { // "ons+"
-				write = true;
-				perms |= R_PERM_W;
-				if (input[3] != ' ') {
-					eprintf ("Usage: ons+ file [addr] [rwx]\n");
-					return 0;
-				}
-				ptr = input + 4;
-			} else if (input[2] == ' ') {
-				ptr = input + 3;
-			} else {
-				eprintf ("Usage: ons file [addr] [rwx]\n");
-				return 0;
-			}
 		} else if (input[1] == ' ') {
 			ptr = input + 2;
 		} else {
@@ -1095,18 +1079,11 @@ static int cmd_open(void *data, const char *input) {
 		}
 		argv = r_str_argv (ptr, &argc);
 		if (!argc) {
-			if (write) {
-				if (silence) eprintf ("Usage: ons+ file [addr] [rwx]\n");
-				else eprintf ("Usage: on+ file [addr] [rwx]\n");
-			} else {
-				if (silence) eprintf ("Usage: ons file [addr] [rwx]\n");
-				else eprintf ("Usage: on file [addr] [rwx]\n");
-			}
+			eprintf ("Usage: on%s file [addr] [rwx]\n", write?"+":"");
 			r_str_argv_free (argv);
 			return 0;
-		} else {
-			ptr = argv[0];
 		}
+		ptr = argv[0];
 		if (argc == 2) {
 			if (r_num_is_valid_input (core->num, argv[1])) {
 				addr = r_num_math (core->num, argv[1]);
@@ -1118,22 +1095,23 @@ static int cmd_open(void *data, const char *input) {
 			addr = r_num_math (core->num, argv[1]);
 			perms = r_str_rwx (argv[2]);
 		}
+		if (!strcmp (ptr, "-")) {
+			ptr = "malloc://512";
+		}
 		if ((desc = r_io_open_at (core->io, ptr, perms, 0644, addr))) {
 			fd = desc->fd;
 		}
-		r_str_argv_free (argv);
-		if (!silence) {
-			eprintf ("%d\n", fd);
+		if (fd == -1) {
+			eprintf ("Cannot open file '%s'\n", ptr);
 		}
+		r_str_argv_free (argv);
+		core->num->value = fd;
 		r_core_block_read (core);
 		return 0;
 #if 1
 	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
 	case 'f': // "of"
-		if ((input[1] == 's') && (input[2] == ' ')) {
-			silence = true;
-			ptr = input + 3;
-		} else if (input[1] == ' ') {
+		if (input[1] == ' ') {
 			ptr = input + 2;
 		} else {
 			eprintf ("wrong\n");
@@ -1148,9 +1126,7 @@ static int cmd_open(void *data, const char *input) {
 			perms = r_str_rwx (argv[1]);
 		}
 		fd = r_io_fd_open (core->io, argv[0], perms, 0);
-		if (!silence) {
-			eprintf ("%d\n", fd);
-		}
+		core->num->value = fd;
 		r_str_argv_free (argv);
 		return 0;
 #else
@@ -1203,18 +1179,8 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '+': // "o+"
 		perms |= R_PERM_W;
-	case 's': // "os"
-		silence = true;
 	case ' ': // "o" "o "
-		if (silence) {
-			ptr = input + 2;
-		} else {
-			ptr = input + 1;
-		}
-		if (ptr[-1] != ' ') {
-			eprintf ("wrong\n");
-			return 0;
-		}
+		ptr = input + 1;
 		argv = r_str_argv (ptr, &argc);
 		if (argc == 0) {
 			eprintf ("wrong\n");
@@ -1238,9 +1204,7 @@ static int cmd_open(void *data, const char *input) {
 			const char *argv0 = argv ? argv[0] : ptr;
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
-				if (!silence) {
-					eprintf ("%d\n", fd);
-				}
+				core->num->value = fd;
 				if (addr == 0) { // if no baddr defined, use the one provided by the file
 					addr = UT64_MAX;
 				}
@@ -1282,9 +1246,9 @@ static int cmd_open(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_oj);
 			break;
 		}
-		core->print->cb_printf("[");
+		core->print->cb_printf ("[");
 		r_id_storage_foreach (core->io->files, desc_list_json_cb, core->print);
-		core->print->cb_printf("]\n");
+		core->print->cb_printf ("]\n");
 		break;
 	case 'L': // "oL"
 		if (r_sandbox_enable (0)) {
