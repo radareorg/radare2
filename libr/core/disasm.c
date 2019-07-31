@@ -3281,7 +3281,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		return;
 	}
 	RAnalFunction *f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
-	if (!f && ds->core->flags) {
+	if (!f && ds->core->flags && !ds->core->vmode) {
 		const char *arch;
 		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
 		                                        R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
@@ -3293,7 +3293,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			return;
 		}
 	}
-	if (!f || !f->name || !ds->opstr || strstr (ds->opstr, f->name)) {
+	if (!f || !f->name) {
 		return;
 	}
 	st64 delta = ds->analop.jump - f->addr;
@@ -3306,12 +3306,14 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		if (f == f2) {
 			return;
 		}
-		ds_begin_comment (ds);
 		if (delta > 0) {
+			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s+0x%x", f->name, delta);
 		} else if (delta < 0) {
+			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s-0x%x", f->name, -delta);
-		} else {
+		} else if (!ds->core->vmode && (!ds->opstr || !strstr (ds->opstr, f->name))) {
+			ds_begin_comment (ds);
 			ds_comment (ds, true, "; %s", f->name);
 		}
 	}
