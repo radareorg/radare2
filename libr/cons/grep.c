@@ -316,13 +316,13 @@ while_end:
 				eprintf ("grep string too long\n");
 				continue;
 			}
-			strncpy (grep->strings[grep->nstrings],
-				optr, R_CONS_GREP_WORD_SIZE - 1);
 			grep->nstrings++;
 			if (grep->nstrings > R_CONS_GREP_WORDS - 1) {
 				eprintf ("too many grep strings\n");
 				break;
 			}
+			strncpy (grep->strings[grep->nstrings - 1],
+				optr, R_CONS_GREP_WORD_SIZE - 1);
 		} while (ptr);
 	} else {
 		grep->str = strdup (ptr);
