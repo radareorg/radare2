@@ -562,24 +562,25 @@ struct TCCState {
 #define VT_PTR              4  /* pointer */
 #define VT_ENUM             5  /* enum definition */
 #define VT_FUNC             6  /* function type */
-#define VT_STRUCT           7  /* struct/union definition */
-#define VT_FLOAT            8  /* IEEE float */
-#define VT_DOUBLE           9  /* IEEE double */
-#define VT_LDOUBLE         10  /* IEEE long double */
-#define VT_BOOL            11  /* ISOC99 boolean type */
-#define VT_INT64		   12  /* int64_t */
-#define VT_LONG            13  /* long integer (NEVER USED as type, only
+#define VT_STRUCT           7  /* struct definition */
+#define VT_UNION            8  /* union definition */
+#define VT_FLOAT            9  /* IEEE float */
+#define VT_DOUBLE          10  /* IEEE double */
+#define VT_LDOUBLE         11  /* IEEE long double */
+#define VT_BOOL            12  /* ISOC99 boolean type */
+#define VT_INT64		   13  /* int64_t */
+#define VT_LONG            14  /* long integer (NEVER USED as type, only
                                   during parsing) */
-#define VT_QLONG           14  /* 128-bit integer. Only used for x86-64 ABI */
-#define VT_QFLOAT          15  /* 128-bit float. Only used for x86-64 ABI */
-#define VT_UNSIGNED    0x0010  /* unsigned type */
-#define VT_ARRAY       0x0020  /* array type (also has VT_PTR) */
-#define VT_BITFIELD    0x0040  /* bitfield modifier */
-#define VT_CONSTANT    0x0800  /* const modifier */
-#define VT_VOLATILE    0x1000  /* volatile modifier */
-#define VT_SIGNED      0x2000  /* signed type */
-#define VT_CHAR		   0x4000  /* character type - for strings */
-#define VT_VLA     0x00040000  /* VLA type (also has VT_PTR and VT_ARRAY) */
+#define VT_QLONG           15  /* 128-bit integer. Only used for x86-64 ABI */
+#define VT_QFLOAT      0x0010  /* 128-bit float. Only used for x86-64 ABI */
+#define VT_UNSIGNED    0x0020  /* unsigned type */
+#define VT_ARRAY       0x0040  /* array type (also has VT_PTR) */
+#define VT_BITFIELD    0x0800  /* bitfield modifier */
+#define VT_CONSTANT    0x1000  /* const modifier */
+#define VT_VOLATILE    0x2000  /* volatile modifier */
+#define VT_SIGNED      0x4000  /* signed type */
+#define VT_CHAR	   0x00040000  /* character type - for strings */
+#define VT_VLA     0x00080000  /* VLA type (also has VT_PTR and VT_ARRAY) */
 
 /* storage */
 #define VT_EXTERN  0x00000080  /* extern definition */
@@ -998,7 +999,12 @@ ST_DATA int last_line_num, last_ind, func_ind; /* debug last line number and pc 
 ST_DATA char *funcname;
 ST_DATA char *dirname;
 
-ST_INLN int is_float(int t);
+ST_INLN bool is_structured(CType *t);
+ST_INLN bool is_struct(CType *t);
+ST_INLN bool is_union(CType *t);
+ST_INLN bool is_float(int t);
+ST_INLN bool not_structured(CType *t);
+
 ST_FUNC int ieee_finite(double d);
 ST_FUNC void test_lvalue(void);
 ST_FUNC void swap(int *p, int *q);
