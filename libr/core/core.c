@@ -3071,6 +3071,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
         if (r->scr_gadgets && *line && *line != 'q') {
                 r_core_cmd0 (r, "pg");
         }
+	r->num->value = r->rc;
 	return true;
 }
 
@@ -3078,6 +3079,7 @@ extern void r_core_echo(RCore *core, const char *input);
 
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = r_core_cmd (r, r->cmdqueue, true);
+	r->rc = r->num->value;
 	//int ret = r_core_cmd (r, r->cmdqueue, true);
 	if (r->cons && r->cons->use_tts) {
 		const char *buf = r_cons_get_buffer();
