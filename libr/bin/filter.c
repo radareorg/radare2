@@ -107,7 +107,7 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 		}
 	} else {
 		sym->dup_count = prev_sym->dup_count + 1;
-		ht_pp_update(ht, oname, sym);
+		ht_pp_update (ht, oname, sym);
 	}
 }
 
