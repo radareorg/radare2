@@ -17,6 +17,7 @@
 #define PANEL_TITLE_GRAPH            "Graph"
 #define PANEL_TITLE_TINY_GRAPH       "Tiny Graph"
 #define PANEL_TITLE_FUNCTIONS        "Functions"
+#define PANEL_TITLE_FUNCTIONCALLS    "Function Calls"
 #define PANEL_TITLE_BREAKPOINTS      "Breakpoints"
 #define PANEL_TITLE_STRINGS_DATA     "Strings in data sections"
 #define PANEL_TITLE_STRINGS_BIN      "Strings in the whole bin"
@@ -101,7 +102,7 @@ static const char *menus_iocache[] = {
 
 static char *menus_View[] = {
 	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets", "Graph", "Tiny Graph",
-	"Functions", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports",
+	"Functions", "Function Calls", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports",
 	"Info", "Database",  "Breakpoints", "Comments", "Classes", "Entropy", "Entropy Fire", "Stack", "Methods",
 	"Var READ address", "Var WRITE address", "Summary", "Relocs", "Headers", "File Hashes", PANEL_TITLE_ALL_DECOMPILER,
 	NULL
@@ -4855,6 +4856,7 @@ void __init_sdb(RCore *core) {
 	sdb_set (panels->db, "Console", "$console", 0);
 	sdb_set (panels->db, "Hexdump", "xc", 0);
 	sdb_set (panels->db, "Functions", "afl", 0);
+	sdb_set (panels->db, "Function Calls", "aflm", 0);
 	sdb_set (panels->db, "Comments", "CC", 0);
 	sdb_set (panels->db, "Entropy", "p=e 100", 0);
 	sdb_set (panels->db, "Entropy Fire", "p==e 100", 0);
@@ -6171,7 +6173,7 @@ char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y) {
 	if (!pos) {
 		pos = R;
 	}
-#define TOkENs "=*+-/()[,] "
+#define TOkENs ":=*+-/()[,] "
 	const char *sp = r_str_rsep (R, pos, TOkENs);
 	if (sp) {
 		sp++;
