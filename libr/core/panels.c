@@ -337,8 +337,8 @@ static bool __check_func_diff(RCore *core, RPanel *p);
 static bool __check_root_state(RCore *core, RPanelsRootState state);
 static bool __check_if_addr(const char *c, int len);
 static bool __check_if_cur_panel(RCore *core, RPanel *panel);
-static bool __check_if_mouse_on_edge_x(RCore *core, int x);
-static bool __check_if_mouse_on_edge_y(RCore *core, int y);
+static bool __check_if_mouse_on_edge_x(RCore *core, int x, int y);
+static bool __check_if_mouse_on_edge_y(RCore *core, int x, int y);
 
 /* add */
 static void __add_help_panel(RCore *core);
@@ -652,24 +652,27 @@ void __update_edge_y(RCore *core, int y) {
 	}
 }
 
-bool __check_if_mouse_on_edge_x(RCore *core, int x) {
+bool __check_if_mouse_on_edge_x(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.x - 2 <= x && x <= panel->view->pos.x + 2) {
+		if (panel->view->pos.x - 1 <= x && x <= panel->view->pos.x + 1
+			&& panel->view->pos.y <= y && y <= panel->view->pos.y + panel->view->pos.h) {
 			return true;
 		}
 	}
 	return false;
 }
 
-bool __check_if_mouse_on_edge_y(RCore *core, int y) {
+bool __check_if_mouse_on_edge_y(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.y - 2 <= y && y <= panel->view->pos.y + 2) {
+		bool top = panel->view->pos.y - 1;
+		if (top && panel->view->pos.y - 1 <= y && y <= panel->view->pos.y + 1
+			&& panel->view->pos.x <= x && x <= panel->view->pos.x + panel->view->pos.w) {
 			return true;
 		}
 	}
@@ -1819,11 +1822,11 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	if (*key == 0) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			if (__check_if_mouse_on_edge_x (core, x)) {
+			if (__check_if_mouse_on_edge_x (core, x, y)) {
 				panels->mouse_on_edge_x = true;
 				panels->mouse_orig_x = x;
 			}
-			if (__check_if_mouse_on_edge_y (core, y)) {
+			if (__check_if_mouse_on_edge_y (core, x, y)) {
 				panels->mouse_on_edge_y = true;
 				panels->mouse_orig_y = y;
 			}
