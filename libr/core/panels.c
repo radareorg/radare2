@@ -344,7 +344,8 @@ static bool __check_func_diff(RCore *core, RPanel *p);
 static bool __check_root_state(RCore *core, RPanelsRootState state);
 static bool __check_if_addr(const char *c, int len);
 static bool __check_if_cur_panel(RCore *core, RPanel *panel);
-static int __check_if_mouse_on_edge(RCore *core, int x, int y);
+static bool __check_if_mouse_on_edge_x(RCore *core, int x);
+static bool __check_if_mouse_on_edge_y(RCore *core, int y);
 
 /* add */
 static void __add_help_panel(RCore *core);
@@ -658,19 +659,28 @@ void __update_edge_y(RCore *core, int y) {
 	}
 }
 
-int __check_if_mouse_on_edge(RCore *core, int x, int y) {
+bool __check_if_mouse_on_edge_x(RCore *core, int x) {
 	RPanels *panels = core->panels;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.x - 1 <= x || x <= panel->view->pos.x + 1) {
-			return 1;
-		}
-		if (panel->view->pos.y - 1 <= y || y <= panel->view->pos.y + 1) {
-			return 2;
+		if (panel->view->pos.x - 2 <= x && x <= panel->view->pos.x + 2) {
+			return true;
 		}
 	}
-	return 0;
+	return false;
+}
+
+bool __check_if_mouse_on_edge_y(RCore *core, int y) {
+	RPanels *panels = core->panels;
+	int i = 0;
+	for (; i < panels->n_panels; i++) {
+		RPanel *panel = __get_panel (panels, i);
+		if (panel->view->pos.y - 2 <= y && y <= panel->view->pos.y + 2) {
+			return true;
+		}
+	}
+	return false;
 }
 
 bool __check_if_cur_panel(RCore *core, RPanel *panel) {
@@ -1798,22 +1808,33 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	const int MENU_Y = 1;
 	RPanels *panels = core->panels;
 	int i;
-	if (panels->mouse_on_edge) {
-		panels->mouse_on_edge = false;
+	if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			__update_edge_x (core, x - panels->mouse_orig_x);
+			if (panels->mouse_on_edge_x) {
+				__update_edge_x (core, x - panels->mouse_orig_x);
+			}
+			if (panels->mouse_on_edge_y) {
+				__update_edge_y (core, y - panels->mouse_orig_y);
+			}
 			__set_refresh_all (core, false, false);
-			return true;
 		}
+		panels->mouse_on_edge_x = false;
+		panels->mouse_on_edge_y = false;
+		return true;
 	}
 	if (*key == INT8_MAX - 1) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			if (__check_if_mouse_on_edge (core, x, y) == 1) {
-				panels->mouse_on_edge = true;
+			if (__check_if_mouse_on_edge_x (core, x)) {
+				panels->mouse_on_edge_x = true;
 				panels->mouse_orig_x = x;
+			}
+			if (__check_if_mouse_on_edge_y (core, y)) {
+				panels->mouse_on_edge_y = true;
 				panels->mouse_orig_y = y;
+			}
+			if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
 				return true;
 			}
 			int h, w = r_cons_get_size (&h);
@@ -5082,7 +5103,8 @@ bool __init(RCore *core, RPanels *panels, int w, int h) {
 	}
 	panels->isResizing = false;
 	panels->autoUpdate = false;
-	panels->mouse_on_edge = false;
+	panels->mouse_on_edge_x = false;
+	panels->mouse_on_edge_y = false;
 	panels->mouse_orig_x = 0;
 	panels->mouse_orig_y = 0;
 	panels->can = __create_new_canvas (core, w, h);

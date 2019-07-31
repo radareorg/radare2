@@ -1133,7 +1133,8 @@ typedef struct r_panels_t {
 	int mouse_orig_y;
 	bool isResizing;
 	bool autoUpdate;
-	bool mouse_on_edge;
+	bool mouse_on_edge_x;
+	bool mouse_on_edge_y;
 	RPanelsMenu *panelsMenu;
 	Sdb *db;
 	Sdb *rotate_db;
