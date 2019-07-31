@@ -456,6 +456,7 @@ static int __cons_readchar_w32 (ut32 usec) {
 	INPUT_RECORD irInBuf;
 	int i, o;
 	bool resize = false;
+	bool click_n_drag = false;
 	void *bed;
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
@@ -474,7 +475,10 @@ static int __cons_readchar_w32 (ut32 usec) {
 		if (ret) {
 			if (irInBuf.EventType == MOUSE_EVENT) {
 				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_MOVED) {
-					continue;
+					if (irInBuf.Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
+						click_n_drag = true;
+					}
+					continue;			
 				}
 				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_WHEELED) {
 					if (irInBuf.Event.MouseEvent.dwButtonState & 0xFF000000) {
@@ -494,6 +498,12 @@ static int __cons_readchar_w32 (ut32 usec) {
 					break;
 				} // TODO: Handle more buttons?
 			}
+
+			if (click_n_drag) {
+				r_cons_set_click (irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1);
+				ch = 1;
+			}
+
 			if (irInBuf.EventType == KEY_EVENT) {
 				if (irInBuf.Event.KeyEvent.bKeyDown) {
 					ch = irInBuf.Event.KeyEvent.uChar.AsciiChar;
