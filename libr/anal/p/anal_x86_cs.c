@@ -1884,6 +1884,76 @@ static void op_fillval(RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn) {
 	}
 }
 
+static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
+	op->ptr = UT64_MAX;
+	switch (INSOP(0).type) {
+	case X86_OP_MEM:
+		op->cycles = CYCLE_MEM;
+		op->ptr = INSOP(0).mem.disp;
+		op->refptr = INSOP(0).size;
+		if (INSOP(0).mem.base == X86_REG_RIP) {
+			op->ptr += addr + insn->size;
+		} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
+			op->type |= R_ANAL_OP_TYPE_REG;
+			op->stackop = R_ANAL_STACK_SET;
+			op->stackptr = regsz;
+		} else {
+			if (op->ptr < 0x1000) {
+				op->ptr = UT64_MAX;
+			}
+		}
+		if (INSOP(1).type == X86_OP_IMM) {
+			op->val = INSOP(1).imm;
+		}
+		break;
+	case X86_OP_REG:
+		if ((INSOP(1).type == X86_OP_IMM) &&
+			(INSOP(0).reg != X86_REG_RSP) && (INSOP(0).reg != X86_REG_ESP)) {
+			op->val = INSOP(1).imm;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
+	if (op->refptr < 1 || op->ptr == UT64_MAX) {
+		switch (INSOP(1).type) {
+		case X86_OP_MEM:
+			op->ptr = INSOP(1).mem.disp;
+			op->refptr = INSOP(1).size;
+			if (INSOP(1).mem.base == X86_REG_RIP) {
+				op->ptr += addr + insn->size;
+			} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
+				op->stackop = R_ANAL_STACK_GET;
+				op->stackptr = regsz;
+			}
+			break;
+		case X86_OP_IMM:
+			if (INSOP (1).imm > 10) {
+				op->ptr = INSOP (1).imm;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+static void op_stackidx(RAnalOp *op, cs_insn *insn, bool minus) {
+	if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
+		if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
+			op->stackop = R_ANAL_STACK_INC;
+			if (minus) {
+				op->stackptr = -INSOP(1).imm;
+			} else {
+				op->stackptr = INSOP(1).imm;
+			}
+		}
+	}
+}
+
 static void set_opdir(RAnalOp *op, cs_insn *insn) {
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
@@ -2211,56 +2281,8 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_MOVDQ2Q:
 		{
 		op->type = R_ANAL_OP_TYPE_MOV;
-		op->ptr = UT64_MAX;
-		switch (INSOP(0).type) {
-		case X86_OP_MEM:
-			op->cycles = CYCLE_MEM;
-			op->ptr = INSOP(0).mem.disp;
-			op->refptr = INSOP(0).size;
-			if (INSOP(0).mem.base == X86_REG_RIP) {
-				op->ptr += addr + insn->size;
-			} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
-				op->type |= R_ANAL_OP_TYPE_REG;
-				op->stackop = R_ANAL_STACK_SET;
-				op->stackptr = regsz;
-			} else {
-				if (op->ptr < 0x1000) {
-					op->ptr = UT64_MAX;
-				}
-			}
-			if (INSOP(1).type == X86_OP_IMM) {
-				op->val = INSOP(1).imm;
-			}
-			break;
-		case X86_OP_REG:
-			if (INSOP(1).type == X86_OP_IMM) {
-				op->val = INSOP(1).imm;
-			}
-			break;
-		default:
-			break;
-		}
-		if (op->refptr<1 || op->ptr == UT64_MAX) {
-			switch (INSOP(1).type) {
-			case X86_OP_MEM:
-				op->ptr = INSOP(1).mem.disp;
-				op->refptr = INSOP(1).size;
-				if (INSOP(1).mem.base == X86_REG_RIP) {
-					op->ptr += addr + insn->size;
-				} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
-					op->stackop = R_ANAL_STACK_GET;
-					op->stackptr = regsz;
-				}
-				break;
-			case X86_OP_IMM:
-				if (INSOP (1).imm > 10) {
-					op->ptr = INSOP (1).imm;
-				}
-				break;
-			default:
-				break;
-			}
-		}
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		}
 		break;
 	case X86_INS_ROL:
@@ -2652,17 +2674,22 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_XORPS:
 	case X86_INS_KXORW:
 	case X86_INS_PXOR:
+		op->type = R_ANAL_OP_TYPE_XOR;
+		break;
 	case X86_INS_XOR:
 		op->type = R_ANAL_OP_TYPE_XOR;
+		// TODO: Add stack indexing handling chang
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_OR:
 		// The OF and CF flags are cleared; the SF, ZF, and PF flags are
 		// set according to the result. The state of the AF flag is
 		// undefined.
 		op->type = R_ANAL_OP_TYPE_OR;
-		if (INSOP(1).type == X86_OP_IMM) {
-			op->val = INSOP(1).imm;
-		}
+		// TODO: Add stack indexing handling chang
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_INC:
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
@@ -2696,15 +2723,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		break;
 	case X86_INS_SUB:
 		op->type = R_ANAL_OP_TYPE_SUB;
-		if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
-			if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
-				op->stackop = R_ANAL_STACK_INC;
-				op->stackptr = INSOP(1).imm;
-			}
-		}
-		if (INSOP(1).type == X86_OP_IMM) {
-			op->val = INSOP(1).imm;
-		}
+		op_stackidx (op, insn, false);
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_SBB:
 		// dst = dst - (src + cf)
@@ -2742,13 +2763,18 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 		op->type = R_ANAL_OP_TYPE_MOV; // XXX
 		break;
-	case X86_INS_AND:
 	case X86_INS_ANDN:
 	case X86_INS_ANDPD:
 	case X86_INS_ANDPS:
 	case X86_INS_ANDNPD:
 	case X86_INS_ANDNPS:
 		op->type = R_ANAL_OP_TYPE_AND;
+		break;
+	case X86_INS_AND:
+		op->type = R_ANAL_OP_TYPE_AND;
+		// TODO: Add stack register change operation
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_IDIV:
 		op->type = R_ANAL_OP_TYPE_DIV;
@@ -2809,27 +2835,16 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
-			if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
-				op->stackop = R_ANAL_STACK_INC;
-				op->stackptr = -INSOP(1).imm;
-			}
-		}
+		op_stackidx (op, insn, true);
 		op->val = INSOP(1).imm;
 		break;
 	case X86_INS_ADD:
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
-			if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
-				op->stackop = R_ANAL_STACK_INC;
-				op->stackptr = -INSOP(1).imm;
-			}
-		}
-		if (INSOP(1).type == X86_OP_IMM) {
-			op->val = INSOP(1).imm;
-		}
+		op_stackidx (op, insn, true);
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_ADC:
 		op->type = R_ANAL_OP_TYPE_ADD;
