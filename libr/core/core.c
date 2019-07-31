@@ -728,12 +728,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			return 0LL; // maybe // return UT64_MAX;
 		case '?': // $?
-			return core->num->value;
+			return core->num->value; // rc;
 		case '$': // $$ offset
 			return str[2] == '$' ? core->prompt_offset : core->offset;
 		case 'o': { // $o
-			RBinSection *s;
-			s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
+			RBinSection *s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
 			return s ? core->offset - s->vaddr + s->paddr : core->offset;
 			break;
 		}
