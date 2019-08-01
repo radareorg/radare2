@@ -6290,9 +6290,11 @@ char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y) 
 		pos--;
 		i++;
 	}
-	while (*tmp && strncmp (padding, tmp, strlen (padding))) {
-		tmp++;
-		i++;
+	if (tmp) {
+		while (*tmp && strncmp (padding, tmp, strlen (padding))) {
+			tmp++;
+			i++;
+		}
 	}
 	char *ret = r_str_newlen (pos += strlen (padding), i - strlen (padding));
 	if (!ret) {
