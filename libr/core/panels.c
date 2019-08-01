@@ -654,11 +654,17 @@ void __update_edge_y(RCore *core, int y) {
 
 bool __check_if_mouse_on_edge_x(RCore *core, int x) {
 	RPanels *panels = core->panels;
+	RConsCanvas *can = panels->can;
+	if (x <= 2 || can->w - 2 <= x) {
+		return true;
+	}
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
 		if (panel->view->pos.x - 2 <= x && x <= panel->view->pos.x + 2) {
-			return true;
+			panels->mouse_on_edge_x = true;
+			panels->mouse_orig_x = x;
+			break;
 		}
 	}
 	return false;
@@ -666,11 +672,17 @@ bool __check_if_mouse_on_edge_x(RCore *core, int x) {
 
 bool __check_if_mouse_on_edge_y(RCore *core, int y) {
 	RPanels *panels = core->panels;
+	RConsCanvas *can = panels->can;
+	if (y <= 2 || can->h - 2 <= y) {
+		return true;
+	}
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
 		if (panel->view->pos.y - 2 <= y && y <= panel->view->pos.y + 2) {
-			return true;
+			panels->mouse_on_edge_y = true;
+			panels->mouse_orig_y = y;
+			break;
 		}
 	}
 	return false;
@@ -1819,13 +1831,11 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	if (*key == 0) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			if (__check_if_mouse_on_edge_x (core, x)) {
-				panels->mouse_on_edge_x = true;
-				panels->mouse_orig_x = x;
-			}
-			if (__check_if_mouse_on_edge_y (core, y)) {
-				panels->mouse_on_edge_y = true;
-				panels->mouse_orig_y = y;
+			if (__check_if_mouse_on_edge_x (core, x) ||
+					__check_if_mouse_on_edge_y (core, y)) {
+				panels->mouse_on_edge_x = false;
+				panels->mouse_on_edge_y = false;
+				return true;
 			}
 			if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
 				return true;
@@ -6241,13 +6251,11 @@ void __panel_prompt(const char *prompt, char *buf, int len) {
 }
 
 char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y) {
-	char *s = r_cons_canvas_to_string (panels->can);
-	char *tmp = s;
-	s = r_str_newf (" %s", tmp);
-	free (tmp);
-	char *R = r_str_ansi_crop (s, 0, y - 1, x + 1024, y);
+	RStrBuf *buf = r_strbuf_new (NULL);
+	r_strbuf_setf (buf, " %s", r_cons_canvas_to_string (panels->can));
+	char *R = r_str_ansi_crop (r_strbuf_get (buf), 0, y - 1, x + 1024, y);
 	r_str_ansi_filter (R, NULL, NULL, -1);
-	char *r = r_str_ansi_crop (s, x - 1, y - 1, x + 1024, y);
+	char *r = r_str_ansi_crop (r_strbuf_drain (buf), x - 1, y - 1, x + 1024, y);
 	r_str_ansi_filter (r, NULL, NULL, -1);
 	char *pos = strstr (R, r);
 	if (!pos) {
@@ -6287,11 +6295,9 @@ char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y) 
 		pos--;
 		i++;
 	}
-	if (tmp) {
-		while (*tmp && strncmp (padding, tmp, strlen (padding))) {
-			tmp++;
-			i++;
-		}
+	while (R_STR_ISNOTEMPTY (tmp) && strncmp (padding, tmp, strlen (padding))) {
+		tmp++;
+		i++;
 	}
 	char *ret = r_str_newlen (pos += strlen (padding), i - strlen (padding));
 	if (!ret) {
