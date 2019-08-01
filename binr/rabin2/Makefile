@@ -15,6 +15,6 @@ include ../../shlr/grub/deps.mk
 include ../../shlr/bochs/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/ar/deps.mk
-LINK+=../../shlr/capstone/libcapstone.a
+include ../../shlr/capstone.mk
 
 LDFLAGS+=$(LINK)
