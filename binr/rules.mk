@@ -8,9 +8,9 @@ endif
 CFLAGS+=-I$(LTOP)/include
 
 ifeq (${COMPILER},emscripten)
-LINK+=../../libr/libr.a
-LINK+=../../shlr/sdb/src/libsdb.a
-LINK+=../../shlr/capstone/libcapstone.a
+LINK+=$(SHLR)/libr/libr.a
+LINK+=$(SHLR)/sdb/src/libsdb.a
+include $(SHLR)/capstone.mk
 CFLAGS+= -s SIDE_MODULE=1
 #CFLAGS+=-s ERROR_ON_UNDEFINED_SYMBOLS=0
 #EXT_EXE=.js
