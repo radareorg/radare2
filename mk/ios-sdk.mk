@@ -4,7 +4,6 @@ USERCC=${CROSS}gcc
 RANLIB=xcrun --sdk iphonesimulator ranlib
 ONELIB=0
 OSTYPE=darwin
-LINK=
 AR=xcrun --sdk iphonesimulator ar
 CC_AR=${AR} -r ${LIBAR}
 PARTIALLD=${CROSS}ld -r -all_load

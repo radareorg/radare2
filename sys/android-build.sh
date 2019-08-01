@@ -60,7 +60,7 @@ x64-static|static-x64)
 	STATIC_BUILD=1
 	;;
 arm64-static|static-arm64)
-	NDK_ARCH=arm64
+	NDK_ARCH=aarch64
 	STATIC_BUILD=1
 	;;
 arm-static|static-arm)
