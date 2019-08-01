@@ -3,7 +3,6 @@ CC=${CROSS}gcc
 RANLIB=${CROSS}ranlib
 ONELIB=0
 OSTYPE=qnx
-LINK=
 AR=${CROSS}ar
 CC_AR=${AR} -r ${LIBAR}
 PARTIALLD=${CROSS}ld -r --whole-archive
