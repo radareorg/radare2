@@ -4858,7 +4858,7 @@ static bool set_jump_demangled_name(RDisasmState *ds, ut64 addr, const char **kw
 		*name = flag_sym->realname;
 		RFlagItem *flag_mthd = r_flag_get_by_spaces (f, addr, R_FLAGS_FS_CLASSES, NULL);
 		if (flag_mthd && flag_mthd->name && r_str_startswith (flag_mthd->name, "method.")) {
-			*kw = "method ";
+			*kw = "meth ";
 		} else {
 			*kw = "sym ";
 		}
