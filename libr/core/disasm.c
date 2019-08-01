@@ -1239,7 +1239,7 @@ static void ds_begin_comment(RDisasmState *ds) {
 static void ds_show_refs(RDisasmState *ds) {
 	RAnalRef *ref;
 	RListIter *iter;
-	RFlagItem *flagi, *flagat;
+	RFlagItem *flagi;
 
 	if (!ds->show_cmtrefs) {
 		return;
@@ -1249,14 +1249,17 @@ static void ds_show_refs(RDisasmState *ds) {
 	r_list_foreach (list, iter, ref) {
 		char *cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
 		flagi = r_flag_get_i (ds->core->flags, ref->addr);
-		flagat = r_flag_get_at (ds->core->flags, ref->addr, false);
+		const RList *fls = r_flag_get_list (ds->core->flags, ref->addr);
+		RListIter *iter2;
+		RFlagItem *fis;
+		r_list_foreach (fls, iter2, fis) {
+			ds_begin_comment (ds);
+			ds_comment (ds, true, "; (%s)", fis->name);
+		}
+
 		// ds_align_comment (ds);
 		if (ds->show_color) {
 			r_cons_strcat (ds->color_comment);
-		}
-		if (flagi && flagat && (strcmp (flagi->name, flagat->name) != 0)) {
-			ds_begin_comment (ds);
-			ds_comment (ds, true, "; (%s)", flagi->name);
 		}
 		if (cmt) {
 			ds_begin_comment (ds);
