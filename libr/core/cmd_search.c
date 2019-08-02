@@ -3260,13 +3260,13 @@ reread:
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_ro (space + 1): NULL;
 				if (!arg || input[2] == '?') {
-					eprintf ("Usage: /Cc[aAdlpb] [hashname] [hexpairhashvalue]\n");
-					eprintf (" /Cca - lowercase alphabet chars only\n");
-					eprintf (" /CcA - uppercase alphabet chars only\n");
-					eprintf (" /Ccl - letters (lower + upper alphabet chars)\n");
-					eprintf (" /Ccd - digits (only numbers)\n");
-					eprintf (" /Ccp - printable (alpha + digit)\n");
-					eprintf (" /Ccb - binary (any number is valid)\n");
+					eprintf ("Usage: /cc[aAdlpb] [hashname] [hexpairhashvalue]\n");
+					eprintf (" /cca - lowercase alphabet chars only\n");
+					eprintf (" /ccA - uppercase alphabet chars only\n");
+					eprintf (" /ccl - letters (lower + upper alphabet chars)\n");
+					eprintf (" /ccd - digits (only numbers)\n");
+					eprintf (" /ccp - printable (alpha + digit)\n");
+					eprintf (" /ccb - binary (any number is valid)\n");
 					goto beach;
 				}
 				char *s = strdup (arg);
@@ -3291,7 +3291,7 @@ reread:
 					ret = true;
 					goto beach;
 				} else {
-					eprintf ("Usage: /Cc [hashname] [hexpairhashvalue]\n");
+					eprintf ("Usage: /cc [hashname] [hexpairhashvalue]\n");
 					eprintf ("Usage: /CC to search ascii collisions\n");
 					goto beach;
 				}
