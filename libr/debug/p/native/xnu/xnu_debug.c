@@ -20,6 +20,7 @@
 #include <mach/host_priv.h>
 #include <mach/mach_vm.h>
 #include <mach/thread_status.h>
+#include <mach/vm_statistics.h>
 
 static task_t task_dbg = 0;
 #include "xnu_debug.h"
@@ -37,6 +38,7 @@ extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_
 #define DYLD_INFO_64_COUNT 5
 #define DYLD_IMAGE_INFO_32_SIZE 12
 #define DYLD_IMAGE_INFO_64_SIZE 24
+#define DEBUG_MAP_TAG_ID 239 /* anonymous page id monitorable (e.g. vmmap) */
 
 typedef struct {
 	ut32 version;
@@ -426,7 +428,8 @@ RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size) {
 		anywhere = VM_FLAGS_ANYWHERE;
 	}
 	ret = vm_allocate (th->port, (vm_address_t *)&base,
-			  (vm_size_t)size, anywhere);
+			  (vm_size_t)size,
+			  anywhere | VM_MAKE_TAG(DEBUG_MAP_TAG_ID));
 	if (ret != KERN_SUCCESS) {
 		eprintf ("vm_allocate failed\n");
 		return NULL;
