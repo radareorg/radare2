@@ -1124,14 +1124,17 @@ static int cmd_interpret(void *data, const char *input) {
 		}
 		break;
 	case '.': // ".." same as \n
-		if (input[1] == '.') { // ... same as \n with e cmd.repeat=true
+		if (input[1] == '.') { // "..." run the last command repeated
+			// same as \n with e cmd.repeat=true
 			r_core_cmd_repeat (core, 1);
-		} else {
-			char *str = r_core_cmd_str_pipe (core, input);
+		} else if (input[1]) {
+			char *str = r_core_cmd_str_pipe (core, r_str_trim_ro (input));
 			if (str) {
 				r_core_cmd (core, str, 0);
 				free (str);
 			}
+		} else {
+			eprintf ("Usage: .. ([file])\n");
 		}
 		break;
 	case '*': // ".*"
