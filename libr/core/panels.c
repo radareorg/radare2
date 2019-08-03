@@ -4855,7 +4855,7 @@ void __do_panels_refresh(RCore *core) {
 	}
 	core->panels->isResizing = true;
 	__panel_all_clear (core->panels);
-	__panels_refresh (core);
+	__panels_layout_refresh (core);
 }
 
 void __do_panels_refreshOneShot(RCore *core) {
