@@ -2950,7 +2950,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
 		"3 = realign at middle flag if sym.*", NULL);
 	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");
-	SETCB ("asm.flags.real", "false", &cb_flag_realnames, "Show flags unfiltered realnames instead of names");
+	SETCB ("asm.flags.real", "false", &cb_flag_realnames,
+	       "Show flags' unfiltered realnames instead of names, except realnames from demangling");
 	SETPREF ("asm.bb.line", "false", "Show empty line after every basic block");
 	SETPREF ("asm.bb.middle", "true", "Realign disassembly if a basic block starts in the middle of an instruction");
 	SETPREF ("asm.lbytes", "true", "Align disasm bytes to left");
