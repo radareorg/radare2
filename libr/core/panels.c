@@ -337,8 +337,10 @@ static bool __check_func_diff(RCore *core, RPanel *p);
 static bool __check_root_state(RCore *core, RPanelsRootState state);
 static bool __check_if_addr(const char *c, int len);
 static bool __check_if_cur_panel(RCore *core, RPanel *panel);
-static bool __check_if_mouse_on_edge_x(RCore *core, int x);
-static bool __check_if_mouse_on_edge_y(RCore *core, int y);
+static bool __check_if_mouse_x_illegal(RCore *core, int x);
+static bool __check_if_mouse_y_illegal(RCore *core, int y);
+static bool __check_if_mouse_x_on_edge(RCore *core, int x);
+static bool __check_if_mouse_y_on_edge(RCore *core, int y);
 
 /* add */
 static void __add_help_panel(RCore *core);
@@ -394,6 +396,7 @@ static void __shrink_panels_backward(RCore *core, int target);
 static void __fix_layout(RCore *core);
 static void __fix_layout_w(RCore *core);
 static void __fix_layout_h(RCore *core);
+static bool __drag_and_resize(RCore *core);
 
 /* cursor */
 static bool __is_abnormal_cursor_type(RCore *core, RPanel *panel);
@@ -436,9 +439,13 @@ static void __set_mode(RCore *core, RPanelsMode mode);
 static bool __handle_zoom_mode(RCore *core, const int key);
 static bool __handle_window_mode(RCore *core, const int key);
 static bool __handle_cursor_mode(RCore *core, const int key);
-static bool __handle_mouse(RCore *core, RPanel *panel, int *key);
 static void __toggle_zoom_mode(RCore *core);
 static void __toggle_window_mode(RCore *core);
+
+/* mouse */
+static bool __handle_mouse(RCore *core, RPanel *panel, int *key);
+static bool __handle_mouse_on_top(RCore *core, int x, int y);
+static void __handle_mouse_on_menu(RCore *core, int x, int y);
 
 /* modal */
 static void __exec_almighty(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db, RPanelLayout dir);
@@ -652,37 +659,47 @@ void __update_edge_y(RCore *core, int y) {
 	}
 }
 
-bool __check_if_mouse_on_edge_x(RCore *core, int x) {
+bool __check_if_mouse_x_illegal(RCore *core, int x) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
 	if (x <= 2 || can->w - 2 <= x) {
 		return true;
 	}
+	return false;
+}
+
+bool __check_if_mouse_y_illegal(RCore *core, int y) {
+	RPanels *panels = core->panels;
+	RConsCanvas *can = panels->can;
+	if (y <= 2 || can->h - 2 <= y) {
+		return true;
+	}
+	return false;
+}
+
+bool __check_if_mouse_x_on_edge(RCore *core, int x) {
+	RPanels *panels = core->panels;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
 		if (panel->view->pos.x - 2 <= x && x <= panel->view->pos.x + 2) {
 			panels->mouse_on_edge_x = true;
 			panels->mouse_orig_x = x;
-			break;
+			return true;
 		}
 	}
 	return false;
 }
 
-bool __check_if_mouse_on_edge_y(RCore *core, int y) {
+bool __check_if_mouse_y_on_edge(RCore *core, int y) {
 	RPanels *panels = core->panels;
-	RConsCanvas *can = panels->can;
-	if (y <= 2 || can->h - 2 <= y) {
-		return true;
-	}
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
 		if (panel->view->pos.y - 2 <= y && y <= panel->view->pos.y + 2) {
 			panels->mouse_on_edge_y = true;
 			panels->mouse_orig_y = y;
-			break;
+			return true;
 		}
 	}
 	return false;
@@ -1812,31 +1829,27 @@ bool __handle_cursor_mode(RCore *core, const int key) {
 bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	const int MENU_Y = 1;
 	RPanels *panels = core->panels;
-	int i;
-	if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
-		int x, y;
-		if (r_cons_get_click (&x, &y)) {
-			if (panels->mouse_on_edge_x) {
-				__update_edge_x (core, x - panels->mouse_orig_x);
-			}
-			if (panels->mouse_on_edge_y) {
-				__update_edge_y (core, y - panels->mouse_orig_y);
-			}
-			__set_refresh_all (core, false, false);
-		}
-		panels->mouse_on_edge_x = false;
-		panels->mouse_on_edge_y = false;
+	if (__drag_and_resize (core)) {
 		return true;
 	}
 	if (*key == 0) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			if (__check_if_mouse_on_edge_x (core, x) ||
-					__check_if_mouse_on_edge_y (core, y)) {
+			if (y == MENU_Y && __handle_mouse_on_top (core, x, y)) {
+				return true;
+			}
+			if (panels->mode == PANEL_MODE_MENU) {
+				__handle_mouse_on_menu (core, x, y);
+				return true;
+			}
+			if (__check_if_mouse_x_illegal(core, x) ||
+					__check_if_mouse_y_illegal(core, y)) {
 				panels->mouse_on_edge_x = false;
 				panels->mouse_on_edge_y = false;
 				return true;
 			}
+			panels->mouse_on_edge_x = __check_if_mouse_x_on_edge (core, x);
+			panels->mouse_on_edge_y = __check_if_mouse_y_on_edge (core, y);
 			if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
 				return true;
 			}
@@ -1848,50 +1861,6 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 			} else if (x == w) {
 				RPanel *p = __get_cur_panel (panels);
 				__split_panel_vertical (core, p, p->model->title, p->model->cmd);
-			} else if (y == MENU_Y) {
-				for (i = 0; i < COUNT (menus); i++) {
-					if (!strcmp (word, menus[i])) {
-						__set_mode (core, PANEL_MODE_MENU);
-						__clear_panels_menu (core);
-						RPanelsMenu *menu = panels->panelsMenu;
-						RPanelsMenuItem *parent = menu->history[menu->depth - 1];
-						parent->selectedIndex = i;
-						RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-						(void)(child->cb (core));
-						__set_refresh_all (core, false, false);
-						free (word);
-						return true;
-					}
-				}
-				if (!strcmp (word, "Tab")) {
-					__handle_tab_new (core);
-					free (word);
-					return true;
-				}
-				if (word[0] == '[' && word[1] && word[2] == ']') {
-					return true;
-				}
-				if (atoi (word)) {
-					__handle_tab_nth (core, word[0]);
-					return true;
-				}
-			} else if (panels->mode == PANEL_MODE_MENU) {
-				char *word = get_word_from_canvas_for_menu (core, panels, x, y);
-				RPanelsMenu *menu = panels->panelsMenu;
-				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
-				for (i = 0; i < parent->n_sub; i++) {
-					if (!strcmp (word, parent->sub[i]->name)) {
-						parent->selectedIndex = i;
-						(void)(parent->sub[parent->selectedIndex]->cb (core));
-						__update_menu_contents (core, menu, parent);
-						free (word);
-						return true;
-					}
-				}
-				__clear_panels_menu (core);
-				__set_mode (core, PANEL_MODE_DEFAULT);
-				__get_cur_panel (panels)->view->refresh = true;
-				return true;
 			} else {
 				// TODO: select nth panel here
 				const int idx = __get_panel_idx_in_pos (core, x, y);
@@ -1942,6 +1911,79 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	if (*key == INT8_MAX) {
 		*key = '"';
 		return false;
+	}
+	return false;
+}
+
+bool __handle_mouse_on_top (RCore *core, int x, int y) {
+	RPanels *panels = core->panels;
+	char *word = get_word_from_canvas (core, panels, x, y);
+	int i;
+	for (i = 0; i < COUNT (menus); i++) {
+		if (!strcmp (word, menus[i])) {
+			__set_mode (core, PANEL_MODE_MENU);
+			__clear_panels_menu (core);
+			RPanelsMenu *menu = panels->panelsMenu;
+			RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+			parent->selectedIndex = i;
+			RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+			(void)(child->cb (core));
+			__set_refresh_all (core, false, false);
+			free (word);
+			return true;
+		}
+	}
+	if (!strcmp (word, "Tab")) {
+		__handle_tab_new (core);
+		free (word);
+		return true;
+	}
+	if (word[0] == '[' && word[1] && word[2] == ']') {
+		return true;
+	}
+	if (atoi (word)) {
+		__handle_tab_nth (core, word[0]);
+		return true;
+	}
+	return false;
+}
+
+void __handle_mouse_on_menu(RCore *core, int x, int y) {
+	RPanels *panels = core->panels;
+	char *word = get_word_from_canvas_for_menu (core, panels, x, y);
+	RPanelsMenu *menu = panels->panelsMenu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	int i;
+	for (i = 0; i < parent->n_sub; i++) {
+		if (!strcmp (word, parent->sub[i]->name)) {
+			parent->selectedIndex = i;
+			(void)(parent->sub[parent->selectedIndex]->cb (core));
+			__update_menu_contents (core, menu, parent);
+			free (word);
+			return;
+		}
+	}
+	__clear_panels_menu (core);
+	__set_mode (core, PANEL_MODE_DEFAULT);
+	__get_cur_panel (panels)->view->refresh = true;
+}
+
+bool __drag_and_resize(RCore *core) {
+	RPanels *panels = core->panels;
+	if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
+		int x, y;
+		if (r_cons_get_click (&x, &y)) {
+			if (panels->mouse_on_edge_x) {
+				__update_edge_x (core, x - panels->mouse_orig_x);
+			}
+			if (panels->mouse_on_edge_y) {
+				__update_edge_y (core, y - panels->mouse_orig_y);
+			}
+			__set_refresh_all (core, false, false);
+		}
+		panels->mouse_on_edge_x = false;
+		panels->mouse_on_edge_y = false;
+		return true;
 	}
 	return false;
 }
