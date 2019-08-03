@@ -1663,22 +1663,31 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 	p->flags |= R_PRINT_FLAGS_HEADER;
 }
 
+static inline void getLineColor (RPrint *p, int k, int cols) {
+	RConsPrintablePalette *pal = &p->cons->context->pal;
+	const char *kol[5];
+	kol[0] = pal->nop;
+	kol[1] = pal->mov;
+	kol[2] = pal->cjmp;
+	kol[3] = pal->jmp;
+	kol[4] = pal->call;
+	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
+	if (show_colors) {
+		int idx = (int) ((k * 4) / cols);
+		const char *k = kol[idx];
+		p->cb_printf ("%s", k);
+	}
+}
+
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
 	r_return_if_fail (p && arr);
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
-	const bool bgFill = (p && (p->flags & R_PRINT_FLAGS_BGFILL));
 	bool useUtf8 = p->cons->use_utf8;
-	// bool useUtf8Curvy = p->cons->use_utf8_curvy;
-	const char *tr_corner = "."; // useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNE_CORNER_TR) : ".";
-	const char *br_corner = "'"; // useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BR : RUNE_CORNER_BR) : "'";
 	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
-	const char *h_line = "_"; // useUtf8 ? RUNE_LINE_HORIZ : "_";
+	const char *h_line = useUtf8 ? RUNE_LONG_LINE_HORIZ : "-";
 	char *firebow[6];
 	int i = 0, j;
 
-	for (i = 0; i < 6; i++) {
-		firebow[i] = p->cb_color (i, 6, bgFill);
-	}
 #define INC 5
 #if TOPLINE
 	if (arr[0] > 1) {
@@ -1694,9 +1703,15 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		p->cb_printf ("\n");
 	}
 #endif
+	// get the max of columns
+	int cols = 0;
+	for (i = 0; i < size; i++) {
+		cols = arr[i] > cols ? arr[i] : cols;
+	}
+	cols /= 5;
 	for (i = 0; i < size; i++) {
 		ut8 next = (i + 1 < size)? arr[i + 1]: 0;
-		int base = 0;
+		int base = 0, k = 0;
 		if (addr != UT64_MAX && step > 0) {
 			ut64 at = addr + (i * step);
 			if (p->cur_enabled) {
@@ -1715,56 +1730,44 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		} else {
 			p->cb_printf (v_line);
 		}
-		if (show_colors) {
-			int idx = (int) (arr[i] * 5 / 255);
-			const char *k = firebow[idx];
-			p->cb_printf ("%s", k);
-		}
 		if (next < INC) {
 			base = 1;
 		}
 		if (next < arr[i]) {
 			if (arr[i] > INC) {
 				for (j = 0; j < next + base; j += INC) {
-					if (bgFill) {
-						p->cb_printf (i ? " " : br_corner);
-					} else {
-						p->cb_printf (i ? tr_corner : br_corner);
-					}
+					getLineColor (p, k, cols);
+					p->cb_printf (h_line);
+					k++;
 				}
 			}
 			for (j = next + INC; j + base < arr[i]; j += INC) {
+				getLineColor (p, k, cols);
 				p->cb_printf (h_line);
+				k++;
 			}
 		} else {
-			if (i == 0) {
-				for (j = INC; j < arr[i] + base; j += INC) {
-					p->cb_printf (br_corner);
-				}
-			} else {
-				for (j = INC; j < arr[i] + base; j += INC) {
-					p->cb_printf (tr_corner);
-				}
-			}
-		}
-		if (show_colors) {
-			p->cb_printf ("%s%s", v_line, Color_RESET);
-		} else {
-			p->cb_printf (v_line);
+			getLineColor (p, k, cols);
+			p->cb_printf (h_line);
+			k++;
 		}
 		if (i + 1 == size) {
 			for (j = arr[i] + INC + base; j + base < next; j += INC) {
+				getLineColor (p, k, cols);
 				p->cb_printf (h_line);
+				k++;
 			}
 		} else if (arr[i + 1] > arr[i]) {
 			for (j = arr[i] + INC + base; j + base < next; j += INC) {
+				getLineColor (p, k, cols);
 				p->cb_printf (h_line);
+				k++;
 			}
 		}
+		if (show_colors) {
+			p->cb_printf ("%s", Color_RESET);
+		}
 		p->cb_printf ("\n");
-	}
-	for (i = 0; i < 6; i++) {
-		free (firebow[i]);
 	}
 }
 
