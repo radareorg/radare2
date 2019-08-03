@@ -1931,7 +1931,8 @@ static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			}
 			break;
 		case X86_OP_IMM:
-			if (INSOP (1).imm > 10) {
+			if ((INSOP (1).imm > 10) &&
+				(INSOP(0).reg != X86_REG_RSP) && (INSOP(0).reg != X86_REG_ESP)) {
 				op->ptr = INSOP (1).imm;
 			}
 			break;
