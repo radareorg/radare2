@@ -446,6 +446,8 @@ static void __toggle_window_mode(RCore *core);
 static bool __handle_mouse(RCore *core, RPanel *panel, int *key);
 static bool __handle_mouse_on_top(RCore *core, int x, int y);
 static void __handle_mouse_on_menu(RCore *core, int x, int y);
+static bool __handle_mouse_on_X(RCore *core, int x, int y);
+static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, int *key);
 
 /* modal */
 static void __exec_almighty(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db, RPanelLayout dir);
@@ -1842,6 +1844,9 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 				__handle_mouse_on_menu (core, x, y);
 				return true;
 			}
+			if (__handle_mouse_on_X (core, x, y)) {
+				return true;
+			}
 			if (__check_if_mouse_x_illegal(core, x) ||
 					__check_if_mouse_y_illegal(core, y)) {
 				panels->mouse_on_edge_x = false;
@@ -1853,56 +1858,16 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 			if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
 				return true;
 			}
+			if (__handle_mouse_on_panel (core, panel, x, y, key)) {
+				return true;
+			}
 			int h, w = r_cons_get_size (&h);
-			char *word = get_word_from_canvas (core, panels, x, y);
 			if (y == h) {
 				RPanel *p = __get_cur_panel (panels);
 				__split_panel_horizontal (core, p, p->model->title, p->model->cmd);
 			} else if (x == w) {
 				RPanel *p = __get_cur_panel (panels);
 				__split_panel_vertical (core, p, p->model->title, p->model->cmd);
-			} else {
-				// TODO: select nth panel here
-				const int idx = __get_panel_idx_in_pos (core, x, y);
-				if (idx == -1) {
-					return false;
-				}
-				RPanel *ppos = __get_panel(panels, idx);
-				const int TITLE_Y = ppos->view->pos.y + 2;
-				if (y == TITLE_Y && strcmp (word, " X ")) {
-					int fx = ppos->view->pos.x;
-					int fX = fx + ppos->view->pos.w;
-					__set_curnode (core, idx);
-					__set_refresh_all (core, true, true);
-					if (x > (fX - 13) && x < fX) {
-						__toggle_cache (core, __get_cur_panel (panels));
-					} else if (x > fx && x < (fx + 5)) {
-						__dismantle_del_panel (core, ppos, idx);
-					} else {
-						__create_almighty (core, __get_panel (panels, 0), panels->almighty_db);
-						__set_mode (core, PANEL_MODE_DEFAULT);
-					}
-					__set_refresh_all (core, false, false);
-					free (word);
-					return true;
-				}
-				if (word) {
-					if (__check_panel_type (panel, PANEL_CMD_FUNCTION) &&
-							__check_if_addr(word, strlen (word))) {
-						const ut64 addr = r_num_math (core->num, word);
-						r_core_seek (core, addr, 1);
-						__set_addr_by_type (core, PANEL_CMD_DISASSEMBLY, addr);
-					}
-					r_config_set (core->config, "scr.highlight", word);
-					free (word);
-				}
-				if (x >= ppos->view->pos.x && x < ppos->view->pos.x + 4) {
-					*key = 'c';
-					return false;
-				}
-				__set_curnode (core, idx);
-				__set_refresh_all (core, true, true);
-				return true;
 			}
 		} else {
 			return false;
@@ -1946,6 +1911,65 @@ bool __handle_mouse_on_top (RCore *core, int x, int y) {
 		return true;
 	}
 	return false;
+}
+
+static bool __handle_mouse_on_X(RCore *core, int x, int y) {
+	RPanels *panels = core->panels;
+	const int idx = __get_panel_idx_in_pos (core, x, y);
+	char *word = get_word_from_canvas (core, panels, x, y);
+	if (idx == -1) {
+		return false;
+	}
+	RPanel *ppos = __get_panel(panels, idx);
+	const int TITLE_Y = ppos->view->pos.y + 2;
+	if (y == TITLE_Y && strcmp (word, " X ")) {
+		int fx = ppos->view->pos.x;
+		int fX = fx + ppos->view->pos.w;
+		__set_curnode (core, idx);
+		__set_refresh_all (core, true, true);
+		if (x > (fX - 13) && x < fX) {
+			__toggle_cache (core, __get_cur_panel (panels));
+		} else if (x > fx && x < (fx + 5)) {
+			__dismantle_del_panel (core, ppos, idx);
+		} else {
+			__create_almighty (core, __get_panel (panels, 0), panels->almighty_db);
+			__set_mode (core, PANEL_MODE_DEFAULT);
+		}
+		__set_refresh_all (core, false, false);
+		free (word);
+		return true;
+	}
+	return false;
+}
+
+static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, int *key) {
+	RPanels *panels = core->panels;
+	int h;
+	(void)r_cons_get_size (&h);
+	const int idx = __get_panel_idx_in_pos (core, x, y);
+	char *word = get_word_from_canvas (core, panels, x, y);
+	if (idx == -1) {
+		return false;
+	}
+	RPanel *ppos = __get_panel(panels, idx);
+	if (word) {
+		if (__check_panel_type (panel, PANEL_CMD_FUNCTION) &&
+				__check_if_addr (word, strlen (word))) {
+			const ut64 addr = r_num_math (core->num, word);
+			r_core_seek (core, addr, 1);
+			__set_addr_by_type (core, PANEL_CMD_DISASSEMBLY, addr);
+		}
+		r_config_set (core->config, "scr.highlight", word);
+		free (word);
+		return true;
+	}
+	if (x >= ppos->view->pos.x && x < ppos->view->pos.x + 4) {
+		*key = 'c';
+		return false;
+	}
+	__set_curnode (core, idx);
+	__set_refresh_all (core, true, true);
+	return true;
 }
 
 void __handle_mouse_on_menu(RCore *core, int x, int y) {
