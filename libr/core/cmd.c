@@ -1665,6 +1665,17 @@ static int cmd_resize(void *data, const char *input) {
 	return true;
 }
 
+static int cmd_panels(void *data, const char *input) {
+	RCore *core = (RCore*) data;
+	if (core->vmode) {
+		return false;
+	}
+	core->vmode = true;
+	r_core_visual_panels_root (core, core->panels_root);
+	core->vmode = false;
+	return true;
+}
+
 static int cmd_visual(void *data, const char *input) {
 	RCore *core = (RCore*) data;
 	if (core->http_up) {
@@ -4712,9 +4723,9 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"t",        "type information (cparse)", cmd_type, cmd_type_init},
 		{"Text",     "Text log utility", cmd_log, cmd_log_init},
 		{"u",        "uname/undo", cmd_uname},
-		{"visual",   "enter visual mode", cmd_visual},
 		{"<",        "pipe into RCons.readChar", cmd_pipein},
-		{"Visual",   "enter visual mode", cmd_visual},
+		{"visual",   "enter visual mode", cmd_visual},
+		{"VisualPanels",   "enter visual mode", cmd_panels},
 		{"write",    "write bytes", cmd_write, cmd_write_init},
 		{"x",        "alias for px", cmd_hexdump},
 		{"yank",     "yank bytes", cmd_yank},
