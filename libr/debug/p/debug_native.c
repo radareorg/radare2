@@ -1062,7 +1062,67 @@ static int io_perms_to_prot (int io_perms) {
 	return prot_perms;
 }
 
-static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
+
+static int linux_map_thp (RDebug *dbg, ut64 addr, int size) {
+#ifndef __ANDROID__
+	RBuffer *buf = NULL;
+	char code[1024];
+	int ret = true;
+	char *asm_list[] = {
+		"x86", "x86.as",
+		"x64", "x86.as",
+		NULL
+	};
+	// In architectures where radare is supported, arm and x86, it is 2MB
+	const size_t thpsize = 1<<21;
+
+	if ((size%thpsize)) {
+		eprintf ("size not a power of huge pages size\n");
+		return false;
+	}
+
+	// In always mode, is more into mmap syscall level
+	// even though the address might not have the 'hg'
+	// vmflags
+	if (r_sys_thp_mode() != 1) {
+		eprintf ("transparent huge page mode is not in madvise mode\n");
+		return false;
+	}
+
+	int num = r_syscall_get_num (dbg->anal->syscall, "madvise");
+
+	snprintf (code, sizeof (code),
+		"sc_madvise@syscall(%d);\n"
+		"main@naked(0) { .rarg0 = sc_madvise(0x%08" PFMT64x ",%d, %d);break;\n"
+		"}\n",
+		num, addr, size, MADV_HUGEPAGE);
+	r_egg_reset (dbg->egg);
+	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
+	r_egg_load (dbg->egg, code, 0);
+	if (!r_egg_compile (dbg->egg)) {
+		eprintf ("Cannot compile.\n");
+		goto err_linux_map_thp;
+	}
+	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
+		eprintf ("r_egg_assemble: invalid assembly\n");
+		goto err_linux_map_thp;
+	}
+	buf = r_egg_get_bin (dbg->egg);
+	if (buf) {
+		r_reg_arena_push (dbg->reg);
+		ut64 tmpsz;
+		const ut8 *tmp = r_buf_data (buf, &tmpsz);
+		ret = r_debug_execute (dbg, tmp, tmpsz, 1) == 0;
+		r_reg_arena_pop (dbg->reg);
+	}
+err_linux_map_thp:
+	return ret;
+#else
+	return false;
+#endif
+}
+
+static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size, bool thp) {
 	RBuffer *buf = NULL;
 	RDebugMap* map = NULL;
 	char code[1024], *sc_name;
@@ -1111,6 +1171,12 @@ static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
 		map_addr = r_debug_execute (dbg, tmp, tmpsz, 1);
 		r_reg_arena_pop (dbg->reg);
 		if (map_addr != (ut64)-1) {
+			if (thp) {
+				if (!linux_map_thp (dbg, map_addr, size)) {
+					// Not overly dramatic
+					eprintf ("map promotion to huge page failed\n");
+				}
+			}
 			r_debug_map_sync (dbg);
 			map = r_debug_map_get (dbg, map_addr);
 		}
@@ -1159,13 +1225,15 @@ err_linux_map_dealloc:
 }
 #endif
 
-static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
+static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size, bool thp) {
 #if __APPLE__
+	(void)thp;
 	return xnu_map_alloc (dbg, addr, size);
 #elif __WINDOWS__
+	(void)thp;
 	return w32_map_alloc (dbg, addr, size);
 #elif __linux__
-	return linux_map_alloc (dbg, addr, size);
+	return linux_map_alloc (dbg, addr, size, thp);
 #else
 	// malloc not implemented for this platform
 	return NULL;

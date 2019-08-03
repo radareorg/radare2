@@ -313,10 +313,10 @@ R_API int r_debug_map_sync(RDebug *dbg) {
 	return (int)ret;
 }
 
-R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size) {
+R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 	RDebugMap *map = NULL;
 	if (dbg && dbg->h && dbg->h->map_alloc) {
-		map = dbg->h->map_alloc (dbg, addr, size);
+		map = dbg->h->map_alloc (dbg, addr, size, thp);
 	}
 	return map;
 }

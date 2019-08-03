@@ -523,6 +523,25 @@ R_API bool r_sys_aslr(int val) {
 	return ret;
 }
 
+R_API int r_sys_thp_mode(void) {
+#if __linux__
+	const char *thp = "/sys/kernel/mm/transparent_hugepage/enabled";
+	int sz;
+	int ret = 0;
+	char *val = r_file_slurp (thp, &sz);	
+	if (val) {
+		if (strstr (val, "[madvise]")) {
+			ret = 1;
+		} else if (strstr (val, "[always]")) {
+			ret = 2;
+		}
+		free (val);
+	}
+
+	return ret;
+#endif
+}
+
 #if __UNIX__
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	char *mysterr = NULL;
