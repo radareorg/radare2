@@ -1674,8 +1674,8 @@ static inline void getLineColor (RPrint *p, int k, int cols) {
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	if (show_colors) {
 		int idx = (int) ((k * 4) / cols);
-		const char *k = kol[idx];
-		p->cb_printf ("%s", k);
+		const char *str = kol[idx];
+		p->cb_printf ("%s", str);
 	}
 }
 
