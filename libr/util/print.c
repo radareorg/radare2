@@ -1665,17 +1665,30 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 
 static inline void getLineColor (RPrint *p, int k, int cols) {
 	RConsPrintablePalette *pal = &p->cons->context->pal;
+	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
 	const char *kol[5];
 	kol[0] = pal->nop;
 	kol[1] = pal->mov;
 	kol[2] = pal->cjmp;
 	kol[3] = pal->jmp;
 	kol[4] = pal->call;
+	const char *bgkol[5];
+	bgkol[0] = Color_BGBLUE;
+	bgkol[1] = Color_BGWHITE;
+	bgkol[2] = Color_BGGREEN;
+	bgkol[3] = Color_BGGREEN;
+	bgkol[4] = Color_BGGREEN;
+
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	if (show_colors) {
 		int idx = (int) ((k * 4) / cols);
-		const char *str = kol[idx];
-		p->cb_printf ("%s", str);
+		if (p->fatlines) {
+			const char *str = bgkol[idx];
+			p->cb_printf ("%s%s", str, " ");
+		} else {
+			const char *str = kol[idx];
+			p->cb_printf ("%s%s", str, h_line);
+		}
 	}
 }
 
@@ -1684,9 +1697,8 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	bool useUtf8 = p->cons->use_utf8;
 	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
-	const char *h_line = useUtf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	char *firebow[6];
 	int i = 0, j;
+
 
 #define INC 5
 #if TOPLINE
@@ -1737,30 +1749,25 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 			if (arr[i] > INC) {
 				for (j = 0; j < next + base; j += INC) {
 					getLineColor (p, k, cols);
-					p->cb_printf (h_line);
 					k++;
 				}
 			}
 			for (j = next + INC; j + base < arr[i]; j += INC) {
 				getLineColor (p, k, cols);
-				p->cb_printf (h_line);
 				k++;
 			}
 		} else {
 			getLineColor (p, k, cols);
-			p->cb_printf (h_line);
 			k++;
 		}
 		if (i + 1 == size) {
 			for (j = arr[i] + INC + base; j + base < next; j += INC) {
 				getLineColor (p, k, cols);
-				p->cb_printf (h_line);
 				k++;
 			}
 		} else if (arr[i + 1] > arr[i]) {
 			for (j = arr[i] + INC + base; j + base < next; j += INC) {
 				getLineColor (p, k, cols);
-				p->cb_printf (h_line);
 				k++;
 			}
 		}

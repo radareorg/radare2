@@ -2125,6 +2125,13 @@ static bool cb_scrnkey(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scr_fat(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->print->fatlines = node->i_value;
+	return true;
+}
+
 static bool cb_scrprompt(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3458,6 +3465,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("scr.prompt.flag", "false", "Show flag name in the prompt");
 	SETPREF ("scr.prompt.sect", "false", "Show section name in the prompt");
 	SETPREF ("scr.tts", "false", "Use tts if available by a command (see ic)");
+	SETCB ("scr.fat.lines", "true", &cb_scr_fat, "Use fat lines for p based commands");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by r2 -q)");
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF ("scr.seek", "", "Seek to the specified address on startup");
