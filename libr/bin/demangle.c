@@ -81,6 +81,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 		str += 4;
 	}
 	if (o) {
+		bool found = false;
 		r_list_foreach (o->libs, iter, lib) {
 			size_t len = strlen (lib);
 			if (!r_str_ncasecmp (str, lib, len)) {
@@ -88,8 +89,12 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 				if (*str == '_') {
 					str++;
 				}
+				found = true;
 				break;
 			}
+		}
+		if (!found) {
+			lib = NULL;
 		}
 		size_t len = strlen (bin->file);
 		if (!r_str_ncasecmp (str, bin->file, len)) {
