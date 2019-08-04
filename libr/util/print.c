@@ -114,7 +114,11 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 		for (j = 0; j < cols; j++) {
 			int realJ = j * len / cols;
 			if (255 - buf[realJ] < threshold) {
-				p->cb_printf (vline);
+				if (p->histblock) {
+					p->cb_printf ("%s%s%s", Color_BGGRAY, " ", Color_RESET);
+				} else {
+					p->cb_printf (vline);
+				}
 			} else if (i + 1 == rows) {
 				p->cb_printf ("_");
 			} else {
@@ -1666,7 +1670,7 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 	p->flags |= R_PRINT_FLAGS_HEADER;
 }
 
-static inline void getLineColor (RPrint *p, int k, int cols) {
+static inline void printHistBlock (RPrint *p, int k, int cols) {
 	RConsPrintablePalette *pal = &p->cons->context->pal;
 	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
 	const char *kol[5];
@@ -1687,10 +1691,16 @@ static inline void getLineColor (RPrint *p, int k, int cols) {
 		int idx = (int) ((k * 4) / cols);
 		if (p->histblock) {
 			const char *str = bgkol[idx];
-			p->cb_printf ("%s%s", str, " ");
+			p->cb_printf ("%s%s%s", str, " ", Color_RESET);
 		} else {
 			const char *str = kol[idx];
-			p->cb_printf ("%s%s", str, h_line);
+			p->cb_printf ("%s%s%s", str, h_line, Color_RESET);
+		}
+	} else {
+		if (p->histblock) {
+			p->cb_printf ("%s%s%s", Color_BGGRAY, " ", Color_RESET);
+		} else {
+			p->cb_printf ("%s", h_line);
 		}
 	}
 }
@@ -1741,7 +1751,7 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 			} else {
 				p->cb_printf ("0x%08" PFMT64x " ", at);
 			}
-			p->cb_printf ("%02x %04x %s", i, arr[i], v_line);
+			p->cb_printf ("%03x %04x %s", i, arr[i], v_line);
 		} else {
 			p->cb_printf (v_line);
 		}
@@ -1751,26 +1761,26 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		if (next < arr[i]) {
 			if (arr[i] > INC) {
 				for (j = 0; j < next + base; j += INC) {
-					getLineColor (p, k, cols);
+					printHistBlock (p, k, cols);
 					k++;
 				}
 			}
 			for (j = next + INC; j + base < arr[i]; j += INC) {
-				getLineColor (p, k, cols);
+				printHistBlock (p, k, cols);
 				k++;
 			}
 		} else {
-			getLineColor (p, k, cols);
+			printHistBlock (p, k, cols);
 			k++;
 		}
 		if (i + 1 == size) {
 			for (j = arr[i] + INC + base; j + base < next; j += INC) {
-				getLineColor (p, k, cols);
+				printHistBlock (p, k, cols);
 				k++;
 			}
 		} else if (arr[i + 1] > arr[i]) {
 			for (j = arr[i] + INC + base; j + base < next; j += INC) {
-				getLineColor (p, k, cols);
+				printHistBlock (p, k, cols);
 				k++;
 			}
 		}
