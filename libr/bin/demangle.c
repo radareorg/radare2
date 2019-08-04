@@ -63,13 +63,12 @@ R_API int r_bin_demangle_type(const char *str) {
 }
 
 R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
-	r_return_val_if_fail (bf && str, NULL);
 	int type = -1;
-	if (!*str) {
+	if (!str || !*str) {
 		return NULL;
 	}
-	RBin *bin = bf->rbin;
-	RBinObject *o = bf->o;
+	RBin *bin = bf? bf->rbin: NULL;
+	RBinObject *o = bf? bf->o: NULL;
 	RListIter *iter;
 	const char *lib;
 	if (!strncmp (str, "reloc.", 6)) {
