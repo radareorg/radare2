@@ -75,12 +75,19 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 	// int realrows = rows * 2;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
 	RConsPrintablePalette *pal = &p->cons->context->pal;
+	const char *vline = p->cons->use_utf8 ? RUNE_LINE_VERT : "|";
 	const char *kol[5];
 	kol[0] = pal->call;
 	kol[1] = pal->jmp;
 	kol[2] = pal->cjmp;
 	kol[3] = pal->mov;
 	kol[4] = pal->nop;
+	const char *bgkol[5];
+	bgkol[0] = Color_BGGREEN;
+	bgkol[1] = Color_BGGREEN;
+	bgkol[2] = Color_BGGREEN;
+	bgkol[3] = Color_BGWHITE;
+	bgkol[4] = Color_BGBLUE;
 	if (colors) {
 		for (i = 0; i < rows; i++) {
 			int threshold = i * (0xff / rows);
@@ -88,10 +95,10 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 				int realJ = j * len / cols;
 	 			if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
 					int koli = i * 5 / rows;
-					if (p->cons->use_utf8) {
-						p->cb_printf ("%s%s%s", kol[koli], RUNE_LINE_VERT, Color_RESET);
+					if (p->fatlines) {
+						p->cb_printf ("%s%s%s", bgkol[koli], " ", Color_RESET);
 					} else {
-					 	p->cb_printf ("%s|" Color_RESET, kol[koli]);
+						p->cb_printf ("%s%s%s", kol[koli], vline, Color_RESET);
 					}
 				} else {
 					p->cb_printf (" ");
@@ -107,11 +114,7 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 		for (j = 0; j < cols; j++) {
 			int realJ = j * len / cols;
 			if (255 - buf[realJ] < threshold) {
-				if (p->cons->use_utf8) {
-					p->cb_printf (RUNE_LINE_VERT);
-				} else {
-					p->cb_printf ("|");
-				}
+				p->cb_printf (vline);
 			} else if (i + 1 == rows) {
 				p->cb_printf ("_");
 			} else {
