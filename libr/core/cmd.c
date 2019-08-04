@@ -1670,6 +1670,10 @@ static int cmd_panels(void *data, const char *input) {
 	if (core->vmode) {
 		return false;
 	}
+	if (*input == 'i') {
+		r_sys_cmdf ("v%s", input);
+		return false;
+	}
 	core->vmode = true;
 	r_core_visual_panels_root (core, core->panels_root);
 	core->vmode = false;
