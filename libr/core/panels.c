@@ -1951,6 +1951,8 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 	if (idx == -1) {
 		return false;
 	}
+	__set_curnode (core, idx);
+	__set_refresh_all (core, true, true);
 	RPanel *ppos = __get_panel(panels, idx);
 	if (word) {
 		if (__check_panel_type (panel, PANEL_CMD_FUNCTION) &&
@@ -1961,14 +1963,11 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 		}
 		r_config_set (core->config, "scr.highlight", word);
 		free (word);
-		return true;
 	}
 	if (x >= ppos->view->pos.x && x < ppos->view->pos.x + 4) {
 		*key = 'c';
 		return false;
 	}
-	__set_curnode (core, idx);
-	__set_refresh_all (core, true, true);
 	return true;
 }
 
@@ -4277,10 +4276,10 @@ RStrBuf *__draw_menu(RCore *core, RPanelsMenuItem *item) {
 	int i;
 	for (i = 0; i < item->n_sub; i++) {
 		if (i == item->selectedIndex) {
-			r_strbuf_appendf (buf, "> %s %s"Color_RESET,
+			r_strbuf_appendf (buf, " %s %s"Color_RESET,
 					core->cons->context->pal.graph_box2, item->sub[i]->name);
 		} else {
-			r_strbuf_appendf (buf, "   %s", item->sub[i]->name);
+			r_strbuf_appendf (buf, "  %s", item->sub[i]->name);
 		}
 		r_strbuf_append (buf, "          \n");
 	}
@@ -4789,8 +4788,7 @@ void __panels_refresh(RCore *core) {
 	if (!can) {
 		return;
 	}
-	char title[1024];
-	char str[1024];
+	RStrBuf *title = r_strbuf_new (" ");
 	int i, h, w = r_cons_get_size (&h);
 	bool utf8 = r_config_get_i (core->config, "scr.utf8");
 	if (firstRun) {
@@ -4823,43 +4821,34 @@ void __panels_refresh(RCore *core) {
 	panels->panelsMenu->n_refresh = 0;
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
 	r_cons_canvas_fill (can, -can->sx, -can->sy, w, 1, ' ');
-	title[0] = 0;
-	if (panels->mode == PANEL_MODE_MENU) {
-		strcpy (title, "> ");
-	}
 	const char *color = core->cons->context->pal.graph_box2;
 	if (panels->mode == PANEL_MODE_ZOOM) {
-		snprintf (str, sizeof (title) - 1, "%s Zoom Mode | Press Enter or q to quit"Color_RESET, color);
-		strcat (title, str);
+		r_strbuf_appendf (title, "%s Zoom Mode | Press Enter or q to quit"Color_RESET, color);
 	} else if (panels->mode == PANEL_MODE_WINDOW) {
-		snprintf (str, sizeof (title) - 1, "%s Window Mode | hjkl: move around the panels | q: quit the mode | Enter: Zoom mode"Color_RESET, color);
-		strcat (title, str);
+		r_strbuf_appendf (title, "%s Window Mode | hjkl: move around the panels | q: quit the mode | Enter: Zoom mode"Color_RESET, color);
 	} else {
 		RPanelsMenuItem *parent = panels->panelsMenu->root;
 		for (i = 0; i < parent->n_sub; i++) {
 			RPanelsMenuItem *item = parent->sub[i];
 			if (panels->mode == PANEL_MODE_MENU && i == parent->selectedIndex) {
-				snprintf (str, sizeof (title) - 1, "%s[%s] "Color_RESET, color, item->name);
+				r_strbuf_appendf (title, "%s[%s] "Color_RESET, color, item->name);
 			} else {
-				snprintf (str, sizeof (title) - 1, "%s  ", item->name);
+				r_strbuf_appendf (title, "%s  ", item->name);
 			}
-			strcat (title, str);
 		}
 	}
 	if (panels->mode == PANEL_MODE_MENU) {
 		r_cons_canvas_write (can, Color_BLUE);
-		r_cons_canvas_write (can, title);
+		r_cons_canvas_write (can, r_strbuf_get (title));
 		r_cons_canvas_write (can, Color_RESET);
 	} else {
 		r_cons_canvas_write (can, Color_RESET);
-		r_cons_canvas_write (can, title);
+		r_cons_canvas_write (can, r_strbuf_get (title));
 	}
-
-	snprintf (title, sizeof (title) - 1,
-		"[0x%08"PFMT64x "]", core->offset);
-	i = -can->sx + w - strlen (title);
+	r_strbuf_setf (title, "[0x%08"PFMT64x "]", core->offset);
+	i = -can->sx + w - r_strbuf_length (title);
 	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
-	r_cons_canvas_write (can, title);
+	r_cons_canvas_write (can, r_strbuf_get (title));
 
 	int tab_pos = i;
 	for (i = core->panels_root->n_panels; i > 0; i--) {
@@ -4870,26 +4859,26 @@ void __panels_refresh(RCore *core) {
 		}
 		if (i - 1 == core->panels_root->cur_panels) {
 			if (!name) {
-				snprintf (title, sizeof (title) - 1, "%s[%d] "Color_RESET, color, i);
+				r_strbuf_setf (title, "%s[%d] "Color_RESET, color, i);
 			} else {
-				snprintf (title, sizeof (title) - 1, "%s[%s] "Color_RESET, color, name);
+				r_strbuf_setf (title, "%s[%s] "Color_RESET, color, name);
 			}
-			tab_pos -= r_str_ansi_len (title);
+			tab_pos -= r_str_ansi_len (r_strbuf_get (title));
 		} else {
 			if (!name) {
-				snprintf (title, sizeof (title) - 1, "%d ", i);
+				r_strbuf_setf (title, "%d ", i);
 			} else {
-				snprintf (title, sizeof (title) - 1, "%s ", name);
+				r_strbuf_setf (title, "%s ", name);
 			}
-			tab_pos -= strlen (title);
+			tab_pos -= r_strbuf_length (title);
 		}
 		(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
-		r_cons_canvas_write (can, title);
+		r_cons_canvas_write (can, r_strbuf_get (title));
 	}
-	snprintf (title, sizeof (title) - 1, "Tab ");
-	tab_pos -= strlen (title);
+	r_strbuf_set (title, "Tab ");
+	tab_pos -= r_strbuf_length (title);
 	(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
-	r_cons_canvas_write (can, title);
+	r_cons_canvas_write (can, r_strbuf_drain (title));
 
 	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 		__print_snow (panels);
