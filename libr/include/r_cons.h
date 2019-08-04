@@ -398,7 +398,7 @@ typedef struct r_cons_canvas_t {
 #define RUNE_CURVE_CORNER_TR "╮"
 #define RUNE_CURVE_CORNER_BR "╯"
 #define RUNE_CURVE_CORNER_BL "╰"
-
+#define RUNE_LONG_LINE_HORIZ "―"
 #define UTF_CIRCLE "\u25EF"
 
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
