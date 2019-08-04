@@ -70,7 +70,7 @@ typedef struct r_print_t {
 	int width;
 	int limit;
 	int bits;
-	bool fatlines;
+	bool histblock;
 	// true if the cursor is enabled, false otherwise
 	bool cur_enabled;
 	// offset of the selected byte from the first displayed one

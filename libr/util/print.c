@@ -95,7 +95,7 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 				int realJ = j * len / cols;
 	 			if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
 					int koli = i * 5 / rows;
-					if (p->fatlines) {
+					if (p->histblock) {
 						p->cb_printf ("%s%s%s", bgkol[koli], " ", Color_RESET);
 					} else {
 						p->cb_printf ("%s%s%s", kol[koli], vline, Color_RESET);
@@ -1685,7 +1685,7 @@ static inline void getLineColor (RPrint *p, int k, int cols) {
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	if (show_colors) {
 		int idx = (int) ((k * 4) / cols);
-		if (p->fatlines) {
+		if (p->histblock) {
 			const char *str = bgkol[idx];
 			p->cb_printf ("%s%s", str, " ");
 		} else {
