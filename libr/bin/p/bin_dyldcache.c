@@ -1245,7 +1245,7 @@ void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		sym->name = strdup (symbols[i].name);
 		sym->vaddr = symbols[i].addr;
 		if (sym->name[0] == '_') {
-			char *dn = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr);
+			char *dn = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr, false);
 			if (dn) {
 				sym->dname = dn;
 				char *p = strchr (dn, '.');

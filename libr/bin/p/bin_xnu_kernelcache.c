@@ -1115,7 +1115,7 @@ static void symbols_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFile
 		sym->name = strdup (symbols[i].name);
 		sym->vaddr = symbols[i].addr;
 		if (sym->name[0] == '_') {
-			char *dn = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr);
+			char *dn = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr, false);
 			if (dn) {
 				sym->dname = dn;
 				char *p = strchr (dn, '.');

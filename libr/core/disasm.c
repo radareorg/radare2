@@ -1770,6 +1770,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		return;
 	}
 	bool demangle = r_config_get_i (core->config, "bin.demangle");
+	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
 	bool call = r_config_get_i (core->config, "asm.calls");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
@@ -1777,7 +1778,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		return;
 	}
 	if (demangle) {
-		fcn_name = r_bin_demangle (core->bin->cur, lang, f->name, f->addr);
+		fcn_name = r_bin_demangle (core->bin->cur, lang, f->name, f->addr, keep_lib);
 		if (fcn_name) {
 			fcn_name_alloc = true;
 		} else {
@@ -2166,6 +2167,7 @@ static void ds_show_flags(RDisasmState *ds) {
 	int count = 0;
 	bool outline = !ds->flags_inline;
 	const char *comma = "";
+	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
 	r_list_foreach (uniqlist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function
@@ -2252,7 +2254,7 @@ static void ds_show_flags(RDisasmState *ds) {
 				case_prev = case_current;
 			} else {
 				const char *lang = r_config_get (core->config, "bin.lang");
-				char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->offset);
+				char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->offset, keep_lib);
 				if (!name) {
 					const char *n = flag->realname? flag->realname: flag->name;
 					if (n) {
@@ -4054,6 +4056,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 	RCore *core = ds->core;
 	const char *lang = r_config_get (core->config, "bin.lang");
 	bool demangle = r_config_get_i (core->config, "asm.demangle");
+	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
 	RBinReloc *rel = r_core_getreloc (core, ds->at, ds->analop.size);
 	if (rel) {
 		int cstrlen = 0;
@@ -4065,12 +4068,12 @@ static void ds_print_relocs(RDisasmState *ds) {
 		r_cons_memset (' ', len);
 		if (rel->import) {
 			if (demangle) {
-				demname = r_bin_demangle (core->bin->cur, lang, rel->import->name, rel->vaddr);
+				demname = r_bin_demangle (core->bin->cur, lang, rel->import->name, rel->vaddr, keep_lib);
 			}
 			r_cons_printf ("; RELOC %d %s", rel->type, demname ? demname : rel->import->name);
 		} else if (rel->symbol) {
 			if (demangle) {
-				demname = r_bin_demangle (core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr);
+				demname = r_bin_demangle (core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr, keep_lib);
 			}
 			r_cons_printf ("; RELOC %d %s @ 0x%08" PFMT64x " + 0x%" PFMT64x,
 					rel->type, demname ? demname : rel->symbol->name,

@@ -68,7 +68,7 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 	// demangle symbol name depending on the language specs if any
 	if (bf && bf->o && bf->o->lang) {
 		const char *lang = r_bin_lang_tostring (bf->o->lang);
-		char *dn = r_bin_demangle (bf, lang, sym->name, sym->vaddr);
+		char *dn = r_bin_demangle (bf, lang, sym->name, sym->vaddr, false);
 		if (dn && *dn) {
 			sym->dname = dn;
 			// XXX this is wrong but is required for this test to pass
