@@ -3266,6 +3266,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			cs_open (CS_ARCH_ARM, mode, &handle);
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 		if (ret != CS_ERR_OK) {
+			handle = 0;
 			return -1;
 		}
 	}

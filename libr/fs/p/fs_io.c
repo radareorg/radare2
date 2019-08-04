@@ -45,7 +45,7 @@ static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 	if (res) {
 		int encoded_size = strlen (res);
 		if (encoded_size != len * 2) {
-			eprintf ("Wrong size\n");
+			eprintf ("Unexpected size (%d vs %d)\n", encoded_size, len*2);
 			R_FREE (res);
 			return false;
 		}

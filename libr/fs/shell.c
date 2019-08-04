@@ -279,6 +279,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			eprintf (
 				"Commands:\n"
 				" !cmd        ; escape to system\n"
+				" :cmd        ; escape to the r2 repl\n"
 				" ls [path]   ; list current directory\n"
 				" cd path     ; change current directory\n"
 				" cat file    ; print contents of file\n"

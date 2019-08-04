@@ -142,10 +142,20 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 			input = (char *)r_str_trim_ro (input);
 			ptr = (char*)r_str_trim_ro (ptr);
-			if (!r_fs_mount (core->fs, input, ptr, off)) {
-				if (!r_fs_mount (core->fs, ptr, input, off)) {
-					eprintf ("Cannot mount %s\n", input);
+
+			const char *mountp = input;
+			const char *fstype = ptr;
+			if (*mountp != '/') {
+				if (*fstype != '/') {
+					eprintf ("Invalid mountpoint\n");
+					return 0;
 				}
+				mountp = ptr;
+				fstype = input;
+			}
+
+			if (!r_fs_mount (core->fs, fstype, mountp, off)) {
+				eprintf ("Cannot mount %s\n", input);
 			}
 		} else {
 			if (!(ptr = r_fs_name (core->fs, core->offset))) {
