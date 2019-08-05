@@ -1135,7 +1135,7 @@ typedef struct r_panels_t {
 	bool autoUpdate;
 	bool mouse_on_edge_x;
 	bool mouse_on_edge_y;
-	RPanelsMenu *panelsMenu;
+	RPanelsMenu *panels_menu;
 	Sdb *db;
 	Sdb *rotate_db;
 	Sdb *almighty_db;
