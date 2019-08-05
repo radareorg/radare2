@@ -62,7 +62,7 @@ R_API int r_bin_demangle_type(const char *str) {
 	return R_BIN_NM_NONE;
 }
 
-R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 vaddr) {
+R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
 	int type = -1;
 	if (!str || !*str) {
 		return NULL;
@@ -81,6 +81,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 		str += 4;
 	}
 	if (o) {
+		bool found = false;
 		r_list_foreach (o->libs, iter, lib) {
 			size_t len = strlen (lib);
 			if (!r_str_ncasecmp (str, lib, len)) {
@@ -88,7 +89,19 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 				if (*str == '_') {
 					str++;
 				}
+				found = true;
 				break;
+			}
+		}
+		if (!found) {
+			lib = NULL;
+		}
+		size_t len = strlen (bin->file);
+		if (!r_str_ncasecmp (str, bin->file, len)) {
+			lib = bin->file;
+			str += len;
+			if (*str == '_') {
+				str++;
 			}
 		}
 	}
@@ -107,16 +120,22 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	if (type == -1) {
 		type = r_bin_lang_type (bf, def, str);
 	}
+	char *demangled = NULL;
 	switch (type) {
-	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);
-	case R_BIN_NM_RUST: return r_bin_demangle_rust (bf, str, vaddr);
-	case R_BIN_NM_OBJC: return r_bin_demangle_objc (NULL, str);
-	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str, bin? bin->demanglercmd: false);
-	case R_BIN_NM_CXX: return r_bin_demangle_cxx (bf, str, vaddr);
-	case R_BIN_NM_MSVC: return r_bin_demangle_msvc (str);
-	case R_BIN_NM_DLANG: return r_bin_demangle_plugin (bin, "dlang", str);
+	case R_BIN_NM_JAVA: demangled = r_bin_demangle_java (str); break;
+	case R_BIN_NM_RUST: demangled = r_bin_demangle_rust (bf, str, vaddr); break;
+	case R_BIN_NM_OBJC: demangled = r_bin_demangle_objc (NULL, str); break;
+	case R_BIN_NM_SWIFT: demangled = r_bin_demangle_swift (str, bin? bin->demanglercmd: false); break;
+	case R_BIN_NM_CXX: demangled = r_bin_demangle_cxx (bf, str, vaddr); break;
+	case R_BIN_NM_MSVC: demangled = r_bin_demangle_msvc (str); break;
+	case R_BIN_NM_DLANG: demangled = r_bin_demangle_plugin (bin, "dlang", str); break;
 	}
-	return NULL;
+	if (libs && demangled && lib) {
+		char *d = r_str_newf ("%s_%s", lib, demangled);
+		free (demangled);
+		demangled = d;
+	}
+	return demangled;
 }
 
 #ifdef TEST

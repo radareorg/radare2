@@ -763,7 +763,7 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id);
 R_API void r_bin_mem_free(void *data);
 
 // demangle functions
-R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr);
+R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr, bool libs);
 R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_msvc(const char *str);
