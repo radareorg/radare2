@@ -3510,8 +3510,19 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 static void ds_begin_nl_comment(RDisasmState *ds) {
 	if (ds->cmtcount > 0 && ds->show_comment_right) {
 		ds_newline (ds);
-	}
-	if (ds->cmtcount > 0 || !ds->show_comment_right) {
+		ds_begin_line (ds);
+		ds_setup_print_pre (ds, false, false);
+		if (!ds->linesright && ds->show_lines_bb && ds->line) {
+			RAnalRefStr *refstr = r_anal_reflines_str (ds->core, ds->at,
+			                    ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
+			char *refline = refstr->str;
+			char *reflinecol = refstr->cols;
+			ds_print_ref_lines (refline, reflinecol, ds);
+			free (refline);
+			free (reflinecol);
+			free (refstr);
+		}
+	} else if (ds->cmtcount > 0 || !ds->show_comment_right) {
 		ds_begin_line (ds);
 		ds_pre_xrefs (ds, false);
 	}
