@@ -4103,9 +4103,21 @@ void __print_stack_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
 	const int delta = r_config_get_i (core->config, "stack.delta");
+	const int bits = r_config_get_i (core->config, "asm.bits");
 	const char sign = (delta < 0)? '+': '-';
 	const int absdelta = R_ABS (delta);
-	const char *cmdstr = r_core_cmd_strf (core, "%s%c%d", panel->model->cmd, sign, absdelta);
+	char *cmd = r_str_newf ("%s%s ", PANEL_CMD_STACK, bits == 32 ? "w" : "q");
+	int n = r_str_split (panel->model->cmd, ' ');
+	int i;
+	for (i = 0; i < n; i++) {
+		const char *s = r_str_word_get0 (panel->model->cmd, i);
+		if (strncmp (s, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
+			cmd = r_str_append (cmd, s);
+			break;
+		}
+	}
+	panel->model->cmd = cmd;
+	const char *cmdstr = r_core_cmd_str (core, r_str_newf ("%s%c%d", cmd, sign, absdelta));
 	__update_panel_contents (core, panel, cmdstr);
 }
 
