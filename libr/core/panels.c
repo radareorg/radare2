@@ -1275,7 +1275,7 @@ int __add_cmd_panel(void *user) {
 	if (!__check_panel_num (core)) {
 		return 0;
 	}
-	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	const char *cmd = __search_db (core, child->name);
@@ -1326,7 +1326,7 @@ int __add_cmdf_panel(RCore *core, char *input, char *str) {
 	}
 	int h;
 	(void)r_cons_get_size (&h);
-	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	__adjust_side_panels (core);
@@ -1888,7 +1888,7 @@ bool __handle_mouse_on_top (RCore *core, int x, int y) {
 		if (!strcmp (word, menus[i])) {
 			__set_mode (core, PANEL_MODE_MENU);
 			__clear_panels_menu (core);
-			RPanelsMenu *menu = panels->panelsMenu;
+			RPanelsMenu *menu = panels->panels_menu;
 			RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 			parent->selectedIndex = i;
 			RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
@@ -1974,17 +1974,20 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 void __handle_mouse_on_menu(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
 	char *word = get_word_from_canvas_for_menu (core, panels, x, y);
-	RPanelsMenu *menu = panels->panelsMenu;
-	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
-	int i;
-	for (i = 0; i < parent->n_sub; i++) {
-		if (!strcmp (word, parent->sub[i]->name)) {
-			parent->selectedIndex = i;
-			(void)(parent->sub[parent->selectedIndex]->cb (core));
-			__update_menu_contents (core, menu, parent);
-			free (word);
-			return;
+	RPanelsMenu *menu = panels->panels_menu;
+	int i, d = menu->depth - 1;
+	while (d) {
+		RPanelsMenuItem *parent = menu->history[d--];
+		for (i = 0; i < parent->n_sub; i++) {
+			if (!strcmp (word, parent->sub[i]->name)) {
+				parent->selectedIndex = i;
+				(void)(parent->sub[parent->selectedIndex]->cb (core));
+				__update_menu_contents (core, menu, parent);
+				free (word);
+				return;
+			}
 		}
+		__del_menu (core);
 	}
 	__clear_panels_menu (core);
 	__set_mode (core, PANEL_MODE_DEFAULT);
@@ -3120,7 +3123,7 @@ int __debugger_cb(void *user) {
 int __settings_decompiler_cb(void *user) {
 	RCore *core = (RCore *)user;
 	RPanelsRoot *root = core->panels_root;
-	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	const char *pdc_next = child->name;
@@ -3175,7 +3178,7 @@ int __show_all_decompiler_cb(void *user) {
 
 int __load_layout_saved_cb(void *user) {
 	RCore *core = (RCore *)user;
-	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	if (!__load_saved_panels_layout (core, child->name)) {
@@ -3183,7 +3186,7 @@ int __load_layout_saved_cb(void *user) {
 		__panels_layout (core->panels);
 	}
 	__set_curnode (core, 0);
-	core->panels->panelsMenu->depth = 1;
+	core->panels->panels_menu->depth = 1;
 	__set_mode (core, PANEL_MODE_DEFAULT);
 	return 0;
 }
@@ -3194,7 +3197,7 @@ int __load_layout_default_cb(void *user) {
 	__create_default_panels (core);
 	__panels_layout (core->panels);
 	__set_refresh_all (core, false, false);
-	core->panels->panelsMenu->depth = 1;
+	core->panels->panels_menu->depth = 1;
 	__set_mode (core, PANEL_MODE_DEFAULT);
 	return 0;
 }
@@ -3258,7 +3261,7 @@ int __fill_cb(void *user) {
 
 int __settings_colors_cb(void *user) {
 	RCore *core = (RCore *)user;
-	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	r_str_ansi_filter (child->name, NULL, NULL, -1);
@@ -3276,7 +3279,7 @@ int __settings_colors_cb(void *user) {
 
 int __config_toggle_cb(void *user) {
 	RCore *core = (RCore *)user;
-	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	RStrBuf *tmp = r_strbuf_new (child->name);
@@ -3296,7 +3299,7 @@ int __config_toggle_cb(void *user) {
 
 int __config_value_cb(void *user) {
 	RCore *core = (RCore *)user;
-	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	RStrBuf *tmp = r_strbuf_new (child->name);
@@ -4174,7 +4177,7 @@ void __reset_snow(RPanels *panels) {
 
 int __open_menu_cb (void *user) {
 	RCore* core = (RCore *)user;
-	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	if (menu->depth < 2) {
@@ -4210,7 +4213,7 @@ void __add_menu(RCore *core, const char *parent, const char *name, RPanelsMenuCa
 		p_item = (RPanelsMenuItem *)addr;
 		ht_pp_insert (panels->mht, sdb_fmt ("%s.%s", parent, name), item);
 	} else {
-		p_item = panels->panelsMenu->root;
+		p_item = panels->panels_menu->root;
 		ht_pp_insert (panels->mht, sdb_fmt ("%s", name), item);
 	}
 	item->n_sub = 0;
@@ -4251,13 +4254,13 @@ void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenuUpdateC
 	if (cb) {
 		cb (core, parent);
 	}
-	RPanelsMenu *menu = panels->panelsMenu;
+	RPanelsMenu *menu = panels->panels_menu;
 	__update_menu_contents (core, menu, p_item);
 }
 
 void __del_menu(RCore *core) {
 	RPanels *panels = core->panels;
-	RPanelsMenu *menu = panels->panelsMenu;
+	RPanelsMenu *menu = panels->panels_menu;
 	int i;
 	menu->depth--;
 	for (i = 1; i < menu->depth; i++) {
@@ -4370,17 +4373,17 @@ void __init_menu_disasm_settings_layout (void *_core, const char *parent) {
 
 bool __init_panels_menu(RCore *core) {
 	RPanels *panels = core->panels;
-	RPanelsMenu *panelsMenu = R_NEW0 (RPanelsMenu);
-	if (!panelsMenu) {
+	RPanelsMenu *panels_menu = R_NEW0 (RPanelsMenu);
+	if (!panels_menu) {
 		return false;
 	}
 	RPanelsMenuItem *root = R_NEW0 (RPanelsMenuItem);
 	if (!root) {
-		R_FREE (panelsMenu);
+		R_FREE (panels_menu);
 		return false;
 	}
-	panels->panelsMenu = panelsMenu;
-	panelsMenu->root = root;
+	panels->panels_menu = panels_menu;
+	panels_menu->root = root;
 	root->n_sub = 0;
 	root->name = NULL;
 	root->sub = NULL;
@@ -4616,9 +4619,9 @@ bool __init_panels_menu(RCore *core) {
 		i++;
 	}
 
-	panelsMenu->history = calloc (8, sizeof (RPanelsMenuItem *));
+	panels_menu->history = calloc (8, sizeof (RPanelsMenuItem *));
 	__clear_panels_menu (core);
-	panelsMenu->refreshPanels = calloc (8, sizeof (RPanel *));
+	panels_menu->refreshPanels = calloc (8, sizeof (RPanel *));
 	return true;
 }
 
@@ -4652,7 +4655,7 @@ void __clear_panels_menuRec(RPanelsMenuItem *pmi) {
 
 void __clear_panels_menu(RCore *core) {
 	RPanels *p = core->panels;
-	RPanelsMenu *pm = p->panelsMenu;
+	RPanelsMenu *pm = p->panels_menu;
 	__clear_panels_menuRec (pm->root);
 	pm->root->selectedIndex = 0;
 	pm->history[0] = pm->root;
@@ -4815,10 +4818,10 @@ void __panels_refresh(RCore *core) {
 	} else {
 		__panel_print (core, can, __get_cur_panel (panels), 1);
 	}
-	for (i = 0; i < panels->panelsMenu->n_refresh; i++) {
-		__panel_print (core, can, panels->panelsMenu->refreshPanels[i], 1);
+	for (i = 0; i < panels->panels_menu->n_refresh; i++) {
+		__panel_print (core, can, panels->panels_menu->refreshPanels[i], 1);
 	}
-	panels->panelsMenu->n_refresh = 0;
+	panels->panels_menu->n_refresh = 0;
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
 	r_cons_canvas_fill (can, -can->sx, -can->sy, w, 1, ' ');
 	const char *color = core->cons->context->pal.graph_box2;
@@ -4827,7 +4830,7 @@ void __panels_refresh(RCore *core) {
 	} else if (panels->mode == PANEL_MODE_WINDOW) {
 		r_strbuf_appendf (title, "%s Window Mode | hjkl: move around the panels | q: quit the mode | Enter: Zoom mode"Color_RESET, color);
 	} else {
-		RPanelsMenuItem *parent = panels->panelsMenu->root;
+		RPanelsMenuItem *parent = panels->panels_menu->root;
 		for (i = 0; i < parent->n_sub; i++) {
 			RPanelsMenuItem *item = parent->sub[i];
 			if (panels->mode == PANEL_MODE_MENU && i == parent->selectedIndex) {
@@ -5208,7 +5211,7 @@ int __file_history_down(RLine *line) {
 
 void __handle_menu(RCore *core, const int key) {
 	RPanels *panels = core->panels;
-	RPanelsMenu *menu = panels->panelsMenu;
+	RPanelsMenu *menu = panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	r_cons_switchbuf (false);
@@ -5276,7 +5279,7 @@ void __handle_menu(RCore *core, const int key) {
 	case 'q':
 	case 'Q':
 	case -1:
-		if (panels->panelsMenu->depth > 1) {
+		if (panels->panels_menu->depth > 1) {
 			__del_menu (core);
 		} else {
 			__set_mode (core, PANEL_MODE_DEFAULT);
