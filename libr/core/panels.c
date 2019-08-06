@@ -6152,6 +6152,7 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 			break;
 		}
 	}
+	r_cons_enable_mouse (false);
 	return true;
 }
 
