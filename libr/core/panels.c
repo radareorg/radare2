@@ -5829,18 +5829,19 @@ void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db) {
 		okey = r_cons_readchar ();
 		key = r_cons_arrow_to_hjkl (okey);
 		word = NULL;
-		if (r_cons_get_click (&cx, &cy)) {
-			if ((key == 0 || key == INT8_MAX) &&
-					((cx < x || x + w < cx) ||
-					 ((cy < y || y + h < cy)))) {
-				key = 'q';
-			} else {
-				word = get_word_from_canvas_for_menu (core, core->panels, cx, cy);
-				if (word) {
-					void *cb = sdb_ptr_get (menu_db, word, 0);
-					if (cb) {
-						((RPanelAlmightyCallback)cb) (core, panel, NONE, word);
-						break;
+		if (key == INT8_MAX - 1) {
+			if (r_cons_get_click (&cx, &cy)) {
+				if ((cx < x || x + w < cx) ||
+						 ((cy < y || y + h < cy))) {
+					key = 'q';
+				} else {
+					word = get_word_from_canvas_for_menu (core, core->panels, cx, cy);
+					if (word) {
+						void *cb = sdb_ptr_get (menu_db, word, 0);
+						if (cb) {
+							((RPanelAlmightyCallback)cb) (core, panel, NONE, word);
+							break;
+						}
 					}
 				}
 			}
