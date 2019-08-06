@@ -5610,7 +5610,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			ret = skip_bytes_bb;
 		}
 		r_anal_op_fini (&ds->analop);
-		if (ds->show_color && !hasanal) {
+		if (!hasanal) {
 			// XXX we probably don't need MASK_ALL
 			r_anal_op (core->anal, &ds->analop, ds->at, core->block + addrbytes * i, core->blocksize - addrbytes * i, R_ANAL_OP_MASK_ALL);
 			hasanal = true;
