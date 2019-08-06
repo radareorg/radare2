@@ -23,6 +23,9 @@
 #else
 #define HAVE_PTHREAD_NP 1
 #endif
+#if __APPLE__
+#include <pthread.h>
+#endif
 #if __FreeBSD__ || __OpenBSD__ || __DragonFly__
 #include <pthread_np.h>
 #endif

@@ -539,6 +539,8 @@ R_API int r_sys_thp_mode(void) {
 	}
 
 	return ret;
+#else
+  return 0;
 #endif
 }
 
