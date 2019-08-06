@@ -933,13 +933,9 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 		if (!scol2) {
 			scol2 = strdup ("");
 		}
-
-		source = malloc (strlen (scol1) + strlen (scol2) + 2 + 1); // reuse source variable
-		if (source) {
-			sprintf (source, "%s||%s", scol1, scol2);
-			free (scol1);
-			free (scol2);
-		}
+		source = r_str_newf ("%s||%s", scol1, scol2);
+		free (scol1);
+		free (scol2);
 		return source;
 	}
 	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset, f ? f->addr : 0);
