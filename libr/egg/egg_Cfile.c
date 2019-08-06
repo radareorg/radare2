@@ -25,7 +25,7 @@ static char* r_egg_Cfile_getCompiler(void) {
 		return output;
 	}
 
-	for (i = 0; i < 3; i++) { 
+	for (i = 0; i < 3; i++) {
 		output = r_file_path (compilers[i]);
 		if (strcmp (output, compilers[i])) {
 			free (output);
@@ -88,7 +88,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 		  		 "Please define it, or fix r2 installation.\n");
 			goto fail;
 		}
-    
+
 		output[strlen (output) - 1] = '\0'; // strip the ending '\n'
 		if (!(cEnv->SFLIBPATH = r_str_newf ("%s/sflib", output))) {
 			goto fail;
@@ -144,7 +144,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 	} else {
 		cEnv->TEXT = ".text";
 	}
-		
+
 	use_clang = false;
 	if (!strcmp (cEnv->TRIPLET, "darwin-arm-64")) {
 		free (cEnv->CC);
@@ -175,7 +175,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 		}
 		free (cEnv->CFLAGS);
 		cEnv->CFLAGS = strdup (buffer);
-	} else { 
+	} else {
 		free (buffer);
 		buffer = r_str_newf ("%s -z execstack -fomit-frame-pointer"
 				" -finline-functions -fno-zero-initialized-in-bss", cEnv->CFLAGS);
@@ -306,7 +306,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 	if (r_file_size (fileExt) == 0) {
 		eprintf ("FALLBACK: Using objcopy instead of rabin2");
 		free (output);
-		output = r_sys_cmd_strf ("'%s' -j .text -O binary '%s.o' '%s.text'", 
+		output = r_sys_cmd_strf ("'%s' -j .text -O binary '%s.o' '%s.text'",
 		  		cEnv->OBJCOPY, file, file);
 		if (!output) {
 			eprintf ("objcopy failed!\n");
