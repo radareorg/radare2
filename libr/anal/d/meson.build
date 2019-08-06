@@ -29,10 +29,52 @@ sdb_files = [
   'types-x86-windows-64'
 ]
 
+win_types_extra = [
+  'bcrypt',
+  'cfgmgr32',
+  'combaseapi',
+  'commctrl',
+  'consoleapi2',
+  'dbghelp',
+  'evntrace',
+  'fileapi',
+  'libloaderapi',
+  'memoryapi',
+  'ncrypt',
+  'objbase',
+  'oleauto',
+  'processthreadsapi',
+  'psapi',
+  'securitybaseapi',
+  'shellapi',
+  'shlwapi',
+  'synchapi',
+  'sysinfoapi',
+  'threadpoolapiset',
+  'userenv',
+  'winbase',
+  'wincred',
+  'wincrypt',
+  'winhttp',
+  'winldap',
+  'winnls',
+  'winreg',
+  'winsock2',
+  'winsvc',
+  'winuser',
+  'ws2spi',
+]
+
 foreach file : sdb_files
   outfile = '@0@.sdb'.format(file)
+  infiles = ['@0@.sdb.txt'.format(file)]
+  if file == 'types-windows'
+    foreach f : win_types_extra
+      infiles += 'types-windows_@0@.sdb.txt'.format(f)
+    endforeach
+  endif
   custom_target(outfile,
-    input: '@0@.sdb.txt'.format(file),
+    input: infiles,
     output: outfile,
     command: sdb_gen_cmd,
     depends: sdb_exe,

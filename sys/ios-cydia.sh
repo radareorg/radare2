@@ -2,6 +2,7 @@
 
 STOW=0
 fromscratch=1
+onlydebug=0
 onlymakedeb=0
 
 if [ -z "${CPU}" ]; then
@@ -74,10 +75,15 @@ if [ $onlymakedeb = 1 ]; then
 	makeDeb
 else
 	if [ $fromscratch = 1 ]; then
-		make clean
-		./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
+		if [ $onlydebug = 1 ]; then
+			(cd libr/debug ; make clean)
+			RV=0
+		else
+			make clean
+			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
 			--with-compiler=ios-sdk --target=arm-unknown-darwin
-		RV=$?
+			RV=$?
+		fi
 	else
 		RV=0
 	fi

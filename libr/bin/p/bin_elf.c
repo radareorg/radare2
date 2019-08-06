@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2009-2019 - pancake, nibble, dso */
+
 #include "bin_elf.inc"
 
 static void headers32(RBinFile *bf) {
@@ -11,26 +13,27 @@ static void headers32(RBinFile *bf) {
 	p ("0x00000020  ShOff       0x%08x\n", r_buf_read_le32_at (bf->buf, 0x20));
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return buf && length > 4 && memcmp (buf, ELFMAG, SELFMAG) == 0
-		&& buf[4] != 2;
+static bool check_buffer(RBuffer *buf) {
+	ut8 b[5] = {0};
+	r_buf_read_at (buf, 0, b, sizeof (b));
+	return !memcmp (b, ELFMAG, SELFMAG) && b[4] != 2;
 }
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
 extern struct r_bin_write_t r_bin_write_elf;
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+	r_return_val_if_fail (bin && opt && opt->arch, NULL);
+
 	ut32 filesize, code_va, code_pa, phoff;
 	ut32 p_start, p_phoff, p_phdr;
 	ut32 p_ehdrsz, p_phdrsz;
 	ut16 ehdrsz, phdrsz;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
 	ut32 baddr;
-	int is_arm = 0;
 	RBuffer *buf = r_buf_new ();
 
-	r_return_val_if_fail (bin && opt && opt->arch, NULL);
-	is_arm = !strcmp (opt->arch, "arm");
+	bool is_arm = !strcmp (opt->arch, "arm");
 	// XXX: hardcoded
 	if (is_arm) {
 		baddr = 0x40000;
@@ -121,7 +124,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.binsym = &binsym,
@@ -145,7 +148,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.maps = &maps,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_elf,

@@ -73,7 +73,7 @@ static void emit_jmp(REgg *egg, const char *str, int atr) {
 }
 
 static void emit_arg (REgg *egg, int xs, int num, const char *str) {
-	// TODO: enhace output here
+	// TODO: enhance output here
 	r_egg_printf (egg, "arg.%d.%d=%s\n", xs, num, str);
 }
 

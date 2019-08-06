@@ -75,7 +75,7 @@ typedef struct r_io_undo_w_t {
 } RIOUndoWrite;
 
 typedef struct r_io_t {
-	struct r_io_desc_t *desc;
+	struct r_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
 	ut64 off;
 	int bits;
 	int va;		//all of this config stuff must be in 1 int
@@ -164,8 +164,8 @@ typedef struct r_io_plugin_t {
 	bool isdbg;
 	// int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
 	char *(*system)(RIO *io, RIODesc *fd, const char *);
-	RIODesc* (*open)(RIO *io, const char *, int rw, int mode);
-	RList* /*RIODesc* */ (*open_many)(RIO *io, const char *, int rw, int mode);
+	RIODesc* (*open)(RIO *io, const char *, int perm, int mode);
+	RList* /*RIODesc* */ (*open_many)(RIO *io, const char *, int perm, int mode);
 	int (*read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	ut64 (*lseek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
 	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
@@ -224,6 +224,7 @@ typedef int (*RIOFdOpen) (RIO *io, const char *uri, int flags, int mode);
 typedef bool (*RIOFdClose) (RIO *io, int fd);
 typedef ut64 (*RIOFdSeek) (RIO *io, int fd, ut64 addr, int whence);
 typedef ut64 (*RIOFdSize) (RIO *io, int fd);
+typedef bool (*RIOFdResize) (RIO *io, int fd, ut64 newsize);
 typedef ut64 (*RIOP2V) (RIO *io, ut64 pa);
 typedef ut64 (*RIOV2P) (RIO *io, ut64 va);
 typedef int (*RIOFdRead) (RIO *io, int fd, ut8 *buf, int len);
@@ -260,6 +261,7 @@ typedef struct r_io_bind_t {
 	RIOFdClose fd_close;
 	RIOFdSeek fd_seek;	//needed for esil
 	RIOFdSize fd_size;
+	RIOFdResize fd_resize;
 	RIOFdRead fd_read;	//needed for esil
 	RIOFdWrite fd_write;	//needed for esil
 	RIOFdReadAt fd_read_at;
@@ -287,6 +289,7 @@ R_API ut64 r_io_map_next_address(RIO* io, ut64 addr);
 R_API void r_io_map_init (RIO *io);
 R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr);
 R_API bool r_io_map_remap_fd (RIO *io, int fd, ut64 addr);
+R_API ut64 r_io_map_location(RIO *io, ut64 size);
 R_API bool r_io_map_exists (RIO *io, RIOMap *map);
 R_API bool r_io_map_exists_for_id (RIO *io, ut32 id);
 R_API RIOMap *r_io_map_resolve (RIO *io, ut32 id);
@@ -390,7 +393,6 @@ R_API void r_io_wundo_set_all(RIO *io, int set);
 R_API int r_io_wundo_set(RIO *io, int n, int set);
 
 //desc.c
-R_API bool r_io_desc_init (RIO *io);
 R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
 R_API RIODesc *r_io_desc_open (RIO *io, const char *uri, int flags, int mode);
 R_API RIODesc *r_io_desc_open_plugin (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode);
@@ -413,7 +415,10 @@ R_API int r_io_desc_get_tid (RIODesc *desc);
 R_API bool r_io_desc_get_base (RIODesc *desc, ut64 *base);
 R_API int r_io_desc_read_at (RIODesc *desc, ut64 addr, ut8 *buf, int len);
 R_API int r_io_desc_write_at (RIODesc *desc, ut64 addr, const ut8 *buf, int len);
-R_API bool r_io_desc_fini (RIO *io);
+
+/* lifecycle */
+R_IPI bool r_io_desc_init (RIO *io);
+R_IPI bool r_io_desc_fini (RIO *io);
 
 /* io/cache.c */
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);

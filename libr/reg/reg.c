@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -167,6 +167,8 @@ R_API void r_reg_free_internal(RReg *reg, bool init) {
 		}
 	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		ht_pp_free (reg->regset[i].ht_regs);
+		reg->regset[i].ht_regs = NULL;
 		if (!reg->regset[i].pool) {
 			continue;
 		}
@@ -272,6 +274,7 @@ R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item) {
 	if (!reg->roregs) {
 		return false;
 	}
+	// XXX O(n)
 	r_list_foreach (reg->roregs, iter, name) {
 		if (!strcmp (item->name, name)) {
 			return true;
@@ -289,8 +292,6 @@ R_API ut64 r_reg_getv(RReg *reg, const char *name) {
 }
 
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
-	RListIter *iter;
-	RRegItem *r;
 	int i, e;
 	r_return_val_if_fail (reg && name, NULL);
 	if (type == R_REG_TYPE_FLG) {
@@ -311,9 +312,12 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 		e = type + 1;
 	}
 	for (; i < e; i++) {
-		r_list_foreach (reg->regset[i].regs, iter, r) {
-			if (r->name && !strcmp (r->name, name)) {
-				return r;
+		HtPP *pp = reg->regset[i].ht_regs;
+		if (pp) {
+			bool found = false;
+			RRegItem *item = ht_pp_find (pp, name, &found);
+			if (found) {
+				return item;
 			}
 		}
 	}

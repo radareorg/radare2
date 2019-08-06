@@ -31,25 +31,20 @@ static bool check_buffer(RBuffer *buf) {
 	return r == sizeof (tmp) && !memcmp (tmp, QNX_MAGIC, sizeof (tmp));
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	RBuffer *b = r_buf_new_with_bytes (buf, length);
-	bool res = check_buffer (b);
-	r_buf_free (b);
-	return res;
-}
-
 // Frees the bin_obj of the binary file
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	r_list_free (qo->sections);
 	r_list_free (qo->fixups);
 	bf->o->bin_obj = NULL;
 	free (qo);
-	return true;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	QnxObj *qo = R_NEW0 (QnxObj);
+	if (!qo) {
+		return false;
+	}
 	lmf_record lrec;
 	lmf_resource lres;
 	lmf_data ldata;
@@ -137,9 +132,10 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	sdb_ns_set (sdb, "info", qo->kv);
 	qo->sections = sections;
 	qo->fixups = fixups;
-	return qo;
+	*bin_obj = qo;
+	return true;
 beach:
-	return NULL;
+	return false;
 }
 
 /*
@@ -280,7 +276,6 @@ RBinPlugin r_bin_plugin_qnx = {
 	.baddr = &baddr,
 	.author = "deepakchethan",
 	.check_buffer = &check_buffer,
-	.check_bytes  = &check_bytes,
 	.header = &header,
 	.get_sdb = &get_sdb,
 	.entries = &entries,
@@ -291,7 +286,7 @@ RBinPlugin r_bin_plugin_qnx = {
 	.info = &info
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_qnx,

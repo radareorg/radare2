@@ -5,13 +5,28 @@
 extern "C" {
 #endif
 
-typedef void (*RPanelDirectionCallback)(void *user, int direction);
-typedef void (*RPanelRotateCallback)(void *user, bool rev);
+typedef enum {
+	VERTICAL,
+	HORIZONTAL,
+	NONE
+} RPanelLayout;
 
 typedef enum {
 	PANEL_TYPE_DEFAULT = 0,
 	PANEL_TYPE_MENU = 1
 } RPanelType;
+
+typedef enum {
+	PANEL_EDGE_NONE,
+	PANEL_EDGE_RIGHT,
+	PANEL_EDGE_BOTTOM
+} RPanelEdge;
+
+
+typedef void (*RPanelMenuUpdateCallback)(void *user, const char *parent);
+typedef void (*RPanelDirectionCallback)(void *user, int direction);
+typedef void (*RPanelRotateCallback)(void *user, bool rev);
+typedef void (*RPanelPrintCallback)(void *user, void *p);
 
 typedef struct r_panel_pos_t {
 	int x;
@@ -20,15 +35,10 @@ typedef struct r_panel_pos_t {
 	int h;
 } RPanelPos;
 
-typedef enum {
-	PANEL_EDGE_NONE,
-	PANEL_EDGE_RIGHT,
-	PANEL_EDGE_BOTTOM
-} RPanelEdge;
-
 typedef struct r_panel_model_t {
 	RPanelDirectionCallback directionCb;
 	RPanelRotateCallback rotateCb;
+	RPanelPrintCallback print_cb;
 	RPanelType type;
 	char *cmd;
 	char *title;
@@ -38,6 +48,8 @@ typedef struct r_panel_model_t {
 	char *cmdStrCache;
 	char *readOnly;
 	char *funcName;
+	char **filter;
+	int n_filter;
 	int rotate;
 } RPanelModel;
 
@@ -55,6 +67,8 @@ typedef struct r_panel_t {
     RPanelModel *model;
     RPanelView *view;
 } RPanel;
+
+typedef void (*RPanelAlmightyCallback)(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
 
 #ifdef __cplusplus
 }

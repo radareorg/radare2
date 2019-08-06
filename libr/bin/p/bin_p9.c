@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 - nibble, pancake */
+/* radare2 - LGPL - Copyright 2009-2019 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -10,23 +10,12 @@ static bool check_buffer(RBuffer *buf) {
 	return r_bin_p9_get_arch (buf, NULL, NULL);
 }
 
-static bool check_bytes(const ut8 *b, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (b, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+	return check_buffer (b);
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
-	if (!check_buffer (buf)) {
-		return NULL;
-	}
-	return r_buf_new ();
-}
-
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_buf_free (bf->o->bin_obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -186,6 +175,9 @@ static RBinInfo *info(RBinFile *bf) {
 
 static ut64 size(RBinFile *bf) {
 	ut64 text, data, syms, spsz;
+	if (!bf) {
+		return 0;
+	}
 	if (!bf->o->info) {
 		bf->o->info = info (bf);
 	}
@@ -232,7 +224,6 @@ RBinPlugin r_bin_plugin_p9 = {
 	.load_buffer = &load_buffer,
 	.size = &size,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
@@ -245,7 +236,7 @@ RBinPlugin r_bin_plugin_p9 = {
 	.create = &create,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_p9,

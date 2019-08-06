@@ -4,6 +4,7 @@ r_core_sources = [
   'esil_data_flow.c',
   'casm.c',
   'blaze.c',
+  'citem.c',
   'canal.c',
   'carg.c',
   'cbin.c',
@@ -42,7 +43,7 @@ r_core_sources = [
   'fortune.c',
   'gdiff.c',
   'zdiff.c',
-  'graph.c',
+  'agraph.c',
   'hack.c',
   'libs.c',
   #'linux_heap_glibc.c',
@@ -53,6 +54,8 @@ r_core_sources = [
   'project.c',
   'pseudo.c',
   'rtr.c',
+  #'rtr_http.c',
+  #'rtr_shell.c',
   'task.c',
   'vasm.c',
   'visual.c',
@@ -68,6 +71,9 @@ r_core_sources = [
 r_core_inc = []
 if host_machine.system() != 'windows'
   r_core_inc += ['../../shlr/heap/include']
+else
+	r_core_sources += 'windows_heap.c'
+	r_core_inc += ['../../shlr/heap/include/r_windows']
 endif
 r_core_inc = [platform_inc, include_directories(r_core_inc)]
 

@@ -1,25 +1,22 @@
-static bool is_kernelcache(const ut8 *buf, ut64 length) {
+static bool is_kernelcache_buffer(RBuffer *b) {
+	ut64 length = r_buf_size (b);
 	if (length < sizeof (struct MACH0_(mach_header))) {
 		return false;
 	}
-	ut32 cputype = r_read_le32 (buf + 4);
+	ut32 cputype = r_buf_read_le32_at (b, 4);
 	if (cputype != CPU_TYPE_ARM64) {
 		return false;
 	}
 
-	const ut8 *end = buf + length;
-	const ut8 *cursor = buf + sizeof (struct MACH0_(mach_header));
-	int i, ncmds = r_read_le32 (buf + 16);
+	int i, ncmds = r_buf_read_le32_at (b, 16);
 	bool has_unixthread = false;
 	bool has_negative_vaddr = false;
 
-	for (i = 0; i < ncmds; i++) {
-		if (cursor >= end) {
-			return false;
-		}
+	ut32 cursor = sizeof (struct MACH0_(mach_header));
+	for (i = 0; i < ncmds && cursor < length; i++) {
 
-		ut32 cmdtype = r_read_le32 (cursor);
-		ut32 cmdsize = r_read_le32 (cursor + 4);
+		ut32 cmdtype = r_buf_read_le32_at (b, cursor);
+		ut32 cmdsize = r_buf_read_le32_at (b, cursor + 4);
 
 		switch (cmdtype) {
 		case LC_UNIXTHREAD:
@@ -34,7 +31,7 @@ static bool is_kernelcache(const ut8 *buf, ut64 length) {
 				if (has_negative_vaddr) {
 					break;
 				}
-				st64 vmaddr = r_read_le64 (cursor + 24);
+				st64 vmaddr = r_buf_read_le64_at (b, cursor + 24);
 				if (vmaddr < 0) {
 					has_negative_vaddr = true;
 				}

@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2015 - riq */
+/* radare - LGPL3 - 2015-2019 - riq */
 
 /* VICE Snapshot File loader: http://vice-emu.sourceforge.net/ */
 
@@ -6,7 +6,7 @@
 #include "vsf/vsf_specs.h"
 
 static const char VICE_MAGIC[] = "VICE Snapshot File\032";
-static const int VICE_MAGIC_LEN = sizeof(VICE_MAGIC)-1;
+#define VICE_MAGIC_LEN sizeof (VICE_MAGIC) - 1
 static const char VICE_MAINCPU[] = "MAINCPU";
 static const char VICE_C64MEM[] = "C64MEM";
 static const char VICE_C64ROM[] = "C64ROM";
@@ -25,24 +25,24 @@ static const struct {
 static const int MACHINES_MAX = sizeof(_machines) / sizeof(_machines[0]);
 
 static Sdb* get_sdb (RBinFile *bf) {
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) bf->o->bin_obj;
 	return bin->kv;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < VICE_MAGIC_LEN) {
-		return false;
+static bool check_buffer(RBuffer *b) {
+	ut8 magic[VICE_MAGIC_LEN];
+	if (r_buf_read_at (b, 0, magic, VICE_MAGIC_LEN) == VICE_MAGIC_LEN) {
+		return !memcmp (magic, VICE_MAGIC, VICE_MAGIC_LEN);
 	}
-	return (!memcmp (buf, VICE_MAGIC, VICE_MAGIC_LEN));
+	return false;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+// XXX b vs bf->buf
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	ut64 offset = 0;
 	struct r_bin_vsf_obj* res = NULL;
-	if (check_bytes (buf, sz)) {
+	if (check_buffer (bf->buf)) {
 		int i = 0;
 		if (!(res = R_NEW0 (struct r_bin_vsf_obj))) {
 		    return false;
@@ -75,6 +75,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		}
 		// read all VSF modules
 		offset = sizeof (struct vsf_hdr);
+		ut64 sz = r_buf_size (bf->buf);
 		while (offset < sz) {
 			struct vsf_module module;
 			int read = r_buf_fread_at (bf->buf, offset, (ut8*)&module, "16ccci", 1);
@@ -504,11 +505,10 @@ static RList* symbols(RBinFile *bf) {
 	return ret;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	struct r_bin_vsf_obj *obj = (struct r_bin_vsf_obj *)bf->o->bin_obj;
 	free (obj->maincpu);
 	free (obj);
-	return true;
 }
 
 static RList* entries(RBinFile *bf) {
@@ -547,8 +547,8 @@ RBinPlugin r_bin_plugin_vsf = {
 	.desc = "VICE Snapshot File",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load_bytes = &load_bytes,
-	.check_bytes = &check_bytes,
+	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.sections = sections,
 	.symbols = &symbols,
@@ -557,7 +557,7 @@ RBinPlugin r_bin_plugin_vsf = {
 	.mem = &mem,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_vsf,

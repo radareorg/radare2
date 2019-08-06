@@ -236,24 +236,56 @@ R_API int r_core_yank_to(RCore *core, const char *_arg) {
 	return res;
 }
 
-R_API int r_core_yank_dump(RCore *core, ut64 pos) {
-	int res = false, i = 0;
+R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
+	bool res = false;
+	int i = 0;
 	int ybl = r_buf_size (core->yank_buf);
 	if (ybl > 0) {
 		if (pos < ybl) {
-			r_cons_printf ("0x%08" PFMT64x " %d ",
-				core->yank_addr + pos,
-				r_buf_size (core->yank_buf) - pos);
-			for (i = pos; i < r_buf_size (core->yank_buf); i++) {
-				r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
+			switch (format) {
+			case 'q':
+				for (i = pos; i < r_buf_size (core->yank_buf); i++) {
+					r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
+				}
+				r_cons_newline ();
+				break;
+			case 'j':
+				{
+					r_cons_printf ("{\"addr\":%"PFMT64u",\"bytes\":\"", core->yank_addr);
+					for (i = pos; i < r_buf_size (core->yank_buf); i++) {
+						r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
+					}
+					r_cons_printf ("\"}\n");
+				}
+				break;
+			case '*':
+				//r_cons_printf ("yfx ");
+				r_cons_printf ("wx ");
+				for (i = pos; i < r_buf_size (core->yank_buf); i++) {
+					r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
+				}
+				//r_cons_printf (" @ 0x%08"PFMT64x, core->yank_addr);
+				r_cons_newline ();
+				break;
+			default:
+				r_cons_printf ("0x%08" PFMT64x " %d ",
+						core->yank_addr + pos,
+						r_buf_size (core->yank_buf) - pos);
+				for (i = pos; i < r_buf_size (core->yank_buf); i++) {
+					r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
+				}
+				r_cons_newline ();
 			}
-			r_cons_newline ();
 			res = true;
 		} else {
 			eprintf ("Position exceeds buffer length.\n");
 		}
 	} else {
-		eprintf ("No buffer yanked already\n");
+		if (format == 'j') {
+			r_cons_printf ("{}\n");
+		} else {
+			eprintf ("No buffer yanked already\n");
+		}
 	}
 	return res;
 }
@@ -361,7 +393,7 @@ R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
 	char *out = strdup (input);
 	int len = r_hex_str2bin (input, (ut8 *)out);
 	if (len > 0) {
-		r_core_yank_set (core, 0, (ut8 *)out, len);
+		r_core_yank_set (core, core->offset, (ut8 *)out, len);
 	}
 	free (out);
 	return true;

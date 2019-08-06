@@ -73,7 +73,7 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	b = r_bin_create (bin, format, code, codelen, NULL, 0, &opts);
 	if (b) {
 		ut64 blen;
-		const ut8 *tmp = r_buf_buffer (b, &blen);
+		const ut8 *tmp = r_buf_data (b, &blen);
 		if (write (1, tmp, blen) != blen) {
 			eprintf ("Failed to write buffer\n");
 		}
@@ -527,7 +527,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		b = r_egg_get_bin (egg);
 		if (show_raw) {
 			ut64 blen;
-			const ut8 *tmp = r_buf_buffer (b, &blen);
+			const ut8 *tmp = r_buf_data (b, &blen);
 			if (write (1, tmp, blen) != blen) {
 				eprintf ("Failed to write buffer\n");
 				goto fail;
@@ -539,7 +539,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			}
 			RPrint *p = r_print_new ();
 			ut64 tmpsz;
-			const ut8 *tmp = r_buf_buffer (b, &tmpsz);
+			const ut8 *tmp = r_buf_data (b, &tmpsz);
 			switch (*format) {
 			case 'c':
 				r_print_code (p, 0, tmp, tmpsz, 'c');
@@ -555,7 +555,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 					}
 					printf ("\"\n");
 				} else if (show_hex) {
-					r_buf_seek (b, 0, 0);
+					r_buf_seek (b, 0, R_BUF_SET);
 					for (i = 0; i < tmpsz; i++) {
 						printf ("%02x", tmp[i]);
 					}

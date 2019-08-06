@@ -1711,7 +1711,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	return op->size;
 }
 
-static int avr_custom_des (RAnalEsil *esil) {
+static bool avr_custom_des (RAnalEsil *esil) {
 	ut64 key, encrypt, text,des_round;
 	ut32 key_lo, key_hi, buf_lo, buf_hi;
 	if (!esil || !esil->anal || !esil->anal->reg) {
@@ -1761,7 +1761,7 @@ static int avr_custom_des (RAnalEsil *esil) {
 }
 
 // ESIL operation SPM_PAGE_ERASE
-static int avr_custom_spm_page_erase(RAnalEsil *esil) {
+static bool avr_custom_spm_page_erase(RAnalEsil *esil) {
 	CPU_MODEL *cpu;
 	ut8 c;
 	ut64 addr, page_size_bits, i;
@@ -1795,7 +1795,7 @@ static int avr_custom_spm_page_erase(RAnalEsil *esil) {
 }
 
 // ESIL operation SPM_PAGE_FILL
-static int avr_custom_spm_page_fill(RAnalEsil *esil) {
+static bool avr_custom_spm_page_fill(RAnalEsil *esil) {
 	CPU_MODEL *cpu;
 	ut64 addr, page_size_bits, i;
 	ut8 r0, r1;
@@ -1836,7 +1836,7 @@ static int avr_custom_spm_page_fill(RAnalEsil *esil) {
 }
 
 // ESIL operation SPM_PAGE_WRITE
-static int avr_custom_spm_page_write(RAnalEsil *esil) {
+static bool avr_custom_spm_page_write(RAnalEsil *esil) {
 	CPU_MODEL *cpu;
 	char *t = NULL;
 	ut64 addr, page_size_bits, tmp_page;
@@ -1903,10 +1903,10 @@ static int esil_avr_init(RAnalEsil *esil) {
 		return false;
 	}
 	desctx.round = 0;
-	r_anal_esil_set_op (esil, "des", avr_custom_des);
-	r_anal_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase);
-	r_anal_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill);
-	r_anal_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write);
+	r_anal_esil_set_op (esil, "des", avr_custom_des, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);		//better meta info plz
+	r_anal_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
+	r_anal_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
+	r_anal_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
 	esil->cb.hook_reg_write = esil_avr_hook_reg_write;
 
 	return true;
@@ -2116,7 +2116,7 @@ RAnalPlugin r_anal_plugin_avr = {
 	.anal_mask = anal_mask_avr,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_avr,

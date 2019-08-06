@@ -134,16 +134,16 @@ static int update_self_regions(RIO *io, int pid) {
 #ifdef _MSC_VER
 	int perm;
 	const size_t name_size = 1024;
-	ut64 to = 0;
+	PVOID to = NULL;
 	MEMORY_BASIC_INFORMATION mbi;
 	HANDLE h = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
-	char *name = calloc (name_size, sizeof (char));
+	LPTSTR name = calloc (name_size, sizeof (TCHAR));
 	if (!name) {
 		R_LOG_ERROR ("io_self/update_self_regions: Failed to allocate memory.\n");
 		return false;
 	}
 	while (VirtualQuery (to, &mbi, sizeof (mbi))) {
-		to = (ut8 *) mbi.BaseAddress + mbi.RegionSize;
+		to = (PBYTE) mbi.BaseAddress + mbi.RegionSize;
 		perm = 0;
 		perm |= mbi.Protect & PAGE_READONLY ? R_PERM_R : 0;
 		perm |= mbi.Protect & PAGE_READWRITE ? R_PERM_RW : 0;
@@ -155,8 +155,8 @@ static int update_self_regions(RIO *io, int pid) {
 			name[0] = '\0';
 		}
 		self_sections[self_sections_count].from = (ut64) mbi.BaseAddress;
-		self_sections[self_sections_count].to = to;
-		self_sections[self_sections_count].name = strdup (name);
+		self_sections[self_sections_count].to = (ut64) to;
+		self_sections[self_sections_count].name = r_sys_conv_win_to_utf8 (name);
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
 		name[0] = '\0';
@@ -410,7 +410,7 @@ RIOPlugin r_io_plugin_self = {
 	.write = __write,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,
@@ -569,9 +569,9 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 		return false;
 	}
 
+	size = size * 4 / 3;
 	ut8 *p = malloc (size);
 	if (p) {
-		size = size * 4 / 3;
 		s = sysctl (mib, 4, p, &size, NULL, 0);
 		if (s == -1) {
 			eprintf ("sysctl failed: %s\n", strerror (errno));
@@ -676,9 +676,9 @@ exit:
 		return false;
 	}
 
+	size = size * 4 / 3;
 	ut8 *p = malloc (size);
 	if (p) {
-		size = size * 4 / 3;
 		s = sysctl (mib, 5, p, &size, NULL, 0);
 		if (s == -1) {
 			eprintf ("sysctl failed: %s\n", strerror (errno));
@@ -791,7 +791,7 @@ RIOPlugin r_io_plugin_self = {
 	.desc = "read memory from myself using 'self://' (UNSUPPORTED)",
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,

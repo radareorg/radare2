@@ -463,7 +463,7 @@ R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
 	}
 	//we need a clean list for this, or this becomes a segfault-field
 	r_io_map_cleanup (io);
-	//tempory set to avoid free the map and to speed up ls_delete a bit
+	//temporary set to avoid free the map and to speed up ls_delete a bit
 	io->maps->free = NULL;
 	ls_foreach_safe (io->maps, iter, ator, map) {
 		if (map->fd == fd) {
@@ -605,3 +605,12 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	return true;
 }
 
+// find a location that can hold enough bytes without overlapping
+// XXX this function is buggy and doesnt works as expected, but i need it for a PoC for now
+R_API ut64 r_io_map_location(RIO *io, ut64 size) {
+	ut64 base = (io->bits == 64)? 0x60000000000LL: 0x60000000;
+	while (r_io_map_get (io, base)) {
+		base += 0x200000;
+	}
+	return base;
+}

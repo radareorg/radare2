@@ -16,7 +16,7 @@ malware family.
 Requirements
 ------------
 
-You can either install libyara with your prefered package manager, or you
+You can either install libyara with your preferred package manager, or you
 can execute `r2pm -i yara3-lib` and `r2pm -i yara3` in order to retrieve
 latest source, compile, and install the library.
 

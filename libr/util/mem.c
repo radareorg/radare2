@@ -341,3 +341,28 @@ R_API void r_mem_memzero(void *dst, size_t l) {
 #endif
 #endif
 }
+
+R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
+#if __WINDOWS__
+	if (m->fm != INVALID_HANDLE_VALUE) {
+		CloseHandle (m->fm);
+	}
+	if (m->fh != INVALID_HANDLE_VALUE) {
+		CloseHandle (m->fh);
+	}
+	if (m->buf) {
+		UnmapViewOfFile (m->buf);
+	}
+#elif __UNIX__
+	if (munmap (m->buf, m->len) != 0) {
+		return NULL;
+	}
+#endif
+	if (!r_sys_truncate (m->filename, newsize)) {
+		return NULL;
+	}
+
+	m->len = newsize;
+	r_file_mmap_arch (m, m->filename, m->fd);
+	return m->buf;
+}

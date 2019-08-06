@@ -104,6 +104,7 @@ struct PE_(r_bin_pe_obj_t) {
 	struct r_bin_pe_section_t *sections;
 
 	// these values define the real offset into the untouched binary
+	ut64 rich_header_offset;
 	ut64 nt_header_offset;
 	ut64 section_header_offset;
 	ut64 import_directory_offset;
@@ -117,6 +118,7 @@ struct PE_(r_bin_pe_obj_t) {
 	int endian;
 	bool verbose;
 	int big_endian;
+	RList* rich_entries;
 	RList* relocs;
 	RList* resources; //RList of r_pe_resources
 	const char* file;
@@ -159,5 +161,5 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin);
 struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin);
 struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin);
-bool PE_(r_bin_pe_section_perms)(struct PE_(r_bin_pe_obj_t) *bin, const char *name, int perms);
+bool PE_(r_bin_pe_section_perms)(RBinFile *bf, const char *name, int perms);
 R_API void PE_(bin_pe_parse_resource) (struct PE_(r_bin_pe_obj_t) *bin);

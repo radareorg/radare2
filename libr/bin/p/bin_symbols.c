@@ -476,7 +476,7 @@ static void parseTable3(RBuffer *buf, int x) {
 	free (b);
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 #if 0
 	SYMBOLS HEADER
 
@@ -499,7 +499,7 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	SymbolsHeader sh = parseHeader (buf);
 	if (!sh.valid) {
 		eprintf ("Invalid headers\n");
-		return NULL;
+		return false;
 	}
 	printSymbolsHeader (sh);
 
@@ -550,9 +550,7 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 		r_list_free (symbolStrings);
 		globalSymbols = symbols;
 	}
-
-	// :D we must hold our priv obj to avoid multiple parsings. it leaks
-	return malloc (32);
+	return true;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -594,13 +592,10 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length >= 4) {
-		if (!memcmp (buf, "\x02\xff\x01\xff", 4)) {
-			return true;
-		}
-	}
-	return false;
+static bool check_buffer(RBuffer *b) {
+	ut8 buf[4];
+	r_buf_read_at (b, 0, buf, sizeof (buf));
+	return !memcmp (buf, "\x02\xff\x01\xff", 4);
 }
 
 static RList *strings(RBinFile *bf) {
@@ -630,7 +625,7 @@ RBinPlugin r_bin_plugin_symbols = {
 	.desc = "Apple Symbols file",
 	.license = "MIT",
 	.load_buffer = &load_buffer,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.symbols = &symbols,
 	.sections = &sections,
 	.strings = strings,
@@ -639,7 +634,7 @@ RBinPlugin r_bin_plugin_symbols = {
 	.info = &info,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_symbols,

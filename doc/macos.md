@@ -53,7 +53,7 @@ As said before, the signing process can also be done manually following the next
 
 	$ make -C binr/radare2 macossign
 
-But this is not enough. As long as r2 code is splitted into several libraries, you should sign every single dependency (libr*).
+But this is not enough. As long as r2 code is split into several libraries, you should sign every single dependency (libr*).
 
 	$ make -C binr/radare2 macos-sign-libs
 
@@ -84,3 +84,11 @@ Packaging
 To create a macOS .pkg just run the following command:
 
 	$ sys/osx-pkg.sh
+
+Uninstall
+---------
+
+To uninstall the .pkg downloaded from the r2 website or the one you have generated with `sys/osx-pkg.sh`
+
+	$ pkgutil --only-files --files radare2.pkg | tr '\n' '\0' | xargs -n 1 -0 sudo rm -i
+

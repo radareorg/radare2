@@ -31,7 +31,7 @@ install:
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
 	#mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
 	#cp -rf r2pm/d/* "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
-	-cd "${DESTDIR}${BINDIR}" && rm -f r2 ; ln -fs radare2 r2
+	-cd "${DESTDIR}${BINDIR}" && rm -f r2 ; ln -fs radare2 r2 ; ln -fs radare2 r2p
 ifeq ($(WITHPIC),1)
 	${INSTALL_LIB} "preload/libr2.$(EXT_SO)" "${DESTDIR}${LIBDIR}"
 	-cd "${DESTDIR}${LIBDIR}" && \
@@ -40,9 +40,9 @@ ifeq ($(WITHPIC),1)
 endif
 
 ios_sign ios-sign ios-sdk-sign:
-	-for a in $(BINS) ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2.xml $$a ; done
-	-for a in ../libr/*/*.${EXT_SO} ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2.xml $$a ; done
-	-for a in ../libr/*/p/*.${EXT_SO} ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2.xml $$a ; done
+	-for a in $(BINS) ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2_ios.xml $$a ; done
+	-for a in ../libr/*/*.${EXT_SO} ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2_ios.xml $$a ; done
+	-for a in ../libr/*/p/*.${EXT_SO} ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2_ios.xml $$a ; done
 
 symstall install-symlink:
 	cd .. && \
@@ -53,6 +53,7 @@ symstall install-symlink:
 	cd .. && mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	#ln -fs "$(BTOP)/r2pm/d" "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
 	-cd .. && ln -fs "${DESTDIR}${BINDIR}/radare2" "${DESTDIR}${BINDIR}/r2"
+	-cd .. && ln -fs "${DESTDIR}${BINDIR}/radare2" "${DESTDIR}${BINDIR}/r2p"
 	-cd .. && ln -fs "${BTOP}/preload/libr2.$(EXT_SO)" "${DESTDIR}${LIBDIR}/libr2.$(EXT_SO)"
 	-cd .. && cd "${DESTDIR}${LIBDIR}" && \
 		mv libr2.$(EXT_SO) $(LIBR2) && \
@@ -62,6 +63,7 @@ deinstall uninstall:
 	-cd .. ; \
 	for BINARY in ${BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$BINARY" ; done ; \
 	rm -f "${DESTDIR}${BINDIR}/r2pm" ; \
+	rm -f "${DESTDIR}${BINDIR}/r2p"
 	rm -f "${DESTDIR}${BINDIR}/r2"
 
 clean:

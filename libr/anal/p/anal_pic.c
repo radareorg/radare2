@@ -727,7 +727,7 @@ static void pic18_cond_branch (RAnalOp *op, ut64 addr, const ut8 *buf, char *fla
 }
 
 static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	//TODO code should be refactored and brocken into smaller chuncks!!
+	//TODO code should be refactored and broken into smaller chunks!!
 	//TODO complete the esil emitter
 	if (len < 2) {
 		op->size = len;
@@ -736,7 +736,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	op->size = 2;
 	ut16 b = *(ut16 *)buf;
 	ut32 dword_instr = 0;
-	memcpy (&dword_instr, buf, len);
+	memcpy (&dword_instr, buf, R_MIN (sizeof (dword_instr), len));
 	switch (b >> 9) {
 	case 0x76: //call
 		if (len < 4) {
@@ -1047,7 +1047,7 @@ static int anal_pic_pic18_set_reg_profile(RAnal *esil) {
 		"#bsr max is 0b111\n"
 		"gpr	bsr	.8	4	0\n"
 		"#tos doesn't exist\n"
-		"#general rule of thumb any register of size >8 bits has no existance\n"
+		"#general rule of thumb any register of size >8 bits has no existence\n"
 		"gpr	tos	.32	5	0\n"
 		"gpr	tosl	.8	5	0\n"
 		"gpr	tosh	.8	6	0\n"
@@ -1192,7 +1192,7 @@ RAnalPlugin r_anal_plugin_pic = {
 	.esil = true
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_pic,

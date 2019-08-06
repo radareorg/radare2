@@ -10,6 +10,10 @@ include ../../libr/main/deps.mk
 include ../../shlr/ar/deps.mk
 include ../../libr/socket/deps.mk
 include ../../shlr/bochs/deps.mk
+include ../../shlr/gdb/deps.mk
+include ../../shlr/grub/deps.mk
+include ../../shlr/java/deps.mk
+include ../../shlr/capstone.mk
 include ../../shlr/qnx/deps.mk
 
 LDFLAGS+=$(LINK)

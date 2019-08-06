@@ -21,6 +21,8 @@
 #include <signal.h>
 #endif
 
+#define QSUPPORTED_MAX_RETRIES 5
+
 extern char hex2char(char *hex);
 
 #if 0
@@ -100,7 +102,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
 	RStrBuf tmp;
 	r_strbuf_init (&tmp);
-	int ret;
+	int ret, i;
 	if (!g || !host) {
 		return -1;
 	}
@@ -131,14 +133,23 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	read_packet (g, true); // vcont=true lets us skip if we get no reply
 	g->connected = 1;
 	// TODO add config possibility here
-	ret = send_msg (g, message);
-	if (ret < 0) {
-		return ret;
+	for (i = 0; i < QSUPPORTED_MAX_RETRIES; i++) {
+		ret = send_msg (g, message);
+		if (ret < 0) {
+			continue;
+		}
+		ret = read_packet (g, false);
+		if (ret < 0) {
+			continue;
+		}
+		ret = handle_qSupported (g);
+		if (ret < 0) {
+			continue;
+		}
+		break;
 	}
-	read_packet (g, false);
-	ret = handle_qSupported (g);
 	if (ret < 0) {
-		return ret;
+		return -1;
 	}
 	if (env_pktsz > 0) {
 		g->stub_features.pkt_sz = R_MAX (R_MIN (env_pktsz, g->stub_features.pkt_sz), GDB_MAX_PKTSZ);

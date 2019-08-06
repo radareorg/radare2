@@ -65,27 +65,25 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ArtObj *ao = R_NEW0 (ArtObj);
-	if (!ao) {
-		return NULL;
+	if (ao) {
+		ao->kv = sdb_new0 ();
+		if (ao->kv) {
+			ao->buf = r_buf_ref (buf);
+			art_header_load (ao, ao->kv);
+			sdb_ns_set (sdb, "info", ao->kv);
+			*bin_obj = ao;
+			return true;
+		}
 	}
-	ao->kv = sdb_new0 ();
-	if (!ao->kv) {
-		free (ao);
-		return NULL;
-	}
-	ao->buf = r_buf_ref (buf);
-	art_header_load (ao, ao->kv);
-	sdb_ns_set (sdb, "info", ao->kv);
-	return ao;
+	return false;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	ArtObj *obj = bf->o->bin_obj;
 	r_buf_free (obj->buf);
 	free (obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -98,16 +96,12 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	ArtObj *ao;
-	RBinInfo *ret;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	ret = R_NEW0 (RBinInfo);
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ao = bf->o->bin_obj;
+	ArtObj *ao = bf->o->bin_obj;
 	ret->lang = NULL;
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("ART");
@@ -136,26 +130,15 @@ static bool check_buffer(RBuffer *buf) {
 	return r == 4 && !strncmp (tmp, "art\n", 4);
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	RBuffer *b = r_buf_new_with_bytes (buf, length);
-	bool res = check_buffer (b);
-	r_buf_free (b);
-	return res;
-}
-
 static RList *entries(RBinFile *bf) {
-	RList *ret;
-	RBinAddr *ptr = NULL;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
+	RList *ret = r_list_newf (free);
+	if (ret) {
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		if (ptr) {
+			ptr->paddr = ptr->vaddr = 0;
+			r_list_append (ret, ptr);
+		}
 	}
-	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
-	ptr->paddr = ptr->vaddr = 0;
-	r_list_append (ret, ptr);
 	return ret;
 }
 
@@ -231,7 +214,6 @@ RBinPlugin r_bin_plugin_art = {
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.sections = &sections,
@@ -240,7 +222,7 @@ RBinPlugin r_bin_plugin_art = {
 	.info = &info,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_art,

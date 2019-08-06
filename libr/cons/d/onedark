@@ -62,3 +62,6 @@ ec graph.trufae rgb:61afef
 ec graph.current rgb:61afef
 ec graph.traced rgb:d19a66
 ec linehl rgb:5c6370
+
+ec widget_bg rgb:ec7 rgb:366
+ec widget_sel black rgb:98c379

@@ -9,6 +9,9 @@
 
 R_LIB_VERSION (r_sign);
 
+#define SIGN_DIFF_MATCH_BYTES_THRESHOLD 1.0
+#define SIGN_DIFF_MATCH_GRAPH_THRESHOLD 1.0
+
 const char *getRealRef(RCore *core, ut64 off) {
 	RFlagItem *item;
 	RListIter *iter;
@@ -160,6 +163,9 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			continue;
 		}
 		token = word + 2;
+		if (!strcmp (word, "*")) {
+			continue;
+		}
 		if (strlen (word) < 3 || word[1] != ':') {
 			eprintf ("Corrupted zignatures database (%s)\n", word);
 			break;
@@ -616,6 +622,7 @@ R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val
 	r_return_val_if_fail (a && name && type && val && len > 0, false);
 	if (type != R_SIGN_BBHASH) {
 		eprintf ("error: hash type unknown");
+		return false;
 	}
 	int digestsize = r_hash_size (R_ZIGN_HASH) * 2;
 	if (len != digestsize) {
@@ -833,6 +840,264 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 	return sdb_remove (a->sdb_zigns, k, 0);
 }
 
+static double matchBytes(RSignItem *a, RSignItem *b) {
+	double result = 0.0;
+
+	if (!a->bytes || !b->bytes) {
+		return result;
+	}
+
+	size_t min_size = R_MIN ((size_t) a->bytes->size, (size_t) b->bytes->size);
+	if (!min_size) {
+		return result;
+	}
+
+	ut8 *combined_mask = NULL;
+	if (a->bytes->mask || b->bytes->mask) {
+		combined_mask = (ut8*) malloc (min_size);
+		if (!combined_mask) {
+			return result;
+		}
+		memcpy (combined_mask, a->bytes->mask, min_size);
+		if (b->bytes->mask) {
+			int i;
+			for (i = 0; i != min_size; i++) {
+				combined_mask[i] &= b->bytes->mask[i];
+			}
+		}
+	}
+
+	if ((combined_mask && !r_mem_cmp_mask (a->bytes->bytes, b->bytes->bytes, combined_mask, min_size)) ||
+		(!combined_mask && !memcmp (a->bytes->bytes, b->bytes->bytes, min_size))) {
+		result = (double) min_size / (double) R_MAX (a->bytes->size, b->bytes->size);
+	}
+
+	free (combined_mask);
+
+	return result;
+}
+
+#define SIMILARITY(a,b) \
+	((a) == (b) ? 1.0 : (R_MAX ((a),(b)) == 0.0 ? 0.0 : (double) R_MIN ((a), (b)) / (double) R_MAX ((a), (b))))
+
+static double matchGraph(RSignItem *a, RSignItem *b) {
+	if (!a->graph || !b->graph) {
+		return 0.0;
+	}
+
+	double total = 0.0;
+
+	total += SIMILARITY (a->graph->cc, b->graph->cc);
+	total += SIMILARITY (a->graph->nbbs, b->graph->nbbs);
+	total += SIMILARITY (a->graph->ebbs, b->graph->ebbs);
+	total += SIMILARITY (a->graph->edges, b->graph->edges);
+	total += SIMILARITY (a->graph->bbsum, b->graph->bbsum);
+
+	return total / 5.0;
+}
+
+R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_name) {
+	char k[R_SIGN_KEY_MAXSZ];
+
+	r_return_val_if_fail (a && other_space_name, false);
+
+	RSpace *current_space = r_spaces_current (&a->zign_spaces);
+	if (!current_space) {
+		return false;
+	}
+	RSpace *other_space = r_spaces_get (&a->zign_spaces, other_space_name);
+	if (!other_space) {
+		return false;
+	}
+
+	serializeKey (a, current_space, "", k);
+	SdbList *current_zigns = sdb_foreach_match (a->sdb_zigns, k, false);
+
+	serializeKey (a, other_space, "", k);
+	SdbList *other_zigns = sdb_foreach_match (a->sdb_zigns, k, false);
+
+	eprintf ("Diff %d %d\n", (int)ls_length (current_zigns), (int)ls_length (other_zigns));
+
+	SdbListIter *iter;
+	SdbKv *kv;
+	RList *lb = NULL;
+	RList *la = r_list_new ();
+	if (!la) {
+		goto beach;
+	}
+	ls_foreach (current_zigns, iter, kv) {
+		RSignItem *it = r_sign_item_new ();
+		if (!it) {
+			goto beach;
+		}
+		if (r_sign_deserialize (a, it, kv->base.key, kv->base.value)) {
+			r_list_append (la, it);
+		} else {
+			r_sign_item_free (it);
+		}
+	}
+	lb = r_list_new ();
+	if (!lb) {
+		goto beach;
+	}
+	ls_foreach (other_zigns, iter, kv) {
+		RSignItem *it = r_sign_item_new ();
+		if (!it) {
+			goto beach;
+		}
+		if (r_sign_deserialize (a, it, kv->base.key, kv->base.value)) {
+			r_list_append (lb, it);
+		} else {
+			r_sign_item_free (it);
+		}
+	}
+
+	ls_free (current_zigns);
+	ls_free (other_zigns);
+
+	RListIter *itr;
+	RListIter *itr2;
+	RSignItem *si;
+	RSignItem *si2;
+
+	// do the sign diff here
+	r_list_foreach (la, itr, si) {
+		if (strstr (si->name, "imp.")) {
+			continue;
+		}
+		r_list_foreach (lb, itr2, si2) {
+			if (strstr (si2->name, "imp.")) {
+				continue;
+			}
+			double bytesScore = matchBytes (si, si2);
+			double graphScore = matchGraph (si, si2);
+			bool bytesMatch = bytesScore >= (options ? options->bytes_diff_threshold : SIGN_DIFF_MATCH_BYTES_THRESHOLD);
+			bool graphMatch = graphScore >= (options ? options->graph_diff_threshold : SIGN_DIFF_MATCH_GRAPH_THRESHOLD);
+
+			if (bytesMatch) {
+				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x " %02.5lf B %s\n", si->addr, si2->addr, bytesScore, si->name);
+			}
+
+			if (graphMatch) {
+				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %02.5lf G %s\n", si->addr, si2->addr, graphScore, si->name);
+			}
+		}
+	}
+
+	r_list_free (la);
+	r_list_free (lb);
+
+	return true;
+beach:
+	ls_free (current_zigns);
+	ls_free (other_zigns);
+	r_list_free (la);
+	r_list_free (lb);
+
+	return false;
+}
+
+R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions * options, const char *other_space_name, bool not_matching) {
+	char k[R_SIGN_KEY_MAXSZ];
+
+	r_return_val_if_fail (a && other_space_name, false);
+
+	RSpace *current_space = r_spaces_current (&a->zign_spaces);
+	if (!current_space) {
+		return false;
+	}
+	RSpace *other_space = r_spaces_get (&a->zign_spaces, other_space_name);
+	if (!other_space) {
+		return false;
+	}
+
+	serializeKey (a, current_space, "", k);
+	SdbList *current_zigns = sdb_foreach_match (a->sdb_zigns, k, false);
+
+	serializeKey (a, other_space, "", k);
+	SdbList *other_zigns = sdb_foreach_match (a->sdb_zigns, k, false);
+
+	eprintf ("Diff by name %d %d (%s)\n", (int)ls_length (current_zigns), (int)ls_length (other_zigns), not_matching ? "not matching" : "matching");
+
+	SdbListIter *iter;
+	SdbKv *kv;
+	RList *lb = NULL;
+	RList *la = r_list_new ();
+	if (!la) {
+		goto beach;
+	}
+	ls_foreach (current_zigns, iter, kv) {
+		RSignItem *it = r_sign_item_new ();
+		if (!it) {
+			goto beach;
+		}
+		if (r_sign_deserialize (a, it, kv->base.key, kv->base.value)) {
+			r_list_append (la, it);
+		} else {
+			r_sign_item_free (it);
+		}
+	}
+	lb = r_list_new ();
+	if (!la) {
+		goto beach;
+	}
+	ls_foreach (other_zigns, iter, kv) {
+		RSignItem *it = r_sign_item_new ();
+		if (!it) {
+			goto beach;
+		}
+		if (r_sign_deserialize (a, it, kv->base.key, kv->base.value)) {
+			r_list_append (lb, it);
+		} else {
+			r_sign_item_free (it);
+		}
+	}
+
+	ls_free (current_zigns);
+	ls_free (other_zigns);
+
+	RListIter *itr;
+	RListIter *itr2;
+	RSignItem *si;
+	RSignItem *si2;
+	size_t current_space_name_len = strlen (current_space->name);
+	size_t other_space_name_len = strlen (other_space->name);
+
+	r_list_foreach (la, itr, si) {
+		if (strstr (si->name, "imp.")) {
+			continue;
+		}
+		r_list_foreach (lb, itr2, si2) {
+			if (strcmp (si->name + current_space_name_len + 1, si2->name + other_space_name_len + 1)) {
+				continue;
+			}
+			// TODO: add config variable for threshold
+			double bytesScore = matchBytes (si, si2);
+			double graphScore = matchGraph (si, si2);
+			bool bytesMatch = bytesScore >= (options ? options->bytes_diff_threshold : SIGN_DIFF_MATCH_BYTES_THRESHOLD);
+			bool graphMatch = graphScore >= (options ? options->graph_diff_threshold : SIGN_DIFF_MATCH_GRAPH_THRESHOLD);
+			if ((bytesMatch && !not_matching) || (!bytesMatch && not_matching)) {
+				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %02.5f B %s\n", si->addr, si2->addr, bytesScore, si->name);
+			}
+			if ((graphMatch && !not_matching) || (!graphMatch && not_matching)) {
+				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %02.5f G %s\n", si->addr, si2->addr, graphScore, si->name);
+			}
+		}
+	}
+
+	r_list_free (la);
+	r_list_free (lb);
+
+	return true;
+beach:
+	ls_free (current_zigns);
+	ls_free (other_zigns);
+	r_list_free (la);
+	r_list_free (lb);
+
+	return false;
+}
+
 struct ctxListCB {
 	RAnal *anal;
 	int idx;
@@ -846,41 +1111,44 @@ struct ctxGetListCB {
 
 static void listBytes(RAnal *a, RSignItem *it, int format) {
 	RSignBytes *bytes = it->bytes;
-	char *strbytes = NULL;
-	int i = 0;
 
-	int masked = 0;
 	if (!bytes->bytes) {
 		return;
 	}
-	for (i = 0; i < bytes->size; i++) {
-		if (bytes->mask[i] & 0xf0) {
-			masked++;
-			strbytes = r_str_appendf (strbytes, "%x", (bytes->bytes[i] & 0xf0) >> 4);
-		} else {
-			strbytes = r_str_appendf (strbytes, ".");
-		}
-		if (bytes->mask[i] & 0xf) {
-			masked++;
-			strbytes = r_str_appendf (strbytes, "%x", bytes->bytes[i] & 0xf);
-		} else {
-			strbytes = r_str_appendf (strbytes, ".");
-		}
-	}
-	masked /= 2; /* nibbles to bytes */
 
-	if (strbytes) {
-		if (format == '*') {
-			a->cb_printf ("za %s b %s\n", it->name, strbytes);
-		} else if (format == 'q') {
-			a->cb_printf (" b(%d/%d)", masked, bytes->size);
-		} else if (format == 'j') {
-			a->cb_printf ("\"bytes\":\"%s\",", strbytes);
-		} else {
-			a->cb_printf ("  bytes: %s\n", strbytes);
-		}
-		free (strbytes);
+	int masked = 0, i = 0;
+	for (i = 0; i < bytes->size; i++) {
+		masked += bytes->mask[i] == 0xff;
 	}
+
+	char * strbytes = r_hex_bin2strdup (bytes->bytes, bytes->size);
+	if (!strbytes) {
+		return;
+	}
+	char * strmask = r_hex_bin2strdup (bytes->mask, bytes->size);
+	if (!strmask) {
+		free (strbytes);
+		return;
+	}
+
+	if (format == '*') {
+		if (masked == bytes->size) {
+			a->cb_printf ("za %s b %s\n", it->name, strbytes);
+		} else {
+			a->cb_printf ("za %s b %s:%s\n", it->name, strbytes, strmask);
+		}
+	} else if (format == 'q') {
+		a->cb_printf (" b(%d/%d)", masked, bytes->size);
+	} else if (format == 'j') {
+		a->cb_printf ("\"bytes\":\"%s\",", strbytes);
+		a->cb_printf ("\"mask\":\"%s\",", strmask);
+	} else {
+		a->cb_printf ("  bytes: %s\n", strbytes);
+		a->cb_printf ("  mask: %s\n", strmask);
+	}
+
+	free (strbytes);
+	free (strmask);
 }
 
 static void listGraph(RAnal *a, RSignItem *it, int format) {
@@ -921,7 +1189,7 @@ static void listRealname(RAnal *a, RSignItem *it, int format) {
 		if (format == 'q') {
 			//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
 		} else if (format == '*') {
-			a->cb_printf ("za %s %s\n", it->name, it->realname);
+			a->cb_printf ("za %s n %s\n", it->name, it->realname);
 			a->cb_printf ("afn %s @ 0x%08"PFMT64x"\n", it->realname, it->addr);
 		} else if (format == 'j') {
 			a->cb_printf ("\"realname\":\"%s\",", it->realname);
@@ -1931,4 +2199,33 @@ R_API bool r_sign_save(RAnal *a, const char *file) {
 	sdb_free (db);
 
 	return retval;
+}
+
+R_API RSignOptions *r_sign_options_new(const char *bytes_thresh, const char *graph_thresh) {
+	RSignOptions *options = R_NEW0 (RSignOptions);
+	if (!options) {
+		return NULL;
+	}
+
+	options->bytes_diff_threshold = r_num_get_float (NULL, bytes_thresh);
+	options->graph_diff_threshold = r_num_get_float (NULL, graph_thresh);
+
+	if (options->bytes_diff_threshold > 1.0) {
+		options->bytes_diff_threshold = 1.0;
+	}
+	if (options->bytes_diff_threshold < 0) {
+		options->bytes_diff_threshold = 0.0;
+	}
+	if (options->graph_diff_threshold > 1.0) {
+		options->graph_diff_threshold = 1.0;
+	}
+	if (options->graph_diff_threshold < 0) {
+		options->graph_diff_threshold = 0.0;
+	}
+
+	return options;
+}
+
+R_API void r_sign_options_free(RSignOptions *options) {
+	R_FREE (options);
 }

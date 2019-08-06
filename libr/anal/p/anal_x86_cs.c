@@ -54,8 +54,8 @@ call = 4
 #define ARG1_AR      1
 #define ARG2_AR      2
 
-static RRegItem base_regs[2];
-static RRegItem regdelta_regs[2];
+static RRegItem base_regs[4];
+static RRegItem regdelta_regs[4];
 
 struct Getarg {
 	csh handle;
@@ -886,7 +886,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		esilprintf (op, "eax,rax,=,31,rax,>>,?{,0xffffffff00000000,rax,|=,}");
 		break;
 	case X86_INS_AAA:
-		esilprintf (op, "0,cf,:=,0,af,:=,9,al,>,?{,10,al,-=,1,ah,+=,1,cf,:=,1,af,:=,}");	//dont
+		esilprintf (op, "0,cf,:=,0,af,:=,9,al,>,?{,10,al,-=,1,ah,+=,1,cf,:=,1,af,:=,}");	//don't
 		break;
 	case X86_INS_AAD:
 		arg0 = "0,zf,:=,0,sf,:=,0,pf,:=,10,ah,*,al,+,ax,=";
@@ -1328,7 +1328,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 
 			/*
 			 * Similar to BSF, except we naturally don't
-			 * need to substract anything to create
+			 * need to subtract anything to create
 			 * a mask and return the result.
 			 */
 			esilprintf (op, "%s,!,?{,1,zf,=,BREAK,},0,zf,=,"
@@ -1813,11 +1813,17 @@ static int parse_reg_name(RRegItem *reg_base, RRegItem *reg_delta, csh *handle, 
 
 #define CREATE_SRC_DST(op) \
 	(op)->src[0] = r_anal_value_new ();\
+	(op)->src[1] = r_anal_value_new ();\
+	(op)->src[2] = r_anal_value_new ();\
 	(op)->dst = r_anal_value_new ();\
 	ZERO_FILL (base_regs[0]);\
 	ZERO_FILL (base_regs[1]);\
+	ZERO_FILL (base_regs[2]);\
+	ZERO_FILL (base_regs[3]);\
 	ZERO_FILL (regdelta_regs[0]);\
-	ZERO_FILL (regdelta_regs[1]);
+	ZERO_FILL (regdelta_regs[1]);\
+	ZERO_FILL (regdelta_regs[2]);\
+	ZERO_FILL (regdelta_regs[3]);
 
 static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
 	parse_reg_name (&base_regs[x], &regdelta_regs[x], handle, insn, x);
@@ -1864,9 +1870,88 @@ static void op_fillval(RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn) {
 		CREATE_SRC_DST (op);
 		set_src_dst (op->dst, handle, insn, 0);
 		set_src_dst (op->src[0], handle, insn, 1);
+		set_src_dst (op->src[1], handle, insn, 2);
+		set_src_dst (op->src[2], handle, insn, 3);
+		break;
+	case R_ANAL_OP_TYPE_UPUSH:
+		if ((op->type & R_ANAL_OP_TYPE_REG)) {
+			CREATE_SRC_DST (op);
+			set_src_dst (op->src[0], handle, insn, 0);
+		}
 		break;
 	default:
 		break;
+	}
+}
+
+static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
+	op->ptr = UT64_MAX;
+	switch (INSOP(0).type) {
+	case X86_OP_MEM:
+		op->cycles = CYCLE_MEM;
+		op->ptr = INSOP(0).mem.disp;
+		op->refptr = INSOP(0).size;
+		if (INSOP(0).mem.base == X86_REG_RIP) {
+			op->ptr += addr + insn->size;
+		} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
+			op->type |= R_ANAL_OP_TYPE_REG;
+			op->stackop = R_ANAL_STACK_SET;
+			op->stackptr = regsz;
+		} else {
+			if (op->ptr < 0x1000) {
+				op->ptr = UT64_MAX;
+			}
+		}
+		if (INSOP(1).type == X86_OP_IMM) {
+			op->val = INSOP(1).imm;
+		}
+		break;
+	case X86_OP_REG:
+		if ((INSOP(1).type == X86_OP_IMM) &&
+			(INSOP(0).reg != X86_REG_RSP) && (INSOP(0).reg != X86_REG_ESP)) {
+			op->val = INSOP(1).imm;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
+	if (op->refptr < 1 || op->ptr == UT64_MAX) {
+		switch (INSOP(1).type) {
+		case X86_OP_MEM:
+			op->ptr = INSOP(1).mem.disp;
+			op->refptr = INSOP(1).size;
+			if (INSOP(1).mem.base == X86_REG_RIP) {
+				op->ptr += addr + insn->size;
+			} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
+				op->stackop = R_ANAL_STACK_GET;
+				op->stackptr = regsz;
+			}
+			break;
+		case X86_OP_IMM:
+			if ((INSOP (1).imm > 10) &&
+				(INSOP(0).reg != X86_REG_RSP) && (INSOP(0).reg != X86_REG_ESP)) {
+				op->ptr = INSOP (1).imm;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+static void op_stackidx(RAnalOp *op, cs_insn *insn, bool minus) {
+	if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
+		if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
+			op->stackop = R_ANAL_STACK_INC;
+			if (minus) {
+				op->stackptr = -INSOP(1).imm;
+			} else {
+				op->stackptr = INSOP(1).imm;
+			}
+		}
 	}
 }
 
@@ -2197,56 +2282,8 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_MOVDQ2Q:
 		{
 		op->type = R_ANAL_OP_TYPE_MOV;
-		op->ptr = UT64_MAX;
-		switch (INSOP(0).type) {
-		case X86_OP_MEM:
-			op->cycles = CYCLE_MEM;
-			op->ptr = INSOP(0).mem.disp;
-			op->refptr = INSOP(0).size;
-			if (INSOP(0).mem.base == X86_REG_RIP) {
-				op->ptr += addr + insn->size;
-			} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
-				op->type |= R_ANAL_OP_TYPE_REG;
-				op->stackop = R_ANAL_STACK_SET;
-				op->stackptr = regsz;
-			} else {
-				if (op->ptr < 0x1000) {
-					op->ptr = UT64_MAX;
-				}
-			}
-			if (INSOP(1).type == X86_OP_IMM) {
-				op->val = INSOP(1).imm;
-			}
-			break;
-		case X86_OP_REG:
-			if (INSOP(1).type == X86_OP_IMM) {
-				op->val = INSOP(1).imm;
-			}
-			break;
-		default:
-			break;
-		}
-		if (op->refptr<1 || op->ptr == UT64_MAX) {
-			switch (INSOP(1).type) {
-			case X86_OP_MEM:
-				op->ptr = INSOP(1).mem.disp;
-				op->refptr = INSOP(1).size;
-				if (INSOP(1).mem.base == X86_REG_RIP) {
-					op->ptr += addr + insn->size;
-				} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
-					op->stackop = R_ANAL_STACK_GET;
-					op->stackptr = regsz;
-				}
-				break;
-			case X86_OP_IMM:
-				if (INSOP (1).imm > 10) {
-					op->ptr = INSOP (1).imm;
-				}
-				break;
-			default:
-				break;
-			}
-		}
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		}
 		break;
 	case X86_INS_ROL:
@@ -2393,6 +2430,10 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		case X86_OP_IMM:
 			op->val = op->ptr = INSOP(0).imm;
 			op->type = R_ANAL_OP_TYPE_PUSH;
+			op->cycles = CYCLE_REG + CYCLE_MEM;
+			break;
+		case X86_OP_REG:
+			op->type = R_ANAL_OP_TYPE_RPUSH;
 			op->cycles = CYCLE_REG + CYCLE_MEM;
 			break;
 		default:
@@ -2634,17 +2675,22 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_XORPS:
 	case X86_INS_KXORW:
 	case X86_INS_PXOR:
+		op->type = R_ANAL_OP_TYPE_XOR;
+		break;
 	case X86_INS_XOR:
 		op->type = R_ANAL_OP_TYPE_XOR;
+		// TODO: Add stack indexing handling chang
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_OR:
 		// The OF and CF flags are cleared; the SF, ZF, and PF flags are
 		// set according to the result. The state of the AF flag is
 		// undefined.
 		op->type = R_ANAL_OP_TYPE_OR;
-		if (INSOP(1).type == X86_OP_IMM) {
-			op->val = INSOP(1).imm;
-		}
+		// TODO: Add stack indexing handling chang
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_INC:
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
@@ -2678,15 +2724,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		break;
 	case X86_INS_SUB:
 		op->type = R_ANAL_OP_TYPE_SUB;
-		if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
-			if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
-				op->stackop = R_ANAL_STACK_INC;
-				op->stackptr = INSOP(1).imm;
-			}
-		}
-		if (INSOP(1).type == X86_OP_IMM) {
-			op->val = INSOP(1).imm;
-		}
+		op_stackidx (op, insn, false);
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_SBB:
 		// dst = dst - (src + cf)
@@ -2724,13 +2764,18 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 		op->type = R_ANAL_OP_TYPE_MOV; // XXX
 		break;
-	case X86_INS_AND:
 	case X86_INS_ANDN:
 	case X86_INS_ANDPD:
 	case X86_INS_ANDPS:
 	case X86_INS_ANDNPD:
 	case X86_INS_ANDNPS:
 		op->type = R_ANAL_OP_TYPE_AND;
+		break;
+	case X86_INS_AND:
+		op->type = R_ANAL_OP_TYPE_AND;
+		// TODO: Add stack register change operation
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_IDIV:
 		op->type = R_ANAL_OP_TYPE_DIV;
@@ -2791,27 +2836,16 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
-			if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
-				op->stackop = R_ANAL_STACK_INC;
-				op->stackptr = -INSOP(1).imm;
-			}
-		}
+		op_stackidx (op, insn, true);
 		op->val = INSOP(1).imm;
 		break;
 	case X86_INS_ADD:
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
-			if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
-				op->stackop = R_ANAL_STACK_INC;
-				op->stackptr = -INSOP(1).imm;
-			}
-		}
-		if (INSOP(1).type == X86_OP_IMM) {
-			op->val = INSOP(1).imm;
-		}
+		op_stackidx (op, insn, true);
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_ADC:
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -2904,7 +2938,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 #endif
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
 	} else {
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = r_str_newf ("%s%s%s",
+				insn->mnemonic,
+				insn->op_str[0]?" ":"",
+				insn->op_str);
+		}
 		// int rs = a->bits / 8;
 		//const char *pc = (a->bits==16)?"ip": (a->bits==32)?"eip":"rip";
 		//const char *sp = (a->bits==16)?"sp": (a->bits==32)?"esp":"rsp";
@@ -3438,7 +3481,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 //	.esil_intr = esil_x86_cs_intr,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_x86_cs,

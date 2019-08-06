@@ -4,32 +4,29 @@ Capstone
 Capstone Engine is the disassembler engine used by radare2 by default for 
 some architectures.
 
-Radare2 ships its own version of capstone based on the -master branch with
-some minor patches. The problem is that latest release have some compile
-time dependencies that make compilation with older releases a bit harder.
+R2 supports capstone 3, 4 and 5.
 
-In order to build r2 against capstone3 you can do the following things:
+* capstone3: legacy support (only for Debian probably)
+* capstone4: stable release at the moment of writing this
+* capstone5: next branch, still under development
 
-	$ cd shlr
-	$ rm -rf capstone
-	$ make capstone-sync CS_RELEASE=1
-	$ make -j4
+By default r2 will build statically against capstone4 (unless you specify --with-capstone5)
 
-If you are a distro packager it will be necessary to fix the include path
-in the package script like this:
+Using system capstone
+---------------------
 
-	$ ln -fs /usr/include libr/include/capstone
+You can link capstone dynamically (by using --with-syscapstone), this will skip all the
+download and build steps of capstone inside `shlr/capstone`.and just link against the version
+of capstone found in the system. That's what distros usually want.
 
-This is because capstone3 pkg-config file references the files directly
-inside the /usr/include/capstone directory. so the includes in code must
-be like this:
+NOTE: that building against capstone-master is cursedd, because cs-master reports v5, but code
+is from v4, so it fails to compile because of missing enums and archs.
 
-	#include <capstone.h>
-	#include <arm.h>
+v5
+--
 
-This was fixed in capstone4 that will be released later this year, but as
-long as distros will take some time to upgrade it is good to provide a
-clean workaround to support both without having to change all the C files
+To build r2 against capstone5 use the following oneliner:
 
-	#include <capstone/capstone.h>
-	#include <capstone/arm.h>
+	git clean -xdf
+	rm -rf shlr/capstone
+	sys/install.sh --with-capstone5

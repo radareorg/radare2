@@ -180,7 +180,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
-	.cpus = "v8,cortex",
+	.cpus = ",v8,cortex",
 	.features = "v8",
 	.license = "BSD",
 	.arch = "arm",
@@ -199,7 +199,7 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 };
 
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_arm_cs,

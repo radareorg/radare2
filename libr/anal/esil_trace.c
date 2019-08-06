@@ -131,12 +131,66 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	esil->trace_idx ++;
 }
 
+static int cmp_strings_by_leading_number(void *data1, void *data2) {
+	const char* a = sdbkv_key ((const SdbKv *)data1);
+	const char* b = sdbkv_key ((const SdbKv *)data2);
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	while (a[i] >= '0' && a[i] <= '9') {
+		i++;
+	}
+	while (b[j] >= '0' && b[j] <= '9') {
+		j++;
+	}
+	if (!i) {
+		return 1;
+	}
+	if (!j) {
+		return -1;
+	}
+	i--;
+	j--;
+	if (i > j) {
+		return 1;
+	}
+	if (j > i) {
+		return -1;
+	}
+	while (k <= i) {
+		if (a[k] < b[k]) {
+			return -1;
+		}
+		if (a[k] > b[k]) {
+			return 1;
+		}
+		k++;
+	}
+	for (; a[i] && b[i]; i++) {
+		if (a[i] > b[i]) {
+			return 1;
+		}
+		if (a[i] < b[i]) {
+			return -1;
+		}
+	}
+	if (!a[i] && b[i]) {
+		return -1;
+	}
+	if (!b[i] && a[i]) {
+		return 1;
+	}
+	return 0;
+}
+
 R_API void r_anal_esil_trace_list (RAnalEsil *esil) {
+	PrintfCallback p = esil->anal->cb_printf;
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *list = sdb_foreach_list (esil->db_trace, true);
+	ls_sort (list, (SdbListComparator) cmp_strings_by_leading_number);
 	ls_foreach (list, iter, kv) {
-		eprintf ("%s=%s\n", sdbkv_key (kv), sdbkv_value (kv));
+		p ("%s=%s\n", sdbkv_key (kv), sdbkv_value (kv));
 	}
 	ls_free (list);
 }

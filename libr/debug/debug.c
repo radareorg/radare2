@@ -5,7 +5,7 @@
 #include <signal.h>
 
 #if __WINDOWS__
-void w32_break_process(void *);
+void w32_break_process_wrapper(void *);
 #endif
 
 R_LIB_VERSION(r_debug);
@@ -587,7 +587,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		return false;
 	}
 
-	if (dbg->h && dbg->h->select && !dbg->h->select (pid, tid)) {
+	if (dbg->h && dbg->h->select && !dbg->h->select (dbg, pid, tid)) {
 		return false;
 	}
 
@@ -912,6 +912,17 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 	return steps_taken;
 }
 
+static bool isStepOverable(ut64 opType) {
+	switch (opType & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_SWI:
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_RCALL:
+		return true;
+	}
+	return false;
+}
+
 R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	RAnalOp op;
 	ut64 buf_pc, pc, ins_size;
@@ -952,7 +963,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		}
 		// Analyze the opcode
 		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
-			eprintf ("Decode error at %"PFMT64x"\n", pc);
+			eprintf ("debug-step-over: Decode error at %"PFMT64x"\n", pc);
 			return steps_taken;
 		}
 		if (op.fail == -1) {
@@ -962,8 +973,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			ins_size = op.fail;
 		}
 		// Skip over all the subroutine calls
-		if ((op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_CALL ||
-			(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
+		if (isStepOverable (op.type)) {
 			if (!r_debug_continue_until (dbg, ins_size)) {
 				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
 				return steps_taken;
@@ -1091,7 +1101,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 		return false;
 	}
 #if __WINDOWS__
-	r_cons_break_push (w32_break_process, dbg);
+	r_cons_break_push (w32_break_process_wrapper, dbg);
 #endif
 repeat:
 	if (r_debug_is_dead (dbg)) {
@@ -1269,7 +1279,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 
-	// step first, we dont want to check current optype
+	// step first, we don't want to check current optype
 	for (;;) {
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 			break;
@@ -1663,7 +1673,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		free (abspath);
 	}
 	// fallback resolution (osx/w32?)
-	// we asume maps to be loaded in order, so lower addresses come first
+	// we assume maps to be loaded in order, so lower addresses come first
 	r_list_foreach (dbg->maps, iter, map) {
 		if (map->perm == 5) { // r-x
 			return map->addr;

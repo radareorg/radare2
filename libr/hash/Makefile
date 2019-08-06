@@ -11,7 +11,7 @@ endif
 endif
 
 DEPS=r_util
-OBJS=state.o hash.o hamdist.o crca.o
+OBJS=state.o hash.o hamdist.o crca.o fletcher.o
 OBJS+=entropy.o calc.o adler32.o luhn.o
 
 ifeq ($(HAVE_LIB_SSL),1)

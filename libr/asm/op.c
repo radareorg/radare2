@@ -3,9 +3,7 @@
 #include <r_asm.h>
 
 R_API RAsmOp *r_asm_op_new() {
-	RAsmOp *op = R_NEW (RAsmOp);
-	r_asm_op_init (op);
-	return op;
+	return R_NEW0 (RAsmOp);
 }
 
 R_API void r_asm_op_free(RAsmOp *op) {
@@ -31,7 +29,6 @@ R_API char *r_asm_op_get_hex(RAsmOp *op) {
 	int size = r_strbuf_length (&op->buf);
 	char* str = calloc (size + 1, 2);
 	r_return_val_if_fail (str, NULL);
-
 	r_hex_bin2str ((const ut8*) r_strbuf_get (&op->buf), size, str);
 	return str;
 }

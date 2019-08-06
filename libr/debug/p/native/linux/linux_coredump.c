@@ -10,7 +10,7 @@
 #include <asm/ptrace.h>
 #include "linux_coredump.h"
 
-/* For compability */
+/* For compatibility */
 #if __x86_64__ || __arm64__
 typedef Elf64_auxv_t elf_auxv_t;
 typedef Elf64_Ehdr elf_hdr_t;
@@ -910,15 +910,13 @@ static elf_fpxregset_t *linux_get_fpx_regset (RDebug *dbg, int tid) {
 #ifdef PTRACE_GETREGSET
 	struct iovec transfer;
 	elf_fpxregset_t *fpxregset = R_NEW0 (elf_fpxregset_t);
-
-	if (!fpxregset) {
-		return NULL;
-	}
-	transfer.iov_base = fpxregset;
-	transfer.iov_len = sizeof (elf_fpxregset_t);
-	if (r_debug_ptrace (PTRACE_GETREGSET, tid, (void *)NT_PRXFPREG, &transfer) < 0) {
-		perror ("linux_get_fpx_regset");
-		return NULL;
+	if (fpxregset) {
+		transfer.iov_base = fpxregset;
+		transfer.iov_len = sizeof (elf_fpxregset_t);
+		if (r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_PRXFPREG, &transfer) < 0) {
+			perror ("linux_get_fpx_regset");
+			R_FREE (fpxregset);
+		}
 	}
 	return fpxregset;
 #else
@@ -1017,7 +1015,7 @@ void write_note_hdr (note_type_t type, ut8 **note_data) {
 		break;
 #endif
 	default:
-		/* shouldnt happen */
+		/* shouldn't happen */
 		memset (*note_data, 0, size_note_hdr);
 		return;
 	}
@@ -1524,7 +1522,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	if (hdr_size) {
 		if (elf_hdr->e_phnum == PN_XNUM) {
 			elf_offset_t offset_shdr;
-			/* Since extra secion header must be placed at the end,
+			/* Since extra section header must be placed at the end,
 				we need to compute the total size to known at which position should be written */
 			offset_shdr = hdr_size + (elf_hdr->e_phnum * elf_hdr->e_phentsize) + note_section_size + maps_size;
 			shdr_pxnum = get_extra_sectionhdr (elf_hdr, offset_shdr, n_segments);

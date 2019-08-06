@@ -1,10 +1,12 @@
+/* radare2 - LGPL - Copyright 2008-2019 - pancake */
+
 #include <r_cons.h>
 #include <r_regex.h>
 #include <r_util.h>
 #include "pager_private.h"
 
 R_API int r_cons_more_str(const char *str, const char *exitkeys) {
-	static int in_help = false;
+	static bool inHelp = false;
 	static const char *r_cons_more_help = \
 		" space    - page up\n"
 		" j        - line down\n"
@@ -79,10 +81,10 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 			r_cons_hud_string (ostr);
 			break;
 		case '?':
-			if (!in_help) {
-				in_help = true;
+			if (!inHelp) {
+				inHelp = true;
 				r_cons_more_str (r_cons_more_help, NULL);
-				in_help = false;
+				inHelp = false;
 			}
 			break;
 		case ' ': from += h; break;
@@ -111,7 +113,7 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 			if (!rx) {
 				break;
 			}
-			/* find all occurences */
+			/* find all occurrences */
 			if (pager_all_matches (p, rx, mla, lines, lines_count)) {
 				from = pager_next_match (from, mla, lines_count);
 			}
@@ -139,6 +141,5 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 }
 
 R_API void r_cons_more() {
-	r_cons_more_str (r_cons_singleton ()->context->buffer, NULL);
+	(void)r_cons_more_str (r_cons_singleton ()->context->buffer, NULL);
 }
-

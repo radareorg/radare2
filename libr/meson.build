@@ -137,6 +137,7 @@ bin_plugins = [
   'mdmp',
   'menuet',
   'mz',
+  'ne',
   'nes',
   'nin3ds',
   'ninds',
@@ -305,7 +306,6 @@ parse_plugins = [
   'dalvik_pseudo',
   'm68k_pseudo',
   'mips_pseudo',
-  'mreplace',
   'ppc_pseudo',
   'sh_pseudo',
   'wasm_pseudo',
@@ -315,6 +315,7 @@ parse_plugins = [
 
 include_files =[
   'include/r2naked.h',
+  'include/r_agraph.h',
   'include/r_anal_ex.h',
   'include/r_anal.h',
   'include/r_asm.h',

@@ -24,6 +24,7 @@ static bool threaded = false;
 static bool haveRarunProfile = false;
 static struct r_core_t r;
 static int do_analysis = 0;
+static bool forcequit = false;
 
 static bool is_valid_gdb_file(RCoreFile *fh) {
 	RIODesc *d = fh && fh->core ? r_io_desc_get (fh->core->io, fh->fd) : NULL;
@@ -158,6 +159,7 @@ static int main_help(int line) {
 		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
 		" -N           do not load user settings and scripts\n"
 		" -q           quiet mode (no prompt) and quit after -i\n"
+		" -qq          quit after running all -c and -i\n"
 		" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
 		" -p [prj]     use project, list if no arg, load if no file\n"
 		" -P [file]    apply rapatch file and quit\n"
@@ -399,6 +401,18 @@ static bool mustSaveHistory(RConfig *c) {
 
 // Try to set the correct scr.color for the current terminal.
 static void set_color_default(void) {
+#ifdef __WINDOWS__
+	char *alacritty = r_sys_getenv ("ALACRITTY_LOG");
+	if (alacritty) {
+		// Despite the setting of env vars to the contrary, Alacritty on
+		// Windows may not actually support >16 colors out-of-the-box
+		// (https://github.com/jwilm/alacritty/issues/1662).
+		// TODO: Windows 10 version check.
+		r_config_set_i (r.config, "scr.color", COLOR_MODE_16);
+		free (alacritty);
+		return;
+	}
+#endif
 	char *tmp = r_sys_getenv ("COLORTERM");
 	if (tmp) {
 		if ((r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit"))) {
@@ -434,7 +448,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 	const char *prj = NULL;
 	int debug = 0;
 	int zflag = 0;
-	int do_connect = 0;
+	bool do_connect = false;
 	bool fullfile = false;
 	int has_project;
 	bool zerosep = false;
@@ -494,7 +508,15 @@ R_API int r_main_radare2(int argc, char **argv) {
 		LISTS_FREE ();
 		return main_help (1);
 	}
-	r_core_init (&r);
+	r_core_init (&r); // TODO: use r_core_new() for simplicity
+	r.r_main_radare2 = r_main_radare2;
+	r.r_main_radiff2 = r_main_radiff2;
+	r.r_main_rafind2 = r_main_rafind2;
+	r.r_main_rabin2 = r_main_rabin2;
+	r.r_main_ragg2 = r_main_ragg2;
+	r.r_main_rasm2 = r_main_rasm2;
+	r.r_main_rax2 = r_main_rax2;
+
 	r_core_task_sync_begin (&r);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (&r, 0);
@@ -584,7 +606,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			if (!strcmp (r_optarg, "q")) {
 				r_core_cmd0 (&r, "eq");
 			} else {
-				r_config_eval (r.config, r_optarg);
+				r_config_eval (r.config, r_optarg, false);
 				r_list_append (evals, r_optarg);
 			}
 			break;
@@ -655,6 +677,9 @@ R_API int r_main_radare2(int argc, char **argv) {
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
 			r_config_set (r.config, "cfg.fortunes", "false");
+			if (quiet) {
+				forcequit = true;
+			}
 			quiet = true;
 			break;
 		case 'r':
@@ -833,7 +858,6 @@ R_API int r_main_radare2(int argc, char **argv) {
 		r_config_set (r.config, "bin.strings", "false");
 	}
 
-	//cverify_version (0);
 	if (do_connect) {
 		const char *uri = argv[r_optind];
 		if (r_optind >= argc) {
@@ -841,13 +865,14 @@ R_API int r_main_radare2(int argc, char **argv) {
 			LISTS_FREE ();
 			return 1;
 		}
-		if (!strncmp (uri, "http://", 7)) {
+		if (strstr (uri, "://")) {
 			r_core_cmdf (&r, "=+%s", uri);
 		} else {
 			r_core_cmdf (&r, "=+http://%s/cmd/", argv[r_optind]);
 		}
-		LISTS_FREE ();
-		return 0;
+		r_core_cmd0 (&r, "=!=");
+		//LISTS_FREE ();
+	//	return 0;
 	}
 
 	switch (zflag) {
@@ -1025,7 +1050,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 					} else {
 						// f is a filename
 						if (r_file_exists (f)) {
-							path = r_str_prefix (strdup (f), "./");
+							path = r_str_prepend (strdup (f), "./");
 						} else {
 							path = r_file_path (f);
 						}
@@ -1251,7 +1276,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			r_core_seek (&r, mapaddr, 1);
 		}
 		r_list_foreach (evals, iter, cmdn) {
-			r_config_eval (r.config, cmdn);
+			r_config_eval (r.config, cmdn, false);
 			r_cons_flush ();
 		}
 #if 0
@@ -1276,8 +1301,25 @@ R_API int r_main_radare2(int argc, char **argv) {
 		if (debug) {
 			r_core_setup_debugger (&r, debugbackend, baddr == UT64_MAX);
 		}
-		if (!debug && r_flag_get (r.flags, "entry0") && !r_bin_cur_object (r.bin)->regstate) {
-			r_core_cmd0 (&r, "s entry0");
+		if (!debug) {
+			RFlagItem *fi = r_flag_get (r.flags, "entry0");
+			if (fi) {
+				r_core_seek (&r, fi->offset, 1);
+			} else {
+				RBinObject *o = r_bin_cur_object (r.bin);
+				if (o) {
+					RList *sections = r_bin_get_sections (r.bin);
+					RListIter *iter;
+					RBinSection *s;
+					r_list_foreach (sections, iter, s) {
+						if (s->perm & R_PERM_X) {
+							ut64 addr = s->vaddr? s->vaddr: s->paddr;
+							r_core_seek (&r, addr, 1);
+							break;
+						}
+					}
+				}
+			}
 		}
 		if (s_seek) {
 			seek = r_num_math (r.num, s_seek);
@@ -1315,7 +1357,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 		}
 
 		r_list_foreach (evals, iter, cmdn) {
-			r_config_eval (r.config, cmdn);
+			r_config_eval (r.config, cmdn, false);
 			r_cons_flush ();
 		}
 
@@ -1383,6 +1425,9 @@ R_API int r_main_radare2(int argc, char **argv) {
 	r_list_free (evals);
 	r_list_free (files);
 	cmds = evals = files = NULL;
+	if (forcequit) {
+		ret = 1;
+	}
 	if (ret) {
 		ret = 0;
 		goto beach;

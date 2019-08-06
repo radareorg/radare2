@@ -46,3 +46,8 @@ func.__android_log_assert.arg.0=const char *,cond
 func.__android_log_assert.arg.1=const char *,tag
 func.__android_log_assert.arg.2=const char *,fmt
 func.__android_log_assert.ret=void
+
+__stack_chk_fail=func
+func.__stack_chk_fail.args=0
+func.__stack_chk_fail.noreturn=true
+func.__stack_chk_fail.ret=void

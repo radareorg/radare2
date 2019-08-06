@@ -78,6 +78,9 @@ R_API int r_num_str_len(const char *str);
 R_API int r_num_str_split(char *str);
 R_API RList *r_num_str_split_list(char *str);
 R_API void *r_num_dup(ut64 n);
+R_API double r_num_cos(double a);
+R_API double r_num_sin(double a);
+R_API double r_num_get_float(RNum *num, const char *str);
 
 static inline st64 r_num_abs(st64 num) {
 	return num < 0 ? -num : num;

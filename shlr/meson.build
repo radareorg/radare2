@@ -16,11 +16,14 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    #CS_TIP = '3a660df88c30685cccf6ff68b4d6d4337b5caf7e'
-    #CS_BRA = 'next'
-    #cs5#CS_TIP = '472845db9c2666ab66b3f517dda21f2b026a06c1'
-    CS_TIP = '7090f081b17a5293a2c185a06513fede18065d3c'
-    CS_BRA = 'v4'
+    use_capstone5 = get_option('use_capstone5')
+    if use_capstone5
+      CS_TIP = 'ec6390f9404bd7725bf8169d59861994a148100c'
+      CS_BRA = 'next'
+    else
+      CS_TIP = '1ccf14960fd38f0e4d2ed6f315c10ef7dcdb4b7c'
+      CS_BRA = 'v4'
+    endif
 
     capstone_git_user = 'aquynh'
 
@@ -93,7 +96,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/X86/X86Disassembler.c',
     'arch/X86/X86DisassemblerDecoder.c',
     'arch/X86/X86IntelInstPrinter.c',
-    # cs5-only 'arch/X86/X86InstPrinterCommon.c',
     'arch/X86/X86Mapping.c',
     'arch/X86/X86Module.c',
     'arch/XCore/XCoreDisassembler.c',
@@ -112,6 +114,9 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   foreach rel_cs_file : rel_cs_files
     cs_files += [join_paths(capstone_path, rel_cs_file)]
   endforeach
+  if get_option('use_capstone5')
+    cs_files += [join_paths(capstone_path, 'arch/X86/X86InstPrinterCommon.c')]
+  endif
 
   capstone_includes = [platform_inc, include_directories('capstone/include')]
 
@@ -198,10 +203,24 @@ sdb_exe = executable('sdb', 'sdb/src/main.c',
   implicit_include_directories: false
 )
 
+sdb_gen_cmd_script = '''#script
+import os
+import sys
+sdb_exe = r'@0@'
+outfile = sys.argv[1]
+infiles = sys.argv[2:]
+if os.name == 'nt':
+    infiles = ','.join(infiles)
+    os.system('powershell -c "Get-Content {} | {} {} ="'.format(infiles, sdb_exe, outfile))
+else:
+    infiles = ' '.join(infiles)
+    os.system('cat {} | {} {} ='.format(infiles, sdb_exe, outfile))
+'''.format(sdb_exe.full_path())
+
 sdb_gen_cmd = [
   py3_exe,
   '-c',
-  'from sys import argv; __import__("os").system("@0@ %s = <%s" % (argv[1], argv[2]))'.format(sdb_exe.full_path()),
+  sdb_gen_cmd_script,
   '@OUTPUT@',
   '@INPUT@'
 ]
@@ -624,3 +643,21 @@ ar_dep = declare_dependency(
 if use_ptrace_wrap
   subdir('ptrace-wrap')
 endif
+
+
+# handle mpc dependency
+mpc_files = [
+  'mpc/mpc.c'
+]
+
+mpc_inc = [platform_inc, include_directories(['mpc'])]
+
+libmpc = static_library('r2mpc', mpc_files,
+  include_directories: mpc_inc,
+  implicit_include_directories: false
+)
+
+mpc_dep = declare_dependency(
+  link_with: libmpc,
+  include_directories: mpc_inc
+)

@@ -590,7 +590,7 @@ R_API int r_isprint(const RRune c) {
 		/*
 		manually copied from top, please update if this ever changes
 		{ 0x0000, 0x001F }, { 0x007F, 0x009F }, { 0x034F, 0x034F },
-		could do a linear search, but thats a lot slower than a few compare
+		could do a linear search, but that's a lot slower than a few compare
 		*/
 		return !( c <= 0x1F || ( c >= 0x7F && c <= 0x9F));
 	}
@@ -731,17 +731,25 @@ R_API int r_utf_block_idx(RRune ch) {
 }
 
 /* str must be UTF8-encoded */
-R_API int *r_utf_block_list(const ut8 *str, int len) {
+R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	if (!str) {
 		return NULL;
 	}
 	if (len < 0) {
 		len = strlen ((const char *)str);
 	}
-	static bool has_block[r_utf_blocks_count] = {0};
+	static int block_freq[r_utf_blocks_count] = {0};
 	int *list = R_NEWS (int, len + 1);
 	if (!list) {
 		return NULL;
+	}
+	int *freq_list_ptr = NULL;
+	if (freq_list) {
+		*freq_list = R_NEWS (int, len + 1);
+		if (!*freq_list) {
+			return NULL;
+		}
+		freq_list_ptr = *freq_list;
 	}
 	int *list_ptr = list;
 	const ut8 *str_ptr = str;
@@ -756,16 +764,23 @@ R_API int *r_utf_block_list(const ut8 *str, int len) {
 		} else {
 			block_idx = r_utf_block_idx (ch);
 		}
-		if (!has_block[block_idx]) {
-			has_block[block_idx] = true;
+		if (!block_freq[block_idx]) {
 			*list_ptr = block_idx;
 			list_ptr++;
 		}
+		block_freq[block_idx]++;
 		str_ptr += ch_bytes;
 	}
 	*list_ptr = -1;
+	if (freq_list_ptr) {
+		for (list_ptr = list; *list_ptr != -1; list_ptr++) {
+			*freq_list_ptr = block_freq[*list_ptr];
+			freq_list_ptr++;
+		}
+		*freq_list_ptr = -1;
+	}
 	for (list_ptr = list; *list_ptr != -1; list_ptr++) {
-		has_block[*list_ptr] = false;
+		block_freq[*list_ptr] = 0;
 	}
 	return list;
 }

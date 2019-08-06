@@ -1,6 +1,6 @@
 NAME=r_fs
 DEPS=r_util r_io
-CFLAGS+=-DCORELIB -Iarch/include -Iarch
+CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch
 
 SHLR=../../shlr/
 

@@ -84,7 +84,7 @@ enum {
 	FCC_UL = 0x3,
 	FCC_ULE = 0xe,
 };
-/* Define some additional conditions that are nor mapable to
+/* Define some additional conditions that are nor mappable to
    the existing R_ANAL_COND* ones and need to be handled in a
    special way. */
 enum {
@@ -619,7 +619,7 @@ RAnalPlugin r_anal_plugin_sparc_gnu = {
 	.set_reg_profile = set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_sparc_gnu,

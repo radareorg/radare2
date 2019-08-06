@@ -1,6 +1,6 @@
 #!/bin/sh
 
-LIBS="libr/cons/libr_cons.a libr/util/libr_util.a  libr/bin/libr_bin.a  libr/anal/libr_anal.a libr/bp/libr_bp.a libr/hash/libr_hash.a libr/debug/libr_debug.a shlr/sdb/src/libsdb.a libr/core/libr_core.a libr/fs/libr_fs.a libr/syscall/libr_syscall.a shlr/java/libr_java.a shlr/zip/librz.a libr/socket/libr_socket.a libr/anal/libr_anal.a libr/flag/libr_flag.a libr/search/libr_search.a libr/reg/libr_reg.a libr/config/libr_config.a libr/io/libr_io.a libr/parse/libr_parse.a libr/bp/libr_bp.a libr/asm/libr_asm.a libr/bp/libr_bp.a libr/egg/libr_egg.a libr/anal/libr_anal.a libr/magic/libr_magic.a libr/lang/libr_lang.a libr/fs/libr_fs.a shlr/grub/libgrubfs.a shlr/capstone/libcapstone.a  shlr/gdb/lib/libgdbr.a"
+LIBS="libr/cons/libr_cons.a libr/util/libr_util.a  libr/bin/libr_bin.a  libr/anal/libr_anal.a libr/bp/libr_bp.a libr/hash/libr_hash.a libr/debug/libr_debug.a shlr/sdb/src/libsdb.a libr/core/libr_core.a libr/main/libr_main.a libr/fs/libr_fs.a libr/syscall/libr_syscall.a shlr/java/libr_java.a shlr/zip/librz.a libr/socket/libr_socket.a libr/anal/libr_anal.a libr/flag/libr_flag.a libr/search/libr_search.a libr/reg/libr_reg.a libr/config/libr_config.a libr/io/libr_io.a libr/parse/libr_parse.a libr/bp/libr_bp.a libr/asm/libr_asm.a libr/bp/libr_bp.a libr/egg/libr_egg.a libr/anal/libr_anal.a libr/magic/libr_magic.a libr/lang/libr_lang.a libr/fs/libr_fs.a shlr/grub/libgrubfs.a shlr/capstone/libcapstone.a  shlr/gdb/lib/libgdbr.a"
 cd ..
 
 LIB=libr.a

@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2008-2018 - pancake */
 
-// TODO: implement a more inteligent way to store cached memory
+// TODO: implement a more intelligent way to store cached memory
 
 #include "r_io.h"
 
@@ -61,7 +61,7 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 				eprintf ("Error writing change at 0x%08"PFMT64x"\n", r_itv_begin (c->itv));
 			}
 			io->cached = cached;
-			break; // XXX old behavior, revisit this
+			// break; // XXX old behavior, revisit this
 		}
 	}
 }

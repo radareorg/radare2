@@ -103,7 +103,7 @@ endif
 platform_deps = []
 platform_inc = ['.', 'libr/include']
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32')]
+  platform_deps = [cc.find_library('ws2_32'), cc.find_library('psapi')]
 endif
 platform_inc = include_directories(platform_inc)
 
@@ -119,7 +119,7 @@ if get_option('default_library') == 'shared'
   endif
 endif
 
-library_cflags = ['-DCORELIB=1']
+library_cflags = ['-DR2_PLUGIN_INCORE=1']
 
 if host_machine.system() == 'windows'
   r2_prefix = '.'

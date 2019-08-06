@@ -3,22 +3,21 @@
 #include <r_bin.h>
 #include "i/private.h"
 
-static char *hashify(char *s, ut64 vaddr) {
+static char *__hashify(char *s, ut64 vaddr) {
 	r_return_val_if_fail (s, NULL);
 
-	char *ret;
 	char *os = s;
 	while (*s) {
 		if (!IS_PRINTABLE (*s)) {
 			if (vaddr && vaddr != UT64_MAX) {
-				ret = r_str_newf ("_%" PFMT64d, vaddr);
+				char *ret = r_str_newf ("_%" PFMT64d, vaddr);
 				if (ret) {
 					free (os);
 				}
 				return ret;
 			}
 			ut32 hash = sdb_hash (s);
-			ret = r_str_newf ("%x", hash);
+			char *ret = r_str_newf ("%x", hash);
 			if (ret) {
 				free (os);
 			}
@@ -45,7 +44,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 	}
 	sdb_num_set (db, sdb_fmt ("%x", vhash), 1, 0);
 	if (vaddr) {
-		char *p = hashify (resname, vaddr);
+		char *p = __hashify (resname, vaddr);
 		if (p) {
 			resname = p;
 		}
@@ -62,16 +61,14 @@ R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 	return resname;
 }
 
-R_API void r_bin_filter_sym(RBinFile *bf, Sdb *db, ut64 vaddr, RBinSymbol *sym) {
-	if (!db || !sym || !sym->name) {
-		return;
-	}
-	char *name = sym->name;
+R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
+	r_return_if_fail (ht && sym && sym->name);
+	const char *name = sym->name;
 	// if (!strncmp (sym->name, "imp.", 4)) {
 	// demangle symbol name depending on the language specs if any
 	if (bf && bf->o && bf->o->lang) {
 		const char *lang = r_bin_lang_tostring (bf->o->lang);
-		char *dn = r_bin_demangle (bf, lang, sym->name, sym->vaddr);
+		char *dn = r_bin_demangle (bf, lang, sym->name, sym->vaddr, false);
 		if (dn && *dn) {
 			sym->dname = dn;
 			// XXX this is wrong but is required for this test to pass
@@ -94,31 +91,40 @@ R_API void r_bin_filter_sym(RBinFile *bf, Sdb *db, ut64 vaddr, RBinSymbol *sym) 
 		}
 	}
 
-	// XXX this is very slow, must be optimized
 	const char *uname = sdb_fmt ("%" PFMT64x ".%s", vaddr, name);
-	ut32 vhash = sdb_hash (uname); // vaddr hash - unique
-	ut32 hash = sdb_hash (name); // name hash - if dupped and not in unique hash must insert
-	int count = sdb_num_inc (db, sdb_fmt ("%x", hash), 1, 0);
-	if (sdb_exists (db, sdb_fmt ("%x", vhash))) {
-		// TODO: symbol is dupped, so symbol can be removed!
+	bool res = ht_pp_insert (ht, uname, sym);
+	if (!res) {
 		return;
 	}
-	sdb_num_set (db, sdb_fmt ("%x", vhash), 1, 0);
-	sym->dup_count = count - 1;
+	sym->dup_count = 0;
+
+	const char *oname = sdb_fmt ("o.%" PFMT64x ".%s", 0, name);
+	RBinSymbol *prev_sym = ht_pp_find (ht, oname, NULL);
+	if (!prev_sym) {
+		if (!ht_pp_insert (ht, oname, sym)) {
+			R_LOG_WARN ("Failed to insert dup_count in ht");
+			return;
+		}
+	} else {
+		sym->dup_count = prev_sym->dup_count + 1;
+		ht_pp_update (ht, oname, sym);
+	}
 }
 
 R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
-	Sdb *db = sdb_new0 ();
-	if (db) {
-		RListIter *iter;
-		RBinSymbol *sym;
-		r_list_foreach (list, iter, sym) {
-			if (sym && sym->name && *sym->name) {
-				r_bin_filter_sym (bf, db, sym->vaddr, sym);
-			}
-		}
-		sdb_free (db);
+	HtPP *ht = ht_pp_new0 ();
+	if (!ht) {
+		return;
 	}
+
+	RListIter *iter;
+	RBinSymbol *sym;
+	r_list_foreach (list, iter, sym) {
+		if (sym && sym->name && *sym->name) {
+			r_bin_filter_sym (bf, ht, sym->vaddr, sym);
+		}
+	}
+	ht_pp_free (ht);
 }
 
 R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
@@ -148,7 +154,7 @@ static bool false_positive(const char *str) {
 		bo[i] = 0;
 	}
 	for (i = 0; str[i]; i++) {
-		if (IS_DIGIT(str[i])) {
+		if (IS_DIGIT (str[i])) {
 			nm++;
 		} else if (str[i]>='a' && str[i]<='z') {
 			lo++;

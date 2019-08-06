@@ -27,7 +27,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 		return NULL;
 	}
 	if (so->timeout > 0) {
-		r_socket_block_time (hr->s, 1, so->timeout);
+		r_socket_block_time (hr->s, 1, so->timeout, 0);
 	}
 	hr->auth = !so->httpauth;
 	for (;;) {
@@ -46,7 +46,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 		}
 		pxx = xx;
 
-		if (first==0) {
+		if (first == 0) {
 			first = 1;
 			if (strlen (buf)<3) {
 				r_socket_http_close (hr);

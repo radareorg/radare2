@@ -1,4 +1,4 @@
-/* radare - LGPL - 2015-2017 - pancake */
+/* radare - LGPL - 2015-2019 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -41,55 +41,52 @@ typedef struct {
 static bool check_buffer(RBuffer *buf) {
 	ut8 tmp[6];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
-	return r == sizeof (tmp) && !memcmp (tmp, "\x00\x00\x01\x00\x00\x00", sizeof (tmp));
+	bool one = r == sizeof (tmp) && !memcmp (tmp, "\x00\x00\x01\x00\x00\x00", sizeof (tmp));
+	if (one) {
+		int r = r_buf_read_at (buf, 6, tmp, sizeof (tmp));
+		if (r != 6) {
+			return false;
+		}
+		return sizeof (tmp) && !memcmp (tmp, "\x00\x00\x00\x00\x00\x00", sizeof (tmp));
+	}
+	return false;
 }
 
-static bool check_bytes(const ut8 *b, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (b, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
-}
-
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	DolHeader *dol = NULL;
-	char *lowername = NULL, *ext;
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	if (r_buf_size (buf) < sizeof (DolHeader)) {
-		return NULL;
+		return false;
 	}
-	dol = R_NEW0 (DolHeader);
+	DolHeader *dol = R_NEW0 (DolHeader);
 	if (!dol) {
-		return NULL;
+		return false;
 	}
-	lowername = strdup (bf->file);
+	char *lowername = strdup (bf->file);
 	if (!lowername) {
 		goto dol_err;
 	}
 	r_str_case (lowername, 0);
-	ext = strstr (lowername, ".dol");
+	char *ext = strstr (lowername, ".dol");
 	if (!ext || ext[4] != 0) {
 		goto lowername_err;
 	}
 	free (lowername);
 	r_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1);
-	return dol;
+	*bin_obj = dol;
+	return true;
 
 lowername_err:
 	free (lowername);
 dol_err:
 	free (dol);
-	return NULL;
+	return false;
 }
 
 static RList *sections(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	int i;
 	RList *ret;
 	RBinSection *s;
-	DolHeader *dol;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	dol = bf->o->bin_obj;
+	DolHeader *dol = bf->o->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
@@ -139,15 +136,10 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RList *ret;
-	RBinAddr *addr;
-	DolHeader *dol;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	ret = r_list_new ();
-	addr = R_NEW0 (RBinAddr);
-	dol = bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	RList *ret = r_list_new ();
+	RBinAddr *addr = R_NEW0 (RBinAddr);
+	DolHeader *dol = bf->o->bin_obj;
 	addr->vaddr = (ut64) dol->entrypoint;
 	addr->paddr = addr->vaddr & 0xFFFF;
 	r_list_append (ret, addr);
@@ -155,13 +147,9 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
-		return NULL;
-	}
-
-	if (!bf || !bf->buf) {
-		free (ret);
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -186,14 +174,13 @@ RBinPlugin r_bin_plugin_dol = {
 	.license = "BSD",
 	.load_buffer = &load_buffer,
 	.baddr = &baddr,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_dol,

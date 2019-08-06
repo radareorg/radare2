@@ -120,7 +120,7 @@ static void set_cpu_model(RAnal *anal, bool force) {
 		cpu = cpu_models[0].name;
 	}
 
-	// if cpu model changed, reinitalize emulation
+	// if cpu model changed, reinitialize emulation
 	if (force || !cpu_curr_model || r_str_casecmp (cpu, cpu_curr_model->name)) {
 		// find model by name
 		int i = 0;
@@ -1059,7 +1059,7 @@ RAnalPlugin r_anal_plugin_8051 = {
 	.esil_fini = esil_i8051_fini
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_8051,

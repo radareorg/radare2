@@ -142,7 +142,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 	free (buf);
 }
 
-/* This functon display list of arg with some colors */
+/* This function display list of arg with some colors */
 
 R_API void r_core_print_func_args(RCore *core) {
 	RListIter *iter;

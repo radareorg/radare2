@@ -1,7 +1,9 @@
+/* radare2 - LGPL - Copyright 2019 - pancake */
+
 #include <r_regex.h>
 #include <r_util.h>
-#include "pager_private.h"
 #include <r_cons.h>
+#include "pager_private.h"
 
 R_IPI void pager_color_line(const char *line, RStrpool *p, RList *ml) {
 	int m_len, offset = 0;
@@ -96,16 +98,16 @@ R_IPI int pager_prev_match(int from, RList **mla) {
 	return from;
 }
 
-R_IPI int pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int lcount) {
-	int l, f = false;
+R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int lcount) {
+	bool res = false;
 	RRegexMatch m;
-	int slen;
+	int l, slen;
 	for (l = 0; l < lcount; l++) {
 		m.rm_so = 0;
 		const char *loff = s + lines[l]; /* current line offset */
 		char *clean = strdup (loff);
 		if (!clean) {
-			return 0;
+			return false;
 		}
 		int *cpos = NULL;
 		int ncpos = r_str_ansi_filter (clean, NULL, &cpos, -1);
@@ -123,12 +125,12 @@ R_IPI int pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines, 
 			}
 			m.rm_so = m.rm_eo;
 			m.rm_eo = slen;
-			f = true;
+			res = true;
 		}
 		free (cpos);
 		free (clean);
 	}
-	return f;
+	return res;
 }
 
 R_IPI int *pager_splitlines(char *s, int *lines_count) {
@@ -141,33 +143,30 @@ R_IPI int *pager_splitlines(char *s, int *lines_count) {
 		return NULL;
 	}
 	lines = malloc (lines_size * sizeof (int));
-	if (!lines) {
-		return NULL;
-	}
-	lines[row++] = 0;
-	for (i = 0; s[i]; i++) {
-		if (row >= lines_size) {
-			int *tmp;
-			lines_size += 128;
-			if (lines_size * sizeof (int) < lines_size) {
-				free (lines);
-				return NULL;
+	if (lines) {
+		lines[row++] = 0;
+		for (i = 0; s[i]; i++) {
+			if (row >= lines_size) {
+				int *tmp;
+				lines_size += 128;
+				if (lines_size * sizeof (int) < lines_size) {
+					free (lines);
+					return NULL;
+				}
+				tmp = realloc (lines, lines_size * sizeof (int));
+				if (!tmp) {
+					free (lines);
+					return NULL;
+				}
+				lines = tmp;
 			}
-			tmp = realloc (lines, lines_size * sizeof (int));
-			if (!tmp) {
-				free (lines);
-				return NULL;
+			if (s[i] == '\n') {
+				s[i] = 0;
+				lines[row++] = i + 1;
 			}
-			lines = tmp;
+			sidx++;
 		}
-		if (s[i] == '\n') {
-			s[i] = 0;
-			lines[row++] = i + 1;
-		}
-		sidx++;
+		*lines_count = row;
 	}
-	*lines_count = row;
 	return lines;
 }
-
-

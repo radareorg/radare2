@@ -1,7 +1,6 @@
 ifeq (${_INCLUDE_MK_CCCL_},)
 _INCLUDE_MK_CCCL_=1
 CC?=cccl
-LINK=
 RANLIB=echo no ranlib for
 ONELIB=0
 CC_AR=arlib q ${LIBAR}

@@ -78,6 +78,8 @@ typedef struct _r_bin_image {
 	ut64 header_at;
 } RDyldBinImage;
 
+static RList * pending_bin_files = NULL;
+
 static void free_bin(RDyldBinImage *bin) {
 	if (!bin) {
 		return;
@@ -304,9 +306,13 @@ static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask) {
 		}
 
 		ut64 data_addr = sections[data_idx].addr;
+		ut64 data_tail = data_addr & 0xfff;
+		ut64 data_tail_end = (data_addr + sections[data_idx].size) & 0xfff;
 		for (i = 0; i < n_classes; i++) {
-			if ((classlist[i] & 0xfff) == (data_addr & 0xfff)) {
-				slide = (classlist[i] & value_mask) - (data_addr & value_mask);
+			ut64 cl_tail = classlist[i] & 0xfff;
+			if (cl_tail >= data_tail && cl_tail < data_tail_end) {
+				ut64 off = cl_tail - data_tail;
+				slide = ((classlist[i] - off) & value_mask) - (data_addr & value_mask);
 				found_sample = true;
 				break;
 			}
@@ -572,13 +578,6 @@ static bool check_buffer(RBuffer *buf) {
 		return false;
 	}
 	return true;
-}
-
-static bool check_bytes(const ut8 *b, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (b, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
 }
 
 static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr) {
@@ -958,10 +957,35 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			} else {
 				cache = ((struct MACH0_(obj_t)*) bf->o->bin_obj)->user;
 			}
+			if (pending_bin_files) {
+				RListIter *to_remove = r_list_contains (pending_bin_files, bf);
+				if (to_remove) {
+					r_list_delete (pending_bin_files, to_remove);
+					if (r_list_empty (pending_bin_files)) {
+						r_list_free (pending_bin_files);
+						pending_bin_files = NULL;
+					}
+				}
+			}
 			break;
 		}
 	}
+	if (!cache) {
+		r_list_foreach (pending_bin_files, iter, bf) {
+			if (bf->fd == fd->fd && bf->o) {
+				if (!strncmp ((char*) bf->o->bin_obj, "dyldcac", 7)) {
+					cache = bf->o->bin_obj;
+				} else {
+					cache = ((struct MACH0_(obj_t)*) bf->o->bin_obj)->user;
+				}
+				break;
+			}
+		}
+	}
 	if (!cache || !cache->original_io_read) {
+		if (fd->plugin->read == &dyldcache_io_read) {
+			return -1;
+		}
 		return fd->plugin->read (io, fd, buf, count);
 	}
 
@@ -1096,44 +1120,48 @@ static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cac
 	return accel;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	RDyldCache *cache = R_NEW0 (RDyldCache);
 	memcpy (cache->magic, "dyldcac", 7);
 	cache->buf = r_buf_ref (buf);
 	cache->hdr = read_cache_header (cache->buf);
 	if (!cache->hdr) {
 		r_dyldcache_free (cache);
-		return NULL;
+		return false;
 	}
-
 	cache->maps = read_cache_maps (cache->buf, cache->hdr);
 	if (!cache->maps) {
 		r_dyldcache_free (cache);
-		return NULL;
+		return false;
 	}
-
 	cache->accel = read_cache_accel (cache->buf, cache->hdr, cache->maps);
 	if (!cache->accel) {
 		r_dyldcache_free (cache);
-		return NULL;
+		return false;
 	}
-
 	cache->bins = create_cache_bins (bf, cache->buf, cache->hdr, cache->maps, cache->accel);
 	if (!cache->bins) {
 		r_dyldcache_free (cache);
-		return NULL;
+		return false;
 	}
-
 	cache->rebase_info = get_rebase_info (bf, cache);
 	if (!cache->rebase_info) {
 		r_dyldcache_free (cache);
-		return NULL;
+		return false;
 	}
-
 	if (!cache->rebase_info->slide) {
+		if (!pending_bin_files) {
+			pending_bin_files = r_list_new ();
+			if (!pending_bin_files) {
+				r_dyldcache_free (cache);
+				return false;
+			}
+		}
+		r_list_push (pending_bin_files, bf);
 		swizzle_io_read (cache, bf->rbin->iob.io);
 	}
-	return cache;
+	*bin_obj = cache;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -1197,7 +1225,8 @@ void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		return;
 	}
 
-	struct symbol_t *symbols = MACH0_(get_symbols) (mach0);
+	// const RList*symbols = MACH0_(get_symbols_list) (mach0);
+	const struct symbol_t *symbols = MACH0_(get_symbols) (mach0);
 	if (!symbols) {
 		return;
 	}
@@ -1216,7 +1245,7 @@ void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		sym->name = strdup (symbols[i].name);
 		sym->vaddr = symbols[i].addr;
 		if (sym->name[0] == '_') {
-			char *dn = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr);
+			char *dn = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr, false);
 			if (dn) {
 				sym->dname = dn;
 				char *p = strchr (dn, '.');
@@ -1243,22 +1272,26 @@ void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		sym->ordinal = i;
 		r_list_append (ret, sym);
 	}
-	free (symbols);
 	MACH0_(mach0_free) (mach0);
 }
 
-static void handle_data_sections(RBinSection *sect) {
-	if (strstr (sect->name, "_cstring")) {
-		sect->is_data = true;
-	} else if (strstr (sect->name, "_os_log")) {
-		sect->is_data = true;
-	} else if (strstr (sect->name, "_objc_methname")) {
-		sect->is_data = true;
-	} else if (strstr (sect->name, "_objc_classname")) {
-		sect->is_data = true;
-	} else if (strstr (sect->name, "_objc_methtype")) {
-		sect->is_data = true;
+static bool __is_data_section(const char *name) {
+	if (strstr (name, "_cstring")) {
+		return true;
 	}
+	if (strstr (name, "_os_log")) {
+		return true;
+	}
+	if (strstr (name, "_objc_methname")) {
+		return true;
+	}
+	if (strstr (name, "_objc_classname")) {
+		return true;
+	}
+	if (strstr (name, "_objc_methtype")) {
+		return true;
+	}
+	return false;
 }
 
 static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
@@ -1274,8 +1307,8 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 
 	int i;
 	for (i = 0; !sections[i].last; i++) {
-		RBinSection *ptr;
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		RBinSection *ptr = R_NEW0 (RBinSection);
+		if (!ptr) {
 			break;
 		}
 		if (bin->file) {
@@ -1287,12 +1320,11 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 			int len = sections[i].size / 8;
 			ptr->format = r_str_newf ("Cd %d[%d]", 8, len);
 		}
-		handle_data_sections (ptr);
+		ptr->is_data = __is_data_section (ptr->name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].offset + bf->o->boffset;
 		ptr->vaddr = sections[i].addr;
-		ptr->add = true;
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
@@ -1329,9 +1361,10 @@ static RList *sections(RBinFile *bf) {
 		ptr->name = r_str_newf ("cache_map.%d", i);
 		ptr->size = cache->maps[i].size;
 		ptr->vsize = ptr->size;
-		ptr->paddr = cache->maps[i].fileOffset;// + bf->o->boffset;
+		ptr->paddr = cache->maps[i].fileOffset;
 		ptr->vaddr = cache->maps[i].address;
 		ptr->add = true;
+		ptr->is_segment = true;
 		ptr->perm = prot2perm (cache->maps[i].initProt);
 		r_list_append (ret, ptr);
 	}
@@ -1383,11 +1416,10 @@ static RList *symbols(RBinFile *bf) {
 	cache->original_io_read = NULL;
 } */
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
 	// unswizzle_io_read (cache, bf->rbin->iob.io); // XXX io may be dead here
 	r_dyldcache_free (cache);
-	return true;
 }
 
 static RList *classes(RBinFile *bf) {
@@ -1456,7 +1488,7 @@ static RList *classes(RBinFile *bf) {
 				bf->o->bin_obj = mach0;
 				bf->buf = cache->buf;
 				if (is_classlist) {
-					MACH0_(get_class_t) ((ut64) pointer_to_class, bf, klass, false);
+					MACH0_(get_class_t) ((ut64) pointer_to_class, bf, klass, false, NULL);
 				} else {
 					MACH0_(get_category_t) ((ut64) pointer_to_class, bf, klass, NULL);
 				}
@@ -1574,7 +1606,6 @@ RBinPlugin r_bin_plugin_dyldcache = {
 	.baddr = &baddr,
 	.symbols = &symbols,
 	.sections = &sections,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.destroy = &destroy,
 	.classes = &classes,
@@ -1582,7 +1613,7 @@ RBinPlugin r_bin_plugin_dyldcache = {
 	.info = &info,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_dyldcache,

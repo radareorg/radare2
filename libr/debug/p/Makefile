@@ -1,7 +1,7 @@
 include ../../config.mk
 
 ifeq ($(WITHPIC),1)
-CFLAGS+=-I../../include -Wall ${PIC_FLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -DCORELIB
+CFLAGS+=-I../../include -Wall ${PIC_FLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -DR2_PLUGIN_INCORE
 
 all: ${ALL_TARGETS}
 

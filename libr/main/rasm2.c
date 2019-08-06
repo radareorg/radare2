@@ -165,7 +165,7 @@ static const char *has_esil(RAsmState *as, const char *name) {
 	RListIter *iter;
 	RAnalPlugin *h;
 	r_list_foreach (as->anal->plugins, iter, h) {
-		if (!strcmp (name, h->name)) {
+		if (h->name && !strcmp (name, h->name)) {
 			return h->esil? "Ae": "A_";
 		}
 	}
@@ -361,9 +361,11 @@ static int rasm_disasm(RAsmState *as, char *buf, ut64 offset, int len, int bits,
 				op.size = 1;
 				r_asm_op_set_asm (&op, "invalid");
 			}
+			char *op_hex = r_asm_op_get_hex (&op);
 			printf ("0x%08" PFMT64x "  %2d %24s  %s\n",
-				as->a->pc, op.size, r_asm_op_get_hex (&op),
+				as->a->pc, op.size, op_hex,
 				r_asm_op_get_asm (&op));
+			free (op_hex);
 			ret += op.size;
 			r_asm_set_pc (as->a, offset + ret);
 		}

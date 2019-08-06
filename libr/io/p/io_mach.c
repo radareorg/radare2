@@ -576,7 +576,7 @@ RIOPlugin r_io_plugin_mach = {
 };
 #endif
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,

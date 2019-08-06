@@ -169,6 +169,15 @@ static void find_and_change (char* in, int len) {
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
+		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
+			if (!strcmp (input, "*")) {
+				input = " -r2";
+			} else if (!strcmp (input, "=")) {
+				input = " -a";
+			} else if (!strcmp (input, "?")) {
+				input = " -h";
+			}
+		}
 		return r_core_cmdf (core, "%s%s", cmdPdc, input);
 	}
 
@@ -270,7 +279,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		}
 		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue
-			// XXX check if cant pop
+			// XXX check if can't pop
 			//eprintf ("%s// 0x%08llx already analyzed\n", indentstr, bb->addr);
 			ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 			if (addr == UT64_MAX) {
@@ -345,7 +354,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);
 					if (!bb) {
-						eprintf ("failed to retrieve blcok at 0x%"PFMT64x"\n", jump);
+						eprintf ("failed to retrieve block at 0x%"PFMT64x"\n", jump);
 						break;
 					}
 					if (fail != UT64_MAX) {

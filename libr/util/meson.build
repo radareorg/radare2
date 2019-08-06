@@ -3,6 +3,7 @@ r_util_sources = [
   'ascii_table.c',
   'assert.c',
   'alloc.c',
+  'donut.c',
   'getopt.c',
   'base85.c',
   'base91.c',

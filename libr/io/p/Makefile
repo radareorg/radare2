@@ -1,4 +1,4 @@
-CFLAGS+=-I../../include -Wall -DWORDSIZE=64 ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -DCORELIB
+CFLAGS+=-I../../include -Wall -DWORDSIZE=64 ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -DR2_PLUGIN_INCORE
 
 include ../../config.mk
 

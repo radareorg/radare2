@@ -11,7 +11,9 @@ include ../../config-user.mk
 
 SHLR=../../shlr
 
-ifneq (${ANDROID},1)
+ifeq (${ANDROID},1)
+LDFLAGS+=-lm
+else
 ifneq (${OSTYPE},linux)
 LDFLAGS+=-lpthread
 LDFLAGS+=-ldl

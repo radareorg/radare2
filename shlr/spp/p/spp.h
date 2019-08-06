@@ -5,11 +5,11 @@
 #endif
 
 static char *spp_var_get(char *var) {
-	return getenv(var);
+	return r_sys_getenv (var);
 }
 
 static int spp_var_set(const char *var, const char *val) {
-	return r_sys_setenv(var, val);
+	return r_sys_setenv (var, val);
 }
 
 #if HAVE_SYSTEM

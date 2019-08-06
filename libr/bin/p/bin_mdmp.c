@@ -8,32 +8,14 @@
 
 #include "mdmp/mdmp.h"
 
-/* FIXME: This is already in r_bin.c but its static, why?! */
-static void r_bbin_mem_free(void *data) {
-	RBinMem *mem = (RBinMem *)data;
-	if (mem && mem->mirrors) {
-		mem->mirrors->free = r_bbin_mem_free;
-		r_list_free (mem->mirrors);
-		mem->mirrors = NULL;
-	}
-	free (mem);
-}
-
-static ut64 baddr(RBinFile *bf) {
-	return 0LL;
-}
-
 static Sdb *get_sdb(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return NULL;
-	}
+	r_return_val_if_fail (bf && bf->o, NULL);
 	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 	return (obj && obj->kv) ? obj->kv: NULL;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_mdmp_free ((struct r_bin_mdmp_obj*)bf->o->bin_obj);
-	return true;
 }
 
 static RList* entries(RBinFile *bf) {
@@ -184,50 +166,15 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	RBuffer *tbuf;
-	struct r_bin_mdmp_obj *res;
-
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-
-	tbuf = r_buf_new_with_bytes (buf, sz);
-	if (!tbuf) {
-		return false;
-	}
-
-	if ((res = r_bin_mdmp_new_buf (tbuf))) {
-		sdb_ns_set (sdb, "info", res->kv);
-	}
-	r_buf_free (tbuf);
-
-	if (res) {
-		*bin_obj = res;
-		return true;
-	} else {
-		return false;
-	}
-}
-
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (buf, NULL);
-
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	r_return_val_if_fail (buf, false);
 	struct r_bin_mdmp_obj *res = r_bin_mdmp_new_buf (buf);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
+		*bin_obj = res;
+		return true;
 	}
-	return res;
-}
-
-static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
-
-	ut64 sz;
-	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	return false;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -367,7 +314,7 @@ static RList *mem(RBinFile *bf) {
 	ut64 index;
 	ut64 state, type, a_protect;
 
-	if (!(ret = r_list_newf (r_bbin_mem_free))) {
+	if (!(ret = r_list_newf (r_bin_mem_free))) {
 		return NULL;
 	}
 
@@ -505,33 +452,33 @@ static RList* symbols(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return buf && (length > sizeof (struct minidump_header))
-		&& (!memcmp (buf, MDMP_MAGIC, 6));
+static bool check_buffer(RBuffer *b) {
+	ut8 magic[6];
+	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 6) {
+		return !memcmp (magic, MDMP_MAGIC, 6);
+	}
+	return false;
 }
 
 RBinPlugin r_bin_plugin_mdmp = {
 	.name = "mdmp",
 	.desc = "Minidump format r_bin plugin",
 	.license = "LGPL3",
-	.baddr = &baddr,
-	.check_bytes = &check_bytes,
 	.destroy = &destroy,
 	.entries = entries,
 	.get_sdb = &get_sdb,
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,
-	.load = &load,
-	.load_bytes = &load_bytes,
 	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.mem = &mem,
 	.relocs = &relocs,
 	.sections = &sections,
 	.symbols = &symbols,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mdmp,

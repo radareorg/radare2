@@ -126,7 +126,7 @@ R_API void r_egg_lang_init(REgg *egg) {
 	egg->lang.varsize = 'l';
 	/* do call or inline it ? */	// BOOL
 	egg->lang.docall = 1;
-	egg->lang.line = 1;	
+	egg->lang.line = 1;
 	egg->lang.file = "stdin";
 	egg->lang.oc = '\n';
 	egg->lang.mode = NORMAL;
@@ -782,7 +782,7 @@ static void rcc_context(REgg *egg, int delta) {
 // eprintf ("Callname is (%s)\n", callname);
 		const char *elm = skipspaces (egg->lang.elem);
 		// const char *cn = callname;
-		// seems cn is useless in nowdays content
+		// seems cn is useless in nowadays content
 // if (egg->lang.nested[context-1])
 #if 0
 		if (delta < 0 && context > 0) {
@@ -1050,7 +1050,7 @@ static void rcc_next(REgg *egg) {
 			rcc_printf ("  cmp $0, %%eax\n");	// XXX MUST SUPPORT != 0 COMPARE HERE
 			/* TODO : Simplify!! */
 			// if (pushvar)
-			// printf("  push %s /* wihle push */\n", pushvar);
+			// printf("  push %s /* while push */\n", pushvar);
 			if (egg->lang.lastctxdelta < 0) {
 				rcc_printf ("  jnz %s\n", get_frame_label (1));
 			} else {
@@ -1312,6 +1312,11 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			break;
 		case '{':
 			if (CTX > 0) {
+				if (CTX > 31 || CTX < 0) {
+					eprintf ("Sinking before overflow\n");
+					CTX = 0;
+					break;
+				}
 				// r_egg_printf (egg, " %s:\n", get_frame_label (0));
 				if (egg->lang.nested_callname[CTX] && strstr (egg->lang.nested_callname[CTX], "if") &&
 				    strstr (egg->lang.elem, "else")) {

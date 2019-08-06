@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2018 - pancake, Judge_Dredd */
+/* radare2 - LGPL - Copyright 2014-2019 - pancake, Judge_Dredd */
 
 #include <r_cons.h>
 #include <r_regex.h>
@@ -6,6 +6,8 @@
 #include "pager_private.h"
 
 R_API int r_cons_less_str(const char *str, const char *exitkeys) {
+	r_return_val_if_fail (str && *str, 0);
+
 	static int in_help = false;
 	static const char *r_cons_less_help = \
 		" u/space  - page up/down\n"
@@ -23,9 +25,6 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	const char *sreg;
 	RList **mla;
 
-	if (!str || !*str) {
-		return 0;
-	}
 	// rcons kills str after flushing the buffer, so we must keep a copy
 	char *ostr = strdup (str);
 	if (!ostr) {
@@ -84,7 +83,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		case '?':
 			if (!in_help) {
 				in_help = true;
-				r_cons_less_str (r_cons_less_help, NULL);
+				(void)r_cons_less_str (r_cons_less_help, NULL);
 				in_help = false;
 			}
 			break;
@@ -129,7 +128,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			if (!rx) {
 				break;
 			}
-			/* find all occurences */
+			/* find all occurrences */
 			if (pager_all_matches (p, rx, mla, lines, lines_count)) {
 				from = pager_next_match (from, mla, lines_count);
 			}
@@ -162,8 +161,8 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	return 0;
 }
 
-R_API void r_cons_less() {
-	r_cons_less_str (r_cons_singleton ()->context->buffer, NULL);
+R_API void r_cons_less(void) {
+	(void)r_cons_less_str (r_cons_singleton ()->context->buffer, NULL);
 }
 
 #if 0

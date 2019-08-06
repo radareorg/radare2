@@ -6,6 +6,30 @@ gmake --help >/dev/null 2>&1
 
 # if owner of sys/install.sh != uid && uid == 0 { exec sudo -u id -A $SUDO_UID sys/install.sh $* }
 
+while : ; do
+	case "$1" in
+	--help)
+		./configure --help
+		echo
+		echo "NOTE: Use sys/install.sh --install to use 'cp' instead of 'ln'."
+		echo
+		exit 0
+		;;
+	"--with-capstone5")
+		export USE_CS5=1
+		rm -rf shlr/capstone
+		shift
+		continue
+		;;
+	"--install")
+		export INSTALL_TARGET="install"
+		shift
+		continue
+		;;
+	esac
+	break
+done
+
 if [ "${UID}" = 0 ]; then
 	echo "[XX] Do not run this script as root!"
 	if [ -n "${SUDO_USER}" ]; then

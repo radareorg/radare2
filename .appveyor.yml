@@ -33,10 +33,10 @@ environment:
 
 # Init
 init:
-  # Build dependant custom commands
+  # Build dependent custom commands
   - cmd: "%init_command%"
 
-# Required softwares for building
+# Required software for building
 install:
   # Update environment variables
   - ps: $env:R2_VERSION = ( python sys\\version.py )
@@ -55,7 +55,7 @@ build_script:
   - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --release --shared --install="%DIST_FOLDER%" && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
 test_script:
-  - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%;%PATH%
+  - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\msys64\mingw64\bin;%PATH%
   - echo %PATH%
   - where radare2
   - radare2 -v
@@ -65,7 +65,7 @@ test_script:
   - cd radare2-regressions/new
   - npm install
   - set NOOK=1
-  - node bin/r2r.js
+  - node_modules/.bin/r2r
   - cd ../..
 
 after_test:

@@ -17,6 +17,13 @@ func.__assert_rtn.noreturn=true
 func.__assert_rtn.ret=void
 func.__assert_rtn.cc=amd64
 
+tputs=func
+func.tputs.args=3
+func.tputs.arg.0=const char *,str
+func.tputs.arg.1=int,affcnt
+func.tputs.arg.2=void *,putc
+func.tputs.ret=int
+
 err=func
 func.err.args=1
 func.err.arg.0=int,eval
@@ -189,3 +196,16 @@ __stack_chk_fail=func
 func.__stack_chk_fail.args=0
 func.__stack_chk_fail.noreturn=true
 func.__stack_chk_fail.ret=void
+
+acl_free=func
+func.acl_free.args=1
+func.acl_free.arg.0=void *,obj_p
+func.acl_free.ret=int
+
+recvfrom=func
+func.recvfrom.args=4
+func.recvfrom.arg.0=int,socket
+func.recvfrom.arg.1=void *,buffer
+func.recvfrom.arg.2=size_t,length
+func.recvfrom.arg.3=int,flags
+func.recvfrom.ret=ssize_t

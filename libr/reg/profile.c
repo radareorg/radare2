@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -56,11 +56,13 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	if (type < 0 || type2 < 0) {
 		return "Invalid register type";
 	}
+#if 1
 	if (r_reg_get (reg, tok[1], R_REG_TYPE_ALL)) {
 		eprintf ("Ignoring duplicated register definition '%s'\n", tok[1]);
 		return NULL;
 		//return "Duplicate register definition";
 	}
+#endif
 
 	RRegItem *item = R_NEW0 (RRegItem);
 	if (!item) {
@@ -103,6 +105,10 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
 	r_list_append (reg->regset[type2].regs, item);
+	if (!reg->regset[type2].ht_regs) {
+		reg->regset[type2].ht_regs = ht_pp_new0 ();
+	}
+	ht_pp_insert (reg->regset[type2].ht_regs, item->name, item);
 
 	// Update the overall profile size
 	if (item->offset + item->size > reg->size) {

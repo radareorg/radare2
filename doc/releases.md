@@ -6,15 +6,15 @@ each release and define the instructions for generating the distribution
 tarball together with a scheduler.
 
 * We try to release every 1/2 months
-* Version numbering (actually we dont follow any rules for this)
-* Codenames for releases MUST be funny (until we didnt get a name that can make
+* Version numbering (actually we don't follow any rules for this)
+* Codenames for releases MUST be funny (until we didn't get a name that can make
   me laugh, we should not release anything!)
 
 Before any release we have to:
 
  - Remove warnings
 
-   We dont want to fall in the warning nightmare of r1. Releases should contain
+   We don't want to fall in the warning nightmare of r1. Releases should contain
    no warnings with `gcc -Wall` or at least no dangerous ones.
 
  - Sync Vala APIs

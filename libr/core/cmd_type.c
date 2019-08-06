@@ -123,12 +123,14 @@ static const char *help_msg_tl[] = {
 	"Usage: tl[...]", "[typename] [[=] address]", "# Type link commands",
 	"tl", "", "list all links.",
 	"tll", "", "list all links in readable format.",
+	"tllj", "", "list all links in readable JSON format.",
 	"tl", " [typename]", "link a type to current address.",
 	"tl", " [typename] = [address]", "link type to given address.",
 	"tls", " [address]", "show link at given address.",
 	"tl-*", "", "delete all links.",
 	"tl-", " [address]", "delete link at given address.",
 	"tl*", "", "list all links in radare2 command format.",
+	"tlj", "", "list all links in JSON format.",
 	NULL
 };
 
@@ -136,7 +138,8 @@ static const char *help_msg_tn[] = {
 	"Usage:", "tn [-][0xaddr|symname]", " manage no-return marks",
 	"tn[a]", " 0x3000", "stop function analysis if call/jmp to this address",
 	"tn[n]", " sym.imp.exit", "same as above but for flag/fcn names",
-	"tn", "-*", "remove all no-return references",
+	"tn-", " 0x3000 sym.imp.exit ...", "remove some no-return references",
+	"tn-*", "", "remove all no-return references",
 	"tn", "", "list them all",
 	NULL
 };
@@ -298,6 +301,45 @@ static void showFormat(RCore *core, const char *name, int mode) {
 			eprintf ("Cannot find '%s' type\n", name);
 		}
 	}
+}
+
+static int cmd_tail(void *data, const char *_input) { // "tail"
+	char *input = strdup (_input);
+	RCore *core = (RCore *)data;
+	int lines = 5;
+	char *arg = strchr (input, ' ');
+	char *tmp, *count;
+	if (arg) {
+		arg = (char *)r_str_trim_ro (arg + 1); 	// contains "count filename"
+		count = strchr (arg, ' ');
+		if (count) {
+			*count = 0;	// split the count and file name
+			tmp = (char *)r_str_trim_ro (count + 1);
+			lines = atoi (arg);
+			arg = tmp;
+		}
+	}
+	switch (*input) {
+	case '?': // "tail?"
+		eprintf ("Usage: tail [file] # to list last n lines in file\n");
+		break;
+	default: // "tail"
+		if (!arg) {
+			arg = "";
+		}
+		if (r_fs_check (core->fs, arg)) {
+			r_core_cmdf (core, "md %s", arg);
+		} else {
+			char *res = r_syscmd_tail (arg, lines);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+		}
+		break;
+	}
+	free (input);
+	return 0;
 }
 
 static void cmd_type_noreturn(RCore *core, const char *input) {
@@ -566,6 +608,9 @@ static void printFunctionType(RCore *core, const char *input) {
 	pj_a (pj);
 	for (i = 0; i < args; i++) {
 		char *type = sdb_get (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
+		if (!type) {
+			continue;
+		}
 		char *name = strchr (type, ',');
 		if (name) {
 			*name++ = 0;
@@ -616,6 +661,11 @@ static int print_link_cb(void *p, const char *k, const char *v) {
 	return 1;
 }
 
+static int print_link_json_cb(void *p, const char *k, const char *v) {
+	r_cons_printf ("{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
+	return 1;
+}
+
 static int print_link_r_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("tl %s = 0x%s\n", v, k + strlen ("link."));
 	return 1;
@@ -625,11 +675,24 @@ static int print_link_readable_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
 	if (!fmt) {
-		eprintf ("Cant fint type %s", v);
+		eprintf ("Can't fint type %s", v);
 		return 1;
 	}
 	r_cons_printf ("(%s)\n", v);
 	r_core_cmdf (core, "pf %s @ 0x%s\n", fmt, k + strlen ("link."));
+	return 1;
+}
+
+static int print_link_readable_json_cb(void *p, const char *k, const char *v) {
+	RCore *core = (RCore *)p;
+	char *fmt = r_type_format (core->anal->sdb_types, v);
+	if (!fmt) {
+		eprintf ("Can't fint type %s", v);
+		return 1;
+	}
+	r_cons_printf ("{\"%s\":", v);
+	r_core_cmdf (core, "pfj %s @ 0x%s\n", fmt, k + strlen ("link."));
+	r_cons_printf ("}");
 	return 1;
 }
 
@@ -650,7 +713,8 @@ static int print_typelist_json_cb(void *p, const char *k, const char *v) {
 	char *sizecmd = r_str_newf ("type.%s.size", k);
 	char *size_s = sdb_querys (sdb, NULL, -1, sizecmd);
 	char *formatcmd = r_str_newf ("type.%s", k);
-	char *format_s = r_str_trim (sdb_querys (sdb, NULL, -1, formatcmd));
+	char *format_s = sdb_querys (sdb, NULL, -1, formatcmd);
+	r_str_trim (format_s);
 	pj_ks (pj, "type", k);
 	pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
 	pj_ks (pj, "format", format_s);
@@ -808,7 +872,7 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 	r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 	ut64 spval = r_reg_getv (esil->anal->reg, sp_name);
 	if (spval) {
-		// reset stack pointer to intial value
+		// reset stack pointer to initial value
 		RRegItem *sp = r_reg_get (esil->anal->reg, sp_name, -1);
 		ut64 curpc = r_reg_getv (esil->anal->reg, pc_name);
 		int stacksz = r_core_get_stacksz (core, fcn->addr, curpc);
@@ -817,7 +881,7 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 			r_reg_set_value (esil->anal->reg, sp, spval + stacksz);
 		}
 	} else {
-		// intialize stack
+		// initialize stack
 		r_core_cmd0 (core, "aeim");
 		stack_set = true;
 	}
@@ -1225,6 +1289,7 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_to);
 		} else if (!r_sandbox_enable (0)) {
 			if (input[1] == ' ') {
+				const char *dir = r_config_get (core->config, "dir.types");
 				const char *filename = input + 2;
 				char *homefile = NULL;
 				if (*filename == '~') {
@@ -1251,7 +1316,7 @@ static int cmd_type(void *data, const char *input) {
 					}
 				} else {
 					char *error_msg = NULL;
-					char *out = r_parse_c_file (core->anal, filename, &error_msg);
+					char *out = r_parse_c_file (core->anal, filename, dir, &error_msg);
 					if (out) {
 						//r_cons_strcat (out);
 						r_anal_save_parsed_type (core->anal, out);
@@ -1280,7 +1345,7 @@ static int cmd_type(void *data, const char *input) {
 					if (out) {
 						// remove previous types and save new edited types
 						sdb_reset (TDB);
-						r_parse_reset ();
+						r_parse_c_reset (core->parser);
 						r_anal_save_parsed_type (core->anal, out);
 						free (out);
 					}
@@ -1427,8 +1492,14 @@ static int cmd_type(void *data, const char *input) {
 			free (off);
 			break;
 		}
+		case 'i': { // "tai"
+			if (input[2] == 'l') {
+				cmd_tail (core, input);
+			}
+			break;
+		}
 		case 'a': { // "taa"
-			char *off = r_str_trim (strdup (input + 2));
+			char *off = r_str_trim_dup (input + 2);
 			RAnalFunction *fcn;
 			RListIter *it;
 			if (off && *off) {
@@ -1577,7 +1648,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		case 's': {
-			char *ptr = r_str_trim (strdup (input + 2));
+			char *ptr = r_str_trim_dup (input + 2);
 			ut64 addr = r_num_math (NULL, ptr);
 			const char *query = sdb_fmt ("link.%08" PFMT64x, addr);
 			const char *link = sdb_const_get (TDB, query, 0);
@@ -1604,7 +1675,17 @@ static int cmd_type(void *data, const char *input) {
 			print_keys (TDB, core, stdiflink, print_link_r_cb, false);
 			break;
 		case 'l':
-			print_keys (TDB, core, stdiflink, print_link_readable_cb, false);
+			switch (input[2]) {
+			case 'j':
+				print_keys (TDB, core, stdiflink, print_link_readable_json_cb, true);
+				break;
+			default:
+				print_keys (TDB, core, stdiflink, print_link_readable_cb, false);
+				break;
+			}
+			break;
+		case 'j':
+			print_keys (TDB, core, stdiflink, print_link_json_cb, true);
 			break;
 		case '\0':
 			print_keys (TDB, core, stdiflink, print_link_cb, false);
@@ -1616,14 +1697,15 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd0 (core, "t?~tp\n");
 		} else { // "tp"
 			char *tmp = strdup (input);
-			char *ptr = r_str_trim (strchr (tmp, ' '));
+			char *ptr = strchr (tmp, ' ');
 			if (!ptr) {
 				break;
 			}
+			r_str_trim (ptr);
 			int nargs = r_str_word_set0 (ptr);
 			if (nargs > 0) {
 				const char *type = r_str_word_get0 (ptr, 0);
-				const char *arg = nargs > 1? r_str_word_get0 (ptr, 1): NULL;
+				const char *arg = (nargs > 1)? r_str_word_get0 (ptr, 1): NULL;
 				char *fmt = r_type_format (TDB, type);
 				if (!fmt) {
 					eprintf ("Cannot find '%s' type\n", type);
@@ -1655,7 +1737,7 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_t_minus);
 		} else if (input[1] == '*') {
 			sdb_reset (TDB);
-			r_parse_reset ();
+			r_parse_c_reset (core->parser);
 		} else {
 			const char *name = input + 1;
 			while (IS_WHITESPACE (*name)) name++;

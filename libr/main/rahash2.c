@@ -11,14 +11,14 @@
 
 static ut64 from = 0LL;
 static ut64 to = 0LL;
-static int incremental = 1;
+static bool incremental = true;
 static int iterations = 0;
 static int quiet = 0;
 static RHashSeed s = {
 	0
 }, *_s = NULL;
 
-void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret) {
+static void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret) {
 	if (compare) {
 		// algobit has only 1 bit set
 		if (!memcmp (ctx->digest, compare, length)) {
@@ -246,7 +246,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					if (to > fsize) {
 						to = fsize;
 					}
-					do_hash_internal (ctx, hashbit, buf, nsize, rad, 0, ule);
+					do_hash_internal (ctx, hashbit, buf, nsize, rad, 1, ule);
 				}
 				do_hash_internal (ctx, hashbit, NULL, 0, rad, 1, ule);
 				from = ofrom;
@@ -459,7 +459,7 @@ int r_main_rahash2(int argc, char **argv) {
 		case 'k': rad = 2; break;
 		case 'p': ptype = r_optarg; break;
 		case 'a': algo = r_optarg; break;
-		case 'B': incremental = 0; break;
+		case 'B': incremental = false; break;
 		case 'b': bsize = (int) r_num_math (NULL, r_optarg); break;
 		case 'f': from = r_num_math (NULL, r_optarg); break;
 		case 't': to = 1 + r_num_math (NULL, r_optarg); break;

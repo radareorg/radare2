@@ -1,10 +1,13 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
 #define R_BIN_ELF64 1
 #include "bin_elf.inc"
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length >= 5) {
+
+static bool check_buffer(RBuffer *b) {
+	ut8 buf[5] = {0};
+	if (r_buf_size (b) > 4) {
+		r_buf_read_at (b, 0, buf, sizeof (buf));
 		if (!memcmp (buf, "\x7F\x45\x4c\x46\x02", 5)) {
 			return true;
 		}
@@ -118,9 +121,9 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.desc = "elf64 bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
+	.check_buffer = &check_buffer,
 	.load_buffer= &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.binsym = &binsym,
@@ -145,7 +148,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.maps = &maps,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_elf64,

@@ -9,7 +9,7 @@ N=$3
 
 git diff --exit-code >/dev/null 2>&1
 if [ $? != 0 ]; then
-	echo "ERROR: There are local changes that must be committed or reseted"
+	echo "ERROR: There are local changes that must be committed or reset"
 	echo "ERROR: Cherrypulling process stopped to avoid data loss."
 	exit 1
 fi

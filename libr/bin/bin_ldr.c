@@ -13,7 +13,7 @@ R_API bool r_bin_loader(RBin *bin, ut32 boid, int options) {
 R_API bool r_bin_loader_library(RBin *bin, const char *name, int options) {
 	// options specify if we want to resolve the symbols and fill the PLT
 	// this is obviously a problem if we have multiple libs that depend
-	// on symbols recursively, and thats where the LD_BIND_NOW option comes to the action
+	// on symbols recursively, and that's where the LD_BIND_NOW option comes to the action
 	// the plt must be modified by using io.cache writes
 	return false;
 }

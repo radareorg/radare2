@@ -141,7 +141,7 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 	return true;
 }
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m68k_cs,
@@ -160,7 +160,7 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.endian = R_SYS_ENDIAN_BIG,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m68k_cs,

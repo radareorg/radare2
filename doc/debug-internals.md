@@ -50,7 +50,7 @@ Radare supports a multitude of different types of breakpoints.
 (`??` is there a list? sw, hw, and trace? anything else??)
 
     libr/bp/bp.c            // main breakpoint management code
-    libr/bp/io.c            // setting and reseting(??) breakpoints
+    libr/bp/io.c            // setting and resetting(??) breakpoints
     libr/bp/parser.h        // header for breakpoint parser (??)
     libr/bp/parser.c        // code for breakpoint parser (??)
     libr/bp/plugin.c        // breakpoint plugin management
@@ -170,10 +170,10 @@ following files:
     libr/debug/p/native/linux/reg/linux-x86.h
     
     // platform-specific debugger code on Windows
-    libr/debug/p/native/w32.c                       // main code for win32 debugger plugin
+    libr/debug/p/native/w32.c                       // !! not used by anything else
     libr/debug/p/native/maps/windows.c              // platform-specific memory map handling
-    libr/debug/p/native/windows/windows_debug.c     // !! nothing in here
-    libr/debug/p/native/windows/windows_debug.h     // !! nothing in here
+    libr/debug/p/native/windows/windows_debug.c     // main code for win32 debugger plugin
+    libr/debug/p/native/windows/windows_debug.h     // including cute windows ascii art
     
     // platform-specific debugger code on XNU (OSX/iOS/etc)
     libr/debug/p/native/darwin.c                    // !! not used by anything else

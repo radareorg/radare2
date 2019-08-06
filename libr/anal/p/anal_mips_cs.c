@@ -747,7 +747,16 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	}
 	n = cs_disasm (hndl, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
 		goto beach;
+	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = r_str_newf ("%s%s%s",
+			insn->mnemonic,
+			insn->op_str[0]?" ":"",
+			insn->op_str);
 	}
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->delay = 0;
@@ -844,7 +853,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		case MIPS_INS_BLEZALC:
 		case MIPS_INS_BGEZALC:
 		case MIPS_INS_BGTZALC:
-			// compact vesions (no delay)
+			// compact versions (no delay)
 			op->delay = 0;
 			op->fail = addr+4;
 			break;
@@ -1170,7 +1179,7 @@ RAnalPlugin r_anal_plugin_mips_cs = {
 	.op = &analop,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_mips_cs,

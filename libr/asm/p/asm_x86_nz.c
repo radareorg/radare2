@@ -1554,6 +1554,9 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 						data[l] = 0x60;
 					}
 					data[l++] |= op->operands[0].regs[0];
+					if (op->operands[0].regs[0] == X86R_ESP) {
+						data[l++] = 0x24;
+					}
 					data[l++] = offset;
 					if (op->operands[0].offset >= 0x80) {
 						data[l++] = offset >> 8;
@@ -1685,6 +1688,15 @@ static int oplea(RAsm *a, ut8 *data, const Opcode *op){
 			rm = op->operands[1].regs[0];
 
 			offset = op->operands[1].offset * op->operands[1].offset_sign;
+			if (op->operands[1].regs[0] == X86R_RIP) {
+				// RIP-relative LEA (not caught above, so "offset" is already relative)
+				data[l++] = reg << 3 | 5;
+				data[l++] = offset;
+				data[l++] = offset >> 8;
+				data[l++] = offset >> 16;
+				data[l++] = offset >> 24;
+				return l;
+			}
 			if (offset != 0 || op->operands[1].regs[0] == X86R_EBP) {
 				mod = 1;
 				if (offset >= 128 || offset < -128) {
@@ -4569,7 +4581,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		*pos = 4;
 	}
 
-	// Now read number, possibly with parantheses
+	// Now read number, possibly with parentheses
 	if (*type & (OT_FPUREG | OT_MMXREG | OT_XMMREG) & ~OT_REGALL) {
 		Register reg = X86R_UNDEFINED;
 
@@ -5016,7 +5028,7 @@ RAsmPlugin r_asm_plugin_x86_nz = {
 	.assemble = &assemble
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_x86_nz,

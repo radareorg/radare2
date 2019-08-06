@@ -6,7 +6,7 @@
 
 #define READ_PAGE_FAIL 0x01
 
-// TODO: Move to a general macroses in r_util/r_types
+// TODO: Move to a general macros in r_util/r_types
 
 ///////////////////////////////////////////////////////////////////////////////
 #define GET_PAGE(pn, off, pos, page_size)	{ \

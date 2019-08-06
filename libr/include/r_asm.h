@@ -41,7 +41,7 @@ R_LIB_VERSION_HEADER(r_asm);
 
 #define R_ASM_GET_NAME(x,y,z) \
 	(x && x->binb.bin && x->binb.get_name)? \
-		x->binb.get_name (x->binb.bin, y, z): NULL
+		x->binb.get_name (x->binb.bin, y, z, x->pseudo): NULL
 
 enum {
 	R_ASM_SYNTAX_NONE = 0,
@@ -116,6 +116,7 @@ typedef struct r_asm_t {
 	bool immdisp; // Display immediates with # symbol (for arm stuff).
 	HtPP *flags;
 	int seggrn;
+	bool pseudo;
 } RAsm;
 
 typedef bool (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
@@ -186,8 +187,8 @@ R_API char* r_asm_code_get_hex(RAsmCode *acode);
 
 /* op.c */
 R_API RAsmOp *r_asm_op_new(void);
-R_API void r_asm_op_free(RAsmOp *op);
 R_API void r_asm_op_init(RAsmOp *op);
+R_API void r_asm_op_free(RAsmOp *op);
 R_API void r_asm_op_fini(RAsmOp *op);
 R_API char *r_asm_op_get_hex(RAsmOp *op);
 R_API char *r_asm_op_get_asm(RAsmOp *op);
@@ -241,6 +242,7 @@ extern RAsmPlugin r_asm_plugin_ppc_cs;
 extern RAsmPlugin r_asm_plugin_ppc_gnu;
 extern RAsmPlugin r_asm_plugin_propeller;
 extern RAsmPlugin r_asm_plugin_riscv;
+extern RAsmPlugin r_asm_plugin_riscv_cs;
 extern RAsmPlugin r_asm_plugin_rsp;
 extern RAsmPlugin r_asm_plugin_sh;
 extern RAsmPlugin r_asm_plugin_snes;

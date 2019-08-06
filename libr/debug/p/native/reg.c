@@ -1,5 +1,5 @@
 // included from p/debug_native.c
-// splitted for better reading/cleaning up
+// split for better reading/cleaning up
 
 static char *r_debug_native_reg_profile(RDebug *dbg) {
 #if __WINDOWS__

@@ -7,8 +7,12 @@
 #include "r_util/r_str.h"
 
 int handle_qSupported(libgdbr_t *g) {
-	// TODO handle the message correct and set all infos like packetsize, thread stuff and features
 	char *tok = NULL;
+	// Catch no data received
+	if (!*g->data) {
+		return -1;
+	}
+	// TODO handle the message correct and set all infos like packetsize, thread stuff and features
 	tok = strtok (g->data, ";");
 	while (tok) {
 		if (r_str_startswith (tok, "PacketSize=")) {

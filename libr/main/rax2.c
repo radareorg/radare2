@@ -4,7 +4,7 @@
 #include <r_util.h>
 #include <r_util/r_print.h>
 
-// dont use fixed sized buffers
+// don't use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
 
 static RNum *num;
@@ -468,7 +468,7 @@ dotherax:
 	} else if (flags & (1 << 21)) { // -i
 		static const char start[] = "unsigned char buf[] = {";
 		printf (start);
-		/* resonable amount of bytes per line */
+		/* reasonable amount of bytes per line */
 		const int byte_per_col = 12;
 		for (i = 0; i < len-1; i++) {
 			/* wrapping every N bytes */

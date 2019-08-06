@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2017 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2019 - Oscar Salvador */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,8 +7,9 @@
 #include <r_io.h>
 #include "bflt/bflt.h"
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return r_bin_bflt_new_buf (buf);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	*bin_obj = r_bin_bflt_new_buf (buf);
+	return *bin_obj;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -111,7 +112,7 @@ static RList *patch_relocs(RBin *b) {
 		R_FREE (bin->reloc_table);
 	}
 	ut64 tmpsz;
-	const ut8 *tmp = r_buf_buffer (bin->b, &tmpsz);
+	const ut8 *tmp = r_buf_data (bin->b, &tmpsz);
 	b->iob.write_at (b->iob.io, 0, tmp, tmpsz);
 	return list;
 }
@@ -289,16 +290,8 @@ static bool check_buffer(RBuffer *buf) {
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	RBuffer *b = r_buf_new_with_bytes (buf, length);
-	bool res = check_buffer (b);
-	r_buf_free (b);
-	return res;
-}
-
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_bflt_free (bf->o->bin_obj);
-	return true;
 }
 
 RBinPlugin r_bin_plugin_bflt = {
@@ -307,7 +300,6 @@ RBinPlugin r_bin_plugin_bflt = {
 	.license = "LGPL3",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.info = &info,
@@ -315,7 +307,7 @@ RBinPlugin r_bin_plugin_bflt = {
 	.patch_relocs = &patch_relocs,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bflt,

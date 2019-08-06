@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake */
+/* radare - LGPL - Copyright 2007-2019 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -65,7 +65,7 @@ R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 	int r = ftruncate (fd, newsize);
 #endif
 	if (r != 0) {
-		eprintf ("Coult not resize %s file\n", filename);
+		eprintf ("Could not resize %s file\n", filename);
 		close (fd);
 		return false;
 	}
@@ -111,6 +111,19 @@ R_API char *r_file_dirname (const char *path) {
 		}
 	}
 	return newpath;
+}
+
+R_API bool r_file_is_c(const char *file) {
+	const char *ext = r_str_lchr (file, '.'); // TODO: add api in r_file_extension or r_str_ext for this
+	if (ext) {
+		ext++;
+		if (!strcmp (ext, "cparse")
+		||  !strcmp (ext, "c")
+		||  !strcmp (ext, "h")) {
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API bool r_file_is_regular(const char *str) {
@@ -286,13 +299,12 @@ R_API char *r_file_path(const char *bin) {
 
 R_API char *r_stdin_slurp (int *sz) {
 #define BS 1024
-#if __UNIX__
+#if __UNIX__ || __WINDOWS__
 	int i, ret, newfd;
-	char *buf;
 	if ((newfd = dup (0)) < 0) {
 		return NULL;
 	}
-	buf = malloc (BS);
+	char *buf = malloc (BS);
 	if (!buf) {
 		close (newfd);
 		return NULL;
@@ -320,11 +332,7 @@ R_API char *r_stdin_slurp (int *sz) {
 	}
 	return buf;
 #else
-#ifdef _MSC_VER
-#pragma message (" TODO r_stdin_slurp")
-#else
 #warning TODO r_stdin_slurp
-#endif
 	return NULL;
 #endif
 }
@@ -406,7 +414,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	ut8 *ret;
 	long sz;
 	int c, bytes = 0;
-	FILE *fd = r_sandbox_fopen (str, "r");
+	FILE *fd = r_sandbox_fopen (str, "rb");
 	if (!fd) {
 		return NULL;
 	}
@@ -543,6 +551,71 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 			if (ptr[i] == '\n') {
 				ptr[i] = '\0';
 				break;
+			}
+		}
+		ptr = strdup (ptr);
+		free (str);
+	}
+	return ptr;
+}
+
+R_API char *r_file_slurp_lines_from_bottom(const char *file, int line) {
+	int i, lines = 0;
+	int sz;
+	char *ptr = NULL, *str = r_file_slurp (file, &sz);
+	// TODO: Implement context
+	if (str) {
+		for (i = 0; str[i]; i++) {
+			if (str[i] == '\n') {
+				lines++;
+			}
+		}
+		if (line > lines) {
+			return strdup (str);	// number of lines requested in more than present, return all
+		}
+		i--;
+		for (; str[i] && line; i--) {
+			if (str[i] == '\n') {
+				line--;
+			}
+		}
+		ptr = str+i;
+		ptr = strdup (ptr);
+		free (str);
+	}
+	return ptr;
+}
+
+R_API char *r_file_slurp_lines(const char *file, int line, int count) {
+	int i, lines = 0;
+	int sz;
+	char *ptr = NULL, *str = r_file_slurp (file, &sz);
+	// TODO: Implement context
+	if (str) {
+		for (i = 0; str[i]; i++) {
+			if (str[i] == '\n') {
+				lines++;
+			}
+		}
+		if (line > lines) {
+			free (str);
+			return NULL;
+		}
+		lines = line - 1;
+		for (i = 0; str[i]&&lines; i++) {
+			if (str[i] == '\n') {
+				lines--;
+			}
+		}
+		ptr = str+i;
+		for (i = 0; ptr[i]; i++) {
+			if (ptr[i] == '\n') {
+				if (count) {
+					count--;
+				} else {
+					ptr[i] = '\0';
+					break;
+				}
 			}
 		}
 		ptr = strdup (ptr);
@@ -858,8 +931,22 @@ static RMmap *r_file_mmap_other (RMmap *m) {
 }
 #endif
 
+R_API RMmap *r_file_mmap_arch(RMmap *mmap, const char *filename, int fd) {
+#if __WINDOWS__
+	(void)fd;
+	return r_file_mmap_windows (mmap, filename);
+#elif __UNIX__
+	(void)filename;
+	return r_file_mmap_unix (mmap, fd);
+#else
+	(void)filename;
+	(void)fd;
+	return r_file_mmap_other (mmap);
+#endif
+}
+
 // TODO: add rwx support?
-R_API RMmap *r_file_mmap (const char *file, bool rw, ut64 base) {
+R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 	RMmap *m = NULL;
 	int fd = -1;
 	if (!rw && !r_file_exists (file)) {
@@ -882,6 +969,7 @@ R_API RMmap *r_file_mmap (const char *file, bool rw, ut64 base) {
 	m->rw = rw;
 	m->fd = fd;
 	m->len = fd != -1? lseek (fd, (off_t)0, SEEK_END) : 0;
+	m->filename = strdup (file);
 
 	if (m->fd == -1) {
 		return m;
@@ -922,6 +1010,7 @@ R_API void r_file_mmap_free (RMmap *m) {
 		free (m);
 		return;
 	}
+	free (m->filename);
 #if __UNIX__
 	munmap (m->buf, m->len);
 #endif

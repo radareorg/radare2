@@ -78,6 +78,10 @@ struct _WindCtx {
 	WindProc *target;
 };
 
+int windbg_get_bits(WindCtx *ctx) {
+	return ctx->is_x64 ? R_SYS_BITS_64 : R_SYS_BITS_32;
+}
+
 int windbg_get_cpus(WindCtx *ctx) {
 	if (!ctx) {
 		return -1;
@@ -153,14 +157,14 @@ WindCtx *windbg_ctx_new(void *io_ptr) {
 	return ctx;
 }
 
-void windbg_ctx_free(WindCtx *ctx) {
-	if (!ctx) {
+void windbg_ctx_free(WindCtx **ctx) {
+	if (!ctx || !*ctx) {
 		return;
 	}
-	r_list_free (ctx->plist_cache);
-	r_list_free (ctx->tlist_cache);
-	iob_close (ctx->io_ptr);
-	free (ctx);
+	r_list_free ((*ctx)->plist_cache);
+	r_list_free ((*ctx)->tlist_cache);
+	iob_close ((*ctx)->io_ptr);
+	R_FREE (*ctx);
 }
 
 #define PKT_REQ(p) ((kd_req_t *) (((kd_packet_t *) p)->data))
@@ -212,16 +216,18 @@ int windbg_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 	int retries = 10;
 
 	do {
-		if (pkt) free (pkt);
+		if (pkt) {
+			R_FREE (pkt);
+		}
 		// Try to read a whole packet
 		ret = kd_read_packet (ctx->io_ptr, &pkt);
-		if (ret != KD_E_OK) {
+		if (ret != KD_E_OK || !pkt) {
 			break;
 		}
 
 		// eprintf ("Received %08x\n", pkt->type);
 		if (pkt->type != type) {
-			eprintf ("We were not waiting for this... %08x\n", type);
+			eprintf ("We were not waiting for this... %08x\n", pkt->type);
 		}
 		if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_STATE_CHANGE64) {
 			// dump_stc (pkt);
@@ -640,6 +646,10 @@ int windbg_sync(WindCtx *ctx) {
 		return 0;
 	}
 
+	if (ctx->syncd) {
+		return 1;
+	}
+
 	// Send the breakin packet
 	if (iob_write (ctx->io_ptr, (const uint8_t *) "b", 1) != 1) {
 		return 0;
@@ -757,7 +767,7 @@ bool windbg_write_reg(WindCtx *ctx, const uint8_t *buf, int size) {
 
 int windbg_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 	kd_req_t req;
-	kd_packet_t *pkt;
+	kd_packet_t *pkt = NULL;
 	int ret;
 
 	if (!ctx || !ctx->io_ptr || !ctx->syncd) {

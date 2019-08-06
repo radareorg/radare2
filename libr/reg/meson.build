@@ -10,7 +10,7 @@ r_reg_sources = [
 r_reg = library('r_reg', r_reg_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
-  dependencies: [r_util_dep],
+  dependencies: [r_util_dep, sdb_dep],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -16,9 +16,8 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 	RRegSet *regset;
 	int off;
 	ut64 ret = 0LL;
-	if (!reg || !item) {
-		return 0LL;
-	}
+	r_return_val_if_fail (reg && item, 0);
+
 	off = BITS2BYTES (item->offset);
 	regset = &reg->regset[item->arena];
 	switch (item->size) {

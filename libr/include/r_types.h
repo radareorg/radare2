@@ -110,6 +110,10 @@
 #  define UNUSED_FUNCTION(x) UNUSED_ ## x
 #endif
 
+#ifdef __EMSCRIPTEN__
+# define __UNIX__ 1
+#endif
+
 #ifdef __HAIKU__
 # define __UNIX__ 1
 #endif

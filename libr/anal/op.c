@@ -33,6 +33,7 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->jump = UT64_MAX;
 		op->fail = UT64_MAX;
 		op->ptr = UT64_MAX;
+		op->refptr = 0;
 		op->val = UT64_MAX;
 	}
 }
@@ -346,6 +347,7 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_MOD, "mod" },
 	{ R_ANAL_OP_TYPE_CMOV, "cmov" },
 	{ R_ANAL_OP_TYPE_MOV, "mov" },
+	{ R_ANAL_OP_TYPE_CAST, "cast" },
 	{ R_ANAL_OP_TYPE_MUL, "mul" },
 	{ R_ANAL_OP_TYPE_DIV, "div" },
 	{ R_ANAL_OP_TYPE_NOP, "nop" },
@@ -380,6 +382,7 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_IRJMP , "ujmp" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_UNK   , "unk" },
 	{ R_ANAL_OP_TYPE_UPUSH , "upush" },
+	{ R_ANAL_OP_TYPE_RPUSH , "rpush" },
 	{ R_ANAL_OP_TYPE_XCHG  , "xchg" },
 	{ R_ANAL_OP_TYPE_XOR   , "xor" },
 	{ R_ANAL_OP_TYPE_CASE  , "case" },
@@ -399,7 +402,14 @@ R_API int r_anal_optype_from_string(const char *type) {
 }
 
 R_API const char *r_anal_optype_to_string(int t) {
-	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we dont want this!
+	switch (t) {
+	case R_ANAL_OP_TYPE_RPUSH:
+		return "rpush";
+	default:
+		/* nothing */
+		break;
+	}
+	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
 #if 0
 	int i;
 	// this is slower than a switch table :(
@@ -432,6 +442,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_MOD   : return "mod";
 	case R_ANAL_OP_TYPE_CMOV  : return "cmov";
 	case R_ANAL_OP_TYPE_MOV   : return "mov";
+	case R_ANAL_OP_TYPE_CAST  : return "cast";
 	case R_ANAL_OP_TYPE_MUL   : return "mul";
 	case R_ANAL_OP_TYPE_NOP   : return "nop";
 	case R_ANAL_OP_TYPE_NOT   : return "not";
@@ -520,6 +531,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH:
+	case R_ANAL_OP_TYPE_RPUSH:
 		snprintf (ret, sizeof (ret), "push %s", a0);
 		break;
 	case R_ANAL_OP_TYPE_POP:
@@ -731,6 +743,10 @@ R_API int r_anal_op_family_from_string(const char *f) {
 R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
 	int changes = 0;
 	if (hint) {
+		if (hint->val != UT64_MAX) {
+			op->val = hint->val;
+			changes++;
+		}
 		if (hint->type > 0) {
 			op->type = hint->type;
 			changes++;

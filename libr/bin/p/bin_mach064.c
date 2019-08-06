@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, alvaro_fe */
 
 #define R_BIN_MACH064 1
 #include "bin_mach0.c"
@@ -6,13 +6,15 @@
 #include "objc/mach064_classes.h"
 #include "../format/mach0/mach064_is_kernelcache.c"
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 4) {
+static bool check_buffer(RBuffer *b) {
+	ut8 buf[4] = {0};
+	if (r_buf_size (b) > 4) {
+		r_buf_read_at (b, 0, buf, sizeof (buf));
 		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4)) {
 			return true;
 		}
 		if (!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
-			return !is_kernelcache (buf, length);
+			return !is_kernelcache_buffer (b);
 		}
 	}
 	return false;
@@ -284,7 +286,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = binsym,
 	.entries = &entries,
@@ -302,7 +304,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.write = &r_bin_write_mach0,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mach064,

@@ -99,7 +99,7 @@ static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 		*noff = r_num_math (core->num, off);
 	}
 	ut64 tmpsz;
-	const ut8 *tmpbuf = r_buf_buffer (b, &tmpsz);
+	const ut8 *tmpbuf = r_buf_data (b, &tmpsz);
 	r_core_write_at (core, *noff, tmpbuf, tmpsz);
 	*noff += r_buf_size (b);
 	free (off);

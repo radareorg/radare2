@@ -1,23 +1,37 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake */
+/* radare - LGPL - Copyright 2011-2019 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
 
+static int __socket_slurp (RSocket *s, ut8 *buf, int bufsz) {
+	int i;
+	int chsz = 1;
+	// r_socket_block_time (s, 1, 1, 0);
+	if (r_socket_read_block (s, (ut8 *) buf, 1) != 1) {
+		return 0;
+	}
+	for (i = 1; i < bufsz; i += chsz) {
+		buf[i] =0;
+		r_socket_block_time (s, 1, 0, 1000);
+		int olen = r_socket_read_block (s, (ut8 *) buf + i , chsz);
+		if (olen != chsz) {
+			buf[i] = 0;
+			break;
+		}
+	}
+	return i;
+}
+
 static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
+	r_return_val_if_fail (s, NULL);
 	const char *p;
-	int ret, olen, len = 0, bufsz = 32768, delta = 0;
-	char *dn, *res, *buf = malloc (bufsz + 32); // XXX: use r_buffer here
+	int ret, len = 0, bufsz = 32768, delta = 0;
+	char *dn, *buf = calloc (1, bufsz + 32); // XXX: use r_buffer here
 	if (!buf) {
 		return NULL;
 	}
-
-	r_socket_block_time (s, 1, 5);
-	res = NULL;
-	olen = r_socket_read_block (s, (unsigned char*) buf, bufsz);
-	if (olen < 1) {
-		goto fail;
-	}
-	buf[olen] = 0;
+	char *res = NULL;
+	int olen = __socket_slurp (s, (ut8*)buf, bufsz);
 	if ((dn = (char*)r_str_casestr (buf, "\n\n"))) {
 		delta += 2;
 	} else if ((dn = (char*)r_str_casestr (buf, "\r\n\r\n"))) {
@@ -35,24 +49,22 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	} else {
 		len = olen - (dn - buf);
 	}
-
-	if (len >0) {
+	if (len > 0) {
 		if (len > olen) {
-			res = malloc (len+2);
-			memcpy (res, dn+delta, olen);
+			res = malloc (len + 2);
+			memcpy (res, dn + delta, olen);
 			do {
-				ret = r_socket_read_block (s,
-					(ut8*) res+olen, len-olen);
+				ret = r_socket_read_block (s, (ut8*) res + olen, len - olen);
 				if (ret < 1) {
 					break;
 				}
 				olen += ret;
-			} while (olen<len);
+			} while (olen < len);
 			res[len] = 0;
 		} else {
-			res = malloc (len+1);
+			res = malloc (len + 1);
 			if (res) {
-				memcpy (res, dn+delta, len);
+				memcpy (res, dn + delta, len);
 				res[len] = 0;
 			}
 		}
@@ -61,7 +73,7 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	}
 fail:
 	free (buf);
-// is 's' free'd? isnt this going to cause a double free?
+// is 's' free'd? isn't this going to cause a double free?
 	r_socket_close (s);
 	if (rlen) {
 		*rlen = len;
@@ -70,6 +82,22 @@ fail:
 }
 
 R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
+	char *curl_env = r_sys_getenv ("R2_CURL");
+	if (curl_env && *curl_env) {
+		char *encoded_url = r_str_escape (url);
+		char *res = r_sys_cmd_strf ("curl '%s'", encoded_url);
+		free (encoded_url);
+		if (res) {
+			if (code) {
+				*code = 200;
+			}
+			if (rlen) {
+				*rlen = strlen (res);
+			}
+		}
+		return res;
+	}
+	free (curl_env);
 	RSocket *s;
 	int ssl = !memcmp (url, "https://", 8);
 	char *response, *host, *path, *port = "80";
@@ -130,27 +158,26 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 
 R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen) {
 	RSocket *s;
-	int ssl = !memcmp (url, "https://", 8);
-	char *response, *host, *path, *port = "80";
+	bool ssl = !memcmp (url, "https://", 8);
 	char *uri = strdup (url);
 	if (!uri) {
 		return NULL;
 	}
 
-	host = strstr (uri, "://");
+	char *host = strstr (uri, "://");
 	if (!host) {
 		free (uri);
 		printf ("Invalid URI");
 		return NULL;
 	}
 	host += 3;
-	port = strchr (host, ':');
+	char *port = strchr (host, ':');
 	if (!port) {
-		port = (ssl)?"443":"80";
+		port = (ssl)? "443": "80";
 	} else {
 		*port++ = 0;
 	}
-	path = strchr (host, '/');
+	char *path = strchr (host, '/');
 	if (!path) {
 		path = "";
 	} else {
@@ -175,11 +202,10 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code, in
 			"Host: %s\r\n"
 			"Content-Length: %i\r\n"
 			"Content-Type: application/x-www-form-urlencoded\r\n"
-			"\r\n", path, host, strlen (data));
-	r_socket_write (s, (void *)data, strlen (data));
-	response = r_socket_http_answer (s, code, rlen);
+			"\r\n", path, host, (int)strlen (data));
 	free (uri);
-	return response;
+	r_socket_write (s, (void *)data, strlen (data));
+	return r_socket_http_answer (s, code, rlen);
 }
 
 #if TEST

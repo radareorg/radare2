@@ -5,6 +5,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
+#define USE_R2 1
 #include <spp/spp.h>
 #include <config.h>
 
@@ -17,6 +18,20 @@ static char *directives[] = {
 };
 
 static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
+
+static void parseHeap(RParse *p, RStrBuf *s) {
+	char *op_buf_asm = r_strbuf_get (s);
+	size_t len = r_strbuf_length (s);
+	char *out = malloc (64 + (len * 2));
+	if (out) {
+		*out = 0;
+		strcpy (out , op_buf_asm);
+	// XXX we shouldn't pad here because we have t orefactor the RParse API to handle boundaries and chunks properly
+		r_parse_parse (p, op_buf_asm, out);
+		r_strbuf_set (s, out);
+		free (out);
+	}
+}
 
 /* pseudo.c - private api */
 static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, char *input) {
@@ -455,8 +470,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	if (a->ofilter) {
-		char *buf_asm = r_strbuf_get (&op->buf_asm);
-		r_parse_parse (a->ofilter, buf_asm, buf_asm);
+		parseHeap (a->ofilter, &op->buf_asm);
 	}
 	int opsz = (op->size > 0)? R_MAX (0, R_MIN (len, op->size)): 1;
 	r_asm_op_set_buf (op, buf, opsz);
@@ -581,8 +595,8 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	}
 	// XXX delete this block, the ase thing should be setting asm, buf and hex
 	if (op && ret > 0) {
-		op->size = ret; // XXX shouldnt be necessary
-		r_asm_op_set_asm (op, b); // XXX ase should be updating this already, isnt?
+		op->size = ret; // XXX shouldn't be necessary
+		r_asm_op_set_asm (op, b); // XXX ase should be updating this already, isn't?
 		ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
 		r_asm_op_set_buf (op, opbuf, ret);
 	}
@@ -619,8 +633,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 			ret = 1;
 		}
 		if (a->ofilter) {
-			char *op_buf_asm = r_strbuf_get (&op.buf_asm);
-			r_parse_parse (a->ofilter, op_buf_asm, op_buf_asm);
+			parseHeap (a->ofilter, &op.buf_asm);
 		}
 		r_strbuf_append (buf_asm, r_strbuf_get (&op.buf_asm));
 		r_strbuf_append (buf_asm, "\n");
@@ -642,6 +655,7 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr
 	}
 	RAsmCode *ret = r_asm_mdisassemble (a, buf, (ut64)len);
 	if (ret && p) {
+		// XXX this can crash
 		r_parse_parse (p, ret->assembly, ret->assembly);
 	}
 	free (buf);
@@ -678,21 +692,29 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 	char *buf_token = NULL;
 	int tokens_size = 32;
 	char **tokens = calloc (sizeof (char*), tokens_size);
+	if (!tokens) {
+		return NULL;
+	}
 	if (!assembly) {
+		free (tokens);
 		return NULL;
 	}
 	ht_pp_free (a->flags);
 	if (!(a->flags = ht_pp_new (dup_val, flag_free_kv, NULL))) {
+		free (tokens);
 		return NULL;
 	}
 	if (!(acode = r_asm_code_new ())) {
+		free (tokens);
 		return NULL;
 	}
 	if (!(acode->assembly = malloc (strlen (assembly) + 16))) {
+		free (tokens);
 		return r_asm_code_free (acode);
 	}
 	r_str_ncpy (acode->assembly, assembly, sizeof (acode->assembly) - 1);
 	if (!(acode->bytes = calloc (1, 64))) {
+		free (tokens);
 		return r_asm_code_free (acode);
 	}
 	lbuf = strdup (assembly);
@@ -744,7 +766,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 		ctr++;
 		if (ctr >= tokens_size) {
 			const int new_tokens_size = tokens_size * 2;
-			char **new_tokens = realloc (tokens, new_tokens_size);
+			char **new_tokens = realloc (tokens, sizeof (char*) * new_tokens_size);
 			if (new_tokens) {
 				tokens_size = new_tokens_size;
 				tokens = new_tokens;
@@ -842,6 +864,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			if (*ptr_start == '.') { /* pseudo */
 				/* TODO: move into a separate function */
 				ptr = ptr_start;
+				r_str_trim (ptr);
 				if (!strncmp (ptr, ".intel_syntax", 13)) {
 					a->syntax = R_ASM_SYNTAX_INTEL;
 				} else if (!strncmp (ptr, ".att_syntax", 11)) {
@@ -933,6 +956,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 					ret = r_asm_pseudo_incbin (&op, ptr + 8);
 				} else {
 					eprintf ("Unknown directive (%s)\n", ptr);
+					free (tokens);
 					free(lbuf);
 					return r_asm_code_free (acode);
 				}
@@ -941,12 +965,13 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				}
 				if (ret < 0) {
 					eprintf ("!!! Oops (%s)\n", ptr);
+					free (tokens);
 					free (lbuf);
 					return r_asm_code_free (acode);
 				}
 			} else { /* Instruction */
 				char *str = ptr_start;
-				ptr_start = r_str_trim (str);
+				r_str_trim (str);
 				if (a->ifilter) {
 					r_parse_parse (a->ifilter, ptr_start, ptr_start);
 				}
@@ -968,19 +993,22 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				if (ret < 1) {
 					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
 					free (lbuf);
+					free (tokens);
 					return r_asm_code_free (acode);
 				}
 				acode->len = idx + ret;
 				char *newbuf = realloc (acode->bytes, (idx + ret) * 2);
 				if (!newbuf) {
 					free (lbuf);
+					free (tokens);
 					return r_asm_code_free (acode);
 				}
 				acode->bytes = (ut8*)newbuf;
 				memcpy (acode->bytes + idx, r_strbuf_get (&op.buf), r_strbuf_length (&op.buf));
 				memset (acode->bytes + idx + ret, 0, idx + ret);
 				if (op.buf_inc && r_buf_size (op.buf_inc) > 1) {
-					char *inc = r_buf_free_to_string (op.buf_inc);
+					char *inc = r_buf_to_string (op.buf_inc);
+					r_buf_free (op.buf_inc);
 					if (inc) {
 						ret += r_hex_str2bin (inc, acode->bytes + idx + ret);
 						free (inc);

@@ -11,9 +11,6 @@
 extern "C" {
 #endif
 
-// XXX : remove this define???
-#define R_PARSE_STRLEN 256
-
 R_LIB_VERSION_HEADER(r_parse);
 
 typedef RList* (*RAnalVarList)(RAnal *anal, RAnalFunction *fcn, int kind);
@@ -32,42 +29,92 @@ typedef struct r_parse_t {
 	int minval;
 	char *retleave_asm;
 	struct r_parse_plugin_t *cur;
-	RAnal *anal; // weak anal ref
+	// RAnal *anal; // weak anal ref XXX do not use. use analb.anal
 	RList *parsers;
 	RAnalVarList varlist;
 	char* (*get_op_ireg)(void *user, ut64 addr);
 	RAnalBind analb;
-	RFlagGetAtAddr flag_get;
+	RFlagGetAtAddr flag_get; // XXX
 } RParse;
 
 typedef struct r_parse_plugin_t {
 	char *name;
 	char *desc;
-	int (*init)(void *user);
-	int (*fini)(void *user);
+	bool (*init)(RParse *p, void *user);
+	int (*fini)(RParse *p, void *user);
 	int (*parse)(RParse *p, const char *data, char *str);
-	int (*assemble)(RParse *p, char *data, char *str);
+	bool (*assemble)(RParse *p, char *data, char *str);
 	int (*filter)(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian);
 	bool (*varsub)(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 	int (*replace)(int argc, const char *argv[], char *newstr);
 } RParsePlugin;
 
 #ifdef R_API
+
+/* lifecycle */
 R_API struct r_parse_t *r_parse_new(void);
 R_API void r_parse_free(RParse *p);
+
+/* plugins */
 R_API void r_parse_set_user_ptr(RParse *p, void *user);
-R_API int r_parse_add(RParse *p, RParsePlugin *foo);
-R_API int r_parse_list(RParse *p);
-R_API int r_parse_use(RParse *p, const char *name);
-R_API int r_parse_parse(RParse *p, const char *data, char *str);
-R_API int r_parse_assemble(RParse *p, char *data, char *str);
-R_API int r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
+R_API bool r_parse_add(RParse *p, RParsePlugin *foo);
+R_API bool r_parse_use(RParse *p, const char *name);
+
+/* action */
+R_API bool r_parse_parse(RParse *p, const char *data, char *str);
+R_API bool r_parse_assemble(RParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
+R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
 R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
-R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg);
-R_API char *r_parse_c_file(RAnal *anal, const char *path, char **error_msg);
-R_API int r_parse_is_c_file(const char *file);
 R_API char *r_parse_immtrim(char *opstr);
-R_API void r_parse_reset(void);
+
+/* c */
+// why we have anal scoped things in rparse
+R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg);
+R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
+R_API void r_parse_c_reset(RParse *p);
+
+/* ctype */
+// Parses strings like "const char * [0x42] const * [23]" to RParseCTypeType
+
+typedef struct r_parse_ctype_t RParseCType;
+
+typedef enum {
+	R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER,
+	R_PARSE_CTYPE_TYPE_KIND_POINTER,
+	R_PARSE_CTYPE_TYPE_KIND_ARRAY
+} RParseCTypeTypeKind;
+
+typedef enum {
+	R_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED,
+	R_PARSE_CTYPE_IDENTIFIER_KIND_STRUCT,
+	R_PARSE_CTYPE_IDENTIFIER_KIND_UNION,
+	R_PARSE_CTYPE_IDENTIFIER_KIND_ENUM
+} RParseCTypeTypeIdentifierKind;
+
+typedef struct r_parse_ctype_type_t RParseCTypeType;
+struct r_parse_ctype_type_t {
+	RParseCTypeTypeKind kind;
+	union {
+		struct {
+			RParseCTypeTypeIdentifierKind kind;
+			char *name;
+			bool is_const;
+		} identifier;
+		struct {
+			RParseCTypeType *type;
+			bool is_const;
+		} pointer;
+		struct {
+			RParseCTypeType *type;
+			ut64 count;
+		} array;
+	};
+};
+
+R_API RParseCType *r_parse_ctype_new(void);
+R_API void r_parse_ctype_free(RParseCType *ctype);
+R_API RParseCTypeType *r_parse_ctype_parse(RParseCType *ctype, const char *str, char **error);
+R_API void r_parse_ctype_type_free(RParseCTypeType *type);
 
 /* plugin pointers */
 extern RParsePlugin r_parse_plugin_6502_pseudo;
@@ -79,7 +126,6 @@ extern RParsePlugin r_parse_plugin_dalvik_pseudo;
 extern RParsePlugin r_parse_plugin_dummy;
 extern RParsePlugin r_parse_plugin_m68k_pseudo;
 extern RParsePlugin r_parse_plugin_mips_pseudo;
-extern RParsePlugin r_parse_plugin_mreplace;
 extern RParsePlugin r_parse_plugin_ppc_pseudo;
 extern RParsePlugin r_parse_plugin_sh_pseudo;
 extern RParsePlugin r_parse_plugin_wasm_pseudo;

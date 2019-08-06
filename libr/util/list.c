@@ -607,6 +607,18 @@ R_API RList *r_list_uniq(const RList *list, RListComparator cmp) {
 	}
 	return nl;
 }
+R_API char *r_list_to_str(RList *list, char ch) {
+	RListIter *iter;
+	RStrBuf *buf = r_strbuf_new ("");
+	if (!buf) {
+		return NULL;
+	}
+	char *item;
+	r_list_foreach (list, iter, item) {
+		r_strbuf_appendf (buf, "%s%c", item, ch);
+	}
+	return r_strbuf_drain (buf);
+}
 
 #if TEST
 

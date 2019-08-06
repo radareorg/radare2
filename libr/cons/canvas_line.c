@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_cons.h>
 #define W(y) r_cons_canvas_write(c,y)
@@ -102,72 +102,6 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 	default:
 		break;
 	}
-}
-
-R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
-	if (x == x2 || y == y2) {
-		style->dot_style = DOT_STYLE_NORMAL;
-		r_cons_canvas_line_square (c, x, y +1, x2, y2, style);
-		return;
-	}
-	apply_line_style (c, x, y, x2, y2, style, 1);
-	if (y2 < y) {
-		int tmp = y2;
-		y2 = y;
-		y=tmp;
-		tmp=x2;
-		x2=x;
-		x=tmp;
-	}
-	char chizzle[2] = {0}; // = '.';//my nizzle
-	// destination
-	int dx = abs (x2-x);
-        int dy = abs (y2-y);
-	// source
-	int sx = (x < x2) ? 1 : -1;
-	int sy = (y < y2) ? 1 : -1;
-
-	int err = (dx > (dy?dx:-dy)) / 2;
-	int e2;
-
-	// TODO: find if there's any collision in this line
-loop:
-	e2 = err;
-	if (e2 > -dx) {
-		*chizzle = '_';
-		err -= dy;
-		x+=sx;
-	}
-	if (e2 < dy) {
-		*chizzle='|';
-		err += dx;
-		y += sy;
-	}
-	if ((e2 < dy) && (e2 > -dx)) {
-		if (sy > 0) {
-			*chizzle = (sx > 0)?'\\':'/';
-		} else {
-			*chizzle = (sx > 0)?'/':'\\';
-		}
-	}
-	if (!(x == x2 && y == y2)) {
-		int i = (*chizzle == '_' && sy < 0) ? 1 : 0;
-		if (G(x, y - i)) {
-			W(chizzle);
-		}
-		goto loop;
-	}
-	if (dx) {
-		if (dy && (dx / dy) < 1) {
-			if (G(x, y)) {
-				W("|");
-			}
-		}
-		if (G(x, y + 1)) {
-			W("|");
-		}
-	}
-	c->attr = Color_RESET;
 }
 
 static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int style, int dot_style) {
@@ -344,6 +278,92 @@ static void draw_vertical_line (RConsCanvas *c, int x, int y, int height, int do
 		}
 	}
 	r_cons_break_pop ();
+}
+
+R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
+	if (x == x2 || y == y2) {
+		style->dot_style = DOT_STYLE_NORMAL;
+		r_cons_canvas_line_square (c, x, y +1, x2, y2, style);
+		return;
+	}
+	apply_line_style (c, x, y, x2, y2, style, 1);
+	if (y2 < y) {
+		int tmp = y2;
+		y2 = y;
+		y = tmp;
+		tmp = x2;
+		x2 = x;
+		x = tmp;
+	}
+	char chizzle[2] = {0}; // = '.';//my nizzle
+	// destination
+	int dx = abs (x2-x);
+        int dy = abs (y2-y);
+	// source
+	int sx = (x < x2) ? 1 : -1;
+	int sy = (y < y2) ? 1 : -1;
+
+	int err = (dx > (dy?dx:-dy)) / 2;
+	int e2;
+
+	// TODO: find if there's any collision in this line
+loop:
+	e2 = err;
+	if (e2 > -dx) {
+		*chizzle = '_';
+		err -= dy;
+		x+=sx;
+	}
+	if (e2 < dy) {
+		*chizzle='|';
+		err += dx;
+		y += sy;
+	}
+	if ((e2 < dy) && (e2 > -dx)) {
+		if (sy > 0) {
+			*chizzle = (sx > 0)?'\\':'/';
+		} else {
+			*chizzle = (sx > 0)?'/':'\\';
+		}
+	}
+	if (!(x == x2 && y == y2)) {
+		int i = (*chizzle == '_' && sy < 0) ? 1 : 0;
+		if (G(x, y - i)) {
+			if (useUtf8) {
+				switch (*chizzle) {
+				case '/':
+					W("╯");
+					break;
+				case '\\':
+					W("└");
+					break;
+				case '|':
+					W("│");
+					break;
+				case '_':
+					W("─");
+					break;
+				default:
+					W("?");
+					break;
+				}
+			} else {
+				W(chizzle);
+			}
+		}
+		goto loop;
+	}
+	if (dx) {
+		if (dy && (dx / dy) < 1) {
+			if (G(x, y)) {
+				W("|");
+			}
+		}
+		if (G(x, y + 1)) {
+			W("|");
+		}
+	}
+	c->attr = Color_RESET;
 }
 
 R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {

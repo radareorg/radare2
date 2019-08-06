@@ -370,7 +370,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			str = eol;
 			break;
 		case 3:	//undefined rec. Just skip.
-		case 5:	//non-standard, sometimes "start linear adddress"
+		case 5:	//non-standard, sometimes "start linear address"
 			str = strchr (str + 1, ':');
 			break;
 		}
@@ -440,7 +440,7 @@ RIOPlugin r_io_plugin_ihex = {
 	.resize = __resize
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_ihex,

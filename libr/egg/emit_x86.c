@@ -254,7 +254,7 @@ static void emit_jmp(REgg *egg, const char *str, int atr) {
 			r_egg_printf (egg, "  jmp %s\n", str);
 		}
 	} else {
-		eprintf ("Jump without destionation\n");
+		eprintf ("Jump without destination\n");
 	}
 }
 
@@ -267,7 +267,7 @@ static void emit_arg (REgg *egg, int xs, int num, const char *str) {
 	case 0:
 #ifdef ARCH_X86_64
 		/*	push imm64 instruction not exist, it´s translated to:
-			mov rax, 0x0102030405060708	
+			mov rax, 0x0102030405060708
 			push rax
 		*/
 		if (attsyntax) {
@@ -357,7 +357,7 @@ static void emit_get_var (REgg *egg, int type, char *out, int idx) {
 		}
 		break;
 	case 1: /* argument */
-// OMG WE CANT stuff found in relative address in stack in the stack
+// OMG WE CAN'T stuff found in relative address in stack in the stack
 		eprintf ("WARNING: Using stack vars in naked functions\n");
 		idx = 8; // HACK to make arg0, arg4, ... work
 		if (idx > 0) {

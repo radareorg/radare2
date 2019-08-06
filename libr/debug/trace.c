@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2019 - pancake */
 
 #include <r_debug.h>
-
 #define R_DEBUG_SDB_TRACES 1
 
 // DO IT WITH SDB
@@ -61,8 +60,14 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
 		return false;
 	}
-	if (dbg->anal->esil && dbg->trace->enabled) {
-		r_anal_esil_trace (dbg->anal->esil, &op);
+	if (dbg->trace->enabled) {
+		if (dbg->anal->esil) {
+			r_anal_esil_trace (dbg->anal->esil, &op);
+		} else {
+			if (dbg->verbose) {
+				eprintf ("Run aeim to get dbg->anal->esil initialized\n");
+			}
+		}
 	}
 	if (oldpc != UT64_MAX) {
 		r_debug_trace_add (dbg, oldpc, op.size); //XXX review what this line really do
@@ -98,9 +103,119 @@ R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
 	return NULL;
 }
 
-R_API void r_debug_trace_list (RDebug *dbg, int mode) {
+typedef struct {
+	char *name;
+	RInterval pitv;
+	RInterval vitv;
+	int perm;
+	char *extra;
+} RListInfo;
+
+static int cmpaddr (const void *_a, const void *_b) {
+	const RListInfo *a = _a, *b = _b;
+	return (r_itv_begin (a->pitv) > r_itv_begin (b->pitv))? 1:
+		 (r_itv_begin (a->pitv) < r_itv_begin (b->pitv))? -1: 0;
+}
+
+// Copy from visual to avoid circular dependency
+void visual_list(RDebug *dbg, RList *list, ut64 seek, ut64 len, int width, int use_color) {
+	ut64 mul, min = -1, max = -1;
+	RListIter *iter;
+	RListInfo *info;
+	int j, i;
+	RIO *io = dbg->iob.io;
+	width -= 80;
+	if (width < 1) {
+		width = 30;
+	}
+
+	r_list_foreach (list, iter, info) {
+		if (min == -1 || info->pitv.addr < min) {
+			min = info->pitv.addr;
+		}
+		if (max == -1 || info->pitv.addr + info->pitv.size > max) {
+			max = info->pitv.addr + info->pitv.size;
+		}
+	}
+	mul = (max - min) / width;
+	if (min != -1 && mul > 0) {
+		const char * color = "", *color_end = "";
+		i = 0;
+		r_list_foreach (list, iter, info) {
+			if (use_color && info->perm != -1) {
+				color_end = Color_RESET;
+				if ((info->perm & R_PERM_X) && (info->perm & R_PERM_W)) { // exec & write bits
+					color = r_cons_singleton ()->context->pal.graph_trufae;
+				} else if ((info->perm & R_PERM_X)) { // exec bit
+					color = r_cons_singleton ()->context->pal.graph_true;
+				} else if ((info->perm & R_PERM_W)) { // write bit
+					color = r_cons_singleton ()->context->pal.graph_false;
+				} else {
+					color = "";
+					color_end = "";
+				}
+			} else {
+				color = "";
+				color_end = "";
+			}
+			if (io->va) {
+				io->cb_printf ("%05d%c %s0x%08"PFMT64x"%s |", i,
+						r_itv_contain (info->vitv, seek) ? '*' : ' ',
+						color, info->vitv.addr, color_end);
+			} else {
+				io->cb_printf ("%05d%c %s0x%08"PFMT64x"%s |", i,
+						r_itv_contain (info->pitv, seek) ? '*' : ' ',
+						color, info->pitv.addr, color_end);
+			}
+			for (j = 0; j < width; j++) {
+				ut64 pos = min + j * mul;
+				ut64 npos = min + (j + 1) * mul;
+				if (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos) {
+					io->cb_printf ("#");
+				} else {
+					io->cb_printf ("-");
+				}
+			}
+			if (io->va) {
+				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %6s %s\n",
+					color, r_itv_end (info->vitv), color_end,
+					(info->perm != -1)? r_str_rwx_i (info->perm) : "   ",
+					(info->extra)?info->extra : "    ",
+					(info->name)?info->name : " ");
+			} else {
+				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %6s %s\n",
+					color, r_itv_end (info->pitv), color_end,
+					(info->perm != -1)? r_str_rwx_i (info->perm) : "   ",
+					(info->extra)?info->extra : "      ",
+					(info->name)?info->name : "");
+			}
+			i++;
+		}
+		/* current seek */
+		if (i > 0 && len != 0) {
+			if (seek == UT64_MAX) {
+				seek = 0;
+			}
+			io->cb_printf ("=>     0x%08"PFMT64x" |", seek);
+			for (j = 0; j < width; j++) {
+				io->cb_printf (
+					((j * mul) + min >= seek &&
+					 (j * mul) + min <= seek+len)
+					?"^" : "-");
+			}
+			io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len);
+		}
+	}
+}
+
+R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 	int tag = dbg->trace->tag;
 	RListIter *iter;
+	bool flag = false;
+	RList *info_list = r_list_new ();
+	if (!info_list && mode == '=') {
+		return;
+	}
 	RDebugTracepoint *trace;
 	r_list_foreach (dbg->trace->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
@@ -108,6 +223,19 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode) {
 			case 'q':
 				dbg->cb_printf ("0x%"PFMT64x"\n", trace->addr);
 				break;
+			case '=': {
+				RListInfo *info = R_NEW0 (RListInfo);
+				if (!info) {
+					return;
+				}
+				info->pitv = (RInterval) {trace->addr, trace->size};
+				info->vitv = info->pitv;
+				info->perm = -1;
+				info->name = r_str_newf ("%d", trace->times);
+				info->extra = r_str_newf ("%d", trace->count);
+				r_list_append (info_list, info);
+				flag = true;
+			}	break;
 			case 1:
 			case '*':
 				dbg->cb_printf ("dt+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
@@ -118,6 +246,12 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode) {
 				break;
 			}
 		}
+	}
+	if (flag) {
+		r_list_sort (info_list, cmpaddr);
+		visual_list (dbg, info_list, offset, 1,
+			r_cons_get_size (NULL), false);
+		r_list_free (info_list);
 	}
 }
 
@@ -140,26 +274,21 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 		return NULL;
 	}
 	r_anal_trace_bb (dbg->anal, addr);
-	tp = r_debug_trace_get (dbg, addr);
+	tp = R_NEW0 (RDebugTracepoint);
 	if (!tp) {
-		tp = R_NEW0 (RDebugTracepoint);
-		if (!tp) {
-			return NULL;
-		}
-		tp->stamp = r_sys_now ();
-		tp->addr = addr;
-		tp->tags = tag;
-		tp->size = size;
-		tp->count = ++dbg->trace->count;
-		tp->times = 1;
-		r_list_append (dbg->trace->traces, tp);
-#if R_DEBUG_SDB_TRACES
-		sdb_num_set (dbg->trace->db, sdb_fmt ("trace.%d.%"PFMT64x, tag, addr),
-			(ut64)(size_t)tp, 0);
-#endif
-	} else {
-		tp->times++;
+		return NULL;
 	}
+	tp->stamp = r_sys_now ();
+	tp->addr = addr;
+	tp->tags = tag;
+	tp->size = size;
+	tp->count = ++dbg->trace->count;
+	tp->times = 1;
+	r_list_append (dbg->trace->traces, tp);
+#if R_DEBUG_SDB_TRACES
+	sdb_num_set (dbg->trace->db, sdb_fmt ("trace.%d.%"PFMT64x, tag, addr),
+		(ut64)(size_t)tp, 0);
+#endif
 	return tp;
 }
 

@@ -330,7 +330,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* openning stuff */
+	/* opening stuff */
 	src    = open(argv[optind], O_RDONLY);
 	if (src == -1) {
 		fprintf(stderr, "Cannot open file source %s\n", argv[optind]);

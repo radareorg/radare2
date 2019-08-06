@@ -1,10 +1,11 @@
 /* work-in-progress reverse engineered swift-demangler in C 
- * Copyright MIT 2015-2016
+ * Copyright MIT 2015-2019
  * by pancake@nopcode.org */
 
 #include <stdio.h>
 #include <string.h>
 #include <r_util.h>
+#include <r_lib.h>
 #include <stdlib.h>
 #include <r_cons.h>
 
@@ -93,7 +94,7 @@ static const char *numpos(const char* n) {
 static const char *getstring(const char *s, int len) {
 	static char buf[256] = {0};
 	if (len < 0 || len > sizeof (buf) - 2) {
-		return NULL;
+		return "";
 	}
 	strncpy (buf, s, len);
 	buf[len] = 0;
@@ -150,8 +151,27 @@ static char *swift_demangle_cmd(const char *s) {
 			free (res);
 			res = NULL;
 		}
-		return r_str_trim (res);
+		r_str_trim (res);
+		return res;
 	}
+	return NULL;
+}
+
+static char *swift_demangle_lib(const char *s) {
+#if __UNIX__
+	static bool haveSwiftCore = false;
+	static char *(*swift_demangle)(const char *sym, int symlen, void *out, int *outlen, int flags) = NULL;
+	if (!haveSwiftCore) {
+		void *lib = r_lib_dl_open ("/usr/lib/swift/libswiftCore.dylib");
+		if (lib) {
+			swift_demangle = r_lib_dl_sym (lib, "swift_demangle");
+		}
+		haveSwiftCore = true;
+	}
+	if (swift_demangle) {
+		return swift_demangle (s, strlen (s), NULL, NULL, 0);
+	}
+#endif
 	return NULL;
 }
 
@@ -170,7 +190,10 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 	}
 
 	if (*s != 'T' && strncmp (s, "_T", 2) && strncmp (s, "__T", 3)) {
-		return NULL;
+		// modern swift symbols
+		if (strncmp (s, "$s", 2)) {
+			return NULL;
+		}
 	}
 
 	if (!strncmp (s, "__", 2)) {
@@ -181,6 +204,10 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 		"module", "class", "method", NULL
 	};
 #endif
+	char *res = swift_demangle_lib (s);
+	if (res) {
+		return res;
+	}
 	const char *attr = NULL;
 	const char *attr2 = NULL;
 	const char *q, *p = s;
@@ -191,7 +218,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 		return NULL;
 	}
 	if (syscmd) {
-		char *res = swift_demangle_cmd (s);
+		res = swift_demangle_cmd (s);
 		if (res) {
 			return res;
 		}
@@ -703,7 +730,7 @@ int main(int argc, char **argv) {
 		}
 	} else {
 		int i = 0;
-		for (i=0; swift_tests[i].sym; i++) {
+		for (i = 0; swift_tests[i].sym; i++) {
 			Test *test = &swift_tests[i];
 			printf ("[>>] %s\n", test->sym);
 			ret = r_bin_demangle_swift (test->sym, 0);

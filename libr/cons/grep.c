@@ -25,8 +25,10 @@ static const char *help_detail_tilde[] = {
 	" &",        "", "all words must match to grep the line",
 	" $[n]",     "", "sort numerically / alphabetically the Nth column",
 	" $!",       "", "sort in inverse order",
+	" ,",        "", "token to define another keyword",
 	" +",        "", "case insensitive grep (grep -i)",
 	" ^",        "", "words must be placed at the beginning of line",
+	" <",        "", "perform zoom operation on the buffer",
 	" !",        "", "negate grep",
 	" ?",        "", "count number of matching lines",
 	" ?.",       "", "count number chars",
@@ -34,9 +36,13 @@ static const char *help_detail_tilde[] = {
 	" :s..e",    "", "show lines s-e",
 	" ..",       "", "internal 'less'",
 	" ...",      "", "internal 'hud' (like V_)",
+	" {:",       "", "human friendly indentation (yes, it's a smiley)",
+	" {:..",     "", "less the output of {:",
+	" {:...",    "", "hud the output of {:",
 	" {}",       "", "json indentation",
-	" {path}",   "", "json grep",
 	" {}..",     "", "less json indentation",
+	" {}...",    "", "hud json indentation",
+	" {path}",   "", "json path grep",
 	"endmodifier:", "", "",
 	" $",        "", "words must be placed at the end of line",
 	"column:", "", "",
@@ -76,10 +82,7 @@ static void parse_grep_expression(const char *str) {
 	}
 	RCons *cons = r_cons_singleton ();
 	RConsGrep *grep = &cons->context->grep;
-	memset (grep, 0, sizeof (RConsGrep));
 	sorted_column = 0;
-	grep->sort = -1;
-	grep->line = -1;
 	bool first = true;
 	while (*str) {
 		switch (*str) {
@@ -95,9 +98,20 @@ static void parse_grep_expression(const char *str) {
 			str++;
 			break;
 		case '{':
-			if (str[1] == '}') {
+			if (str[1] == ':') {
+				grep->human = true; // human friendly indentation ij~{:
 				grep->json = 1;
-				if (!strncmp (str, "{}..", 4)) {
+				if (!strncmp (str, "{:...", 5)) {
+					grep->hud = true;
+				} else if (!strncmp (str, "{:..", 4)) {
+					grep->less = 1;
+				}
+			} else if (str[1] == '}') {
+				// standard json indentation
+				grep->json = 1;
+				if (!strncmp (str, "{}...", 5)) {
+					grep->hud = true;
+				} else if (!strncmp (str, "{}..", 4)) {
 					grep->less = 1;
 				}
 			} else {
@@ -135,6 +149,10 @@ static void parse_grep_expression(const char *str) {
 		case '&':
 			str++;
 			grep->amp = 1;
+			break;
+		case '<':
+			grep->zoom = atoi (++str);
+			//grep->zoomy = atoi (arg);
 			break;
 		case '+':
 			if (first) {
@@ -298,13 +316,13 @@ while_end:
 				eprintf ("grep string too long\n");
 				continue;
 			}
-			strncpy (grep->strings[grep->nstrings],
-				optr, R_CONS_GREP_WORD_SIZE - 1);
 			grep->nstrings++;
 			if (grep->nstrings > R_CONS_GREP_WORDS - 1) {
 				eprintf ("too many grep strings\n");
 				break;
 			}
+			strncpy (grep->strings[grep->nstrings - 1],
+				optr, R_CONS_GREP_WORD_SIZE - 1);
 		} while (ptr);
 	} else {
 		grep->str = strdup (ptr);
@@ -457,6 +475,23 @@ R_API void r_cons_grepbuf() {
 	if ((!len || !buf || buf[0] == '\0') && (grep->json || grep->less)) {
 		grep->json = 0;
 		grep->less = 0;
+		grep->hud = 0;
+		return;
+	}
+
+	if (grep->zoom) {
+		char *in = calloc (cons->context->buffer_len + 2, 4);
+		strcpy (in, cons->context->buffer);
+		char *out = r_str_scale (in, grep->zoom * 2, grep->zoomy?grep->zoomy:grep->zoom);
+		if (out) {
+			free (cons->context->buffer);
+			cons->context->buffer = out;
+			cons->context->buffer_len = strlen (out);
+			cons->context->buffer_sz = cons->context->buffer_len;
+		}
+		grep->zoom = 0;
+		grep->zoomy = 0;
+		free (in);
 		return;
 	}
 	if (grep->json) {
@@ -479,7 +514,9 @@ R_API void r_cons_grepbuf() {
 				Color_RESET,
 				NULL
 			};
-			char *out = r_print_json_indent (buf, I (context->color), "  ", palette);
+			char *out = (cons->context->grep.human)
+				? r_print_json_human (buf)
+				: r_print_json_indent (buf, I (context->color_mode), "  ", palette);
 			if (!out) {
 				return;
 			}
@@ -488,7 +525,10 @@ R_API void r_cons_grepbuf() {
 			cons->context->buffer_len = strlen (out);
 			cons->context->buffer_sz = cons->context->buffer_len + 1;
 			grep->json = 0;
-			if (grep->less) {
+			if (grep->hud) {
+				grep->hud = false;
+				r_cons_hud_string (cons->context->buffer);
+			} else if (grep->less) {
 				grep->less = 0;
 				r_cons_less_str (cons->context->buffer, NULL);
 			}
@@ -629,6 +669,7 @@ R_API void r_cons_grepbuf() {
 		snprintf (cons->context->buffer, cons->context->buffer_len, "%d\n", cnt);
 		cons->context->buffer_len = strlen (cons->context->buffer);
 		cons->num->value = cons->lines;
+		r_strbuf_free (ob);
 		return;
 	}
 	
@@ -789,7 +830,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 		if (!unsorted_lines) {
 			unsorted_lines = r_list_newf (free);
 		}
-		if (cons->lines > grep->sort_row) {
+		if (cons->lines >= grep->sort_row) {
 			r_list_append (sorted_lines, strdup (buf));
 		} else {
 			r_list_append (unsorted_lines, strdup (buf));
@@ -801,12 +842,13 @@ R_API int r_cons_grep_line(char *buf, int len) {
 }
 
 static const char *gethtmlrgb(const char *str) {
-	static char buf[32];
-	ut8 r, g, b;
-	r = g = b = 0;
-	r_cons_rgb_parse (str, &r, &g, &b, 0);
-	sprintf (buf, "#%02x%02x%02x", r, g, b);
-	return buf;
+	ut8 r = 0, g = 0, b = 0;
+	if (r_cons_rgb_parse (str, &r, &g, &b, 0)) {
+		static char buf[32];
+		sprintf (buf, "#%02x%02x%02x", r, g, b);
+		return buf;
+	}
+	return "";
 }
 
 static const char *gethtmlcolor(const char ptrch, const char *def) {
@@ -933,15 +975,20 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				continue;
 				// reset color
 			} else if (ptr[0] == '3' && ptr[2] == 'm') {
-				r_strbuf_appendf (res, "<font color='%s'>", gethtmlcolor (ptr[1], inv? "#fff": "#000"));
+				const char *htmlColor = gethtmlcolor (ptr[1], inv? "#fff":NULL);
+				if (htmlColor) {
+					r_strbuf_appendf (res, "<font color='%s'>", htmlColor);
+				}
 				tag_font = true;
 				ptr = ptr + 1;
 				str = ptr + 2;
 				esc = 0;
 				continue;
 			} else if (ptr[0] == '4' && ptr[2] == 'm') {
-				r_strbuf_appendf (res, "<font style='background-color:%s'>",
-					gethtmlcolor (ptr[1], inv? "#000": "#fff"));
+				const char *htmlColor = gethtmlcolor (ptr[1], inv? "#000":NULL);
+				if (htmlColor) {
+					r_strbuf_appendf (res, "<font style='background-color:%s'>", htmlColor);
+				}
 				tag_font = true;
 				ptr = ptr + 1;
 				str = ptr + 2;

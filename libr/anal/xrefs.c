@@ -83,6 +83,10 @@ static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
 	return 0;
 }
 
+static void sortxrefs(RList *list) {
+	r_list_sort (list, (RListComparator)ref_cmp);
+}
+
 static void listxrefs(HtUP *m, ut64 addr, RList *list) {
 	if (addr == UT64_MAX) {
 		ht_up_foreach (m, mylistrefs_cb, list);
@@ -95,7 +99,6 @@ static void listxrefs(HtUP *m, ut64 addr, RList *list) {
 
 		ht_up_foreach (d, appendRef, list);
 	}
-	r_list_sort (list, (RListComparator)ref_cmp);
 }
 
 static void setxref(HtUP *m, ut64 from, ut64 to, int type) {
@@ -151,6 +154,7 @@ R_API int r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
 
 R_API int r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
 	listxrefs (anal->dict_refs, addr, list);
+	sortxrefs (list);
 	return true;
 }
 
@@ -160,6 +164,7 @@ R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to) {
 		return NULL;
 	}
 	listxrefs (anal->dict_xrefs, to, list);
+	sortxrefs (list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
@@ -173,6 +178,7 @@ R_API RList *r_anal_refs_get(RAnal *anal, ut64 from) {
 		return NULL;
 	}
 	listxrefs (anal->dict_refs, from, list);
+	sortxrefs (list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
@@ -186,6 +192,7 @@ R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
 		return NULL;
 	}
 	listxrefs (anal->dict_refs, to, list);
+	sortxrefs (list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
@@ -199,6 +206,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	PJ *pj = NULL;
 	RList *list = r_anal_ref_list_new();
 	listxrefs (anal->dict_refs, UT64_MAX, list);
+	sortxrefs (list);
 	if (rad == 'j') {
 		pj = pj_new ();
 		if (!pj) {
@@ -340,6 +348,7 @@ static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {
 			listxrefs (ht, at, list);
 		}
 	}
+	sortxrefs (list);
 	return list;
 }
 

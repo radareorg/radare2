@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_types.h"
 #include "r_config.h"
@@ -140,9 +140,7 @@ R_API int r_core_lines_currline(RCore *core) {  // make priv8 again
 }
 
 R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
-	int i, line_count;
-	int bsz = core->blocksize;
-	char *buf;
+	int i, bsz = core->blocksize;
 	ut64 off = start_addr;
 	ut64 baddr;
 	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
@@ -157,9 +155,9 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 
 	baddr = r_config_get_i (core->config, "bin.baddr");
 
-	line_count = start_addr? 0: 1;
+	int line_count = start_addr? 0: 1;
 	core->print->lines_cache[0] = start_addr? 0: baddr;
-	buf = malloc (bsz);
+	char *buf = malloc (bsz);
 	if (!buf) {
 		return -1;
 	}
@@ -170,18 +168,22 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 		}
 		r_io_read_at (core->io, off, (ut8 *) buf, bsz);
 		for (i = 0; i < bsz; i++) {
-			if (buf[i] == '\n') {
-				core->print->lines_cache[line_count] = start_addr? off + i + 1: off + i + 1 + baddr;
-				line_count++;
-				if (line_count % bsz == 0) {
-					ut64 *tmp = realloc (core->print->lines_cache,
-						(line_count + bsz) * sizeof (ut64));
-					if (tmp) {
-						core->print->lines_cache = tmp;
-					} else {
-						R_FREE (core->print->lines_cache);
-						goto beach;
-					}
+			if (buf[i] != '\n') {
+				continue;
+			}
+			if (line_count >= bsz) {
+				break;
+			}
+			core->print->lines_cache[line_count] = start_addr? off + i + 1: off + i + 1 + baddr;
+			line_count++;
+			if (line_count % bsz == 0) {
+				ut64 *tmp = realloc (core->print->lines_cache,
+					(line_count + bsz) * sizeof (ut64));
+				if (tmp) {
+					core->print->lines_cache = tmp;
+				} else {
+					R_FREE (core->print->lines_cache);
+					goto beach;
 				}
 			}
 		}
@@ -214,6 +216,34 @@ static void seek_to_register(RCore *core, const char *input, bool is_silent) {
 		}
 		r_core_seek (core, off, 1);
 	}
+}
+
+static int cmd_sort(void *data, const char *input) { // "sort"
+	RCore *core = (RCore *)data;
+	const char *arg = strchr (input, ' ');
+	if (arg) {
+		arg = r_str_trim_ro (arg + 1);
+	}
+	switch (*input) {
+	case '?': // "sort?"
+		eprintf ("Usage: sort # sort the contents of the file\n");
+		break;
+	default: // "ls"
+		if (!arg) {
+			arg = "";
+		}
+		if (r_fs_check (core->fs, arg)) {
+			r_core_cmdf (core, "md %s", arg);
+		} else {
+			char *res = r_syscmd_sort (arg);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+		}
+		break;
+	}
+	return 0;
 }
 
 static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
@@ -307,7 +337,7 @@ static int cmd_seek(void *data, const char *input) {
 		free (dup);
 	}
 	const char *inputnum = strchr (input, ' ');
-	{
+	if (r_str_cmp (input, "ort", 3)) {					// hack to handle Invalid Argument for sort
 		const char *u_num = inputnum? inputnum + 1: input + 1;
 		off = r_num_math (core->num, u_num);
 		if (*u_num == '-') {
@@ -710,7 +740,23 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	}
 	case 'o': // "so"
-		cmd_seek_opcode (core, input + 1);
+		switch (input[1]) {
+		case 'r':
+			if (input[2] == 't') {
+				cmd_sort (core, input);
+			} else {
+				return -1;
+			}
+			break;
+		case ' ':
+		case '\0':
+		case '+':
+		case '-':
+			cmd_seek_opcode (core, input + 1);
+			break;
+		default:
+			return -1;	// invalid command
+		}
 		break;
 	case 'g': // "sg"
 	{

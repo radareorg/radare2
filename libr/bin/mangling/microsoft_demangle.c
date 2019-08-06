@@ -175,7 +175,6 @@ int get_template (char *buf, SStrInfo *str_info) {
 	if (!init_type_code_str_struct(&type_code_str)) {
 		goto get_template_err;
 	}
-	abbr_names = r_list_new ();
 
 	// get/copy template len/name
 	len += (tmp - buf + 1);
@@ -244,7 +243,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 
 	int len = 0, read_len = 0, tmp_len = 0;
 
-	names_l = r_list_new();
+	names_l = r_list_new ();
 
 #define SET_OPERATOR_CODE(str) { \
 	str_info = (SStrInfo *) malloc (sizeof(SStrInfo)); \
@@ -1303,7 +1302,7 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 		curr_pos += i;
 	}
 
-	func_args = r_list_new();
+	func_args = r_list_new ();
 
 	// Function arguments
 	while (*curr_pos && *curr_pos != 'Z')
@@ -1337,7 +1336,7 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 
 			r_list_append (func_args, str_arg);
 
-			if (strncmp (tmp, "void", 4) == 0) {
+			if (strncmp (tmp, "void", 4) == 0 && strlen (tmp) == 4) {
 				// arguments list is void
 				if (!is_abbr_type) {
 					R_FREE (tmp);

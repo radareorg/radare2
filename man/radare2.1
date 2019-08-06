@@ -1,4 +1,4 @@
-.Dd Aug 24, 2017
+.Dd Jul 2, 2019
 .Dt RADARE2 1
 .Sh NAME
 .Nm radare2
@@ -78,6 +78,8 @@ Only load the rbin structures (elf, mach0, ...)
 Do not load user settings/projects from ~/.radare2rc, ~/.config/radare2/radare2rc and the scripts inside .../radare2rc.d/ directory.
 .It Fl q
 Quiet mode (no prompt) and quit after running the commands specified with -i or -c
+.It Fl qq
+Quit before showing the prompt. Right after all the -e -c and -i arguments are evaluated.
 .It Fl Q
 Same as q, but exiting without freeing RCore, this produces leaks at exit time, but saves some precious ms to run the testsuite in fast mode.
 .It Fl p Ar prj

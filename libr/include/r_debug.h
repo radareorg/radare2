@@ -358,7 +358,7 @@ typedef struct r_debug_plugin_t {
 	const char *license;
 	const char *author;
 	const char *version;
-	//const char **archs; // MUST BE DEPREACTED!!!!
+	//const char **archs; // MUST BE DEPRECATED!!!!
 	ut32 bits;
 	const char *arch;
 	int canstep;
@@ -368,7 +368,7 @@ typedef struct r_debug_plugin_t {
 	int (*startv)(int argc, char **argv);
 	int (*attach)(RDebug *dbg, int pid);
 	int (*detach)(RDebug *dbg, int pid);
-	int (*select)(int pid, int tid);
+	int (*select)(RDebug *dbg, int pid, int tid);
 	RList *(*threads)(RDebug *dbg, int pid);
 	RList *(*pids)(RDebug *dbg, int pid);
 	RList *(*tids)(RDebug *dbg, int pid);
@@ -392,7 +392,7 @@ typedef struct r_debug_plugin_t {
 	/* memory */
 	RList *(*map_get)(RDebug *dbg);
 	RList *(*modules_get)(RDebug *dbg);
-	RDebugMap* (*map_alloc)(RDebug *dbg, ut64 addr, int size);
+	RDebugMap* (*map_alloc)(RDebug *dbg, ut64 addr, int size, bool thp);
 	int (*map_dealloc)(RDebug *dbg, ut64 addr, int size);
 	int (*map_protect)(RDebug *dbg, ut64 addr, int size, int perms);
 	int (*init)(RDebug *dbg);
@@ -491,7 +491,7 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo);
 
 /* memory */
 R_API RList *r_debug_modules_list(RDebug*);
-R_API RDebugMap *r_debug_map_alloc(RDebug *dbg, ut64 addr, int size);
+R_API RDebugMap *r_debug_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp);
 R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map);
 R_API RList *r_debug_map_list_new(void);
 R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr);
@@ -544,7 +544,7 @@ R_API void r_debug_trace_reset(RDebug *dbg);
 R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc);
 R_API void r_debug_trace_at(RDebug *dbg, const char *str);
 R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr);
-R_API void r_debug_trace_list(RDebug *dbg, int mode);
+R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset);
 R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size);
 R_API RDebugTrace *r_debug_trace_new(void);
 R_API void r_debug_trace_free(RDebugTrace *dbg);

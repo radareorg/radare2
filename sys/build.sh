@@ -80,7 +80,7 @@ fi
 [ -z "${PREFIX}" ] && PREFIX="${DEFAULT_PREFIX}"
 
 case "$1" in
--h)
+-h|--help)
 	echo "Usage: sys/build.sh [/usr]"
 	exit 0
 	;;
@@ -95,6 +95,10 @@ case "$1" in
 	PREFIX="$1"
 	;;
 esac
+
+if [ "$USE_CS5" = 1 ]; then
+	CFGARG="${CFGARG} --with-capstone5"
+fi
 
 ccache --help > /dev/null 2>&1
 if [ $? = 0 ]; then
@@ -132,9 +136,6 @@ fi
 
 # build
 ${MAKE} mrproper > /dev/null 2>&1
-if [ -d shlr/capstone/.git ]; then
-( cd shlr/capstone ; git clean -xdf )
-fi
 [ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed ${LDFLAGS}"
 if [ -z "${KEEP_PLUGINS_CFG}" ]; then
 	rm -f plugins.cfg

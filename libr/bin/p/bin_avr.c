@@ -38,7 +38,7 @@ static ut64 jmp_dest(RBuffer* b, ut64 addr) {
 	return (r_buf_read8_at (b, addr + 2) + (r_buf_read8_at (b, addr + 3) << 8)) * 2;
 }
 
-static bool check_bytes_rjmp(RBuffer *b) {
+static bool check_buffer_rjmp(RBuffer *b) {
 	CHECK3INSTR (b, rjmp, 4);
 	ut64 dst = rjmp_dest (0, b);
 	if (dst < 1 || dst > r_buf_size (b)) {
@@ -49,7 +49,7 @@ static bool check_bytes_rjmp(RBuffer *b) {
 }
 
 
-static bool check_bytes_jmp(RBuffer *b) {
+static bool check_buffer_jmp(RBuffer *b) {
 	CHECK4INSTR (b, jmp, 4);
 	ut64 dst = jmp_dest (b, 0);
 	if (dst < 1 || dst > r_buf_size (b)) {
@@ -64,46 +64,33 @@ static bool check_buffer(RBuffer *buf) {
 		return false;
 	}
 	if (!rjmp (buf, 0)) {
-		return check_bytes_jmp (buf);
+		return check_buffer_jmp (buf);
 	}
-	return check_bytes_rjmp (buf);
+	return check_buffer_rjmp (buf);
 }
 
-static bool check_bytes(const ut8 *b, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (b, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer (buf);
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	RBuffer *obj = r_buf_ref (buf);
-	if (!check_buffer (obj)) {
-		return NULL;
-	}
-	return obj;
-}
-
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_buf_free (bf->o->bin_obj);
-	return true;
 }
 
 static RBinInfo* info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret || !bf) {
-		free (ret);
-		return NULL;
+	r_return_val_if_fail (bf, NULL);
+	RBinInfo *bi = R_NEW0 (RBinInfo);
+	if (bi) {
+		bi->file = strdup (bf->file);
+		bi->type = strdup ("ROM");
+		bi->machine = strdup ("ATmel");
+		bi->os = strdup ("avr");
+		bi->has_va = 0; // 1;
+		bi->has_lit = false;
+		bi->arch = strdup ("avr");
+		bi->bits = 8;
 	}
-	ret->file = strdup (bf->file);
-	ret->type = strdup ("ROM");
-	ret->machine = strdup ("ATmel");
-	ret->os = strdup ("avr");
-	ret->has_va = 0; // 1;
-	ret->has_lit = false;
-	ret->arch = strdup ("avr");
-	ret->bits = 8;
-	return ret;
+	return bi;
 }
 
 static RList* entries(RBinFile *bf) {
@@ -126,14 +113,13 @@ static RList* entries(RBinFile *bf) {
 
 static void addsym(RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
+	if (ptr) {
+		ptr->name = strdup (name? name: "");
+		ptr->paddr = ptr->vaddr = addr;
+		ptr->size = 0;
+		ptr->ordinal = 0;
+		r_list_append (ret, ptr);
 	}
-	ptr->name = strdup (name? name: "");
-	ptr->paddr = ptr->vaddr = addr;
-	ptr->size = 0;
-	ptr->ordinal = 0;
-	r_list_append (ret, ptr);
 }
 
 static void addptr(RList *ret, const char *name, ut64 addr, RBuffer *b) {
@@ -151,22 +137,18 @@ static RList *symbols(RBinFile *bf) {
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	if (false) { // TODO bf->cpu && !strcmp (bf->cpu, "atmega8")) {
-		/* ... */
-	} else {
-		/* atmega8 */
-		addptr (ret, "int0", 2, obj);
-		addptr (ret, "int1", 4, obj);
-		addptr (ret, "timer2cmp", 6, obj);
-		addptr (ret, "timer2ovf", 8, obj);
-		addptr (ret, "timer1capt", 10, obj);
-		addptr (ret, "timer1cmpa", 12, obj);
-		/* ... */
-	}
+	/* atmega8 */
+	addptr (ret, "int0", 2, obj);
+	addptr (ret, "int1", 4, obj);
+	addptr (ret, "timer2cmp", 6, obj);
+	addptr (ret, "timer2ovf", 8, obj);
+	addptr (ret, "timer1capt", 10, obj);
+	addptr (ret, "timer1cmpa", 12, obj);
 	return ret;
 }
 
 static RList *strings(RBinFile *bf) {
+	// we dont want to find strings in avr bins because there are lot of false positives
 	return NULL;
 }
 
@@ -178,13 +160,12 @@ RBinPlugin r_bin_plugin_avr = {
 	.destroy = &destroy,
 	.entries = &entries,
 	.symbols = &symbols,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.info = &info,
 	.strings = &strings,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_avr,

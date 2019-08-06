@@ -1,0 +1,2395 @@
+### wincrypt.h ###
+
+PFN_CERT_ENUM_PHYSICAL_STORE=type
+type.PFN_CERT_ENUM_PHYSICAL_STORE=p
+
+PFN_CERT_ENUM_SYSTEM_STORE=type
+type.PFN_CERT_ENUM_SYSTEM_STORE=p
+
+PFN_CERT_ENUM_SYSTEM_STORE_LOCATION=type
+type.PFN_CERT_ENUM_SYSTEM_STORE_LOCATION=p
+
+PFN_CRYPT_ENUM_KEYID_PROP=type
+type.PFN_CRYPT_ENUM_KEYID_PROP=p
+
+PFN_CRYPT_ENUM_OID_FUNC=type
+type.PFN_CRYPT_ENUM_OID_FUNC=p
+
+PFN_CRYPT_ENUM_OID_INFO=type
+type.PFN_CRYPT_ENUM_OID_INFO=p
+
+
+
+PCERT_CHAIN_ENGINE_CONFIG=type
+type.PCERT_CHAIN_ENGINE_CONFIG=p
+
+PCERT_CHAIN_PARA=type
+type.PCERT_CHAIN_PARA=p
+
+PCERT_CHAIN_POLICY_PARA=type
+type.PCERT_CHAIN_POLICY_PARA=p
+
+PCERT_CHAIN_POLICY_STATUS=type
+type.PCERT_CHAIN_POLICY_STATUS=p
+
+PCERT_CREATE_CONTEXT_PARA=type
+type.PCERT_CREATE_CONTEXT_PARA=p
+
+PCERT_ENHKEY_USAGE=type
+type.PCERT_ENHKEY_USAGE=p
+
+PCERT_EXTENSION=type
+type.PCERT_EXTENSION=p
+
+PCERT_EXTENSIONS=type
+type.PCERT_EXTENSIONS=p
+
+PCERT_INFO=type
+type.PCERT_INFO=p
+
+PCERT_NAME_BLOB=type
+type.PCERT_NAME_BLOB=p
+
+PCERT_NAME_INFO=type
+type.PCERT_NAME_INFO=p
+
+PCERT_PHYSICAL_STORE_INFO=type
+type.PCERT_PHYSICAL_STORE_INFO=p
+
+PCERT_PUBLIC_KEY_INFO=type
+type.PCERT_PUBLIC_KEY_INFO=p
+
+PCERT_RDN=type
+type.PCERT_RDN=p
+
+PCERT_RDN_ATTR=type
+type.PCERT_RDN_ATTR=p
+
+PCERT_RDN_VALUE_BLOB=type
+type.PCERT_RDN_VALUE_BLOB=p
+
+PCERT_REVOCATION_PARA=type
+type.PCERT_REVOCATION_PARA=p
+
+PCERT_REVOCATION_STATUS=type
+type.PCERT_REVOCATION_STATUS=p
+
+PCERT_SERVER_OCSP_RESPONSE_OPEN_PARA=type
+type.PCERT_SERVER_OCSP_RESPONSE_OPEN_PARA=p
+
+PCERT_SYSTEM_STORE_INFO=type
+type.PCERT_SYSTEM_STORE_INFO=p
+
+PCMSG_SIGNED_ENCODE_INFO=type
+type.PCMSG_SIGNED_ENCODE_INFO=p
+
+PCMSG_SIGNER_ENCODE_INFO=type
+type.PCMSG_SIGNER_ENCODE_INFO=p
+
+PCMSG_STREAM_INFO=type
+type.PCMSG_STREAM_INFO=p
+
+PCRL_ENTRY=type
+type.PCRL_ENTRY=p
+
+PCRL_INFO=type
+type.PCRL_INFO=p
+
+PCRYPT_ALGORITHM_IDENTIFIER=type
+type.PCRYPT_ALGORITHM_IDENTIFIER=p
+
+PCRYPT_ATTRIBUTE=type
+type.PCRYPT_ATTRIBUTE=p
+
+PCRYPT_CREDENTIALS=type
+type.PCRYPT_CREDENTIALS=p
+
+PCRYPT_DATA_BLOB=type
+type.PCRYPT_DATA_BLOB=p
+
+PCRYPT_DECODE_PARA=type
+type.PCRYPT_DECODE_PARA=p
+
+PCRYPT_DECRYPT_MESSAGE_PARA=type
+type.PCRYPT_DECRYPT_MESSAGE_PARA=p
+
+PCRYPT_DER_BLOB=type
+type.PCRYPT_DER_BLOB=p
+
+PCRYPT_ENCODE_PARA=type
+type.PCRYPT_ENCODE_PARA=p
+
+PCRYPT_ENCRYPT_MESSAGE_PARA=type
+type.PCRYPT_ENCRYPT_MESSAGE_PARA=p
+
+PCRYPT_GET_TIME_VALID_OBJECT_EXTRA_INFO=type
+type.PCRYPT_GET_TIME_VALID_OBJECT_EXTRA_INFO=p
+
+PCRYPT_HASH_MESSAGE_PARA=type
+type.PCRYPT_HASH_MESSAGE_PARA=p
+
+PCRYPT_INTEGER_BLOB=type
+type.PCRYPT_INTEGER_BLOB=p
+
+PCRYPT_KEY_PROV_INFO=type
+type.PCRYPT_KEY_PROV_INFO=p
+
+PCRYPT_KEY_SIGN_MESSAGE_PARA=type
+type.PCRYPT_KEY_SIGN_MESSAGE_PARA=p
+
+PCRYPT_KEY_VERIFY_MESSAGE_PARA=type
+type.PCRYPT_KEY_VERIFY_MESSAGE_PARA=p
+
+PCRYPT_RETRIEVE_AUX_INFO=type
+type.PCRYPT_RETRIEVE_AUX_INFO=p
+
+PCRYPT_SIGN_MESSAGE_PARA=type
+type.PCRYPT_SIGN_MESSAGE_PARA=p
+
+PCRYPT_TIMESTAMP_CONTEXT=type
+type.PCRYPT_TIMESTAMP_CONTEXT=p
+
+PCRYPT_TIMESTAMP_PARA=type
+type.PCRYPT_TIMESTAMP_PARA=p
+
+PCRYPT_URL_ARRAY=type
+type.PCRYPT_URL_ARRAY=p
+
+PCRYPT_URL_INFO=type
+type.PCRYPT_URL_INFO=p
+
+PCRYPT_VERIFY_MESSAGE_PARA=type
+type.PCRYPT_VERIFY_MESSAGE_PARA=p
+
+PCTL_ENTRY=type
+type.PCTL_ENTRY=p
+
+PCTL_INFO=type
+type.PCTL_INFO=p
+
+PCTL_USAGE=type
+type.PCTL_USAGE=p
+
+PCTL_VERIFY_USAGE_PARA=type
+type.PCTL_VERIFY_USAGE_PARA=p
+
+PCTL_VERIFY_USAGE_STATUS=type
+type.PCTL_VERIFY_USAGE_STATUS=p
+
+
+
+PCCERT_CHAIN_CONTEXT=type
+type.PCCERT_CHAIN_CONTEXT=p
+
+PCCERT_CONTEXT=type
+type.PCCERT_CONTEXT=p
+
+PCCERT_SERVER_OCSP_RESPONSE_CONTEXT=type
+type.PCCERT_SERVER_OCSP_RESPONSE_CONTEXT=p
+
+PCCERT_SELECT_CHAIN_PARA=type
+type.PCCERT_SELECT_CHAIN_PARA=p
+
+PCCERT_SELECT_CRITERIA=type
+type.PCCERT_SELECT_CRITERIA=p
+
+PCCERT_STRONG_SIGN_PARA=type
+type.PCCERT_STRONG_SIGN_PARA=p
+
+PCCRL_CONTEXT=type
+type.PCCRL_CONTEXT=p
+
+PCCRYPT_OID_INFO=type
+type.PCCRYPT_OID_INFO=p
+
+PCCTL_CONTEXT=type
+type.PCCTL_CONTEXT=p
+
+
+
+CertAddCRLContextToStore=func
+func.CertAddCRLContextToStore.args=4
+func.CertAddCRLContextToStore.arg.0=HCERTSTORE,hCertStore
+func.CertAddCRLContextToStore.arg.1=PCCRL_CONTEXT,pCrlContext
+func.CertAddCRLContextToStore.arg.2=DWORD,dwAddDisposition
+func.CertAddCRLContextToStore.arg.3=PCCRL_CONTEXT *,ppStoreContext
+func.CertAddCRLContextToStore.ret=BOOL
+
+CertAddCRLLinkToStore=func
+func.CertAddCRLLinkToStore.args=4
+func.CertAddCRLLinkToStore.arg.0=HCERTSTORE,hCertStore
+func.CertAddCRLLinkToStore.arg.1=PCCRL_CONTEXT,pCrlContext
+func.CertAddCRLLinkToStore.arg.2=DWORD,dwAddDisposition
+func.CertAddCRLLinkToStore.arg.3=PCCRL_CONTEXT *,ppStoreContext
+func.CertAddCRLLinkToStore.ret=BOOL
+
+CertAddCTLContextToStore=func
+func.CertAddCTLContextToStore.args=4
+func.CertAddCTLContextToStore.arg.0=HCERTSTORE,hCertStore
+func.CertAddCTLContextToStore.arg.1=PCCTL_CONTEXT,pCtlContext
+func.CertAddCTLContextToStore.arg.2=DWORD,dwAddDisposition
+func.CertAddCTLContextToStore.arg.3=PCCTL_CONTEXT *,ppStoreContext
+func.CertAddCTLContextToStore.ret=BOOL
+
+CertAddCTLLinkToStore=func
+func.CertAddCTLLinkToStore.args=4
+func.CertAddCTLLinkToStore.arg.0=HCERTSTORE,hCertStore
+func.CertAddCTLLinkToStore.arg.1=PCCTL_CONTEXT,pCtlContext
+func.CertAddCTLLinkToStore.arg.2=DWORD,dwAddDisposition
+func.CertAddCTLLinkToStore.arg.3=PCCTL_CONTEXT *,ppStoreContext
+func.CertAddCTLLinkToStore.ret=BOOL
+
+CertAddCertificateContextToStore=func
+func.CertAddCertificateContextToStore.args=4
+func.CertAddCertificateContextToStore.arg.0=HCERTSTORE,hCertStore
+func.CertAddCertificateContextToStore.arg.1=PCCERT_CONTEXT,pCertContext
+func.CertAddCertificateContextToStore.arg.2=DWORD,dwAddDisposition
+func.CertAddCertificateContextToStore.arg.3=PCCERT_CONTEXT *,ppStoreContext
+func.CertAddCertificateContextToStore.ret=BOOL
+
+CertAddCertificateLinkToStore=func
+func.CertAddCertificateLinkToStore.args=4
+func.CertAddCertificateLinkToStore.arg.0=HCERTSTORE,hCertStore
+func.CertAddCertificateLinkToStore.arg.1=PCCERT_CONTEXT,pCertContext
+func.CertAddCertificateLinkToStore.arg.2=DWORD,dwAddDisposition
+func.CertAddCertificateLinkToStore.arg.3=PCCERT_CONTEXT *,ppStoreContext
+func.CertAddCertificateLinkToStore.ret=BOOL
+
+CertAddEncodedCRLToStore=func
+func.CertAddEncodedCRLToStore.args=6
+func.CertAddEncodedCRLToStore.arg.0=HCERTSTORE,hCertStore
+func.CertAddEncodedCRLToStore.arg.1=DWORD,dwCertEncodingType
+func.CertAddEncodedCRLToStore.arg.2=const BYTE *,pbCrlEncoded
+func.CertAddEncodedCRLToStore.arg.3=DWORD,cbCrlEncoded
+func.CertAddEncodedCRLToStore.arg.4=DWORD,dwAddDisposition
+func.CertAddEncodedCRLToStore.arg.5=PCCRL_CONTEXT *,ppCrlContext
+func.CertAddEncodedCRLToStore.ret=BOOL
+
+CertAddEncodedCTLToStore=func
+func.CertAddEncodedCTLToStore.args=6
+func.CertAddEncodedCTLToStore.arg.0=HCERTSTORE,hCertStore
+func.CertAddEncodedCTLToStore.arg.1=DWORD,dwMsgAndCertEncodingType
+func.CertAddEncodedCTLToStore.arg.2=const BYTE *,pbCtlEncoded
+func.CertAddEncodedCTLToStore.arg.3=DWORD,cbCtlEncoded
+func.CertAddEncodedCTLToStore.arg.4=DWORD,dwAddDisposition
+func.CertAddEncodedCTLToStore.arg.5=PCCTL_CONTEXT *,ppCtlContext
+func.CertAddEncodedCTLToStore.ret=BOOL
+
+CertAddEncodedCertificateToStore=func
+func.CertAddEncodedCertificateToStore.args=6
+func.CertAddEncodedCertificateToStore.arg.0=HCERTSTORE,hCertStore
+func.CertAddEncodedCertificateToStore.arg.1=DWORD,dwCertEncodingType
+func.CertAddEncodedCertificateToStore.arg.2=const BYTE *,pbCertEncoded
+func.CertAddEncodedCertificateToStore.arg.3=DWORD,cbCertEncoded
+func.CertAddEncodedCertificateToStore.arg.4=DWORD,dwAddDisposition
+func.CertAddEncodedCertificateToStore.arg.5=PCCERT_CONTEXT *,ppCertContext
+func.CertAddEncodedCertificateToStore.ret=BOOL
+
+CertAddEncodedCertificateToSystemStoreA=func
+func.CertAddEncodedCertificateToSystemStoreA.args=3
+func.CertAddEncodedCertificateToSystemStoreA.arg.0=LPCSTR,szCertStoreName
+func.CertAddEncodedCertificateToSystemStoreA.arg.1=const BYTE *,pbCertEncoded
+func.CertAddEncodedCertificateToSystemStoreA.arg.2=DWORD,cbCertEncoded
+func.CertAddEncodedCertificateToSystemStoreA.ret=BOOL
+
+CertAddEncodedCertificateToSystemStoreW=func
+func.CertAddEncodedCertificateToSystemStoreW.args=3
+func.CertAddEncodedCertificateToSystemStoreW.arg.0=LPCWSTR,szCertStoreName
+func.CertAddEncodedCertificateToSystemStoreW.arg.1=const BYTE *,pbCertEncoded
+func.CertAddEncodedCertificateToSystemStoreW.arg.2=DWORD,cbCertEncoded
+func.CertAddEncodedCertificateToSystemStoreW.ret=BOOL
+
+CertAddEnhancedKeyUsageIdentifier=func
+func.CertAddEnhancedKeyUsageIdentifier.args=2
+func.CertAddEnhancedKeyUsageIdentifier.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertAddEnhancedKeyUsageIdentifier.arg.1=LPCSTR,pszUsageIdentifier
+func.CertAddEnhancedKeyUsageIdentifier.ret=BOOL
+
+CertAddRefServerOcspResponse=func
+func.CertAddRefServerOcspResponse.args=1
+func.CertAddRefServerOcspResponse.arg.0=HCERT_SERVER_OCSP_RESPONSE,hServerOcspResponse
+func.CertAddRefServerOcspResponse.ret=VOID
+
+CertAddRefServerOcspResponseContext=func
+func.CertAddRefServerOcspResponseContext.args=1
+func.CertAddRefServerOcspResponseContext.arg.0=PCCERT_SERVER_OCSP_RESPONSE_CONTEXT,pServerOcspResponseContext
+func.CertAddRefServerOcspResponseContext.ret=VOID
+
+CertAddSerializedElementToStore=func
+func.CertAddSerializedElementToStore.args=8
+func.CertAddSerializedElementToStore.arg.0=HCERTSTORE,hCertStore
+func.CertAddSerializedElementToStore.arg.1=const BYTE *,pbElement
+func.CertAddSerializedElementToStore.arg.2=DWORD,cbElement
+func.CertAddSerializedElementToStore.arg.3=DWORD,dwAddDisposition
+func.CertAddSerializedElementToStore.arg.4=DWORD,dwFlags
+func.CertAddSerializedElementToStore.arg.5=DWORD,dwContextTypeFlags
+func.CertAddSerializedElementToStore.arg.6=DWORD *,pdwContextType
+func.CertAddSerializedElementToStore.arg.7=const void **,ppvContext
+func.CertAddSerializedElementToStore.ret=BOOL
+
+CertAddStoreToCollection=func
+func.CertAddStoreToCollection.args=4
+func.CertAddStoreToCollection.arg.0=HCERTSTORE,hCollectionStore
+func.CertAddStoreToCollection.arg.1=HCERTSTORE,hSiblingStore
+func.CertAddStoreToCollection.arg.2=DWORD,dwUpdateFlags
+func.CertAddStoreToCollection.arg.3=DWORD,dwPriority
+func.CertAddStoreToCollection.ret=BOOL
+
+CertAlgIdToOID=func
+func.CertAlgIdToOID.args=1
+func.CertAlgIdToOID.arg.0=DWORD,dwAlgId
+func.CertAlgIdToOID.ret=LPCSTR
+
+CertCloseServerOcspResponse=func
+func.CertCloseServerOcspResponse.args=2
+func.CertCloseServerOcspResponse.arg.0=HCERT_SERVER_OCSP_RESPONSE,hServerOcspResponse
+func.CertCloseServerOcspResponse.arg.1=DWORD,dwFlags
+func.CertCloseServerOcspResponse.ret=VOID
+
+CertCloseStore=func
+func.CertCloseStore.args=2
+func.CertCloseStore.arg.0=HCERTSTORE,hCertStore
+func.CertCloseStore.arg.1=DWORD,dwFlags
+func.CertCloseStore.ret=BOOL
+
+CertCompareCertificate=func
+func.CertCompareCertificate.args=3
+func.CertCompareCertificate.arg.0=DWORD,dwCertEncodingType
+func.CertCompareCertificate.arg.1=PCERT_INFO,pCertId1
+func.CertCompareCertificate.arg.2=PCERT_INFO,pCertId2
+func.CertCompareCertificate.ret=BOOL
+
+CertCompareCertificateName=func
+func.CertCompareCertificateName.args=3
+func.CertCompareCertificateName.arg.0=DWORD,dwCertEncodingType
+func.CertCompareCertificateName.arg.1=PCERT_NAME_BLOB,pCertName1
+func.CertCompareCertificateName.arg.2=PCERT_NAME_BLOB,pCertName2
+func.CertCompareCertificateName.ret=BOOL
+
+CertComparePublicKeyInfo=func
+func.CertComparePublicKeyInfo.args=3
+func.CertComparePublicKeyInfo.arg.0=DWORD,dwCertEncodingType
+func.CertComparePublicKeyInfo.arg.1=PCERT_PUBLIC_KEY_INFO,pPublicKey1
+func.CertComparePublicKeyInfo.arg.2=PCERT_PUBLIC_KEY_INFO,pPublicKey2
+func.CertComparePublicKeyInfo.ret=BOOL
+
+CertControlStore=func
+func.CertControlStore.args=4
+func.CertControlStore.arg.0=HCERTSTORE,hCertStore
+func.CertControlStore.arg.1=DWORD,dwFlags
+func.CertControlStore.arg.2=DWORD,dwCtrlType
+func.CertControlStore.arg.3=void const *,pvCtrlPara
+func.CertControlStore.ret=BOOL
+
+CertCreateCRLContext=func
+func.CertCreateCRLContext.args=3
+func.CertCreateCRLContext.arg.0=DWORD,dwCertEncodingType
+func.CertCreateCRLContext.arg.1=const BYTE *,pbCrlEncoded
+func.CertCreateCRLContext.arg.2=DWORD,cbCrlEncoded
+func.CertCreateCRLContext.ret=PCCRL_CONTEXT
+
+CertCreateCTLContext=func
+func.CertCreateCTLContext.args=3
+func.CertCreateCTLContext.arg.0=DWORD,dwMsgAndCertEncodingType
+func.CertCreateCTLContext.arg.1=const BYTE *,pbCtlEncoded
+func.CertCreateCTLContext.arg.2=DWORD,cbCtlEncoded
+func.CertCreateCTLContext.ret=PCCTL_CONTEXT
+
+CertCreateCTLEntryFromCertificateContextProperties=func
+func.CertCreateCTLEntryFromCertificateContextProperties.args=7
+func.CertCreateCTLEntryFromCertificateContextProperties.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertCreateCTLEntryFromCertificateContextProperties.arg.1=DWORD,cOptAttr
+func.CertCreateCTLEntryFromCertificateContextProperties.arg.2=PCRYPT_ATTRIBUTE,rgOptAttr
+func.CertCreateCTLEntryFromCertificateContextProperties.arg.3=DWORD,dwFlags
+func.CertCreateCTLEntryFromCertificateContextProperties.arg.4=void *,pvReserved
+func.CertCreateCTLEntryFromCertificateContextProperties.arg.5=PCTL_ENTRY,pCtlEntry
+func.CertCreateCTLEntryFromCertificateContextProperties.arg.6=DWORD *,pcbCtlEntry
+func.CertCreateCTLEntryFromCertificateContextProperties.ret=BOOL
+
+CertCreateCertificateChainEngine=func
+func.CertCreateCertificateChainEngine.args=2
+func.CertCreateCertificateChainEngine.arg.0=PCERT_CHAIN_ENGINE_CONFIG,pConfig
+func.CertCreateCertificateChainEngine.arg.1=HCERTCHAINENGINE *,phChainEngine
+func.CertCreateCertificateChainEngine.ret=BOOL
+
+CertCreateCertificateContext=func
+func.CertCreateCertificateContext.args=3
+func.CertCreateCertificateContext.arg.0=DWORD,dwCertEncodingType
+func.CertCreateCertificateContext.arg.1=const BYTE *,pbCertEncoded
+func.CertCreateCertificateContext.arg.2=DWORD,cbCertEncoded
+func.CertCreateCertificateContext.ret=PCCERT_CONTEXT
+
+CertCreateContext=func
+func.CertCreateContext.args=6
+func.CertCreateContext.arg.0=DWORD,dwContextType
+func.CertCreateContext.arg.1=DWORD,dwEncodingType
+func.CertCreateContext.arg.2=const BYTE *,pbEncoded
+func.CertCreateContext.arg.3=DWORD,cbEncoded
+func.CertCreateContext.arg.4=DWORD,dwFlags
+func.CertCreateContext.arg.5=PCERT_CREATE_CONTEXT_PARA,pCreatePara
+func.CertCreateContext.ret=const void *
+
+CertCreateSelfSignCertificate=func
+func.CertCreateSelfSignCertificate.args=8
+func.CertCreateSelfSignCertificate.arg.0=HCRYPTPROV_OR_NCRYPT_KEY_HANDLE,hCryptProvOrNCryptKey
+func.CertCreateSelfSignCertificate.arg.1=PCERT_NAME_BLOB,pSubjectIssuerBlob
+func.CertCreateSelfSignCertificate.arg.2=DWORD,dwFlags
+func.CertCreateSelfSignCertificate.arg.3=PCRYPT_KEY_PROV_INFO,pKeyProvInfo
+func.CertCreateSelfSignCertificate.arg.4=PCRYPT_ALGORITHM_IDENTIFIER,pSignatureAlgorithm
+func.CertCreateSelfSignCertificate.arg.5=PSYSTEMTIME,pStartTime
+func.CertCreateSelfSignCertificate.arg.6=PSYSTEMTIME,pEndTime
+func.CertCreateSelfSignCertificate.arg.7=PCERT_EXTENSIONS,pExtensions
+func.CertCreateSelfSignCertificate.ret=PCCERT_CONTEXT
+
+CertDeleteCRLFromStore=func
+func.CertDeleteCRLFromStore.args=1
+func.CertDeleteCRLFromStore.arg.0=PCCRL_CONTEXT,pCrlContext
+func.CertDeleteCRLFromStore.ret=BOOL
+
+CertDeleteCTLFromStore=func
+func.CertDeleteCTLFromStore.args=1
+func.CertDeleteCTLFromStore.arg.0=PCCTL_CONTEXT,pCtlContext
+func.CertDeleteCTLFromStore.ret=BOOL
+
+CertDeleteCertificateFromStore=func
+func.CertDeleteCertificateFromStore.args=1
+func.CertDeleteCertificateFromStore.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertDeleteCertificateFromStore.ret=BOOL
+
+CertDuplicateCRLContext=func
+func.CertDuplicateCRLContext.args=1
+func.CertDuplicateCRLContext.arg.0=PCCRL_CONTEXT,pCrlContext
+func.CertDuplicateCRLContext.ret=PCCRL_CONTEXT
+
+CertDuplicateCTLContext=func
+func.CertDuplicateCTLContext.args=1
+func.CertDuplicateCTLContext.arg.0=PCCTL_CONTEXT,pCtlContext
+func.CertDuplicateCTLContext.ret=PCCTL_CONTEXT
+
+CertDuplicateCertificateChain=func
+func.CertDuplicateCertificateChain.args=1
+func.CertDuplicateCertificateChain.arg.0=PCCERT_CHAIN_CONTEXT,pChainContext
+func.CertDuplicateCertificateChain.ret=PCCERT_CHAIN_CONTEXT
+
+CertDuplicateCertificateContext=func
+func.CertDuplicateCertificateContext.args=1
+func.CertDuplicateCertificateContext.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertDuplicateCertificateContext.ret=PCCERT_CONTEXT
+
+CertDuplicateStore=func
+func.CertDuplicateStore.args=1
+func.CertDuplicateStore.arg.0=HCERTSTORE,hCertStore
+func.CertDuplicateStore.ret=HCERTSTORE
+
+CertEnumCRLContextProperties=func
+func.CertEnumCRLContextProperties.args=2
+func.CertEnumCRLContextProperties.arg.0=PCCRL_CONTEXT,pCrlContext
+func.CertEnumCRLContextProperties.arg.1=DWORD,dwPropId
+func.CertEnumCRLContextProperties.ret=DWORD
+
+CertEnumCRLsInStore=func
+func.CertEnumCRLsInStore.args=2
+func.CertEnumCRLsInStore.arg.0=HCERTSTORE,hCertStore
+func.CertEnumCRLsInStore.arg.1=PCCRL_CONTEXT,pPrevCrlContext
+func.CertEnumCRLsInStore.ret=PCCRL_CONTEXT
+
+CertEnumCTLContextProperties=func
+func.CertEnumCTLContextProperties.args=2
+func.CertEnumCTLContextProperties.arg.0=PCCTL_CONTEXT,pCtlContext
+func.CertEnumCTLContextProperties.arg.1=DWORD,dwPropId
+func.CertEnumCTLContextProperties.ret=DWORD
+
+CertEnumCTLsInStore=func
+func.CertEnumCTLsInStore.args=2
+func.CertEnumCTLsInStore.arg.0=HCERTSTORE,hCertStore
+func.CertEnumCTLsInStore.arg.1=PCCTL_CONTEXT,pPrevCtlContext
+func.CertEnumCTLsInStore.ret=PCCTL_CONTEXT
+
+CertEnumCertificateContextProperties=func
+func.CertEnumCertificateContextProperties.args=2
+func.CertEnumCertificateContextProperties.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertEnumCertificateContextProperties.arg.1=DWORD,dwPropId
+func.CertEnumCertificateContextProperties.ret=DWORD
+
+CertEnumCertificatesInStore=func
+func.CertEnumCertificatesInStore.args=2
+func.CertEnumCertificatesInStore.arg.0=HCERTSTORE,hCertStore
+func.CertEnumCertificatesInStore.arg.1=PCCERT_CONTEXT,pPrevCertContext
+func.CertEnumCertificatesInStore.ret=PCCERT_CONTEXT
+
+CertEnumPhysicalStore=func
+func.CertEnumPhysicalStore.args=4
+func.CertEnumPhysicalStore.arg.0=const void *,pvSystemStore
+func.CertEnumPhysicalStore.arg.1=DWORD,dwFlags
+func.CertEnumPhysicalStore.arg.2=void *,pvArg
+func.CertEnumPhysicalStore.arg.3=PFN_CERT_ENUM_PHYSICAL_STORE,pfnEnum
+func.CertEnumPhysicalStore.ret=BOOL
+
+CertEnumSubjectInSortedCTL=func
+func.CertEnumSubjectInSortedCTL.args=4
+func.CertEnumSubjectInSortedCTL.arg.0=PCCTL_CONTEXT,pCtlContext
+func.CertEnumSubjectInSortedCTL.arg.1=void **,ppvNextSubject
+func.CertEnumSubjectInSortedCTL.arg.2=PCRYPT_DER_BLOB,pSubjectIdentifier
+func.CertEnumSubjectInSortedCTL.arg.3=PCRYPT_DER_BLOB,pEncodedAttributes
+func.CertEnumSubjectInSortedCTL.ret=BOOL
+
+CertEnumSystemStore=func
+func.CertEnumSystemStore.args=4
+func.CertEnumSystemStore.arg.0=DWORD,dwFlags
+func.CertEnumSystemStore.arg.1=void *,pvSystemStoreLocationPara
+func.CertEnumSystemStore.arg.2=void *,pvArg
+func.CertEnumSystemStore.arg.3=PFN_CERT_ENUM_SYSTEM_STORE,pfnEnum
+func.CertEnumSystemStore.ret=BOOL
+
+CertEnumSystemStoreLocation=func
+func.CertEnumSystemStoreLocation.args=3
+func.CertEnumSystemStoreLocation.arg.0=DWORD,dwFlags
+func.CertEnumSystemStoreLocation.arg.1=void *,pvArg
+func.CertEnumSystemStoreLocation.arg.2=PFN_CERT_ENUM_SYSTEM_STORE_LOCATION,pfnEnum
+func.CertEnumSystemStoreLocation.ret=BOOL
+
+CertFindAttribute=func
+func.CertFindAttribute.args=3
+func.CertFindAttribute.arg.0=LPCSTR,pszObjId
+func.CertFindAttribute.arg.1=DWORD,cAttr
+func.CertFindAttribute.arg.2=CRYPT_ATTRIBUTE *,rgAttr
+func.CertFindAttribute.ret=PCRYPT_ATTRIBUTE
+
+CertFindCRLInStore=func
+func.CertFindCRLInStore.args=6
+func.CertFindCRLInStore.arg.0=HCERTSTORE,hCertStore
+func.CertFindCRLInStore.arg.1=DWORD,dwCertEncodingType
+func.CertFindCRLInStore.arg.2=DWORD,dwFindFlags
+func.CertFindCRLInStore.arg.3=DWORD,dwFindType
+func.CertFindCRLInStore.arg.4=const void *,pvFindPara
+func.CertFindCRLInStore.arg.5=PCCRL_CONTEXT,pPrevCrlContext
+func.CertFindCRLInStore.ret=PCCRL_CONTEXT
+
+CertFindCTLInStore=func
+func.CertFindCTLInStore.args=6
+func.CertFindCTLInStore.arg.0=HCERTSTORE,hCertStore
+func.CertFindCTLInStore.arg.1=DWORD,dwMsgAndCertEncodingType
+func.CertFindCTLInStore.arg.2=DWORD,dwFindFlags
+func.CertFindCTLInStore.arg.3=DWORD,dwFindType
+func.CertFindCTLInStore.arg.4=const void *,pvFindPara
+func.CertFindCTLInStore.arg.5=PCCTL_CONTEXT,pPrevCtlContext
+func.CertFindCTLInStore.ret=PCCTL_CONTEXT
+
+CertFindCertificateInCRL=func
+func.CertFindCertificateInCRL.args=5
+func.CertFindCertificateInCRL.arg.0=PCCERT_CONTEXT,pCert
+func.CertFindCertificateInCRL.arg.1=PCCRL_CONTEXT,pCrlContext
+func.CertFindCertificateInCRL.arg.2=DWORD,dwFlags
+func.CertFindCertificateInCRL.arg.3=void *,pvReserved
+func.CertFindCertificateInCRL.arg.4=PCRL_ENTRY *,ppCrlEntry
+func.CertFindCertificateInCRL.ret=BOOL
+
+CertFindCertificateInStore=func
+func.CertFindCertificateInStore.args=6
+func.CertFindCertificateInStore.arg.0=HCERTSTORE,hCertStore
+func.CertFindCertificateInStore.arg.1=DWORD,dwCertEncodingType
+func.CertFindCertificateInStore.arg.2=DWORD,dwFindFlags
+func.CertFindCertificateInStore.arg.3=DWORD,dwFindType
+func.CertFindCertificateInStore.arg.4=const void *,pvFindPara
+func.CertFindCertificateInStore.arg.5=PCCERT_CONTEXT,pPrevCertContext
+func.CertFindCertificateInStore.ret=PCCERT_CONTEXT
+
+CertFindChainInStore=func
+func.CertFindChainInStore.args=6
+func.CertFindChainInStore.arg.0=HCERTSTORE,hCertStore
+func.CertFindChainInStore.arg.1=DWORD,dwCertEncodingType
+func.CertFindChainInStore.arg.2=DWORD,dwFindFlags
+func.CertFindChainInStore.arg.3=DWORD,dwFindType
+func.CertFindChainInStore.arg.4=const void *,pvFindPara
+func.CertFindChainInStore.arg.5=PCCERT_CHAIN_CONTEXT,pPrevChainContext
+func.CertFindChainInStore.ret=PCCERT_CHAIN_CONTEXT
+
+CertFindExtension=func
+func.CertFindExtension.args=3
+func.CertFindExtension.arg.0=LPCSTR,pszObjId
+func.CertFindExtension.arg.1=DWORD,cExtensions
+func.CertFindExtension.arg.2=CERT_EXTENSION *,rgExtensions
+func.CertFindExtension.ret=PCERT_EXTENSION
+
+CertFindRDNAttr=func
+func.CertFindRDNAttr.args=2
+func.CertFindRDNAttr.arg.0=LPCSTR,pszObjId
+func.CertFindRDNAttr.arg.1=PCERT_NAME_INFO,pName
+func.CertFindRDNAttr.ret=PCERT_RDN_ATTR
+
+CertFindSubjectInCTL=func
+func.CertFindSubjectInCTL.args=5
+func.CertFindSubjectInCTL.arg.0=DWORD,dwEncodingType
+func.CertFindSubjectInCTL.arg.1=DWORD,dwSubjectType
+func.CertFindSubjectInCTL.arg.2=void *,pvSubject
+func.CertFindSubjectInCTL.arg.3=PCCTL_CONTEXT,pCtlContext
+func.CertFindSubjectInCTL.arg.4=DWORD,dwFlags
+func.CertFindSubjectInCTL.ret=PCTL_ENTRY
+
+CertFindSubjectInSortedCTL=func
+func.CertFindSubjectInSortedCTL.args=5
+func.CertFindSubjectInSortedCTL.arg.0=PCRYPT_DATA_BLOB,pSubjectIdentifier
+func.CertFindSubjectInSortedCTL.arg.1=PCCTL_CONTEXT,pCtlContext
+func.CertFindSubjectInSortedCTL.arg.2=DWORD,dwFlags
+func.CertFindSubjectInSortedCTL.arg.3=void *,pvReserved
+func.CertFindSubjectInSortedCTL.arg.4=PCRYPT_DER_BLOB,pEncodedAttributes
+func.CertFindSubjectInSortedCTL.ret=BOOL
+
+CertFreeCRLContext=func
+func.CertFreeCRLContext.args=1
+func.CertFreeCRLContext.arg.0=PCCRL_CONTEXT,pCrlContext
+func.CertFreeCRLContext.ret=BOOL
+
+CertFreeCTLContext=func
+func.CertFreeCTLContext.args=1
+func.CertFreeCTLContext.arg.0=PCCTL_CONTEXT,pCtlContext
+func.CertFreeCTLContext.ret=BOOL
+
+CertFreeCertificateChain=func
+func.CertFreeCertificateChain.args=1
+func.CertFreeCertificateChain.arg.0=PCCERT_CHAIN_CONTEXT,pChainContext
+func.CertFreeCertificateChain.ret=VOID
+
+CertFreeCertificateChainEngine=func
+func.CertFreeCertificateChainEngine.args=1
+func.CertFreeCertificateChainEngine.arg.0=HCERTCHAINENGINE,hChainEngine
+func.CertFreeCertificateChainEngine.ret=VOID
+
+CertFreeCertificateChainList=func
+func.CertFreeCertificateChainList.args=1
+func.CertFreeCertificateChainList.arg.0=PCCERT_CHAIN_CONTEXT *,prgpSelection
+func.CertFreeCertificateChainList.ret=VOID
+
+CertFreeCertificateContext=func
+func.CertFreeCertificateContext.args=1
+func.CertFreeCertificateContext.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertFreeCertificateContext.ret=BOOL
+
+CertFreeServerOcspResponseContext=func
+func.CertFreeServerOcspResponseContext.args=1
+func.CertFreeServerOcspResponseContext.arg.0=PCCERT_SERVER_OCSP_RESPONSE_CONTEXT,pServerOcspResponseContext
+func.CertFreeServerOcspResponseContext.ret=VOID
+
+CertGetCRLContextProperty=func
+func.CertGetCRLContextProperty.args=4
+func.CertGetCRLContextProperty.arg.0=PCCRL_CONTEXT,pCrlContext
+func.CertGetCRLContextProperty.arg.1=DWORD,dwPropId
+func.CertGetCRLContextProperty.arg.2=void *,pvData
+func.CertGetCRLContextProperty.arg.3=DWORD *,pcbData
+func.CertGetCRLContextProperty.ret=BOOL
+
+CertGetCRLFromStore=func
+func.CertGetCRLFromStore.args=4
+func.CertGetCRLFromStore.arg.0=HCERTSTORE,hCertStore
+func.CertGetCRLFromStore.arg.1=PCCERT_CONTEXT,pIssuerContext
+func.CertGetCRLFromStore.arg.2=PCCRL_CONTEXT,pPrevCrlContext
+func.CertGetCRLFromStore.arg.3=DWORD *,pdwFlags
+func.CertGetCRLFromStore.ret=PCCRL_CONTEXT
+
+CertGetCTLContextProperty=func
+func.CertGetCTLContextProperty.args=4
+func.CertGetCTLContextProperty.arg.0=PCCTL_CONTEXT,pCtlContext
+func.CertGetCTLContextProperty.arg.1=DWORD,dwPropId
+func.CertGetCTLContextProperty.arg.2=void *,pvData
+func.CertGetCTLContextProperty.arg.3=DWORD *,pcbData
+func.CertGetCTLContextProperty.ret=BOOL
+
+CertGetCertificateChain=func
+func.CertGetCertificateChain.args=8
+func.CertGetCertificateChain.arg.0=HCERTCHAINENGINE,hChainEngine
+func.CertGetCertificateChain.arg.1=PCCERT_CONTEXT,pCertContext
+func.CertGetCertificateChain.arg.2=LPFILETIME,pTime
+func.CertGetCertificateChain.arg.3=HCERTSTORE,hAdditionalStore
+func.CertGetCertificateChain.arg.4=PCERT_CHAIN_PARA,pChainPara
+func.CertGetCertificateChain.arg.5=DWORD,dwFlags
+func.CertGetCertificateChain.arg.6=LPVOID,pvReserved
+func.CertGetCertificateChain.arg.7=PCCERT_CHAIN_CONTEXT *,ppChainContext
+func.CertGetCertificateChain.ret=BOOL
+
+CertGetCertificateContextProperty=func
+func.CertGetCertificateContextProperty.args=4
+func.CertGetCertificateContextProperty.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertGetCertificateContextProperty.arg.1=DWORD,dwPropId
+func.CertGetCertificateContextProperty.arg.2=void *,pvData
+func.CertGetCertificateContextProperty.arg.3=DWORD *,pcbData
+func.CertGetCertificateContextProperty.ret=BOOL
+
+CertGetEnhancedKeyUsage=func
+func.CertGetEnhancedKeyUsage.args=4
+func.CertGetEnhancedKeyUsage.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertGetEnhancedKeyUsage.arg.1=DWORD,dwFlags
+func.CertGetEnhancedKeyUsage.arg.2=PCERT_ENHKEY_USAGE,pUsage
+func.CertGetEnhancedKeyUsage.arg.3=DWORD *,pcbUsage
+func.CertGetEnhancedKeyUsage.ret=BOOL
+
+CertGetIntendedKeyUsage=func
+func.CertGetIntendedKeyUsage.args=4
+func.CertGetIntendedKeyUsage.arg.0=DWORD,dwCertEncodingType
+func.CertGetIntendedKeyUsage.arg.1=PCERT_INFO,pCertInfo
+func.CertGetIntendedKeyUsage.arg.2=BYTE *,pbKeyUsage
+func.CertGetIntendedKeyUsage.arg.3=DWORD,cbKeyUsage
+func.CertGetIntendedKeyUsage.ret=BOOL
+
+CertGetIssuerCertificateFromStore=func
+func.CertGetIssuerCertificateFromStore.args=4
+func.CertGetIssuerCertificateFromStore.arg.0=HCERTSTORE,hCertStore
+func.CertGetIssuerCertificateFromStore.arg.1=PCCERT_CONTEXT,pSubjectContext
+func.CertGetIssuerCertificateFromStore.arg.2=PCCERT_CONTEXT,pPrevIssuerContext
+func.CertGetIssuerCertificateFromStore.arg.3=DWORD *,pdwFlags
+func.CertGetIssuerCertificateFromStore.ret=PCCERT_CONTEXT
+
+CertGetNameStringA=func
+func.CertGetNameStringA.args=6
+func.CertGetNameStringA.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertGetNameStringA.arg.1=DWORD,dwType
+func.CertGetNameStringA.arg.2=DWORD,dwFlags
+func.CertGetNameStringA.arg.3=void *,pvTypePara
+func.CertGetNameStringA.arg.4=LPSTR,pszNameString
+func.CertGetNameStringA.arg.5=DWORD,cchNameString
+func.CertGetNameStringA.ret=DWORD
+
+CertGetNameStringW=func
+func.CertGetNameStringW.args=6
+func.CertGetNameStringW.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertGetNameStringW.arg.1=DWORD,dwType
+func.CertGetNameStringW.arg.2=DWORD,dwFlags
+func.CertGetNameStringW.arg.3=void *,pvTypePara
+func.CertGetNameStringW.arg.4=LPWSTR,pszNameString
+func.CertGetNameStringW.arg.5=DWORD,cchNameString
+func.CertGetNameStringW.ret=DWORD
+
+CertGetPublicKeyLength=func
+func.CertGetPublicKeyLength.args=2
+func.CertGetPublicKeyLength.arg.0=DWORD,dwCertEncodingType
+func.CertGetPublicKeyLength.arg.1=PCERT_PUBLIC_KEY_INFO,pPublicKey
+func.CertGetPublicKeyLength.ret=DWORD
+
+CertGetServerOcspResponseContext=func
+func.CertGetServerOcspResponseContext.args=3
+func.CertGetServerOcspResponseContext.arg.0=HCERT_SERVER_OCSP_RESPONSE,hServerOcspResponse
+func.CertGetServerOcspResponseContext.arg.1=DWORD,dwFlags
+func.CertGetServerOcspResponseContext.arg.2=LPVOID,pvReserved
+func.CertGetServerOcspResponseContext.ret=PCCERT_SERVER_OCSP_RESPONSE_CONTEXT
+
+CertGetStoreProperty=func
+func.CertGetStoreProperty.args=4
+func.CertGetStoreProperty.arg.0=HCERTSTORE,hCertStore
+func.CertGetStoreProperty.arg.1=DWORD,dwPropId
+func.CertGetStoreProperty.arg.2=void *,pvData
+func.CertGetStoreProperty.arg.3=DWORD *,pcbData
+func.CertGetStoreProperty.ret=BOOL
+
+CertGetSubjectCertificateFromStore=func
+func.CertGetSubjectCertificateFromStore.args=3
+func.CertGetSubjectCertificateFromStore.arg.0=HCERTSTORE,hCertStore
+func.CertGetSubjectCertificateFromStore.arg.1=DWORD,dwCertEncodingType
+func.CertGetSubjectCertificateFromStore.arg.2=PCERT_INFO,pCertId
+func.CertGetSubjectCertificateFromStore.ret=PCCERT_CONTEXT
+
+CertGetValidUsages=func
+func.CertGetValidUsages.args=5
+func.CertGetValidUsages.arg.0=DWORD,cCerts
+func.CertGetValidUsages.arg.1=PCCERT_CONTEXT *,rghCerts
+func.CertGetValidUsages.arg.2=int *,cNumOIDs
+func.CertGetValidUsages.arg.3=LPSTR *,rghOIDs
+func.CertGetValidUsages.arg.4=DWORD *,pcbOIDs
+func.CertGetValidUsages.ret=BOOL
+
+CertIsRDNAttrsInCertificateName=func
+func.CertIsRDNAttrsInCertificateName.args=4
+func.CertIsRDNAttrsInCertificateName.arg.0=DWORD,dwCertEncodingType
+func.CertIsRDNAttrsInCertificateName.arg.1=DWORD,dwFlags
+func.CertIsRDNAttrsInCertificateName.arg.2=PCERT_NAME_BLOB,pCertName
+func.CertIsRDNAttrsInCertificateName.arg.3=PCERT_RDN,pRDN
+func.CertIsRDNAttrsInCertificateName.ret=BOOL
+
+CertIsStrongHashToSign=func
+func.CertIsStrongHashToSign.args=3
+func.CertIsStrongHashToSign.arg.0=PCCERT_STRONG_SIGN_PARA,pStrongSignPara
+func.CertIsStrongHashToSign.arg.1=LPCWSTR,pwszCNGHashAlgid
+func.CertIsStrongHashToSign.arg.2=PCCERT_CONTEXT,pSigningCert
+func.CertIsStrongHashToSign.ret=BOOL
+
+CertIsValidCRLForCertificate=func
+func.CertIsValidCRLForCertificate.args=4
+func.CertIsValidCRLForCertificate.arg.0=PCCERT_CONTEXT,pCert
+func.CertIsValidCRLForCertificate.arg.1=PCCRL_CONTEXT,pCrl
+func.CertIsValidCRLForCertificate.arg.2=DWORD,dwFlags
+func.CertIsValidCRLForCertificate.arg.3=void *,pvReserved
+func.CertIsValidCRLForCertificate.ret=BOOL
+
+CertIsWeakHash=func
+func.CertIsWeakHash.args=6
+func.CertIsWeakHash.arg.0=DWORD,dwHashUseType
+func.CertIsWeakHash.arg.1=LPCWSTR,pwszCNGHashAlgid
+func.CertIsWeakHash.arg.2=DWORD,dwChainFlags
+func.CertIsWeakHash.arg.3=PCCERT_CHAIN_CONTEXT,pSignerChainContext
+func.CertIsWeakHash.arg.4=LPFILETIME,pTimeStamp
+func.CertIsWeakHash.arg.5=LPCWSTR,pwszFileName
+func.CertIsWeakHash.ret=BOOL
+
+CertNameToStrA=func
+func.CertNameToStrA.args=5
+func.CertNameToStrA.arg.0=DWORD,dwCertEncodingType
+func.CertNameToStrA.arg.1=PCERT_NAME_BLOB,pName
+func.CertNameToStrA.arg.2=DWORD,dwStrType
+func.CertNameToStrA.arg.3=LPSTR,psz
+func.CertNameToStrA.arg.4=DWORD,csz
+func.CertNameToStrA.ret=DWORD
+
+CertNameToStrW=func
+func.CertNameToStrW.args=5
+func.CertNameToStrW.arg.0=DWORD,dwCertEncodingType
+func.CertNameToStrW.arg.1=PCERT_NAME_BLOB,pName
+func.CertNameToStrW.arg.2=DWORD,dwStrType
+func.CertNameToStrW.arg.3=LPWSTR,psz
+func.CertNameToStrW.arg.4=DWORD,csz
+func.CertNameToStrW.ret=DWORD
+
+CertOIDToAlgId=func
+func.CertOIDToAlgId.args=1
+func.CertOIDToAlgId.arg.0=LPCSTR,pszObjId
+func.CertOIDToAlgId.ret=DWORD
+
+CertOpenServerOcspResponse=func
+func.CertOpenServerOcspResponse.args=3
+func.CertOpenServerOcspResponse.arg.0=PCCERT_CHAIN_CONTEXT,pChainContext
+func.CertOpenServerOcspResponse.arg.1=DWORD,dwFlags
+func.CertOpenServerOcspResponse.arg.2=PCERT_SERVER_OCSP_RESPONSE_OPEN_PARA,pOpenPara
+func.CertOpenServerOcspResponse.ret=HCERT_SERVER_OCSP_RESPONSE
+
+CertOpenStore=func
+func.CertOpenStore.args=5
+func.CertOpenStore.arg.0=LPCSTR,lpszStoreProvider
+func.CertOpenStore.arg.1=DWORD,dwEncodingType
+func.CertOpenStore.arg.2=HCRYPTPROV_LEGACY,hCryptProv
+func.CertOpenStore.arg.3=DWORD,dwFlags
+func.CertOpenStore.arg.4=const void *,pvPara
+func.CertOpenStore.ret=HCERTSTORE
+
+CertOpenSystemStoreA=func
+func.CertOpenSystemStoreA.args=2
+func.CertOpenSystemStoreA.arg.0=HCRYPTPROV_LEGACY,hProv
+func.CertOpenSystemStoreA.arg.1=LPCSTR,szSubsystemProtocol
+func.CertOpenSystemStoreA.ret=HCERTSTORE
+
+CertOpenSystemStoreW=func
+func.CertOpenSystemStoreW.args=2
+func.CertOpenSystemStoreW.arg.0=HCRYPTPROV_LEGACY,hProv
+func.CertOpenSystemStoreW.arg.1=LPCWSTR,szSubsystemProtocol
+func.CertOpenSystemStoreW.ret=HCERTSTORE
+
+CertRDNValueToStrA=func
+func.CertRDNValueToStrA.args=4
+func.CertRDNValueToStrA.arg.0=DWORD,dwValueType
+func.CertRDNValueToStrA.arg.1=PCERT_RDN_VALUE_BLOB,pValue
+func.CertRDNValueToStrA.arg.2=LPSTR,psz
+func.CertRDNValueToStrA.arg.3=DWORD,csz
+func.CertRDNValueToStrA.ret=DWORD
+
+CertRDNValueToStrW=func
+func.CertRDNValueToStrW.args=4
+func.CertRDNValueToStrW.arg.0=DWORD,dwValueType
+func.CertRDNValueToStrW.arg.1=PCERT_RDN_VALUE_BLOB,pValue
+func.CertRDNValueToStrW.arg.2=LPWSTR,psz
+func.CertRDNValueToStrW.arg.3=DWORD,csz
+func.CertRDNValueToStrW.ret=DWORD
+
+CertRegisterPhysicalStore=func
+func.CertRegisterPhysicalStore.args=5
+func.CertRegisterPhysicalStore.arg.0=const void *,pvSystemStore
+func.CertRegisterPhysicalStore.arg.1=DWORD,dwFlags
+func.CertRegisterPhysicalStore.arg.2=LPCWSTR,pwszStoreName
+func.CertRegisterPhysicalStore.arg.3=PCERT_PHYSICAL_STORE_INFO,pStoreInfo
+func.CertRegisterPhysicalStore.arg.4=void *,pvReserved
+func.CertRegisterPhysicalStore.ret=BOOL
+
+CertRegisterSystemStore=func
+func.CertRegisterSystemStore.args=4
+func.CertRegisterSystemStore.arg.0=const void *,pvSystemStore
+func.CertRegisterSystemStore.arg.1=DWORD,dwFlags
+func.CertRegisterSystemStore.arg.2=PCERT_SYSTEM_STORE_INFO,pStoreInfo
+func.CertRegisterSystemStore.arg.3=void *,pvReserved
+func.CertRegisterSystemStore.ret=BOOL
+
+CertRemoveEnhancedKeyUsageIdentifier=func
+func.CertRemoveEnhancedKeyUsageIdentifier.args=2
+func.CertRemoveEnhancedKeyUsageIdentifier.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertRemoveEnhancedKeyUsageIdentifier.arg.1=LPCSTR,pszUsageIdentifier
+func.CertRemoveEnhancedKeyUsageIdentifier.ret=BOOL
+
+CertRemoveStoreFromCollection=func
+func.CertRemoveStoreFromCollection.args=2
+func.CertRemoveStoreFromCollection.arg.0=HCERTSTORE,hCollectionStore
+func.CertRemoveStoreFromCollection.arg.1=HCERTSTORE,hSiblingStore
+func.CertRemoveStoreFromCollection.ret=void
+
+CertResyncCertificateChainEngine=func
+func.CertResyncCertificateChainEngine.args=1
+func.CertResyncCertificateChainEngine.arg.0=HCERTCHAINENGINE,hChainEngine
+func.CertResyncCertificateChainEngine.ret=BOOL
+
+CertRetrieveLogoOrBiometricInfo=func
+func.CertRetrieveLogoOrBiometricInfo.args=9
+func.CertRetrieveLogoOrBiometricInfo.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertRetrieveLogoOrBiometricInfo.arg.1=LPCSTR,lpszLogoOrBiometricType
+func.CertRetrieveLogoOrBiometricInfo.arg.2=DWORD,dwRetrievalFlags
+func.CertRetrieveLogoOrBiometricInfo.arg.3=DWORD,dwTimeout
+func.CertRetrieveLogoOrBiometricInfo.arg.4=DWORD,dwFlags
+func.CertRetrieveLogoOrBiometricInfo.arg.5=void *,pvReserved
+func.CertRetrieveLogoOrBiometricInfo.arg.6=BYTE **,ppbData
+func.CertRetrieveLogoOrBiometricInfo.arg.7=DWORD *,pcbData
+func.CertRetrieveLogoOrBiometricInfo.arg.8=LPWSTR *,ppwszMimeType
+func.CertRetrieveLogoOrBiometricInfo.ret=BOOL
+
+CertSaveStore=func
+func.CertSaveStore.args=6
+func.CertSaveStore.arg.0=HCERTSTORE,hCertStore
+func.CertSaveStore.arg.1=DWORD,dwEncodingType
+func.CertSaveStore.arg.2=DWORD,dwSaveAs
+func.CertSaveStore.arg.3=DWORD,dwSaveTo
+func.CertSaveStore.arg.4=void *,pvSaveToPara
+func.CertSaveStore.arg.5=DWORD,dwFlags
+func.CertSaveStore.ret=BOOL
+
+CertSelectCertificateChains=func
+func.CertSelectCertificateChains.args=8
+func.CertSelectCertificateChains.arg.0=LPCGUID,pSelectionContext
+func.CertSelectCertificateChains.arg.1=DWORD,dwFlags
+func.CertSelectCertificateChains.arg.2=PCCERT_SELECT_CHAIN_PARA,pChainParameters
+func.CertSelectCertificateChains.arg.3=DWORD,cCriteria
+func.CertSelectCertificateChains.arg.4=PCCERT_SELECT_CRITERIA,rgpCriteria
+func.CertSelectCertificateChains.arg.5=HCERTSTORE,hStore
+func.CertSelectCertificateChains.arg.6=PDWORD,pcSelection
+func.CertSelectCertificateChains.arg.7=PCCERT_CHAIN_CONTEXT **,pprgpSelection
+func.CertSelectCertificateChains.ret=BOOL
+
+CertSerializeCRLStoreElement=func
+func.CertSerializeCRLStoreElement.args=4
+func.CertSerializeCRLStoreElement.arg.0=PCCRL_CONTEXT,pCrlContext
+func.CertSerializeCRLStoreElement.arg.1=DWORD,dwFlags
+func.CertSerializeCRLStoreElement.arg.2=BYTE *,pbElement
+func.CertSerializeCRLStoreElement.arg.3=DWORD *,pcbElement
+func.CertSerializeCRLStoreElement.ret=BOOL
+
+CertSerializeCTLStoreElement=func
+func.CertSerializeCTLStoreElement.args=4
+func.CertSerializeCTLStoreElement.arg.0=PCCTL_CONTEXT,pCtlContext
+func.CertSerializeCTLStoreElement.arg.1=DWORD,dwFlags
+func.CertSerializeCTLStoreElement.arg.2=BYTE *,pbElement
+func.CertSerializeCTLStoreElement.arg.3=DWORD *,pcbElement
+func.CertSerializeCTLStoreElement.ret=BOOL
+
+CertSerializeCertificateStoreElement=func
+func.CertSerializeCertificateStoreElement.args=4
+func.CertSerializeCertificateStoreElement.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertSerializeCertificateStoreElement.arg.1=DWORD,dwFlags
+func.CertSerializeCertificateStoreElement.arg.2=BYTE *,pbElement
+func.CertSerializeCertificateStoreElement.arg.3=DWORD *,pcbElement
+func.CertSerializeCertificateStoreElement.ret=BOOL
+
+CertSetCRLContextProperty=func
+func.CertSetCRLContextProperty.args=4
+func.CertSetCRLContextProperty.arg.0=PCCRL_CONTEXT,pCrlContext
+func.CertSetCRLContextProperty.arg.1=DWORD,dwPropId
+func.CertSetCRLContextProperty.arg.2=DWORD,dwFlags
+func.CertSetCRLContextProperty.arg.3=const void *,pvData
+func.CertSetCRLContextProperty.ret=BOOL
+
+CertSetCTLContextProperty=func
+func.CertSetCTLContextProperty.args=4
+func.CertSetCTLContextProperty.arg.0=PCCTL_CONTEXT,pCtlContext
+func.CertSetCTLContextProperty.arg.1=DWORD,dwPropId
+func.CertSetCTLContextProperty.arg.2=DWORD,dwFlags
+func.CertSetCTLContextProperty.arg.3=const void *,pvData
+func.CertSetCTLContextProperty.ret=BOOL
+
+CertSetCertificateContextPropertiesFromCTLEntry=func
+func.CertSetCertificateContextPropertiesFromCTLEntry.args=3
+func.CertSetCertificateContextPropertiesFromCTLEntry.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertSetCertificateContextPropertiesFromCTLEntry.arg.1=PCTL_ENTRY,pCtlEntry
+func.CertSetCertificateContextPropertiesFromCTLEntry.arg.2=DWORD,dwFlags
+func.CertSetCertificateContextPropertiesFromCTLEntry.ret=BOOL
+
+CertSetCertificateContextProperty=func
+func.CertSetCertificateContextProperty.args=4
+func.CertSetCertificateContextProperty.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertSetCertificateContextProperty.arg.1=DWORD,dwPropId
+func.CertSetCertificateContextProperty.arg.2=DWORD,dwFlags
+func.CertSetCertificateContextProperty.arg.3=const void *,pvData
+func.CertSetCertificateContextProperty.ret=BOOL
+
+CertSetEnhancedKeyUsage=func
+func.CertSetEnhancedKeyUsage.args=2
+func.CertSetEnhancedKeyUsage.arg.0=PCCERT_CONTEXT,pCertContext
+func.CertSetEnhancedKeyUsage.arg.1=PCERT_ENHKEY_USAGE,pUsage
+func.CertSetEnhancedKeyUsage.ret=BOOL
+
+CertSetStoreProperty=func
+func.CertSetStoreProperty.args=4
+func.CertSetStoreProperty.arg.0=HCERTSTORE,hCertStore
+func.CertSetStoreProperty.arg.1=DWORD,dwPropId
+func.CertSetStoreProperty.arg.2=DWORD,dwFlags
+func.CertSetStoreProperty.arg.3=const void *,pvData
+func.CertSetStoreProperty.ret=BOOL
+
+CertStrToNameA=func
+func.CertStrToNameA.args=7
+func.CertStrToNameA.arg.0=DWORD,dwCertEncodingType
+func.CertStrToNameA.arg.1=LPCSTR,pszX500
+func.CertStrToNameA.arg.2=DWORD,dwStrType
+func.CertStrToNameA.arg.3=void *,pvReserved
+func.CertStrToNameA.arg.4=BYTE *,pbEncoded
+func.CertStrToNameA.arg.5=DWORD *,pcbEncoded
+func.CertStrToNameA.arg.6=LPCSTR *,ppszError
+func.CertStrToNameA.ret=BOOL
+
+CertStrToNameW=func
+func.CertStrToNameW.args=7
+func.CertStrToNameW.arg.0=DWORD,dwCertEncodingType
+func.CertStrToNameW.arg.1=LPCWSTR,pszX500
+func.CertStrToNameW.arg.2=DWORD,dwStrType
+func.CertStrToNameW.arg.3=void *,pvReserved
+func.CertStrToNameW.arg.4=BYTE *,pbEncoded
+func.CertStrToNameW.arg.5=DWORD *,pcbEncoded
+func.CertStrToNameW.arg.6=LPCWSTR *,ppszError
+func.CertStrToNameW.ret=BOOL
+
+CertUnregisterPhysicalStore=func
+func.CertUnregisterPhysicalStore.args=3
+func.CertUnregisterPhysicalStore.arg.0=const void *,pvSystemStore
+func.CertUnregisterPhysicalStore.arg.1=DWORD,dwFlags
+func.CertUnregisterPhysicalStore.arg.2=LPCWSTR,pwszStoreName
+func.CertUnregisterPhysicalStore.ret=BOOL
+
+CertUnregisterSystemStore=func
+func.CertUnregisterSystemStore.args=2
+func.CertUnregisterSystemStore.arg.0=const void *,pvSystemStore
+func.CertUnregisterSystemStore.arg.1=DWORD,dwFlags
+func.CertUnregisterSystemStore.ret=BOOL
+
+CertVerifyCRLRevocation=func
+func.CertVerifyCRLRevocation.args=4
+func.CertVerifyCRLRevocation.arg.0=DWORD,dwCertEncodingType
+func.CertVerifyCRLRevocation.arg.1=PCERT_INFO,pCertId
+func.CertVerifyCRLRevocation.arg.2=DWORD,cCrlInfo
+func.CertVerifyCRLRevocation.arg.3=PCRL_INFO *,rgpCrlInfo
+func.CertVerifyCRLRevocation.ret=BOOL
+
+CertVerifyCRLTimeValidity=func
+func.CertVerifyCRLTimeValidity.args=2
+func.CertVerifyCRLTimeValidity.arg.0=LPFILETIME,pTimeToVerify
+func.CertVerifyCRLTimeValidity.arg.1=PCRL_INFO,pCrlInfo
+func.CertVerifyCRLTimeValidity.ret=LONG
+
+CertVerifyCTLUsage=func
+func.CertVerifyCTLUsage.args=7
+func.CertVerifyCTLUsage.arg.0=DWORD,dwEncodingType
+func.CertVerifyCTLUsage.arg.1=DWORD,dwSubjectType
+func.CertVerifyCTLUsage.arg.2=void *,pvSubject
+func.CertVerifyCTLUsage.arg.3=PCTL_USAGE,pSubjectUsage
+func.CertVerifyCTLUsage.arg.4=DWORD,dwFlags
+func.CertVerifyCTLUsage.arg.5=PCTL_VERIFY_USAGE_PARA,pVerifyUsagePara
+func.CertVerifyCTLUsage.arg.6=PCTL_VERIFY_USAGE_STATUS,pVerifyUsageStatus
+func.CertVerifyCTLUsage.ret=BOOL
+
+CertVerifyCertificateChainPolicy=func
+func.CertVerifyCertificateChainPolicy.args=4
+func.CertVerifyCertificateChainPolicy.arg.0=LPCSTR,pszPolicyOID
+func.CertVerifyCertificateChainPolicy.arg.1=PCCERT_CHAIN_CONTEXT,pChainContext
+func.CertVerifyCertificateChainPolicy.arg.2=PCERT_CHAIN_POLICY_PARA,pPolicyPara
+func.CertVerifyCertificateChainPolicy.arg.3=PCERT_CHAIN_POLICY_STATUS,pPolicyStatus
+func.CertVerifyCertificateChainPolicy.ret=BOOL
+
+CertVerifyRevocation=func
+func.CertVerifyRevocation.args=7
+func.CertVerifyRevocation.arg.0=DWORD,dwEncodingType
+func.CertVerifyRevocation.arg.1=DWORD,dwRevType
+func.CertVerifyRevocation.arg.2=DWORD,cContext
+func.CertVerifyRevocation.arg.3=PVOID *,rgpvContext
+func.CertVerifyRevocation.arg.4=DWORD,dwFlags
+func.CertVerifyRevocation.arg.5=PCERT_REVOCATION_PARA,pRevPara
+func.CertVerifyRevocation.arg.6=PCERT_REVOCATION_STATUS,pRevStatus
+func.CertVerifyRevocation.ret=BOOL
+
+CertVerifySubjectCertificateContext=func
+func.CertVerifySubjectCertificateContext.args=3
+func.CertVerifySubjectCertificateContext.arg.0=PCCERT_CONTEXT,pSubject
+func.CertVerifySubjectCertificateContext.arg.1=PCCERT_CONTEXT,pIssuer
+func.CertVerifySubjectCertificateContext.arg.2=DWORD *,pdwFlags
+func.CertVerifySubjectCertificateContext.ret=BOOL
+
+CertVerifyTimeValidity=func
+func.CertVerifyTimeValidity.args=2
+func.CertVerifyTimeValidity.arg.0=LPFILETIME,pTimeToVerify
+func.CertVerifyTimeValidity.arg.1=PCERT_INFO,pCertInfo
+func.CertVerifyTimeValidity.ret=LONG
+
+CertVerifyValidityNesting=func
+func.CertVerifyValidityNesting.args=2
+func.CertVerifyValidityNesting.arg.0=PCERT_INFO,pSubjectInfo
+func.CertVerifyValidityNesting.arg.1=PCERT_INFO,pIssuerInfo
+func.CertVerifyValidityNesting.ret=BOOL
+
+CryptAcquireCertificatePrivateKey=func
+func.CryptAcquireCertificatePrivateKey.args=6
+func.CryptAcquireCertificatePrivateKey.arg.0=PCCERT_CONTEXT,pCert
+func.CryptAcquireCertificatePrivateKey.arg.1=DWORD,dwFlags
+func.CryptAcquireCertificatePrivateKey.arg.2=void *,pvParameters
+func.CryptAcquireCertificatePrivateKey.arg.3=HCRYPTPROV_OR_NCRYPT_KEY_HANDLE *,phCryptProvOrNCryptKey
+func.CryptAcquireCertificatePrivateKey.arg.4=DWORD *,pdwKeySpec
+func.CryptAcquireCertificatePrivateKey.arg.5=BOOL *,pfCallerFreeProvOrNCryptKey
+func.CryptAcquireCertificatePrivateKey.ret=BOOL
+
+CryptAcquireContextA=func
+func.CryptAcquireContextA.args=5
+func.CryptAcquireContextA.arg.0=HCRYPTPROV *,phProv
+func.CryptAcquireContextA.arg.1=LPCSTR,szContainer
+func.CryptAcquireContextA.arg.2=LPCSTR,szProvider
+func.CryptAcquireContextA.arg.3=DWORD,dwProvType
+func.CryptAcquireContextA.arg.4=DWORD,dwFlags
+func.CryptAcquireContextA.ret=BOOL
+
+CryptAcquireContextW=func
+func.CryptAcquireContextW.args=5
+func.CryptAcquireContextW.arg.0=HCRYPTPROV *,phProv
+func.CryptAcquireContextW.arg.1=LPCWSTR,szContainer
+func.CryptAcquireContextW.arg.2=LPCWSTR,szProvider
+func.CryptAcquireContextW.arg.3=DWORD,dwProvType
+func.CryptAcquireContextW.arg.4=DWORD,dwFlags
+func.CryptAcquireContextW.ret=BOOL
+
+CryptBinaryToStringA=func
+func.CryptBinaryToStringA.args=5
+func.CryptBinaryToStringA.arg.0=const BYTE *,pbBinary
+func.CryptBinaryToStringA.arg.1=DWORD,cbBinary
+func.CryptBinaryToStringA.arg.2=DWORD,dwFlags
+func.CryptBinaryToStringA.arg.3=LPSTR,pszString
+func.CryptBinaryToStringA.arg.4=DWORD *,pcchString
+func.CryptBinaryToStringA.ret=BOOL
+
+CryptBinaryToStringW=func
+func.CryptBinaryToStringW.args=5
+func.CryptBinaryToStringW.arg.0=const BYTE *,pbBinary
+func.CryptBinaryToStringW.arg.1=DWORD,cbBinary
+func.CryptBinaryToStringW.arg.2=DWORD,dwFlags
+func.CryptBinaryToStringW.arg.3=LPWSTR,pszString
+func.CryptBinaryToStringW.arg.4=DWORD *,pcchString
+func.CryptBinaryToStringW.ret=BOOL
+
+CryptCancelAsyncRetrieval=func
+func.CryptCancelAsyncRetrieval.args=1
+func.CryptCancelAsyncRetrieval.arg.0=HCRYPTASYNC,hAsyncRetrieval
+func.CryptCancelAsyncRetrieval.ret=BOOL
+
+CryptCloseAsyncHandle=func
+func.CryptCloseAsyncHandle.args=1
+func.CryptCloseAsyncHandle.arg.0=HCRYPTASYNC,hAsync
+func.CryptCloseAsyncHandle.ret=BOOL
+
+CryptContextAddRef=func
+func.CryptContextAddRef.args=3
+func.CryptContextAddRef.arg.0=HCRYPTPROV,hProv
+func.CryptContextAddRef.arg.1=DWORD *,pdwReserved
+func.CryptContextAddRef.arg.2=DWORD,dwFlags
+func.CryptContextAddRef.ret=BOOL
+
+CryptCreateAsyncHandle=func
+func.CryptCreateAsyncHandle.args=2
+func.CryptCreateAsyncHandle.arg.0=DWORD,dwFlags
+func.CryptCreateAsyncHandle.arg.1=PHCRYPTASYNC,phAsync
+func.CryptCreateAsyncHandle.ret=BOOL
+
+CryptCreateHash=func
+func.CryptCreateHash.args=5
+func.CryptCreateHash.arg.0=HCRYPTPROV,hProv
+func.CryptCreateHash.arg.1=ALG_ID,Algid
+func.CryptCreateHash.arg.2=HCRYPTKEY,hKey
+func.CryptCreateHash.arg.3=DWORD,dwFlags
+func.CryptCreateHash.arg.4=HCRYPTHASH *,phHash
+func.CryptCreateHash.ret=BOOL
+
+CryptCreateKeyIdentifierFromCSP=func
+func.CryptCreateKeyIdentifierFromCSP.args=8
+func.CryptCreateKeyIdentifierFromCSP.arg.0=DWORD,dwCertEncodingType
+func.CryptCreateKeyIdentifierFromCSP.arg.1=LPCSTR,pszPubKeyOID
+func.CryptCreateKeyIdentifierFromCSP.arg.2=const PUBLICKEYSTRUC *,pPubKeyStruc
+func.CryptCreateKeyIdentifierFromCSP.arg.3=DWORD,cbPubKeyStruc
+func.CryptCreateKeyIdentifierFromCSP.arg.4=DWORD,dwFlags
+func.CryptCreateKeyIdentifierFromCSP.arg.5=void *,pvReserved
+func.CryptCreateKeyIdentifierFromCSP.arg.6=BYTE *,pbHash
+func.CryptCreateKeyIdentifierFromCSP.arg.7=DWORD *,pcbHash
+func.CryptCreateKeyIdentifierFromCSP.ret=BOOL
+
+CryptDecodeMessage=func
+func.CryptDecodeMessage.args=13
+func.CryptDecodeMessage.arg.0=DWORD,dwMsgTypeFlags
+func.CryptDecodeMessage.arg.1=PCRYPT_DECRYPT_MESSAGE_PARA,pDecryptPara
+func.CryptDecodeMessage.arg.2=PCRYPT_VERIFY_MESSAGE_PARA,pVerifyPara
+func.CryptDecodeMessage.arg.3=DWORD,dwSignerIndex
+func.CryptDecodeMessage.arg.4=const BYTE *,pbEncodedBlob
+func.CryptDecodeMessage.arg.5=DWORD,cbEncodedBlob
+func.CryptDecodeMessage.arg.6=DWORD,dwPrevInnerContentType
+func.CryptDecodeMessage.arg.7=DWORD *,pdwMsgType
+func.CryptDecodeMessage.arg.8=DWORD *,pdwInnerContentType
+func.CryptDecodeMessage.arg.9=BYTE *,pbDecoded
+func.CryptDecodeMessage.arg.10=DWORD *,pcbDecoded
+func.CryptDecodeMessage.arg.11=PCCERT_CONTEXT *,ppXchgCert
+func.CryptDecodeMessage.arg.12=PCCERT_CONTEXT *,ppSignerCert
+func.CryptDecodeMessage.ret=BOOL
+
+CryptDecodeObject=func
+func.CryptDecodeObject.args=7
+func.CryptDecodeObject.arg.0=DWORD,dwCertEncodingType
+func.CryptDecodeObject.arg.1=LPCSTR,lpszStructType
+func.CryptDecodeObject.arg.2=const BYTE *,pbEncoded
+func.CryptDecodeObject.arg.3=DWORD,cbEncoded
+func.CryptDecodeObject.arg.4=DWORD,dwFlags
+func.CryptDecodeObject.arg.5=void *,pvStructInfo
+func.CryptDecodeObject.arg.6=DWORD *,pcbStructInfo
+func.CryptDecodeObject.ret=BOOL
+
+CryptDecodeObjectEx=func
+func.CryptDecodeObjectEx.args=8
+func.CryptDecodeObjectEx.arg.0=DWORD,dwCertEncodingType
+func.CryptDecodeObjectEx.arg.1=LPCSTR,lpszStructType
+func.CryptDecodeObjectEx.arg.2=const BYTE *,pbEncoded
+func.CryptDecodeObjectEx.arg.3=DWORD,cbEncoded
+func.CryptDecodeObjectEx.arg.4=DWORD,dwFlags
+func.CryptDecodeObjectEx.arg.5=PCRYPT_DECODE_PARA,pDecodePara
+func.CryptDecodeObjectEx.arg.6=void *,pvStructInfo
+func.CryptDecodeObjectEx.arg.7=DWORD *,pcbStructInfo
+func.CryptDecodeObjectEx.ret=BOOL
+
+CryptDecrypt=func
+func.CryptDecrypt.args=6
+func.CryptDecrypt.arg.0=HCRYPTKEY,hKey
+func.CryptDecrypt.arg.1=HCRYPTHASH,hHash
+func.CryptDecrypt.arg.2=BOOL,Final
+func.CryptDecrypt.arg.3=DWORD,dwFlags
+func.CryptDecrypt.arg.4=BYTE *,pbData
+func.CryptDecrypt.arg.5=DWORD *,pdwDataLen
+func.CryptDecrypt.ret=BOOL
+
+CryptDecryptAndVerifyMessageSignature=func
+func.CryptDecryptAndVerifyMessageSignature.args=9
+func.CryptDecryptAndVerifyMessageSignature.arg.0=PCRYPT_DECRYPT_MESSAGE_PARA,pDecryptPara
+func.CryptDecryptAndVerifyMessageSignature.arg.1=PCRYPT_VERIFY_MESSAGE_PARA,pVerifyPara
+func.CryptDecryptAndVerifyMessageSignature.arg.2=DWORD,dwSignerIndex
+func.CryptDecryptAndVerifyMessageSignature.arg.3=const BYTE *,pbEncryptedBlob
+func.CryptDecryptAndVerifyMessageSignature.arg.4=DWORD,cbEncryptedBlob
+func.CryptDecryptAndVerifyMessageSignature.arg.5=BYTE *,pbDecrypted
+func.CryptDecryptAndVerifyMessageSignature.arg.6=DWORD *,pcbDecrypted
+func.CryptDecryptAndVerifyMessageSignature.arg.7=PCCERT_CONTEXT *,ppXchgCert
+func.CryptDecryptAndVerifyMessageSignature.arg.8=PCCERT_CONTEXT *,ppSignerCert
+func.CryptDecryptAndVerifyMessageSignature.ret=BOOL
+
+CryptDecryptMessage=func
+func.CryptDecryptMessage.args=6
+func.CryptDecryptMessage.arg.0=PCRYPT_DECRYPT_MESSAGE_PARA,pDecryptPara
+func.CryptDecryptMessage.arg.1=const BYTE *,pbEncryptedBlob
+func.CryptDecryptMessage.arg.2=DWORD,cbEncryptedBlob
+func.CryptDecryptMessage.arg.3=BYTE *,pbDecrypted
+func.CryptDecryptMessage.arg.4=DWORD *,pcbDecrypted
+func.CryptDecryptMessage.arg.5=PCCERT_CONTEXT *,ppXchgCert
+func.CryptDecryptMessage.ret=BOOL
+
+CryptDeriveKey=func
+func.CryptDeriveKey.args=5
+func.CryptDeriveKey.arg.0=HCRYPTPROV,hProv
+func.CryptDeriveKey.arg.1=ALG_ID,Algid
+func.CryptDeriveKey.arg.2=HCRYPTHASH,hBaseData
+func.CryptDeriveKey.arg.3=DWORD,dwFlags
+func.CryptDeriveKey.arg.4=HCRYPTKEY *,phKey
+func.CryptDeriveKey.ret=BOOL
+
+CryptDestroyHash=func
+func.CryptDestroyHash.args=1
+func.CryptDestroyHash.arg.0=HCRYPTHASH,hHash
+func.CryptDestroyHash.ret=BOOL
+
+CryptDestroyKey=func
+func.CryptDestroyKey.args=1
+func.CryptDestroyKey.arg.0=HCRYPTKEY,hKey
+func.CryptDestroyKey.ret=BOOL
+
+CryptDuplicateHash=func
+func.CryptDuplicateHash.args=4
+func.CryptDuplicateHash.arg.0=HCRYPTHASH,hHash
+func.CryptDuplicateHash.arg.1=DWORD *,pdwReserved
+func.CryptDuplicateHash.arg.2=DWORD,dwFlags
+func.CryptDuplicateHash.arg.3=HCRYPTHASH *,phHash
+func.CryptDuplicateHash.ret=BOOL
+
+CryptDuplicateKey=func
+func.CryptDuplicateKey.args=4
+func.CryptDuplicateKey.arg.0=HCRYPTKEY,hKey
+func.CryptDuplicateKey.arg.1=DWORD *,pdwReserved
+func.CryptDuplicateKey.arg.2=DWORD,dwFlags
+func.CryptDuplicateKey.arg.3=HCRYPTKEY *,phKey
+func.CryptDuplicateKey.ret=BOOL
+
+CryptEncodeObject=func
+func.CryptEncodeObject.args=5
+func.CryptEncodeObject.arg.0=DWORD,dwCertEncodingType
+func.CryptEncodeObject.arg.1=LPCSTR,lpszStructType
+func.CryptEncodeObject.arg.2=const void *,pvStructInfo
+func.CryptEncodeObject.arg.3=BYTE *,pbEncoded
+func.CryptEncodeObject.arg.4=DWORD *,pcbEncoded
+func.CryptEncodeObject.ret=BOOL
+
+CryptEncodeObjectEx=func
+func.CryptEncodeObjectEx.args=7
+func.CryptEncodeObjectEx.arg.0=DWORD,dwCertEncodingType
+func.CryptEncodeObjectEx.arg.1=LPCSTR,lpszStructType
+func.CryptEncodeObjectEx.arg.2=const void *,pvStructInfo
+func.CryptEncodeObjectEx.arg.3=DWORD,dwFlags
+func.CryptEncodeObjectEx.arg.4=PCRYPT_ENCODE_PARA,pEncodePara
+func.CryptEncodeObjectEx.arg.5=void *,pvEncoded
+func.CryptEncodeObjectEx.arg.6=DWORD *,pcbEncoded
+func.CryptEncodeObjectEx.ret=BOOL
+
+CryptEncrypt=func
+func.CryptEncrypt.args=7
+func.CryptEncrypt.arg.0=HCRYPTKEY,hKey
+func.CryptEncrypt.arg.1=HCRYPTHASH,hHash
+func.CryptEncrypt.arg.2=BOOL,Final
+func.CryptEncrypt.arg.3=DWORD,dwFlags
+func.CryptEncrypt.arg.4=BYTE *,pbData
+func.CryptEncrypt.arg.5=DWORD *,pdwDataLen
+func.CryptEncrypt.arg.6=DWORD,dwBufLen
+func.CryptEncrypt.ret=BOOL
+
+CryptEncryptMessage=func
+func.CryptEncryptMessage.args=7
+func.CryptEncryptMessage.arg.0=PCRYPT_ENCRYPT_MESSAGE_PARA,pEncryptPara
+func.CryptEncryptMessage.arg.1=DWORD,cRecipientCert
+func.CryptEncryptMessage.arg.2=PCCERT_CONTEXT *,rgpRecipientCert
+func.CryptEncryptMessage.arg.3=const BYTE *,pbToBeEncrypted
+func.CryptEncryptMessage.arg.4=DWORD,cbToBeEncrypted
+func.CryptEncryptMessage.arg.5=BYTE *,pbEncryptedBlob
+func.CryptEncryptMessage.arg.6=DWORD *,pcbEncryptedBlob
+func.CryptEncryptMessage.ret=BOOL
+
+CryptEnumKeyIdentifierProperties=func
+func.CryptEnumKeyIdentifierProperties.args=7
+func.CryptEnumKeyIdentifierProperties.arg.0=const CRYPT_HASH_BLOB *,pKeyIdentifier
+func.CryptEnumKeyIdentifierProperties.arg.1=DWORD,dwPropId
+func.CryptEnumKeyIdentifierProperties.arg.2=DWORD,dwFlags
+func.CryptEnumKeyIdentifierProperties.arg.3=LPCWSTR,pwszComputerName
+func.CryptEnumKeyIdentifierProperties.arg.4=void *,pvReserved
+func.CryptEnumKeyIdentifierProperties.arg.5=void *,pvArg
+func.CryptEnumKeyIdentifierProperties.arg.6=PFN_CRYPT_ENUM_KEYID_PROP,pfnEnum
+func.CryptEnumKeyIdentifierProperties.ret=BOOL
+
+CryptEnumOIDFunction=func
+func.CryptEnumOIDFunction.args=6
+func.CryptEnumOIDFunction.arg.0=DWORD,dwEncodingType
+func.CryptEnumOIDFunction.arg.1=LPCSTR,pszFuncName
+func.CryptEnumOIDFunction.arg.2=LPCSTR,pszOID
+func.CryptEnumOIDFunction.arg.3=DWORD,dwFlags
+func.CryptEnumOIDFunction.arg.4=void *,pvArg
+func.CryptEnumOIDFunction.arg.5=PFN_CRYPT_ENUM_OID_FUNC,pfnEnumOIDFunc
+func.CryptEnumOIDFunction.ret=BOOL
+
+CryptEnumOIDInfo=func
+func.CryptEnumOIDInfo.args=4
+func.CryptEnumOIDInfo.arg.0=DWORD,dwGroupId
+func.CryptEnumOIDInfo.arg.1=DWORD,dwFlags
+func.CryptEnumOIDInfo.arg.2=void *,pvArg
+func.CryptEnumOIDInfo.arg.3=PFN_CRYPT_ENUM_OID_INFO,pfnEnumOIDInfo
+func.CryptEnumOIDInfo.ret=BOOL
+
+CryptEnumProviderTypesA=func
+func.CryptEnumProviderTypesA.args=6
+func.CryptEnumProviderTypesA.arg.0=DWORD,dwIndex
+func.CryptEnumProviderTypesA.arg.1=DWORD *,pdwReserved
+func.CryptEnumProviderTypesA.arg.2=DWORD,dwFlags
+func.CryptEnumProviderTypesA.arg.3=DWORD *,pdwProvType
+func.CryptEnumProviderTypesA.arg.4=LPSTR,szTypeName
+func.CryptEnumProviderTypesA.arg.5=DWORD *,pcbTypeName
+func.CryptEnumProviderTypesA.ret=BOOL
+
+CryptEnumProviderTypesW=func
+func.CryptEnumProviderTypesW.args=6
+func.CryptEnumProviderTypesW.arg.0=DWORD,dwIndex
+func.CryptEnumProviderTypesW.arg.1=DWORD *,pdwReserved
+func.CryptEnumProviderTypesW.arg.2=DWORD,dwFlags
+func.CryptEnumProviderTypesW.arg.3=DWORD *,pdwProvType
+func.CryptEnumProviderTypesW.arg.4=LPWSTR,szTypeName
+func.CryptEnumProviderTypesW.arg.5=DWORD *,pcbTypeName
+func.CryptEnumProviderTypesW.ret=BOOL
+
+CryptEnumProvidersA=func
+func.CryptEnumProvidersA.args=6
+func.CryptEnumProvidersA.arg.0=DWORD,dwIndex
+func.CryptEnumProvidersA.arg.1=DWORD *,pdwReserved
+func.CryptEnumProvidersA.arg.2=DWORD,dwFlags
+func.CryptEnumProvidersA.arg.3=DWORD *,pdwProvType
+func.CryptEnumProvidersA.arg.4=LPSTR,szProvName
+func.CryptEnumProvidersA.arg.5=DWORD *,pcbProvName
+func.CryptEnumProvidersA.ret=BOOL
+
+CryptEnumProvidersW=func
+func.CryptEnumProvidersW.args=6
+func.CryptEnumProvidersW.arg.0=DWORD,dwIndex
+func.CryptEnumProvidersW.arg.1=DWORD *,pdwReserved
+func.CryptEnumProvidersW.arg.2=DWORD,dwFlags
+func.CryptEnumProvidersW.arg.3=DWORD *,pdwProvType
+func.CryptEnumProvidersW.arg.4=LPWSTR,szProvName
+func.CryptEnumProvidersW.arg.5=DWORD *,pcbProvName
+func.CryptEnumProvidersW.ret=BOOL
+
+CryptExportKey=func
+func.CryptExportKey.args=6
+func.CryptExportKey.arg.0=HCRYPTKEY,hKey
+func.CryptExportKey.arg.1=HCRYPTKEY,hExpKey
+func.CryptExportKey.arg.2=DWORD,dwBlobType
+func.CryptExportKey.arg.3=DWORD,dwFlags
+func.CryptExportKey.arg.4=BYTE *,pbData
+func.CryptExportKey.arg.5=DWORD *,pdwDataLen
+func.CryptExportKey.ret=BOOL
+
+CryptExportPKCS8=func
+func.CryptExportPKCS8.args=7
+func.CryptExportPKCS8.arg.0=HCRYPTPROV,hCryptProv
+func.CryptExportPKCS8.arg.1=DWORD,dwKeySpec
+func.CryptExportPKCS8.arg.2=LPSTR,pszPrivateKeyObjId
+func.CryptExportPKCS8.arg.3=DWORD,dwFlags
+func.CryptExportPKCS8.arg.4=void *,pvAuxInfo
+func.CryptExportPKCS8.arg.5=BYTE *,pbPrivateKeyBlob
+func.CryptExportPKCS8.arg.6=DWORD *,pcbPrivateKeyBlob
+func.CryptExportPKCS8.ret=BOOL
+
+CryptExportPKCS8Ex=func
+func.CryptExportPKCS8Ex.args=5
+func.CryptExportPKCS8Ex.arg.0=CRYPT_PKCS8_EXPORT_PARAMS *,psExportParams
+func.CryptExportPKCS8Ex.arg.1=DWORD,dwFlags
+func.CryptExportPKCS8Ex.arg.2=void *,pvAuxInfo
+func.CryptExportPKCS8Ex.arg.3=BYTE *,pbPrivateKeyBlob
+func.CryptExportPKCS8Ex.arg.4=DWORD *,pcbPrivateKeyBlob
+func.CryptExportPKCS8Ex.ret=BOOL
+
+CryptExportPublicKeyInfo=func
+func.CryptExportPublicKeyInfo.args=5
+func.CryptExportPublicKeyInfo.arg.0=HCRYPTPROV_OR_NCRYPT_KEY_HANDLE,hCryptProvOrNCryptKey
+func.CryptExportPublicKeyInfo.arg.1=DWORD,dwKeySpec
+func.CryptExportPublicKeyInfo.arg.2=DWORD,dwCertEncodingType
+func.CryptExportPublicKeyInfo.arg.3=PCERT_PUBLIC_KEY_INFO,pInfo
+func.CryptExportPublicKeyInfo.arg.4=DWORD *,pcbInfo
+func.CryptExportPublicKeyInfo.ret=BOOL
+
+CryptExportPublicKeyInfoEx=func
+func.CryptExportPublicKeyInfoEx.args=8
+func.CryptExportPublicKeyInfoEx.arg.0=HCRYPTPROV_OR_NCRYPT_KEY_HANDLE,hCryptProvOrNCryptKey
+func.CryptExportPublicKeyInfoEx.arg.1=DWORD,dwKeySpec
+func.CryptExportPublicKeyInfoEx.arg.2=DWORD,dwCertEncodingType
+func.CryptExportPublicKeyInfoEx.arg.3=LPSTR,pszPublicKeyObjId
+func.CryptExportPublicKeyInfoEx.arg.4=DWORD,dwFlags
+func.CryptExportPublicKeyInfoEx.arg.5=void *,pvAuxInfo
+func.CryptExportPublicKeyInfoEx.arg.6=PCERT_PUBLIC_KEY_INFO,pInfo
+func.CryptExportPublicKeyInfoEx.arg.7=DWORD *,pcbInfo
+func.CryptExportPublicKeyInfoEx.ret=BOOL
+
+CryptExportPublicKeyInfoFromBCryptKeyHandle=func
+func.CryptExportPublicKeyInfoFromBCryptKeyHandle.args=7
+func.CryptExportPublicKeyInfoFromBCryptKeyHandle.arg.0=BCRYPT_KEY_HANDLE,hBCryptKey
+func.CryptExportPublicKeyInfoFromBCryptKeyHandle.arg.1=DWORD,dwCertEncodingType
+func.CryptExportPublicKeyInfoFromBCryptKeyHandle.arg.2=LPSTR,pszPublicKeyObjId
+func.CryptExportPublicKeyInfoFromBCryptKeyHandle.arg.3=DWORD,dwFlags
+func.CryptExportPublicKeyInfoFromBCryptKeyHandle.arg.4=void *,pvAuxInfo
+func.CryptExportPublicKeyInfoFromBCryptKeyHandle.arg.5=PCERT_PUBLIC_KEY_INFO,pInfo
+func.CryptExportPublicKeyInfoFromBCryptKeyHandle.arg.6=DWORD *,pcbInfo
+func.CryptExportPublicKeyInfoFromBCryptKeyHandle.ret=BOOL
+
+CryptFindCertificateKeyProvInfo=func
+func.CryptFindCertificateKeyProvInfo.args=3
+func.CryptFindCertificateKeyProvInfo.arg.0=PCCERT_CONTEXT,pCert
+func.CryptFindCertificateKeyProvInfo.arg.1=DWORD,dwFlags
+func.CryptFindCertificateKeyProvInfo.arg.2=void *,pvReserved
+func.CryptFindCertificateKeyProvInfo.ret=BOOL
+
+CryptFindLocalizedName=func
+func.CryptFindLocalizedName.args=1
+func.CryptFindLocalizedName.arg.0=LPCWSTR,pwszCryptName
+func.CryptFindLocalizedName.ret=LPCWSTR
+
+CryptFindOIDInfo=func
+func.CryptFindOIDInfo.args=3
+func.CryptFindOIDInfo.arg.0=DWORD,dwKeyType
+func.CryptFindOIDInfo.arg.1=void *,pvKey
+func.CryptFindOIDInfo.arg.2=DWORD,dwGroupId
+func.CryptFindOIDInfo.ret=PCCRYPT_OID_INFO
+
+CryptFlushTimeValidObject=func
+func.CryptFlushTimeValidObject.args=5
+func.CryptFlushTimeValidObject.arg.0=LPCSTR,pszFlushTimeValidOid
+func.CryptFlushTimeValidObject.arg.1=LPVOID,pvPara
+func.CryptFlushTimeValidObject.arg.2=PCCERT_CONTEXT,pIssuer
+func.CryptFlushTimeValidObject.arg.3=DWORD,dwFlags
+func.CryptFlushTimeValidObject.arg.4=LPVOID,pvReserved
+func.CryptFlushTimeValidObject.ret=BOOL
+
+CryptFormatObject=func
+func.CryptFormatObject.args=9
+func.CryptFormatObject.arg.0=DWORD,dwCertEncodingType
+func.CryptFormatObject.arg.1=DWORD,dwFormatType
+func.CryptFormatObject.arg.2=DWORD,dwFormatStrType
+func.CryptFormatObject.arg.3=void *,pFormatStruct
+func.CryptFormatObject.arg.4=LPCSTR,lpszStructType
+func.CryptFormatObject.arg.5=const BYTE *,pbEncoded
+func.CryptFormatObject.arg.6=DWORD,cbEncoded
+func.CryptFormatObject.arg.7=void *,pbFormat
+func.CryptFormatObject.arg.8=DWORD *,pcbFormat
+func.CryptFormatObject.ret=BOOL
+
+CryptFreeOIDFunctionAddress=func
+func.CryptFreeOIDFunctionAddress.args=2
+func.CryptFreeOIDFunctionAddress.arg.0=HCRYPTOIDFUNCADDR,hFuncAddr
+func.CryptFreeOIDFunctionAddress.arg.1=DWORD,dwFlags
+func.CryptFreeOIDFunctionAddress.ret=BOOL
+
+CryptGenKey=func
+func.CryptGenKey.args=4
+func.CryptGenKey.arg.0=HCRYPTPROV,hProv
+func.CryptGenKey.arg.1=ALG_ID,Algid
+func.CryptGenKey.arg.2=DWORD,dwFlags
+func.CryptGenKey.arg.3=HCRYPTKEY *,phKey
+func.CryptGenKey.ret=BOOL
+
+CryptGenRandom=func
+func.CryptGenRandom.args=3
+func.CryptGenRandom.arg.0=HCRYPTPROV,hProv
+func.CryptGenRandom.arg.1=DWORD,dwLen
+func.CryptGenRandom.arg.2=BYTE *,pbBuffer
+func.CryptGenRandom.ret=BOOL
+
+CryptGetAsyncParam=func
+func.CryptGetAsyncParam.args=4
+func.CryptGetAsyncParam.arg.0=HCRYPTASYNC,hAsync
+func.CryptGetAsyncParam.arg.1=LPSTR,pszParamOid
+func.CryptGetAsyncParam.arg.2=LPVOID *,ppvParam
+func.CryptGetAsyncParam.arg.3=PFN_CRYPT_ASYNC_PARAM_FREE_FUNC *,ppfnFree
+func.CryptGetAsyncParam.ret=BOOL
+
+CryptGetDefaultOIDDllList=func
+func.CryptGetDefaultOIDDllList.args=4
+func.CryptGetDefaultOIDDllList.arg.0=HCRYPTOIDFUNCSET,hFuncSet
+func.CryptGetDefaultOIDDllList.arg.1=DWORD,dwEncodingType
+func.CryptGetDefaultOIDDllList.arg.2=WCHAR *,pwszDllList
+func.CryptGetDefaultOIDDllList.arg.3=DWORD *,pcchDllList
+func.CryptGetDefaultOIDDllList.ret=BOOL
+
+CryptGetDefaultOIDFunctionAddress=func
+func.CryptGetDefaultOIDFunctionAddress.args=6
+func.CryptGetDefaultOIDFunctionAddress.arg.0=HCRYPTOIDFUNCSET,hFuncSet
+func.CryptGetDefaultOIDFunctionAddress.arg.1=DWORD,dwEncodingType
+func.CryptGetDefaultOIDFunctionAddress.arg.2=LPCWSTR,pwszDll
+func.CryptGetDefaultOIDFunctionAddress.arg.3=DWORD,dwFlags
+func.CryptGetDefaultOIDFunctionAddress.arg.4=void **,ppvFuncAddr
+func.CryptGetDefaultOIDFunctionAddress.arg.5=HCRYPTOIDFUNCADDR *,phFuncAddr
+func.CryptGetDefaultOIDFunctionAddress.ret=BOOL
+
+CryptGetDefaultProviderA=func
+func.CryptGetDefaultProviderA.args=5
+func.CryptGetDefaultProviderA.arg.0=DWORD,dwProvType
+func.CryptGetDefaultProviderA.arg.1=DWORD *,pdwReserved
+func.CryptGetDefaultProviderA.arg.2=DWORD,dwFlags
+func.CryptGetDefaultProviderA.arg.3=LPSTR,pszProvName
+func.CryptGetDefaultProviderA.arg.4=DWORD *,pcbProvName
+func.CryptGetDefaultProviderA.ret=BOOL
+
+CryptGetDefaultProviderW=func
+func.CryptGetDefaultProviderW.args=5
+func.CryptGetDefaultProviderW.arg.0=DWORD,dwProvType
+func.CryptGetDefaultProviderW.arg.1=DWORD *,pdwReserved
+func.CryptGetDefaultProviderW.arg.2=DWORD,dwFlags
+func.CryptGetDefaultProviderW.arg.3=LPWSTR,pszProvName
+func.CryptGetDefaultProviderW.arg.4=DWORD *,pcbProvName
+func.CryptGetDefaultProviderW.ret=BOOL
+
+CryptGetHashParam=func
+func.CryptGetHashParam.args=5
+func.CryptGetHashParam.arg.0=HCRYPTHASH,hHash
+func.CryptGetHashParam.arg.1=DWORD,dwParam
+func.CryptGetHashParam.arg.2=BYTE *,pbData
+func.CryptGetHashParam.arg.3=DWORD *,pdwDataLen
+func.CryptGetHashParam.arg.4=DWORD,dwFlags
+func.CryptGetHashParam.ret=BOOL
+
+CryptGetKeyIdentifierProperty=func
+func.CryptGetKeyIdentifierProperty.args=7
+func.CryptGetKeyIdentifierProperty.arg.0=const CRYPT_HASH_BLOB *,pKeyIdentifier
+func.CryptGetKeyIdentifierProperty.arg.1=DWORD,dwPropId
+func.CryptGetKeyIdentifierProperty.arg.2=DWORD,dwFlags
+func.CryptGetKeyIdentifierProperty.arg.3=LPCWSTR,pwszComputerName
+func.CryptGetKeyIdentifierProperty.arg.4=void *,pvReserved
+func.CryptGetKeyIdentifierProperty.arg.5=void *,pvData
+func.CryptGetKeyIdentifierProperty.arg.6=DWORD *,pcbData
+func.CryptGetKeyIdentifierProperty.ret=BOOL
+
+CryptGetKeyParam=func
+func.CryptGetKeyParam.args=5
+func.CryptGetKeyParam.arg.0=HCRYPTKEY,hKey
+func.CryptGetKeyParam.arg.1=DWORD,dwParam
+func.CryptGetKeyParam.arg.2=BYTE *,pbData
+func.CryptGetKeyParam.arg.3=DWORD *,pdwDataLen
+func.CryptGetKeyParam.arg.4=DWORD,dwFlags
+func.CryptGetKeyParam.ret=BOOL
+
+CryptGetMessageCertificates=func
+func.CryptGetMessageCertificates.args=5
+func.CryptGetMessageCertificates.arg.0=DWORD,dwMsgAndCertEncodingType
+func.CryptGetMessageCertificates.arg.1=HCRYPTPROV_LEGACY,hCryptProv
+func.CryptGetMessageCertificates.arg.2=DWORD,dwFlags
+func.CryptGetMessageCertificates.arg.3=const BYTE *,pbSignedBlob
+func.CryptGetMessageCertificates.arg.4=DWORD,cbSignedBlob
+func.CryptGetMessageCertificates.ret=HCERTSTORE
+
+CryptGetMessageSignerCount=func
+func.CryptGetMessageSignerCount.args=3
+func.CryptGetMessageSignerCount.arg.0=DWORD,dwMsgEncodingType
+func.CryptGetMessageSignerCount.arg.1=const BYTE *,pbSignedBlob
+func.CryptGetMessageSignerCount.arg.2=DWORD,cbSignedBlob
+func.CryptGetMessageSignerCount.ret=LONG
+
+CryptGetOIDFunctionAddress=func
+func.CryptGetOIDFunctionAddress.args=6
+func.CryptGetOIDFunctionAddress.arg.0=HCRYPTOIDFUNCSET,hFuncSet
+func.CryptGetOIDFunctionAddress.arg.1=DWORD,dwEncodingType
+func.CryptGetOIDFunctionAddress.arg.2=LPCSTR,pszOID
+func.CryptGetOIDFunctionAddress.arg.3=DWORD,dwFlags
+func.CryptGetOIDFunctionAddress.arg.4=void **,ppvFuncAddr
+func.CryptGetOIDFunctionAddress.arg.5=HCRYPTOIDFUNCADDR *,phFuncAddr
+func.CryptGetOIDFunctionAddress.ret=BOOL
+
+CryptGetOIDFunctionValue=func
+func.CryptGetOIDFunctionValue.args=7
+func.CryptGetOIDFunctionValue.arg.0=DWORD,dwEncodingType
+func.CryptGetOIDFunctionValue.arg.1=LPCSTR,pszFuncName
+func.CryptGetOIDFunctionValue.arg.2=LPCSTR,pszOID
+func.CryptGetOIDFunctionValue.arg.3=LPCWSTR,pwszValueName
+func.CryptGetOIDFunctionValue.arg.4=DWORD *,pdwValueType
+func.CryptGetOIDFunctionValue.arg.5=BYTE *,pbValueData
+func.CryptGetOIDFunctionValue.arg.6=DWORD *,pcbValueData
+func.CryptGetOIDFunctionValue.ret=BOOL
+
+CryptGetObjectUrl=func
+func.CryptGetObjectUrl.args=8
+func.CryptGetObjectUrl.arg.0=LPCSTR,pszUrlOid
+func.CryptGetObjectUrl.arg.1=LPVOID,pvPara
+func.CryptGetObjectUrl.arg.2=DWORD,dwFlags
+func.CryptGetObjectUrl.arg.3=PCRYPT_URL_ARRAY,pUrlArray
+func.CryptGetObjectUrl.arg.4=DWORD *,pcbUrlArray
+func.CryptGetObjectUrl.arg.5=PCRYPT_URL_INFO,pUrlInfo
+func.CryptGetObjectUrl.arg.6=DWORD *,pcbUrlInfo
+func.CryptGetObjectUrl.arg.7=LPVOID,pvReserved
+func.CryptGetObjectUrl.ret=BOOL
+
+CryptGetProvParam=func
+func.CryptGetProvParam.args=5
+func.CryptGetProvParam.arg.0=HCRYPTPROV,hProv
+func.CryptGetProvParam.arg.1=DWORD,dwParam
+func.CryptGetProvParam.arg.2=BYTE *,pbData
+func.CryptGetProvParam.arg.3=DWORD *,pdwDataLen
+func.CryptGetProvParam.arg.4=DWORD,dwFlags
+func.CryptGetProvParam.ret=BOOL
+
+CryptGetTimeValidObject=func
+func.CryptGetTimeValidObject.args=9
+func.CryptGetTimeValidObject.arg.0=LPCSTR,pszTimeValidOid
+func.CryptGetTimeValidObject.arg.1=LPVOID,pvPara
+func.CryptGetTimeValidObject.arg.2=PCCERT_CONTEXT,pIssuer
+func.CryptGetTimeValidObject.arg.3=LPFILETIME,pftValidFor
+func.CryptGetTimeValidObject.arg.4=DWORD,dwFlags
+func.CryptGetTimeValidObject.arg.5=DWORD,dwTimeout
+func.CryptGetTimeValidObject.arg.6=LPVOID *,ppvObject
+func.CryptGetTimeValidObject.arg.7=PCRYPT_CREDENTIALS,pCredentials
+func.CryptGetTimeValidObject.arg.8=PCRYPT_GET_TIME_VALID_OBJECT_EXTRA_INFO,pExtraInfo
+func.CryptGetTimeValidObject.ret=BOOL
+
+CryptGetUserKey=func
+func.CryptGetUserKey.args=3
+func.CryptGetUserKey.arg.0=HCRYPTPROV,hProv
+func.CryptGetUserKey.arg.1=DWORD,dwKeySpec
+func.CryptGetUserKey.arg.2=HCRYPTKEY *,phUserKey
+func.CryptGetUserKey.ret=BOOL
+
+CryptHashCertificate=func
+func.CryptHashCertificate.args=7
+func.CryptHashCertificate.arg.0=HCRYPTPROV_LEGACY,hCryptProv
+func.CryptHashCertificate.arg.1=ALG_ID,Algid
+func.CryptHashCertificate.arg.2=DWORD,dwFlags
+func.CryptHashCertificate.arg.3=const BYTE *,pbEncoded
+func.CryptHashCertificate.arg.4=DWORD,cbEncoded
+func.CryptHashCertificate.arg.5=BYTE *,pbComputedHash
+func.CryptHashCertificate.arg.6=DWORD *,pcbComputedHash
+func.CryptHashCertificate.ret=BOOL
+
+CryptHashCertificate2=func
+func.CryptHashCertificate2.args=7
+func.CryptHashCertificate2.arg.0=LPCWSTR,pwszCNGHashAlgid
+func.CryptHashCertificate2.arg.1=DWORD,dwFlags
+func.CryptHashCertificate2.arg.2=void *,pvReserved
+func.CryptHashCertificate2.arg.3=const BYTE *,pbEncoded
+func.CryptHashCertificate2.arg.4=DWORD,cbEncoded
+func.CryptHashCertificate2.arg.5=BYTE *,pbComputedHash
+func.CryptHashCertificate2.arg.6=DWORD *,pcbComputedHash
+func.CryptHashCertificate2.ret=BOOL
+
+CryptHashData=func
+func.CryptHashData.args=4
+func.CryptHashData.arg.0=HCRYPTHASH,hHash
+func.CryptHashData.arg.1=const BYTE *,pbData
+func.CryptHashData.arg.2=DWORD,dwDataLen
+func.CryptHashData.arg.3=DWORD,dwFlags
+func.CryptHashData.ret=BOOL
+
+CryptHashMessage=func
+func.CryptHashMessage.args=9
+func.CryptHashMessage.arg.0=PCRYPT_HASH_MESSAGE_PARA,pHashPara
+func.CryptHashMessage.arg.1=BOOL,fDetachedHash
+func.CryptHashMessage.arg.2=DWORD,cToBeHashed
+func.CryptHashMessage.arg.3=const BYTE **,rgpbToBeHashed
+func.CryptHashMessage.arg.4=DWORD *,rgcbToBeHashed
+func.CryptHashMessage.arg.5=BYTE *,pbHashedBlob
+func.CryptHashMessage.arg.6=DWORD *,pcbHashedBlob
+func.CryptHashMessage.arg.7=BYTE *,pbComputedHash
+func.CryptHashMessage.arg.8=DWORD *,pcbComputedHash
+func.CryptHashMessage.ret=BOOL
+
+CryptHashPublicKeyInfo=func
+func.CryptHashPublicKeyInfo.args=7
+func.CryptHashPublicKeyInfo.arg.0=HCRYPTPROV_LEGACY,hCryptProv
+func.CryptHashPublicKeyInfo.arg.1=ALG_ID,Algid
+func.CryptHashPublicKeyInfo.arg.2=DWORD,dwFlags
+func.CryptHashPublicKeyInfo.arg.3=DWORD,dwCertEncodingType
+func.CryptHashPublicKeyInfo.arg.4=PCERT_PUBLIC_KEY_INFO,pInfo
+func.CryptHashPublicKeyInfo.arg.5=BYTE *,pbComputedHash
+func.CryptHashPublicKeyInfo.arg.6=DWORD *,pcbComputedHash
+func.CryptHashPublicKeyInfo.ret=BOOL
+
+CryptHashSessionKey=func
+func.CryptHashSessionKey.args=3
+func.CryptHashSessionKey.arg.0=HCRYPTHASH,hHash
+func.CryptHashSessionKey.arg.1=HCRYPTKEY,hKey
+func.CryptHashSessionKey.arg.2=DWORD,dwFlags
+func.CryptHashSessionKey.ret=BOOL
+
+CryptHashToBeSigned=func
+func.CryptHashToBeSigned.args=6
+func.CryptHashToBeSigned.arg.0=HCRYPTPROV_LEGACY,hCryptProv
+func.CryptHashToBeSigned.arg.1=DWORD,dwCertEncodingType
+func.CryptHashToBeSigned.arg.2=const BYTE *,pbEncoded
+func.CryptHashToBeSigned.arg.3=DWORD,cbEncoded
+func.CryptHashToBeSigned.arg.4=BYTE *,pbComputedHash
+func.CryptHashToBeSigned.arg.5=DWORD *,pcbComputedHash
+func.CryptHashToBeSigned.ret=BOOL
+
+CryptImportKey=func
+func.CryptImportKey.args=6
+func.CryptImportKey.arg.0=HCRYPTPROV,hProv
+func.CryptImportKey.arg.1=const BYTE *,pbData
+func.CryptImportKey.arg.2=DWORD,dwDataLen
+func.CryptImportKey.arg.3=HCRYPTKEY,hPubKey
+func.CryptImportKey.arg.4=DWORD,dwFlags
+func.CryptImportKey.arg.5=HCRYPTKEY *,phKey
+func.CryptImportKey.ret=BOOL
+
+CryptImportPKCS8=func
+func.CryptImportPKCS8.args=4
+func.CryptImportPKCS8.arg.0=CRYPT_PKCS8_IMPORT_PARAMS,sPrivateKeyAndParams
+func.CryptImportPKCS8.arg.1=DWORD,dwFlags
+func.CryptImportPKCS8.arg.2=HCRYPTPROV *,phCryptProv
+func.CryptImportPKCS8.arg.3=void *,pvAuxInfo
+func.CryptImportPKCS8.ret=BOOL
+
+CryptImportPublicKeyInfo=func
+func.CryptImportPublicKeyInfo.args=4
+func.CryptImportPublicKeyInfo.arg.0=HCRYPTPROV,hCryptProv
+func.CryptImportPublicKeyInfo.arg.1=DWORD,dwCertEncodingType
+func.CryptImportPublicKeyInfo.arg.2=PCERT_PUBLIC_KEY_INFO,pInfo
+func.CryptImportPublicKeyInfo.arg.3=HCRYPTKEY *,phKey
+func.CryptImportPublicKeyInfo.ret=BOOL
+
+CryptImportPublicKeyInfoEx=func
+func.CryptImportPublicKeyInfoEx.args=7
+func.CryptImportPublicKeyInfoEx.arg.0=HCRYPTPROV,hCryptProv
+func.CryptImportPublicKeyInfoEx.arg.1=DWORD,dwCertEncodingType
+func.CryptImportPublicKeyInfoEx.arg.2=PCERT_PUBLIC_KEY_INFO,pInfo
+func.CryptImportPublicKeyInfoEx.arg.3=ALG_ID,aiKeyAlg
+func.CryptImportPublicKeyInfoEx.arg.4=DWORD,dwFlags
+func.CryptImportPublicKeyInfoEx.arg.5=void *,pvAuxInfo
+func.CryptImportPublicKeyInfoEx.arg.6=HCRYPTKEY *,phKey
+func.CryptImportPublicKeyInfoEx.ret=BOOL
+
+CryptImportPublicKeyInfoEx2=func
+func.CryptImportPublicKeyInfoEx2.args=5
+func.CryptImportPublicKeyInfoEx2.arg.0=DWORD,dwCertEncodingType
+func.CryptImportPublicKeyInfoEx2.arg.1=PCERT_PUBLIC_KEY_INFO,pInfo
+func.CryptImportPublicKeyInfoEx2.arg.2=DWORD,dwFlags
+func.CryptImportPublicKeyInfoEx2.arg.3=void *,pvAuxInfo
+func.CryptImportPublicKeyInfoEx2.arg.4=BCRYPT_KEY_HANDLE *,phKey
+func.CryptImportPublicKeyInfoEx2.ret=BOOL
+
+CryptInitOIDFunctionSet=func
+func.CryptInitOIDFunctionSet.args=2
+func.CryptInitOIDFunctionSet.arg.0=LPCSTR,pszFuncName
+func.CryptInitOIDFunctionSet.arg.1=DWORD,dwFlags
+func.CryptInitOIDFunctionSet.ret=HCRYPTOIDFUNCSET
+
+CryptInstallCancelRetrieval=func
+func.CryptInstallCancelRetrieval.args=4
+func.CryptInstallCancelRetrieval.arg.0=PFN_CRYPT_CANCEL_RETRIEVAL,pfnCancel
+func.CryptInstallCancelRetrieval.arg.1=const void *,pvArg
+func.CryptInstallCancelRetrieval.arg.2=DWORD,dwFlags
+func.CryptInstallCancelRetrieval.arg.3=void *,pvReserved
+func.CryptInstallCancelRetrieval.ret=BOOL
+
+CryptInstallDefaultContext=func
+func.CryptInstallDefaultContext.args=6
+func.CryptInstallDefaultContext.arg.0=HCRYPTPROV,hCryptProv
+func.CryptInstallDefaultContext.arg.1=DWORD,dwDefaultType
+func.CryptInstallDefaultContext.arg.2=const void *,pvDefaultPara
+func.CryptInstallDefaultContext.arg.3=DWORD,dwFlags
+func.CryptInstallDefaultContext.arg.4=void *,pvReserved
+func.CryptInstallDefaultContext.arg.5=HCRYPTDEFAULTCONTEXT *,phDefaultContext
+func.CryptInstallDefaultContext.ret=BOOL
+
+CryptInstallOIDFunctionAddress=func
+func.CryptInstallOIDFunctionAddress.args=6
+func.CryptInstallOIDFunctionAddress.arg.0=HMODULE,hModule
+func.CryptInstallOIDFunctionAddress.arg.1=DWORD,dwEncodingType
+func.CryptInstallOIDFunctionAddress.arg.2=LPCSTR,pszFuncName
+func.CryptInstallOIDFunctionAddress.arg.3=DWORD,cFuncEntry
+func.CryptInstallOIDFunctionAddress.arg.4=const CRYPT_OID_FUNC_ENTRY *,rgFuncEntry
+func.CryptInstallOIDFunctionAddress.arg.5=DWORD,dwFlags
+func.CryptInstallOIDFunctionAddress.ret=BOOL
+
+CryptMemAlloc=func
+func.CryptMemAlloc.args=1
+func.CryptMemAlloc.arg.0=ULONG,cbSize
+func.CryptMemAlloc.ret=LPVOID
+
+CryptMemFree=func
+func.CryptMemFree.args=1
+func.CryptMemFree.arg.0=LPVOID,pv
+func.CryptMemFree.ret=VOID
+
+CryptMemRealloc=func
+func.CryptMemRealloc.args=2
+func.CryptMemRealloc.arg.0=LPVOID,pv
+func.CryptMemRealloc.arg.1=ULONG,cbSize
+func.CryptMemRealloc.ret=LPVOID
+
+CryptMsgCalculateEncodedLength=func
+func.CryptMsgCalculateEncodedLength.args=6
+func.CryptMsgCalculateEncodedLength.arg.0=DWORD,dwMsgEncodingType
+func.CryptMsgCalculateEncodedLength.arg.1=DWORD,dwFlags
+func.CryptMsgCalculateEncodedLength.arg.2=DWORD,dwMsgType
+func.CryptMsgCalculateEncodedLength.arg.3=void const *,pvMsgEncodeInfo
+func.CryptMsgCalculateEncodedLength.arg.4=LPSTR,pszInnerContentObjID
+func.CryptMsgCalculateEncodedLength.arg.5=DWORD,cbData
+func.CryptMsgCalculateEncodedLength.ret=DWORD
+
+CryptMsgClose=func
+func.CryptMsgClose.args=1
+func.CryptMsgClose.arg.0=HCRYPTMSG,hCryptMsg
+func.CryptMsgClose.ret=BOOL
+
+CryptMsgControl=func
+func.CryptMsgControl.args=4
+func.CryptMsgControl.arg.0=HCRYPTMSG,hCryptMsg
+func.CryptMsgControl.arg.1=DWORD,dwFlags
+func.CryptMsgControl.arg.2=DWORD,dwCtrlType
+func.CryptMsgControl.arg.3=void const *,pvCtrlPara
+func.CryptMsgControl.ret=BOOL
+
+CryptMsgDuplicate=func
+func.CryptMsgDuplicate.args=1
+func.CryptMsgDuplicate.arg.0=HCRYPTMSG,hCryptMsg
+func.CryptMsgDuplicate.ret=HCRYPTMSG
+
+CryptMsgEncodeAndSignCTL=func
+func.CryptMsgEncodeAndSignCTL.args=6
+func.CryptMsgEncodeAndSignCTL.arg.0=DWORD,dwMsgEncodingType
+func.CryptMsgEncodeAndSignCTL.arg.1=PCTL_INFO,pCtlInfo
+func.CryptMsgEncodeAndSignCTL.arg.2=PCMSG_SIGNED_ENCODE_INFO,pSignInfo
+func.CryptMsgEncodeAndSignCTL.arg.3=DWORD,dwFlags
+func.CryptMsgEncodeAndSignCTL.arg.4=BYTE *,pbEncoded
+func.CryptMsgEncodeAndSignCTL.arg.5=DWORD *,pcbEncoded
+func.CryptMsgEncodeAndSignCTL.ret=BOOL
+
+CryptMsgGetAndVerifySigner=func
+func.CryptMsgGetAndVerifySigner.args=6
+func.CryptMsgGetAndVerifySigner.arg.0=HCRYPTMSG,hCryptMsg
+func.CryptMsgGetAndVerifySigner.arg.1=DWORD,cSignerStore
+func.CryptMsgGetAndVerifySigner.arg.2=HCERTSTORE *,rghSignerStore
+func.CryptMsgGetAndVerifySigner.arg.3=DWORD,dwFlags
+func.CryptMsgGetAndVerifySigner.arg.4=PCCERT_CONTEXT *,ppSigner
+func.CryptMsgGetAndVerifySigner.arg.5=DWORD *,pdwSignerIndex
+func.CryptMsgGetAndVerifySigner.ret=BOOL
+
+CryptMsgGetParam=func
+func.CryptMsgGetParam.args=5
+func.CryptMsgGetParam.arg.0=HCRYPTMSG,hCryptMsg
+func.CryptMsgGetParam.arg.1=DWORD,dwParamType
+func.CryptMsgGetParam.arg.2=DWORD,dwIndex
+func.CryptMsgGetParam.arg.3=void *,pvData
+func.CryptMsgGetParam.arg.4=DWORD *,pcbData
+func.CryptMsgGetParam.ret=BOOL
+
+CryptMsgOpenToDecode=func
+func.CryptMsgOpenToDecode.args=6
+func.CryptMsgOpenToDecode.arg.0=DWORD,dwMsgEncodingType
+func.CryptMsgOpenToDecode.arg.1=DWORD,dwFlags
+func.CryptMsgOpenToDecode.arg.2=DWORD,dwMsgType
+func.CryptMsgOpenToDecode.arg.3=HCRYPTPROV_LEGACY,hCryptProv
+func.CryptMsgOpenToDecode.arg.4=PCERT_INFO,pRecipientInfo
+func.CryptMsgOpenToDecode.arg.5=PCMSG_STREAM_INFO,pStreamInfo
+func.CryptMsgOpenToDecode.ret=HCRYPTMSG
+
+CryptMsgOpenToEncode=func
+func.CryptMsgOpenToEncode.args=6
+func.CryptMsgOpenToEncode.arg.0=DWORD,dwMsgEncodingType
+func.CryptMsgOpenToEncode.arg.1=DWORD,dwFlags
+func.CryptMsgOpenToEncode.arg.2=DWORD,dwMsgType
+func.CryptMsgOpenToEncode.arg.3=void const *,pvMsgEncodeInfo
+func.CryptMsgOpenToEncode.arg.4=LPSTR,pszInnerContentObjID
+func.CryptMsgOpenToEncode.arg.5=PCMSG_STREAM_INFO,pStreamInfo
+func.CryptMsgOpenToEncode.ret=HCRYPTMSG
+
+CryptMsgSignCTL=func
+func.CryptMsgSignCTL.args=7
+func.CryptMsgSignCTL.arg.0=DWORD,dwMsgEncodingType
+func.CryptMsgSignCTL.arg.1=BYTE *,pbCtlContent
+func.CryptMsgSignCTL.arg.2=DWORD,cbCtlContent
+func.CryptMsgSignCTL.arg.3=PCMSG_SIGNED_ENCODE_INFO,pSignInfo
+func.CryptMsgSignCTL.arg.4=DWORD,dwFlags
+func.CryptMsgSignCTL.arg.5=BYTE *,pbEncoded
+func.CryptMsgSignCTL.arg.6=DWORD *,pcbEncoded
+func.CryptMsgSignCTL.ret=BOOL
+
+CryptMsgUpdate=func
+func.CryptMsgUpdate.args=4
+func.CryptMsgUpdate.arg.0=HCRYPTMSG,hCryptMsg
+func.CryptMsgUpdate.arg.1=const BYTE *,pbData
+func.CryptMsgUpdate.arg.2=DWORD,cbData
+func.CryptMsgUpdate.arg.3=BOOL,fFinal
+func.CryptMsgUpdate.ret=BOOL
+
+CryptQueryObject=func
+func.CryptQueryObject.args=11
+func.CryptQueryObject.arg.0=DWORD,dwObjectType
+func.CryptQueryObject.arg.1=const void *,pvObject
+func.CryptQueryObject.arg.2=DWORD,dwExpectedContentTypeFlags
+func.CryptQueryObject.arg.3=DWORD,dwExpectedFormatTypeFlags
+func.CryptQueryObject.arg.4=DWORD,dwFlags
+func.CryptQueryObject.arg.5=DWORD *,pdwMsgAndCertEncodingType
+func.CryptQueryObject.arg.6=DWORD *,pdwContentType
+func.CryptQueryObject.arg.7=DWORD *,pdwFormatType
+func.CryptQueryObject.arg.8=HCERTSTORE *,phCertStore
+func.CryptQueryObject.arg.9=HCRYPTMSG *,phMsg
+func.CryptQueryObject.arg.10=const void **,ppvContext
+func.CryptQueryObject.ret=BOOL
+
+CryptRegisterDefaultOIDFunction=func
+func.CryptRegisterDefaultOIDFunction.args=4
+func.CryptRegisterDefaultOIDFunction.arg.0=DWORD,dwEncodingType
+func.CryptRegisterDefaultOIDFunction.arg.1=LPCSTR,pszFuncName
+func.CryptRegisterDefaultOIDFunction.arg.2=DWORD,dwIndex
+func.CryptRegisterDefaultOIDFunction.arg.3=LPCWSTR,pwszDll
+func.CryptRegisterDefaultOIDFunction.ret=BOOL
+
+CryptRegisterOIDFunction=func
+func.CryptRegisterOIDFunction.args=5
+func.CryptRegisterOIDFunction.arg.0=DWORD,dwEncodingType
+func.CryptRegisterOIDFunction.arg.1=LPCSTR,pszFuncName
+func.CryptRegisterOIDFunction.arg.2=LPCSTR,pszOID
+func.CryptRegisterOIDFunction.arg.3=LPCWSTR,pwszDll
+func.CryptRegisterOIDFunction.arg.4=LPCSTR,pszOverrideFuncName
+func.CryptRegisterOIDFunction.ret=BOOL
+
+CryptRegisterOIDInfo=func
+func.CryptRegisterOIDInfo.args=2
+func.CryptRegisterOIDInfo.arg.0=PCCRYPT_OID_INFO,pInfo
+func.CryptRegisterOIDInfo.arg.1=DWORD,dwFlags
+func.CryptRegisterOIDInfo.ret=BOOL
+
+CryptReleaseContext=func
+func.CryptReleaseContext.args=2
+func.CryptReleaseContext.arg.0=HCRYPTPROV,hProv
+func.CryptReleaseContext.arg.1=DWORD,dwFlags
+func.CryptReleaseContext.ret=BOOL
+
+CryptRetrieveObjectByUrlA=func
+func.CryptRetrieveObjectByUrlA.args=9
+func.CryptRetrieveObjectByUrlA.arg.0=LPCSTR,pszUrl
+func.CryptRetrieveObjectByUrlA.arg.1=LPCSTR,pszObjectOid
+func.CryptRetrieveObjectByUrlA.arg.2=DWORD,dwRetrievalFlags
+func.CryptRetrieveObjectByUrlA.arg.3=DWORD,dwTimeout
+func.CryptRetrieveObjectByUrlA.arg.4=LPVOID *,ppvObject
+func.CryptRetrieveObjectByUrlA.arg.5=HCRYPTASYNC,hAsyncRetrieve
+func.CryptRetrieveObjectByUrlA.arg.6=PCRYPT_CREDENTIALS,pCredentials
+func.CryptRetrieveObjectByUrlA.arg.7=LPVOID,pvVerify
+func.CryptRetrieveObjectByUrlA.arg.8=PCRYPT_RETRIEVE_AUX_INFO,pAuxInfo
+func.CryptRetrieveObjectByUrlA.ret=BOOL
+
+CryptRetrieveObjectByUrlW=func
+func.CryptRetrieveObjectByUrlW.args=9
+func.CryptRetrieveObjectByUrlW.arg.0=LPCWSTR,pszUrl
+func.CryptRetrieveObjectByUrlW.arg.1=LPCSTR,pszObjectOid
+func.CryptRetrieveObjectByUrlW.arg.2=DWORD,dwRetrievalFlags
+func.CryptRetrieveObjectByUrlW.arg.3=DWORD,dwTimeout
+func.CryptRetrieveObjectByUrlW.arg.4=LPVOID *,ppvObject
+func.CryptRetrieveObjectByUrlW.arg.5=HCRYPTASYNC,hAsyncRetrieve
+func.CryptRetrieveObjectByUrlW.arg.6=PCRYPT_CREDENTIALS,pCredentials
+func.CryptRetrieveObjectByUrlW.arg.7=LPVOID,pvVerify
+func.CryptRetrieveObjectByUrlW.arg.8=PCRYPT_RETRIEVE_AUX_INFO,pAuxInfo
+func.CryptRetrieveObjectByUrlW.ret=BOOL
+
+CryptSetAsyncParam=func
+func.CryptSetAsyncParam.args=4
+func.CryptSetAsyncParam.arg.0=HCRYPTASYNC,hAsync
+func.CryptSetAsyncParam.arg.1=LPSTR,pszParamOid
+func.CryptSetAsyncParam.arg.2=LPVOID,pvParam
+func.CryptSetAsyncParam.arg.3=PFN_CRYPT_ASYNC_PARAM_FREE_FUNC,pfnFree
+func.CryptSetAsyncParam.ret=BOOL
+
+CryptSetHashParam=func
+func.CryptSetHashParam.args=4
+func.CryptSetHashParam.arg.0=HCRYPTHASH,hHash
+func.CryptSetHashParam.arg.1=DWORD,dwParam
+func.CryptSetHashParam.arg.2=const BYTE *,pbData
+func.CryptSetHashParam.arg.3=DWORD,dwFlags
+func.CryptSetHashParam.ret=BOOL
+
+CryptSetKeyIdentifierProperty=func
+func.CryptSetKeyIdentifierProperty.args=6
+func.CryptSetKeyIdentifierProperty.arg.0=const CRYPT_HASH_BLOB *,pKeyIdentifier
+func.CryptSetKeyIdentifierProperty.arg.1=DWORD,dwPropId
+func.CryptSetKeyIdentifierProperty.arg.2=DWORD,dwFlags
+func.CryptSetKeyIdentifierProperty.arg.3=LPCWSTR,pwszComputerName
+func.CryptSetKeyIdentifierProperty.arg.4=void *,pvReserved
+func.CryptSetKeyIdentifierProperty.arg.5=const void *,pvData
+func.CryptSetKeyIdentifierProperty.ret=BOOL
+
+CryptSetKeyParam=func
+func.CryptSetKeyParam.args=4
+func.CryptSetKeyParam.arg.0=HCRYPTKEY,hKey
+func.CryptSetKeyParam.arg.1=DWORD,dwParam
+func.CryptSetKeyParam.arg.2=const BYTE *,pbData
+func.CryptSetKeyParam.arg.3=DWORD,dwFlags
+func.CryptSetKeyParam.ret=BOOL
+
+CryptSetOIDFunctionValue=func
+func.CryptSetOIDFunctionValue.args=7
+func.CryptSetOIDFunctionValue.arg.0=DWORD,dwEncodingType
+func.CryptSetOIDFunctionValue.arg.1=LPCSTR,pszFuncName
+func.CryptSetOIDFunctionValue.arg.2=LPCSTR,pszOID
+func.CryptSetOIDFunctionValue.arg.3=LPCWSTR,pwszValueName
+func.CryptSetOIDFunctionValue.arg.4=DWORD,dwValueType
+func.CryptSetOIDFunctionValue.arg.5=const BYTE *,pbValueData
+func.CryptSetOIDFunctionValue.arg.6=DWORD,cbValueData
+func.CryptSetOIDFunctionValue.ret=BOOL
+
+CryptSetProvParam=func
+func.CryptSetProvParam.args=4
+func.CryptSetProvParam.arg.0=HCRYPTPROV,hProv
+func.CryptSetProvParam.arg.1=DWORD,dwParam
+func.CryptSetProvParam.arg.2=const BYTE *,pbData
+func.CryptSetProvParam.arg.3=DWORD,dwFlags
+func.CryptSetProvParam.ret=BOOL
+
+CryptSetProviderA=func
+func.CryptSetProviderA.args=2
+func.CryptSetProviderA.arg.0=LPCSTR,pszProvName
+func.CryptSetProviderA.arg.1=DWORD,dwProvType
+func.CryptSetProviderA.ret=BOOL
+
+CryptSetProviderExA=func
+func.CryptSetProviderExA.args=4
+func.CryptSetProviderExA.arg.0=LPCSTR,pszProvName
+func.CryptSetProviderExA.arg.1=DWORD,dwProvType
+func.CryptSetProviderExA.arg.2=DWORD *,pdwReserved
+func.CryptSetProviderExA.arg.3=DWORD,dwFlags
+func.CryptSetProviderExA.ret=BOOL
+
+CryptSetProviderExW=func
+func.CryptSetProviderExW.args=4
+func.CryptSetProviderExW.arg.0=LPCWSTR,pszProvName
+func.CryptSetProviderExW.arg.1=DWORD,dwProvType
+func.CryptSetProviderExW.arg.2=DWORD *,pdwReserved
+func.CryptSetProviderExW.arg.3=DWORD,dwFlags
+func.CryptSetProviderExW.ret=BOOL
+
+CryptSetProviderW=func
+func.CryptSetProviderW.args=2
+func.CryptSetProviderW.arg.0=LPCWSTR,pszProvName
+func.CryptSetProviderW.arg.1=DWORD,dwProvType
+func.CryptSetProviderW.ret=BOOL
+
+CryptSignAndEncodeCertificate=func
+func.CryptSignAndEncodeCertificate.args=9
+func.CryptSignAndEncodeCertificate.arg.0=BCRYPT_KEY_HANDLE,hBCryptKey
+func.CryptSignAndEncodeCertificate.arg.1=DWORD,dwKeySpec
+func.CryptSignAndEncodeCertificate.arg.2=DWORD,dwCertEncodingType
+func.CryptSignAndEncodeCertificate.arg.3=LPCSTR,lpszStructType
+func.CryptSignAndEncodeCertificate.arg.4=const void *,pvStructInfo
+func.CryptSignAndEncodeCertificate.arg.5=PCRYPT_ALGORITHM_IDENTIFIER,pSignatureAlgorithm
+func.CryptSignAndEncodeCertificate.arg.6=const void *,pvHashAuxInfo
+func.CryptSignAndEncodeCertificate.arg.7=BYTE *,pbEncoded
+func.CryptSignAndEncodeCertificate.arg.8=DWORD *,pcbEncoded
+func.CryptSignAndEncodeCertificate.ret=BOOL
+
+CryptSignAndEncryptMessage=func
+func.CryptSignAndEncryptMessage.args=8
+func.CryptSignAndEncryptMessage.arg.0=PCRYPT_SIGN_MESSAGE_PARA,pSignPara
+func.CryptSignAndEncryptMessage.arg.1=PCRYPT_ENCRYPT_MESSAGE_PARA,pEncryptPara
+func.CryptSignAndEncryptMessage.arg.2=DWORD,cRecipientCert
+func.CryptSignAndEncryptMessage.arg.3=PCCERT_CONTEXT *,rgpRecipientCert
+func.CryptSignAndEncryptMessage.arg.4=const BYTE *,pbToBeSignedAndEncrypted
+func.CryptSignAndEncryptMessage.arg.5=DWORD,cbToBeSignedAndEncrypted
+func.CryptSignAndEncryptMessage.arg.6=BYTE *,pbSignedAndEncryptedBlob
+func.CryptSignAndEncryptMessage.arg.7=DWORD *,pcbSignedAndEncryptedBlob
+func.CryptSignAndEncryptMessage.ret=BOOL
+
+CryptSignCertificate=func
+func.CryptSignCertificate.args=9
+func.CryptSignCertificate.arg.0=BCRYPT_KEY_HANDLE,hBCryptKey
+func.CryptSignCertificate.arg.1=DWORD,dwKeySpec
+func.CryptSignCertificate.arg.2=DWORD,dwCertEncodingType
+func.CryptSignCertificate.arg.3=const BYTE *,pbEncodedToBeSigned
+func.CryptSignCertificate.arg.4=DWORD,cbEncodedToBeSigned
+func.CryptSignCertificate.arg.5=PCRYPT_ALGORITHM_IDENTIFIER,pSignatureAlgorithm
+func.CryptSignCertificate.arg.6=const void *,pvHashAuxInfo
+func.CryptSignCertificate.arg.7=BYTE *,pbSignature
+func.CryptSignCertificate.arg.8=DWORD *,pcbSignature
+func.CryptSignCertificate.ret=BOOL
+
+CryptSignHashA=func
+func.CryptSignHashA.args=6
+func.CryptSignHashA.arg.0=HCRYPTHASH,hHash
+func.CryptSignHashA.arg.1=DWORD,dwKeySpec
+func.CryptSignHashA.arg.2=LPCSTR,szDescription
+func.CryptSignHashA.arg.3=DWORD,dwFlags
+func.CryptSignHashA.arg.4=BYTE *,pbSignature
+func.CryptSignHashA.arg.5=DWORD *,pdwSigLen
+func.CryptSignHashA.ret=BOOL
+
+CryptSignHashW=func
+func.CryptSignHashW.args=6
+func.CryptSignHashW.arg.0=HCRYPTHASH,hHash
+func.CryptSignHashW.arg.1=DWORD,dwKeySpec
+func.CryptSignHashW.arg.2=LPCWSTR,szDescription
+func.CryptSignHashW.arg.3=DWORD,dwFlags
+func.CryptSignHashW.arg.4=BYTE *,pbSignature
+func.CryptSignHashW.arg.5=DWORD *,pdwSigLen
+func.CryptSignHashW.ret=BOOL
+
+CryptSignMessage=func
+func.CryptSignMessage.args=7
+func.CryptSignMessage.arg.0=PCRYPT_SIGN_MESSAGE_PARA,pSignPara
+func.CryptSignMessage.arg.1=BOOL,fDetachedSignature
+func.CryptSignMessage.arg.2=DWORD,cToBeSigned
+func.CryptSignMessage.arg.3=const BYTE **,rgpbToBeSigned
+func.CryptSignMessage.arg.4=DWORD *,rgcbToBeSigned
+func.CryptSignMessage.arg.5=BYTE *,pbSignedBlob
+func.CryptSignMessage.arg.6=DWORD *,pcbSignedBlob
+func.CryptSignMessage.ret=BOOL
+
+CryptSignMessageWithKey=func
+func.CryptSignMessageWithKey.args=5
+func.CryptSignMessageWithKey.arg.0=PCRYPT_KEY_SIGN_MESSAGE_PARA,pSignPara
+func.CryptSignMessageWithKey.arg.1=const BYTE *,pbToBeSigned
+func.CryptSignMessageWithKey.arg.2=DWORD,cbToBeSigned
+func.CryptSignMessageWithKey.arg.3=BYTE *,pbSignedBlob
+func.CryptSignMessageWithKey.arg.4=DWORD *,pcbSignedBlob
+func.CryptSignMessageWithKey.ret=BOOL
+
+CryptStringToBinaryA=func
+func.CryptStringToBinaryA.args=7
+func.CryptStringToBinaryA.arg.0=LPCSTR,pszString
+func.CryptStringToBinaryA.arg.1=DWORD,cchString
+func.CryptStringToBinaryA.arg.2=DWORD,dwFlags
+func.CryptStringToBinaryA.arg.3=BYTE *,pbBinary
+func.CryptStringToBinaryA.arg.4=DWORD *,pcbBinary
+func.CryptStringToBinaryA.arg.5=DWORD *,pdwSkip
+func.CryptStringToBinaryA.arg.6=DWORD *,pdwFlags
+func.CryptStringToBinaryA.ret=BOOL
+
+CryptStringToBinaryW=func
+func.CryptStringToBinaryW.args=7
+func.CryptStringToBinaryW.arg.0=LPCWSTR,pszString
+func.CryptStringToBinaryW.arg.1=DWORD,cchString
+func.CryptStringToBinaryW.arg.2=DWORD,dwFlags
+func.CryptStringToBinaryW.arg.3=BYTE *,pbBinary
+func.CryptStringToBinaryW.arg.4=DWORD *,pcbBinary
+func.CryptStringToBinaryW.arg.5=DWORD *,pdwSkip
+func.CryptStringToBinaryW.arg.6=DWORD *,pdwFlags
+func.CryptStringToBinaryW.ret=BOOL
+
+CryptUninstallCancelRetrieval=func
+func.CryptUninstallCancelRetrieval.args=2
+func.CryptUninstallCancelRetrieval.arg.0=DWORD,dwFlags
+func.CryptUninstallCancelRetrieval.arg.1=void *,pvReserved
+func.CryptUninstallCancelRetrieval.ret=BOOL
+
+CryptUninstallDefaultContext=func
+func.CryptUninstallDefaultContext.args=3
+func.CryptUninstallDefaultContext.arg.0=HCRYPTDEFAULTCONTEXT,hDefaultContext
+func.CryptUninstallDefaultContext.arg.1=DWORD,dwFlags
+func.CryptUninstallDefaultContext.arg.2=void *,pvReserved
+func.CryptUninstallDefaultContext.ret=BOOL
+
+CryptUnregisterDefaultOIDFunction=func
+func.CryptUnregisterDefaultOIDFunction.args=3
+func.CryptUnregisterDefaultOIDFunction.arg.0=DWORD,dwEncodingType
+func.CryptUnregisterDefaultOIDFunction.arg.1=LPCSTR,pszFuncName
+func.CryptUnregisterDefaultOIDFunction.arg.2=LPCWSTR,pwszDll
+func.CryptUnregisterDefaultOIDFunction.ret=BOOL
+
+CryptUnregisterOIDFunction=func
+func.CryptUnregisterOIDFunction.args=3
+func.CryptUnregisterOIDFunction.arg.0=DWORD,dwEncodingType
+func.CryptUnregisterOIDFunction.arg.1=LPCSTR,pszFuncName
+func.CryptUnregisterOIDFunction.arg.2=LPCSTR,pszOID
+func.CryptUnregisterOIDFunction.ret=BOOL
+
+CryptUnregisterOIDInfo=func
+func.CryptUnregisterOIDInfo.args=1
+func.CryptUnregisterOIDInfo.arg.0=PCCRYPT_OID_INFO,pInfo
+func.CryptUnregisterOIDInfo.ret=BOOL
+
+CryptVerifyCertificateSignature=func
+func.CryptVerifyCertificateSignature.args=5
+func.CryptVerifyCertificateSignature.arg.0=HCRYPTPROV_LEGACY,hCryptProv
+func.CryptVerifyCertificateSignature.arg.1=DWORD,dwCertEncodingType
+func.CryptVerifyCertificateSignature.arg.2=const BYTE *,pbEncoded
+func.CryptVerifyCertificateSignature.arg.3=DWORD,cbEncoded
+func.CryptVerifyCertificateSignature.arg.4=PCERT_PUBLIC_KEY_INFO,pPublicKey
+func.CryptVerifyCertificateSignature.ret=BOOL
+
+CryptVerifyCertificateSignatureEx=func
+func.CryptVerifyCertificateSignatureEx.args=8
+func.CryptVerifyCertificateSignatureEx.arg.0=HCRYPTPROV_LEGACY,hCryptProv
+func.CryptVerifyCertificateSignatureEx.arg.1=DWORD,dwCertEncodingType
+func.CryptVerifyCertificateSignatureEx.arg.2=DWORD,dwSubjectType
+func.CryptVerifyCertificateSignatureEx.arg.3=void *,pvSubject
+func.CryptVerifyCertificateSignatureEx.arg.4=DWORD,dwIssuerType
+func.CryptVerifyCertificateSignatureEx.arg.5=void *,pvIssuer
+func.CryptVerifyCertificateSignatureEx.arg.6=DWORD,dwFlags
+func.CryptVerifyCertificateSignatureEx.arg.7=void *,pvExtra
+func.CryptVerifyCertificateSignatureEx.ret=BOOL
+
+CryptVerifyDetachedMessageHash=func
+func.CryptVerifyDetachedMessageHash.args=8
+func.CryptVerifyDetachedMessageHash.arg.0=PCRYPT_HASH_MESSAGE_PARA,pHashPara
+func.CryptVerifyDetachedMessageHash.arg.1=BYTE *,pbDetachedHashBlob
+func.CryptVerifyDetachedMessageHash.arg.2=DWORD,cbDetachedHashBlob
+func.CryptVerifyDetachedMessageHash.arg.3=DWORD,cToBeHashed
+func.CryptVerifyDetachedMessageHash.arg.4=const BYTE **,rgpbToBeHashed
+func.CryptVerifyDetachedMessageHash.arg.5=DWORD *,rgcbToBeHashed
+func.CryptVerifyDetachedMessageHash.arg.6=BYTE *,pbComputedHash
+func.CryptVerifyDetachedMessageHash.arg.7=DWORD *,pcbComputedHash
+func.CryptVerifyDetachedMessageHash.ret=BOOL
+
+CryptVerifyDetachedMessageSignature=func
+func.CryptVerifyDetachedMessageSignature.args=8
+func.CryptVerifyDetachedMessageSignature.arg.0=PCRYPT_VERIFY_MESSAGE_PARA,pVerifyPara
+func.CryptVerifyDetachedMessageSignature.arg.1=DWORD,dwSignerIndex
+func.CryptVerifyDetachedMessageSignature.arg.2=const BYTE *,pbDetachedSignBlob
+func.CryptVerifyDetachedMessageSignature.arg.3=DWORD,cbDetachedSignBlob
+func.CryptVerifyDetachedMessageSignature.arg.4=DWORD,cToBeSigned
+func.CryptVerifyDetachedMessageSignature.arg.5=const BYTE **,rgpbToBeSigned
+func.CryptVerifyDetachedMessageSignature.arg.6=DWORD *,rgcbToBeSigned
+func.CryptVerifyDetachedMessageSignature.arg.7=PCCERT_CONTEXT *,ppSignerCert
+func.CryptVerifyDetachedMessageSignature.ret=BOOL
+
+CryptVerifyMessageHash=func
+func.CryptVerifyMessageHash.args=7
+func.CryptVerifyMessageHash.arg.0=PCRYPT_HASH_MESSAGE_PARA,pHashPara
+func.CryptVerifyMessageHash.arg.1=BYTE *,pbHashedBlob
+func.CryptVerifyMessageHash.arg.2=DWORD,cbHashedBlob
+func.CryptVerifyMessageHash.arg.3=BYTE *,pbToBeHashed
+func.CryptVerifyMessageHash.arg.4=DWORD *,pcbToBeHashed
+func.CryptVerifyMessageHash.arg.5=BYTE *,pbComputedHash
+func.CryptVerifyMessageHash.arg.6=DWORD *,pcbComputedHash
+func.CryptVerifyMessageHash.ret=BOOL
+
+CryptVerifyMessageSignature=func
+func.CryptVerifyMessageSignature.args=7
+func.CryptVerifyMessageSignature.arg.0=PCRYPT_VERIFY_MESSAGE_PARA,pVerifyPara
+func.CryptVerifyMessageSignature.arg.1=DWORD,dwSignerIndex
+func.CryptVerifyMessageSignature.arg.2=const BYTE *,pbSignedBlob
+func.CryptVerifyMessageSignature.arg.3=DWORD,cbSignedBlob
+func.CryptVerifyMessageSignature.arg.4=BYTE *,pbDecoded
+func.CryptVerifyMessageSignature.arg.5=DWORD *,pcbDecoded
+func.CryptVerifyMessageSignature.arg.6=PCCERT_CONTEXT *,ppSignerCert
+func.CryptVerifyMessageSignature.ret=BOOL
+
+CryptVerifyMessageSignatureWithKey=func
+func.CryptVerifyMessageSignatureWithKey.args=6
+func.CryptVerifyMessageSignatureWithKey.arg.0=PCRYPT_KEY_VERIFY_MESSAGE_PARA,pVerifyPara
+func.CryptVerifyMessageSignatureWithKey.arg.1=PCERT_PUBLIC_KEY_INFO,pPublicKeyInfo
+func.CryptVerifyMessageSignatureWithKey.arg.2=const BYTE *,pbSignedBlob
+func.CryptVerifyMessageSignatureWithKey.arg.3=DWORD,cbSignedBlob
+func.CryptVerifyMessageSignatureWithKey.arg.4=BYTE *,pbDecoded
+func.CryptVerifyMessageSignatureWithKey.arg.5=DWORD *,pcbDecoded
+func.CryptVerifyMessageSignatureWithKey.ret=BOOL
+
+CryptVerifySignatureA=func
+func.CryptVerifySignatureA.args=6
+func.CryptVerifySignatureA.arg.0=HCRYPTHASH,hHash
+func.CryptVerifySignatureA.arg.1=const BYTE *,pbSignature
+func.CryptVerifySignatureA.arg.2=DWORD,dwSigLen
+func.CryptVerifySignatureA.arg.3=HCRYPTKEY,hPubKey
+func.CryptVerifySignatureA.arg.4=LPCSTR,szDescription
+func.CryptVerifySignatureA.arg.5=DWORD,dwFlags
+func.CryptVerifySignatureA.ret=BOOL
+
+CryptVerifySignatureW=func
+func.CryptVerifySignatureW.args=6
+func.CryptVerifySignatureW.arg.0=HCRYPTHASH,hHash
+func.CryptVerifySignatureW.arg.1=const BYTE *,pbSignature
+func.CryptVerifySignatureW.arg.2=DWORD,dwSigLen
+func.CryptVerifySignatureW.arg.3=HCRYPTKEY,hPubKey
+func.CryptVerifySignatureW.arg.4=LPCWSTR,szDescription
+func.CryptVerifySignatureW.arg.5=DWORD,dwFlags
+func.CryptVerifySignatureW.ret=BOOL
+
+PFXExportCertStore=func
+func.PFXExportCertStore.args=4
+func.PFXExportCertStore.arg.0=HCERTSTORE,hStore
+func.PFXExportCertStore.arg.1=CRYPT_DATA_BLOB *,pPFX
+func.PFXExportCertStore.arg.2=LPCWSTR,szPassword
+func.PFXExportCertStore.arg.3=DWORD,dwFlags
+func.PFXExportCertStore.ret=BOOL
+
+PFXExportCertStoreEx=func
+func.PFXExportCertStoreEx.args=5
+func.PFXExportCertStoreEx.arg.0=HCERTSTORE,hStore
+func.PFXExportCertStoreEx.arg.1=CRYPT_DATA_BLOB *,pPFX
+func.PFXExportCertStoreEx.arg.2=LPCWSTR,szPassword
+func.PFXExportCertStoreEx.arg.3=void *,pvPara
+func.PFXExportCertStoreEx.arg.4=DWORD,dwFlags
+func.PFXExportCertStoreEx.ret=BOOL
+
+PFXImportCertStore=func
+func.PFXImportCertStore.args=3
+func.PFXImportCertStore.arg.0=CRYPT_DATA_BLOB *,pPFX
+func.PFXImportCertStore.arg.1=LPCWSTR,szPassword
+func.PFXImportCertStore.arg.2=DWORD,dwFlags
+func.PFXImportCertStore.ret=HCERTSTORE
+
+PFXIsPFXBlob=func
+func.PFXIsPFXBlob.args=1
+func.PFXIsPFXBlob.arg.0=CRYPT_DATA_BLOB *,pPFX
+func.PFXIsPFXBlob.ret=BOOL
+
+PFXVerifyPassword=func
+func.PFXVerifyPassword.args=3
+func.PFXVerifyPassword.arg.0=CRYPT_DATA_BLOB *,pPFX
+func.PFXVerifyPassword.arg.1=LPCWSTR,szPassword
+func.PFXVerifyPassword.arg.2=DWORD,dwFlags
+func.PFXVerifyPassword.ret=BOOL

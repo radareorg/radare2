@@ -222,7 +222,7 @@ RDebugPlugin r_debug_plugin_bf = {
 	.map_get = r_debug_native_map_get,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_bf,

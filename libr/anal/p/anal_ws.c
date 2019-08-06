@@ -129,7 +129,7 @@ RAnalPlugin r_anal_plugin_ws = {
 	.op = &ws_anal,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_ws,

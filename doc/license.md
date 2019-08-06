@@ -22,7 +22,7 @@ Some parts of r2 are under the GPL license, here's a list of them:
 * GNU binutils disassemblers (libr/asm)
 * GRUB filesystems (libr/fs)
 
-If you are going to use r2 in your propietary product bear in mind to build it without those parts, which may infect your program. Please refer to the FSF or GNU sites to understand how licenses work.
+If you are going to use r2 in your proprietary product bear in mind to build it without those parts, which may infect your program. Please refer to the FSF or GNU sites to understand how licenses work.
 
 As long as r2pipe, or webui access is done via a textual interface which requires no reverse engineering or linking for integration other programs will not be affected by the license rules.
 

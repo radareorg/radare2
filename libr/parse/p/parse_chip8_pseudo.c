@@ -110,7 +110,7 @@ RParsePlugin r_parse_plugin_chip8_pseudo = {
 	.parse = parse,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_chip8_pseudo,

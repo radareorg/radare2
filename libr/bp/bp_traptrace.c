@@ -124,7 +124,7 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 		return false;
 	}
 	// read a memory, overwrite it as breakpointing area
-	// everytime it is hitted, instruction is restored
+	// every time it is hitted, instruction is restored
 	return true;
 }
 

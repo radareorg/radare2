@@ -65,7 +65,7 @@ R_API bool r_sandbox_check_path (const char *path) {
         if (path[0]=='.' && path[1]=='/') {
 		return false;
 	}
-	// Properly check for directrory traversal using "..". First, does it start with a .. part?
+	// Properly check for directory traversal using "..". First, does it start with a .. part?
 	if (path[0] == '.' && path[1] == '.' && (path[2] == '\0' || path[2] == '/')) {
 		return 0;
 	}
@@ -114,7 +114,7 @@ R_API bool r_sandbox_disable (bool e) {
 R_API bool r_sandbox_enable (bool e) {
 	if (enabled) {
 		if (!e) {
-			// eprintf ("Cant disable sandbox\n");
+			// eprintf ("Can't disable sandbox\n");
 		}
 		return true;
 	}
@@ -126,9 +126,40 @@ R_API bool r_sandbox_enable (bool e) {
 	}
 #endif
 #if HAVE_CAPSICUM
-	if (enabled && cap_enter () != 0) {
-		eprintf ("sandbox: call_enter failed\n");
-		return false;
+	if (enabled) {
+#if __FreeBSD_version >= 1000000
+		cap_rights_t wrt, rdr;
+
+		if (!cap_rights_init (&wrt, CAP_READ, CAP_WRITE)) {
+			eprintf ("sandbox: write descriptor failed\n");
+			return false;
+		}
+
+		if (!cap_rights_init (&rdr, CAP_READ, CAP_EVENT, CAP_FCNTL)) {
+			eprintf ("sandbox: read descriptor failed\n");
+			return false;
+		}
+
+		if (cap_rights_limit (STDIN_FILENO, &rdr) == -1) {
+			eprintf ("sandbox: stdin protection failed\n");
+			return false;
+		}
+
+		if (cap_rights_limit (STDOUT_FILENO, &wrt) == -1) {
+			eprintf ("sandbox: stdout protection failed\n");
+			return false;
+		}
+
+		if (cap_rights_limit (STDERR_FILENO, &wrt) == -1) {
+			eprintf ("sandbox: stderr protection failed\n");
+			return false;
+		}
+#endif
+
+		if (cap_enter () != 0) {
+			eprintf ("sandbox: call_enter failed\n");
+			return false;
+		}
 	}
 #endif
 	return enabled;
@@ -224,27 +255,38 @@ static char *expand_home(const char *p) {
 	return strdup (p);
 }
 
-R_API int r_sandbox_lseek (int fd, ut64 addr, int whence) {
+R_API int r_sandbox_lseek(int fd, ut64 addr, int whence) {
 	if (enabled) {
 		return -1;
 	}
 	return lseek (fd, (off_t)addr, whence);
 }
 
-R_API int r_sandbox_read (int fd, ut8* buf, int len) {
-	return enabled? -1 : read (fd, buf, len);
+R_API int r_sandbox_truncate(int fd, ut64 length) {
+	if (enabled) {
+		return -1;
+	}
+#ifdef _MSC_VER
+	return _chsize_s (fd, length);
+#else
+	return ftruncate (fd, (off_t)length);
+#endif
 }
 
-R_API int r_sandbox_write (int fd, const ut8* buf, int len) {
-	return enabled? -1 : write (fd, buf, len);
+R_API int r_sandbox_read(int fd, ut8 *buf, int len) {
+	return enabled? -1: read (fd, buf, len);
 }
 
-R_API int r_sandbox_close (int fd) {
-	return enabled? -1 : close (fd);
+R_API int r_sandbox_write(int fd, const ut8* buf, int len) {
+	return enabled? -1: write (fd, buf, len);
+}
+
+R_API int r_sandbox_close(int fd) {
+	return enabled? -1: close (fd);
 }
 
 /* perm <-> mode */
-R_API int r_sandbox_open (const char *path, int mode, int perm) {
+R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	if (!path) {
 		return -1;
 	}
@@ -271,11 +313,11 @@ R_API int r_sandbox_open (const char *path, int mode, int perm) {
 			free (epath);
 			return -1;
 		}
-		ret = _wopen (wepath, mode, perm);
+		ret = _wopen (wepath, perm, mode);
 		free (wepath);
 	}
 #else // __WINDOWS__
-	ret = open (epath, mode, perm);
+	ret = open (epath, perm, mode);
 #endif // __WINDOWS__
 	free (epath);
 	return ret;

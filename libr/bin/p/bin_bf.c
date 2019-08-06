@@ -1,17 +1,16 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return r_buf_ref (buf);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return true;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_buf_free (bf->o->bin_obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -93,13 +92,6 @@ static bool check_buffer(RBuffer *buf) {
 	return true;
 }
 
-static bool check_bytes(const ut8 *b, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (b, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
-}
-
 static RList *entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
@@ -121,7 +113,6 @@ RBinPlugin r_bin_plugin_bf = {
 	.license = "LGPL3",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = entries,
@@ -129,7 +120,7 @@ RBinPlugin r_bin_plugin_bf = {
 	.info = &info,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bf,

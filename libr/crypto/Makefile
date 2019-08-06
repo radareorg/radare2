@@ -1,6 +1,6 @@
 NAME=r_crypto
 DEPS=r_hash r_util
-CFLAGS+=-DCORELIB
+CFLAGS+=-DR2_PLUGIN_INCORE
 
 include ../config.mk
 

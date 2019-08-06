@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2017 - pancake */
+/* sdb - MIT - Copyright 2011-2019 - pancake */
 
 #include <signal.h>
 #include <stdio.h>
@@ -24,7 +24,7 @@ static void terminate(int sig UNUSED) {
 		exit (1);
 	}
 	sdb_free (s);
-	exit (0);
+	exit (sig<2?sig:0);
 }
 
 #define BS 128
@@ -142,11 +142,9 @@ static char *stdin_slurp(int *sz) {
 	if (sz) {
 		*sz = len;
 	}
-	//eprintf ("LEN %d (%s)\n", len, buf);
 	if (len < 1) {
 		free (buf);
-		buf = NULL;
-		return NULL;
+		return buf = NULL;
 	}
 	buf[len] = 0;
 	return buf;
@@ -155,9 +153,8 @@ static char *stdin_slurp(int *sz) {
 #if USE_MMAN
 static void synchronize(int sig UNUSED) {
 	// TODO: must be in sdb_sync() or wat?
-	Sdb *n;
 	sdb_sync (s);
-	n = sdb_new (s->path, s->name, s->lock);
+	Sdb *n = sdb_new (s->path, s->name, s->lock);
 	if (n) {
 		sdb_config (n, options);
 		sdb_free (s);
@@ -165,23 +162,22 @@ static void synchronize(int sig UNUSED) {
 	}
 }
 #endif
-static int sdb_grep_dump(const char *db, int fmt, bool grep,
+
+static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
                          const char *expgrep) {
-	char *v;
-	char k[SDB_MAX_KEY] = {
-		0
-	};
+	char *v, k[SDB_MAX_KEY] = { 0 };
 	const char *comma = "";
-	Sdb *s = sdb_new (NULL, db, 0);
-	if (!s) {
+	// local db beacuse is readonly and we dont need to finalize in case of ^C
+	Sdb *db = sdb_new (NULL, dbname, 0);
+	if (!db) {
 		return 1;
 	}
-	sdb_config (s, options);
-	sdb_dump_begin (s);
+	sdb_config (db, options);
+	sdb_dump_begin (db);
 	if (fmt == MODE_JSON) {
 		printf ("{");
 	}
-	while (sdb_dump_dupnext (s, k, &v, NULL)) {
+	while (sdb_dump_dupnext (db, k, &v, NULL)) {
 		if (grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
 			free (v);
 			continue;
@@ -218,9 +214,10 @@ static int sdb_grep_dump(const char *db, int fmt, bool grep,
 		printf ("}\n");
 		break;
 	}
-	sdb_free (s);
+	sdb_free (db);
 	return 0;
 }
+
 static int sdb_grep(const char *db, int fmt, const char *grep) {
 	return sdb_grep_dump (db, fmt, true, grep);
 }
@@ -401,7 +398,7 @@ int showcount(const char *db) {
 int main(int argc, const char **argv) {
 	char *line;
 	const char *arg, *grep = NULL;
-	int i, ret, fmt = MODE_DFLT;
+	int i, fmt = MODE_DFLT;
 	int db0 = 1, argi = 1;
 	bool interactive = false;
 
@@ -484,7 +481,7 @@ int main(int argc, const char **argv) {
 	signal (SIGINT, terminate);
 	signal (SIGHUP, synchronize);
 #endif
-	ret = 0;
+	int ret = 0;
 	if (interactive || !strcmp (argv[db0 + 1], "-")) {
 		if ((s = sdb_new (NULL, argv[db0], 0))) {
 			sdb_config (s, options);
@@ -517,6 +514,6 @@ int main(int argc, const char **argv) {
 			}
 		}
 	}
-	terminate (0);
+	terminate (ret);
 	return ret;
 }

@@ -74,10 +74,14 @@ R_API char* r_str_trim_lines(char *str) {
 	return r_strbuf_drain (sb);
 }
 
-R_API char *r_str_trim(char *str) {
-	if (!str) {
-		return NULL;
-	}
+R_API char *r_str_trim_dup(const char *str) {
+	char *a = strdup (str);
+	r_str_trim (a);
+	return a;
+}
+
+R_API void r_str_trim(char *str) {
+	r_return_if_fail (str);
 	char *nonwhite = str;
 	while (*nonwhite && IS_WHITECHAR (*nonwhite)) {
 		nonwhite++;
@@ -97,7 +101,6 @@ R_API char *r_str_trim(char *str) {
 			*ptr = '\0';
 		}
 	}
-	return str;
 }
 
 // Returns a pointer to the first non-whitespace character of str.
@@ -168,7 +171,7 @@ R_API char *r_str_trim_nc(char *str) {
 	return r_str_trim_tail (s);
 }
 
-/* suposed to chop a string with ansi controls to max length of n. */
+/* supposed to chop a string with ansi controls to max length of n. */
 R_API int r_str_ansi_trim(char *str, int str_len, int n) {
 	char ch, ch2;
 	int back = 0, i = 0, len = 0;

@@ -40,7 +40,6 @@ S_API int spp_run(char *buf, Output *out) {
 				break;
 			}
 			if (ret) {
-
 				if (proc->state.ifl < 0 || proc->state.ifl >= MAXIFL) {
 					fprintf (stderr, "Nested conditionals parsing error.\n");
 					break;

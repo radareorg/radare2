@@ -21,7 +21,7 @@ static int usage (int v) {
 	"  -h        show this help message\n"
 	"  -s        run in sandbox mode\n"
 	"  -u        enable http Authorization access\n"
-	"  -t        user:password authentification file\n"
+	"  -t        user:password authentication file\n"
 	"  -p [port] specify listening port (defaults to 8080)\n");
 	return !v;
 }
@@ -80,7 +80,7 @@ R_API int r_main_r2agent(int argc, char **argv) {
 
 	if (so.httpauth) {
 		if (!httpauthfile) {
-			eprintf ("No authentification user list set\n");
+			eprintf ("No authentication user list set\n");
 			return usage (0);
 		}
 

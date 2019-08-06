@@ -53,3 +53,6 @@ ec graph.current rgb:fff
 ec func_var rgb:9df
 ec func_var_type rgb:fd6
 ec func_var_addr rgb:bb5
+
+ec widget_bg rgb:bb5 rgb:222
+ec widget_sel black rgb:9c4

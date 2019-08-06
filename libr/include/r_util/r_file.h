@@ -7,12 +7,15 @@ extern "C" {
 
 #include <r_util/r_mem.h>
 
+/* is */
 R_API int r_file_is_abspath(const char *file);
+R_API bool r_file_is_c(const char *file);
+R_API bool r_file_is_directory(const char *str);
+R_API bool r_file_is_regular(const char *str);
+
 R_API bool r_file_truncate(const char *filename, ut64 newsize);
 R_API ut64 r_file_size(const char *str);
 R_API char *r_file_root(const char *root, const char *path);
-R_API bool r_file_is_directory(const char *str);
-R_API bool r_file_is_regular(const char *str);
 R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base);
 R_API int r_file_mmap_read(const char *file, ut64 addr, ut8 *buf, int len);
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len);
@@ -39,11 +42,14 @@ R_API bool r_file_rm(const char *file);
 R_API bool r_file_exists(const char *str);
 R_API bool r_file_fexists(const char *fmt, ...);
 R_API char *r_file_slurp_line(const char *file, int line, int context);
+R_API char *r_file_slurp_lines(const char *file, int line, int count);
+R_API char *r_file_slurp_lines_from_bottom(const char *file, int line);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API char *r_file_tmpdir(void);
 R_API char *r_file_readlink(const char *path);
 R_API bool r_file_copy (const char *src, const char *dst);
 R_API RList* r_file_globsearch (const char *globbed_path, int maxdepth);
+R_API RMmap *r_file_mmap_arch (RMmap *map, const char *filename, int fd);
 
 #ifdef __cplusplus
 }

@@ -12,7 +12,6 @@ PARTIALLD=${CROSS}ld -r --whole-archive
 
 ONELIB=0
 OSTYPE=gnulinux
-LINK=
 PICFLAGS=-fPIC -fpic
 CFLAGS+=${PICFLAGS}
 LDFLAGS+=-ldl -pthread -lutil
