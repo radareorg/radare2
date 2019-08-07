@@ -1572,6 +1572,7 @@ bool __handle_zoom_mode(RCore *core, const int key) {
 	case ';':
 	case ' ':
 	case '"':
+	case 'A':
 	case 'b':
 	case 'd':
 	case 'n':
@@ -6605,7 +6606,11 @@ repeat:
 		panels->autoUpdate = __show_status_yesno (core, 'y', "Auto update On? (Y/n)");
 		break;
 	case 'A':
-		r_core_visual_asm (core, core->offset);
+		{
+			const int ocur = core->print->cur_enabled;
+			r_core_visual_asm (core, core->offset);
+			core->print->cur_enabled = ocur;
+		}
 		break;
 	case 'd':
 		r_core_visual_define (core, "", 0);
