@@ -3019,10 +3019,13 @@ next2:
 	}
 escape_backtick:
 	// TODO must honor " and `
-	if (*cmd != '"' && strstr (cmd, "~?")) {
-		r_cons_grep_help ();
-		r_list_free (tmpenvs);
-		return true;
+	if (*cmd != '"') {
+		const char *s = strstr (cmd, "~?");
+		if (s && (!strcmp (s, "~?") || !strcmp (s, "~??"))) {
+			r_cons_grep_help ();
+			r_list_free (tmpenvs);
+			return true;
+		}
 	}
 	if (*cmd != '.') {
 		grep = r_cons_grep_strip (cmd, quotestr);
