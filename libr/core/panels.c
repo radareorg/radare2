@@ -77,7 +77,7 @@ static const char *menus_File[] = {
 };
 
 static const char *menus_Settings[] = {
-	"Colors", "Decompiler", "Disassembly", "Graphics",
+	"Colors", "Decompiler", "Disassembly", "Screen",
 	NULL
 };
 
@@ -144,7 +144,7 @@ static const char *menus_settings_disassembly[] = {
 	NULL
 };
 
-static const char *menus_settings_graphics[] = {
+static const char *menus_settings_screen[] = {
 	"scr.bgfill", "scr.color", "scr.utf8", "scr.utf8.curvy", "scr.wheel",
 	NULL
 };
@@ -286,7 +286,7 @@ static void __init_new_panels_root(RCore *core);
 static void __init_menu_saved_layout(void *core, const char *parent);
 static void __init_menu_color_settings_layout(void *core, const char *parent);
 static void __init_menu_disasm_settings_layout(void *_core, const char *parent);
-static void __init_menu_graphics_settings_layout(void *_core, const char *parent);
+static void __init_menu_screen_settings_layout(void *_core, const char *parent);
 
 /* create */
 static void __create_default_panels(RCore *core);
@@ -3328,8 +3328,8 @@ int __config_toggle_cb(void *user) {
 	if (!strcmp (parent->name, "Disassembly")) {
 		__update_menu(core, "Settings.Disassembly", __init_menu_disasm_settings_layout);
 	}
-	if (!strcmp (parent->name, "Graphics")) {
-		__update_menu(core, "Settings.Graphics", __init_menu_graphics_settings_layout);
+	if (!strcmp (parent->name, "Screen")) {
+		__update_menu(core, "Settings.Screen", __init_menu_screen_settings_layout);
 	}
 	return 0;
 }
@@ -3354,8 +3354,8 @@ int __config_value_cb(void *user) {
 	if (!strcmp (parent->name, "Disassembly")) {
 		__update_menu(core, "Settings.Disassembly", __init_menu_disasm_settings_layout);
 	}
-	if (!strcmp (parent->name, "Graphics")) {
-		__update_menu(core, "Settings.Graphics", __init_menu_graphics_settings_layout);
+	if (!strcmp (parent->name, "Screen")) {
+		__update_menu(core, "Settings.Screen", __init_menu_screen_settings_layout);
 	}
 	return 0;
 }
@@ -4425,16 +4425,16 @@ void __init_menu_disasm_settings_layout (void *_core, const char *parent) {
 	}
 }
 
-static void __init_menu_graphics_settings_layout(void *_core, const char *parent) {
+static void __init_menu_screen_settings_layout(void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
 	int i = 0;
-	while (menus_settings_graphics[i]) {
+	while (menus_settings_screen[i]) {
 		RStrBuf *rsb = r_strbuf_new (NULL);
-		const char *menu = menus_settings_graphics[i];
+		const char *menu = menus_settings_screen[i];
 		r_strbuf_append (rsb, menu);
 		r_strbuf_append (rsb, ": ");
 		r_strbuf_append (rsb, r_config_get (core->config, menu));
-		if (!strcmp (menus_settings_graphics[i], "scr.color")) {
+		if (!strcmp (menus_settings_screen[i], "scr.color")) {
 			__add_menu (core, parent, r_strbuf_drain (rsb), __config_value_cb);
 		} else {
 			__add_menu (core, parent, r_strbuf_drain (rsb), __config_toggle_cb);
@@ -4679,7 +4679,7 @@ bool __init_panels_menu(RCore *core) {
 	}
 
 	__init_menu_disasm_settings_layout (core, "Settings.Disassembly");
-	__init_menu_graphics_settings_layout (core, "Settings.Graphics");
+	__init_menu_screen_settings_layout (core, "Settings.Screen");
 
 	parent = "Edit.io.cache";
 	i = 0;
