@@ -427,7 +427,7 @@ R_API int r_core_is_valid_offset (RCore *core, ut64 offset) {
 	if (!core) {
 		eprintf ("r_core_is_valid_offset: core is NULL\n");
 		r_sys_backtrace ();
-		return R_FAIL;
+		return -1;
 	}
 	return r_io_is_valid_offset (core->io, offset, 0);
 }
