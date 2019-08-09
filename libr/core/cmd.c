@@ -3020,7 +3020,10 @@ next2:
 escape_backtick:
 	// TODO must honor " and `
 
-	if (r_str_endswith (cmd, "~?") && cmd[2] == '\0') {
+    // match ~? and ~?? help
+	if (strncmp(cmd, "~?", 2) == 0 &&
+        ((cmd[2] == '\0') || (cmd[2] == '?' && cmd[3] == '\0'))) {
+
 		r_cons_grep_help ();
 		r_list_free (tmpenvs);
 		return true;
