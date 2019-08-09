@@ -2388,11 +2388,11 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		switch (INSOP(1).type) {
 		case X86_OP_MEM:
 			// op->type = R_ANAL_OP_TYPE_ULEA;
-			op->ptr = INSOP(1).mem.disp;
+			op->disp = INSOP(1).mem.disp;
 			op->refptr = INSOP(1).size;
 			switch (INSOP(1).mem.base) {
 			case X86_REG_RIP:
-				op->ptr += addr + op->size;
+				op->ptr = addr + op->size + op->disp;
 				break;
 			case X86_REG_RBP:
 			case X86_REG_EBP:

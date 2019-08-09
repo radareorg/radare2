@@ -1009,6 +1009,9 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
 	core->parser->relsub_addr = 0;
+	if (core->parser->relsub && ds->analop.type == R_ANAL_OP_TYPE_LEA && ds->analop.ptr != UT64_MAX) {
+		core->parser->relsub_addr = ds->analop.ptr;
+	}
 	if (ds->varsub && ds->opstr) {
 		ut64 at = ds->vat;
 		RAnalFunction *f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL);
@@ -1070,7 +1073,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				core->parser->flagspace = NULL;
 			}
 		}
-		if (ds->analop.refptr) {
+		if (core->parser->relsub && ds->analop.refptr) {
 			if (core->parser->relsub_addr == 0) {
 				ut64 killme = UT64_MAX;
 				const int be = core->assembler->big_endian;
