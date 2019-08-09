@@ -77,7 +77,7 @@ static const char *menus_File[] = {
 };
 
 static const char *menus_Settings[] = {
-	"Colors", "Decompiler", "Disassembly",
+	"Colors", "Decompiler", "Disassembly", "Graphics",
 	NULL
 };
 
@@ -141,6 +141,11 @@ static char *menus_Colors[128];
 static const char *menus_settings_disassembly[] = {
 	"asm.bytes", "asm.section", "hex.section", "asm.cmt.right", "io.cache", "hex.pairs", "emu.str",
 	"asm.emu", "asm.var.summary", "asm.pseudo", "asm.flags.inbytes",
+	NULL
+};
+
+static const char *menus_settings_graphics[] = {
+	"scr.bgfill", "scr.color", "scr.utf8", "scr.utf8.curvy", "scr.wheel",
 	NULL
 };
 
@@ -281,6 +286,7 @@ static void __init_new_panels_root(RCore *core);
 static void __init_menu_saved_layout(void *core, const char *parent);
 static void __init_menu_color_settings_layout(void *core, const char *parent);
 static void __init_menu_disasm_settings_layout(void *_core, const char *parent);
+static void __init_menu_graphics_settings_layout(void *_core, const char *parent);
 
 /* create */
 static void __create_default_panels(RCore *core);
@@ -3319,7 +3325,12 @@ int __config_toggle_cb(void *user) {
 		p->view->refresh = true;
 		menu->refreshPanels[menu->n_refresh++] = p;
 	}
-	__update_menu(core, "Settings.Disassembly", __init_menu_disasm_settings_layout);
+	if (!strcmp (parent->name, "Disassembly")) {
+		__update_menu(core, "Settings.Disassembly", __init_menu_disasm_settings_layout);
+	}
+	if (!strcmp (parent->name, "Graphics")) {
+		__update_menu(core, "Settings.Graphics", __init_menu_graphics_settings_layout);
+	}
 	return 0;
 }
 
@@ -3340,7 +3351,12 @@ int __config_value_cb(void *user) {
 		p->view->refresh = true;
 		menu->refreshPanels[menu->n_refresh++] = p;
 	}
-	__update_menu(core, "Settings.Disassembly", __init_menu_disasm_settings_layout);
+	if (!strcmp (parent->name, "Disassembly")) {
+		__update_menu(core, "Settings.Disassembly", __init_menu_disasm_settings_layout);
+	}
+	if (!strcmp (parent->name, "Graphics")) {
+		__update_menu(core, "Settings.Graphics", __init_menu_graphics_settings_layout);
+	}
 	return 0;
 }
 
@@ -4409,6 +4425,24 @@ void __init_menu_disasm_settings_layout (void *_core, const char *parent) {
 	}
 }
 
+static void __init_menu_graphics_settings_layout(void *_core, const char *parent) {
+	RCore *core = (RCore *)_core;
+	int i = 0;
+	while (menus_settings_graphics[i]) {
+		RStrBuf *rsb = r_strbuf_new (NULL);
+		const char *menu = menus_settings_graphics[i];
+		r_strbuf_append (rsb, menu);
+		r_strbuf_append (rsb, ": ");
+		r_strbuf_append (rsb, r_config_get (core->config, menu));
+		if (!strcmp (menus_settings_graphics[i], "scr.color")) {
+			__add_menu (core, parent, r_strbuf_drain (rsb), __config_value_cb);
+		} else {
+			__add_menu (core, parent, r_strbuf_drain (rsb), __config_toggle_cb);
+		}
+		i++;
+	}
+}
+
 bool __init_panels_menu(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanelsMenu *panels_menu = R_NEW0 (RPanelsMenu);
@@ -4645,6 +4679,7 @@ bool __init_panels_menu(RCore *core) {
 	}
 
 	__init_menu_disasm_settings_layout (core, "Settings.Disassembly");
+	__init_menu_graphics_settings_layout (core, "Settings.Graphics");
 
 	parent = "Edit.io.cache";
 	i = 0;
