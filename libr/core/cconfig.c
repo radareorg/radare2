@@ -836,7 +836,7 @@ static bool cb_asmos(void *user, void *data) {
 		__setsegoff (core->config, asmarch->value, asmbits);
 	}
 	r_anal_set_os (core->anal, node->value);
-
+	r_core_anal_cc_init (core);
 	return true;
 }
 
