@@ -35,7 +35,6 @@ R_API int r_lib_types_get_i(const char *str) {
 
 R_API void *r_lib_dl_open(const char *libname) {
 	void *ret = NULL;
-	char *errmsg = "";
 #if __UNIX__
 	if (libname) {
 		ret = dlopen (libname, RTLD_GLOBAL | RTLD_LAZY);
@@ -43,7 +42,7 @@ R_API void *r_lib_dl_open(const char *libname) {
 		ret = dlopen (NULL, RTLD_NOW);
 	}
 	if (!ret && __has_debug) {
-		errmsg = dlerror ();
+		eprintf ("r_lib_dl_open: error: %s (%s)\n", libname, dlerror ());
 	}
 #elif __WINDOWS__
 	LPTSTR libname_;
@@ -61,10 +60,10 @@ R_API void *r_lib_dl_open(const char *libname) {
 	}
 	ret = LoadLibrary (libname_);
 	free (libname_);
-#endif
-	if (!ret) {
-		eprintf ("r_lib_dl_open: error: %s (%s)\n", libname, errmsg);
+	if (!ret && __has_debug) {
+		eprintf ("r_lib_dl_open: error: %s\n", libname);
 	}
+#endif
 	return ret;
 }
 
