@@ -1251,7 +1251,7 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == ' ') {
-			if (r_lib_open (core->lib, input+2) == R_FAIL) {
+			if (r_lib_open (core->lib, input + 2) == -1) {
 				eprintf ("Oops\n");
 			}
 		} else {

@@ -1,30 +1,14 @@
-/* radare - LGPL - Copyright 2008-2018 - pancake */
+/* radare - LGPL - Copyright 2008-2019 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
-#include "r_lib.h"
-#include <stdio.h>
+#include <r_util.h>
+#include <r_lib.h>
+
+// TODO: boolify
+#define IFDBG if(__has_debug)
 
 R_LIB_VERSION(r_lib);
 
-/* TODO: support for nested plugins ?? here */
-
-#if __UNIX__
-#include <dlfcn.h>
-  #define DLOPEN(x)  dlopen(x, RTLD_GLOBAL | RTLD_LAZY)
-  #define DLSYM(x,y) dlsym(x,y)
-  #define DLCLOSE(x) dlclose(x)
-#elif __WINDOWS__
-#include <windows.h>
-  #define DLOPEN(x)  LoadLibrary(x)
-  #define DLSYM(x,y) GetProcAddress(x,y)
-  #define DLCLOSE(x) 0//(x)
-//CloseLibrary(x)
-#else
-  #define DLOPEN(x)  NULL
-  #define DLSYM(x,y) NULL
-  #define DLCLOSE(x) NULL
-#endif
+static bool __has_debug = false;
 
 /* XXX : this must be registered in runtime */
 static const char *r_lib_types[] = {
@@ -32,12 +16,7 @@ static const char *r_lib_types[] = {
 	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", NULL
 };
 
-static int __has_debug = 0;
-
-#define IFDBG if(__has_debug)
-
-/* XXX: Rename this helper function */
-R_API const char *r_lib_types_get(int idx) {
+static const char *__lib_types_get(int idx) {
 	if (idx < 0 || idx > R_LIB_TYPE_LAST - 1) {
 		return "unk";
 	}
@@ -55,16 +34,21 @@ R_API int r_lib_types_get_i(const char *str) {
 }
 
 R_API void *r_lib_dl_open(const char *libname) {
-	void *ret;
+	void *ret = NULL;
 #if __UNIX__
-	if (!libname) {
-		return dlopen (NULL, RTLD_NOW);
+	if (libname) {
+		ret = dlopen (libname, RTLD_GLOBAL | RTLD_LAZY);
+	} else {
+		ret = dlopen (NULL, RTLD_NOW);
 	}
-#endif
-#if __WINDOWS__
+	if (!ret && __has_debug) {
+		eprintf ("r_lib_dl_open: error: %s (%s)\n", libname, dlerror ());
+	}
+#elif __WINDOWS__
 	LPTSTR libname_;
-
-	if (!libname || !*libname) {
+	if (libname && *libname) {
+		libname_ = r_sys_conv_utf8_to_win (libname);
+	} else {
 		libname_ = calloc (MAX_PATH, sizeof (char));
 		if (!libname_) {
 			R_LOG_ERROR ("lib/r_lib_dl_open: Failed to allocate memory.\n");
@@ -73,73 +57,60 @@ R_API void *r_lib_dl_open(const char *libname) {
 		if (!GetModuleFileName (NULL, libname_, MAX_PATH)) {
 			libname_[0] = '\0';
 		}
-	} else {
-		libname_ = r_sys_conv_utf8_to_win (libname);
 	}
-	ret = DLOPEN (libname_);
-#else
-	if (!libname || !*libname) {
-		return NULL;
-	}
-	ret = DLOPEN (libname);
-#endif
-	if (__has_debug && !ret) {
-#if __UNIX__
-		eprintf ("dlerror(%s): %s\n", libname, dlerror ());
-#else
-		eprintf ("r_lib_dl_open: Cannot open '%s'\n", libname);
-#endif
-	}
-#if __WINDOWS__
+	ret = LoadLibrary (libname_);
 	free (libname_);
+	if (!ret && __has_debug) {
+		eprintf ("r_lib_dl_open: error: %s\n", libname);
+	}
 #endif
 	return ret;
 }
 
 R_API void *r_lib_dl_sym(void *handler, const char *name) {
-	return DLSYM (handler, name);
+#if __UNIX__
+	return dlsym (handler, name);
+#elif __WINDOWS__
+	return GetProcAddress (handler, name);
+#else
+	return NULL;
+#endif
 }
 
 R_API int r_lib_dl_close(void *handler) {
-	int ret = -1;
-	if (handler) {
-		ret = DLCLOSE (handler);
-	}
-	return ret;
+#if __UNIX__
+	return dlclose (handler);
+#else
+	return handler? 0: -1;
+#endif
 }
 
-/* ---- */
-
 R_API char *r_lib_path(const char *libname) {
-	char *next, *path0, libpath[1024];
 #if __APPLE__
 	char *env = r_sys_getenv ("DYLD_LIBRARY_PATH");
-	const char *ext = ".dylib";
 	env = r_str_append (env, ":/lib:/usr/lib:/usr/local/lib");
 #elif __UNIX__
 	char *env = r_sys_getenv ("LD_LIBRARY_PATH");
-	const char *ext = ".so";
 	env = r_str_append (env, ":/lib:/usr/lib:/usr/local/lib");
 #else
-	char *env = strdup (".:../../../../../../../windows/system32");
-	const char *ext = ".dll";
+	char *env = strdup (".:../../../../../../../../../../../../windows/system32");
 #endif
 	if (!env) {
 		env = strdup (".");
 	}
-	path0 = env;
+	char *next, *path0 = env;
 	do {
 		next = strchr (path0, ':');
 		if (next) {
 			*next = 0;
 		}
-		snprintf (libpath, sizeof (libpath), "%s/%s%s", path0, libname, ext);
-		//eprintf ("--> %s\n", libpath);
+		char *libpath = r_str_newf ("%s/%s." R_LIB_EXT, path0, libname);
 		if (r_file_exists (libpath)) {
 			free (env);
-			return strdup (libpath);
+			return libpath;
 		}
-		path0 = next+1;
+		free (libpath);
+		path0 = next + 1;
 	} while (next);
 	free (env);
 	return NULL;
@@ -147,37 +118,34 @@ R_API char *r_lib_path(const char *libname) {
 
 R_API RLib *r_lib_new(const char *symname) {
 	RLib *lib = R_NEW (RLib);
-	char *env_debug;
 	if (lib) {
-		env_debug = r_sys_getenv ("R_DEBUG");
-		__has_debug = env_debug ? true : false;
-		if (env_debug) {
-			free (env_debug);
+		char *e = r_sys_getenv ("R_DEBUG");
+		if (e) {
+			__has_debug = *e;
+			free (e);
+		} else {
+			__has_debug = false;
 		}
 		lib->handlers = r_list_newf (free);
 		lib->plugins = r_list_newf (free);
-		strncpy (lib->symname, symname, sizeof (lib->symname)-1);
+		lib->symname = strdup (symname);
 	}
 	return lib;
 }
 
-R_API RLib *r_lib_free(RLib *lib) {
-	if (!lib) {
-		return NULL;
+R_API void r_lib_free(RLib *lib) {
+	if (lib) {
+		r_lib_close (lib, NULL);
+		r_list_free (lib->handlers);
+		r_list_free (lib->plugins);
+		free (lib->symname);
+		free (lib);
 	}
-	r_lib_close (lib, NULL);
-	r_list_free (lib->handlers);
-	r_list_free (lib->plugins);
-	free (lib);
-	return NULL;
 }
 
-/* THIS IS WRONG */
-R_API int r_lib_dl_check_filename(const char *file) {
-	return (strstr (file, "."R_LIB_EXT)) != NULL;
+static bool __lib_dl_check_filename(const char *file) {
+	return r_str_endswith (file, "." R_LIB_EXT);
 }
-
-/* high level api */
 
 R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 	RLibHandler *h = plugin->handler;
@@ -186,7 +154,7 @@ R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 		return h->constructor (plugin, h->user, symbol->data);
 	}
 	IFDBG eprintf ("Cannot find plugin constructor\n");
-	return R_FAIL;
+	return -1;
 }
 
 R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
@@ -202,9 +170,9 @@ R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
 
 R_API int r_lib_close(RLib *lib, const char *file) {
 	RLibPlugin *p;
-	RListIter *iter, *iter_tmp;
-	r_list_foreach_safe (lib->plugins, iter, iter_tmp, p) {
-		if ((file==NULL || (!strcmp (file, p->file)))) {
+	RListIter *iter, *iter2;
+	r_list_foreach_safe (lib->plugins, iter, iter2, p) {
+		if ((!file || !strcmp (file, p->file))) {
 			int ret = 0;
 			if (p->handler && p->handler->destructor) {
 				ret = p->handler->destructor (p, p->handler->user, p->data);
@@ -239,47 +207,17 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 	return -1;
 }
 
-// XXX ugly hack ?
-static int samefile(const char *a, const char *b) {
-	char *sa = strdup (a);
-	char *sb = strdup (b);
-	char *ptr;
-	int len, ret = false;
-
-	if (sa != NULL && sb != NULL) {
-		do {
-			ptr = strstr (sa, "//");
-			if (ptr) {
-				len = strlen (ptr+1) + 1;
-				memmove (ptr, ptr+1, len);
-			}
-		} while (ptr);
-		do {
-			ptr = strstr (sb, "//");
-			if (ptr) {
-				len = strlen (ptr+1) + 1;
-				memmove (ptr, ptr+1, len);
-			}
-		} while (ptr);
-		ret = strcmp (sa,sb)? false: true;
-	}
-
-	free (sa);
-	free (sb);
-	return ret;
-}
-
 R_API int r_lib_open(RLib *lib, const char *file) {
 	/* ignored by filename */
-	if (!r_lib_dl_check_filename (file)) {
+	if (!__lib_dl_check_filename (file)) {
 		eprintf ("Invalid library extension: %s\n", file);
-		return R_FAIL;
+		return -1;
 	}
 
 	void *handler = r_lib_dl_open (file);
 	if (!handler) {
 		IFDBG eprintf ("Cannot open library: '%s'\n", file);
-		return R_FAIL;
+		return -1;
 	}
 
 	RLibStruct *stru = (RLibStruct *) r_lib_dl_sym (handler, lib->symname);
@@ -287,42 +225,40 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 		IFDBG eprintf ("Cannot find symbol '%s' in library '%s'\n",
 			lib->symname, file);
 		r_lib_dl_close (handler);
-		return R_FAIL;
+		return -1;
 	}
 
 	return r_lib_open_ptr (lib, file, handler, stru);
 }
 
-R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct *stru) {
+static bool __alreadyLoaded(RLib *lib, const char *file) {
+	const char *fileName = r_str_rstr (file, R_SYS_DIR);
 	RLibPlugin *p;
 	RListIter *iter;
-	int ret = false;
-
-	if (!lib || !file || !stru) {
-		return R_FAIL;
+	if (fileName) {
+		r_list_foreach (lib->plugins, iter, p) {
+			const char *pFileName = r_str_rstr (p->file, R_SYS_DIR);
+			if (pFileName && !strcmp (fileName, pFileName)) {
+				return true;
+			}
+		}
 	}
+	return false;
+}
+
+R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru) {
+	r_return_val_if_fail (lib && file && stru, -1);
 	if (stru->version) {
 		if (strcmp (stru->version, R2_VERSION)) {
 			eprintf ("Module version mismatch %s (%s) vs (%s)\n",
 				file, stru->version, R2_VERSION);
-			return R_FAIL;
+			return -1;
 		}
 	}
-	// TODO: Use Sdb here. just a single line
-	if (handler) {
-		r_list_foreach (lib->plugins, iter, p) {
-			if (samefile (file, p->file)) {
-				IFDBG eprintf ("Dupped\n");
-				// TODO: reload if opening again?
-				// TODO: store timestamp of file
-				// TODO: autoreload plugins if updated \o/
-				r_lib_dl_close (handler);
-				return R_FAIL;
-			}
-		}
+	if (__alreadyLoaded (lib, file)) {
+		return -1;
 	}
-
-	p = R_NEW0 (RLibPlugin);
+	RLibPlugin *p = R_NEW0 (RLibPlugin);
 	p->type = stru->type;
 	p->data = stru->data;
 	p->file = strdup (file);
@@ -330,8 +266,8 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 	p->handler = r_lib_get_handler (lib, p->type);
 	p->free = stru->free;
 
-	ret = r_lib_run_handler (lib, p, stru);
-	if (ret == R_FAIL) {
+	int ret = r_lib_run_handler (lib, p, stru);
+	if (ret == -1) {
 		IFDBG eprintf ("Library handler has failed for '%s'\n", file);
 		free (p->file);
 		free (p);
@@ -343,7 +279,8 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 	return ret;
 }
 
-R_API int r_lib_opendir(RLib *lib, const char *path) {
+R_API bool r_lib_opendir(RLib *lib, const char *path) {
+	r_return_val_if_fail (lib && path, false);
 #if __WINDOWS__
 	wchar_t file[1024];
 	WIN32_FIND_DATAW dir;
@@ -381,7 +318,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 		swprintf (file, _countof (file), L"%ls/%ls", wcpath, dir.cFileName);
 		wctocbuff = r_utf16_to_utf8 (file);
 		if (wctocbuff) {
-			if (r_lib_dl_check_filename (wctocbuff)) {
+			if (__lib_dl_check_filename (wctocbuff)) {
 				r_lib_open (lib, wctocbuff);
 			} else {
 				IFDBG eprintf ("Cannot open %ls\n", dir.cFileName);
@@ -402,7 +339,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 			continue;
 		}
 		snprintf (file, sizeof (file), "%s/%s", path, de->d_name);
-		if (r_lib_dl_check_filename (file)) {
+		if (__lib_dl_check_filename (file)) {
 			IFDBG eprintf ("Loading %s\n", file);
 			r_lib_open (lib, file);
 		} else {
@@ -461,11 +398,12 @@ R_API bool r_lib_del_handler(RLib *lib, int type) {
 	return false;
 }
 
+// TODO _list methods should not exist.. only used in ../core/cmd_log.c: r_lib_list (core->lib);
 R_API void r_lib_list(RLib *lib) {
 	RListIter *iter;
 	RLibPlugin *p;
 	r_list_foreach (lib->plugins, iter, p) {
-		printf (" %5s %p %s \n", r_lib_types_get (p->type),
+		printf (" %5s %p %s \n", __lib_types_get (p->type),
 			p->dl_handler, p->file);
 	}
 }
