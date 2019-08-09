@@ -2979,8 +2979,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			char *cc = argument;
 			r_str_trim (cc);
 			if (!r_anal_cc_exist (core->anal, cc)) {
-				eprintf ("Unknown calling convention '%s'\n"
-						"See afcl for available types\n", cc);
+				const char *asmOs = r_config_get (core->config, "asm.os");
+				eprintf ("afc: Unknown calling convention '%s' for '%s'\n"
+						"See afcl for available types\n", cc, asmOs);
 			} else {
 				fcn->cc = (const char *) r_str_new (cc);
 			}
