@@ -3019,7 +3019,7 @@ next2:
 	}
 escape_backtick:
 	// TODO must honor " and `
-	if (*cmd != '"' && strstr (cmd, "~?") {
+	if (*cmd != '"' && strstr (cmd, "~?")) {
 		r_cons_grep_help ();
 		r_list_free (tmpenvs);
 		return true;
