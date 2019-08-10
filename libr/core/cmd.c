@@ -27,6 +27,9 @@
 #include <sys/utsname.h>
 #endif
 
+R_API void r_save_panels_layout(RCore *core, const char *_name);
+R_API void r_load_panels_layout(RCore *core, const char *_name);
+
 #define DEFINE_CMD_DESCRIPTOR(core, cmd_) \
 	{ \
 		RCmdDescriptor *d = R_NEW0 (RCmdDescriptor); \
