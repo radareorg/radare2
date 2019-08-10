@@ -365,8 +365,8 @@ static void __panels_layout_refresh(RCore *core);
 static void __panels_layout(RPanels *panels);
 static void __layout_default(RPanels *panels);
 static void __layout_equal_hor(RPanels *panels);
-static void __save_panels_layout(RCore *core);
-static int __load_saved_panels_layout(RCore *core, const char *_name);
+R_API void r_save_panels_layout(RCore *core, const char *_name);
+R_API bool r_load_panels_layout(RCore *core, const char *_name);
 static void __split_panel_vertical(RCore *core, RPanel *p, const char *name, const char *cmd);
 static void __split_panel_horizontal(RCore *core, RPanel *p, const char *name, const char *cmd);
 static void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, int color);
@@ -3188,7 +3188,7 @@ int __load_layout_saved_cb(void *user) {
 	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	if (!__load_saved_panels_layout (core, child->name)) {
+	if (!r_load_panels_layout (core, child->name)) {
 		__create_default_panels (core);
 		__panels_layout (core->panels);
 	}
@@ -3217,7 +3217,7 @@ int __close_file_cb(void *user) {
 
 int __save_layout_cb(void *user) {
 	RCore *core = (RCore *)user;
-	__save_panels_layout (core);
+	r_save_panels_layout (core, NULL);
 	(void)__show_status (core, "Panels layout saved!");
 	return 0;
 }
@@ -5449,10 +5449,18 @@ char *__get_panels_config_path() {
 	return newPath;
 }
 
-void __save_panels_layout(RCore *core) {
+void r_save_panels_layout(RCore *core, const char *_name) {
 	int i;
+	if (!core->panels) {
+		return;
+	}
 	char *config_path = __get_panels_config_path ();
-	char *name = __show_status_input (core, "Name for the layout: ");
+	const char *name;
+	if (_name) {
+		name = _name;
+	} else {
+		name = __show_status_input (core, "Name for the layout: ");
+	}
 	RPanels *panels = core->panels;
 	PJ *pj = NULL;
 	pj = pj_new ();
@@ -5468,7 +5476,7 @@ void __save_panels_layout(RCore *core) {
 		pj_kn (pj, "h", panel->view->pos.h);
 		pj_end (pj);
 	}
-	FILE *file = fopen (config_path, "a");
+	FILE *file = fopen (config_path, "w");
 	if (!file) {
 		free (config_path);
 		return;
@@ -5476,7 +5484,9 @@ void __save_panels_layout(RCore *core) {
 	fprintf (file, "%s", pj_drain (pj));
 	fprintf (file, "\n");
 	fclose (file);
-	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
+	if (!_name) {
+		__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
+	}
 }
 
 char *__parse_panels_config(const char *cfg, int len) {
@@ -5510,11 +5520,14 @@ void __load_config_menu(RCore *core) {
 	}
 }
 
-int __load_saved_panels_layout(RCore *core, const char *_name) {
+bool r_load_panels_layout(RCore *core, const char *_name) {
+	if (!core->panels) {
+		return false;
+	}
 	char *config_path = __get_panels_config_path();
 	char *panels_config = r_file_slurp (config_path, NULL);
 	if (!panels_config) {
-		return 0;
+		return false;
 	}
 	RPanels *panels = core->panels;
 	int count = r_str_split (panels_config, '\n');
@@ -5554,7 +5567,7 @@ int __load_saved_panels_layout(RCore *core, const char *_name) {
 				RStrBuf *rsb = r_strbuf_new (NULL);
 				r_core_visual_append_help (rsb, "Visual Ascii Art Panels", help_msg_panels);
 				if (!rsb) {
-					return 0;
+					return false;
 				}
 				__set_read_only (p, r_strbuf_drain (rsb));
 			}
@@ -5567,10 +5580,10 @@ int __load_saved_panels_layout(RCore *core, const char *_name) {
 	}
 	free (panels_config);
 	if (!panels->n_panels) {
-		return 0;
+		return false;
 	}
 	__set_refresh_all (core, true, false);
-	return 1;
+	return true;
 }
 
 void __maximize_panel_size(RPanels *panels) {
@@ -6153,6 +6166,12 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 			panels_root->cur_pdc_cache = sdb;
 		}
 	}
+	{
+		const char *l = r_config_get (core->config, "scr.layout");
+		if (l && *l) {
+			r_core_cmdf (core, "v %s", l);
+		}
+	}
 	while (panels_root->n_panels) {
 		__set_root_state (core, DEFAULT);
 		__panels_process (core, panels_root->panels[panels_root->cur_panels]);
@@ -6440,7 +6459,13 @@ void __panels_process(RCore *core, RPanels *panels) {
 
 	bool originVmode = core->vmode;
 	core->vmode = true;
-
+	{
+		const char *layout = r_config_get (core->config, "scr.layout");
+		if (layout && *layout) {
+			r_load_panels_layout (core, layout);
+			r_save_panels_layout (core, layout);
+		}
+	}
 	r_cons_enable_mouse (false);
 repeat:
 	r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
@@ -6550,6 +6575,14 @@ repeat:
 		break;
 	case ';':
 		__handleComment (core);
+		break;
+	case '$':
+		if (core->print->cur_enabled) {
+			r_core_cmdf (core, "dr PC=$$+%d", core->print->cur);
+		} else {
+			r_core_cmd0 (core, "dr PC=$$");
+		}
+		__set_refresh_all (core, false, false);
 		break;
 	case 's':
 		__panel_single_step_in (core);
@@ -6822,7 +6855,7 @@ repeat:
 		__set_refresh_all (core, false, false);
 		break;
 	case 'W':
-		__move_panel_to_dir(core, cur, panels->curnode);
+		__move_panel_to_dir (core, cur, panels->curnode);
 		break;
 	case 0x0d: // "\\n"
 		__toggle_zoom_mode (core);
