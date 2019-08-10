@@ -266,7 +266,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 }
 
 R_API RConfigNode* r_config_node_get(RConfig *cfg, const char *name) {
-	r_return_val_if_fail (cfg && name && *name, NULL);
+	r_return_val_if_fail (cfg && name, NULL);
 	return ht_pp_find (cfg->ht, name, NULL);
 }
 
