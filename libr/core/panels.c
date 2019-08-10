@@ -1576,8 +1576,22 @@ bool __handle_zoom_mode(RCore *core, const int key) {
 	case 'C':
 	case ';':
 	case ' ':
+	case '_':
 	case '"':
 	case 'A':
+	case 'r':
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+	case 'u':
+	case 'U':
 	case 'b':
 	case 'd':
 	case 'n':
@@ -1586,7 +1600,11 @@ bool __handle_zoom_mode(RCore *core, const int key) {
 	case 'h':
 	case 'j':
 	case 'k':
+	case 'J':
+	case 'K':
 	case 'l':
+	case '.':
+	case 'R':
 	case 'p':
 	case 'P':
 	case 's':
