@@ -1051,25 +1051,18 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 }
 
 static int var_cmd(RCore *core, const char *str) {
-	char *p, *ostr;
 	int delta, type = *str, res = true;
 	RAnalVar *v1;
-	if (!str[0] || str[1] == '?'|| str[0] == '?') {
-		var_help (core, *str);
-		return res;
-	}
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	if (!fcn) {
-		eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
-		return false;
-	}
-	ostr = p = NULL;
 	if (!str[0]) {
 		// "afv"
 		r_core_cmd0 (core, "afvs");
 		r_core_cmd0 (core, "afvb");
 		r_core_cmd0 (core, "afvr");
 		return true;
+	}
+	if (!str[0] || str[1] == '?'|| str[0] == '?') {
+		var_help (core, *str);
+		return res;
 	}
 	if (str[0] == 'j') {
 		// "afvj"
@@ -1082,7 +1075,9 @@ static int var_cmd(RCore *core, const char *str) {
 		r_cons_printf ("}\n");
 		return true;
 	}
-	ostr = p = strdup (str);
+	char *p = strdup (str);
+	char *ostr = p;
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
 	case '-':
@@ -1094,18 +1089,26 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'R': // "afvR"
 	case 'W': // "afvW"
 	case '*': // "afv*"
-		{
+		if (fcn) {
 			char *name = r_str_trim_head (strchr (ostr, ' '));
 			list_vars (core, fcn, str[0], name);
 			return true;
+		} else {
+			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+			return false;
 		}
 	case 'a': // "afva"
-		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
-		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
-		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
-		r_core_recover_vars (core, fcn, false);
-		free (p);
-		return true;
+		if (fcn) {
+			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
+			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
+			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
+			r_core_recover_vars (core, fcn, false);
+			free (p);
+			return true;
+		} else {
+			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+			return false;
+		}
 	case 'n':
 		if (str[1]) { // "afvn"
 			RAnalOp *op = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_BASIC);
