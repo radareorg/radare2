@@ -1542,7 +1542,7 @@ R_API void r_cons_highlight(const char *word) {
 	};
 
         if (!I.enable_highlight) {
-                r_cons_enable_highlight(true);
+                r_cons_enable_highlight (true);
                 return;
         }
 	if (word && *word && I.context->buffer) {
