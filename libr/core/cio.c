@@ -106,6 +106,18 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	return true;
 }
 
+static inline void __endian_swap(ut8 *buf, ut32 blocksize, ut64 len) {
+	int i, j;
+	ut8 tmp;
+	for (i=0; i<blocksize; i+=len) {
+		for (j=0; j<len/2; j++) {
+			tmp = buf[i+j];
+			buf[i+j] = buf[i+len-j-1];
+			buf[i+len-j-1] = tmp;
+		}
+	}
+}
+
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	int i, j, ret = false;
 	ut64 len;
@@ -227,6 +239,10 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			}
 		}
 	} else {
+		bool be = r_config_get_i (core->config, "cfg.bigendian");
+		if (!be) {
+			__endian_swap(str, len, len);
+		}
 		for (i=j=0; i<core->blocksize; i++) {
 			switch (op) {
 			case 'x': buf[i] ^= str[j]; break;
@@ -244,6 +260,9 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			if (j >= len) {
 				j = 0; /* cyclic key */
 			}
+		}
+		if (!be) {
+			__endian_swap(str, len, len);
 		}
 	}
 
