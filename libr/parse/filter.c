@@ -134,13 +134,12 @@ static void __replaceRegisters(RReg *reg, char *s, bool x86) {
 }
 
 static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
-	char *ptr = data, *ptr2, *ptr_backup;
+	char *ptr = data, *ptr2;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
 	ut64 off;
 	bool x86 = false;
 	bool arm = false;
-	bool computed = false;
 	if (p && p->cur && p->cur->name) {
 		if (strstr (p->cur->name, "x86")) {
 			x86 = true;
@@ -197,9 +196,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 			if (f) {
 				RFlagItem *flag2;
 				flag = p->flag_get (f, off);
-				computed = false;
 				if ((!flag || arm) && p->relsub_addr) {
-					computed = true;
 					flag2 = p->flag_get (f, p->relsub_addr);
 					if (!flag || arm) {
 						flag = flag2;
@@ -214,21 +211,25 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 						ptr = ptr2;
 						continue;
 					}
-					// hack to realign pointer for colours
-					ptr2--;
-					if (*ptr2 != 0x1b) {
-						ptr2++;
-					}
-					ptr_backup = ptr;
-					if (computed && ptr != ptr2 && *ptr) {
-						if (*ptr2 == ']') {
-							ptr2++;
-							for (ptr--; ptr > data && *ptr != '['; ptr--) {
-								;
-							}
-							if (ptr == data) {
-								ptr = ptr_backup;
-							}
+					if ((p->analop && p->analop->type == R_ANAL_OP_TYPE_LEA) || arm) {
+						// Remove brackets
+						char *left = ptr;
+						for (; left > data
+						       && !(*left == '[' && *(left - 1) != 0x1b); left--) {
+							;
+						}
+						if (*left == '[') {
+							memmove (left, left + 1, strlen (left + 1) + 1);
+							ptr--;
+							ptr2--;
+						}
+						char *right = ptr2;
+						for (; *right && right > data
+						       && !(*right == ']' && *(right - 1) != 0x1b); right++) {
+							;
+						}
+						if (*right == ']') {
+							memmove (ptr2, right + 1, strlen (right + 1) + 1);
 						}
 					}
 					*ptr = 0;
@@ -262,72 +263,6 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					}
 					snprintf (str, len, "%s%s%s", data, flagname, (ptr != ptr2) ? ptr2 : "");
 					free (flagname);
-					bool banned = false;
-					{
-						const char *p = strchr (str, '[');
-						const char *a = strchr (str, '+');
-						const char *m = strchr (str, '*');
-						if (p && (a || m)) {
-							banned = true;
-						}
-					}
-					if (p->relsub_addr && !banned) {
-						int flag_len = strlen (flag->name);
-						char *ptr_end = str + strlen (data) + flag_len - 1;
-						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
-						bool ansi_found = false;
-						if (!*ptr_end) {
-							return true;
-						}
-						while (*ptr_right) {
-							if (*ptr_right == 0x1b) {
-								while (*ptr_right && *ptr_right != 'm') {
-									ptr_right++;
-								}
-								if (*ptr_right) {
-									ptr_right++;
-								}
-								ansi_found = true;
-								continue;
-							}
-							if (*ptr_right == ']') {
-								ptr_left = ptr_esc = ptr_end - flag_len;
-								while (ptr_left >= str) {
-									if (*ptr_left == '[' &&
-									(ptr_left == str || *(ptr_left - 1) != 0x1b)) {
-										break;
-									}
-									ptr_left--;
-								}
-								if (ptr_left < str) {
-									break;
-								}
-								for (; ptr_esc >= str && *ptr_esc != 0x1b; ptr_esc--) {
-									;
-								}
-								if (ptr_esc < str) {
-									ptr_esc = ptr_end - flag_len + 1;
-								}
-								int copied_len = ptr_end - ptr_esc + 1;
-								if (copied_len < 1) {
-									break;
-								}
-								memmove (ptr_left, ptr_esc, copied_len);
-								char *dptr_left = strcpy (ptr_left + copied_len,
-										(ansi_found && ptr_right - ptr_end + 1 >= 4) ? Color_RESET : "");
-								int dlen = strlen (dptr_left);
-								dptr_left += dlen;
-								char *dptr_end = ptr_right + 1;
-								while (*dptr_end) {
-									dptr_end++;
-								}
-								int llen = dptr_end - (ptr_right + 1);
-								memmove (dptr_left, ptr_right + 1, llen);
-								dptr_left[llen] = 0;
-							}
-							break;
-						}
-					}
 					return true;
 				}
 				if (p->tailsub) { //  && off > UT32_MAX && addr > UT32_MAX)

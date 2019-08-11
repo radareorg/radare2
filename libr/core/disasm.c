@@ -1008,6 +1008,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	/* initialize */
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
+	core->parser->analop = &ds->analop;
 	core->parser->relsub_addr = 0;
 	if (core->parser->relsub && ds->analop.type == R_ANAL_OP_TYPE_LEA && ds->analop.ptr != UT64_MAX) {
 		core->parser->relsub_addr = ds->analop.ptr;
