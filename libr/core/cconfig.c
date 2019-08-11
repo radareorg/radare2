@@ -1103,10 +1103,10 @@ static bool cb_str_escbslash(void *user, void *data) {
 }
 
 static bool cb_completion_maxtab (void *user, void *data) {
-    RCore *core = (RCore*) user;
-    RConfigNode *node = (RConfigNode*) data;
-    core->cons->line->completion.args_limit = node->i_value;
-    return true;
+        RCore *core = (RCore*) user;
+        RConfigNode *node = (RConfigNode*) data;
+        core->cons->line->completion.args_limit = node->i_value;
+        return true;
 }
 
 static bool cb_cfg_fortunes(void *user, void *data) {
