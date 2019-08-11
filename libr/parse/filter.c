@@ -211,13 +211,26 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 						ptr = ptr2;
 						continue;
 					}
-					if ((p->analop && p->analop->type == R_ANAL_OP_TYPE_LEA) || arm) {
-						// Remove brackets
-						char *left = ptr;
-						for (; left > data
-						       && !(*left == '[' && *(left - 1) != 0x1b); left--) {
+					char *left = ptr;
+					for (; left > data
+					       && !(*left == '[' && *(left - 1) != 0x1b) && *left != ']' ; left--) {
+						;
+					}
+					if (*left == '[') {  // for [reg + disp] case
+						char *prefix = ptr;
+						for (; prefix > left && *prefix != 0x1b; prefix--) {
 							;
 						}
+						if (prefix == left) {
+							prefix = ptr;
+						}
+						memmove (left + 1, prefix, strlen (prefix) + 1);
+						ptr -= prefix - (left + 1);
+						ptr2 -= prefix - (left + 1);
+					}
+					if ((p->analop && p->analop->type == R_ANAL_OP_TYPE_LEA) || arm
+					    || /* HACK for axt */ (x86 && r_str_startswith (data, "lea "))) {
+						// remove brackets
 						if (*left == '[') {
 							memmove (left, left + 1, strlen (left + 1) + 1);
 							ptr--;
