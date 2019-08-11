@@ -1102,6 +1102,13 @@ static bool cb_str_escbslash(void *user, void *data) {
 	return true;
 }
 
+static bool cb_completion_maxtab (void *user, void *data) {
+    RCore *core = (RCore*) user;
+    RConfigNode *node = (RConfigNode*) data;
+    core->cons->line->completion.args_limit = node->i_value;
+    return true;
+}
+
 static bool cb_cfg_fortunes(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -3422,6 +3429,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "scr.fgets", "Use fgets() instead of dietline for prompt input");
 	SETCB ("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");
 	SETICB ("scr.linesleep", 0, &cb_scrlinesleep, "Flush sleeping some ms in every line");
+	SETICB ("scr.maxtab", 4096, &cb_completion_maxtab, "Change max number of auto completion suggestions");
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "Flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "Force flush to console in realtime (breaks scripting)");
 	SETPREF ("scr.slow", "true", "Do slow stuff on visual mode like RFlag.get_at(true)");

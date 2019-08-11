@@ -330,6 +330,7 @@ typedef struct r_core_t {
 	struct r_core_t *c2;
 	RCoreAutocomplete *autocomplete;
 	int autocomplete_type;
+	int maxtab;
 	REvent *ev;
 	RList *gadgets;
 	bool scr_gadgets;

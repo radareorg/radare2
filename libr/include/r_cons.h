@@ -995,6 +995,7 @@ typedef int (*RLineCompletionCb)(RLineCompletion *completion, RLineBuffer *buf, 
 struct r_line_comp_t {
 	bool opt;
 	size_t args_limit;
+	bool quit;
 	RPVector args; /* <char *> */
 	RLineCompletionCb run;
 	void *run_user;
