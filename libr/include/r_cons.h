@@ -1076,6 +1076,7 @@ R_API void r_line_completion_clear(RLineCompletion *completion);
 #endif
 
 typedef int (*RPanelsMenuCallback)(void *user);
+typedef void (*RPanelsMouseCallback)(void *user, int x, int y);
 typedef struct r_panels_menu_item {
 	int n_sub, selectedIndex;
 	char *name;
@@ -1147,6 +1148,9 @@ typedef struct r_panels_t {
 	RList *snows;
 	char *name;
 	ut64 addr;
+	RPanelsMouseCallback mouse_cb;
+	int mouse_cb_x;
+	int mouse_cb_y;
 } RPanels;
 
 typedef enum {
