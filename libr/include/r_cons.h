@@ -940,7 +940,7 @@ R_API int r_cons_get_column(void);
 R_API char *r_cons_message(const char *msg);
 R_API void r_cons_set_title(const char *str);
 R_API bool r_cons_enable_mouse(const bool enable);
-R_API bool r_cons_enable_highlight(const bool enable);
+R_API void r_cons_enable_highlight(const bool enable);
 R_API void r_cons_bind(RConsBind *bind);
 R_API const char* r_cons_get_rune(const ut8 ch);
 #endif

@@ -469,7 +469,7 @@ R_API bool r_cons_get_click(int *x, int *y) {
 	return set;
 }
 
-R_API bool r_cons_enable_highlight(const bool enable) {
+R_API void r_cons_enable_highlight(const bool enable) {
         I.enable_highlight = enable;
 }
 
