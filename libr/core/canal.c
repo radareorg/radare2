@@ -5247,6 +5247,11 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 				continue;
 			}
 
+			// skip recursing refereces
+			if (xrefop->jump == f->addr || xrefop->ptr == f->addr) {
+				continue;
+			}
+
 			int depth = r_config_get_i (core->config, "anal.depth");
 			ut64 addr = f->addr;
 
