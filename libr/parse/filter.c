@@ -237,8 +237,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 							ptr2--;
 						}
 						char *right = ptr2;
-						for (; *right && right > data
-						       && !(*right == ']' && *(right - 1) != 0x1b); right++) {
+						for (; *right && *right != ']'; right++) {
 							;
 						}
 						if (*right == ']') {
