@@ -5213,10 +5213,6 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 		}
 	}
 
-	if (!r_list_length (todo)) {
-		return;
-	}
-
 	while(r_list_length (todo)) {
 		RAnalFunction *noretf = r_list_pop (todo);
 		if (!noretf) {
