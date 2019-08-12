@@ -5263,8 +5263,10 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 
 			if (!r_list_contains(done, f->addr) && is_noreturn_function (core, f)) {
 				r_anal_noreturn_add (core->anal, NULL, f->addr);
-				r_list_append (todo, f);
-				r_list_append (done, f->addr);
+				if (f->addr) {
+					r_list_append (todo, f);
+					r_list_append (done, f->addr);
+				}
 			}
 
 			r_anal_op_free (xrefop);
