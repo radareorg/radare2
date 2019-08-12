@@ -5241,7 +5241,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 			}
 
 			f = r_anal_get_fcn_in (core->anal, xref->addr, 0);
-			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM && f->type != R_ANAL_FCN_TYPE_NULL)) {
+			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
 				continue;
 			}
 
