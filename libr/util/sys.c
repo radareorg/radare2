@@ -105,6 +105,36 @@ R_LIB_VERSION(r_util);
 	eprintf ("r_sys_run_rop: Unsupported arch\n");
 #endif
 
+#ifdef __x86_64__
+# ifdef _MSC_VER
+#  define R_SYS_ASM_START_ROP() \
+	 eprintf ("r_sys_run_rop: Unsupported arch\n");
+# else
+#  define R_SYS_ASM_START_ROP() \
+	 __asm__ __volatile__ ("leaq %0, %%rsp; ret" \
+				: \
+				: "m" (*bufptr) \
+				:);
+# endif
+#elif __i386__
+# ifdef _MSC_VER
+#  define R_SYS_ASM_START_ROP() \
+	__asm { \
+		lea esp, bufptr \
+		ret \
+	}
+# else
+#  define R_SYS_ASM_START_ROP() \
+	__asm__ __volatile__ ("leal %0, %%esp; ret" \
+				: \
+				: "m" (*bufptr) \
+				:);
+# endif
+#else
+# define R_SYS_ASM_START_ROP() \
+	eprintf ("r_sys_run_rop: Unsupported arch\n");
+#endif
+
 static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"x86", R_SYS_ARCH_X86},
     {"arm", R_SYS_ARCH_ARM},
