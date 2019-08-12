@@ -291,11 +291,6 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			break;
 		case 'X':
 			// execute rop chain
-			show_execute = true;
-			show_execute_rop = true;
-			break;
-		case 'X':
-			// execute rop chain
 			show_execute = 1;
 			show_execute_rop = 1;
 			break;
