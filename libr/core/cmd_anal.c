@@ -1051,73 +1051,64 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 }
 
 static int var_cmd(RCore *core, const char *str) {
-	char *p, *ostr;
 	int delta, type = *str, res = true;
 	RAnalVar *v1;
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	ostr = p = NULL;
 	if (!str[0]) {
 		// "afv"
-		if (fcn) {
-			r_core_cmd0 (core, "afvs");
-			r_core_cmd0 (core, "afvb");
-			r_core_cmd0 (core, "afvr");
-			return true;
-		}
-		eprintf ("Cannot find function\n");
-		return false;
-	}
-	if (str[0] == 'j') {
-		// "afvj"
-		if (fcn) {
-			r_cons_printf ("{\"sp\":");
-			r_core_cmd0 (core, "afvsj");
-			r_cons_printf (",\"bp\":");
-			r_core_cmd0 (core, "afvbj");
-			r_cons_printf (",\"reg\":");
-			r_core_cmd0 (core, "afvrj");
-			r_cons_printf ("}\n");
-			return true;
-		}
-		eprintf ("Cannot find function\n");
-		return false;
+		r_core_cmd0 (core, "afvs");
+		r_core_cmd0 (core, "afvb");
+		r_core_cmd0 (core, "afvr");
+		return true;
 	}
 	if (!str[0] || str[1] == '?'|| str[0] == '?') {
 		var_help (core, *str);
 		return res;
 	}
-	if (!fcn) {
-		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
-		return false;
+	if (str[0] == 'j') {
+		// "afvj"
+		r_cons_printf ("{\"sp\":");
+		r_core_cmd0 (core, "afvsj");
+		r_cons_printf (",\"bp\":");
+		r_core_cmd0 (core, "afvbj");
+		r_cons_printf (",\"reg\":");
+		r_core_cmd0 (core, "afvrj");
+		r_cons_printf ("}\n");
+		return true;
 	}
-	ostr = p = strdup (str);
+	char *p = strdup (str);
+	char *ostr = p;
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
 	case '-':
 		// "afv"
-		if (fcn) {
-			r_core_cmdf (core, "afvs-%s", str + 1);
-			r_core_cmdf (core, "afvb-%s", str + 1);
-			r_core_cmdf (core, "afvr-%s", str + 1);
-			return true;
-		}
-		eprintf ("Cannot find function\n");
-		return false;
+		r_core_cmdf (core, "afvs-%s", str + 1);
+		r_core_cmdf (core, "afvb-%s", str + 1);
+		r_core_cmdf (core, "afvr-%s", str + 1);
+		return true;
 	case 'R': // "afvR"
 	case 'W': // "afvW"
 	case '*': // "afv*"
-		{
+		if (fcn) {
 			char *name = r_str_trim_head (strchr (ostr, ' '));
 			list_vars (core, fcn, str[0], name);
 			return true;
+		} else {
+			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+			return false;
 		}
 	case 'a': // "afva"
-		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
-		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
-		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
-		r_core_recover_vars (core, fcn, false);
-		free (p);
-		return true;
+		if (fcn) {
+			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
+			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
+			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
+			r_core_recover_vars (core, fcn, false);
+			free (p);
+			return true;
+		} else {
+			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+			return false;
+		}
 	case 'n':
 		if (str[1]) { // "afvn"
 			RAnalOp *op = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_BASIC);
@@ -1216,8 +1207,7 @@ static int var_cmd(RCore *core, const char *str) {
 		r_anal_var_free (v1);
 		free (ostr);
 		return true;
-
-	}
+		}
 	}
 	switch (str[1]) { // afv[bsr]
 	case '\0':
@@ -2216,12 +2206,15 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 	}
 	fcn = r_anal_get_fcn_in (core->anal, fcnaddr, 0);
 	if (fcn) {
-		int ret = r_anal_fcn_add_bb (core->anal, fcn, addr, size, jump, fail, type, diff);
-		if (!ret) {
-			eprintf ("Cannot add basic block\n");
+		if (!r_anal_fcn_add_bb (core->anal, fcn, addr, size, jump, fail, type, diff))
+		//if (!r_anal_fcn_add_bb_raw (core->anal, fcn, addr, size, jump, fail, type, diff))
+		{
+			eprintf ("afb+: Cannot add basic block at 0x%08"PFMT64x"\n", addr);
+eprintf ("# %s\n", input);
 		}
 	} else {
-		eprintf ("Cannot find function at 0x%" PFMT64x "\n", fcnaddr);
+		eprintf ("afb+ Cannot find function at 0x%" PFMT64x " from 0x%08"PFMT64x" -> 0x%08"PFMT64x"\n",
+				fcnaddr, addr, jump);
 	}
 	r_anal_diff_free (diff);
 	free (ptr);
@@ -2427,7 +2420,7 @@ static void afCc(RCore *core, const char *input) {
 		// cf. canal.c
 		r_cons_printf ("%d\n", totalCycles);
 	} else {
-		eprintf ("Cannot find function\n");
+		eprintf ("afCc: Cannot find function\n");
 	}
 }
 
@@ -2615,7 +2608,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				r_cons_println (fcn->name);
 			}
 		} else {
-			eprintf ("Cannot find function\n");
+			eprintf ("afd: Cannot find function\n");
 		}
 		}
 		break;
@@ -2966,7 +2959,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		if (!input[2] || input[2] == ' ' || input[2] == 'r' || input[2] == 'a') {
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (!fcn) {
-				eprintf ("Cannot find function here\n");
+				eprintf ("afc: Cannot find function here\n");
 				break;
 			}
 		}
@@ -2979,8 +2972,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			char *cc = argument;
 			r_str_trim (cc);
 			if (!r_anal_cc_exist (core->anal, cc)) {
-				eprintf ("Unknown calling convention '%s'\n"
-						"See afcl for available types\n", cc);
+				const char *asmOs = r_config_get (core->config, "asm.os");
+				eprintf ("afc: Unknown calling convention '%s' for '%s'\n"
+						"See afcl for available types\n", cc, asmOs);
 			} else {
 				fcn->cc = (const char *) r_str_new (cc);
 			}
@@ -3103,8 +3097,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'B': // "afB" // set function bits
 		if (input[2] == ' ') {
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset,
-					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				int bits = atoi (input + 3);
 				r_anal_hint_set_bits (core->anal, fcn->addr, bits);
@@ -3113,7 +3106,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					core->anal->bits);
 				fcn->bits = bits;
 			} else {
-				eprintf ("Cannot find function to set bits\n");
+				eprintf ("afB: Cannot find function to set bits at 0x%08"PFMT64x"\n", core->offset);
 			}
 		} else {
 			eprintf ("Usage: afB [bits]\n");
@@ -3318,7 +3311,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					}
 					r_list_free (refs);
 				} else {
-					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", addr);
+					eprintf ("afx: Cannot find function at 0x%08"PFMT64x"\n", addr);
 				}
 			}
 			if (input[2] == 'j') {
@@ -3428,7 +3421,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 							f = r_anal_get_fcn_at (core->anal, fcn->addr, 0);
 						}
 						if (!f) {
-							eprintf ("Cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
+							eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
 						}
 					}
 #endif
@@ -3441,7 +3434,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		if (name) {
 			if (*name && !setFunctionName (core, addr, name, true)) {
-				eprintf ("Cannot find function at 0x%08" PFMT64x "\n", (ut64)addr);
+				eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", (ut64)addr);
 			}
 			free (name);
 		}

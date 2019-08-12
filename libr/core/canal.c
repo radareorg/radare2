@@ -2850,18 +2850,21 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 			fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?'m':
 			fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
 	// FIXME: this command prints something annoying. Does it have important side-effects?
+	fcn_list_bbs (fcn);
+	if (fcn->bits != 0) {
+		r_cons_printf ("afB %d @ 0x%08"PFMT64x"\n", fcn->bits, fcn->addr);
+	}
+	// FIXME command injection vuln here
 	r_cons_printf ("afc %s @ 0x%08"PFMT64x"\n", fcn->cc?fcn->cc: defaultCC, fcn->addr);
 	if (fcn->folded) {
 		r_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);
 	}
-	if (fcn->bits != 0) {
-		r_cons_printf ("afB %d @ 0x%08"PFMT64x"\n", fcn->bits, fcn->addr);
+	if (fcn) {
+		/* show variables  and arguments */
+		r_core_cmdf (core, "afvb* @ 0x%"PFMT64x"\n", fcn->addr);
+		r_core_cmdf (core, "afvr* @ 0x%"PFMT64x"\n", fcn->addr);
+		r_core_cmdf (core, "afvs* @ 0x%"PFMT64x"\n", fcn->addr);
 	}
-	fcn_list_bbs (fcn);
-	/* show variables  and arguments */
-	r_core_cmdf (core, "afvb* @ 0x%"PFMT64x"\n", fcn->addr);
-	r_core_cmdf (core, "afvr* @ 0x%"PFMT64x"\n", fcn->addr);
-	r_core_cmdf (core, "afvs* @ 0x%"PFMT64x"\n", fcn->addr);
 	/* Show references */
 	RListIter *refiter;
 	RAnalRef *refi;

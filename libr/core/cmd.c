@@ -27,6 +27,9 @@
 #include <sys/utsname.h>
 #endif
 
+R_API void r_save_panels_layout(RCore *core, const char *_name);
+R_API void r_load_panels_layout(RCore *core, const char *_name);
+
 #define DEFINE_CMD_DESCRIPTOR(core, cmd_) \
 	{ \
 		RCmdDescriptor *d = R_NEW0 (RCmdDescriptor); \
@@ -1670,6 +1673,25 @@ static int cmd_panels(void *data, const char *input) {
 	if (core->vmode) {
 		return false;
 	}
+	if (*input == '?') {
+		eprintf ("Usage: v[*i]\n");
+		eprintf ("v.test    # save curren layout with name test\n");
+		eprintf ("v test    # load saved layout with name test\n");
+		eprintf ("vi ...    # launch 'vim'\n");
+		return false;
+	}
+	if (*input == ' ') {
+		if (core->panels) {
+			r_load_panels_layout (core, input + 1);
+		}
+		r_config_set (core->config, "scr.layout", input + 1);
+		return true;
+	}
+	if (*input == '=') {
+		r_save_panels_layout (core, input + 1);
+		r_config_set (core->config, "scr.layout", input + 1);
+		return true;
+	}
 	if (*input == 'i') {
 		r_sys_cmdf ("v%s", input);
 		return false;
@@ -3019,11 +3041,27 @@ next2:
 	}
 escape_backtick:
 	// TODO must honor " and `
-
-	if (r_str_endswith (cmd, "~?") && cmd[2] == '\0') {
-		r_cons_grep_help ();
-		r_list_free (tmpenvs);
-		return true;
+	if (*cmd != '"' && *cmd) {
+		const char *s = strstr (cmd, "~?");
+		if (s) {
+			bool showHelp = false;
+			if (cmd == s) {
+				// ~?
+				// ~??
+				showHelp = true;
+			} else {
+				// pd~?
+				// pd~??
+				if (!strcmp (s, "~??")) {
+					showHelp = true;
+				}
+			}
+			if (showHelp) {
+				r_cons_grep_help ();
+				r_list_free (tmpenvs);
+				return true;
+			}
+		}
 	}
 	if (*cmd != '.') {
 		grep = r_cons_grep_strip (cmd, quotestr);

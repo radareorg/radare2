@@ -1756,7 +1756,6 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 		}
 		return false;
 	}
-	const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
 		if (addr == bbi->addr) {
@@ -1776,6 +1775,9 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 			r_anal_fcn_update_tinyrange_bbs (fcn);
 		}
 	}
+// TODO fix this x86-ism
+#if 1
+	const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 	if (is_x86) {
 		if (bb) {
 			r_list_delete_data (fcn->bbs, bb);
@@ -1790,8 +1792,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 				return true;
 			}
 			if (anal->verbose) {
-				eprintf ("Warning: r_anal_fcn_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x"\n",
-						fcn->addr, addr);
+				eprintf ("Warning: r_anal_fcn_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x"\n", fcn->addr, addr);
 			}
 			return false;
 		}
@@ -1805,6 +1806,20 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 		}
 		bb->addr = addr;
 	}
+#else
+	if (!bb) {
+		bb = appendBasicBlock (anal, fcn, addr);
+		if (!bb) {
+			eprintf ("appendBasicBlock failed\n");
+			return false;
+		}
+	}
+	bb->addr = addr;
+	r_anal_fcn_invalidate_read_ahead_cache ();
+	fcn_recurse (anal, fcn, addr, size, 1);
+	r_anal_fcn_update_tinyrange_bbs (fcn);
+	r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));
+#endif
 	bb->size = size;
 	bb->jump = jump;
 	bb->fail = fail;

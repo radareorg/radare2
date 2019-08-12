@@ -539,6 +539,8 @@ static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
 	RListIter *iter;
 	RIOMap *map;
 	if (desc) {
+		// reload bin info
+		r_cons_printf ("\"obf %s\"\n", desc->uri);
 		r_cons_printf ("\"ofs \\\"%s\\\" %s\"\n", desc->uri, r_str_rwx_i (desc->perm));
 		if ((maps = r_io_map_get_for_fd (core->io, id))) {
 			r_list_foreach (maps, iter, map) {
@@ -586,20 +588,6 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 		r_cons_flush ();
 	}
 
-	if (opts & R_CORE_PRJ_META) {
-		r_str_write (fd, "# meta\n");
-		r_meta_list (core->anal, R_META_TYPE_ANY, 1);
-		r_cons_flush ();
-		r_core_cmd (core, "fV*", 0);
-		r_cons_flush ();
-	}
-
-	if (opts & R_CORE_PRJ_XREFS) {
-		r_str_write (fd, "# xrefs\n");
-		r_core_cmd (core, "ax*", 0);
-		r_cons_flush ();
-	}
-
 	if (opts & R_CORE_PRJ_FCNS) {
 		r_str_write (fd, "# functions\n");
 		r_core_cmd (core, "afl*", 0);
@@ -611,6 +599,19 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 		r_core_cmd (core, "f.**", 0);
 		r_cons_flush ();
 	}
+	if (opts & R_CORE_PRJ_META) {
+		r_str_write (fd, "# meta\n");
+		r_meta_list (core->anal, R_META_TYPE_ANY, 1);
+		r_cons_flush ();
+		r_core_cmd (core, "fV*", 0);
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_XREFS) {
+		r_str_write (fd, "# xrefs\n");
+		r_core_cmd (core, "ax*", 0);
+		r_cons_flush ();
+	}
+
 
 	r_cons_singleton ()->fdout = fdold;
 	r_cons_singleton ()->context->is_interactive = true;
@@ -650,16 +651,7 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	fdold = r_cons_singleton ()->fdout;
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
-
 	r_str_write (fd, "# r2 rdb project file\n");
-
-	if (opts & R_CORE_PRJ_FLAGS) {
-		r_str_write (fd, "# flags\n");
-		r_flag_space_push (core->flags, NULL);
-		r_flag_list (core->flags, true, NULL);
-		r_flag_space_pop (core->flags);
-		r_cons_flush ();
-	}
 	// Set file.path and file.lastpath to empty string to signal
 	// new behaviour to project load routine (see io maps below).
 	r_config_set (core->config, "file.path", "");
@@ -667,6 +659,19 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	if (opts & R_CORE_PRJ_EVAL) {
 		r_str_write (fd, "# eval\n");
 		r_config_list (core->config, NULL, true);
+		r_cons_flush ();
+	}
+
+	if (opts & R_CORE_PRJ_FCNS) {
+		r_core_cmd (core, "afl*", 0);
+		r_cons_flush ();
+	}
+
+	if (opts & R_CORE_PRJ_FLAGS) {
+		r_str_write (fd, "# flags\n");
+		r_flag_space_push (core->flags, NULL);
+		r_flag_list (core->flags, true, NULL);
+		r_flag_space_pop (core->flags);
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_IO_MAPS && core->io && core->io->files) {
@@ -687,10 +692,6 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	}
 	if (opts & R_CORE_PRJ_XREFS) {
 		r_core_cmd (core, "ax*", 0);
-		r_cons_flush ();
-	}
-	if (opts & R_CORE_PRJ_FCNS) {
-		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_FLAGS) {

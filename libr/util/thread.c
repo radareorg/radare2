@@ -64,6 +64,11 @@ R_API bool r_th_setname(RThread *th, const char *name) {
 		eprintf ("Failed to set thread name\n");
 		return false;
 	}	
+#elif __APPLE__
+	if (pthread_setname_np (name) != 0) {
+		eprintf ("Failed to set thread name\n");
+		return false;
+	}
 #elif __FreeBSD__ || __OpenBSD__ || __DragonFly__
 	pthread_set_name_np (th->tid, name);
 #elif __NetBSD__
@@ -80,7 +85,7 @@ R_API bool r_th_setname(RThread *th, const char *name) {
 
 R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 #if defined(HAVE_PTHREAD_NP) && HAVE_PTHREAD_NP
-#if __linux__ || __NetBSD__
+#if __linux__ || __NetBSD__ || __APPLE__
 	if (pthread_getname_np (th->tid, name, len) != 0) {
 		eprintf ("Failed to get thread name\n");
 		return false;
