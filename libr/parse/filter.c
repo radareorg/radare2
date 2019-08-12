@@ -236,7 +236,8 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 						ptr -= prefix - (left + 1);
 						ptr2 -= prefix - (left + 1);
 					}
-					if ((p->analop && p->analop->type == R_ANAL_OP_TYPE_LEA) || arm
+					if ((p->analop && p->analop->type == R_ANAL_OP_TYPE_LEA)
+					    || (arm && p->relsub_addr)
 					    || /* HACK for axt */ (x86 && r_str_startswith (data, "lea "))) {
 						// remove brackets
 						if (*left == '[') {
