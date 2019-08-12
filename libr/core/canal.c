@@ -5202,7 +5202,9 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 	RAnalFunction *f;
 	RListIter *iter;
 	RList *todo;
+	RList *done;
 	todo = r_list_new ();
+	done = r_list_new ();
 
 	// find known noreturn functions to propagate
 	r_list_foreach (core->anal->fcns, iter, f) {
@@ -5247,11 +5249,6 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 				continue;
 			}
 
-			// skip recursing refereces
-			if (xrefop->jump == f->addr || xrefop->ptr == f->addr) {
-				continue;
-			}
-
 			int depth = r_config_get_i (core->config, "anal.depth");
 			ut64 addr = f->addr;
 
@@ -5264,13 +5261,15 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 				continue;
 			}
 
-			if (is_noreturn_function (core, f)) {
+			if (!r_list_contains(done, f->addr) && is_noreturn_function (core, f)) {
 				r_anal_noreturn_add (core->anal, NULL, f->addr);
 				r_list_append (todo, f);
+				r_list_append (done, f->addr);
 			}
 
 			r_anal_op_free (xrefop);
 		}
 	}
 	r_list_free (todo);
+	r_list_free (done);
 }
