@@ -5269,6 +5269,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 
 			r_anal_op_free (xrefop);
 		}
+		r_list_free(xrefs);
 	}
 	r_list_free (todo);
 	r_list_free (done);
