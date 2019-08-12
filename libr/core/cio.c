@@ -106,14 +106,33 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	return true;
 }
 
-static inline void __endian_swap(ut8 *buf, ut32 blocksize, ut64 len) {
-	int i, j;
+static inline void __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
+	ut32 i;
 	ut8 tmp;
+	if (len != 8 && len != 4 && len != 2 && len != 1) {
+		eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
+		return;
+	}
+	if (len == 1) {
+		return;
+	}
 	for (i=0; i<blocksize; i+=len) {
-		for (j=0; j<len/2; j++) {
-			tmp = buf[i+j];
-			buf[i+j] = buf[i+len-j-1];
-			buf[i+len-j-1] = tmp;
+		switch (len) {
+			case 8:
+				tmp = buf[i];	buf[i]	 = buf[i+7]; buf[i+7] = tmp;
+				tmp = buf[i+1]; buf[i+1] = buf[i+6]; buf[i+6] = tmp;
+				tmp = buf[i+2]; buf[i+2] = buf[i+5]; buf[i+5] = tmp;
+				tmp = buf[i+3]; buf[i+3] = buf[i+4]; buf[i+4] = tmp;
+				break;
+			case 4:
+				tmp = buf[i];	buf[i]	 = buf[i+3]; buf[i+3] = tmp;
+				tmp = buf[i+1]; buf[i+1] = buf[i+2]; buf[i+2] = tmp;
+				break;
+			case 2:
+				tmp = buf[i];	buf[i]	 = buf[i+1]; buf[i+1] = tmp;
+				break;
+			default:
+				return;
 		}
 	}
 }
@@ -241,7 +260,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	} else {
 		bool be = r_config_get_i (core->config, "cfg.bigendian");
 		if (!be) {
-			__endian_swap(str, len, len);
+			__endian_swap (str, len, len);
 		}
 		for (i=j=0; i<core->blocksize; i++) {
 			switch (op) {
@@ -262,7 +281,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			}
 		}
 		if (!be) {
-			__endian_swap(str, len, len);
+			__endian_swap (str, len, len);
 		}
 	}
 
