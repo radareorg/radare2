@@ -5169,3 +5169,103 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	r_config_set (core->config, "anal.in", anal_in);
 	free (anal_in);
 }
+
+static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (f->bbs, iter, bb) {
+		ut64 pos = bb->addr;
+		RAnalOp op;
+		op.type = R_ANAL_OP_TYPE_ILL;
+
+		// get last opcode
+		while (pos < bb->addr + bb->size) {
+			ut8 buf[64];
+			r_io_read_at (core->io, pos, buf, sizeof (buf));
+			if (r_anal_op (core->anal, &op, pos, buf, sizeof (buf), R_ANAL_OP_MASK_ALL) < 1) {
+				eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", pos);
+				return false;
+			}
+			pos += op.size;
+		}
+
+		switch (op.type & R_ANAL_OP_TYPE_MASK) {
+			case R_ANAL_OP_TYPE_ILL:
+			case R_ANAL_OP_TYPE_RET:
+				return false;
+		}
+	}
+	return true;
+}
+
+R_API void r_core_anal_propagate_noreturn(RCore *core) {
+	RAnalFunction *f;
+	RListIter *iter;
+	RList *todo;
+	todo = r_list_new ();
+
+	// find known noreturn functions to propagate
+	r_list_foreach (core->anal->fcns, iter, f) {
+		if (r_anal_noreturn_at (core->anal, f->addr)) {
+			r_list_append (todo, f);
+		}
+	}
+
+	if (!r_list_length (todo)) {
+		return;
+	}
+
+	while(r_list_length (todo)) {
+		RAnalFunction *noretf = r_list_pop (todo);
+		if (!noretf) {
+			continue;
+		}
+
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+
+		RList *xrefs = NULL;
+		RAnalRef *xref;
+		xrefs = r_anal_xrefs_get (core->anal, noretf->addr);
+		r_list_foreach (xrefs, iter, xref) {
+			RAnalOp *xrefop = r_core_op_anal (core, xref->addr);
+			if (!xrefop) {
+				eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", xref->addr);
+				continue;
+			}
+
+			switch (xref->type) {
+				case R_ANAL_REF_TYPE_CALL:
+					break;
+				default:
+					continue;
+			}
+
+			f = r_anal_get_fcn_in (core->anal, xref->addr, 0);
+			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM && f->type != R_ANAL_FCN_TYPE_NULL)) {
+				continue;
+			}
+
+			int depth = r_config_get_i (core->config, "anal.depth");
+			ut64 addr = f->addr;
+
+			r_anal_fcn_del_locs (core->anal, addr);
+			r_anal_fcn_del (core->anal,addr);
+			r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
+
+			f = r_anal_get_fcn_at (core->anal, addr, 0);
+			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
+				continue;
+			}
+
+			if (is_noreturn_function (core, f)) {
+				r_anal_noreturn_add (core->anal, NULL, f->addr);
+				r_list_append (todo, f);
+			}
+
+			r_anal_op_free (xrefop);
+		}
+	}
+	r_list_free (todo);
+}
