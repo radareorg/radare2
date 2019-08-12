@@ -136,7 +136,7 @@ static void __replaceRegisters(RReg *reg, char *s, bool x86) {
 static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
 	char *ptr = data, *ptr2;
 	RAnalFunction *fcn;
-	RFlagItem *flag;
+	RFlagItem *flag = NULL;
 	ut64 off;
 	bool x86 = false;
 	bool arm = false;
@@ -195,7 +195,20 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 			}
 			if (f) {
 				RFlagItem *flag2;
-				flag = p->flag_get (f, off);
+				char *left = ptr;
+				for (; left > data
+				       && !(*left == '[' && *(left - 1) != 0x1b) && *left != ']'; left--) {
+					;
+				}
+				char *op_ptr = ptr;
+				if (*left == '[') {
+					for (; op_ptr > left && !strchr ("+-*", *op_ptr); op_ptr--) {
+						;
+					}
+				}
+				if (!strchr ("+-*", *op_ptr)) {
+					flag = p->flag_get (f, off);
+				}
 				if ((!flag || arm) && p->relsub_addr) {
 					flag2 = p->flag_get (f, p->relsub_addr);
 					if (!flag || arm) {
@@ -210,11 +223,6 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					} else if (p->flagspace && (p->flagspace != flag->space)) {
 						ptr = ptr2;
 						continue;
-					}
-					char *left = ptr;
-					for (; left > data
-					       && !(*left == '[' && *(left - 1) != 0x1b) && *left != ']' ; left--) {
-						;
 					}
 					if (*left == '[') {  // for [reg + disp] case
 						char *prefix = ptr;
