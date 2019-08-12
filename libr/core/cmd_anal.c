@@ -7362,6 +7362,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 
 static void cmd_anal_graph(RCore *core, const char *input) {
 	core->graph->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
+	r_cons_enable_highlight (false);
 	switch (input[0]) {
 	case 'f': // "agf"
 		switch (input[1]) {
