@@ -86,7 +86,10 @@ static void initBB (bb_t *bb, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_typ
 	}
 }
 
-static bool addBB (RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
+static bool addBB(RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
+	if (__isdata (core, start + cur)) {
+		return false;
+	}
 	bb_t *bb = (bb_t*) R_NEW0 (bb_t);
 	if (!bb) {
 		eprintf ("Failed to calloc mem for new basic block!\n");
@@ -204,6 +207,22 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	}
 }
 
+static int __isdata(RCore *core, ut64 addr) {
+	RList *list = r_meta_find_list_in (anal, addr, -1, 4);
+	RListIter *iter;
+	RAnalMetaItem *meta;
+	r_list_foreach (list, iter, meta) {
+		switch (meta->type) {
+		case R_META_TYPE_DATA:
+		case R_META_TYPE_STRING:
+		case R_META_TYPE_FORMAT:
+			return meta->size - (addr - meta->addr);
+		}
+	}
+	r_list_free (list);
+	return 0;
+}
+
 #define Fhandled(x) sdb_fmt("handled.%"PFMT64x"", x)
 R_API bool core_anal_bbs(RCore *core, const char* input) {
 	if (!r_io_is_valid_offset (core->io, core->offset, false)) {
@@ -241,6 +260,11 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		// magic number to fix huge section of invalid code fuzz files
 		if (block_score < invalid_instruction_barrier) {
 			break;
+		}
+		int dsize = __isdata (core, start + cur);
+		if (dsize > 0) {
+			cur += dsize;
+			continue;
 		}
 		op = r_core_anal_op (core, start + cur, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 
