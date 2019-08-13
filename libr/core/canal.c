@@ -5202,11 +5202,19 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 	RAnalFunction *f;
 	RListIter *iter;
 	RList *todo;
-	RList *done;
-	todo = r_list_new ();
-	done = r_list_new ();
+	HtUUOptions opt = { 0 };
+	HtUU *done;
 
-	r_return_if_fail (todo && done);
+	todo = r_list_new ();
+	if (!todo) {
+		return;
+	}
+
+	done = ht_uu_new_opt (&opt);
+	if (!done) {
+		r_list_free (todo);
+		return;
+	}
 
 	// find known noreturn functions to propagate
 	r_list_foreach (core->anal->fcns, iter, f) {
@@ -5215,9 +5223,10 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 		}
 	}
 
-	while(r_list_length (todo)) {
+	while(!r_list_empty (todo)) {
 		RAnalFunction *noretf = r_list_pop (todo);
 		if (!noretf) {
+			r_warn_if_reached ();
 			continue;
 		}
 
@@ -5225,9 +5234,8 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 			break;
 		}
 
-		RList *xrefs = NULL;
+		RList *xrefs = r_anal_xrefs_get (core->anal, noretf->addr);
 		RAnalRef *xref;
-		xrefs = r_anal_xrefs_get (core->anal, noretf->addr);
 		r_list_foreach (xrefs, iter, xref) {
 			RAnalOp *xrefop = r_core_op_anal (core, xref->addr);
 			if (!xrefop) {
@@ -5235,11 +5243,8 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 				continue;
 			}
 
-			switch (xref->type) {
-				case R_ANAL_REF_TYPE_CALL:
-					break;
-				default:
-					continue;
+			if (xref->type != R_ANAL_REF_TYPE_CALL) {
+				continue;
 			}
 
 			f = r_anal_get_fcn_in (core->anal, xref->addr, 0);
@@ -5251,7 +5256,6 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 			ut64 addr = f->addr;
 
 			r_anal_fcn_del_locs (core->anal, addr);
-			r_anal_fcn_del (core->anal,addr);
 			r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 
 			f = r_anal_get_fcn_at (core->anal, addr, 0);
@@ -5259,16 +5263,18 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 				continue;
 			}
 
-			if (f->addr && !r_list_contains(done, f->addr) && is_noreturn_function (core, f)) {
+			bool found = false;
+			found = ht_uu_find (done, f->addr, &found);
+			if (f->addr && !found && is_noreturn_function (core, f)) {
 				r_anal_noreturn_add (core->anal, NULL, f->addr);
 				r_list_append (todo, f);
-				r_list_append (done, f->addr);
+				ht_uu_insert (done, f->addr, 1);
 			}
 
 			r_anal_op_free (xrefop);
 		}
-		r_list_free(xrefs);
+		r_list_free (xrefs);
 	}
 	r_list_free (todo);
-	r_list_free (done);
+	ht_uu_free (done);
 }
