@@ -106,35 +106,36 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	return true;
 }
 
-static inline void __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
+static int __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
 	ut32 i;
 	ut8 tmp;
+	ut16 v16;
+	ut32 v32;
+	ut64 v64;
 	if (len != 8 && len != 4 && len != 2 && len != 1) {
 		eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
-		return;
+		return false;
 	}
 	if (len == 1) {
-		return;
+		return true;
 	}
-	for (i=0; i<blocksize; i+=len) {
+	for (i = 0; i < blocksize; i += len) {
 		switch (len) {
-			case 8:
-				tmp = buf[i];	buf[i]	 = buf[i+7]; buf[i+7] = tmp;
-				tmp = buf[i+1]; buf[i+1] = buf[i+6]; buf[i+6] = tmp;
-				tmp = buf[i+2]; buf[i+2] = buf[i+5]; buf[i+5] = tmp;
-				tmp = buf[i+3]; buf[i+3] = buf[i+4]; buf[i+4] = tmp;
-				break;
-			case 4:
-				tmp = buf[i];	buf[i]	 = buf[i+3]; buf[i+3] = tmp;
-				tmp = buf[i+1]; buf[i+1] = buf[i+2]; buf[i+2] = tmp;
-				break;
-			case 2:
-				tmp = buf[i];	buf[i]	 = buf[i+1]; buf[i+1] = tmp;
-				break;
-			default:
-				return;
+		case 8:
+			v64 = r_read_be64(buf+i);
+			r_write_le64(buf+i, v64);
+			break;
+		case 4:
+			v32 = r_read_be32(buf+i);
+			r_write_le32(buf+i, v32);
+			break;
+		case 2:
+			v16 = r_read_be16(buf+i);
+			r_write_le16(buf+i, v16);
+			break;
 		}
 	}
+	return true;
 }
 
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
@@ -260,7 +261,9 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	} else {
 		bool be = r_config_get_i (core->config, "cfg.bigendian");
 		if (!be) {
-			__endian_swap (str, len, len);
+			if (!__endian_swap (str, len, len)) {
+				goto beach;
+			}
 		}
 		for (i=j=0; i<core->blocksize; i++) {
 			switch (op) {
@@ -279,9 +282,6 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			if (j >= len) {
 				j = 0; /* cyclic key */
 			}
-		}
-		if (!be) {
-			__endian_swap (str, len, len);
 		}
 	}
 
