@@ -5,6 +5,7 @@ r_asm_sources = [
   'p/asm_6502.c',
   'p/asm_6502_cs.c',
   'p/asm_8051.c',
+  'p/asm_amd29k.c',
   'p/asm_arc.c',
   'p/asm_arm_as.c',
   'p/asm_arm_cs.c',

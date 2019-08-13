@@ -38,6 +38,7 @@ r_anal_sources = [
   'p/anal_6502.c',
   'p/anal_6502_cs.c',
   'p/anal_8051.c',
+  'p/anal_amd29k.c',
   'p/anal_arc.c',
   'p/anal_arm_cs.c',
   'p/anal_arm_gnu.c',
