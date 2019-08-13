@@ -106,7 +106,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	return true;
 }
 
-static int __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
+static bool __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
 	ut32 i;
 	ut8 tmp;
 	ut16 v16;
@@ -122,16 +122,16 @@ static int __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
 	for (i = 0; i < blocksize; i += len) {
 		switch (len) {
 		case 8:
-			v64 = r_read_be64(buf+i);
-			r_write_le64(buf+i, v64);
+			v64 = r_read_at_be64 (buf, i);
+			r_write_at_le64 (buf, v64, i);
 			break;
 		case 4:
-			v32 = r_read_be32(buf+i);
-			r_write_le32(buf+i, v32);
+			v32 = r_read_at_be32 (buf, i);
+			r_write_at_le32 (buf, v32, i);
 			break;
 		case 2:
-			v16 = r_read_be16(buf+i);
-			r_write_le16(buf+i, v16);
+			v16 = r_read_at_be16 (buf, i);
+			r_write_at_le16 (buf, v16, i);
 			break;
 		}
 	}
@@ -265,7 +265,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 				goto beach;
 			}
 		}
-		for (i=j=0; i<core->blocksize; i++) {
+		for (i = j = 0; i < core->blocksize; i++) {
 			switch (op) {
 			case 'x': buf[i] ^= str[j]; break;
 			case 'a': buf[i] += str[j]; break;
