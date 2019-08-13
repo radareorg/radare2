@@ -5206,9 +5206,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 	todo = r_list_new ();
 	done = r_list_new ();
 
-	if (!todo || !done) {
-		return;
-	}
+	r_return_if_fail (todo && done);
 
 	// find known noreturn functions to propagate
 	r_list_foreach (core->anal->fcns, iter, f) {
