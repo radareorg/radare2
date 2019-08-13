@@ -624,6 +624,7 @@ static void __handle_refs(RCore *core, RPanel *panel, ut64 tmp);
 static void __undo_seek(RCore *core);
 static void __redo_seek(RCore *core);
 static void __cache_white_list(RCore *core, RPanel *panel);
+static bool search_db_check_panel_type (RCore *core, RPanel *panel, const char *ch);
 
 void __update_edge_x(RCore *core, int x) {
 	RPanels *panels = core->panels;
@@ -813,39 +814,38 @@ bool __check_root_state(RCore *core, RPanelsRootState state) {
 	return core->panels_root->root_state == state;
 }
 
+bool search_db_check_panel_type (RCore *core, RPanel *panel, const char *ch) {
+	char *str = __search_db (core, ch);;
+	if (str && __check_panel_type (panel, __search_db (core, ch))) {
+		return true;
+	}
+	return false;
+}
+
 //TODO: Refactroing
 bool __is_abnormal_cursor_type(RCore *core, RPanel *panel) {
-	char *str;
 	if (__check_panel_type (panel, PANEL_CMD_SYMBOLS) || __check_panel_type (panel, PANEL_CMD_FUNCTION)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_DISASMSUMMARY);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_DISASMSUMMARY))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_DISASMSUMMARY)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_STRINGS_DATA);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_STRINGS_DATA))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_STRINGS_DATA)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_STRINGS_BIN);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_STRINGS_BIN))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_STRINGS_BIN)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_BREAKPOINTS);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_BREAKPOINTS))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_BREAKPOINTS)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_SECTIONS);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_SECTIONS))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_SECTIONS)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_SEGMENTS);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_SEGMENTS))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_SEGMENTS)) {
 		return true;
 	}
-
-	str = __search_db (core, PANEL_TITLE_COMMENTS);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_COMMENTS))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_COMMENTS)) {
 		return true;
 	}
 	return false;
