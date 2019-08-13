@@ -1833,13 +1833,14 @@ static const char *getPrefixFor(const char *s) {
 	return "sym";
 }
 
-static char *construct_symbol_flagname(const char *pfx, const char *symname) {
-#define MAXFLAG_LEN 128
+#define MAXFLAG_LEN_DEFAULT 128
+
+static char *construct_symbol_flagname(const char *pfx, const char *symname, int len) {
 	char *r = r_str_newf ("%s.%s", pfx, symname);
 	if (!r) {
 		return NULL;
 	}
-	r_name_filter (r, MAXFLAG_LEN);
+	r_name_filter (r, len);
 	return r;
 }
 
@@ -1863,11 +1864,11 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	}
 	sn->name = strdup (sym->name);
 	const char *pfx = getPrefixFor (sym->type);
-	sn->nameflag = construct_symbol_flagname(pfx, r_bin_symbol_name (sym));
+	sn->nameflag = construct_symbol_flagname(pfx, r_bin_symbol_name (sym), MAXFLAG_LEN_DEFAULT);
 	if (sym->classname && sym->classname[0]) {
 		sn->classname = strdup (sym->classname);
 		sn->classflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
-		r_name_filter (sn->classflag, MAXFLAG_LEN);
+		r_name_filter (sn->classflag, MAXFLAG_LEN_DEFAULT);
 		const char *name = sym->dname? sym->dname: sym->name;
 		sn->methname = r_str_newf ("%s::%s", sn->classname, name);
 		sn->methflag = r_str_newf ("sym.%s.%s", sn->classname, name);
@@ -1883,7 +1884,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	if (bin_demangle && sym->paddr) {
 		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
 		if (sn->demname) {
-			sn->demflag = construct_symbol_flagname (pfx, sn->demname);
+			sn->demflag = construct_symbol_flagname (pfx, sn->demname, -1);
 		}
 	}
 }
@@ -2153,7 +2154,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				lastfs = 's';
 			}
 			if (r->bin->prefix || *name) { // we don't want unnamed symbol flags
-				char *flagname = construct_symbol_flagname ("sym", name);
+				char *flagname = construct_symbol_flagname ("sym", name, MAXFLAG_LEN_DEFAULT);
 				if (!flagname) {
 					goto next;
 				}
