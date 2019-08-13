@@ -2158,7 +2158,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				if (!flagname) {
 					goto next;
 				}
-				r_cons_printf ("f %s%s%s %u 0x%08" PFMT64x "\n",
+				r_cons_printf ("\"f %s%s%s %u 0x%08" PFMT64x "\"\n",
 					r->bin->prefix ? r->bin->prefix : "", r->bin->prefix ? "." : "",
 					flagname, symbol->size, addr);
 				free(flagname);
