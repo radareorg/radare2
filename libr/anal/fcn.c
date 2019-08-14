@@ -388,6 +388,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->diff = r_anal_diff_new ();
 	fcn->has_changed = true;
 	fcn->bp_frame = true;
+	fcn->is_noreturn = false;
 	r_tinyrange_init (&fcn->bbr);
 	fcn->meta.min = UT64_MAX;
 	return fcn;
