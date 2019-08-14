@@ -5169,3 +5169,113 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	r_config_set (core->config, "anal.in", anal_in);
 	free (anal_in);
 }
+
+static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (f->bbs, iter, bb) {
+		ut64 opaddr;
+
+		opaddr = r_anal_bb_opaddr_i (bb, bb->ninstr - 1);
+		if (opaddr == UT64_MAX) {
+			return false;
+		}
+
+		// get last opcode
+		RAnalOp *op = r_core_op_anal (core, opaddr);
+		if (!op) {
+			eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", opaddr);
+			return false;
+		}
+
+		switch (op->type & R_ANAL_OP_TYPE_MASK) {
+			case R_ANAL_OP_TYPE_ILL:
+			case R_ANAL_OP_TYPE_RET:
+				free (op);
+				return false;
+		}
+		free (op);
+	}
+	return true;
+}
+
+R_API void r_core_anal_propagate_noreturn(RCore *core) {
+	RAnalFunction *f;
+	RListIter *iter;
+	RList *todo;
+	HtUU *done;
+
+	todo = r_list_new ();
+	if (!todo) {
+		return;
+	}
+
+	done = ht_uu_new0 ();
+	if (!done) {
+		r_list_free (todo);
+		return;
+	}
+
+	// find known noreturn functions to propagate
+	r_list_foreach (core->anal->fcns, iter, f) {
+		if (f->is_noreturn) {
+			r_list_append (todo, f);
+		}
+	}
+
+	while(!r_list_empty (todo)) {
+		RAnalFunction *noretf = r_list_pop (todo);
+		if (!noretf) {
+			r_warn_if_reached ();
+			continue;
+		}
+
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+
+		RList *xrefs = r_anal_xrefs_get (core->anal, noretf->addr);
+		RAnalRef *xref;
+		r_list_foreach (xrefs, iter, xref) {
+			RAnalOp *xrefop = r_core_op_anal (core, xref->addr);
+			if (!xrefop) {
+				eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", xref->addr);
+				continue;
+			}
+
+			if (xref->type != R_ANAL_REF_TYPE_CALL) {
+				continue;
+			}
+
+			f = r_anal_get_fcn_in (core->anal, xref->addr, 0);
+			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
+				continue;
+			}
+
+			int depth = r_config_get_i (core->config, "anal.depth");
+			ut64 addr = f->addr;
+
+			r_anal_fcn_del_locs (core->anal, addr);
+			r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
+
+			f = r_anal_get_fcn_at (core->anal, addr, 0);
+			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
+				continue;
+			}
+
+			bool found = false;
+			found = ht_uu_find (done, f->addr, &found);
+			if (f->addr && !found && is_noreturn_function (core, f)) {
+				f->is_noreturn = true;
+				r_anal_noreturn_add (core->anal, NULL, f->addr);
+				r_list_append (todo, f);
+				ht_uu_insert (done, f->addr, 1);
+			}
+
+			r_anal_op_free (xrefop);
+		}
+		r_list_free (xrefs);
+	}
+	r_list_free (todo);
+	ht_uu_free (done);
+}

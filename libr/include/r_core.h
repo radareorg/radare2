@@ -924,6 +924,7 @@ R_API void r_core_autocomplete_free(RCoreAutocomplete *obj);
 R_API void r_core_autocomplete_reload (RCore *core);
 R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd, bool exact);
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd);
+R_API void r_core_anal_propagate_noreturn(RCore *core);
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;
