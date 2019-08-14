@@ -5176,7 +5176,7 @@ static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
 	r_list_foreach (f->bbs, iter, bb) {
 		ut64 opaddr;
 
-		opaddr = r_anal_bb_opaddr_i(bb, bb->ninstr - 1);
+		opaddr = r_anal_bb_opaddr_i (bb, bb->ninstr - 1);
 		if (opaddr == UT64_MAX) {
 			return false;
 		}
@@ -5191,10 +5191,10 @@ static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
 		switch (op->type & R_ANAL_OP_TYPE_MASK) {
 			case R_ANAL_OP_TYPE_ILL:
 			case R_ANAL_OP_TYPE_RET:
-				free(op);
+				free (op);
 				return false;
 		}
-		free(op);
+		free (op);
 	}
 	return true;
 }
