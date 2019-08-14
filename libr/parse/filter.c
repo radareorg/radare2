@@ -140,7 +140,6 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	ut64 off;
 	bool x86 = false;
 	bool arm = false;
-	bool computed = false;
 	if (p && p->cur && p->cur->name) {
 		if (strstr (p->cur->name, "x86")) {
 			x86 = true;
@@ -196,10 +195,11 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 			}
 			if (f) {
 				RFlagItem *flag2;
+				bool remove_brackets = false;
 				flag = p->flag_get (f, off);
-				computed = false;
 				if ((!flag || arm) && p->relsub_addr) {
-					computed = true;
+					remove_brackets = !p->brackets || (arm && p->relsub_addr)
+					                || /* HACK for axt */ (x86 && r_str_startswith (data, "lea "));
 					flag2 = p->flag_get (f, p->relsub_addr);
 					if (!flag || arm) {
 						flag = flag2;
@@ -220,7 +220,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 						ptr2++;
 					}
 					ptr_backup = ptr;
-					if (computed && ptr != ptr2 && *ptr) {
+					if (remove_brackets && ptr != ptr2 && *ptr) {
 						if (*ptr2 == ']') {
 							ptr2++;
 							for (ptr--; ptr > data && *ptr != '['; ptr--) {
@@ -271,7 +271,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 							banned = true;
 						}
 					}
-					if (p->relsub_addr && !banned) {
+					if (p->relsub_addr && !banned && !p->brackets) {  // TODO: use remove_brackets
 						int flag_len = strlen (flag->name);
 						char *ptr_end = str + strlen (data) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
