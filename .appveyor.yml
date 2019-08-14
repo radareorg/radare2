@@ -63,6 +63,8 @@ test_script:
   - node --version
   - git clone https://github.com/radare/radare2-regressions
   - cd radare2-regressions/new
+  - ps: $env:pull_owner=($env:APPVEYOR_PULL_REQUEST_HEAD_REPO_NAME -split "/")[0]
+  - git fetch https://github.com/%pull_owner%/radare2-regressions %APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%:%APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH% && git checkout %APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH% || (echo Using master & exit /b 0)
   - npm install
   - set NOOK=1
   - node_modules/.bin/r2r
