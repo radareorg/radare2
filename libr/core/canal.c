@@ -5174,26 +5174,27 @@ static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (f->bbs, iter, bb) {
-		ut64 pos = bb->addr;
-		RAnalOp op;
-		op.type = R_ANAL_OP_TYPE_ILL;
+		ut64 opaddr;
+
+		opaddr = r_anal_bb_opaddr_i(bb, bb->ninstr - 1);
+		if (opaddr == UT64_MAX) {
+			return false;
+		}
 
 		// get last opcode
-		while (pos < bb->addr + bb->size) {
-			ut8 buf[64];
-			r_io_read_at (core->io, pos, buf, sizeof (buf));
-			if (r_anal_op (core->anal, &op, pos, buf, sizeof (buf), R_ANAL_OP_MASK_ALL) < 1) {
-				eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", pos);
-				return false;
-			}
-			pos += op.size;
+		RAnalOp *op = r_core_op_anal (core, opaddr);
+		if (!op) {
+			eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", opaddr);
+			return false;
 		}
 
-		switch (op.type & R_ANAL_OP_TYPE_MASK) {
+		switch (op->type & R_ANAL_OP_TYPE_MASK) {
 			case R_ANAL_OP_TYPE_ILL:
 			case R_ANAL_OP_TYPE_RET:
+				free(op);
 				return false;
 		}
+		free(op);
 	}
 	return true;
 }
@@ -5202,7 +5203,6 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 	RAnalFunction *f;
 	RListIter *iter;
 	RList *todo;
-	HtUUOptions opt = { 0 };
 	HtUU *done;
 
 	todo = r_list_new ();
@@ -5210,7 +5210,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 		return;
 	}
 
-	done = ht_uu_new_opt (&opt);
+	done = ht_uu_new0 ();
 	if (!done) {
 		r_list_free (todo);
 		return;
