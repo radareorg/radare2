@@ -5218,7 +5218,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 
 	// find known noreturn functions to propagate
 	r_list_foreach (core->anal->fcns, iter, f) {
-		if (r_anal_noreturn_at (core->anal, f->addr)) {
+		if (f->is_noreturn) {
 			r_list_append (todo, f);
 		}
 	}
@@ -5266,6 +5266,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 			bool found = false;
 			found = ht_uu_find (done, f->addr, &found);
 			if (f->addr && !found && is_noreturn_function (core, f)) {
+				f->is_noreturn = true;
 				r_anal_noreturn_add (core->anal, NULL, f->addr);
 				r_list_append (todo, f);
 				ht_uu_insert (done, f->addr, 1);

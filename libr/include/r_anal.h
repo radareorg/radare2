@@ -300,6 +300,7 @@ typedef struct r_anal_function_t {
 	RBNode rb;
 	RBNode addr_rb;
 	RList *imports; // maybe bound to class?
+	bool is_noreturn;
 } RAnalFunction;
 
 typedef struct r_anal_func_arg_t {

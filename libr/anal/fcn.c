@@ -1226,6 +1226,10 @@ repeat:
 			(void) r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
 
 			if (op.ptr != UT64_MAX && r_anal_noreturn_at (anal, op.ptr)) {
+				RAnalFunction *f = r_anal_get_fcn_at(anal, op.ptr, 0);
+				if (f) {
+					f->is_noreturn = true;
+				}
 				gotoBeach (R_ANAL_RET_END);
 			}
 			break;
@@ -1235,6 +1239,10 @@ repeat:
 			(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
 
 			if (r_anal_noreturn_at (anal, op.jump)) {
+				RAnalFunction *f = r_anal_get_fcn_at(anal, op.jump, 0);
+				if (f) {
+					f->is_noreturn = true;
+				}
 				gotoBeach (R_ANAL_RET_END);
 			}
 			break;
