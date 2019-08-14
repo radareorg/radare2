@@ -1025,32 +1025,25 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 }
 
 R_API int r_sys_run_rop(const ut8 *buf, int len) {
-	const int sz = 4096;
-	int pdelta;
 #if USE_FORK
-	int st, pid;
+	int st;
 #endif
 	// TODO: define R_SYS_ALIGN_FORWARD in r_util.h
-	ut8 *bufptr, *p = malloc ((sz + len) << 1);
-	if (p == 0) {
+	ut8 *bufptr = malloc (len);
+	if (!bufptr) {
 		eprintf ("r_sys_run_rop: Cannot allocate buffer\n");
 		return false;
 	}
 
-	bufptr = p;
-	pdelta = ((size_t)(p)) & (4096 - 1);
-	if (pdelta) {
-		bufptr += (4096 - pdelta);
-	}
-	if (!bufptr || !buf) {
+	if (!buf) {
 		eprintf ("r_sys_run_rop: Cannot execute empty rop chain\n");
-		free (p);
+		free (bufptr);
 		return false;
 	}
 	memcpy (bufptr, buf, len);
 #if USE_FORK
 #if __UNIX__
-	pid = r_sys_fork ();
+	pid_t pid = r_sys_fork ();
 #else
 	pid = -1;
 #endif
@@ -1069,11 +1062,10 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	} else {
 		ret = WEXITSTATUS (st);
 	}
-
 #else
 	R_SYS_ASM_START_ROP ();
 #endif
-	free (p);
+	free (bufptr);
 	return 0;
 }
 
