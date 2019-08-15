@@ -459,7 +459,8 @@ static void __transfer_drx(RDebug *dbg, ut8 *buf) {
 	CONTEXT cur_ctx;
 	if (w32_reg_read (dbg, R_REG_TYPE_ALL, &cur_ctx, sizeof (CONTEXT))) {
 		CONTEXT *new_ctx = (CONTEXT *)buf;
-		memcpy (&cur_ctx.Dr0, &new_ctx->Dr0, offsetof (CONTEXT, Dr7) - offsetof (CONTEXT, Dr0) + sizeof (new_ctx->Dr7));
+		size_t drx_size = offsetof (CONTEXT, Dr7) - offsetof (CONTEXT, Dr0) + sizeof (new_ctx->Dr7);
+		memcpy (&cur_ctx.Dr0, &new_ctx->Dr0, drx_size);
 		*new_ctx = cur_ctx;
 	}
 }
