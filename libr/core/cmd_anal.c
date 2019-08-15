@@ -7717,17 +7717,43 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		break;
 	case 'd': // "agd"
 		switch (input[1]) {
-		case 'v':
-		case 't':
-		case 'j':
-		case 'J':
-		case 'g':
-		case 'k':
-		case '*':
+		case 'j': {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+			r_core_gdiff_fcn (core, addr, core->offset);
+			r_core_anal_graph (core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF
+				| R_CORE_ANAL_JSON);
+			break;
+		}
+		case 'J': {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+			r_core_gdiff_fcn (core, addr, core->offset);
+			r_core_anal_graph (core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF
+				| R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
+			break;
+		}
+		case 'k': {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+			r_core_gdiff_fcn (core, addr, core->offset);
+			r_core_anal_graph (core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF
+				| R_CORE_ANAL_KEYVALUE);
+			break;
+		}
+		case '*': {
+                        ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
+                        r_core_gdiff_fcn (core, addr, core->offset);
+                        r_core_anal_graph(core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF
+                        | R_CORE_ANAL_STAR);
+                        break;
+                }
 		case ' ':
 		case 0:
-			eprintf ("Currently the only supported formats for the diff graph are 'agdd' and 'agdw'\n");
-			break;
+                case 'v':
+                case 'g': {
+                        ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+                        r_core_gdiff_fcn (core, addr, core->offset);
+                        r_core_visual_graph(core, NULL, NULL, true);
+                        break;
+                }
 		case 'd': {
 			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
 			r_core_gdiff_fcn (core, addr, core->offset);
