@@ -124,6 +124,8 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 	const char *tmptype;
 	if (!strncmp (type, "struct ", 7)) {
 		tmptype = type + 7;
+	} else if (!strncmp (type, "union ", 6)) {
+		tmptype = type + 6;
 	} else {
 		tmptype = type;
 	}
