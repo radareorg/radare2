@@ -456,14 +456,11 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static void __transfer_drx(RDebug *dbg, ut8 *buf) {
-	CONTEXT *cur_ctx = R_NEW0 (CONTEXT);
-	if (!cur_ctx) {
-		return;
-	}
-	if (w32_reg_read (dbg, R_REG_TYPE_ALL, cur_ctx, sizeof (CONTEXT))) {
+	CONTEXT cur_ctx;
+	if (w32_reg_read (dbg, R_REG_TYPE_ALL, &cur_ctx, sizeof (CONTEXT))) {
 		CONTEXT *new_ctx = (CONTEXT *)buf;
-		memcpy (&cur_ctx->Dr0, &new_ctx->Dr0, offsetof (CONTEXT, Dr7) - offsetof (CONTEXT, Dr0) + sizeof (new_ctx->Dr7));
-		*new_ctx = *cur_ctx;
+		memcpy (&cur_ctx.Dr0, &new_ctx->Dr0, offsetof (CONTEXT, Dr7) - offsetof (CONTEXT, Dr0) + sizeof (new_ctx->Dr7));
+		*new_ctx = cur_ctx;
 	}
 }
 
