@@ -983,7 +983,7 @@ static void struct_decl(CType *type, int u) {
 			goto do_decl;
 		}
 	} else {
-		static char buf[STRING_MAX_SIZE + 1];
+		char buf[STRING_MAX_SIZE + 1];
 		v = anon_sym++;
 		snprintf (buf, sizeof(buf), "%u", v - SYM_FIRST_ANOM);
 		name = buf;
