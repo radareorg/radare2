@@ -1309,7 +1309,7 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                 r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
                                         "  <img class=\"connector-end\" src=\"img/arrow.gif\" /></div>\n",
                                         bbi->addr, bbi->jump);
-                                } else if (!is_json) {
+                                } else if (!is_json && !is_keva) {
                                         if (is_star) {
                                                 char *from = get_title (bbi->addr);
                                                 char *to = get_title (bbi->jump);
@@ -1328,7 +1328,7 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                 r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
                                                        "  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
                                                        bbi->addr, bbi->fail);
-                                } else if (!is_keva) {
+                                } else if (!is_keva && !is_json) {
                                         if (is_star) {
                                                 char *from = get_title (bbi->addr);
                                                 char *to = get_title (bbi->fail);
@@ -1349,7 +1349,7 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                         r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
                                                                "  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
                                                                bbi->addr, bbi->fail);
-                                } else if (!is_keva) {
+                                } else if (!is_keva && !is_json) {
                                         if (is_star) {
                                                 char *from = get_title (bbi->addr);
                                                 char *to = get_title (bbi->fail);
@@ -1376,7 +1376,7 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                         r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
                                                         "  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
                                                         caseop->addr, caseop->jump);
-                                } else {
+                                } else if (!is_json && !is_keva){
                                         if (is_star) {
                                                 char *from = get_title (caseop->addr);
                                                 char *to = get_title (caseop->jump);
