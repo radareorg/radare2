@@ -254,6 +254,10 @@ typedef struct r_cons_palette_t {
 	RColor graph_trufae;
 	RColor graph_traced;
 	RColor graph_current;
+        RColor graph_diff_match;
+        RColor graph_diff_unmatch;
+        RColor graph_diff_unknown;
+        RColor graph_diff_new;
 } RConsPalette;
 
 typedef struct r_cons_printable_palette_t {
@@ -321,6 +325,10 @@ typedef struct r_cons_printable_palette_t {
 	char *graph_box2;
 	char *graph_box3;
 	char *graph_box4;
+	char *graph_diff_match;
+	char *graph_diff_unmatch;
+	char *graph_diff_unknown;
+	char *graph_diff_new;
 	char *graph_true;
 	char *graph_false;
 	char *graph_trufae;
