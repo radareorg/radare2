@@ -46,7 +46,7 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CORE_ANAL_JSON                8
 #define R_CORE_ANAL_KEYVALUE            16
 #define R_CORE_ANAL_JSON_FORMAT_DISASM  32
-#define R_CORE_ANAL_STAR 64
+#define R_CORE_ANAL_STAR                64
 
 #define R_FLAGS_FS_CLASSES "classes"
 #define R_FLAGS_FS_FUNCTIONS "functions"
