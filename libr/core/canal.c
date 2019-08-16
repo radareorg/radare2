@@ -1239,6 +1239,9 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 			}
 			oline = line;
 		}
+	} else if (opts & R_CORE_ANAL_STAR) {
+                snprintf (cmd, sizeof (cmd), "pdb %d @ 0x%08" PFMT64x, bb->size, bb->addr);
+                str = r_core_cmd_str (core, cmd);
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
 		const bool scrColor = r_config_get (core->config, "scr.color");
 		const bool scrUtf8 = r_config_get (core->config, "scr.utf8");
@@ -1248,10 +1251,10 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		cmdstr = r_core_cmd_str (core, cmd);
 		r_config_set_i (core->config, "scr.color", scrColor);
 		r_config_set_i (core->config, "scr.utf8", scrUtf8);
-	}
-	if (cmdstr) {
-		str = r_str_escape_dot (cmdstr);
-		free (cmdstr);
+                if (cmdstr) {
+                        str = r_str_escape_dot (cmdstr);
+                        free (cmdstr);
+                }
 	}
 	return str;
 }
@@ -1960,7 +1963,6 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 		char *title = get_title (bb->addr);
 		char *body = r_core_cmd_strf (core, "pdb @ 0x%08"PFMT64x, bb->addr);
 		char *body_b64 = r_base64_encode_dyn (body, -1);
-
 		if (!title || !body || !body_b64) {
 			free (body_b64);
 			free (body);
@@ -3482,9 +3484,11 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		if (!is_html && !is_json && !is_keva) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (is_star) {
-			        r_cons_printf ("\t agn \"0x%08"PFMT64x"\";\n", fcn? fcn->addr: addr);
+			        char *name = get_title(fcn ? fcn->addr: addr);
+			        r_cons_printf ("agn %s;", name);
+			}else {
+                                r_cons_printf ("\t\"0x%08"PFMT64x"\";\n", fcn? fcn->addr: addr);
 			}
-			r_cons_printf ("\t\"0x%08"PFMT64x"\";\n", fcn? fcn->addr: addr);
 		}
 	}
 	if (!is_keva && !is_html && !is_json && !is_star) {
