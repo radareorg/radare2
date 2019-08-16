@@ -3456,7 +3456,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	}
 	/* print the graph title */
 	(void) G (-g->can->sx, -g->can->sy);
-	W (g->title);
+	if (!g->is_tiny) {
+                W (g->title);
+	}
 	if (is_interactive && g->title) {
 		int title_len = strlen (g->title);
 		r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
