@@ -7159,9 +7159,10 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 		char *newbody = NULL;
 		char **args, *body;
 		int n_args, B_LEN = strlen ("base64:");
+		int color = -1;
 		input++;
 		args = r_str_argv (input, &n_args);
-		if (n_args < 1 || n_args > 2) {
+		if (n_args < 1 || n_args > 3) {
 			r_cons_printf ("Wrong arguments\n");
 			r_str_argv_free (args);
 			break;
@@ -7181,10 +7182,13 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 				body = newbody;
 			}
 			body = r_str_append (body, "\n");
+			if (n_args > 2) {
+			        color = atoi(args[2]);
+			}
 		} else {
 			body = strdup ("");
 		}
-		r_agraph_add_node (core->graph, args[0], body);
+		r_agraph_add_node_with_color (core->graph, args[0], body, color);
 		r_str_argv_free (args);
 		free (body);
 		//free newbody it's not necessary since r_str_append reallocate the space

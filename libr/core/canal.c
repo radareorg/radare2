@@ -1454,21 +1454,21 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 						char *diffstr = r_diff_buffers_to_string (d,
 							(const ut8*)str, strlen (str),
 							(const ut8*)str2, strlen(str2));
-						if (diffstr) {
-							char *nl = strchr (diffstr, '\n');
-							if (nl) {
-								nl = strchr (nl + 1, '\n');
-								if (nl) {
-									nl = strchr (nl + 1, '\n');
-									if (nl) {
-										r_str_cpy (diffstr, nl + 1);
-									}
-								}
-							}
-						}
-						diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
-						diffstr = r_str_replace (diffstr, "\"", "'", 1);
-						// eprintf ("%s\n", diffstr? diffstr: "");
+
+                                                if (diffstr) {
+                                                        char *nl = strchr (diffstr, '\n');
+                                                        if (nl) {
+                                                                nl = strchr (nl + 1, '\n');
+                                                                if (nl) {
+                                                                        nl = strchr (nl + 1, '\n');
+                                                                        if (nl) {
+                                                                                r_str_cpy (diffstr, nl + 1);
+                                                                        }
+                                                                }
+                                                        }
+                                                }
+                                                diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
+                                                diffstr = r_str_replace (diffstr, "\"", "'", 1);
 						if (is_star) {
                                                         char *title = get_title (bbi->addr);
                                                         char *body_b64 = r_base64_encode_dyn (diffstr, -1);
@@ -1479,8 +1479,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
                                                                 return false;
                                                         }
                                                         body_b64 = r_str_prepend (body_b64, "base64:");
-                                                        r_cons_printf ("agn %s %s %s\n", title, body_b64, difftype);
+                                                        r_cons_printf ("agn %s %s %d\n", title, body_b64, bbi->diff->type);
 						} else {
+
                                                         r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
                                                                       "color=\"black\", fontname=\"Courier\","
                                                                       " label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
@@ -1500,7 +1501,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
                                                                 return false;
                                                         }
                                                         body_b64 = r_str_prepend (body_b64, "base64:");
-                                                        r_cons_printf ("agn %s %s %s\n", title, body_b64, difftype);
+                                                        r_cons_printf ("agn %s %s %d\n", title, body_b64, bbi->diff->type);
 					        } else {
                                                         r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
                                                                       "color=\"black\", fontname=\"Courier\","
@@ -1547,14 +1548,15 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
                                                         return false;
                                                 }
                                                 body_b64 = r_str_prepend (body_b64, "base64:");
-                                                r_cons_printf ("agn %s %s %s\n", title, body_b64, fill_color);
+                                                r_cons_printf ("agn %s %s %d\n", title, body_b64, bbi->diff->type);
+					} else {
+                                                r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
+                                                               "URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\","
+                                                               "color=\"%s\", fontname=\"%s\","
+                                                               "label=\"%s\"]\n",
+                                                               bbi->addr, fcn->name, bbi->addr,
+                                                               fill_color, label_color, font, str);
 					}
-					r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
-						"URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\","
-						"color=\"%s\", fontname=\"%s\","
-						"label=\"%s\"]\n",
-						bbi->addr, fcn->name, bbi->addr,
-						fill_color, label_color, font, str);
 				}
 			}
 			free (str);
@@ -1620,23 +1622,25 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
                                 RAnalCaseOp *caseop;
                                 RListIter *iter;
 
-                                if (is_html) {
-                                        r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
-                                                       "  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
-                                                       bbi->addr, bbi->fail);
-                                } else if (!is_keva) {
-                                        //r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
-                                        //	"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
-                                        if (is_star) {
-                                                char *from = get_title (bbi->addr);
-                                                char *to = get_title (bbi->fail);
-                                                r_cons_printf ("%age %s %s\n", from, to);
-                                        } else {
-                                                r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-                                                               "[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
-                                                core_anal_color_curr_node (core, bbi);
-                                        }
+                                if (bbi->fail != UT64_MAX) {
+                                        if (is_html) {
+                                                r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
+                                                               "  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
+                                                               bbi->addr, bbi->fail);
+                                        } else if (!is_keva) {
+                                                //r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+                                                //	"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
+                                                if (is_star) {
+                                                        char *from = get_title (bbi->addr);
+                                                        char *to = get_title (bbi->fail);
+                                                        r_cons_printf ("%age %s %s\n", from, to);
+                                                } else {
+                                                        r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+                                                                       "[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
+                                                        core_anal_color_curr_node (core, bbi);
+                                                }
 
+                                        }
                                 }
 
                                 r_list_foreach (bbi->switch_op->cases, iter, caseop) {
