@@ -1129,11 +1129,18 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 	}
 
 	lpath = r_str_new (path);
+#if __WINDOWS__
+	r_str_replace_ch (lpath, '/', '\\', true);
+#endif
 	p = (char *)r_str_last (lpath, R_SYS_DIR);
 	if (p) {
 		*p = 0;
 		if (p == lpath) { // /xxx
-			dirname = r_str_new ("/");
+#if __WINDOWS__
+			dirname = strdup ("\\.\\");
+#else
+			dirname = r_str_new (R_SYS_DIR);
+#endif
 		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
 			dirname = r_str_home (lpath + 2);
 		} else if (lpath[0] == '~') { // ~/xxx
@@ -1142,10 +1149,16 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 			}
 			dirname = r_str_newf ("%s%s", home, R_SYS_DIR);
 			free (home);
-		} else if (lpath[0] == '.' || lpath[0] == '/' ) { // ./xxx/yyy || /xxx/yyy
+		} else if (lpath[0] == '.' || lpath[0] == R_SYS_DIR[0] ) { // ./xxx/yyy || /xxx/yyy
 			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
 		} else { // xxx/yyy
-			dirname = r_str_newf (".%s%s%s", R_SYS_DIR, lpath, R_SYS_DIR);
+			char *fmt = ".%s%s%s";
+#if __WINDOWS__
+			if (strchr (path, ':')) {
+				fmt = "%.0s%s%s";
+			}
+#endif
+			dirname = r_str_newf (fmt, R_SYS_DIR, lpath, R_SYS_DIR);
 		}
 		basename = r_str_new (p + 1);
 	} else { // xxx
@@ -1168,7 +1181,7 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 			if (!basename[0] || !strncmp (filename, basename, n))  {
 				char *tmpstring = r_str_newf ("%s%s", dirname, filename);
 				if (r_file_is_directory (tmpstring)) {
-					char *s = r_str_newf ("%s/", tmpstring);
+					char *s = r_str_newf ("%s%s", tmpstring, R_SYS_DIR);
 					r_line_completion_push (completion, s);
 					free (s);
 				} else if (!chgdir) {
