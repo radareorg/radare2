@@ -1022,7 +1022,6 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RAnalOp aop = {0};
-	RAsmOp asmop = {0};
 	const char *start = NULL, *end = NULL;
 	char *grep_str = NULL;
 	RCoreAsmHit *hit = NULL;
@@ -1071,12 +1070,15 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		// opsz = r_strbuf_length (asmop.buf);
 		char *opst = aop.mnemonic;
 		if (!opst) {
+			R_LOG_WARN ("Anal plugin %s did not return disassembly\n", core->anal->cur->name);
+			RAsmOp asmop;
 			r_asm_set_pc (core->assembler, addr);
 			if (!r_asm_disassemble (core->assembler, &asmop, buf + idx, buflen - idx)) {
 				valid = false;
 				goto ret;
 			}
-			opst = r_strbuf_get (&asmop.buf_asm);
+			opst = strdup (r_asm_op_get_asm (&asmop));
+			r_asm_op_fini (&asmop);
 		}
 		if (!r_str_ncasecmp (opst, "invalid", strlen ("invalid")) ||
 		    !r_str_ncasecmp (opst, ".byte", strlen (".byte"))) {
@@ -1119,12 +1121,11 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 				rx = r_list_get_n (rx_list, count++);
 			}
 		}
-		r_asm_op_fini (&asmop);
-		R_FREE (aop.mnemonic);
 		if (endaddr <= (idx - opsz)) {
 			valid = (endaddr == idx - opsz);
 			goto ret;
 		}
+		free (opst);
 		nb_instr++;
 	}
 ret:
