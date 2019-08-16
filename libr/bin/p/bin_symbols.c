@@ -346,6 +346,7 @@ static RBinSymbol *newSymbol(RBinString *s, ut64 addr, ut64 size) {
 		sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 		sym->bind = r_str_const ("NONE");
 	}
+	r_name_filter(sym->name, -1);
 	return sym;
 }
 
@@ -379,6 +380,7 @@ static RList *parseSections(RBuffer *b, int x, int n_sections, RList *strings) {
 		}
 		RBinString *name = strings? r_list_get_n (strings, i): NULL;
 		const char *namestr = name? name->string: "";
+		r_name_filter(namestr, -1);
 		ut32 A = r_read_le32 (buf + off);
 		ut32 B = r_read_le32 (buf + off + 4);
 		//ut32 C = r_read_le32 (buf + off + 8);

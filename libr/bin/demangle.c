@@ -135,6 +135,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 		free (demangled);
 		demangled = d;
 	}
+	r_name_filter (demangled, -1);
 	return demangled;
 }
 

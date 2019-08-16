@@ -1300,6 +1300,7 @@ static char *get_reloc_name(RCore *r, RBinReloc *reloc, ut64 addr) {
 		// TODO(eddyb) implement constant relocs.
 	}
 	free (demangled_name);
+	r_name_filter(reloc_name, -1);
 	return reloc_name;
 }
 
@@ -1366,6 +1367,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
 		}
 		reloc_name = reloc->import->name;
+		r_name_filter(reloc_name, -1);
 		if (r->bin->prefix) {
 			snprintf (str, R_FLAG_NAME_SIZE, "%s.reloc.%s", r->bin->prefix, reloc_name);
 		} else {
@@ -1391,6 +1393,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 	} else {
 		char *reloc_name = get_reloc_name (r, reloc, addr);
 		if (reloc_name) {
+			r_name_filter(reloc_name, -1);
 			r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
 		} else {
 			// eprintf ("Cannot find a name for 0x%08"PFMT64x"\n", addr);
@@ -1503,6 +1506,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				}
 			}
 			if (name) {
+				r_name_filter(name, -1);
 				int reloc_size = 4;
 				r_cons_printf ("\"f %s%s%s %d 0x%08"PFMT64x"\"\n",
 					r->bin->prefix ? r->bin->prefix : "reloc.",
@@ -1731,6 +1735,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			continue;
 		}
 		char *symname = strdup (import->name);
+		r_name_filter(symname, -1);
 		ut64 addr = lit ? r_core_bin_impaddr (r->bin, va, symname): 0;
 		if (bin_demangle) {
 			char *dname = r_bin_demangle (r->bin->cur, NULL, symname, addr, keep_lib);
@@ -2016,6 +2021,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			continue;
 		}
 		char *r_symbol_name = r_str_escape_utf8 (symbol->name, false, true);
+		r_name_filter(r_symbol_name, -1);
 		ut64 addr = compute_addr (r->bin, symbol->paddr, symbol->vaddr, va);
 		int len = symbol->size ? symbol->size : 32;
 		SymName sn = {0};
@@ -3081,6 +3087,7 @@ static int bin_libs(RCore *r, int mode) {
 			// Nothing to set.
 			// TODO: load libraries with iomaps?
 		} else if (IS_MODE_RAD (mode)) {
+			r_name_filter(lib, -1);
 			r_cons_printf ("CCa entry0 %s\n", lib);
 		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("%s\"%s\"", iter->p ? "," : "", lib);
