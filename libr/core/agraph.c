@@ -3685,9 +3685,13 @@ R_API void r_agraph_set_title(RAGraph *g, const char *title) {
 
 R_API RANode *r_agraph_add_node_with_color(const RAGraph *g, const char *title, const char *body, int color) {
         RANode *res = r_agraph_get_node (g, title);
-        r_return_val_if_fail(!res, res);
+        if (res) {
+                return res;
+        }
         res = R_NEW0 (RANode);
-        r_return_val_if_fail(res, NULL);
+        if (!res) {
+                return NULL;
+        }
 
         res->title = title? r_str_trunc_ellipsis (title, 255) : strdup ("");
         res->body = body? strdup (body): strdup ("");
