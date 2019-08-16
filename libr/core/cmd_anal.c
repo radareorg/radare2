@@ -7719,63 +7719,56 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'd': // "agd"
-		switch (input[1]) {
-		case 'j': {
-			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
-			r_core_gdiff_fcn (core, addr, core->offset);
-			r_core_anal_graph (core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF
-				| R_CORE_ANAL_JSON);
-			break;
-		}
-		case 'J': {
-			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
-			r_core_gdiff_fcn (core, addr, core->offset);
-			r_core_anal_graph (core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF
-				| R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
-			break;
-		}
-		case 'k': {
-			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
-			r_core_gdiff_fcn (core, addr, core->offset);
-			r_core_anal_graph (core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF
-				| R_CORE_ANAL_KEYVALUE);
-			break;
-		}
-		case '*': {
-                        ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
-                        r_core_gdiff_fcn (core, addr, core->offset);
-                        r_core_anal_graph(core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF
-                        | R_CORE_ANAL_STAR);
-                        break;
+	case 'd': {// "agd"
+	        int diff_opt = R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF;
+                switch (input[1]) {
+                        case 'j': {
+                                ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
+                                r_core_gdiff_fcn(core, addr, core->offset);
+                                r_core_anal_graph(core, addr, diff_opt | R_CORE_ANAL_JSON);
+                                break;
+                        }
+                        case 'J': {
+                                ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
+                                r_core_gdiff_fcn(core, addr, core->offset);
+                                r_core_anal_graph(core, addr, diff_opt | R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
+                                break;
+                        }
+                        case '*': {
+                                ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
+                                r_core_gdiff_fcn(core, addr, core->offset);
+                                r_core_anal_graph(core, addr, diff_opt | R_CORE_ANAL_STAR);
+                                break;
+                        }
+                        case ' ':
+                        case 0:
+                        case 't':
+                        case 'k':
+                        case 'v':
+                        case 'g': {
+                                ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
+                                r_core_cmdf (core, "ag-; .agd* @ %"PFMT64u"; agg%s;", addr, input + 1);
+                                break;
+                        }
+                        case 'd': {
+                                ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
+                                r_core_gdiff_fcn(core, addr, core->offset);
+                                r_core_anal_graph(core, addr, diff_opt);
+                                break;
+                        }
+                        case 'w': {
+                                char *cmdargs = r_str_newf("agdd 0x%"PFMT64x, core->offset);
+                                char *cmd = graph_cmd(core, cmdargs, input + 2);
+                                if (cmd && *cmd) {
+                                        r_core_cmd0(core, cmd);
+                                }
+                                free(cmd);
+                                free(cmdargs);
+                                break;
+                        }
                 }
-		case ' ':
-		case 0:
-                case 'v':
-                case 'g': {
-                        ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
-                        r_core_gdiff_fcn (core, addr, core->offset);
-                        r_core_visual_graph(core, NULL, NULL, true);
-                        break;
-                }
-		case 'd': {
-			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
-			r_core_gdiff_fcn (core, addr, core->offset);
-			r_core_anal_graph (core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
-			break;
-			}
-		case 'w': {
-			char *cmdargs = r_str_newf ("agdd 0x%"PFMT64x, core->offset);
-			char *cmd = graph_cmd (core, cmdargs, input + 2);
-			if (cmd && *cmd) {
-				r_core_cmd0 (core, cmd);
-			}
-			free (cmd);
-			free (cmdargs);
-			break;
-			}
-		}
-		break;
+                break;
+        }
 	case 'v': // "agv" alias for "agfv"
 		r_core_cmdf (core, "agfv%s", input + 1);
 		break;
