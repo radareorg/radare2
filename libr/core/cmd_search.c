@@ -1126,6 +1126,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 			goto ret;
 		}
 		free (opst);
+		aop.mnemonic = NULL;
 		nb_instr++;
 	}
 ret:
