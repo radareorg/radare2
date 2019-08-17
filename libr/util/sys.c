@@ -1020,11 +1020,16 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	if (pid < 0) {
 		R_SYS_ASM_START_ROP ();
 	} else {
-		R_SYS_ASM_START_ROP ()
+		R_SYS_ASM_START_ROP ();
 		exit (0);
+                return 0;
 	}
 	st = 0;
-	waitpid (pid, &st, 0);
+	if (waitpid (pid, &st, 0) == -1) {
+            eprintf ("r_sys_run_rop: waitpid failed\n");
+            free (bufptr);
+            return -1;
+        }
 	if (WIFSIGNALED (st)) {
 		int num = WTERMSIG (st);
 		eprintf ("Got signal %d\n", num);
