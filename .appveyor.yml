@@ -30,6 +30,10 @@ environment:
     - builder: vs2017_64_dyn
       PYTHON: 'C:\\Python37'
       BUILD_DIR: build
+    # Clang-cl 64 (Dynamic linking)
+    - builder: clang_cl_64_dyn
+      PYTHON: 'C:\\Python37'
+      BUILD_DIR: build
 
 # Init
 init:
@@ -54,6 +58,8 @@ build_script:
 
   - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --release --shared --install="%DIST_FOLDER%" && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
+  - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && set CC=clang-cl && python sys\meson.py --release --shared --install="%DIST_FOLDER%" && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+
 test_script:
   - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\msys64\mingw64\bin;%PATH%
   - echo %PATH%
@@ -63,6 +69,8 @@ test_script:
   - node --version
   - git clone https://github.com/radare/radare2-regressions
   - cd radare2-regressions/new
+  - ps: $env:pull_owner=($env:APPVEYOR_PULL_REQUEST_HEAD_REPO_NAME -split "/")[0]
+  - ps: if (-not [string]::IsNullOrWhiteSpace($env:pull_owner)) {cmd /c "(git fetch https://github.com/%pull_owner%/radare2-regressions %APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%:%APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH% && git checkout %APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%) > nul 2>&1 || exit 0"} else {echo "Using master"}
   - npm install
   - set NOOK=1
   - node_modules/.bin/r2r

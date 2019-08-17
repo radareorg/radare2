@@ -21,7 +21,6 @@ $(LIBAR): zip/libr_zip.$(EXT_AR)
 	${CC_AR} zlib/*.o zip/*.o
 	@echo $(RANLIB) librz.$(EXT_AR)
 	$(RANLIB) librz.$(EXT_AR)
-	sleep 10
 
 zip/libr_zip.$(EXT_AR): zlib/libr_z.$(EXT_AR)
 	$(MAKE) -C zip

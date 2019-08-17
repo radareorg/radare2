@@ -727,7 +727,7 @@ R_API void r_line_autocomplete() {
 			}
 			memcpy (p, argv[0], largv0);
 
-			if (p[largv0 - 1] != '/') {
+			if (p[largv0 - 1] != R_SYS_DIR[0]) {
 				p[largv0] = ' ';
 				if (!len_t) {
 					p[largv0 + 1] = '\0';

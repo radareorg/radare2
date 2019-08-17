@@ -3438,6 +3438,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			free (name);
 		}
+		r_core_anal_propagate_noreturn(core);
 #if 0
 		// XXX THIS IS VERY SLOW
 		if (core->anal->opt.vars) {
@@ -7159,9 +7160,10 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 		char *newbody = NULL;
 		char **args, *body;
 		int n_args, B_LEN = strlen ("base64:");
+		int color = -1;
 		input++;
 		args = r_str_argv (input, &n_args);
-		if (n_args < 1 || n_args > 2) {
+		if (n_args < 1 || n_args > 3) {
 			r_cons_printf ("Wrong arguments\n");
 			r_str_argv_free (args);
 			break;
@@ -7181,10 +7183,13 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 				body = newbody;
 			}
 			body = r_str_append (body, "\n");
+			if (n_args > 2) {
+			        color = atoi(args[2]);
+			}
 		} else {
 			body = strdup ("");
 		}
-		r_agraph_add_node (core->graph, args[0], body);
+		r_agraph_add_node_with_color (core->graph, args[0], body, color);
 		r_str_argv_free (args);
 		free (body);
 		//free newbody it's not necessary since r_str_append reallocate the space
@@ -7362,6 +7367,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 
 static void cmd_anal_graph(RCore *core, const char *input) {
 	core->graph->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
+	r_cons_enable_highlight (false);
 	switch (input[0]) {
 	case 'f': // "agf"
 		switch (input[1]) {
@@ -7715,37 +7721,56 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'd': // "agd"
-		switch (input[1]) {
-		case 'v':
-		case 't':
-		case 'j':
-		case 'J':
-		case 'g':
-		case 'k':
-		case '*':
-		case ' ':
-		case 0:
-			eprintf ("Currently the only supported formats for the diff graph are 'agdd' and 'agdw'\n");
-			break;
-		case 'd': {
-			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
-			r_core_gdiff_fcn (core, addr, core->offset);
-			r_core_anal_graph (core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
-			break;
-			}
-		case 'w': {
-			char *cmdargs = r_str_newf ("agdd 0x%"PFMT64x, core->offset);
-			char *cmd = graph_cmd (core, cmdargs, input + 2);
-			if (cmd && *cmd) {
-				r_core_cmd0 (core, cmd);
-			}
-			free (cmd);
-			free (cmdargs);
-			break;
-			}
-		}
-		break;
+	case 'd': {// "agd"
+	        int diff_opt = R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF;
+                switch (input[1]) {
+                        case 'j': {
+                                ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
+                                r_core_gdiff_fcn(core, addr, core->offset);
+                                r_core_anal_graph(core, addr, diff_opt | R_CORE_ANAL_JSON);
+                                break;
+                        }
+                        case 'J': {
+                                ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
+                                r_core_gdiff_fcn(core, addr, core->offset);
+                                r_core_anal_graph(core, addr, diff_opt | R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
+                                break;
+                        }
+                        case '*': {
+                                ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
+                                r_core_gdiff_fcn(core, addr, core->offset);
+                                r_core_anal_graph(core, addr, diff_opt | R_CORE_ANAL_STAR);
+                                break;
+                        }
+                        case ' ':
+                        case 0:
+                        case 't':
+                        case 'k':
+                        case 'v':
+                        case 'g': {
+                                ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
+                                r_core_cmdf (core, "ag-; .agd* @ %"PFMT64u"; agg%s;", addr, input + 1);
+                                break;
+                        }
+                        case 'd': {
+                                ut64 addr = input[2] ? r_num_math(core->num, input + 2) : core->offset;
+                                r_core_gdiff_fcn(core, addr, core->offset);
+                                r_core_anal_graph(core, addr, diff_opt);
+                                break;
+                        }
+                        case 'w': {
+                                char *cmdargs = r_str_newf("agdd 0x%"PFMT64x, core->offset);
+                                char *cmd = graph_cmd(core, cmdargs, input + 2);
+                                if (cmd && *cmd) {
+                                        r_core_cmd0(core, cmd);
+                                }
+                                free(cmd);
+                                free(cmdargs);
+                                break;
+                        }
+                }
+                break;
+        }
 	case 'v': // "agv" alias for "agfv"
 		r_core_cmdf (core, "agfv%s", input + 1);
 		break;
@@ -8460,6 +8485,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
 				r_core_cmd0 (core, "aaft");
 				r_print_rowlog_done (core->print, oldstr);
+
+				oldstr = r_print_rowlog (core->print, "Propagate noreturn information");
+				r_print_rowlog_done (core->print, oldstr);
+				r_core_anal_propagate_noreturn(core);
+
 				oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 				r_print_rowlog_done (core->print, oldstr);
 

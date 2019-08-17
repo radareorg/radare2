@@ -959,6 +959,7 @@ static void struct_decl(CType *type, int u) {
 	int a, v, size, align, maxalign, offset;
 	long long c = 0;
 	int bit_size, bit_pos, bsize, bt, lbit_pos, prevbt;
+	char buf[STRING_MAX_SIZE + 1];
 	Sym *s, *ss, *ass, **ps;
 	AttributeDef ad;
 	const char *name = NULL;
@@ -983,7 +984,6 @@ static void struct_decl(CType *type, int u) {
 			goto do_decl;
 		}
 	} else {
-		static char buf[STRING_MAX_SIZE + 1];
 		v = anon_sym++;
 		snprintf (buf, sizeof(buf), "%u", v - SYM_FIRST_ANOM);
 		name = buf;

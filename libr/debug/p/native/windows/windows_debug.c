@@ -455,6 +455,16 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return size;
 }
 
+static void __transfer_drx(RDebug *dbg, ut8 *buf) {
+	CONTEXT cur_ctx;
+	if (w32_reg_read (dbg, R_REG_TYPE_ALL, &cur_ctx, sizeof (CONTEXT))) {
+		CONTEXT *new_ctx = (CONTEXT *)buf;
+		size_t drx_size = offsetof (CONTEXT, Dr7) - offsetof (CONTEXT, Dr0) + sizeof (new_ctx->Dr7);
+		memcpy (&cur_ctx.Dr0, &new_ctx->Dr0, drx_size);
+		*new_ctx = cur_ctx;
+	}
+}
+
 int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	DWORD flags = THREAD_SUSPEND_RESUME | THREAD_SET_CONTEXT;
 	if (dbg->bits == R_SYS_BITS_64) {
@@ -470,6 +480,9 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	if (alive && __suspend_thread (th, dbg->bits) == -1) {
 		CloseHandle (th);
 		return false;
+	}
+	if (type == R_REG_TYPE_DRX) {
+		__transfer_drx (dbg, buf);
 	}
 	bool ret = __set_thread_context (th, buf, size, dbg->bits);
 	// Always resume
