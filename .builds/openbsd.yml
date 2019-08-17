@@ -1,0 +1,17 @@
+image: openbsd/latest
+packages:
+    - devel/meson
+    - devel/pkgconf
+    - devel/gmake
+    - devel/llvm
+environment:
+    CXX: clang++
+    CC: clang
+sources:
+    - https://github.com/radare/radare2
+tasks:
+    - build: |
+        cd radare2
+        ./configure
+        gmake
+
