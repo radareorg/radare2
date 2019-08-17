@@ -393,7 +393,7 @@ static void flagbars(RCore *core, const char *glob) {
 	}
 
 	struct flagbar_t u = { .core = core, .cols = cols };
-	r_flag_foreach_glob (core->flags, glob, flagbar_foreach, &u);
+	r_flag_foreach_space_glob (core->flags, glob, r_flag_space_cur (core->flags), flagbar_foreach, &u);
 }
 
 struct flag_to_flag_t {

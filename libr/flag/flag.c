@@ -954,6 +954,10 @@ R_API void r_flag_foreach_glob(RFlag *f, const char *glob, RFlagItemCb cb, void 
 	FOREACH_BODY (!glob || r_str_glob (fi->name, glob));
 }
 
+R_API void r_flag_foreach_space_glob(RFlag *f, const char *glob, const RSpace *space, RFlagItemCb cb, void *user) {
+        FOREACH_BODY (IS_FI_IN_SPACE (fi, space) && (!glob || r_str_glob (fi->name, glob)));
+}
+
 R_API void r_flag_foreach_space(RFlag *f, const RSpace *space, RFlagItemCb cb, void *user) {
 	FOREACH_BODY (IS_FI_IN_SPACE (fi, space));
 }
