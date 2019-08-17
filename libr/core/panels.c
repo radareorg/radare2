@@ -4326,7 +4326,7 @@ RStrBuf *__draw_menu(RCore *core, RPanelsMenuItem *item) {
 	int i;
 	for (i = 0; i < item->n_sub; i++) {
 		if (i == item->selectedIndex) {
-			r_strbuf_appendf (buf, " %s %s"Color_RESET,
+			r_strbuf_appendf (buf, "%s> %s"Color_RESET,
 					core->cons->context->pal.graph_box2, item->sub[i]->name);
 		} else {
 			r_strbuf_appendf (buf, "  %s", item->sub[i]->name);
