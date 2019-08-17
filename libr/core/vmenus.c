@@ -3362,6 +3362,11 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			}
 			break;
 		case 'g':
+		        r_core_visual_showcursor (core, true);
+		        r_core_visual_offset (core);
+		        r_core_visual_showcursor (core, false);
+		        break;
+		case 'G':
 			r_core_seek (core, addr, SEEK_SET);
 			goto beach;
 		case ' ':
