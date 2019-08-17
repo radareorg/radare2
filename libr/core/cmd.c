@@ -1216,7 +1216,12 @@ static int cmd_interpret(void *data, const char *input) {
 				}
 				if (*ptr) {
 					char *p = r_str_append (strdup (ptr), filter);
+					bool prev_one_cmd_pre_line = core->one_cmd_per_line;
+					if (p[0] == '\"') {
+						core->one_cmd_per_line = true;
+					}
 					r_core_cmd0 (core, p);
+					core->one_cmd_per_line = prev_one_cmd_pre_line;
 					free (p);
 				}
 				if (!eol) {
@@ -2623,6 +2628,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				break;
 			}
 			if (eos) {
+				break;
+			}
+			if (core->one_cmd_per_line) {
+				*p = '\0';
 				break;
 			}
 			if (haveQuote) {
