@@ -140,6 +140,7 @@ static bool demangle(RCore *core, const char *s) {
 }
 
 static void cmd_info_here(RCore *core, int mode) {
+	r_cons_set_auto_quote(mode == R_MODE_RADARE);
 	RCoreItem *item = r_core_item_at (core, core->offset);
 	if (item) {
 		PJ *pj = pj_new ();
@@ -199,6 +200,7 @@ static void cmd_info_here(RCore *core, int mode) {
 		free (s);
 		r_core_item_free (item);
 	}
+	r_cons_set_auto_quote(false);
 }
 
 #define STR(x) (x)? (x): ""
@@ -343,6 +345,7 @@ static int bin_is_executable(RBinObject *obj){
 static void cmd_info_bin(RCore *core, int va, int mode) {
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	int array = 0;
+	r_cons_set_auto_quote(mode == R_MODE_RADARE);
 	if (core->file) {
 		if ((mode & R_MODE_JSON) && !(mode & R_MODE_ARRAY)) {
 			mode = R_MODE_JSON;
@@ -366,6 +369,7 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 	} else {
 		eprintf ("No file selected\n");
 	}
+	r_cons_set_auto_quote(false);
 }
 
 static void playMsg(RCore *core, const char *n, int len) {
@@ -444,7 +448,7 @@ static int cmd_info(void *data, const char *input) {
 	int fd = r_io_fd_get_current (core->io);
 	RIODesc *desc = r_io_desc_get (core->io, fd);
 	int i, va = core->io->va || core->io->debug;
-	int mode = 0; //R_MODE_SIMPLE;
+	int prev_mode, mode = 0; //R_MODE_SIMPLE;
 	bool rdump = false;
 	int is_array = 0;
 	Sdb *db;
@@ -517,7 +521,9 @@ static int cmd_info(void *data, const char *input) {
 				}
 				break;
 			case '*':
+				r_cons_set_auto_quote(true);
 				r_core_bin_export_info_rad (core);
+				r_cons_set_auto_quote(false);
 				break;
 			case '.':
 			case ' ':
@@ -804,7 +810,12 @@ static int cmd_info(void *data, const char *input) {
 			RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0);
 			break;
 		case 'X': // "iX"
+			prev_mode = mode;
+			if (mode == R_MODE_RADARE) {
+				mode = R_MODE_SIMPLE;
+			}
 			RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
+			mode = prev_mode;
 			break;
 		case 'd': // "id"
 			if (input[1] == 'p') { // "idp"
@@ -934,7 +945,12 @@ static int cmd_info(void *data, const char *input) {
 			RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
 			break;
 		case 'V': // "iV"
+			prev_mode = mode;
+			if (mode == R_MODE_RADARE){
+				mode = R_MODE_SIMPLE;
+			}
 			RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
+			mode = prev_mode;
 			break;
 		case 'T': // "iT"
 		case 'C': // "iC" // rabin2 -C create
@@ -990,7 +1006,9 @@ static int cmd_info(void *data, const char *input) {
 					int min = r_config_get_i (core->config, "bin.minstr");
 					if (bf) {
 						bf->strmode = mode;
+						r_cons_set_auto_quote(mode == R_MODE_RADARE);
 						r_bin_dump_strings (bf, min, 2);
+						r_cons_set_auto_quote(false);
 					}
 					goto done;
 				}
@@ -1084,11 +1102,13 @@ static int cmd_info(void *data, const char *input) {
 						}
 						switch (mode) {
 						case '*':
+							r_cons_set_auto_quote(true);
 							r_list_foreach (cls->methods, iter2, sym) {
 								r_cons_printf ("f sym.%s @ 0x%"PFMT64x "\n",
 									sym->name, sym->vaddr);
 							}
 							input++;
+							r_cons_set_auto_quote(false);
 							break;
 						case 'l':
 							r_list_foreach (cls->methods, iter2, sym) {
@@ -1175,7 +1195,11 @@ static int cmd_info(void *data, const char *input) {
 			return 0;
 		case 'a': // "ia"
 			switch (mode) {
-			case R_MODE_RADARE: cmd_info (core, "IieEcsSmz*"); break;
+			case R_MODE_RADARE:
+				r_cons_set_auto_quote(true);
+				cmd_info (core, "IieEcsSmz*");
+				r_cons_set_auto_quote(false);
+				break;
 			case R_MODE_JSON: cmd_info (core, "IieEcsSmzj"); break;
 			case R_MODE_SIMPLE: cmd_info (core, "IieEcsSmzq"); break;
 			default: cmd_info (core, "IiEecsSmz"); break;

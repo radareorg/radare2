@@ -1134,13 +1134,55 @@ club:
 	va_end (ap3);
 }
 
+char* auto_quote (const char* str) {
+	char* str_copy = strdup(str);
+	if (!str_copy) {
+		return 0;
+	}
+
+	int last = strlen (str_copy)-1;
+	if (last == -1) {
+		return str_copy;
+	}
+
+	char line_ending = '\0';
+	if (str_copy[last] == '\n') {
+		str_copy[last] = '\0';
+		last--;
+		line_ending = '\n';
+	}
+
+	bool needs_quoting;
+	if (last == -1) {
+		needs_quoting = false;
+	} else {
+		needs_quoting = (str[0] != '\"' && str[0] != '\0' && str[last] != '\"');
+	}
+
+	char *tmp = r_str_replace(str_copy, "\n", "\"\n\"", true);
+	if (!needs_quoting) {
+		str_copy = r_str_newf("%s%c", tmp, line_ending);
+	} else {
+		str_copy = r_str_newf("\"%s\"%c", tmp, line_ending);
+	}
+	free(tmp);
+	return str_copy;
+}
+
 R_API int r_cons_printf(const char *format, ...) {
 	va_list ap;
 	if (!format || !*format) {
 		return -1;
 	}
+
 	va_start (ap, format);
-	r_cons_printf_list (format, ap);
+	if (I.auto_quote) {
+		char* quoted = auto_quote(format);
+		r_cons_printf_list (quoted, ap);
+		free (quoted);
+	} else {
+		r_cons_printf_list (format, ap);
+	}
 	va_end (ap);
 
 	return 0;
@@ -1200,9 +1242,18 @@ R_API void r_cons_strcat(const char *str) {
 	if (!str || I.null) {
 		return;
 	}
-	len = strlen (str);
-	if (len > 0) {
-		r_cons_memcat (str, len);
+	if (I.auto_quote) {
+		char* quoted = auto_quote(str);
+		len = strlen (quoted);
+		if (len > 0) {
+			r_cons_memcat (quoted, len);
+		}
+		free (quoted);
+	} else {
+		len = strlen (str);
+		if (len > 0) {
+			r_cons_memcat (str, len);
+		}
 	}
 }
 
@@ -1516,6 +1567,10 @@ R_API void r_cons_set_interactive(bool x) {
 
 R_API void r_cons_set_last_interactive() {
 	r_cons_singleton ()->context->is_interactive = lasti;
+}
+
+R_API void r_cons_set_auto_quote(bool b) {
+	r_cons_singleton ()->auto_quote = b;
 }
 
 R_API void r_cons_set_title(const char *str) {

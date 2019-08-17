@@ -973,15 +973,15 @@ static int bin_dwarf(RCore *core, int mode) {
 
 R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 	R_PDB pdb = R_EMPTY;
-
+	r_cons_set_auto_quote(mode == R_MODE_RADARE);
 	pdb.cb_printf = r_cons_printf;
 	if (!init_pdb_parser (&pdb, file)) {
-		return false;
+		goto out_false;
 	}
 	if (!pdb.pdb_parse (&pdb)) {
 		eprintf ("pdb was not parsed\n");
 		pdb.finish_pdb_parse (&pdb);
-		return false;
+		goto out_false;
 	}
 	if (mode == R_MODE_JSON) {
 		r_cons_printf ("[");
@@ -991,7 +991,7 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 	case R_MODE_SET:
 		mode = 's';
 		r_core_cmd0 (core, ".iP*");
-		return true;
+		goto out_true;
 	case R_MODE_JSON:
 		mode = 'j';
 		break;
@@ -1014,7 +1014,12 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 	}
 	pdb.finish_pdb_parse (&pdb);
 
+out_true:
+	r_cons_set_auto_quote(false);
 	return true;
+out_false:
+	r_cons_set_auto_quote(false);
+	return false;
 }
 
 static int bin_pdb(RCore *core, int mode) {
@@ -2959,11 +2964,11 @@ static int bin_classes(RCore *r, int mode) {
 			}
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
-				char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, c->name, sym->name, sym->vaddr);
+				char *cmd = r_str_newf ("f method%s.%s.%s = 0x%"PFMT64x"\n", mflags, c->name, sym->name, sym->vaddr);
 				if (cmd) {
 					r_str_replace_char (cmd, ' ', '_');
-					if (strlen (cmd) > 2) {
-						cmd[2] = ' ';
+					if (strlen (cmd) > 1) {
+						cmd[1] = ' ';
 					}
 					char *eq = (char *)r_str_rchr (cmd, NULL, '=');
 					if (eq && eq != cmd) {
@@ -3673,6 +3678,8 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		name = filter->name;
 	}
 
+	r_cons_set_auto_quote(mode == R_MODE_RADARE);
+
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
 #if 0
@@ -3767,6 +3774,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 			}
 		}
 	}
+	r_cons_set_auto_quote(false);
 	return ret;
 }
 

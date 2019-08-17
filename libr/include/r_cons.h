@@ -518,6 +518,7 @@ typedef struct r_cons_t {
 	bool click_set;
 	int click_x;
 	int click_y;
+	bool auto_quote;
 	// TODO: move into instance? + avoid unnecessary copies
 } RCons;
 
@@ -852,6 +853,7 @@ R_API void r_cons_chop(void);
 R_API void r_cons_set_raw(bool b);
 R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_last_interactive(void);
+R_API void r_cons_set_auto_quote(bool b);
 
 /* output */
 R_API int r_cons_printf(const char *format, ...);
