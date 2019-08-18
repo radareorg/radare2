@@ -1510,22 +1510,21 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                 char *str2 = r_core_cmd_strf (c, "pdb @ 0x%08"PFMT64x, bbi->diff->addr);
                                                 char *diffstr = r_diff_buffers_to_string (d,
                                                         (const ut8*)str, strlen (str),
-                                                        (const ut8*)str2, strlen(str2));
+                                                        (const ut8*)str2, strlen (str2));
 
-                                                if (diffstr) {
-                                                        char *nl = strchr (diffstr, '\n');
-                                                        if (nl) {
-                                                                nl = strchr (nl + 1, '\n');
-                                                                if (nl) {
-                                                                        nl = strchr (nl + 1, '\n');
-                                                                        if (nl) {
-                                                                                r_str_cpy (diffstr, nl + 1);
-                                                                        }
-                                                                }
-                                                        }
-                                                }
-                                                diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
-                                                diffstr = r_str_replace (diffstr, "\"", "'", 1);
+						if (diffstr) {
+							char *nl = strchr (diffstr, '\n');
+							if (nl) {
+								nl = strchr (nl + 1, '\n');
+								if (nl) {
+									nl = strchr (nl + 1, '\n');
+									if (nl) {
+										r_str_cpy (diffstr, nl + 1);
+									}
+								}
+							}
+						}
+
                                                 if (is_star) {
                                                         char *title = get_title (bbi->addr);
                                                         char *body_b64 = r_base64_encode_dyn (diffstr, -1);
@@ -1538,6 +1537,8 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                                 body_b64 = r_str_prepend (body_b64, "base64:");
                                                                 r_cons_printf ("agn %s %s %d\n", title, body_b64, bbi->diff->type);
                                                 } else {
+							diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
+							diffstr = r_str_replace (diffstr, "\"", "'", 1);
                                                         r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
                                                         "color=\"black\", fontname=\"Courier\","
                                                         " label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
@@ -1550,14 +1551,14 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                 if (is_star) {
                                                         char *title = get_title (bbi->addr);
                                                         char *body_b64 = r_base64_encode_dyn (str, -1);
-
+                                                        int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
                                                         if (!title  || !body_b64) {
                                                                 free (body_b64);
                                                                 free (title);
                                                                 return false;
                                                         }
                                                         body_b64 = r_str_prepend (body_b64, "base64:");
-                                                        r_cons_printf ("agn %s %s %d\n", title, body_b64, bbi->diff->type);
+                                                        r_cons_printf ("agn %s %s %d\n", title, body_b64, color);
                                                 } else {
                                                         r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
                                                                               "color=\"black\", fontname=\"Courier\","
@@ -1592,14 +1593,14 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                         if (is_star) {
                                                 char *title = get_title (bbi->addr);
                                                 char *body_b64 = r_base64_encode_dyn (str, -1);
-
+                                                int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
                                                 if (!title  || !body_b64) {
                                                         free (body_b64);
                                                         free (title);
                                                         return false;
                                                 }
                                                 body_b64 = r_str_prepend (body_b64, "base64:");
-                                                r_cons_printf ("agn %s %s %d\n", title, body_b64, bbi->diff->type);
+                                                r_cons_printf ("agn %s %s %d\n", title, body_b64, color);
                                         } else {
                                                 r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
                                                                        "URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\","
@@ -3492,7 +3493,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 			}
 		}
 	}
-	if (!is_keva && !is_html && !is_json && !is_star) {
+	if (!is_keva && !is_html && !is_json && !is_star && !is_json_format_disasm) {
 		r_cons_printf ("}\n");
 	}
 	if (is_json) {
