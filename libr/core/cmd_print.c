@@ -15,7 +15,7 @@ static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
 	"pa", " [assembly]", "print hexpairs of the given assembly expression",
 	"paD", " [hexpairs]", "print assembly expression from hexpairs and show hexpairs",
-	"pad", " [hexpairs]", "print assembly expression from hexpairs",
+	"pad", " [hexpairs]", "print assembly expression from hexpairs (alias for pdx, pix)",
 	"pade", " [hexpairs]", "print ESIL expression from hexpairs",
 	"pae", " [assembly]", "print ESIL expression of the given assembly expression",
 	NULL
@@ -321,6 +321,7 @@ static const char *help_msg_pd[] = {
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 	"pdt", "", "disassemble the debugger traces (see atd)",
+	"pdx", " [hexpairs]", "alias for pad or pix",
 	NULL
 };
 
@@ -428,6 +429,7 @@ static const char *help_msg_pi[] = {
 	"pij", "", "print N instructions in JSON",
 	"pir", "", "like 'pdr' but with 'pI' output",
 	"piu", "[q] [limit]", "disasm until ujmp or ret is found (see pdp)",
+	"pix", "  [hexpairs]", "alias for pdx and pad",
 	NULL
 };
 
@@ -579,6 +581,22 @@ static void cmd_print_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, pv);
 	DEFINE_CMD_DESCRIPTOR (core, px);
 	DEFINE_CMD_DESCRIPTOR (core, pz);
+}
+
+static void __cmd_pad(RCore *core, const char *arg) {
+	if (*arg == '?') {
+		eprintf ("Usage: pad [hexpairs] # disassembly given bytes\n");
+		return;
+	}
+	r_asm_set_pc (core->assembler, core->offset);
+	bool is_pseudo = r_config_get_i (core->config, "asm.pseudo");
+	RAsmCode *acode = r_asm_mdisassemble_hexstr (core->assembler, is_pseudo ? core->parser : NULL, arg);
+	if (acode) {
+		r_cons_print (acode->assembly);
+		r_asm_code_free (acode);
+	} else {
+		eprintf ("Invalid hexstr\n");
+	}
 }
 
 // colordump
@@ -4975,18 +4993,8 @@ static int cmd_print(void *data, const char *input) {
 				}
 				break;
 			case ' ': // "pad"
-			{
-				r_asm_set_pc (core->assembler, core->offset);
-				bool is_pseudo = r_config_get_i (core->config, "asm.pseudo");
-				RAsmCode *acode = r_asm_mdisassemble_hexstr (core->assembler, is_pseudo ? core->parser : NULL, arg);
-				if (acode) {
-					r_cons_print (acode->assembly);
-					r_asm_code_free (acode);
-				} else {
-					eprintf ("Invalid hexstr\n");
-				}
+				__cmd_pad (core, arg);
 				break;
-			}
 			case '?': // "pad?"
 				r_cons_printf ("|Usage: pad [hex]       print assembly expression from hexpairs\n");
 				break;
@@ -5123,6 +5131,9 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'u': // "piu" disasm until ret/jmp . todo: accept arg to specify type
 			disasm_until_ret (core, core->offset, input[2], input + 2);
+			break;
+		case 'x': // "pix"
+			__cmd_pad (core, r_str_trim_ro (input + 2));
 			break;
 		case 'a': // "pia" is like "pda", but with "pi" output
 			if (l != 0) {
@@ -5377,6 +5388,9 @@ static int cmd_print(void *data, const char *input) {
 			}
 			pd_result = 0;
 			break;
+		case 'x': // "pdx"
+			__cmd_pad (core, r_str_trim_ro (input + 2));
+			return 0;
 		case 'a': // "pda"
 			processed_cmd = true;
 			r_core_print_disasm_all (core, core->offset, l, len, input[2]);
