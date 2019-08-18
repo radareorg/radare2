@@ -49,7 +49,7 @@ R_API void *r_lib_dl_open(const char *libname) {
 	if (libname && *libname) {
 		libname_ = r_sys_conv_utf8_to_win (libname);
 	} else {
-		libname_ = calloc (MAX_PATH, sizeof (char));
+		libname_ = calloc (MAX_PATH, sizeof (TCHAR));
 		if (!libname_) {
 			R_LOG_ERROR ("lib/r_lib_dl_open: Failed to allocate memory.\n");
 			return NULL;
@@ -86,14 +86,45 @@ R_API int r_lib_dl_close(void *handler) {
 }
 
 R_API char *r_lib_path(const char *libname) {
+#if __WINDOWS__
+	char *tmp = r_str_newf ("%s." R_LIB_EXT, libname);
+	if (!tmp) {
+		return NULL;
+	}
+	TCHAR *name = r_sys_conv_utf8_to_win (tmp);
+	free (tmp);
+	char *path = NULL;
+	if (!name) {
+		goto err;
+	}
+
+	int count;
+	if (!(count = SearchPath (NULL, name, NULL, 0, NULL, NULL))) {
+		r_sys_perror ("SearchPath");
+		goto err;
+	}
+	path = malloc (count * sizeof (TCHAR));
+	if (!path) {
+		goto err;
+	}
+	if (!(count = SearchPath (NULL, name, NULL, count, path, NULL))) {
+		R_FREE (path);
+		r_sys_perror ("SearchPath");
+		goto err;
+	}
+	tmp = r_sys_conv_win_to_utf8 (path);
+	free (path);
+	path = tmp;
+err:
+	free (name);
+	return path;
+#else
 #if __APPLE__
 	char *env = r_sys_getenv ("DYLD_LIBRARY_PATH");
 	env = r_str_append (env, ":/lib:/usr/lib:/usr/local/lib");
 #elif __UNIX__
 	char *env = r_sys_getenv ("LD_LIBRARY_PATH");
 	env = r_str_append (env, ":/lib:/usr/lib:/usr/local/lib");
-#else
-	char *env = strdup (".:../../../../../../../../../../../../windows/system32");
 #endif
 	if (!env) {
 		env = strdup (".");
@@ -114,6 +145,7 @@ R_API char *r_lib_path(const char *libname) {
 	} while (next);
 	free (env);
 	return NULL;
+#endif
 }
 
 R_API RLib *r_lib_new(const char *symname) {
