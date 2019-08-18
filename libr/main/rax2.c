@@ -248,12 +248,11 @@ dotherax:
 	} else if (flags & (1 << 8)) { // -K
 		int n = ((strlen (str)) >> 1) + 1;
 		char *s = NULL;
-		ut32 *m;
 		buf = (ut8 *) malloc (n);
 		if (!buf) {
 			return false;
 		}
-		m = (ut32 *) buf;
+		ut32 *m = (ut32 *) buf;
 		memset (buf, '\0', n);
 		n = r_hex_str2bin (str, (ut8 *) buf);
 		if (n < 1 || !memcmp (str, "0x", 2)) {
@@ -514,7 +513,7 @@ dotherax:
 		return true;
 	}
 
-	if (r_str_startswith (str, "0x")) {
+	if  (str[0] == '0' && (tolower (str[1]) == 'x')) {
 		out_mode = (flags & 32)? '0': 'I';
 	} else if (r_str_startswith (str, "b")) {
 		out_mode = 'B';

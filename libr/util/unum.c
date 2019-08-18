@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake */
+/* radare - LGPL - Copyright 2007-2019 - pancake */
 
 #if __WINDOWS__
 #include <stdlib.h>
@@ -195,7 +195,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 				return (ut64) ((s<<4) + a);
 			}
 		}
-	} else if (len>6 && str[6] == ':') {
+	} else if (len > 6 && str[6] == ':') {
 		if (sscanf (str, "0x%04x:0x%04x", &s, &a) == 2) {
 			return (ut64) ((s << 4) + a);
 		}
@@ -221,15 +221,17 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	// ugly as hell
 	} else if (!strncmp (str, "0xf..", 5) || !strncmp (str, "0xF..", 5)) {
 		ret = r_num_tailff (num, str + 5);
-	} else if (str[0] == '0' && str[1] == 'x') {
+	} else if (str[0] == '0' && tolower (str[1]) == 'x') {
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
 			// Support 0x1000_f000_4000
 			// TODO: Only take underscores separated every 4 chars starting at the end
 			char *s = strdup (str + 2);
-			r_str_replace_char (s, '_', 0);
-			ret = strtoull (s, NULL, 16);
-			free (s);
+			if (s) {
+				r_str_replace_char (s, '_', 0);
+				ret = strtoull (s, NULL, 16);
+				free (s);
+			}
 		} else {
 			ret = strtoull (str + 2, NULL, 16);
 			// sscanf (str+2, "%"PFMT64x, &ret);
