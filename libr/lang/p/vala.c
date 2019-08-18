@@ -132,7 +132,7 @@ static int lang_vala_init(void *user) {
 
 static int lang_vala_run(RLang *lang, const char *code, int len) {
 	bool silent = !strncmp (code, "-s", 2);
-	FILE *fd = fopen (".tmp.vala", "w");
+	FILE *fd = r_sandbox_fopen (".tmp.vala", "w");
 	if (fd) {
 		if (silent) {
 			code += 2;
