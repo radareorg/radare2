@@ -86,7 +86,7 @@ static int lang_c_init(void *user) {
 }
 
 static int lang_c_run(RLang *lang, const char *code, int len) {
-	FILE *fd = fopen (".tmp.c", "w");
+	FILE *fd = r_sandbox_fopen (".tmp.c", "w");
 	if (fd) {
 		fputs ("#include <r_core.h>\n\nvoid entry(RCore *core, int argc, const char **argv) {\n", fd);
 		fputs (code, fd);

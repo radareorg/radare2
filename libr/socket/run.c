@@ -534,7 +534,7 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 	} else if (!strcmp (b, "envfile")) {
 		char *p, buf[1024];
 		size_t len;
-		FILE *fd = fopen (e, "r");
+		FILE *fd = r_sandbox_fopen (e, "r");
 		if (!fd) {
 			eprintf ("Cannot open '%s'\n", e);
 			if (must_free == true) {
@@ -552,11 +552,11 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 			p = strchr (buf, '=');
 			if (p) {
 				*p++ = 0;
-				len = strlen(p);
-				if (p[len - 1] == '\n') {
+				len = strlen (p);
+				if (len > 0 && p[len - 1] == '\n') {
 					p[len - 1] = 0;
 				}
-				if (p[len - 2] == '\r') {
+				if (len > 1 && p[len - 2] == '\r') {
 					p[len - 2] = 0;
 				}
 				r_sys_setenv (buf, p);

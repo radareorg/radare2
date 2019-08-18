@@ -1309,7 +1309,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 #else
 	snprintf (path, sizeof (path), "/proc/%d/maps", dbg->pid);
 #endif
-	fd = fopen (path, "r");
+	fd = r_sandbox_fopen (path, "r");
 	if (!fd) {
 		perror (sdb_fmt ("Cannot open '%s'", path));
 		return NULL;

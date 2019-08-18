@@ -455,7 +455,7 @@ R_API int r_line_hist_load(const char *file) {
 	if (!path) {
 		return false;
 	}
-	if (!(fd = fopen (path, "r"))) {
+	if (!(fd = r_sandbox_fopen (path, "r"))) {
 		free (path);
 		return false;
 	}
@@ -485,7 +485,7 @@ R_API int r_line_hist_save(const char *file) {
 			}
 			*p = R_SYS_DIR[0];
 		}
-		fd = fopen (path, "w");
+		fd = r_sandbox_fopen (path, "w");
 		if (fd != NULL) {
 			if (I.history.data) {
 				for (i = 0; i < I.history.index; i++) {

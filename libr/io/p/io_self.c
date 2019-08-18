@@ -84,7 +84,7 @@ static int update_self_regions(RIO *io, int pid) {
 	char path[1024], line[1024];
 	char region[100], region2[100], perms[5];
 	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", pid);
-	FILE *fd = fopen (path, "r");
+	FILE *fd = r_sandbox_fopen (path, "r");
 	if (!fd) {
 		return false;
 	}
