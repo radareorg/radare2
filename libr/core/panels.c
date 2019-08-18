@@ -815,11 +815,8 @@ bool __check_root_state(RCore *core, RPanelsRootState state) {
 }
 
 bool search_db_check_panel_type (RCore *core, RPanel *panel, const char *ch) {
-	char *str = __search_db (core, ch);;
-	if (str && __check_panel_type (panel, __search_db (core, ch))) {
-		return true;
-	}
-	return false;
+	char *str = __search_db (core, ch);
+	return str && __check_panel_type (panel, __search_db (core, ch));
 }
 
 //TODO: Refactroing
