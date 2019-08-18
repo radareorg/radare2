@@ -5501,7 +5501,7 @@ void r_save_panels_layout(RCore *core, const char *_name) {
 		pj_kn (pj, "h", panel->view->pos.h);
 		pj_end (pj);
 	}
-	FILE *file = fopen (config_path, "a");
+	FILE *file = r_sandbox_fopen (config_path, "ab");
 	if (!file) {
 		free (config_path);
 		return;
@@ -5605,8 +5605,10 @@ bool r_load_panels_layout(RCore *core, const char *_name) {
 	}
 	if (!found) {
 		char *tmp = r_str_newf ("No saved layout found for the name: %s", _name);
-		(void)__show_status (core, tmp);
-		free (tmp);
+		if (tmp) {
+			(void)__show_status (core, tmp);
+			free (tmp);
+		}
 	}
 	free (panels_config);
 	if (!panels->n_panels) {
