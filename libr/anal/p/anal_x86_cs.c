@@ -1889,10 +1889,10 @@ static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	switch (INSOP(0).type) {
 	case X86_OP_MEM:
 		op->cycles = CYCLE_MEM;
-		op->ptr = INSOP(0).mem.disp;
+		op->disp = INSOP(0).mem.disp;
 		op->refptr = INSOP(0).size;
 		if (INSOP(0).mem.base == X86_REG_RIP) {
-			op->ptr += addr + insn->size;
+			op->ptr = addr + insn->size + op->disp;
 		} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
 			op->type |= R_ANAL_OP_TYPE_REG;
 			op->stackop = R_ANAL_STACK_SET;
@@ -1921,10 +1921,10 @@ static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	if (op->refptr < 1 || op->ptr == UT64_MAX) {
 		switch (INSOP(1).type) {
 		case X86_OP_MEM:
-			op->ptr = INSOP(1).mem.disp;
+			op->disp = INSOP(1).mem.disp;
 			op->refptr = INSOP(1).size;
 			if (INSOP(1).mem.base == X86_REG_RIP) {
-				op->ptr += addr + insn->size;
+				op->ptr = addr + insn->size + op->disp;
 			} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
 				op->stackop = R_ANAL_STACK_GET;
 				op->stackptr = regsz;
