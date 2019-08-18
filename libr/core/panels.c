@@ -671,7 +671,8 @@ void __update_edge_y(RCore *core, int y) {
 bool __check_if_mouse_x_illegal(RCore *core, int x) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
-	if (x <= 2 || can->w - 2 <= x) {
+	const int edge_x = 2;
+	if (x <= edge_x || can->w - edge_x <= x) {
 		return true;
 	}
 	return false;
@@ -680,7 +681,8 @@ bool __check_if_mouse_x_illegal(RCore *core, int x) {
 bool __check_if_mouse_y_illegal(RCore *core, int y) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
-	if (y <= 2 || can->h - 2 <= y) {
+	const int edge_y = 2;
+	if (y <= edge_y || can->h - edge_y <= y) {
 		return true;
 	}
 	return false;
@@ -688,10 +690,11 @@ bool __check_if_mouse_y_illegal(RCore *core, int y) {
 
 bool __check_if_mouse_x_on_edge(RCore *core, int x) {
 	RPanels *panels = core->panels;
+	const int edge_x = 2;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.x - 2 <= x && x <= panel->view->pos.x + 2) {
+		if (panel->view->pos.x - edge_x <= x && x <= panel->view->pos.x + edge_x) {
 			panels->mouse_on_edge_x = true;
 			panels->mouse_orig_x = x;
 			return true;
@@ -702,10 +705,11 @@ bool __check_if_mouse_x_on_edge(RCore *core, int x) {
 
 bool __check_if_mouse_y_on_edge(RCore *core, int y) {
 	RPanels *panels = core->panels;
+	const int edge_y = 2;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.y - 2 <= y && y <= panel->view->pos.y + 2) {
+		if (panel->view->pos.y - edge_y <= y && y <= panel->view->pos.y + edge_y) {
 			panels->mouse_on_edge_y = true;
 			panels->mouse_orig_y = y;
 			return true;
@@ -3233,7 +3237,6 @@ int __close_file_cb(void *user) {
 int __save_layout_cb(void *user) {
 	RCore *core = (RCore *)user;
 	r_save_panels_layout (core, NULL);
-	(void)__show_status (core, "Panels layout saved!");
 	return 0;
 }
 
@@ -5476,6 +5479,10 @@ void r_save_panels_layout(RCore *core, const char *_name) {
 	} else {
 		name = __show_status_input (core, "Name for the layout: ");
 	}
+	if (R_STR_ISEMPTY (name)) {
+		(void)__show_status (core, "Name can't be empty!");
+		return;
+	}
 	RPanels *panels = core->panels;
 	PJ *pj = NULL;
 	pj = pj_new ();
@@ -5491,7 +5498,7 @@ void r_save_panels_layout(RCore *core, const char *_name) {
 		pj_kn (pj, "h", panel->view->pos.h);
 		pj_end (pj);
 	}
-	FILE *file = fopen (config_path, "w");
+	FILE *file = r_sandbox_fopen (config_path, "ab");
 	if (!file) {
 		free (config_path);
 		return;
@@ -5502,11 +5509,11 @@ void r_save_panels_layout(RCore *core, const char *_name) {
 	if (!_name) {
 		__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
 	}
+	(void)__show_status (core, "Panels layout saved!");
 }
 
 char *__parse_panels_config(const char *cfg, int len) {
 	if (R_STR_ISEMPTY (cfg) || len < 2) {
-		eprintf ("Not valid config!\n");
 		return NULL;
 	}
 	char *tmp = r_str_newlen (cfg, len + 1);
@@ -5592,6 +5599,13 @@ bool r_load_panels_layout(RCore *core, const char *_name) {
 			break;
 		}
 		p_cfg += strlen (p_cfg) + 1;
+	}
+	if (!found) {
+		char *tmp = r_str_newf ("No saved layout found for the name: %s", _name);
+		if (tmp) {
+			(void)__show_status (core, tmp);
+			free (tmp);
+		}
 	}
 	free (panels_config);
 	if (!panels->n_panels) {
@@ -6476,9 +6490,8 @@ void __panels_process(RCore *core, RPanels *panels) {
 	core->vmode = true;
 	{
 		const char *layout = r_config_get (core->config, "scr.layout");
-		if (layout && *layout) {
+		if (R_STR_ISNOTEMPTY (layout)) {
 			r_load_panels_layout (core, layout);
-			r_save_panels_layout (core, layout);
 		}
 	}
 	r_cons_enable_mouse (false);
