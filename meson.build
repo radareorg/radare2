@@ -113,8 +113,15 @@ if get_option('static_runtime')
   endif
 endif
 
+if cc.get_id() == 'clang-cl'
+  add_project_arguments('-D__STDC__=1', language: 'c')
+  add_project_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
+  add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
+  add_project_arguments('-D_CRT_NONSTDC_NO_DEPRECATE', language: 'c')
+endif
+
 if get_option('default_library') == 'shared'
-  if host_machine.system() != 'windows' or cc.get_id() != 'msvc'
+  if host_machine.system() != 'windows' or cc.get_id() not in ['msvc', 'clang-cl']
     add_project_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif

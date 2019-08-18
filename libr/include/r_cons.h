@@ -254,6 +254,10 @@ typedef struct r_cons_palette_t {
 	RColor graph_trufae;
 	RColor graph_traced;
 	RColor graph_current;
+        RColor graph_diff_match;
+        RColor graph_diff_unmatch;
+        RColor graph_diff_unknown;
+        RColor graph_diff_new;
 } RConsPalette;
 
 typedef struct r_cons_printable_palette_t {
@@ -321,6 +325,10 @@ typedef struct r_cons_printable_palette_t {
 	char *graph_box2;
 	char *graph_box3;
 	char *graph_box4;
+	char *graph_diff_match;
+	char *graph_diff_unmatch;
+	char *graph_diff_unknown;
+	char *graph_diff_new;
 	char *graph_true;
 	char *graph_false;
 	char *graph_trufae;
@@ -482,6 +490,7 @@ typedef struct r_cons_t {
 	char *pager;
 	int blankline;
 	char *highlight;
+	bool enable_highlight;
 	int null; // if set, does not show anything
 	int mouse;
 	int is_wine;
@@ -939,6 +948,7 @@ R_API int r_cons_get_column(void);
 R_API char *r_cons_message(const char *msg);
 R_API void r_cons_set_title(const char *str);
 R_API bool r_cons_enable_mouse(const bool enable);
+R_API void r_cons_enable_highlight(const bool enable);
 R_API void r_cons_bind(RConsBind *bind);
 R_API const char* r_cons_get_rune(const ut8 ch);
 #endif
@@ -995,6 +1005,7 @@ typedef int (*RLineCompletionCb)(RLineCompletion *completion, RLineBuffer *buf, 
 struct r_line_comp_t {
 	bool opt;
 	size_t args_limit;
+	bool quit;
 	RPVector args; /* <char *> */
 	RLineCompletionCb run;
 	void *run_user;

@@ -42,6 +42,7 @@ static int usage(int v) {
 			" -v              show version\n"
 			" -w [off:hex]    patch hexpairs at given offset\n"
 			" -x              execute\n"
+			" -X [hexpairs]   execute rop chain, using the stack provided\n"
 			" -z              output in C string syntax\n");
 	}
 	return 1;
@@ -122,7 +123,8 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	const char *arch = R_SYS_ARCH;
 	const char *os = R_EGG_OS_NAME;
 	char *format = "raw";
-	int show_execute = 0;
+	bool show_execute = false;
+	bool show_execute_rop = false;
 	int show_hex = 1;
 	int show_asm = 0;
 	int show_raw = 0;
@@ -140,7 +142,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-	while ((c = r_getopt (argc, argv, "n:N:he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:")) != -1) {
+	while ((c = r_getopt (argc, argv, "n:N:he:a:b:f:o:sxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:")) != -1) {
 		switch (c) {
 		case 'a':
 			arch = r_optarg;
@@ -285,7 +287,12 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			break;
 		case 'x':
 			// execute
+			show_execute = true;
+			break;
+		case 'X':
+			// execute rop chain
 			show_execute = 1;
+			show_execute_rop = 1;
 			break;
 		case 'L':
 			list (egg);
@@ -520,7 +527,12 @@ R_API int r_main_ragg2(int argc, char **argv) {
 
 	if (show_raw || show_hex || show_execute) {
 		if (show_execute) {
-			int r = r_egg_run (egg);
+			int r;
+			if (show_execute_rop) {
+				r = r_egg_run_rop (egg);
+			} else {
+				r = r_egg_run (egg);
+			}
 			r_egg_free (egg);
 			return r;
 		}

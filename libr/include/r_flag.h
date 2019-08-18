@@ -132,6 +132,7 @@ R_API void r_flag_foreach_prefix(RFlag *f, const char *pfx, int pfx_len, RFlagIt
 R_API void r_flag_foreach_range(RFlag *f, ut64 from, ut64 to, RFlagItemCb cb, void *user);
 R_API void r_flag_foreach_glob(RFlag *f, const char *glob, RFlagItemCb cb, void *user);
 R_API void r_flag_foreach_space(RFlag *f, const RSpace *space, RFlagItemCb cb, void *user);
+R_API void r_flag_foreach_space_glob(RFlag *f, const char *glob, const RSpace *space, RFlagItemCb cb, void *user);
 
 /* spaces */
 static inline RSpace *r_flag_space_get(RFlag *f, const char *name) {

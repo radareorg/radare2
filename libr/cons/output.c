@@ -133,7 +133,7 @@ static int r_cons_w32_hprint(DWORD hdl, const ut8 *ptr, int len, bool vmode) {
 				}
 			}
 			if (ll > 0) {
-				raw_ll = bytes_utf8len (str, ll, strlen (str));
+				raw_ll = bytes_utf8len (str, ll);
 				write (fd, str, raw_ll);
 				linelen += ll;
 			}
@@ -184,7 +184,7 @@ static int r_cons_w32_hprint(DWORD hdl, const ut8 *ptr, int len, bool vmode) {
 				}
 			}
 			if (ll > 0) {
-				raw_ll = bytes_utf8len (str, ll, strlen (str));
+				raw_ll = bytes_utf8len (str, ll);
 				write (fd, str, raw_ll);
 				linelen += ll;
 			}

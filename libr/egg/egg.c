@@ -388,6 +388,12 @@ R_API int r_egg_run(REgg *egg) {
 	return res;
 }
 
+R_API int r_egg_run_rop(REgg *egg) {
+	ut64 sz;
+	const ut8 *tmp = r_buf_data (egg->bin, &sz);
+	return r_sys_run_rop (tmp, sz);
+}
+
 #define R_EGG_FILL_TYPE_TRAP
 #define R_EGG_FILL_TYPE_NOP
 #define R_EGG_FILL_TYPE_CHAR

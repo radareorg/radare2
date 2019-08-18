@@ -46,6 +46,7 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CORE_ANAL_JSON                8
 #define R_CORE_ANAL_KEYVALUE            16
 #define R_CORE_ANAL_JSON_FORMAT_DISASM  32
+#define R_CORE_ANAL_STAR                64
 
 #define R_FLAGS_FS_CLASSES "classes"
 #define R_FLAGS_FS_FUNCTIONS "functions"
@@ -330,6 +331,7 @@ typedef struct r_core_t {
 	struct r_core_t *c2;
 	RCoreAutocomplete *autocomplete;
 	int autocomplete_type;
+	int maxtab;
 	REvent *ev;
 	RList *gadgets;
 	bool scr_gadgets;
@@ -923,6 +925,7 @@ R_API void r_core_autocomplete_free(RCoreAutocomplete *obj);
 R_API void r_core_autocomplete_reload (RCore *core);
 R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd, bool exact);
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd);
+R_API void r_core_anal_propagate_noreturn(RCore *core);
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;

@@ -68,3 +68,10 @@ ec ai.ascii rgb:fec
 
 ec widget_bg rgb:db7 rgb:000000
 ec widget_sel rgb:000000 rgb:fec
+
+# Linux default colors (need to be sepiaized)
+
+ec graph.diff.unknown rgb:881798
+ec graph.diff.new rgb:c50f1f
+ec graph.diff.match rgb:767676
+ec graph.diff.unmatch rgb:c19c00

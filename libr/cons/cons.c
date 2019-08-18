@@ -469,6 +469,10 @@ R_API bool r_cons_get_click(int *x, int *y) {
 	return set;
 }
 
+R_API void r_cons_enable_highlight(const bool enable) {
+        I.enable_highlight = enable;
+}
+
 R_API bool r_cons_enable_mouse(const bool enable) {
 #if __UNIX__
 	const char *click = enable
@@ -509,6 +513,7 @@ R_API RCons *r_cons_new() {
 	}
 	I.rgbstr = r_cons_rgb_str_off;
 	I.line = r_line_new ();
+	I.enable_highlight = true;
 	I.highlight = NULL;
 	I.is_wine = -1;
 	I.fps = 0;
@@ -1536,6 +1541,10 @@ R_API void r_cons_highlight(const char *word) {
 		strlen (inv[1])
 	};
 
+        if (!I.enable_highlight) {
+                r_cons_enable_highlight (true);
+                return;
+        }
 	if (word && *word && I.context->buffer) {
 		int word_len = strlen (word);
 		char *orig;

@@ -626,6 +626,7 @@ static void __handle_refs(RCore *core, RPanel *panel, ut64 tmp);
 static void __undo_seek(RCore *core);
 static void __redo_seek(RCore *core);
 static void __cache_white_list(RCore *core, RPanel *panel);
+static bool search_db_check_panel_type (RCore *core, RPanel *panel, const char *ch);
 
 void __update_edge_x(RCore *core, int x) {
 	RPanels *panels = core->panels;
@@ -672,7 +673,8 @@ void __update_edge_y(RCore *core, int y) {
 bool __check_if_mouse_x_illegal(RCore *core, int x) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
-	if (x <= 2 || can->w - 2 <= x) {
+	const int edge_x = 2;
+	if (x <= edge_x || can->w - edge_x <= x) {
 		return true;
 	}
 	return false;
@@ -681,7 +683,8 @@ bool __check_if_mouse_x_illegal(RCore *core, int x) {
 bool __check_if_mouse_y_illegal(RCore *core, int y) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
-	if (y <= 2 || can->h - 2 <= y) {
+	const int edge_y = 2;
+	if (y <= edge_y || can->h - edge_y <= y) {
 		return true;
 	}
 	return false;
@@ -689,10 +692,11 @@ bool __check_if_mouse_y_illegal(RCore *core, int y) {
 
 bool __check_if_mouse_x_on_edge(RCore *core, int x) {
 	RPanels *panels = core->panels;
+	const int edge_x = 2;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.x - 2 <= x && x <= panel->view->pos.x + 2) {
+		if (panel->view->pos.x - edge_x <= x && x <= panel->view->pos.x + edge_x) {
 			panels->mouse_on_edge_x = true;
 			panels->mouse_orig_x = x;
 			return true;
@@ -703,10 +707,11 @@ bool __check_if_mouse_x_on_edge(RCore *core, int x) {
 
 bool __check_if_mouse_y_on_edge(RCore *core, int y) {
 	RPanels *panels = core->panels;
+	const int edge_y = 2;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.y - 2 <= y && y <= panel->view->pos.y + 2) {
+		if (panel->view->pos.y - edge_y <= y && y <= panel->view->pos.y + edge_y) {
 			panels->mouse_on_edge_y = true;
 			panels->mouse_orig_y = y;
 			return true;
@@ -816,39 +821,35 @@ bool __check_root_state(RCore *core, RPanelsRootState state) {
 	return core->panels_root->root_state == state;
 }
 
+bool search_db_check_panel_type (RCore *core, RPanel *panel, const char *ch) {
+	char *str = __search_db (core, ch);
+	return str && __check_panel_type (panel, __search_db (core, ch));
+}
+
 //TODO: Refactroing
 bool __is_abnormal_cursor_type(RCore *core, RPanel *panel) {
-	char *str;
 	if (__check_panel_type (panel, PANEL_CMD_SYMBOLS) || __check_panel_type (panel, PANEL_CMD_FUNCTION)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_DISASMSUMMARY);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_DISASMSUMMARY))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_DISASMSUMMARY)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_STRINGS_DATA);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_STRINGS_DATA))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_STRINGS_DATA)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_STRINGS_BIN);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_STRINGS_BIN))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_STRINGS_BIN)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_BREAKPOINTS);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_BREAKPOINTS))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_BREAKPOINTS)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_SECTIONS);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_SECTIONS))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_SECTIONS)) {
 		return true;
 	}
-	str = __search_db (core, PANEL_TITLE_SEGMENTS);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_SEGMENTS))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_SEGMENTS)) {
 		return true;
 	}
-
-	str = __search_db (core, PANEL_TITLE_COMMENTS);
-	if (str && __check_panel_type (panel, __search_db (core, PANEL_TITLE_COMMENTS))) {
+	if (search_db_check_panel_type (core, panel, PANEL_TITLE_COMMENTS)) {
 		return true;
 	}
 	return false;
@@ -1867,20 +1868,20 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 		if (r_cons_get_click (&x, &y)) {
 			if (y == MENU_Y) {
 				panels->mouse_cb = __handle_mouse_on_top;
-				panels->mouse_cb_x= x;
-				panels->mouse_cb_y= y;
+				panels->mouse_cb_x = x;
+				panels->mouse_cb_y = y;
 				return true;
 			}
 			if (panels->mode == PANEL_MODE_MENU && __trigger_mouse_on_menu (core, x, y)) {
 				panels->mouse_cb = __handle_mouse_on_menu;
-				panels->mouse_cb_x= x;
-				panels->mouse_cb_y= y;
+				panels->mouse_cb_x = x;
+				panels->mouse_cb_y = y;
 				return true;
 			}
 			if (__trigger_X (core, x, y)) {
 				panels->mouse_cb = __handle_mouse_on_X;
-				panels->mouse_cb_x= x;
-				panels->mouse_cb_y= y;
+				panels->mouse_cb_x = x;
+				panels->mouse_cb_y = y;
 				return true;
 			}
 			if (__check_if_mouse_x_illegal(core, x) ||
@@ -1974,10 +1975,7 @@ bool __trigger_X(RCore *core, int x, int y) {
 	}
 	RPanel *ppos = __get_panel(panels, idx);
 	const int TITLE_Y = ppos->view->pos.y + 2;
-	if (y == TITLE_Y) {
-		return true;
-	}
-	return false;
+	return y == TITLE_Y;
 }
 
 void __handle_mouse_on_X(void *user, int x, int y) {
@@ -3279,7 +3277,6 @@ int __close_file_cb(void *user) {
 int __save_layout_cb(void *user) {
 	RCore *core = (RCore *)user;
 	r_save_panels_layout (core, NULL);
-	(void)__show_status (core, "Panels layout saved!");
 	__set_mode (core, PANEL_MODE_DEFAULT);
 	__clear_panels_menu (core);
 	__get_cur_panel (core->panels)->view->refresh = true;
@@ -4372,7 +4369,7 @@ RStrBuf *__draw_menu(RCore *core, RPanelsMenuItem *item) {
 	int i;
 	for (i = 0; i < item->n_sub; i++) {
 		if (i == item->selectedIndex) {
-			r_strbuf_appendf (buf, " %s %s"Color_RESET,
+			r_strbuf_appendf (buf, "%s> %s"Color_RESET,
 					core->cons->context->pal.graph_box2, item->sub[i]->name);
 		} else {
 			r_strbuf_appendf (buf, "  %s", item->sub[i]->name);
@@ -5525,6 +5522,10 @@ void r_save_panels_layout(RCore *core, const char *_name) {
 	} else {
 		name = __show_status_input (core, "Name for the layout: ");
 	}
+	if (R_STR_ISEMPTY (name)) {
+		(void)__show_status (core, "Name can't be empty!");
+		return;
+	}
 	RPanels *panels = core->panels;
 	PJ *pj = NULL;
 	pj = pj_new ();
@@ -5540,7 +5541,7 @@ void r_save_panels_layout(RCore *core, const char *_name) {
 		pj_kn (pj, "h", panel->view->pos.h);
 		pj_end (pj);
 	}
-	FILE *file = fopen (config_path, "w");
+	FILE *file = r_sandbox_fopen (config_path, "ab");
 	if (!file) {
 		free (config_path);
 		return;
@@ -5551,11 +5552,11 @@ void r_save_panels_layout(RCore *core, const char *_name) {
 	if (!_name) {
 		__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
 	}
+	(void)__show_status (core, "Panels layout saved!");
 }
 
 char *__parse_panels_config(const char *cfg, int len) {
 	if (R_STR_ISEMPTY (cfg) || len < 2) {
-		eprintf ("Not valid config!\n");
 		return NULL;
 	}
 	char *tmp = r_str_newlen (cfg, len + 1);
@@ -5641,6 +5642,13 @@ bool r_load_panels_layout(RCore *core, const char *_name) {
 			break;
 		}
 		p_cfg += strlen (p_cfg) + 1;
+	}
+	if (!found) {
+		char *tmp = r_str_newf ("No saved layout found for the name: %s", _name);
+		if (tmp) {
+			(void)__show_status (core, tmp);
+			free (tmp);
+		}
 	}
 	free (panels_config);
 	if (!panels->n_panels) {
@@ -6526,9 +6534,8 @@ void __panels_process(RCore *core, RPanels *panels) {
 	core->vmode = true;
 	{
 		const char *layout = r_config_get (core->config, "scr.layout");
-		if (layout && *layout) {
+		if (R_STR_ISNOTEMPTY (layout)) {
 			r_load_panels_layout (core, layout);
-			r_save_panels_layout (core, layout);
 		}
 	}
 	r_cons_enable_mouse (false);

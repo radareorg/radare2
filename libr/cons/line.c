@@ -66,17 +66,26 @@ R_API void r_line_completion_fini(RLineCompletion *completion) {
 
 R_API void r_line_completion_push(RLineCompletion *completion, const char *str) {
 	r_return_if_fail (completion && str);
+	if (completion->quit) {
+	        return;
+	}
 	if (r_pvector_len (&completion->args) < completion->args_limit) {
 		char *s = strdup (str);
 		if (s) {
 			r_pvector_push (&completion->args, (void *)s);
 		}
+	} else {
+	        completion->quit = true;
+	        eprintf ("WARNING: Maximum completion capacity reached, increase scr.maxtab");
 	}
 }
 
 R_API void r_line_completion_set(RLineCompletion *completion, int argc, const char **argv) {
 	r_return_if_fail (completion && (argc >= 0));
 	r_line_completion_clear (completion);
+	if (argc > completion->args_limit) {
+                eprintf ("WARNING: Maximum completion capacity reached, increase scr.maxtab");
+	}
 	size_t count = R_MIN (argc, completion->args_limit);
 	r_pvector_reserve (&completion->args, count);
 	int i;
@@ -87,6 +96,7 @@ R_API void r_line_completion_set(RLineCompletion *completion, int argc, const ch
 
 R_API void r_line_completion_clear(RLineCompletion *completion) {
 	r_return_if_fail (completion);
+	completion->quit = false;
 	r_pvector_clear (&completion->args);
 }
 

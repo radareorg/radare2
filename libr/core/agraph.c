@@ -317,6 +317,16 @@ static void tiny_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	}
 }
 
+static char *get_node_color (int color, int cur) {
+        RCons *cons = r_cons_singleton ();
+        if (color == -1) {
+                return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
+        }
+        return color ? (\
+                color==R_ANAL_DIFF_TYPE_MATCH ? cons->context->pal.graph_diff_match:
+                color==R_ANAL_DIFF_TYPE_UNMATCH? cons->context->pal.graph_diff_unmatch : cons->context->pal.graph_diff_new): cons->context->pal.graph_diff_unknown;
+}
+
 static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	ut32 center_x = 0, center_y = 0;
 	ut32 delta_x = 0, delta_txt_x = 0;
@@ -324,6 +334,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	char title[TITLE_LEN];
 	char *body;
 	int x, y;
+	int color = n->difftype;
 	const bool showTitle = g->show_node_titles;
 	const bool showBody = g->show_node_body;
 
@@ -401,18 +412,17 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 
 	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RANode* from RCore*
-	RCons *cons = r_cons_singleton ();
 	if (g->show_node_bubble) {
 		if (cur) {
-			r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box2);
+			r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
 		} else {
-			r_cons_canvas_circle(g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box);
+			r_cons_canvas_circle(g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
 		}
 	} else {
 		if (cur) {
-			r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box2);
+			r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
 		} else {
-			r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box);
+			r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
 		}
 	}
 }
@@ -3446,7 +3456,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	}
 	/* print the graph title */
 	(void) G (-g->can->sx, -g->can->sy);
-	W (g->title);
+	if (!g->is_tiny) {
+                W (g->title);
+	}
 	if (is_interactive && g->title) {
 		int title_len = strlen (g->title);
 		r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
@@ -3673,42 +3685,47 @@ R_API void r_agraph_set_title(RAGraph *g, const char *title) {
 	sdb_set (g->db, "agraph.title", g->title, 0);
 }
 
-R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char *body) {
-	RANode *res = r_agraph_get_node (g, title);
-	if (res) {
-		return res;
-	}
-	res = R_NEW0 (RANode);
-	if (!res) {
-		return NULL;
-	}
+R_API RANode *r_agraph_add_node_with_color(const RAGraph *g, const char *title, const char *body, int color) {
+        RANode *res = r_agraph_get_node (g, title);
+        if (res) {
+                return res;
+        }
+        res = R_NEW0 (RANode);
+        if (!res) {
+                return NULL;
+        }
 
-	res->title = title? r_str_trunc_ellipsis (title, 255) : strdup ("");
-	res->body = body? strdup (body): strdup ("");
-	res->layer = -1;
-	res->pos_in_layer = -1;
-	res->is_dummy = false;
-	res->is_reversed = false;
-	res->klass = -1;
-	res->gnode = r_graph_add_node (g->graph, res);
-	sdb_num_set (g->nodes, res->title, (ut64) (size_t) res, 0);
-	if (res->title) {
-		char *s, *estr, *b;
-		size_t len;
-		sdb_array_add (g->db, "agraph.nodes", res->title, 0);
-		b = strdup (res->body);
-		len = strlen (b);
-		if (len > 0 && b[len - 1] == '\n') {
-			b[len - 1] = '\0';
-		}
-		estr = sdb_encode ((const void *) b, -1);
-		//s = sdb_fmt ("base64:%s", estr);
-		s = r_str_newf ("base64:%s", estr);
-		free (estr);
-		free (b);
-		sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.body", res->title), s, 0);
-	}
-	return res;
+        res->title = title? r_str_trunc_ellipsis (title, 255) : strdup ("");
+        res->body = body? strdup (body): strdup ("");
+        res->layer = -1;
+        res->pos_in_layer = -1;
+        res->is_dummy = false;
+        res->is_reversed = false;
+        res->klass = -1;
+        res->difftype = color;
+        res->gnode = r_graph_add_node (g->graph, res);
+        sdb_num_set (g->nodes, res->title, (ut64) (size_t) res, 0);
+        if (res->title) {
+                char *s, *estr, *b;
+                size_t len;
+                sdb_array_add (g->db, "agraph.nodes", res->title, 0);
+                b = strdup (res->body);
+                len = strlen (b);
+                if (len > 0 && b[len - 1] == '\n') {
+                        b[len - 1] = '\0';
+                }
+                estr = sdb_encode ((const void *) b, -1);
+                //s = sdb_fmt ("base64:%s", estr);
+                s = r_str_newf ("base64:%s", estr);
+                free (estr);
+                free (b);
+                sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.body", res->title), s, 0);
+        }
+        return res;
+}
+
+R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char *body) {
+        return r_agraph_add_node_with_color(g, title, body, -1);
 }
 
 R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {

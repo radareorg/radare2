@@ -1021,7 +1021,7 @@ static bool insert_into(void *user, const ut64 k, const ut64 v) {
 static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
-	RAsmOp asmop;
+	RAnalOp aop = {0};
 	const char *start = NULL, *end = NULL;
 	char *grep_str = NULL;
 	RCoreAsmHit *hit = NULL;
@@ -1060,19 +1060,26 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 	}
 	while (nb_instr < max_instr) {
 		ht_uu_insert (localbadstart, idx, 1);
-		r_asm_set_pc (core->assembler, addr);
-		if (!r_asm_disassemble (core->assembler, &asmop, buf + idx, buflen - idx)) {
-			goto ret;
-		}
-		RAnalOp aop;
-		r_anal_op (core->anal, &aop, addr, buf + idx, buflen - idx, R_ANAL_OP_MASK_BASIC);
+		r_anal_op (core->anal, &aop, addr, buf + idx, buflen - idx, R_ANAL_OP_MASK_DISASM);
+
 		if (nb_instr == 0 && is_end_gadget (&aop, 0)) {
 			valid = false;
 			goto ret;
 		}
-		const int opsz = asmop.size;
+		const int opsz = aop.size;
 		// opsz = r_strbuf_length (asmop.buf);
-		char *opst = r_asm_op_get_asm (&asmop);
+		char *opst = aop.mnemonic;
+		if (!opst) {
+			R_LOG_WARN ("Anal plugin %s did not return disassembly\n", core->anal->cur->name);
+			RAsmOp asmop;
+			r_asm_set_pc (core->assembler, addr);
+			if (!r_asm_disassemble (core->assembler, &asmop, buf + idx, buflen - idx)) {
+				valid = false;
+				goto ret;
+			}
+			opst = strdup (r_asm_op_get_asm (&asmop));
+			r_asm_op_fini (&asmop);
+		}
 		if (!r_str_ncasecmp (opst, "invalid", strlen ("invalid")) ||
 		    !r_str_ncasecmp (opst, ".byte", strlen (".byte"))) {
 			valid = false;
@@ -1118,9 +1125,12 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 			valid = (endaddr == idx - opsz);
 			goto ret;
 		}
+		free (opst);
+		aop.mnemonic = NULL;
 		nb_instr++;
 	}
 ret:
+	free (aop.mnemonic);
 	free (grep_str);
 	if (regex && rx) {
 		r_list_free (hitlist);
