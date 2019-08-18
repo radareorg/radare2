@@ -794,7 +794,6 @@ char *__show_status_input(RCore *core, const char *msg) {
 	char *n_msg = r_str_newf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, core->cons->context->pal.graph_box2, msg);
 	r_cons_gotoxy (0, 0);
 	r_cons_flush ();
-	fflush (stdout);
 	char *out = r_cons_input (n_msg);
 	free (n_msg);
 	return out;
