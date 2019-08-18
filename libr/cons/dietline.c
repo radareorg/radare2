@@ -1341,7 +1341,7 @@ static inline void delete_till_end () {
 }
 
 static void __print_prompt () {
-        RCons *cons = r_cons_singleton();
+        RCons *cons = r_cons_singleton ();
 	int columns = r_cons_get_size (NULL) - 2;
 	int chars = R_MAX (1, strlen (I.buffer.data));	
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt) - 2);
@@ -2396,7 +2396,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				}
 				printf ("\r (reverse-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
 			} else {
-			        __print_prompt();
+			        __print_prompt ();
 			}
 			fflush (stdout);
 		}
