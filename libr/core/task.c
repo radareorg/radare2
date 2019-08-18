@@ -320,7 +320,7 @@ static void task_wakeup(RCoreTask *current) {
 	current->state = R_CORE_TASK_STATE_RUNNING;
 
 	// check if there are other tasks running
-	bool single = core->tasks_running == 1;
+	bool single = core->tasks_running == 1 || core->tasks_running == 0;
 
 	r_th_lock_enter (current->dispatch_lock);
 

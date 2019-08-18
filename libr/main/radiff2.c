@@ -23,6 +23,18 @@ enum {
 	MODE_COLS
 };
 
+enum {
+        GRAPH_DEFAULT_MODE,
+        GRAPH_SDB_MODE,
+        GRAPH_JSON_MODE,
+        GRAPH_JSON_DIS_MODE,
+        GRAPH_TINY_MODE,
+        GRAPH_INTERACTIVE_MODE,
+        GRAPH_DOT_MODE,
+        GRAPH_STAR_MODE,
+        GRAPH_GML_MODE
+};
+
 static bool zignatures = false;
 static char *file = NULL;
 static char *file2 = NULL;
@@ -406,7 +418,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-abBcCdjrspOxuUvV] [-A[A]] [-g sym] [-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-abBcCdjrspOxuUvV] [-A[A]] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
 	if (v) {
 		printf (
 			"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
@@ -423,6 +435,7 @@ static int show_help(int v) {
 			"  -i         diff imports of target files (see -u, -U and -z)\n"
 			"  -j         output in json format\n"
 			"  -n         print bare addresses only (diff.bare=1)\n"
+                        "  -m [aditsjJ]  choose the graph output mode\n"
 			"  -O         code diffing with opcode bytes only\n"
 			"  -p         use physical addressing (io.va=0)\n"
 			"  -q         quiet mode (disable colors, reduce output)\n"
@@ -437,7 +450,17 @@ static int show_help(int v) {
 			"  -v         show version information\n"
 			"  -V         be verbose (current only for -s)\n"
 			"  -z         diff on extracted strings\n"
-			"  -Z         diff code comparing zignatures\n");
+			"  -Z         diff code comparing zignatures\n\n"
+                       "Graph Output formats: (-m [mode])\n"
+		        "  <blank/a>  Ascii art\n"
+	                "  s          r2 commands\n"
+		        "  d          Graphviz dot\n"
+	                "  g          Graph Modelling Language (gml)\n"
+		        "  j          json\n"
+	                "  J          json with disarm\n"
+		        "  k          SDB key-value\n"
+	                "  t          Tiny ascii art\n"
+		        "  i          Interactive ascii art\n");
 	}
 	return 1;
 }
@@ -696,6 +719,88 @@ static ut8 *get_strings(RCore *c, int *len) {
 	return buf;
 }
 
+static char *get_graph_commands(RCore *c, ut64 off) {
+        bool tmp_html = r_cons_singleton ()->is_html;
+        r_cons_singleton ()->is_html = false;
+        r_cons_push ();
+        r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF |  R_CORE_ANAL_STAR);
+        const char *static_str = r_cons_get_buffer ();
+        char *retstr = strdup (static_str? static_str: "");
+        r_cons_pop ();
+        r_cons_echo (NULL);
+        r_cons_singleton ()->is_html = tmp_html;
+        return retstr;
+}
+
+static void __generate_graph (RCore *c, ut64 off) {
+        r_return_if_fail (c);
+        char *ptr = get_graph_commands (c, off);
+        r_cons_break_push (NULL, NULL);
+        if (ptr) {
+                for (;;) {
+                        if (r_cons_is_breaked ()) {
+                                break;
+                        }
+                        char *eol = strchr (ptr, '\n');
+                        if (eol) {
+                                *eol = '\0';
+                        }
+                        if (*ptr) {
+                                char *p = strdup (ptr);
+                                r_return_if_fail (p);
+                                r_core_cmd0 (c, p);
+                                free (p);
+                        }
+                        if (!eol) {
+                                break;
+                        }
+                        ptr = eol + 1;
+                }
+        }
+        r_cons_break_pop ();
+}
+
+static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
+        int opts = R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF;
+        r_agraph_reset(c->graph);
+        switch (gmode) {
+        case GRAPH_DOT_MODE:
+                r_core_anal_graph (c, off, opts);
+                break;
+        case GRAPH_STAR_MODE:
+                r_core_anal_graph (c, off, opts |  R_CORE_ANAL_STAR);
+                break;
+        case GRAPH_TINY_MODE:
+                __generate_graph (c, off);
+                r_core_cmd0 (c, "aggt");
+                break;
+        case GRAPH_INTERACTIVE_MODE:
+                __generate_graph (c, off);
+                r_core_cmd0 (c, "aggv");
+                break;
+        case GRAPH_SDB_MODE:
+                __generate_graph (c, off);
+                r_core_cmd0 (c, "aggk");
+                break;
+        case GRAPH_GML_MODE:
+                __generate_graph (c, off);
+                r_core_cmd0 (c, "aggg");
+                break;
+        case GRAPH_JSON_MODE:
+                r_core_anal_graph (c, off, opts | R_CORE_ANAL_JSON);
+                break;
+        case GRAPH_JSON_DIS_MODE:
+                r_core_anal_graph (c, off, opts | R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
+                break;
+        case GRAPH_DEFAULT_MODE:
+        default:
+                __generate_graph (c, off);
+                r_core_cmd0 (c, "agg");
+        break;
+        }
+        r_cons_reset_colors ();
+}
+
 R_API int r_main_radiff2(int argc, char **argv) {
 	const char *columnSort = NULL;
 	const char *addr = NULL;
@@ -704,13 +809,13 @@ R_API int r_main_radiff2(int argc, char **argv) {
 	ut8 *bufa = NULL, *bufb = NULL;
 	int o, sza, szb, /*diffmode = 0,*/ delta = 0;
 	int mode = MODE_DIFF;
+	int gmode = GRAPH_DEFAULT_MODE;
 	int diffops = 0;
 	int threshold = -1;
 	double sim = 0.0;
-
 	evals = r_list_newf (NULL);
 
-	while ((o = r_getopt (argc, argv, "Aa:b:BCDe:npg:G:OijrhcdsS:uUvVxt:zqZ")) != -1) {
+	while ((o = r_getopt (argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxt:zqZ")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = r_optarg;
@@ -737,6 +842,21 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			mode = MODE_GRAPH;
 			addr = r_optarg;
 			break;
+		case 'm':{
+		        char *tmp = r_optarg;
+		        switch(tmp[0]) {
+	                case 'i': gmode = GRAPH_INTERACTIVE_MODE; break;
+	                case 'k': gmode = GRAPH_SDB_MODE; break;
+	                case 'j': gmode = GRAPH_JSON_MODE; break;
+	                case 'J': gmode = GRAPH_JSON_DIS_MODE; break;
+	                case 't': gmode = GRAPH_TINY_MODE; break;
+	                case 'd': gmode = GRAPH_DOT_MODE; break;
+	                case 's': gmode = GRAPH_STAR_MODE; break;
+	                case 'g': gmode = GRAPH_GML_MODE; break;
+	                case 'a':
+                        default: gmode = GRAPH_DEFAULT_MODE; break;
+		        }
+		}       break;
 		case 'G':
 			runcmd = r_optarg;
 			break;
@@ -886,15 +1006,14 @@ R_API int r_main_radiff2(int argc, char **argv) {
 				r_core_anal_fcn (c2, r_num_math (c2->num, second),
 					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_gdiff (c, c2);
-				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
+				__print_diff_graph (c, off, gmode);
 			} else {
 				r_core_anal_fcn (c, r_num_math (c->num, words),
 					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_anal_fcn (c2, r_num_math (c2->num, words),
 					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_gdiff (c, c2);
-				r_core_anal_graph (c, r_num_math (c->num, addr),
-					R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
+				__print_diff_graph (c, r_num_math (c->num, addr), gmode);
 			}
 			free (words);
 		} else if (mode == MODE_CODE) {
