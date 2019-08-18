@@ -45,6 +45,13 @@ R_API void r_debug_bp_update(RDebug *dbg) {
 	}
 }
 
+static int r_debug_drx_at(RDebug *dbg, ut64 addr) {
+	if (dbg && dbg->h && dbg->h->drx) {
+		return dbg->h->drx (dbg, 0, addr, 0, 0, 0);
+	}
+	return -1;
+}
+
 /*
  * Recoiling after a breakpoint has two stages:
  * 1. remove the breakpoint and fix the program counter.
@@ -102,6 +109,12 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 			/* Some targets set pc to breakpoint */
 			b = r_bp_get_at (dbg->bp, pc);
 			if (!b) {
+				/* handle the case of hw breakpoints - notify the user */
+				int drx_reg_idx = r_debug_drx_at(dbg, pc);
+				if ( drx_reg_idx != -1){
+					eprintf ("hit hardware breakpoint %d at: %" PFMT64x "\n",
+						drx_reg_idx, pc);
+				}
 				/* Couldn't find the break point. Nothing more to do... */
 				return true;
 			}
