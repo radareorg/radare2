@@ -1506,31 +1506,6 @@ static int r_debug_native_init (RDebug *dbg) {
 #endif
 }
 
-static int r_debug_native_drx_get_at(RDebug *dbg, ut64 addr){
-
-#if __i386__ || __x86_64__
-	drxt regs[8] = {0};
-	// sync drx regs
-#define R dbg->reg
-	regs[0] = r_reg_getv (R, "dr0");
-	regs[1] = r_reg_getv (R, "dr1");
-	regs[2] = r_reg_getv (R, "dr2");
-	regs[3] = r_reg_getv (R, "dr3");
-/*
-	RESERVED
-	regs[4] = r_reg_getv (R, "dr4");
-	regs[5] = r_reg_getv (R, "dr5");
-*/
-	regs[6] = r_reg_getv (R, "dr6");
-	regs[7] = r_reg_getv (R, "dr7");
-
-	return drx_get_at((drxt*)&regs, addr);
-#endif
-
-	//TODO: other architectures
-	return -1;
-}
-
 static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g) {
 #if __i386__ || __x86_64__
 	drxt regs[8] = {0};
