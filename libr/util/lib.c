@@ -91,7 +91,7 @@ R_API char *r_lib_path(const char *libname) {
 	if (!tmp) {
 		return NULL;
 	}
-	TCHAR *name = r_sys_conv_utf8_to_win (tmp);
+	WCHAR *name = r_utf8_to_utf16 (tmp);
 	free (tmp);
 	char *path = NULL;
 	if (!name) {
@@ -99,7 +99,7 @@ R_API char *r_lib_path(const char *libname) {
 	}
 
 	int count;
-	if (!(count = SearchPath (NULL, name, NULL, 0, NULL, NULL))) {
+	if (!(count = SearchPathW (NULL, name, NULL, 0, NULL, NULL))) {
 		r_sys_perror ("SearchPath");
 		goto err;
 	}
@@ -107,12 +107,12 @@ R_API char *r_lib_path(const char *libname) {
 	if (!path) {
 		goto err;
 	}
-	if (!(count = SearchPath (NULL, name, NULL, count, path, NULL))) {
+	if (!(count = SearchPathW (NULL, name, NULL, count, path, NULL))) {
 		R_FREE (path);
 		r_sys_perror ("SearchPath");
 		goto err;
 	}
-	tmp = r_sys_conv_win_to_utf8 (path);
+	tmp = r_utf16_to_utf8 (path);
 	free (path);
 	path = tmp;
 err:
