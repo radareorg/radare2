@@ -517,10 +517,10 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 	// mov reg2, sword [reg1 + tbl_off*4 + tbl_loc_off]
 	// add reg2, reg1
 	// jmp reg2
-	if (mov_aop.type && add_aop.type && mov_aop.addr < add_aop.addr && add_aop.addr < jmp_aop->addr && mov_aop.ptr) {
-		// ptr in this case should be tbl_loc_off
-		// eprintf ("JMPTBL ADDR %llx\n", mov_aop.ptr);
-		*jmptbl_addr += mov_aop.ptr;
+	if (mov_aop.type && add_aop.type && mov_aop.addr < add_aop.addr && add_aop.addr < jmp_aop->addr
+	    && mov_aop.disp && mov_aop.disp != UT64_MAX) {
+		// disp in this case should be tbl_loc_off
+		*jmptbl_addr += mov_aop.disp;
 	}
 #if 0
 	// required for the last jmptbl.. but seems to work without it and breaks other tests
@@ -739,7 +739,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		}
 		r_list_free (list);
 	}
-	ut64 movptr = UT64_MAX; // used by jmptbl when coded as "mov reg,[R*4+B]"
+	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov reg,[R*4+B]"
 	ut8 buf[32]; // 32 bytes is enough to hold any instruction.
 	int maxlen = len * addrbytes;
 	if (is_dalvik) {
@@ -925,7 +925,7 @@ repeat:
 			// skip mov reg, reg
 			if (anal->opt.jmptbl) {
 				if (op.scale && op.ireg) {
-					movptr = op.ptr;
+					movdisp = op.disp;
 				}
 			}
 			if (anal->opt.hpskip && regs_exist (op.src[0], op.dst)
@@ -946,7 +946,7 @@ repeat:
 				ut8 buf[4];
 				anal->iob.read_at (anal->iob.io, op.ptr, buf, sizeof (buf));
 				if (buf[2] == 0xff && buf[3] == 0xff) {
-					leaddr = op.ptr; // XXX movptr is dupped but seems to be trashed sometimes, better track leaddr separately
+					leaddr = op.ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
 				}
 				if (op.dst && op.dst->reg && op.dst->reg->name && op.ptr > 0 && op.ptr != UT64_MAX) {
 					free (last_reg_mov_lea_name);
@@ -1274,18 +1274,18 @@ repeat:
 					if (try_get_jmptbl_info (anal, fcn, op.addr, bb, &table_size, &default_case)) {
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
 					}
-				} else if (movptr == 0) {
+				} else if (movdisp == 0) {
 					ut64 jmptbl_base = leaddr;
 					ut64 table_size = cmpval + 1;
 					ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, jmptbl_base, jmptbl_base, 4, table_size, -1, ret);
-				} else if (movptr != UT64_MAX) {
+				} else if (movdisp != UT64_MAX) {
 					ut64 table_size, default_case;
 
 					if (try_get_jmptbl_info (anal, fcn, op.addr, bb, &table_size, &default_case)) {
-						op.ptr = movptr;
+						op.ptr = movdisp;
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
 					}
-					movptr = UT64_MAX;
+					movdisp = UT64_MAX;
 				} else if (is_arm) {
 					if (op.ptrsize == 1) { // TBB
 						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op.ireg);

@@ -35,6 +35,7 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->ptr = UT64_MAX;
 		op->refptr = 0;
 		op->val = UT64_MAX;
+		op->disp = UT64_MAX;
 	}
 }
 
