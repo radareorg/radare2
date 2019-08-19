@@ -110,8 +110,8 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 			b = r_bp_get_at (dbg->bp, pc);
 			if (!b) {
 				/* handle the case of hw breakpoints - notify the user */
-				int drx_reg_idx = r_debug_drx_at(dbg, pc);
-				if ( drx_reg_idx != -1){
+				int drx_reg_idx = r_debug_drx_at (dbg, pc);
+				if (drx_reg_idx != -1) {
 					eprintf ("hit hardware breakpoint %d at: %" PFMT64x "\n",
 						drx_reg_idx, pc);
 				}

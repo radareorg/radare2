@@ -166,11 +166,10 @@ int drx_get_at(drxt *drx, ut64 at_addr) {
 		}
 		rwx = len = g = en = 0;
 		addr = drx_get (drx, i, &rwx, &len, &g, &en);
-		if (addr == at_addr){
+		if (addr == at_addr) {
 			return i;
 		}
 	}
-
 	return -1;
 }
 

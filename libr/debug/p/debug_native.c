@@ -1524,9 +1524,9 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
 	regs[7] = r_reg_getv (R, "dr7");
 
 	if (sz == 0) {
-		if (addr != 0){
+		if (addr != 0) {
 			/* get the index of the breakpoint at addr */
-			return drx_get_at((drxt*)&regs, addr);
+			return drx_get_at ((drxt*)&regs, addr);
 		} else {
 			/* print the list of breakpoints */
 			drx_list ((drxt*)&regs);
