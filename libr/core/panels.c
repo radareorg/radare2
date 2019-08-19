@@ -138,9 +138,14 @@ static const char *menus_Analyze[] = {
 
 static char *menus_Colors[128];
 
-static const char *menus_settings_disassembly[] = {
-	"asm.bytes", "asm.section", "hex.section", "asm.cmt.right", "io.cache", "hex.pairs", "emu.str",
-	"asm.emu", "asm.var.summary", "asm.pseudo", "asm.flags.inbytes",
+static char *menus_settings_disassembly[] = {
+	"asm", "hex.section", "io.cache", "hex.pairs", "emu.str",
+	NULL
+};
+
+static char *menus_settings_disassembly_asm[] = {
+	"asm.bytes", "asm.section", "asm.cmt.right", "asm.emu", "asm.var.summary",
+	"asm.pseudo", "asm.flags.inbytes", "asm.arch", "asm.bits", "asm.cpu",
 	NULL
 };
 
@@ -286,6 +291,7 @@ static void __init_new_panels_root(RCore *core);
 static void __init_menu_saved_layout(void *core, const char *parent);
 static void __init_menu_color_settings_layout(void *core, const char *parent);
 static void __init_menu_disasm_settings_layout(void *_core, const char *parent);
+static void __init_menu_disasm_asm_settings_layout(void *_core, const char *parent);
 static void __init_menu_screen_settings_layout(void *_core, const char *parent);
 
 /* create */
@@ -3318,8 +3324,8 @@ int __config_toggle_cb(void *user) {
 		p->view->refresh = true;
 		menu->refreshPanels[menu->n_refresh++] = p;
 	}
-	if (!strcmp (parent->name, "Disassembly")) {
-		__update_menu(core, "Settings.Disassembly", __init_menu_disasm_settings_layout);
+	if (!strcmp (parent->name, "asm")) {
+		__update_menu(core, "Settings.Disassembly.asm", __init_menu_disasm_asm_settings_layout);
 	}
 	if (!strcmp (parent->name, "Screen")) {
 		__update_menu(core, "Settings.Screen", __init_menu_screen_settings_layout);
@@ -3335,7 +3341,7 @@ int __config_value_cb(void *user) {
 	RStrBuf *tmp = r_strbuf_new (child->name);
 	(void)r_str_split (r_strbuf_get(tmp), ':');
 	const char *v = __show_status_input (core, "New value: ");
-	r_config_set_i (core->config, r_strbuf_drain (tmp), r_num_math (core->num, v));
+	r_config_set (core->config, r_strbuf_drain (tmp), v);
 	__set_refresh_all (core, false, false);
 	parent->p->model->title = r_strbuf_drain (__draw_menu (core, parent));
 	int i;
@@ -3344,8 +3350,8 @@ int __config_value_cb(void *user) {
 		p->view->refresh = true;
 		menu->refreshPanels[menu->n_refresh++] = p;
 	}
-	if (!strcmp (parent->name, "Disassembly")) {
-		__update_menu(core, "Settings.Disassembly", __init_menu_disasm_settings_layout);
+	if (!strcmp (parent->name, "asm")) {
+		__update_menu(core, "Settings.Disassembly.asm", __init_menu_disasm_asm_settings_layout);
 	}
 	if (!strcmp (parent->name, "Screen")) {
 		__update_menu(core, "Settings.Screen", __init_menu_screen_settings_layout);
@@ -4403,18 +4409,42 @@ void __init_menu_color_settings_layout (void *_core, const char *parent) {
 void __init_menu_disasm_settings_layout (void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
 	int i = 0;
-	while (menus_settings_disassembly[i]) {
+	RList *list = __sorted_list (core, menus_settings_disassembly, COUNT (menus_settings_disassembly));
+	char *pos;
+	RListIter* iter;
+	r_list_foreach (list, iter, pos) {
+		if (!strcmp (pos, "asm")) {
+			__add_menu (core, parent, pos, __open_menu_cb);
+			__init_menu_disasm_asm_settings_layout (core, "Settings.Disassembly.asm");
+		} else {
+			RStrBuf *rsb = r_strbuf_new (NULL);
+			r_strbuf_append (rsb, pos);
+			r_strbuf_append (rsb, ": ");
+			r_strbuf_append (rsb, r_config_get (core->config, pos));
+			__add_menu (core, parent, r_strbuf_drain (rsb), __config_toggle_cb);
+		}
+		i++;
+	}
+}
+
+static void __init_menu_disasm_asm_settings_layout(void *_core, const char *parent) {
+	RCore *core = (RCore *)_core;
+	RList *list = __sorted_list (core, menus_settings_disassembly_asm, COUNT (menus_settings_disassembly_asm));
+	char *pos;
+	RListIter* iter;
+	r_list_foreach (list, iter, pos) {
 		RStrBuf *rsb = r_strbuf_new (NULL);
-		const char *menu = menus_settings_disassembly[i];
-		r_strbuf_append (rsb, menu);
+		r_strbuf_append (rsb, pos);
 		r_strbuf_append (rsb, ": ");
-		r_strbuf_append (rsb, r_config_get (core->config, menu));
-		if (!strcmp (menus_settings_disassembly[i], "asm.var.summary")) {
+		r_strbuf_append (rsb, r_config_get (core->config, pos));
+		if (!strcmp (pos, "asm.var.summary") ||
+				!strcmp (pos, "asm.arch") ||
+				!strcmp (pos, "asm.bits") ||
+				!strcmp (pos, "asm.cpu")) {
 			__add_menu (core, parent, r_strbuf_drain (rsb), __config_value_cb);
 		} else {
 			__add_menu (core, parent, r_strbuf_drain (rsb), __config_toggle_cb);
 		}
-		i++;
 	}
 }
 
