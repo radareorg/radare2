@@ -421,8 +421,11 @@ const amd29k_instruction_t amd29k_instructions[N_AMD29K_INSTRUCTIONS] = {
 };
 
 bool amd29k_instr_decode(const ut8* buffer, const ut32 buffer_size, amd29k_instr_t* instruction, const char* cpu) {
-	if (!buffer || buffer_size < 4 || !instruction || strlen (cpu) < 5) {
+	if (!buffer || buffer_size < 4 || !instruction || (cpu && strlen (cpu) < 5)) {
 		return false;
+	}
+	if (!cpu) {
+		cpu = CPU_29000;
 	}
 	if (buffer[0] == 0x70 && buffer[1] == 0x40 && buffer[2] == 0x01 && buffer[3] == 0x01) {
 		decode_none (instruction, buffer);
