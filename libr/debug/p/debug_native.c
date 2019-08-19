@@ -2,6 +2,7 @@
 
 #include <r_userconf.h>
 #include <r_debug.h>
+#include <r_drx.h>
 #include <r_asm.h>
 #include <r_core.h>
 #include <r_reg.h>
@@ -1506,9 +1507,14 @@ static int r_debug_native_init (RDebug *dbg) {
 #endif
 }
 
-static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g) {
+static void sync_drx_regs (RDebug *dbg, drxt *regs, size_t num_regs) {
 #if __i386__ || __x86_64__
-	drxt regs[8] = {0};
+	/* sanity check, we rely on this assumption */
+	if (num_regs != NUM_DRX_REGISTERS) {
+		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
+		return;
+	}
+
 	// sync drx regs
 #define R dbg->reg
 	regs[0] = r_reg_getv (R, "dr0");
@@ -1522,24 +1528,64 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
 */
 	regs[6] = r_reg_getv (R, "dr6");
 	regs[7] = r_reg_getv (R, "dr7");
+#else
+	eprintf ("drx sync_drx_regs: Unsupported platform\n");
+#endif
+}
 
-	if (sz == 0) {
-		drx_list ((drxt*)&regs);
-		return false;
+static void set_drx_regs (RDebug *dbg, drxt *regs, size_t num_regs) {
+#if __i386__ || __x86_64__
+	/* sanity check, we rely on this assumption */
+	if (num_regs != NUM_DRX_REGISTERS){
+		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
+		return;
 	}
-	if (sz < 0) { // remove
-		drx_set (regs, n, addr, -1, 0, 0);
-	} else {
-		drx_set (regs, n, addr, sz, rwx, g);
-	}
-	r_reg_setv (R, "dr0", regs[0]);
+
+#define R dbg->reg
+ 	r_reg_setv (R, "dr0", regs[0]);
 	r_reg_setv (R, "dr1", regs[1]);
 	r_reg_setv (R, "dr2", regs[2]);
 	r_reg_setv (R, "dr3", regs[3]);
 	r_reg_setv (R, "dr6", regs[6]);
 	r_reg_setv (R, "dr7", regs[7]);
+#else
+	eprintf ("drx set_drx_regs: Unsupported platform\n");
+#endif
+}
 
-	return true;
+static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
+#if __i386__ || __x86_64__
+	int retval = false;
+	drxt regs[NUM_DRX_REGISTERS] = {0};
+	// sync drx regs
+	sync_drx_regs (dbg, regs, NUM_DRX_REGISTERS);
+
+	switch (api_type) {
+	case DRX_API_LIST:
+		drx_list (regs);
+		retval = false;
+	case DRX_API_GET_BP:
+		/* get the index of the breakpoint at addr */
+		retval = drx_get_at (regs, addr);
+	case DRX_API_REMOVE_BP:
+		/* remove hardware breakpoint */
+		drx_set (regs, n, addr, -1, 0, 0);
+		retval = true;
+		break;
+	case DRX_API_SET_BP:
+		/* set hardware breakpoint */
+		drx_set (regs, n, addr, sz, rwx, g);
+		retval = true;
+		break;
+	default:
+		/* this should not happen, someone misused the API */
+		eprintf ("drx: Unsupported api type in r_debug_native_drx\n");
+		retval = false;
+	}
+
+	set_drx_regs (dbg, regs, NUM_DRX_REGISTERS);
+
+	return retval;
 #else
 	eprintf ("drx: Unsupported platform\n");
 #endif

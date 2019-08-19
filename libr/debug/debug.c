@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_debug.h>
+#include <r_drx.h>
 #include <r_core.h>
 #include <signal.h>
 
@@ -43,6 +44,13 @@ R_API void r_debug_bp_update(RDebug *dbg) {
 			bp->addr = dbg->corebind.numGet (dbg->corebind.core, bp->expr);
 		}
 	}
+}
+
+static int r_debug_drx_at(RDebug *dbg, ut64 addr) {
+	if (dbg && dbg->h && dbg->h->drx) {
+		return dbg->h->drx (dbg, 0, addr, 0, 0, 0, DRX_API_GET_BP);
+	}
+	return -1;
 }
 
 /*
@@ -102,6 +110,12 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 			/* Some targets set pc to breakpoint */
 			b = r_bp_get_at (dbg->bp, pc);
 			if (!b) {
+				/* handle the case of hw breakpoints - notify the user */
+				int drx_reg_idx = r_debug_drx_at (dbg, pc);
+				if (drx_reg_idx != -1) {
+					eprintf ("hit hardware breakpoint %d at: %" PFMT64x "\n",
+						drx_reg_idx, pc);
+				}
 				/* Couldn't find the break point. Nothing more to do... */
 				return true;
 			}
@@ -1613,20 +1627,20 @@ R_API int r_debug_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 
 R_API void r_debug_drx_list(RDebug *dbg) {
 	if (dbg && dbg->h && dbg->h->drx) {
-		dbg->h->drx (dbg, 0, 0, 0, 0, 0);
+		dbg->h->drx (dbg, 0, 0, 0, 0, 0, DRX_API_LIST);
 	}
 }
 
 R_API int r_debug_drx_set(RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g) {
 	if (dbg && dbg->h && dbg->h->drx) {
-		return dbg->h->drx (dbg, idx, addr, len, rwx, g);
+		return dbg->h->drx (dbg, idx, addr, len, rwx, g, DRX_API_SET_BP);
 	}
 	return false;
 }
 
 R_API int r_debug_drx_unset(RDebug *dbg, int idx) {
 	if (dbg && dbg->h && dbg->h->drx) {
-		return dbg->h->drx (dbg, idx, 0, -1, 0, 0);
+		return dbg->h->drx (dbg, idx, 0, -1, 0, 0, DRX_API_REMOVE_BP);
 	}
 	return false;
 }
