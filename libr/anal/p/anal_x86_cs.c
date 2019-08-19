@@ -1897,7 +1897,9 @@ static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			op->type |= R_ANAL_OP_TYPE_REG;
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = regsz;
-		} else {
+		} else if (INSOP(0).mem.segment == X86_REG_INVALID && INSOP(0).mem.base == X86_REG_INVALID
+			   && INSOP(0).mem.index == X86_REG_INVALID && INSOP(0).mem.scale == 1) { // [<addr>]
+			op->ptr = op->disp;
 			if (op->ptr < 0x1000) {
 				op->ptr = UT64_MAX;
 			}
@@ -1928,6 +1930,9 @@ static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
 				op->stackop = R_ANAL_STACK_GET;
 				op->stackptr = regsz;
+			} else if (INSOP(1).mem.segment == X86_REG_INVALID && INSOP(1).mem.base == X86_REG_INVALID
+			           && INSOP(1).mem.index == X86_REG_INVALID && INSOP(1).mem.scale == 1) { // [<addr>]
+				op->ptr = op->disp;
 			}
 			break;
 		case X86_OP_IMM:
