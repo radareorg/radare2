@@ -14,6 +14,8 @@ bool r_coff_supported_arch(const ut8 *buf) {
 	case COFF_FILE_MACHINE_H8300:
 	case COFF_FILE_TI_COFF:
 	case COFF_FILE_MACHINE_R4000:
+	case COFF_FILE_MACHINE_AMD29KBE:
+	case COFF_FILE_MACHINE_AMD29KLE:
 		return true;
 	default:
 		return false;
@@ -107,8 +109,15 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 }
 
 static bool r_bin_coff_init_hdr(struct r_bin_coff_obj *obj) {
-	ut16 magic = r_buf_read_ble16_at (obj->b, 0, obj->endian);;
-	obj->endian = (magic == COFF_FILE_MACHINE_H8300)? 1 : 0;
+	ut16 magic = r_buf_read_ble16_at (obj->b, 0, COFF_IS_LITTLE_ENDIAN);
+	switch (magic) {
+	case COFF_FILE_MACHINE_H8300:
+	case COFF_FILE_MACHINE_AMD29KBE:
+		obj->endian = COFF_IS_BIG_ENDIAN;
+		break;
+	default:
+		obj->endian = COFF_IS_LITTLE_ENDIAN;
+	}
 	int ret = 0;
 	ret = r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S3I2S": "2s3i2s", 1);
 	if (ret != sizeof (struct coff_hdr)) {

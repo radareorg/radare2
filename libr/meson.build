@@ -1,6 +1,7 @@
 anal_plugins = [
   '6502',
   '8051',
+  'amd29k',
   'arc',
   'arm_cs',
   'arm_gnu',
@@ -53,6 +54,7 @@ anal_plugins = [
 asm_plugins = [
   '6502',
   '8051',
+  'amd29k',
   'arc',
   'arm_as',
   'arm_cs',

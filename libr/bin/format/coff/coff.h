@@ -8,6 +8,9 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
+#define COFF_IS_BIG_ENDIAN 1
+#define COFF_IS_LITTLE_ENDIAN 0
+
 #include "coff_specs.h"
 
 struct r_bin_coff_obj {

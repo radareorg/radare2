@@ -332,6 +332,13 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->arch = strdup ("h8300");
 		ret->bits = 16;
 		break;
+	case COFF_FILE_MACHINE_AMD29KBE:
+	case COFF_FILE_MACHINE_AMD29KLE:
+		ret->cpu = strdup ("29000");
+		ret->machine = strdup ("amd29k");
+		ret->arch = strdup ("amd29k");
+		ret->bits = 32;
+		break;	
 	case COFF_FILE_TI_COFF:
 		switch (obj->target_id) {
 		case COFF_FILE_MACHINE_TMS320C54:
