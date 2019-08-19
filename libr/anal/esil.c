@@ -921,7 +921,7 @@ static bool esil_interrupt(RAnalEsil *esil) {
 }
 
 // This function also sets internal vars which is used in flag calculations.
-static bool esil_cmp(RAnalEsil *esil) {
+static bool esil_cmp(RAnalEsil *esil, int bits) {
 	ut64 num, num2;
 	bool ret = false;
 	char *dst = r_anal_esil_pop (esil);
@@ -937,13 +937,29 @@ static bool esil_cmp(RAnalEsil *esil) {
 				esil->lastsz = esil_internal_sizeof_reg (esil, src);
 			} else {
 				// default size is set to 64 as internally operands are ut64
-				esil->lastsz = 64;
+				esil->lastsz = bits;
 			}
 		}
 	}
 	free (dst);
 	free (src);
 	return ret;
+}
+
+static bool esil_cmp8(RAnalEsil *esil) {
+    return esil_cmp(esil, 64);
+}
+
+static bool esil_cmp4(RAnalEsil *esil) {
+    return esil_cmp(esil, 32);
+}
+
+static bool esil_cmp2(RAnalEsil *esil) {
+    return esil_cmp(esil, 16);
+}
+
+static bool esil_cmp1(RAnalEsil *esil) {
+    return esil_cmp(esil, 8);
 }
 
 #if 0
@@ -3102,7 +3118,10 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$js", esil_js, 1, 0, OT_UNK);
 	OP ("$r", esil_rs, 1, 0, OT_UNK);
 	OP ("$$", esil_address, 1, 0, OT_UNK);
-	OP ("==", esil_cmp, 0, 2, OT_MATH);
+	OP ("==", esil_cmp8, 0, 2, OT_MATH);
+	OP ("==4", esil_cmp4, 0, 2, OT_MATH);
+	OP ("==2", esil_cmp2, 0, 2, OT_MATH);
+	OP ("==1", esil_cmp2, 0, 2, OT_MATH);
 	OP ("<", esil_smaller, 1, 2, OT_MATH);
 	OP (">", esil_bigger, 1, 2, OT_MATH);
 	OP ("<=", esil_smaller_equal, 1, 2, OT_MATH);

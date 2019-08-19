@@ -908,17 +908,35 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_CMPSB:
 	case X86_INS_CMPSS:
 	case X86_INS_TEST:
+    {
+        const char *opname;
+        switch (INSOP(0).size) {
+            case 1:
+                opname="==1";
+                break;
+            case 2:
+                opname="==2";
+                break;
+            case 4:
+                opname="==4";
+                break;
+            case 8:
+            default:
+                opname="==";
+                break;
+        }
 		if (insn->id == X86_INS_TEST) {
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR);
-			esilprintf (op, "0,%s,%s,&,==,$z,zf,:=,$p,pf,:=,$s,sf,:=,0,cf,:=,0,of,:=",
-				src, dst);
+			esilprintf (op, "0,%s,%s,&,%s,$z,zf,:=,$p,pf,:=,$s,sf,:=,0,cf,:=,0,of,:=",
+				src, dst, opname);
 		} else {
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR);
-			esilprintf (op,  "%s,%s,==,$z,zf,:=,%d,$b,cf,:=,$p,pf,:=,$s,sf,:=,$o,of,:=",
-				src, dst, (INSOP(0).size*8));
+			esilprintf (op,  "%s,%s,%s,$z,zf,:=,%d,$b,cf,:=,$p,pf,:=,$s,sf,:=,$o,of,:=",
+				src, dst, opname, (INSOP(0).size*8));
 		}
+    }
 		break;
 	case X86_INS_LEA:
 		{
