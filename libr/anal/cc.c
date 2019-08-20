@@ -10,7 +10,7 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	sdb_unset (DB, sdb_fmt ("%s", name), 0);
 	sdb_unset (DB, sdb_fmt ("cc.%s.ret", name), 0);
 	sdb_unset (DB, sdb_fmt ("cc.%s.argn", name), 0);
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		sdb_unset (DB, sdb_fmt ("cc.%s.arg%d", name, i), 0);
 	}
 }
@@ -66,7 +66,7 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	RStrBuf *sb = r_strbuf_new (NULL);
 	r_strbuf_appendf (sb, "%s %s (", ret, name);
 	bool isFirst = true;
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		const char *k = sdb_fmt ("cc.%s.arg%d", name, i);
 		const char *arg = sdb_const_get (DB, k, 0);
 		if (!arg) {
@@ -101,22 +101,30 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 		query = sdb_fmt ("cc.%s.argn", convention);
 		ret = sdb_const_get (DB, query, 0);
 	}
-	return ret;
-
+	return r_str_const (ret);
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
-	int ret = 0;
-	const char *query, *res;
-	r_return_val_if_fail (anal && cc, 0);
-	do {
-		query = sdb_fmt ("cc.%s.arg%d", cc, ret);
-		res = sdb_const_get (DB, query, 0);
-		if (res) {
-			ret++;
+	int i = 0;
+	r_return_val_if_fail (anal && DB && cc, 0);
+	static void *oldDB = NULL;
+	static char *oldCC = NULL;
+	static int oldArg = 0;
+	if (oldDB == DB && !strcmp (cc, oldCC)) {
+		return oldArg;
+	}
+	oldDB = DB;
+	free (oldCC);
+	oldCC = strdup (cc);
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+		const char *query = sdb_fmt ("cc.%s.arg%d", cc, i);
+		const char *res = sdb_const_get (DB, query, 0);
+		if (!res) {
+			break;
 		}
-	} while (res && ret < 6);
-	return ret;
+	}
+	oldArg = i;
+	return i;
 }
 
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention) {
