@@ -196,6 +196,7 @@ enum {
 #define R_ANAL_CC_TYPE_PASCAL 1
 #define R_ANAL_CC_TYPE_FASTCALL 'A' // syscall
 #define R_ANAL_CC_TYPE_SYSV 8
+#define R_ANAL_CC_MAXARG 16
 
 enum {
 	R_ANAL_FCN_TYPE_NULL = 0,
