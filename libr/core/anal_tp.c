@@ -367,7 +367,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 				r_anal_op_free (next_op);
 				break;
 			}
-			char *key = NULL;
+			const char *key = NULL;
 			RAnalVar *var = op->var;
 			if (!in_stack) {
 				key = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", caddr, place);
@@ -489,7 +489,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	bool prev_var = false;
 	char prev_type[256] = {0};
 	const char *prev_dest = NULL;
-	const char *ret_reg = NULL;
+	char *ret_reg = NULL;
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
 	r_cons_break_push (NULL, NULL);
@@ -561,15 +561,24 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						fcn_name = strdup (full_name);
 						userfnc = true;
 					}
-					const char* cc = r_anal_cc_func (anal, fcn_name);
+					char* cc = strdup (r_anal_cc_func (anal, fcn_name));
 					if (cc && r_anal_cc_exist (anal, cc)) {
 						type_match (core, addr, fcn_name, bb->addr, cc, prev_idx,
 								userfnc, callee_addr);
 						prev_idx = cur_idx;
-						ret_type = (char *) r_type_func_ret (TDB, fcn_name);
-						ret_reg = r_anal_cc_ret (anal, cc);
+						R_FREE (ret_type);
+						const char *rt = r_type_func_ret (TDB, fcn_name);
+						if (rt) {
+							ret_type = strdup (rt);
+						}
+						R_FREE (ret_reg);
+						char *rr =  r_anal_cc_ret (anal, cc);
+						if (rr) {
+							ret_reg = strdup (rr);
+						}
 						resolved = false;
 					}
+					free (cc);
 					if (!strcmp (fcn_name, "__stack_chk_fail")) {
 						const char *query = sdb_fmt ("%d.addr", cur_idx - 1);
 						ut64 mov_addr = sdb_num_get (trace, query, 0);
@@ -588,22 +597,25 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				// Forward propgation of function return type
 				char src[REG_SZ] = {0};
 				const char *query = sdb_fmt ("%d.reg.write", cur_idx);
-				const char *cur_dest = sdb_const_get (trace, query, 0);
+				char *cur_dest = sdb_get (trace, query, 0);
 				get_src_regname (core, aop.addr, src, sizeof (src));
 				if (ret_reg && *src && strstr (ret_reg, src)) {
 					if (var && aop.direction == R_ANAL_OP_DIR_WRITE) {
 						var_retype (anal, var, NULL, ret_type, addr, false, false);
 						resolved = true;
 					} else if (type == R_ANAL_OP_TYPE_MOV) {
-						ret_reg = cur_dest;
+						R_FREE (ret_reg);
+						if (cur_dest) {
+							ret_reg = strdup (cur_dest);
+						}
 					}
 				} else if (cur_dest) {
-					char *foo = r_str_new (cur_dest);
+					char *foo = strdup (cur_dest);
 					char *tmp = strchr (foo, ',');
 					if (tmp) {
-						*tmp = '\0';
+						*tmp++ = '\0';
 					}
-					if (strstr (ret_reg, foo) || (tmp && strstr (ret_reg, tmp + 1))) {
+					if (ret_reg && (strstr (ret_reg, foo) || (tmp && strstr (ret_reg, tmp)))) {
 						resolved = true;
 					} else if (type == R_ANAL_OP_TYPE_MOV &&
 							(next_op && next_op->type == R_ANAL_OP_TYPE_MOV)){
@@ -619,6 +631,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					}
 					free (foo);
 				}
+				free (cur_dest);
 			}
 			// Type propagation using instruction access pattern
 			if (var) {
@@ -776,6 +789,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		R_LOG_DEBUG ("No calling convention set for function '%s'\n", fcn->name);
 	}
 out_function:
+	R_FREE (ret_reg);
+	R_FREE (ret_type);
 	free (buf);
 	r_cons_break_pop();
 	r_anal_emul_restore (core, hc);

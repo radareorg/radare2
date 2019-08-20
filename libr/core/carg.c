@@ -232,7 +232,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	}
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	int nargs = r_type_func_args_count (TDB, key);
-	const char *cc = r_anal_cc_func (core->anal, key);
+	char *cc = strdup (r_anal_cc_func (core->anal, key));
 	const char *src = r_anal_cc_arg (core->anal, cc, 0); // src of first argument
 	if (!cc) {
 		// unsupported calling convention
@@ -270,5 +270,6 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		}
 	}
 	free (key);
+	free (cc);
 	return list;
 }

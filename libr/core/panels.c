@@ -6487,7 +6487,7 @@ char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y) 
 	}
 	char *ret = r_str_newlen (pos += strlen (padding), i - strlen (padding));
 	if (!ret) {
-		ret = pos;
+		ret = strdup (pos);
 	}
 	free (r);
 	free (R);

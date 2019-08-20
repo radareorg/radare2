@@ -5284,41 +5284,37 @@ static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
 }
 
 R_API void r_core_anal_propagate_noreturn(RCore *core) {
-	RAnalFunction *f;
-	RListIter *iter;
-	RList *todo;
-	HtUU *done;
-
-	todo = r_list_new ();
+	RList *todo = r_list_newf (free);
 	if (!todo) {
 		return;
 	}
 
-	done = ht_uu_new0 ();
+	HtUU *done = ht_uu_new0 ();
 	if (!done) {
 		r_list_free (todo);
 		return;
 	}
 
 	// find known noreturn functions to propagate
+	RAnalFunction *f;
+	RListIter *iter;
+
 	r_list_foreach (core->anal->fcns, iter, f) {
 		if (f->is_noreturn) {
-			r_list_append (todo, f);
+			ut64 *n = malloc (sizeof (ut64));
+			*n = f->addr;
+			r_list_append (todo, n);
 		}
 	}
 
-	while(!r_list_empty (todo)) {
-		RAnalFunction *noretf = r_list_pop (todo);
-		if (!noretf) {
-			r_warn_if_reached ();
-			continue;
-		}
-
+	while (!r_list_empty (todo)) {
+		ut64 *paddr = (ut64*)r_list_pop (todo);
+		ut64 noret_addr = *paddr;
+		free (paddr);
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-
-		RList *xrefs = r_anal_xrefs_get (core->anal, noretf->addr);
+		RList *xrefs = r_anal_xrefs_get (core->anal, noret_addr);
 		RAnalRef *xref;
 		r_list_foreach (xrefs, iter, xref) {
 			RAnalOp *xrefop = r_core_op_anal (core, xref->addr);
@@ -5326,21 +5322,18 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 				eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", xref->addr);
 				continue;
 			}
-
 			if (xref->type != R_ANAL_REF_TYPE_CALL) {
 				continue;
 			}
-
 			f = r_anal_get_fcn_in (core->anal, xref->addr, 0);
 			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
 				continue;
 			}
-
-			int depth = r_config_get_i (core->config, "anal.depth");
 			ut64 addr = f->addr;
 
 			r_anal_fcn_del_locs (core->anal, addr);
-			r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
+			// big depth results on infinite loops :( but this is a different issue
+			r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 3);
 
 			f = r_anal_get_fcn_at (core->anal, addr, 0);
 			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
@@ -5352,10 +5345,11 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 			if (f->addr && !found && is_noreturn_function (core, f)) {
 				f->is_noreturn = true;
 				r_anal_noreturn_add (core->anal, NULL, f->addr);
-				r_list_append (todo, f);
-				ht_uu_insert (done, f->addr, 1);
+				ut64 *n = malloc (sizeof (ut64));
+				*n = f->addr;
+				r_list_append (todo, n);
+				ht_uu_insert (done, *n, 1);
 			}
-
 			r_anal_op_free (xrefop);
 		}
 		r_list_free (xrefs);
