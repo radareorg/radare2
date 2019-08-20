@@ -4608,7 +4608,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				bool warning = false;
 				bool on_stack = false;
 				r_list_foreach (list, iter, arg) {
-					if (r_str_startswith (arg->cc_source, "stack")) {
+					if (arg->cc_source && r_str_startswith (arg->cc_source, "stack")) {
 						on_stack = true;
 					}
 					if (!arg->size) {

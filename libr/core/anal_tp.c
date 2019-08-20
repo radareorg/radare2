@@ -572,7 +572,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 							ret_type = strdup (rt);
 						}
 						R_FREE (ret_reg);
-						char *rr =  r_anal_cc_ret (anal, cc);
+						const char *rr = r_anal_cc_ret (anal, cc);
 						if (rr) {
 							ret_reg = strdup (rr);
 						}

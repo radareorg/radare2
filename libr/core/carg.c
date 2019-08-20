@@ -264,7 +264,13 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 				}
 				spv += arg->size;
 			} else {
-				arg->src = r_reg_getv (core->anal->reg, arg->cc_source);
+				const char *cs = arg->cc_source;
+				if (!cs) {
+					cs = r_anal_cc_default (core->anal);
+				}
+				if (cs) {
+					arg->src = r_reg_getv (core->anal->reg, cs);
+				}
 			}
 			r_list_append (list, arg);
 		}
