@@ -3356,7 +3356,7 @@ int __config_toggle_cb(void *user) {
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	RStrBuf *tmp = r_strbuf_new (child->name);
-	(void)r_str_split (r_strbuf_get(tmp), ':');
+	(void)r_str_split (r_strbuf_get (tmp), ':');
 	r_config_toggle (core->config, r_strbuf_drain (tmp));
 	__set_refresh_all (core, false, false);
 	parent->p->model->title = r_strbuf_drain (__draw_menu (core, parent));

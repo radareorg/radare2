@@ -690,6 +690,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	r_cons_show_cursor (false);
 	core->vmode = true;
 	r_cons_enable_mouse (true);
+	r_cons_show_cursor (true);
 }
 
 R_API int r_core_visual_prompt(RCore *core) {
