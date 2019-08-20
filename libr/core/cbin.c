@@ -563,15 +563,15 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	RListIter *it;
 	RAnalFunction *fcn;
 	r_list_foreach (core->anal->fcns, it, fcn) {
-		char *ptr = sdb_fmt ("%p", fcn->cc);
-		const char *cc = sdb_const_get (sdbs[0], ptr, 0);
-		if (cc) {
-			fcn->cc = cc;
+		const char *cc = NULL;
+		if (fcn->cc) {
+			char *ptr = sdb_fmt ("%p", fcn->cc);
+			cc = sdb_const_get (sdbs[0], ptr, 0);
 		}
-		if (!fcn->cc) {
-			fcn->cc = r_anal_cc_default (core->anal);
+		if  (!cc) {
+			cc = r_anal_cc_default (core->anal);
 		}
-		fcn->cc = r_str_const (fcn->cc);
+		fcn->cc = r_str_const (cc);
 	}
 	sdb_close (sdbs[0]);
 	sdb_free (sdbs[0]);

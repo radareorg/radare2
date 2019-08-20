@@ -893,7 +893,6 @@ static int var_comparator(const RAnalVar *a, const RAnalVar *b){
 
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ *pj) {
 	RList *list = r_anal_var_list (anal, fcn, kind);
-	r_list_sort (list, (RListComparator) var_comparator);
 	RAnalVar *var;
 	RListIter *iter;
 	if (!pj && mode == 'j') {
@@ -902,6 +901,13 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 	if (mode == 'j') {
 		pj_a (pj);
 	}
+	if (!list) {
+		if (mode == 'j') {
+			pj_end (pj);
+		}
+		return;
+	}
+	r_list_sort (list, (RListComparator) var_comparator);
 	r_list_foreach (list, iter, var) {
 		if (var->kind != kind) {
 			continue;

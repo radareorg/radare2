@@ -3438,7 +3438,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			free (name);
 		}
-		r_core_anal_propagate_noreturn(core);
+		r_core_anal_propagate_noreturn (core);
 #if 0
 		// XXX THIS IS VERY SLOW
 		if (core->anal->opt.vars) {
@@ -8488,7 +8488,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 				oldstr = r_print_rowlog (core->print, "Propagate noreturn information");
 				r_print_rowlog_done (core->print, oldstr);
-				r_core_anal_propagate_noreturn(core);
+				r_core_anal_propagate_noreturn (core);
 
 				oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 				r_print_rowlog_done (core->print, oldstr);

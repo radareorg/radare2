@@ -108,7 +108,6 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 
 static bool __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
 	ut32 i;
-	ut8 tmp;
 	ut16 v16;
 	ut32 v32;
 	ut64 v64;
@@ -261,7 +260,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	} else {
 		bool be = r_config_get_i (core->config, "cfg.bigendian");
 		if (!be) {
-			if (!__endian_swap (str, len, len)) {
+			if (!__endian_swap ((ut8*)str, len, len)) {
 				goto beach;
 			}
 		}
@@ -272,7 +271,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			case 's': buf[i] -= str[j]; break;
 			case 'm': buf[i] *= str[j]; break;
 			case 'w': buf[i] = str[j]; break;
-			case 'd': buf[i] = (str[j])? buf[i] / str[j]: 0; break;
+			case 'd': buf[i] = (str[j])? (buf[i] / str[j]): 0; break;
 			case 'r': buf[i] >>= str[j]; break;
 			case 'l': buf[i] <<= str[j]; break;
 			case 'o': buf[i] |= str[j]; break;
