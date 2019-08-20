@@ -453,12 +453,17 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
-	RAnal *anal = core->anal;
-	Sdb *TDB = anal->sdb_types;
 	bool resolved = false;
 
-	r_return_if_fail (core && fcn && core->anal && core->anal->esil);
+	r_return_if_fail (core && core->anal && fcn);
 
+	if (!core->anal->esil) {
+		eprintf ("Please run aeim\n");
+		return;
+	}
+
+	RAnal *anal = core->anal;
+	Sdb *TDB = anal->sdb_types;
 	bool chk_constraint = r_config_get_i (core->config, "anal.types.constraint");
 	int ret, bsize = R_MAX (64, core->blocksize);
 	const int mininstrsz = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
@@ -474,7 +479,6 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	}
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
-		free (buf);
 		r_anal_emul_restore (core, hc);
 		return;
 	}
@@ -500,7 +504,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			if (i >= (bsize - 32)) {
 				i = 0;
 			}
-			ut64 pcval = r_reg_getv (core->anal->reg, pc);
+			ut64 pcval = r_reg_getv (anal->reg, pc);
 			if ((addr >= bb->addr + bb->size) || (addr < bb->addr) || pcval != addr) {
 				break;
 			}

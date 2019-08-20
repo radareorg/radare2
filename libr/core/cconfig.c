@@ -643,16 +643,15 @@ static bool cb_dbgbtdepth(void *user, void *data) {
 }
 
 static bool cb_asmbits(void *user, void *data) {
-	const char *asmos, *asmarch, *asmcpu;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	int ret = 0, bits;
+	int ret = 0;
 	if (!core) {
 		eprintf ("user can't be NULL\n");
 		return false;
 	}
 
-	bits = node->i_value;
+	int bits = node->i_value;
 #if 0
 // TODO: pretty good optimization, but breaks many tests when arch is different i think
 	if (bits == core->assembler->bits && bits == core->anal->bits && bits == core->dbg->bits) {
@@ -697,9 +696,10 @@ static bool cb_asmbits(void *user, void *data) {
 			(void)r_anal_set_reg_profile (core->anal);
 		}
 	}
-	asmos = r_config_get (core->config, "asm.os");
-	asmarch = r_config_get (core->config, "asm.arch");
-	asmcpu = r_config_get (core->config, "asm.cpu");
+	r_core_anal_cc_init (core);
+	const char *asmos = r_config_get (core->config, "asm.os");
+	const char *asmarch = r_config_get (core->config, "asm.arch");
+	const char *asmcpu = r_config_get (core->config, "asm.cpu");
 	if (core->anal) {
 		if (!r_syscall_setup (core->anal->syscall, asmarch, bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
@@ -729,7 +729,9 @@ static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
 			for (i = 0; i < argc; i++) {
 				node->options->free = free;
 				const char *feature = r_str_word_get0 (features, i);
-				r_list_append (node->options, strdup (feature));
+				if (feature) {
+					r_list_append (node->options, strdup (feature));
+				}
 			}
 			free (features);
 		}
