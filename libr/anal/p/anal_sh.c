@@ -1112,6 +1112,7 @@ static int sh_set_reg_profile(RAnal* anal) {
 	//TODO Add system ( ssr, spc ) + fpu regs
 	const char *p =
 		"=PC	pc\n"
+		"=SN	r0\n"
 		"=SP	r15\n"
 		"=BP	r14\n"
 		"gpr	r0	.32	0	0\n"
