@@ -456,10 +456,12 @@ static void __toggle_window_mode(RCore *core);
 
 /* mouse */
 static bool __handle_mouse(RCore *core, RPanel *panel, int *key);
-static bool __handle_mouse_on_top(RCore *core, int x, int y);
-static void __handle_mouse_on_menu(RCore *core, int x, int y);
-static bool __handle_mouse_on_X(RCore *core, int x, int y);
+static void __handle_mouse_on_top(void *user, int x, int y);
+static void __handle_mouse_on_menu(void *user, int x, int y);
+static void __handle_mouse_on_X(void *user, int x, int y);
 static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, int *key);
+static bool __trigger_mouse_on_menu(RCore *core, int x, int y);
+static bool __trigger_X(RCore *core, int x, int y);
 
 /* modal */
 static void __exec_almighty(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db, RPanelLayout dir);
@@ -1869,14 +1871,22 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	if (*key == 0) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			if (y == MENU_Y && __handle_mouse_on_top (core, x, y)) {
+			if (y == MENU_Y) {
+				panels->mouse_cb = __handle_mouse_on_top;
+				panels->mouse_cb_x = x;
+				panels->mouse_cb_y = y;
 				return true;
 			}
-			if (panels->mode == PANEL_MODE_MENU) {
-				__handle_mouse_on_menu (core, x, y);
+			if (panels->mode == PANEL_MODE_MENU && __trigger_mouse_on_menu (core, x, y)) {
+				panels->mouse_cb = __handle_mouse_on_menu;
+				panels->mouse_cb_x = x;
+				panels->mouse_cb_y = y;
 				return true;
 			}
-			if (__handle_mouse_on_X (core, x, y)) {
+			if (__trigger_X (core, x, y)) {
+				panels->mouse_cb = __handle_mouse_on_X;
+				panels->mouse_cb_x = x;
+				panels->mouse_cb_y = y;
 				return true;
 			}
 			if (__check_if_mouse_x_illegal(core, x) ||
@@ -1905,6 +1915,10 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 			return false;
 		}
 	}
+	if (*key == INT8_MAX - 1 && panels->mouse_cb) {
+		panels->mouse_cb (core, panels->mouse_cb_x, panels->mouse_cb_y);
+		panels->mouse_cb = NULL;
+	}
 	if (*key == INT8_MAX) {
 		*key = '"';
 		return false;
@@ -1912,7 +1926,8 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	return false;
 }
 
-bool __handle_mouse_on_top (RCore *core, int x, int y) {
+void __handle_mouse_on_top (void *user, int x, int y) {
+	RCore * core = (RCore *)user;
 	RPanels *panels = core->panels;
 	char *word = get_word_from_canvas (core, panels, x, y);
 	int i;
@@ -1927,31 +1942,52 @@ bool __handle_mouse_on_top (RCore *core, int x, int y) {
 			(void)(child->cb (core));
 			__set_refresh_all (core, false, false);
 			free (word);
-			return true;
 		}
 	}
 	if (!strcmp (word, "Tab")) {
 		__handle_tab_new (core);
 		free (word);
-		return true;
-	}
-	if (word[0] == '[' && word[1] && word[2] == ']') {
-		return true;
 	}
 	if (atoi (word)) {
 		__handle_tab_nth (core, word[0]);
-		return true;
+	}
+}
+
+bool __trigger_mouse_on_menu(RCore *core, int x, int y) {
+	RPanels *panels = core->panels;
+	char *word = get_word_from_canvas_for_menu (core, panels, x, y);
+	RPanelsMenu *menu = panels->panels_menu;
+	int i, d = menu->depth - 1;
+	while (d) {
+		RPanelsMenuItem *parent = menu->history[d--];
+		for (i = 0; i < parent->n_sub; i++) {
+			if (!strcmp (word, parent->sub[i]->name)) {
+				parent->selectedIndex = i;
+				__update_menu_contents (core, menu, parent);
+				free (word);
+				return true;
+			}
+		}
 	}
 	return false;
 }
 
-static bool __handle_mouse_on_X(RCore *core, int x, int y) {
+bool __trigger_X(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
 	const int idx = __get_panel_idx_in_pos (core, x, y);
-	char *word = get_word_from_canvas (core, panels, x, y);
 	if (idx == -1) {
 		return false;
 	}
+	RPanel *ppos = __get_panel(panels, idx);
+	const int TITLE_Y = ppos->view->pos.y + 2;
+	return y == TITLE_Y;
+}
+
+void __handle_mouse_on_X(void *user, int x, int y) {
+	RCore * core = (RCore *)user;
+	RPanels *panels = core->panels;
+	const int idx = __get_panel_idx_in_pos (core, x, y);
+	char *word = get_word_from_canvas (core, panels, x, y);
 	RPanel *ppos = __get_panel(panels, idx);
 	const int TITLE_Y = ppos->view->pos.y + 2;
 	if (y == TITLE_Y && strcmp (word, " X ")) {
@@ -1969,9 +2005,7 @@ static bool __handle_mouse_on_X(RCore *core, int x, int y) {
 		}
 		__set_refresh_all (core, false, false);
 		free (word);
-		return true;
 	}
-	return false;
 }
 
 static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, int *key) {
@@ -2000,10 +2034,16 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 		*key = 'c';
 		return false;
 	}
+	if (panels->mode == PANEL_MODE_MENU) {
+		__set_mode (core, PANEL_MODE_DEFAULT);
+		__clear_panels_menu (core);
+		__get_cur_panel (core->panels)->view->refresh = true;
+	}
 	return true;
 }
 
-void __handle_mouse_on_menu(RCore *core, int x, int y) {
+void __handle_mouse_on_menu(void *user, int x, int y) {
+	RCore *core = (RCore *)user;
 	RPanels *panels = core->panels;
 	char *word = get_word_from_canvas_for_menu (core, panels, x, y);
 	RPanelsMenu *menu = panels->panels_menu;
@@ -2014,7 +2054,6 @@ void __handle_mouse_on_menu(RCore *core, int x, int y) {
 			if (!strcmp (word, parent->sub[i]->name)) {
 				parent->selectedIndex = i;
 				(void)(parent->sub[parent->selectedIndex]->cb (core));
-				__update_menu_contents (core, menu, parent);
 				free (word);
 				return;
 			}
@@ -3243,6 +3282,9 @@ int __close_file_cb(void *user) {
 int __save_layout_cb(void *user) {
 	RCore *core = (RCore *)user;
 	r_save_panels_layout (core, NULL);
+	__set_mode (core, PANEL_MODE_DEFAULT);
+	__clear_panels_menu (core);
+	__get_cur_panel (core->panels)->view->refresh = true;
 	return 0;
 }
 
@@ -6266,6 +6308,7 @@ void __init_new_panels_root(RCore *core) {
 	__set_mode (core, PANEL_MODE_DEFAULT);
 	__create_default_panels (core);
 	__panels_layout (panels);
+	panels->mouse_cb = NULL;
 	core->panels = prev;
 }
 
