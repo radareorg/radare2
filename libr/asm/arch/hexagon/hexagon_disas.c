@@ -23041,7 +23041,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 						hi->ops[2].op.imm |= (0xFFFFFFFF << 10);
 					}
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[1]);
+					hex_op_extend_off(&hi->ops[2], 2);
 					sprintf(hi->mnem, "if (cmp.eq (R%d, 0x%x)) jump:nt 0x%x", hi->ops[0].op.reg, hi->ops[1].op.imm, addr + (st32) hi->ops[2].op.imm);
 					break;
 				}
@@ -23059,7 +23059,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 						hi->ops[2].op.imm |= (0xFFFFFFFF << 10);
 					}
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[1]);
+					hex_op_extend_off(&hi->ops[2], 2);
 					sprintf(hi->mnem, "if (cmp.eq (R%d, 0x%x)) jump:t 0x%x", hi->ops[0].op.reg, hi->ops[1].op.imm, addr + (st32) hi->ops[2].op.imm);
 					break;
 				}
@@ -23077,7 +23077,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 						hi->ops[2].op.imm |= (0xFFFFFFFF << 10);
 					}
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[1]);
+					hex_op_extend_off(&hi->ops[2], 2);
 					sprintf(hi->mnem, "if (!cmp.eq (R%d, 0x%x)) jump:nt 0x%x", hi->ops[0].op.reg, hi->ops[1].op.imm, addr + (st32) hi->ops[2].op.imm);
 					break;
 				}
@@ -23095,7 +23095,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 						hi->ops[2].op.imm |= (0xFFFFFFFF << 10);
 					}
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[1]);
+					hex_op_extend_off(&hi->ops[2], 2);
 					sprintf(hi->mnem, "if (!cmp.eq (R%d, 0x%x)) jump:t 0x%x", hi->ops[0].op.reg, hi->ops[1].op.imm, addr + (st32) hi->ops[2].op.imm);
 					break;
 				}
@@ -23113,7 +23113,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 						hi->ops[2].op.imm |= (0xFFFFFFFF << 10);
 					}
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[1]);
+					hex_op_extend_off(&hi->ops[2], 2);
 					sprintf(hi->mnem, "if (cmp.gt (R%d, 0x%x)) jump:nt 0x%x", hi->ops[0].op.reg, hi->ops[1].op.imm, addr + (st32) hi->ops[2].op.imm);
 					break;
 				}
@@ -23131,7 +23131,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 						hi->ops[2].op.imm |= (0xFFFFFFFF << 10);
 					}
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[1]);
+					hex_op_extend_off(&hi->ops[2], 2);
 					sprintf(hi->mnem, "if (cmp.gt (R%d, 0x%x)) jump:t 0x%x", hi->ops[0].op.reg, hi->ops[1].op.imm, addr + (st32) hi->ops[2].op.imm);
 					break;
 				}
@@ -23149,7 +23149,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 						hi->ops[2].op.imm |= (0xFFFFFFFF << 10);
 					}
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[1]);
+					hex_op_extend_off(&hi->ops[2], 2);
 					sprintf(hi->mnem, "if (!cmp.gt (R%d, 0x%x)) jump:nt 0x%x", hi->ops[0].op.reg, hi->ops[1].op.imm, addr + (st32) hi->ops[2].op.imm);
 					break;
 				}
@@ -23167,7 +23167,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 						hi->ops[2].op.imm |= (0xFFFFFFFF << 10);
 					}
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[1]);
+					hex_op_extend_off(&hi->ops[2], 2);
 					sprintf(hi->mnem, "if (!cmp.gt (R%d, 0x%x)) jump:t 0x%x", hi->ops[0].op.reg, hi->ops[1].op.imm, addr + (st32) hi->ops[2].op.imm);
 					break;
 				}
@@ -26948,7 +26948,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[1].type = HEX_OP_TYPE_IMM;
 					hi->ops[1].op.imm = (((hi_u32 & 0x1f0000) >> 11) | ((hi_u32 & 0xe0) >> 3) | ((hi_u32 & 0x3) >> 0));
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[1]);
+					hex_op_extend_off(&hi->ops[0], 2);
 					sprintf(hi->mnem, "loop0 (0x%x, 0x%x)", hi->ops[0].op.imm, hi->ops[1].op.imm);
 					break;
 				}
@@ -26964,7 +26964,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[1].type = HEX_OP_TYPE_IMM;
 					hi->ops[1].op.imm = (((hi_u32 & 0x1f0000) >> 11) | ((hi_u32 & 0xe0) >> 3) | ((hi_u32 & 0x3) >> 0));
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[1]);
+					hex_op_extend_off(&hi->ops[0], 2);
 					sprintf(hi->mnem, "loop1 (0x%x, 0x%x)", hi->ops[0].op.imm, hi->ops[1].op.imm);
 					break;
 				}
@@ -28073,7 +28073,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[2].type = HEX_OP_TYPE_IMM;
 					hi->ops[2].op.imm = (((hi_u32 & 0x1f0000) >> 15) | ((hi_u32 & 0x2000) >> 13));
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "R%d:R%d = combine (0x%x, 0x%x)", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm);
 					break;
 				}
@@ -28136,7 +28136,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 						hi->ops[3].op.imm |= (0xFFFFFFFF << 7);
 					}
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[3]);
+					hex_op_extend(&hi->ops[2]);
 					sprintf(hi->mnem, "R%d = mux (P%d, 0x%x, 0x%x)", hi->ops[0].op.reg, hi->ops[1].op.pred, hi->ops[2].op.imm, hi->ops[3].op.imm);
 					break;
 				}
@@ -31349,7 +31349,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_IMM;
 					hi->ops[3].op.imm = (((hi_u32 & 0xf00) >> 6) | ((hi_u32 & 0x60) >> 5));
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[3]);
+					hex_op_extend(&hi->ops[2]);
 					sprintf(hi->mnem, "R%d:R%d = memd (R%d << 0x%x + 0x%x)", hi->ops[0].op.reg + 1, hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.imm, hi->ops[3].op.imm);
 					break;
 				}
@@ -31623,7 +31623,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_IMM;
 					hi->ops[3].op.imm = (((hi_u32 & 0xf00) >> 6) | ((hi_u32 & 0x60) >> 5));
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[3]);
+					hex_op_extend(&hi->ops[2]);
 					sprintf(hi->mnem, "R%d = memb (R%d << 0x%x + 0x%x)", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.imm, hi->ops[3].op.imm);
 					break;
 				}
@@ -32153,7 +32153,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_IMM;
 					hi->ops[3].op.imm = (((hi_u32 & 0xf00) >> 6) | ((hi_u32 & 0x60) >> 5));
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[3]);
+					hex_op_extend(&hi->ops[2]);
 					sprintf(hi->mnem, "R%d = memh (R%d << 0x%x + 0x%x)", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.imm, hi->ops[3].op.imm);
 					break;
 				}
@@ -32417,7 +32417,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_IMM;
 					hi->ops[3].op.imm = (((hi_u32 & 0xf00) >> 6) | ((hi_u32 & 0x60) >> 5));
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[3]);
+					hex_op_extend(&hi->ops[2]);
 					sprintf(hi->mnem, "R%d = memub (R%d << 0x%x + 0x%x)", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.imm, hi->ops[3].op.imm);
 					break;
 				}
@@ -32681,7 +32681,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_IMM;
 					hi->ops[3].op.imm = (((hi_u32 & 0xf00) >> 6) | ((hi_u32 & 0x60) >> 5));
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[3]);
+					hex_op_extend(&hi->ops[2]);
 					sprintf(hi->mnem, "R%d = memuh (R%d << 0x%x + 0x%x)", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.imm, hi->ops[3].op.imm);
 					break;
 				}
@@ -32945,7 +32945,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_IMM;
 					hi->ops[3].op.imm = (((hi_u32 & 0xf00) >> 6) | ((hi_u32 & 0x60) >> 5));
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[3]);
+					hex_op_extend(&hi->ops[2]);
 					sprintf(hi->mnem, "R%d = memw (R%d << 0x%x + 0x%x)", hi->ops[0].op.reg, hi->ops[1].op.reg, hi->ops[2].op.imm, hi->ops[3].op.imm);
 					break;
 				}
@@ -33854,7 +33854,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_REG;
 					hi->ops[3].op.reg = (((hi_u32) & 0x700) >> 8); // Nt.new
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "memb (R%d << 0x%x + 0x%x) = R%d", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm, hi->ops[3].op.reg);
 					break;
 				}
@@ -34113,7 +34113,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_REG;
 					hi->ops[3].op.reg = (((hi_u32) & 0x700) >> 8); // Nt.new
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "memh (R%d << 0x%x + 0x%x) = R%d", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm, hi->ops[3].op.reg);
 					break;
 				}
@@ -34372,7 +34372,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_REG;
 					hi->ops[3].op.reg = (((hi_u32) & 0x700) >> 8); // Nt.new
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "memw (R%d << 0x%x + 0x%x) = R%d", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm, hi->ops[3].op.reg);
 					break;
 				}
@@ -34638,7 +34638,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].attr |= HEX_OP_REG_PAIR;
 					hi->ops[3].op.reg = (((hi_u32) & 0x1f00) >> 8);
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "memd (R%d << 0x%x + 0x%x) = R%d:R%d", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm, hi->ops[3].op.reg + 1, hi->ops[3].op.reg);
 					break;
 				}
@@ -34908,7 +34908,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_REG;
 					hi->ops[3].op.reg = (((hi_u32) & 0x1f00) >> 8); // Rt
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "memb (R%d << 0x%x + 0x%x) = R%d", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm, hi->ops[3].op.reg);
 					break;
 				}
@@ -35249,7 +35249,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_REG;
 					hi->ops[3].op.reg = (((hi_u32) & 0x1f00) >> 8); // Rt
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "memh (R%d << 0x%x + 0x%x) = R%d", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm, hi->ops[3].op.reg);
 					break;
 				}
@@ -35685,7 +35685,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[3].type = HEX_OP_TYPE_REG;
 					hi->ops[3].op.reg = (((hi_u32) & 0x1f00) >> 8); // Rt
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "memw (R%d << 0x%x + 0x%x) = R%d", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm, hi->ops[3].op.reg);
 					break;
 				}
@@ -40544,7 +40544,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[2].type = HEX_OP_TYPE_IMM;
 					hi->ops[2].op.imm = (((hi_u32) & 0x1f00) >> 8);
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "R%d = add (0x%x, asl (Rx, 0x%x))", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm);
 					break;
 				}
@@ -40559,7 +40559,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[2].type = HEX_OP_TYPE_IMM;
 					hi->ops[2].op.imm = (((hi_u32) & 0x1f00) >> 8);
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "R%d = sub (0x%x, asl (Rx, 0x%x))", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm);
 					break;
 				}
@@ -40574,7 +40574,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[2].type = HEX_OP_TYPE_IMM;
 					hi->ops[2].op.imm = (((hi_u32) & 0x1f00) >> 8);
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "R%d = add (0x%x, lsr (Rx, 0x%x))", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm);
 					break;
 				}
@@ -40589,7 +40589,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[2].type = HEX_OP_TYPE_IMM;
 					hi->ops[2].op.imm = (((hi_u32) & 0x1f00) >> 8);
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "R%d = sub (0x%x, lsr (Rx, 0x%x))", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm);
 					break;
 				}
@@ -40604,7 +40604,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[2].type = HEX_OP_TYPE_IMM;
 					hi->ops[2].op.imm = (((hi_u32) & 0x1f00) >> 8);
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "R%d = and (0x%x, asl (Rx, 0x%x))", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm);
 					break;
 				}
@@ -40619,7 +40619,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[2].type = HEX_OP_TYPE_IMM;
 					hi->ops[2].op.imm = (((hi_u32) & 0x1f00) >> 8);
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "R%d = or (0x%x, asl (Rx, 0x%x))", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm);
 					break;
 				}
@@ -40634,7 +40634,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[2].type = HEX_OP_TYPE_IMM;
 					hi->ops[2].op.imm = (((hi_u32) & 0x1f00) >> 8);
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "R%d = and (0x%x, lsr (Rx, 0x%x))", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm);
 					break;
 				}
@@ -40649,7 +40649,7 @@ int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 					hi->ops[2].type = HEX_OP_TYPE_IMM;
 					hi->ops[2].op.imm = (((hi_u32) & 0x1f00) >> 8);
 					hi->predicate = HEX_NOPRED;
-					hex_op_extend(&hi->ops[2]);
+					hex_op_extend(&hi->ops[1]);
 					sprintf(hi->mnem, "R%d = or (0x%x, lsr (Rx, 0x%x))", hi->ops[0].op.reg, hi->ops[1].op.imm, hi->ops[2].op.imm);
 					break;
 				}
