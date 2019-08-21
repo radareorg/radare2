@@ -2350,14 +2350,17 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		}
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
-			op->ptr = INSOP(0).mem.disp;
+			op->disp = INSOP(0).mem.disp;
 			op->refptr = INSOP(0).size;
 			if (INSOP(0).mem.base == X86_REG_RIP) {
-				op->ptr += addr + insn->size;
+				op->ptr = addr + insn->size + op->disp;
 			} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
 				op->stackop = R_ANAL_STACK_SET;
 				op->stackptr = regsz;
 				op->type |= R_ANAL_OP_TYPE_REG;
+			} else if (INSOP(0).mem.segment == X86_REG_INVALID && INSOP(0).mem.base == X86_REG_INVALID
+			           && INSOP(0).mem.index == X86_REG_INVALID && INSOP(0).mem.scale == 1) { // [<addr>]
+				op->ptr = op->disp;
 			}
 			if (INSOP(1).type == X86_OP_IMM) {
 				op->val = INSOP(1).imm;
@@ -2366,14 +2369,19 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		default:
 			switch (INSOP(1).type) {
 			case X86_OP_MEM:
-				op->ptr = INSOP(1).mem.disp;
+				op->disp = INSOP(1).mem.disp;
 				op->refptr = INSOP(1).size;
 				if (INSOP(1).mem.base == X86_REG_RIP) {
-					op->ptr += addr + insn->size;
+					op->ptr = addr + insn->size + op->disp;;
 				} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
 					op->type |= R_ANAL_OP_TYPE_REG;
 					op->stackop = R_ANAL_STACK_SET;
 					op->stackptr = regsz;
+				} else if (INSOP(1).mem.segment == X86_REG_INVALID
+				           && INSOP(1).mem.base == X86_REG_INVALID
+				           && INSOP(1).mem.index == X86_REG_INVALID
+				           && INSOP(1).mem.scale == 1) { // [<addr>]
+					op->ptr = op->disp;
 				}
 				if (INSOP(0).type == X86_OP_IMM) {
 					op->val = INSOP(0).imm;
