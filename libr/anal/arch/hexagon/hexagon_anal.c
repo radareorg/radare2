@@ -12,655 +12,655 @@ int hexagon_anal_instruction(HexInsn *hi, RAnalOp *op) {
 	case HEX_INS_CALL__R22_2: {
 		// call #r22:2
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = op->addr + hi->ops[0].op.imm;
+		op->jump = op->addr + (st32) hi->ops[0].op.imm;
 		break;
 	}
 	case HEX_INS_IF__PU__CALL__R15_2: {
 		// if (Pu) call #r15:2
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = op->addr + hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		break;
 	}
 	case HEX_INS_IF__NOT_PU_CALL__R15_2: {
 		// if !Pu call #r15:2
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = op->addr + hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS____1____IF__P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.eq (Rs, #-1) ; if (p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS____1____IF__P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.gt (Rs, #-1) ; if (p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___TSTBIT__RS___0____IF__P0_NEW__JUMP_NT__R9_2: {
 		// p0 = tstbit (Rs, #0) ; if (p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS____1____IF__P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.eq (Rs, #-1) ; if (p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS____1____IF__P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.gt (Rs, #-1) ; if (p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___TSTBIT__RS___0____IF__P0_NEW__JUMP_T__R9_2: {
 		// p0 = tstbit (Rs, #0) ; if (p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS____1____IF___NOT_P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.eq (Rs, #-1) ; if (!p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS____1____IF___NOT_P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.gt (Rs, #-1) ; if (!p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___TSTBIT__RS___0____IF___NOT_P0_NEW__JUMP_NT__R9_2: {
 		// p0 = tstbit (Rs, #0) ; if (!p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS____1____IF___NOT_P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.eq (Rs, #-1) ; if (!p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS____1____IF___NOT_P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.gt (Rs, #-1) ; if (!p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___TSTBIT__RS___0____IF___NOT_P0_NEW__JUMP_T__R9_2: {
 		// p0 = tstbit (Rs, #0) ; if (!p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS___U5____IF__P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.eq (Rs, #U5) ; if (p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS___U5____IF__P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.eq (Rs, #U5) ; if (p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS___U5____IF___NOT_P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.eq (Rs, #U5) ; if (!p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS___U5____IF___NOT_P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.eq (Rs, #U5) ; if (!p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS___U5____IF__P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.gt (Rs, #U5) ; if (p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS___U5____IF__P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.gt (Rs, #U5) ; if (p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS___U5____IF___NOT_P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.gt (Rs, #U5) ; if (!p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS___U5____IF___NOT_P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.gt (Rs, #U5) ; if (!p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GTU__RS___U5____IF__P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.gtu (Rs, #U5) ; if (p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GTU__RS___U5____IF__P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.gtu (Rs, #U5) ; if (p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GTU__RS___U5____IF___NOT_P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.gtu (Rs, #U5) ; if (!p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GTU__RS___U5____IF___NOT_P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.gtu (Rs, #U5) ; if (!p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS____1____IF__P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.eq (Rs, #-1) ; if (p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS____1____IF__P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.gt (Rs, #-1) ; if (p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___TSTBIT__RS___0____IF__P1_NEW__JUMP_NT__R9_2: {
 		// p1 = tstbit (Rs, #0) ; if (p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS____1____IF__P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.eq (Rs, #-1) ; if (p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS____1____IF__P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.gt (Rs, #-1) ; if (p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___TSTBIT__RS___0____IF__P1_NEW__JUMP_T__R9_2: {
 		// p1 = tstbit (Rs, #0) ; if (p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS____1____IF___NOT_P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.eq (Rs, #-1) ; if (!p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS____1____IF___NOT_P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.gt (Rs, #-1) ; if (!p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___TSTBIT__RS___0____IF___NOT_P1_NEW__JUMP_NT__R9_2: {
 		// p1 = tstbit (Rs, #0) ; if (!p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS____1____IF___NOT_P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.eq (Rs, #-1) ; if (!p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS____1____IF___NOT_P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.gt (Rs, #-1) ; if (!p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___TSTBIT__RS___0____IF___NOT_P1_NEW__JUMP_T__R9_2: {
 		// p1 = tstbit (Rs, #0) ; if (!p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS___U5____IF__P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.eq (Rs, #U5) ; if (p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS___U5____IF__P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.eq (Rs, #U5) ; if (p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS___U5____IF___NOT_P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.eq (Rs, #U5) ; if (!p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS___U5____IF___NOT_P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.eq (Rs, #U5) ; if (!p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS___U5____IF__P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.gt (Rs, #U5) ; if (p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS___U5____IF__P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.gt (Rs, #U5) ; if (p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS___U5____IF___NOT_P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.gt (Rs, #U5) ; if (!p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS___U5____IF___NOT_P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.gt (Rs, #U5) ; if (!p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GTU__RS___U5____IF__P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.gtu (Rs, #U5) ; if (p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GTU__RS___U5____IF__P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.gtu (Rs, #U5) ; if (p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GTU__RS___U5____IF___NOT_P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.gtu (Rs, #U5) ; if (!p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GTU__RS___U5____IF___NOT_P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.gtu (Rs, #U5) ; if (!p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS__RT____IF__P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.eq (Rs, Rt) ; if (p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS__RT____IF__P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.eq (Rs, Rt) ; if (p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS__RT____IF__P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.eq (Rs, Rt) ; if (p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS__RT____IF__P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.eq (Rs, Rt) ; if (p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS__RT____IF___NOT_P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.eq (Rs, Rt) ; if (!p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS__RT____IF___NOT_P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.eq (Rs, Rt) ; if (!p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS__RT____IF___NOT_P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.eq (Rs, Rt) ; if (!p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_EQ__RS__RT____IF___NOT_P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.eq (Rs, Rt) ; if (!p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS__RT____IF__P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.gt (Rs, Rt) ; if (p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS__RT____IF__P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.gt (Rs, Rt) ; if (p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS__RT____IF__P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.gt (Rs, Rt) ; if (p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS__RT____IF__P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.gt (Rs, Rt) ; if (p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS__RT____IF___NOT_P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.gt (Rs, Rt) ; if (!p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS__RT____IF___NOT_P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.gt (Rs, Rt) ; if (!p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GT__RS__RT____IF___NOT_P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.gt (Rs, Rt) ; if (!p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GT__RS__RT____IF___NOT_P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.gt (Rs, Rt) ; if (!p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GTU__RS__RT____IF__P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.gtu (Rs, Rt) ; if (p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GTU__RS__RT____IF__P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.gtu (Rs, Rt) ; if (p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GTU__RS__RT____IF__P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.gtu (Rs, Rt) ; if (p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GTU__RS__RT____IF__P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.gtu (Rs, Rt) ; if (p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GTU__RS__RT____IF___NOT_P0_NEW__JUMP_NT__R9_2: {
 		// p0 = cmp.gtu (Rs, Rt) ; if (!p0.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GTU__RS__RT____IF___NOT_P1_NEW__JUMP_NT__R9_2: {
 		// p1 = cmp.gtu (Rs, Rt) ; if (!p1.new) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_GTU__RS__RT____IF___NOT_P0_NEW__JUMP_T__R9_2: {
 		// p0 = cmp.gtu (Rs, Rt) ; if (!p0.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_P1___CMP_GTU__RS__RT____IF___NOT_P1_NEW__JUMP_T__R9_2: {
 		// p1 = cmp.gtu (Rs, Rt) ; if (!p1.new) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_JUMP__R22_2: {
 		// jump #r22:2
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = hi->ops[0].op.imm;
+		op->jump = op->addr + (st32) hi->ops[0].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__PU__JUMP_NT__R15_2: {
 		// if (Pu) jump:nt #r15:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__PU__JUMP_T__R15_2: {
 		// if (Pu) jump:t #r15:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__NOT_PU_JUMP_NT__R15_2: {
 		// if !Pu jump:nt #r15:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__NOT_PU_JUMP_T__R15_2: {
 		// if !Pu jump:t #r15:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__PU_NEW__JUMP_NT__R15_2: {
 		// if (Pu.new) jump:nt #r15:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__PU_NEW__JUMP_T__R15_2: {
 		// if (Pu.new) jump:t #r15:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__NOT_PU_NEW_JUMP_NT__R15_2: {
 		// if !Pu.new jump:nt #r15:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__NOT_PU_NEW_JUMP_T__R15_2: {
 		// if !Pu.new jump:t #r15:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__RS__NOT____0__JUMP_NT__R13_2: {
 		// if (Rs != #0) jump:nt #r13:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__RS__NOT____0__JUMP_T__R13_2: {
 		// if (Rs != #0) jump:t #r13:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__RS_GT_EQ___0__JUMP_NT__R13_2: {
 		// if (Rs> = #0) jump:nt #r13:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__RS_GT_EQ___0__JUMP_T__R13_2: {
 		// if (Rs> = #0) jump:t #r13:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__RS__EQ___0__JUMP_NT__R13_2: {
 		// if (Rs == #0) jump:nt #r13:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__RS__EQ___0__JUMP_T__R13_2: {
 		// if (Rs == #0) jump:t #r13:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__RS_LT_EQ___0__JUMP_NT__R13_2: {
 		// if (Rs< = #0) jump:nt #r13:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__RS_LT_EQ___0__JUMP_T__R13_2: {
 		// if (Rs< = #0) jump:t #r13:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_RD____U6___JUMP__R9_2: {
 		// Rd = #U6 ; jump #r9:2
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_MULT_RD___RS___JUMP__R9_2: {
 		// Rd = Rs ; jump #r9:2
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
@@ -702,308 +702,308 @@ int hexagon_anal_instruction(HexInsn *hi, RAnalOp *op) {
 	case HEX_INS_IF__CMP_EQ__NS_NEW__RT___JUMP_NT__R9_2: {
 		// if (cmp.eq (Ns.new, Rt)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_EQ__NS_NEW__RT___JUMP_T__R9_2: {
 		// if (cmp.eq (Ns.new, Rt)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_EQ__NS_NEW__RT___JUMP_NT__R9_2: {
 		// if (!cmp.eq (Ns.new, Rt)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_EQ__NS_NEW__RT___JUMP_T__R9_2: {
 		// if (!cmp.eq (Ns.new, Rt)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GT__NS_NEW__RT___JUMP_NT__R9_2: {
 		// if (cmp.gt (Ns.new, Rt)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GT__NS_NEW__RT___JUMP_T__R9_2: {
 		// if (cmp.gt (Ns.new, Rt)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GT__NS_NEW__RT___JUMP_NT__R9_2: {
 		// if (!cmp.gt (Ns.new, Rt)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GT__NS_NEW__RT___JUMP_T__R9_2: {
 		// if (!cmp.gt (Ns.new, Rt)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GTU__NS_NEW__RT___JUMP_NT__R9_2: {
 		// if (cmp.gtu (Ns.new, Rt)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GTU__NS_NEW__RT___JUMP_T__R9_2: {
 		// if (cmp.gtu (Ns.new, Rt)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GTU__NS_NEW__RT___JUMP_NT__R9_2: {
 		// if (!cmp.gtu (Ns.new, Rt)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GTU__NS_NEW__RT___JUMP_T__R9_2: {
 		// if (!cmp.gtu (Ns.new, Rt)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GT__RT__NS_NEW___JUMP_NT__R9_2: {
 		// if (cmp.gt (Rt, Ns.new)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GT__RT__NS_NEW___JUMP_T__R9_2: {
 		// if (cmp.gt (Rt, Ns.new)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GT__RT__NS_NEW___JUMP_NT__R9_2: {
 		// if (!cmp.gt (Rt, Ns.new)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GT__RT__NS_NEW___JUMP_T__R9_2: {
 		// if (!cmp.gt (Rt, Ns.new)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GTU__RT__NS_NEW___JUMP_NT__R9_2: {
 		// if (cmp.gtu (Rt, Ns.new)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GTU__RT__NS_NEW___JUMP_T__R9_2: {
 		// if (cmp.gtu (Rt, Ns.new)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GTU__RT__NS_NEW___JUMP_NT__R9_2: {
 		// if (!cmp.gtu (Rt, Ns.new)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GTU__RT__NS_NEW___JUMP_T__R9_2: {
 		// if (!cmp.gtu (Rt, Ns.new)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_EQ__NS_NEW___U5___JUMP_NT__R9_2: {
 		// if (cmp.eq (Ns.new, #U5)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_EQ__NS_NEW___U5___JUMP_T__R9_2: {
 		// if (cmp.eq (Ns.new, #U5)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_EQ__NS_NEW___U5___JUMP_NT__R9_2: {
 		// if (!cmp.eq (Ns.new, #U5)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_EQ__NS_NEW___U5___JUMP_T__R9_2: {
 		// if (!cmp.eq (Ns.new, #U5)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GT__NS_NEW___U5___JUMP_NT__R9_2: {
 		// if (cmp.gt (Ns.new, #U5)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GT__NS_NEW___U5___JUMP_T__R9_2: {
 		// if (cmp.gt (Ns.new, #U5)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GT__NS_NEW___U5___JUMP_NT__R9_2: {
 		// if (!cmp.gt (Ns.new, #U5)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GT__NS_NEW___U5___JUMP_T__R9_2: {
 		// if (!cmp.gt (Ns.new, #U5)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GTU__NS_NEW___U5___JUMP_NT__R9_2: {
 		// if (cmp.gtu (Ns.new, #U5)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GTU__NS_NEW___U5___JUMP_T__R9_2: {
 		// if (cmp.gtu (Ns.new, #U5)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GTU__NS_NEW___U5___JUMP_NT__R9_2: {
 		// if (!cmp.gtu (Ns.new, #U5)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GTU__NS_NEW___U5___JUMP_T__R9_2: {
 		// if (!cmp.gtu (Ns.new, #U5)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[2].op.imm;
+		op->jump = op->addr + (st32) hi->ops[2].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__TSTBIT__NS_NEW___0___JUMP_NT__R9_2: {
 		// if (tstbit (Ns.new, #0)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__TSTBIT__NS_NEW___0___JUMP_T__R9_2: {
 		// if (tstbit (Ns.new, #0)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_TSTBIT__NS_NEW___0___JUMP_NT__R9_2: {
 		// if (!tstbit (Ns.new, #0)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_TSTBIT__NS_NEW___0___JUMP_T__R9_2: {
 		// if (!tstbit (Ns.new, #0)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_EQ__NS_NEW____1___JUMP_NT__R9_2: {
 		// if (cmp.eq (Ns.new, #-1)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_EQ__NS_NEW____1___JUMP_T__R9_2: {
 		// if (cmp.eq (Ns.new, #-1)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_EQ__NS_NEW____1___JUMP_NT__R9_2: {
 		// if (!cmp.eq (Ns.new, #-1)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_EQ__NS_NEW____1___JUMP_T__R9_2: {
 		// if (!cmp.eq (Ns.new, #-1)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GT__NS_NEW____1___JUMP_NT__R9_2: {
 		// if (cmp.gt (Ns.new, #-1)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF__CMP_GT__NS_NEW____1___JUMP_T__R9_2: {
 		// if (cmp.gt (Ns.new, #-1)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GT__NS_NEW____1___JUMP_NT__R9_2: {
 		// if (!cmp.gt (Ns.new, #-1)) jump:nt #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
 	case HEX_INS_IF___NOT_CMP_GT__NS_NEW____1___JUMP_T__R9_2: {
 		// if (!cmp.gt (Ns.new, #-1)) jump:t #r9:2
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = hi->ops[1].op.imm;
+		op->jump = op->addr + (st32) hi->ops[1].op.imm;
 		op->fail = op->addr + op->size;
 		break;
 	}
