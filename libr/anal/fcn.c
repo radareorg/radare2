@@ -1120,8 +1120,8 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_CMP:
-			if (op.ptr) {
-				cmpval = op.ptr;
+			if (op.disp) {
+				cmpval = op.disp;
 				bb->cmpval = cmpval;
 				bb->cmpreg = op.reg;
 			}
