@@ -561,8 +561,9 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						fcn_name = strdup (full_name);
 						userfnc = true;
 					}
-					char* cc = strdup (r_anal_cc_func (anal, fcn_name));
-					if (cc && r_anal_cc_exist (anal, cc)) {
+					const char* Cc = r_anal_cc_func (anal, fcn_name);
+					if (Cc && r_anal_cc_exist (anal, Cc)) {
+						char *cc = strdup (Cc);
 						type_match (core, addr, fcn_name, bb->addr, cc, prev_idx,
 								userfnc, callee_addr);
 						prev_idx = cur_idx;
@@ -577,8 +578,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 							ret_reg = strdup (rr);
 						}
 						resolved = false;
+						free (cc);
 					}
-					free (cc);
 					if (!strcmp (fcn_name, "__stack_chk_fail")) {
 						const char *query = sdb_fmt ("%d.addr", cur_idx - 1);
 						ut64 mov_addr = sdb_num_get (trace, query, 0);
