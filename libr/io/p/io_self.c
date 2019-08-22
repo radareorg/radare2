@@ -420,140 +420,95 @@ R_API RLibStruct radare_plugin = {
 
 #if __APPLE__
 // mach/mach_vm.h not available for iOS
-kern_return_t mach_vm_region (
+kern_return_t mach_vm_region_recurse (
         vm_map_t target_task,
         mach_vm_address_t *address,
         mach_vm_size_t *size,
-        vm_region_flavor_t flavor,
-        vm_region_info_t info,
-        mach_msg_type_number_t *infoCnt,
-        mach_port_t *object_name
+        natural_t *depth,
+        vm_region_recurse_info_t info,
+        mach_msg_type_number_t *infoCnt
 );
-// taken from vmmap.c ios clone
-// XXX. this code is dupped in libr/debug/p/debug_native.c
-// but this one looks better, the other one seems to work too.
 // TODO: unify that implementation in a single reusable place
 void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max) {
 	kern_return_t kret;
 
-	mach_vm_address_t prev_address;
-	/* @TODO: warning - potential overflow here - gotta fix this.. */
-	vm_region_basic_info_data_t prev_info, info;
-	mach_vm_size_t size, prev_size;
+	struct vm_region_submap_info_64 info;
+	mach_vm_size_t size;
 
-	mach_port_t object_name;
+	natural_t nsubregions = 1;
 	mach_msg_type_number_t count;
 
-	int nsubregions = 0;
 	int num_printed = 0;
-
-	count = VM_REGION_BASIC_INFO_COUNT_64;
-	kret = mach_vm_region (task, &address, &size, VM_REGION_BASIC_INFO,
-		(vm_region_info_t) &info, &count, &object_name);
-
-	if (kret) {
-		eprintf ("mach_vm_region: Error %d - %s", kret, mach_error_string(kret));
-		return;
-	}
-	memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_t));
-	prev_address = address;
-	prev_size = size;
-	nsubregions = 1;
-	self_sections_count = 0;
+	static const char *share_mode[] = {
+		"null",
+		"cow",
+		"private",
+		"empty",
+		"shared",
+		"true shared",
+		"prv aliased",
+		"shm aliased",
+		"large",
+	};
 
 	for (;;) {
-		int print = 0;
-		int done = 0;
-
-		address = prev_address + prev_size;
-
-		/* Check to see if address space has wrapped around. */
-		if (address == 0)
-			print = done = 1;
-
-		if (!done) {
-			// Even on iOS, we use VM_REGION_BASIC_INFO_COUNT_64. This works.
-			count = VM_REGION_BASIC_INFO_COUNT_64;
-			kret = mach_vm_region (task, &address, &size, VM_REGION_BASIC_INFO,
-				(vm_region_info_t) &info, &count, &object_name);
-			if (kret != KERN_SUCCESS) {
-				/* iOS 6 workaround - attempt to reget the task port to avoiD */
-				/* "(ipc/send) invalid destination port" (1000003 or something) */
-				task_for_pid(mach_task_self(),getpid (), &task);
-				kret = mach_vm_region (task, &address, &size, VM_REGION_BASIC_INFO,
-					(vm_region_info_t) &info, &count, &object_name);
+		count = VM_REGION_SUBMAP_INFO_COUNT_64;
+		kret = mach_vm_region_recurse (task, &address, &size, &nsubregions,
+				(vm_region_recurse_info_t) &info, &count);
+		if (kret != KERN_SUCCESS) {
+			if (!num_printed) {
+				eprintf ("mach_vm_region_recurse: Error %d - %s", kret, mach_error_string(kret));
 			}
-			if (kret != KERN_SUCCESS) {
-				eprintf ("mach_vm_region failed for address %p - Error: %x\n",
-					(void*)(size_t)address, kret);
-				size = 0;
-				if (address >= 0x4000000) {
-					return;
-				}
-				print = done = 1;
-			}
+			break;
 		}
-		if (address != prev_address + prev_size) {
-			print = 1;
-		}
-		if ((info.protection != prev_info.protection)
-			|| (info.max_protection != prev_info.max_protection)
-			|| (info.inheritance != prev_info.inheritance)
-			|| (info.shared != prev_info.reserved)
-			|| (info.reserved != prev_info.reserved))
-			print = 1;
 
-		if (print) {
+		if (!info.is_submap) {
 			int print_size;
 			char *print_size_unit;
 
 			io->cb_printf (num_printed? "   ... ": "Region ");
 			//findListOfBinaries(task, prev_address, prev_size);
 			/* Quick hack to show size of segment, which GDB does not */
-			print_size = prev_size;
+			print_size = size;
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "K"; }
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "M"; }
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "G"; }
 			/* End Quick hack */
-			io->cb_printf (" %p - %p [%d%s](%x/%x; %d, %s, %s)",
-				(void*)(size_t)(prev_address),
-				(void*)(size_t)(prev_address + prev_size),
-				print_size,
-				print_size_unit,
-				prev_info.protection,
-				prev_info.max_protection,
-				prev_info.inheritance,
-				prev_info.shared ? "shared" : "private",
-				prev_info.reserved ? "reserved" : "not-reserved");
+			io->cb_printf (" %p - %p [%d%s](%x/%x; %d, %s, %u p. res, %u p. swp, %u p. drt, %u ref)",
+					(void*)(size_t)(address),
+					(void*)(size_t)(address + size),
+					print_size,
+					print_size_unit,
+					info.protection,
+					info.max_protection,
+					info.inheritance,
+					share_mode[info.share_mode],
+					info.pages_resident,
+					info.pages_swapped_out,
+					info.pages_dirtied,
+					info.ref_count);
 
-			self_sections[self_sections_count].from = prev_address;
-			self_sections[self_sections_count].to = prev_address+prev_size;
-			self_sections[self_sections_count].perm = R_PERM_R; //prev_info.protection;
+			self_sections[self_sections_count].from = address;
+			self_sections[self_sections_count].to = address+size;
+			self_sections[self_sections_count].perm = R_PERM_R; //info.protection;
 			self_sections_count++;
 			if (nsubregions > 1) {
 				io->cb_printf (" (%d sub-regions)", nsubregions);
 			}
 			io->cb_printf ("\n");
 
-			prev_address = address;
-			prev_size = size;
-			memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_t));
-			nsubregions = 1;
-
 			num_printed++;
+			address += size;
+			size = 0;
 		} else {
-			prev_size += size;
 			nsubregions++;
 		}
 
 		if ((max > 0) && (num_printed >= max)) {
 			eprintf ("Max %d num_printed %d\n", max, num_printed);
-			done = 1;
-		}
-		if (done) {
 			break;
 		}
-	 }
+	}
 }
 #elif __BSD__
 bool bsd_proc_vmmaps(RIO *io, int pid) {
@@ -600,10 +555,10 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 
 			if (entry->kve_path[0] != '\0') {
 				io->cb_printf (" %p - %p %s (%s)\n",
-					(void *)entry->kve_start,
-					(void *)entry->kve_end,
-					r_str_rwx_i (perm),
-					entry->kve_path);
+						(void *)entry->kve_start,
+						(void *)entry->kve_end,
+						r_str_rwx_i (perm),
+						entry->kve_path);
 			}
 
 			self_sections[self_sections_count].from = entry->kve_start;
