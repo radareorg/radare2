@@ -33,6 +33,7 @@ static int set_reg_profile(RAnal *anal) {
 		"=SP	r29\n"
 		"=BP	r30\n"
 		"=LR	r31\n"
+		"=SN	r6\n"
 		"=ZF	z\n"
 		"=SF	s\n"
 		"=OF	ov\n"
