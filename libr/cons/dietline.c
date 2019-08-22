@@ -217,7 +217,7 @@ R_API int r_line_dietline_init() {
 /* read utf8 char into 's', return the length in bytes */
 static int r_line_readchar_utf8(ut8 *s, int slen) {
 #if __WINDOWS__
-	r_line_readchar_win_utf8 (s, slen);
+	r_line_readchar_win (s, slen);
 #else
 	// TODO: add support for w32
 	ssize_t len, i;
@@ -264,22 +264,23 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 #endif
 
 #if __WINDOWS__
-static ut8 *r_line_readchar_win() { // this function handle the input in console mode
+static int r_line_readchar_win(ut8 *s, int slen) { // this function handle the input in console mode
 	INPUT_RECORD irInBuf;
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
-	ut8 *buf = calloc (5, sizeof (ut8));
+	ut8 buf[5];
 	HANDLE h;
 	int i;
 	void *bed;
 
 	if (I.zerosep) {
 		bed = r_cons_sleep_begin ();
-		int rsz = read (0, buf, 1);
+		int rsz = read (0, s, 1);
 		r_cons_sleep_end (bed);
-		if (rsz != 1)
-			return NULL;
-		return buf;
+		if (rsz != 1) {
+			return 0;
+		}
+		return 1;
 	}
 
 	h = GetStdHandle (STD_INPUT_HANDLE);
@@ -290,14 +291,17 @@ do_it_again:
 	ret = ReadConsoleInput (h, &irInBuf, 1, &out);
 	r_cons_sleep_end (bed);
 	if (ret < 1) {
-		free (buf);
 		return 0;
 	}
 	if (irInBuf.EventType == KEY_EVENT) {
 		if (irInBuf.Event.KeyEvent.bKeyDown) {
 			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
-				free (buf);
-				buf = r_sys_conv_win_to_utf8_l ((PTCHAR)&irInBuf.Event.KeyEvent.uChar, 1);
+				char *tmp = r_sys_conv_win_to_utf8_l ((PTCHAR)&irInBuf.Event.KeyEvent.uChar, 1);
+				if (!tmp) {
+					return 0;
+				}
+				strncpy_s (buf, sizeof (buf), tmp, strlen (tmp));
+				free (tmp);
 			} else {
 				int idx = 0;
 				buf[idx++] = 27;
@@ -316,7 +320,7 @@ do_it_again:
 				case VK_DELETE: buf[idx++] = '3'; break; // SUPR KEY
 				case VK_HOME: buf[idx++] = 'H'; break;	// HOME KEY
 				case VK_END: buf[idx++] = 'F'; break;	// END KEY
-				default: buf[idx++] = *buf = 0; break;
+				default: buf[0] = 0; break;
 				}
 			}
 		}
@@ -324,19 +328,10 @@ do_it_again:
 	if (!buf[0]) {
 		goto do_it_again;
 	}
+	strncpy_s (s, slen, buf, sizeof (buf));
+	free (buf);
 	SetConsoleMode (h, mode);
-	return buf;
-}
-
-static int r_line_readchar_win_utf8(ut8 *s, int slen) {
-	char *buf = r_line_readchar_win ();
-	int len = 0;
-	if (buf) {
-		len = strlen (buf);
-		r_str_cpy (s, buf);
-		free (buf);
-	}
-	return len;
+	return strlen (s);
 }
 
 #endif
@@ -1282,12 +1277,23 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		}
 		buf[utflen] = 0;
 #else
+#if __WINDOWS__
+		{
+			int len = r_line_readchar_win ((ut8 *)buf, sizeof (buf));
+			if (len < 1) {
+				r_cons_break_pop ();
+				return NULL;
+			}
+			buf[len] = 0;
+		}
+#else
 		ch = r_cons_readchar ();
 		if (ch == -1) {
 			r_cons_break_pop ();
 			return NULL;
 		}
 		buf[0] = ch;
+#endif
 #endif
 		if (I.echo) {
 			r_cons_clear_line (0);
