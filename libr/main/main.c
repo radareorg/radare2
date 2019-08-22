@@ -26,7 +26,7 @@ R_API RMain *r_main_new (const char *name) {
 		if (!strcmp (name, foo[i].name)) {
 			RMain *m = R_NEW0 (RMain);
 			if (m) {
-				m->name = foo[i].name;
+				m->name = strdup (foo[i].name);
 				m->main = foo[i].main;
 			}
 			return m;
@@ -35,12 +35,6 @@ R_API RMain *r_main_new (const char *name) {
 	}
 	return NULL;
 }
-#if 0
-	// list
-	for (i = 0; foo[i].name; i++) {
-		printf ("%s\n", foo[i].name);
-	}
-#endif
 
 R_API void r_main_free(RMain *m) {
 	free (m->name);
