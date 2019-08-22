@@ -1191,27 +1191,23 @@ static void __vi_mode() {
 			while (rep--) {
 				vi_cmd_w ();
 			} break;
-		case 27: {					// escape key
-			char tmp = r_cons_readchar_timeout (50);
-			if (tmp == 0x5b) {	
-				char cmd = r_cons_readchar ();	
-				switch (cmd) {
-				case 'A': 			// up
-					r_line_hist_up ();
-					break;
-				case 'B':			// down
-					r_line_hist_down ();
-					break;
-				case 'C':			// right
-					__move_cursor_right ();
-					break;
-				case 'D':			// left
-					__move_cursor_left ();
-					break;
-				}
-				
+		default:					// escape key
+			ch = tolower (r_cons_arrow_to_hjkl (ch));
+			switch (ch) {
+			case 'k': 			// up
+				r_line_hist_up ();
+				break;
+			case 'j':			// down
+				r_line_hist_down ();
+				break;
+			case 'l':			// right
+				__move_cursor_right ();
+				break;
+			case 'h':			// left
+				__move_cursor_left ();
+				break;
 			}
-		} break;
+			break;
 		}
 		if (I.hud) {
 			return;
