@@ -19,6 +19,9 @@ LDFLAGS+=-lpthread
 LDFLAGS+=-ldl
 endif
 endif
+ifeq ($(USE_LTO),1)
+LDFLAGS+=-flto
+endif
 
 CFLAGS+=-I../../libr/include/
 CFLAGS+=-I$(SHLR)/spp

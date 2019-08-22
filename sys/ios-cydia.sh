@@ -110,8 +110,11 @@ else
 		time make -j4
 		if [ "$static" = 1 ]; then
 			rm -f libr/*/*.dylib
-			( cd binr ; make clean ; 
-			cd blob ; make -j 4)
+			(
+			cd binr ; make clean ; 
+			cd blob ; make USE_LTO=1
+			xcrun --sdk iphoneos strip radare2
+			)
 		fi
 		if [ $? = 0 ]; then
 			makeDeb
