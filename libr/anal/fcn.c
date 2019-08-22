@@ -1119,12 +1119,14 @@ repeat:
 				cmpval = op.val;
 			}
 			break;
-		case R_ANAL_OP_TYPE_CMP:
-			if (op.disp) {
-				cmpval = op.disp;
+		case R_ANAL_OP_TYPE_CMP: {
+			ut64 val = is_x86 ? op.disp : op.ptr;
+			if (val) {
+				cmpval = val;
 				bb->cmpval = cmpval;
 				bb->cmpreg = op.reg;
 			}
+		}
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_MCJMP:
