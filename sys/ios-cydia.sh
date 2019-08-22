@@ -4,6 +4,7 @@ STOW=0
 fromscratch=1
 onlydebug=0
 onlymakedeb=0
+static=1
 
 if [ -z "${CPU}" ]; then
 	export CPU=arm64
@@ -80,8 +81,14 @@ else
 			RV=0
 		else
 			make clean
-			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
-			--with-compiler=ios-sdk --target=arm-unknown-darwin
+			cp plugins.ios.cfg plugins.cfg
+			if [ "$static" = 1 ]; then
+				./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
+				--with-compiler=ios-sdk --target=arm-unknown-darwin --with-libr
+			else
+				./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
+				--with-compiler=ios-sdk --target=arm-unknown-darwin
+			fi
 			RV=$?
 		fi
 	else
@@ -89,6 +96,10 @@ else
 	fi
 	if [ $RV = 0 ]; then
 		time make -j4
+		if [ "$static" = 1 ]; then
+			rm -f libr/*/*.dylib
+			( cd binr ; make clean ; make -j 4)
+		fi
 		if [ $? = 0 ]; then
 			makeDeb
 		fi
