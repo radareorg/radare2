@@ -1,7 +1,7 @@
 #!/bin/sh
 
 STOW=0
-fromscratch=1
+fromscratch=1 # 1
 onlydebug=0
 onlymakedeb=0
 static=1
@@ -42,10 +42,22 @@ makeDeb() {
 	sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/radare2/root
 	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.dSYM
 	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.a
-        for a in sys/cydia/radare2/root/usr/bin/* sys/cydia/radare2/root/usr/lib/*.dylib ; do
-		echo "Signing $a"
-		ldid2 -Sbinr/radare2/radare2_ios.xml $a
-	done
+	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.dylib
+	if [ "$static" = 1 ]; then
+	(
+		rm -f sys/cydia/radare2/root/${PREFIX}/bin/*
+		cp -f binr/blob/radare2 sys/cydia/radare2/root/${PREFIX}/bin
+		cd sys/cydia/radare2/root/${PREFIX}/bin
+		for a in r2 rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2 radiff2 ; do ln -fs radare2 $a ; done
+	)
+		echo "Signing radare2"
+		ldid2 -Sbinr/radare2/radare2_ios.xml sys/cydia/radare2/root/usr/bin/radare2
+	else
+		for a in sys/cydia/radare2/root/usr/bin/* sys/cydia/radare2/root/usr/lib/*.dylib ; do
+			echo "Signing $a"
+			ldid2 -Sbinr/radare2/radare2_ios.xml $a
+		done
+	fi
 if [ "${STOW}" = 1 ]; then
 	(
 		cd sys/cydia/radare2/root/
@@ -98,7 +110,8 @@ else
 		time make -j4
 		if [ "$static" = 1 ]; then
 			rm -f libr/*/*.dylib
-			( cd binr ; make clean ; make -j 4)
+			( cd binr ; make clean ; 
+			cd blob ; make -j 4)
 		fi
 		if [ $? = 0 ]; then
 			makeDeb
