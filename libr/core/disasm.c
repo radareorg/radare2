@@ -3501,10 +3501,13 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		break;
 	}
 	if (ds->asm_hint_pos > 0) {
-		int begin = (gotShortcut) ? (ds->asm_hint_pos == 0)? 1: 2: 3;
+		int begin = gotShortcut ? 2: 3;
 		for (i = begin - slen; i > 0; i--) {
 			r_cons_strcat (" ");
 		}
+	}
+	if (ds->asm_hint_pos == 0 && !gotShortcut) {
+		r_cons_strcat ("   ");
 	}
 	ds->hinted_line = gotShortcut;
 	return gotShortcut;
