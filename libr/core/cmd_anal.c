@@ -1132,13 +1132,20 @@ static int var_cmd(RCore *core, const char *str) {
 				*old_name++ = 0;
 				r_str_trim (old_name);
 			}
-			v1 = r_anal_var_get_byname (core->anal, fcn->addr, old_name);
-			if (v1) {
-				r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-						v1->kind, old_name, new_name, true);
-				r_anal_var_free (v1);
+			if (fcn) {
+				v1 = r_anal_var_get_byname (core->anal, fcn->addr, old_name);
+				if (v1) {
+					r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
+							v1->kind, old_name, new_name, true);
+					r_anal_var_free (v1);
+				} else {
+					eprintf ("Cant find var by name\n");
+				}
 			} else {
-				eprintf ("Cant find var by name\n");
+				eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+				r_anal_op_free (op);
+				free (ostr);
+				return false;
 			}
 			r_anal_op_free (op);
 			free (ostr);
