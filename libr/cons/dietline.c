@@ -268,7 +268,7 @@ static int r_line_readchar_win(ut8 *s, int slen) { // this function handle the i
 	INPUT_RECORD irInBuf;
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
-	ut8 buf[5];
+	ut8 buf[5] = {0};
 	HANDLE h;
 	int i;
 	void *bed;
@@ -329,7 +329,6 @@ do_it_again:
 		goto do_it_again;
 	}
 	strncpy_s (s, slen, buf, sizeof (buf));
-	free (buf);
 	SetConsoleMode (h, mode);
 	return strlen (s);
 }
