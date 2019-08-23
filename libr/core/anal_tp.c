@@ -662,7 +662,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						var_retype (anal, var, NULL, prev_type, addr, false, false);
 					}
 				}
-				if (chk_constraint && var && (type == R_ANAL_OP_TYPE_CMP && aop.ptr != UT64_MAX)
+				if (chk_constraint && var && (type == R_ANAL_OP_TYPE_CMP && aop.disp != UT64_MAX)
 						&& next_op && next_op->type == R_ANAL_OP_TYPE_CJMP) {
 					bool jmp = false;
 					RAnalOp *jmp_op = {0};
