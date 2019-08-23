@@ -312,9 +312,8 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab, cons
 			continue;
 		}
 		if (indent <= 0) {
-			// non-JSON part
+			// non-JSON part, skip it
 			if (s[0] != '{' && s[0] != '[') {
-				*o++ = *s;
 				continue;
 			}
 		}
@@ -322,7 +321,7 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab, cons
 		if (s[0] == '"') {
 			instr = 1;
 		}
-		if (*s == '\n' || *s == '\r' || *s == '\t' || *s == ' ') {
+		if (*s == '\n' || *s == '\r' || *s == '\t' || *s == ' ' || !IS_PRINTABLE(*s)) {
 			continue;
 		}
 		switch (*s) {
