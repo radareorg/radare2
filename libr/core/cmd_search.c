@@ -1062,7 +1062,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		ht_uu_insert (localbadstart, idx, 1);
 		r_anal_op (core->anal, &aop, addr, buf + idx, buflen - idx, R_ANAL_OP_MASK_DISASM);
 
-		if (nb_instr == 0 && is_end_gadget (&aop, 0)) {
+		if (nb_instr == 0 && (is_end_gadget (&aop, 0) || aop.type == R_ANAL_OP_TYPE_NOP)) {
 			valid = false;
 			goto ret;
 		}
