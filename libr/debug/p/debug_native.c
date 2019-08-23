@@ -398,17 +398,12 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			if (tracelib (dbg, "load", r->lib)) {
 				reason = R_DEBUG_REASON_TRAP;
 			}
-			r_debug_info_free (r);
 
 			/* Check if autoload PDB is set, and load PDB information if yes */
 			RCore* core = dbg->corebind.core;
 			bool autoload_pdb = dbg->corebind.cfggeti (core, "pdb.autoload");
 			if (autoload_pdb) {
 				char* o_res = dbg->corebind.cmdstrf (core, "o %s", ((PLIB_ITEM)(r->lib))->Path);
-				// File exists since we loaded it, however the "o" command fails sometimes hence the while loop
-				while (*o_res == 0) {
-					o_res = dbg->corebind.cmdstrf (core, "o %s", ((PLIB_ITEM)(r->lib))->Path);
-				}
 				int fd = atoi (o_res);
 				dbg->corebind.cmdf (core, "o %d", fd);
 				char* pdb_path = dbg->corebind.cmdstr (core, "i~pdb");
@@ -417,10 +412,11 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 					dbg->corebind.cmd (core, "i");
 				} else {
 					pdb_path = strchr (pdb_path, ' ') + 1;
-					dbg->corebind.cmdf (core, ".idp* %s", pdb_path);
+					dbg->corebind.cmdf (core, "idp %s", pdb_path);
 				}
 				dbg->corebind.cmdf (core, "o-%d", fd);
 			}
+			r_debug_info_free (r);
 		} else {
 			//eprintf ("Loading unknown library.\n");
 			r_cons_printf ("Loading unknown library.\n");
