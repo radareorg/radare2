@@ -3361,10 +3361,20 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				}
 			}
 			break;
-		case 'g':
-		        r_core_visual_showcursor (core, true);
-		        r_core_visual_offset (core);
-		        r_core_visual_showcursor (core, false);
+		case 'g': {
+			r_core_visual_showcursor (core, true);
+			r_core_visual_offset (core);        // change the seek to selected offset
+			RListIter *iter;		   // change the current option to selected seek
+			RAnalFunction *fcn;
+			int i = 0;
+			r_list_foreach (core->anal->fcns, iter, fcn) {
+				if (core->offset ==  fcn->addr){
+					option = i;
+				}
+				i++;
+			}
+			r_core_visual_showcursor (core, false);
+		}
 		        break;
 		case 'G':
 			r_core_seek (core, addr, SEEK_SET);
