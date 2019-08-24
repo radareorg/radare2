@@ -1493,7 +1493,6 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                         r_config_hold_i (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
                                                 "asm.cmt.right", "asm.lines.fcn", "asm.bytes", NULL);
                                         RDiff *d = r_diff_new ();
-                                        r_config_set_i (core->config, "scr.color", 0);
                                         r_config_set_i (core->config, "scr.utf8", 0);
                                         r_config_set_i (core->config, "asm.offset", 0);
                                         r_config_set_i (core->config, "asm.lines", 0);

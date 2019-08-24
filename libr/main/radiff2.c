@@ -762,6 +762,7 @@ static void __generate_graph (RCore *c, ut64 off) {
 
 static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
         int opts = R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF;
+        int use_utf8 = r_config_get_i (c->config, "scr.utf8");
         r_agraph_reset(c->graph);
         switch (gmode) {
         case GRAPH_DOT_MODE:
@@ -772,19 +773,19 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
                 break;
         case GRAPH_TINY_MODE:
                 __generate_graph (c, off);
-                r_core_cmd0 (c, "aggt");
+                r_core_agraph_print (c, use_utf8, "t");
                 break;
         case GRAPH_INTERACTIVE_MODE:
                 __generate_graph (c, off);
-                r_core_cmd0 (c, "aggv");
+                r_core_agraph_print (c, use_utf8, "v");
                 break;
         case GRAPH_SDB_MODE:
                 __generate_graph (c, off);
-                r_core_cmd0 (c, "aggk");
+                r_core_agraph_print (c, use_utf8, "k");
                 break;
         case GRAPH_GML_MODE:
                 __generate_graph (c, off);
-                r_core_cmd0 (c, "aggg");
+                r_core_agraph_print (c, use_utf8, "g");
                 break;
         case GRAPH_JSON_MODE:
                 r_core_anal_graph (c, off, opts | R_CORE_ANAL_JSON);
@@ -795,7 +796,7 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
         case GRAPH_DEFAULT_MODE:
         default:
                 __generate_graph (c, off);
-                r_core_cmd0 (c, "agg");
+                r_core_agraph_print (c, use_utf8, "");
         break;
         }
         r_cons_reset_colors ();
