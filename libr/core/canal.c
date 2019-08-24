@@ -1528,14 +1528,15 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                 if (is_star) {
                                                         char *title = get_title (bbi->addr);
                                                         char *body_b64 = r_base64_encode_dyn (diffstr, -1);
-
                                                         if (!title  || !body_b64) {
                                                                 free (body_b64);
                                                                 free (title);
                                                                 return false;
                                                         }
-                                                                body_b64 = r_str_prepend (body_b64, "base64:");
-                                                                r_cons_printf ("agn %s %s %d\n", title, body_b64, bbi->diff->type);
+                                                        body_b64 = r_str_prepend (body_b64, "base64:");
+                                                        r_cons_printf ("agn %s %s %d\n", title, body_b64, bbi->diff->type);
+                                                        free (body_b64);
+                                                        free (title);
                                                 } else {
 							diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
 							diffstr = r_str_replace (diffstr, "\"", "'", 1);
@@ -1559,6 +1560,8 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                         }
                                                         body_b64 = r_str_prepend (body_b64, "base64:");
                                                         r_cons_printf ("agn %s %s %d\n", title, body_b64, color);
+                                                        free (body_b64);
+                                                        free (title);
                                                 } else {
                                                         r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
                                                                               "color=\"black\", fontname=\"Courier\","
@@ -1601,6 +1604,8 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                 }
                                                 body_b64 = r_str_prepend (body_b64, "base64:");
                                                 r_cons_printf ("agn %s %s %d\n", title, body_b64, color);
+                                                free (body_b64);
+                                                free (title);
                                         } else {
                                                 r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
                                                                        "URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\","
