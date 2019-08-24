@@ -7258,7 +7258,8 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_agraph_print(RCore *core, const char *input) {
+R_API void r_core_agraph_print (RCore *core, const char *input) {
+	r_config_set (core->config, "scr.utf8", r_str_bool (r_cons_is_utf8 ()));
 	switch (*input) {
 	case 0:
 		core->graph->can->linemode = r_config_get_i (core->config, "graph.linemode");
@@ -7466,7 +7467,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		cmd_agraph_edge (core, input + 1);
 		break;
 	case 'g': // "agg"
-		cmd_agraph_print (core, input + 1);
+		r_core_agraph_print (core, input + 1);
 		break;
 	case 's': // "ags"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), 0);
