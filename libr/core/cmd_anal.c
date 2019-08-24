@@ -2731,7 +2731,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '\0':
 			{
 				ut64 addr = core->offset;
-				RListIter *iter;
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					r_cons_printf ("0x%08" PFMT64x "\n", fcn->addr);

@@ -1241,7 +1241,6 @@ static void ds_begin_comment(RDisasmState *ds) {
 static void ds_show_refs(RDisasmState *ds) {
 	RAnalRef *ref;
 	RListIter *iter;
-	RFlagItem *flagi;
 
 	if (!ds->show_cmtrefs) {
 		return;
@@ -1250,7 +1249,6 @@ static void ds_show_refs(RDisasmState *ds) {
 
 	r_list_foreach (list, iter, ref) {
 		char *cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
-		flagi = r_flag_get_i (ds->core->flags, ref->addr);
 		const RList *fls = r_flag_get_list (ds->core->flags, ref->addr);
 		RListIter *iter2;
 		RFlagItem *fis;
