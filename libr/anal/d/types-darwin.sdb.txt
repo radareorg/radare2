@@ -192,11 +192,6 @@ func.waitid.arg.2=siginfo_t *,infop
 func.waitid.arg.3=int,options
 func.waitid.ret=int
 
-__stack_chk_fail=func
-func.__stack_chk_fail.args=0
-func.__stack_chk_fail.noreturn=true
-func.__stack_chk_fail.ret=void
-
 acl_free=func
 func.acl_free.args=1
 func.acl_free.arg.0=void *,obj_p
