@@ -776,11 +776,11 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
                 break;
         case GRAPH_INTERACTIVE_MODE:
                 __generate_graph (c, off);
-		r_core_agraph_print (c, "v");
+                r_core_agraph_print (c, "v");
                 break;
         case GRAPH_SDB_MODE:
                 __generate_graph (c, off);
-		r_core_agraph_print (c, "k");
+                r_core_agraph_print (c, "k");
                 break;
         case GRAPH_GML_MODE:
                 __generate_graph (c, off);
@@ -795,7 +795,7 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
         case GRAPH_DEFAULT_MODE:
         default:
                 __generate_graph (c, off);
-               r_core_agraph_print (c, "");
+                r_core_agraph_print (c, "");
         break;
         }
         r_cons_reset_colors ();
