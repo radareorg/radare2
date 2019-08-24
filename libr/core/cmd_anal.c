@@ -302,7 +302,7 @@ static const char *help_msg_af[] = {
 	"afM", " name", "print functions map",
 	"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
 	"afna", "", "suggest automatic name for current offset",
-	"afo", " [fcn.name]", "show address for the function named like this",
+	"afo", "[?j] [fcn.name]", "show address for the function name or current offset",
 	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
 	"afS", "[stack_size]", "set stack frame size for function at current address",
 	"afsr", " [function_name] [new_type]", "change type for given function",
@@ -2720,19 +2720,47 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case 'o': // "afo"
-		{
-		RAnalFunction *fcn;
-		ut64 addr = core->offset;
-		if (input[2] == ' ')
-			addr = r_num_math (core->num, input + 3);
-		if (addr == 0LL) {
-			fcn = r_anal_fcn_find_name (core->anal, input + 3);
-		} else {
-			fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-		}
-		if (fcn) {
-			r_cons_printf ("0x%08" PFMT64x "\n", fcn->addr);
-		}
+		switch (input[2]) {
+		case '?':
+			eprintf ("Usage: afo[?sj] ([name|offset])\n");
+			break;
+		case 'j':
+		case '\0':
+			{
+				ut64 addr = core->offset;
+				RListIter *iter;
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				if (fcn) {
+					r_cons_printf ("0x%08" PFMT64x "\n", fcn->addr);
+				}
+			}
+			break;
+		case 's': // "afos"
+			{
+				ut64 addr = core->offset;
+				RListIter *iter;
+				RList *list = r_anal_get_fcn_in_list (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				RAnalFunction *fcn;
+				r_list_foreach (list, iter, fcn) {
+					r_cons_printf ("= 0x%08" PFMT64x "\n", fcn->addr);
+				}
+				r_list_free (list);
+			}
+			break;
+		case ' ':
+			{
+				RAnalFunction *fcn;
+				ut64 addr = r_num_math (core->num, input + 3);
+				if (addr == 0LL) {
+					fcn = r_anal_fcn_find_name (core->anal, input + 3);
+				} else {
+					fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				}
+				if (fcn) {
+					r_cons_printf ("0x%08" PFMT64x "\n", fcn->addr);
+				}
+			}
+			break;
 		}
 		break;
 	case 'i': // "afi"
