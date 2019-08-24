@@ -58,6 +58,8 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_cons);
 
+#define R_CONS_CMD_DEPTH 100
+
 typedef int (*RConsGetSize)(int *rows);
 typedef int (*RConsGetCursor)(int *rows);
 typedef bool (*RConsIsBreaked)(void);
@@ -429,6 +431,7 @@ typedef struct r_cons_context_t {
 	RStack *break_stack;
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
+	int cmd_depth;
 
 	// Used for per-task logging redirection
 	RLogCallback log_callback; // TODO: RList of callbacks

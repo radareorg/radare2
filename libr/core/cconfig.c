@@ -1772,7 +1772,7 @@ static bool cb_cmddepth(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	int c = R_MAX (((RConfigNode*)data)->i_value, 0);
 	core->max_cmd_depth = c;
-	core->cmd_depth = c;
+	core->cons->context->cmd_depth = c;
 	return true;
 }
 

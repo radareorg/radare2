@@ -85,8 +85,6 @@ R_LIB_VERSION_HEADER(r_core);
 
 #define RTR_MAX_HOSTS 255
 
-#define R_CORE_CMD_DEPTH 100
-
 /* visual mode */
 #define R_CORE_VISUAL_MODE_PX  0
 #define R_CORE_VISUAL_MODE_PD  1
@@ -310,7 +308,6 @@ typedef struct r_core_t {
 	RThreadLock *tasks_lock;
 	int tasks_running;
 	bool oneshot_running;
-	int cmd_depth;
 	int max_cmd_depth;
 	ut8 switch_file_view;
 	Sdb *sdb;
