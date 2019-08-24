@@ -208,6 +208,7 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 		if (!task->cons_context) {
 			goto hell;
 		}
+		task->cons_context->cmd_depth = core->max_cmd_depth;
 	}
 
 	task->id = core->task_id_next++;

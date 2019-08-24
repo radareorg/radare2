@@ -2341,7 +2341,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	ut64 orig_offset = core->offset;
 	icmd = strdup (cmd);
 
-	if (core->max_cmd_depth - core->cmd_depth == 1) {
+	if (core->max_cmd_depth - core->cons->context->cmd_depth == 1) {
 		core->prompt_offset = core->offset;
 	}
 	cmd = r_str_trim_head_tail (icmd);
@@ -4358,14 +4358,14 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		r_line_hist_add (cstr);
 	}
 
-	if (core->cmd_depth < 1) {
+	if (core->cons->context->cmd_depth < 1) {
 		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
 		free (ocmd);
 		R_FREE (core->oobi);
 		core->oobi_len = 0;
 		goto beach;
 	}
-	core->cmd_depth--;
+	core->cons->context->cmd_depth--;
 	for (rcmd = cmd;;) {
 		ptr = strchr (rcmd, '\n');
 		if (ptr) {
@@ -4383,7 +4383,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	}
 	/* run pending analysis commands */
 	run_pending_anal (core);
-	core->cmd_depth++;
+	core->cons->context->cmd_depth++;
 	free (ocmd);
 	R_FREE (core->oobi);
 	core->oobi_len = 0;
@@ -4635,7 +4635,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 
 R_API void r_core_cmd_repeat(RCore *core, int next) {
 	// Fix for backtickbug px`~`
-	if (!core->lastcmd || core->cmd_depth < 1) {
+	if (!core->lastcmd || core->cons->context->cmd_depth < 1) {
 		return;
 	}
 	switch (*core->lastcmd) {
