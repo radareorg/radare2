@@ -686,17 +686,6 @@ static ut32 adr(ArmOp *op, int addr) {
 	return data;
 }
 
-static ut32 neg(ArmOp *op) {
-	if (op->operands_count < 2) {
-		return -1;
-	}
-	op->operands_count++;
-	op->operands[2] = op->operands[1];
-	op->operands[1].reg = 31; // xzr
-
-	return arithmetic (op, 0xd1); // sub reg0, xzr, reg1
-}
-
 static ut32 stp(ArmOp *op, int k) {
 	ut32 data = UT32_MAX;
 
@@ -754,6 +743,17 @@ static ut32 arithmetic (ArmOp *op, int k) {
 		data += (op->operands[2].reg >> 6) << 8;
 	}
 	return data;
+}
+
+static ut32 neg(ArmOp *op) {
+	if (op->operands_count < 2) {
+		return -1;
+	}
+	op->operands_count++;
+	op->operands[2] = op->operands[1];
+	op->operands[1].reg = 31; // xzr
+
+	return arithmetic (op, 0xd1); // sub reg0, xzr, reg1
 }
 
 static bool parseOperands(char* str, ArmOp *op) {
