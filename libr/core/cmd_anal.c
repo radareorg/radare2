@@ -1159,7 +1159,9 @@ static int var_cmd(RCore *core, const char *str) {
 		}
 		return true;
 	case 'd': // "afvd"
-		if (str[1]) {
+		if (!fcn) {
+			eprintf ("Cannot find function.\n");
+		} else if (str[1]) {
 			p = strchr (ostr, ' ');
 			if (!p) {
 				free (ostr);
@@ -1190,30 +1192,34 @@ static int var_cmd(RCore *core, const char *str) {
 			r_list_free (list);
 		}
 		return true;
-	case 't':{ // "afvt"
-		p = strchr (ostr, ' ');
-		if (!p++) {
-			free (ostr);
-			return false;
-		}
+	case 't':
+		if (fcn) { // "afvt"
+			p = strchr (ostr, ' ');
+			if (!p++) {
+				free (ostr);
+				return false;
+			}
 
-		char *type = strchr (p, ' ');
-		if (!type) {
+			char *type = strchr (p, ' ');
+			if (!type) {
+				free (ostr);
+				return false;
+			}
+			*type++ = 0;
+			v1 = r_anal_var_get_byname (core->anal, fcn->addr, p);
+			if (!v1) {
+				eprintf ("Cant find get by name %s\n", p);
+				free (ostr);
+				return false;
+			}
+			r_anal_var_retype (core->anal, fcn->addr,
+					R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, v1->isarg, p);
+			r_anal_var_free (v1);
 			free (ostr);
+			return true;
+		} else {
+			eprintf ("Cannot find function\n");
 			return false;
-		}
-		*type++ = 0;
-		v1 = r_anal_var_get_byname (core->anal, fcn->addr, p);
-		if (!v1) {
-			eprintf ("Cant find get by name %s\n", p);
-			free (ostr);
-			return false;
-		}
-		r_anal_var_retype (core->anal, fcn->addr,
-			R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, v1->isarg, p);
-		r_anal_var_free (v1);
-		free (ostr);
-		return true;
 		}
 	}
 	switch (str[1]) { // afv[bsr]
@@ -1324,16 +1330,19 @@ static int var_cmd(RCore *core, const char *str) {
 		}
 		if ((type == 'b') && delta > 0) {
 			isarg = true;
-		} else if ((type == 's') && delta > fcn->maxstack) {
+		} else if (type == 's' && fcn && delta > fcn->maxstack) {
 			isarg = true;
 		}
-		r_anal_var_add (core->anal, fcn->addr,scope,
-				delta, type, vartype,
-				size, isarg, name);
+		if (fcn) {
+			r_anal_var_add (core->anal, fcn->addr,scope,
+					delta, type, vartype,
+					size, isarg, name);
+		} else {
+			eprintf ("Missing function at 0x%08"PFMT64x"\n", core->offset);
 		}
+ 		}
 		break;
-	};
-
+	}
 	free (ostr);
 	return res;
 }
