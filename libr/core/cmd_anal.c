@@ -1142,7 +1142,10 @@ static int var_cmd(RCore *core, const char *str) {
 					eprintf ("Cant find var by name\n");
 				}
 			} else {
-				eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+				eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+				r_anal_op_free (op);
+				free (ostr);
+				return false;
 			}
 			r_anal_op_free (op);
 			free (ostr);
