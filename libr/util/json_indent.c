@@ -314,6 +314,7 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab, cons
 		if (indent <= 0) {
 			// non-JSON part, skip it
 			if (s[0] != '{' && s[0] != '[') {
+				*o++ = *s;
 				continue;
 			}
 		}
