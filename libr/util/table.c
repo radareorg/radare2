@@ -7,6 +7,18 @@ static bool Ginc = false;
 static int Gnth = 0;
 static RListComparator Gcmp = NULL;
 
+static int sortString(const void *a, const void *b) {
+	return strcmp (a, b);
+}
+
+static int sortNumber(const void *a, const void *b) {
+	return r_num_get (NULL, a) - r_num_get (NULL, b);
+}
+
+// maybe just index by name instead of exposing those symbols as global
+R_API RTableColumnType r_table_type_string = { "string", sortString };
+R_API RTableColumnType r_table_type_number = { "number", sortNumber };
+
 // TODO: unused for now, maybe good to call after filter :?
 static void __table_adjust(RTable *t) {
 	RListIter *iter, *iter2;
