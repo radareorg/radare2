@@ -1095,25 +1095,11 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			if (ox) {
 				char *e = strstr (ox, "]");
 				if (e) {
-					e = strdup (ds->analop.type == R_ANAL_OP_TYPE_LEA ? e + 1 : e);
+					e = strdup (e);
 					ut64 addr = r_num_get (NULL, ox);
 					if (addr > ds->min_ref_addr) {
 						RFlagItem *fi = r_flag_get_i (ds->core->flags, addr);
 						if (fi) {
-							if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-								char *left = ox;
-								for (; left > ds->str
-								       && !(*left == '[' && *(left - 1) != 0x1b)
-								       && *left != ']';
-								     left--) {
-									;
-								}
-								if (*left == '[') {
-									memmove (left, left + 1,
-									         strlen (left + 1) + 1);
-									ox--;
-								}
-							}
 							strcpy (ox, fi->name);
 							strcat (ox, e);
 						}
