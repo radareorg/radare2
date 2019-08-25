@@ -359,12 +359,64 @@ R_API void r_table_sort(RTable *t, int nth, int dir) {
 	
 }
 
+static int __columnByName(RTable *t, const char *name) {
+	RListIter *iter;
+	RTableColumn *col;
+	int n = 0;
+	r_list_foreach (t->cols, iter, col) {
+		if (!strcmp (name, col->name)) {
+			return n;
+		}
+		n++;
+	}
+	return -1;
+}
+
+static int __resolveOperation(const char *op) {
+	if (!strcmp (op, "gt")) {
+		return '>';
+	}
+	if (!strcmp (op, "lt")) {
+		return '<';
+	}
+	if (!strcmp (op, "eq")) {
+		return '=';
+	}
+	if (!strcmp (op, "ne")) {
+		return '!';
+	}
+	return -1;
+}
+
 R_API void r_table_query(RTable *t, const char *q) {
-	// addr>200&&addr<400&&is_global&&name~test&&type=bind
-	// query: [addr]>200&&[addr]<400&&[]
-	// we need a syntax to do sorting
 	// TODO support parenthesis and (or)||
 	// split by "&&" (or comma) -> run .filter on each
-	// call .sort() multiple times if needed for different columns
 	// addr/gt/200,addr/lt/400,addr/sort/dec,offset/sort/inc
+	RList *queries = r_str_split_list (q, ",");
+	r_list_foreach (queries, iter, query) {
+		RList *q = r_str_split_list (query, "/");
+		const char *columnName = r_list_get_n (q, 0);
+		const char *operation = r_list_get_n (q, 1);
+		const char *operand = r_list_get_n (q, 2);
+		int col = __columnByName (columnName);
+		if (col == -1) {
+			if (*columName == '[') {
+				nth = atoi (columnName + 1);
+			} else {
+				eprintf ("Invalid column name (%s)\n", columnName);
+			}
+		}
+		if (!strcmp (operation, "sort")) {
+			r_table_sort (t, col, !strcmp (operation, "inc"));
+		} else {
+			int op = __resolveOperation (operation);
+			if (op == -1) {
+				eprintf ("Invalid operation (%s)\n", operation);
+			} else {
+				r_table_filter (t, col, op, operand);
+			}
+		}
+		r_list_free (q);
+	}
+	r_list_free (queries);
 }
