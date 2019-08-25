@@ -4,6 +4,7 @@ r_util_sources = [
   'assert.c',
   'alloc.c',
   'donut.c',
+  'table.c',
   'getopt.c',
   'base85.c',
   'base91.c',
