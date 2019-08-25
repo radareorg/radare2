@@ -166,7 +166,40 @@ R_API void r_table_add_row(RTable *t, const char *name, ...) {
 	t->totalCols = R_MAX (t->totalCols, r_list_length (items));
 }
 
-// import / export .. deprecate?
+// import / export
+
+R_API char *r_table_tofancystring(RTable *t) {
+	RStrBuf *sb = r_strbuf_new ("");
+	RTableRow *row;
+	RTableColumn *col;
+	RListIter *iter, *iter2;
+	
+	r_list_foreach (t->cols, iter, col) {
+		r_strbuf_appendf (sb, "| %*s ", col->width, col->name);
+	}
+	int len = r_strbuf_length (sb) - 1;
+	{
+		char *s = r_str_newf (".%s.\n", r_str_pad ('-', len));
+		r_strbuf_prepend (sb, s);
+		free (s);
+	}
+
+	r_strbuf_appendf (sb, "|\n)%s(\n", r_str_pad ('-', len));
+	r_list_foreach (t->rows, iter, row) {
+		char *item;
+		int c = 0;
+		r_list_foreach (row->items, iter2, item) {
+			RTableColumn *col = r_list_get_n (t->cols, c);
+			if (col) {
+				r_strbuf_appendf (sb, "| %*s ", col->width, item);
+			}
+			c++;
+		}
+		r_strbuf_append (sb, "|\n");
+	}
+	r_strbuf_appendf (sb, "`%s'\n", r_str_pad ('-', len));
+	return r_strbuf_drain (sb);
+}
 
 R_API char *r_table_tostring(RTable *t) {
 	RStrBuf *sb = r_strbuf_new ("");
@@ -241,6 +274,24 @@ R_API char *r_table_drain(RTable *t) {
 	return res;
 }
 
+R_API char *r_table_tohtml(RTable *t) {
+	// TODO
+}
+
+R_API void r_table_transpose(RTable *t) {
+	// When the music stops rows will be cols and cols... rows!
+}
+
+R_API void r_table_format(RTable *t, int nth, RTableColumnType) {
+	// change the format of a specific column
+	// change imm base, decimal precission, ...
+}
+
+// to compute sum result of all the elements in a column
+R_API ut64 r_table_reduce(RTable *t, int nth) {
+	// When the music stops rows will be cols and cols... rows!
+}
+
 R_API char *r_table_tojson(RTable *t) {
 	PJ *pj = pj_new ();
 	RTableRow *row;
@@ -272,20 +323,40 @@ R_API void r_table_fromcsv(RTable *t, const char *csv) {
 	//  TODO
 }
 
-R_API void r_table_filter(RTable *t, int nth, int op, const char *v) {
-	switch (op) {
-	case '<':
-	case '>':
-	case '=':
-	case '~':
-	case '!':
-	case '\0':
-		break;
+R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
+	RTableRow *row;
+	RListIter *iter, *iter2;
+	ut64 uv = r_num_get (NULL, un);
+	r_list_foreach_safe (t->rows, iter, iter2, row) {
+		const char *nn = r_list_get_n (row->items, nth);
+		ut64 nv = r_num_get (NULL, nn);
+		bool match = true;
+		switch (op) {
+		case '>':
+			match = (nv > uv);
+			break;
+		case '<':
+			match = (nv < uv);
+			break;
+		case '=':
+			match = (nv == uv);
+			break;
+		case '!':
+			match = (nv == uv);
+			break;
+		case '~':
+			match = strstr (nn, un) != NULL;
+		case '\0':
+			break;
+		}
+		if (!match) {
+			r_list_delete (t->rows, iter);
+		}
 	}
 }
 
 R_API void r_table_sort(RTable *t, int nth, int dir) {
-
+	
 }
 
 R_API void r_table_query(RTable *t, const char *q) {
@@ -295,4 +366,5 @@ R_API void r_table_query(RTable *t, const char *q) {
 	// TODO support parenthesis and (or)||
 	// split by "&&" (or comma) -> run .filter on each
 	// call .sort() multiple times if needed for different columns
+	// addr/gt/200,addr/lt/400,addr/sort/dec,offset/sort/inc
 }

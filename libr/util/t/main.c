@@ -13,6 +13,15 @@ int main() {
 
 	r_table_add_row (t, "hello", "100", NULL);
 	r_table_add_row (t, "namings", "20000", NULL);
+
+	//r_table_filter (t, 1, '>', "200");
+	r_table_filter (t, 1, '=', "100");
+
+	{
+		char *s = r_table_tofancystring (t);
+		eprintf ("%s\n", s);
+		free (s);
+	}
 	{
 		char *s = r_table_tostring (t);
 		eprintf ("%s\n", s);
