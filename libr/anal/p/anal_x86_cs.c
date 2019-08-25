@@ -1909,8 +1909,8 @@ static void op0_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 		}
 		break;
 	case X86_OP_REG:
-		if ((INSOP(1).type == X86_OP_IMM) &&
-			(INSOP(0).reg != X86_REG_RSP) && (INSOP(0).reg != X86_REG_ESP)) {
+		if (INSOP(1).type == X86_OP_IMM) {
+		//	(INSOP(0).reg != X86_REG_RSP) && (INSOP(0).reg != X86_REG_ESP)) {
 			op->val = INSOP(1).imm;
 		}
 		break;
