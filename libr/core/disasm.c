@@ -3752,6 +3752,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
+	const int opType = ds->analop.type & R_ANAL_OP_TYPE_MASK;
+	bool canHaveChar = opType == R_ANAL_OP_TYPE_MOV;
+	if (!canHaveChar) {
+		canHaveChar = opType == R_ANAL_OP_TYPE_PUSH;
+	}
 
 	ds->chref = 0;
 	if ((char)v > 0 && v >= '!') {
@@ -3770,14 +3775,14 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				if (r_flag_get_i (core->flags, v)) {
 					printable = false;
 				}
-				if (printable) {
+				if (canHaveChar && printable) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; '%s'", str);
 				}
 			}
 			free (str);
 		} else {
-			if ((char)v > 0 && v >= '!' && v <= '~') {
+			if (canHaveChar && (char)v > 0 && v >= '!' && v <= '~') {
 				ds_begin_comment (ds);
 				aligned = true;
 				ds_comment (ds, true, "; '%c'", (char)v);
@@ -3970,7 +3975,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				ds_comment (ds, true, "; -1");
 			} else if (((char)refaddr > 0) && refaddr >= '!' && refaddr <= '~') {
 				char ch = refaddr;
-				if (ch != ds->chref) {
+				if (canHaveChar && ch != ds->chref) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; '%c'", ch);
 				}
