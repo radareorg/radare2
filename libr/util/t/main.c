@@ -15,7 +15,9 @@ int main() {
 	r_table_add_row (t, "namings", "20000", NULL);
 
 	//r_table_filter (t, 1, '>', "200");
-	r_table_filter (t, 1, '=', "100");
+	// r_table_filter (t, 1, '=', "100");
+	// r_table_query (t, "[1]/q/100");
+	r_table_sort (t, 1, true);
 
 	{
 		char *s = r_table_tofancystring (t);

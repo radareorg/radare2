@@ -1,47 +1,13 @@
 /* radare - LGPL - Copyright 2019 - pancake */
 
-#include <r_util.h>
+#include <r_util/r_table.h>
 
+// cant do that without globals because RList doesnt have void *user :(
+static bool Ginc = false;
+static int Gnth = 0;
+static RListComparator Gcmp = NULL;
 
-typedef struct {
-	const char *name;
-	RListComparator cmp;
-} RTableType;
-
-static int sortString(const void *a, const void *b) {
-	return strcmp (a, b);
-}
-
-static int sortNumber(const void *a, const void *b) {
-	return r_num_get (NULL, a) - r_num_get (NULL, b);
-}
-
-RTableType r_table_type_string = { "string", sortString };
-RTableType r_table_type_number = { "string", sortNumber };
-
-typedef struct {
-	char *name;
-	RTableType *type;
-	int align; // left, right, center (TODO: unused)
-	int width; // computed
-	int maxWidth;
-	bool forceUppercase;
-} RTableColumn;
-
-typedef struct {
-	// TODO: use RVector
-	RList *items;
-} RTableRow;
-
-typedef struct {
-	RList *rows;
-	RList *cols;
-	int totalCols;
-	bool showHeader;
-	bool adjustedCols;
-} RTable;
-
-// adjust column width
+// TODO: unused for now, maybe good to call after filter :?
 static void __table_adjust(RTable *t) {
 	RListIter *iter, *iter2;
 	RTableColumn *col;
@@ -54,6 +20,10 @@ static void __table_adjust(RTable *t) {
 		int ncol = 0;
 		r_list_foreach (row->items, iter2, item) {
 			int itemLength = r_str_len_utf8 (item);
+			RTableColumn *c = r_list_get_n (t->cols, ncol);
+			if (c) {
+				c->width = R_MAX (c->width, itemLength);
+			}
 			ncol ++;
 		}
 	}
@@ -84,22 +54,7 @@ R_API void r_table_free(RTable *t) {
 	free (t);
 }
 
-R_API RTable *r_table_clone(RTable *t) {
-	// TODO: implement
-	return NULL;
-}
-
-R_API RTable *r_table_push(RTable *t) {
-	// TODO: implement
-	return NULL;
-}
-
-R_API RTable *r_table_pop(RTable *t) {
-	// TODO: implement
-	return NULL;
-}
-
-R_API void r_table_add_column(RTable *t, RTableType *type, const char *name, int maxWidth) {
+R_API void r_table_add_column(RTable *t, RTableColumnType *type, const char *name, int maxWidth) {
 	RTableColumn *c = R_NEW0 (RTableColumn);
 	if (c) {
 		c->name = strdup (name);
@@ -111,22 +66,6 @@ R_API void r_table_add_column(RTable *t, RTableType *type, const char *name, int
 	}
 }
 
-#if 0
-R_API void r_table_columns(RTable *t, const char *name, ...) {
-	va_list ap;
-	va_start (ap, fmt);
-	r_list_free (t->cols);
-	t->cols = r_list_newf (__table_column_free);
-	for (;;) {
-		const char *n = va_arg (ap, const char *);
-		if (!n) {
-			
-			break;
-		}
-	}
-        va_end (ap);
-}
-#endif
 R_API RTableRow *r_table_row_new(RList *items) {
 	RTableRow *row = R_NEW (RTableRow);
 	row->items = items;
@@ -267,35 +206,9 @@ R_API char *r_table_tocsv(RTable *t) {
 	return r_strbuf_drain (sb);
 }
 
-// XXX deprecate?
-R_API char *r_table_drain(RTable *t) {
-	char *res = r_table_tostring (t);
-	r_table_free (t);
-	return res;
-}
-
-R_API char *r_table_tohtml(RTable *t) {
-	// TODO
-}
-
-R_API void r_table_transpose(RTable *t) {
-	// When the music stops rows will be cols and cols... rows!
-}
-
-R_API void r_table_format(RTable *t, int nth, RTableColumnType) {
-	// change the format of a specific column
-	// change imm base, decimal precission, ...
-}
-
-// to compute sum result of all the elements in a column
-R_API ut64 r_table_reduce(RTable *t, int nth) {
-	// When the music stops rows will be cols and cols... rows!
-}
-
 R_API char *r_table_tojson(RTable *t) {
 	PJ *pj = pj_new ();
 	RTableRow *row;
-	RTableColumn *col;
 	RListIter *iter, *iter2;
 	pj_a (pj);
 	r_list_foreach (t->rows, iter, row) {
@@ -313,14 +226,6 @@ R_API char *r_table_tojson(RTable *t) {
 	}
 	pj_end (pj);
 	return pj_drain (pj);
-}
-
-R_API void r_table_fromjson(RTable *t, const char *csv) {
-	//  TODO
-}
-
-R_API void r_table_fromcsv(RTable *t, const char *csv) {
-	//  TODO
 }
 
 R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
@@ -355,8 +260,26 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 	}
 }
 
-R_API void r_table_sort(RTable *t, int nth, int dir) {
-	
+static int cmp(const void *_a, const void *_b) {
+	RTableRow *a = (RTableRow*)_a;
+	RTableRow *b = (RTableRow*)_b;
+	const char *wa = r_list_get_n (a->items, Gnth);
+	const char *wb = r_list_get_n (b->items, Gnth);
+	int res = Gcmp (wa, wb);
+	if (Ginc) {
+		res = -res;
+	}
+	return res;
+}
+
+R_API void r_table_sort(RTable *t, int nth, bool inc) {
+	RTableColumn *col = r_list_get_n (t->cols, nth);
+	Ginc = inc;
+	Gnth = nth;
+	Gcmp = col->type->cmp;
+	r_list_sort (t->rows, cmp);
+	Gnth = Ginc = 0;
+	Gcmp = NULL;
 }
 
 static int __columnByName(RTable *t, const char *name) {
@@ -392,16 +315,19 @@ R_API void r_table_query(RTable *t, const char *q) {
 	// TODO support parenthesis and (or)||
 	// split by "&&" (or comma) -> run .filter on each
 	// addr/gt/200,addr/lt/400,addr/sort/dec,offset/sort/inc
-	RList *queries = r_str_split_list (q, ",");
+	RListIter *iter;
+	char *qq = strdup (q);
+	RList *queries = r_str_split_list (qq, ",");
+	char *query;
 	r_list_foreach (queries, iter, query) {
 		RList *q = r_str_split_list (query, "/");
 		const char *columnName = r_list_get_n (q, 0);
 		const char *operation = r_list_get_n (q, 1);
 		const char *operand = r_list_get_n (q, 2);
-		int col = __columnByName (columnName);
+		int col = __columnByName (t, columnName);
 		if (col == -1) {
-			if (*columName == '[') {
-				nth = atoi (columnName + 1);
+			if (*columnName == '[') {
+				col = atoi (columnName + 1);
 			} else {
 				eprintf ("Invalid column name (%s)\n", columnName);
 			}
@@ -419,4 +345,65 @@ R_API void r_table_query(RTable *t, const char *q) {
 		r_list_free (q);
 	}
 	r_list_free (queries);
+	free (qq);
 }
+
+#if 0
+// TODO: to be implemented
+R_API RTable *r_table_clone(RTable *t) {
+	// TODO: implement
+	return NULL;
+}
+
+R_API RTable *r_table_push(RTable *t) {
+	// TODO: implement
+	return NULL;
+}
+
+R_API RTable *r_table_pop(RTable *t) {
+	// TODO: implement
+	return NULL;
+}
+
+R_API void r_table_fromjson(RTable *t, const char *csv) {
+	//  TODO
+}
+
+R_API void r_table_fromcsv(RTable *t, const char *csv) {
+	//  TODO
+}
+
+R_API char *r_table_tohtml(RTable *t) {
+	// TODO
+	return NULL;
+}
+
+R_API void r_table_transpose(RTable *t) {
+	// When the music stops rows will be cols and cols... rows!
+}
+
+R_API void r_table_format(RTable *t, int nth, RTableColumnType *type) {
+	// change the format of a specific column
+	// change imm base, decimal precission, ...
+}
+
+// to compute sum result of all the elements in a column
+R_API ut64 r_table_reduce(RTable *t, int nth) {
+	// When the music stops rows will be cols and cols... rows!
+	return 0;
+}
+
+R_API void r_table_columns(RTable *t, const char *name, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	r_list_free (t->cols);
+	t->cols = r_list_newf (__table_column_free);
+	for (;;) {
+		const char *n = va_arg (ap, const char *);
+		if (!n) {
+			break;
+		}
+	}
+        va_end (ap);
+}
+#endif
