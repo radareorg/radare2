@@ -5531,6 +5531,24 @@ char *__create_panels_config_path(const char *file) {
 	return file_path;
 }
 
+char *__get_panels_config_file_from_dir (const char *file) {
+	char *ret = NULL;
+	struct dirent *d;
+	DIR *dir = opendir (__get_panels_config_dir_path ());
+	while ((d = readdir (dir))) {
+		if (!strcmp (d->d_name, file)) {
+			ret = d->d_name;
+		}
+	}
+	closedir (dir);
+	if (!ret) {
+		return ret;
+	}
+	char *dir_path = __get_panels_config_dir_path ();
+	ret = r_str_newf (R_JOIN_2_PATHS ("%s", "%s"), dir_path, ret);
+	return ret;
+}
+
 void r_save_panels_layout(RCore *core) {
 	int i;
 	if (!core->panels) {
@@ -5564,9 +5582,7 @@ void r_save_panels_layout(RCore *core) {
 	fprintf (file, "%s", pj_drain (pj));
 	fprintf (file, "\n");
 	fclose (file);
-	if (!name) {
-		__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
-	}
+	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
 	(void)__show_status (core, "Panels layout saved!");
 }
 
@@ -5604,9 +5620,19 @@ bool r_load_panels_layout(RCore *core, const char *_name) {
 	if (!core->panels) {
 		return false;
 	}
-	char *config_path = __get_panels_config_dir_path ();
+	char *config_path = __get_panels_config_file_from_dir (_name);
+	if (!config_path) { 
+		char *tmp = r_str_newf ("No saved layout found for the name: %s", _name);
+		(void)__show_status (core, tmp);
+		free (tmp);
+		return false;
+	}
 	char *panels_config = r_file_slurp (config_path, NULL);
-	if (!panels_config || !r_file_exists (panels_config)) {
+	free (config_path);
+	if (!panels_config) {
+		char *tmp = r_str_newf ("Layout is empty: %s", _name);
+		(void)__show_status (core, tmp);
+		free (tmp);
 		return false;
 	}
 	RPanels *panels = core->panels;
@@ -5644,11 +5670,6 @@ bool r_load_panels_layout(RCore *core, const char *_name) {
 		tmp_cfg += strlen (tmp_cfg) + 1;
 	}
 	p_cfg += strlen (p_cfg) + 1;
-	char *tmp = r_str_newf ("No saved layout found for the name: %s", _name);
-	if (tmp) {
-		(void)__show_status (core, tmp);
-		free (tmp);
-	}
 	free (panels_config);
 	if (!panels->n_panels) {
 		return false;
