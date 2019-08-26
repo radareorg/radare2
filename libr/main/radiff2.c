@@ -798,7 +798,6 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
                 r_core_cmd0 (c, "agg");
         break;
         }
-        r_cons_reset_colors ();
 }
 
 R_API int r_main_radiff2(int argc, char **argv) {
