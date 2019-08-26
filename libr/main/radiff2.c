@@ -777,6 +777,7 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
         case GRAPH_INTERACTIVE_MODE:
                 __generate_graph (c, off);
                 r_core_cmd0 (c, "aggv");
+                r_cons_reset_colors ();
                 break;
         case GRAPH_SDB_MODE:
                 __generate_graph (c, off);
@@ -796,6 +797,7 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
         default:
                 __generate_graph (c, off);
                 r_core_cmd0 (c, "agg");
+                r_cons_reset_colors ();
         break;
         }
 }

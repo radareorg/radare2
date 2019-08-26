@@ -4842,6 +4842,5 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	}
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
-	r_cons_reset_colors ();
 	return !is_error;
 }
