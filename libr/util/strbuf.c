@@ -121,6 +121,7 @@ R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s) {
 		memcpy (ns, s, l);
 		char *s = sb->ptr ? sb->ptr: sb->buf;
 		memcpy (ns + l, s, sb->len);
+		ns[newlen] = 0;
 		return r_strbuf_set (sb, ns);
 	}
 	return false;

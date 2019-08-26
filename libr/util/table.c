@@ -286,12 +286,14 @@ static int cmp(const void *_a, const void *_b) {
 
 R_API void r_table_sort(RTable *t, int nth, bool inc) {
 	RTableColumn *col = r_list_get_n (t->cols, nth);
-	Ginc = inc;
-	Gnth = nth;
-	Gcmp = col->type->cmp;
-	r_list_sort (t->rows, cmp);
-	Gnth = Ginc = 0;
-	Gcmp = NULL;
+	if (col) {
+		Ginc = inc;
+		Gnth = nth;
+		Gcmp = col->type->cmp;
+		r_list_sort (t->rows, cmp);
+		Gnth = Ginc = 0;
+		Gcmp = NULL;
+	}
 }
 
 static int __columnByName(RTable *t, const char *name) {
@@ -323,6 +325,28 @@ static int __resolveOperation(const char *op) {
 	return -1;
 }
 
+static void __table_column_free(void *_col) {
+	RTableColumn *col = (RTableColumn*)_col;
+	free (col);
+}
+
+R_API void r_table_filter_columns(RTable *t, RList *list) {
+	const char *col;
+	RListIter *iter;
+	RList *cols = t->cols;
+	t->cols = r_list_newf (__table_column_free);
+	r_list_foreach (list, iter, col) {
+		int ncol = __columnByName(t, col);
+		if (ncol != -1) {
+			RTableColumn *c = r_list_get_n (cols, ncol);
+			if (c) {
+				//c->width = R_MAX (c->width, itemLength);
+				r_table_add_column (t, c->type, col, 0);
+			}
+		}
+	}
+}
+
 R_API void r_table_query(RTable *t, const char *q) {
 	// TODO support parenthesis and (or)||
 	// split by "&&" (or comma) -> run .filter on each
@@ -344,8 +368,18 @@ R_API void r_table_query(RTable *t, const char *q) {
 				eprintf ("Invalid column name (%s)\n", columnName);
 			}
 		}
+		if (!operation) {
+			break;
+		}
 		if (!strcmp (operation, "sort")) {
-			r_table_sort (t, col, !strcmp (operation, "inc"));
+			r_table_sort (t, col, operand && !strcmp (operand, "dec"));
+		} else if (!strcmp (operation, "cols")) {
+			//eprintf ("(%s)\n", q);
+		// TODO	r_table_filter_columns (t, q);
+		} else if (!strcmp (operation, "quiet")) {
+			t->showHeader = false;
+		} else if (!strcmp (operation, "graph")) {
+		// TODO	r_table_rendergraph(t, q);
 		} else {
 			int op = __resolveOperation (operation);
 			if (op == -1) {

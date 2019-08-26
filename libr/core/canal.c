@@ -3102,7 +3102,7 @@ static int fcn_list_detail(RCore *core, RList *fcns) {
 	return 0;
 }
 
-static int fcn_list_table(RCore *core, const char *q) {
+static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	RAnalFunction *fcn;
 	RListIter *iter;
 	RTable *t = r_table_new ();
@@ -3115,7 +3115,12 @@ static int fcn_list_table(RCore *core, const char *q) {
 		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, NULL);
 	}
 	r_table_query (t, q);
-	char *s = r_table_tofancystring (t);
+	char *s = NULL;
+	if (fmt == 'j') {
+		s = r_table_tojson (t);
+	} else {
+		s = r_table_tofancystring (t);
+	}
 	// char *s = r_table_tostring (t);
 	r_cons_printf ("%s\n", s);
 	free (s);
@@ -3197,10 +3202,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_list_free (flist);
 		break;
 		}
-	case 't':
-		fcn_list_table (core, r_str_trim_ro (rad + 1));
+	case 't': // "aflt" "afltj"
+		fcn_list_table (core, r_str_trim_ro (rad + 1), rad[1]);
 		break;
-	case 'l':
+	case 'l': // "afll" "afllj"
 		if (rad[1] == 'j') {
 			fcn_list_verbose_json (core, fcns);
 		} else {
