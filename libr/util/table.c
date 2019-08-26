@@ -31,7 +31,7 @@ static void __table_adjust(RTable *t) {
 		const char *item;
 		int ncol = 0;
 		r_list_foreach (row->items, iter2, item) {
-			int itemLength = r_str_len_utf8 (item);
+			int itemLength = r_str_len_utf8 (item) + 1;
 			RTableColumn *c = r_list_get_n (t->cols, ncol);
 			if (c) {
 				c->width = R_MAX (c->width, itemLength);
@@ -72,8 +72,8 @@ R_API void r_table_add_column(RTable *t, RTableColumnType *type, const char *nam
 		c->name = strdup (name);
 		c->maxWidth = maxWidth;
 		c->type = type;
-		int itemLength = r_str_len_utf8 (name);
-		c->width = itemLength + 1;
+		int itemLength = r_str_len_utf8 (name) + 1;
+		c->width = itemLength;
 		r_list_append (t->cols, c);
 	}
 }
@@ -85,7 +85,7 @@ R_API RTableRow *r_table_row_new(RList *items) {
 }
 
 static bool addRow (RTable *t, RList *items, const char *arg, int col) {
-	int itemLength = r_str_len_utf8 (arg);
+	int itemLength = r_str_len_utf8 (arg) + 1;
 	RTableColumn *c = r_list_get_n (t->cols, col);
 	if (c) {
 		c->width = R_MAX (c->width, itemLength);
@@ -358,6 +358,7 @@ R_API void r_table_query(RTable *t, const char *q) {
 	}
 	r_list_free (queries);
 	free (qq);
+	__table_adjust (t);
 }
 
 #if 0

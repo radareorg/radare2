@@ -373,6 +373,7 @@ static const char *help_msg_afl[] = {
 	"afl=", "", "display ascii-art bars with function ranges",
 	"aflc", "", "count of functions",
 	"aflj", "", "list functions in json",
+	"aflt", " [query]", "list functions in table format",
 	"afll", " [column]", "list functions in verbose mode (sorted by column name)",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
 	"aflm", "", "list functions in makefile style (af@@=`aflm~0x`)",
@@ -2876,6 +2877,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				break;
 			}
 			/* fallthrough */
+		case 't': // "aflt"
 		case 'j': // "aflj"
 		case 'q': // "aflq"
 		case 'm': // "aflm"

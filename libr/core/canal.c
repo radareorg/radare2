@@ -3102,8 +3102,28 @@ static int fcn_list_detail(RCore *core, RList *fcns) {
 	return 0;
 }
 
-static int fcn_list_legacy(RCore *core, RList *fcns)
-{
+static int fcn_list_table(RCore *core, const char *q) {
+	RAnalFunction *fcn;
+	RListIter *iter;
+	RTable *t = r_table_new ();
+	r_table_add_column (t, &r_table_type_number, "addr", 0);
+	r_table_add_column (t, &r_table_type_number, "size", 0);
+	r_table_add_column (t, &r_table_type_string, "name", 0);
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		const char *fcnAddr = sdb_fmt ("0x%08"PFMT64x, fcn->addr);
+		const char *fcnSize = sdb_fmt ("%d", r_anal_fcn_size (fcn));
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, NULL);
+	}
+	r_table_query (t, q);
+	char *s = r_table_tofancystring (t);
+	// char *s = r_table_tostring (t);
+	r_cons_printf ("%s\n", s);
+	free (s);
+	r_table_free (t);
+	return 0;
+}
+
+static int fcn_list_legacy(RCore *core, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
@@ -3177,6 +3197,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_list_free (flist);
 		break;
 		}
+	case 't':
+		fcn_list_table (core, r_str_trim_ro (rad + 1));
+		break;
 	case 'l':
 		if (rad[1] == 'j') {
 			fcn_list_verbose_json (core, fcns);
