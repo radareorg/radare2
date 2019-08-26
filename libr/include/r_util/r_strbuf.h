@@ -21,6 +21,7 @@ R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...);
 R_API bool r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap);
 R_API bool r_strbuf_append(RStrBuf *sb, const char *s);
 R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, int l);
+R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s);
 R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...);
 R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap);
 R_API char *r_strbuf_get(RStrBuf *sb);

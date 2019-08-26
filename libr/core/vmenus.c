@@ -951,7 +951,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 	RBinField *f, *fur = NULL;
 	int i = 0;
 	int skip = *idx - 10;
-	bool found = false;
 
 	switch (mode) {
 	case 'c':
@@ -1025,7 +1024,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			}
 			if (show_color) {
 				if (i == *idx) {
-					found = true;
 					const char *clr = Color_BLUE;
 					r_cons_printf (Color_GREEN ">>" Color_RESET " %02d %s0x%08"
 							PFMT64x Color_YELLOW " %s %s\n" Color_RESET,
@@ -1062,7 +1060,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			return mur;
 		}
 		r_cons_printf ("[hjkl_/cfM]> methods of %s\n\n", _c->name);
-		found = false;
 		r_list_foreach (_c->methods, iter, m) {
 			const char *name = m->dname? m->dname: m->name;
 			char *mflags;
@@ -1088,7 +1085,6 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 					name += strlen (_c->name);
 				}
 				if (i == *idx) {
-					found = true;
 					const char *clr = Color_BLUE;
 					r_cons_printf (Color_GREEN ">>" Color_RESET " %02d %s0x%08"
 							PFMT64x Color_YELLOW " %s %s\n" Color_RESET,
@@ -1125,9 +1121,9 @@ R_API int r_core_visual_classes(RCore *core) {
 	int ch, index = 0;
 	char cmd[1024];
 	int mode = 'c';
-	RBinField *fur = NULL;
 	RBinClass *cur = NULL;
 	RBinSymbol *mur = NULL;
+	RBinField *fur = NULL;
 	void *ptr;
 	int oldcur = 0;
 	char *grep = NULL;
@@ -3361,10 +3357,20 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				}
 			}
 			break;
-		case 'g':
-		        r_core_visual_showcursor (core, true);
-		        r_core_visual_offset (core);
-		        r_core_visual_showcursor (core, false);
+		case 'g': {
+			r_core_visual_showcursor (core, true);
+			r_core_visual_offset (core);        // change the seek to selected offset
+			RListIter *iter;		   // change the current option to selected seek
+			RAnalFunction *fcn;
+			int i = 0;
+			r_list_foreach (core->anal->fcns, iter, fcn) {
+				if (core->offset ==  fcn->addr){
+					option = i;
+				}
+				i++;
+			}
+			r_core_visual_showcursor (core, false);
+		}
 		        break;
 		case 'G':
 			r_core_seek (core, addr, SEEK_SET);

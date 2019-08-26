@@ -1493,7 +1493,6 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                         r_config_hold_i (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
                                                 "asm.cmt.right", "asm.lines.fcn", "asm.bytes", NULL);
                                         RDiff *d = r_diff_new ();
-                                        r_config_set_i (core->config, "scr.color", 0);
                                         r_config_set_i (core->config, "scr.utf8", 0);
                                         r_config_set_i (core->config, "asm.offset", 0);
                                         r_config_set_i (core->config, "asm.lines", 0);
@@ -1528,14 +1527,15 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                 if (is_star) {
                                                         char *title = get_title (bbi->addr);
                                                         char *body_b64 = r_base64_encode_dyn (diffstr, -1);
-
                                                         if (!title  || !body_b64) {
                                                                 free (body_b64);
                                                                 free (title);
                                                                 return false;
                                                         }
-                                                                body_b64 = r_str_prepend (body_b64, "base64:");
-                                                                r_cons_printf ("agn %s %s %d\n", title, body_b64, bbi->diff->type);
+                                                        body_b64 = r_str_prepend (body_b64, "base64:");
+                                                        r_cons_printf ("agn %s %s %d\n", title, body_b64, bbi->diff->type);
+                                                        free (body_b64);
+                                                        free (title);
                                                 } else {
 							diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
 							diffstr = r_str_replace (diffstr, "\"", "'", 1);
@@ -1559,6 +1559,8 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                         }
                                                         body_b64 = r_str_prepend (body_b64, "base64:");
                                                         r_cons_printf ("agn %s %s %d\n", title, body_b64, color);
+                                                        free (body_b64);
+                                                        free (title);
                                                 } else {
                                                         r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
                                                                               "color=\"black\", fontname=\"Courier\","
@@ -1601,6 +1603,8 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                 }
                                                 body_b64 = r_str_prepend (body_b64, "base64:");
                                                 r_cons_printf ("agn %s %s %d\n", title, body_b64, color);
+                                                free (body_b64);
+                                                free (title);
                                         } else {
                                                 r_cons_printf ("\t\"0x%08"PFMT64x"\" ["
                                                                        "URL=\"%s/0x%08"PFMT64x"\", fillcolor=\"%s\","
@@ -3098,8 +3102,33 @@ static int fcn_list_detail(RCore *core, RList *fcns) {
 	return 0;
 }
 
-static int fcn_list_legacy(RCore *core, RList *fcns)
-{
+static int fcn_list_table(RCore *core, const char *q, int fmt) {
+	RAnalFunction *fcn;
+	RListIter *iter;
+	RTable *t = r_table_new ();
+	r_table_add_column (t, &r_table_type_number, "addr", 0);
+	r_table_add_column (t, &r_table_type_number, "size", 0);
+	r_table_add_column (t, &r_table_type_string, "name", 0);
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		const char *fcnAddr = sdb_fmt ("0x%08"PFMT64x, fcn->addr);
+		const char *fcnSize = sdb_fmt ("%d", r_anal_fcn_size (fcn));
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, NULL);
+	}
+	r_table_query (t, q);
+	char *s = NULL;
+	if (fmt == 'j') {
+		s = r_table_tojson (t);
+	} else {
+		s = r_table_tofancystring (t);
+	}
+	// char *s = r_table_tostring (t);
+	r_cons_printf ("%s\n", s);
+	free (s);
+	r_table_free (t);
+	return 0;
+}
+
+static int fcn_list_legacy(RCore *core, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
@@ -3173,7 +3202,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_list_free (flist);
 		break;
 		}
-	case 'l':
+	case 't': // "aflt" "afltj"
+		fcn_list_table (core, r_str_trim_ro (rad + 1), rad[1]);
+		break;
+	case 'l': // "afll" "afllj"
 		if (rad[1] == 'j') {
 			fcn_list_verbose_json (core, fcns);
 		} else {

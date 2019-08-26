@@ -1371,10 +1371,13 @@ static int cmd_type(void *data, const char *input) {
 				"\nt");
 
 		} else if (input[1] == ' ') {
-			char tmp[8192];
-			snprintf (tmp, sizeof (tmp) - 1, "%s;", input + 2);
+			char *tmp = r_str_newf ("%s;", input + 2);
+			if (!tmp) {
+				break;
+			}
 			char *error_msg = NULL;
 			char *out = r_parse_c_string (core->anal, tmp, &error_msg);
+			free (tmp);
 			if (out) {
 				r_anal_save_parsed_type (core->anal, out);
 				free (out);

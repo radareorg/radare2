@@ -302,7 +302,7 @@ static const char *help_msg_af[] = {
 	"afM", " name", "print functions map",
 	"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
 	"afna", "", "suggest automatic name for current offset",
-	"afo", " [fcn.name]", "show address for the function named like this",
+	"afo", "[?j] [fcn.name]", "show address for the function name or current offset",
 	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
 	"afS", "[stack_size]", "set stack frame size for function at current address",
 	"afsr", " [function_name] [new_type]", "change type for given function",
@@ -373,6 +373,7 @@ static const char *help_msg_afl[] = {
 	"afl=", "", "display ascii-art bars with function ranges",
 	"aflc", "", "count of functions",
 	"aflj", "", "list functions in json",
+	"aflt", " [query]", "list functions in table format",
 	"afll", " [column]", "list functions in verbose mode (sorted by column name)",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
 	"aflm", "", "list functions in makefile style (af@@=`aflm~0x`)",
@@ -1132,13 +1133,20 @@ static int var_cmd(RCore *core, const char *str) {
 				*old_name++ = 0;
 				r_str_trim (old_name);
 			}
-			v1 = r_anal_var_get_byname (core->anal, fcn->addr, old_name);
-			if (v1) {
-				r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-						v1->kind, old_name, new_name, true);
-				r_anal_var_free (v1);
+			if (fcn) {
+				v1 = r_anal_var_get_byname (core->anal, fcn->addr, old_name);
+				if (v1) {
+					r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
+							v1->kind, old_name, new_name, true);
+					r_anal_var_free (v1);
+				} else {
+					eprintf ("Cant find var by name\n");
+				}
 			} else {
-				eprintf ("Cant find var by name\n");
+				eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+				r_anal_op_free (op);
+				free (ostr);
+				return false;
 			}
 			r_anal_op_free (op);
 			free (ostr);
@@ -1152,7 +1160,9 @@ static int var_cmd(RCore *core, const char *str) {
 		}
 		return true;
 	case 'd': // "afvd"
-		if (str[1]) {
+		if (!fcn) {
+			eprintf ("Cannot find function.\n");
+		} else if (str[1]) {
 			p = strchr (ostr, ' ');
 			if (!p) {
 				free (ostr);
@@ -1183,30 +1193,34 @@ static int var_cmd(RCore *core, const char *str) {
 			r_list_free (list);
 		}
 		return true;
-	case 't':{ // "afvt"
-		p = strchr (ostr, ' ');
-		if (!p++) {
-			free (ostr);
-			return false;
-		}
+	case 't':
+		if (fcn) { // "afvt"
+			p = strchr (ostr, ' ');
+			if (!p++) {
+				free (ostr);
+				return false;
+			}
 
-		char *type = strchr (p, ' ');
-		if (!type) {
+			char *type = strchr (p, ' ');
+			if (!type) {
+				free (ostr);
+				return false;
+			}
+			*type++ = 0;
+			v1 = r_anal_var_get_byname (core->anal, fcn->addr, p);
+			if (!v1) {
+				eprintf ("Cant find get by name %s\n", p);
+				free (ostr);
+				return false;
+			}
+			r_anal_var_retype (core->anal, fcn->addr,
+					R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, v1->isarg, p);
+			r_anal_var_free (v1);
 			free (ostr);
+			return true;
+		} else {
+			eprintf ("Cannot find function\n");
 			return false;
-		}
-		*type++ = 0;
-		v1 = r_anal_var_get_byname (core->anal, fcn->addr, p);
-		if (!v1) {
-			eprintf ("Cant find get by name %s\n", p);
-			free (ostr);
-			return false;
-		}
-		r_anal_var_retype (core->anal, fcn->addr,
-			R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, v1->isarg, p);
-		r_anal_var_free (v1);
-		free (ostr);
-		return true;
 		}
 	}
 	switch (str[1]) { // afv[bsr]
@@ -1317,16 +1331,19 @@ static int var_cmd(RCore *core, const char *str) {
 		}
 		if ((type == 'b') && delta > 0) {
 			isarg = true;
-		} else if ((type == 's') && delta > fcn->maxstack) {
+		} else if (type == 's' && fcn && delta > fcn->maxstack) {
 			isarg = true;
 		}
-		r_anal_var_add (core->anal, fcn->addr,scope,
-				delta, type, vartype,
-				size, isarg, name);
+		if (fcn) {
+			r_anal_var_add (core->anal, fcn->addr,scope,
+					delta, type, vartype,
+					size, isarg, name);
+		} else {
+			eprintf ("Missing function at 0x%08"PFMT64x"\n", core->offset);
 		}
+ 		}
 		break;
-	};
-
+	}
 	free (ostr);
 	return res;
 }
@@ -2707,19 +2724,46 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case 'o': // "afo"
-		{
-		RAnalFunction *fcn;
-		ut64 addr = core->offset;
-		if (input[2] == ' ')
-			addr = r_num_math (core->num, input + 3);
-		if (addr == 0LL) {
-			fcn = r_anal_fcn_find_name (core->anal, input + 3);
-		} else {
-			fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-		}
-		if (fcn) {
-			r_cons_printf ("0x%08" PFMT64x "\n", fcn->addr);
-		}
+		switch (input[2]) {
+		case '?':
+			eprintf ("Usage: afo[?sj] ([name|offset])\n");
+			break;
+		case 'j':
+		case '\0':
+			{
+				ut64 addr = core->offset;
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				if (fcn) {
+					r_cons_printf ("0x%08" PFMT64x "\n", fcn->addr);
+				}
+			}
+			break;
+		case 's': // "afos"
+			{
+				ut64 addr = core->offset;
+				RListIter *iter;
+				RList *list = r_anal_get_fcn_in_list (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				RAnalFunction *fcn;
+				r_list_foreach (list, iter, fcn) {
+					r_cons_printf ("= 0x%08" PFMT64x "\n", fcn->addr);
+				}
+				r_list_free (list);
+			}
+			break;
+		case ' ':
+			{
+				RAnalFunction *fcn;
+				ut64 addr = r_num_math (core->num, input + 3);
+				if (addr == 0LL) {
+					fcn = r_anal_fcn_find_name (core->anal, input + 3);
+				} else {
+					fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				}
+				if (fcn) {
+					r_cons_printf ("0x%08" PFMT64x "\n", fcn->addr);
+				}
+			}
+			break;
 		}
 		break;
 	case 'i': // "afi"
@@ -2833,6 +2877,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				break;
 			}
 			/* fallthrough */
+		case 't': // "aflt"
 		case 'j': // "aflj"
 		case 'q': // "aflq"
 		case 'm': // "aflm"
@@ -7258,7 +7303,10 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_agraph_print(RCore *core, const char *input) {
+R_API void r_core_agraph_print (RCore *core, int use_utf, const char *input) {
+	if (use_utf != -1) {
+		r_config_set_i (core->config, "scr.utf8", use_utf);
+	}
 	switch (*input) {
 	case 0:
 		core->graph->can->linemode = r_config_get_i (core->config, "graph.linemode");
@@ -7466,7 +7514,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		cmd_agraph_edge (core, input + 1);
 		break;
 	case 'g': // "agg"
-		cmd_agraph_print (core, input + 1);
+		r_core_agraph_print (core, -1, input + 1);
 		break;
 	case 's': // "ags"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), 0);

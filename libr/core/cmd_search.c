@@ -81,7 +81,7 @@ static const char *help_msg_slash_a[] = {
 	"/ae", " esil", "search for esil expressions matching substring",
 	"/af", "[l] family", "Search for instruction of specific family (afl=list",
 	"/ai", "", "Search for infinite loop instructions (jmp $$)",
-	"/ai", "[j] 0x300", "find all the instructions using that immediate",
+	"/aI", "[j] 0x300 [0x500]", "find all the instructions using that immediate (in range)",
 	"/al", "", "Same as aoml, list all opcodes",
 	"/am", " opcode", "Search for specific instructions of specific mnemonic",
 	"/ao", " instr", "search for instruction 'instr' (in all offsets)",
@@ -1062,7 +1062,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		ht_uu_insert (localbadstart, idx, 1);
 		r_anal_op (core->anal, &aop, addr, buf + idx, buflen - idx, R_ANAL_OP_MASK_DISASM);
 
-		if (nb_instr == 0 && is_end_gadget (&aop, 0)) {
+		if (nb_instr == 0 && (is_end_gadget (&aop, 0) || aop.type == R_ANAL_OP_TYPE_NOP)) {
 			valid = false;
 			goto ret;
 		}
@@ -3230,9 +3230,11 @@ reread:
 		} else if (input[1] == 'a') { // "/aa"
 			dosearch = 0;
 			do_asm_search (core, &param, input + 2, 'a', search_itv);
-		} else if (input[1] == '1') {
+		} else if (input[1] == 'i') { // "/ai"
+			do_asm_search (core, &param, input + 2, 'i', search_itv);
+		} else if (input[1] == '1') { // "a1"
 			__core_cmd_search_asm_byteswap (core, (int)r_num_math (core->num, input + 2));
-		} else if (input[1] == 'i') {
+		} else if (input[1] == 'I') { // "/aI" - infinite
 			__core_cmd_search_asm_infinite (core, r_str_trim_ro (input + 1));
 		} else if (input[1] == ' ') {
 			if (input[param_offset - 1]) {

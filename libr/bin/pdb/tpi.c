@@ -1582,7 +1582,7 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 		case eLF_CHAR:
 		{
 			SVal_LF_CHAR lf_char;
-			READ2(*read_bytes, len, lf_char.value, leaf_data, st16);
+			READ1(*read_bytes, len, lf_char.value, leaf_data, st8);
 			parse_sctring (&lf_char.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof (SVal_LF_CHAR));
 			if (!val->name_or_val) {

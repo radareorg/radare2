@@ -1670,6 +1670,21 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 	return true;
 }
 
+R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type) {
+	RList *list = r_list_newf (NULL);
+	// Interval tree query
+	RAnalFunction *fcn;
+	FcnTreeIter it;
+	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
+		if (!type || (fcn && fcn->type & type)) {
+			if (r_tinyrange_in (&fcn->bbr, addr) || fcn->addr == addr) {
+				r_list_append (list, fcn);
+			}
+		}
+	}
+	return list;
+}
+
 R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 #if 0
   // Linear scan

@@ -137,12 +137,21 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			r_asm_set_pc (core->assembler, addr);
 			if (mode == 'i') {
 				RAnalOp analop = {0};
-				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, 0) < 1) {
+				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM) < 1) {
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
 				ut64 val = analop.val; // maybe chk for ptr or others?
-				if (val >= usrimm && val <= usrimm2) {
+				bool match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
+				if (!match) {
+					ut64 val = analop.disp;
+					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
+				}
+				if (!match) {
+					ut64 val = analop.ptr;
+					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
+				}
+				if (match) {
 					if (!(hit = r_core_asm_hit_new ())) {
 						r_list_purge (hits);
 						R_FREE (hits);
