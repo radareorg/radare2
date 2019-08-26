@@ -8,8 +8,8 @@ typedef struct {
 	RListComparator cmp;
 } RTableColumnType;
 
-extern RTableColumnType r_table_type_string;
-extern RTableColumnType r_table_type_number;
+extern R_API RTableColumnType r_table_type_string;
+extern R_API RTableColumnType r_table_type_number;
 
 typedef struct {
 	char *name;
