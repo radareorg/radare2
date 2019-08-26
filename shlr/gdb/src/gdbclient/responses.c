@@ -256,7 +256,10 @@ int handle_stop_reason(libgdbr_t *g) {
 		if (send_ack (g) < 0) {
 			return -1;
 		}
-		return handle_stop_reason (g); // Wait for next stop message
+		memset (&g->stop_reason, 0, sizeof (libgdbr_stop_reason_t));
+		g->stop_reason.signum = -1;
+		g->stop_reason.reason = R_DEBUG_REASON_NONE;
+		return 0;
 	case 'W':
 		return stop_reason_exit (g);
 	case 'X':
