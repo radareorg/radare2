@@ -1983,6 +1983,10 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_LDRB:
 		r_strbuf_appendf (&op->esil, "%s,%d,+,[1],%s,=",
 			MEMBASE(1), MEMDISP(1), REG(0));
+			if (insn->detail->arm.writeback) {
+				r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
+				MEMBASE(1), MEMDISP(1), MEMBASE(1) );
+			}
 		break;
 	case ARM_INS_SXTH:
 		r_strbuf_appendf (&op->esil,
