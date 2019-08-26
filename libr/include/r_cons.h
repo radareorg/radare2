@@ -58,6 +58,8 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_cons);
 
+#define R_CONS_CMD_DEPTH 100
+
 typedef int (*RConsGetSize)(int *rows);
 typedef int (*RConsGetCursor)(int *rows);
 typedef bool (*RConsIsBreaked)(void);
@@ -429,6 +431,7 @@ typedef struct r_cons_context_t {
 	RStack *break_stack;
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
+	int cmd_depth;
 
 	// Used for per-task logging redirection
 	RLogCallback log_callback; // TODO: RList of callbacks
@@ -1087,7 +1090,6 @@ R_API void r_line_completion_clear(RLineCompletion *completion);
 #endif
 
 typedef int (*RPanelsMenuCallback)(void *user);
-typedef void (*RPanelsMouseCallback)(void *user, int x, int y);
 typedef struct r_panels_menu_item {
 	int n_sub, selectedIndex;
 	char *name;
@@ -1159,9 +1161,6 @@ typedef struct r_panels_t {
 	RList *snows;
 	char *name;
 	ut64 addr;
-	RPanelsMouseCallback mouse_cb;
-	int mouse_cb_x;
-	int mouse_cb_y;
 } RPanels;
 
 typedef enum {

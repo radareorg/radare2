@@ -1607,26 +1607,35 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 			free (c->class_data);
 			return;
 		}
-		p = r_uleb128 (p, p_end - p, &c->class_data->static_fields_size);
+		ut64 eof;
+
+		p = r_uleb128 (p, p_end - p, &eof);
 		if (p >= p_end) {
 			free (c->class_data);
 			return;
 		}
-		p = r_uleb128 (p, p_end - p, &c->class_data->instance_fields_size);
+		c->class_data->static_fields_size = eof;
+
+		p = r_uleb128 (p, p_end - p, &eof);
 		if (p >= p_end) {
 			free (c->class_data);
 			return;
 		}
-		p = r_uleb128 (p, p_end - p, &c->class_data->direct_methods_size);
+		c->class_data->instance_fields_size = eof;
+
+		p = r_uleb128 (p, p_end - p, &eof);
 		if (p >= p_end) {
 			free (c->class_data);
 			return;
 		}
-		p = r_uleb128 (p, p_end - p, &c->class_data->virtual_methods_size);
+		c->class_data->direct_methods_size = eof;
+
+		p = r_uleb128 (p, p_end - p, &eof);
 		if (p >= p_end) {
 			free (c->class_data);
 			return;
 		}
+		c->class_data->virtual_methods_size = eof;
 
 		if (dexdump) {
 			rbin->cb_printf ("  Static fields     -\n");

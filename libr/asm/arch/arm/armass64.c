@@ -745,6 +745,17 @@ static ut32 arithmetic (ArmOp *op, int k) {
 	return data;
 }
 
+static ut32 neg(ArmOp *op) {
+	if (op->operands_count < 2) {
+		return -1;
+	}
+	op->operands_count++;
+	op->operands[2] = op->operands[1];
+	op->operands[1].reg = 31; // xzr
+
+	return arithmetic (op, 0xd1); // sub reg0, xzr, reg1
+}
+
 static bool parseOperands(char* str, ArmOp *op) {
 	char *t = strdup (str);
 	int operand = 0;
@@ -1077,6 +1088,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	}
 	if (!strncmp (str, "adrp x", 6)) {
 		*op = adrp (&ops, addr, 0x00000090);
+		return *op != -1;
+	}
+	if (!strncmp (str, "neg", 3)) {
+		*op = neg (&ops);
 		return *op != -1;
 	}
 	if (!strcmp (str, "isb")) {

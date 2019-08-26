@@ -44,6 +44,7 @@ enum {
 	TYPE_MUL = 18,
 	TYPE_CLZ = 19,
 	TYPE_REV = 20,
+	TYPE_NEG = 21
 };
 
 static int strcmpnull(const char *a, const char *b) {
@@ -147,6 +148,7 @@ static ArmOp ops[] = {
 	{"mrc", 0x100010ee, TYPE_COPROC},
 	{"setend", 0x000001f1, TYPE_ENDIAN},
 	{ "clz", 0x000f6f01, TYPE_CLZ},
+	{ "neg", 0x7000, TYPE_NEG },
 
 	{ NULL }
 };
@@ -6525,6 +6527,18 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				}
 				ao->o |= reg << 24;
 
+				break;
+			case TYPE_NEG:
+				if (!ao->a[0] || !ao->a[1]) {
+					return 0;
+				}
+				ao->a[2] = "0";
+				int len = strlen (ao->a[1]) + 1;
+				memmove (ao->a[0] + 1, ao->a[0], ao->a[1] - ao->a[0] + len);
+				ao->a[0]++;
+				ao->a[1]++;
+				strncpy (ao->op, "rsbs", 5);
+				arm_assemble (ao, off, str); // rsbs reg0, reg1, #0
 				break;
 			}
 			}

@@ -393,6 +393,7 @@ r_util_files = [
   'include/r_util/r_name.h',
   'include/r_util/r_num.h',
   'include/r_util/r_panels.h',
+  'include/r_util/r_table.h',
   'include/r_util/r_pkcs7.h',
   'include/r_util/r_pool.h',
   'include/r_util/r_print.h',
