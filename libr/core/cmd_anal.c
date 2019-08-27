@@ -1390,12 +1390,12 @@ static const char *syscallNumber(int n) {
 	return sdb_fmt (n > 1000 ? "0x%x" : "%d", n);
 }
 
-R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
+R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	int i;
 	char str[64];
 	int defVector = r_syscall_get_swi (core->anal->syscall);
 	if (defVector > 0) {
-		n = -1;
+	////	n = -1;
 	}
 	if (n == -1) {
 		n = (int)r_debug_reg_get (core->dbg, "oeax");
@@ -1463,7 +1463,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
 	return r_str_appendf (res, ")");
 }
 
-static void cmd_syscall_do(RCore *core, int n, ut64 addr) {
+static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 	char *msg = cmd_syscall_dostr (core, n, addr);
 	if (msg) {
 		r_cons_println (msg);
@@ -6206,7 +6206,14 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		cmd_syscall_do (core, -1, core->offset);
 		break;
 	case ' ':
-		cmd_syscall_do (core, (int)r_num_get (core->num, input + 1), -1);
+		{
+		const char *sn = r_str_trim_ro (input + 1);
+		st64 num = r_syscall_get_num (core->anal->syscall, sn);
+		if (num < 1) {
+			num = (int)r_num_get (core->num, sn);
+		}
+		cmd_syscall_do (core, num, -1);
+		}
 		break;
 	case 'k': // "ask"
 		if (input[1] == ' ') {

@@ -856,7 +856,7 @@ R_API int r_line_hist_offset_up(RLine *line);
 R_API int r_line_hist_offset_down(RLine *line);
 
 // TODO : move into debug or syscall++
-R_API char *cmd_syscall_dostr(RCore *core, int num, ut64 addr);
+R_API char *cmd_syscall_dostr(RCore *core, st64 num, ut64 addr);
 
 /* tasks */
 
