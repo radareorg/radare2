@@ -2257,7 +2257,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		if (r_cons_get_click (&x, &y)) {
 			if (y == 1) {
 				if (x < 15) {
-					ch = ':';
+					ch = '_';
 				} else if (x < 20) {
 					ch = 'p';
 				} else if (x < 24) {
@@ -2273,7 +2273,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 				return 1;
 			} else {
-				ch = 'c';
+				ch = 0; //'c';
 			}
 		} else {
 			return 1;
