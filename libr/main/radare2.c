@@ -1257,6 +1257,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			const char *fstype = r.bin->cur->o->info->bclass;
 			r_core_cmdf (&r, "m /root %s @ 0", fstype);
 		}
+		r_core_cmd0 (&r, "=!"); // initalize io subsystem
 		iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 #if USE_THREADS
 		if (iod && load_bin == LOAD_BIN_ALL && threaded) {

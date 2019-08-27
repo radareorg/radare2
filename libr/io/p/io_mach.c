@@ -489,6 +489,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 	task_t task = pid_to_task (fd, iodd->tid);
 	/* XXX ugly hack for testing purposes */
+	if (!strcmp (cmd, "")) {
+		return NULL;
+	}
 	if (!strncmp (cmd, "perm", 4)) {
 		int perm = r_str_rwx (cmd + 4);
 		if (perm) {
