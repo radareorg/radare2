@@ -4371,10 +4371,7 @@ void __init_menu_saved_layout (void *_core, const char *parent) {
 	}
 	RCore *core = (RCore *)_core;
 	struct dirent *d;
-	while ((d = readdir (dir_path)) && d) {
-		if (!d) {
-			continue;
-		}
+	while ((d = readdir (dir_path))) {
 		if (strcmp (d->d_name, ".") && strcmp (d->d_name, "..")) {
 			__add_menu (core, parent, d->d_name, __load_layout_saved_cb);
 		}
@@ -5486,7 +5483,7 @@ void __restore_panel_pos(RPanel* panel) {
 char *__get_panels_config_dir_path() {
 	char *config_path = r_str_new (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
 	char *new_config_path = r_str_home (config_path);
-	R_FREE (config_path);
+	free (config_path);
 	return new_config_path;
 }
 
@@ -5506,9 +5503,6 @@ char *__get_panels_config_file_from_dir (const char *file) {
 	char *tmp = NULL;
 	struct dirent *d;
 	while ((d = readdir (dir))) {
-		if (!d) {
-			continue;
-		}
 		if (!strcmp (d->d_name, file)) {
 			tmp = d->d_name;
 			break;
@@ -5524,6 +5518,8 @@ char *__get_panels_config_file_from_dir (const char *file) {
 		return NULL;
 	}
 	char *ret = r_str_newf (R_JOIN_2_PATHS ("%s", "%s"), dir_path, tmp);
+	free (tmp),
+	free (dir_path);
 	return ret;
 }
 
