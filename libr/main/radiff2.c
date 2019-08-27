@@ -778,6 +778,7 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
         case GRAPH_INTERACTIVE_MODE:
                 __generate_graph (c, off);
                 r_core_agraph_print (c, use_utf8, "v");
+                r_cons_reset_colors ();
                 break;
         case GRAPH_SDB_MODE:
                 __generate_graph (c, off);
@@ -797,9 +798,9 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
         default:
                 __generate_graph (c, off);
                 r_core_agraph_print (c, use_utf8, "");
+                r_cons_reset_colors ();
         break;
         }
-        r_cons_reset_colors ();
 }
 
 R_API int r_main_radiff2(int argc, char **argv) {

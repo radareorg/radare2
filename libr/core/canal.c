@@ -1251,10 +1251,10 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		cmdstr = r_core_cmd_str (core, cmd);
 		r_config_set_i (core->config, "scr.color", scrColor);
 		r_config_set_i (core->config, "scr.utf8", scrUtf8);
-                if (cmdstr) {
-                        str = r_str_escape_dot (cmdstr);
-                        free (cmdstr);
-                }
+	}
+	if (cmdstr) {
+		str = r_str_escape_dot (cmdstr);
+		free (cmdstr);
 	}
 	return str;
 }
