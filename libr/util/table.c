@@ -25,7 +25,8 @@ static void __table_adjust(RTable *t) {
 	RTableColumn *col;
 	RTableRow  *row;
 	r_list_foreach (t->cols, iter, col) {
-		col->width = 0;
+		int itemLength = r_str_len_utf8 (col->name) + 1;
+		col->width = itemLength;
 	}
 	r_list_foreach (t->rows, iter, row) {
 		const char *item;

@@ -2735,7 +2735,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 				if (pj) { // Append calee json item
 					pj_o (pj);
 					pj_ks (pj, "name", dst);
-                	pj_kn (pj, "addr", refi->addr);
+					pj_kn (pj, "addr", refi->addr);
 					pj_end (pj); // close referenced item
 				} else if (mode == 'q') {
 					r_cons_printf ("%s ", dst);
@@ -3109,10 +3109,27 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, &r_table_type_number, "addr", 0);
 	r_table_add_column (t, &r_table_type_number, "size", 0);
 	r_table_add_column (t, &r_table_type_string, "name", 0);
+	r_table_add_column (t, &r_table_type_string, "nbbs", 0);
+	r_table_add_column (t, &r_table_type_string, "xref", 0);
+	r_table_add_column (t, &r_table_type_string, "calls", 0);
+	r_table_add_column (t, &r_table_type_string, "cc", 0);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		const char *fcnAddr = sdb_fmt ("0x%08"PFMT64x, fcn->addr);
 		const char *fcnSize = sdb_fmt ("%d", r_anal_fcn_size (fcn));
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, NULL);
+		const char *nbbs = sdb_fmt ("%d", r_list_length (fcn->bbs)); // r_anal_fcn_size (fcn));
+		RList *xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
+		char xref[128], ccstr[128];
+		snprintf (xref, sizeof (xref), "%d", r_list_length (xrefs));
+		r_list_free (xrefs);
+
+		RList * calls = r_core_anal_fcn_get_calls (core, fcn);
+		// Uniquify the list by ref->addr
+		calls = r_list_uniq (calls, (RListComparator)RAnalRef_cmp);
+		const char *callstr = sdb_fmt ("%d", r_list_length (calls));
+		r_list_free (calls);
+		snprintf (ccstr, sizeof (ccstr), "%d", r_anal_fcn_cc (core->anal, fcn));
+
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, nbbs, xref, callstr, ccstr, NULL);
 	}
 	r_table_query (t, q);
 	char *s = NULL;
@@ -3203,7 +3220,11 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		break;
 		}
 	case 't': // "aflt" "afltj"
-		fcn_list_table (core, r_str_trim_ro (rad + 1), rad[1]);
+		if (rad[1] == 'j') {
+			fcn_list_table (core, r_str_trim_ro (rad+ 2), 'j');
+		} else {
+			fcn_list_table (core, r_str_trim_ro (rad + 1), rad[1]);
+		}
 		break;
 	case 'l': // "afll" "afllj"
 		if (rad[1] == 'j') {
