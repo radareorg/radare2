@@ -4365,10 +4365,16 @@ void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *par
 }
 
 void __init_menu_saved_layout (void *_core, const char *parent) {
+	DIR *dir_path = opendir (__get_panels_config_dir_path ());
+	if (!dir_path) {
+		return;
+	}
 	RCore *core = (RCore *)_core;
 	struct dirent *d;
-	DIR *dir_path = opendir (__get_panels_config_dir_path ());
-	while ((d = readdir (dir_path))) {
+	while ((d = readdir (dir_path)) && d) {
+		if (!d) {
+			continue;
+		}
 		if (strcmp (d->d_name, ".") && strcmp (d->d_name, "..")) {
 			__add_menu (core, parent, d->d_name, __load_layout_saved_cb);
 		}
@@ -5493,20 +5499,31 @@ char *__create_panels_config_path(const char *file) {
 }
 
 char *__get_panels_config_file_from_dir (const char *file) {
-	char *ret = NULL;
-	struct dirent *d;
 	DIR *dir = opendir (__get_panels_config_dir_path ());
+	if (!dir) {
+		return NULL;
+	}
+	char *tmp = NULL;
+	struct dirent *d;
 	while ((d = readdir (dir))) {
+		if (!d) {
+			continue;
+		}
 		if (!strcmp (d->d_name, file)) {
-			ret = d->d_name;
+			tmp = d->d_name;
+			break;
 		}
 	}
 	closedir (dir);
-	if (!ret) {
-		return ret;
+	if (!tmp) {
+		return NULL;
 	}
 	char *dir_path = __get_panels_config_dir_path ();
-	ret = r_str_newf (R_JOIN_2_PATHS ("%s", "%s"), dir_path, ret);
+	if (!dir_path) {
+		free (tmp);
+		return NULL;
+	}
+	char *ret = r_str_newf (R_JOIN_2_PATHS ("%s", "%s"), dir_path, tmp);
 	return ret;
 }
 
