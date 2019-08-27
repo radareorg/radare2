@@ -1268,6 +1268,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.length = 0;
 			}
 		}
+		bool mouse_status = r_cons_singleton()->mouse;
+		r_cons_enable_mouse (false);
 #if USE_UTF8
 		utflen = r_line_readchar_utf8 ((ut8 *) buf, sizeof (buf));
 		if (utflen < 1) {
@@ -1309,6 +1311,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			printf ("\r\x1b[2K\r");	// %*c\r", columns, ' ');
 		}
 #endif
+		r_cons_enable_mouse (mouse_status);
 		switch (*buf) {
 		case 0:	// control-space
 			/* ignore atm */
