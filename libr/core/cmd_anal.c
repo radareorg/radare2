@@ -1390,23 +1390,25 @@ static const char *syscallNumber(int n) {
 	return sdb_fmt (n > 1000 ? "0x%x" : "%d", n);
 }
 
-R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
+R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	int i;
 	char str[64];
+	st64 N = n;
 	int defVector = r_syscall_get_swi (core->anal->syscall);
 	if (defVector > 0) {
 		n = -1;
 	}
-	if (n == -1) {
+	if (n == -1 || defVector > 0) {
 		n = (int)r_debug_reg_get (core->dbg, "oeax");
 		if (!n || n == -1) {
 			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 			n = (a0 == NULL)? -1: (int)r_debug_reg_get (core->dbg, a0);
 		}
 	}
-	RSyscallItem *item = (defVector > 0)
-		? r_syscall_get (core->anal->syscall, n, -1)
-		: r_syscall_get (core->anal->syscall, 0, n);
+	RSyscallItem *item = r_syscall_get (core->anal->syscall, n, defVector);
+	if (!item) {
+		item =  r_syscall_get (core->anal->syscall, N, -1);
+	}
 	if (!item) {
 		return r_str_newf ("%s = unknown ()", syscallNumber (n));
 	}
@@ -1463,7 +1465,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
 	return r_str_appendf (res, ")");
 }
 
-static void cmd_syscall_do(RCore *core, int n, ut64 addr) {
+static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 	char *msg = cmd_syscall_dostr (core, n, addr);
 	if (msg) {
 		r_cons_println (msg);
@@ -6206,7 +6208,14 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		cmd_syscall_do (core, -1, core->offset);
 		break;
 	case ' ':
-		cmd_syscall_do (core, (int)r_num_get (core->num, input + 1), -1);
+		{
+		const char *sn = r_str_trim_ro (input + 1);
+		st64 num = r_syscall_get_num (core->anal->syscall, sn);
+		if (num < 1) {
+			num = (int)r_num_get (core->num, sn);
+		}
+		cmd_syscall_do (core, num, -1);
+		}
 		break;
 	case 'k': // "ask"
 		if (input[1] == ' ') {
