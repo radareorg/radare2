@@ -5094,7 +5094,7 @@ void __init_sdb(RCore *core) {
 	sdb_set (panels->db, "Info", "i", 0);
 	sdb_set (panels->db, "Database", "k ***", 0);
 	sdb_set (panels->db, "Console", "$console", 0);
-	sdb_set (panels->db, "Hexdump", "xc", 0);
+	sdb_set (panels->db, "Hexdump", "xc $r*16", 0);
 	sdb_set (panels->db, "Functions", "afl", 0);
 	sdb_set (panels->db, "Function Calls", "aflm", 0);
 	sdb_set (panels->db, "Comments", "CC", 0);
@@ -6525,6 +6525,8 @@ void __panels_process(RCore *core, RPanels *panels) {
 		}
 	}
 	r_cons_enable_mouse (false);
+	int scrInteractive = r_config_get_i (core->config, "scr.interactive");
+	r_config_set_i (core->config, "scr.interactive", 0);
 repeat:
 	r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
 	core->panels = panels;
@@ -7078,4 +7080,5 @@ exit:
 	core->print->col = 0;
 	core->vmode = originVmode;
 	core->panels = prev;
+	r_config_set_i (core->config, "scr.interactive", scrInteractive);
 }
