@@ -7297,11 +7297,13 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 			core->graph->layout = r_config_get_i (core->config, "graph.layout");
 			int ov = r_cons_is_interactive ();
 			core->graph->need_update_dim = true;
-			r_core_visual_graph (core, core->graph, NULL, true);
+			int update_seek = r_core_visual_graph (core, core->graph, NULL, true);
 			r_config_set_i (core->config, "scr.interactive", ov);
 			r_cons_show_cursor (true);
 			r_cons_enable_mouse (false);
-			r_core_seek (core, oseek, 0);
+			if (update_seek != -1) {
+				r_core_seek (core, oseek, 0);
+			}
 		} else {
 			eprintf ("This graph contains no nodes\n");
 		}
