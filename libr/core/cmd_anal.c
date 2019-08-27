@@ -1393,20 +1393,22 @@ static const char *syscallNumber(int n) {
 R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	int i;
 	char str[64];
+	st64 N = n;
 	int defVector = r_syscall_get_swi (core->anal->syscall);
 	if (defVector > 0) {
-	////	n = -1;
+		n = -1;
 	}
-	if (n == -1) {
+	if (n == -1 || defVector > 0) {
 		n = (int)r_debug_reg_get (core->dbg, "oeax");
 		if (!n || n == -1) {
 			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 			n = (a0 == NULL)? -1: (int)r_debug_reg_get (core->dbg, a0);
 		}
 	}
-	RSyscallItem *item = (defVector > 0)
-		? r_syscall_get (core->anal->syscall, n, -1)
-		: r_syscall_get (core->anal->syscall, 0, n);
+	RSyscallItem *item = r_syscall_get (core->anal->syscall, n, defVector);
+	if (!item) {
+		item =  r_syscall_get (core->anal->syscall, N, -1);
+	}
 	if (!item) {
 		return r_str_newf ("%s = unknown ()", syscallNumber (n));
 	}
