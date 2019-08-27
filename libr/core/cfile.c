@@ -857,7 +857,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	fh->alive = 1;
 	fh->core = r;
 	fh->fd = fd->fd;
-
 	{
 		const char *cp = r_config_get (r->config, "cmd.open");
 		if (cp && *cp) {
@@ -890,6 +889,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	if (loadaddr != UT64_MAX) {
 		r_config_set_i (r->config, "bin.laddr", loadaddr);
 	}
+	r_core_cmd0 (r, "=!");
 beach:
 	r->times->file_open_time = r_sys_now () - prev;
 	return fh;
