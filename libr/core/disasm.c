@@ -4220,6 +4220,11 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			case R_ANAL_OP_TYPE_RET:
 				ignored = true;
 				break;
+			case R_ANAL_OP_TYPE_LEA:
+				if (ds->core->assembler->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
+					ignored = true;
+				}
+				break;
 			}
 			if (!jump_op && !ignored) {
 				const char *prefix;
