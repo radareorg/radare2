@@ -6170,6 +6170,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	int filter = r_config_get_i (core->config, "asm.filter");
 	int show_color = r_config_get_i (core->config, "scr.color");
 	bool asm_ucase = r_config_get_i (core->config, "asm.ucase");
+	bool asm_instr = r_config_get_i (core->config, "asm.instr");
 	int esil = r_config_get_i (core->config, "asm.esil");
 	int flags = r_config_get_i (core->config, "asm.flags");
 	bool asm_immtrim = r_config_get_i (core->config, "asm.imm.trim");
@@ -6367,7 +6368,9 @@ toro:
 				free (op_hex);
 			}
 			ret = asmop.size;
-			if (!asm_immtrim && (decode || esil)) {
+			if (!asm_instr) {
+				r_cons_newline ();
+			} else if (!asm_immtrim && (decode || esil)) {
 				RAnalOp analop = {
 					0
 				};
