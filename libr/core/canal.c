@@ -1499,6 +1499,9 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                         r_config_set_i (core->config, "asm.cmt.right", 0);
                                         r_config_set_i (core->config, "asm.lines.fcn", 0);
                                         r_config_set_i (core->config, "asm.bytes", 0);
+                                        if (!is_star) {
+						r_config_set_i (core->config, "scr.color", 0);	// disable color for dot
+                                        }
 
                                         if (bbi->diff && bbi->diff->type != R_ANAL_DIFF_TYPE_MATCH && core->c2) {
                                                 RCore *c = core->c2;
