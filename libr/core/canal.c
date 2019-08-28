@@ -3852,7 +3852,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	ut64 at;
 	int count = 0;
-	const int bsz = core->blocksize;
+	const int bsz = 8096;
 	RAnalOp op = { 0 };
 
 	if (from == to) {
@@ -3901,7 +3901,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			continue;
 		}
 		while (i < bsz && !r_cons_is_breaked ()) {
-			ret = r_anal_op (core->anal, &op, at, buf + i, bsz - i, 0);
+			ret = r_anal_op (core->anal, &op, at + i, buf + i, bsz - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 			ret = ret > 0 ? ret : 1;
 			i += ret;
 			if (ret <= 0 || i > bsz) {
@@ -3954,9 +3954,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			default:
 				break;
 			}
-			at += ret;
 			r_anal_op_fini (&op);
 		}
+		at += bsz;
 		r_anal_op_fini (&op);
 	}
 	r_cons_break_pop ();

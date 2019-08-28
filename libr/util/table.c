@@ -66,9 +66,11 @@ R_API void r_table_column_free(void *_col) {
 
 R_API RTable *r_table_new() {
 	RTable *t = R_NEW0 (RTable);
-	t->showHeader = true;
-	t->cols = r_list_newf (r_table_column_free);
-	t->rows = r_list_newf (r_table_row_free);
+	if (t) {
+		t->showHeader = true;
+		t->cols = r_list_newf (r_table_column_free);
+		t->rows = r_list_newf (r_table_row_free);
+	}
 	return t;
 }
 
@@ -403,7 +405,7 @@ R_API void r_table_query(RTable *t, const char *q) {
 		if (!strcmp (operation, "sort")) {
 			r_table_sort (t, col, operand && !strcmp (operand, "dec"));
 		} else if (!strcmp (operation, "cols")) {
-			//eprintf ("(%s)\n", q);
+			eprintf ("(%s)\n", qq);
 		// TODO	r_table_filter_columns (t, q);
 		} else if (!strcmp (operation, "quiet")) {
 			t->showHeader = false;
