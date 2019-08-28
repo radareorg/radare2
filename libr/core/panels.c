@@ -3185,7 +3185,7 @@ int __show_all_decompiler_cb(void *user) {
 	RPanelsRoot *root = core->panels_root;
 	const char *pdc_now = r_config_get (core->config, "cmd.pdc");
 	char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
-	RList *optl = r_str_split_list (opts, "\n");
+	RList *optl = r_str_split_list (opts, "\n", 0);
 	RListIter *iter;
 	char *opt;
 	int i = 0;
@@ -4685,7 +4685,7 @@ bool __init_panels_menu(RCore *core) {
 	{
 		parent = "Settings.Decompiler";
 		char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
-		RList *optl = r_str_split_list (opts, "\n");
+		RList *optl = r_str_split_list (opts, "\n", 0);
 		RListIter *iter;
 		char *opt;
 		r_list_foreach (optl, iter, opt) {

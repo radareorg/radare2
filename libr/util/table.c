@@ -110,7 +110,6 @@ static bool addRow (RTable *t, RList *items, const char *arg, int col) {
 }
 
 R_API void r_table_add_row_list(RTable *t, RList *items) {
-	int col = 0;
 	RTableRow *row = r_table_row_new (items);
 	r_list_append (t->rows, row);
 	// throw warning if not enough columns defined in header
@@ -361,6 +360,30 @@ static void __table_column_free(void *_col) {
 	free (col);
 }
 
+R_API void r_table_columns(RTable *t, RList *colNames) {
+	RListIter  *iter, *iterCol;
+	char * colName;
+	RTableRow *row;
+	r_list_foreach (t->rows, iter, row) {
+		RList *items = r_list_newf (r_table_row_free);
+		r_list_foreach (colNames, iterCol, colName) {
+			int fc = r_table_column_nth (t, colName);
+			RTableRow *item = r_list_get_n (row->items, fc);
+			r_list_append (items, item);
+		}
+		row->items = items;
+	}
+	RList *cols = r_list_newf (r_table_column_free);
+	r_list_foreach (colNames, iterCol, colName) {
+		int fc = r_table_column_nth (t, colName);
+		if (fc >= 0) {
+			RTableColumn *c = r_list_get_n (t->cols, fc);
+			r_list_append (cols, c);
+		}
+	}
+	t->cols = cols;
+}
+
 R_API void r_table_filter_columns(RTable *t, RList *list) {
 	const char *col;
 	RListIter *iter;
@@ -384,10 +407,10 @@ R_API void r_table_query(RTable *t, const char *q) {
 	// addr/gt/200,addr/lt/400,addr/sort/dec,offset/sort/inc
 	RListIter *iter;
 	char *qq = strdup (q);
-	RList *queries = r_str_split_list (qq, ",");
+	RList *queries = r_str_split_list (qq, ",",  0);
 	char *query;
 	r_list_foreach (queries, iter, query) {
-		RList *q = r_str_split_list (query, "/");
+		RList *q = r_str_split_list (query, "/", 2);
 		const char *columnName = r_list_get_n (q, 0);
 		const char *operation = r_list_get_n (q, 1);
 		const char *operand = r_list_get_n (q, 2);
@@ -396,7 +419,7 @@ R_API void r_table_query(RTable *t, const char *q) {
 			if (*columnName == '[') {
 				col = atoi (columnName + 1);
 			} else {
-				eprintf ("Invalid column name (%s)\n", columnName);
+				eprintf ("Invalid column name (%s) for (%s)\n", columnName, query);
 			}
 		}
 		if (!operation) {
@@ -405,7 +428,12 @@ R_API void r_table_query(RTable *t, const char *q) {
 		if (!strcmp (operation, "sort")) {
 			r_table_sort (t, col, operand && !strcmp (operand, "dec"));
 		} else if (!strcmp (operation, "cols")) {
-			eprintf ("(%s)\n", qq);
+			char *op = strdup (operand);
+			RList *list = r_str_split_list (op, "/", 0);
+			r_list_prepend (list, strdup (columnName));
+			r_table_columns (t, list); // select/reorder columns
+			r_list_free (list);
+			free (op);
 		// TODO	r_table_filter_columns (t, q);
 		} else if (!strcmp (operation, "quiet")) {
 			t->showHeader = false;

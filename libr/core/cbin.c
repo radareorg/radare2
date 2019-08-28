@@ -1039,7 +1039,7 @@ static int bin_source(RCore *r, int mode) {
 	SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
 	ls_foreach (ls, iter, kv) {
 		char *v = sdbkv_value (kv);
-		RList *list = r_str_split_list (v, "|");
+		RList *list = r_str_split_list (v, "|", 0);
 		srcline = r_list_get_bottom (list);
 		if (srcline) {
 			if (!strstr (srcline, "0x")){

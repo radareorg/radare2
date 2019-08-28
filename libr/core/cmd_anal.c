@@ -2786,7 +2786,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				char *args = strdup (input + 2);
-				RList *argv = r_str_split_list (args, " ");
+				RList *argv = r_str_split_list (args, " ", 0);
 				ut64 table = r_num_math (core->num, r_list_get_n (argv, 0));
 				ut64 elements = r_num_math (core->num, r_list_get_n (argv, 1));
 				r_anal_jmptbl (core->anal, fcn, core->offset, table, elements, UT64_MAX);
@@ -5256,7 +5256,7 @@ static void __core_anal_appcall(RCore *core, const char *input) {
 	RListIter *iter;
 	char *arg;
 	char *inp = strdup (input);
-	RList *args = r_str_split_list (inp, " ");
+	RList *args = r_str_split_list (inp, " ", 0);
 	int i = 0;
 	r_list_foreach (args, iter, arg) {
 		const char *alias = sdb_fmt ("A%d", i);
@@ -6771,8 +6771,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					char *res1 = sdb_get (core->anal->sdb_fcns, wvar, 0);
 					const char *ref;
 					RListIter *iter;
-					RList *list = (res && *res)? r_str_split_list (res, ","): NULL;
-					RList *list1 = (res1 && *res1)? r_str_split_list (res1, ","): NULL;
+					RList *list = (res && *res)? r_str_split_list (res, ",", 0): NULL;
+					RList *list1 = (res1 && *res1)? r_str_split_list (res1, ",", 0): NULL;
 					r_list_join (list , list1);
 					r_list_foreach (list, iter, ref) {
 						ut64 addr = r_num_math (NULL, ref);

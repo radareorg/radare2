@@ -865,7 +865,7 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 		goto end;
 	}
 
-	optypes_list = r_str_split_list (optypes, " ");
+	optypes_list = r_str_split_list (optypes, " ", 0);
 
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
@@ -2285,7 +2285,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				all = strdup (all);
 			}
 			char *arg;
-			RList *args = r_str_split_list (all, " ");
+			RList *args = r_str_split_list (all, " ", 0);
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false); //R_REG_TYPE_GPR, false);
 			int count = r_list_length (args);
 			r_list_foreach (args, iter, arg) {
@@ -4629,7 +4629,7 @@ static int cmd_debug(void *data, const char *input) {
 		case '+': // "dt+"
 			if (input[2] == '+') { // "dt++"
 				char *a, *s = r_str_trim_dup (input + 3);
-				RList *args = r_str_split_list (s, " ");
+				RList *args = r_str_split_list (s, " ", 0);
 				RListIter *iter;
 				r_list_foreach (args, iter, a) {
 					ut64 addr = r_num_get (NULL, a);

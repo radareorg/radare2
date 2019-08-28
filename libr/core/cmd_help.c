@@ -937,7 +937,7 @@ static int cmd_help(void *data, const char *input) {
 		case 'p':
 			  {
 			char *word, *str = strdup (input + 2);
-				  RList *list = r_str_split_list (str, " ");
+				  RList *list = r_str_split_list (str, " ", 0);
 				  ut64 *nums = calloc (sizeof (ut64), r_list_length (list));
 				  int i = 0;
 				  r_list_foreach (list, iter, word) {
