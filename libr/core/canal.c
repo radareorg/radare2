@@ -3112,10 +3112,10 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, &r_table_type_number, "addr", 0);
 	r_table_add_column (t, &r_table_type_number, "size", 0);
 	r_table_add_column (t, &r_table_type_string, "name", 0);
-	r_table_add_column (t, &r_table_type_string, "nbbs", 0);
-	r_table_add_column (t, &r_table_type_string, "xref", 0);
-	r_table_add_column (t, &r_table_type_string, "calls", 0);
-	r_table_add_column (t, &r_table_type_string, "cc", 0);
+	r_table_add_column (t, &r_table_type_number, "nbbs", 0);
+	r_table_add_column (t, &r_table_type_number, "xref", 0);
+	r_table_add_column (t, &r_table_type_number, "calls", 0);
+	r_table_add_column (t, &r_table_type_number, "cc", 0);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		const char *fcnAddr = sdb_fmt ("0x%08"PFMT64x, fcn->addr);
 		const char *fcnSize = sdb_fmt ("%d", r_anal_fcn_size (fcn));

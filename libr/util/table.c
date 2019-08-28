@@ -96,6 +96,14 @@ static bool addRow (RTable *t, RList *items, const char *arg, int col) {
 	return false;
 }
 
+R_API void r_table_add_row_list(RTable *t, RList *items) {
+	int col = 0;
+	RTableRow *row = r_table_row_new (items);
+	r_list_append (t->rows, row);
+	// throw warning if not enough columns defined in header
+	t->totalCols = R_MAX (t->totalCols, r_list_length (items));
+}
+
 R_API void r_table_add_row(RTable *t, const char *name, ...) {
 	va_list ap;
 	va_start (ap, name);
@@ -231,7 +239,16 @@ R_API char *r_table_tojson(RTable *t) {
 		r_list_foreach (row->items, iter2, item) {
 			RTableColumn *col = r_list_get_n (t->cols, c);
 			if (col) {
-				pj_ks (pj, col->name, item);
+				if (col->type == &r_table_type_number) {
+					ut64 n = r_num_get (NULL, item);
+					if (n) {
+						pj_kn (pj, col->name, n);
+					} else if (*item && *item != '0') {
+						pj_ks (pj, col->name, item);
+					}
+				} else {
+					pj_ks (pj, col->name, item);
+				}
 			}
 			c++;
 		}
@@ -297,7 +314,7 @@ R_API void r_table_sort(RTable *t, int nth, bool inc) {
 	}
 }
 
-static int __columnByName(RTable *t, const char *name) {
+R_API int r_table_column_nth(RTable *t, const char *name) {
 	RListIter *iter;
 	RTableColumn *col;
 	int n = 0;
@@ -337,7 +354,7 @@ R_API void r_table_filter_columns(RTable *t, RList *list) {
 	RList *cols = t->cols;
 	t->cols = r_list_newf (__table_column_free);
 	r_list_foreach (list, iter, col) {
-		int ncol = __columnByName(t, col);
+		int ncol = r_table_column_nth (t, col);
 		if (ncol != -1) {
 			RTableColumn *c = r_list_get_n (cols, ncol);
 			if (c) {
@@ -361,7 +378,7 @@ R_API void r_table_query(RTable *t, const char *q) {
 		const char *columnName = r_list_get_n (q, 0);
 		const char *operation = r_list_get_n (q, 1);
 		const char *operand = r_list_get_n (q, 2);
-		int col = __columnByName (t, columnName);
+		int col = r_table_column_nth (t, columnName);
 		if (col == -1) {
 			if (*columnName == '[') {
 				col = atoi (columnName + 1);

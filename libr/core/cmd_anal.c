@@ -2558,6 +2558,194 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 	}
 }
 
+static void __updateStats(RCore *core, Sdb *db, ut64 addr, int statsMode) {
+	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_DISASM);
+	if (!op) {
+		return;
+	}
+	if (statsMode == 'f') {
+		const char *family = r_anal_op_family_to_string (op->family);
+		sdb_num_inc (db, family, 1, 0);
+	} else if (statsMode == 'o') {
+		const char *type = r_anal_optype_to_string (op->type);
+		sdb_num_inc (db, type, 1, 0);
+	} else {
+		char *mnem = strdup (op->mnemonic);
+		char *sp = strstr (mnem, " ");
+		if (sp) {
+			*sp = 0;
+			//memmove (mnem, sp + 1, strlen (sp));
+		}
+		sdb_num_inc (db, mnem, 1, 0);
+	}
+	//sdb_set (db, family, "1", 0);
+	//r_cons_printf ("0x%08"PFMT64x" %s\n", addr, family);
+	r_anal_op_free (op);
+	// r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x"\n", addr);
+}
+
+
+static Sdb *__core_cmd_anal_fcn_stats (RCore *core, const char *input) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+	if (!fcn) {
+		eprintf ("Cannot find any function at 0x%08"PFMT64x"\n", core->offset);
+		return NULL;
+	}
+	bool silentMode = false;
+	int statsMode = 0;
+	if (*input == '*') {
+		silentMode = true;
+		input++;
+	}
+	switch (*input) {
+	case '?':
+		eprintf ("Usage: afis[ft]\n");
+		eprintf (" afis           enumerate unique opcodes in function\n");
+		eprintf (" afisa[fo]      enumerate all the meta of all the functions\n");
+		eprintf (" afisf          enumerate unique opcode families in function\n");
+		eprintf (" afiso          enumerate unique opcode types in function\n");
+		eprintf (" afist [query]  list in table format\n");
+		return NULL;
+	case 'f':
+	case 'o':
+		statsMode = *input;
+		input++;
+		break;
+	}
+
+	Sdb *db = sdb_new0 ();
+	RAnalBlock *bb;
+	RListIter *iter;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		int i;
+		__updateStats (core, db, bb->addr, statsMode);
+		for (i = 0; i< bb->op_pos_size; i++) {
+			ut16 op_pos = bb->op_pos[i];
+			__updateStats (core, db, bb->addr + op_pos, statsMode);
+		}
+	}
+	if (silentMode) {
+		// nothing
+	} else if (*input == 't') {
+		SdbList *ls = sdb_foreach_list (db, true);
+		SdbListIter *it;
+		RTable *t = r_table_new ();
+		SdbKv *kv;
+		r_table_add_column (t, &r_table_type_string, "name", 0);
+		ls_foreach (ls, it, kv) {
+			const char *key = sdbkv_key(kv);
+			r_table_add_column (t, &r_table_type_string, key, 0);
+		}
+		RList *items = r_list_newf (free);
+		r_list_append (items, fcn->name);
+		ls_foreach (ls, it, kv) {
+			const char *value = sdbkv_value (kv);
+			int nv = (int)r_num_get (NULL, value);
+			r_list_append (items, r_str_newf ("%d", nv));
+		}
+		r_table_add_row_list (t, items);
+		r_table_query (t, input + 1);
+		char *ts = r_table_tostring (t);
+		r_cons_printf ("%s", ts);
+		free (ts);
+		r_table_free (t);
+	} else {
+		SdbList *ls = sdb_foreach_list (db, true);
+		SdbListIter *it;
+		SdbKv *kv;
+		ls_foreach (ls, it, kv) {
+			const char *key = sdbkv_key(kv);
+			const char *value = sdbkv_value(kv);
+			r_cons_printf ("%4d %s\n", (int)r_num_get (NULL, value), key);
+		}
+	}
+	return db;
+	//sdb_free (db);
+}
+
+static void __core_cmd_anal_fcn_allstats (RCore *core, const char *input) {
+	RAnalFunction *fcn;
+	SdbKv *kv;
+	RListIter *iter;
+	SdbListIter *it;
+	RList *dbs = r_list_newf ((RListFree)sdb_free);
+	Sdb *d = sdb_new0 ();
+	ut64 oseek = core->offset;
+	
+	char *inp = r_str_newf ("*%s", input);
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		r_core_seek (core, fcn->addr, true);
+		Sdb *db = __core_cmd_anal_fcn_stats (core, inp);
+                sdb_num_set (db, ".addr", fcn->addr, 0);
+		r_list_append (dbs, db);
+	}
+	free (inp);
+	Sdb *db;
+	r_list_foreach (dbs, iter, db) {
+		SdbList *ls = sdb_foreach_list (db, true);
+		ls_foreach (ls, it, kv) {
+			const char *name = sdbkv_key(kv);
+			sdb_add (d, name, "1", 0);
+		}
+		ls_free (ls);
+	}
+	RTable *t = r_table_new ();
+	SdbList *ls = sdb_foreach_list (d, true);
+	r_table_add_column (t, &r_table_type_string, "name", 0);
+	r_table_add_column (t, &r_table_type_number, "addr", 0);
+	ls_foreach (ls, it, kv) {
+		const char *key = sdbkv_key(kv);
+		if (*key == '.') continue;
+		r_table_add_column (t, &r_table_type_number, key, 0);
+	}
+	sdb_free (d);
+
+	r_list_foreach (dbs, iter, db) {
+		SdbList *ls = sdb_foreach_list (db, false);
+		SdbListIter *it;
+		SdbKv *kv;
+		char *names[100];
+		int i;
+		for (i = 0;i<100;i++) {
+			names[i] = NULL;
+		}
+		ls_foreach (ls, it, kv) {
+			const char *key = sdbkv_key(kv);
+			const char *value = sdbkv_value (kv);
+			int idx = r_table_column_nth (t, key);
+			if (idx != -1) {
+				ut64 nv = r_num_get (NULL, value);
+				names[idx] = r_str_newf ("%d", (int)nv);
+			}
+		}
+		RList *items = r_list_newf (free);
+		ut64 fcnAddr = sdb_num_get (db, ".addr", 0);
+
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, fcnAddr, 0);
+		r_list_append (items, fcn?strdup (fcn->name):strdup (""));
+		r_list_append (items, fcn?r_str_newf ("0x%08"PFMT64x, fcn->addr): strdup ("0"));
+		int cols = r_list_length (t->cols);
+		for (i = 0; i < cols; i++) {
+			if (names[i]) {
+				if (names[i][0] != '.') {
+					r_list_append (items, strdup (names[i]));
+				}
+				R_FREE (names[i]);
+			} else {
+				r_list_append (items, strdup ("0"));
+			}
+		}
+		r_table_add_row_list (t, items);
+	}
+	r_table_query (t, (*input)?input + 1: "");
+	// char *ts = r_table_tostring (t);
+	char *ts = r_table_tojson(t);
+	r_cons_printf ("%s", ts);
+	free (ts);
+	r_table_free (t);
+	r_core_seek (core, oseek, true);
+}
+
 static int cmd_anal_fcn(RCore *core, const char *input) {
 	char i;
 
@@ -2819,6 +3007,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						r_cons_printf ("%s\n", imp);
 					}
 				}
+			}
+			break;
+		case 's': // "afis"
+			if (input[3] == 'a') { // "afisa"
+				__core_cmd_anal_fcn_allstats (core, input + 4);
+			} else {
+				sdb_free (__core_cmd_anal_fcn_stats (core, input + 3));
 			}
 			break;
 		case 'j': // "afij"
