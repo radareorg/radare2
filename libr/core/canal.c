@@ -5341,6 +5341,9 @@ static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
 }
 
 R_API void r_core_anal_propagate_noreturn(RCore *core) {
+	int handle_noreturn = r_config_get_i (core->config, "anal.noreturn");
+	if (!handle_noreturn)
+		return;
 	RList *todo = r_list_newf (free);
 	if (!todo) {
 		return;
