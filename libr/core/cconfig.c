@@ -3351,6 +3351,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "http.browser", "Command to open HTTP URLs");
 #endif
 	SETI ("http.maxsize", 0, "Maximum file size for upload");
+	SETPREF ("http.index", "index.html", "Main html file to check in directory");
 	SETPREF ("http.bind", "localhost", "Server address");
 	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", R2_HOME_WWWROOT), "http home root directory");
 #if __ANDROID__

@@ -12,6 +12,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	char *dir;
 	int iport;
 	const char *host = r_config_get (core->config, "http.bind");
+	const char *index = r_config_get (core->config, "http.index");
 	const char *root = r_config_get (core->config, "http.root");
 	const char *homeroot = r_config_get (core->config, "http.homeroot");
 	const char *port = r_config_get (core->config, "http.port");
@@ -376,12 +377,18 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
 				const char *homeroot = r_config_get (core->config, "http.homeroot");
+				const char *index = r_config_get (core->config, "http.index");
 				char *path;
 				if (!strcmp (rs->path, "/")) {
 					free (rs->path);
-					rs->path = strdup ("/index.html");
-				}
-				if (homeroot && *homeroot) {
+					if (*index == '/') {
+						rs->path = strdup (index);
+						path = strdup (index);
+					} else {
+						rs->path = r_str_newf ("/%s", index);
+						path = r_file_root (root, rs->path);
+					}
+				} else if (homeroot && *homeroot) {
 					char *homepath = r_file_abspath (homeroot);
 					path = r_file_root (homepath, rs->path);
 					free (homepath);
@@ -390,12 +397,15 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 						path = r_file_root (root, rs->path);
 					}
 				} else {
-					path = r_file_root (root, rs->path);
+					if (*index == '/') {
+						path = strdup (index);
+					} else {
+					}
 				}
 				// FD IS OK HERE
 				if (rs->path [strlen (rs->path) - 1] == '/') {
-					path = r_str_append (path, "index.html");
-					//rs->path = r_str_append (rs->path, "index.html");
+					const char *index = r_config_get (core->config, "http.index");
+					path = (*index == '/')? strdup (index): r_str_append (path, index);
 				} else {
 					//snprintf (path, sizeof (path), "%s/%s", root, rs->path);
 					if (r_file_is_directory (path)) {
