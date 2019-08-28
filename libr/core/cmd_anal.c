@@ -8064,8 +8064,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 R_API int r_core_anal_refs(RCore *core, const char *input) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	ut64 from, to;
-	char *ptr;
-	int rad, n;
+	int rad;
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_aar);
 		return 0;
@@ -8079,8 +8078,8 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	}
 
 	from = to = 0;
-	ptr = r_str_trim_head (strdup (input));
-	n = r_str_word_set0 (ptr);
+	char *ptr = r_str_trim_head (strdup (input));
+	int n = r_str_word_set0 (ptr);
 	if (!n) {
 		// get boundaries of current memory map, section or io map
 		if (cfg_debug) {

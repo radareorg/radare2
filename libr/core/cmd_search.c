@@ -606,6 +606,7 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 	if (io && io->desc) {
 		map->fd = r_io_fd_get_current (io);
 	}
+
 	map->perm = perms;
 	RInterval itv = {from, size};
 	if (size == -1) {
@@ -787,6 +788,41 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 				ut64 size = core->io->va? s->vsize: s->size;
 				append_bound (list, core->io, search_itv, addr, size, s->perm);
 			}
+		}
+	} else if (r_str_startswith (mode, "code")) {
+		RBinObject *obj = r_bin_cur_object (core->bin);
+		if (obj) {
+			ut64 from = UT64_MAX;
+			ut64 to = 0;
+			RBinSection *s;
+			RListIter *iter;
+			r_list_foreach (obj->sections, iter, s) {
+				if (s->is_segment) {
+					continue;
+				}
+				if (maskMatches (s->perm, 1, false)) {
+					continue;
+				}
+				ut64 addr = core->io->va? s->vaddr: s->paddr;
+				ut64 size = core->io->va? s->vsize: s->size;
+				from = R_MIN (addr, from);
+				to = R_MAX (to, addr + size);
+			}
+			if (from == UT64_MAX) {
+				SdbListIter *iter;
+				RIOMap *map;
+				int mask = 1;
+				ls_foreach  (core->io->maps, iter, map) {
+					ut64 from = r_itv_begin (map->itv);
+					ut64 size = r_itv_size (map->itv);
+					int rwx = map->perm;
+					if ((rwx & mask) != mask) {
+						continue;
+					}
+					append_bound (list, core->io, search_itv, from, size, rwx);
+				}
+			}
+			append_bound (list, core->io, search_itv, from, to-from, 1);
 		}
 	} else if (r_str_startswith (mode, "bin.sections")) {
 		int len = strlen ("bin.sections.");
