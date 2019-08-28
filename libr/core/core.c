@@ -1565,6 +1565,9 @@ static bool find_e_opts(RCore *core, RLineCompletion *completion, RLineBuffer *b
 	for (i = pmatch[1].rm_so; i < pmatch[1].rm_eo; i++) {
 		str = r_str_appendch (str, buf->data[i]);
 	}
+	if (!str) {
+		goto out;
+	}
 	if ((sp = strchr (str, ' '))) {
 		// if the name contains a space, just null
 		*sp = 0;
