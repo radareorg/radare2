@@ -84,6 +84,9 @@ static bool r2k__plugin_open(RIO *io, const char *pathname, bool many) {
 }
 
 static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
+	if (!strcmp (cmd, "")) {
+		return NULL;
+	}
 	if (!strncmp (cmd, "mod", 3)) {
 #if __WINDOWS__
 		GetSystemModules (io);

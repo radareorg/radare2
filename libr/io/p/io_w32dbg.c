@@ -175,7 +175,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOW32Dbg *iop = fd->data;
 	//printf("w32dbg io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
-	if (!strncmp (cmd, "pid", 3)) {
+	if (!strcmp (cmd, "")) {
+		// do nothing
+	} else if (!strncmp (cmd, "pid", 3)) {
 		if (cmd[3] == ' ') {
 			int pid = atoi (cmd + 3);
 			if (pid > 0 && pid != iop->pi.dwProcessId) {

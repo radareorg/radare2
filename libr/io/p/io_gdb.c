@@ -216,7 +216,10 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!desc) {
 		return NULL;
 	}
-	if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
+	if (!*cmd) {
+		return NULL;
+	}
+	if (cmd[0] == '?' || !strcmp (cmd, "help")) {
 		eprintf ("Usage: =!cmd args\n"
 			 " =!pid             - show targeted pid\n"
 			 " =!pkt s           - send packet 's'\n"

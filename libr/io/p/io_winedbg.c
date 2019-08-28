@@ -224,6 +224,9 @@ static struct winedbg_x86_32 regState() {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
+	if (!strcmp (cmd, "")) {
+		return NULL;
+	}
 	if (!strncmp (cmd, "?", 1)) {
 		eprintf ("dr  : show registers\n");
 		eprintf ("dr* : show registers as flags\n");
