@@ -4579,6 +4579,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					}
 				}
 			}
+			ds_align_comment (ds);
 			fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
 			if (fcn) {
 				fcn_name = fcn->name;
