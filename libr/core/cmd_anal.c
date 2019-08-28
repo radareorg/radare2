@@ -2663,7 +2663,7 @@ static Sdb *__core_cmd_anal_fcn_stats (RCore *core, const char *input) {
 	//sdb_free (db);
 }
 
-static void __core_cmd_anal_fcn_allstats (RCore *core, const char *input) {
+static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	RAnalFunction *fcn;
 	SdbKv *kv;
 	RListIter *iter;
@@ -2671,6 +2671,7 @@ static void __core_cmd_anal_fcn_allstats (RCore *core, const char *input) {
 	RList *dbs = r_list_newf ((RListFree)sdb_free);
 	Sdb *d = sdb_new0 ();
 	ut64 oseek = core->offset;
+	bool isJson = strstr (input, "j") != NULL;
 	
 	char *inp = r_str_newf ("*%s", input);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -2712,10 +2713,15 @@ static void __core_cmd_anal_fcn_allstats (RCore *core, const char *input) {
 		ls_foreach (ls, it, kv) {
 			const char *key = sdbkv_key(kv);
 			const char *value = sdbkv_value (kv);
+			if (*key == '.') {
+				continue;
+			}
 			int idx = r_table_column_nth (t, key);
 			if (idx != -1) {
 				ut64 nv = r_num_get (NULL, value);
 				names[idx] = r_str_newf ("%d", (int)nv);
+			} else {
+				eprintf ("Invalid column name (%s) %c", key, 10);
 			}
 		}
 		RList *items = r_list_newf (free);
@@ -2723,9 +2729,9 @@ static void __core_cmd_anal_fcn_allstats (RCore *core, const char *input) {
 
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, fcnAddr, 0);
 		r_list_append (items, fcn?strdup (fcn->name):strdup (""));
-		r_list_append (items, fcn?r_str_newf ("0x%08"PFMT64x, fcn->addr): strdup ("0"));
+		r_list_append (items, fcn?r_str_newf ("0x%08"PFMT64x, fcnAddr): strdup ("0"));
 		int cols = r_list_length (t->cols);
-		for (i = 0; i < cols; i++) {
+		for (i = 2; i < cols; i++) {
 			if (names[i]) {
 				if (names[i][0] != '.') {
 					r_list_append (items, strdup (names[i]));
@@ -2738,12 +2744,12 @@ static void __core_cmd_anal_fcn_allstats (RCore *core, const char *input) {
 		r_table_add_row_list (t, items);
 	}
 	r_table_query (t, (*input)?input + 1: "");
-	// char *ts = r_table_tostring (t);
-	char *ts = r_table_tojson(t);
+	char *ts = isJson? r_table_tojson(t): r_table_tostring (t);
 	r_cons_printf ("%s", ts);
 	free (ts);
 	r_table_free (t);
 	r_core_seek (core, oseek, true);
+	r_list_free (dbs);
 }
 
 static int cmd_anal_fcn(RCore *core, const char *input) {
