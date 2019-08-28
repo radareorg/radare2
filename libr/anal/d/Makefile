@@ -30,6 +30,7 @@ F+= cc-powerpc-32
 F+= cc-powerpc-64
 F+= cc-xtensa-32
 F+= cc-riscv-64
+F+= cc-hexagon-32
 
 WIN_TYPES=
 WIN_TYPES+= bcrypt
