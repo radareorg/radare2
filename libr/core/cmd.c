@@ -873,7 +873,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 		}
 	} else if (r_str_endswith (file, ".html")) {
 		const bool httpSandbox = r_config_get_i (core->config, "http.sandbox");
-		const bool httpIndex = r_config_get_i (core->config, "http.index");
+		char *httpIndex = strdup (r_config_get (core->config, "http.index"));
 		r_config_set_i (core->config, "http.sandbox", 0);
 		char *absfile = r_file_abspath (file);
 		r_config_set (core->config, "http.index", absfile);
@@ -881,6 +881,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 		r_core_cmdf (core, "=H");
 		r_config_set_i (core->config, "http.sandbox", httpSandbox);
 		r_config_set (core->config, "http.index", httpIndex);
+		free (httpIndex);
 		ret = true;
 	} else if (r_str_endswith (file, ".c")) {
 		r_core_cmd_strf (core, "#!c %s", file);
