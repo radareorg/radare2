@@ -2301,7 +2301,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		// only in disasm and debug prints..
 		if (isDisasmPrint (core->printidx)) {
 			if (r_config_get_i (core->config, "asm.hints") && (r_config_get_i (core->config, "asm.hint.jmp")
-			|| r_config_get_i (core->config, "asm.hint.lea") || r_config_get_i (core->config, "asm.hint.call"))) {
+			|| r_config_get_i (core->config, "asm.hint.lea") || r_config_get_i (core->config, "asm.hint.emu")
+			|| r_config_get_i (core->config, "asm.hint.call"))) {
 				r_core_visual_jump (core, ch);
 			} else {
 				numbuf_append (ch);
@@ -2824,13 +2825,18 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			// TODO: toggle shortcut hotkeys
 			if (r_config_get_i (core->config, "asm.hint.call")) {
 				r_core_cmd0 (core, "e!asm.hint.call");
-				r_core_cmd0 (core, "e!asm.hint.jmp");
+				r_core_cmd0 (core, "e asm.hint.jmp=true");
 			} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
 				r_core_cmd0 (core, "e!asm.hint.jmp");
-				r_core_cmd0 (core, "e!asm.hint.lea");
+				r_core_cmd0 (core, "e asm.hint.emu=true");
+			} else if (r_config_get_i (core->config, "asm.hint.emu")) {
+				r_core_cmd0 (core, "e!asm.hint.emu");
+				r_core_cmd0 (core, "e asm.hint.lea=true");
 			} else if (r_config_get_i (core->config, "asm.hint.lea")) {
 				r_core_cmd0 (core, "e!asm.hint.lea");
-				r_core_cmd0 (core, "e!asm.hint.call");
+				r_core_cmd0 (core, "e asm.hint.call=true");
+			} else {
+				r_core_cmd0 (core, "e asm.hint.call=true");
 			}
 			visual_refresh (core);
 			break;

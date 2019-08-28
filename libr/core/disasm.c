@@ -148,7 +148,9 @@ typedef struct {
 	bool asm_hint_cdiv;
 	bool asm_hint_call;
 	bool asm_hint_lea;
+	bool asm_hint_emu;
 	int  asm_hint_pos;
+	ut64 emuptr;
 	bool show_slow;
 	Sdb *ssa;
 	int cmtcol;
@@ -738,6 +740,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
 	ds->asm_hint_call = r_config_get_i (core->config, "asm.hint.call");
 	ds->asm_hint_lea = r_config_get_i (core->config, "asm.hint.lea");
+	ds->asm_hint_emu = r_config_get_i (core->config, "asm.hint.emu");
 	ds->asm_hint_cdiv = r_config_get_i (core->config, "asm.hint.cdiv");
 	ds->asm_hint_pos = r_config_get_i (core->config, "asm.hint.pos");
 	ds->asm_hints = r_config_get_i (core->config, "asm.hints"); // only for cdiv wtf
@@ -3420,6 +3423,16 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	if (!ds->asm_hints) {
 		return false;
 	}
+	if (ds->asm_hint_emu) {
+		if (ds->emuptr) {
+			if (r_io_is_valid_offset (core->io, ds->emuptr, 0)) {
+				ds_print_shortcut (ds, ds->emuptr, pos);
+				//getPtr (ds, ds->emuptr, pos);
+				ds->emuptr = 0;
+				return ds->hinted_line = gotShortcut = true;
+			}
+		}
+	}
 	if (ds->asm_hint_lea) {
 		RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (mi && mi->from) {
@@ -4175,6 +4188,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		char *type = NULL;
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str) - 1] = 0;
+		ds->emuptr = *val;
 		// support cstring here
 		{
 			ut64 *cstr = (ut64*) str;
@@ -4196,7 +4210,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				ds->printed_str_addr = cstr[0];
 				type = r_str_newf ("(pstr 0x%08"PFMT64x") ", addr);
 				(void)r_io_read_at (esil->anal->iob.io, addr,
-					(ut8*)str, sizeof (str)-1);
+					(ut8*)str, sizeof (str) - 1);
 			//	eprintf ("IS PSTRING 0x%llx %s\n", addr, str);
 			}
 		}
@@ -4236,6 +4250,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 					len = R_DISASM_MAX_STR;
 				}
 #endif
+				ds->emuptr = *val;
 				char *escstr = ds_esc_str (ds, str, (int)len, &prefix, false);
 				if (escstr) {
 					char *m;
@@ -4274,6 +4289,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	}
 	if (ds->show_emu_str) {
 		if (msg && *msg) {
+			ds->emuptr = *val;
 			if (ds->show_emu_stroff && *msg == '"') {
 				ds_comment_esil (ds, true, false, "; 0x%"PFMT64x" %s", *val, msg);
 			} else {

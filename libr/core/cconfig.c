@@ -2923,6 +2923,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.hint.jmp", "false", "Show jump hints [numbers] in disasm");
 	SETPREF ("asm.hint.call", "true", "Show call hints [numbers] in disarm");
 	SETPREF ("asm.hint.lea", "false", "Show LEA hints [numbers] in disasm");
+	SETPREF ("asm.hint.emu", "true", "Show asm.emu hints [numbers] in disasm");
 	SETPREF ("asm.hint.cdiv", "false", "Show CDIV hints optimization hint");
 	SETI ("asm.hint.pos", 1, "Shortcut hint position (-1, 0, 1)");
 	SETPREF ("asm.slow", "true", "Perform slow analysis operations in disasm");
