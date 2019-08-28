@@ -3109,13 +3109,15 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	RAnalFunction *fcn;
 	RListIter *iter;
 	RTable *t = r_table_new ();
-	r_table_add_column (t, &r_table_type_number, "addr", 0);
-	r_table_add_column (t, &r_table_type_number, "size", 0);
-	r_table_add_column (t, &r_table_type_string, "name", 0);
-	r_table_add_column (t, &r_table_type_number, "nbbs", 0);
-	r_table_add_column (t, &r_table_type_number, "xref", 0);
-	r_table_add_column (t, &r_table_type_number, "calls", 0);
-	r_table_add_column (t, &r_table_type_number, "cc", 0);
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeNumber = r_table_type ("number");
+	r_table_add_column (t, typeNumber, "addr", 0);
+	r_table_add_column (t, typeNumber, "size", 0);
+	r_table_add_column (t, typeString, "name", 0);
+	r_table_add_column (t, typeNumber, "nbbs", 0);
+	r_table_add_column (t, typeNumber, "xref", 0);
+	r_table_add_column (t, typeNumber, "calls", 0);
+	r_table_add_column (t, typeNumber, "cc", 0);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		const char *fcnAddr = sdb_fmt ("0x%08"PFMT64x, fcn->addr);
 		const char *fcnSize = sdb_fmt ("%d", r_anal_fcn_size (fcn));

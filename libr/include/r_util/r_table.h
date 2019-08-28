@@ -8,9 +8,6 @@ typedef struct {
 	RListComparator cmp;
 } RTableColumnType;
 
-R_API RTableColumnType r_table_type_string;
-R_API RTableColumnType r_table_type_number;
-
 typedef struct {
 	char *name;
 	RTableColumnType *type;
@@ -35,6 +32,7 @@ typedef struct {
 
 R_API void r_table_row_free(void *_row);
 R_API void r_table_column_free(void *_col);
+R_API RTableColumnType *r_table_type (const char *name);
 R_API RTable *r_table_new();
 R_API void r_table_free(RTable *t);
 R_API int r_table_column_nth(RTable *t, const char *name);

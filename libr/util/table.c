@@ -16,8 +16,19 @@ static int sortNumber(const void *a, const void *b) {
 }
 
 // maybe just index by name instead of exposing those symbols as global
-R_API RTableColumnType r_table_type_string = { "string", sortString };
-R_API RTableColumnType r_table_type_number = { "number", sortNumber };
+static RTableColumnType r_table_type_string = { "string", sortString };
+static RTableColumnType r_table_type_number = { "number", sortNumber };
+
+R_API RTableColumnType *r_table_type (const char *name) {
+	if (!strcmp (name, "string")) {
+		return &r_table_type_string;
+	}
+	if (!strcmp (name, "number")) {
+		return &r_table_type_number;
+	}
+	return NULL;
+}
+
 
 // TODO: unused for now, maybe good to call after filter :?
 static void __table_adjust(RTable *t) {

@@ -2631,10 +2631,12 @@ static Sdb *__core_cmd_anal_fcn_stats (RCore *core, const char *input) {
 		SdbListIter *it;
 		RTable *t = r_table_new ();
 		SdbKv *kv;
-		r_table_add_column (t, &r_table_type_string, "name", 0);
+		RTableColumnType *typeString = r_table_type ("string");
+		RTableColumnType *typeNumber = r_table_type ("number");
+		r_table_add_column (t, typeString, "name", 0);
 		ls_foreach (ls, it, kv) {
-			const char *key = sdbkv_key(kv);
-			r_table_add_column (t, &r_table_type_string, key, 0);
+			const char *key = sdbkv_key (kv);
+			r_table_add_column (t, typeNumber, key, 0);
 		}
 		RList *items = r_list_newf (free);
 		r_list_append (items, fcn->name);
@@ -2692,12 +2694,14 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	}
 	RTable *t = r_table_new ();
 	SdbList *ls = sdb_foreach_list (d, true);
-	r_table_add_column (t, &r_table_type_string, "name", 0);
-	r_table_add_column (t, &r_table_type_number, "addr", 0);
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeNumber = r_table_type ("number");
+	r_table_add_column (t, typeString, "name", 0);
+	r_table_add_column (t, typeNumber, "addr", 0);
 	ls_foreach (ls, it, kv) {
-		const char *key = sdbkv_key(kv);
+		const char *key = sdbkv_key (kv);
 		if (*key == '.') continue;
-		r_table_add_column (t, &r_table_type_number, key, 0);
+		r_table_add_column (t, typeNumber, key, 0);
 	}
 	sdb_free (d);
 
