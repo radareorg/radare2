@@ -1366,7 +1366,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 
 	eprintf ("Searching ROP gadgets...\n");
 	char *ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
-	RList *rops = r_str_split_list (ropstr, "\n");
+	RList *rops = r_str_split_list (ropstr, "\n", 0);
 	int delta = 0;
 	bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	bool forceaddr = false;
@@ -1518,7 +1518,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 					free (ropstr);
 					ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
 					r_list_free (rops);
-					rops = r_str_split_list (ropstr, "\n");
+					rops = r_str_split_list (ropstr, "\n", 0);
 				}
 			}
 			break;

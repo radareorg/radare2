@@ -653,7 +653,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 	char *target_libs = NULL;
 	target_libs = r_sys_getenv ("R_DYLDCACHE_FILTER");
 	if (target_libs) {
-		RList *target_lib_names = r_str_split_list (target_libs, ":");
+		RList *target_lib_names = r_str_split_list (target_libs, ":", 0);
 		if (!target_lib_names) {
 			R_FREE (target_libs);
 			r_list_free (bins);

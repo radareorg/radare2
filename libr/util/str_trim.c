@@ -57,7 +57,7 @@ R_API void r_str_trim_path(char *s) {
 }
 
 R_API char* r_str_trim_lines(char *str) {
-	RList *list = r_str_split_list (str, "\n");
+	RList *list = r_str_split_list (str, "\n", 0);
 	char *s;
 	RListIter *iter;
 	RStrBuf *sb = r_strbuf_new ("");

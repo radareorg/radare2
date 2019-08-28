@@ -492,7 +492,7 @@ R_API RAnalMetaItem *r_meta_find_in(RAnal *a, ut64 at, int type, int where) {
 	if (!res) {
 		return NULL;
 	}
-	RList *list = r_str_split_list (res, ",");
+	RList *list = r_str_split_list (res, ",", 0);
 	RListIter *iter;
 	const char *meta;
 	r_list_foreach (list, iter, meta) {
@@ -513,7 +513,7 @@ R_API RList *r_meta_find_list_in(RAnal *a, ut64 at, int type, int where) {
 	if (!res) {
 		return NULL;
 	}
-	RList *list = r_str_split_list (res, ",");
+	RList *list = r_str_split_list (res, ",", 0);
 	RList *out = r_list_new ();
 	if (!out) {
 		return NULL;

@@ -106,7 +106,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		pfile = r_file_slurp (httpauthfile, &sz);
 
 		if (pfile) {
-			so.authtokens = r_str_split_list (pfile, "\n");
+			so.authtokens = r_str_split_list (pfile, "\n", 0);
 		} else {
 			r_socket_free (s);
 			eprintf ("Empty list of HTTP users\n");
@@ -377,7 +377,6 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
 				const char *homeroot = r_config_get (core->config, "http.homeroot");
-				const char *index = r_config_get (core->config, "http.index");
 				char *path;
 				if (!strcmp (rs->path, "/")) {
 					free (rs->path);
@@ -404,7 +403,6 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 				}
 				// FD IS OK HERE
 				if (rs->path [strlen (rs->path) - 1] == '/') {
-					const char *index = r_config_get (core->config, "http.index");
 					path = (*index == '/')? strdup (index): r_str_append (path, index);
 				} else {
 					//snprintf (path, sizeof (path), "%s/%s", root, rs->path);

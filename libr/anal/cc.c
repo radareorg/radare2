@@ -25,8 +25,8 @@ R_API void r_anal_cc_set(RAnal *anal, const char *expr) {
 	char *end = strchr (args, ')');
 	if (end) {
 		*end++ = 0;
-		RList *retName = r_str_split_list (e, " ");
-		RList *ccArgs = r_str_split_list (args, ",");
+		RList *retName = r_str_split_list (e, " ", 0);
+		RList *ccArgs = r_str_split_list (args, ",", 0);
 		if (r_list_length (retName) == 2) {
 			const char *ret = r_list_get_n (retName, 0);
 			const char *name = r_list_get_n (retName, 1);

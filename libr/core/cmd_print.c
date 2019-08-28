@@ -1245,7 +1245,7 @@ static void cmd_print_gadget(RCore *core, const char *_input) {
 			} else {
 				space = "";
 			}
-			RList *args = r_str_split_list (space, " ");
+			RList *args = r_str_split_list (space, " ", 0);
 			char *x = r_list_pop_head (args);
 			char *y = r_list_pop_head (args);
 			char *w = r_list_pop_head (args);
@@ -1261,7 +1261,7 @@ static void cmd_print_gadget(RCore *core, const char *_input) {
 		}
 	} else if (*_input == ' ') { // "pg "
 		char *input = strdup (_input);
-		RList *args = r_str_split_list (input, " ");
+		RList *args = r_str_split_list (input, " ", 0);
 		char *x = r_list_pop_head (args);
 		char *y = r_list_pop_head (args);
 		char *w = r_list_pop_head (args);

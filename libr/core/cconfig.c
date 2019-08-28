@@ -436,7 +436,7 @@ static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
 	RListIter *iter;
 	r_list_purge (node->options);
 	char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
-	RList *optl = r_str_split_list (opts, "\n");
+	RList *optl = r_str_split_list (opts, "\n", 0);
 	char *opt;
 	node->options->free = free;
 	r_list_foreach (optl, iter, opt) {
