@@ -4579,7 +4579,6 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					}
 				}
 			}
-			ds_align_comment (ds);
 			fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
 			if (fcn) {
 				fcn_name = fcn->name;
@@ -4600,9 +4599,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				int nargs = r_type_func_args_count (core->anal->sdb_types, key);
 				// remove other comments
 				delete_last_comment (ds);
-				// ds_comment_start (ds, "");
 				ds_comment_esil (ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
 				if (fcn_type) {
+					ds_begin_comment (ds);
 					ds_comment_middle (ds, "; %s%s%s(", r_str_get (fcn_type),
 							(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
 							r_str_get (key));
