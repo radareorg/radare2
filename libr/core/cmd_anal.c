@@ -8269,8 +8269,9 @@ static bool archIsThumbable(RCore *core) {
 
 static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
 	int arch_align = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-	int align = arch_align; // core->search->align;
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
+	int searchAlign = r_config_get_i (core->config, "search.align");
+	int align = (searchAlign > 0)? searchAlign: arch_align;
 	if (align > 1) {
 		if ((from % align) || (to % align)) {
 			bool itsFine = false;
