@@ -877,6 +877,7 @@ typedef struct r_core_task_t {
 	RThreadSemaphore *running_sem;
 	void *user;
 	RCore *core;
+	bool dispatched;
 	RThreadCond *dispatch_cond;
 	RThreadLock *dispatch_lock;
 	RThread *thread;
