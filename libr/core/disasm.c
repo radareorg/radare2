@@ -4389,7 +4389,7 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 }
 
 static void ds_print_bbline(RDisasmState *ds, bool force) {
-	if (ds->show_bbline) {
+	if (ds->show_bbline && ds->fcn) {
 		RAnalBlock *bb = r_anal_fcn_bbget_at (ds->fcn, ds->at);
 		if (force || (ds->fcn && bb)) {
 			ds_begin_line (ds);
