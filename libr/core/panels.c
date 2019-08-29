@@ -6699,15 +6699,21 @@ repeat:
 		}
 		break;
 	case 'r':
+		// TODO: toggle shortcut hotkeys
 		if (r_config_get_i (core->config, "asm.hint.call")) {
 			r_core_cmd0 (core, "e!asm.hint.call");
-			r_core_cmd0 (core, "e!asm.hint.jmp");
+			r_core_cmd0 (core, "e asm.hint.jmp=true");
 		} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
 			r_core_cmd0 (core, "e!asm.hint.jmp");
-			r_core_cmd0 (core, "e!asm.hint.lea");
+			r_core_cmd0 (core, "e asm.hint.emu=true");
+		} else if (r_config_get_i (core->config, "asm.hint.emu")) {
+			r_core_cmd0 (core, "e!asm.hint.emu");
+			r_core_cmd0 (core, "e asm.hint.lea=true");
 		} else if (r_config_get_i (core->config, "asm.hint.lea")) {
 			r_core_cmd0 (core, "e!asm.hint.lea");
-			r_core_cmd0 (core, "e!asm.hint.call");
+			r_core_cmd0 (core, "e asm.hint.call=true");
+		} else {
+			r_core_cmd0 (core, "e asm.hint.call=true");
 		}
 		__set_refresh_all (core, false, false);
 		break;
