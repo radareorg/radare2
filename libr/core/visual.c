@@ -673,6 +673,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	ut64 addr, bsze, newaddr = 0LL;
 	int ret, h;
 	(void) r_cons_get_size (&h);
+	bool mouse_state = r_cons_singleton ()->mouse;
 	r_cons_enable_mouse (false);
 	r_cons_gotoxy (0, h);
 	r_cons_reset_colors ();
@@ -688,7 +689,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 
 	r_cons_show_cursor (false);
 	core->vmode = true;
-	r_cons_enable_mouse (true);
+	r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 	r_cons_show_cursor (true);
 }
 
@@ -1598,6 +1599,7 @@ char *getcommapath(RCore *core) {
 }
 
 static void visual_comma(RCore *core) {
+	bool mouse_state = r_cons_singleton ()->mouse;
 	r_cons_enable_mouse (false);
 	ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 	char *comment, *cwd, *cmtfile;
@@ -1633,7 +1635,7 @@ static void visual_comma(RCore *core) {
 		eprintf ("No commafile found.\n");
 	}
 	free (comment);
-	r_cons_enable_mouse (true);
+	r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 }
 
 static bool isDisasmPrint(int mode) {
@@ -2585,19 +2587,22 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			r_config_set_i (core->config, "scr.color", color);
 			break;
-		case 'd':
+		case 'd': {
+			bool mouse_state = r_cons_singleton ()->mouse;
 			r_cons_enable_mouse (false);
 			r_core_visual_showcursor (core, true);
 			int distance = numbuf_pull ();
 			r_core_visual_define (core, arg + 1, distance - 1);
 			r_core_visual_showcursor (core, false);
-			r_cons_enable_mouse (true);
+			r_cons_enable_mouse (mouse_state && r_config_get_i(core->config, "scr.wheel"));
+		}
 			break;
 		case 'D':
 			setdiff (core);
 			break;
 		case 'f':
 		{
+			bool mouse_state = r_cons_singleton ()->mouse;
 			r_cons_enable_mouse (false);
 			int range, min, max;
 			char name[256], *n;
@@ -2636,9 +2641,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				}
 			}
+			r_cons_enable_mouse (mouse_state && r_config_get_i(core->config, "scr.wheel"));
 		}
 			r_core_visual_showcursor (core, false);
-			r_cons_enable_mouse (true);
 			break;
 		case ',':
 			visual_comma (core);
@@ -3247,7 +3252,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			break;
-		case '/':
+		case '/': {
+			bool mouse_state = r_cons_singleton ()->mouse;
 			r_cons_enable_mouse (false);
 			if (core->print->cur_enabled) {
 				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
@@ -3272,8 +3278,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_core_block_size (core, core->blocksize - cols);
 				}
 			}
-			r_cons_enable_mouse (true);
-			break;
+			r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
+		}	break;
 		case '(':
 			snowMode = !snowMode;
 			if (!snowMode) {
