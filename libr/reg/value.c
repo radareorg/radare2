@@ -123,7 +123,6 @@ R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegisterId role) {
 }
 
 R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
-	int fits_in_arena;
 	ut8 bytes[12];
 	ut8 *src = bytes;
 	r_return_val_if_fail (reg && item, false);
@@ -184,12 +183,15 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
 		return false;
 	}
-	fits_in_arena = (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size)) >= 0;
-	if (src && fits_in_arena) {
-		r_mem_copybits (reg->regset[item->arena].arena->bytes +
-				BITS2BYTES (item->offset),
-			src, item->size);
-		return true;
+	RRegArena *arena = reg->regset[item->arena].arena;
+	if (arena) {
+		const bool fits_in_arena = (arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size)) >= 0;
+		if (src && fits_in_arena) {
+			r_mem_copybits (reg->regset[item->arena].arena->bytes +
+					BITS2BYTES (item->offset),
+					src, item->size);
+			return true;
+		}
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, value);
 	return false;
