@@ -134,7 +134,10 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (r_reg_is_readonly (reg, item)) {
 		return true;
 	}
-
+	RRegArena *arena = reg->regset[item->arena].arena;
+	if (!arena) {
+		return false;
+	}
 	switch (item->size) {
 	case 80:
 	case 96: // long floating value
@@ -166,13 +169,12 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		break;
 	case 1:
 		if (value) {
-			ut8 *buf = reg->regset[item->arena].arena->bytes + (item->offset / 8);
+			ut8 *buf = arena->bytes + (item->offset / 8);
 			int bit = (item->offset % 8);
 			ut8 mask = (1 << bit);
 			buf[0] = (buf[0] & (0xff ^ mask)) | mask;
 		} else {
 			int idx = item->offset / 8;
-			RRegArena *arena = reg->regset[item->arena].arena;
 			if (idx + item->size > arena->size) {
 				eprintf ("RRegSetOverflow %d vs %d\n", idx + item->size, arena->size);
 				return false;
@@ -187,15 +189,12 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
 		return false;
 	}
-	RRegArena *arena = reg->regset[item->arena].arena;
-	if (arena) {
-		const bool fits_in_arena = (arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size)) >= 0;
-		if (src && fits_in_arena) {
-			r_mem_copybits (reg->regset[item->arena].arena->bytes +
-					BITS2BYTES (item->offset),
-					src, item->size);
-			return true;
-		}
+	const bool fits_in_arena = (arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size)) >= 0;
+	if (src && fits_in_arena) {
+		r_mem_copybits (reg->regset[item->arena].arena->bytes +
+				BITS2BYTES (item->offset),
+				src, item->size);
+		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, value);
 	return false;

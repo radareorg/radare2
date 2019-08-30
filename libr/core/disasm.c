@@ -2902,7 +2902,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			}
 			switch (mi->type) {
 			case R_META_TYPE_STRING:
-			{
+			if (mi->str) {
 				bool esc_bslash = core->print->esc_bslash;
 
 				switch (mi->subtype) {
