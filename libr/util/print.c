@@ -83,11 +83,11 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 	kol[3] = pal->mov;
 	kol[4] = pal->nop;
 	const char *bgkol[5];
-	bgkol[0] = Color_BGGREEN;
-	bgkol[1] = Color_BGGREEN;
-	bgkol[2] = Color_BGGREEN;
-	bgkol[3] = Color_BGWHITE;
-	bgkol[4] = Color_BGBLUE;
+	bgkol[0] = pal->wordhl;
+	bgkol[1] = pal->wordhl;
+	bgkol[2] = pal->crypto;
+	bgkol[3] = pal->linehl;
+	bgkol[4] = pal->linehl;
 	if (colors) {
 		for (i = 0; i < rows; i++) {
 			int threshold = i * (0xff / rows);
@@ -1680,11 +1680,11 @@ static inline void printHistBlock (RPrint *p, int k, int cols) {
 	kol[3] = pal->jmp;
 	kol[4] = pal->call;
 	const char *bgkol[5];
-	bgkol[0] = Color_BGBLUE;
-	bgkol[1] = Color_BGWHITE;
-	bgkol[2] = Color_BGGREEN;
-	bgkol[3] = Color_BGGREEN;
-	bgkol[4] = Color_BGGREEN;
+	bgkol[0] = pal->linehl;
+	bgkol[1] = pal->linehl;
+	bgkol[2] = pal->crypto;
+	bgkol[3] = pal->wordhl;
+	bgkol[4] = pal->wordhl;
 
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	if (show_colors) {
