@@ -4763,6 +4763,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"=",        "io pipe", cmd_rap},
 		{"?",        "help message", cmd_help, cmd_help_init},
 		{"\\",       "alias for =!", cmd_rap_run},
+		{"'",       "alias for =!", cmd_rap_run},
 		{"0x",       "alias for s 0x", cmd_ox},
 		{"analysis", "analysis", cmd_anal, cmd_anal_init},
 		{"bsize",    "change block size", cmd_bsize},
