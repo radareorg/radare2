@@ -120,15 +120,13 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 }
 
 #define PARSER_MAX_TOKENS 8
-R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
+R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	char *tok[PARSER_MAX_TOKENS];
 	char tmp[128];
 	int i, j, l;
 	const char *p = str;
 
-	if (!reg || !str) {
-		return false;
-	}
+	r_return_val_if_fail (reg && str, false);
 
 	// Same profile, no need to change
 	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str)) {
@@ -220,8 +218,6 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 		//eprintf ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
 		if (rs && rs->arena) {
 			reg->size += rs->arena->size;
-		} else {
-			reg->size = 0;
 		}
 	}
 	// Align to byte boundary if needed
@@ -237,8 +233,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	return true;
 }
 
-R_API int r_reg_set_profile(RReg *reg, const char *profile) {
-	int ret;
+R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 	char *base, *file;
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
@@ -253,12 +248,12 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 		eprintf ("r_reg_set_profile: Cannot find '%s'\n", profile);
 		return false;
 	}
-	ret = r_reg_set_profile_string (reg, str);
+	bool ret = r_reg_set_profile_string (reg, str);
 	free (str);
 	return ret;
 }
 
-static int gdb_to_r2_profile(char *gdb) {
+static bool gdb_to_r2_profile(char *gdb) {
 	char *ptr = gdb, *ptr1, *gptr, *gptr1;
 	char name[16], groups[128], type[16];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
@@ -374,7 +369,7 @@ static int gdb_to_r2_profile(char *gdb) {
 	return true;
 }
 
-R_API int r_reg_parse_gdb_profile(const char *profile_file) {
+R_API bool r_reg_parse_gdb_profile(const char *profile_file) {
 	char *base, *str = NULL;
 	if (!(str = r_file_slurp (profile_file, NULL))) {
 		if ((base = r_sys_getenv (R_LIB_ENV))) {
@@ -389,7 +384,7 @@ R_API int r_reg_parse_gdb_profile(const char *profile_file) {
 		eprintf ("r_reg_parse_gdb_profile: Cannot find '%s'\n", profile_file);
 		return false;
 	}
-	int ret = gdb_to_r2_profile (str);
+	bool ret = gdb_to_r2_profile (str);
 	free (str);
 	return ret;
 }
