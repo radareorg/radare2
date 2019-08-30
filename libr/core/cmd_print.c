@@ -15,7 +15,7 @@ static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
 	"pa", " [assembly]", "print hexpairs of the given assembly expression",
 	"paD", " [hexpairs]", "print assembly expression from hexpairs and show hexpairs",
-	"pad", " [hexpairs]", "print assembly expression from hexpairs (alias for pix)",
+	"pad", " [hexpairs]", "print assembly expression from hexpairs (alias for pdx, pix)",
 	"pade", " [hexpairs]", "print ESIL expression from hexpairs",
 	"pae", " [assembly]", "print ESIL expression of the given assembly expression",
 	NULL
@@ -321,7 +321,7 @@ static const char *help_msg_pd[] = {
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 	"pdt", "", "disassemble the debugger traces (see atd)",
-	"pdx", " [hexpairs]", "disassemble hexpairs (alias for pd @x:)",
+	"pdx", " [hexpairs]", "alias for pad or pix",
 	NULL
 };
 
@@ -429,7 +429,7 @@ static const char *help_msg_pi[] = {
 	"pij", "", "print N instructions in JSON",
 	"pir", "", "like 'pdr' but with 'pI' output",
 	"piu", "[q] [limit]", "disasm until ujmp or ret is found (see pdp)",
-	"pix", "  [hexpairs]", "alias for pad",
+	"pix", "  [hexpairs]", "alias for pdx and pad",
 	NULL
 };
 
@@ -4788,7 +4788,7 @@ static int cmd_print(void *data, const char *input) {
 		len = core->blocksize;
 	}
 
-	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f') {
+	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f' && input[0] != 'i') {
 		n = core->blocksize_max;
 		i = (int) n;
 		if (i != n) {
@@ -5332,14 +5332,8 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		if (input[1] == 'x') { // pdx
-			if (input[2] == '?') {
-				r_cons_printf ("Usage: pdx [hexpairs] - disassemble hexpairs\n");
-				return 0;
-			} else {
-				r_core_cmdf (core, "pd @x:%s", r_str_trim_ro (input + 2));
-				eprintf ("pd @x:%s\n", r_str_trim_ro (input + 2));
-				return 0;
-			}
+			__cmd_pad (core, r_str_trim_ro (input + 2));
+			return 0;
 		}
 
 		const char *sp = NULL;
