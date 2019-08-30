@@ -14,7 +14,7 @@ R_API bool r_io_fd_close(RIO *io, int fd) {
 //returns length of read bytes
 R_API int r_io_fd_read(RIO *io, int fd, ut8 *buf, int len) {
 	r_return_val_if_fail (io && buf, -1);
-	if (len < 1) {
+	if (len < 0) {
 		return -1;
 	}
 	RIODesc *desc = r_io_desc_get (io, fd);
@@ -24,7 +24,7 @@ R_API int r_io_fd_read(RIO *io, int fd, ut8 *buf, int len) {
 //returns length of written bytes
 R_API int r_io_fd_write(RIO *io, int fd, const ut8 *buf, int len) {
 	r_return_val_if_fail (io && buf, -1);
-	if (len < 1) {
+	if (len < 0) {
 		return -1;
 	}
 	RIODesc *desc = r_io_desc_get (io, fd);
