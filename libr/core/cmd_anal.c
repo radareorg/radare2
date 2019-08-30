@@ -3802,7 +3802,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i (core->config, "scr.color");
-	struct r_reg_item_t *r;
+	RRegItem *r;
 	const char *use_color;
 	const char *name;
 	char *arg;
@@ -5760,6 +5760,12 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case 'a': // "aea"
+		{
+		RReg *reg = core->anal->reg;
+		ut64 pc = r_reg_getv (reg, "PC");
+		RAnalOp *op = r_core_anal_op (core, pc, 0);
+		ut64 newPC = core->offset + op->size;
+		r_reg_setv (reg, "PC", newPC);
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_aea);
 		} else if (input[1] == 'r') {
@@ -5803,6 +5809,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			ut64 len = r_num_math (core->num, arg);
 			cmd_aea (core, 0, core->offset, len);
 		}
+		r_reg_setv (reg, "PC", pc);
+}
 		break;
 	case 'x': { // "aex"
 		char *hex;
