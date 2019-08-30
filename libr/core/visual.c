@@ -626,7 +626,7 @@ static void reset_print_cur(RPrint *p) {
 }
 
 static bool __holdMouseState(RCore *core) {
-	int m = r_cons_singleton ()->mouse;
+	bool m = r_cons_singleton ()->mouse;
 	r_cons_enable_mouse (false);
 	return m;
 }
