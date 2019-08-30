@@ -218,7 +218,11 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegSet *rs = &reg->regset[i];
 		//eprintf ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
-		reg->size += rs->arena->size;
+		if (rs && rs->arena) {
+			reg->size += rs->arena->size;
+		} else {
+			reg->size = 0;
+		}
 	}
 	// Align to byte boundary if needed
 	//if (reg->size & 7) {
