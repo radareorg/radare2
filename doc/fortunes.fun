@@ -278,3 +278,4 @@ Most likely your core dump fell into a blackhole, can't see it.
 Long time no C
 radare2 is power, France is pancake.
 Come to C me!
+Unable to locate package gdb
