@@ -13,13 +13,14 @@ static ut27 r_read_me27(const ut8 *buf, int boff) {
 }
 
 R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
-	RRegSet *regset;
-	int off;
-	ut64 ret = 0LL;
 	r_return_val_if_fail (reg && item, 0);
 
-	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->arena];
+	ut64 ret = 0LL;
+	int off = BITS2BYTES (item->offset);
+	RRegSet *regset = &reg->regset[item->arena];
+	if (!regset->arena) {
+		return 0LL;
+	}
 	switch (item->size) {
 	case 80: // word + qword
 		if (regset->arena->bytes && (off + 10 <= regset->arena->size)) {
@@ -63,6 +64,9 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	}
 	int off = BITS2BYTES (item->offset);
 	RRegSet *regset = &reg->regset[item->arena];
+	if (!regset->arena) {
+		return 0LL;
+	}
 	switch (item->size) {
 	case 1: {
 		int offset = item->offset / 8;
@@ -246,8 +250,11 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 		eprintf ("Invalid bit size for packet register\n");
 		return 0LL;
 	}
-	int off = BITS2BYTES (item->offset);
 	RRegSet *regset = &reg->regset[item->arena];
+	if (!regset->arena) {
+		return 0LL;
+	}
+	int off = BITS2BYTES (item->offset);
 	off += (packidx * packbytes);
 	if (regset->arena->size - off - 1 >= 0) {
 		memcpy (&ret, regset->arena->bytes + off, packbytes);
@@ -256,17 +263,16 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 }
 
 R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
-	int packbytes, packmod;
+	r_return_val_if_fail (reg && item, false);
 
-	if (!reg || !item) {
-		eprintf ("r_reg_set_value: item is NULL\n");
-		return false;
+	if (!reg->regset->arena) {
+		return 0LL;
 	}
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
-	packbytes = packbits / 8;
-	packmod = packbits % 8;
+	int packbytes = packbits / 8;
+	int packmod = packbits % 8;
 	if (packidx * packbits > item->size) {
 		eprintf ("Packed index is beyond the register size\n");
 		return false;
