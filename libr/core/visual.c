@@ -625,6 +625,12 @@ static void reset_print_cur(RPrint *p) {
 	p->ocur = -1;
 }
 
+static bool __holdMouseState(RCore *core) {
+	int m = r_cons_singleton ()->mouse;
+	r_cons_enable_mouse (false);
+	return m;
+}
+
 static void backup_current_addr(RCore *core, ut64 *addr, ut64 *bsze, ut64 *newaddr) {
 	*addr = core->offset;
 	*bsze = core->blocksize;
@@ -673,8 +679,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	ut64 addr, bsze, newaddr = 0LL;
 	int ret, h;
 	(void) r_cons_get_size (&h);
-	bool mouse_state = r_cons_singleton ()->mouse;
-	r_cons_enable_mouse (false);
+	bool mouse_state = __holdMouseState(core);
 	r_cons_gotoxy (0, h);
 	r_cons_reset_colors ();
 	//r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
@@ -1599,8 +1604,7 @@ char *getcommapath(RCore *core) {
 }
 
 static void visual_comma(RCore *core) {
-	bool mouse_state = r_cons_singleton ()->mouse;
-	r_cons_enable_mouse (false);
+	bool mouse_state = __holdMouseState (core);
 	ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 	char *comment, *cwd, *cmtfile;
 	comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
@@ -2588,8 +2592,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_config_set_i (core->config, "scr.color", color);
 			break;
 		case 'd': {
-			bool mouse_state = r_cons_singleton ()->mouse;
-			r_cons_enable_mouse (false);
+			bool mouse_state = __holdMouseState (core);
 			r_core_visual_showcursor (core, true);
 			int distance = numbuf_pull ();
 			r_core_visual_define (core, arg + 1, distance - 1);
@@ -2602,8 +2605,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'f':
 		{
-			bool mouse_state = r_cons_singleton ()->mouse;
-			r_cons_enable_mouse (false);
+			bool mouse_state = __holdMouseState (core);
 			int range, min, max;
 			char name[256], *n;
 			r_line_set_prompt ("flag name: ");
@@ -3253,8 +3255,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case '/': {
-			bool mouse_state = r_cons_singleton ()->mouse;
-			r_cons_enable_mouse (false);
+			bool mouse_state = __holdMouseState (core);
 			if (core->print->cur_enabled) {
 				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
 					if (core->seltab) {
