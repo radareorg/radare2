@@ -59,6 +59,9 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 		}
 		// Now left endpoint <= addr < right endpoint
 		ut64 len1 = R_MIN (vaddr + len - addr, r_itv_end (part->itv) - addr);
+		if (len1 < 1) {
+			break;
+		}
 		// The map satisfies the permission requirement or p_cache is enabled
 		if (((part->map->perm & match_flg) == match_flg || io->p_cache)) {
 			st64 result = op (io, part->map->fd, part->map->delta + addr - part->map->itv.addr,
