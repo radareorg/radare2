@@ -2435,41 +2435,41 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 }
 
 static void cmd_print_op(RCore *core, const char *input) {
-     ut8 *buf;
-     if (!input[0])
-         return;
-     switch (input[1]) {
-     case 'a':
-     case 's':
-     case 'A':
-     case 'x':
-     case 'r':
-     case 'l':
-     case 'm':
-     case 'd':
-     case 'o':
-     case '2':
-     case '4':
-         if (input[2]) {  // parse val from arg
-             buf = r_core_transform_op (core, input+3, input[1]);
-         } else {  // use clipboard instead of val
-             buf = r_core_transform_op (core, NULL, input[1]);
-         }
-         break;
-     case 'n':
-         buf = r_core_transform_op (core, "ff", 'x');
-         break;
-     case '\0':
-     case '?':
-     default:
-         r_core_cmd_help (core, help_msg_po);
-         return;
-     }
-     if (buf) {
-	 r_print_hexdump(core->print, core->offset, buf,
-		 core->blocksize, 16, 1, 1);
-	 free (buf);
-     }
+	ut8 *buf;
+	if (!input[0])
+		return;
+	switch (input[1]) {
+	case 'a':
+	case 's':
+	case 'A':
+	case 'x':
+	case 'r':
+	case 'l':
+	case 'm':
+	case 'd':
+	case 'o':
+	case '2':
+	case '4':
+		if (input[2]) {  // parse val from arg
+			buf = r_core_transform_op (core, input+3, input[1]);
+		} else {  // use clipboard instead of val
+			buf = r_core_transform_op (core, NULL, input[1]);
+		}
+		break;
+	case 'n':
+		buf = r_core_transform_op (core, "ff", 'x');
+		break;
+	case '\0':
+	case '?':
+	default:
+		r_core_cmd_help (core, help_msg_po);
+		return;
+	}
+	if (buf) {
+		r_print_hexdump(core->print, core->offset, buf,
+				core->blocksize, 16, 1, 1);
+		free (buf);
+	}
 }
 
 static void printraw(RCore *core, int len, int mode) {
