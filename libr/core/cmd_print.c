@@ -213,6 +213,7 @@ static const char *help_msg_p[] = {
 	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
 	"pj", "[?] [len]", "print as indented JSON",
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
+	"po", "[?] hex", "print operation applied to block (see po?)",
 	"pp", "[?][sz] [len]", "print patterns, see pp? for more help",
 	"pq", "[?][is] [len]", "print QR code with the first Nbytes",
 	"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
@@ -439,6 +440,23 @@ static const char *help_msg_pif[] = {
 	"pifc", "", "print all calls from this function",
 	"pifcj", "", "print all calls from this function in JSON format",
 	"pifj", "", "print instructions of function in JSON format",
+};
+
+static const char *help_msg_po[] = {
+	"Usage:","po[24aAdlmorsx]"," [hexpairs] @ addr[!bsize]",
+	"po[24aAdlmorsx]","", "without hexpair values, clipboard is used",
+	"po2"," [val]","2=  2 byte endian swap",
+	"po4"," [val]", "4=  4 byte endian swap",
+	"poa"," [val]", "+=  addition (f.ex: poa 0102)",
+	"poA"," [val]","&=  and",
+	"pod"," [val]", "/=  divide",
+	"pol"," [val]","<<= shift left",
+	"pom"," [val]", "*=  multiply",
+	"poo"," [val]","|=  or",
+	"por"," [val]", ">>= shift right",
+	"pos"," [val]", "-=  substraction",
+	"pox"," [val]","^=  xor  (f.ex: pox 0x90)",
+	NULL
 };
 
 static const char *help_msg_ps[] = {
@@ -2414,6 +2432,44 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 	}
 
 	return true;
+}
+
+static void cmd_print_op(RCore *core, const char *input) {
+	ut8 *buf;
+	if (!input[0])
+		return;
+	switch (input[1]) {
+	case 'a':
+	case 's':
+	case 'A':
+	case 'x':
+	case 'r':
+	case 'l':
+	case 'm':
+	case 'd':
+	case 'o':
+	case '2':
+	case '4':
+		if (input[2]) {  // parse val from arg
+			buf = r_core_transform_op (core, input+3, input[1]);
+		} else {  // use clipboard instead of val
+			buf = r_core_transform_op (core, NULL, input[1]);
+		}
+		break;
+	case 'n':
+		buf = r_core_transform_op (core, "ff", 'x');
+		break;
+	case '\0':
+	case '?':
+	default:
+		r_core_cmd_help (core, help_msg_po);
+		return;
+	}
+	if (buf) {
+		r_print_hexdump(core->print, core->offset, buf,
+			core->blocksize, 16, 1, 1);
+		free (buf);
+	}
 }
 
 static void printraw(RCore *core, int len, int mode) {
@@ -4763,9 +4819,10 @@ static int cmd_print(void *data, const char *input) {
 		const char *p = off? strchr (input + idx, ' '): NULL;
 		if (p) {
 			l = (int) r_num_math (core->num, p + 1);
-			/* except disasm and memoryfmt (pd, pm) */
+			/* except disasm and memoryfmt (pd, pm) and overlay (po) */
 			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' &&
-				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' && input[0] != 'I') {
+				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' &&
+				input[0] != 'I' && input[0] != 'o') {
 				if (l < 0) {
 					off = core->offset + l;
 					len = l = -l;
@@ -4788,7 +4845,7 @@ static int cmd_print(void *data, const char *input) {
 		len = core->blocksize;
 	}
 
-	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f') {
+	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f' && input[0] != 'o') {
 		n = core->blocksize_max;
 		i = (int) n;
 		if (i != n) {
@@ -6179,6 +6236,9 @@ l = use_blocksize;
 			r_print_stereogram_print (core->print, res);
 			free (res);
 		}
+		break;
+	case 'o': // "po"
+		cmd_print_op(core, input);
 		break;
 	case 'x': // "px"
 	{
