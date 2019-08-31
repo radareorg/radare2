@@ -240,20 +240,21 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 		} else {
 			eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
 		}
-	} else if (op=='2' || op=='4') {
-		op -= '0';
-		// if i < core->blocksize would pass the test but buf[i+3] goes beyond the buffer
-		if (core->blocksize > 3) {
-			for (i=0; i<core->blocksize-3; i+=op) {
-				/* endian swap */
-				ut8 tmp = buf[i];
+	} else if (op == '2' || op == '4') {
+		int inc = op - '0';
+		ut8 tmp;
+		for (i = 0; i <= core->blocksize - inc; i += inc) {
+			if (inc == 2) {
+				tmp = buf[i];
+				buf[i] = buf[i+1];
+				buf[i+1] = tmp;
+			} else if (inc == 4) {
+				tmp = buf[i];
 				buf[i] = buf[i+3];
 				buf[i+3] = tmp;
-				if (op == 4) {
-					tmp = buf[i + 1];
-					buf[i + 1] = buf[i + 2];
-					buf[i + 2] = tmp;
-				}
+				tmp = buf[i+1];
+				buf[i+1] = buf[i+2];
+				buf[i+2] = tmp;
 			}
 		}
 	} else {
