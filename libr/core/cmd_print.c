@@ -2467,7 +2467,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 	}
 	if (buf) {
 		r_print_hexdump(core->print, core->offset, buf,
-				core->blocksize, 16, 1, 1);
+			core->blocksize, 16, 1, 1);
 		free (buf);
 	}
 }
@@ -4819,9 +4819,10 @@ static int cmd_print(void *data, const char *input) {
 		const char *p = off? strchr (input + idx, ' '): NULL;
 		if (p) {
 			l = (int) r_num_math (core->num, p + 1);
-			/* except disasm and memoryfmt (pd, pm) */
+			/* except disasm and memoryfmt (pd, pm) and overlay (po) */
 			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' &&
-				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' && input[0] != 'I') {
+				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' &&
+				input[0] != 'I' && input[0] != 'o') {
 				if (l < 0) {
 					off = core->offset + l;
 					len = l = -l;
@@ -4844,7 +4845,7 @@ static int cmd_print(void *data, const char *input) {
 		len = core->blocksize;
 	}
 
-	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f') {
+	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f' && input[0] != 'o') {
 		n = core->blocksize_max;
 		i = (int) n;
 		if (i != n) {
