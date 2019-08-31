@@ -1219,9 +1219,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #if USE_UTF8
 	int utflen;
 #endif
-	int ch, i = 0;	/* grep completion */
+	int ch, key, i = 0;	/* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
+	RCons *cons = r_cons_singleton ();
 
 	if (!I.hud || (I.hud && !I.hud->activate)) {
 		I.buffer.index = I.buffer.length = 0;
@@ -1255,6 +1256,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		__print_prompt ();
 	}
 	r_cons_break_push (NULL, NULL);
+	int mouse_status = cons->mouse;
+	if (I.hud) {
+		r_cons_enable_mouse (true);
+	} else {
+		r_cons_enable_mouse (false);
+	}
 	for (;;) {
 		yank_flag = 0;
 		if (r_cons_is_breaked ()) {
@@ -1268,8 +1275,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.length = 0;
 			}
 		}
-		bool mouse_status = r_cons_singleton()->mouse;
-		r_cons_enable_mouse (false);
 #if USE_UTF8
 		utflen = r_line_readchar_utf8 ((ut8 *) buf, sizeof (buf));
 		if (utflen < 1) {
@@ -1311,7 +1316,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			printf ("\r\x1b[2K\r");	// %*c\r", columns, ' ');
 		}
 #endif
-		r_cons_enable_mouse (mouse_status);
 		switch (*buf) {
 		case 0:	// control-space
 			/* ignore atm */
@@ -1615,6 +1619,29 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							selection_widget_draw ();
 						}
 						break;
+					case '9': // handle mouse wheel
+						key = r_cons_readchar ();
+						cons->mouse_event = 1;
+						if (key == '6') {	// up
+							if (I.hud) {
+								if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
+									I.hud->top_entry_n--;
+								}
+							}
+						} else if (key == '7') {	 // down
+							if (I.hud) {
+								if (I.hud->top_entry_n >= 0) {
+									I.hud->top_entry_n++;
+								}
+							}
+						} else {
+							ch = 0;
+						}
+						int ch2;
+						do {
+							ch2 = r_cons_readchar ();
+						} while (ch2 != 'M');
+						break;
 					/* arrows */
 					case 'A':	// up arrow
 						if (I.hud) {
@@ -1866,6 +1893,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 _end:
 	r_cons_break_pop ();
 	r_cons_set_raw (0);
+	r_cons_enable_mouse (mouse_status);
 	if (I.echo) {
 		printf ("\r%s%s\n", I.prompt, I.buffer.data);
 		fflush (stdout);
