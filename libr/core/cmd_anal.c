@@ -5764,6 +5764,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		RReg *reg = core->anal->reg;
 		ut64 pc = r_reg_getv (reg, "PC");
 		RAnalOp *op = r_core_anal_op (core, pc, 0);
+		if (!op) {
+			break;
+		}
 		ut64 newPC = core->offset + op->size;
 		r_reg_setv (reg, "PC", newPC);
 		if (input[1] == '?') {
