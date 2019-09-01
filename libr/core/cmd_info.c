@@ -479,7 +479,11 @@ static int cmd_info(void *data, const char *input) {
 		input = "I*";
 	}
 	char *question = strchr (input, '?');
-	if (question > input) {
+	const char *space = strchr (input, ' ');
+	if (!space) {
+		space = input;
+	}
+	if (question < space && question > input) {
 		question--;
 		r_core_cmdf (core, "i?~& i%c", *question);
 		goto done;
