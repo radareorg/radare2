@@ -1853,6 +1853,26 @@ bool __handle_cursor_mode(RCore *core, const int key) {
 	case '"':
 	case 9:
 		return false;
+	case ']':
+		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
+			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
+		} else {
+			int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+			r_config_set_i (core->config, "asm.cmt.col", cmtcol + 2);
+		}
+		cur->view->refresh = true;
+		break;
+	case '[':
+		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
+			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+ 		} else {
+			int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+			if (cmtcol > 2) {
+				r_config_set_i (core->config, "asm.cmt.col", cmtcol - 2);
+			}
+		}
+		cur->view->refresh = true;
+		break;
 	case 'Q':
 	case 'q':
 	case 'c':
@@ -2425,20 +2445,20 @@ void __move_panel_to_dir(RCore *core, RPanel *panel, int src) {
 	key = r_cons_arrow_to_hjkl (key);
 	__set_refresh_all (core, false, true);
 	switch (key) {
-		case 'h':
-			__move_panel_to_left (core, panel, src);
-			break;
-		case 'l':
-			__move_panel_to_right (core, panel, src);
-			break;
-		case 'k':
-			__move_panel_to_up (core, panel, src);
-			break;
-		case 'j':
-			__move_panel_to_down (core, panel, src);
-			break;
-		default:
-			break;
+	case 'h':
+		__move_panel_to_left (core, panel, src);
+		break;
+	case 'l':
+		__move_panel_to_right (core, panel, src);
+		break;
+	case 'k':
+		__move_panel_to_up (core, panel, src);
+		break;
+	case 'j':
+		__move_panel_to_down (core, panel, src);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -6942,11 +6962,23 @@ repeat:
 		}
 		break;
 	case ']':
-		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
+		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
+			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
+		} else {
+			int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+			r_config_set_i (core->config, "asm.cmt.col", cmtcol + 2);
+		}
 		cur->view->refresh = true;
 		break;
 	case '[':
-		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
+			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+ 		} else {
+			int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+			if (cmtcol > 2) {
+				r_config_set_i (core->config, "asm.cmt.col", cmtcol - 2);
+			}
+		}
 		cur->view->refresh = true;
 		break;
 	case '/':
