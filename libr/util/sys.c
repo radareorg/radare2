@@ -89,9 +89,10 @@ R_LIB_VERSION(r_util);
 #elif __i386__
 # ifdef _MSC_VER
 #  define R_SYS_ASM_START_ROP() \
-	__asm { \
-		lea esp, bufptr \
-		ret \
+	__asm \
+	{ \
+		__asm lea esp, bufptr\
+		__asm ret\
 	}
 # else
 #  define R_SYS_ASM_START_ROP() \
