@@ -1257,11 +1257,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	}
 	r_cons_break_push (NULL, NULL);
 	int mouse_status = cons->mouse;
-	if (I.hud) {
-		r_cons_enable_mouse (true);
-	} else {
-		r_cons_enable_mouse (false);
-	}
+	r_cons_enable_mouse (I.hud);
 	for (;;) {
 		yank_flag = 0;
 		if (r_cons_is_breaked ()) {
@@ -1623,24 +1619,15 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						key = r_cons_readchar ();
 						cons->mouse_event = 1;
 						if (key == '6') {	// up
-							if (I.hud) {
-								if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
-									I.hud->top_entry_n--;
-								}
+							if (I.hud && I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
+								I.hud->top_entry_n--;
 							}
 						} else if (key == '7') {	 // down
-							if (I.hud) {
-								if (I.hud->top_entry_n >= 0) {
-									I.hud->top_entry_n++;
-								}
+							if (I.hud && I.hud->top_entry_n >= 0) {
+								I.hud->top_entry_n++;
 							}
-						} else {
-							ch = 0;
 						}
-						int ch2;
-						do {
-							ch2 = r_cons_readchar ();
-						} while (ch2 != 'M');
+						while (r_cons_readchar () != 'M') {}
 						break;
 					/* arrows */
 					case 'A':	// up arrow
