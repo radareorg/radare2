@@ -2360,3 +2360,11 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 		free (buf);
 	}
 }
+
+R_API const char *r_anal_label_at(RAnal *a, ut64 addr) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
+	if (fcn) {
+		return r_anal_fcn_label_at (a, fcn, addr);
+	}
+	return NULL;
+}

@@ -764,6 +764,7 @@ typedef struct r_anal_bind_t {
 	RAnalGetHint get_hint;
 } RAnalBind;
 
+typedef const char *(*RAnalLabelAt) (RAnal *a, RAnalFunction *fcn, ut64);
 
 #define R_ANAL_VAR_KIND_ANY 0
 #define R_ANAL_VAR_KIND_ARG 'a'

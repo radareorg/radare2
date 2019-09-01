@@ -209,7 +209,8 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				if (flag && !strncmp (flag->name, "section.", 8)) {
 					flag = r_flag_get_i (f, off);
 				}
-				if (isvalidflag (flag)) {
+				const char *label = p->label_get (p->analb.anal, fcn, off);
+				if (label || isvalidflag (flag)) {
 					if (p->notin_flagspace) {
 						if (p->flagspace == flag->space) {
 							continue;
@@ -236,7 +237,12 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 						}
 					}
 					*ptr = 0;
-					char *flagname = strdup (f->realnames? flag->realname : flag->name);
+					char *flagname;
+					if (label) {
+						flagname = r_str_newf (".%s", label);
+					} else {
+						flagname = strdup (f->realnames? flag->realname : flag->name);
+					}
 					int maxflagname = p->maxflagnamelen;
 					if (maxflagname > 0 && strlen (flagname) > maxflagname) {
 						char *doublelower = (char *)r_str_rstr (flagname, "__");
