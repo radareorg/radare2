@@ -2705,7 +2705,7 @@ static int bin_fields(RCore *r, int mode, int va) {
 			r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", field->name, addr);
 			if (field->comment && *field->comment) {
 				r_cons_printf ("CC %s @ 0x%"PFMT64x"\n", field->comment, addr);
-				r_cons_printf ("Cf %d %s @ 0x%"PFMT64x"\n", field->size, field->format, addr);
+				r_cons_printf ("Cf %d .%s @ 0x%"PFMT64x"\n", field->size, field->format, addr);
 			}
 			if (field->format && *field->format) {
 				r_cons_printf ("pf.%s %s\n", field->name, field->format);
@@ -3629,7 +3629,7 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 					offset = strdup ("0");
 				}
 				flagname = dup;
-				int fmtsize = r_print_format_struct_size (v, core->print, 0, 0);
+				int fmtsize = r_print_format_struct_size (core->print, v, 0, 0);
 				char *offset_key = r_str_newf ("%s.offset", flagname);
 				const char *off = sdb_const_get (db, offset_key, 0);
 				free (offset_key);

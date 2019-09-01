@@ -1351,7 +1351,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			_input++;
 			val = sdb_get (core->print->formats, _input, NULL);
 			if (val) {
-				r_cons_printf ("%d\n", r_print_format_struct_size (val, core->print, mode, 0));
+				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, val, mode, 0));
 			} else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
@@ -1360,7 +1360,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				_input++;
 			}
 			if (*_input) {
-				r_cons_printf ("%d\n", r_print_format_struct_size (_input, core->print, mode, 0));
+				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, _input, mode, 0));
 			} else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
@@ -1552,7 +1552,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			const char *fmt = NULL;
 			fmt = sdb_get (core->print->formats, name, NULL);
 			if (fmt) {
-				int size = r_print_format_struct_size (fmt, core->print, mode, 0) + 10;
+				int size = r_print_format_struct_size (core->print, fmt, mode, 0) + 10;
 				if (size > core->blocksize) {
 					r_core_block_size (core, size);
 				}
@@ -1578,11 +1578,8 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		}
 	} else {
 		/* This make sure the structure will be printed entirely */
-		char *fmt = input + 1;
-		while (*fmt && IS_WHITECHAR (*fmt)) {
-			fmt++;
-		}
-		int struct_sz = r_print_format_struct_size (fmt, core->print, mode, 0);
+		const char *fmt = r_str_trim_ro (input + 1);
+		int struct_sz = r_print_format_struct_size (core->print, fmt, mode, 0);
 		int size = R_MAX (core->blocksize, struct_sz);
 		ut8 *buf = calloc (1, size);
 		if (!buf) {

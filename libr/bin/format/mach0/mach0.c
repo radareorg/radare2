@@ -503,11 +503,11 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 		return false;
 	}
 	st.cmd = r_read_ble32 (symt, be);
-	st.cmdsize = r_read_ble32 (symt+4, be);
+	st.cmdsize = r_read_ble32 (symt + 4, be);
 	st.symoff = r_read_ble32 (symt + 8, be);
-	st.nsyms = r_read_ble32 (symt+12, be);
-	st.stroff = r_read_ble32 (symt+16, be);
-	st.strsize = r_read_ble32 (symt+20, be);
+	st.nsyms = r_read_ble32 (symt + 12, be);
+	st.stroff = r_read_ble32 (symt + 16, be);
+	st.strsize = r_read_ble32 (symt + 20, be);
 
 	mo->symtab = NULL;
 	mo->nsymtab = 0;
@@ -3565,7 +3565,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 	for (n = 0; n < mh->ncmds; n++) {
 		READWORD ();
 		int lcType = word;
-		const char * pf_definition = cmd_to_pf_definition (lcType);
+		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
 			cb_printf ("pf.%s @ 0x%08"PFMT64x"\n", pf_definition, pvaddr - 4);
 		}
