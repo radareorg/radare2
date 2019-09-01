@@ -1231,6 +1231,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.hud->activate = true;
 		}
 	}
+	int mouse_status = cons->mouse;
 	if (I.hud && I.hud->vi) {
 		__vi_mode ();
 		goto _end;
@@ -1256,7 +1257,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		__print_prompt ();
 	}
 	r_cons_break_push (NULL, NULL);
-	int mouse_status = cons->mouse;
 	r_cons_enable_mouse (I.hud);
 	for (;;) {
 		yank_flag = 0;
