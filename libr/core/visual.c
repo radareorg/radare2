@@ -115,6 +115,21 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 	r_config_set (core->config, "asm.instr", "false");
 }
 
+static void setcursor(RCore *core, bool cur) {
+	int flags = core->print->flags; // wtf
+	if (core->print->cur_enabled) {
+		flags |= R_PRINT_FLAGS_CURSOR;
+	} else {
+		flags &= ~(R_PRINT_FLAGS_CURSOR);
+	}
+	core->print->cur_enabled = cur;
+	if (core->print->cur == -1) {
+		core->print->cur = 0;
+	}
+	r_print_set_flags (core->print, flags);
+	core->print->col = core->print->cur_enabled? 1: 0;
+}
+
 R_API void r_core_visual_applyDisMode(RCore *core, int disMode) {
 	currentFormat = R_ABS(disMode) % 5;
 	switch (currentFormat) {
@@ -501,7 +516,7 @@ R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char *
 	}
 }
 
-static int visual_help() {
+static int visual_help(RCore *core) {
 	int ret = 0;
 	RStrBuf *p, *q;
 repeat:
@@ -518,6 +533,9 @@ repeat:
 	case 'q':
 		r_strbuf_free (p);
 		return ret;
+	case '!':
+		r_core_visual_panels_root (core, core->panels_root);
+		break;
 	case '?':
 		r_core_visual_append_help (p, "Visual mode help", help_msg_visual);
 		r_core_visual_append_help (p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
@@ -554,6 +572,10 @@ repeat:
 		);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
+	case 'c':
+		setcursor (core, !core->print->cur_enabled);
+		r_strbuf_free (p);
+		return ret;
 	case 'i':
 		r_strbuf_appendf (p, "Visual Insertion Help:\n\n");
 		r_strbuf_appendf (p,
@@ -785,7 +807,7 @@ static int visual_nkey(RCore *core, int ch) {
 		if (cmd && *cmd) {
 			ch = r_core_cmd0 (core, cmd);
 		} else {
-			visual_help ();
+			visual_help (core);
 		}
 		break;
 	case R_CONS_KEY_F2:
@@ -873,21 +895,6 @@ static int visual_nkey(RCore *core, int ch) {
 		r_core_seek (core, oseek, 0);
 	}
 	return ch;
-}
-
-static void setcursor(RCore *core, bool cur) {
-	int flags = core->print->flags; // wtf
-	if (core->print->cur_enabled) {
-		flags |= R_PRINT_FLAGS_CURSOR;
-	} else {
-		flags &= ~(R_PRINT_FLAGS_CURSOR);
-	}
-	core->print->cur_enabled = cur;
-	if (core->print->cur == -1) {
-		core->print->cur = 0;
-	}
-	r_print_set_flags (core->print, flags);
-	core->print->col = core->print->cur_enabled? 1: 0;
 }
 
 static void setdiff(RCore *core) {
@@ -3563,7 +3570,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case '?':
-			if (visual_help () == '?') {
+			if (visual_help (core) == '?') {
 				r_core_visual_hud (core);
 			}
 			break;
