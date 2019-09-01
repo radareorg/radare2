@@ -3627,7 +3627,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "p=j" cjmp and jmp
-	case 'A': // "p=A" anal info 
+	case 'A': // "p=A" anal info
 	case 'a': // "p=a" bb info
 	case 'c': // "p=c" calls
 	case 'i': // "p=i" invalid
@@ -4845,7 +4845,7 @@ static int cmd_print(void *data, const char *input) {
 		len = core->blocksize;
 	}
 
-	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f' && input[0] != 'o') {
+	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f' && input[0] != 'i') {
 		n = core->blocksize_max;
 		i = (int) n;
 		if (i != n) {
@@ -5387,7 +5387,12 @@ static int cmd_print(void *data, const char *input) {
 				goto beach;
 			}
 		}
-		
+
+		if (input[1] == 'x') { // pdx
+			__cmd_pad (core, r_str_trim_ro (input + 2));
+			return 0;
+		}
+
 		const char *sp = NULL;
 		if (input[1] == '.') {
 			sp = input + 2;
@@ -5445,9 +5450,6 @@ static int cmd_print(void *data, const char *input) {
 			}
 			pd_result = 0;
 			break;
-		case 'x': // "pdx"
-			__cmd_pad (core, r_str_trim_ro (input + 2));
-			return 0;
 		case 'a': // "pda"
 			processed_cmd = true;
 			r_core_print_disasm_all (core, core->offset, l, len, input[2]);
