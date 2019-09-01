@@ -6315,6 +6315,13 @@ R_API bool r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 			r_core_cmdf (core, "v %s", l);
 		}
 	}
+	RPanels *panels = panels_root->panels[panels_root->cur_panels];
+	if (panels) {
+		RPanel *cur = __get_cur_panel (panels);
+		if (cur) {
+			cur->model->addr = core->offset;
+		}
+	}
 	while (panels_root->n_panels) {
 		__set_root_state (core, DEFAULT);
 		__panels_process (core, panels_root->panels[panels_root->cur_panels]);
