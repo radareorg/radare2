@@ -185,15 +185,14 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 			p->cb_printf ("%d", buf[i]);
 		} else {
 			p->cb_printf ("[ ");
+			const char *comma = "";
 			while (size--) {
 				if (elem == -1 || elem == 0) {
-					p->cb_printf (", %d", buf[i]);
+					p->cb_printf ("%s%d", comma, buf[i]);
+					comma = ",";
 					if (elem == 0) {
 						elem = -2;
 					}
-				}
-				if (size != 0 && elem == -1) {
-					p->cb_printf (", ");
 				}
 				if (elem > -1) {
 					elem--;

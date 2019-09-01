@@ -2727,6 +2727,11 @@ static int bin_fields(RCore *r, int mode, int va) {
 				// TODO: filter comment before json
 				r_cons_printf (",\"format\":\"%s\"", field->format);
 			}
+			char *o = r_core_cmd_strf (r, "pfj.%s@0x%"PFMT64x, field->format, field->vaddr);
+			if (o && *o) {
+				r_cons_printf (",\"pf\":%s", o);
+			}
+			free (o);
 			r_cons_printf ("}");
 		} else if (IS_MODE_NORMAL (mode)) {
 			const bool haveComment = (field->comment && *field->comment);
