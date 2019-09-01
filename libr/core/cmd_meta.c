@@ -799,6 +799,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 								p = (char *)realformat;
 							} else {
 								eprintf ("Cannot resolve format '%s'\n", p + 1);
+								break;
 							}
 						}
 						if (n < 1) {
