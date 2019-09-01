@@ -481,7 +481,7 @@ static int cmd_info(void *data, const char *input) {
 	char *question = strchr (input, '?');
 	const char *space = strchr (input, ' ');
 	if (!space) {
-		space = input;
+		space = question + 1;
 	}
 	if (question < space && question > input) {
 		question--;
