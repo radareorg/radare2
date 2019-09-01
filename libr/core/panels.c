@@ -6257,8 +6257,10 @@ void __rotate_asmemu(RCore *core, RPanel *p) {
 	p->view->refresh = true;
 }
 
-R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
-	bool fromVisual = core->vmode;
+static bool fromVisual = false;
+
+R_API bool r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
+	fromVisual = core->vmode;
 	if (!panels_root) {
 		panels_root = R_NEW0 (RPanelsRoot);
 		if (!panels_root) {
@@ -6304,10 +6306,9 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 	}
 	r_cons_enable_mouse (false);
-	if (!fromVisual) {
+	if (fromVisual) {
 		r_core_cmdf (core, "V");
 	}
-
 	return true;
 }
 
@@ -7121,6 +7122,7 @@ repeat:
 		__set_root_state (core, QUIT);
 		goto exit;
 	case '!':
+		fromVisual = true;
 	case 'q':
 	case -1: // EOF
 		__set_root_state (core, DEL);

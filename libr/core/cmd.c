@@ -1720,17 +1720,7 @@ static int cmd_visual(void *data, const char *input) {
 	if (!r_cons_is_interactive ()) {
 		return false;
 	}
-#if 0
-	char *buf = strdup (input);
-	int len = r_str_unescape (buf);
-	r_cons_readpush (buf, len);
-	free (buf);
-	int res = r_core_visual ((RCore *)data, ""); //input);
-	r_cons_readflush ();
-	return res;
-#else
 	return r_core_visual ((RCore *)data, input);
-#endif
 }
 
 static int cmd_pipein(void *user, const char *input) {
