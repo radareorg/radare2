@@ -64,7 +64,8 @@ static int current5format = 0;
 static const char *print5Formats[PRINT_5_FORMATS] = {
 	"pca", "pcA", "p8", "pcc", "pss", "pcp", "pcd", "pcj"
 };
-static void applyHexMode(RCore *core, int hexMode) {
+
+R_API void r_core_visual_applyHexMode(RCore *core, int hexMode) {
 	currentFormat = R_ABS(hexMode) % 3;
 	switch (currentFormat) {
 	case 0:
@@ -2364,7 +2365,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			{
 				switch (core->printidx) {
 				case R_CORE_VISUAL_MODE_PX: // 0 // xc
-					applyHexMode (core, --hexMode);
+					r_core_visual_applyHexMode (core, --hexMode);
 					printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 					break;
 				case R_CORE_VISUAL_MODE_PD: // pd
@@ -2427,7 +2428,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					switch (core->printidx) {
 					case R_CORE_VISUAL_MODE_PX: // 0 // xc
-						applyHexMode (core, ++hexMode);
+						r_core_visual_applyHexMode (core, ++hexMode);
 						printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_PD: // pd
@@ -3534,7 +3535,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					switch (core->printidx) {
 					case R_CORE_VISUAL_MODE_PX: // 0 // xc
-						applyHexMode (core, --hexMode);
+						r_core_visual_applyHexMode (core, --hexMode);
 						printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_PD: // pd

@@ -166,8 +166,8 @@ static const char *entropy_rotate[] = {
 	NULL
 };
 
-static const char *hexdump_rotate[] = {
-	"", "a", "r", "b", "h", "w", "q", "d", "r",
+static char *hexdump_rotate[] = {
+	"xc", "pxa", "pxr", "prx", "pxb", "pxh", "pxw", "pxq", "pxd", "pxr",
 	NULL
 };
 
@@ -808,16 +808,47 @@ bool __check_panel_type(RPanel *panel, const char *type) {
 	if (!panel->model->cmd || !type) {
 		return false;
 	}
+	char *tmp = r_str_new (panel->model->cmd);
+	int n = r_str_split (tmp, ' ');
+	if (!n) {
+		return false;
+	}
+	const char *base = r_str_word_get0 (tmp, 0);
+	if (R_STR_ISEMPTY (base)) {
+		return false;
+	}
 	int len = strlen (type);
 	if (!strcmp (type, PANEL_CMD_DISASSEMBLY)) {
-		if (!strncmp (panel->model->cmd, type, len) &&
+		if (!strncmp (tmp, type, len) &&
 				strcmp (panel->model->cmd, PANEL_CMD_DECOMPILER) &&
 				strcmp (panel->model->cmd, PANEL_CMD_DECOMPILER_O) &&
 				strcmp (panel->model->cmd, PANEL_CMD_DISASMSUMMARY)) {
+			free (tmp);
 			return true;
 		}
+		free (tmp);
 		return false;
 	}
+	if (!strcmp (type, PANEL_CMD_STACK)) {
+		if (!strcmp (tmp, PANEL_CMD_STACK)) {
+			free (tmp);
+			return true;
+		}
+		free (tmp);
+		return false;
+	}
+	if (!strcmp (type, PANEL_CMD_HEXDUMP)) {
+		int i = 0;
+		for (; i < COUNT (hexdump_rotate); i++) {
+			if (!strcmp (tmp, hexdump_rotate[i])) {
+				free (tmp);
+				return true;
+			}
+		}
+		free (tmp);
+		return false;
+	}
+	free (tmp);
 	return !strncmp (panel->model->cmd, type, len);
 }
 
@@ -4131,10 +4162,10 @@ void __print_stack_cb(void *user, void *p) {
 	int i;
 	for (i = 0; i < n; i++) {
 		const char *s = r_str_word_get0 (panel->model->cmd, i);
-		if (strncmp (s, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
-			cmd = r_str_append (cmd, s);
-			break;
+		if (!i) {
+			continue;
 		}
+		cmd = r_str_append (cmd, s);
 	}
 	panel->model->cmd = cmd;
 	const char *cmdstr = r_core_cmd_str (core, r_str_newf ("%s%c%d", cmd, sign, absdelta));
@@ -4152,6 +4183,18 @@ void __print_hexdump_cb(void *user, void *p) {
 			r_core_seek (core, core->offset, 1);
 			r_core_block_read (core);
 		}
+		char *base = hexdump_rotate[R_ABS(panel->model->rotate) % COUNT (hexdump_rotate)];
+		char *cmd = r_str_newf ("%s ", base);
+		int n = r_str_split (panel->model->cmd, ' ');
+		int i;
+		for (i = 0; i < n; i++) {
+			const char *s = r_str_word_get0 (panel->model->cmd, i);
+			if (!i) {
+				continue;
+			}
+			cmd = r_str_append (cmd, s);
+		}
+		panel->model->cmd = cmd;
 		cmdstr = __handle_cmd_str_cache (core, panel, false);
 		core->offset = o_offset;
 	}
@@ -5070,6 +5113,7 @@ void __init_rotate_db(RCore *core) {
 	sdb_ptr_set (panels->rotate_db, "px", &__rotate_hexdump_cb, 0);
 	sdb_ptr_set (panels->rotate_db, "dr", &__rotate_register_cb, 0);
 	sdb_ptr_set (panels->rotate_db, "af", &__rotate_function_cb, 0);
+	sdb_ptr_set (panels->rotate_db, PANEL_CMD_HEXDUMP, &__rotate_hexdump_cb, 0);
 }
 
 void __init_sdb(RCore *core) {
@@ -6131,7 +6175,15 @@ void __rotate_entropy_h_cb(void *user, bool rev) {
 
 void __rotate_hexdump_cb (void *user, bool rev) {
 	RCore *core = (RCore *)user;
-	__rotate_panel_cmds (core, hexdump_rotate, COUNT (hexdump_rotate), "px", rev);
+	RPanel *p = __get_cur_panel (core->panels);
+
+	if (rev) {
+		p->model->rotate--;
+	} else {
+		p->model->rotate++;
+	}
+	r_core_visual_applyHexMode (core, p->model->rotate);
+	__rotate_asmemu (core, p);
 }
 
 void __rotate_register_cb (void *user, bool rev) {
