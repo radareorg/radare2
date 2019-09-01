@@ -2981,12 +2981,38 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 			}
 		}
 		break;
+	case '*': { // "pv*"
+			  for (i = 0; i < repeat; i++) {
+				  const bool be = core->print->big_endian;
+				ut64 at = core->offset + (i * n);
+				ut8 *b = block + (i * n);
+				  switch (n) {
+				  case 1:
+					  r_cons_printf ("f pval.0x%08"PFMT64x"=%"PFMT64d"\n", at, r_read_ble8 (b));
+					  break;
+				  case 2:
+					  r_cons_printf ("f pval.0x%08"PFMT64x"=%"PFMT64d"\n", at, r_read_ble16 (b, be));
+					  break;
+				  case 4:
+					  r_cons_printf ("f pval.0x%08"PFMT64x"=%"PFMT64d"\n", at, r_read_ble32 (b, be));
+					  break;
+				  case 8:
+				default:
+					  r_cons_printf ("f pval.0x%08"PFMT64x"=%"PFMT64d"\n", at, r_read_ble64 (b, be));
+					  break;
+				  }
+			  }
+		}
+		break;
 	case 'j': { // "pvj"
 			  r_cons_printf ("[");
+			ut64 at = core->offset;
+			ut64 oldAt = at;
 			  for (i = 0; i < repeat; i++) {
 				  if (i > 0) {
 					  r_cons_printf (",");
 				  }
+				  r_core_seek (core, at, 0);
 				  char *str = r_core_cmd_str (core, "ps @ [$$]");
 				  r_str_trim (str);
 				  char *p = str;
@@ -3023,8 +3049,10 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 					  break;
 				  }
 				  free (str);
+				  at += n;
 			  }
 			  r_cons_printf ("]\n");
+			r_core_seek (core, oldAt, 0);
 		break;
 	}
 	case '?': // "pv?"
