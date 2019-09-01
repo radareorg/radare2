@@ -1133,9 +1133,7 @@ static void cmd_p_minus_e(RCore *core, ut64 at, ut64 ate) {
 	if (!blockptr) {
 		return;
 	}
-	if (!r_io_read_at (core->io, at, blockptr, (ate - at))) {
-		eprintf ("Error: failed to read block");
-	} else {
+	if (r_io_read_at (core->io, at, blockptr, (ate - at))) {
 		ut8 entropy = (ut8)(r_hash_entropy_fraction (blockptr, (ate - at)) * 255);
 		entropy = 9 * entropy / 200; // normalize entropy from 0 to 9
 		if (r_config_get_i (core->config, "scr.color")) {
