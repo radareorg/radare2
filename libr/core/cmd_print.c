@@ -2943,12 +2943,21 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		fixed_size = false;
 		break;
 	}
-	st64 repeat = r_num_math (core->num, input);
+	const char *arg = strchr (input, ' ');
+	if (arg) {
+		arg = r_str_trim_ro (arg + 1);
+	} else {
+		arg = input;
+	}
+	st64 repeat = r_num_math (core->num, arg);
 	if (repeat < 0) {
 		repeat = 1;
 	}
-	if (useBytes) {
+	if (useBytes && n > 0 && repeat > 0) {
 		repeat /= n;
+	}
+	if (repeat < 1) {
+		repeat = 1;
 	}
 	// variables can be
 	switch (input[0]) {
@@ -2973,42 +2982,49 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		}
 		break;
 	case 'j': { // "pvj"
-		char *str = r_core_cmd_str (core, "ps @ [$$]");
-		r_str_trim (str);
-		char *p = str;
-		if (p) {
-			while (*p) {
-				if (*p == '\\' && p[1] == 'x') {
-					memmove (p, p + 4, strlen (p + 4) + 1);
-				}
-			}
-		}
-		// r_num_get is gonna use a dangling pointer since the internal
-		// token that RNum holds ([$$]) has been already freed by r_core_cmd_str
-		// r_num_math reload a new token so the dangling pointer is gone
-		switch (n) {
-		case 1:
-			pj_fmt (r_cons_printf, "{'value':%i,'string':%s}\n",
-				r_read_ble8 (block), str);
-			break;
-		case 2:
-			pj_fmt (r_cons_printf, "{'value':%i,'string':%s}\n",
-				r_read_ble16 (block, core->print->big_endian), str);
-			break;
-		case 4:
-			pj_fmt (r_cons_printf, "{'value':%n,'string':%s}\n",
-				(ut64)r_read_ble32 (block, core->print->big_endian), str);
-			break;
-		case 8:
-			pj_fmt (r_cons_printf, "{'value':%n,'string':%s}\n",
-				r_read_ble64 (block, core->print->big_endian), str);
-			break;
-		default:
-			pj_fmt (r_cons_printf, "{'value':%n,'string':%s}\n",
-				r_read_ble64 (block, core->print->big_endian), str);
-			break;
-		}
-		free (str);
+			  r_cons_printf ("[");
+			  for (i = 0; i < repeat; i++) {
+				  if (i > 0) {
+					  r_cons_printf (",");
+				  }
+				  char *str = r_core_cmd_str (core, "ps @ [$$]");
+				  r_str_trim (str);
+				  char *p = str;
+				  if (p) {
+					  while (*p) {
+						  if (*p == '\\' && p[1] == 'x') {
+							  memmove (p, p + 4, strlen (p + 4) + 1);
+						  }
+					  }
+				  }
+				  // r_num_get is gonna use a dangling pointer since the internal
+				  // token that RNum holds ([$$]) has been already freed by r_core_cmd_str
+				  // r_num_math reload a new token so the dangling pointer is gone
+				  switch (n) {
+				  case 1:
+					  pj_fmt (r_cons_printf, "{'value':%i,'string':%s}",
+							  r_read_ble8 (block), str);
+					  break;
+				  case 2:
+					  pj_fmt (r_cons_printf, "{'value':%i,'string':%s}",
+							  r_read_ble16 (block, core->print->big_endian), str);
+					  break;
+				  case 4:
+					  pj_fmt (r_cons_printf, "{'value':%n,'string':%s}",
+							  (ut64)r_read_ble32 (block, core->print->big_endian), str);
+					  break;
+				  case 8:
+					  pj_fmt (r_cons_printf, "{'value':%n,'string':%s}",
+							  r_read_ble64 (block, core->print->big_endian), str);
+					  break;
+				  default:
+					  pj_fmt (r_cons_printf, "{'value':%n,'string':%s}",
+							  r_read_ble64 (block, core->print->big_endian), str);
+					  break;
+				  }
+				  free (str);
+			  }
+			  r_cons_printf ("]\n");
 		break;
 	}
 	case '?': // "pv?"
