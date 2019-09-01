@@ -258,6 +258,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOPtrace *iop = (RIOPtrace*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
+	if (!strcmp (cmd, "")) {
+		return NULL;
+	}
 	if (!strcmp (cmd, "help")) {
 		eprintf ("Usage: =!cmd args\n"
 			" =!ptrace   - use ptrace io\n"

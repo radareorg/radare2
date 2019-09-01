@@ -518,6 +518,7 @@ R_API int r_core_seek_delta(RCore *core, st64 addr);
 R_API int r_core_extend_at(RCore *core, ut64 addr, int size);
 R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
 R_API int r_core_write_op(RCore *core, const char *arg, char op);
+R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op);
 R_API int r_core_set_file_by_fd (RCore * core, ut64 bin_fd);
 R_API int r_core_set_file_by_name (RBin * bin, const char * name);
 R_API ut32 r_core_file_cur_fd (RCore *core);
@@ -856,7 +857,7 @@ R_API int r_line_hist_offset_up(RLine *line);
 R_API int r_line_hist_offset_down(RLine *line);
 
 // TODO : move into debug or syscall++
-R_API char *cmd_syscall_dostr(RCore *core, int num, ut64 addr);
+R_API char *cmd_syscall_dostr(RCore *core, st64 num, ut64 addr);
 
 /* tasks */
 
@@ -877,6 +878,7 @@ typedef struct r_core_task_t {
 	RThreadSemaphore *running_sem;
 	void *user;
 	RCore *core;
+	bool dispatched;
 	RThreadCond *dispatch_cond;
 	RThreadLock *dispatch_lock;
 	RThread *thread;

@@ -137,16 +137,15 @@ static bool __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
 	return true;
 }
 
-R_API int r_core_write_op(RCore *core, const char *arg, char op) {
-	int i, j, ret = false;
+R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
+	int i, j;
 	ut64 len;
 	char *str = NULL;
 	ut8 *buf;
 
-	// XXX we can work with config.block instead of dupping it
 	buf = (ut8 *)malloc (core->blocksize);
 	if (!buf) {
-		goto beach;
+		return NULL;
 	}
 	memcpy (buf, core->block, core->blocksize);
 
@@ -284,10 +283,25 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 		}
 	}
 
-	ret = r_core_write_at (core, core->offset, buf, core->blocksize);
-beach:
-	free (buf);
 	free (str);
+	return buf;
+beach:
+	free (str);
+	free (buf);
+	return NULL;
+}
+
+R_API int r_core_write_op(RCore *core, const char *arg, char op) {
+	int ret;
+	ut8 *buf;
+
+	buf = r_core_transform_op(core, arg, op);
+	if (!buf) {
+		return false;
+	}
+	ret = r_core_write_at(core, core->offset, buf, core->blocksize);
+
+	free(buf);
 	return ret;
 }
 

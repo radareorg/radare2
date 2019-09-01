@@ -171,7 +171,7 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 			if (buf[i] != '\n') {
 				continue;
 			}
-			if (line_count >= bsz) {
+			if ((line_count + 1) >= bsz) {
 				break;
 			}
 			core->print->lines_cache[line_count] = start_addr? off + i + 1: off + i + 1 + baddr;

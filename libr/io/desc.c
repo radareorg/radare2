@@ -145,7 +145,10 @@ R_API bool r_io_desc_close(RIODesc *desc) {
 
 //returns length of written bytes
 R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
-	r_return_val_if_fail (desc && buf && len > 0, -1);
+	r_return_val_if_fail (desc && buf, -1);
+	if (len < 0) {
+		return -1;
+	}
 	//check pointers and pcache
 	if (desc->io && (desc->io->p_cache & 2)) {
 		return r_io_desc_cache_write (desc,
@@ -156,12 +159,14 @@ R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 
 // returns length of read bytes
 R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
-	ut64 seek;
 	// check pointers and permissions
-	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & R_PERM_R)) {
-		return 0;
+	if (!buf || !desc || !desc->plugin || !(desc->perm & R_PERM_R)) {
+		return -1;
 	}
-	seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
+	if (desc < 0) {
+		return -1;
+	}
+	ut64 seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
 	if (desc->io->cachemode) {
 		if (seek != UT64_MAX && r_io_cache_at (desc->io, seek)) {
 			return r_io_cache_read (desc->io, seek, buf, len);

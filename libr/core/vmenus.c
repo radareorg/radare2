@@ -1366,7 +1366,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 
 	eprintf ("Searching ROP gadgets...\n");
 	char *ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
-	RList *rops = r_str_split_list (ropstr, "\n");
+	RList *rops = r_str_split_list (ropstr, "\n", 0);
 	int delta = 0;
 	bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	bool forceaddr = false;
@@ -1518,7 +1518,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 					free (ropstr);
 					ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
 					r_list_free (rops);
-					rops = r_str_split_list (ropstr, "\n");
+					rops = r_str_split_list (ropstr, "\n", 0);
 				}
 			}
 			break;
@@ -3541,7 +3541,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 	if (core->print->cur_enabled) {
 		int cur = core->print->cur;
 		if (core->print->ocur != -1) {
-			plen = R_ABS (core->print->cur- core->print->ocur)+1;
+			plen = R_ABS (core->print->cur - core->print->ocur) + 1;
 			if (core->print->ocur<cur) {
 				cur = core->print->ocur;
 			}
@@ -3562,14 +3562,15 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		," $    define flag size"
 		," 1    edit bits"
 		," a    assembly"
-		," b    set as byte"
-		," B    set as short word (2 bytes)"
-		," c    set as code"
+		," b    as byte (1 byte)"
+		," B    define half word (16 bit, 2 byte size)"
+		," c    as code (unset any data / string / format) in here"
 		," C    define flag color (fc)"
 		," d    set as data"
 		," e    end of function"
 		," f    analyze function"
 		," F    format"
+		," h    define hint (for half-word, see 'B')"
 		," i    (ahi) immediate base (b(in), o(ct), d(ec), h(ex), s(tr))"
 		," I    (ahi1) immediate base (b(in), o(ct), d(ec), h(ex), s(tr))"
 		," j    merge down (join this and next functions)"
@@ -3671,9 +3672,9 @@ onemoretime:
 		define_data_ntimes (core, off, rep, R_BYTE_DATA);
 		wordsize = 1;
 		break;
-	case 'B':
+	case 'B': // "VdB"
 		if (plen != core->blocksize) {
-			rep = plen;
+			rep = plen / 2;
 		}
 		define_data_ntimes (core, off, rep, R_WORD_DATA);
 		wordsize = 2;
@@ -3841,9 +3842,9 @@ onemoretime:
 		eprintf ("TODO: merge up\n");
 		r_cons_any_key (NULL);
 		break;
+	// very weak and incomplete
 	case 'h': // "Vdh"
 		handleHints (core);
-		//r_core_cmdf (core, "?i highlight;e scr.highlight=`yp` @ 0x%08"PFMT64x, off);
 		break;
 	case 'r': // "Vdr"
 		r_core_cmdf (core, "?i new function name;afn `yp` @ 0x%08"PFMT64x, off);

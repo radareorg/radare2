@@ -148,7 +148,9 @@ typedef struct {
 	bool asm_hint_cdiv;
 	bool asm_hint_call;
 	bool asm_hint_lea;
+	bool asm_hint_emu;
 	int  asm_hint_pos;
+	ut64 emuptr;
 	bool show_slow;
 	Sdb *ssa;
 	int cmtcol;
@@ -738,6 +740,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
 	ds->asm_hint_call = r_config_get_i (core->config, "asm.hint.call");
 	ds->asm_hint_lea = r_config_get_i (core->config, "asm.hint.lea");
+	ds->asm_hint_emu = r_config_get_i (core->config, "asm.hint.emu");
 	ds->asm_hint_cdiv = r_config_get_i (core->config, "asm.hint.cdiv");
 	ds->asm_hint_pos = r_config_get_i (core->config, "asm.hint.pos");
 	ds->asm_hints = r_config_get_i (core->config, "asm.hints"); // only for cdiv wtf
@@ -2899,7 +2902,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			}
 			switch (mi->type) {
 			case R_META_TYPE_STRING:
-			{
+			if (mi->str) {
 				bool esc_bslash = core->print->esc_bslash;
 
 				switch (mi->subtype) {
@@ -3420,6 +3423,16 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	if (!ds->asm_hints) {
 		return false;
 	}
+	if (ds->asm_hint_emu) {
+		if (ds->emuptr) {
+			if (r_io_is_valid_offset (core->io, ds->emuptr, 0)) {
+				ds_print_shortcut (ds, ds->emuptr, pos);
+				//getPtr (ds, ds->emuptr, pos);
+				ds->emuptr = 0;
+				return ds->hinted_line = gotShortcut = true;
+			}
+		}
+	}
 	if (ds->asm_hint_lea) {
 		RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (mi && mi->from) {
@@ -3752,6 +3765,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
+	const int opType = ds->analop.type & R_ANAL_OP_TYPE_MASK;
+	bool canHaveChar = opType == R_ANAL_OP_TYPE_MOV;
+	if (!canHaveChar) {
+		canHaveChar = opType == R_ANAL_OP_TYPE_PUSH;
+	}
 
 	ds->chref = 0;
 	if ((char)v > 0 && v >= '!') {
@@ -3770,14 +3788,14 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				if (r_flag_get_i (core->flags, v)) {
 					printable = false;
 				}
-				if (printable) {
+				if (canHaveChar && printable) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; '%s'", str);
 				}
 			}
 			free (str);
 		} else {
-			if ((char)v > 0 && v >= '!' && v <= '~') {
+			if (canHaveChar && (char)v > 0 && v >= '!' && v <= '~') {
 				ds_begin_comment (ds);
 				aligned = true;
 				ds_comment (ds, true, "; '%c'", (char)v);
@@ -3970,7 +3988,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				ds_comment (ds, true, "; -1");
 			} else if (((char)refaddr > 0) && refaddr >= '!' && refaddr <= '~') {
 				char ch = refaddr;
-				if (ch != ds->chref) {
+				if (canHaveChar && ch != ds->chref) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; '%c'", ch);
 				}
@@ -4170,6 +4188,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		char *type = NULL;
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str) - 1] = 0;
+		ds->emuptr = *val;
 		// support cstring here
 		{
 			ut64 *cstr = (ut64*) str;
@@ -4191,7 +4210,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				ds->printed_str_addr = cstr[0];
 				type = r_str_newf ("(pstr 0x%08"PFMT64x") ", addr);
 				(void)r_io_read_at (esil->anal->iob.io, addr,
-					(ut8*)str, sizeof (str)-1);
+					(ut8*)str, sizeof (str) - 1);
 			//	eprintf ("IS PSTRING 0x%llx %s\n", addr, str);
 			}
 		}
@@ -4215,6 +4234,11 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			case R_ANAL_OP_TYPE_RET:
 				ignored = true;
 				break;
+			case R_ANAL_OP_TYPE_LEA:
+				if (ds->core->assembler->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
+					ignored = true;
+				}
+				break;
 			}
 			if (!jump_op && !ignored) {
 				const char *prefix;
@@ -4226,6 +4250,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 					len = R_DISASM_MAX_STR;
 				}
 #endif
+				ds->emuptr = *val;
 				char *escstr = ds_esc_str (ds, str, (int)len, &prefix, false);
 				if (escstr) {
 					char *m;
@@ -4264,6 +4289,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	}
 	if (ds->show_emu_str) {
 		if (msg && *msg) {
+			ds->emuptr = *val;
 			if (ds->show_emu_stroff && *msg == '"') {
 				ds_comment_esil (ds, true, false, "; 0x%"PFMT64x" %s", *val, msg);
 			} else {
@@ -4363,7 +4389,7 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 }
 
 static void ds_print_bbline(RDisasmState *ds, bool force) {
-	if (ds->show_bbline) {
+	if (ds->show_bbline && ds->fcn) {
 		RAnalBlock *bb = r_anal_fcn_bbget_at (ds->fcn, ds->at);
 		if (force || (ds->fcn && bb)) {
 			ds_begin_line (ds);
@@ -6165,6 +6191,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	int filter = r_config_get_i (core->config, "asm.filter");
 	int show_color = r_config_get_i (core->config, "scr.color");
 	bool asm_ucase = r_config_get_i (core->config, "asm.ucase");
+	bool asm_instr = r_config_get_i (core->config, "asm.instr");
 	int esil = r_config_get_i (core->config, "asm.esil");
 	int flags = r_config_get_i (core->config, "asm.flags");
 	bool asm_immtrim = r_config_get_i (core->config, "asm.imm.trim");
@@ -6362,7 +6389,9 @@ toro:
 				free (op_hex);
 			}
 			ret = asmop.size;
-			if (!asm_immtrim && (decode || esil)) {
+			if (!asm_instr) {
+				r_cons_newline ();
+			} else if (!asm_immtrim && (decode || esil)) {
 				RAnalOp analop = {
 					0
 				};

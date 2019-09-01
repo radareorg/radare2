@@ -108,6 +108,25 @@ done:
 	return ret;
 }
 
+R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s) {
+	r_return_val_if_fail (sb && s, false);
+	int l = strlen (s);
+	// fast path if no chars to append
+	if (l == 0) {
+		return true;
+	}
+	int newlen = l + sb->len;
+	char *ns = malloc (newlen + 1);
+	if (ns) {
+		memcpy (ns, s, l);
+		char *s = sb->ptr ? sb->ptr: sb->buf;
+		memcpy (ns + l, s, sb->len);
+		ns[newlen] = 0;
+		return r_strbuf_set (sb, ns);
+	}
+	return false;
+}
+
 R_API bool r_strbuf_append(RStrBuf *sb, const char *s) {
 	r_return_val_if_fail (sb && s, false);
 

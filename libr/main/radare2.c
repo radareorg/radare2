@@ -1149,6 +1149,12 @@ R_API int r_main_radare2(int argc, char **argv) {
 								/* Load rbin info from r2 dbg:// or r2 /bin/ls */
 								/* the baddr should be set manually here */
 								(void)r_core_bin_load (&r, filepath, baddr);
+								// check if bin info is loaded and complain if -B was used
+								RBinFile *bi = r_bin_cur (r.bin);
+								bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
+								if (!haveBinInfo && baddr != UT64_MAX) {
+									eprintf ("Warning: Don't use -B on unknown files. Consider using -m.\n");
+								}
 							}
 						} else {
 							r_io_map_new (r.io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod));
@@ -1257,6 +1263,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			const char *fstype = r.bin->cur->o->info->bclass;
 			r_core_cmdf (&r, "m /root %s @ 0", fstype);
 		}
+		r_core_cmd0 (&r, "=!"); // initalize io subsystem
 		iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 #if USE_THREADS
 		if (iod && load_bin == LOAD_BIN_ALL && threaded) {

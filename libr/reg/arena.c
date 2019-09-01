@@ -135,6 +135,9 @@ R_API int r_reg_fit_arena(RReg *reg) {
 
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		arena = reg->regset[i].arena;
+		if (!arena) {
+			continue;
+		}
 		newsize = 0;
 		r_list_foreach (reg->regset[i].regs, iter, r) {
 			// XXX: bits2bytes doesnt seems to work fine

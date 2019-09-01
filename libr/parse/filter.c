@@ -17,7 +17,7 @@ static bool isvalidflag(RFlagItem *flag) {
 			return true;
 		}
 		if (strchr (flag->name, '.')) {
-			return strncmp (flag->name, "section.", 8);
+			return true;
 		}
 	}
 	return false;
@@ -205,6 +205,9 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 					if (!flag || arm) {
 						flag = flag2;
 					}
+				}
+				if (flag && !strncmp (flag->name, "section.", 8)) {
+					flag = r_flag_get_i (f, off);
 				}
 				if (isvalidflag (flag)) {
 					if (p->notin_flagspace) {

@@ -87,7 +87,7 @@ R_API int r_main_r2agent(int argc, char **argv) {
 		int sz;
 		pfile = r_file_slurp (httpauthfile, &sz);
 		if (pfile) {
-			so.authtokens = r_str_split_list (pfile, "\n");
+			so.authtokens = r_str_split_list (pfile, "\n", 0);
 		} else {
 			eprintf ("Empty list of HTTP users\\n");
 			return usage (0);

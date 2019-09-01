@@ -1920,6 +1920,7 @@ static int set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pcl\n"
 		"=SP	sp\n"
+		"=BP    y\n"
 // explained in http://www.nongnu.org/avr-libc/user-manual/FAQ.html
 // and http://www.avrfreaks.net/forum/function-calling-convention-gcc-generated-assembly-file
 		"=A0	r25\n"

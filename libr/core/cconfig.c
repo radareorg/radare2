@@ -436,7 +436,7 @@ static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
 	RListIter *iter;
 	r_list_purge (node->options);
 	char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
-	RList *optl = r_str_split_list (opts, "\n");
+	RList *optl = r_str_split_list (opts, "\n", 0);
 	char *opt;
 	node->options->free = free;
 	r_list_foreach (optl, iter, opt) {
@@ -2923,6 +2923,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.hint.jmp", "false", "Show jump hints [numbers] in disasm");
 	SETPREF ("asm.hint.call", "true", "Show call hints [numbers] in disarm");
 	SETPREF ("asm.hint.lea", "false", "Show LEA hints [numbers] in disasm");
+	SETPREF ("asm.hint.emu", "false", "Show asm.emu hints [numbers] in disasm");
 	SETPREF ("asm.hint.cdiv", "false", "Show CDIV hints optimization hint");
 	SETI ("asm.hint.pos", 1, "Shortcut hint position (-1, 0, 1)");
 	SETPREF ("asm.slow", "true", "Perform slow analysis operations in disasm");
@@ -3350,6 +3351,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "http.browser", "Command to open HTTP URLs");
 #endif
 	SETI ("http.maxsize", 0, "Maximum file size for upload");
+	SETPREF ("http.index", "index.html", "Main html file to check in directory");
 	SETPREF ("http.bind", "localhost", "Server address");
 	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", R2_HOME_WWWROOT), "http home root directory");
 #if __ANDROID__

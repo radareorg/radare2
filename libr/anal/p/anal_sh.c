@@ -1115,6 +1115,11 @@ static int sh_set_reg_profile(RAnal* anal) {
 		"=SN	r0\n"
 		"=SP	r15\n"
 		"=BP	r14\n"
+		"=A0	r4\n"
+		"=A1	r5\n"
+		"=A2	r6\n"
+		"=A3	r7\n"
+		"=R0	r0\n"
 		"gpr	r0	.32	0	0\n"
 		"gpr	r1	.32	4	0\n"
 		"gpr	r2	.32	8	0\n"
@@ -1142,6 +1147,11 @@ static int sh_set_reg_profile(RAnal* anal) {
 }
 
 static int archinfo(RAnal *anal, int q) {
+#if 0
+	if (q == R_ANAL_ARCHINFO_ALIGN) {
+		return 4;
+	}
+#endif
 	return 2; /* :) */
 }
 

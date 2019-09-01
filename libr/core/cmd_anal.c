@@ -285,7 +285,6 @@ static const char *help_msg_af[] = {
 	"afr", " ([name]) ([addr])", "analyze functions recursively",
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
-	"afj", " [tableaddr] [count]", "analyze function jmptableble",
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
 	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb", "[?] [addr]", "List basic blocks of given function",
@@ -297,6 +296,7 @@ static const char *help_msg_af[] = {
 	"aff", "", "re-adjust function boundaries to fit",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
+	"afj", " [tableaddr] [count]", "analyze function jmptableble",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 	"afm", " name", "merge two functions",
 	"afM", " name", "print functions map",
@@ -373,6 +373,7 @@ static const char *help_msg_afl[] = {
 	"afl=", "", "display ascii-art bars with function ranges",
 	"aflc", "", "count of functions",
 	"aflj", "", "list functions in json",
+	"aflt", " [query]", "list functions in table format",
 	"afll", " [column]", "list functions in verbose mode (sorted by column name)",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
 	"aflm", "", "list functions in makefile style (af@@=`aflm~0x`)",
@@ -1389,23 +1390,25 @@ static const char *syscallNumber(int n) {
 	return sdb_fmt (n > 1000 ? "0x%x" : "%d", n);
 }
 
-R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
+R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	int i;
 	char str[64];
+	st64 N = n;
 	int defVector = r_syscall_get_swi (core->anal->syscall);
 	if (defVector > 0) {
 		n = -1;
 	}
-	if (n == -1) {
+	if (n == -1 || defVector > 0) {
 		n = (int)r_debug_reg_get (core->dbg, "oeax");
 		if (!n || n == -1) {
 			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 			n = (a0 == NULL)? -1: (int)r_debug_reg_get (core->dbg, a0);
 		}
 	}
-	RSyscallItem *item = (defVector > 0)
-		? r_syscall_get (core->anal->syscall, n, -1)
-		: r_syscall_get (core->anal->syscall, 0, n);
+	RSyscallItem *item = r_syscall_get (core->anal->syscall, n, defVector);
+	if (!item) {
+		item =  r_syscall_get (core->anal->syscall, N, -1);
+	}
 	if (!item) {
 		return r_str_newf ("%s = unknown ()", syscallNumber (n));
 	}
@@ -1462,7 +1465,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
 	return r_str_appendf (res, ")");
 }
 
-static void cmd_syscall_do(RCore *core, int n, ut64 addr) {
+static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 	char *msg = cmd_syscall_dostr (core, n, addr);
 	if (msg) {
 		r_cons_println (msg);
@@ -2555,6 +2558,204 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 	}
 }
 
+static void __updateStats(RCore *core, Sdb *db, ut64 addr, int statsMode) {
+	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_DISASM);
+	if (!op) {
+		return;
+	}
+	if (statsMode == 'f') {
+		const char *family = r_anal_op_family_to_string (op->family);
+		sdb_num_inc (db, family, 1, 0);
+	} else if (statsMode == 'o') {
+		const char *type = r_anal_optype_to_string (op->type);
+		sdb_num_inc (db, type, 1, 0);
+	} else {
+		char *mnem = strdup (op->mnemonic);
+		char *sp = strstr (mnem, " ");
+		if (sp) {
+			*sp = 0;
+			//memmove (mnem, sp + 1, strlen (sp));
+		}
+		sdb_num_inc (db, mnem, 1, 0);
+	}
+	//sdb_set (db, family, "1", 0);
+	//r_cons_printf ("0x%08"PFMT64x" %s\n", addr, family);
+	r_anal_op_free (op);
+	// r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x"\n", addr);
+}
+
+
+static Sdb *__core_cmd_anal_fcn_stats (RCore *core, const char *input) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+	if (!fcn) {
+		eprintf ("Cannot find any function at 0x%08"PFMT64x"\n", core->offset);
+		return NULL;
+	}
+	bool silentMode = false;
+	int statsMode = 0;
+	if (*input == '*') {
+		silentMode = true;
+		input++;
+	}
+	switch (*input) {
+	case '?':
+		eprintf ("Usage: afis[ft]\n");
+		eprintf (" afis           enumerate unique opcodes in function\n");
+		eprintf (" afisa[fo]      enumerate all the meta of all the functions\n");
+		eprintf (" afisf          enumerate unique opcode families in function\n");
+		eprintf (" afiso          enumerate unique opcode types in function\n");
+		eprintf (" afist [query]  list in table format\n");
+		return NULL;
+	case 'f':
+	case 'o':
+		statsMode = *input;
+		input++;
+		break;
+	}
+
+	Sdb *db = sdb_new0 ();
+	RAnalBlock *bb;
+	RListIter *iter;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		int i;
+		__updateStats (core, db, bb->addr, statsMode);
+		for (i = 0; i< bb->op_pos_size; i++) {
+			ut16 op_pos = bb->op_pos[i];
+			__updateStats (core, db, bb->addr + op_pos, statsMode);
+		}
+	}
+	if (silentMode) {
+		// nothing
+	} else if (*input == 't') {
+		SdbList *ls = sdb_foreach_list (db, true);
+		SdbListIter *it;
+		RTable *t = r_table_new ();
+		SdbKv *kv;
+		RTableColumnType *typeString = r_table_type ("string");
+		RTableColumnType *typeNumber = r_table_type ("number");
+		r_table_add_column (t, typeString, "name", 0);
+		ls_foreach (ls, it, kv) {
+			const char *key = sdbkv_key (kv);
+			r_table_add_column (t, typeNumber, key, 0);
+		}
+		RList *items = r_list_newf (free);
+		r_list_append (items, fcn->name);
+		ls_foreach (ls, it, kv) {
+			const char *value = sdbkv_value (kv);
+			int nv = (int)r_num_get (NULL, value);
+			r_list_append (items, r_str_newf ("%d", nv));
+		}
+		r_table_add_row_list (t, items);
+		r_table_query (t, input + 1);
+		char *ts = r_table_tostring (t);
+		r_cons_printf ("%s", ts);
+		free (ts);
+		r_table_free (t);
+	} else {
+		SdbList *ls = sdb_foreach_list (db, true);
+		SdbListIter *it;
+		SdbKv *kv;
+		ls_foreach (ls, it, kv) {
+			const char *key = sdbkv_key(kv);
+			const char *value = sdbkv_value(kv);
+			r_cons_printf ("%4d %s\n", (int)r_num_get (NULL, value), key);
+		}
+	}
+	return db;
+	//sdb_free (db);
+}
+
+static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
+	RAnalFunction *fcn;
+	SdbKv *kv;
+	RListIter *iter;
+	SdbListIter *it;
+	RList *dbs = r_list_newf ((RListFree)sdb_free);
+	Sdb *d = sdb_new0 ();
+	ut64 oseek = core->offset;
+	bool isJson = strstr (input, "j") != NULL;
+	
+	char *inp = r_str_newf ("*%s", input);
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		r_core_seek (core, fcn->addr, true);
+		Sdb *db = __core_cmd_anal_fcn_stats (core, inp);
+                sdb_num_set (db, ".addr", fcn->addr, 0);
+		r_list_append (dbs, db);
+	}
+	free (inp);
+	Sdb *db;
+	r_list_foreach (dbs, iter, db) {
+		SdbList *ls = sdb_foreach_list (db, true);
+		ls_foreach (ls, it, kv) {
+			const char *name = sdbkv_key(kv);
+			sdb_add (d, name, "1", 0);
+		}
+		ls_free (ls);
+	}
+	RTable *t = r_table_new ();
+	SdbList *ls = sdb_foreach_list (d, true);
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeNumber = r_table_type ("number");
+	r_table_add_column (t, typeString, "name", 0);
+	r_table_add_column (t, typeNumber, "addr", 0);
+	ls_foreach (ls, it, kv) {
+		const char *key = sdbkv_key (kv);
+		if (*key == '.') continue;
+		r_table_add_column (t, typeNumber, key, 0);
+	}
+	sdb_free (d);
+
+	r_list_foreach (dbs, iter, db) {
+		SdbList *ls = sdb_foreach_list (db, false);
+		SdbListIter *it;
+		SdbKv *kv;
+		char *names[100];
+		int i;
+		for (i = 0;i<100;i++) {
+			names[i] = NULL;
+		}
+		ls_foreach (ls, it, kv) {
+			const char *key = sdbkv_key(kv);
+			const char *value = sdbkv_value (kv);
+			if (*key == '.') {
+				continue;
+			}
+			int idx = r_table_column_nth (t, key);
+			if (idx != -1) {
+				ut64 nv = r_num_get (NULL, value);
+				names[idx] = r_str_newf ("%d", (int)nv);
+			} else {
+				eprintf ("Invalid column name (%s) %c", key, 10);
+			}
+		}
+		RList *items = r_list_newf (free);
+		ut64 fcnAddr = sdb_num_get (db, ".addr", 0);
+
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, fcnAddr, 0);
+		r_list_append (items, fcn?strdup (fcn->name):strdup (""));
+		r_list_append (items, fcn?r_str_newf ("0x%08"PFMT64x, fcnAddr): strdup ("0"));
+		int cols = r_list_length (t->cols);
+		for (i = 2; i < cols; i++) {
+			if (names[i]) {
+				if (names[i][0] != '.') {
+					r_list_append (items, strdup (names[i]));
+				}
+				R_FREE (names[i]);
+			} else {
+				r_list_append (items, strdup ("0"));
+			}
+		}
+		r_table_add_row_list (t, items);
+	}
+	r_table_query (t, (*input)?input + 1: "");
+	char *ts = isJson? r_table_tojson(t): r_table_tostring (t);
+	r_cons_printf ("%s", ts);
+	free (ts);
+	r_table_free (t);
+	r_core_seek (core, oseek, true);
+	r_list_free (dbs);
+}
+
 static int cmd_anal_fcn(RCore *core, const char *input) {
 	char i;
 
@@ -2585,7 +2786,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				char *args = strdup (input + 2);
-				RList *argv = r_str_split_list (args, " ");
+				RList *argv = r_str_split_list (args, " ", 0);
 				ut64 table = r_num_math (core->num, r_list_get_n (argv, 0));
 				ut64 elements = r_num_math (core->num, r_list_get_n (argv, 1));
 				r_anal_jmptbl (core->anal, fcn, core->offset, table, elements, UT64_MAX);
@@ -2818,6 +3019,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				}
 			}
 			break;
+		case 's': // "afis"
+			if (input[3] == 'a') { // "afisa"
+				__core_cmd_anal_fcn_allstats (core, input + 4);
+			} else {
+				sdb_free (__core_cmd_anal_fcn_stats (core, input + 3));
+			}
+			break;
 		case 'j': // "afij"
 		case '*': // "afi*"
 			r_core_anal_fcn_list (core, input + 3, input + 2);
@@ -2876,6 +3084,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				break;
 			}
 			/* fallthrough */
+		case 't': // "aflt"
 		case 'j': // "aflj"
 		case 'q': // "aflq"
 		case 'm': // "aflm"
@@ -3593,7 +3802,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i (core->config, "scr.color");
-	struct r_reg_item_t *r;
+	RRegItem *r;
 	const char *use_color;
 	const char *name;
 	char *arg;
@@ -4147,19 +4356,23 @@ repeat:
 			(void)r_io_read_at (core->io, naddr, code2, sizeof (code2));
 			// TODO: sometimes this is dupe
 			ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2), R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
-			switch (op2.type) {
-			case R_ANAL_OP_TYPE_CJMP:
-			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_CRET:
-			case R_ANAL_OP_TYPE_RET:
-				// branches are illegal in a delay slot
-				esil->trap = R_ANAL_TRAP_EXEC_ERR;
-				esil->trap_code = addr;
-				eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
-				return_tail (1);
-				break;
+			if (ret > 0) {
+				switch (op2.type) {
+					case R_ANAL_OP_TYPE_CJMP:
+					case R_ANAL_OP_TYPE_JMP:
+					case R_ANAL_OP_TYPE_CRET:
+					case R_ANAL_OP_TYPE_RET:
+						// branches are illegal in a delay slot
+						esil->trap = R_ANAL_TRAP_EXEC_ERR;
+						esil->trap_code = addr;
+						eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
+						return_tail (1);
+						break;
+				}
+				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op2.esil));
+			} else {
+				eprintf ("Invalid instruction at 0x%08"PFMT64x"\n", naddr);
 			}
-			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op2.esil));
 			r_anal_op_fini (&op2);
 		}
 		tail_return_value = 1;
@@ -5047,7 +5260,7 @@ static void __core_anal_appcall(RCore *core, const char *input) {
 	RListIter *iter;
 	char *arg;
 	char *inp = strdup (input);
-	RList *args = r_str_split_list (inp, " ");
+	RList *args = r_str_split_list (inp, " ", 0);
 	int i = 0;
 	r_list_foreach (args, iter, arg) {
 		const char *alias = sdb_fmt ("A%d", i);
@@ -5547,6 +5760,12 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case 'a': // "aea"
+		{
+		RReg *reg = core->anal->reg;
+		ut64 pc = r_reg_getv (reg, "PC");
+		RAnalOp *op = r_core_anal_op (core, pc, 0);
+		ut64 newPC = core->offset + op->size;
+		r_reg_setv (reg, "PC", newPC);
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_aea);
 		} else if (input[1] == 'r') {
@@ -5590,6 +5809,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			ut64 len = r_num_math (core->num, arg);
 			cmd_aea (core, 0, core->offset, len);
 		}
+		r_reg_setv (reg, "PC", pc);
+}
 		break;
 	case 'x': { // "aex"
 		char *hex;
@@ -6204,7 +6425,14 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		cmd_syscall_do (core, -1, core->offset);
 		break;
 	case ' ':
-		cmd_syscall_do (core, (int)r_num_get (core->num, input + 1), -1);
+		{
+		const char *sn = r_str_trim_ro (input + 1);
+		st64 num = r_syscall_get_num (core->anal->syscall, sn);
+		if (num < 1) {
+			num = (int)r_num_get (core->num, sn);
+		}
+		cmd_syscall_do (core, num, -1);
+		}
 		break;
 	case 'k': // "ask"
 		if (input[1] == ' ') {
@@ -6555,8 +6783,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					char *res1 = sdb_get (core->anal->sdb_fcns, wvar, 0);
 					const char *ref;
 					RListIter *iter;
-					RList *list = (res && *res)? r_str_split_list (res, ","): NULL;
-					RList *list1 = (res1 && *res1)? r_str_split_list (res1, ","): NULL;
+					RList *list = (res && *res)? r_str_split_list (res, ",", 0): NULL;
+					RList *list1 = (res1 && *res1)? r_str_split_list (res1, ",", 0): NULL;
 					r_list_join (list , list1);
 					r_list_foreach (list, iter, ref) {
 						ut64 addr = r_num_math (NULL, ref);
@@ -7343,11 +7571,13 @@ R_API void r_core_agraph_print (RCore *core, int use_utf, const char *input) {
 			core->graph->layout = r_config_get_i (core->config, "graph.layout");
 			int ov = r_cons_is_interactive ();
 			core->graph->need_update_dim = true;
-			r_core_visual_graph (core, core->graph, NULL, true);
+			int update_seek = r_core_visual_graph (core, core->graph, NULL, true);
 			r_config_set_i (core->config, "scr.interactive", ov);
 			r_cons_show_cursor (true);
 			r_cons_enable_mouse (false);
-			r_core_seek (core, oseek, 0);
+			if (update_seek != -1) {
+				r_core_seek (core, oseek, 0);
+			}
 		} else {
 			eprintf ("This graph contains no nodes\n");
 		}
@@ -7846,8 +8076,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 R_API int r_core_anal_refs(RCore *core, const char *input) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	ut64 from, to;
-	char *ptr;
-	int rad, n;
+	int rad;
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_aar);
 		return 0;
@@ -7861,8 +8090,8 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	}
 
 	from = to = 0;
-	ptr = r_str_trim_head (strdup (input));
-	n = r_str_word_set0 (ptr);
+	char *ptr = r_str_trim_head (strdup (input));
+	int n = r_str_word_set0 (ptr);
 	if (!n) {
 		// get boundaries of current memory map, section or io map
 		if (cfg_debug) {
@@ -8052,8 +8281,9 @@ static bool archIsThumbable(RCore *core) {
 
 static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
 	int arch_align = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-	int align = arch_align; // core->search->align;
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
+	int searchAlign = r_config_get_i (core->config, "search.align");
+	int align = (searchAlign > 0)? searchAlign: arch_align;
 	if (align > 1) {
 		if ((from % align) || (to % align)) {
 			bool itsFine = false;
@@ -8101,7 +8331,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	char *tmp = strdup (analin);
 	bool asterisk = strchr (input, '*');
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
-	// pre
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps.x");

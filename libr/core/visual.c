@@ -625,6 +625,12 @@ static void reset_print_cur(RPrint *p) {
 	p->ocur = -1;
 }
 
+static bool __holdMouseState(RCore *core) {
+	bool m = r_cons_singleton ()->mouse;
+	r_cons_enable_mouse (false);
+	return m;
+}
+
 static void backup_current_addr(RCore *core, ut64 *addr, ut64 *bsze, ut64 *newaddr) {
 	*addr = core->offset;
 	*bsze = core->blocksize;
@@ -673,7 +679,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	ut64 addr, bsze, newaddr = 0LL;
 	int ret, h;
 	(void) r_cons_get_size (&h);
-	r_cons_enable_mouse (false);
+	bool mouse_state = __holdMouseState(core);
 	r_cons_gotoxy (0, h);
 	r_cons_reset_colors ();
 	//r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
@@ -688,7 +694,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 
 	r_cons_show_cursor (false);
 	core->vmode = true;
-	r_cons_enable_mouse (true);
+	r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 	r_cons_show_cursor (true);
 }
 
@@ -1530,6 +1536,9 @@ repeat:
 	} else if (ch == 'G') {
 		skip = 9999;
 		goto repeat;
+	} else if (ch == '/') {
+		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
+		goto repeat;
 	} else if (ch == ';') {
 		addComment (core, cur_ref_addr);
 		goto repeat;
@@ -1598,6 +1607,7 @@ char *getcommapath(RCore *core) {
 }
 
 static void visual_comma(RCore *core) {
+	bool mouse_state = __holdMouseState (core);
 	ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 	char *comment, *cwd, *cmtfile;
 	comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
@@ -1632,6 +1642,7 @@ static void visual_comma(RCore *core) {
 		eprintf ("No commafile found.\n");
 	}
 	free (comment);
+	r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 }
 
 static bool isDisasmPrint(int mode) {
@@ -2255,7 +2266,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		if (r_cons_get_click (&x, &y)) {
 			if (y == 1) {
 				if (x < 15) {
-					ch = ':';
+					ch = '_';
 				} else if (x < 20) {
 					ch = 'p';
 				} else if (x < 24) {
@@ -2271,7 +2282,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 				return 1;
 			} else {
-				ch = 'c';
+				ch = 0; //'c';
 			}
 		} else {
 			return 1;
@@ -2296,7 +2307,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		// only in disasm and debug prints..
 		if (isDisasmPrint (core->printidx)) {
 			if (r_config_get_i (core->config, "asm.hints") && (r_config_get_i (core->config, "asm.hint.jmp")
-			|| r_config_get_i (core->config, "asm.hint.lea") || r_config_get_i (core->config, "asm.hint.call"))) {
+			|| r_config_get_i (core->config, "asm.hint.lea") || r_config_get_i (core->config, "asm.hint.emu")
+			|| r_config_get_i (core->config, "asm.hint.call"))) {
 				r_core_visual_jump (core, ch);
 			} else {
 				numbuf_append (ch);
@@ -2583,17 +2595,21 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			r_config_set_i (core->config, "scr.color", color);
 			break;
-		case 'd':
+		case 'd': {
+			bool mouse_state = __holdMouseState (core);
 			r_core_visual_showcursor (core, true);
 			int distance = numbuf_pull ();
 			r_core_visual_define (core, arg + 1, distance - 1);
 			r_core_visual_showcursor (core, false);
+			r_cons_enable_mouse (mouse_state && r_config_get_i(core->config, "scr.wheel"));
+		}
 			break;
 		case 'D':
 			setdiff (core);
 			break;
 		case 'f':
 		{
+			bool mouse_state = __holdMouseState (core);
 			int range, min, max;
 			char name[256], *n;
 			r_line_set_prompt ("flag name: ");
@@ -2631,6 +2647,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				}
 			}
+			r_cons_enable_mouse (mouse_state && r_config_get_i(core->config, "scr.wheel"));
 		}
 			r_core_visual_showcursor (core, false);
 			break;
@@ -2815,13 +2832,18 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			// TODO: toggle shortcut hotkeys
 			if (r_config_get_i (core->config, "asm.hint.call")) {
 				r_core_cmd0 (core, "e!asm.hint.call");
-				r_core_cmd0 (core, "e!asm.hint.jmp");
+				r_core_cmd0 (core, "e asm.hint.jmp=true");
 			} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
 				r_core_cmd0 (core, "e!asm.hint.jmp");
-				r_core_cmd0 (core, "e!asm.hint.lea");
+				r_core_cmd0 (core, "e asm.hint.emu=true");
+			} else if (r_config_get_i (core->config, "asm.hint.emu")) {
+				r_core_cmd0 (core, "e!asm.hint.emu");
+				r_core_cmd0 (core, "e asm.hint.lea=true");
 			} else if (r_config_get_i (core->config, "asm.hint.lea")) {
 				r_core_cmd0 (core, "e!asm.hint.lea");
-				r_core_cmd0 (core, "e!asm.hint.call");
+				r_core_cmd0 (core, "e asm.hint.call=true");
+			} else {
+				r_core_cmd0 (core, "e asm.hint.call=true");
 			}
 			visual_refresh (core);
 			break;
@@ -3241,7 +3263,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			break;
-		case '/':
+		case '/': {
+			bool mouse_state = __holdMouseState (core);
 			if (core->print->cur_enabled) {
 				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
 					if (core->seltab) {
@@ -3265,7 +3288,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_core_block_size (core, core->blocksize - cols);
 				}
 			}
-			break;
+			r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
+		}	break;
 		case '(':
 			snowMode = !snowMode;
 			if (!snowMode) {

@@ -17,7 +17,7 @@ extern bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_
 #define BB_ALIGN 0x10
 
 /* speedup analysis by removing some function overlapping checks */
-#define JAYRO_04 0
+#define JAYRO_04 1
 
 // 16 KB is the maximum size for a basic block
 #define MAX_FLG_NAME_SIZE 64
@@ -1531,9 +1531,23 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	r_list_free (refs);
 }
 
+
 /* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
-	r_anal_fcn_set_size (NULL, fcn, 0); // fcn is not yet in anal => pass NULL
+#if 0
+#define visitedKey(x) sdb_fmt("%"PFMT64x, x)
+	static Sdb *visited =NULL;
+
+	if (!visited) {
+		visited = sdb_new0 ();
+	}
+	if (sdb_const_get (visited, visitedKey(addr), 0)) {
+		// already visited
+		eprintf ("Already visited 0x%llx\n", addr);
+		return R_ANAL_RET_END;
+	}
+	sdb_set (visited, visitedKey(addr), "1", 0);
+#endif
 	/* defines fcn. or loc. prefix */
 	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE) ? R_ANAL_FCN_TYPE_LOC : R_ANAL_FCN_TYPE_FCN;
 	if (fcn->addr == UT64_MAX) {
@@ -1545,9 +1559,10 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 			return result;
 		}
 	}
+	r_anal_fcn_set_size (NULL, fcn, 0); // fcn is not yet in anal => pass NULL
 	fcn->maxstack = 0;
 #if USE_FCN_RECURSE
-	int ret = fcn_recurse (anal, fcn, addr, len, anal->opt.depth);
+	int ret = fcn_recurse (anal, fcn, addr, len, anal->opt.depth - 1);
 	// update tinyrange for the function
 	r_anal_fcn_update_tinyrange_bbs (fcn);
 #else
@@ -1572,7 +1587,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 				break;
 			}
 		}
-#if !JAYRO_04
+#if JAYRO_04
 		// fcn is not yet in anal => pass NULL
 		r_anal_fcn_resize (anal, fcn, endaddr - fcn->addr);
 #endif
@@ -2115,9 +2130,7 @@ R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut6
 }
 
 R_API RAnalBlock *r_anal_fcn_bbget_at(RAnalFunction *fcn, ut64 addr) {
-	if (!fcn || addr == UT64_MAX) {
-		return NULL;
-	}
+	r_return_val_if_fail (fcn && addr != UT64_MAX, NULL);
 #if USE_SDB_CACHE
 	return sdb_ptr_get (HB, sdb_fmt (SDB_KEY_BB, fcn->addr, addr), NULL);
 #else
@@ -2269,8 +2282,9 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 	const char *bp_name = anal->reg->name[R_REG_NAME_BP];
 	bool is_bp_dst = opdreg && !dst->memref && !strcmp (opdreg, bp_name);
 	bool is_bp_src = opsreg && !src->memref && !strcmp (opsreg, bp_name);
-	if (op->type == R_ANAL_OP_TYPE_XCHG)
+	if (op->type == R_ANAL_OP_TYPE_XCHG) {
 		return is_bp_src || is_bp_dst;
+	}
 	return is_bp_dst; 
 }
 /*

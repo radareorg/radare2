@@ -871,6 +871,18 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 			ret = r_core_cmd_lines (core, out);
 			free (out);
 		}
+	} else if (r_str_endswith (file, ".html")) {
+		const bool httpSandbox = r_config_get_i (core->config, "http.sandbox");
+		char *httpIndex = strdup (r_config_get (core->config, "http.index"));
+		r_config_set_i (core->config, "http.sandbox", 0);
+		char *absfile = r_file_abspath (file);
+		r_config_set (core->config, "http.index", absfile);
+		free (absfile);
+		r_core_cmdf (core, "=H");
+		r_config_set_i (core->config, "http.sandbox", httpSandbox);
+		r_config_set (core->config, "http.index", httpIndex);
+		free (httpIndex);
+		ret = true;
 	} else if (r_str_endswith (file, ".c")) {
 		r_core_cmd_strf (core, "#!c %s", file);
 		ret = true;
@@ -1696,9 +1708,7 @@ static int cmd_panels(void *data, const char *input) {
 		r_sys_cmdf ("v%s", input);
 		return false;
 	}
-	core->vmode = true;
 	r_core_visual_panels_root (core, core->panels_root);
-	core->vmode = false;
 	return true;
 }
 
@@ -4753,6 +4763,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"=",        "io pipe", cmd_rap},
 		{"?",        "help message", cmd_help, cmd_help_init},
 		{"\\",       "alias for =!", cmd_rap_run},
+		{"'",       "alias for =!", cmd_rap_run},
 		{"0x",       "alias for s 0x", cmd_ox},
 		{"analysis", "analysis", cmd_anal, cmd_anal_init},
 		{"bsize",    "change block size", cmd_bsize},

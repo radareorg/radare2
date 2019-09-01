@@ -47,6 +47,7 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "r_util/r_mem.h"
 #include "r_util/r_name.h"
 #include "r_util/r_num.h"
+#include "r_util/r_table.h"
 #include "r_util/r_graph.h"
 #include "r_util/r_panels.h"
 #include "r_util/r_pool.h"

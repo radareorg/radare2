@@ -128,7 +128,7 @@ R_API int r_io_plugin_list_json(RIO *io) {
 		if (plugin->uris) {
 			char *uri;
 			char *uris = strdup (plugin->uris);
-			RList *plist = r_str_split_list (uris, ",");
+			RList *plist = r_str_split_list (uris, ",",  0);
 			RListIter *piter;
 			pj_k (pj, "uris");
 			pj_a (pj);

@@ -197,6 +197,7 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 	task->cmd_log = false;
 	task->res = NULL;
 	task->running_sem = NULL;
+	task->dispatched = false;
 	task->dispatch_cond = r_th_cond_new ();
 	task->dispatch_lock = r_th_lock_new (false);
 	if (!task->dispatch_cond || !task->dispatch_lock) {
@@ -292,10 +293,14 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	if (next) {
 		r_cons_context_reset ();
 		r_th_lock_enter (next->dispatch_lock);
-		r_th_cond_signal (next->dispatch_cond);
+		next->dispatched = true;
 		r_th_lock_leave (next->dispatch_lock);
+		r_th_cond_signal (next->dispatch_cond);
 		if (!stop) {
-			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
+			while (!current->dispatched) {
+				r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
+			}
+			current->dispatched = false;
 		}
 	}
 
@@ -334,7 +339,10 @@ static void task_wakeup(RCoreTask *current) {
 	tasks_lock_leave (core, &old_sigset);
 
 	if (!single) {
-		r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
+		while (!current->dispatched) {
+			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
+		}
+		current->dispatched = false;
 	}
 
 	core->current_task = current;

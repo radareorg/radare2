@@ -205,7 +205,7 @@ static void __core_cmd_tcc(RCore *core, const char *input) {
 	case 'j':
 		{
 			char *ccs = r_core_cmd_strf (core, "afcl");
-			RList *list = r_str_split_list (ccs, "\n");
+			RList *list = r_str_split_list (ccs, "\n", 0);
 			RListIter *iter;
 			const char *cc;
 			PJ *pj = pj_new ();
@@ -226,7 +226,7 @@ static void __core_cmd_tcc(RCore *core, const char *input) {
 	case 'l':
 		{
 			char *ccs = r_core_cmd_strf (core, "afcl");
-			RList *list = r_str_split_list (ccs, "\n");
+			RList *list = r_str_split_list (ccs, "\n", 0);
 			RListIter *iter;
 			const char *cc;
 			r_list_foreach (list, iter, cc) {
@@ -241,7 +241,7 @@ static void __core_cmd_tcc(RCore *core, const char *input) {
 	case '*':
 		{
 			char *ccs = r_core_cmd_strf (core, "afcl");
-			RList *list = r_str_split_list (ccs, "\n");
+			RList *list = r_str_split_list (ccs, "\n", 0);
 			RListIter *iter;
 			const char *cc;
 			r_list_foreach (list, iter, cc) {
@@ -351,7 +351,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 			char *s = strdup (r_str_trim_ro (input + 1));
 			RListIter *iter;
 			char *k;
-			RList *list = r_str_split_list (s, " ");
+			RList *list = r_str_split_list (s, " ", 0);
 			r_list_foreach (list, iter, k) {
 				r_anal_noreturn_drop (core->anal, k);
 			}

@@ -135,6 +135,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *command) {
+	if (!*command) {
+		return NULL;
+	}
 	int code, rlen;
 	char *cmd = r_str_uri_encode (command);
 	char *url = r_str_newf ("%s/%s", rURL(fd), cmd);

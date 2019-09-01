@@ -4049,6 +4049,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	int o_scrinteractive = r_cons_is_interactive ();
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
+	int update_seek = false;
 	struct agraph_refresh_data *grd;
 	int okey, key;
 	RAnalFunction *fcn = NULL;
@@ -4248,9 +4249,13 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				get_bbupdate (g, core, fcn);
 			}
 			break;
+		case 13:
+			agraph_update_seek (g, get_anode (g->curnode), true);
+			update_seek = true;
+			exit_graph = true;
+			break;
 		case '>':
 			if (fcn && r_cons_yesno ('y', "Compute function callgraph? (Y/n)")) {
-				// r_core_cmd0 (core, "ag-;.agc* @$FB;.axtg @$FB;aggi");
 				r_core_cmd0 (core, "ag-;.agc* @$FB;.axfg @$FB;aggi");
 			}
 			break;
@@ -4842,5 +4847,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	}
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
+	if (update_seek) {
+		return -1;
+	}
 	return !is_error;
 }

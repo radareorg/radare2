@@ -81,7 +81,7 @@ static const char *help_msg_slash_a[] = {
 	"/ae", " esil", "search for esil expressions matching substring",
 	"/af", "[l] family", "Search for instruction of specific family (afl=list",
 	"/ai", "", "Search for infinite loop instructions (jmp $$)",
-	"/ai", "[j] 0x300", "find all the instructions using that immediate",
+	"/aI", "[j] 0x300 [0x500]", "find all the instructions using that immediate (in range)",
 	"/al", "", "Same as aoml, list all opcodes",
 	"/am", " opcode", "Search for specific instructions of specific mnemonic",
 	"/ao", " instr", "search for instruction 'instr' (in all offsets)",
@@ -606,6 +606,7 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 	if (io && io->desc) {
 		map->fd = r_io_fd_get_current (io);
 	}
+
 	map->perm = perms;
 	RInterval itv = {from, size};
 	if (size == -1) {
@@ -787,6 +788,41 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 				ut64 size = core->io->va? s->vsize: s->size;
 				append_bound (list, core->io, search_itv, addr, size, s->perm);
 			}
+		}
+	} else if (r_str_startswith (mode, "code")) {
+		RBinObject *obj = r_bin_cur_object (core->bin);
+		if (obj) {
+			ut64 from = UT64_MAX;
+			ut64 to = 0;
+			RBinSection *s;
+			RListIter *iter;
+			r_list_foreach (obj->sections, iter, s) {
+				if (s->is_segment) {
+					continue;
+				}
+				if (maskMatches (s->perm, 1, false)) {
+					continue;
+				}
+				ut64 addr = core->io->va? s->vaddr: s->paddr;
+				ut64 size = core->io->va? s->vsize: s->size;
+				from = R_MIN (addr, from);
+				to = R_MAX (to, addr + size);
+			}
+			if (from == UT64_MAX) {
+				SdbListIter *iter;
+				RIOMap *map;
+				int mask = 1;
+				ls_foreach  (core->io->maps, iter, map) {
+					ut64 from = r_itv_begin (map->itv);
+					ut64 size = r_itv_size (map->itv);
+					int rwx = map->perm;
+					if ((rwx & mask) != mask) {
+						continue;
+					}
+					append_bound (list, core->io, search_itv, from, size, rwx);
+				}
+			}
+			append_bound (list, core->io, search_itv, from, to-from, 1);
 		}
 	} else if (r_str_startswith (mode, "bin.sections")) {
 		int len = strlen ("bin.sections.");
@@ -3230,9 +3266,11 @@ reread:
 		} else if (input[1] == 'a') { // "/aa"
 			dosearch = 0;
 			do_asm_search (core, &param, input + 2, 'a', search_itv);
-		} else if (input[1] == '1') {
+		} else if (input[1] == 'i') { // "/ai"
+			do_asm_search (core, &param, input + 2, 'i', search_itv);
+		} else if (input[1] == '1') { // "a1"
 			__core_cmd_search_asm_byteswap (core, (int)r_num_math (core->num, input + 2));
-		} else if (input[1] == 'i') {
+		} else if (input[1] == 'I') { // "/aI" - infinite
 			__core_cmd_search_asm_infinite (core, r_str_trim_ro (input + 1));
 		} else if (input[1] == ' ') {
 			if (input[param_offset - 1]) {

@@ -273,7 +273,7 @@ R_API char *r_syscmd_sort(const char *file) {
 		if (!data) {
 			eprintf ("No such file or directory\n");
 		} else {
-			list = r_str_split_list (data, "\n");
+			list = r_str_split_list (data, "\n", 0);
 			r_list_sort (list, cmpstr);
 			data = r_list_to_str (list, '\n');
 			r_list_free (list);
@@ -352,7 +352,7 @@ R_API char *r_syscmd_uniq(const char *file) {
 		if (!data) {
 			eprintf ("No such file or directory\n");
 		} else {
-			list = r_str_split_list (data, "\n");
+			list = r_str_split_list (data, "\n", 0);
 			RList *uniq_list = r_list_uniq (list, cmpstr);
 			data = r_list_to_str (uniq_list, '\n');
 			r_list_free (uniq_list);
@@ -399,8 +399,8 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 		if (!data1 && !data2) {
 			eprintf ("No such files or directory\n");
 		} else {
-			list1 = r_str_split_list (data1, "\n");
-			list2 = r_str_split_list (data2, "\n");
+			list1 = r_str_split_list (data1, "\n",  0);
+			list2 = r_str_split_list (data2, "\n", 0);
 
 			char *str1, *str2;
 			r_list_foreach (list1, iter1, str1) {
