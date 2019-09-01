@@ -76,18 +76,13 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
 	RConsPrintablePalette *pal = &p->cons->context->pal;
 	const char *vline = p->cons->use_utf8 ? RUNE_LINE_VERT : "|";
+	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->call;
 	kol[1] = pal->jmp;
 	kol[2] = pal->cjmp;
 	kol[3] = pal->mov;
 	kol[4] = pal->nop;
-	const char *bgkol[5];
-	bgkol[0] = pal->wordhl;
-	bgkol[1] = pal->wordhl;
-	bgkol[2] = pal->crypto;
-	bgkol[3] = pal->linehl;
-	bgkol[4] = pal->linehl;
 	if (colors) {
 		for (i = 0; i < rows; i++) {
 			int threshold = i * (0xff / rows);
@@ -96,7 +91,7 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 	 			if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
 					int koli = i * 5 / rows;
 					if (p->histblock) {
-						p->cb_printf ("%s%s%s", bgkol[koli], " ", Color_RESET);
+						p->cb_printf ("%s%s%s", kol[koli], block, Color_RESET);
 					} else {
 						p->cb_printf ("%s%s%s", kol[koli], vline, Color_RESET);
 					}
@@ -115,7 +110,7 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 			int realJ = j * len / cols;
 			if (255 - buf[realJ] < threshold) {
 				if (p->histblock) {
-					p->cb_printf ("%s%s%s", Color_BGGRAY, " ", Color_RESET);
+					p->cb_printf ("%s%s%s", Color_BGGRAY, block, Color_RESET);
 				} else {
 					p->cb_printf (vline);
 				}
@@ -1673,32 +1668,26 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 static inline void printHistBlock (RPrint *p, int k, int cols) {
 	RConsPrintablePalette *pal = &p->cons->context->pal;
 	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->nop;
 	kol[1] = pal->mov;
 	kol[2] = pal->cjmp;
 	kol[3] = pal->jmp;
 	kol[4] = pal->call;
-	const char *bgkol[5];
-	bgkol[0] = pal->linehl;
-	bgkol[1] = pal->linehl;
-	bgkol[2] = pal->crypto;
-	bgkol[3] = pal->wordhl;
-	bgkol[4] = pal->wordhl;
 
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	if (show_colors) {
 		int idx = (int) ((k * 4) / cols);
+		const char *str = kol[idx];
 		if (p->histblock) {
-			const char *str = bgkol[idx];
-			p->cb_printf ("%s%s%s", str, " ", Color_RESET);
+			p->cb_printf ("%s%s%s", str, block, Color_RESET);
 		} else {
-			const char *str = kol[idx];
 			p->cb_printf ("%s%s%s", str, h_line, Color_RESET);
 		}
 	} else {
 		if (p->histblock) {
-			p->cb_printf ("%s%s%s", Color_BGGRAY, " ", Color_RESET);
+			p->cb_printf ("%s%s%s", Color_BGGRAY, block, Color_RESET);
 		} else {
 			p->cb_printf ("%s", h_line);
 		}
