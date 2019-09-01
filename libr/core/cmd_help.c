@@ -119,7 +119,7 @@ static const char *help_msg_root[] = {
 
 static const char *help_msg_question[] = {
 	"Usage: ?[?[?]] expression", "", "",
-	"?", " eip-0x804800", "show hex and dec result for this math expr",
+	"?", " eip-0x804800", "show all representation result for this math expr",
 	"?:", "", "list core cmd plugins",
 	"[cmd]?*", "", "recursive help for the given cmd",
 	"?!", " [cmd]", "run cmd if $? == 0",
