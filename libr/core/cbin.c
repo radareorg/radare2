@@ -56,6 +56,27 @@ static void pair_ut64(const char *key, ut64 val, int mode, bool last) {
 	pair (key, sdb_fmt ("%"PFMT64d, val), mode, last);
 }
 
+static char *__filterShell(const char *arg) {
+	char *a = malloc (strlen (arg) + 1);
+	char *b = a;
+	while (*arg) {
+		switch (*arg) {
+		case '@':
+		case '`':
+		case '|':
+		case ';':
+		case '\n':
+			break;
+		default:
+			*b++ = *arg;
+			break;
+		}
+		arg++;
+	}
+	*b = 0;
+	return a;
+}
+
 static void pair_ut64x(const char *key, ut64 val, int mode, bool last) {
 	const char *str_val = IS_MODE_JSON (mode) ? sdb_fmt ("%"PFMT64d, val) : sdb_fmt ("0x%"PFMT64x, val);
 	pair (key, str_val, mode, last);
@@ -1186,9 +1207,11 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			} else {
 				name = r_str_newf ("entry%i", i);
 			}
-			r_cons_printf ("\"f %s 1 0x%08"PFMT64x"\"\n", name, at);
-			r_cons_printf ("\"f %s_%s 1 0x%08"PFMT64x"\"\n", name, hpaddr_key, hpaddr);
-			r_cons_printf ("\"s %s\"\n", name);
+			char *n = __filterShell (name);
+			r_cons_printf ("\"f %s 1 0x%08"PFMT64x"\"\n", n, at);
+			r_cons_printf ("\"f %s_%s 1 0x%08"PFMT64x"\"\n", n, hpaddr_key, hpaddr);
+			r_cons_printf ("\"s %s\"\n", n);
+			free (n);
 			free (name);
 		} else {
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x, at, paddr);
@@ -1500,10 +1523,12 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			}
 			if (name) {
 				int reloc_size = 4;
+				char *n = __filterShell (name);
 				r_cons_printf ("\"f %s%s%s %d 0x%08"PFMT64x"\"\n",
 					r->bin->prefix ? r->bin->prefix : "reloc.",
-					r->bin->prefix ? "." : "", name, reloc_size, addr);
+					r->bin->prefix ? "." : "", n, reloc_size, addr);
 				add_metadata (r, reloc, addr, mode);
+				free (n);
 				free (name);
 			}
 		} else if (IS_MODE_JSON (mode)) {
@@ -2502,7 +2527,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			bits = R_SYS_BITS;
 		}
 		if (IS_MODE_RAD (mode)) {
-			r_cons_printf ("f %s.%s = 0x%08"PFMT64x"\n", type, section->name, section->vaddr);
+			char *n = __filterShell (section->name);
+			r_cons_printf ("f %s.%s = 0x%08"PFMT64x"\n", type, n, section->vaddr);
+			free (n);
 		} else if (IS_MODE_SET (mode)) {
 #if LOAD_BSS_MALLOC
 			if (!strcmp (section->name, ".bss")) {
@@ -2701,15 +2728,19 @@ static int bin_fields(RCore *r, int mode, int va) {
 		ut64 addr = rva (bin, field->paddr, field->vaddr, va);
 
 		if (IS_MODE_RAD (mode)) {
-			r_name_filter (field->name, -1);
-			r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", field->name, addr);
+			char *n = __filterShell (field->name);
+			r_name_filter (n, -1);
+			r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", n, addr);
 			if (field->comment && *field->comment) {
-				r_cons_printf ("CC %s @ 0x%"PFMT64x"\n", field->comment, addr);
+				char *c = __filterShell (field->comment);
+				r_cons_printf ("CC %s @ 0x%"PFMT64x"\n", c, addr);
 				r_cons_printf ("Cf %d .%s @ 0x%"PFMT64x"\n", field->size, field->format, addr);
+				free (c);
 			}
 			if (field->format && *field->format) {
-				r_cons_printf ("pf.%s %s\n", field->name, field->format);
+				r_cons_printf ("pf.%s %s\n", n, field->format);
 			}
+			free (n);
 		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
@@ -2952,15 +2983,24 @@ static int bin_classes(RCore *r, int mode) {
 				c->addr, at_min, at_max, c->name, c->super ? " " : "",
 				c->super ? c->super : "");
 		} else if (IS_MODE_RAD (mode)) {
-			r_cons_printf ("\"f class.%s = 0x%"PFMT64x"\"\n",
-				name, at_min);
+			char *n = __filterShell (name);
+			r_cons_printf ("\"f class.%s = 0x%"PFMT64x"\"\n", n, at_min);
+			free (n);
 			if (c->super) {
+				char *cn = __filterShell (c->name);
+				char *su = __filterShell (c->super);
 				r_cons_printf ("\"f super.%s.%s = %d\"\n",
-					c->name, c->super, c->index);
+						cn, su, c->index);
+				free (cn);
+				free (su);
 			}
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
-				char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, c->name, sym->name, sym->vaddr);
+				char *n = __filterShell (c->name);
+				char *sn = __filterShell (sym->name);
+				char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, n, sn, sym->vaddr);
+				free (n);
+				free (sn);
 				if (cmd) {
 					r_str_replace_char (cmd, ' ', '_');
 					if (strlen (cmd) > 2) {
@@ -3082,7 +3122,9 @@ static int bin_libs(RCore *r, int mode) {
 			// Nothing to set.
 			// TODO: load libraries with iomaps?
 		} else if (IS_MODE_RAD (mode)) {
-			r_cons_printf ("CCa entry0 %s\n", lib);
+			char *l = __filterShell (lib);
+			r_cons_printf ("CCa entry0 %s\n", l);
+			free (l);
 		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("%s\"%s\"", iter->p ? "," : "", lib);
 		} else {
@@ -3868,7 +3910,11 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, int mode) {
 
 	switch (mode) {
 	case '*':
-		r_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", bf->o->boffset, name, bf->id);
+		{
+			char *n = __filterShell (name);
+			r_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", bf->o->boffset, n, bf->id);
+			free (n);
+		}
 		break;
 	case 'q':
 		r_cons_printf ("%d\n", bf->id);
