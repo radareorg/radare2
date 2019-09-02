@@ -619,7 +619,7 @@ static int decode_push_pop(const ut8 *bytes, ebc_command_t *cmd) {
 			CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s %u",
 				op1c, immed);
 		}
-	} else {
+    } else {
         CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s",	op1c);
     }
 
