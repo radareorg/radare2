@@ -56,6 +56,29 @@ static void pair_ut64(const char *key, ut64 val, int mode, bool last) {
 	pair (key, sdb_fmt ("%"PFMT64d, val), mode, last);
 }
 
+static char *__filterQuotedShell(const char *arg) {
+	r_return_val_if_fail (arg, NULL);
+	char *a = malloc (strlen (arg) + 1);
+	if (!a) {
+		return NULL;
+	}
+	char *b = a;
+	while (*arg) {
+		switch (*arg) {
+		case ' ':
+		case '=':
+		case '\r':
+		case '\n':
+			break;
+		default:
+			*b++ = *arg;
+			break;
+		}
+		arg++;
+	}
+	*b = 0;
+	return a;
+}
 // TODO: move into libr/util/name.c
 static char *__filterShell(const char *arg) {
 	r_return_val_if_fail (arg, NULL);
@@ -1212,7 +1235,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			} else {
 				name = r_str_newf ("entry%i", i);
 			}
-			char *n = __filterShell (name);
+			char *n = __filterQuotedShell (name);
 			r_cons_printf ("\"f %s 1 0x%08"PFMT64x"\"\n", n, at);
 			r_cons_printf ("\"f %s_%s 1 0x%08"PFMT64x"\"\n", n, hpaddr_key, hpaddr);
 			r_cons_printf ("\"s %s\"\n", n);
@@ -1528,7 +1551,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			}
 			if (name) {
 				int reloc_size = 4;
-				char *n = __filterShell (name);
+				char *n = __filterQuotedShell (name);
 				r_cons_printf ("\"f %s%s%s %d 0x%08"PFMT64x"\"\n",
 					r->bin->prefix ? r->bin->prefix : "reloc.",
 					r->bin->prefix ? "." : "", n, reloc_size, addr);
@@ -1865,7 +1888,7 @@ static char *construct_symbol_flagname(const char *pfx, const char *symname, int
 	char *r = r_str_newf ("%s.%s", pfx, symname);
 	if (r) {
 		r_name_filter (r, len); // maybe unnecessary..
-		char *R = __filterShell (r);
+		char *R = __filterQuotedShell (r);
 		free (r);
 		return R;
 	}
@@ -2537,8 +2560,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			bits = R_SYS_BITS;
 		}
 		if (IS_MODE_RAD (mode)) {
-			char *n = __filterShell (section->name);
-			r_cons_printf ("f %s.%s = 0x%08"PFMT64x"\n", type, n, section->vaddr);
+			char *n = __filterQuotedShell (section->name);
+			r_cons_printf ("\"f %s.%s 1 0x%08"PFMT64x"\"\n", type, n, section->vaddr);
 			free (n);
 		} else if (IS_MODE_SET (mode)) {
 #if LOAD_BSS_MALLOC
@@ -2738,14 +2761,16 @@ static int bin_fields(RCore *r, int mode, int va) {
 		ut64 addr = rva (bin, field->paddr, field->vaddr, va);
 
 		if (IS_MODE_RAD (mode)) {
-			char *n = __filterShell (field->name);
+			char *n = __filterQuotedShell (field->name);
 			r_name_filter (n, -1);
-			r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", n, addr);
+			r_cons_printf ("\"f header.%s 1 0x%08"PFMT64x"\"\n", n, addr);
 			if (field->comment && *field->comment) {
-				char *c = __filterShell (field->comment);
-				r_cons_printf ("CC %s @ 0x%"PFMT64x"\n", c, addr);
-				r_cons_printf ("Cf %d .%s @ 0x%"PFMT64x"\n", field->size, field->format, addr);
-				free (c);
+				char *e = sdb_encode ((const ut8*)field->comment, -1);
+				r_cons_printf ("CCu %s @ 0x%"PFMT64x"\n", e, addr);
+				free (e);
+				char *f = __filterShell (field->format);
+				r_cons_printf ("Cf %d .%s @ 0x%"PFMT64x"\n", field->size, f, addr);
+				free (f);
 			}
 			if (field->format && *field->format) {
 				r_cons_printf ("pf.%s %s\n", n, field->format);
