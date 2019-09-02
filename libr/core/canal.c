@@ -4852,9 +4852,14 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	if (!sn) {
 		eprintf ("Warning: No SN reg alias for current architecture.\n");
 	}
+	int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	r_reg_arena_push (core->anal->reg);
 	for (i = 0; i < iend; i++) {
 repeat:
+		// double check to avoid infinite loop from the goto repeat
+		if (i + mininstrsz >= iend) {
+			break;
+		}
 		if (esil_anal_stop || r_cons_is_breaked ()) {
 			break;
 		}
