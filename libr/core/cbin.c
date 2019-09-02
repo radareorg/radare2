@@ -1858,11 +1858,13 @@ static const char *getPrefixFor(const char *s) {
 
 static char *construct_symbol_flagname(const char *pfx, const char *symname, int len) {
 	char *r = r_str_newf ("%s.%s", pfx, symname);
-	if (!r) {
-		return NULL;
+	if (r) {
+		r_name_filter (r, len); // maybe unnecessary..
+		char *R = __filterShell (r);
+		free (r);
+		return R;
 	}
-	r_name_filter (r, len);
-	return r;
+	return NULL;
 }
 
 typedef struct {
@@ -2169,8 +2171,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				lastfs = 'i';
 			} else {
 				if (lastfs != 's') {
-					r_cons_printf ("fs %s\n",
-						exponly? "exports": "symbols");
+					const char *fs = exponly? "exports": "symbols";
+					r_cons_printf ("fs %s\n", fs);
 				}
 				lastfs = 's';
 			}
@@ -2182,7 +2184,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				r_cons_printf ("\"f %s%s%s %u 0x%08" PFMT64x "\"\n",
 					r->bin->prefix ? r->bin->prefix : "", r->bin->prefix ? "." : "",
 					flagname, symbol->size, addr);
-				free(flagname);
+				free (flagname);
 			}
 			binfile = r_bin_cur (r->bin);
 			plugin = r_bin_file_cur_plugin (binfile);
@@ -2191,7 +2193,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					char *module = strdup (r_symbol_name);
 					char *p = strstr (module, ".dll_");
 					if (p && strstr (module, "imp.")) {
-						const char *symname = p + 5;
+						char *symname = __filterShell (p + 5);
+						char *m = __filterShell (module);
 						*p = 0;
 						if (r->bin->prefix) {
 							r_cons_printf ("k bin/pe/%s/%d=%s.%s\n",
@@ -2200,6 +2203,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 							r_cons_printf ("k bin/pe/%s/%d=%s\n",
 								module, symbol->ordinal, symname);
 						}
+						free (symname);
+						free (m);
 					}
 					free (module);
 				}
