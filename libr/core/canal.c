@@ -4854,10 +4854,26 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 	r_reg_arena_push (core->anal->reg);
 	for (i = 0; i < iend; i++) {
+repeat:
 		if (esil_anal_stop || r_cons_is_breaked ()) {
 			break;
 		}
 		cur = addr + i;
+		{
+			RList *list = r_meta_find_list_in (core->anal, cur, -1, 4);
+			RListIter *iter;
+			RAnalMetaItem *meta;
+			r_list_foreach (list, iter, meta) {
+				switch (meta->type) {
+				case R_META_TYPE_DATA:
+				case R_META_TYPE_STRING:
+				case R_META_TYPE_FORMAT:
+					i += 4;
+					goto repeat;
+				}
+			}
+			r_list_free (list);
+		}
 		/* realign address if needed */
 		if (opalign > 0) {
 			cur -= (cur % opalign);

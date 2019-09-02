@@ -1544,6 +1544,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 			return 0;
 		}
 	}
+	r_list_free (list);
 #if 0
 #define visitedKey(x) sdb_fmt("%"PFMT64x, x)
 	static Sdb *visited =NULL;
