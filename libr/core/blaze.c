@@ -30,6 +30,30 @@ typedef struct fcn {
 	ut64 ends;
 } fcn_t;
 
+static int __isdata(RCore *core, ut64 addr) {
+	if (!r_io_is_valid_offset (core->io, addr, false)) {
+eprintf ("invalid memory address\n");
+		return 4;
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	if (fcn) {
+		return r_anal_fcn_size (fcn);
+	}
+	RList *list = r_meta_find_list_in (core->anal, addr, -1, 4);
+	RListIter *iter;
+	RAnalMetaItem *meta;
+	r_list_foreach (list, iter, meta) {
+		switch (meta->type) {
+		case R_META_TYPE_DATA:
+		case R_META_TYPE_STRING:
+		case R_META_TYPE_FORMAT:
+			return meta->size - (addr - meta->from);
+		}
+	}
+	r_list_free (list);
+	return 0;
+}
+
 static bool fcnAddBB (fcn_t *fcn, bb_t* block) {
 	if (!fcn) {
 		eprintf ("No function given to add a basic block\n");
@@ -87,9 +111,6 @@ static void initBB (bb_t *bb, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_typ
 }
 
 static bool addBB(RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
-	if (__isdata (core, start + cur)) {
-		return false;
-	}
 	bb_t *bb = (bb_t*) R_NEW0 (bb_t);
 	if (!bb) {
 		eprintf ("Failed to calloc mem for new basic block!\n");
@@ -197,6 +218,9 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	f->type = R_ANAL_FCN_TYPE_FCN;
 
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {
+		if (__isdata (core, cur->start)) {
+			continue;
+		}
 		r_anal_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, 0, NULL);
 	}
 	if (!r_anal_fcn_insert (core->anal, f)) {
@@ -205,22 +229,6 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 		//TODO free not added function
 		return;
 	}
-}
-
-static int __isdata(RCore *core, ut64 addr) {
-	RList *list = r_meta_find_list_in (anal, addr, -1, 4);
-	RListIter *iter;
-	RAnalMetaItem *meta;
-	r_list_foreach (list, iter, meta) {
-		switch (meta->type) {
-		case R_META_TYPE_DATA:
-		case R_META_TYPE_STRING:
-		case R_META_TYPE_FORMAT:
-			return meta->size - (addr - meta->addr);
-		}
-	}
-	r_list_free (list);
-	return 0;
 }
 
 #define Fhandled(x) sdb_fmt("handled.%"PFMT64x"", x)

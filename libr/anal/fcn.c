@@ -1795,17 +1795,13 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 	bool mid = false;
 	st64 n;
 	if (size == 0) { // empty basic blocks allowed?
+		eprintf ("Warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
 		r_warn_if_reached ();
-		if (anal->verbose) {
-			eprintf ("warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
-		}
 		return false;
 	}
 	if (size > anal->opt.bb_max_size) {
+		eprintf ("Warning: can't allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"\n", (st64)size, addr);
 		r_warn_if_reached ();
-		if (anal->verbose) {
-			eprintf ("warning: can't allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"\n", (st64)size, addr);
-		}
 		return false;
 	}
 
