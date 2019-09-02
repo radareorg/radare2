@@ -1564,12 +1564,12 @@ PUSH { r4, r5, r6, r7, lr }
 4,sp,-=,r5,sp,=[4],
 4,sp,-=,r4,sp,=[4]
 
-20,sp,-=,r4,r5,r6,r7,lr,5,sp,=[*]
+20,sp,-=,lr,r7,r6,r5,r4,5,sp,=[*]
 #endif
 		r_strbuf_setf (&op->esil, "%d,sp,-=,",
 			4 * insn->detail->arm.op_count);
-		for (i=0; i<insn->detail->arm.op_count; i++) {
-			r_strbuf_appendf (&op->esil, "%s,", REG (i));
+		for (i=insn->detail->arm.op_count; i>0; i--) {
+			r_strbuf_appendf (&op->esil, "%s,", REG (i-1));
 		}
 		r_strbuf_appendf (&op->esil, "%d,sp,=[*]",
 			insn->detail->arm.op_count);
@@ -1592,11 +1592,11 @@ PUSH { r4, r5, r6, r7, lr }
 	case ARM_INS_POP:
 #if 0
 POP { r4,r5, r6}
-r4,r5,r6,3,sp,[*],12,sp,+=
+r6,r5,r4,3,sp,[*],12,sp,+=
 #endif
 		r_strbuf_setf (&op->esil, "");
-		for (i=0; i<insn->detail->arm.op_count; i++) {
-			r_strbuf_appendf (&op->esil, "%s,", REG (i));
+		for (i=insn->detail->arm.op_count; i>0; i--) {
+			r_strbuf_appendf (&op->esil, "%s,", REG (i-1));
 		}
 		r_strbuf_appendf (&op->esil, "%d,sp,[*],",
 			insn->detail->arm.op_count);
