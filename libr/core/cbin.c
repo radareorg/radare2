@@ -2166,7 +2166,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					char *module = strdup (r_symbol_name);
 					char *p = strstr (module, ".dll_");
 					if (p && strstr (module, "imp.")) {
-						const char *symname = p + 5;
+						char *symname = strdup (p + 5);
+						r_name_filter (symname, -1);
 						*p = 0;
 						if (r->bin->prefix) {
 							r_cons_printf ("k bin/pe/%s/%d=%s.%s\n",
@@ -2175,6 +2176,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 							r_cons_printf ("k bin/pe/%s/%d=%s\n",
 								module, symbol->ordinal, symname);
 						}
+						free (symname);
 					}
 					free (module);
 				}
