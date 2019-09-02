@@ -1675,7 +1675,9 @@ static inline void printHistBlock (RPrint *p, int k, int cols) {
 	kol[2] = pal->cjmp;
 	kol[3] = pal->jmp;
 	kol[4] = pal->call;
-
+	if (cols < 1) {
+		cols = 1;
+	}
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	if (show_colors) {
 		int idx = (int) ((k * 4) / cols);
