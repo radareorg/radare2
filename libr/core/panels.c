@@ -2023,6 +2023,7 @@ static bool __handle_mouse_on_X(RCore *core, int x, int y) {
 		free (word);
 		return true;
 	}
+	free (word);
 	return false;
 }
 
@@ -6008,6 +6009,7 @@ void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db) {
 						void *cb = sdb_ptr_get (menu_db, word, 0);
 						if (cb) {
 							((RPanelAlmightyCallback)cb) (core, panel, NONE, word);
+							__free_modal (&modal);
 							break;
 						}
 					}
