@@ -56,6 +56,7 @@ static void pair_ut64(const char *key, ut64 val, int mode, bool last) {
 	pair (key, sdb_fmt ("%"PFMT64d, val), mode, last);
 }
 
+// TODO: move into libr/util/name.c
 static char *__filterShell(const char *arg) {
 	char *a = malloc (strlen (arg) + 1);
 	char *b = a;
@@ -1887,7 +1888,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	}
 	sn->name = strdup (sym->name);
 	const char *pfx = getPrefixFor (sym->type);
-	sn->nameflag = construct_symbol_flagname(pfx, r_bin_symbol_name (sym), MAXFLAG_LEN_DEFAULT);
+	sn->nameflag = construct_symbol_flagname (pfx, r_bin_symbol_name (sym), MAXFLAG_LEN_DEFAULT);
 	if (sym->classname && sym->classname[0]) {
 		sn->classname = strdup (sym->classname);
 		sn->classflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
@@ -2992,20 +2993,20 @@ static int bin_classes(RCore *r, int mode) {
 			r_cons_printf ("\"f class.%s = 0x%"PFMT64x"\"\n", n, at_min);
 			free (n);
 			if (c->super) {
-				char *cn = __filterShell (c->name);
-				char *su = __filterShell (c->super);
+				char *cn = c->name; // __filterShell (c->name);
+				char *su = c->super; // __filterShell (c->super);
 				r_cons_printf ("\"f super.%s.%s = %d\"\n",
 						cn, su, c->index);
-				free (cn);
-				free (su);
+				// free (cn);
+				// free (su);
 			}
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
-				char *n = __filterShell (c->name);
-				char *sn = __filterShell (sym->name);
+				char *n = c->name; //  __filterShell (c->name);
+				char *sn = sym->name; //__filterShell (sym->name);
 				char *cmd = r_str_newf ("\"f method%s.%s.%s = 0x%"PFMT64x"\"\n", mflags, n, sn, sym->vaddr);
-				free (n);
-				free (sn);
+				// free (n);
+				// free (sn);
 				if (cmd) {
 					r_str_replace_char (cmd, ' ', '_');
 					if (strlen (cmd) > 2) {
@@ -3127,9 +3128,7 @@ static int bin_libs(RCore *r, int mode) {
 			// Nothing to set.
 			// TODO: load libraries with iomaps?
 		} else if (IS_MODE_RAD (mode)) {
-			char *l = __filterShell (lib);
-			r_cons_printf ("CCa entry0 %s\n", l);
-			free (l);
+			r_cons_printf ("\"CCa entry0 %s\"\n", lib);
 		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("%s\"%s\"", iter->p ? "," : "", lib);
 		} else {
