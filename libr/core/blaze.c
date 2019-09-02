@@ -32,7 +32,7 @@ typedef struct fcn {
 
 static int __isdata(RCore *core, ut64 addr) {
 	if (!r_io_is_valid_offset (core->io, addr, false)) {
-eprintf ("invalid memory address\n");
+		// eprintf ("Warning: Invalid memory address at 0x%08"PFMT64x"\n", addr);
 		return 4;
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
@@ -261,7 +261,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
 		eprintf ("Creating basic blocks\b");
 	}
-	while (cur < size) {
+	ut64 base = cur;
+	while (cur >= base && cur < size) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -269,12 +270,17 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		if (block_score < invalid_instruction_barrier) {
 			break;
 		}
-		int dsize = __isdata (core, start + cur);
+		ut64 dst = start + cur;
+		if (dst < start) {
+			// fix underflow issue
+			break;
+		}
+		int dsize = __isdata (core, dst);
 		if (dsize > 0) {
 			cur += dsize;
 			continue;
 		}
-		op = r_core_anal_op (core, start + cur, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+		op = r_core_anal_op (core, dst, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;
