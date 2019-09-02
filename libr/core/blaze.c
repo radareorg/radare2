@@ -30,6 +30,30 @@ typedef struct fcn {
 	ut64 ends;
 } fcn_t;
 
+static int __isdata(RCore *core, ut64 addr) {
+	if (!r_io_is_valid_offset (core->io, addr, false)) {
+		// eprintf ("Warning: Invalid memory address at 0x%08"PFMT64x"\n", addr);
+		return 4;
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	if (fcn) {
+		return r_anal_fcn_size (fcn);
+	}
+	RList *list = r_meta_find_list_in (core->anal, addr, -1, 4);
+	RListIter *iter;
+	RAnalMetaItem *meta;
+	r_list_foreach (list, iter, meta) {
+		switch (meta->type) {
+		case R_META_TYPE_DATA:
+		case R_META_TYPE_STRING:
+		case R_META_TYPE_FORMAT:
+			return meta->size - (addr - meta->from);
+		}
+	}
+	r_list_free (list);
+	return 0;
+}
+
 static bool fcnAddBB (fcn_t *fcn, bb_t* block) {
 	if (!fcn) {
 		eprintf ("No function given to add a basic block\n");
@@ -86,7 +110,7 @@ static void initBB (bb_t *bb, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_typ
 	}
 }
 
-static bool addBB (RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
+static bool addBB(RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
 	bb_t *bb = (bb_t*) R_NEW0 (bb_t);
 	if (!bb) {
 		eprintf ("Failed to calloc mem for new basic block!\n");
@@ -194,6 +218,9 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	f->type = R_ANAL_FCN_TYPE_FCN;
 
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {
+		if (__isdata (core, cur->start)) {
+			continue;
+		}
 		r_anal_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, 0, NULL);
 	}
 	if (!r_anal_fcn_insert (core->anal, f)) {
@@ -234,7 +261,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
 		eprintf ("Creating basic blocks\b");
 	}
-	while (cur < size) {
+	ut64 base = cur;
+	while (cur >= base && cur < size) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -242,7 +270,17 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		if (block_score < invalid_instruction_barrier) {
 			break;
 		}
-		op = r_core_anal_op (core, start + cur, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+		ut64 dst = start + cur;
+		if (dst < start) {
+			// fix underflow issue
+			break;
+		}
+		int dsize = __isdata (core, dst);
+		if (dsize > 0) {
+			cur += dsize;
+			continue;
+		}
+		op = r_core_anal_op (core, dst, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;
