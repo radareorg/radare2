@@ -240,10 +240,13 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 		} else {
 			eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
 		}
-	} else if (op == '2' || op == '4') {
+	} else if (op == '2' || op == '4' || op == '8') {
 		int inc = op - '0';
 		ut8 tmp;
-		for (i = 0; i <= core->blocksize - inc; i += inc) {
+		if (inc < 1 || inc > 8) {
+			goto beach;
+		}
+		for (i = 0; (i + inc) < core->blocksize - inc; i += inc) {
 			if (inc == 2) {
 				tmp = buf[i];
 				buf[i] = buf[i+1];
@@ -255,6 +258,25 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 				tmp = buf[i+1];
 				buf[i+1] = buf[i+2];
 				buf[i+2] = tmp;
+			} else if (inc == 8) {
+				tmp = buf[i];
+				buf[i] = buf[i+7];
+				buf[i+7] = tmp;
+
+				tmp = buf[i+1];
+				buf[i+1] = buf[i+6];
+				buf[i+6] = tmp;
+
+				tmp = buf[i+2];
+				buf[i+2] = buf[i+5];
+				buf[i+5] = tmp;
+
+				tmp = buf[i+3];
+				buf[i+3] = buf[i+4];
+				buf[i+4] = tmp;
+			} else {
+				eprintf ("Invalid inc, use 2, 4 or 8.\n");
+				break;
 			}
 		}
 	} else {

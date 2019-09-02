@@ -89,8 +89,9 @@ static const char *help_msg_we[] = {
 static const char *help_msg_wo[] = {
 	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
 	"wo[24aAdlmorwx]","", "without hexpair values, clipboard is used",
-	"wo2"," [val]","2=  2 byte endian swap",
-	"wo4"," [val]", "4=  4 byte endian swap",
+	"wo2"," [val]","2=  2 byte endian swap (word)",
+	"wo4"," [val]", "4=  4 byte endian swap (dword)",
+	"wo8"," [val]", "8=  8 byte endian swap (qword)",
 	"woa"," [val]", "+=  addition (f.ex: woa 0102)",
 	"woA"," [val]","&=  and",
 	"wod"," [val]", "/=  divide",
