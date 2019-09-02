@@ -1531,9 +1531,19 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	r_list_free (refs);
 }
 
-
 /* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
+	RList *list = r_meta_find_list_in (anal, addr, -1, 4);
+	RListIter *iter;
+	RAnalMetaItem *meta;
+	r_list_foreach (list, iter, meta) {
+		switch (meta->type) {
+		case R_META_TYPE_DATA:
+		case R_META_TYPE_STRING:
+		case R_META_TYPE_FORMAT:
+			return 0;
+		}
+	}
 #if 0
 #define visitedKey(x) sdb_fmt("%"PFMT64x, x)
 	static Sdb *visited =NULL;
