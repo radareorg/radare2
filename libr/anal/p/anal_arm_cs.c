@@ -2231,7 +2231,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		case ARM_INS_CMN:
 			break;
 		default:
-		        r_strbuf_appendf (&op->esil, ",$z,zf,:=");
+		        r_strbuf_appendf (&op->esil, ",$z,zf,:=,$s,nf,:=");
 		}
 	}
 
