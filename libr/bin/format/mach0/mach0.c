@@ -1846,7 +1846,6 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				eprintf ("data-in-code at 0x%x size %d\n", dataoff, datasize);
 				ut8 *db = (ut8*)malloc (datasize);
 				if (db) {
-					RBinFile *bf = NULL;
 					r_buf_read_at (bin->b, dataoff, db, datasize);
 					// TODO table of non-instructions regions in __text
 					for (i = 0; i < datasize; i += 8) {
