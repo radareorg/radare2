@@ -320,15 +320,15 @@ static void cmd_write_op (RCore *core, const char *input) {
 	case 'd':
 	case 'o':
 	case 'w':
-	case '2':
-	case '4':
+	case '2': // "wo2"
+	case '4': // "wo4"
+	case '8': // "wo8"
 		if (input[2]) {  // parse val from arg
-			r_core_write_op (core, input+3, input[1]);
-			r_core_block_read (core);
+			r_core_write_op (core, input + 3, input[1]);
 		} else {  // use clipboard instead of val
 			r_core_write_op (core, NULL, input[1]);
-			r_core_block_read (core);
 		}
+		r_core_block_read (core);
 		break;
 	case 'R':
 		r_core_cmd0 (core, "wr $b");

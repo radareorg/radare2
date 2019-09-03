@@ -240,13 +240,13 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 		} else {
 			eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
 		}
-	} else if (op == '2' || op == '4' || op == '8') {
+	} else if (op == '2' || op == '4' || op == '8') { // "wo2" "wo4" "wo8"
 		int inc = op - '0';
 		ut8 tmp;
 		if (inc < 1 || inc > 8) {
 			goto beach;
 		}
-		for (i = 0; (i + inc) < core->blocksize - inc; i += inc) {
+		for (i = 0; (i + inc) <= core->blocksize; i += inc) {
 			if (inc == 2) {
 				tmp = buf[i];
 				buf[i] = buf[i+1];
@@ -315,23 +315,18 @@ beach:
 }
 
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
-	int ret;
-	ut8 *buf;
-
-	buf = r_core_transform_op(core, arg, op);
+	ut8 *buf = r_core_transform_op(core, arg, op);
 	if (!buf) {
 		return false;
 	}
-	ret = r_core_write_at(core, core->offset, buf, core->blocksize);
-
-	free(buf);
+	int ret = r_core_write_at (core, core->offset, buf, core->blocksize);
+	free (buf);
 	return ret;
 }
 
 static void __choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
 	if (core->anal) {
-		int ret =  r_anal_range_tree_find_bits_at (core->anal->rb_hints_ranges,
-							  addr);
+		int ret =  r_anal_range_tree_find_bits_at (core->anal->rb_hints_ranges, addr);
 		if (ret) {
 			*bits = ret;
 		}
