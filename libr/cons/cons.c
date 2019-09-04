@@ -370,6 +370,7 @@ R_API int r_cons_get_cur_line() {
 #if __UNIX__
 		char buf[8];
 		struct termios save,raw;
+		fflush(stdout);			// flush the Arrow keys escape keys which was messing up the output
 		(void) tcgetattr (0, &save);
 		cfmakeraw (&raw);
 		(void) tcsetattr (0, TCSANOW, &raw);
