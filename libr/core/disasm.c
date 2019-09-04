@@ -4391,9 +4391,21 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 static void ds_print_bbline(RDisasmState *ds, bool force) {
 	if (ds->show_bbline && ds->fcn) {
 		RAnalBlock *bb = r_anal_fcn_bbget_at (ds->fcn, ds->at);
-		if (force || (ds->fcn && bb)) {
+		if ((force || (ds->fcn && bb && ds->fcn->addr != ds->at))
+		    && ds->at) {
 			ds_begin_line (ds);
-			ds_setup_print_pre (ds, false, false);
+			// adapted from ds_setup_pre ()
+			ds->cmtcount = 0;
+			if (!ds->show_functions || !ds->show_lines_fcn) {
+				ds->pre = DS_PRE_NONE;
+			} else {
+				ds->pre = DS_PRE_EMPTY;
+				RAnalFunction *f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
+				if (f_before == ds->fcn) {
+					ds->pre = DS_PRE_FCN_MIDDLE;
+				}
+			}
+			ds_print_pre (ds);
 			if (!ds->linesright && ds->show_lines_bb && ds->line) {
 				char *refline, *reflinecol = NULL;
 				RAnalRefStr *refstr;
