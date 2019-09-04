@@ -196,6 +196,26 @@ R_API void r_graph_add_edge_at (RGraph *t, RGraphNode *from, RGraphNode *to, int
 	}
 }
 
+// splits the "split_me", so that new node has it's outnodes
+R_API RGraphNode *r_graph_node_split_forward (RGraph *g, RGraphNode *split_me, void *data) {
+	RGraphNode *front = r_graph_add_node(g, data);
+	RList *tmp = front->out_nodes;
+	front->out_nodes = split_me->out_nodes;
+	split_me->out_nodes = tmp;
+	RListIter *iter;
+	RGraphNode *n;
+	r_list_foreach (front->out_nodes, iter, n) {
+		r_list_delete_data (n->in_nodes, split_me);		// optimize me
+		r_list_delete_data (n->all_neighbours, split_me);	// boy this all_neighbours is so retarding perf here
+		r_list_delete_data (split_me->all_neighbours, n);
+		r_list_append (n->all_neighbours, front);
+		r_list_append (n->in_nodes, front);
+		r_list_append (front->all_neighbours, n);
+	}
+	return front;
+}
+
+
 R_API void r_graph_del_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
 	if (!from || !to || !r_graph_adjacent (t, from, to)) {
 		return;

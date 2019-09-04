@@ -475,7 +475,7 @@ R_API bool r_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, v
 	RContRBNode data_wrap = { { { NULL, NULL }, false }, data };
 	RBNode *root_node = &tree->root->node;
 	const bool ret = r_rbtree_aug_delete (&root_node, &data_wrap, cont_rbtree_free_cmp_wrapper, cont_node_free, NULL, &cmp_wrap);
-	if (root_node != (&tree->root->node)) {
+	if (root_node != (&tree->root->node)) {	//can this crash?
 		tree->root = container_of (root_node, RContRBNode, node); //cursed augmentation garbage
 	}
 	if (!ret) {

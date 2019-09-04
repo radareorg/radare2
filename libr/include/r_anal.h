@@ -1228,6 +1228,31 @@ typedef struct r_anal_esil_operation_t {
 } RAnalEsilOp;
 
 
+// this is 80-bit offsets so we can address every piece of esil in an instruction
+typedef struct r_anal_esil_expr_offset_t {
+	ut64 off;
+	ut16 idx;
+} RAnalEsilEOffset;
+
+typedef enum {
+	R_ANAL_ESIL_BLOCK_ENTER_NEITHER = 0,
+	R_ANAL_ESIL_BLOCK_ENTER_TRUE,
+	R_ANAL_ESIL_BLOCK_ENTER_FALSE,
+} RAnalEsilBlockEnterType;
+
+typedef struct r_anal_esil_basic_block_t {
+	RAnalEsilEOffset first;
+	RAnalEsilEOffset last;
+	char *expr;	//synthesized esil-expression for this block
+	RAnalEsilBlockEnterType enter;	//maybe more type is needed here
+} RAnalEsilBB;
+
+typedef struct r_anal_esil_cfg_t {
+	RGraphNode *start;
+	RGraphNode *end;
+	RGraph *g;
+} RAnalEsilCFG;
+
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
 typedef int (*RAnalExCallback)(RAnal *a, struct r_anal_state_type_t *state, ut64 addr);
