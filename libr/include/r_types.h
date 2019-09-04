@@ -146,7 +146,9 @@
   #ifdef _MSC_VER
   /* Must be included before windows.h */
   #include <winsock2.h>
+  #ifndef WIN32_LEAN_AND_MEAN
   #define WIN32_LEAN_AND_MEAN
+  #endif
   #endif
   typedef int socklen_t;
   #undef USE_SOCKETS
