@@ -388,7 +388,6 @@ void _round_2_cb(RGraphNode *n, RGraphVisitor *vi) {
 	}
 	bb->expr = strdup (r_strbuf_get(buf));
 	r_strbuf_free (buf);
-	// TODO: delete node from blocks_tree
 	r_rbtree_cont_delete(gen->blocks, n, _graphnode_esilbb_insert_cmp, NULL);
 }
 
@@ -477,10 +476,16 @@ static RAnalEsilCFG *esil_cfg_gen (RAnalEsilCFG *cfg, RAnal *anal, RIDStorage *a
 		r_graph_dfs_node(cfg->g, start, &vi);
 	}
 	// this loop removes unused atoms
-	do {} while (r_rbtree_cont_delete(blocks, NULL, _graphnode_delete_always_0_cmp, &gen));
+	do {} while (blocks->root && r_rbtree_cont_delete(blocks, NULL, _graphnode_delete_always_0_cmp, &gen));
 
 	free(_expr);
 	return cfg;
+}
+
+static void _free_bb_cb(void *data) {
+	RAnalEsilBB *bb = (RAnalEsilBB *)data;
+	free(bb->expr);
+	free(bb);
 }
 
 R_API RAnalEsilCFG *r_anal_esil_cfg_new () {
@@ -514,6 +519,9 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_new () {
 			free(cf);
 			return NULL;
 		}
+		if (cf->g->nodes) {
+			cf->g->nodes->free = _free_bb_cb;
+		}
 	}
 	return cf;
 }
@@ -546,5 +554,19 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_expr (RAnalEsilCFG *cfg, RAnal *anal, const 
 		r_rbtree_cont_free(blocks);
 		return NULL;
 	}
-	return esil_cfg_gen(cfg, anal, atoms, blocks, stack, off, expr);
+	RAnalEsilCFG *ret = esil_cfg_gen(cf, anal, atoms, blocks, stack, off, expr);
+	r_stack_free(stack);
+	r_id_storage_free(atoms);
+	r_rbtree_cont_free(blocks);
+	return ret;
+}
+
+R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg) {
+	if (cfg && cfg->g) {
+		if (cfg->g->nodes) {
+			cfg->g->nodes->free = _free_bb_cb;
+		}
+		r_graph_free(cfg->g);
+	}
+	free(cfg);
 }
