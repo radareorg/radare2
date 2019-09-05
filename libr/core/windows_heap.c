@@ -712,8 +712,10 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 	WPARAM lfhKey = GetLFHKey (dbg, h_proc, false);
 
 	if (!lfhKey) {
+		RtlDestroyQueryDebugBuffer (db);
+		CloseHandle (h_proc);
 		eprintf ("GetHeapBlocks: Failed to get LFH key.\n");
-		goto err;
+		return NULL;
 	}
 
 	PHeapInformation heapInfo = db->HeapInformation;
