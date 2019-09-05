@@ -6202,6 +6202,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 		if (hint && hint->bits) {
 			setBits = hint->bits;
 		}
+		r_anal_hint_free (hint);
 		if (setBits != core->assembler->bits) {
 			r_config_set_i (core->config, "asm.bits", setBits);
 		}

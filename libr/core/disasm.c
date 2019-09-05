@@ -2430,6 +2430,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			ds->oplen = sz; //ds->asmop.size;
 			return i;
 		}
+		if (meta) {
+			r_meta_item_free (meta);
+		}
 	}
 
 	if (ds->show_nodup) {
@@ -2992,8 +2995,8 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 				break;
 			}
 		}
+		r_list_free (list);
 	}
-	r_list_free (list);
 	return ret;
 }
 
@@ -3441,6 +3444,9 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 			getPtr (ds, mi->from, pos);
 			ds->core->assembler->bits = obits;
 			gotShortcut = true;
+		}
+		if (mi) {
+			r_meta_item_free (mi);
 		}
 	}
 	switch (ds->analop.type) {
@@ -4774,6 +4780,8 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 	if (mi) {
 		is_code = mi->type != 'd';
+		r_meta_item_free (mi);
+		mi = NULL;
 	}
 	if (is_code && ds->asm_describe && !ds->has_description) {
 		char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
@@ -6260,6 +6268,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	int midbb = r_config_get_i (core->config, "asm.bb.middle");
 	i = 0;
 	j = 0;
+	RAnalMetaItem *meta = NULL;
 toro:
 	for (; pdi_check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
 		RFlagItem *item;
@@ -6267,7 +6276,12 @@ toro:
 			err = 1;
 			break;
 		}
-		RAnalMetaItem *meta = r_meta_find (core->anal, core->offset + i,
+		if (meta)  {
+			// Release before write, control flow bellow is too messy to
+			// relase after use.
+			r_meta_item_free (meta);
+		}
+		meta = r_meta_find (core->anal, core->offset + i,
 			R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (meta && meta->size > 0) {
 			switch (meta->type) {
@@ -6455,6 +6469,9 @@ toro:
 		r_core_seek (core, core->offset + i, 1);
 		i = 0;
 		goto toro;
+	}
+	if (meta) {
+		r_meta_item_free (meta);
 	}
 	r_cons_break_pop ();
 	r_core_seek (core, old_offset, 1);

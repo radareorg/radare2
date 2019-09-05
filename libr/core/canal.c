@@ -898,6 +898,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 								break;
 							}
 							at += mi->size;
+							r_meta_item_free (mi);
 						}
 						// TODO: ensure next address is function after padding (nop or trap or wat)
 						// XXX noisy for test cases because we want to clear the stderr
@@ -4874,10 +4875,13 @@ repeat:
 				case R_META_TYPE_STRING:
 				case R_META_TYPE_FORMAT:
 					i += 4;
+					r_list_free (list);
 					goto repeat;
 				}
 			}
-			r_list_free (list);
+			if (list) {
+				r_list_free (list);
+			}
 		}
 		/* realign address if needed */
 		if (opalign > 0) {

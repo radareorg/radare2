@@ -805,6 +805,7 @@ R_API void r_anal_merge_hint_ranges(RAnal *a) {
 			}
 			range_bits = bits;
 		}
+		ls_free (sdb_range);
 		a->merge_hints = false;
 	}
 }

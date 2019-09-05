@@ -703,6 +703,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
 			if (mi) {
 				r_meta_print (core->anal, mi, input[3], NULL, false);
+				r_meta_item_free (mi);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
@@ -710,6 +711,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			if (mi) {
 				r_meta_print (core->anal, mi, input[2], NULL, false);
 				r_cons_newline ();
+				r_meta_item_free (mi);
 			}
 			break;
 		}

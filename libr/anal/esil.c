@@ -1844,12 +1844,13 @@ static bool esil_poke_some(RAnalEsil *esil) {
 					r_anal_esil_get_parm_size (esil, foo, &tmp, &regsize);
 					isregornum (esil, foo, &num64);
 					r_write_ble (b, num64, esil->anal->big_endian, regsize);
-					const ut32 written = r_anal_esil_mem_write (esil, ptr, b, regsize);
-					if (written != regsize) {
+					const int size_bytes = regsize / 8;
+					const ut32 written = r_anal_esil_mem_write (esil, ptr, b, size_bytes);
+					if (written != size_bytes) {
 						//eprintf ("Cannot write at 0x%08" PFMT64x "\n", ptr);
 						esil->trap = 1;
 					}
-					ptr += regsize/8;
+					ptr += size_bytes;
 					free (foo);
 				}
 			}
