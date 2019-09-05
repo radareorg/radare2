@@ -4630,7 +4630,7 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 	len /= ws;
 
 	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-	p->cb_printf ("const uint%d_t buffer[%d] = {", bits, len);
+	p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {", bits, len);
 
 	p->interrupt = 0;
 
