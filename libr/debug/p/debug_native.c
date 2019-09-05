@@ -403,17 +403,19 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			RCore* core = dbg->corebind.core;
 			bool autoload_pdb = dbg->corebind.cfggeti (core, "pdb.autoload");
 			if (autoload_pdb) {
-				char* o_res = dbg->corebind.cmdstrf (core, "o %s", ((PLIB_ITEM)(r->lib))->Path);
+				dbg->corebind.cmdf (core, "o %s 0x%p", ((PLIB_ITEM)(r->lib))->Path, ((PLIB_ITEM)(r->lib))->BaseOfDll);
+				char *o_res = dbg->corebind.cmdstrf (core, "o~+%s", ((PLIB_ITEM)(r->lib))->Path);
 				int fd = atoi (o_res);
-				dbg->corebind.cmdf (core, "o %d", fd);
-				char* pdb_path = dbg->corebind.cmdstr (core, "i~pdb");
+				free (o_res);
+				char *pdb_path = dbg->corebind.cmdstr (core, "i~pdb");
 				if (*pdb_path == 0) {
 					eprintf ("Failure...\n");
 					dbg->corebind.cmd (core, "i");
 				} else {
 					pdb_path = strchr (pdb_path, ' ') + 1;
-					dbg->corebind.cmdf (core, "idp %s", pdb_path);
+					dbg->corebind.cmdf (core, "idp");
 				}
+				free (pdb_path);
 				dbg->corebind.cmdf (core, "o-%d", fd);
 			}
 			r_debug_info_free (r);
