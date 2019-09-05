@@ -2,6 +2,7 @@
 #define WINDOWS_HEAP_H
 
 #include <windows.h>
+#include <winternl.h>
 
 /* 
 	Defines most of heap related structures on Windows (some still missing)
@@ -1000,5 +1001,13 @@ NTSTATUS (NTAPI *RtlQueryProcessDebugInformation)(
 
 NTSTATUS (NTAPI *RtlDestroyQueryDebugBuffer)(
 	IN PDEBUG_BUFFER DebugBuffer
+);
+
+__kernel_entry NTSTATUS (*w32_NtQueryInformationProcess)(
+  IN HANDLE           ProcessHandle,
+  IN PROCESSINFOCLASS ProcessInformationClass,
+  OUT PVOID           ProcessInformation,
+  IN ULONG            ProcessInformationLength,
+  OUT PULONG          ReturnLength
 );
 #endif
