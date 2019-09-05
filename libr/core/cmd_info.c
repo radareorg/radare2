@@ -832,7 +832,7 @@ static int cmd_info(void *data, const char *input) {
 					pdbopts.symbol_store_path = (char*) r_config_get (core->config, "pdb.symstore");
 					int r = r_bin_pdb_download (core, 0, NULL, &pdbopts);
 					if (r > 0) {
-						eprintf ("Error while downloading pdb file");
+						eprintf ("Error while downloading pdb file\n");
 					}
 					input++;
 					break;
@@ -847,7 +847,7 @@ static int cmd_info(void *data, const char *input) {
 					} else {
 						/* Autodetect local file */
 						if (!info || !info->debug_file_name) {
-							eprintf ("Cannot get file's debug information");
+							eprintf ("Cannot get file's debug information\n");
 							break;
 						}
 						// Check raw path for debug filename
@@ -884,7 +884,7 @@ static int cmd_info(void *data, const char *input) {
 					}
 
 					if (!file_found) {
-						eprintf ("File '%s' not found in file directory or symbol store", r_file_basename (info->debug_file_name));
+						eprintf ("File '%s' not found in file directory or symbol store\n", r_file_basename (info->debug_file_name));
 						free (filename);
 						break;
 					}
