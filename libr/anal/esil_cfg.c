@@ -83,8 +83,7 @@ RAnalEsilOp *esil_get_op (RAnalEsil *esil, const char *op) {
 static void esil_expr_atomize(RIDStorage *atoms, char *expr) {
 	ut32 forget_me;
 	for (
-		r_id_storage_add(atoms, expr, &forget_me);
-		!!expr && r_id_storage_add(atoms, expr, &forget_me);
+		;!!expr && r_id_storage_add(atoms, expr, &forget_me);
 		expr = condrets_strtok(expr, ',')
 	) {}
 }
@@ -348,11 +347,23 @@ void _handle_goto(EsilCfgGen *gen, ut32 idx) {
 	// get the node to the corresponding GOTO destination
 	RAnalEsilEOffset dst_off = {gen->off, (ut16)v->val};
 	RGraphNode *dst_node = r_rbtree_cont_find(gen->blocks, &dst_off, _graphnode_esilbb_find_cmp, NULL);
-	if (dst_node) {
+	if (!dst_node) {
 		// out-of-bounds
 		// check if this works
 		dst_node = gen->cfg->end;
+	} else {
+		RAnalEsilBB *dst_bb = (RAnalEsilBB *)dst_node->data;
+		if (dst_bb->first.idx != v->val) {
+			RAnalEsilBB *split_bb = R_NEW0(RAnalEsilBB);
+			split_bb[0] = dst_bb[0];
+			dst_bb->last.idx = v->val - 1;
+			split_bb->first.idx = v->val;
+			RGraphNode *split = r_graph_node_split_forward(gen->cfg->g, dst_node, split_bb);
+			r_graph_add_edge(gen->cfg->g, dst_node, split);
+			dst_node = split;
+		}
 	}
+
 
 	r_graph_add_edge(gen->cfg->g, gnode, dst_node);
 beach:
