@@ -276,6 +276,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 		eprintf ("Opening %s\n", ntdllpath);
 		dbg->corebind.cmdf (dbg->corebind.core, "o %s 0x%"PFMT64x"", ntdllpath, map->addr);
 		lastNdtllAddr = map->addr;
+		free (ntdllpath);
 	}
 	r_list_free (modules);
 
@@ -311,13 +312,13 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	return true;
 }
 
-static WPARAM GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment) {
+static bool GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) {
 	r_return_val_if_fail (dbg, 0);
-	WPARAM lfhKey = 0;
 	WPARAM lfhKeyLocation;
 
 	if (!GetHeapGlobalsOffset (dbg, h_proc)) {
-		return 0;
+		*lfhKey = 0;
+		return false;
 	}
 
 	if (segment) {
@@ -325,11 +326,13 @@ static WPARAM GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment) {
 	} else {
 		lfhKeyLocation = RtlpLFHKeyOffset; // ntdll!RtlpLFHKey
 	}
-	if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, &lfhKey, sizeof (WPARAM), NULL)) {
+	if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, lfhKey, sizeof (WPARAM), NULL)) {
 		r_sys_perror ("ReadProcessMemory");
 		eprintf ("LFH key not found.\n");
+		*lfhKey = 0;
+		return false;
 	}
-	return lfhKey;
+	return true;
 }
 
 static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
@@ -709,9 +712,8 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 		goto err;
 	}
 
-	WPARAM lfhKey = GetLFHKey (dbg, h_proc, false);
-
-	if (!lfhKey) {
+	WPARAM lfhKey;
+	if (!GetLFHKey (dbg, h_proc, false, &lfhKey)) {
 		RtlDestroyQueryDebugBuffer (db);
 		CloseHandle (h_proc);
 		eprintf ("GetHeapBlocks: Failed to get LFH key.\n");
@@ -979,7 +981,9 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 		if (segment.DescArray[pageIndex].RangeFlags & PAGE_RANGE_FLAGS_LFH_SUBSEGMENT) {
 			HEAP_LFH_SUBSEGMENT subsegment;
 			ReadProcessMemory (h_proc, (PVOID)subsegmentOffset, &subsegment, sizeof (HEAP_LFH_SUBSEGMENT), NULL);
-			subsegment.BlockOffsets.EncodedData ^= (DWORD)GetLFHKey (dbg, h_proc, true) ^ ((DWORD)subsegmentOffset >> 0xC);
+			WPARAM lfhKey;
+			GetLFHKey (dbg, h_proc, true, &lfhKey);
+			subsegment.BlockOffsets.EncodedData ^= (DWORD)lfhKey ^ ((DWORD)subsegmentOffset >> 0xC);
 			hb->dwAddress = (PVOID)offset;
 			hb->dwSize = subsegment.BlockOffsets.BlockSize;
 			hb->dwFlags = 1 | SEGMENT_HEAP_BLOCK | LFH_BLOCK;
@@ -1048,7 +1052,8 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 		R_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
 		goto err;
 	}
-	WPARAM NtLFHKey = GetLFHKey (dbg, h_proc, false);
+	WPARAM NtLFHKey;
+	GetLFHKey (dbg, h_proc, false, &NtLFHKey);
 	PHeapInformation heapInfo = db->HeapInformation;
 	for (int i = 0; i < heapInfo->count; i++) {
 		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
