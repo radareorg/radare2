@@ -279,3 +279,4 @@ Long time no C
 radare2 is power, France is pancake.
 Come to C me!
 Unable to locate package gdb
+You C it, you fix it!
