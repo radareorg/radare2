@@ -588,7 +588,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op (RAnalEsilCFG *cfg, RAnal *anal, RAnalOp 
 		return NULL;
 	}
 	const char *pc = r_reg_get_name(anal->reg, R_REG_NAME_PC);
-	r_strbuf_setf(glue, "0x%"PFMT64x",%s,:=", op->addr + op->size, pc);
+	r_strbuf_setf(glue, "0x%"PFMT64x",%s,:=,", op->addr + op->size, pc);
 	glue_bb->expr = strdup(r_strbuf_get(glue));
 	r_strbuf_free(glue);
 	if (!glue_bb->expr) {
@@ -617,6 +617,59 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op (RAnalEsilCFG *cfg, RAnal *anal, RAnalOp 
 		ret = r_anal_esil_cfg_expr(cfg, anal, op->addr, r_strbuf_get(&op->esil));
 	}
 	return ret;
+}
+
+static void merge_2_blocks(RAnalEsilCFG *cfg, RGraphNode *node, RGraphNode *block) {
+	// merge node and block, block dies in this
+	// block----->node ===> node
+	if (node == cfg->end) {
+	// do not merge the post-dominator
+		return;
+	}
+	RListIter *iter;
+	RGraphNode *n;
+	r_list_foreach(block->in_nodes, iter, n) {
+		r_graph_add_edge(cfg->g, n, node);
+	}
+	RAnalEsilBB *block_bb, *node_bb = (RAnalEsilBB *)node->data;
+	block_bb = (RAnalEsilBB *)block->data;
+	if ((block_bb->enter == R_ANAL_ESIL_BLOCK_ENTER_TRUE) || (block_bb->enter == R_ANAL_ESIL_BLOCK_ENTER_FALSE)) {
+		node_bb->enter = block_bb->enter;
+	} else {
+		node_bb->enter = R_ANAL_ESIL_BLOCK_ENTER_NORMAL;
+	}
+	RStrBuf *buf = r_strbuf_new(block_bb->expr);
+	node_bb->first = block_bb->first;
+	r_graph_del_node(cfg->g, block);
+	r_strbuf_appendf(buf, "\\n%s", node_bb->expr);
+	free(node_bb->expr);
+	node_bb->expr = strdup(r_strbuf_get(buf));
+	if (block == cfg->start) {
+		cfg->start = node;
+	}
+}
+
+
+// this shit is slow af, bc of foolish graph api
+R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg) {
+	if (!cfg || !cfg->g || !cfg->g->nodes) {
+		return;
+	}
+	RListIter *iter, *ator;
+	RGraphNode *node;
+	r_list_foreach_safe(cfg->g->nodes, iter, ator, node) {
+		if (r_list_length(node->in_nodes) == 1) {
+			RAnalEsilBB *bb = (RAnalEsilBB *)node->data;
+			RGraphNode *top = (RGraphNode *)r_list_get_top(node->out_nodes);
+			// segfaults here ?
+			if (!(top && bb->enter == R_ANAL_ESIL_BLOCK_ENTER_GLUE && (r_list_length(top->in_nodes) > 1))) {
+				RGraphNode *block = (RGraphNode *)r_list_get_top(node->in_nodes);
+				if (r_list_length(block->out_nodes) == 1) {
+					merge_2_blocks(cfg, node, block);
+				}
+			}
+		}
+	}
 }
 
 R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg) {
