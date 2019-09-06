@@ -52,6 +52,7 @@ static const char *help_msg_aa[] = {
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 	"aang", "", "find function and symbol names from golang binaries",
 	"aao", "", "analyze all objc references",
+	"aaO", " [fcn]", "Analyze all/given function to convert immediate to linked structure offsets (see tl?)",
 	"aap", "", "find and analyze function preludes",
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
 	"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
@@ -552,8 +553,9 @@ static const char *help_msg_ah[] = {
 	"ahi", "[?] 10", "define numeric base for immediates (1, 8, 10, 16, s)",
 	"ahj", "", "list hints in JSON",
 	"aho", " foo a0,33", "replace opcode string",
+	"ahO", " [?] <type>", "Mark immediate as a type offset",
 	"ahp", " addr", "set pointer hint",
-	"ahr", " val",  "set hint for return value of a function",
+	"ahr", " val", "set hint for return value of a function",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
 	"aht", " call", "change opcode type (see aht?)",
@@ -572,6 +574,14 @@ static const char *help_msg_ahi[] = {
 	"ahi", " i", "set base to IP address (32)",
 	"ahi", " S", "set base to syscall (80)",
 	"ahi", " s", "set base to string (1)",
+	NULL
+};
+
+static const char *help_msg_ahO[] = {
+	"Usage: ahO[...]", "", "",
+	"ahOs", " <offset>", "List all matching structure offsets",
+	"ahO", " <struct.member>", "Change immediate to structure offset",
+	"ahO?", "", "show this help",
 	NULL
 };
 
@@ -8805,6 +8815,33 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'o': // "aao"
 		cmd_anal_objc (core, input + 1, false);
 		break;
+	case 'O': { // "aaO"
+		char *off = r_str_trim_dup (input + 2);
+		RAnalFunction *fcn;
+		RListIter *it;
+		if (off && *off) {
+			ut64 addr = r_num_math (NULL, off);
+			fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+			if (fcn) {
+				link_struct_offset (core, fcn);
+			} else {
+				eprintf ("cannot find function at %08" PFMT64x "\n", addr);
+			}
+		} else {
+			if (r_list_length (core->anal->fcns) == 0) {
+				eprintf ("couldn't find any functions\n");
+				break;
+			}
+			r_list_foreach (core->anal->fcns, it, fcn) {
+				if (r_cons_is_breaked ()) {
+					break;
+				}
+				link_struct_offset (core, fcn);
+			}
+		}
+		free (off);
+		break;
+	}
 	case 'e': // "aae"
 		if (input[1]) {
 			const char *len = (char *)input + 1;

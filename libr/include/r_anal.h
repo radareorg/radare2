@@ -736,6 +736,7 @@ typedef struct r_anal_hint_t {
 	char *syntax;
 	char *esil;
 	char *offset;
+	char *structoff;
 	ut32 type;
 	int size;
 	int bits;
