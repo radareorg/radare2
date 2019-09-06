@@ -572,6 +572,53 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_expr (RAnalEsilCFG *cfg, RAnal *anal, const 
 	return ret;
 }
 
+R_API RAnalEsilCFG *r_anal_esil_cfg_op (RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op) {
+	if (!op || !anal || !anal->reg || !anal->esil) {
+		return NULL;
+	}
+	RAnalEsilBB *glue_bb = R_NEW0(RAnalEsilBB);
+	if (!glue_bb) {
+		eprintf("Couldn't allocate glue_bb\n");
+		return NULL;
+	}
+	RStrBuf *glue = r_strbuf_new("");
+	if (!glue) {
+		free(glue_bb);
+		eprintf("Couldn't allocate glue\n");
+		return NULL;
+	}
+	const char *pc = r_reg_get_name(anal->reg, R_REG_NAME_PC);
+	r_strbuf_setf(glue, "0x%"PFMT64x",%s,:=", op->addr + op->size, pc);
+	glue_bb->expr = strdup(r_strbuf_get(glue));
+	r_strbuf_free(glue);
+	if (!glue_bb->expr) {
+		free(glue_bb);
+		eprintf("Couldn't strdup\n");
+		return NULL;
+	}
+	glue_bb->enter = R_ANAL_ESIL_BLOCK_ENTER_GLUE;
+	glue_bb->first.off = glue_bb->last.off = op->addr;
+	glue_bb->first.idx = glue_bb->last.idx = 0;
+
+	RAnalEsilCFG *ret;
+
+	if (!cfg) {
+		ret = r_anal_esil_cfg_expr(cfg, anal, op->addr, r_strbuf_get(&op->esil));
+		RGraphNode *glue_node = r_graph_add_node(ret->g, glue_bb);
+		r_graph_add_edge(ret->g, glue_node, ret->start);
+		ret->start = glue_node;
+	} else {
+		RGraphNode *glue_node = r_graph_add_node(cfg->g, glue_bb);
+		r_graph_add_edge(cfg->g, cfg->end, glue_node);
+		void *foo = cfg->end->data;
+		cfg->end->data = glue_node->data;
+		glue_node->data = foo;
+		cfg->end = glue_node;
+		ret = r_anal_esil_cfg_expr(cfg, anal, op->addr, r_strbuf_get(&op->esil));
+	}
+	return ret;
+}
+
 R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg) {
 	if (cfg && cfg->g) {
 		if (cfg->g->nodes) {
