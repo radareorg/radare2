@@ -4681,6 +4681,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			} else {
 				r_list_free (list);
 				// function name not resolved
+				r_warn_if_fail (!key);
 				nargs = DEFAULT_NARGS;
 				if (fcn) {
 					// @TODO: fcn->nargs should be updated somewhere and used here instead
@@ -4689,6 +4690,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 							r_anal_var_count (core->anal, fcn, 'r', 1);
 				}
 				if (nargs > 0) {
+					ds_comment_esil (ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
 					if (fcn_name) {
 						ds_comment_middle (ds, "; %s(", fcn_name);
 					} else {
