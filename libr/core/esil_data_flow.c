@@ -15,10 +15,11 @@ typedef struct esil_data_flow_node_t {
 	// add more info here
 	ut32 idx;
 	RStrBuf *content;
+	bool generative;
 } EsilDataFlowNode;
 
 EsilDataFlowNode *new_edf_node (EsilDataFlow *edf, const char *c) {
-	EsilDataFlowNode *ret = R_NEW (EsilDataFlowNode);
+	EsilDataFlowNode *ret = R_NEW0 (EsilDataFlowNode);
 	ret->content = r_strbuf_new (c);
 	ret->idx = edf->idx++;
 	return ret;
@@ -155,6 +156,7 @@ static bool edf_consume_2_set_reg(RAnalEsil *esil) {
 
 	EsilDataFlowNode *eop_node = new_edf_node (edf, src);
 	r_strbuf_appendf (eop_node->content, ",%s,%s", dst, op_string);
+	eop_node->generative = true;
 	free (src);
 
 	RGraphNode *op_node = r_graph_add_node (edf->flow, eop_node);
@@ -183,6 +185,7 @@ static bool edf_consume_2_push_1(RAnalEsil *esil) {
 	}
 	EsilDataFlowNode *eop_node = new_edf_node (edf, src[0]);
 	r_strbuf_appendf (eop_node->content, ",%s,%s", src[1], op_string);
+	eop_node->generative = true;
 	RGraphNode *op_node = r_graph_add_node (edf->flow, eop_node);
 	RGraphNode *src_node[2];
 	ut32 i;
@@ -240,6 +243,7 @@ static bool edf_consume_1_push_1(RAnalEsil *esil) {
 	}
 	EsilDataFlowNode *eop_node = new_edf_node (edf, src);
 	r_strbuf_appendf (eop_node->content, ",%s", op_string);
+	eop_node->generative = true;
 	RGraphNode *op_node = r_graph_add_node (edf->flow, eop_node);
 	RGraphNode *src_node = sdb_ptr_get (edf->latest_nodes, src, 0);
 	if (!src_node) {
@@ -311,6 +315,7 @@ static bool edf_consume_1_use_old_new_push_1(RAnalEsil *esil, const char *op_str
 		return false;
 	}
 	EsilDataFlowNode *eop_node = new_edf_node (edf, src);
+	eop_node->generative = true;
 	r_strbuf_appendf (eop_node->content, ",%s", op_string);
 	RGraphNode *src_node, *op_node = r_graph_add_node (edf->flow, eop_node);
 	src_node = sdb_ptr_get (edf->latest_nodes, src, 0);
@@ -422,7 +427,11 @@ R_API void r_core_anal_esil_graph(RCore *core, const char *expr) {
 	r_list_foreach (r_graph_get_nodes (edf->flow), iter, node) {
 		const EsilDataFlowNode *enode = (EsilDataFlowNode *)node->data;
 		char *esc_str = r_str_escape (r_strbuf_get (enode->content));
-		r_cons_printf ("\"agn %d %s\"\n", enode->idx, esc_str);
+		if (enode->generative) {
+			r_cons_printf ("\"agn %d generative:%s\"\n", enode->idx, esc_str);
+		} else {
+			r_cons_printf ("\"agn %d %s\"\n", enode->idx, esc_str);
+		}
 		node->free = (RListFree)edf_node_free;
 		free (esc_str);
 	}
