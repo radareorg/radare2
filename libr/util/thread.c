@@ -90,7 +90,7 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 		eprintf ("Failed to get thread name\n");
 		return false;
 	}
-#elif (__FreeBSD__ &&  __FreeBSD_version >= 1200000) || __DragonFly__ /* || __OpenBSD__ TODO after nxt rel. */
+#elif (__FreeBSD__ &&  __FreeBSD_version >= 1200000) || __DragonFly__  || (__OpenBSD__ && OpenBSD >= 201905)
 	pthread_get_name_np (th->tid, name, len);
 #else
 #pragma message("warning r_th_getname not implemented")
