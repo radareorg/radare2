@@ -14,7 +14,7 @@ static const char *help_msg_t[] = {
 	"t*", "", "List types info in r2 commands",
 	"t-", " <name>", "Delete types by its name",
 	"t-*", "", "Remove all types",
-	"ta", " <type>", "Mark immediate as a type offset",
+	"tail", " [filename]", "Output the last part of files",
 	"tc", "[type.name]", "List all/given types in C output format",
 	"te", "[?]", "List all loaded enums",
 	"td", "[?] <string>", "Load types from string",
@@ -167,7 +167,6 @@ static const char *help_msg_tu[] = {
 static void cmd_type_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, t);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, t-, t_minus);
-	DEFINE_CMD_DESCRIPTOR (core, ta);
 	DEFINE_CMD_DESCRIPTOR (core, tc);
 	DEFINE_CMD_DESCRIPTOR (core, td);
 	DEFINE_CMD_DESCRIPTOR (core, te);
@@ -825,7 +824,7 @@ beach:
 	return;
 }
 
-static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
+R_API void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};

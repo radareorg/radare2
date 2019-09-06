@@ -7313,8 +7313,108 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			}
 		} else {
 			r_anal_hint_clear (core->anal);
+		} break;
+	case 'O': // "ahO"
+		switch (input[1]) {
+		case 's': { // "ahOs"
+			char *off = strdup (input + 2);
+			r_str_trim (off);
+			int toff = r_num_math (NULL, off);
+			if (toff) {
+				RList *typeoffs = r_type_get_by_offset (core->anal->sdb_types, toff);
+				RListIter *iter;
+				char *ty;
+				r_list_foreach (typeoffs, iter, ty) {
+					r_cons_printf ("%s\n", ty);
+				}
+				r_list_free (typeoffs);
+			}
+			free (off);
+			break;
 		}
-		break;
+		case ' ': {
+			// r_anal_hint_set_opcode (core->anal, core->offset, input + 2);
+			const char *off = NULL;
+			char *type = strdup (r_str_trim_ro (input + 2));
+			char *idx = strchr (type, ' ');
+			if (idx) {
+				*idx++ = 0;
+				off = idx;
+			}
+			char *ptr = strchr (type, '=');
+			ut64 offimm = 0;
+			int i = 0;
+			ut64 addr;
+
+			if (ptr) {
+				*ptr++ = 0;
+				r_str_trim (ptr);
+				if (ptr && *ptr) {
+					addr = r_num_math (core->num, ptr);
+				} else {
+					eprintf ("address is unvalid\n");
+					free (type);
+					break;
+				}
+			} else {
+				addr = core->offset;
+			}
+			r_str_trim (type);
+			RAsmOp asmop;
+			RAnalOp op = { 0 };
+			ut8 code[128] = { 0 };
+			(void)r_io_read_at (core->io, core->offset, code, sizeof (code));
+			r_asm_set_pc (core->assembler, addr);
+			(void)r_asm_disassemble (core->assembler, &asmop, code, core->blocksize);
+			int ret = r_anal_op (core->anal, &op, core->offset, code, core->blocksize, R_ANAL_OP_MASK_VAL);
+			if (ret >= 0) {
+				// HACK: Just convert only the first imm seen
+				for (i = 0; i < 3; i++) {
+					if (op.src[i]) {
+						if (op.src[i]->imm) {
+							offimm = op.src[i]->imm;
+						} else if (op.src[i]->delta) {
+							offimm = op.src[i]->delta;
+						}
+					}
+				}
+				if (!offimm && op.dst) {
+					if (op.dst->imm) {
+						offimm = op.dst->imm;
+					} else if (op.dst->delta) {
+						offimm = op.dst->delta;
+					}
+				}
+				if (offimm != 0) {
+					if (off) {
+						offimm += r_num_math (NULL, off);
+					}
+					// TODO: Allow to select from multiple choices
+					RList *otypes = r_type_get_by_offset (core->anal->sdb_types, offimm);
+					RListIter *iter;
+					char *otype = NULL;
+					r_list_foreach (otypes, iter, otype) {
+						// TODO: I don't think we should silently error, it is confusing
+						if (!strcmp (type, otype)) {
+							//eprintf ("Adding type offset %s\n", type);
+							r_type_link_offset (core->anal->sdb_types, type, addr);
+							r_anal_hint_set_offset (core->anal, addr, otype);
+							break;
+						}
+					}
+					if (!otype) {
+						eprintf ("wrong type for opcode offset\n");
+					}
+					r_list_free (otypes);
+				}
+			}
+			r_anal_op_fini (&op);
+			free (type);
+		} break;
+		case '?':
+			r_core_cmd_help (core, help_msg_ahO);
+			break;
+		}
 	}
 }
 

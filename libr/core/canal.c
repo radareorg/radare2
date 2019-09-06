@@ -1038,6 +1038,7 @@ static void print_hint_h_format(RAnalHint* hint) {
 	HINTCMD (hint, immbase, " immbase=%d");
 	HINTCMD (hint, esil, " esil='%s'");
 	HINTCMD (hint, ptr, " ptr=0x%"PFMT64x);
+	HINTCMD (hint, offset, " offset='%s'");
 	if (hint->val != UT64_MAX) {
 		r_cons_printf (" val=0x%08"PFMT64x, hint->val);
 	}
