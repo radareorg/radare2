@@ -134,6 +134,9 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (r_reg_is_readonly (reg, item)) {
 		return true;
 	}
+	if (item->offset < 0) {
+		return true;
+	}
 	RRegArena *arena = reg->regset[item->arena].arena;
 	if (!arena) {
 		return false;
