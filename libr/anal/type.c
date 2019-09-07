@@ -41,7 +41,7 @@ static void save_type_size(Sdb *sdb_types, char *name) {
  * \param core pointer to radare2 core
  * \param parsed the parsed c string in sdb format
  */
-static void save_parsed_type_size(RAnal *anal, const char *parsed) {
+static void __save_parsed_type_size(RAnal *anal, const char *parsed) {
 	r_return_if_fail (anal && parsed);
 	char *str = strdup (parsed);
 	if (str) {
@@ -117,6 +117,6 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 
 	// Now add the type to sdb.
 	sdb_query_lines (anal->sdb_types, parsed);
-	save_parsed_type_size (anal, parsed);
+	__save_parsed_type_size (anal, parsed);
 }
 
