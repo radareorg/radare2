@@ -1748,6 +1748,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				append (echars, Color_INVERT);
 				hadflag = true;
 			}
+			if (meta) {
+				r_meta_item_free (meta);
+				meta = NULL;
+			}
 			// collect comments
 			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
 			if (comment) {

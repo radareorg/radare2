@@ -444,8 +444,7 @@ static RAnalMetaItem *r_meta_find_(RAnal *a, ut64 at, int type, int where, int e
 	const char *infos, *metas;
 	char key[100];
 	Sdb *s = a->sdb_meta;
-	static RAnalMetaItem mi = {0};
-	// XXX: return allocated item? wtf
+	RAnalMetaItem *mi = NULL;
 	if (where != R_META_WHERE_HERE) {
 		eprintf ("THIS WAS NOT SUPPOSED TO HAPPEN\n");
 		return NULL;
@@ -456,6 +455,7 @@ static RAnalMetaItem *r_meta_find_(RAnal *a, ut64 at, int type, int where, int e
 	if (!infos) {
 		return NULL;
 	}
+	mi =  R_NEW0 (RAnalMetaItem);
 	for (; *infos; infos++) {
 		if (*infos == ',') {
 			continue;
@@ -469,12 +469,13 @@ static RAnalMetaItem *r_meta_find_(RAnal *a, ut64 at, int type, int where, int e
 		snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, *infos, at);
 		metas = sdb_const_get (s, key, 0);
 		if (metas) {
-			if (!r_meta_deserialize_val (a, &mi, *infos, at, metas)) {
+			if (!r_meta_deserialize_val (a, mi, *infos, at, metas)) {
 				continue;
 			}
-			return &mi;
+			return mi;
 		}
 	}
+	r_meta_item_free (mi);
 	return NULL;
 }
 
@@ -498,9 +499,12 @@ R_API RAnalMetaItem *r_meta_find_in(RAnal *a, ut64 at, int type, int where) {
 	r_list_foreach (list, iter, meta) {
 		ut64 mia = r_num_math (NULL, meta);
 		RAnalMetaItem *mi = r_meta_find (a, mia, type, where);
-		if (mi && (at >= mi->from && at < mi->to)) {
-			free (res);
-			return mi;
+		if (mi) {
+			if ((at >= mi->from && at < mi->to)) {
+				free (res);
+				return mi;
+			}
+			r_meta_item_free (mi);
 		}
 	}
 	r_list_free (list);
@@ -514,7 +518,7 @@ R_API RList *r_meta_find_list_in(RAnal *a, ut64 at, int type, int where) {
 		return NULL;
 	}
 	RList *list = r_str_split_list (res, ",", 0);
-	RList *out = r_list_new ();
+	RList *out = r_list_newf (r_meta_item_free);
 	if (!out) {
 		return NULL;
 	}
@@ -536,11 +540,13 @@ R_API RList *r_meta_find_list_in(RAnal *a, ut64 at, int type, int where) {
 			const char *metas = sdb_const_get (s, key, 0);
 			if (metas) {
 				RAnalMetaItem *mi = R_NEW0 (RAnalMetaItem);
-				if (!r_meta_deserialize_val (a, mi, *infos, mia, metas)) {
-					continue;
-				}
-				if (mi && (at >= mi->from && at < mi->to)) {
-					r_list_append (out, mi);
+				if (mi) {
+					if (r_meta_deserialize_val (a, mi, *infos, mia, metas) &&
+						(at >= mi->from && at < mi->to)) {
+						r_list_append (out, mi);
+					} else {
+						r_meta_item_free (mi);
+					}
 				}
 			}
 		}

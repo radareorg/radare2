@@ -728,7 +728,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool last_is_mov_lr_pc = false;
 	ut64 last_push_addr = UT64_MAX;
 	if (anal->limit && addr + idx < anal->limit->from) {
-		return R_ANAL_RET_END;
+		gotoBeach (R_ANAL_RET_END);
 	}
 	RAnalFunction *tmp_fcn = r_anal_get_fcn_in (anal, addr, 0);
 	if (tmp_fcn) {
@@ -782,7 +782,7 @@ repeat:
 			if (anal->verbose) {
 				eprintf ("Warning: FFFF opcode at 0x%08"PFMT64x "\n", at);
 			}
-			return R_ANAL_RET_ERROR;
+			gotoBeach (R_ANAL_RET_ERROR)
 		}
 		r_anal_op_fini (&op);
 		if ((oplen = r_anal_op (anal, &op, at, buf, bytes_read, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) < 1) {
@@ -935,7 +935,7 @@ repeat:
 					goto repeat;
 				}
 				if (skip_ret == 2) {
-					return R_ANAL_RET_END;
+					gotoBeach (R_ANAL_RET_END);
 				}
 			}
 			break;
@@ -964,7 +964,7 @@ repeat:
 					goto repeat;
 				}
 				if (skip_ret == 2) {
-					return R_ANAL_RET_END;
+					gotoBeach (R_ANAL_RET_END);
 				}
 			}
 			if (anal->opt.jmptbl) {
@@ -1054,7 +1054,7 @@ repeat:
 						goto repeat;
 					}
 					if (skip_ret == 2) {
-						return R_ANAL_RET_END;
+						gotoBeach (R_ANAL_RET_END);
 					}
 				}
 			}
@@ -1070,7 +1070,7 @@ repeat:
 				}
 			}
 			if (r_cons_is_breaked ()) {
-				return R_ANAL_RET_END;
+				gotoBeach (R_ANAL_RET_END);
 			}
 			if (anal->opt.jmpref) {
 				(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
@@ -1175,15 +1175,14 @@ repeat:
 					FITFCNSZ ();
 					r_anal_fcn_bb (anal, fcn, op.jump, depth);
 					ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
-					return R_ANAL_RET_END;
+					gotoBeach (R_ANAL_RET_END);
 #else
 					// hardcoded jmp size // must be checked at the end wtf?
 					// always fitfcnsz and retend
 					if (op.jump > fcn->addr + JMP_IS_EOB_RANGE) {
 						ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
 						/* jump inside the same function */
-						FITFCNSZ ();
-						return R_ANAL_RET_END;
+						gotoBeach (R_ANAL_RET_END);
 #if JMP_IS_EOB_RANGE > 0
 					} else {
 						if (op.jump < addr - JMP_IS_EOB_RANGE && op.jump < addr) {
@@ -1206,8 +1205,7 @@ repeat:
 							bb->jump = op.jump;
 							bb->fail = UT64_MAX;
 						}
-						FITFCNSZ ();
-						return R_ANAL_RET_END;
+						gotoBeach (R_ANAL_RET_END);
 					}
 				}
 			}
@@ -1541,6 +1539,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 		case R_META_TYPE_DATA:
 		case R_META_TYPE_STRING:
 		case R_META_TYPE_FORMAT:
+			r_list_free (list);
 			return 0;
 		}
 	}
