@@ -402,6 +402,7 @@ R_API void r_w32_print_windows(RDebug *dbg) {
 		}
 		__print_windows (dbg, windows);
 	}
+	r_list_free (windows);
 }
 
 R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, char *name) {
