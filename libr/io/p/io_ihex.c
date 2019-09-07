@@ -209,7 +209,8 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 		return -1;
 	}
 	rih = fd->data;
-	return r_buf_seek (rih->rbuf, offset, whence);
+	io->off = r_buf_seek (rih->rbuf, offset, whence);
+	return io->off;
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
