@@ -170,8 +170,8 @@ static bool edf_consume_2_push_1(RAnalEsil *esil) {
 		free (src[1]);
 		return false;
 	}
-	RAnalEsilDFGNode *eop_node = r_anal_esil_dfg_node_new (edf, src[0]);
-	r_strbuf_appendf (eop_node->content, ",%s,%s", src[1], op_string);
+	RAnalEsilDFGNode *eop_node = r_anal_esil_dfg_node_new (edf, src[1]);
+	r_strbuf_appendf (eop_node->content, ",%s,%s", src[0], op_string);
 	eop_node->generative = true;
 	RGraphNode *op_node = r_graph_add_node (edf->flow, eop_node);
 	RGraphNode *src_node[2];
