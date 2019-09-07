@@ -64,6 +64,7 @@ if host_machine.system() == 'windows'
  r_debug_sources += [
   'p/native/maps/windows_maps.c',
   'p/native/windows/windows_debug.c',
+  'p/native/windows/windows_message.c',
  ]
 endif
 
