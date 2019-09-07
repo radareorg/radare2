@@ -81,7 +81,7 @@ static const char *help_msg_db[] = {
 	"dbx", " [expr]", "Set expression for bp in current offset",
 	"dbw", " <addr> <r/w/rw>", "Add watchpoint",
 #if __WINDOWS__
-	"dbW", " <WM_DEFINE> [?|handle|name]", "Set cond. breakpoint on a window message handler"
+	"dbW", " <WM_DEFINE> [?|handle|name]", "Set cond. breakpoint on a window message handler",
 #endif
 	"drx", " number addr len perm", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
