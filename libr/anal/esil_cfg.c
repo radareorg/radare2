@@ -88,6 +88,13 @@ static void esil_expr_atomize(RIDStorage *atoms, char *expr) {
 	) {}
 }
 
+
+static void _free_bb_cb(void *data) {
+	RAnalEsilBB *bb = (RAnalEsilBB *)data;
+	free(bb->expr);
+	free(bb);
+}
+
 // REMINDER: generating the block content needs to prepend setting the program counter
 
 // this nasty hook up is an insert-compare for RGraphNodes that contain RAnalEsilBB
@@ -164,6 +171,7 @@ void _handle_if_enter(EsilCfgGen *gen, ut32 id, const bool has_next) {
 
 	// create if-entered-graph-node
 	RGraphNode *entered_node = r_graph_add_node(gen->cfg->g, entered_bb);
+	entered_node->free = _free_bb_cb;
 	r_rbtree_cont_insert(gen->blocks, entered_node, _graphnode_esilbb_insert_cmp, NULL);
 
 	// add edge from entering node to entered node
@@ -190,6 +198,7 @@ void _handle_else_enter(EsilCfgGen *gen, ut32 id, const bool has_next) {
 
 	// create if-entered-graph-node
 	RGraphNode *entered_node = r_graph_add_node(gen->cfg->g, entered_bb);
+	entered_node->free = _free_bb_cb;
 	r_rbtree_cont_insert(gen->blocks, entered_node, _graphnode_esilbb_insert_cmp, NULL);
 
 	if (cookie->is_else) {
@@ -224,6 +233,7 @@ void _handle_fi_leave(EsilCfgGen *gen, ut32 id, const bool has_next) {
 		leaving_bb->first.off = leaving_bb->last.off = gen->off;
 		leaving_bb->first.idx = leaving_bb->last.idx = id;
 		RGraphNode *leaving_node = r_graph_add_node(gen->cfg->g, leaving_bb);
+		leaving_node->free = _free_bb_cb;
 		r_graph_add_edge(gen->cfg->g, gen->cur, leaving_node);
 		r_rbtree_cont_insert(gen->blocks, leaving_node, _graphnode_esilbb_insert_cmp, NULL);
 		gen->cur = leaving_node;
@@ -426,6 +436,7 @@ static RAnalEsilCFG *esil_cfg_gen (RAnalEsilCFG *cfg, RAnal *anal, RIDStorage *a
 		free(_expr);
 		return cfg;
 	}
+	end->free = _free_bb_cb;
 
 	esil_expr_atomize(atoms, _expr);
 
@@ -493,12 +504,6 @@ static RAnalEsilCFG *esil_cfg_gen (RAnalEsilCFG *cfg, RAnal *anal, RIDStorage *a
 	return cfg;
 }
 
-static void _free_bb_cb(void *data) {
-	RAnalEsilBB *bb = (RAnalEsilBB *)data;
-	free(bb->expr);
-	free(bb);
-}
-
 R_API RAnalEsilCFG *r_anal_esil_cfg_new () {
 	RAnalEsilCFG *cf = R_NEW0(RAnalEsilCFG);
 	if (cf) {
@@ -531,7 +536,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_new () {
 			return NULL;
 		}
 		if (cf->g->nodes) {
-			cf->g->nodes->free = _free_bb_cb;
+			cf->end->free = _free_bb_cb;
 		}
 	}
 	return cf;
@@ -605,10 +610,12 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op (RAnalEsilCFG *cfg, RAnal *anal, RAnalOp 
 	if (!cfg) {
 		ret = r_anal_esil_cfg_expr(cfg, anal, op->addr, r_strbuf_get(&op->esil));
 		RGraphNode *glue_node = r_graph_add_node(ret->g, glue_bb);
+		glue_node->free = _free_bb_cb;
 		r_graph_add_edge(ret->g, glue_node, ret->start);
 		ret->start = glue_node;
 	} else {
 		RGraphNode *glue_node = r_graph_add_node(cfg->g, glue_bb);
+		glue_node->free = _free_bb_cb;
 		r_graph_add_edge(cfg->g, cfg->end, glue_node);
 		void *foo = cfg->end->data;
 		cfg->end->data = glue_node->data;
@@ -674,9 +681,6 @@ R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg) {
 
 R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg) {
 	if (cfg && cfg->g) {
-		if (cfg->g->nodes) {
-			cfg->g->nodes->free = _free_bb_cb;
-		}
 		r_graph_free(cfg->g);
 	}
 	free(cfg);
