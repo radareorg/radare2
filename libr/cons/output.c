@@ -22,21 +22,25 @@ static void __fill_tail(int cols, int lines) {
 R_API void r_cons_w32_clear(void) {
 	static HANDLE hStdout = NULL;
 	static CONSOLE_SCREEN_BUFFER_INFO csbi;
-	const COORD startCoords = { 0, 0 };
+	COORD startCoords;
 	DWORD dummy;
 	if (I->is_wine == 1) {
 		write (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
 	}
 	if (!hStdout) {
 		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
-		GetConsoleScreenBufferInfo (hStdout, &csbi);
-		//GetConsoleWindowInfo (hStdout, &csbi);
 	}
+	GetConsoleScreenBufferInfo (hStdout, &csbi);
+	startCoords = (COORD) {
+		csbi.srWindow.Left,
+		csbi.srWindow.Top
+	};
+	DWORD nLength = csbi.dwSize.X * (csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
 	FillConsoleOutputCharacter (hStdout, ' ',
-		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
+		nLength, startCoords, &dummy);
 	FillConsoleOutputAttribute (hStdout,
 		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
-		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
+		nLength, startCoords, &dummy);
 }
 
 R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
@@ -52,6 +56,10 @@ R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
 	if (!*hConsole) {
 		*hConsole = GetStdHandle (fd == 1 ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
 	}
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	GetConsoleScreenBufferInfo (*hConsole, &info);
+	coord.X += info.srWindow.Left;
+	coord.Y += info.srWindow.Top;
 	SetConsoleCursorPosition (*hConsole, coord);
 }
 
