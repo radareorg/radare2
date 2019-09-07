@@ -275,7 +275,6 @@ static bool edf_consume_1_push_1(RAnalEsil *esil) {
 }
 
 static bool edf_consume_2_set_mem(RAnalEsil *esil) {
-	eprintf ("called\n");
 	const char *op_string = esil->current_opstr;
 	RAnalEsilDFG *edf = (RAnalEsilDFG *)esil->user;
 	char *dst = r_anal_esil_pop (esil);
@@ -288,11 +287,6 @@ static bool edf_consume_2_set_mem(RAnalEsil *esil) {
 	}
 
 	int dst_type = r_anal_esil_get_parm_type (esil, dst);
-	if (dst_type == R_ANAL_ESIL_PARM_INVALID) {
-		free (dst);
-		free (src);
-		return false;
-	}
 
 	RGraphNode *src_node = sdb_ptr_get (edf->latest_nodes, src, 0);
 	if (!src_node) {
