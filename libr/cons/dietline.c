@@ -651,7 +651,7 @@ static void selection_widget_select() {
 		if (sp) {
 			int delta = sp - I.buffer.data + 1;
 			I.buffer.length = R_MIN (delta + strlen (sel_widget->options[sel_widget->selection]), R_LINE_BUFSIZE - 1);
-			memcpy (I.buffer.data + delta, sel_widget->options[sel_widget->selection], I.buffer.length);
+			memcpy (I.buffer.data + delta, sel_widget->options[sel_widget->selection], strlen (sel_widget->options[sel_widget->selection]));
 			I.buffer.index = I.buffer.length;
 			return;
 		}
