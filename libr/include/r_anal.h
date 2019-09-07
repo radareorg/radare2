@@ -1254,6 +1254,19 @@ typedef struct r_anal_esil_cfg_t {
 	RGraph *g;
 } RAnalEsilCFG;
 
+typedef struct r_anal_esil_dfg_t {
+	ut32 idx;
+	Sdb *latest_nodes;
+	RGraph *flow;
+} RAnalEsilDFG;
+
+typedef struct r_anal_esil_dfg_node_t {
+	// add more info here
+	ut32 idx;
+	RStrBuf *content;
+	bool generative;
+} RAnalEsilDFGNode;
+
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
 typedef int (*RAnalExCallback)(RAnal *a, struct r_anal_state_type_t *state, ut64 addr);
@@ -1967,6 +1980,11 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const u
 R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op);
 R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg);
 R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg);
+
+R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new (RAnalEsilDFG *edf, const char *c);
+R_API RAnalEsilDFG *r_anal_esil_dfg_new();
+R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg);
+R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, const char *expr);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
