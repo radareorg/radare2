@@ -484,6 +484,15 @@ RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
 	rdi->tid = dbg->tid;
 	rdi->uid = kp.kp_eproc.e_ucred.cr_uid;
 	rdi->gid = kp.kp_eproc.e_ucred.cr_gid;
+#ifdef HAS_LIBPROC
+	char file_path[MAXPATHLEN] = {0};
+	int file_path_len;
+	file_path_len = proc_pidpath (rdi->pid, file_path, sizeof (file_path));
+	if (file_path_len > 0) {
+		file_path[file_path_len] = 0;
+		rdi->exe = strdup (file_path);
+	}
+#endif
 	return rdi;
 }
 
