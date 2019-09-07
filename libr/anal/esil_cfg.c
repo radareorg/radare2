@@ -641,7 +641,7 @@ static void merge_2_blocks(RAnalEsilCFG *cfg, RGraphNode *node, RGraphNode *bloc
 	RStrBuf *buf = r_strbuf_new(block_bb->expr);
 	node_bb->first = block_bb->first;
 	r_graph_del_node(cfg->g, block);
-	r_strbuf_appendf(buf, "\\n%s", node_bb->expr);
+	r_strbuf_appendf(buf, "\n%s", node_bb->expr);
 	free(node_bb->expr);
 	node_bb->expr = strdup(r_strbuf_get(buf));
 	if (block == cfg->start) {
