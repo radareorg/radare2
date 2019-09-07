@@ -1580,6 +1580,10 @@ PUSH { r4, r5, r6, r7, lr }
 			r_strbuf_appendf (&op->esil, "%s,%s,%d,%c,=[4],",
 				REG (i), ARG (0), R_ABS(i*4), i > 0? '+' : '-');
 		}
+		if (insn->detail->arm.writeback == true) { //writeback, reg should be incremented
+			r_strbuf_appendf (&op->esil, "%d,%s,+=,",
+				(insn->detail->arm.op_count -1)*4, ARG (0));
+		}
 		break;
 	case ARM_INS_ASR:
 		// suffix 'S' forces conditional flag to be updated
