@@ -4389,10 +4389,15 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 }
 
 static void ds_print_bbline(RDisasmState *ds, bool force) {
-	if (ds->show_bbline && ds->fcn) {
-		RAnalBlock *bb = r_anal_fcn_bbget_at (ds->fcn, ds->at);
-		if ((force || (ds->fcn && bb && ds->fcn->addr != ds->at))
-		    && ds->at) {
+	if (ds->show_bbline && ds->at && (!force || ds->fcn)) {
+		RAnalBlock *bb = NULL;
+		RAnalFunction *f_before = NULL;
+		if (ds->fcn) {
+			bb = r_anal_fcn_bbget_at (ds->fcn, ds->at);
+		} else {
+			f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
+		}
+		if (force || (ds->fcn && bb && ds->fcn->addr != ds->at) || (!ds->fcn && f_before)) {
 			ds_begin_line (ds);
 			// adapted from ds_setup_pre ()
 			ds->cmtcount = 0;
@@ -4400,7 +4405,9 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 				ds->pre = DS_PRE_NONE;
 			} else {
 				ds->pre = DS_PRE_EMPTY;
-				RAnalFunction *f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
+				if (!f_before) {
+					f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
+				}
 				if (f_before == ds->fcn) {
 					ds->pre = DS_PRE_FCN_MIDDLE;
 				}
