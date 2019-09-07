@@ -41,7 +41,7 @@ static void save_type_size(Sdb *sdb_types, char *name) {
  * \param core pointer to radare2 core
  * \param parsed the parsed c string in sdb format
  */
-static void save_parsed_type_size(RAnal *anal, const char *parsed) {
+static void __save_parsed_type_size(RAnal *anal, const char *parsed) {
 	r_return_if_fail (anal && parsed);
 	char *str = strdup (parsed);
 	if (str) {
@@ -95,21 +95,28 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
 
 R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 	r_return_if_fail (anal && parsed);
-	// First, if this exists, let's remove it.
+
+	// First, if any parsed types exist, let's remove them.
 	char *type = strdup (parsed);
 	if (type) {
-		char *name = is_type (type);
-		if (name) {
+		char *cur = type;
+		while (1) {
+			cur = is_type (cur);
+			if (!cur) {
+				break;
+			}
+			char *name = cur++;
 			*name = 0;
-			while (name - 1 >= type && *(name - 1) != '\n') {
+			while (name > type && *(name - 1) != '\n') {
 				name--;
 			}
 			r_anal_remove_parsed_type (anal, name);
-			// Now add the type to sdb.
-			sdb_query_lines (anal->sdb_types, parsed);
-			save_parsed_type_size (anal, parsed);
 		}
 		free (type);
 	}
+
+	// Now add the type to sdb.
+	sdb_query_lines (anal->sdb_types, parsed);
+	__save_parsed_type_size (anal, parsed);
 }
 
