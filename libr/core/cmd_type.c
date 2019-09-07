@@ -824,7 +824,7 @@ beach:
 	return;
 }
 
-R_API void link_struct_offset(RCore *core, RAnalFunction *fcn) {
+R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
@@ -1466,15 +1466,18 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 	} break;
-	// ta: moved to ahO - just for tail, at the moment
+	// ta: moved to anal hints (ahl)- just for tail, at the moment
 	case 'a': // "ta"
 		switch (input[1]) {
 		case 'i': { // "tai"
 			if (input[2] == 'l') {
 				cmd_tail (core, input);
+			} else {
+				eprintf ("Usage: tail [number] [file]\n");
 			}
-			break;
-		}
+		} break;
+		default:
+			eprintf ("[WARNING] \"ta\" is deprecated. Use \"ahl\" instead.\n");
 		}
 		break;
 	// tl - link a type to an address
@@ -1507,7 +1510,7 @@ static int cmd_type(void *data, const char *input) {
 				r_type_set_link (TDB, type, addr);
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				if (fcn) {
-					link_struct_offset (core, fcn);
+					r_core_link_stroff (core, fcn);
 				}
 				free (tmp);
 			} else {

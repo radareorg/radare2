@@ -8923,20 +8923,20 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			ut64 addr = r_num_math (NULL, off);
 			fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
 			if (fcn) {
-				link_struct_offset (core, fcn);
+				r_core_link_stroff (core, fcn);
 			} else {
-				eprintf ("cannot find function at %08" PFMT64x "\n", addr);
+				eprintf ("Cannot find function at %08" PFMT64x "\n", addr);
 			}
 		} else {
-			if (r_list_length (core->anal->fcns) == 0) {
-				eprintf ("couldn't find any functions\n");
+			if (r_list_empty (core->anal->fcns)) {
+				eprintf ("Couldn't find any functions\n");
 				break;
 			}
 			r_list_foreach (core->anal->fcns, it, fcn) {
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				link_struct_offset (core, fcn);
+				r_core_link_stroff (core, fcn);
 			}
 		}
 		free (off);
