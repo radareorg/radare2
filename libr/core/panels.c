@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2019 - Author: pancake, vane11ope */
+/* Copyright radare2 2014-2019 - Author: pancake, vane11ope, Kirils Solovjovs */
 
 // pls move the typedefs into roons and rename it -> RConsPanel
 
@@ -4988,9 +4988,9 @@ void __panels_refresh(RCore *core) {
 		for (i = 0; i < parent->n_sub; i++) {
 			RPanelsMenuItem *item = parent->sub[i];
 			if (panels->mode == PANEL_MODE_MENU && i == parent->selectedIndex) {
-				r_strbuf_appendf (title, "%s[%s] "Color_RESET, color, item->name);
+				r_strbuf_appendf (title, "%s[%s]"Color_RESET, color, item->name);
 			} else {
-				r_strbuf_appendf (title, "%s  ", item->name);
+				r_strbuf_appendf (title, " %s ", item->name);
 			}
 		}
 	}
