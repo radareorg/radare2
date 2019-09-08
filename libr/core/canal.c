@@ -3168,6 +3168,7 @@ static int fcn_list_legacy(RCore *core, RList *fcns) {
 }
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
+	char temp[64];
 	r_return_val_if_fail (core && core->anal, 0);
 	if (r_list_empty (core->anal->fcns)) {
 		return 0;
@@ -3218,7 +3219,6 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 			return -1;
 		}
 		ls_foreach (fcns, iter, fcn) {
-			char temp[4];
 			RInterval inter = (RInterval) {fcn->addr, r_anal_fcn_size (fcn)};
 			RListInfo *info = r_listinfo_new (r_core_anal_fcn_name (core, fcn), inter, inter, -1, sdb_itoa (fcn->bits, temp, 10));
 			if (!info) {
