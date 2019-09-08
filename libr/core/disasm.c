@@ -4394,8 +4394,8 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	ds_pre_emulation (ds);
 }
 
-static void ds_print_bbline(RDisasmState *ds, bool force) {
-	if (ds->show_bbline && ds->at && (!force || ds->fcn)) {
+static void ds_print_bbline(RDisasmState *ds) {
+	if (ds->show_bbline && ds->at) {
 		RAnalBlock *bb = NULL;
 		RAnalFunction *f_before = NULL;
 		if (ds->fcn) {
@@ -4403,7 +4403,7 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 		} else {
 			f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
 		}
-		if (force || (ds->fcn && bb && ds->fcn->addr != ds->at) || (!ds->fcn && f_before)) {
+		if ((ds->fcn && bb && ds->fcn->addr != ds->at) || (!ds->fcn && f_before)) {
 			ds_begin_line (ds);
 			// adapted from ds_setup_pre ()
 			ds->cmtcount = 0;
@@ -4421,23 +4421,10 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 			ds_print_pre (ds);
 			if (!ds->linesright && ds->show_lines_bb && ds->line) {
 				char *refline, *reflinecol = NULL;
-				RAnalRefStr *refstr;
-				if (force) { // bbline is after disasm
-					refstr = r_anal_reflines_str (ds->core, ds->at,
-						ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
-					refline = refstr->str;
-					reflinecol = refstr->cols;
-					free (refstr);
-				} else {
-					ds_update_ref_lines (ds);
-					refline = ds->refline2;
-					reflinecol = ds->prev_line_col;
-				}
+				ds_update_ref_lines (ds);
+				refline = ds->refline2;
+				reflinecol = ds->prev_line_col;
 				ds_print_ref_lines (refline, reflinecol, ds);
-
-				if (force) {
-					free (refline);
-				}
 			}
 			r_cons_printf ("|");
 			ds_newline (ds);
@@ -5279,7 +5266,7 @@ toro:
 				ds->analop.ptr = ds->hint->ptr;
 			}
 		}
-		ds_print_bbline (ds, false);
+		ds_print_bbline (ds);
 		if (ds->at >= addr) {
 			r_print_set_rowoff (core->print, ds->lines, ds->at - addr, calc_row_offsets);
 		}
@@ -5448,20 +5435,6 @@ toro:
 		}
 		core->print->resetbg = true;
 		ds_newline (ds);
-		if (ds->show_bbline && !ds->bblined && !ds->fcn) {
-			switch (ds->analop.type) {
-			case R_ANAL_OP_TYPE_MJMP:
-			case R_ANAL_OP_TYPE_UJMP:
-			case R_ANAL_OP_TYPE_IJMP:
-			case R_ANAL_OP_TYPE_RJMP:
-			case R_ANAL_OP_TYPE_IRJMP:
-			case R_ANAL_OP_TYPE_CJMP:
-			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_RET:
-				ds_print_bbline (ds, true);
-				break;
-			}
-		}
 		if (ds->line) {
 			if (ds->show_lines_ret && ds->analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (ds->line, '>')) {
