@@ -67,6 +67,8 @@ static char *__filterQuotedShell(const char *arg) {
 		switch (*arg) {
 		case ' ':
 		case '=':
+		case '"':
+		case '\\':
 		case '\r':
 		case '\n':
 			break;
@@ -88,15 +90,17 @@ static char *__filterShell(const char *arg) {
 	}
 	char *b = a;
 	while (*arg) {
-		switch (*arg) {
+		char ch = *arg;
+		switch (ch) {
 		case '@':
 		case '`':
 		case '|':
 		case ';':
+		case '=':
 		case '\n':
 			break;
 		default:
-			*b++ = *arg;
+			*b++ = ch;
 			break;
 		}
 		arg++;
@@ -2225,10 +2229,10 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 						char *m = __filterShell (module);
 						*p = 0;
 						if (r->bin->prefix) {
-							r_cons_printf ("k bin/pe/%s/%d=%s.%s\n",
+							r_cons_printf ("\"k bin/pe/%s/%d=%s.%s\"\n",
 								module, symbol->ordinal, r->bin->prefix, symname);
 						} else {
-							r_cons_printf ("k bin/pe/%s/%d=%s\n",
+							r_cons_printf ("\"k bin/pe/%s/%d=%s\"\n",
 								module, symbol->ordinal, symname);
 						}
 						free (symname);
