@@ -2557,9 +2557,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			char *line, *p;
 			haveQuote = *cmd == '"';
 			if (haveQuote) {
-			//	*cmd = 0;
 				cmd++;
-				p = cmd[0] ? find_eoq (cmd + 1) : NULL;
+				p = *cmd ? find_eoq (cmd) : NULL;
 				if (!p || !*p) {
 					eprintf ("Missing \" in (%s).", cmd);
 					r_list_free (tmpenvs);
@@ -2581,7 +2580,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				cmd = sc + 1;
 				continue;
 			}
-			if (p[0]) {
+			if (*p) {
 				// workaround :D
 				if (p[0] == '@') {
 					p--;
@@ -4753,7 +4752,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"=",        "io pipe", cmd_rap},
 		{"?",        "help message", cmd_help, cmd_help_init},
 		{"\\",       "alias for =!", cmd_rap_run},
-		{"'",       "alias for =!", cmd_rap_run},
+		{"'",        "alias for =!", cmd_rap_run},
 		{"0x",       "alias for s 0x", cmd_ox},
 		{"analysis", "analysis", cmd_anal, cmd_anal_init},
 		{"bsize",    "change block size", cmd_bsize},
