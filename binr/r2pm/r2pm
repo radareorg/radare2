@@ -692,8 +692,8 @@ suicide)
 Usage: r2pm [init|update|cmd] [...]
 Commands:
  -I,info                     information about repository and installed packages
- -i,install <pkgname>        install package in your home (pkgname=all)
- -gi,global-install <pkg>    install package system-wide
+ -i,install <pkgname>        install or update package in your home (pkgname=all)
+ -gi,global-install <pkg>    install or update package system-wide
  -gu,global-uninstall <pkg>  uninstall pkg from systemdir
  -u,uninstall <pkgname>      r2pm -u baleful (-uu to force)
  -l,list                     list installed pkgs
