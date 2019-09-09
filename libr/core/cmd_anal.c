@@ -296,7 +296,7 @@ static const char *help_msg_af[] = {
 	"aff", "", "re-adjust function boundaries to fit",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
-	"afj", " [tableaddr] [count]", "analyze function jmptableble",
+	"afj", " [tableaddr] [count]", "analyze function jumptable",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 	"afm", " name", "merge two functions",
 	"afM", " name", "print functions map",
