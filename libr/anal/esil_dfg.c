@@ -76,7 +76,7 @@ static bool edf_bf(RAnalEsil *esil) {
 	return edf_consume_1_use_old_new_push_1 (esil, "$b", edf_bf_constraint);
 }
 
-static bool edf_consume_2_set_reg(RAnalEsil *esil) {
+static bool _edf_consume_2_set_reg(RAnalEsil *esil, const bool use_origin) {
 	const char *op_string = esil->current_opstr;
 	RAnalEsilDFG *edf = (RAnalEsilDFG *)esil->user;
 	char *dst = r_anal_esil_pop (esil);
@@ -133,8 +133,14 @@ static bool edf_consume_2_set_reg(RAnalEsil *esil) {
 			ev_node->type = R_ANAL_ESIL_DFG_BLOCK_VAR;
 			r_strbuf_appendf (ev_node->content, ":var_%d", edf->idx++);
 			dst_node = r_graph_add_node (edf->flow, ev_node);
+			ev_node->origin = dst_node;	// consider using n_reg instead
 			//			sdb_ptr_set (edf->latest_nodes, dst, ev_node, 0);
-			//r_graph_add_edge (edf->flow, n_reg, dst_node);	// don't connect them
+			r_graph_add_edge (edf->flow, n_reg, dst_node);
+		}
+	} else {
+		if ((dst_type == R_ANAL_ESIL_PARM_REG) && use_origin) {
+			RAnalEsilDFGNode *ev_node = (RAnalEsilDFGNode *)dst_node->data;
+			dst_node = ev_node->origin;
 		}
 	}
 
@@ -155,6 +161,12 @@ static bool edf_consume_2_set_reg(RAnalEsil *esil) {
 	sdb_ptr_set (edf->latest_nodes, "old", dst_node, 0); //esil->old
 	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, dst);
 	result->type = R_ANAL_ESIL_DFG_BLOCK_RESULT | R_ANAL_ESIL_DFG_BLOCK_VAR;
+	if (use_origin) {
+		result->origin = dst_node;
+	} else {
+		RAnalEsilDFGNode *ev_node = (RAnalEsilDFGNode *)dst_node->data;
+		result->origin = ev_node->origin ? ev_node->origin : dst_node;
+	}
 	r_strbuf_appendf (result->content, ":var_%d", edf->idx++);
 	dst_node = r_graph_add_node (edf->flow, result);
 	r_graph_add_edge (edf->flow, op_node, dst_node);
@@ -162,6 +174,14 @@ static bool edf_consume_2_set_reg(RAnalEsil *esil) {
 	sdb_ptr_set (edf->latest_nodes, "new", dst_node, 0); //esil->new
 	free (dst);
 	return true;
+}
+
+static bool edf_consume_2_use_set_reg(RAnalEsil *esil) {
+	return _edf_consume_2_set_reg(esil, false);
+}
+
+static bool edf_consume_2_set_reg(RAnalEsil *esil) {
+	return _edf_consume_2_set_reg(esil, true);
 }
 
 static bool edf_consume_2_push_1(RAnalEsil *esil) {
@@ -510,14 +530,14 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, const char *expr) {
 	r_anal_esil_set_op (esil, "$z", edf_zf, 1, 0, R_ANAL_ESIL_OP_TYPE_UNKNOWN);
 	r_anal_esil_set_op (esil, "$c", edf_cf, 1, 1, R_ANAL_ESIL_OP_TYPE_UNKNOWN);
 	r_anal_esil_set_op (esil, "$b", edf_bf, 1, 1, R_ANAL_ESIL_OP_TYPE_UNKNOWN);
-	r_anal_esil_set_op (esil, "^=", edf_consume_2_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "-=", edf_consume_2_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "+=", edf_consume_2_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "*=", edf_consume_2_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "/=", edf_consume_2_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "&=", edf_consume_2_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "|=", edf_consume_2_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "^=", edf_consume_2_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
+	r_anal_esil_set_op (esil, "^=", edf_consume_2_use_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
+	r_anal_esil_set_op (esil, "-=", edf_consume_2_use_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
+	r_anal_esil_set_op (esil, "+=", edf_consume_2_use_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
+	r_anal_esil_set_op (esil, "*=", edf_consume_2_use_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
+	r_anal_esil_set_op (esil, "/=", edf_consume_2_use_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
+	r_anal_esil_set_op (esil, "&=", edf_consume_2_use_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
+	r_anal_esil_set_op (esil, "|=", edf_consume_2_use_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
+	r_anal_esil_set_op (esil, "^=", edf_consume_2_use_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
 	r_anal_esil_set_op (esil, "+", edf_consume_2_push_1, 1, 2, R_ANAL_ESIL_OP_TYPE_MATH);
 	r_anal_esil_set_op (esil, "-", edf_consume_2_push_1, 1, 2, R_ANAL_ESIL_OP_TYPE_MATH);
 	r_anal_esil_set_op (esil, "&", edf_consume_2_push_1, 1, 2, R_ANAL_ESIL_OP_TYPE_MATH);
