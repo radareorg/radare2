@@ -11,7 +11,7 @@ R_API void r_core_anal_esil_graph(RCore *core, const char *expr) {
 	r_list_foreach (r_graph_get_nodes (edf->flow), iter, node) {
 		const RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)node->data;
 		char *esc_str = r_str_escape (r_strbuf_get (enode->content));
-		if (enode->generative) {
+		if (enode->type == R_ANAL_ESIL_DFG_BLOCK_GENERATIVE) {
 			r_cons_printf ("\"agn %d generative:%s\"\n", enode->idx, esc_str);
 		} else {
 			r_cons_printf ("\"agn %d %s\"\n", enode->idx, esc_str);

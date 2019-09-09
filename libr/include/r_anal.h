@@ -1254,6 +1254,14 @@ typedef struct r_anal_esil_cfg_t {
 	RGraph *g;
 } RAnalEsilCFG;
 
+typedef enum {
+	R_ANAL_ESIL_DFG_BLOCK_CONST = 1,
+	R_ANAL_ESIL_DFG_BLOCK_VAR = 2,
+	R_ANAL_ESIL_DFG_BLOCK_PTR = 4,
+	R_ANAL_ESIL_DFG_BLOCK_RESULT = 8,
+	R_ANAL_ESIL_DFG_BLOCK_GENERATIVE = 16,
+} RAnalEsilDFGBlockType;
+
 typedef struct r_anal_esil_dfg_t {
 	ut32 idx;
 	Sdb *latest_nodes;
@@ -1264,7 +1272,7 @@ typedef struct r_anal_esil_dfg_node_t {
 	// add more info here
 	ut32 idx;
 	RStrBuf *content;
-	bool generative;
+	RAnalEsilDFGBlockType type;
 } RAnalEsilDFGNode;
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
