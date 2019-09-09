@@ -15,7 +15,7 @@ R_API RLine *r_line_new(void) {
 	I.hist_down = NULL;
 	I.prompt = strdup ("> ");
 	I.contents = NULL;
-	I.vi_mode = false;
+	I.enable_vi_mode = false;
 	I.clipboard = NULL;
 	I.kill_ring = r_list_newf (NULL);
 	I.kill_ring_ptr = -1;
