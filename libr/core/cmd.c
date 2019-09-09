@@ -2580,6 +2580,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				cmd = sc + 1;
 				continue;
 			}
+			char op0 = 0;
 			if (*p) {
 				// workaround :D
 				if (p[0] == '@') {
@@ -2591,6 +2592,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				if (p[1] == '@' || (p[1] && p[2] == '@')) {
 					char *q = strchr (p + 1, '"');
 					if (q) {
+						op0 = *q;
 						*q = 0;
 					}
 					haveQuote = q != NULL;
@@ -2644,9 +2646,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					cmd = p + 1;
 				} else {
 					if (*p == '"') {
-						cmd = p + 1;
+						cmd = p;
 					} else {
-						*p = '"';
+						*p = op0;
 						cmd = p;
 					}
 				}
