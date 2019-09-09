@@ -1757,7 +1757,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.index++;
 			}
 			if (I.sel_widget) {
+				selection_widget_down (1);
 				I.sel_widget->complete_common = true;
+				selection_widget_draw ();
 			}
 			if (I.hud) {
 				if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
