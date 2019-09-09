@@ -126,7 +126,6 @@ static int typecmp(const void *a, const void *b) {
 	return strcmp (type1 , type2);
 }
 
-
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalVar *var;

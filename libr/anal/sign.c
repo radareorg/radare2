@@ -69,9 +69,7 @@ R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn) {
 
 R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, NULL);
-
 	RList *ret = r_anal_types_from_fcn (a, fcn);
-
 	return ret;
 }
 
@@ -191,13 +189,13 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			it->comment = strdup (token);
 			break;
 		case R_SIGN_GRAPH:
-		if (strlen (token) == 2 * sizeof (RSignGraph)) {
-			it->graph = R_NEW0 (RSignGraph);
-			if (it->graph) {
-				r_hex_str2bin (token, (ut8 *) it->graph);
+			if (strlen (token) == 2 * sizeof (RSignGraph)) {
+				it->graph = R_NEW0 (RSignGraph);
+				if (it->graph) {
+					r_hex_str2bin (token, (ut8 *) it->graph);
+				}
 			}
-		}
-		break;
+			break;
 		case R_SIGN_OFFSET:
 			it->addr = atoll (token);
 			break;
