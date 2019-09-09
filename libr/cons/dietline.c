@@ -1015,7 +1015,7 @@ static inline void vi_cmd_e() {
 
 static void __update_prompt_color () {
 	RCons *cons = r_cons_singleton ();
-	char *BEGIN = "", *END = "";
+	const char *BEGIN = "", *END = "";
 	if (cons->context->color_mode) {
 		if (I.prompt_mode) {
 			switch (I.vi_mode) {
@@ -1049,7 +1049,7 @@ static void __vi_mode() {
 			__print_prompt ();
 		}
 		if (I.vi_mode != CONTROL_MODE) {		// exit if insert mode is selected
-			__update_prompt_color();
+			__update_prompt_color ();
 			break;
 		}
 		ch = r_cons_readchar ();

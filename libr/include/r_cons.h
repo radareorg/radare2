@@ -729,8 +729,8 @@ enum {
 };
 
 typedef enum {
-    INSERT_MODE = 'i',
-    CONTROL_MODE = 'c'
+	INSERT_MODE = 'i',
+	CONTROL_MODE = 'c'
 } RViMode;
 
 #define DOT_STYLE_NORMAL 0
