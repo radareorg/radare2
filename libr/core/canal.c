@@ -893,7 +893,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 					if (i == nexti) {
 						ut64 at = fcn->addr + r_anal_fcn_size (fcn);
 						while (true) {
-							const RAnalMetaItem *mi = r_meta_find (core->anal, at, R_META_TYPE_ANY, 0);
+							RAnalMetaItem *mi = r_meta_find (core->anal, at, R_META_TYPE_ANY, 0);
 							if (!mi) {
 								break;
 							}
