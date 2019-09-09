@@ -984,25 +984,6 @@ beach:
 	free (buf);
 }
 
-static int typecmp(const void *a, const void *b) {
-	char *type1 = (char *) a;
-	char *type2 = (char *) b;
-	return strcmp (type1 , type2);
-}
-
-static RList *get_uniq_type(RCore *core, RAnalFunction *fcn) {
-	RListIter *iter;
-	RAnalVar *var;
-	RList *list = r_anal_var_all_list (core->anal, fcn);
-        RList *type_used = r_list_new ();
-        r_list_foreach (list, iter, var) {
-		r_list_append (type_used , var->type);
-        }
-	RList *uniq = r_list_uniq (type_used , typecmp);
-	r_list_free (type_used);
-	return uniq;
-}
-
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	Sdb *TDB = core->anal->sdb_types;
@@ -1399,7 +1380,7 @@ static int cmd_type(void *data, const char *input) {
 		case 'f': // "txf" type xrefs 
 			fcn  = r_anal_get_fcn_at (core->anal, core->offset, 0);
 			if (fcn) {
-				RList *uniq = get_uniq_type (core, fcn);
+				RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 				r_list_foreach (uniq , iter , type) {
 					r_cons_println (type);
 				}
@@ -1410,7 +1391,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 0: // "tx"
 			r_list_foreach (core->anal->fcns, iter, fcn) {
-				RList *uniq = get_uniq_type (core, fcn);
+				RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 				if (r_list_length (uniq)) {
 					r_cons_printf ("%s: ", fcn->name);
 				}
@@ -1422,7 +1403,7 @@ static int cmd_type(void *data, const char *input) {
 		case 'g': // "txg"
 			{
 				r_list_foreach (core->anal->fcns, iter, fcn) {
-					RList *uniq = get_uniq_type (core, fcn);
+					RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 					if (r_list_length (uniq)) {
 						r_cons_printf ("agn %s\n", fcn->name);
 					}
@@ -1440,7 +1421,7 @@ static int cmd_type(void *data, const char *input) {
 			{
 				RList *uniqList = r_list_newf (free);
 				r_list_foreach (core->anal->fcns, iter, fcn) {
-					RList *uniq = get_uniq_type (core, fcn);
+					RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 					r_list_foreach (uniq , iter2, type) {
 						if (!r_list_find (uniqList, type, (RListComparator)strcmp)) {
 							r_list_push (uniqList, strdup (type));
@@ -1457,7 +1438,7 @@ static int cmd_type(void *data, const char *input) {
 		case ' ': // "tx " -- show which function use given type
 			type = (char *)r_str_trim_ro (input + 2);
 			r_list_foreach (core->anal->fcns, iter, fcn) {
-				RList *uniq = get_uniq_type (core, fcn);
+				RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 				r_list_foreach (uniq , iter2, type2) {
 					if (!strcmp (type2, type)) {
 						r_cons_printf ("%s\n", fcn->name);

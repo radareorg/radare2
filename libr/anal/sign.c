@@ -70,32 +70,8 @@ R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn) {
 R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, NULL);
 
-	RCore *core = a->coreb.core;
+	RList *ret = r_anal_types_from_fcn (a, fcn);
 
-	if (!core) {
-		return NULL;
-	}
-	RListIter *iter;
-	RAnalVar *var;
-	RList *ret = r_list_newf ((RListFree) free);
-	if (!ret) {
-		return NULL;
-	}
-	RList *reg_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_REG);
-	RList *spv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_SPV);
-	RList *bpv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
-	r_list_foreach (bpv_vars, iter, var) {
-		r_list_append (ret, r_str_newf ("b%d", var->delta));
-	}
-	r_list_foreach (spv_vars, iter, var) {
-		r_list_append (ret, r_str_newf ("s%d", var->delta));
-	}
-	r_list_foreach (reg_vars, iter, var) {
-		r_list_append (ret, r_str_newf ("r%d", var->delta));
-	}
-	r_list_free (reg_vars);
-	r_list_free (bpv_vars);
-	r_list_free (spv_vars);
 	return ret;
 }
 
@@ -396,6 +372,7 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 			vars = r_str_append (vars, var);
 			i++;
 		}
+		i = 0;
 		r_list_foreach (it->types, iter, type) {
 			if (i > 0) {
 				types = r_str_appendch (types, ',');
@@ -835,7 +812,6 @@ R_API bool r_sign_add_types(RAnal *a, const char *name, RList *types) {
 	it->space = r_spaces_current (&a->zign_spaces);
 	it->types = r_list_newf ((RListFree) free);
 	r_list_foreach (types, iter, type) {
-		r_cons_printf ("type: %s\n", type);
 		r_list_append (it->types, strdup (type));
 	}
 	bool retval = addItem (a, it);
