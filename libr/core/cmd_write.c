@@ -251,7 +251,9 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 			int result_size = 0;
 			ut8 *result = r_crypto_get_output (cry, &result_size);
 			if (result) {
-				r_io_write_at (core->io, core->offset, result, result_size);
+				if (!r_io_write_at (core->io, core->offset, result, result_size)) {
+					eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
+				}
 				eprintf ("Written %d byte(s)\n", result_size);
 				free (result);
 			}
@@ -294,7 +296,9 @@ static void cmd_write_inc(RCore *core, int size, st64 num) {
 	case 8: v64 = (ut64*)core->block; *v64 += num; break;
 	}
 	// TODO: obey endian here
-        r_core_write_at (core, core->offset, core->block, size);
+	if (!r_core_write_at (core, core->offset, core->block, size)) {
+		cmd_write_fail ();
+	}
 }
 
 static void cmd_write_op (RCore *core, const char *input) {
@@ -407,6 +411,9 @@ static void cmd_write_op (RCore *core, const char *input) {
 					} else {
 						while (true) {
 							int res = r_core_write_at (core, addr, ptr, len);
+							if (res != 0) {
+								cmd_write_fail ();
+							}
 							if (res < 1 || len == res) {
 								break;
 							}
@@ -533,8 +540,10 @@ static bool cmd_wff(RCore *core, const char *input) {
 	if (!strcmp (arg, "-")) {
 		char *out = r_core_editor (core, NULL, NULL);
 		if (out) {
-			r_io_write_at (core->io, core->offset,
-				(ut8*)out, strlen (out));
+			if (!r_io_write_at (core->io, core->offset,
+				(ut8*)out, strlen (out))) {
+					eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
+			}
 			r_core_block_read (core);
 			free (out);
 		}
@@ -553,7 +562,9 @@ static bool cmd_wff(RCore *core, const char *input) {
 			}
 		}
 		r_io_use_fd (core->io, core->file->fd);
-		r_io_write_at (core->io, core->offset, buf + u_offset, u_size);
+		if (!r_io_write_at (core->io, core->offset, buf + u_offset, u_size)) {
+			eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
+		}
 		WSEEK (core, size);
 		free (buf);
 		r_core_block_read (core);
@@ -747,7 +758,9 @@ static int cmd_write(void *data, const char *input) {
 			if (len>0) {
 				ut8 *buf = calloc (1, len);
 				if (buf) {
-					r_io_write_at (core->io, core->offset, buf, len);
+					if (!r_io_write_at (core->io, core->offset, buf, len)) {
+						eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
+					}
 					r_core_block_read (core);
 					free (buf);
 				} else eprintf ("Cannot allocate %d byte(s)\n", (int)len);
@@ -829,7 +842,9 @@ static int cmd_write(void *data, const char *input) {
 			}
 		}
 		if (!fail) {
-			r_core_write_at (core, core->offset, buf, len);
+			if (!r_core_write_at (core, core->offset, buf, len)) {
+				cmd_write_fail ();
+			}
 			WSEEK (core, len);
 			r_core_block_read (core);
 			free (buf);
@@ -898,7 +913,9 @@ static int cmd_write(void *data, const char *input) {
 					ut64 cur_off = core->offset;
 					cmd_suc = r_core_extend_at (core, cur_off, len);
 					if (cmd_suc) {
-						r_core_write_at (core, cur_off, bytes, len);
+						if (!r_core_write_at (core, cur_off, bytes, len)) {
+							cmd_write_fail ();
+						}
 					}
 					core->offset = cur_off;
 					r_core_block_read (core);
@@ -947,7 +964,9 @@ static int cmd_write(void *data, const char *input) {
 					//ut64 cur_off = core->offset;
 					cmd_suc = r_core_extend_at (core, addr, len);
 					if (cmd_suc) {
-						r_core_write_at (core, addr, bytes, len);
+						if (!r_core_write_at (core, addr, bytes, len)) {
+							cmd_write_fail ();
+						}
 					}
 					core->offset = addr;
 					r_core_block_read (core);
@@ -1047,7 +1066,9 @@ static int cmd_write(void *data, const char *input) {
 				r_num_irand ();
 				for (i=0; i<len; i++)
 					buf[i] = r_num_rand (256);
-				r_core_write_at (core, core->offset, buf, len);
+				if (!r_core_write_at (core, core->offset, buf, len)) {
+					cmd_write_fail ();
+				}
 				WSEEK (core, len);
 				free (buf);
 			} else eprintf ("Cannot allocate %d byte(s)\n", len);
@@ -1063,7 +1084,9 @@ static int cmd_write(void *data, const char *input) {
 					r_num_math (core->num, input+4));
 				eprintf ("len=%d\n", len);
 				if (len>0) {
-					r_core_write_at (core, core->offset, core->block, len);
+					if (!r_core_write_at (core, core->offset, core->block, len)) {
+						cmd_write_fail ();
+					}
 					WSEEK (core, len);
 				} else eprintf ("r_asm_modify = %d\n", len);
 			} else eprintf ("Usage: wA [type] [value]\n");
@@ -1164,7 +1187,9 @@ static int cmd_write(void *data, const char *input) {
 	case ' ': // "w"
 		/* write string */
 		len = r_str_unescape (str);
-		r_core_write_at (core, core->offset, (const ut8*)str, len);
+		if (!r_core_write_at (core, core->offset, (const ut8*)str, len)) {
+			cmd_write_fail ();
+		}
 #if 0
 		r_io_use_desc (core->io, core->file->desc);
 		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
@@ -1175,7 +1200,9 @@ static int cmd_write(void *data, const char *input) {
 	case 'z': // "wz"
 		/* write zero-terminated string */
 		len = r_str_unescape (str);
-		r_core_write_at (core, core->offset, (const ut8*)str + 1, len);
+		if (!r_core_write_at (core, core->offset, (const ut8*)str + 1, len)) {
+			cmd_write_fail ();
+		}
 		if (len > 0) {
 			core->num->value = len;
 		} else {
@@ -1362,7 +1389,9 @@ static int cmd_write(void *data, const char *input) {
 			if (core->file) {
 				r_io_use_fd (core->io, core->file->fd);
 			}
-			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
+			if (!r_io_write_at (core->io, core->offset, (const ut8*)str, len)) {
+				eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
+			}
 			WSEEK (core, len);
 			r_core_block_read (core);
 			free (tmp);
@@ -1386,7 +1415,9 @@ static int cmd_write(void *data, const char *input) {
 					if (out) {
 						len = r_hex_str2bin (in, out);
 						if (len > 0) {
-							r_io_write_at (core->io, core->offset, out, len);
+							if (!r_io_write_at (core->io, core->offset, out, len)) {
+								eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
+							}
 							core->num->value = len;
 						} else {
 							core->num->value = 0;
@@ -1401,6 +1432,8 @@ static int cmd_write(void *data, const char *input) {
 					if (r_io_write_at (core->io, core->offset, buf, size) > 0) {
 						core->num->value = size;
 						WSEEK (core, size);
+					} else {
+						eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
 					}
 					free (buf);
 					r_core_block_read (core);
@@ -1623,7 +1656,9 @@ static int cmd_write(void *data, const char *input) {
 				ut64 len = r_num_math (core->num, arg+1);
 				ut8 *data = malloc (len);
 				r_io_read_at (core->io, addr, data, len);
-				r_io_write_at (core->io, core->offset, data, len);
+				if (!r_io_write_at (core->io, core->offset, data, len)) {
+					eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
+				}
 				free (data);
 			} else eprintf ("See wd?\n");
 			free (inp);
