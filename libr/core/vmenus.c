@@ -2725,13 +2725,13 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 			}
 			if (show) {
 				if (color) {
-					r_cons_printf ("%c%c %s0x%08"PFMT64x"" Color_RESET" %4d %s%s"Color_RESET"\n",
+					r_cons_printf ("%c%c %s0x%08"PFMT64x"" Color_RESET" %4d %s%.40s"Color_RESET"\n",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
 							color_addr, fcn->addr, r_anal_fcn_realsize (fcn),
 							color_fcn, fcn->name);
 				} else {
-					r_cons_printf ("%c%c 0x%08"PFMT64x" %4d %s\n",
+					r_cons_printf ("%c%c 0x%08"PFMT64x" %4d %.40s\n",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
 							fcn->addr, r_anal_fcn_realsize (fcn), fcn->name);
