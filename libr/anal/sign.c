@@ -67,6 +67,38 @@ R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
+R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
+	r_return_val_if_fail (a && fcn, NULL);
+
+	RCore *core = a->coreb.core;
+
+	if (!core) {
+		return NULL;
+	}
+	RListIter *iter;
+	RAnalVar *var;
+	RList *ret = r_list_newf ((RListFree) free);
+	if (!ret) {
+		return NULL;
+	}
+	RList *reg_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_REG);
+	RList *spv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_SPV);
+	RList *bpv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
+	r_list_foreach (bpv_vars, iter, var) {
+		r_list_append (ret, r_str_newf ("b%d", var->delta));
+	}
+	r_list_foreach (spv_vars, iter, var) {
+		r_list_append (ret, r_str_newf ("s%d", var->delta));
+	}
+	r_list_foreach (reg_vars, iter, var) {
+		r_list_append (ret, r_str_newf ("r%d", var->delta));
+	}
+	r_list_free (reg_vars);
+	r_list_free (bpv_vars);
+	r_list_free (spv_vars);
+	return ret;
+}
+
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalRef *refi = NULL;
@@ -122,8 +154,9 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	char *refs = NULL;
 	char *vars = NULL;
+	char *types = NULL;
 	const char *token = NULL;
-	int i = 0, n = 0, nrefs = 0, nvars = 0, size = 0, w = 0;
+	int i = 0, n = 0, nrefs = 0, nvars = 0, ntypes = 0, size = 0, w = 0;
 
 	r_return_val_if_fail (a && it && k && v, false);
 
@@ -182,13 +215,13 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			it->comment = strdup (token);
 			break;
 		case R_SIGN_GRAPH:
-			if (strlen (token) == 2 * sizeof (RSignGraph)) {
-				it->graph = R_NEW0 (RSignGraph);
-				if (it->graph) {
-					r_hex_str2bin (token, (ut8 *) it->graph);
-				}
+		if (strlen (token) == 2 * sizeof (RSignGraph)) {
+			it->graph = R_NEW0 (RSignGraph);
+			if (it->graph) {
+				r_hex_str2bin (token, (ut8 *) it->graph);
 			}
-			break;
+		}
+		break;
 		case R_SIGN_OFFSET:
 			it->addr = atoll (token);
 			break;
@@ -219,6 +252,16 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 				it->vars = r_list_newf ((RListFree) free);
 				for (i = 0; i < nvars; i++) {
 					r_list_append (it->vars, r_str_newf (r_str_word_get0 (vars, i)));
+				}
+			}
+			break;
+		case R_SIGN_TYPES:
+			types = r_str_new (token);
+			ntypes = r_str_split (types, ',');
+			if (ntypes > 0) {
+				it->types = r_list_newf ((RListFree) free);
+				for (i = 0; i < ntypes; i++) {
+					r_list_append (it->types, r_str_newf (r_str_word_get0 (types, i)));
 				}
 			}
 			break;
@@ -295,6 +338,7 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 	RListIter *iter = NULL;
 	char *hexbytes = NULL, *hexmask = NULL, *hexgraph = NULL;
 	char *refs = NULL, *xrefs = NULL, *ref = NULL, *var, *vars = NULL;
+	char *type, *types = NULL;
 	int i = 0, len = 0;
 	RSignBytes *bytes = it->bytes;
 	RSignGraph *graph = it->graph;
@@ -352,6 +396,13 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 			vars = r_str_append (vars, var);
 			i++;
 		}
+		r_list_foreach (it->types, iter, type) {
+			if (i > 0) {
+				types = r_str_appendch (types, ',');
+			}
+			types = r_str_append (types, type);
+			i++;
+		}
 		RStrBuf *sb = r_strbuf_new ("");
 		if (bytes) {
 			// TODO: do not hardcoded s,b,m here, use RSignType enum
@@ -371,6 +422,9 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 		}
 		if (vars) {
 			r_strbuf_appendf (sb, "|%c:%s", R_SIGN_VARS, vars);
+		}
+		if (types) {
+			r_strbuf_appendf (sb, "|%c:%s", R_SIGN_TYPES, types);
 		}
 		if (it->comment) {
 			// b64 encoded
@@ -402,7 +456,7 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 
 static void mergeItem(RSignItem *dst, RSignItem *src) {
 	RListIter *iter = NULL;
-	char *ref, *var;
+	char *ref, *var, *type;
 
 	if (src->bytes) {
 		if (dst->bytes) {
@@ -467,6 +521,15 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 		dst->vars = r_list_newf ((RListFree) free);
 		r_list_foreach (src->vars, iter, var) {
 			r_list_append (dst->vars, r_str_new (var));
+		}
+	}
+
+	if (src->types) {
+		r_list_free (dst->types);
+
+		dst->types = r_list_newf ((RListFree) free);
+		r_list_foreach (src->types, iter, type) {
+			r_list_append (dst->types, r_str_new (type));
 		}
 	}
 
@@ -747,6 +810,33 @@ R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars) {
 	it->vars = r_list_newf ((RListFree) free);
 	r_list_foreach (vars, iter, var) {
 		r_list_append (it->vars, strdup (var));
+	}
+	bool retval = addItem (a, it);
+	r_sign_item_free (it);
+
+	return retval;
+}
+
+R_API bool r_sign_add_types(RAnal *a, const char *name, RList *types) {
+	r_return_val_if_fail (a && name && types, false);
+
+	RListIter *iter;
+	char *type;
+
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		return false;
+	}
+	it->name = r_str_new (name);
+	if (!it->name) {
+		r_sign_item_free (it);
+		return false;
+	}
+	it->space = r_spaces_current (&a->zign_spaces);
+	it->types = r_list_newf ((RListFree) free);
+	r_list_foreach (types, iter, type) {
+		r_cons_printf ("type: %s\n", type);
+		r_list_append (it->types, strdup (type));
 	}
 	bool retval = addItem (a, it);
 	r_sign_item_free (it);
@@ -1252,6 +1342,47 @@ static void listVars(RAnal *a, RSignItem *it, int format) {
 	}
 }
 
+static void listTypes(RAnal *a, RSignItem *it, int format) {
+	RListIter *iter = NULL;
+	char *type = NULL;
+	int i = 0;
+
+	if (format == '*') {
+		a->cb_printf ("za %s v ", it->name);
+	} else if (format == 'q') {
+		a->cb_printf (" types(%d)", r_list_length (it->types));
+		return;
+	} else if (format == 'j') {
+		a->cb_printf ("\"types\":[");
+	} else {
+		a->cb_printf ("  types: ");
+	}
+
+	r_list_foreach (it->types, iter, type) {
+		if (i > 0) {
+			if (format == '*') {
+				a->cb_printf (" ");
+			} else if (format == 'j') {
+				a->cb_printf (",");
+			} else {
+				a->cb_printf (", ");
+			}
+		}
+		if (format == 'j') {
+			a->cb_printf ("\"%s\"", type);
+		} else {
+			a->cb_printf ("%s", type);
+		}
+		i++;
+	}
+
+	if (format == 'j') {
+		a->cb_printf ("],");
+	} else {
+		a->cb_printf ("\n");
+	}
+}
+
 static void listXRefs(RAnal *a, RSignItem *it, int format) {
 	RListIter *iter = NULL;
 	char *ref = NULL;
@@ -1458,6 +1589,11 @@ static int listCB(void *user, const char *k, const char *v) {
 		listVars (a, it, ctx->format);
 	} else if (ctx->format == 'j') {
 		a->cb_printf ("\"vars\":[],");
+	}
+	if (it->types) {
+		listTypes (a, it, ctx->format);
+	} else if (ctx->format == 'j') {
+		a->cb_printf ("\types\":[],");
 	}
 	// Hash
 	if (it->hash) {
