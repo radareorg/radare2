@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake, defragger */
 
+#include <r_core.h>
 #include <r_asm.h>
 #include <r_debug.h>
 #include <libgdbr.h>
@@ -311,6 +312,21 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 		}
 		ut64 val = r_reg_get_value (dbg->reg, current);
 		int bytes = bits / 8;
+		if (r_config_get_i(((RCore*)dbg->corebind.core)->config, "cfg.bigendian")) {
+			// TODO: validate that it's correct for all kinds of archs
+			switch (bytes) {
+				case 2:
+					val = r_swap_ut16(val);
+					break;
+				case 4:
+					val = r_swap_ut32(val);
+					break;
+				case 8:
+				default:
+					val = r_swap_ut64(val);
+					break;
+			}
+		}
 		gdbr_write_reg (desc, current->name, (char*)&val, bytes);
 	}
 	return true;

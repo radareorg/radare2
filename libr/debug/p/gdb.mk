@@ -21,6 +21,7 @@ LDFLAGS+=-L$(LTOP)/anal -lr_anal
 LDFLAGS+=-L$(LTOP)/reg -lr_reg
 LDFLAGS+=-L$(LTOP)/bp -lr_bp
 LDFLAGS+=-L$(LTOP)/io -lr_io
+LDFLAGS+=-L$(LTOP)/config -lr_config
 
 OBJ_GDB=debug_gdb.o
 

@@ -743,7 +743,7 @@ int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 		return -1;
 	}
 	reg_cache.valid = false;
-	ret = snprintf (command, sizeof (command) - 1, "%s%d=", CMD_WRITEREG, index);
+	ret = snprintf (command, sizeof (command) - 1, "%s%x=", CMD_WRITEREG, index);
 	if (len + ret >= sizeof (command)) {
 		eprintf ("command is too small\n");
 		return -1;
