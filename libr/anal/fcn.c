@@ -799,7 +799,9 @@ repeat:
 			if (anal->verbose) {
 				eprintf ("Invalid instruction at 0x%"PFMT64x" with %d bits\n", at, anal->bits);
 			}
-			gotoBeach (R_ANAL_RET_END);
+			gotoBeach (R_ANAL_RET_ERROR);
+			// RET_END causes infinite loops somehow
+			//  gotoBeach (R_ANAL_RET_END);
 		}
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
