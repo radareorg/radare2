@@ -3244,6 +3244,9 @@ int __show_all_decompiler_cb(void *user) {
 	__handle_tab_new (core);
 	RPanels *panels = __get_panels (root, root->n_panels - 1);
 	r_list_foreach (optl, iter, opt) {
+		if (R_STR_ISEMPTY (opt)) {
+			continue;
+		}
 		r_config_set (core->config, "cmd.pdc", opt);
 		if (panels->n_panels <= i) {
 			panels->n_panels++;
