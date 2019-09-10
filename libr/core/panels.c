@@ -351,8 +351,8 @@ static bool __check_if_addr(const char *c, int len);
 static bool __check_if_cur_panel(RCore *core, RPanel *panel);
 static bool __check_if_mouse_x_illegal(RCore *core, int x);
 static bool __check_if_mouse_y_illegal(RCore *core, int y);
-static bool __check_if_mouse_x_on_edge(RCore *core, int x);
-static bool __check_if_mouse_y_on_edge(RCore *core, int y);
+static bool __check_if_mouse_x_on_edge(RCore *core, int x, int y);
+static bool __check_if_mouse_y_on_edge(RCore *core, int x, int y);
 
 /* add */
 static void __add_help_panel(RCore *core);
@@ -695,13 +695,13 @@ bool __check_if_mouse_y_illegal(RCore *core, int y) {
 	return false;
 }
 
-bool __check_if_mouse_x_on_edge(RCore *core, int x) {
+bool __check_if_mouse_x_on_edge(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
-	const int edge_x = 2;
+	const int edge_x = 1;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.x - edge_x <= x && x <= panel->view->pos.x + edge_x) {
+		if (x > panel->view->pos.x && x <= panel->view->pos.x + edge_x) {
 			panels->mouse_on_edge_x = true;
 			panels->mouse_orig_x = x;
 			return true;
@@ -710,16 +710,18 @@ bool __check_if_mouse_x_on_edge(RCore *core, int x) {
 	return false;
 }
 
-bool __check_if_mouse_y_on_edge(RCore *core, int y) {
+bool __check_if_mouse_y_on_edge(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
-	const int edge_y = 2;
+	const int edge_y = 1;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.y - edge_y <= y && y <= panel->view->pos.y + edge_y) {
-			panels->mouse_on_edge_y = true;
-			panels->mouse_orig_y = y;
-			return true;
+		if (panel->view->pos.x < x && x <= panel->view->pos.x + panel->view->pos.w) {
+			if (panel->view->pos.y < y && y <= panel->view->pos.y + edge_y) {
+				panels->mouse_on_edge_y = true;
+				panels->mouse_orig_y = y;
+				return true;
+			}
 		}
 	}
 	return false;
@@ -1937,8 +1939,8 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 				panels->mouse_on_edge_y = false;
 				return true;
 			}
-			panels->mouse_on_edge_x = __check_if_mouse_x_on_edge (core, x);
-			panels->mouse_on_edge_y = __check_if_mouse_y_on_edge (core, y);
+			panels->mouse_on_edge_x = __check_if_mouse_x_on_edge (core, x, y);
+			panels->mouse_on_edge_y = __check_if_mouse_y_on_edge (core, x, y);
 			if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
 				return true;
 			}
