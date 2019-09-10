@@ -345,20 +345,22 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 	if (!entries) {
 		return NULL;
 	}
-	RBinAddr *entry = R_NEW0 (RBinAddr);
-	if (!entry) {
-		r_list_free (entries);
-		return NULL;
-	}
+	RBinAddr *entry;
 	RList *segments = r_bin_ne_get_segments (bin);
 	if (!segments) {
 		r_list_free (entries);
 		return NULL;
 	}
-	entry->bits = 16;
-	entry->paddr = bin->ne_header->ipEntryPoint + ((RBinSection *)r_list_get_n (segments, bin->ne_header->csEntryPoint - 1))->paddr;
-	r_list_append (entries, entry);
-	
+	if (bin->ne_header->csEntryPoint) {
+		entry = R_NEW0 (RBinAddr);
+		if (!entry) {
+			r_list_free (entries);
+			return NULL;
+		}
+		entry->bits = 16;
+		entry->paddr = bin->ne_header->ipEntryPoint + ((RBinSection *)r_list_get_n (segments, bin->ne_header->csEntryPoint - 1))->paddr;
+		r_list_append (entries, entry);
+	}
 	int off = 0;
 	while (off < bin->ne_header->EntryTableLength) {
 		ut8 bundle_length = *(ut8 *)(bin->entry_table + off);
