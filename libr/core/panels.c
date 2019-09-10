@@ -678,7 +678,7 @@ void __update_edge_y(RCore *core, int y) {
 bool __check_if_mouse_x_illegal(RCore *core, int x) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
-	const int edge_x = 2;
+	const int edge_x = 1;
 	if (x <= edge_x || can->w - edge_x <= x) {
 		return true;
 	}
@@ -688,7 +688,7 @@ bool __check_if_mouse_x_illegal(RCore *core, int x) {
 bool __check_if_mouse_y_illegal(RCore *core, int y) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
-	const int edge_y = 2;
+	const int edge_y = 0;
 	if (y <= edge_y || can->h - edge_y <= y) {
 		return true;
 	}
