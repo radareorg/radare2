@@ -30,6 +30,7 @@ typedef enum {
 	R_SIGN_REFS      = 'r', // references
 	R_SIGN_XREFS     = 'x', // xrefs
 	R_SIGN_VARS      = 'v', // variables
+	R_SIGN_TYPES     = 't', // types
 	R_SIGN_BBHASH    = 'h', // basic block hash
 } RSignType;
 
@@ -63,6 +64,7 @@ typedef struct r_sign_item_t {
 	RList *refs;
 	RList *xrefs;
 	RList *vars;
+	RList *types;
 	RSignHash *hash;
 } RSignItem;
 
@@ -96,6 +98,7 @@ R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment);
 R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs);
 R_API bool r_sign_add_xrefs(RAnal *a, const char *name, RList *xrefs);
 R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars);
+R_API bool r_sign_add_types(RAnal *a, const char *name, RList *vars);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
 R_API RList *r_sign_get_list(RAnal *a);

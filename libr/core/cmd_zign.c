@@ -160,6 +160,16 @@ static bool addFcnVars(RCore *core, RAnalFunction *fcn, const char *name) {
 	return retval;
 }
 
+static bool addFcnTypes(RCore *core, RAnalFunction *fcn, const char *name) {
+	RList *types = r_anal_types_from_fcn (core->anal, fcn);
+	if (!types) {
+		return false;
+	}
+	bool retval = r_sign_add_types (core->anal, name, types);
+	r_list_free (types);
+	return retval;
+}
+
 #if 0
 static char *getFcnComments(RCore *core, RAnalFunction *fcn) {
 	// XXX this is slow as hell on big binaries
@@ -190,6 +200,7 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	addFcnXRefs (core, fcn, zigname);
 	addFcnRefs (core, fcn, zigname);
 	addFcnVars (core, fcn, zigname);
+	addFcnTypes (core, fcn, zigname);
 	addFcnHash (core, fcn, zigname);
 	if (strcmp (zigname, fcn->name)) {
 		r_sign_add_name (core->anal, zigname, fcn->name);
@@ -390,6 +401,23 @@ static bool addVarsZign(RCore *core, const char *name, const char *args0, int na
 	return retval;
 }
 
+static bool addTypesZign(RCore *core, const char *name, const char *args0, int nargs) {
+       int i = 0;
+       if (nargs < 1) {
+               eprintf ("error: invalid syntax\n");
+               return false;
+       }
+
+       RList *types = r_list_newf ((RListFree) free);
+       for (i = 0; i < nargs; i++) {
+               r_list_append (types, r_str_new (r_str_word_get0 (args0, i)));
+       }
+
+       bool retval = r_sign_add_types (core->anal, name, types);
+       r_list_free (types);
+       return retval;
+}
+
 static bool addZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
 	switch (type) {
 	case R_SIGN_BYTES:
@@ -409,6 +437,8 @@ static bool addZign(RCore *core, const char *name, int type, const char *args0, 
 		return addXRefsZign (core, name, args0, nargs);
 	case R_SIGN_VARS:
 		return addVarsZign (core, name, args0, nargs);
+	case R_SIGN_TYPES:
+		return addTypesZign (core, name, args0, nargs);
 	case R_SIGN_BBHASH:
 		return addHashZign (core, name, type, args0, nargs);
 	default:

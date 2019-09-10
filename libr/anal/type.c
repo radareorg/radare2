@@ -120,3 +120,21 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 	__save_parsed_type_size (anal, parsed);
 }
 
+static int typecmp(const void *a, const void *b) {
+	char *type1 = (char *) a;
+	char *type2 = (char *) b;
+	return strcmp (type1 , type2);
+}
+
+R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
+	RListIter *iter;
+	RAnalVar *var;
+	RList *list = r_anal_var_all_list (anal, fcn);
+        RList *type_used = r_list_new ();
+        r_list_foreach (list, iter, var) {
+		r_list_append (type_used , var->type);
+        }
+	RList *uniq = r_list_uniq (type_used , typecmp);
+	r_list_free (type_used);
+	return uniq;
+}
