@@ -1458,7 +1458,7 @@ void __activate_cursor(RCore *core) {
 	RPanel *cur = __get_cur_panel (panels);
 	if (__is_normal_cursor_type (cur) || __is_abnormal_cursor_type (core, cur)) {
 		if (cur->model->cache) {
-			if (__show_status_yesno (core, 'y', "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
+			if (__show_status_yesno (core, 1, "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
 				cur->model->cache = false;
 				__set_cmd_str_cache (core, cur, NULL);
 				(void)__show_status (core, "Cache is off and cursor is on");
@@ -3304,8 +3304,23 @@ int __save_layout_cb(void *user) {
 
 int __clear_layout_cb(void *user) {
 	RCore *core = (RCore *)user;
-	__show_status_yesno (core, 'n', "Clear all the saved layouts?(y/n): ");
-	r_file_rm (__get_panels_config_dir_path ());
+	if (!__show_status_yesno (core, 0, "Clear all the saved layouts?(y/n): ")) {
+		return 0;
+	}
+	const char *config_path = __get_panels_config_dir_path ();
+	RList *dir = r_sys_dir (config_path);
+	if (!dir) {
+		return 0;
+	}
+	RListIter *it;
+	char *entry;
+	r_list_foreach (dir, it, entry) {
+		const char *tmp = r_str_newf ("%s%s%s", config_path, R_SYS_DIR, entry);
+		r_file_rm (tmp);
+	}
+	r_file_rm (config_path);
+	r_list_free (dir);
+
 	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
 	return 0;
 }
@@ -4371,6 +4386,7 @@ void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenuUpdateC
 		RPanelsMenuItem *sub = p_item->sub[i];
 		ht_pp_delete (core->panels->mht, sdb_fmt ("%s.%s", parent, sub->name));
 	}
+	p_item->sub = NULL;
 	p_item->n_sub = 0;
 	if (cb) {
 		cb (core, parent);
@@ -5794,7 +5810,7 @@ void __set_breakpoints_on_cursor(RCore *core, RPanel *panel) {
 
 void __insert_value(RCore *core) {
 	if (!r_config_get_i (core->config, "io.cache")) {
-		if (__show_status_yesno (core, 'y', "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
+		if (__show_status_yesno (core, 1, "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
 			r_config_set_i (core->config, "io.cache", 1);
 			(void)__show_status (core, "io.cache is on and insert is available now.");
 		} else {
@@ -6620,9 +6636,11 @@ void __panels_process(RCore *core, RPanels *panels) {
 			r_load_panels_layout (core, layout);
 		}
 	}
+
+	bool o_interactive = r_cons_is_interactive ();
+	r_cons_set_interactive (true);
+
 	r_cons_enable_mouse (false);
-	int scrInteractive = r_config_get_i (core->config, "scr.interactive");
-	r_config_set_i (core->config, "scr.interactive", 0);
 repeat:
 	r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
 	core->panels = panels;
@@ -6808,7 +6826,7 @@ repeat:
 		__do_panels_refresh (core);
 		break;
 	case 'a':
-		panels->autoUpdate = __show_status_yesno (core, 'y', "Auto update On? (Y/n)");
+		panels->autoUpdate = __show_status_yesno (core, 1, "Auto update On? (Y/n)");
 		break;
 	case 'A':
 		{
@@ -7195,5 +7213,5 @@ exit:
 	core->print->col = 0;
 	core->vmode = originVmode;
 	core->panels = prev;
-	r_config_set_i (core->config, "scr.interactive", scrInteractive);
+	r_cons_set_interactive (o_interactive);
 }
