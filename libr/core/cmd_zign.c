@@ -161,7 +161,7 @@ static bool addFcnVars(RCore *core, RAnalFunction *fcn, const char *name) {
 }
 
 static bool addFcnTypes(RCore *core, RAnalFunction *fcn, const char *name) {
-	RList *types = r_sign_fcn_types (core->anal, fcn);
+	RList *types = r_anal_types_from_fcn (core->anal, fcn);
 	if (!types) {
 		return false;
 	}

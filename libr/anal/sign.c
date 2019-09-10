@@ -67,12 +67,6 @@ R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
-R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
-	r_return_val_if_fail (a && fcn, NULL);
-	RList *ret = r_anal_types_from_fcn (a, fcn);
-	return ret;
-}
-
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalRef *refi = NULL;
@@ -1322,7 +1316,7 @@ static void listTypes(RAnal *a, RSignItem *it, int format) {
 	int i = 0;
 
 	if (format == '*') {
-		a->cb_printf ("za %s v ", it->name);
+		a->cb_printf ("za %s t ", it->name);
 	} else if (format == 'q') {
 		a->cb_printf (" types(%d)", r_list_length (it->types));
 		return;
@@ -1567,7 +1561,7 @@ static int listCB(void *user, const char *k, const char *v) {
 	if (it->types) {
 		listTypes (a, it, ctx->format);
 	} else if (ctx->format == 'j') {
-		a->cb_printf ("\types\":[],");
+		a->cb_printf ("\"types\":[],");
 	}
 	// Hash
 	if (it->hash) {
