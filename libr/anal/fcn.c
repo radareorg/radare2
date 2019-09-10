@@ -465,7 +465,7 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 
 static bool isInvalidMemory(const ut8 *buf, int len) {
 	// can be wrong
-	if (!memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", R_MIN (len, 8))) {
+	if (len > 3 && !memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", R_MIN (len, 8))) {
 		return true;
 	}
 	return !memcmp (buf, "\xff\xff\xff\xff", R_MIN (len, 4));
