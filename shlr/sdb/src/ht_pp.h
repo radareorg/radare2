@@ -1,5 +1,5 @@
-#ifndef SDB_HT_P_H_
-#define SDB_HT_P_H_
+#ifndef SDB_HT_PP_H
+#define SDB_HT_PP_H
 
 /*
  * This header provides an hashtable HtPP that has void* as key and void* as

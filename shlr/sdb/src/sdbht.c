@@ -1,3 +1,5 @@
+/* sdb - MIT - Copyright 2011-2018 - pancake */
+
 #include "sdbht.h"
 
 void sdbkv_fini(SdbKv *kv) {

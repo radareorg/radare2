@@ -1,5 +1,5 @@
-#ifndef SDB_HT_U_H_
-#define SDB_HT_U_H_
+#ifndef SDB_HT_UP_H
+#define SDB_HT_UP_H
 
 /*
  * This header provides an hashtable HtUP that has ut64 as key and void* as

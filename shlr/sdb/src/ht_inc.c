@@ -229,6 +229,7 @@ static bool insert_update(HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value,
 	if (!kv_dst) {
 		return false;
 	}
+
 	kv_dst->key = dupkey (ht, key);
 	kv_dst->key_len = key_len;
 	kv_dst->value = dupval (ht, value);
