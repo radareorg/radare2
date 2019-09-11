@@ -173,7 +173,7 @@ R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 }
 
 R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
-	int l, covered = 0;
+	bool covered = false;
 	RListIter *iter;
 	RIOCache *c;
 	RInterval range = (RInterval){ addr, len };
@@ -181,27 +181,14 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 		if (r_itv_overlap (c->itv, range)) {
 			const ut64 begin = r_itv_begin (c->itv);
 			if (addr < begin) {
-				l = R_MIN (addr + len - begin, r_itv_size (c->itv));
+				int l = R_MIN (addr + len - begin, r_itv_size (c->itv));
 				memcpy (buf + begin - addr, c->data, l);
 			} else {
-				l = R_MIN (r_itv_end (c->itv) - addr, len);
+				int l = R_MIN (r_itv_end (c->itv) - addr, len);
 				memcpy (buf, c->data + addr - begin, l);
 			}
-			covered += l;
+			covered = true;
 		}
 	}
-	return (covered == 0) ? false: true;
+	return covered;
 }
-
-////////////////////////////////////////////////////////////////////
-#if 0
-R_API bool r_io_cache_ll_read(RIO *io, ut64 addr, ut8 *buf, int len) {
-//	UnownedRList *list = r
-}
-
-R_API bool r_io_cache_ll_write(RIO *io, ut64 addr, ut8 *buf, int len) {
-}
-
-R_API bool r_io_cache_ll_invalidate(RIO *io, ut64 addr, int len) {
-}
-#endif

@@ -56,7 +56,6 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 	if (!mmo->buf) {
 		return UT64_MAX;
 	}
-
 	io->off = r_buf_seek (mmo->buf, offset, whence);
 	return io->off;
 }
@@ -164,10 +163,7 @@ static bool r_io_def_mmap_check_default (const char *filename) {
 	}
 	const char * peekaboo = (!strncmp (filename, "nocache://", 10))
 		? NULL : strstr (filename, "://");
-	if (!peekaboo || (peekaboo - filename) > 10) {
-		return true;
-	}
-	return false;
+	return (!peekaboo || (peekaboo - filename) > 10);
 }
 
 static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
@@ -318,9 +314,8 @@ static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode
 }
 
 static ut64 r_io_def_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	return (fd && fd->data)
-		? r_io_def_mmap_seek (io, (RIOMMapFileObj *)fd->data, offset, whence)
-		: UT64_MAX;
+	r_return_val_if_fail (fd && fd->data, UT64_MAX);
+	return r_io_def_mmap_seek (io, (RIOMMapFileObj *)fd->data, offset, whence);
 }
 
 static int r_io_def_mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {
@@ -383,10 +378,6 @@ static bool __is_blockdevice (RIODesc *desc) {
 }
 #endif
 
-static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
-	return NULL;
-}
-
 RIOPlugin r_io_plugin_default = {
 	.name = "default",
 	.desc = "Open local files",
@@ -399,7 +390,6 @@ RIOPlugin r_io_plugin_default = {
 	.lseek = __lseek,
 	.write = __write,
 	.resize = __resize,
-	.system = __system,
 #if __UNIX__
 	.is_blockdevice = __is_blockdevice,
 #endif
