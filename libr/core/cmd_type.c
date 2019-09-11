@@ -1447,7 +1447,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 	} break;
-	// ta: moved to anal hints (ahl)- just for tail, at the moment
+	// ta: moved to anal hints (aht)- just for tail, at the moment
 	case 'a': // "ta"
 		switch (input[1]) {
 		case 'i': { // "tai"
@@ -1458,7 +1458,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 		} break;
 		default:
-			eprintf ("[WARNING] \"ta\" is deprecated. Use \"ahl\" instead.\n");
+			eprintf ("[WARNING] \"ta\" is deprecated. Use \"aht\" instead.\n");
 		}
 		break;
 	// tl - link a type to an address

@@ -546,19 +546,19 @@ static const char *help_msg_ah[] = {
 	"aha", " ppc 51", "set arch for a range of N bytes",
 	"ahb", " 16 @ $$", "force 16bit for current instruction",
 	"ahc", " 0x804804", "override call/jump address",
+	"ahd", " foo a0,33", "replace opcode string",
 	"ahe", " 3,eax,+=", "set vm analysis string",
 	"ahf", " 0x804840", "override fallback address for call",
 	"ahF", " 0x10", "set stackframe size at current offset",
 	"ahh", " 0x804840", "highlight this address offset in disasm",
 	"ahi", "[?] 10", "define numeric base for immediates (1, 8, 10, 16, s)",
 	"ahj", "", "list hints in JSON",
-	"aho", " foo a0,33", "replace opcode string",
-	"ahO", " [?] <type>", "Mark immediate as a type offset",
+	"aho", " call", "change opcode type (see aho?)",
 	"ahp", " addr", "set pointer hint",
 	"ahr", " val", "set hint for return value of a function",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
-	"aht", " call", "change opcode type (see aht?)",
+	"aht", " [?] <type>", "Mark immediate as a type offset",
 	"ahv", " val", "change opcode's val field (useful to set jmptbl sizes in jmp rax)",
 	NULL
 };
@@ -577,11 +577,11 @@ static const char *help_msg_ahi[] = {
 	NULL
 };
 
-static const char *help_msg_ahO[] = {
-	"Usage: ahO[...]", "", "",
-	"ahOs", " <offset>", "List all matching structure offsets",
-	"ahO", " <struct.member>", "Change immediate to structure offset",
-	"ahO?", "", "show this help",
+static const char *help_msg_aht[] = {
+	"Usage: aht[...]", "", "",
+	"ahts", " <offset>", "List all matching structure offsets",
+	"aht", " <struct.member>", "Change immediate to structure offset",
+	"aht?", "", "show this help",
 	NULL
 };
 
@@ -7143,13 +7143,14 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			eprintf ("Missing argument\n");
 		}
 		break;
-	case 't': // "aht"
+	case 'o': // "aho"
+		eprintf ("[WARNING] Former \"aho\" is deprecated and has been moved to \"ahd\".\n");
 		if (input[1] == ' ') {
 			const char *arg = r_str_trim_ro (input + 1);
 			int type = r_anal_optype_from_string (arg);
 			r_anal_hint_set_type (core->anal, core->offset, type);
 		} else {
-			eprintf ("Usage: aht [type] # can be mov, jmp, call, ...\n");
+			eprintf ("Usage: aho [type] # can be mov, jmp, call, ...\n");
 		}
 		break;
 	case 'b': // "ahb" set bits
@@ -7249,13 +7250,13 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			eprintf ("Usage: ahS att\n");
 		}
 		break;
-	case 'o': // "aho" set opcode string
+	case 'd': // "ahd" set opcode string
 		if (input[1] == ' ') {
 			r_anal_hint_set_opcode (core->anal, core->offset, input + 2);
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_opcode (core->anal, core->offset);
 		} else {
-			eprintf ("Usage: aho popall\n");
+			eprintf ("Usage: ahd popall\n");
 		}
 		break;
 	case 'e': // "ahe" set ESIL string
@@ -7334,9 +7335,10 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else {
 			r_anal_hint_clear (core->anal);
 		} break;
-	case 'O': // "ahO"
+	case 't': // "aht"
+		eprintf ("[WARNING] Former \"aht\" is deprecated and has been moved to \"aho\".\n");
 		switch (input[1]) {
-		case 's': { // "ahOs"
+		case 's': { // "ahts"
 			char *off = strdup (input + 2);
 			r_str_trim (off);
 			int toff = r_num_math (NULL, off);
@@ -7432,7 +7434,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			free (type);
 		} break;
 		case '?':
-			r_core_cmd_help (core, help_msg_ahO);
+			r_core_cmd_help (core, help_msg_aht);
 			break;
 		}
 	}

@@ -1080,13 +1080,13 @@ static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
 			}
 		}
 		HINTCMD_ADDR (hint, size, "ahs %d");
-		HINTCMD_ADDR (hint, opcode, "aho %s");
+		HINTCMD_ADDR (hint, opcode, "ahd %s");
 		HINTCMD_ADDR (hint, syntax, "ahS %s");
 		HINTCMD_ADDR (hint, immbase, "ahi %d");
 		HINTCMD_ADDR (hint, esil, "ahe %s");
 		HINTCMD_ADDR (hint, ptr, "ahp 0x%" PFMT64x);
 		if (hint->offset) {
-			r_cons_printf ("ahO %s @ Ox%" PFMT64x "\n", hint->offset, hint->addr);
+			r_cons_printf ("aht %s @ Ox%" PFMT64x "\n", hint->offset, hint->addr);
 		}
 		if (hint->jump != UT64_MAX) {
 			r_cons_printf ("ahc 0x%" PFMT64x " @ 0x%" PFMT64x "\n", hint->jump, hint->addr);
