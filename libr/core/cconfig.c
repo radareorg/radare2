@@ -253,6 +253,13 @@ static bool cb_analvars(void *user, void *data) {
         return true;
 }
 
+static bool cb_anal_nonull(void *user, void *data) {
+        RCore *core = (RCore*) user;
+        RConfigNode *node = (RConfigNode*) data;
+        core->anal->opt.nonull = node->i_value;
+        return true;
+}
+
 static bool cb_analstrings(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2833,6 +2840,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("anal.calls", "false", "Make basic af analysis walk into calls");
 	SETPREF ("anal.autoname", "false", "Speculatively set a name for the functions, may result in some false positives");
 	SETPREF ("anal.hasnext", "false", "Continue analysis after each function");
+	SETICB ("anal.nonull", 0, &cb_anal_nonull, "Do not analyze regions of N null bytes");
 	SETPREF ("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB ("anal.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
 	SETPREF ("anal.types.spec", "gcc",  "Set profile for specifying format chars used in type analysis");
