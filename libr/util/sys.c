@@ -539,13 +539,13 @@ R_API bool r_sys_aslr(int val) {
 	}
 #elif __FreeBSD__ && __FreeBSD_version >= 1300000
 	size_t vlen = sizeof (val);
-	if (sysctlbyname ("kern.elf32.aslr.enable", &val, &vlen, NULL, 0) == -1) {
+	if (sysctlbyname ("kern.elf32.aslr.enable", NULL, 0, &val, vlen) == -1) {
 		eprintf ("Failed to set RVA 32 bits\n");
 		return false;
 	}
 
 #if __LP64__
-	if (sysctlbyname ("kern.elf64.aslr.enable", &val, &vlen, NULL, 0) == -1) {
+	if (sysctlbyname ("kern.elf64.aslr.enable", NULL, 0, &val, vlen) == -1) {
 		eprintf ("Failed to set RVA 64 bits\n");
 		ret = false;
 	}
