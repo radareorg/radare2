@@ -17,7 +17,7 @@ extern bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_
 #define BB_ALIGN 0x10
 
 /* speedup analysis by removing some function overlapping checks */
-#define JAYRO_04 0
+#define JAYRO_04 1
 
 // 16 KB is the maximum size for a basic block
 #define MAX_FLG_NAME_SIZE 64
@@ -728,7 +728,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool last_is_mov_lr_pc = false;
 	ut64 last_push_addr = UT64_MAX;
 	if (anal->limit && addr + idx < anal->limit->from) {
-		return R_ANAL_RET_END;
+		gotoBeach (R_ANAL_RET_END);
 	}
 	RAnalFunction *tmp_fcn = r_anal_get_fcn_in (anal, addr, 0);
 	if (tmp_fcn) {
@@ -782,7 +782,7 @@ repeat:
 			if (anal->verbose) {
 				eprintf ("Warning: FFFF opcode at 0x%08"PFMT64x "\n", at);
 			}
-			return R_ANAL_RET_ERROR;
+			gotoBeach (R_ANAL_RET_ERROR)
 		}
 		r_anal_op_fini (&op);
 		if ((oplen = r_anal_op (anal, &op, at, buf, bytes_read, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) < 1) {
@@ -935,7 +935,7 @@ repeat:
 					goto repeat;
 				}
 				if (skip_ret == 2) {
-					return R_ANAL_RET_END;
+					gotoBeach (R_ANAL_RET_END);
 				}
 			}
 			break;
@@ -964,7 +964,7 @@ repeat:
 					goto repeat;
 				}
 				if (skip_ret == 2) {
-					return R_ANAL_RET_END;
+					gotoBeach (R_ANAL_RET_END);
 				}
 			}
 			if (anal->opt.jmptbl) {
@@ -1054,7 +1054,7 @@ repeat:
 						goto repeat;
 					}
 					if (skip_ret == 2) {
-						return R_ANAL_RET_END;
+						gotoBeach (R_ANAL_RET_END);
 					}
 				}
 			}
@@ -1070,7 +1070,7 @@ repeat:
 				}
 			}
 			if (r_cons_is_breaked ()) {
-				return R_ANAL_RET_END;
+				gotoBeach (R_ANAL_RET_END);
 			}
 			if (anal->opt.jmpref) {
 				(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
@@ -1175,15 +1175,14 @@ repeat:
 					FITFCNSZ ();
 					r_anal_fcn_bb (anal, fcn, op.jump, depth);
 					ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
-					return R_ANAL_RET_END;
+					gotoBeach (R_ANAL_RET_END);
 #else
 					// hardcoded jmp size // must be checked at the end wtf?
 					// always fitfcnsz and retend
 					if (op.jump > fcn->addr + JMP_IS_EOB_RANGE) {
 						ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
 						/* jump inside the same function */
-						FITFCNSZ ();
-						return R_ANAL_RET_END;
+						gotoBeach (R_ANAL_RET_END);
 #if JMP_IS_EOB_RANGE > 0
 					} else {
 						if (op.jump < addr - JMP_IS_EOB_RANGE && op.jump < addr) {
@@ -1206,8 +1205,7 @@ repeat:
 							bb->jump = op.jump;
 							bb->fail = UT64_MAX;
 						}
-						FITFCNSZ ();
-						return R_ANAL_RET_END;
+						gotoBeach (R_ANAL_RET_END);
 					}
 				}
 			}
@@ -1533,7 +1531,33 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 
 /* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
-	r_anal_fcn_set_size (NULL, fcn, 0); // fcn is not yet in anal => pass NULL
+	RList *list = r_meta_find_list_in (anal, addr, -1, 4);
+	RListIter *iter;
+	RAnalMetaItem *meta;
+	r_list_foreach (list, iter, meta) {
+		switch (meta->type) {
+		case R_META_TYPE_DATA:
+		case R_META_TYPE_STRING:
+		case R_META_TYPE_FORMAT:
+			r_list_free (list);
+			return 0;
+		}
+	}
+	r_list_free (list);
+#if 0
+#define visitedKey(x) sdb_fmt("%"PFMT64x, x)
+	static Sdb *visited =NULL;
+
+	if (!visited) {
+		visited = sdb_new0 ();
+	}
+	if (sdb_const_get (visited, visitedKey(addr), 0)) {
+		// already visited
+		eprintf ("Already visited 0x%llx\n", addr);
+		return R_ANAL_RET_END;
+	}
+	sdb_set (visited, visitedKey(addr), "1", 0);
+#endif
 	/* defines fcn. or loc. prefix */
 	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE) ? R_ANAL_FCN_TYPE_LOC : R_ANAL_FCN_TYPE_FCN;
 	if (fcn->addr == UT64_MAX) {
@@ -1545,9 +1569,10 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 			return result;
 		}
 	}
+	r_anal_fcn_set_size (NULL, fcn, 0); // fcn is not yet in anal => pass NULL
 	fcn->maxstack = 0;
 #if USE_FCN_RECURSE
-	int ret = fcn_recurse (anal, fcn, addr, len, anal->opt.depth);
+	int ret = fcn_recurse (anal, fcn, addr, len, anal->opt.depth - 1);
 	// update tinyrange for the function
 	r_anal_fcn_update_tinyrange_bbs (fcn);
 #else
@@ -1572,7 +1597,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 				break;
 			}
 		}
-#if !JAYRO_04
+#if JAYRO_04
 		// fcn is not yet in anal => pass NULL
 		r_anal_fcn_resize (anal, fcn, endaddr - fcn->addr);
 #endif
@@ -1769,17 +1794,13 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 	bool mid = false;
 	st64 n;
 	if (size == 0) { // empty basic blocks allowed?
+		eprintf ("Warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
 		r_warn_if_reached ();
-		if (anal->verbose) {
-			eprintf ("warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
-		}
 		return false;
 	}
 	if (size > anal->opt.bb_max_size) {
+		eprintf ("Warning: can't allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"\n", (st64)size, addr);
 		r_warn_if_reached ();
-		if (anal->verbose) {
-			eprintf ("warning: can't allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"\n", (st64)size, addr);
-		}
 		return false;
 	}
 
@@ -2115,9 +2136,7 @@ R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut6
 }
 
 R_API RAnalBlock *r_anal_fcn_bbget_at(RAnalFunction *fcn, ut64 addr) {
-	if (!fcn || addr == UT64_MAX) {
-		return NULL;
-	}
+	r_return_val_if_fail (fcn && addr != UT64_MAX, NULL);
 #if USE_SDB_CACHE
 	return sdb_ptr_get (HB, sdb_fmt (SDB_KEY_BB, fcn->addr, addr), NULL);
 #else
@@ -2269,8 +2288,9 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 	const char *bp_name = anal->reg->name[R_REG_NAME_BP];
 	bool is_bp_dst = opdreg && !dst->memref && !strcmp (opdreg, bp_name);
 	bool is_bp_src = opsreg && !src->memref && !strcmp (opsreg, bp_name);
-	if (op->type == R_ANAL_OP_TYPE_XCHG)
+	if (op->type == R_ANAL_OP_TYPE_XCHG) {
 		return is_bp_src || is_bp_dst;
+	}
 	return is_bp_dst; 
 }
 /*
@@ -2345,4 +2365,12 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 		}
 		free (buf);
 	}
+}
+
+R_API const char *r_anal_label_at(RAnal *a, ut64 addr) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
+	if (fcn) {
+		return r_anal_fcn_label_at (a, fcn, addr);
+	}
+	return NULL;
 }

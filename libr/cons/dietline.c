@@ -28,11 +28,6 @@ typedef enum {
 	MAJOR_BREAK
 } BreakMode;
 
-typedef enum {
-	INSERT_MODE,
-	CONTROL_MODE
-} RViMode; 
-
 bool enable_yank_pop = false;
 
 static inline bool is_word_break_char(char ch, bool mode) {
@@ -542,7 +537,7 @@ static void selection_widget_draw() {
 		pos_y = r_cons_get_cur_line ();
 		if (pos_y + sel_widget->h > cons->rows) {
 			printf ("%s\n", r_str_pad('\n', sel_widget->h));
-			pos_y = cons->rows - sel_widget->h;
+			pos_y = cons->rows - sel_widget->h - 1;
 		}
 	}
 	sel_widget->w = R_MIN (sel_widget->w, R_SELWIDGET_MAXW);
@@ -651,7 +646,7 @@ static void selection_widget_select() {
 		if (sp) {
 			int delta = sp - I.buffer.data + 1;
 			I.buffer.length = R_MIN (delta + strlen (sel_widget->options[sel_widget->selection]), R_LINE_BUFSIZE - 1);
-			memcpy (I.buffer.data + delta, sel_widget->options[sel_widget->selection], I.buffer.length);
+			memcpy (I.buffer.data + delta, sel_widget->options[sel_widget->selection], strlen (sel_widget->options[sel_widget->selection]));
 			I.buffer.index = I.buffer.length;
 			return;
 		}
@@ -1018,9 +1013,34 @@ static inline void vi_cmd_e() {
 	}
 }
 
+static void __update_prompt_color () {
+	RCons *cons = r_cons_singleton ();
+	const char *BEGIN = "", *END = "";
+	if (cons->context->color_mode) {
+		if (I.prompt_mode) {
+			switch (I.vi_mode) {
+			case CONTROL_MODE:
+				BEGIN = cons->context->pal.invalid;
+				break;
+			case INSERT_MODE:
+			default:
+				BEGIN = cons->context->pal.prompt;
+				break;
+			}
+		} else {
+			BEGIN = cons->context->pal.prompt;
+		}
+		END = cons->context->pal.reset;
+	}
+	char *prompt = r_str_escape (I.prompt);		// remote the color
+	free (I.prompt);
+	I.prompt = r_str_newf ("%s%s%s", BEGIN, prompt, END);
+}
+
 static void __vi_mode() {
 	char ch;
-	int mode = CONTROL_MODE;
+	I.vi_mode = CONTROL_MODE;
+	__update_prompt_color ();
 	const char *gcomp_line = "";
 	static int gcomp = 0;
 	for (;;) {
@@ -1028,7 +1048,8 @@ static void __vi_mode() {
 		if (I.echo) {
 			__print_prompt ();
 		}
-		if (mode != CONTROL_MODE) {		// exit if insert mode is selected
+		if (I.vi_mode != CONTROL_MODE) {		// exit if insert mode is selected
+			__update_prompt_color ();
 			break;
 		}
 		ch = r_cons_readchar ();
@@ -1067,7 +1088,7 @@ static void __vi_mode() {
 				__delete_next_char (); 
 			} break;
 		case 'c': 
-			mode = INSERT_MODE;			// goto insert mode
+			I.vi_mode = INSERT_MODE;			// goto insert mode
 		case 'd': {
 			char c = r_cons_readchar ();
 			while (rep--) {
@@ -1119,7 +1140,7 @@ static void __vi_mode() {
 			if (I.hud) {
 				I.hud->vi = false;
 			}
-			mode = INSERT_MODE;
+			I.vi_mode = INSERT_MODE;
 		case '^':
 		case '0': 
 			if (gcomp) {
@@ -1131,7 +1152,7 @@ static void __vi_mode() {
 			I.buffer.index = 0;
 			break;
 		case 'A':
-			mode = INSERT_MODE;
+			I.vi_mode = INSERT_MODE;
 		case '$': 
 			if (gcomp) {
 				strcpy (I.buffer.data, gcomp_line);
@@ -1148,7 +1169,7 @@ static void __vi_mode() {
 		case 'a':
 			__move_cursor_right ();
 		case 'i': 
-			mode = INSERT_MODE;
+			I.vi_mode = INSERT_MODE;
 			if (I.hud) {
 				I.hud->vi = false;
 			}
@@ -1219,9 +1240,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #if USE_UTF8
 	int utflen;
 #endif
-	int ch, i = 0;	/* grep completion */
+	int ch, key, i = 0;	/* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
+	RCons *cons = r_cons_singleton ();
 
 	if (!I.hud || (I.hud && !I.hud->activate)) {
 		I.buffer.index = I.buffer.length = 0;
@@ -1230,6 +1252,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.hud->activate = true;
 		}
 	}
+	int mouse_status = cons->mouse;
 	if (I.hud && I.hud->vi) {
 		__vi_mode ();
 		goto _end;
@@ -1255,6 +1278,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		__print_prompt ();
 	}
 	r_cons_break_push (NULL, NULL);
+	r_cons_enable_mouse (I.hud);
 	for (;;) {
 		yank_flag = 0;
 		if (r_cons_is_breaked ()) {
@@ -1268,8 +1292,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.length = 0;
 			}
 		}
-		bool mouse_status = r_cons_singleton()->mouse;
-		r_cons_enable_mouse (false);
 #if USE_UTF8
 		utflen = r_line_readchar_utf8 ((ut8 *) buf, sizeof (buf));
 		if (utflen < 1) {
@@ -1311,7 +1333,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			printf ("\r\x1b[2K\r");	// %*c\r", columns, ' ');
 		}
 #endif
-		r_cons_enable_mouse (mouse_status);
 		switch (*buf) {
 		case 0:	// control-space
 			/* ignore atm */
@@ -1518,7 +1539,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				backward_kill_word ();
 				break;
 			case -1:  // escape key, goto vi mode
-				if (I.vi_mode) {
+				if (I.enable_vi_mode) {
 					if (I.hud) {
 						I.hud->vi = true;
 					}
@@ -1614,6 +1635,20 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
 							selection_widget_draw ();
 						}
+						break;
+					case '9': // handle mouse wheel
+						key = r_cons_readchar ();
+						cons->mouse_event = 1;
+						if (key == '6') {	// up
+							if (I.hud && I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
+								I.hud->top_entry_n--;
+							}
+						} else if (key == '7') {	 // down
+							if (I.hud && I.hud->top_entry_n >= 0) {
+								I.hud->top_entry_n++;
+							}
+						}
+						while (r_cons_readchar () != 'M') {}
 						break;
 					/* arrows */
 					case 'A':	// up arrow
@@ -1743,7 +1778,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.index++;
 			}
 			if (I.sel_widget) {
+				selection_widget_down (1);
 				I.sel_widget->complete_common = true;
+				selection_widget_draw ();
 			}
 			if (I.hud) {
 				if (I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
@@ -1866,6 +1903,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 _end:
 	r_cons_break_pop ();
 	r_cons_set_raw (0);
+	r_cons_enable_mouse (mouse_status);
 	if (I.echo) {
 		printf ("\r%s%s\n", I.prompt, I.buffer.data);
 		fflush (stdout);

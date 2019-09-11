@@ -479,11 +479,31 @@ RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
 		eprintf ("Error while querying the process info to sysctl\n");
 		return NULL;
 	}
-	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
+	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this w/o libproc ?
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
 	rdi->uid = kp.kp_eproc.e_ucred.cr_uid;
 	rdi->gid = kp.kp_eproc.e_ucred.cr_gid;
+#ifdef HAS_LIBPROC
+	struct proc_bsdinfo proc;
+	rdi->status = 0;
+	char file_path[MAXPATHLEN] = {0};
+	int file_path_len;
+	file_path_len = proc_pidpath (rdi->pid, file_path, sizeof (file_path));
+	if (file_path_len > 0) {
+		file_path[file_path_len] = 0;
+		rdi->exe = strdup (file_path);
+	}
+	if (proc_pidinfo (rdi->pid, PROC_PIDTBSDINFO, 0,
+		&proc, PROC_PIDTBSDINFO_SIZE) == PROC_PIDTBSDINFO_SIZE) {
+		if ((proc.pbi_flags & PROC_FLAG_TRACED) != 0) {
+			rdi->status = R_DBG_PROC_RUN;
+		}
+		if ((proc.pbi_flags & PROC_FLAG_INEXIT) != 0) {
+			rdi->status = R_DBG_PROC_STOP;
+		}
+	}
+#endif
 	return rdi;
 }
 

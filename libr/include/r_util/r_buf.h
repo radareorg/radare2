@@ -110,91 +110,91 @@ R_API RList *r_buf_nonempty_list(RBuffer *b);
 
 static inline ut16 r_buf_read_be16(RBuffer *b) {
 	ut8 buf[sizeof (ut16)];
-	int r = r_buf_read (b, buf, sizeof (buf));
+	int r = (int) r_buf_read (b, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_be16 (buf): UT16_MAX;
 }
 
 static inline ut16 r_buf_read_be16_at(RBuffer *b, ut64 addr) {
 	ut8 buf[sizeof (ut16)];
-	int r = r_buf_read_at (b, addr, buf, sizeof (buf));
+	int r = (int) r_buf_read_at (b, addr, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_be16 (buf): UT16_MAX;
 }
 
 static inline ut32 r_buf_read_be32(RBuffer *b) {
 	ut8 buf[sizeof (ut32)];
-	int r = r_buf_read (b, buf, sizeof (buf));
+	int r = (int) r_buf_read (b, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_be32 (buf): UT32_MAX;
 }
 
 static inline ut32 r_buf_read_be32_at(RBuffer *b, ut64 addr) {
 	ut8 buf[sizeof (ut32)];
-	int r = r_buf_read_at (b, addr, buf, sizeof (buf));
+	int r = (int) r_buf_read_at (b, addr, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_be32 (buf): UT32_MAX;
 }
 
 static inline ut64 r_buf_read_be64(RBuffer *b) {
 	ut8 buf[sizeof (ut64)];
-	int r = r_buf_read (b, buf, sizeof (buf));
+	int r = (int) r_buf_read (b, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_be64 (buf): UT64_MAX;
 }
 
 static inline ut64 r_buf_read_be64_at(RBuffer *b, ut64 addr) {
 	ut8 buf[sizeof (ut64)];
-	int r = r_buf_read_at (b, addr, buf, sizeof (buf));
+	int r = (int) r_buf_read_at (b, addr, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_be64 (buf): UT64_MAX;
 }
 
 static inline ut16 r_buf_read_le16(RBuffer *b) {
 	ut8 buf[sizeof (ut16)];
-	int r = r_buf_read (b, buf, sizeof (buf));
+	int r = (int) r_buf_read (b, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_le16 (buf): UT16_MAX;
 }
 
 static inline ut16 r_buf_read_le16_at(RBuffer *b, ut64 addr) {
 	ut8 buf[sizeof (ut16)];
-	int r = r_buf_read_at (b, addr, buf, sizeof (buf));
+	int r = (int) r_buf_read_at (b, addr, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_le16 (buf): UT16_MAX;
 }
 
 static inline ut32 r_buf_read_le32(RBuffer *b) {
 	ut8 buf[sizeof (ut32)];
-	int r = r_buf_read (b, buf, sizeof (buf));
+	int r = (int) r_buf_read (b, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_le32 (buf): UT32_MAX;
 }
 
 static inline ut32 r_buf_read_le32_at(RBuffer *b, ut64 addr) {
 	ut8 buf[sizeof (ut32)];
-	int r = r_buf_read_at (b, addr, buf, sizeof (buf));
+	int r = (int) r_buf_read_at (b, addr, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_le32 (buf): UT32_MAX;
 }
 
 static inline ut64 r_buf_read_le64(RBuffer *b) {
 	ut8 buf[sizeof (ut64)];
-	int r = r_buf_read (b, buf, sizeof (buf));
+	int r = (int) r_buf_read (b, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_le64 (buf): UT64_MAX;
 }
 
 static inline ut64 r_buf_read_le64_at(RBuffer *b, ut64 addr) {
 	ut8 buf[sizeof (ut64)];
-	int r = r_buf_read_at (b, addr, buf, sizeof (buf));
+	int r = (int) r_buf_read_at (b, addr, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_le64 (buf): UT64_MAX;
 }
 
 static inline ut16 r_buf_read_ble16_at(RBuffer *b, ut64 addr, bool big_endian) {
 	ut8 buf[sizeof (ut16)];
-	int r = r_buf_read_at (b, addr, buf, sizeof (buf));
+	int r = (int) r_buf_read_at (b, addr, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_ble16 (buf, big_endian): UT16_MAX;
 }
 
 static inline ut32 r_buf_read_ble32_at(RBuffer *b, ut64 addr, bool big_endian) {
 	ut8 buf[sizeof (ut32)];
-	int r = r_buf_read_at (b, addr, buf, sizeof (buf));
+	int r = (int) r_buf_read_at (b, addr, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_ble32 (buf, big_endian): UT32_MAX;
 }
 
 static inline ut64 r_buf_read_ble64_at(RBuffer *b, ut64 addr, bool big_endian) {
 	ut8 buf[sizeof (ut64)];
-	int r = r_buf_read_at (b, addr, buf, sizeof (buf));
+	int r = (int) r_buf_read_at (b, addr, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_ble64 (buf, big_endian): UT64_MAX;
 }
 

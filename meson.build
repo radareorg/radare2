@@ -121,7 +121,7 @@ if cc.get_id() == 'clang-cl'
 endif
 
 if get_option('default_library') == 'shared'
-  if host_machine.system() != 'windows' or cc.get_id() not in ['msvc', 'clang-cl']
+  if host_machine.system() != 'windows' or cc.get_id()!='msvc' and cc.get_id()!='clang-cl'
     add_project_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif

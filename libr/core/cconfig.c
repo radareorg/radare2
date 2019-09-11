@@ -380,7 +380,14 @@ static bool cb_scrlast(void *user, void *data) {
 static bool cb_scr_vi(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->cons->line->vi_mode = node->i_value;
+	core->cons->line->enable_vi_mode = node->i_value;
+	return true;
+}
+
+static bool cb_scr_prompt_mode(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->cons->line->prompt_mode = node->i_value;
 	return true;
 }
 
@@ -2988,6 +2995,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");
 	SETPREF ("scr.square", "true", "Use square pixels or not");
 	SETCB ("scr.prompt.vi", "false", &cb_scr_vi, "Use vi mode for input prompt");
+	SETCB ("scr.prompt.mode", "false", &cb_scr_prompt_mode,  "Set prompt color based on vi mode");
 	SETCB ("scr.wideoff", "false", &cb_scr_wideoff, "Adjust offsets to match asm.bits");
 	SETCB ("scr.rainbow", "false", &cb_scrrainbow, "Shows rainbow colors depending of address");
 	SETCB ("scr.last", "true", &cb_scrlast, "Cache last output after flush to make _ command work (disable for performance)");

@@ -129,7 +129,7 @@ static ut64 offset_to_vaddr(struct MACH0_(obj_t) *bin, ut64 offset) {
 }
 
 static ut64 pa2va(RBinFile *bf, ut64 offset) {
-	if (!bf->rbin) {
+	if (!bf || !bf->rbin) {
 		return offset;
 	}
 	RIO *io = bf->rbin->iob.io;
@@ -503,11 +503,11 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 		return false;
 	}
 	st.cmd = r_read_ble32 (symt, be);
-	st.cmdsize = r_read_ble32 (symt+4, be);
+	st.cmdsize = r_read_ble32 (symt + 4, be);
 	st.symoff = r_read_ble32 (symt + 8, be);
-	st.nsyms = r_read_ble32 (symt+12, be);
-	st.stroff = r_read_ble32 (symt+16, be);
-	st.strsize = r_read_ble32 (symt+20, be);
+	st.nsyms = r_read_ble32 (symt + 12, be);
+	st.stroff = r_read_ble32 (symt + 16, be);
+	st.strsize = r_read_ble32 (symt + 20, be);
 
 	mo->symtab = NULL;
 	mo->nsymtab = 0;
@@ -1538,7 +1538,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 	//bprintf ("Commands: %d\n", bin->hdr.ncmds);
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + bin->header_at; \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
-		if (off > bin->size || off + sizeof (struct load_command) > bin->size){
+		if (off > bin->size || off + sizeof (struct load_command) > bin->size) {
 			bprintf ("mach0: out of bounds command\n");
 			return false;
 		}
@@ -1564,11 +1564,9 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
 		}
 
-		//bprintf ("%d\n", lc.cmd);
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
 			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "data_in_code", 0);
-			// TODO table of non-instructions in __text
 			break;
 		case LC_RPATH:
 			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "rpath", 0);
@@ -1813,10 +1811,61 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			break;
 		}
 	}
+	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + bin->header_at; \
+			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
+		len = r_buf_read_at (bin->b, off, loadc, sizeof (struct load_command));
+		if (len < 1) {
+			bprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
+			return false;
+		}
+		lc.cmd = r_read_ble32 (&loadc[0], bin->big_endian);
+		lc.cmdsize = r_read_ble32 (&loadc[4], bin->big_endian);
+
+		if (lc.cmdsize < 1 || off + lc.cmdsize > bin->size) {
+			bprintf ("Warning: mach0_header %d = cmdsize<1. (0x%llx vs 0x%llx)\n", i,
+				(ut64)(off + lc.cmdsize), (ut64)(bin->size));
+			break;
+		}
+
+		sdb_num_set (bin->kv, sdb_fmt ("mach0_cmd_%d.offset", i), off, 0);
+		const char *format_name = cmd_to_pf_definition (lc.cmd);
+		if (format_name) {
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.format", i), format_name, 0);
+		} else {
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
+		}
+
+		switch (lc.cmd) {
+		case LC_DATA_IN_CODE:
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "data_in_code", 0);
+			if (bin->verbose) {
+				ut8 buf[8];
+				r_buf_read_at (bin->b, off + 8, buf, sizeof (buf));
+				ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
+				ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+				eprintf ("data-in-code at 0x%x size %d\n", dataoff, datasize);
+				ut8 *db = (ut8*)malloc (datasize);
+				if (db) {
+					r_buf_read_at (bin->b, dataoff, db, datasize);
+					// TODO table of non-instructions regions in __text
+					for (i = 0; i < datasize; i += 8) {
+						ut32 dw = r_read_ble32 (db + i, bin->big_endian);
+						// int kind = r_read_ble16 (db + i + 4 + 2, bin->big_endian);
+						int len = r_read_ble16 (db + i + 4, bin->big_endian);
+						ut64 va = offset_to_vaddr(bin, dw);
+					//	eprintf ("# 0x%d -> 0x%x\n", dw, va);
+					//	eprintf ("0x%x kind %d len %d\n", dw, kind, len);
+						eprintf ("Cd 4 %d @ 0x%"PFMT64x"\n", len / 4, va);
+					}
+				}
+			}
+			break;
+		}
+	}
 	return true;
 }
 
-static int init(struct MACH0_(obj_t) *mo) {
+static bool init(struct MACH0_(obj_t) *mo) {
 	if (!init_hdr (mo)) {
 		Eprintf ("Warning: File is not MACH0\n");
 		return false;
@@ -3565,7 +3614,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 	for (n = 0; n < mh->ncmds; n++) {
 		READWORD ();
 		int lcType = word;
-		const char * pf_definition = cmd_to_pf_definition (lcType);
+		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
 			cb_printf ("pf.%s @ 0x%08"PFMT64x"\n", pf_definition, pvaddr - 4);
 		}

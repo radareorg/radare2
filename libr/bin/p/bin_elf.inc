@@ -171,6 +171,8 @@ static RList* sections(RBinFile *bf) {
 			ptr->name = strdup ((char*)section[i].name);
 			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel") && !strstr (ptr->name, "pydata")) {
 				ptr->is_data = true;
+			} else if (!strcmp (ptr->name, "C")) {
+				ptr->is_data = true;
 			}
 			if (strstr (ptr->name, ".got")) {
 #if R_BIN_ELF64

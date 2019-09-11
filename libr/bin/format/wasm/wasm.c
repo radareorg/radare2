@@ -37,7 +37,7 @@ static ut32 consume_r (RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_f
 }
 
 static size_t consume_u32_r (RBuffer *b, ut64 max, ut32 *out) {
-	size_t n;
+	size_t n = 0;
 	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
 	if (out) {
 		*out = tmp;

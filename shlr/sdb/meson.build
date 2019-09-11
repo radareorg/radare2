@@ -32,6 +32,7 @@ configure_file(
 
 libsdb_sources = [
   'src/array.c',
+  'src/set.c',
   'src/base64.c',
   'src/buffer.c',
   'src/cdb.c',

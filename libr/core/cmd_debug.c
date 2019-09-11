@@ -35,6 +35,9 @@ static const char *help_msg_d[] = {
 	"ds", "[?]", "Step, over, source line",
 	"dt", "[?]", "Display instruction traces",
 	"dw", " <pid>", "Block prompt until pid dies",
+#if __WINDOWS__
+	"dW", "", "List process windows",
+#endif
 	"dx", "[?]", "Inject and run code on target process (See gs)",
 	NULL
 };
@@ -77,6 +80,9 @@ static const char *help_msg_db[] = {
 	"dbt", "[?]", "Show backtrace. See dbt? for more details",
 	"dbx", " [expr]", "Set expression for bp in current offset",
 	"dbw", " <addr> <r/w/rw>", "Add watchpoint",
+#if __WINDOWS__
+	"dbW", " <WM_DEFINE> [?|handle|name]", "Set cond. breakpoint on a window message handler",
+#endif
 	"drx", " number addr len perm", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
 	NULL
@@ -3140,6 +3146,10 @@ static void core_cmd_dbi (RCore *core, const char *input, ut64 addr) {
 	}
 }
 
+#if __WINDOWS__
+#include "..\debug\p\native\windows\windows_message.h"
+#endif
+
 static void r_core_cmd_bp(RCore *core, const char *input) {
 	RBreakpointItem *bpi;
 	int i, hwbp = r_config_get_i (core->config, "dbg.hwbp");
@@ -3532,6 +3542,17 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		}
 		break;
+#if __WINDOWS__
+	case 'W': // "dbW"
+		if (input[2] == ' ') {
+			if (r_w32_add_winmsg_breakpoint (core->dbg, input + 3)) {
+				r_cons_print ("Breakpoint set.\n");
+			} else {
+				r_cons_print ("Breakpoint not set.\n");
+			}
+		}
+		break;
+#endif
 	case 'w': // "dbw"
 		input++; // skip 'w'
 		watch = true;
@@ -5109,6 +5130,11 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		}
 		break;
+#if __WINDOWS__
+	case 'W': // "dW"
+		r_w32_print_windows (core->dbg);
+		break;
+#endif
 	case 'w': // "dw"
 		r_cons_break_push (static_debug_stop, core->dbg);
 		for (;!r_cons_is_breaked ();) {

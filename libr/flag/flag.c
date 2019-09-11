@@ -45,11 +45,10 @@ static int flag_skiplist_cmp(const void *va, const void *vb) {
 
 static ut64 num_callback(RNum *user, const char *name, int *ok) {
 	RFlag *f = (RFlag *)user;
-	RFlagItem *item;
 	if (ok) {
 		*ok = 0;
 	}
-	item = ht_pp_find (f->ht_name, name, NULL);
+	RFlagItem *item = ht_pp_find (f->ht_name, name, NULL);
 	if (item) {
 		// NOTE: to avoid warning infinite loop here we avoid recursivity
 		if (item->alias) {

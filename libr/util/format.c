@@ -185,15 +185,14 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 			p->cb_printf ("%d", buf[i]);
 		} else {
 			p->cb_printf ("[ ");
+			const char *comma = "";
 			while (size--) {
 				if (elem == -1 || elem == 0) {
-					p->cb_printf (", %d", buf[i]);
+					p->cb_printf ("%s%d", comma, buf[i]);
+					comma = ",";
 					if (elem == 0) {
 						elem = -2;
 					}
-				}
-				if (size != 0 && elem == -1) {
-					p->cb_printf (", ");
 				}
 				if (elem > -1) {
 					elem--;
@@ -1517,8 +1516,12 @@ static void r_print_format_num(const RPrint *p, int endian, int mode, const char
 	}
 }
 
+R_API const char *r_print_format_byname(RPrint *p, const char *name) {
+	return sdb_const_get (p->formats, name, NULL);
+}
+
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
-int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
+R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) {
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
@@ -1686,7 +1689,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 				free (o);
 				return 0;
 			}
-			int newsize = r_print_format_struct_size (format, p, mode, n + 1);
+			int newsize = r_print_format_struct_size (p, format, mode, n + 1);
 			if (newsize < 1) {
 				eprintf ("Cannot find size for `%s'\n", format);
 				free (structname);
@@ -1745,7 +1748,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			} else if (fmt[i+1] == '8') {
 				size += tabsize * 8;
 			} else {
-				eprintf ("Invalid n format.\n");
+				eprintf ("Invalid n format in (%s)\n", fmt);
 				free (o);
 				free (args);
 				return -2;
@@ -1805,7 +1808,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 		p->cb_printf ("<%s>\n", name);
 	}
 	r_print_format (p, seek, b, len, fmt, mode, setval, field);
-	return r_print_format_struct_size (fmt, p, mode, 0);
+	return r_print_format_struct_size (p, fmt, mode, 0);
 }
 
 static char *get_args_offset(const char *arg) {
@@ -2053,7 +2056,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			} else {
 				size = -1;
 			}
-			int fs = r_print_format_struct_size (arg, p, 0, idx);
+			int fs = r_print_format_struct_size (p, arg, 0, idx);
 			if (fs == -2) {
 				i = -1;
 				goto beach;

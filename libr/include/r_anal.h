@@ -764,6 +764,7 @@ typedef struct r_anal_bind_t {
 	RAnalGetHint get_hint;
 } RAnalBind;
 
+typedef const char *(*RAnalLabelAt) (RAnal *a, RAnalFunction *fcn, ut64);
 
 #define R_ANAL_VAR_KIND_ANY 0
 #define R_ANAL_VAR_KIND_ARG 'a'
@@ -1930,6 +1931,7 @@ R_API void r_anal_class_list(RAnal *anal, int mode);
 R_API void r_anal_class_list_bases(RAnal *anal, const char *class_name);
 R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name);
 
+R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;

@@ -410,6 +410,7 @@ typedef struct r_cons_canvas_t {
 #define RUNE_CURVE_CORNER_BL "╰"
 #define RUNE_LONG_LINE_HORIZ "―"
 #define UTF_CIRCLE "\u25EF"
+#define UTF_BLOCK "\u2588"
 
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
@@ -727,6 +728,11 @@ enum {
 	LINE_NOSYM_HORIZ
 };
 
+typedef enum {
+	INSERT_MODE = 'i',
+	CONTROL_MODE = 'c'
+} RViMode;
+
 #define DOT_STYLE_NORMAL 0
 #define DOT_STYLE_CONDITIONAL 1
 #define DOT_STYLE_BACKEDGE 2
@@ -1040,7 +1046,9 @@ struct r_line_t {
 	int (*hist_down)(void *user);
 	char *contents;
 	bool zerosep;
-	bool vi_mode;
+	bool enable_vi_mode;
+	int vi_mode;
+	bool prompt_mode;
 	RLinePromptType prompt_type;
 	int offset_hist_index;
 	int file_hist_index;

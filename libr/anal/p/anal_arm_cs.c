@@ -1564,12 +1564,12 @@ PUSH { r4, r5, r6, r7, lr }
 4,sp,-=,r5,sp,=[4],
 4,sp,-=,r4,sp,=[4]
 
-20,sp,-=,r4,r5,r6,r7,lr,5,sp,=[*]
+20,sp,-=,lr,r7,r6,r5,r4,5,sp,=[*]
 #endif
 		r_strbuf_setf (&op->esil, "%d,sp,-=,",
 			4 * insn->detail->arm.op_count);
-		for (i=0; i<insn->detail->arm.op_count; i++) {
-			r_strbuf_appendf (&op->esil, "%s,", REG (i));
+		for (i=insn->detail->arm.op_count; i>0; i--) {
+			r_strbuf_appendf (&op->esil, "%s,", REG (i-1));
 		}
 		r_strbuf_appendf (&op->esil, "%d,sp,=[*]",
 			insn->detail->arm.op_count);
@@ -1579,6 +1579,10 @@ PUSH { r4, r5, r6, r7, lr }
 		for (i=1; i<insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s,%s,%d,%c,=[4],",
 				REG (i), ARG (0), R_ABS(i*4), i > 0? '+' : '-');
+		}
+		if (insn->detail->arm.writeback == true) { //writeback, reg should be incremented
+			r_strbuf_appendf (&op->esil, "%d,%s,+=,",
+				(insn->detail->arm.op_count -1)*4, ARG (0));
 		}
 		break;
 	case ARM_INS_ASR:
@@ -1592,11 +1596,11 @@ PUSH { r4, r5, r6, r7, lr }
 	case ARM_INS_POP:
 #if 0
 POP { r4,r5, r6}
-r4,r5,r6,3,sp,[*],12,sp,+=
+r6,r5,r4,3,sp,[*],12,sp,+=
 #endif
 		r_strbuf_setf (&op->esil, "");
-		for (i=0; i<insn->detail->arm.op_count; i++) {
-			r_strbuf_appendf (&op->esil, "%s,", REG (i));
+		for (i=insn->detail->arm.op_count; i>0; i--) {
+			r_strbuf_appendf (&op->esil, "%s,", REG (i-1));
 		}
 		r_strbuf_appendf (&op->esil, "%d,sp,[*],",
 			insn->detail->arm.op_count);
@@ -2231,7 +2235,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		case ARM_INS_CMN:
 			break;
 		default:
-		        r_strbuf_appendf (&op->esil, ",$z,zf,:=");
+		        r_strbuf_appendf (&op->esil, ",$z,zf,:=,$s,nf,:=");
 		}
 	}
 

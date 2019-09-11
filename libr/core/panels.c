@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2019 - Author: pancake, vane11ope */
+/* Copyright radare2 2014-2019 - Author: pancake, vane11ope, Kirils Solovjovs */
 
 // pls move the typedefs into roons and rename it -> RConsPanel
 
@@ -166,8 +166,8 @@ static const char *entropy_rotate[] = {
 	NULL
 };
 
-static const char *hexdump_rotate[] = {
-	"", "a", "r", "b", "h", "w", "q", "d", "r",
+static char *hexdump_rotate[] = {
+	"xc", "pxa", "pxr", "prx", "pxb", "pxh", "pxw", "pxq", "pxd", "pxr",
 	NULL
 };
 
@@ -351,8 +351,8 @@ static bool __check_if_addr(const char *c, int len);
 static bool __check_if_cur_panel(RCore *core, RPanel *panel);
 static bool __check_if_mouse_x_illegal(RCore *core, int x);
 static bool __check_if_mouse_y_illegal(RCore *core, int y);
-static bool __check_if_mouse_x_on_edge(RCore *core, int x);
-static bool __check_if_mouse_y_on_edge(RCore *core, int y);
+static bool __check_if_mouse_x_on_edge(RCore *core, int x, int y);
+static bool __check_if_mouse_y_on_edge(RCore *core, int x, int y);
 
 /* add */
 static void __add_help_panel(RCore *core);
@@ -678,7 +678,7 @@ void __update_edge_y(RCore *core, int y) {
 bool __check_if_mouse_x_illegal(RCore *core, int x) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
-	const int edge_x = 2;
+	const int edge_x = 1;
 	if (x <= edge_x || can->w - edge_x <= x) {
 		return true;
 	}
@@ -688,20 +688,20 @@ bool __check_if_mouse_x_illegal(RCore *core, int x) {
 bool __check_if_mouse_y_illegal(RCore *core, int y) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
-	const int edge_y = 2;
+	const int edge_y = 0;
 	if (y <= edge_y || can->h - edge_y <= y) {
 		return true;
 	}
 	return false;
 }
 
-bool __check_if_mouse_x_on_edge(RCore *core, int x) {
+bool __check_if_mouse_x_on_edge(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
-	const int edge_x = 2;
+	const int edge_x = 1;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.x - edge_x <= x && x <= panel->view->pos.x + edge_x) {
+		if (x > panel->view->pos.x && x <= panel->view->pos.x + edge_x) {
 			panels->mouse_on_edge_x = true;
 			panels->mouse_orig_x = x;
 			return true;
@@ -710,16 +710,18 @@ bool __check_if_mouse_x_on_edge(RCore *core, int x) {
 	return false;
 }
 
-bool __check_if_mouse_y_on_edge(RCore *core, int y) {
+bool __check_if_mouse_y_on_edge(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
-	const int edge_y = 2;
+	const int edge_y = 1;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.y - edge_y <= y && y <= panel->view->pos.y + edge_y) {
-			panels->mouse_on_edge_y = true;
-			panels->mouse_orig_y = y;
-			return true;
+		if (panel->view->pos.x < x && x <= panel->view->pos.x + panel->view->pos.w) {
+			if (panel->view->pos.y < y && y <= panel->view->pos.y + edge_y) {
+				panels->mouse_on_edge_y = true;
+				panels->mouse_orig_y = y;
+				return true;
+			}
 		}
 	}
 	return false;
@@ -808,16 +810,47 @@ bool __check_panel_type(RPanel *panel, const char *type) {
 	if (!panel->model->cmd || !type) {
 		return false;
 	}
+	char *tmp = r_str_new (panel->model->cmd);
+	int n = r_str_split (tmp, ' ');
+	if (!n) {
+		return false;
+	}
+	const char *base = r_str_word_get0 (tmp, 0);
+	if (R_STR_ISEMPTY (base)) {
+		return false;
+	}
 	int len = strlen (type);
 	if (!strcmp (type, PANEL_CMD_DISASSEMBLY)) {
-		if (!strncmp (panel->model->cmd, type, len) &&
+		if (!strncmp (tmp, type, len) &&
 				strcmp (panel->model->cmd, PANEL_CMD_DECOMPILER) &&
 				strcmp (panel->model->cmd, PANEL_CMD_DECOMPILER_O) &&
 				strcmp (panel->model->cmd, PANEL_CMD_DISASMSUMMARY)) {
+			free (tmp);
 			return true;
 		}
+		free (tmp);
 		return false;
 	}
+	if (!strcmp (type, PANEL_CMD_STACK)) {
+		if (!strcmp (tmp, PANEL_CMD_STACK)) {
+			free (tmp);
+			return true;
+		}
+		free (tmp);
+		return false;
+	}
+	if (!strcmp (type, PANEL_CMD_HEXDUMP)) {
+		int i = 0;
+		for (; i < COUNT (hexdump_rotate); i++) {
+			if (!strcmp (tmp, hexdump_rotate[i])) {
+				free (tmp);
+				return true;
+			}
+		}
+		free (tmp);
+		return false;
+	}
+	free (tmp);
 	return !strncmp (panel->model->cmd, type, len);
 }
 
@@ -1427,7 +1460,7 @@ void __activate_cursor(RCore *core) {
 	RPanel *cur = __get_cur_panel (panels);
 	if (__is_normal_cursor_type (cur) || __is_abnormal_cursor_type (core, cur)) {
 		if (cur->model->cache) {
-			if (__show_status_yesno (core, 'y', "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
+			if (__show_status_yesno (core, 1, "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
 				cur->model->cache = false;
 				__set_cmd_str_cache (core, cur, NULL);
 				(void)__show_status (core, "Cache is off and cursor is on");
@@ -1822,6 +1855,26 @@ bool __handle_cursor_mode(RCore *core, const int key) {
 	case '"':
 	case 9:
 		return false;
+	case ']':
+		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
+			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
+		} else {
+			int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+			r_config_set_i (core->config, "asm.cmt.col", cmtcol + 2);
+		}
+		cur->view->refresh = true;
+		break;
+	case '[':
+		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
+			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+ 		} else {
+			int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+			if (cmtcol > 2) {
+				r_config_set_i (core->config, "asm.cmt.col", cmtcol - 2);
+			}
+		}
+		cur->view->refresh = true;
+		break;
 	case 'Q':
 	case 'q':
 	case 'c':
@@ -1886,8 +1939,8 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 				panels->mouse_on_edge_y = false;
 				return true;
 			}
-			panels->mouse_on_edge_x = __check_if_mouse_x_on_edge (core, x);
-			panels->mouse_on_edge_y = __check_if_mouse_y_on_edge (core, y);
+			panels->mouse_on_edge_x = __check_if_mouse_x_on_edge (core, x, y);
+			panels->mouse_on_edge_y = __check_if_mouse_y_on_edge (core, x, y);
 			if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
 				return true;
 			}
@@ -1972,6 +2025,7 @@ static bool __handle_mouse_on_X(RCore *core, int x, int y) {
 		free (word);
 		return true;
 	}
+	free (word);
 	return false;
 }
 
@@ -2394,20 +2448,20 @@ void __move_panel_to_dir(RCore *core, RPanel *panel, int src) {
 	key = r_cons_arrow_to_hjkl (key);
 	__set_refresh_all (core, false, true);
 	switch (key) {
-		case 'h':
-			__move_panel_to_left (core, panel, src);
-			break;
-		case 'l':
-			__move_panel_to_right (core, panel, src);
-			break;
-		case 'k':
-			__move_panel_to_up (core, panel, src);
-			break;
-		case 'j':
-			__move_panel_to_down (core, panel, src);
-			break;
-		default:
-			break;
+	case 'h':
+		__move_panel_to_left (core, panel, src);
+		break;
+	case 'l':
+		__move_panel_to_right (core, panel, src);
+		break;
+	case 'k':
+		__move_panel_to_up (core, panel, src);
+		break;
+	case 'j':
+		__move_panel_to_down (core, panel, src);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -3192,6 +3246,9 @@ int __show_all_decompiler_cb(void *user) {
 	__handle_tab_new (core);
 	RPanels *panels = __get_panels (root, root->n_panels - 1);
 	r_list_foreach (optl, iter, opt) {
+		if (R_STR_ISEMPTY (opt)) {
+			continue;
+		}
 		r_config_set (core->config, "cmd.pdc", opt);
 		if (panels->n_panels <= i) {
 			panels->n_panels++;
@@ -3252,8 +3309,23 @@ int __save_layout_cb(void *user) {
 
 int __clear_layout_cb(void *user) {
 	RCore *core = (RCore *)user;
-	__show_status_yesno (core, 'n', "Clear all the saved layouts?(y/n): ");
-	r_file_rm (__get_panels_config_dir_path ());
+	if (!__show_status_yesno (core, 0, "Clear all the saved layouts?(y/n): ")) {
+		return 0;
+	}
+	const char *config_path = __get_panels_config_dir_path ();
+	RList *dir = r_sys_dir (config_path);
+	if (!dir) {
+		return 0;
+	}
+	RListIter *it;
+	char *entry;
+	r_list_foreach (dir, it, entry) {
+		const char *tmp = r_str_newf ("%s%s%s", config_path, R_SYS_DIR, entry);
+		r_file_rm (tmp);
+	}
+	r_file_rm (config_path);
+	r_list_free (dir);
+
 	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
 	return 0;
 }
@@ -4131,10 +4203,10 @@ void __print_stack_cb(void *user, void *p) {
 	int i;
 	for (i = 0; i < n; i++) {
 		const char *s = r_str_word_get0 (panel->model->cmd, i);
-		if (strncmp (s, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
-			cmd = r_str_append (cmd, s);
-			break;
+		if (!i) {
+			continue;
 		}
+		cmd = r_str_append (cmd, s);
 	}
 	panel->model->cmd = cmd;
 	const char *cmdstr = r_core_cmd_str (core, r_str_newf ("%s%c%d", cmd, sign, absdelta));
@@ -4152,6 +4224,18 @@ void __print_hexdump_cb(void *user, void *p) {
 			r_core_seek (core, core->offset, 1);
 			r_core_block_read (core);
 		}
+		char *base = hexdump_rotate[R_ABS(panel->model->rotate) % COUNT (hexdump_rotate)];
+		char *cmd = r_str_newf ("%s ", base);
+		int n = r_str_split (panel->model->cmd, ' ');
+		int i;
+		for (i = 0; i < n; i++) {
+			const char *s = r_str_word_get0 (panel->model->cmd, i);
+			if (!i) {
+				continue;
+			}
+			cmd = r_str_append (cmd, s);
+		}
+		panel->model->cmd = cmd;
 		cmdstr = __handle_cmd_str_cache (core, panel, false);
 		core->offset = o_offset;
 	}
@@ -4307,6 +4391,7 @@ void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenuUpdateC
 		RPanelsMenuItem *sub = p_item->sub[i];
 		ht_pp_delete (core->panels->mht, sdb_fmt ("%s.%s", parent, sub->name));
 	}
+	p_item->sub = NULL;
 	p_item->n_sub = 0;
 	if (cb) {
 		cb (core, parent);
@@ -4924,9 +5009,9 @@ void __panels_refresh(RCore *core) {
 		for (i = 0; i < parent->n_sub; i++) {
 			RPanelsMenuItem *item = parent->sub[i];
 			if (panels->mode == PANEL_MODE_MENU && i == parent->selectedIndex) {
-				r_strbuf_appendf (title, "%s[%s] "Color_RESET, color, item->name);
+				r_strbuf_appendf (title, "%s[%s]"Color_RESET, color, item->name);
 			} else {
-				r_strbuf_appendf (title, "%s  ", item->name);
+				r_strbuf_appendf (title, " %s ", item->name);
 			}
 		}
 	}
@@ -5070,6 +5155,7 @@ void __init_rotate_db(RCore *core) {
 	sdb_ptr_set (panels->rotate_db, "px", &__rotate_hexdump_cb, 0);
 	sdb_ptr_set (panels->rotate_db, "dr", &__rotate_register_cb, 0);
 	sdb_ptr_set (panels->rotate_db, "af", &__rotate_function_cb, 0);
+	sdb_ptr_set (panels->rotate_db, PANEL_CMD_HEXDUMP, &__rotate_hexdump_cb, 0);
 }
 
 void __init_sdb(RCore *core) {
@@ -5729,7 +5815,7 @@ void __set_breakpoints_on_cursor(RCore *core, RPanel *panel) {
 
 void __insert_value(RCore *core) {
 	if (!r_config_get_i (core->config, "io.cache")) {
-		if (__show_status_yesno (core, 'y', "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
+		if (__show_status_yesno (core, 1, "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
 			r_config_set_i (core->config, "io.cache", 1);
 			(void)__show_status (core, "io.cache is on and insert is available now.");
 		} else {
@@ -5944,6 +6030,7 @@ void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db) {
 						void *cb = sdb_ptr_get (menu_db, word, 0);
 						if (cb) {
 							((RPanelAlmightyCallback)cb) (core, panel, NONE, word);
+							__free_modal (&modal);
 							break;
 						}
 					}
@@ -6131,7 +6218,15 @@ void __rotate_entropy_h_cb(void *user, bool rev) {
 
 void __rotate_hexdump_cb (void *user, bool rev) {
 	RCore *core = (RCore *)user;
-	__rotate_panel_cmds (core, hexdump_rotate, COUNT (hexdump_rotate), "px", rev);
+	RPanel *p = __get_cur_panel (core->panels);
+
+	if (rev) {
+		p->model->rotate--;
+	} else {
+		p->model->rotate++;
+	}
+	r_core_visual_applyHexMode (core, p->model->rotate);
+	__rotate_asmemu (core, p);
 }
 
 void __rotate_register_cb (void *user, bool rev) {
@@ -6205,8 +6300,10 @@ void __rotate_asmemu(RCore *core, RPanel *p) {
 	p->view->refresh = true;
 }
 
-R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
-	bool fromVisual = core->vmode;
+static bool fromVisual = false;
+
+R_API bool r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
+	fromVisual = core->vmode;
 	if (!panels_root) {
 		panels_root = R_NEW0 (RPanelsRoot);
 		if (!panels_root) {
@@ -6241,6 +6338,13 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 			r_core_cmdf (core, "v %s", l);
 		}
 	}
+	RPanels *panels = panels_root->panels[panels_root->cur_panels];
+	if (panels) {
+		RPanel *cur = __get_cur_panel (panels);
+		if (cur) {
+			cur->model->addr = core->offset;
+		}
+	}
 	while (panels_root->n_panels) {
 		__set_root_state (core, DEFAULT);
 		__panels_process (core, panels_root->panels[panels_root->cur_panels]);
@@ -6252,10 +6356,9 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 	}
 	r_cons_enable_mouse (false);
-	if (!fromVisual) {
+	if (fromVisual) {
 		r_core_cmdf (core, "V");
 	}
-
 	return true;
 }
 
@@ -6538,9 +6641,11 @@ void __panels_process(RCore *core, RPanels *panels) {
 			r_load_panels_layout (core, layout);
 		}
 	}
+
+	bool o_interactive = r_cons_is_interactive ();
+	r_cons_set_interactive (true);
+
 	r_cons_enable_mouse (false);
-	int scrInteractive = r_config_get_i (core->config, "scr.interactive");
-	r_config_set_i (core->config, "scr.interactive", 0);
 repeat:
 	r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
 	core->panels = panels;
@@ -6699,15 +6804,21 @@ repeat:
 		}
 		break;
 	case 'r':
+		// TODO: toggle shortcut hotkeys
 		if (r_config_get_i (core->config, "asm.hint.call")) {
 			r_core_cmd0 (core, "e!asm.hint.call");
-			r_core_cmd0 (core, "e!asm.hint.jmp");
+			r_core_cmd0 (core, "e asm.hint.jmp=true");
 		} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
 			r_core_cmd0 (core, "e!asm.hint.jmp");
-			r_core_cmd0 (core, "e!asm.hint.lea");
+			r_core_cmd0 (core, "e asm.hint.emu=true");
+		} else if (r_config_get_i (core->config, "asm.hint.emu")) {
+			r_core_cmd0 (core, "e!asm.hint.emu");
+			r_core_cmd0 (core, "e asm.hint.lea=true");
 		} else if (r_config_get_i (core->config, "asm.hint.lea")) {
 			r_core_cmd0 (core, "e!asm.hint.lea");
-			r_core_cmd0 (core, "e!asm.hint.call");
+			r_core_cmd0 (core, "e asm.hint.call=true");
+		} else {
+			r_core_cmd0 (core, "e asm.hint.call=true");
 		}
 		__set_refresh_all (core, false, false);
 		break;
@@ -6720,7 +6831,7 @@ repeat:
 		__do_panels_refresh (core);
 		break;
 	case 'a':
-		panels->autoUpdate = __show_status_yesno (core, 'y', "Auto update On? (Y/n)");
+		panels->autoUpdate = __show_status_yesno (core, 1, "Auto update On? (Y/n)");
 		break;
 	case 'A':
 		{
@@ -6883,11 +6994,23 @@ repeat:
 		}
 		break;
 	case ']':
-		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
+		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
+			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
+		} else {
+			int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+			r_config_set_i (core->config, "asm.cmt.col", cmtcol + 2);
+		}
 		cur->view->refresh = true;
 		break;
 	case '[':
-		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
+			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+ 		} else {
+			int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+			if (cmtcol > 2) {
+				r_config_set_i (core->config, "asm.cmt.col", cmtcol - 2);
+			}
+		}
 		cur->view->refresh = true;
 		break;
 	case '/':
@@ -7063,6 +7186,7 @@ repeat:
 		__set_root_state (core, QUIT);
 		goto exit;
 	case '!':
+		fromVisual = true;
 	case 'q':
 	case -1: // EOF
 		__set_root_state (core, DEL);
@@ -7094,5 +7218,5 @@ exit:
 	core->print->col = 0;
 	core->vmode = originVmode;
 	core->panels = prev;
-	r_config_set_i (core->config, "scr.interactive", scrInteractive);
+	r_cons_set_interactive (o_interactive);
 }

@@ -703,6 +703,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
 			if (mi) {
 				r_meta_print (core->anal, mi, input[3], NULL, false);
+				r_meta_item_free (mi);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
@@ -710,6 +711,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			if (mi) {
 				r_meta_print (core->anal, mi, input[2], NULL, false);
 				r_cons_newline ();
+				r_meta_item_free (mi);
 			}
 			break;
 		}
@@ -793,8 +795,17 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					p = strchr (t, ' ');
 					if (p) {
 						p = (char *)r_str_trim_ro (p);
+						if (*p == '.') {
+							const char *realformat = r_print_format_byname (core->print, p + 1);
+							if (realformat) {
+								p = (char *)realformat;
+							} else {
+								eprintf ("Cannot resolve format '%s'\n", p + 1);
+								break;
+							}
+						}
 						if (n < 1) {
-							n = r_print_format_struct_size (p, core->print, 0, 0);
+							n = r_print_format_struct_size (core->print, p, 0, 0);
 							if (n < 1) {
 								eprintf ("Warning: Cannot resolve struct size for '%s'\n", p);
 								n = 32; //

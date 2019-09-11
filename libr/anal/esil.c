@@ -405,8 +405,19 @@ static int internal_esil_reg_write_no_null (RAnalEsil *esil, const char *regname
 	const char *pc = r_reg_get_name (esil->anal->reg, R_REG_NAME_PC);
 	const char *sp = r_reg_get_name (esil->anal->reg, R_REG_NAME_SP);
 	const char *bp = r_reg_get_name (esil->anal->reg, R_REG_NAME_BP);
-	//trick to protect strcmp from segfaulting with out making the condition complex
-	r_return_val_if_fail (pc && sp && bp, -1);
+
+	if (!pc) {
+		eprintf ("Warning: RReg profile does not contain PC register\n");
+		return false;
+	}
+	if (!sp) {
+		eprintf ("Warning: RReg profile does not contain SP register\n");
+		return false;
+	}
+	if (!bp) {
+		eprintf ("Warning: RReg profile does not contain BP register\n");
+		return false;
+	}
 	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp(reg->name, bp)) || num)) { //I trust k-maps
 		r_reg_set_value (esil->anal->reg, reg, num);
 		return true;
@@ -1812,7 +1823,7 @@ static bool esil_poke_some(RAnalEsil *esil) {
 	int i, regsize;
 	ut64 ptr, regs = 0, tmp;
 	char *count, *dst = r_anal_esil_pop (esil);
-#define BYTES_SIZE 64
+
 	if (dst && r_anal_esil_get_parm_size (esil, dst, &tmp, &regsize)) {
 		// reg
 		isregornum (esil, dst, &ptr);
@@ -1820,7 +1831,7 @@ static bool esil_poke_some(RAnalEsil *esil) {
 		if (count) {
 			isregornum (esil, count, &regs);
 			if (regs > 0) {
-				ut8 b[BYTES_SIZE];
+				ut8 b[8] = {0};
 				ut64 num64;
 				for (i = 0; i < regs; i++) {
 					char *foo = r_anal_esil_pop (esil);
@@ -1830,16 +1841,16 @@ static bool esil_poke_some(RAnalEsil *esil) {
 						free (count);
 						return true;
 					}
+					r_anal_esil_get_parm_size (esil, foo, &tmp, &regsize);
 					isregornum (esil, foo, &num64);
-					/* TODO: implement peek here */
-					// read from $dst
 					r_write_ble (b, num64, esil->anal->big_endian, regsize);
-					const ut32 written = r_anal_esil_mem_write (esil, ptr, b, BYTES_SIZE);
-					if (written != BYTES_SIZE) {
+					const int size_bytes = regsize / 8;
+					const ut32 written = r_anal_esil_mem_write (esil, ptr, b, size_bytes);
+					if (written != size_bytes) {
 						//eprintf ("Cannot write at 0x%08" PFMT64x "\n", ptr);
 						esil->trap = 1;
 					}
-					ptr += BYTES_SIZE;
+					ptr += size_bytes;
 					free (foo);
 				}
 			}

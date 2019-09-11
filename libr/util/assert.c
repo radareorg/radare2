@@ -27,6 +27,7 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...) {
 	va_end (args);
 	char *env = r_sys_getenv ("R_DEBUG_ASSERT");
 	if (env) {
+		r_sys_backtrace ();
 		if (*env && atoi (env)) {
 			r_sys_breakpoint ();
 		}

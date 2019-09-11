@@ -1147,6 +1147,11 @@ static int sh_set_reg_profile(RAnal* anal) {
 }
 
 static int archinfo(RAnal *anal, int q) {
+#if 0
+	if (q == R_ANAL_ARCHINFO_ALIGN) {
+		return 4;
+	}
+#endif
 	return 2; /* :) */
 }
 

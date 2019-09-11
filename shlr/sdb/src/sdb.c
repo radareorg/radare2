@@ -228,9 +228,8 @@ SDB_API bool sdb_free(Sdb* s) {
 }
 
 SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *cas) {
-	ut32 pos, len, keylen;
+	ut32 pos, len;
 	ut64 now = 0LL;
-	SdbKv *kv;
 	bool found;
 
 	if (cas) {
@@ -243,10 +242,10 @@ SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *
 		return NULL;
 	}
 	// TODO: optimize, iterate once
-	keylen = strlen (key);
+	size_t keylen = strlen (key);
 
 	/* search in memory */
-	kv = (SdbKv*) sdb_ht_find_kvp (s->ht, key, &found);
+	SdbKv *kv = (SdbKv*) sdb_ht_find_kvp (s->ht, key, &found);
 	if (found) {
 		if (!sdbkv_value (kv) || !*sdbkv_value (kv)) {
 			return NULL;

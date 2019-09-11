@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake, defragger */
 
+#include <r_core.h>
 #include <r_asm.h>
 #include <r_debug.h>
 #include <libgdbr.h>
@@ -304,6 +305,10 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	}
 
 	RRegItem* current = NULL;
+	// We default to little endian if there's no way to get the configuration,
+	// since this was the behaviour prior to the change.
+	bool bigendian = dbg->corebind.core && \
+					 dbg->corebind.cfggeti (dbg->corebind.core, "cfg.bigendian");
 	for (;;) {
 		current = r_reg_next_diff (dbg->reg, type, reg_buf, buflen, current, bits);
 		if (!current) {
@@ -311,6 +316,21 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 		}
 		ut64 val = r_reg_get_value (dbg->reg, current);
 		int bytes = bits / 8;
+		if (bigendian) {
+			// TODO: validate that it's correct for all kinds of archs
+			switch (bytes) {
+			case 2:
+				val = r_swap_ut16 (val);
+				break;
+			case 4:
+				val = r_swap_ut32 (val);
+				break;
+			case 8:
+			default:
+				val = r_swap_ut64 (val);
+				break;
+			}
+		}
 		gdbr_write_reg (desc, current->name, (char*)&val, bytes);
 	}
 	return true;
@@ -1101,7 +1121,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
 	.license = "LGPL3",
-	.arch = "x86,arm,sh,mips,avr,lm32,v850",
+	.arch = "x86,arm,sh,mips,avr,lm32,v850,ba2",
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.step = r_debug_gdb_step,
 	.cont = r_debug_gdb_continue,

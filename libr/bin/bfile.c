@@ -683,7 +683,7 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 		bf->sdb_addrinfo = NULL;
 	}
 	free (bf->file);
-	bf->o = NULL;
+	r_bin_object_free (bf->o);
 	r_list_free (bf->xtr_data);
 	if (bf->id != -1) {
 		// TODO: use r_storage api

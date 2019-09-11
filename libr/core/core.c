@@ -2050,26 +2050,31 @@ static int is_string (const ut8 *buf, int size, int *len) {
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth);
 R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
 	if (verbose) {
-		return r_core_anal_hasrefs_to_depth (core, value, r_config_get_i (core->config, "hex.depth"));
+		const int hex_depth = r_config_get_i (core->config, "hex.depth");
+		return r_core_anal_hasrefs_to_depth (core, value, hex_depth);
 	}
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
-	if (fi) {
-		return strdup (fi->name);
-	}
-	return NULL;
+	return fi? strdup (fi->name): NULL;
 }
 
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
+	r_return_val_if_fail (core && value != UT64_MAX, NULL);
+	if (depth < 1) {
+		return NULL;
+	}
 	RStrBuf *s = r_strbuf_new (NULL);
 	char *mapname = NULL;
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
 	ut64 type = r_core_anal_address (core, value);
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, value, 0);
 	if (value && value != UT64_MAX) {
 		RDebugMap *map = r_debug_map_get (core->dbg, value);
 		if (map && map->name && map->name[0]) {
 			mapname = strdup (map->name);
 		}
+	}
+	if (mapname) {
+		r_strbuf_appendf (s, " (%s)", mapname);
+		R_FREE (mapname);
 	}
 	int bits = core->assembler->bits;
 	switch (bits) {
@@ -2107,10 +2112,6 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		if (sect && sect->name[0]) {
 			r_strbuf_appendf (s," (%s)", sect->name);
 		}
-		if (mapname) {
-			r_strbuf_appendf (s, " (%s)", mapname);
-			R_FREE (mapname);
-		}
 	}
 	if (fi) {
 		RRegItem *r = r_reg_get (core->dbg->reg, fi->name, -1);
@@ -2118,6 +2119,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			r_strbuf_appendf (s, " %s", fi->name);
 		}
 	}
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, value, 0);
 	if (fcn) {
 		r_strbuf_appendf (s, " %s", fcn->name);
 	}
@@ -2787,6 +2789,7 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->flg_fcn_set = core_flg_fcn_set;
 	r_anal_bind (core->anal, &(core->parser->analb));
 	core->parser->flag_get = r_core_flag_get_by_spaces;
+	core->parser->label_get = r_anal_fcn_label_at;
 
 	r_core_bind (core, &(core->anal->coreb));
 
@@ -3655,134 +3658,6 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 #endif
 	}
 	return b;
-}
-
-static bool isValidAddress (RCore *core, ut64 addr) {
-	// check if address is mapped
-	RIOMap* map = r_io_map_get (core->io, addr);
-	if (!map) {
-		return false;
-	}
-	st64 fdsz = (st64)r_io_fd_size (core->io, map->fd);
-	if (fdsz > 0 && map->delta > fdsz) {
-		return false;
-	}
-	// check if associated file is opened
-	RIODesc *desc = r_io_desc_get (core->io, map->fd);
-	if (!desc) {
-		return false;
-	}
-	// check if current map->fd is null://
-	if (!strncmp (desc->name, "null://", 7)) {
-		return false;
-	}
-	return true;
-}
-
-R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 vmin,
-				     ut64 vmax, int vsize, bool asterisk, inRangeCb cb) {
-	int i, align = core->search->align, hitctr = 0;
-	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
-	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
-	ut8 buf[4096];
-	ut64 v64, value = 0, size;
-	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
-	ut32 v32;
-	ut16 v16;
-	if (from >= to) {
-		eprintf ("Error: from must be lower than to\n");
-		return -1;
-	}
-	bool maybeThumb = false;
-	if (align && core->anal->cur && core->anal->cur->arch) {
-		if (!strcmp (core->anal->cur->arch, "arm") && core->anal->bits != 64) {
-			maybeThumb = true;
-		}
-	}
-
-	if (vmin >= vmax) {
-		eprintf ("Error: vmin must be lower than vmax\n");
-		return -1;
-	}
-	if (to == UT64_MAX) {
-		eprintf ("Error: Invalid destination boundary\n");
-		return -1;
-	}
-	r_cons_break_push (NULL, NULL);
-
-	while (from < to) {
-		size = R_MIN (to - from, sizeof (buf));
-		memset (buf, 0xff, sizeof (buf)); // probably unnecessary
-		if (r_cons_is_breaked ()) {
-			goto beach;
-		}
-		bool res = r_io_read_at_mapped (core->io, from, buf, size);
-		if (!res || !memcmp (buf, "\xff\xff\xff\xff", 4) || !memcmp (buf, "\x00\x00\x00\x00", 4)) {
-			if (!isValidAddress (core, from)) {
-				ut64 next = r_io_map_next_address (core->io, from);
-				if (next == UT64_MAX) {
-					from += sizeof (buf);
-				} else {
-					from += (next - from);
-				}
-				continue;
-			}
-		}
-		for (i = 0; i <= (size - vsize); i++) {
-			void *v = (buf + i);
-			ut64 addr = from + i;
-			if (r_cons_is_breaked ()) {
-				goto beach;
-			}
-			if (align && (addr) % align) {
-				continue;
-			}
-			int match = false;
-			int left = size - i;
-			if (vsize > left) {
-				break;
-			}
-			switch (vsize) {
-			case 1: value = *(ut8 *)v; match = (buf[i] >= vmin && buf[i] <= vmax); break;
-			case 2: v16 = *(uut16 *)v; match = (v16 >= vmin && v16 <= vmax); value = v16; break;
-			case 4: v32 = *(uut32 *)v; match = (v32 >= vmin && v32 <= vmax); value = v32; break;
-			case 8: v64 = *(uut64 *)v; match = (v64 >= vmin && v64 <= vmax); value = v64; break;
-			default: eprintf ("Unknown vsize %d\n", vsize); return -1;
-			}
-			if (match && !vinfun) {
-				if (vinfunr) {
-					if (r_anal_get_fcn_in_bounds (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
-						match = false;
-					}
-				} else {
-					if (r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
-						match = false;
-					}
-				}
-			}
-			if (match && value) {
-				bool isValidMatch = true;
-				if (align && (value % align)) {
-					// ignored .. unless we are analyzing arm/thumb and lower bit is 1
-					isValidMatch = false;
-					if (maybeThumb && (value & 1)) {
-						isValidMatch = true;
-					}
-				}
-				if (isValidMatch) {
-					cb (core, addr, value, vsize, asterisk, hitctr);
-					hitctr++;
-				}
-			}
-		}
-		if (size == to-from) {
-			break;
-		}
-		from += size-vsize+1;
-	}
-beach:
-	r_cons_break_pop ();
-	return hitctr;
 }
 
 R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd, int type, bool lock) {

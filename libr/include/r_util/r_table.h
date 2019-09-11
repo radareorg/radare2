@@ -17,6 +17,12 @@ typedef struct {
 	bool forceUppercase;
 } RTableColumn;
 
+enum {
+	R_TABLE_ALIGN_LEFT,
+	R_TABLE_ALIGN_RIGHT,
+	R_TABLE_ALIGN_CENTER
+};
+
 typedef struct {
 	// TODO: use RVector
 	RList *items;

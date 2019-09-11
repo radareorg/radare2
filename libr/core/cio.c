@@ -137,16 +137,15 @@ static bool __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
 	return true;
 }
 
-R_API int r_core_write_op(RCore *core, const char *arg, char op) {
-	int i, j, ret = false;
+R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
+	int i, j;
 	ut64 len;
 	char *str = NULL;
 	ut8 *buf;
 
-	// XXX we can work with config.block instead of dupping it
 	buf = (ut8 *)malloc (core->blocksize);
 	if (!buf) {
-		goto beach;
+		return NULL;
 	}
 	memcpy (buf, core->block, core->blocksize);
 
@@ -241,20 +240,43 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 		} else {
 			eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
 		}
-	} else if (op=='2' || op=='4') {
-		op -= '0';
-		// if i < core->blocksize would pass the test but buf[i+3] goes beyond the buffer
-		if (core->blocksize > 3) {
-			for (i=0; i<core->blocksize-3; i+=op) {
-				/* endian swap */
-				ut8 tmp = buf[i];
+	} else if (op == '2' || op == '4' || op == '8') { // "wo2" "wo4" "wo8"
+		int inc = op - '0';
+		ut8 tmp;
+		if (inc < 1 || inc > 8) {
+			goto beach;
+		}
+		for (i = 0; (i + inc) <= core->blocksize; i += inc) {
+			if (inc == 2) {
+				tmp = buf[i];
+				buf[i] = buf[i+1];
+				buf[i+1] = tmp;
+			} else if (inc == 4) {
+				tmp = buf[i];
 				buf[i] = buf[i+3];
 				buf[i+3] = tmp;
-				if (op == 4) {
-					tmp = buf[i + 1];
-					buf[i + 1] = buf[i + 2];
-					buf[i + 2] = tmp;
-				}
+				tmp = buf[i+1];
+				buf[i+1] = buf[i+2];
+				buf[i+2] = tmp;
+			} else if (inc == 8) {
+				tmp = buf[i];
+				buf[i] = buf[i+7];
+				buf[i+7] = tmp;
+
+				tmp = buf[i+1];
+				buf[i+1] = buf[i+6];
+				buf[i+6] = tmp;
+
+				tmp = buf[i+2];
+				buf[i+2] = buf[i+5];
+				buf[i+5] = tmp;
+
+				tmp = buf[i+3];
+				buf[i+3] = buf[i+4];
+				buf[i+4] = tmp;
+			} else {
+				eprintf ("Invalid inc, use 2, 4 or 8.\n");
+				break;
 			}
 		}
 	} else {
@@ -284,17 +306,27 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 		}
 	}
 
-	ret = r_core_write_at (core, core->offset, buf, core->blocksize);
-beach:
-	free (buf);
 	free (str);
+	return buf;
+beach:
+	free (str);
+	free (buf);
+	return NULL;
+}
+
+R_API int r_core_write_op(RCore *core, const char *arg, char op) {
+	ut8 *buf = r_core_transform_op(core, arg, op);
+	if (!buf) {
+		return false;
+	}
+	int ret = r_core_write_at (core, core->offset, buf, core->blocksize);
+	free (buf);
 	return ret;
 }
 
 static void __choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
 	if (core->anal) {
-		int ret =  r_anal_range_tree_find_bits_at (core->anal->rb_hints_ranges,
-							  addr);
+		int ret =  r_anal_range_tree_find_bits_at (core->anal->rb_hints_ranges, addr);
 		if (ret) {
 			*bits = ret;
 		}

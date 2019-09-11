@@ -286,7 +286,6 @@ static const char *help_msg_af[] = {
 	"afr", " ([name]) ([addr])", "analyze functions recursively",
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
-	"afj", " [tableaddr] [count]", "analyze function jmptableble",
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
 	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb", "[?] [addr]", "List basic blocks of given function",
@@ -298,6 +297,7 @@ static const char *help_msg_af[] = {
 	"aff", "", "re-adjust function boundaries to fit",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
+	"afj", " [tableaddr] [count]", "analyze function jumptable",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 	"afm", " name", "merge two functions",
 	"afM", " name", "print functions map",
@@ -3812,7 +3812,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i (core->config, "scr.color");
-	struct r_reg_item_t *r;
+	RRegItem *r;
 	const char *use_color;
 	const char *name;
 	char *arg;
@@ -4366,19 +4366,23 @@ repeat:
 			(void)r_io_read_at (core->io, naddr, code2, sizeof (code2));
 			// TODO: sometimes this is dupe
 			ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2), R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
-			switch (op2.type) {
-			case R_ANAL_OP_TYPE_CJMP:
-			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_CRET:
-			case R_ANAL_OP_TYPE_RET:
-				// branches are illegal in a delay slot
-				esil->trap = R_ANAL_TRAP_EXEC_ERR;
-				esil->trap_code = addr;
-				eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
-				return_tail (1);
-				break;
+			if (ret > 0) {
+				switch (op2.type) {
+					case R_ANAL_OP_TYPE_CJMP:
+					case R_ANAL_OP_TYPE_JMP:
+					case R_ANAL_OP_TYPE_CRET:
+					case R_ANAL_OP_TYPE_RET:
+						// branches are illegal in a delay slot
+						esil->trap = R_ANAL_TRAP_EXEC_ERR;
+						esil->trap_code = addr;
+						eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
+						return_tail (1);
+						break;
+				}
+				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op2.esil));
+			} else {
+				eprintf ("Invalid instruction at 0x%08"PFMT64x"\n", naddr);
 			}
-			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op2.esil));
 			r_anal_op_fini (&op2);
 		}
 		tail_return_value = 1;
@@ -5025,6 +5029,10 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (mode); ops++, ptr += len) {
 		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		esilstr = R_STRBUF_SAFEGET (&aop.esil);
+		if (!*esilstr) {
+			eprintf ("Empty ESIL at 0x%08"PFMT64x"\n", addr + ptr);
+			break;
+		}
 		if (len < 1) {
 			eprintf ("Invalid 0x%08"PFMT64x" instruction %02x %02x\n",
 				addr + ptr, buf[ptr], buf[ptr + 1]);
@@ -5766,6 +5774,15 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case 'a': // "aea"
+		{
+		RReg *reg = core->anal->reg;
+		ut64 pc = r_reg_getv (reg, "PC");
+		RAnalOp *op = r_core_anal_op (core, pc, 0);
+		if (!op) {
+			break;
+		}
+		ut64 newPC = core->offset + op->size;
+		r_reg_setv (reg, "PC", newPC);
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_aea);
 		} else if (input[1] == 'r') {
@@ -5809,6 +5826,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			ut64 len = r_num_math (core->num, arg);
 			cmd_aea (core, 0, core->offset, len);
 		}
+		r_reg_setv (reg, "PC", pc);
+}
 		break;
 	case 'x': { // "aex"
 		char *hex;
@@ -6193,6 +6212,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 		if (hint && hint->bits) {
 			setBits = hint->bits;
 		}
+		r_anal_hint_free (hint);
 		if (setBits != core->assembler->bits) {
 			r_config_set_i (core->config, "asm.bits", setBits);
 		}
@@ -8379,8 +8399,9 @@ static bool archIsThumbable(RCore *core) {
 
 static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
 	int arch_align = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-	int align = arch_align; // core->search->align;
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
+	int searchAlign = r_config_get_i (core->config, "search.align");
+	int align = (searchAlign > 0)? searchAlign: arch_align;
 	if (align > 1) {
 		if ((from % align) || (to % align)) {
 			bool itsFine = false;
@@ -8428,7 +8449,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	char *tmp = strdup (analin);
 	bool asterisk = strchr (input, '*');
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
-	// pre
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps.x");

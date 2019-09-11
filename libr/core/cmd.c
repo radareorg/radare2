@@ -1720,17 +1720,7 @@ static int cmd_visual(void *data, const char *input) {
 	if (!r_cons_is_interactive ()) {
 		return false;
 	}
-#if 0
-	char *buf = strdup (input);
-	int len = r_str_unescape (buf);
-	r_cons_readpush (buf, len);
-	free (buf);
-	int res = r_core_visual ((RCore *)data, ""); //input);
-	r_cons_readflush ();
-	return res;
-#else
 	return r_core_visual ((RCore *)data, input);
-#endif
 }
 
 static int cmd_pipein(void *user, const char *input) {
@@ -2567,9 +2557,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			char *line, *p;
 			haveQuote = *cmd == '"';
 			if (haveQuote) {
-			//	*cmd = 0;
 				cmd++;
-				p = cmd[0] ? find_eoq (cmd + 1) : NULL;
+				p = *cmd ? find_eoq (cmd) : NULL;
 				if (!p || !*p) {
 					eprintf ("Missing \" in (%s).", cmd);
 					r_list_free (tmpenvs);
@@ -2591,7 +2580,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				cmd = sc + 1;
 				continue;
 			}
-			if (p[0]) {
+			char op0 = 0;
+			if (*p) {
 				// workaround :D
 				if (p[0] == '@') {
 					p--;
@@ -2602,6 +2592,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				if (p[1] == '@' || (p[1] && p[2] == '@')) {
 					char *q = strchr (p + 1, '"');
 					if (q) {
+						op0 = *q;
 						*q = 0;
 					}
 					haveQuote = q != NULL;
@@ -2655,9 +2646,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					cmd = p + 1;
 				} else {
 					if (*p == '"') {
-						cmd = p + 1;
+						cmd = p;
 					} else {
-						*p = '"';
+						*p = op0;
 						cmd = p;
 					}
 				}
@@ -4763,6 +4754,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"=",        "io pipe", cmd_rap},
 		{"?",        "help message", cmd_help, cmd_help_init},
 		{"\\",       "alias for =!", cmd_rap_run},
+		{"'",        "alias for =!", cmd_rap_run},
 		{"0x",       "alias for s 0x", cmd_ox},
 		{"analysis", "analysis", cmd_anal, cmd_anal_init},
 		{"bsize",    "change block size", cmd_bsize},

@@ -64,7 +64,8 @@ static int current5format = 0;
 static const char *print5Formats[PRINT_5_FORMATS] = {
 	"pca", "pcA", "p8", "pcc", "pss", "pcp", "pcd", "pcj"
 };
-static void applyHexMode(RCore *core, int hexMode) {
+
+R_API void r_core_visual_applyHexMode(RCore *core, int hexMode) {
 	currentFormat = R_ABS(hexMode) % 3;
 	switch (currentFormat) {
 	case 0:
@@ -112,6 +113,21 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 	r_config_set (core->config, "asm.comments", "false");
 	r_config_set (core->config, "asm.usercomments", "true");
 	r_config_set (core->config, "asm.instr", "false");
+}
+
+static void setcursor(RCore *core, bool cur) {
+	int flags = core->print->flags; // wtf
+	if (core->print->cur_enabled) {
+		flags |= R_PRINT_FLAGS_CURSOR;
+	} else {
+		flags &= ~(R_PRINT_FLAGS_CURSOR);
+	}
+	core->print->cur_enabled = cur;
+	if (core->print->cur == -1) {
+		core->print->cur = 0;
+	}
+	r_print_set_flags (core->print, flags);
+	core->print->col = core->print->cur_enabled? 1: 0;
 }
 
 R_API void r_core_visual_applyDisMode(RCore *core, int disMode) {
@@ -500,7 +516,7 @@ R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char *
 	}
 }
 
-static int visual_help() {
+static int visual_help(RCore *core) {
 	int ret = 0;
 	RStrBuf *p, *q;
 repeat:
@@ -517,6 +533,9 @@ repeat:
 	case 'q':
 		r_strbuf_free (p);
 		return ret;
+	case '!':
+		r_core_visual_panels_root (core, core->panels_root);
+		break;
 	case '?':
 		r_core_visual_append_help (p, "Visual mode help", help_msg_visual);
 		r_core_visual_append_help (p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
@@ -553,6 +572,10 @@ repeat:
 		);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
+	case 'c':
+		setcursor (core, !core->print->cur_enabled);
+		r_strbuf_free (p);
+		return ret;
 	case 'i':
 		r_strbuf_appendf (p, "Visual Insertion Help:\n\n");
 		r_strbuf_appendf (p,
@@ -625,6 +648,12 @@ static void reset_print_cur(RPrint *p) {
 	p->ocur = -1;
 }
 
+static bool __holdMouseState(RCore *core) {
+	bool m = r_cons_singleton ()->mouse;
+	r_cons_enable_mouse (false);
+	return m;
+}
+
 static void backup_current_addr(RCore *core, ut64 *addr, ut64 *bsze, ut64 *newaddr) {
 	*addr = core->offset;
 	*bsze = core->blocksize;
@@ -673,7 +702,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	ut64 addr, bsze, newaddr = 0LL;
 	int ret, h;
 	(void) r_cons_get_size (&h);
-	r_cons_enable_mouse (false);
+	bool mouse_state = __holdMouseState(core);
 	r_cons_gotoxy (0, h);
 	r_cons_reset_colors ();
 	//r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
@@ -688,7 +717,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 
 	r_cons_show_cursor (false);
 	core->vmode = true;
-	r_cons_enable_mouse (true);
+	r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 	r_cons_show_cursor (true);
 }
 
@@ -778,7 +807,7 @@ static int visual_nkey(RCore *core, int ch) {
 		if (cmd && *cmd) {
 			ch = r_core_cmd0 (core, cmd);
 		} else {
-			visual_help ();
+			visual_help (core);
 		}
 		break;
 	case R_CONS_KEY_F2:
@@ -866,21 +895,6 @@ static int visual_nkey(RCore *core, int ch) {
 		r_core_seek (core, oseek, 0);
 	}
 	return ch;
-}
-
-static void setcursor(RCore *core, bool cur) {
-	int flags = core->print->flags; // wtf
-	if (core->print->cur_enabled) {
-		flags |= R_PRINT_FLAGS_CURSOR;
-	} else {
-		flags &= ~(R_PRINT_FLAGS_CURSOR);
-	}
-	core->print->cur_enabled = cur;
-	if (core->print->cur == -1) {
-		core->print->cur = 0;
-	}
-	r_print_set_flags (core->print, flags);
-	core->print->col = core->print->cur_enabled? 1: 0;
 }
 
 static void setdiff(RCore *core) {
@@ -1601,7 +1615,7 @@ char *getcommapath(RCore *core) {
 }
 
 static void visual_comma(RCore *core) {
-	r_cons_enable_mouse (false);
+	bool mouse_state = __holdMouseState (core);
 	ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 	char *comment, *cwd, *cmtfile;
 	comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
@@ -1636,7 +1650,7 @@ static void visual_comma(RCore *core) {
 		eprintf ("No commafile found.\n");
 	}
 	free (comment);
-	r_cons_enable_mouse (true);
+	r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 }
 
 static bool isDisasmPrint(int mode) {
@@ -2358,7 +2372,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			{
 				switch (core->printidx) {
 				case R_CORE_VISUAL_MODE_PX: // 0 // xc
-					applyHexMode (core, --hexMode);
+					r_core_visual_applyHexMode (core, --hexMode);
 					printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 					break;
 				case R_CORE_VISUAL_MODE_PD: // pd
@@ -2421,7 +2435,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					switch (core->printidx) {
 					case R_CORE_VISUAL_MODE_PX: // 0 // xc
-						applyHexMode (core, ++hexMode);
+						r_core_visual_applyHexMode (core, ++hexMode);
 						printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_PD: // pd
@@ -2589,20 +2603,21 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			r_config_set_i (core->config, "scr.color", color);
 			break;
-		case 'd':
-			r_cons_enable_mouse (false);
+		case 'd': {
+			bool mouse_state = __holdMouseState (core);
 			r_core_visual_showcursor (core, true);
 			int distance = numbuf_pull ();
 			r_core_visual_define (core, arg + 1, distance - 1);
 			r_core_visual_showcursor (core, false);
-			r_cons_enable_mouse (true);
+			r_cons_enable_mouse (mouse_state && r_config_get_i(core->config, "scr.wheel"));
+		}
 			break;
 		case 'D':
 			setdiff (core);
 			break;
 		case 'f':
 		{
-			r_cons_enable_mouse (false);
+			bool mouse_state = __holdMouseState (core);
 			int range, min, max;
 			char name[256], *n;
 			r_line_set_prompt ("flag name: ");
@@ -2640,9 +2655,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 				}
 			}
+			r_cons_enable_mouse (mouse_state && r_config_get_i(core->config, "scr.wheel"));
 		}
 			r_core_visual_showcursor (core, false);
-			r_cons_enable_mouse (true);
 			break;
 		case ',':
 			visual_comma (core);
@@ -2935,6 +2950,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 					if (ami) {
 						r_core_seek_delta (core, ami->size);
+						r_meta_item_free (ami);
 					} else {
 						int distance = numbuf_pull ();
 						if (distance > 1) {
@@ -3256,8 +3272,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			break;
-		case '/':
-			r_cons_enable_mouse (false);
+		case '/': {
+			bool mouse_state = __holdMouseState (core);
 			if (core->print->cur_enabled) {
 				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
 					if (core->seltab) {
@@ -3281,8 +3297,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_core_block_size (core, core->blocksize - cols);
 				}
 			}
-			r_cons_enable_mouse (true);
-			break;
+			r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
+		}	break;
 		case '(':
 			snowMode = !snowMode;
 			if (!snowMode) {
@@ -3527,7 +3543,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					switch (core->printidx) {
 					case R_CORE_VISUAL_MODE_PX: // 0 // xc
-						applyHexMode (core, --hexMode);
+						r_core_visual_applyHexMode (core, --hexMode);
 						printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_PD: // pd
@@ -3555,7 +3571,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case '?':
-			if (visual_help () == '?') {
+			if (visual_help (core) == '?') {
 				r_core_visual_hud (core);
 			}
 			break;

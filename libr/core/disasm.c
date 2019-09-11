@@ -2430,6 +2430,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			ds->oplen = sz; //ds->asmop.size;
 			return i;
 		}
+		if (meta) {
+			r_meta_item_free (meta);
+		}
 	}
 
 	if (ds->show_nodup) {
@@ -2902,7 +2905,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			}
 			switch (mi->type) {
 			case R_META_TYPE_STRING:
-			{
+			if (mi->str) {
 				bool esc_bslash = core->print->esc_bslash;
 
 				switch (mi->subtype) {
@@ -2992,8 +2995,8 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 				break;
 			}
 		}
+		r_list_free (list);
 	}
-	r_list_free (list);
 	return ret;
 }
 
@@ -3441,6 +3444,9 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 			getPtr (ds, mi->from, pos);
 			ds->core->assembler->bits = obits;
 			gotShortcut = true;
+		}
+		if (mi) {
+			r_meta_item_free (mi);
 		}
 	}
 	switch (ds->analop.type) {
@@ -4388,31 +4394,37 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	ds_pre_emulation (ds);
 }
 
-static void ds_print_bbline(RDisasmState *ds, bool force) {
-	if (ds->show_bbline) {
-		RAnalBlock *bb = r_anal_fcn_bbget_at (ds->fcn, ds->at);
-		if (force || (ds->fcn && bb)) {
+static void ds_print_bbline(RDisasmState *ds) {
+	if (ds->show_bbline && ds->at) {
+		RAnalBlock *bb = NULL;
+		RAnalFunction *f_before = NULL;
+		if (ds->fcn) {
+			bb = r_anal_fcn_bbget_at (ds->fcn, ds->at);
+		} else {
+			f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
+		}
+		if ((ds->fcn && bb && ds->fcn->addr != ds->at) || (!ds->fcn && f_before)) {
 			ds_begin_line (ds);
-			ds_setup_print_pre (ds, false, false);
+			// adapted from ds_setup_pre ()
+			ds->cmtcount = 0;
+			if (!ds->show_functions || !ds->show_lines_fcn) {
+				ds->pre = DS_PRE_NONE;
+			} else {
+				ds->pre = DS_PRE_EMPTY;
+				if (!f_before) {
+					f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
+				}
+				if (f_before == ds->fcn) {
+					ds->pre = DS_PRE_FCN_MIDDLE;
+				}
+			}
+			ds_print_pre (ds);
 			if (!ds->linesright && ds->show_lines_bb && ds->line) {
 				char *refline, *reflinecol = NULL;
-				RAnalRefStr *refstr;
-				if (force) { // bbline is after disasm
-					refstr = r_anal_reflines_str (ds->core, ds->at,
-						ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
-					refline = refstr->str;
-					reflinecol = refstr->cols;
-					free (refstr);
-				} else {
-					ds_update_ref_lines (ds);
-					refline = ds->refline2;
-					reflinecol = ds->prev_line_col;
-				}
+				ds_update_ref_lines (ds);
+				refline = ds->refline2;
+				reflinecol = ds->prev_line_col;
 				ds_print_ref_lines (refline, reflinecol, ds);
-
-				if (force) {
-					free (refline);
-				}
 			}
 			r_cons_printf ("|");
 			ds_newline (ds);
@@ -4669,6 +4681,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			} else {
 				r_list_free (list);
 				// function name not resolved
+				r_warn_if_fail (!key);
 				nargs = DEFAULT_NARGS;
 				if (fcn) {
 					// @TODO: fcn->nargs should be updated somewhere and used here instead
@@ -4677,6 +4690,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 							r_anal_var_count (core->anal, fcn, 'r', 1);
 				}
 				if (nargs > 0) {
+					ds_comment_esil (ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
 					if (fcn_name) {
 						ds_comment_middle (ds, "; %s(", fcn_name);
 					} else {
@@ -4774,6 +4788,8 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 	if (mi) {
 		is_code = mi->type != 'd';
+		r_meta_item_free (mi);
+		mi = NULL;
 	}
 	if (is_code && ds->asm_describe && !ds->has_description) {
 		char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
@@ -5250,7 +5266,7 @@ toro:
 				ds->analop.ptr = ds->hint->ptr;
 			}
 		}
-		ds_print_bbline (ds, false);
+		ds_print_bbline (ds);
 		if (ds->at >= addr) {
 			r_print_set_rowoff (core->print, ds->lines, ds->at - addr, calc_row_offsets);
 		}
@@ -5419,20 +5435,6 @@ toro:
 		}
 		core->print->resetbg = true;
 		ds_newline (ds);
-		if (ds->show_bbline && !ds->bblined && !ds->fcn) {
-			switch (ds->analop.type) {
-			case R_ANAL_OP_TYPE_MJMP:
-			case R_ANAL_OP_TYPE_UJMP:
-			case R_ANAL_OP_TYPE_IJMP:
-			case R_ANAL_OP_TYPE_RJMP:
-			case R_ANAL_OP_TYPE_IRJMP:
-			case R_ANAL_OP_TYPE_CJMP:
-			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_RET:
-				ds_print_bbline (ds, true);
-				break;
-			}
-		}
 		if (ds->line) {
 			if (ds->show_lines_ret && ds->analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (ds->line, '>')) {
@@ -6260,6 +6262,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	int midbb = r_config_get_i (core->config, "asm.bb.middle");
 	i = 0;
 	j = 0;
+	RAnalMetaItem *meta = NULL;
 toro:
 	for (; pdi_check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
 		RFlagItem *item;
@@ -6267,7 +6270,12 @@ toro:
 			err = 1;
 			break;
 		}
-		RAnalMetaItem *meta = r_meta_find (core->anal, core->offset + i,
+		if (meta)  {
+			// Release before write, control flow bellow is too messy to
+			// relase after use.
+			r_meta_item_free (meta);
+		}
+		meta = r_meta_find (core->anal, core->offset + i,
 			R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (meta && meta->size > 0) {
 			switch (meta->type) {
@@ -6455,6 +6463,9 @@ toro:
 		r_core_seek (core, core->offset + i, 1);
 		i = 0;
 		goto toro;
+	}
+	if (meta) {
+		r_meta_item_free (meta);
 	}
 	r_cons_break_pop ();
 	r_core_seek (core, old_offset, 1);

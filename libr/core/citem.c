@@ -34,6 +34,7 @@ R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr) {
 						ci->data = strdup (item->str);
 					}
 				}
+				r_meta_item_free (item);
 			}
 		}
 	}

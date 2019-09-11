@@ -10,6 +10,7 @@ static const char *help_msg_f[] = {
 	"f?","flagname","check if flag exists or not, See ?? and ?!",
 	"f."," [*[*]]","list local per-function flags (*) as r2 commands",
 	"f.","blah=$$+12","set local function label named 'blah'",
+	"f."," fname","list all local labels for the given function",
 	"f*","","list flags in r commands",
 	"f"," name 12 @ 33","set flag 'name' with length 12 at offset 33",
 	"f"," name = 33","alias for 'f name @ 33' or 'f name 1 33'",
@@ -19,7 +20,6 @@ static const char *help_msg_f[] = {
 	"f+","name 12 @ 33","like above but creates new one if doesnt exist",
 	"f-","name","remove flag 'name'",
 	"f-","@addr","remove flag at address expression",
-	"f."," fname","list all local labels for the given function",
 	"f="," [glob]","list range bars graphics with flag offsets and sizes",
 	"fa"," [name] [alias]","alias a flag to evaluate an expression",
 	"fb"," [addr]","set base address for new flags",
@@ -420,7 +420,7 @@ static int flag_to_flag(RCore *core, const char *glob) {
 	return 0;
 }
 
-static void cmd_flag_tags (RCore *core, const char *input) {
+static void cmd_flag_tags(RCore *core, const char *input) {
 	char mode = input[1];
 	for (; *input && !IS_WHITESPACE (*input); input++) {}
 	char *inp = strdup (input);
@@ -911,8 +911,11 @@ rep:
 					r_anal_fcn_labels (core->anal, NULL, 1);
 				} else {
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
-					if (fcn) r_anal_fcn_labels (core->anal, fcn, 1);
-					else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+					if (fcn) {
+						r_anal_fcn_labels (core->anal, fcn, 1);
+					} else {
+						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+					}
 				}
 			} else {
 				char *name = strdup (input + ((input[2] == ' ')? 2: 1));
@@ -948,8 +951,7 @@ rep:
 	case 'l': // "fl"
 		if (input[1] == '?') { // "fl?"
 			eprintf ("Usage: fl[a] [flagname] [flagsize]\n");
-		} else
-		if (input[1] == 'a') { // "fla"
+		} else if (input[1] == 'a') { // "fla"
 			// TODO: we can optimize this if core->flags->flags is sorted by flagitem->offset
 			char *glob = strchr (input, ' ');
 			if (glob) {
