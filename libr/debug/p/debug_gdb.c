@@ -305,6 +305,10 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	}
 
 	RRegItem* current = NULL;
+	// We default to little endian if there's no way to get the configuration,
+	// since this was the behaviour prior to the change.
+	bool bigendian = dbg->corebind.core && \
+					 dbg->corebind.cfggeti (dbg->corebind.core, "cfg.bigendian");
 	for (;;) {
 		current = r_reg_next_diff (dbg->reg, type, reg_buf, buflen, current, bits);
 		if (!current) {
@@ -312,7 +316,7 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 		}
 		ut64 val = r_reg_get_value (dbg->reg, current);
 		int bytes = bits / 8;
-		if (r_config_get_i (((RCore*)dbg->corebind.core)->config, "cfg.bigendian")) {
+		if (bigendian) {
 			// TODO: validate that it's correct for all kinds of archs
 			switch (bytes) {
 			case 2:
