@@ -2382,7 +2382,7 @@ static bool fcnNeedsPrefix(const char *name) {
 }
 
 static char * getFunctionName (RCore *core, ut64 off, const char *name, bool prefix) {
-	const char *fcnpfx = ""
+	const char *fcnpfx = "";
 	if (prefix) {
 		if (fcnNeedsPrefix (name) && (!fcnpfx || !*fcnpfx)) {
 			fcnpfx = "fcn";
