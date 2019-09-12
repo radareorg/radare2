@@ -2382,15 +2382,13 @@ static bool fcnNeedsPrefix(const char *name) {
 }
 
 static char * getFunctionName (RCore *core, ut64 off, const char *name, bool prefix) {
-	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+	const char *fcnpfx = "";
 	if (prefix) {
-		if (fcnNeedsPrefix (name)) {
-			if (!fcnpfx || !*fcnpfx) {
-				fcnpfx = "fcn";
-			}
+		if (fcnNeedsPrefix (name) && (!fcnpfx || !*fcnpfx)) {
+			fcnpfx = "fcn";
+		} else {
+			fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 		}
-	} else {
-		fcnpfx = "";
 	}
 	if (r_reg_get (core->anal->reg, name, -1)) {
 		return r_str_newf ("%s.%08"PFMT64x, "fcn", off);
@@ -2405,20 +2403,18 @@ static char * getFunctionName (RCore *core, ut64 off, const char *name, bool pre
 static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefix) {
 	r_return_val_if_fail (core && _name, false);
 	char *name = getFunctionName (core, off, _name, prefix);
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off,
-			R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM |
-			R_ANAL_FCN_TYPE_LOC | R_ANAL_FCN_TYPE_INT);
-	if (!fcn) {
-		free (name);
-		return false;
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, R_ANAL_FCN_TYPE_ANY);
+	if (fcn) {
+		free (fcn->name);
+		fcn->name = name;
+		if (core->anal->cb.on_fcn_rename) {
+			core->anal->cb.on_fcn_rename (core->anal,
+					core->anal->user, fcn, name);
+		}
+		return true;
 	}
-	free (fcn->name);
-	fcn->name = name;
-	if (core->anal->cb.on_fcn_rename) {
-		core->anal->cb.on_fcn_rename (core->anal,
-				core->anal->user, fcn, name);
-	}
-	return true;
+	free (name);
+	return false;
 }
 
 static void afCc(RCore *core, const char *input) {
