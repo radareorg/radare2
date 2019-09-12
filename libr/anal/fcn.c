@@ -463,8 +463,19 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 
 #define gotoBeach(x) ret = x; goto beach;
 
-static bool isInvalidMemory(const ut8 *buf, int len) {
-	// can be wrong
+static bool isInvalidMemory(RAnal *anal, const ut8 *buf, int len) {
+	if (anal->opt.nonull > 0) {
+		int i;
+		const int count = R_MIN (len, anal->opt.nonull);
+		for (i = 0; i < count; i++) {
+			if (buf[i]) {
+				break;
+			}
+		}
+		if (i == count) {
+			return true;
+		}
+	}
 	return !memcmp (buf, "\xff\xff\xff\xff", R_MIN (len, 4));
 }
 
@@ -777,7 +788,7 @@ repeat:
 			eprintf ("Failed to read\n");
 			break;
 		}
-		if (isInvalidMemory (buf, bytes_read)) {
+		if (isInvalidMemory (anal, buf, bytes_read)) {
 			FITFCNSZ ();
 			if (anal->verbose) {
 				eprintf ("Warning: FFFF opcode at 0x%08"PFMT64x "\n", at);
