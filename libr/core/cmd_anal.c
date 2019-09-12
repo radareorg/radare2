@@ -2406,7 +2406,8 @@ static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefi
 	r_return_val_if_fail (core && _name, false);
 	char *name = getFunctionName (core, off, _name, prefix);
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off,
-			R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
+			R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM |
+			R_ANAL_FCN_TYPE_LOC | R_ANAL_FCN_TYPE_INT);
 	if (!fcn) {
 		free (name);
 		return false;
