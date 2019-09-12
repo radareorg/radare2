@@ -822,6 +822,7 @@ repeat:
 		if (!overlapped) {
 			r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
 			bb->size += oplen;
+eprintf ("INC\n");
 			fcn->ninstr++;
 			// FITFCNSZ(); // defer this, in case this instruction is a branch delay entry
 			// fcn->size += oplen; /// XXX. must be the sum of all the bblocks
@@ -853,7 +854,7 @@ repeat:
 			// Save the location of it in `delay.idx`
 			// note, we have still increased size of basic block
 			// (and function)
-			VERBOSE_DELAY eprintf("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
+			VERBOSE_DELAY eprintf("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%d\n", at - oplen, bb->size);
 			delay.idx = idx - oplen;
 			delay.cnt = op.delay;
 			delay.pending = 1; // we need this in case the actual idx is zero...
@@ -970,7 +971,7 @@ repeat:
 			// skip lea reg,[reg]
 			if (anal->opt.hpskip && regs_exist (op.src[0], op.dst)
 			&& !strcmp (op.src[0]->reg->name, op.dst->reg->name)) {
-				skip_ret = skip_hp (anal, fcn, &op, bb, addr, tmp_buf, oplen, delay.un_idx, &idx);
+				skip_ret = skip_hp (anal, fcn, &op, bb, at, tmp_buf, oplen, delay.un_idx, &idx);
 				if (skip_ret == 1) {
 					goto repeat;
 				}
@@ -1041,6 +1042,7 @@ repeat:
 			}
 			gotoBeach (R_ANAL_RET_END);
 		case R_ANAL_OP_TYPE_NOP:
+eprintf ("found a nop at %llx\n", at);
 			if (anal->opt.nopskip) {
 				if (!strcmp (anal->cur->arch, "mips")) {
 					// Looks like this flags check is useful only for mips
@@ -1056,11 +1058,24 @@ repeat:
 						}
 					}
 				} else {
+#if 0
 					RFlagItem *fi = anal->flb.get_at (anal->flb.f, fcn->addr? fcn->addr: addr, false);
 					if (fi) {
 						break;
 					}
-					skip_ret = skip_hp (anal, fcn, &op, bb, addr, tmp_buf, oplen, delay.un_idx, &idx);
+#endif
+					if (oplen) {
+						eprintf ("AT %llx + %d\n", at, oplen);
+						eprintf ("BBS %d\n", bb->size);
+						if (bb->size == oplen) {
+							fcn->addr = at + oplen;
+							bb->ninstr = 1;
+							bb->size = 0;
+							eprintf ("c----\n");
+						}
+						goto repeat;
+					}
+					skip_ret = skip_hp (anal, fcn, &op, bb, at, tmp_buf, oplen, delay.un_idx, &idx);
 					if (skip_ret == 1) {
 						goto repeat;
 					}
@@ -1386,6 +1401,8 @@ analopfinish:
 			}
 			break;
 		case R_ANAL_OP_TYPE_RET:
+eprintf ("MAGIC %llx\n", fcn->addr);
+bb->size ++;
 			if (op.family == R_ANAL_OP_FAMILY_PRIV) {
 				fcn->type = R_ANAL_FCN_TYPE_INT;
 			}
