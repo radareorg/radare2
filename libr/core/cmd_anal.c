@@ -45,19 +45,18 @@ static const char *help_msg_aa[] = {
 	"aac*", " [len]", "flag function calls without performing a complete analysis",
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
-	"aaf", "[e|t] ", "analyze all functions (e anal.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
+	"aaf", "[e|r|t] ", "analyze all functions (e anal.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
 	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
 	"aaFa", " [sym*]", "same as aaF but uses af/a2f instead of af+/afb+ (slower but more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 	"aang", "", "find function and symbol names from golang binaries",
 	"aao", "", "analyze all objc references",
-	"aaO", " [fcn]", "Analyze all/given function to convert immediate to linked structure offsets (see tl?)",
 	"aap", "", "find and analyze function preludes",
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
 	"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
 	"aaS", "", "analyze all flags starting with sym. (af @@ sym.*)",
-	"aat", " [len]", "analyze all consecutive functions in section",
+	"aat", " [fcn]", "Analyze all/given function to convert immediate to linked structure offsets (see tl?)",
 	"aaT", " [len]", "analyze code after trap-sleds",
 	"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
 	"aav", " [sat]", "find values referencing a specific section or map",
@@ -8664,6 +8663,23 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'f':
 		if (input[1] == 'e') {  // "aafe"
 			r_core_cmd0 (core, "aef@@f");
+		} else if (input[1] == 'r') {
+			ut64 cur = core->offset;
+			bool hasnext = r_config_get_i (core->config, "anal.hasnext");
+			RListIter *iter;
+			RIOMap *map;
+			RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
+			if (!list) {
+				break;
+			}
+			r_list_foreach (list, iter, map) {
+				r_core_seek (core, map->itv.addr, 1);
+				r_config_set_i (core->config, "anal.hasnext", 1);
+				r_core_cmd0 (core, "afr");
+				r_config_set_i (core->config, "anal.hasnext", hasnext);
+			}
+			r_list_free (list);
+			r_core_seek (core, cur, 1);
 		} else if (input[1] == 't') { // "aaft"
 			cmd_anal_aaft (core);
 		} else if (input[1] == 0) { // "aaf"
@@ -8672,8 +8688,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_cmd0 (core, "afr@@c:isq");
 			r_config_set_i (core->config, "anal.hasnext", analHasnext);
 		} else {
-			r_cons_printf ("Usage: aaf[et] - analyze all functions again\n");
+			r_cons_printf ("Usage: aaf[e|r|t] - analyze all functions again\n");
 			r_cons_printf (" aafe = aef@@f\n");
+			r_cons_printf ("aafr [len] = analyze all consecutive functions in section\n");
 			r_cons_printf (" aaft = recursive type matching in all functions\n");
 			r_cons_printf (" aaf  = afr@@c:isq\n");
 		}
@@ -8913,31 +8930,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		}
 		break;
 	case 't': { // "aat"
-		ut64 cur = core->offset;
-		bool hasnext = r_config_get_i (core->config, "anal.hasnext");
-		RListIter *iter;
-		RIOMap *map;
-		RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
-		if (!list) {
-			break;
-		}
-		r_list_foreach (list, iter, map) {
-			r_core_seek (core, map->itv.addr, 1);
-			r_config_set_i (core->config, "anal.hasnext", 1);
-			r_core_cmd0 (core, "afr");
-			r_config_set_i (core->config, "anal.hasnext", hasnext);
-		}
-		r_list_free (list);
-		r_core_seek (core, cur, 1);
-		break;
-	}
-	case 'T': // "aaT"
-		cmd_anal_aftertraps (core, input + 1);
-		break;
-	case 'o': // "aao"
-		cmd_anal_objc (core, input + 1, false);
-		break;
-	case 'O': { // "aaO"
 		char *off = r_str_trim_dup (input + 2);
 		RAnalFunction *fcn;
 		RListIter *it;
@@ -8964,6 +8956,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		free (off);
 		break;
 	}
+	case 'T': // "aaT"
+		cmd_anal_aftertraps (core, input + 1);
+		break;
+	case 'o': // "aao"
+		cmd_anal_objc (core, input + 1, false);
+		break;
 	case 'e': // "aae"
 		if (input[1]) {
 			const char *len = (char *)input + 1;
