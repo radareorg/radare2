@@ -1076,7 +1076,7 @@ static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
 		if (hint->type) {
 			const char *type = r_anal_optype_to_string (hint->type);
 			if (type) {
-				r_cons_printf ("aht %s @ 0x%"PFMT64x"\n", type, hint->addr);
+				r_cons_printf ("aho %s @ 0x%"PFMT64x"\n", type, hint->addr);
 			}
 		}
 		HINTCMD_ADDR (hint, size, "ahs %d");
