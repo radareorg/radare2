@@ -442,7 +442,7 @@ in the code for various reasons.
 The source of the radare2 regression test suite can be found in the
 following github repository.
 ```sh
-   git clone git://github.com/radare/radare2-regressions
+   git clone git://github.com/radareorg/radare2-regressions
 ```
 
 See the `README.md` file in that repository for further information.
