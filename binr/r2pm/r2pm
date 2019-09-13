@@ -212,6 +212,7 @@ fi
 mkdir -p "${R2PM_USRDIR}/pkg/"
 mkdir -p "${R2PM_GITDIR}"
 mkdir -p "${R2PM_PLUGDIR}"
+mkdir -p "${R2PM_BINDIR}"
 
 R2PM_SYSPKG() {
 	IS_SYSPKG="$1"
