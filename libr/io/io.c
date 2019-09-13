@@ -348,7 +348,7 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 		}
 	}
 	if (io->cached & R_PERM_W) {
-		ret = r_io_cache_write (io, addr, mybuf, len) != len;
+		ret = r_io_cache_write (io, addr, mybuf, len);
 	} else if (io->va) {
 		ret = r_io_vwrite_at (io, addr, mybuf, len);
 	} else {

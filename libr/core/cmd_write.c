@@ -196,7 +196,7 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 		if (len < 0) {
 			len = -len;
 			if (len < core->blocksize) {
-				buf[len-1] |= core->block[len-1] & 0xf;
+				buf[len - 1] |= core->block[len - 1] & 0xf;
 			}
 		}
 		core->num->value = 0;
