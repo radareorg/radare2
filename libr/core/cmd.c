@@ -114,6 +114,7 @@ static const char *help_msg_dollar[] = {
 	"$", "dis=", "undefine alias",
 	"$", "dis", "execute the previously defined alias",
 	"$", "dis?", "show commands aliased by $dis",
+	"$", "dis?n", "show commands aliased by $dis, without a new line",
 	NULL
 };
 
@@ -511,6 +512,7 @@ static int cmd_alias(void *data, const char *input) {
 	char *q = strchr (buf, ' ');
 	char *def = strchr (buf, '=');
 	char *desc = strchr (buf, '?');
+	char *nonl = strchr (buf, 'n');
 
 	/* create alias */
 	if ((def && q && (def < q)) || (def && !q)) {
@@ -542,7 +544,11 @@ static int cmd_alias(void *data, const char *input) {
 		*desc = 0;
 		char *v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
-			r_cons_println (v);
+			if (nonl == desc+1) {
+				r_cons_print (v);
+			} else {
+				r_cons_println (v);
+			}
 			free (buf);
 			return 1;
 		} else {
