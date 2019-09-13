@@ -267,6 +267,8 @@ R2PM_TGZ() {
 	TARBALL="`basename $1`"
 	if [ -z "$2" ]; then
 		DIR="`echo ${TARBALL} | awk -F .t '{print $1}'`"
+	elif [ "${2%${2#?}}"x = '/x' ]; then
+		DIR="${2#?}"
 	else
 		DIR="$2"
 	fi
@@ -291,7 +293,7 @@ R2PM_TGZ() {
 		elif [ "`echo ${URL} | grep -e .txz -e tar`" ]; then
 			tar xvf "${TARBALL}"
 		elif [ "`echo ${URL} | grep -e .zip`" ]; then
-			if [ -n "$2" ]; then
+			if [ -n "$2" ] && [ "${2%${2#?}}"x != '/x' ]; then
 				unzip -d "${DIR}" -o "${TARBALL}"
 			else
 				unzip "${TARBALL}"
