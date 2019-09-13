@@ -17,7 +17,7 @@ extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 static bool dexdump = false;
 static Sdb *mdb = NULL;
 static const char *dexSubsystem = NULL;
-static bool simplifiedDemangling = false; // depends on asm.pseudo 
+static bool simplifiedDemangling = false; // depends on asm.pseudo
 
 static ut64 get_method_flags(ut64 MA) {
 	ut64 flags = 0;
@@ -855,9 +855,10 @@ static RBinInfo *info(RBinFile *bf) {
 	h = &ret->sum[1];
 	h->type = "adler32";
 	h->len = 4;
-	h->addr = 0x8;
+	h->addr = 8;
 	h->from = 12;
 	h->to = r_buf_size (bf->buf) - h->from;
+	r_buf_read_at (bf->buf, 8, h->buf, 12);
 	h = &ret->sum[2];
 	h->type = 0;
 	r_buf_read_at (bf->buf, 8, h->buf, 4);
@@ -1027,7 +1028,7 @@ static char *dex_field_name(RBinDexObj *bin, int fid) {
 				bin->types[cid].descriptor_id
 			     );
 	}
-	return (a && b && c) 
+	return (a && b && c)
 		? r_str_newf ("%s->%s %s", a, b, c)
 		: r_str_newf ("%d->%d %d", bin->types[cid].descriptor_id, tid, bin->types[type_id].descriptor_id);
 }
@@ -1080,7 +1081,7 @@ static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
 			simplify (flagname);
 		}
 	}
-	
+
 	return flagname;
 }
 
@@ -1301,7 +1302,7 @@ static const ut8 *parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClas
 					// number of 16-bit code units covered by this entry.
 					// The last code unit covered (inclusive) is start_addr + insn_count - 1.
 					insn_count = r_buf_read_le16_at (bf->buf, offset + 4);
-					// offset in bytes from the start of the associated encoded_catch_hander_list 
+					// offset in bytes from the start of the associated encoded_catch_hander_list
 					// to the encoded_catch_handler for this entry.
 					// This must be an offset to the start of an encoded_catch_handler.
 					ut64 handler_off = r_buf_read_le16_at (bf->buf, offset + 6);
