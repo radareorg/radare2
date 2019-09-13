@@ -640,6 +640,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			break;
 		case 'm':
 			mapaddr = r_num_math (r.num, r_optarg);
+			s_seek = r_optarg;
 			r_config_set_i (r.config, "file.offset", mapaddr);
 			break;
 		case 'M':
