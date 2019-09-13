@@ -577,7 +577,10 @@ R_API RList *r_core_get_func_args(RCore *core, const char *func_name);
 R_API void r_core_print_func_args(RCore *core);
 R_API char *resolve_fcn_name(RAnal *anal, const char * func_name);
 
-R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to);
+R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to);
+
+/* cmd_type.c */
+R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn);
 
 /* anal.c */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask);
