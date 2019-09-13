@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2011-2016 - pancake */
+/* radare - LGPL - Copyright 2011-2019 - pancake */
 
 #include <r_core.h>
 
-R_API int r_core_patch_line (RCore *core, char *str) {
+R_API int r_core_patch_line(RCore *core, char *str) {
 	char *p, *q;
 	p = strchr (str + 1, ' ');
 	if (!p) {
@@ -15,17 +15,17 @@ R_API int r_core_patch_line (RCore *core, char *str) {
 
 	switch (*p) {
 	case '"':
-		  q = strchr (p + 1,'"');
-		  if (q) {
-			  *q = 0;
-		  }
-		  r_core_cmdf (core, "s %s", str);
-		  r_core_cmdf (core, "\"w %s\"", p+1);
-		  break;
+		q = strchr (p + 1,'"');
+		if (q) {
+			*q = 0;
+		}
+		r_core_cmdf (core, "s %s", str);
+		r_core_cmdf (core, "\"w %s\"", p+1);
+		break;
 	case ':':
-		  r_core_cmdf (core, "s %s", str);
-		  r_core_cmdf (core, "\"wa %s\"", p);
-		  break;
+		r_core_cmdf (core, "s %s", str);
+		r_core_cmdf (core, "\"wa %s\"", p);
+		break;
 	case 'v':
 		q = strchr (p + 1,' ');
 		if (q) {
@@ -40,9 +40,9 @@ R_API int r_core_patch_line (RCore *core, char *str) {
 		r_core_cmdf (core, "wv%s %s", p + 1, q);
 		break;
 	default:
-		  r_core_cmdf (core, "s %s", str);
-		  r_core_cmdf (core, "wx %s", p);
-		  break;
+		r_core_cmdf (core, "s %s", str);
+		r_core_cmdf (core, "wx %s", p);
+		break;
 	}
 	return 1;
 }

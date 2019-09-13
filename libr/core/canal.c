@@ -4527,6 +4527,7 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 }
 
 
+// dup with isValidAddress wtf
 static bool myvalid(RIO *io, ut64 addr) {
 	if (addr < 0x100) {
 		return false;
@@ -5111,6 +5112,11 @@ repeat:
 								? R_ANAL_REF_TYPE_CALL
 								: R_ANAL_REF_TYPE_CODE;
 							r_anal_xrefs_set (core->anal, cur, dst, ref);
+#if 0
+							if (op.type == R_ANAL_OP_TYPE_UCALL || op.type == R_ANAL_OP_TYPE_RCALL) {
+								eprintf ("0x%08"PFMT64x"  RCALL TO %llx\n", cur, dst);
+							}
+#endif
 						}
 					}
 				}

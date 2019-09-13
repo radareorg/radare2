@@ -180,23 +180,29 @@ static void cmd_write_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, wx);
 }
 
-static void cmd_write_fail() {
+static void cmd_write_fail(RCore *core) {
 	eprintf ("Failed to write\n");
+	core->num->value = 1;
 }
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	r_return_val_if_fail (core && pairs, 0);
 	ut8 *buf = malloc (strlen (pairs) + 1);
+	if (!buf) {
+		return 0;
+	}
 	int len = r_hex_str2bin (pairs, buf);
 	if (len != 0) {
 		if (len < 0) {
 			len = -len;
 			if (len < core->blocksize) {
-				buf[len-1] |= core->block[len-1] & 0xf;
+				buf[len - 1] |= core->block[len - 1] & 0xf;
 			}
 		}
+		core->num->value = 0;
 		if (!r_core_write_at (core, core->offset, buf, len)) {
-			cmd_write_fail ();
+			cmd_write_fail (core);
+			core->num->value = 1;
 		}
 		if (r_config_get_i (core->config, "cfg.wseek")) {
 			r_core_seek_delta (core, len);
@@ -204,6 +210,7 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 		r_core_block_read (core);
 	} else {
 		eprintf ("Error: invalid hexpair string\n");
+		core->num->value = 1;
 	}
 	free (buf);
 	return len;
@@ -280,7 +287,7 @@ static void cmd_write_bits(RCore *core, int set, ut64 val) {
 		ret = orig & (~(val));
 	}
 	if (!r_core_write_at (core, core->offset, (const ut8*)&ret, sizeof (ret))) {
-		cmd_write_fail ();
+		cmd_write_fail (core);
 	}
 }
 
@@ -297,7 +304,7 @@ static void cmd_write_inc(RCore *core, int size, st64 num) {
 	}
 	// TODO: obey endian here
 	if (!r_core_write_at (core, core->offset, core->block, size)) {
-		cmd_write_fail ();
+		cmd_write_fail (core);
 	}
 }
 
@@ -412,7 +419,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 						while (true) {
 							int res = r_core_write_at (core, addr, ptr, len);
 							if (res != 0) {
-								cmd_write_fail ();
+								cmd_write_fail (core);
 							}
 							if (res < 1 || len == res) {
 								break;
@@ -462,8 +469,10 @@ static void cmd_write_value (RCore *core, const char *input) {
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	bool be = r_config_get_i (core->config, "cfg.bigendian");
 
-	if (!input)
+	core->num->value = 0;
+	if (!input) {
 		return;
+	}
 
 	if (input[0])
 	switch (input[1]) {
@@ -489,7 +498,7 @@ static void cmd_write_value (RCore *core, const char *input) {
 	case 1:
 		r_write_ble8 (buf, (ut8)(off & UT8_MAX));
 		if (!r_io_write (core->io, buf, 1)) {
-			cmd_write_fail ();
+			cmd_write_fail (core);
 		} else {
 			WSEEK (core, 1);
 		}
@@ -497,7 +506,7 @@ static void cmd_write_value (RCore *core, const char *input) {
 	case 2:
 		r_write_ble16 (buf, (ut16)(off & UT16_MAX), be);
 		if (!r_io_write (core->io, buf, 2)) {
-			cmd_write_fail ();
+			cmd_write_fail (core);
 		} else {
 			WSEEK (core, 2);
 		}
@@ -505,7 +514,7 @@ static void cmd_write_value (RCore *core, const char *input) {
 	case 4:
 		r_write_ble32 (buf, (ut32)(off & UT32_MAX), be);
 		if (!r_io_write (core->io, buf, 4)) {
-			cmd_write_fail ();
+			cmd_write_fail (core);
 		} else {
 			WSEEK (core, 4);
 		}
@@ -513,7 +522,7 @@ static void cmd_write_value (RCore *core, const char *input) {
 	case 8:
 		r_write_ble64 (buf, off, be);
 		if (!r_io_write (core->io, buf, 8)) {
-			cmd_write_fail ();
+			cmd_write_fail (core);
 		} else {
 			WSEEK (core, 8);
 		}
@@ -843,7 +852,7 @@ static int cmd_write(void *data, const char *input) {
 		}
 		if (!fail) {
 			if (!r_core_write_at (core, core->offset, buf, len)) {
-				cmd_write_fail ();
+				cmd_write_fail (core);
 			}
 			WSEEK (core, len);
 			r_core_block_read (core);
@@ -914,7 +923,7 @@ static int cmd_write(void *data, const char *input) {
 					cmd_suc = r_core_extend_at (core, cur_off, len);
 					if (cmd_suc) {
 						if (!r_core_write_at (core, cur_off, bytes, len)) {
-							cmd_write_fail ();
+							cmd_write_fail (core);
 						}
 					}
 					core->offset = cur_off;
@@ -965,7 +974,7 @@ static int cmd_write(void *data, const char *input) {
 					cmd_suc = r_core_extend_at (core, addr, len);
 					if (cmd_suc) {
 						if (!r_core_write_at (core, addr, bytes, len)) {
-							cmd_write_fail ();
+							cmd_write_fail (core);
 						}
 					}
 					core->offset = addr;
@@ -1067,7 +1076,7 @@ static int cmd_write(void *data, const char *input) {
 				for (i=0; i<len; i++)
 					buf[i] = r_num_rand (256);
 				if (!r_core_write_at (core, core->offset, buf, len)) {
-					cmd_write_fail ();
+					cmd_write_fail (core);
 				}
 				WSEEK (core, len);
 				free (buf);
@@ -1085,7 +1094,7 @@ static int cmd_write(void *data, const char *input) {
 				eprintf ("len=%d\n", len);
 				if (len>0) {
 					if (!r_core_write_at (core, core->offset, core->block, len)) {
-						cmd_write_fail ();
+						cmd_write_fail (core);
 					}
 					WSEEK (core, len);
 				} else eprintf ("r_asm_modify = %d\n", len);
@@ -1188,7 +1197,7 @@ static int cmd_write(void *data, const char *input) {
 		/* write string */
 		len = r_str_unescape (str);
 		if (!r_core_write_at (core, core->offset, (const ut8*)str, len)) {
-			cmd_write_fail ();
+			cmd_write_fail (core);
 		}
 #if 0
 		r_io_use_desc (core->io, core->file->desc);
@@ -1201,7 +1210,7 @@ static int cmd_write(void *data, const char *input) {
 		/* write zero-terminated string */
 		len = r_str_unescape (str);
 		if (!r_core_write_at (core, core->offset, (const ut8*)str + 1, len)) {
-			cmd_write_fail ();
+			cmd_write_fail (core);
 		}
 		if (len > 0) {
 			core->num->value = len;
@@ -1502,7 +1511,7 @@ static int cmd_write(void *data, const char *input) {
 						r_cons_printf ("wx %s\n", hex);
 					} else {
 						if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
-							cmd_write_fail ();
+							cmd_write_fail (core);
 						} else {
 							if (r_config_get_i (core->config, "scr.prompt")) {
 								eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, hex);
@@ -1576,7 +1585,7 @@ static int cmd_write(void *data, const char *input) {
 							eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, hex);
 						}
 						if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
-							cmd_write_fail ();
+							cmd_write_fail (core);
 						} else {
 							WSEEK (core, acode->len);
 						}
@@ -1604,7 +1613,7 @@ static int cmd_write(void *data, const char *input) {
 			if (len > 0) {
 				r_mem_copyloop (core->block, buf, core->blocksize, len);
 				if (!r_core_write_at (core, core->offset, core->block, core->blocksize)) {
-					cmd_write_fail ();
+					cmd_write_fail (core);
 				} else {
 					WSEEK (core, core->blocksize);
 				}
@@ -1672,8 +1681,8 @@ static int cmd_write(void *data, const char *input) {
 			} else {
 				ut8 ulen = (ut8)len;
 				if (!r_core_write_at (core, core->offset, &ulen, 1) ||
-						!r_core_write_at (core, core->offset+1, (const ut8*)str+1, len)) {
-					cmd_write_fail ();
+				!r_core_write_at (core, core->offset + 1, (const ut8*)str + 1, len)) {
+					cmd_write_fail (core);
 				} else {
 					WSEEK (core, len);
 				}
