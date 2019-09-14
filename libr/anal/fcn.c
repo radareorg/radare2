@@ -433,19 +433,22 @@ static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr, bool jumpmid) {
 	return NULL;
 }
 
+// TODO: split between bb.new and append_bb()
 static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock *bb = r_anal_bb_new ();
-	if (!bb) {
-		return NULL;
-	}
-	bb->addr = addr;
-	bb->size = 0;
-	bb->jump = UT64_MAX;
-	bb->fail = UT64_MAX;
-	bb->type = 0; // TODO
-	r_anal_fcn_bbadd (fcn, bb);
-	if (anal->cb.on_fcn_bb_new) {
-		anal->cb.on_fcn_bb_new (anal, anal->user, fcn, bb);
+	if (bb) {
+		if (anal->verbose) {
+			eprintf ("Append bb at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x ")\n", addr, fcn->addr);
+		}
+		bb->addr = addr;
+		bb->size = 0;
+		bb->jump = UT64_MAX;
+		bb->fail = UT64_MAX;
+		bb->type = 0; // TODO
+		r_anal_fcn_bbadd (fcn, bb);
+		if (anal->cb.on_fcn_bb_new) {
+			anal->cb.on_fcn_bb_new (anal, anal->user, fcn, bb);
+		}
 	}
 	return bb;
 }
@@ -725,12 +728,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
-	bb = appendBasicBlock (anal, fcn, addr);
-
-	if (anal->verbose) {
-		eprintf ("Append bb at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x ")\n", addr, fcn->addr);
-	}
-
 	ut64 leaddr = UT64_MAX;
 	char *last_reg_mov_lea_name = NULL;
 	ut64 last_reg_mov_lea_val = UT64_MAX;
@@ -767,6 +764,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			gotoBeach (R_ANAL_RET_END);
 		}
 	}
+	bb = appendBasicBlock (anal, fcn, addr);
+
 	while (addrbytes * idx < maxlen) {
 		if (!last_is_reg_mov_lea) {
 			free (last_reg_mov_lea_name);
@@ -802,14 +801,23 @@ repeat:
 			}
 			gotoBeach (R_ANAL_RET_END);
 		}
-		if (anal->opt.nopskip) {
-			switch (op.type & R_ANAL_OP_TYPE_MASK) {
-			case R_ANAL_OP_TYPE_NOP:
-				if (fcn->addr == at) {
-					bb->addr = fcn->addr = addr = at + op.size;
+		if (anal->opt.nopskip && fcn->addr == at) {
+			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
+			if (!fi || strncmp (fi->name, "sym.", 4)) {
+				if ((addr + delay.un_idx - oplen) == fcn->addr) {
+					fcn->addr += oplen;
+					bb->size -= oplen;
+					bb->addr += oplen;
+					idx = delay.un_idx;
 					goto repeat;
 				}
-				break;
+			}
+			switch (op.type & R_ANAL_OP_TYPE_MASK) {
+			case R_ANAL_OP_TYPE_TRAP:
+			case R_ANAL_OP_TYPE_ILL:
+			case R_ANAL_OP_TYPE_NOP:
+				bb->addr = fcn->addr = addr = at + op.size;
+				goto repeat;
 			}
 		}
 		if (op.hint.new_bits) {
@@ -1025,71 +1033,11 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_ILL:
-			if (anal->opt.nopskip && bytes_read > 3 && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
-				if ((addr + delay.un_idx - oplen) == fcn->addr) {
-					fcn->addr += oplen;
-					bb->size -= oplen;
-					bb->addr += oplen;
-					idx = delay.un_idx;
-					goto repeat;
-				} else {
-					// sa
-					bb->size -= oplen;
-					op.type = R_ANAL_OP_TYPE_RET;
-				}
-			}
 			gotoBeach (R_ANAL_RET_END);
 		case R_ANAL_OP_TYPE_TRAP:
-			if (anal->opt.nopskip && buf[0] == 0xcc) {
-				if ((addr + delay.un_idx - oplen) == fcn->addr) {
-					fcn->addr += oplen;
-					bb->size -= oplen;
-					//bb->addr += oplen;
-					idx = delay.un_idx;
-					goto repeat;
-				}
-			}
 			gotoBeach (R_ANAL_RET_END);
 		case R_ANAL_OP_TYPE_NOP:
-			if (anal->opt.nopskip) {
-				if (!strcmp (anal->cur->arch, "mips")) {
-					// Looks like this flags check is useful only for mips
-					// do not skip nops if there's a flag at starting address
-					RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
-					if (!fi || strncmp (fi->name, "sym.", 4)) {
-						if ((addr + delay.un_idx - oplen) == fcn->addr) {
-							fcn->addr += oplen;
-							bb->size -= oplen;
-							bb->addr += oplen;
-							idx = delay.un_idx;
-							goto repeat;
-						}
-					}
-				} else {
-#if 0
-					RFlagItem *fi = anal->flb.get_at (anal->flb.f, fcn->addr? fcn->addr: addr, false);
-					if (fi) {
-						break;
-					}
-					if (oplen) {
-						eprintf ("AT %llx + %d\n", at, oplen);
-						eprintf ("BBS %d\n", bb->size);
-						if (bb->size == oplen) {
-							fcn->addr = at + oplen;
-							bb->ninstr = 1;
-							bb->size = 0;
-							eprintf ("c----\n");
-						}
-						goto repeat;
-					}
-					skip_ret = skip_hp (anal, fcn, &op, bb, at, tmp_buf, oplen, delay.un_idx, &idx);
-					if (skip_ret == 1) {
-					//	goto repeat;
-					}
-					//77 if (skip_ret == 2) { gotoBeach (R_ANAL_RET_END); }
-#endif
-				}
-			}
+			// do nothing, because the nopskip goes before this switch
 			break;
 		case R_ANAL_OP_TYPE_JMP:
 			if (op.jump == UT64_MAX) {
@@ -1347,31 +1295,6 @@ repeat:
 					}
 				}
 			}
-#if 0
-	// XXX i think we can remove this
-			if (anal->cur) {
-				/* if UJMP is in .plt section just skip it */
-				RBinSection *s = anal->binb.get_vsect_at (anal->binb.bin, addr);
-				if (s && s->name[0]) {
-					bool in_plt = strstr (s->name, ".plt") != NULL;
-					if (!in_plt && strstr (s->name, "_stubs") != NULL) {
-						/* for mach0 */
-						in_plt = true;
-					}
-					if (anal->cur->arch && strstr (anal->cur->arch, "arm")) {
-						if (anal->bits == 64) {
-							if (!in_plt) {
-								goto river;
-							}
-						}
-					} else {
-						if (in_plt && !strstr (s->name, "_stubs")) {
-							goto river;
-						}
-					}
-				}
-			}
-#endif
 			if (anal->opt.ijmp) {
 				if (continue_after_jump) {
 					r_anal_fcn_bb (anal, fcn, op.jump, depth);
@@ -1926,7 +1849,6 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 
 // TODO: rename fcn_bb_split()
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, ut64 addr) {
-	RAnalBlock *bb;
 	int new_bbi_instr, i;
 	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size + 1, 0);
 	if (addr == UT64_MAX) {
@@ -1935,11 +1857,13 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, 
 	if (addr == bbi->addr) {
 		return R_ANAL_RET_DUP;
 	}
-	bb = appendBasicBlock (anal, fcn, addr);
-	bb->size = bbi->addr + bbi->size - addr;
-	bb->jump = bbi->jump;
-	bb->fail = bbi->fail;
-	bb->conditional = bbi->conditional;
+	RAnalBlock *bb = appendBasicBlock (anal, fcn, addr);
+	if (bb) {
+		bb->size = bbi->addr + bbi->size - addr;
+		bb->jump = bbi->jump;
+		bb->fail = bbi->fail;
+		bb->conditional = bbi->conditional;
+	}
 	FITFCNSZ ();
 	bbi->size = addr - bbi->addr;
 	bbi->jump = addr;
