@@ -172,12 +172,15 @@ def win_dist(args):
     with open(r2_bat_fname, 'w') as r2_bat:
         r2_bat.write('@"%s\\bin\\radare2" %%*\n' % os.path.abspath(args.install))
 
-    copy(r'{BUILDDIR}\libr\*\*.dll', r'{DIST}\bin')
     makedirs(r'{DIST}\{R2_LIBDIR}')
     if args.shared:
+        copy(r'{BUILDDIR}\libr\*\*.dll', r'{DIST}\bin')
         copy(r'{BUILDDIR}\libr\*\*.lib', r'{DIST}\{R2_LIBDIR}')
+        copy(r'{BUILDDIR}\shlr\r_sdb.dll', r'{DIST}\bin')
+        copy(r'{BUILDDIR}\shlr\r_sdb.lib', r'{DIST}\{R2_LIBDIR}')
     else:
         copy(r'{BUILDDIR}\libr\*\*.a', r'{DIST}\{R2_LIBDIR}')
+        copy(r'{BUILDDIR}\shlr\r_sdb.a', r'{DIST}\{R2_LIBDIR}')
     win_dist_libr2()
 
 def win_dist_libr2(**path_fmt):
