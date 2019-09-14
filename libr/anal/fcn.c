@@ -802,6 +802,16 @@ repeat:
 			}
 			gotoBeach (R_ANAL_RET_END);
 		}
+		if (anal->opt.nopskip) {
+			switch (op.type & R_ANAL_OP_TYPE_MASK) {
+			case R_ANAL_OP_TYPE_NOP:
+				if (fcn->addr == at) {
+					bb->addr = fcn->addr = addr = at + op.size;
+					goto repeat;
+				}
+				break;
+			}
+		}
 		if (op.hint.new_bits) {
 			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
 		}
@@ -822,7 +832,6 @@ repeat:
 		if (!overlapped) {
 			r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
 			bb->size += oplen;
-eprintf ("INC\n");
 			fcn->ninstr++;
 			// FITFCNSZ(); // defer this, in case this instruction is a branch delay entry
 			// fcn->size += oplen; /// XXX. must be the sum of all the bblocks
@@ -1042,7 +1051,6 @@ eprintf ("INC\n");
 			}
 			gotoBeach (R_ANAL_RET_END);
 		case R_ANAL_OP_TYPE_NOP:
-eprintf ("found a nop at %llx\n", at);
 			if (anal->opt.nopskip) {
 				if (!strcmp (anal->cur->arch, "mips")) {
 					// Looks like this flags check is useful only for mips
@@ -1063,7 +1071,6 @@ eprintf ("found a nop at %llx\n", at);
 					if (fi) {
 						break;
 					}
-#endif
 					if (oplen) {
 						eprintf ("AT %llx + %d\n", at, oplen);
 						eprintf ("BBS %d\n", bb->size);
@@ -1077,11 +1084,10 @@ eprintf ("found a nop at %llx\n", at);
 					}
 					skip_ret = skip_hp (anal, fcn, &op, bb, at, tmp_buf, oplen, delay.un_idx, &idx);
 					if (skip_ret == 1) {
-						goto repeat;
+					//	goto repeat;
 					}
-					if (skip_ret == 2) {
-						gotoBeach (R_ANAL_RET_END);
-					}
+					//77 if (skip_ret == 2) { gotoBeach (R_ANAL_RET_END); }
+#endif
 				}
 			}
 			break;
@@ -1401,8 +1407,6 @@ analopfinish:
 			}
 			break;
 		case R_ANAL_OP_TYPE_RET:
-eprintf ("MAGIC %llx\n", fcn->addr);
-bb->size ++;
 			if (op.family == R_ANAL_OP_FAMILY_PRIV) {
 				fcn->type = R_ANAL_FCN_TYPE_INT;
 			}
@@ -1412,15 +1416,14 @@ bb->size ++;
 				bb->jump = op.jump;
 				ret = r_anal_fcn_bb (anal, fcn, op.jump, depth);
 				goto beach;
-			} else {
-				if (!op.cond) {
-					if (anal->verbose) {
-						eprintf ("RET 0x%08"PFMT64x ". %d %d %d\n",
-							addr + delay.un_idx - oplen, overlapped,
-							bb->size, r_anal_fcn_size (fcn));
-					}
-					gotoBeach (R_ANAL_RET_END);
+			}
+			if (!op.cond) {
+				if (anal->verbose) {
+					eprintf ("RET 0x%08"PFMT64x ". %d %d %d\n",
+						addr + delay.un_idx - oplen, overlapped,
+						bb->size, r_anal_fcn_size (fcn));
 				}
+				gotoBeach (R_ANAL_RET_END);
 			}
 			break;
 		}
