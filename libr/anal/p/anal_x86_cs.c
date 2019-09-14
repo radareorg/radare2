@@ -2501,7 +2501,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->type = R_ANAL_OP_TYPE_TRAP; // TRAP
 		break;
 	case X86_INS_INT1:
-		op->type = R_ANAL_OP_TYPE_SWI; // TRAP
+		op->type = R_ANAL_OP_TYPE_SWI;
 		op->val = 1;
 		break;
 	case X86_INS_INT:
@@ -2518,6 +2518,10 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->family = R_ANAL_OP_FAMILY_PRIV;
 		break;
 	case X86_INS_INTO:
+		op->type = R_ANAL_OP_TYPE_SWI;
+		// int4 if overflow bit is set , so this is an optional swi
+		op->type |= R_ANAL_OP_TYPE_COND;
+		break;
 	case X86_INS_VMCALL:
 	case X86_INS_VMMCALL:
 		op->type = R_ANAL_OP_TYPE_TRAP;
