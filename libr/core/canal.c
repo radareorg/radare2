@@ -3987,8 +3987,14 @@ static bool isValidSymbol(RBinSymbol *symbol) {
 	return false;
 }
 
-static bool isDllImport(RBinSymbol *s) {
+static bool isSkippable(RBinSymbol *s) {
 	if (s && s->name && s->bind) {
+		if (!strcmp (s->name, "radr://")) {
+			return true;
+		}
+		if (!strcmp (s->name, "__mh_execute_header")) {
+			return true;
+		}
 		if (!strcmp (s->bind, "NONE")) {
 			if (r_str_startswith (s->name, "imp.")) {
 				if (strstr (s->name, ".dll_")) {
@@ -4029,7 +4035,7 @@ R_API int r_core_anal_all(RCore *core) {
 				break;
 			}
 			// Stop analyzing PE imports further
-			if (isDllImport (symbol)) {
+			if (isSkippable (symbol)) {
 				continue;
 			}
 			if (isValidSymbol (symbol)) {
@@ -4040,13 +4046,13 @@ R_API int r_core_anal_all(RCore *core) {
 		}
 	}
 	/* Main */
-	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL) {
+	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN))) {
 		if (binmain->paddr != UT64_MAX) {
 			ut64 addr = r_bin_get_vaddr (core->bin, binmain->paddr, binmain->vaddr);
 			r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth - 1);
 		}
 	}
-	if ((list = r_bin_get_entries (core->bin)) != NULL) {
+	if ((list = r_bin_get_entries (core->bin))) {
 		r_list_foreach (list, iter, entry) {
 			if (entry->paddr == UT64_MAX) {
 				continue;
