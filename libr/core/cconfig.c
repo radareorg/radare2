@@ -3473,6 +3473,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "Emulate console break (^C) when a word is printed (useful for pD)");
 	SETCB ("scr.breaklines", "false", &cb_breaklines, "Break lines in Visual instead of truncating them");
 	SETCB ("scr.gadgets", "true", &cb_scr_gadgets, "Run pg in prompt, visual and panels");
+	SETPREF ("scr.panelborder", "false", "Specify panels border active area (0 by default)");
 	SETICB ("scr.columns", 0, &cb_scrcolumns, "Force console column count (width)");
 	SETPREF ("scr.dumpcols", "false", "Prefer pC commands before p ones");
 	SETCB ("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");

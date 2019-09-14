@@ -697,11 +697,11 @@ bool __check_if_mouse_y_illegal(RCore *core, int y) {
 
 bool __check_if_mouse_x_on_edge(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
-	const int edge_x = 1;
+	const int edge_x = r_config_get_i (core->config, "scr.panelborder")? 3: 1;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (x > panel->view->pos.x && x <= panel->view->pos.x + edge_x) {
+		if (x > panel->view->pos.x - (edge_x - 1) && x <= panel->view->pos.x + edge_x) {
 			panels->mouse_on_edge_x = true;
 			panels->mouse_orig_x = x;
 			return true;
@@ -712,12 +712,12 @@ bool __check_if_mouse_x_on_edge(RCore *core, int x, int y) {
 
 bool __check_if_mouse_y_on_edge(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
-	const int edge_y = 1;
+	const int edge_y = r_config_get_i (core->config, "scr.panelborder")? 3: 1;
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->pos.x < x && x <= panel->view->pos.x + panel->view->pos.w) {
-			if (panel->view->pos.y < y && y <= panel->view->pos.y + edge_y) {
+		if (x > panel->view->pos.x && x <= panel->view->pos.x + panel->view->pos.w + edge_y) {
+			if (y > 2 && y >= panel->view->pos.y && y <= panel->view->pos.y + edge_y) {
 				panels->mouse_on_edge_y = true;
 				panels->mouse_orig_y = y;
 				return true;
@@ -1933,8 +1933,7 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 			if (__handle_mouse_on_X (core, x, y)) {
 				return true;
 			}
-			if (__check_if_mouse_x_illegal(core, x) ||
-					__check_if_mouse_y_illegal(core, y)) {
+			if (__check_if_mouse_x_illegal (core, x) || __check_if_mouse_y_illegal (core, y)) {
 				panels->mouse_on_edge_x = false;
 				panels->mouse_on_edge_y = false;
 				return true;
