@@ -3989,7 +3989,7 @@ static bool isValidSymbol(RBinSymbol *symbol) {
 
 static bool isSkippable(RBinSymbol *s) {
 	if (s && s->name && s->bind) {
-		if (!r_str_startswith (s->name, "radr://")) {
+		if (r_str_startswith (s->name, "radr://")) {
 			return true;
 		}
 		if (!strcmp (s->name, "__mh_execute_header")) {
