@@ -3,7 +3,7 @@
 
 // defines like IS_DIGIT, etc'
 #include "r_util/r_str_util.h"
-#include "r_userconf.h"
+#include <r_userconf.h>
 #include <stddef.h>
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
@@ -197,7 +197,6 @@
   #define FUNC_ATTR_ALWAYS_INLINE
 #endif
 
-#include <r_userconf.h>
 #include <r_types_base.h>
 
 #undef _FILE_OFFSET_BITS
