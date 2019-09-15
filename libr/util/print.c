@@ -814,7 +814,7 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, int zoomsz) {
 	PrintfCallback printfmt = (PrintfCallback) printf;
-	bool c = p->flags & R_PRINT_FLAGS_COLOR;
+	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
 	const char *color_title = c? (Pal (p, offset): Color_MAGENTA): "";
 	int i, j, k, inc = p? p->cols : 16;
 	int sparse_char = 0;
@@ -1098,7 +1098,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					continue;
 				}
-				const char *hl = (hex_style && p->offname (p->user, addr + j))? Color_INVERT: NULL;
+				const char *hl = (hex_style && p && p->offname (p->user, addr + j))? Color_INVERT: NULL;
 				if (hl) {
 					printfmt (hl);
 				}
@@ -1107,7 +1107,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					/* TODO: check step. it should be 2/4 for base(32) and 8 for
 					 *       base(64) */
 					ut64 n = 0;
-					size_t sz_n = (base == 64) 
+					size_t sz_n = (base == 64)
 						? sizeof (ut64) : (step == 2)
 						? sizeof (ut16) : sizeof (ut32);
 					sz_n = R_MIN (left, sz_n);

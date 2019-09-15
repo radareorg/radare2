@@ -1562,9 +1562,11 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
 	case DRX_API_LIST:
 		drx_list (regs);
 		retval = false;
+		break;
 	case DRX_API_GET_BP:
 		/* get the index of the breakpoint at addr */
 		retval = drx_get_at (regs, addr);
+		break;
 	case DRX_API_REMOVE_BP:
 		/* remove hardware breakpoint */
 		drx_set (regs, n, addr, -1, 0, 0);

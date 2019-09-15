@@ -64,10 +64,10 @@ static void print_string(RBinFile *bf, RBinString *string, int raw) {
 			}
 		}
 		break;
-	case R_MODE_SIMPLEST: 
+	case R_MODE_SIMPLEST:
 		io->cb_printf ("%s\n", string->string);
 		break;
-	case R_MODE_SIMPLE: 
+	case R_MODE_SIMPLE:
 		if (raw == 2) {
 			io->cb_printf ("0x%08"PFMT64x" %s\n", addr, string->string);
 		} else {
@@ -95,7 +95,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw) {
 		free (f_name);
 		break;
 		}
-	case R_MODE_PRINT: 
+	case R_MODE_PRINT:
 		io->cb_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
 			       "(%s) %5s %s\n",
 			string->ordinal, string->paddr, vaddr,
@@ -754,7 +754,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 	RBinSection *section;
 	RList *ret = dump? NULL: r_list_newf (r_bin_string_free);
 
-	if (!raw && bf->o && bf->o && bf->o->sections && !r_list_empty (bf->o->sections)) {
+	if (!raw && bf && bf->o && bf->o->sections && !r_list_empty (bf->o->sections)) {
 		RBinObject *o = bf->o;
 		r_list_foreach (o->sections, iter, section) {
 			if (__isDataSection (bf, section)) {

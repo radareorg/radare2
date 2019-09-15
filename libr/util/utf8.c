@@ -747,6 +747,7 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	if (freq_list) {
 		*freq_list = R_NEWS (int, len + 1);
 		if (!*freq_list) {
+			free (list);
 			return NULL;
 		}
 		freq_list_ptr = *freq_list;
