@@ -544,7 +544,7 @@ static int cmd_alias(void *data, const char *input) {
 		*desc = 0;
 		char *v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
-			if (nonl == desc+1) {
+			if (nonl == desc + 1) {
 				r_cons_print (v);
 			} else {
 				r_cons_println (v);
