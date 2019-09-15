@@ -1042,7 +1042,7 @@ static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->src[0] = anal_pcrel_disp_mov (anal, op, code & 0xFF, LONG_SIZE);
 	//TODO: check it
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-	r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + (op->addr & 0xfffffffc) + 4, GET_TARGET_REG (code));
+	r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + (op->addr & 0xfffffff3) + 4, GET_TARGET_REG (code));
 	return op->size;
 }
 
