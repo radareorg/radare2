@@ -246,7 +246,7 @@ static char *msg_types_arr[] = {
 	NULL
 };
 
-RListFree __free_window (void *ptr) {
+void __free_window (void *ptr) {
 	window *win = ptr;
 	free (win->name);
 	free (win);

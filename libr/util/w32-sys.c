@@ -41,6 +41,7 @@ R_API os_info *r_sys_get_winver() {
 	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
 		KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
 		r_sys_perror ("r_sys_get_winver/RegOpenKeyExA");
+		free (info);
 		return 0;
 	}
 	size = sizeof (major);
@@ -154,7 +155,7 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	if (sterr) {
 		*sterr = ReadFromPipe (fe, NULL);
 	}
-	
+
 	if (fi && !CloseHandle (fi)) {
 		ErrorExit ("PipeIn CloseHandle");
 	}
@@ -164,7 +165,7 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	if (fe && !CloseHandle (fe)) {
 		ErrorExit ("PipeErr CloseHandle");
 	}
-	
+
 	return true;
 }
 
@@ -199,7 +200,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 			NULL,          // use parent's environment
 			NULL,          // use parent's current directory
 			&si,           // STARTUPINFO pointer
-			&pi))) {  // receives PROCESS_INFORMATION 
+			&pi))) {  // receives PROCESS_INFORMATION
 		ret = true;
 		CloseHandle (pi.hProcess);
 		CloseHandle (pi.hThread);

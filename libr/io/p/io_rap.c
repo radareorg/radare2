@@ -47,8 +47,8 @@ static int __rap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 static bool __rap_accept(RIO *io, RIODesc *desc, int fd) {
-	RIORap *rap = desc->data;
-	if (rap && desc && fd != -1) {
+	RIORap *rap = desc? desc->data: NULL;
+	if (rap && fd != -1) {
 		rap->client = r_socket_new_from_fd (fd);
 		return true;
 	}

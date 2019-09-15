@@ -140,6 +140,7 @@ static int update_self_regions(RIO *io, int pid) {
 	LPTSTR name = calloc (name_size, sizeof (TCHAR));
 	if (!name) {
 		R_LOG_ERROR ("io_self/update_self_regions: Failed to allocate memory.\n");
+		CloseHandle (h);
 		return false;
 	}
 	while (VirtualQuery (to, &mbi, sizeof (mbi))) {
