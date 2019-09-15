@@ -3,7 +3,6 @@
 #include "r_io.h"
 #include "r_lib.h"
 #include <sys/types.h>
-#include <sys/mman.h>
 
 #if __ANDROID__ || EMSCRIPTEN
 #undef __UNIX__
@@ -13,6 +12,7 @@
 #if __UNIX__ && !defined (__QNX__) && !defined (__HAIKU__)
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/mman.h>
 
 typedef struct {
 	int fd;
