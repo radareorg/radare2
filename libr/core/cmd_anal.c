@@ -6229,6 +6229,11 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 					isValidCall = false;
 				}
 				if (isValidCall) {
+					ut8 buf[4];
+					r_io_read_at (core->io, op.jump, buf, 4);
+					isValidCall = memcmp (buf, "\x00\x00\x00\x00", 4);
+				}
+				if (isValidCall) {
 #if JAYRO_03
 					if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
 						fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
