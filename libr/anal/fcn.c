@@ -716,7 +716,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-	RAnalFunction *fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0);
+	// RAnalFunction *fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0);
+	RAnalFunction *fcn_at_addr = r_anal_get_fcn_in (anal, addr, 0);
 	if (fcn_at_addr && fcn_at_addr != fcn) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
@@ -2029,11 +2030,14 @@ R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
 		return _fcn_addr_tree_find_addr (anal, addr);
 	}
+#if 0
+	// at != in
 	// rbtree is broken as hell, better rewrite than try to fix, this is a workaround to avoid infinite loops
 	RAnalFunction *f = r_anal_get_fcn_in (anal, addr, 0);
 	if (f) {
 		return f;
 	}
+#endif
 	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
 		if (!type || (fcn && fcn->type & type)) {
 			if (addr == fcn->addr) {
