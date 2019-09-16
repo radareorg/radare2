@@ -575,10 +575,11 @@ typedef struct r_bin_field_t {
 	char *type;
 	char *comment;
 	char *format;
+	bool format_named; // whether format is the name of a format or a raw pf format string
 	ut64 flags;
 } RBinField;
 
-R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format);
+R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
 R_API void r_bin_field_free(void *);
 
 typedef struct r_bin_mem_t {
