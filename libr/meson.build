@@ -83,6 +83,7 @@ asm_plugins = [
   'm68k_cs',
   'm680x_cs',
   'malbolge',
+  'mcore',
   'mcs96',
   'mips_cs',
   'mips_gnu',
