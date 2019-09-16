@@ -516,7 +516,7 @@ R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg) {
 }
 
 
-R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, const char *expr) {
+R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr) {
 	if (!expr) {
 		return NULL;
 	}
@@ -526,7 +526,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, const char *expr) {
 	}
 	esil->anal = anal;
 
-	RAnalEsilDFG *edf = r_anal_esil_dfg_new();
+	RAnalEsilDFG *edf = dfg ? dfg : r_anal_esil_dfg_new();
 	if (!edf) {
 		r_anal_esil_free(esil);
 		return NULL;
@@ -685,7 +685,7 @@ R_API RStrBuf *r_anal_esil_dfg_filter_expr (RAnal *anal, const char *expr, const
 	if (!reg) {
 		return NULL;
 	}
-	RAnalEsilDFG *dfg = r_anal_esil_dfg_expr(anal, expr);
+	RAnalEsilDFG *dfg = r_anal_esil_dfg_expr(anal, NULL, expr);
 	if (!dfg) {
 		return NULL;
 	}
