@@ -4354,8 +4354,16 @@ repeat:
 			}
 			r_anal_esil_stack_free (esil);
 		}
+		bool isNextFall = false;
+		if (op.type == R_ANAL_OP_TYPE_CJMP) {
+			ut64 pc = r_debug_reg_get (core->dbg, "PC");
+			if (pc == addr + op.size) {
+				// do not opdelay here
+				isNextFall = true;
+			}
+		}
 		// only support 1 slot for now
-		if (op.delay) {
+		if (op.delay && !isNextFall) {
 			ut8 code2[32];
 			ut64 naddr = addr + op.size;
 			RAnalOp op2 = {0};
@@ -4366,16 +4374,16 @@ repeat:
 			ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2), R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 			if (ret > 0) {
 				switch (op2.type) {
-					case R_ANAL_OP_TYPE_CJMP:
-					case R_ANAL_OP_TYPE_JMP:
-					case R_ANAL_OP_TYPE_CRET:
-					case R_ANAL_OP_TYPE_RET:
-						// branches are illegal in a delay slot
-						esil->trap = R_ANAL_TRAP_EXEC_ERR;
-						esil->trap_code = addr;
-						eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
-						return_tail (1);
-						break;
+				case R_ANAL_OP_TYPE_CJMP:
+				case R_ANAL_OP_TYPE_JMP:
+				case R_ANAL_OP_TYPE_CRET:
+				case R_ANAL_OP_TYPE_RET:
+					// branches are illegal in a delay slot
+					esil->trap = R_ANAL_TRAP_EXEC_ERR;
+					esil->trap_code = addr;
+					eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
+					return_tail (1);
+					break;
 				}
 				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op2.esil));
 			} else {
