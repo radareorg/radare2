@@ -7,5 +7,6 @@ executable('r2agent', 'r2agent.c',
     r_cons_dep
   ],
   install: true,
+  install_rpath: get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : '',
   implicit_include_directories: false
 )
