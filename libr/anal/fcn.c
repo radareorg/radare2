@@ -716,8 +716,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-	// RAnalFunction *fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0);
-	RAnalFunction *fcn_at_addr = r_anal_get_fcn_in (anal, addr, 0);
+	RAnalFunction *fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0);
+	//RAnalFunction *fcn_at_addr = r_anal_get_fcn_in (anal, addr, 0);
 	if (fcn_at_addr && fcn_at_addr != fcn) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
@@ -1621,8 +1621,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 	RListIter *iter, *iter2;
-	RAnalFunction *fcn, *f = r_anal_get_fcn_in (anal, addr,
-		R_ANAL_FCN_TYPE_ROOT);
+	RAnalFunction *fcn, *f = r_anal_get_fcn_in (anal, addr, R_ANAL_FCN_TYPE_ROOT);
 	if (!f) {
 		return false;
 	}
@@ -1671,10 +1670,9 @@ R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type) {
 
 R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 #if 0
-  // Linear scan
+	// Linear scan
 	RAnalFunction *fcn, *ret = NULL;
 	RListIter *iter;
-#if 0
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
 		r_list_foreach (anal->fcns, iter, fcn) {
 			if (addr == fcn->addr) {
@@ -1683,7 +1681,6 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 		}
 		return NULL;
 	}
-#endif
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || type == R_ANAL_FCN_TYPE_ANY || (fcn->type & type)) {
 			if (r_tinyrange_in (&fcn->bbr, addr) || fcn->addr == addr) {
