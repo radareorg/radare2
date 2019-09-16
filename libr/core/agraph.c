@@ -413,17 +413,9 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RANode* from RCore*
 	if (g->show_node_bubble) {
-		if (cur) {
-			r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
-		} else {
-			r_cons_canvas_circle(g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
-		}
+		r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, get_node_color (color, cur));
 	} else {
-		if (cur) {
-			r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
-		} else {
-			r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
-		}
+		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, get_node_color (color, cur));
 	}
 }
 

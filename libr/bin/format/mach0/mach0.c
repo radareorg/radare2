@@ -3827,13 +3827,9 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			eprintf ("Invalid size for a load command\n");
 			break;
 		}
-		const char * pf_definition = cmd_to_pf_definition (lcType);
+		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
-			if (lcType != LC_BUILD_VERSION) {
-				r_list_append (ret, r_bin_field_new (addr, addr, 1, sdb_fmt ("load_command_%d_%s", n, cmd_to_string (lcType)), pf_definition, pf_definition));
-			} else {
-				r_list_append (ret, r_bin_field_new (addr, addr, 1, sdb_fmt ("load_command_%d_%s", n, cmd_to_string (lcType)), pf_definition, pf_definition));
-			}
+			r_list_append (ret, r_bin_field_new (addr, addr, 1, sdb_fmt ("load_command_%d_%s", n, cmd_to_string (lcType)), pf_definition, pf_definition));
 		}
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
