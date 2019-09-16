@@ -5,6 +5,13 @@
 #include <sdb.h>
 
 
+typedef struct r_anal_esil_dfg_filter_t {
+	RAnalEsilDFG *dfg;
+	RContRBTree *tree;
+	Sdb *results;
+} RAnalEsilDFGFilter;
+
+
 // TODO: simple const propagation - use node->type of srcs to propagate consts of pushed vars
 
 R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new (RAnalEsilDFG *edf, const char *c) {
@@ -566,4 +573,123 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, const char *expr) {
 	r_anal_esil_parse (esil, expr);
 	r_anal_esil_free (esil);
 	return edf;
+}
+
+
+static int _dfg_node_filter_insert_cmp(void *incoming, void *in, void *user) {
+	RAnalEsilDFGNode *incoming_node = (RAnalEsilDFGNode *)incoming;
+	RAnalEsilDFGNode *in_node = (RAnalEsilDFGNode *)in;
+	return incoming_node->idx - in_node->idx;
+}
+
+
+static void _dfg_rev_dfs_cb(RGraphNode *n, RGraphVisitor *vi) {
+	RAnalEsilDFGNode *node = (RAnalEsilDFGNode *)n->data;
+	RAnalEsilDFGFilter *filter = (RAnalEsilDFGFilter *)vi->data;
+	switch (node->type) {
+	case R_ANAL_ESIL_DFG_BLOCK_GENERATIVE:
+		r_rbtree_cont_insert (filter->tree, node, _dfg_node_filter_insert_cmp, NULL);
+		break;
+	case R_ANAL_ESIL_DFG_BLOCK_RESULT: // outnode must be result generator here
+		{
+			RGraphNode *previous = (RGraphNode *)r_list_get_top(n->in_nodes);
+			if (previous) {
+				sdb_ptr_set(filter->results, r_strbuf_get(node->content), previous, 0);
+			}
+		}
+		break;
+	}
+}
+
+static char *condrets_strtok(char *str, const char tok) {
+	if (!str) {
+		return NULL;
+	}
+	ut32 i = 0;
+	while (1==1) {
+		if (!str[i]) {
+			break;
+		}
+		if (str[i] == tok) {
+			str[i] = '\0';
+			return &str[i+1];
+		}
+		i++;
+	}
+	return NULL;
+}
+
+static RStrBuf *get_resolved_expr(RAnalEsilDFGFilter *filter, RAnalEsilDFGNode *node) {
+	char *expr = strdup (r_strbuf_get(node->content));
+	RStrBuf *res = r_strbuf_new("");
+	if (!expr) {	//empty expressions. can this happen?
+		return res;
+	}
+	char *p, *q;
+	// we can do this bc every generative node MUST end with an operator
+	for (p = expr; q = condrets_strtok(p, ','); p = q) {
+		RGraphNode *gn = sdb_ptr_get(filter->results, p, 0);
+		if (!gn) {
+			r_strbuf_appendf(res, ",%s,", p);
+		} else {
+			eprintf ("resolving %s\n", p);
+			RStrBuf *r = get_resolved_expr(filter, (RAnalEsilDFGNode *)gn->data);
+			r_strbuf_appendf(res, ",%s,", r_strbuf_get(r));
+			r_strbuf_free(r);
+		}
+	}
+	r_strbuf_appendf(res, "%s", p);
+	free(expr);
+	return res;
+}
+
+
+R_API RStrBuf *r_anal_esil_dfg_filter (RAnalEsilDFG *dfg, const char *reg) {
+	if (!dfg || !reg) {
+		return NULL;
+	}
+	RGraphNode *resolve_me = sdb_ptr_get(dfg->latest_nodes, reg, 0);
+	if (!resolve_me) {
+		return NULL;
+	}
+
+	// allocate stuff
+	RAnalEsilDFGFilter filter = { dfg, r_rbtree_cont_new(), sdb_new0() };
+	RStrBuf *filtered = r_strbuf_new("");
+	RGraphVisitor vi = { _dfg_rev_dfs_cb, NULL, NULL, NULL, NULL, &filter};
+
+	// dfs the graph starting at node of esp-register
+	r_graph_dfs_node_reverse(dfg->flow, resolve_me, &vi);
+
+	
+	RBIter ator;
+	RAnalEsilDFGNode *node;
+	r_rbtree_cont_foreach(filter.tree, ator, node) {
+		// resolve results to opstr here
+		RStrBuf *resolved = get_resolved_expr(&filter, node);
+		r_strbuf_append (filtered, r_strbuf_get(resolved));
+		r_strbuf_free(resolved);
+	}
+	{
+		char *sanitized = r_str_replace(r_str_replace(strdup(r_strbuf_get(filtered)), ",,", ",", 1), ",,", ",", 1);
+		r_strbuf_set(filtered, (sanitized[0] == ',') ? &sanitized[1] : sanitized);
+		free(sanitized);
+	}
+	r_rbtree_cont_free(filter.tree);
+	sdb_free(filter.results);
+	return filtered;
+}
+
+
+R_API RStrBuf *r_anal_esil_dfg_filter_expr (RAnal *anal, const char *expr, const char *reg) {
+	if (!reg) {
+		return NULL;
+	}
+	RAnalEsilDFG *dfg = r_anal_esil_dfg_expr(anal, expr);
+	if (!dfg) {
+		return NULL;
+	}
+	RStrBuf *filtered = r_anal_esil_dfg_filter(dfg, reg);
+	r_anal_esil_dfg_free(dfg);
+	return filtered;
 }
