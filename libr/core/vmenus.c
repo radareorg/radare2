@@ -29,6 +29,8 @@ typedef struct {
 	const char *optword;
 } RCoreVisualTypes;
 
+static bool show_vars = false;
+
 // TODO: move this helper into r_cons
 static char *prompt(const char *str, const char *txt) {
 	char cmd[1024];
@@ -2701,10 +2703,11 @@ static void variable_set_type (RCore *core, ut64 addr, int vindex, const char *t
 // In visual mode, display function list
 static ut64 var_functions_show(RCore *core, int idx, int show) {
 	int wdelta = (idx > 5)? idx - 5: 0;
+	char *var_functions;
 	ut64 seek = core->offset;
 	ut64 addr = core->offset;
 	RAnalFunction *fcn;
-	int window, i = 0;
+	int window, i = 0, print_full_func;
 	RListIter *iter;
 
 	// Adjust the windows size automaticaly
@@ -2715,6 +2718,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 	const char *color_fcn = core->cons->context->pal.fname;
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
+		print_full_func = true;
 		if (i >= wdelta) {
 			if (i> window+wdelta) {
 				r_cons_printf ("...\n");
@@ -2724,17 +2728,28 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 				addr = fcn->addr;
 			}
 			if (show) {
+				char *tmp;
 				if (color) {
-					r_cons_printf ("%c%c %s0x%08"PFMT64x"" Color_RESET" %4d %s%.40s"Color_RESET"\n",
+					var_functions = r_str_newf ("%c%c %s0x%08"PFMT64x"" Color_RESET" %4d %s%s"Color_RESET"",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
 							color_addr, fcn->addr, r_anal_fcn_realsize (fcn),
 							color_fcn, fcn->name);
 				} else {
-					r_cons_printf ("%c%c 0x%08"PFMT64x" %4d %.40s\n",
+					var_functions = r_str_newf ("%c%c 0x%08"PFMT64x" %4d %s",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
 							fcn->addr, r_anal_fcn_realsize (fcn), fcn->name);
+				}
+				if (!show_vars) {
+					tmp = r_str_crop (var_functions, 0, 0, 72, r_cons_singleton()->rows);
+					if (strlen (tmp) < strlen (var_functions)) {
+						r_cons_printf ("%s..%s\n", tmp, Color_RESET);
+						print_full_func = false;
+					}
+				}
+				if (print_full_func){
+					r_cons_println (var_functions);
 				}
 			}
 		}
@@ -3134,6 +3149,10 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		}
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
+		case '[':
+			show_vars = true; break;
+		case ']':
+			show_vars = false; break;
 		case '?':
 			r_cons_clear00 ();
 			RStrBuf *buf = r_strbuf_new ("");
