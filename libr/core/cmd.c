@@ -4555,7 +4555,7 @@ R_API int r_core_flush(RCore *core, const char *cmd) {
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	char *tmp = NULL;
 	char *p = (*cmd != '"')? strchr (cmd, '|'): NULL;
-	if (!p) {
+	if (!p && *cmd != '!' && *cmd != '.') {
 		return r_core_cmd_str (core, cmd);
 	}
 #if 0
