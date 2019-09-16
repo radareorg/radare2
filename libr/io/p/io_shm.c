@@ -45,9 +45,6 @@ static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		}
 		count = shm->size - io->off;
 	}
-	if (count > 32) {
-		count = 32;
-	}
 	if (shm->buf) {
 		memcpy (buf, shm->buf+io->off , count);
 	} else {
