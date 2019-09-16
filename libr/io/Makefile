@@ -20,9 +20,10 @@ include $(SHLR)/ptrace-wrap/deps.mk
 OBJS+=$(PTRACEWRAP_OBJS)
 endif
 
-ifeq (${OSTYPE},gnulinux)
-  LDFLAGS+=-lrt
-endif
+## only for shm_open
+#ifeq (${OSTYPE},gnulinux)
+#  LDFLAGS+=-lrt
+#endif
 
 ifeq (${BUILD_OS},dragonfly)
   LDFLAGS+=-lkvm

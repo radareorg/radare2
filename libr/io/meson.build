@@ -65,7 +65,8 @@ if host_machine.system() == 'linux'
   r_io_sources += [
     'p/io_r2k_linux.c',
   ]
-  r_io_deps += meson.get_compiler('c').find_library('rt')
+  ## only for shm_open
+  # r_io_deps += meson.get_compiler('c').find_library('rt')
 endif
 
 if use_ptrace_wrap

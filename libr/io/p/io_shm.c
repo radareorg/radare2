@@ -9,6 +9,11 @@
 #define __UNIX__ 0
 #endif
 
+// linux requires -lrt for this, but still it seems to not work as expected
+// better not to enable it by default until we get enough time to properly
+// make this work across all unixes without adding extra depenencies
+#define USE_SHM_OPEN 0
+
 #if __UNIX__ && !defined (__QNX__) && !defined (__HAIKU__)
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -30,16 +35,14 @@ static int shm__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (shm->buf) {
 		(void)memcpy (shm->buf + io->off, buf, count);
 		return count;
-	} else {
-		return write (shm->fd, buf, count);
 	}
-	return -1;
+	return write (shm->fd, buf, count);
 }
 
 static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	r_return_val_if_fail (fd && fd->data, -1);
 	RIOShm *shm = fd->data;
-	if (io->off+count >= shm->size) {
+	if (io->off + count >= shm->size) {
 		if (io->off > shm->size) {
 			return -1;
 		}
@@ -47,10 +50,9 @@ static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 	if (shm->buf) {
 		memcpy (buf, shm->buf+io->off , count);
-	} else {
-		count = read (shm->fd, buf, count);
+		return count;
 	}
-	return count;
+	return read (shm->fd, buf, count);
 }
 
 static int shm__close(RIODesc *fd) {
@@ -105,8 +107,13 @@ static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		shm->buf = shmat (shm->id, 0, 0);
 		if (shm->buf == (void*)(size_t)-1) {
+#if USE_SHM_OPEN
 			shm->buf = NULL;
 			shm->fd = shm_open (ptr, O_CREAT | (rw?O_RDWR:O_RDONLY), 0644);
+#else
+			shm->fd = -1;
+#endif
+
 		} else {
 			shm->fd = getshmfd (shm);
 		}
