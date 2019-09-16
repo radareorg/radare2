@@ -1993,7 +1993,7 @@ R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg);
 R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new (RAnalEsilDFG *edf, const char *c);
 R_API RAnalEsilDFG *r_anal_esil_dfg_new();
 R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg);
-R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, const char *expr);
+R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr);
 R_API RStrBuf *r_anal_esil_dfg_filter (RAnalEsilDFG *dfg, const char *reg);
 R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
