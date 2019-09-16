@@ -342,6 +342,9 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	char *ret;
 	FILE *fd;
 	long sz;
+	if (usz) {
+		*usz = 0;
+	}
 	if (!r_file_exists (str)) {
 		return NULL;
 	}
