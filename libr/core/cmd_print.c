@@ -3339,6 +3339,7 @@ static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skip
 		eprintf ("Error: failed to malloc memory");
 		return NULL;
 	}
+	// XXX: unused memblock
 	ut8 *p = malloc (blocksize);
 	if (!p) {
 		R_FREE (ptr);
@@ -3360,6 +3361,7 @@ static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skip
 			ptr[i] = R_MIN (255, value);
 		}
 		r_core_anal_stats_free (as);
+		free (p);
 		return ptr;
 	}
 	for (i = 0; i < nblocks; i++) {

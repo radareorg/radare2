@@ -445,7 +445,7 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 	if (db) {
 		return db;
 	}
-	
+
 	// TODO: Not do this
 	os_info *osi = r_sys_get_osinfo ();
 	if (mask == PDI_HEAPS && osi->major >= 10) {
@@ -462,6 +462,7 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 		HANDLE h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
 		if (!h_proc) {
 			R_LOG_ERROR ("OpenProcess failed\n");
+			free (heapInfo);
 			RtlDestroyQueryDebugBuffer (db);
 			return NULL;
 		}
@@ -1210,8 +1211,8 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 		return;
 	}
 	PHeapInformation heapInfo = db->HeapInformation;
-	HeapBlock *block = malloc (sizeof (HeapBlock));
 	CHECK_INFO (heapInfo);
+	HeapBlock *block = malloc (sizeof (HeapBlock));
 	int i;
 	PJ *pj = pj_new ();
 	pj_a (pj);

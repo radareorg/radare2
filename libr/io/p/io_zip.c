@@ -424,6 +424,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 				zip_filename = strdup (pikaboo + 1);
 			}
 		} else {
+			free (zip_filename);
 			zip_filename = strdup (pikaboo + 1);
 		}
 	}

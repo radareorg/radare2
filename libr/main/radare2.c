@@ -792,6 +792,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 		r_io_plugin_list (r.io);
 		r_cons_flush ();
 		LISTS_FREE ();
+		free (pfile);
 		return 0;
 	}
 

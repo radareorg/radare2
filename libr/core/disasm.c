@@ -2611,7 +2611,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 	}
 	if (ds->line) {
 		ds_print_ref_lines (ds->line, ds->line_col, ds);
-	} 
+	}
 }
 
 static void ds_print_family(RDisasmState *ds) {
@@ -5043,6 +5043,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	if (json) {
 		ds->pj = pj ? pj : pj_new ();
 		if (!ds->pj) {
+			ds_free (ds);
 			return 0;
 		}
 		r_cons_push ();

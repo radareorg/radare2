@@ -268,6 +268,7 @@ static BOOL CALLBACK __enum_childs(
 	char *tmp = malloc (sz);
 	if (!tmp) {
 		r_list_free (windows);
+		free (win);
 		return false;
 	}
 	GetClassNameW (hwnd, tmp, MAX_CLASS_NAME);
@@ -302,6 +303,7 @@ static RList *__get_windows(RDebug *dbg) {
 			char *tmp = malloc (sz);
 			if (!tmp) {
 				r_list_free (windows);
+				free (win);
 				return NULL;
 			}
 			GetClassNameW (hCurWnd, tmp, MAX_CLASS_NAME);
