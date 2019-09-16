@@ -107,6 +107,7 @@ R_API bool r_sandbox_disable (bool e) {
 		enabled = false;
 	} else {
 		enabled = disabled;
+		disabled = false;
 	}
 	return enabled;
 }

@@ -40,10 +40,11 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	}
 	if (backup_fd != -1) {
 		close (backup_fd);
+		// already set in __dupDescriptor // backup_fd = -1;
 	}
 	backup_fdn = fdn;
 	if (!__dupDescriptor (fd, fdn)) {
-		eprintf ("Cannot dup stdout to %d\n", backup_fd);
+		eprintf ("Cannot dup stdout to %d\n", fdn);
 		free (targetFile);
 		return -1;
 	}
