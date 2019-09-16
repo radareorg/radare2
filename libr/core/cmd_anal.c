@@ -2940,7 +2940,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '\0':
 			{
 				ut64 addr = core->offset;
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
 				if (fcn) {
 					r_cons_printf ("0x%08" PFMT64x "\n", fcn->addr);
 				}
@@ -2950,7 +2950,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			{
 				ut64 addr = core->offset;
 				RListIter *iter;
-				RList *list = r_anal_get_fcn_in_list (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				RList *list = r_anal_get_fcn_in_list (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
 				RAnalFunction *fcn;
 				r_list_foreach (list, iter, fcn) {
 					r_cons_printf ("= 0x%08" PFMT64x "\n", fcn->addr);
@@ -2965,7 +2965,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				if (addr == 0LL) {
 					fcn = r_anal_fcn_find_name (core->anal, input + 3);
 				} else {
-					fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+					fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
 				}
 				if (fcn) {
 					r_cons_printf ("0x%08" PFMT64x "\n", fcn->addr);

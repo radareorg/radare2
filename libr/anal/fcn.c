@@ -60,6 +60,7 @@ R_API const char *r_anal_fcn_type_tostring(int type) {
 	case R_ANAL_FCN_TYPE_IMP: return "imp";
 	case R_ANAL_FCN_TYPE_INT: return "int"; // interrupt
 	case R_ANAL_FCN_TYPE_ROOT: return "root";
+	case R_ANAL_FCN_TYPE_ANY: return "any"; // same as null?
 	}
 	return "unk";
 }
@@ -715,7 +716,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-	RAnalFunction *fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0);
+	// RAnalFunction *fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0);
+	RAnalFunction *fcn_at_addr = r_anal_get_fcn_in (anal, addr, 0);
 	if (fcn_at_addr && fcn_at_addr != fcn) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
@@ -1511,7 +1513,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	}
 	if (sdb_const_get (visited, visitedKey(addr), 0)) {
 		// already visited
-		eprintf ("Already visited 0x%llx\n", addr);
+		eprintf ("Already visited 0x%"PFMT64x"\n", addr);
 		return R_ANAL_RET_END;
 	}
 	sdb_set (visited, visitedKey(addr), "1", 0);
@@ -1658,7 +1660,7 @@ R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type) {
 	RAnalFunction *fcn;
 	FcnTreeIter it;
 	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
-		if (!type || (fcn && fcn->type & type)) {
+		if (!type || type == R_ANAL_FCN_TYPE_ANY || (fcn->type & type)) {
 			if (r_tinyrange_in (&fcn->bbr, addr) || fcn->addr == addr) {
 				r_list_append (list, fcn);
 			}
@@ -1672,6 +1674,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
   // Linear scan
 	RAnalFunction *fcn, *ret = NULL;
 	RListIter *iter;
+#if 0
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
 		r_list_foreach (anal->fcns, iter, fcn) {
 			if (addr == fcn->addr) {
@@ -1680,11 +1683,11 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 		}
 		return NULL;
 	}
+#endif
 	r_list_foreach (anal->fcns, iter, fcn) {
-		if (!type || (fcn && fcn->type & type)) {
+		if (!type || type == R_ANAL_FCN_TYPE_ANY || (fcn->type & type)) {
 			if (r_tinyrange_in (&fcn->bbr, addr) || fcn->addr == addr) {
-				ret = fcn;
-				break;
+				return fcn;
 			}
 		}
 	}
@@ -1698,8 +1701,8 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 		return _fcn_addr_tree_find_addr (anal, addr);
 	}
 	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
-		if (!type || (fcn && fcn->type & type)) {
-			if (r_tinyrange_in (&fcn->bbr, addr) || fcn->addr == addr) {
+		if (!type || type == R_ANAL_FCN_TYPE_ANY || (fcn->type & type)) {
+			if (fcn->addr == addr || r_tinyrange_in (&fcn->bbr, addr)) {
 				return fcn;
 			}
 		}
@@ -2027,6 +2030,14 @@ R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
 		return _fcn_addr_tree_find_addr (anal, addr);
 	}
+#if 0
+	// at != in
+	// rbtree is broken as hell, better rewrite than try to fix, this is a workaround to avoid infinite loops
+	RAnalFunction *f = r_anal_get_fcn_in (anal, addr, 0);
+	if (f) {
+		return f;
+	}
+#endif
 	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
 		if (!type || (fcn && fcn->type & type)) {
 			if (addr == fcn->addr) {
@@ -2043,7 +2054,6 @@ R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr) {
 	RListIter *iter;
 	RAnalFunction *closer = NULL;
 	r_list_foreach (anal->fcns, iter, fcni) {
-		// if (fcni->addr == addr)
 		if (fcni->addr > addr && (!closer || fcni->addr < closer->addr)) {
 			closer = fcni;
 		}

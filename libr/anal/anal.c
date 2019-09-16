@@ -118,9 +118,7 @@ static bool __anal_range_hint_tree_delete(RBNode **root, RAnalRange *data) {
 #endif
 
 static void __anal_range_hint_tree_insert(RBNode **root, RAnalRange *range) {
-	r_rbtree_aug_insert (root, range, &(range->rb),
-			     __anal_hint_range_tree_cmp,
-			     NULL);
+	r_rbtree_aug_insert (root, range, &(range->rb), __anal_hint_range_tree_cmp, NULL);
 }
 
 static void __anal_add_range_on_hints(RAnal *a, ut64 addr, int bits) {
@@ -799,9 +797,11 @@ R_API void r_anal_merge_hint_ranges(RAnal *a) {
 				r_anal_hint_unset_bits (a, addr);
 			} else {
 				RAnalRange *range = R_NEW0 (RAnalRange);
-				range->bits = bits;
-				range->from = addr;
-				__anal_range_hint_tree_insert (&a->rb_hints_ranges, range);
+				if (range) {
+					range->bits = bits;
+					range->from = addr;
+					__anal_range_hint_tree_insert (&a->rb_hints_ranges, range);
+				}
 			}
 			range_bits = bits;
 		}
