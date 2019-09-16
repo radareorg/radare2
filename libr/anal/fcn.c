@@ -4,7 +4,6 @@
 #include <r_parse.h>
 #include <r_util.h>
 #include <r_list.h>
-#include <sdb/set.h>
 
 extern int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, int jmptbl_size, ut64 default_case, int ret0);
 extern bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case);
@@ -1504,15 +1503,19 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	}
 	r_list_free (list);
 	if (anal->opt.norevisit) {
-		static SetU *visited = NULL;
-		if (!visited) {
-			visited = set_u_new ();
+		if (!anal->visited) {
+			anal->visited = set_u_new ();
 		}
-		if (set_u_contains (visited, addr)) {
-			eprintf ("Already visited 0x%"PFMT64x"\n", addr);
+		if (set_u_contains (anal->visited, addr)) {
+			eprintf ("r_anal_fcn: anal.norevisit at 0x%08"PFMT64x" %c\n", addr, reftype);
 			return R_ANAL_RET_END;
 		}
-		set_u_add (visited, addr);
+		set_u_add (anal->visited, addr);
+	} else {
+		if (anal->visited) {
+			set_u_free (anal->visited);
+			anal->visited = NULL;
+		}
 	}
 	/* defines fcn. or loc. prefix */
 	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE) ? R_ANAL_FCN_TYPE_LOC : R_ANAL_FCN_TYPE_FCN;
