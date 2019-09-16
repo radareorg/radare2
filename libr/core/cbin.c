@@ -2773,10 +2773,10 @@ static int bin_fields(RCore *r, int mode, int va) {
 				r_cons_printf ("CCu %s @ 0x%"PFMT64x"\n", e, addr);
 				free (e);
 				char *f = __filterShell (field->format);
-				r_cons_printf ("Cf %d .%s @ 0x%"PFMT64x"\n", field->size, f, addr);
+				r_cons_printf ("Cf %d %s @ 0x%"PFMT64x"\n", field->size, f, addr);
 				free (f);
 			}
-			if (field->format && *field->format) {
+			if (field->format && *field->format && !field->format_named) {
 				r_cons_printf ("pf.%s %s\n", n, field->format);
 			}
 			free (n);
@@ -2797,7 +2797,8 @@ static int bin_fields(RCore *r, int mode, int va) {
 				// TODO: filter comment before json
 				r_cons_printf (",\"format\":\"%s\"", field->format);
 			}
-			char *o = r_core_cmd_strf (r, "pfj.%s@0x%"PFMT64x, field->format, field->vaddr);
+			char *o = r_core_cmd_strf (r, "pfj%c%s@0x%"PFMT64x,
+				field->format_named ? '.' :  ' ', field->format, field->vaddr);
 			if (o && *o) {
 				r_cons_printf (",\"pf\":%s", o);
 			}

@@ -1338,12 +1338,13 @@ R_API void r_bin_load_filter(RBin *bin, ut64 rules) {
 }
 
 /* RBinField */
-R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format) {
+R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named) {
 	RBinField *ptr = R_NEW0 (RBinField);
 	if (ptr) {
 		ptr->name = strdup (name);
 		ptr->comment = (comment && *comment)? strdup (comment): NULL;
 		ptr->format = (format && *format)? strdup (format): NULL;
+		ptr->format_named = format_named;
 		ptr->paddr = paddr;
 		ptr->size = size;
 	//	ptr->visibility = any default visibility?
