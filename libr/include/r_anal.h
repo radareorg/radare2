@@ -617,6 +617,7 @@ typedef struct r_anal_options_t {
 	int followbrokenfcnsrefs;
 	int bb_max_size;
 	bool trycatch;
+	bool norevisit;
 	int afterjmp; // continue analysis after jmp eax or forward jmp // option
 	int recont; // continue on recurse analysis mode
 	int eobjmp; // option

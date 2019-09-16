@@ -161,6 +161,7 @@ sdb_files = [
   'sdb/src/array.c',
   'sdb/src/base64.c',
   'sdb/src/buffer.c',
+  'sdb/src/set.c',
   'sdb/src/cdb.c',
   'sdb/src/cdb_make.c',
   'sdb/src/dict.c',
