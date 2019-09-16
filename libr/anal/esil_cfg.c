@@ -96,8 +96,9 @@ static void _free_bb_cb(void *data) {
 }
 
 // REMINDER: generating the block content needs to prepend setting the program counter
+// r_anal_esil_cfg_op does this ^, use it whenever generating cfg from op
 
-// this nasty hook up is an insert-compare for RGraphNodes that contain RAnalEsilBB
+// this nasty function is an insert-compare for RGraphNodes that contain RAnalEsilBB
 static int _graphnode_esilbb_insert_cmp(void *incoming, void *in, void *user) {
 	RGraphNode *incoming_gnode = (RGraphNode *)incoming;
 	RGraphNode *in_gnode = (RGraphNode *)in;
@@ -244,7 +245,7 @@ void _handle_fi_leave(EsilCfgGen *gen, ut32 id, const bool has_next) {
 }
 
 
-// this dirty bitch handles '?{','}{’ and '}'
+// this function handles '?{','}{’ and '}'
 // return type should probably be a bool, but idk
 void _handle_control_flow_ifelsefi(EsilCfgGen *gen, char *atom, ut32 id) {
 	// we're probably going to see more ?{ and }, than }{
@@ -262,7 +263,7 @@ void _handle_control_flow_ifelsefi(EsilCfgGen *gen, char *atom, ut32 id) {
 	}
 }
 
-// this little slut is expected to generate a subgraph with most nodes in it
+// this little function is expected to generate a subgraph with most nodes in it
 // but not all edges. It's expected to handle if, else and fi
 bool _round_0_cb(void *user, void *data, ut32 id) {
 	EsilCfgGen *gen = (EsilCfgGen *)user;
@@ -412,7 +413,7 @@ void _round_2_cb(RGraphNode *n, RGraphVisitor *vi) {
 	r_rbtree_cont_delete(gen->blocks, n, _graphnode_esilbb_insert_cmp, NULL);
 }
 
-// this little bitch takes a cfg, an offset and an esil expression
+// this function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph.
 // Also expects RIDStorage atoms and RContRBTree to be allocate in prior of the call
 static RAnalEsilCFG *esil_cfg_gen (RAnalEsilCFG *cfg, RAnal *anal, RIDStorage *atoms, RContRBTree *blocks, RStack *stack, ut64 off, char *expr) {
@@ -542,7 +543,7 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_new () {
 	return cf;
 }
 
-// this little bitch takes a cfg, an offset and an esil expression
+// this little function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph
 R_API RAnalEsilCFG *r_anal_esil_cfg_expr (RAnalEsilCFG *cfg, RAnal *anal, const ut64 off, char *expr) {
 	if (!anal || !anal->esil) {
