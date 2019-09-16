@@ -884,30 +884,15 @@ static ut64 findClassBounds(RCore *core, const char *input, int *len) {
 	RListIter *iter;
 	RBinClass *c;
 	RList *cs = r_bin_get_classes (core->bin);
-	if (input && *input) {
-		// resolve by name
-		r_list_foreach (cs, iter, c) {
-			if (!c || !c->name || !c->name[0]) {
-				continue;
-			}
-			findMethodBounds (c->methods, &min, &max);
-			if (len) {
-				*len = (max - min);
-			}
-			return min;
+	r_list_foreach (cs, iter, c) {
+		if (!c || !c->name || !c->name[0]) {
+			continue;
 		}
-	} else {
-		// resolve by core->offset
-		r_list_foreach (cs, iter, c) {
-			if (!c || !c->name || !c->name[0]) {
-				continue;
-			}
-			findMethodBounds (c->methods, &min, &max);
-			if (len) {
-				*len = (max - min);
-			}
-			return min;
+		findMethodBounds (c->methods, &min, &max);
+		if (len) {
+			*len = (max - min);
 		}
+		return min;
 	}
 	return 0;
 }

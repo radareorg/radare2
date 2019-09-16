@@ -785,25 +785,9 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	do {
 		RFlagItem *f;
 		int delta = r_anal_fcn_size (fcn);
-		// XXX hack slow check io error
-		if (core->io->va) {
-			if (!r_io_is_valid_offset (core->io, at + delta, !core->anal->opt.noncode)) {
-				goto error;
-			}
-		} else {
-			if (!r_io_is_valid_offset (core->io, at + delta, !core->anal->opt.noncode)) {
-				goto error;
-			}
+		if (!r_io_is_valid_offset (core->io, at + delta, !core->anal->opt.noncode)) {
+			goto error;
 		}
-#if 0
-		// TODO bring back old hack, should be fixed
-		{
-			ut8 buf [4];
-			if (!r_io_read_at (core->io, at + delta, buf, 4)) {
-				goto error;
-			}
-		}
-#endif
 		if (r_cons_is_breaked ()) {
 			break;
 		}
