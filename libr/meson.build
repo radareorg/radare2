@@ -433,6 +433,7 @@ install_headers(r_crypto_files, subdir: 'libr/r_crypto')
 sdb_files = [
   'include/sdb/buffer.h',
   'include/sdb/cdb.h',
+  'include/sdb/set.h',
   'include/sdb/cdb_make.h',
   'include/sdb/config.h',
   'include/sdb/dict.h',
