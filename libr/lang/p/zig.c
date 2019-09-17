@@ -58,10 +58,12 @@ static int lang_zig_file(RLang *lang, const char *file) {
 	} else {
 		eprintf ("Cannot open library\n");
 		free (path);
+		free (cc);
 		return false;
 	}
 	r_file_rm (path); // remove lib
 	free (path);
+	free (cc);
 	return true;
 }
 

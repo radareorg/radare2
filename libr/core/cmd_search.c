@@ -611,6 +611,7 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 	RInterval itv = {from, size};
 	if (size == -1) {
 		eprintf ("Warning: Invalid range. Use different search.in=? or anal.in=dbg.maps.x\n");
+		free (map);
 		return;
 	}
 	// TODO UT64_MAX is a valid address. search.from and search.to are not specified
@@ -1767,7 +1768,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
 	RRegItem *reg_a0 = r_reg_get (core->dbg->reg, a0, -1);
-	
+
 	arr = malloc (bsize);
 	if (!arr) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
@@ -2814,6 +2815,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 	memcpy (buf, core->block, bufsz);
 	if (hashLength > sizeof (cmphash)) {
 		eprintf ("Hashlength mismatch %d %d\n", hashLength, (int)sizeof (cmphash));
+		free (buf);
 		return;
 	}
 	memcpy (cmphash, hashValue, hashLength);
@@ -2822,11 +2824,13 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 	int hashSize = r_hash_size (hashBits);
 	if (hashLength != hashSize) {
 		eprintf ("Invalid hash size %d vs %d\n", hashLength, hashSize);
+		free (buf);
 		return;
 	}
 
 	RHash *ctx = r_hash_new (true, algoType);
 	if (!ctx) {
+		free (buf);
 		return;
 	}
 	r_cons_break_push (NULL, NULL);
