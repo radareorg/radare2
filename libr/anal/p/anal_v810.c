@@ -10,10 +10,10 @@
 #include <v810_disas.h>
 
 enum {
-	V810_FLAG_CY,
-	V810_FLAG_OV,
-	V810_FLAG_S,
-	V810_FLAG_Z,
+	V810_FLAG_CY = 1,
+	V810_FLAG_OV = 2,
+	V810_FLAG_S = 4,
+	V810_FLAG_Z = 8,
 };
 
 static void update_flags(RAnalOp *op, int flags) {
