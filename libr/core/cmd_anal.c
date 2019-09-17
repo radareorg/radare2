@@ -5694,7 +5694,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				}
 		//		eprintf ("[*] Emulating 0x%08"PFMT64x" basic block 0x%08" PFMT64x " - 0x%08" PFMT64x "\r[", fcn->addr, pc, end);
 				ut8 *buf = calloc (1, bbs + 1);
-				if (buf) {
+				if (!buf) {
 					break;
 				}
 				r_io_read_at (core->io, pc, buf, bbs);
