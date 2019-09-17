@@ -5575,7 +5575,7 @@ char *__get_panels_config_dir_path() {
 
 char *__create_panels_config_path(const char *file) {
 	char *dir_path = __get_panels_config_dir_path ();
-	r_sys_mkdir (dir_path);
+	r_sys_mkdirp (dir_path);
 	char *file_path = r_str_newf (R_JOIN_2_PATHS ("%s", "%s"), dir_path, file);
 	R_FREE (dir_path);
 	return file_path;
@@ -5622,8 +5622,7 @@ void r_save_panels_layout(RCore *core) {
 	}
 	char *config_path = __create_panels_config_path (name);
 	RPanels *panels = core->panels;
-	PJ *pj = NULL;
-	pj = pj_new ();
+	PJ *pj = pj_new ();
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
 		pj_o (pj);
@@ -5635,16 +5634,16 @@ void r_save_panels_layout(RCore *core) {
 		pj_kn (pj, "h", panel->view->pos.h);
 		pj_end (pj);
 	}
-	FILE *file = r_sandbox_fopen (config_path, "w");
-	if (!file) {
-		free (config_path);
-		return;
+	FILE *fd = r_sandbox_fopen (config_path, "w");
+	if (fd) {
+		char *pjs = pj_drain (pj);
+		fprintf (fd, "%s\n", pjs);
+		free (pjs);
+		fclose (fd);
+		__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
+		(void)__show_status (core, "Panels layout saved!");
 	}
-	fprintf (file, "%s", pj_drain (pj));
-	fprintf (file, "\n");
-	fclose (file);
-	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
-	(void)__show_status (core, "Panels layout saved!");
+	free (config_path);
 }
 
 char *__parse_panels_config(const char *cfg, int len) {
