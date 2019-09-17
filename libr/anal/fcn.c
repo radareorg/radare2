@@ -217,11 +217,12 @@ static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) 
 	}
 }
 
-R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *data) {
-	bool ret_min = !!r_rbtree_aug_delete (&anal->fcn_tree, data, _fcn_tree_cmp, _fcn_tree_free, _fcn_tree_calc_max_addr);
-	bool ret_addr = !!r_rbtree_delete (&anal->fcn_addr_tree, data, _fcn_addr_tree_cmp, NULL);
+R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *fcn) {
+	bool ret_min = !!r_rbtree_aug_delete (&anal->fcn_tree, fcn, _fcn_tree_cmp, _fcn_tree_free, _fcn_tree_calc_max_addr);
+	bool ret_addr = !!r_rbtree_delete (&anal->fcn_addr_tree, fcn, _fcn_addr_tree_cmp, NULL);
 	if (ret_min == ret_addr) {
 		eprintf ("WARNING: r_anal_fcn_tree_delete: check 'ret_min == ret_addr' failed\n");
+		return false;
 	}
 	// r_return_val_if_fail (ret_min == ret_addr, false);
 	return ret_min;
@@ -1623,8 +1624,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 	RListIter *iter, *iter2;
-	RAnalFunction *fcn, *f = r_anal_get_fcn_in (anal, addr,
-		R_ANAL_FCN_TYPE_ROOT);
+	RAnalFunction *fcn, *f = r_anal_get_fcn_in (anal, addr, R_ANAL_FCN_TYPE_ROOT);
 	if (!f) {
 		return false;
 	}
@@ -1633,7 +1633,9 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 			continue;
 		}
 		if (r_anal_fcn_in (fcn, addr)) {
-			r_anal_fcn_tree_delete (anal, fcn);
+			if (!r_anal_fcn_tree_delete (anal, fcn)) {
+				return false;
+			}
 			r_list_delete (anal->fcns, iter);
 		}
 	}
@@ -1649,7 +1651,9 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 			if (a->cb.on_fcn_delete) {
 				a->cb.on_fcn_delete (a, a->user, fcni);
 			}
-			r_anal_fcn_tree_delete (a, fcni);
+			if (!r_anal_fcn_tree_delete (a, fcni)) {
+				return false;
+			}
 			r_list_delete (a->fcns, iter);
 		}
 	}

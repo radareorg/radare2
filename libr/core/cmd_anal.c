@@ -49,8 +49,7 @@ static const char *help_msg_aa[] = {
 	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
 	"aaFa", " [sym*]", "same as aaF but uses af/a2f instead of af+/afb+ (slower but more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
-	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
-	"aang", "", "find function and symbol names from golang binaries",
+	"aan", "[gr?]", "autoname functions (aang = golang, aanr = noreturn propagation)",
 	"aao", "", "analyze all objc references",
 	"aap", "", "find and analyze function preludes",
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
@@ -8755,8 +8754,17 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'n': // "aan"
 		switch (input[1]) {
+		case 'r': // "aanr" // all noreturn propagation
+			r_core_anal_propagate_noreturn (core);
+			break;
 		case 'g': // "aang"
 			r_core_anal_autoname_all_golang_fcns (core);
+			break;
+		case '?':
+			eprintf ("Usage: aan[rg]\n");
+			eprintf ("aan  : autoname all functions\n");
+			eprintf ("aang : autoname all golang functions\n");
+			eprintf ("aanr : auto-noreturn propagation\n");
 			break;
 		default: // "aan"
 			r_core_anal_autoname_all_fcns (core);
