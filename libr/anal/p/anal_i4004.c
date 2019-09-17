@@ -135,7 +135,7 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		break;
 	case 3:
-		if (low & 1 == 1) {
+		if (low & 1) {
 			op->type = R_ANAL_OP_TYPE_RJMP;
 		} else {
 			op->type = R_ANAL_OP_TYPE_MOV;
