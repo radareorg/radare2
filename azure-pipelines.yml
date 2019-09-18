@@ -1,0 +1,12 @@
+trigger:
+- master
+
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+    - script: |
+    ./configure
+    make
+  displayName: 'make'
