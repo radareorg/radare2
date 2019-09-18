@@ -2100,8 +2100,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 		offset = op->operands[1].offset * op->operands[1].offset_sign;
 		if (op->operands[0].reg == X86R_EAX && op->operands[1].regs[0] == X86R_UNDEFINED) {
-			if (a->bits == 64) {
+			if (op->operands[0].type & OT_QWORD) {
 				data[l++] = 0x48;
+			} else if (op->operands[0].type & OT_WORD && a->bits != 16) {
+				data[l++] = 0x66;
 			}
 			if (op->operands[0].type & OT_BYTE) {
 				data[l++] = 0xa0;
@@ -2110,13 +2112,15 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 			data[l++] = offset;
 			data[l++] = offset >> 8;
-			data[l++] = offset >> 16;
-			data[l++] = offset >> 24;
-			if (a->bits == 64) {
-				data[l++] = offset >> 32;
-				data[l++] = offset >> 40;
-				data[l++] = offset >> 48;
-				data[l++] = offset >> 54;
+			if (a->bits >= 32) {
+				data[l++] = offset >> 16;
+				data[l++] = offset >> 24;
+				if (a->bits == 64) {
+					data[l++] = offset >> 32;
+					data[l++] = offset >> 40;
+					data[l++] = offset >> 48;
+					data[l++] = offset >> 56;
+				}
 			}
 			return l;
 		}
