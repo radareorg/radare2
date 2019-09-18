@@ -10,4 +10,4 @@ jobs:
     - script: |
       ./configure
       make
-  displayName: 'make'
+    displayName: 'make'
