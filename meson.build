@@ -416,6 +416,7 @@ subdir('libr/flag/d')
 subdir('libr/main')
 
 if not meson.is_subproject()
+  rpath = get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : ''
   subdir('binr/rahash2')
   subdir('binr/rarun2')
   subdir('binr/rasm2')

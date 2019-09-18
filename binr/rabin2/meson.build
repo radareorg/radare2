@@ -14,6 +14,6 @@ executable('rabin2', 'rabin2.c',
     sdb_dep
   ],
   install: true,
-  install_rpath: get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : '',
+  install_rpath: rpath,
   implicit_include_directories: false
 )

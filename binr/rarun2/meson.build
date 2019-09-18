@@ -6,6 +6,6 @@ executable('rarun2', 'rarun2.c',
     r_socket_dep
   ],
   install: true,
-  install_rpath: get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : '',
+  install_rpath: rpath,
   implicit_include_directories: false
 )
