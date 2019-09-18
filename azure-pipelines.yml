@@ -4,6 +4,6 @@ jobs:
     vmImage: 'ubuntu-latest'
   steps:
     - script: |
-    ./configure
-    make
+      ./configure
+      make
   displayName: 'make'
