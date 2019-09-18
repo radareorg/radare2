@@ -74,11 +74,11 @@ static int i4004dis (RAsmOp *op, const ut8 *buf, int len) {
 			buf_asm = sdb_fmt ("fim r%d, 0x%02x", (low & 0xe), buf[1]);
 		}
 		break;
-	case 3: 
-		if (low & 1 == 1) {
+	case 3:
+		if ((low & 1) == 1) {
 			buf_asm = sdb_fmt ("jin r%d", (low & 0xe));
 		} else {
-			buf_asm = sdb_fmt ("fin r%d", (low & 0xe)); 
+			buf_asm = sdb_fmt ("fin r%d", (low & 0xe));
 		}
 		break;
 	case 4: buf_asm = sdb_fmt ("jun 0x%03x", ((ut16)(low<<8) | buf[1])); break;
