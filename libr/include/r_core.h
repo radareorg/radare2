@@ -920,9 +920,9 @@ R_API void r_core_task_del_all_done(RCore *core);
 R_API RCoreTask *r_core_task_self(RCore *core);
 R_API void r_core_task_join(RCore *core, RCoreTask *current, int id);
 typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize,
-			   bool asterisk, int count);
+		int count, void *cb_user);
 R_API int r_core_search_value_in_range (RCore *core, RInterval search_itv,
-		ut64 vmin, ut64 vmax, int vsize, bool asterisk, inRangeCb cb);
+		ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
 
 R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd, int type, bool lock);
 R_API void r_core_autocomplete_free(RCoreAutocomplete *obj);
