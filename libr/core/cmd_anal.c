@@ -8410,7 +8410,8 @@ static bool archIsThumbable(RCore *core) {
 	return false;
 }
 
-static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
+static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, int count, void *user) {
+	bool asterisk = user != NULL;
 	int arch_align = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
 	int searchAlign = r_config_get_i (core->config, "search.align");
@@ -8491,7 +8492,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			oldstr = r_print_rowlog (core->print, sdb_fmt ("from 0x%"PFMT64x" to 0x%"PFMT64x" (aav)", map->itv.addr, r_itv_end (map->itv)));
 			r_print_rowlog_done (core->print, oldstr);
 			(void)r_core_search_value_in_range (core, map->itv,
-				map->itv.addr, r_itv_end (map->itv), vsize, asterisk, _CbInRangeAav);
+				map->itv.addr, r_itv_end (map->itv), vsize, _CbInRangeAav, (void *)asterisk);
 		}
 		r_list_free (list);
 	} else {
@@ -8526,7 +8527,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 				}
 				oldstr = r_print_rowlog (core->print, sdb_fmt ("0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x" (aav)", from, to, begin, end));
 				r_print_rowlog_done (core->print, oldstr);
-				(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, asterisk, _CbInRangeAav);
+				(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, _CbInRangeAav, (void *)asterisk);
 				}
 		}
 		r_list_free (list);

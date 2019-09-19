@@ -141,8 +141,6 @@ static const char *help_msg_slash_x[] = {
 static int preludecnt = 0;
 static int searchflags = 0;
 static int searchshow = 0;
-static bool json = false;
-static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
 
 struct search_parameters {
@@ -150,6 +148,7 @@ struct search_parameters {
 	RList *boundaries;
 	const char *mode;
 	const char *cmd_hit;
+	int outmode; // 0 or R_MODE_RADARE or R_MODE_JSON
 	bool inverse;
 	bool crypto_search;
 	bool aes_search;
@@ -465,7 +464,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	if (searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
 		char *s = NULL, *str = NULL, *p = NULL;
-		extra = (json)? 3: 1;
+		extra = (param->outmode == R_MODE_JSON)? 3: 1;
 		const char *type = "hexpair";
 		bool escaped = false;
 		ut8 *buf = malloc (keyword_len);
@@ -489,7 +488,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				pos = strdup ("");
 			}
 			free (buf);
-			if (json) {
+			if (param->outmode == R_MODE_JSON) {
 				char *pre_esc = r_str_escape (pre);
 				char *pos_esc = r_str_escape (pos);
 				s = r_str_newf ("%s%s%s", pre_esc, wrd, pos_esc);
@@ -516,7 +515,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				p = str;
 				memset (str, 0, len);
 				r_io_read_at (core->io, base_addr + addr, buf, keyword_len);
-				if (json) {
+				if (param->outmode == R_MODE_JSON) {
 					p = str;
 				}
 				const int bytes = (len > 40)? 40: len;
@@ -537,7 +536,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			break;
 		}
 
-		if (json) {
+		if (param->outmode == R_MODE_JSON) {
 			if (core->search->nhits >= 1) {
 				r_cons_printf (",");
 			}
@@ -555,7 +554,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		free (buf);
 		free (str);
 	} else if (kw) {
-		if (json) {
+		if (param->outmode == R_MODE_JSON) {
 			if (core->search->nhits >= 1) {
 				r_cons_printf (",");
 			}
@@ -585,8 +584,8 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 static int c = 0;
 
-static inline void print_search_progress(ut64 at, ut64 to, int n) {
-	if ((++c % 64) || (json)) {
+static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param) {
+	if ((++c % 64) || (param->outmode == R_MODE_JSON)) {
 		return;
 	}
 	if (r_cons_singleton ()->columns < 50) {
@@ -1431,7 +1430,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			tok = strtok (NULL, ";");
 		}
 	}
-	if (json) {
+	if (param->outmode == R_MODE_JSON) {
 		r_cons_printf ("[");
 	}
 	r_cons_break_push (NULL, NULL);
@@ -1583,7 +1582,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 						free (headAddr);
 					}
 
-					if (json) {
+					if (param->outmode == R_MODE_JSON) {
 						mode = 'j';
 					}
 					if ((mode == 'q') && subchain) {
@@ -1614,7 +1613,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	}
 	r_cons_break_pop ();
 
-	if (json) {
+	if (param->outmode == R_MODE_JSON) {
 		r_cons_printf ("]\n");
 	}
 bad:
@@ -2248,31 +2247,23 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	bool regexp = input[1] == '/'; // "/c/"
 	bool everyByte = regexp && input[2] == 'a';
 	char *end_cmd = strstr (input, " ");
-	int outmode;
+	switch ((end_cmd ? *(end_cmd - 1) : input[1])) {
+	case 'j':
+		param->outmode = R_MODE_JSON;
+		break;
+	case '*':
+		param->outmode = R_MODE_RADARE;
+		break;
+	default:
+		break;
+	}
 	if (mode == 'o') {
 		everyByte = true;
-	}
-	if (input[0] && input[1] && input[2] == 'j') {
-		json = true;
-	}
-	if (input[1] && input[2] == 'j') {
-		json = true;
-	}
-	if (end_cmd) {
-		outmode = *(end_cmd - 1);
-	} else {
-		outmode = input[1];
-	}
-	if (outmode != 'j') {
-		json = 0;
-	}
-	if (input[1] == 'j') {
-		json = true;
 	}
 
 	maxhits = (int) r_config_get_i (core->config, "search.maxhits");
 	filter = (int) r_config_get_i (core->config, "asm.filter");
-	if (json) {
+	if (param->outmode == R_MODE_JSON) {
 		r_cons_print ("[");
 	}
 	r_cons_break_push (NULL, NULL);
@@ -2291,12 +2282,8 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		if (maxhits && count >= maxhits) {
 			break;
 		}
-		if (!outmode) {
-			hits = NULL;
-		} else {
-			hits = r_core_asm_strsearch (core, end_cmd,
-					from, to, maxhits, regexp, everyByte, mode);
-		}
+		hits = r_core_asm_strsearch (core, end_cmd,
+				from, to, maxhits, regexp, everyByte, mode);
 		if (hits) {
 			const char *cmdhit = r_config_get (core->config, "cmd.hit");
 			r_list_foreach (hits, iter, hit) {
@@ -2306,8 +2293,8 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 				if (cmdhit && *cmdhit) {
 					r_core_cmdf (core, "%s @ 0x%"PFMT64x, cmdhit, hit->addr);
 				}
-				switch (outmode) {
-				case 'j':
+				switch (param->outmode) {
+				case R_MODE_JSON:
 					if (count > 0) {
 						r_cons_printf (",");
 					}
@@ -2315,7 +2302,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 						"{\"offset\":%"PFMT64d ",\"len\":%d,\"code\":\"%s\"}",
 						hit->addr, hit->len, hit->code);
 					break;
-				case '*':
+				case R_MODE_RADARE:
 					r_cons_printf ("f %s%d_%i = 0x%08"PFMT64x "\n",
 						searchprefix, kwidx, count, hit->addr);
 					break;
@@ -2348,7 +2335,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 			free (hits);
 		}
 	}
-	if (json) {
+	if (param->outmode == R_MODE_JSON) {
 		r_cons_printf ("]");
 	}
 	r_cons_break_pop ();
@@ -2359,12 +2346,12 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 	ut8 *buf;
 	RSearch *search = core->search;
 
-	if (json) {
+	if (param->outmode == R_MODE_JSON) {
 		r_cons_printf ("[");
 	}
 	RListIter *iter;
 	RIOMap *map;
-	if (!searchflags && !json) {
+	if (!searchflags && param->outmode != R_MODE_JSON) {
 		r_cons_printf ("fs hits\n");
 	}
 	core->search->inverse = param->inverse;
@@ -2384,7 +2371,6 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 		/* TODO: launch search in background support */
 		// REMOVE OLD FLAGS r_core_cmdf (core, "f-%s*", r_config_get (core->config, "search.prefix"));
 		r_search_set_callback (core->search, &_cb_hit, param);
-		cmdhit = r_config_get (core->config, "cmd.hit");
 		if (!(buf = malloc (core->blocksize))) {
 			return;
 		}
@@ -2402,7 +2388,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			if (!json) {
+			if (param->outmode != R_MODE_JSON) {
 				RSearchKeyword *kw = r_list_first (core->search->kws);
 				int lenstr = kw? kw->keyword_length: 0;
 				const char *bytestr = lenstr > 1? "bytes": "byte";
@@ -2426,7 +2412,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					to1 = search->bckwrds ? from : to;
 			ut64 len;
 			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len) {
-				print_search_progress (at, to1, search->nhits);
+				print_search_progress (at, to1, search->nhits, param);
 				if (r_cons_is_breaked ()) {
 					eprintf ("\n\n");
 					break;
@@ -2466,10 +2452,10 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					}
 				}
 			}
-			print_search_progress (at, to1, search->nhits);
+			print_search_progress (at, to1, search->nhits, param);
 			r_cons_clear_line (1);
 			core->num->value = search->nhits;
-			if (!json) {
+			if (param->outmode != R_MODE_JSON) {
 				eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
 		}
@@ -2480,7 +2466,7 @@ done:
 		eprintf ("No keywords defined\n");
 	}
 
-	if (json) {
+	if (param->outmode == R_MODE_JSON) {
 		r_cons_printf ("]");
 	}
 }
@@ -2643,7 +2629,8 @@ static bool isArm(RCore *core) {
 	return false;
 }
 
-void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
+void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, int count, void *user) {
+	struct search_parameters *param = user;
 	bool isarm = isArm (core);
 	// this is expensive operation that could be cached but is a callback
 	// and for not messing adding a new param
@@ -2653,7 +2640,7 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk
 			to--;
 		}
 	}
-	if (!json) {
+	if (param->outmode != R_MODE_JSON) {
 		r_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to);
 	} else {
 		if (count >= 1) {
@@ -2952,6 +2939,7 @@ static int cmd_search(void *data, const char *input) {
 	struct search_parameters param = {
 		.core = core,
 		.cmd_hit = r_config_get (core->config, "cmd.hit"),
+		.outmode = 0,
 		.inverse = false,
 		.crypto_search = false,
 		.aes_search = false,
@@ -3003,7 +2991,6 @@ static int cmd_search(void *data, const char *input) {
 	}
 
 	c = 0;
-	json = false;
 
 	searchshow = r_config_get_i (core->config, "search.show");
 	param.mode = r_config_get (core->config, "search.in");
@@ -3043,7 +3030,7 @@ static int cmd_search(void *data, const char *input) {
 	}
 	/* Quick & dirty check for json output */
 	if (input[0] && (input[1] == 'j') && (input[0] != ' ')) {
-		json = true;
+		param.outmode = R_MODE_JSON;
 		param_offset++;
 	}
 
@@ -3079,7 +3066,7 @@ reread:
 			addr = UT64_MAX;
 			(void)r_core_asm_bwdis_len (core, NULL, &addr, n);
 		}
-		if (json) {
+		if (param.outmode == R_MODE_JSON) {
 			r_cons_printf ("[%"PFMT64u "]", addr);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x "\n", addr);
@@ -3092,7 +3079,7 @@ reread:
 			n = 1;
 		}
 		addr = r_core_prevop_addr_force (core, core->offset, n);
-		if (json) {
+		if (param.outmode == R_MODE_JSON) {
 			r_cons_printf ("[%"PFMT64u "]", addr);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x "\n", addr);
@@ -3428,20 +3415,20 @@ reread:
 			eprintf ("\n");
 		} else if (input[1] == 'e') { // "/me"
 			r_cons_printf ("* r2 thinks%s\n", input + 2);
-		} else if (input[1] == ' ' || input[1] == '\0' || json) {
+		} else if (input[1] == ' ' || input[1] == '\0' || param.outmode == R_MODE_JSON) {
 			int ret;
 			const char *file = input[param_offset - 1]? input + param_offset: NULL;
 			ut64 addr = search_itv.addr;
 			RListIter *iter;
 			RIOMap *map;
-			if (json) {
+			if (param.outmode == R_MODE_JSON) {
 				r_cons_printf ("[");
 			}
 			r_core_magic_reset (core);
 			int maxHits = r_config_get_i (core->config, "search.maxhits");
 			int hits = 0;
 			r_list_foreach (param.boundaries, iter, map) {
-				if (!json) {
+				if (param.outmode != R_MODE_JSON) {
 					eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
 				}
 				r_cons_break_push (NULL, NULL);
@@ -3449,7 +3436,7 @@ reread:
 					if (r_cons_is_breaked ()) {
 						break;
 					}
-					ret = r_core_magic_at (core, file, addr, 99, false, json, &hits);
+					ret = r_core_magic_at (core, file, addr, 99, false, param.outmode == R_MODE_JSON, &hits);
 					if (ret == -1) {
 						// something went terribly wrong.
 						break;
@@ -3462,7 +3449,7 @@ reread:
 				r_cons_clear_line (1);
 				r_cons_break_pop ();
 			}
-			if (json) {
+			if (param.outmode == R_MODE_JSON) {
 				r_cons_printf ("]");
 			}
 		} else {
@@ -3496,14 +3483,15 @@ reread:
 	case 'V': // "/V"
 		{
 			if (input[2] == 'j') {
-				json = true;
+				param.outmode = R_MODE_JSON;
 				param_offset++;
+			} else if (strchr (input + 1, '*')) {
+				param.outmode = R_MODE_RADARE;
 			}
 			int err = 1, vsize = atoi (input + 1);
-			bool asterisk = strchr (input + 1, '*');
 			const char *num_str = input + param_offset + 1;
 			if (vsize && input[2] && num_str) {
-				if (json) {
+				if (param.outmode == R_MODE_JSON) {
 					r_cons_printf ("[");
 				}
 				char *w = strchr (num_str, ' ');
@@ -3517,15 +3505,15 @@ reread:
 						r_list_foreach (param.boundaries, iter, map) {
 							err = 0;
 							int hits = r_core_search_value_in_range (core, map->itv,
-									vmin, vmax, vsize, asterisk,
-									_CbInRangeSearchV);
-							if (!json) {
+									vmin, vmax, vsize,
+									_CbInRangeSearchV, &param);
+							if (param.outmode != R_MODE_JSON) {
 								eprintf ("hits: %d\n", hits);
 							}
 						}
 					}
 				}
-				if (json) {
+				if (param.outmode == R_MODE_JSON) {
 					r_cons_printf ("]");
 				}
 			}
@@ -3542,7 +3530,7 @@ reread:
 				break;
 			}
 			if (input[2] == 'j') {
-				json = true;
+				param.outmode = R_MODE_JSON;
 				param_offset++;
 			}
 		}
@@ -3603,18 +3591,22 @@ reread:
 		if (input[1]) {
 			if (input[2]) {
 				if (input[1] == 'j' || input[2] == 'j') {
-					json = true;
+					param.outmode = R_MODE_JSON;
 				}
 				if (input[1] == 'i' || input[2] == 'i') {
 					ignorecase = true;
 				}
 			}
 
-			if (input[1 + json + ignorecase] == ' ') {
-				int strstart, len;
+			size_t shift = 1 + ignorecase;
+			if (param.outmode == R_MODE_JSON) {
+				shift++;
+			}
+			if (input[shift] == ' ') {
+				size_t strstart, len;
 				const char *p2;
 				char *p, *str;
-				strstart = 2 + json + ignorecase;
+				strstart = shift + 1;
 				len = strlen (input + strstart);
 				str = calloc ((len + 1), 2);
 				for (p2 = input + strstart, p = str; *p2; p += 2, p2++) {
@@ -3652,11 +3644,11 @@ reread:
 		ignorecase = true;
 	case 'j': // "/j"
 		if (input[0] == 'j') {
-			json = true;
+			param.outmode = R_MODE_JSON;
 		}
 		// fallthrough
 	case ' ': // "/ " search string
-		inp = strdup (input + 1 + ignorecase + json);
+		inp = strdup (input + 1 + ignorecase + (param.outmode == R_MODE_JSON ? 1 : 0));
 		len = r_str_unescape (inp);
 #if 0
 		if (!json) {
@@ -3954,7 +3946,7 @@ beach:
 	core->num->value = search->nhits;
 	core->in_search = false;
 	r_flag_space_pop (core->flags);
-	if (json) {
+	if (param.outmode == R_MODE_JSON) {
 		r_cons_newline ();
 	}
 	r_list_free (param.boundaries);
