@@ -239,10 +239,30 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 	return -1;
 }
 
+static bool __already_loaded(RLib *lib, const char *file) {
+	const char *fileName = r_str_rstr (file, R_SYS_DIR);
+	RLibPlugin *p;
+	RListIter *iter;
+	if (fileName) {
+		r_list_foreach (lib->plugins, iter, p) {
+			const char *pFileName = r_str_rstr (p->file, R_SYS_DIR);
+			if (pFileName && !strcmp (fileName, pFileName)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 R_API int r_lib_open(RLib *lib, const char *file) {
 	/* ignored by filename */
 	if (!__lib_dl_check_filename (file)) {
 		eprintf ("Invalid library extension: %s\n", file);
+		return -1;
+	}
+
+	if (__already_loaded (lib, file)) {
+		eprintf("Not loading library because it has already been loaded from somewhere else: '%s'\n", file);
 		return -1;
 	}
 
@@ -263,21 +283,6 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	return r_lib_open_ptr (lib, file, handler, stru);
 }
 
-static bool __alreadyLoaded(RLib *lib, const char *file) {
-	const char *fileName = r_str_rstr (file, R_SYS_DIR);
-	RLibPlugin *p;
-	RListIter *iter;
-	if (fileName) {
-		r_list_foreach (lib->plugins, iter, p) {
-			const char *pFileName = r_str_rstr (p->file, R_SYS_DIR);
-			if (pFileName && !strcmp (fileName, pFileName)) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru) {
 	r_return_val_if_fail (lib && file && stru, -1);
 	if (stru->version) {
@@ -286,9 +291,6 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 				file, stru->version, R2_VERSION);
 			return -1;
 		}
-	}
-	if (__alreadyLoaded (lib, file)) {
-		return -1;
 	}
 	RLibPlugin *p = R_NEW0 (RLibPlugin);
 	p->type = stru->type;
