@@ -2932,7 +2932,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 	RStrBuf *buf;
 	char old[1024];
 	bool color = r_config_get_i (core->config, "scr.color");
-	int cols = r_cons_get_size (NULL);
+	int h, cols = r_cons_get_size (&h);
 	old[0] = '\0';
 	addr = core->offset;
 	cols -= 50;
@@ -2989,7 +2989,19 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 		}
 		// TODO: filter only the callrefs. but we cant grep here
 		sprintf (old, "afi @ 0x%08"PFMT64x, addr);
-		r_core_cmd0 (core, old);
+		char *output = r_core_cmd_str (core, old);
+		if (output) {
+			// 'h - 2' because we have two new lines in r_cons_printf
+			if (!show_vars) {
+				char *out = r_str_ansi_crop(output, 0, 0, cols, h - 2);
+				r_cons_printf("\n%s\n", out);
+				free(out);
+				R_FREE (output);
+			} else {
+				r_cons_printf("\n%s\n", output);
+				R_FREE (output);
+			}
+		}
 		break;
 	default:
 		// assert
