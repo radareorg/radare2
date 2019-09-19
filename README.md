@@ -11,8 +11,10 @@
 
 | Service | Badge |
 |----------|---------------------------------------------------------------------|
-| **TravisCI** 	| [![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)](https://travis-ci.org/radare/radare2)|
-| **AppVeyor**  | [![Build Status](https://ci.appveyor.com/api/projects/status/v9bxvsb1p6c3cmf9/branch/master?svg=true)](https://ci.appveyor.com/project/radare/radare2-shvdd)|
+| **TravisCI** 	| [![Build Status](https://travis-ci.org/radareorg/radare2.svg?branch=master)](https://travis-ci.org/radareorg/radare2)|
+| **AppVeyor**  | [![Build status](https://ci.appveyor.com/api/projects/status/9cgkgxkc3203fm1o/branch/master?svg=true)](https://ci.appveyor.com/project/radare/radare2/branch/master)|
+| **FreeBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/radare2/freebsd.yml.svg)](https://builds.sr.ht/~xvilka/radare2/freebsd.yml?)|
+| **OpenBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/radare2/openbsd.yml.svg)](https://builds.sr.ht/~xvilka/radare2/openbsd.yml?)|
 | **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
 | **LGTM** | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radare/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radare/radare2/alerts/)
 | **Infrastructure** |  [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) |
