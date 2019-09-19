@@ -4,4 +4,3 @@ PRIORITY=optional
 MAINTAINER=pancake <pancake@nopcode.org>
 
 include ../../../config-user.mk
-include ../arch.mk
