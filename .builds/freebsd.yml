@@ -8,6 +8,7 @@ packages:
 environment:
     CXX: clang++
     CC: clang
+    HOST_CC: clang
 sources:
     - https://github.com/radare/radare2
 tasks:
