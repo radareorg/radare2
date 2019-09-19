@@ -2701,7 +2701,7 @@ static void variable_set_type (RCore *core, ut64 addr, int vindex, const char *t
 }
 
 // In visual mode, display function list
-static ut64 var_functions_show(RCore *core, int idx, int show) {
+static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 	int wdelta = (idx > 5)? idx - 5: 0;
 	char *var_functions;
 	ut64 seek = core->offset;
@@ -2720,7 +2720,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		print_full_func = true;
 		if (i >= wdelta) {
-			if (i> window+wdelta) {
+			if (i > window + wdelta - 1) {
 				r_cons_printf ("...\n");
 				break;
 			}
@@ -2741,15 +2741,21 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 							(idx==i)?'*':' ',
 							fcn->addr, r_anal_fcn_realsize (fcn), fcn->name);
 				}
-				if (!show_vars) {
-					tmp = r_str_crop (var_functions, 0, 0, 72, r_cons_singleton()->rows);
-					if (strlen (tmp) < strlen (var_functions)) {
-						r_cons_printf ("%s..%s\n", tmp, Color_RESET);
-						print_full_func = false;
+				if (var_functions) {
+					if (!show_vars) {
+						int fun_len = r_str_ansi_len (var_functions);
+						int columns = fun_len > cols ? cols - 2 : cols;
+						tmp = r_str_ansi_crop (var_functions, 0, 0, columns, window);
+						if (r_str_ansi_len (tmp) < fun_len) {
+							r_cons_printf("%s..%s\n", tmp, Color_RESET);
+							print_full_func = false;
+						}
+						r_free (tmp);
 					}
-				}
-				if (print_full_func){
-					r_cons_println (var_functions);
+					if (print_full_func) {
+						r_cons_println (var_functions);
+					}
+					r_free (var_functions);
 				}
 			}
 		}
@@ -2759,9 +2765,9 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 }
 
 // In visual mode, display the variables.
-static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show) {
+static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int cols) {
 	int i = 0;
-	const ut64 addr = var_functions_show (core, idx, 0);
+	const ut64 addr = var_functions_show (core, idx, 0, cols);
 	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	int window;
 	int wdelta = (idx > 5) ? idx - 5 : 0;
@@ -2842,7 +2848,7 @@ static const char *cmd, *printCmds[lastPrintMode] = {
 static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 	const ut64 addr = (level != 0 && level != 1)
 		? core->offset
-		: var_functions_show (core, option, 0);
+		: var_functions_show (core, option, 0, colpos);
 	// RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	int h, w = r_cons_get_size (&h);
 	// int sz = (fcn)? R_MIN (r_anal_fcn_size (fcn), h * 15) : 16; // max instr is 15 bytes.
@@ -2956,7 +2962,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 		}
 		r_core_vmenu_append_help (buf, help_fun_visual);
 		r_cons_printf ("%s", r_strbuf_drain (buf));
-		addr = var_functions_show (core, option, 1);
+		addr = var_functions_show (core, option, 1, cols);
 		break;
 	case 1:
 		buf = r_strbuf_new ("");
@@ -2969,7 +2975,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 		}
 		r_core_vmenu_append_help (buf, help_var_visual);
 		r_cons_printf ("%s", r_strbuf_drain (buf));
-		addr = var_variables_show (core, option, &variable_option, 1);
+		addr = var_variables_show (core, option, &variable_option, 1, cols);
 		// var_index_show (core->anal, fcn, addr, option);
 		break;
 	case 2:
@@ -3150,9 +3156,11 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case '[':
-			show_vars = true; break;
+			show_vars = true;
+			break;
 		case ']':
-			show_vars = false; break;
+			show_vars = false;
+			break;
 		case '?':
 			r_cons_clear00 ();
 			RStrBuf *buf = r_strbuf_new ("");
