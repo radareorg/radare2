@@ -962,6 +962,7 @@ R_API int r_main_radiff2(int argc, char **argv) {
 		}
 		c->c2 = c2;
 		c2->c2 = c;
+		r_core_parse_radare2rc (c);
 		if (arch) {
 			r_config_set (c->config, "asm.arch", arch);
 			r_config_set (c2->config, "asm.arch", arch);

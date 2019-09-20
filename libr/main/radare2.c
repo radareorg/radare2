@@ -302,53 +302,6 @@ static RThreadFunctionRet rabin_delegate(RThread *th) {
 }
 #endif
 
-static void radare2_rc(RCore *r) {
-	char* env_debug = r_sys_getenv ("R_DEBUG");
-	bool has_debug = false;
-	if (env_debug) {
-		has_debug = true;
-		R_FREE (env_debug);
-	}
-	char *homerc = r_str_home (".radare2rc");
-	if (homerc && r_file_is_regular (homerc)) {
-		if (has_debug) {
-			eprintf ("USER CONFIG loaded from %s\n", homerc);
-		}
-		r_core_cmd_file (r, homerc);
-	}
-	free (homerc);
-	homerc = r_str_home (R2_HOME_RC);
-	if (homerc && r_file_is_regular (homerc)) {
-		if (has_debug) {
-			eprintf ("USER CONFIG loaded from %s\n", homerc);
-		}
-		r_core_cmd_file (r, homerc);
-	}
-	free (homerc);
-	homerc = r_str_home (R2_HOME_RC_DIR);
-	if (homerc) {
-		if (r_file_is_directory (homerc)) {
-			char *file;
-			RListIter *iter;
-			RList *files = r_sys_dir (homerc);
-			r_list_foreach (files, iter, file) {
-				if (*file != '.') {
-					char *path = r_str_newf ("%s/%s", homerc, file);
-					if (r_file_is_regular (path)) {
-						if (has_debug) {
-							eprintf ("USER CONFIG loaded from %s\n", homerc);
-						}
-						r_core_cmd_file (r, path);
-					}
-					free (path);
-				}
-			}
-			r_list_free (files);
-		}
-		free (homerc);
-	}
-}
-
 static bool run_commands(RList *cmds, RList *files, bool quiet) {
 	RListIter *iter;
 	const char *cmdn;
@@ -891,7 +844,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 	}
 
 	if (run_rc) {
-		radare2_rc (&r);
+		r_core_parse_radare2rc (&r);
 	}
 
 	if (r_config_get_i (r.config, "zign.autoload")) {

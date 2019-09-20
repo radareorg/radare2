@@ -3632,6 +3632,48 @@ R_API int r_core_config_init(RCore *core) {
 	return true;
 }
 
+R_API void r_core_parse_radare2rc(RCore *r) {
+	bool has_debug = r_sys_getenv_asbool ("R_DEBUG");
+	char *homerc = r_str_home (".radare2rc");
+	if (homerc && r_file_is_regular (homerc)) {
+		if (has_debug) {
+			eprintf ("USER CONFIG loaded from %s\n", homerc);
+		}
+		r_core_cmd_file (r, homerc);
+	}
+	free (homerc);
+	homerc = r_str_home (R2_HOME_RC);
+	if (homerc && r_file_is_regular (homerc)) {
+		if (has_debug) {
+			eprintf ("USER CONFIG loaded from %s\n", homerc);
+		}
+		r_core_cmd_file (r, homerc);
+	}
+	free (homerc);
+	homerc = r_str_home (R2_HOME_RC_DIR);
+	if (homerc) {
+		if (r_file_is_directory (homerc)) {
+			char *file;
+			RListIter *iter;
+			RList *files = r_sys_dir (homerc);
+			r_list_foreach (files, iter, file) {
+					if (*file != '.') {
+						char *path = r_str_newf ("%s/%s", homerc, file);
+						if (r_file_is_regular (path)) {
+							if (has_debug) {
+								eprintf ("USER CONFIG loaded from %s\n", homerc);
+							}
+							r_core_cmd_file (r, path);
+						}
+						free (path);
+					}
+				}
+			r_list_free (files);
+		}
+		free (homerc);
+	}
+}
+
 R_API void r_core_config_update(RCore *core) {
 	RConfigNode *cmdpdc = r_config_node_get (core->config, "cmd.pdc");
 	update_cmdpdc_options (core, cmdpdc);
