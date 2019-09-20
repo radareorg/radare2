@@ -1535,7 +1535,7 @@ static int cmd_write(void *data, const char *input) {
 
 				char *src = r_file_slurp (file, NULL);
 				if (src) {
-					ut64 nextaddr, addr = core->offset;
+					ut64 addr = core->offset, nextaddr = addr;
 					char *a, *b = src;
 					do {
 						a = strstr (b, ".offset ");
@@ -1555,7 +1555,7 @@ static int cmd_write(void *data, const char *input) {
 							RAsmCode *ac = r_asm_massemble (core->assembler, b);
 							char* hex = r_asm_code_get_hex (ac);
 							if (hex) {
-								r_cons_printf ("wx %s @ 0x%08"PFMT64x"\n",  hex, addr);
+								r_core_cmdf (core, "wx %s @ 0x%08"PFMT64x"\n",  hex, addr);
 								free (hex);
 							}
 							r_asm_code_free (ac);
