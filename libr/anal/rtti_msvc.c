@@ -392,9 +392,9 @@ R_API char *r_anal_rtti_msvc_demangle_class_name(RVTableContext *context, const 
 		char *n = strchr (ret, ' ');
 		if (n && *(++n)) {
 			r_str_trim (n);
-			char *name = strdup (n);
+			char *tmp = strdup (n);
 			free (ret);
-			ret = name;
+			ret = tmp;
 		} else {
 			R_FREE (ret);
 		}
