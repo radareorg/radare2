@@ -117,6 +117,8 @@ R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, int mincc, RSignGrap
 R_API bool r_sign_match_addr(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCallback cb, void *user);
 R_API bool r_sign_match_hash(RAnal *a, RAnalFunction *fcn, RSignHashMatchCallback cb, void *user);
 R_API bool r_sign_match_refs(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
+R_API bool r_sign_match_vars(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
+R_API bool r_sign_match_types(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
 
 R_API bool r_sign_load(RAnal *a, const char *file);
 R_API bool r_sign_load_gz(RAnal *a, const char *filename);

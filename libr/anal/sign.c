@@ -49,9 +49,9 @@ R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn) {
 	if (!ret) {
 		return NULL;
 	}
-        RList *reg_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_REG);
-        RList *spv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_SPV);
-        RList *bpv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
+	RList *reg_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_REG);
+	RList *spv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_SPV);
+	RList *bpv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
 	r_list_foreach (bpv_vars, iter, var) {
 		r_list_append (ret, r_str_newf ("b%d", var->delta));
 	}
@@ -2069,6 +2069,53 @@ R_API bool r_sign_match_vars(RAnal *a, RAnalFunction *fcn, RSignVarsMatchCallbac
 	return r_sign_foreach (a, varsMatchCB, &ctx);
 }
 
+static int typesMatchCB(RSignItem *it, void *user) {
+	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
+	RList *types = NULL;
+	char *type_a = NULL, *type_b = NULL;
+	int i = 0, retval = 1;
+
+	if (!it->types) {
+		return 1;
+	}
+	// TODO(nibble | oxcabe): slow operation, add cache
+	types = r_anal_types_from_fcn (ctx->anal, ctx->fcn);
+	if (!types) {
+		return 1;
+	}
+	for (i = 0; ; i++) {
+		type_a = (char *) r_list_get_n (it->types, i);
+		type_b = (char *) r_list_get_n (types, i);
+
+		if (!type_a || !type_b) {
+			if (type_a != type_b) {
+				retval = 1;
+				goto out;
+			}
+			break;
+		}
+		if (strcmp (type_a, type_b)) {
+			retval = 1;
+			goto out;
+		}
+	}
+
+	if (ctx->cb) {
+		retval = ctx->cb (it, ctx->fcn, ctx->user);
+		goto out;
+	}
+
+out:
+	r_list_free (types);
+
+	return retval;
+}
+
+R_API bool r_sign_match_types(RAnal *a, RAnalFunction *fcn, RSignVarsMatchCallback cb, void *user) {
+	r_return_val_if_fail (a && fcn && cb, false);
+	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
+	return r_sign_foreach (a, typesMatchCB, &ctx);
+}
 
 R_API RSignItem *r_sign_item_new() {
 	RSignItem *ret = R_NEW0 (RSignItem);
