@@ -3117,6 +3117,9 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	ut64 off = core->offset;
 	ut64 from = UT64_MAX;
 	ut64 to = 0;
+	RTable *t = r_table_new();
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeNumber = r_table_type ("number");
 	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
 	if (!list) {
 		return 1;
@@ -3154,10 +3157,14 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		pj_k (pj, "blocks");
 		pj_a (pj);
 		break;
-	case 'h': // "p-h"
-		r_cons_printf (".-------------.----------------------------.\n");
-		r_cons_printf ("|   offset    | flags funcs cmts syms str  |\n");
-		r_cons_printf ("|-------------)----------------------------|\n");
+	case 'h': {	// "p-h"
+		r_table_add_column (t, typeString, "offset", 0);
+		r_table_add_column (t, typeNumber, "flags", 0);
+		r_table_add_column (t, typeNumber, "funcs", 0);
+		r_table_add_column (t, typeNumber, "cmts", 0);
+		r_table_add_column (t, typeNumber, "syms", 0);
+		r_table_add_column (t, typeNumber, "str", 0);
+	}
 		break;
 	case 'e':
 	default:
@@ -3219,12 +3226,18 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 				|| (as->block[p].comments)
 				|| (as->block[p].symbols)
 				|| (as->block[p].strings)) {
-				r_cons_printf ("| 0x%09"PFMT64x " | %4d %4d %4d %4d %4d   |\n", at,
-						as->block[p].flags,
-						as->block[p].functions,
-						as->block[p].comments,
-						as->block[p].symbols,
-						as->block[p].strings);
+				char *offset = r_str_newf ("0x%09"PFMT64x"", at);
+				char *flags = r_str_newf ("%d", as->block[p].flags);
+				char *funcs = r_str_newf ("%d", as->block[p].functions);
+				char *comments = r_str_newf ("%d", as->block[p].comments);
+				char *symbols = r_str_newf ("%d", as->block[p].symbols);
+				char *strings = r_str_newf ("%d", as->block[p].strings);
+				r_table_add_row (t, offset, flags, funcs, comments, symbols, strings, NULL);
+				r_free (flags);
+				r_free (funcs);
+				r_free (comments);
+				r_free (symbols);
+				r_free (strings);
 			}
 			break;
 		case 'e': // p-e
@@ -3273,13 +3286,22 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 			r_cons_println (pj_string (pj));
 			pj_free (pj);
 			break;
-		case 'h':
-			// r_cons_printf ("  total    | flags funcs cmts syms str  |\n");
-			r_cons_printf ("|-------------)----------------------------|\n");
-			r_cons_printf ("|    total    | %4d %4d %4d %4d %4d   |\n",
-						   total.flags, total.functions, total.comments, total.symbols, total.strings);
-			r_cons_printf ("`-------------'----------------------------'\n");
+		case 'h': {
+			char *flags = r_str_newf ("%d", total.flags);
+			char *funcs = r_str_newf ("%d", total.functions);
+			char *comments = r_str_newf ("%d", total.comments);
+			char *symbols = r_str_newf ("%d", total.symbols);
+			char *strings = r_str_newf ("%d", total.strings);
+			r_table_add_row (t, "total", flags, funcs, comments, symbols, strings, NULL);
+			r_cons_printf ("\n%s\n", r_table_tofancystring (t));
+			r_free (flags);
+			r_free (funcs);
+			r_free (comments);
+			r_free (symbols);
+			r_free (strings);
+			r_table_free (t);
 			break;
+		}
 		case 'e':
 		default:
 			if (use_color) {
