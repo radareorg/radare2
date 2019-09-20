@@ -146,8 +146,8 @@ static int _fcn_tree_cmp(const void *a_, const RBNode *b_) {
 	const RAnalFunction *b = FCN_CONTAINER (b_);
 	set_meta_min_if_needed ((RAnalFunction *)a);
 	set_meta_min_if_needed ((RAnalFunction *)b);
-	ut64 from0 = a->meta.min, to0 = a->meta.min + a->_size, addr0 = a->addr,
-		from1 = b->meta.min, to1 = b->meta.min + b->_size, addr1 = b->addr;
+	ut64 from0 = a->meta.min, to0 = a->meta.min + a->_size, addr0 = a->addr;
+	ut64 from1 = b->meta.min, to1 = b->meta.min + b->_size, addr1 = b->addr;
 	if (from0 != from1) {
 		return from0 < from1 ? -1 : 1;
 	}
