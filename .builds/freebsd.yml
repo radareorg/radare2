@@ -6,7 +6,7 @@ packages:
     - devel/llvm
     - ftp/wget
     - lang/python2
-    - www/npm
+    - www/npm-node10
 environment:
     CXX: clang++
     CC: clang
