@@ -243,7 +243,7 @@ int get_template_params(char *sym, unsigned int *amount_of_read_chars, char **st
 			char *a = get_num (&state);
 			char *b = get_num (&state);
 			if (a && b) {
-				res = r_str_newf ("{%u, %u, %u}", a, b);
+				res = r_str_newf ("{%s, %s}", a, b);
 			}
 			free (a);
 			free (b);
@@ -253,7 +253,7 @@ int get_template_params(char *sym, unsigned int *amount_of_read_chars, char **st
 			char *b = get_num (&state);
 			char *c = get_num (&state);
 			if (a && b && c) {
-				res = r_str_newf ("{%u, %u, %u}", a, b, c);
+				res = r_str_newf ("{%s, %s, %s}", a, b, c);
 			}
 			free (a);
 			free (b);
