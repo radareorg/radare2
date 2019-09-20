@@ -5,6 +5,7 @@ packages:
     - devel/gmake
     - devel/llvm
     - ftp/wget
+    - lang/python2
     - www/npm
 environment:
     CXX: clang++
@@ -16,6 +17,7 @@ tasks:
     - build: |
         cd radare2
         export LD_LIBRARY_PATH=$HOME/lib
+        npm config set python "/usr/local/bin/python2.7"
         ./configure --prefix=$HOME
         gmake
         gmake install
