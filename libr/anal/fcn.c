@@ -679,7 +679,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END, skip_ret = 0;
-	int overlapped = 0;
+	bool overlapped = false;
 	RAnalOp op = {0};
 	int oplen, idx = 0;
 	static ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
@@ -843,7 +843,7 @@ repeat:
 				if (anal->opt.jmpmid && is_x86) {
 					r_anal_fcn_split_bb (anal, fcn, bbg, at);
 				}
-				overlapped = 1;
+				overlapped = true;
 				if (anal->verbose) {
 					eprintf ("Overlapped at 0x%08"PFMT64x "\n", at);
 				}
@@ -1363,8 +1363,8 @@ analopfinish:
 			}
 			if (!op.cond) {
 				if (anal->verbose) {
-					eprintf ("RET 0x%08"PFMT64x ". %d %d %d\n",
-						addr + delay.un_idx - oplen, overlapped,
+					eprintf ("RET 0x%08"PFMT64x ". overlap=%s %d %d\n",
+						addr + delay.un_idx - oplen, r_str_bool (overlapped),
 						bb->size, r_anal_fcn_size (fcn));
 				}
 				gotoBeach (R_ANAL_RET_END);
