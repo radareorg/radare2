@@ -2957,6 +2957,18 @@ R_API const char *r_str_pad(const char ch, int sz) {
 	return pad;
 }
 
+R_API const char *r_str_repeat (const char *ch, int sz) {
+	RStrBuf *buf = r_strbuf_new (ch);
+	int i;
+	if (sz < 0) {
+		sz = 0;
+	}
+	for (i = 1; i < sz; ++i) {
+		r_strbuf_append (buf, ch);
+	}
+	return r_strbuf_drain (buf);
+}
+
 static char **__consts = NULL;
 
 R_API const char *r_str_const_at(char ***consts, const char *ptr) {

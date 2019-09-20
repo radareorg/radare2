@@ -34,6 +34,8 @@ typedef struct {
 	int totalCols;
 	bool showHeader;
 	bool adjustedCols;
+	bool useUtf8;
+	bool useUtf8Curvy;
 } RTable;
 
 R_API void r_table_row_free(void *_row);
