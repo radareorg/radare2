@@ -5,6 +5,7 @@ packages:
     - devel/gmake
     - devel/llvm
     - ftp/wget
+    - www/npm
 environment:
     CXX: clang++
     CC: clang
@@ -14,5 +15,9 @@ sources:
 tasks:
     - build: |
         cd radare2
-        ./configure
+        setenv LD_LIBRARY_PATH $HOME/lib
+        ./configure --prefix=$HOME
         gmake
+        gmake install
+        gmake tests
+        
