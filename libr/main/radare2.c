@@ -842,7 +842,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 	}
 
 	if (run_rc) {
-		radare2_rc (&r);
+		r_core_parse_radare2rc (&r);
 	}
 
 	if (r_config_get_i (r.config, "zign.autoload")) {

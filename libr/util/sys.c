@@ -511,6 +511,18 @@ err_r_sys_get_env:
 #endif
 }
 
+R_API bool r_sys_getenv_asbool(const char *key) {
+	char *env = r_sys_getenv (key);
+	if (env) {
+		if (*env || *env=='1') {
+			r_free (env);
+			return true;
+		}
+		r_free (env);
+	}
+	return false;
+}
+
 R_API char *r_sys_getdir(void) {
 #if __WINDOWS__
 	return _getcwd (NULL, 0);

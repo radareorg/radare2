@@ -3606,13 +3606,8 @@ R_API int r_core_config_init(RCore *core) {
 	return true;
 }
 
-R_API void radare2_rc(RCore *r) {
-	char* env_debug = r_sys_getenv ("R_DEBUG");
-	bool has_debug = false;
-	if (env_debug) {
-		has_debug = true;
-		R_FREE (env_debug);
-	}
+R_API void r_core_parse_radare2rc(RCore *r) {
+	bool has_debug = r_sys_getenv_asbool ("R_DEBUG");
 	char *homerc = r_str_home (".radare2rc");
 	if (homerc && r_file_is_regular (homerc)) {
 		if (has_debug) {

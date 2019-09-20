@@ -402,7 +402,7 @@ R_API RCore *r_core_ncast(ut64 p);
 R_API RCore *r_core_cast(void *p);
 R_API int r_core_config_init(RCore *core);
 R_API void r_core_config_update(RCore *core);
-R_API void radare2_rc(RCore *r);
+R_API void r_core_parse_radare2rc(RCore *r);
 R_API int r_core_prompt(RCore *core, int sync);
 R_API int r_core_prompt_exec(RCore *core);
 R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr);
