@@ -1546,6 +1546,37 @@ parse_microsoft_mangled_name_err:
 	return err;
 }
 
+static EDemanglerErr parse_microsoft_rtti_mangled_name(char *sym, char **demangled_name) {
+	EDemanglerErr err = eDemanglerErrOK;
+	char *type = NULL;
+	if (!strncmp (sym, "AT", 2)) {
+		type = "union";
+	} else if (!strncmp (sym, "AU", 2)) {
+		type = "struct";
+	} else if (!strncmp (sym, "AV", 2)) {
+		type = "class";
+	} else if (!strncmp (sym, "AW", 2)) {
+		type = "enum";
+	} else {
+		err = eDemanglerErrUncorrectMangledSymbol;
+		goto parse_microsoft_rtti_mangled_name_err;
+	}
+	int read = 0;
+	STypeCodeStr type_code_str;
+	init_type_code_str_struct (&type_code_str);
+	int len = get_namespace_and_name (sym + 2, &type_code_str, NULL);
+	if (!len) {
+		err = eDemanglerErrUncorrectMangledSymbol;
+		goto parse_microsoft_rtti_mangled_name_err;
+	}
+
+	*demangled_name = r_str_newf ("%s %s", type, type_code_str.type_str);
+	free (type_code_str.type_str);
+
+parse_microsoft_rtti_mangled_name_err:
+	return err;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name) {
 	EDemanglerErr err = eDemanglerErrOK;
@@ -1560,7 +1591,12 @@ EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name) {
 		err = eDemanglerErrMemoryAllocation;
 		goto microsoft_demangle_err;
 	}
-	err = parse_microsoft_mangled_name(demangler->symbol + 1, demangled_name);
+	
+	if (!strncmp (demangler->symbol, ".?", 2)) {
+		err = parse_microsoft_rtti_mangled_name (demangler->symbol + 2, demangled_name);
+	} else {
+		err = parse_microsoft_mangled_name (demangler->symbol + 1, demangled_name);
+	}
 
 microsoft_demangle_err:
 	r_list_free (abbr_names);
