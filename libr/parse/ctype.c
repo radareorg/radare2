@@ -4,14 +4,14 @@
 
 #include <mpc.h>
 
-typedef struct r_parse_ctype_t {
+struct r_parse_ctype_t {
 	mpc_parser_t *integerlit;
 	mpc_parser_t *identifier;
 	mpc_parser_t *qualifier;
 	mpc_parser_t *pointer;
 	mpc_parser_t *array;
 	mpc_parser_t *type;
-} RParseCType;
+};
 
 #define ALL_PARSERS(ctype) ctype->integerlit, ctype->identifier, ctype->qualifier, ctype->pointer, ctype->array, ctype->type
 #define ALL_PARSERS_COUNT 6
