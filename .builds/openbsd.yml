@@ -4,6 +4,8 @@ packages:
     - devel/pkgconf
     - devel/gmake
     - devel/llvm
+    - lang/node
+    - lang/python
 environment:
     CXX: clang++
     CC: clang
@@ -12,6 +14,10 @@ sources:
 tasks:
     - build: |
         cd radare2
-        ./configure
+        export LD_LIBRARY_PATH=$HOME
+        npm config set python "/usr/local/bin/python2.7"
+        ./configure --prefix=$HOME
         gmake
+        gmake install
+        gmake tests
 
