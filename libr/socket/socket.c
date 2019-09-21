@@ -180,11 +180,7 @@ R_API RSocket *r_socket_new(bool is_ssl) {
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	s->local = 0;
-#ifdef _MSC_VER
-	s->fd = INVALID_SOCKET;
-#else
-	s->fd = -1;
-#endif
+	s->fd = R_INVALID_SOCKET;
 #if HAVE_LIB_SSL
 	if (is_ssl) {
 		s->sfd = NULL;
@@ -266,11 +262,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		return false;
 	}
 	s->fd = socket (AF_INET, SOCK_STREAM, 0);
-#ifdef _MSC_VER
-	if (s->fd == INVALID_SOCKET) {
-#else
-	if (s->fd == -1) {
-#endif
+	if (s->fd == R_INVALID_SOCKET) {
 		return false;
 	}
 
@@ -435,7 +427,7 @@ R_API int r_socket_close(RSocket *s) {
 	if (!s) {
 		return false;
 	}
-	if (s->fd != -1) {
+	if (s->fd != R_INVALID_SOCKET) {
 #if __UNIX__
 		shutdown (s->fd, SHUT_RDWR);
 #endif
@@ -452,7 +444,7 @@ R_API int r_socket_close(RSocket *s) {
 #else
 		ret = close (s->fd);
 #endif
-		s->fd = -1;
+		s->fd = R_INVALID_SOCKET;
 	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl && s->sfd) {
@@ -507,7 +499,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 		return false;
 	}
 #endif
-	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) == R_INVALID_SOCKET) {
 		return false;
 	}
 
@@ -590,7 +582,7 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 	}
 	//signal (SIGPIPE, SIG_DFL);
 	sock->fd = accept (s->fd, (struct sockaddr *)&s->sa, &salen);
-	if (sock->fd == -1) {
+	if (sock->fd == R_INVALID_SOCKET) {
 		if (errno != EWOULDBLOCK) {
 			// not just a timeout
 			r_sys_perror ("accept");
@@ -702,7 +694,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 #elif __WINDOWS__
 	fd_set rfds;
 	struct timeval tv;
-	if (s->fd == -1) {
+	if (s->fd == R_INVALID_SOCKET) {
 		return -1;
 	}
 	FD_ZERO (&rfds);
@@ -782,7 +774,7 @@ R_API int r_socket_puts(RSocket *s, char *buf) {
 R_API void r_socket_printf(RSocket *s, const char *fmt, ...) {
 	char buf[BUFFER_SIZE];
 	va_list ap;
-	if (s->fd >= 0) {
+	if (s->fd != R_INVALID_SOCKET) {
 		va_start (ap, fmt);
 		vsnprintf (buf, BUFFER_SIZE, fmt, ap);
 		r_socket_write (s, buf, strlen (buf));
@@ -832,7 +824,7 @@ R_API int r_socket_gets(RSocket *s, char *buf,	int size) {
 	int i = 0;
 	int ret = 0;
 
-	if (s->fd == -1) {
+	if (s->fd == R_INVALID_SOCKET) {
 		return -1;
 	}
 	while (i < size) {
