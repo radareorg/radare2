@@ -306,8 +306,17 @@ userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
 userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', r2_prefix)
-userconf.set('LIBDIR', join_paths(r2_prefix, r2_libdir))
-userconf.set('INCLUDEDIR', join_paths(r2_prefix, r2_incdir))
+if host_machine.system() == 'windows'
+  userconf.set('LIBDIR', r2_libdir)
+  userconf.set('INCLUDEDIR', r2_incdir)
+  userconf.set('DATADIR_R2', r2_datdir)
+  userconf.set10('HAVE_JEMALLOC', false)
+else
+  userconf.set('LIBDIR', join_paths(r2_prefix, r2_libdir))
+  userconf.set('INCLUDEDIR', join_paths(r2_prefix, r2_incdir))
+  userconf.set('DATADIR_R2', r2_datdir_r2)
+  userconf.set10('HAVE_JEMALLOC', true)
+endif
 userconf.set('DATADIR', join_paths(r2_prefix, r2_datdir))
 userconf.set('WWWROOT', join_paths(r2_prefix, r2_wwwroot))
 userconf.set('SDB', r2_sdb)
@@ -325,13 +334,6 @@ userconf.set10('HAVE_FORK', true)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', true)
-if host_machine.system() == 'windows'
-  userconf.set('DATADIR_R2', r2_datdir)
-  userconf.set10('HAVE_JEMALLOC', false)
-else
-  userconf.set('DATADIR_R2', r2_datdir_r2)
-  userconf.set10('HAVE_JEMALLOC', true)
-endif
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 

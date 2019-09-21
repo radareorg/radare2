@@ -444,39 +444,58 @@ static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
 
 R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	const char *dirlibs = r_config_get (core->config, "dir.libs");
+	bool free_libdir = true;
+#ifdef __WINDOWS__
+	char *libdir = r_str_r2_prefix (R2_LIBDIR);
+#else
+	char *libdir = strdup (R2_LIBDIR);
+#endif
+	if (!libdir) {
+		libdir = R2_LIBDIR;
+		free_libdir = false;
+	}
 	if (!dirlibs || !*dirlibs) {
-		dirlibs = "./";
+		dirlibs = "." R_SYS_DIR;
 	}
 	const char *ldlibrarypath[] = {
 		dirlibs,
-		R2_LIBDIR,
+		libdir,
+#ifndef __WINDOWS__
 		"/usr/local/lib",
 		"/usr/lib",
 		"/lib",
-		"./",
+#endif
+		"." R_SYS_DIR,
 		NULL
 	};
 	const char * *libpath = (const char * *) &ldlibrarypath;
 
+	bool ret = false;
+#ifdef __WINDOWS__
+	if (strlen (lib) >= 3 && lib[1] == ':' && lib[2] == '\\') {
+#else
 	if (*lib == '/') {
+#endif
 		if (try_loadlib (core, lib, libaddr)) {
-			return true;
+			ret = true;
 		}
 	} else {
 		while (*libpath) {
-			bool ret = false;
-			char *s = r_str_newf ("%s/%s", *libpath, lib);
+			char *s = r_str_newf ("%s" R_SYS_DIR "%s", *libpath, lib);
 			if (try_loadlib (core, s, libaddr)) {
 				ret = true;
 			}
 			free (s);
 			if (ret) {
-				return true;
+				break;
 			}
 			libpath++;
 		}
 	}
-	return false;
+	if (free_libdir) {
+		free (libdir);
+	}
+	return ret;
 }
 
 R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
@@ -494,7 +513,7 @@ R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
 }
 
 static void load_scripts_for(RCore *core, const char *name) {
-	// TODO: 
+	// TODO:
 	char *file;
 	RListIter *iter;
 	char *hdir = r_str_newf (R_JOIN_2_PATHS (R2_HOME_BINRC, "bin-%s"), name);
@@ -549,7 +568,7 @@ static bool linkcb(void *user, void *data, ut32 id) {
 				return false;
 			}
 		}
-	} 
+	}
 	return true;
 }
 

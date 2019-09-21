@@ -212,6 +212,13 @@ static int main_help(int line) {
 
 static int main_print_var(const char *var_name) {
 	int i = 0;
+#ifdef __WINDOWS__
+	char *incdir = r_str_r2_prefix (R2_INCDIR);
+	char *libdir = r_str_r2_prefix (R2_LIBDIR);
+#else
+	char *incdir = strdup (R2_INCDIR);
+	char *libdir = strdup (R2_LIBDIR);
+#endif
 	char *confighome = r_str_home (R2_HOME_CONFIGDIR);
 	char *datahome = r_str_home (R2_HOME_DATADIR);
 	char *cachehome = r_str_home (R2_HOME_CACHEDIR);
@@ -226,8 +233,8 @@ static int main_print_var(const char *var_name) {
 		{ "R2_PREFIX", R2_PREFIX },
 		{ "R2_MAGICPATH", magicpath },
 		{ "R2_PREFIX", R2_PREFIX },
-		{ "R2_INCDIR", R2_INCDIR },
-		{ "R2_LIBDIR", R2_LIBDIR },
+		{ "R2_INCDIR", incdir },
+		{ "R2_LIBDIR", libdir },
 		{ "R2_LIBEXT", R_LIB_EXT },
 		{ "R2_RCONFIGHOME", confighome },
 		{ "R2_RDATAHOME", datahome },
@@ -255,6 +262,8 @@ static int main_print_var(const char *var_name) {
 			i++;
 		}
 	}
+	free (incdir);
+	free (libdir);
 	free (confighome);
 	free (datahome);
 	free (cachehome);
