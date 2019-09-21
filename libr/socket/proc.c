@@ -115,7 +115,7 @@ R_API void r_socket_proc_printf (RSocketProc *sp, const char *fmt, ...) {
 	va_list ap;
 	s.is_ssl = false;
 	s.fd = sp->fd0[1];
-	if (s.fd >= 0) {
+	if (s.fd != R_INVALID_SOCKET) {
 		va_start (ap, fmt);
 		vsnprintf (buf, BUFFER_SIZE, fmt, ap);
 		r_socket_write (&s, buf, strlen(buf));

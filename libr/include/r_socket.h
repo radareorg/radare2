@@ -44,6 +44,13 @@ R_LIB_VERSION_HEADER (r_socket);
 #define SD_SEND 1
 #define SD_BOTH 2
 #endif
+
+#if _MSC_VER
+#define R_INVALID_SOCKET INVALID_SOCKET
+#else
+#define R_INVALID_SOCKET -1
+#endif
+
 typedef struct {
 	int child;
 #if __WINDOWS__
