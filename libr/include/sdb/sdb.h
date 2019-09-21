@@ -181,7 +181,7 @@ SDB_API void* sdb_ptr_get(Sdb *db, const char *key, ut32 *cas);
 
 /* create db */
 SDB_API bool sdb_disk_create(Sdb* s);
-int sdb_disk_insert(Sdb* s, const char *key, const char *val);
+SDB_API int sdb_disk_insert(Sdb* s, const char *key, const char *val);
 SDB_API bool sdb_disk_finish(Sdb* s);
 SDB_API bool sdb_disk_unlink(Sdb* s);
 
@@ -232,8 +232,8 @@ SDB_API int sdb_json_num_set(Sdb* s, const char *k, const char *p, int v, ut32 c
 SDB_API int sdb_json_num_dec(Sdb* s, const char *k, const char *p, int n, ut32 cas);
 SDB_API int sdb_json_num_inc(Sdb* s, const char *k, const char *p, int n, ut32 cas);
 
-char *sdb_json_indent(const char *s, const char *tab);
-char *sdb_json_unindent(const char *s);
+SDB_API char *sdb_json_indent(const char *s, const char *tab);
+SDB_API char *sdb_json_unindent(const char *s);
 
 typedef struct {
 	char *buf;
@@ -241,65 +241,65 @@ typedef struct {
 	size_t len;
 } SdbJsonString;
 
-const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...);
+SDB_API const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...);
 #define sdb_json_format_free(x) free ((x)->buf)
 
 // namespace
-Sdb* sdb_ns(Sdb *s, const char *name, int create);
-Sdb *sdb_ns_path(Sdb *s, const char *path, int create);
-void sdb_ns_init(Sdb* s);
-void sdb_ns_free(Sdb* s);
-void sdb_ns_lock(Sdb *s, int lock, int depth);
-void sdb_ns_sync(Sdb* s);
-int sdb_ns_set(Sdb *s, const char *name, Sdb *r);
-bool sdb_ns_unset(Sdb *s, const char *name, Sdb *r);
+SDB_API Sdb* sdb_ns(Sdb *s, const char *name, int create);
+SDB_API Sdb *sdb_ns_path(Sdb *s, const char *path, int create);
+SDB_API void sdb_ns_init(Sdb* s);
+SDB_API void sdb_ns_free(Sdb* s);
+SDB_API void sdb_ns_lock(Sdb *s, int lock, int depth);
+SDB_API void sdb_ns_sync(Sdb* s);
+SDB_API int sdb_ns_set(Sdb *s, const char *name, Sdb *r);
+SDB_API bool sdb_ns_unset(Sdb *s, const char *name, Sdb *r);
 
 // array
-bool sdb_array_contains(Sdb* s, const char *key, const char *val, ut32 *cas);
-bool sdb_array_contains_num(Sdb *s, const char *key, ut64 val, ut32 *cas);
-int sdb_array_indexof(Sdb *s, const char *key, const char *val, ut32 cas);
-int sdb_array_set(Sdb* s, const char *key, int idx, const char *val, ut32 cas);
-int sdb_array_set_num(Sdb* s, const char *key, int idx, ut64 val, ut32 cas);
-bool sdb_array_append(Sdb *s, const char *key, const char *val, ut32 cas);
-bool sdb_array_append_num(Sdb *s, const char *key, ut64 val, ut32 cas);
-bool sdb_array_prepend(Sdb *s, const char *key, const char *val, ut32 cas);
-bool sdb_array_prepend_num(Sdb *s, const char *key, ut64 val, ut32 cas);
-char *sdb_array_get(Sdb* s, const char *key, int idx, ut32 *cas);
-ut64 sdb_array_get_num(Sdb* s, const char *key, int idx, ut32 *cas);
-int sdb_array_get_idx(Sdb *s, const char *key, const char *val, ut32 cas); // agetv
-int sdb_array_insert(Sdb* s, const char *key, int idx, const char *val, ut32 cas);
-int sdb_array_insert_num(Sdb* s, const char *key, int idx, ut64 val, ut32 cas);
-int sdb_array_unset(Sdb* s, const char *key, int n, ut32 cas); // leaves empty bucket
-int sdb_array_delete(Sdb* s, const char *key, int n, ut32 cas);
-void sdb_array_sort(Sdb* s, const char *key, ut32 cas);
-void sdb_array_sort_num(Sdb* s, const char *key, ut32 cas);
+SDB_API bool sdb_array_contains(Sdb* s, const char *key, const char *val, ut32 *cas);
+SDB_API bool sdb_array_contains_num(Sdb *s, const char *key, ut64 val, ut32 *cas);
+SDB_API int sdb_array_indexof(Sdb *s, const char *key, const char *val, ut32 cas);
+SDB_API int sdb_array_set(Sdb* s, const char *key, int idx, const char *val, ut32 cas);
+SDB_API int sdb_array_set_num(Sdb* s, const char *key, int idx, ut64 val, ut32 cas);
+SDB_API bool sdb_array_append(Sdb *s, const char *key, const char *val, ut32 cas);
+SDB_API bool sdb_array_append_num(Sdb *s, const char *key, ut64 val, ut32 cas);
+SDB_API bool sdb_array_prepend(Sdb *s, const char *key, const char *val, ut32 cas);
+SDB_API bool sdb_array_prepend_num(Sdb *s, const char *key, ut64 val, ut32 cas);
+SDB_API char *sdb_array_get(Sdb* s, const char *key, int idx, ut32 *cas);
+SDB_API ut64 sdb_array_get_num(Sdb* s, const char *key, int idx, ut32 *cas);
+SDB_API int sdb_array_get_idx(Sdb *s, const char *key, const char *val, ut32 cas); // agetv
+SDB_API int sdb_array_insert(Sdb* s, const char *key, int idx, const char *val, ut32 cas);
+SDB_API int sdb_array_insert_num(Sdb* s, const char *key, int idx, ut64 val, ut32 cas);
+SDB_API int sdb_array_unset(Sdb* s, const char *key, int n, ut32 cas); // leaves empty bucket
+SDB_API int sdb_array_delete(Sdb* s, const char *key, int n, ut32 cas);
+SDB_API void sdb_array_sort(Sdb* s, const char *key, ut32 cas);
+SDB_API void sdb_array_sort_num(Sdb* s, const char *key, ut32 cas);
 // set
 
 // Adds string `val` at the end of array `key`.
-int sdb_array_add(Sdb* s, const char *key, const char *val, ut32 cas);
+SDB_API int sdb_array_add(Sdb* s, const char *key, const char *val, ut32 cas);
 
 // Adds number `val` at the end of array `key`.
-int sdb_array_add_num(Sdb* s, const char *key, ut64 val, ut32 cas);
+SDB_API int sdb_array_add_num(Sdb* s, const char *key, ut64 val, ut32 cas);
 
 // Adds string `val` in the sorted array `key`.
-int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 cas);
+SDB_API int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 cas);
 
 // Adds number `val` in the sorted array `key`.
-int sdb_array_add_sorted_num(Sdb *s, const char *key, ut64 val, ut32 cas);
+SDB_API int sdb_array_add_sorted_num(Sdb *s, const char *key, ut64 val, ut32 cas);
 
 // Removes the string `val` from the array `key`.
-int sdb_array_remove(Sdb *s, const char *key, const char *val, ut32 cas);
+SDB_API int sdb_array_remove(Sdb *s, const char *key, const char *val, ut32 cas);
 
 // Removes the number `val` from the array `key`.
-int sdb_array_remove_num(Sdb* s, const char *key, ut64 val, ut32 cas);
+SDB_API int sdb_array_remove_num(Sdb* s, const char *key, ut64 val, ut32 cas);
 
 // helpers
-char *sdb_anext(char *str, char **next);
-const char *sdb_const_anext(const char *str);
-int sdb_alen(const char *str);
-int sdb_alen_ignore_empty(const char *str);
-int sdb_array_size(Sdb* s, const char *key);
-int sdb_array_length(Sdb* s, const char *key);
+SDB_API char *sdb_anext(char *str, char **next);
+SDB_API const char *sdb_const_anext(const char *str);
+SDB_API int sdb_alen(const char *str);
+SDB_API int sdb_alen_ignore_empty(const char *str);
+SDB_API int sdb_array_size(Sdb* s, const char *key);
+SDB_API int sdb_array_length(Sdb* s, const char *key);
 
 int sdb_array_list(Sdb* s, const char *key);
 
@@ -308,20 +308,20 @@ SDB_API bool sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas);
 
 // Returns the string at the start of array `key` or
 // NULL if there are no elements.
-char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas);
+SDB_API char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas);
 
 // Adds the number `val` to the start of array `key`.
-int sdb_array_push_num(Sdb *s, const char *key, ut64 num, ut32 cas);
+SDB_API int sdb_array_push_num(Sdb *s, const char *key, ut64 num, ut32 cas);
 
 // Returns the number at the start of array `key`.
-ut64 sdb_array_pop_num(Sdb *s, const char *key, ut32 *cas);
+SDB_API ut64 sdb_array_pop_num(Sdb *s, const char *key, ut32 *cas);
 
-char *sdb_array_pop_head(Sdb *s, const char *key, ut32 *cas);
-char *sdb_array_pop_tail(Sdb *s, const char *key, ut32 *cas);
+SDB_API char *sdb_array_pop_head(Sdb *s, const char *key, ut32 *cas);
+SDB_API char *sdb_array_pop_tail(Sdb *s, const char *key, ut32 *cas);
 
 typedef void (*SdbHook)(Sdb *s, void *user, const char *k, const char *v);
 
-void sdb_global_hook(SdbHook hook, void *user);
+SDB_API void sdb_global_hook(SdbHook hook, void *user);
 SDB_API bool sdb_hook(Sdb* s, SdbHook cb, void* user);
 SDB_API bool sdb_unhook(Sdb* s, SdbHook h);
 SDB_API int sdb_hook_call(Sdb *s, const char *k, const char *v);
