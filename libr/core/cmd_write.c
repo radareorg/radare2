@@ -1553,11 +1553,7 @@ static int cmd_write(void *data, const char *input) {
 						}
 						if (*b) {
 							RAsmCode *ac = r_asm_massemble (core->assembler, b);
-							char* hex = r_asm_code_get_hex (ac);
-							if (hex) {
-								r_core_cmdf (core, "wx %s @ 0x%08"PFMT64x"\n",  hex, addr);
-								free (hex);
-							}
+							r_io_write_at (core->io, addr, ac->bytes, ac->len);
 							r_asm_code_free (ac);
 						}
 						b = a;
