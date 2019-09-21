@@ -1909,7 +1909,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				if (item) {
 					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);
 				}
-				memset (previnstr, 0, sizeof (previnstr) * sizeof (*previnstr)); // clearing the buffer
+				memset (previnstr, 0, (MAXINSTR + 1) * sizeof (*previnstr)); // clearing the buffer
 				if (searchflags) {
 					char *flag = r_str_newf ("%s%d_%d.%s", searchprefix, kwidx, count, item? item->name: "syscall");
 					r_flag_set (core->flags, flag, at, ret);
@@ -1944,6 +1944,7 @@ beach:
 	free (buf);
 	free (esp32);
 	free (esp);
+	free (previnstr);
 }
 
 static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {
