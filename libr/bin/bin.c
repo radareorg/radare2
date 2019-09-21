@@ -1166,6 +1166,7 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 		b->get_name = __getname;
 		b->get_sections = r_bin_get_sections;
 		b->get_vsect_at = __get_vsection_at;
+		b->demangle = r_bin_demangle;
 	}
 }
 

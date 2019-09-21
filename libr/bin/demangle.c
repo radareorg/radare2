@@ -5,7 +5,7 @@
 #include <cxx/demangle.h>
 
 R_API void r_bin_demangle_list(RBin *bin) {
-	const char *langs[] = { "c++", "java", "objc", "swift", "dlang", "msvc", NULL };
+	const char *langs[] = { "c++", "java", "objc", "swift", "dlang", "msvc", "rust", NULL };
 	RBinPlugin *plugin;
 	RListIter *it;
 	int i;
@@ -27,7 +27,7 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 	RListIter *it;
 	if (bin && name && str) {
 		r_list_foreach (bin->plugins, it, plugin) {
-			if (plugin->demangle) {
+			if (plugin->demangle && !strncmp (plugin->name, name, strlen (plugin->name))) {
 				return plugin->demangle (str);
 			}
 		}
