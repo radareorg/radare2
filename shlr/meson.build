@@ -189,7 +189,7 @@ sdb_inc = [platform_inc, include_directories('sdb/src')]
 libr2sdb = static_library('r2sdb', sdb_files,
   include_directories: sdb_inc,
   implicit_include_directories: false,
-  c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : '',
+  c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : [],
 )
 
 if host_machine.system() == 'windows'
