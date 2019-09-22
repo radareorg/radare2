@@ -3134,16 +3134,14 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 
 		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, nbbs, xref, callstr, ccstr, NULL);
 	}
-	r_table_query (t, q);
-	char *s = NULL;
-	if (fmt == 'j') {
-		s = r_table_tojson (t);
-	} else {
-		s = r_table_tofancystring (t);
+	if (r_table_query (t, q)) {
+		char *s = (fmt== 'j')
+			? r_table_tojson (t)
+			: r_table_tofancystring (t);
+		// char *s = r_table_tostring (t);
+		r_cons_printf ("%s\n", s);
+		free (s);
 	}
-	// char *s = r_table_tostring (t);
-	r_cons_printf ("%s\n", s);
-	free (s);
 	r_table_free (t);
 	return 0;
 }

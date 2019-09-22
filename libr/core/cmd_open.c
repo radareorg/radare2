@@ -113,6 +113,7 @@ static const char *help_msg_om[] = {
 	"omq", "", "list all maps and their fds",
 	"omqq", "", "list all maps addresses (See $MM to get the size)",
 	"omr", " mapid newsize", "resize map with corresponding id",
+	"omt", " [query]", "list maps using table api",
 	NULL
 };
 
@@ -525,6 +526,29 @@ static void cmd_omf(RCore *core, const char *input) {
 	free (arg);
 }
 
+static void r_core_cmd_omt(RCore *core, const char *arg) {
+	RTable *t = r_table_new ();
+	
+	r_table_set_columnsf (t, "nnnnnnss", "id", "fd", "pa", "pa_end", "va", "va_end", "perm", "name", NULL);
+
+	SdbListIter *iter;
+	RIOMap *m;
+	ls_foreach_prev (core->io->maps, iter, m) {
+		ut64 va = r_itv_begin (m->itv);
+		ut64 va_end = r_itv_end (m->itv);
+		ut64 pa = m->delta;
+		ut64 pa_end = r_itv_size (m->itv);
+		r_table_add_rowf (t, "ddxxxxss", m->id, m->fd, pa, pa_end, va, va_end, r_str_rwx_i (m->perm), m->name);
+	}
+
+	if (r_table_query (t, arg)) {
+		char *ts = r_table_tofancystring (t);
+		r_cons_printf ("%s", ts);
+		free (ts);
+	}
+	r_table_free (t);
+}
+
 static void cmd_open_map(RCore *core, const char *input) {
 	ut64 fd = 0LL;
 	ut32 id = 0;
@@ -614,6 +638,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 			break;
 		}
+		break;
+	case 't': // "omt"
+		r_core_cmd_omt (core, input + 2);
 		break;
 	case ' ': // "om"
 		s = strdup (input + 2);

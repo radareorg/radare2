@@ -116,6 +116,69 @@ R_API void r_table_add_row_list(RTable *t, RList *items) {
 	t->totalCols = R_MAX (t->totalCols, r_list_length (items));
 }
 
+R_API void r_table_set_columnsf(RTable *t, const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeNumber = r_table_type ("number");
+	const char *name;
+	const char *f = fmt;
+	for (;*f;f++) {
+		name = va_arg (ap, const char *);
+		if (!name) {
+			break;
+		}
+		switch (*f) {
+		case 's':
+		case 'z':
+			r_table_add_column (t, typeString, name, 0);
+			break;
+		case 'i':
+		case 'd':
+			r_table_add_column (t, typeNumber, name, 0);
+			break;
+		case 'n':
+			r_table_add_column (t, typeNumber, name, 0);
+			break;
+		case 'x':
+			r_table_add_column (t, typeNumber, name, 0);
+			break;
+		default:
+			eprintf ("Invalid format string char '%c', use 's' or 'n'\n", *f);
+			break;
+		}
+	}
+}
+
+R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	RList *list = r_list_newf (free);
+	const char *f = fmt;
+	for (;*f;f++) {
+		switch (*f) {
+		case 's':
+		case 'z':
+			r_list_append (list, strdup (va_arg (ap, const char *)));
+			break;
+		case 'i':
+		case 'd':
+			r_list_append (list, r_str_newf ("%d", va_arg (ap, int)));
+			break;
+		case 'n':
+			r_list_append (list, r_str_newf ("%"PFMT64d, va_arg (ap, ut64)));
+			break;
+		case 'x':
+			r_list_append (list, r_str_newf ("0x%"PFMT64x, va_arg (ap, ut64)));
+			break;
+		default:
+			eprintf ("Invalid format string char '%c', use 's' or 'n'\n", *f);
+			break;
+		}
+	}
+	r_table_add_row_list (t, list);
+}
+
 R_API void r_table_add_row(RTable *t, const char *name, ...) {
 	va_list ap;
 	va_start (ap, name);
@@ -441,10 +504,25 @@ R_API void r_table_filter_columns(RTable *t, RList *list) {
 	}
 }
 
-R_API void r_table_query(RTable *t, const char *q) {
+R_API bool r_table_query(RTable *t, const char *q) {
+	r_return_val_if_fail (t, false);
+	q = r_str_trim_ro (q);
+	if (*q == '?') {
+		eprintf ("RTableQuery> comma separated \n");
+		eprintf (" colname/sort/inc          sort rows by given colname\n");
+		eprintf (" col0/cols/col1/col2/col3  select cols\n");
+		eprintf (" col0/gt/0x800             grep rows matching col0 > 0x800\n");
+		eprintf (" col0/lt/0x800             grep rows matching col0 < 0x800\n");
+		eprintf (" col0/eq/0x800             grep rows matching col0 == 0x800\n");
+		return false;
+	}
 	// TODO support parenthesis and (or)||
 	// split by "&&" (or comma) -> run .filter on each
 	// addr/gt/200,addr/lt/400,addr/sort/dec,offset/sort/inc
+	if (!q || !*q) {
+		__table_adjust (t);
+		return true;
+	}
 	RListIter *iter;
 	char *qq = strdup (q);
 	RList *queries = r_str_split_list (qq, ",",  0);
@@ -492,6 +570,7 @@ R_API void r_table_query(RTable *t, const char *q) {
 	r_list_free (queries);
 	free (qq);
 	__table_adjust (t);
+	return true;
 }
 
 #if 0
@@ -537,19 +616,5 @@ R_API void r_table_format(RTable *t, int nth, RTableColumnType *type) {
 R_API ut64 r_table_reduce(RTable *t, int nth) {
 	// When the music stops rows will be cols and cols... rows!
 	return 0;
-}
-
-R_API void r_table_columns(RTable *t, const char *name, ...) {
-	va_list ap;
-	va_start (ap, fmt);
-	r_list_free (t->cols);
-	t->cols = r_list_newf (__table_column_free);
-	for (;;) {
-		const char *n = va_arg (ap, const char *);
-		if (!n) {
-			break;
-		}
-	}
-        va_end (ap);
 }
 #endif
