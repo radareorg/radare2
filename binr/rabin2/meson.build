@@ -14,5 +14,6 @@ executable('rabin2', 'rabin2.c',
     sdb_dep
   ],
   install: true,
+  install_rpath: rpath,
   implicit_include_directories: false
 )

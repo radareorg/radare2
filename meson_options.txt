@@ -1,4 +1,5 @@
 option('static_runtime', type: 'boolean', value: false)
+option('local', type: 'boolean', value: false, description: 'Adds support for local/side-by-side installation (sets rpath if needed)')
 
 # For Windows
 option('r2_libdir', type: 'string', value: '')

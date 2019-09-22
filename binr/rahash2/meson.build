@@ -9,5 +9,6 @@ executable('rahash2', 'rahash2.c',
     r_socket_dep
   ],
   install: true,
+  install_rpath: rpath,
   implicit_include_directories: false
 )

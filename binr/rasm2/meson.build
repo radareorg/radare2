@@ -11,5 +11,6 @@ executable('rasm2', 'rasm2.c',
     sdb_dep
   ],
   install: true,
+  install_rpath: rpath,
   implicit_include_directories: false
 )

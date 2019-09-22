@@ -222,6 +222,8 @@ def build(args):
     options = ['-D%s' % x for x in args.options]
     if args.webui:
         options.append('-Duse_webui=true')
+    if args.local:
+        options.append('-Dlocal=true')
     if not os.path.exists(r2_builddir):
         meson(ROOT, r2_builddir, prefix=args.prefix, backend=args.backend,
               release=args.release, shared=args.shared, options=options)
@@ -261,6 +263,8 @@ def main():
             help='Choose build backend (default: %(default)s)')
     parser.add_argument('--shared', action='store_true',
             help='Link dynamically (shared library) rather than statically')
+    parser.add_argument('--local', action='store_true',
+            help='Adds support for local/side-by-side installation (sets rpath if needed)')
     parser.add_argument('--prefix', default=None,
             help='Set project installation prefix')
     parser.add_argument('--dir', default=BUILDDIR, required=False,
