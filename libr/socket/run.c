@@ -962,7 +962,11 @@ R_API int r_run_config_env(RRunProfile *p) {
 		if (p->_preload) {
 			eprintf ("WARNING: Only one library can be opened at a time\n");
 		}
-		p->_preload = R2_LIBDIR"/libr2."R_LIB_EXT;
+#ifdef __WINDOWS__
+		p->_preload = r_str_r2_prefix (R_JOIN_2_PATHS (R2_LIBDIR, "libr2."R_LIB_EXT));
+#else
+		p->_preload = strdup (R2_LIBDIR"/libr2."R_LIB_EXT);
+#endif
 	}
 	if (p->_libpath) {
 #if __WINDOWS__
