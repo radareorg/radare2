@@ -377,7 +377,7 @@ static void rtti_msvc_print_base_class_descriptor_json(rtti_base_class_descripto
  * .?AVClassInInnerNamespace@InnerNamespace@OuterNamespace@@
  * => OuterNamespace::InnerNamespace::AVClassInInnerNamespace
  */
-R_API char *r_anal_rtti_msvc_demangle_class_name(const char *name) {
+R_API char *r_anal_rtti_msvc_demangle_class_name(RVTableContext *context, const char *name) {
 	if (!name) {
 		return NULL;
 	}
@@ -387,27 +387,19 @@ R_API char *r_anal_rtti_msvc_demangle_class_name(const char *name) {
 		|| strncmp (name + original_len - 2, "@@", 2) != 0) {
 		return NULL;
 	}
-	char *ret = malloc ((original_len - 6) * 2 + 1);
-	if (!ret) {
-		return NULL;
-	}
-	char *c = ret;
-	const char *oc = name + original_len - 3;
-	size_t part_len = 0;
-	while (oc >= name + 4) {
-		if (*oc == '@') {
-			memcpy (c, oc + 1, part_len);
-			c += part_len;
-			*c++ = ':';
-			*c++ = ':';
-			part_len = 0;
+	char *ret = context->anal->binb.demangle (NULL, "msvc", name, 0, false);
+	if (ret && *ret) {
+		char *n = strchr (ret, ' ');
+		if (n && *(++n)) {
+			char *tmp = strdup (n);
+			free (ret);
+			ret = tmp;
 		} else {
-			part_len++;
+			R_FREE (ret);
 		}
-		oc--;
+	} else {
+		R_FREE (ret);
 	}
-	memcpy (c, oc + 1, part_len);
-	c[part_len] = '\0';
 	return ret;
 }
 
@@ -880,7 +872,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 		return existing;
 	}
 
-	char *name = r_anal_rtti_msvc_demangle_class_name (col->td->td.name);
+	char *name = r_anal_rtti_msvc_demangle_class_name (context->vt_context, col->td->td.name);
 	if (!name) {
 		if (context->vt_context->anal->verbose) {
 			eprintf ("Failed to demangle a class name: \"%s\"\n", col->td->td.name);
@@ -921,7 +913,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 		return existing;
 	}
 
-	char *name = r_anal_rtti_msvc_demangle_class_name (td->td.name);
+	char *name = r_anal_rtti_msvc_demangle_class_name (context->vt_context, td->td.name);
 	if (!name) {
 		if (context->vt_context->anal->verbose) {
 			eprintf("Failed to demangle a class name: \"%s\"\n", td->td.name);
