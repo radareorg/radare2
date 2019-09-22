@@ -28,7 +28,7 @@
 #define R2_FLAGS "@FLAGS@"
 #define R2_HUD "@HUD@"
 #else
-#if __WINDOWS__ || _MSC_VER || CUTTER
+#if __WINDOWS__ || _MSC_VER
 #define R2_PREFIX "."
 #define R2_LIBDIR "lib"
 #define R2_INCDIR "include\\libr"

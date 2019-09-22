@@ -71,19 +71,20 @@ beach:
 }
 
 R_API char *r_sys_get_src_dir_w32() {
-	int i = 0;
 	TCHAR fullpath[MAX_PATH + 1];
 	TCHAR shortpath[MAX_PATH + 1];
-	char *path;
 
 	if (!GetModuleFileName (NULL, fullpath, MAX_PATH + 1) ||
 		!GetShortPathName (fullpath, shortpath, MAX_PATH + 1)) {
 		return NULL;
 	}
-	path = r_sys_conv_win_to_utf8 (shortpath);
-	char *dir, *tmp = dir = r_file_dirname (path);
-	dir = r_file_dirname (tmp);
-	free (tmp);
+	char *path = r_sys_conv_win_to_utf8 (shortpath);
+	char *dir = r_file_dirname (path);
+	if (!r_sys_getenv_asbool ("R_ALT_SRC_DIR")) {
+		char *tmp = dir;
+		dir = r_file_dirname (tmp);
+		free (tmp);
+	}
 	return dir;
 }
 
