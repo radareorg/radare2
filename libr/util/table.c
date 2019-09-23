@@ -155,11 +155,13 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 	va_start (ap, fmt);
 	RList *list = r_list_newf (free);
 	const char *f = fmt;
-	for (;*f;f++) {
+	const char *arg = NULL;
+	for (; *f; f++) {
 		switch (*f) {
 		case 's':
 		case 'z':
-			r_list_append (list, strdup (va_arg (ap, const char *)));
+			arg = va_arg (ap, const char *);
+			r_list_append (list, strdup (arg?arg:""));
 			break;
 		case 'i':
 		case 'd':
