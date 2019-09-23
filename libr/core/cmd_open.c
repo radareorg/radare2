@@ -529,7 +529,7 @@ static void cmd_omf(RCore *core, const char *input) {
 static void r_core_cmd_omt(RCore *core, const char *arg) {
 	RTable *t = r_table_new ();
 	
-	r_table_set_columnsf (t, "nnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
+	r_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
 
 	SdbListIter *iter;
 	RIOMap *m;
