@@ -5,6 +5,7 @@
 #include <r_io.h>
 #include <r_main.h>
 #include <r_hash.h>
+#include <r_util/r_mem.h>
 #include <r_util/r_print.h>
 #include <r_util.h>
 #include <r_crypto.h>
@@ -21,7 +22,7 @@ static RHashSeed s = {
 static void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret) {
 	if (compare) {
 		// algobit has only 1 bit set
-		if (!memcmp (ctx->digest, compare, length)) {
+		if (!r_mem_safe_cmp (ctx->digest, compare, length)) {
 			printf ("rahash2: Computed hash matches the expected one.\n");
 		} else {
 			eprintf ("rahash2: Computed hash doesn't match the expected one.\n");

@@ -28,6 +28,19 @@ R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
 	return true;
 }
 
+R_API int r_mem_safe_cmp(const ut8 *a, const ut8 *b, int len)
+{
+	const volatile ut8* volatile ua = (const volatile ut8* volatile)a;
+	const volatile ut8* volatile ub = (const volatile ut8* volatile)b;
+	int d = 0, i = 0;
+	while (i < len) {
+		d |= ua[i] ^ ub[i];
+		i++;
+	}
+
+	return d;
+}
+
 R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
 	int i = 0, j;
 	while (i < dsize) {
