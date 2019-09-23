@@ -8,6 +8,8 @@
 
 #define PANEL_TITLE_SYMBOLS          "Symbols"
 #define PANEL_TITLE_STACK            "Stack"
+#define PANEL_TITLE_XREFS_HERE       "Xrefs Here"
+#define PANEL_TITLE_XREFS            "Xrefs"
 #define PANEL_TITLE_REGISTERS        "Registers"
 #define PANEL_TITLE_DISASSEMBLY      "Disassembly"
 #define PANEL_TITLE_DISASMSUMMARY    "Disassemble Summary"
@@ -26,6 +28,8 @@
 #define PANEL_TITLE_COMMENTS         "Comments"
 
 #define PANEL_CMD_SYMBOLS            "isq"
+#define PANEL_CMD_XREFS_HERE         "ax."
+#define PANEL_CMD_XREFS              "ax"
 #define PANEL_CMD_STACK              "px"
 #define PANEL_CMD_REGISTERS          "dr"
 #define PANEL_CMD_DISASSEMBLY        "pd"
@@ -104,7 +108,7 @@ static const char *menus_iocache[] = {
 static char *menus_View[] = {
 	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets", "Graph", "Tiny Graph",
 	"Functions", "Function Calls", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports",
-	"Info", "Database",  "Breakpoints", "Comments", "Classes", "Entropy", "Entropy Fire", "Stack", "Methods",
+	"Info", "Database",  "Breakpoints", "Comments", "Classes", "Entropy", "Entropy Fire", "Stack", "Xrefs Here", "Methods",
 	"Var READ address", "Var WRITE address", "Summary", "Relocs", "Headers", "File Hashes", PANEL_TITLE_ALL_DECOMPILER,
 	NULL
 };
@@ -315,6 +319,7 @@ static char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y);
 static char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y);
 
 /* set */
+static void __seek_all(RCore *core, ut64 addr);
 static void __set_curnode(RCore *core, int idx);
 static void __set_refresh_all(RCore *core, bool clearCache, bool force_refresh);
 static void __set_addr_by_type(RCore *core, const char *cmd, ut64 addr);
@@ -928,6 +933,7 @@ void __set_geometry(RPanelPos *pos, int x, int y, int w, int h) {
 
 void __set_panel_addr(RCore *core, RPanel *panel, ut64 addr) {
 	panel->model->addr = addr;
+	// TODO: implement sync() __seek_all (core, addr);
 	if (core->panels->autoUpdate) {
 		__set_refresh_all (core, false, false);
 		return;
@@ -1541,7 +1547,6 @@ void __cursor_right(RCore *core) {
 	}
 }
 
-
 void __cursor_up(RCore *core) {
 	RPrint *print = core->print;
 	ut64 addr, oaddr = core->offset + print->cur;
@@ -2048,6 +2053,16 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 			__set_addr_by_type (core, PANEL_CMD_DISASSEMBLY, addr);
 		}
 		r_config_set (core->config, "scr.highlight", word);
+#if 1
+// TODO implement sync
+		{
+			ut64 addr = r_num_math (core->num, word);
+			if (addr > 0) {
+		//		__set_panel_addr (core, cur, addr);
+				__seek_all (core, addr);
+			}
+		}
+#endif
 		free (word);
 	}
 	if (x >= ppos->view->pos.x && x < ppos->view->pos.x + 4) {
@@ -3001,6 +3016,14 @@ bool __check_func_diff(RCore *core, RPanel *p) {
 	return false;
 }
 
+void __seek_all(RCore *core, ut64 addr) {
+	RPanels *panels = core->panels;
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = __get_panel (panels, i);
+		panel->model->addr = addr;
+	}
+}
 void __set_refresh_all(RCore *core, bool clearCache, bool force_refresh) {
 	RPanels *panels = core->panels;
 	int i;
@@ -5177,6 +5200,8 @@ void __init_sdb(RCore *core) {
 	sdb_set (panels->db, "Database", "k ***", 0);
 	sdb_set (panels->db, "Console", "$console", 0);
 	sdb_set (panels->db, "Hexdump", "xc $r*16", 0);
+	sdb_set (panels->db, "Xrefs", "ax", 0);
+	sdb_set (panels->db, "Xrefs Here", "ax.", 0);
 	sdb_set (panels->db, "Functions", "afl", 0);
 	sdb_set (panels->db, "Function Calls", "aflm", 0);
 	sdb_set (panels->db, "Comments", "CC", 0);
