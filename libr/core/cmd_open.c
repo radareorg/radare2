@@ -538,7 +538,8 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 		ut64 va_end = r_itv_end (m->itv);
 		ut64 pa = m->delta;
 		ut64 pa_end = r_itv_size (m->itv);
-		r_table_add_rowf (t, "ddxxxxss", m->id, m->fd, pa, pa_end, va, va_end, r_str_rwx_i (m->perm), m->name);
+		const char *name = m->name? m->name: "";
+		r_table_add_rowf (t, "ddxxxxss", m->id, m->fd, pa, pa_end, va, va_end, r_str_rwx_i (m->perm), name);
 	}
 
 	if (r_table_query (t, arg)) {

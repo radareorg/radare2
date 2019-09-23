@@ -4568,16 +4568,18 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		bool validRef = false;
 		if (trace && myvalid (mycore->io, refptr)) {
 			if (ntarget == UT64_MAX || ntarget == refptr) {
-				r_anal_xrefs_set (mycore->anal, esil->address, refptr, R_ANAL_REF_TYPE_DATA);
 				str[0] = 0;
 				if (r_io_read_at (mycore->io, refptr, str, sizeof (str)) < 1) {
-					eprintf ("Invalid read\n");
+					//eprintf ("Invalid read\n");
 					str[0] = 0;
+					validRef = false;
+				} else {
+					r_anal_xrefs_set (mycore->anal, esil->address, refptr, R_ANAL_REF_TYPE_DATA);
+					str[sizeof (str) - 1] = 0;
+					add_string_ref (mycore, esil->address, refptr);
+					esilbreak_last_data = UT64_MAX;
+					validRef = true;
 				}
-				str[sizeof (str) - 1] = 0;
-				add_string_ref (mycore, esil->address, refptr);
-				esilbreak_last_data = UT64_MAX;
-				validRef = true;
 			}
 		}
 
@@ -4754,6 +4756,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		eprintf ("Usage: aae[f] [len] [addr] - analyze refs in function, section or len bytes with esil\n");
 		eprintf ("  aae $SS @ $S             - analyze the whole section\n");
 		eprintf ("  aae $SS str.Hello @ $S   - find references for str.Hellow\n");
+		eprintf ("  aaef                     - analyze functions discovered with esil\n");
 		return;
 	}
 #define CHECKREF(x) ((refptr && (x) == refptr) || !refptr)
@@ -4860,6 +4863,9 @@ repeat:
 			break;
 		}
 		cur = addr + i;
+		if (!myvalid (mycore->io, cur)) {
+			goto repeat;
+		}
 		{
 			RList *list = r_meta_find_list_in (core->anal, cur, -1, 4);
 			RListIter *iter;
