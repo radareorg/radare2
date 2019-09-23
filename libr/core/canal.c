@@ -4863,10 +4863,6 @@ repeat:
 			break;
 		}
 		cur = addr + i;
-		if (!myvalid (mycore->io, cur)) {
-			i += minopsize - 1; //   XXX dupe in op.size below
-			goto repeat;
-		}
 		{
 			RList *list = r_meta_find_list_in (core->anal, cur, -1, 4);
 			RListIter *iter;
