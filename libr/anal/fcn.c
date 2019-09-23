@@ -878,7 +878,7 @@ repeat:
 		}
 		idx += oplen;
 		delay.un_idx = idx;
-		if (op.delay > 0 && !delay.pending) {
+		if (anal->opt.delay && op.delay > 0 && !delay.pending) {
 			// Handle first pass through a branch delay jump:
 			// Come back and handle the current instruction later.
 			// Save the location of it in `delay.idx`

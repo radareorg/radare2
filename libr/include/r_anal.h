@@ -630,6 +630,7 @@ typedef struct r_anal_options_t {
 	bool pushret; // analyze push+ret as jmp
 	bool armthumb; //
 	bool endsize; // chop function size which is known to be buggy but goodie too
+	bool delay;
 } RAnalOptions;
 
 typedef enum {

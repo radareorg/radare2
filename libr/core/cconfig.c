@@ -240,12 +240,20 @@ static bool cb_analafterjmp(void *user, void *data) {
 	return true;
 }
 
+static bool cb_anal_delay(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.delay = node->i_value;
+	return true;
+}
+
 static bool cb_anal_endsize(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.endsize = node->i_value;
 	return true;
 }
+
 static bool cb_analvars(void *user, void *data) {
         RCore *core = (RCore*) user;
         RConfigNode *node = (RConfigNode*) data;
@@ -2840,6 +2848,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.jmp.eob", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
 	SETCB ("anal.jmp.after", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
 	SETCB ("anal.endsize", "true", &cb_anal_endsize, "Adjust function size at the end of the analysis (known to be buggy)");
+	SETCB ("anal.delay", "true", &cb_anal_delay, "Enable delay slot analysis if supported by the architecgture");
 	SETICB ("anal.depth", 64, &cb_analdepth, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "Max depth for path search");
 	SETICB ("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
