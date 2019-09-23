@@ -179,7 +179,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 		      fprintf_fn (stream, " @r%d", rn);
 		      break;
 	      case A_DISP_REG_N:
-		      fprintf_fn (stream, " @(0x%X,r%d)", imm, rn);
+		      fprintf_fn (stream, " @(0x%x,r%d)", imm, rn);
 		      break;
 	      case A_REG_M:
 		      fprintf_fn (stream, " r%d", rm);
@@ -194,7 +194,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 		      fprintf_fn (stream, " @r%d", rm);
 		      break;
 	      case A_DISP_REG_M:
-		      fprintf_fn (stream, " @(0x%X,r%d)", imm, rm);
+		      fprintf_fn (stream, " @(0x%x,r%d)", imm, rm);
 		      break;
 	      case A_REG_B:
 		      fprintf_fn (stream, " r%d_bank", rb);
@@ -202,7 +202,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 	      case A_DISP_PC:
 		      disp_pc = 1;
 		      disp_pc_addr = imm + 4 + (memaddr & relmask);
-		      fprintf_fn (stream, " @(0x%X,PC)", imm);
+		      fprintf_fn (stream, " @(0x%x,pc)", imm);
 		      break;
 	      case A_IND_R0_REG_N:
 		      fprintf_fn (stream, " @(r0,r%d)", rn);
