@@ -2957,7 +2957,7 @@ R_API const char *r_str_pad(const char ch, int sz) {
 	return pad;
 }
 
-R_API const char *r_str_repeat (const char *ch, int sz) {
+R_API const char *r_str_repeat(const char *ch, int sz) {
 	RStrBuf *buf = r_strbuf_new (ch);
 	int i;
 	if (sz < 0) {
