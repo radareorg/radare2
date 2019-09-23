@@ -5079,6 +5079,9 @@ void __panels_refresh(RCore *core) {
 		r_core_cmd0 (core, "pg");
 	}
 	r_cons_flush ();
+	if (r_cons_singleton ()->fps) {
+		r_cons_print_fps (40);
+	}
 }
 
 void __do_panels_refresh(RCore *core) {

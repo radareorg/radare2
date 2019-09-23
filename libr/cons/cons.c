@@ -992,32 +992,39 @@ R_API void r_cons_visual_flush() {
 	}
 	r_cons_reset ();
 	if (I.fps) {
-		int fps = 0, w = r_cons_get_size (NULL);
-		static ut64 prev = 0LL; //r_sys_now ();
-		fps = 0;
-		if (prev) {
-			ut64 now = r_sys_now ();
-			st64 diff = (st64)(now - prev);
-			if (diff < 0) {
-				fps = 0;
-			} else {
-				fps = (diff < 1000000)? (1000000.0/diff): 0;
-			}
-			prev = now;
-		} else {
-			prev = r_sys_now ();
-		}
-#ifdef __WINDOWS__
-		if (I.ansicon) {
-#endif
-			eprintf ("\x1b[0;%dH[%d FPS] \n", w - 10, fps);
-#ifdef __WINDOWS__
-		} else {
-			r_cons_w32_gotoxy (2, w - 10, 0);
-			eprintf ("[%d FPS] \n", fps);
-		}
-#endif
+		r_cons_print_fps (0);
 	}
+}
+
+R_API void r_cons_print_fps (int col) {
+	int fps = 0, w = r_cons_get_size (NULL);
+	static ut64 prev = 0LL; //r_sys_now ();
+	fps = 0;
+	if (prev) {
+		ut64 now = r_sys_now ();
+		st64 diff = (st64)(now - prev);
+		if (diff < 0) {
+			fps = 0;
+		} else {
+			fps = (diff < 1000000)? (1000000.0/diff): 0;
+		}
+		prev = now;
+	} else {
+		prev = r_sys_now ();
+	}
+	if (col < 1) {
+		col = 12;
+	}
+#ifdef __WINDOWS__
+	if (I.ansicon) {
+		eprintf ("\x1b[0;%dH[%d FPS] \n", w - col, fps);
+	} else {
+		r_cons_w32_gotoxy (2, w - col, 0);
+		eprintf (" [%d FPS] \n", fps);
+	}
+#else
+	eprintf ("\x1b[0;%dH[%d FPS] \n", w - col, fps);
+#endif
 }
 
 static int real_strlen(const char *ptr, int len) {
