@@ -372,13 +372,13 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_SWITCH, "switch" },
 	{ R_ANAL_OP_TYPE_TRAP  , "trap" },
 	{ R_ANAL_OP_TYPE_UCALL , "ucall" },
-	{ R_ANAL_OP_TYPE_RCALL , "ucall" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_RCALL , "rcall" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_ICALL , "ucall" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_IRCALL, "ucall" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_UCCALL, "uccall" },
 	{ R_ANAL_OP_TYPE_UCJMP , "ucjmp" },
 	{ R_ANAL_OP_TYPE_UJMP  , "ujmp" },
-	{ R_ANAL_OP_TYPE_RJMP  , "ujmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_RJMP  , "rjmp" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_IJMP  , "ujmp" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_IRJMP , "ujmp" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_UNK   , "unk" },
@@ -410,7 +410,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 		/* nothing */
 		break;
 	}
-	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
+	// t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
 #if 0
 	int i;
 	// this is slower than a switch table :(
@@ -466,13 +466,13 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_SWITCH: return "switch";
 	case R_ANAL_OP_TYPE_TRAP  : return "trap";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
-	case R_ANAL_OP_TYPE_RCALL : return "ucall"; // needs to be changed
+	case R_ANAL_OP_TYPE_RCALL : return "rcall"; // needs to be changed
 	case R_ANAL_OP_TYPE_ICALL : return "ucall"; // needs to be changed
 	case R_ANAL_OP_TYPE_IRCALL: return "ucall"; // needs to be changed
 	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
 	case R_ANAL_OP_TYPE_UCJMP : return "ucjmp";
 	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
-	case R_ANAL_OP_TYPE_RJMP  : return "ujmp"; // needs to be changed
+	case R_ANAL_OP_TYPE_RJMP  : return "rjmp"; // needs to be changed
 	case R_ANAL_OP_TYPE_IJMP  : return "ujmp"; // needs to be changed
 	case R_ANAL_OP_TYPE_IRJMP : return "ujmp"; // needs to be changed
 	case R_ANAL_OP_TYPE_UNK   : return "unk";

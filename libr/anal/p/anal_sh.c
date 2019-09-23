@@ -641,7 +641,8 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 	}
 
 	if (IS_JSR (code)) {
-		op->type = R_ANAL_OP_TYPE_UCALL; //call to reg
+		// op->type = R_ANAL_OP_TYPE_UCALL; //call to reg
+		op->type = R_ANAL_OP_TYPE_RCALL; //call to reg
 		op->delay = 1;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "1,SETD,pc,2,+,pr,=,r%d,pc,=", GET_TARGET_REG (code));
