@@ -3117,7 +3117,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	ut64 off = core->offset;
 	ut64 from = UT64_MAX;
 	ut64 to = 0;
-	RTable *t = r_table_new();
+	RTable *t = r_table_new ();
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
 	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");

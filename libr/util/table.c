@@ -73,6 +73,7 @@ R_API RTable *r_table_new() {
 		t->rows = r_list_newf (r_table_row_free);
 		t->useUtf8 = true;
 		t->useUtf8Curvy = true;
+		t->showSum = false;
 	}
 	return t;
 }
@@ -92,6 +93,7 @@ R_API void r_table_add_column(RTable *t, RTableColumnType *type, const char *nam
 		int itemLength = r_str_len_utf8 (name) + 1;
 		c->width = itemLength;
 		r_list_append (t->cols, c);
+		c->total = -1;
 	}
 }
 
@@ -239,6 +241,26 @@ static void __strbuf_append_col_aligned_fancy(RTable *t, RStrBuf *sb, RTableColu
 	}
 }
 
+static void __computeTotal(RTable *t) {
+	RTableRow *row;
+	RTableColumn *col;
+	RListIter *iter, *iter2;
+	r_list_foreach (t->rows, iter, row) {
+			char *item;
+			int c = 0;
+			r_list_foreach (row->items, iter2, item) {
+					RTableColumn *col = r_list_get_n (t->cols, c);
+					if (!r_str_cmp (col->type->name, "number", r_str_ansi_len ("number")) && r_str_isnumber(item)) {
+						if (col->total < 0) {
+							col->total = 0;
+						}
+						col->total += sdb_atoi(item);
+					}
+					c++;
+				}
+		}
+}
+
 R_API char *r_table_tofancystring(RTable *t) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
@@ -257,9 +279,9 @@ R_API char *r_table_tofancystring(RTable *t) {
 
 
 	r_list_foreach (t->cols, iter, col) {
-		__strbuf_append_col_aligned_fancy(t, sb, col, col->name);
+		__strbuf_append_col_aligned_fancy (t, sb, col, col->name);
 	}
-	int len = r_str_len_utf8_ansi(r_strbuf_get (sb)) - 1;
+	int len = r_str_len_utf8_ansi (r_strbuf_get (sb)) - 1;
 	{
 		char *s = r_str_newf ("%s%s%s\n", tl_corner, r_str_repeat (h_line, len), tr_corner);
 		r_strbuf_prepend (sb, s);
@@ -276,6 +298,17 @@ R_API char *r_table_tofancystring(RTable *t) {
 				__strbuf_append_col_aligned_fancy (t, sb, col, item);
 			}
 			c++;
+		}
+		r_strbuf_appendf (sb, "%s\n", v_line);
+	}
+
+	if (t->showSum) {
+		char tmp[64];
+		__computeTotal (t);
+		r_strbuf_appendf (sb, "%s%s%s\n", l_intersect, r_str_repeat (h_line, len), r_intersect);
+		r_list_foreach (t->cols, iter, col) {
+			char *num = col->total == -1 ? "" : sdb_itoa (col->total, tmp, 10);
+			__strbuf_append_col_aligned_fancy (t, sb, col, num);
 		}
 		r_strbuf_appendf (sb, "%s\n", v_line);
 	}
@@ -313,7 +346,7 @@ R_API char *r_table_tostring(RTable *t) {
 		r_list_foreach (t->cols, iter, col) {
 			__strbuf_append_col_aligned (sb, col, col->name);
 		}
-		int len = r_strbuf_length (sb);
+		int len = r_str_len_utf8_ansi (r_strbuf_get (sb)) - 1;
 		r_strbuf_appendf (sb, "\n%s\n", r_str_repeat (h_line, len));
 	}
 	r_list_foreach (t->rows, iter, row) {
@@ -327,6 +360,15 @@ R_API char *r_table_tostring(RTable *t) {
 			c++;
 		}
 		r_strbuf_append (sb, "\n");
+	}
+	if (t->showSum) {
+		char tmp[64];
+		__computeTotal(t);
+		int len = r_str_len_utf8_ansi (r_strbuf_get (sb)) - 1;
+		r_strbuf_appendf (sb, "\n%s\n", r_str_repeat (h_line, len));
+		r_list_foreach (t->cols, iter, col) {
+			__strbuf_append_col_aligned (sb, col, sdb_itoa (col->total, tmp, 10));
+		}
 	}
 	return r_strbuf_drain (sb);
 }

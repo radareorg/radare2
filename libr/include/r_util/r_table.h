@@ -15,6 +15,7 @@ typedef struct {
 	int width; // computed
 	int maxWidth;
 	bool forceUppercase;
+	int total;
 } RTableColumn;
 
 enum {
@@ -33,6 +34,7 @@ typedef struct {
 	RList *cols;
 	int totalCols;
 	bool showHeader;
+	bool showSum;
 	bool adjustedCols;
 	bool useUtf8;
 	bool useUtf8Curvy;
