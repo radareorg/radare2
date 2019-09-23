@@ -3117,7 +3117,8 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	ut64 off = core->offset;
 	ut64 from = UT64_MAX;
 	ut64 to = 0;
-	RTable *t = r_table_new ();
+	RTable *t = r_core_table (core);
+	t->showSum = true;
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
 	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
@@ -3158,12 +3159,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		pj_a (pj);
 		break;
 	case 'h': {	// "p-h"
-		r_table_add_column (t, typeString, "offset", 0);
-		r_table_add_column (t, typeNumber, "flags", 0);
-		r_table_add_column (t, typeNumber, "funcs", 0);
-		r_table_add_column (t, typeNumber, "cmts", 0);
-		r_table_add_column (t, typeNumber, "syms", 0);
-		r_table_add_column (t, typeNumber, "str", 0);
+		r_table_set_columnsf (t, "sddddd", "offset", "flags", "funcs", "cmts", "syms", "str");
 	}
 		break;
 	case 'e':
@@ -3174,7 +3170,6 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	bool use_color = r_config_get_i (core->config, "scr.color");
 	int len = 0;
 	int i;
-	RCoreAnalStatsItem total = {0};
 	for (i = 0; i < ((to - from) / piece); i++) {
 		ut64 at = from + (piece * i);
 		ut64 ate = at + piece;
@@ -3216,28 +3211,13 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 			len++;
 			break;
 		case 'h':
-			total.flags += as->block[p].flags;
-			total.functions += as->block[p].functions;
-			total.comments += as->block[p].comments;
-			total.symbols += as->block[p].symbols;
-			total.strings += as->block[p].strings;
 			if ((as->block[p].flags)
 				|| (as->block[p].functions)
 				|| (as->block[p].comments)
 				|| (as->block[p].symbols)
 				|| (as->block[p].strings)) {
-				char *offset = r_str_newf ("0x%09"PFMT64x"", at);
-				char *flags = r_str_newf ("%d", as->block[p].flags);
-				char *funcs = r_str_newf ("%d", as->block[p].functions);
-				char *comments = r_str_newf ("%d", as->block[p].comments);
-				char *symbols = r_str_newf ("%d", as->block[p].symbols);
-				char *strings = r_str_newf ("%d", as->block[p].strings);
-				r_table_add_row (t, offset, flags, funcs, comments, symbols, strings, NULL);
-				r_free (flags);
-				r_free (funcs);
-				r_free (comments);
-				r_free (symbols);
-				r_free (strings);
+				r_table_add_rowf (t, "sddddd", sdb_fmt ("0x%09"PFMT64x"", at), as->block[p].flags,
+						  as->block[p].functions, as->block[p].comments, as->block[p].symbols,  as->block[p].strings);
 			}
 			break;
 		case 'e': // p-e
@@ -3287,18 +3267,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 			pj_free (pj);
 			break;
 		case 'h': {
-			char *flags = r_str_newf ("%d", total.flags);
-			char *funcs = r_str_newf ("%d", total.functions);
-			char *comments = r_str_newf ("%d", total.comments);
-			char *symbols = r_str_newf ("%d", total.symbols);
-			char *strings = r_str_newf ("%d", total.strings);
-			r_table_add_row (t, "total", flags, funcs, comments, symbols, strings, NULL);
 			r_cons_printf ("\n%s\n", r_table_tofancystring (t));
-			r_free (flags);
-			r_free (funcs);
-			r_free (comments);
-			r_free (symbols);
-			r_free (strings);
 			r_table_free (t);
 			break;
 		}

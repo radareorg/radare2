@@ -899,6 +899,7 @@ typedef void (*RCoreTaskOneShot)(void *);
 R_API void r_core_echo(RCore *core, const char *msg);
 R_API RCoreTask *r_core_task_get(RCore *core, int id);
 R_API RCoreTask *r_core_task_get_incref(RCore *core, int id);
+R_API RTable *r_core_table (RCore *core);
 R_API void r_core_task_print(RCore *core, RCoreTask *task, int mode);
 R_API void r_core_task_list(RCore *core, int mode);
 R_API int r_core_task_running_tasks_count(RCore *core);
