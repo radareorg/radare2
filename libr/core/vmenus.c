@@ -29,8 +29,6 @@ typedef struct {
 	const char *optword;
 } RCoreVisualTypes;
 
-static bool show_vars = false;
-
 // TODO: move this helper into r_cons
 static char *prompt(const char *str, const char *txt) {
 	char cmd[1024];
@@ -2742,12 +2740,12 @@ static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 							fcn->addr, r_anal_fcn_realsize (fcn), fcn->name);
 				}
 				if (var_functions) {
-					if (!show_vars) {
+					if (!r_cons_singleton ()->show_vals) {
 						int fun_len = r_str_ansi_len (var_functions);
 						int columns = fun_len > cols ? cols - 2 : cols;
 						tmp = r_str_ansi_crop (var_functions, 0, 0, columns, window);
 						if (r_str_ansi_len (tmp) < fun_len) {
-							r_cons_printf("%s..%s\n", tmp, Color_RESET);
+							r_cons_printf ("%s..%s\n", tmp, Color_RESET);
 							print_full_func = false;
 						}
 						r_free (tmp);
@@ -2992,13 +2990,13 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 		char *output = r_core_cmd_str (core, old);
 		if (output) {
 			// 'h - 2' because we have two new lines in r_cons_printf
-			if (!show_vars) {
+			if (!r_cons_singleton ()->show_vals) {
 				char *out = r_str_ansi_crop(output, 0, 0, cols, h - 2);
-				r_cons_printf("\n%s\n", out);
-				free(out);
+				r_cons_printf ("\n%s\n", out);
+				free (out);
 				R_FREE (output);
 			} else {
-				r_cons_printf("\n%s\n", output);
+				r_cons_printf ("\n%s\n", output);
 				R_FREE (output);
 			}
 		}
@@ -3168,10 +3166,10 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case '[':
-			show_vars = true;
+			r_cons_singleton ()->show_vals = true;
 			break;
 		case ']':
-			show_vars = false;
+			r_cons_singleton ()->show_vals = false;
 			break;
 		case '?':
 			r_cons_clear00 ();
