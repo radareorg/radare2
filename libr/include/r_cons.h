@@ -522,6 +522,7 @@ typedef struct r_cons_t {
 	bool click_set;
 	int click_x;
 	int click_y;
+	bool show_vals;		// show which section in Vv
 	// TODO: move into instance? + avoid unnecessary copies
 } RCons;
 

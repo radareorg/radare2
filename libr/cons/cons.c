@@ -580,6 +580,7 @@ R_API RCons *r_cons_new() {
 #endif
 	I.pager = NULL; /* no pager by default */
 	I.mouse = 0;
+	I.show_vals = false;
 	r_cons_reset ();
 	r_cons_rgb_init ();
 
