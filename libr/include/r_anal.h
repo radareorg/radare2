@@ -880,7 +880,6 @@ typedef struct r_anal_cond_t {
 } RAnalCond;
 
 typedef struct r_anal_bb_t {
-	char *name;
 	ut64 addr;
 	ut64 jump;
 	ut64 type2;

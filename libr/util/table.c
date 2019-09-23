@@ -174,7 +174,14 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 			r_list_append (list, r_num_units (NULL, 32, va_arg (ap, ut64)));
 			break;
 		case 'x':
-			r_list_append (list, r_str_newf ("0x%"PFMT64x, va_arg (ap, ut64)));
+			{
+				ut64 n = va_arg (ap, ut64);
+				if (n == UT64_MAX) {
+					r_list_append (list, "-1");
+				} else {
+					r_list_append (list, r_str_newf ("0x%"PFMT64x, n));
+				}
+			}
 			break;
 		default:
 			eprintf ("Invalid format string char '%c', use 's' or 'n'\n", *f);

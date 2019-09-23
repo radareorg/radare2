@@ -320,12 +320,13 @@ static const char *help_msg_afb[] = {
 	"afb.", " [addr]", "show info of current basic block",
 	"afb=", "", "display ascii-art bars for basic block regions",
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add basic block by hand",
-	"afbr", "", "Show addresses of instructions which leave the function",
+	"afbc", " [addr] [color(ut32)]", "set a color for the bb at a given address",
+	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afbi", "", "print current basic block information",
 	"afbj", " [addr]", "show basic blocks information in json",
-	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
+	"afbr", "", "Show addresses of instructions which leave the function",
+	"afbt", "", "Show basic blocks of current function in a table",
 	"afB", " [bits]", "define asm.bits for the given function",
-	"afbc", " [addr] [color(ut32)]", "set a color for the bb at a given address",
 	NULL
 };
 
@@ -1918,9 +1919,13 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	}
 	if (input && *input) {
 		addr = bbaddr = r_num_math (core->num, input);
+		if (!addr && *input != '0') {
+			addr = core->offset;
+		}
 	} else {
 		addr = core->offset;
 	}
+	input = r_str_trim_ro (input);
 	if (one) {
 		bbaddr = addr;
 	}
@@ -1938,6 +1943,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			r_cons_println (pj_string (pj));
 			pj_free (pj);
 		}
+		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", addr);
 		return false;
 	}
 	if (mode == '*') {
@@ -1962,6 +1968,12 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		r_list_free (flist);
 		return true;
 	}
+
+	RTable *t = NULL;
+	if (mode == 't') {
+		t = r_table_new ();
+		r_table_set_columnsf (t, "xdxx", "addr", "size", "jump", "fail");
+	}
 	r_list_foreach (fcn->bbs, iter, b) {
 		if (one) {
 			if (bbaddr != UT64_MAX && (bbaddr < b->addr || bbaddr >= (b->addr + b->size))) {
@@ -1969,6 +1981,9 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			}
 		}
 		switch (mode) {
+		case 't':
+			r_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
+			break;
 		case 'r':
 			if (b->jump == UT64_MAX) {
 				ut64 retaddr = r_anal_bb_opaddr_i (b, b->ninstr - 1);
@@ -2116,7 +2131,15 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			break;
 		}
 	}
-	if (mode == 'j') {
+	if (mode == 't') {
+		const char *arg = input;
+		if (r_table_query (t, arg)) {
+			char *ts = r_table_tofancystring (t);
+			r_cons_printf ("%s", ts);
+			free (ts);
+		}
+		r_table_free (t);
+	} else if (mode == 'j') {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
@@ -3404,6 +3427,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '=': // "afb="
 		case '*': // "afb*"
 		case 'j': // "afbj"
+		case 't': // "afbt"
 			anal_fcn_list_bb (core, input + 2, false);
 			break;
 		case 'i': // "afbi"
