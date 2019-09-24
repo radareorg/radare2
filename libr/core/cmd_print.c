@@ -338,6 +338,7 @@ static const char *help_msg_pf[] = {
 	"pf.", "fmt_name", "Show data using named format",
 	"pf.", "fmt_name.field_name", "Show specific data field using named format",
 	"pf.", "fmt_name.field_name=33", "Set new value for the specified field in named format",
+	"pf.", "fmt_name.field_name[i]", "Show element i of array field_name",
 	"pf.", "name [0|cnt]fmt", "Define a new named format",
 	"pf?", "fmt_name", "Show the definition of a named format",
 	"pfc ", "fmt_name|fmt", "Show data using (named) format as C string",
