@@ -5,7 +5,7 @@
 #include <r_util.h>
 
 R_API void r_core_anal_esil_graph(RCore *core, const char *expr) {
-	RAnalEsilDFG * edf = r_anal_esil_dfg_expr(core->anal, expr);
+	RAnalEsilDFG * edf = r_anal_esil_dfg_expr(core->anal, NULL, expr);
 	RListIter *iter, *ator;
 	RGraphNode *node, *edon;
 	r_list_foreach (r_graph_get_nodes (edf->flow), iter, node) {
