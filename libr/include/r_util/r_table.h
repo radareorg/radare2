@@ -45,9 +45,6 @@ typedef struct {
 	bool showHeader;
 	bool showSum;
 	bool adjustedCols;
-	bool useUtf8;
-	bool useUtf8Curvy;
-	int useColor;
     	void *cons;
 } RTable;
 
