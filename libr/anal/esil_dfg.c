@@ -581,6 +581,11 @@ static void _dfg_rev_dfs_cb(RGraphNode *n, RGraphVisitor *vi) {
 	RAnalEsilDFGNode *node = (RAnalEsilDFGNode *)n->data;
 	RAnalEsilDFGFilter *filter = (RAnalEsilDFGFilter *)vi->data;
 	switch (node->type) {
+	case R_ANAL_ESIL_DFG_BLOCK_CONST:
+	case R_ANAL_ESIL_DFG_BLOCK_VAR:
+	case R_ANAL_ESIL_DFG_BLOCK_PTR:
+		eprintf  ("TODO: Unsupported dfg_rev_dfs\n");
+		break;
 	case R_ANAL_ESIL_DFG_BLOCK_GENERATIVE:
 		r_rbtree_cont_insert (filter->tree, node, _dfg_node_filter_insert_cmp, NULL);
 		break;
@@ -620,7 +625,7 @@ static RStrBuf *get_resolved_expr(RAnalEsilDFGFilter *filter, RAnalEsilDFGNode *
 	}
 	char *p, *q;
 	// we can do this bc every generative node MUST end with an operator
-	for (p = expr; q = condrets_strtok (p, ','); p = q) {
+	for (p = expr; (q = condrets_strtok (p, ',')); p = q) {
 		RGraphNode *gn = sdb_ptr_get (filter->results, p, 0);
 		if (!gn) {
 			r_strbuf_appendf (res, ",%s,", p);
