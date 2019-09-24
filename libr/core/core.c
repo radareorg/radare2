@@ -3748,6 +3748,8 @@ R_API RTable *r_core_table(RCore *core) {
 	if (table) {
 		table->useUtf8 = core->cons->use_utf8;
 		table->useUtf8Curvy = core->cons->use_utf8_curvy;
+		table->useColor = core->cons->context->color_mode;
+		table->cons = core->cons;
 	}
 	return table;
 }

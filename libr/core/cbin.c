@@ -2473,7 +2473,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			RListInfo *info = r_listinfo_new (s->name, pitv, vitv, s->perm, strdup (humansz));
 			r_list_append (list, info);
 		}
-		r_core_visual_list (r, list, r->offset, -1, cols, r->print->flags & R_PRINT_FLAGS_COLOR);
+		RTable *table = r_core_table (r);
+		table->showHeader = false;
+		r_table_visual_list (table, list, r->offset, -1, cols, r->print->flags & R_PRINT_FLAGS_COLOR);
+		r_cons_printf ("\n%s\n", r_table_tostring (table));
+		r_table_free (table);
 		r_list_free (list);
 		goto out;
 	}

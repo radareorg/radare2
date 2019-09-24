@@ -103,14 +103,6 @@ R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
 	return NULL;
 }
 
-typedef struct {
-	char *name;
-	RInterval pitv;
-	RInterval vitv;
-	int perm;
-	char *extra;
-} RListInfo;
-
 static int cmpaddr (const void *_a, const void *_b) {
 	const RListInfo *a = _a, *b = _b;
 	return (r_itv_begin (a->pitv) > r_itv_begin (b->pitv))? 1:
@@ -249,8 +241,14 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 	}
 	if (flag) {
 		r_list_sort (info_list, cmpaddr);
-		visual_list (dbg, info_list, offset, 1,
-			r_cons_get_size (NULL), false);
+		RTable *table = r_table_new ();
+		table->useUtf8 = r_cons_singleton ()->use_utf8;
+		table->useUtf8Curvy = r_cons_singleton ()->use_utf8_curvy;
+		RIO *io = dbg->iob.io;
+		r_table_visual_list (table, info_list, offset, 1,
+			r_cons_get_size (NULL), io->va);
+		io->cb_printf ("\n%s\n", r_table_tostring (table));
+		r_table_free (table);
 		r_list_free (info_list);
 	}
 }

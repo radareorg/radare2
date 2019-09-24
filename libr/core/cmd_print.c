@@ -3119,8 +3119,6 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	ut64 to = 0;
 	RTable *t = r_core_table (core);
 	t->showSum = true;
-	RTableColumnType *typeString = r_table_type ("string");
-	RTableColumnType *typeNumber = r_table_type ("number");
 	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
 	if (!list) {
 		return 1;
