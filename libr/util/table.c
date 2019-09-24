@@ -244,19 +244,19 @@ static void __computeTotal(RTable *t) {
 	RTableRow *row;
 	RListIter *iter, *iter2;
 	r_list_foreach (t->rows, iter, row) {
-			char *item;
-			int c = 0;
-			r_list_foreach (row->items, iter2, item) {
-					RTableColumn *col = r_list_get_n (t->cols, c);
-					if (!r_str_cmp (col->type->name, "number", r_str_ansi_len ("number")) && r_str_isnumber (item)) {
-						if (col->total < 0) {
-							col->total = 0;
-						}
-						col->total += sdb_atoi(item);
-					}
-					c++;
+		char *item;
+		int c = 0;
+		r_list_foreach (row->items, iter2, item) {
+			RTableColumn *col = r_list_get_n (t->cols, c);
+			if (!r_str_cmp (col->type->name, "number", r_str_ansi_len ("number")) && r_str_isnumber (item)) {
+				if (col->total < 0) {
+					col->total = 0;
 				}
+				col->total += sdb_atoi(item);
+			}
+			c++;
 		}
+	}
 }
 
 R_API char *r_table_tofancystring(RTable *t) {

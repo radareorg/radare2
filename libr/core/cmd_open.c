@@ -392,7 +392,6 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				r_list_append (list, info);
 			}
 			RTable *table = r_core_table (core);
-			table->showHeader = false;
 			r_table_visual_list (table, list, core->offset, core->blocksize,
 				r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 			r_cons_printf ("\n%s\n", r_table_tostring (table));
@@ -838,7 +837,6 @@ static void cmd_open_map(RCore *core, const char *input) {
 			r_list_append (list, info);
 		}
 		RTable *table = r_core_table (core);
-		table->showHeader = false;
 		r_table_visual_list (table, list, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		r_cons_printf ("\n%s\n", r_table_tostring (table));
