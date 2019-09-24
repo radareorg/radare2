@@ -376,14 +376,6 @@ typedef struct r_core_cmpwatch_t {
 
 typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 
-typedef struct {
-	char *name;
-	RInterval pitv;
-	RInterval vitv;
-	int perm;
-	char *extra;
-} RListInfo;
-
 #ifdef R_API
 //#define r_core_ncast(x) (RCore*)(size_t)(x)
 R_API RList *r_core_list_themes(RCore *core);
@@ -483,7 +475,6 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 R_API void r_core_anal_esil_graph(RCore *core, const char *expr);
 
 R_API void r_core_list_io(RCore *core);
-R_API void r_core_visual_list(RCore *core, RList* list, ut64 seek, ut64 len, int width, int use_color);
 R_API RListInfo *r_listinfo_new (char *name, RInterval pitv, RInterval vitv, int perm, char *extra);
 R_API void r_listinfo_free (RListInfo *info);
 /* visual marks */
@@ -899,6 +890,7 @@ typedef void (*RCoreTaskOneShot)(void *);
 R_API void r_core_echo(RCore *core, const char *msg);
 R_API RCoreTask *r_core_task_get(RCore *core, int id);
 R_API RCoreTask *r_core_task_get_incref(RCore *core, int id);
+R_API RTable *r_core_table(RCore *core);
 R_API void r_core_task_print(RCore *core, RCoreTask *task, int mode);
 R_API void r_core_task_list(RCore *core, int mode);
 R_API int r_core_task_running_tasks_count(RCore *core);

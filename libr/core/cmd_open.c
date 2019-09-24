@@ -391,8 +391,11 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				}
 				r_list_append (list, info);
 			}
-			r_core_visual_list (core, list, core->offset, core->blocksize,
+			RTable *table = r_core_table (core);
+			r_table_visual_list (table, list, core->offset, core->blocksize,
 				r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+			r_cons_printf ("\n%s\n", r_table_tostring (table));
+			r_table_free (table);
 			r_list_free (list);
 		} break;
 	case '?': // "ob?"
@@ -833,8 +836,11 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 			r_list_append (list, info);
 		}
-		r_core_visual_list (core, list, core->offset, core->blocksize,
+		RTable *table = r_core_table (core);
+		r_table_visual_list (table, list, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+		r_cons_printf ("\n%s\n", r_table_tostring (table));
+		r_table_free (table);
 		r_list_free (list);
 		} break;
 	default:
