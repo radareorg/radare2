@@ -3726,6 +3726,12 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	if (ds->core->flags->realnames || !r_bin_string_filter (ds->core->bin, str, refaddr)) {
 		return;
 	}
+	// do not resolve strings on arm64 pointed with ADRP
+	if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
+		if (ds->core->assembler->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
+			return;
+		}
+	}
 	const char *prefix;
 	char *escstr = ds_esc_str (ds, str, len, &prefix, false);
 	if (escstr) {
