@@ -584,7 +584,6 @@ static void _dfg_rev_dfs_cb(RGraphNode *n, RGraphVisitor *vi) {
 	case R_ANAL_ESIL_DFG_BLOCK_CONST:
 	case R_ANAL_ESIL_DFG_BLOCK_VAR:
 	case R_ANAL_ESIL_DFG_BLOCK_PTR:
-		eprintf  ("TODO: Unsupported dfg_rev_dfs\n");
 		break;
 	case R_ANAL_ESIL_DFG_BLOCK_GENERATIVE:
 		r_rbtree_cont_insert (filter->tree, node, _dfg_node_filter_insert_cmp, NULL);
