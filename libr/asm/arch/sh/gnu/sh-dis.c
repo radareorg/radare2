@@ -211,7 +211,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 		      fprintf_fn (stream, " @(r0,r%d)", rm);
 		      break;
 	      case A_DISP_GBR:
-		      fprintf_fn (stream, " @(0x%X,gbr)", imm);
+		      fprintf_fn (stream, " @(0x%x,gbr)", imm);
 		      break;
 	      case A_R0_GBR:
 		      fprintf_fn (stream, " @(r0,gbr)");
@@ -362,7 +362,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
       ;
 
     }	//for
-  fprintf_fn (stream, ".word 0x%X%X%X%X", nibs[0], nibs[1], nibs[2], nibs[3]);
+  fprintf_fn (stream, ".word 0x%02x%02x%02x%02x", nibs[0], nibs[1], nibs[2], nibs[3]);
   return 2;
 }
 
