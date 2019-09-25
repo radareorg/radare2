@@ -15,6 +15,8 @@ r_anal_sources = [
   'esil_trace.c',
   'esil_interrupt.c',
   'esil_sources.c',
+  'esil_cfg.c',
+  'esil_dfg.c',
   'fcn.c',
   'flirt.c',
   'hint.c',
