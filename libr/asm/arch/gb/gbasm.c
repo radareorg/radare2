@@ -597,5 +597,6 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		len = 0;
 		break;
 	}
+	memcpy(r_strbuf_get(&op->buf), opbuf, sizeof(ut8) * len);
 	return op->size = len;
 }
