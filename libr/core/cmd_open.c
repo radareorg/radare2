@@ -923,33 +923,15 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	char *bin_abspath = r_file_abspath (binpath);
 	char *escaped_path = r_str_arg_escape (bin_abspath);
 	char *newfile = r_str_newf ("dbg://%s %s", escaped_path, args);
-	char *newfile2 = strdup (newfile);
 	desc->uri = newfile;
 	desc->referer = NULL;
 	r_config_set_i (core->config, "asm.bits", bits);
 	r_config_set_i (core->config, "cfg.debug", true);
 	r_core_file_reopen (core, newfile, 0, 2);
-	newfile = newfile2;
-#if !__WINDOWS__
-	ut64 new_baddr = r_debug_get_baddr (core->dbg, newfile);
-	ut64 old_baddr = r_config_get_i (core->config, "bin.baddr");
-	if (old_baddr != new_baddr) {
-		r_bin_set_baddr (core->bin, new_baddr);
-		r_config_set_i (core->config, "bin.baddr", new_baddr);
-		r_core_bin_rebase (core, new_baddr);
-		// r_core_bin_load (core, newfile, new_baddr);
-		// reload symbols with new baddr
-		r_core_cmd0 (core, ".is*");
-		r_core_cmd0 (core, ".ir*");
-		r_core_cmd0 (core, ".iz*");
-		r_core_cmd0 (core, ".iM*");
-	}
-#endif
 	r_core_cmd0 (core, "sr PC");
 	free (bin_abspath);
 	free (escaped_path);
 	free (binpath);
-	free (newfile);
 }
 
 static int fdsz = 0;

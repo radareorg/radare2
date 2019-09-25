@@ -366,11 +366,13 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	if (min < 0) {
 		return;
 	}
-	if (!to || to > r_buf_size (bf->buf)) {
-		to = r_buf_size (bf->buf);
-	}
-	if (!to) {
-		return;
+	if (!bf->rbin->is_debugger) {
+		if (!to || to > r_buf_size (bf->buf)) {
+			to = r_buf_size (bf->buf);
+		}
+		if (!to) {
+			return;
+		}
 	}
 	if (raw != 2) {
 		ut64 size = to - from;
