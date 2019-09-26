@@ -3277,6 +3277,7 @@ R_API int r_core_config_init(RCore *core) {
 		r_config_set_i (cfg, "dbg.follow", 32);
 	}
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
+	SETPREF ("dbg.rebase", "true", "Rebase anal/meta/comments/flags when reopening file in debugger");
 	SETCB ("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
 	SETPREF ("dbg.trace.inrange", "false", "While tracing, avoid following calls outside specified range");
 	SETPREF ("dbg.trace.libs", "true", "Trace library code too");
