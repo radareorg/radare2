@@ -458,7 +458,7 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 	return bb;
 }
 
-#define FITFCNSZ() {\
+#define FITFCNSZ() if (bb) {\
 	st64 n = bb->addr + bb->size - fcn->addr;\
 	if (n >= 0 && r_anal_fcn_size (fcn) < n) {\
 		r_anal_fcn_set_size (NULL, fcn, n); }\
