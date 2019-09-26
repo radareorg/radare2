@@ -24,7 +24,8 @@ typedef struct {
 enum {
 	R2_ARCH_THUMB,
 	R2_ARCH_ARM32,
-	R2_ARCH_ARM64
+	R2_ARCH_ARM64,
+	R2_ARCH_MIPS
 } R2Arch;
 
 static int cmpfcn(const void *_a, const void *_b);
@@ -1700,6 +1701,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 }
 
 /* analyze a RAnalBlock at the address at and add that to the fcn function. */
+// TODO: move into RAnal.
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 addr, int head) {
 	RAnalBlock *bb, *bbi;
 	RListIter *iter;
@@ -1779,30 +1781,15 @@ fin:
 	return rc;
 }
 
-/* returns the address of the basic block that contains addr or UT64_MAX if
- * there is no such basic block */
-R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr) {
-	RAnalBlock *bbi;
-	RAnalFunction *fcni;
-	RListIter *iter, *iter2;
-	r_list_foreach (core->anal->fcns, iter, fcni) {
-		r_list_foreach (fcni->bbs, iter2, bbi) {
-			if (addr >= bbi->addr && addr < bbi->addr + bbi->size) {
-				return bbi->addr;
-			}
-		}
-	}
-	return UT64_MAX;
-}
-
 /* seek basic block that contains address addr or just addr if there's no such
  * basic block */
-R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
-	ut64 bbaddr = r_core_anal_get_bbaddr (core, addr);
+R_API bool r_core_anal_bb_seek(RCore *core, ut64 addr) {
+	ut64 bbaddr = r_anal_get_bbaddr (core->anal, addr);
 	if (bbaddr != UT64_MAX) {
-		addr = bbaddr;
+		r_core_seek (core, bbaddr, false);
+		return true;
 	}
-	return r_core_seek (core, addr, false);
+	return false;
 }
 
 R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
@@ -4733,11 +4720,6 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	free (buf);
 }
 
-static inline bool canal_isThumb(RCore *core) {
-	const char *asmarch = r_config_get (core->config, "asm.arch");
-	return (!strcmp (asmarch, "arm") && core->anal->bits == 16);
-}
-
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
@@ -4750,6 +4732,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool end_address_set = false;
 	int i, iend;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
+	bool archIsArm = false;
 	ut64 addr = core->offset;
 	ut64 end = 0LL;
 	ut64 cur;
@@ -4841,12 +4824,14 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		case 32: arch = R2_ARCH_ARM32; break;
 		case 16: arch = R2_ARCH_THUMB; break;
 		}
+		archIsArm = true;
 	}
 
 	ut64 gp = r_config_get_i (core->config, "anal.gp");
 	const char *gp_reg = NULL;
 	if (!strcmp (core->anal->cur->arch, "mips")) {
 		gp_reg = "gp";
+		arch = R2_ARCH_MIPS;
 	}
 
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
@@ -4943,7 +4928,7 @@ repeat:
 		}
 		if (sn && op.type == R_ANAL_OP_TYPE_SWI) {
 			r_flag_space_set (core->flags, R_FLAGS_FS_SYSCALLS);
-			int snv = canal_isThumb (core)? op.val: (int)r_reg_getv (core->anal->reg, sn);
+			int snv = (arch == R2_ARCH_THUMB)? op.val: (int)r_reg_getv (core->anal->reg, sn);
 			RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, -1);
 			if (si) {
 			//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
@@ -4978,7 +4963,6 @@ repeat:
 					r_anal_xrefs_set (core->anal, cur, ESIL->cur, R_ANAL_REF_TYPE_STRING);
 				}
 			} else if ((target && op.ptr == ntarget) || !target) {
-		//		if (core->anal->cur && strcmp (core->anal->cur->arch, "arm")) {
 				if (CHECKREF (ESIL->cur)) {
 					if (op.ptr && r_io_is_valid_offset (core->io, op.ptr, !core->anal->opt.noncode)) {
 						r_anal_xrefs_set (core->anal, cur, op.ptr, R_ANAL_REF_TYPE_STRING);
@@ -4993,7 +4977,7 @@ repeat:
 			break;
 		case R_ANAL_OP_TYPE_ADD:
 			/* TODO: test if this is valid for other archs too */
-			if (core->anal->cur && !strcmp (core->anal->cur->arch, "arm")) {
+			if (core->anal->cur && archIsArm) {
 				/* This code is known to work on Thumb, ARM and ARM64 */
 				ut64 dst = ESIL->cur;
 				if ((target && dst == ntarget) || !target) {
@@ -5007,7 +4991,7 @@ repeat:
 				if (cfg_anal_strings) {
 					add_string_ref (core, op.addr, dst);
 				}
-			} else if ((core->anal->bits == 32 && core->anal->cur && !strcmp (core->anal->cur->arch, "mips"))) {
+			} else if ((core->anal->bits == 32 && core->anal->cur && arch == R2_ARCH_MIPS)) {
 				ut64 dst = ESIL->cur;
 				if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name) {
 					break;

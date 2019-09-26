@@ -3362,7 +3362,10 @@ static int check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunct
 		agraph_set_layout (g);
 	}
 	if (core) {
-		ut64 off = r_core_anal_get_bbaddr (core, core->offset);
+		ut64 off = r_anal_get_bbaddr (core->anal, core->offset);
+		if (off == UT64_MAX) {
+			return false;
+		}
 		char *title = get_title (off);
 		RANode *cur_anode = get_anode (g->curnode);
 		if (fcn && ((is_interactive && !cur_anode) || (cur_anode && strcmp (cur_anode->title, title)))) {
@@ -3502,7 +3505,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		ut64 addr = r_reg_get_value (core->dbg->reg, r);
 		RANode *acur = get_anode (g->curnode);
 
-		addr = r_core_anal_get_bbaddr (core, addr);
+		addr = r_anal_get_bbaddr (core->anal, addr);
 		char *title = get_title (addr);
 		if (!acur || strcmp (acur->title, title)) {
 			r_core_cmd0 (core, "sr PC");
@@ -3939,7 +3942,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 }
 
 static void seek_to_node(RANode *n, RCore *core) {
-	ut64 off = r_core_anal_get_bbaddr (core, core->offset);
+	ut64 off = r_anal_get_bbaddr (core->anal, core->offset);
 	char *title = get_title (off);
 
 	if (title && strcmp (title, n->title)) {
@@ -4302,7 +4305,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				break;
 			}
 			ut64 old_off = core->offset;
-			ut64 off = r_core_anal_get_bbaddr (core, core->offset);
+			ut64 off = r_anal_get_bbaddr (core->anal, core->offset);
 			r_core_seek (core, off, 0);
 			if ((key == 'x' && !r_core_visual_refs (core, true, true)) ||
 			    (key == 'X' && !r_core_visual_refs (core, false, true))) {

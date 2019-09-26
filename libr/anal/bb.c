@@ -9,60 +9,61 @@
 
 R_API RAnalBlock *r_anal_bb_new() {
 	RAnalBlock *bb = R_NEW0 (RAnalBlock);
-	if (!bb) {
-		return NULL;
+	if (bb) {
+		bb->addr = UT64_MAX;
+		bb->jump = UT64_MAX;
+		bb->fail = UT64_MAX;
+		bb->type = R_ANAL_BB_TYPE_NULL;
+		bb->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
+		bb->op_pos_size = DFLT_NINSTR;
+		bb->stackptr = 0;
+		bb->parent_stackptr = INT_MAX;
+		bb->cmpval = UT64_MAX;
 	}
-	bb->addr = UT64_MAX;
-	bb->jump = UT64_MAX;
-	bb->fail = UT64_MAX;
-	bb->type = R_ANAL_BB_TYPE_NULL;
-	bb->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
-	bb->op_pos_size = DFLT_NINSTR;
-	bb->stackptr = 0;
-	bb->parent_stackptr = INT_MAX;
-	bb->cmpval = UT64_MAX;
 	return bb;
 }
 
 R_API void r_anal_bb_free(RAnalBlock *bb) {
-	if (!bb) {
-		return;
+	if (bb) {
+		r_anal_cond_free (bb->cond);
+		free (bb->fingerprint);
+		r_anal_diff_free (bb->diff);
+		free (bb->op_bytes);
+		r_anal_switch_op_free (bb->switch_op);
+		free (bb->label);
+		free (bb->op_pos);
+		free (bb->parent_reg_arena);
+		free (bb);
 	}
-	r_anal_cond_free (bb->cond);
-	free (bb->fingerprint);
-	r_anal_diff_free (bb->diff);
-	free (bb->op_bytes);
-	r_anal_switch_op_free (bb->switch_op);
-	free (bb->label);
-	free (bb->op_pos);
-	free (bb->parent_reg_arena);
-	free (bb); // double free
 }
 
 R_API RList *r_anal_bb_list_new() {
 	return r_list_newf ((RListFree)r_anal_bb_free);
 }
 
-R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, int head) {
+// TODO: remove the const ut8*buf, int len, and use the r_buf/r_io api instead
+R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, const ut8 *buf, ut64 len, int head) {
+	r_return_val_if_fail (anal && bb && addr != UT64_MAX, R_ANAL_RET_END);
+	const int maxOpLen = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+
 	RAnalOp *op = NULL;
 	int oplen, idx = 0;
 
-	if (bb->addr == -1) {
+	if (bb->addr == UT64_MAX) {
 		bb->addr = addr;
 	}
-	len -= 16; // XXX: hack to avoid segfault by x86im
-	while (idx < len) {
+	while (idx < (len - maxOpLen)) {
+		const ut64 at = addr + idx;
 		// TODO: too slow object construction
 		if (!(op = r_anal_op_new ())) {
-			eprintf ("Error: new (op)\n");
 			return R_ANAL_RET_ERROR;
 		}
-		if ((oplen = r_anal_op (anal, op, addr + idx, buf + idx, len - idx, R_ANAL_OP_MASK_VAL)) == 0) {
+		if ((oplen = r_anal_op (anal, op, at, buf + idx, len - idx, R_ANAL_OP_MASK_VAL)) == 0) {
 			r_anal_op_free (op);
 			op = NULL;
 			if (idx == 0) {
 				if (anal->verbose) {
-					eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
+					eprintf ("Cannot analyze basic block at 0x%08"PFMT64x"\n", at);
 				}
 				return R_ANAL_RET_END;
 			}
@@ -71,7 +72,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		if (oplen < 1) {
 			goto beach;
 		}
-		r_anal_bb_set_offset (bb, bb->ninstr++, addr + idx - bb->addr);
+		r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
 		idx += oplen;
 		bb->size += oplen;
 		if (head) {
@@ -91,7 +92,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 					eprintf ("Unknown conditional for block 0x%"PFMT64x"\n", bb->addr);
 				}
 			}
-			bb->conditional = 1;
+			bb->conditional = true;
 			bb->fail = op->fail;
 			bb->jump = op->jump;
 			bb->type |= R_ANAL_BB_TYPE_BODY;
@@ -280,4 +281,20 @@ R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr) {
 		}
 	}
 	return false;
+}
+
+/* returns the address of the basic block that contains addr or UT64_MAX if
+ * there is no such basic block */
+R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr) {
+	RAnalBlock *bb;
+	RListIter *iter;
+	RAnalFunction *fcni = r_anal_get_fcn_at (anal, addr, 0);
+	if (fcni) {
+		r_list_foreach (fcni->bbs, iter, bb) {
+			if (addr >= bb->addr && addr < bb->addr + bb->size) {
+				return bb->addr;
+			}
+		}
+	}
+	return UT64_MAX;
 }
