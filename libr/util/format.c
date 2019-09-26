@@ -81,7 +81,7 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 	} else if (MUSTSEE) {
 		if (!SEEVALUE && !ISQUIET) {
 			p->cb_printf ("0x%08"PFMT64x" = (qword)",
-				seeki + ((elem >= 0)? elem * 2: 0));
+				seeki + ((elem >= 0)? elem * 8: 0));
 		}
 		if (size == -1) {
 			if (addr64 == UT32_MAX || ((st64)addr64 < 0 && (st64)addr64 > -4096)) {
