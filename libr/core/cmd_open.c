@@ -914,7 +914,7 @@ static RList *__save_old_sections(RCore *core) {
 		}
 		*old_sec = *sec;
 		old_sec->name = strdup (sec->name);
-		old_sec->arch = NULL;
+		old_sec->format = NULL;
 		r_list_append (old_sections, old_sec);
 	}
 	return old_sections;
