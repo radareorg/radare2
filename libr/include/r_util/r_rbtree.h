@@ -32,7 +32,7 @@ typedef struct r_rb_iter_t {
 	RBNode *path[R_RBTREE_MAX_HEIGHT];
 } RBIter;
 
-typedef int (*RContRBCmp)(const void *incoming, void *in, void *user);
+typedef int (*RContRBCmp)(void *incoming, void *in, void *user);
 typedef void (*RContRBFree)(void *);
 typedef struct r_containing_rb_node_t {
 	RBNode node;

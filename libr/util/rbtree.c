@@ -416,8 +416,10 @@ static int cont_rbtree_search_cmp_wrapper(const void *incoming, const RBNode *in
 	RCRBCmpWrap *cmp_wrap = (RCRBCmpWrap *)user;
 	RBNode *_in_tree;
 	memcpy (&_in_tree, &in_tree, sizeof (RBNode *));
+	void *_incoming;
+	memcpy (&_incoming, &incoming, sizeof (void *));
 	RContRBNode *in_tree_node = container_of (_in_tree, RContRBNode, node);
-	return cmp_wrap->cmp (incoming, in_tree_node->data, user);
+	return cmp_wrap->cmp (_incoming, in_tree_node->data, user);
 }
 
 static int cont_rbtree_free_cmp_wrapper(const void *data, const RBNode *in_tree, void *user) {
