@@ -1228,6 +1228,54 @@ typedef struct r_anal_esil_operation_t {
 } RAnalEsilOp;
 
 
+// this is 80-bit offsets so we can address every piece of esil in an instruction
+typedef struct r_anal_esil_expr_offset_t {
+	ut64 off;
+	ut16 idx;
+} RAnalEsilEOffset;
+
+typedef enum {
+	R_ANAL_ESIL_BLOCK_ENTER_NORMAL = 0,
+	R_ANAL_ESIL_BLOCK_ENTER_TRUE,
+	R_ANAL_ESIL_BLOCK_ENTER_FALSE,
+	R_ANAL_ESIL_BLOCK_ENTER_GLUE,
+} RAnalEsilBlockEnterType;
+
+typedef struct r_anal_esil_basic_block_t {
+	RAnalEsilEOffset first;
+	RAnalEsilEOffset last;
+	char *expr;	//synthesized esil-expression for this block
+	RAnalEsilBlockEnterType enter;	//maybe more type is needed here
+} RAnalEsilBB;
+
+typedef struct r_anal_esil_cfg_t {
+	RGraphNode *start;
+	RGraphNode *end;
+	RGraph *g;
+} RAnalEsilCFG;
+
+typedef enum {
+	R_ANAL_ESIL_DFG_BLOCK_CONST = 1,
+	R_ANAL_ESIL_DFG_BLOCK_VAR = 2,
+	R_ANAL_ESIL_DFG_BLOCK_PTR = 4,
+	R_ANAL_ESIL_DFG_BLOCK_RESULT = 8,
+	R_ANAL_ESIL_DFG_BLOCK_GENERATIVE = 16,
+} RAnalEsilDFGBlockType;
+
+typedef struct r_anal_esil_dfg_t {
+	ut32 idx;
+	Sdb *latest_nodes;
+	RGraph *flow;
+} RAnalEsilDFG;
+
+typedef struct r_anal_esil_dfg_node_t {
+	// add more info here
+	ut32 idx;
+	RGraphNode *origin;	//this is for regs
+	RStrBuf *content;
+	RAnalEsilDFGBlockType type;
+} RAnalEsilDFGNode;
+
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
 typedef int (*RAnalExCallback)(RAnal *a, struct r_anal_state_type_t *state, ut64 addr);
@@ -1936,6 +1984,18 @@ R_API void r_anal_class_list(RAnal *anal, int mode);
 R_API void r_anal_class_list_bases(RAnal *anal, const char *class_name);
 R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name);
 
+R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
+R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const ut64 off, char *expr);
+R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op);
+R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg);
+R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg);
+
+R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new (RAnalEsilDFG *edf, const char *c);
+R_API RAnalEsilDFG *r_anal_esil_dfg_new();
+R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg);
+R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr);
+R_API RStrBuf *r_anal_esil_dfg_filter (RAnalEsilDFG *dfg, const char *reg);
+R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 /* plugin pointers */

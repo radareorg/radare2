@@ -37,7 +37,11 @@ static int node_cmp (unsigned int idx, RGraphNode *b) {
 	return idx == b->idx ? 0 : -1;
 }
 
-static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[]) {
+// direction == true => forwards
+static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[], const bool direction) {
+	if (!n) {
+		return;
+	}
 	RStack *s = r_stack_new (2 * g->n_edges + 1);
 	if (!s) {
 		return;
@@ -87,7 +91,7 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[])
 		r_stack_push (s, edg);
 
 		i = 0;
-		const RList *neighbours = r_graph_get_neighbours (g, cur);
+		const RList *neighbours = direction ? cur->out_nodes : cur->in_nodes;
 		r_list_foreach (neighbours, it, v) {
 			edg = R_NEW (RGraphEdge);
 			edg->from = cur;
@@ -196,6 +200,26 @@ R_API void r_graph_add_edge_at (RGraph *t, RGraphNode *from, RGraphNode *to, int
 	}
 }
 
+// splits the "split_me", so that new node has it's outnodes
+R_API RGraphNode *r_graph_node_split_forward (RGraph *g, RGraphNode *split_me, void *data) {
+	RGraphNode *front = r_graph_add_node(g, data);
+	RList *tmp = front->out_nodes;
+	front->out_nodes = split_me->out_nodes;
+	split_me->out_nodes = tmp;
+	RListIter *iter;
+	RGraphNode *n;
+	r_list_foreach (front->out_nodes, iter, n) {
+		r_list_delete_data (n->in_nodes, split_me);		// optimize me
+		r_list_delete_data (n->all_neighbours, split_me);	// boy this all_neighbours is so retarding perf here
+		r_list_delete_data (split_me->all_neighbours, n);
+		r_list_append (n->all_neighbours, front);
+		r_list_append (n->in_nodes, front);
+		r_list_append (front->all_neighbours, n);
+	}
+	return front;
+}
+
+
 R_API void r_graph_del_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
 	if (!from || !to || !r_graph_adjacent (t, from, to)) {
 		return;
@@ -247,7 +271,18 @@ R_API void r_graph_dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
 	}
 	int *color = R_NEWS0 (int, g->last_index);
 	if (color) {
-		dfs_node (g, n, vis, color);
+		dfs_node (g, n, vis, color, true);
+		free (color);
+	}
+}
+
+R_API void r_graph_dfs_node_reverse (RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
+	if (!g || !n || !vis) {
+		return;
+	}
+	int *color = R_NEWS0 (int, g->last_index);
+	if (color) {
+		dfs_node (g, n, vis, color, false);
 		free (color);
 	}
 }
@@ -261,7 +296,7 @@ R_API void r_graph_dfs (RGraph *g, RGraphVisitor *vis) {
 	if (color) {
 		r_list_foreach (g->nodes, it, n) {
 			if (color[n->idx] == WHITE_COLOR) {
-				dfs_node (g, n, vis, color);
+				dfs_node (g, n, vis, color, true);
 			}
 		}
 		free (color);
