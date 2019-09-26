@@ -386,8 +386,7 @@ R_API void r_rbtree_iter_prev(RBIter *it) {
 }
 
 R_API RContRBTree *r_rbtree_cont_new() {
-	RContRBTree *tree = R_NEW0 (RContRBTree);
-	return tree;
+	return R_NEW0 (RContRBTree);
 }
 
 R_API RContRBTree *r_rbtree_cont_newf(RContRBFree f) {
@@ -427,7 +426,7 @@ static int cont_rbtree_free_cmp_wrapper(const void *data, const RBNode *in_tree,
 	memcpy (&dat, &data, sizeof (void *));
 	const int ret = cont_rbtree_cmp_wrapper (dat, in_tree, user);
 	if (!ret && cmp_wrap->free) { //this is for deleting
-		RContRBNode *in_tree_node = container_of (in_tree, RContRBNode, node);
+		RContRBNode *in_tree_node = container_of ((void*)in_tree, RContRBNode, node);
 		cmp_wrap->free (in_tree_node->data);
 	}
 	return ret;
@@ -487,7 +486,7 @@ R_API bool r_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, v
 R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
 	r_return_val_if_fail (tree && cmp && tree->root, NULL);
 	RCRBCmpWrap cmp_wrap = { cmp, NULL, user };
-	RBNode search_node = tree->root->node;
+	// RBNode search_node = tree->root->node;
 	RBNode *result_node = r_rbtree_find (&tree->root->node, data, cont_rbtree_search_cmp_wrapper, &cmp_wrap);
 	if (result_node) {
 		return (container_of (result_node, RContRBNode, node))->data;

@@ -945,8 +945,8 @@ static bool __rebase_flags(RFlagItem *flag, void *user) {
 	return true;
 }
 
-static bool __rebase_refs_i(void *user, KEY_TYPE k, VALUE_TYPE v) {
-	struct __rebase_struct *reb = user;
+static bool __rebase_refs_i(void *user, const ut64 k, const void *v) {
+	struct __rebase_struct *reb = (void*)user;
 	RAnalRef *ref = (RAnalRef *)v;
 	ref->addr += reb->diff;
 	ref->at += reb->diff;
@@ -958,7 +958,7 @@ static bool __rebase_refs_i(void *user, KEY_TYPE k, VALUE_TYPE v) {
 	return true;
 }
 
-static bool __rebase_refs(void *user, KEY_TYPE k, VALUE_TYPE v) {
+static bool __rebase_refs(void *user, const ut64 k, const void *v) {
 	HtUP *ht = (HtUP *)v;
 	ht_up_foreach (ht, __rebase_refs_i, user);
 	return true;
@@ -998,8 +998,8 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 			if (fcn->meta.min) {
 				fcn->meta.min += diff;
 			}
-			int j = 0;
-			for (int j = 0; j < fcn->bbr.pairs * 2; j++) {
+			int j;
+			for (j = 0; j < fcn->bbr.pairs * 2; j++) {
 				fcn->bbr.ranges[j] += diff;
 			}
 			r_anal_fcn_tree_insert (core->anal, fcn);
