@@ -358,7 +358,8 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 			return NULL;
 		}
 		entry->bits = 16;
-		entry->paddr = bin->ne_header->ipEntryPoint + ((RBinSection *)r_list_get_n (segments, bin->ne_header->csEntryPoint - 1))->paddr;
+		RBinSection *s = r_list_get_n (segments, bin->ne_header->csEntryPoint - 1);
+		entry->paddr = bin->ne_header->ipEntryPoint + (s? s->paddr: 0);
 		r_list_append (entries, entry);
 	}
 	int off = 0;
