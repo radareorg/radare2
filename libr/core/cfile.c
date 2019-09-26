@@ -93,6 +93,23 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 
 	// r_str_trim (path);
 	file = r_core_file_open (core, path, perm, laddr);
+
+	if (isdebug) {
+		int newtid = newpid;
+		// XXX - select the right backend
+		if (core->file) {
+			newpid = r_io_fd_get_pid (core->io, core->file->fd);
+			newtid = r_io_fd_get_tid (core->io, core->file->fd);
+#if __linux__
+			core->dbg->main_pid = newpid;
+			newtid = newpid;
+#endif
+		}
+		//reopen and attach
+		r_core_setup_debugger (core, "native", true);
+		r_debug_select (core->dbg, newpid, newtid);
+	}
+
 	if (file) {
 		bool had_rbin_info = false;
 
@@ -110,9 +127,13 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			(perm & R_PERM_W)? "read-write": "read-only");
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
-			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-			if (new_baddr != UT64_MAX) {
+			ut64 baddr;
+			if (isdebug) {
+				baddr = r_debug_get_baddr (core->dbg, path);
+			} else if (new_baddr != UT64_MAX) {
 				baddr = new_baddr;
+			} else {
+				baddr = r_config_get_i (core->config, "bin.baddr");
 			}
 			ret = r_core_bin_load (core, obinfilepath, baddr);
 			r_core_bin_update_arch_bits (core);
@@ -135,26 +156,6 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		r_core_file_set_by_file (core, ofile);
 	} else {
 		eprintf ("Cannot reopen\n");
-	}
-	if (isdebug) {
-		int newtid = newpid;
-		// XXX - select the right backend
-		if (core->file) {
-			newpid = r_io_fd_get_pid (core->io, core->file->fd);
-			newtid = r_io_fd_get_tid (core->io, core->file->fd);
-#if __linux__
-			core->dbg->main_pid = newpid;
-			newtid = newpid;
-#endif
-// TODO: fix debugger-concept in core
-#if __WINDOWS__
-			r_debug_select (core->dbg, newpid, newtid);
-			core->dbg->reason.type = R_DEBUG_REASON_NONE;
-#endif
-		}
-		//reopen and attach
-		r_core_setup_debugger (core, "native", true);
-		r_debug_select (core->dbg, newpid, newtid);
 	}
 	if (core->file) {
 		r_io_use_fd (core->io, core->file->fd);
