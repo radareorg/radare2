@@ -5540,6 +5540,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 				eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", xref->addr);
 				continue;
 			}
+			r_anal_op_free (xrefop);
 			if (xref->type != R_ANAL_REF_TYPE_CALL) {
 				continue;
 			}
@@ -5568,7 +5569,6 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 				r_list_append (todo, n);
 				ht_uu_insert (done, *n, 1);
 			}
-			r_anal_op_free (xrefop);
 		}
 		r_list_free (xrefs);
 	}
