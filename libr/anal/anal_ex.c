@@ -226,6 +226,7 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 	ut64 backup_addr = state->current_addr;
 	state->current_addr = addr;
 	RList *bb_list = r_anal_bb_list_new ();
+	bb_list->free = NULL; // avoid dblfree
 
 	if (state->done) {
 		return bb_list;

@@ -203,7 +203,7 @@ static int java_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr) {
 	return 0;
 }
 
-static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
+static int handle_bb_cf_recursive_descent(RAnal *anal, RAnalState *state) {
 	RAnalBlock *bb = state->current_bb;
 	ut64 addr = 0;
 	int result = 0;
@@ -319,7 +319,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 			r_list_foreach (bb->switch_op->cases, iter, caseop) {
 				if (caseop) {
 					if (r_anal_state_addr_is_valid (state, caseop->jump) ) {
-						jmp_list = r_anal_ex_perform_analysis ( anal, state, caseop->jump );
+						jmp_list = r_anal_ex_perform_analysis (anal, state, caseop->jump );
 						if (jmp_list) {
 							caseop->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
 						}

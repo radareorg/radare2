@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2019 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -15,19 +15,12 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->addr = UT64_MAX;
 	bb->jump = UT64_MAX;
 	bb->fail = UT64_MAX;
-	bb->switch_op = NULL;
 	bb->type = R_ANAL_BB_TYPE_NULL;
-	bb->cond = NULL;
-	bb->fingerprint = NULL;
-	bb->diff = NULL; //r_anal_diff_new ();
-	bb->label = NULL;
 	bb->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
 	bb->op_pos_size = DFLT_NINSTR;
-	bb->parent_reg_arena = NULL;
 	bb->stackptr = 0;
 	bb->parent_stackptr = INT_MAX;
 	bb->cmpval = UT64_MAX;
-	bb->cmpreg = NULL;
 	return bb;
 }
 
@@ -36,47 +29,18 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 		return;
 	}
 	r_anal_cond_free (bb->cond);
-	R_FREE (bb->fingerprint);
+	free (bb->fingerprint);
 	r_anal_diff_free (bb->diff);
-	bb->diff = NULL;
-	R_FREE (bb->op_bytes);
+	free (bb->op_bytes);
 	r_anal_switch_op_free (bb->switch_op);
-	bb->switch_op = NULL;
-	bb->fingerprint = NULL;
-	bb->cond = NULL;
-	R_FREE (bb->label);
-	R_FREE (bb->op_pos);
-	R_FREE (bb->parent_reg_arena);
-	if (bb->prev) {
-		if (bb->prev->jumpbb == bb) {
-			bb->prev->jumpbb = NULL;
-		}
-		if (bb->prev->failbb == bb) {
-			bb->prev->failbb = NULL;
-		}
-		bb->prev = NULL;
-	}
-	if (bb->jumpbb) {
-		bb->jumpbb->prev = NULL;
-		bb->jumpbb = NULL;
-	}
-	if (bb->failbb) {
-		bb->failbb->prev = NULL;
-		bb->failbb = NULL;
-	}
-	if (bb->next) {
-		// avoid double free
-		bb->next->prev = NULL;
-	}
-	R_FREE (bb); // double free
+	free (bb->label);
+	free (bb->op_pos);
+	free (bb->parent_reg_arena);
+	free (bb); // double free
 }
 
 R_API RList *r_anal_bb_list_new() {
-	RList *list = r_list_newf ((RListFree)r_anal_bb_free);
-	if (!list) {
-		return NULL;
-	}
-	return list;
+	return r_list_newf ((RListFree)r_anal_bb_free);
 }
 
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, int head) {
@@ -257,7 +221,6 @@ R_API ut64 r_anal_bb_opaddr_i(RAnalBlock *bb, int i) {
 	if (offset == UT16_MAX) {
 		return UT64_MAX;
 	}
-
 	return bb->addr + offset;
 }
 
@@ -304,15 +267,14 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 /* return true if an instruction starts at a given address of the given
  * basic block. */
 R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr) {
-	ut16 off, inst_off;
 	int i;
 
 	if (!r_anal_bb_is_in_offset (bb, addr)) {
 		return false;
 	}
-	off = addr - bb->addr;
+	ut16 off = addr - bb->addr;
 	for (i = 0; i < bb->ninstr; i++) {
-		inst_off = r_anal_bb_offset_inst (bb, i);
+		ut16 inst_off = r_anal_bb_offset_inst (bb, i);
 		if (off == inst_off) {
 			return true;
 		}
