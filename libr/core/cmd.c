@@ -2104,6 +2104,11 @@ static int cmd_system(void *data, const char *input) {
 
 #if __WINDOWS__
 #include <tchar.h>
+#define __CLOSE_DUPPED_PIPES() \
+		close (1);             \
+		close (fd_out);        \
+		fd_out = -1;
+
 static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	STARTUPINFO si = {0};
 	PROCESS_INFORMATION pi = {0};
@@ -2135,7 +2140,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	while (*_shell_cmd && isspace ((ut8)*_shell_cmd)) {
 		_shell_cmd++;
 	}
-	char *tmp = r_str_newf ("/Q /c \"%s\"", shell_cmd);
+	char *tmp = r_str_newf ("/Q /c \"%s\"", _shell_cmd);
 	if (!tmp) {
 		goto err_r_w32_cmd_pipe;
 	}
@@ -2169,11 +2174,33 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	dup2 (fd_out, 1);
 	// exec radare command
 	r_core_cmd (core, radare_cmd, 0);
-	r_cons_flush ();
-	close (1);
-	close (fd_out);
-	fd_out = -1;
-	WaitForSingleObject (pi.hProcess, INFINITE);
+
+	HANDLE th = CreateThread (NULL, 0, r_cons_flush, NULL, 0, NULL);
+	if (!th) {
+		__CLOSE_DUPPED_PIPES ();
+		goto err_r_w32_cmd_pipe;
+	}
+	while (true) {
+		int ret = WaitForSingleObject (th, 50);
+		if (!ret) {
+			// Successfully written everything to pipe
+			__CLOSE_DUPPED_PIPES ();
+			WaitForSingleObject (pi.hProcess, INFINITE);
+			break;
+		}
+		ret = WaitForSingleObject (pi.hProcess, 50);
+		if (!ret) {
+			// Process exited before we finished writing to pipe
+			DWORD exit;
+			if (GetExitCodeThread (th, &exit) && exit == STILL_ACTIVE) {
+				CancelSynchronousIo (th);
+			}
+			WaitForSingleObject (th, INFINITE);
+			__CLOSE_DUPPED_PIPES ();
+			break;
+		}
+	}
+	CloseHandle (th);
 err_r_w32_cmd_pipe:
 	if (pi.hProcess) {
 		CloseHandle (pi.hProcess);
@@ -2183,9 +2210,6 @@ err_r_w32_cmd_pipe:
 	}
 	if (pipe[0]) {
 		CloseHandle (pipe[0]);
-	}
-	if (pipe[1]) {
-		CloseHandle (pipe[1]);
 	}
 	if (fd_out != -1) {
 		close (fd_out);
@@ -2198,6 +2222,7 @@ err_r_w32_cmd_pipe:
 	free (_shell_cmd_);
 	SetConsoleMode (GetStdHandle (STD_OUTPUT_HANDLE), mode);
 }
+#undef __CLOSE_DUPPED_PIPES
 #endif
 
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
