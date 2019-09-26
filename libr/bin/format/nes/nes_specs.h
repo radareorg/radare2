@@ -36,9 +36,9 @@
 #define ROM_SIZE                            0x8000
 
 #define ROM_MIRROR_ADDRESS                  0xC000
-#define ROM_MIRROR_SIZE                     0x8000
+#define ROM_MIRROR_SIZE 0x8000
 
-#define NMI_VECTOR_START_ADDRESS            0xFFFA
+#define NMI_VECTOR_START_ADDRESS 0xFFFA
 #define RESET_VECTOR_START_ADDRESS          0xFFFC
 #define IRQ_VECTOR_START_ADDRESS            0xFFFE
 
