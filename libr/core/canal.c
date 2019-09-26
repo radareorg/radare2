@@ -5493,10 +5493,10 @@ static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
 		switch (op->type & R_ANAL_OP_TYPE_MASK) {
 			case R_ANAL_OP_TYPE_ILL:
 			case R_ANAL_OP_TYPE_RET:
-				free (op);
+				r_anal_op_free (op);
 				return false;
 		}
-		free (op);
+		r_anal_op_free (op);
 	}
 	return true;
 }
