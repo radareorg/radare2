@@ -949,17 +949,18 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		off = (int)(size_t)(p - str);
 		if (vlen != klen) {
 			int tlen = slen - (off + klen);
-			char *tail = p + klen;
 			slen += vlen - klen;
-			newstr = realloc (str, slen + 1);
-			if (!newstr) {
-				eprintf ("realloc fail\n");
-				R_FREE (str);
-				break;
+			if (vlen > klen) {
+				newstr = realloc (str, slen + 1);
+				if (!newstr) {
+					eprintf ("realloc fail\n");
+					R_FREE (str);
+					break;
+				}
+				str = newstr;
 			}
-			str = newstr;
 			p = str + off;
-			memmove (p + vlen, tail, tlen + 1);
+			memmove (p + vlen, p + klen, tlen + 1);
 		}
 		memcpy (p, val, vlen);
 		i = off + vlen;
@@ -988,15 +989,16 @@ R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int
 		off = (int)(size_t) (p - str);
 		if (vlen != klen) {
 			int tlen = slen - (off + klen);
-			char *tail = p + klen;
 			slen += vlen - klen;
-			newstr = realloc (str, slen + 1);
-			if (!newstr) {
-				goto alloc_fail;
+			if (vlen > klen) {
+				newstr = realloc (str, slen + 1);
+				if (!newstr) {
+					goto alloc_fail;
+				}
+				str = newstr;
 			}
-			str = newstr;
 			p = str + off;
-			memmove (p + vlen, tail, tlen + 1);
+			memmove (p + vlen, p + klen, tlen + 1);
 		}
 
 		if (keep_case) {
