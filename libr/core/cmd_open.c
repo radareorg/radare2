@@ -978,46 +978,47 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 	r_list_foreach (core->anal->fcns, it, fcn) {
 		int i = 0;
 		r_list_foreach (old_sections, itit, old_section) {
-			if (__is_inside_section (fcn->addr, old_section)) {
-				RList *var_list = r_anal_var_all_list (core->anal, fcn);
-				RAnalVar *var;
-				r_list_foreach (var_list, ititit, var) {
-					r_anal_var_delete (core->anal, var->addr, var->kind, 1, var->delta);
-					var->addr += diff;
-					r_anal_var_add (core->anal, var->addr, 1, var->delta, var->kind, var->type, var->size, var->isarg, var->name);
-				}
-				r_list_free (var_list);
-				r_anal_fcn_tree_delete (core->anal, fcn);
-				fcn->addr += diff;
-				if (fcn->meta.max) {
-					fcn->meta.max += diff;
-				}
-				if (fcn->meta.min) {
-					fcn->meta.min += diff;
-				}
-				int j = 0;
-				for (int j = 0; j < fcn->bbr.pairs * 2; j++) {
-					fcn->bbr.ranges[j] += diff;
-				}
-				r_anal_fcn_tree_insert (core->anal, fcn);
-				RAnalBlock *bb;
-				ut64 new_sec_addr = new_base + old_section->vaddr;
-				r_list_foreach (fcn->bbs, ititit, bb) {
-					if (bb->addr >= new_sec_addr && bb->addr <= new_sec_addr + old_section->vsize) {
-						// Todo: Find better way to check if bb was already rebased
-						continue;
-					}
-					bb->addr += diff;
-					if (bb->jump != UT64_MAX) {
-						bb->jump += diff;
-					}
-					if (bb->fail != UT64_MAX) {
-						bb->fail += diff;
-					}
-				}
-				break;
+			if (!__is_inside_section (fcn->addr, old_section)) {
+				i++;
+				continue;
 			}
-			i++;
+			RList *var_list = r_anal_var_all_list (core->anal, fcn);
+			RAnalVar *var;
+			r_list_foreach (var_list, ititit, var) {
+				r_anal_var_delete (core->anal, var->addr, var->kind, 1, var->delta);
+				var->addr += diff;
+				r_anal_var_add (core->anal, var->addr, 1, var->delta, var->kind, var->type, var->size, var->isarg, var->name);
+			}
+			r_list_free (var_list);
+			r_anal_fcn_tree_delete (core->anal, fcn);
+			fcn->addr += diff;
+			if (fcn->meta.max) {
+				fcn->meta.max += diff;
+			}
+			if (fcn->meta.min) {
+				fcn->meta.min += diff;
+			}
+			int j = 0;
+			for (int j = 0; j < fcn->bbr.pairs * 2; j++) {
+				fcn->bbr.ranges[j] += diff;
+			}
+			r_anal_fcn_tree_insert (core->anal, fcn);
+			RAnalBlock *bb;
+			ut64 new_sec_addr = new_base + old_section->vaddr;
+			r_list_foreach (fcn->bbs, ititit, bb) {
+				if (bb->addr >= new_sec_addr && bb->addr <= new_sec_addr + old_section->vsize) {
+					// Todo: Find better way to check if bb was already rebased
+					continue;
+				}
+				bb->addr += diff;
+				if (bb->jump != UT64_MAX) {
+					bb->jump += diff;
+				}
+				if (bb->fail != UT64_MAX) {
+					bb->fail += diff;
+				}
+			}
+			break;
 		}
 	}
 
@@ -1036,13 +1037,14 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 	r_list_foreach (meta_list, it, item) {
 		int i = 0;
 		r_list_foreach (old_sections, itit, old_section) {
-			if (__is_inside_section (item->from, old_section)) {
-				r_meta_del (core->anal, item->type, item->from, item->size);
-				item->from += diff;
-				r_meta_add_with_subtype (core->anal, item->type, item->subtype, item->from, item->from + item->size, item->str);
-				break;
+			if (!__is_inside_section (item->from, old_section)) {
+				i++;
+				continue;
 			}
-			i++;
+			r_meta_del (core->anal, item->type, item->from, item->size);
+			item->from += diff;
+			r_meta_add_with_subtype (core->anal, item->type, item->subtype, item->from, item->from + item->size, item->str);
+			break;
 		}
 	}
 	r_list_free (meta_list);
