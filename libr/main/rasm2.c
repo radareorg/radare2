@@ -47,6 +47,7 @@ static void __as_free(RAsmState *as) {
 	r_asm_free (as->a);
 	r_anal_free (as->anal);
 	r_lib_free (as->l);
+    	free (as);
 }
 
 static char *stackop2str(int type) {
