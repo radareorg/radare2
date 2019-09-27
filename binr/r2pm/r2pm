@@ -181,8 +181,8 @@ init|up|update)
 		git reset --hard @^^
 		git pull
 	else
-		echo git clone https://github.com/radare/radare2-pm
-		git clone --depth=3 --recursive https://github.com/radare/radare2-pm
+		echo git clone https://github.com/radareorg/radare2-pm
+		git clone --depth=3 --recursive https://github.com/radareorg/radare2-pm
 		cd radare2-pm
 		pwd
 	fi
