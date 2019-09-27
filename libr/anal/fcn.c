@@ -218,7 +218,7 @@ static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) 
 	}
 }
 
-static bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *fcn) {
+R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *fcn) {
 	bool ret_min = !!r_rbtree_aug_delete (&anal->fcn_tree, fcn, _fcn_tree_cmp, _fcn_tree_free, _fcn_tree_calc_max_addr, NULL);
 	bool ret_addr = !!r_rbtree_delete (&anal->fcn_addr_tree, fcn, _fcn_addr_tree_cmp, NULL, NULL);
 	if (ret_min != ret_addr) {

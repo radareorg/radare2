@@ -1526,7 +1526,7 @@ R_API void r_anal_pin_list(RAnal *a);
 
 /* fcn.c */
 R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn);
-//static bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *data);
+R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *data);
 R_API void r_anal_fcn_tree_insert(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_count_edges(const RAnalFunction *fcn, int *ebbs);
 R_API RAnalFunction *r_anal_fcn_new(void);
