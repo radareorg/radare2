@@ -274,7 +274,7 @@ R_API char *r_table_tofancystring(RTable *t) {
 	const char *tl_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_TL : RUNE_CORNER_TL) : ".";
 	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_TR : RUNE_CORNER_TR) : ".";
 	const char *bl_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_BL : RUNE_CORNER_BL) : "`";
-	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CORNER_BR : RUNE_CORNER_BR) : "'";
+	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_BR : RUNE_CORNER_BR) : "'";
 	__table_adjust (t);
 
 	r_list_foreach (t->cols, iter, col) {
@@ -682,6 +682,8 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 	RListInfo *info;
 	RCons *cons = (RCons *) table->cons;
 	table->showHeader = false;
+	const char *h_line = cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = cons->use_utf8 ? UTF_BLOCK : "#";
 	int j, i;
 	width -= 80;
 	if (width < 1) {
@@ -723,9 +725,9 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 				ut64 pos = min + j * mul;
 				ut64 npos = min + (j + 1) * mul;
 				if (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos) {
-					r_strbuf_append (buf, "#");
+					r_strbuf_append (buf, block);
 				} else {
-					r_strbuf_append (buf, "-");
+					r_strbuf_append (buf, h_line);
 				}
 			}
 			if (va) {
@@ -749,7 +751,7 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 			}
 			for (j = 0; j < width; j++) {
 				r_strbuf_append (buf,((j * mul) + min >= seek &&
-						     (j * mul) + min <= seek + len) ? "^" : "-");
+						     (j * mul) + min <= seek + len) ? "^" : h_line);
 			}
 			r_table_add_rowf (table, "sssssss", "=>", sdb_fmt ("0x%08"PFMT64x"", seek),
 			    r_strbuf_drain (buf),  sdb_fmt ("0x%08"PFMT64x"", seek + len), "", "", "");
