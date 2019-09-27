@@ -64,16 +64,13 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 		p++;
 	}
 
-	if (p != s) {
-		RStrBuf *tmp = r_strbuf_new (NULL);
-		if (!tmp) {
-			return NULL;
-		}
-		const int slen = p - s;
-		if (slen > 0) {
-			r_strbuf_append_n (tmp, s, slen);
-			c->attr = r_str_const (r_strbuf_drain (tmp));
-		}
+	const int slen = p - s;
+	if (slen > 0) {
+		RStrBuf tmp;
+		r_strbuf_init (&tmp);
+		r_strbuf_append_n (&tmp, s, slen);
+		c->attr = r_str_const (r_strbuf_get (&tmp));
+		r_strbuf_fini (&tmp);
 	}
 	return p;
 }
