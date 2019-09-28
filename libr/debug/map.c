@@ -93,7 +93,7 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 	case 'j': // "dmj" add JSON opening array brace
 		dbg->cb_printf ("[");
 		break;
-	case '*': // "dm*" dont print a header for r2 commands output
+	case '*': // "dm*" don't print a header for r2 commands output
 		break;
 	default:
 		// TODO: Find a way to only print headers if output isn't being grepped
@@ -189,6 +189,7 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 	int width = r_cons_get_size (NULL) - 90;
 	RListIter *iter;
 	RDebugMap *map;
+	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 	if (width < 1) {
 		width = 30;
 	}
@@ -205,10 +206,12 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 			r_num_units (humansz, sizeof (humansz), map->size); // Convert map size to human readable string
 			if (colors) {
 				color_suffix = Color_RESET;
-				if (map->perm & 2) { // Writable maps are red
-					color_prefix = Color_RED;
-				} else if (map->perm & 1) { // Executable maps are green
-					color_prefix = Color_GREEN;
+				if ((map->perm & 2) && (map->perm & 1)) { // Writable & Executable
+					color_prefix = pal->widget_sel;
+				} else if (map->perm & 2) { // Writable
+					color_prefix = pal->graph_false;
+				} else if (map->perm & 1) { // Executable
+					color_prefix = pal->graph_true;
 				} else {
 					color_prefix = "";
 					color_suffix = "";
@@ -227,7 +230,7 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 			dbg->cb_printf (fmtstr, humansz,
 				(addr >= map->addr && \
 				addr < map->addr_end) ? '*' : '-',
-				color_prefix, map->addr, color_suffix); // * indicates map is within our current seeked offset
+				color_prefix, map->addr, color_suffix); // * indicates map is within our current sought offset
 			int col;
 			for (col = 0; col < width; col++) { // Iterate over the available width/columns for bar graph
 				ut64 pos = min + (col * mul); // Current address space to check
@@ -310,10 +313,10 @@ R_API int r_debug_map_sync(RDebug *dbg) {
 	return (int)ret;
 }
 
-R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size) {
+R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 	RDebugMap *map = NULL;
 	if (dbg && dbg->h && dbg->h->map_alloc) {
-		map = dbg->h->map_alloc (dbg, addr, size);
+		map = dbg->h->map_alloc (dbg, addr, size, thp);
 	}
 	return map;
 }

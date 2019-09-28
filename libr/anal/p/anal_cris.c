@@ -3,7 +3,7 @@
 #include <r_asm.h>
 #include <r_lib.h>
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int opsize = -1;
         op->type = -1;
 	opsize = 2;
@@ -285,7 +285,7 @@ RAnalPlugin r_anal_plugin_cris = {
 	.op = &analop,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_cris,

@@ -237,7 +237,7 @@ e0  Reserved by
 e1  DOS access or SpeedStor 12-bit FAT extended partitionKevin Cummings reports in alt.os.linux:
 e3  DOS R/O or SpeedStor
 e4  SpeedStor 16-bit FAT extended partition < 1024 cyl.
-e5  Tandy MSDOS with
+e5  Tandy MS-DOS with
 e6  Storage Dimensions SpeedStor
 e8  LUKS
 eb  BeOS BFSBeOS is an operating system that runs on Power PCs and on Intel PCs.

@@ -16,6 +16,8 @@ static const char *help_msg_L[] = {
 	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
 	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (same as dL)",
+	"LD", "", "list supported decompilers (e cmd.pdc=?)",
+	"Lm", "", "list fs plugins (same as mL)",
 	"Lh", "", "list hash plugins (same as ph)",
 	"Li", "", "list bin plugins (same as iL)",
 	"Lo", "", "list io plugins (same as oL)",
@@ -245,7 +247,7 @@ static int cmd_log(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_T);
 		break;
 	case 'T': // "TT" Ts ? as ms?
-		if (r_config_get_i (core->config, "scr.interactive")) {
+		if (r_cons_is_interactive ()) {
 			textlog_chat (core);
 		} else {
 			eprintf ("Only available when the screen is interactive\n");
@@ -327,14 +329,24 @@ static int cmd_plugins(void *data, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_L);
 		break;
+	case 'm': // "Lm"
+		r_core_cmdf (core, "mL%s", input + 1);
+		break;
 	case 'd': // "Ld"
-		r_core_cmd0 (core, "dL"); // rahash2 -L is more verbose
+		r_core_cmdf (core, "dL%s", input + 1);
 		break;
 	case 'h': // "Lh"
 		r_core_cmd0 (core, "ph"); // rahash2 -L is more verbose
 		break;
 	case 'a': // "La"
 		r_core_cmd0 (core, "e asm.arch=??");
+		break;
+	case 'D': // "LD"
+		if (input[1] == ' ') {
+			r_core_cmdf (core, "e cmd.pdc=%s", r_str_trim_ro (input + 2));
+		} else {
+			r_core_cmd0 (core, "e cmd.pdc=?");
+		}
 		break;
 	case 'l': // "Ll"
 		r_core_cmd0 (core, "#!");

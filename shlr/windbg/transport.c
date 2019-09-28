@@ -5,7 +5,7 @@
 extern io_backend_t iob_pipe;
 
 static io_backend_t *io_backends[] = {
-// #if __WINDOWS__ || __CYGWIN__ || MINGW32
+// #if __WINDOWS__
 // #warning TODO: add proper IO backend for windows here
 // #else
 	&iob_pipe,

@@ -34,7 +34,7 @@ case "$1" in
 #	FLAGS="-mlong-calls"
 #	export LDFLAGS="-fuse-ld=gold"
 	;;
-"arm")
+arm)
 	NDK_ARCH=arm
 	STATIC_BUILD=0
 	STRIP=arm-eabi-strip
@@ -44,13 +44,23 @@ arm64|aarch64)
 	STATIC_BUILD=0
 	STRIP=aarch64-linux-android-strip
 	;;
-"x86")
+x64|x86_64)
+	NDK_ARCH=x86_64
+	export NDK_ARCH
+	STATIC_BUILD=0
+	STRIP=strip
+	;;
+x86)
 	NDK_ARCH=x86
 	STATIC_BUILD=0
 	STRIP=strip
 	;;
+x64-static|static-x64)
+	NDK_ARCH=x86
+	STATIC_BUILD=1
+	;;
 arm64-static|static-arm64)
-	NDK_ARCH=arm64
+	NDK_ARCH=aarch64
 	STATIC_BUILD=1
 	;;
 arm-static|static-arm)
@@ -63,13 +73,13 @@ x86-static|static-x86)
 	;;
 mips-static|static-mips)
 	NDK_ARCH=mips
-	# XXX: by default we should build all libs as .a but link binary dinamically
+	# XXX: by default we should build all libs as .a but link binary dynamically
 	STATIC_BUILD=1
 	STRIP=mips-linux-android-strip
 	;;
 mips64-static|static-mips64)
 	NDK_ARCH=mips64
-	# XXX: by default we should build all libs as .a but link binary dinamically
+	# XXX: by default we should build all libs as .a but link binary dynamically
 	STATIC_BUILD=1
 	STRIP=mips64el-linux-android-strip
 	;;
@@ -79,7 +89,7 @@ local)
 	NDK_ARCH=local
 	;;
 ""|"-h")
-	echo "Usage: android-build.sh [local|arm|arm64|x86|mips|mips64][-static]"
+	echo "Usage: android-build.sh [local|arm|arm64|x86|x64|mips|mips64][-static]"
 	exit 1
 	;;
 *)
@@ -118,7 +128,7 @@ if [ "${BUILD}" = 1 ]; then
 			--with-ostype=android \
 			--without-libuv \
 			--prefix=${PREFIX} ${CFGFLAGS}
-
+		cp -f plugins.android.cfg plugins.cfg
 		./configure --with-compiler=android --without-libuv \
 			--with-ostype=android \
 			--prefix=${PREFIX} ${CFGFLAGS} || exit 1

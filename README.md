@@ -9,16 +9,17 @@
                              --pancake
 ```
 
-
-
-| | |
+| Service | Badge |
 |----------|---------------------------------------------------------------------|
-| **Jenkins**  	| [![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)](http://ci.rada.re/job/radare2)|
-| **TravisCI** 	| [![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)](https://travis-ci.org/radare/radare2)|
-| **AppVeyor**  | [![Build Status](https://ci.appveyor.com/api/projects/status/v9bxvsb1p6c3cmf9/branch/master?svg=true)](https://ci.appveyor.com/project/radare/radare2-shvdd)|
+| **TravisCI** 	| [![Build Status](https://travis-ci.org/radareorg/radare2.svg?branch=master)](https://travis-ci.org/radareorg/radare2)|
+| **AppVeyor**  | [![Build status](https://ci.appveyor.com/api/projects/status/9cgkgxkc3203fm1o/branch/master?svg=true)](https://ci.appveyor.com/project/radareorg/radare2/branch/master)|
+| **FreeBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/radare2/freebsd.yml.svg)](https://builds.sr.ht/~xvilka/radare2/freebsd.yml?)|
+| **OpenBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/radare2/openbsd.yml.svg)](https://builds.sr.ht/~xvilka/radare2/openbsd.yml?)|
 | **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
+| **LGTM** | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/)
 | **Infrastructure** |  [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) |
-| **Codecov** | [![codecov](https://codecov.io/gh/radare/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radare/radare2)
+| **Codecov** | [![codecov](https://codecov.io/gh/radareorg/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radareorg/radare2)
+| **Fuzzit** | [![fuzzit](https://app.fuzzit.dev/badge?org_id=2zv5qI33roZkRm0oO2Mi&target_id=YVkkS6RPVpKhSixyFWcT&branch=master)](https://app.fuzzit.dev/admin/2zv5qI33roZkRm0oO2Mi/target)
 <a href="https://repology.org/metapackage/radare2">
 <img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
 </a>
@@ -35,99 +36,78 @@ code, debugging programs, attaching to remote gdb servers...
 
 radare2 is portable.
 
-## Architectures
+To learn more on radare2 you may want to read the [official radare2 book](https://radare.gitbooks.io/radare2book/content/).
 
-i386, x86-64, ARM, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, AVR, XAP,
-System Z, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810, V850,
-CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller, Tricore, Chip8
-LH5801, T8200, GameBoy, SNES, MSP430, Xtensa, NIOS II,
-Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x, c55+, c66),
-Hexagon, Brainfuck, Malbolge, DCPU16.
-
-## File Formats
-
-ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, TE, XBE, BIOS/UEFI,
-Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
-ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
-WASM (WebAssembly binary), Commodore VICE emulator, 
-Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
+You can also use [r2lrn](https://github.com/0ki/r2lrn) or r2golf for a hands-on learning experience.
 
 ## Operating Systems
 
 Windows (since XP), GNU/Linux, OS X, [Net|Free|Open]BSD,
 Android, iOS, OSX, QNX, Solaris, Haiku, FirefoxOS.
 
-## Bindings
+## Architectures
 
-Vala/Genie, Python (2, 3), NodeJS, Lua, Go, Perl,
-Guile, PHP, Newlisp, Ruby, Java, OCaml...
+i386, x86-64, ARM, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, m680x, AVR,
+XAP, System Z, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
+V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
+Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
+NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
+c55+, c66), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
+MCORE, mcs96, RSP, SuperH-4, VAX.
 
-# Dependencies
+## File Formats
 
-radare2 can be built without any special dependency, just
-get a working toolchain (gcc, clang, tcc...) and use make.
+ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, TE, XBE, BIOS/UEFI,
+Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
+ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
+WASM (WebAssembly binary), Commodore VICE emulator, QNX,
+Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
 
-Optionally you can use libewf for loading EnCase disk images.
+## Scripting
 
-To build the bindings you need latest valabind, g++ and swig2.
+Native bindings are supported but the recommended way to interact with r2
+from other languages is by using [r2pipe](https://github.com/radareorg/radare2-r2pipe)
 
-# Install
+Python, Ruby, JavaScript, Lua, Perl, PHP, Go, Rust, Swift, C#, Java,
+Shell, OCaml, Haskell, Scheme (Guile), CommonLisp, Clojure, Erlang, D,
+Vala/Genie, Prolog, Nim, Newlisp...
 
-The easiest way to install radare2 from git is by running
-the following command:
+# Install / Update
 
-	$ sys/install.sh
-
-If you want to install radare2 in the home directory without
-using root privileges and sudo, simply run:
-
-	$ sys/user.sh
-
-# Building with meson + ninja
-
-If you don't already have meson and ninja, you can install them
-with your distribution package manager or with r2pm:
-
-	$ r2pm -i meson
-
-If you already have them installed, you can run this line to
-compile radare2:
-
-	$ python ./sys/meson.py --prefix=/usr --shared --install
-
-This method is mostly useful on Windows because the initial building
-with Makefile is not suitable. If you are lost in any way, just type:
-
-	$ python ./sys/meson.py --help
-
-# Update
-
-To update Radare2 system-wide, you don't need to uninstall or pull.
-Just re-run:
+The recommended way to install or update radare2 from git for single-user systems:
 
 	$ sys/install.sh
 
-If you installed Radare2 in the home directory,
-just re-run:
+If you don't have root, or just want to install it in your home use:
 
 	$ sys/user.sh
 
-# Uninstall
+Note that those scripts will install using configure+make using symlinks, so you
+don't need to reinstall every time you change something in the builddir.
+
+* If you don't like symlinks use `sys/install.sh --install`
+* To use capstone5 use the `--with-capstone5` flag.
+
+Alternatively you can also build with meson + ninja:
+
+	$ ./sys/meson.py --prefix=/usr --shared --install
+
+## Uninstall
 
 In case of a polluted filesystem, you can uninstall the current
 version or remove all previous installations:
 
 	$ make uninstall
 	$ make purge
-	
+
 To remove all stuff including libraries, use
 
 	$ make system-purge
 
-# Package manager
+## Package Manager
 
 Radare2 has its own package manager - r2pm. Its packages
-repository is on [GitHub too](https://github.com/radare/radare2-pm).
+repository is on [GitHub too](https://github.com/radareorg/radare2-pm).
 To start to using it for the first time, you need to initialize packages:
 
 	$ r2pm init
@@ -140,84 +120,29 @@ To install a package, use the following command:
 
 	$ r2pm install [package name]
 
-# Bindings
+# Development
 
-All language bindings are under the r2-bindings directory.
-You will need to install swig and valabind in order to
-build the bindings for Python, Lua, etc..
+## Coding Style
 
-APIs are defined in vapi files which are then translated
-to swig interfaces, nodejs-ffi or other and then compiled.
+Look at [CONTRIBUTING.md](https://github.com/radareorg/radare2/blob/master/CONTRIBUTING.md).
 
-The easiest way to install the python bindings is to run:
+## Tests
 
-	$ r2pm install lang-python2 #lang-python3 for python3 bindings
-	$ r2pm install r2api-python
-	$ r2pm install r2pipe-py
+Running `make tests` will fetch the [radare2-regressions](https://github.com/radareorg/radare2-regressions)
+repository and run all the tests in order to verify that no changes break any functionality.
 
-In addition there are `r2pipe` bindings, which is an API
-interface to interact with the prompt, passing commands
-and receivent the output as a string, many commands support
-JSON output, so its integrated easily with many languages
-in order to deserialize it into native objects.
+We run those tests on every commit, and they are also executed with ASAN
+and valgrind on different platforms to catch other unwanted 'features'.
 
-	$ npm install r2pipe   # NodeJS
-	$ gem install r2pipe   # Ruby
-	$ pip install r2pipe   # Python
-	$ opam install radare2 # OCaml
 
-And also for Go, Rust, Swift, D, .NET, Java, NewLisp, Perl, Haskell,
-Vala, OCaml, and many more to come!
+# Community
 
-# Regression Testsuite
+Website: [https://www.radare.org/](https://www.radare.org/)
 
-Running `make tests` will fetch the radare2-regressions
-repository and run all the tests in order to verify that no
-changes break any functionality.
+Telegram: [https://t.me/radare](https://t.me/radare)
 
-We run those tests on every commit, and they are also
-executed with ASAN and valgrind on different platforms
-to catch other unwanted 'features'.
-
-# Documentation
-
-There is no formal documentation of r2 yet. Not all commands
-are compatible with radare1, so the best way to learn how to
-do stuff in r2 is by reading the examples from the web and
-appending '?' to every command you are interested in.
-
-Commands are small mnemonics of few characters and there is
-some extra syntax sugar that makes the shell much more pleasant
-for scripting and interacting with the APIs.
-
-You could also checkout the [radare2 book](https://radare.gitbooks.io/radare2book/content/).
-
-# Coding Style
-
-Look at [CONTRIBUTING.md](https://github.com/radare/radare2/blob/master/CONTRIBUTING.md).
-
-# Webserver
-
-radare2 comes with an embedded webserver which serves a pure
-html/js interface that sends ajax queries to the core and
-aims to implement an usable UI for phones, tablets and desktops.
-
-	$ r2 -c=H /bin/ls
-
-To use the webserver on Windows, you require a cmd instance
-with administrator rights. To start the webserver, use the following command
-in the project root.
-
-	> radare2.exe -c=H rax2.exe
-
-# Pointers
-
-Website: https://www.radare.org/
+Twitter: [@radareorg](https://twitter.com/radareorg)
 
 IRC: irc.freenode.net #radare
 
-Telegram: https://t.me/radare
-
 Matrix: @radare2:matrix.org
-
-Twitter: [@radareorg](https://twitter.com/radareorg)

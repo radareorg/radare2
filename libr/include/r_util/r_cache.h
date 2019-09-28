@@ -5,8 +5,6 @@
 extern "C" {
 #endif
 
-#include <sys/time.h>
-
 typedef struct r_cache_t {
 	ut64 base;
 	ut8 *buf;

@@ -1,14 +1,13 @@
 default.cc=arm64
 
 arm64=cc
-cc.arm64.name=arm64
-cc.arm64.arg1=x0
-cc.arm64.arg2=x1
-cc.arm64.arg3=x2
-cc.arm64.arg4=x3
-cc.arm64.arg5=x4
-cc.arm64.arg6=x5
-cc.arm64.arg7=x6
-cc.arm64.arg8=x7
+cc.arm64.arg0=x0
+cc.arm64.arg1=x1
+cc.arm64.arg2=x2
+cc.arm64.arg3=x3
+cc.arm64.arg4=x4
+cc.arm64.arg5=x5
+cc.arm64.arg6=x6
+cc.arm64.arg7=x7
 cc.arm64.argn=stack
 cc.arm64.ret=x0

@@ -7,7 +7,7 @@ static BOOL InstallService(const char * rutaDriver, LPCTSTR  lpServiceName, LPCT
 	BOOL ret = FALSE;
 	HANDLE hSCManager = OpenSCManager (NULL, NULL, SC_MANAGER_CREATE_SERVICE);
 	if (hSCManager)	{
-		LPTSTR rutaDriver_ = r_sys_conv_utf8_to_utf16 (rutaDriver);
+		LPTSTR rutaDriver_ = r_sys_conv_utf8_to_win (rutaDriver);
 		hService = CreateService (hSCManager, lpServiceName, lpDisplayName, SERVICE_START | DELETE | SERVICE_STOP, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_IGNORE, rutaDriver_, NULL, NULL, NULL, NULL, NULL);
 		if (hService) {
 			CloseServiceHandle (hService);
@@ -93,7 +93,7 @@ int GetSystemModules(RIO *io) {
 	int bufmodsize = 1024 * 1024;
 	if(gHandleDriver) {
 		if (!(lpBufMods = malloc (bufmodsize))) {
-			eprintf ("[r2k] GetSystemModules: Error cant allocate %i bytes of memory.\n", bufmodsize);
+			eprintf ("[r2k] GetSystemModules: Error can't allocate %i bytes of memory.\n", bufmodsize);
 			return -1;
 		}
 		if (DeviceIoControl (gHandleDriver, IOCTL_GET_SYSTEM_MODULES, lpBufMods, bufmodsize, lpBufMods, bufmodsize, &bRead, NULL)) {
@@ -119,7 +119,7 @@ int ReadKernelMemory (ut64 address, ut8 *buf, int len) {
 	if(gHandleDriver) {
 		bufsize = sizeof (PA) + len;
 		if (!(lpBuffer = malloc (bufsize))) {
-			eprintf ("[r2k] ReadKernelMemory: Error cant allocate %i bytes of memory.\n", bufsize);
+			eprintf ("[r2k] ReadKernelMemory: Error can't allocate %i bytes of memory.\n", bufsize);
 			return -1;
 		}
 		p = (PPA)lpBuffer;
@@ -147,7 +147,7 @@ int WriteKernelMemory (ut64 address, const ut8 *buf, int len) {
 	if(gHandleDriver) {
 		bufsize = sizeof (PA) + len;
 		if (!(lpBuffer = malloc (bufsize))) {
-			eprintf ("[r2k] WriteKernelMemory: Error cant allocate %i bytes of memory.\n", bufsize);
+			eprintf ("[r2k] WriteKernelMemory: Error can't allocate %i bytes of memory.\n", bufsize);
 			return -1;
 		}
 		p = (PPA)lpBuffer;

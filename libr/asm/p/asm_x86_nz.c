@@ -670,6 +670,47 @@ static int opsbb(RAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x18);
 }
 
+static int opbs(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	if (a->bits >= 32 && op->operands[1].type & OT_MEMORY && op->operands[1].reg_size & OT_WORD) {
+		return -1;
+	}
+	if (!(op->operands[1].type & OT_MEMORY) && 
+		!((op->operands[0].type & ALL_SIZE) == (op->operands[1].type & ALL_SIZE))) {
+		return -1;
+	}
+	if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
+		if (a->bits == 64) {
+			if (op->operands[1].type & OT_MEMORY && 
+				op->operands[1].reg_size & OT_DWORD) {
+				data[l++] = 0x67;
+			}
+			if (op->operands[0].type & OT_WORD) {
+				data[l++] = 0x66;
+			}
+			if (op->operands[0].type & OT_QWORD) {
+				data[l++] = 0x48;
+			}
+		} else if (op->operands[0].type & OT_WORD) {
+				data[l++] = 0x66;
+		}
+		data[l++] = 0x0f;
+		if (!strcmp (op->mnemonic, "bsf")) {
+			data[l++] = 0xbc;
+		} else {
+			data[l++] = 0xbd;
+		}
+		if (op->operands[1].type & OT_GPREG && !(op->operands[1].type & OT_MEMORY)) {
+			data[l] = 0xc0;
+		} else if (!(op->operands[1].type & OT_MEMORY)) {
+			return -1;
+		}
+		data[l] += op->operands[0].reg << 3;
+		data[l++] += op->operands[1].reg;
+	}
+	return l;
+}
+
 static int opbswap(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (op->operands[0].type & OT_REGALL) {
@@ -1513,6 +1554,9 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 						data[l] = 0x60;
 					}
 					data[l++] |= op->operands[0].regs[0];
+					if (op->operands[0].regs[0] == X86R_ESP) {
+						data[l++] = 0x24;
+					}
 					data[l++] = offset;
 					if (op->operands[0].offset >= 0x80) {
 						data[l++] = offset >> 8;
@@ -1627,18 +1671,32 @@ static int oplea(RAsm *a, ut8 *data, const Opcode *op){
 		}
 		data[l++] = 0x8d;
 		if (op->operands[1].regs[0] == X86R_UNDEFINED) {
-			int high = 0xff00 & op->operands[1].offset;
+			// RIP-relative LEA
+			ut64 offset = op->operands[1].offset - a->pc;
+			if (data[0] == 0x48) {
+				offset -= 7;
+			}
+			ut32 high = 0xff00 & offset;
 			data[l++] = op->operands[0].reg << 3 | 5;
-			data[l++] = op->operands[1].offset;
+			data[l++] = offset;
 			data[l++] = high >> 8;
-			data[l++] = op->operands[1].offset >> 16;
-			data[l++] = op->operands[1].offset >> 24;
+			data[l++] = offset >> 16;
+			data[l++] = offset >> 24;
 			return l;
 		} else {
 			reg = op->operands[0].reg;
 			rm = op->operands[1].regs[0];
 
 			offset = op->operands[1].offset * op->operands[1].offset_sign;
+			if (op->operands[1].regs[0] == X86R_RIP) {
+				// RIP-relative LEA (not caught above, so "offset" is already relative)
+				data[l++] = reg << 3 | 5;
+				data[l++] = offset;
+				data[l++] = offset >> 8;
+				data[l++] = offset >> 16;
+				data[l++] = offset >> 24;
+				return l;
+			}
 			if (offset != 0 || op->operands[1].regs[0] == X86R_EBP) {
 				mod = 1;
 				if (offset >= 128 || offset < -128) {
@@ -2042,8 +2100,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 		offset = op->operands[1].offset * op->operands[1].offset_sign;
 		if (op->operands[0].reg == X86R_EAX && op->operands[1].regs[0] == X86R_UNDEFINED) {
-			if (a->bits == 64) {
+			if (op->operands[0].type & OT_QWORD) {
 				data[l++] = 0x48;
+			} else if (op->operands[0].type & OT_WORD && a->bits != 16) {
+				data[l++] = 0x66;
 			}
 			if (op->operands[0].type & OT_BYTE) {
 				data[l++] = 0xa0;
@@ -2052,13 +2112,15 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 			data[l++] = offset;
 			data[l++] = offset >> 8;
-			data[l++] = offset >> 16;
-			data[l++] = offset >> 24;
-			if (a->bits == 64) {
-				data[l++] = offset >> 32;
-				data[l++] = offset >> 40;
-				data[l++] = offset >> 48;
-				data[l++] = offset >> 54;
+			if (a->bits >= 32) {
+				data[l++] = offset >> 16;
+				data[l++] = offset >> 24;
+				if (a->bits == 64) {
+					data[l++] = offset >> 32;
+					data[l++] = offset >> 40;
+					data[l++] = offset >> 48;
+					data[l++] = offset >> 56;
+				}
 			}
 			return l;
 		}
@@ -4034,6 +4096,8 @@ LookupTable oplookup[] = {
 	{"adx", 0, NULL, 0xd4, 1},
 	{"amx", 0, NULL, 0xd5, 1},
 	{"and", 0, &opand, 0},
+	{"bsf", 0, &opbs, 0},
+	{"bsr", 0, &opbs, 0},
 	{"bswap", 0, &opbswap, 0},
 	{"call", 0, &opcall, 0},
 	{"cbw", 0, NULL, 0x6698, 2},
@@ -4521,7 +4585,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		*pos = 4;
 	}
 
-	// Now read number, possibly with parantheses
+	// Now read number, possibly with parentheses
 	if (*type & (OT_FPUREG | OT_MMXREG | OT_XMMREG) & ~OT_REGALL) {
 		Register reg = X86R_UNDEFINED;
 
@@ -4968,7 +5032,7 @@ RAsmPlugin r_asm_plugin_x86_nz = {
 	.assemble = &assemble
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_x86_nz,

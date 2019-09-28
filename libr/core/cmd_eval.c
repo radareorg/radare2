@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - pancake */
+/* radare2 - LGPL - Copyright 2009-2019 - pancake */
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -12,6 +12,8 @@ static const char *help_msg_e[] = {
 	"e", " a=b", "set var 'a' the 'b' value",
 	"e var=?", "", "print all valid values of var",
 	"e var=??", "", "print all valid values of var with description",
+	"e.", "a=b", "same as 'e a=b' but without using a space",
+	"e,", "k=v,k=v,k=v", "comma separated k[=v]",
 	"e-", "", "reset config vars",
 	"e*", "", "dump config vars in r commands",
 	"e!", "a", "invert the boolean value of 'a' var",
@@ -62,7 +64,7 @@ static const char *help_msg_eco[] = {
 	NULL
 };
 
-static char *curtheme = NULL;
+static char *curtheme = "default";
 static bool getNext = false;
 
 static void cmd_eval_init(RCore *core) {
@@ -120,6 +122,11 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	if (!_arg || !*_arg) {
 		return false;
 	}
+	if (!r_str_cmp (_arg, "default", strlen (_arg))) {
+		curtheme = strdup (_arg);
+		r_cons_pal_init (core->cons->context);
+		return true;
+	}
 	char *arg = strdup (_arg);
 
 	char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_THEMES, "%s"), arg);
@@ -169,7 +176,8 @@ R_API char *r_core_get_theme () {
 R_API RList *r_core_list_themes(RCore *core) {
 	RList *list = r_list_newf (free);
 	getNext = false;
-
+	char *tmp = strdup ("default");
+	r_list_append (list, tmp);
 	char *path = r_str_home (R2_HOME_THEMES R_SYS_DIR);
 	if (path) {
 		list_themes_in_path (list, path);
@@ -277,6 +285,23 @@ done:
 	files = NULL;
 	if (mode == 'j') {
 		r_cons_printf ("]\n");
+	}
+}
+
+R_API void r_core_echo(RCore *core, const char *input) {
+	if (!strncmp (input, "64 ", 3)) {
+		char *buf = strdup (input);
+		r_base64_decode ((ut8*)buf, input + 3, -1);
+		if (*buf) {
+			r_cons_echo (buf);
+		}
+		free (buf);
+	} else {
+		char *p = strchr (input, ' ');
+		if (p) {
+			r_cons_strcat (p + 1);
+			r_cons_newline ();
+		}
 	}
 }
 
@@ -391,11 +416,7 @@ static int cmd_eval(void *data, const char *input) {
 		case '*': r_cons_pal_list (1, NULL); break; // "ec*"
 		case 'h': // echo
 			if (input[2] == 'o') {
-				char *p = strchr (input, ' ');
-				if (p) {
-					r_cons_strcat (p + 1);
-					r_cons_newline ();
-				}
+				r_core_echo (core, input + 3);
 			} else {
 				r_cons_pal_list ('h', NULL);
 			}
@@ -514,7 +535,7 @@ static int cmd_eval(void *data, const char *input) {
 			free (file);
 		} else {
 			char *file = r_str_home (".radare2rc");
-			if (r_config_get_i (core->config, "scr.interactive")) {
+			if (r_cons_is_interactive ()) {
 				r_file_touch (file);
 				char * res = r_cons_editor (file, NULL);
 				if (res) {
@@ -531,22 +552,23 @@ static int cmd_eval(void *data, const char *input) {
 	case 'e': // "ee"
 		if (input[1] == ' ') {
 			char *p;
-			const char *val, *input2 = strchr (input+2, ' ');
-			if (input2) input2++; else input2 = input+2;
-			val = r_config_get (core->config, input2);
+			const char *input2 = strchr (input + 2, ' ');
+			input2 = (input2) ? input2 + 1 : input + 2;
+			const char *val = r_config_get (core->config, input2);
 			p = r_core_editor (core, NULL, val);
 			if (p) {
 				r_str_replace_char (p, '\n', ';');
 				r_config_set (core->config, input2, p);
 			}
 		} else {
-			eprintf ("Usage: ee varname\n");
+			eprintf ("Usage: ee varname # use $EDITOR to edit this config value\n");
 		}
 		break;
 	case '!': // "e!"
-		input = r_str_trim_ro (input+1);
-		if (!r_config_toggle (core->config, input))
+		input = r_str_trim_ro (input + 1);
+		if (!r_config_toggle (core->config, input)) {
 			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
+		}
 		break;
 	case 's': // "es"
 		r_config_list (core->config, (input[1])? input + 1: NULL, 's');
@@ -560,16 +582,25 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 'r': // "er"
 		if (input[1]) {
-			const char *key = input+((input[1]==' ')?2:1);
+			const char *key = input + ((input[1] == ' ')? 2: 1);
 			if (!r_config_readonly (core->config, key)) {
 				eprintf ("cannot find key '%s'\n", key);
 			}
 		} else {
-			eprintf ("Usage: er [key]\n");
+			eprintf ("Usage: er [key]  # make an eval key PERMANENTLY read only\n");
 		}
 		break;
-	case ' ':
-		r_config_eval (core->config, input + 1);
+	case ',': // "e."
+		r_config_eval (core->config, input + 1, true);
+		break;
+	case '.': // "e "
+	case ' ': // "e "
+		if (r_str_endswith (input, ".")) {
+			r_config_list (core->config, input + 1, 0);
+		} else {
+			// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
+			r_config_eval (core->config, input + 1, false);
+		}
 		break;
 	}
 	return 0;

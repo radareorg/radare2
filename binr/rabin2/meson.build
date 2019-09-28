@@ -3,6 +3,7 @@ executable('rabin2', 'rabin2.c',
   dependencies: [
     r_util_dep,
     r_cons_dep,
+    r_main_dep,
     r_config_dep,
     r_hash_dep,
     r_io_dep,
@@ -13,5 +14,6 @@ executable('rabin2', 'rabin2.c',
     sdb_dep
   ],
   install: true,
+  install_rpath: rpath,
   implicit_include_directories: false
 )

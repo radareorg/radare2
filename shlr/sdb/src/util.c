@@ -18,7 +18,7 @@ struct timezone {
 	int  tz_dsttime;     /* type of dst correction */
 };
 
-int gettimeofday (struct timeval* p, struct timezone * tz) {
+SDB_API int gettimeofday (struct timeval* p, struct timezone * tz) {
 	//ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
 	static int tzflag = 0;

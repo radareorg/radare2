@@ -78,7 +78,7 @@ int linux_handle_signals (RDebug *dbg) {
 		dbg->stopaddr = (ut64)siginfo.si_addr;
 		//dbg->errno = siginfo.si_errno;
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
-#warning DO MORE RDEBUGREASON HERE
+// TODO: DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
 		case SIGTRAP:
 		{
@@ -508,11 +508,9 @@ RDebugInfo *linux_info(RDebug *dbg, const char *arg) {
 	rdi->gid = found ? th->gid : -1;
 	rdi->cwd = read_link (rdi->pid, "cwd");
 	rdi->exe = read_link (rdi->pid, "exe");
-	snprintf (proc_buff, sizeof (proc_buff),
-				"/proc/%d/cmdline", rdi->pid);
+	snprintf (proc_buff, sizeof (proc_buff), "/proc/%d/cmdline", rdi->pid);
 	rdi->cmdline = r_file_slurp (proc_buff, NULL);
-	snprintf (proc_buff, sizeof (proc_buff),
-				"/proc/%d/stack", rdi->pid);
+	snprintf (proc_buff, sizeof (proc_buff), "/proc/%d/stack", rdi->pid);
 	rdi->kernel_stack = r_file_slurp (proc_buff, NULL);
 	rdi->status = found ? th->status : R_DBG_PROC_STOP;
 	if (list_alloc) {
@@ -723,11 +721,11 @@ void print_fpu (void *f, int r){
 		eprintf ("swd = 0x%04x  ; status\n", fpxregs.swd);
 		eprintf ("twd = 0x%04x ", fpxregs.twd);
 		eprintf ("fop = 0x%04x\n", fpxregs.fop);
-		eprintf ("fip = 0x%08x\n", fpxregs.fip);
-		eprintf ("fcs = 0x%08x\n", fpxregs.fcs);
-		eprintf ("foo = 0x%08x\n", fpxregs.foo);
-		eprintf ("fos = 0x%08x\n", fpxregs.fos);
-		eprintf ("mxcsr = 0x%08x\n", fpxregs.mxcsr);
+		eprintf ("fip = 0x%08x\n", (ut32)fpxregs.fip);
+		eprintf ("fcs = 0x%08x\n", (ut32)fpxregs.fcs);
+		eprintf ("foo = 0x%08x\n", (ut32)fpxregs.foo);
+		eprintf ("fos = 0x%08x\n", (ut32)fpxregs.fos);
+		eprintf ("mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
 		for(i = 0; i < 8; i++) {
 			ut32 *a = (ut32*)(&fpxregs.xmm_space);
 			ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);

@@ -55,7 +55,7 @@ static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
 	}
 }
 
-static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	int ilen = 0;
 	z80_op_size (data, len, &ilen, &op->nopcode);
 
@@ -426,7 +426,7 @@ RAnalPlugin r_anal_plugin_z80 = {
 	.op = &z80_anal_op,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_z80,

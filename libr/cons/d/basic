@@ -19,9 +19,11 @@ ec other gray
 ec btext cyan
 ec invalid red
 ec trap red
+ec ucall cyan
+ec ujmp green
 ec args green
 ec help yellow
-ec prompt white
+ec prompt cyan
 ec mov gray
 ec math gray
 ec push yellow
@@ -49,3 +51,6 @@ ec graph.box4 gray
 ec func_var white
 ec func_var_type blue
 ec func_var_addr cyan
+
+ec widget_bg white gray
+ec widget_sel black cyan

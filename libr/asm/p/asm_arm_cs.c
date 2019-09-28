@@ -158,7 +158,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 				r_write_be32 (opbuf, opcode);
 			}
 		} else if (opsize == 2) {
-			r_write_be16 (opbuf, opcode & UT16_MAX);
+			if (a->big_endian) {
+				r_write_le16 (opbuf, opcode & UT16_MAX);
+			} else {
+				r_write_be16 (opbuf, opcode & UT16_MAX);
+			}
 		}
 	} else {
 		opsize = 4;
@@ -176,7 +180,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
-	.cpus = "v8,cortex",
+	.cpus = ",v8,cortex",
 	.features = "v8",
 	.license = "BSD",
 	.arch = "arm",
@@ -195,7 +199,7 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 };
 
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_arm_cs,

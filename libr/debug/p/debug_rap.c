@@ -35,7 +35,7 @@ static int __rap_attach(RDebug *dbg, int pid) {
 		if (!strcmp ("rap", d->plugin->name)) {
 			eprintf ("SUCCESS: rap attach with inferior rap rio worked\n");
 		} else {
-			eprintf ("ERROR: Underlaying IO descriptor is not a rap one..\n");
+			eprintf ("ERROR: Underlying IO descriptor is not a rap one..\n");
 		}
 	}
 	return true;
@@ -52,6 +52,7 @@ static char *__rap_reg_profile(RDebug *dbg) {
 	char *out, *tf = r_file_temp ("rap.XXXXXX");
 	int fd = r_cons_pipe_open (tf, 1, 0);
 	r_io_system (dbg->iob.io, "drp");
+	r_cons_flush ();
 	r_cons_pipe_close (fd);
 	out = r_file_slurp (tf, NULL);
 	r_file_rm (tf);
@@ -82,7 +83,7 @@ RDebugPlugin r_debug_plugin_rap = {
 	//.bp_read = &__rap_bp_read,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_rap,

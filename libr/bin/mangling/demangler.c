@@ -24,6 +24,7 @@ static EManglingType get_mangling_type(char *sym)
 	}
 
 	switch (*sym) {
+	case '.':
 	case '?':
 		mangling_type = eManglingMicrosoft;
 		break;

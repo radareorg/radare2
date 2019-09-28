@@ -13,7 +13,7 @@
 #include <r_anal.h>
 #include "rsp_idec.h"
 
-static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
+static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	int i;
 	typedef struct {
 		RAnalValue* value;
@@ -702,7 +702,7 @@ RAnalPlugin r_anal_plugin_rsp = {
 	.get_reg_profile = &get_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_rsp,

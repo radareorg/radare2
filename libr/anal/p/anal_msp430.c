@@ -7,7 +7,7 @@
 
 #include <msp430_disas.h>
 
-static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int ret;
 	struct msp430_cmd cmd;
 

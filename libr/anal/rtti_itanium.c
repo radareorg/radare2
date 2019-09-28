@@ -5,9 +5,9 @@
 #include <r_flag.h>
 #include <r_cons.h>
 
-#define vmi_class_type_info_name "obj.vtablefor__cxxabiv1::__vmi_class_type_info"
-#define class_type_info_name "obj.vtablefor__cxxabiv1::__class_type_info"
-#define si_class_type_info_name "obj.vtablefor__cxxabiv1::__si_class_type_info"
+#define VMI_CLASS_TYPE_INFO_NAME "obj.vtable_for___cxxabiv1::__vmi_class_type_info"
+#define CLASS_TYPE_INFO_NAME "obj.vtable_for___cxxabiv1::__class_type_info"
+#define SI_CLASS_TYPE_INFO_NAME "obj.vtable_for___cxxabiv1::__si_class_type_info"
 #define NAME_BUF_SIZE 64
 
 typedef struct class_type_info_t {
@@ -330,12 +330,12 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 	class_type_offset -= 2 * context->word_size;
 	RFlagItem *flag;
 
-	flag = r_flag_get_i(core->flags, class_type_offset);
+	flag = context->anal->flag_get (core->flags, class_type_offset);
 	if (!flag) {
 		eprintf ("No RTTI found\n");
 		return false;
 	}
-	if (!r_str_cmp (flag->name, vmi_class_type_info_name, r_str_len_utf8 (flag->name))) {
+	if (!r_str_cmp (flag->name, VMI_CLASS_TYPE_INFO_NAME, r_str_len_utf8 (flag->name))) {
 		vmi_class_type_info vmi_cti = {0};
 		if (!rtti_itanium_read_vmi_class_type_info (context, colAddr, &vmi_cti)) {
 			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
@@ -351,7 +351,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 		rtti_itanium_vmi_class_type_info_fini (&vmi_cti);
 	}
 
-	if (!r_str_cmp (flag->name, si_class_type_info_name, r_str_len_utf8 (flag->name))) {
+	if (!r_str_cmp (flag->name, SI_CLASS_TYPE_INFO_NAME, r_str_len_utf8 (flag->name))) {
 		si_class_type_info si_cti = {0};
 		if (!rtti_itanium_read_si_class_type_info (context, colAddr, &si_cti)) {
 			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
@@ -367,7 +367,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 		rtti_itanium_si_class_type_info_fini (&si_cti);
 	}
 
-	if (!r_str_cmp (flag->name, class_type_info_name, r_str_len_utf8 (flag->name))) {
+	if (!r_str_cmp (flag->name, CLASS_TYPE_INFO_NAME, r_str_len_utf8 (flag->name))) {
 		class_type_info cti;
 		if (!rtti_itanium_read_class_type_info (context, colAddr, &cti)) {
 			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);

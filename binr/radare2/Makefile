@@ -1,7 +1,7 @@
 BIN=radare2
 BINDEPS=r_core r_parse r_search r_cons r_config
 BINDEPS+=r_bin r_debug r_anal r_reg r_bp r_io r_fs
-BINDEPS+=r_lang r_asm r_syscall r_hash
+BINDEPS+=r_lang r_asm r_syscall r_hash r_main
 BINDEPS+=r_magic r_socket r_flag r_egg r_crypto r_util
 
 include ../../config-user.mk
@@ -19,7 +19,7 @@ ifeq (${COMPILER},emscripten)
 # https://kripken.github.io/emscripten-site/docs/optimizing/Optimizing-Code.html
 # -s INLINING_LIMIT=1
 # --memory-init-file 0
-CFLAGS+=-s EXPORTED_FUNCTIONS='["_r2_asmjs_new", "_r2_asmjs_cmd", "_r2_asmjs_free", "_r2_asmjs_openurl"]'
+CFLAGS+=-s EXPORTED_FUNCTIONS='["_r_core_new", "_r_core_free", "_r_cmd_str"]'
 CFLAGS+=-s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap", "addOnInit"]'
 CFLAGS+=-s TOTAL_MEMORY=33554432
 CFLAGS+=-s ALLOW_MEMORY_GROWTH=1
@@ -74,13 +74,17 @@ macos-sign-libs:
 
 ifeq ($(OSTYPE),android)
 LDFLAGS+=${DL_LIBS} -lm
+LDFLAGS+=../../shlr/capstone/libcapstone.a
 endif
 
 include ../../libr/socket/deps.mk
 include ../../libr/magic/deps.mk
+include ../../libr/main/deps.mk
 include ../../shlr/zip/deps.mk
 include ../../shlr/gdb/deps.mk
 include ../../shlr/java/deps.mk
 include ../../shlr/bochs/deps.mk
+include ../../shlr/grub/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/ar/deps.mk
+LDFLAGS+=$(LINK)

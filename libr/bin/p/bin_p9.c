@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 - nibble, pancake */
+/* radare2 - LGPL - Copyright 2009-2019 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,26 +6,16 @@
 #include <r_bin.h>
 #include "../format/p9/p9bin.h"
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length >= 4) {
-		return (r_bin_p9_get_arch (buf, NULL, NULL));
-	}
-	return false;
+static bool check_buffer(RBuffer *buf) {
+	return r_bin_p9_get_arch (buf, NULL, NULL);
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return check_bytes (buf, sz);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+	return check_buffer (b);
 }
 
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
-	ut64 sz = bf? r_buf_size (bf->buf): 0;
-	ut64 la = (bf && bf->o)? bf->o->loadaddr: 0;
-	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
-}
-
-static int destroy(RBinFile *bf) {
-	return true;
+static void destroy(RBinFile *bf) {
+	r_buf_free (bf->o->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -68,7 +58,7 @@ static RList *sections(RBinFile *bf) {
 		return NULL;
 	}
 	// add text segment
-	textsize = r_mem_get_num (bf->buf->buf + 4, 4);
+	textsize = r_buf_read_le32_at (bf->buf, 4);
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		r_list_free (ret);
 		return NULL;
@@ -82,7 +72,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	// add data segment
-	datasize = r_mem_get_num (bf->buf->buf + 8, 4);
+	datasize = r_buf_read_le32_at (bf->buf, 8);
 	if (datasize > 0) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -98,7 +88,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	// ignore bss or what
 	// add syms segment
-	symssize = r_mem_get_num (bf->buf->buf + 16, 4);
+	symssize = r_buf_read_le32_at (bf->buf, 16);
 	if (symssize) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -113,7 +103,7 @@ static RList *sections(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 	// add spsz segment
-	spszsize = r_mem_get_num (bf->buf->buf + 24, 4);
+	spszsize = r_buf_read_le32_at (bf->buf, 24);
 	if (spszsize) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -128,7 +118,7 @@ static RList *sections(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 	// add pcsz segment
-	pcszsize = r_mem_get_num (bf->buf->buf + 24, 4);
+	pcszsize = r_buf_read_le32_at (bf->buf, 24);
 	if (pcszsize) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -162,7 +152,7 @@ static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	int bits = 32, bina, big_endian = 0;
 
-	if (!(bina = r_bin_p9_get_arch (bf->buf->buf, &bits, &big_endian))) {
+	if (!(bina = r_bin_p9_get_arch (bf->buf, &bits, &big_endian))) {
 		return NULL;
 	}
 	if (!(ret = R_NEW0 (RBinInfo))) {
@@ -185,6 +175,9 @@ static RBinInfo *info(RBinFile *bf) {
 
 static ut64 size(RBinFile *bf) {
 	ut64 text, data, syms, spsz;
+	if (!bf) {
+		return 0;
+	}
 	if (!bf->o->info) {
 		bf->o->info = info (bf);
 	}
@@ -195,10 +188,10 @@ static ut64 size(RBinFile *bf) {
 	if (r_buf_size (bf->buf) < 28) {
 		return 0;
 	}
-	text = r_mem_get_num (bf->buf->buf + 4, 4);
-	data = r_mem_get_num (bf->buf->buf + 8, 4);
-	syms = r_mem_get_num (bf->buf->buf + 16, 4);
-	spsz = r_mem_get_num (bf->buf->buf + 24, 4);
+	text = r_buf_read_le32_at (bf->buf, 4);
+	data = r_buf_read_le32_at (bf->buf, 8);
+	syms = r_buf_read_le32_at (bf->buf, 16);
+	spsz = r_buf_read_le32_at (bf->buf, 24);
 	return text + data + syms + spsz + (6 * 4);
 }
 
@@ -228,11 +221,10 @@ RBinPlugin r_bin_plugin_p9 = {
 	.name = "p9",
 	.desc = "Plan9 bin plugin",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.size = &size,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
@@ -244,7 +236,7 @@ RBinPlugin r_bin_plugin_p9 = {
 	.create = &create,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_p9,

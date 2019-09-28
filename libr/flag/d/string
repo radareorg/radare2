@@ -5,3 +5,6 @@ strlen
 strtok
 strstr
 strlcpy
+asprintf
+sprintf
+snprintf

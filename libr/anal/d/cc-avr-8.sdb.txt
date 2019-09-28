@@ -1,13 +1,12 @@
 default.cc=avr
 
 avr=cc
-cc.avr.name=avr
-cc.avr.arg1=r26
-cc.avr.arg2=r25
-cc.avr.arg3=r24
-cc.avr.arg4=r23
-cc.avr.arg5=r22
-cc.avr.arg6=r21
-cc.avr.arg7=r18
+cc.avr.arg0=r26
+cc.avr.arg1=r25
+cc.avr.arg2=r24
+cc.avr.arg3=r23
+cc.avr.arg4=r22
+cc.avr.arg5=r21
+cc.avr.arg6=r18
 cc.avr.argn=stack
 cc.avr.ret=r24

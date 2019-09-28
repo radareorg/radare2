@@ -7,7 +7,7 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len) {
+static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len, RAnalOpMask mask) {
 //int arch_ppc_op(ut64 addr, const u8 *bytes, struct op_t *op)
 	// XXX hack
 	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
@@ -152,7 +152,7 @@ RAnalPlugin r_anal_plugin_ppc_gnu = {
 	.set_reg_profile = &set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_ppc_gnu,

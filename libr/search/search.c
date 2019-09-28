@@ -54,7 +54,7 @@ R_API RSearch *r_search_free(RSearch *s) {
 	}
 	r_list_free (s->hits);
 	r_list_free (s->kws);
-	//r_io_free(s->iob.io); this is suposed to be a weak reference
+	//r_io_free(s->iob.io); this is supposed to be a weak reference
 	free (s->data);
 	free (s);
 	return NULL;
@@ -112,7 +112,7 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
 			kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
-			eprintf ("0x%08"PFMT64x" Sequencial hit ignored.\n", addr);
+			eprintf ("0x%08"PFMT64x" Sequential hit ignored.\n", addr);
 			return 1;
 		}
 	}

@@ -58,10 +58,12 @@ static int lang_zig_file(RLang *lang, const char *file) {
 	} else {
 		eprintf ("Cannot open library\n");
 		free (path);
+		free (cc);
 		return false;
 	}
 	r_file_rm (path); // remove lib
 	free (path);
+	free (cc);
 	return true;
 }
 
@@ -72,7 +74,7 @@ static int lang_zig_init(void *user) {
 
 static int lang_zig_run(RLang *lang, const char *code, int len) {
 	const char *file = "_tmp.zig";
-	FILE *fd = fopen (file, "w");
+	FILE *fd = r_sandbox_fopen (file, "w");
 	if (fd) {
 		const char *zig_header = \
 "extern fn puts(&const u8) void;\n" \

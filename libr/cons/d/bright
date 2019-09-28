@@ -1,0 +1,72 @@
+# r2 default palette but with bright colors for all
+
+ec b0x00 rgb:00ff00
+ec b0x7f rgb:00ffff
+ec b0xff rgb:ff0000
+ec args rgb:ffff00
+ec bin rgb:00ffff
+ec btext rgb:ffff00
+ec call rgb:00ff00 . bold
+ec cjmp rgb:00ff00
+ec cmp rgb:00ffff
+ec comment rgb:ff0000
+ec usrcmt rgb:ffffff
+ec creg rgb:00ffff
+ec flag rgb:00ffff
+ec fline rgb:00ffff
+ec floc rgb:00ffff
+ec flow rgb:00ffff
+ec flow2 rgb:0000ff
+ec fname rgb:ff0000
+ec help rgb:00ff00
+ec input rgb:ffffff
+ec invalid rgb:ff0000 . bold
+ec jmp rgb:00ff00
+ec label rgb:00ffff
+ec math rgb:ffff00
+ec mov rgb:ffffff
+ec nop rgb:0000ff
+ec num rgb:ffff00
+ec offset rgb:00ff00
+ec other rgb:ffffff
+ec pop rgb:ff00ff . bold
+ec prompt rgb:ffff00
+ec push rgb:ff00ff
+ec crypto rgb:ffff00
+ec reg rgb:00ffff
+ec ret rgb:ff0000
+ec swi rgb:ff00ff
+ec trap rgb:ff0000 . bold
+ec ucall rgb:00ff00
+ec ujmp rgb:00ff00
+
+ec ai.read rgb:00ff00
+ec ai.write rgb:0000ff
+ec ai.exec rgb:ff0000
+ec ai.seq rgb:ff00ff
+ec ai.ascii rgb:ffff00
+
+ec gui.cflow rgb:ffff00
+ec gui.dataoffset rgb:ffff00
+ec gui.background rgb:000000
+ec gui.alt_background rgb:ffffff
+ec gui.border rgb:000000
+ec wordhl rgb:ff0000
+ec linehl rgb:000080
+
+ec func_var rgb:ffffff
+ec func_var_type rgb:ffff00
+ec func_var_addr rgb:00ffff
+
+ec widget_bg rgb:303030
+ec widget_sel rgb:ff0000
+
+ec graph.box rgb:0000ff
+ec graph.box2 rgb:00ff00
+ec graph.box3 rgb:ff00ff
+ec graph.box4 rgb:808080
+ec graph.true rgb:00ff00
+ec graph.false rgb:ff0000
+ec graph.trufae rgb:0000ff    # single jump
+ec graph.traced rgb:ffff00
+ec graph.current rgb:0000ff

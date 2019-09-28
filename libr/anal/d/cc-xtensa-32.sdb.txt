@@ -1,12 +1,11 @@
 default.cc=call0
 
 call0=cc
-cc.call0.name=call0
-cc.call0.arg1=a2
-cc.call0.arg2=a3
-cc.call0.arg3=a4
-cc.call0.arg4=a5
-cc.call0.arg5=a6
-cc.call0.arg6=a7
+cc.call0.arg0=a2
+cc.call0.arg1=a3
+cc.call0.arg2=a4
+cc.call0.arg3=a5
+cc.call0.arg4=a6
+cc.call0.arg5=a7
 cc.call0.argn=stack
 cc.call0.ret=a2

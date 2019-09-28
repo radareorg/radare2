@@ -105,9 +105,11 @@ static state_func const state_table[eTCStateMax] = {
 // State machine for parsing type codes functions
 ///////////////////////////////////////////////////////////////////////////////
 
+static void init_state_struct(SStateInfo *state, char *buff_for_parsing);
 static EDemanglerErr get_type_code_string(char *sym, unsigned int *amount_of_read_chars, char **str_type_code);
 static int init_type_code_str_struct(STypeCodeStr *type_coder_str);
 static void free_type_code_str_struct(STypeCodeStr *type_code_str);
+char *get_num(SStateInfo *state);
 
 static void run_state(SStateInfo *state_info, STypeCodeStr *type_code_str) {
 	state_table[state_info->state](state_info, type_code_str);
@@ -159,6 +161,126 @@ copy_string_err:
 	return res;
 }
 
+int get_template_params(char *sym, unsigned int *amount_of_read_chars, char **str_type_code) {
+	EDemanglerErr err = eDemanglerErrOK;
+	SStateInfo state;
+	init_state_struct (&state, sym);
+	const char template_param[] = "template-parameter-";
+	char *tmp, *res = NULL;
+	if (!strncmp (sym, "?", 1)) {
+		// anonymous template param
+		state.amount_of_read_chars += 1;
+		state.buff_for_parsing += 1;
+		res = get_num (&state);
+		if (res) {
+			tmp = r_str_newf("%s%s", template_param, res);
+			free (res);
+			res = tmp;
+		}
+	} else {
+		if (strncmp (sym, "$", 1)) {
+			goto get_template_params_err;
+		}
+		sym++;
+		state.amount_of_read_chars += 2;
+		state.buff_for_parsing += 2;
+		if (!strncmp (sym, "0", 1)) {
+			// Signed integer
+			tmp = get_num (&state);
+			if (tmp) {
+				int signed_a = atoi (tmp);
+				res = r_str_newf ("%d", signed_a);
+				free (tmp);
+			}
+		} else if (!strncmp (sym, "2", 1)) {
+			// real value a ^ b
+			char *a = get_num (&state);
+			char *b = get_num (&state);
+			if (a && b) {
+				int signed_b = atoi (b);
+				res = r_str_newf ("%sE%d", a, signed_b);
+			}
+			free (a);
+			free (b);
+		} else if (!strncmp (sym, "D", 1)) {
+			// anonymous template param
+			res = get_num (&state);
+			if (res) {
+				tmp = r_str_newf("%s%s", template_param, res);
+				free (res);
+				res = tmp;
+			}
+		} else if (!strncmp (sym, "F", 1)) {
+			// Signed {a, b}
+			char *a = get_num (&state);
+			char *b = get_num (&state);
+			if (a && b) {
+				int signed_a = atoi (a);
+				int signed_b = atoi (b);
+				res = r_str_newf ("{%d, %d}", signed_a, signed_b);
+			}
+			free (a);
+			free (b);
+		} else if (!strncmp (sym, "G", 1)) {
+			// Signed {a, b, c}
+			char *a = get_num (&state);
+			char *b = get_num (&state);
+			char *c = get_num (&state);
+			if (a && b && c) {
+				int signed_a = atoi (a);
+				int signed_b = atoi (b);
+				int signed_c = atoi (c);
+				res = r_str_newf ("{%d, %d, %d}", signed_a, signed_b, signed_c);
+			}
+			free (a);
+			free (b);
+			free (c);
+		} else if (!strncmp (sym, "H", 1)) {
+			// Unsigned integer
+			res = get_num (&state);
+		} else if (!strncmp (sym, "I", 1)) {
+			// Unsigned {x, y}
+			char *a = get_num (&state);
+			char *b = get_num (&state);
+			if (a && b) {
+				res = r_str_newf ("{%s, %s}", a, b);
+			}
+			free (a);
+			free (b);
+		} else if (!strncmp (sym, "J", 1)) {
+			// Unsigned {x, y, z}
+			char *a = get_num (&state);
+			char *b = get_num (&state);
+			char *c = get_num (&state);
+			if (a && b && c) {
+				res = r_str_newf ("{%s, %s, %s}", a, b, c);
+			}
+			free (a);
+			free (b);
+			free (c);
+		} else if (!strncmp (sym, "Q", 1)) {
+			// anonymous non-type template parameter
+			res = get_num (&state);
+			if (res) {
+				tmp = r_str_newf("non-type-%s%s", template_param, res);
+				free (res);
+				res = tmp;
+			}
+		}
+	}
+
+	if (!res) {
+		err = eDemanglerErrUnsupportedMangling;
+		goto get_template_params_err;
+	}
+
+	*str_type_code = res;
+	*amount_of_read_chars = state.amount_of_read_chars;
+
+get_template_params_err:
+	return err;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 int get_template (char *buf, SStrInfo *str_info) {
 	int len = 0;
@@ -175,7 +297,6 @@ int get_template (char *buf, SStrInfo *str_info) {
 	if (!init_type_code_str_struct(&type_code_str)) {
 		goto get_template_err;
 	}
-	abbr_names = r_list_new ();
 
 	// get/copy template len/name
 	len += (tmp - buf + 1);
@@ -192,8 +313,10 @@ int get_template (char *buf, SStrInfo *str_info) {
 			copy_string (&type_code_str, ", ", 0);
 		}
 		if (get_type_code_string (buf, &i, &str_type_code) != eDemanglerErrOK) {
-			len = 0;
-			goto get_template_err;
+			if (get_template_params (buf, &i, &str_type_code) != eDemanglerErrOK) {
+				len = 0;
+				goto get_template_err;
+			}
 		}
 		copy_string (&type_code_str, str_type_code, 0);
 		buf += i;
@@ -244,7 +367,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 
 	int len = 0, read_len = 0, tmp_len = 0;
 
-	names_l = r_list_new();
+	names_l = r_list_new ();
 
 #define SET_OPERATOR_CODE(str) { \
 	str_info = (SStrInfo *) malloc (sizeof(SStrInfo)); \
@@ -304,6 +427,7 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 			i = get_template (buf + 1, str_info);
 			if (!i) {
 				R_FREE (str_info);
+				read_len--;
 				goto get_namespace_and_name_err;
 			}
 			r_list_append (names_l, str_info);
@@ -1303,7 +1427,7 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 		curr_pos += i;
 	}
 
-	func_args = r_list_new();
+	func_args = r_list_new ();
 
 	// Function arguments
 	while (*curr_pos && *curr_pos != 'Z')
@@ -1337,7 +1461,7 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 
 			r_list_append (func_args, str_arg);
 
-			if (strncmp (tmp, "void", 4) == 0) {
+			if (strncmp (tmp, "void", 4) == 0 && strlen (tmp) == 4) {
 				// arguments list is void
 				if (!is_abbr_type) {
 					R_FREE (tmp);
@@ -1422,6 +1546,36 @@ parse_microsoft_mangled_name_err:
 	return err;
 }
 
+static EDemanglerErr parse_microsoft_rtti_mangled_name(char *sym, char **demangled_name) {
+	EDemanglerErr err = eDemanglerErrOK;
+	char *type = NULL;
+	if (!strncmp (sym, "AT", 2)) {
+		type = "union";
+	} else if (!strncmp (sym, "AU", 2)) {
+		type = "struct";
+	} else if (!strncmp (sym, "AV", 2)) {
+		type = "class";
+	} else if (!strncmp (sym, "AW", 2)) {
+		type = "enum";
+	} else {
+		err = eDemanglerErrUncorrectMangledSymbol;
+		goto parse_microsoft_rtti_mangled_name_err;
+	}
+	STypeCodeStr type_code_str;
+	init_type_code_str_struct (&type_code_str);
+	int len = get_namespace_and_name (sym + 2, &type_code_str, NULL);
+	if (!len) {
+		err = eDemanglerErrUncorrectMangledSymbol;
+		goto parse_microsoft_rtti_mangled_name_err;
+	}
+
+	*demangled_name = r_str_newf ("%s %s", type, type_code_str.type_str);
+	free (type_code_str.type_str);
+
+parse_microsoft_rtti_mangled_name_err:
+	return err;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name) {
 	EDemanglerErr err = eDemanglerErrOK;
@@ -1436,7 +1590,12 @@ EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name) {
 		err = eDemanglerErrMemoryAllocation;
 		goto microsoft_demangle_err;
 	}
-	err = parse_microsoft_mangled_name(demangler->symbol + 1, demangled_name);
+	
+	if (!strncmp (demangler->symbol, ".?", 2)) {
+		err = parse_microsoft_rtti_mangled_name (demangler->symbol + 2, demangled_name);
+	} else {
+		err = parse_microsoft_mangled_name (demangler->symbol + 1, demangled_name);
+	}
 
 microsoft_demangle_err:
 	r_list_free (abbr_names);

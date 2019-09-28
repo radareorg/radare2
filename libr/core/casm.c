@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_core.h>
@@ -57,7 +57,7 @@ R_API char* r_core_asm_search(RCore *core, const char *input) {
 	if (!(acode = r_asm_massemble (core->assembler, input))) {
 		return NULL;
 	}
-	ret = strdup (acode->buf_hex);
+	ret = r_asm_code_get_hex (acode);
 	r_asm_code_free (acode);
 	return ret;
 }
@@ -81,7 +81,17 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		return NULL;
 	}
 
-	ut64 usrimm = r_num_math (core->num, input + 1);
+	char *inp = r_str_trim_dup (input + 1);
+	char *inp_arg = strchr (inp, ' ');
+	if (inp_arg) {
+		*inp_arg++ = 0;
+	}
+	ut64 usrimm = r_num_math (core->num, inp);
+	ut64 usrimm2 = inp_arg? r_num_math (core->num, inp_arg): usrimm;
+	if (usrimm > usrimm2) {
+		eprintf ("Error: /ci : Invalid range\n");
+		return NULL;
+	}
 
 	if (core->blocksize < 8) {
 		eprintf ("error: block size too small\n");
@@ -109,7 +119,6 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 	tokens[tokcount] = NULL;
 	r_cons_break_push (NULL, NULL);
-	// int opsz = 0;
 	char *opst = NULL;
 	for (at = from, matchcount = 0; at < to; at += core->blocksize) {
 		if (r_cons_is_breaked ()) {
@@ -122,14 +131,27 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		idx = 0, matchcount = 0;
 		while (addrbytes * (idx + 1) <= core->blocksize) {
 			ut64 addr = at + idx;
+			if (addr >= to) {
+				break;
+			}
 			r_asm_set_pc (core->assembler, addr);
 			if (mode == 'i') {
 				RAnalOp analop = {0};
-				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, 0) < 1) {
+				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM) < 1) {
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
-				if (analop.val == usrimm) {
+				ut64 val = analop.val; // maybe chk for ptr or others?
+				bool match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
+				if (!match) {
+					ut64 val = analop.disp;
+					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
+				}
+				if (!match) {
+					ut64 val = analop.ptr;
+					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
+				}
+				if (match) {
 					if (!(hit = r_core_asm_hit_new ())) {
 						r_list_purge (hits);
 						R_FREE (hits);
@@ -177,7 +199,9 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				matches = strcmp (opst, "invalid") && strcmp (opst, "unaligned");
 			}
 			if (matches && tokens[matchcount]) {
-				if (!regexp) {
+				if (mode == 'a') { // check for case sensitive
+					matches = !r_str_ncasecmp (opst, tokens[matchcount], strlen (tokens[matchcount]));
+				} else if (!regexp) {
 					matches = strstr (opst, tokens[matchcount]) != NULL;
 				} else {
 					rx = r_regex_new (tokens[matchcount], "");
@@ -453,14 +477,13 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 
 R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	RAsmOp op;
-	// len = n * 32;
 	// if (n > core->blocksize) n = core->blocksize;
 	ut64 at;
 	ut32 idx = 0, hit_count;
 	int numinstr, asmlen, ii;
 	const int addrbytes = core->io->addrbytes;
 	RAsmCode *c;
-	RList *hits = r_core_asm_hit_list_new();
+	RList *hits = r_core_asm_hit_list_new ();
 	if (!hits) {
 		return NULL;
 	}
@@ -489,15 +512,15 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		c = r_asm_mdisassemble (core->assembler, buf+(len-idx), idx);
-		if (strstr (c->buf_asm, "invalid") || strstr (c->buf_asm, ".byte")) {
+		c = r_asm_mdisassemble (core->assembler, buf + len - idx, idx);
+		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte")) {
 			r_asm_code_free(c);
 			continue;
 		}
 		numinstr = 0;
-		asmlen = strlen (c->buf_asm);
-		for(ii = 0; ii < asmlen; ++ii) {
-			if (c->buf_asm[ii] == '\n') {
+		asmlen = strlen (c->assembly);
+		for (ii = 0; ii < asmlen; ++ii) {
+			if (c->assembly[ii] == '\n') {
 				++numinstr;
 			}
 		}

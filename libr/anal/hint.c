@@ -68,7 +68,7 @@ R_API void r_anal_hint_set_newbits(RAnal *a, ut64 addr, int bits) {
 	setHint (a, "Bits:", addr, NULL, bits);
 }
 
-// TOOD: add helpers for newendian and newbank
+// TODO: add helpers for newendian and newbank
 
 R_API void r_anal_hint_set_fail(RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "fail:", addr, NULL, ptr);
@@ -124,6 +124,14 @@ R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits) {
 
 R_API void r_anal_hint_set_size(RAnal *a, ut64 addr, int size) {
 	setHint (a, "size:", addr, NULL, size);
+}
+
+R_API void r_anal_hint_set_stackframe(RAnal *a, ut64 addr, ut64 size) {
+	setHint (a, "Frame:", addr, NULL, size);
+}
+
+R_API void r_anal_hint_set_val(RAnal *a, ut64 addr, ut64 v) {
+	setHint (a, "val:", addr, NULL, v);
 }
 
 R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr) {
@@ -182,8 +190,16 @@ R_API void r_anal_hint_unset_fail(RAnal *a, ut64 addr) {
 	unsetHint (a, "fail:", addr);
 }
 
+R_API void r_anal_hint_unset_val (RAnal *a, ut64 v) {
+	unsetHint (a, "val:", v);
+}
+
 R_API void r_anal_hint_unset_type (RAnal *a, ut64 addr) {
 	unsetHint (a, "type:", addr);
+}
+
+R_API void r_anal_hint_unset_stackframe(RAnal *a, ut64 addr) {
+	unsetHint (a, "Frame:", addr);
 }
 
 R_API void r_anal_hint_free(RAnalHint *h) {
@@ -198,6 +214,9 @@ R_API void r_anal_hint_free(RAnalHint *h) {
 }
 
 R_API int r_anal_hint_get_bits_at(RAnal *a, ut64 addr, const char *str) {
+	if (a->opt.ignbithints) {
+		return 0;
+	}
 	char *r, *nxt, *nxt2;
 	char *s = strdup (str);
 	int token = 0, bits = 0;
@@ -238,6 +257,8 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 	hint->jump = UT64_MAX;
 	hint->fail = UT64_MAX;
 	hint->ret = UT64_MAX;
+	hint->val = UT64_MAX;
+	hint->stackframe = UT64_MAX;
 	char *s = strdup (str);
 	if (!s) {
 		free (hint);
@@ -256,9 +277,10 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 			case 'i': hint->immbase = sdb_atoi (nxt); break;
 			case 'j': hint->jump = sdb_atoi (nxt); break;
 			case 'f': hint->fail = sdb_atoi (nxt); break;
-			case 'p': hint->ptr  = sdb_atoi (nxt); break;
+			case 'F': hint->stackframe = sdb_atoi (nxt); break;
+			case 'p': hint->ptr = sdb_atoi (nxt); break;
 			case 'n': hint->nword = sdb_atoi (nxt); break;
-			case 'r': hint->ret  = sdb_atoi (nxt); break;
+			case 'r': hint->ret = sdb_atoi (nxt); break;
 			case 'b': hint->bits = sdb_atoi (nxt); break;
 			case 'B': hint->new_bits = sdb_atoi (nxt); break;
 			case 's': hint->size = sdb_atoi (nxt); break;
@@ -269,6 +291,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 			case 'e': hint->esil = (char*)sdb_decode (nxt, 0); break;
 			case 'a': hint->arch = (char*)sdb_decode (nxt, 0); break;
 			case 'h': hint->high = sdb_atoi (nxt); break;
+			case 'v': hint->val = sdb_atoi (nxt); break;
 			}
 		}
 		if (!nxt || !nxt2) {

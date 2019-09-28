@@ -1,11 +1,12 @@
 #ifndef R2_LIB_H
 #define R2_LIB_H
 
-// TODO: rename type from int to 4 byte string
-// TODO: use 4 chars to idnetify plugin type
-
 #include "r_types.h"
 #include "r_list.h"
+
+#if __UNIX__
+#include <dlfcn.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,8 +18,9 @@ R_LIB_VERSION_HEADER (r_lib);
 
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
 
-/* XXX : This must depend on HOST_OS */
+/* TODO: This must depend on HOST_OS, and maybe move into r_types */
 #if __WINDOWS__
+#include <windows.h>
 #define R_LIB_EXT "dll"
 #elif __APPLE__
 #define R_LIB_EXT "dylib"
@@ -41,7 +43,7 @@ typedef struct r_lib_plugin_t {
 /* store list of initialized plugin handlers */
 typedef struct r_lib_handler_t {
 	int type;
-	char desc[128];
+	char desc[128]; // TODO: use char *
 	void *user; /* user pointer */
 	int (*constructor)(RLibPlugin *, void *user, void *data);
 	int (*destructor)(RLibPlugin *, void *user, void *data);
@@ -81,7 +83,7 @@ typedef struct r_lib_t {
 	/* linked list with all the plugin handler */
 	/* only one handler per handler-id allowed */
 	/* this is checked in add_handler function */
-	char symname[32];
+	char *symname;
 	RList /*RLibPlugin*/ *plugins;
 	RList /*RLibHandler*/ *handlers;
 } RLib;
@@ -91,22 +93,19 @@ typedef struct r_lib_t {
 R_API void *r_lib_dl_open(const char *libname);
 R_API void *r_lib_dl_sym(void *handler, const char *name);
 R_API int r_lib_dl_close(void *handler);
-R_API int r_lib_dl_check_filename(const char *file);
 
 /* high level api */
+typedef int (*RLibCallback)(RLibPlugin *, void *, void *);
 R_API RLib *r_lib_new(const char *symname);
-R_API RLib *r_lib_free(RLib *lib);
+R_API void r_lib_free(RLib *lib);
 R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol);
 R_API RLibHandler *r_lib_get_handler(RLib *lib, int type);
 R_API int r_lib_open(RLib *lib, const char *file);
-R_API int r_lib_opendir(RLib *lib, const char *path);
+R_API bool r_lib_opendir(RLib *lib, const char *path);
 R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct *stru);
 R_API char *r_lib_path(const char *libname);
 R_API void r_lib_list(RLib *lib);
-R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc,
-	int (*cb)(RLibPlugin *, void *, void *),
-	int (*dt)(RLibPlugin *, void *, void *),
-	void *user );
+R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, RLibCallback ct, RLibCallback dt, void *user);
 R_API bool r_lib_del_handler(RLib *lib, int type);
 R_API int r_lib_close(RLib *lib, const char *file);
 

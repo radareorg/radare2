@@ -15,7 +15,7 @@ pf.TRXv2 [4]zxxwwxxx*? magic length crc flags version part_loader part_kernel pa
 # magic: firmware magic depends on board etc. s.th. like '3G2V' or 'W54U'
 # res1: reserved for extra magic??
 # char fwdate[3]: fwdate[0]: Year, fwdate[1]: Month, fwdate[2]: Day
-# fwvern: version informations a.b.c.
+# fwvern: version information a.b.c.
 # ID: fix "U2ND"
 # hw_ver: depends on board
 # s/n: depends on board

@@ -12,7 +12,7 @@ static RAnalEsilCallbacks ocbs = {0};
 
 static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
-	if (*name=='0') {
+	if (*name == '0') {
 		//eprintf ("Register not found in profile\n");
 		return 0;
 	}
@@ -90,7 +90,14 @@ static int trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 }
 
 R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
+	if (!esil || !op) {
+		return;
+	}
 	const char *expr = r_strbuf_get (&op->esil);
+	if (R_STR_ISEMPTY (expr)) {
+		// do nothing
+		return;
+	}
 	int esil_verbose = esil->verbose;
 	if (ocbs_set) {
 		eprintf ("cannot call recursively\n");
@@ -124,12 +131,66 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	esil->trace_idx ++;
 }
 
+static int cmp_strings_by_leading_number(void *data1, void *data2) {
+	const char* a = sdbkv_key ((const SdbKv *)data1);
+	const char* b = sdbkv_key ((const SdbKv *)data2);
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	while (a[i] >= '0' && a[i] <= '9') {
+		i++;
+	}
+	while (b[j] >= '0' && b[j] <= '9') {
+		j++;
+	}
+	if (!i) {
+		return 1;
+	}
+	if (!j) {
+		return -1;
+	}
+	i--;
+	j--;
+	if (i > j) {
+		return 1;
+	}
+	if (j > i) {
+		return -1;
+	}
+	while (k <= i) {
+		if (a[k] < b[k]) {
+			return -1;
+		}
+		if (a[k] > b[k]) {
+			return 1;
+		}
+		k++;
+	}
+	for (; a[i] && b[i]; i++) {
+		if (a[i] > b[i]) {
+			return 1;
+		}
+		if (a[i] < b[i]) {
+			return -1;
+		}
+	}
+	if (!a[i] && b[i]) {
+		return -1;
+	}
+	if (!b[i] && a[i]) {
+		return 1;
+	}
+	return 0;
+}
+
 R_API void r_anal_esil_trace_list (RAnalEsil *esil) {
+	PrintfCallback p = esil->anal->cb_printf;
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *list = sdb_foreach_list (esil->db_trace, true);
+	ls_sort (list, (SdbListComparator) cmp_strings_by_leading_number);
 	ls_foreach (list, iter, kv) {
-		eprintf ("%s=%s\n", sdbkv_key (kv), sdbkv_value (kv));
+		p ("%s=%s\n", sdbkv_key (kv), sdbkv_value (kv));
 	}
 	ls_free (list);
 }
@@ -145,7 +206,7 @@ R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
 	if (!str2) {
 		return;
 	}
-	p ("dr pc = %s\n", str2);
+	p ("ar PC = %s\n", str2);
 	/* registers */
 	str = sdb_const_get (DB, KEY ("reg.read"), 0);
 	if (str) {
@@ -159,7 +220,7 @@ R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
 					memcpy (regname, ptr, len);
 					regname[len] = 0;
 					str2 = sdb_const_get (DB, KEYREG ("reg.read", regname), 0);
-					p ("dr %s = %s\n", regname, str2);
+					p ("ar %s = %s\n", regname, str2);
 				} else {
 					eprintf ("Invalid entry in reg.read\n");
 				}

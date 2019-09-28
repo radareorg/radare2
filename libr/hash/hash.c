@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2007-2018 pancake */
+/* radare2 - LGPL - Copyright 2007-2019 pancake */
 
 #include <r_hash.h>
 #include "r_util.h"
@@ -34,6 +34,11 @@ static const struct {
 	// {"base91", R_HASH_BASE91},
 	// {"punycode", R_HASH_PUNYCODE},
 	{ "luhn", R_HASH_LUHN },
+
+	{ "fletcher8", R_HASH_FLETCHER8 },
+	{ "fletcher16", R_HASH_FLETCHER16 },
+	{ "fletcher32", R_HASH_FLETCHER32 },
+	{ "fletcher64", R_HASH_FLETCHER64 },
 
 	{ "crc8smbus", R_HASH_CRC8_SMBUS },
 #if R_HAVE_CRC8_EXTRA
@@ -189,6 +194,10 @@ R_API int r_hash_size(ut64 algo) {
 	if (algo & R_HASH_##x) {\
 		return R_HASH_SIZE_##x;\
 	}
+	ALGOBIT (FLETCHER8);
+	ALGOBIT (FLETCHER16);
+	ALGOBIT (FLETCHER32);
+	ALGOBIT (FLETCHER64);
 	ALGOBIT (MD4);
 	ALGOBIT (MD5);
 	ALGOBIT (SHA1);

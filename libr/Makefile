@@ -42,6 +42,9 @@ endif
 ifneq ($(LIBS7),)
 	$(MAKE) $(LIBS7)
 endif
+ifneq ($(LIBS8),)
+	$(MAKE) $(LIBS8)
+endif
 ifeq ($(WITH_LIBR),1)
 	$(MAKE) libr.${EXT_AR}
 	$(MAKE) libr.${EXT_SO}
@@ -67,7 +70,7 @@ LDFLAGS+=${SSL_LDFLAGS}
 	rm -rf .libr
 	mkdir -p .libr
 	for LIB in $^ ; do \
-		${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
+		${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB}.a).o $${LIB} ; \
 	done
 ifeq ($(OSTYPE),linux)
 	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
@@ -83,23 +86,21 @@ ifeq ($(OSTYPE),bsd)
 endif
 
 _libr.${EXT_AR}: .libr
-	${AR} crs $@ .libr/*.o
+	-${AR} crs $@ .libr/*.o
 
 .libr2: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr2
 	mkdir -p .libr2
-	for LIB in $^ ; do \
+	-for LIB in $^ ; do \
 		BN=`basename $$LIB` ; \
 		echo $$BN ; \
 		mkdir -p .libr2/$$BN ; \
-		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ar x ../../$$LIB ) ; \
+		echo .libr2/$$BN $$LIB; ${AR} ; \
+		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ${AR} x ../../$$LIB ) ; \
 	done
 
 libr.${EXT_AR}: .libr2
-	${AR} crs $@ .libr2/*/*.o
-
-#libr.${EXT_AR}: .libr
-#	${AR} crs $@ .libr/*.o
+	-${AR} crs $@ .libr2/*/*.o
 
 ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
@@ -122,10 +123,14 @@ E+=../shlr/capstone/libcapstone.${EXT_AR}
 endif
 
 libr.${EXT_SO}: .libr2
+ifeq (${COMPILER},emscripten)
+	echo nothing to do here
+else
 	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -shared -dynamiclib -o libr.${EXT_SO}  \
 		.libr2/*/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
-		../shlr/libr_shlr.${EXT_AR} $(E)
+		../shlr/libr_shlr.${EXT_AR} ../shlr/mpc/libmpc.${EXT_AR} $(E)
+endif
 
 #libr.${EXT_SO}: .libr
 #	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -shared -dynamiclib -o libr.${EXT_SO}  \

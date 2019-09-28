@@ -97,7 +97,7 @@ static int i4004_get_ins_len (ut8 hex) {
 	return ret;
 }
 
-static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	char basm[128];
 	const size_t basz = sizeof (basm)-1;
 	int rlen = i4004_get_ins_len (*buf);
@@ -122,24 +122,29 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case 1: //snprintf (basm, basz, "jcn %d 0x%02x", low, buf[1]); break;
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = buf[1];
+		op->jump = (addr & (~0xFF)) + buf[1];
 		op->fail = addr + rlen;
 		break;
 	case 2:
 		if (rlen == 1) {
 			snprintf (basm, basz, "scr r%d", (low & 0xe));
 		} else {
+			op->type = R_ANAL_OP_TYPE_MOV;
+			op->val = buf[1];
 			snprintf (basm, basz, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
 		}
 		break;
 	case 3:
-		op->type = R_ANAL_OP_TYPE_MOV;
-		snprintf (basm, basz, "fin r%d", (low & 0xe));
+		if (low & 1) {
+			op->type = R_ANAL_OP_TYPE_RJMP;
+		} else {
+			op->type = R_ANAL_OP_TYPE_MOV;
+			snprintf (basm, basz, "fin r%d", (low & 0xe));
+		}
 		break;
 	case 4:
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = (ut16) (low<<8) | buf[1];
-		op->fail = addr + rlen;
 		break;
 	case 5: //snprintf (basm, basz, "jms 0x%03x", ((ut16)(low<<8) | buf[1])); break;
 		op->type = R_ANAL_OP_TYPE_CALL;
@@ -149,7 +154,11 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case 6: //snprintf (basm, basz, "inc r%d", low); break;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
-	case 7: snprintf (basm, basz, "isz r%d, 0x%02x", low, buf[1]); break;
+	case 7: //snprintf (basm, basz, "isz r%d, 0x%02x", low, buf[1]); 
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->fail = (addr & (~0xFF)) + buf[1];
+		op->jump = addr + rlen;
+		break;
 	case 8:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		//snprintf (basm, basz, "add r%d", low); break;
@@ -204,7 +213,7 @@ RAnalPlugin r_anal_plugin_i4004 = {
 	.set_reg_profile = &set_reg_profile
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_i4004,

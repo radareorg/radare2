@@ -3,7 +3,9 @@ ec b0x7f rgb:033
 ec b0xff rgb:577
 ec bin rgb:688
 ec btext rgb:899
+ec ucall rgb:890
 ec call rgb:890 #b80
+ec ujmp rgb:890
 ec cjmp rgb:890 # b80 #ee8
 ec jmp rgb:e37
 ec cmp rgb:c41 # ffe
@@ -56,3 +58,6 @@ ec ai.ascii rgb:899
 
 # background of the terminal must be 134 o 033
 # xterm -fn 10x20 -bg rgb:00/30/30 -fg rgb:e0/e0/e0 -e "r2 -c 'eco solarized' /bin/ls"
+
+ec widget_bg rgb:bb5 rgb:033
+ec widget_sel white rgb:c41

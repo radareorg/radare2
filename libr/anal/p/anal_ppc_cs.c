@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2018 - pancake */
+/* radare2 - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -209,7 +209,9 @@ static int set_reg_profile(RAnal *anal) {
 		p =
 			"=PC	pc\n"
 			"=SP	r1\n"
+			"=BP	r31\n"
 			"=SR	srr1\n" // status register ??
+			"=SN	r3\n" // also for ret
 			"=A0	r3\n" // also for ret
 			"=A1	r4\n"
 			"=A2	r5\n"
@@ -534,7 +536,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static csh handle = 0;
 	static int omode = -1, obits = -1;
 	int n, ret;
@@ -581,7 +583,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
-		opex (&op->opex, handle, insn);
+		if (mask & R_ANAL_OP_MASK_OPEX) {
+			opex (&op->opex, handle, insn);
+		}
 		struct Getarg gop = {
 			.handle = handle,
 			.insn = insn,
@@ -601,6 +605,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_CMPLWI:
 		case PPC_INS_CMPW:
 		case PPC_INS_CMPWI:
+#if CS_API_MAJOR > 4
+		case PPC_INS_CMP:
+		case PPC_INS_CMPI:
+#endif
 			op->type = R_ANAL_OP_TYPE_CMP;
 			op->sign = true;
 			if (ARG (2)[0] == '\0') {
@@ -797,6 +805,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_ADD;
 			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
+		case PPC_INS_CRCLR:
+		case PPC_INS_CRSET:
+		case PPC_INS_CRMOVE:
+		case PPC_INS_CRXOR:
+		case PPC_INS_CRNOR:
+		case PPC_INS_CRNOT:
+			// reset conditional bits
+			op->type = R_ANAL_OP_TYPE_MOV;
+			break;
 		case PPC_INS_ADDC:
 		case PPC_INS_ADDIC:
 			op->type = R_ANAL_OP_TYPE_ADD;
@@ -823,8 +840,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case PPC_INS_B:
 		case PPC_INS_BC:
-			op->jump = ARG (1)[0] == '\0' ? IMM (0) : IMM (1);
+		case PPC_INS_BA:
 			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->jump = ARG (1)[0] == '\0' ? IMM (0) : IMM (1);
 			op->fail = addr + op->size;
 			switch (insn->detail->ppc.bc) {
 			case PPC_BC_LT:
@@ -880,7 +898,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			}
 			break;
-		case PPC_INS_BA:
+		case PPC_INS_BT:
+		case PPC_INS_BF:
 			switch (insn->detail->ppc.operands[0].type) {
 			case PPC_OP_CRX:
 				op->type = R_ANAL_OP_TYPE_CJMP;
@@ -1147,7 +1166,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (0, ARG (3)), ARG (0));
 			break;
 		}
-		if (a->fillval) {
+		if (mask & R_ANAL_OP_MASK_VAL) {
 			op_fillval (op, handle, insn);
 		}
 		r_strbuf_fini (&op->esil);
@@ -1176,7 +1195,7 @@ RAnalPlugin r_anal_plugin_ppc_cs = {
 	.set_reg_profile = &set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_ppc_cs,

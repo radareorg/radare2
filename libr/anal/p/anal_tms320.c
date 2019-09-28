@@ -80,12 +80,12 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 	return op->size;
 }
 
-int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len) {
+int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len, RAnalOpMask mask) {
 	TMS_ANAL_OP_FN aop = tms320_c55x_op;
 
 	if (anal->cpu && r_str_casecmp(anal->cpu, "c64x") == 0) {
 #ifdef CAPSTONE_TMS320C64X_H
-		return tms320c64x_analop (anal, op, addr, buf, len);
+		return tms320c64x_analop (anal, op, addr, buf, len, mask);
 #else
 		return -1;
 #endif
@@ -119,7 +119,7 @@ RAnalPlugin r_anal_plugin_tms320 = {
 	.op = &tms320_op,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_tms320,

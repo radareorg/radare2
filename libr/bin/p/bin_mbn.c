@@ -1,4 +1,7 @@
-/* radare2 - LGPL - Copyright 2015-2017 - pancake */
+/* radare2 - LGPL - Copyright 2015-2019 - pancake */
+
+// XXX: this plugin have 0 tests and no binaries
+//
 
 #include <r_types.h>
 #include <r_util.h>
@@ -16,23 +19,35 @@ typedef struct sbl_header {
 	ut32 sign_sz;
 	ut32 cert_va;    // Max of 3 certs?
 	ut32 cert_sz;
-} SBLHDR;
+} SblHeader;
 
 // TODO avoid globals
-static SBLHDR sb = {0};
+static SblHeader sb = {0};
 
-static bool check_bytes(const ut8 *buf, ut64 bufsz) {
-	if (buf && bufsz >= sizeof (SBLHDR)) {
-		RBuffer *b = r_buf_new_with_pointers (buf, bufsz);
+static bool check_buffer(RBuffer *b) {
+	r_return_val_if_fail (b, false);
+	ut64 bufsz = r_buf_size (b);
+	if (sizeof (SblHeader) < bufsz) {
 		int ret = r_buf_fread_at (b, 0, (ut8*)&sb, "10i", 1);
-		r_buf_free (b);
 		if (!ret) {
 			return false;
 		}
+#if 0
+		eprintf ("V=%d\n", sb.version);
+		eprintf ("PA=0x%08x sz=0x%x\n", sb.paddr, sb.psize);
+		eprintf ("VA=0x%08x sz=0x%x\n", sb.vaddr, sb.psize);
+		eprintf ("CODE=0x%08x\n", sb.code_pa + sb.vaddr + 40);
+		eprintf ("SIGN=0x%08x sz=0x%x\n", sb.sign_va, sb.sign_sz);
+		if (sb.cert_sz > 0) {
+			eprintf ("CERT=0x%08x sz=0x%x\n", sb.cert_va, sb.cert_sz);
+		} else {
+			eprintf ("No certificate found.\n");
+		}
+#endif
 		if (sb.version != 3) { // NAND
 			return false;
 		}
-		if (sb.paddr + sizeof (SBLHDR) > bufsz) { // NAND
+		if (sb.paddr + sizeof (SblHeader) > bufsz) { // NAND
 			return false;
 		}
 		if (sb.vaddr < 0x100 || sb.psize > bufsz) { // NAND
@@ -53,39 +68,14 @@ static bool check_bytes(const ut8 *buf, ut64 bufsz) {
 		if (sb.load_index < 1 || sb.load_index > 0x40) {
 			return false; // should be 0x19 ?
 		}
-#if 0
-		eprintf ("V=%d\n", sb.version);
-		eprintf ("PA=0x%08x sz=0x%x\n", sb.paddr, sb.psize);
-		eprintf ("VA=0x%08x sz=0x%x\n", sb.vaddr, sb.psize);
-		eprintf ("CODE=0x%08x\n", sb.code_pa + sb.vaddr+40);
-		eprintf ("SIGN=0x%08x sz=0x%x\n", sb.sign_va, sb.sign_sz);
-		if (sb.cert_sz > 0) {
-			eprintf ("CERT=0x%08x sz=0x%x\n", sb.cert_va, sb.cert_sz);
-		} else {
-			eprintf ("No certificate found.\n");
-		}
-#endif
 // TODO: Add more checks here
 		return true;
 	}
 	return false;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return check_bytes (buf, sz);
-}
-
-static bool load(RBinFile *bf) {
-	if (bf && bf->buf) {
-		const ut8 *bytes = r_buf_buffer (bf->buf);
-		ut64 sz = r_buf_size (bf->buf);
-		return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-	}
-	return false;
-}
-
-static int destroy (RBinFile *bf) {
-	return true;
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+	return check_buffer (b);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -93,17 +83,14 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RList* entries(RBinFile *bf) {
-	RList* ret;
-	RBinAddr *ptr = NULL;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = 40 + sb.code_pa;
-		ptr->vaddr = 40 + sb.code_pa + sb.vaddr;
-		r_list_append (ret, ptr);
+	RList* ret = r_list_newf (free);;
+	if (ret) {
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		if (ptr) {
+			ptr->paddr = 40 + sb.code_pa;
+			ptr->vaddr = 40 + sb.code_pa + sb.vaddr;
+			r_list_append (ret, ptr);
+		}
 	}
 	return ret;
 }
@@ -192,7 +179,7 @@ static RBinInfo* info(RBinFile *bf) {
 }
 
 static ut64 size(RBinFile *bf) {
-	return sizeof (SBLHDR) + sb.psize;
+	return sizeof (SblHeader) + sb.psize;
 }
 
 RBinPlugin r_bin_plugin_mbn = {
@@ -200,18 +187,16 @@ RBinPlugin r_bin_plugin_mbn = {
 	.desc = "MBN/SBL bootloader things",
 	.license = "LGPL3",
 	.minstrlen = 10,
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.size = &size,
-	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mbn,

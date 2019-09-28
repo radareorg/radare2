@@ -22,11 +22,12 @@ extern "C" {
  * Paths pointing into the webroot are an exception: For reaching the webroot, .. and absolute
  * path are ok.
  */
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry);
 #else
 R_API DIR* r_sandbox_opendir(const char *path);
 #endif
+R_API int r_sandbox_truncate(int fd, ut64 length);
 R_API int r_sandbox_lseek(int fd, ut64 addr, int mode);
 R_API int r_sandbox_close(int fd);
 R_API int r_sandbox_read(int fd, ut8 *buf, int len);

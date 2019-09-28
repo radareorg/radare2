@@ -275,7 +275,7 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 		snapentry.perm = base->perm;
 		r_file_dump (base_file, (const ut8 *) &snapentry, sizeof (RSnapEntry), 1);
 		r_file_dump (base_file, (const ut8 *) base->data, base->size, 1);
-		/* dump all hases */
+		/* dump all hashes */
 		for (i = 0; i < base->page_num; i++) {
 			r_file_dump (base_file, (const ut8 *) base->hashes[i], 128, 1);
 		}
@@ -300,7 +300,7 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 		if (!header.difflist_len) {
 			continue;
 		}
-		// eprintf ("#### Sesssion ####\n");
+		// eprintf ("#### Session ####\n");
 		// eprintf ("Saved all registers off=0x%"PFMT64x"\n", curp);
 
 		/* Dump all diff entries */
@@ -380,7 +380,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 			R_FREE (base);
 			break;
 		}
-		/* restore all hases */
+		/* restore all hashes */
 		base->hashes = R_NEWS0 (ut8 *, base->page_num);
 		for (i = 0; i < base->page_num; i++) {
 			base->hashes[i] = calloc (1, 128);
@@ -429,6 +429,10 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 			/* Resotre RReagArena from raw dump */
 			int arena_size;
 			if (fread (&arena_size, sizeof (int), 1, fd) != 1) {
+				break;
+			}
+			if (arena_size < 1 || arena_size > 1024*1024) {
+				eprintf ("Invalid arena size?\n");
 				break;
 			}
 			ut8 *arena_raw = calloc (arena_size, 1);

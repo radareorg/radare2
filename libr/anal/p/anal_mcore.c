@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include "../../asm/arch/mcore/mcore.h"
 
-static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	mcore_handle handle = {0};
 	mcore_t* instr = NULL;
 
@@ -129,7 +129,7 @@ RAnalPlugin r_anal_plugin_mcore = {
 	.set_reg_profile = &set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_mcore,

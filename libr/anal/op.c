@@ -12,16 +12,9 @@ struct VarUsedType {
 	st64 delta;
 };
 
-R_API RAnalOp *r_anal_op_new () {
-	RAnalOp *op = R_NEW0 (RAnalOp);
-	if (op) {
-		op->addr = UT64_MAX;
-		op->jump = UT64_MAX;
-		op->fail = UT64_MAX;
-		op->ptr = UT64_MAX;
-		op->val = UT64_MAX;
-		r_strbuf_init (&op->esil);
-	}
+R_API RAnalOp *r_anal_op_new() {
+	RAnalOp *op = R_NEW (RAnalOp);
+	r_anal_op_init (op);
 	return op;
 }
 
@@ -31,6 +24,19 @@ R_API RList *r_anal_op_list_new() {
 		list->free = &r_anal_op_free;
 	}
 	return list;
+}
+
+R_API void r_anal_op_init(RAnalOp *op) {
+	if (op) {
+		memset (op, 0, sizeof (*op));
+		op->addr = UT64_MAX;
+		op->jump = UT64_MAX;
+		op->fail = UT64_MAX;
+		op->ptr = UT64_MAX;
+		op->refptr = 0;
+		op->val = UT64_MAX;
+		op->disp = UT64_MAX;
+	}
 }
 
 R_API bool r_anal_op_fini(RAnalOp *op) {
@@ -127,12 +133,10 @@ static int defaultCycles(RAnalOp *op) {
 	}
 }
 
-R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, int mask) {
+R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
-	memset (op, 0, sizeof (RAnalOp));
-	anal->decode = (bool)(mask & R_ANAL_OP_MASK_ESIL);
-	anal->fillval = (bool)(mask & R_ANAL_OP_MASK_VAL);
 	if (anal->pcalign && addr % anal->pcalign) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->addr = addr;
@@ -147,7 +151,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
 		}
-		ret = anal->cur->op (anal, op, addr, data, len);
+		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		}
@@ -156,11 +160,13 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (op->nopcode < 1) {
 			op->nopcode = 1;
 		}
-		//free the previous var in op->var
-		RAnalVar *tmp = get_used_var (anal, op);
-		if (tmp) {
-			r_anal_var_free (op->var);
-			op->var = tmp;
+		if (mask & R_ANAL_OP_MASK_VAL) {
+			//free the previous var in op->var
+			RAnalVar *tmp = get_used_var (anal, op);
+			if (tmp) {
+				r_anal_var_free (op->var);
+				op->var = tmp;
+			}
 		}
 	} else if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -342,6 +348,7 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_MOD, "mod" },
 	{ R_ANAL_OP_TYPE_CMOV, "cmov" },
 	{ R_ANAL_OP_TYPE_MOV, "mov" },
+	{ R_ANAL_OP_TYPE_CAST, "cast" },
 	{ R_ANAL_OP_TYPE_MUL, "mul" },
 	{ R_ANAL_OP_TYPE_DIV, "div" },
 	{ R_ANAL_OP_TYPE_NOP, "nop" },
@@ -365,17 +372,18 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_SWITCH, "switch" },
 	{ R_ANAL_OP_TYPE_TRAP  , "trap" },
 	{ R_ANAL_OP_TYPE_UCALL , "ucall" },
-	{ R_ANAL_OP_TYPE_RCALL , "ucall" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_RCALL , "rcall" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_ICALL , "ucall" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_IRCALL, "ucall" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_UCCALL, "uccall" },
 	{ R_ANAL_OP_TYPE_UCJMP , "ucjmp" },
 	{ R_ANAL_OP_TYPE_UJMP  , "ujmp" },
-	{ R_ANAL_OP_TYPE_RJMP  , "ujmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_RJMP  , "rjmp" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_IJMP  , "ujmp" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_IRJMP , "ujmp" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_UNK   , "unk" },
 	{ R_ANAL_OP_TYPE_UPUSH , "upush" },
+	{ R_ANAL_OP_TYPE_RPUSH , "rpush" },
 	{ R_ANAL_OP_TYPE_XCHG  , "xchg" },
 	{ R_ANAL_OP_TYPE_XOR   , "xor" },
 	{ R_ANAL_OP_TYPE_CASE  , "case" },
@@ -395,7 +403,14 @@ R_API int r_anal_optype_from_string(const char *type) {
 }
 
 R_API const char *r_anal_optype_to_string(int t) {
-	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we dont want this!
+	switch (t) {
+	case R_ANAL_OP_TYPE_RPUSH:
+		return "rpush";
+	default:
+		/* nothing */
+		break;
+	}
+	// t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
 #if 0
 	int i;
 	// this is slower than a switch table :(
@@ -428,6 +443,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_MOD   : return "mod";
 	case R_ANAL_OP_TYPE_CMOV  : return "cmov";
 	case R_ANAL_OP_TYPE_MOV   : return "mov";
+	case R_ANAL_OP_TYPE_CAST  : return "cast";
 	case R_ANAL_OP_TYPE_MUL   : return "mul";
 	case R_ANAL_OP_TYPE_NOP   : return "nop";
 	case R_ANAL_OP_TYPE_NOT   : return "not";
@@ -450,13 +466,13 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_SWITCH: return "switch";
 	case R_ANAL_OP_TYPE_TRAP  : return "trap";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
-	case R_ANAL_OP_TYPE_RCALL : return "ucall"; // needs to be changed
+	case R_ANAL_OP_TYPE_RCALL : return "rcall"; // needs to be changed
 	case R_ANAL_OP_TYPE_ICALL : return "ucall"; // needs to be changed
 	case R_ANAL_OP_TYPE_IRCALL: return "ucall"; // needs to be changed
 	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
 	case R_ANAL_OP_TYPE_UCJMP : return "ucjmp";
 	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
-	case R_ANAL_OP_TYPE_RJMP  : return "ujmp"; // needs to be changed
+	case R_ANAL_OP_TYPE_RJMP  : return "rjmp"; // needs to be changed
 	case R_ANAL_OP_TYPE_IJMP  : return "ujmp"; // needs to be changed
 	case R_ANAL_OP_TYPE_IRJMP : return "ujmp"; // needs to be changed
 	case R_ANAL_OP_TYPE_UNK   : return "unk";
@@ -516,6 +532,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH:
+	case R_ANAL_OP_TYPE_RPUSH:
 		snprintf (ret, sizeof (ret), "push %s", a0);
 		break;
 	case R_ANAL_OP_TYPE_POP:
@@ -683,6 +700,7 @@ R_API const char *r_anal_op_family_to_string(int n) {
 	switch (n) {
 	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";
+	case R_ANAL_OP_FAMILY_PAC: return "pac";
 	case R_ANAL_OP_FAMILY_FPU: return "fpu";
 	case R_ANAL_OP_FAMILY_MMX: return "mmx";
 	case R_ANAL_OP_FAMILY_SSE: return "sse";
@@ -709,6 +727,7 @@ R_API int r_anal_op_family_from_string(const char *f) {
 		{"virt", R_ANAL_OP_FAMILY_VIRT},
 		{"crpt", R_ANAL_OP_FAMILY_CRYPTO},
 		{"io", R_ANAL_OP_FAMILY_IO},
+		{"pac", R_ANAL_OP_FAMILY_PAC},
 		{"thread", R_ANAL_OP_FAMILY_THREAD},
 	};
 
@@ -725,6 +744,10 @@ R_API int r_anal_op_family_from_string(const char *f) {
 R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
 	int changes = 0;
 	if (hint) {
+		if (hint->val != UT64_MAX) {
+			op->val = hint->val;
+			changes++;
+		}
 		if (hint->type > 0) {
 			op->type = hint->type;
 			changes++;
@@ -753,4 +776,21 @@ R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
 		}
 	}
 	return changes;
+}
+
+// returns the '33' in 'rax + 33'
+// returns value for the given register name in specific address / range
+// imho this should not iterate, should be just a helper to get that value
+R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
+	ut8 buf[32];
+	anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf));
+	RAnalOp op = { 0 };
+	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL) > 0) {
+		if (op.dst && op.dst->reg && op.dst->reg->name && (!name || !strcmp (op.dst->reg->name, name))) {
+			if (op.src[0]) {
+				return op.src[0]->delta;
+			}
+		}
+	}
+	return 0;
 }

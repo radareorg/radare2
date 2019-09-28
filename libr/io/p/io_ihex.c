@@ -68,7 +68,8 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 
 	/* disk write : process each sparse chunk */
 	//TODO : sort addresses + check overlap?
-	r_list_foreach (rih->rbuf->sparse, iter, rbs) {
+	RList *nonempty = r_buf_nonempty_list (rih->rbuf);
+	r_list_foreach (nonempty, iter, rbs) {
 		ut16 addl0 = rbs->from & 0xffff;
 		ut16 addh0 = rbs->from >> 16;
 		ut16 addh1 = rbs->to >> 16;
@@ -82,6 +83,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			//04 record (ext address)
 			if (fw04b (out, addh0) < 0) {
 				eprintf("ihex:write: file error\n");
+				r_list_free (nonempty);
 				fclose (out);
 				return -1;
 			}
@@ -90,6 +92,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			addl0 = 0;
 			if (fwblock (out, rbs->data, rbs->from, tsiz)) {
 				eprintf ("ihex:fwblock error\n");
+				r_list_free (nonempty);
 				fclose (out);
 				return -1;
 			}
@@ -97,17 +100,20 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		//04 record (ext address)
 		if (fw04b (out, addh1) < 0) {
 			eprintf ("ihex:write: file error\n");
+			r_list_free (nonempty);
 			fclose (out);
 			return -1;
 		}
 		//00 records (remaining data)
 		if (fwblock (out, rbs->data + tsiz, (addh1 << 16) | addl0, rbs->size - tsiz)) {
 			eprintf ("ihex:fwblock error\n");
+			r_list_free (nonempty);
 			fclose (out);
 			return -1;
 		}
 	}	//list_foreach
 
+	r_list_free (nonempty);
 	fprintf (out, ":00000001FF\n");
 	fclose (out);
 	out = NULL;
@@ -203,7 +209,8 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 		return -1;
 	}
 	rih = fd->data;
-	return r_buf_seek (rih->rbuf, offset, whence);
+	io->off = r_buf_seek (rih->rbuf, offset, whence);
+	return io->off;
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
@@ -364,7 +371,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			str = eol;
 			break;
 		case 3:	//undefined rec. Just skip.
-		case 5:	//non-standard, sometimes "start linear adddress"
+		case 5:	//non-standard, sometimes "start linear address"
 			str = strchr (str + 1, ':');
 			break;
 		}
@@ -434,7 +441,7 @@ RIOPlugin r_io_plugin_ihex = {
 	.resize = __resize
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_ihex,

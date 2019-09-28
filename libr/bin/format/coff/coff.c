@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2017 pancake, inisider */
+/* radare - LGPL - Copyright 2008-2019 pancake, inisider */
 
 #include <r_util.h>
 
@@ -14,15 +14,12 @@ bool r_coff_supported_arch(const ut8 *buf) {
 	case COFF_FILE_MACHINE_H8300:
 	case COFF_FILE_TI_COFF:
 	case COFF_FILE_MACHINE_R4000:
+	case COFF_FILE_MACHINE_AMD29KBE:
+	case COFF_FILE_MACHINE_AMD29KLE:
 		return true;
 	default:
 		return false;
 	}
-}
-
-int r_coff_is_stripped(struct r_bin_coff_obj *obj) {
-	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | \
-		COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
 }
 
 char *r_coff_symbol_name(struct r_bin_coff_obj *obj, void *ptr) {
@@ -39,7 +36,7 @@ char *r_coff_symbol_name(struct r_bin_coff_obj *obj, void *ptr) {
 		return NULL;
 	}
 	if (p->zero) {
-		return strdup (p->name);
+		return r_str_ndup (p->name, 8);
 	}
 	offset = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof (struct coff_symbol) + p->offset;
 	if (offset > obj->size) {
@@ -93,29 +90,41 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 			}
 		}
 	}
+#if 0
 	/* Still clueless ? Let's just use the address of .text */
 	if (obj->scn_hdrs) {
 		for (i = 0; i < obj->hdr.f_nscns; i++) {
-			//avoid doing string matching and use x bit from the section
+			// avoid doing string matching and use x bit from the section
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
 				addr->paddr = obj->scn_hdrs[i].s_scnptr;
 				return addr;
 			}
 		}
 	}
+#else
+	free (addr);
+	return NULL;
+#endif
 	return addr;
 }
 
 static bool r_bin_coff_init_hdr(struct r_bin_coff_obj *obj) {
-	ut16 magic = *(ut16 *)obj->b->buf;
-	obj->endian = (magic == COFF_FILE_MACHINE_H8300)? 1 : 0;
+	ut16 magic = r_buf_read_ble16_at (obj->b, 0, COFF_IS_LITTLE_ENDIAN);
+	switch (magic) {
+	case COFF_FILE_MACHINE_H8300:
+	case COFF_FILE_MACHINE_AMD29KBE:
+		obj->endian = COFF_IS_BIG_ENDIAN;
+		break;
+	default:
+		obj->endian = COFF_IS_LITTLE_ENDIAN;
+	}
 	int ret = 0;
 	ret = r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S3I2S": "2s3i2s", 1);
 	if (ret != sizeof (struct coff_hdr)) {
 		return false;
 	}
 	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
-		ret = r_buf_fread_at (obj->b, R_BUF_CUR, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
+		ret = r_buf_fread (obj->b, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
 		if (ret != sizeof (ut16)) {
 			return false;
 		}
@@ -184,13 +193,9 @@ static bool r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 }
 
 static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbose) {
-	obj->b = r_buf_new ();
-	obj->size = buf->length;
+	obj->b = r_buf_ref (buf);
+	obj->size = r_buf_size (buf);
 	obj->verbose = verbose;
-	if (!r_buf_set_bytes (obj->b, buf->buf, obj->size)){
-		r_buf_free (obj->b);
-		return false;
-	}
 	if (!r_bin_coff_init_hdr (obj)) {
 		bprintf ("Warning: failed to init hdr\n");
 		return false;
@@ -210,6 +215,7 @@ static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbos
 void r_bin_coff_free(struct r_bin_coff_obj *obj) {
 	free (obj->scn_hdrs);
 	free (obj->symbols);
+	r_buf_free (obj->b);
 	R_FREE (obj);
 }
 

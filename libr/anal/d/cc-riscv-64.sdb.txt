@@ -1,13 +1,12 @@
 default.cc=rvg
 
 rvg=cc
-cc.rvg.name=rvg
-cc.rvg.arg1=a0
-cc.rvg.arg2=a1
-cc.rvg.arg3=a2
-cc.rvg.arg4=a3
-cc.rvg.arg5=a4
-cc.rvg.arg6=a5
-cc.rvg.arg7=a6
-cc.rvg.arg8=a7
+cc.rvg.arg0=a0
+cc.rvg.arg1=a1
+cc.rvg.arg2=a2
+cc.rvg.arg3=a3
+cc.rvg.arg4=a4
+cc.rvg.arg5=a5
+cc.rvg.arg6=a6
+cc.rvg.arg7=a7
 cc.rvg.ret=a0

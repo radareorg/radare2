@@ -9,6 +9,7 @@ r_cons_sources = [
   'hud.c',
   'input.c',
   'less.c',
+  'stiv.c',
   'line.c',
   'more.c',
   'output.c',

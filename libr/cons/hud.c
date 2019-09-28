@@ -54,9 +54,9 @@ R_API char *r_cons_hud_string(const char *s) {
 /* Match a filter on a line. A filter can contain multiple words
    separated by spaces, which are all matched *in any order* over the target
    entry. If all words are present, the function returns true.
-   The mask is a character buffer wich is filled by 'x' to mark those characters
+   The mask is a character buffer which is filled by 'x' to mark those characters
    that match the filter */
-static bool strmatch(char *entry, char *filter, char *mask, const int mask_size) {
+static bool __matchString(char *entry, char *filter, char *mask, const int mask_size) {
 	char *p, *current_token = filter;
 	const char *filter_end = filter + strlen (filter);
 	// first we separate the filter in words (include the terminator char
@@ -95,7 +95,6 @@ static bool strmatch(char *entry, char *filter, char *mask, const int mask_size)
 	return true;
 }
 
-#define HUD_BUF_SIZE 512
 
 static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry) {
 	RListIter *iter;
@@ -109,7 +108,7 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 	RList *res = r_list_newf (free);
 	r_list_foreach (list, iter, current_entry) {
 		memset (mask, 0, HUD_BUF_SIZE);
-		if (*user_input && !strmatch (current_entry, user_input, mask, HUD_BUF_SIZE)) {
+		if (*user_input && !__matchString (current_entry, user_input, mask, HUD_BUF_SIZE)) {
 			continue;
 		}
 		if (++counter == rows + top_entry_n) {
@@ -125,10 +124,10 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 			p = strdup (current_entry);
 			// if the filter is empty, print the entry and move on
 			if (!user_input[0]) {
-				r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', current_entry));
+				r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', p));
 			} else {
 				// otherwise we need to emphasize the matching part
-				if (I (context->color)) {
+				if (I (context->color_mode)) {
 					int last_color_change = 0;
 					int last_mask = 0;
 					char *str = r_str_newf (" %c ", first_line? '-': ' ');
@@ -189,29 +188,36 @@ static void mht_free_kv(HtPPKv *kv) {
 
 #define HUD_CACHE 0
 R_API char *r_cons_hud(RList *list, const char *prompt) {
-	int ch, nch, current_entry_n, i = 0;
-	char user_input[HUD_BUF_SIZE];
-	int top_entry_n = 0;
+	char user_input[HUD_BUF_SIZE], hud_prompt[HUD_BUF_SIZE + 1];
 	char *selected_entry = NULL;
 	RListIter *iter;
 
 	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
-
-	user_input[0] = 0;
+	RLineHud *hud = (RLineHud*) R_NEW (RLineHud);
+	hud->activate = 0;
+	hud->vi = 0;
+	I(line)->echo = false;
+	I(line)->hud = hud;
+	hud_prompt [0] = 0;
+	user_input [0] = 0;
+	hud->top_entry_n = 0;
+	r_cons_show_cursor (false);
+	r_cons_enable_mouse (false);
 	r_cons_clear ();
+
 	// Repeat until the user exits the hud
 	for (;;) {
 		r_cons_gotoxy (0, 0);
-		current_entry_n = 0;
-		if (top_entry_n < 0) {
-			top_entry_n = 0;
+		hud->current_entry_n = 0;
+		
+		if (hud->top_entry_n < 0) {
+			hud->top_entry_n = 0;
 		}
 		selected_entry = NULL;
 		if (prompt && *prompt) {
-			r_cons_print (">> ");
-			r_cons_println (prompt);
+			r_cons_printf (">> %s\n", prompt);
 		}
-		r_cons_printf ("%d> %s|\n", top_entry_n, user_input);
+		r_cons_printf ("%d> %s\n", hud->top_entry_n, hud_prompt);
 		char *row;
 		RList *filtered_list = NULL;
 
@@ -219,7 +225,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		filtered_list = ht_pp_find (ht, user_input, &found);
 		if (!found) {
 			filtered_list = hud_filter (list, user_input,
-				top_entry_n, &current_entry_n, &selected_entry);
+				hud->top_entry_n, &(hud->current_entry_n), &selected_entry);
 #if HUD_CACHE
 			ht_pp_insert (ht, user_input, filtered_list);
 #endif
@@ -227,84 +233,45 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		r_list_foreach (filtered_list, iter, row) {
 			r_cons_printf ("%s\n", row);
 		}
+		if (!filtered_list->length) {				// hack to remove garbage value when list is empty
+			printf ("%s", R_CONS_CLEAR_LINE);
+		}
 #if !HUD_CACHE
 		r_list_free (filtered_list);
 #endif
-
 		r_cons_visual_flush ();
-		ch = r_cons_readchar ();
-		nch = r_cons_arrow_to_hjkl (ch);
-		int rows;
-		(void) r_cons_get_size (&rows);
-		if (nch == 'J' && ch != 'J') {
-			top_entry_n += (rows - 1);
-			if (top_entry_n + 1 >= current_entry_n) {
-				top_entry_n = current_entry_n;
-			}
-		} else if (nch == 'K' && ch != 'K') {
-			top_entry_n -= (rows - 1);
-			if (top_entry_n < 0) {
-				top_entry_n = 0;
-			}
-		} else if (nch == 'j' && ch != 'j') {
-			if (top_entry_n + 1 < current_entry_n) {
-				top_entry_n++;
-			}
-		} else if (nch == 'k' && ch != 'k') {
-			if (top_entry_n >= 0) {
-				top_entry_n--;
-			}
-		} else {
-			switch (ch) {
-			case 9:	// \t
-				if (top_entry_n + 1 < current_entry_n) {
-					top_entry_n++;
-				} else {
-					top_entry_n = 0;
-				}
-				break;
-			case 10:// \n
-			case 13:// \r
-				top_entry_n = 0;
-				// if (!*buf)
-				// return NULL;
-				if (current_entry_n >= 1) {
-					// eprintf ("%s\n", buf);
-					// i = buf[0] = 0;
+		(void) r_line_readline ();
+		memset (user_input, 0, HUD_BUF_SIZE);
+		memset (hud_prompt, 0, HUD_BUF_SIZE + 1);
+		strcpy (user_input, I(line)->buffer.data); 				// to search
+		strcpy (hud_prompt, user_input); 					// to display
+		int i;
+		for (i = I(line)->buffer.length; i > I(line)->buffer.index; i--) {
+			hud_prompt[i] = hud_prompt[i - 1];
+		}
+		memcpy (hud_prompt + I(line)->buffer.index, "|", 1);
+		if (!hud->activate) {
+			hud->top_entry_n = 0;
+			if (hud->current_entry_n >= 1 ) {
+				if (selected_entry) {
+					R_FREE (I(line)->hud);
+					I(line)->echo = true;
+					r_cons_enable_mouse (false);
+					r_cons_show_cursor (true);
+					r_cons_set_raw (false);
 					return strdup (selected_entry);
-				}	// no match!
-				break;
-			case 23:// ^w
-				top_entry_n = 0;
-				i = user_input[0] = 0;
-				break;
-			case 0x1b:	// ESC
-				return NULL;
-			case 8:		// bs
-			case 127:	// bs
-				top_entry_n = 0;
-				if (i < 1) {
-					return NULL;
-				}
-				user_input[--i] = 0;
-				break;
-			default:
-				if (IS_PRINTABLE (ch)) {
-					if (i >= HUD_BUF_SIZE) {
-						break;
-					}
-					top_entry_n = 0;
-					if (i + 1 >= HUD_BUF_SIZE) {
-						// too many
-						break;
-					}
-					user_input[i++] = ch;
-					user_input[i] = 0;
-				}
-				break;
+				} 
+			} else {
+				goto _beach;
 			}
 		}
 	}
+_beach:
+	R_FREE (I(line)->hud);
+	I(line)->echo = true;
+	r_cons_show_cursor (true);
+	r_cons_enable_mouse (false);
+	r_cons_set_raw (false);
 	ht_pp_free (ht);
 	return NULL;
 }

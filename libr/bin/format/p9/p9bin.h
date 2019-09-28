@@ -1,3 +1,5 @@
+#include <r_util.h>
+
 /*
  * Binary loader for Plan 9's a.out executable format
  * 
@@ -46,4 +48,4 @@ struct plan9_exec {
 #define p9bin_close(x) fclose(x)
 
 /* Reads four bytes from b. */
-int r_bin_p9_get_arch(const unsigned char *b, int *bits, int *big_endian);
+int r_bin_p9_get_arch(RBuffer *b, int *bits, int *big_endian);

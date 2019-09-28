@@ -46,9 +46,6 @@
 #include <memory.h>
 #include <ctype.h>
 #include <stdlib.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #include "names.h"
 
 #define MAXLINELEN 300	/* longest sane line length */

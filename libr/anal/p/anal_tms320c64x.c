@@ -59,7 +59,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "]}");
 }
 
-static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static csh handle = 0;
 	static int omode;
 	cs_insn *insn;
@@ -90,7 +90,9 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
-		opex (&op->opex, handle, insn);
+		if (mask & R_ANAL_OP_MASK_OPEX) {
+			opex (&op->opex, handle, insn);
+		}
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
@@ -214,7 +216,7 @@ RAnalPlugin r_anal_plugin_tms320c64x = {
 };
 #endif
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_tms320c64x,

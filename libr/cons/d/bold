@@ -9,7 +9,7 @@ ec cmp white
 ec usrcmt black white bold
 ec reg green . bold
 ec creg rgb:f72
-ec flag white . bold
+ec flag yellow . bold
 ec fline white
 
 ec flow yellow
@@ -25,9 +25,11 @@ ec nop rgb:ccc
 
 ec comment yellow . bold
 ec call black green bold
+ec ucall black green bold
 ec num rgb:fff . bold
 ec jmp yellow . bold
-ec cjmp rgb:f72 . bold
+ec cjmp yellow . bold
+ec ujmp yellow . bold
 
 ec offset white . bold
 ec other rgb:999
@@ -66,3 +68,6 @@ ec ai.write white . bold
 ec ai.exec red . bold
 ec ai.seq green . bold
 ec ai.ascii yellow . bold
+
+ec widget_bg yellow black
+ec widget_sel black yellow

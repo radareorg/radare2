@@ -6,7 +6,7 @@
 #include "pdb_downloader.h"
 
 static bool checkExtract() {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	if (r_sys_cmd ("expand -? >nul") != 0) {
 		return false;
 	}
@@ -79,7 +79,7 @@ static int download(struct SPDBDownloader *pd) {
 							   guid,
 		                       archive_name_escaped,
 		                       abspath_to_archive);
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 		const char *cabextractor = "expand";
 		const char *format = "%s %s %s";
 		char *abspath_to_file = strdup (abspath_to_archive);

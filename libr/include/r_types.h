@@ -3,7 +3,7 @@
 
 // defines like IS_DIGIT, etc'
 #include "r_util/r_str_util.h"
-#include "r_userconf.h"
+#include <r_userconf.h>
 #include <stddef.h>
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
@@ -110,6 +110,10 @@
 #  define UNUSED_FUNCTION(x) UNUSED_ ## x
 #endif
 
+#ifdef __EMSCRIPTEN__
+# define __UNIX__ 1
+#endif
+
 #ifdef __HAIKU__
 # define __UNIX__ 1
 #endif
@@ -118,11 +122,6 @@
 #define __KFBSD__ 1
 #else
 #define __KFBSD__ 0
-#endif
-
-#if __MINGW32__ || __MINGW64__
-#undef MINGW32
-#define MINGW32 1
 #endif
 
 #ifdef _MSC_VER
@@ -143,11 +142,13 @@
   #define __BSD__ 1
   #define __UNIX__ 1
 #endif
-#if __WINDOWS__ || _WIN32 || MINGW32 && !(__MINGW64__ || __CYGWIN__)
+#if __WINDOWS__ || _WIN32
   #ifdef _MSC_VER
   /* Must be included before windows.h */
   #include <winsock2.h>
+  #ifndef WIN32_LEAN_AND_MEAN
   #define WIN32_LEAN_AND_MEAN
+  #endif
   #endif
   typedef int socklen_t;
   #undef USE_SOCKETS
@@ -155,7 +156,7 @@
   #undef __UNIX__
   #undef __BSD__
 #endif
-#if __WINDOWS__ || _WIN32 || __CYGWIN__ || MINGW32
+#if __WINDOWS__ || _WIN32
   #define __addr_t_defined
   #include <windows.h>
 #endif
@@ -196,7 +197,6 @@
   #define FUNC_ATTR_ALWAYS_INLINE
 #endif
 
-#include <r_userconf.h>
 #include <r_types_base.h>
 
 #undef _FILE_OFFSET_BITS
@@ -243,13 +243,6 @@ extern "C" {
 #endif
 
 typedef int (*PrintfCallback)(const char *str, ...);
-
-// TODO NOT USED. DEPREACATE
-#if R_RTDEBUG
-#define IFRTDBG if (getenv ("LIBR_DEBUG"))
-#else
-#define IFRTDBG if (0)
-#endif
 
 /* compile-time introspection helpers */
 #define CTO(y,z) ((size_t) &((y*)0)->z)
@@ -369,7 +362,7 @@ static inline void *r_new_copy(int size, void *data) {
 #if 1
 #define r_offsetof(type, member) offsetof(type, member)
 #else
-#if __SDB_WINDOWS__ && !__CYGWIN__
+#if __SDB_WINDOWS__
 #define r_offsetof(type, member) ((unsigned long) (ut64)&((type*)0)->member)
 #else
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
@@ -398,7 +391,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define HAVE_REGEXP 1
 #endif
 
-#if (__WINDOWS__ || MINGW32) && !__CYGWIN__
+#if __WINDOWS__
 #define PFMT64x "I64x"
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
@@ -498,6 +491,14 @@ static inline void *r_new_copy(int size, void *data) {
 /* we should default to wasm when ready */
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS R_SYS_BITS_32
+#elif __riscv__ || __riscv
+# define R_SYS_ARCH "riscv"
+# define R_SYS_ENDIAN 0
+# if __riscv_xlen == 32
+#  define R_SYS_BITS R_SYS_BITS_32
+# else
+#  define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
+# endif
 #else
 #ifdef _MSC_VER
 #ifdef _WIN64
@@ -574,7 +575,7 @@ enum {
 #define R_SYS_OS "darwin"
 #elif defined (__linux__)
 #define R_SYS_OS "linux"
-#elif defined (__WINDOWS__) || defined (__CYGWIN__) || defined (MINGW32)
+#elif defined (__WINDOWS__)
 #define R_SYS_OS "windows"
 #elif defined (__NetBSD__ )
 #define R_SYS_OS "netbsd"

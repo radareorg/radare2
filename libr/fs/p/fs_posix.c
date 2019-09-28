@@ -8,7 +8,7 @@
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #define MAXPATHLEN 255
 #endif
-static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
+static RFSFile* fs_posix_open(RFSRoot *root, const char *path, bool create) {
 	FILE *fd;
 	RFSFile *file = r_fs_file_new (root, path);
 	if (!file) {
@@ -16,7 +16,7 @@ static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
 	}
 	file->ptr = NULL;
 	file->p = root->p;
-	fd = r_sandbox_fopen (path, "r");
+	fd = r_sandbox_fopen (path, create? "wb": "rb");
 	if (fd) {
 		fseek (fd, 0, SEEK_END);
 		file->size = ftell (fd);
@@ -42,7 +42,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 	RList *list;
 	char fullpath[4096];
 	struct stat st;
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	WIN32_FIND_DATAW entry;
 	HANDLE fh;
 	wchar_t *wcpath;
@@ -56,7 +56,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 	if (!list) {
 		return NULL;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	wcpath = r_utf8_to_utf16 (path);
 	if (!wcpath) {
 		return NULL;
@@ -140,7 +140,7 @@ RFSPlugin r_fs_plugin_posix = {
 	.umount = fs_posix_umount,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
         .type = R_LIB_TYPE_FS,
         .data = &r_fs_plugin_posix,

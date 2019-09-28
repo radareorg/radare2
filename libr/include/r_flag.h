@@ -39,6 +39,7 @@ typedef struct r_flags_at_offset_t {
 typedef struct r_flag_item_t {
 	char *name;     /* unique name, escaped to avoid issues with r2 shell */
 	char *realname; /* real name, without any escaping */
+	bool demangled; /* real name from demangling? */
 	ut64 offset;    /* offset flagged by this item */
 	ut64 size;      /* size of the flag item */
 	RSpace *space;  /* flag space this item belongs to */
@@ -67,6 +68,7 @@ typedef struct r_flag_t {
 
 typedef bool (*RFlagExistAt)(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
+typedef RFlagItem *(*RFlagGetAtAddr) (RFlag *f, ut64);
 typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr, bool closest);
 typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size);
 typedef bool (*RFlagUnset)(RFlag *f, RFlagItem *item);
@@ -103,7 +105,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx);
 R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
-R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off);
+R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...);
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest);
 R_API RList *r_flag_all_list(RFlag *f, bool by_space);
 R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off);
@@ -130,6 +132,7 @@ R_API void r_flag_foreach_prefix(RFlag *f, const char *pfx, int pfx_len, RFlagIt
 R_API void r_flag_foreach_range(RFlag *f, ut64 from, ut64 to, RFlagItemCb cb, void *user);
 R_API void r_flag_foreach_glob(RFlag *f, const char *glob, RFlagItemCb cb, void *user);
 R_API void r_flag_foreach_space(RFlag *f, const RSpace *space, RFlagItemCb cb, void *user);
+R_API void r_flag_foreach_space_glob(RFlag *f, const char *glob, const RSpace *space, RFlagItemCb cb, void *user);
 
 /* spaces */
 static inline RSpace *r_flag_space_get(RFlag *f, const char *name) {
@@ -175,7 +178,7 @@ static inline bool r_flag_space_is_empty(RFlag *f) {
 #define r_flag_space_foreach(f, it, s) r_spaces_foreach (&(f)->spaces, (it), (s))
 
 /* tags */
-R_API RList *r_flag_tags_list(RFlag *f);
+R_API RList *r_flag_tags_list(RFlag *f, const char *name);
 R_API RList *r_flag_tags_set(RFlag *f, const char *name, const char *words);
 R_API void r_flag_tags_reset(RFlag *f, const char *name);
 R_API RList *r_flag_tags_get(RFlag *f, const char *name);
@@ -188,6 +191,7 @@ R_API bool r_flag_zone_del(RFlag *fz, const char *name);
 R_API bool r_flag_zone_around(RFlag *fz, ut64 addr, const char **prev, const char **next);
 R_API bool r_flag_zone_list(RFlag *fz, int mode);
 R_API bool r_flag_zone_reset(RFlag *f);
+R_API RList *r_flag_zone_barlist(RFlag *f, ut64 from, ut64 bsize, int rows);
 
 #endif
 

@@ -32,6 +32,8 @@ ec push rgb:ddd
 ec ret rgb:777
 ec swi rgb:f72
 ec trap rgb:f72
+ec ucall rgb:f72 rgb:333
+ec ujmp rgb:f72
 ec graph.true rgb:f72
 ec graph.false rgb:777
 ec graph.trufae rgb:ddd
@@ -56,3 +58,6 @@ ec ai.write rgb:ddd
 ec ai.exec rgb:fff
 ec ai.seq rgb:f72
 ec ai.ascii rgb:f72
+
+ec widget_bg rgb:f72 rgb:333
+ec widget_sel rgb:333 rgb:f72

@@ -17,10 +17,10 @@ void meta_gb_hardware_cmt(RAnal *a, const ut8 hw, ut64 addr) {
 			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "JOYPAD");				//Moar context for this (which Key is affected)
 			break;
 		case 1:
-			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "Serial tranfer data");
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "Serial transfer data");
 			break;
 		case 2:
-			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "Serial tranfer data - Ctl");
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "Serial transfer data - Ctl");
 			break;
 		case 4:
 			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "DIV");

@@ -369,20 +369,11 @@ struct minidump_handle_object_information {
 	ut32	size_of_info;
 });
 
-/* Contains a list of handle operations. */
-R_PACKED (
-struct minidump_handle_operation_list {
-	ut32	size_of_header;
-	ut32	size_of_entry;
-	ut32	number_of_entries;
-	ut32	reserved;
-});
-
 /* Contains a list of memory ranges. */
 R_PACKED (
 struct minidump_memory_list {
 	ut32	number_of_memory_ranges;
-	struct minidump_memory_descriptor *memory_ranges;
+	struct minidump_memory_descriptor memory_ranges[];
 });
 
 /* Contains a list of memory ranges. */
@@ -390,7 +381,7 @@ R_PACKED (
 struct minidump_memory64_list {
 	ut64	number_of_memory_ranges;
 	rva64_t	base_rva;
-	struct minidump_memory_descriptor64 *memory_ranges;
+	struct minidump_memory_descriptor64 memory_ranges[];
 });
 
 /* Describes a region of memory. */
@@ -413,6 +404,7 @@ struct minidump_memory_info_list {
 	ut32	size_of_header;
 	ut32	size_of_entry;
 	ut64	number_of_entries;
+	struct minidump_memory_info entries[];
 });
 
 /* Contains a variety of information. */
@@ -482,7 +474,7 @@ struct minidump_module {
 R_PACKED (
 struct minidump_module_list {
 	ut32 number_of_modules;
-	struct minidump_module *modules;
+	struct minidump_module modules[];
 });
 
 /* Describes a string. */
@@ -550,7 +542,7 @@ struct minidump_thread {
 R_PACKED (
 struct minidump_thread_list {
 	ut32 number_of_threads;
-	struct minidump_thread *threads;
+	struct minidump_thread threads[0];
 });
 
 /* Contains extended information for a specific thread. */
@@ -571,8 +563,7 @@ struct minidump_thread_ex {
 R_PACKED (
 struct minidump_thread_ex_list {
 	ut32	number_of_threads;
-
-	struct minidump_thread_ex *threads;
+	struct minidump_thread_ex threads[];
 });
 
 /* Contains thread state information. */
@@ -596,6 +587,7 @@ struct minidump_thread_info_list {
 	ut32	size_of_header;
 	ut32	size_of_entry;
 	ut32	number_of_entries;
+	struct minidump_thread_info entries[];
 });
 
 /* Contains a token information. */
@@ -613,6 +605,7 @@ struct minidump_token_info_list {
 	ut32	number_of_entries;
 	ut32	list_header_size;
 	ut32	element_header_size;
+	struct minidump_token_info entries[];
 });
 
 /* Contains information about a module that has been unloaded. This information
@@ -632,6 +625,7 @@ struct minidump_unloaded_module_list {
 	ut32	size_of_header;
 	ut32	size_of_entry;
 	ut32	number_of_entries;
+	struct minidump_unloaded_module entries[];
 });
 
 /* Contains user-defined information stored in a data stream. */
@@ -745,6 +739,16 @@ struct avrf_handle_operation {
 	ut32	spare_0;
 
 	struct avrf_backtrace_information back_trace_information;
+});
+
+/* Contains a list of handle operations. */
+R_PACKED (
+struct minidump_handle_operation_list {
+	ut32 size_of_header;
+	ut32 size_of_entry;
+	ut32 number_of_entries;
+	ut32 reserved;
+	struct avrf_handle_operation entries[];
 });
 
 #endif /* MDMP_SPECS_H */

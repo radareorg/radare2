@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2019 - nibble, pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -47,7 +47,7 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 		/* remove strings */
 		r_list_foreach_safe (cores[i]->anal->fcns, iter, iter2, fcn) {
 			if (!strncmp (fcn->name, "str.", 4)) {
-				r_anal_fcn_tree_delete (&cores[i]->anal->fcn_tree, fcn);
+				r_anal_fcn_tree_delete (cores[i]->anal, fcn);
 				r_list_delete (cores[i]->anal->fcns, iter);
 			}
 		}

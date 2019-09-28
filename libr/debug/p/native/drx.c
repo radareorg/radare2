@@ -156,6 +156,23 @@ int drx_next(drxt *drx) {
 	return -1;
 }
 
+int drx_get_at(drxt *drx, ut64 at_addr) {
+	ut64 addr;
+	int i, rwx, len, g, en;
+
+	for (i = 0; i < 8; i++) {
+		if (i == 4 || i == 5) {
+			continue;
+		}
+		rwx = len = g = en = 0;
+		addr = drx_get (drx, i, &rwx, &len, &g, &en);
+		if (addr == at_addr) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 void drx_list(drxt *drx) {
 	ut64 addr;
 	int i, rwx, len, g, en;

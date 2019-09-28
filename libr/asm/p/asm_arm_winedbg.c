@@ -24,10 +24,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	const char *asmstr = winedbg_arm_insn_asm (arminsn);
 	if (asmstr) {
 		r_strbuf_set (&op->buf_asm, asmstr);
-		r_strbuf_set (&op->buf_hex, winedbg_arm_insn_hex (arminsn));
+		r_asm_op_set_hex(op, winedbg_arm_insn_hex (arminsn));
 	} else {
 		r_strbuf_set (&op->buf_asm, "invalid");
-		r_strbuf_set (&op->buf_hex, "");
+		r_strbuf_set (&op->buf, "");
 	}
 	arm_free (arminsn);
 	return op->size;
@@ -43,7 +43,7 @@ RAsmPlugin r_asm_plugin_arm_winedbg = {
 	.license = "LGPL2"
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_arm_winedbg,

@@ -1,20 +1,16 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return true;
 }
 
-static bool load(RBinFile *bf) {
-	return true;
-}
-
-static int destroy(RBinFile *bf) {
-	return true;
+static void destroy(RBinFile *bf) {
+	r_buf_free (bf->o->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -64,32 +60,36 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	int i, is_bf = 0;
-	if (buf && length > 0) {
-		int max = R_MIN (16, length);
-		const char *p = (const char *) buf;
-		is_bf = 1;
-		for (i = 0; i < max; i++) {
-			switch (p[i]) {
-			case '+':
-			case '-':
-			case '>':
-			case '<':
-			case '[':
-			case ']':
-			case ',':
-			case '.':
-			case ' ':
-			case '\n':
-			case '\r':
-				break;
-			default:
-				is_bf = 0;
-			}
+static bool check_buffer(RBuffer *buf) {
+	r_return_val_if_fail (buf, false);
+
+	ut8 tmp[16];
+	int read_length = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	if (read_length <= 0) {
+		return false;
+	}
+
+	const ut8 *p = (const ut8 *)tmp;
+	int i;
+	for (i = 0; i < read_length; i++) {
+		switch (p[i]) {
+		case '+':
+		case '-':
+		case '>':
+		case '<':
+		case '[':
+		case ']':
+		case ',':
+		case '.':
+		case ' ':
+		case '\n':
+		case '\r':
+			break;
+		default:
+			return false;
 		}
 	}
-	return is_bf;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -111,17 +111,16 @@ RBinPlugin r_bin_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = entries,
 	.strings = &strings,
 	.info = &info,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bf,

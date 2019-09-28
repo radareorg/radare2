@@ -273,5 +273,5 @@ char* hex_get_sub_regpair(int opreg);
 bool hex_if_duplex(ut32 insn_word);
 void hex_op_extend(HexOp *op);
 void hex_op_extend_off(HexOp *op, int offset);
-int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi);
+int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr);
 

@@ -2,7 +2,7 @@
 #define R2_SOCKET_H
 
 /* Must be included before windows.h (r_types) */
-#if defined(__WINDOWS__) && !defined(__CYGWIN__) && !defined(MINGW32) && !defined(__MINGW64__)
+#if defined(__WINDOWS__)
 #include <ws2tcpip.h>
 #endif
 
@@ -16,7 +16,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_socket);
 
-#if __UNIX__ || __CYGWIN__ || __MINGW64__ && !defined(MINGW32)
+#if __UNIX__
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <poll.h>
@@ -31,7 +31,7 @@ R_LIB_VERSION_HEADER (r_socket);
 #include <openssl/err.h>
 #endif
 
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 #include <netinet/tcp.h>
 #endif
 
@@ -44,6 +44,13 @@ R_LIB_VERSION_HEADER (r_socket);
 #define SD_SEND 1
 #define SD_BOTH 2
 #endif
+
+#if _MSC_VER
+#define R_INVALID_SOCKET INVALID_SOCKET
+#else
+#define R_INVALID_SOCKET -1
+#endif
+
 typedef struct {
 	int child;
 #if __WINDOWS__
@@ -62,6 +69,7 @@ typedef struct r_socket_t {
 	int fd;
 #endif
 	bool is_ssl;
+	int proto;
 	int local;	// TODO: merge ssl with local -> flags/options
 	int port;
 	struct sockaddr_in sa;
@@ -87,23 +95,24 @@ typedef struct r_socket_http_options {
 #ifdef R_API
 R_API RSocket *r_socket_new_from_fd(int fd);
 R_API RSocket *r_socket_new(bool is_ssl);
+R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout);
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout);
-R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout);
 R_API int r_socket_connect_serial(RSocket *sock, const char *path, int speed, int parity);
 #define r_socket_connect_tcp(a, b, c, d) r_socket_connect (a, b, c, R_SOCKET_PROTO_TCP, d)
 #define r_socket_connect_udp(a, b, c, d) r_socket_connect (a, b, c, R_SOCKET_PROTO_UDP, d)
 #if __UNIX__
-#define r_socket_connect_unix(a, b) r_socket_connect (a, b, NULL, R_SOCKET_PROTO_UNIX)
-R_API int r_socket_unix_listen(RSocket *s, const char *file);
+#define r_socket_connect_unix(a, b) r_socket_connect (a, b, b, R_SOCKET_PROTO_UNIX, 0)
+#else
+#define r_socket_connect_unix(a, b) (false)
 #endif
+R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile);
 R_API int r_socket_port_by_name(const char *name);
 R_API int r_socket_close_fd(RSocket *s);
 R_API int r_socket_close(RSocket *s);
 R_API int r_socket_free(RSocket *s);
-R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile);
 R_API RSocket *r_socket_accept(RSocket *s);
 R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout);
-R_API int r_socket_block_time(RSocket *s, int block, int sec);
+R_API int r_socket_block_time(RSocket *s, int block, int sec, int usec);
 R_API int r_socket_flush(RSocket *s);
 R_API int r_socket_ready(RSocket *s, int secs, int usecs);
 R_API char *r_socket_to_string(RSocket *s);

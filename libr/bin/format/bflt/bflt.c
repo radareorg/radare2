@@ -60,39 +60,32 @@ fail:
 }
 
 static int r_bin_bflt_init(struct r_bin_bflt_obj *obj, RBuffer *buf) {
-	if (!(obj->b = r_buf_new ())) {
-		return false;
-	}
-	obj->size = buf->length;
+	obj->b = r_buf_ref (buf);
+	obj->size = r_buf_size (buf);
 	obj->endian = false;
 	obj->reloc_table = NULL;
 	obj->got_table = NULL;
 	obj->n_got = 0;
 	obj->hdr = NULL;
-
-	if(!r_buf_set_bytes (obj->b, buf->buf, obj->size)) {
-		r_buf_free (obj->b);
-		return false;
-	}
 	if (!bflt_init_hdr (obj)) {
 		return false;
 	}
 	return true;
 }
 
-struct r_bin_bflt_obj *r_bin_bflt_new_buf(struct r_buf_t *buf) {
+struct r_bin_bflt_obj *r_bin_bflt_new_buf(RBuffer *buf) {
 	struct r_bin_bflt_obj *bin = R_NEW0 (struct r_bin_bflt_obj);
 	if (bin && r_bin_bflt_init (bin, buf)) {
 		return bin;
 	}
 	r_bin_bflt_free (bin);
 	return NULL;
-}	
+}
 
 void r_bin_bflt_free(struct r_bin_bflt_obj *obj) {
 	if (obj) {
 		R_FREE (obj->hdr);
-		R_FREE (obj->b);
+		r_buf_free (obj->b);
 		R_FREE (obj);
 	}
 }

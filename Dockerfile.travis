@@ -18,14 +18,19 @@ RUN apt-get install -y \
     jq \
     libncurses5 \
     libcapstone3 \
+    libcapstone-dev \
+    libmagic-dev \
     libzip4 \
+    libzip-dev \
     liblz4-1 \
+    liblz4-dev \
     gnupg2 \
     python-pip \
     python3-pip \
     pkg-config \
     liblzma5 \
-    npm
+    npm \
+    zlib1g-dev
 
 RUN pip3 install meson
 RUN pip3 install ninja

@@ -1,0 +1,53 @@
+enum.androidLogPriority=UNKNOWN,DEFAULT,VERBOSE,DEBUG,INFO,WARN,ERROR,FATAL,SILENT
+enum.androidLogPriority.0x0=UNKNOWN
+enum.androidLogPriority.0x1=DEFAULT
+enum.androidLogPriority.0x2=VERBOSE
+enum.androidLogPriority.0x3=DEBUG
+enum.androidLogPriority.0x4=INFO
+enum.androidLogPriority.0x5=WARN
+enum.androidLogPriority.0x6=ERROR
+enum.androidLogPriority.0x7=FATAL
+enum.androidLogPriority.0x8=SILENT
+enum.androidLogPriority.UNKNOWN=0x0
+enum.androidLogPriority.DEFAULT=0x1
+enum.androidLogPriority.VERBOSE=0x2
+enum.androidLogPriority.DEBUG=0x3
+enum.androidLogPriority.INFO=0x4
+enum.androidLogPriority.WARN=0x5
+enum.androidLogPriority.ERROR=0x6
+enum.androidLogPriority.FATAL=0x7
+enum.androidLogPriority.SILENT=0x8
+androidLogPriority=enum
+
+__android_log_print=func
+func.__android_log_print.args=3
+func.__android_log_print.arg.0=androidLogPriority,prio
+func.__android_log_print.arg.1=const char *,tag
+func.__android_log_print.arg.2=const char *,fmt
+func.__android_log_print.ret=int
+
+__android_log_write=func
+func.__android_log_write.args=3
+func.__android_log_write.arg.0=androidLogPriority,prio
+func.__android_log_write.arg.1=const char *,tag
+func.__android_log_write.arg.2=const char *,fmt
+func.__android_log_write.ret=int
+
+__android_log_vprint=func
+func.__android_log_vprint.args=3
+func.__android_log_vprint.arg.0=androidLogPriority,prio
+func.__android_log_vprint.arg.1=const char *,tag
+func.__android_log_vprint.arg.2=const char *,fmt
+func.__android_log_vprint.ret=int
+
+__android_log_assert=func
+func.__android_log_assert.args=3
+func.__android_log_assert.arg.0=const char *,cond
+func.__android_log_assert.arg.1=const char *,tag
+func.__android_log_assert.arg.2=const char *,fmt
+func.__android_log_assert.ret=void
+
+__stack_chk_fail=func
+func.__stack_chk_fail.args=0
+func.__stack_chk_fail.noreturn=true
+func.__stack_chk_fail.ret=void

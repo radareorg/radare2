@@ -1,6 +1,5 @@
 default.cc=m68k
 
 m68k=cc
-cc.m68k.name=m68k
-cc.m68k.arg1=stack_rev
+cc.m68k.arg0=stack_rev
 cc.m68k.ret=d0

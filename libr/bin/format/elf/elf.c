@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2018 - nibble, pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2008-2019 - nibble, pancake, alvaro_fe */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,10 +40,10 @@
 #define READWORD(x, i) READ32 (x, i)
 #endif
 
-#define BREAD8(x, i) r_read_ble8(r_buf_get_at (x, (i), NULL)); (i) += 1
-#define BREAD16(x, i) r_read_ble16(r_buf_get_at (x, (i), NULL), bin->endian); (i) += 2
-#define BREAD32(x, i) r_read_ble32(r_buf_get_at (x, (i), NULL), bin->endian); (i) += 4
-#define BREAD64(x, i) r_read_ble64(r_buf_get_at (x, (i), NULL), bin->endian); (i) += 8
+#define BREAD8(x, i) r_buf_read_ble8_at(x, i); (i) += 1
+#define BREAD16(x, i) r_buf_read_ble16_at(x, i, bin->endian); (i) += 2
+#define BREAD32(x, i) r_buf_read_ble32_at(x, i, bin->endian); (i) += 4
+#define BREAD64(x, i) r_buf_read_ble64_at(x, i, bin->endian); (i) += 8
 
 #if R_BIN_ELF64
 static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
@@ -96,12 +96,16 @@ static inline int __strnlen(const char *str, int len) {
 	return l + 1;
 }
 
-static int handle_e_ident(ELFOBJ *bin) {
+static bool is_bin_etrel(ELFOBJ *bin) {
+	return bin->ehdr.e_type == ET_REL;
+}
+
+static bool __is_valid_ident(ELFOBJ *bin) {
 	return !strncmp ((char *)bin->ehdr.e_ident, ELFMAG, SELFMAG) ||
 		!strncmp ((char *)bin->ehdr.e_ident, CGCMAG, SCGCMAG);
 }
 
-static int init_ehdr(ELFOBJ *bin) {
+static bool init_ehdr(ELFOBJ *bin) {
 	ut8 e_ident[EI_NIDENT];
 	ut8 ehdr[sizeof (Elf_(Ehdr))] = { 0 };
 	int i, len;
@@ -112,49 +116,74 @@ static int init_ehdr(ELFOBJ *bin) {
 	sdb_set (bin->kv, "elf_type.cparse", "enum elf_type { ET_NONE=0, ET_REL=1,"
 			" ET_EXEC=2, ET_DYN=3, ET_CORE=4, ET_LOOS=0xfe00, ET_HIOS=0xfeff,"
 			" ET_LOPROC=0xff00, ET_HIPROC=0xffff };", 0);
-	sdb_set (bin->kv, "elf_machine.cparse", "enum elf_machine{EM_NONE=0, EM_M32=1,"
-			" EM_SPARC=2, EM_386=3, EM_68K=4, EM_88K=5, EM_486=6, "
-			" EM_860=7, EM_MIPS=8, EM_S370=9, EM_MIPS_RS3_LE=10, EM_RS6000=11,"
-			" EM_UNKNOWN12=12, EM_UNKNOWN13=13, EM_UNKNOWN14=14, "
-			" EM_PA_RISC=15, EM_PARISC=EM_PA_RISC, EM_nCUBE=16, EM_VPP500=17,"
-			" EM_SPARC32PLUS=18, EM_960=19, EM_PPC=20, EM_PPC64=21, "
-			" EM_S390=22, EM_UNKNOWN22=EM_S390, EM_UNKNOWN23=23, EM_UNKNOWN24=24,"
-			" EM_UNKNOWN25=25, EM_UNKNOWN26=26, EM_UNKNOWN27=27, EM_UNKNOWN28=28,"
-			" EM_UNKNOWN29=29, EM_UNKNOWN30=30, EM_UNKNOWN31=31, EM_UNKNOWN32=32,"
-			" EM_UNKNOWN33=33, EM_UNKNOWN34=34, EM_UNKNOWN35=35, EM_V800=36,"
-			" EM_FR20=37, EM_RH32=38, EM_RCE=39, EM_ARM=40, EM_ALPHA=41, EM_SH=42,"
-			" EM_SPARCV9=43, EM_TRICORE=44, EM_ARC=45, EM_H8_300=46, EM_H8_300H=47,"
-			" EM_H8S=48, EM_H8_500=49, EM_IA_64=50, EM_MIPS_X=51, EM_COLDFIRE=52,"
-			" EM_68HC12=53, EM_MMA=54, EM_PCP=55, EM_NCPU=56, EM_NDR1=57,"
-			" EM_STARCORE=58, EM_ME16=59, EM_ST100=60, EM_TINYJ=61, EM_AMD64=62,"
-			" EM_X86_64=EM_AMD64, EM_PDSP=63, EM_UNKNOWN64=64, EM_UNKNOWN65=65,"
-			" EM_FX66=66, EM_ST9PLUS=67, EM_ST7=68, EM_68HC16=69, EM_68HC11=70,"
-			" EM_68HC08=71, EM_68HC05=72, EM_SVX=73, EM_ST19=74, EM_VAX=75, "
-			" EM_CRIS=76, EM_JAVELIN=77, EM_FIREPATH=78, EM_ZSP=79, EM_MMIX=80,"
-			" EM_HUANY=81, EM_PRISM=82, EM_AVR=83, EM_FR30=84, EM_D10V=85, EM_D30V=86,"
-			" EM_V850=87, EM_M32R=88, EM_MN10300=89, EM_MN10200=90, EM_PJ=91,"
-			" EM_OPENRISC=92, EM_ARC_A5=93, EM_XTENSA=94, EM_NUM=95};", 0);
+	sdb_set (bin->kv, "elf_machine.cparse", "enum elf_machine {EM_NONE=0, EM_M32=1,"
+			" EM_SPARC=2, EM_386=3, EM_68K=4, EM_88K=5, EM_IAMCU=6, EM_860=7, EM_MIPS=8,"
+			" EM_S370=9, EM_MIPS_RS3_LE=10, EM_RS6000=11, EM_PARISC=15, EM_nCUBE=16,"
+			" EM_VPP500=17, EM_SPARC32PLUS=18, EM_960=19, EM_PPC=20, EM_PPC64=21, EM_S390=22,"
+			" EM_SPU=23, EM_V800=36, EM_FR20=37, EM_RH32=38, EM_RCE=39, EM_ARM=40,"
+			" EM_ALPHA=41, EM_SH=42, EM_SPARCV9=43, EM_TRICORE=44, EM_ARC=45, EM_H8_300=46,"
+			" EM_H8_300H=47, EM_H8S=48, EM_H8_500=49, EM_IA_64=50, EM_MIPS_X=51,"
+			" EM_COLDFIRE=52, EM_68HC12=53, EM_MMA=54, EM_PCP=55, EM_NCPU=56, EM_NDR1=57,"
+			" EM_STARCORE=58, EM_ME16=59, EM_ST100=60, EM_TINYJ=61, EM_X86_64=62, EM_PDSP=63,"
+			" EM_PDP10=64, EM_PDP11=65, EM_FX66=66, EM_ST9PLUS=67, EM_ST7=68, EM_68HC16=69,"
+			" EM_68HC11=70, EM_68HC08=71, EM_68HC05=72, EM_SVX=73, EM_ST19=74, EM_VAX=75,"
+			" EM_CRIS=76, EM_JAVELIN=77, EM_FIREPATH=78, EM_ZSP=79, EM_MMIX=80, EM_HUANY=81,"
+			" EM_PRISM=82, EM_AVR=83, EM_FR30=84, EM_D10V=85, EM_D30V=86, EM_V850=87,"
+			" EM_M32R=88, EM_MN10300=89, EM_MN10200=90, EM_PJ=91, EM_OPENRISC=92,"
+			" EM_ARC_COMPACT=93, EM_XTENSA=94, EM_VIDEOCORE=95, EM_TMM_GPP=96, EM_NS32K=97,"
+			" EM_TPC=98, EM_SNP1K=99, EM_ST200=100, EM_IP2K=101, EM_MAX=102, EM_CR=103,"
+			" EM_F2MC16=104, EM_MSP430=105, EM_BLACKFIN=106, EM_SE_C33=107, EM_SEP=108,"
+			" EM_ARCA=109, EM_UNICORE=110, EM_EXCESS=111, EM_DXP=112, EM_ALTERA_NIOS2=113,"
+			" EM_CRX=114, EM_XGATE=115, EM_C166=116, EM_M16C=117, EM_DSPIC30F=118, EM_CE=119,"
+			" EM_M32C=120, EM_TSK3000=131, EM_RS08=132, EM_SHARC=133, EM_ECOG2=134,"
+			" EM_SCORE7=135, EM_DSP24=136, EM_VIDEOCORE3=137, EM_LATTICEMICO32=138,"
+			" EM_SE_C17=139, EM_TI_C6000=140, EM_TI_C2000=141, EM_TI_C5500=142,"
+			" EM_TI_ARP32=143, EM_TI_PRU=144,"
+			" EM_MMDSP_PLUS=160, EM_CYPRESS_M8C=161, EM_R32C=162, EM_TRIMEDIA=163,"
+			" EM_HEXAGON=164, EM_8051=165, EM_STXP7X=166, EM_NDS32=167,"
+			" EM_ECOG1X=168, EM_MAXQ30=169, EM_XIMO16=170, EM_MANIK=171, EM_CRAYNV2=172,"
+			" EM_RX=173, EM_METAG=174, EM_MCST_ELBRUS=175, EM_ECOG16=176, EM_CR16=177,"
+			" EM_ETPU=178, EM_SLE9X=179, EM_L10M=180, EM_K10M=181, EM_AARCH64=183,"
+			" EM_AVR32=185, EM_STM8=186, EM_TILE64=187, EM_TILEPRO=188, EM_CUDA=190,"
+			" EM_TILEGX=191, EM_CLOUDSHIELD=192, EM_COREA_1ST=193, EM_COREA_2ND=194,"
+			" EM_ARC_COMPACT2=195, EM_OPEN8=196, EM_RL78=197, EM_VIDEOCORE5=198,"
+			" EM_78KOR=199, EM_56800EX=200, EM_BA1=201, EM_BA2=202, EM_XCORE=203,"
+			" EM_MCHP_PIC=204, EM_INTEL205=205, EM_INTEL206=206, EM_INTEL207=207,"
+			" EM_INTEL208=208, EM_INTEL209=209, EM_KM32=210, EM_KMX32=211, EM_KMX16=212,"
+			" EM_KMX8=213, EM_KVARC=214, EM_CDP=215, EM_COGE=216, EM_COOL=217, EM_NORC=218,"
+			" EM_CSR_KALIMBA=219, EM_AMDGPU=224, EM_RISCV=243, EM_LANAI=244, EM_BPF=247,"
+			" EM_CSKY=252}", 0);
+	sdb_set (bin->kv, "elf_class.cparse", "enum elf_class {ELFCLASSNONE=0, ELFCLASS32=1, ELFCLASS64=2};", 0);
+	sdb_set (bin->kv, "elf_data.cparse", "enum elf_data {ELFDATANONE=0, ELFDATA2LSB=1, ELFDATA2MSB=2};", 0);
+	sdb_set (bin->kv, "elf_hdr_version.cparse", "enum elf_hdr_version {EV_NONE=0, EV_CURRENT=1};", 0);
+	sdb_set (bin->kv, "elf_obj_version.cparse", "enum elf_obj_version {EV_NONE=0, EV_CURRENT=1};", 0);
 	sdb_num_set (bin->kv, "elf_header.offset", 0, 0);
 	sdb_num_set (bin->kv, "elf_header.size", sizeof (Elf_(Ehdr)), 0);
+	sdb_set (bin->kv, "elf_ident.format", "[4]z[1]E[1]E[1]E.::"
+	         " magic (elf_class)class (elf_data)data (elf_hdr_version)version", 0);
 #if R_BIN_ELF64
-	sdb_set (bin->kv, "elf_header.format", "[16]z[2]E[2]Exqqqxwwwwww"
-		" ident (elf_type)type (elf_machine)machine version entry phoff shoff flags ehsize"
-		" phentsize phnum shentsize shnum shstrndx", 0);
+	sdb_set (bin->kv, "elf_header.format", "?[2]E[2]E[4]Eqqqxwwwwww"
+		" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
+		" entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx", 0);
 #else
-	sdb_set (bin->kv, "elf_header.format", "[16]z[2]E[2]Exxxxxwwwwww"
-		" ident (elf_type)type (elf_machine)machine version entry phoff shoff flags ehsize"
-		" phentsize phnum shentsize shnum shstrndx", 0);
+	sdb_set (bin->kv, "elf_header.format", "?[2]E[2]E[4]Exxxxwwwwww"
+		" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
+		" entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx", 0);
 #endif
 	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB)? 1: 0;
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
-
-	len = r_buf_read_at (bin->b, 0, ehdr, sizeof (Elf_(Ehdr)));
-	if (len < 1) {
+	len = r_buf_read_at (bin->b, 0, ehdr, sizeof (ehdr));
+	if (len < 32) { // tinyelf != sizeof (Elf_(Ehdr))) {
 		bprintf ("read (ehdr)\n");
 		return false;
 	}
+	// XXX no need to check twice
 	memcpy (&bin->ehdr.e_ident, ehdr, 16);
+	if (!__is_valid_ident (bin)) {
+		return false;
+	}
 	i = 16;
+	// TODO: use r_read or r_buf_read_ apis instead
 	bin->ehdr.e_type = READ16 (ehdr, i);
 	bin->ehdr.e_machine = READ16 (ehdr, i);
 	bin->ehdr.e_version = READ32 (ehdr, i);
@@ -174,8 +203,8 @@ static int init_ehdr(ELFOBJ *bin) {
 	bin->ehdr.e_shentsize = READ16 (ehdr, i);
 	bin->ehdr.e_shnum = READ16 (ehdr, i);
 	bin->ehdr.e_shstrndx = READ16 (ehdr, i);
-	return handle_e_ident (bin);
-	// Usage example:
+	return true;
+	// [Outdated] Usage example:
 	// > td `k bin/cur/info/elf_type.cparse`; td `k bin/cur/info/elf_machine.cparse`
 	// > pf `k bin/cur/info/elf_header.format` @ `k bin/cur/info/elf_header.offset`
 }
@@ -213,6 +242,7 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 		bin->phdr[i].p_memsz = READWORD (phdr, j);
 		if (!is_elf64) {
 			bin->phdr[i].p_flags = READ32 (phdr, j);
+		//	bin->phdr[i].p_flags |= 1; tiny.elf needs this somehow :? LOAD0 is always +x for linux?
 		}
 		bin->phdr[i].p_align = READWORD (phdr, j);
 	}
@@ -265,7 +295,7 @@ static int init_phdr(ELFOBJ *bin) {
 	bool linux_kern_hack = false;
 	/* Enable this hack only for the X86 64bit ELFs */
 	const int _128K = 1024 * 128;
-	if (bin->b->length > _128K && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386)) {
+	if (r_buf_size (bin->b) > _128K && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386)) {
 		linux_kern_hack = true;
 	}
 	if (!read_phdr (bin, linux_kern_hack)) {
@@ -275,8 +305,9 @@ static int init_phdr(ELFOBJ *bin) {
 	sdb_num_set (bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0);
 	sdb_num_set (bin->kv, "elf_phdr.size", sizeof (Elf_(Phdr)), 0);
 	sdb_set (bin->kv, "elf_p_type.cparse", "enum elf_p_type {PT_NULL=0,PT_LOAD=1,PT_DYNAMIC=2,"
-			"PT_INTERP=3,PT_NOTE=4,PT_SHLIB=5,PT_PHDR=6,PT_LOOS=0x60000000,"
-			"PT_HIOS=0x6fffffff,PT_LOPROC=0x70000000,PT_HIPROC=0x7fffffff};", 0);
+		"PT_INTERP=3,PT_NOTE=4,PT_SHLIB=5,PT_PHDR=6,PT_LOOS=0x60000000,"
+		"PT_HIOS=0x6fffffff,PT_LOPROC=0x70000000,PT_HIPROC=0x7fffffff};",
+		0);
 	sdb_set (bin->kv, "elf_p_flags.cparse", "enum elf_p_flags {PF_None=0,PF_Exec=1,"
 			"PF_Write=2,PF_Write_Exec=3,PF_Read=4,PF_Read_Exec=5,PF_Read_Write=6,"
 			"PF_Read_Write_Exec=7};", 0);
@@ -292,7 +323,6 @@ static int init_phdr(ELFOBJ *bin) {
 	// > td `k bin/cur/info/elf_p_type.cparse`; td `k bin/cur/info/elf_p_flags.cparse`
 	// > pf `k bin/cur/info/elf_phdr.format` @ `k bin/cur/info/elf_phdr.offset`
 }
-
 
 static int init_shdr(ELFOBJ *bin) {
 	ut32 shdr_size;
@@ -367,7 +397,7 @@ static int init_shdr(ELFOBJ *bin) {
 }
 
 static bool is_shidx_valid(ELFOBJ *bin, Elf_(Half) value) {
-	return value < bin->ehdr.e_shnum && !R_BETWEEN (SHN_LORESERVE, value, SHN_HIRESERVE);
+	return value >= 0 && value < bin->ehdr.e_shnum && !R_BETWEEN (SHN_LORESERVE, value, SHN_HIRESERVE);
 }
 
 static int init_strtab(ELFOBJ *bin) {
@@ -481,7 +511,6 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	ut64 strtabaddr = 0;
 	char *strtab = NULL;
 	size_t relentry = 0, strsize = 0;
-	int entries;
 	int i, len, r;
 	ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
 	ut64 dyn_size = 0, loaded_offset;
@@ -497,7 +526,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	}
 	dyn_size = dyn_phdr->p_filesz;
 
-	entries = compute_dyn_entries (bin, dyn_phdr, dyn_size);
+	int entries = compute_dyn_entries (bin, dyn_phdr, dyn_size);
 	if (entries < 0) {
 		return false;
 	}
@@ -1175,25 +1204,12 @@ static bool init_dynstr(ELFOBJ *bin) {
 	return false;
 }
 
-static int elf_init(ELFOBJ *bin) {
-	bin->phdr = NULL;
-	bin->shdr = NULL;
-	bin->strtab = NULL;
-	bin->shstrtab = NULL;
-	bin->strtab_size = 0;
-	bin->strtab_section = NULL;
-	bin->dyn_buf = NULL;
-	bin->dynstr = NULL;
-	ZERO_FILL (bin->version_info);
-
-	bin->g_sections = NULL;
-	bin->g_symbols = NULL;
-	bin->g_imports = NULL;
+static bool elf_init(ELFOBJ *bin) {
 	/* bin is not an ELF */
 	if (!init_ehdr (bin)) {
 		return false;
 	}
-	if (!init_phdr (bin)) {
+	if (!init_phdr (bin) && !is_bin_etrel (bin)) {
 		bprintf ("Cannot initialize program headers\n");
 	}
 	if (bin->ehdr.e_type != ET_CORE) {
@@ -1203,11 +1219,11 @@ static int elf_init(ELFOBJ *bin) {
 		if (!init_strtab (bin)) {
 			bprintf ("Cannot initialize strings table\n");
 		}
-		if (!init_dynstr (bin)) {
+		if (!init_dynstr (bin) && !is_bin_etrel (bin)) {
 			bprintf ("Cannot initialize dynamic strings\n");
 		}
 		bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
-		if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_is_static) (bin)) {
+		if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_is_static) (bin) && !is_bin_etrel (bin)) {
 			bprintf ("Cannot initialize dynamic section\n");
 		}
 	}
@@ -1219,7 +1235,6 @@ static int elf_init(ELFOBJ *bin) {
 	bin->g_sections = Elf_(r_bin_elf_get_sections) (bin);
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
 	sdb_ns_set (bin->kv, "versioninfo", store_versioninfo (bin));
-
 	return true;
 }
 
@@ -1325,26 +1340,22 @@ static HtUP *rel_cache_new(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	rel_cache = ht_up_new_size (nrel, NULL, rel_cache_free, NULL);
+	const int htsize = R_MIN (nrel, 1024);
+	rel_cache = ht_up_new_size (htsize, NULL, rel_cache_free, NULL);
 
 	for (j = k = 0; j < rel_sec->size && k < nrel; j += tsize, k++) {
-		if (rel_sec->offset + j > bin->size) {
-			goto out;
-		}
-		if (rel_sec->offset + j + tsize > bin->size) {
-			goto out;
-		}
 		int len = r_buf_read_at (bin->b, rel_sec->offset + j, rl, tsize);
-		if (len < 1) {
-			goto out;
+		if (len != tsize) {
+			break;
 		}
-
 		struct ht_rel_t *rel = read_ht_rel (bin, rl, k);
 		if (!rel) {
 			goto out;
 		}
 
-		ht_up_insert (rel_cache, REL_SYM, rel);
+		if (!ht_up_insert (rel_cache, REL_SYM, rel)) {
+			free (rel);
+		}
 	}
 	return rel_cache;
 out:
@@ -1752,7 +1763,7 @@ ut64 Elf_(r_bin_elf_get_baddr)(ELFOBJ *bin) {
 			}
 		}
 	}
-	if (base == UT64_MAX && bin->ehdr.e_type == ET_REL) {
+	if (base == UT64_MAX && is_bin_etrel (bin)) {
 		//we return our own base address for ET_REL type
 		//we act as a loader for ELF
 		return 0x08000000;
@@ -1783,9 +1794,9 @@ ut64 Elf_(r_bin_elf_get_boffset)(ELFOBJ *bin) {
 
 ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
-	ut8 buf[512];
-	if (!bin) {
-		return 0LL;
+	ut8 buf[128];
+	if (!bin || entry == UT64_MAX) {
+		return UT64_MAX;
 	}
 	if (r_buf_read_at (bin->b, entry + 16, buf, sizeof (buf)) < 1) {
 		bprintf ("read (init_offset)\n");
@@ -1793,7 +1804,7 @@ ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *bin) {
 	}
 	if (buf[0] == 0x68) { // push // x86 only
 		ut64 addr;
-		memmove (buf, buf+1, 4);
+		memmove (buf, buf + 1, 4);
 		addr = (ut64)r_read_le32 (buf);
 		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
@@ -1803,29 +1814,24 @@ ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *bin) {
 ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
 	ut8 buf[512];
-	if (!bin) {
-		return 0LL;
+	if (!bin || entry == UT64_MAX) {
+		return UT64_MAX;
 	}
-
-	if (r_buf_read_at (bin->b, entry+11, buf, sizeof (buf)) == -1) {
+	if (r_buf_read_at (bin->b, entry + 11, buf, sizeof (buf)) == -1) {
 		bprintf ("read (get_fini)\n");
 		return 0;
 	}
 	if (*buf == 0x68) { // push // x86/32 only
-		ut64 addr;
-		memmove (buf, buf+1, 4);
-		addr = (ut64)r_read_le32 (buf);
+		memmove (buf, buf + 1, 4);
+		ut64 addr = (ut64)r_read_le32 (buf);
 		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 	return 0;
 }
 
 ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
-	ut64 entry;
-	if (!bin) {
-		return 0LL;
-	}
-	entry = bin->ehdr.e_entry;
+	r_return_val_if_fail (bin, UT64_MAX);
+	ut64 entry = bin->ehdr.e_entry;
 	if (!entry) {
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
 		if (entry != UT64_MAX) {
@@ -1835,13 +1841,7 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 		if (entry != UT64_MAX) {
 			return entry;
 		}
-		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init");
-		if (entry != UT64_MAX) {
-			return entry;
-		}
-		if (entry == UT64_MAX) {
-			return 0;
-		}
+		return Elf_(r_bin_elf_get_section_offset)(bin, ".init");
 	}
 	return Elf_(r_bin_elf_v2p) (bin, entry);
 }
@@ -1862,16 +1862,17 @@ static ut64 getmainsymbol(ELFOBJ *bin) {
 
 ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
-	ut8 buf[512];
-	if (!bin) {
-		return 0LL;
+	ut8 buf[256];
+	if (!bin || entry == UT64_MAX) {
+		return UT64_MAX;
 	}
 	if (entry > bin->size || (entry + sizeof (buf)) > bin->size) {
-		return 0;
+		return UT64_MAX;
 	}
+	// unnecessary to read 512 bytes imho
 	if (r_buf_read_at (bin->b, entry, buf, sizeof (buf)) < 1) {
 		bprintf ("read (main)\n");
-		return 0;
+		return UT64_MAX;
 	}
 	// ARM64
 	if (buf[0x18+3] == 0x58 && buf[0x2f] == 0x00) {
@@ -1883,26 +1884,30 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	}
 
 	// TODO: Use arch to identify arch before memcmp's
-	// ARM
-	ut64 text = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
-	ut64 text_end = text + bin->size;
 
-	// ARM-Thumb-Linux
-	if (entry & 1 && !memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00", 6)) {
-		ut32 * ptr = (ut32*)(buf+40-1);
-		if (*ptr &1) {
-			return Elf_(r_bin_elf_v2p) (bin, *ptr -1);
+	// ARM Glibc
+	if (entry & 1) {
+		int delta = 0;
+		/* thumb entry points */
+		if (!memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00\x0e\x02\xbc\x6a\x46", 11)) {
+			/* newer versions of gcc use push/pop */
+			delta = 0x28;
+		} else if (!memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00\x0e\x5d\xf8\x04\x1b", 11)) {
+			/* older versions of gcc (4.5.x) use ldr/str */
+			delta = 0x30;
 		}
-	}
-	if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
-		ut32 vaddr = r_read_le32 (&buf[0x34]);
-		ut32 paddr = Elf_(r_bin_elf_v2p) (bin, vaddr);
-		/*
-		   0x00012000    00b0a0e3     mov fp, 0
-		   0x00012004    00e0a0e3     mov lr, 0
-		*/
-		if (paddr >= text && paddr < text_end) {
-			return paddr;
+		if (delta) {
+			ut64 pa = Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[delta-1]) & ~1);
+			if (pa < r_buf_size (bin->b)) {
+				return pa;
+			}
+		}
+	} else {
+		/* non-thumb entry points */
+		if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
+			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x34]) & ~1);
+		} else if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
+			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x30]) & ~1);
 		}
 	}
 
@@ -1936,11 +1941,6 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 		}
 
 		return 0;
-	}
-	// ARM
-	if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
-		ut64 addr = r_read_le32 (&buf[48]);
-		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 	// X86-CGC
 	if (buf[0] == 0xe8 && !memcmp (buf + 5, "\x50\xe8\x00\x00\x00\x00\xb8\x01\x00\x00\x00\x53", 12)) {
@@ -1994,7 +1994,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	}
 #endif
 	/* linux64 pie main -- probably buggy in some cases */
-	int bo = 29; // Begin offset may vary depending on the entry prelude 
+	int bo = 29; // Begin offset may vary depending on the entry prelude
 	if (buf[0] == 0xf3 && buf[1] == 0x0f && buf[2] == 0x1e && buf[3] == 0xfa) {
 		// Change begin offset if binary starts with 'endbr64'
 		bo = 33;
@@ -2151,90 +2151,166 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	}
 }
 
+// http://www.sco.com/developers/gabi/latest/ch4.eheader.html
+
 char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	switch (bin->ehdr.e_machine) {
-	case EM_NONE:        return strdup ("No machine");
-	case EM_M32:         return strdup ("AT&T WE 32100");
-	case EM_SPARC:       return strdup ("SUN SPARC");
-	case EM_386:         return strdup ("Intel 80386");
-	case EM_68K:         return strdup ("Motorola m68k family");
-	case EM_88K:         return strdup ("Motorola m88k family");
-	case EM_860:         return strdup ("Intel 80860");
-	case EM_MIPS:        return strdup ("MIPS R3000");
-	case EM_S370:        return strdup ("IBM System/370");
-	case EM_MIPS_RS3_LE: return strdup ("MIPS R3000 little-endian");
-	case EM_PARISC:      return strdup ("HPPA");
-	case EM_VPP500:      return strdup ("Fujitsu VPP500");
-	case EM_SPARC32PLUS: return strdup ("Sun's \"v8plus\"");
-	case EM_960:         return strdup ("Intel 80960");
-	case EM_PPC:         return strdup ("PowerPC");
-	case EM_PPC64:       return strdup ("PowerPC 64-bit");
-	case EM_S390:        return strdup ("IBM S390");
-	case EM_V800:        return strdup ("NEC V800 series");
-	case EM_FR20:        return strdup ("Fujitsu FR20");
-	case EM_RH32:        return strdup ("TRW RH-32");
-	case EM_RCE:         return strdup ("Motorola RCE");
-	case EM_ARM:         return strdup ("ARM");
-	case EM_BLACKFIN:    return strdup ("Analog Devices Blackfin");
-	case EM_FAKE_ALPHA:  return strdup ("Digital Alpha");
-	case EM_SH:          return strdup ("Hitachi SH");
-	case EM_SPARCV9:     return strdup ("SPARC v9 64-bit");
-	case EM_TRICORE:     return strdup ("Siemens Tricore");
-	case EM_ARC:         return strdup ("Argonaut RISC Core");
-	case EM_H8_300:      return strdup ("Hitachi H8/300");
-	case EM_H8_300H:     return strdup ("Hitachi H8/300H");
-	case EM_H8S:         return strdup ("Hitachi H8S");
-	case EM_H8_500:      return strdup ("Hitachi H8/500");
-	case EM_IA_64:       return strdup ("Intel Merced");
-	case EM_MIPS_X:      return strdup ("Stanford MIPS-X");
-	case EM_COLDFIRE:    return strdup ("Motorola Coldfire");
-	case EM_68HC12:      return strdup ("Motorola M68HC12");
-	case EM_MMA:         return strdup ("Fujitsu MMA Multimedia Accelerator");
-	case EM_PCP:         return strdup ("Siemens PCP");
-	case EM_NCPU:        return strdup ("Sony nCPU embeeded RISC");
-	case EM_NDR1:        return strdup ("Denso NDR1 microprocessor");
-	case EM_STARCORE:    return strdup ("Motorola Start*Core processor");
-	case EM_ME16:        return strdup ("Toyota ME16 processor");
-	case EM_ST100:       return strdup ("STMicroelectronic ST100 processor");
-	case EM_TINYJ:       return strdup ("Advanced Logic Corp. Tinyj emb.fam");
-	case EM_X86_64:      return strdup ("AMD x86-64 architecture");
-	case EM_LANAI:       return strdup ("32bit LANAI architecture");
-	case EM_PDSP:        return strdup ("Sony DSP Processor");
-	case EM_FX66:        return strdup ("Siemens FX66 microcontroller");
-	case EM_ST9PLUS:     return strdup ("STMicroelectronics ST9+ 8/16 mc");
-	case EM_ST7:         return strdup ("STmicroelectronics ST7 8 bit mc");
-	case EM_68HC16:      return strdup ("Motorola MC68HC16 microcontroller");
-	case EM_68HC11:      return strdup ("Motorola MC68HC11 microcontroller");
-	case EM_68HC08:      return strdup ("Motorola MC68HC08 microcontroller");
-	case EM_68HC05:      return strdup ("Motorola MC68HC05 microcontroller");
-	case EM_SVX:         return strdup ("Silicon Graphics SVx");
-	case EM_ST19:        return strdup ("STMicroelectronics ST19 8 bit mc");
-	case EM_VAX:         return strdup ("Digital VAX");
-	case EM_CRIS:        return strdup ("Axis Communications 32-bit embedded processor");
-	case EM_JAVELIN:     return strdup ("Infineon Technologies 32-bit embedded processor");
-	case EM_FIREPATH:    return strdup ("Element 14 64-bit DSP Processor");
-	case EM_ZSP:         return strdup ("LSI Logic 16-bit DSP Processor");
-	case EM_MMIX:        return strdup ("Donald Knuth's educational 64-bit processor");
-	case EM_HUANY:       return strdup ("Harvard University machine-independent object files");
-	case EM_PRISM:       return strdup ("SiTera Prism");
-	case EM_AVR:         return strdup ("Atmel AVR 8-bit microcontroller");
-	case EM_FR30:        return strdup ("Fujitsu FR30");
-	case EM_D10V:        return strdup ("Mitsubishi D10V");
-	case EM_D30V:        return strdup ("Mitsubishi D30V");
-	case EM_V850:        return strdup ("NEC v850");
-	case EM_M32R:        return strdup ("Mitsubishi M32R");
-	case EM_MN10300:     return strdup ("Matsushita MN10300");
-	case EM_MN10200:     return strdup ("Matsushita MN10200");
-	case EM_PJ:          return strdup ("picoJava");
-	case EM_OPENRISC:    return strdup ("OpenRISC 32-bit embedded processor");
-	case EM_ARC_A5:      return strdup ("ARC Cores Tangent-A5");
-	case EM_XTENSA:      return strdup ("Tensilica Xtensa Architecture");
-	case EM_AARCH64:     return strdup ("ARM aarch64");
-	case EM_PROPELLER:   return strdup ("Parallax Propeller");
-	case EM_MICROBLAZE:  return strdup ("Xilinx MicroBlaze");
-	case EM_RISCV:       return strdup ("RISC V");
-	case EM_VIDEOCORE3:  return strdup ("VideoCore III");
-	case EM_VIDEOCORE4:  return strdup ("VideoCore IV");
+	case EM_NONE:          return strdup ("No machine");
+	case EM_M32:           return strdup ("AT&T WE 32100");
+	case EM_SPARC:         return strdup ("SUN SPARC");
+	case EM_386:           return strdup ("Intel 80386");
+	case EM_68K:           return strdup ("Motorola m68k family");
+	case EM_88K:           return strdup ("Motorola m88k family");
+	case EM_860:           return strdup ("Intel 80860");
+	case EM_MIPS:          return strdup ("MIPS R3000");
+	case EM_S370:          return strdup ("IBM System/370");
+	case EM_MIPS_RS3_LE:   return strdup ("MIPS R3000 little-endian");
+	case EM_PARISC:        return strdup ("HPPA");
+	case EM_VPP500:        return strdup ("Fujitsu VPP500");
+	case EM_SPARC32PLUS:   return strdup ("Sun's \"v8plus\"");
+	case EM_960:           return strdup ("Intel 80960");
+	case EM_PPC:           return strdup ("PowerPC");
+	case EM_PPC64:         return strdup ("PowerPC 64-bit");
+	case EM_S390:          return strdup ("IBM S390");
+	case EM_V800:          return strdup ("NEC V800 series");
+	case EM_FR20:          return strdup ("Fujitsu FR20");
+	case EM_RH32:          return strdup ("TRW RH-32");
+	case EM_RCE:           return strdup ("Motorola RCE");
+	case EM_ARM:           return strdup ("ARM");
+	case EM_BLACKFIN:      return strdup ("Analog Devices Blackfin");
+	case EM_FAKE_ALPHA:    return strdup ("Digital Alpha");
+	case EM_SH:            return strdup ("Hitachi SH");
+	case EM_SPARCV9:       return strdup ("SPARC v9 64-bit");
+	case EM_TRICORE:       return strdup ("Siemens Tricore");
+	case EM_ARC:           return strdup ("Argonaut RISC Core");
+	case EM_H8_300:        return strdup ("Hitachi H8/300");
+	case EM_H8_300H:       return strdup ("Hitachi H8/300H");
+	case EM_H8S:           return strdup ("Hitachi H8S");
+	case EM_H8_500:        return strdup ("Hitachi H8/500");
+	case EM_IA_64:         return strdup ("Intel Merced");
+	case EM_MIPS_X:        return strdup ("Stanford MIPS-X");
+	case EM_COLDFIRE:      return strdup ("Motorola Coldfire");
+	case EM_68HC12:        return strdup ("Motorola M68HC12");
+	case EM_MMA:           return strdup ("Fujitsu MMA Multimedia Accelerator");
+	case EM_PCP:           return strdup ("Siemens PCP");
+	case EM_NCPU:          return strdup ("Sony nCPU embeeded RISC");
+	case EM_NDR1:          return strdup ("Denso NDR1 microprocessor");
+	case EM_STARCORE:      return strdup ("Motorola Start*Core processor");
+	case EM_ME16:          return strdup ("Toyota ME16 processor");
+	case EM_ST100:         return strdup ("STMicroelectronic ST100 processor");
+	case EM_TINYJ:         return strdup ("Advanced Logic Corp. Tinyj emb.fam");
+	case EM_X86_64:        return strdup ("AMD x86-64 architecture");
+	case EM_LANAI:         return strdup ("32bit LANAI architecture");
+	case EM_PDSP:          return strdup ("Sony DSP Processor");
+	case EM_PDP10:         return strdup ("Digital Equipment Corp. PDP-10");
+	case EM_PDP11:         return strdup ("Digital Equipment Corp. PDP-11");
+	case EM_FX66:          return strdup ("Siemens FX66 microcontroller");
+	case EM_ST9PLUS:       return strdup ("STMicroelectronics ST9+ 8/16 mc");
+	case EM_ST7:           return strdup ("STmicroelectronics ST7 8 bit mc");
+	case EM_68HC16:        return strdup ("Motorola MC68HC16 microcontroller");
+	case EM_68HC11:        return strdup ("Motorola MC68HC11 microcontroller");
+	case EM_68HC08:        return strdup ("Motorola MC68HC08 microcontroller");
+	case EM_68HC05:        return strdup ("Motorola MC68HC05 microcontroller");
+	case EM_SVX:           return strdup ("Silicon Graphics SVx");
+	case EM_ST19:          return strdup ("STMicroelectronics ST19 8 bit mc");
+	case EM_VAX:           return strdup ("Digital VAX");
+	case EM_CRIS:          return strdup ("Axis Communications 32-bit embedded processor");
+	case EM_JAVELIN:       return strdup ("Infineon Technologies 32-bit embedded processor");
+	case EM_FIREPATH:      return strdup ("Element 14 64-bit DSP Processor");
+	case EM_ZSP:           return strdup ("LSI Logic 16-bit DSP Processor");
+	case EM_MMIX:          return strdup ("Donald Knuth's educational 64-bit processor");
+	case EM_HUANY:         return strdup ("Harvard University machine-independent object files");
+	case EM_PRISM:         return strdup ("SiTera Prism");
+	case EM_AVR:           return strdup ("Atmel AVR 8-bit microcontroller");
+	case EM_FR30:          return strdup ("Fujitsu FR30");
+	case EM_D10V:          return strdup ("Mitsubishi D10V");
+	case EM_D30V:          return strdup ("Mitsubishi D30V");
+	case EM_V850:          return strdup ("NEC v850");
+	case EM_M32R:          return strdup ("Mitsubishi M32R");
+	case EM_MN10300:       return strdup ("Matsushita MN10300");
+	case EM_MN10200:       return strdup ("Matsushita MN10200");
+	case EM_PJ:            return strdup ("picoJava");
+	case EM_OPENRISC:      return strdup ("OpenRISC 32-bit embedded processor");
+	case EM_ARC_A5:        return strdup ("ARC Cores Tangent-A5");
+	case EM_XTENSA:        return strdup ("Tensilica Xtensa Architecture");
+	case EM_AARCH64:       return strdup ("ARM aarch64");
+	case EM_PROPELLER:     return strdup ("Parallax Propeller");
+	case EM_MICROBLAZE:    return strdup ("Xilinx MicroBlaze");
+	case EM_RISCV:         return strdup ("RISC V");
+	case EM_VIDEOCORE3:    return strdup ("VideoCore III");
+	case EM_VIDEOCORE4:    return strdup ("VideoCore IV");
+	case EM_LATTICEMICO32: return strdup ("RISC processor for Lattice FPGA architecture");
+	case EM_SE_C17:        return strdup ("Seiko Epson C17 family");
+	case EM_TI_C6000:      return strdup ("The Texas Instruments TMS320C6000 DSP family");
+	case EM_TI_C2000:      return strdup ("The Texas Instruments TMS320C2000 DSP family");
+	case EM_TI_C5500:      return strdup ("The Texas Instruments TMS320C55x DSP family");
+	case EM_TI_ARP32:      return strdup ("Texas Instruments Application Specific RISC Processor, 32bit fetch");
+	case EM_TI_PRU:        return strdup ("Texas Instruments Programmable Realtime Unit");
+	case EM_MMDSP_PLUS:    return strdup ("STMicroelectronics 64bit VLIW Data Signal Processor");
+	case EM_CYPRESS_M8C:   return strdup ("Cypress M8C microprocessor");
+	case EM_R32C:          return strdup ("Renesas R32C series microprocessors");
+	case EM_TRIMEDIA:      return strdup ("NXP Semiconductors TriMedia architecture family");
+	case EM_QDSP6:         return strdup ("QUALCOMM DSP6 Processor");  // Nonstandard
+	case EM_8051:          return strdup ("Intel 8051 and variants");
+	case EM_STXP7X:        return strdup ("STMicroelectronics STxP7x family of configurable and extensible RISC processors");
+	case EM_NDS32:         return strdup ("Andes Technology compact code size embedded RISC processor family");
+	case EM_ECOG1:         return strdup ("Cyan Technology eCOG1X family");
+	// case EM_ECOG1X:        return strdup ("Cyan Technology eCOG1X family");  // Nonstandard
+	case EM_MAXQ30:        return strdup ("Dallas Semiconductor MAXQ30 Core Micro-controllers");
+	case EM_XIMO16:        return strdup ("New Japan Radio (NJR) 16-bit DSP Processor");
+	case EM_MANIK:         return strdup ("M2000 Reconfigurable RISC Microprocessor");
+	case EM_CRAYNV2:       return strdup ("Cray Inc. NV2 vector architecture");
+	case EM_RX:            return strdup ("Renesas RX family");
+	case EM_METAG:         return strdup ("Imagination Technologies META processor architecture");
+	case EM_MCST_ELBRUS:   return strdup ("MCST Elbrus general purpose hardware architecture");
+	case EM_ECOG16:        return strdup ("Cyan Technology eCOG16 family");
+	case EM_CR16:          return strdup ("National Semiconductor CompactRISC CR16 16-bit microprocessor");
+	case EM_ETPU:          return strdup ("Freescale Extended Time Processing Unit");
+	case EM_SLE9X:         return strdup ("Infineon Technologies SLE9X core");
+	case EM_L10M:          return strdup ("Intel L10M");
+	case EM_K10M:          return strdup ("Intel K10M");
+	// case EM_AARCH64:       return strdup ("ARM 64-bit architecture (AARCH64)");  // Nonstandard
+	case EM_AVR32:         return strdup ("Atmel Corporation 32-bit microprocessor family");
+	case EM_STM8:          return strdup ("STMicroeletronics STM8 8-bit microcontroller");
+	case EM_TILE64:        return strdup ("Tilera TILE64 multicore architecture family");
+	case EM_TILEPRO:       return strdup ("Tilera TILEPro multicore architecture family");
+	// case EM_MICROBLAZE:    return strdup ("Xilinx MicroBlaze 32-bit RISC soft processor core");  // Nonstandard
+	case EM_CUDA:          return strdup ("NVIDIA CUDA architecture");
+	case EM_TILEGX:        return strdup ("Tilera TILE-Gx multicore architecture family");
+	case EM_CLOUDSHIELD:   return strdup ("CloudShield architecture family");
+	case EM_COREA_1ST:     return strdup ("KIPO-KAIST Core-A 1st generation processor family");
+	case EM_COREA_2ND:     return strdup ("KIPO-KAIST Core-A 2nd generation processor family");
+	case EM_ARC_COMPACT2:  return strdup ("Synopsys ARCompact V2");
+	case EM_OPEN8:         return strdup ("Open8 8-bit RISC soft processor core");
+	case EM_RL78:          return strdup ("Renesas RL78 family");
+	case EM_VIDEOCORE5:    return strdup ("Broadcom VideoCore V processor");
+	case EM_78KOR:         return strdup ("Renesas 78KOR family");
+	// case EM_56800EX:       return strdup ("Freescale 56800EX Digital Signal Controller (DSC)");  // Nonstandard
+	case EM_BA1:           return strdup ("Beyond BA1 CPU architecture");
+	case EM_BA2:           return strdup ("Beyond BA2 CPU architecture");
+	case EM_XCORE:         return strdup ("XMOS xCORE processor family");
+	case EM_MCHP_PIC:      return strdup ("Microchip 8-bit PIC(r) family");
+	case EM_INTEL205:      return strdup ("Reserved by Intel");
+	case EM_INTEL206:      return strdup ("Reserved by Intel");
+	case EM_INTEL207:      return strdup ("Reserved by Intel");
+	case EM_INTEL208:      return strdup ("Reserved by Intel");
+	case EM_INTEL209:      return strdup ("Reserved by Intel");
+	case EM_KM32:          return strdup ("KM211 KM32 32-bit processor");
+	case EM_KMX32:         return strdup ("KM211 KMX32 32-bit processor");
+	case EM_KMX16:         return strdup ("KM211 KMX16 16-bit processor");
+	case EM_KMX8:          return strdup ("KM211 KMX8 8-bit processor");
+	case EM_KVARC:         return strdup ("KM211 KVARC processor");
+	case EM_CDP:           return strdup ("Paneve CDP architecture family");
+	case EM_COGE:          return strdup ("Cognitive Smart Memory Processor");
+	case EM_COOL:          return strdup ("Bluechip Systems CoolEngine");
+	case EM_NORC:          return strdup ("Nanoradio Optimized RISC");
+	case EM_CSR_KALIMBA:   return strdup ("CSR Kalimba architecture family");
+	case EM_Z80:           return strdup ("Zilog Z80");
+	case EM_VISIUM:        return strdup ("Controls and Data Services VISIUMcore processor");
+	case EM_FT32:          return strdup ("FTDI Chip FT32 high performance 32-bit RISC architecture");
+	case EM_MOXIE:         return strdup ("Moxie processor family");
+	case EM_AMDGPU:        return strdup ("AMD GPU architecture");
+
 	default:             return r_str_newf ("<unknown>: 0x%x", bin->ehdr.e_machine);
 	}
 }
@@ -2324,11 +2400,9 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 				}
 			}
 		}
-		{
-			ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
-			if (entry & 1) {
-				return 16;
-			}
+		ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
+		if (entry & 1) {
+			return 16;
 		}
 	}
 	switch (bin->ehdr.e_ident[EI_CLASS]) {
@@ -2340,13 +2414,12 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 }
 
 static inline int noodle(ELFOBJ *bin, const char *s) {
-	const ut8 *p = bin->b->buf;
-	if (bin->b->length > 64)  {
-		p += bin->b->length - 64;
-	} else {
+	if (r_buf_size (bin->b) <= 64)  {
 		return 0;
 	}
-	return r_mem_mem (p, 64, (const ut8 *)s, strlen (s)) != NULL;
+	ut8 tmp[64];
+	r_buf_read_at (bin->b, r_buf_size (bin->b) - 64, tmp, 64);
+	return r_mem_mem (tmp, 64, (const ut8 *)s, strlen (s)) != NULL;
 }
 
 static inline int needle(ELFOBJ *bin, const char *s) {
@@ -2636,7 +2709,7 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 			if (j + res > bin->g_sections[i].size) {
 				bprintf ("malformed file, relocation entry #%u is partially beyond the end of section %u.\n", rel, i);
 			}
-			if (bin->ehdr.e_type == ET_REL) {
+			if (is_bin_etrel (bin)) {
 				if (bin->g_sections[i].info < bin->ehdr.e_shnum && bin->shdr) {
 					ret[rel].rva = bin->shdr[bin->g_sections[i].info].sh_offset + ret[rel].offset;
 					ret[rel].rva = Elf_(r_bin_elf_p2v) (bin, ret[rel].rva);
@@ -2716,7 +2789,8 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	int i, num_sections = 0;
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
 	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
-	if (!bin || !bin->phdr || !bin->ehdr.e_phnum || !bin->dyn_buf) {
+	r_return_val_if_fail (bin && bin->phdr, NULL);
+	if (!bin->ehdr.e_phnum || !bin->dyn_buf) {
 		return NULL;
 	}
 
@@ -2787,7 +2861,7 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 		ret[i].link = bin->shdr[i].sh_link;
 		ret[i].info = bin->shdr[i].sh_info;
 		ret[i].type = bin->shdr[i].sh_type;
-		if (bin->ehdr.e_type == ET_REL) {
+		if (is_bin_etrel (bin)) {
 			ret[i].rva = bin->baddr + bin->shdr[i].sh_offset;
 		} else {
 			ret[i].rva = bin->shdr[i].sh_addr;
@@ -2817,8 +2891,34 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 	return ret;
 }
 
+static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
+	if (name[0] != '$') {
+		return false;
+	}
+	switch (name[1]) {
+	case 'a':
+	case 't':
+	case 'd':
+		return (name[2] == '\0' || name[2] == '.') &&
+			ELF_ST_TYPE (sym->st_info) == STT_NOTYPE &&
+			ELF_ST_BIND (sym->st_info) == STB_LOCAL &&
+			ELF_ST_VISIBILITY (sym->st_info) == STV_DEFAULT;
+	default:
+		return false;
+	}
+}
+
+static bool is_special_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
+	switch (bin->ehdr.e_machine) {
+	case EM_ARM:
+		return is_special_arm_symbol (bin, sym, name);
+	default:
+		return false;
+	}
+}
+
 static const char *bind2str(Elf_(Sym) *sym) {
-	switch (ELF_ST_BIND(sym->st_info)) {
+	switch (ELF_ST_BIND (sym->st_info)) {
 	case STB_LOCAL:  return R_BIN_BIND_LOCAL_STR;
 	case STB_GLOBAL: return R_BIN_BIND_GLOBAL_STR;
 	case STB_WEAK:   return R_BIN_BIND_WEAK_STR;
@@ -2831,27 +2931,30 @@ static const char *bind2str(Elf_(Sym) *sym) {
 	}
 }
 
-static const char *type2str(Elf_(Sym) *sym) {
+static const char *type2str(ELFOBJ *bin, struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
+	if (bin && ret && is_special_symbol (bin, sym, ret->name)) {
+		return R_BIN_TYPE_SPECIAL_SYM_STR;
+	}
 	switch (ELF_ST_TYPE (sym->st_info)) {
-	case STT_NOTYPE:  return R_BIN_TYPE_NOTYPE_STR;
-	case STT_OBJECT:  return R_BIN_TYPE_OBJECT_STR;
-	case STT_FUNC:    return R_BIN_TYPE_FUNC_STR;
+	case STT_NOTYPE: return R_BIN_TYPE_NOTYPE_STR;
+	case STT_OBJECT: return R_BIN_TYPE_OBJECT_STR;
+	case STT_FUNC: return R_BIN_TYPE_FUNC_STR;
 	case STT_SECTION: return R_BIN_TYPE_SECTION_STR;
-	case STT_FILE:    return R_BIN_TYPE_FILE_STR;
-	case STT_COMMON:  return R_BIN_TYPE_COMMON_STR;
-	case STT_TLS:     return R_BIN_TYPE_TLS_STR;
-	case STT_NUM:     return R_BIN_TYPE_NUM_STR;
-	case STT_LOOS:    return R_BIN_TYPE_LOOS_STR;
-	case STT_HIOS:    return R_BIN_TYPE_HIOS_STR;
-	case STT_LOPROC:  return R_BIN_TYPE_LOPROC_STR;
-	case STT_HIPROC:  return R_BIN_TYPE_HIPROC_STR;
-	default:          return R_BIN_TYPE_UNKNOWN_STR;
+	case STT_FILE: return R_BIN_TYPE_FILE_STR;
+	case STT_COMMON: return R_BIN_TYPE_COMMON_STR;
+	case STT_TLS: return R_BIN_TYPE_TLS_STR;
+	case STT_NUM: return R_BIN_TYPE_NUM_STR;
+	case STT_LOOS: return R_BIN_TYPE_LOOS_STR;
+	case STT_HIOS: return R_BIN_TYPE_HIOS_STR;
+	case STT_LOPROC: return R_BIN_TYPE_LOPROC_STR;
+	case STT_HIPROC: return R_BIN_TYPE_HIPROC_STR;
+	default: return R_BIN_TYPE_UNKNOWN_STR;
 	}
 }
 
-static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
+static void fill_symbol_bind_and_type(ELFOBJ *bin, struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
 	ret->bind = bind2str (sym);
-	ret->type = type2str (sym);
+	ret->type = type2str (bin, ret, sym);
 }
 
 static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
@@ -2966,7 +3069,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		// since we don't know the size of the sym table in this case,
 		// let's stop at the first invalid entry
 		if (!strcmp (bind2str (&sym[i]), R_BIN_BIND_UNKNOWN_STR) ||
-		    !strcmp (type2str (&sym[i]), R_BIN_TYPE_UNKNOWN_STR)) {
+		    !strcmp (type2str (NULL, NULL, &sym[i]), R_BIN_TYPE_UNKNOWN_STR)) {
 			goto done;
 		}
 		tmp_offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
@@ -2999,7 +3102,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		ret[ret_ctr].ordinal = i;
 		ret[ret_ctr].in_shdr = false;
 		ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
-		fill_symbol_bind_and_type (&ret[ret_ctr], &sym[i]);
+		fill_symbol_bind_and_type (bin, &ret[ret_ctr], &sym[i]);
 		ret[ret_ctr].is_sht_null = is_sht_null;
 		ret[ret_ctr].is_vaddr = is_vaddr;
 		ret[ret_ctr].last = 0;
@@ -3128,6 +3231,24 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 	return nsym;
 }
 
+static bool is_section_local_sym(ELFOBJ *bin, Elf_(Sym) *sym) {
+	if (sym->st_name != 0) {
+		return false;
+	}
+	if (ELF_ST_TYPE (sym->st_info) != STT_SECTION) {
+		return false;
+	}
+	if (ELF_ST_BIND (sym->st_info) != STB_LOCAL) {
+		return false;
+	}
+	if (!is_shidx_valid (bin, sym->st_shndx)) {
+		return false;
+	}
+
+	Elf_(Word) sh_name = bin->shdr[sym->st_shndx].sh_name;
+	return bin->shstrtab && sh_name >= 0 && sh_name < bin->shstrtab_size;
+}
+
 static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
 		return;
@@ -3210,7 +3331,7 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 	return ptr;
 }
 
-// TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we dont have to do it twice
+// TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
 	ut32 shdr_size;
 	int tsize, nsym, ret_ctr = 0, i, j, r, k, newsize;
@@ -3352,7 +3473,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					toffset = (ut64)sym[k].st_value;
 					is_sht_null = sym[k].st_shndx == SHT_NULL;
 				}
-				if (bin->ehdr.e_type == ET_REL) {
+				if (is_bin_etrel (bin)) {
 					if (sym[k].st_shndx < bin->ehdr.e_shnum) {
 						ret[ret_ctr].offset = sym[k].st_value + bin->shdr[sym[k].st_shndx].sh_offset;
 					}
@@ -3371,8 +3492,11 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				{
 					int rest = ELF_STRING_LENGTH - 1;
 					int st_name = sym[k].st_name;
-					int maxsize = R_MIN (bin->b->length, strtab_section->sh_size);
-					if (st_name < 0 || st_name >= maxsize) {
+					int maxsize = R_MIN (r_buf_size (bin->b), strtab_section->sh_size);
+					if (is_section_local_sym (bin, &sym[k])) {
+						const char *shname = &bin->shstrtab[bin->shdr[sym[k].st_shndx].sh_name];
+						r_str_ncpy (ret[ret_ctr].name, shname, ELF_STRING_LENGTH);
+					} else if (st_name <= 0 || st_name >= maxsize) {
 						ret[ret_ctr].name[0] = 0;
 					} else {
 						bool found = false;
@@ -3380,7 +3504,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 						while (!ret[++j].last && j < prev_ret_size) {
 							if (ret[j].offset == ret[ret_ctr].offset &&
 									strcmp (ret[j].name, "") != 0 && strcmp (ret[j].name, &strtab[st_name]) == 0
-									&& strcmp (ret[j].type, type2str (&sym[k])) == 0) {
+									&& strcmp (ret[j].type, type2str (NULL, NULL, &sym[k])) == 0) {
 								found = true;
 								break;
 							}
@@ -3395,7 +3519,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				}
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
-				fill_symbol_bind_and_type (&ret[ret_ctr], &sym[k]);
+				fill_symbol_bind_and_type (bin, &ret[ret_ctr], &sym[k]);
 				ret[ret_ctr].is_sht_null = is_sht_null;
 				ret[ret_ctr].is_vaddr = is_vaddr;
 				ret[ret_ctr].last = 0;
@@ -3414,9 +3538,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	}
 	if (!ret) {
 		return Elf_(get_phdr_symbols) (bin, type);
-	} else {
-		ret[ret_ctr].last = 1; // ugly dirty hack :D
 	}
+	ret[ret_ctr].last = 1; // ugly dirty hack :D
 	int max = -1;
 	RBinElfSymbol *aux = NULL;
 	nsym = Elf_(fix_symbols) (bin, ret_ctr, type, &ret);
@@ -3505,10 +3628,10 @@ RBinElfField* Elf_(r_bin_elf_get_fields)(ELFOBJ *bin) {
 	return ret;
 }
 
-void* Elf_(r_bin_elf_free)(ELFOBJ* bin) {
+void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	int i;
 	if (!bin) {
-		return NULL;
+		return;
 	}
 	free (bin->phdr);
 	free (bin->shdr);
@@ -3542,47 +3665,19 @@ void* Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	ht_up_free (bin->rel_cache);
 	bin->rel_cache = NULL;
 	free (bin);
-	return NULL;
-}
-
-ELFOBJ* Elf_(r_bin_elf_new)(const char* file, bool verbose) {
-	ut8 *buf;
-	int size;
-	ELFOBJ *bin = R_NEW0 (ELFOBJ);
-	if (!bin) {
-		return NULL;
-	}
-	memset (bin, 0, sizeof (ELFOBJ));
-	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp (file, &size))) {
-		return Elf_(r_bin_elf_free) (bin);
-	}
-	bin->size = size;
-	bin->verbose = verbose;
-	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
-		free (buf);
-		return Elf_(r_bin_elf_free) (bin);
-	}
-	if (!elf_init (bin)) {
-		free (buf);
-		return Elf_(r_bin_elf_free) (bin);
-	}
-	free (buf);
-	return bin;
 }
 
 ELFOBJ* Elf_(r_bin_elf_new_buf)(RBuffer *buf, bool verbose) {
 	ELFOBJ *bin = R_NEW0 (ELFOBJ);
-	bin->kv = sdb_new0 ();
-	bin->b = r_buf_new ();
-	bin->size = (ut32)buf->length;
-	bin->verbose = verbose;
-	if (!r_buf_set_bytes (bin->b, buf->buf, buf->length)) {
-		return Elf_(r_bin_elf_free) (bin);
-	}
-	if (!elf_init (bin)) {
-		return Elf_(r_bin_elf_free) (bin);
+	if (bin) {
+		bin->kv = sdb_new0 ();
+		bin->size = (ut32)r_buf_size (buf);
+		bin->verbose = verbose;
+		bin->b = r_buf_ref (buf);
+		if (!elf_init (bin)) {
+			Elf_(r_bin_elf_free) (bin);
+			return NULL;
+		}
 	}
 	return bin;
 }
@@ -3601,7 +3696,7 @@ ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 
 	r_return_val_if_fail (bin, 0);
 	if (!bin->phdr) {
-		if (bin->ehdr.e_type == ET_REL) {
+		if (is_bin_etrel (bin)) {
 			return bin->baddr + paddr;
 		}
 		return paddr;
@@ -3625,7 +3720,7 @@ ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 
 	r_return_val_if_fail (bin, 0);
 	if (!bin->phdr) {
-		if (bin->ehdr.e_type == ET_REL) {
+		if (is_bin_etrel (bin)) {
 			return vaddr - bin->baddr;
 		}
 		return vaddr;
@@ -3649,7 +3744,7 @@ ut64 Elf_(r_bin_elf_p2v_new) (ELFOBJ *bin, ut64 paddr) {
 
 	r_return_val_if_fail (bin, UT64_MAX);
 	if (!bin->phdr) {
-		if (bin->ehdr.e_type == ET_REL) {
+		if (is_bin_etrel (bin)) {
 			return bin->baddr + paddr;
 		}
 		return UT64_MAX;
@@ -3671,7 +3766,7 @@ ut64 Elf_(r_bin_elf_v2p_new) (ELFOBJ *bin, ut64 vaddr) {
 
 	r_return_val_if_fail (bin, UT64_MAX);
 	if (!bin->phdr) {
-		if (bin->ehdr.e_type == ET_REL) {
+		if (is_bin_etrel (bin)) {
 			return vaddr - bin->baddr;
 		}
 		return UT64_MAX;
@@ -3808,4 +3903,41 @@ RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin) {
 	}
 
 	return maps;
+}
+
+char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
+	RBinElfSection *section = get_section_by_name (bin, ".comment");
+	if (!section) {
+		return NULL;
+	}
+
+	ut64 off = section->offset;
+	int sz = section->size;
+	if (sz < 1) {
+		return NULL;
+	}
+	char *buf = malloc (sz + 1);
+	if (!buf) {
+		return NULL;
+	}
+	if (r_buf_read_at (bin->b, off, (ut8*)buf, sz) < 1) {
+		free (buf);
+		return NULL;
+	}
+
+	buf[sz] = 0;
+	char *ptr = buf;
+
+	do {
+		char *p = strchr (ptr, '\0');
+		size_t psz = (p - ptr);
+		ptr = p;
+		sz -= psz + 1;
+		if (sz > 1) {
+			*ptr = '/';
+			ptr++;
+		}
+	} while (sz > 0);
+
+	return buf;
 }

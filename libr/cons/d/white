@@ -6,11 +6,13 @@ ec crypto magenta
 ec other blue
 ec push black
 ec pop black
-ec cmp black
-ec nop blue
-ec jmp green
-ec cjmp green
-ec call rgb:000 rgb:ff0
+ec cmp magenta
+ec nop black
+ec jmp blue
+ec cjmp magenta
+ec ujmp green
+ec call magenta white bold
+ec ucall magenta white bold
 ec input black
 ec fline green
 ec prompt black
@@ -52,3 +54,6 @@ ec ai.write magenta
 ec ai.exec blue
 ec ai.seq black
 ec ai.ascii black
+
+ec widget_bg blue white
+ec widget_sel black yellow

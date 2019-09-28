@@ -169,7 +169,7 @@ The structure of the C files in r2 must be like this:
 #include <r_core.h>        ## includes
 static int globals         ## const, define, global variables
 static void helper() {}    ## static functions
-R_IPI void internal() {}   ## internal apis (used only inside the library
+R_IPI void internal() {}   ## internal apis (used only inside the library)
 R_API void public() {}     ## public apis starting with constructor/destructor
 
 ```
@@ -177,7 +177,7 @@ R_API void public() {}     ## public apis starting with constructor/destructor
 
 * Why return int vs enum
 
-The reason why many places in r2land functions return int instead of an enum type is because enums cant be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
+The reason why many places in r2land functions return int instead of an enum type is because enums can't be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
 
 ```
 r_core_wrap.cxx:28612:60: error: assigning to 'RRegisterType' from incompatible type 'long'
@@ -191,7 +191,9 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Do not leave trailing whitespaces at the end of line
 
-* Do not use asserts
+* Do not use assert.h, use r_util/r_assert.h instead.
+
+* You can use `export R_DEBUG_ASSERT=1` to set a breakpoint when hitting an assert.
 
 * Do not use C99 variable declaration
     - This way we reduce the number of local variables per function
@@ -440,7 +442,7 @@ in the code for various reasons.
 The source of the radare2 regression test suite can be found in the
 following github repository.
 ```sh
-   git clone git://github.com/radare/radare2-regressions
+   git clone git://github.com/radareorg/radare2-regressions
 ```
 
 See the `README.md` file in that repository for further information.

@@ -6,7 +6,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	memset (op, '\0', sizeof (RAnalOp));
 	ut16 opcode = r_read_be16 (data);
 //	uint8_t x = (opcode >> 8) & 0x0F;
@@ -16,48 +16,38 @@ static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int 
 	uint8_t kk = opcode & 0xFF;
 	op->size = 2;
 	op->addr = addr;
+	op->type = R_ANAL_OP_TYPE_UNK;
 	switch (opcode & 0xF000) {
 	case 0x0000:
-		if (opcode == 0x00E0) {
-			op->type = R_ANAL_OP_TYPE_UNK;
-		} else if (opcode == 0x00EE) {
-			op->type = R_ANAL_OP_TYPE_UNK;
-		} else if (opcode == 0x00C0) {
-			op->type = R_ANAL_OP_TYPE_UNK;
-		} else if (opcode == 0x00FB) {
-			op->type = R_ANAL_OP_TYPE_UNK;
-		} else if (opcode == 0x00FC) {
-			op->type = R_ANAL_OP_TYPE_UNK;
-		} else if (opcode == 0x00FD) {
-			op->type = R_ANAL_OP_TYPE_UNK;
-		} else if (opcode == 0x00FE) {
-			op->type = R_ANAL_OP_TYPE_UNK;
-		} else if (opcode == 0x00FF) {
-			op->type = R_ANAL_OP_TYPE_UNK;
+		if (opcode == 0x00EE) {
+			op->type = R_ANAL_OP_TYPE_RET;
 		}
 		break;
 	case 0x1000:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = nnn;
-		op->fail = addr + op->size;
 		break;
 	case 0x2000:
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = nnn;
-		op->fail = addr + op->size;
 		break;
 	case 0x3000:
-		r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, "KEYPAD");
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ANAL_OP_TYPE_RJMP;
+		op->jump = addr + op->size * 2;
+		op->fail = addr + op->size;
 		break;
 	case 0x4000:
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ANAL_OP_TYPE_RJMP;
+		op->jump = addr + op->size * 2;
+		op->fail = addr + op->size;
 		break;
 	case 0x5000:
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ANAL_OP_TYPE_RJMP;
+		op->jump = addr + op->size * 2;
+		op->fail = addr + op->size;
 		break;
 	case 0x6000:
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case 0x7000:
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -65,7 +55,7 @@ static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int 
 	case 0x8000: {
 		switch (nibble) {
 		case 0x0:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case 0x1:
 			op->type = R_ANAL_OP_TYPE_OR;
@@ -94,68 +84,66 @@ static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int 
 		}
 	} break;
 	case 0x9000:
-		op->type = R_ANAL_OP_TYPE_UNK;
+		if (nibble == 0) {
+			op->type = R_ANAL_OP_TYPE_RJMP;
+			op->jump = addr + op->size * 2;
+			op->fail = addr + op->size;
+		}
 		break;
 	case 0xA000:
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case 0xB000:
 		op->type = R_ANAL_OP_TYPE_JMP;
+		/* FIXME: this is wrong as op->jump depends on register V0 */
 		op->jump = nnn;
-		op->fail = addr + op->size;
 		break;
-	case 0xC000:
-		op->type = R_ANAL_OP_TYPE_UNK;
-		break;
-	case 0xD000:
-		op->type = R_ANAL_OP_TYPE_UNK;
-		break;
-	case 0xE000: {
-		if (kk == 0x9E) {
-			op->type = R_ANAL_OP_TYPE_UNK;
-			break;
-		} else if (kk == 0xA1) {
-			op->type = R_ANAL_OP_TYPE_UNK;
-			break;
+	case 0xE000:
+		if (kk == 0x9E || kk == 0xA1) {
+			r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, "KEYPAD");
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->jump = addr + op->size * 2;
+			op->fail = addr + op->size;
 		}
-	} break;
+		break;
 	case 0xF000: {
 		switch (kk) {
 		case 0x07:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case 0x0A:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, "KEYPAD");
+			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case 0x15:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case 0x18:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case 0x1E:
 			op->type = R_ANAL_OP_TYPE_ADD;
 			break;
 		case 0x29:
-			op->type = R_ANAL_OP_TYPE_UNK;
-			break;
-		case 0x33:
-			op->type = R_ANAL_OP_TYPE_UNK;
-			break;
-		case 0x55:
-			op->type = R_ANAL_OP_TYPE_UNK;
-			break;
-		case 0x65:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case 0x30:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
+		case 0x33:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			break;
+		case 0x55:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			break;
+		case 0x65:
+			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case 0x75:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case 0x85:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		}
 	} break;
@@ -172,7 +160,7 @@ RAnalPlugin r_anal_plugin_chip8 = {
 	.op = &chip8_anop,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_chip8,

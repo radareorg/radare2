@@ -3,7 +3,7 @@ include ../../global.mk
 NAME=r_asm
 DEPS=r_syscall r_lang r_util r_parse
 DEPS+=r_flag r_cons r_reg
-CFLAGS+=-DCORELIB -Iarch/include -Iarch -I../../shlr
+CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch -I../../shlr
 CURDIR=p/
 
 include $(TOP)/libr/config.mk
@@ -11,6 +11,7 @@ include $(TOP)/libr/config.mk
 include p/capstone.mk
 LDFLAGS+=${CS_LDFLAGS}
 include $(STOP)/java/deps.mk
+include $(STOP)/capstone.mk
 
 .PHONY: all plugins
 

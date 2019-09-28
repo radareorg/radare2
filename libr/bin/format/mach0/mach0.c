@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2019 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -6,13 +6,32 @@
 #include "mach0.h"
 #include <r_hash.h>
 
+// TODO: deprecate bprintf and use Eprintf (bin->self)
 #define bprintf if (bin->verbose) eprintf
+#define Eprintf if (mo->verbose) eprintf
 
 typedef struct _ulebr {
 	ut8 *p;
 } ulebr;
 
+typedef struct {
+	struct symbol_t *symbols;
+	int j;
+	int symbols_count;
+	HtPP *hash;
+} RSymCtx;
+
+typedef void (*RExportsIterator)(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx);
+
+typedef struct {
+	ut8 *node;
+	char *label;
+	int i;
+	ut8 *next_child;
+} RTrieState;
+
 // OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
+// USE THIS: int ws = bf->o->info->big_endian;
 #define mach0_endian 1
 
 static ut64 read_uleb128(ulebr *r, ut8 *end) {
@@ -22,12 +41,12 @@ static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut8 *p = r->p;
 	do {
 		if (p == end) {
-			eprintf ("malformed uleb128");
+			eprintf ("malformed uleb128\n");
 			break;
 		}
 		slice = *p & 0x7f;
 		if (bit > 63) {
-			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x, bit, result);
+			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x"\n", bit, result);
 		} else {
 			result |= (slice << bit);
 			bit += 7;
@@ -44,12 +63,16 @@ static st64 read_sleb128(ulebr *r, ut8 *end) {
 	ut8 *p = r->p;
 	do {
 		if (p == end) {
-			eprintf ("malformed sleb128");
+			eprintf ("malformed sleb128\n");
 			break;
 		}
 		byte = *p++;
 		result |= (((st64)(byte & 0x7f)) << bit);
 		bit += 7;
+		if (bit > 63) {
+			eprintf ("too large sleb128 shift\n");
+			return result;
+		}
 	} while (byte & 0x80);
 	// sign extend negative numbers
 	if ((byte & 0x40)) {
@@ -59,7 +82,7 @@ static st64 read_sleb128(ulebr *r, ut8 *end) {
 	return result;
 }
 
-static ut64 entry_to_vaddr(struct MACH0_(obj_t)* bin) {
+static ut64 entry_to_vaddr(struct MACH0_(obj_t) *bin) {
 	switch (bin->main_cmd.cmd) {
 	case LC_MAIN:
 		return bin->entry + bin->baddr;
@@ -71,7 +94,7 @@ static ut64 entry_to_vaddr(struct MACH0_(obj_t)* bin) {
 	}
 }
 
-static ut64 addr_to_offset(struct MACH0_(obj_t)* bin, ut64 addr) {
+static ut64 addr_to_offset(struct MACH0_(obj_t) *bin, ut64 addr) {
 	ut64 segment_base, segment_size;
 	int i;
 
@@ -88,7 +111,174 @@ static ut64 addr_to_offset(struct MACH0_(obj_t)* bin, ut64 addr) {
 	return 0;
 }
 
-static int init_hdr(struct MACH0_(obj_t)* bin) {
+static ut64 offset_to_vaddr(struct MACH0_(obj_t) *bin, ut64 offset) {
+	ut64 segment_base, segment_size;
+	int i;
+
+	if (!bin->segs) {
+		return 0;
+	}
+	for (i = 0; i < bin->nsegs; i++) {
+		segment_base = (ut64)bin->segs[i].fileoff;
+		segment_size = (ut64)bin->segs[i].filesize;
+		if (offset >= segment_base && offset < segment_base + segment_size) {
+			return bin->segs[i].vmaddr + (offset - segment_base);
+		}
+	}
+	return 0;
+}
+
+static ut64 pa2va(RBinFile *bf, ut64 offset) {
+	if (!bf || !bf->rbin) {
+		return offset;
+	}
+	RIO *io = bf->rbin->iob.io;
+	if (!io->va) {
+		return offset;
+	}
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+	if (!bin) {
+		return offset;
+	}
+	return offset_to_vaddr (bin, offset);
+}
+
+static void init_sdb_formats(struct MACH0_(obj_t) *bin) {
+	/*
+	 * These definitions are used by r2 -nn
+	 * must be kept in sync with libr/bin/d/macho
+	 */
+	sdb_set (bin->kv, "mach0_build_platform.cparse",
+		"enum mach0_build_platform" "{MACOS=1, IOS=2, TVOS=3, WATCHOS=4, BRIDGEOS=5, IOSMAC=6, IOSSIMULATOR=7, TVOSSIMULATOR=8, WATCHOSSIMULATOR=9};",
+		0);
+	sdb_set (bin->kv, "mach0_build_tool.cparse",
+		"enum mach0_build_tool" "{CLANG=1, SWIFT=2, LD=3};",
+		0);
+	sdb_set (bin->kv, "mach0_load_command_type.cparse",
+		"enum mach0_load_command_type" "{ LC_SEGMENT=0x00000001ULL, LC_SYMTAB=0x00000002ULL, LC_SYMSEG=0x00000003ULL, LC_THREAD=0x00000004ULL, LC_UNIXTHREAD=0x00000005ULL, LC_LOADFVMLIB=0x00000006ULL, LC_IDFVMLIB=0x00000007ULL, LC_IDENT=0x00000008ULL, LC_FVMFILE=0x00000009ULL, LC_PREPAGE=0x0000000aULL, LC_DYSYMTAB=0x0000000bULL, LC_LOAD_DYLIB=0x0000000cULL, LC_ID_DYLIB=0x0000000dULL, LC_LOAD_DYLINKER=0x0000000eULL, LC_ID_DYLINKER=0x0000000fULL, LC_PREBOUND_DYLIB=0x00000010ULL, LC_ROUTINES=0x00000011ULL, LC_SUB_FRAMEWORK=0x00000012ULL, LC_SUB_UMBRELLA=0x00000013ULL, LC_SUB_CLIENT=0x00000014ULL, LC_SUB_LIBRARY=0x00000015ULL, LC_TWOLEVEL_HINTS=0x00000016ULL, LC_PREBIND_CKSUM=0x00000017ULL, LC_LOAD_WEAK_DYLIB=0x80000018ULL, LC_SEGMENT_64=0x00000019ULL, LC_ROUTINES_64=0x0000001aULL, LC_UUID=0x0000001bULL, LC_RPATH=0x8000001cULL, LC_CODE_SIGNATURE=0x0000001dULL, LC_SEGMENT_SPLIT_INFO=0x0000001eULL, LC_REEXPORT_DYLIB=0x8000001fULL, LC_LAZY_LOAD_DYLIB=0x00000020ULL, LC_ENCRYPTION_INFO=0x00000021ULL, LC_DYLD_INFO=0x00000022ULL, LC_DYLD_INFO_ONLY=0x80000022ULL, LC_LOAD_UPWARD_DYLIB=0x80000023ULL, LC_VERSION_MIN_MACOSX=0x00000024ULL, LC_VERSION_MIN_IPHONEOS=0x00000025ULL, LC_FUNCTION_STARTS=0x00000026ULL, LC_DYLD_ENVIRONMENT=0x00000027ULL, LC_MAIN=0x80000028ULL, LC_DATA_IN_CODE=0x00000029ULL, LC_SOURCE_VERSION=0x0000002aULL, LC_DYLIB_CODE_SIGN_DRS=0x0000002bULL, LC_ENCRYPTION_INFO_64=0x0000002cULL, LC_LINKER_OPTION=0x0000002dULL, LC_LINKER_OPTIMIZATION_HINT=0x0000002eULL, LC_VERSION_MIN_TVOS=0x0000002fULL, LC_VERSION_MIN_WATCHOS=0x00000030ULL, LC_NOTE=0x00000031ULL, LC_BUILD_VERSION=0x00000032ULL };",
+		0);
+	sdb_set (bin->kv, "mach0_header_filetype.cparse",
+		"enum mach0_header_filetype" "{MH_OBJECT=1, MH_EXECUTE=2, MH_FVMLIB=3, MH_CORE=4, MH_PRELOAD=5, MH_DYLIB=6, MH_DYLINKER=7, MH_BUNDLE=8, MH_DYLIB_STUB=9, MH_DSYM=10, MH_KEXT_BUNDLE=11};",
+		0);
+	sdb_set (bin->kv, "mach0_header_flags.cparse",
+		"enum mach0_header_flags" "{MH_NOUNDEFS=1, MH_INCRLINK=2,MH_DYLDLINK=4,MH_BINDATLOAD=8,MH_PREBOUND=0x10, MH_SPLIT_SEGS=0x20,MH_LAZY_INIT=0x40,MH_TWOLEVEL=0x80, MH_FORCE_FLAT=0x100,MH_NOMULTIDEFS=0x200,MH_NOFIXPREBINDING=0x400, MH_PREBINDABLE=0x800, MH_ALLMODSBOUND=0x1000, MH_SUBSECTIONS_VIA_SYMBOLS=0x2000, MH_CANONICAL=0x4000,MH_WEAK_DEFINES=0x8000, MH_BINDS_TO_WEAK=0x10000,MH_ALLOW_STACK_EXECUTION=0x20000, MH_ROOT_SAFE=0x40000,MH_SETUID_SAFE=0x80000, MH_NO_REEXPORTED_DYLIBS=0x100000,MH_PIE=0x200000, MH_DEAD_STRIPPABLE_DYLIB=0x400000, MH_HAS_TLV_DESCRIPTORS=0x800000, MH_NO_HEAP_EXECUTION=0x1000000};",
+		0);
+	sdb_set (bin->kv, "mach0_section_types.cparse",
+		"enum mach0_section_types" "{S_REGULAR=0, S_ZEROFILL=1, S_CSTRING_LITERALS=2, S_4BYTE_LITERALS=3, S_8BYTE_LITERALS=4, S_LITERAL_POINTERS=5, S_NON_LAZY_SYMBOL_POINTERS=6, S_LAZY_SYMBOL_POINTERS=7, S_SYMBOL_STUBS=8, S_MOD_INIT_FUNC_POINTERS=9, S_MOD_TERM_FUNC_POINTERS=0xa, S_COALESCED=0xb, S_GB_ZEROFILL=0xc, S_INTERPOSING=0xd, S_16BYTE_LITERALS=0xe, S_DTRACE_DOF=0xf, S_LAZY_DYLIB_SYMBOL_POINTERS=0x10, S_THREAD_LOCAL_REGULAR=0x11, S_THREAD_LOCAL_ZEROFILL=0x12, S_THREAD_LOCAL_VARIABLES=0x13, S_THREAD_LOCAL_VARIABLE_POINTERS=0x14, S_THREAD_LOCAL_INIT_FUNCTION_POINTERS=0x15, S_INIT_FUNC_OFFSETS=0x16};",
+		0);
+	sdb_set (bin->kv, "mach0_section_attrs.cparse",
+		"enum mach0_section_attrs" "{S_ATTR_PURE_INSTRUCTIONS=0x800000ULL, S_ATTR_NO_TOC=0x400000ULL, S_ATTR_STRIP_STATIC_SYMS=0x200000ULL, S_ATTR_NO_DEAD_STRIP=0x100000ULL, S_ATTR_LIVE_SUPPORT=0x080000ULL, S_ATTR_SELF_MODIFYING_CODE=0x040000ULL, S_ATTR_DEBUG=0x020000ULL, S_ATTR_SOME_INSTRUCTIONS=0x000004ULL, S_ATTR_EXT_RELOC=0x000002ULL, S_ATTR_LOC_RELOC=0x000001ULL};",
+		0);
+	sdb_set (bin->kv, "mach0_header.format",
+		"xxx[4]Edd[4]B "
+		"magic cputype cpusubtype (mach0_header_filetype)filetype ncmds sizeofcmds (mach0_header_flags)flags",
+		0);
+	sdb_set (bin->kv, "mach0_segment.format",
+		"[4]Ed[16]zxxxxoodx "
+		"(mach0_load_command_type)cmd cmdsize segname vmaddr vmsize fileoff filesize maxprot initprot nsects flags",
+		0);
+	sdb_set (bin->kv, "mach0_segment64.format",
+		"[4]Ed[16]zqqqqoodx "
+		"(mach0_load_command_type)cmd cmdsize segname vmaddr vmsize fileoff filesize maxprot initprot nsects flags",
+		0);
+	sdb_set (bin->kv, "mach0_symtab_command.format",
+		"[4]Edxdxd "
+		"(mach0_load_command_type)cmd cmdsize symoff nsyms stroff strsize",
+		0);
+	sdb_set (bin->kv, "mach0_dysymtab_command.format",
+		"[4]Edddddddddddxdxdxxxd "
+		"(mach0_load_command_type)cmd cmdsize ilocalsym nlocalsym iextdefsym nextdefsym iundefsym nundefsym tocoff ntoc moddtaboff nmodtab extrefsymoff nextrefsyms inddirectsymoff nindirectsyms extreloff nextrel locreloff nlocrel",
+		0);
+	sdb_set (bin->kv, "mach0_section.format",
+		"[16]z[16]zxxxxxx[1]E[3]Bxx "
+		"sectname segname addr size offset align reloff nreloc (mach0_section_types)flags_type (mach0_section_attrs)flags_attr reserved1 reserved2", 0);
+	sdb_set (bin->kv, "mach0_section64.format",
+		"[16]z[16]zqqxxxx[1]E[3]Bxxx "
+		"sectname segname addr size offset align reloff nreloc (mach0_section_types)flags_type (mach0_section_attrs)flags_attr reserved1 reserved2 reserved3",
+		0);
+	sdb_set (bin->kv, "mach0_dylib.format",
+		"xxxxz "
+		"name_offset timestamp current_version compatibility_version name",
+		0);
+	sdb_set (bin->kv, "mach0_dylib_command.format",
+		"[4]Ed? "
+		"(mach0_load_command_type)cmd cmdsize (mach0_dylib)dylib",
+		0);
+	sdb_set (bin->kv, "mach0_id_dylib_command.format",
+		"[4]Ed? "
+		"(mach0_load_command_type)cmd cmdsize (mach0_dylib)dylib",
+		0);
+	sdb_set (bin->kv, "mach0_uuid_command.format",
+		"[4]Ed[16]b "
+		"(mach0_load_command_type)cmd cmdsize uuid",
+		0);
+	sdb_set (bin->kv, "mach0_rpath_command.format",
+		"[4]Edxz "
+		"(mach0_load_command_type)cmd cmdsize path_offset path",
+		0);
+	sdb_set (bin->kv, "mach0_entry_point_command.format",
+		"[4]Edqq "
+		"(mach0_load_command_type)cmd cmdsize entryoff stacksize",
+		0);
+	sdb_set (bin->kv, "mach0_encryption_info64_command.format",
+		"[4]Edxddx "
+		"(mach0_load_command_type)cmd cmdsize offset size id padding",
+		0);
+	sdb_set (bin->kv, "mach0_encryption_info_command.format",
+		"[4]Edxdd "
+		"(mach0_load_command_type)cmd cmdsize offset size id",
+		0);
+	sdb_set (bin->kv, "mach0_code_signature_command.format",
+		"[4]Edxd "
+		"(mach0_load_command_type)cmd cmdsize offset size",
+		0);
+	sdb_set (bin->kv, "mach0_dyld_info_only_command.format",
+		"[4]Edxdxdxdxdxd "
+		"(mach0_load_command_type)cmd cmdsize rebase_off rebase_size bind_off bind_size weak_bind_off weak_bind_size lazy_bind_off lazy_bind_size export_off export_size",
+		0);
+	sdb_set (bin->kv, "mach0_load_dylinker_command.format",
+		"[4]Edxz "
+		"(mach0_load_command_type)cmd cmdsize name_offset name",
+		0);
+	sdb_set (bin->kv, "mach0_id_dylinker_command.format",
+		"[4]Edxzi "
+		"(mach0_load_command_type)cmd cmdsize name_offset name",
+		0);
+	sdb_set (bin->kv, "mach0_build_version_command.format",
+		"[4]Ed[4]Exxd "
+		"(mach0_load_command_type)cmd cmdsize (mach0_build_platform)platform minos sdk ntools",
+		0);
+	sdb_set (bin->kv, "mach0_build_version_tool.format",
+		"[4]Ex "
+		"(mach0_build_tool)tool version",
+		0);
+	sdb_set (bin->kv, "mach0_source_version_command.format",
+		"[4]Edq "
+		"(mach0_load_command_type)cmd cmdsize version",
+		0);
+	sdb_set (bin->kv, "mach0_function_starts_command.format",
+		"[4]Edxd "
+		"(mach0_load_command_type)cmd cmdsize offset size",
+		0);
+	sdb_set (bin->kv, "mach0_data_in_code_command.format",
+		"[4]Edxd "
+		"(mach0_load_command_type)cmd cmdsize offset size",
+		0);
+	sdb_set (bin->kv, "mach0_version_min_command.format",
+		"[4]Edxx "
+		"(mach0_load_command_type)cmd cmdsize version reserved",
+		0);
+	sdb_set (bin->kv, "mach0_segment_split_info_command.format",
+		"[4]Edxd "
+		"(mach0_load_command_type)cmd cmdsize offset size",
+		0);
+	sdb_set (bin->kv, "mach0_unixthread_command.format",
+		"[4]Eddd "
+		"(mach0_load_command_type)cmd cmdsize flavor count",
+		0);
+}
+
+static bool init_hdr(struct MACH0_(obj_t) *bin) {
 	ut8 magicbytes[4] = {0};
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = {0};
 	int len;
@@ -126,32 +316,12 @@ static int init_hdr(struct MACH0_(obj_t)* bin) {
 #if R_BIN_MACH064
 	bin->hdr.reserved = r_read_ble (&machohdrbytes[28], bin->big_endian, 32);
 #endif
-	sdb_set (bin->kv, "mach0_header.format",
-		"xxxxddx "
-		"magic cputype cpusubtype filetype ncmds sizeofcmds flags", 0);
+	init_sdb_formats (bin);
 	sdb_num_set (bin->kv, "mach0_header.offset", 0, 0); // wat about fatmach0?
-	sdb_set (bin->kv, "mach_filetype.cparse", "enum mach_filetype{MH_OBJECT=1,"
-			"MH_EXECUTE=2, MH_FVMLIB=3, MH_CORE=4, MH_PRELOAD=5, MH_DYLIB=6,"
-			"MH_DYLINKER=7, MH_BUNDLE=8, MH_DYLIB_STUB=9, MH_DSYM=10,"
-			"MH_KEXT_BUNDLE=11}"
-			,0);
-	sdb_set (bin->kv, "mach_flags.cparse", "enum mach_flags{MH_NOUNDEFS=1,"
-			"MH_INCRLINK=2,MH_DYLDLINK=4,MH_BINDATLOAD=8,MH_PREBOUND=0x10,"
-			"MH_SPLIT_SEGS=0x20,MH_LAZY_INIT=0x40,MH_TWOLEVEL=0x80,"
-			"MH_FORCE_FLAT=0x100,MH_NOMULTIDEFS=0x200,MH_NOFIXPREBINDING=0x400,"
-			"MH_PREBINDABLE=0x800, MH_ALLMODSBOUND=0x1000,"
-			"MH_SUBSECTIONS_VIA_SYMBOLS=0x2000,"
-			"MH_CANONICAL=0x4000,MH_WEAK_DEFINES=0x8000,"
-			"MH_BINDS_TO_WEAK=0x10000,MH_ALLOW_STACK_EXECUTION=0x20000,"
-			"MH_ROOT_SAFE=0x40000,MH_SETUID_SAFE=0x80000,"
-			"MH_NO_REEXPORTED_DYLIBS=0x100000,MH_PIE=0x200000,"
-			"MH_DEAD_STRIPPABLE_DYLIB=0x400000,"
-			"MH_HAS_TLV_DESCRIPTORS=0x800000,"
-			"MH_NO_HEAP_EXECUTION=0x1000000 }",0);
 	return true;
 }
 
-static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
+static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 	int i, j, k, sect, len;
 	ut32 size_sects;
 	ut8 segcom[sizeof (struct MACH0_(segment_command))] = {0};
@@ -210,12 +380,13 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 	i += sizeof (ut32);
 	bin->segs[j].flags = r_read_ble32 (&segcom[i], bin->big_endian);
 
+#if R_BIN_MACH064
+	sdb_num_set (bin->kv, sdb_fmt ("mach0_segment64_%d.offset", j), off, 0);
+#else
 	sdb_num_set (bin->kv, sdb_fmt ("mach0_segment_%d.offset", j), off, 0);
+#endif
+
 	sdb_num_set (bin->kv, "mach0_segments.count", 0, 0);
-	sdb_set (bin->kv, "mach0_segment.format",
-		"xd[16]zxxxxoodx "
-		"cmd cmdsize segname vmaddr vmsize "
-		"fileoff filesize maxprot initprot nsects flags", 0);
 
 	if (bin->segs[j].nsects > 0) {
 		sect = bin->nsects;
@@ -272,6 +443,14 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 			i += 16;
 			memcpy (&bin->sects[k].segname, &sec[i], 16);
 			i += 16;
+
+			sdb_num_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.offset", &bin->sects[k].segname, &bin->sects[k].sectname), offset, 0);
+#if R_BIN_MACH064
+			sdb_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.format", &bin->sects[k].segname, &bin->sects[k].sectname), "mach0_section64", 0);
+#else
+			sdb_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.format", &bin->sects[k].segname, &bin->sects[k].sectname), "mach0_section", 0);
+#endif
+
 #if R_BIN_MACH064
 			bin->sects[k].addr = r_read_ble64 (&sec[i], bin->big_endian);
 			i += sizeof (ut64);
@@ -305,86 +484,85 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 	return true;
 }
 
-static int parse_symtab(struct MACH0_(obj_t)* bin, ut64 off) {
+#define Error(x) errorMessage = x; goto error;
+static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 	struct symtab_command st;
 	ut32 size_sym;
 	int i;
+	const char *errorMessage = "";
 	ut8 symt[sizeof (struct symtab_command)] = {0};
 	ut8 nlst[sizeof (struct MACH0_(nlist))] = {0};
+	const bool be = mo->big_endian;
 
-	if (off > (ut64)bin->size || off + sizeof (struct symtab_command) > (ut64)bin->size) {
+	if (off > (ut64)mo->size || off + sizeof (struct symtab_command) > (ut64)mo->size) {
 		return false;
 	}
-	int len = r_buf_read_at (bin->b, off, symt, sizeof (struct symtab_command));
+	int len = r_buf_read_at (mo->b, off, symt, sizeof (struct symtab_command));
 	if (len != sizeof (struct symtab_command)) {
-		bprintf ("Error: read (symtab)\n");
+		Eprintf ("Error: read (symtab)\n");
 		return false;
 	}
-	st.cmd = r_read_ble32 (&symt[0], bin->big_endian);
-	st.cmdsize = r_read_ble32 (&symt[4], bin->big_endian);
-	st.symoff = r_read_ble32 (&symt[8], bin->big_endian);
-	st.nsyms = r_read_ble32 (&symt[12], bin->big_endian);
-	st.stroff = r_read_ble32 (&symt[16], bin->big_endian);
-	st.strsize = r_read_ble32 (&symt[20], bin->big_endian);
+	st.cmd = r_read_ble32 (symt, be);
+	st.cmdsize = r_read_ble32 (symt + 4, be);
+	st.symoff = r_read_ble32 (symt + 8, be);
+	st.nsyms = r_read_ble32 (symt + 12, be);
+	st.stroff = r_read_ble32 (symt + 16, be);
+	st.strsize = r_read_ble32 (symt + 20, be);
 
-	bin->symtab = NULL;
-	bin->nsymtab = 0;
-	if (st.strsize > 0 && st.strsize < bin->size && st.nsyms > 0) {
-		bin->nsymtab = st.nsyms;
-		if (st.stroff > bin->size || st.stroff + st.strsize > bin->size) {
-			return false;
+	mo->symtab = NULL;
+	mo->nsymtab = 0;
+	if (st.strsize > 0 && st.strsize < mo->size && st.nsyms > 0) {
+		mo->nsymtab = st.nsyms;
+		if (st.stroff > mo->size || st.stroff + st.strsize > mo->size) {
+			Error ("fail");
 		}
-		if (!UT32_MUL (&size_sym, bin->nsymtab, sizeof (struct MACH0_(nlist)))) {
-			bprintf("fail2\n");
-			return false;
+		if (!UT32_MUL (&size_sym, mo->nsymtab, sizeof (struct MACH0_(nlist)))) {
+			Error ("fail2");
 		}
 		if (!size_sym) {
-			bprintf("fail3\n");
-			return false;
+			Error ("symbol size is zero");
 		}
-		if (st.symoff > bin->size || st.symoff + size_sym > bin->size) {
-			bprintf("fail4\n");
-			return false;
+		if (st.symoff > mo->size || st.symoff + size_sym > mo->size) {
+			Error ("symoff is out of bounds");
 		}
-		if (!(bin->symstr = calloc (1, st.strsize + 2))) {
-			perror ("calloc (symstr)");
-			return false;
+		if (!(mo->symstr = calloc (1, st.strsize + 2))) {
+			Error ("symoff is out of bounds");
 		}
-		bin->symstrlen = st.strsize;
-		len = r_buf_read_at (bin->b, st.stroff, (ut8*)bin->symstr, st.strsize);
+		mo->symstrlen = st.strsize;
+		len = r_buf_read_at (mo->b, st.stroff, (ut8*)mo->symstr, st.strsize);
 		if (len != st.strsize) {
-			bprintf ("Error: read (symstr)\n");
-			R_FREE (bin->symstr);
-			return false;
+			Error ("Error: read (symstr)");
 		}
-		if (!(bin->symtab = calloc (bin->nsymtab, sizeof (struct MACH0_(nlist))))) {
-			perror ("calloc (symtab)");
-			return false;
+		if (!(mo->symtab = calloc (mo->nsymtab, sizeof (struct MACH0_(nlist))))) {
+			goto error;
 		}
-		for (i = 0; i < bin->nsymtab; i++) {
-			len = r_buf_read_at (bin->b, st.symoff + (i * sizeof (struct MACH0_(nlist))),
-								nlst, sizeof (struct MACH0_(nlist)));
+		for (i = 0; i < mo->nsymtab; i++) {
+			ut64 at = st.symoff + (i * sizeof (struct MACH0_(nlist)));
+			len = r_buf_read_at (mo->b, at, nlst, sizeof (struct MACH0_(nlist)));
 			if (len != sizeof (struct MACH0_(nlist))) {
-				bprintf ("Error: read (nlist)\n");
-				R_FREE (bin->symtab);
-				return false;
+				Error ("read (nlist)");
 			}
 			//XXX not very safe what if is n_un.n_name instead?
-			bin->symtab[i].n_strx = r_read_ble32 (&nlst[0], bin->big_endian);
-			bin->symtab[i].n_type = r_read_ble8 (&nlst[4]);
-			bin->symtab[i].n_sect = r_read_ble8 (&nlst[5]);
-			bin->symtab[i].n_desc = r_read_ble16 (&nlst[6], bin->big_endian);
+			mo->symtab[i].n_strx = r_read_ble32 (nlst, be);
+			mo->symtab[i].n_type = r_read_ble8 (nlst + 4);
+			mo->symtab[i].n_sect = r_read_ble8 (nlst + 5);
+			mo->symtab[i].n_desc = r_read_ble16 (nlst + 6, be);
 #if R_BIN_MACH064
-			bin->symtab[i].n_value = r_read_ble64 (&nlst[8], bin->big_endian);
+			mo->symtab[i].n_value = r_read_ble64 (&nlst[8], be);
 #else
-			bin->symtab[i].n_value = r_read_ble32 (&nlst[8], bin->big_endian);
+			mo->symtab[i].n_value = r_read_ble32 (&nlst[8], be);
 #endif
 		}
 	}
 	return true;
+error:
+	R_FREE (mo->symstr);
+	R_FREE (mo->symtab);
+	Eprintf ("%s\n", errorMessage);
+	return false;
 }
 
-static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
+static int parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 	int len, i;
 	ut32 size_tab;
 	ut8 dysym[sizeof (struct dysymtab_command)] = {0};
@@ -522,7 +700,6 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 			R_FREE (bin->indirectsyms);
 			return false;
 		}
-
 		for (i = 0; i < bin->nindirectsyms; i++) {
 			len = r_buf_read_at (bin->b, bin->dysymtab.indirectsymoff + i * sizeof (ut32), idsyms, 4);
 			if (len == -1) {
@@ -546,20 +723,20 @@ static char *readString (ut8 *p, int off, int len) {
 
 static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
 	typedef struct __CodeDirectory {
-		uint32_t magic;					/* magic number (CSMAGIC_CODEDIRECTORY) */
-		uint32_t length;				/* total length of CodeDirectory blob */
-		uint32_t version;				/* compatibility version */
-		uint32_t flags;					/* setup and mode flags */
-		uint32_t hashOffset;			/* offset of hash slot element at index zero */
-		uint32_t identOffset;			/* offset of identifier string */
-		uint32_t nSpecialSlots;			/* number of special hash slots */
-		uint32_t nCodeSlots;			/* number of ordinary (code) hash slots */
-		uint32_t codeLimit;				/* limit to main image signature range */
-		uint8_t hashSize;				/* size of each hash in bytes */
-		uint8_t hashType;				/* type of hash (cdHashType* constants) */
-		uint8_t platform;					/* unused (must be zero) */
-		uint8_t	pageSize;				/* log2(page size in bytes); 0 => infinite */
-		uint32_t spare2;				/* unused (must be zero) */
+		uint32_t magic;		/* magic number (CSMAGIC_CODEDIRECTORY) */
+		uint32_t length;	/* total length of CodeDirectory blob */
+		uint32_t version;	/* compatibility version */
+		uint32_t flags;		/* setup and mode flags */
+		uint32_t hashOffset;	/* offset of hash slot element at index zero */
+		uint32_t identOffset;	/* offset of identifier string */
+		uint32_t nSpecialSlots;	/* number of special hash slots */
+		uint32_t nCodeSlots;	/* number of ordinary (code) hash slots */
+		uint32_t codeLimit;	/* limit to main image signature range */
+		uint8_t hashSize;	/* size of each hash in bytes */
+		uint8_t hashType;	/* type of hash (cdHashType* constants) */
+		uint8_t platform;	/* unused (must be zero) */
+		uint8_t	pageSize;	/* log2(page size in bytes); 0 => infinite */
+		uint32_t spare2;	/* unused (must be zero) */
 		/* followed by dynamic content as located by offset fields above */
 		uint32_t scatterOffset;
 		uint32_t teamIDOffset;
@@ -607,7 +784,7 @@ static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
 	eprintf ("CodeSlots: %d\n", cscd.nCodeSlots);
 	free (identity);
 	free (teamId);
-	
+
 	int hashSize = 20; // SHA1 is default
 	int algoType = R_HASH_SHA1;
 	const char *hashName = "sha1";
@@ -713,9 +890,9 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		bin->signature = (ut8 *)strdup ("Malformed entitlement");
 		return true;
 	}
-	super.blob.magic = r_read_ble32 (bin->b->buf + data, mach0_endian);
-	super.blob.length = r_read_ble32 (bin->b->buf + data + 4, mach0_endian);
-	super.count = r_read_ble32 (bin->b->buf + data + 8, mach0_endian);
+	super.blob.magic = r_buf_read_ble32_at (bin->b, data, mach0_endian);
+	super.blob.length = r_buf_read_ble32_at (bin->b, data + 4, mach0_endian);
+	super.count = r_buf_read_ble32_at (bin->b, data + 8, mach0_endian);
 	char *verbose = r_sys_getenv ("RABIN2_CODESIGN_VERBOSE");
 	bool isVerbose = false;
 	if (verbose) {
@@ -728,7 +905,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	// $ openssl asn1parse -inform der -in a|less
 	// $ openssl pkcs7 -inform DER -print_certs -text -in a
 	for (i = 0; i < super.count; i++) {
-		if ((ut8 *)(bin->b->buf + data + i) > (ut8 *)(bin->b->buf + bin->size)) {
+		if (data + i > bin->size) {
 			bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			break;
 		}
@@ -742,30 +919,31 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		switch (idx.type) {
 		case CSSLOT_ENTITLEMENTS:
 			if (true || isVerbose) {
-			ut64 off = data + idx.offset;
-			if (off > bin->size || off + sizeof (struct blob_t) > bin->size) {
-				bin->signature = (ut8 *)strdup ("Malformed entitlement");
-				break;
-			}
-			struct blob_t entitlements = {0};
-			entitlements.magic = r_read_ble32 (bin->b->buf + off, mach0_endian);
-			entitlements.length = r_read_ble32 (bin->b->buf + off + 4, mach0_endian);
-			len = entitlements.length - sizeof (struct blob_t);
-			if (len <= bin->size && len > 1) {
-				bin->signature = calloc (1, len + 1);
-				if (!bin->signature) {
+				ut64 off = data + idx.offset;
+				if (off > bin->size || off + sizeof (struct blob_t) > bin->size) {
+					bin->signature = (ut8 *)strdup ("Malformed entitlement");
 					break;
 				}
-				ut8 *src = bin->b->buf + off + sizeof (struct blob_t);
-				if (off + sizeof (struct blob_t) + len < bin->b->length) {
-					memcpy (bin->signature, src, len);
-					bin->signature[len] = '\0';
+				struct blob_t entitlements = {0};
+				entitlements.magic = r_buf_read_ble32_at (bin->b, off, mach0_endian);
+				entitlements.length = r_buf_read_ble32_at (bin->b, off + 4, mach0_endian);
+				len = entitlements.length - sizeof (struct blob_t);
+				if (len <= bin->size && len > 1) {
+					bin->signature = calloc (1, len + 1);
+					if (!bin->signature) {
+						break;
+					}
+					if (off + sizeof (struct blob_t) + len < r_buf_size (bin->b)) {
+						r_buf_read_at (bin->b, off + sizeof (struct blob_t), (ut8 *)bin->signature, len);
+						if (len >= 0) {
+							bin->signature[len] = '\0';
+						}
+					} else {
+						bin->signature = (ut8 *)strdup ("Malformed entitlement");
+					}
 				} else {
 					bin->signature = (ut8 *)strdup ("Malformed entitlement");
 				}
-			} else {
-				bin->signature = (ut8 *)strdup ("Malformed entitlement");
-			}
 			}
 			break;
 		case CSSLOT_CODEDIRECTORY:
@@ -811,7 +989,9 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 						free (ident);
 					}
 				} else {
-					eprintf ("Invalid code slot size\n");
+					if (bin->verbose) {
+						eprintf ("Invalid code slot size\n");
+					}
 				}
 			}
 			break;
@@ -819,10 +999,14 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		case CSSLOT_RESOURCEDIR: // 3;
 		case CSSLOT_APPLICATION: // 4;
 			// TODO: parse those codesign slots
-			eprintf ("TODO: Some codesign slots are not yet supported\n");
+			if (bin->verbose) {
+				eprintf ("TODO: Some codesign slots are not yet supported\n");
+			}
 			break;
 		default:
-			eprintf ("Unknown Code signature slot %d\n", idx.type);
+			if (bin->verbose) {
+				eprintf ("Unknown Code signature slot %d\n", idx.type);
+			}
 			break;
 		}
 	}
@@ -832,7 +1016,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	return true;
 }
 
-static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64 off, bool is_first_thread) {
+static int parse_thread(struct MACH0_(obj_t) *bin, struct load_command *lc, ut64 off, bool is_first_thread) {
 	ut64 ptr_thread, pc = UT64_MAX, pc_offset = UT64_MAX;
 	ut32 flavor, count;
 	ut8 *arw_ptr = NULL;
@@ -999,10 +1183,9 @@ wrong_read:
 	return false;
 }
 
-static int parse_function_starts (struct MACH0_(obj_t)* bin, ut64 off) {
+static int parse_function_starts (struct MACH0_(obj_t) *bin, ut64 off) {
 	struct linkedit_data_command fc;
 	ut8 sfc[sizeof (struct linkedit_data_command)] = {0};
-	ut8 *buf;
 	int len;
 
 	if (off > bin->size || off + sizeof (struct linkedit_data_command) > bin->size) {
@@ -1020,31 +1203,36 @@ static int parse_function_starts (struct MACH0_(obj_t)* bin, ut64 off) {
 	fc.dataoff = r_read_ble32 (&sfc[8], bin->big_endian);
 	fc.datasize = r_read_ble32 (&sfc[12], bin->big_endian);
 
-	buf = calloc (1, fc.datasize + 1);
-	if (!buf) {
-		bprintf ("Failed to allocate buffer\n");
-		return false;
+	if ((int)fc.datasize > 0) {
+		ut8 *buf = calloc (1, fc.datasize + 1);
+		if (!buf) {
+			bprintf ("Failed to allocate buffer\n");
+			return false;
+		}
+		bin->func_size = fc.datasize;
+		if (fc.dataoff > bin->size || fc.dataoff + fc.datasize > bin->size) {
+			free (buf);
+			bprintf ("Likely overflow while parsing "
+				"LC_FUNCTION_STARTS command\n");
+			return false;
+		}
+		len = r_buf_read_at (bin->b, fc.dataoff, buf, fc.datasize);
+		if (len != fc.datasize) {
+			free (buf);
+			bprintf ("Failed to get data while parsing"
+				" LC_FUNCTION_STARTS\n");
+			return false;
+		}
+		buf[fc.datasize] = 0; // null-terminated buffer
+		bin->func_start = buf;
+		return true;
 	}
-	bin->func_size = fc.datasize;
-	if (fc.dataoff > bin->size || fc.dataoff + fc.datasize > bin->size) {
-		free (buf);
-		bprintf ("Likely overflow while parsing "
-			"LC_FUNCTION_STARTS command\n");
-		return false;
-	}
-	len = r_buf_read_at (bin->b, fc.dataoff, buf, fc.datasize);
-	if (len != fc.datasize) {
-		free (buf);
-		bprintf ("Failed to get data while parsing"
-			" LC_FUNCTION_STARTS\n");
-		return false;
-	}
-	buf[fc.datasize] = 0; // null-terminated buffer
-	bin->func_start = buf;
-	return true;
+	bin->func_start = NULL;
+	return false;
+
 }
 
-static int parse_dylib(struct MACH0_(obj_t)* bin, ut64 off) {
+static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
 	struct dylib_command dl;
 	int lib, len;
 	ut8 sdl[sizeof (struct dylib_command)] = {0};
@@ -1108,8 +1296,6 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_SYMTAB";
 	case LC_SYMSEG:
 		return "LC_SYMSEG";
-	case LC_ID_DYLIB:
-		return "LC_ID_DYLIB";
 	case LC_DYSYMTAB:
 		return "LC_DYSYMTAB";
 	case LC_PREBOUND_DYLIB:
@@ -1154,6 +1340,10 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_MAIN";
 	case LC_UUID:
 		return "LC_UUID";
+	case LC_ID_DYLIB:
+		return "LC_ID_DYLIB";
+	case LC_ID_DYLINKER:
+		return "LC_ID_DYLINKER";
 	case LC_LAZY_LOAD_DYLIB:
 		return "LC_LAZY_LOAD_DYLIB";
 	case LC_ENCRYPTION_INFO:
@@ -1192,7 +1382,145 @@ static const char *cmd_to_string(ut32 cmd) {
 	return "";
 }
 
-static int init_items(struct MACH0_(obj_t)* bin) {
+static const char *cmd_to_pf_definition(ut32 cmd) {
+	switch (cmd) {
+	case LC_BUILD_VERSION:
+		return "mach0_build_version_command";
+	case LC_CODE_SIGNATURE:
+		return "mach0_code_signature_command";
+	case LC_DATA_IN_CODE:
+		return "mach0_data_in_code_command";
+	case LC_DYLD_INFO:
+	case LC_DYLD_INFO_ONLY:
+		return "mach0_dyld_info_only_command";
+	case LC_DYLD_ENVIRONMENT:
+		return NULL;
+	case LC_DYLIB_CODE_SIGN_DRS:
+		return NULL;
+	case LC_DYSYMTAB:
+		return "mach0_dysymtab_command";
+	case LC_ENCRYPTION_INFO:
+		return "mach0_encryption_info_command";
+	case LC_ENCRYPTION_INFO_64:
+		return "mach0_encryption_info64_command";
+	case LC_FUNCTION_STARTS:
+		return "mach0_function_starts_command";
+	case LC_FVMFILE:
+		return NULL;
+	case LC_ID_DYLIB:
+		return "mach0_id_dylib_command";
+	case LC_ID_DYLINKER:
+		return "mach0_id_dylinker_command";
+	case LC_IDENT:
+		return NULL;
+	case LC_IDFVMLIB:
+		return NULL;
+	case LC_LINKER_OPTION:
+		return NULL;
+	case LC_LINKER_OPTIMIZATION_HINT:
+		return NULL;
+	case LC_LOAD_DYLINKER:
+		return "mach0_load_dylinker_command";
+	case LC_LAZY_LOAD_DYLIB:
+	case LC_LOAD_WEAK_DYLIB:
+	case LC_LOAD_DYLIB:
+		return "mach0_dylib_command";
+	case LC_LOADFVMLIB:
+		return NULL;
+	case LC_MAIN:
+		return "mach0_entry_point_command";
+	case LC_NOTE:
+		return NULL;
+	case LC_PREBIND_CKSUM:
+		return NULL;
+	case LC_PREBOUND_DYLIB:
+		return NULL;
+	case LC_PREPAGE:
+		return NULL;
+	case LC_REEXPORT_DYLIB:
+		return NULL;
+	case LC_ROUTINES:
+		return NULL;
+	case LC_ROUTINES_64:
+		return NULL;
+	case LC_RPATH:
+		return "mach0_rpath_command";
+	case LC_SEGMENT:
+		return "mach0_segment";
+	case LC_SEGMENT_64:
+		return "mach0_segment64";
+	case LC_SEGMENT_SPLIT_INFO:
+		return "mach0_segment_split_info_command";
+	case LC_SOURCE_VERSION:
+		return "mach0_source_version_command";
+	case LC_SUB_FRAMEWORK:
+		return NULL;
+	case LC_SUB_UMBRELLA:
+		return NULL;
+	case LC_SUB_CLIENT:
+		return NULL;
+	case LC_SUB_LIBRARY:
+		return NULL;
+	case LC_SYMTAB:
+		return "mach0_symtab_command";
+	case LC_SYMSEG:
+		return NULL;
+	case LC_TWOLEVEL_HINTS:
+		return NULL;
+	case LC_UUID:
+		return "mach0_uuid_command";
+	case LC_VERSION_MIN_MACOSX:
+	case LC_VERSION_MIN_IPHONEOS:
+	case LC_VERSION_MIN_TVOS:
+	case LC_VERSION_MIN_WATCHOS:
+		return "mach0_version_min_command";
+	case LC_THREAD:
+		return NULL;
+	case LC_UNIXTHREAD:
+		return "mach0_unixthread_command";
+	}
+	return NULL;
+}
+
+static const char *build_version_platform_to_string(ut32 platform) {
+	switch (platform) {
+	case 1:
+		return "macOS";
+	case 2:
+		return "iOS";
+	case 3:
+		return "tvOS";
+	case 4:
+		return "watchOS";
+	case 5:
+		return "bridgeOS";
+	case 6:
+		return "iOSmac";
+	case 7:
+		return "iOS Simulator";
+	case 8:
+		return "tvOS Simulator";
+	case 9:
+		return "watchOS Simulator";
+	default:
+		return "unknown";
+	}
+}
+
+static const char *build_version_tool_to_string(ut32 tool) {
+	switch (tool) {
+	case 1:
+		return "clang";
+	case 2:
+		return "swift";
+	case 3:
+		return "ld";
+	default:
+		return "unknown";
+	}
+}
+
+static int init_items(struct MACH0_(obj_t) *bin) {
 	struct load_command lc = {0, 0};
 	ut8 loadc[sizeof (struct load_command)] = {0};
 	bool is_first_thread = true;
@@ -1210,7 +1538,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 	//bprintf ("Commands: %d\n", bin->hdr.ncmds);
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + bin->header_at; \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
-		if (off > bin->size || off + sizeof (struct load_command) > bin->size){
+		if (off > bin->size || off + sizeof (struct load_command) > bin->size) {
 			bprintf ("mach0: out of bounds command\n");
 			return false;
 		}
@@ -1228,15 +1556,17 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			break;
 		}
 
-		// TODO: a different format for each cmd
 		sdb_num_set (bin->kv, sdb_fmt ("mach0_cmd_%d.offset", i), off, 0);
-		sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.format", i), "xd cmd size", 0);
+		const char *format_name = cmd_to_pf_definition (lc.cmd);
+		if (format_name) {
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.format", i), format_name, 0);
+		} else {
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
+		}
 
-		//bprintf ("%d\n", lc.cmd);
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
 			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "data_in_code", 0);
-			// TODO table of non-instructions in __text
 			break;
 		case LC_RPATH:
 			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "rpath", 0);
@@ -1261,7 +1591,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			break;
 		case LC_DYSYMTAB:
 			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "dysymtab", 0);
-			if (!parse_dysymtab(bin, off)) {
+			if (!parse_dysymtab (bin, off)) {
 				bprintf ("error parsing dysymtab\n");
 				return false;
 			}
@@ -1295,7 +1625,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			{
 			struct uuid_command uc = {0};
 			if (off + sizeof (struct uuid_command) > bin->size) {
-				bprintf ("UUID out of obunds\n");
+				bprintf ("UUID out of bounds\n");
 				return false;
 			}
 			if (r_buf_fread_at (bin->b, off, (ut8*)&uc, "24c", 1) != -1) {
@@ -1374,7 +1704,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "main", 0);
 
 			if (!is_first_thread) {
-				bprintf("Error: LC_MAIN with other threads\n");
+				bprintf ("Error: LC_MAIN with other threads\n");
 				return false;
 			}
 			if (off + 8 > bin->size || off + sizeof (ep) > bin->size) {
@@ -1481,44 +1811,100 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			break;
 		}
 	}
+	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + bin->header_at; \
+			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
+		len = r_buf_read_at (bin->b, off, loadc, sizeof (struct load_command));
+		if (len < 1) {
+			bprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
+			return false;
+		}
+		lc.cmd = r_read_ble32 (&loadc[0], bin->big_endian);
+		lc.cmdsize = r_read_ble32 (&loadc[4], bin->big_endian);
+
+		if (lc.cmdsize < 1 || off + lc.cmdsize > bin->size) {
+			bprintf ("Warning: mach0_header %d = cmdsize<1. (0x%llx vs 0x%llx)\n", i,
+				(ut64)(off + lc.cmdsize), (ut64)(bin->size));
+			break;
+		}
+
+		sdb_num_set (bin->kv, sdb_fmt ("mach0_cmd_%d.offset", i), off, 0);
+		const char *format_name = cmd_to_pf_definition (lc.cmd);
+		if (format_name) {
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.format", i), format_name, 0);
+		} else {
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
+		}
+
+		switch (lc.cmd) {
+		case LC_DATA_IN_CODE:
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "data_in_code", 0);
+			if (bin->verbose) {
+				ut8 buf[8];
+				r_buf_read_at (bin->b, off + 8, buf, sizeof (buf));
+				ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
+				ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+				eprintf ("data-in-code at 0x%x size %d\n", dataoff, datasize);
+				ut8 *db = (ut8*)malloc (datasize);
+				if (db) {
+					r_buf_read_at (bin->b, dataoff, db, datasize);
+					// TODO table of non-instructions regions in __text
+					for (i = 0; i < datasize; i += 8) {
+						ut32 dw = r_read_ble32 (db + i, bin->big_endian);
+						// int kind = r_read_ble16 (db + i + 4 + 2, bin->big_endian);
+						int len = r_read_ble16 (db + i + 4, bin->big_endian);
+						ut64 va = offset_to_vaddr(bin, dw);
+					//	eprintf ("# 0x%d -> 0x%x\n", dw, va);
+					//	eprintf ("0x%x kind %d len %d\n", dw, kind, len);
+						eprintf ("Cd 4 %d @ 0x%"PFMT64x"\n", len / 4, va);
+					}
+				}
+			}
+			break;
+		}
+	}
 	return true;
 }
 
-static int init(struct MACH0_(obj_t)* bin) {
-	if (!init_hdr (bin)) {
-		bprintf ("Warning: File is not MACH0\n");
+static bool init(struct MACH0_(obj_t) *mo) {
+	if (!init_hdr (mo)) {
+		Eprintf ("Warning: File is not MACH0\n");
 		return false;
 	}
-	if (!init_items (bin)) {
-		bprintf ("Warning: Cannot initialize items\n");
+	if (!init_items (mo)) {
+		Eprintf ("Warning: Cannot initialize items\n");
 	}
-	bin->baddr = MACH0_(get_baddr)(bin);
+	mo->baddr = MACH0_(get_baddr)(mo);
 	return true;
 }
 
-void* MACH0_(mach0_free)(struct MACH0_(obj_t)* mo) {
+void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	if (!mo) {
 		return NULL;
 	}
+	free (mo->symbols);
 	free (mo->segs);
 	free (mo->sects);
 	free (mo->symtab);
 	free (mo->symstr);
 	free (mo->indirectsyms);
 	free (mo->imports_by_ord);
+	if (mo->imports_by_name) {
+		ht_pp_free (mo->imports_by_name);
+	}
 	free (mo->dyld_info);
 	free (mo->toc);
 	free (mo->modtab);
 	free (mo->libs);
 	free (mo->func_start);
 	free (mo->signature);
-	// this is freed in bfile.c:792
-	// r_buf_free (mo->b);
+	free (mo->intrp);
+	free (mo->compiler);
+	r_buf_free (mo->b);
 	free (mo);
 	return NULL;
 }
 
-void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile * bf) {
+void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
 	if (!options) {
 		return;
 	}
@@ -1531,18 +1917,30 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile * bf) {
 	}
 }
 
-struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file, struct MACH0_(opts_t) *options) {
-	ut8 *buf;
-	struct MACH0_(obj_t) *bin;
-	if (!(bin = malloc (sizeof (struct MACH0_(obj_t))))) {
+static void *duplicate_ptr(void *p) {
+	return p;
+}
+
+static void free_only_key(HtPPKv *kv) {
+	free (kv->key);
+}
+
+static size_t ptr_size(void *c) {
+	return 8;
+}
+
+// XXX should be deprecated its never called
+struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) *options) {
+	struct MACH0_(obj_t) *bin = R_NEW0 (struct MACH0_(obj_t));
+	if (!bin) {
 		return NULL;
 	}
-	memset (bin, 0, sizeof (struct MACH0_(obj_t)));
 	if (options) {
 		bin->verbose = options->verbose;
 		bin->header_at = options->header_at;
 	}
 	bin->file = file;
+	ut8 *buf;
 	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) {
 		return MACH0_(mach0_free)(bin);
 	}
@@ -1558,35 +1956,32 @@ struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file, struct MACH0_(opts_t) 
 	}
 	bin->imports_by_ord_size = 0;
 	bin->imports_by_ord = NULL;
+	bin->imports_by_name = ht_pp_new ((HtPPDupValue)duplicate_ptr, free_only_key, (HtPPCalcSizeV)ptr_size);
 	return bin;
 }
 
-struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options) {
-	if (!buf) {
-		return NULL;
-	}
-
-	RBuffer * buf_ref = r_buf_ref (buf);
+struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options) {
+	r_return_val_if_fail (buf, NULL);
 	struct MACH0_(obj_t) *bin = R_NEW0 (struct MACH0_(obj_t));
-	if (!bin) {
-		return NULL;
-	}
-	bin->kv = sdb_new (NULL, "bin.mach0", 0);
-	bin->size = r_buf_size (buf_ref);
-	if (options) {
-		bin->verbose = options->verbose;
-		bin->header_at = options->header_at;
-	}
-	bin->b = buf_ref;
-	if (!init (bin)) {
-		return MACH0_(mach0_free)(bin);
+	if (bin) {
+		bin->b = r_buf_ref (buf);
+		bin->main_addr = UT64_MAX;
+		bin->kv = sdb_new (NULL, "bin.mach0", 0);
+		bin->size = r_buf_size (bin->b);
+		if (options) {
+			bin->verbose = options->verbose;
+			bin->header_at = options->header_at;
+		}
+		if (!init (bin)) {
+			return MACH0_(mach0_free)(bin);
+		}
 	}
 	return bin;
 }
 
 // prot: r = 1, w = 2, x = 4
 // perm: r = 4, w = 2, x = 1
-static int prot2perm (int x) {
+static int prot2perm(int x) {
 	int r = 0;
 	if (x & 1) {
 		r |= 4;
@@ -1600,7 +1995,98 @@ static int prot2perm (int x) {
 	return r;
 }
 
-struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
+static bool __isDataSection(RBinSection *sect) {
+	if (strstr (sect->name, "_cstring")) {
+		return true;
+	}
+	if (strstr (sect->name, "_objc_methname")) {
+		return true;
+	}
+	if (strstr (sect->name, "_objc_classname")) {
+		return true;
+	}
+	if (strstr (sect->name, "_objc_methtype")) {
+		return true;
+	}
+	return false;
+}
+
+RList *MACH0_(get_segments)(RBinFile *bf) {
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+
+	RList *list = r_list_newf ((RListFree)r_bin_section_free);
+
+	int i, j;
+
+	/* for core files */
+	if (bin->nsegs > 0) {
+		struct MACH0_(segment_command) *seg;
+		for (i = 0; i < bin->nsegs; i++) {
+			seg = &bin->segs[i];
+			if (!seg->initprot) {
+				continue;
+			}
+			RBinSection *s = r_bin_section_new (NULL);
+			if (!s) {
+				break;
+			}
+			s->vaddr = seg->vmaddr;
+			s->vsize = seg->vmsize;
+			s->size = seg->vmsize;
+			s->paddr = seg->fileoff;
+			s->paddr += bf->o->boffset;
+			//TODO s->flags = seg->flags;
+			s->name = r_str_ndup (seg->segname, 16);
+			s->is_segment = true;
+			r_str_filter (s->name, -1);
+			s->perm = prot2perm (seg->initprot);
+			s->add = true;
+			r_list_append (list, s);
+		}
+	}
+	if (bin->nsects > 0) {
+		int last_section = R_MIN (bin->nsects, 128); // maybe drop this limit?
+		for (i = 0; i < last_section; i++) {
+			RBinSection *s = R_NEW0 (RBinSection);
+			if (!s) {
+				break;
+			}
+			s->vaddr = (ut64)bin->sects[i].addr;
+			s->vsize = (ut64)bin->sects[i].size;
+			s->is_segment = false;
+			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
+			// XXX flags
+			s->paddr = (ut64)bin->sects[i].offset;
+			int segment_index = 0;
+			//s->perm =prot2perm (bin->segs[j].initprot);
+			for (j = 0; j < bin->nsegs; j++) {
+				if (s->vaddr >= bin->segs[j].vmaddr &&
+						s->vaddr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
+					s->perm = prot2perm (bin->segs[j].initprot);
+					segment_index = j;
+					break;
+				}
+			}
+			char *section_name = r_str_ndup (bin->sects[i].sectname, 16);
+			char *segment_name = r_str_newf ("%d.%s", i, bin->segs[segment_index].segname);
+			s->name = r_str_newf ("%s.%s", segment_name, section_name);
+			s->is_data = __isDataSection (s);
+			if (strstr (section_name, "interpos") || strstr (section_name, "__mod_")) {
+#if R_BIN_MACH064
+				const int ws = 8;
+#else
+				const int ws = 4;
+#endif
+				s->format = r_str_newf ("Cd %d[%d]", ws, s->vsize / ws);
+			}
+			r_list_append (list, s);
+		}
+	}
+	return list;
+}
+
+// XXX this function is called so many times
+struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 	struct section_t *sections;
 	char segname[32], sectname[32], raw_segname[17];
 	int i, j, to;
@@ -1675,11 +2161,11 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 	return sections;
 }
 
-static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol, int idx) {
+static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol, int idx) {
 	int i, j, nsyms, stridx;
 	const char *symstr;
 	if (idx < 0) {
-		return 0;
+		return false;
 	}
 	symbol->offset = 0LL;
 	symbol->addr = 0LL;
@@ -1716,8 +2202,13 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 					continue;
 				}
 				symbol->type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-				symbol->offset = bin->sects[i].offset + j * bin->sects[i].reserved2;
-				symbol->addr = bin->sects[i].addr + j * bin->sects[i].reserved2;
+				int delta = j * bin->sects[i].reserved2;
+				if (delta < 0) {
+					bprintf ("mach0: corrupted reserved2 value leads to int overflow.\n");
+					continue;
+				}
+				symbol->offset = bin->sects[i].offset + delta;
+				symbol->addr = bin->sects[i].addr + delta;
 				symbol->size = 0;
 				stridx = bin->symtab[idx].n_strx;
 				if (stridx >= 0 && stridx < bin->symstrlen) {
@@ -1748,7 +2239,7 @@ static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 	return false;
 }
 
-static char *get_name(struct MACH0_(obj_t)* mo, ut32 stridx, bool filter) {
+static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 	int i = 0;
 	if (stridx >= mo->symstrlen) {
 		return NULL;
@@ -1771,16 +2262,192 @@ static char *get_name(struct MACH0_(obj_t)* mo, ut32 stridx, bool filter) {
 	return NULL;
 }
 
-struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
+static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void * ctx) {
+#define ULEB(at) read_uleb128 (&ur, end)
+	r_return_val_if_fail (bin, 0);
+	if (!bin->dyld_info) {
+		return 0;
+	}
+
+	int count = 0;
+	ulebr ur = {NULL};
+	ut8 * trie = NULL;
+	RList * states = NULL;
+	ut64 size = bin->dyld_info->export_size;
+	if (!size) {
+		return count;
+	}
+	trie = malloc (size);
+	if (!trie) {
+		return count;
+	}
+	ut8 * end = trie + size;
+
+	if (r_buf_read_at (bin->b, bin->dyld_info->export_off, trie, bin->dyld_info->export_size) != size) {
+		goto beach;
+	}
+
+	states = r_list_newf ((RListFree)free);
+	if (!states) {
+		goto beach;
+	}
+
+	RTrieState * root = R_NEW0 (RTrieState);
+	if (!root) {
+		goto beach;
+	}
+	root->node = trie;
+	root->i = 0;
+	root->label = NULL;
+	r_list_push (states, root);
+
+	do {
+		RTrieState * state = r_list_get_top (states);
+		ur.p = state->node;
+		ut64 len = ULEB();
+		if (len) {
+			ut64 flags = ULEB();
+			ut64 offset = ULEB();
+			ut64 resolver = 0;
+			bool isReexport = flags & EXPORT_SYMBOL_FLAGS_REEXPORT;
+			bool hasResolver = flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER;
+			if (hasResolver) {
+				resolver = ULEB() + bin->header_at;
+			} else if (isReexport) {
+				ur.p += strlen ((char*) ur.p) + 1;
+				// TODO: handle this
+			}
+			if (!isReexport) {
+				offset += bin->header_at;
+			}
+			if (iterator && !isReexport) {
+				char * name = NULL;
+				RListIter *iter;
+				RTrieState *s;
+				r_list_foreach (states, iter, s) {
+					if (!s->label) {
+						continue;
+					}
+					name = r_str_append (name, s->label);
+				}
+				if (name == NULL) {
+					eprintf ("malformed export trie\n");
+					goto beach;
+				}
+				if (hasResolver) {
+					char * stub_name = r_str_newf ("stub.%s", name);
+					iterator (bin, stub_name, flags, offset, ctx);
+					iterator (bin, name, flags, resolver, ctx);
+					R_FREE (stub_name);
+				} else {
+					iterator (bin, name, flags, offset, ctx);
+				}
+				R_FREE (name);
+			}
+			if (!isReexport) {
+				if (hasResolver) {
+					count++;
+				}
+				count++;
+			}
+		}
+		ut64 child_count = ULEB();
+		if (state->i == child_count) {
+			r_list_pop (states);
+			continue;
+		}
+		if (!state->next_child) {
+			state->next_child = ur.p;
+		} else {
+			ur.p = state->next_child;
+		}
+		RTrieState * next = R_NEW0 (RTrieState);
+		if (!next) {
+			goto beach;
+		}
+		next->label = (char *) ur.p;
+		ur.p += strlen (next->label) + 1;
+		if (ur.p >= end) {
+			eprintf ("malformed export trie\n");
+			R_FREE (next);
+			goto beach;
+		}
+		next->node = ULEB() + trie;
+		if (next->node >= end) {
+			eprintf ("malformed export trie\n");
+			R_FREE (next);
+			goto beach;
+		}
+		{
+			// avoid loops
+			RListIter *it;
+			RTrieState *s;
+			r_list_foreach (states, it, s) {
+				if (s->node == next->node) {
+					eprintf ("malformed export trie\n");
+					R_FREE (next);
+					goto beach;
+				}
+			}
+		}
+		next->i = 0;
+		state->i++;
+		state->next_child = ur.p;
+		r_list_push (states, next);
+	} while (r_list_length (states));
+#undef ULEB
+
+beach:
+	r_list_free (states);
+	R_FREE (trie);
+	return count;
+}
+
+static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void * ctx) {
+	RList *list = (RList*) ctx;
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	if (!sym) {
+		return;
+	}
+	sym->vaddr = offset_to_vaddr (bin, offset);
+	sym->paddr = offset;
+	sym->type = "EXT";
+	sym->name = strdup (name);
+	sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
+	r_list_append (list, sym);
+}
+
+// TODO: Return RList<RBinSymbol> // 2x speedup
+const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
+	static RList * cache = NULL; // XXX DONT COMMIT WITH THIS
 	struct symbol_t *symbols;
 	int j, s, stridx, symbols_size, symbols_count;
 	ut32 to, from, i;
 
 	r_return_val_if_fail (bin, NULL);
-	if (!bin->symtab || !bin->symstr) {
+	if (cache) {
+		return cache;
+	}
+	RList *list = r_list_newf ((RListFree)r_bin_symbol_free);
+	cache = list;
+
+	HtPP *hash = ht_pp_new0 ();
+	if (!hash) {
 		return NULL;
 	}
 
+	walk_exports (bin, fill_exports_list, list);
+	if (r_list_length (list)) {
+		RListIter *it;
+		RBinSymbol *s;
+		r_list_foreach (list, it, s) {
+			inSymtab (hash, s->name, s->vaddr);
+		}
+	}
+
+	if (!bin->symtab || !bin->symstr) {
+		return list;
+	}
 	/* parse dynamic symbol table */
 	symbols_count = (bin->dysymtab.nextdefsym + \
 			bin->dysymtab.nlocalsym + \
@@ -1794,12 +2461,8 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	if (!(symbols = calloc (1, symbols_size))) {
 		return NULL;
 	}
-	HtPP *hash = ht_pp_new0 ();
-	if (!hash) {
-		free (symbols);
-		return NULL;
-	}
 	j = 0; // symbol_idx
+	bin->main_addr = 0;
 	for (s = 0; s < 2; s++) {
 		switch (s) {
 		case 0:
@@ -1824,48 +2487,63 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		from = R_MIN (R_MAX (0, from), symbols_size / sizeof (struct symbol_t));
 		to = R_MIN (R_MIN (to, bin->nsymtab), symbols_size / sizeof (struct symbol_t));
 
-		int maxsymbols = symbols_size / sizeof (struct symbol_t);
-		if (to > 0x500000) {
-			bprintf ("WARNING: corrupted mach0 header: symbol table is too big %d\n", to);
-			free (symbols);
-			ht_pp_free (hash);
-			return NULL;
-		}
+		ut32 maxsymbols = symbols_size / sizeof (struct symbol_t);
 		if (symbols_count >= maxsymbols) {
 			symbols_count = maxsymbols - 1;
+			eprintf ("macho warning: Symbol table truncated\n");
 		}
 		for (i = from; i < to && j < symbols_count; i++, j++) {
-			symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
-			symbols[j].addr = bin->symtab[i].n_value;
+			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			sym->vaddr = bin->symtab[i].n_value;
+			sym->paddr = addr_to_offset (bin, sym->vaddr);
 			symbols[j].size = 0; /* TODO: Is it anywhere? */
-			if (bin->symtab[i].n_type & N_EXT) {
-				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
-			} else {
-				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-			}
 
-			stridx = bin->symtab[i].n_strx;
+			if (bin->symtab[i].n_type & N_EXT) {
+				sym->type = "EXT";
+			} else {
+				sym->type = "LOCAL";
+			}
+			int stridx = bin->symtab[i].n_strx;
 			char *sym_name = get_name (bin, stridx, false);
 			if (sym_name) {
-				r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
-				free (sym_name);
+				sym->name = sym_name;
+				if (!bin->main_addr || bin->main_addr == UT64_MAX) {
+					const char *name = sym->name;
+					if (!strcmp (name, "__Dmain")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (!strcmp (name, "_main")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (!strcmp (name, "main")) {
+						bin->main_addr = symbols[j].addr;
+					}
+				}
+			} else {
+				sym->name = r_str_newf ("unk%d", i);
 			}
-			symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
-			symbols[j].last = 0;
-			if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
-				symbols[j].name[0] = 0;
-				j--;
+			if (!inSymtab (hash, sym->name, sym->vaddr)) {
+				r_list_append (list, sym);
 			}
 		}
 	}
 	to = R_MIN ((ut32)bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
 	for (i = bin->dysymtab.iundefsym; i < to; i++) {
+		struct symbol_t symbol;
 		if (j > symbols_count) {
 			bprintf ("mach0-get-symbols: error\n");
 			break;
 		}
-		if (parse_import_stub (bin, &symbols[j], i)) {
-			symbols[j++].last = 0;
+		if (parse_import_stub (bin, &symbol, i)) {
+			j++;
+			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			sym->vaddr = symbol.addr;
+			sym->paddr = symbol.offset;
+			sym->name = strdup (symbol.name);
+			if (!sym->name) {
+				sym->name = r_str_newf ("unk%d", i);
+			}
+			r_list_append (list, sym);
 		}
 	}
 
@@ -1876,38 +2554,245 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		// 1 is for symbols
 		// 2 is for func.eh (exception handlers?)
 		int section = st->n_sect;
-		if (section == 1 && j < symbols_count) { // text ??st->n_type == 1)
+		if (section == 1 && j < symbols_count) { // text ??st->n_type == 1) maybe wrong
+			RBinSymbol *sym = R_NEW0(RBinSymbol);
 			/* is symbol */
-			symbols[j].addr = st->n_value;
-			symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
-			symbols[j].size = 0; /* find next symbol and crop */
+			sym->vaddr = st->n_value;
+			sym->paddr = addr_to_offset (bin, symbols[j].addr);
 			if (st->n_type & N_EXT) {
-				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
+				sym->type = "EXT";
 			} else {
-				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+				sym->type = "LOCAL";
 			}
 			char *sym_name = get_name (bin, stridx, false);
 			if (sym_name) {
-				r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
-				free (sym_name);
+				sym->name = sym_name;
+				if (inSymtab (hash, sym->name, sym->vaddr)) {
+					r_bin_symbol_free (sym);
+					continue;
+				}
+				if (!bin->main_addr || bin->main_addr == UT64_MAX) {
+					const char *name = sym->name;
+					if (!strcmp (name, "__Dmain")) {
+						bin->main_addr = symbols[i].addr;
+					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+						bin->main_addr = symbols[i].addr;
+					} else if (!strcmp (symbols[i].name, "_main")) {
+						bin->main_addr = symbols[i].addr;
+					}
+				}
 			} else {
-				symbols[j].name[0] = 0;
+				sym->name = r_str_newf ("unk%d", i);
 			}
-			symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 1] = 0;
-			symbols[j].last = 0;
-			if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
-				symbols[j].name[0] = 0;
-			} else {
-				j++;
-			}
+			r_list_append (list, sym);
+			j++;
 		}
 	}
 	ht_pp_free (hash);
+	// bin->symbols = symbols;
+	return list;
+}
+
+static void assign_export_symbol_t(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx) {
+	RSymCtx *sym_ctx = (RSymCtx*) ctx;
+	int j = sym_ctx->j;
+	if (j < sym_ctx->symbols_count) {
+		sym_ctx->symbols[j].offset = offset;
+		sym_ctx->symbols[j].addr = offset_to_vaddr (bin, offset);
+		if (inSymtab (sym_ctx->hash, name, sym_ctx->symbols[j].addr)) {
+			return;
+		}
+		sym_ctx->symbols[j].size = 0;
+		sym_ctx->symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
+		r_str_ncpy (sym_ctx->symbols[j].name, name, R_BIN_MACH0_STRING_LENGTH);
+		sym_ctx->j++;
+	}
+}
+
+const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
+	struct symbol_t *symbols;
+	int j, s, stridx, symbols_size, symbols_count;
+	ut32 to, from, i;
+
+	if (bin->symbols) {
+		return bin->symbols;
+	}
+
+	HtPP *hash = ht_pp_new0 ();
+	if (!hash) {
+		return NULL;
+	}
+
+	r_return_val_if_fail (bin, NULL);
+	int n_exports = walk_exports (bin, NULL, NULL);
+
+	symbols_count = n_exports;
+	j = 0; // symbol_idx
+
+	if (bin->symtab && bin->symstr) {
+		/* parse dynamic symbol table */
+		symbols_count = (bin->dysymtab.nextdefsym + \
+				bin->dysymtab.nlocalsym + \
+				bin->dysymtab.nundefsym );
+		symbols_count += bin->nsymtab;
+		symbols_size = (symbols_count + 1) * 2 * sizeof (struct symbol_t);
+
+		if (symbols_size < 1) {
+			return NULL;
+		}
+		if (!(symbols = calloc (1, symbols_size))) {
+			return NULL;
+		}
+		bin->main_addr = 0;
+		for (s = 0; s < 2; s++) {
+			switch (s) {
+			case 0:
+				from = bin->dysymtab.iextdefsym;
+				to = from + bin->dysymtab.nextdefsym;
+				break;
+			case 1:
+				from = bin->dysymtab.ilocalsym;
+				to = from + bin->dysymtab.nlocalsym;
+				break;
+#if NOT_USED
+			case 2:
+				from = bin->dysymtab.iundefsym;
+				to = from + bin->dysymtab.nundefsym;
+				break;
+#endif
+			}
+			if (from == to) {
+				continue;
+			}
+
+			from = R_MIN (R_MAX (0, from), symbols_size / sizeof (struct symbol_t));
+			to = R_MIN (R_MIN (to, bin->nsymtab), symbols_size / sizeof (struct symbol_t));
+
+			ut32 maxsymbols = symbols_size / sizeof (struct symbol_t);
+			if (symbols_count >= maxsymbols) {
+				symbols_count = maxsymbols - 1;
+				eprintf ("macho warning: Symbol table truncated\n");
+			}
+			for (i = from; i < to && j < symbols_count; i++, j++) {
+				symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
+				symbols[j].addr = bin->symtab[i].n_value;
+				symbols[j].size = 0; /* TODO: Is it anywhere? */
+				if (bin->symtab[i].n_type & N_EXT) {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
+				} else {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+				}
+
+				stridx = bin->symtab[i].n_strx;
+				char *sym_name = get_name (bin, stridx, false);
+				if (sym_name) {
+					r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
+					free (sym_name);
+				}
+				symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
+				symbols[j].last = 0;
+				if (bin->main_addr == 0) {
+					const char *name = symbols[j].name;
+					if (!strcmp (name, "__Dmain")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (!strcmp (name, "_main")) {
+						bin->main_addr = symbols[j].addr;
+					} else if (!strcmp (name, "main")) {
+						bin->main_addr = symbols[j].addr;
+					}
+				}
+				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
+					symbols[j].name[0] = 0;
+					j--;
+				}
+			}
+		}
+		to = R_MIN ((ut32)bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
+		for (i = bin->dysymtab.iundefsym; i < to; i++) {
+			if (j > symbols_count) {
+				bprintf ("mach0-get-symbols: error\n");
+				break;
+			}
+			if (parse_import_stub (bin, &symbols[j], i)) {
+				symbols[j++].last = 0;
+			}
+		}
+
+		for (i = 0; i < bin->nsymtab; i++) {
+			struct MACH0_(nlist) *st = &bin->symtab[i];
+			stridx = st->n_strx;
+			// 0 is for imports
+			// 1 is for symbols
+			// 2 is for func.eh (exception handlers?)
+			int section = st->n_sect;
+			if (section == 1 && j < symbols_count) { // text ??st->n_type == 1)
+			//if (j < symbols_count) { // text ??st->n_type == 1)
+				/* is symbol */
+				symbols[j].addr = st->n_value;
+				symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
+				symbols[j].size = 0; /* find next symbol and crop */
+				if (st->n_type & N_EXT) {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
+				} else {
+					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+				}
+				char *sym_name = get_name (bin, stridx, false);
+				if (sym_name) {
+					r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
+					free (sym_name);
+				} else {
+					sprintf (symbols[j].name, "entry%d\n", i);
+					//symbols[j].name[0] = 0;
+				}
+				symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 1] = 0;
+				symbols[j].last = 0;
+				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
+					symbols[j].name[0] = 0;
+				} else {
+					j++;
+				}
+				if (bin->main_addr == 0) {
+					const char *name = symbols[j-1].name;
+					if (!strcmp (name, "__Dmain")) {
+						bin->main_addr = symbols[i].addr;
+					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+						bin->main_addr = symbols[i].addr;
+					} else if (!strcmp (symbols[i].name, "_main")) {
+						bin->main_addr = symbols[i].addr;
+					}
+				}
+			}
+		}
+	} else if (!n_exports) {
+		ht_pp_free (hash);
+		return NULL;
+	} else {
+		symbols_size = (symbols_count + 1) * sizeof (struct symbol_t);
+		if (symbols_size < 1) {
+			return NULL;
+		}
+		if (!(symbols = calloc (1, symbols_size))) {
+			return NULL;
+		}
+	}
+	if (n_exports && (symbols_count - j) >= n_exports) {
+		RSymCtx sym_ctx;
+		sym_ctx.symbols = symbols;
+		sym_ctx.j = j;
+		sym_ctx.symbols_count = symbols_count;
+		sym_ctx.hash = hash;
+		walk_exports (bin, assign_export_symbol_t, &sym_ctx);
+		j = sym_ctx.j;
+	}
+	ht_pp_free (hash);
 	symbols[j].last = 1;
+	bin->symbols = symbols;
 	return symbols;
 }
 
-static int parse_import_ptr(struct MACH0_(obj_t)* bin, struct reloc_t *reloc, int idx) {
+static int parse_import_ptr(struct MACH0_(obj_t) *bin, struct reloc_t *reloc, int idx) {
 	int i, j, sym, wordsize;
 	ut32 stype;
 	wordsize = MACH0_(get_bits)(bin) / 8;
@@ -1953,7 +2838,7 @@ static int parse_import_ptr(struct MACH0_(obj_t)* bin, struct reloc_t *reloc, in
 	return false;
 }
 
-struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
+struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) *bin) {
 	int i, j, idx, stridx;
 
 	r_return_val_if_fail (bin && bin->sects, NULL);
@@ -2003,19 +2888,22 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 	return imports;
 }
 
-struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
-	struct reloc_t *relocs = NULL;
-	int i = 0, len;
+static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
+	return a->addr - b->addr;
+}
+
+RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
+	RSkipList *relocs;
 	ulebr ur = {NULL};
 	int wordsize = MACH0_(get_bits)(bin) / 8;
 	if (bin->dyld_info) {
 		ut8 *opcodes,*end, type = 0, rel_type = 0;
 		int lib_ord, seg_idx = -1, sym_ord = -1;
-		size_t j, count, skip, bind_size, lazy_size;
+		char *sym_name = NULL;
+		size_t j, count, skip, bind_size, lazy_size, weak_size;
 		st64 addend = 0;
 		ut64 segmentAddress = 0LL;
 		ut64 addr = 0LL;
-		ut8 done = 0;
 
 #define CASE(T) case ((T) / 8): rel_type = R_BIN_RELOC_ ## T; break
 		switch (wordsize) {
@@ -2028,6 +2916,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 #undef CASE
 		bind_size = bin->dyld_info->bind_size;
 		lazy_size = bin->dyld_info->lazy_bind_size;
+		weak_size = bin->dyld_info->weak_bind_size;
 
 		if (!bind_size || !lazy_size) {
 			return NULL;
@@ -2043,41 +2932,46 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 			bin->dyld_info->lazy_bind_off + lazy_size > bin->size) {
 			return NULL;
 		}
-		if (bin->dyld_info->bind_off+bind_size+lazy_size > bin->size) {
+		if (bin->dyld_info->bind_off + bind_size + lazy_size > bin->size) {
 			return NULL;
 		}
-		// NOTE(eddyb) it's a waste of memory, but we don't know the actual number of relocs.
-		int amount = bind_size + lazy_size;
-		if (amount < 0) {
-			amount = 0;
+		if (bin->dyld_info->weak_bind_off + weak_size > bin->size) {
+			return NULL;
 		}
-		if (!(relocs = calloc (amount + 1, sizeof (struct reloc_t)))) {
+		ut64 amount = bind_size + lazy_size + weak_size;
+		if (amount < 0) {
+			return NULL;
+		}
+		relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);
+		if (!relocs) {
 			return NULL;
 		}
 		opcodes = calloc (1, amount + 1);
 		if (!opcodes) {
-			free (relocs);
+			r_skiplist_free (relocs);
 			return NULL;
 		}
-		len = r_buf_read_at (bin->b, bin->dyld_info->bind_off, opcodes, bind_size);
-		int ls = r_buf_read_at (bin->b, bin->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size);
-		if (len < 1 || ls < 1) {
+
+		int len = r_buf_read_at (bin->b, bin->dyld_info->bind_off, opcodes, bind_size);
+		len += r_buf_read_at (bin->b, bin->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size);
+		len += r_buf_read_at (bin->b, bin->dyld_info->weak_bind_off, opcodes + bind_size + lazy_size, weak_size);
+		if (len < amount) {
 			bprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n", (ut64)(size_t)bin->dyld_info->bind_off);
-			free (opcodes);
-			relocs[i].last = true;
-			return relocs;
+			R_FREE (opcodes);
+			r_skiplist_free (relocs);
+			return NULL;
 		}
-		// that +2 is a minimum required for uleb128, this may be wrong,
-		// the correct fix would be to make ULEB() must use rutil's
-		// implementation that already checks for buffer boundaries
-		for (ur.p = opcodes, end = opcodes + bind_size + lazy_size ; (ur.p+2 < end) && !done; ) {
+
+		for (ur.p = opcodes, end = opcodes + amount ; ur.p < end; ) {
 			ut8 imm = *ur.p & BIND_IMMEDIATE_MASK, op = *ur.p & BIND_OPCODE_MASK;
 			++ur.p;
+			if (ur.p >= end) {
+				break;
+			}
 			switch (op) {
 #define ULEB() read_uleb128 (&ur,end)
 #define SLEB() read_sleb128 (&ur,end)
 			case BIND_OPCODE_DONE:
-				done = 1;
 				break;
 			case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
 				lib_ord = imm;
@@ -2089,8 +2983,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 				lib_ord = imm? (st8)(BIND_OPCODE_MASK | imm) : 0;
 				break;
 			case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
-				char *sym_name = (char*)ur.p;
-				//ut8 sym_flags = imm;
+				sym_name = (char*)ur.p;
 				while (*ur.p++ && ur.p<end) {
 					/* empty loop */
 				}
@@ -2128,8 +3021,9 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 				if (seg_idx < 0 || seg_idx >= bin->nsegs) {
 					bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
 						" has unexistent segment %d\n", seg_idx);
-					R_FREE (relocs);
-					return 0; // early exit to avoid future mayhem
+					R_FREE (opcodes);
+					r_skiplist_free (relocs);
+					return NULL; // early exit to avoid future mayhem
 				} else {
 					addr = bin->segs[seg_idx].vmaddr + ULEB();
 					segmentAddress = bin->segs[seg_idx].vmaddr \
@@ -2140,18 +3034,22 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 				addr += ULEB();
 				break;
 #define DO_BIND() do {\
-if (sym_ord < 0 || seg_idx < 0 ) break;\
-if (i >= (bind_size + lazy_size)) break;\
-relocs[i].addr = addr;\
-relocs[i].offset = addr - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;\
-if (type == BIND_TYPE_TEXT_PCREL32)\
-	relocs[i].addend = addend - (bin->baddr + addr);\
-else relocs[i].addend = addend;\
-/* library ordinal ??? */ \
-relocs[i].ord = lib_ord;\
-relocs[i].ord = sym_ord;\
-relocs[i].type = rel_type;\
-relocs[i++].last = 0;\
+	if ((sym_ord < 0 && !sym_name) || seg_idx < 0 ) break;\
+	if (!addr) break;\
+	struct reloc_t *reloc = R_NEW0 (struct reloc_t);\
+	reloc->addr = addr;\
+	reloc->offset = addr - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;\
+	if (type == BIND_TYPE_TEXT_PCREL32)\
+		reloc->addend = addend - (bin->baddr + addr);\
+	else\
+		reloc->addend = addend;\
+	/* library ordinal ??? */ \
+	reloc->ord = lib_ord;\
+	reloc->ord = sym_ord;\
+	reloc->type = rel_type;\
+	if (sym_name)\
+		r_str_ncpy (reloc->name, sym_name, 256);\
+	r_skiplist_insert (relocs, reloc);\
 } while (0)
 			case BIND_OPCODE_DO_BIND:
 				if (addr >= segmentAddress) {
@@ -2194,12 +3092,11 @@ relocs[i++].last = 0;\
 #undef SLEB
 			default:
 				bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
-				free (opcodes);
-				relocs[i].last = 1;
+				R_FREE (opcodes);
 				return relocs;
 			}
 		}
-		free (opcodes);
+		R_FREE (opcodes);
 	} else {
 		int j;
 		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms) {
@@ -2209,31 +3106,31 @@ relocs[i++].last = 0;\
 		if (amount < 0) {
 			amount = 0;
 		}
-		if (!(relocs = calloc (amount + 1, sizeof (struct reloc_t)))) {
+		relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);
+		if (!relocs) {
 			return NULL;
 		}
 		for (j = 0; j < amount; j++) {
-			if (parse_import_ptr (bin, &relocs[i], bin->dysymtab.iundefsym + j)) {
-				relocs[i].ord = j;
-				relocs[i++].last = false;
+			struct reloc_t *reloc = R_NEW0 (struct reloc_t);
+			if (parse_import_ptr (bin, reloc, bin->dysymtab.iundefsym + j)) {
+				reloc->ord = j;
 			}
 		}
 	}
 beach:
-	if (relocs) {
-		relocs[i].last = true;
-	}
 	return relocs;
 }
 
-struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
+struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin && bin->sects, NULL);
 
+#if 0
 	/* it's probably a dylib */
 	if (!bin->entry) {
 		return NULL;
 	}
-	
+#endif
+
 	struct addr_t *entry = R_NEW0 (struct addr_t);
 	if (!entry) {
 		return NULL;
@@ -2266,14 +3163,14 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 	return entry;
 }
 
-void MACH0_(kv_loadlibs)(struct MACH0_(obj_t)* bin) {
+void MACH0_(kv_loadlibs)(struct MACH0_(obj_t) *bin) {
 	int i;
 	for (i = 0; i < bin->nlibs; i++) {
 		sdb_set (bin->kv, sdb_fmt ("libs.%d.name", i), bin->libs[i], 0);
 	}
 }
 
-struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
+struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) *bin) {
 	struct lib_t *libs;
 	int i;
 
@@ -2293,7 +3190,7 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
 	return libs;
 }
 
-ut64 MACH0_(get_baddr)(struct MACH0_(obj_t)* bin) {
+ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *bin) {
 	int i;
 
 	if (bin->hdr.filetype != MH_EXECUTE && bin->hdr.filetype != MH_DYLINKER) {
@@ -2307,7 +3204,7 @@ ut64 MACH0_(get_baddr)(struct MACH0_(obj_t)* bin) {
 	return 0;
 }
 
-char* MACH0_(get_class)(struct MACH0_(obj_t)* bin) {
+char *MACH0_(get_class)(struct MACH0_(obj_t) *bin) {
 #if R_BIN_MACH064
 	return r_str_new ("MACH064");
 #else
@@ -2318,7 +3215,7 @@ char* MACH0_(get_class)(struct MACH0_(obj_t)* bin) {
 //XXX we are mixing up bits from cpu and opcodes
 //since thumb use 16 bits opcode but run in 32 bits
 //cpus  so here we should only return 32 or 64
-int MACH0_(get_bits)(struct MACH0_(obj_t)* bin) {
+int MACH0_(get_bits)(struct MACH0_(obj_t) *bin) {
 	if (bin) {
 		int bits = MACH0_(get_bits_from_hdr) (&bin->hdr);
 		if (bin->hdr.cputype == CPU_TYPE_ARM && bin->entry & 1) {
@@ -2329,7 +3226,7 @@ int MACH0_(get_bits)(struct MACH0_(obj_t)* bin) {
 	return 32;
 }
 
-int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header)* hdr) {
+int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	if (hdr->magic == MH_MAGIC_64 || hdr->magic == MH_CIGAM_64) {
 		return 64;
 	}
@@ -2342,7 +3239,7 @@ int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header)* hdr) {
 	return 32;
 }
 
-bool MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin) {
+bool MACH0_(is_big_endian)(struct MACH0_(obj_t) *bin) {
 	if (bin) {
 		const int cpu = bin->hdr.cputype;
 		return cpu == CPU_TYPE_POWERPC || cpu == CPU_TYPE_POWERPC64;
@@ -2350,11 +3247,11 @@ bool MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin) {
 	return false;
 }
 
-const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin) {
+const char *MACH0_(get_intrp)(struct MACH0_(obj_t) *bin) {
 	return bin? bin->intrp: NULL;
 }
 
-const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin) {
+const char *MACH0_(get_os)(struct MACH0_(obj_t) *bin) {
 	if (bin) {
 		switch (bin->os) {
 		case 1: return "macos";
@@ -2366,7 +3263,7 @@ const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin) {
 	return "darwin";
 }
 
-const char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr) {
+const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	const char *archstr = "unknown";
 	switch (hdr->cputype) {
 	case CPU_TYPE_VAX:
@@ -2413,7 +3310,7 @@ const char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	return archstr;
 }
 
-const char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin) {
+const char *MACH0_(get_cputype)(struct MACH0_(obj_t) *bin) {
 	return bin? MACH0_(get_cputype_from_hdr) (&bin->hdr): "unknown";
 }
 
@@ -2492,6 +3389,12 @@ static const char *cpusubtype_tostring (ut32 cputype, ut32 cpusubtype) {
 		default:			return "Unknown hppa subtype";
 		}
 	case CPU_TYPE_ARM64:
+		switch (cpusubtype & 0xff) {
+		case CPU_SUBTYPE_ARM64_ALL:	return "all";
+		case CPU_SUBTYPE_ARM64_V8:	return "arm64v8";
+		case CPU_SUBTYPE_ARM64E:	return "arm64e";
+		default:			return "Unknown arm64 subtype";
+		}
 		return "v8";
 	case CPU_TYPE_ARM:
 		switch (cpusubtype & 0xff) {
@@ -2566,28 +3469,25 @@ static const char *cpusubtype_tostring (ut32 cputype, ut32 cpusubtype) {
 	return "Unknown cputype";
 }
 
-char* MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) *hdr) {
+char *MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	r_return_val_if_fail (hdr, NULL);
 	return strdup (cpusubtype_tostring (hdr->cputype, hdr->cpusubtype));
 }
 
-char* MACH0_(get_cpusubtype)(struct MACH0_(obj_t)* bin) {
-	if (bin) {
-		return MACH0_(get_cpusubtype_from_hdr) (&bin->hdr);
-	}
-	return strdup ("Unknown");
+char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) *bin) {
+	return bin? MACH0_(get_cpusubtype_from_hdr) (&bin->hdr): strdup ("Unknown");
 }
 
-bool MACH0_(is_pie)(struct MACH0_(obj_t)* bin) {
+bool MACH0_(is_pie)(struct MACH0_(obj_t) *bin) {
 	return (bin && bin->hdr.filetype == MH_EXECUTE && bin->hdr.flags & MH_PIE);
 }
 
-bool MACH0_(has_nx)(struct MACH0_(obj_t)* bin) {
+bool MACH0_(has_nx)(struct MACH0_(obj_t) *bin) {
 	return (bin && bin->hdr.filetype == MH_EXECUTE &&
 		bin->hdr.flags & MH_NO_HEAP_EXECUTION);
 }
 
-char* MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr) {
+char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	const char *mhtype = "Unknown";
 	switch (hdr->filetype) {
 	case MH_OBJECT:     mhtype = "Relocatable object"; break;
@@ -2604,168 +3504,287 @@ char* MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	return strdup (mhtype);
 }
 
-char* MACH0_(get_filetype)(struct MACH0_(obj_t)* bin) {
-	if (bin) {
-		return MACH0_(get_filetype_from_hdr) (&bin->hdr);
-	}
-	return strdup ("Unknown");
+char *MACH0_(get_filetype)(struct MACH0_(obj_t) *bin) {
+	return bin? MACH0_(get_filetype_from_hdr) (&bin->hdr): strdup ("Unknown");
 }
 
-ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
-	ut64 addr = 0LL;
-	struct symbol_t *symbols;
+ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin) {
+	ut64 addr = UT64_MAX;
 	int i;
 
-	if (!(symbols = MACH0_(get_symbols) (bin))) {
-		return 0;
+	// 0 = sscanned but no main found
+	// -1 = not scanned, so no main
+	// other = valid main addr
+	if (bin->main_addr == UT64_MAX) {
+#if FEATURE_SYMLIST
+		 (void)MACH0_(get_symbols_list) (bin);
+#else
+		 (void)MACH0_(get_symbols) (bin);
+#endif
 	}
-	for (i = 0; !symbols[i].last; i++) {
-		const char *name = symbols[i].name;
-		if (!strcmp (name, "__Dmain")) {
-			addr = symbols[i].addr;
-			break;
-		}
-		if (strstr (name, "4main") && !strstr (name, "STATIC")) {
-			addr = symbols[i].addr;
-			break;
-		}
-		if (!strcmp (symbols[i].name, "_main")) {
-			addr = symbols[i].addr;
-	//		break;
-		}
+	if (bin->main_addr != 0 && bin->main_addr != UT64_MAX) {
+		return bin->main_addr;
 	}
-	free (symbols);
+	// dummy call to initialize things
+	free (MACH0_(get_entrypoint)(bin));
 
-	if (!addr && bin->main_cmd.cmd == LC_MAIN) {
+	bin->main_addr = 0;
+
+	if (addr == UT64_MAX && bin->main_cmd.cmd == LC_MAIN) {
 		addr = bin->entry + bin->baddr;
 	}
 
 	if (!addr) {
 		ut8 b[128];
-		ut64 entry = addr_to_offset(bin, bin->entry);
+		ut64 entry = addr_to_offset (bin, bin->entry);
 		// XXX: X86 only and hacky!
 		if (entry > bin->size || entry + sizeof (b) > bin->size) {
-			return 0;
+			return UT64_MAX;
 		}
 		i = r_buf_read_at (bin->b, entry, b, sizeof (b));
-		if (i < 1) {
-			return 0;
+		if (i < 80) {
+			return UT64_MAX;
 		}
 		for (i = 0; i < 64; i++) {
-			if (b[i] == 0xe8 && !b[i+3] && !b[i+4]) {
-				int delta = b[i+1] | (b[i+2] << 8) | (b[i+3] << 16) | (b[i+4] << 24);
-				return bin->entry + i + 5 + delta;
-
+			if (b[i] == 0xe8 && !b[i + 3] && !b[i + 4]) {
+				int delta = b[i + 1] | (b[i + 2] << 8) | (b[i + 3] << 16) | (b[i + 4] << 24);
+				addr = bin->entry + i + 5 + delta;
+				break;
 			}
 		}
+		if (!addr) {
+			addr = entry;
+		}
 	}
-	return addr;
+	return bin->main_addr = addr;
 }
 
-void MACH0_(mach_headerfields)(RBinFile *file) {
-	PrintfCallback cb_printf = file->rbin->cb_printf;
+void MACH0_(mach_headerfields)(RBinFile *bf) {
+	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	if (!cb_printf) {
 		cb_printf = printf;
 	}
-	RBuffer *buf = file->buf;
+	RBuffer *buf = bf->buf;
+	ut64 length = r_buf_size (buf);
 	int n = 0;
-	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(buf);
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf);
 	if (!mh) {
 		return;
 	}
-	cb_printf ("0x00000000  Magic       0x%x\n", mh->magic);
-	cb_printf ("0x00000004  CpuType     0x%x\n", mh->cputype);
-	cb_printf ("0x00000008  CpuSubType  0x%x\n", mh->cpusubtype);
-	cb_printf ("0x0000000c  FileType    0x%x\n", mh->filetype);
-	cb_printf ("0x00000010  nCmds       %d\n", mh->ncmds);
-	cb_printf ("0x00000014  sizeOfCmds  %d\n", mh->sizeofcmds);
-	cb_printf ("0x00000018  Flags       0x%x\n", mh->flags);
+	ut64 pvaddr = pa2va (bf, 0);
+	cb_printf ("pf.mach0_header @ 0x%08"PFMT64x"\n", pvaddr);
+	cb_printf ("0x%08"PFMT64x"  Magic       0x%x\n", pvaddr, mh->magic);
+	pvaddr += 4;
+	cb_printf ("0x%08"PFMT64x"  CpuType     0x%x\n", pvaddr, mh->cputype);
+	pvaddr += 4;
+	cb_printf ("0x%08"PFMT64x"  CpuSubType  0x%x\n", pvaddr, mh->cpusubtype);
+	pvaddr += 4;
+	cb_printf ("0x%08"PFMT64x"  FileType    0x%x\n", pvaddr, mh->filetype);
+	pvaddr += 4;
+	cb_printf ("0x%08"PFMT64x"  nCmds       %d\n", pvaddr, mh->ncmds);
+	pvaddr += 4;
+	cb_printf ("0x%08"PFMT64x"  sizeOfCmds  %d\n", pvaddr, mh->sizeofcmds);
+	pvaddr += 4;
+	cb_printf ("0x%08"PFMT64x"  Flags       0x%x\n", pvaddr, mh->flags);
+	pvaddr += 4;
 	bool is64 = mh->cputype >> 16;
 
 	ut64 addr = 0x20 - 4;
 	ut32 word = 0;
 	ut8 wordbuf[sizeof (word)];
+	bool isBe = false;
+	switch (mh->cputype) {
+	case CPU_TYPE_POWERPC:
+	case CPU_TYPE_POWERPC64:
+		isBe = true;
+		break;
+	}
 #define READWORD() \
-		if (!r_buf_read_at (buf, addr, (ut8*)wordbuf, 4)) { \
+		if (r_buf_read_at (buf, addr, (ut8*)wordbuf, 4) != 4) { \
 			eprintf ("Invalid address in buffer."); \
 			break; \
 		} \
 		addr += 4; \
-		word = r_read_le32 (wordbuf);
+		pvaddr += 4;\
+		word = isBe? r_read_be32 (wordbuf): r_read_le32 (wordbuf);
 	if (is64) {
 		addr += 4;
+		pvaddr += 4;
 	}
 	for (n = 0; n < mh->ncmds; n++) {
 		READWORD ();
 		int lcType = word;
+		const char *pf_definition = cmd_to_pf_definition (lcType);
+		if (pf_definition) {
+			cb_printf ("pf.%s @ 0x%08"PFMT64x"\n", pf_definition, pvaddr - 4);
+		}
 		cb_printf ("0x%08"PFMT64x"  cmd %7d 0x%x %s\n",
-			addr, n, lcType, cmd_to_string (lcType));
+			pvaddr - 4, n, lcType, cmd_to_string (lcType));
 		READWORD ();
+		if (addr > length) {
+			break;
+		}
 		int lcSize = word;
 		word &= 0xFFFFFF;
-		cb_printf ("0x%08"PFMT64x"  cmdsize     %d\n", addr, word);
+		cb_printf ("0x%08"PFMT64x"  cmdsize     %d\n", pvaddr - 4, word);
 		if (lcSize < 1) {
 			eprintf ("Invalid size for a load command\n");
 			break;
 		}
 		switch (lcType) {
+		case LC_BUILD_VERSION: {
+			cb_printf ("0x%08"PFMT64x"  platform    %s\n",
+				pvaddr, build_version_platform_to_string (r_buf_read_le32_at (buf, addr)));
+			cb_printf ("0x%08"PFMT64x"  minos       %d.%d.%d\n",
+				pvaddr + 4, r_buf_read_le16_at (buf, addr + 6), r_buf_read8_at (buf, addr + 5),
+				r_buf_read8_at (buf, addr + 4));
+			cb_printf ("0x%08"PFMT64x"  sdk         %d.%d.%d\n",
+				pvaddr + 8, r_buf_read_le16_at (buf, addr + 10), r_buf_read8_at (buf, addr + 9),
+				r_buf_read8_at (buf, addr + 8));
+			ut32 ntools = r_buf_read_le32_at (buf, addr + 12);
+			cb_printf ("0x%08"PFMT64x"  ntools      %d\n",
+				pvaddr + 12, ntools);
+			ut64 off = 16;
+			while (off < (lcSize - 8) && ntools--) {
+				cb_printf ("pf.mach0_build_version_tool @ 0x%08"PFMT64x"\n", pvaddr + off);
+				cb_printf ("0x%08"PFMT64x"  tool        %s\n",
+					pvaddr + off, build_version_tool_to_string (r_buf_read_le32_at (buf, addr + off)));
+				off += 4;
+				if (off >= (lcSize - 8)) {
+					break;
+				}
+				cb_printf ("0x%08"PFMT64x"  version     %d.%d.%d\n",
+					pvaddr + off, r_buf_read_le16_at (buf, addr + off + 2), r_buf_read8_at (buf, addr + off + 1),
+					r_buf_read8_at (buf, addr + off));
+				off += 4;
+			}
+			break;
+		}
 		case LC_MAIN:
 			{
 				ut8 data[64];
 				r_buf_read_at (buf, addr, data, sizeof (data));
 #if R_BIN_MACH064
 				ut64 ep = r_read_ble64 (&data, false); //  bin->big_endian);
-				cb_printf ("0x%08"PFMT64x"  entry0      0x%" PFMT64x "\n", addr, ep);
+				cb_printf ("0x%08"PFMT64x"  entry0      0x%" PFMT64x "\n", pvaddr, ep);
 				ut64 ss = r_read_ble64 (&data[8], false); //  bin->big_endian);
-				cb_printf ("0x%08"PFMT64x"  stacksize   0x%" PFMT64x "\n", addr +  8, ss);
+				cb_printf ("0x%08"PFMT64x"  stacksize   0x%" PFMT64x "\n", pvaddr +  8, ss);
 #else
 				ut32 ep = r_read_ble32 (&data, false); //  bin->big_endian);
-				cb_printf ("0x%08"PFMT32x"  entry0      0x%" PFMT32x "\n", (ut32)addr, ep);
+				cb_printf ("0x%08"PFMT32x"  entry0      0x%" PFMT32x "\n", (ut32)pvaddr, ep);
 				ut32 ss = r_read_ble32 (&data[4], false); //  bin->big_endian);
-				cb_printf ("0x%08"PFMT32x"  stacksize   0x%" PFMT32x "\n", (ut32)addr +  4, ss);
+				cb_printf ("0x%08"PFMT32x"  stacksize   0x%" PFMT32x "\n", (ut32)pvaddr +  4, ss);
 #endif
 			}
 			break;
-		case LC_ID_DYLIB: // install_name_tool
-			cb_printf ("0x%08"PFMT64x"  id           %s\n",
-				addr + 20, r_buf_get_at (buf, addr + 20, NULL));
+		case LC_SYMTAB:
+#if 0
+			{
+			char *id = r_buf_get_string (buf, addr + 20);
+			cb_printf ("0x%08"PFMT64x"  id         0x%x\n", addr + 20, id? id: "");
+			cb_printf ("0x%08"PFMT64x"  symooff    0x%x\n", addr + 20, id? id: "");
+			cb_printf ("0x%08"PFMT64x"  nsyms      %d\n", addr + 20, id? id: "");
+			cb_printf ("0x%08"PFMT64x"  stroff     0x%x\n", addr + 20, id? id: "");
+			cb_printf ("0x%08"PFMT64x"  strsize    0x%x\n", addr + 20, id? id: "");
+			free (id);
+			}
+#endif
 			break;
+		case LC_ID_DYLIB: { // install_name_tool
+			ut32 str_off = r_buf_read_ble32_at (buf, addr, isBe);
+			char *id = r_buf_get_string (buf, addr + str_off - 8);
+			cb_printf ("0x%08"PFMT64x"  current     %d.%d.%d\n",
+				pvaddr + 8, r_buf_read_le16_at (buf, addr + 10), r_buf_read8_at (buf, addr + 9),
+				r_buf_read8_at (buf, addr + 8));
+			cb_printf ("0x%08"PFMT64x"  compat      %d.%d.%d\n",
+				pvaddr + 12, r_buf_read_le16_at (buf, addr + 14), r_buf_read8_at (buf, addr + 13),
+				r_buf_read8_at (buf, addr + 12));
+			cb_printf ("0x%08"PFMT64x"  id          %s\n",
+				pvaddr + str_off - 8, id? id: "");
+			free (id);
+			break;
+		}
 		case LC_UUID:
 			{
 				ut8 i, uuid[16];
 				r_buf_read_at (buf, addr, uuid, sizeof (uuid));
-				cb_printf ("0x%08"PFMT64x"  uuid        ", addr);
+				cb_printf ("0x%08"PFMT64x"  uuid        ", pvaddr);
 				for (i = 0; i < sizeof (uuid); i++) {
 					cb_printf ("%02x", uuid[i]);
 				}
 				cb_printf ("\n");
 			}
 			break;
-		case LC_LOAD_DYLIB:
-		case LC_LOAD_WEAK_DYLIB:
-			cb_printf ("0x%08"PFMT64x"  load_dylib  %s\n",
-				addr + 16, r_buf_get_at (buf, addr + 16, NULL));
-			break;
-		case LC_RPATH:
-			cb_printf ("0x%08"PFMT64x"  rpath       %s\n",
-				addr + 4, r_buf_get_at (buf, addr + 4, NULL));
-			break;
-		case LC_CODE_SIGNATURE:
+		case LC_SEGMENT:
+		case LC_SEGMENT_64:
 			{
-			ut32 *words = (ut32*)r_buf_get_at (buf, addr, NULL);
-			cb_printf ("0x%08"PFMT64x"  dataoff     0x%08x\n", addr, words[0]);
-			cb_printf ("0x%08"PFMT64x"  datasize    %d\n", addr + 4, words[1]);
-			cb_printf ("# wtf mach0.sign %d @ 0x%x\n", words[1], words[0]);
+				ut8 name[17] = {0};
+				r_buf_read_at (buf, addr, name, sizeof (name) - 1);
+				cb_printf ("0x%08"PFMT64x"  name        %s\n", pvaddr, name);
+				ut32 nsects = r_buf_read_le32_at (buf, addr - 8 + (is64 ? 64 : 48));
+				ut64 off = is64 ? 72 : 56;
+				while (off < lcSize && nsects--) {
+					if (is64) {
+						cb_printf ("pf.mach0_section64 @ 0x%08"PFMT64x"\n", pvaddr - 8 + off);
+						off += 80;
+					} else {
+						cb_printf ("pf.mach0_section @ 0x%08"PFMT64x"\n", pvaddr - 8 + off);
+						off += 68;
+					}
+				}
 			}
 			break;
+		case LC_LOAD_DYLIB:
+		case LC_LOAD_WEAK_DYLIB: {
+			ut32 str_off = r_buf_read_ble32_at (buf, addr, isBe);
+			char *load_dylib = r_buf_get_string (buf, addr + str_off - 8);
+			cb_printf ("0x%08"PFMT64x"  current     %d.%d.%d\n",
+				pvaddr + 8, r_buf_read_le16_at (buf, addr + 10), r_buf_read8_at (buf, addr + 9),
+				r_buf_read8_at (buf, addr + 8));
+			cb_printf ("0x%08"PFMT64x"  compat      %d.%d.%d\n",
+				pvaddr + 12, r_buf_read_le16_at (buf, addr + 14), r_buf_read8_at (buf, addr + 13),
+				r_buf_read8_at (buf, addr + 12));
+			cb_printf ("0x%08"PFMT64x"  load_dylib  %s\n",
+				pvaddr + str_off - 8, load_dylib? load_dylib: "");
+			free (load_dylib);
+			break;
+		}
+		case LC_RPATH: {
+			char *rpath = r_buf_get_string (buf, addr + 4);
+			cb_printf ("0x%08" PFMT64x "  rpath       %s\n",
+				pvaddr + 4, rpath ? rpath : "");
+			free (rpath);
+			break;
+		}
+		case LC_ENCRYPTION_INFO:
+		case LC_ENCRYPTION_INFO_64: {
+			ut32 word = r_buf_read_le32_at (buf, addr);
+			cb_printf ("0x%08"PFMT64x"  cryptoff   0x%08x\n", pvaddr, word);
+			word = r_buf_read_le32_at (buf, addr + 4);
+			cb_printf ("0x%08"PFMT64x"  cryptsize  %d\n", pvaddr + 4, word);
+			word = r_buf_read_le32_at (buf, addr + 8);
+			cb_printf ("0x%08"PFMT64x"  cryptid    %d\n", pvaddr + 8, word);
+			break;
+		}
+		case LC_CODE_SIGNATURE: {
+			ut32 words[2];
+			r_buf_read_at (buf, addr, (ut8 *)words, sizeof (words));
+			cb_printf ("0x%08"PFMT64x"  dataoff     0x%08x\n", pvaddr, words[0]);
+			cb_printf ("0x%08"PFMT64x"  datasize    %d\n", pvaddr + 4, words[1]);
+			cb_printf ("# wtf mach0.sign %d @ 0x%x\n", words[1], words[0]);
+			break;
+		}
 		}
 		addr += word - 8;
+		pvaddr += word - 8;
 	}
 	free (mh);
 }
 
-RList* MACH0_(mach_fields)(RBinFile *bf) {
-	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(bf->buf);
+RList *MACH0_(mach_fields)(RBinFile *bf) {
+	RBuffer *buf = bf->buf;
+	ut64 length = r_buf_size (buf);
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr) (buf);
 	if (!mh) {
 		return NULL;
 	}
@@ -2775,22 +3794,79 @@ RList* MACH0_(mach_fields)(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	ut64 addr = 0;
+	ut64 addr = pa2va (bf, 0);
+	ut64 paddr = 0;
 
-#define ROW(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt)); \
-	addr += 4;
-	ROW ("hdr.magic", 4, mh->magic, "x");
-	ROW ("hdr.cputype", 4, mh->cputype, "x");
-	ROW ("hdr.cpusubtype", 4, mh->cpusubtype, "x");
-	ROW ("hdr.filetype", 4, mh->filetype, "x");
-	ROW ("hdr.nbcmds", 4, mh->ncmds, "x");
-	ROW ("hdr.sizeofcmds", 4, mh->sizeofcmds, "x");
+	r_list_append (ret, r_bin_field_new (addr, addr, 1, "header", "mach0_header", "mach0_header", true));
+	addr += 0x20 - 4;
+	paddr += 0x20 - 4;
+	bool is64 = mh->cputype >> 16;
+	if (is64) {
+		addr += 4;
+		paddr += 4;
+	}
+
+	bool isBe = false;
+	switch (mh->cputype) {
+	case CPU_TYPE_POWERPC:
+	case CPU_TYPE_POWERPC64:
+		isBe = true;
+		break;
+	}
+
+	int n;
+	for (n = 0; n < mh->ncmds; n++) {
+		ut32 lcType = r_buf_read_ble32_at (buf, paddr, isBe);
+		ut32 word = r_buf_read_ble32_at (buf, paddr + 4, isBe);
+		if (paddr + 8 > length) {
+			break;
+		}
+		ut32 lcSize = word;
+		word &= 0xFFFFFF;
+		if (lcSize < 1) {
+			eprintf ("Invalid size for a load command\n");
+			break;
+		}
+		const char *pf_definition = cmd_to_pf_definition (lcType);
+		if (pf_definition) {
+			r_list_append (ret, r_bin_field_new (addr, addr, 1, sdb_fmt ("load_command_%d_%s", n, cmd_to_string (lcType)), pf_definition, pf_definition, true));
+		}
+		switch (lcType) {
+		case LC_BUILD_VERSION: {
+			ut32 ntools = r_buf_read_le32_at (buf, paddr + 20);
+			ut64 off = 24;
+			int j = 0;
+			while (off < lcSize && ntools--) {
+				r_list_append (ret, r_bin_field_new (addr + off, addr + off, 1, sdb_fmt ("tool_%d", j++), "mach0_build_version_tool", "mach0_build_version_tool", true));
+				off += 8;
+			}
+			break;
+		}
+		case LC_SEGMENT:
+		case LC_SEGMENT_64: {
+			ut32 nsects = r_buf_read_le32_at (buf, addr + (is64 ? 64 : 48));
+			ut64 off = is64 ? 72 : 56;
+			int j = 0;
+			while (off < lcSize && nsects--) {
+				if (is64) {
+					r_list_append (ret, r_bin_field_new (addr + off, addr + off, 1, sdb_fmt ("section_%d", j++), "mach0_section64", "mach0_section64", true));
+					off += 80;
+				} else {
+					r_list_append (ret, r_bin_field_new (addr + off, addr + off, 1, sdb_fmt ("section_%d", j++), "mach0_section", "mach0_section", true));
+					off += 68;
+				}
+			}
+			break;
+		}
+		}
+		addr += word;
+		paddr += word;
+	}
 	free (mh);
 	return ret;
 }
 
-struct MACH0_(mach_header) * MACH0_(get_hdr_from_bytes)(RBuffer *buf) {
+struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf) {
 	ut8 magicbytes[sizeof (ut32)] = {0};
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = {0};
 	int len;

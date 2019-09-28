@@ -10,43 +10,43 @@
 #include <v810_disas.h>
 
 enum {
-	V810_FLAG_CY,
-	V810_FLAG_OV,
-	V810_FLAG_S,
-	V810_FLAG_Z,
+	V810_FLAG_CY = 1,
+	V810_FLAG_OV = 2,
+	V810_FLAG_S = 4,
+	V810_FLAG_Z = 8,
 };
 
 static void update_flags(RAnalOp *op, int flags) {
 	if (flags & V810_FLAG_CY) {
-		r_strbuf_append (&op->esil, ",$c31,cy,=");
+		r_strbuf_append (&op->esil, ",31,$c,cy,:=");
 	}
 	if (flags & V810_FLAG_OV) {
-		r_strbuf_append (&op->esil, ",$o,ov,=");
+		r_strbuf_append (&op->esil, ",$o,ov,:=");
 	}
 	if (flags & V810_FLAG_S) {
-		r_strbuf_append (&op->esil, ",$s,s,=");
+		r_strbuf_append (&op->esil, ",$s,s,:=");
 	}
 	if (flags & V810_FLAG_Z) {
-		r_strbuf_append (&op->esil, ",$z,z,=");
+		r_strbuf_append (&op->esil, ",$z,z,:=");
 	}
 }
 
 static void clear_flags(RAnalOp *op, int flags) {
 	if (flags & V810_FLAG_CY) {
-		r_strbuf_append (&op->esil, ",0,cy,=");
+		r_strbuf_append (&op->esil, ",0,cy,:=");
 	}
 	if (flags & V810_FLAG_OV) {
-		r_strbuf_append (&op->esil, ",0,ov,=");
+		r_strbuf_append (&op->esil, ",0,ov,:=");
 	}
 	if (flags & V810_FLAG_S) {
-		r_strbuf_append (&op->esil, ",0,s,=");
+		r_strbuf_append (&op->esil, ",0,s,:=");
 	}
 	if (flags & V810_FLAG_Z) {
-		r_strbuf_append (&op->esil, ",0,z,=");
+		r_strbuf_append (&op->esil, ",0,z,:=");
 	}
 }
 
-static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int ret;
 	ut8 opcode, reg1, reg2, imm5, cond;
 	ut16 word1, word2 = 0;
@@ -458,7 +458,7 @@ RAnalPlugin r_anal_plugin_v810 = {
 	.set_reg_profile = set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_v810,

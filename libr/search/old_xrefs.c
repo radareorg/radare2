@@ -87,7 +87,6 @@ match value ffffffad (ffffad) at offset 0x454
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <signal.h>
 #include <getopt.h>
@@ -252,6 +251,7 @@ int set_arch_settings()
 	return 0;
 }
 
+// WTF
 int main(int argc, char **argv)
 {
 	ut64 i, c, src;
@@ -330,7 +330,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* openning stuff */
+	/* opening stuff */
 	src    = open(argv[optind], O_RDONLY);
 	if (src == -1) {
 		fprintf(stderr, "Cannot open file source %s\n", argv[optind]);

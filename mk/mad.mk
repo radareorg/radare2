@@ -1,5 +1,4 @@
 CC=mad gcc
-LINK=
 RANLIB=mad ranlib
 ONELIB=0
 CC_AR=mad ar qf ${LIBAR}

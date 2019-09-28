@@ -528,7 +528,7 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 		if (_e) {
 			doEval = true;
 			p = _e + 2;
-			p = r_str_trim (p);
+			r_str_trim (p);
 		}
 	}
 	// TODO: set argv here
@@ -541,7 +541,7 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 				r_lang_run_file (core->lang, p);
 			}
 		} else {
-			if (r_config_get_i (core->config, "scr.interactive")) {
+			if (r_cons_is_interactive ()) {
 				r_lang_prompt (core->lang);
 			} else {
 				eprintf ("Error: scr.interactive required to run the rlang prompt\n");

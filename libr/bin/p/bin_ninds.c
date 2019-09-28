@@ -1,4 +1,4 @@
-/* radare - LGPL - 2015-2018 - a0rtega */
+/* radare - LGPL - 2015-2019 - a0rtega */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -10,35 +10,25 @@
 
 static struct nds_hdr loaded_header;
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
+static bool check_buffer(RBuffer *b) {
 	ut8 ninlogohead[6];
-	if (!buf || length < sizeof(struct nds_hdr)) { /* header size */
-		return false;
+	if (r_buf_read_at (b, 0xc0, ninlogohead, sizeof (ninlogohead)) == 6) {
+		/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
+		if (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6)) {
+			return true;
+		}
+		/* begin of Homebrew magic */
+		if (!memcmp (ninlogohead, "\xC8\x60\x4F\xE2\x01\x70", 6)){
+			return true;
+		}
 	}
-	memcpy (ninlogohead, buf + 0xc0, 6);
-	/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
-	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? true: false;
+	return false;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = memcpy (&loaded_header, buf, sizeof(struct nds_hdr));
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header));
+	*bin_obj = &loaded_header;
 	return (*bin_obj != NULL);
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
-	ut64 sz = bf? r_buf_size (bf->buf): 0;
-	if (!bf || !bf->o) {
-		return false;
-	}
-	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-	return check_bytes (bytes, sz);
-}
-
-static int destroy(RBinFile *bf) {
-	r_buf_free (bf->buf);
-	bf->buf = NULL;
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -120,24 +110,19 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
+	if (ret) {
+		char *filepath = r_str_newf ("%.12s - %.4s",
+			loaded_header.title, loaded_header.gamecode);
+		ret->file = filepath;
+		ret->type = strdup ("ROM");
+		ret->machine = strdup ("Nintendo DS");
+		ret->os = strdup ("nds");
+		ret->arch = strdup ("arm");
+		ret->has_va = true;
+		ret->bits = 32;
 	}
-
-	if (!bf || !bf->buf) {
-		free (ret);
-		return NULL;
-	}
-	char *filepath = r_str_newf ("%.12s - %.4s",
-		loaded_header.title, loaded_header.gamecode);
-	ret->file = filepath;
-	ret->type = strdup ("ROM");
-	ret->machine = strdup ("Nintendo DS");
-	ret->os = strdup ("nds");
-	ret->arch = strdup ("arm");
-	ret->has_va = true;
-	ret->bits = 32;
 	return ret;
 }
 
@@ -145,10 +130,8 @@ RBinPlugin r_bin_plugin_ninds = {
 	.name = "ninds",
 	.desc = "Nintendo DS format r_bin plugin",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
-	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.entries = &entries,
@@ -156,7 +139,7 @@ RBinPlugin r_bin_plugin_ninds = {
 	.info = &info,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_ninds,

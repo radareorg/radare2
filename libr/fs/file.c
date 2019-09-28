@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2019 - pancake */
 
 #include <r_fs.h>
 
@@ -8,15 +8,37 @@ R_API RFSFile* r_fs_file_new(RFSRoot* root, const char* path) {
 		return NULL;
 	}
 	file->root = root;
-	file->name = strdup (path);
-	// TODO: concat path?
+	if (root) {
+		file->p = file->root->p; // XXX dupe
+	}
+	file->path = strdup (path);
+	char *last = (char *)r_str_rchr (file->path, NULL, '/');
+	if (last) {
+		*last++ = 0;
+		file->name = strdup (last);
+	} else {
+		file->name = strdup (path);
+	}
 	return file;
 }
 
 R_API void r_fs_file_free(RFSFile* file) {
-	free (file->name);
-	free (file->data);
-	free (file);
+	if (file) {
+		free (file->path);
+		free (file->name);
+		free (file->data);
+		free (file);
+	}
+}
+
+R_API char* r_fs_file_copy_abs_path(RFSFile* file) {
+	if (!file) {
+		return NULL;
+	}
+	if (!strcmp (file->path, file->name)) {
+		return strdup (file->path);
+	}
+	return r_str_newf ("%s/%s", file->path, file->name);
 }
 
 // TODO: Use RFSRoot and pass it in the stack instead of heap? problematic with bindings

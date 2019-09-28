@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -13,7 +13,8 @@ R_API RStrBuf *r_strbuf_new(const char *str) {
 }
 
 R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
-	if (!sa || !sb || sa->len != sb->len) { // faster comparisons
+	r_return_val_if_fail (sa && sb, false);
+	if (sa->len != sb->len) {
 		return false;
 	}
 	return strcmp (r_strbuf_get (sa), r_strbuf_get (sb)) == 0;
@@ -47,6 +48,7 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 		memcpy (ptr, s, l);
 		*(ptr + l) = 0;
 	} else {
+		R_FREE (sb->ptr);
 		sb->ptr = NULL;
 		memcpy (sb->buf, s, l);
 		sb->buf[l] = 0;
@@ -103,6 +105,27 @@ R_API bool r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
 	}
 done:
 	va_end (ap2);
+	return ret;
+}
+
+R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s) {
+	r_return_val_if_fail (sb && s, false);
+	int l = strlen (s);
+	// fast path if no chars to append
+	if (l == 0) {
+		return true;
+	}
+	int newlen = l + sb->len;
+	char *ns = malloc (newlen + 1);
+	bool ret = false;
+	if (ns) {
+		memcpy (ns, s, l);
+		char *s = sb->ptr ? sb->ptr: sb->buf;
+		memcpy (ns + l, s, sb->len);
+		ns[newlen] = 0;
+		ret = r_strbuf_set (sb, ns);
+		free (ns);
+	}
 	return ret;
 }
 

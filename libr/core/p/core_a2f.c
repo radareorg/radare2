@@ -97,7 +97,7 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 
 void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
 	if (!sdb_num_get (db, Fhandled(addr), NULL)) {
-		ut64* value = (ut64*) malloc (1 * sizeof(ut64));
+		ut64* value = (ut64*) malloc (1 * sizeof (ut64));
 		if (!value) {
 			eprintf ("Failed to allocate memory for address stack\n");
 			return;
@@ -108,11 +108,11 @@ void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
 			free (value);
 			return;
 		}
-		sdb_num_set (db, Fhandled(addr), 1, 0);
+		sdb_num_set (db, Fhandled (addr), 1, 0);
 	}
 }
 
-ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_commands) {
+static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_commands) {
 #define addCall(x) sdb_array_add_num (db, "calls", x, 0);
 #define addUcall(x) sdb_array_add_num (db, "ucalls", x, 0);
 #define addUjmp(x) sdb_array_add_num (db, "ujmps", x, 0);
@@ -139,14 +139,14 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_commands)
 		free (value);
 		cur = 0;
 		while (!block_end) {
-			op = r_core_anal_op (core, addr + cur, R_ANAL_OP_MASK_BASIC);
+			op = r_core_anal_op (core, addr + cur, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 			if (!op || !op->mnemonic) {
-				eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
+				eprintf ("a2f: Cannot analyze opcode at 0x%"PFMT64x"\n", addr+cur);
 				oaddr = UT64_MAX;
 				break;
 			}
 			if (op->mnemonic[0] == '?') {
-				eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
+				eprintf ("a2f: Cannot analyze opcode at 0x%"PFMT64x"\n", addr+cur);
 				oaddr = UT64_MAX;
 				break;
 			}
@@ -397,7 +397,7 @@ RCorePlugin r_core_plugin_a2f = {
 	.call = r_cmd_anal_call,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
 	.data = &r_core_plugin_a2f,

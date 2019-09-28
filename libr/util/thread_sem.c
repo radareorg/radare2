@@ -46,7 +46,7 @@ R_API RThreadSemaphore *r_th_sem_new(unsigned int initial) {
 		return NULL;
 	}
 #  endif
-#elif __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__
 	sem->sem = CreateSemaphore (NULL, (LONG)initial, ST32_MAX, NULL);
 	if (!sem->sem) {
 		free (sem);
@@ -69,7 +69,7 @@ R_API void r_th_sem_free(RThreadSemaphore *sem) {
 		free (sem->sem);
 #  endif
 	}
-#elif __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__
 	CloseHandle (sem->sem);
 #endif
 	free (sem);
@@ -78,7 +78,7 @@ R_API void r_th_sem_free(RThreadSemaphore *sem) {
 R_API void r_th_sem_post(RThreadSemaphore *sem) {
 #if HAVE_PTHREAD
 	sem_post (sem->sem);
-#elif __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__
 	ReleaseSemaphore (sem->sem, 1, NULL);
 #endif
 }
@@ -86,7 +86,7 @@ R_API void r_th_sem_post(RThreadSemaphore *sem) {
 R_API void r_th_sem_wait(RThreadSemaphore *sem) {
 #if HAVE_PTHREAD
 	sem_wait (sem->sem);
-#elif __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__
 	WaitForSingleObject (sem->sem, INFINITE);
 #endif
 }

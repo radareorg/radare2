@@ -3,6 +3,12 @@
 
 #include "r_log.h"
 
+#define R_STATIC_ASSERT(x)\
+	switch (0) {\
+	case 0:\
+	case (x):;\
+	}
+
 R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
 
 #if defined (__GNUC__) && defined (__cplusplus)

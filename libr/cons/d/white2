@@ -31,7 +31,7 @@ ec jmp rgb:376B4C 0 bold underline               # jmp instructions
 ec label rgb:66d9ef
 ec linehl rgb:42505e            # highlight color when using asm.highlight
 ec math rgb:761B48 0 bold              # math instructions like sub, add
-ec mov rgb:d9d8d7               # mov instructions
+ec mov black
 ec nop rgb:a37acc               # nop instructions
 ec num rgb:761B48               # numbers
 ec offset rgb:2F6F9F            # offset in visual mode
@@ -43,8 +43,13 @@ ec reg rgb:400080               # register names
 ec ret rgb:F92672 0 bold                  # ret opcode
 ec swi rgb:d66
 ec trap rgb:d66                 
+ec ucall rgb:A63A00 0 bold
+ec ujmp rgb:376B4C 0 bold underline
 ec usrcmt rgb:007D96 0 bold           # user comment
 
 ec func_var rgb:400080      # var name in function
 ec func_var_type rgb:305F65 0 italic     # function variable
 ec func_var_addr magenta
+
+ec widget_bg rgb:2f6f9f white
+ec widget_sel white rgb:f73 bold

@@ -4,7 +4,7 @@
 #include <r_types.h>
 #include <r_lib.h>
 
-static int null_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int null_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	memset (op, '\0', sizeof(RAnalOp));
 	/* This should better follow the disassembler */
 	return op->size = 1;
@@ -24,7 +24,7 @@ RAnalPlugin r_anal_plugin_null = {
 	.set_reg_profile = &null_set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_null,

@@ -37,7 +37,7 @@ static inline ut16 i2ut16(struct instruction *in) {
 	return *((uint16_t*)in);
 }
 
-static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len) {
+static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len, RAnalOpMask mask) {
 	struct instruction *in = (struct instruction *)bytes;
 	ut16 lol, ins;
 	struct directive d = {{0}};
@@ -218,7 +218,7 @@ RAnalPlugin r_anal_plugin_xap = {
 	.op = &xap_op,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_xap,

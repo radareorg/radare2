@@ -26,7 +26,7 @@ static ut64 ws_find_label(int l, RIOBind iob) {
 	return 0;
 }
 
-static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -129,7 +129,7 @@ RAnalPlugin r_anal_plugin_ws = {
 	.op = &ws_anal,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_ws,

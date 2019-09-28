@@ -16,7 +16,7 @@
 #if defined(__FreeBSD__)
 # include <sys/param.h>
 # include <sys/sysctl.h>
-# if __FreeBSD_version >= 1000000 
+# if __FreeBSD_version >= 1000000
 #  define FREEBSD_WITH_BACKTRACE
 # endif
 #endif
@@ -42,7 +42,7 @@ static char** env = NULL;
 #if HAVE_ENVIRON
 #include <execinfo.h>
 #endif
-// iOS dont have this we cant hardcode
+// iOS don't have this we can't hardcode
 // #include <crt_externs.h>
 extern char ***_NSGetEnviron(void);
 # ifndef PROC_PIDPATHINFO_MAXSIZE
@@ -51,39 +51,57 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 //#  include <libproc.h>
 # endif
 #endif
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__
 # include <sys/wait.h>
 # include <sys/stat.h>
 # include <errno.h>
 # include <signal.h>
-# include <unistd.h>
 extern char **environ;
 
 #ifdef __HAIKU__
 # define Sleep sleep
 #endif
 #endif
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 # include <io.h>
 # include <winbase.h>
 #define TMP_BUFSIZE	4096
 #ifdef _MSC_VER
 #include <psapi.h>
-#include <io.h>
 #include <process.h>  // to allow getpid under windows msvc compilation
 #include <direct.h>  // to allow getcwd under windows msvc compilation
-#else
-typedef BOOL WINAPI (*QueryFullProcessImageName_t) (HANDLE, DWORD, LPTSTR, PDWORD);
-typedef DWORD WINAPI (*GetProcessImageFileName_t) (HANDLE, LPTSTR, DWORD);
-GetProcessImageFileName_t GetProcessImageFileName;
-QueryFullProcessImageName_t QueryFullProcessImageName;
 #endif
 #endif
 
 R_LIB_VERSION(r_util);
-#ifdef _MSC_VER
-// Required for GetModuleFileNameEx linking
-#pragma comment(lib, "psapi.lib")
+
+#ifdef __x86_64__
+# ifdef _MSC_VER
+#  define R_SYS_ASM_START_ROP() \
+	 eprintf ("r_sys_run_rop: Unsupported arch\n");
+# else
+#  define R_SYS_ASM_START_ROP() \
+	 __asm__ __volatile__ ("leaq %0, %%rsp; ret" \
+				: \
+				: "m" (*bufptr));
+# endif
+#elif __i386__
+# ifdef _MSC_VER
+#  define R_SYS_ASM_START_ROP() \
+	__asm \
+	{ \
+		__asm lea esp, bufptr\
+		__asm ret\
+	}
+# else
+#  define R_SYS_ASM_START_ROP() \
+	__asm__ __volatile__ ("leal %0, %%esp; ret" \
+				: \
+				: "m" (*bufptr));
+# endif
+#else
+# define R_SYS_ASM_START_ROP() \
+	eprintf ("r_sys_run_rop: Unsupported arch\n");
 #endif
 
 static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
@@ -113,7 +131,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
 
 R_API int r_sys_fork() {
 #if HAVE_FORK
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	return -1;
 #else
 	return fork ();
@@ -123,7 +141,15 @@ R_API int r_sys_fork() {
 #endif
 }
 
-/* TODO: import stuff fron bininfo/p/bininfo_addr2line */
+R_API void r_sys_exit(int status, bool nocleanup) {
+	if (nocleanup) {
+		_exit (status);
+	} else {
+		exit (status);
+	}
+}
+
+/* TODO: import stuff from bininfo/p/bininfo_addr2line */
 /* TODO: check endianness issues here */
 R_API ut64 r_sys_now(void) {
 	ut64 ret;
@@ -137,7 +163,7 @@ R_API ut64 r_sys_now(void) {
 }
 
 R_API int r_sys_truncate(const char *file, int sz) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	int fd = r_sandbox_open (file, O_RDWR, 0644);
 	if (fd == -1) {
 		return false;
@@ -162,13 +188,46 @@ R_API int r_sys_truncate(const char *file, int sz) {
 #endif
 }
 
+R_API os_info *r_sys_get_osinfo() {
+#if __WINDOWS__
+	return r_sys_get_winver();
+#endif
+	os_info *info = calloc (1, sizeof (os_info));
+	if (!info) {
+		return NULL;
+	}
+	int len = 0;
+	char *output = r_sys_cmd_str ("uname -s", NULL, &len);
+	if (len) {
+		strncpy (info->name, output, sizeof (info->name));
+		info->name[31] = '\0';
+	}
+	free (output);
+	output = r_sys_cmd_str ("uname -r", NULL, &len);
+	if (len) {
+		char *dot = strtok (output, ".");
+		if (dot) {
+			info->major = atoi (dot);
+		}
+		dot = strtok (NULL, ".");
+		if (dot) {
+			info->minor = atoi (dot);
+		}
+		dot = strtok (NULL, ".");
+		if (dot) {
+			info->patch = atoi (dot);
+		}
+	}
+	free (output);
+	return info;
+}
+
 R_API RList *r_sys_dir(const char *path) {
 	RList *list = NULL;
-#if __WINDOWS__ && !defined(__CYGWIN__)
-	HANDLE fh;
+#if __WINDOWS__
 	WIN32_FIND_DATAW entry;
 	char *cfname;
-	fh = r_sandbox_opendir (path, &entry);
+	HANDLE fh = r_sandbox_opendir (path, &entry);
 	if (fh == INVALID_HANDLE_VALUE) {
 		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
 		return list;
@@ -196,7 +255,7 @@ R_API RList *r_sys_dir(const char *path) {
 		}
 		closedir (dir);
 	}
-#endif	
+#endif
 	return list;
 }
 
@@ -275,7 +334,7 @@ R_API int r_sys_usleep(int usecs) {
 	rqtp.tv_sec = usecs / 1000000;
 	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
 	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
-#elif __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#elif __UNIX__
 	return usleep (usecs);
 #else
 	// w32 api uses milliseconds
@@ -286,7 +345,7 @@ R_API int r_sys_usleep(int usecs) {
 }
 
 R_API int r_sys_clearenv(void) {
-#if __UNIX__ || (__CYGWIN__ && !defined(MINGW32))
+#if __UNIX__
 #if __APPLE__ && !HAVE_ENVIRON
 	/* do nothing */
 	if (!env) {
@@ -319,23 +378,25 @@ R_API int r_sys_clearenv(void) {
 }
 
 R_API int r_sys_setenv(const char *key, const char *value) {
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	if (!key) {
 		return 0;
 	}
+#if __UNIX__
 	if (!value) {
 		unsetenv (key);
 		return 0;
 	}
 	return setenv (key, value, 1);
 #elif __WINDOWS__
-	LPTSTR key_ = r_sys_conv_utf8_to_utf16 (key);
-	LPTSTR value_ = r_sys_conv_utf8_to_utf16 (value);
-
-	SetEnvironmentVariable (key_, value_);
+	LPTSTR key_ = r_sys_conv_utf8_to_win (key);
+	LPTSTR value_ = r_sys_conv_utf8_to_win (value);
+	int ret = SetEnvironmentVariable (key_, value_);
+	if (!ret) {
+		r_sys_perror ("r_sys_setenv/SetEnvironmentVariable");
+	}
 	free (key_);
 	free (value_);
-	return 0; // TODO. get ret
+	return ret ? 0 : -1;
 #else
 #warning r_sys_setenv : unimplemented for this platform
 	return 0;
@@ -404,7 +465,7 @@ R_API int r_sys_crash_handler(const char *cmd) {
 }
 
 R_API char *r_sys_getenv(const char *key) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	DWORD dwRet;
 	LPTSTR envbuf = NULL, key_ = NULL, tmp_ptr;
 	char *val = NULL;
@@ -416,7 +477,7 @@ R_API char *r_sys_getenv(const char *key) {
 	if (!envbuf) {
 		goto err_r_sys_get_env;
 	}
-	key_ = r_sys_conv_utf8_to_utf16 (key);
+	key_ = r_sys_conv_utf8_to_win (key);
 	dwRet = GetEnvironmentVariable (key_, envbuf, TMP_BUFSIZE);
 	if (dwRet == 0) {
 		if (GetLastError () == ERROR_ENVVAR_NOT_FOUND) {
@@ -433,7 +494,7 @@ R_API char *r_sys_getenv(const char *key) {
 			goto err_r_sys_get_env;
 		}
 	}
-	val = r_sys_conv_utf16_to_utf8_l (envbuf, (int)dwRet);
+	val = r_sys_conv_win_to_utf8_l (envbuf, (int)dwRet);
 err_r_sys_get_env:
 	free (key_);
 	free (envbuf);
@@ -448,8 +509,15 @@ err_r_sys_get_env:
 #endif
 }
 
+R_API bool r_sys_getenv_asbool(const char *key) {
+	char *env = r_sys_getenv (key);
+	const bool res = (env && *env == '1');
+	free (env);
+	return res;
+}
+
 R_API char *r_sys_getdir(void) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	return _getcwd (NULL, 0);
 #else
 	return getcwd (NULL, 0);
@@ -460,7 +528,59 @@ R_API int r_sys_chdir(const char *s) {
 	return r_sandbox_chdir (s)==0;
 }
 
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+R_API bool r_sys_aslr(int val) {
+	bool ret = true;
+#if __linux__
+	const char *rva = "/proc/sys/kernel/randomize_va_space";
+	char buf[3] = {0};
+	snprintf(buf, sizeof (buf), "%d\n", val != 0 ? 2 : 0);
+	int fd = r_sandbox_open (rva, O_WRONLY, 0644);
+	if (fd != -1) {
+		if (r_sandbox_write (fd, (ut8 *)buf, sizeof (buf)) != sizeof (buf)) {
+			eprintf ("Failed to set RVA\n");
+			ret = false;
+		}
+		close (fd);
+	}
+#elif __FreeBSD__ && __FreeBSD_version >= 1300000
+	size_t vlen = sizeof (val);
+	if (sysctlbyname ("kern.elf32.aslr.enable", NULL, 0, &val, vlen) == -1) {
+		eprintf ("Failed to set RVA 32 bits\n");
+		return false;
+	}
+
+#if __LP64__
+	if (sysctlbyname ("kern.elf64.aslr.enable", NULL, 0, &val, vlen) == -1) {
+		eprintf ("Failed to set RVA 64 bits\n");
+		ret = false;
+	}
+#endif
+#endif
+	return ret;
+}
+
+R_API int r_sys_thp_mode(void) {
+#if __linux__
+	const char *thp = "/sys/kernel/mm/transparent_hugepage/enabled";
+	int sz;
+	int ret = 0;
+	char *val = r_file_slurp (thp, &sz);
+	if (val) {
+		if (strstr (val, "[madvise]")) {
+			ret = 1;
+		} else if (strstr (val, "[always]")) {
+			ret = 2;
+		}
+		free (val);
+	}
+
+	return ret;
+#else
+  return 0;
+#endif
+}
+
+#if __UNIX__
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	char *mysterr = NULL;
 	if (!sterr) {
@@ -505,7 +625,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			close (sh_out[1]);
 		}
 		if (sterr) {
-			dup2 (sh_err[1], 2); 
+			dup2 (sh_err[1], 2);
 		} else {
 			close (2);
 		}
@@ -611,17 +731,8 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	return false;
 }
 #elif __WINDOWS__
-// TODO: fully implement the rest
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	bool result = r_sys_cmd_str_full_w32 (cmd, input, output, sterr);
-	if (len) {
-		*len = 0;
-		if (output && result) {
-			*len = strlen (*output);
-		}
-	}
-
-	return result;
+	return r_sys_cmd_str_full_w32 (cmd, input, output, len, sterr);
 }
 #else
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
@@ -642,7 +753,7 @@ R_API int r_sys_cmdf (const char *fmt, ...) {
 }
 
 R_API int r_sys_cmdbg (const char *str) {
-#if __UNIX__ || __CYGWIN && !defined(MINGW32)
+#if __UNIX__
 	int ret, pid = r_sys_fork ();
 	if (pid == -1) {
 		return -1;
@@ -709,8 +820,8 @@ R_API bool r_sys_mkdir(const char *dir) {
 	if (r_sandbox_enable (0)) {
 		return false;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__)
-	LPTSTR dir_ = r_sys_conv_utf8_to_utf16 (dir);
+#if __WINDOWS__
+	LPTSTR dir_ = r_sys_conv_utf8_to_win (dir);
 
 	ret = CreateDirectory (dir_, NULL) != 0;
 	free (dir_);
@@ -731,7 +842,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 	if (*ptr == slash) {
 		ptr++;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	{
 		char *p = strstr (ptr, ":\\");
 		if (p) {
@@ -767,7 +878,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 }
 
 R_API void r_sys_perror_str(const char *fun) {
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__
 #pragma push_macro("perror")
 #undef perror
 	perror (fun);
@@ -784,7 +895,11 @@ R_API void r_sys_perror_str(const char *fun) {
 			MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
 			(LPTSTR)&lpMsgBuf,
 			0, NULL )) {
-		eprintf ("%s: " W32_TCHAR_FSTR "\n", fun, lpMsgBuf);
+		char *err = r_sys_conv_win_to_utf8 (lpMsgBuf);
+		if (err) {
+			eprintf ("%s: %s\n", fun, err);
+			free (err);
+		}
 		LocalFree (lpMsgBuf);
 	} else {
 		eprintf ("%s\n", fun);
@@ -856,7 +971,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (int (*)())ptr;
 #if USE_FORK
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__
 	pid = r_sys_fork ();
 #else
 	pid = -1;
@@ -885,7 +1000,57 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API int r_is_heap (void *p) {
+R_API int r_sys_run_rop(const ut8 *buf, int len) {
+#if USE_FORK
+	int st;
+#endif
+	// TODO: define R_SYS_ALIGN_FORWARD in r_util.h
+	ut8 *bufptr = malloc (len);
+	if (!bufptr) {
+		eprintf ("r_sys_run_rop: Cannot allocate buffer\n");
+		return false;
+	}
+
+	if (!buf) {
+		eprintf ("r_sys_run_rop: Cannot execute empty rop chain\n");
+		free (bufptr);
+		return false;
+	}
+	memcpy (bufptr, buf, len);
+#if USE_FORK
+#if __UNIX__
+	pid_t pid = r_sys_fork ();
+#else
+	pid = -1;
+#endif
+	if (pid < 0) {
+		R_SYS_ASM_START_ROP ();
+	} else {
+		R_SYS_ASM_START_ROP ();
+		exit (0);
+                return 0;
+	}
+	st = 0;
+	if (waitpid (pid, &st, 0) == -1) {
+            eprintf ("r_sys_run_rop: waitpid failed\n");
+            free (bufptr);
+            return -1;
+        }
+	if (WIFSIGNALED (st)) {
+		int num = WTERMSIG (st);
+		eprintf ("Got signal %d\n", num);
+		ret = num;
+	} else {
+		ret = WEXITSTATUS (st);
+	}
+#else
+	R_SYS_ASM_START_ROP ();
+#endif
+	free (bufptr);
+	return 0;
+}
+
+R_API bool r_is_heap (void *p) {
 	void *q = malloc (8);
 	ut64 mask = UT64_MAX;
 	ut64 addr = (ut64)(size_t)q;
@@ -899,69 +1064,92 @@ R_API int r_is_heap (void *p) {
 
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	HANDLE kernel32 = GetModuleHandle (TEXT("kernel32"));
-	if (!kernel32) {
-		eprintf ("Error getting the handle to kernel32.dll\n");
-		return NULL;
-	}
-#ifndef _MSC_VER
-	if (!GetProcessImageFileName) {
-		if (!QueryFullProcessImageName) {
-			QueryFullProcessImageName = (QueryFullProcessImageName_t) GetProcAddress (kernel32, W32_TCALL ("QueryFullProcessImageName"));
-		}
-		if (!QueryFullProcessImageName) {
-			// QueryFullProcessImageName does not exist before Vista, fallback to GetProcessImageFileName
-			HANDLE psapi = LoadLibrary (TEXT("Psapi.dll"));
-			if (!psapi) {
-				eprintf ("Error getting the handle to Psapi.dll\n");
-				return NULL;
-			}
-			GetProcessImageFileName = (GetProcessImageFileName_t) GetProcAddress (psapi, W32_TCALL ("GetProcessImageFileName"));
-			if (!GetProcessImageFileName) {
-				eprintf ("Error getting the address of GetProcessImageFileName\n");
-				return NULL;
-			}
-		}
-	}
-	HANDLE handle = NULL;
+	// TODO: add maximum path length support
+	HANDLE processHandle;
+	const DWORD maxlength = MAX_PATH;
 	TCHAR filename[MAX_PATH];
-	DWORD maxlength = MAX_PATH;
-	handle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-	if (handle != NULL) {
-		if (QueryFullProcessImageName) {
-			if (QueryFullProcessImageName (handle, 0, filename, &maxlength) == 0) {
-				eprintf ("Error calling QueryFullProcessImageName\n");
-				CloseHandle (handle);
-				return NULL;
-			}
-		} else {
-			if (GetProcessImageFileName (handle, filename, maxlength) == 0) {
-				eprintf ("Error calling GetProcessImageFileName\n");
-				CloseHandle (handle);
-				return NULL;
-			}
-		}
-		CloseHandle (handle);
-		return r_sys_conv_utf16_to_utf8 (filename);
-	}
-	return NULL;
-#else
-	HANDLE processHandle = NULL;
-	TCHAR filename[FILENAME_MAX];
+	const char *result;
 
 	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-	if (processHandle != NULL) {
-		if (GetModuleFileNameEx (processHandle, NULL, filename, FILENAME_MAX) == 0) {
-			eprintf ("r_sys_pid_to_path: Cannot get module filename.");
-		} else {
-			return strdup (filename);
-		}
-		CloseHandle (processHandle);
-	} else {
-		eprintf ("r_sys_pid_to_path: Cannot open process.");
+	if (!processHandle) {
+		eprintf ("r_sys_pid_to_path: Cannot open process.\n");
+		return NULL;
 	}
-	return NULL;
-#endif
+	DWORD length = GetModuleFileNameEx (processHandle, NULL, filename, maxlength);
+	if (length == 0) {
+		// Upon failure fallback to GetProcessImageFileName
+		length = GetProcessImageFileName (processHandle, filename, maxlength);
+		CloseHandle (processHandle);
+		if (length == 0) {
+			eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");
+			return NULL;
+		}
+		// Convert NT path to win32 path
+		char *name = r_sys_conv_win_to_utf8 (filename);
+		if (!name) {
+			eprintf ("r_sys_pid_to_path: Error converting to utf8\n");
+			return NULL;
+		}
+		char *tmp = strchr (name + 1, '\\');
+		if (!tmp) {
+			free (name);
+			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
+			return NULL;
+		}
+		tmp = strchr (tmp + 1, '\\');
+		if (!tmp) {
+			free (name);
+			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
+			return NULL;
+		}
+		length = tmp - name;
+		tmp = malloc (length + 1);
+		if (!tmp) {
+			free (name);
+			eprintf ("r_sys_pid_to_path: Error allocating memory\n");
+			return NULL;
+		}
+		strncpy (tmp, name, length);
+		tmp[length] = '\0';
+		TCHAR device[MAX_PATH];
+		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
+			if (QueryDosDevice (drv, device, maxlength) > 0) {
+				char *dvc = r_sys_conv_win_to_utf8 (device);
+				if (!dvc) {
+					free (name);
+					free (tmp);
+					eprintf ("r_sys_pid_to_path: Error converting to utf8\n");
+					return NULL;
+				}
+				if (!strcmp (tmp, dvc)) {
+					free (tmp);
+					free (dvc);
+					char *d = r_sys_conv_win_to_utf8 (drv);
+					if (!d) {
+						free (name);
+						eprintf ("r_sys_pid_to_path: Error converting to utf8\n");
+						return NULL;
+					}
+					tmp = r_str_newf ("%s%s", d, &name[length]);
+					free (d);
+					if (!tmp) {
+						free (name);
+						eprintf ("r_sys_pid_to_path: Error calling r_str_newf\n");
+						return NULL;
+					}
+					result = strdup (tmp);
+					break;
+				}
+				free (dvc);
+			}
+		}
+		free (name);
+		free (tmp);
+	} else {
+		CloseHandle (processHandle);
+		result = r_sys_conv_win_to_utf8 (filename);
+	}
+	return result;
 #elif __APPLE__
 #if __POWERPC__
 #warning TODO getpidproc
@@ -1030,7 +1218,7 @@ R_API char *r_sys_whoami (char *buf) {
 R_API int r_sys_getpid() {
 #if __UNIX__
 	return getpid ();
-#elif __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__
 	return GetCurrentProcessId();
 #else
 #warning r_sys_getpid not implemented for this platform
@@ -1058,15 +1246,20 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 }
 
 R_API const char *r_sys_prefix(const char *pfx) {
-	static char prefix[1024] = {0};
-	if (!*prefix) {
-		r_str_ncpy (prefix, R2_PREFIX, sizeof (prefix));
+	static char *prefix = NULL;
+	if (!prefix) {
+#if __WINDOWS__
+		prefix = r_sys_get_src_dir_w32 ();
+		if (!prefix) {
+			prefix = strdup (R2_PREFIX);
+		}
+#else
+		prefix = strdup (R2_PREFIX);
+#endif
 	}
 	if (pfx) {
-		if (strlen (pfx) >= sizeof (prefix) - 1) {
-			return NULL;
-		}
-		r_str_ncpy (prefix, pfx, sizeof (prefix) - 1);
+		free (prefix);
+		prefix = strdup (pfx);
 	}
 	return prefix;
 }

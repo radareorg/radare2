@@ -5,7 +5,6 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include "sdb.h"
 
@@ -42,7 +41,7 @@ static bool r_sys_mkdir(const char *path) {
 	return ret;
 }
 #else
-#define r_sys_conv_utf8_to_utf16(buf) strdup (buf) 
+#define r_sys_conv_utf8_to_utf16(buf) strdup (buf)
 #define r_sys_mkdir(x) CreateDirectory (x, NULL)
 #endif
 #ifndef ERROR_ALREADY_EXISTS

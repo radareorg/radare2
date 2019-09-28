@@ -9,12 +9,12 @@
 #include "hexagon_insn.h"
 #include "hexagon_anal.h"
 
-static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	HexInsn hi = {0};;
 	ut32 data = 0;
 	memset (op, 0, sizeof (RAnalOp));
 	data = r_read_le32 (buf);
-	int size = hexagon_disasm_instruction (data, &hi);
+	int size = hexagon_disasm_instruction (data, &hi, (ut32) addr);
 	op->size = size;
 	if (size <= 0) {
 		return size;
@@ -33,6 +33,7 @@ static int set_reg_profile(RAnal *anal) {
 		"=SP	r29\n"
 		"=BP	r30\n"
 		"=LR	r31\n"
+		"=SN	r6\n"
 		"=ZF	z\n"
 		"=SF	s\n"
 		"=OF	ov\n"
@@ -96,7 +97,7 @@ RAnalPlugin r_anal_plugin_hexagon = {
 	.set_reg_profile = set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_hexagon_v6,

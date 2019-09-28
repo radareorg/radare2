@@ -95,15 +95,17 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (length > 0x190 && !memcmp (buf + 0x100, "SEGA", 4)) {
-		return true;
+static bool check_buffer(RBuffer *b) {
+	if (r_buf_size (b) > 0x190) {
+		ut8 buf[4];
+		r_buf_read_at (b, 0x100, buf, sizeof (buf));
+		return !memcmp (buf, "SEGA", 4);
 	}
 	return false;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return check_bytes (buf, sz);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+	return check_buffer (b);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -114,7 +116,9 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("Sega Megadrive");
-	ret->bclass = r_str_ndup ((char *) bf->buf->buf + 0x100, 32);
+	ut8 tmp[32];
+	r_buf_read_at (bf->buf, 0x100, tmp, sizeof (tmp));
+	ret->bclass = r_str_ndup ((char *)tmp, 32);
 	ret->os = strdup ("smd");
 	ret->arch = strdup ("m68k");
 	ret->bits = 16;
@@ -284,7 +288,7 @@ static RList *sections(RBinFile *bf) {
 		ut64 baddr = r_read_be32 (&hdr.RomStart);
 		ptr->vaddr += baddr;
 	}
-	ptr->size = ptr->vsize = bf->buf->length - ptr->paddr;
+	ptr->size = ptr->vsize = r_buf_size (bf->buf) - ptr->paddr;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
@@ -317,8 +321,8 @@ RBinPlugin r_bin_plugin_smd = {
 	.name = "smd",
 	.desc = "SEGA Genesis/Megadrive",
 	.license = "LGPL3",
-	.load_bytes = &load_bytes,
-	.check_bytes = &check_bytes,
+	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,
@@ -328,7 +332,7 @@ RBinPlugin r_bin_plugin_smd = {
 	.strfilter = 'U'
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_smd,

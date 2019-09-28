@@ -3,8 +3,8 @@
 #include "p9bin.h"
 #include <r_asm.h>
 
-int r_bin_p9_get_arch(const ut8 *b, int *bits, int *big_endian) {
-	st32 a = (st32) r_read_be32 (b);
+int r_bin_p9_get_arch(RBuffer *b, int *bits, int *big_endian) {
+	st32 a = (st32) r_buf_read_be32_at (b, 0);
 	if (bits) {
 		*bits = 32;
 	}

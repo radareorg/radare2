@@ -1,5 +1,5 @@
 malloc
-free
+free$
 calloc
 kalloc
 realloc

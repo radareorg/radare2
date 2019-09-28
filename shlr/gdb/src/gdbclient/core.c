@@ -17,9 +17,11 @@
 #include <termios.h>
 #endif
 
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 #include <signal.h>
 #endif
+
+#define QSUPPORTED_MAX_RETRIES 5
 
 extern char hex2char(char *hex);
 
@@ -100,7 +102,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
 	RStrBuf tmp;
 	r_strbuf_init (&tmp);
-	int ret;
+	int ret, i;
 	if (!g || !host) {
 		return -1;
 	}
@@ -131,14 +133,23 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	read_packet (g, true); // vcont=true lets us skip if we get no reply
 	g->connected = 1;
 	// TODO add config possibility here
-	ret = send_msg (g, message);
-	if (ret < 0) {
-		return ret;
+	for (i = 0; i < QSUPPORTED_MAX_RETRIES; i++) {
+		ret = send_msg (g, message);
+		if (ret < 0) {
+			continue;
+		}
+		ret = read_packet (g, false);
+		if (ret < 0) {
+			continue;
+		}
+		ret = handle_qSupported (g);
+		if (ret < 0) {
+			continue;
+		}
+		break;
 	}
-	read_packet (g, false);
-	ret = handle_qSupported (g);
 	if (ret < 0) {
-		return ret;
+		return -1;
 	}
 	if (env_pktsz > 0) {
 		g->stub_features.pkt_sz = R_MAX (R_MIN (env_pktsz, g->stub_features.pkt_sz), GDB_MAX_PKTSZ);
@@ -732,7 +743,7 @@ int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 		return -1;
 	}
 	reg_cache.valid = false;
-	ret = snprintf (command, sizeof (command) - 1, "%s%d=", CMD_WRITEREG, index);
+	ret = snprintf (command, sizeof (command) - 1, "%s%x=", CMD_WRITEREG, index);
 	if (len + ret >= sizeof (command)) {
 		eprintf ("command is too small\n");
 		return -1;
@@ -870,7 +881,7 @@ int test_command(libgdbr_t *g, const char *command) {
 
 static bool _isbreaked = false;
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 static HANDLE h;
 static BOOL __w32_signal(DWORD type) {
 	if (type == CTRL_C_EVENT) {
@@ -883,7 +894,7 @@ static BOOL __w32_signal(DWORD type) {
 #define SET_SIGINT_HANDLER(g,x)
 #define UNSET_SIGINT_HANDLER()
 
-#elif __UNIX__ || __CYGWIN__
+#elif __UNIX__
 static void _sigint_handler(int signo) {
 	_isbreaked = true;
 }

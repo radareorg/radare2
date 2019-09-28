@@ -4,7 +4,9 @@ ec b0xff rgb:eee
 ec other rgb:888
 ec bin rgb:FFE792
 ec btext rgb:a398e5
+ec ucall rgb:f1c40f
 ec call rgb:f1c40f
+ec ujmp rgb:A6df2E
 ec cjmp rgb:A6df2E
 ec jmp rgb:A6df2E
 ec cmp rgb:ef8d1a
@@ -49,3 +51,6 @@ ec graph.current rgb:fff
 ec func_var cyan
 ec func_var_type rgb:a398e5
 ec func_var_addr rgb:f92672
+
+ec widget_bg rgb:f1c40f rgb:555
+ec widget_sel white rgb:f92672

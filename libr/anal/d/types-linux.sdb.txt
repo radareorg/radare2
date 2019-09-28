@@ -7,6 +7,28 @@ func.__assert_fail.arg.3=const char *,function
 func.__assert_fail.noreturn=true
 func.__assert_fail.ret=void
 
+err=func
+func.err.args=1
+func.err.arg.0=int,eval
+func.err.arg.1=const char *,fmt
+func.err.noreturn=true
+func.err.ret=void
+
+errc=func
+func.errc.args=1
+func.errc.arg.0=int,eval
+func.errc.arg.1=int,code
+func.errc.arg.2=const char *,fmt
+func.errc.noreturn=true
+func.errc.ret=void
+
+errx=func
+func.errx.args=1
+func.errx.arg.0=int,eval
+func.errx.arg.1=const char *,fmt
+func.errx.noreturn=true
+func.errx.ret=void
+
 _exit=func
 func._exit.args=1
 func._exit.arg.0=int,status
@@ -157,3 +179,11 @@ __stack_chk_fail=func
 func.__stack_chk_fail.args=0
 func.__stack_chk_fail.noreturn=true
 func.__stack_chk_fail.ret=void
+
+__cxa_throw=func
+func.__cxa_throw.args=3
+func.__cxa_throw.arg.0=void *,thrown_exception
+func.__cxa_throw.arg.1=struct std::type_info *,tinfo
+func.__cxa_throw.arg.2=void *,dest
+func.__cxa_throw.noreturn=true
+func.__cxa_throw.ret=void

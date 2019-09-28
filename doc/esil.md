@@ -119,7 +119,7 @@ ESIL Flags
 ==========
 
 ESIL VM have an internal state flags that can are read only and can be used to
-export those values to the underlaying CPU flags. This is because the ESIL vm
+export those values to the underlying CPU flags. This is because the ESIL vm
 defines all the flag changes, while the CPUs only update the flags under
 certain conditions or specific instructions.
 
@@ -144,9 +144,9 @@ Variables
 
 Bitarrays
 =========
-What to do with them? What about bit arithmetics if use variables instead of registers?
+What to do with them? What about bit arithmetic if use variables instead of registers?
 
-Arithmetics
+Arithmetic
 ===========
 1. ADD ("+")
 2. MUL ("*")
@@ -155,7 +155,7 @@ Arithmetics
 5. MOD ("%")
 
 
-Bit arithmetics
+Bit arithmetic
 ===============
 1. AND  "&"
 2. OR   "|"

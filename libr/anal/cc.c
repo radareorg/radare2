@@ -10,8 +10,7 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	sdb_unset (DB, sdb_fmt ("%s", name), 0);
 	sdb_unset (DB, sdb_fmt ("cc.%s.ret", name), 0);
 	sdb_unset (DB, sdb_fmt ("cc.%s.argn", name), 0);
-	sdb_unset (DB, sdb_fmt ("cc.%s.name", name), 0);
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		sdb_unset (DB, sdb_fmt ("cc.%s.arg%d", name, i), 0);
 	}
 }
@@ -26,17 +25,16 @@ R_API void r_anal_cc_set(RAnal *anal, const char *expr) {
 	char *end = strchr (args, ')');
 	if (end) {
 		*end++ = 0;
-		RList *retName = r_str_split_list (e, " ");
-		RList *ccArgs = r_str_split_list (args, ",");
+		RList *retName = r_str_split_list (e, " ", 0);
+		RList *ccArgs = r_str_split_list (args, ",", 0);
 		if (r_list_length (retName) == 2) {
 			const char *ret = r_list_get_n (retName, 0);
 			const char *name = r_list_get_n (retName, 1);
 			sdb_set (DB, name, "cc", 0);
 			sdb_set (DB, sdb_fmt ("cc.%s.ret"), ret, 0);
-			sdb_set (DB, sdb_fmt ("cc.%s.name"), name, 0); // XXX redundant
 			RListIter *iter;
 			const char *arg;
-			int n = 1;
+			int n = 0;
 			r_list_foreach (ccArgs, iter, arg) {
 				if (!strcmp (arg, "stack")) {
 					sdb_set (DB, sdb_fmt ("cc.%s.argn", name), arg, 0);
@@ -67,9 +65,8 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	}
 	RStrBuf *sb = r_strbuf_new (NULL);
 	r_strbuf_appendf (sb, "%s %s (", ret, name);
-	// XXX wtf are we starting with arg1 and not arg0
 	bool isFirst = true;
-	for (i = 1; i < 16; i++) {
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		const char *k = sdb_fmt ("cc.%s.arg%d", name, i);
 		const char *arg = sdb_const_get (DB, k, 0);
 		if (!arg) {
@@ -93,33 +90,48 @@ R_API bool r_anal_cc_exist (RAnal *anal, const char *convention) {
 	return x && *x && !strcmp (x, "cc");
 }
 
+// TODO: all callers to this function expect NON-NULL, so lets return "" on fail for now
 R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 	r_return_val_if_fail (anal && convention, NULL);
-	if (n < 1) {
-		return NULL;
+	if (n < 0) {
+		return "";
 	}
 	const char *query = sdb_fmt ("cc.%s.arg%d", convention, n);
 	const char *ret = sdb_const_get (DB, query, 0);
 	if (!ret) {
 		query = sdb_fmt ("cc.%s.argn", convention);
 		ret = sdb_const_get (DB, query, 0);
+#if 0
+		if (!strcmp (ret, "stack")) {
+			// TODO handle stack arguments here
+			return NULL;
+		}
+#endif
 	}
-	return ret;
-
+	return r_str_const (ret);
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
-	int ret = 0;
-	const char *query, *res;
-	r_return_val_if_fail (anal && cc, 0);
-	do {
-		query = sdb_fmt ("cc.%s.arg%d", cc, ret + 1);
-		res = sdb_const_get (DB, query, 0);
-		if (res) {
-			ret++;
+	int i = 0;
+	r_return_val_if_fail (anal && DB && cc, 0);
+	static void *oldDB = NULL;
+	static char *oldCC = NULL;
+	static int oldArg = 0;
+	if (oldDB == DB && !strcmp (cc, oldCC)) {
+		return oldArg;
+	}
+	oldDB = DB;
+	free (oldCC);
+	oldCC = strdup (cc);
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+		const char *query = sdb_fmt ("cc.%s.arg%d", cc, i);
+		const char *res = sdb_const_get (DB, query, 0);
+		if (!res) {
+			break;
 		}
-	} while (res && ret < 6);
-	return ret;
+	}
+	oldArg = i;
+	return i;
 }
 
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention) {
@@ -138,10 +150,4 @@ R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name) {
 	const char *query = sdb_fmt ("func.%s.cc", func_name);
 	const char *cc = sdb_const_get (anal->sdb_types, query, 0);
 	return cc ? cc : r_anal_cc_default (anal);
-}
-
-R_API const char *r_anal_cc_to_constant(RAnal *anal, char *convention) {
-	r_return_val_if_fail (anal && convention, NULL);
-	char *query = sdb_fmt ("cc.%s.name", convention);
-	return sdb_const_get (DB, query, 0);
 }

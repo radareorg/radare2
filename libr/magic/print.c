@@ -3,7 +3,7 @@
  * Copyright (c) Ian F. Darwin 1986-1995.
  * Software written by Ian F. Darwin and others;
  * maintained 1995-present by Christos Zoulas and others.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -13,7 +13,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *  
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -39,9 +39,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #include <time.h>
 
 #define SZOF(a)	(sizeof(a) / sizeof(a[0]))
@@ -51,18 +48,17 @@ void file_mdump(struct r_magic *m) {
 	static const char optyp[] = { FILE_OPS };
 
 	(void) eprintf ("[%u", m->lineno);
-	(void) eprintf (">>>>>>>> %u" + 8 - (m->cont_level & 7),
-		       m->offset);
+	(void) eprintf ("%.*s %u", m->cont_level & 7, ">>>>>>>>", m->offset);
 
 	if (m->flag & INDIR) {
 		(void) eprintf ("(%s,",
 			       /* Note: type is unsigned */
-			       (m->in_type < file_nnames) ? 
+			       (m->in_type < file_nnames) ?
 					magic_file_names[m->in_type] : "*bad*");
 		if (m->in_op & FILE_OPINVERSE)
 			(void) fputc('~', stderr);
 		(void) eprintf ("%c%u),",
-			       ((m->in_op & FILE_OPS_MASK) < SZOF(optyp)) ? 
+			       ((m->in_op & FILE_OPS_MASK) < SZOF(optyp)) ?
 					optyp[m->in_op & FILE_OPS_MASK] : '?',
 				m->in_offset);
 	}
@@ -75,16 +71,16 @@ void file_mdump(struct r_magic *m) {
 	if (MAGIC_IS_STRING(m->type)) {
 		if (m->str_flags) {
 			(void) fputc('/', stderr);
-			if (m->str_flags & STRING_COMPACT_BLANK) 
+			if (m->str_flags & STRING_COMPACT_BLANK)
 				(void) fputc(CHAR_COMPACT_BLANK, stderr);
-			if (m->str_flags & STRING_COMPACT_OPTIONAL_BLANK) 
+			if (m->str_flags & STRING_COMPACT_OPTIONAL_BLANK)
 				(void) fputc(CHAR_COMPACT_OPTIONAL_BLANK,
 				    stderr);
-			if (m->str_flags & STRING_IGNORE_LOWERCASE) 
+			if (m->str_flags & STRING_IGNORE_LOWERCASE)
 				(void) fputc(CHAR_IGNORE_LOWERCASE, stderr);
-			if (m->str_flags & STRING_IGNORE_UPPERCASE) 
+			if (m->str_flags & STRING_IGNORE_UPPERCASE)
 				(void) fputc(CHAR_IGNORE_UPPERCASE, stderr);
-			if (m->str_flags & REGEX_OFFSET_START) 
+			if (m->str_flags & REGEX_OFFSET_START)
 				(void) fputc(CHAR_REGEX_OFFSET_START, stderr);
 		}
 		if (m->str_range)
@@ -95,7 +91,7 @@ void file_mdump(struct r_magic *m) {
 			(void) fputc(optyp[m->mask_op & FILE_OPS_MASK], stderr);
 		else
 			(void) fputc('?', stderr);
-			
+
 		if (m->num_mask)
 			(void) eprintf ("%08"PFMT64x, (ut64)m->num_mask);
 	}
@@ -179,7 +175,7 @@ void file_magwarn(struct r_magic_set *ms, const char *f, ...) {
 	va_list va;
 
 	/* cuz we use stdout for most, stderr here */
-	(void) fflush(stdout); 
+	(void) fflush(stdout);
 
 	if (ms->file)
 		(void) eprintf ("%s, %lu: ", ms->file,

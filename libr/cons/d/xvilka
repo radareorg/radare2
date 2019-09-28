@@ -4,8 +4,10 @@ ec label rgb:0f3
 ec math rgb:660
 ec bin rgb:f90
 ec call red
+ec ucall red
 ec jmp rgb:03f
 ec cjmp rgb:33c
+ec ujmp rgb:330
 ec offset rgb:366
 ec comment rgb:0cf
 ec usrcmt rgb:ff0 rgb:06f
@@ -60,3 +62,6 @@ ec gui.border black
 ec func_var rgb:0cf
 ec func_var_type rgb:0c0
 ec func_var_addr rgb:366
+
+ec widget_bg green rgb:255
+ec widget_sel white rgb:336 bold

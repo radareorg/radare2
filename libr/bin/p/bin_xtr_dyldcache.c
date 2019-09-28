@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -11,20 +11,19 @@ static RBinXtrData * extract(RBin *bin, int idx);
 static RList * extractall(RBin *bin);
 static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx);
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size);
-static int free_xtr (void *xtr_obj);
 
-static bool check_bytes(const ut8* buf, ut64 sz) {
-	return buf && sz > 3 && !memcmp (buf, "dyld", 4);
+static bool check_buffer(RBuffer *buf) {
+	ut8 b[4] = {0};
+	r_buf_read_at (buf, 0, b, sizeof (b));
+	return !memcmp (buf, "dyld", 4);
 }
 
-// TODO: destroy must be void?
-static int destroy(RBin *bin) {
-	return free_xtr (bin->cur->xtr_obj);
-}
-
-static int free_xtr(void *xtr_obj) {
+static void free_xtr(void *xtr_obj) {
 	r_bin_dyldcache_free ((struct r_bin_dyldcache_obj_t*)xtr_obj);
-	return true;
+}
+
+static void destroy(RBin *bin) {
+	free_xtr (bin->cur->xtr_obj);
 }
 
 static bool load(RBin *bin) {
@@ -83,7 +82,7 @@ static RBinXtrData *extract(RBin *bin, int idx) {
 			free (lib);
 			return NULL;
 		}
-		hdr = MACH0_(get_hdr_from_bytes) (lib->b);
+		hdr = MACH0_(get_hdr) (lib->b);
 		if (!hdr) {
 			free (lib);
 			R_FREE (metadata);
@@ -126,7 +125,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 		free (lib);
 		return NULL;
 	}
-	hdr = MACH0_(get_hdr_from_bytes) (lib->b);
+	hdr = MACH0_(get_hdr) (lib->b);
 	if (!hdr) {
 		free (lib);
 		free (metadata);
@@ -136,7 +135,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	r_bin_dydlcache_get_libname (lib, &libname);
 	metadata->libname = strdup (libname);
 
-	res = r_bin_xtrdata_new (lib->b, lib->offset, lib->b->length, nlib, metadata);
+	res = r_bin_xtrdata_new (lib->b, lib->offset, r_buf_size (lib->b), nlib, metadata);
 	r_buf_free (lib->b);
 	free (hdr);
 	free (lib);
@@ -182,10 +181,10 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache = {
 	.extract_from_bytes = &oneshot,
 	.extractall_from_bytes = &oneshotall,
 	.free_xtr = &free_xtr,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
 	.data = &r_bin_xtr_plugin_dyldcache,

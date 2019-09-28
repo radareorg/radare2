@@ -21,7 +21,7 @@ ec math rgb:ffffff
 ec mov rgb:ffffff
 ec nop rgb:FFE792
 ec offset rgb:ababab
-ec prompt rgb:ffcc00
+ec prompt rgb:fc0
 ec pop rgb:ef8d1a
 ec push rgb:df077e
 ec reg rgb:009d9d
@@ -29,6 +29,8 @@ ec args rgb:ffd200
 ec help rgb:009d9d
 ec input rgb:888
 ec trap rgb:d66
+ec ucall rgb:ffd200
+ec ujmp rgb:9dd600
 ec swi rgb:df077e
 ec creg rgb:69d200
 ec flag rgb:00b1ab
@@ -54,3 +56,6 @@ ec ai.write rgb:df077e
 ec ai.exec rgb:9dd600
 ec ai.seq rgb:9dd600
 ec ai.ascii rgb:d25032
+
+ec widget_bg rgb:099 rgb:444
+ec widget_sel rgb:000 yellow

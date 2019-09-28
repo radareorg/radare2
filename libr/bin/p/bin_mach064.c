@@ -1,15 +1,20 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, alvaro_fe */
 
 #define R_BIN_MACH064 1
 #include "bin_mach0.c"
 
 #include "objc/mach064_classes.h"
+#include "../format/mach0/mach064_is_kernelcache.c"
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 4) {
-		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
-			!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
+static bool check_buffer(RBuffer *b) {
+	ut8 buf[4] = {0};
+	if (r_buf_size (b) > 4) {
+		r_buf_read_at (b, 0, buf, sizeof (buf));
+		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4)) {
 			return true;
+		}
+		if (!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
+			return !is_kernelcache_buffer (b);
 		}
 	}
 	return false;
@@ -35,7 +40,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 #define Q(x) r_buf_append_ut64(buf,x)
 #define Z(x) r_buf_append_nbytes(buf,x)
 #define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)(y),z)
-#define WZ(x,y) p_tmp=buf->length;Z(x);W(p_tmp,y,strlen(y))
+#define WZ(x,y) p_tmp=r_buf_size (buf);Z(x);W(p_tmp,y,strlen(y))
 
 	/* MACH0 HEADER */
 	// 32bit B ("\xce\xfa\xed\xfe", 4); // header
@@ -61,12 +66,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	/* COMMANDS */
 	D (ncmds); // ncmds
-	p_cmdsize = buf->length;
+	p_cmdsize = r_buf_size (buf);
 	D (-1); // headsize // cmdsize?
 	D (0);//0x85); // flags
 	D (0); // reserved -- only found in x86-64
 
-	magiclen = buf->length;
+	magiclen = r_buf_size (buf);
 
 	if (use_pagezero) {
 		/* PAGEZERO */
@@ -92,7 +97,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	Q (0x1000); // vmsize XXX
 
 	Q (0); // fileoff
-	p_codefsz = buf->length;
+	p_codefsz = r_buf_size (buf);
 	Q (-1); // filesize
 	D (7); // maxprot
 	D (5); // initprot
@@ -101,11 +106,11 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	// define section
 	WZ (16, "__text");
 	WZ (16, "__TEXT");
-	p_codeva = buf->length; // virtual address
+	p_codeva = r_buf_size (buf); // virtual address
 	Q (-1);
-	p_codesz = buf->length; // size of code (end-start)
+	p_codesz = r_buf_size (buf); // size of code (end-start)
 	Q (-1);
-	p_codepa = buf->length; // code - baddr
+	p_codepa = r_buf_size (buf); // code - baddr
 	D (-1); // offset, _start-0x1000);
 	D (2); // align
 	D (0); // reloff
@@ -115,19 +120,19 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	D (0); // reserved2
 	D (0); // reserved3
 
-	if (data && datalen>0) {
+	if (data && datalen > 0) {
 		/* DATA SEGMENT */
 		D (0x19);   // cmd.LC_SEGMENT_64
 		D (124+28); // sizeof (cmd)
-		p_tmp = buf->length;
+		p_tmp = r_buf_size (buf);
 		Z (16);
 		W (p_tmp, "__TEXT", 6); // segment name
-//XXX must be vmaddr+baddr
+		//XXX must be vmaddr+baddr
 		Q (0x2000); // vmaddr
-//XXX must be vmaddr+baddr
+		//XXX must be vmaddr+baddr
 		Q (0x1000); // vmsize
 		Q (0); // fileoff
-		p_datafsz = buf->length;
+		p_datafsz = r_buf_size (buf);
 		Q (-1); // filesize
 		D (6); // maxprot
 		D (6); // initprot
@@ -137,11 +142,11 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 		WZ (16, "__data");
 		WZ (16, "__DATA");
 
-		p_datava = buf->length;
+		p_datava = r_buf_size (buf);
 		Q (-1);
-		p_datasz = buf->length;
+		p_datasz = r_buf_size (buf);
 		Q (-1);
-		p_datapa = buf->length;
+		p_datapa = r_buf_size (buf);
 		D (-1); //_start-0x1000);
 		D (2); // align
 		D (0); // reloff
@@ -155,7 +160,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	if (use_dylinker) {
 		if (use_linkedit) {
 			/* LINKEDIT */
-			D (0x19);   // cmd.LC_SEGMENT
+			D (0x19); // cmd.LC_SEGMENT
 			D (72); // sizeof (cmd)
 			WZ (16, "__LINKEDIT");
 			Q (0x3000); // vmaddr
@@ -216,15 +221,15 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 		D (184); // sizeof (cmd)
 		D (4); // 1=i386, 4=x86_64
 		D (42); // thread-state-count
-		p_entry = buf->length + (16*sizeof (ut64));
+		p_entry = r_buf_size (buf) + (16*sizeof (ut64));
 		Z (STATESIZE);
 	}
 
-	WZ (4096 - buf->length, "");
-	headerlen = buf->length - magiclen;
+	WZ (4096 - r_buf_size (buf), "");
+	headerlen = r_buf_size (buf) - magiclen;
 
-	codeva = buf->length + baddr;
-	datava = buf->length + codelen + baddr;
+	codeva = r_buf_size (buf) + baddr;
+	datava = r_buf_size (buf) + codelen + baddr;
 
 	if (p_entry != 0) {
 		W (p_entry, &codeva, 8); // set PC
@@ -279,11 +284,9 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.desc = "mach064 bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = binsym,
 	.entries = &entries,
@@ -301,7 +304,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.write = &r_bin_write_mach0,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mach064,

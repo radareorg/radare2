@@ -36,6 +36,7 @@ bool bsd_proc_vmmaps(RIO *io, int pid);
 #endif
 #ifdef _MSC_VER
 #include <process.h>  // to compile getpid for msvc windows
+#include <psapi.h>
 #endif
 
 typedef struct {
@@ -83,7 +84,7 @@ static int update_self_regions(RIO *io, int pid) {
 	char path[1024], line[1024];
 	char region[100], region2[100], perms[5];
 	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", pid);
-	FILE *fd = fopen (path, "r");
+	FILE *fd = r_sandbox_fopen (path, "r");
 	if (!fd) {
 		return false;
 	}
@@ -131,7 +132,39 @@ static int update_self_regions(RIO *io, int pid) {
 	return bsd_proc_vmmaps(io, pid);
 #else
 #ifdef _MSC_VER
-#pragma message ("Not yet implemented for this platform")
+	int perm;
+	const size_t name_size = 1024;
+	PVOID to = NULL;
+	MEMORY_BASIC_INFORMATION mbi;
+	HANDLE h = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
+	LPTSTR name = calloc (name_size, sizeof (TCHAR));
+	if (!name) {
+		R_LOG_ERROR ("io_self/update_self_regions: Failed to allocate memory.\n");
+		CloseHandle (h);
+		return false;
+	}
+	while (VirtualQuery (to, &mbi, sizeof (mbi))) {
+		to = (PBYTE) mbi.BaseAddress + mbi.RegionSize;
+		perm = 0;
+		perm |= mbi.Protect & PAGE_READONLY ? R_PERM_R : 0;
+		perm |= mbi.Protect & PAGE_READWRITE ? R_PERM_RW : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE ? R_PERM_X : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE_READ ? R_PERM_RX : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE_READWRITE ? R_PERM_RWX : 0;
+		perm = mbi.Protect & PAGE_NOACCESS ? 0 : perm;
+		if (perm && !GetMappedFileName (h, (LPVOID) mbi.BaseAddress, name, name_size)) {
+			name[0] = '\0';
+		}
+		self_sections[self_sections_count].from = (ut64) mbi.BaseAddress;
+		self_sections[self_sections_count].to = (ut64) to;
+		self_sections[self_sections_count].name = r_sys_conv_win_to_utf8 (name);
+		self_sections[self_sections_count].perm = perm;
+		self_sections_count++;
+		name[0] = '\0';
+	}
+	free (name);
+	CloseHandle (h);
+	return true;
 #else
 	#warning not yet implemented for this platform
 #endif
@@ -199,7 +232,7 @@ static int __close(RIODesc *fd) {
 }
 
 static void got_alarm(int sig) {
-#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
+#if !defined(__WINDOWS__)
 	// !!! may die if not running from r2preload !!! //
 	kill (getpid (), SIGUSR1);
 #endif
@@ -210,7 +243,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return r_str_newf ("%d", fd->fd);
 	} else if (!strncmp (cmd, "pid", 3)) {
 		/* do nothing here */
-#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
+#if !defined(__WINDOWS__)
 	} else if (!strncmp (cmd, "kill", 4)) {
 		if (r_sandbox_enable (false)) {
 			eprintf ("This is unsafe, so disabled by the sandbox\n");
@@ -310,7 +343,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		eprintf ("RES %"PFMT64d"\n", result);
 		free (argv);
-#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
+#if !defined(__WINDOWS__)
 	} else if (!strncmp (cmd, "alarm ", 6)) {
 		signal (SIGALRM, got_alarm);
 		// TODO: use setitimer
@@ -354,7 +387,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("| =!pid               show getpid()\n");
 		eprintf ("| =!maps              show map regions\n");
 		eprintf ("| =!kill              commit suicide\n");
-#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
+#if !defined(__WINDOWS__)
 		eprintf ("| =!alarm [secs]      setup alarm signal to raise r2 prompt\n");
 #endif
 		eprintf ("| =!dlsym [sym]       dlopen\n");
@@ -378,7 +411,7 @@ RIOPlugin r_io_plugin_self = {
 	.write = __write,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,
@@ -388,140 +421,106 @@ R_API RLibStruct radare_plugin = {
 
 #if __APPLE__
 // mach/mach_vm.h not available for iOS
-kern_return_t mach_vm_region (
+kern_return_t mach_vm_region_recurse (
         vm_map_t target_task,
         mach_vm_address_t *address,
         mach_vm_size_t *size,
-        vm_region_flavor_t flavor,
-        vm_region_info_t info,
-        mach_msg_type_number_t *infoCnt,
-        mach_port_t *object_name
+        natural_t *depth,
+        vm_region_recurse_info_t info,
+        mach_msg_type_number_t *infoCnt
 );
-// taken from vmmap.c ios clone
-// XXX. this code is dupped in libr/debug/p/debug_native.c
-// but this one looks better, the other one seems to work too.
 // TODO: unify that implementation in a single reusable place
 void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max) {
 	kern_return_t kret;
 
-	mach_vm_address_t prev_address;
-	/* @TODO: warning - potential overflow here - gotta fix this.. */
-	vm_region_basic_info_data_t prev_info, info;
-	mach_vm_size_t size, prev_size;
+	struct vm_region_submap_info_64 info;
+	mach_vm_size_t size;
 
-	mach_port_t object_name;
+	natural_t nsubregions = 1;
 	mach_msg_type_number_t count;
 
-	int nsubregions = 0;
 	int num_printed = 0;
-
-	count = VM_REGION_BASIC_INFO_COUNT_64;
-	kret = mach_vm_region (task, &address, &size, VM_REGION_BASIC_INFO,
-		(vm_region_info_t) &info, &count, &object_name);
-
-	if (kret) {
-		eprintf ("mach_vm_region: Error %d - %s", kret, mach_error_string(kret));
-		return;
-	}
-	memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_t));
-	prev_address = address;
-	prev_size = size;
-	nsubregions = 1;
-	self_sections_count = 0;
+	static const char *share_mode[] = {
+		"null",
+		"cow",
+		"private",
+		"empty",
+		"shared",
+		"true shared",
+		"prv aliased",
+		"shm aliased",
+		"large",
+	};
 
 	for (;;) {
-		int print = 0;
-		int done = 0;
-
-		address = prev_address + prev_size;
-
-		/* Check to see if address space has wrapped around. */
-		if (address == 0)
-			print = done = 1;
-
-		if (!done) {
-			// Even on iOS, we use VM_REGION_BASIC_INFO_COUNT_64. This works.
-			count = VM_REGION_BASIC_INFO_COUNT_64;
-			kret = mach_vm_region (task, &address, &size, VM_REGION_BASIC_INFO,
-				(vm_region_info_t) &info, &count, &object_name);
-			if (kret != KERN_SUCCESS) {
-				/* iOS 6 workaround - attempt to reget the task port to avoiD */
-				/* "(ipc/send) invalid destination port" (1000003 or something) */
-				task_for_pid(mach_task_self(),getpid (), &task);
-				kret = mach_vm_region (task, &address, &size, VM_REGION_BASIC_INFO,
-					(vm_region_info_t) &info, &count, &object_name);
+		count = VM_REGION_SUBMAP_INFO_COUNT_64;
+		kret = mach_vm_region_recurse (task, &address, &size, &nsubregions,
+				(vm_region_recurse_info_t) &info, &count);
+		if (kret != KERN_SUCCESS) {
+			if (!num_printed) {
+				eprintf ("mach_vm_region_recurse: Error %d - %s", kret, mach_error_string(kret));
 			}
-			if (kret != KERN_SUCCESS) {
-				eprintf ("mach_vm_region failed for address %p - Error: %x\n",
-					(void*)(size_t)address, kret);
-				size = 0;
-				if (address >= 0x4000000) {
-					return;
-				}
-				print = done = 1;
-			}
+			break;
 		}
-		if (address != prev_address + prev_size) {
-			print = 1;
-		}
-		if ((info.protection != prev_info.protection)
-			|| (info.max_protection != prev_info.max_protection)
-			|| (info.inheritance != prev_info.inheritance)
-			|| (info.shared != prev_info.reserved)
-			|| (info.reserved != prev_info.reserved))
-			print = 1;
 
-		if (print) {
+		if (!info.is_submap) {
 			int print_size;
 			char *print_size_unit;
+			int perm = 0;
 
 			io->cb_printf (num_printed? "   ... ": "Region ");
 			//findListOfBinaries(task, prev_address, prev_size);
 			/* Quick hack to show size of segment, which GDB does not */
-			print_size = prev_size;
+			print_size = size;
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "K"; }
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "M"; }
 			if (print_size > 1024) { print_size /= 1024; print_size_unit = "G"; }
 			/* End Quick hack */
-			io->cb_printf (" %p - %p [%d%s](%x/%x; %d, %s, %s)",
-				(void*)(size_t)(prev_address),
-				(void*)(size_t)(prev_address + prev_size),
-				print_size,
-				print_size_unit,
-				prev_info.protection,
-				prev_info.max_protection,
-				prev_info.inheritance,
-				prev_info.shared ? "shared" : "private",
-				prev_info.reserved ? "reserved" : "not-reserved");
+			io->cb_printf (" %p - %p [%d%s](%x/%x; %d, %s, %u p. res, %u p. swp, %u p. drt, %u ref)",
+					(void*)(size_t)(address),
+					(void*)(size_t)(address + size),
+					print_size,
+					print_size_unit,
+					info.protection,
+					info.max_protection,
+					info.inheritance,
+					share_mode[info.share_mode],
+					info.pages_resident,
+					info.pages_swapped_out,
+					info.pages_dirtied,
+					info.ref_count);
 
-			self_sections[self_sections_count].from = prev_address;
-			self_sections[self_sections_count].to = prev_address+prev_size;
-			self_sections[self_sections_count].perm = R_PERM_R; //prev_info.protection;
+			if (info.protection & VM_PROT_READ) {
+				perm |= R_PERM_R;
+			}
+			if (info.protection & VM_PROT_WRITE) {
+				perm |= R_PERM_W;
+			}
+			if (info.protection & VM_PROT_EXECUTE) {
+				perm |= R_PERM_X;
+			}
+
+			self_sections[self_sections_count].from = address;
+			self_sections[self_sections_count].to = address+size;
+			self_sections[self_sections_count].perm = perm;
 			self_sections_count++;
 			if (nsubregions > 1) {
 				io->cb_printf (" (%d sub-regions)", nsubregions);
 			}
 			io->cb_printf ("\n");
 
-			prev_address = address;
-			prev_size = size;
-			memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_t));
-			nsubregions = 1;
-
 			num_printed++;
+			address += size;
+			size = 0;
 		} else {
-			prev_size += size;
 			nsubregions++;
 		}
 
 		if ((max > 0) && (num_printed >= max)) {
 			eprintf ("Max %d num_printed %d\n", max, num_printed);
-			done = 1;
-		}
-		if (done) {
 			break;
 		}
-	 }
+	}
 }
 #elif __BSD__
 bool bsd_proc_vmmaps(RIO *io, int pid) {
@@ -537,9 +536,9 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 		return false;
 	}
 
+	size = size * 4 / 3;
 	ut8 *p = malloc (size);
 	if (p) {
-		size = size * 4 / 3;
 		s = sysctl (mib, 4, p, &size, NULL, 0);
 		if (s == -1) {
 			eprintf ("sysctl failed: %s\n", strerror (errno));
@@ -568,10 +567,10 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 
 			if (entry->kve_path[0] != '\0') {
 				io->cb_printf (" %p - %p %s (%s)\n",
-					(void *)entry->kve_start,
-					(void *)entry->kve_end,
-					r_str_rwx_i (perm),
-					entry->kve_path);
+						(void *)entry->kve_start,
+						(void *)entry->kve_end,
+						r_str_rwx_i (perm),
+						entry->kve_path);
 			}
 
 			self_sections[self_sections_count].from = entry->kve_start;
@@ -644,9 +643,9 @@ exit:
 		return false;
 	}
 
+	size = size * 4 / 3;
 	ut8 *p = malloc (size);
 	if (p) {
-		size = size * 4 / 3;
 		s = sysctl (mib, 5, p, &size, NULL, 0);
 		if (s == -1) {
 			eprintf ("sysctl failed: %s\n", strerror (errno));
@@ -759,7 +758,7 @@ RIOPlugin r_io_plugin_self = {
 	.desc = "read memory from myself using 'self://' (UNSUPPORTED)",
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,

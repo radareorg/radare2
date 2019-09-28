@@ -1,0 +1,11 @@
+extraction:
+    cpp:
+        after_prepare:
+            - export GNU_MAKE=make
+        configure:
+            command: "./configure"
+        before_index:
+            - export CS_COMMIT_ARCHIVE=1
+        index:
+            build_command:
+                - $GNU_MAKE -j2 -s

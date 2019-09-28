@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include "sdb.h"
 #include "cdb.h"
 #include "cdb_make.h"
@@ -19,10 +18,6 @@ char *cdb_alloc(ut32 n) {
 	return malloc (n);
 #endif
 }
-
-#if __SDB_WINDOWS__ && !__CYGWIN__
-extern void _aligned_free(void *memblock);
-#endif
 
 void cdb_alloc_free(void *x) {
 #if __SDB_WINDOWS__ && !__CYGWIN__

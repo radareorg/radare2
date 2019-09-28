@@ -11,6 +11,7 @@ typedef struct r_mmap_t {
 	int len;
 	int fd;
 	int rw;
+	char *filename;
 #if __WINDOWS__
 	HANDLE fh;
 	HANDLE fm;
@@ -34,7 +35,7 @@ R_API RMemoryPool* r_mem_pool_deinit(RMemoryPool *pool);
 R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
 R_API RMemoryPool *r_mem_pool_free(RMemoryPool *pool);
 R_API void* r_mem_pool_alloc(RMemoryPool *pool);
-R_API void *r_mem_dup(void *s, int l);
+R_API void *r_mem_dup(const void *s, int l);
 R_API void *r_mem_alloc(int sz);
 R_API void r_mem_free(void *);
 R_API void r_mem_memzero(void *, size_t);
@@ -54,6 +55,7 @@ R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *nee
 R_API int r_mem_count(const ut8 **addr);
 R_API bool r_mem_is_printable (const ut8 *a, int la);
 R_API bool r_mem_is_zero(const ut8 *b, int l);
+R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize);
 
 #ifdef __cplusplus
 }

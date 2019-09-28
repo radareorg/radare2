@@ -1,4 +1,4 @@
-/* radare2 - LGPL 3 - Copyright 2018 - lowlyw */
+/* radare2 - LGPL 3 - Copyright 2018-2019 - lowlyw */
 
 /*
  * info comes from here.
@@ -69,34 +69,23 @@ static ut64 baddr(RBinFile *bf) {
 	return (ut64) r_read_be32(&n64_header.BootAddress);
 }
 
-static bool check_bytes (const ut8 *buf, ut64 length) {
-	ut32 magic = 0x80371240;
-	if (length < N64_ROM_START) {
+static bool check_buffer(RBuffer *b) {
+	ut8 magic[4];
+	if (r_buf_size (b) < N64_ROM_START) {
 		return false;
 	}
-	return magic == r_read_be32 (buf);
+	(void)r_buf_read_at (b, 0, magic, sizeof (magic));
+	return !memcmp (magic, "\x80\x37\x12\x40", 4);
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	if (check_bytes (r_buf_buffer (bf->buf), sz)) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	if (check_buffer (b)) {
+		ut8 buf[sizeof (N64Header)] = {0};
+		r_buf_read_at (b, 0, buf, sizeof (buf));
 		*bin_obj = memcpy (&n64_header, buf, sizeof (N64Header));
 		return true;
 	}
 	return false;
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf) : 0;
-	if (!bf || !bf->o) {
-		return false;
-	}
-	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-	return check_bytes (bytes, sz);
-}
-
-static int destroy(RBinFile *bf) {
-	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -124,7 +113,7 @@ static RList *sections(RBinFile *bf) {
 		return NULL;
 	}
 	text->name = strdup ("text");
-	text->size = bf->buf->length - N64_ROM_START;
+	text->size = r_buf_size (bf->buf) - N64_ROM_START;
 	text->vsize = text->size;
 	text->paddr = N64_ROM_START;
 	text->vaddr = baddr (bf);
@@ -162,10 +151,8 @@ RBinPlugin r_bin_plugin_z64 = {
 	.name = "z64",
 	.desc = "Nintendo 64 binaries big endian r_bin plugin",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
-	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.baddr = baddr,
 	.boffset = &boffset,
 	.entries = &entries,
@@ -173,7 +160,7 @@ RBinPlugin r_bin_plugin_z64 = {
 	.info = &info
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_z64,

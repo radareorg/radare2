@@ -21,7 +21,7 @@ static const char* mips_reg_decode(unsigned reg_num) {
 	return NULL;
 }
 
-static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
+static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	ut32 opcode;
 	// WIP char buf[10]; int reg; int family;
 	int optype, oplen = (anal->bits==16)?2:4;
@@ -540,7 +540,7 @@ RAnalPlugin r_anal_plugin_mips_gnu = {
 	.set_reg_profile = mips_set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
         .type = R_LIB_TYPE_ANAL,
         .data = &r_anal_plugin_mips_gnu

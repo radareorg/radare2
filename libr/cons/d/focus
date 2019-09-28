@@ -2,25 +2,27 @@ ec fname rgb:0cf rgb:000
 ec label rgb:0cf rgb:000
 ec math rgb:ccc
 ec bin rgb:f90
-ec call rgb:000 rgb:ff0
-ec jmp rgb:ff3
+ec call rgb:ff0 rgb:00f
+ec ucall rgb:000 rgb:ff0
+ec jmp rgb:ff0 rgb:00f
 ec cjmp rgb:ff0
+ec ujmp rgb:ff3
 ec ret rgb:f00
 ec trap rgb:000 rgb:f00
 ec offset rgb:fff
-ec prompt yellow 
+ec prompt byellow 
 ec comment rgb:0cf
 ec usrcmt rgb:ff0 rgb:06f
 ec push rgb:f3f
-ec pop rgb:000 rgb:f3f
-ec cmp rgb:000 rgb:0f0
+ec pop rgb:f3f bold
+ec cmp rgb:ff0 rgb:060
 ec nop rgb:000
 ec b0x00 green
 ec b0x7f cyan 
 ec b0xff red 
 ec btext yellow 
 ec other rgb:666
-ec num rgb:888
+ec num rgb:ff0
 ec reg rgb:6f0 rgb:000
 ec fline rgb:fc0
 ec flow rgb:ff3
@@ -54,3 +56,6 @@ ec ai.write rgb:6f0
 ec ai.exec rgb:f3f
 ec ai.seq white
 ec ai.ascii yellow
+
+ec widget_bg rgb:ff0 rgb:000
+ec widget_sel rgb:000 rgb:0f0

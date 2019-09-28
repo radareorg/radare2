@@ -1,45 +1,43 @@
 default.cc=cdecl
 
 cdecl=cc
-cc.cdecl.name=cdecl
 cc.cdecl.argn=stack
 cc.cdecl.ret=eax
 
+cdecl-thiscall-ms=cc
+cc.cdecl-thiscall-ms.arg0=ecx
+cc.cdecl-fastcall-ms.argn=stack
+cc.cdecl-fastcall-ms.ret=eax
+
 optlink=cc
-cc.optlink.name=optlink
-cc.optlink.arg1=eax
-cc.optlink.arg2=edx
-cc.optlink.arg3=ecx
+cc.optlink.arg0=eax
+cc.optlink.arg1=edx
+cc.optlink.arg2=ecx
 cc.optlink.argn=stack
 cc.optlink.ret=eax
 
 stdcall=cc
-cc.stdcall.name=stdcall
 cc.stdcall.argn=stack_rev
 cc.stdcall.ret=eax
 
 fastcall=cc
-cc.fastcall.name=fastcall
-cc.fastcall.arg1=ecx
-cc.fastcall.arg2=edx
+cc.fastcall.arg0=ecx
+cc.fastcall.arg1=edx
 cc.fastcall.argn=stack
 cc.fastcall.ret=eax
 
 borland=cc
-cc.borland.name=borland
-cc.borland.arg1=eax
-cc.borland.arg2=edx
-cc.borland.arg3=ecx
+cc.borland.arg0=eax
+cc.borland.arg1=edx
+cc.borland.arg2=ecx
 cc.borland.argn=stack_rev
 
 watcom=cc
-cc.watcom.name=watcom
-cc.watcom.arg1=eax
-cc.watcom.arg2=edx
-cc.watcom.arg3=ebx
-cc.watcom.arg4=ecx
+cc.watcom.arg0=eax
+cc.watcom.arg1=edx
+cc.watcom.arg2=ebx
+cc.watcom.arg3=ecx
 cc.watcom.argn=stack
 
 pascal=cc
-cc.pascal.name=pascal
 cc.pascal.argn=stack_rev

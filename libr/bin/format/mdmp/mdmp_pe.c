@@ -5,7 +5,7 @@
 
 #include "mdmp_pe.h"
 
-static void PE_(add_tls_callbacks)(struct PE_(r_bin_pe_obj_t) *bin, RList* list) {
+static void PE_(add_tls_callbacks)(struct PE_(r_bin_pe_obj_t) * bin, RList *list) {
 	char *key;
 	int count = 0;
 	PE_DWord haddr, paddr, vaddr;
@@ -30,21 +30,21 @@ static void PE_(add_tls_callbacks)(struct PE_(r_bin_pe_obj_t) *bin, RList* list)
 			break;
 		}
 		if ((ptr = R_NEW0 (RBinAddr))) {
-			ptr->paddr  = paddr;
-			ptr->vaddr  = vaddr;
+			ptr->paddr = paddr;
+			ptr->vaddr = vaddr;
 			ptr->hpaddr = haddr;
-			ptr->type   = R_BIN_ENTRY_TYPE_TLS;
+			ptr->type = R_BIN_ENTRY_TYPE_TLS;
 			r_list_append (list, ptr);
 		}
 		count++;
 	} while (vaddr);
 }
 
-RList *PE_(r_bin_mdmp_pe_get_entrypoint)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
+RList *PE_(r_bin_mdmp_pe_get_entrypoint) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 	ut64 offset;
 	struct r_bin_pe_addr_t *entry = NULL;
 	RBinAddr *ptr = NULL;
-	RList* ret;
+	RList *ret;
 
 	if (!(entry = PE_(r_bin_pe_get_entrypoint) (pe_bin->bin))) {
 		return NULL;
@@ -58,15 +58,16 @@ RList *PE_(r_bin_mdmp_pe_get_entrypoint)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) 
 		if (offset > pe_bin->vaddr) {
 			offset -= pe_bin->vaddr;
 		}
-		ptr->paddr  = offset + pe_bin->paddr;
-		ptr->vaddr  = offset + pe_bin->vaddr;
+		ptr->paddr = offset + pe_bin->paddr;
+		ptr->vaddr = offset + pe_bin->vaddr;
 		ptr->hpaddr = pe_bin->paddr + entry->haddr;
-		ptr->type   = R_BIN_ENTRY_TYPE_PROGRAM;
+		ptr->type = R_BIN_ENTRY_TYPE_PROGRAM;
 
 		r_list_append (ret, ptr);
 	}
 
-	PE_(add_tls_callbacks) (pe_bin->bin, ret);
+	PE_(add_tls_callbacks)
+	(pe_bin->bin, ret);
 
 	free (entry);
 
@@ -83,7 +84,7 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-RList *PE_(r_bin_mdmp_pe_get_imports)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
+RList *PE_(r_bin_mdmp_pe_get_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
 	ut64 offset;
 	struct r_bin_pe_import_t *imports = NULL;
@@ -108,7 +109,7 @@ RList *PE_(r_bin_mdmp_pe_get_imports)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 			break;
 		}
 		filter_import (imports[i].name);
-		ptr->name = strdup ((char*)imports[i].name);
+		ptr->name = strdup ((char *)imports[i].name);
 		ptr->bind = r_str_const ("NONE");
 		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 		ptr->ordinal = imports[i].ordinal;
@@ -138,10 +139,10 @@ RList *PE_(r_bin_mdmp_pe_get_imports)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 	return ret;
 }
 
-RList *PE_(r_bin_mdmp_pe_get_sections)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
+RList *PE_(r_bin_mdmp_pe_get_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 	/* TODO: Vet code, taken verbatim(ish) from bin_pe.c */
 	int i;
-	ut64 ba = pe_bin->vaddr;//baddr (arch);
+	ut64 ba = pe_bin->vaddr; //baddr (arch);
 	struct r_bin_pe_section_t *sections = NULL;
 	RBinSection *ptr;
 	RList *ret;
@@ -149,17 +150,18 @@ RList *PE_(r_bin_mdmp_pe_get_sections)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
-	if (!pe_bin->bin || !(sections = pe_bin->bin->sections)){
+	if (!pe_bin->bin || !(sections = pe_bin->bin->sections)) {
 		r_list_free (ret);
 		return NULL;
 	}
-	PE_(r_bin_pe_check_sections) (pe_bin->bin, &sections);
+	PE_(r_bin_pe_check_sections)
+	(pe_bin->bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
 		}
 		if (sections[i].name[0]) {
-			ptr->name = strdup ((char*)sections[i].name);
+			ptr->name = strdup ((char *)sections[i].name);
 		} else {
 			ptr->name = strdup ("");
 		}
@@ -187,32 +189,30 @@ RList *PE_(r_bin_mdmp_pe_get_sections)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 			ptr->perm |= R_PERM_W;
 		}
 		if (R_BIN_PE_SCN_IS_READABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_X;
+			ptr->perm |= R_PERM_R;
 		}
 		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].perm)) {
 			ptr->perm |= R_PERM_SHAR;
 		}
-#define X 1
-#define ROW (4 | 2)
-		if (ptr->perm & ROW && !(ptr->perm & X) && ptr->size > 0) {
-			if (!strcmp (ptr->name, ".rsrc") ||
-				!strcmp (ptr->name, ".data") ||
-				!strcmp (ptr->name, ".rdata")) {
-					ptr->is_data = true;
-				}
+		if ((ptr->perm & R_PERM_R) && !(ptr->perm & R_PERM_X) && ptr->size > 0) {
+			if (!strncmp (ptr->name, ".rsrc", 5) ||
+				!strncmp (ptr->name, ".data", 5) ||
+				!strncmp (ptr->name, ".rdata", 5)) {
+				ptr->is_data = true;
+			}
 		}
 		r_list_append (ret, ptr);
 	}
 	return ret;
 }
 
-RList *PE_(r_bin_mdmp_pe_get_symbols)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
+RList *PE_(r_bin_mdmp_pe_get_symbols) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
 	ut64 offset;
 	struct r_bin_pe_export_t *symbols = NULL;
 	struct r_bin_pe_import_t *imports = NULL;
 	RBinSymbol *ptr = NULL;
-	RList* ret;
+	RList *ret;
 
 	if (!(ret = r_list_new ())) {
 		return NULL;

@@ -94,7 +94,7 @@ This release comes with contributions from the following people:
 Previous contributors
 ---------------------
 
-Some people didn't contribute to the lastest release, but they did it for the past ones. Kudos for them too!
+Some people didn't contribute to the latest release, but they did it for the past ones. Kudos for them too!
 
  - 0xroot
  - Alexander

@@ -42,23 +42,23 @@ static ut64 r_io_ar_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	}
 
 	b = fd->data;
-	seek_val = b->cur;
+	seek_val = r_buf_tell (b);
 
 	switch (whence) {
 	case SEEK_SET:
-		seek_val = (b->length < offset)? b->length: offset;
+		seek_val = (r_buf_size (b) < offset)? r_buf_size (b) : offset;
 		io->off = seek_val;
-		b->cur = b->base + seek_val;
+		r_buf_seek (b, seek_val, R_BUF_SET);
 		return seek_val;
 	case SEEK_CUR:
-		seek_val = (b->length < offset)? b->length: offset;
+		seek_val = (r_buf_size (b) < offset)? r_buf_size (b) : offset;
 		io->off = seek_val;
-		b->cur = b->base + seek_val;
+		r_buf_seek (b, seek_val, R_BUF_SET);
 		return seek_val;
 	case SEEK_END:
-		seek_val = b->length;
+		seek_val = r_buf_size (b);
 		io->off = seek_val;
-		b->cur = b->base + seek_val;
+		r_buf_seek (b, seek_val, R_BUF_SET);
 		return seek_val;
 	}
 	return seek_val;
@@ -104,7 +104,7 @@ RIOPlugin r_io_plugin_ar = {
 	.check = r_io_ar_plugin_open
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_ar,

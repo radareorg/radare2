@@ -4,6 +4,8 @@ _INCLUDE_RULES_MK_=
 -include $(LTOP)/config.mk
 -include $(LTOP)/../mk/compiler.mk
 
+WITH_LIBS?=1
+
 ifeq ($(DEBUG),1)
 export NOSTRIP=1
 CFLAGS+=-g
@@ -69,6 +71,7 @@ else
 	@-if [ -f p/Makefile ] ; then (echo "DIR ${NAME}/p"; cd p && ${MAKE}) ; fi
 endif
 
+ifeq ($(WITH_LIBS),1)
 $(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	@for a in ${OBJS} ${SHARED_OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
@@ -81,15 +84,17 @@ $(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	    [ -f "$(LIBR)/stripsyms.sh" ] && sh $(LIBR)/stripsyms.sh ${LIBSO} ${NAME} ; \
 	  break ; \
 	fi ; done
+else
+$(LIBSO): ;
+endif
 
 ifeq ($(WITH_LIBR),1)
 $(LIBAR): ${OBJS}
-	[ "${SILENT}" = 1 ] && @echo "CC_AR $(LIBAR)" || true
+	@[ "${SILENT}" = 1 ] && echo "CC_AR $(LIBAR)" || true
 	rm -f $(LIBAR)
 	${CC_AR} ${OBJS} ${SHARED_OBJ}
 	${RANLIB} $(LIBAR)
 else
-# ${LIBSO} $(LIBAR): ;
 $(LIBAR): ;
 endif
 

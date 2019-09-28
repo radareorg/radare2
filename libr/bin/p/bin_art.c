@@ -31,14 +31,16 @@ typedef struct __packed art_header_t {
 typedef struct {
 	Sdb *kv;
 	ARTHeader art;
+	RBuffer *buf;
 } ArtObj;
 
-static int art_header_load(ARTHeader *art, RBuffer *buf, Sdb *db) {
+static int art_header_load(ArtObj *ao, Sdb *db) {
 	/* TODO: handle read errors here */
-	if (r_buf_size (buf) < sizeof (ARTHeader)) {
+	if (r_buf_size (ao->buf) < sizeof (ARTHeader)) {
 		return false;
 	}
-	(void) r_buf_fread_at (buf, 0, (ut8 *) art, "IIiiiiiiiiiiii", 1);
+	ARTHeader *art = &ao->art;
+	(void) r_buf_fread_at (ao->buf, 0, (ut8 *) art, "IIiiiiiiiiiiii", 1);
 	sdb_set (db, "img.base", sdb_fmt ("0x%x", art->image_base), 0);
 	sdb_set (db, "img.size", sdb_fmt ("0x%x", art->image_size), 0);
 	sdb_set (db, "art.checksum", sdb_fmt ("0x%x", art->checksum), 0);
@@ -63,28 +65,25 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb){
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ArtObj *ao = R_NEW0 (ArtObj);
-	if (!ao) {
-		return false;
+	if (ao) {
+		ao->kv = sdb_new0 ();
+		if (ao->kv) {
+			ao->buf = r_buf_ref (buf);
+			art_header_load (ao, ao->kv);
+			sdb_ns_set (sdb, "info", ao->kv);
+			*bin_obj = ao;
+			return true;
+		}
 	}
-	ao->kv = sdb_new0 ();
-	if (!ao->kv) {
-		free (ao);
-		return false;
-	}
-	art_header_load (&ao->art, bf->buf, ao->kv);
-	sdb_ns_set (sdb, "info", ao->kv);
-	*bin_obj = ao;
-	return true;
+	return false;
 }
 
-static bool load(RBinFile *bf) {
-	return true;
-}
-
-static int destroy(RBinFile *bf) {
-	return true;
+static void destroy(RBinFile *bf) {
+	ArtObj *obj = bf->o->bin_obj;
+	r_buf_free (obj->buf);
+	free (obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -97,17 +96,12 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	ArtObj *ao;
-	RBinInfo *ret;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	ret = R_NEW0 (RBinInfo);
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	// art_header_load (&art, bf->buf);
-	ao = bf->o->bin_obj;
+	ArtObj *ao = bf->o->bin_obj;
 	ret->lang = NULL;
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("ART");
@@ -130,23 +124,21 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return (buf && length > 3 && !strncmp ((const char *) buf, "art\n", 4));
+static bool check_buffer(RBuffer *buf) {
+	char tmp[4];
+	int r = r_buf_read_at (buf, 0, (ut8 *)tmp, sizeof (tmp));
+	return r == 4 && !strncmp (tmp, "art\n", 4);
 }
 
 static RList *entries(RBinFile *bf) {
-	RList *ret;
-	RBinAddr *ptr = NULL;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
+	RList *ret = r_list_newf (free);
+	if (ret) {
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		if (ptr) {
+			ptr->paddr = ptr->vaddr = 0;
+			r_list_append (ret, ptr);
+		}
 	}
-	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
-	ptr->paddr = ptr->vaddr = 0;
-	r_list_append (ret, ptr);
 	return ret;
 }
 
@@ -168,7 +160,7 @@ static RList *sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("load");
-	ptr->size = bf->buf->length;
+	ptr->size = r_buf_size (bf->buf);
 	ptr->vsize = art.image_size; // TODO: align?
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;
@@ -220,10 +212,9 @@ RBinPlugin r_bin_plugin_art = {
 	.desc = "Android Runtime",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.sections = &sections,
 	.entries = entries,
@@ -231,7 +222,7 @@ RBinPlugin r_bin_plugin_art = {
 	.info = &info,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_art,

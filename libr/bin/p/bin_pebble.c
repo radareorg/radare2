@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2015 - pancake */
+/* radare - LGPL - Copyright 2014-2019 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -18,10 +18,10 @@ typedef struct  {
 
 R_PACKED (
 typedef struct  {
-	char header[8];                   //!< Sentinal value, should always be 'PBLAPP\0\0'
-	Version struct_version;           //!< version of this structure's format
-	Version sdk_version;              //!< version of the SDK used to build this app
-	Version app_version;              //!< version of the app
+	char header[8];               //!< Sentinel value, should always be 'PBLAPP\0\0'
+	Version struct_version;       //!< version of this structure's format
+	Version sdk_version;          //!< version of the SDK used to build this app
+	Version app_version;          //!< version of the app
 	ut16 size;                    //!< size of the app binary, including this metadata but not the reloc table
 	ut32 offset;                  //!< The entry point of this executable
 	ut32 crc;                     //!< CRC of the app data only, ie, not including this struct or the reloc table at the end
@@ -35,23 +35,16 @@ typedef struct  {
 	ut8 uuid[16];
 }) PebbleAppInfo;
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return (length > 7 && !memcmp (buf, "PBLAPP\x00\x00", 8));
+static bool check_buffer(RBuffer *b) {
+	ut8 magic[8];
+	if (r_buf_read_at (b, 0, magic, sizeof (magic)) != sizeof (magic)) {
+		return false;
+	}
+	return !memcmp (magic, "PBLAPP\x00\x00", 8);
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return check_bytes (buf, sz);
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
-static int destroy(RBinFile *bf) {
-	//r_bin_pebble_free ((struct r_bin_pebble_obj_t*)bf->o->bin_obj);
-	return true;
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+	return check_buffer (b);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -194,10 +187,8 @@ RBinPlugin r_bin_plugin_pebble = {
 	.name = "pebble",
 	.desc = "Pebble Watch App",
 	.license = "LGPL",
-	.load = &load,
-	.load_bytes = &load_bytes,
-	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = entries,
 	.sections = sections,
@@ -206,7 +197,7 @@ RBinPlugin r_bin_plugin_pebble = {
 	//.relocs = &relocs
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_pebble,

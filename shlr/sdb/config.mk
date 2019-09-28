@@ -6,7 +6,7 @@ INCDIR=${PREFIX}/include
 VAPIDIR=${DATADIR}/vala/vapi/
 MANDIR=${DATADIR}/man/man1
 
-SDBVER=1.3.0
+SDBVER=1.4.1
 
 BUILD_MEMCACHE=0
 
@@ -52,7 +52,7 @@ HAVE_VALA=#$(shell valac --version 2> /dev/null)
 # This is hacky
 HOST_CC?=gcc
 RANLIB?=ranlib
-OS?=$(shell uname)
+OS=$(shell uname)
 OSTYPE?=$(shell uname -s)
 ARCH?=$(shell uname -m)
 

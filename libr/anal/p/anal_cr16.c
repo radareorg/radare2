@@ -11,7 +11,7 @@
 #include <cr16_disas.h>
 
 static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
-		const ut8 *buf, int len)
+		const ut8 *buf, int len, RAnalOpMask mask)
 {
 	int ret;
 	struct cr16_cmd cmd;
@@ -132,7 +132,7 @@ RAnalPlugin r_anal_plugin_cr16 = {
 	.op = cr16_op,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_cr16,

@@ -31,6 +31,9 @@ ec pop rgb:af87ff
 ec swi rgb:8787ff
 ec crypto rgb:000000 rgb:ff5f5f
 ec trap rgb:000000 rgb:ff005f
+ec ucall rgb:000000 rgb:00ff5f
+ec ujmp rgb:000000 rgb:5f87ff
+
 ec invalid rgb:000000 rgb:ff005f
 ec num rgb:af87ff rgb:121212
 ec reg rgb:5fff5f rgb:121212
@@ -58,3 +61,6 @@ ec linehl rgb:1f1f1f
 ec func_var rgb:ff005f
 ec func_var_type blue
 ec func_var_addr rgb:5f87ff
+
+ec widget_bg rgb:68f rgb:555
+ec widget_sel black rgb:0f6

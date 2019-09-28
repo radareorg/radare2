@@ -1,6 +1,6 @@
 ec comment rgb:af2
 ec usrcmt rgb:af2 rgb:140
-ec mov white
+ec mov rgb:090
 ec fname rgb:27a
 ec args white
 ec floc rgb:af2
@@ -8,8 +8,8 @@ ec fline rgb:af2
 ec flag rgb:af2
 ec fname rgb:af2
 ec label rgb:af2
-ec flow rgb:af2 rgb:222
-ec flow2 rgb:af2 rgb:222
+ec flow rgb:af2
+ec flow2 rgb:af2
 ec prompt rgb:090
 ec offset rgb:ef0
 ec input rgb:7d5
@@ -25,7 +25,9 @@ ec push rgb:ef0
 ec pop rgb:ef0
 ec jmp rgb:af2
 ec cjmp rgb:af2
-ec call rgb:af2 rgb:140
+ec ujmp rgb:af2
+ec call rgb:fff
+ec ucall rgb:fff
 ec nop rgb:2da
 ec ret rgb:5d5
 ec trap rgb:a7a
@@ -58,3 +60,6 @@ ec ai.write rgb:9e2
 ec ai.exec rgb:af2
 ec ai.seq rgb:ef0
 ec ai.ascii rgb:ef0
+
+ec widget_bg rgb:ef0 rgb:060
+ec widget_sel black rgb:af2

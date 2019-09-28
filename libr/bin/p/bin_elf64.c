@@ -1,10 +1,13 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
 #define R_BIN_ELF64 1
 #include "bin_elf.inc"
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length >= 5) {
+
+static bool check_buffer(RBuffer *b) {
+	ut8 buf[5] = {0};
+	if (r_buf_size (b) > 4) {
+		r_buf_read_at (b, 0, buf, sizeof (buf));
 		if (!memcmp (buf, "\x7F\x45\x4c\x46\x02", 5)) {
 			return true;
 		}
@@ -23,14 +26,13 @@ static ut64 get_elf_vaddr64 (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 
 static void headers64(RBinFile *bf) {
 #define p bf->rbin->cb_printf
-	const ut8 *buf = r_buf_get_at (bf->buf, 0, NULL);
-	p ("0x00000000  ELF64       0x%08x\n", r_read_le32 (buf));
-	p ("0x00000010  Type        0x%04x\n", r_read_le16 (buf + 0x10));
-	p ("0x00000012  Machine     0x%04x\n", r_read_le16 (buf + 0x12));
-	p ("0x00000014  Version     0x%08x\n", r_read_le32 (buf + 0x14));
-	p ("0x00000018  Entrypoint  0x%08"PFMT64x"\n", r_read_le64 (buf + 0x18));
-	p ("0x00000020  PhOff       0x%08"PFMT64x"\n", r_read_le64 (buf + 0x20));
-	p ("0x00000028  ShOff       0x%08"PFMT64x"\n", r_read_le64 (buf + 0x28));
+	p ("0x00000000  ELF64       0x%08x\n", r_buf_read_le32_at (bf->buf, 0));
+	p ("0x00000010  Type        0x%04x\n", r_buf_read_le16_at (bf->buf, 0x10));
+	p ("0x00000012  Machine     0x%04x\n", r_buf_read_le16_at (bf->buf, 0x12));
+	p ("0x00000014  Version     0x%08x\n", r_buf_read_le32_at (bf->buf, 0x14));
+	p ("0x00000018  Entrypoint  0x%08"PFMT64x"\n", r_buf_read_le64_at (bf->buf, 0x18));
+	p ("0x00000020  PhOff       0x%08"PFMT64x"\n", r_buf_read_le64_at (bf->buf, 0x20));
+	p ("0x00000028  ShOff       0x%08"PFMT64x"\n", r_buf_read_le64_at (bf->buf, 0x28));
 }
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
@@ -55,15 +57,15 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	H (2); // e_type = ET_EXEC
 	H (62); // e_machine = EM_X86_64
 	D (1); // e_version = EV_CURRENT
-	p_start = buf->length;
+	p_start = r_buf_size (buf);
 	Q (-1); // e_entry = 0xFFFFFFFF
-	p_phoff = buf->length;
+	p_phoff = r_buf_size (buf);
 	Q (-1); // e_phoff = 0xFFFFFFFF
 	Q (0);  // e_shoff = 0xFFFFFFFF
 	D (0);  // e_flags
-	p_ehdrsz = buf->length;
+	p_ehdrsz = r_buf_size (buf);
 	H (-1); // e_ehsize = 0xFFFFFFFF
-	p_phdrsz = buf->length;
+	p_phdrsz = r_buf_size (buf);
 	H (-1); // e_phentsize = 0xFFFFFFFF
 	H (1);  // e_phnum
 	H (0);  // e_shentsize
@@ -71,24 +73,24 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	H (0);  // e_shstrndx
 
 	/* Phdr */
-	p_phdr = buf->length;
-	D (1);  // p_type
+	p_phdr = r_buf_size (buf);
+	D (1); // p_type
 	D (5);  // p_flags = PF_R | PF_X
 	Q (0);  // p_offset
-	p_vaddr = buf->length;
+	p_vaddr = r_buf_size (buf);
 	Q (-1); // p_vaddr = 0xFFFFFFFF
-	p_paddr = buf->length;
+	p_paddr = r_buf_size (buf);
 	Q (-1); // p_paddr = 0xFFFFFFFF
-	p_fs = buf->length;
+	p_fs = r_buf_size (buf);
 	Q (-1); // p_filesz
-	p_fs2 = buf->length;
+	p_fs2 = r_buf_size (buf);
 	Q (-1); // p_memsz
 	Q (0x200000); // p_align
 
 	/* Calc fields */
 	ehdrsz = p_phdr;
-	phdrsz = buf->length - p_phdr;
-	code_pa = buf->length;
+	phdrsz = r_buf_size (buf) - p_phdr;
+	code_pa = r_buf_size (buf);
 	code_va = code_pa + baddr;
 	phoff = p_phdr;
 	filesize = code_pa + codelen + datalen;
@@ -119,11 +121,9 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.desc = "elf64 bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.check_buffer = &check_buffer,
 	.load_buffer= &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.binsym = &binsym,
@@ -148,7 +148,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.maps = &maps,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_elf64,

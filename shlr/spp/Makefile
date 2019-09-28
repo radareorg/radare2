@@ -17,6 +17,9 @@ config.h:
 ${BIN}: config.h ${OBJ}
 	${CC} ${LDFLAGS} -o ${BIN} ${OBJ}
 
+r2lib: config.h
+	${CC} -DUSE_R2=1 -c ${CFLAGS} ${LDFLAGS} -o spp.o spp.c
+
 symlinks:
 	ln -s ${BIN} acr
 	ln -s ${BIN} cpp

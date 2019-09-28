@@ -71,7 +71,7 @@ static int lang_rust_init(void *user) {
 }
 
 static int lang_rust_run(RLang *lang, const char *code, int len) {
-	FILE *fd = fopen ("_tmp.rs", "w");
+	FILE *fd = r_sandbox_fopen ("_tmp.rs", "w");
 	if (fd) {
 		const char *rust_header = \
 "use std::ffi::CStr;\n" \

@@ -8,6 +8,9 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
+#define COFF_IS_BIG_ENDIAN 1
+#define COFF_IS_LITTLE_ENDIAN 0
+
 #include "coff_specs.h"
 
 struct r_bin_coff_obj {
@@ -18,7 +21,7 @@ struct r_bin_coff_obj {
 
 	ut16 target_id; /* TI COFF specific */
 
-	struct r_buf_t *b;
+	RBuffer *b;
 	size_t size;
 	ut8 endian;
 	Sdb *kv;
@@ -30,6 +33,5 @@ struct r_bin_coff_obj* r_bin_coff_new_buf(RBuffer *buf, bool verbose);
 void r_bin_coff_free(struct r_bin_coff_obj *obj);
 RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj);
 char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr);
-int r_coff_is_stripped (struct r_bin_coff_obj *obj);
 
 #endif /* COFF_H */

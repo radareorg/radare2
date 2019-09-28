@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018 - pancake */
+/* radare2 - LGPL - Copyright 2018-2019 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -74,7 +74,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
-	if (n>0) {
+	if (n > 0) {
 		if (insn->size > 0) {
 			op->size = insn->size;
 			char *buf_asm = sdb_fmt ("%s%s%s",
@@ -113,7 +113,7 @@ RAsmPlugin r_asm_plugin_m680x_cs = {
 };
 #endif
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m680x_cs,

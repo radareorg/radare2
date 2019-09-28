@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake, defragger */
 
+#include <r_core.h>
 #include <r_asm.h>
 #include <r_debug.h>
 #include <libgdbr.h>
@@ -13,6 +14,7 @@ typedef struct {
 #define UNSUPPORTED 0
 #define SUPPORTED 1
 
+static RIOGdb ** origriogdb = NULL;
 static libgdbr_t *desc = NULL;
 static ut8* reg_buf = NULL;
 static int buf_size = 0;
@@ -303,6 +305,10 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	}
 
 	RRegItem* current = NULL;
+	// We default to little endian if there's no way to get the configuration,
+	// since this was the behaviour prior to the change.
+	bool bigendian = dbg->corebind.core && \
+					 dbg->corebind.cfggeti (dbg->corebind.core, "cfg.bigendian");
 	for (;;) {
 		current = r_reg_next_diff (dbg->reg, type, reg_buf, buflen, current, bits);
 		if (!current) {
@@ -310,6 +316,21 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 		}
 		ut64 val = r_reg_get_value (dbg->reg, current);
 		int bytes = bits / 8;
+		if (bigendian) {
+			// TODO: validate that it's correct for all kinds of archs
+			switch (bytes) {
+			case 2:
+				val = r_swap_ut16 (val);
+				break;
+			case 4:
+				val = r_swap_ut32 (val);
+				break;
+			case 8:
+			default:
+				val = r_swap_ut64 (val);
+				break;
+			}
+		}
 		gdbr_write_reg (desc, current->name, (char*)&val, bytes);
 	}
 	return true;
@@ -363,6 +384,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
+			origriogdb = (RIOGdb **)&d->data;	//TODO bit of a hack, please improve
 			support_sw_bp = UNKNOWN;
 			support_hw_bp = UNKNOWN;
 			int arch = r_sys_arch_id (dbg->arch);
@@ -416,7 +438,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				break;
 			}
 		} else {
-			eprintf ("ERROR: Underlaying IO descriptor is not a GDB one..\n");
+			eprintf ("ERROR: Underlying IO descriptor is not a GDB one..\n");
 		}
 	}
 	return true;
@@ -1043,8 +1065,9 @@ static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int r_debug_gdb_select(int pid, int tid) {
-	if (!desc) {
+static int r_debug_gdb_select(RDebug *dbg, int pid, int tid) {
+	if (!desc  || !*origriogdb ) {
+		desc = NULL;	//TODO hacky fix, please improve. I would suggest using a **desc instead of a *desc, so it is automatically updated
 		return false;
 	}
 	return gdbr_select (desc, pid, tid) >= 0;
@@ -1098,7 +1121,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
 	.license = "LGPL3",
-	.arch = "x86,arm,sh,mips,avr,lm32,v850",
+	.arch = "x86,arm,sh,mips,avr,lm32,v850,ba2",
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.step = r_debug_gdb_step,
 	.cont = r_debug_gdb_continue,
@@ -1121,7 +1144,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	//.bp_read = &r_debug_gdb_bp_read,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_gdb,

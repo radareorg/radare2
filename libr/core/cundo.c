@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018 - pancake */
+/* radare2 - LGPL - Copyright 2018-2019 - pancake */
 
 #include <r_core.h>
 
@@ -12,18 +12,21 @@ TODO:
 
 R_API RCoreUndo *r_core_undo_new(ut64 offset, const char *action, const char *revert) {
 	RCoreUndo *cu = R_NEW (RCoreUndo);
-	cu->action = strdup (action);
-	cu->revert = strdup (revert);
-	cu->tstamp = r_sys_now ();
-	cu->offset = offset;
+	if (cu) {
+		cu->action = strdup (action);
+		cu->revert = strdup (revert);
+		cu->tstamp = r_sys_now ();
+		cu->offset = offset;
+	}
 	return cu;
 }
 
-R_API void *r_core_undo_free(RCoreUndo *cu) {
-	free (cu->action);
-	free (cu->revert);
+R_API void r_core_undo_free(RCoreUndo *cu) {
+	if (cu) {
+		free (cu->action);
+		free (cu->revert);
+	}
 	free (cu);
-	return NULL;
 }
 
 R_API void r_core_undo_push(RCore *core, RCoreUndo *cu) {

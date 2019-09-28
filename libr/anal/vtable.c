@@ -84,9 +84,13 @@ static bool vtable_is_value_in_text_section(RVTableContext *context, ut64 curAdd
 }
 
 static bool vtable_section_can_contain_vtables(RVTableContext *context, RBinSection *section) {
-	return !strcmp(section->name, ".rodata") ||
-		   !strcmp(section->name, ".rdata") ||
-		   !strcmp(section->name, ".data.rel.ro");
+	if (section->is_segment) {
+		return false;
+	}
+	return !strcmp (section->name, ".rodata") ||
+		!strcmp (section->name, ".rdata") ||
+		!strcmp (section->name, ".data.rel.ro") ||
+		r_str_endswith (section->name, "__const");
 }
 
 
@@ -216,7 +220,6 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 
 	if (r_list_empty (vtables)) {
 		// stripped binary?
-		eprintf ("No virtual tables found\n");
 		r_list_free (vtables);
 		return NULL;
 	}

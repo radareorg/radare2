@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake, alvarofe */
+/* radare - LGPL - Copyright 2007-2019 - pancake, alvarofe */
 // TODO: RRef - reference counting
 
 #include <stdio.h>
@@ -64,11 +64,9 @@ R_API int r_list_length(const RList *list) {
 
 /* remove all elements of a list */
 R_API void r_list_purge(RList *list) {
-	RListIter *it;
-
 	r_return_if_fail (list);
 
-	it = list->head;
+	RListIter *it = list->head;
 	while (it) {
 		RListIter *next = it->n;
 		r_list_delete (list, it);
@@ -111,11 +109,9 @@ R_API void r_list_delete(RList *list, RListIter *iter) {
 }
 
 R_API void r_list_split(RList *list, void *ptr) {
-	RListIter *iter;
-
 	r_return_if_fail (list);
 
-	iter = r_list_iterator (list);
+	RListIter *iter = r_list_iterator (list);
 	while (iter) {
 		void *item = iter->data;
 		if (ptr == item) {
@@ -186,10 +182,9 @@ R_API RList *r_list_newf(RListFree f) {
 
 R_API RListIter *r_list_item_new(void *data) {
 	RListIter *item = R_NEW0 (RListIter);
-	if (!item) {
-		return NULL;
+	if (item) {
+		item->data = data;
 	}
-	item->data = data;
 	return item;
 }
 
@@ -218,11 +213,9 @@ R_API RListIter *r_list_append(RList *list, void *data) {
 }
 
 R_API RListIter *r_list_prepend(RList *list, void *data) {
-	RListIter *item;
-
 	r_return_val_if_fail (list, NULL);
 
-	item = R_NEW0 (RListIter);
+	RListIter *item = R_NEW0 (RListIter);
 	if (!item) {
 		return NULL;
 	}
@@ -294,12 +287,11 @@ R_API void *r_list_pop(RList *list) {
 
 R_API void *r_list_pop_head(RList *list) {
 	void *data = NULL;
-	RListIter *iter;
 
 	r_return_val_if_fail (list, NULL);
 
 	if (list->head) {
-		iter = list->head;
+		RListIter *iter = list->head;
 		if (list->head == list->tail) {
 			list->head = list->tail = NULL;
 		} else {
@@ -607,6 +599,18 @@ R_API RList *r_list_uniq(const RList *list, RListComparator cmp) {
 		}
 	}
 	return nl;
+}
+R_API char *r_list_to_str(RList *list, char ch) {
+	RListIter *iter;
+	RStrBuf *buf = r_strbuf_new ("");
+	if (!buf) {
+		return NULL;
+	}
+	char *item;
+	r_list_foreach (list, iter, item) {
+		r_strbuf_appendf (buf, "%s%c", item, ch);
+	}
+	return r_strbuf_drain (buf);
 }
 
 #if TEST

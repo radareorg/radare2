@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 
-R_API RAnalValue *r_anal_value_new() {			//makro for this ?
+R_API RAnalValue *r_anal_value_new() {			//macro for this ?
 	return R_NEW0 (RAnalValue);
 }
 

@@ -1,11 +1,12 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_debug.h>
+#include <r_drx.h>
 #include <r_core.h>
 #include <signal.h>
 
 #if __WINDOWS__
-void w32_break_process(void *);
+void w32_break_process_wrapper(void *);
 #endif
 
 R_LIB_VERSION(r_debug);
@@ -43,6 +44,13 @@ R_API void r_debug_bp_update(RDebug *dbg) {
 			bp->addr = dbg->corebind.numGet (dbg->corebind.core, bp->expr);
 		}
 	}
+}
+
+static int r_debug_drx_at(RDebug *dbg, ut64 addr) {
+	if (dbg && dbg->h && dbg->h->drx) {
+		return dbg->h->drx (dbg, 0, addr, 0, 0, 0, DRX_API_GET_BP);
+	}
+	return -1;
 }
 
 /*
@@ -102,6 +110,12 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 			/* Some targets set pc to breakpoint */
 			b = r_bp_get_at (dbg->bp, pc);
 			if (!b) {
+				/* handle the case of hw breakpoints - notify the user */
+				int drx_reg_idx = r_debug_drx_at (dbg, pc);
+				if (drx_reg_idx != -1) {
+					eprintf ("hit hardware breakpoint %d at: %" PFMT64x "\n",
+						drx_reg_idx, pc);
+				}
 				/* Couldn't find the break point. Nothing more to do... */
 				return true;
 			}
@@ -587,7 +601,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		return false;
 	}
 
-	if (dbg->h && dbg->h->select && !dbg->h->select (pid, tid)) {
+	if (dbg->h && dbg->h->select && !dbg->h->select (dbg, pid, tid)) {
 		return false;
 	}
 
@@ -811,8 +825,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		} else {
 			r = 0;
 		}
-		if (!dbg->iob.read_at (dbg->iob.io,
-		      r*op.scale + op.disp, (ut8*)&memval, 8)) {
+		if (!dbg->iob.read_at (dbg->iob.io, r*op.scale + op.disp, (ut8*)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
 			next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
@@ -913,6 +926,17 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 	return steps_taken;
 }
 
+static bool isStepOverable(ut64 opType) {
+	switch (opType & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_SWI:
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_RCALL:
+		return true;
+	}
+	return false;
+}
+
 R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	RAnalOp op;
 	ut64 buf_pc, pc, ins_size;
@@ -953,7 +977,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		}
 		// Analyze the opcode
 		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
-			eprintf ("Decode error at %"PFMT64x"\n", pc);
+			eprintf ("debug-step-over: Decode error at %"PFMT64x"\n", pc);
 			return steps_taken;
 		}
 		if (op.fail == -1) {
@@ -963,8 +987,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			ins_size = op.fail;
 		}
 		// Skip over all the subroutine calls
-		if ((op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_CALL ||
-			(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
+		if (isStepOverable (op.type)) {
 			if (!r_debug_continue_until (dbg, ins_size)) {
 				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
 				return steps_taken;
@@ -1092,7 +1115,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 		return false;
 	}
 #if __WINDOWS__
-	r_cons_break_push (w32_break_process, dbg);
+	r_cons_break_push (w32_break_process_wrapper, dbg);
 #endif
 repeat:
 	if (r_debug_is_dead (dbg)) {
@@ -1237,7 +1260,7 @@ R_API int r_debug_continue(RDebug *dbg) {
 	return r_debug_continue_kill (dbg, 0); //dbg->reason.signum);
 }
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 R_API int r_debug_continue_pass_exception(RDebug *dbg) {
 	return r_debug_continue_kill (dbg, DBG_EXCEPTION_NOT_HANDLED);
 }
@@ -1270,7 +1293,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 
-	// step first, we dont want to check current optype
+	// step first, we don't want to check current optype
 	for (;;) {
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 			break;
@@ -1604,20 +1627,20 @@ R_API int r_debug_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 
 R_API void r_debug_drx_list(RDebug *dbg) {
 	if (dbg && dbg->h && dbg->h->drx) {
-		dbg->h->drx (dbg, 0, 0, 0, 0, 0);
+		dbg->h->drx (dbg, 0, 0, 0, 0, 0, DRX_API_LIST);
 	}
 }
 
 R_API int r_debug_drx_set(RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g) {
 	if (dbg && dbg->h && dbg->h->drx) {
-		return dbg->h->drx (dbg, idx, addr, len, rwx, g);
+		return dbg->h->drx (dbg, idx, addr, len, rwx, g, DRX_API_SET_BP);
 	}
 	return false;
 }
 
 R_API int r_debug_drx_unset(RDebug *dbg, int idx) {
 	if (dbg && dbg->h && dbg->h->drx) {
-		return dbg->h->drx (dbg, idx, 0, -1, 0, 0);
+		return dbg->h->drx (dbg, idx, 0, -1, 0, 0, DRX_API_REMOVE_BP);
 	}
 	return false;
 }
@@ -1664,7 +1687,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		free (abspath);
 	}
 	// fallback resolution (osx/w32?)
-	// we asume maps to be loaded in order, so lower addresses come first
+	// we assume maps to be loaded in order, so lower addresses come first
 	r_list_foreach (dbg->maps, iter, map) {
 		if (map->perm == 5) { // r-x
 			return map->addr;

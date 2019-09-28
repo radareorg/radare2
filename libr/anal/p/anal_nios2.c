@@ -6,12 +6,12 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
+static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	if (!op) {
 		return 1;
 	}
 	/* Ayeeee! What's inside op? Do we have an initialized RAnalOp? Are we going to have a leak here? :-( */
-	memset (op, 0, sizeof (RAnalOp)); /* We need to refactorize this. Something like r_anal_op_init would be more appropiate */
+	memset (op, 0, sizeof (RAnalOp)); /* We need to refactorize this. Something like r_anal_op_init would be more appropriate */
 	r_strbuf_init (&op->esil);
 	op->size = 4;
 
@@ -99,7 +99,7 @@ RAnalPlugin r_anal_plugin_nios2 = {
 	.op = &nios2_op,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_nios2,

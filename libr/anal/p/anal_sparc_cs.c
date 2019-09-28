@@ -94,7 +94,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static csh handle = 0;
 	static int omode;
 	cs_insn *insn;
@@ -133,7 +133,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
-		opex (&op->opex, handle, insn);
+		if (mask & R_ANAL_OP_MASK_OPEX) {
+			opex (&op->opex, handle, insn);
+		}
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
@@ -316,7 +318,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_DIV;
 			break;
 		}
-		if (a->fillval) {
+		if (mask & R_ANAL_OP_MASK_VAL) {
 			op_fillval (op, handle, insn);
 		}
 		cs_free (insn, n);
@@ -392,7 +394,7 @@ RAnalPlugin r_anal_plugin_sparc_cs = {
 	.set_reg_profile = &set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_sparc_cs,

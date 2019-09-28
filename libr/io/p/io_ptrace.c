@@ -94,13 +94,21 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	if (fd != -1) {
 		ret = lseek (fd, addr, SEEK_SET);
 		if (ret >=0) {
-			ret = read (fd, buf, len);
 			// Workaround for the buggy Debian Wheeze's /proc/pid/mem
-			if (ret != -1) return ret;
+			if (read (fd, buf, len) != -1) {
+				return ret;
+			}
 		}
 	}
 #endif
-	return debug_os_read_at (io, RIOPTRACE_PID (desc), (ut32*)buf, len, addr);
+	ut32 *aligned_buf = (ut32*)r_malloc_aligned (len, sizeof (ut32));
+	if (aligned_buf) {
+		int res = debug_os_read_at (io, RIOPTRACE_PID (desc), (ut32*)aligned_buf, len, addr);
+		memcpy (buf, aligned_buf, len);
+		r_free_aligned (aligned_buf);
+		return res;
+	}
+	return -1;
 }
 
 static int ptrace_write_at(RIO *io, int pid, const ut8 *pbuf, int sz, ut64 addr) {
@@ -250,6 +258,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOPtrace *iop = (RIOPtrace*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
+	if (!strcmp (cmd, "")) {
+		return NULL;
+	}
 	if (!strcmp (cmd, "help")) {
 		eprintf ("Usage: =!cmd args\n"
 			" =!ptrace   - use ptrace io\n"
@@ -314,7 +325,7 @@ struct r_io_plugin_t r_io_plugin_ptrace = {
 };
 #endif
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_ptrace,

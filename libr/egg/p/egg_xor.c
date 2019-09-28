@@ -27,21 +27,21 @@ static RBuffer *build (REgg *egg) {
 		nkey &= 0xff;
 		eprintf ("xor key wrapped to (%d)\n", nkey);
 	}
-	if (egg->bin->length > 240) { // XXX
+	if (r_buf_size (egg->bin) > 240) { // XXX
 		eprintf ("shellcode is too long :(\n");
 		free (key);
 		return NULL;
 	}
 	sc = egg->bin; // hack
-	if (!sc->length) {
+	if (!r_buf_size (sc)) {
 		eprintf ("No shellcode found!\n");
 		free (key);
 		return NULL;
 	}
 
-	for (i = 0; i<sc->length; i++) {
+	for (i = 0; i<r_buf_size (sc); i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
-		if ((sc->buf[i]^nkey)==0) {
+		if ((r_buf_read8_at (sc, i) ^ nkey)==0) {
 			eprintf ("This xor key generates null bytes. Try again.\n");
 			free (key);
 			return NULL;
@@ -66,7 +66,7 @@ static RBuffer *build (REgg *egg) {
 			"\xe2\xf9"; // loop loop0
 		// ecx = length
 		aux[0] = 0x6a; // push length
-		aux[1] = sc->length;
+		aux[1] = r_buf_size (sc);
 		aux[2] = 0x59; // pop ecx
 		// ebx = key
 		aux[3] = 0x6a; // push key
@@ -76,9 +76,9 @@ static RBuffer *build (REgg *egg) {
 
 		r_buf_append_bytes (buf, stub, STUBLEN);
 
-		for (i = 0; i<sc->length; i++) {
-//			 eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
-			sc->buf[i]^=nkey;
+		for (i = 0; i<r_buf_size (sc); i++) {
+			ut8 v = r_buf_read8_at (sc, i) ^ nkey;
+			r_buf_write_at (sc, i, &v, sizeof (v));
 		}
 		r_buf_append_buf (buf, sc);
 	}
@@ -96,7 +96,7 @@ REggPlugin r_egg_plugin_xor = {
 };
 
 #if 0
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_EGG,
 	.data = &r_egg_plugin_xor,

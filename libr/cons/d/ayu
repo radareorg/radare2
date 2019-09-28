@@ -3,13 +3,9 @@ ec ai.read rgb:66d
 ec ai.write rgb:d66
 ec args rgb:2bc
 ec b0x00 rgb:738699             # 00 bytes
-ec b0x7f rgb:fff
+ec b0x7f rgb:677
 ec b0xff rgb:abb0b6             # ff bytes
-ec bin rgb:f07178               # operations like xor
-ec btext rgb:66737f             # text section opcode? first byte of opcode
-ec call rgb:5ccfe6              # call instructions
-ec cjmp rgb:c2d94c              # je, jg, etc
-ec cmp rgb:f07178               # cmp instructions
+ec btext rgb:5de             # text section opcode? first byte of opcode
 ec comment rgb:95e6cb           # r2 renerated comments
 ec creg rgb:ff7733              # modified registries
 ec flag rgb:5ccfe6              # flags. usually apprears above the current seek
@@ -17,6 +13,7 @@ ec fline rgb:55b4d4             # function line. the boundary of a function
 ec flow rgb:c2d94c              # lines that show jump destinations
 ec flow2 rgb:ddd
 ec fname rgb:ff6a00             # function name
+ec graph.traced rgb:2eb
 ec graph.box rgb:5c6773         # unselected boxes in visual graph mode
 ec graph.box2 rgb:ff6a00        # currently selected box in visual graph mode
 ec graph.box3 rgb:66d9ef
@@ -30,21 +27,30 @@ ec input rgb:888
 ec jmp rgb:c2d94c               # jmp instructions
 ec label rgb:66d9ef
 ec linehl rgb:42505e            # highlight color when using asm.highlight
-ec math rgb:ffd580              # math instructions like sub, add
 ec mov rgb:d9d8d7               # mov instructions
 ec nop rgb:a37acc               # nop instructions
 ec num rgb:f28779               # numbers
 ec offset rgb:ed9366            # offset in visual mode
 ec other rgb:888
-ec pop rgb:ff7733               # pop instructions
-ec prompt rgb:fa6e32            # color for main r2 prompt
-ec push rgb:ff7733              # push instructions
+ec prompt rgb:5de               # color for main r2 prompt
+ec call rgb:ff7733              # push instructions
 ec reg rgb:e6e1cf               # register names
 ec ret rgb:d66                  # ret opcode
 ec swi rgb:d66
 ec trap rgb:d66                 
+ec cmp rgb:5de
+ec push rgb:5de
+ec math rgb:5de
+ec bin rgb:5de
+ec pop rgb:5de
+ec cjmp rgb:c2d94c              # je, jg, etc
+ec ucall rgb:5ccfe6
+ec ujmp rgb:c2d94c
 ec usrcmt rgb:fa6e32           # user comment
 
 ec func_var rgb:95e6cb
 ec func_var_type rgb:ffd580
 ec func_var_addr rgb:f28779
+
+ec widget_bg rgb:888 rgb:000
+ec widget_sel rgb:5de rgb:333

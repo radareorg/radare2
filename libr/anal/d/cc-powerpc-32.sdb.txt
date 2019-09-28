@@ -1,15 +1,14 @@
 default.cc=powerpc-32
 
 powerpc-32=cc
-cc.powerpc-32.name=powerpc-32
-cc.powerpc-32.arg1=r3
-cc.powerpc-32.arg2=r4
-cc.powerpc-32.arg3=r5
-cc.powerpc-32.arg4=r6
-cc.powerpc-32.arg5=r7
-cc.powerpc-32.arg6=r8
-cc.powerpc-32.arg7=r9
-cc.powerpc-32.arg8=r10
+cc.powerpc-32.arg0=r3
+cc.powerpc-32.arg1=r4
+cc.powerpc-32.arg2=r5
+cc.powerpc-32.arg3=r6
+cc.powerpc-32.arg4=r7
+cc.powerpc-32.arg5=r8
+cc.powerpc-32.arg6=r9
+cc.powerpc-32.arg7=r10
 cc.powerpc-32.argn=stack_rev
 cc.powerpc-32.ret=r3
 

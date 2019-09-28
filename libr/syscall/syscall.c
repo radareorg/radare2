@@ -232,11 +232,8 @@ R_API int r_syscall_get_swi(RSyscall *s) {
 }
 
 R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
+	r_return_val_if_fail (s && s->db, NULL);
 	const char *ret, *ret2, *key;
-	if (!s || !s->db) {
-		eprintf ("Syscall database not loaded\n");
-		return NULL;
-	}
 	swi = getswi (s, swi);
 	if (swi < 16) {
 		key = sdb_fmt ("%d.%d", swi, num);
@@ -248,7 +245,11 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 		key = sdb_fmt ("0x%02x.0x%02x", swi, num); // Workaround until Syscall SDB is fixed
 		ret = sdb_const_get (s->db, key, 0);
 		if (!ret) {
-			return NULL;
+			key = sdb_fmt ("0x%02x.%d", num, swi); // Workaround until Syscall SDB is fixed
+			ret = sdb_const_get (s->db, key, 0);
+			if (!ret) {
+				return NULL;
+			}
 		}
 	}
 	ret2 = sdb_const_get (s->db, ret, 0);
@@ -259,17 +260,17 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 }
 
 R_API int r_syscall_get_num(RSyscall *s, const char *str) {
-	if (!s || !s->db) {
-		return -1;
+	r_return_val_if_fail (s && str && s->db, -1);
+	int sn = (int)sdb_array_get_num (s->db, str, 1, NULL);
+	if (sn == 0) {
+		return (int)sdb_array_get_num (s->db, str, 0, NULL);
 	}
-	return (int)sdb_array_get_num (s->db, str, 1, NULL);
+	return sn;
 }
 
 R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
+	r_return_val_if_fail (s && s->db, NULL);
 	char foo[32];
-	if (!s || !s->db) {
-		return NULL;
-	}
 	swi = getswi (s, swi);
 	snprintf (foo, sizeof (foo), "0x%x.%d", swi, num);
 	return sdb_const_get (s->db, foo, 0);
@@ -292,22 +293,16 @@ static int callback_list(void *u, const char *k, const char *v) {
 }
 
 R_API RList *r_syscall_list(RSyscall *s) {
-	RList *list;
-	if (!s || !s->db) {
-		return NULL;
-	}
-	// show list of syscalls to stdout
-	list = r_list_newf ((RListFree)r_syscall_item_free);
+	r_return_val_if_fail (s && s->db, NULL);
+	RList *list = r_list_newf ((RListFree)r_syscall_item_free);
 	sdb_foreach (s->db, callback_list, list);
 	return list;
 }
 
 /* io and sysregs */
 R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
+	r_return_val_if_fail (s, NULL);
 	int i;
-	if (!s) {
-		return NULL;
-	}
 	const char *name = r_syscall_sysreg (s, "io", ioport);
 	if (name) {
 		return name;
@@ -321,9 +316,7 @@ R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
 }
 
 R_API const char* r_syscall_sysreg(RSyscall *s, const char *type, ut64 num) {
-	if (!s || !s->db) {
-		return NULL;
-	}
+	r_return_val_if_fail (s && s->db, NULL);
 	const char *key = sdb_fmt ("%s,%"PFMT64d, type, num);
 	return sdb_const_get (s->db, key, 0);
 }

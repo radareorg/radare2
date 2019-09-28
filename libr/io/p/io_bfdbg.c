@@ -11,6 +11,7 @@
 #include "../debug/p/bfvm.c"
 
 typedef struct {
+	ut32 magic;
 	int fd;
 	ut8 *buf;
 	ut32 size;
@@ -205,7 +206,7 @@ RIOPlugin r_io_plugin_bfdbg = {
 	.write = __write,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_bfdbg,

@@ -472,7 +472,8 @@ static bool pdb7_parse(R_PDB *pdb) {
 	}
 	p_tmp = root_page_data;
 	for (i = 0; i < num_root_index_pages; i++) {
-		r_buf_seek (pdb->buf, root_index_pages[i] * page_size, 0);
+		r_buf_seek (pdb->buf, root_index_pages[i] * page_size,
+			   R_BUF_SET);
 		r_buf_read (pdb->buf, p_tmp, page_size);
 		p_tmp = (char *) p_tmp + page_size;
 	}
@@ -1198,7 +1199,7 @@ R_API bool init_pdb_parser(R_PDB *pdb, const char *filename) {
 		goto error;
 	}
 
-	r_buf_seek (pdb->buf, 0, 0);
+	r_buf_seek (pdb->buf, 0, R_BUF_SET);
 
 	if (!memcmp (signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
 		pdb->pdb_parse = pdb7_parse;

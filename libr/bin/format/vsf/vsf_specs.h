@@ -71,8 +71,8 @@ struct vsf_c128rom {
 /* Internal structure */
 struct r_bin_vsf_obj {
 	int machine_idx;	/* 0=C64, 1=C128, ... see bin_vsf.c */
-	void* rom;		/* ptr to C64/C128 rom */
-	void* mem;		/* ptr to C64/C128 ram */
+	ut64 rom;		/* ptr to C64/C128 rom */
+	ut64 mem;		/* ptr to C64/C128 ram */
 	struct vsf_maincpu* maincpu;
 	Sdb* kv;
 };

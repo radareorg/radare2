@@ -5,7 +5,9 @@ ec bin rgb:0f0
 ec crypto rgb:0f0
 ec other rgb:0a0
 ec btext rgb:0b0
+ec ucall rgb:0b0
 ec call rgb:0b0
+ec ujmp rgb:2f2
 ec cjmp rgb:2f2
 ec jmp rgb:2f2
 ec cmp rgb:191
@@ -54,3 +56,6 @@ ec ai.write rgb:1a1
 ec ai.exec rgb:383
 ec ai.seq rgb:3f3
 ec ai.ascii rgb:3f3
+
+ec widget_bg rgb:0b0 rgb:000
+ec widget_sel black rgb:0c0

@@ -16,7 +16,7 @@ R_API void r_debug_plugin_init(RDebug *dbg) {
 }
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
-	if (str) {
+	if (dbg && str) {
 		RDebugPlugin *h;
 		RListIter *iter;
 		r_list_foreach (dbg->plugins, iter, h) {

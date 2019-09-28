@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2018 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2014-2019 - pancake, thestr4ng3r */
 
 #include <r_core.h>
 
@@ -38,6 +38,7 @@ typedef struct oneshot_t {
 R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 	switch (mode) {
 	case 'j':
+		{
 		r_cons_printf ("{\"id\":%d,\"state\":\"", task->id);
 		switch (task->state) {
 		case R_CORE_TASK_STATE_BEFORE_START:
@@ -59,6 +60,7 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 		} else {
 			r_cons_printf ("null}");
 		}
+		}
 		break;
 	default: {
 		const char *info = task->cmd;
@@ -70,8 +72,8 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 					   task->transient ? "(t)" : "",
 					   r_core_task_status (task),
 					   info ? info : "");
+		}
 		break;
-	}
 	}
 }
 
@@ -195,6 +197,7 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 	task->cmd_log = false;
 	task->res = NULL;
 	task->running_sem = NULL;
+	task->dispatched = false;
 	task->dispatch_cond = r_th_cond_new ();
 	task->dispatch_lock = r_th_lock_new (false);
 	if (!task->dispatch_cond || !task->dispatch_lock) {
@@ -206,6 +209,7 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 		if (!task->cons_context) {
 			goto hell;
 		}
+		task->cons_context->cmd_depth = core->max_cmd_depth;
 	}
 
 	task->id = core->task_id_next++;
@@ -289,10 +293,14 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	if (next) {
 		r_cons_context_reset ();
 		r_th_lock_enter (next->dispatch_lock);
-		r_th_cond_signal (next->dispatch_cond);
+		next->dispatched = true;
 		r_th_lock_leave (next->dispatch_lock);
+		r_th_cond_signal (next->dispatch_cond);
 		if (!stop) {
-			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
+			while (!current->dispatched) {
+				r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
+			}
+			current->dispatched = false;
 		}
 	}
 
@@ -318,7 +326,7 @@ static void task_wakeup(RCoreTask *current) {
 	current->state = R_CORE_TASK_STATE_RUNNING;
 
 	// check if there are other tasks running
-	bool single = core->tasks_running == 1;
+	bool single = core->tasks_running == 1 || core->tasks_running == 0;
 
 	r_th_lock_enter (current->dispatch_lock);
 
@@ -330,8 +338,11 @@ static void task_wakeup(RCoreTask *current) {
 
 	tasks_lock_leave (core, &old_sigset);
 
-	if(!single) {
-		r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
+	if (!single) {
+		while (!current->dispatched) {
+			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
+		}
+		current->dispatched = false;
 	}
 
 	core->current_task = current;
@@ -372,7 +383,7 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	free (task->res);
 	task->res = res_str;
 
-	if (task != core->main_task) {
+	if (task != core->main_task && r_cons_default_context_is_interactive ()) {
 		eprintf ("\nTask %d finished\n", task->id);
 	}
 

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018 - pancake */
+/* radare2 - LGPL - Copyright 2018-2019 - pancake */
 
 #include <r_bin.h>
 
@@ -40,14 +40,19 @@ static bool check_swift(RBinSymbol *sym) {
 	return false;
 }
 
-static bool check_cxx(RBinSymbol *sym) {
-	if (!strncmp (sym->name, "_Z", 2)) {
+static inline bool is_cxx_symbol (const char *name) {
+	r_return_val_if_fail (name, false);
+	if (!strncmp (name, "_Z", 2)) {
 		return true;
 	}
-	if (!strncmp (sym->name, "__Z", 3)) {
+	if (!strncmp (name, "__Z", 3)) {
 		return true;
 	}
 	return false;
+}
+
+static bool check_cxx(RBinSymbol *sym) {
+	return is_cxx_symbol (sym->name);
 }
 
 static bool check_msvc(RBinSymbol *sym) {
@@ -75,9 +80,22 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	bool isMacho = strstr (ft, "mach");
 	bool isElf = strstr (ft, "elf");
 	bool isPe = strstr (ft, "pe");
+	bool isBlocks = false;
+	bool isObjC = false;
 
 	if (unknownType || !(isMacho || isElf || isPe)) {
 		return R_BIN_NM_NONE;
+	}
+
+	// check in imports . can be slow
+	r_list_foreach (o->imports, iter, sym) {
+		const char *name = sym->name;
+		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
+			isBlocks = true;
+		} else if (!strncmp (name, "objc_", 5)) {
+			isObjC = true;
+			cantbe.objc = true;
+		}
 	}
 
 	r_list_foreach (o->symbols, iter, sym) {
@@ -153,14 +171,16 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 			}
 		}
 	}
+	if (isObjC) {
+		return R_BIN_NM_OBJC | (isBlocks?R_BIN_NM_BLOCKS:0);
+	}
 	if (canBeCxx) {
-		info->lang = "c++";
-		return R_BIN_NM_CXX;
+		return R_BIN_NM_CXX | (isBlocks?R_BIN_NM_BLOCKS:0);
 	}
 	if (isMsvc) {
 		return R_BIN_NM_MSVC;
 	}
-	return R_BIN_NM_NONE;
+	return R_BIN_NM_C | (isBlocks?R_BIN_NM_BLOCKS:0);
 }
 
 R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
@@ -188,3 +208,28 @@ R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	}
 	return type;
 }
+
+R_API const char *r_bin_lang_tostring(int lang) {
+	switch (lang & 0xffff) {
+	case R_BIN_NM_SWIFT:
+		return "swift";
+	case R_BIN_NM_JAVA:
+		return "java";
+	case R_BIN_NM_KOTLIN:
+		return "kotlin";
+	case R_BIN_NM_C:
+		return (lang & R_BIN_NM_BLOCKS)? "c with blocks": "c";
+	case R_BIN_NM_CXX:
+		return (lang & R_BIN_NM_BLOCKS)? "c++ with blocks": "c++";
+	case R_BIN_NM_DLANG:
+		return "d";
+	case R_BIN_NM_OBJC:
+		return (lang & R_BIN_NM_BLOCKS)? "objc with blocks": "objc";
+	case R_BIN_NM_MSVC:
+		return "msvc";
+	case R_BIN_NM_RUST:
+		return "rust";
+	}
+	return NULL;
+}
+

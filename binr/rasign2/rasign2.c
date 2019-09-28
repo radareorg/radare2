@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <stdio.h>
 #include <string.h>
-#include <getopt.h>
+#include <r_getopt.h>
 
 #include "r_userconf.h"
 #include "r_sign.h"

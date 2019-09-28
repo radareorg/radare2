@@ -1,12 +1,11 @@
 default.cc=sparc
 
 sparc=cc
-cc.sparc.name=sparc
-cc.sparc.arg1=i0
-cc.sparc.arg2=i1
-cc.sparc.arg3=i2
-cc.sparc.arg4=i3
-cc.sparc.arg5=i4
-cc.sparc.arg6=i5
+cc.sparc.arg0=i0
+cc.sparc.arg1=i1
+cc.sparc.arg2=i2
+cc.sparc.arg3=i3
+cc.sparc.arg4=i4
+cc.sparc.arg5=i5
 cc.sparc.argn=stack
 cc.sparc.ret=o0

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 pancake, nibble */
+/* radare - LGPL - Copyright 2010-2019 pancake, nibble */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,10 +8,12 @@
 #include "elf.h"
 
 // XXX UGLY CODE
-/* TODO: Take care of endianess */
+/* TODO: Take care of endianness */
 /* TODO: Real error handling */
 /* TODO: Resize sections before .init */
-ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, ut64 size) {
+// ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, ut64 size) {
+ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
+	struct Elf_(r_bin_elf_obj_t) *bin = bf->o->bin_obj; // , const char *name, ut64 size) {
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
 	Elf_(Phdr) *phdr = bin->phdr, *phdrp;
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
@@ -179,13 +181,14 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	r_buf_write_at (bin->b, rsz_offset + rsz_size, (ut8*)buf, rest_size);
 	printf ("Shifted %d byte(s)\n", (int)delta);
 	free (buf);
-	bin->size = bin->b->length;
+	bin->size = r_buf_size (bin->b);
 
 	return delta;
 }
 
 /* XXX Endianness? */
-bool Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
+bool Elf_(r_bin_elf_del_rpath)(RBinFile *bf) {
+	struct Elf_(r_bin_elf_obj_t) *bin = bf->o->bin_obj;
 	Elf_(Dyn) *dyn = NULL;
 	ut64 stroff = 0LL;
 	int ndyn, i, j;
@@ -230,7 +233,8 @@ bool Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return true;
 }
 
-bool Elf_(r_bin_elf_section_perms)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, int perms) {
+bool Elf_(r_bin_elf_section_perms)(RBinFile *bf, const char *name, int perms) {
+	struct Elf_(r_bin_elf_obj_t) *bin = bf->o->bin_obj;
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
 	const char *strtab = bin->shstrtab;
@@ -258,22 +262,22 @@ bool Elf_(r_bin_elf_section_perms)(struct Elf_(r_bin_elf_obj_t) *bin, const char
 			patchoff += ((const ut8*)shdrp - (const ut8*)bin->shdr);
 			patchoff += r_offsetof (Elf_(Shdr), sh_flags);
 			printf ("wx %02x @ 0x%x\n", newperms, patchoff);
-			r_buf_write_at (bin->b, patchoff, (ut8*)&newperms, 1);
+			r_buf_write_at (bf->buf, patchoff, (ut8*)&newperms, 1);
 			return true;
 		}
 	}
 	return false;
 }
 
-bool Elf_(r_bin_elf_entry_write)(struct Elf_(r_bin_elf_obj_t) *bin, ut64 addr) {
-	int patchoff = 0x18;
+bool Elf_(r_bin_elf_entry_write)(RBinFile *bf, ut64 addr) {
+	const int patchoff = 0x18;
 #if R_BIN_ELF64
 	printf ("wv8 0x%"PFMT64x" @ 0x%x\n", addr, patchoff);
-	eprintf ("%d\n", r_buf_write_at (bin->b, patchoff, (ut8*)&addr, sizeof (addr)));
+	r_buf_write_at (bf->buf, patchoff, (ut8*)&addr, sizeof (addr));
 #else
 	ut32 addr32 = (ut32)addr;
 	printf ("wv4 0x%x @ 0x%x\n", addr32, patchoff);
-	r_buf_write_at (bin->b, patchoff, (ut8*)&addr32, sizeof (addr32));
+	r_buf_write_at (bf->buf, patchoff, (ut8*)&addr32, sizeof (addr32));
 #endif
 	return true;
 }

@@ -24,7 +24,7 @@
 
 #if __linux__
 // TODO: provide proper api in cbin to resolve symbols and load libraries from debug maps and such
-// this is, provide a programatic api for the slow dmi command
+// this is, provide a programmatic api for the slow dmi command
 static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	RListIter *iter;
 	RBinSymbol *s;
@@ -116,6 +116,7 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 
 static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 	ut64 cnksz;
+	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
 	if (!GH(r_resolve_jemalloc)(core, "je_chunksize", &cnksz)) {
 		eprintf ("Fail at read symbol je_chunksize\n");
@@ -172,7 +173,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 			extent_node_t *head = R_NEW0 (extent_node_t);
 			
 			if (!node || !head) {
-				eprintf ("Erorr calling calloc\n");
+				eprintf ("Error calling calloc\n");
 				free (ar);
 				free (node);
 				free (head);
@@ -236,6 +237,7 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 	}
 	int i = 0;
 	GHT narenas = 0;
+	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
 	switch (input[0]) {
 	case '\0':
@@ -325,6 +327,8 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 	GHT arena = GHT_MAX; //, bin = GHT_MAX;
 	arena_t *ar = NULL;
 	arena_bin_info_t *b = NULL;
+	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+
 	switch (input[0]) {
 	case ' ':
 		ar = R_NEW0 (arena_t);
@@ -485,7 +489,7 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 static int GH(cmd_dbg_map_jemalloc)(RCore *core, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "dmh", " # Memory map heap",
-		"dmha", "[arena_t]", "show all arenas created, or print arena_t sructure for given arena",
+		"dmha", "[arena_t]", "show all arenas created, or print arena_t structure for given arena",
 		"dmhb", "[arena_t]", "show all bins created for given arena",
 		"dmhc", "*|[arena_t]", "show all chunks created in all arenas, or show all chunks created for a given arena_t instance",
 		// "dmhr", "[arena_chunk_t]", "print all runs created for a given arena_chunk_t instance",

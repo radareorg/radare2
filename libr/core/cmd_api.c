@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_cmd.h>
 #include <r_util.h>
@@ -100,39 +100,47 @@ R_API bool r_cmd_alias_del (RCmd *cmd, const char *k) {
 	return false;
 }
 
+// XXX: use a hashtable or any other standard data structure
 R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) {
-	int i; // find
+	void *tofree = NULL;
+	if (!strncmp (v, "base64:", 7)) {
+		ut8 *s = r_base64_decode_dyn (v + 7, -1);
+		if (s) {
+			tofree = s;
+			v = (const char *)s;
+		}
+	}
+	int i;
 	for (i = 0; i < cmd->aliases.count; i++) {
 		int matches = !strcmp (k, cmd->aliases.keys[i]);
 		if (matches) {
 			free (cmd->aliases.values[i]);
 			cmd->aliases.values[i] = strdup (v);
+			free (tofree);
 			return 1;
 		}
 	}
-	// new
+	
 	i = cmd->aliases.count++;
 	char **K = (char **)realloc (cmd->aliases.keys,
 				     sizeof (char *) * cmd->aliases.count);
-	if (!K) {
-		return 0;
+	if (K) {
+		cmd->aliases.keys = K;
+		int *R = (int *)realloc (cmd->aliases.remote,
+				sizeof (int) * cmd->aliases.count);
+		if (R) {
+			cmd->aliases.remote = R;
+			char **V = (char **)realloc (cmd->aliases.values,
+					sizeof (char *) * cmd->aliases.count);
+			if (V) {
+				cmd->aliases.values = V;
+				cmd->aliases.keys[i] = strdup (k);
+				cmd->aliases.values[i] = strdup (v);
+				cmd->aliases.remote[i] = remote;
+			}
+		}
 	}
-	cmd->aliases.keys = K;
-	int *R = (int *)realloc (cmd->aliases.remote,
-				 sizeof (int) * cmd->aliases.count);
-	if (!R) {
-		return 0;
-	}
-	cmd->aliases.remote = R;
-	char **V = (char **)realloc (cmd->aliases.values,
-				     sizeof (char *) * cmd->aliases.count);
-	if (!V) {
-		return 0;
-	}
-	cmd->aliases.values = V;
-	cmd->aliases.keys[i] = strdup (k);
-	cmd->aliases.values[i] = strdup (v);
-	cmd->aliases.remote[i] = remote;
+	free (tofree);
 	return 0;
 }
 
@@ -141,7 +149,7 @@ R_API char *r_cmd_alias_get (RCmd *cmd, const char *k, int remote) {
 	if (!cmd || !k) {
 		return NULL;
 	}
-	for (i=0; i < cmd->aliases.count; i++) {
+	for (i = 0; i < cmd->aliases.count; i++) {
 		matches = 0;
 		if (remote) {
 			if (cmd->aliases.remote[i]) {
@@ -180,12 +188,10 @@ R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const ch
 }
 
 R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(cb)) {
-	struct r_cmd_item_t *item;
 	int idx = (ut8)cmd[0];
-
-	item = c->cmds[idx];
+	RCmdItem *item = c->cmds[idx];
 	if (!item) {
-		item = R_NEW (RCmdItem);
+		item = R_NEW0 (RCmdItem);
 		c->cmds[idx] = item;
 	}
 	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);
@@ -205,10 +211,8 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	int ret = -1;
 	RListIter *iter;
 	RCorePlugin *cp;
-	if (!cmd || !input) {
-		return -1;
-	}
-	if (!input || !*input) {
+	r_return_val_if_fail (cmd && input, -1);
+	if (!*input) {
 		if (cmd->nullcallback) {
 			ret = cmd->nullcallback (cmd->data);
 		}
@@ -216,8 +220,13 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 		char *nstr = NULL;
 		const char *ji = r_cmd_alias_get (cmd, input, 1);
 		if (ji) {
-			nstr = r_str_newf ("=!%s", input);
-			input = nstr;
+			if (*ji == '$') {
+				r_cons_strcat (ji + 1);
+				return true;
+			} else {
+				nstr = r_str_newf ("=!%s", input);
+				input = nstr;
+			}
 		}
 		r_list_foreach (cmd->plist, iter, cp) {
 			if (cp->call (cmd->data, input)) {

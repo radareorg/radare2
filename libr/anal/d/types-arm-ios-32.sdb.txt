@@ -8,6 +8,27 @@ func.__assert_rtn.noreturn=true
 func.__assert_rtn.ret=void
 func.__assert_rtn.cc=amd64
 
+err=func
+func.err.args=1
+func.err.arg.0=int,eval
+func.err.arg.1=const char *,fmt
+func.err.noreturn=true
+func.err.ret=void
+
+errc=func
+func.errc.args=1
+func.errc.arg.0=int,eval
+func.errc.arg.1=int,code
+func.errc.arg.2=const char *,fmt
+func.errc.noreturn=true
+func.errc.ret=void
+
+errx=func
+func.errx.args=1
+func.errx.arg.0=int,eval
+func.errx.arg.1=const char *,fmt
+func.errx.noreturn=true
+func.errx.ret=void
 _exit=func
 func._exit.args=1
 func._exit.arg.0=int,status

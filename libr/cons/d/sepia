@@ -4,9 +4,12 @@ ec b0x00 rgb:431
 ec b0x7f rgb:fd9
 ec b0xff rgb:960
 ec bin rgb:fec
+ec crypto rgb:0000ff
 ec other rgb:ba6
 ec btext rgb:fec
-ec call rgb:fec rgb:320
+ec ucall rgb:ffffff
+ec call rgb:ffffff
+ec ujmp rgb:fec
 ec cjmp rgb:fec
 ec jmp rgb:fec
 ec cmp rgb:ca6
@@ -14,6 +17,7 @@ ec comment rgb:fd9
 ec usrcmt rgb:fff
 ec ret rgb:ab7
 ec fline rgb:ca6
+ec floc rgb:00ffff
 ec flow rgb:ca6
 ec flow2 rgb:fec
 ec fname rgb:bb7
@@ -35,16 +39,22 @@ ec trap rgb:431
 ec swi rgb:bb7
 ec creg rgb:960
 ec flag rgb:ffd
+ec wordhl rgb:ff0000
 ec linehl rgb:210
 ec graph.true rgb:fd9
 ec graph.false rgb:431
 ec graph.trufae rgb:fd9
-ec graph.current blue
-ec graph.traced blue
+ec graph.current rgb:0000ff
+ec graph.traced rgb:0000ff
 ec graph.box rgb:431
 ec graph.box2 rgb:ca6
 ec graph.box3 rgb:ca6
 ec graph.box4 rgb:ca6
+ec gui.cflow rgb:ffff00
+ec gui.dataoffset rgb:ffff00
+ec gui.alt_background rgb:ffffff
+ec gui.background rgb:000000
+ec gui.border rgb:000000
 
 ec func_var rgb:fd9
 ec func_var_type rgb:850
@@ -55,3 +65,13 @@ ec ai.write rgb:ca6
 ec ai.exec rgb:db7
 ec ai.seq rgb:960
 ec ai.ascii rgb:fec
+
+ec widget_bg rgb:db7 rgb:000000
+ec widget_sel rgb:000000 rgb:fec
+
+# Linux default colors (need to be sepiaized)
+
+ec graph.diff.unknown rgb:881798
+ec graph.diff.new rgb:c50f1f
+ec graph.diff.match rgb:767676
+ec graph.diff.unmatch rgb:c19c00

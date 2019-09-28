@@ -7,9 +7,10 @@
 #if __x86_64__ || __i386__ || __arm__ || __arm64__
 #include <sys/uio.h>
 #include <sys/ptrace.h>
+#include <asm/ptrace.h>
 #include "linux_coredump.h"
 
-/* For compability */
+/* For compatibility */
 #if __x86_64__ || __arm64__
 typedef Elf64_auxv_t elf_auxv_t;
 typedef Elf64_Ehdr elf_hdr_t;
@@ -196,7 +197,7 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 	return t;
 }
 
-static prstatus_t *linux_get_prstatus(int pid, int tid, proc_content_t *proc_data, short int signr) {
+static prstatus_t *linux_get_prstatus(RDebug *dbg, int pid, int tid, proc_content_t *proc_data, short int signr) {
 	elf_gregset_t regs;
 	prstatus_t *p;
 
@@ -224,7 +225,7 @@ static prstatus_t *linux_get_prstatus(int pid, int tid, proc_content_t *proc_dat
 	p->pr_cstime.tv_sec = proc_data->per_thread->cstime / 1000;
 	p->pr_cstime.tv_usec = (proc_data->per_thread->cstime % 1000) / 1000;
 
-	if (ptrace (PTRACE_GETREGS, tid, NULL, &regs) < 0) {
+	if (r_debug_ptrace (dbg, PTRACE_GETREGS, tid, NULL, &regs) < 0) {
 		perror ("PTRACE_GETREGS");
 		R_FREE (proc_data->per_thread);
 		free (p);
@@ -235,10 +236,10 @@ static prstatus_t *linux_get_prstatus(int pid, int tid, proc_content_t *proc_dat
 	return p;
 }
 
-static elf_fpregset_t *linux_get_fp_regset(int pid) {
+static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg, int pid) {
 	elf_fpregset_t *p = R_NEW0 (elf_fpregset_t);
 	if (p) {
-		if (ptrace (PTRACE_GETFPREGS, pid, NULL, p) < 0) {
+		if (r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, p) < 0) {
 			perror ("PTRACE_GETFPREGS");
 			free (p);
 			return NULL;
@@ -248,12 +249,12 @@ static elf_fpregset_t *linux_get_fp_regset(int pid) {
 	return NULL;
 }
 
-static siginfo_t *linux_get_siginfo(int pid) {
+static siginfo_t *linux_get_siginfo(RDebug *dbg, int pid) {
 	siginfo_t *siginfo = R_NEW0 (siginfo_t);
 	if (!siginfo) {
 		return NULL;
 	}
-	int ret = ptrace (PTRACE_GETSIGINFO, pid, 0, siginfo);
+	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, pid, 0, (r_ptrace_data_t)(size_t)siginfo);
 	if (ret == -1 || !siginfo->si_signo) {
 		perror ("PTRACE_GETSIGINFO");
 		free (siginfo);
@@ -905,19 +906,17 @@ static bool dump_elf_sheader_pxnum(RBuffer *dest, elf_shdr_t *shdr) {
 }
 
 #if __i386__
-static elf_fpxregset_t *linux_get_fpx_regset (int tid) {
+static elf_fpxregset_t *linux_get_fpx_regset (RDebug *dbg, int tid) {
 #ifdef PTRACE_GETREGSET
 	struct iovec transfer;
 	elf_fpxregset_t *fpxregset = R_NEW0 (elf_fpxregset_t);
-
-	if (!fpxregset) {
-		return NULL;
-	}
-	transfer.iov_base = fpxregset;
-	transfer.iov_len = sizeof (elf_fpxregset_t);
-	if (ptrace (PTRACE_GETREGSET, tid, (unsigned int)NT_PRXFPREG, &transfer) < 0) {
-		perror ("linux_get_fpx_regset");
-		return NULL;
+	if (fpxregset) {
+		transfer.iov_base = fpxregset;
+		transfer.iov_len = sizeof (elf_fpxregset_t);
+		if (r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_PRXFPREG, &transfer) < 0) {
+			perror ("linux_get_fpx_regset");
+			R_FREE (fpxregset);
+		}
 	}
 	return fpxregset;
 #else
@@ -927,7 +926,7 @@ static elf_fpxregset_t *linux_get_fpx_regset (int tid) {
 #endif
 
 #if __i386__ || __x86_64__
-void *linux_get_xsave_data (int tid, ut32 size) {
+void *linux_get_xsave_data (RDebug *dbg, int tid, ut32 size) {
 #ifdef PTRACE_GETREGSET
 	struct iovec transfer;
 	char *xsave_data = calloc (size, 1);
@@ -936,7 +935,7 @@ void *linux_get_xsave_data (int tid, ut32 size) {
 	}
 	transfer.iov_base = xsave_data;
 	transfer.iov_len = size;
-	if (ptrace (PTRACE_GETREGSET, tid, (unsigned int)NT_X86_XSTATE, &transfer) < 0) {
+	if (r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_X86_XSTATE, &transfer) < 0) {
 		perror ("linux_get_xsave_data");
 		free (xsave_data);
 		return NULL;
@@ -949,14 +948,14 @@ void *linux_get_xsave_data (int tid, ut32 size) {
 #endif
 
 #if __arm__ || __arm64__
-void *linux_get_arm_vfp_data (int tid) {
+void *linux_get_arm_vfp_data (RDebug *dbg, int tid) {
 #ifdef PTRACE_GETVFPREGS
 	char *vfp_data = calloc (ARM_VFPREGS_SIZE + 1, 1);
 	if (!vfp_data) {
 		return NULL;
 	}
 
-	if (ptrace (PTRACE_GETVFPREGS, tid, 0, vfp_data) < 0) {
+	if (r_debug_ptrace (dbg, PTRACE_GETVFPREGS, tid, 0, vfp_data) < 0) {
 		perror ("linux_get_arm_vfp_data");
 		free (vfp_data);
 		return NULL;
@@ -1016,7 +1015,7 @@ void write_note_hdr (note_type_t type, ut8 **note_data) {
 		break;
 #endif
 	default:
-		/* shouldnt happen */
+		/* shouldn't happen */
 		memset (*note_data, 0, size_note_hdr);
 		return;
 	}
@@ -1063,7 +1062,7 @@ static int *get_unique_thread_id (RDebug *dbg, int n_threads) {
 					thread_id[i] = th->pid;
 					/* The main thread is already being traced */
 					if (th->pid != dbg->pid) {
-						if (ptrace (PTRACE_ATTACH, thread_id[i], 0, 0) < 0) {
+						if (r_debug_ptrace (dbg, PTRACE_ATTACH, thread_id[i], 0, 0) < 0) {
 							perror ("Could not attach to thread");
 						}
 					}
@@ -1081,7 +1080,7 @@ void detach_threads (RDebug *dbg, int *thread_id, int n_threads) {
 	int i;
 	for(i = 0; i < n_threads ; i++) {
 		if (dbg->pid != thread_id[i]) {
-			if (ptrace (PTRACE_DETACH, thread_id[i], 0, 0) < 0) {
+			if (r_debug_ptrace (dbg, PTRACE_DETACH, thread_id[i], 0, 0) < 0) {
 				perror ("PTRACE_DETACH");
 			}
 		}
@@ -1199,23 +1198,23 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 			goto fail;
 		}
 		for (i = 0; i < elf_proc_note->n_threads; i++) {
-			elf_proc_note->thread_note->siginfo = linux_get_siginfo (thread_id[i]);
+			elf_proc_note->thread_note->siginfo = linux_get_siginfo (dbg, thread_id[i]);
 			if (!elf_proc_note->thread_note->siginfo) {
 				goto fail;
 			}
-			elf_proc_note->thread_note->prstatus = linux_get_prstatus (dbg->pid,
+			elf_proc_note->thread_note->prstatus = linux_get_prstatus (dbg, dbg->pid,
 								thread_id[i], proc_data,
 								elf_proc_note->thread_note->siginfo->si_signo);
 			if (!elf_proc_note->thread_note->prstatus) {
 				goto fail;
 			}
-			elf_proc_note->thread_note->fp_regset = linux_get_fp_regset (thread_id[i]);
+			elf_proc_note->thread_note->fp_regset = linux_get_fp_regset (dbg, thread_id[i]);
 			if (!elf_proc_note->thread_note->fp_regset) {
 				goto fail;
 			}
 #if __i386__
 			if (fpx_flag) {
-				elf_proc_note->thread_note->fpx_regset = linux_get_fpx_regset (thread_id[i]);
+				elf_proc_note->thread_note->fpx_regset = linux_get_fpx_regset (dbg, thread_id[i]);
 				if (!elf_proc_note->thread_note->fpx_regset) {
 					goto fail;
 				}
@@ -1223,7 +1222,7 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 #endif
 #if __i386__ || __x86_64__
 			if (xsave_flag) {
-				elf_proc_note->thread_note->xsave_data = linux_get_xsave_data (thread_id[i],
+				elf_proc_note->thread_note->xsave_data = linux_get_xsave_data (dbg, thread_id[i],
 										note_info[NT_X86_XSTATE_T].size);
 				if (!elf_proc_note->thread_note->xsave_data) {
 					goto fail;
@@ -1231,7 +1230,7 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 			}
 #elif __arm__ || __arm64__
 			if (vfp_flag) {
-				elf_proc_note->thread_note->arm_vfp_data = linux_get_arm_vfp_data (thread_id[i]);
+				elf_proc_note->thread_note->arm_vfp_data = linux_get_arm_vfp_data (dbg, thread_id[i]);
 				if (!elf_proc_note->thread_note->arm_vfp_data) {
 					goto fail;
 				}
@@ -1336,7 +1335,7 @@ fail:
 }
 
 #if __i386__ || __x86_64
-static int get_xsave_size(int pid) {
+static int get_xsave_size(RDebug *dbg, int pid) {
 #ifdef PTRACE_GETREGSET
 	struct iovec local;
 	unsigned long xstate_hdr[XSTATE_HDR_SIZE/sizeof(unsigned long)];
@@ -1346,7 +1345,7 @@ static int get_xsave_size(int pid) {
 	We could also check this by cpuid instruction https://en.wikipedia.org/wiki/CPUID#EAX.3D1:_Processor_Info_and_Feature_Bits*/
 	local.iov_base = xstate_hdr;
 	local.iov_len = sizeof (xstate_hdr);
-	if (ptrace (PTRACE_GETREGSET, pid, (unsigned int)NT_X86_XSTATE, &local) < 0) {
+	if (r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void *)NT_X86_XSTATE, &local) < 0) {
 		perror ("NT_X86_XSTATE");
 		return 0;
 	}
@@ -1390,7 +1389,7 @@ static int get_arm_vfpregs_size(void) {
 }
 #endif
 
-static void init_note_info_structure(int pid, size_t auxv_size) {
+static void init_note_info_structure(RDebug *dbg, int pid, size_t auxv_size) {
 	note_type_t type;
 	int len_name_core = round_up (strlen ("CORE") + 1);
 	int len_name_linux = round_up (strlen ("LINUX") + 1);
@@ -1442,7 +1441,7 @@ static void init_note_info_structure(int pid, size_t auxv_size) {
 #if __x86_64__ || __i386__
 	/* NT_X86_XSTATE_T */
 	type = NT_X86_XSTATE_T;
-	note_info[type].size = get_xsave_size (pid);
+	note_info[type].size = get_xsave_size (dbg, pid);
 	note_info[type].size_roundedup = round_up (note_info[type].size);
 	note_info[type].size_name = len_name_linux;
 	strncpy (note_info[type].name, "LINUX", sizeof (note_info[type].name));
@@ -1506,7 +1505,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	}
 	n_segments = get_info_mappings (elf_proc_note->maps, &maps_size);
 
-	init_note_info_structure(dbg->pid, elf_proc_note->auxv->size);
+	init_note_info_structure(dbg, dbg->pid, elf_proc_note->auxv->size);
 	note_data = build_note_section (dbg, elf_proc_note, proc_data, &note_section_size);
 	if (!note_data) {
 		error = true;
@@ -1523,7 +1522,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	if (hdr_size) {
 		if (elf_hdr->e_phnum == PN_XNUM) {
 			elf_offset_t offset_shdr;
-			/* Since extra secion header must be placed at the end,
+			/* Since extra section header must be placed at the end,
 				we need to compute the total size to known at which position should be written */
 			offset_shdr = hdr_size + (elf_hdr->e_phnum * elf_hdr->e_phentsize) + note_section_size + maps_size;
 			shdr_pxnum = get_extra_sectionhdr (elf_hdr, offset_shdr, n_segments);

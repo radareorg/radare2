@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,27 +6,20 @@
 #include <r_bin.h>
 #include <r_magic.h>
 
-static char *get_filetype(RBinFile *bf) {
-	ut8 buf[4096] = {
-		0
-	};
+static char *get_filetype(RBuffer *b) {
+	ut8 buf[4096] = { 0 };
 	char *res = NULL;
-	RMagic *ck;
-	if (!bf) {
+	RMagic *ck = r_magic_new (0);
+	if (!ck) {
 		return NULL;
 	}
-	ck = r_magic_new (0);
-	if (ck && bf && bf->buf) {
-		const char *tmp = NULL;
-		// TODO: dir.magic not honored here
-		char *pfx = r_str_newf (R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC), r_sys_prefix (NULL));
-		r_magic_load (ck, R2_SDB_MAGIC);
-		r_buf_read_at (bf->buf, 0, buf, sizeof (buf));
-		tmp = r_magic_buffer (ck, buf, sizeof (buf));
-		if (tmp) {
-			res = strdup (tmp);
-		}
-		free (pfx);
+	const char *tmp = NULL;
+	// TODO: dir.magic not honored here
+	r_magic_load (ck, R2_SDB_MAGIC);
+	r_buf_read_at (b, 0, buf, sizeof (buf));
+	tmp = r_magic_buffer (ck, buf, sizeof (buf));
+	if (tmp) {
+		res = strdup (tmp);
 	}
 	r_magic_free (ck);
 	return res;
@@ -39,7 +32,7 @@ static RBinInfo *info(RBinFile *bf) {
 	}
 	ret->lang = "";
 	ret->file = bf->file? strdup (bf->file): NULL;
-	ret->type = get_filetype (bf);
+	ret->type = get_filetype (bf->buf);
 	ret->has_pi = 0;
 	ret->has_canary = 0;
 	ret->has_retguard = -1;
@@ -57,16 +50,12 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool load(RBinFile *bf) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return true;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return r_buf_new ();
-}
-
-static int destroy(RBinFile *bf) {
-	return true;
+static void destroy(RBinFile *bf) {
+	r_buf_free (bf->o->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -77,7 +66,6 @@ RBinPlugin r_bin_plugin_any = {
 	.name = "any",
 	.desc = "Dummy format r_bin plugin",
 	.license = "LGPL3",
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.baddr = &baddr,
@@ -85,7 +73,7 @@ RBinPlugin r_bin_plugin_any = {
 	.minstrlen = 0,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_any,

@@ -16,8 +16,14 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    CS_TIP = '09fc20d626d91c762b4c7a13383330e0f49b94a8'
-    CS_BRA = 'master'
+    use_capstone5 = get_option('use_capstone5')
+    if use_capstone5
+      CS_TIP = '5f200f7bae883467883dc7ef611c25a6c5ac8b10'
+      CS_BRA = 'next'
+    else
+      CS_TIP = 'c25923bc99fe746686aec571d10fcb7cc9faf885'
+      CS_BRA = 'v4'
+    endif
 
     capstone_git_user = 'aquynh'
 
@@ -47,7 +53,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
       patch_cmd = run_command(git_exe, patch_cmd_str.split())
       if patch_cmd.returncode() != 0
-        error('Cannot apply patch ' + file)
+        warning('Cannot apply patch ' + file)
       endif
     endforeach
   endif
@@ -62,6 +68,9 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/ARM/ARMInstPrinter.c',
     'arch/ARM/ARMMapping.c',
     'arch/ARM/ARMModule.c',
+    'arch/M680X/M680XDisassembler.c',
+    'arch/M680X/M680XInstPrinter.c',
+    'arch/M680X/M680XModule.c',
     'arch/M68K/M68KDisassembler.c',
     'arch/M68K/M68KInstPrinter.c',
     'arch/M68K/M68KModule.c',
@@ -108,6 +117,9 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   foreach rel_cs_file : rel_cs_files
     cs_files += [join_paths(capstone_path, rel_cs_file)]
   endforeach
+  if get_option('use_capstone5')
+    cs_files += [join_paths(capstone_path, 'arch/X86/X86InstPrinterCommon.c')]
+  endif
 
   capstone_includes = [platform_inc, include_directories('capstone/include')]
 
@@ -120,6 +132,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       '-DCAPSTONE_HAS_ARM',
       '-DCAPSTONE_HAS_ARM64',
       '-DCAPSTONE_HAS_M68K',
+      '-DCAPSTONE_HAS_M680X',
       '-DCAPSTONE_HAS_MIPS',
       '-DCAPSTONE_HAS_POWERPC',
       '-DCAPSTONE_HAS_SPARC',
@@ -148,6 +161,7 @@ sdb_files = [
   'sdb/src/array.c',
   'sdb/src/base64.c',
   'sdb/src/buffer.c',
+  'sdb/src/set.c',
   'sdb/src/cdb.c',
   'sdb/src/cdb_make.c',
   'sdb/src/dict.c',
@@ -174,17 +188,20 @@ sdb_inc = [platform_inc, include_directories('sdb/src')]
 
 libr2sdb = static_library('r2sdb', sdb_files,
   include_directories: sdb_inc,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : [],
 )
 
-sdb_dep = declare_dependency(
-  link_with: libr2sdb,
-  include_directories: sdb_inc
-)
-
-sdb_platform_inc = []
 if host_machine.system() == 'windows'
-  sdb_platform_inc = include_directories('sdb/msvc')
+  sdb_dep = declare_dependency(
+    link_whole: libr2sdb,
+    include_directories: sdb_inc
+  )
+else
+  sdb_dep = declare_dependency(
+    link_with: libr2sdb,
+    include_directories: sdb_inc
+  )
 endif
 
 # Create sdb_version.h
@@ -193,17 +210,30 @@ run_command(py3_exe, '-c', 'with open("sdb/src/sdb_version.h", "w") as f: f.writ
 
 sdb_exe = executable('sdb', 'sdb/src/main.c',
   include_directories: [
-    sdb_platform_inc,
     include_directories(['sdb/src'])
   ],
   link_with: [libr2sdb],
   implicit_include_directories: false
 )
 
+sdb_gen_cmd_script = '''#script
+import os
+import sys
+sdb_exe = r'@0@'
+outfile = sys.argv[1]
+infiles = sys.argv[2:]
+if os.name == 'nt':
+    infiles = ','.join(infiles)
+    os.system('powershell -c "Get-Content {} | {} {} ="'.format(infiles, sdb_exe, outfile))
+else:
+    infiles = ' '.join(infiles)
+    os.system('cat {} | {} {} ='.format(infiles, sdb_exe, outfile))
+'''.format(sdb_exe.full_path())
+
 sdb_gen_cmd = [
   py3_exe,
   '-c',
-  'from sys import argv; __import__("os").system("@0@ %s = <%s" % (argv[1], argv[2]))'.format(sdb_exe.full_path()),
+  sdb_gen_cmd_script,
   '@OUTPUT@',
   '@INPUT@'
 ]
@@ -275,7 +305,8 @@ java_inc = [platform_inc, include_directories('java')]
 
 libr2java = static_library('r2java', java_files,
   include_directories: java_inc,
-  dependencies: [sdb_dep],
+  # Remove sdb_dep here to avoid LNK2005 error on Windows
+  # dependencies: [sdb_dep],
   implicit_include_directories: false
 )
 
@@ -626,3 +657,21 @@ ar_dep = declare_dependency(
 if use_ptrace_wrap
   subdir('ptrace-wrap')
 endif
+
+
+# handle mpc dependency
+mpc_files = [
+  'mpc/mpc.c'
+]
+
+mpc_inc = [platform_inc, include_directories(['mpc'])]
+
+libmpc = static_library('r2mpc', mpc_files,
+  include_directories: mpc_inc,
+  implicit_include_directories: false
+)
+
+mpc_dep = declare_dependency(
+  link_with: libmpc,
+  include_directories: mpc_inc
+)

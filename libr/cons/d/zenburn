@@ -7,7 +7,9 @@ ec b0xff rgb:8a8
 ec bin rgb:fcb
 ec other rgb:aaa
 ec btext rgb:ddc
+ec ucall rgb:d52
 ec call rgb:d52
+ec ujmp rgb:d52
 ec cjmp rgb:d52
 ec jmp rgb:d52
 ec cmp rgb:ff8
@@ -57,3 +59,6 @@ ec ai.write rgb:c88
 ec ai.exec rgb:cd9
 ec ai.seq rgb:ddc
 ec ai.ascii rgb:ddc
+
+ec widget_bg rgb:8dd rgb:333
+ec widget_sel white rgb:b52 bold

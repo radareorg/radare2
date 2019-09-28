@@ -228,9 +228,8 @@ SDB_API bool sdb_free(Sdb* s) {
 }
 
 SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *cas) {
-	ut32 pos, len, keylen;
+	ut32 pos, len;
 	ut64 now = 0LL;
-	SdbKv *kv;
 	bool found;
 
 	if (cas) {
@@ -243,10 +242,10 @@ SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *
 		return NULL;
 	}
 	// TODO: optimize, iterate once
-	keylen = strlen (key);
+	size_t keylen = strlen (key);
 
 	/* search in memory */
-	kv = (SdbKv*) sdb_ht_find_kvp (s->ht, key, &found);
+	SdbKv *kv = (SdbKv*) sdb_ht_find_kvp (s->ht, key, &found);
 	if (found) {
 		if (!sdbkv_value (kv) || !*sdbkv_value (kv)) {
 			return NULL;
@@ -428,6 +427,10 @@ SDB_API int sdb_open(Sdb *s, const char *file) {
 SDB_API void sdb_close(Sdb *s) {
 	if (s) {
 		if (s->fd != -1) {
+			if (s->db.fd != -1 && s->db.fd == s->fd) {
+				/* close db fd as well */
+				s->db.fd = -1;
+			}
 			close (s->fd);
 			s->fd = -1;
 		}
@@ -943,7 +946,7 @@ SDB_API bool sdb_dump_dupnext(Sdb* s, char *key, char **value, int *_vlen) {
 	}
 	if (value) {
 		*value = 0;
-		if (vlen >= SDB_MIN_VALUE && vlen < SDB_MAX_VALUE) {
+		if (vlen < SDB_MAX_VALUE) {
 			*value = malloc (vlen + 10);
 			if (!*value) {
 				return false;

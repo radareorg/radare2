@@ -5,14 +5,6 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 #if EMSCRIPTEN
 #define NETWORK_DISABLED 1
@@ -25,17 +17,11 @@ R_LIB_VERSION(r_socket);
 
 #if NETWORK_DISABLED
 /* no network */
-R_API RSocket *r_socket_new (int is_ssl) {
+R_API RSocket *r_socket_new (bool is_ssl) {
 	return NULL;
 }
 R_API bool r_socket_is_connected (RSocket *s) {
 	return false;
-}
-static int r_socket_unix_connect(RSocket *s, const char *file) {
-	return -1;
-}
-R_API int r_socket_unix_listen (RSocket *s, const char *file) {
-	return -1;
 }
 R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
 	return false;
@@ -64,7 +50,7 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 	return NULL;
 }
-R_API int r_socket_block_time (RSocket *s, int block, int sec) {
+R_API int r_socket_block_time (RSocket *s, int block, int sec, int usec) {
 	return -1;
 }
 R_API int r_socket_flush(RSocket *s) {
@@ -110,16 +96,16 @@ WSACleanup: closes all network connections
 #endif
 #define BUFFER_SIZE 4096
 
-R_API bool r_socket_is_connected (RSocket *s) {
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+R_API bool r_socket_is_connected(RSocket *s) {
+#if __WINDOWS__
 	char buf[2];
-	r_socket_block_time (s, 0, 0);
+	r_socket_block_time (s, 0, 0, 0);
 #ifdef _MSC_VER
 	int ret = recv (s->fd, (char*)&buf, 1, MSG_PEEK);
 #else
 	ssize_t ret = recv (s->fd, (char*)&buf, 1, MSG_PEEK);
 #endif
-	r_socket_block_time (s, 1, 0);
+	r_socket_block_time (s, 1, 0, 0);
 	return ret? true: false;
 #else
 	char buf[2];
@@ -128,8 +114,8 @@ R_API bool r_socket_is_connected (RSocket *s) {
 #endif
 }
 
-#if __UNIX__ || defined(__CYGWIN__)
-static int r_socket_unix_connect(RSocket *s, const char *file) {
+#if __UNIX__
+static bool __connect_unix(RSocket *s, const char *file) {
 	struct sockaddr_un addr;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -150,7 +136,7 @@ static int r_socket_unix_connect(RSocket *s, const char *file) {
 	return true;
 }
 
-R_API int r_socket_unix_listen (RSocket *s, const char *file) {
+static bool __listen_unix (RSocket *s, const char *file) {
 	struct sockaddr_un unix_name;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -183,7 +169,7 @@ R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 }
 #endif
 
-R_API RSocket *r_socket_new (bool is_ssl) {
+R_API RSocket *r_socket_new(bool is_ssl) {
 	RSocket *s = R_NEW0 (RSocket);
 	if (!s) {
 		return NULL;
@@ -194,11 +180,7 @@ R_API RSocket *r_socket_new (bool is_ssl) {
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	s->local = 0;
-#ifdef _MSC_VER
-	s->fd = INVALID_SOCKET;
-#else
-	s->fd = -1;
-#endif
+	s->fd = R_INVALID_SOCKET;
 #if HAVE_LIB_SSL
 	if (is_ssl) {
 		s->sfd = NULL;
@@ -216,7 +198,7 @@ R_API RSocket *r_socket_new (bool is_ssl) {
 	return s;
 }
 
-R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout) {
+R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	// XXX TODO: dont use sockets, we can achieve the same with pipes
 	const int port = 2000 + r_num_rand (2000);
 	int childPid = r_sys_fork ();
@@ -265,8 +247,9 @@ R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout) {
 	return true;
 }
 
-R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
+	r_return_val_if_fail (s, false);
+#if __WINDOWS__
 	struct sockaddr_in sa;
 	struct hostent *he;
 	WSADATA wsadata;
@@ -279,11 +262,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 		return false;
 	}
 	s->fd = socket (AF_INET, SOCK_STREAM, 0);
-#ifdef _MSC_VER
-	if (s->fd == INVALID_SOCKET) {
-#else
-	if (s->fd == -1) {
-#endif
+	if (s->fd == R_INVALID_SOCKET) {
 		return false;
 	}
 
@@ -292,7 +271,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 	if (iResult != NO_ERROR) {
 		eprintf ("ioctlsocket error: %d\n", iResult);
 	}
-	memset (&sa, 0, sizeof(sa));
+	memset (&sa, 0, sizeof (sa));
 	sa.sin_family = AF_INET;
 	he = (struct hostent *)gethostbyname (host);
 	if (he == (struct hostent*)0) {
@@ -305,6 +284,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 	}
 	sa.sin_addr = *((struct in_addr *)he->h_addr);
 	s->port = r_socket_port_by_name (port);
+	s->proto = proto;
 	sa.sin_port = htons (s->port);
 	if (!connect (s->fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
 #ifdef _MSC_VER
@@ -319,6 +299,9 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 	if (iResult != NO_ERROR) {
 		eprintf ("ioctlsocket error: %d\n", iResult);
 	}
+	if (timeout > 0) {
+		r_socket_block_time (s, 1, timeout, 0);
+	}
 	fd_set Write, Err;
 	FD_ZERO (&Write);
 	FD_ZERO (&Err);
@@ -329,7 +312,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 		return true;
 	}
 	return false;
-#elif __UNIX__ || defined(__CYGWIN__)
+#elif __UNIX__
 	int ret;
 	struct addrinfo hints = {0};
 	struct addrinfo *res, *rp;
@@ -338,7 +321,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 	}
 	signal (SIGPIPE, SIG_IGN);
 	if (proto == R_SOCKET_PROTO_UNIX) {
-		if (!r_socket_unix_connect (s, host)) {
+		if (!__connect_unix (s, host)) {
 			return false;
 		}
 	} else {
@@ -346,7 +329,8 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 		hints.ai_protocol = proto;
 		int gai = getaddrinfo (host, port, &hints, &res);
 		if (gai != 0) {
-			eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
+			eprintf ("r_socket_connect: Error in getaddrinfo: %s (%s:%s)\n",
+				gai_strerror (gai), host, port);
 			return false;
 		}
 		for (rp = res; rp != NULL; rp = rp->ai_next) {
@@ -365,7 +349,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 				continue;
 			}
 			if (timeout > 0) {
-				r_socket_block_time (s, 1, timeout);
+				r_socket_block_time (s, 1, timeout, 0);
 				//fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
 			}
 			ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
@@ -429,7 +413,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 }
 
 /* close the file descriptor associated with the RSocket s */
-R_API int r_socket_close_fd (RSocket *s) {
+R_API int r_socket_close_fd(RSocket *s) {
 #ifdef _MSC_VER
 	return s->fd != INVALID_SOCKET ? closesocket (s->fd) : false;
 #else
@@ -438,26 +422,29 @@ R_API int r_socket_close_fd (RSocket *s) {
 }
 
 /* shutdown the socket and close the file descriptor */
-R_API int r_socket_close (RSocket *s) {
+R_API int r_socket_close(RSocket *s) {
 	int ret = false;
 	if (!s) {
 		return false;
 	}
-	if (s->fd != -1) {
-#if __UNIX__ || defined(__CYGWIN__)
+	if (s->fd != R_INVALID_SOCKET) {
+#if __UNIX__
 		shutdown (s->fd, SHUT_RDWR);
 #endif
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#if __WINDOWS__
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/ms740481(v=vs.85).aspx
 		shutdown (s->fd, SD_SEND);
-		do {
-			char buf = 0;
-			ret = recv (s->fd, &buf, 1, 0);
-		} while (ret != 0 && ret != SOCKET_ERROR);
+		if (r_socket_ready (s, 0, 250)) {
+			do {
+				char buf = 0;
+				ret = recv (s->fd, &buf, 1, 0);
+			} while (ret != 0 && ret != SOCKET_ERROR);
+		}
 		ret = closesocket (s->fd);
 #else
 		ret = close (s->fd);
 #endif
+		s->fd = R_INVALID_SOCKET;
 	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl && s->sfd) {
@@ -469,7 +456,7 @@ R_API int r_socket_close (RSocket *s) {
 }
 
 /* shutdown the socket, close the file descriptor and free the RSocket */
-R_API int r_socket_free (RSocket *s) {
+R_API int r_socket_free(RSocket *s) {
 	int res = r_socket_close (s);
 #if HAVE_LIB_SSL
 	if (s && s->is_ssl) {
@@ -490,26 +477,32 @@ R_API int r_socket_port_by_name(const char *name) {
 	return (p && p->s_port) ? ntohs (p->s_port) : r_num_get (NULL, name);
 }
 
-R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) {
-#if __UNIX__ || defined(__CYGWIN__)
+R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	int optval = 1;
 	int ret;
 	struct linger linger = { 0 };
+
+	if (s->proto == R_SOCKET_PROTO_UNIX) {
+#if __UNIX__
+		return __listen_unix (s, port);
 #endif
+		return false;
+	}
+
 	if (r_sandbox_enable (0)) {
 		return false;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#if __WINDOWS__
 	WSADATA wsadata;
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
 		eprintf ("Error creating socket.");
 		return false;
 	}
 #endif
-	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) == R_INVALID_SOCKET) {
 		return false;
 	}
-#if __UNIX__ || defined(__CYGWIN__)
+
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
 	ret = setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof (linger));
@@ -527,7 +520,7 @@ R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) 
 	if (ret < 0) {
 		return false;
 	}
-#endif
+
 	memset (&s->sa, 0, sizeof (s->sa));
 	s->sa.sin_family = AF_INET;
 	s->sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
@@ -545,7 +538,7 @@ R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) 
 #endif
 		return false;
 	}
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	if (listen (s->fd, 32) < 0) {
@@ -589,7 +582,7 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 	}
 	//signal (SIGPIPE, SIG_DFL);
 	sock->fd = accept (s->fd, (struct sockaddr *)&s->sa, &salen);
-	if (sock->fd == -1) {
+	if (sock->fd == R_INVALID_SOCKET) {
 		if (errno != EWOULDBLOCK) {
 			// not just a timeout
 			r_sys_perror ("accept");
@@ -645,14 +638,14 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 	return NULL;
 }
 
-R_API int r_socket_block_time (RSocket *s, int block, int sec) {
-#if __UNIX__ || defined(__CYGWIN__)
+R_API int r_socket_block_time(RSocket *s, int block, int sec, int usec) {
+#if __UNIX__
 	int ret, flags;
 #endif
 	if (!s) {
 		return false;
 	}
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 	flags = fcntl (s->fd, F_GETFL, 0);
 	if (flags < 0) {
 		return false;
@@ -663,17 +656,14 @@ R_API int r_socket_block_time (RSocket *s, int block, int sec) {
 	if (ret < 0) {
 		return false;
 	}
-#elif __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
-	// HACK: nonblocking io on w32 behaves strange
-	return true;
+#elif __WINDOWS__
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
-	if (sec > 0) {
+	if (sec > 0 || usec > 0) {
 		struct timeval tv = {0};
 		tv.tv_sec = sec;
-		tv.tv_usec = 0;
-		if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO,
-			    (char *)&tv, sizeof (tv)) < 0) {
+		tv.tv_usec = usec;
+		if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof (tv)) < 0) {
 			return false;
 		}
 	}
@@ -693,7 +683,7 @@ R_API int r_socket_flush(RSocket *s) {
 /* waits secs until new data is received.	  */
 /* returns -1 on error, 0 is false, 1 is true */
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 	//int msecs = (1000 * secs) + (usecs / 1000);
 	int msecs = (usecs / 1000);
 	struct pollfd fds[1];
@@ -701,32 +691,26 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	fds[0].events = POLLIN | POLLPRI;
 	fds[0].revents = POLLNVAL | POLLHUP | POLLERR;
 	return poll ((struct pollfd *)&fds, 1, msecs);
-#elif __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
-	return 1;
-#if XXX_THIS_IS_NOT_WORKING_WELL
+#elif __WINDOWS__
 	fd_set rfds;
 	struct timeval tv;
-	if (s->fd == -1) {
+	if (s->fd == R_INVALID_SOCKET) {
 		return -1;
 	}
 	FD_ZERO (&rfds);
 	FD_SET (s->fd, &rfds);
 	tv.tv_sec = secs;
 	tv.tv_usec = usecs;
-	if (select (s->fd + 1, &rfds, NULL, NULL, &tv) == -1) {
-		return -1;
-	}
-	return FD_ISSET (0, &rfds);
-#endif
+	return select (s->fd + 1, &rfds, NULL, NULL, &tv);
 #else
 	return true; /* always ready if unknown */
 #endif
 }
 
 R_API char *r_socket_to_string(RSocket *s) {
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#if __WINDOWS__
 	return r_str_newf ("fd%d", (int)(size_t)s->fd);
-#elif __UNIX__ || defined(__CYGWIN__)
+#elif __UNIX__
 	char *str = NULL;
 	struct sockaddr sa;
 	socklen_t sl = sizeof (sa);
@@ -750,7 +734,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 /* Read/Write functions */
 R_API int r_socket_write(RSocket *s, void *buf, int len) {
 	int ret, delta = 0;
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	for (;;) {
@@ -790,7 +774,7 @@ R_API int r_socket_puts(RSocket *s, char *buf) {
 R_API void r_socket_printf(RSocket *s, const char *fmt, ...) {
 	char buf[BUFFER_SIZE];
 	va_list ap;
-	if (s->fd >= 0) {
+	if (s->fd != R_INVALID_SOCKET) {
 		va_start (ap, fmt);
 		vsnprintf (buf, BUFFER_SIZE, fmt, ap);
 		r_socket_write (s, buf, strlen (buf));
@@ -810,14 +794,13 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 		return SSL_read (s->sfd, buf, len);
 	}
 #endif
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#if __WINDOWS__
 rep:
 	{
 	int ret = recv (s->fd, (void *)buf, len, 0);
-	//if (ret != len)
-	//	return 0;
-	//r_sys_perror ("recv");
-	if (ret == -1) goto rep;
+	if (ret == -1) {
+		goto rep;
+	}
 	return ret;
 	}
 #else
@@ -841,7 +824,7 @@ R_API int r_socket_gets(RSocket *s, char *buf,	int size) {
 	int i = 0;
 	int ret = 0;
 
-	if (s->fd == -1) {
+	if (s->fd == R_INVALID_SOCKET) {
 		return -1;
 	}
 	while (i < size) {

@@ -116,7 +116,7 @@ R_API int r_cmd_call_long(RCmd *cmd, const char *input);
 R_API char **r_cmd_args(RCmd *cmd, int *argc);
 
 /* r_cmd_macro */
-R_API RCmdMacroItem *r_cmd_macro_item_new();
+R_API RCmdMacroItem *r_cmd_macro_item_new(void);
 R_API void r_cmd_macro_item_free(RCmdMacroItem *item);
 R_API void r_cmd_macro_init(RCmdMacro *mac);
 R_API int r_cmd_macro_add(RCmdMacro *mac, const char *name);

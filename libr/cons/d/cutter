@@ -25,7 +25,9 @@ ec pop rgb:da3192
 ec crypto rgb:d03080
 ec jmp rgb:5f8700
 ec cjmp rgb:5f8700
+ec ujmp rgb:5f8700
 ec call rgb:0693c9
+ec ucall rgb:0693c9
 ec nop rgb:005f87
 ec ret rgb:0693c9
 ec trap rgb:0693c9
@@ -62,3 +64,5 @@ ec gui.border rgb:000000
 ec wordhl rgb:ff0000
 ec linehl rgb:efefef
 
+ec widget_bg rgb:4cf rgb:058
+ec widget_sel black rgb:d39

@@ -42,14 +42,13 @@
 #include <strings.h>
 #endif
 #include <errno.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef __WINDOWS__
 #include <io.h>
 #include <fcntl.h>
+#else
+#include <unistd.h>
 #endif
 
 

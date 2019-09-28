@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake */
+/* radare - LGPL - Copyright 2011-2019 - pancake */
 
 #include <r_asm.h>
 #include <r_debug.h>
@@ -27,13 +27,14 @@ struct bfvm_regs {
 
 static struct bfvm_regs r;
 
-static int is_io_bf(RDebug *dbg) {
+static bool is_io_bf(RDebug *dbg) {
 	RIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name) {
-		if (!strcmp ("bdescbg", d->plugin->name)) {
+		if (!strcmp ("bfdbg", d->plugin->name)) {
 			return true;
 		}
 	}
+	eprintf ("error: the iodesc data is not brainfuck friendly\n");
 	return false;
 }
 
@@ -61,17 +62,14 @@ static int r_debug_bf_step(RDebug *dbg) {
 }
 
 static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	RIOBdescbg *o;
-	if (!dbg) {
-		return false;
-	}
+	r_return_val_if_fail (dbg && buf && size > 0, -1);
 	if (!is_io_bf (dbg)) {
 		return 0;
 	}
 	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data)) {
 		return 0;
 	}
-	o = dbg->iob.io->desc->data;
+	RIOBdescbg *o = dbg->iob.io->desc->data;
 	r.pc = o->bfvm->eip;
 	r.ptr = o->bfvm->ptr;
 	r.sp = o->bfvm->esp;
@@ -87,7 +85,6 @@ static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	RIOBdescbg *o;
 	if (!dbg) {
 		return false;
 	}
@@ -97,7 +94,7 @@ static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size)
 	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data)) {
 		return 0;
 	}
-	o = dbg->iob.io->desc->data;
+	RIOBdescbg *o = dbg->iob.io->desc->data;
 	memcpy (&r, buf, sizeof (r));
 	o->bfvm->eip = r.pc;
 	o->bfvm->ptr = r.ptr; // dup
@@ -132,13 +129,6 @@ static int r_debug_bf_attach(RDebug *dbg, int pid) {
 	if (!is_io_bf (dbg)) {
 		return false;
 	}
-#if 0
-	RIOBdescbg *o;
-	o = dbg->iob.io->desc->data;
-eprintf ("base = %llx\n", o->bfvm->base);
-eprintf ("screen = %llx\n", o->bfvm->screen);
-eprintf ("input = %llx\n", o->bfvm->input);
-#endif
 	return true;
 }
 
@@ -170,12 +160,20 @@ static int r_debug_bf_breakpoint (struct r_bp_t *bp, RBreakpointItem *b, bool se
 }
 
 static bool r_debug_bf_kill(RDebug *dbg, int pid, int tid, int sig) {
+	if (!is_io_bf (dbg)) {
+		return false;
+	}
 	RIOBdescbg *o = dbg->iob.io->desc->data;
-	bfvm_reset (o->bfvm);
+	if (o) {
+		bfvm_reset (o->bfvm);
+	}
 	return true;
 }
 
 static RList *r_debug_native_map_get(RDebug *dbg) {
+	if (!is_io_bf (dbg)) {
+		return false;
+	}
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	BfvmCPU *c = o->bfvm;
 	RList *list = r_list_newf ((RListFree)r_debug_map_free);
@@ -194,6 +192,9 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 }
 
 static int r_debug_bf_stop(RDebug *dbg) {
+	if (!is_io_bf (dbg)) {
+		return false;
+	}
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	BfvmCPU *c = o->bfvm;
 	c->breaked = true;
@@ -221,7 +222,7 @@ RDebugPlugin r_debug_plugin_bf = {
 	.map_get = r_debug_native_map_get,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_bf,

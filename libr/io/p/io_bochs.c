@@ -42,7 +42,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		fileCfg = strdup (i + 1);
 	} else {
 		free (fileCfg);
-		eprintf ("Error cant find :\n");
+		eprintf ("Error can't find :\n");
 		return NULL;
 	}
 	riob = R_NEW0 (RIOBochs);
@@ -96,7 +96,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
                 lprintf ("Usage: =!cmd args\n"
                         " =!:<bochscmd>      - Send a bochs command.\n"
                         " =!dobreak          - pause bochs.\n");
-		lprintf ("io_system: Enviando comando bochs\n");
+		lprintf ("io_system: Enviando commando bochs\n");
 		bochs_send_cmd (desc, &cmd[1], true);
 		io->cb_printf ("%s\n", desc->data);
 	} else if (!strncmp (cmd, "dobreak", 7)) {
@@ -121,7 +121,7 @@ RIOPlugin r_io_plugin_bochs = {
 	.isdbg = true
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_bochs,

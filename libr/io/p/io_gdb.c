@@ -179,12 +179,15 @@ static int __close(RIODesc *fd) {
 	}
 	gdbr_disconnect (desc);
 	gdbr_cleanup (desc);
+	if (riogdb) {	//TODO is there a less band-aid fix to do this?
+		riogdb->data = NULL;
+	}
 	R_FREE (desc);
 	return -1;
 }
 
 static int __getpid(RIODesc *fd) {
-	// XXX dont use globals
+	// XXX don't use globals
 	return desc ? desc->pid : -1;
 #if 0
 	// dupe for ? r_io_desc_get_pid (desc);
@@ -213,7 +216,10 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!desc) {
 		return NULL;
 	}
-	if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
+	if (!*cmd) {
+		return NULL;
+	}
+	if (cmd[0] == '?' || !strcmp (cmd, "help")) {
 		eprintf ("Usage: =!cmd args\n"
 			 " =!pid             - show targeted pid\n"
 			 " =!pkt s           - send packet 's'\n"
@@ -365,7 +371,7 @@ RIOPlugin r_io_plugin_gdb = {
 	.isdbg = true
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_gdb,

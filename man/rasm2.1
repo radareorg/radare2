@@ -5,7 +5,7 @@
 .Nd radare2 assembler and disassembler tool
 .Sh SYNOPSIS
 .Nm rasm2
-.Op Fl ABdDeEfCLvwrq
+.Op Fl ABdDeEfCLvwrqx
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
@@ -67,6 +67,8 @@ Show output in r2 script
 Select syntax output (intel, att)
 .It Fl w
 Describe opcode (whats op)
+.It Fl x
+Use hex dwords instead of hexpairs in the assembler output
 .It Fl q
 Quiet output (handy for -L, -v, ...)
 .El
@@ -80,25 +82,26 @@ Use ATT syntax rather than flu :w
 dentify the region fof aslerrger
 .It Fl string
 dentify the region fof aslerrger
-.It Fl .ascii
 .It Fl .align
-.It Fl .arm
-.It Fl .thumb
 .It Fl .arch
+.It Fl .arm
+.It Fl .ascii
 .It Fl .bits
+.It Fl .data
+.It Fl .equ
 .It Fl .fill
-.It Fl .kernel
-.It Fl .os
+.It Fl .glob
 .It Fl .hex
 .It Fl .int16
-.It Fl .short
 .It Fl .int32
 .It Fl .int64
-.It Fl .glob
-.It Fl .equ
+.It Fl .kernel
+.It Fl .offset
 .It Fl .org
+.It Fl .os
+.It Fl .short
 .It Fl .text
-.It Fl .data
+.It Fl .thumb
 .El
 .Sh EXAMPLES
 .Pp

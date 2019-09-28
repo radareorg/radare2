@@ -6,6 +6,7 @@ if [ -n "$1" ]; then
 	shift
 fi
 export ANDROID=1
+ARCH=${NDK_ARCH}
 case "${NDK_ARCH}" in
 mips64)
 	export NDK_ARCH
@@ -17,13 +18,18 @@ mips)
 	AR=mipsel-linux-android-ar
 	RANLIB=mipsel-linux-android-ranlib
 	;;
-x86)
+x64)
+	NDK_ARCH=x86_64
+	export NDK_ARCH
+	;;
+x86|x86_64)
 	export NDK_ARCH
 	;;
 aarch64|arm64)
-	NDK_ARCH=arm64
+	NDK_ARCH=aarch64
 	export NDK_ARCH
 	AR=aarch64-linux-android-ar
+	ARCH=arm64
 	RANLIB=aarch64-linux-android-ranlib
 	;;
 arm)
@@ -35,7 +41,7 @@ local)
 	export ANDROID=1
 	;;
 *)
-	echo "Usage: $0 [arm64|arm|mips|mips64|x86]"
+	echo "Usage: $0 [arm64|arm|mips|mips64|x86|x64]"
 	exit 1
 	;;
 esac
@@ -83,7 +89,7 @@ echo NDK=$NDK
 echo NDK_ARCH=$NDK_ARCH
 
 echo "Building the standalone NDK toolchain..."
-${NDK}/build/tools/make_standalone_toolchain.py --arch=${NDK_ARCH} --install-dir=/tmp/ndk/ --api=28 --force
+${NDK}/build/tools/make_standalone_toolchain.py --arch=${ARCH} --install-dir=/tmp/ndk/ --api=28 --force
 (
 cd /tmp/ndk/bin/ && \
 ln -fs clang ndk-gcc && \

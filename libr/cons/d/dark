@@ -32,6 +32,8 @@ ec reg rgb:368
 ec creg rgb:368
 ec trap rgb:000 rgb:
 ec swi rgb:99a
+ec ucall rgb:44f rgb:123
+ec ujmp rgb:368
 ec invalid rgb:rgb:44f rgb:123
 ec linehl rgb:004
 ec graph.box rgb:040
@@ -53,3 +55,6 @@ ec ai.write rgb:366
 ec ai.exec rgb:368
 ec ai.seq rgb:d38
 ec ai.ascii rgb:99a
+
+ec widget_bg rgb:366 black
+ec widget_sel rgb:44f rgb:123

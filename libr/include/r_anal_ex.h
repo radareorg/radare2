@@ -314,7 +314,7 @@ R_API RList * r_anal_ex_perform_analysis( RAnal *anal, RAnalState *state, ut64 a
 
 // BB and OP handling
 R_API void r_anal_ex_update_bb_cfg_head_tail( RAnalBlock *start, RAnalBlock * head, RAnalBlock * tail );
-R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr);
+R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr, RAnalOpMask mask);
 R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr);
 R_API void r_anal_ex_clone_op_switch_to_bb (RAnalBlock *bb, RAnalOp *op);
 

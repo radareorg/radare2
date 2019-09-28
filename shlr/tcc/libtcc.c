@@ -548,6 +548,17 @@ LIBTCCAPI TCCState *tcc_new(const char *arch, int bits, const char *os)
 	tcc_define_symbol (s, "__STDC_VERSION__", "199901L");
 	tcc_define_symbol (s, "__STDC_HOSTED__", NULL);
 
+	/* type defines */
+	tcc_define_symbol (s, "ut8", "uint8_t");
+	tcc_define_symbol (s, "ut16", "uint16_t");
+	tcc_define_symbol (s, "ut32", "uint32_t");
+	tcc_define_symbol (s, "ut64", "uint64_t");
+
+	tcc_define_symbol (s, "st8", "int8_t");
+	tcc_define_symbol (s, "st16", "int16_t");
+	tcc_define_symbol (s, "st32", "int32_t");
+	tcc_define_symbol (s, "st64", "int64_t");
+
 	/* target defines */
 	if (!strncmp (arch, "x86", 3)) {
 		if (bits == 32 || bits == 16) {
@@ -722,8 +733,12 @@ the_end:
 	return ret;
 }
 
-LIBTCCAPI int tcc_add_file(TCCState *s, const char *filename)
+LIBTCCAPI int tcc_add_file(TCCState *s, const char *filename, const char *directory)
 {
+	if (directory) {
+		dirname = strdup (directory);
+	}
+
 	if (s->output_type == TCC_OUTPUT_PREPROCESS) {
 		return tcc_add_file_internal (s, filename, AFF_PRINT_ERROR | AFF_PREPROCESS);
 	} else {

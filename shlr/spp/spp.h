@@ -5,11 +5,47 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#if HAVE_R_UTIL
-#include <r_util.h>
+#include <stdbool.h>
+#include <errno.h>
+
+#ifdef S_API
+#undef S_API
+#endif
+#if R_SWIG
+  #define S_API export
+#elif R_INLINE
+  #define S_API inline
 #else
-#include "r_api.h"
-int r_sys_setenv(const char *key, const char *value);
+  #if defined(__GNUC__) && __GNUC__ >= 4
+    #define S_API __attribute__((visibility("default")))
+  #elif defined(_MSC_VER)
+    #define S_API __declspec(dllexport)
+  #else
+    #define S_API
+  #endif
+#endif
+
+#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__)
+  #define __BSD__ 0
+  #define __UNIX__ 1
+#endif
+#if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__)
+  #define __BSD__ 1
+  #define __UNIX__ 1
+#endif
+#if __WIN32__ || __CYGWIN__ || MINGW32
+  #define __addr_t_defined
+  #include <windows.h>
+#endif
+#if __WIN32__ || MINGW32 && !__CYGWIN__ || _MSC_VER
+  #ifndef _MSC_VER
+    #include <winsock.h>
+  #endif
+  typedef int socklen_t;
+  #undef USE_SOCKETS
+  #define __WINDOWS__ 1
+  #undef __UNIX__
+  #undef __BSD__
 #endif
 
 #ifdef __WINDOWS__
@@ -23,10 +59,6 @@ int r_sys_setenv(const char *key, const char *value);
 #define VERSION "1.0"
 
 #define MAXIFL 128
-
-extern int ifl;
-extern int echo[MAXIFL];
-extern int lineno;
 
 #ifndef HAVE_FORK
 #define HAVE_FORK 1
@@ -47,12 +79,24 @@ extern int lineno;
 #define GET_ARG(x,y,i) if (y[i][2]) x = y[i] + 2; else x = y[++i]
 
 #define DEFAULT_PROC(x) \
-DLL_LOCAL struct Tag *tags = (struct Tag *)&x##_tags; \
-DLL_LOCAL struct Arg *args = (struct Arg *)&x##_args; \
-DLL_LOCAL struct Proc *proc = &x##_proc;
+struct Tag *tags = (struct Tag *)&x##_tags; \
+struct Arg *args = (struct Arg *)&x##_args; \
+struct Proc *proc = &x##_proc;
+
+#if USE_R2
+#include <r_util.h>
+#define SStrBuf RStrBuf
+#else
+typedef struct s_strbuf_t {
+	int len;
+	char *ptr;
+	int ptrlen;
+	char buf[64];
+} SStrBuf;
+#endif
 
 typedef struct {
-	RStrBuf *cout;
+	SStrBuf *cout;
 	FILE *fout;
 	int size;
 } Output;
@@ -101,22 +145,16 @@ struct Proc {
 	int tag_begin;
 	int default_echo;
 	SppState state;
-    SppBuf buf;
+	SppBuf buf;
 };
 
-R_API int spp_file(const char *file, Output *out);
-R_API int spp_run(char *buf, Output *out);
-R_API void spp_eval(char *buf, Output *out);
-R_API void spp_io(FILE *in, Output *out);
-#ifdef _MSC_VER
-void do_printf(Output *out, char *str, ...);
-#else
-void do_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
-#endif
-
-R_API void spp_proc_list(void);
-R_API void spp_proc_list_kw(void);
-R_API void spp_proc_set(struct Proc *p, char *arg, int fail);
+S_API int spp_file(const char *file, Output *out);
+S_API int spp_run(char *buf, Output *out);
+S_API void spp_eval(char *buf, Output *out);
+S_API void spp_io(FILE *in, Output *out);
+S_API void spp_proc_list(void);
+S_API void spp_proc_list_kw(void);
+S_API void spp_proc_set(struct Proc *p, char *arg, int fail);
 
 #if DEBUG
 #define D if (1)

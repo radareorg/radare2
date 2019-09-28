@@ -136,16 +136,16 @@ static const char* V850_REG_NAMES[] = {
 
 static void update_flags(RAnalOp *op, int flags) {
 	if (flags & V850_FLAG_CY) {
-		r_strbuf_append (&op->esil, ",$c31,cy,=");
+		r_strbuf_append (&op->esil, "31,$c,cy,:=");
 	}
 	if (flags & V850_FLAG_OV) {
-		r_strbuf_append (&op->esil, ",$o,ov,=");
+		r_strbuf_append (&op->esil, ",$o,ov,:=");
 	}
 	if (flags & V850_FLAG_S) {
-		r_strbuf_append (&op->esil, ",$s,s,=");
+		r_strbuf_append (&op->esil, ",$s,s,:=");
 	}
 	if (flags & V850_FLAG_Z) {
-		r_strbuf_append (&op->esil, ",$z,z,=");
+		r_strbuf_append (&op->esil, ",$z,z,:=");
 	}
 }
 
@@ -164,7 +164,7 @@ static void clear_flags(RAnalOp *op, int flags) {
 	}
 }
 
-static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int ret = 0;
 	ut8 opcode = 0;
 	const char *reg1 = NULL;
@@ -209,7 +209,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		break;
 	case V850_MOVEA:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		// FIXME: to decide about reading 16/32 bit and use only macroses to access
+		// FIXME: to decide about reading 16/32 bit and use only macros to access
 		r_strbuf_appendf (&op->esil, "%s,0xffff,&,%u,+,%s,=", F6_RN1(word1), word2, F6_RN2(word1));
 		break;
 	case V850_SLDB:
@@ -556,7 +556,7 @@ RAnalPlugin r_anal_plugin_v850 = {
 	.get_reg_profile = get_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_v850,

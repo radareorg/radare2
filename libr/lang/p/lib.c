@@ -15,7 +15,7 @@ static int lang_lib_file_run (RLang *user, const char *file) {
 		return -1;
 	}
 	if (!r_str_startswith (libpath, "/") && !r_str_startswith (libpath, "./")) {
-		libpath = r_str_prefix (libpath, "./");
+		libpath = r_str_prepend (libpath, "./");
 	}
 	if (!r_file_exists (libpath)) {
 		if (!r_str_endswith (libpath, R_LIB_EXT)) {

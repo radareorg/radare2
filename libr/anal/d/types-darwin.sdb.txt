@@ -1,0 +1,211 @@
+__assert_fail=func
+func.__assert_fail.args=4
+func.__assert_fail.arg.0=const char *,assertion
+func.__assert_fail.arg.1=const char *,file
+func.__assert_fail.arg.2=unsigned int,line
+func.__assert_fail.arg.3=const char *,function
+func.__assert_fail.noreturn=true
+func.__assert_fail.ret=void
+
+__assert_rtn=func
+func.__assert_rtn.args=4
+func.__assert_rtn.arg.0=const char *,assertion
+func.__assert_rtn.arg.1=const char *,file
+func.__assert_rtn.arg.2=unsigned int,line
+func.__assert_rtn.arg.3=const char *,function
+func.__assert_rtn.noreturn=true
+func.__assert_rtn.ret=void
+func.__assert_rtn.cc=amd64
+
+tputs=func
+func.tputs.args=3
+func.tputs.arg.0=const char *,str
+func.tputs.arg.1=int,affcnt
+func.tputs.arg.2=void *,putc
+func.tputs.ret=int
+
+err=func
+func.err.args=1
+func.err.arg.0=int,eval
+func.err.arg.1=const char *,fmt
+func.err.noreturn=true
+func.err.ret=void
+
+errc=func
+func.errc.args=1
+func.errc.arg.0=int,eval
+func.errc.arg.1=int,code
+func.errc.arg.2=const char *,fmt
+func.errc.noreturn=true
+func.errc.ret=void
+
+errx=func
+func.errx.args=1
+func.errx.arg.0=int,eval
+func.errx.arg.1=const char *,fmt
+func.errx.noreturn=true
+func.errx.ret=void
+
+_exit=func
+func._exit.args=1
+func._exit.arg.0=int,status
+func._exit.noreturn=true
+func._exit.ret=void
+
+_Exit=func
+func._Exit.args=1
+func._Exit.arg.0=int,status
+func._Exit.noreturn=true
+func._Exit.ret=void
+
+__libc_init=func
+func.__libc_init.args=3
+func.__libc_init.arg.0=int,argc
+func.__libc_init.arg.1=char **,argv
+func.__libc_init.arg.2=char **,envp
+func.__libc_init.noreturn=true
+func.__libc_init.ret=void
+
+__libc_init_array=func
+func.__libc_init_array.args=0
+func.__libc_init_array.ret=void
+
+__libc_start_main=func
+func.__libc_start_main.args=7
+func.__libc_start_main.arg.0=func,main
+func.__libc_start_main.arg.1=int,argc
+func.__libc_start_main.arg.2=char **,ubp_av
+func.__libc_start_main.arg.3=func,init
+func.__libc_start_main.arg.4=func,fini
+func.__libc_start_main.arg.5=func,rtld_fini
+func.__libc_start_main.arg.6=void *,stack_end
+func.__libc_start_main.noreturn=true
+func.__libc_start_main.ret=int
+
+__uClibc_main=func
+func.__uClibc_main.args=7
+func.__uClibc_main.arg.0=func,main
+func.__uClibc_main.arg.1=int,argc
+func.__uClibc_main.arg.2=char **,argv
+func.__uClibc_main.arg.3=func,app_init
+func.__uClibc_main.arg.4=func,app_fini
+func.__uClibc_main.arg.5=func,rtld_fini
+func.__uClibc_main.arg.6=void *,stack_end
+func.__uClibc_main.noreturn=true
+func.__uClibc_main.ret=int
+
+abort=func
+func.abort.args=0
+func.abort.noreturn=true
+func.abort.ret=void
+
+atexit=func
+func.atexit.args=1
+func.atexit.arg.0=func,function
+func.atexit.ret=int
+
+exit=func
+func.exit.args=1
+func.exit.arg.0=int,status
+func.exit.noreturn=true
+func.exit.ret=void
+
+access=func
+func.access.args=2
+func.access.arg.0=const char *,path
+func.access.arg.1=int,mode
+func.access.ret=int
+
+prctl=func
+func.prctl.args=5
+func.prctl.arg.0=int,option
+func.prctl.arg.1=unsigned long,v2
+func.prctl.arg.2=unsigned long,v3
+func.prctl.arg.3=unsigned long,v4
+func.prctl.arg.4=unsigned long,v5
+func.prctl.ret=int
+
+sigaction=func
+func.sigaction.args=3
+func.sigaction.arg.0=int,signum
+func.sigaction.arg.1=const struct sigaction *,act
+func.sigaction.arg.2=struct sigaction *,oldact
+func.sigaction.ret=int
+
+select=func
+func.select.args=5
+func.select.arg.0=int,nfds
+func.select.arg.1=fd_set *,readfds
+func.select.arg.2=fd_set *,writefds
+func.select.arg.3=fd_set *,exceptfds
+func.select.arg.4=struct timeval *,timeout
+func.select.ret=int
+
+nanosleep=func
+func.nanosleep.args=2
+func.nanosleep.arg.0=const struct timespec *,req
+func.nanosleep.arg.1=struct timespec *,rem
+func.nanosleep.ret=int
+
+getsockname=func
+func.getsockname.args=3
+func.getsockname.arg.0=int,sockfd
+func.getsockname.arg.1=struct sockaddr *,addr
+func.getsockname.arg.2=socklen_t *,addrlen
+func.getsockname.ret=int
+
+getsockopt=func
+func.getsockopt.args=5
+func.getsockopt.arg.0=int,sockfd
+func.getsockopt.arg.1=int,level
+func.getsockopt.arg.2=int,optname
+func.getsockopt.arg.3=void *,optval
+func.getsockopt.arg.4=socklen_t *,optlen
+func.getsockopt.ret=int
+
+setsockopt=func
+func.setsockopt.args=5
+func.setsockopt.arg.0=int,sockfd
+func.setsockopt.arg.1=int,level
+func.setsockopt.arg.2=int,optname
+func.setsockopt.arg.3=void *,optval
+func.setsockopt.arg.4=socklen_t,optlen
+func.setsockopt.ret=int
+
+waitpid=func
+func.waitpid.args=3
+func.waitpid.arg.0=pid_t,pid
+func.waitpid.arg.1=int *,wstatus
+func.waitpid.arg.2=int,options
+func.waitpid.ret=pid_t
+
+wait=func
+func.wait.args=1
+func.wait.arg.0=int *,wstatus
+func.wait.ret=pid_t
+
+waitid=func
+func.waitid.args=4
+func.waitid.arg.0=idtype_t,idtype
+func.waitid.arg.1=id_t,id
+func.waitid.arg.2=siginfo_t *,infop
+func.waitid.arg.3=int,options
+func.waitid.ret=int
+
+__stack_chk_fail=func
+func.__stack_chk_fail.args=0
+func.__stack_chk_fail.noreturn=true
+func.__stack_chk_fail.ret=void
+
+acl_free=func
+func.acl_free.args=1
+func.acl_free.arg.0=void *,obj_p
+func.acl_free.ret=int
+
+recvfrom=func
+func.recvfrom.args=4
+func.recvfrom.arg.0=int,socket
+func.recvfrom.arg.1=void *,buffer
+func.recvfrom.arg.2=size_t,length
+func.recvfrom.arg.3=int,flags
+func.recvfrom.ret=ssize_t

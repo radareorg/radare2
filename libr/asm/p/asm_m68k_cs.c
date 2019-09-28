@@ -17,6 +17,9 @@
 
 #if CAPSTONE_HAS_M68K
 
+// Size of the longest instruction in bytes
+#define M68K_LONGEST_INSTRUCTION 10
+
 static bool check_features(RAsm *a, cs_insn *insn);
 static csh cd = 0;
 #include "cs_mnemonics.c"
@@ -72,9 +75,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
 		goto beach;
 	}
-	ut8 mybuf[8] = {0};
-	int mylen = R_MIN (8, len);
-	memcpy (mybuf, buf, R_MIN (8, len));
+
+	ut8 mybuf[M68K_LONGEST_INSTRUCTION] = {0};
+	int mylen = R_MIN (M68K_LONGEST_INSTRUCTION, len);
+	memcpy (mybuf, buf, mylen);
+
 	n = cs_disasm (cd, mybuf, mylen, a->pc, 1, &insn);
 	if (n < 1) {
 		ret = -1;
@@ -125,8 +130,8 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.cpus = "68000,68010,68020,68030,68040,68060",
 	.license = "BSD",
 	.arch = "m68k",
-	.bits = 16 | 32,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.bits = 32,
+	.endian = R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.mnemonics = &mnemonics,
 };
@@ -136,7 +141,7 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 	return true;
 }
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m68k_cs,
@@ -151,11 +156,11 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.license = "BSD",
 	.author = "pancake",
 	.arch = "m68k",
-	.bits = 16 | 32,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.bits = 32,
+	.endian = R_SYS_ENDIAN_BIG,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m68k_cs,

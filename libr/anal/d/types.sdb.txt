@@ -84,6 +84,31 @@ arc4random=func
 func.arc4random.args=0
 func.arc4random.ret=uint32_t
 
+random=func
+func.random.args=0
+func.random.ret=uint32_t
+
+srandomdev=func
+func.srandomdev.args=0
+func.srandomdev.ret=void
+
+initstate=func
+func.initstate.args=3
+func.initstate.arg.0=uint32_t,state
+func.initstate.arg.1=char *,state
+func.initstate.arg.2=size_t,size
+func.initstate.ret=char *
+
+setstate=func
+func.setstate.args=1
+func.setstate.arg.0=const char *,state
+func.setstate.ret=const char *
+
+srandom=func
+func.srandom.args=1
+func.srandom.arg.0=uint32_t,seed
+func.srandom.ret=uint32_t
+
 calloc=func
 func.calloc.args=2
 func.calloc.arg.0=size_t,nmeb
@@ -182,6 +207,26 @@ func.realloc.arg.0=void *,ptr
 func.realloc.arg.1=size_t,size
 func.realloc.ret=void *
 
+reallocf=func
+func.reallocf.args=2
+func.reallocf.arg.0=void *,ptr
+func.reallocf.arg.1=size_t,size
+func.reallocf.ret=void *
+
+user_from_uid=func
+func.user_from_uid.args=2
+func.user_from_uid.arg.0=uid_t,uid
+func.user_from_uid.arg.1=int,nouser
+func.user_from_uid.ret=char *
+func.user_from_uid.include=pwd.h
+
+group_from_gid=func
+func.group_from_gid.args=2
+func.group_from_gid.arg.0=gid_t,gid
+func.group_from_gid.arg.1=int,nogroup
+func.group_from_gid.ret=char *
+func.group_from_uid.include=grp.h
+
 setlocale=func
 func.setlocale.args=2
 func.setlocale.arg.0=int,category
@@ -193,6 +238,12 @@ func.strcpy.args=2
 func.strcpy.arg.0=char *,dest
 func.strcpy.arg.1=const char *,src
 func.strcpy.ret=char *
+
+strcpy_chk=func
+func.strcpy_chk.args=2
+func.strcpy_chk.arg.0=char *,dest
+func.strcpy_chk.arg.1=const char *,src
+func.strcpy_chk.ret=char *
 
 compat_mode=func
 func.compat_mode.args=2
@@ -240,6 +291,25 @@ func.sleep.args=1
 func.sleep.arg.0=int,s
 func.sleep.ret=int
 
+usleep=func
+func.usleep.args=1
+func.usleep.arg.0=int,s
+func.usleep.ret=int
+
+bind=func
+func.bind.args=3
+func.bind.arg.0=int,socket
+func.bind.arg.1=struct sockaddr*,address
+func.bind.arg.2=socklen_t,address_len
+func.bind.ret=int
+
+socket=func
+func.socket.args=3
+func.socket.arg.0=int,domain
+func.socket.arg.1=int,type
+func.socket.arg.2=int,protocol
+func.socket.ret=int
+
 close=func
 func.close.args=1
 func.close.arg.0=int,fildes
@@ -249,6 +319,11 @@ fclose=func
 func.fclose.args=1
 func.fclose.arg.0=FILE *,stream
 func.fclose.ret=int
+
+pclose=func
+func.pclose.args=1
+func.pclose.arg.0=FILE *,stream
+func.pclose.ret=int
 
 fileno=func
 func.fileno.args=1
@@ -268,6 +343,13 @@ func.open.args=2
 func.open.arg.0=const char *,path
 func.open.arg.1=int,oflag
 func.open.ret=int
+
+openat=func
+func.openat.args=3
+func.openat.arg.0=int,fd
+func.openat.arg.1=const char *,path
+func.openat.arg.2=int,oflag
+func.openat.ret=int
 
 read=func
 func.read.args=3
@@ -406,10 +488,38 @@ func.tolower.args=1
 func.tolower.arg.0=int,c
 func.tolower.ret=int
 
+maskrune=func
+func.maskrune.args=2
+func.maskrune.arg.0=long,c
+func.maskrune.arg.1=long,f
+func.maskrune.ret=int
+
+__maskrune=func
+func.__maskrune.args=2
+func.__maskrune.arg.0=long,c
+func.__maskrune.arg.1=long,f
+func.__maskrune.ret=int
+
 toupper=func
 func.toupper.args=1
 func.toupper.arg.0=int,c
 func.toupper.ret=int
+
+__tolower=func
+func.__tolower.args=1
+func.__tolower.arg.0=int,c
+func.__tolower.ret=int
+
+__toupper=func
+func.__toupper.args=1
+func.__toupper.arg.0=int,c
+func.__toupper.ret=int
+
+kill=func
+func.kill.args=2
+func.kill.arg.0=pid_t,pid
+func.kill.arg.1=int,sig
+func.kill.ret=int
 
 feclearexcept=func
 func.feclearexcept.args=1
@@ -1659,6 +1769,18 @@ func.*aligned_alloc.arg.0=size_t,alignment
 func.*aligned_alloc.arg.1=size_t,size
 func.*aligned_alloc.ret=void
 
+bzero=func
+func.bzero.args=2
+func.bzero.arg.0=void *,s
+func.bzero.arg.1=size_t,n
+func.bzero.ret=void
+
+__bzero=func
+func.__bzero.args=2
+func.__bzero.arg.0=void *,s
+func.__bzero.arg.1=size_t,n
+func.__bzero.ret=void
+
 memcpy=func
 func.memcpy.args=3
 func.memcpy.arg.0=void *,s1
@@ -1712,6 +1834,14 @@ func.memchr.arg.0=const void *,s
 func.memchr.arg.1=int,c
 func.memchr.arg.2=size_t,n
 func.memchr.ret=void *
+
+memmem=func
+func.memmem.args=4
+func.memmem.arg.0=const void *,big
+func.memmem.arg.1=int,big_len
+func.memmem.arg.2=const void *,little
+func.memmem.arg.3=int,little_len
+func.memmem.ret=void *
 
 memchr=func
 func.memchr.args=3
@@ -1773,6 +1903,37 @@ strerror=func
 func.strerror.args=1
 func.strerror.arg.0=int,errnum
 func.strerror.ret=char *
+
+fts_open_INODE64=func
+func.fts_open_INODE64.args=4
+func.fts_open_INODE64.arg.0=const char *,path_argv
+func.fts_open_INODE64.arg.1=int,options
+func.fts_open_INODE64.arg.2=void *,compar
+func.fts_open_INODE64.arg.3=void *,ftsen$INODE64t
+func.fts_open_INODE64.ret=void *
+
+fts_read_INODE64=func
+func.fts_read_INODE64.args=1
+func.fts_read_INODE64.arg.0=void*,ftsp
+func.fts_read_INODE64.ret=void *
+
+fts_close_INODE64=func
+func.fts_close_INODE64.args=1
+func.fts_close_INODE64.arg.0=void*,ftsp
+func.fts_close_INODE64.ret=int
+
+fts_set_INODE64=func
+func.fts_set_INODE64.args=3
+func.fts_set_INODE64.arg.0=void*,ftsp
+func.fts_set_INODE64.arg.1=void*,f
+func.fts_set_INODE64.arg.2=int,options
+func.fts_set_INODE64.ret=int
+
+fts_children_INODE64=func
+func.fts_children_INODE64.args=2
+func.fts_children_INODE64.arg.0=void*,ftsp
+func.fts_children_INODE64.arg.1=int,opotions
+func.fts_children_INODE64.ret=void *
 
 strlen=func
 func.strlen.args=1
@@ -2372,6 +2533,12 @@ func.fopen.arg.0=const char *,filename
 func.fopen.arg.1=const char *,mode
 func.fopen.ret=file*
 
+popen=func
+func.popen.args=2
+func.popen.arg.0=const char *,filename
+func.popen.arg.1=const char *,mode
+func.popen.ret=file*
+
 freopen=func
 func.freopen.args=3
 func.freopen.arg.0=const char *,filename
@@ -2417,6 +2584,17 @@ func.warn.args=1
 func.warn.arg.0=const char *,format
 func.warn.ret=void
 
+warnx=func
+func.warnx.args=1
+func.warnx.arg.0=const char *,format
+func.warnx.ret=void
+
+warnc=func
+func.warnc.args=2
+func.warnc.arg.1=int,opt
+func.warnc.arg.0=const char *,format
+func.warnc.ret=void
+
 lstat=func
 func.lstat.args=2
 func.lstat.arg.0=const char *,path
@@ -2436,12 +2614,27 @@ func.snprintf.arg.2=const char *,format
 func.snprintf.arg.3=,...
 func.snprintf.ret=int
 
+snprintf_chk=func
+func.snprintf_chk.args=4
+func.snprintf_chk.arg.0=char *,s
+func.snprintf_chk.arg.1=size_t,size
+func.snprintf_chk.arg.2=const char *,format
+func.snprintf_chk.arg.3=,...
+func.snprintf_chk.ret=int
+
 sprintf=func
 func.sprintf.args=3
 func.sprintf.arg.0=char *,s
 func.sprintf.arg.1=const char *,format
 func.sprintf.arg.2=,...
 func.sprintf.ret=int
+
+sprintf_chk=func
+func.sprintf_chk.args=3
+func.sprintf_chk.arg.0=char *,s
+func.sprintf_chk.arg.1=const char *,format
+func.sprintf_chk.arg.2=,...
+func.sprintf_chk.ret=int
 
 sscanf=func
 func.sscanf.args=3
@@ -2594,12 +2787,45 @@ func.signal.arg.0=int,sig
 func.signal.arg.1=void *,func
 func.signal.ret=void
 
+send=func
+func.send.args=4
+func.send.arg.0=int,socket
+func.send.arg.1=void *,buffer
+func.send.arg.2=size_t,length
+func.send.arg.3=int,flags
+func.send.ret=ssize_t
+recv=func
+func.recv.args=4
+func.recv.arg.0=int,socket
+func.recv.arg.1=void *,buffer
+func.recv.arg.2=size_t,length
+func.recv.arg.3=int,flags
+func.recv.ret=ssize_t
+
 write=func
 func.write.args=3
 func.write.arg.0=int,fd
-func.write.arg.1=void *,ptr
+func.write.arg.1=const char *,ptr
 func.write.arg.2=size_t,nbytes
 func.write.ret=ssize_t
+
+inet_aton=func
+func.inet_aton.args=2
+func.inet_aton.arg.0=const char *,cp
+func.inet_aton.arg.1=void *,pin
+func.inet_aton.ret=int
+
+inet_ntoa=func
+func.inet_ntoa.args=1
+func.inet_ntoa.arg.0=void *,in
+func.inet_ntoa.ret=char *
+
+connect=func
+func.connect.args=3
+func.connect.arg.0=int,socket
+func.connect.arg.1=void *,addr
+func.connect.arg.2=size_t,addrlen
+func.connect.ret=ssize_t
 
 getpid=func
 func.getpid.args=0
@@ -2732,6 +2958,13 @@ func.error.arg.0=int,status
 func.error.arg.1=int,errname
 func.error.arg.2=char *,format
 func.error.ret=void
+
+__error=func
+func.__error.args=3
+func.__error.arg.0=int,status
+func.__error.arg.1=int,errname
+func.__error.arg.2=char *,format
+func.__error.ret=void
 
 nl_langinfo=func
 func.nl_langinfo.args=1

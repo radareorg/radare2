@@ -43,9 +43,10 @@ static void cmd_egg_option(REgg *egg, const char *key, const char *input) {
 
 static void showBuffer(RBuffer *b) {
 	int i;
-	if (b && b->length > 0) {
-		for (i = 0; i < b->length; i++) {
-			r_cons_printf ("%02x", b->buf[i]);
+	if (b && r_buf_size (b) > 0) {
+		r_buf_seek (b, 0, R_BUF_SET);
+		for (i = 0; i < r_buf_size (b); i++) {
+			r_cons_printf ("%02x", r_buf_read8 (b));
 		}
 		r_cons_newline ();
 	}

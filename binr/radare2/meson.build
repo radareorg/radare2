@@ -2,6 +2,7 @@ executable('radare2', 'radare2.c',
   include_directories: [platform_inc],
   dependencies: [
     r_util_dep,
+    r_main_dep,
     r_socket_dep,
     r_core_dep,
     r_io_dep,
@@ -24,5 +25,6 @@ executable('radare2', 'radare2.c',
     r_magic_dep
   ],
   install: true,
+  install_rpath: rpath,
   implicit_include_directories: false
 )

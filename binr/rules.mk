@@ -8,7 +8,15 @@ endif
 CFLAGS+=-I$(LTOP)/include
 
 ifeq (${COMPILER},emscripten)
-EXT_EXE=.js
+LINK+=$(SHLR)/libr/libr.a
+LINK+=$(SHLR)/sdb/src/libsdb.a
+include $(SHLR)/capstone.mk
+CFLAGS+= -s SIDE_MODULE=1
+#CFLAGS+=-s ERROR_ON_UNDEFINED_SYMBOLS=0
+#EXT_EXE=.js
+#EXT_EXE=.html
+EXT_EXE=.bc
+#EXT_EXE=.wasm
 endif
 
 ifeq ($(USE_RPATH),1)
@@ -73,7 +81,7 @@ endif
 endif
 endif
 
-# Dummy myclean rule that can be overriden by the t/ Makefile
+# Dummy myclean rule that can be overridden by the t/ Makefile
 # TODO: move to config.mk ? it must be a precondition
 myclean:
 

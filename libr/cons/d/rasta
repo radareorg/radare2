@@ -7,7 +7,7 @@ ec label yellow
 ec flow green
 ec flow2 yellow
 ec floc green
-ec prompt red
+ec prompt green
 ec offset yellow
 ec input green
 ec other green
@@ -21,7 +21,9 @@ ec push yellow
 ec pop green
 ec jmp red
 ec cjmp red
+ec ujmp red
 ec call red
+ec ucall red
 ec nop red
 ec ret yellow
 ec trap green
@@ -58,3 +60,6 @@ ec ai.write green
 ec ai.exec yellow
 ec ai.seq red
 ec ai.ascii red
+
+ec widget_bg yellow black
+ec widget_sel black green

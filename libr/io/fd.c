@@ -13,20 +13,22 @@ R_API bool r_io_fd_close(RIO *io, int fd) {
 
 //returns length of read bytes
 R_API int r_io_fd_read(RIO *io, int fd, ut8 *buf, int len) {
-	RIODesc *desc;
-	if (!io || !buf || (len < 1) || !(desc = r_io_desc_get (io, fd))) {
-		return 0;
+	r_return_val_if_fail (io && buf, -1);
+	if (len < 0) {
+		return -1;
 	}
-	return r_io_desc_read (desc, buf, len);
+	RIODesc *desc = r_io_desc_get (io, fd);
+	return desc? r_io_desc_read (desc, buf, len): -1;
 }
 
 //returns length of written bytes
 R_API int r_io_fd_write(RIO *io, int fd, const ut8 *buf, int len) {
-	RIODesc *desc;
-	if (!io || !buf || (len < 1) || !(desc = r_io_desc_get (io, fd))) {
-		return 0;
+	r_return_val_if_fail (io && buf, -1);
+	if (len < 0) {
+		return -1;
 	}
-	return r_io_desc_write (desc, buf, len);
+	RIODesc *desc = r_io_desc_get (io, fd);
+	return desc? r_io_desc_write (desc, buf, len): -1;
 }
 
 R_API ut64 r_io_fd_seek(RIO *io, int fd, ut64 addr, int whence) {
@@ -63,60 +65,45 @@ R_API int r_io_fd_read_at(RIO *io, int fd, ut64 addr, ut8 *buf, int len) {
 
 //returns length of written bytes
 R_API int r_io_fd_write_at(RIO *io, int fd, ut64 addr, const ut8 *buf, int len) {
-	RIODesc *desc;
-	if (!io || !buf || (len < 1) || !(desc = r_io_desc_get (io, fd))) {
-		return 0;
-	}
-	return r_io_desc_write_at (desc, addr, buf, len);
+	r_return_val_if_fail (io && buf, false);
+	RIODesc *desc = r_io_desc_get (io, fd);
+	return desc? r_io_desc_write_at (desc, addr, buf, len): -1;
 }
 
 R_API bool r_io_fd_is_dbg(RIO *io, int fd) {
-	RIODesc *desc;
-	if (!io || !io->files || !(desc = r_io_desc_get (io, fd))) {
-		return false;
-	}
-	return r_io_desc_is_dbg (desc);
+	r_return_val_if_fail (io && io->files, false);
+	RIODesc *desc = r_io_desc_get (io, fd);
+	return desc? r_io_desc_is_dbg (desc): false;
 }
 
 R_API int r_io_fd_get_pid(RIO *io, int fd) {
-	RIODesc *desc;
 	if (!io || !io->files) {
 		return -2;
 	}
- 	desc = r_io_desc_get (io, fd);
+	RIODesc *desc = r_io_desc_get (io, fd);
 	return r_io_desc_get_pid (desc);
 }
 
 R_API int r_io_fd_get_tid(RIO *io, int fd) {
-	RIODesc *desc;
-	if (!io || !io->files) {
-		return -2;
-	}
- 	desc = r_io_desc_get (io, fd);
+	r_return_val_if_fail (io && io->files, -2);
+	RIODesc *desc = r_io_desc_get (io, fd);
 	return r_io_desc_get_tid (desc);
 }
 
 R_API bool r_io_fd_get_base (RIO *io, int fd, ut64 *base) {
-	RIODesc *desc;
-	if (!io || !io->files || !base) {
-		return false;
-	}
-	desc = r_io_desc_get (io, fd);
+	r_return_val_if_fail (io && io->files && base, false);
+	RIODesc *desc = r_io_desc_get (io, fd);
 	return r_io_desc_get_base (desc, base);
 }
 
 R_API const char *r_io_fd_get_name(RIO *io, int fd) {
-	RIODesc *desc;
-	if (!io || !io->files || !(desc = r_io_desc_get (io, fd))) {
-		return NULL;
-	}
-	return desc->name;
+	r_return_val_if_fail (io && io->files, NULL);
+	RIODesc *desc = r_io_desc_get (io, fd);
+	return desc? desc->name: NULL;
 }
 
 R_API bool r_io_use_fd(RIO* io, int fd) {
-	if (!io) {
-		return false;
-	}
+	r_return_val_if_fail (io, false);
 	if (!io->desc) {
 		io->desc = r_io_desc_get (io, fd);
 		return io->desc? true: false;
@@ -133,7 +120,8 @@ R_API bool r_io_use_fd(RIO* io, int fd) {
 }
 
 R_API int r_io_fd_get_current(RIO *io) {
-	if (io && io->desc) {
+	r_return_val_if_fail (io, -1);
+	if (io->desc) {
 		return io->desc->fd;
 	}
 	return -1;

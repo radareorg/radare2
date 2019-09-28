@@ -21,7 +21,8 @@ r_egg = library('r_egg', r_egg_sources,
     r_util_dep,
     r_asm_dep,
     r_syscall_dep,
-    sdb_dep
+    sdb_dep,
+    mpc_dep
   ],
   install: true,
   implicit_include_directories: false,

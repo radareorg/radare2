@@ -28,7 +28,7 @@ showHelp() {
 # Add capatibility to use ptrace with radare2
 ALLOW_DEBUG="--cap-add=SYS_PTRACE"
 
-# Remove by default all capatibilities
+# Remove by default all capabilities
 DEFAULT_CAP="--cap-drop=ALL"
 
 case "$1" in

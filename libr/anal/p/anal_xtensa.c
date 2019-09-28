@@ -1908,7 +1908,7 @@ static void analop_esil (xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 	}
 }
 
-static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_original, int len_original) {
+static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_original, int len_original, RAnalOpMask mask) {
 	if (!op) {
 		return 1;
 	}
@@ -1921,9 +1921,6 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origin
 	}
 
 	xtensa_op0_fns[(buf_original[0] & 0xf)] (anal, op, addr, buf_original);
-
-	if (anal->decode) {
-	}
 
 	ut8 buffer[XTENSA_MAX_LENGTH] = { 0 };
 	int len = R_MIN(op->size, XTENSA_MAX_LENGTH);
@@ -1972,7 +1969,7 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origin
 			xtensa_check_stack_op (isa, opcode, format, i, slot_buffer, op);
 		}
 
-		if (anal->decode) {
+		if (mask & R_ANAL_OP_MASK_ESIL) {
 			analop_esil (isa, opcode, format, i, slot_buffer, op);
 		}
 	}
@@ -2033,7 +2030,7 @@ RAnalPlugin r_anal_plugin_xtensa = {
 	.get_reg_profile = get_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_xtensa,

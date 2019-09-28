@@ -1,5 +1,3 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
-
 #include <r_types.h>
 #include "mach0_specs.h"
 
@@ -12,13 +10,13 @@ struct r_bin_fatmach0_obj_t {
 	int nfat_arch;
 	struct fat_header hdr;
 	struct fat_arch *archs;
-	struct r_buf_t* b;
+	RBuffer* b;
 };
 
 struct r_bin_fatmach0_arch_t {
 	int size;
 	int offset;
-	struct r_buf_t *b; 
+	RBuffer *b;
 	int last;
 };
 
@@ -26,4 +24,5 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 void* r_bin_fatmach0_free(struct r_bin_fatmach0_obj_t* bin);
 struct r_bin_fatmach0_obj_t* r_bin_fatmach0_new(const char* file);
 struct r_bin_fatmach0_obj_t* r_bin_fatmach0_from_bytes_new(const ut8* buf, ut64 size);
+struct r_bin_fatmach0_obj_t* r_bin_fatmach0_from_buffer_new(RBuffer *b);
 #endif

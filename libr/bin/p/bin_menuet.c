@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2018 - pancake */
+/* radare2 - LGPL - Copyright 2016-2019 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -49,8 +49,12 @@
 
 #endif
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length >= 32 && !memcmp (buf, "MENUET0", 7)) {
+static bool check_buffer(RBuffer *b) {
+	ut8 buf[8];
+	if (r_buf_read_at (b, 0, buf, sizeof (buf)) != sizeof (buf)) {
+		return false;
+	}
+	if (r_buf_size (b) >= 32 && !memcmp (buf, "MENUET0", 7)) {
 		switch (buf[7]) {
 		case '0':
 		case '1':
@@ -62,22 +66,15 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return check_bytes (buf, sz);
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
-	ut64 la = (bf && bf->o) ? bf->o->loadaddr: 0;
-	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+	return check_buffer (b);
 }
 
 static ut64 baddr(RBinFile *bf) {
 	return 0; // 0x800000;
 }
 
-static ut64 menuetEntry (const ut8 *buf, int buf_size) {
+static ut64 menuetEntry(const ut8 *buf, int buf_size) {
 	switch (MENUET_VERSION(buf)) {
 	case '0': return r_read_ble32 (buf + 12, false);
 	case '1': return r_read_ble32 (buf + 12, false);
@@ -210,10 +207,9 @@ RBinPlugin r_bin_plugin_menuet = {
 	.name = "menuet",
 	.desc = "Menuet/KolibriOS bin plugin",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.size = &size,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,
@@ -221,7 +217,7 @@ RBinPlugin r_bin_plugin_menuet = {
 	.create = &create,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_menuet,

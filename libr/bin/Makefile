@@ -2,7 +2,7 @@ include ../config.mk
 include ../../global.mk
 
 NAME=r_bin
-DEPS=r_util r_io r_socket r_magic r_hash
+DEPS=r_util r_io r_socket r_magic r_hash r_syscall
 
 .PHONY: pre
 
@@ -10,7 +10,7 @@ pre: $(LIBSO) $(LIBAR)
 	$(MAKE) -C p
 	$(MAKE) -C d
 
-CFLAGS+=-DCORELIB -Iformat -Imangling
+CFLAGS+=-DR2_PLUGIN_INCORE -Iformat -Imangling
 
 include ${STATIC_BIN_PLUGINS}
 include ${STATIC_BIN_XTR_PLUGINS}
@@ -21,7 +21,7 @@ include $(LIBR)/magic/deps.mk
 
 STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
 OBJS=bin.o dbginfo.o bin_ldr.o bin_write.o demangle.o
-OBJS+=dwarf.o filter.o bfile.o obj.o blang.o
+OBJS+=dwarf.o filter.o bfile.o bobj.o blang.o
 OBJS+=mangling/cxx/cp-demangle.o ${STATIC_OBJS}
 OBJS+=mangling/demangler.o
 OBJS+=mangling/microsoft_demangle.o

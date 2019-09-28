@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2018 - pancake */
+/* radare2 - LGPL - Copyright 2017-2019 - pancake */
 
 // TODO: Support NRR and MODF
 #include <r_types.h>
@@ -30,40 +30,26 @@ static ut64 baddr(RBinFile *bf) {
 	return bf? readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF): 0;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length >= 0x20) {
-		return fileType (buf + NRO_OFF (magic)) != NULL;
+static bool check_buffer(RBuffer *b) {
+	ut8 magic[4];
+	if (r_buf_read_at (b, NRO_OFF (magic), magic, sizeof (magic)) == 4) {
+		return fileType (magic) != NULL;
 	}
 	return false;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	// XX bf->buf vs b :D this load_b
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
-	if (!bin) {
-		return false;
+	if (bin) {
+		ut64 ba = baddr (bf);
+		bin->methods_list = r_list_newf ((RListFree)free);
+		bin->imports_list = r_list_newf ((RListFree)free);
+		bin->classes_list = r_list_newf ((RListFree)free);
+		ut32 mod0 = readLE32 (b, NRO_OFFSET_MODMEMOFF);
+		parseMod (b, bin, mod0, ba);
+		*bin_obj = bin;
 	}
-	ut64 ba = baddr (bf);
-	bin->methods_list = r_list_newf ((RListFree)free);
-	bin->imports_list = r_list_newf ((RListFree)free);
-	bin->classes_list = r_list_newf ((RListFree)free);
-	ut32 mod0 = readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF);
-	parseMod (bf->buf, bin, mod0, ba);
-	*bin_obj = bin;
-	return true;
-}
-
-static bool load(RBinFile *bf) {
-	if (!bf || !bf->buf || !bf->o) {
-		return false;
-	}
-	const ut64 sz = r_buf_size (bf->buf);
-	const ut64 la = bf->o->loadaddr;
-	const ut8 *bytes = r_buf_buffer (bf->buf);
-	load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf->sdb);
-	return bf->o->bin_obj != NULL;
-}
-
-static int destroy(RBinFile *bf) {
 	return true;
 }
 
@@ -270,10 +256,8 @@ RBinPlugin r_bin_plugin_nro = {
 	.name = "nro",
 	.desc = "Nintendo Switch NRO0 binaries",
 	.license = "MIT",
-	.load = &load,
-	.load_bytes = &load_bytes,
-	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
@@ -285,7 +269,7 @@ RBinPlugin r_bin_plugin_nro = {
 	.libs = &libs,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_nro,

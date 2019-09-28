@@ -38,6 +38,8 @@ ec creg rgb:f0f
 ec num rgb:0ff
 ec help rgb:0ff
 ec trap rgb:000 rgb:f0f
+ec ucall rgb:f0f
+ec ujmp rgb:f0f
 ec linehl rgb:008
 
 ec graph.box rgb:f0f
@@ -65,3 +67,6 @@ ec ai.ascii rgb:f0f
 ec func_var rgb:f0f
 ec func_var_type rgb:f0f
 ec func_var_addr rgb:0ff
+
+ec widget_bg rgb:f0f rgb:000
+ec widget_sel rgb:0ff rgb:000

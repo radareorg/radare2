@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_util
-CFLAGS+=-DCORELIB -I$(TOP)/shlr
+CFLAGS+=-DR2_PLUGIN_INCORE -I$(TOP)/shlr
 PCLIBS=@LIBZIP@ @DL_LIBS@
 
 ifneq ($(OSTYPE),darwin)
@@ -13,11 +13,11 @@ endif
 
 OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o tinyrange.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
-OBJS+=list.o flist.o chmod.o graph.o event.o
+OBJS+=list.o flist.o chmod.o graph.o event.o alloc.o donut.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
 OBJS+=sandbox.o calc.o thread.o thread_sem.o thread_lock.o thread_cond.o
 OBJS+=strpool.o bitmap.o date.o format.o pie.o print.o ctype.o
-OBJS+=seven.o randomart.o zip.o debruijn.o log.o
+OBJS+=seven.o randomart.o zip.o debruijn.o log.o getopt.o table.o
 OBJS+=utf8.o utf16.o utf32.o strbuf.o lib.o name.o spaces.o signal.o syscmd.o
 OBJS+=diff.o bdiff.o stack.o queue.o tree.o idpool.o assert.o
 OBJS+=punycode.o pkcs7.o x509.o asn1.o astr.o json_indent.o skiplist.o pj.o

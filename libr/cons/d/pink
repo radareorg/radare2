@@ -21,8 +21,10 @@ ec push rgb:75a
 ec pop rgb:75a
 ec jmp rgb:f5d
 ec cjmp rgb:f5d
+ec ujmp rgb:f5d
 ec usrcmt rgb:f5d rgb:502
 ec call rgb:000 rgb:faf
+ec ucall rgb:000 rgb:faf
 ec nop rgb:fa5
 ec ret rgb:ffa
 ec trap rgb:a22
@@ -57,3 +59,6 @@ ec ai.write rgb:f5d
 ec ai.exec rgb:75a
 ec ai.seq rgb:72d
 ec ai.ascii rgb:72d
+
+ec widget_bg rgb:72d rgb:222
+ec widget_sel white rgb:f5d

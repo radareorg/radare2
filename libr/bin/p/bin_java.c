@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -74,15 +74,13 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	struct r_bin_java_obj_t *tmp_bin_obj = NULL;
-	RBuffer *tbuf = NULL;
-	if (!buf || sz == 0 || sz == UT64_MAX) {
+	RBuffer *tbuf = r_buf_ref (buf);
+	tmp_bin_obj = r_bin_java_new_buf (tbuf, loadaddr, sdb);
+	if (!tmp_bin_obj) {
 		return false;
 	}
-	tbuf = r_buf_new ();
-	r_buf_set_bytes (tbuf, buf, sz);
-	tmp_bin_obj = r_bin_java_new_buf (tbuf, loadaddr, sdb);
 	*bin_obj = tmp_bin_obj;
 	add_bin_obj_to_sdb (tmp_bin_obj);
 	if (bf && bf->file) {
@@ -92,54 +90,10 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	return true;
 }
 
-static bool load(RBinFile *bf) {
-	int result = false;
-	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
-	ut64 sz = bf? r_buf_size (bf->buf): 0;
-	struct r_bin_java_obj_t *bin_obj = NULL;
-
-	if (!bf || !bf->o) {
-		return false;
-	}
-
-	load_bytes (bf, (void **) &bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-
-	if (bin_obj) {
-		if (!bf->o->kv) {
-			bf->o->kv = bin_obj->kv;
-		}
-		bf->o->bin_obj = bin_obj;
-		bin_obj->AllJavaBinObjs = DB;
-		// XXX - /\ this is a hack, but (one way but) necessary to get access to
-		// the object addrs from anal. If only global variables are used,
-		// they get "lost" somehow after they are initialized and go out of
-		// scope.
-		//
-		// There are several points of indirection, but here is the gist:
-		// 1) RAnal->(through RBinBind) RBin->RBinJavaObj->DB
-		//
-		// The purpose is to ensure that information about a give class file
-		// can be grabbed at any time from RAnal.  This was tried with global
-		// variables, but failed when attempting to access the DB
-		// in the class.c scope.  Once DB  was moved here, it is initialized
-		// once here and assigned to each of the other RBinJavaObjs.
-		//
-		// Now, the RAnal component of radare can get to each of the
-		// RBinJavaObjs for analysing functions and dependencies using an Sdb.
-		add_bin_obj_to_sdb (bin_obj);
-		if (bf->file) {
-			bin_obj->file = strdup (bf->file);
-		}
-		result = true;
-	}
-	return result;
-}
-
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_java_free ((struct r_bin_java_obj_t *) bf->o->bin_obj);
 	sdb_free (DB);
 	DB = NULL;
-	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -185,20 +139,19 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	bool ret = false;
-	int off, version = 0;
-	if (buf && length > 32 && !memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
-		// XXX not sure about endianness here
-		memcpy (&off, buf + 4 * sizeof (int), sizeof (int));
-		version = buf[6] | (buf[7] << 8);
-		if (version > 1024) {
-			// XXX is this correct in all cases? opposite of prev?
-			r_mem_swapendian ((ut8 *) &off, (ut8 *) &off, sizeof (int));
-			ret = true;
+static bool check_buffer(RBuffer *b) {
+	if (r_buf_size (b) > 32) {
+		ut8 buf[4];
+		r_buf_read_at (b, 0, buf, sizeof (buf));
+		if (!memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
+			int off = r_buf_read_be32_at (b, 4 * sizeof (int));
+			int version = r_buf_read_be16_at (b, 6);
+			if (off > 0 && version < 1024) {
+				return true;
+			}
 		}
 	}
-	return ret;
+	return false;
 }
 
 static int retdemangle(const char *str) {
@@ -252,10 +205,9 @@ RBinPlugin r_bin_plugin_java = {
 	.init = init,
 	.fini = fini,
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = binsym,
 	.entries = &entries,
@@ -272,7 +224,7 @@ RBinPlugin r_bin_plugin_java = {
 	.minstrlen = 3,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_java,

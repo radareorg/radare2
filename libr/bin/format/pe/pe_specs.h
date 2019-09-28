@@ -370,6 +370,13 @@ typedef struct {
 	char* Name;
 } Pe32_image_metadata_stream, Pe64_image_metadata_stream;
 
+typedef struct {
+	ut16 productId;
+	ut16 minVersion;
+	ut32 timesUsed;
+	char *productName;
+} Pe_image_rich_entry;
+
 #define PE_IMAGE_SIZEOF_SHORT_NAME 8
 
 #define PE_IMAGE_SCN_MEM_SHARED    0x10000000

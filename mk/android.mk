@@ -39,15 +39,23 @@ ARCH=aarch64
 CROSS=${ARCH}-linux-android-
 endif
 
+ifeq (${NDK_ARCH},)
+all::
+	echo "Undefined NDK_ARCH"
+	exit 1
+endif
+
 RANLIB=${CROSS}ranlib
 AR=${CROSS}ar
-CC_AR=${AR} -r ${LIBAR}
-PARTIALLD=${CROSS}ld -r --whole-archive
+CC_AR=${CROSS}ar -r ${LIBAR}
+PARTIALLD=${CROSS}ld -r
+# -all_load
 ONELIB=0
 OSTYPE=android
-LINK=
+#LINK=
 #CC_AR=ndk-ar -r ${LIBAR}
 PICFLAGS=-fPIC -fpic
+LDFLAGS_LIB=-shared
 CFLAGS+=${PICFLAGS}
 CC_LIB=${CC} -shared -o
 CFLAGS_INCLUDE=-I

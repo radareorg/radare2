@@ -255,7 +255,7 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 	if (mprotect (ptr, size, p) == -1) {
 		return false;
 	}
-#elif __WINDOWS__ || __CYGWIN__
+#elif __WINDOWS__
 	int r, w, x;
 	DWORD p = PAGE_NOACCESS;
 	r = strchr (prot, 'r')? 1: 0;
@@ -280,7 +280,7 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 	return true;
 }
 
-R_API void *r_mem_dup(void *s, int l) {
+R_API void *r_mem_dup(const void *s, int l) {
 	void *d = malloc (l);
 	if (!d) {
 		return NULL;
@@ -340,4 +340,29 @@ R_API void r_mem_memzero(void *dst, size_t l) {
 	__asm__ volatile ("" :: "r"(dst) : "memory");
 #endif
 #endif
+}
+
+R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
+#if __WINDOWS__
+	if (m->fm != INVALID_HANDLE_VALUE) {
+		CloseHandle (m->fm);
+	}
+	if (m->fh != INVALID_HANDLE_VALUE) {
+		CloseHandle (m->fh);
+	}
+	if (m->buf) {
+		UnmapViewOfFile (m->buf);
+	}
+#elif __UNIX__
+	if (munmap (m->buf, m->len) != 0) {
+		return NULL;
+	}
+#endif
+	if (!r_sys_truncate (m->filename, newsize)) {
+		return NULL;
+	}
+
+	m->len = newsize;
+	r_file_mmap_arch (m, m->filename, m->fd);
+	return m->buf;
 }

@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <r_socket.h>
 #include <r_util.h>
@@ -48,6 +47,7 @@
 #if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <util.h>
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
+#include <sys/sysctl.h>
 #include <libutil.h>
 #endif
 #endif
@@ -226,35 +226,17 @@ static int parseBool(const char *e) {
 		0: 1): 1): 1): 1);
 }
 
-#if __linux__
-#define RVAS "/proc/sys/kernel/randomize_va_space"
-static void setRVA(const char *v) {
-	int fd = open (RVAS, O_WRONLY);
-	if (fd != -1) {
-		if (write (fd, v, 2) != 2) {
-			eprintf ("Failed to set RVA\n");
-		}
-		close (fd);
-	}
-}
-#endif
-
 // TODO: move into r_util? r_run_... ? with the rest of funcs?
 static void setASLR(RRunProfile *r, int enabled) {
 #if __linux__
-	if (enabled) {
-		setRVA ("2\n");
-	} else {
-#if __ANDROID__
-		setRVA ("0\n");
-#else
-#if HAVE_DECL_ADDR_NO_RANDOMIZE
-		if (personality (ADDR_NO_RANDOMIZE) == -1) {
+	r_sys_aslr (enabled);
+#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
+	if (personality (ADDR_NO_RANDOMIZE) == -1) {
 #endif
-			setRVA ("0\n");
-		}
-#endif
+		r_sys_aslr (0);
+#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
 	}
+#endif
 #elif __APPLE__
 	// TOO OLD setenv ("DYLD_NO_PIE", "1", 1);
 	// disable this because its
@@ -268,6 +250,8 @@ static void setASLR(RRunProfile *r, int enabled) {
 	// for osxver>=10.7
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
 	// the right way is to disable the aslr bit in the spawn call
+#elif __FreeBSD__
+	r_sys_aslr (enabled);
 #else
 	// not supported for this platform
 #endif
@@ -550,7 +534,7 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 	} else if (!strcmp (b, "envfile")) {
 		char *p, buf[1024];
 		size_t len;
-		FILE *fd = fopen (e, "r");
+		FILE *fd = r_sandbox_fopen (e, "r");
 		if (!fd) {
 			eprintf ("Cannot open '%s'\n", e);
 			if (must_free == true) {
@@ -568,11 +552,11 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 			p = strchr (buf, '=');
 			if (p) {
 				*p++ = 0;
-				len = strlen(p);
-				if (p[len - 1] == '\n') {
+				len = strlen (p);
+				if (len > 0 && p[len - 1] == '\n') {
 					p[len - 1] = 0;
 				}
-				if (p[len - 2] == '\r') {
+				if (len > 1 && p[len - 2] == '\r') {
 					p[len - 2] = 0;
 				}
 				r_sys_setenv (buf, p);
@@ -978,7 +962,11 @@ R_API int r_run_config_env(RRunProfile *p) {
 		if (p->_preload) {
 			eprintf ("WARNING: Only one library can be opened at a time\n");
 		}
-		p->_preload = R2_LIBDIR"/libr2."R_LIB_EXT;
+#ifdef __WINDOWS__
+		p->_preload = r_str_r2_prefix (R_JOIN_2_PATHS (R2_LIBDIR, "libr2."R_LIB_EXT));
+#else
+		p->_preload = strdup (R2_LIBDIR"/libr2."R_LIB_EXT);
+#endif
 	}
 	if (p->_libpath) {
 #if __WINDOWS__

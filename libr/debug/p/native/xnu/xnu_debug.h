@@ -37,6 +37,7 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #if !__POWERPC__
 #include <sys/proc_info.h>
 #include <libproc.h>
+#define HAS_LIBPROC
 #endif
 #endif
 #include <sys/types.h>

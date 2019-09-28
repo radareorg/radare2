@@ -1,24 +1,22 @@
 default.cc=n32
 
 o32=cc
-cc.o32.name=o32
-cc.o32.arg1=a0
-cc.o32.arg2=a1
-cc.o32.arg3=a2
-cc.o32.arg4=a3
+cc.o32.arg0=a0
+cc.o32.arg1=a1
+cc.o32.arg2=a2
+cc.o32.arg3=a3
 cc.o32.argn=stack
 cc.o32.ret=v0
 
 n32=cc
-cc.n32.name=n32
-cc.n32.arg1=a0
-cc.n32.arg2=a1
-cc.n32.arg3=a2
-cc.n32.arg4=a3
-cc.n32.arg5=a4
-cc.n32.arg6=a5
-cc.n32.arg7=a6
-cc.n32.arg8=a7
+cc.n32.arg0=a0
+cc.n32.arg1=a1
+cc.n32.arg2=a2
+cc.n32.arg3=a3
+cc.n32.arg4=a4
+cc.n32.arg5=a5
+cc.n32.arg6=a6
+cc.n32.arg7=a7
 cc.n32.argn=stack
 cc.n32.ret=v0
 

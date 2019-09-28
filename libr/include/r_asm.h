@@ -41,7 +41,7 @@ R_LIB_VERSION_HEADER(r_asm);
 
 #define R_ASM_GET_NAME(x,y,z) \
 	(x && x->binb.bin && x->binb.get_name)? \
-		x->binb.get_name (x->binb.bin, y, z): NULL
+		x->binb.get_name (x->binb.bin, y, z, x->pseudo): NULL
 
 enum {
 	R_ASM_SYNTAX_NONE = 0,
@@ -68,16 +68,14 @@ typedef struct r_asm_op_t {
 	// But this is pretty slow..so maybe we should add some accessors
 	RStrBuf buf;
 	RStrBuf buf_asm;
-	RStrBuf buf_hex;
 	RBuffer *buf_inc; // must die
 } RAsmOp;
 
 typedef struct r_asm_code_t {
 #if 1
 	int len;
-	ut8 *buf;
-	char *buf_hex;
-	char *buf_asm;
+	ut8 *bytes;
+	char *assembly;
 #else
 	RAsmOp op; // we have those fields already inside RAsmOp
 #endif
@@ -118,6 +116,7 @@ typedef struct r_asm_t {
 	bool immdisp; // Display immediates with # symbol (for arm stuff).
 	HtPP *flags;
 	int seggrn;
+	bool pseudo;
 } RAsm;
 
 typedef bool (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
@@ -165,7 +164,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf);
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len);
-R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr);
+R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr);
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf);
 R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp);
 R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file);
@@ -182,13 +181,14 @@ R_API void r_asm_list_directives(void);
 R_API RAsmCode *r_asm_code_new(void);
 R_API void* r_asm_code_free(RAsmCode *acode);
 R_API void r_asm_equ_item_free(RAsmEqu *equ);
-R_API bool r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value);
-R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);
+R_API bool r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value);
+R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str);
+R_API char* r_asm_code_get_hex(RAsmCode *acode);
 
 /* op.c */
 R_API RAsmOp *r_asm_op_new(void);
-R_API void r_asm_op_free(RAsmOp *op);
 R_API void r_asm_op_init(RAsmOp *op);
+R_API void r_asm_op_free(RAsmOp *op);
 R_API void r_asm_op_fini(RAsmOp *op);
 R_API char *r_asm_op_get_hex(RAsmOp *op);
 R_API char *r_asm_op_get_asm(RAsmOp *op);
@@ -203,6 +203,7 @@ R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
 extern RAsmPlugin r_asm_plugin_6502;
 extern RAsmPlugin r_asm_plugin_6502_cs;
 extern RAsmPlugin r_asm_plugin_8051;
+extern RAsmPlugin r_asm_plugin_amd29k;
 extern RAsmPlugin r_asm_plugin_arc;
 extern RAsmPlugin r_asm_plugin_arm_as;
 extern RAsmPlugin r_asm_plugin_arm_cs;
@@ -210,6 +211,7 @@ extern RAsmPlugin r_asm_plugin_arm_gnu;
 extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_avr;
 extern RAsmPlugin r_asm_plugin_bf;
+extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_chip8;
 extern RAsmPlugin r_asm_plugin_cr16;
 extern RAsmPlugin r_asm_plugin_cris_gnu;
@@ -241,6 +243,7 @@ extern RAsmPlugin r_asm_plugin_ppc_cs;
 extern RAsmPlugin r_asm_plugin_ppc_gnu;
 extern RAsmPlugin r_asm_plugin_propeller;
 extern RAsmPlugin r_asm_plugin_riscv;
+extern RAsmPlugin r_asm_plugin_riscv_cs;
 extern RAsmPlugin r_asm_plugin_rsp;
 extern RAsmPlugin r_asm_plugin_sh;
 extern RAsmPlugin r_asm_plugin_snes;

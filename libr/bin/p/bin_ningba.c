@@ -1,4 +1,4 @@
-/* radare - LGPL - 2014-2015 - condret@runas-racer.com */
+/* radare - LGPL - 2014-2019 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,29 +7,15 @@
 #include <string.h>
 #include "../format/nin/gba.h"
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
+static bool check_buffer(RBuffer *b) {
 	ut8 lict[156];
-	if (!buf || length < 160) {
-		return 0;
-	}
-	memcpy (lict, buf + 0x4, 156);
-	return (!memcmp (lict, lic_gba, 156))? 1: 0;
+	r_return_val_if_fail (b, false);
+	r_buf_read_at (b, 4, (ut8*)lict, sizeof (lict));
+	return !memcmp (lict, lic_gba, 156);
 }
 
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
-	ut64 sz = bf? r_buf_size (bf->buf): 0;
-	if (!bf || !bf->o) {
-		return false;
-	}
-	bf->rbin->maxstrbuf = 0x20000000;
-	return check_bytes (bytes, sz);
-}
-
-static int destroy(RBinFile *bf) {
-	r_buf_free (bf->buf);
-	bf->buf = NULL;
-	return true;
+static bool load_buffer(RBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer (buf);
 }
 
 static RList *entries(RBinFile *bf) {
@@ -100,15 +86,14 @@ RBinPlugin r_bin_plugin_ningba = {
 	.name = "ningba",
 	.desc = "Game Boy Advance format r_bin plugin",
 	.license = "LGPL3",
-	.load = &load,
-	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.info = &info,
 	.sections = &sections,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_ningba,

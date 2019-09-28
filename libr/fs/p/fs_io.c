@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2017 - pancake */
+/* radare - LGPL - Copyright 2017-2019 - pancake */
 
 #include <r_fs.h>
 #include <r_lib.h>
 #include <sys/stat.h>
 
-static RFSFile *fs_io_open(RFSRoot *root, const char *path) {
+static RFSFile *fs_io_open(RFSRoot *root, const char *path, bool create) {
 	char *cmd = r_str_newf ("m %s", path);
 	char *res = root->iob.system (root->iob.io, cmd);
 	R_FREE (cmd);
@@ -31,21 +31,28 @@ static RFSFile *fs_io_open(RFSRoot *root, const char *path) {
 
 static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 	RFSRoot *root = file->root;
-	// char *cmd = r_str_newf ("mg %s %"PFMT64x" %d", file->path, addr, len);
-	char *cmd = r_str_newf ("mg %s", file->name);
+	char *abs_path = r_fs_file_copy_abs_path (file);
+	if (!abs_path) {
+		return false;
+	}
+	char *cmd = r_str_newf ("mg %s", abs_path);
+	R_FREE (abs_path);
+	if (!cmd) {
+		return false;
+	}
 	char *res = root->iob.system (root->iob.io, cmd);
 	R_FREE (cmd);
 	if (res) {
 		int encoded_size = strlen (res);
 		if (encoded_size != len * 2) {
-			eprintf ("Wrong size\n");
+			eprintf ("Unexpected size (%d vs %d)\n", encoded_size, len*2);
 			R_FREE (res);
-			return NULL;
+			return false;
 		}
 		file->data = (ut8 *) calloc (1, len);
 		if (!file->data) {
 			R_FREE (res);
-			return NULL;
+			return false;
 		}
 		int ret = r_hex_str2bin (res, file->data);
 		if (ret != len) {
@@ -54,7 +61,7 @@ static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 		}
 		R_FREE (res);
 	}
-	return NULL;
+	return false;
 }
 
 static void fs_io_close(RFSFile *file) {
@@ -124,7 +131,7 @@ RFSPlugin r_fs_plugin_io = {
 	.umount = fs_io_umount,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_FS,
 	.data = &r_fs_plugin_io,

@@ -4,15 +4,13 @@
 #if __WINDOWS__
 #include <windows.h>
 #include <stdio.h>
-#ifndef __CYGWIN__
 #include <tchar.h>
-#endif
 
 #define BUFSIZE 1024
 void r_sys_perror_str(const char *fun);
 
-#define ErrorExit(x) { r_sys_perror(x); return NULL; }
-char *ReadFromPipe(HANDLE fh);
+#define ErrorExit(x) { r_sys_perror(x); return false; }
+char *ReadFromPipe(HANDLE fh, int *outlen);
 
 // HACKY
 static char *getexe(const char *str) {
@@ -29,31 +27,68 @@ static char *getexe(const char *str) {
 	return argv0;
 }
 
-R_API int r_sys_get_src_dir_w32(char *buf) {
-	int i = 0;
+R_API os_info *r_sys_get_winver() {
+	HKEY key;
+	DWORD type;
+	DWORD size;
+	DWORD major;
+	DWORD minor;
+	char release[25];
+	os_info *info = calloc (1, sizeof (os_info));
+	if (!info) {
+		return NULL;
+	}
+	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
+		KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
+		r_sys_perror ("r_sys_get_winver/RegOpenKeyExA");
+		free (info);
+		return 0;
+	}
+	size = sizeof (major);
+	if (RegQueryValueExA (key, "CurrentMajorVersionNumber", NULL, &type,
+		(LPBYTE)&major, &size) != ERROR_SUCCESS
+		|| type != REG_DWORD) {
+		goto beach;
+	}
+	info->major = major;
+	size = sizeof (minor);
+	if (RegQueryValueExA (key, "CurrentMinorVersionNumber", NULL, &type,
+		(LPBYTE)&minor, &size) != ERROR_SUCCESS
+		|| type != REG_DWORD) {
+		goto beach;
+	}
+	info->minor = minor;
+	size = sizeof (release);
+	if (RegQueryValueExA (key, "ReleaseId", NULL, &type,
+		(LPBYTE)release, &size) != ERROR_SUCCESS
+		|| type != REG_SZ) {
+		goto beach;
+	}
+	info->compilation = atoi (release);
+beach:
+	RegCloseKey (key);
+	return info;
+}
+
+R_API char *r_sys_get_src_dir_w32() {
 	TCHAR fullpath[MAX_PATH + 1];
 	TCHAR shortpath[MAX_PATH + 1];
-	char *path;
 
 	if (!GetModuleFileName (NULL, fullpath, MAX_PATH + 1) ||
 		!GetShortPathName (fullpath, shortpath, MAX_PATH + 1)) {
-		return false;
+		return NULL;
 	}
-	path = r_sys_conv_utf16_to_utf8 (shortpath);
-	memcpy (buf, path, strlen(path) + 1);
-	free (path);
-	i = strlen (buf);
-	while(i > 0 && buf[i-1] != '/' && buf[i-1] != '\\') {
-		buf[--i] = 0;
+	char *path = r_sys_conv_win_to_utf8 (shortpath);
+	char *dir = r_file_dirname (path);
+	if (!r_sys_getenv_asbool ("R_ALT_SRC_DIR")) {
+		char *tmp = dir;
+		dir = r_file_dirname (tmp);
+		free (tmp);
 	}
-	// Remove the last separator in the path.
-	if(i > 0) {
-		buf[--i] = 0;
-	}
-	return true;
+	return dir;
 }
 
-R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, char **sterr) {
+R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr) {
 	HANDLE in = NULL;
 	HANDLE out = NULL;
 	HANDLE err = NULL;
@@ -89,8 +124,8 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 		if (!CreatePipe (&fi, &in, &saAttr, 0)) {
 			ErrorExit ("StdInRd CreatePipe");
 		}
-		LPDWORD nBytesWritten;
-		WriteFile (in, input, strlen(input) + 1, &nBytesWritten, NULL);
+		DWORD nBytesWritten;
+		WriteFile (in, input, strlen (input) + 1, &nBytesWritten, NULL);
 		if (!SetHandleInformation (in, HANDLE_FLAG_INHERIT, 0)) {
 			ErrorExit ("StdIn SetHandleInformation");
 		}
@@ -115,13 +150,13 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	}
 
 	if (output) {
-		*output = ReadFromPipe (fo);
+		*output = ReadFromPipe (fo, outlen);
 	}
 
 	if (sterr) {
-		*sterr = ReadFromPipe (fe);
+		*sterr = ReadFromPipe (fe, NULL);
 	}
-	
+
 	if (fi && !CloseHandle (fi)) {
 		ErrorExit ("PipeIn CloseHandle");
 	}
@@ -131,7 +166,7 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	if (fe && !CloseHandle (fe)) {
 		ErrorExit ("PipeErr CloseHandle");
 	}
-	
+
 	return true;
 }
 
@@ -140,8 +175,8 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 	STARTUPINFO si = {0};
 	LPTSTR cmdline_;
 	bool ret = false;
-	const size_t max_length = 32768;
-	char *_cmdline_ = malloc (max_length);
+	const size_t max_length = 32768 * sizeof (TCHAR);
+	LPTSTR _cmdline_ = malloc (max_length);
 
 	if (!_cmdline_) {
 		R_LOG_ERROR ("Failed to allocate memory\n");
@@ -155,7 +190,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 	si.hStdOutput = out;
 	si.hStdInput = in;
 	si.dwFlags |= STARTF_USESTDHANDLES;
-	cmdline_ = r_sys_conv_utf8_to_utf16 (cmdline);
+	cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	ExpandEnvironmentStrings (cmdline_, _cmdline_, max_length - 1);
 	if ((ret = CreateProcess (NULL,
 			_cmdline_,     // command line
@@ -166,7 +201,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 			NULL,          // use parent's environment
 			NULL,          // use parent's current directory
 			&si,           // STARTUPINFO pointer
-			&pi))) {  // receives PROCESS_INFORMATION 
+			&pi))) {  // receives PROCESS_INFORMATION
 		ret = true;
 		CloseHandle (pi.hProcess);
 		CloseHandle (pi.hThread);
@@ -178,7 +213,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 	return ret;
 }
 
-char *ReadFromPipe(HANDLE fh) {
+char *ReadFromPipe(HANDLE fh, int *outlen) {
 	DWORD dwRead;
 	CHAR chBuf[BUFSIZE];
 	BOOL bSuccess = FALSE;
@@ -186,6 +221,9 @@ char *ReadFromPipe(HANDLE fh) {
 	int strl = 0;
 	int strsz = BUFSIZE+1;
 
+	if (outlen) {
+		*outlen = 0;
+	}
 	str = malloc (strsz);
 	if (!str) {
 		return NULL;
@@ -208,6 +246,9 @@ char *ReadFromPipe(HANDLE fh) {
 		strl += dwRead;
 	}
 	str[strl] = 0;
+	if (outlen) {
+		*outlen = strl;
+	}
 	return str;
 }
 #endif

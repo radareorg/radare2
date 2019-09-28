@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2017 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2019 - Oscar Salvador */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,25 +7,9 @@
 #include <r_io.h>
 #include "bflt/bflt.h"
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loaddr, Sdb *sdb) {
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-	RBuffer *tbuf = r_buf_new ();
-	if (!tbuf) {
-		return false;
-	}
-	r_buf_set_bytes (tbuf, buf, sz);
-	struct r_bin_bflt_obj *res = r_bin_bflt_new_buf (tbuf);
-	r_buf_free (tbuf);
-	*bin_obj = res;
-	return true;
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = r_buf_buffer (bf->buf);
-	ut64 sz = r_buf_size (bf->buf);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	*bin_obj = r_bin_bflt_new_buf (buf);
+	return *bin_obj;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -127,7 +111,9 @@ static RList *patch_relocs(RBin *b) {
 		}
 		R_FREE (bin->reloc_table);
 	}
-	b->iob.write_at (b->iob.io, bin->b->base, bin->b->buf, bin->b->length);
+	ut64 tmpsz;
+	const ut8 *tmp = r_buf_data (bin->b, &tmpsz);
+	b->iob.write_at (b->iob.io, 0, tmp, tmpsz);
 	return list;
 }
 
@@ -298,30 +284,30 @@ static RBinInfo *info(RBinFile *bf) {
 	return info;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return length > 4 && !memcmp (buf, "bFLT", 4);
+static bool check_buffer(RBuffer *buf) {
+	ut8 tmp[4];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
 }
 
-static int destroy(RBinFile *bf) {
-	r_bin_bflt_free ((struct r_bin_bflt_obj *) bf->o->bin_obj);
-	return true;
+static void destroy(RBinFile *bf) {
+	r_bin_bflt_free (bf->o->bin_obj);
 }
 
 RBinPlugin r_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT format r_bin plugin",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.info = &info,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bflt,

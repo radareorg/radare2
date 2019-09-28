@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2018 - condret, pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2008-2019 - condret, pancake, alvaro_fe */
 
 #include <r_io.h>
 #include <sdb.h>
@@ -59,6 +59,9 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 		}
 		// Now left endpoint <= addr < right endpoint
 		ut64 len1 = R_MIN (vaddr + len - addr, r_itv_end (part->itv) - addr);
+		if (len1 < 1) {
+			break;
+		}
 		// The map satisfies the permission requirement or p_cache is enabled
 		if (((part->map->perm & match_flg) == match_flg || io->p_cache)) {
 			st64 result = op (io, part->map->fd, part->map->delta + addr - part->map->itv.addr,
@@ -112,48 +115,27 @@ R_API RIO* r_io_init(RIO* io) {
 	return io;
 }
 
-R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len) {
-	RBuffer *b = R_NEW0 (RBuffer);
-	if (!b) {
-		return NULL;
-	}
-	b->buf = malloc (len);
-	if (!b->buf) {
-		free (b);
-		return NULL;
-	}
-	len = r_io_read_at (io, addr, b->buf, len);
-	b->length = (len < 0)? 0: len;
-	return b;
-}
-
-R_API int r_io_write_buf(RIO *io, struct r_buf_t *b) {
-	return r_io_write_at (io, b->base, b->buf, b->length);
-}
-
 R_API void r_io_free(RIO *io) {
-	if (!io) {
-		return;
+	if (io) {
+		r_io_fini (io);
+		r_cache_free (io->buffer);
+		free (io);
 	}
-	r_io_fini (io);
-	r_cache_free (io->buffer);
-	free (io);
 }
 
 R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
-	const int bufSize = r_buf_size (b);
+	ut64 bufSize = r_buf_size (b);
 	char *uri = r_str_newf ("malloc://%d", bufSize);
 	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
 	if (desc) {
-		r_io_desc_write (desc, r_buf_get_at (b, 0, NULL), bufSize);
+		const ut8 *tmp = r_buf_data (b, &bufSize);
+		r_io_desc_write (desc, tmp, bufSize);
 	}
 	return desc;
 }
 
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int perm, int mode) {
-	if (!io || !uri) {
-		return NULL;
-	}
+	r_return_val_if_fail (io && uri, NULL);
 	RIODesc *desc = r_io_desc_open (io, uri, perm, mode);
 	if ((io->autofd || !io->desc) && desc) {
 		io->desc = desc;
@@ -166,23 +148,21 @@ R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int perm, int mode) {
 R_API RIODesc* r_io_open(RIO* io, const char* uri, int perm, int mode) {
 	r_return_val_if_fail (io && io->maps, NULL);
 	RIODesc* desc = r_io_open_nomap (io, uri, perm, mode);
-	if (!desc) {
-		return NULL;
+	if (desc) {
+		r_io_map_new (io, desc->fd, desc->perm, 0LL, 0LL, r_io_desc_size (desc));
 	}
-	r_io_map_new (io, desc->fd, desc->perm, 0LL, 0LL, r_io_desc_size (desc));
 	return desc;
 }
 
 /* opens a file and maps it to an offset specified by the "at"-parameter */
 R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int perm, int mode, ut64 at) {
-	r_return_val_if_fail (io && io->maps, NULL);
-	RIODesc* desc;
-	ut64 size;
-	desc = r_io_open_nomap (io, uri, perm, mode);
+	r_return_val_if_fail (io && io->maps && uri, NULL);
+
+	RIODesc* desc = r_io_open_nomap (io, uri, perm, mode);
 	if (!desc) {
 		return NULL;
 	}
-	size = r_io_desc_size (desc);
+	ut64 size = r_io_desc_size (desc);
 	// second map
 	if (size && ((UT64_MAX - size + 1) < at)) {
 		// split map into 2 maps if only 1 big map results into interger overflow
@@ -499,6 +479,23 @@ R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 	return true;
 }
 
+R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
+	RIOMap *map = r_io_map_get_paddr (io, pa);
+	if (map) {
+		return pa - map->delta + map->itv.addr;
+	}
+	return UT64_MAX;
+}
+
+R_API ut64 r_io_v2p(RIO *io, ut64 va) {
+	RIOMap *map = r_io_map_get (io, va);
+	if (map) {
+		st64 delta = va - map->itv.addr;
+		return map->itv.addr + map->delta + delta;
+	}
+	return UT64_MAX;
+}
+
 R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	r_return_if_fail (io && bnd);
 
@@ -507,6 +504,8 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->desc_use = r_io_use_fd;
 	bnd->desc_get = r_io_desc_get;
 	bnd->desc_size = r_io_desc_size;
+	bnd->p2v = r_io_p2v;
+	bnd->v2p = r_io_v2p;
 	bnd->open = r_io_open_nomap;
 	bnd->open_at = r_io_open_at;
 	bnd->close = r_io_fd_close;
@@ -517,6 +516,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_close = r_io_fd_close;
 	bnd->fd_seek = r_io_fd_seek;
 	bnd->fd_size = r_io_fd_size;
+	bnd->fd_resize = r_io_fd_resize;
 	bnd->fd_read = r_io_fd_read;
 	bnd->fd_write = r_io_fd_write;
 	bnd->fd_read_at = r_io_fd_read_at;
@@ -527,6 +527,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_remap = r_io_map_remap_fd;
 	bnd->is_valid_offset = r_io_is_valid_offset;
 	bnd->map_get = r_io_map_get;
+	bnd->map_get_paddr = r_io_map_get_paddr;
 	bnd->addr_is_mapped = r_io_addr_is_mapped;
 	bnd->map_add = r_io_map_add;
 #if HAVE_PTRACE

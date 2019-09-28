@@ -51,7 +51,7 @@ static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "w32://", 6)) {
 		RIOW32 *w32 = R_NEW0 (RIOW32);
 		const char *filename = pathname+6;
-		LPTSTR filename_ = r_sys_conv_utf8_to_utf16 (filename);
+		LPTSTR filename_ = r_sys_conv_utf8_to_win (filename);
 		w32->hnd = CreateFile (filename_,
 			GENERIC_READ | rw?GENERIC_WRITE:0,
 			FILE_SHARE_READ | rw? FILE_SHARE_WRITE:0,
@@ -87,7 +87,7 @@ RIOPlugin r_io_plugin_w32 = {
 	.write = w32__write,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_w32,

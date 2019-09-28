@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - pancake, cgvwzq */
+/* radare - LGPL - Copyright 2017-2019 - pancake, cgvwzq */
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 
@@ -252,6 +252,7 @@ static WasmOpDef opcodes_threads[256] = {
 	[WASM_OP_I64ATOMICRMW32UCMPXCHG] = { "i64.atomic.rmw32_u.cmpxchg" , 3, 3 }
 };
 
+#ifndef WASM_NO_ASM
 // assembles the given line of wasm assembly.
 R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	int i = 0, len = 0;
@@ -292,6 +293,7 @@ R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	err:
 		return -1;
 }
+#endif
 
 // disassemble an instruction from the given buffer.
 R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
@@ -628,10 +630,7 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			}
 			break;
 		case WASM_OP_F32CONST:
-			{
-				if (buf_len < 4) {
-					goto err;
-				}
+			if (buf_len > 4) {
 				union fi {
 					ut32  v;
 					float f;
@@ -639,13 +638,12 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				u.v = r_read_at_le32 (buf, 1);
 				r_strbuf_setf (sb, "%s %f", opdef->txt, u.f);
 				op->len += 4;
+			} else {
+				goto err;
 			}
 			break;
 		case WASM_OP_F64CONST:
-			{
-				if (buf_len < 8) {
-					goto err;
-				}
+			if (buf_len > 8) {
 				union di {
 					ut64   v;
 					double f;
@@ -653,6 +651,8 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				u.v = r_read_at_le64 (buf, 1);
 				r_strbuf_setf (sb, "%s %f", opdef->txt, u.f);
 				op->len += 8;
+			} else {
+				goto err;
 			}
 			break;
 		default:
