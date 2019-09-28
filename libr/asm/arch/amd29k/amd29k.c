@@ -441,12 +441,12 @@ bool amd29k_instr_decode(const ut8* buffer, const ut32 buffer_size, amd29k_instr
 			instruction->mnemonic = in->mnemonic;
 			instruction->op_type = in->op_type;
 			return true;
-		} else if (in->cpu[3] == '0' && in->mask == buffer[0]) {
+		} else if (in->cpu[0] != '*' && in->cpu[3] == '0' && in->mask == buffer[0]) {
 			in->decode (instruction, buffer);
 			instruction->mnemonic = in->mnemonic;
 			instruction->op_type = in->op_type;
 			return true;
-		} else if (in->cpu[3] == '5' && in->mask == buffer[0]) {
+		} else if (in->cpu[0] != '*' && in->cpu[3] == '5' && in->mask == buffer[0]) {
 			in->decode (instruction, buffer);
 			instruction->mnemonic = in->mnemonic;
 			instruction->op_type = in->op_type;
