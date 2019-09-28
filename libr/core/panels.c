@@ -818,10 +818,12 @@ bool __check_panel_type(RPanel *panel, const char *type) {
 	char *tmp = r_str_new (panel->model->cmd);
 	int n = r_str_split (tmp, ' ');
 	if (!n) {
+		free (tmp);
 		return false;
 	}
 	const char *base = r_str_word_get0 (tmp, 0);
 	if (R_STR_ISEMPTY (base)) {
+		free (tmp);
 		return false;
 	}
 	int len = strlen (type);
@@ -865,7 +867,9 @@ bool __check_root_state(RCore *core, RPanelsRootState state) {
 
 bool search_db_check_panel_type (RCore *core, RPanel *panel, const char *ch) {
 	char *str = __search_db (core, ch);
-	return str && __check_panel_type (panel, __search_db (core, ch));
+	bool ret = str && __check_panel_type (panel, str);
+	free (str);
+	return ret;
 }
 
 //TODO: Refactroing
@@ -1059,12 +1063,14 @@ void __update_help_title(RCore *core, RPanel *panel) {
 		r_strbuf_setf (cache_title, "[Cache] N/A");
 	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, r_strbuf_drain (title));
+		r_cons_canvas_write (can, r_strbuf_get (title));
 	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w
 				- r_str_ansi_len (r_strbuf_get (cache_title)) - 2, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, r_strbuf_drain (cache_title));
+		r_cons_canvas_write (can, r_strbuf_get (cache_title));
 	}
+	r_strbuf_free (cache_title);
+	r_strbuf_free (title);
 }
 
 void __update_panel_contents(RCore *core, RPanel *panel, const char *cmdstr) {
@@ -1127,11 +1133,14 @@ void __update_panel_title(RCore *core, RPanel *panel) {
 		r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
 	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, r_strbuf_drain (title));
+		r_cons_canvas_write (can, r_strbuf_get (title));
 	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w - r_str_ansi_len (r_strbuf_get (cache_title)) - 2, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, r_strbuf_drain (cache_title));
+		r_cons_canvas_write (can, r_strbuf_get (cache_title));
 	}
+	r_strbuf_free (title);
+	r_strbuf_free (cache_title);
+	free (cmd_title);
 }
 
 //TODO: make this a task
@@ -1344,6 +1353,7 @@ int __add_cmd_panel(void *user) {
 	__set_curnode (core, 0);
 	__set_refresh_all (core, false, false);
 	__set_mode (core, PANEL_MODE_DEFAULT);
+	free (cmd);
 	return 0;
 }
 
@@ -1505,10 +1515,13 @@ ut64 __parse_string_on_cursor(RCore *core, RPanel *panel, int idx) {
 				r_strbuf_append_n (buf, s, 1);
 				s++;
 			}
-			return r_num_math (core->num, r_strbuf_drain (buf));
+			ut64 ret = r_num_math (core->num, r_strbuf_get (buf));
+			r_strbuf_free (buf);
+			return ret;
 		}
 		s++;
 	}
+	r_strbuf_free (buf);
 	return UT64_MAX;
 }
 
@@ -1847,6 +1860,7 @@ bool __handle_window_mode(RCore *core, const int key) {
 bool __handle_cursor_mode(RCore *core, const int key) {
 	RPanel *cur = __get_cur_panel (core->panels);
 	RPrint *print = core->print;
+	char *db_val;
 	switch (key) {
 	case ':':
 	case ';':
@@ -1901,10 +1915,13 @@ bool __handle_cursor_mode(RCore *core, const int key) {
 		}
 		break;
 	case '-':
-		if (__check_panel_type (cur, __search_db (core, "Breakpoints"))) {
+		db_val = __search_db (core, "Breakpoints");
+		if (__check_panel_type (cur, db_val)) {
 			__cursor_del_breakpoints(core, cur);
+			free (db_val);
 			break;
 		}
+		free (db_val);
 		return false;
 	case 'x':
 		__handle_refs (core, cur, __parse_string_on_cursor (core, cur, cur->view->curpos));
@@ -4496,15 +4513,16 @@ void __init_menu_color_settings_layout (void *_core, const char *parent) {
 	RList *list = __sorted_list (core, menus_Colors, COUNT (menus_Colors));
 	char *pos;
 	RListIter* iter;
+	RStrBuf *buf = r_strbuf_new (NULL);
 	r_list_foreach (list, iter, pos) {
 		if (pos && !strcmp (now, pos)) {
-            RStrBuf *buf = r_strbuf_new (NULL);
 			r_strbuf_setf (buf, "%s%s", color, pos);
-			__add_menu (core, parent, r_strbuf_drain (buf), __settings_colors_cb);
+			__add_menu (core, parent, r_strbuf_get (buf), __settings_colors_cb);
 			continue;
 		}
 		__add_menu (core, parent, pos, __settings_colors_cb);
 	}
+	r_strbuf_free (buf);
 }
 
 void __init_menu_disasm_settings_layout (void *_core, const char *parent) {
@@ -4533,38 +4551,40 @@ static void __init_menu_disasm_asm_settings_layout(void *_core, const char *pare
 	RList *list = __sorted_list (core, menus_settings_disassembly_asm, COUNT (menus_settings_disassembly_asm));
 	char *pos;
 	RListIter* iter;
+	RStrBuf *rsb = r_strbuf_new (NULL);
 	r_list_foreach (list, iter, pos) {
-		RStrBuf *rsb = r_strbuf_new (NULL);
-		r_strbuf_append (rsb, pos);
+		r_strbuf_set (rsb, pos);
 		r_strbuf_append (rsb, ": ");
 		r_strbuf_append (rsb, r_config_get (core->config, pos));
 		if (!strcmp (pos, "asm.var.summary") ||
 				!strcmp (pos, "asm.arch") ||
 				!strcmp (pos, "asm.bits") ||
 				!strcmp (pos, "asm.cpu")) {
-			__add_menu (core, parent, r_strbuf_drain (rsb), __config_value_cb);
+			__add_menu (core, parent, r_strbuf_get (rsb), __config_value_cb);
 		} else {
-			__add_menu (core, parent, r_strbuf_drain (rsb), __config_toggle_cb);
+			__add_menu (core, parent, r_strbuf_get (rsb), __config_toggle_cb);
 		}
 	}
+	r_strbuf_free (rsb);
 }
 
 static void __init_menu_screen_settings_layout(void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
+	RStrBuf *rsb = r_strbuf_new (NULL);
 	int i = 0;
 	while (menus_settings_screen[i]) {
-		RStrBuf *rsb = r_strbuf_new (NULL);
 		const char *menu = menus_settings_screen[i];
-		r_strbuf_append (rsb, menu);
+		r_strbuf_set (rsb, menu);
 		r_strbuf_append (rsb, ": ");
 		r_strbuf_append (rsb, r_config_get (core->config, menu));
 		if (!strcmp (menus_settings_screen[i], "scr.color")) {
-			__add_menu (core, parent, r_strbuf_drain (rsb), __config_value_cb);
+			__add_menu (core, parent, r_strbuf_get (rsb), __config_value_cb);
 		} else {
-			__add_menu (core, parent, r_strbuf_drain (rsb), __config_toggle_cb);
+			__add_menu (core, parent, r_strbuf_get (rsb), __config_toggle_cb);
 		}
 		i++;
 	}
+	r_strbuf_free (rsb);
 }
 
 bool __init_panels_menu(RCore *core) {
@@ -5078,7 +5098,8 @@ void __panels_refresh(RCore *core) {
 	r_strbuf_set (title, "Tab ");
 	tab_pos -= r_strbuf_length (title);
 	(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
-	r_cons_canvas_write (can, r_strbuf_drain (title));
+	r_cons_canvas_write (can, r_strbuf_get (title));
+	r_strbuf_free (title);
 
 	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 		__print_snow (panels);
@@ -5318,7 +5339,10 @@ void __search_strings_bin_create(void *user, RPanel *panel, const RPanelLayout d
 char *__search_strings (RCore *core, bool whole) {
 	const char *title = whole ? PANEL_TITLE_STRINGS_BIN : PANEL_TITLE_STRINGS_DATA;
 	const char *str = __show_status_input (core, "Search Strings: ");
-	return r_str_newf ("%s~%s", __search_db (core, title), str);
+	char *db_val = __search_db (core, title);
+	char *ret = r_str_newf ("%s~%s", db_val, str);
+	free (db_val);
+	return ret;
 }
 
 void __put_breakpoints_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title) {
@@ -5709,7 +5733,7 @@ bool r_load_panels_layout(RCore *core, const char *_name) {
 		return false;
 	}
 	char *config_path = __get_panels_config_file_from_dir (_name);
-	if (!config_path) { 
+	if (!config_path) {
 		char *tmp = r_str_newf ("No saved layout found for the name: %s", _name);
 		(void)__show_status (core, tmp);
 		free (tmp);
@@ -6006,7 +6030,8 @@ void __update_modal(RCore *core, Sdb *menu_db, RModal *modal) {
 	r_cons_gotoxy (0, 0);
 	r_cons_canvas_fill (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, ' ');
 	(void)r_cons_canvas_gotoxy (can, modal->pos.x + 2, modal->pos.y + 1);
-	r_cons_canvas_write (can, r_strbuf_drain (modal->data));
+	r_cons_canvas_write (can, r_strbuf_get (modal->data));
+	r_strbuf_free (modal->data);
 
 	r_cons_canvas_box (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, core->cons->context->pal.graph_box2);
 
@@ -6149,7 +6174,9 @@ void __create_default_panels(RCore *core) {
 			return;
 		}
 		const char *s = panels_list[i++];
-		__init_panel_param (core, p, s, __search_db (core, s));
+		char *db_val = __search_db (core, s);
+		__init_panel_param (core, p, s, db_val);
+		free (db_val);
 	}
 }
 
