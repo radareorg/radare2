@@ -30,6 +30,24 @@ R_API void r_strbuf_init(RStrBuf *sb) {
 	memset (sb, 0, sizeof (RStrBuf));
 }
 
+R_API bool r_strbuf_reserve(RStrBuf *sb, int len) {
+	r_return_val_if_fail (sb && len > 0, false);
+
+	if ((sb->ptr && len < sb->ptrlen) || (!sb->ptr && len < sizeof (sb->buf))) {
+		return true;
+	}
+	char *newptr = realloc (sb->ptr, len + 1);
+	if (!newptr) {
+		return false;
+	}
+	if (!sb->ptr) {
+		memcpy (newptr, sb->buf, sizeof (sb->buf));
+	}
+	sb->ptr = newptr;
+	sb->ptrlen = len + 1;
+	return true;
+}
+
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 	r_return_val_if_fail (sb && s, false);
 	r_return_val_if_fail (l >= 0, false);

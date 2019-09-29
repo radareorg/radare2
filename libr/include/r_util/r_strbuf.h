@@ -31,6 +31,7 @@ R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);
 R_API void r_strbuf_init(RStrBuf *sb);
 R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb);
+R_API bool r_strbuf_reserve(RStrBuf *sb, int len);
 
 #ifdef __cplusplus
 }
