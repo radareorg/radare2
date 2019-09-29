@@ -16,6 +16,8 @@ R_LIB_VERSION_HEADER (r_lib);
 
 // rename to '.' ??
 #define R_LIB_SEPARATOR "."
+#define R_LIB_SYMNAME "radare_plugin"
+#define R_LIB_SYMFUNC "radare_plugin_function"
 
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
 
@@ -59,7 +61,7 @@ typedef struct r_lib_struct_t {
 	void (*free)(void *data);
 } RLibStruct;
 
-typedef RLibStruct* (*RLibStructFunc) (void *u);
+typedef RLibStruct* (*RLibStructFunc) ();
 
 // order matters because of libr/util/lib.c
 enum {

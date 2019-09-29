@@ -160,8 +160,8 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 		}
 		lib->handlers = r_list_newf (free);
 		lib->plugins = r_list_newf (free);
-		lib->symname = strdup (symname);
-		lib->symnamefunc = strdup (symnamefunc);
+		lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
+		lib->symnamefunc = strdup (symnamefunc? symnamefunc: R_LIB_SYMFUNC);
 	}
 	return lib;
 }
@@ -276,7 +276,7 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	RLibStructFunc strf = (RLibStructFunc) r_lib_dl_sym (handler, lib->symnamefunc);
 	RLibStruct *stru = NULL;
 	if (strf) {
-		stru = strf (NULL);
+		stru = strf ();
 	}
 	if (!stru) {
 		stru = (RLibStruct *) r_lib_dl_sym (handler, lib->symname);
