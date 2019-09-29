@@ -35,7 +35,7 @@ static RAsmState *__as_new() {
 	if (!as) {
 		return NULL;
 	}
-	as->l = r_lib_new ("radare_plugin");
+	as->l = r_lib_new ("radare_plugin", "radare_plugin_function");
 	as->a = r_asm_new ();
 	as->anal = r_anal_new ();
 	__load_plugins (as);

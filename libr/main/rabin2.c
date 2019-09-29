@@ -567,7 +567,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
 		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
 		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
-		l = r_lib_new ("radare_plugin");
+		l = r_lib_new ("radare_plugin", "radare_plugin_function");
 		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, NULL);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",

@@ -148,7 +148,7 @@ err:
 #endif
 }
 
-R_API RLib *r_lib_new(const char *symname) {
+R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	RLib *lib = R_NEW (RLib);
 	if (lib) {
 		char *e = r_sys_getenv ("R_DEBUG");
@@ -161,6 +161,7 @@ R_API RLib *r_lib_new(const char *symname) {
 		lib->handlers = r_list_newf (free);
 		lib->plugins = r_list_newf (free);
 		lib->symname = strdup (symname);
+		lib->symnamefunc = strdup (symnamefunc);
 	}
 	return lib;
 }
@@ -272,7 +273,14 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 		return -1;
 	}
 
-	RLibStruct *stru = (RLibStruct *) r_lib_dl_sym (handler, lib->symname);
+	RLibStructFunc strf = (RLibStructFunc) r_lib_dl_sym (handler, lib->symnamefunc);
+	RLibStruct *stru = NULL;
+	if (strf) {
+		stru = strf (NULL);
+	}
+	if (!stru) {
+		stru = (RLibStruct *) r_lib_dl_sym (handler, lib->symname);
+	}
 	if (!stru) {
 		IFDBG eprintf ("Cannot find symbol '%s' in library '%s'\n",
 			lib->symname, file);
@@ -280,7 +288,11 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 		return -1;
 	}
 
-	return r_lib_open_ptr (lib, file, handler, stru);
+	int res = r_lib_open_ptr (lib, file, handler, stru);
+	if (strf) {
+		free (stru);
+	}
+	return res;
 }
 
 R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru) {
