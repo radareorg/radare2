@@ -774,7 +774,7 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 		sc64->segname[0] = 0; // XXX curr_map->name OR curr_map->file ???
 		sc64->vmaddr = curr_map->addr;
 		sc64->vmsize = curr_map->size;
-		sc64->maxprot = 7; // TODO
+		sc64->maxprot = xwr2rwx (curr_map->user);
 		sc64->initprot = xwr2rwx (curr_map->perm);
 		sc64->nsects = 0;
 #elif __i386__ || __ppc__
@@ -786,7 +786,7 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 		sc->vmsize = CAST_DOWN (vm_size_t, curr_map->size);
 		sc->fileoff = CAST_DOWN (ut32, foffset);
 		sc->filesize = CAST_DOWN (ut32, curr_map->size);
-		sc->maxprot = 7; // TODO
+		sc->maxprot = xwr2rwx (curr_map->user);
 		sc->initprot = xwr2rwx (curr_map->perm);
 		sc->nsects = 0;
 #endif
@@ -1255,7 +1255,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 				(ut8*)file_path, MAXPATHLEN - 1);
 		//eprintf ("--> %d 0x%08"PFMT64x" %s\n", i, addr, file_path);
 		size = mach0_size (dbg, addr);
-		mr = r_debug_map_new (file_path, addr, addr + size, 7, 0);
+		mr = r_debug_map_new (file_path, addr, addr + size, 7, 7);
 		if (!mr) {
 			eprintf ("Cannot create r_debug_map_new\n");
 			break;
@@ -1385,7 +1385,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				info.is_submap? "_sub": "",
 				"", info.is_submap ? "_submap": "",
 				module_name, maxperm, depthstr);
-			if (!(mr = r_debug_map_new (buf, address, address + size, xwr2rwx (info.protection), 0))) {
+			if (!(mr = r_debug_map_new (buf, address, address + size, xwr2rwx (info.protection), xwr2rwx (info.max_protection)))) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				break;
 			}
