@@ -2146,11 +2146,13 @@ R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb) {
 
 /* directly set the size of the function
  * if fcn is in ana RAnal's fcn_tree, the anal MUST be passed,
- * otherwise it can be NULL */
+ * otherwise it can be NULL
+ * IMPORTANT: this function should be removed, since it makes no sense to
+ * change the size of a function independently of its basic blocks */
 R_API void r_anal_fcn_set_size(RAnal *anal, RAnalFunction *fcn, ut32 size) {
 	r_return_if_fail (fcn);
 	fcn->_size = size;
-	if (anal) {
+	if (anal && r_anal_get_fcn_at (anal, fcn->addr, R_ANAL_FCN_TYPE_ROOT)) {
 		_fcn_tree_update_size (anal, fcn);
 	}
 }
