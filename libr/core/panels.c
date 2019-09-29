@@ -1340,7 +1340,7 @@ int __add_cmd_panel(void *user) {
 	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	const char *cmd = __search_db (core, child->name);
+	char *cmd = __search_db (core, child->name);
 	if (!cmd) {
 		return 0;
 	}
