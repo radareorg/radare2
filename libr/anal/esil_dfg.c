@@ -36,12 +36,17 @@ static bool edf_consume_1_use_old_new_push_1(RAnalEsil *esil, const char *op_str
 
 static bool edf_eq_weak(RAnalEsil *esil) {
 	RAnalEsilDFG *edf = (RAnalEsilDFG *)esil->user;
+#if 0
 	RGraphNode *o_old = sdb_ptr_get (edf->latest_nodes, "old", 0); //node for esil->old
 	RGraphNode *o_new = sdb_ptr_get (edf->latest_nodes, "new", 0); //node for esil->cur
+#endif
+	RGraphNode *o_old = edf->old; //node for esil->old
+	RGraphNode *o_new = edf->cur; //node for esil->cur
 	if (!edf_consume_2_set_reg (esil)) {
 		return false;
 	}
 	//work-around
+#if 0
 	if (o_old) {
 		sdb_ptr_set (edf->latest_nodes, "old", o_old, 0);
 	} else {
@@ -52,6 +57,9 @@ static bool edf_eq_weak(RAnalEsil *esil) {
 	} else {
 		sdb_remove (edf->latest_nodes, "new", 0);
 	}
+#endif
+	edf->old = o_old ? o_old : NULL;
+	edf->cur = o_new ? o_new : NULL;
 	return true;
 }
 
@@ -163,7 +171,10 @@ static bool _edf_consume_2_set_reg(RAnalEsil *esil, const bool use_origin) {
 	RGraphNode *op_node = r_graph_add_node (edf->flow, eop_node);
 	r_graph_add_edge (edf->flow, dst_node, op_node);
 	r_graph_add_edge (edf->flow, src_node, op_node);
+#if 0
 	sdb_ptr_set (edf->latest_nodes, "old", dst_node, 0); //esil->old
+#endif
+	edf->old = dst_node;
 	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, dst);
 	result->type = R_ANAL_ESIL_DFG_BLOCK_RESULT | R_ANAL_ESIL_DFG_BLOCK_VAR;
 	if (use_origin) {
@@ -176,7 +187,10 @@ static bool _edf_consume_2_set_reg(RAnalEsil *esil, const bool use_origin) {
 	dst_node = r_graph_add_node (edf->flow, result);
 	r_graph_add_edge (edf->flow, op_node, dst_node);
 	sdb_ptr_set (edf->latest_nodes, dst, dst_node, 0);
+#if 0
 	sdb_ptr_set (edf->latest_nodes, "new", dst_node, 0); //esil->new
+#endif
+	edf->cur = dst_node;
 	free (dst);
 	return true;
 }
@@ -459,8 +473,12 @@ static bool edf_consume_1_use_old_new_push_1(RAnalEsil *esil, const char *op_str
 
 	r_graph_add_edge (edf->flow, src_node, op_node);
 
+#if 0
 	RGraphNode *latest_new = sdb_ptr_get (edf->latest_nodes, "new", 0);
 	RGraphNode *latest_old = sdb_ptr_get (edf->latest_nodes, "old", 0);
+#endif
+	RGraphNode *latest_new = edf->cur;
+	RGraphNode *latest_old = edf->old;
 	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, "result_");
 	result->type = R_ANAL_ESIL_DFG_BLOCK_RESULT; // propagate type here
 	r_strbuf_appendf (result->content, "%d", edf->idx++);
