@@ -301,6 +301,10 @@ SDB_API HT_(Kv)* Ht_(find_kv)(HtName_(Ht)* ht, const KEY_TYPE key, bool* found) 
 	if (found) {
 		*found = false;
 	}
+	if (!ht) {
+		*found = false;
+		return NULL;
+	}
 
 	HT_(Bucket) *bt = &ht->table[bucketfn (ht, key)];
 	ut32 key_len = calcsize_key (ht, key);
