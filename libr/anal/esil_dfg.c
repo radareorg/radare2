@@ -416,7 +416,9 @@ static bool edf_consume_1_use_old_new_push_1(RAnalEsil *esil, const char *op_str
 		return false;
 	}
 	RAnalEsilDFGNode *eop_node = r_anal_esil_dfg_node_new (edf, src);
+#if 0
 	eop_node->type = R_ANAL_ESIL_DFG_BLOCK_GENERATIVE;
+#endif
 	r_strbuf_appendf (eop_node->content, ",%s", op_string);
 	RGraphNode *src_node, *op_node = r_graph_add_node (edf->flow, eop_node);
 	src_node = sdb_ptr_get (edf->latest_nodes, src, 0);
