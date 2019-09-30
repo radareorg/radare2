@@ -315,56 +315,72 @@ static char *filterFlags(RCore *core, const char *msg) {
 	return buf;
 }
 
+static const char *avatar_orangg[] = {
+	"      _______\n"
+	"     /       \\      .-%s-.\n"
+	"   _| ( o) (o)\\_    | %s |\n"
+	"  / _     .\\. | \\  <| %s |\n"
+	"  \\| \\   ____ / 7`  | %s |\n"
+	"  '|\\|  `---'/      `-%s-'\n"
+	"     | /----. \\\n"
+	"     | \\___/  |___\n"
+	"     `-----'`-----'\n"
+};
+
+static const char *avatar_clippy[] = {
+	" .--.     .-%s-.\n"
+	" | _|     | %s |\n"
+	" | O O   <  %s |\n"
+	" |  |  |  | %s |\n"
+	" || | /   `-%s-'\n"
+	" |`-'|\n"
+	" `---'\n",
+	" .--.     .-%s-.\n"
+	" |   \\    | %s |\n"
+	" | O o   <  %s |\n"
+	" |   | /  | %s |\n"
+	" |  ( /   `-%s-'\n"
+	" |   / \n"
+	" `--'\n",
+	" .--.     .-%s-.\n"
+	" | _|_    | %s |\n"
+	" | O O   <  %s |\n"
+	" |  ||    | %s |\n"
+	" | _:|    `-%s-'\n"
+	" |   |\n"
+	" `---'\n",
+};
+
+static const char *avatar_clippy_utf8[] = {
+	" ╭──╮    ╭─%s─╮\n"
+	" │ _│    │ %s │\n"
+	" │ O O  <  %s │\n"
+	" │  │╭   │ %s │\n"
+	" ││ ││   ╰─%s─╯\n"
+	" │└─┘│\n"
+	" ╰───╯\n",
+	" ╭──╮    ╭─%s─╮\n"
+	" │ ╶│╶   │ %s │\n"
+	" │ O o  <  %s │\n"
+	" │  │  ╱ │ %s │\n"
+	" │ ╭┘ ╱  ╰─%s─╯\n"
+	" │ ╰ ╱\n"
+	" ╰──'\n",
+	" ╭──╮    ╭─%s─╮\n"
+	" │ _│_   │ %s │\n"
+	" │ O O  <  %s │\n"
+	" │  │╷   │ %s │\n"
+	" │  ││   ╰─%s─╯\n"
+	" │ ─╯│\n"
+	" ╰───╯\n",
+};
+
 enum {
 	R_AVATAR_ORANGG,
 	R_AVATAR_CLIPPY,
 };
 
-static const char *getClippy(int type) {
-	if (type == R_AVATAR_ORANGG) {
-			return
-			"      _______\n"
-			"     /       \\      .-%s-.\n"
-			"   _| ( o) (o)\\_    | %s |\n"
-			"  / _     .\\. | \\  <| %s |\n"
-			"  \\| \\   ____ / 7`  | %s |\n"
-			"  '|\\|  `---'/      `-%s-'\n"
-			"     | /----. \\\n"
-			"     | \\___/  |___\n"
-			"     `-----'`-----'\n"
-			;
-	}
-	const int choose = r_num_rand (3);
-	switch (choose) {
-	case 0: return
-" .--.     .-%s-.\n"
-" | _|     | %s |\n"
-" | O O   <  %s |\n"
-" |  |  |  | %s |\n"
-" || | /   `-%s-'\n"
-" |`-'|\n"
-" `---'\n";
-	case 1: return
-" .--.     .-%s-.\n"
-" |   \\    | %s |\n"
-" | O o   <  %s |\n"
-" |   | /  | %s |\n"
-" |  ( /   `-%s-'\n"
-" |   / \n"
-" `--'\n";
-	case 2: return
-" .--.     .-%s-.\n"
-" | _|_    | %s |\n"
-" | O O   <  %s |\n"
-" |  ||    | %s |\n"
-" | _:|    `-%s-'\n"
-" |   |\n"
-" `---'\n";
-	}
-	return "";
-}
-
-R_API void r_core_clippy(const char *msg) {
+R_API void r_core_clippy(RCore *core, const char *msg) {
 	int type = R_AVATAR_CLIPPY;
 	if (*msg == '+') {
 		char *space = strchr (msg, ' ');
@@ -374,10 +390,23 @@ R_API void r_core_clippy(const char *msg) {
 		type = R_AVATAR_ORANGG;
 		msg = space + 1;
 	}
-	int msglen = strlen (msg);
-	char *l = strdup (r_str_pad ('-', msglen));
+	const char *f;
+	int msglen = r_str_len_utf8 (msg);
 	char *s = strdup (r_str_pad (' ', msglen));
-	r_cons_printf (getClippy (type), l, s, msg, s, l);
+	char *l;
+
+	if (type == R_AVATAR_ORANGG) {
+		l = strdup (r_str_pad ('-', msglen));
+		f = avatar_orangg[0];
+	} else if (r_config_get_i (core->config, "scr.utf8")) {
+		l = (char *)r_str_repeat ("─", msglen);
+		f = avatar_clippy_utf8[r_num_rand (R_ARRAY_SIZE (avatar_clippy_utf8))];
+	} else {
+		l = strdup (r_str_pad ('-', msglen));
+		f = avatar_clippy[r_num_rand (R_ARRAY_SIZE (avatar_clippy))];
+	}
+
+	r_cons_printf (f, l, s, msg, s, l);
 	free (l);
 	free (s);
 }
@@ -850,7 +879,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'E': // "?E" clippy echo
-		r_core_clippy (r_str_trim_ro (input + 1));
+		r_core_clippy (core, r_str_trim_ro (input + 1));
 		break;
 	case 'e': // "?e" echo
 		switch (input[1]) {
@@ -1097,7 +1126,7 @@ static int cmd_help(void *data, const char *input) {
 	case '?': // "??"
 		if (input[1] == '?') {
 			if (input[2] == '?') { // "???"
-				r_core_clippy ("What are you doing?");
+				r_core_clippy (core, "What are you doing?");
 				return 0;
 			}
 			if (input[2]) {
