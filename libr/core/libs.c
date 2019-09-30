@@ -86,7 +86,7 @@ static void __loadSystemPlugins(RCore *core, int where, const char *path) {
 R_API void r_core_loadlibs_init(RCore *core) {
 	ut64 prev = r_sys_now ();
 #define DF(x, y, z) r_lib_add_handler (core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
-	core->lib = r_lib_new ("radare_plugin");
+	core->lib = r_lib_new (NULL, NULL);
 	DF (IO, "io plugins", io);
 	DF (CORE, "core plugins", core);
 	DF (DBG, "debugger plugins", debug);

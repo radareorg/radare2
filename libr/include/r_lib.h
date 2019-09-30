@@ -13,8 +13,11 @@ extern "C" {
 #endif
 
 R_LIB_VERSION_HEADER (r_lib);
+
 // rename to '.' ??
 #define R_LIB_SEPARATOR "."
+#define R_LIB_SYMNAME "radare_plugin"
+#define R_LIB_SYMFUNC "radare_plugin_function"
 
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
 
@@ -58,6 +61,8 @@ typedef struct r_lib_struct_t {
 	void (*free)(void *data);
 } RLibStruct;
 
+typedef RLibStruct* (*RLibStructFunc) ();
+
 // order matters because of libr/util/lib.c
 enum {
 	R_LIB_TYPE_IO,      /* io layer */
@@ -84,6 +89,7 @@ typedef struct r_lib_t {
 	/* only one handler per handler-id allowed */
 	/* this is checked in add_handler function */
 	char *symname;
+	char *symnamefunc;
 	RList /*RLibPlugin*/ *plugins;
 	RList /*RLibHandler*/ *handlers;
 } RLib;
@@ -91,12 +97,13 @@ typedef struct r_lib_t {
 #ifdef R_API
 /* low level api */
 R_API void *r_lib_dl_open(const char *libname);
+
 R_API void *r_lib_dl_sym(void *handler, const char *name);
 R_API int r_lib_dl_close(void *handler);
 
 /* high level api */
 typedef int (*RLibCallback)(RLibPlugin *, void *, void *);
-R_API RLib *r_lib_new(const char *symname);
+R_API RLib *r_lib_new(const char *symname, const char *symnamefunc);
 R_API void r_lib_free(RLib *lib);
 R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol);
 R_API RLibHandler *r_lib_get_handler(RLib *lib, int type);
