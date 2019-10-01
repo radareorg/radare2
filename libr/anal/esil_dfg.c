@@ -62,6 +62,14 @@ static bool edf_zf(RAnalEsil *esil) {
 	return edf_use_new_push_1 (esil, "$z", edf_zf_constraint);
 }
 
+static void edf_pf_constraint(RStrBuf *result, const char *new_node_str) {
+	r_strbuf_appendf (result, ":parity_of(%s)", new_node_str);
+}
+
+static bool edf_pf(RAnalEsil *esil) {
+	return edf_use_new_push_1 (esil, "$p", edf_pf_constraint);
+}
+
 static void edf_cf_constraint(RStrBuf *result, const char *consume, const char *o, const char *n) {
 	r_strbuf_appendf (result, ":((%s&mask(%s&0x3f))<(%s&mask(%s&0x3f)))",
 		n, consume, o, consume);
@@ -535,6 +543,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const c
 	r_anal_esil_set_op (esil, "=", edf_consume_2_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
 	r_anal_esil_set_op (esil, ":=", edf_eq_weak, 0, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
 	r_anal_esil_set_op (esil, "$z", edf_zf, 1, 0, R_ANAL_ESIL_OP_TYPE_UNKNOWN);
+	r_anal_esil_set_op (esil, "$p", edf_pf, 1, 0, R_ANAL_ESIL_OP_TYPE_UNKNOWN);
 	r_anal_esil_set_op (esil, "$c", edf_cf, 1, 1, R_ANAL_ESIL_OP_TYPE_UNKNOWN);
 	r_anal_esil_set_op (esil, "$b", edf_bf, 1, 1, R_ANAL_ESIL_OP_TYPE_UNKNOWN);
 	r_anal_esil_set_op (esil, "^=", edf_consume_2_use_set_reg, 0, 2, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_REG_WRITE);
