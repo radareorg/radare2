@@ -509,7 +509,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,r%d,+=,$o,?{,0x1,sr,|=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,r%d,+=,31,$o,sr,|=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_SUB (code)) {
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -524,7 +524,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, CLR_T ",r%d,r%d,-=,$o,sr,|,sr,:=", GET_SOURCE_REG(code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, CLR_T ",r%d,r%d,-=,31,$o,sr,|,sr,:=", GET_SOURCE_REG(code), GET_TARGET_REG (code));
 	} else if (IS_CMPEQ (code)) {
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->src[0] = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -750,7 +750,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 				S16_EXT("r%d,[2]")"," //@Rm sign extended
 				"*"
 				"macl,+=," //macl+(@Rm+@Rm)
-				"$o,?{," //if overflow
+				"31,$o,?{," //if overflow
 					"macl,0x80000000,&,?{,"
 						"0x7fffffff,macl,=,"
 					"}{,"
