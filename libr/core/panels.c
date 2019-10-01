@@ -308,6 +308,7 @@ static void __free_panel_model(RPanel *panel);
 static void __free_panel_view(RPanel *panel);
 static void __free_single_panel(RPanel *panel);
 static void __free_all_panels(RPanels *panels);
+static void __free_menu_item(RPanelsMenuItem *item);
 
 /* get */
 static RPanel *__get_panel(RPanels *panels, int i);
@@ -1253,6 +1254,8 @@ char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache) {
 	}
 	if (R_STR_ISNOTEMPTY (out)) {
 		__set_cmd_str_cache (core, panel, out);
+	} else {
+		R_FREE (out);
 	}
 	free (cmd);
 	if (b) {
@@ -2110,6 +2113,7 @@ void __handle_mouse_on_menu(RCore *core, int x, int y) {
 	__clear_panels_menu (core);
 	__set_mode (core, PANEL_MODE_DEFAULT);
 	__get_cur_panel (panels)->view->refresh = true;
+	free (word);
 }
 
 bool __drag_and_resize(RCore *core) {
@@ -3351,19 +3355,21 @@ int __clear_layout_cb(void *user) {
 	if (!__show_status_yesno (core, 0, "Clear all the saved layouts?(y/n): ")) {
 		return 0;
 	}
-	const char *config_path = __get_panels_config_dir_path ();
-	RList *dir = r_sys_dir (config_path);
+	const char *dir_path = __get_panels_config_dir_path ();
+	RList *dir = r_sys_dir (dir_path);
 	if (!dir) {
 		return 0;
 	}
 	RListIter *it;
 	char *entry;
 	r_list_foreach (dir, it, entry) {
-		const char *tmp = r_str_newf ("%s%s%s", config_path, R_SYS_DIR, entry);
+		const char *tmp = r_str_newf ("%s%s%s", dir_path, R_SYS_DIR, entry);
 		r_file_rm (tmp);
+		free (tmp);
 	}
-	r_file_rm (config_path);
+	r_file_rm (dir_path);
 	r_list_free (dir);
+	free (dir_path);
 
 	__update_menu (core, "File.Load Layout.Saved", __init_menu_saved_layout);
 	return 0;
@@ -3430,8 +3436,10 @@ int __config_toggle_cb(void *user) {
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	RStrBuf *tmp = r_strbuf_new (child->name);
 	(void)r_str_split (r_strbuf_get (tmp), ':');
-	r_config_toggle (core->config, r_strbuf_drain (tmp));
+	r_config_toggle (core->config, r_strbuf_get (tmp));
+	r_strbuf_free (tmp);
 	__set_refresh_all (core, false, false);
+	free (parent->p->model->title);
 	parent->p->model->title = r_strbuf_drain (__draw_menu (core, parent));
 	int i;
 	for (i = 1; i < menu->depth; i++) {
@@ -3456,8 +3464,10 @@ int __config_value_cb(void *user) {
 	RStrBuf *tmp = r_strbuf_new (child->name);
 	(void)r_str_split (r_strbuf_get(tmp), ':');
 	const char *v = __show_status_input (core, "New value: ");
-	r_config_set (core->config, r_strbuf_drain (tmp), v);
+	r_config_set (core->config, r_strbuf_get (tmp), v);
+	r_strbuf_free (tmp);
 	__set_refresh_all (core, false, false);
+	free (parent->p->model->title);
 	parent->p->model->title = r_strbuf_drain (__draw_menu (core, parent));
 	int i;
 	for (i = 1; i < menu->depth; i++) {
@@ -3563,7 +3573,8 @@ int __esil_step_range_cb(void *user) {
 	char *s = __show_status_input (core, r_strbuf_get (rsb));
 	r_strbuf_append (rsb, s);
 	r_strbuf_append (rsb, " end addr: ");
-	char *d = __show_status_input (core, r_strbuf_drain (rsb));
+	char *d = __show_status_input (core, r_strbuf_get (rsb));
+	r_strbuf_free (rsb);
 	ut64 s_a = r_num_math (core->num, s);
 	ut64 d_a = r_num_math (core->num, d);
 	if (s_a >= d_a) {
@@ -4372,6 +4383,7 @@ int __open_menu_cb (void *user) {
 	if (!buf) {
 		return 0;
 	}
+	free (child->p->model->title);
 	child->p->model->title = r_strbuf_drain (buf);
 	child->p->view->pos.w = r_str_bounds (child->p->model->title, &child->p->view->pos.h);
 	child->p->view->pos.h += 4;
@@ -4403,12 +4415,13 @@ void __add_menu(RCore *core, const char *parent, const char *name, RPanelsMenuCa
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);
 	if (!item->p) {
-		free (item);
+		__free_menu_item (item);
 		return;
 	}
 	item->p->model = R_NEW0 (RPanelModel);
 	item->p->view = R_NEW0 (RPanelView);
 	if (!item->p->model || !item->p->view) {
+		__free_menu_item (item);
 		return;
 	}
 	p_item->n_sub++;
@@ -4417,7 +4430,7 @@ void __add_menu(RCore *core, const char *parent, const char *name, RPanelsMenuCa
 		p_item->sub = sub;
 		p_item->sub[p_item->n_sub - 1] = item;
 	} else {
-		free (item);
+		__free_menu_item (item);
 	}
 }
 
@@ -4476,6 +4489,7 @@ void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *par
 	if (!buf) {
 		return;
 	}
+	free (p->model->title);
 	p->model->title = r_strbuf_drain (buf);
 	int new_w = r_str_bounds (p->model->title, &p->view->pos.h);
 	if (new_w < p->view->pos.w) {
@@ -4489,8 +4503,10 @@ void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *par
 }
 
 void __init_menu_saved_layout (void *_core, const char *parent) {
-	RList *dir = r_sys_dir (__get_panels_config_dir_path ());
+	char *dir_path = __get_panels_config_dir_path ();
+	RList *dir = r_sys_dir (dir_path);
 	if (!dir) {
+		free (dir_path);
 		return;
 	}
 	RCore *core = (RCore *)_core;
@@ -4502,6 +4518,7 @@ void __init_menu_saved_layout (void *_core, const char *parent) {
 		}
 	}
 	r_list_free (dir);
+	free (dir_path);
 }
 
 void __init_menu_color_settings_layout (void *_core, const char *parent) {
@@ -4531,19 +4548,20 @@ void __init_menu_disasm_settings_layout (void *_core, const char *parent) {
 	RList *list = __sorted_list (core, menus_settings_disassembly, COUNT (menus_settings_disassembly));
 	char *pos;
 	RListIter* iter;
+	RStrBuf *rsb = r_strbuf_new (NULL);
 	r_list_foreach (list, iter, pos) {
 		if (!strcmp (pos, "asm")) {
 			__add_menu (core, parent, pos, __open_menu_cb);
 			__init_menu_disasm_asm_settings_layout (core, "Settings.Disassembly.asm");
 		} else {
-			RStrBuf *rsb = r_strbuf_new (NULL);
-			r_strbuf_append (rsb, pos);
+			r_strbuf_set (rsb, pos);
 			r_strbuf_append (rsb, ": ");
 			r_strbuf_append (rsb, r_config_get (core->config, pos));
-			__add_menu (core, parent, r_strbuf_drain (rsb), __config_toggle_cb);
+			__add_menu (core, parent, r_strbuf_get (rsb), __config_toggle_cb);
 		}
 		i++;
 	}
+	r_strbuf_free (rsb);
 }
 
 static void __init_menu_disasm_asm_settings_layout(void *_core, const char *parent) {
@@ -4939,6 +4957,22 @@ void __free_all_panels(RPanels *panels) {
 		__free_single_panel (p);
 	}
 	free (panels->panel);
+}
+
+void __free_menu_item(RPanelsMenuItem *item) {
+	if (!item) {
+		return;
+	}
+	int i;
+	free (item->name);
+	free (item->p->model);
+	free (item->p->view);
+	free (item->p);
+	for (i = 0; i < item->n_sub; i++) {
+		__free_menu_item (item->sub[i]);
+	}
+	free (item->sub);
+	free (item);
 }
 
 void __refresh_core_offset (RCore *core) {
@@ -5364,7 +5398,7 @@ void __step_over_almighty_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const 
 
 void __mht_free_kv(HtPPKv *kv) {
 	free (kv->key);
-	free (kv->value);
+	__free_menu_item ((RPanelsMenuItem *)kv->value);
 }
 
 bool __init(RCore *core, RPanels *panels, int w, int h) {
@@ -5619,10 +5653,7 @@ void __restore_panel_pos(RPanel* panel) {
 }
 
 char *__get_panels_config_dir_path() {
-	char *config_path = r_str_new (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
-	char *new_config_path = r_str_home (config_path);
-	free (config_path);
-	return new_config_path;
+	return r_str_home (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
 }
 
 char *__create_panels_config_path(const char *file) {
@@ -5634,8 +5665,10 @@ char *__create_panels_config_path(const char *file) {
 }
 
 char *__get_panels_config_file_from_dir (const char *file) {
-	RList *dir = r_sys_dir (__get_panels_config_dir_path ());
-	if (!dir) {
+	char *dir_path = __get_panels_config_dir_path ();
+	RList *dir = r_sys_dir (dir_path);
+	if (!dir_path || !dir) {
+		free (dir_path);
 		return NULL;
 	}
 	char *tmp = NULL;
@@ -5649,11 +5682,7 @@ char *__get_panels_config_file_from_dir (const char *file) {
 	}
 	if (!tmp) {
 		r_list_free (dir);
-		return NULL;
-	}
-	char *dir_path = __get_panels_config_dir_path ();
-	if (!dir_path) {
-		r_list_free (dir);
+		free (dir_path);
 		return NULL;
 	}
 	char *ret = r_str_newf (R_JOIN_2_PATHS ("%s", "%s"), dir_path, tmp);
@@ -6082,8 +6111,10 @@ void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db) {
 						if (cb) {
 							((RPanelAlmightyCallback)cb) (core, panel, NONE, word);
 							__free_modal (&modal);
+							free (word);
 							break;
 						}
+						free (word);
 					}
 				}
 			}
@@ -6607,11 +6638,13 @@ void __panel_prompt(const char *prompt, char *buf, int len) {
 }
 
 char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y) {
-	RStrBuf *buf = r_strbuf_new (NULL);
-	r_strbuf_setf (buf, " %s", r_cons_canvas_to_string (panels->can));
-	char *R = r_str_ansi_crop (r_strbuf_get (buf), 0, y - 1, x + 1024, y);
+	RStrBuf rsb;
+	r_strbuf_init (&rsb);
+	char *cs = r_cons_canvas_to_string (panels->can);
+	r_strbuf_setf (&rsb, " %s", cs);
+	char *R = r_str_ansi_crop (r_strbuf_get (&rsb), 0, y - 1, x + 1024, y);
 	r_str_ansi_filter (R, NULL, NULL, -1);
-	char *r = r_str_ansi_crop (r_strbuf_drain (buf), x - 1, y - 1, x + 1024, y);
+	char *r = r_str_ansi_crop (r_strbuf_get (&rsb), x - 1, y - 1, x + 1024, y);
 	r_str_ansi_filter (r, NULL, NULL, -1);
 	char *pos = strstr (R, r);
 	if (!pos) {
@@ -6631,14 +6664,16 @@ char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y) {
 	char *res = strdup (sp);
 	free (r);
 	free (R);
+	free (cs);
+	r_strbuf_fini (&rsb);
 	return res;
 }
 
 char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y) {
-	char *s = r_cons_canvas_to_string (panels->can);
-	char *R = r_str_ansi_crop (s, 0, y - 1, x + 1024, y);
+	char *cs = r_cons_canvas_to_string (panels->can);
+	char *R = r_str_ansi_crop (cs, 0, y - 1, x + 1024, y);
 	r_str_ansi_filter (R, NULL, NULL, -1);
-	char *r = r_str_ansi_crop (s, x - 1, y - 1, x + 1024, y);
+	char *r = r_str_ansi_crop (cs, x - 1, y - 1, x + 1024, y);
 	r_str_ansi_filter (r, NULL, NULL, -1);
 	char *pos = strstr (R, r);
 	char *tmp = pos;
@@ -6661,6 +6696,7 @@ char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y) 
 	}
 	free (r);
 	free (R);
+	free (cs);
 	return ret;
 }
 
