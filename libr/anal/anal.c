@@ -126,10 +126,11 @@ R_API RAnal *r_anal_new(void) {
 		free (anal);
 		return NULL;
 	}
+	anal->ht_bbs = ht_up_new0 ();
+	anal->ht_fua = ht_up_new0 ();
+	anal->ht_fun = ht_pp_new0 ();
 	anal->os = strdup (R_SYS_OS);
-	anal->reflines = NULL;
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
-	anal->limit = NULL;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->gp = 0LL;
@@ -197,6 +198,9 @@ R_API RAnal *r_anal_free(RAnal *a) {
 		return NULL;
 	}
 	/* TODO: Free anals here */
+	ht_up_free (a->ht_bbs);
+	ht_up_free (a->ht_fua);
+	ht_pp_free (a->ht_fun);
 	set_u_free (a->visited);
 	free (a->cpu);
 	free (a->os);

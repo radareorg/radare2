@@ -1123,7 +1123,7 @@ R_API int r_core_visual_classes(RCore *core) {
 	int mode = 'c';
 	RBinClass *cur = NULL;
 	RBinSymbol *mur = NULL;
-	RBinField *fur = NULL;
+	//RBinField *fur = NULL;
 	void *ptr;
 	int oldcur = 0;
 	char *grep = NULL;
@@ -1142,7 +1142,7 @@ R_API int r_core_visual_classes(RCore *core) {
 		ptr = show_class (core, mode, &index, cur, grep, list);
 		switch (mode) {
 		case 'f':
-			fur = (RBinField*)ptr;
+			//fur = (RBinField*)ptr;
 			break;
 		case 'm':
 			mur = (RBinSymbol*)ptr;

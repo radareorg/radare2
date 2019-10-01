@@ -357,9 +357,9 @@ dotherax:
 	} else if (flags & (1 << 11)) { // -t
 		RList *split = r_str_split_list (str, "GMT", 0);
 		char *ts = r_list_head (split)->data;
-		char *gmt = NULL;
+		const char *gmt = NULL;
 		if (r_list_length (split) >= 2 && strlen (r_list_head (split)->n->data) > 2) {
-			gmt = (char *) r_list_head (split)->n->data + 2;
+			gmt = (const char*) r_list_head (split)->n->data + 2;
 		}
 		ut32 n = r_num_math (num, ts);
 		RPrint *p = r_print_new ();
