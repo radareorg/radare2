@@ -1037,6 +1037,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	char unk[128];
 	char archline[128];
 	RBinFile *binfile = r_bin_cur (bin);
+	RTable *table = r_table_new ();
 	const char *name = binfile? binfile->file: NULL;
 	int narch = binfile? binfile->narch: 0;
 
@@ -1076,6 +1077,8 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 		snprintf (unk, sizeof (unk), "unk_%d", i);
 		arch = unk;
 	}
+	r_table_hide_header (table);
+	r_table_set_columnsf (table, "nsnss", "num", "offset", "Object Size", "Arch", "Machine");
 
 	if (info && narch > 1) {
 		switch (mode) {
@@ -1090,8 +1093,8 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 					boffset, obj_size, machine);
 			break;
 		default:
-			bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%i %s\n", i,
-					boffset, obj_size, arch, bits, machine);
+			r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%" PFMT64x , boffset), obj_size, sdb_fmt("%s_%i", arch, bits), machine);
+			bin->cb_printf ("%s\n", r_table_tostring(table));
 		}
 		snprintf (archline, sizeof (archline) - 1,
 			"0x%08" PFMT64x ":%d:%s:%d:%s",
@@ -1112,8 +1115,8 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 						boffset, obj_size, machine);
 				break;
 			default:
-				bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%d\n", i,
-						boffset, obj_size, arch, bits);
+				r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%08" PFMT64x , boffset), obj_size, sdb_fmt("%s_%i", arch, bits), "");
+				bin->cb_printf ("%s\n", r_table_tostring(table));
 			}
 			snprintf (archline, sizeof (archline),
 				"0x%08" PFMT64x ":%d:%s:%d",
@@ -1131,8 +1134,8 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 						boffset, obj_size, machine);
 				break;
 			default:
-				bin->cb_printf ("%03i 0x%08" PFMT64x " %d unk_0\n", i,
-						boffset, obj_size);
+				r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%08" PFMT64x , boffset), obj_size, "", "");
+				bin->cb_printf ("%s\n", r_table_tostring(table));
 			}
 			snprintf (archline, sizeof (archline),
 				"0x%08" PFMT64x ":%d:%s:%d",
@@ -1145,6 +1148,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	if (mode == 'j') {
 		bin->cb_printf ("]");
 	}
+	r_table_free (table);
 }
 
 R_API void r_bin_set_user_ptr(RBin *bin, void *user) {

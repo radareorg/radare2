@@ -676,6 +676,10 @@ R_API bool r_table_query(RTable *t, const char *q) {
 }
 
 
+R_API bool r_table_hide_header (RTable *t) {
+	t->showHeader = false;
+}
+
 R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, int width, bool va) {
 	ut64 mul, min = -1, max = -1;
 	RListIter *iter;

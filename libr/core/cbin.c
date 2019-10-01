@@ -2028,6 +2028,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	bool firstexp = true;
 	bool printHere = false;
 	int i = 0, lastfs = 's';
+	RTable *table = r_core_table (r);
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (!info) {
 		return 0;
@@ -2061,7 +2062,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("Num Paddr      Vaddr      Bind     Type Size Name\n");
+		r_table_set_columnsf (table, "dssssds", "Num", "Paddr","Vaddr","Bind", "Type", "Size", "Name");
 	}
 
 
@@ -2246,14 +2247,15 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			const char *type = symbol->type? symbol->type: "NONE";
 			const char *name = r_str_get (sn.demname? sn.demname: r_symbol_name);
 			// const char *fwd = r_str_get (symbol->forwarder);
+
 			r_cons_printf ("%03u", symbol->ordinal);
 			if (symbol->paddr == UT64_MAX) {
 				r_cons_printf (" ----------");
 			} else {
 				r_cons_printf (" 0x%08"PFMT64x, symbol->paddr);
 			}
-			r_cons_printf (" 0x%08"PFMT64x" %6s %6s %4d%s%s\n",
-			               addr, bind, type, symbol->size, *name? " ": "", name);
+			r_table_add_rowf (table, "dssssds", symbol->ordinal, symbol->paddr == UT64_MAX ? " ----------": sdb_fmt (" 0x%08"PFMT64x, symbol->paddr),
+			    sdb_fmt("0x%08"PFMT64x, addr), bind, type, symbol->size, name);
 		}
 next:
 		snFini (&sn);
@@ -2265,6 +2267,9 @@ next:
 		if (printHere) {
 			break;
 		}
+	}
+	if (IS_MODE_NORMAL (mode)){
+		r_cons_printf ("%s\n", r_table_tofancystring (table));
 	}
 	if (count == 0 && IS_MODE_JSON (mode)) {
 		r_cons_printf ("{}");
@@ -2284,6 +2289,7 @@ next:
 	}
 
 	r_spaces_pop (&r->anal->meta_spaces);
+	r_table_free (table);
 	return true;
 }
 
