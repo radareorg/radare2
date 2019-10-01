@@ -207,7 +207,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 		pfx = "fcn";
 	}
 
-	RAnalFunction *f = r_anal_fcn_new ();
+	RAnalFunction *f = r_anal_fcn_new (core->anal);
 	if (!f) {
 		eprintf ("Failed to create new function\n");
 		return;

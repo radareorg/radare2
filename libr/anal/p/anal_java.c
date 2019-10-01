@@ -540,7 +540,7 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	// deallocate niceties
 	r_list_free (fcn->bbs);
-	fcn->bbs = r_anal_bb_list_new ();
+	fcn->bbs = r_list_newf ((RListFree)r_anal_block_unref);
 	java_new_method (fcn->addr);
 	state->current_fcn = fcn;
 	// Not a resource leak.  Basic blocks should be stored in the state->fcn
@@ -584,8 +584,7 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 
 	while (offset < buf_len) {
 		ut64 length = buf_len - offset;
-
-		RAnalFunction *fcn = r_anal_fcn_new ();
+		RAnalFunction *fcn = r_anal_fcn_new (anal);
 		fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 		result = analyze_from_code_buffer ( anal, fcn, addr, buffer+offset, length );
 		if (result == R_ANAL_RET_ERROR) {
@@ -634,7 +633,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 			if ((method && analyze_all) ||
 			    (check_addr_less_start (method, end) ||
 			     check_addr_in_code (method, end))) {
-				RAnalFunction *fcn = r_anal_fcn_new ();
+				RAnalFunction *fcn = r_anal_fcn_new (anal);
 				fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 				java_set_function_prototype (anal, fcn, method);
 				result = analyze_from_code_attr (anal, fcn, method, loadaddr);

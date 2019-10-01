@@ -4508,7 +4508,7 @@ static void ds_print_bbline(RDisasmState *ds) {
 		RAnalBlock *bb = NULL;
 		RAnalFunction *f_before = NULL;
 		if (ds->fcn) {
-			bb = r_anal_fcn_bbget_at (ds->fcn, ds->at);
+			bb = r_anal_fcn_bbget_at (ds->core->anal, ds->fcn, ds->at);
 		} else {
 			f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
 		}
