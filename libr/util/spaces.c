@@ -211,7 +211,10 @@ R_API bool r_spaces_rename(RSpaces *sp, const char *oname, const char *nname) {
 	};
 	r_event_send (sp->event, R_SPACE_EVENT_RENAME, &ev);
 
-	r_rbtree_delete (&sp->spaces, (void *)s->name, name_space_cmp, space_node_free, NULL);
-	r_spaces_add (sp, nname);
+	r_rbtree_delete (&sp->spaces, (void *)s->name, name_space_cmp, NULL, NULL);
+	free (s->name);
+	s->name = strdup (nname);
+	r_rbtree_insert (&sp->spaces, s, &s->rb, space_cmp, NULL);
+
 	return true;
 }
