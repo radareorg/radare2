@@ -23,21 +23,25 @@ environment:
     # VS2017 64
     - builder: vs2017_64
       PYTHON: 'C:\\Python37-x64'
+      INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
     # VS2019 64
     - builder: vs2019_64
       PYTHON: 'C:\\Python37-x64'
+      INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       BUILD_DIR: build
     # VS2017 64 (Dynamic linking)
     - builder: vs2017_64_dyn
       PYTHON: 'C:\\Python37'
+      INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
     # Clang-cl 64 (Dynamic linking)
     - builder: clang_cl_64_dyn
       PYTHON: 'C:\\Python37'
+      INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
 
@@ -86,7 +90,7 @@ test_script:
 
 after_test:
   - git clone https://github.com/radare/radare2-win-installer
-  - set PATH=%PATH%;"C:\\Program Files (x86)\\Inno Setup 6"
+  - set PATH=%PATH%;%INNO_SETUP%
   - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=%R2_VERSION%
   - move radare2-win-installer\Output\radare2.exe radare2_installer-%builder%.exe
 
