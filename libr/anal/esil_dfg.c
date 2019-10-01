@@ -27,7 +27,7 @@ void _dfg_node_free (RAnalEsilDFGNode *free_me) {
 }
 
 static bool _edf_reg_set(RAnalEsilDFG *edf, const char *reg, RGraphNode *node) {
-	return edf ? !!sdb_ptr_set (edf->latest_nodes, reg, node, 0) : false;
+	return edf ? !sdb_ptr_set (edf->latest_nodes, reg, node, 0) : false;
 }
 
 static void* _edf_reg_get(RAnalEsilDFG *edf, const char *reg) {
