@@ -26,11 +26,12 @@ void _dfg_node_free (RAnalEsilDFGNode *free_me) {
 	free (free_me);
 }
 
-static bool _edf_reg_set(RAnalEsilDFG *edf, char *reg, RGraphNode *node) {
-	return sdb_ptr_set (edf->latest_nodes, reg, node, 0) == 0;
+static bool _edf_reg_set(RAnalEsilDFG *edf, const char *reg, RGraphNode *node) {
+	return edf ? !!sdb_ptr_set (edf->latest_nodes, reg, node, 0) : false;
 }
-static void* _edf_reg_get(RAnalEsilDFG *edf, char *reg) {
-	return sdb_ptr_get (edf->latest_nodes, reg, 0);
+
+static void* _edf_reg_get(RAnalEsilDFG *edf, const char *reg) {
+	return edf ? sdb_ptr_get (edf->latest_nodes, reg, 0) : NULL;
 }
 
 static bool edf_consume_2_set_reg(RAnalEsil *esil);
