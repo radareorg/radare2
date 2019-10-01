@@ -553,6 +553,7 @@ static bool esil_zf(RAnalEsil *esil) {
 	return r_anal_esil_pushnum (esil, !(esil->cur & genmask (esil->lastsz - 1)));
 }
 
+// checks if there was a carry from bit x (x,$c)
 static bool esil_cf(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 
@@ -578,6 +579,7 @@ static bool esil_cf(RAnalEsil *esil) {
 	return r_anal_esil_pushnum (esil, (esil->cur & mask) < (esil->old & mask));
 }
 
+// checks if there was a borrow from bit x (x,$b)
 static bool esil_bf(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 
@@ -612,30 +614,31 @@ static bool esil_pf(RAnalEsil *esil) {
 	return r_anal_esil_pushnum (esil, !((((lsb * c1) & c2) % c3) & 1));
 }
 
+// like carry
+// checks overflow from bit x (x,$o)
+//	x,$o ===> x,$c,x-1,$c,^
 static bool esil_of(RAnalEsil *esil) {
-	char *p_size = r_anal_esil_pop (esil);
+	char *p_bit = r_anal_esil_pop (esil);
 
-	if (!p_size) {
+	if (!p_bit) {
 		return false;
 	}
 
-	if (r_anal_esil_get_parm_type (esil, p_size) != R_ANAL_ESIL_PARM_NUM) {
-		free (p_size);
+	if (r_anal_esil_get_parm_type (esil, p_bit) != R_ANAL_ESIL_PARM_NUM) {
+		free (p_bit);
 		return false;
 	}
-	ut64 size;
-	r_anal_esil_get_parm (esil, p_size, &size);
-	free (p_size);
+	ut64 bit;
+	r_anal_esil_get_parm (esil, p_bit, &bit);
+	free (p_bit);
 
-	if (size < 2) {
-		return false;
-	}
-	const ut64 m[2] = {genmask (size - 1), genmask (size - 2)};
+	const ut64 m[2] = {genmask (bit & 0x3f), genmask ((bit + 0x3f) & 0x3f)};
 	const ut64 result = ((esil->cur & m[0]) < (esil->old & m[0])) ^ ((esil->cur & m[1]) < (esil->old & m[1]));
 	ut64 res = r_anal_esil_pushnum (esil, result);
 	return res;
 }
 
+//checks sign bit at x (x,$s)
 static bool esil_sf(RAnalEsil *esil) {
 	char *p_size = r_anal_esil_pop (esil);
 
