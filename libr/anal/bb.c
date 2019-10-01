@@ -19,6 +19,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 		bb->stackptr = 0;
 		bb->parent_stackptr = INT_MAX;
 		bb->cmpval = UT64_MAX;
+		bb->fcns = r_list_newf ((RListFree)r_anal_function_unref);
 	}
 	return bb;
 }
@@ -30,6 +31,7 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 		r_anal_diff_free (bb->diff);
 		free (bb->op_bytes);
 		r_anal_switch_op_free (bb->switch_op);
+		r_list_free (bb->fcns);
 		free (bb->label);
 		free (bb->op_pos);
 		free (bb->parent_reg_arena);
@@ -37,11 +39,7 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 	}
 }
 
-R_API RList *r_anal_bb_list_new() {
-	return r_list_newf ((RListFree)r_anal_bb_free);
-}
-
-R_API inline int r_anal_bb_is_in_offset (RAnalBlock *bb, ut64 off) {
+R_API bool r_anal_bb_is_in_offset(RAnalBlock *bb, ut64 off) {
 	return (off >= bb->addr && off < bb->addr + bb->size);
 }
 
@@ -52,12 +50,13 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	const bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 	if (anal->opt.jmpmid && x86) {
 		RAnalBlock *nearest_bb = NULL;
+		// TODO: too slow. use the block api
 		r_list_foreach (anal->fcns, iter, fcn) {
 			r_list_foreach (fcn->bbs, iter2, bb) {
 				if (r_anal_bb_op_starts_at (bb, off)) {
 					return bb;
-				} else if (r_anal_bb_is_in_offset (bb, off)
-				           && (!nearest_bb || nearest_bb->addr < bb->addr)) {
+				}
+				if (r_anal_bb_is_in_offset (bb, off) && (!nearest_bb || nearest_bb->addr < bb->addr)) {
 					nearest_bb = bb;
 				}
 			}
