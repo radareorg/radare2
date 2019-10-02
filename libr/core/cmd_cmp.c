@@ -242,11 +242,18 @@ static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
 
 static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int mode) {
 	int i, eq = 0;
+    PJ *pj = NULL;
 	if (len < 1) {
 		return 0;
 	}
     if (mode == 'j') {
-        r_cons_printf ("{\"diff_bytes\":[");
+        pj = pj_new ();
+        if (!pj) {
+            return -1;
+        }
+        pj_o (pj);
+        pj_k (pj, "diff_bytes");
+        pj_a (pj);
     }
 	for (i = 0; i < len; i++) {
 		if (f[i] == d[i]) {
@@ -267,12 +274,12 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 				core->offset + i);
 			break;
         case 'j':
-            r_cons_printf ("{\"offset\":%d,"\
-                "\"rel_offset\":%d,"\
-                "\"value\":%d,"\
-                "\"cmp_value\":%d}",
-                core->offset + i, i, f[i], d[i]);
-            if (i != (len - 1)) r_cons_printf (",");
+            pj_o (pj);
+            pj_kn (pj, "offset", core->offset + i);
+            pj_ki (pj, "rel_offset", i);
+            pj_ki (pj, "value", (int)f[i]);
+            pj_ki (pj, "cmp_value", (int)d[i]);
+            pj_end (pj);
             break;
 
 		}
@@ -280,8 +287,12 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 	if (mode == 0) {
 		eprintf ("Compare %d/%d equal bytes (%d%%)\n", eq, len, (eq / len) * 100);
 	} else if (mode == 'j') {
-        r_cons_printf ("],\"equal_bytes\":%d,\"total_bytes\":%d}\n",
-            eq, len);
+        pj_end (pj);
+        pj_ki (pj, "equal_bytes", eq);
+        pj_ki (pj, "total_bytes", len);
+        pj_end (pj); // End array
+        pj_end (pj); // End object
+        r_cons_println (pj_string (pj));
     }
 	return len - eq;
 }
