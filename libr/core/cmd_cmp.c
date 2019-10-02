@@ -245,6 +245,9 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 	if (len < 1) {
 		return 0;
 	}
+    if (mode == 'j') {
+        r_cons_printf ("{\"diff_bytes\":[");
+    }
 	for (i = 0; i < len; i++) {
 		if (f[i] == d[i]) {
 			eq++;
@@ -263,12 +266,23 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 				d[i],
 				core->offset + i);
 			break;
+        case 'j':
+            r_cons_printf ("{\"offset\":%d,"\
+                "\"rel_offset\":%d,"\
+                "\"value\":%d,"\
+                "\"cmp_value\":%d}",
+                core->offset + i, i, f[i], d[i]);
+            if (i != (len - 1)) r_cons_printf (",");
+            break;
 
 		}
 	}
 	if (mode == 0) {
 		eprintf ("Compare %d/%d equal bytes (%d%%)\n", eq, len, (eq / len) * 100);
-	}
+	} else if (mode == 'j') {
+        r_cons_printf ("],\"equal_bytes\":%d,\"total_bytes\":%d}\n",
+            eq, len);
+    }
 	return len - eq;
 }
 
@@ -555,6 +569,18 @@ static int cmd_cmp(void *data, const char *input) {
 		free (str);
 	}
 	break;
+    case 'j':
+    {
+        if (input[1] != ' ') {
+            eprintf ("Usage: cj [string]\n");
+            return 0;
+        }
+		char *str = strdup (input + 2);
+		int len = r_str_unescape (str);
+		val = radare_compare (core, block, (ut8 *) str, len, 'j');
+		free (str);
+    }
+    break;
 	case 'x':
 		switch (input[1]) {
 		case ' ':
