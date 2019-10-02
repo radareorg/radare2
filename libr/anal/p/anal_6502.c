@@ -38,7 +38,7 @@ static void _6502_anal_update_flags(RAnalOp *op, int flags) {
 		r_strbuf_append (&op->esil, ",$z,Z,:=");
 	}
 	if (flags & _6502_FLAGS_N) {
-		r_strbuf_append (&op->esil, ",$s,N,:=");
+		r_strbuf_append (&op->esil, ",7,$s,N,:=");
 	}
 }
 
