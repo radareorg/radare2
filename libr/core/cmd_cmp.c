@@ -242,19 +242,19 @@ static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
 
 static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int mode) {
 	int i, eq = 0;
-    PJ *pj = NULL;
+	PJ *pj = NULL;
 	if (len < 1) {
 		return 0;
 	}
-    if (mode == 'j') {
-        pj = pj_new ();
-        if (!pj) {
-            return -1;
-        }
-        pj_o (pj);
-        pj_k (pj, "diff_bytes");
-        pj_a (pj);
-    }
+	if (mode == 'j') {
+		pj = pj_new ();
+		if (!pj) {
+			return -1;
+		}
+		pj_o (pj);
+		pj_k (pj, "diff_bytes");
+		pj_a (pj);
+	}
 	for (i = 0; i < len; i++) {
 		if (f[i] == d[i]) {
 			eq++;
@@ -273,27 +273,27 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 				d[i],
 				core->offset + i);
 			break;
-        case 'j':
-            pj_o (pj);
-            pj_kn (pj, "offset", core->offset + i);
-            pj_ki (pj, "rel_offset", i);
-            pj_ki (pj, "value", (int)f[i]);
-            pj_ki (pj, "cmp_value", (int)d[i]);
-            pj_end (pj);
-            break;
+		case 'j':
+			pj_o (pj);
+			pj_kn (pj, "offset", core->offset + i);
+			pj_ki (pj, "rel_offset", i);
+			pj_ki (pj, "value", (int)f[i]);
+			pj_ki (pj, "cmp_value", (int)d[i]);
+			pj_end (pj);
+			break;
 
 		}
 	}
 	if (mode == 0) {
 		eprintf ("Compare %d/%d equal bytes (%d%%)\n", eq, len, (eq / len) * 100);
 	} else if (mode == 'j') {
-        pj_end (pj);
-        pj_ki (pj, "equal_bytes", eq);
-        pj_ki (pj, "total_bytes", len);
-        pj_end (pj); // End array
-        pj_end (pj); // End object
-        r_cons_println (pj_string (pj));
-    }
+		pj_end (pj);
+		pj_ki (pj, "equal_bytes", eq);
+		pj_ki (pj, "total_bytes", len);
+		pj_end (pj); // End array
+		pj_end (pj); // End object
+		r_cons_println (pj_string (pj));
+	}
 	return len - eq;
 }
 
@@ -580,18 +580,18 @@ static int cmd_cmp(void *data, const char *input) {
 		free (str);
 	}
 	break;
-    case 'j':
-    {
-        if (input[1] != ' ') {
-            eprintf ("Usage: cj [string]\n");
-            return 0;
-        }
+	case 'j':
+	{
+	    if (input[1] != ' ') {
+	        eprintf ("Usage: cj [string]\n");
+	        return 0;
+	    }
 		char *str = strdup (input + 2);
 		int len = r_str_unescape (str);
 		val = radare_compare (core, block, (ut8 *) str, len, 'j');
 		free (str);
-    }
-    break;
+	}
+	break;
 	case 'x':
 		switch (input[1]) {
 		case ' ':
