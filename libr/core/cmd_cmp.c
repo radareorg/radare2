@@ -582,14 +582,14 @@ static int cmd_cmp(void *data, const char *input) {
 	break;
 	case 'j':
 	{
-	    if (input[1] != ' ') {
-	        eprintf ("Usage: cj [string]\n");
-	        return 0;
-	    }
-		char *str = strdup (input + 2);
-		int len = r_str_unescape (str);
-		val = radare_compare (core, block, (ut8 *) str, len, 'j');
-		free (str);
+		if (input[1] != ' ') {
+			eprintf ("Usage: cj [string]\n");
+		} else {
+			char *str = strdup (input + 2);
+			int len = r_str_unescape (str);
+			val = radare_compare (core, block, (ut8 *) str, len, 'j');
+			free (str);
+		}
 	}
 	break;
 	case 'x':
