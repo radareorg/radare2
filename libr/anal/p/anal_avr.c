@@ -308,7 +308,7 @@ INST_HANDLER (adc) {	// ADC Rd, Rr
 	ESIL_A ("$z,zf,:=,");
 	ESIL_A ("3,$c,hf,:=,");
 	ESIL_A ("7,$c,cf,:=,");
-	ESIL_A ("$o,vf,:=,");
+	ESIL_A ("7,$o,vf,:=,");
 	ESIL_A ("0x80,r%d,&,!,!,nf,:=", d);
 }
 
@@ -323,7 +323,7 @@ INST_HANDLER (add) {	// ADD Rd, Rr
 	ESIL_A ("$z,zf,:=,");
 	ESIL_A ("3,$c,hf,:=,");
 	ESIL_A ("7,$c,cf,:=,");
-	ESIL_A ("$o,vf,:=,");
+	ESIL_A ("7,$o,vf,:=,");
 	ESIL_A ("0x80,r%d,&,!,!,nf,:=,", d);
 }
 
@@ -336,7 +336,7 @@ INST_HANDLER (adiw) {	// ADIW Rd+1:Rd, K
 	op->val = k;
 	ESIL_A ("%d,r%d_r%d,+=,", k, d + 1, d);			// Rd+1_Rd + k
 								// FLAGS:
-	ESIL_A ("$o,vf,:=,");					// V
+	ESIL_A ("7,$o,vf,:=,");					// V
 	ESIL_A ("r%d_r%d,0x8000,&,!,!,nf,:=,", d + 1, d);	// N
 	ESIL_A ("$z,zf,:=,");					// Z
 	ESIL_A ("15,$c,cf,:=,");				// C
@@ -530,7 +530,7 @@ INST_HANDLER (cp) {	// CP Rd, Rr
 	ESIL_A ("$z,zf,:=,");
 	ESIL_A ("3,$b,hf,:=,");
 	ESIL_A ("8,$b,cf,:=,");
-	ESIL_A ("$o,vf,:=,");
+	ESIL_A ("7,$o,vf,:=,");
 	ESIL_A ("vf,nf,^,sf,:=");
 }
 
@@ -546,7 +546,7 @@ INST_HANDLER (cpc) {	// CPC Rd, Rr
 	ESIL_A ("$z,zf,:=,");
 	ESIL_A ("3,$b,hf,:=,");
 	ESIL_A ("8,$b,cf,:=,");
-	ESIL_A ("$o,vf,:=,");
+	ESIL_A ("7,$o,vf,:=,");
 	ESIL_A ("vf,nf,^,sf,:=");
 }
 
@@ -561,7 +561,7 @@ INST_HANDLER (cpi) { // CPI Rd, K
 	ESIL_A ("$z,zf,:=,");
 	ESIL_A ("3,$b,hf,:=,");
 	ESIL_A ("8,$b,cf,:=,");
-	ESIL_A ("$o,vf,:=,");
+	ESIL_A ("7,$o,vf,:=,");
 	ESIL_A ("vf,nf,^,sf,:=");
 }
 
@@ -600,7 +600,7 @@ INST_HANDLER (dec) {	// DEC Rd
 	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A ("0x1,r%d,-=,", d);			// Rd--
 							// FLAGS:
-	ESIL_A ("$o,vf,:=,");				// V
+	ESIL_A ("7,$o,vf,:=,");				// V
 	ESIL_A ("r%d,0x80,&,!,!,nf,:=,", d);		// N
 	ESIL_A ("$z,zf,:=,");				// Z
 	ESIL_A ("vf,nf,^,sf,:=,");			// S
@@ -756,7 +756,7 @@ INST_HANDLER (inc) {	// INC Rd
 	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A ("1,r%d,+=,", d);			// Rd++
 							// FLAGS:
-	ESIL_A ("$o,vf,:=,");				// V
+	ESIL_A ("7,$o,vf,:=,");				// V
 	ESIL_A ("r%d,0x80,&,!,!,nf,:=,", d);		// N
 	ESIL_A ("$z,zf,:=,");				// Z
 	ESIL_A ("vf,nf,^,sf,:=,");			// S
@@ -1206,7 +1206,7 @@ INST_HANDLER (sbc) {	// SBC Rd, Rr
 	ESIL_A ("$z,zf,:=,");
 	ESIL_A ("3,$b,hf,:=,");
 	ESIL_A ("8,$b,cf,:=,");
-	ESIL_A ("$o,vf,:=,");
+	ESIL_A ("7,$o,vf,:=,");
 	ESIL_A ("0x80,r%d,&,!,!,nf,:=,", d);
 	ESIL_A ("vf,nf,^,sf,:=");
 }
@@ -1223,7 +1223,7 @@ INST_HANDLER (sbci) {	// SBCI Rd, k
 	ESIL_A ("$z,zf,:=,");
 	ESIL_A ("3,$b,hf,:=,");
 	ESIL_A ("8,$b,cf,:=,");
-	ESIL_A ("$o,vf,:=,");
+	ESIL_A ("7,$o,vf,:=,");
 	ESIL_A ("0x80,r%d,&,!,!,nf,:=,", d);
 	ESIL_A ("vf,nf,^,sf,:=");
 }
@@ -1239,7 +1239,7 @@ INST_HANDLER (sub) {	// SUB Rd, Rr
 	ESIL_A ("$z,zf,:=,");
 	ESIL_A ("3,$b,hf,:=,");
 	ESIL_A ("8,$b,cf,:=,");
-	ESIL_A ("$o,vf,:=,");
+	ESIL_A ("7,$o,vf,:=,");
 	ESIL_A ("0x80,r%d,&,!,!,nf,:=,", d);
 	ESIL_A ("vf,nf,^,sf,:=");
 }
@@ -1256,7 +1256,7 @@ INST_HANDLER (subi) {	// SUBI Rd, k
 	ESIL_A ("$z,zf,:=,");
 	ESIL_A ("3,$b,hf,:=,");
 	ESIL_A ("8,$b,cf,:=,");
-	ESIL_A ("$o,vf,:=,");
+	ESIL_A ("7,$o,vf,:=,");
 	ESIL_A ("0x80,r%d,&,!,!,nf,:=,", d);
 	ESIL_A ("vf,nf,^,sf,:=");
 }
