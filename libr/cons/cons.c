@@ -1551,15 +1551,16 @@ R_API void r_cons_highlight(const char *word) {
 		strlen (inv[1])
 	};
 
-        if (!I.enable_highlight) {
-                r_cons_enable_highlight (true);
-                return;
-        }
+	if (!I.enable_highlight) {
+		r_cons_enable_highlight (true);
+		return;
+	}
 	if (word && *word && I.context->buffer) {
 		int word_len = strlen (word);
 		char *orig;
 		clean = r_str_ndup (I.context->buffer, I.context->buffer_len);
 		l = r_str_ansi_filter (clean, &orig, &cpos, -1);
+		free (I.context->buffer);
 		I.context->buffer = orig;
 		if (I.highlight) {
 			if (strcmp (word, I.highlight)) {
@@ -1579,7 +1580,7 @@ R_API void r_cons_highlight(const char *word) {
 		strcpy (rword + linv[0], word);
 		strcpy (rword + linv[0] + word_len, inv[1]);
 		res = r_str_replace_thunked (I.context->buffer, clean, cpos,
-					     l, word, rword, 1);
+					l, word, rword, 1);
 		if (res) {
 			I.context->buffer = res;
 			I.context->buffer_len = I.context->buffer_sz = strlen (res);
