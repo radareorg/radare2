@@ -13,7 +13,7 @@
 #define emitf(...) r_strbuf_appendf(&op->esil, __VA_ARGS__)
 //setting the appropriate flags, NOTE: semicolon included
 #define setZ r_strbuf_appendf(&op->esil, ",$z,Z,:=") //zero flag
-#define setN r_strbuf_appendf(&op->esil, ",$s,N,=") //negative(sign) flag
+#define setN r_strbuf_appendf(&op->esil, ",15,$s,N,=") //negative(sign) flag
 #define setV(val) r_strbuf_appendf(&op->esil, ",%s,V,=", val) //overflow flag
 #define setC_B r_strbuf_appendf(&op->esil, ",7,$c,C,:=") //carry flag for byte op
 #define setC_W r_strbuf_appendf(&op->esil, ",15,$c,C,:=") //carryflag for word op
