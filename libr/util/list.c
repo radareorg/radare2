@@ -72,6 +72,7 @@ R_API void r_list_purge(RList *list) {
 		r_list_delete (list, it);
 		it = next;
 	}
+	list->length = 0;
 	list->head = list->tail = NULL;
 }
 
@@ -159,6 +160,7 @@ R_API int r_list_join(RList *list1, RList *list2) {
 		list1->sorted = false;
 	}
 	list1->length += list2->length;
+	list2->length = 0;
 	list2->head = list2->tail = NULL;
 	return 1;
 }
