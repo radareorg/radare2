@@ -72,6 +72,7 @@ R_API void r_list_purge(RList *list) {
 		r_list_delete (list, it);
 		it = next;
 	}
+	list->length = 0;
 	list->head = list->tail = NULL;
 }
 
