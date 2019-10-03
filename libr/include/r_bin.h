@@ -401,10 +401,11 @@ typedef struct r_bin_trycatch_t {
 	ut64 from;
 	ut64 to;
 	ut64 handler;
+	ut64 filter;
 	// TODO: add type/name of exception
 } RBinTrycatch;
 
-R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler);
+R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter);
 R_API void r_bin_trycatch_free(RBinTrycatch *tc);
 
 typedef struct r_bin_plugin_t {
