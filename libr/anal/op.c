@@ -206,7 +206,7 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	nop->src[2] = r_anal_value_copy (op->src[2]);
 	nop->dst = r_anal_value_copy (op->dst);
 	r_strbuf_init (&nop->esil);
-	r_strbuf_set (&nop->esil, r_strbuf_get (&op->esil));
+	r_strbuf_copy (&nop->esil, &op->esil);
 	return nop;
 }
 
