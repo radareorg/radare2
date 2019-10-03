@@ -327,10 +327,6 @@ static RList *trycatch(RBinFile *bf) {
 	if (!tclist) {
 		return NULL;
 	}
-	RList *tmplist = r_list_newf (r_bin_trycatch_free);
-	if (!tmplist) {
-		goto err;
-	}
 
 	for (ut64 offset = expdir->VirtualAddress; offset < (ut64)expdir->VirtualAddress + expdir->Size; offset += sizeof (PE64_RUNTIME_FUNCTION)) {
 		PE64_RUNTIME_FUNCTION rfcn;
@@ -349,7 +345,8 @@ static RList *trycatch(RBinFile *bf) {
 		ut64 exceptionDataOff = baseAddr + rfcn.UnwindData + offsetof (PE64_UNWIND_INFO, UnwindCode) + sizeOfCodeEntries;
 
 		if (info.Flags & PE64_UNW_FLAG_CHAININFO) {
-			ut32 savedOff = rfcn.BeginAddress;
+			ut32 savedBeginOff = rfcn.BeginAddress;
+			ut32 savedEndOff = rfcn.EndAddress;
 			do {
 				r_io_read_at_mapped (io, exceptionDataOff, (ut8 *)&rfcn, sizeof (rfcn));
 				r_io_read_at_mapped (io, rfcn.UnwindData + baseAddr, (ut8 *)&info, sizeof (info));
@@ -360,7 +357,8 @@ static RList *trycatch(RBinFile *bf) {
 			if (!(info.Flags & PE64_UNW_FLAG_EHANDLER)) {
 				continue;
 			}
-			rfcn.BeginAddress = savedOff;
+			rfcn.BeginAddress = savedBeginOff;
+			rfcn.EndAddress = savedEndOff;
 		}
 
 		exceptionDataOff += sizeof (ut32);
@@ -373,21 +371,21 @@ static RList *trycatch(RBinFile *bf) {
 		for (int i = 0; i < tbl.Count; i++) {
 			scopeRecOff += i * sizeof (PE64_SCOPE_RECORD);
 			r_io_read_at_mapped (io, scopeRecOff, (ut8 *)&scope, sizeof (PE64_SCOPE_RECORD));
-			if (scope.BeginAddress == -1 || scope.BeginAddress == 0
-				|| !r_io_is_valid_offset (io, scope.BeginAddress + baseAddr, R_PERM_X)) {
-				r_list_purge (tmplist);
-				break;
+			if (!(scope.BeginAddress < scope.EndAddress
+				&& scope.BeginAddress >= rfcn.BeginAddress && scope.BeginAddress < rfcn.EndAddress
+				&& scope.EndAddress <= rfcn.EndAddress && scope.EndAddress > rfcn.BeginAddress)) {
+				continue;
 			}
+			ut64 handlerAddr = scope.HandlerAddress == 1 ? 0 : scope.HandlerAddress + baseAddr;
 			RBinTrycatch *tc = r_bin_trycatch_new (
 				rfcn.BeginAddress + baseAddr,
 				scope.BeginAddress + baseAddr,
 				scope.EndAddress + baseAddr,
 				scope.JumpTarget + baseAddr,
-				scope.HandlerAddress + baseAddr
+				handlerAddr
 			);
-			r_list_append (tmplist, tc);
+			r_list_append (tclist, tc);
 		}
-		r_list_join (tclist, tmplist);
 	}
 	return tclist;
 err:
