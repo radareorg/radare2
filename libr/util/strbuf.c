@@ -30,6 +30,25 @@ R_API void r_strbuf_init(RStrBuf *sb) {
 	memset (sb, 0, sizeof (RStrBuf));
 }
 
+R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
+	r_return_val_if_fail (dst && src, false);
+	if (src->ptr) {
+		char *p = malloc (src->ptrlen);
+		if (!p) {
+			return false;
+		}
+		memcpy (p, src->ptr, src->ptrlen);
+		free (dst->ptr);
+		dst->ptr = p;
+		dst->ptrlen = src->ptrlen;
+	} else {
+		R_FREE (dst->ptr);
+		memcpy (dst->buf, src->buf, sizeof (dst->buf));
+	}
+	dst->len = src->len;
+	return true;
+}
+
 R_API bool r_strbuf_reserve(RStrBuf *sb, int len) {
 	r_return_val_if_fail (sb && len > 0, false);
 
