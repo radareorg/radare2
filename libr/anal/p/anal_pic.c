@@ -829,7 +829,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->cycles = 1;
 		//TODO add support for dc flag
-		r_strbuf_setf (&op->esil, "0x%x,wreg,+=,$z,z,:=,$s,n,:=,7,$c,c,:=,$o,ov,:=,", *(ut16 *)buf & 0xff);
+		r_strbuf_setf (&op->esil, "0x%x,wreg,+=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xe: //movlw
 		op->type = R_ANAL_OP_TYPE_LOAD;
@@ -849,23 +849,23 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	case 0xb: //andlw
 		op->type = R_ANAL_OP_TYPE_AND;
 		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "0x%x,wreg,&=,$z,z,:=,$s,n,:=,", *(ut16 *)buf & 0xff);
+		r_strbuf_setf (&op->esil, "0x%x,wreg,&=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xa: //xorlw
 		op->type = R_ANAL_OP_TYPE_XOR;
 		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "0x%x,wreg,^=,$z,z,:=,$s,n,:=,", *(ut16 *)buf & 0xff);
+		r_strbuf_setf (&op->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0x9: //iorlw
 		op->type = R_ANAL_OP_TYPE_OR;
 		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "0x%x,wreg,^=,$z,z,:=,$s,n,:=,", *(ut16 *)buf & 0xff);
+		r_strbuf_setf (&op->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0x8: //sublw
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->cycles = 1;
 		//TODO add support for dc flag
-		r_strbuf_setf (&op->esil, "wreg,0x%x,-,wreg,=,$z,z,:=,$s,n,:=,7,$c,c,:=,$o,ov,:=,", *(ut16 *)buf & 0xff);
+		r_strbuf_setf (&op->esil, "wreg,0x%x,-,wreg,=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	};
 

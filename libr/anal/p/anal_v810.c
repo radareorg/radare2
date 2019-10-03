@@ -21,10 +21,10 @@ static void update_flags(RAnalOp *op, int flags) {
 		r_strbuf_append (&op->esil, ",31,$c,cy,:=");
 	}
 	if (flags & V810_FLAG_OV) {
-		r_strbuf_append (&op->esil, ",$o,ov,:=");
+		r_strbuf_append (&op->esil, ",31,$o,ov,:=");
 	}
 	if (flags & V810_FLAG_S) {
-		r_strbuf_append (&op->esil, ",$s,s,:=");
+		r_strbuf_append (&op->esil, ",31,$s,s,:=");
 	}
 	if (flags & V810_FLAG_Z) {
 		r_strbuf_append (&op->esil, ",$z,z,:=");
