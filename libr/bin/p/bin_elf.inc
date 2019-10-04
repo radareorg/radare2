@@ -180,7 +180,9 @@ static RList* sections(RBinFile *bf) {
 #else
 				int wordsize = 4;
 #endif
-				ptr->format = r_str_newf ("Cd %d[%d]", wordsize, section[i].size / wordsize);
+				if (!strstr (ptr->name, "plt")) {
+					ptr->format = r_str_newf ("Cd %d[%d]", wordsize, section[i].size / wordsize);
+				}
 			}
 			ptr->size = section[i].type != SHT_NOBITS ? section[i].size : 0;
 			ptr->vsize = section[i].size;
