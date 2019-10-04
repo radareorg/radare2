@@ -359,7 +359,7 @@ dotherax:
 		char *ts = r_list_head (split)->data;
 		char *gmt = NULL;
 		if (r_list_length (split) >= 2 && strlen (r_list_head (split)->n->data) > 2) {
-			gmt = r_list_head (split)->n->data + 2;
+			gmt = (const ut8*) r_list_head (split)->n->data + 2;
 		}
 		ut32 n = r_num_math (num, ts);
 		RPrint *p = r_print_new ();
