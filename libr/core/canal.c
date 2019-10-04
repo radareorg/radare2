@@ -981,8 +981,9 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	if (!op) {
 		return NULL;
 	}
-	if (addr >= core->offset && addr + 16 < core->offset + core->blocksize) {
-		int delta = (addr - core->offset);
+	int delta = (addr - core->offset);
+	int minopsz = 8;
+	if (delta > 0 && delta + minopsz < core->blocksize && addr >= core->offset && addr + 16 < core->offset + core->blocksize) {
 		ptr = core->block + delta;
 		len = core->blocksize - delta;
 		if (len < 1) {
