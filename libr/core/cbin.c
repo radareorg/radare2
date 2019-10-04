@@ -2269,7 +2269,7 @@ next:
 		}
 	}
 	if (IS_MODE_NORMAL (mode)){
-		r_cons_printf ("%s\n", r_table_tofancystring (table));
+		r_cons_printf ("\n%s\n", r_table_tofancystring (table));
 	}
 	if (count == 0 && IS_MODE_JSON (mode)) {
 		r_cons_printf ("{}");
@@ -2441,6 +2441,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	RList *sections;
 	RListIter *iter;
 	RListIter *last_processed = NULL;
+	RTable *table = r_core_table (r);
+	r_return_val_if_fail (table, false);
 	int i = 0;
 	int fd = -1;
 	bool printHere = false;
@@ -2481,7 +2483,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 		RTable *table = r_core_table (r);
 		r_table_visual_list (table, list, r->offset, -1, cols, r->io->va);
-		r_cons_printf ("\n%s\n", r_table_tostring (table));
+		r_cons_printf ("\n%s\n", r_table_tofancystring (table));
 		r_table_free (table);
 		r_list_free (list);
 		goto out;
@@ -2499,8 +2501,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		r_flag_space_set (r->flags, print_segments? R_FLAGS_FS_SEGMENTS: R_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("Nm Paddr       Size Vaddr      Memsz Perms %sName\n",
-                   chksum ? "Checksum          " : "");
+		if (chksum) {
+			r_table_set_columnsf (table, "nsnsnsss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms","Checksum", "Name");
+		} else {
+			r_table_set_columnsf (table, "nsnsnss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms", "Name");
+		}
 	}
 	if (IS_MODE_SET (mode)) {
 		r_list_foreach (sections, iter, section) {
@@ -2713,11 +2718,26 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				str[0] = 0;
 			}
 			if (r->bin->prefix) {
+				if (hashstr) {
+					r_table_add_row (table, "nsnsnsss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
+							 section->vsize, perms, hashstr, sdb_fmt("%s.%s", r->bin->prefix, section->name));
+				}else {
+					r_table_add_row (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
+							 section->vsize, perms, sdb_fmt("%s.%s", r->bin->prefix, section->name));
+				}
+
 				r_cons_printf ("%02i 0x%08"PFMT64x" %5"PFMT64d" 0x%08"PFMT64x" %5"PFMT64d" "
 					"%s %s%s%s.%s\n",
 					i, section->paddr, section->size, addr, section->vsize,
 					perms, str, hashstr ?hashstr : "", r->bin->prefix, section->name);
 			} else {
+				if (hashstr) {
+					r_table_add_rowf (table, "nsnsnsss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
+							 section->vsize, perms, hashstr, section->name);
+				}else {
+					r_table_add_rowf (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
+							 section->vsize, perms, section->name);
+				}
 				r_cons_printf ("%02i 0x%08"PFMT64x" %5"PFMT64d" 0x%08"PFMT64x" %5"PFMT64d" "
 					"%s %s%s%s\n",
 					i, section->paddr, (ut64)section->size, addr, (ut64)section->vsize,
@@ -2749,6 +2769,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 
 	ret = true;
 out:
+	if (IS_MODE_NORMAL (mode)) {
+		r_cons_printf ("\n%s\n", r_table_tofancystring (table));
+		r_table_free (table);
+	}
 	ht_pp_free (dup_chk_ht);
 	return ret;
 }

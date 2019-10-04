@@ -676,7 +676,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 }
 
 
-R_API bool r_table_hide_header (RTable *t) {
+R_API void r_table_hide_header (RTable *t) {
 	t->showHeader = false;
 }
 
