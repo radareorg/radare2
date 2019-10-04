@@ -5495,14 +5495,12 @@ static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
 			case R_ANAL_OP_TYPE_RET:
 				r_anal_op_free (op);
 				return false;
-			case R_ANAL_OP_TYPE_JMP: {
-				RAnalFunction *target_f = r_anal_get_fcn_in (core->anal, op->jump, 0);
-				if (!target_f || target_f->addr != f->addr) {
+			case R_ANAL_OP_TYPE_JMP:
+				if (!r_anal_fcn_in (f, op->jump)) {
 					r_anal_op_free (op);
 					return false;
 				}
 				break;
-			}
 		}
 		r_anal_op_free (op);
 	}
