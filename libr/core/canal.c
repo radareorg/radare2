@@ -5501,6 +5501,7 @@ static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
 					r_anal_op_free (op);
 					return false;
 				}
+				break;
 			}
 		}
 		r_anal_op_free (op);
