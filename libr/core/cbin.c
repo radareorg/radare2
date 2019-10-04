@@ -2720,7 +2720,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			if (r->bin->prefix) {
 				if (hashstr) {
 					r_table_add_row (table, "nsnsnsss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
-							 section->vsize, perms, hashstr, sdb_fmt("%s.%s", r->bin->prefix, section->name));
+							 section->vsize, perms, sdb_fmt("%s%s",str, hashstr), sdb_fmt("%s.%s", r->bin->prefix, section->name));
 				}else {
 					r_table_add_row (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
 							 section->vsize, perms, sdb_fmt("%s.%s", r->bin->prefix, section->name));
@@ -2733,7 +2733,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			} else {
 				if (hashstr) {
 					r_table_add_rowf (table, "nsnsnsss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
-							 section->vsize, perms, hashstr, section->name);
+							 section->vsize, perms, sdb_fmt("%s%s",str, hashstr), section->name);
 				}else {
 					r_table_add_rowf (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
 							 section->vsize, perms, section->name);
