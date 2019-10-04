@@ -1315,7 +1315,7 @@ static const ut8 *parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClas
 					if (dexdump) {
 						cb_printf ("        0x%04x - 0x%04x\n", start_addr, (start_addr + insn_count));
 					}
-					RBinTrycatch *tc = r_bin_trycatch_new (method_offset, try_from, try_to, try_catch);
+					RBinTrycatch *tc = r_bin_trycatch_new (method_offset, try_from, try_to, try_catch, 0);
 					r_list_append (bin->trycatch_list, tc);
 
 					//XXX tries_size is tainted and oob here
