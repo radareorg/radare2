@@ -296,7 +296,6 @@ static int do_help(int line) {
 static void algolist() {
 	ut64 bits;
 	ut64 i;
-	eprintf ("Available Hashes: \n");
 	for (i = 0; i < R_HASH_NBITS; i++) {
 		bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
@@ -304,12 +303,10 @@ static void algolist() {
 			printf ("h  %s\n", name);
 		}
 	}
-	eprintf ("\nAvailable Encoders/Decoders: \n");
 	// TODO: do not hardcode
 	printf ("e  base64\n");
 	printf ("e  base91\n");
 	printf ("e  punycode\n");
-	eprintf ("\nAvailable Crypto Algos: \n");
 	for (i = 0;; i++) {
 		bits = ((ut64) 1) << i;
 		const char *name = r_crypto_name (bits);
