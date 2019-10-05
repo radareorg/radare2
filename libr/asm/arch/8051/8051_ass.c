@@ -181,7 +181,7 @@ static bool get_arg(char const*multi, int n, char * dest)
  * returns true if the number of arguments in the args string is less than n
  */
 static bool n_args_lt(char const*args, int n) {
-	char *dest = malloc (strlen (args));
+	char *dest = malloc (strlen (args) + 1);
 	if (!args || n < 0) {
 		return false;
 	}
@@ -342,8 +342,8 @@ static bool address_direct(char const* addr_str, ut8* addr_out) {
  * attempts to parse the given string as a bit-address
  */
 static bool address_bit(char const* addr_str, ut8* addr_out) {
-	char *bitpart = malloc (strlen (addr_str));
-	char *bytepart = malloc (strlen (addr_str));
+	char *bitpart = malloc (strlen (addr_str) + 1);
+	char *bytepart = malloc (strlen (addr_str) + 1);
 	char const *separator = r_str_lchr (addr_str, '.');
 	ut8 byte;
 	int bit;
@@ -469,7 +469,7 @@ static bool mnem_add(char const*args, ut16 pc, ut8**out) {
 		add_immediate,
 		add_direct_or_register,
 	};
-	char *arg = malloc (strlen (args));
+	char *arg = malloc (strlen (args) + 1);
 	bool ret;
 	switch (match_prefix (args, (table) {
 		{ "a,@r",add_indirect },
@@ -509,7 +509,7 @@ static bool mnem_addc(char const*args, ut16 pc, ut8**out) {
 		addc_immediate,
 		addc_direct_or_register,
 	};
-	char *arg = malloc (strlen (args));
+	char *arg = malloc (strlen (args) + 1);
 	bool ret;
 	switch (match_prefix (args, (table){
 		{ "a,@r", addc_indirect },
@@ -564,7 +564,7 @@ static bool mnem_anl(char const*args, ut16 pc, ut8**out) {
 		anl_carry_inverted,
 		anl_carry,
 	};
-	char *arg = malloc (strlen (args));
+	char *arg = malloc (strlen (args) + 1);
 	bool ret;
 	switch(match_prefix(args, (table){
 		{ "a,@r", anl_indirect },
@@ -612,13 +612,13 @@ static bool mnem_anl(char const*args, ut16 pc, ut8**out) {
 		}
 	}
 	break; case -1: {
-		char *firstarg = malloc (strlen (args));
+		char *firstarg = malloc (strlen (args) + 1);
 		ut8 address;
 		if (!get_arg (args, 1, firstarg)
 			|| !address_direct (firstarg, &address)) {
 			ret = false;
 		}
-		char *secondarg = malloc (strlen (args));
+		char *secondarg = malloc (strlen (args) + 1);
 		if (!get_arg (args, 2, secondarg)) {
 			ret = false;
 			free (firstarg);
@@ -658,7 +658,7 @@ static bool mnem_cjne(char const*args, ut16 pc, ut8**out) {
 		cjne_register,
 	};
 
-	char *arg = malloc (strlen (args));
+	char *arg = malloc (strlen (args) + 1);
 	bool ret;
 	ut16 address;
 	if (!get_arg (args, 3, arg) || !to_address (arg, &address)
@@ -779,7 +779,7 @@ static bool mnem_div(char const*args, ut16 pc, ut8**out) {
 }
 
 static bool mnem_djnz(char const*args, ut16 pc, ut8**out) {
-	char *secondarg = malloc (strlen (args));
+	char *secondarg = malloc (strlen (args) + 1);
 	bool ret = true;
 	{
 		ut16 address;
@@ -795,7 +795,7 @@ static bool mnem_djnz(char const*args, ut16 pc, ut8**out) {
 	if (!ret) {
 		return ret;
 	}
-	char *firstarg = malloc (strlen (args));
+	char *firstarg = malloc (strlen (args) + 1);
 	ut8 address;
 	if (!get_arg (args, 1, firstarg)) {
 		ret = false;
@@ -834,7 +834,7 @@ static bool mnem_inc(char const*args, ut16 pc, ut8**out) {
 }
 
 static bool mnem_jb(char const*args, ut16 pc, ut8**out) {
-	char *secondarg = malloc (strlen (args));
+	char *secondarg = malloc (strlen (args) + 1);
 	{ ut16 address;
 	if (!get_arg (args, 2, secondarg)
 		|| !to_address (secondarg, &address)
@@ -843,7 +843,7 @@ static bool mnem_jb(char const*args, ut16 pc, ut8**out) {
 		return false;
 	} }
 	free (secondarg);
-	char *firstarg = malloc (strlen (args));
+	char *firstarg = malloc (strlen (args) + 1);
 	ut8 address;
 	if (!get_arg (args, 1, firstarg)
 		|| !address_bit (firstarg, &address)) {
@@ -858,7 +858,7 @@ static bool mnem_jb(char const*args, ut16 pc, ut8**out) {
 }
 
 static bool mnem_jbc(char const*args, ut16 pc, ut8**out) {
-	char *secondarg = malloc (strlen (args));
+	char *secondarg = malloc (strlen (args) + 1);
 	{ ut16 address;
 	if (!get_arg (args, 2, secondarg)) {
 		free (secondarg);
@@ -870,7 +870,7 @@ static bool mnem_jbc(char const*args, ut16 pc, ut8**out) {
 		return false;
 	} }
 	free (secondarg);
-	char *firstarg = malloc (strlen (args));
+	char *firstarg = malloc (strlen (args) + 1);
 	ut8 address;
 	if (!get_arg (args, 1, firstarg)
 		|| !address_bit (firstarg, &address)) {
@@ -889,7 +889,7 @@ static bool mnem_jc(char const*args, ut16 pc, ut8**out) {
 }
 
 static bool mnem_jnb(char const*args, ut16 pc, ut8**out) {
-	char *secondarg = malloc (strlen (args));
+	char *secondarg = malloc (strlen (args) + 1);
 	{
 		ut16 address;
 		if (!get_arg (args, 2, secondarg)
@@ -900,7 +900,7 @@ static bool mnem_jnb(char const*args, ut16 pc, ut8**out) {
 		}
 	}
 	free (secondarg);
-	char *firstarg = malloc (strlen (args));
+	char *firstarg = malloc (strlen (args) + 1);
 	ut8 address;
 	if( !get_arg (args, 1, firstarg)
 		|| !address_bit (firstarg, &address)) {
@@ -952,7 +952,7 @@ static bool mnem_ljmp(char const*args, ut16 pc, ut8**out) {
 
 static bool mnem_mov_c(char const*args, ut16 pc, ut8**out) {
 	char *arg;
-	arg = malloc (strlen (args));
+	arg = malloc (strlen (args) + 1);
 	if (!get_arg (args, 2, arg)) {
 		return false;
 	}
@@ -968,7 +968,7 @@ static bool mnem_mov(char const*args, ut16 pc, ut8**out) {
 		mov_a_direct_or_register,
 		mov_indirect_any,
 	};
-	char *arg = malloc (strlen (args));
+	char *arg = malloc (strlen (args) + 1);
 	bool ret;
 	switch (match_prefix (args, (table) {
 		{ "dptr,#", mov_dptr },
@@ -1031,8 +1031,8 @@ static bool mnem_mov(char const*args, ut16 pc, ut8**out) {
 		}
 	}
 	break; case -1: {
-		char *firstarg = malloc (strlen (args));
-		char *secondarg = malloc (strlen (args));
+		char *firstarg = malloc (strlen (args) + 1);
+		char *secondarg = malloc (strlen (args) + 1);
 		if (!get_arg (args, 1, firstarg)
 			|| !get_arg (args, 2, secondarg)) {
 			ret = false;
@@ -1118,7 +1118,7 @@ static bool mnem_movx(char const*args, ut16 pc, ut8**out) {
 		movx_dptr_write,
 	};
 	char *arg;
-	arg = malloc (strlen (args));
+	arg = malloc (strlen (args) + 1);
 	bool ret;
 
 	switch (match_prefix (args, (table){
@@ -1182,7 +1182,7 @@ static bool mnem_orl(char const*args, ut16 pc, ut8**out) {
 		orl_carry_inverted,
 		orl_carry,
 	};
-	char *arg = malloc (strlen (args));
+	char *arg = malloc (strlen (args) + 1);
 	bool ret;
 	switch (match_prefix (args, (table) {
 		{ "a,@r", orl_indirect },
@@ -1230,7 +1230,7 @@ static bool mnem_orl(char const*args, ut16 pc, ut8**out) {
 		}
 	}
 	break; case -1: {
-		char *firstarg = malloc (strlen (args));
+		char *firstarg = malloc (strlen (args) + 1);
 		ut8 address;
 		if (!get_arg (args, 1, firstarg)
 			|| !address_direct (firstarg, &address)) {
@@ -1238,7 +1238,7 @@ static bool mnem_orl(char const*args, ut16 pc, ut8**out) {
 			free (arg);
 			return false;
 		}
-		char *secondarg = malloc (strlen (args));
+		char *secondarg = malloc (strlen (args) + 1);
 		if (!get_arg (args, 2, secondarg)) {
 			free (firstarg);
 			free (secondarg);
@@ -1353,7 +1353,7 @@ static bool mnem_subb(char const*args, ut16 pc, ut8**out) {
 		subb_immediate,
 		subb_direct_or_register,
 	};
-	char *arg = malloc (strlen (args));
+	char *arg = malloc (strlen (args) + 1);
 	bool ret;
 	switch (match_prefix (args, (table) {
 		{ "a,@r", subb_indirect },
@@ -1398,7 +1398,7 @@ static bool mnem_xrl(char const*args, ut16 pc, ut8**out) {
 		xrl_immediate,
 		xrl_direct_or_register,
 	};
-	char *arg = malloc (strlen (args));
+	char *arg = malloc (strlen (args) + 1);
 	bool ret;
 	switch (match_prefix (args, (table) {
 		{ "a,@r", xrl_indirect },
@@ -1430,7 +1430,7 @@ static bool mnem_xrl(char const*args, ut16 pc, ut8**out) {
 		}
 	}
 	break; case -1: {
-		char *firstarg = malloc (strlen (args));
+		char *firstarg = malloc (strlen (args) + 1);
 		ut8 address;
 		if (!get_arg (args, 1, firstarg)
 			|| !address_direct (firstarg, &address)) {
@@ -1439,7 +1439,7 @@ static bool mnem_xrl(char const*args, ut16 pc, ut8**out) {
 		}
 		free (firstarg);
 		(*out)[1] = address; //FIXME: may not be 16 bit
-		char *secondarg = malloc (strlen (args));
+		char *secondarg = malloc (strlen (args) + 1);
 		if (!get_arg (args, 2, secondarg)) {
 			ret = false;
 		} else if (secondarg[0] == '#') {
@@ -1470,7 +1470,7 @@ static bool mnem_xch(char const*args, ut16 pc, ut8**out) {
 		xch_indirect,
 		xch_direct_or_register,
 	};
-	char *arg = malloc (strlen (args));
+	char *arg = malloc (strlen (args) + 1);
 	bool ret;
 	switch (match_prefix (args, (table) {
 		{ "a,@r", xch_indirect },
@@ -1498,7 +1498,7 @@ static bool mnem_xch(char const*args, ut16 pc, ut8**out) {
 }
 
 static bool mnem_xchd(char const*args, ut16 pc, ut8**out) {
-	char *arg = malloc (strlen (args));
+	char *arg = malloc (strlen (args) + 1);
 	bool ret;
 	if (!match_prefix (args, (table) { {"a,@r", true}, {0, false}})
 		|| !get_arg (args, 2, arg)) {
