@@ -1639,6 +1639,7 @@ bool __handle_zoom_mode(RCore *core, const int key) {
 	case ';':
 	case ' ':
 	case '_':
+	case '/':
 	case '"':
 	case 'A':
 	case 'r':
@@ -1846,6 +1847,7 @@ bool __handle_window_mode(RCore *core, const int key) {
 	case '"':
 	case ':':
 	case ';':
+	case '/':
 	case 'd':
 	case 'b':
 	case 'p':
