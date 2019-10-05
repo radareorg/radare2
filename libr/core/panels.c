@@ -3355,8 +3355,8 @@ int __clear_layout_cb(void *user) {
 	if (!__show_status_yesno (core, 0, "Clear all the saved layouts?(y/n): ")) {
 		return 0;
 	}
-	const char *dir_path = __get_panels_config_dir_path ();
-	RList *dir = r_sys_dir (dir_path);
+	char *dir_path = __get_panels_config_dir_path ();
+	RList *dir = r_sys_dir ((const char *)dir_path);
 	if (!dir) {
 		return 0;
 	}
