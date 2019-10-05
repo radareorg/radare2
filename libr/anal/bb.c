@@ -288,7 +288,7 @@ R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr) {
 R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr) {
 	RAnalBlock *bb;
 	RListIter *iter;
-	RAnalFunction *fcni = r_anal_get_fcn_at (anal, addr, 0);
+	RAnalFunction *fcni = r_anal_get_fcn_in_bounds (anal, addr, 0);
 	if (fcni) {
 		r_list_foreach (fcni->bbs, iter, bb) {
 			if (addr >= bb->addr && addr < bb->addr + bb->size) {
