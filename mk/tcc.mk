@@ -14,7 +14,7 @@ CFLAGS_OPT3=-O3
 LD?=ld
 
 ifeq ($(OSTYPE),darwin)
-PARTIALLD=${LD} -r -all_load
+PARTIALLD=${LD} -r -all_load -platform_version macos 10.14 10.14
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_SONAME=-Wl,-install_name,
 else

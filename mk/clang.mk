@@ -16,7 +16,7 @@ CFLAGS_DEBUG=-g
 
 ifeq ($(OSTYPE),darwin)
 ARCH=$(shell uname -m)
-PARTIALLD=ld -r -all_load
+PARTIALLD=ld -r -all_load -platform_version macos 10.14 10.14
 #CFLAGS+=-arch ${ARCH}
 #LDFLAGS+=-arch ${ARCH}
 LDFLAGS_LIB=-dynamiclib

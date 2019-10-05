@@ -20,7 +20,7 @@ ifeq ($(OSTYPE),darwin)
 ARCH=$(shell uname -m)
 #CFLAGS+=-arch ${ARCH}
 #LDFLAGS+=-arch ${ARCH}
-PARTIALLD=${LD} -r -all_load
+PARTIALLD=${LD} -r -all_load -arch ${ARCH} -platform_version macos 10.14 10.14
 CFLAGS+=-fno-common
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_SONAME=-Wl,-install_name,${LIBDIR}/
