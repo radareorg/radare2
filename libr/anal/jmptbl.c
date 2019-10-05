@@ -9,28 +9,28 @@
 
 static void queue_case(RAnal *anal, ut64 switch_addr, int offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
 	// eprintf ("** queue_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
-	anal->cmdtail = r_str_appendf (anal->cmdtail,
+	r_strbuf_appendf (anal->cmdtail,
 		"Cd %d @ 0x%08"PFMT64x"\n", offset_sz, case_addr_loc);
-	anal->cmdtail = r_str_appendf (anal->cmdtail,
+	r_strbuf_appendf (anal->cmdtail,
 		"ahi 10 @ 0x%08"PFMT64x"\n", case_addr_loc);
-	anal->cmdtail = r_str_appendf (anal->cmdtail,
+	r_strbuf_appendf (anal->cmdtail,
 		"axc 0x%"PFMT64x " 0x%"PFMT64x "\n",
 		(ut64)case_addr, (ut64)switch_addr);
-	anal->cmdtail = r_str_appendf (anal->cmdtail,
+	r_strbuf_appendf (anal->cmdtail,
 		"afbe 0x%"PFMT64x " 0x%"PFMT64x "\n",
 		(ut64)switch_addr, (ut64)case_addr);
-	// anal->cmdtail = r_str_appendf (anal->cmdtail,
+	// r_strbuf_appendf (anal->cmdtail,
 	// 	"aho case %d: from 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
 	// 	id, switch_addr, case_addr_loc);
-	// anal->cmdtail = r_str_appendf (anal->cmdtail,
+	// r_strbuf_appendf (anal->cmdtail,
 	// 	"CCu case %d: @ 0x%"PFMT64x "\n",
 	// 	id, case_addr);
-	anal->cmdtail = r_str_appendf (anal->cmdtail,
+	r_strbuf_appendf (anal->cmdtail,
 		"f case.0x%"PFMT64x ".%d 1 @ 0x%08"PFMT64x "\n",
 		(ut64)switch_addr, (int)id, (ut64)case_addr);
 }
 
-// analyze a jmptablle inside a function // maybe rename to r_anal_fcn_jmptbl() ? 
+// analyze a jmptablle inside a function // maybe rename to r_anal_fcn_jmptbl() ?
 R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr) {
 	const int depth = 50;
 	return try_walkthrough_jmptbl (anal, fcn, depth, jmpaddr, table, table, tablesize, tablesize, default_addr, 0);
@@ -110,14 +110,14 @@ R_API int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut6
 
 	if (offs > 0) {
 		// eprintf("\n\nSwitch statement at 0x%llx:\n", ip);
-		anal->cmdtail = r_str_appendf (anal->cmdtail,
+		r_strbuf_appendf (anal->cmdtail,
 			"CCu switch table (%d cases) at 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
 			(int)(offs/sz), jmptbl_loc, ip);
-		anal->cmdtail = r_str_appendf (anal->cmdtail,
+		r_strbuf_appendf (anal->cmdtail,
 			"f switch.0x%08"PFMT64x" 1 @ 0x%08"PFMT64x"\n",
 			ip, ip);
 		if (default_case != 0 && default_case != UT64_MAX) {
-			anal->cmdtail = r_str_appendf (anal->cmdtail,
+			r_strbuf_appendf (anal->cmdtail,
 					"f case.default.0x%"PFMT64x " 1 @ 0x%08"PFMT64x "\n",
 					default_case, default_case);
 		}
@@ -223,14 +223,14 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, int dept
 
 	if (offs > 0) {
 		// eprintf("\n\nSwitch statement at 0x%llx:\n", ip);
-		anal->cmdtail = r_str_appendf (anal->cmdtail,
+		r_strbuf_appendf (anal->cmdtail,
 			"CCu switch table (%d cases) at 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
 			offs / sz, jmptbl_loc, ip);
-		anal->cmdtail = r_str_appendf (anal->cmdtail,
+		r_strbuf_appendf (anal->cmdtail,
 			"f switch.0x%08"PFMT64x" 1 @ 0x%08"PFMT64x"\n",
 			ip, ip);
 		if (default_case != 0 && default_case != UT64_MAX && default_case != UT32_MAX) {
-			anal->cmdtail = r_str_appendf (anal->cmdtail,
+			r_strbuf_appendf (anal->cmdtail,
 				"f case.default.0x%"PFMT64x " 1 @ 0x%08"PFMT64x "\n",
 				default_case, default_case);
 		}
