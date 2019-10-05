@@ -623,9 +623,9 @@ R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr
 		case R_ANAL_OP_TYPE_RET:
 		case R_ANAL_OP_TYPE_JMP:
 			// eprintf ("CASE AT 0x%llx size %d\n", addr, idx + oplen);
-			anal->cmdtail = r_str_appendf (anal->cmdtail, "afb+ 0x%"PFMT64x " 0x%"PFMT64x " %d\n",
+			r_strbuf_appendf (anal->cmdtail, "afb+ 0x%"PFMT64x " 0x%"PFMT64x " %d\n",
 				fcn->addr, addr, idx + oplen);
-			anal->cmdtail = r_str_appendf (anal->cmdtail, "afbe 0x%"PFMT64x " 0x%"PFMT64x "\n",
+			r_strbuf_appendf (anal->cmdtail, "afbe 0x%"PFMT64x " 0x%"PFMT64x "\n",
 				addr_bbsw, addr);
 			return idx + oplen;
 		}
@@ -2276,7 +2276,7 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 	if (op->type == R_ANAL_OP_TYPE_XCHG) {
 		return is_bp_src || is_bp_dst;
 	}
-	return is_bp_dst; 
+	return is_bp_dst;
 }
 /*
  * This function checks whether any operation in a given function may change bp (excluding "mov bp, sp"
@@ -2308,7 +2308,7 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_MOV:
 				if (can_affect_bp (anal, &op) && op.src[0] && op.src[0]->reg && op.src[0]->reg->name
-				&& strcmp (op.src[0]->reg->name, anal->reg->name[R_REG_NAME_SP])) {	
+				&& strcmp (op.src[0]->reg->name, anal->reg->name[R_REG_NAME_SP])) {
 					fcn->bp_frame = false;
 				}
 				break;
