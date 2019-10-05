@@ -313,6 +313,86 @@ static void header(RBinFile *bf) {
 
 extern struct r_bin_write_t r_bin_write_pe64;
 
+static RList *trycatch(RBinFile *bf) {
+	RIO *io = bf->rbin->iob.io;
+	ut64 baseAddr = bf->o->baddr;
+	
+	struct PE_(r_bin_pe_obj_t) * bin = bf->o->bin_obj;
+	PE_(image_data_directory) *expdir = &bin->optional_header->DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION];
+	if (!expdir->Size) {
+		return NULL;
+	}
+
+	RList *tclist = r_list_newf (r_bin_trycatch_free);
+	if (!tclist) {
+		return NULL;
+	}
+
+	for (ut64 offset = expdir->VirtualAddress; offset < (ut64)expdir->VirtualAddress + expdir->Size; offset += sizeof (PE64_RUNTIME_FUNCTION)) {
+		PE64_RUNTIME_FUNCTION rfcn;
+		r_io_read_at_mapped (io, offset + baseAddr, (ut8 *)&rfcn, sizeof (rfcn));
+		if (!rfcn.BeginAddress) {
+			break;
+		}
+		PE64_UNWIND_INFO info;
+		r_io_read_at_mapped (io, rfcn.UnwindData + baseAddr, (ut8 *)&info, sizeof (info));
+		if (!(info.Flags & PE64_UNW_FLAG_EHANDLER) && !(info.Flags & PE64_UNW_FLAG_CHAININFO)) {
+			continue;
+		}
+
+		ut32 sizeOfCodeEntries = info.CountOfCodes % 2 ? info.CountOfCodes + 1 : info.CountOfCodes;
+		sizeOfCodeEntries *= sizeof (PE64_UNWIND_CODE);
+		ut64 exceptionDataOff = baseAddr + rfcn.UnwindData + offsetof (PE64_UNWIND_INFO, UnwindCode) + sizeOfCodeEntries;
+
+		if (info.Flags & PE64_UNW_FLAG_CHAININFO) {
+			ut32 savedBeginOff = rfcn.BeginAddress;
+			ut32 savedEndOff = rfcn.EndAddress;
+			do {
+				r_io_read_at_mapped (io, exceptionDataOff, (ut8 *)&rfcn, sizeof (rfcn));
+				r_io_read_at_mapped (io, rfcn.UnwindData + baseAddr, (ut8 *)&info, sizeof (info));
+				sizeOfCodeEntries = info.CountOfCodes % 2 ? info.CountOfCodes + 1 : info.CountOfCodes;
+				sizeOfCodeEntries *= sizeof (PE64_UNWIND_CODE);
+				exceptionDataOff = baseAddr + rfcn.UnwindData + offsetof (PE64_UNWIND_INFO, UnwindCode) + sizeOfCodeEntries;
+			} while (info.Flags & PE64_UNW_FLAG_CHAININFO);
+			if (!(info.Flags & PE64_UNW_FLAG_EHANDLER)) {
+				continue;
+			}
+			rfcn.BeginAddress = savedBeginOff;
+			rfcn.EndAddress = savedEndOff;
+		}
+
+		exceptionDataOff += sizeof (ut32);
+
+		PE64_SCOPE_TABLE tbl;
+		r_io_read_at_mapped (io, exceptionDataOff, (ut8 *)&tbl, sizeof (tbl));
+
+		PE64_SCOPE_RECORD scope;
+		ut64 scopeRecOff = exceptionDataOff + sizeof (tbl);
+		for (int i = 0; i < tbl.Count; i++) {
+			scopeRecOff += i * sizeof (PE64_SCOPE_RECORD);
+			r_io_read_at_mapped (io, scopeRecOff, (ut8 *)&scope, sizeof (PE64_SCOPE_RECORD));
+			if (!(scope.BeginAddress < scope.EndAddress
+				&& scope.BeginAddress >= rfcn.BeginAddress && scope.BeginAddress < rfcn.EndAddress
+				&& scope.EndAddress <= rfcn.EndAddress && scope.EndAddress > rfcn.BeginAddress)) {
+				continue;
+			}
+			ut64 handlerAddr = scope.HandlerAddress == 1 ? 0 : scope.HandlerAddress + baseAddr;
+			RBinTrycatch *tc = r_bin_trycatch_new (
+				rfcn.BeginAddress + baseAddr,
+				scope.BeginAddress + baseAddr,
+				scope.EndAddress + baseAddr,
+				scope.JumpTarget + baseAddr,
+				handlerAddr
+			);
+			r_list_append (tclist, tc);
+		}
+	}
+	return tclist;
+err:
+	r_list_free (tclist);
+	return NULL;
+}
+
 RBinPlugin r_bin_plugin_pe64 = {
 	.name = "pe64",
 	.desc = "PE64 (PE32+) bin plugin",
@@ -333,6 +413,7 @@ RBinPlugin r_bin_plugin_pe64 = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.get_vaddr = &get_vaddr,
+	.trycatch = &trycatch,
 	.write = &r_bin_write_pe64
 };
 

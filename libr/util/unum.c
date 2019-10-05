@@ -219,6 +219,10 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	} else if (!strncmp (str, "0xff..", 6) || !strncmp (str, "0xFF..", 6)) {
 		ret = r_num_tailff (num, str + 6);
 	// ugly as hell
+	} else if (!strncmp (str, "0o", 2)) {
+		if (sscanf (str + 2, "%"PFMT64o, &ret) != 1) {
+			error (num, "invalid octal number");
+		}
 	} else if (!strncmp (str, "0xf..", 5) || !strncmp (str, "0xF..", 5)) {
 		ret = r_num_tailff (num, str + 5);
 	} else if (str[0] == '0' && tolower (str[1]) == 'x') {

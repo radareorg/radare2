@@ -1034,7 +1034,10 @@ rep:
 			break;
 		case 'r':
 			if (input[2] ==' ') {
-				r_flag_space_rename (core->flags, NULL, input + 2);
+				char *newname = strdup (input + 3);
+				r_str_trim (newname);
+				r_flag_space_rename (core->flags, NULL, newname);
+				free (newname);
 			} else {
 				eprintf ("Usage: fsr [newname]\n");
 			}
@@ -1063,8 +1066,13 @@ rep:
 			}
 			break;
 		case ' ':
-			r_flag_space_set (core->flags, input+2);
+		{
+			char *name = strdup (input + 2);
+			r_str_trim (name);
+			r_flag_space_set (core->flags, name);
+			free (name);
 			break;
+		}
 		case 'm':
 			{ RFlagItem *f;
 			ut64 off = core->offset;

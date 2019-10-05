@@ -134,6 +134,7 @@ static void set_meta_min_if_needed(RAnalFunction *x) {
 			}
 		}
 		x->meta.min = min;
+		x->meta.max = max;
 		x->_size = max - min; // HACK TODO Fix af size calculation
 	}
 }
@@ -144,8 +145,9 @@ static int _fcn_tree_cmp(const void *a_, const RBNode *b_, void *user) {
 	const RAnalFunction *b = FCN_CONTAINER (b_);
 	set_meta_min_if_needed ((RAnalFunction *)a);
 	set_meta_min_if_needed ((RAnalFunction *)b);
-	ut64 from0 = a->meta.min, to0 = a->meta.min + a->_size, addr0 = a->addr;
-	ut64 from1 = b->meta.min, to1 = b->meta.min + b->_size, addr1 = b->addr;
+	ut32 size0 = a->meta.max - a->meta.min, size1 = b->meta.max - b->meta.min;
+	ut64 from0 = a->meta.min, to0 = a->meta.min + size0, addr0 = a->addr;
+	ut64 from1 = b->meta.min, to1 = b->meta.min + size1, addr1 = b->addr;
 	if (from0 != from1) {
 		return from0 < from1 ? -1 : 1;
 	}
@@ -172,7 +174,7 @@ static void _fcn_tree_calc_max_addr(RBNode *node) {
 	int i;
 	RAnalFunction *fcn = FCN_CONTAINER (node);
 	set_meta_min_if_needed (fcn);
-	fcn->rb_max_addr = fcn->meta.min + (fcn->_size == 0 ? 0 : fcn->_size - 1);
+	fcn->rb_max_addr = fcn->meta.min + (fcn->_size == 0 ? 0 : (fcn->meta.max - fcn->meta.min - 1));
 	for (i = 0; i < 2; i++) {
 		if (node->child[i]) {
 			RAnalFunction *fcn1 = FCN_CONTAINER (node->child[i]);
@@ -203,7 +205,7 @@ static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) 
 			continue;
 		}
 		if (x->meta.min <= to - 1) {
-			if (from <= x->meta.min + (x->_size == 0 ? 0 : x->_size - 1)) {
+			if (from <= x->meta.min + (x->_size == 0 ? 0 : (x->meta.max - x->meta.min - 1))) {
 				return x_;
 			}
 			if ((y_ = x_->child[1])) {
@@ -328,7 +330,7 @@ static void _fcn_tree_iter_next(FcnTreeIter *it, ut64 from, ut64 to) {
 			it->cur = NULL;
 			break;
 		}
-		if (from <= x->meta.min + (x->_size == 0 ? 0 : x->_size - 1)) {
+		if (from <= x->meta.min + (x->_size == 0 ? 0 : (x->meta.max - x->meta.min - 1))) {
 			it->cur = x_;
 			break;
 		}
@@ -2144,11 +2146,13 @@ R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb) {
 
 /* directly set the size of the function
  * if fcn is in ana RAnal's fcn_tree, the anal MUST be passed,
- * otherwise it can be NULL */
+ * otherwise it can be NULL
+ * IMPORTANT: this function should be removed, since it makes no sense to
+ * change the size of a function independently of its basic blocks */
 R_API void r_anal_fcn_set_size(RAnal *anal, RAnalFunction *fcn, ut32 size) {
 	r_return_if_fail (fcn);
 	fcn->_size = size;
-	if (anal) {
+	if (anal && r_anal_get_fcn_at (anal, fcn->addr, R_ANAL_FCN_TYPE_ROOT)) {
 		_fcn_tree_update_size (anal, fcn);
 	}
 }

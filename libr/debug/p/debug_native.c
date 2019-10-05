@@ -57,7 +57,7 @@ R_API RList *r_w32_dbg_maps(RDebug *);
 #if __KFBSD__ || __DragonFly__
 #include <sys/user.h>
 #include <libutil.h>
-#elif __OpenBSD__
+#elif __OpenBSD__ || __NetBSD__
 #include <sys/proc.h>
 #include <sys/sysctl.h>
 #endif
@@ -327,6 +327,7 @@ static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
 
 	kvm_t *kd = kvm_openfiles (NULL, NULL, NULL, KVM_NO_FILES, err);
 	if (!kd) {
+		free (rdi);
 		return NULL;
 	}
 
@@ -350,6 +351,54 @@ static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
 				rdi->status = R_DBG_PROC_RUN;
 		}
 
+	}
+
+	kvm_close (kd);
+
+	return rdi;
+#elif __NetBSD__
+	struct kinfo_proc2 *kp;
+	char err[_POSIX2_LINE_MAX];
+	int np;
+	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
+	if (!rdi) {
+		return NULL;
+	}
+
+	kvm_t *kd = kvm_openfiles (NULL, NULL, NULL, KVM_NO_FILES, err);
+	if (!kd) {
+		free (rdi);
+		return NULL;
+	}
+
+	kp = kvm_getproc2 (kd, KERN_PROC_PID, dbg->pid, sizeof(*kp), &np);
+	if (kp) {
+		rdi->pid = dbg->pid;
+		rdi->tid = dbg->tid;
+		rdi->uid = kp->p_uid;
+		rdi->gid = kp->p__pgid;
+		rdi->exe = strdup (kp->p_comm);
+
+		rdi->status = R_DBG_PROC_STOP;
+
+		switch (kp->p_stat) {
+			case SDEAD:
+				rdi->status = R_DBG_PROC_DEAD;
+				break;
+			case SSTOP:
+				rdi->status = R_DBG_PROC_STOP;
+				break;
+			case SZOMB:
+				rdi->status = R_DBG_PROC_ZOMBIE;
+				break;
+			case SACTIVE:
+			case SIDL:
+			case SDYING:
+				rdi->status = R_DBG_PROC_RUN;
+				break;
+			default:
+				rdi->status = R_DBG_PROC_SLEEP;
+		}
 	}
 
 	kvm_close (kd);

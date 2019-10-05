@@ -553,6 +553,7 @@ static bool esil_zf(RAnalEsil *esil) {
 	return r_anal_esil_pushnum (esil, !(esil->cur & genmask (esil->lastsz - 1)));
 }
 
+// checks if there was a carry from bit x (x,$c)
 static bool esil_cf(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 
@@ -578,6 +579,7 @@ static bool esil_cf(RAnalEsil *esil) {
 	return r_anal_esil_pushnum (esil, (esil->cur & mask) < (esil->old & mask));
 }
 
+// checks if there was a borrow from bit x (x,$b)
 static bool esil_bf(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 
@@ -612,21 +614,47 @@ static bool esil_pf(RAnalEsil *esil) {
 	return r_anal_esil_pushnum (esil, !((((lsb * c1) & c2) % c3) & 1));
 }
 
+// like carry
+// checks overflow from bit x (x,$o)
+//	x,$o ===> x,$c,x-1,$c,^
 static bool esil_of(RAnalEsil *esil) {
-	if (!esil || esil->lastsz < 2) {
+	char *p_bit = r_anal_esil_pop (esil);
+
+	if (!p_bit) {
 		return false;
 	}
-	const ut64 m[2] = {genmask (esil->lastsz - 1), genmask (esil->lastsz - 2)};
+
+	if (r_anal_esil_get_parm_type (esil, p_bit) != R_ANAL_ESIL_PARM_NUM) {
+		free (p_bit);
+		return false;
+	}
+	ut64 bit;
+	r_anal_esil_get_parm (esil, p_bit, &bit);
+	free (p_bit);
+
+	const ut64 m[2] = {genmask (bit & 0x3f), genmask ((bit + 0x3f) & 0x3f)};
 	const ut64 result = ((esil->cur & m[0]) < (esil->old & m[0])) ^ ((esil->cur & m[1]) < (esil->old & m[1]));
 	ut64 res = r_anal_esil_pushnum (esil, result);
 	return res;
 }
 
+//checks sign bit at x (x,$s)
 static bool esil_sf(RAnalEsil *esil) {
-	if (!esil || !esil->lastsz) {
+	char *p_size = r_anal_esil_pop (esil);
+
+	if (!p_size) {
 		return false;
 	}
-	ut64 res = r_anal_esil_pushnum (esil, (esil->cur >> (esil->lastsz - 1)) & 1);
+
+	if (r_anal_esil_get_parm_type (esil, p_size) != R_ANAL_ESIL_PARM_NUM) {
+		free (p_size);
+		return false;
+	}
+	ut64 size;
+	r_anal_esil_get_parm (esil, p_size, &size);
+	free (p_size);
+
+	ut64 res = r_anal_esil_pushnum (esil, (esil->cur >> size) & 1);
 	return res;
 }
 
@@ -689,7 +717,7 @@ static bool esil_weak_eq(RAnalEsil *esil) {
 		free (dst);
 		return true;
 	}
-	
+
 	free (src);
 	free (dst);
 	return false;
@@ -3100,14 +3128,14 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 #define	OT_REGW	R_ANAL_ESIL_OP_TYPE_REG_WRITE
 #define	OT_MEMW	R_ANAL_ESIL_OP_TYPE_MEM_WRITE
 #define	OT_MEMR	R_ANAL_ESIL_OP_TYPE_MEM_READ
-	
+
 	OP ("$", esil_interrupt, 0, 1, OT_UNK);		//hm, type seems a bit wrong
 	OP ("$z", esil_zf, 1, 0, OT_UNK);
 	OP ("$c", esil_cf, 1, 1, OT_UNK);
 	OP ("$b", esil_bf, 1, 1, OT_UNK);
 	OP ("$p", esil_pf, 1, 0, OT_UNK);
-	OP ("$s", esil_sf, 1, 0, OT_UNK);
-	OP ("$o", esil_of, 1, 0, OT_UNK);
+	OP ("$s", esil_sf, 1, 1, OT_UNK);
+	OP ("$o", esil_of, 1, 1, OT_UNK);
 	OP ("$ds", esil_ds, 1, 0, OT_UNK);
 	OP ("$jt", esil_jt, 1, 0, OT_UNK);
 	OP ("$js", esil_js, 1, 0, OT_UNK);

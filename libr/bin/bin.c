@@ -1453,13 +1453,14 @@ R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
 	return NULL;
 }
 
-R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler) {
+R_API RBinTrycatch *r_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter) {
 	RBinTrycatch *tc = R_NEW0 (RBinTrycatch);
 	if (tc) {
 		tc->source = source;
 		tc->from = from;
-		tc->to = to ;
+		tc->to = to;
 		tc->handler = handler;
+		tc->filter = filter;
 	}
 	return tc;
 }

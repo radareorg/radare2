@@ -368,13 +368,12 @@ SDB_API int sdb_add(Sdb* s, const char *key, const char *val, ut32 cas) {
 SDB_API bool sdb_exists(Sdb* s, const char *key) {
 	ut32 pos;
 	char ch;
-	SdbKv *kv;
 	bool found;
 	int klen = strlen (key) + 1;
 	if (!s) {
 		return false;
 	}
-	kv = (SdbKv*)sdb_ht_find_kvp (s->ht, key, &found);
+	SdbKv *kv = (SdbKv*)sdb_ht_find_kvp (s->ht, key, &found);
 	if (found && kv) {
 		char *v = sdbkv_value (kv);
 		return v && *v;

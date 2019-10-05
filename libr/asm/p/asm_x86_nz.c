@@ -2579,36 +2579,42 @@ static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 		return -1;
 	}
 	if (a->bits == 64) {
-		if (op->operands[0].type & OT_MEMORY ||
-			op->operands[1].type & OT_MEMORY) {
+		if (op->operands[0].type & OT_MEMORY &&
+			op->operands[0].reg_size & OT_DWORD) {
 			data[l++] = 0x67;
 		}
-		if (op->operands[0].type & OT_QWORD &&
-			op->operands[1].type & OT_QWORD) {
+		if (op->operands[0].type & OT_QWORD) {
 			if (op->operands[0].extended &&
-			    op->operands[1].extended) {
-					data[l++] = 0x4d;
-				} else {
-					data[l++] = 0x48;
-				}
+				op->operands[1].extended) {
+				data[l++] = 0x4d;
+			} else {
+				data[l++] = 0x48;
+			}
 		}
 	}
 
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (op->operands[0].type & OT_BYTE) {
 			data[l++] = 0xf6;
-			data[l++] = op->operands[0].regs[0];
-			data[l++] = op->operands[1].immediate;
-			return l;
+		} else {
+			if (op->operands[0].type & OT_WORD && a->bits != 16) {
+				data[l++] = 0x66;
+			}
+			data[l++] = 0xf7;
 		}
-		data[l++] = 0xf7;
 		if (op->operands[0].type & OT_MEMORY) {
-			data[l++] = 0x00 | op->operands[0].regs[0];
+			data[l++] = 0x00 | op->operands[0].reg;
 		} else {
 			data[l++] = 0xc0 | op->operands[0].reg;
 		}
 		data[l++] = op->operands[1].immediate >> 0;
+		if (op->operands[0].type & OT_BYTE) {
+			return l;
+		}
 		data[l++] = op->operands[1].immediate >> 8;
+		if (op->operands[0].type & OT_WORD) {
+			return l;
+		}
 		data[l++] = op->operands[1].immediate >> 16;
 		data[l++] = op->operands[1].immediate >> 24;
 		return l;
@@ -4522,15 +4528,15 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 			}
 		}
 	}
-	if (length == 2 && (token[1] == 'l' || token[1] == 'h')) {
-		for (i = 0; regs8[i]; i++) {
-			if (!r_str_ncasecmp (regs8[i], token, length)) {
-				*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
-				return i;
+	if (length == 2) {
+		if (token[1] == 'l' || token[1] == 'h') {
+			for (i = 0; regs8[i]; i++) {
+				if (!r_str_ncasecmp (regs8[i], token, length)) {
+					*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
+					return i;
+				}
 			}
 		}
-	}
-	if (length == 2) {
 		for (i = 0; regs16[i]; i++) {
 			if (!r_str_ncasecmp (regs16[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_WORD;
@@ -4570,58 +4576,47 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 			}
 		}
 	}
-
 	// Extended registers
 	if (!r_str_ncasecmp ("st", token, 2)) {
 		*type = (OT_FPUREG & ~OT_REGALL);
-		*pos = 3;
+		*pos = 2;
 	}
 	if (!r_str_ncasecmp ("mm", token, 2)) {
 		*type = (OT_MMXREG & ~OT_REGALL);
-		*pos = 3;
+		*pos = 2;
 	}
 	if (!r_str_ncasecmp ("xmm", token, 3)) {
 		*type = (OT_XMMREG & ~OT_REGALL);
-		*pos = 4;
+		*pos = 3;
 	}
-
 	// Now read number, possibly with parentheses
 	if (*type & (OT_FPUREG | OT_MMXREG | OT_XMMREG) & ~OT_REGALL) {
 		Register reg = X86R_UNDEFINED;
-
 		// pass by '(',if there is one
-		if (getToken (str, pos, &nextpos) == TT_SPECIAL && str[*pos] == '(') {
+		if (getToken (token, pos, &nextpos) == TT_SPECIAL && token[*pos] == '(') {
 			*pos = nextpos;
 		}
-
 		// read number
 		// const int maxreg = (a->bits == 64) ? 15 : 7;
-		if (getToken (str, pos, &nextpos) != TT_NUMBER ||
-				(reg = getnum (a, str + *pos)) > 7) {
-			if ((int)reg > 15) {
-				eprintf ("Too large register index!\n");
-				return X86R_UNDEFINED;
-			} else {
-				reg -= 8;
-			}
+		if (getToken (token, pos, &nextpos) != TT_NUMBER) {
+			eprintf ("Expected register number '%s'\n", str + *pos);
+			return X86R_UNDEFINED;
 		}
-
+		reg = getnum (a, token + *pos);
+		// st and mm go up to 7, xmm up to 15
+		if ((reg > 15) || ((*type & (OT_FPUREG | OT_MMXREG ) & ~OT_REGALL) && reg > 7))   {
+			eprintf ("Too large register index!\n");
+			return X86R_UNDEFINED;
+		}
 		*pos = nextpos;
 
 		// pass by ')'
-		if (getToken (str, pos, &nextpos) == TT_SPECIAL && str[*pos] == ')') {
+		if (getToken (token, pos, &nextpos) == TT_SPECIAL && token[*pos] == ')') {
 			*pos = nextpos;
-		}
-		// Safety to prevent a shift bigger than 31. Reg
-		// should never be > 8 anyway
-		if (reg > 7) {
-			eprintf ("Too large register index!\n");
-			return X86R_UNDEFINED;
 		}
 		*type |= (OT_REG (reg) & ~OT_REGTYPE);
 		return reg;
 	}
-
 	return X86R_UNDEFINED;
 }
 

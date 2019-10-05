@@ -716,6 +716,7 @@ static int rd_ld_nn(const char **p) {
 
 /* read argument of ld a, */
 static int rd_lda(const char **p) {
+#define A_N 7
 #define A_I 9
 #define A_R 10
 #define A_NN 11
@@ -1121,6 +1122,12 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					wrtb (0x57 + 8 * (r == A_R));
 					break;
 				}
+				if (r == A_N) {
+					char n = r_num_math (NULL, readbyte);
+					wrtb (0x3E);
+					wrtb (n);
+					break;
+				}
 				if (r < 0) {
 					wrtb (0x0A - 0x10 * ++r);
 					break;
@@ -1136,7 +1143,13 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				if (!(s = rd_ldbcdehla (&ptr))) {
 					break;
 				}
-				wrtb (0x40 + 0x08 * (r - 7) + (s - 1));
+				if (s == 7) {
+					char n = r_num_math(NULL, readbyte);
+					wrtb (0x08 * (r - 7) + 0x6);
+					wrtb (n);
+				} else {
+					wrtb (0x40 + 0x08 * (r -7) + (s - 1));
+				}
 				break;
 			case ldBC:
 			case ldDE:

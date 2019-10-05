@@ -815,9 +815,29 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				}
 				continue;
 			}
-			ptr = strchr (ptr_start, '#'); /* Comments */
-			if (ptr && !R_BETWEEN ('0', ptr[1], '9') && ptr[1] != '-') {
-				*ptr = '\0';
+			/* Comments */ {
+				bool likely_comment = true;
+				char*cptr = strchr (ptr_start, ',');
+				ptr = strchr (ptr_start, '#');
+				// a comma is probably not followed by a comment
+				// 8051 often uses #symbol notation as 2nd arg
+				if (cptr && ptr && cptr < ptr) {
+					likely_comment = false;
+					for (cptr += 1; cptr < ptr ; cptr += 1) {
+						if ( ! isspace ( *cptr)) {
+							likely_comment = true;
+							break;
+						}
+					}
+				}
+				// # followed by number literal also
+				// isn't likely to be a comment
+				likely_comment = likely_comment && ptr
+					&& !R_BETWEEN ('0', ptr[1], '9')
+					&& ptr[1] != '-' ;
+				if (likely_comment) {
+					*ptr = '\0';
+				}
 			}
 			r_asm_set_pc (a, a->pc + ret);
 			off = a->pc;

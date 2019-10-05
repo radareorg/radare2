@@ -2960,11 +2960,15 @@ R_API const char *r_str_pad(const char ch, int sz) {
 }
 
 R_API const char *r_str_repeat(const char *ch, int sz) {
-	RStrBuf *buf = r_strbuf_new (ch);
+	RStrBuf *buf;
 	int i;
 	if (sz < 0) {
 		sz = 0;
 	}
+	if (sz == 0) {
+		return strdup("");
+	}
+	buf = r_strbuf_new (ch);
 	for (i = 1; i < sz; ++i) {
 		r_strbuf_append (buf, ch);
 	}

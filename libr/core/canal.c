@@ -981,8 +981,9 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	if (!op) {
 		return NULL;
 	}
-	if (addr >= core->offset && addr + 16 < core->offset + core->blocksize) {
-		int delta = (addr - core->offset);
+	int delta = (addr - core->offset);
+	int minopsz = 8;
+	if (delta > 0 && delta + minopsz < core->blocksize && addr >= core->offset && addr + 16 < core->offset + core->blocksize) {
 		ptr = core->block + delta;
 		len = core->blocksize - delta;
 		if (len < 1) {
@@ -5495,6 +5496,12 @@ static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
 			case R_ANAL_OP_TYPE_RET:
 				r_anal_op_free (op);
 				return false;
+			case R_ANAL_OP_TYPE_JMP:
+				if (!r_anal_fcn_in (f, op->jump)) {
+					r_anal_op_free (op);
+					return false;
+				}
+				break;
 		}
 		r_anal_op_free (op);
 	}

@@ -2103,7 +2103,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_set_i (core->config, "asm.marks", false);
 	r_config_set_i (core->config, "asm.cmt.right", (opts & BODY_SUMMARY) || o_cmtright);
 	r_config_set_i (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
-	r_config_set_i (core->config, "asm.bytes", 
+	r_config_set_i (core->config, "asm.bytes",
 		(opts & (BODY_SUMMARY | BODY_OFFSETS)) || o_bytes || o_flags_in_bytes);
 	r_config_set_i (core->config, "asm.bb.middle", false);
 	core->print->cur_enabled = false;
@@ -3328,6 +3328,7 @@ static void agraph_update_title(RCore *core, RAGraph *g, RAnalFunction *fcn) {
 		fcn->addr, a? a->title: "", sig);
 	r_agraph_set_title (g, new_title);
 	free (new_title);
+	free (sig);
 }
 
 /* look for any change in the state of the graph
@@ -3544,7 +3545,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	if (r_config_get_i (core->config, "scr.scrollbar")) {
 		r_core_print_scrollbar (core);
 	}
-	
+
 	return res;
 }
 
@@ -3681,46 +3682,46 @@ R_API void r_agraph_set_title(RAGraph *g, const char *title) {
 }
 
 R_API RANode *r_agraph_add_node_with_color(const RAGraph *g, const char *title, const char *body, int color) {
-        RANode *res = r_agraph_get_node (g, title);
-        if (res) {
-                return res;
-        }
-        res = R_NEW0 (RANode);
-        if (!res) {
-                return NULL;
-        }
+	RANode *res = r_agraph_get_node (g, title);
+	if (res) {
+		return res;
+	}
+	res = R_NEW0 (RANode);
+	if (!res) {
+		return NULL;
+	}
 
-        res->title = title? r_str_trunc_ellipsis (title, 255) : strdup ("");
-        res->body = body? strdup (body): strdup ("");
-        res->layer = -1;
-        res->pos_in_layer = -1;
-        res->is_dummy = false;
-        res->is_reversed = false;
-        res->klass = -1;
-        res->difftype = color;
-        res->gnode = r_graph_add_node (g->graph, res);
-        sdb_num_set (g->nodes, res->title, (ut64) (size_t) res, 0);
-        if (res->title) {
-                char *s, *estr, *b;
-                size_t len;
-                sdb_array_add (g->db, "agraph.nodes", res->title, 0);
-                b = strdup (res->body);
-                len = strlen (b);
-                if (len > 0 && b[len - 1] == '\n') {
-                        b[len - 1] = '\0';
-                }
-                estr = sdb_encode ((const void *) b, -1);
-                //s = sdb_fmt ("base64:%s", estr);
-                s = r_str_newf ("base64:%s", estr);
-                free (estr);
-                free (b);
-                sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.body", res->title), s, 0);
-        }
-        return res;
+	res->title = title? r_str_trunc_ellipsis (title, 255) : strdup ("");
+	res->body = body? strdup (body): strdup ("");
+	res->layer = -1;
+	res->pos_in_layer = -1;
+	res->is_dummy = false;
+	res->is_reversed = false;
+	res->klass = -1;
+	res->difftype = color;
+	res->gnode = r_graph_add_node (g->graph, res);
+	sdb_num_set (g->nodes, res->title, (ut64) (size_t) res, 0);
+	if (res->title) {
+		char *s, *estr, *b;
+		size_t len;
+		sdb_array_add (g->db, "agraph.nodes", res->title, 0);
+		b = strdup (res->body);
+		len = strlen (b);
+		if (len > 0 && b[len - 1] == '\n') {
+			b[len - 1] = '\0';
+		}
+		estr = sdb_encode ((const void *) b, -1);
+		//s = sdb_fmt ("base64:%s", estr);
+		s = r_str_newf ("base64:%s", estr);
+		free (estr);
+		free (b);
+		sdb_set_owned (g->db, sdb_fmt ("agraph.nodes.%s.body", res->title), s, 0);
+	}
+	return res;
 }
 
 R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char *body) {
-        return r_agraph_add_node_with_color(g, title, body, -1);
+	return r_agraph_add_node_with_color(g, title, body, -1);
 }
 
 R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
@@ -4418,7 +4419,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			applyDisMode (core);
 			g->need_reload_nodes = true;
 			get_bbupdate (g, core, fcn);
-			break;	
+			break;
 		case 'u':
 		{
 			if (!fcn) {

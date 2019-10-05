@@ -355,10 +355,20 @@ dotherax:
 		printf ("%s\n", buf);
 		return true;
 	} else if (flags & (1 << 11)) { // -t
-		ut32 n = r_num_math (num, str);
+		RList *split = r_str_split_list (str, "GMT", 0);
+		char *ts = r_list_head (split)->data;
+		char *gmt = NULL;
+		if (r_list_length (split) >= 2 && strlen (r_list_head (split)->n->data) > 2) {
+			gmt = (const ut8*) r_list_head (split)->n->data + 2;
+		}
+		ut32 n = r_num_math (num, ts);
 		RPrint *p = r_print_new ();
+		if (gmt) {
+			p->datezone = r_num_math (num, gmt);
+		}
 		r_print_date_unix (p, (const ut8 *) &n, sizeof (ut32));
 		r_print_free (p);
+		r_list_free (split);
 		return true;
 	} else if (flags & (1 << 12)) { // -E
 		const int len = strlen (str);

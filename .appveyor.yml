@@ -4,9 +4,6 @@ version: git-{build}
 # Skip Github tags
 skip_tags: true
 
-# VM Template
-image: Visual Studio 2017
-
 # Clone depth
 clone_depth: 1
 
@@ -19,20 +16,33 @@ branches:
 environment:
   nodejs_version: "Stable"
   NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip
-  VSVARSALLPATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat'
+  VSVARSALLPATH2017: 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat'
+  VSVARSALLPATH2019: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat'
 
   matrix:
     # VS2017 64
     - builder: vs2017_64
       PYTHON: 'C:\\Python37-x64'
+      INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      BUILD_DIR: build
+    # VS2019 64
+    - builder: vs2019_64
+      PYTHON: 'C:\\Python37-x64'
+      INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       BUILD_DIR: build
     # VS2017 64 (Dynamic linking)
     - builder: vs2017_64_dyn
       PYTHON: 'C:\\Python37'
+      INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
     # Clang-cl 64 (Dynamic linking)
     - builder: clang_cl_64_dyn
       PYTHON: 'C:\\Python37'
+      INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
 
 # Init
@@ -54,11 +64,13 @@ install:
 build_script:
   - appveyor AddMessage "Compiling radare2 %R2_VERSION% (%builder%)"
 
-  - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --backend vs2017 --release --xp --install="%DIST_FOLDER%" --webui --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && python sys\meson.py --backend vs2017 --release --xp --install="%DIST_FOLDER%" --webui --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --release --shared --install="%DIST_FOLDER%" --webui && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2019_64 ( choco install mingw && refreshenv && set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && python sys\meson.py --backend vs2019 --release --install="%DIST_FOLDER%" --webui --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && set CC=clang-cl && python sys\meson.py --release --shared --install="%DIST_FOLDER%" --webui && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && python sys\meson.py --release --shared --install="%DIST_FOLDER%" --webui && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+
+  - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && set CC=clang-cl && python sys\meson.py --release --shared --install="%DIST_FOLDER%" --webui && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
 test_script:
   - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\msys64\mingw64\bin;%PATH%
@@ -78,7 +90,7 @@ test_script:
 
 after_test:
   - git clone https://github.com/radare/radare2-win-installer
-  - set PATH=%PATH%;"C:\\Program Files (x86)\\Inno Setup 5"
+  - set PATH=%PATH%;%INNO_SETUP%
   - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=%R2_VERSION%
   - move radare2-win-installer\Output\radare2.exe radare2_installer-%builder%.exe
 

@@ -1265,6 +1265,8 @@ typedef struct r_anal_esil_dfg_t {
 	ut32 idx;
 	Sdb *latest_nodes;
 	RGraph *flow;
+	RGraphNode *cur;
+	RGraphNode *old;
 } RAnalEsilDFG;
 
 typedef struct r_anal_esil_dfg_node_t {
