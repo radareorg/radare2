@@ -928,6 +928,15 @@ static bool parseOperands(char* str, ArmOp *op) {
 				op->operands[operand].mem_option = mem_opt;
 			}
 			break;
+		case '#':
+			if (token[1] == '-') {
+				op->operands[operand].sign = -1;
+			}
+			op->operands_count ++;
+			op->operands[operand].type = ARM_CONSTANT;
+			op->operands[operand].immediate = r_num_math (NULL, token + 1);
+			imm_count++;
+			break;
 		case '-':
 			op->operands[operand].sign = -1;
 			// falthru
