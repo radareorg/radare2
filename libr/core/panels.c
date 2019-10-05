@@ -3365,7 +3365,7 @@ int __clear_layout_cb(void *user) {
 	RListIter *it;
 	char *entry;
 	r_list_foreach (dir, it, entry) {
-		const char *tmp = r_str_newf ("%s%s%s", dir_path, R_SYS_DIR, entry);
+		char *tmp = r_str_newf ("%s%s%s", dir_path, R_SYS_DIR, entry);
 		r_file_rm (tmp);
 		free (tmp);
 	}
