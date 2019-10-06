@@ -1796,8 +1796,11 @@ static void ds_show_functions(RDisasmState *ds) {
 	if (f->type == R_ANAL_FCN_TYPE_LOC) {
 		r_cons_printf ("%s%s ", COLOR (ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-
-		r_cons_printf ("%s%s%s %d", COLOR (ds, color_floc),
-			fcn_name, COLOR_RESET (ds), r_anal_fcn_size (f));
+		if (!ds->show_fcnsig) {
+			r_cons_printf ("%s%s%s %d", COLOR (ds, color_floc),
+					fcn_name, COLOR_RESET (ds), r_anal_fcn_size (f));
+			ds_newline (ds);
+		}
 	} else {
 		const char *fcntype;
 		char cmt[32];
@@ -1821,14 +1824,18 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_lines_left (ds);
 			ds_print_offset (ds);
 		}
-		r_cons_printf ("%s(%s) %s%s%s %d", COLOR (ds, color_fname),
-			fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
+		if (!ds->show_fcnsig) {
+			r_cons_printf ("%s(%s) %s%s%s %d", COLOR (ds, color_fname),
+					fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
+			ds_newline (ds);
+		}
 	}
-	ds_newline (ds);
-	if (sign) {
-		ds_begin_line (ds);
-		r_cons_printf ("// %s", sign);
-		ds_newline (ds);
+	if (!ds->show_fcnsig) {
+		if (sign) {
+			ds_begin_line (ds);
+			r_cons_printf ("// %s", sign);
+			ds_newline (ds);
+		}
 	}
 	R_FREE (sign);
 	if (ds->show_lines_fcn) {
@@ -1849,10 +1856,12 @@ static void ds_show_functions(RDisasmState *ds) {
 		}
 	}
 
-	if (call && ds->show_fcnsig) {
-		ds_begin_line (ds);
-		r_cons_print (COLOR (ds, color_fline));
-		ds_print_pre (ds);
+	if (call) {
+		if (!ds->show_fcnsig) {
+			ds_begin_line (ds);
+			r_cons_print (COLOR (ds, color_fline));
+			ds_print_pre (ds);
+		}
 		r_cons_printf ("%s  ", COLOR_RESET (ds));
 		char *sig = r_anal_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
 		if (sig) {
@@ -5197,7 +5206,6 @@ toro:
 				if (len == l) {
 					break;
 				}
-				continue;
 			} else {
 				ds->lines--;
 				ds->addr += 1;
@@ -5205,8 +5213,8 @@ toro:
 				inc = 0; //delta;
 				idx = 0;
 				r_anal_op_fini (&ds->analop);
-				continue;
 			}
+			continue;
 		}
 		ds_show_comments_right (ds);
 		// TRY adding here
