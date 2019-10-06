@@ -16,7 +16,12 @@ CFLAGS_DEBUG=-g
 
 ifeq ($(OSTYPE),darwin)
 ARCH=$(shell uname -m)
-PARTIALLD=ld -r -all_load -platform_version macos 10.14 10.14
+XCODE_VERSION=$(shell xcodebuild -version|grep Xcode|grep -o "[\.0-9]\+")
+XCODE_VERSION_MAJOR = $(word 1, $(subst ., ,$(XCODE_VERSION)))
+PARTIALLD=${LD} -r -all_load
+ifeq ($(XCODE_VERSION_MAJOR),11)
+PARTIALLD+=-arch ${ARCH} -platform_version macos 10.14 10.14
+endif
 #CFLAGS+=-arch ${ARCH}
 #LDFLAGS+=-arch ${ARCH}
 LDFLAGS_LIB=-dynamiclib
