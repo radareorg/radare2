@@ -1861,8 +1861,9 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_begin_line (ds);
 			r_cons_print (COLOR (ds, color_fline));
 			ds_print_pre (ds);
+			r_cons_printf ("%s  ", COLOR_RESET (ds));
 		}
-		r_cons_printf ("%s  ", COLOR_RESET (ds));
+		r_cons_printf ("%d: ", r_anal_fcn_realsize (f));
 		char *sig = r_anal_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
 		if (sig) {
 			r_cons_print (sig);
