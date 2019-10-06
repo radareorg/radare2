@@ -109,7 +109,8 @@ static void init_state_struct(SStateInfo *state, char *buff_for_parsing);
 static EDemanglerErr get_type_code_string(char *sym, unsigned int *amount_of_read_chars, char **str_type_code);
 static int init_type_code_str_struct(STypeCodeStr *type_coder_str);
 static void free_type_code_str_struct(STypeCodeStr *type_code_str);
-char *get_num(SStateInfo *state);
+static int get_template(char *buf, SStrInfo *str_info);
+static char *get_num(SStateInfo *state);
 
 static void run_state(SStateInfo *state_info, STypeCodeStr *type_code_str) {
 	state_table[state_info->state](state_info, type_code_str);
@@ -179,6 +180,7 @@ int get_template_params(char *sym, unsigned int *amount_of_read_chars, char **st
 		}
 	} else {
 		if (strncmp (sym, "$", 1)) {
+			err = eDemanglerErrUncorrectMangledSymbol;
 			goto get_template_params_err;
 		}
 		sym++;
@@ -281,27 +283,155 @@ get_template_params_err:
 	return err;
 }
 
+static int get_operator_code(char *buf, RList *names_l) {
+	// C++ operator code (one character, or two if the first is '_')
+#define SET_OPERATOR_CODE(str) { \
+	str_info = (SStrInfo *) malloc (sizeof(SStrInfo)); \
+	if (!str_info) break; \
+	str_info->len = strlen (str); \
+	str_info->str_ptr = str; \
+	r_list_append (names_l, str_info); \
+}	
+	SStrInfo *str_info;
+	int read_len = 1;
+	switch (*++buf) {
+	case '0': SET_OPERATOR_CODE("constructor"); break;
+	case '1': SET_OPERATOR_CODE("~destructor"); break;
+	case '2': SET_OPERATOR_CODE("operator new"); break;
+	case '3': SET_OPERATOR_CODE("operator delete"); break;
+	case '4': SET_OPERATOR_CODE("operator="); break;
+	case '5': SET_OPERATOR_CODE("operator>>"); break;
+	case '6': SET_OPERATOR_CODE("operator<<"); break;
+	case '7': SET_OPERATOR_CODE("operator!"); break;
+	case '8': SET_OPERATOR_CODE("operator=="); break;
+	case '9': SET_OPERATOR_CODE("operator!="); break;
+	case 'A': SET_OPERATOR_CODE("operator[]"); break;
+	case 'C': SET_OPERATOR_CODE("operator->"); break;
+	case 'D': SET_OPERATOR_CODE("operator*"); break;
+	case 'E': SET_OPERATOR_CODE("operator++"); break;
+	case 'F': SET_OPERATOR_CODE("operator--"); break;
+	case 'G': SET_OPERATOR_CODE("operator-"); break;
+	case 'H': SET_OPERATOR_CODE("operator+"); break;
+	case 'I': SET_OPERATOR_CODE("operator&"); break;
+	case 'J': SET_OPERATOR_CODE("operator->*"); break;
+	case 'K': SET_OPERATOR_CODE("operator/"); break;
+	case 'L': SET_OPERATOR_CODE("operator%"); break;
+	case 'M': SET_OPERATOR_CODE("operator<"); break;
+	case 'N': SET_OPERATOR_CODE("operator<="); break;
+	case 'O': SET_OPERATOR_CODE("operator>"); break;
+	case 'P': SET_OPERATOR_CODE("operator>="); break;
+	case 'Q': SET_OPERATOR_CODE("operator,"); break;
+	case 'R': SET_OPERATOR_CODE("operator()"); break;
+	case 'S': SET_OPERATOR_CODE("operator~"); break;
+	case 'T': SET_OPERATOR_CODE("operator^"); break;
+	case 'U': SET_OPERATOR_CODE("operator|"); break;
+	case 'V': SET_OPERATOR_CODE("operator&"); break;
+	case 'W': SET_OPERATOR_CODE("operator||"); break;
+	case 'X': SET_OPERATOR_CODE("operator*="); break;
+	case 'Y': SET_OPERATOR_CODE("operator+="); break;
+	case 'Z': SET_OPERATOR_CODE("operator-="); break;
+	case '$':
+	{
+		int i = 0;
+		str_info = (SStrInfo *)malloc (sizeof(SStrInfo));
+		if (!str_info) {
+			break;
+		}
+		i = get_template (buf + 1, str_info);
+		if (!i) {
+			R_FREE (str_info);
+			return 0;
+		}
+		r_list_append (names_l, str_info);
+		buf += i;
+		read_len += i;
+		break;
+	}
+	case '_':
+		switch (*++buf) {
+		case '0': SET_OPERATOR_CODE ("operator/="); break;
+		case '1': SET_OPERATOR_CODE ("operator%="); break;
+		case '2': SET_OPERATOR_CODE ("operator>>="); break;
+		case '3': SET_OPERATOR_CODE ("operator<<="); break;
+		case '4': SET_OPERATOR_CODE ("operator&="); break;
+		case '5': SET_OPERATOR_CODE ("operator|="); break;
+		case '6': SET_OPERATOR_CODE ("operator^="); break;
+		case '7': SET_OPERATOR_CODE ("vftable"); break;
+		case '8': SET_OPERATOR_CODE ("vbtable"); break;
+		case '9': SET_OPERATOR_CODE ("vcall"); break;
+		case 'A': SET_OPERATOR_CODE ("typeof"); break;
+		case 'B': SET_OPERATOR_CODE ("local_static_guard"); break;
+		case 'C': SET_OPERATOR_CODE ("string"); break;
+		case 'D': SET_OPERATOR_CODE ("vbase_dtor"); break;
+		case 'E': SET_OPERATOR_CODE ("vector_dtor"); break;
+		case 'G': SET_OPERATOR_CODE ("scalar_dtor"); break;
+		case 'H': SET_OPERATOR_CODE ("vector_ctor_iter"); break;
+		case 'I': SET_OPERATOR_CODE ("vector_dtor_iter"); break;
+		case 'J': SET_OPERATOR_CODE ("vector_vbase_ctor_iter"); break;
+		case 'L': SET_OPERATOR_CODE ("eh_vector_ctor_iter"); break;
+		case 'M': SET_OPERATOR_CODE ("eh_vector_dtor_iter"); break;
+		case 'N': SET_OPERATOR_CODE ("eh_vector_vbase_ctor_iter"); break;
+		case 'O': SET_OPERATOR_CODE ("copy_ctor_closure"); break;
+		case 'S': SET_OPERATOR_CODE ("local_vftable"); break;
+		case 'T': SET_OPERATOR_CODE ("local_vftable_ctor_closure"); break;
+		case 'U': SET_OPERATOR_CODE ("operator new[]"); break;
+		case 'V': SET_OPERATOR_CODE ("operator delete[]"); break;
+		case 'X': SET_OPERATOR_CODE ("placement_new_closure"); break;
+		case 'Y': SET_OPERATOR_CODE ("placement_delete_closure"); break;
+		default:
+			r_list_free (names_l);
+			return 0;
+		}
+		read_len++;
+		break;
+	default:
+		r_list_free (names_l);
+		return 0;
+	}
+	read_len++;
+	return read_len;
+#undef SET_OPERATOR_CODE
+}
+
 ///////////////////////////////////////////////////////////////////////////////
-int get_template (char *buf, SStrInfo *str_info) {
+static int get_template(char *buf, SStrInfo *str_info) {
 	int len = 0;
 	unsigned int i = 0;
 	char *str_type_code = NULL;
-	char *tmp = strstr(buf, "@");
 	STypeCodeStr type_code_str;
 	// RListIter *it = NULL;
 	// RList *saved_abbr_names = abbr_names;	// save current abbr names, this
 
-	if (!tmp) {
-		goto get_template_err;
-	}
 	if (!init_type_code_str_struct(&type_code_str)) {
 		goto get_template_err;
 	}
 
-	// get/copy template len/name
-	len += (tmp - buf + 1);
-	copy_string(&type_code_str, buf, len - 1);
-	buf += len;
+	if (*buf == '?') {
+		RList *names_l = r_list_new ();
+		if (!names_l) {
+			return 0;
+		}
+		int i = get_operator_code (buf, names_l);
+		if (!i) {
+			r_list_free (names_l);
+			return 0;
+		}
+		len += i;
+		buf += i;
+		SStrInfo *name = r_list_head (names_l)->data;
+		copy_string(&type_code_str, name->str_ptr, name->len);
+		r_list_free (names_l);
+	} else {
+		char *tmp = strstr(buf, "@");
+		if (!tmp) {
+			goto get_template_err;
+		}
+
+		// get/copy template len/name
+		len += (tmp - buf + 1);
+		copy_string(&type_code_str, buf, len - 1);
+		buf += len;
+	}
 
 	if (*buf != '@') {
 		copy_string(&type_code_str, "<", 0);
@@ -327,7 +457,9 @@ int get_template (char *buf, SStrInfo *str_info) {
 		len = 0;
 		goto get_template_err;
 	}
-	copy_string (&type_code_str, ">", 0);
+	if (i) {
+		copy_string (&type_code_str, ">", 0);
+	}
 	buf++;
 	len++;
 
@@ -369,118 +501,14 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 
 	names_l = r_list_new ();
 
-#define SET_OPERATOR_CODE(str) { \
-	str_info = (SStrInfo *) malloc (sizeof(SStrInfo)); \
-	if (!str_info) break; \
-	str_info->len = strlen (str); \
-	str_info->str_ptr = str; \
-	r_list_append (names_l, str_info); \
-}
-
-	// C++ operator code (one character, or two if the first is '_')
 	if (*buf == '?') {
-		read_len++;
-		switch (*++buf)
-		{
-		case '0': SET_OPERATOR_CODE("constructor"); break;
-		case '1': SET_OPERATOR_CODE("~destructor"); break;
-		case '2': SET_OPERATOR_CODE("operator new"); break;
-		case '3': SET_OPERATOR_CODE("operator delete"); break;
-		case '4': SET_OPERATOR_CODE("operator="); break;
-		case '5': SET_OPERATOR_CODE("operator>>"); break;
-		case '6': SET_OPERATOR_CODE("operator<<"); break;
-		case '7': SET_OPERATOR_CODE("operator!"); break;
-		case '8': SET_OPERATOR_CODE("operator=="); break;
-		case '9': SET_OPERATOR_CODE("operator!="); break;
-		case 'A': SET_OPERATOR_CODE("operator[]"); break;
-		case 'C': SET_OPERATOR_CODE("operator->"); break;
-		case 'D': SET_OPERATOR_CODE("operator*"); break;
-		case 'E': SET_OPERATOR_CODE("operator++"); break;
-		case 'F': SET_OPERATOR_CODE("operator--"); break;
-		case 'G': SET_OPERATOR_CODE("operator-"); break;
-		case 'H': SET_OPERATOR_CODE("operator+"); break;
-		case 'I': SET_OPERATOR_CODE("operator&"); break;
-		case 'J': SET_OPERATOR_CODE("operator->*"); break;
-		case 'K': SET_OPERATOR_CODE("operator/"); break;
-		case 'L': SET_OPERATOR_CODE("operator%"); break;
-		case 'M': SET_OPERATOR_CODE("operator<"); break;
-		case 'N': SET_OPERATOR_CODE("operator<="); break;
-		case 'O': SET_OPERATOR_CODE("operator>"); break;
-		case 'P': SET_OPERATOR_CODE("operator>="); break;
-		case 'Q': SET_OPERATOR_CODE("operator,"); break;
-		case 'R': SET_OPERATOR_CODE("operator()"); break;
-		case 'S': SET_OPERATOR_CODE("operator~"); break;
-		case 'T': SET_OPERATOR_CODE("operator^"); break;
-		case 'U': SET_OPERATOR_CODE("operator|"); break;
-		case 'V': SET_OPERATOR_CODE("operator&"); break;
-		case 'W': SET_OPERATOR_CODE("operator||"); break;
-		case 'X': SET_OPERATOR_CODE("operator*="); break;
-		case 'Y': SET_OPERATOR_CODE("operator+="); break;
-		case 'Z': SET_OPERATOR_CODE("operator-="); break;
-		case '$':
-		{
-			int i = 0;
-			str_info = (SStrInfo *) malloc (sizeof(SStrInfo));
-			if (!str_info) {
-				break;
-			}
-			i = get_template (buf + 1, str_info);
-			if (!i) {
-				R_FREE (str_info);
-				read_len--;
-				goto get_namespace_and_name_err;
-			}
-			r_list_append (names_l, str_info);
-			buf += i;
-			read_len += i;
-			break;
-		}
-		case '_':
-			switch (*++buf)
-			{
-			case '0': SET_OPERATOR_CODE ("operator/="); break;
-			case '1': SET_OPERATOR_CODE ("operator%="); break;
-			case '2': SET_OPERATOR_CODE ("operator>>="); break;
-			case '3': SET_OPERATOR_CODE ("operator<<="); break;
-			case '4': SET_OPERATOR_CODE ("operator&="); break;
-			case '5': SET_OPERATOR_CODE ("operator|="); break;
-			case '6': SET_OPERATOR_CODE ("operator^="); break;
-			case '7': SET_OPERATOR_CODE ("vftable"); break;
-			case '8': SET_OPERATOR_CODE ("vbtable"); break;
-			case '9': SET_OPERATOR_CODE ("vcall"); break;
-			case 'A': SET_OPERATOR_CODE ("typeof"); break;
-			case 'B': SET_OPERATOR_CODE ("local_static_guard"); break;
-			case 'C': SET_OPERATOR_CODE ("string"); break;
-			case 'D': SET_OPERATOR_CODE ("vbase_dtor"); break;
-			case 'E': SET_OPERATOR_CODE ("vector_dtor"); break;
-			case 'G': SET_OPERATOR_CODE ("scalar_dtor"); break;
-			case 'H': SET_OPERATOR_CODE ("vector_ctor_iter"); break;
-			case 'I': SET_OPERATOR_CODE ("vector_dtor_iter"); break;
-			case 'J': SET_OPERATOR_CODE ("vector_vbase_ctor_iter"); break;
-			case 'L': SET_OPERATOR_CODE ("eh_vector_ctor_iter"); break;
-			case 'M': SET_OPERATOR_CODE ("eh_vector_dtor_iter"); break;
-			case 'N': SET_OPERATOR_CODE ("eh_vector_vbase_ctor_iter"); break;
-			case 'O': SET_OPERATOR_CODE ("copy_ctor_closure"); break;
-			case 'S': SET_OPERATOR_CODE ("local_vftable"); break;
-			case 'T': SET_OPERATOR_CODE ("local_vftable_ctor_closure"); break;
-			case 'U': SET_OPERATOR_CODE ("operator new[]"); break;
-			case 'V': SET_OPERATOR_CODE ("operator delete[]"); break;
-			case 'X': SET_OPERATOR_CODE ("placement_new_closure"); break;
-			case 'Y': SET_OPERATOR_CODE ("placement_delete_closure"); break;
-			default:
-				r_list_free (names_l);
-				return 0;
-			}
-			read_len++;
-		break;
-		default:
-			r_list_free (names_l);
+		int res = get_operator_code (buf, names_l);
+		if (!res) {
 			return 0;
 		}
-		buf++;
-		read_len++;
+		buf += res;
+		read_len += res;
 	}
-#undef SET_OPERATOR_CODE
 
 	prev_pos = buf;
 	curr_pos = strchr (buf, '@');
@@ -763,7 +791,7 @@ DEF_STATE_ACTION(V)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-char* get_num(SStateInfo *state)
+static char *get_num(SStateInfo *state)
 {
 	char *ptr = NULL;
 	if (*state->buff_for_parsing >= '0' && *state->buff_for_parsing <= '8') {
@@ -1369,7 +1397,6 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 	// when some find the case where it is used please remove this (void)*
 	// lines
 	(void)is_static;
-	(void)memb_func_access_code;
 
 	if (err != eDemanglerErrOK) {
 		goto parse_microsoft_mangled_name_err;
@@ -1525,6 +1552,10 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 			R_FREE (str_arg);
 		}
 		copy_string (&func_str, ")", 0);
+	}
+
+	if (memb_func_access_code) {
+			copy_string (&func_str, memb_func_access_code, 0);
 	}
 
 	if (__64ptr) {
