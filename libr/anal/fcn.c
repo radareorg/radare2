@@ -16,9 +16,6 @@ extern bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_
 #define JMPTBL_MAXFCNSIZE 4096
 #define BB_ALIGN 0x10
 
-/* speedup analysis by removing some function overlapping checks */
-#define JAYRO_04 1
-
 // 16 KB is the maximum size for a basic block
 #define MAX_FLG_NAME_SIZE 64
 
@@ -1557,31 +1554,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 			eprintf ("Failed to analyze basic block at 0x%"PFMT64x"\n", addr);
 		}
 	}
-	if (anal->opt.endsize && ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {   // cfg analysis completed
-		RListIter *iter;
-		RAnalBlock *bb;
-		ut64 endaddr = fcn->addr;
-		const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
-
-		// set function size as length of continuous sequence of bbs
-		r_list_sort (fcn->bbs, &cmpaddr);
-		r_list_foreach (fcn->bbs, iter, bb) {
-			if (endaddr == bb->addr) {
-				endaddr += bb->size;
-			} else if ((endaddr < bb->addr && bb->addr - endaddr < BB_ALIGN)
-			           || (anal->opt.jmpmid && is_x86 && endaddr > bb->addr
-			               && bb->addr + bb->size > endaddr)) {
-				endaddr = bb->addr + bb->size;
-			} else {
-				break;
-			}
-		}
-#if JAYRO_04
-		// fcn is not yet in anal => pass NULL
-		r_anal_fcn_resize (anal, fcn, endaddr - fcn->addr);
-#endif
-		r_anal_trim_jmprefs (anal, fcn);
-	}
+	r_anal_trim_jmprefs (anal, fcn);
 	return ret;
 }
 
