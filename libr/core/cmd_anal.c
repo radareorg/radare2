@@ -5615,7 +5615,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			// reinitialize
 			{
 				const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-				if (r_reg_getv (core->anal->reg, pc) == 0LL) {
+				if (pc && r_reg_getv (core->anal->reg, pc) == 0LL) {
 					r_core_cmd0 (core, "ar PC=$$");
 				}
 			}

@@ -4376,6 +4376,9 @@ static void ds_pre_emulation(RDisasmState *ds) {
 static void ds_print_esil_anal_init(RDisasmState *ds) {
 	RCore *core = ds->core;
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	if (!pc) {
+		return;
+	}
 	ds->esil_old_pc = r_reg_getv (core->anal->reg, pc);
 	if (!ds->esil_old_pc || ds->esil_old_pc == UT64_MAX) {
 		ds->esil_old_pc = core->offset;

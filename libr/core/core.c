@@ -801,13 +801,15 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				int role = r_reg_get_name_idx (str);
 				if (role != -1) {
 					const char *alias = r_reg_get_name (core->dbg->reg, role);
-					r = r_reg_get (core->dbg->reg, alias, -1);
-					if (r) {
-						if (ok) {
-							*ok = true;
+					if (alias) {
+						r = r_reg_get (core->dbg->reg, alias, -1);
+						if (r) {
+							if (ok) {
+								*ok = true;
+							}
+							ret = r_reg_get_value (core->dbg->reg, r);
+							return ret;
 						}
-						ret = r_reg_get_value (core->dbg->reg, r);
-						return ret;
 					}
 				}
 			} else {
