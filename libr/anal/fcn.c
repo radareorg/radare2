@@ -1247,7 +1247,7 @@ repeat:
 				if (f) {
 					f->is_noreturn = true;
 				}
-				gotoBeach (R_ANAL_RET_PATH_END);
+				gotoBeach (R_ANAL_RET_END);
 			}
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
