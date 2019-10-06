@@ -1774,6 +1774,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 	bool demangle = r_config_get_i (core->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
+	bool showSig = ds->show_fcnsig && ds->show_calls;
 	bool call = r_config_get_i (core->config, "asm.calls");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
@@ -1796,7 +1797,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	if (f->type == R_ANAL_FCN_TYPE_LOC) {
 		r_cons_printf ("%s%s ", COLOR (ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-
-		if (!ds->show_fcnsig) {
+		if (!showSig) {
 			r_cons_printf ("%s%s%s %d", COLOR (ds, color_floc),
 					fcn_name, COLOR_RESET (ds), r_anal_fcn_size (f));
 			ds_newline (ds);
@@ -1824,13 +1825,13 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_lines_left (ds);
 			ds_print_offset (ds);
 		}
-		if (!ds->show_fcnsig) {
+		if (!showSig) {
 			r_cons_printf ("%s(%s) %s%s%s %d", COLOR (ds, color_fname),
 					fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
 			ds_newline (ds);
 		}
 	}
-	if (!ds->show_fcnsig) {
+	if (!showSig) {
 		if (sign) {
 			ds_begin_line (ds);
 			r_cons_printf ("// %s", sign);
@@ -1857,7 +1858,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 
 	if (call) {
-		if (!ds->show_fcnsig) {
+		if (!showSig) {
 			ds_begin_line (ds);
 			r_cons_print (COLOR (ds, color_fline));
 			ds_print_pre (ds);
