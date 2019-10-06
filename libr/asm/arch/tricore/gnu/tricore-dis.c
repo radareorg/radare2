@@ -1443,7 +1443,11 @@ print_decoded_insn (memaddr, info)
 	    {
 	      creg = find_core_reg (dec_insn.cexp[i]);
 	      if (creg) {
+#ifdef RESOLVE_SFR_NAMES
 		      DPRINT (DFILE, "%s", creg);
+#else
+		      DPRINT (DFILE, "#0x%04lx", dec_insn.cexp[i]);
+#endif
 	      } else {
 		      DPRINT (DFILE, "$0x%04lx (unknown SFR)", dec_insn.cexp[i]);
 	      }
