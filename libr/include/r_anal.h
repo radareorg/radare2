@@ -568,6 +568,7 @@ enum {
 
 enum {
 	R_ANAL_RET_ERROR = -1,
+	R_ANAL_RET_PATH_END = -1,
 	R_ANAL_RET_DUP = -2,
 	R_ANAL_RET_NEW = -3,
 	R_ANAL_RET_END = -4
