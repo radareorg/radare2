@@ -5,6 +5,7 @@ include ../libr/config.mk
 include ../mk/platform.mk
 _INCLUDE_MK_GCC_=
 include ../mk/${COMPILER}.mk
+include ../mk/darwin.mk
 
 # Build against last capstone release or next
 ifeq ($(shell test -d ../.git && echo 1),1)

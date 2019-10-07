@@ -14,13 +14,7 @@ CFLAGS_OPT3=-O3
 LD?=ld
 
 ifeq ($(OSTYPE),darwin)
-ARCH=$(shell uname -m)
-XCODE_VERSION=$(shell xcodebuild -version|grep Xcode|grep -o "[\.0-9]\+")
-XCODE_VERSION_MAJOR = $(word 1, $(subst ., ,$(XCODE_VERSION)))
 PARTIALLD=${LD} -r -all_load
-ifeq ($(XCODE_VERSION_MAJOR),11)
-PARTIALLD+=-arch ${ARCH} -platform_version macos 10.14 10.14
-endif
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_SONAME=-Wl,-install_name,
 else
