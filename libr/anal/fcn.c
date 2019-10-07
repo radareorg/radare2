@@ -14,7 +14,6 @@ extern bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_
 #define JMPTBLSZ 512
 #define JMPTBL_LEA_SEARCH_SZ 64
 #define JMPTBL_MAXFCNSIZE 4096
-#define BB_ALIGN 0x10
 
 // 16 KB is the maximum size for a basic block
 #define MAX_FLG_NAME_SIZE 64
