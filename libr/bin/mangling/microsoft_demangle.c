@@ -306,6 +306,7 @@ static int get_operator_code(char *buf, RList *names_l) {
 	case '8': SET_OPERATOR_CODE("operator=="); break;
 	case '9': SET_OPERATOR_CODE("operator!="); break;
 	case 'A': SET_OPERATOR_CODE("operator[]"); break;
+	case 'B': SET_OPERATOR_CODE("operator #{return_type}"); break;
 	case 'C': SET_OPERATOR_CODE("operator->"); break;
 	case 'D': SET_OPERATOR_CODE("operator*"); break;
 	case 'E': SET_OPERATOR_CODE("operator++"); break;
@@ -413,7 +414,6 @@ static int get_template(char *buf, SStrInfo *str_info) {
 		}
 		int i = get_operator_code (buf, names_l);
 		if (!i) {
-			r_list_free (names_l);
 			return 0;
 		}
 		len += i;
@@ -1561,6 +1561,13 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 	if (__64ptr) {
 		copy_string (&func_str, " ", 0);
 		copy_string (&func_str, __64ptr, 0);
+	}
+
+	if (ret_type) {
+		if (strstr (func_str.type_str, "#{return_type}")) {
+			func_str.type_str = r_str_replace (func_str.type_str, "#{return_type}", ret_type, 0);
+			func_str.curr_pos -= strlen ("#{return_type}") - strlen (ret_type);
+		}
 	}
 
 	// need to be free by user

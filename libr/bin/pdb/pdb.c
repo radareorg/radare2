@@ -797,11 +797,11 @@ void build_command_field(ELeafType lt, char **command_field) {
 	switch (lt) {
 	case eLF_STRUCTURE:
 	case eLF_UNION:
-		*command_field = (char *) malloc (strlen ("pf.") + 1);
+		*command_field = (char *) malloc (strlen ("\"pf.") + 1);
 		if (!(*command_field)) {
 			break;
 		}
-		strcpy (*command_field, "pf.");
+		strcpy (*command_field, "\"pf.");
 		break;
 	case eLF_ENUM:
 		*command_field = (char *) malloc (strlen ("\"td enum ") + 1);
@@ -1021,6 +1021,7 @@ static void print_types(R_PDB *pdb, int mode) {
 			}
 
 			if (mode == 'r') {
+				r_name_filter (name_field, -1);
 				pdb->cb_printf ("%s%s ", command_field, name_field);
 				if (lt != eLF_ENUM) {
 					pdb->cb_printf ("%s ", flags_format_field);
@@ -1029,6 +1030,7 @@ static void print_types(R_PDB *pdb, int mode) {
 				}
 				sym = (lt == eLF_ENUM)? ',': ' ';
 				for (i = 0; i < members_amount; i++) {
+					r_name_filter (members_name_field[i], -1);
 					pdb->cb_printf ("%s", members_name_field[i]);
 					if ((i + 1) != members_amount) {
 						pdb->cb_printf ("%c", sym);
@@ -1037,7 +1039,7 @@ static void print_types(R_PDB *pdb, int mode) {
 				if (lt == eLF_ENUM) {
 					pdb->cb_printf (" };\"\n");
 				} else {
-					pdb->cb_printf ("\n");
+					pdb->cb_printf ("\"\n");
 				}
 			}
 			if (mode == 'j') {
