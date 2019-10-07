@@ -316,6 +316,8 @@ extern struct r_bin_write_t r_bin_write_pe64;
 static RList *trycatch(RBinFile *bf) {
 	RIO *io = bf->rbin->iob.io;
 	ut64 baseAddr = bf->o->baddr;
+	int i;
+	ut64 offset;
 	
 	struct PE_(r_bin_pe_obj_t) * bin = bf->o->bin_obj;
 	PE_(image_data_directory) *expdir = &bin->optional_header->DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION];
@@ -328,7 +330,7 @@ static RList *trycatch(RBinFile *bf) {
 		return NULL;
 	}
 
-	for (ut64 offset = expdir->VirtualAddress; offset < (ut64)expdir->VirtualAddress + expdir->Size; offset += sizeof (PE64_RUNTIME_FUNCTION)) {
+	for (offset = expdir->VirtualAddress; offset < (ut64)expdir->VirtualAddress + expdir->Size; offset += sizeof (PE64_RUNTIME_FUNCTION)) {
 		PE64_RUNTIME_FUNCTION rfcn;
 		r_io_read_at_mapped (io, offset + baseAddr, (ut8 *)&rfcn, sizeof (rfcn));
 		if (!rfcn.BeginAddress) {
@@ -368,7 +370,7 @@ static RList *trycatch(RBinFile *bf) {
 
 		PE64_SCOPE_RECORD scope;
 		ut64 scopeRecOff = exceptionDataOff + sizeof (tbl);
-		for (int i = 0; i < tbl.Count; i++) {
+		for (i = 0; i < tbl.Count; i++) {
 			scopeRecOff += i * sizeof (PE64_SCOPE_RECORD);
 			r_io_read_at_mapped (io, scopeRecOff, (ut8 *)&scope, sizeof (PE64_SCOPE_RECORD));
 			if (!(scope.BeginAddress < scope.EndAddress
