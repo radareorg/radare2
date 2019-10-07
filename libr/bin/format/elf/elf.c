@@ -17,6 +17,7 @@
 #define IFINT if (0)
 
 #define MIPS_PLT_OFFSET 108
+#define RISCV_PLT_OFFSET 40
 
 #define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000LL
 #define ELF_PAGE_SIZE 12
@@ -1604,6 +1605,36 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSectio
 	}
 }
 
+static ut64 get_import_addr_riscv(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section) {
+	RBinElfSection *s = get_section_by_name (bin, ".rela.plt");
+	if (s) {
+		ut8 buf[1024];
+		const ut8 *base;
+		ut64 plt_addr = s->rva + s->size;
+		int len = r_buf_read_at (bin->b, s->offset + s->size, buf, sizeof (buf));
+		if (len != sizeof (buf)) {
+			// oops
+		}
+		base = r_mem_mem_aligned (buf, sizeof (buf), (const ut8 *)"\x3c\x0f\x00", 3, 4);
+		if (base) {
+			plt_addr += (int)(size_t) (base - buf);
+		} else {
+			plt_addr += RISCV_PLT_OFFSET; // HARDCODED HACK
+		}
+		plt_addr += rel->k * 16;
+		return plt_addr;
+	}
+	if (plt_section) {
+		const int sizeOfProcedureLinkageTable = 32;
+		const int sizeOfPltEntry = 16;
+		return plt_section->rva + sizeOfProcedureLinkageTable + (rel->k * sizeOfPltEntry);
+	}
+	eprintf ("Unsupported relocs type %" PFMT64u " for arch %d\n",
+		(ut64)REL_TYPE, bin->ehdr.e_machine);
+	return UT64_MAX;
+}
+
+
 static ut64 get_import_addr_mips(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section) {
 	RBinElfSection *s = get_section_by_name (bin, ".rela.plt");
 	if (s) {
@@ -1628,7 +1659,6 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSecti
 		const int sizeOfPltEntry = 16;
 		return plt_section->rva + sizeOfProcedureLinkageTable + (rel->k * sizeOfPltEntry);
 	}
-
 	eprintf ("Unsupported relocs type %" PFMT64u " for arch %d\n",
 		(ut64)REL_TYPE, bin->ehdr.e_machine);
 	return UT64_MAX;
@@ -1666,6 +1696,8 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	case EM_SPARCV9:
 	case EM_SPARC32PLUS:
 		return get_import_addr_sparc (bin, rel, plt_section);
+	case EM_RISCV:
+		return get_import_addr_riscv (bin, rel, plt_section);
 	case EM_ARM:
 	case EM_AARCH64:
 		return get_import_addr_arm (bin, rel, plt_section);
