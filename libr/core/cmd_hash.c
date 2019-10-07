@@ -502,11 +502,15 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 			core->lang->cur = p;
 			if (ac > 1) {
 				if (!strcmp (av[1], "-e")) {
-					char *run_str = strstr(input + 2, "-e") + 2;
+					char *run_str = strstr (input + 2, "-e") + 2;
 					r_lang_run_string (core->lang, run_str);
 				} else {
-					r_lang_set_argv (core->lang, ac - 1, &av[1]);
-					r_lang_run_file (core->lang, av[1]);
+					if (r_lang_set_argv (core->lang, ac - 1, &av[1])) {
+						r_lang_run_file (core->lang, av[1]);
+					} else {
+						char *run_str = strstr (input + 2, av[1]);
+						r_lang_run_file (core->lang, run_str);
+					}
 				}
 			} else {
 				if (r_cons_is_interactive ()) {
