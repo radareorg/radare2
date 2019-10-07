@@ -8,7 +8,7 @@ environment:
     CXX: clang++
     CC: clang
 sources:
-    - https://github.com/radare/radare2
+    - https://github.com/radareorg/radare2
 tasks:
     - build: |
         cd radare2

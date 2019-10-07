@@ -13,7 +13,7 @@ Radare2 Dependencies:
 
 	sudo pkg install git gcc gmake patch pkgconf
 
-	git clone https://github.com/radare/radare2
+	git clone https://github.com/radareorg/radare2
 	cd radare2
 	sys/install.sh /usr/local
 
