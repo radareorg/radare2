@@ -294,6 +294,7 @@ static const char *help_msg_pc[] = {
 	"pcs", "", "string",
 	"pcv", "", "JaVa",
 	"pcw", "", "C words (4 byte)",
+	"pcy", "", "yara",
 	"pcz", "", "Swift",
 	NULL
 };
@@ -4750,6 +4751,15 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 			r_print_cursor (p, i, 1, 0);
 		}
 		p->cb_printf ("};\n");
+		break;
+	case 'y': // "pcy"
+		p->cb_printf ("$hex_%"PFMT64x" = {");
+		for (i = 0; !p->interrupt && i < len; i++) {
+			r_print_cursor (p, i, 1, 1);
+			p->cb_printf (" %02x", buf[i] & 0xff);
+			r_print_cursor (p, i, 1, 0);
+		}
+		p->cb_printf ("}\n");
 		break;
 	case 'j': // "pcj"
 		p->cb_printf ("[");
