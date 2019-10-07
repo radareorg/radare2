@@ -406,27 +406,19 @@ typedef struct rcrb_cmp_wrap_t {
 static int cont_rbtree_cmp_wrapper(const void *incoming, const RBNode *in_tree, void *user) {
 	RCRBCmpWrap *cmp_wrap = (RCRBCmpWrap *)user;
 	RContRBNode *incoming_node = (RContRBNode *)incoming;
-	RBNode *_in_tree;
-	memcpy (&_in_tree, &in_tree, sizeof (RBNode *));
-	RContRBNode *in_tree_node = container_of (_in_tree, RContRBNode, node);
+	RContRBNode *in_tree_node = container_of ((RBNode*)in_tree, RContRBNode, node);
 	return cmp_wrap->cmp (incoming_node->data, in_tree_node->data, cmp_wrap->user);
 }
 
 static int cont_rbtree_search_cmp_wrapper(const void *incoming, const RBNode *in_tree, void *user) {
 	RCRBCmpWrap *cmp_wrap = (RCRBCmpWrap *)user;
-	RBNode *_in_tree;
-	memcpy (&_in_tree, &in_tree, sizeof (RBNode *));
-	void *_incoming;
-	memcpy (&_incoming, &incoming, sizeof (void *));
-	RContRBNode *in_tree_node = container_of (_in_tree, RContRBNode, node);
-	return cmp_wrap->cmp (_incoming, in_tree_node->data, user);
+	RContRBNode *in_tree_node = container_of ((RBNode*)in_tree, RContRBNode, node);
+	return cmp_wrap->cmp ((RBNode*)incoming, in_tree_node->data, user);
 }
 
 static int cont_rbtree_free_cmp_wrapper(const void *data, const RBNode *in_tree, void *user) {
 	RCRBCmpWrap *cmp_wrap = (RCRBCmpWrap *)user;
-	void *dat;
-	memcpy (&dat, &data, sizeof (void *));
-	const int ret = cont_rbtree_cmp_wrapper (dat, in_tree, user);
+	const int ret = cont_rbtree_cmp_wrapper ((void*)data, in_tree, user);
 	if (!ret && cmp_wrap->free) { //this is for deleting
 		RContRBNode *in_tree_node = container_of ((void*)in_tree, RContRBNode, node);
 		cmp_wrap->free (in_tree_node->data);
