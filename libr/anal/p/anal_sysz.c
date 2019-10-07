@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2017 - pancake */
+/* radare2 - LGPL - Copyright 2014-2019 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -26,17 +26,17 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 		}
 		r_strbuf_append (buf, "{");
 		switch (op->type) {
-		case PPC_OP_REG:
+		case SYSZ_OP_REG:
 			r_strbuf_append (buf, "\"type\":\"reg\"");
 			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
 			break;
-		case PPC_OP_IMM:
+		case SYSZ_OP_IMM:
 			r_strbuf_append (buf, "\"type\":\"imm\"");
 			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
 			break;
-		case PPC_OP_MEM:
+		case SYSZ_OP_MEM:
 			r_strbuf_append (buf, "\"type\":\"mem\"");
-			if (op->mem.base != PPC_REG_INVALID) {
+			if (op->mem.base != SYSZ_REG_INVALID) {
 				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
 			}
 			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64)op->mem.disp);
@@ -53,9 +53,8 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh handle;
 	cs_insn *insn;
-	int mode, n, ret;
-	mode = CS_MODE_BIG_ENDIAN;
-	ret = cs_open (CS_ARCH_SYSZ, mode, &handle);
+	int mode = CS_MODE_BIG_ENDIAN;
+	int ret = cs_open (CS_ARCH_SYSZ, mode, &handle);
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->size = 0;
 	op->delay = 0;
@@ -63,7 +62,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (ret == CS_ERR_OK) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 		// capstone-next
-		n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+		int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 		if (n < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		} else {
@@ -185,6 +184,18 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return 2;
+}
+
 RAnalPlugin r_anal_plugin_sysz = {
 	.name = "sysz",
 	.desc = "Capstone SystemZ microanalysis",
@@ -193,6 +204,7 @@ RAnalPlugin r_anal_plugin_sysz = {
 	.arch = "sysz",
 	.bits = 32|64,
 	.op = &analop,
+	.archinfo = archinfo,
 	.set_reg_profile = &set_reg_profile,
 };
 
