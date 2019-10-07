@@ -5018,7 +5018,7 @@ repeat:
 								char *str2 = sdb_fmt ("esilref: '%s'", str);
 								// HACK avoid format string inside string used later as format
 								// string crashes disasm inside agf under some conditions.
-								// https://github.com/radare/radare2/issues/6937
+								// https://github.com/radareorg/radare2/issues/6937
 								r_str_replace_char (str2, '%', '&');
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, str2);
 								free (str);

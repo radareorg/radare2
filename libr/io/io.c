@@ -214,7 +214,7 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	}
 	//does this really work, or do we have to handler debuggers ugly
 	uri = old->referer? old->referer: old->uri;
-#if __WINDOWS__ //TODO: workaround, see https://github.com/radare/radare2/issues/8840
+#if __WINDOWS__ //TODO: workaround, see https://github.com/radareorg/radare2/issues/8840
 	if (!r_io_desc_close (old)) {
 		return false; // TODO: this is an unrecoverable scenario
 	}

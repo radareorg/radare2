@@ -92,7 +92,7 @@ EOF
 
 args=""
 unset help r2pipe_npm r2pipe_py
-github="https://github.com/radare/radare2.git"
+github="https://github.com/radareorg/radare2.git"
 r2branch="master"
 
 # Check for missing dependencies

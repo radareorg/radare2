@@ -24,7 +24,7 @@ The packages required to build are:
 
 Now you can clone the repo and build:
 
-	git clone --depth 1 https://github.com/radare/radare2
+	git clone --depth 1 https://github.com/radareorg/radare2
 	cd radare2
 	sys/termux.sh
 

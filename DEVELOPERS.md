@@ -238,7 +238,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Do not use bashisms `[[`, `$'...'` etc.
 
-* Use our [shellcheck.sh](https://github.com/radare/radare2/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
+* Use our [shellcheck.sh](https://github.com/radareorg/radare2/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
 
 # Manage Endianness
 
@@ -457,7 +457,7 @@ don't know how to do something which is supposed to be covered
 by this framework.
 
 You should report it into the github issues page.
-   https://github.com/radare/radare2/issues
+   https://github.com/radareorg/radare2/issues
 
 Otherwise, if you are looking for some more feedback, I will
 encourage you to send an email to any of the emails enumerated

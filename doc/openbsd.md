@@ -30,7 +30,7 @@ Python Swig Bindings Dependencies:
 Building Python Swig Bindings:
 ------------------------------
 
-	git clone https://github.com/radare/radare2-bindings
+	git clone https://github.com/radareorg/radare2-bindings
 	cd radare2-bindings
 	export CC=cc
 	export CXX=c++
