@@ -325,7 +325,7 @@ static RList *trycatch(RBinFile *bf) {
 		return NULL;
 	}
 
-	RList *tclist = r_list_newf (r_bin_trycatch_free);
+	RList *tclist = r_list_newf ((RListFree)r_bin_trycatch_free);
 	if (!tclist) {
 		return NULL;
 	}
@@ -390,9 +390,6 @@ static RList *trycatch(RBinFile *bf) {
 		}
 	}
 	return tclist;
-err:
-	r_list_free (tclist);
-	return NULL;
 }
 
 RBinPlugin r_bin_plugin_pe64 = {

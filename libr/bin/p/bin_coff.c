@@ -181,7 +181,6 @@ static RList *symbols(RBinFile *bf) {
 	int i;
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
-	struct coff_symbol *s;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return ret;
@@ -189,7 +188,6 @@ static RList *symbols(RBinFile *bf) {
 	ret->free = free;
 	if (obj->symbols) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
-			s = &obj->symbols[i];
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}

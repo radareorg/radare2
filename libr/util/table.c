@@ -701,26 +701,9 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 	}
 	mul = (max - min) / width;
 	if (min != -1 && mul > 0) {
-		const char * color = "", *color_end = "";
 		i = 0;
 		r_list_foreach (list, iter, info) {
 			RStrBuf *buf = r_strbuf_new ("");
-			if (cons->context->color_mode && info->perm != -1) {
-				color_end = Color_RESET;
-				if ((info->perm & R_PERM_X) && (info->perm & R_PERM_W)) { // exec & write bits
-					color = cons->context->pal.graph_trufae;
-				} else if ((info->perm & R_PERM_X)) { // exec bit
-					color = cons->context->pal.graph_true;
-				} else if ((info->perm & R_PERM_W)) { // write bit
-					color = cons->context->pal.graph_false;
-				} else {
-					color = "";
-					color_end = "";
-				}
-			} else {
-				color = "";
-				color_end = "";
-			}
 			for (j = 0; j < width; j++) {
 				ut64 pos = min + j * mul;
 				ut64 npos = min + (j + 1) * mul;

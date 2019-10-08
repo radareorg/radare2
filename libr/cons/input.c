@@ -51,7 +51,7 @@ R_API int r_cons_controlz(int ch) {
 static int __parseMouseEvent() {
 	char xpos[32];
 	char ypos[32];
-	int ch = r_cons_readchar ();
+	(void)r_cons_readchar (); // skip first char
 	int ch2 = r_cons_readchar ();
 
 	// [32M - mousedown
@@ -76,7 +76,7 @@ static int __parseMouseEvent() {
 		}
 		ypos[i] = 0;
 		r_cons_set_click (atoi (xpos), atoi (ypos));
-		ch = r_cons_readchar ();
+		(void) r_cons_readchar ();
 		// ignored
 		int ch = r_cons_readchar ();
 		if (ch == 27) {
