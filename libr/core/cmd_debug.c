@@ -2573,8 +2573,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		//r_debug_drx_list (core->dbg);
 		break;
 	case 'f': // "drf"
-		/* note, that negative type forces sync to print the regs from the backend */
-		r_debug_reg_sync (core->dbg, -R_REG_TYPE_FPU, false);
 		//r_debug_drx_list (core->dbg);
 		if (str[1]=='?') {
 			eprintf ("usage: drf [fpureg] [= value]\n");
@@ -2609,6 +2607,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_cons_printf ("%lf\n", res);
 				}
 			} else {
+				/* note, that negative type forces sync to print the regs from the backend */
 				eprintf ("cannot find multimedia register '%s'\n", name);
 			}
 			free (name);
