@@ -6282,7 +6282,8 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				if (reg == -1) {
 					int imm = getnum(ao->a[2]);
 					if (imm && !(imm & (imm - 1)) && imm > 255) {
-						for (int r = 0; r != 32; r += 2) {
+						int r;
+						for (r = 0; r != 32; r += 2) {
 							if (!(imm & ~0xff)) {
 								ao->o |= (r << 15) | (imm << 24) | 2;
 								break;
