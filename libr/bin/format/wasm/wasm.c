@@ -541,15 +541,19 @@ static void *parse_custom_name_entry (RBuffer *b, ut64 max) {
 
 			if (!(consume_u32_r (b, max, &local_name->index))) {
 				r_list_free (ptr->local->locals);
+				free (local_name);
 				goto beach;
 			}
 
 			local_name->names = r_id_storage_new (0, UT32_MAX);
 			if (!local_name->names) {
+				free (local_name);
 				goto beach;
 			}
 
 			if (!parse_namemap (b, max, local_name->names, &local_name->names_count)) {
+				r_id_storage_free (local_name->names);
+				free (local_name);
 				goto beach;
 			}
 
