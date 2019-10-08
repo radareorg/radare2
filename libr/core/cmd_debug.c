@@ -2532,11 +2532,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 'm': // "drm"
 		if (str[1]=='?') {
 			eprintf ("usage: drm [reg] [idx] [wordsize] [= value] # Use * as index to show all\n");
-		} else if (str[1]==' ') {
-			int index = 0;
-			int size = 0; // auto
-			char *q, *p, *name = strdup (str+2);
-			char *eq = strchr (name, '=');
+		} else if (str[1] == ' ' || str[1] == 'b' || str[1] == 'd' || str[1] == 'w' || str[1] == 'q'){
 			char explicit_index = 0;
 			char explicit_size = 0;
 			#define NUM_PACK_TYPES 4
@@ -2544,34 +2540,57 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			char *pack_format[NUM_PACK_TYPES]  = {"%s0x%02"PFMT64x,"%s0x%04"PFMT64x,"%s0x%08"PFMT64x,"%s0x%016"PFMT64x};
 			#define pack_print(i, reg, pack_type_index) printf(pack_format[pack_type_index], i != 0 ? " " : "", reg);
 			char pack_show[NUM_PACK_TYPES] = {0, 0, 0, 0};
-			if (eq) {
-				*eq++ = 0;
-			}
-			p = strchr (name, ' ');
-			if (p) {
-				*p++ = 0;
-				q = strchr (p, ' ');
-				if(p[0] != '*') {
-					// do not show whole register
-					explicit_index = 1;
-					index = r_num_math(core->num, p);
+			int index = 0;
+			int size = 0; // auto
+			char *q, *p, *name;
+			char *eq = NULL;
+			if(str[1] == ' ') {
+				name = strdup (str+2);
+				if (eq) {
+					*eq++ = 0;
 				}
-				if (q) {
-					*q++ = 0;
-					size = r_num_math (core->num, q);
-					for (i = 0; i < NUM_PACK_TYPES; i++)	{
-						if (size == pack_sizes[i])	{
-							explicit_size = 1;
-							pack_show[i] = 1;
+				p = strchr(name, ' ');
+				if (p) {
+					*p++ = 0;
+					q = strchr(p, ' ');
+					if (p[0] != '*') {
+						// do not show whole register
+						explicit_index = 1;
+						index = r_num_math(core->num, p);
+					}
+					if (q) {
+						*q++ = 0;
+						size = r_num_math(core->num, q);
+						for (i = 0; i < NUM_PACK_TYPES; i++) {
+							if (size == pack_sizes[i]) {
+								explicit_size = 1;
+								pack_show[i] = 1;
+							}
+						}
+						if (!explicit_size) {
+							eprintf("Unsupported wordsize %d\n", size);
+							break;
 						}
 					}
-					if (!explicit_size)	{
-						eprintf("Unsupported wordsize %d\n", size);
-						break;
-					}
+				}
+			} else {
+				explicit_size = 1;
+				name = strdup (str+3);
+				if(str[1] == 'b')	{ 		// "drmb"
+					size = pack_sizes[0];
+					pack_show[0] = 1;
+				} else if(str[1] == 'w')	{ // "drmw"
+					size = pack_sizes[1];
+					pack_show[1] = 1;
+				} else if(str[1] == 'd')	{ // "drmd"
+					size = pack_sizes[2];
+					pack_show[2] = 1;
+				} else if(str[1] == 'q')	{ // "drmq"
+					size = pack_sizes[3];
+					pack_show[3] = 1;
 				}
 			}
-			// TODO: sanity check index, wordsize against item->packed_size
+			// TODO: sanity check index, size against item->packed_size
 			RRegItem *item = r_reg_get (core->dbg->reg, name, -1);
 			if (item) {
 				if (eq) { // TODO: fix setting xmm registers
@@ -2604,8 +2623,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				eprintf ("cannot find multimedia register '%s'\n", name);
 			}
 			free (name);
-		} else {
-			r_debug_reg_sync (core->dbg, -R_REG_TYPE_MMX, false); // TODO: fix this, not displaying anything
+		} else { // drm # no arg
+			r_debug_reg_sync(core->dbg, -R_REG_TYPE_MMX, false); // TODO: fix this, not displaying anything
 		}
 		//r_debug_drx_list (core->dbg);
 		break;
