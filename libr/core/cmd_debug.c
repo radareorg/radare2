@@ -330,7 +330,7 @@ static const char *help_msg_dr[] = {
 	"dri", "", "Show inverse registers dump (sorted by value)",
 	"drl", "[j]", "List all register names",
 	"drm", "", "Show multimedia packed registers",
-	"drm", " mmx0 0 32 = 12", "Set the first 32 bit word of the mmx reg to 12",
+//	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", // Do not advertise - broken
 	"drn", " <pc>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
 	"dro", "", "Show previous (old) values of registers",
 	"drp", "", "Display current register profile",
@@ -392,6 +392,18 @@ static const char *help_msg_drx[] = {
 	"drx", "", "List all (x86?) hardware breakpoints",
 	"drx", " <number> <address> <length> <perms>", "Modify hardware breakpoint",
 	"drx-", "<number>", "Clear hardware breakpoint",
+	NULL
+};
+
+
+static const char *help_msg_drm[] = {
+	"Usage: drm", " [reg] [idx] [wordsize] [= value]", "Show multimedia packed registers",
+	"drm", " xmm0", "Show all packings of xmm0",
+	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", //broken
+	"drmb", " <reg>", "Show register as bytes",
+	"drmw", " <reg>", "Show register as words",
+	"drmd", " <reg>", "Show register as doublewords",
+	"drmq", " <reg>", "Show register as quadwords",
 	NULL
 };
 
@@ -2531,7 +2543,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		break;
 	case 'm': // "drm"
 		if (str[1]=='?') {
-			eprintf ("usage: drm [reg] [idx] [wordsize] [= value] # Use * as index to show all\n");
+			// eprintf ("usage: drm [reg] [idx] [wordsize] [= value]\n");
+			r_core_cmd_help (core, help_msg_drm);
 		} else if (str[1] == ' ' || str[1] == 'b' || str[1] == 'd' || str[1] == 'w' || str[1] == 'q'){
 			char explicit_index = 0;
 			char explicit_size = 0;
