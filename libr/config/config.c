@@ -589,7 +589,7 @@ static void __evalString(RConfig *cfg, char *name) {
 			if (v) {
 				cfg->cb_printf ("%s\n", v);
 			} else {
-				eprintf ("Invalid conifg key %s\n", name);
+				eprintf ("Invalid config key %s\n", name);
 			}
 		}
 	}
