@@ -406,10 +406,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 		if (!space) {
 			return;
 		}
-		if (*msg == '+')
-			type = R_AVATAR_ORANGG;
-		else
-			type = R_AVATAR_CYBCAT;
+		type = (*msg == '+')? R_AVATAR_ORANGG: R_AVATAR_CYBCAT
 		msg = space + 1;
 	}
 	const char *f;
