@@ -683,8 +683,8 @@ void print_fpu (void *f, int r){
 		float *f = (float *)&fpregs.st_space;
 		c = c + (i * 4);
 		f = f + (i * 4);
-		eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | \
-			%0.3f (%08x) \n", i,
+		eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x) | "\
+			"%0.3f (%08x) \n", i,
 			(double)*((double*)&fpregs.st_space[i*4]), *b, (float) f[0],
 			c[0], (float) f[1], c[1]);
 	}
@@ -704,8 +704,8 @@ void print_fpu (void *f, int r){
 			double *d = (double *)&fpregs.st_space[i*4];
 			c = c + (i * 4);
 			f = f + (i * 4);
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  |\
-				%0.3f (%08x) \n", i, *d, *b,
+			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (%08x) | "\
+				"%0.3f (%08x) \n", i, *d, *b,
 				(float)f[0], c[0], (float)f[1], c[1]);
 		} else {
 			eprintf ("\n");
@@ -736,8 +736,8 @@ void print_fpu (void *f, int r){
 			f = f + (i * 4);
 			eprintf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
 				(int)a[1], (int)a[2], (int)a[3] );
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) |\
-				%0.3f (0x%08x)\n", i,
+			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
+				"%0.3f (0x%08x)\n", i,
 				(double)*((double*)(&fpxregs.st_space[i*4])), b[0],
 				f[0], c[0], f[1], c[1]);
 		}
@@ -752,8 +752,8 @@ void print_fpu (void *f, int r){
 			float *f = (float *)&fpregs.st_space;
 			c = c + (i * 4);
 			f = f + (i * 4);
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | \
-				%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
+			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
+				"%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
 		}
 	}
 #endif
