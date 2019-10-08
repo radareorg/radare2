@@ -741,7 +741,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
-	ut64 leaddr = UT64_MAX;
+	static ut64 leaddr = UT64_MAX;
 	char *last_reg_mov_lea_name = NULL;
 	ut64 last_reg_mov_lea_val = UT64_MAX;
 	bool last_is_reg_mov_lea = false;
@@ -997,7 +997,7 @@ repeat:
 			{
 				ut8 buf[4];
 				anal->iob.read_at (anal->iob.io, op.ptr, buf, sizeof (buf));
-				if (buf[2] == 0xff && buf[3] == 0xff) {
+				if ((buf[2] == 0xff || buf[2] == 0xfe) && buf[3] == 0xff) {
 					leaddr = op.ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
 				}
 				if (op.dst && op.dst->reg && op.dst->reg->name && op.ptr > 0 && op.ptr != UT64_MAX) {
@@ -1123,7 +1123,7 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_CMP: {
-			ut64 val = is_x86 ? op.disp : op.ptr;
+			ut64 val = is_x86 ? op.val : op.ptr;
 			if (val) {
 				cmpval = val;
 				bb->cmpval = cmpval;
@@ -1281,6 +1281,8 @@ repeat:
 					ut64 jmptbl_base = leaddr;
 					ut64 table_size = cmpval + 1;
 					ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, jmptbl_base, jmptbl_base, 4, table_size, -1, ret);
+					leaddr = UT64_MAX;
+					cmpval = UT64_MAX;
 				} else if (movdisp != UT64_MAX) {
 					ut64 table_size, default_case;
 
