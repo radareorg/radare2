@@ -2538,7 +2538,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			#define NUM_PACK_TYPES 4
 			int pack_sizes[NUM_PACK_TYPES] = {8, 16, 32, 64};
 			char *pack_format[NUM_PACK_TYPES]  = {"%s0x%02"PFMT64x,"%s0x%04"PFMT64x,"%s0x%08"PFMT64x,"%s0x%016"PFMT64x};
-			#define pack_print(i, reg, pack_type_index) printf(pack_format[pack_type_index], i != 0 ? " " : "", reg);
+			#define pack_print(i, reg, pack_type_index) r_cons_printf(pack_format[pack_type_index], i != 0 ? " " : "", reg);
 			char pack_show[NUM_PACK_TYPES] = {0, 0, 0, 0};
 			int index = 0;
 			int size = 0; // auto
@@ -2611,7 +2611,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 									ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
 									pack_print(i, res, pi);
 								}
-								printf("\n");
+								r_cons_printf("\n");
 							}
 						}
 					} else {
