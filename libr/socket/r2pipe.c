@@ -110,12 +110,14 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 	if (!r2pipe) {
 		return 0;
 	}
+	/*
 	if (r2pipe->coreb.core && !r2pipe->coreb.puts) {
 		void (*rfre)(void *c) = r_lib_dl_sym (libr, "r_core_free");
 		if (rfre) {
 			rfre (r2pipe->coreb.core);
 		}
 	}
+	*/
 #if __WINDOWS__
 	if (r2pipe->pipe) {
 		CloseHandle (r2pipe->pipe);
