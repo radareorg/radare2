@@ -2256,13 +2256,6 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			const char *type = symbol->type? symbol->type: "NONE";
 			const char *name = r_str_get (sn.demname? sn.demname: r_symbol_name);
 			// const char *fwd = r_str_get (symbol->forwarder);
-
-			r_cons_printf ("%03u", symbol->ordinal);
-			if (symbol->paddr == UT64_MAX) {
-				r_cons_printf (" ----------");
-			} else {
-				r_cons_printf (" 0x%08"PFMT64x, symbol->paddr);
-			}
 			r_table_add_rowf (table, "dssssds", symbol->ordinal, symbol->paddr == UT64_MAX ? " ----------": sdb_fmt (" 0x%08"PFMT64x, symbol->paddr),
 			    sdb_fmt("0x%08"PFMT64x, addr), bind, type, symbol->size, name);
 		}
@@ -2278,7 +2271,7 @@ next:
 		}
 	}
 	if (IS_MODE_NORMAL (mode)){
-		r_cons_printf ("\n%s\n", r_table_tostring (table));
+		r_cons_printf ("\n%s", r_table_tostring (table));
 	}
 	if (count == 0 && IS_MODE_JSON (mode)) {
 		r_cons_printf ("{}");
