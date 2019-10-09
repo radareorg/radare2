@@ -120,4 +120,3 @@ __pycache__
 # Dynamic docker building folder to minimize docker context
 .docker_alpine
 .ccls-cache/
-CFLAGS
