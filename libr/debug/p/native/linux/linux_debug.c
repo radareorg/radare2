@@ -652,23 +652,23 @@ RList *linux_thread_list(int pid, RList *list) {
 }
 
 #define PRINT_FPU(fpregs) \
-	eprintf ("cwd = 0x%04x  ; control   ", (fpregs).cwd);\
-	eprintf ("swd = 0x%04x  ; status\n", (fpregs).swd);\
-	eprintf ("ftw = 0x%04x              ", (fpregs).ftw);\
-	eprintf ("fop = 0x%04x\n", (fpregs).fop);\
-	eprintf ("rip = 0x%016"PFMT64x"  ", (ut64)(fpregs).rip);\
-	eprintf ("rdp = 0x%016"PFMT64x"\n", (ut64)(fpregs).rdp);\
-	eprintf ("mxcsr = 0x%08x        ", (fpregs).mxcsr);\
-	eprintf ("mxcr_mask = 0x%08x\n", (fpregs).mxcr_mask)\
+	r_cons_printf ("cwd = 0x%04x  ; control   ", (fpregs).cwd);\
+	r_cons_printf ("swd = 0x%04x  ; status\n", (fpregs).swd);\
+	r_cons_printf ("ftw = 0x%04x              ", (fpregs).ftw);\
+	r_cons_printf ("fop = 0x%04x\n", (fpregs).fop);\
+	r_cons_printf ("rip = 0x%016"PFMT64x"  ", (ut64)(fpregs).rip);\
+	r_cons_printf ("rdp = 0x%016"PFMT64x"\n", (ut64)(fpregs).rdp);\
+	r_cons_printf ("mxcsr = 0x%08x        ", (fpregs).mxcsr);\
+	r_cons_printf ("mxcr_mask = 0x%08x\n", (fpregs).mxcr_mask)\
 
 #define PRINT_FPU_NOXMM(fpregs) \
-	eprintf ("cwd = 0x%04lx  ; control   ", (fpregs).cwd);\
-	eprintf ("swd = 0x%04lx  ; status\n", (fpregs).swd);\
-	eprintf ("twd = 0x%04lx              ", (fpregs).twd);\
-	eprintf ("fip = 0x%04lx          \n", (fpregs).fip);\
-	eprintf ("fcs = 0x%04lx              ", (fpregs).fcs);\
-	eprintf ("foo = 0x%04lx          \n", (fpregs).foo);\
-	eprintf ("fos = 0x%04lx              ", (fpregs).fos)
+	r_cons_printf ("cwd = 0x%04lx  ; control   ", (fpregs).cwd);\
+	r_cons_printf ("swd = 0x%04lx  ; status\n", (fpregs).swd);\
+	r_cons_printf ("twd = 0x%04lx              ", (fpregs).twd);\
+	r_cons_printf ("fip = 0x%04lx          \n", (fpregs).fip);\
+	r_cons_printf ("fcs = 0x%04lx              ", (fpregs).fcs);\
+	r_cons_printf ("foo = 0x%04lx          \n", (fpregs).foo);\
+	r_cons_printf ("fos = 0x%04lx              ", (fpregs).fos)
 
 void print_fpu (void *f, int r){
 #if __x86_64__ || __i386__
@@ -683,19 +683,19 @@ void print_fpu (void *f, int r){
 		float *f = (float *)&fpregs.st_space;
 		c = c + (i * 4);
 		f = f + (i * 4);
-		eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | \
-			%0.3f (%08x) \n", i,
+		r_cons_printf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x) | "\
+			"%0.3f (%08x) \n", i,
 			(double)*((double*)&fpregs.st_space[i*4]), *b, (float) f[0],
 			c[0], (float) f[1], c[1]);
 	}
 #else
-	eprintf ("---- x86-64 ----\n");
+	r_cons_printf ("---- x86-64 ----\n");
 	PRINT_FPU (fpregs);
-	eprintf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
+	r_cons_printf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
 	for (i = 0; i < 16; i++) {
 		ut32 *a = (ut32*)&fpregs.xmm_space;
 		a = a + (i * 4);
-		eprintf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
+		r_cons_printf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
 			(int)a[2], (int)a[3] );
 		if (i < 8) {
 			ut64 *b = (ut64*)&fpregs.st_space[i * 4];
@@ -704,11 +704,11 @@ void print_fpu (void *f, int r){
 			double *d = (double *)&fpregs.st_space[i*4];
 			c = c + (i * 4);
 			f = f + (i * 4);
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  |\
-				%0.3f (%08x) \n", i, *d, *b,
+			r_cons_printf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (%08x) | "\
+				"%0.3f (%08x) \n", i, *d, *b,
 				(float)f[0], c[0], (float)f[1], c[1]);
 		} else {
-			eprintf ("\n");
+			r_cons_printf ("\n");
 		}
 	}
 #endif // __ANDROID__
@@ -716,16 +716,16 @@ void print_fpu (void *f, int r){
 	if (!r) {
 #if !__ANDROID__
 		struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct*)f;
-		eprintf ("---- x86-32 ----\n");
-		eprintf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
-		eprintf ("swd = 0x%04x  ; status\n", fpxregs.swd);
-		eprintf ("twd = 0x%04x ", fpxregs.twd);
-		eprintf ("fop = 0x%04x\n", fpxregs.fop);
-		eprintf ("fip = 0x%08x\n", (ut32)fpxregs.fip);
-		eprintf ("fcs = 0x%08x\n", (ut32)fpxregs.fcs);
-		eprintf ("foo = 0x%08x\n", (ut32)fpxregs.foo);
-		eprintf ("fos = 0x%08x\n", (ut32)fpxregs.fos);
-		eprintf ("mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
+		r_cons_printf ("---- x86-32 ----\n");
+		r_cons_printf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
+		r_cons_printf ("swd = 0x%04x  ; status\n", fpxregs.swd);
+		r_cons_printf ("twd = 0x%04x ", fpxregs.twd);
+		r_cons_printf ("fop = 0x%04x\n", fpxregs.fop);
+		r_cons_printf ("fip = 0x%08x\n", (ut32)fpxregs.fip);
+		r_cons_printf ("fcs = 0x%08x\n", (ut32)fpxregs.fcs);
+		r_cons_printf ("foo = 0x%08x\n", (ut32)fpxregs.foo);
+		r_cons_printf ("fos = 0x%08x\n", (ut32)fpxregs.fos);
+		r_cons_printf ("mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
 		for(i = 0; i < 8; i++) {
 			ut32 *a = (ut32*)(&fpxregs.xmm_space);
 			ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
@@ -734,16 +734,16 @@ void print_fpu (void *f, int r){
 			a = a + (i * 4);
 			c = c + (i * 4);
 			f = f + (i * 4);
-			eprintf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
+			r_cons_printf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
 				(int)a[1], (int)a[2], (int)a[3] );
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) |\
-				%0.3f (0x%08x)\n", i,
+			r_cons_printf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
+				"%0.3f (0x%08x)\n", i,
 				(double)*((double*)(&fpxregs.st_space[i*4])), b[0],
 				f[0], c[0], f[1], c[1]);
 		}
 #endif // !__ANDROID__
 	} else {
-		eprintf ("---- x86-32-noxmm ----\n");
+		r_cons_printf ("---- x86-32-noxmm ----\n");
 		PRINT_FPU_NOXMM (fpregs);
 		for(i = 0; i < 8; i++) {
 			ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
@@ -752,8 +752,8 @@ void print_fpu (void *f, int r){
 			float *f = (float *)&fpregs.st_space;
 			c = c + (i * 4);
 			f = f + (i * 4);
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | \
-				%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
+			r_cons_printf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
+				"%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
 		}
 	}
 #endif
