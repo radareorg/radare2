@@ -216,6 +216,8 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	bool b64str = r_config_get_i (r->config, "bin.b64str");
 	int minstr = r_config_get_i (r->config, "bin.minstr");
 	int maxstr = r_config_get_i (r->config, "bin.maxstr");
+	RTable *table = r_core_table (r);
+	r_return_if_fail (table);
 	RBin *bin = r->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
 	RListIter *iter;
@@ -238,7 +240,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("[Strings]\n");
-		r_cons_printf ("Num Paddr      Vaddr      Len Size Section  Type  String\n");
+		r_table_set_columnsf (table, "nssnnsss", "Num", "Paddr", "Vaddr", "Len", "Size", "Section", "Type", "String");
 	}
 	RBinString b64 = { 0 };
 	r_list_foreach (list, iter, string) {
@@ -369,13 +371,12 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 					str = no_dbl_bslash_str;
 				}
 			}
-			r_cons_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u (%s) %5s %s",
-				string->ordinal, paddr, vaddr,
-				string->length, string->size,
-				section_name, type_string, str);
+
+
 			if (str == no_dbl_bslash_str) {
 				R_FREE (str);
 			}
+			RStrBuf *buf = r_strbuf_new (str);
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
@@ -388,19 +389,20 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 						break;
 					}
 					int *block_ptr = block_list;
-					r_cons_printf (" blocks=");
+					r_strbuf_append (buf, " blocks=");
 					for (; *block_ptr != -1; block_ptr++) {
 						if (block_ptr != block_list) {
-							r_cons_printf (",");
+							r_strbuf_append (buf, ",");
 						}
 						const char *name = r_utf_block_name (*block_ptr);
-						r_cons_printf ("%s", name? name: "");
+						r_strbuf_appendf (buf,"%s", name? name: "");
 					}
 					free (block_list);
 				}
 				break;
 			}
-			r_cons_printf ("\n");
+			r_table_add_rowf (table, "nssnnsss", string->ordinal, sdb_fmt ("0x%08" PFMT64x,paddr), sdb_fmt ("0x%08" PFMT64x,vaddr), string->length,
+					  string->size, section_name, type_string, r_strbuf_drain (buf));
 		}
 		last_processed = iter;
 	}
@@ -411,6 +413,11 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	if (IS_MODE_SET (mode)) {
 		r_cons_break_pop ();
 	}
+	if (IS_MODE_NORMAL (mode)) {
+		r_cons_printf ("%s", r_table_tostring (table));
+
+	}
+	r_table_free (table);
 }
 
 static bool bin_raw_strings(RCore *r, int mode, int va) {
@@ -1642,13 +1649,14 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("\n%s\n", r_table_tostring (table));
 		r_cons_printf ("\n%i relocations\n", i);
-		r_table_free (table);
+
 	}
 
 	// free PJ object if used
 	if (pj) {
 		pj_free (pj);
 	}
+	r_table_free (table);
 	R_FREE (sdb_module);
 	sdb_free (db);
 	db = NULL;
@@ -1865,15 +1873,13 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		R_FREE (symname);
 		i++;
 	}
-	if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("%s\n", r_table_tostring (table));
-		r_table_free (table);
-	}
+
 	if (IS_MODE_JSON (mode)) {
 		r_cons_print ("]");
 	} else if (IS_MODE_NORMAL (mode)) {
-		// r_cons_printf ("# %i imports\n", i);
+		r_cons_printf ("%s\n", r_table_tostring (table));
 	}
+	r_table_free (table);
 #if MYDB
 	// NOTE: if we comment out this, it will leak.. but it will be faster
 	// because it will keep the cache across multiple RBin calls
@@ -2766,8 +2772,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 out:
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("\n%s\n", r_table_tostring (table));
-		r_table_free (table);
+
 	}
+	r_table_free (table);
 	ht_pp_free (dup_chk_ht);
 	return ret;
 }
