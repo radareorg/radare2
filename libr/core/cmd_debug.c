@@ -2603,8 +2603,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				} else {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_FPU, false);
-					long double res = r_reg_get_double (core->dbg->reg, item);
-					r_cons_printf ("%lf\n", res);
+					long double res = r_reg_get_longdouble (core->dbg->reg, item);
+					r_cons_printf ("%Lf\n", res);
 				}
 			} else {
 				/* note, that negative type forces sync to print the regs from the backend */
