@@ -1500,6 +1500,8 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = r_config_get (r->config, "bin.lang");
+	RTable *table = r_core_table (r);
+	r_return_val_if_fail (table, false);
 	RBIter iter;
 	RBinReloc *reloc = NULL;
 	Sdb *db = NULL;
@@ -1520,6 +1522,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		r_cons_println ("fs relocs");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Relocations]");
+		r_table_set_columnsf (table, "ssss", "vaddr", "paddr", "type", "name");
 	} else if (IS_MODE_JSON (mode)) {
 		// start a new JSON object
 		pj = pj_new ();
@@ -1609,28 +1612,25 @@ static int bin_relocs(RCore *r, int mode, int va) {
 					name = mn;
 				}
 			}
-			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" type=%s",
-				addr, reloc->paddr, bin_reloc_type_name (reloc));
-			if (reloc->import && reloc->import->name[0]) {
-				r_cons_printf (" %s", name);
-			} else if (reloc->symbol && name && name[0]) {
-				r_cons_printf (" %s", name);
+			RStrBuf *buf = r_strbuf_new ("");
+			if ((reloc->import && reloc->import->name[0]) || (reloc->symbol && name && name[0])) {
+				r_strbuf_appendf (buf, " %s", name);
 			}
 			R_FREE (name);
 			if (reloc->addend) {
 				if ((reloc->import || (reloc->symbol && !R_STR_ISEMPTY (name))) && reloc->addend > 0) {
-					r_cons_printf (" +");
+					r_strbuf_append (buf," +");
 				}
 				if (reloc->addend < 0) {
-					r_cons_printf (" - 0x%08"PFMT64x, -reloc->addend);
+					r_strbuf_appendf (buf," - 0x%08"PFMT64x, -reloc->addend);
 				} else {
-					r_cons_printf (" 0x%08"PFMT64x, reloc->addend);
+					r_strbuf_appendf (buf," 0x%08"PFMT64x, reloc->addend);
 				}
 			}
 			if (reloc->is_ifunc) {
-				r_cons_print (" (ifunc)");
+				r_strbuf_append (buf, " (ifunc)");
 			}
-			r_cons_newline ();
+			r_table_add_rowf (table, "ssss", sdb_fmt("0x%08"PFMT64x, addr), sdb_fmt ("0x%08"PFMT64x, reloc->paddr), bin_reloc_type_name (reloc), r_strbuf_drain (buf));
 		}
 		i++;
 	}
@@ -1640,7 +1640,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		r_cons_println (pj_string (pj));
 	}
 	if (IS_MODE_NORMAL (mode)) {
+		r_cons_printf ("\n%s\n", r_table_tostring (table));
 		r_cons_printf ("\n%i relocations\n", i);
+		r_table_free (table);
 	}
 
 	// free PJ object if used
