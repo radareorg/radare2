@@ -1759,11 +1759,14 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
+	RTable *table = r_core_table (r);
+	r_return_val_if_fail (table, false);
 	RBinImport *import;
 	RListIter *iter;
 	bool lit = info ? info->has_lit: false;
 	char *str;
 	int i = 0;
+
 
 	if (!info) {
 		return false;
@@ -1777,7 +1780,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_println ("fs imports");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Imports]");
-		r_cons_println ("Num  Vaddr       Bind      Type Name");
+		r_table_set_columnsf (table, "nssss", "Num", "Vaddr", "Bind", "Type Name");
 	}
 	r_list_foreach (imports, iter, import) {
 		if (name && strcmp (import->name, name)) {
@@ -1842,8 +1845,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			}
 			r_cons_newline ();
 #else
-			r_cons_printf ("%4d 0x%08"PFMT64x" %7s %7s ",
-				import->ordinal, addr, bind, type);
+			r_table_add_rowf (table, import->ordinal, sdb_fmt ("0x"PFMT64x, addr), bind, type);
 			if (import->classname && import->classname[0]) {
 				r_cons_printf ("%s.", import->classname);
 			}
@@ -1857,6 +1859,10 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		}
 		R_FREE (symname);
 		i++;
+	}
+	if (IS_MODE_NORMAL (mode)) {
+		r_cons_printf ("%s\n", r_table_tostring (table));
+		r_table_free (table);
 	}
 	if (IS_MODE_JSON (mode)) {
 		r_cons_print ("]");
@@ -2725,11 +2731,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					r_table_add_row (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
 							 section->vsize, perms, sdb_fmt("%s.%s", r->bin->prefix, section->name));
 				}
-
-				r_cons_printf ("%02i 0x%08"PFMT64x" %5"PFMT64d" 0x%08"PFMT64x" %5"PFMT64d" "
-					"%s %s%s%s.%s\n",
-					i, section->paddr, section->size, addr, section->vsize,
-					perms, str, hashstr ?hashstr : "", r->bin->prefix, section->name);
 			} else {
 				if (hashstr) {
 					r_table_add_rowf (table, "nsnsnsss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
@@ -2738,10 +2739,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					r_table_add_rowf (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
 							 section->vsize, perms, section->name);
 				}
-				r_cons_printf ("%02i 0x%08"PFMT64x" %5"PFMT64d" 0x%08"PFMT64x" %5"PFMT64d" "
-					"%s %s%s%s\n",
-					i, section->paddr, (ut64)section->size, addr, (ut64)section->vsize,
-					perms, str, hashstr ?hashstr : "", section->name);
 			}
 			free (hashstr);
 		}
