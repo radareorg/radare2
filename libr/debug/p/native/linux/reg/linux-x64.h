@@ -144,6 +144,15 @@ return strdup (
 "fpu	st6	.64	128	0\n"
 "fpu	st7	.64	144	0\n"
 
+"mmx@fpu	mm0 .64 32	8\n"
+"mmx@fpu	mm1 .64 48	8\n"
+"mmx@fpu	mm2 .64 64	8\n"
+"mmx@fpu	mm3 .64 80	8\n"
+"mmx@fpu	mm4 .64 96	8\n"
+"mmx@fpu	mm5 .64 112	8\n"
+"mmx@fpu	mm6 .64 128 8\n"
+"mmx@fpu	mm7 .64 144 8\n"
+
 "fpu    xmm0    .64 160 16\n"
 "fpu	xmm0h	.64	160	8\n"
 "fpu	xmm0l	.64	168	8\n"
