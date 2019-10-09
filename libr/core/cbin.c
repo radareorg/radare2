@@ -1856,9 +1856,9 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			r_cons_newline ();
 #else
 			if (import->classname && import->classname[0]) {
-				r_table_add_rowf (table, "nssss", import->ordinal, sdb_fmt ("0x08"PFMT64x, addr), bind, type, sdb_fmt ("%s.%s", import->classname, symname));
+				r_table_add_rowf (table, "nssss", import->ordinal, sdb_fmt ("0x08%"PFMT64x, addr), bind, type, sdb_fmt ("%s.%s", import->classname, symname));
 			} else {
-				r_table_add_rowf (table, "nssss", import->ordinal, sdb_fmt ("0x08"PFMT64x, addr), bind, type, symname);
+				r_table_add_rowf (table, "nssss", import->ordinal, sdb_fmt ("0x08%"PFMT64x, addr), bind, type, symname);
 			}
 
 			if (import->descriptor && import->descriptor[0]) {
@@ -2728,21 +2728,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				str[0] = 0;
 			}
 			if (r->bin->prefix) {
-				if (hashstr) {
-					r_table_add_row (table, "nsnsnsss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
-							 section->vsize, perms, sdb_fmt("%s%s",str, hashstr), sdb_fmt("%s.%s", r->bin->prefix, section->name));
-				}else {
-					r_table_add_row (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
+				r_table_add_row (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
 							 section->vsize, perms, sdb_fmt("%s.%s", r->bin->prefix, section->name));
-				}
 			} else {
-				if (hashstr) {
-					r_table_add_rowf (table, "nsnsnsss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
-							 section->vsize, perms, sdb_fmt("%s%s",str, hashstr), section->name);
-				}else {
-					r_table_add_rowf (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
+ 				r_table_add_rowf (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
 							 section->vsize, perms, section->name);
-				}
 			}
 			free (hashstr);
 		}
