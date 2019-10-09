@@ -670,10 +670,10 @@ RList *linux_thread_list(int pid, RList *list) {
 	r_cons_printf ("foo = 0x%04lx          \n", (fpregs).foo);\
 	r_cons_printf ("fos = 0x%04lx              ", (fpregs).fos)
 
-void print_fpu (void *f, int r){
+void print_fpu (void *f){
 #if __x86_64__ || __i386__
-	int i;
-	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct*)f;
+	int i,j;
+	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
 #if __x86_64__
 #if __ANDROID__
 	PRINT_FPU (fpregs);
@@ -693,20 +693,22 @@ void print_fpu (void *f, int r){
 	PRINT_FPU (fpregs);
 	r_cons_printf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
 	for (i = 0; i < 16; i++) {
-		ut32 *a = (ut32*)&fpregs.xmm_space;
+		ut32 *a = (ut32 *)&fpregs.xmm_space;
 		a = a + (i * 4);
 		r_cons_printf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
-			(int)a[2], (int)a[3] );
+					   (int)a[2], (int)a[3] );
 		if (i < 8) {
-			ut64 *b = (ut64*)&fpregs.st_space[i * 4];
-			ut32 *c = (ut32*)&fpregs.st_space;
-			float *f = (float *)&fpregs.st_space;
-			double *d = (double *)&fpregs.st_space[i*4];
-			c = c + (i * 4);
-			f = f + (i * 4);
-			r_cons_printf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (%08x) | "\
-				"%0.3f (%08x) \n", i, *d, *b,
-				(float)f[0], c[0], (float)f[1], c[1]);
+			ut64 *st_u64 = (ut64*)&fpregs.st_space[i * 4];
+			ut8 *st_u8 = (ut8 *)&fpregs.st_space[i * 4];
+			long double *st_ld = (long double *)&fpregs.st_space[i * 4];
+			r_cons_printf ("mm%d = 0x%016" PFMT64x " | st%d = ", i, *st_u64, i);
+			// print as hex TBYTE
+			for (j = 0; j < 10; j++) {
+				r_cons_printf ("%02x", st_u8[j]);
+			}
+			// Using %Lf and %Le even though we do not show the extra precision to avoid another cast
+			// %f with (double)*st_ld would also work
+			r_cons_printf (" %Le %Lf\n", *st_ld, *st_ld);
 		} else {
 			r_cons_printf ("\n");
 		}
@@ -813,7 +815,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 #if __x86_64__
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
 			if (showfpu) {
-				print_fpu ((void *)&fpregs, 0);
+				print_fpu ((void *)&fpregs);
 			}
 			if (ret1 != 0) {
 				return false;
