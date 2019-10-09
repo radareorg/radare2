@@ -17,7 +17,7 @@ static int lang_pipe_file(RLang *lang, const char *file) {
 
 #if __WINDOWS__
 static HANDLE pipe = 0;
-static HANDLE  myCreateChildProcess(const char * szCmdline) {
+static HANDLE myCreateChildProcess(const char * szCmdline) {
 	PROCESS_INFORMATION piProcInfo = {0};
 	STARTUPINFO siStartInfo = {0};
 	BOOL bSuccess = FALSE;
@@ -46,10 +46,10 @@ static HANDLE  myCreateChildProcess(const char * szCmdline) {
 	return bSuccess ? piProcInfo.hProcess : NULL;
 }
 
-static BOOL bStopPipeLoop = FALSE;
+static volatile BOOL bStopPipeLoop = FALSE;
 static HANDLE hPipeInOut = NULL;
 static HANDLE hproc = NULL;
-#define PIPE_BUF_SIZE 4096
+#define PIPE_BUF_SIZE 8192
 
 static DWORD WINAPI WaitForProcThread(LPVOID lParam) {
 	WaitForSingleObject (hproc, INFINITE);
@@ -79,6 +79,10 @@ static void lang_pipe_run_win(RLang *lang) {
 		}
 		if (bSuccess && dwRead > 0) {
 			buf[sizeof (buf) - 1] = 0;
+			r_cons_print (buf);
+			if (bStopPipeLoop) {
+				break;
+			}
 			char *res = lang->cmd_str ((RCore*)lang->user, buf);
 			if (res) {
 				int res_len = strlen (res) + 1;
@@ -91,7 +95,7 @@ static void lang_pipe_run_win(RLang *lang) {
 						break;
 					}
 					if (!rc) {
-						eprintf ("WriteFile: failed 0x%x\n", (int)GetLastError ());
+						r_sys_perror ("lang_pipe_run_win/WriteFile");
 					}
 					if (dwWritten > 0) {
 						i += dwWritten - 1;
@@ -238,10 +242,10 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		CloseHandle (CreateThread (NULL, 0, WaitForProcThread, NULL, 0, NULL));
 		/* lang_pipe_run_win has to run in the command thread to prevent deadlock. */
 		lang_pipe_run_win (lang);
-		DeleteFile (r2pipe_paz_);
-		CloseHandle (hPipeInOut);
 		CloseHandle (pipe);
 	}
+	DeleteFile (r2pipe_paz_);
+	CloseHandle (hPipeInOut);
 	free (r2pipe_var);
 	free (r2pipe_paz);
 	free (r2pipe_paz_);
