@@ -702,8 +702,8 @@ void print_fpu (void *f){
 			ut8 *st_u8 = (ut8 *)&fpregs.st_space[i * 4];
 			long double *st_ld = (long double *)&fpregs.st_space[i * 4];
 			r_cons_printf ("mm%d = 0x%016" PFMT64x " | st%d = ", i, *st_u64, i);
-			// print as hex TBYTE
-			for (j = 0; j < 10; j++) {
+			// print as hex TBYTE - always little endian
+			for (j = 9; j >= 0; j--) {
 				r_cons_printf ("%02x", st_u8[j]);
 			}
 			// Using %Lf and %Le even though we do not show the extra precision to avoid another cast
