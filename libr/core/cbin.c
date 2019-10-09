@@ -2269,7 +2269,7 @@ next:
 		}
 	}
 	if (IS_MODE_NORMAL (mode)){
-		r_cons_printf ("\n%s\n", r_table_tofancystring (table));
+		r_cons_printf ("\n%s\n", r_table_tostring (table));
 	}
 	if (count == 0 && IS_MODE_JSON (mode)) {
 		r_cons_printf ("{}");
@@ -2483,7 +2483,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 		RTable *table = r_core_table (r);
 		r_table_visual_list (table, list, r->offset, -1, cols, r->io->va);
-		r_cons_printf ("\n%s\n", r_table_tofancystring (table));
+		r_cons_printf ("\n%s\n", r_table_tostring (table));
 		r_table_free (table);
 		r_list_free (list);
 		goto out;
@@ -2770,7 +2770,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	ret = true;
 out:
 	if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("\n%s\n", r_table_tofancystring (table));
+		r_cons_printf ("\n%s\n", r_table_tostring (table));
 		r_table_free (table);
 	}
 	ht_pp_free (dup_chk_ht);
