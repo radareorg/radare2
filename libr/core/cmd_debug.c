@@ -329,7 +329,7 @@ static const char *help_msg_dr[] = {
 	"drf", "", "Show fpu registers (80 bit long double)",
 	"dri", "", "Show inverse registers dump (sorted by value)",
 	"drl", "[j]", "List all register names",
-	"drm", "", "Show multimedia packed registers",
+	"drm", "[?]", "Show multimedia packed registers",
 	//	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", // Do not advertise - broken
 	"dro", "", "Show previous (old) values of registers",
 	"drp", "", "Display current register profile",
