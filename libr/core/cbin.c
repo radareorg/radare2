@@ -1780,7 +1780,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_println ("fs imports");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Imports]");
-		r_table_set_columnsf (table, "nssss", "Num", "Vaddr", "Bind", "Type Name");
+		r_table_set_columnsf (table, "nssss", "Num", "Vaddr", "Bind", "Type", "Name");
 	}
 	r_list_foreach (imports, iter, import) {
 		if (name && strcmp (import->name, name)) {
@@ -1845,16 +1845,19 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			}
 			r_cons_newline ();
 #else
-			r_table_add_rowf (table, import->ordinal, sdb_fmt ("0x"PFMT64x, addr), bind, type);
 			if (import->classname && import->classname[0]) {
-				r_cons_printf ("%s.", import->classname);
+				r_table_add_rowf (table, "nssss", import->ordinal, sdb_fmt ("0x08"PFMT64x, addr), bind, type, sdb_fmt ("%s.%s", import->classname, symname));
+			} else {
+				r_table_add_rowf (table, "nssss", import->ordinal, sdb_fmt ("0x08"PFMT64x, addr), bind, type, symname);
 			}
-			r_cons_printf ("%s", symname);
+
 			if (import->descriptor && import->descriptor[0]) {
 				// Uh?
 				r_cons_printf (" descriptor=%s", import->descriptor);
 			}
-			r_cons_newline ();
+			if (!IS_MODE_NORMAL (mode)) {
+				r_cons_newline ();
+			}
 #endif
 		}
 		R_FREE (symname);
