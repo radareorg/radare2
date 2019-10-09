@@ -1611,9 +1611,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						buf[1] = r_cons_readchar ();
 #endif
 						if (I.hud) {
-							I.hud->top_entry_n += (rows - 1);
-							if (I.hud->top_entry_n >= I.hud->current_entry_n) {
-								I.hud->top_entry_n = I.hud->current_entry_n - 1;
+							I.hud->top_entry_n -= (rows - 1);
+							if (I.hud->top_entry_n < 0) {
+								I.hud->top_entry_n = 0;
 							}
 						}
 						if (I.sel_widget) {
@@ -1626,9 +1626,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						buf[1] = r_cons_readchar ();
 #endif
 						if (I.hud) {
-							I.hud->top_entry_n -= (rows - 1);
-							if (I.hud->top_entry_n < 0) {
-								I.hud->top_entry_n = 0;
+							I.hud->top_entry_n += (rows - 1);
+							if (I.hud->top_entry_n >= I.hud->current_entry_n) {
+								I.hud->top_entry_n = I.hud->current_entry_n - 1;
 							}
 						}
 						if (I.sel_widget) {
