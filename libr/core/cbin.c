@@ -402,8 +402,8 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				break;
 			}
 			char *bufstr = r_strbuf_drain (buf);
-			r_table_add_rowf (table, "nXXnnsss", string->ordinal, paddr, vaddr,
-				string->length, string->size, section_name,
+			r_table_add_rowf (table, "nXXddsss", string->ordinal, paddr, vaddr,
+				(int)string->length, (int)string->size, section_name,
 				type_string, bufstr);
 			free (bufstr);
 		}

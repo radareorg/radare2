@@ -9,17 +9,12 @@
 #include "../../libr/bin/pdb/pdb_downloader.h"
 
 // TODO: kill globals
-static struct r_bin_t *bin = NULL;
+static RBin *bin = NULL;
 static char* output = NULL;
-static char* create = NULL;
-static int rad = false;
-static ut64 laddr = UT64_MAX;
-static ut64 baddr = UT64_MAX;
-static char* file = NULL;
+static int rad = 0;
+static char *file = NULL;
 static char *name = NULL;
-static int va = true;
 static char *stdin_buf = NULL;
-static const char *do_demangle = NULL;
 static ut64 at = 0LL;
 static RLib *l;
 
@@ -245,17 +240,14 @@ static int rabin_extract(int all) {
 }
 
 static int rabin_dump_symbols(int len) {
-	RList *symbols;
-	RListIter *iter;
-	RBinSymbol *symbol;
-	ut8 *buf;
-	char *ret;
-	int olen = len;
-
-	if (!(symbols = r_bin_get_symbols (bin))) {
+	RList *symbols = r_bin_get_symbols (bin);
+	if (!symbols) {
 		return false;
 	}
 
+	RListIter *iter;
+	RBinSymbol *symbol;
+	int olen = len;
 	r_list_foreach (symbols, iter, symbol) {
 		if (symbol->size && (olen > symbol->size || !olen)) {
 			len = symbol->size;
@@ -264,10 +256,12 @@ static int rabin_dump_symbols(int len) {
 		} else {
 			len = olen;
 		}
-		if (!(buf = calloc (1, len))) {
+		ut8 *buf = calloc (1, len);
+		if (!buf) {
 			return false;
 		}
-		if (!(ret = malloc ((len * 2) + 1))) {
+		char *ret = malloc ((len * 2) + 1);
+		if (!ret) {
 			free (buf);
 			return false;
 		}
@@ -545,8 +539,13 @@ static void __listPlugins(const char* plugin_name) {
 }
 
 R_API int r_main_rabin2(int argc, char **argv) {
+	ut64 laddr = UT64_MAX;
+	ut64 baddr = UT64_MAX;
+	const char *do_demangle = NULL;
 	const char *query = NULL;
 	int c, bits = 0, actions_done = 0, actions = 0;
+	char* create = NULL;
+	bool va = true;
 	ut64 action = R_BIN_REQ_UNK;
 	char *tmp, *ptr, *arch = NULL, *arch_name = NULL;
 	const char *forcebin = NULL;
