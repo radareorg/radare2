@@ -1060,7 +1060,7 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 
 static int cmd_join(void *data, const char *input) { // "join"
 	RCore *core = (RCore *)data;
-	const char *tmp = strdup (input);
+	char *tmp = strdup (input);
 	const char *arg1 = strchr (tmp, ' ');
 	if (!arg1) {
 		goto beach;
@@ -1092,13 +1092,14 @@ static int cmd_join(void *data, const char *input) { // "join"
 				r_cons_print (res);
 				free (res);
 			}
-			R_FREE (tmp);
 		}
 		break;
 	}
+	free (tmp);
 	return 0;
 beach:
 	eprintf ("Usage: join [file1] [file2] # join the contents of the two files\n");
+	free (tmp);
 	return 0;
 }
 
