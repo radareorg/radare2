@@ -329,9 +329,8 @@ static const char *help_msg_dr[] = {
 	"drf", "", "Show fpu registers (80 bit long double)",
 	"dri", "", "Show inverse registers dump (sorted by value)",
 	"drl", "[j]", "List all register names",
-	"drm", "", "Show multimedia packed registers",
-	"drm", " mmx0 0 32 = 12", "Set the first 32 bit word of the mmx reg to 12",
-	"drn", " <pc>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
+	"drm", "[?]", "Show multimedia packed registers",
+	//	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", // Do not advertise - broken
 	"dro", "", "Show previous (old) values of registers",
 	"drp", "", "Display current register profile",
 	"drp", "[?] <file>", "Load register metadata file",
@@ -392,6 +391,18 @@ static const char *help_msg_drx[] = {
 	"drx", "", "List all (x86?) hardware breakpoints",
 	"drx", " <number> <address> <length> <perms>", "Modify hardware breakpoint",
 	"drx-", "<number>", "Clear hardware breakpoint",
+	NULL
+};
+
+
+static const char *help_msg_drm[] = {
+	"Usage: drm", " [reg] [idx] [wordsize] [= value]", "Show multimedia packed registers",
+	"drm", " xmm0", "Show all packings of xmm0",
+	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", //broken
+	"drmb", " <reg>", "Show register as bytes",
+	"drmw", " <reg>", "Show register as words",
+	"drmd", " <reg>", "Show register as doublewords",
+	"drmq", " <reg>", "Show register as quadwords",
 	NULL
 };
 
@@ -2531,44 +2542,101 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		break;
 	case 'm': // "drm"
 		if (str[1]=='?') {
-			eprintf ("usage: drm [reg] [idx] [wordsize] [= value]\n");
-		} else if (str[1]==' ') {
-			int word = 0;
+			// eprintf ("usage: drm [reg] [idx] [wordsize] [= value]\n");
+			r_core_cmd_help (core, help_msg_drm);
+		} else if (str[1] == ' ' || str[1] == 'b' || str[1] == 'd' || str[1] == 'w' || str[1] == 'q') {
+			char explicit_index = 0;
+			char explicit_size = 0;
+#define NUM_PACK_TYPES 4
+			int pack_sizes[NUM_PACK_TYPES] = { 8, 16, 32, 64 };
+			char *pack_format[NUM_PACK_TYPES] = { "%s0x%02" PFMT64x, "%s0x%04" PFMT64x, "%s0x%08" PFMT64x, "%s0x%016" PFMT64x };
+#define pack_print(i, reg, pack_type_index) r_cons_printf (pack_format[pack_type_index], i != 0? " ": "", reg);
+			char pack_show[NUM_PACK_TYPES] = { 0, 0, 0, 0 };
+			int index = 0;
 			int size = 0; // auto
-			char *q, *p, *name = strdup (str+2);
-			char *eq = strchr (name, '=');
-			if (eq) {
-				*eq++ = 0;
-			}
-			p = strchr (name, ' ');
-			if (p) {
-				*p++ = 0;
-				q = strchr (p, ' ');
-				if (q) {
-					*q++ = 0;
-					size = r_num_math (core->num, q);
+			char *q, *p, *name;
+			char *eq = NULL;
+			if (str[1] == ' ') {
+				name = strdup (str + 2);
+				if (eq) {
+					*eq++ = 0;
 				}
-				word = r_num_math (core->num, p);
+				p = strchr (name, ' ');
+				if (p) {
+					*p++ = 0;
+					q = strchr (p, ' ');
+					if (p[0] != '*') {
+						// do not show whole register
+						explicit_index = 1;
+						index = r_num_math (core->num, p);
+					}
+					if (q) {
+						*q++ = 0;
+						size = r_num_math (core->num, q);
+						for (i = 0; i < NUM_PACK_TYPES; i++) {
+							if (size == pack_sizes[i]) {
+								explicit_size = 1;
+								pack_show[i] = 1;
+							}
+						}
+						if (!explicit_size) {
+							eprintf ("Unsupported wordsize %d\n", size);
+							break;
+						}
+					}
+				}
+			} else {
+				explicit_size = 1;
+				name = strdup (str + 3);
+				if (str[1] == 'b') { // "drmb"
+					size = pack_sizes[0];
+					pack_show[0] = 1;
+				} else if (str[1] == 'w') { // "drmw"
+					size = pack_sizes[1];
+					pack_show[1] = 1;
+				} else if (str[1] == 'd') { // "drmd"
+					size = pack_sizes[2];
+					pack_show[2] = 1;
+				} else if (str[1] == 'q') { // "drmq"
+					size = pack_sizes[3];
+					pack_show[3] = 1;
+				}
 			}
+			// TODO: sanity check index, size against item->packed_size
 			RRegItem *item = r_reg_get (core->dbg->reg, name, -1);
 			if (item) {
-				if (eq) {
+				if (eq) { // TODO: fix setting xmm registers
 					ut64 val = r_num_math (core->num, eq);
-					r_reg_set_pack (core->dbg->reg, item, word, size, val);
+					r_reg_set_pack (core->dbg->reg, item, index, size, val);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_MMX, true);
 				} else {
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_MMX, false);
-					ut64 res = r_reg_get_pack (core->dbg->reg, item, word, size);
-					r_cons_printf ("0x%08"PFMT64x"\n", res);
+					ut64 res = r_reg_get_pack (core->dbg->reg, item, index, size);
+					// TODO: handle mm
+					if (!explicit_index) {
+						int pi;
+						for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
+							if (!explicit_size || pack_show[pi]) {
+								for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
+									ut64 res = r_reg_get_pack (core->dbg->reg, item, i, pack_sizes[pi]);
+									pack_print (i, res, pi);
+								}
+								r_cons_printf ("\n");
+							}
+						}
+					} else {
+						// print selected index / wordsize
+						r_cons_printf ("0x%08" PFMT64x "\n", res);
+					}
 				}
 			} else {
 				eprintf ("cannot find multimedia register '%s'\n", name);
 			}
 			free (name);
-		} else {
-			r_debug_reg_sync (core->dbg, -R_REG_TYPE_MMX, false);
+		} else { // drm # no arg
+			r_debug_reg_sync (core->dbg, -R_REG_TYPE_MMX, false); // TODO: fix this, not displaying anything
 		}
 		//r_debug_drx_list (core->dbg);
 		break;
