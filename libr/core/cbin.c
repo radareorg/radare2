@@ -1637,7 +1637,12 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			if (reloc->is_ifunc) {
 				r_strbuf_append (buf, " (ifunc)");
 			}
-			r_table_add_rowf (table, "ssss", sdb_fmt("0x%08"PFMT64x, addr), sdb_fmt ("0x%08"PFMT64x, reloc->paddr), bin_reloc_type_name (reloc), r_strbuf_drain (buf));
+			char *res = r_strbuf_drain (buf);
+			r_table_add_rowf (table, "ssss",
+				sdb_fmt ("0x%08"PFMT64x, addr),
+				sdb_fmt ("0x%08"PFMT64x, reloc->paddr),
+				bin_reloc_type_name (reloc), res);
+			free (res);
 		}
 		i++;
 	}
@@ -1841,24 +1846,12 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		} else if (IS_MODE_RAD (mode)) {
 			// TODO(eddyb) symbols that are imports.
 		} else {
-			const char *bind = r_str_get (import->bind);
-			const char *type = r_str_get (import->type);
-#if 0
-			r_cons_printf ("ordinal=%03d plt=0x%08"PFMT64x" bind=%s type=%s",
-				import->ordinal, addr, bind, type);
+			const char *bind = import->bind? import->bind: "NONE";
+			const char *type = import->type? import->type: "NONE";
 			if (import->classname && import->classname[0]) {
-				r_cons_printf (" classname=%s", import->classname);
-			}
-			r_cons_printf (" name=%s", symname);
-			if (import->descriptor && import->descriptor[0]) {
-				r_cons_printf (" descriptor=%s", import->descriptor);
-			}
-			r_cons_newline ();
-#else
-			if (import->classname && import->classname[0]) {
-				r_table_add_rowf (table, "nssss", import->ordinal, sdb_fmt ("0x08%"PFMT64x, addr), bind, type, sdb_fmt ("%s.%s", import->classname, symname));
+				r_table_add_rowf (table, "nxsss", import->ordinal, addr, bind, type, sdb_fmt ("%s.%s", import->classname, symname));
 			} else {
-				r_table_add_rowf (table, "nssss", import->ordinal, sdb_fmt ("0x08%"PFMT64x, addr), bind, type, symname);
+				r_table_add_rowf (table, "nxsss", import->ordinal, addr, bind, type, symname);
 			}
 
 			if (import->descriptor && import->descriptor[0]) {
@@ -1868,7 +1861,6 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			if (!IS_MODE_NORMAL (mode)) {
 				r_cons_newline ();
 			}
-#endif
 		}
 		R_FREE (symname);
 		i++;

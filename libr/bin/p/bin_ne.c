@@ -1,4 +1,5 @@
-#include <r_types.h>
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, alvarofe */
+
 #include <r_bin.h>
 #include <r_lib.h>
 #include "../i/private.h"
