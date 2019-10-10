@@ -9,8 +9,12 @@
 static int r_core_file_do_load_for_debug(RCore *r, ut64 loadaddr, const char *filenameuri);
 static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr);
 
+static bool __isMips (RAsm *a) {
+	return a && a->cur && a->cur->arch && strstr (a->cur->arch, "mips");
+}
+
 static void loadGP(RCore *core) {
-	if (strstr (core->assembler->cur->arch, "mips")) {
+	if (__isMips (core->assembler)) {
 		ut64 gp = r_num_math (core->num, "loc._gp");
 		if (!gp || gp == UT64_MAX) {
 			r_config_set (core->config, "anal.roregs", "zero");
