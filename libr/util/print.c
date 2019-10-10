@@ -4,6 +4,7 @@
 #include "r_cons.h"
 #include "r_util.h"
 #include "r_util/r_print.h"
+#include "r_core.h"
 
 #define DFLT_ROWS 16
 
