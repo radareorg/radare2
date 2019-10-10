@@ -14,6 +14,7 @@
  * ## Section 7: radare2 glue and mnemonic tokenization
  *
  * documentation date: 2019-10-04
+ * documentation date: 2019-10-14
  *
  * 1. Token parsers
  *
@@ -24,9 +25,14 @@
  *
  * 2. Some weird datastructure
  *
- * Basically it's for matching strings whitespace-independently, and uses c99s
+ * Started out for matching strings whitespace-independently, and uses c99s
  * (struct literal){} notation and is zero-terminated.
  * I wrote this thing in the late hours of r2con2019 while jetlagged.
+ *
+ * Currently the last place it's used in is mnemonic matching, since I hacked
+ * in a nr-of-arguments field into the table. Whitespace-independence is
+ * currently a bug since it'll accept "n o p" as "nop"... also functions need
+ * to be renamed.
  *
  * One pitfall is that the match is lazy (non-greedy?) in other words, "reti"
  * is matched by "ret", but not the other way around, so the most-specific match
@@ -59,17 +65,11 @@
  * There's lots of easy deduplication opportunity, and now that it's finished I
  * have some ideas on how to do it better, but eh.
  *
- * Pretty much each instruction variant tokenizes its own instruction list,
- * which really isn't necessary because the number of arguments is constant for
- * each instruction, a fact that eventually even made it into the dispatcher, so
- * the dispatcher really could do the argument tokenization and save ~500 lines.
- *
  *
  * 6. mnemonic token dispatcher
  *
  * The weird datastructure returns! with macros! it's basically just a jump
- * table with one bit of validation, I'm planning to move more validation and
- * parsing to here to deduplicate.
+ * table with one bit of validation.
  *
  *
  * 7. Radare2 glue and mnemonic tokenization
@@ -77,7 +77,8 @@
  * Had one look at the gb glue code and copied the lot of it without really
  * understanding what I'm doing.
  *
- * also splits out the first word (asserted mnemonic) for the token dispatcher.
+ * also splits out the first word (asserted mnemonic) for the token dispatcher,
+ * and splits up the arguments
  *
 \*****************************************************************************/
 #include<r_util.h>
@@ -178,24 +179,43 @@ static bool get_arg(char const*multi, int n, char * dest)
 }
 
 /**
- * returns true if the number of arguments in the args string is less than n
+ * tokenizes the argument list
+ * arg parameter must be 3 char pointers wide.
+ * TODO: merge with get_arg, as this is now the only user
  */
-static bool n_args_lt(char const*args, int n) {
-	char *dest = malloc (strlen (args) + 1);
-	if (!args || n < 0) {
-		return false;
+static int get_arguments (char**arg, char const*arguments) {
+	size_t arglen = strlen (arguments) + 1;
+	char*tmp = malloc (arglen);
+	if (!get_arg (arguments, 1, tmp)) {
+		free (tmp); tmp = 0;
+		return 0;
+	} else {
+		arg[0] = realloc (tmp, strlen (tmp) + 1); tmp = 0;
+		tmp = malloc (arglen);
+		if (!get_arg (arguments, 2, tmp)) {
+			free (tmp); tmp = 0;
+			return 1;
+		} else {
+			arg[1] = realloc (tmp, strlen (tmp) + 1); tmp = 0;
+			tmp = malloc (arglen + 1);
+			if (!get_arg (arguments, 3, tmp)) {
+				free (tmp); tmp = 0;
+				return 2;
+			} else {
+				arg[2] = realloc (tmp, strlen (tmp) + 1); tmp = 0;
+				tmp = malloc (arglen + 1);
+				if (get_arg (arguments, 4, tmp)) {
+					free (tmp); tmp = 0;
+					free (arg[0]); arg[0] = 0;
+					free (arg[1]); arg[1] = 0;
+					free (arg[2]); arg[2] = 0;
+					return 4;
+				}
+				free (tmp); tmp = 0;
+				return 3;
+			}
+		}
 	}
-	if (n == 0 && args[0] == '\0') {
-		return true;
-	}
-	if (args[0] == '\0') {
-		return false;
-	}
-	dest[0] = ',';
-	get_arg (args, n + 1, dest);
-	bool ret = dest[0] == ',';
-	free (dest);
-	return ret;
 }
 
 /**
@@ -205,16 +225,43 @@ static bool terminates_asm_line(char c) {
 	return c == '\0' || c == '\n' || c == '\r' || c == ';' ;
 }
 
+/**
+ * Like r_str_casecmp, but ignores all isspace characters
+ */
+static int str_iwhitecasecmp(char const*a, char const*b) {
+	if (!a && !b) {
+		return *a - *b;
+	}
+	while (a && b) {
+		if (!*a && !*b) {
+			break;
+		}
+		if (!*a || !*b) {
+			break;
+		}
+		if (isspace (*a)) {
+			a += 1;
+			continue;
+		}
+		if (isspace (*b)) {
+			b += 1;
+			continue;
+		}
+		if (tolower (*a) == tolower (*b)) {
+			a += 1;
+			b += 1;
+			continue;
+		}
+		break;
+	}
+	return *a - *b;
+}
+
 /******************************************************************************
  * ## Section 2: some weird datastructure
                  ------------------------*/
 
-typedef struct {
-	char const*const pattern;
-	int res;
-} table[];
-
-typedef bool (*parse_mnem_args)(char const*args, ut16 pc, ut8**out);
+typedef bool (*parse_mnem_args)(char const*const*, ut16, ut8**);
 
 typedef struct {
 	char const*const pattern;
@@ -248,19 +295,6 @@ static bool pattern_match(char const*str, char const*pattern) {
 	return true;
 }
 
-static int match_prefix(char const*str, table const tbl) {
-	int row = 0;
-	while (tbl[row].pattern) {
-		if (pattern_match (str, tbl[row].pattern)) {
-			return tbl[row].res;
-		}
-		else {
-			row += 1;
-		}
-	}
-	return tbl[row].res;
-}
-
 static parse_mnem_args match_prefix_f(int*args, char const*str, ftable const tbl) {
 	int row = 0;
 	while (tbl[row].pattern) {
@@ -281,13 +315,29 @@ static parse_mnem_args match_prefix_f(int*args, char const*str, ftable const tbl
                  -----------------*/
 
 /**
- * returns true if the given string is either @r0 or @r1, case insensitive
+ * matches registers r0 and r1 when they are indirectly-addressed.
+ * 8051-style syntax @r0, but also r2 defacto [r0]
  */
 static bool is_indirect_reg(char const*str)
 {
-	return str && str[0] == '@' && r_str_ansi_nlen (str, 4) == 3
-		&& tolower (str[1]) == 'r'
-		&& (str[2] == '0' || str[2] == '1');
+	if ( !str) {
+		return false;
+	}
+
+	if (str[0] == '@' ) {
+		return r_str_ansi_nlen (str, 4) == 3
+			&& tolower (str[1]) == 'r'
+			&& (str[2] == '0' || str[2] == '1');
+	}
+
+	if (str[0] == '[' ) {
+		return r_str_ansi_nlen (str, 5) == 4
+			&& tolower (str[1]) == 'r'
+			&& (str[2] == '0' || str[2] == '1')
+			&& str[3] == ']';
+	}
+
+	return false;
 }
 
 /**
@@ -314,13 +364,16 @@ static bool relative_address(ut16 pc, ut16 address, ut8 *out)
 		return true;
 	}
 }
+
 static bool resolve_immediate(char const* imm_str, ut16* imm_out) {
-	// FIXME: accept symbols as well as hex
+	// rasm2 resolves symbols, so does this really only need to parse hex?
+	// maybe TODO: skip leading '#' if exists?
 	return parse_hexadecimal (imm_str, imm_out);
 }
 
 static bool to_address(char const* addr_str, ut16* addr_out) {
-	// FIXME: accept symbols as well as hex
+	// rasm2 resolves symbols, so does this really only need to parse hex?
+	// maybe TODO: check address bounds?
 	return parse_hexadecimal (addr_str, addr_out);
 }
 
@@ -329,7 +382,8 @@ static bool to_address(char const* addr_str, ut16* addr_out) {
  */
 static bool address_direct(char const* addr_str, ut8* addr_out) {
 	ut16 addr_big;
-	// FIXME: accept symbols as well as hex
+	// rasm2 resolves symbols, so does this really only need to parse hex?
+	// maybe TODO: check address bounds?
 	if ( !parse_hexadecimal (addr_str, &addr_big)
 		|| (0xFF < addr_big)) {
 		return false;
@@ -348,13 +402,17 @@ static bool address_bit(char const* addr_str, ut8* addr_out) {
 	ut8 byte;
 	int bit;
 	bool ret = false;
+	// TODO: check if symbols are resolved properly in all cases:
+	// - symbol.2
+	// - 0x25.symbol
+	// - symbol.symbol
+	// - symbol
 	if (!separator) {
-		// FIXME: accept symbols as well as dot-notation
 		goto end;
 	}
 	r_str_ncpy (bytepart, addr_str, separator - addr_str + 1);
 	bytepart[separator - addr_str + 1] = '\0';
-	r_str_ncpy (bitpart, separator + 1, strlen(separator));
+	r_str_ncpy (bitpart, separator + 1, strlen (separator));
 	if (!address_direct (bytepart, &byte)) {
 		goto end;
 	}
@@ -372,11 +430,24 @@ static bool address_bit(char const* addr_str, ut8* addr_out) {
 		ret = true;
 	}
 end:
-	free (bitpart);
-	free (bytepart);
+	free (bitpart); bitpart = 0;
+	free (bytepart); bytepart = 0;
 	return ret;
 }
 
+/**
+ * figures out which register is denoted by the given string
+ * returns 8 if invalid
+ */
+static int register_number(char const*reg) {
+	if (is_reg (reg)) {
+		return reg[1] - '0';
+	}
+	if (is_indirect_reg (reg)) {
+		return reg[2] - '0';
+	}
+	return 8; // not register 0-7, so...
+}
 
 /******************************************************************************
  * ## Section 4: Generic instruction emmiters
@@ -437,10 +508,14 @@ static bool singlearg_immediate(ut8 firstbyte, char const* imm_str, ut8**out) {
 	return true;
 }
 
+static bool singlearg_register(ut8 firstbyte, char const*reg, ut8**out) {
+	return single_byte_instr (firstbyte | register_number (reg), out);
+}
+
 static bool single_a_arg_instr(ut8 const firstbyte, char const*arg
 	, ut8 **out)
 {
-	if (r_str_ncasecmp ("a", arg, 2)) {
+	if (r_str_casecmp ("a", arg)) {
 		return false;
 	}
 	return single_byte_instr (firstbyte, out);
@@ -450,9 +525,9 @@ static bool single_a_arg_instr(ut8 const firstbyte, char const*arg
  * ## Section 5: Specific instruction parsing
                  ----------------------------*/
 
-static bool mnem_acall(char const*args, ut16 pc, ut8**out) {
+static bool mnem_acall(char const*const*arg, ut16 pc, ut8**out) {
 	ut16 address;
-	if (!to_address (args, &address)) {
+	if (!to_address (arg[0], &address)) {
 		return false;
 	}
 	(*out)[0] = ((address & 0x0700) >> 3) | 0x11;
@@ -461,91 +536,42 @@ static bool mnem_acall(char const*args, ut16 pc, ut8**out) {
 	return true;
 }
 
-static bool mnem_add(char const*args, ut16 pc, ut8**out) {
-	enum add_class {
-		add_indirect,
-		add_immediate,
-		add_direct_or_register,
-	};
-	char *arg = malloc (strlen (args) + 1);
-	bool ret;
-	switch (match_prefix (args, (table) {
-		{ "a,@r",add_indirect },
-		{ "a,#", add_immediate },
-		{ "a,", add_direct_or_register },
-		{ 0, -1 }})) {
-	default: ret = false;
-	break; case add_indirect: {
-		if(!get_arg (args, 2 , arg) || !is_indirect_reg(arg)) {
-			ret = false;
-		} else {
-			ret = single_byte_instr (0x26 | (arg[2] - '0'), out);
-		}
+static bool mnem_add(char const*const*arg, ut16 pc, ut8**out) {
+	if (r_str_casecmp (arg[0], "a")) {
+		return false;
 	}
-	break; case add_immediate: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else {
-			ret = singlearg_immediate (0x24, arg, out);
-		}
+	switch (arg[1][0]) {
+	break; case '@': case '[':
+		return singlearg_register (0x26, arg[1], out);
+	break; case '#':
+		return singlearg_immediate (0x24, arg[1], out);
 	}
-	break; case add_direct_or_register: {
-		get_arg (args, 2, arg);
-		if (is_reg (arg)) {
-			ret = single_byte_instr (0x28 | (arg[1] - '0'), out);
-		} else {
-			ret = singlearg_direct (0x25, arg, out);
-		}
-	} }
-	free (arg);
-	return ret;
+	if (is_reg (arg[1])) {
+		return singlearg_register (0x28, arg[1], out);
+	} else {
+		return singlearg_direct (0x25, arg[1], out);
+	}
 }
 
-static bool mnem_addc(char const*args, ut16 pc, ut8**out) {
-	enum addc_class {
-		addc_indirect,
-		addc_immediate,
-		addc_direct_or_register,
-	};
-	char *arg = malloc (strlen (args) + 1);
-	bool ret;
-	switch (match_prefix (args, (table){
-		{ "a,@r", addc_indirect },
-		{ "a,#", addc_immediate },
-		{ "a,", addc_direct_or_register },
-		{ 0, -1 }})) {
-	default: ret = false;
-	break; case addc_indirect: {
-		if (!get_arg (args, 2, arg) || !is_indirect_reg (arg)) {
-			ret = false;
-		} else {
-			ret = single_byte_instr (0x36 | (arg[2] - '0'), out);
-		}
+static bool mnem_addc(char const*const*arg, ut16 pc, ut8**out) {
+	if (r_str_casecmp (arg[0], "a")) {
+		return false;
 	}
-	break; case addc_immediate: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else {
-			ret = singlearg_immediate (0x34, arg, out);
-		}
+	if (is_indirect_reg (arg[1])) {
+		return singlearg_register (0x36, arg[1], out);
 	}
-	break; case addc_direct_or_register: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-			break;
-		}
-		if (is_reg (arg)) {
-			ret = single_byte_instr(0x38 | (arg[1] - '0'), out);
-		} else {
-			ret = singlearg_direct (0x35, arg, out);
-		}
-	} }
-	return ret;
+	if (arg[1][0] == '#') {
+		return singlearg_immediate (0x34, arg[1], out);
+	}
+	if (is_reg (arg[1])) {
+		return singlearg_register (0x38, arg[1], out);
+	}
+	return singlearg_direct (0x35, arg[1], out);
 }
 
-static bool mnem_ajmp(char const*args, ut16 pc, ut8**out) {
+static bool mnem_ajmp(char const*const*arg, ut16 pc, ut8**out) {
 	ut16 address;
-	if (!to_address (args, &address)) {
+	if (!to_address (arg[0], &address)) {
 		return false;
 	}
 	(*out)[0] = ((address & 0x0700) >> 3 ) | 0x01;
@@ -554,379 +580,253 @@ static bool mnem_ajmp(char const*args, ut16 pc, ut8**out) {
 	return true;
 }
 
-static bool mnem_anl(char const*args, ut16 pc, ut8**out) {
-	enum anl_class {
-		anl_indirect,
-		anl_immediate,
-		anl_direct_or_register,
-		anl_carry_inverted,
-		anl_carry,
-	};
-	char *arg = malloc (strlen (args) + 1);
-	bool ret;
-	switch(match_prefix(args, (table){
-		{ "a,@r", anl_indirect },
-		{ "a,#", anl_immediate },
-		{ "a,", anl_direct_or_register },
-		{ "c,/", anl_carry_inverted },
-		{ "c,", anl_carry },
-		{ 0, -1 }})) {
-	default: ret = false;
-	break; case anl_indirect: {
-		if (!get_arg (args, 2, arg) || !is_indirect_reg (arg)) {
-			ret = false;
-		} else {
-			ret = single_byte_instr(0x56 | (arg[2] - '0'), out);
+static bool mnem_anl(char const*const*arg, ut16 pc, ut8**out) {
+	if (!strcmp (arg[0], "c")) {
+		if (arg[1][0] == '/') {
+			return singlearg_bit (0xb0, arg[1] + 1, out);
 		}
+		return singlearg_bit (0x82, arg[1], out);
 	}
-	break; case anl_immediate: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else {
-			ret = singlearg_immediate (0x54, arg, out);
+	if (!strcmp (arg[0], "a")) {
+		if (is_indirect_reg (arg[1])) {
+			return singlearg_register (0x56, arg[1], out);
 		}
+		if (arg[1][0] == '#') {
+			return singlearg_immediate (0x54, arg[1], out);
+		}
+		if (is_reg (arg[1])) {
+			return singlearg_register (0x58, arg[1], out);
+		}
+		return singlearg_direct (0x55, arg[1], out);
 	}
-	break; case anl_direct_or_register: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else if(is_reg (arg)) {
-			ret = single_byte_instr(0x58 | (arg[1] - '0'), out);
-		} else {
-			ret = singlearg_direct (0x55, arg, out);
-		}
-	}
-	break; case anl_carry_inverted: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else {
-			ret = singlearg_bit (0xb0, arg + 1, out);
-		}
-	}
-	break; case anl_carry: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else {
-			ret = singlearg_bit (0x82, arg, out);
-		}
-	}
-	break; case -1: {
-		char *firstarg = malloc (strlen (args) + 1);
-		ut8 address;
-		if (!get_arg (args, 1, firstarg)
-			|| !address_direct (firstarg, &address)) {
-			ret = false;
-		}
-		char *secondarg = malloc (strlen (args) + 1);
-		if (!get_arg (args, 2, secondarg)) {
-			ret = false;
-			free (firstarg);
-			free (secondarg);
-			goto end;
-		}
-		free (firstarg);
-		if (r_str_ncasecmp ("a", secondarg, 2)) {
-			ut16 imm;
-			if (secondarg[0] != '#'
-				|| !resolve_immediate (secondarg + 1, &imm)) {
-				ret = false;
-			} else {
-				(*out)[0] = 0x53;
-				(*out)[1] = address;
-				(*out)[2] = imm & 0x00FF;
-				*out += 3;
-				ret = true;
-			}
-		} else {
-			(*out)[0] = 0x52;
-			(*out)[1] = address;
-			*out += 2;
-			ret = true;
-		}
-	} }
-end:
-	free (arg);
-	return ret;
-}
 
-static bool mnem_cjne(char const*args, ut16 pc, ut8**out) {
-	enum cjne_class {
-		cjne_indirect,
-		cjne_immediate,
-		cjne_direct,
-		cjne_register,
-	};
-
-	char *arg = malloc (strlen (args) + 1);
-	bool ret;
-	ut16 address;
-	if (!get_arg (args, 3, arg) || !to_address (arg, &address)
-		|| !relative_address (pc+1, address, (*out)+2)) {
-		free (arg);
+	ut8 address;
+	if (!address_direct (arg[0], &address)) {
 		return false;
 	}
-	switch(match_prefix(args, (table) {
-	{ "@r", cjne_indirect },
-	{ "a,#", cjne_immediate },
-	{ "a,", cjne_direct },
-	{ "r", cjne_register },
-	{ 0, -1 }})) {
-	default: ret = false;
-	break; case cjne_indirect: {
-		ut16 imm;
-		if (!get_arg (args, 1, arg) || !is_indirect_reg (arg)) {
-			ret = false;
-			break;
-		}
-		(*out)[0] = 0xb6 | (arg[2] - '0');
-		get_arg (args, 2, arg);
-		if (!resolve_immediate (arg + 1, &imm)) {
-			ret = false;
-		} else {
-			(*out)[1] = imm & 0x00FF;
-			*out += 3;
-			ret = true;
-		}
+	if (!r_str_casecmp (arg[1], "a")) {
+		return singlearg_direct (0x52, arg[0], out);
 	}
-	break; case cjne_immediate: {
-		ut16 imm;
-		if (!get_arg (args, 2, arg)
-			|| !resolve_immediate (arg + 1, &imm)) {
-			ret = false;
-		} else {
+	ut16 imm;
+	if (arg[1][0] != '#' || !resolve_immediate (arg[1] + 1, &imm)) {
+		return false;
+	}
+	(*out)[0] = 0x53;
+	(*out)[1] = address;
+	(*out)[2] = imm & 0x00FF;
+	*out += 3;
+	return true;
+}
+
+static bool mnem_cjne(char const*const*arg, ut16 pc, ut8**out) {
+	ut16 address;
+	if (!to_address (arg[2], &address)
+		|| !relative_address (pc+1, address, (*out)+2)) {
+		return false;
+	}
+	if (!r_str_casecmp (arg[0], "a")) {
+		if (arg[1][0] == '#') {
+			ut16 imm;
+			if (!resolve_immediate (arg[1] + 1, &imm)) {
+				return false;
+			}
 			(*out)[0] = 0xb4;
 			(*out)[1] = imm & 0x00FF;
+			// out[2] set earlier
 			*out += 3;
-			ret = true;
+			return true;
 		}
-	}
-	break; case cjne_direct: {
 		ut8 address;
-		if (!get_arg (args, 2, arg) || !address_direct (arg, &address)) {
-			ret = false;
-		} else {
-			(*out)[0] = 0xb5;
-			(*out)[1] = address;
-			*out += 3;
-			ret = true;
+		if (!address_direct (arg[1], &address)) {
+			return false;
 		}
+		(*out)[0] = 0xb5;
+		(*out)[1] = address;
+		// out[2] set earlier
+		*out += 3;
+		return true;
 	}
-	break; case cjne_register: {
+	if (is_reg (arg[0])) {
 		ut16 imm;
-		if (!get_arg (args, 2, arg) || !resolve_immediate (arg + 1, &imm)) {
-			ret = false;
-			break;
+		if (!resolve_immediate (arg[1] + 1, &imm)) {
+			return false;
 		}
-		(*out)[0] = 0xbf | (arg[1] - '0');
-		if (!get_arg (args, 1, arg) || !is_reg(arg)) {
-			ret = false;
-		} else {
-			(*out)[1] = imm & 0x00FF;
-			*out += 3;
-			ret = true;
+		(*out)[0] = 0xbf | register_number (arg[0]) ;
+		(*out)[1] = imm & 0x00FF;
+		// out[2] set earlier
+		*out += 3;
+		return true;
+	}
+	if (is_indirect_reg (arg[0])) {
+		ut16 imm;
+		if (!resolve_immediate (arg[1] + 1, &imm)) {
+			return false;
 		}
-	} }
-	free (arg);
-	return ret;
+		(*out)[0] = 0xb6 | register_number (arg[0]) ;
+		(*out)[1] = imm & 0x00FF;
+		// out[2] set earlier
+		*out += 3;
+		return true;
+	}
+	return false;
 }
 
-static bool mnem_clr(char const*args, ut16 pc, ut8**out) {
-	if (!r_str_ncasecmp  ("a", args, 2)) {
+static bool mnem_clr(char const*const*arg, ut16 pc, ut8**out) {
+	if (!r_str_casecmp  ("a", arg[0])) {
 		return single_byte_instr (0xe4, out);
 	}
-	if (!r_str_ncasecmp  ("c", args, 2)) {
+	if (!r_str_casecmp  ("c", arg[0])) {
 		return single_byte_instr (0xc3, out);
 	}
-	return singlearg_bit (0xc2, args, out);
+	return singlearg_bit (0xc2, arg[0], out);
 }
 
-static bool mnem_cpl(char const*args, ut16 pc, ut8**out) {
-	if (!r_str_ncasecmp  ("a", args, 2)) {
+static bool mnem_cpl(char const*const*arg, ut16 pc, ut8**out) {
+	if (!r_str_casecmp  ("a", arg[0])) {
 		return single_byte_instr (0xf4, out);
 	}
-	if (!r_str_ncasecmp  ("c", args, 2)) {
+	if (!r_str_casecmp  ("c", arg[0])) {
 		return single_byte_instr (0xb3, out);
 	}
-	return singlearg_bit (0xb2, args, out);
+	return singlearg_bit (0xb2, arg[0], out);
 }
 
-static bool mnem_da(char const*args, ut16 pc, ut8**out) {
-	if (r_str_ncasecmp ("a", args, 2)) {
-		return false;
-	}
-	return single_byte_instr (0xd4, out);
+static bool mnem_da(char const*const*arg, ut16 pc, ut8**out) {
+	return single_a_arg_instr (0xd4, arg[0], out);
 }
 
-static bool mnem_dec(char const*args, ut16 pc, ut8**out) {
-	if (is_indirect_reg (args)) {
-		return single_byte_instr(0x16 | (args[2] - '0'), out);
+static bool mnem_dec(char const*const*arg, ut16 pc, ut8**out) {
+	if (is_indirect_reg (arg[0])) {
+		return singlearg_register (0x16, arg[0], out);
 	}
-	if (is_reg (args)) {
-		return single_byte_instr(0x18 | (args[1] - '0'), out);
+	if (is_reg (arg[0])) {
+		return singlearg_register (0x18, arg[0], out);
 	}
-	if (!r_str_ncasecmp ("a", args, 2)) {
-		return single_byte_instr(0x14, out);
+	if (!r_str_casecmp ("a", arg[0])) {
+		return single_byte_instr (0x14, out);
 	}
-	return singlearg_direct (0x15, args, out);
+	return singlearg_direct (0x15, arg[0], out);
 }
 
-static bool mnem_div(char const*args, ut16 pc, ut8**out) {
-	if (r_str_ncasecmp  ("ab", args, 3)) {
+static bool mnem_div(char const*const*arg, ut16 pc, ut8**out) {
+	if (r_str_casecmp  ("ab", arg[0])) {
 		return false;
 	}
 	return single_byte_instr (0x84, out);
 }
 
-static bool mnem_djnz(char const*args, ut16 pc, ut8**out) {
-	char *secondarg = malloc (strlen (args) + 1);
-	bool ret = true;
-	{
-		ut16 address;
-		if (!get_arg (args, 2, secondarg)) {
-			ret = false;
-		} else if (!to_address (secondarg, &address)) {
-			ret = false;
-		} else if (! relative_address (pc, address, (*out) + 2)) {
-			ret = false;
-		}
+static bool mnem_djnz(char const*const*arg, ut16 pc, ut8**out) {
+	ut16 jmp_address;
+	if (!to_address (arg[1], &jmp_address)) {
+		return false;
 	}
-	free (secondarg);
-	if (!ret) {
-		return ret;
+	if (!relative_address (pc, jmp_address, (*out) + 2)) {
+		return false;
 	}
-	char *firstarg = malloc (strlen (args) + 1);
-	ut8 address;
-	if (!get_arg (args, 1, firstarg)) {
-		ret = false;
-	} else if (is_reg (firstarg)) {
-		(*out)[0] = 0xd8 | (firstarg[1] - '0');
+
+	if (is_reg (arg[0])) {
+		(*out)[0] = 0xd8 | register_number (arg[0]);
 		(*out)[1] = (*out)[2];
 		*out += 2;
-		ret = true;
-	} else if (!address_direct (firstarg, &address)) {
-		ret = false;
-	} else {
-		(*out)[0] = 0xd5;
-		(*out)[1] = address;
-		(*out)[2] -= 1;
-		*out += 3;
-		ret = true;
+		return true;
 	}
-	free (firstarg);
-	return ret;
-}
-
-static bool mnem_inc(char const*args, ut16 pc, ut8**out) {
-	if (is_reg (args)) {
-		return single_byte_instr(0x08 | (args[1] - '0'), out);
-	}
-	if (is_indirect_reg (args)) {
-		return single_byte_instr(0x06 | (args[2] - '0'), out);
-	}
-	if (!r_str_ncasecmp  ("a", args, 2)) {
-		return single_byte_instr(0x04, out);
-	}
-	if (!r_str_ncasecmp  ("dptr", args, 5)) {
-		return single_byte_instr(0xa3, out);
-	}
-	return singlearg_direct (0x05, args, out);
-}
-
-static bool mnem_jb(char const*args, ut16 pc, ut8**out) {
-	char *secondarg = malloc (strlen (args) + 1);
-	{ ut16 address;
-	if (!get_arg (args, 2, secondarg)
-		|| !to_address (secondarg, &address)
-		|| !relative_address (pc + 1, address, (*out) + 2)) {
-		free (secondarg);
-		return false;
-	} }
-	free (secondarg);
-	char *firstarg = malloc (strlen (args) + 1);
-	ut8 address;
-	if (!get_arg (args, 1, firstarg)
-		|| !address_bit (firstarg, &address)) {
-		free (firstarg);
+	ut8 dec_address;
+	if (!address_direct (arg[0], &dec_address))  {
 		return false;
 	}
-	free (firstarg);
-	(*out)[0] = 0x20;
-	(*out)[1] = address;
+	(*out)[0] = 0xd5;
+	(*out)[1] = dec_address;
+	(*out)[2] -= 1;
 	*out += 3;
 	return true;
 }
 
-static bool mnem_jbc(char const*args, ut16 pc, ut8**out) {
-	char *secondarg = malloc (strlen (args) + 1);
-	{ ut16 address;
-	if (!get_arg (args, 2, secondarg)) {
-		free (secondarg);
+static bool mnem_inc(char const*const*arg, ut16 pc, ut8**out) {
+	if (is_reg (arg[0])) {
+		return singlearg_register (0x08, arg[0], out);
+	}
+	if (is_indirect_reg (arg[0])) {
+		return singlearg_register (0x06, arg[0], out);
+	}
+	if (!r_str_casecmp  ("a", arg[0])) {
+		return single_byte_instr (0x04, out);
+	}
+	if (!r_str_casecmp ("dptr", arg[0])) {
+		return single_byte_instr (0xa3, out);
+	}
+	return singlearg_direct (0x05, arg[0], out);
+}
+
+static bool mnem_jb(char const*const*arg, ut16 pc, ut8**out) {
+	ut8 cmp_addr;
+	if (!address_bit (arg[0], &cmp_addr)) {
 		return false;
 	}
-	if (!to_address (secondarg, &address)
-		|| !relative_address (pc + 1, address, (*out) + 2)) {
-		free (secondarg);
+	ut16 jmp_addr;
+	if (!to_address (arg[1], &jmp_addr)
+		|| !relative_address (pc + 1, jmp_addr, (*out) + 2)) {
 		return false;
-	} }
-	free (secondarg);
-	char *firstarg = malloc (strlen (args) + 1);
-	ut8 address;
-	if (!get_arg (args, 1, firstarg)
-		|| !address_bit (firstarg, &address)) {
-		free (firstarg);
+	}
+	(*out)[0] = 0x20;
+	(*out)[1] = cmp_addr;
+	// out[2] set earlier
+	*out += 3;
+	return true;
+}
+
+static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
+	ut8 cmp_addr;
+	if (!address_bit (arg[0], &cmp_addr)) {
+		return false;
+	}
+	ut16 jmp_addr;
+	if (!to_address (arg[1], &jmp_addr)
+		|| !relative_address (pc + 1, jmp_addr, (*out) + 2)) {
 		return false;
 	}
 	(*out)[0] = 0x10;
-	(*out)[1] = address;
+	(*out)[1] = cmp_addr;
+	// out[2] set earlier
 	*out += 3;
-	free (firstarg);
 	return true;
 }
 
-static bool mnem_jc(char const*args, ut16 pc, ut8**out) {
-	return singlearg_reladdr (0x40, args, pc, out);
+static bool mnem_jc(char const*const*arg, ut16 pc, ut8**out) {
+	return singlearg_reladdr (0x40, arg[0], pc, out);
 }
 
-static bool mnem_jnb(char const*args, ut16 pc, ut8**out) {
-	char *secondarg = malloc (strlen (args) + 1);
-	{
-		ut16 address;
-		if (!get_arg (args, 2, secondarg)
-			|| !to_address (secondarg, &address)
-			|| !relative_address (pc + 1, address, (*out) + 2)) {
-			free (secondarg);
-			return false;
-		}
-	}
-	free (secondarg);
-	char *firstarg = malloc (strlen (args) + 1);
-	ut8 address;
-	if( !get_arg (args, 1, firstarg)
-		|| !address_bit (firstarg, &address)) {
-		free (firstarg);
+static bool mnem_jnb(char const*const*arg, ut16 pc, ut8**out) {
+	ut8 cmp_addr;
+	if (!address_bit (arg[0], &cmp_addr)) {
 		return false;
 	}
-	free (firstarg);
+	ut16 jmp_addr;
+	if (!to_address (arg[1], &jmp_addr)
+		|| !relative_address (pc + 1, jmp_addr, (*out) + 2)) {
+		return false;
+	}
 	(*out)[0] = 0x30;
-	(*out)[1] = address; //FIXME: may not be 16 bit
+	(*out)[1] = cmp_addr;
+	// out[2] set earlier
 	*out += 3;
 	return true;
 }
 
-static bool mnem_jnc(char const*args, ut16 pc, ut8**out) {
-	return singlearg_reladdr (0x50, args, pc, out);
+static bool mnem_jnc(char const*const*arg, ut16 pc, ut8**out) {
+	return singlearg_reladdr (0x50, arg[0], pc, out);
 }
 
-static bool mnem_jnz(char const*args, ut16 pc, ut8**out) {
-	return singlearg_reladdr (0x70, args, pc, out);
+static bool mnem_jnz(char const*const*arg, ut16 pc, ut8**out) {
+	return singlearg_reladdr (0x70, arg[0], pc, out);
 }
 
-static bool mnem_jz(char const*args, ut16 pc, ut8**out) {
-	return singlearg_reladdr (0x60, args, pc, out);
+static bool mnem_jz(char const*const*arg, ut16 pc, ut8**out) {
+	return singlearg_reladdr (0x60, arg[0], pc, out);
 }
 
-static bool mnem_lcall(char const*args, ut16 pc, ut8**out) {
+static bool mnem_lcall(char const*const*arg, ut16 pc, ut8**out) {
 	ut16 address;
-	if (!to_address (args, &address)) {
+	if (!to_address (arg[0], &address)) {
 		return false;
 	}
 	(*out)[0] = 0x12;
@@ -936,9 +836,9 @@ static bool mnem_lcall(char const*args, ut16 pc, ut8**out) {
 	return true;
 }
 
-static bool mnem_ljmp(char const*args, ut16 pc, ut8**out) {
+static bool mnem_ljmp(char const*const*arg, ut16 pc, ut8**out) {
 	ut16 address;
-	if (!to_address (args, &address)) {
+	if (!to_address (arg[0], &address)) {
 		return false;
 	}
 	(*out)[0] = 0x02;
@@ -948,382 +848,243 @@ static bool mnem_ljmp(char const*args, ut16 pc, ut8**out) {
 	return true;
 }
 
-static bool mnem_mov_c(char const*args, ut16 pc, ut8**out) {
-	char *arg;
-	arg = malloc (strlen (args) + 1);
-	if (!get_arg (args, 2, arg)) {
+static bool mnem_mov_c(char const*const*arg, ut16 pc, ut8**out) {
+	return singlearg_bit (0xa2, arg[1], out);
+}
+
+static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
+	if (!r_str_casecmp (arg[0], "dptr")) {
+		ut16 imm;
+		if (!resolve_immediate (arg[1] + 1, &imm)) {
+			return false;
+		}
+		(*out)[0] = 0x90;
+		(*out)[1] = imm >> 8;
+		(*out)[2] = imm;
+		*out += 3;
+		return true;
+	}
+	if (is_indirect_reg (arg[0])) {
+		if (!r_str_casecmp (arg[1], "a")) {
+			return singlearg_register (0xf6, arg[0], out);
+		}
+		if (arg[1][0] != '#' ) {
+			return singlearg_direct (
+				0xa6 | register_number (arg[0])
+				, arg[1]
+				, out);
+		}
+		return singlearg_immediate (0x76 | register_number (arg[0])
+			, arg[1]
+			, out);
+	}
+	if (!r_str_casecmp (arg[0], "a")) {
+		if (is_indirect_reg (arg[1])) {
+			return singlearg_register (0xe6, arg[1], out);
+		}
+		if (is_reg (arg[1])) {
+			return singlearg_register (0xe8, arg[1], out);
+		}
+		if (arg[1][0] == '#') {
+			return singlearg_immediate (0x74, arg[1], out);
+		}
+		return singlearg_direct (0xe5, arg[1], out);
+	}
+	if (is_reg (arg[0])) {
+		if (!r_str_casecmp (arg[1], "a")) {
+			return singlearg_register (0xf8, arg[0], out);
+		}
+		if (arg[1][0] == '#') {
+			return singlearg_immediate (
+				0x78 | register_number (arg[0])
+				, arg[1]
+				, out);
+		}
+		return singlearg_direct (0xa8 | register_number (arg[0])
+			, arg[1]
+			, out);
+	}
+	if (!r_str_casecmp (arg[1], "c")) {
+		return singlearg_bit (0x92, arg[0], out);
+	}
+	if (!r_str_casecmp (arg[1], "a")) {
+		return singlearg_direct (0xf5,  arg[0], out);
+	}
+	if (is_reg (arg[1])) {
+		return singlearg_direct (0x88 | register_number (arg[1])
+			, arg[0]
+			, out);
+	}
+	if (is_indirect_reg (arg[1])) {
+		return singlearg_direct (0x86 | register_number (arg[1])
+			, arg[0]
+			, out);
+	}
+	ut8 dest_addr;
+	if (!address_direct (arg[0], &dest_addr)) {
 		return false;
 	}
-	return singlearg_bit (0xa2, arg, out);
-}
-
-static bool mnem_mov(char const*args, ut16 pc, ut8**out) {
-	enum mov_class {
-		mov_c_bit,
-		mov_dptr,
-		mov_a_indirect,
-		mov_a_immidiate,
-		mov_a_direct_or_register,
-		mov_indirect_any,
-	};
-	char *arg = malloc (strlen (args) + 1);
-	bool ret;
-	switch (match_prefix (args, (table) {
-		{ "dptr,#", mov_dptr },
-		{ "@r", mov_indirect_any },
-		{ "a,@r", mov_a_indirect },
-		{ "a,#", mov_a_immidiate },
-		{ "a,", mov_a_direct_or_register },
-		{ 0, -1 }})) {
-	default: ret = false;
-	break; case mov_dptr: {
+	if (arg[1][0] == '#') {
 		ut16 imm;
-		if (!get_arg (args, 2, arg)
-			|| !resolve_immediate (arg + 1, &imm)) {
-			ret = false;
-		} else {
-			(*out)[0] = 0x90;
-			(*out)[1] = imm >> 8;
-			(*out)[2] = imm;
-			*out += 3;
-			ret = true;
-		}
-	}
-	break; case mov_a_indirect: {
-		if (!get_arg (args, 2, arg) || !is_indirect_reg (arg)) {
-			ret = false;
-		} else {
-			ret = single_byte_instr(0xe6 | (arg[2] - '0'), out);
-		}
-	}
-	break; case mov_indirect_any: {
-		if (!get_arg (args, 1, arg) || !is_indirect_reg (arg)) {
-			ret = false;
-			break;
-		}
-		(*out)[0] = 0x06 | (arg[2] - '0');
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else if (!r_str_ncasecmp ("a", arg, 2)) {
-			ret = single_byte_instr(0xf0 | (*out)[0], out);
-		} else if (arg[0] != '#') {
-			ret = singlearg_direct(0xa0 | (*out)[0], arg, out);
-		} else {
-			ret = singlearg_immediate ((*out)[0] | 0x70, arg, out);
-		}
-	}
-	break; case mov_a_immidiate: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else {
-			ret = singlearg_immediate (0x74, arg, out);
-		}
-	}
-	break; case mov_a_direct_or_register: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else if (is_reg (arg)) {
-			ret = single_byte_instr (0xe8 | (arg[1] - '0'), out);
-		} else {
-			ret = singlearg_direct (0xe5, arg, out);
-		}
-	}
-	break; case -1: {
-		char *firstarg = malloc (strlen (args) + 1);
-		char *secondarg = malloc (strlen (args) + 1);
-		if (!get_arg (args, 1, firstarg)
-			|| !get_arg (args, 2, secondarg)) {
-			ret = false;
-		} else if (is_reg (firstarg)) {
-			if (!r_str_ncasecmp ("a", secondarg, 2)) {
-				ret = single_byte_instr ( 0xf8 | (firstarg[1] - '0'), out);
-			} else if (secondarg[0] == '#') {
-				ret = singlearg_immediate (0x78 | (firstarg[1] - '0'), secondarg, out);
-			} else {
-				ret = singlearg_direct (0xa8 | (firstarg[1] - '0')
-					, secondarg, out);
-			}
-		} else if (!r_str_ncasecmp  ("c", secondarg, 2)) {
-			ret = singlearg_bit (0x92, firstarg, out);
-		} else if (!r_str_ncasecmp ("a", secondarg, 2)) {
-			ret = singlearg_direct (0xf5, firstarg, out);
-		} else if (is_reg (secondarg)) {
-			ret = singlearg_direct (0x88 | (secondarg[1] - '0')
-				, firstarg, out);
-		} else if (is_indirect_reg (secondarg)) {
-			ret = singlearg_direct (0x86 | (secondarg[2] - '0')
-				, firstarg, out);
-		} else {
-			ut8 dest_addr;
-			ut16 imm;
-			ut8 src_addr;
-			if (!address_direct (firstarg, &dest_addr)) {
-				ret = false;
-			} else if (secondarg[0] == '#'
-				&& resolve_immediate (secondarg + 1, &imm)) {
-				(*out)[0] = 0x75;
-				(*out)[1] = dest_addr;
-				(*out)[2] = imm & 0x00FF;
-				*out += 3;
-				ret = true;
-			} else if (!address_direct (secondarg, &src_addr)) {
-				ret = false;
-			} else {
-				(*out)[0] = 0x85;
-				(*out)[1] = src_addr;
-				(*out)[2] = dest_addr;
-				*out += 3;
-				ret = true;
-			}
-		}
-		free (firstarg);
-		free (secondarg);
-	} }
-	free (arg);
-	return ret;
-}
-
-static bool mnem_movc(char const*args, ut16 pc, ut8**out) {
-	enum movc_class {
-		movc_dptr,
-		movc_pc,
-	};
-
-	switch (match_prefix (args, (table) {
-		{ "a,@a+dptr", movc_dptr },
-		{ "a,@a+pc", movc_pc, },
-		{ 0, -1 }})) {
-	default: return false;
-	break; case movc_dptr:
-		if (r_str_casestr (args, "dptr")[4] != '\0') {
+		if (!resolve_immediate (arg[1] + 1, &imm)) {
 			return false;
 		}
+		(*out)[0] = 0x75;
+		(*out)[1] = dest_addr;
+		(*out)[2] = imm & 0x00FF;
+		*out += 3;
+		return true;
+	}
+	ut8 src_addr;
+	if (!address_direct (arg[1], &src_addr)) {
+		return false;
+	}
+	(*out)[0] = 0x85;
+	(*out)[1] = src_addr;
+	(*out)[2] = dest_addr;
+	*out += 3;
+	return true;
+}
+
+static bool mnem_movc(char const*const*arg, ut16 pc, ut8**out) {
+	if (r_str_casecmp (arg[0], "a")) {
+		return false;
+	}
+	if (!str_iwhitecasecmp (arg[1], "@a+dptr")
+		|| !str_iwhitecasecmp (arg[1], "[a+dptr]")) {
 		return single_byte_instr (0x93, out);
-	break; case movc_pc: {
-		char const* pcp = r_str_casestr (args, "pc");
-		if (pcp[2] != '\0') {
-			return false;
-		}
+	}
+	if (!str_iwhitecasecmp (arg[1], "@a+pc")
+		|| !str_iwhitecasecmp (arg[1], "[a+pc]")) {
 		return single_byte_instr (0x83, out);
-	} }
+	}
+	return false;
 }
 
-static bool mnem_movx(char const*args, ut16 pc, ut8**out) {
-	enum movx_class {
-		movx_indirect_read,
-		movx_dptr_read,
-		movx_indirect_write,
-		movx_dptr_write,
-	};
-	char *arg;
-	arg = malloc (strlen (args) + 1);
-	bool ret;
-
-	switch (match_prefix (args, (table){
-		{ "a,@r", movx_indirect_read },
-		{ "a,@dptr", movx_dptr_read },
-		{ "@r", movx_indirect_write },
-		{ "@dptr,a", movx_dptr_write },
-		{ 0, -1 }})) {
-	default: ret = false;
-	break; case movx_dptr_read: {
-		if (!get_arg (args, 1, arg) || strcmp (arg, "a")) {
-			ret = false;
-		} else {
-			ret = single_byte_instr (0xe0, out);
+static bool mnem_movx(char const*const*arg, ut16 pc, ut8**out) {
+	if (!r_str_casecmp (arg[0], "a")) {
+		if (is_indirect_reg (arg[1])) {
+			return singlearg_register (0xe2, arg[1], out);
+		}
+		if (!str_iwhitecasecmp (arg[1], "@dptr")
+			|| !str_iwhitecasecmp (arg[1], "[dptr]")) {
+			return single_byte_instr (0xe0, out);
 		}
 	}
-	break; case movx_dptr_write: {
-		if (!get_arg (args, 2, arg) || strcmp (arg, "a")) {
-			ret = false;
-		} else {
-			ret = single_byte_instr (0xf0, out);
-		}
+	if (r_str_casecmp (arg[1], "a")) {
+		return false;
 	}
-	break; case movx_indirect_read: {
-		if (!get_arg (args, 2, arg) || !is_indirect_reg (arg)) {
-			ret = false;
-		} else {
-			ret = single_byte_instr (0xe2 | (arg[2] - '0'), out);
-		}
+	if (is_indirect_reg (arg[0])) {
+		return singlearg_register (0xf2, arg[0], out);
 	}
-	break; case movx_indirect_write: {
-		if (!get_arg (args, 1, arg) || !is_indirect_reg(arg)) {
-			ret = false;
-		} else {
-			ret = single_byte_instr (0xf2 | (arg[2] - '0'), out);
-		}
-	} }
-	free (arg);
-	return ret;
+	if (!str_iwhitecasecmp (arg[0], "@dptr")
+		|| !str_iwhitecasecmp (arg[0], "[dptr]")) {
+		return single_byte_instr (0xf0, out);
+	}
+	return false;
 }
 
-static bool mnem_mul(char const*args, ut16 pc, ut8**out) {
-	if (r_str_ncasecmp ("ab", args, 3)) {
+static bool mnem_mul(char const*const*arg, ut16 pc, ut8**out) {
+	if (r_str_ncasecmp ("ab", arg[0], 3)) {
 		return false;
 	}
 	return single_byte_instr (0xa4, out);
 }
 
-static bool mnem_nop(char const*args, ut16 pc, ut8**out) {
-	if (args[0] != '\0') {
-		return false;
-	}
+static bool mnem_nop(char const*const*arg, ut16 pc, ut8**out) {
 	return single_byte_instr (0x00, out);
 }
 
-static bool mnem_orl(char const*args, ut16 pc, ut8**out) {
-	enum orl_class {
-		orl_indirect,
-		orl_immediate,
-		orl_direct_or_register,
-		orl_carry_inverted,
-		orl_carry,
-	};
-	char *arg = malloc (strlen (args) + 1);
-	bool ret;
-	switch (match_prefix (args, (table) {
-		{ "a,@r", orl_indirect },
-		{ "a,#", orl_immediate },
-		{ "a,", orl_direct_or_register },
-		{ "c,/", orl_carry_inverted },
-		{ "c,", orl_carry },
-		{ 0, -1 }})) {
-	default: ret = false;
-	break; case orl_indirect: {
-		if (!get_arg (args, 2, arg) || !is_indirect_reg (arg)) {
-			ret = false;
-		} else {
-			ret = single_byte_instr (0x46 | (arg[2] - '0'), out);
+static bool mnem_orl(char const*const*arg, ut16 pc, ut8**out) {
+	if (!r_str_casecmp (arg[0], "c")) {
+		if (arg[1][0] == '/') {
+			return singlearg_bit (0xa0, arg[1] + 1, out);
 		}
+		return singlearg_bit (0x72, arg[1], out);
 	}
-	break; case orl_immediate: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else {
-			ret = singlearg_immediate (0x44, arg, out);
+	if (!r_str_casecmp (arg[0], "a")) {
+		if (is_indirect_reg (arg[1])) {
+			return singlearg_register (0x46, arg[1], out);
 		}
+		if (arg[1][0] == '#') {
+			return singlearg_immediate (0x44, arg[1], out);
+		}
+		if (is_reg (arg[1])) {
+			return singlearg_register (0x48, arg[1], out);
+		}
+		return singlearg_direct (0x45, arg[1], out);
 	}
-	break; case orl_direct_or_register: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else if (is_reg (arg)) {
-			ret = single_byte_instr (0x48 | (arg[1] - '0' ), out);
-		} else {
-			ret = singlearg_direct (0x45, arg, out);
-		}
-	}
-	break; case orl_carry_inverted: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else {
-			ret = singlearg_bit (0xa0, arg + 1, out);
-		}
-	}
-	break; case orl_carry: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else {
-			ret = singlearg_bit (0x72, arg, out);
-		}
-	}
-	break; case -1: {
-		char *firstarg = malloc (strlen (args) + 1);
-		ut8 address;
-		if (!get_arg (args, 1, firstarg)
-			|| !address_direct (firstarg, &address)) {
-			free (firstarg);
-			free (arg);
-			return false;
-		}
-		char *secondarg = malloc (strlen (args) + 1);
-		if (!get_arg (args, 2, secondarg)) {
-			free (firstarg);
-			free (secondarg);
-			free (arg);
-			return false;
-		}
-		free (firstarg);
-		if (secondarg[0] == '#' ) {
-			ut16 imm;
-			if (!resolve_immediate (secondarg + 1, &imm)) {
-				ret = false;
-			} else {
-				(*out)[0] = 0x43;
-				(*out)[1] = address; //FIXME: may not be 16 bit
-				(*out)[2] = imm & 0x00FF;
-				*out += 3;
-				ret = true;
-			}
-		} else {
-			(*out)[0] = 0x42;
-			(*out)[1] = address; //FIXME: may not be 16 bit
-			*out += 2;
-			ret = true;
-		}
-	} }
-	free (arg);
-	return ret;
-}
 
-static bool mnem_pop(char const*args, ut16 pc, ut8**out) {
-	return singlearg_direct(0xd0, args, out);
-}
+	if (arg[1][0] != '#') {
+		return singlearg_direct (0x42, arg[0], out);
+	}
 
-static bool mnem_push(char const*args, ut16 pc, ut8**out) {
-	return singlearg_direct(0xc0, args, out);
-}
-
-static bool mnem_ret(char const*args, ut16 pc, ut8**out) {
-	if (args[0] != '\0') {
+	ut8 dest_addr;
+	if (!address_direct (arg[0], &dest_addr)) {
 		return false;
 	}
+	ut16 imm;
+	if (!resolve_immediate (arg[1] + 1, &imm)) {
+		return false;
+	}
+	(*out)[0] = 0x43;
+	(*out)[1] = dest_addr;
+	(*out)[2] = imm & 0x00FF;
+	*out += 3;
+	return true;
+}
+
+static bool mnem_pop(char const*const*arg, ut16 pc, ut8**out) {
+	return singlearg_direct (0xd0, arg[0], out);
+}
+
+static bool mnem_push(char const*const*arg, ut16 pc, ut8**out) {
+	return singlearg_direct (0xc0, arg[0], out);
+}
+
+static bool mnem_ret(char const*const*arg, ut16 pc, ut8**out) {
 	return single_byte_instr (0x22, out);
 }
 
-static bool mnem_reti(char const*args, ut16 pc, ut8**out) {
-	if (args[0] != '\0') {
-		return false;
-	}
+static bool mnem_reti(char const*const*arg, ut16 pc, ut8**out) {
 	return single_byte_instr (0x32, out);
 }
 
-static bool mnem_rl(char const*args, ut16 pc, ut8**out) {
-	return single_a_arg_instr (0x23, args, out);
+static bool mnem_rl(char const*const*arg, ut16 pc, ut8**out) {
+	return single_a_arg_instr (0x23, arg[0], out);
 }
 
-static bool mnem_rlc(char const*args, ut16 pc, ut8**out) {
-	return single_a_arg_instr (0x33, args, out);
+static bool mnem_rlc(char const*const*arg, ut16 pc, ut8**out) {
+	return single_a_arg_instr (0x33, arg[0], out);
 }
 
-static bool mnem_rr(char const*args, ut16 pc, ut8**out) {
-	return single_a_arg_instr (0x03, args, out);
+static bool mnem_rr(char const*const*arg, ut16 pc, ut8**out) {
+	return single_a_arg_instr (0x03, arg[0], out);
 }
 
-static bool mnem_rrc(char const*args, ut16 pc, ut8**out) {
-	return single_a_arg_instr (0x13, args, out);
+static bool mnem_rrc(char const*const*arg, ut16 pc, ut8**out) {
+	return single_a_arg_instr (0x13, arg[0], out);
 }
 
-static bool mnem_setb(char const*args, ut16 pc, ut8**out) {
-	if (!r_str_ncasecmp  ("c", args, 2)) {
+static bool mnem_setb(char const*const*arg, ut16 pc, ut8**out) {
+	if (!r_str_casecmp  ("c", arg[0])) {
 		return single_byte_instr (0xd3, out);
 	}
-	return singlearg_bit (0xd2, args, out);
+	return singlearg_bit (0xd2, arg[0], out);
 }
 
-static bool mnem_sjmp(char const*args, ut16 pc, ut8**out) {
-	return singlearg_reladdr (0x80, args, pc, out);
+static bool mnem_sjmp(char const*const*arg, ut16 pc, ut8**out) {
+	return singlearg_reladdr (0x80, arg[0], pc, out);
 }
 
-static bool mnem_jmp(char const*args, ut16 pc, ut8**out) {
-	if (match_prefix (args, (table){ {"@a+dptr", true}, {0, false}})
-		&& r_str_casestr (args, "dptr")[4] == '\0') {
-		(*out)[0] = 0x73;
-		*out += 1;
-		return true;
+static bool mnem_jmp(char const*const*arg, ut16 pc, ut8**out) {
+	if (!str_iwhitecasecmp (arg[0], "@a+dptr")
+		|| !str_iwhitecasecmp (arg[0], "[a+dptr]")) {
+		return single_byte_instr (0x73, out);
 	}
+
 	ut16 address;
-	if (!to_address (args, &address)) {
+	if (!to_address (arg[0], &address)) {
 		return false;
 	}
 	ut16 reladdr;
@@ -1335,177 +1096,91 @@ static bool mnem_jmp(char const*args, ut16 pc, ut8**out) {
 	}
 
 	if ( reladdr < 0x100 ) {
-		return mnem_sjmp (args, pc, out);
+		return mnem_sjmp (arg, pc, out);
 	}
 	else if ( reladdr < 0x08FF ) {
-		return mnem_ajmp (args, pc, out);
+		return mnem_ajmp (arg, pc, out);
 	}
 	else {
-		return mnem_ljmp (args, pc, out);
+		return mnem_ljmp (arg, pc, out);
 	}
 }
 
-static bool mnem_subb(char const*args, ut16 pc, ut8**out) {
-	enum subb_class {
-		subb_indirect,
-		subb_immediate,
-		subb_direct_or_register,
-	};
-	char *arg = malloc (strlen (args) + 1);
-	bool ret;
-	switch (match_prefix (args, (table) {
-		{ "a,@r", subb_indirect },
-		{ "a,#", subb_immediate },
-		{ "a,", subb_direct_or_register },
-		{ 0, -1 }})) {
-	default: ret = false;
-	break; case subb_indirect: {
-		if (!get_arg (args, 2, arg) || !is_indirect_reg (arg)) {
-			ret = false;
-		} else {
-			ret = single_byte_instr (0x96 | (arg[2] - '0'), out);
-		}
+static bool mnem_subb(char const*const*arg, ut16 pc, ut8**out) {
+	if (r_str_casecmp (arg[0], "a")) {
+		return false;
 	}
-	break; case subb_immediate: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else {
-			ret = singlearg_immediate (0x94, arg, out);
-		}
+	if (is_indirect_reg (arg[1])) {
+		return singlearg_register (0x96, arg[1], out);
 	}
-	break; case subb_direct_or_register: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else if (is_reg (arg)) {
-			ret = single_byte_instr (0x9d, out);
-		} else {
-			ret = singlearg_direct (0x95, arg, out);
-		}
-	} }
-	free (arg);
-	return ret;
+	if (arg[1][0] == '#') {
+		return singlearg_immediate (0x94, arg[1], out);
+	}
+	if (is_reg (arg[1])) {
+		return singlearg_register (0x98, arg[1], out);
+	}
+	return singlearg_direct (0x95, arg[1], out);
 }
 
-static bool mnem_swap(char const*args, ut16 pc, ut8**out) {
-	return single_a_arg_instr (0xc4, args, out);
+static bool mnem_swap(char const*const*arg, ut16 pc, ut8**out) {
+	return single_a_arg_instr (0xc4, arg[0], out);
 }
 
-static bool mnem_xrl(char const*args, ut16 pc, ut8**out) {
-	enum xrl_class {
-		xrl_indirect,
-		xrl_immediate,
-		xrl_direct_or_register,
-	};
-	char *arg = malloc (strlen (args) + 1);
-	bool ret;
-	switch (match_prefix (args, (table) {
-		{ "a,@r", xrl_indirect },
-		{ "a,#", xrl_immediate },
-		{ "a,", xrl_direct_or_register },
-		{ 0, -1 }})) {
-	default: ret = false;
-	break; case xrl_indirect: {
-		if (!get_arg (args, 2, arg) || !is_indirect_reg (arg)) {
-			ret = false;
-		} else {
-			ret = single_byte_instr (0x66 | (arg[2] - '0'), out);
+static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
+	if (!r_str_casecmp (arg[0], "a")) {
+		if (is_indirect_reg (arg[1])) {
+			return singlearg_register (0x66, arg[1], out);
 		}
+		if (arg[1][0] == '#') {
+			return singlearg_immediate (0x64, arg[1], out);
+		}
+		if (is_reg (arg[1])) {
+			return singlearg_register (0x68, arg[1], out);
+		}
+		return singlearg_direct (0x65, arg[1], out);
 	}
-	break; case xrl_immediate: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else {
-			ret = singlearg_immediate (0x64, arg, out);
+	if (arg[1][0] != '#') {
+		if (r_str_casecmp (arg[1], "a")) {
+			return false;
 		}
+		return singlearg_direct (0x62, arg[0], out);
 	}
-	break; case xrl_direct_or_register: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else if (is_reg (arg)) {
-			ret = single_byte_instr (0x68 | (arg[1] - '0'), out);
-		} else {
-			ret = singlearg_direct (0x65, arg, out);
-		}
+	ut8 dest_addr;
+	if (!address_direct (arg[0], &dest_addr)) {
+		return false;
 	}
-	break; case -1: {
-		char *firstarg = malloc (strlen (args) + 1);
-		ut8 address;
-		if (!get_arg (args, 1, firstarg)
-			|| !address_direct (firstarg, &address)) {
-			ret = false;
-			break;
-		}
-		free (firstarg);
-		(*out)[1] = address; //FIXME: may not be 16 bit
-		char *secondarg = malloc (strlen (args) + 1);
-		if (!get_arg (args, 2, secondarg)) {
-			ret = false;
-		} else if (secondarg[0] == '#') {
-			ut16 imm;
-			if (!resolve_immediate (secondarg + 1, &imm)) {
-				ret = false;
-			} else {
-				(*out)[0] = 0x63;
-				(*out)[2] = imm & 0x00FF;
-				*out += 3;
-				ret = true;
-			}
-		} else if (r_str_ncasecmp  ("a", secondarg, 2)) {
-			ret = false;
-		} else {
-			(*out)[0] = 0x62;
-			*out += 2;
-			ret = true;
-		}
-		free (secondarg);
-	} }
-	free (arg);
-	return ret;
+	ut16 imm;
+	if (!resolve_immediate (arg[1] + 1, &imm)) {
+		return false;
+	}
+	(*out)[0] = 0x63;
+	(*out)[1] = dest_addr;
+	(*out)[2] = imm & 0x00FF;
+	*out += 3;
+	return true;
 }
 
-static bool mnem_xch(char const*args, ut16 pc, ut8**out) {
-	enum xch_class {
-		xch_indirect,
-		xch_direct_or_register,
-	};
-	char *arg = malloc (strlen (args) + 1);
-	bool ret;
-	switch (match_prefix (args, (table) {
-		{ "a,@r", xch_indirect },
-		{ "a,", xch_direct_or_register},
-		{ 0, -1 }})) {
-	default: ret = false;
-	break; case xch_indirect: {
-		if (!get_arg (args, 2, arg) || !is_indirect_reg (arg)) {
-			ret = false;
-		} else {
-			ret = single_byte_instr (0xc6 | (arg[1] - '0'), out);
-		}
+static bool mnem_xch(char const*const*arg, ut16 pc, ut8**out) {
+	if (r_str_casecmp (arg[0], "a")) {
+		return false;
 	}
-	break; case xch_direct_or_register: {
-		if (!get_arg (args, 2, arg)) {
-			ret = false;
-		} else if (is_reg (arg)) {
-			ret = single_byte_instr (0xc8 | (arg[1] - '0'), out);
-		} else {
-			ret = singlearg_direct (0xc5, arg, out);
-		}
-	} }
-	free (arg);
-	return ret;
+	if (is_indirect_reg (arg[1])) {
+		return singlearg_register (0xc6, arg[1], out);
+	}
+	if (is_reg (arg[1])) {
+		return singlearg_register (0xc8, arg[1], out);
+	}
+	return singlearg_direct (0xc5, arg[1], out);
 }
 
-static bool mnem_xchd(char const*args, ut16 pc, ut8**out) {
-	char *arg = malloc (strlen (args) + 1);
-	bool ret;
-	if (!match_prefix (args, (table) { {"a,@r", true}, {0, false}})
-		|| !get_arg (args, 2, arg)) {
-		ret = false;
-	} else {
-		ret = single_byte_instr (0xd6 | (arg[2] - '0'), out);
+static bool mnem_xchd(char const*const*arg, ut16 pc, ut8**out) {
+	if (r_str_casecmp (arg[0], "a")) {
+		return false;
 	}
-	free (arg);
-	return ret;
+	if (!is_indirect_reg (arg[1])) {
+		return false;
+	}
+	return singlearg_register (0xd6, arg[1], out);
 }
 
 /******************************************************************************
@@ -1563,7 +1238,7 @@ static parse_mnem_args mnemonic(char const *user_asm, int*nargs) {
 		mnem (1, setb)
 		mnem (1, sjmp)
 		mnem (2, subb)
-		mnem (2, swap)
+		mnem (1, swap)
 		zeroarg_mnem (nop)
 		zeroarg_mnem (reti)
 		zeroarg_mnem (ret)
@@ -1594,24 +1269,32 @@ int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
 		&& (*arguments == ' ' || *arguments == '\t')) {
 		arguments += 1;
 	}
-	size_t arglen = strlen (arguments);
-	char *arguments_buf = malloc (arglen + 1);
-	r_str_ncpy (arguments_buf, arguments, arglen + 1);
-	int nargs;
-	parse_mnem_args mnem = mnemonic (user_asm, &nargs);
-	if (!mnem || !n_args_lt(arguments_buf, nargs)) {
-		free (arguments_buf);
+	char*arg[3] = {0};
+	int nr_of_arguments = get_arguments (arg, arguments);
+	char const*carg[3] = { arg[0], arg[1], arg[2] }; /* aliasing pointers...
+		I need to pass char const *s, but I can't free char const *s
+		not without compiler warnings, at least */
+	int wants_arguments;
+	parse_mnem_args mnem = mnemonic (user_asm, &wants_arguments);
+	if (!mnem || nr_of_arguments != wants_arguments) {
+		free (arg[2]); arg[2] = 0; carg[2] = 0;
+		free (arg[1]); arg[1] = 0; carg[1] = 0;
+		free (arg[0]); arg[0] = 0; carg[0] = 0;
 		return 0;
 	}
 	ut8 instr[4] = {0};
 	ut8 *binp = instr;
-	if (!mnem (arguments_buf, a->pc, &binp)) {
-		free (arguments_buf);
+	if (!mnem (carg, a->pc, &binp)) {
+		free (arg[0]); arg[0] = 0; carg[2] = 0;
+		free (arg[1]); arg[1] = 0; carg[1] = 0;
+		free (arg[2]); arg[2] = 0; carg[0] = 0;
 		return 0;
 	} else {
-		free (arguments_buf);
+		free (arg[0]); arg[0] = 0; carg[2] = 0;
+		free (arg[1]); arg[1] = 0; carg[1] = 0;
+		free (arg[2]); arg[2] = 0; carg[0] = 0;
 		size_t len = binp - instr;
-		r_strbuf_setbin(&op->buf, instr, len);
+		r_strbuf_setbin (&op->buf, instr, len);
 		return binp - instr;
 	}
 }
