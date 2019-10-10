@@ -1617,7 +1617,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							}
 						}
 						if (I.sel_widget) {
-							selection_widget_down (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
+							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
 							selection_widget_draw ();
 						}
 						break;
@@ -1632,7 +1632,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							}
 						}
 						if (I.sel_widget) {
-							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
+							selection_widget_down (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
 							selection_widget_draw ();
 						}
 						break;
