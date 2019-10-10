@@ -2504,9 +2504,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		if (chksum) {
-			r_table_set_columnsf (table, "nsnsnsss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms","Checksum", "Name", NULL);
+			r_table_set_columnsf (table, "dXxXXsss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms","Checksum", "Name");
 		} else {
-			r_table_set_columnsf (table, "nsnsnss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms", "Name", NULL);
+			r_table_set_columnsf (table, "dXxXXss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms", "Name");
 		}
 	}
 	if (IS_MODE_SET (mode)) {
@@ -2546,7 +2546,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		if (section->is_segment != print_segments) {
 			continue;
 		}
-
+		// XXX use r_str_perm instead of doing it here imho
 		if (section->perm & R_PERM_SHAR) {
 			perms[0] = 's';
 		}
@@ -2719,13 +2719,13 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			} else {
 				str[0] = 0;
 			}
-			if (r->bin->prefix) {
-				r_table_add_row (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
-							 section->vsize, perms, sdb_fmt("%s.%s", r->bin->prefix, section->name));
-			} else {
- 				r_table_add_rowf (table, "nsnsnss", i, sdb_fmt ("0x%08"PFMT64x, section->paddr),section->size, sdb_fmt (" 0x%08"PFMT64x,addr),
-							 section->vsize, perms, section->name);
-			}
+			const char *name = (r->bin->prefix)
+				? sdb_fmt ("%s.%s", r->bin->prefix, section->name)
+				: section->name;
+			r_table_add_rowf (table, "dXxXXss", i,
+				(ut64)section->paddr, (ut64)section->size,
+				(ut64)addr, (ut64)section->vsize,
+				perms, name);
 			free (hashstr);
 		}
 		i++;

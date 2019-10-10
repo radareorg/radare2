@@ -137,14 +137,8 @@ R_API void r_table_set_columnsf(RTable *t, const char *fmt, ...) {
 			break;
 		case 'i':
 		case 'd':
-			r_table_add_column (t, typeNumber, name, 0);
-			break;
 		case 'n':
-			r_table_add_column (t, typeNumber, name, 0);
-			break;
 		case 'x':
-			r_table_add_column (t, typeNumber, name, 0);
-			break;
 		case 'X':
 			r_table_add_column (t, typeNumber, name, 0);
 			break;
@@ -179,22 +173,17 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 			r_list_append (list, r_num_units (NULL, 32, va_arg (ap, ut64)));
 			break;
 		case 'x':
-			{
-				ut64 n = va_arg (ap, ut64);
-				if (n == UT64_MAX) {
-					r_list_append (list, "-1");
-				} else {
-					r_list_append (list, r_str_newf ("0x%"PFMT64x, n));
-				}
-			}
-			break;
 		case 'X':
 			{
 				ut64 n = va_arg (ap, ut64);
 				if (n == UT64_MAX) {
-					r_list_append (list, "-1");
+					r_list_append (list, strdup ("-1"));
 				} else {
-					r_list_append (list, r_str_newf ("0x%08"PFMT64x, n));
+					if (*f == 'X') {
+						r_list_append (list, r_str_newf ("0x%08"PFMT64x, n));
+					} else {
+						r_list_append (list, r_str_newf ("0x%"PFMT64x, n));
+					}
 				}
 			}
 			break;
@@ -610,7 +599,6 @@ R_API void r_table_filter_columns(RTable *t, RList *list) {
 		if (ncol != -1) {
 			RTableColumn *c = r_list_get_n (cols, ncol);
 			if (c) {
-				//c->width = R_MAX (c->width, itemLength);
 				r_table_add_column (t, c->type, col, 0);
 			}
 		}
