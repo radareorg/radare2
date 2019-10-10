@@ -416,7 +416,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 	bool zerosep = false;
 	int help = 0;
 	enum { LOAD_BIN_ALL, LOAD_BIN_NOTHING, LOAD_BIN_STRUCTURES_ONLY } load_bin = LOAD_BIN_ALL;
-	int run_rc = 1;
+	bool run_rc = true;
  	int ret, c, perms = R_PERM_RX;
 	bool sandbox = false;
 	ut64 baddr = UT64_MAX;
@@ -618,7 +618,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			r_config_set (r.config, "file.info", "false");
 			break;
 		case 'N':
-			run_rc = 0;
+			run_rc = false;
 			break;
 		case 'p':
 			if (!strcmp (r_optarg, "?")) {
@@ -854,6 +854,8 @@ R_API int r_main_radare2(int argc, char **argv) {
 
 	if (run_rc) {
 		r_core_parse_radare2rc (&r);
+	} else {
+		r_config_set (r.config, "scr.utf8", "false");
 	}
 
 	if (r_config_get_i (r.config, "zign.autoload")) {
