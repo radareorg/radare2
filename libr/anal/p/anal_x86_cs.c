@@ -2459,7 +2459,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_PUSHFQ:
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
-			if (INSOP(0).mem.disp) {
+			if (INSOP(0).mem.disp && !INSOP(0).mem.base && !INSOP(0).mem.index) {
 				op->val = op->ptr = INSOP(0).mem.disp;
 				op->type = R_ANAL_OP_TYPE_PUSH;
 			} else {
