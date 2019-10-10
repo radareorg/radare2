@@ -1532,7 +1532,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		r_cons_println ("fs relocs");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Relocations]");
-		r_table_set_columnsf (table, "ssss", "vaddr", "paddr", "type", "name", NULL);
+		r_table_set_columnsf (table, "XXss", "vaddr", "paddr", "type", "name", NULL);
 	} else if (IS_MODE_JSON (mode)) {
 		// start a new JSON object
 		pj = pj_new ();
@@ -1641,9 +1641,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				r_strbuf_append (buf, " (ifunc)");
 			}
 			char *res = r_strbuf_drain (buf);
-			r_table_add_rowf (table, "ssss",
-				sdb_fmt ("0x%08"PFMT64x, addr),
-				sdb_fmt ("0x%08"PFMT64x, reloc->paddr),
+			r_table_add_rowf (table, "XXss", addr, reloc->paddr,
 				bin_reloc_type_name (reloc), res);
 			free (res);
 		}
