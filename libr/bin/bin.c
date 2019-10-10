@@ -1078,7 +1078,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 		arch = unk;
 	}
 	r_table_hide_header (table);
-	r_table_set_columnsf (table, "nsnss", "num", "offset", "Object Size", "Arch", "Machine");
+	r_table_set_columnsf (table, "nXnss", "num", "offset", "size", "arch", "machine", NULL);
 
 	if (info && narch > 1) {
 		switch (mode) {
@@ -1093,7 +1093,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 					boffset, obj_size, machine);
 			break;
 		default:
-			r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%" PFMT64x , boffset), obj_size, sdb_fmt("%s_%i", arch, bits), machine);
+			r_table_add_rowf (table, "nXnss", i, boffset, obj_size, sdb_fmt ("%s_%i", arch, bits), machine);
 			bin->cb_printf ("%s\n", r_table_tostring(table));
 		}
 		snprintf (archline, sizeof (archline) - 1,

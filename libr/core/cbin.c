@@ -240,7 +240,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("[Strings]\n");
-		r_table_set_columnsf (table, "nssnnsss", "Num", "Paddr", "Vaddr", "Len", "Size", "Section", "Type", "String");
+		r_table_set_columnsf (table, "nXXnnsss", "Num", "Paddr", "Vaddr", "Len", "Size", "Section", "Type", "String", NULL);
 	}
 	RBinString b64 = { 0 };
 	r_list_foreach (list, iter, string) {
@@ -401,8 +401,11 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				}
 				break;
 			}
-			r_table_add_rowf (table, "nssnnsss", string->ordinal, sdb_fmt ("0x%08" PFMT64x,paddr), sdb_fmt ("0x%08" PFMT64x,vaddr), string->length,
-					  string->size, section_name, type_string, r_strbuf_drain (buf));
+			char *bufstr = r_strbuf_drain (buf);
+			r_table_add_rowf (table, "nXXnnsss", string->ordinal, paddr, vaddr,
+				string->length, string->size, section_name,
+				type_string, bufstr);
+			free (bufstr);
 		}
 		last_processed = iter;
 	}
@@ -1529,7 +1532,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		r_cons_println ("fs relocs");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Relocations]");
-		r_table_set_columnsf (table, "ssss", "vaddr", "paddr", "type", "name");
+		r_table_set_columnsf (table, "ssss", "vaddr", "paddr", "type", "name", NULL);
 	} else if (IS_MODE_JSON (mode)) {
 		// start a new JSON object
 		pj = pj_new ();
@@ -1795,7 +1798,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_println ("fs imports");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Imports]");
-		r_table_set_columnsf (table, "nssss", "Num", "Vaddr", "Bind", "Type", "Name");
+		r_table_set_columnsf (table, "nXsss", "Num", "Vaddr", "Bind", "Type", "Name", NULL);
 	}
 	r_list_foreach (imports, iter, import) {
 		if (name && strcmp (import->name, name)) {
@@ -1849,9 +1852,9 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			const char *bind = import->bind? import->bind: "NONE";
 			const char *type = import->type? import->type: "NONE";
 			if (import->classname && import->classname[0]) {
-				r_table_add_rowf (table, "nxsss", import->ordinal, addr, bind, type, sdb_fmt ("%s.%s", import->classname, symname));
+				r_table_add_rowf (table, "nXsss", import->ordinal, addr, bind, type, sdb_fmt ("%s.%s", import->classname, symname));
 			} else {
-				r_table_add_rowf (table, "nxsss", import->ordinal, addr, bind, type, symname);
+				r_table_add_rowf (table, "nXsss", import->ordinal, addr, bind, type, symname);
 			}
 
 			if (import->descriptor && import->descriptor[0]) {
@@ -2071,9 +2074,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_table_set_columnsf (table, "dssssds", "Num", "Paddr","Vaddr","Bind", "Type", "Size", "Name");
+		r_table_set_columnsf (table, "dssssds", "Num", "Paddr","Vaddr","Bind", "Type", "Size", "Name", NULL);
 	}
-
 
 	size_t count = 0;
 	r_list_foreach (symbols, iter, symbol) {
@@ -2504,9 +2506,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		if (chksum) {
-			r_table_set_columnsf (table, "nsnsnsss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms","Checksum", "Name");
+			r_table_set_columnsf (table, "nsnsnsss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms","Checksum", "Name", NULL);
 		} else {
-			r_table_set_columnsf (table, "nsnsnss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms", "Name");
+			r_table_set_columnsf (table, "nsnsnss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms", "Name", NULL);
 		}
 	}
 	if (IS_MODE_SET (mode)) {

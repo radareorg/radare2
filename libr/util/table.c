@@ -145,6 +145,9 @@ R_API void r_table_set_columnsf(RTable *t, const char *fmt, ...) {
 		case 'x':
 			r_table_add_column (t, typeNumber, name, 0);
 			break;
+		case 'X':
+			r_table_add_column (t, typeNumber, name, 0);
+			break;
 		default:
 			eprintf ("Invalid format string char '%c', use 's' or 'n'\n", *f);
 			break;
@@ -182,6 +185,16 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 					r_list_append (list, "-1");
 				} else {
 					r_list_append (list, r_str_newf ("0x%"PFMT64x, n));
+				}
+			}
+			break;
+		case 'X':
+			{
+				ut64 n = va_arg (ap, ut64);
+				if (n == UT64_MAX) {
+					r_list_append (list, "-1");
+				} else {
+					r_list_append (list, r_str_newf ("0x%08"PFMT64x, n));
 				}
 			}
 			break;
@@ -354,12 +367,12 @@ R_API char *r_table_tostring(RTable *t) {
 	const char *h_line = (cons && (cons->use_utf8 || cons->use_utf8_curvy)) ? RUNE_LONG_LINE_HORIZ : "-";
 	__table_adjust (t);
 	int maxlen = 0;
-	r_list_foreach (t->cols, iter, col) {
-		bool nopad = !iter->n;
-		int ll = __strbuf_append_col_aligned (sb, col, col->name, nopad);
-		maxlen = R_MAX (maxlen, ll);
-	}
 	if (t->showHeader) {
+		r_list_foreach (t->cols, iter, col) {
+			bool nopad = !iter->n;
+			int ll = __strbuf_append_col_aligned (sb, col, col->name, nopad);
+			maxlen = R_MAX (maxlen, ll);
+		}
 		int len = r_str_len_utf8_ansi (r_strbuf_get (sb));
 		r_strbuf_appendf (sb, "\n%s\n", r_str_repeat (h_line, R_MAX (maxlen, len)));
 	}
