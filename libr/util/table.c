@@ -100,7 +100,7 @@ R_API RTableRow *r_table_row_new(RList *items) {
 	return row;
 }
 
-static bool addRow (RTable *t, RList *items, const char *arg, int col) {
+static bool __addRow(RTable *t, RList *items, const char *arg, int col) {
 	int itemLength = r_str_len_utf8 (arg) + 1;
 	RTableColumn *c = r_list_get_n (t->cols, col);
 	if (c) {
@@ -200,13 +200,13 @@ R_API void r_table_add_row(RTable *t, const char *name, ...) {
 	va_start (ap, name);
 	int col = 0;
 	RList *items = r_list_newf (free);
-	addRow (t, items, name, col++);
+	__addRow (t, items, name, col++);
 	for (;;) {
 		const char *arg = va_arg (ap, const char *);
 		if (!arg) {
 			break;
 		}
-		addRow (t, items, arg, col);
+		__addRow (t, items, arg, col);
 		// TODO: assert if number of columns doesnt match t->cols
 		col++;
 	}
@@ -331,7 +331,7 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 			r_strbuf_appendf (sb, "%-*s", col->width, str);
 			break;
 		case R_TABLE_ALIGN_RIGHT:
-			r_strbuf_appendf (sb, "%*s", col->width, str);
+			r_strbuf_appendf (sb, "%*s ", col->width, str);
 			break;
 		case R_TABLE_ALIGN_CENTER:
 			{
@@ -339,7 +339,7 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 				int pad = (col->width - len) / 2;
 				int left = col->width - (pad * 2 + len);
 				r_strbuf_appendf (sb, "%-*s", pad, " ");
-				r_strbuf_appendf (sb, "%-*s", pad + left, str);
+				r_strbuf_appendf (sb, "%-*s ", pad + left, str);
 				break;
 			}
 		}
@@ -683,6 +683,15 @@ R_API bool r_table_query(RTable *t, const char *q) {
 	free (qq);
 	__table_adjust (t);
 	return true;
+}
+
+R_API bool r_table_align(RTable *t, int nth, int align) {
+	RTableColumn *col = r_list_get_n (t->cols, nth);
+	if (col) {
+		col->align = align;
+		return true;
+	}
+	return false;
 }
 
 R_API void r_table_hide_header (RTable *t) {

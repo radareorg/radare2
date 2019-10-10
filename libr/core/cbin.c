@@ -240,7 +240,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("[Strings]\n");
-		r_table_set_columnsf (table, "nXXnnsss", "Num", "Paddr", "Vaddr", "Len", "Size", "Section", "Type", "String", NULL);
+		r_table_set_columnsf (table, "nXXnnsss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
 	}
 	RBinString b64 = { 0 };
 	r_list_foreach (list, iter, string) {
@@ -1532,7 +1532,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		r_cons_println ("fs relocs");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Relocations]");
-		r_table_set_columnsf (table, "XXss", "vaddr", "paddr", "type", "name", NULL);
+		r_table_set_columnsf (table, "XXss", "vaddr", "paddr", "type", "name");
 	} else if (IS_MODE_JSON (mode)) {
 		// start a new JSON object
 		pj = pj_new ();
@@ -1796,7 +1796,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_println ("fs imports");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Imports]");
-		r_table_set_columnsf (table, "nXsss", "Num", "Vaddr", "Bind", "Type", "Name", NULL);
+		r_table_set_columnsf (table, "nXsss", "nth", "vaddr", "bind", "type", "name");
 	}
 	r_list_foreach (imports, iter, import) {
 		if (name && strcmp (import->name, name)) {
@@ -2072,7 +2072,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_table_set_columnsf (table, "dssssds", "Num", "Paddr","Vaddr","Bind", "Type", "Size", "Name", NULL);
+		r_table_set_columnsf (table, "dssssds", "nth", "paddr","vaddr","bind", "type", "size", "name");
 	}
 
 	size_t count = 0;
@@ -2503,11 +2503,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		r_flag_space_set (r->flags, print_segments? R_FLAGS_FS_SEGMENTS: R_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		if (chksum) {
-			r_table_set_columnsf (table, "dXxXXsss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms","Checksum", "Name");
-		} else {
-			r_table_set_columnsf (table, "dXxXXss", "Nm", "Paddr", "Size", "Vaddr", "Memsz", "Perms", "Name");
-		}
+		r_table_set_columnsf (table, "dXxXxss", "nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+		// r_table_align (table, 0, R_TABLE_ALIGN_CENTER);
+		r_table_align (table, 2, R_TABLE_ALIGN_RIGHT);
+		r_table_align (table, 4, R_TABLE_ALIGN_RIGHT);
 	}
 	if (IS_MODE_SET (mode)) {
 		r_list_foreach (sections, iter, section) {
@@ -2722,7 +2721,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			const char *name = (r->bin->prefix)
 				? sdb_fmt ("%s.%s", r->bin->prefix, section->name)
 				: section->name;
-			r_table_add_rowf (table, "dXxXXss", i,
+			r_table_add_rowf (table, "dXxXxss", i,
 				(ut64)section->paddr, (ut64)section->size,
 				(ut64)addr, (ut64)section->vsize,
 				perms, name);
