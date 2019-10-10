@@ -347,17 +347,15 @@ static bool address_bit(char const* addr_str, ut8* addr_out) {
 	char const *separator = r_str_lchr (addr_str, '.');
 	ut8 byte;
 	int bit;
-	bool ret;
+	bool ret = false;
 	if (!separator) {
 		// FIXME: accept symbols as well as dot-notation
-		ret = false;
 		goto end;
 	}
 	r_str_ncpy (bytepart, addr_str, separator - addr_str + 1);
 	bytepart[separator - addr_str + 1] = '\0';
 	r_str_ncpy (bitpart, separator + 1, strlen(separator));
 	if (!address_direct (bytepart, &byte)) {
-		ret = false;
 		goto end;
 	}
 	if (1 < strlen (bitpart)
