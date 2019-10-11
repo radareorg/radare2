@@ -2994,8 +2994,8 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		break;
 	case 'j': { // "pvj"
 			  r_cons_printf ("[");
-			ut64 at = core->offset;
-			ut64 oldAt = at;
+			  ut64 at = core->offset;
+			  ut64 oldAt = at;
 			  for (i = 0; i < repeat; i++) {
 				  if (i > 0) {
 					  r_cons_printf (",");
@@ -3009,6 +3009,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 						  if (*p == '\\' && p[1] == 'x') {
 							  memmove (p, p + 4, strlen (p + 4) + 1);
 						  }
+						  p++;
 					  }
 				  }
 				  // r_num_get is gonna use a dangling pointer since the internal
@@ -3040,58 +3041,58 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				  at += n;
 			  }
 			  r_cons_printf ("]\n");
-			r_core_seek (core, oldAt, 0);
-		break;
-	}
+			  r_core_seek (core, oldAt, 0);
+			  break;
+		  }
 	case '?': // "pv?"
-		r_core_cmd_help (core, help_msg_pv);
-		break;
+		  r_core_cmd_help (core, help_msg_pv);
+		  break;
 	default:
-	do {
-		repeat--;
-		if (block + 8 >= block_end) {
-			eprintf ("Truncated. TODO: use r_io_read apis insgtead of depending on blocksize\n");
-			break;
-		}
-		ut64 v;
-		if (!fixed_size) {
-			n = 0;
-		}
-		switch (n) {
-		case 1:
-			v = r_read_ble8 (block);
-			r_cons_printf ("0x%02" PFMT64x "\n", v);
-			block += 1;
-			break;
-		case 2:
-			v = r_read_ble16 (block, core->print->big_endian);
-			r_cons_printf ("0x%04" PFMT64x "\n", v);
-			block += 2;
-			break;
-		case 4:
-			v = r_read_ble32 (block, core->print->big_endian);
-			r_cons_printf ("0x%08" PFMT64x "\n", v);
-			block += 4;
-			break;
-		case 8:
-			v = r_read_ble64 (block, core->print->big_endian);
-			r_cons_printf ("0x%016" PFMT64x "\n", v);
-			block += 8;
-			break;
-		default:
-			v = r_read_ble64 (block, core->print->big_endian);
-			switch (core->assembler->bits / 8) {
-			case 1: r_cons_printf ("0x%02" PFMT64x "\n", v & UT8_MAX); break;
-			case 2: r_cons_printf ("0x%04" PFMT64x "\n", v & UT16_MAX); break;
-			case 4: r_cons_printf ("0x%08" PFMT64x "\n", v & UT32_MAX); break;
-			case 8: r_cons_printf ("0x%016" PFMT64x "\n", v & UT64_MAX); break;
-			default: break;
-			}
-			block += core->assembler->bits / 8;
-			break;
-		}
-	} while (repeat > 0);
-	break;
+		  do {
+			  repeat--;
+			  if (block + 8 >= block_end) {
+				  eprintf ("Truncated. TODO: use r_io_read apis insgtead of depending on blocksize\n");
+				  break;
+			  }
+			  ut64 v;
+			  if (!fixed_size) {
+				  n = 0;
+			  }
+			  switch (n) {
+				  case 1:
+					  v = r_read_ble8 (block);
+					  r_cons_printf ("0x%02" PFMT64x "\n", v);
+					  block += 1;
+					  break;
+				  case 2:
+					  v = r_read_ble16 (block, core->print->big_endian);
+					  r_cons_printf ("0x%04" PFMT64x "\n", v);
+					  block += 2;
+					  break;
+				  case 4:
+					  v = r_read_ble32 (block, core->print->big_endian);
+					  r_cons_printf ("0x%08" PFMT64x "\n", v);
+					  block += 4;
+					  break;
+				  case 8:
+					  v = r_read_ble64 (block, core->print->big_endian);
+					  r_cons_printf ("0x%016" PFMT64x "\n", v);
+					  block += 8;
+					  break;
+				  default:
+					  v = r_read_ble64 (block, core->print->big_endian);
+					  switch (core->assembler->bits / 8) {
+						  case 1: r_cons_printf ("0x%02" PFMT64x "\n", v & UT8_MAX); break;
+						  case 2: r_cons_printf ("0x%04" PFMT64x "\n", v & UT16_MAX); break;
+						  case 4: r_cons_printf ("0x%08" PFMT64x "\n", v & UT32_MAX); break;
+						  case 8: r_cons_printf ("0x%016" PFMT64x "\n", v & UT64_MAX); break;
+						  default: break;
+					  }
+					  block += core->assembler->bits / 8;
+					  break;
+			  }
+		  } while (repeat > 0);
+		  break;
 	}
 }
 
