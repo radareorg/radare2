@@ -18,6 +18,7 @@
 
 static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig);
 static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
+static int r_debug_native_reg_read_p (RDebug *dbg, int type, ut8 *buf, int size, char print, int arena);
 static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int size);
 
 #include "native/bt.c"
@@ -963,6 +964,18 @@ static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	return linux_reg_read (dbg, type, buf, size);
 #elif __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __DragonFly__
 	return bsd_reg_read (dbg, type, buf, size);
+#else
+	#warning dbg-native not supported for this platform
+	return false;
+#endif
+}
+
+static int r_debug_native_reg_read_p (RDebug *dbg, int type, ut8 *buf, int size, char print, int arena) {
+	if (size < 1) {
+		return false;
+	}
+#if __linux__
+	return linux_reg_read_p (dbg, type, buf, size, print, arena);
 #else
 	#warning dbg-native not supported for this platform
 	return false;
@@ -2123,6 +2136,7 @@ RDebugPlugin r_debug_plugin_native = {
 	.frames = &r_debug_native_frames, // rename to backtrace ?
 	.reg_profile = r_debug_native_reg_profile,
 	.reg_read = r_debug_native_reg_read,
+	.reg_read_p = r_debug_native_reg_read_p,
 	.info = r_debug_native_info,
 	.reg_write = (void *)&r_debug_native_reg_write,
 	.map_alloc = r_debug_native_map_alloc,

@@ -670,7 +670,7 @@ RList *linux_thread_list(int pid, RList *list) {
 	r_cons_printf ("foo = 0x%04lx          \n", (fpregs).foo);\
 	r_cons_printf ("fos = 0x%04lx              ", (fpregs).fos)
 
-void print_fpu (void *f){
+void print_fpu (void *f, int type){
 #if __x86_64__ || __i386__
 	int i,j;
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
@@ -690,28 +690,35 @@ void print_fpu (void *f){
 	}
 #else
 	r_cons_printf ("---- x86-64 ----\n");
-	PRINT_FPU (fpregs);
-	r_cons_printf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
-	for (i = 0; i < 16; i++) {
-		ut32 *a = (ut32 *)&fpregs.xmm_space;
-		a = a + (i * 4);
-		r_cons_printf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
-					   (int)a[2], (int)a[3] );
-		if (i < 8) {
-			ut64 *st_u64 = (ut64*)&fpregs.st_space[i * 4];
-			ut8 *st_u8 = (ut8 *)&fpregs.st_space[i * 4];
-			long double *st_ld = (long double *)&fpregs.st_space[i * 4];
-			r_cons_printf ("mm%d = 0x%016" PFMT64x " | st%d = ", i, *st_u64, i);
-			// print as hex TBYTE - always little endian
-			for (j = 9; j >= 0; j--) {
-				r_cons_printf ("%02x", st_u8[j]);
+	switch(type)	{
+		case R_REG_TYPE_XMM:
+			for (i = 0; i < 16; i++) {
+				ut32 *a = (ut32 *)&fpregs.xmm_space;
+				a = a + (i * 4);
+				r_cons_printf ("xmm%d\t= %08x %08x %08x %08x\n", i, (int)a[0], (int)a[1],
+							   (int)a[2], (int)a[3] );
 			}
-			// Using %Lf and %Le even though we do not show the extra precision to avoid another cast
-			// %f with (double)*st_ld would also work
-			r_cons_printf (" %Le %Lf\n", *st_ld, *st_ld);
-		} else {
-			r_cons_printf ("\n");
-		}
+			break;
+		case R_REG_TYPE_FPU:
+		case R_REG_TYPE_MMX:
+			PRINT_FPU (fpregs);
+			r_cons_printf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
+			for (i = 0; i < 8; i++){
+				ut64 *st_u64 = (ut64*)&fpregs.st_space[i * 4];
+				ut8 *st_u8 = (ut8 *)&fpregs.st_space[i * 4];
+				long double *st_ld = (long double *)&fpregs.st_space[i * 4];
+				r_cons_printf ("mm%d = 0x%016" PFMT64x " | st%d = ", i, *st_u64, i);
+				// print as hex TBYTE - always little endian
+				for (j = 9; j >= 0; j--) {
+					r_cons_printf ("%02x", st_u8[j]);
+				}
+				// Using %Lf and %Le even though we do not show the extra precision to avoid another cast
+				// %f with (double)*st_ld would also work
+				r_cons_printf (" %Le %Lf\n", *st_ld, *st_ld);
+			}
+			break;
+		default:
+			break;
 	}
 #endif // __ANDROID__
 #elif __i386__
@@ -765,14 +772,20 @@ void print_fpu (void *f){
 }
 
 int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
-	bool showfpu = false;
+	int type_ = type;
+	bool print = false;
+	if (type < -1) {
+		print = true;
+		type_ = -type;
+	}
+	return linux_reg_read_p(dbg, type_, buf, size, print, type);
+}
+
+int linux_reg_read_p (RDebug *dbg, int arena, ut8 *buf, int size, char print, int type) {
+	bool showfpu = print;
 	int pid = dbg->pid;
 	int ret;
-	if (type < -1) {
-		showfpu = true;
-		type = -type;
-	}
-	switch (type) {
+	switch (arena) {
 	case R_REG_TYPE_DRX:
 #if __POWERPC__
 		// no drx for powerpc
@@ -811,11 +824,11 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 		{
 		int ret1 = 0;
 		struct user_fpregs_struct fpregs;
-		if (type == R_REG_TYPE_FPU) {
+		if (arena == R_REG_TYPE_FPU) {
 #if __x86_64__
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
 			if (showfpu) {
-				print_fpu ((void *)&fpregs);
+				print_fpu ((void *)&fpregs, type);
 			}
 			if (ret1 != 0) {
 				return false;
@@ -830,13 +843,13 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			struct user_fpxregs_struct fpxregs;
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
 			if (ret1 == 0) {
-				if (showfpu) print_fpu ((void *)&fpxregs, ret1);
+				if (showfpu) print_fpu ((void *)&fpxregs, type);
 				if (sizeof(fpxregs) < size) size = sizeof(fpxregs);
 				memcpy (buf, &fpxregs, size);
 				return sizeof(fpxregs);
 			} else {
 				ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-				if (showfpu) print_fpu ((void *)&fpregs, ret1);
+				if (showfpu) print_fpu ((void *)&fpregs, type);
 				if (ret1 != 0) return false;
 				if (sizeof(fpregs) < size) size = sizeof(fpregs);
 				memcpy (buf, &fpregs, size);
@@ -844,7 +857,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 #else
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-			if (showfpu) print_fpu ((void *)&fpregs, 1);
+			if (showfpu) print_fpu ((void *)&fpregs, type);
 			if (ret1 != 0) return false;
 			if (sizeof (fpregs) < size) size = sizeof(fpregs);
 			memcpy (buf, &fpregs, size);

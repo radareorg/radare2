@@ -7,6 +7,10 @@
 
 R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	int i, n, size;
+ 	char have_get_reg_p = false;
+	int original_type = type;
+	char print = false;
+
 	if (!dbg || !dbg->reg || !dbg->h) {
 		return false;
 	}
@@ -21,6 +25,16 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	if (!write && !dbg->h->reg_read) {
 		return false;
 	}
+
+	if(dbg->h->reg_read_p)	{
+		have_get_reg_p =  true;
+		if (type < -1)	{	// print request
+			type = -type;
+			original_type = -original_type;
+			print = true;
+		}
+	}
+
 	// Sync all the types sequentially if asked
 	i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
@@ -34,8 +48,9 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			int v = ((int)1 << i);
 			// skip checks on same request arena and check if this arena have inside the request arena type
 			if (n != i && (mask & v)) {
-				//eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
-				//eprintf(" request arena %i found at arena %i\n", i, n );
+				// TODO: comment this out again, debugging right now
+				eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
+				eprintf(" request arena %i found at arena %i\n", i, n );
 				// if this arena have the request arena type, force to use this arena.
 				i = n;
 				break;
@@ -64,7 +79,11 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 					return false;
 				}
 				//we have already checked dbg->h and dbg->h->reg_read above
-				size = dbg->h->reg_read (dbg, i, buf, bufsize);
+				if (have_get_reg_p)	{
+					size = dbg->h->reg_read_p(dbg, i, buf, bufsize, print, original_type);
+				} else {
+					size = dbg->h->reg_read(dbg, i, buf, bufsize);
+				}
 				// we need to check against zero because reg_read can return false
 				if (size > 0) {
 					r_reg_set_bytes (dbg->reg, i, buf, size); //R_MIN (size, bufsize));

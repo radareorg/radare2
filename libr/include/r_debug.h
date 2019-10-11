@@ -387,6 +387,7 @@ typedef struct r_debug_plugin_t {
 	RBreakpointCallback breakpoint;
 // XXX: specify, pid, tid, or RDebug ?
 	int (*reg_read)(RDebug *dbg, int type, ut8 *buf, int size);
+	int (*reg_read_p)(RDebug *dbg, int type, ut8 *buf, int size, char print, int arena);
 	int (*reg_write)(RDebug *dbg, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
 	char* (*reg_profile)(RDebug *dbg);
 	/* memory */
