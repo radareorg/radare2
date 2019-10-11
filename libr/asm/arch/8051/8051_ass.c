@@ -1597,7 +1597,6 @@ int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
 	size_t arglen = strlen (arguments);
 	char *arguments_buf = malloc (arglen + 1);
 	r_str_ncpy (arguments_buf, arguments, arglen + 1);
-	arguments_buf[arglen + 1] = '\0';
 	int nargs;
 	parse_mnem_args mnem = mnemonic (user_asm, &nargs);
 	if (!mnem || !n_args_lt(arguments_buf, nargs)) {
