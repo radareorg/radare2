@@ -1571,26 +1571,31 @@ static int cmd_write(void *data, const char *input) {
 			if ((input[2] == ' ' || input[2] == '*')) {
 				const char *file = input + ((input[2] == '*')? 4: 3);
 				r_asm_set_pc (core->assembler, core->offset);
-				RAsmCode *acode = r_asm_assemble_file (core->assembler, file);
-				if (acode) {
-					char* hex = r_asm_code_get_hex (acode);
-					if (input[2] == '*') {
-						cmd_write_hexpair (core, hex);
-					} else {
-						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, hex);
-						}
-						if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
-							cmd_write_fail (core);
+				char *f = r_file_slurp (file, NULL);
+				if (f) {
+					RAsmCode *acode = r_asm_assemble_file (core->assembler, f);
+					if (acode) {
+						char* hex = r_asm_code_get_hex (acode);
+						if (input[2] == '*') {
+							cmd_write_hexpair (core, hex);
 						} else {
-							WSEEK (core, acode->len);
+							if (r_config_get_i (core->config, "scr.prompt")) {
+								eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, hex);
+							}
+							if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
+								cmd_write_fail (core);
+							} else {
+								WSEEK (core, acode->len);
+							}
+							r_core_block_read (core);
 						}
-						r_core_block_read (core);
+						free (hex);
+						r_asm_code_free (acode);
+					} else {
+						eprintf ("Cannot assemble file\n");
 					}
-					free (hex);
-					r_asm_code_free (acode);
 				} else {
-					eprintf ("Cannot assemble file\n");
+					eprintf ("Cannot slurp '%s'\n", file);
 				}
 			} else {
 				eprintf ("Wrong argument\n");
