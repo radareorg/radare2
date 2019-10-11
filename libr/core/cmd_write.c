@@ -1573,7 +1573,7 @@ static int cmd_write(void *data, const char *input) {
 				r_asm_set_pc (core->assembler, core->offset);
 				char *f = r_file_slurp (file, NULL);
 				if (f) {
-					RAsmCode *acode = r_asm_assemble_file (core->assembler, f);
+					RAsmCode *acode = r_asm_massemble (core->assembler, f);
 					if (acode) {
 						char* hex = r_asm_code_get_hex (acode);
 						if (input[2] == '*') {
