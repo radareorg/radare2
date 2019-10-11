@@ -67,6 +67,27 @@ static const char* cmask32(const char *mb_c, const char *me_c) {
 	return cmask;
 }
 
+static const char *getreg(struct Getarg *gop, int n) {
+	cs_insn *insn = gop->insn;
+	csh handle = gop->handle;
+
+	if (n < 0 || n >= 8) {
+		return NULL;
+	}
+	cs_ppc_op op = INSOP (n);
+	switch (op.type) {
+	case PPC_OP_REG:
+		return cs_reg_name (handle, op.reg);
+	case PPC_OP_MEM:
+		return cs_reg_name (handle, op.mem.base);
+	case PPC_OP_INVALID:
+	case PPC_OP_IMM:
+	case PPC_OP_CRX: // Condition Register field
+		return NULL;
+	}
+	return NULL;
+}
+
 static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 	cs_insn *insn = gop->insn;
 	csh handle = gop->handle;
@@ -202,6 +223,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 #define PPCSPR(n) getspr(&gop, n)
 #define ARG(n) getarg2(&gop, n, "")
 #define ARG2(n,m) getarg2(&gop, n, m)
+#define REG2(n) getreg(&gop, n)
 
 static int set_reg_profile(RAnal *anal) {
 	const char *p = NULL;
@@ -683,30 +705,42 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			esilprintf (op, ",");
 			break;
 		case PPC_INS_STW:
-		case PPC_INS_STWU:
 		case PPC_INS_STWUX:
 		case PPC_INS_STWX:
 		case PPC_INS_STWCX:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[4]"));
 			break;
+		case PPC_INS_STWU:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			esilprintf (op, "%s,%s,4,%s,+=", ARG (0), ARG2 (1, "=[4]"), REG2(1));
+			break;
 		case PPC_INS_STWBRX:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case PPC_INS_STB:
-		case PPC_INS_STBU:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[1]"));
 			break;
+		case PPC_INS_STBU:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			esilprintf (op, "%s,%s,1,%s,+=", ARG (0), ARG2 (1, "=[1]"), REG2(1));
+			break;
 		case PPC_INS_STH:
-		case PPC_INS_STHU:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[2]"));
 			break;
+		case PPC_INS_STHU:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			esilprintf (op, "%s,%s,2,%s,+=", ARG (0), ARG2 (1, "=[2]"), REG2(1));
+			break;
 		case PPC_INS_STD:
-		case PPC_INS_STDU:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[8]"));
+			break;
+		case PPC_INS_STDU:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			esilprintf (op, "%s,%s,8,%s,+=", ARG (0), ARG2 (1, "=[8]"), REG2(1));
 			break;
 		case PPC_INS_LBZ:
 #if CS_API_MAJOR >= 4
@@ -714,6 +748,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 #endif
 		case PPC_INS_LBZU:
 		case PPC_INS_LBZUX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			esilprintf (op, "%s,%s,=,1,%s,+=", ARG2 (1, "[1]"), ARG (0), REG2(1));
+			break;
 		case PPC_INS_LBZX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[1]"), ARG (0));
@@ -725,6 +762,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 #endif
 		case PPC_INS_LDU:
 		case PPC_INS_LDUX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			esilprintf (op, "%s,%s,=,8,%s,+=", ARG2 (1, "[8]"), ARG (0), REG2(1));
+			break;
 		case PPC_INS_LDX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[8]"), ARG (0));
@@ -765,11 +805,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 #if CS_API_MAJOR >= 4
 		case PPC_INS_LWZCIX:
 #endif
-		case PPC_INS_LWZU:
-		case PPC_INS_LWZUX:
 		case PPC_INS_LWZX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[4]"), ARG (0));
+			break;
+		case PPC_INS_LWZU:
+		case PPC_INS_LWZUX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			esilprintf (op, "%s,%s,=,4,%s,+=", ARG2 (1, "[4]"), ARG (0), REG2 (1));
 			break;
 		case PPC_INS_LWBRX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
