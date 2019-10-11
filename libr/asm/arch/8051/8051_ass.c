@@ -1101,7 +1101,7 @@ static bool mnem_movc(char const*args, ut16 pc, ut8**out) {
 		return single_byte_instr (0x93, out);
 	break; case movc_pc: {
 		char const* pcp = r_str_casestr (args, "pc");
-		if (pcp[3] != '\0') {
+		if (pcp[2] != '\0') {
 			return false;
 		}
 		return single_byte_instr (0x83, out);
