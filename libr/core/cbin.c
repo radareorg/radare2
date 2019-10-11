@@ -417,7 +417,12 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		r_cons_break_pop ();
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("%s", r_table_tostring (table));
+		if (r->table_query) {
+			r_table_query (table, r->table_query);
+		}
+		char *s = r_table_tostring (table);
+		r_cons_printf ("%s", s);
+		free (s);
 
 	}
 	r_table_free (table);
@@ -1653,7 +1658,12 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		r_cons_println (pj_string (pj));
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("\n%s\n", r_table_tostring (table));
+		if (r->table_query) {
+			r_table_query (table, r->table_query);
+		}
+		char *s = r_table_tostring (table);
+		r_cons_printf ("\n%s\n", s);
+		free (s);
 		r_cons_printf ("\n%i relocations\n", i);
 
 	}
@@ -1870,7 +1880,12 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	if (IS_MODE_JSON (mode)) {
 		r_cons_print ("]");
 	} else if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("%s\n", r_table_tostring (table));
+		if (r->table_query) {
+			r_table_query (table, r->table_query);
+		}
+		char *s = r_table_tostring (table);
+		r_cons_printf ("%s\n", s);
+		free (s);
 	}
 	r_table_free (table);
 #if MYDB
@@ -2271,7 +2286,12 @@ next:
 		}
 	}
 	if (IS_MODE_NORMAL (mode)){
-		r_cons_printf ("\n%s", r_table_tostring (table));
+		if (r->table_query) {
+			r_table_query (table, r->table_query);
+		}
+		char *s = r_table_tostring (table);
+		r_cons_printf ("\n%s", s);
+		free (s);
 	}
 	if (count == 0 && IS_MODE_JSON (mode)) {
 		r_cons_printf ("{}");
@@ -2485,7 +2505,14 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 		RTable *table = r_core_table (r);
 		r_table_visual_list (table, list, r->offset, -1, cols, r->io->va);
-		r_cons_printf ("\n%s\n", r_table_tostring (table));
+		if (r->table_query) {
+			r_table_query (table, r->table_query);
+		}
+		{
+			char *s = r_table_tostring (table);
+			r_cons_printf ("\n%s\n", s);
+			free (s);
+		}
 		r_table_free (table);
 		r_list_free (list);
 		goto out;
@@ -2752,8 +2779,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	ret = true;
 out:
 	if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("\n%s\n", r_table_tostring (table));
-
+		if (r->table_query) {
+			r_table_query (table, r->table_query);
+		}
+		char *s = r_table_tostring (table);
+		r_cons_printf ("\n%s\n", s);
+		free (s);
 	}
 	r_table_free (table);
 	ht_pp_free (dup_chk_ht);
