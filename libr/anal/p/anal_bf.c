@@ -1,12 +1,8 @@
-/* radare2 - LGPL - Copyright 2011-2016 - pancake */
+/* radare2 - LGPL - Copyright 2011-2019 - pancake */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
 
-static int countChar (const ut8 *buf, int len, char ch) {
+static int __countChar(const ut8 *buf, int len, char ch) {
 	int i;
 	for (i = 0; i < len; i++) {
 		if (buf[i] != ch) {
@@ -16,7 +12,7 @@ static int countChar (const ut8 *buf, int len, char ch) {
 	return i;
 }
 
-static int getid (char ch) {
+static int __getid(char ch) {
 	const char *keys = "[]<>+-,.";
 	const char *cidx = strchr (keys, ch);
 	return cidx? cidx - keys + 1: 0;
@@ -24,87 +20,83 @@ static int getid (char ch) {
 
 #define BUFSIZE_INC 32
 static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	const ut8 *p = buf + 1;
+	int lev = 0, i = 1;
 	ut64 dst = 0LL;
 	if (!op) {
 		return 1;
 	}
-	/* Ayeeee! What's inside op? Do we have an initialized RAnalOp? Are we going to have a leak here? :-( */
-	memset (op, 0, sizeof (RAnalOp)); /* We need to refactorize this. Something like r_anal_op_init would be more appropriate */
-	r_strbuf_init (&op->esil);
 	op->size = 1;
-	op->id = getid (buf[0]);
+	op->id = __getid (buf[0]);
 	switch (buf[0]) {
 	case '[':
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->fail = addr+1;
+		op->fail = addr + 1;
 		buf = r_mem_dup ((void *)buf, len);
 		if (!buf) {
 			break;
 		}
-		{
-			const ut8 *p = buf + 1;
-			int lev = 0, i = 1;
-			len--;
-			while (i < len && *p) {
-				if (*p == '[') {
-					lev++;
-				}
-				if (*p == ']') {
-					lev--;
-					if (lev==-1) {
-						dst = addr + (size_t)(p-buf);
-						dst ++;
-						op->jump = dst;
-						r_strbuf_setf (&op->esil,
-								"$$,brk,=[1],brk,++=,"
-								"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
-						goto beach;
-					}
-				}
-				if (*p == 0x00 || *p == 0xff) {
-					op->type = R_ANAL_OP_TYPE_ILL;
+		len--;
+		while (i < len && *p) {
+			if (*p == '[') {
+				lev++;
+			}
+			if (*p == ']') {
+				lev--;
+				if (lev==-1) {
+					dst = addr + (size_t)(p-buf);
+					dst ++;
+					op->jump = dst;
+					r_strbuf_setf (&op->esil,
+							"$$,brk,=[1],brk,++=,"
+							"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
 					goto beach;
 				}
-				if (i == len - 1 && anal->read_at) {
-					int new_buf_len = len + 1 + BUFSIZE_INC;
-					ut8 *new_buf = calloc (new_buf_len, 1);
-					if (new_buf) {
-						free ((ut8 *)buf);
-						(void)anal->read_at (anal, addr, new_buf, new_buf_len);
-						buf = new_buf;
-						p = buf + i;
-						len += BUFSIZE_INC;
-					}
-				}
-				p++;
-				i++;
 			}
+			if (*p == 0x00 || *p == 0xff) {
+				op->type = R_ANAL_OP_TYPE_ILL;
+				goto beach;
+			}
+			if (i == len - 1 && anal->read_at) {
+				int new_buf_len = len + 1 + BUFSIZE_INC;
+				ut8 *new_buf = calloc (new_buf_len, 1);
+				if (new_buf) {
+					free ((ut8 *)buf);
+					(void)anal->read_at (anal, addr, new_buf, new_buf_len);
+					buf = new_buf;
+					p = buf + i;
+					len += BUFSIZE_INC;
+				}
+			}
+			p++;
+			i++;
 		}
 beach:
 		free ((ut8 *)buf);
 		break;
-	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
+	case ']':
+		op->type = R_ANAL_OP_TYPE_UJMP;
 		// XXX This is wrong esil
 		r_strbuf_set (&op->esil, "brk,--=,brk,[1],pc,=");
 		break;
 	case '>':
 		op->type = R_ANAL_OP_TYPE_ADD;
-		op->size = countChar (buf, len, '>');
+		op->size = __countChar (buf, len, '>');
 		r_strbuf_setf (&op->esil, "%d,ptr,+=", op->size);
 		break;
 	case '<':
 		op->type = R_ANAL_OP_TYPE_SUB;
-		op->size = countChar (buf, len, '<');
+		op->size = __countChar (buf, len, '<');
 		r_strbuf_setf (&op->esil, "%d,ptr,-=", op->size);
 		break;
 	case '+':
-		op->size = countChar (buf, len, '+');
+		op->size = __countChar (buf, len, '+');
 		op->type = R_ANAL_OP_TYPE_ADD;
 		r_strbuf_setf (&op->esil, "%d,ptr,+=[1]", op->size);
 		break;
 	case '-':
 		op->type = R_ANAL_OP_TYPE_SUB;
-		op->size = countChar (buf, len, '-');
+		op->size = __countChar (buf, len, '-');
 		r_strbuf_setf (&op->esil, "%d,ptr,-=[1]", op->size);
 		break;
 	case '.':

@@ -405,7 +405,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	return true;
 }
 
-static bool isInvalid (RAsmOp *op) {
+static bool __isInvalid (RAsmOp *op) {
 	const char *buf_asm = r_strbuf_get (&op->buf_asm);
 	return (buf_asm && *buf_asm && !strcmp (buf_asm, "invalid"));
 }
@@ -455,7 +455,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 
-	if (op->size < 1 || isInvalid (op)) {
+	if (op->size < 1 || __isInvalid (op)) {
 		if (a->invhex) {
 			if (a->bits == 16) {
 				ut16 b = r_read_le16 (buf);
@@ -662,22 +662,12 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr
 	return ret;
 }
 
-R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
-	char *f = r_file_slurp (file, NULL);
-	if (f) {
-		RAsmCode *ac = r_asm_massemble (a, f);
-		free (f);
-		return ac;
-	}
-	return NULL;
-}
-
-static void flag_free_kv(HtPPKv *kv) {
+static void __flag_free_kv(HtPPKv *kv) {
 	free (kv->key);
 	free (kv->value);
 }
 
-static void *dup_val(const void *v) {
+static void *__dup_val(const void *v) {
 	return (void *)strdup ((char *)v);
 }
 
@@ -700,7 +690,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 		return NULL;
 	}
 	ht_pp_free (a->flags);
-	if (!(a->flags = ht_pp_new (dup_val, flag_free_kv, NULL))) {
+	if (!(a->flags = ht_pp_new (__dup_val, __flag_free_kv, NULL))) {
 		free (tokens);
 		return NULL;
 	}

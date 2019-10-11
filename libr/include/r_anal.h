@@ -860,7 +860,6 @@ typedef struct r_anal_op_t {
 	RAnalVar *var;  /* local var/arg used by this instruction */
 	RAnalValue *src[3];
 	RAnalValue *dst;
-	struct r_anal_op_t *next; // TODO deprecate
 	RStrBuf esil;
 	RStrBuf opex;
 	const char *reg; /* destination register */
