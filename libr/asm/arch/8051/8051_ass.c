@@ -1127,7 +1127,7 @@ static bool mnem_movx(char const*args, ut16 pc, ut8**out) {
 		{ 0, -1 }})) {
 	default: ret = false;
 	break; case movx_dptr_read: {
-		if (!get_arg (args, 2, arg) || strcmp (arg, "a")) {
+		if (!get_arg (args, 1, arg) || strcmp (arg, "a")) {
 			ret = false;
 		} else {
 			ret = single_byte_instr (0xe0, out);
