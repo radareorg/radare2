@@ -2850,15 +2850,30 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			addr = core->offset;
 		}
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-		if (fcn) {
-			if (fcn->addr != addr) {
-				r_cons_printf ("%s + %d\n", fcn->name,
-						(int)(addr - fcn->addr));
-			} else {
-				r_cons_println (fcn->name);
+		if (input[2] == 'j') { // afdj
+			PJ *pj = pj_new ();
+			if (!pj) {
+				return false;
 			}
+			pj_o (pj);
+			if (fcn) {
+				pj_ks (pj, "name", fcn->name);
+				pj_ki (pj, "offset", (int)(addr - fcn->addr));
+			}
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
 		} else {
-			eprintf ("afd: Cannot find function\n");
+			if (fcn) {
+				if (fcn->addr != addr) {
+					r_cons_printf ("%s + %d\n", fcn->name,
+							(int)(addr - fcn->addr));
+				} else {
+					r_cons_println (fcn->name);
+				}
+			} else {
+				eprintf ("afd: Cannot find function\n");
+			}
 		}
 		}
 		break;
@@ -2962,10 +2977,24 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			eprintf ("Usage: afo[?sj] ([name|offset])\n");
 			break;
 		case 'j':
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+				PJ *pj = pj_new ();
+				if (!pj) {
+					return false;
+				}
+				pj_o (pj);
+				if (fcn) {
+					pj_ki (pj, "address", fcn->addr);
+				}
+				pj_end (pj);
+				r_cons_println (pj_string (pj));
+				pj_free (pj);
+			}
+			break;
 		case '\0':
 			{
-				ut64 addr = core->offset;
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					r_cons_printf ("0x%08" PFMT64x "\n", fcn->addr);
 				}
