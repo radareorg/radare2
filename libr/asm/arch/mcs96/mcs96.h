@@ -13,8 +13,8 @@ typedef struct mcs96_op_t {
 #define	MCS96_5B	0x10
 
 #define	MCS96_3B_OR_4B	0x20
-#define MCS96_4B_OR_5B	0x40
-#define MCS96_5B_OR_6B	0x80
+#define	MCS96_4B_OR_5B	0x40
+#define	MCS96_5B_OR_6B	0x80
 
 #define	MCS96_2OP	0x100
 #define	MCS96_3OP	0x200
