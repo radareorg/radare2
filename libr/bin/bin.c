@@ -1068,7 +1068,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	RBinInfo *info = obj->info;
 	char bits = info? info->bits: 0;
 	ut64 boffset = obj->boffset;
-	ut32 obj_size = obj->obj_size;
+	ut64 obj_size = obj->obj_size;
 	const char *arch = info? info->arch: NULL;
 	const char *machine = info? info->machine: "unknown_machine";
 
@@ -1087,7 +1087,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			break;
 		case 'j':
 			bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-					"\"offset\":%" PFMT64d ",\"size\":%d,"
+					"\"offset\":%" PFMT64u ",\"size\":%" PFMT64u ","
 					"\"machine\":\"%s\"}",
 					i? ",": "", arch, bits,
 					boffset, obj_size, machine);
@@ -1097,7 +1097,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			bin->cb_printf ("%s\n", r_table_tostring(table));
 		}
 		snprintf (archline, sizeof (archline) - 1,
-			"0x%08" PFMT64x ":%d:%s:%d:%s",
+			"0x%08" PFMT64x ":%" PFMT64u ":%s:%d:%s",
 			boffset, obj_size, arch, bits, machine);
 		/// xxx machine not exported?
 		//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
@@ -1109,7 +1109,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				break;
 			case 'j':
 				bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-						"\"offset\":%" PFMT64d ",\"size\":%d,"
+						"\"offset\":%" PFMT64u ",\"size\":%" PFMT64u ","
 						"\"machine\":\"%s\"}",
 						i? ",": "", arch, bits,
 						boffset, obj_size, machine);
@@ -1119,7 +1119,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				bin->cb_printf ("%s\n", r_table_tostring(table));
 			}
 			snprintf (archline, sizeof (archline),
-				"0x%08" PFMT64x ":%d:%s:%d",
+				"0x%08" PFMT64x ":%" PFMT64u ":%s:%d",
 				boffset, obj_size, arch, bits);
 		} else if (nbinfile && mode) {
 			switch (mode) {
@@ -1128,7 +1128,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				break;
 			case 'j':
 				bin->cb_printf ("%s{\"arch\":\"unk_%d\",\"bits\":%d,"
-						"\"offset\":%" PFMT64d ",\"size\":%d,"
+						"\"offset\":%" PFMT64u ",\"size\":%" PFMT64u ","
 						"\"machine\":\"%s\"}",
 						i? ",": "", i, bits,
 						boffset, obj_size, machine);
@@ -1138,7 +1138,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				bin->cb_printf ("%s\n", r_table_tostring(table));
 			}
 			snprintf (archline, sizeof (archline),
-				"0x%08" PFMT64x ":%d:%s:%d",
+				"0x%08" PFMT64x ":%" PFMT64u ":%s:%d",
 				boffset, obj_size, "unk", 0);
 		} else {
 			eprintf ("Error: Invalid RBinFile.\n");
