@@ -536,7 +536,7 @@ R_API bool r_debug_arg_set(RDebug *dbg, int fast, int num, ut64 value);
 R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta);
 
 /* pid */
-R_API int r_debug_thread_list(RDebug *dbg, int pid);
+R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt);
 
 R_API void r_debug_tracenodes_reset(RDebug *dbg);
 
