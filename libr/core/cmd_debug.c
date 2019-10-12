@@ -307,7 +307,9 @@ static const char *help_msg_dp[] = {
 	"dpn", "", "Create new process (fork)",
 	"dptn", "", "Create new thread (clone)",
 	"dpt", "", "List threads of current pid",
+	"dptj", "", "List threads of current pid in JSON format",
 	"dpt", " <pid>", "List threads of process",
+	"dptj", " <pid>", "List threads of process in JSON format",
 	"dpt=", "<thread>", "Attach to thread",
 	NULL
 };
@@ -1082,10 +1084,17 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case 't': // "dpt"
 		switch (input[2]) {
 		case '\0': // "dpt"
-			r_debug_thread_list (core->dbg, core->dbg->pid);
+			r_debug_thread_list (core->dbg, core->dbg->pid, 0);
+			break;
+		case 'j': // "dptj"
+			if (input[3] != ' ') { // "dptj"
+				r_debug_thread_list (core->dbg, core->dbg->pid, 'j');
+			} else { // "dptj "
+				r_debug_thread_list (core->dbg, atoi (input + 3), 'j');
+			}
 			break;
 		case ' ': // "dpt "
-			r_debug_thread_list (core->dbg, atoi (input + 2));
+			r_debug_thread_list (core->dbg, atoi (input + 2), 0);
 			break;
 		case '=': // "dpt="
 			r_debug_select (core->dbg, core->dbg->pid,
