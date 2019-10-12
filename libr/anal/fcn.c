@@ -742,6 +742,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 
 	static ut64 leaddr = UT64_MAX;
+	static ut64 lea_jmptbl_ip = UT64_MAX;
 	char *last_reg_mov_lea_name = NULL;
 	ut64 last_reg_mov_lea_val = UT64_MAX;
 	bool last_is_reg_mov_lea = false;
@@ -1033,6 +1034,9 @@ repeat:
 					if (try_get_jmptbl_info (anal, fcn, jmp_aop.addr, bb, &table_size, &default_case)
 						|| try_get_delta_jmptbl_info (anal, fcn, jmp_aop.addr, op.addr, &table_size, &default_case)) {
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, jmp_aop.addr, jmptbl_addr, op.ptr, 4, table_size, default_case, 4);
+						if (ret) {
+							lea_jmptbl_ip = jmp_aop.addr;
+						}
 					}
 				}
 				r_anal_op_fini (&jmp_aop);
@@ -1264,7 +1268,7 @@ repeat:
 				gotoBeach (R_ANAL_RET_END);
 			}
 			// switch statement
-			if (anal->opt.jmptbl) {
+			if (anal->opt.jmptbl && lea_jmptbl_ip != op.addr) {
 				// op.ireg since rip relative addressing produces way too many false positives otherwise
 				// op.ireg is 0 for rip relative, "rax", etc otherwise
 				if (op.ptr != UT64_MAX && op.ireg) { // direct jump
@@ -1319,6 +1323,9 @@ repeat:
 						idx += (tablesize * 2);
 					}
 				}
+			}
+			if (lea_jmptbl_ip == op.addr) {
+				lea_jmptbl_ip = UT64_MAX;
 			}
 			if (anal->opt.ijmp) {
 				if (continue_after_jump) {
