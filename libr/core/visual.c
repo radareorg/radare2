@@ -809,6 +809,9 @@ R_API int r_core_visual_prompt(RCore *core) {
 		r_cons_echo (NULL);
 		r_cons_flush ();
 		ret = true;
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			r_core_cmd (core, ".dr*", 0);
+		}
 	} else {
 		ret = false;
 		//r_cons_any_key (NULL);
