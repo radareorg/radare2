@@ -86,7 +86,7 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 			switch (fmt) {
 			case 'j':
 				pj_o (j);
-				pj_ki (j, "current", dbg->tid == p->pid? true: false);
+				pj_kb (j, "current", dbg->tid == p->pid);
 				pj_ki (j, "pid", p->pid);
 				pj_ks (j, "status", &p->status);
 				pj_ks (j, "path", p->path);
