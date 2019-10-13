@@ -971,7 +971,6 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	int len;
 	ut8 buf[32];
 	ut8 *ptr;
-	RAsmOp asmop;
 
 	r_return_val_if_fail (core, NULL);
 	if (addr == UT64_MAX) {
@@ -999,15 +998,9 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	if (r_anal_op (core->anal, op, addr, ptr, len, mask) < 1) {
 		goto err_op;
 	}
+	// TODO move into analop
 	if (!op->mnemonic && mask & R_ANAL_OP_MASK_DISASM) {
-		// i don't think this is used anywhere
-		// decode instruction here
-		r_asm_set_pc (core->assembler, addr);
-		r_asm_op_init (&asmop);
-		if (r_asm_disassemble (core->assembler, &asmop, ptr, len) > 0) {
-			op->mnemonic = strdup (r_strbuf_get (&asmop.buf_asm));
-		}
-		r_asm_op_fini (&asmop);
+		eprintf ("WARNING: anal plugin is not handling mask.disasm\n");
 	}
 	return op;
 err_op:
