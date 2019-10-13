@@ -577,7 +577,7 @@ R_API void r_table_columns(RTable *t, RList *colNames) {
 	char * colName;
 	RTableRow *row;
 	r_list_foreach (t->rows, iter, row) {
-		RList *items = r_list_newf (r_table_row_free);
+		RList *items = r_list_newf (free);
 		r_list_foreach (colNames, iterCol, colName) {
 			int fc = r_table_column_nth (t, colName);
 			RTableRow *item = r_list_get_n (row->items, fc);
