@@ -176,7 +176,8 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->cycles = defaultCycles (op);
 		}
 	}
-  if (!op->mnemonic && mask & R_ANAL_OP_MASK_DISASM) {
+#if 0
+	if (!op->mnemonic && mask & R_ANAL_OP_MASK_DISASM) {
                 // i don't think this is used anywhere
                 // decode instruction here
                 r_asm_set_pc (core->assembler, addr);
@@ -186,6 +187,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
                 }
                 r_asm_op_fini (&asmop);
         }
+#endif
 	if (mask & R_ANAL_OP_MASK_HINT) {
 		RAnalHint *hint = r_anal_hint_get (anal, addr);
 		if (hint) {
