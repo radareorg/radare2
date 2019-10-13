@@ -21,7 +21,9 @@ typedef struct mcs96_op_t {
 #define	MCS96_4OP	0x400
 #define	MCS96_5OP	0x800
 
-#define	MCS96_FE	0x1000	//0xfe extension
+#define	MCS96_REG_8	0x1000
+
+#define	MCS96_FE	0x2000	//0xfe extension
 
 
 static Mcs96Op mcs96_op[] = {
@@ -105,7 +107,7 @@ static Mcs96Op mcs96_op[] = {
 	{"mulu",	MCS96_5B|MCS96_3OP|MCS96_FE},
 	{"mulu",	MCS96_4B|MCS96_3OP|MCS96_FE},
 	{"mulu",	MCS96_5B_OR_6B|MCS96_3OP|MCS96_FE},	//0x4f
-	{"andb",	MCS96_4B|MCS96_3OP},
+	{"andb",	MCS96_4B|MCS96_3OP|MCS96_REG_8},
 	{"andb",	MCS96_4B|MCS96_3OP},
 	{"andb",	MCS96_4B|MCS96_3OP},
 	{"andb",	MCS96_5B_OR_6B|MCS96_3OP},	//datasheet says that this is always 5 byte
@@ -138,19 +140,19 @@ static Mcs96Op mcs96_op[] = {
 	{"mulu",	MCS96_4B|MCS96_2OP|MCS96_FE},
 	{"mulu",	MCS96_3B|MCS96_2OP|MCS96_FE},
 	{"mulu",	MCS96_4B_OR_5B|MCS96_2OP|MCS96_FE},	//0x6f
-	{"andb",	MCS96_3B|MCS96_2OP},
+	{"andb",	MCS96_3B|MCS96_2OP|MCS96_REG_8},
 	{"andb",	MCS96_3B|MCS96_2OP},
 	{"andb",	MCS96_3B|MCS96_2OP},
 	{"andb",	MCS96_4B_OR_5B|MCS96_2OP},	//again i don't trust the data-sheet here
-	{"addb",	MCS96_3B|MCS96_2OP},
+	{"addb",	MCS96_3B|MCS96_2OP|MCS96_REG_8},
 	{"addb",	MCS96_3B|MCS96_2OP},
 	{"addb",	MCS96_3B|MCS96_2OP},
 	{"addb",	MCS96_4B_OR_5B|MCS96_2OP},
-	{"subb",	MCS96_3B|MCS96_2OP},
+	{"subb",	MCS96_3B|MCS96_2OP|MCS96_REG_8},
 	{"subb",	MCS96_3B|MCS96_2OP},
 	{"subb",	MCS96_3B|MCS96_2OP},
 	{"subb",	MCS96_4B_OR_5B|MCS96_2OP},
-	{"mulub",	MCS96_3B|MCS96_2OP|MCS96_FE},
+	{"mulub",	MCS96_3B|MCS96_2OP|MCS96_FE|MCS96_REG_8},
 	{"mulub",	MCS96_3B|MCS96_2OP|MCS96_FE},
 	{"mulub",	MCS96_3B|MCS96_2OP|MCS96_FE},
 	{"mulub",	MCS96_4B_OR_5B|MCS96_2OP|MCS96_FE},	//0x7f
@@ -170,19 +172,19 @@ static Mcs96Op mcs96_op[] = {
 	{"divu",	MCS96_4B|MCS96_2OP|MCS96_FE},
 	{"divu",	MCS96_3B|MCS96_2OP|MCS96_FE},
 	{"divu",	MCS96_4B_OR_5B|MCS96_2OP|MCS96_FE},	//0x8f
-	{"orb",		MCS96_3B|MCS96_2OP},
+	{"orb",		MCS96_3B|MCS96_2OP|MCS96_REG_8},
 	{"orb",		MCS96_3B|MCS96_2OP},
 	{"orb",		MCS96_3B|MCS96_2OP},
 	{"orb",		MCS96_4B_OR_5B|MCS96_2OP},
-	{"xorb",	MCS96_3B|MCS96_2OP},
+	{"xorb",	MCS96_3B|MCS96_2OP|MCS96_REG_8},
 	{"xorb",	MCS96_3B|MCS96_2OP},
 	{"xorb",	MCS96_3B|MCS96_2OP},
 	{"xorb",	MCS96_4B_OR_5B|MCS96_2OP},
-	{"cmpb",	MCS96_3B|MCS96_2OP},
+	{"cmpb",	MCS96_3B|MCS96_2OP|MCS96_REG_8},
 	{"cmpb",	MCS96_3B|MCS96_2OP},
 	{"cmpb",	MCS96_3B|MCS96_2OP},
 	{"cmpb",	MCS96_4B_OR_5B|MCS96_2OP},
-	{"divub",	MCS96_3B|MCS96_2OP|MCS96_FE},
+	{"divub",	MCS96_3B|MCS96_2OP|MCS96_FE|MCS96_REG_8},
 	{"divub",	MCS96_3B|MCS96_2OP|MCS96_FE},
 	{"divub",	MCS96_3B|MCS96_2OP|MCS96_FE},
 	{"divub",	MCS96_4B_OR_5B|MCS96_2OP|MCS96_FE},	//0x9f
@@ -202,19 +204,19 @@ static Mcs96Op mcs96_op[] = {
 	{"lbsze",	MCS96_3B|MCS96_2OP},
 	{"lbsze",	MCS96_3B|MCS96_2OP},
 	{"lbsze",	MCS96_4B_OR_5B|MCS96_2OP},	//0xaf
-	{"ldb",		MCS96_3B|MCS96_2OP},
+	{"ldb",		MCS96_3B|MCS96_2OP|MCS96_REG_8},
 	{"ldb",		MCS96_3B|MCS96_2OP},
 	{"ldb",		MCS96_3B|MCS96_2OP},
 	{"ldb",		MCS96_4B_OR_5B|MCS96_2OP},
-	{"addcb",	MCS96_3B|MCS96_2OP},
+	{"addcb",	MCS96_3B|MCS96_2OP|MCS96_REG_8},
 	{"addcb",	MCS96_3B|MCS96_2OP},
 	{"addcb",	MCS96_3B|MCS96_2OP},
 	{"addcb",	MCS96_4B_OR_5B|MCS96_2OP},
-	{"subcb",	MCS96_3B|MCS96_2OP},
+	{"subcb",	MCS96_3B|MCS96_2OP|MCS96_REG_8},
 	{"subcb",	MCS96_3B|MCS96_2OP},
 	{"subcb",	MCS96_3B|MCS96_2OP},
 	{"subcb",	MCS96_4B_OR_5B|MCS96_2OP},
-	{"ldbse",	MCS96_3B|MCS96_2OP},
+	{"ldbse",	MCS96_3B|MCS96_2OP|MCS96_REG_8},
 	{"ldbse",	MCS96_3B|MCS96_2OP},
 	{"ldbse",	MCS96_3B|MCS96_2OP},
 	{"ldbse",	MCS96_4B_OR_5B|MCS96_2OP},	//0xbf
