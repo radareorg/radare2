@@ -675,6 +675,11 @@ static void check_purity(HtUP *ht, RAnal *anal, RAnalFunction *fcn) {
 	r_list_free (refs);
 }
 
+typedef struct {
+	ut64 op_addr;
+	ut64 leaddr;
+} leaddr_pair;
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -741,7 +746,14 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
-	static ut64 leaddr = UT64_MAX;
+	static RList *leaddrs = NULL;
+	if (!leaddrs) {
+		leaddrs = r_list_new (); // TODO: leaks
+		if (!leaddrs) {
+			eprintf ("Cannot create leaddr list\n");
+			return R_ANAL_RET_ERROR;
+		}
+	}
 	static ut64 lea_jmptbl_ip = UT64_MAX;
 	char *last_reg_mov_lea_name = NULL;
 	ut64 last_reg_mov_lea_val = UT64_MAX;
@@ -999,7 +1011,14 @@ repeat:
 				ut8 buf[4];
 				anal->iob.read_at (anal->iob.io, op.ptr, buf, sizeof (buf));
 				if ((buf[2] == 0xff || buf[2] == 0xfe) && buf[3] == 0xff) {
-					leaddr = op.ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
+					leaddr_pair *pair = R_NEW (leaddr_pair);
+					if (!pair) {
+						eprintf ("Cannot create leaddr_pair\n");
+						gotoBeach (R_ANAL_RET_ERROR);
+					}
+					pair->op_addr = op.addr;
+					pair->leaddr = op.ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
+					r_list_append (leaddrs, pair);
 				}
 				if (op.dst && op.dst->reg && op.dst->reg->name && op.ptr > 0 && op.ptr != UT64_MAX) {
 					free (last_reg_mov_lea_name);
@@ -1282,10 +1301,27 @@ repeat:
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
 					}
 				} else if (movdisp == 0) {
-					ut64 jmptbl_base = leaddr;
+					ut64 jmptbl_base = UT64_MAX;
+					ut64 lea_op_off = UT64_MAX;
+					RListIter *lea_op_iter = NULL;
+					RListIter *iter;
+					leaddr_pair *pair;
+					// find nearest candidate leaddr before op.addr
+					r_list_foreach (leaddrs, iter, pair) {
+						if (pair->op_addr >= op.addr) {
+							continue;
+						}
+						if (lea_op_off == UT64_MAX || lea_op_off > op.addr - pair->op_addr) {
+							lea_op_off = op.addr - pair->op_addr;
+							jmptbl_base = pair->leaddr;
+							lea_op_iter = iter;
+						}
+					}
+					if (lea_op_iter) {
+						r_list_delete (leaddrs, lea_op_iter);
+					}
 					ut64 table_size = cmpval + 1;
 					ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, jmptbl_base, jmptbl_base, 4, table_size, -1, ret);
-					leaddr = UT64_MAX;
 					cmpval = UT64_MAX;
 				} else if (movdisp != UT64_MAX) {
 					ut64 table_size, default_case;
