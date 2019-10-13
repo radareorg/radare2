@@ -176,18 +176,9 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->cycles = defaultCycles (op);
 		}
 	}
-#if 0
-	if (!op->mnemonic && mask & R_ANAL_OP_MASK_DISASM) {
-                // i don't think this is used anywhere
-                // decode instruction here
-                r_asm_set_pc (core->assembler, addr);
-                r_asm_op_init (&asmop);
-                if (r_asm_disassemble (core->assembler, &asmop, ptr, len) > 0) {
-                        op->mnemonic = strdup (r_strbuf_get (&asmop.buf_asm));
-                }
-                r_asm_op_fini (&asmop);
+	if (!op->mnemonic && (mask & R_ANAL_OP_MASK_DISASM)) {
+		eprintf ("Warning: unhandled R_ANAL_OP_MASK_DISASM in r_anal_op\n");
         }
-#endif
 	if (mask & R_ANAL_OP_MASK_HINT) {
 		RAnalHint *hint = r_anal_hint_get (anal, addr);
 		if (hint) {
