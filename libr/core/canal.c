@@ -723,6 +723,7 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 				}
 			}
 		}
+		r_list_free (refs);
 	}
 }
 
