@@ -2083,6 +2083,12 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 				r_cons_printf (" %s\n", rrstr);
 			}
 			free (rrstr);
+		} else {
+			if (mode == 'j') {
+				r_cons_printf (",\"ref\":\"\"}");
+			} else {
+				r_cons_printf ("\n");
+			}
 		}
 	}
 	if (mode == 'j') {
