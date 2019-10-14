@@ -60,7 +60,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	}
 	qo->kv = sdb_new0 ();
 	if (!qo->kv) {
-		free (qo);
 		goto beach;
 	}
 	// Read the first record
@@ -81,10 +80,10 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 			break;
 		} else if (lrec.rec_type == LMF_RESOURCE_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
-			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&lres, "ssss", 1) < sizeof (lmf_resource)) {
+			if (!ptr) {
 				goto beach;
 			}
-			if (!ptr) {
+			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&lres, "ssss", 1) < sizeof (lmf_resource)) {
 				goto beach;
 			}
 			ptr->name = strdup ("LMF_RESOURCE");
@@ -135,6 +134,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	*bin_obj = qo;
 	return true;
 beach:
+	free (qo);
 	return false;
 }
 

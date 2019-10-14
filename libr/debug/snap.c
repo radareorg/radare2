@@ -344,8 +344,11 @@ R_API RDebugSnapDiff *r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 	new_diff->last_changes = R_NEWS0 (RPageData *, base->page_num);
 	if (r_list_length (base->history)) {
 		/* Inherit last changes from previous SnapDiff */
-		prev_diff = (RDebugSnapDiff *) r_list_tail (base->history)->data;
-		memcpy (new_diff->last_changes, prev_diff->last_changes, sizeof (RPageData *) * base->page_num);
+		RListIter *tail = r_list_tail (base->history);
+		if (tail) {
+			prev_diff = (RDebugSnapDiff *) tail->data;
+			memcpy (new_diff->last_changes, prev_diff->last_changes, sizeof (RPageData *) * base->page_num);
+		}
 	}
 
 	/* Compare hash of pages. */

@@ -133,6 +133,9 @@ static int prev_mode(int mode) {
 }
 
 static RGraphNode *agraph_get_title(const RAGraph *g, RANode *n, bool in) {
+	if (!n) {
+		return NULL;
+	}
 	if (n->title && *n->title) {
 		return n->gnode;
 	}
@@ -3234,6 +3237,9 @@ static void agraph_follow_innodes (RAGraph *g, bool in) {
 	int count = 0;
 	RListIter *iter;
 	RANode *an = get_anode (g->curnode);
+	if (!an) {
+		return;
+	}
 	RGraphNode *gn = an->gnode;
 	const RList *list = in? an->gnode->in_nodes: an->gnode->out_nodes;
 	int nth = -1;

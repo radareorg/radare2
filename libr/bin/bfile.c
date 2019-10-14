@@ -36,6 +36,9 @@ static void print_string(RBinFile *bf, RBinString *string, int raw) {
 	int mode = bf->strmode;
 	ut64 addr, vaddr;
 	RBin *bin = bf->rbin;
+	if (!bin) {
+		return;
+	}
 	const char *section_name, *type_string;
 	RIO *io = bin->iob.io;
 	if (!io) {

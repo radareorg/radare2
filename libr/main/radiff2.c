@@ -748,7 +748,10 @@ static void __generate_graph (RCore *c, ut64 off) {
                         }
                         if (*ptr) {
                                 char *p = strdup (ptr);
-                                r_return_if_fail (p);
+                                if (!p) {
+                                        free (str);
+                                        return;
+                                }
                                 r_core_cmd0 (c, p);
                                 free (p);
                         }
