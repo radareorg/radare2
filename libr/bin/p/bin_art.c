@@ -69,13 +69,15 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	ArtObj *ao = R_NEW0 (ArtObj);
 	if (ao) {
 		ao->kv = sdb_new0 ();
-		if (ao->kv) {
-			ao->buf = r_buf_ref (buf);
-			art_header_load (ao, ao->kv);
-			sdb_ns_set (sdb, "info", ao->kv);
-			*bin_obj = ao;
-			return true;
+		if (!ao->kv) {
+			free (ao);
+			return false;
 		}
+		ao->buf = r_buf_ref (buf);
+		art_header_load (ao, ao->kv);
+		sdb_ns_set (sdb, "info", ao->kv);
+		*bin_obj = ao;
+		return true;
 	}
 	return false;
 }

@@ -805,7 +805,7 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 	if (use_section) {
 		const char *s = p->get_section_name (p->user, at);
 		if (!s) {
-			s = strdup ("");
+			s = "";
 		}
 		char *tail = r_str_ndup (s, 19);
 		p->cb_printf ("%20s ", tail);
