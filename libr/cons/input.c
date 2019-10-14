@@ -91,74 +91,9 @@ static int __parseMouseEvent() {
 	return 0;
 }
 
-#if __WINDOWS__
-bool bCtrl;
-bool is_special;
-#endif
-
 R_API int r_cons_arrow_to_hjkl(int ch) {
 #if __WINDOWS__
-	if (is_special) {
-		switch ((ut8)ch) {
-		case VK_DOWN: // key down
-			ch = bCtrl ? 'J' : 'j';
-			break;
-		case VK_RIGHT: // key right
-			ch = bCtrl ? 'L' : 'l';
-			break;
-		case VK_UP: // key up
-			ch = bCtrl ? 'K' : 'k';
-			break;
-		case VK_LEFT: // key left
-			ch = bCtrl ? 'H' : 'h';
-			break;
-		case VK_PRIOR: // key home
-			ch = 'K';
-			break;
-		case VK_NEXT: // key end
-			ch = 'J';
-			break;
-		case VK_F1:
-			ch = R_CONS_KEY_F1;
-			break;
-		case VK_F2:
-			ch = R_CONS_KEY_F2;
-			break;
-		case VK_F3:
-			ch = R_CONS_KEY_F3;
-			break;
-		case VK_F4:
-			ch = R_CONS_KEY_F4;
-			break;
-		case VK_F5:
-			ch = bCtrl ? 0xcf5 : R_CONS_KEY_F5;
-			break;
-		case VK_F6:
-			ch = R_CONS_KEY_F6;
-			break;
-		case VK_F7:
-			ch = R_CONS_KEY_F7;
-			break;
-		case VK_F8:
-			ch = R_CONS_KEY_F8;
-			break;
-		case VK_F9:
-			ch = R_CONS_KEY_F9;
-			break;
-		case VK_F10:
-			ch = R_CONS_KEY_F10;
-			break;
-		case VK_F11:
-			ch = R_CONS_KEY_F11;
-			break;
-		case VK_F12:
-			ch = R_CONS_KEY_F12;
-			break;
-		default:
-			break;
-		}
-	}
-	return (ut8)ch < 2 ? 0 : ch;
+	return ch < 2 ? 0 : ch;
 #endif
 	I->mouse_event = 0;
 	/* emacs */
@@ -452,8 +387,7 @@ extern void resizeWin(void);
 static int __cons_readchar_w32 (ut32 usec) {
 	int ch = 0;
 	BOOL ret;
-	bCtrl = false;
-	is_special = false;
+	BOOL bCtrl = FALSE;
 	DWORD mode, out;
 	HANDLE h;
 	INPUT_RECORD irInBuf;
@@ -510,10 +444,68 @@ static int __cons_readchar_w32 (ut32 usec) {
 			if (irInBuf.EventType == KEY_EVENT) {
 				if (irInBuf.Event.KeyEvent.bKeyDown) {
 					ch = irInBuf.Event.KeyEvent.uChar.AsciiChar;
-					bCtrl = (bool)(irInBuf.Event.KeyEvent.dwControlKeyState & 8);
+					bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
 					if (irInBuf.Event.KeyEvent.uChar.AsciiChar == 0) {
-						is_special = true;
-						ch = irInBuf.Event.KeyEvent.wVirtualKeyCode;
+						ch = 0;
+						switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
+						case VK_DOWN: // key down
+							ch = bCtrl ? 'J' : 'j';
+							break;
+						case VK_RIGHT: // key right
+							ch = bCtrl ? 'L' : 'l';
+							break;
+						case VK_UP: // key up
+							ch = bCtrl ? 'K' : 'k';
+							break;
+						case VK_LEFT: // key left
+							ch = bCtrl ? 'H' : 'h';
+							break;
+						case VK_PRIOR: // key home
+							ch = 'K';
+							break;
+						case VK_NEXT: // key end
+							ch = 'J';
+							break;
+						case VK_F1:
+							ch = R_CONS_KEY_F1;
+							break;
+						case VK_F2:
+							ch = R_CONS_KEY_F2;
+							break;
+						case VK_F3:
+							ch = R_CONS_KEY_F3;
+							break;
+						case VK_F4:
+							ch = R_CONS_KEY_F4;
+							break;
+						case VK_F5:
+							ch = bCtrl ? 0xcf5 : R_CONS_KEY_F5;
+							break;
+						case VK_F6:
+							ch = R_CONS_KEY_F6;
+							break;
+						case VK_F7:
+							ch = R_CONS_KEY_F7;
+							break;
+						case VK_F8:
+							ch = R_CONS_KEY_F8;
+							break;
+						case VK_F9:
+							ch = R_CONS_KEY_F9;
+							break;
+						case VK_F10:
+							ch = R_CONS_KEY_F10;
+							break;
+						case VK_F11:
+							ch = R_CONS_KEY_F11;
+							break;
+						case VK_F12:
+							ch = R_CONS_KEY_F12;
+							break;
+						default:
+							ch = 0;
+							break;
+						}
 					}
 				}
 			}
