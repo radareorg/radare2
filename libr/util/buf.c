@@ -170,7 +170,7 @@ R_API RBuffer *r_buf_new_with_string(const char *msg) {
 }
 
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
-	ut64 sz;
+	ut64 sz = 0;
 	const ut8 *tmp = r_buf_data (b, &sz);
 	return r_buf_new_with_bytes (tmp, sz);
 }
@@ -238,7 +238,7 @@ R_API bool r_buf_dump(RBuffer *b, const char *file) {
 	if (!b || !file) {
 		return false;
 	}
-	ut64 tmpsz;
+	ut64 tmpsz = 0;
 	const ut8 *tmp = r_buf_data (b, &tmpsz);
 	return r_file_dump (file, tmp, tmpsz, 0);
 }
@@ -365,7 +365,7 @@ R_API bool r_buf_append_ut64(RBuffer *b, ut64 n) {
 
 R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	r_return_val_if_fail (b && a && !b->readonly, false);
-	ut64 sz;
+	ut64 sz = 0;
 	const ut8 *tmp = r_buf_data (a, &sz);
 	return r_buf_append_bytes (b, tmp, sz);
 }

@@ -927,10 +927,12 @@ R_API int r_flag_count(RFlag *f, const char *glob) {
 	RListIter *it2, *tmp2;	  \
 	RFlagItem *fi; \
 	r_skiplist_foreach_safe (f->by_off, it, tmp, flags_at) { \
-		r_list_foreach_safe (flags_at->flags, it2, tmp2, fi) {	\
-			if (condition) { \
-				if (!cb (fi, user)) { \
-					return; \
+		if (flags_at) { \
+			r_list_foreach_safe (flags_at->flags, it2, tmp2, fi) {	\
+				if (condition) { \
+					if (!cb (fi, user)) { \
+						return; \
+					} \
 				} \
 			} \
 		} \
