@@ -91,9 +91,36 @@ static int __parseMouseEvent() {
 	return 0;
 }
 
+#if __WINDOWS__
+static bool bCtrl;
+static bool is_arrow;
+#endif
+
 R_API int r_cons_arrow_to_hjkl(int ch) {
 #if __WINDOWS__
-	return ch < 2 ? 0 : ch;
+	if (is_arrow) {
+		switch (ch) {
+		case VK_DOWN: // key down
+			ch = bCtrl ? 'J' : 'j';
+			break;
+		case VK_RIGHT: // key right
+			ch = bCtrl ? 'L' : 'l';
+			break;
+		case VK_UP: // key up
+			ch = bCtrl ? 'K' : 'k';
+			break;
+		case VK_LEFT: // key left
+			ch = bCtrl ? 'H' : 'h';
+			break;
+		case VK_PRIOR: // key home
+			ch = 'K';
+			break;
+		case VK_NEXT: // key end
+			ch = 'J';
+			break;
+		}
+	}
+	return I->mouse_event && (ut8)ch == UT8_MAX ? 0 : ch;
 #endif
 	I->mouse_event = 0;
 	/* emacs */
@@ -384,10 +411,11 @@ R_API int r_cons_any_key(const char *msg) {
 extern void resizeWin(void);
 
 #if __WINDOWS__
-static int __cons_readchar_w32 (ut32 usec) {
+static int __cons_readchar_w32(ut32 usec) {
 	int ch = 0;
 	BOOL ret;
-	BOOL bCtrl = FALSE;
+	bCtrl = false;
+	is_arrow = false;
 	DWORD mode, out;
 	HANDLE h;
 	INPUT_RECORD irInBuf;
@@ -395,6 +423,7 @@ static int __cons_readchar_w32 (ut32 usec) {
 	bool resize = false;
 	bool click_n_drag = false;
 	void *bed;
+	I->mouse_event = 0;
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS);
@@ -428,7 +457,7 @@ static int __cons_readchar_w32 (ut32 usec) {
 				switch (irInBuf.Event.MouseEvent.dwButtonState) {
 				case FROM_LEFT_1ST_BUTTON_PRESSED:
 					r_cons_set_click (irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1);
-					ch = 1;
+					ch = UT8_MAX;
 					break;
 				case RIGHTMOST_BUTTON_PRESSED:
 					r_cons_enable_mouse (false);
@@ -438,7 +467,7 @@ static int __cons_readchar_w32 (ut32 usec) {
 
 			if (click_n_drag) {
 				r_cons_set_click (irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1);
-				ch = 1;
+				ch = UT8_MAX;
 			}
 
 			if (irInBuf.EventType == KEY_EVENT) {
@@ -446,25 +475,15 @@ static int __cons_readchar_w32 (ut32 usec) {
 					ch = irInBuf.Event.KeyEvent.uChar.AsciiChar;
 					bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
 					if (irInBuf.Event.KeyEvent.uChar.AsciiChar == 0) {
-						ch = 0;
 						switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
 						case VK_DOWN: // key down
-							ch = bCtrl ? 'J' : 'j';
-							break;
 						case VK_RIGHT: // key right
-							ch = bCtrl ? 'L' : 'l';
-							break;
 						case VK_UP: // key up
-							ch = bCtrl ? 'K' : 'k';
-							break;
 						case VK_LEFT: // key left
-							ch = bCtrl ? 'H' : 'h';
-							break;
 						case VK_PRIOR: // key home
-							ch = 'K';
-							break;
 						case VK_NEXT: // key end
-							ch = 'J';
+							ch = irInBuf.Event.KeyEvent.wVirtualKeyCode;
+							is_arrow = true;
 							break;
 						case VK_F1:
 							ch = R_CONS_KEY_F1;
@@ -503,7 +522,6 @@ static int __cons_readchar_w32 (ut32 usec) {
 							ch = R_CONS_KEY_F12;
 							break;
 						default:
-							ch = 0;
 							break;
 						}
 					}
