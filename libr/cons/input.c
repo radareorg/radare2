@@ -435,6 +435,40 @@ beach:
 	return ret;
 }
 
+R_API char *r_cons_get_input() {
+	RCons *cons = r_cons_singleton ();
+	const int color = cons->context->pal.input && *cons->context->pal.input;
+	if (cons->echo) {
+		r_cons_set_raw (false);
+		r_cons_show_cursor (true);
+	}
+	if (cons->user_get_input) {
+		return cons->user_get_input();
+	}
+	printf ("%s", cons->line->prompt);
+	fflush (stdout);
+	if (color) {
+		const char *p = cons->context->pal.input;
+		int len = p? strlen (p): 0;
+		if (len > 0) {
+			fwrite (p, len, 1, stdout);
+		}
+		fflush (stdout);
+	}
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	char buf[1024];
+	do {
+		buf[1022] = '\0';
+		fgets(buf, 1024, cons->fdin);
+		r_strbuf_append (&sb, buf);
+	} while (buf[1022] != '\0' && buf[1022] != '\n' && !feof(cons->fdin));
+	if (color) {
+		printf (Color_RESET);
+	}
+	return sb.ptr ? sb.ptr : strdup (sb.buf);
+}
+
 R_API int r_cons_any_key(const char *msg) {
 	if (msg && *msg) {
 		r_cons_printf ("\n-- %s --\n", msg);
@@ -698,15 +732,13 @@ R_API char *r_cons_input(const char *msg) {
 	if (!oprompt) {
 		return NULL;
 	}
-	char buf[1024];
 	if (msg) {
 		r_line_set_prompt (msg);
 	} else {
 		r_line_set_prompt ("");
 	}
-	buf[0] = 0;
-	r_cons_fgets (buf, sizeof (buf), 0, NULL);
+	char *input = r_cons_get_input ();
 	r_line_set_prompt (oprompt);
 	free (oprompt);
-	return strdup (buf);
+	return input;
 }
