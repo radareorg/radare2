@@ -461,7 +461,7 @@ R_API char *r_cons_get_input(int *status) {
 	int s = 0;
 	do {
 		buf[1022] = '\0';
-		if (!fgets(buf, 1024, cons->fdin) {
+		if (!fgets(buf, 1024, cons->fdin)) {
 			s = -1;
 		} else if (feof(cons->fdin)) {
 			s = -2;
