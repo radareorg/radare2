@@ -2278,7 +2278,7 @@ static bool cb_utf8(void *user, void *data) {
 #if UNICODE
 	if (IsValidCodePage (CP_UTF8)) {
 		if (!SetConsoleOutputCP (CP_UTF8) || !SetConsoleCP (CP_UTF8)) {
-			r_sys_perror ("r_cons_new");
+			r_sys_perror ("cb_utf8");
 		}
 	} else {
 		R_LOG_WARN ("UTF-8 Codepage not installed.\n");
@@ -2287,13 +2287,13 @@ static bool cb_utf8(void *user, void *data) {
 	UINT CP_IN = GetACP ();
 	UINT CP_OUT = IsValidCodePage (CP_UTF8) ? CP_UTF8 : CP_IN;
 	if (!SetConsoleOutputCP (CP_OUT) || !SetConsoleCP (CP_IN)) {
-		r_sys_perror ("r_cons_new");
+		r_sys_perror ("cb_utf8");
 	}
 #endif
 	} else {
 		UINT acp = GetACP ();
 		if (!SetConsoleOutputCP (acp) || !SetConsoleCP (acp)) {
-			r_sys_perror ("r_cons_new");
+			r_sys_perror ("cb_utf8");
 		}
 	}
 #endif
