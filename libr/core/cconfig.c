@@ -2274,28 +2274,7 @@ static bool cb_utf8(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->cons->use_utf8 = node->i_value;
 #if __WINDOWS__
-	if (core->cons->use_utf8) {
-#if UNICODE
-	if (IsValidCodePage (CP_UTF8)) {
-		if (!SetConsoleOutputCP (CP_UTF8) || !SetConsoleCP (CP_UTF8)) {
-			r_sys_perror ("cb_utf8");
-		}
-	} else {
-		R_LOG_WARN ("UTF-8 Codepage not installed.\n");
-	}
-#else
-	UINT CP_IN = GetACP ();
-	UINT CP_OUT = IsValidCodePage (CP_UTF8) ? CP_UTF8 : CP_IN;
-	if (!SetConsoleOutputCP (CP_OUT) || !SetConsoleCP (CP_IN)) {
-		r_sys_perror ("cb_utf8");
-	}
-#endif
-	} else {
-		UINT acp = GetACP ();
-		if (!SetConsoleOutputCP (acp) || !SetConsoleCP (acp)) {
-			r_sys_perror ("cb_utf8");
-		}
-	}
+	r_cons_win_set_cp (core->cons->use_utf8);
 #endif
 	return true;
 }

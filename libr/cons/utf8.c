@@ -242,3 +242,30 @@ R_API int r_cons_is_utf8() {
 }
 
 #endif
+
+#if __WINDOWS__
+R_API void r_cons_win_set_cp(bool utf8) {
+	if (utf8) {
+#if UNICODE
+	if (IsValidCodePage (CP_UTF8)) {
+		if (!SetConsoleOutputCP (CP_UTF8) || !SetConsoleCP (CP_UTF8)) {
+			r_sys_perror ("r_cons_set_cp_w32");
+		}
+	} else {
+		R_LOG_WARN ("UTF-8 Codepage not installed.\n");
+	}
+#else
+	UINT CP_IN = GetACP ();
+	UINT CP_OUT = IsValidCodePage (CP_UTF8) ? CP_UTF8 : CP_IN;
+	if (!SetConsoleOutputCP (CP_OUT) || !SetConsoleCP (CP_IN)) {
+		r_sys_perror ("r_cons_set_cp_w32");
+	}
+#endif
+	} else {
+		UINT acp = GetACP ();
+		if (!SetConsoleOutputCP (acp) || !SetConsoleCP (acp)) {
+			r_sys_perror ("r_cons_set_cp_w32");
+		}
+	}
+}
+#endif

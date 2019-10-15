@@ -822,6 +822,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode);
 R_API int r_cons_win_printf(bool vmode, const char *fmt, ...);
 R_API int r_cons_win_eprintf(bool vmode, const char *fmt, ...);
 R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap);
+R_API void r_cons_win_set_cp(bool utf8);
 #endif
 
 R_API void r_cons_push(void);
