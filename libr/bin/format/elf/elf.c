@@ -3703,7 +3703,7 @@ ELFOBJ* Elf_(r_bin_elf_new_buf)(RBuffer *buf, bool verbose) {
 	ELFOBJ *bin = R_NEW0 (ELFOBJ);
 	if (bin) {
 		bin->kv = sdb_new0 ();
-		bin->size = (ut32)r_buf_size (buf);
+		bin->size = r_buf_size (buf);
 		bin->verbose = verbose;
 		bin->b = r_buf_ref (buf);
 		if (!elf_init (bin)) {
