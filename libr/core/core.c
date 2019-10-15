@@ -1942,12 +1942,16 @@ static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLineProm
 	return true;
 }
 
-R_API char *r_core_get_input() {
+R_API char *r_core_get_input(int *status) {
 	RLine *rli = r_line_singleton ();
 	r_line_completion_set (&rli->completion, radare_argc, radare_argv);
 	rli->completion.run = autocomplete;
 	rli->completion.run_user = rli->user;
-	return strdup (r_line_readline ());
+	ret = strdup (r_line_readline ());
+	if (status) {
+		status[0] = ret ? 0 : -1;
+	}
+	return ret;
 }
 
 R_API int r_core_fgets(char *buf, int len) {

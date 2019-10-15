@@ -471,7 +471,7 @@ typedef struct r_cons_t {
 	int fdout; // only used in pipe.c :?? remove?
 	const char *teefile;
 	int (*user_fgets)(char *buf, int len);
-	char *(*user_get_input)();
+	char *(*user_get_input)(int *status);
 	RConsEvent event_resize;
 	void *event_data;
 	int mouse_event;
@@ -927,7 +927,7 @@ R_API void r_cons_rainbow_free(RConsContext *ctx);
 R_API void r_cons_rainbow_new(RConsContext *ctx, int sz);
 
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);
-R_API char *r_cons_get_input();
+R_API char *r_cons_get_input(int *status);
 R_API char *r_cons_hud(RList *list, const char *prompt);
 R_API char *r_cons_hud_path(const char *path, int dir);
 R_API char *r_cons_hud_string(const char *s);

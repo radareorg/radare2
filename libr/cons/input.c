@@ -435,7 +435,7 @@ beach:
 	return ret;
 }
 
-R_API char *r_cons_get_input() {
+R_API char *r_cons_get_input(int *status) {
 	RCons *cons = r_cons_singleton ();
 	const int color = cons->context->pal.input && *cons->context->pal.input;
 	if (cons->echo) {
@@ -443,7 +443,7 @@ R_API char *r_cons_get_input() {
 		r_cons_show_cursor (true);
 	}
 	if (cons->user_get_input) {
-		return cons->user_get_input();
+		return cons->user_get_input(status);
 	}
 	printf ("%s", cons->line->prompt);
 	fflush (stdout);
@@ -458,15 +458,26 @@ R_API char *r_cons_get_input() {
 	RStrBuf sb;
 	r_strbuf_init (&sb);
 	char buf[1024];
+	int s = 0;
 	do {
 		buf[1022] = '\0';
-		fgets(buf, 1024, cons->fdin);
+		if (!fgets(buf, 1024, cons->fdin) {
+			s = -1;
+		} else if (feof(cons->fdin)) {
+			s = -2;
+		}
 		r_strbuf_append (&sb, buf);
-	} while (buf[1022] != '\0' && buf[1022] != '\n' && !feof(cons->fdin));
+		
+	} while (buf[1022] != '\0' && buf[1022] != '\n' && s == 0);
 	if (color) {
 		printf (Color_RESET);
 	}
-	return sb.ptr ? sb.ptr : strdup (sb.buf);
+	if (status) {
+		status[0] = s;
+	}
+	char *ret = sb.ptr ? sb.ptr : strdup (sb.buf);
+	ret[sb.len - 1] = '\0';
+	return ret;
 }
 
 R_API int r_cons_any_key(const char *msg) {
@@ -737,7 +748,7 @@ R_API char *r_cons_input(const char *msg) {
 	} else {
 		r_line_set_prompt ("");
 	}
-	char *input = r_cons_get_input ();
+	char *input = r_cons_get_input (NULL);
 	r_line_set_prompt (oprompt);
 	free (oprompt);
 	return input;
