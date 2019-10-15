@@ -768,7 +768,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		eprintf ("Error: new (fcn)\n");
 		return false;
 	}
-	fcn->cc = r_str_const (r_anal_cc_default (core->anal));
+	fcn->cc = r_str_const_at (&core->anal->consts, r_anal_cc_default (core->anal));
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function

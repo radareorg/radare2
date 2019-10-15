@@ -1659,7 +1659,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 		append = true;
 	}
 	fcn->addr = fcn->meta.min = addr;
-	fcn->cc = r_str_const (r_anal_cc_default (a));
+	fcn->cc = r_str_const_at (&a->consts, r_anal_cc_default (a));
 	fcn->bits = a->bits;
 	r_anal_fcn_set_size (append ? NULL : a, fcn, size);
 	free (fcn->name);
