@@ -216,7 +216,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	f->name = name? strdup (name): r_str_newf ("%s.%" PFMT64x, pfx, fcn->addr);
 	f->addr = fcn->addr;
 	f->bits = core->anal->bits;
-	f->cc = r_str_const (r_anal_cc_default (core->anal));
+	f->cc = r_str_const_at (&core->anal->consts, r_anal_cc_default (core->anal));
 	r_anal_fcn_set_size (NULL, f, fcn->size);
 	f->type = R_ANAL_FCN_TYPE_FCN;
 
