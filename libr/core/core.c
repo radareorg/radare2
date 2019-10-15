@@ -2723,8 +2723,10 @@ R_API bool r_core_init(RCore *core) {
 		}
 #if __EMSCRIPTEN__
 		core->cons->user_fgets = NULL;
+		core->cons->user_get_input = NULL;
 #else
 		core->cons->user_fgets = (void *)r_core_fgets;
+		core->cons->user_get_input = (void *)r_core_get_input;
 #endif
 		//r_line_singleton ()->user = (void *)core;
 		r_line_hist_load (R2_HOME_HISTORY);
