@@ -1396,6 +1396,12 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 	}
+	case ARM64_INS_UBFX:
+		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
+			r_strbuf_appendf (&op->esil, "%d,%s,%d,%"PFMT64u",<<,&,>>,%s,=",
+				IMM64 (2), REG64 (1), IMM64 (2) , (ut64)bitmask_by_width[IMM64 (3) - 1], REG64 (0));
+		}
+		break;
 	case ARM64_INS_NEG:
 #if CS_API_MAJOR > 3
 	case ARM64_INS_NEGS:
