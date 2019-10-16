@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - qnix */
+/* radare - LGPL - Copyright 2015-2019 - qnix */
 
 #include <string.h>
 #include <r_types.h>
@@ -40,12 +40,12 @@ static bool _is_any(const char *str, ...) {
 	return false;
 }
 
-static void arg_p2 (char *buf, unsigned long val, const char* const* array, size_t size) {
+static void arg_p2(char *buf, unsigned long val, const char* const* array, size_t size) {
 	const char *s = val >= size || array[val] ? array[val] : "unknown";
 	snprintf (buf, RISCVARGSIZE, "%s", s);
 }
 
-static struct riscv_opcode *get_opcode (insn_t word) {
+static struct riscv_opcode *get_opcode(insn_t word) {
 	struct riscv_opcode *op = NULL;
 	static const struct riscv_opcode *riscv_hash[OP_MASK_OP + 1] = {0};
 
@@ -67,7 +67,7 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 }
 
 /* Print insn arguments for 32/64-bit code.  */
-static void get_insn_args (riscv_args_t *args, const char *d, insn_t l, uint64_t pc) {
+static void get_insn_args(riscv_args_t *args, const char *d, insn_t l, uint64_t pc) {
 	int rs1 = (l >> OP_SH_RS1) & OP_MASK_RS1;
 	int rd = (l >> OP_SH_RD) & OP_MASK_RD;
 	uint64_t target;
@@ -295,7 +295,6 @@ static const char* arg_n(riscv_args_t* args, int n) {
 static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	const int no_alias = 1;
 	riscv_args_t args = {0};
-	struct riscv_opcode *o = NULL;
 	ut64 word = 0;
 	int xlen = anal->bits;
 
@@ -312,13 +311,16 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return -1;
 	}
 
-	o = get_opcode (word);
+	struct riscv_opcode *o = get_opcode (word);
 	if (word == UT64_MAX) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return -1;
 	}
 	if (!o || !o->name) {
 		return op->size;
+	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = strdup (o->name);
 	}
 
 	for (; o <= &riscv_opcodes[NUMOPCODES - 1]; o++) {
