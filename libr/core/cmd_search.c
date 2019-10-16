@@ -258,7 +258,6 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 			if (plug->size) {
 				RBinOptions opt = {
 					.pluginname = plug->name,
-					.offset = core->offset,
 					.baseaddr = 0,
 					.loadaddr = 0,
 					.sz = 4096,

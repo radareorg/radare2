@@ -223,7 +223,6 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
 		eprintf ("Couldn't open bin for file '%s'\n", file);
 		return false;
 	}
-	opt->offset = 0;
 	opt->sz = 0;
 	opt->pluginname = NULL;
 	return r_bin_open_io (bin, opt);
@@ -243,9 +242,6 @@ R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	}
 	RBinOptions opt;
 	r_bin_options_init (&opt, fd, baseaddr, bf->loadaddr, bin->rawstr);
-	if (bf->o) {
-		opt.offset = bf->o->boffset;
-	}
 
 	// invalidate current object reference
 	bf->o = NULL;
@@ -320,7 +316,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 			if (bin->verbose) {
 				eprintf ("r_bin_open_io: unknown file size, Loading from memory..\n");
 			}
-		//	return false;
+			//	return false;
 			// Seems like thanks to the new IO buf doesnt really matters how big is this
 			file_sz = 1024 * 1024 * 1024;
 		}
@@ -386,7 +382,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	if (!bf) {
 		bf = r_bin_file_new_from_buffer (
 			bin, fname, buf, file_sz, bin->rawstr,
-			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname, opt->offset);
+			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname);
 		if (!bf) {
 			return false;
 		}

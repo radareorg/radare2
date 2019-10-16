@@ -245,7 +245,6 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
 					RBinOptions opt;
-					opt.offset = addr;
 					opt.baseaddr = baddr;
 					opt.loadaddr = addr;
 					opt.sz = 1024*1024*1;
@@ -261,7 +260,6 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
 					RBinOptions opt;
-					opt.offset = addr;
 					opt.baseaddr = addr;
 					opt.loadaddr = addr;
 					opt.sz = 1024 * 1024 * 1;
