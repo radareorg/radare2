@@ -74,23 +74,34 @@ TODO:
 #else
 #define COLORFLAGS 0
 #endif
+#if 0
 					char buf[1024];
+#endif
 					if (COLORFLAGS) {
 						r_line_set_prompt (Color_RESET":> ");
 					} else {
 						r_line_set_prompt (":> ");
 					}
 					showcursor (core, true);
+					char *input_buf = r_cons_get_input(NULL);
+#if 0
 					r_cons_fgets (buf+3, sizeof (buf) - 4, 0, NULL);
 					memcpy (buf, "wx ", 3);
-					if (buf[3]) {
-						char *res = rtrcmd (T, buf);
+#endif
+					if (input_buf[0]) {
+						RStrBuf buf;
+						r_strbuf_init (&buf);
+						r_strbuf_set (&buf, "wx ");
+						r_strbuf_append (&buf, input_buf);
+						char *res = rtrcmd (T, r_strbuf_get(&buf));
+						r_strbuf_fini (&buf);
 						if (res) {
 							r_cons_println (res);
 							free (res);
 						}
 						r_cons_flush ();
 					}
+					free (input_buf);
 				}
 				break;
 			case 's':
@@ -107,17 +118,24 @@ TODO:
 					int ret;
 					eprintf ("Press <enter> to return to Visual mode.\n");
 					do {
-						char buf[1024];
 #if __UNIX__
 						r_line_set_prompt (Color_RESET":> ");
 #else
 						r_line_set_prompt (":> ");
 #endif
 						showcursor (core, true);
+#if 0
+						char buf[1024];
 						r_cons_fgets (buf, sizeof (buf), 0, NULL);
+#else
+						char *buf = r_cons_get_input (NULL);
+#endif
 						if (*buf) {
 							r_line_hist_add (buf);
 							char *res = rtrcmd (T, buf);
+#if 1
+							free (buf);
+#endif
 							if (res) {
 								r_cons_println (res);
 								free (res);
