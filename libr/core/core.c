@@ -1947,11 +1947,11 @@ R_API char *r_core_get_input(int *status) {
 	r_line_completion_set (&rli->completion, radare_argc, radare_argv);
 	rli->completion.run = autocomplete;
 	rli->completion.run_user = rli->user;
-	char *ret = strdup (r_line_readline ());
+	char *line = r_line_readline();
 	if (status) {
-		status[0] = ret ? 0 : -1;
+		status[0] = line ? 0 : -1;
 	}
-	return ret;
+	return strdup (line ? line : "");
 }
 
 R_API int r_core_fgets(char *buf, int len) {
@@ -3094,14 +3094,14 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	char *line = r_cons_get_input (&ret);
 	if (ret == -2) {
 		free (line);
-		r_cons_print ("\n");
-		r_cons_flush ();
+	//	r_cons_print ("\n");
+	//	r_cons_flush ();
 		return R_CORE_CMD_EXIT; // ^D
 	}
 	if (ret == -1) {
 		free (line);
-		r_cons_print ("\n");
-		r_cons_flush ();
+	//	r_cons_print ("\n");
+	//	r_cons_flush ();
 		return false; // FD READ ERROR
 	}
 	r->num->value = rnv;

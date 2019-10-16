@@ -476,7 +476,9 @@ R_API char *r_cons_get_input(int *status) {
 		status[0] = s;
 	}
 	char *ret = sb.ptr ? sb.ptr : strdup (sb.buf);
-	ret[sb.len - 1] = '\0';
+	if (sb.len) {
+		ret[sb.len - 1] = '\0';
+	}
 	return ret;
 }
 
