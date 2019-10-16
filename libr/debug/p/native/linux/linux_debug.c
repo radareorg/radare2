@@ -415,10 +415,10 @@ static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
 	// Attaching to a process that has already been started with PTRACE_TRACEME.
 	// sets errno to "Operation not permitted" which may be misleading.
 	// GETSIGINFO can be called multiple times and would fail without attachment.
-	if (-1 == r_debug_ptrace(dbg, PTRACE_GETSIGINFO, ptid, NULL,
-		(r_ptrace_data_t)&sig)) {
-		if (-1 == r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL,
-			(r_ptrace_data_t)NULL)) {
+	if (r_debug_ptrace (dbg, PTRACE_GETSIGINFO, ptid, NULL,
+		(r_ptrace_data_t)&sig) == -1) {
+		if (r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL,
+			(r_ptrace_data_t)NULL) == -1) {
 			perror ("ptrace (PT_ATTACH)");
 			return false;
 		}
