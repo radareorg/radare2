@@ -862,6 +862,7 @@ R_API void r_cons_chop(void);
 R_API void r_cons_set_raw(bool b);
 R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_last_interactive(void);
+R_API void r_cons_set_utf8(bool b);
 
 /* output */
 R_API int r_cons_printf(const char *format, ...);

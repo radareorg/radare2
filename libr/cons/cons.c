@@ -543,21 +543,6 @@ R_API RCons *r_cons_new() {
 	I.null = 0;
 #if __WINDOWS__
 	I.ansicon = r_cons_is_ansicon ();
-#if UNICODE
-	if (IsValidCodePage (CP_UTF8)) {
-		if (!SetConsoleOutputCP (CP_UTF8) || !SetConsoleCP (CP_UTF8)) {
-			r_sys_perror ("r_cons_new");
-		}
-	} else {
-		R_LOG_WARN ("UTF-8 Codepage not installed.\n");
-	}
-#else
-	UINT CP_IN = GetACP ();
-	UINT CP_OUT = IsValidCodePage (CP_UTF8) ? CP_UTF8 : CP_IN;
-	if (!SetConsoleOutputCP (CP_OUT) || !SetConsoleCP (CP_IN)) {
-		r_sys_perror ("r_cons_new");
-	}
-#endif
 #endif
 #if EMSCRIPTEN
 	/* do nothing here :? */
@@ -1464,6 +1449,31 @@ R_API void r_cons_set_raw(bool is_raw) {
 #endif
 	fflush (stdout);
 	oldraw = is_raw;
+}
+
+R_API void r_cons_set_utf8(bool b) {
+	I.use_utf8 = b;
+#if __WINDOWS__
+	if (b) {
+		if (IsValidCodePage (CP_UTF8)) {
+			if (!SetConsoleOutputCP (CP_UTF8)) {
+				r_sys_perror ("r_cons_set_utf8");
+			}
+#if UNICODE
+			if (!SetConsoleCP (CP_UTF8)) {
+				r_sys_perror ("r_cons_set_utf8");
+			}
+#endif
+		} else {
+			R_LOG_WARN ("UTF-8 Codepage not installed.\n");
+		}
+	} else {
+		UINT acp = GetACP ();
+		if (!SetConsoleCP (acp) || !SetConsoleOutputCP (acp)) {
+			r_sys_perror ("r_cons_set_utf8");
+		}
+	}
+#endif
 }
 
 R_API void r_cons_invert(int set, int color) {

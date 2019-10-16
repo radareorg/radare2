@@ -240,5 +240,4 @@ R_API int r_cons_is_utf8() {
 	return 0;
 #endif
 }
-
 #endif

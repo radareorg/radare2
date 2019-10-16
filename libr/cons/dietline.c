@@ -9,9 +9,7 @@
 #if __WINDOWS__
 #include <windows.h>
 #define printf(...) r_cons_win_printf (false, __VA_ARGS__)
-#ifdef UNICODE
 #define USE_UTF8 1
-#endif
 #else
 #include <sys/ioctl.h>
 #include <termios.h>
