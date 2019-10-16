@@ -20,6 +20,8 @@
 char *linux_reg_profile (RDebug *dbg) {
 #if __arm__
 #include "reg/linux-arm.h"
+#elif __riscv
+#include "reg/linux-riscv64.h"
 #elif __arm64__ || __aarch64__
 #include "reg/linux-arm64.h"
 #elif __mips__
@@ -46,6 +48,7 @@ char *linux_reg_profile (RDebug *dbg) {
 	}
 #else
 #error "Unsupported Linux CPU"
+	return NULL;
 #endif
 }
 
@@ -764,7 +767,7 @@ void print_fpu (void *f){
 #endif
 }
 
-int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
+int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	bool showfpu = false;
 	int pid = dbg->pid;
 	int ret;
@@ -877,7 +880,8 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 #elif __BSD__ && (__POWERPC__ || __sparc__)
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
 #else
-			/* linux -{arm/x86/x86_64} */
+			/* linux -{arm/mips/riscv/x86/x86_64} */
+			eprintf ("REG READ\n");
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, NULL, &regs);
 #endif
 			/*
