@@ -2270,12 +2270,8 @@ static bool cb_tracetag(void *user, void *data) {
 }
 
 static bool cb_utf8(void *user, void *data) {
-	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->cons->use_utf8 = node->i_value;
-#if __WINDOWS__
-	r_cons_win_set_cp (core->cons->use_utf8);
-#endif
+	r_cons_set_utf8 ((bool)node->i_value);
 	return true;
 }
 

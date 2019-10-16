@@ -1451,6 +1451,31 @@ R_API void r_cons_set_raw(bool is_raw) {
 	oldraw = is_raw;
 }
 
+R_API void r_cons_set_utf8(bool b) {
+	I.use_utf8 = b;
+#if __WINDOWS__
+	if (b) {
+		if (IsValidCodePage (CP_UTF8)) {
+			if (!SetConsoleOutputCP (CP_UTF8)) {
+				r_sys_perror ("r_cons_set_utf8");
+			}
+#if UNICODE
+			if (!SetConsoleCP (CP_UTF8)) {
+				r_sys_perror ("r_cons_set_utf8");
+			}
+#endif
+		} else {
+			R_LOG_WARN ("UTF-8 Codepage not installed.\n");
+		}
+	} else {
+		UINT acp = GetACP ();
+		if (!SetConsoleCP (acp) || !SetConsoleOutputCP (acp)) {
+			r_sys_perror ("r_cons_set_utf8");
+		}
+	}
+#endif
+}
+
 R_API void r_cons_invert(int set, int color) {
 	r_cons_strcat (R_CONS_INVERT (set, color));
 }
