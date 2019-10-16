@@ -107,8 +107,9 @@ static void showcursor(RCore *core, int x) {
 // clone of textlog_chat () using rtrcmd()
 static void rtr_textlog_chat (RCore *core, TextLog T) {
 	char prompt[64];
-	char buf[1024];
-	int lastmsg = 0;
+//	char buf[1024];
+	char *buf = NULL;
+	int lastmsg = 0, status;
 	const char *me = r_config_get (core->config, "cfg.user");
 	char *ret, msg[1024];
 
@@ -129,12 +130,23 @@ static void rtr_textlog_chat (RCore *core, TextLog T) {
 		ret = rtrcmd (T, "Tl");
 		lastmsg = atoi (ret)-1;
 		free (ret);
+		R_FREE (buf);
+#if 0
 		if (r_cons_fgets (buf, sizeof (buf) - 1, 0, NULL) < 0) {
 			goto beach;
 		}
 		if (!*buf) {
 			continue;
 		}
+#else
+		buf = r_cons_get_input(&status);
+		if (status < 0) {
+			goto beach;
+		}
+		if (!*buf) {	//can this happen?
+			continue;
+		}
+#endif
 		if (!strcmp (buf, "/help")) {
 			eprintf ("/quit           quit the chat (same as ^D)\n");
 			eprintf ("/nick <nick>    set cfg.user nick name\n");
@@ -902,7 +914,8 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 	__rtr_shell (core, atoi (input));
 	return;
 
-	char prompt[64], buf[1024];
+	char prompt[64];
+	char *buf = NULL;
 	int fd;
 
 	prompt[0] = 0;
@@ -920,9 +933,18 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 		}
 		free (r_line_singleton ()->prompt);
 		r_line_singleton ()->prompt = strdup (prompt);
+		R_FREE (buf);
+		int status;
+		buf = r_cons_get_input(&status);
+#if 0
 		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 1) {
 			break;
 		}
+#else
+		if (status < 0) {
+			break;
+		}
+#endif
 		if (!*buf || *buf == 'q') {
 			break;
 		}
@@ -933,6 +955,7 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 		r_core_rtr_cmd (core, buf);
 		r_cons_flush ();
 	}
+	free(buf);
 }
 
 static ut8 *r_rap_packet(ut8 type, ut32 len) {
