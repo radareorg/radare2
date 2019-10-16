@@ -181,13 +181,19 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *desc = NULL;
 	int ret = -1;
-	if (__plugin_open (io, file, 0)) {
-		int pid = atoi (file + 9);
-		// ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
+	siginfo_t sig = { 0 };
+
+	if (!__plugin_open (io, file, 0)) {
+		return NULL;
+	}
+
+	int pid = atoi (file + 9);
+
+	// Safely check if the PID has already been attached to avoid printing errors.
+	ret = r_io_ptrace (io, PTRACE_GETSIGINFO, pid, NULL, &sig);
+	// Attempt attaching on failure
+	if (-1 == ret) {
 		ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
-		if (file[0] == 'p') { //ptrace
-			ret = 0;
-		} else 
 		if (ret == -1) {
 #ifdef __ANDROID__
 			eprintf ("ptrace_attach: Operation not permitted\n");
@@ -208,17 +214,20 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		} else {
 			eprintf ("Error in waitpid\n");
 		}
-		if (ret != -1) {
-			RIOPtrace *riop = R_NEW0 (RIOPtrace);
-			if (!riop) {
-				return NULL;
-			}
-			riop->pid = riop->tid = pid;
-			open_pidmem (riop);
-			desc = r_io_desc_new (io, &r_io_plugin_ptrace, file, rw | R_PERM_X, mode, riop);
-			desc->name = r_sys_pid_to_path (pid);
-		}
 	}
+
+	if (ret != -1) {
+		RIOPtrace *riop = R_NEW0 (RIOPtrace);
+		if (!riop) {
+			return NULL;
+		}
+
+		riop->pid = riop->tid = pid;
+		open_pidmem (riop);
+		desc = r_io_desc_new (io, &r_io_plugin_ptrace, file, rw | R_PERM_X, mode, riop);
+		desc->name = r_sys_pid_to_path (pid);
+	}
+
 	return desc;
 }
 

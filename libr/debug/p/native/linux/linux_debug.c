@@ -54,14 +54,14 @@ char *linux_reg_profile (RDebug *dbg) {
 
 static void linux_detach_all (RDebug *dbg);
 static char *read_link (int pid, const char *file);
-static int linux_attach_single_pid (RDebug *dbg, int ptid);
+static bool linux_attach_single_pid (RDebug *dbg, int ptid);
 static void linux_attach_all (RDebug *dbg);
 static void linux_remove_thread (RDebug *dbg, int pid);
 static void linux_add_and_attach_new_thread (RDebug *dbg, int tid);
 static int linux_stop_process(int pid);
 
 int linux_handle_signals (RDebug *dbg) {
-	siginfo_t siginfo = {0};
+	siginfo_t siginfo = { 0 };
 	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, dbg->pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
 	if (ret == -1) {
 		/* ESRCH means the process already went away :-/ */
@@ -243,6 +243,7 @@ bool linux_set_options(RDebug *dbg, int pid) {
 	/* SIGTRAP | 0x80 on signal handler .. not supported on all archs */
 	traceflags |= PTRACE_O_TRACESYSGOOD;
 	if (r_debug_ptrace (dbg, PTRACE_SETOPTIONS, pid, 0, (r_ptrace_data_t)(size_t)traceflags) == -1) {
+		perror ("ptrace (PT_SETOPTIONS)");
 		return false;
 	}
 	return true;
@@ -408,10 +409,26 @@ static int linux_stop_process(int pid) {
 	return ret == pid;
 }
 
-static int linux_attach_single_pid(RDebug *dbg, int ptid) {
-	linux_set_options (dbg, ptid);
-	return r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL,
-		(r_ptrace_data_t)(size_t)NULL);
+static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
+	siginfo_t sig = {0};
+	// Safely check if the PID has already been attached to avoid printing errors.
+	// Attaching to a process that has already been started with PTRACE_TRACEME.
+	// sets errno to "Operation not permitted" which may be misleading.
+	// GETSIGINFO can be called multiple times and would fail without attachment.
+	if (r_debug_ptrace (dbg, PTRACE_GETSIGINFO, ptid, NULL,
+		(r_ptrace_data_t)&sig) == -1) {
+		if (r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL,
+			(r_ptrace_data_t)NULL) == -1) {
+			perror ("ptrace (PT_ATTACH)");
+			return false;
+		}
+	}
+
+	if (!linux_set_options (dbg, ptid)) {
+		return false;
+	}
+
+	return true;
 }
 
 static RList *get_pid_thread_list (RDebug *dbg, int main_pid) {
@@ -424,10 +441,7 @@ static RList *get_pid_thread_list (RDebug *dbg, int main_pid) {
 }
 
 static void linux_attach_all (RDebug *dbg) {
-	int ret = linux_attach_single_pid (dbg, dbg->main_pid);
-	if (ret != -1) {
-		perror ("ptrace (PT_ATTACH)");
-	}
+	linux_attach_single_pid (dbg, dbg->main_pid);
 
 	RList *list = dbg->threads;
 	if (list) {
@@ -435,10 +449,8 @@ static void linux_attach_all (RDebug *dbg) {
 		RListIter *it;
 		r_list_foreach (list, it, th) {
 			if (th->pid && th->pid != dbg->main_pid) {
-				ret = linux_attach_single_pid (dbg, th->pid);
-				if (ret == -1) {
+				if (!linux_attach_single_pid (dbg, th->pid)) {
 					eprintf ("PID %d\n", th->pid);
-					perror ("ptrace (PT_ATTACH)");
 				}
 			}
 		}
@@ -456,10 +468,7 @@ int linux_attach(RDebug *dbg, int pid) {
 		if (dbg->threads && !r_list_find (dbg->threads, &pid, &match_pid)) {
 			goto out;
 		}
-		int ret = linux_attach_single_pid (dbg, pid);
-		if (ret == -1) {
-			perror ("ptrace (PT_ATTACH)");
-		}
+		linux_attach_single_pid (dbg, pid);
 	}
 out:
 	return pid;
@@ -881,7 +890,6 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
 #else
 			/* linux -{arm/mips/riscv/x86/x86_64} */
-			eprintf ("REG READ\n");
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, NULL, &regs);
 #endif
 			/*
