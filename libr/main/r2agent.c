@@ -151,14 +151,15 @@ R_API int r_main_r2agent(int argc, char **argv) {
 				int session_port = 3000 + r_num_rand (1024);
 				char *filename = rs->path + 11;
 				char *escaped_filename = r_str_escape (filename);
-				int escaped_len = strlen (escaped_filename);
+				size_t escaped_len = strlen (escaped_filename);
+				size_t cmd_len = escaped_len + 40;
 				char *cmd;
 
-				if (!(cmd = malloc (escaped_len + 40))) {
+				if (!(cmd = malloc (cmd_len))) {
 					perror ("malloc");
 					return 1;
 				}
-				sprintf (cmd, "r2 -q %s-e http.port=%d -c=h \"%s\"",
+				snprintf (cmd, cmd_len, "r2 -q %s-e http.port=%d -c=h \"%s\"",
 					listenlocal? "": "-e http.bind=public ",
 					session_port, escaped_filename);
 
