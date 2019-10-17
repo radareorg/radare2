@@ -29,10 +29,11 @@ static bool buf_ref_init(RBuffer *b, const void *user) {
 	// NOTE: we only support readonly ref-buffers for now. Supporting
 	// read-write would mean to choose how we want to handle writing to the
 	// referencer. Copy-on-write? Write to the buffer underneath?
+	ut64 parent_sz = r_buf_size (u->parent);
 	b->readonly = true;
 	priv->parent = r_buf_ref (u->parent);
-	priv->base = u->offset;
-	priv->size = u->size;
+	priv->base = R_MIN (u->offset, parent_sz);
+	priv->size = R_MIN (parent_sz - priv->base, u->size);
 	b->priv = priv;
 	return true;
 }
@@ -46,7 +47,8 @@ static bool buf_ref_fini(RBuffer *b) {
 
 static bool buf_ref_resize(RBuffer *b, ut64 newsize) {
 	struct buf_ref_priv *priv = get_priv_ref (b);
-	priv->size = newsize;
+	ut64 parent_sz = r_buf_size (priv->parent);
+	priv->size = R_MIN (parent_sz - priv->base, newsize);
 	return true;
 }
 
