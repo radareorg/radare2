@@ -97,6 +97,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status);
 int linux_attach (RDebug *dbg, int pid);
 RDebugInfo *linux_info (RDebug *dbg, const char *arg);
 RList *linux_thread_list (int pid, RList *list);
+bool linux_select_thread (RDebug *dbg, int pid, int tid);
 RDebugPid *fill_pid_info (const char *info, const char *path, int tid);
 int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size);
