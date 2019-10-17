@@ -2976,6 +2976,7 @@ R_API char *r_str_repeat(const char *ch, int sz) {
 
 static char **__consts = NULL;
 
+// DEPRECATED!
 R_API const char *r_str_const_at(char ***consts, const char *ptr) {
 	if (!consts) {
 		consts = &__consts;
@@ -3008,6 +3009,7 @@ R_API const char *r_str_const_at(char ***consts, const char *ptr) {
 	return (*consts)[ctr];
 }
 
+// EXTREMELY DEPRECATED!
 R_API const char *r_str_const(const char *ptr) {
 	if (!ptr) {
 		return NULL;

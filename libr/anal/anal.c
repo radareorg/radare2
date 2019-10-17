@@ -122,7 +122,10 @@ R_API RAnal *r_anal_new(void) {
 	if (!anal) {
 		return NULL;
 	}
-	anal->consts = NULL;
+	if (!r_str_constpool_init (&anal->constpool)) {
+		free (anal);
+		return NULL;
+	}
 	anal->os = strdup (R_SYS_OS);
 	anal->reflines = NULL;
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
@@ -218,7 +221,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	}
 	free (a->last_disasm_reg);
 	r_strbuf_free (a->cmdtail);
-	r_str_const_free (&a->consts);
+	r_str_constpool_fini (&a->constpool);
 	free (a);
 	return NULL;
 }

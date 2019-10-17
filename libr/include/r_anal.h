@@ -278,7 +278,7 @@ typedef struct r_anal_function_t {
 	/*item_list *rets; // Type of return value */
 	char *rets;
 	short fmod; //  static, inline or volatile?
-	const char *cc; // calling convention, should come from RAnal.consts
+	const char *cc; // calling convention, should come from RAnal.constpool
 	char* attr; // __attribute__(()) list
 	ut64 addr;
 	ut64 rb_max_addr; // maximum of meta.min + _size - 1 in the subtree, for fcn interval tree
@@ -728,7 +728,7 @@ typedef struct r_anal_t {
 	bool use_ex;
 	RList *imports; // global imports
 	SetU *visited;
-	char **consts; // for r_str_const_*
+	RStrConstPool constpool;
 } RAnal;
 
 typedef struct r_anal_hint_t {
