@@ -296,58 +296,50 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
 	RBinXtrPlugin *xtr;
-	int tfd = opt->fd;
 
 	bool is_debugger = iob->fd_is_dbg (io, opt->fd);
 	const char *fname = iob->fd_get_name (io, opt->fd);
-
 	bin->rawstr = opt->rawstr;
+	bin->file = fname;
 	if (opt->loadaddr == UT64_MAX) {
 		opt->loadaddr = 0;
 	}
-	ut64 file_sz = iob->fd_size (io, opt->fd);
-	if (file_sz == UT64_MAX) {
-		if (is_debugger) {
-			tfd = iob->fd_open (io, fname, R_PERM_R, 0644);
-			if (tfd >= 1) {
-				file_sz = iob->fd_size (io, tfd);
-			}
-		} else {
-			if (bin->verbose) {
-				eprintf ("r_bin_open_io: unknown file size, Loading from memory..\n");
-			}
-			//	return false;
-			// Seems like thanks to the new IO buf doesnt really matters how big is this
-			file_sz = 1024 * 1024 * 1024;
-		}
+
+	// Create RBuffer from the opened file
+	// When debugging something, we want to open the backed file because
+	// not all binary info are mapped in the virtual space. If that is not
+	// possible (e.g. remote file) just try to load bin info from the
+	// debugee process.
+	RBuffer *buf = NULL;
+	if (is_debugger) {
+		buf = r_buf_new_file (fname, O_RDONLY, 0);
+		is_debugger = false;
 	}
-	if (opt->sz) {
-		opt->sz = R_MIN (file_sz, opt->sz);
-	} else {
-		opt->sz = file_sz;
+	if (!buf) {
+		buf = r_buf_new_with_io (&bin->iob, opt->fd);
 	}
-	// check if blockdevice?
-	if (opt->sz >= UT32_MAX) {
-		opt->sz = 1024 * 32;
-	}
-	RBuffer *buf = r_buf_new_with_io (&bin->iob, tfd);
 	if (!buf) {
 		return false;
 	}
-	bin->file = fname;
-	ut64 seekaddr = opt->loadaddr;
 
-	if (!is_debugger && seekaddr > 0 && seekaddr != UT64_MAX) {
-		// slice buffer if necessary
-		RBuffer *nb = r_buf_new_slice (buf, seekaddr, opt->sz);
-		if (nb) {
-			r_buf_free (buf);
-			buf = nb;
-		}
+	if (!opt->sz) {
+		opt->sz = r_buf_size (buf);
+	}
+
+	// Slice buffer if necessary
+	RBuffer *slice = buf;
+	if (!is_debugger && (opt->loadaddr != 0 || opt->sz != r_buf_size (buf))) {
+		slice = r_buf_new_slice (buf, opt->loadaddr, opt->sz);
+	} else if (is_debugger && opt->baseaddr != UT64_MAX && opt->baseaddr != 0) {
+		slice = r_buf_new_slice (buf, opt->baseaddr, opt->sz);
+	}
+	if (slice != buf) {
+		r_buf_free (buf);
+		buf = slice;
 	}
 
 	RBinFile *bf = NULL;
-	if (bin->use_xtr && !opt->pluginname && (st64)opt->sz > 0) {
+	if (bin->use_xtr && !opt->pluginname) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
@@ -359,29 +351,15 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 			if (xtr->check_buffer (buf)) {
 				if (xtr->extract_from_buffer || xtr->extractall_from_buffer ||
 				    xtr->extract_from_bytes || xtr->extractall_from_bytes) {
-					if (is_debugger && opt->sz != file_sz) {
-						if (tfd < 0) {
-							tfd = iob->fd_open (io, fname, R_PERM_R, 0);
-						}
-						opt->sz = iob->fd_size (io, tfd);
-						if (opt->sz != UT64_MAX) {
-							r_buf_seek (buf, 0, R_BUF_SET);
-							//buf->base_priv = 0;
-						}
-						// DOUBLECLOSE UAF : iob->fd_close (io, tfd);
-						tfd = -1; // marking it closed
-					}
 					bf = r_bin_file_xtr_load_buffer (bin, xtr,
-						fname, buf, file_sz,
-						opt->baseaddr, opt->loadaddr, opt->xtr_idx,
-						opt->fd, bin->rawstr);
+						fname, buf, opt->baseaddr, opt->loadaddr,
+						opt->xtr_idx, opt->fd, bin->rawstr);
 				}
 			}
 		}
 	}
 	if (!bf) {
-		bf = r_bin_file_new_from_buffer (
-			bin, fname, buf, file_sz, bin->rawstr,
+		bf = r_bin_file_new_from_buffer (bin, fname, buf, bin->rawstr,
 			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname);
 		if (!bf) {
 			return false;
