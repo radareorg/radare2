@@ -1191,8 +1191,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			abs = val>=0? val: -val;
 			// "str x2, [x8], 0x20
 			// "x2,x8,=[8],32,x8,+=",
-			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,%c,=[%d],%"PFMT64d",%s,%c=",
-					REG64(0), abs, MEMBASE64(1), sign, size,
+			r_strbuf_setf (&op->esil, "%s,%s,=[%d],%"PFMT64d",%s,%c=",
+					REG64(0), MEMBASE64(1), size,
 					abs, MEMBASE64(1), sign);
 		} else {
 			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,%c,=[%d]",
