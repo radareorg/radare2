@@ -807,9 +807,9 @@ static void create_initterm_syms(RKext *kext, RList *ret, int type, ut64 *pointe
 		sym->vaddr = func_vaddr;
 		sym->paddr = func_vaddr - kext->pa2va_exec;
 		sym->size = 0;
-		sym->forwarder = r_str_const ("NONE");
-		sym->bind = r_str_const ("GLOBAL");
-		sym->type = r_str_const ("FUNC");
+		sym->forwarder = "NONE";
+		sym->bind = "GLOBAL";
+		sym->type = "FUNC";
 
 		r_list_append (ret, sym);
 	}
@@ -861,9 +861,9 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mac
 				sym->vaddr = addr64;
 				sym->paddr = paddr64;
 				sym->size = 0;
-				sym->forwarder = r_str_const ("NONE");
-				sym->bind = r_str_const ("GLOBAL");
-				sym->type = r_str_const ("FUNC");
+				sym->forwarder = "NONE";
+				sym->bind = "GLOBAL";
+				sym->type = "FUNC";
 
 				r_list_append (ret, sym);
 			}
@@ -1133,10 +1133,9 @@ static void symbols_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFile
 				}
 			}
 		}
-		sym->forwarder = r_str_const ("NONE");
-		sym->bind = r_str_const ((symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
-			"LOCAL": "GLOBAL");
-		sym->type = r_str_const ("FUNC");
+		sym->forwarder = "NONE";
+		sym->bind = (symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)? "LOCAL": "GLOBAL";
+		sym->type = "FUNC";
 		sym->paddr = symbols[i].offset + bf->o->boffset + paddr;
 		sym->size = symbols[i].size;
 		sym->ordinal = ordinal + i;
@@ -1247,9 +1246,9 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	sym->vaddr = sysent_vaddr;
 	sym->paddr = cursor - data_const + data_const_offset;
 	sym->size = 0;
-	sym->forwarder = r_str_const ("NONE");
-	sym->bind = r_str_const ("GLOBAL");
-	sym->type = r_str_const ("OBJECT");
+	sym->forwarder = "NONE";
+	sym->bind = "GLOBAL";
+	sym->type = "OBJECT";
 	r_list_append (syscalls, sym);
 
 	i = 1;
@@ -1268,9 +1267,9 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 			sym->vaddr = addr;
 			sym->paddr = addr;
 			sym->size = 0;
-			sym->forwarder = r_str_const ("NONE");
-			sym->bind = r_str_const ("GLOBAL");
-			sym->type = r_str_const ("FUNC");
+			sym->forwarder = "NONE";
+			sym->bind = "GLOBAL";
+			sym->type = "FUNC";
 			r_list_append (syscalls, sym);
 
 			r_syscall_item_free (item);
@@ -1433,9 +1432,9 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 				sym->vaddr = routine_p;
 				sym->paddr = sym->vaddr - text_exec_vaddr + text_exec_offset;
 				sym->size = 0;
-				sym->forwarder = r_str_const ("NONE");
-				sym->bind = r_str_const ("GLOBAL");
-				sym->type = r_str_const ("OBJECT");
+				sym->forwarder = "NONE";
+				sym->bind = "GLOBAL";
+				sym->type = "OBJECT";
 				r_list_append (subsystem, sym);
 			}
 
@@ -1522,9 +1521,9 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 				sym->vaddr = vaddr;
 				sym->paddr = stubs_cursor;
 				sym->size = 12;
-				sym->forwarder = r_str_const ("NONE");
-				sym->bind = r_str_const ("LOCAL");
-				sym->type = r_str_const ("FUNC");
+				sym->forwarder = "NONE";
+				sym->bind = "LOCAL";
+				sym->type = "FUNC";
 				sym->ordinal = ordinal ++;
 				r_list_append (ret, sym);
 				break;
@@ -1552,9 +1551,9 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 		remote_sym->vaddr = target_addr;
 		remote_sym->paddr = target_addr - obj->pa2va_exec;
 		remote_sym->size = 0;
-		remote_sym->forwarder = r_str_const ("NONE");
-		remote_sym->bind = r_str_const ("GLOBAL");
-		remote_sym->type = r_str_const ("FUNC");
+		remote_sym->forwarder = "NONE";
+		remote_sym->bind = "GLOBAL";
+		remote_sym->type = "FUNC";
 		remote_sym->ordinal = ordinal ++;
 		r_list_append (ret, remote_sym);
 
@@ -1567,9 +1566,9 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 		local_sym->vaddr = vaddr;
 		local_sym->paddr = stubs_cursor;
 		local_sym->size = 12;
-		local_sym->forwarder = r_str_const ("NONE");
-		local_sym->bind = r_str_const ("GLOBAL");
-		local_sym->type = r_str_const ("FUNC");
+		local_sym->forwarder = "NONE";
+		local_sym->bind = "GLOBAL";
+		local_sym->type = "FUNC";
 		local_sym->ordinal = ordinal ++;
 		r_list_append (ret, local_sym);
 	}

@@ -57,27 +57,27 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 	}
 	ptr->name = strdup (coffname);
 	free (coffname);
-	ptr->forwarder = r_str_const ("NONE");
+	ptr->forwarder = "NONE";
 
 	switch (s->n_sclass) {
 	case COFF_SYM_CLASS_FUNCTION:
-		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+		ptr->type = R_BIN_TYPE_FUNC_STR;
 		break;
 	case COFF_SYM_CLASS_FILE:
-		ptr->type = r_str_const ("FILE");
+		ptr->type = "FILE";
 		break;
 	case COFF_SYM_CLASS_SECTION:
-		ptr->type = r_str_const (R_BIN_TYPE_SECTION_STR);
+		ptr->type = R_BIN_TYPE_SECTION_STR;
 		break;
 	case COFF_SYM_CLASS_EXTERNAL: // should be prefixed with sym.imp
 		if (bin->symbols[idx].n_scnum) {
-			ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+			ptr->type = R_BIN_TYPE_FUNC_STR;
 		} else {
-			ptr->type = r_str_const ("EXTERNAL");
+			ptr->type = "EXTERNAL";
 		}
 		break;
 	case COFF_SYM_CLASS_STATIC:
-		ptr->type = r_str_const ("STATIC");
+		ptr->type = "STATIC";
 		break;
 	default:
 		ptr->type = r_str_const (sdb_fmt ("%i", s->n_sclass));
@@ -110,8 +110,8 @@ static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 		return NULL;
 	}
 	ptr->name = strdup (coffname);
-	ptr->bind = r_str_const ("NONE");
-	ptr->type = r_str_const ("FUNC");
+	ptr->bind = "NONE";
+	ptr->type = "FUNC";
 	return ptr;
 }
 

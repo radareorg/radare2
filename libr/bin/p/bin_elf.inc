@@ -537,8 +537,8 @@ static RList* imports(RBinFile *bf) {
 			break;
 		}
 		ptr->name = strdup (import[i].name);
-		ptr->bind = r_str_const (import[i].bind);
-		ptr->type = r_str_const (import[i].type);
+		ptr->bind = import[i].bind;
+		ptr->type = import[i].type;
 		ptr->ordinal = import[i].ordinal;
 		setimpord (elf, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);

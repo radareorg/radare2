@@ -134,7 +134,7 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 		}
 		sym->name = name;
 		if (!first) {
-			sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
+			sym->bind = R_BIN_BIND_GLOBAL_STR;
 		}
 		ut16 entry_off = r_buf_read_le16_at (bin->buf, off);
 		off += 2;
@@ -159,7 +159,7 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 			}
 			sym->name = r_str_newf ("entry%d", i - 1);
 			sym->paddr = en->paddr;
-			sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
+			sym->bind = R_BIN_BIND_GLOBAL_STR;
 			sym->ordinal = i;
 			r_list_append (symbols, sym);
 		}

@@ -343,8 +343,8 @@ static RBinSymbol *newSymbol(RBinString *s, ut64 addr, ut64 size) {
 		sym->paddr = addr;
 		sym->vaddr = addr;
 		sym->size = size;
-		sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
-		sym->bind = r_str_const ("NONE");
+		sym->type = R_BIN_TYPE_FUNC_STR;
+		sym->bind = "NONE";
 	}
 	return sym;
 }

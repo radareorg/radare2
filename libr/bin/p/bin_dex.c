@@ -10,8 +10,6 @@
 #define r_hash_adler32 __adler32
 #include "../../hash/adler32.c"
 
-#define r_str_const(x) x
-
 // globals to kill
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 static bool dexdump = false;
@@ -1145,10 +1143,10 @@ static const ut8 *parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClas
 		}
 		if (is_sfield) {
 			sym->name = r_str_newf ("%s.sfield_%s:%s", cls->name, fieldName, type_str);
-			sym->type = r_str_const ("STATIC");
+			sym->type = "STATIC";
 		} else {
 			sym->name = r_str_newf ("%s.ifield_%s:%s", cls->name, fieldName, type_str);
-			sym->type = r_str_const ("FIELD");
+			sym->type = "FIELD";
 		}
 		sym->name = r_str_replace (sym->name, "method.", "", 0);
 		r_str_replace_char (sym->name, ';', 0);
@@ -1399,19 +1397,19 @@ static const ut8 *parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClas
 			// if method has code *addr points to code
 			// otherwise it points to the encoded method
 			if (MC > 0) {
-				sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+				sym->type = R_BIN_TYPE_FUNC_STR;
 				sym->paddr = MC;// + 0x10;
 				sym->vaddr = MC;// + 0x10;
 			} else {
-				sym->type = r_str_const (R_BIN_TYPE_METH_STR);
+				sym->type = R_BIN_TYPE_METH_STR;
 				sym->paddr = encoded_method_addr - bufbuf;
 				sym->vaddr = encoded_method_addr - bufbuf;
 			}
 			bin->code_from = R_MIN (bin->code_from, sym->paddr);
 			if ((MA & 1) == 1) {
-				sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
+				sym->bind = R_BIN_BIND_GLOBAL_STR;
 			} else {
-				sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
+				sym->bind = R_BIN_BIND_LOCAL_STR;
 			}
 
 			sym->method_flags = get_method_flags (MA);
@@ -1809,8 +1807,8 @@ static bool dex_loadcode(RBinFile *bf) {
 					return false;
 				}
 				imp->name  = r_str_newf ("%s.method.%s%s", class_name, method_name, signature);
-				imp->type = r_str_const ("FUNC");
-				imp->bind = r_str_const ("NONE");
+				imp->type = "FUNC";
+				imp->bind = "NONE";
 				imp->ordinal = import_count++;
 				r_list_append (bin->imports_list, imp);
 
@@ -1822,8 +1820,8 @@ static bool dex_loadcode(RBinFile *bf) {
 					return false;
 				}
 				sym->name = r_str_newf ("imp.%s", imp->name);
-				sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
-				sym->bind = r_str_const ("NONE");
+				sym->type = R_BIN_TYPE_FUNC_STR;
+				sym->bind = "NONE";
 				//XXX so damn unsafe check buffer boundaries!!!!
 				//XXX use r_buf API!!
 				sym->paddr = sym->vaddr = bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;

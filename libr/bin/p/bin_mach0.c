@@ -227,10 +227,9 @@ static RList *symbols(RBinFile *bf) {
 				}
 			}
 		}
-		ptr->forwarder = r_str_const ("NONE");
-		ptr->bind = r_str_const ((syms[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
-				R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR);
-		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+		ptr->forwarder = "NONE";
+		ptr->bind = (syms[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
+		ptr->type = R_BIN_TYPE_FUNC_STR;
 		ptr->vaddr = syms[i].addr;
 		ptr->paddr = syms[i].offset + obj->boffset;
 		ptr->size = syms[i].size;
@@ -336,7 +335,7 @@ static RBinImport *import_from_name(const char *orig_name, HtPP *imports_by_name
 		name++;
 	}
 	ptr->name = strdup (name);
-	ptr->bind = r_str_const ("NONE");
+	ptr->bind = "NONE";
 	ptr->type = r_str_const (type);
 
 	if (imports_by_name) {
