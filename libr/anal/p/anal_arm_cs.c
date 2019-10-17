@@ -1730,8 +1730,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		if (OPCOUNT() == 3) { // e.g. 'str r2, [r3], 4
 			if (ISIMM(2)) { // e.g. 'str r2, [r3], 4
-				r_strbuf_appendf (&op->esil, "%s,%s,%d,+,0xffffffff,&,=[4],%d,%s,+=",
-					       REG(0), MEMBASE(1), IMM(2), IMM(2), MEMBASE(1));
+				// r2,r3,0xffffffff,&,=[4],4,r3,+=
+				r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[4],%d,%s,+=",
+					       REG(0), MEMBASE(1), IMM(2), MEMBASE(1));
 			}
 			if (ISREG(2)) { // e.g. 'str r2, [r3], r1
 				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
@@ -1842,8 +1843,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		if (OPCOUNT() == 3) { // e.g. 'str r2, [r3], 4
 			if (ISIMM(2)) { // e.g. 'str r2, [r3], 4
-				r_strbuf_appendf (&op->esil, "%s,%s,%d,+,0xffffffff,&,=[2],%d,%s,+=",
-					       REG(0), MEMBASE(1), IMM(2), IMM(2), MEMBASE(1));
+				r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[2],%d,%s,+=",
+					       REG(0), MEMBASE(1), IMM(2), MEMBASE(1));
 			}
 			if (ISREG(2)) { // e.g. 'str r2, [r3], r1
 				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
@@ -1953,8 +1954,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		if (OPCOUNT() == 3) { // e.g. 'str r2, [r3], 4
 			if (ISIMM(2)) { // e.g. 'str r2, [r3], 4
-				r_strbuf_appendf (&op->esil, "%s,%s,%d,+,0xffffffff,&,=[1],%d,%s,+=",
-					       REG(0), MEMBASE(1), IMM(2), IMM(2), MEMBASE(1));
+				r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[1],%d,%s,+=",
+					       REG(0), MEMBASE(1), IMM(2), MEMBASE(1));
 			}
 			if (ISREG(2)) { // e.g. 'str r2, [r3], r1
 				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
