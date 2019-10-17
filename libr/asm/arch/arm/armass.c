@@ -6583,7 +6583,7 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 	if (thumb < 0 || thumb > 1) {
 		return -1;
 	}
-	if (!assemble[thumb] (&aop, off, buf)) {
+	if (assemble[thumb] (&aop, off, buf) <= 0) {
 		//eprintf ("armass: Unknown opcode (%s)\n", buf);
 		return -1;
 	}
