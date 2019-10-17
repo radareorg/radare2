@@ -1059,8 +1059,16 @@ special(struct parse *p, int ch) {
 	char *oldnext = p->next;
 	char *oldend = p->end;
 	char bracket[16] = {0};
+	char digits[3] = {0};
+	char c;
 	int num = 0;
 	switch (ch) {
+	case 'x':
+		digits[0] = GETNEXT ();
+		digits[1] = GETNEXT ();
+		c = (char)strtol (digits, NULL, 16);
+		ordinary (p, c);
+		return;
 	case 'n':
 		ordinary (p, '\n');
 		return;
