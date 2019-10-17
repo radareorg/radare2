@@ -187,11 +187,13 @@ static int r_debug_native_detach (RDebug *dbg, int pid) {
 #endif
 }
 
+static int r_debug_native_select(RDebug *dbg, int pid, int tid) {
 #if __WINDOWS__
-static int r_debug_native_select (RDebug *dbg, int pid, int tid) {
 	return w32_select (dbg, pid, tid);
-}
+#elif __linux__
+	return linux_select_thread (dbg, pid, tid);
 #endif
+}
 
 static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 // XXX: num is ignored
@@ -2112,7 +2114,7 @@ RDebugPlugin r_debug_plugin_native = {
 	.attach = &r_debug_native_attach,
 	.detach = &r_debug_native_detach,
 // TODO: add native select for other platforms?
-#if __WINDOWS__
+#if __WINDOWS__ || __linux__
 	.select = &r_debug_native_select,
 #endif
 	.pids = &r_debug_native_pids,

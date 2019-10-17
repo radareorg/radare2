@@ -61,8 +61,9 @@ static void linux_add_and_attach_new_thread (RDebug *dbg, int tid);
 static int linux_stop_process(int pid);
 
 int linux_handle_signals (RDebug *dbg) {
+	int pid = dbg->tid;
 	siginfo_t siginfo = { 0 };
-	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, dbg->pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
+	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
 	if (ret == -1) {
 		/* ESRCH means the process already went away :-/ */
 		if (errno == ESRCH) {
@@ -212,8 +213,9 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 
 int linux_step(RDebug *dbg) {
 	int ret = false;
+	int pid = dbg->tid;
 	ut64 addr = r_debug_reg_get (dbg, "PC");
-	ret = r_debug_ptrace (dbg, PTRACE_SINGLESTEP, dbg->pid, (void*)(size_t)addr, 0);
+	ret = r_debug_ptrace (dbg, PTRACE_SINGLESTEP, pid, (void*)(size_t)addr, 0);
 	//XXX(jjd): why?? //linux_handle_signals (dbg);
 	if (ret == -1) {
 		perror ("native-singlestep");
@@ -284,6 +286,10 @@ static void linux_remove_thread (RDebug *dbg, int pid) {
 	}
 }
 
+bool linux_select_thread(RDebug *dbg, int pid, int tid) {
+	return linux_attach (dbg, tid);
+}
+
 void linux_attach_new_process (RDebug *dbg) {
 	linux_detach_all (dbg);
 
@@ -301,7 +307,7 @@ void linux_attach_new_process (RDebug *dbg) {
 
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
-	int pid = (dbg->continue_all_threads && dbg->n_threads) ? -1 : dbg->main_pid;
+	int pid = dbg->tid;
 	int status, flags = __WALL;
 
 	if (pid == -1) {
@@ -410,7 +416,7 @@ static int linux_stop_process(int pid) {
 }
 
 static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
-	siginfo_t sig = {0};
+	siginfo_t sig = { 0 };
 	// Safely check if the PID has already been attached to avoid printing errors.
 	// Attaching to a process that has already been started with PTRACE_TRACEME.
 	// sets errno to "Operation not permitted" which may be misleading.
@@ -422,10 +428,10 @@ static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
 			perror ("ptrace (PT_ATTACH)");
 			return false;
 		}
-	}
 
-	if (!linux_set_options (dbg, ptid)) {
-		return false;
+		if (!linux_set_options (dbg, ptid)) {
+			return false;
+		}
 	}
 
 	return true;
@@ -778,7 +784,7 @@ void print_fpu (void *f){
 
 int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	bool showfpu = false;
-	int pid = dbg->pid;
+	int pid = dbg->tid;
 	int ret;
 	if (type < -1) {
 		showfpu = true;
@@ -910,6 +916,8 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
+	int pid = dbg->tid;
+
 	if (type == R_REG_TYPE_DRX) {
 #if !__ANDROID__ && (__i386__ || __x86_64__)
 		int i;
@@ -918,7 +926,7 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 			if (i == 4 || i == 5) {
 				continue;
 			}
-			if (r_debug_ptrace (dbg, PTRACE_POKEUSER, dbg->pid,
+			if (r_debug_ptrace (dbg, PTRACE_POKEUSER, pid,
 					(void *)r_offsetof (struct user, u_debugreg[i]), (r_ptrace_data_t)val[i])) {
 				eprintf ("ptrace error for dr %d\n", i);
 				r_sys_perror ("ptrace POKEUSER");
@@ -935,11 +943,11 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 			.iov_base = (void*)buf,
 			.iov_len = sizeof (R_DEBUG_REG_T)
 		};
-		int ret = r_debug_ptrace (dbg, PTRACE_SETREGSET, dbg->pid, (void*)(size_t)NT_PRSTATUS, (r_ptrace_data_t)(size_t)&io);
+		int ret = r_debug_ptrace (dbg, PTRACE_SETREGSET, pid, (void*)(size_t)NT_PRSTATUS, (r_ptrace_data_t)(size_t)&io);
 #elif __POWERPC__ || __sparc__
-		int ret = r_debug_ptrace (dbg, PTRACE_SETREGS, dbg->pid, buf, NULL);
+		int ret = r_debug_ptrace (dbg, PTRACE_SETREGS, pid, buf, NULL);
 #else
-		int ret = r_debug_ptrace (dbg, PTRACE_SETREGS, dbg->pid, 0, (void*)buf);
+		int ret = r_debug_ptrace (dbg, PTRACE_SETREGS, pid, 0, (void*)buf);
 #endif
 #if DEAD_CODE
 		if (size > sizeof (R_DEBUG_REG_T)) {
