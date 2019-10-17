@@ -96,7 +96,6 @@ static void screenlock(RCore *core) {
 
 static int textlog_chat(RCore *core) {
 	char prompt[64];
-	char buf[1024];
 	int lastmsg = 0;
 	const char *me = r_config_get (core->config, "cfg.user");
 	char msg[2048];
@@ -104,10 +103,15 @@ static int textlog_chat(RCore *core) {
 	eprintf ("Type '/help' for commands:\n");
 	snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
 	r_line_set_prompt (prompt);
+	char *buf = NULL;
 	for (;;) {
+		R_FREE (buf);
 		r_core_log_list (core, lastmsg, 0, 0);
 		lastmsg = core->log->last;
-		if (r_cons_fgets (buf, sizeof (buf) - 1, 0, NULL) < 0) {
+		int status;
+		buf = r_cons_get_input(&status);
+		if (status < 0) {
+			free (buf);
 			return 1;
 		}
 		if (!*buf) {
@@ -142,6 +146,7 @@ static int textlog_chat(RCore *core) {
 			r_core_log_add (core, msg);
 		}
 	}
+	free (buf);
 	return 1;
 }
 

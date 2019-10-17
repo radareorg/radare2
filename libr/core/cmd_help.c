@@ -1109,16 +1109,16 @@ static int cmd_help(void *data, const char *input) {
 				 core->num->value = r_cons_yesno (0, "%s? (y/N)", input);
 				 break;
 			default: {
-				char foo[1024];
 				r_cons_flush ();
 				for (input++; *input == ' '; input++);
-				// TODO: r_cons_input()
-				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
-				r_line_set_prompt (foo);
-				r_cons_fgets (foo, sizeof (foo)-1, 0, NULL);
-				foo[sizeof (foo) - 1] = 0;
-				r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
-				core->num->value = r_num_math (core->num, foo);
+				RStrBuf *foo = r_strbuf_new (input);
+				r_strbuf_append (foo, ": ");
+				r_line_set_prompt (r_strbuf_get(foo));
+				r_strbuf_free (foo);
+				char *u_input = r_cons_get_input (NULL);
+				r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, u_input, strlen (u_input));
+				core->num->value = r_num_math (core->num, u_input);
+				free (u_input);
 				}
 				break;
 			}
