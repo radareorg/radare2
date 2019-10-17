@@ -119,7 +119,7 @@ R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn) {
 	}
 }
 
-static void set_meta_min_if_needed(RAnalFunction *x) {
+static void set_meta_if_needed(RAnalFunction *x) {
 	if (x->meta.min == UT64_MAX) {
 		ut64 min = UT64_MAX;
 		ut64 max = UT64_MIN;
@@ -143,8 +143,8 @@ static void set_meta_min_if_needed(RAnalFunction *x) {
 static int _fcn_tree_cmp(const void *a_, const RBNode *b_, void *user) {
 	const RAnalFunction *a = (const RAnalFunction *)a_;
 	const RAnalFunction *b = FCN_CONTAINER (b_);
-	set_meta_min_if_needed ((RAnalFunction *)a);
-	set_meta_min_if_needed ((RAnalFunction *)b);
+	set_meta_if_needed ((RAnalFunction *)a);
+	set_meta_if_needed ((RAnalFunction *)b);
 	ut32 size0 = a->meta.max - a->meta.min, size1 = b->meta.max - b->meta.min;
 	ut64 from0 = a->meta.min, to0 = a->meta.min + size0, addr0 = a->addr;
 	ut64 from1 = b->meta.min, to1 = b->meta.min + size1, addr1 = b->addr;
@@ -173,7 +173,7 @@ static int _fcn_addr_tree_cmp(const void *a_, const RBNode *b_, void *user) {
 static void _fcn_tree_calc_max_addr(RBNode *node) {
 	int i;
 	RAnalFunction *fcn = FCN_CONTAINER (node);
-	set_meta_min_if_needed (fcn);
+	set_meta_if_needed (fcn);
 	fcn->rb_max_addr = fcn->meta.min + (fcn->_size == 0 ? 0 : (fcn->meta.max - fcn->meta.min - 1));
 	for (i = 0; i < 2; i++) {
 		if (node->child[i]) {
