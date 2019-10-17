@@ -62,6 +62,7 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "r_util/r_ascii_table.h"
 #include "r_util/r_strbuf.h"
 #include "r_util/r_strpool.h"
+#include "r_util/r_str_constpool.h"
 #include "r_util/r_sys.h"
 #include "r_util/r_tree.h"
 #include "r_util/r_uleb128.h"
