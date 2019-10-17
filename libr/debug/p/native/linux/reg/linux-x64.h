@@ -153,36 +153,13 @@ return strdup (
 "mmx@fpu	mm6 .64 128 8\n"
 "mmx@fpu	mm7 .64 144 8\n"
 
-"fpu    xmm0    .64 160 16\n"
-"fpu	xmm0h	.64	160	8\n"
-"fpu	xmm0l	.64	168	8\n"
-
-"fpu    xmm1    .64 176 16\n"
-"fpu	xmm1h	.64	176	8\n"
-"fpu	xmm1l	.64	184	8\n"
-
-"fpu    xmm2    .64 192 16\n"
-"fpu	xmm2h	.64	192	8\n"
-"fpu	xmm2l	.64	200	8\n"
-
-"fpu    xmm3    .64 208 16\n"
-"fpu	xmm3h	.64	208	8\n"
-"fpu	xmm3l	.64	216	8\n"
-
-"fpu    xmm4    .64 224 16\n"
-"fpu	xmm4h	.64	224	8\n"
-"fpu	xmm4l	.64	232	8\n"
-
-"fpu    xmm5    .64 240 16\n"
-"fpu	xmm5h	.64	240	8\n"
-"fpu	xmm5l	.64	248	8\n"
-
-"fpu    xmm6    .64 256 16\n"
-"fpu	xmm6h	.64	256	8\n"
-"fpu	xmm6l	.64	264	8\n"
-
-"fpu    xmm7    .64 272 16\n"
-"fpu	xmm7h	.64	272	8\n"
-"fpu	xmm7l	.64	280	8\n"
+"xmm@fpu    xmm0    .128	160 16\n"
+"xmm@fpu    xmm1    .128	176 16\n"
+"xmm@fpu    xmm2    .128	192 16\n"
+"xmm@fpu    xmm3    .128	208 16\n"
+"xmm@fpu    xmm4    .128	224 16\n"
+"xmm@fpu    xmm5    .128	240 16\n"
+"xmm@fpu    xmm6    .128	256 16\n"
+"xmm@fpu    xmm7    .128	272 16\n"
 "fpu	x64	.64	288	0\n"
 );

@@ -2651,7 +2651,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 			free (name);
 		} else { // drm # no arg
-			r_debug_reg_sync (core->dbg, -R_REG_TYPE_MMX, false); // TODO: fix this, not displaying anything
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, false);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_XMM, 128, 0, 0);
 		}
 		//r_debug_drx_list (core->dbg);
 		break;
