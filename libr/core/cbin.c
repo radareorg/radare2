@@ -594,12 +594,19 @@ R_API void r_core_anal_type_init(RCore *core) {
 
 R_API void r_core_anal_cc_init(RCore *core) {
 	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
-	sdb_reset (core->anal->sdb_cc);
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
 	int bits = core->anal->bits;
-	char *dbpath = sdb_fmt ("%s/"R2_SDB_FCNSIGN"/cc-%s-%d.sdb", dir_prefix, anal_arch, bits);
+	char *dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "cc-%s-%d.sdb"),
+		dir_prefix, anal_arch, bits);
+	// Avoid sdb reloading
+	if (core->anal->sdb_cc->path && !strcmp (core->anal->sdb_cc->path, dbpath)) {
+		return;
+	}
+	sdb_reset (core->anal->sdb_cc);
+	R_FREE (core->anal->sdb_cc->path);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (core->anal->sdb_cc, dbpath);
+		core->anal->sdb_cc->path = strdup (dbpath);
 	}
 }
 
