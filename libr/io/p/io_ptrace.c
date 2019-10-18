@@ -178,6 +178,14 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return false;
 }
 
+static inline bool is_pid_already_attached (RIO *io, int pid, siginfo_t *sig) {
+#ifdef __linux__
+	return -1 != r_io_ptrace (io, PTRACE_GETSIGINFO, pid, NULL, sig);
+#else
+	return false;
+#endif
+}
+
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *desc = NULL;
 	int ret = -1;
@@ -189,10 +197,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 	int pid = atoi (file + 9);
 
-	// Safely check if the PID has already been attached to avoid printing errors.
-	ret = r_io_ptrace (io, PTRACE_GETSIGINFO, pid, NULL, &sig);
-	// Attempt attaching on failure
-	if (-1 == ret) {
+	// Safely check if the PID has already been attached to avoid printing errors
+	// and attempt attaching on failure
+	if (!is_pid_already_attached(io, pid, &sig)) {
 		ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 		if (ret == -1) {
 #ifdef __ANDROID__
