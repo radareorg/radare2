@@ -3001,7 +3001,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 					  r_cons_printf (",");
 				  }
 				  r_core_seek (core, at, 0);
-				  char *str = r_core_cmd_str (core, "ps @ [$$]");
+				  char *str = r_core_cmd_str (core, "ps");
 				  r_str_trim (str);
 				  char *p = str;
 				  if (p) {
