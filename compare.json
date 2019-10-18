@@ -1,0 +1,13 @@
+import org.junit.Test;
+import org.apache.commons.io.FileUtils;
+import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
+
+... 
+@Test
+public void thisTest() {
+  String expectedJson = FileUtils.readFileToString("/expectedFile");
+  String actualJson = FileUtils.readFileToString("/actualFile");
+  JSONAssert.assertEquals(expectedJson, actualJson, JSONCompareMode.STRICT);
+}
+... 
