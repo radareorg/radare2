@@ -191,16 +191,23 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 }
 #endif
 
-R_API int r_cons_is_utf8() {
-	int ret = 0;
+R_API bool r_cons_is_utf8() {
+	bool ret = false;
 #if UTF8_DETECT_ENV
 	char *sval = r_sys_getenv ("LC_CTYPE");
 	if (sval) {
 		r_str_case (sval, 0);
 		if (!strcmp (sval, "utf-8")) {
-			ret = 1;
+			ret = true;
 		}
 		free (sval);
+	}
+	char *lang = r_sys_getenv ("LANG");
+	if (lang) {
+		if (strstr (lang, "UTF-8")) {
+			ret = true;
+		}
+		free (lang);
 	}
 #endif
 #if UTF8_DETECT_LOCALE
@@ -208,7 +215,7 @@ R_API int r_cons_is_utf8() {
 	const char *ctype = setlocale(LC_CTYPE, NULL);
 	if ( (ctype != NULL) && (ctype = strchr(ctype, '.')) && ctype++ &&
 		(r_str_casecmp(ctype, "UTF-8") == 0 || r_str_casecmp(ctype, "UTF8") == 0)) {
-		return 1;
+		return true;
 	}
 #endif
 #if UTF8_DETECT_CURSOR
@@ -216,15 +223,15 @@ R_API int r_cons_is_utf8() {
 	int row2 = 0, col2 = 0;
 	int fd = current_tty();
 	if (fd == -1)
-		return 0;
+		return false;
 	if (cursor_position(fd, &row, &col)) {
 		close (fd);
-		return 0;
+		return false;
 	}
 	write (1, "\xc3\x89\xc3\xa9", 4);
 	if (cursor_position (fd, &row2, &col2)) {
 		close (fd);
-		return 0;
+		return false;
 	}
 	close (fd);
 	write (1, "\r    \r", 6);
@@ -233,12 +240,11 @@ R_API int r_cons_is_utf8() {
 	return ret;
 }
 #else
-R_API int r_cons_is_utf8() {
+R_API bool r_cons_is_utf8() {
 #if __WINDOWS__
 	return GetConsoleOutputCP () == CP_UTF8;
 #else
-	return 0;
+	return true;
 #endif
 }
-
 #endif

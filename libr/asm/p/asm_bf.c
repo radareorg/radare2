@@ -1,9 +1,5 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
-#include <stdio.h>
-#include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
 #include <r_asm.h>
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {

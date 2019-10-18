@@ -278,7 +278,7 @@ typedef struct r_anal_function_t {
 	/*item_list *rets; // Type of return value */
 	char *rets;
 	short fmod; //  static, inline or volatile?
-	const char *cc; // calling convention
+	const char *cc; // calling convention, should come from RAnal.consts
 	char* attr; // __attribute__(()) list
 	ut64 addr;
 	ut64 rb_max_addr; // maximum of meta.min + _size - 1 in the subtree, for fcn interval tree
@@ -721,13 +721,14 @@ typedef struct r_anal_t {
 	bool (*log)(struct r_anal_t *anal, const char *msg);
 	bool (*read_at)(struct r_anal_t *anal, ut64 addr, ut8 *buf, int len);
 	bool verbose;
-	char *cmdtail;
+	RStrBuf *cmdtail;
 	int seggrn;
 	RFlagGetAtAddr flag_get;
 	REvent *ev;
 	bool use_ex;
 	RList *imports; // global imports
 	SetU *visited;
+	char **consts; // for r_str_const_*
 } RAnal;
 
 typedef struct r_anal_hint_t {
@@ -860,7 +861,6 @@ typedef struct r_anal_op_t {
 	RAnalVar *var;  /* local var/arg used by this instruction */
 	RAnalValue *src[3];
 	RAnalValue *dst;
-	struct r_anal_op_t *next; // TODO deprecate
 	RStrBuf esil;
 	RStrBuf opex;
 	const char *reg; /* destination register */

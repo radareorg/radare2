@@ -723,6 +723,7 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 				}
 			}
 		}
+		r_list_free (refs);
 	}
 }
 
@@ -767,7 +768,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		eprintf ("Error: new (fcn)\n");
 		return false;
 	}
-	fcn->cc = r_str_const (r_anal_cc_default (core->anal));
+	fcn->cc = r_str_const_at (&core->anal->consts, r_anal_cc_default (core->anal));
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
@@ -971,7 +972,6 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	int len;
 	ut8 buf[32];
 	ut8 *ptr;
-	RAsmOp asmop;
 
 	r_return_val_if_fail (core, NULL);
 	if (addr == UT64_MAX) {
@@ -999,15 +999,9 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	if (r_anal_op (core->anal, op, addr, ptr, len, mask) < 1) {
 		goto err_op;
 	}
+	// TODO move into analop
 	if (!op->mnemonic && mask & R_ANAL_OP_MASK_DISASM) {
-		// i don't think this is used anywhere
-		// decode instruction here
-		r_asm_set_pc (core->assembler, addr);
-		r_asm_op_init (&asmop);
-		if (r_asm_disassemble (core->assembler, &asmop, ptr, len) > 0) {
-			op->mnemonic = strdup (r_strbuf_get (&asmop.buf_asm));
-		}
-		r_asm_op_fini (&asmop);
+		eprintf ("WARNING: anal plugin is not handling mask.disasm\n");
 	}
 	return op;
 err_op:
@@ -5018,7 +5012,7 @@ repeat:
 								char *str2 = sdb_fmt ("esilref: '%s'", str);
 								// HACK avoid format string inside string used later as format
 								// string crashes disasm inside agf under some conditions.
-								// https://github.com/radare/radare2/issues/6937
+								// https://github.com/radareorg/radare2/issues/6937
 								r_str_replace_char (str2, '%', '&');
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, str2);
 								free (str);

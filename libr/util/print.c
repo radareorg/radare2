@@ -4,6 +4,7 @@
 #include "r_cons.h"
 #include "r_util.h"
 #include "r_util/r_print.h"
+#include "r_core.h"
 
 #define DFLT_ROWS 16
 
@@ -804,7 +805,7 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 	if (use_section) {
 		const char *s = p->get_section_name (p->user, at);
 		if (!s) {
-			s = strdup ("");
+			s = "";
 		}
 		char *tail = r_str_ndup (s, 19);
 		p->cb_printf ("%20s ", tail);
@@ -1548,13 +1549,15 @@ static RPrint staticp = {
 };
 
 /* TODO: handle screen width */
-R_API void r_print_progressbar(RPrint *p, int _pc, int _cols) {
-	double pc = _pc;
+R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 	// TODO: add support for colors
 	int i, cols = (_cols == -1)? 78: _cols;
 	if (!p) {
 		p = &staticp;
 	}
+	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
+
 	pc = R_MAX (0, R_MIN (100, pc));
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		p->cb_printf ("%4d%% ", pc);
@@ -1562,10 +1565,10 @@ R_API void r_print_progressbar(RPrint *p, int _pc, int _cols) {
 	cols -= 15;
 	p->cb_printf ("[");
 	for (i = cols * pc / 100; i; i--) {
-		p->cb_printf ("#");
+		p->cb_printf (block);
 	}
 	for (i = cols - (cols * pc / 100); i; i--) {
-		p->cb_printf ("-");
+		p->cb_printf (h_line);
 	}
 	p->cb_printf ("]");
 }

@@ -68,7 +68,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 	return false;
 }
 
-R_API int r_debug_thread_list(RDebug *dbg, int pid) {
+R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 	RList *list;
 	RListIter *iter;
 	RDebugPid *p;
@@ -80,26 +80,30 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid) {
 		if (!list) {
 			return false;
 		}
-		if (pid == -'j') {
-			PJ *j = pj_new ();
-			pj_a (j);
-			r_list_foreach (list, iter, p) {
+		PJ *j = pj_new ();
+		pj_a (j);
+		r_list_foreach (list, iter, p) {
+			switch (fmt) {
+			case 'j':
 				pj_o (j);
+				pj_kb (j, "current", dbg->tid == p->pid);
 				pj_ki (j, "pid", p->pid);
 				pj_ks (j, "status", &p->status);
 				pj_ks (j, "path", p->path);
 				pj_end (j);
-			}
-			pj_end (j);
-			dbg->cb_printf (pj_string (j));
-			pj_free (j);
-		} else {
-			r_list_foreach (list, iter, p) {
+				break;
+			default:
 				dbg->cb_printf (" %c %d %c %s\n",
-						dbg->tid == p->pid ? '*' : '-',
-						p->pid, p->status, p->path);
+					dbg->tid == p->pid? '*': '-',
+					p->pid, p->status, p->path);
+				break;
 			}
 		}
+		pj_end (j);
+		if (fmt == 'j') {
+			dbg->cb_printf (pj_string (j));
+		}
+		pj_free (j);
 		r_list_free (list);
 	}
 	return false;

@@ -862,6 +862,7 @@ R_API void r_cons_chop(void);
 R_API void r_cons_set_raw(bool b);
 R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_last_interactive(void);
+R_API void r_cons_set_utf8(bool b);
 
 /* output */
 R_API int r_cons_printf(const char *format, ...);
@@ -884,7 +885,7 @@ R_API void r_cons_2048(bool color);
 R_API void r_cons_memset(char ch, int len);
 R_API void r_cons_visual_flush(void);
 R_API void r_cons_visual_write(char *buffer);
-R_API int r_cons_is_utf8(void);
+R_API bool r_cons_is_utf8(void);
 R_API void r_cons_cmd_help(const char * help[], bool use_color);
 R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
  unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...);

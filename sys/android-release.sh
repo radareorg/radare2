@@ -51,7 +51,7 @@ makeReadme() {
 if [ ! -d "${R2B}" ]; then
 	mkdir -p "${R2B}"
 	cd "${R2B}/.."
-	git clone https://github.com/radare/radare2-bin
+	git clone https://github.com/radareorg/radare2-bin
 fi
 
 cd "$R2B"

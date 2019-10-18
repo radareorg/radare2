@@ -156,7 +156,6 @@ R_API char* r_print_json_human(const char* s) {
 	const char *tab = "  ";
 	const int indentSize = strlen (tab);
 	int instr = 0;
-	bool isValue = false;
 	char *o, *OE, *tmp;
 	if (!s) {
 		return NULL;
@@ -218,16 +217,13 @@ R_API char* r_print_json_human(const char* s) {
 		case ':':
 			*o++ = *s;
 			*o++ = ' ';
-			isValue = true;
 			break;
 		case ',':
 			*o++ = '\n';
-			isValue = false;
 			doIndent (indent - 1, &o, tab);
 			break;
 		case '{':
 		case '[':
-			isValue = false;
 			if (indent > 0) {
 				*o++ = (indent != -1)? '\n': ' ';
 			}
@@ -241,7 +237,6 @@ R_API char* r_print_json_human(const char* s) {
 			break;
 		case '}':
 		case ']':
-			isValue = false;
 			indent--;
 			doIndent (indent - 1, &o, tab);
 			break;

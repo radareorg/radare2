@@ -801,13 +801,15 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				int role = r_reg_get_name_idx (str);
 				if (role != -1) {
 					const char *alias = r_reg_get_name (core->dbg->reg, role);
-					r = r_reg_get (core->dbg->reg, alias, -1);
-					if (r) {
-						if (ok) {
-							*ok = true;
+					if (alias) {
+						r = r_reg_get (core->dbg->reg, alias, -1);
+						if (r) {
+							if (ok) {
+								*ok = true;
+							}
+							ret = r_reg_get_value (core->dbg->reg, r);
+							return ret;
 						}
-						ret = r_reg_get_value (core->dbg->reg, r);
-						return ret;
 					}
 				}
 			} else {
@@ -2884,6 +2886,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	// TODO: sync all dbs?
 	//r_core_file_free (c->file);
 	//c->file = NULL;
+	R_FREE (c->table_query);
 	r_list_free (c->files);
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);

@@ -375,19 +375,38 @@ static const char *avatar_clippy_utf8[] = {
 	" ╰───╯\n",
 };
 
+static const char *avatar_cybcat[] = {
+"     /\\.---./\\       .-%s-.\n"
+" '--           --'   | %s |\n"
+"----   ^   ^   ---- <  %s |\n"
+"  _.-    Y    -._    | %s |\n"
+"                     `-%s-'\n",
+"     /\\.---./\\       .-%s-.\n"
+" '--   @   @   --'   | %s |\n"
+"----     Y     ---- <  %s |\n"
+"  _.-    O    -._    | %s |\n"
+"                     `-%s-'\n",
+"     /\\.---./\\       .-%s-.\n"
+" '--   =   =   --'   | %s |\n"
+"----     Y     ---- <  %s |\n"
+"  _.-    U    -._    | %s |\n"
+"                     `-%s-'\n",
+};
+
 enum {
 	R_AVATAR_ORANGG,
+	R_AVATAR_CYBCAT,
 	R_AVATAR_CLIPPY,
 };
 
 R_API void r_core_clippy(RCore *core, const char *msg) {
 	int type = R_AVATAR_CLIPPY;
-	if (*msg == '+') {
+	if (*msg == '+' || *msg == '3') {
 		char *space = strchr (msg, ' ');
 		if (!space) {
 			return;
 		}
-		type = R_AVATAR_ORANGG;
+		type = (*msg == '+')? R_AVATAR_ORANGG: R_AVATAR_CYBCAT;
 		msg = space + 1;
 	}
 	const char *f;
@@ -398,6 +417,9 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 	if (type == R_AVATAR_ORANGG) {
 		l = strdup (r_str_pad ('-', msglen));
 		f = avatar_orangg[0];
+	} else if (type == R_AVATAR_CYBCAT) {
+		l = strdup (r_str_pad ('-', msglen));
+		f = avatar_cybcat[r_num_rand (R_ARRAY_SIZE (avatar_cybcat))];
 	} else if (r_config_get_i (core->config, "scr.utf8")) {
 		l = (char *)r_str_repeat ("─", msglen);
 		f = avatar_clippy_utf8[r_num_rand (R_ARRAY_SIZE (avatar_clippy_utf8))];

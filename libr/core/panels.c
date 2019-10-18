@@ -3365,7 +3365,7 @@ int __clear_layout_cb(void *user) {
 	RListIter *it;
 	char *entry;
 	r_list_foreach (dir, it, entry) {
-		const char *tmp = r_str_newf ("%s%s%s", dir_path, R_SYS_DIR, entry);
+		char *tmp = r_str_newf ("%s%s%s", dir_path, R_SYS_DIR, entry);
 		r_file_rm (tmp);
 		free (tmp);
 	}
@@ -5218,6 +5218,9 @@ void __panels_check_stackbase(RCore *core) {
 	}
 	int i;
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	if (!sp) {
+		return;
+	}
 	const ut64 stackbase = r_reg_getv (core->anal->reg, sp);
 	RPanels *panels = core->panels;
 	for (i = 1; i < panels->n_panels; i++) {

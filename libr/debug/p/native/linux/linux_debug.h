@@ -72,6 +72,16 @@ struct powerpc_regs_t {
 	unsigned long result;		/* Result of a system call */
 };
 #define R_DEBUG_REG_T struct powerpc_regs_t
+#elif __riscv || __riscv__ || __riscv64__
+
+#include <sys/ucontext.h>
+#include <asm/ptrace.h>
+
+// typedef ut64 riscv64_regs_t [65];
+// #define R_DEBUG_REG_T riscv64_regs_t
+#define R_DEBUG_REG_T struct user_regs_struct 
+// #define R_DEBUG_REG_T mcontext_t 77 784 in size (coz the fpu regs)
+
 #elif __mips__
 
 #include <sys/ucontext.h>
@@ -87,6 +97,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status);
 int linux_attach (RDebug *dbg, int pid);
 RDebugInfo *linux_info (RDebug *dbg, const char *arg);
 RList *linux_thread_list (int pid, RList *list);
+bool linux_select_thread (RDebug *dbg, int pid, int tid);
 RDebugPid *fill_pid_info (const char *info, const char *path, int tid);
 int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size);

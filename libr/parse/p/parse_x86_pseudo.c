@@ -427,7 +427,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
         }
 	bpargs = p->varlist (anal, f, 'b');
 	spargs = p->varlist (anal, f, 's');
-	/*iterate over stack pointer arguments/variables*/
+	/* Iterate over stack pointer arguments/variables */
 	bool ucase = *tstr >= 'A' && *tstr <= 'Z';
 	if (ucase && tstr[1]) {
 		ucase = tstr[1] >= 'A' && tstr[1] <= 'Z';
@@ -444,16 +444,6 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			r_str_case (oldstr, true);
 		}
 		parse_localvar (p, newstr, sizeof (newstr), sparg->name, anal->reg->name[R_REG_NAME_SP], '+', ireg, att);
-		if (ucase) {
-			char *plus = strchr (newstr, '+');
-			if (plus) {
-				*plus = 0;
-				r_str_case (newstr, true);
-				*plus = '+';
-			} else {
-				r_str_case (newstr, true);
-			}
-		}
 		char *ptr = strstr(tstr, oldstr);
 		if (ptr && (!att || *(ptr - 1) == ' ')) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
@@ -479,16 +469,6 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			r_str_case (oldstr, true);
 		}
 		parse_localvar (p, newstr, sizeof (newstr), bparg->name, anal->reg->name[R_REG_NAME_BP], sign, ireg, att);
-		if (ucase) {
-			char *plus = strchr (newstr, sign);
-			if (plus) {
-				*plus = 0;
-				r_str_case (newstr, true);
-				*plus = sign;
-			} else {
-				r_str_case (newstr, true);
-			}
-		}
 		char *ptr = strstr (tstr, oldstr);
 		if (ptr && (!att || *(ptr - 1) == ' ')) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);

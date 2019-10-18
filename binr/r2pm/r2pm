@@ -502,15 +502,15 @@ case "$1" in
 	if [ -n "$3" ]; then
 		TRAVIS_JOB="$3"
 	else
-		TRAVIS_JOB=`${CURL} -s https://api.travis-ci.org/repos?slug=radare%2Fradare2| jq .[0].last_build_id`
+		TRAVIS_JOB=`${CURL} -s https://api.travis-ci.com/repos?slug=radare%2Fradare2| jq .[0].last_build_id`
 		TRAVIS_JOB=$(($TRAVIS_JOB+1))
 	fi
 	echo $TRAVIS_JOB >&2
 	# storage
-	${CURL} -s https://s3.amazonaws.com/archive.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
+	${CURL} -s https://s3.amazonaws.com/archive.travis-ci.com/jobs/${TRAVIS_JOB}/log.txt |\
 		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
 # wip
-	${CURL} -s https://api.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
+	${CURL} -s https://api.travis-ci.com/jobs/${TRAVIS_JOB}/log.txt |\
 		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
 	;;
 -l|list)

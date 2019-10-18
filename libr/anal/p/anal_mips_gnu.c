@@ -275,7 +275,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		// but the macro needs the opcode values as input
 		//
 		// TODO: this is a stop-gap. Really we need some smarts in here to tie this into the
-		// flags directly, as suggested here: https://github.com/radare/radare2/issues/949#issuecomment-43654922
+		// flags directly, as suggested here: https://github.com/radareorg/radare2/issues/949#issuecomment-43654922
 		case 15: // lui
 			op->dst = r_anal_value_new ();
 			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode(rt), R_REG_TYPE_GPR);

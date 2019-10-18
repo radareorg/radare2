@@ -582,6 +582,8 @@ R_API int r_debug_detach(RDebug *dbg, int pid) {
 }
 
 R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
+	ut64 pc = 0;
+
 	if (pid < 0) {
 		return false;
 	}
@@ -610,7 +612,16 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	dbg->pid = pid;
 	dbg->tid = tid;
 
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+	// Synchronize with the current thread's data
+	if (dbg->corebind.core) {
+		RCore *core = (RCore *)dbg->corebind.core;
+
+		r_reg_arena_swap (core->dbg->reg, true);
+		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
+
+		pc = r_debug_reg_get (dbg, "PC");
+		core->offset = pc;
+	}
 
 	return true;
 }

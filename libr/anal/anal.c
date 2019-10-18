@@ -122,6 +122,7 @@ R_API RAnal *r_anal_new(void) {
 	if (!anal) {
 		return NULL;
 	}
+	anal->consts = NULL;
 	anal->os = strdup (R_SYS_OS);
 	anal->reflines = NULL;
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
@@ -176,6 +177,7 @@ R_API RAnal *r_anal_new(void) {
 			r_anal_add (anal, anal_static_plugins[i]);
 		}
 	}
+	anal->cmdtail = r_strbuf_new (NULL);
 	return anal;
 }
 
@@ -215,6 +217,8 @@ R_API RAnal *r_anal_free(RAnal *a) {
 		a->esil = NULL;
 	}
 	free (a->last_disasm_reg);
+	r_strbuf_free (a->cmdtail);
+	r_str_const_free (&a->consts);
 	free (a);
 	return NULL;
 }
@@ -400,6 +404,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 			memset (ret + idx + op->nopcode, 0, oplen - op->nopcode);
 		}
 		idx += oplen;
+		at += oplen;
 	}
 
 	r_anal_op_free (op);
@@ -452,7 +457,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	return op;
 }
 
-R_API bool r_anal_op_is_eob (RAnalOp *op) {
+R_API bool r_anal_op_is_eob(RAnalOp *op) {
 	if (op->eob) {
 		return true;
 	}

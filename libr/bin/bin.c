@@ -223,7 +223,6 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
 		eprintf ("Couldn't open bin for file '%s'\n", file);
 		return false;
 	}
-	opt->offset = 0;
 	opt->sz = 0;
 	opt->pluginname = NULL;
 	return r_bin_open_io (bin, opt);
@@ -243,9 +242,6 @@ R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	}
 	RBinOptions opt;
 	r_bin_options_init (&opt, fd, baseaddr, bf->loadaddr, bin->rawstr);
-	if (bf->o) {
-		opt.offset = bf->o->boffset;
-	}
 
 	// invalidate current object reference
 	bf->o = NULL;
@@ -320,7 +316,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 			if (bin->verbose) {
 				eprintf ("r_bin_open_io: unknown file size, Loading from memory..\n");
 			}
-		//	return false;
+			//	return false;
 			// Seems like thanks to the new IO buf doesnt really matters how big is this
 			file_sz = 1024 * 1024 * 1024;
 		}
@@ -386,7 +382,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	if (!bf) {
 		bf = r_bin_file_new_from_buffer (
 			bin, fname, buf, file_sz, bin->rawstr,
-			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname, opt->offset);
+			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname);
 		if (!bf) {
 			return false;
 		}
@@ -1037,6 +1033,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	char unk[128];
 	char archline[128];
 	RBinFile *binfile = r_bin_cur (bin);
+	RTable *table = r_table_new ();
 	const char *name = binfile? binfile->file: NULL;
 	int narch = binfile? binfile->narch: 0;
 
@@ -1067,7 +1064,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	RBinInfo *info = obj->info;
 	char bits = info? info->bits: 0;
 	ut64 boffset = obj->boffset;
-	ut32 obj_size = obj->obj_size;
+	ut64 obj_size = obj->obj_size;
 	const char *arch = info? info->arch: NULL;
 	const char *machine = info? info->machine: "unknown_machine";
 
@@ -1076,6 +1073,8 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 		snprintf (unk, sizeof (unk), "unk_%d", i);
 		arch = unk;
 	}
+	r_table_hide_header (table);
+	r_table_set_columnsf (table, "nXnss", "num", "offset", "size", "arch", "machine", NULL);
 
 	if (info && narch > 1) {
 		switch (mode) {
@@ -1084,17 +1083,17 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			break;
 		case 'j':
 			bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-					"\"offset\":%" PFMT64d ",\"size\":%d,"
+					"\"offset\":%" PFMT64u ",\"size\":%" PFMT64u ","
 					"\"machine\":\"%s\"}",
 					i? ",": "", arch, bits,
 					boffset, obj_size, machine);
 			break;
 		default:
-			bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%i %s\n", i,
-					boffset, obj_size, arch, bits, machine);
+			r_table_add_rowf (table, "nXnss", i, boffset, obj_size, sdb_fmt ("%s_%i", arch, bits), machine);
+			bin->cb_printf ("%s\n", r_table_tostring(table));
 		}
 		snprintf (archline, sizeof (archline) - 1,
-			"0x%08" PFMT64x ":%d:%s:%d:%s",
+			"0x%08" PFMT64x ":%" PFMT64u ":%s:%d:%s",
 			boffset, obj_size, arch, bits, machine);
 		/// xxx machine not exported?
 		//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
@@ -1106,17 +1105,17 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				break;
 			case 'j':
 				bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-						"\"offset\":%" PFMT64d ",\"size\":%d,"
+						"\"offset\":%" PFMT64u ",\"size\":%" PFMT64u ","
 						"\"machine\":\"%s\"}",
 						i? ",": "", arch, bits,
 						boffset, obj_size, machine);
 				break;
 			default:
-				bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%d\n", i,
-						boffset, obj_size, arch, bits);
+				r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%08" PFMT64x , boffset), obj_size, sdb_fmt("%s_%i", arch, bits), "");
+				bin->cb_printf ("%s\n", r_table_tostring(table));
 			}
 			snprintf (archline, sizeof (archline),
-				"0x%08" PFMT64x ":%d:%s:%d",
+				"0x%08" PFMT64x ":%" PFMT64u ":%s:%d",
 				boffset, obj_size, arch, bits);
 		} else if (nbinfile && mode) {
 			switch (mode) {
@@ -1125,17 +1124,17 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				break;
 			case 'j':
 				bin->cb_printf ("%s{\"arch\":\"unk_%d\",\"bits\":%d,"
-						"\"offset\":%" PFMT64d ",\"size\":%d,"
+						"\"offset\":%" PFMT64u ",\"size\":%" PFMT64u ","
 						"\"machine\":\"%s\"}",
 						i? ",": "", i, bits,
 						boffset, obj_size, machine);
 				break;
 			default:
-				bin->cb_printf ("%03i 0x%08" PFMT64x " %d unk_0\n", i,
-						boffset, obj_size);
+				r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%08" PFMT64x , boffset), obj_size, "", "");
+				bin->cb_printf ("%s\n", r_table_tostring(table));
 			}
 			snprintf (archline, sizeof (archline),
-				"0x%08" PFMT64x ":%d:%s:%d",
+				"0x%08" PFMT64x ":%" PFMT64u ":%s:%d",
 				boffset, obj_size, "unk", 0);
 		} else {
 			eprintf ("Error: Invalid RBinFile.\n");
@@ -1145,6 +1144,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	if (mode == 'j') {
 		bin->cb_printf ("]");
 	}
+	r_table_free (table);
 }
 
 R_API void r_bin_set_user_ptr(RBin *bin, void *user) {

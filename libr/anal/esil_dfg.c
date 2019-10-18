@@ -506,6 +506,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_new() {
 	if (!dfg->latest_nodes) {
 		r_graph_free (dfg->flow);
 		free (dfg);
+		return NULL;
 	}
 	return dfg;
 }

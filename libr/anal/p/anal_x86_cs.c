@@ -1615,8 +1615,25 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			ut32 bitsize;
 			src = getarg (&gop, 0, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 1, NULL, DST_AR, &bitsize);
-			esilprintf (op, "0,cf,:=,0,%s,>,?{,1,cf,:=,},%s,0,-,%s,$z,zf,:=,0,of,:=,%d,$s,sf,:=,%d,$o,pf,:=",
-				src, src, dst, bitsize - 1, bitsize - 1); //is this correct ?
+			ut64 xor = 0;
+			switch (bitsize) {
+			case 8:
+				xor = 0xff;
+				break;
+			case 16:
+				xor = 0xffff;
+				break;
+			case 32:
+				xor = 0xffffffff;
+				break;
+			case 64:
+				xor = 0xffffffffffffffff;
+				break;
+			default:
+				eprintf ("Neg: Unhandled bitsize %d\n", bitsize);
+			}
+			esilprintf (op, "%s,!,!,cf,:=,%s,0x%"PFMT64x",^,1,+,%s,$z,zf,:=,0,of,:=,%d,$s,sf,:=,%d,$o,pf,:=",
+				src, src, xor, dst, bitsize - 1, bitsize - 1);
 		}
 		break;
 	case X86_INS_NOT:
@@ -2458,6 +2475,15 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_PUSHFD:
 	case X86_INS_PUSHFQ:
 		switch (INSOP(0).type) {
+		case X86_OP_MEM:
+			if (INSOP(0).mem.disp && !INSOP(0).mem.base && !INSOP(0).mem.index) {
+				op->val = op->ptr = INSOP(0).mem.disp;
+				op->type = R_ANAL_OP_TYPE_PUSH;
+			} else {
+				op->type = R_ANAL_OP_TYPE_UPUSH;
+			}
+			op->cycles = CYCLE_REG + CYCLE_MEM;
+			break;
 		case X86_OP_IMM:
 			op->val = op->ptr = INSOP(0).imm;
 			op->type = R_ANAL_OP_TYPE_PUSH;

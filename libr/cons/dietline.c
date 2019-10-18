@@ -9,9 +9,7 @@
 #if __WINDOWS__
 #include <windows.h>
 #define printf(...) r_cons_win_printf (false, __VA_ARGS__)
-#ifdef UNICODE
 #define USE_UTF8 1
-#endif
 #else
 #include <sys/ioctl.h>
 #include <termios.h>
@@ -212,7 +210,7 @@ R_API int r_line_dietline_init() {
 /* read utf8 char into 's', return the length in bytes */
 static int r_line_readchar_utf8(ut8 *s, int slen) {
 #if __WINDOWS__
-	r_line_readchar_win (s, slen);
+	return r_line_readchar_win (s, slen);
 #else
 	// TODO: add support for w32
 	ssize_t len, i;
@@ -1617,7 +1615,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							}
 						}
 						if (I.sel_widget) {
-							selection_widget_down (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
+							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
 							selection_widget_draw ();
 						}
 						break;
@@ -1632,7 +1630,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							}
 						}
 						if (I.sel_widget) {
-							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
+							selection_widget_down (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
 							selection_widget_draw ();
 						}
 						break;

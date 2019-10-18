@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2017 - pancake */
+/* radare2 - LGPL - Copyright 2014-2019 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -26,17 +26,17 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 		}
 		r_strbuf_append (buf, "{");
 		switch (op->type) {
-		case PPC_OP_REG:
+		case SYSZ_OP_REG:
 			r_strbuf_append (buf, "\"type\":\"reg\"");
 			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
 			break;
-		case PPC_OP_IMM:
+		case SYSZ_OP_IMM:
 			r_strbuf_append (buf, "\"type\":\"imm\"");
 			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
 			break;
-		case PPC_OP_MEM:
+		case SYSZ_OP_MEM:
 			r_strbuf_append (buf, "\"type\":\"mem\"");
-			if (op->mem.base != PPC_REG_INVALID) {
+			if (op->mem.base != SYSZ_REG_INVALID) {
 				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
 			}
 			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64)op->mem.disp);
@@ -53,9 +53,8 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh handle;
 	cs_insn *insn;
-	int mode, n, ret;
-	mode = CS_MODE_BIG_ENDIAN;
-	ret = cs_open (CS_ARCH_SYSZ, mode, &handle);
+	int mode = CS_MODE_BIG_ENDIAN;
+	int ret = cs_open (CS_ARCH_SYSZ, mode, &handle);
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->size = 0;
 	op->delay = 0;
@@ -63,7 +62,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (ret == CS_ERR_OK) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 		// capstone-next
-		n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+		int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 		if (n < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		} else {
@@ -146,15 +145,67 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	return op->size;
 }
 
+static int set_reg_profile(RAnal *anal) {
+	char *p =
+		"=PC	r15\n"
+		"=LR	r14\n"
+		"=SP	r13\n"
+		"=BP	r12\n"
+		"=A0	r0\n"
+		"=A1	r1\n"
+		"=A2	r2\n"
+		"=A3	r3\n"
+		"=SN	r0\n"
+		"gpr	sb	.32	36	0\n" // r9
+		"gpr	sl	.32	40	0\n" // rl0
+		"gpr	fp	.32	44	0\n" // r11
+		"gpr	ip	.32	48	0\n" // r12
+		"gpr	sp	.32	52	0\n" // r13
+		"gpr	lr	.32	56	0\n" // r14
+		"gpr	pc	.32	60	0\n" // r15
+
+		"gpr	r0	.32	0	0\n"
+		"gpr	r1	.32	4	0\n"
+		"gpr	r2	.32	8	0\n"
+		"gpr	r3	.32	12	0\n"
+		"gpr	r4	.32	16	0\n"
+		"gpr	r5	.32	20	0\n"
+		"gpr	r6	.32	24	0\n"
+		"gpr	r7	.32	28	0\n"
+		"gpr	r8	.32	32	0\n"
+		"gpr	r9	.32	36	0\n"
+		"gpr	r10	.32	40	0\n"
+		"gpr	r11	.32	44	0\n"
+		"gpr	r12	.32	48	0\n"
+		"gpr	r13	.32	52	0\n"
+		"gpr	r14	.32	56	0\n"
+		"gpr	r15	.32	60	0\n"
+	;
+	return r_reg_set_profile_string (anal->reg, p);
+}
+
+static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return 2;
+}
+
 RAnalPlugin r_anal_plugin_sysz = {
-	.name = "systemz.cs",
+	.name = "sysz",
 	.desc = "Capstone SystemZ microanalysis",
 	.esil = false,
 	.license = "BSD",
 	.arch = "sysz",
 	.bits = 32|64,
 	.op = &analop,
-	//.set_reg_profile = &set_reg_profile,
+	.archinfo = archinfo,
+	.set_reg_profile = &set_reg_profile,
 };
 
 #ifndef R2_PLUGIN_INCORE

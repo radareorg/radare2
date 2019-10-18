@@ -11,7 +11,7 @@ static inline ut8 r_read_ble8(const void *src) {
 	if (!src) {
 		return UT8_MAX;
 	}
-	return *(ut8 *)src;
+	return *(const ut8 *)src;
 }
 
 static inline ut8 r_read_at_ble8(const void *src, size_t offset) {
@@ -325,7 +325,7 @@ static inline ut64 r_read_ble64(const void *src, bool big_endian) {
 static inline ut64 r_read_ble(const void *src, bool big_endian, int size) {
 	switch (size) {
 	case 8:
-		return (ut64) ((ut8*)src)[0];
+		return (ut64) ((const ut8*)src)[0];
 	case 16:
 		return r_read_ble16 (src, big_endian);
 	case 32:

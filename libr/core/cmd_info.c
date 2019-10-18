@@ -480,7 +480,7 @@ static int cmd_info(void *data, const char *input) {
 	}
 	char *question = strchr (input, '?');
 	const char *space = strchr (input, ' ');
-	if (!space) {
+	if (!space && question) {
 		space = question + 1;
 	}
 	if (question < space && question > input) {
@@ -488,7 +488,14 @@ static int cmd_info(void *data, const char *input) {
 		r_core_cmdf (core, "i?~& i%c", *question);
 		goto done;
 	}
+	R_FREE (core->table_query);
+	if (space && *space == ' ') {
+		core->table_query = r_str_trim_dup (space + 1);
+	}
 	while (*input) {
+		if (*input == ' ') {
+			break;
+		}
 		switch (*input) {
 		case 'b': // "ib"
 		{

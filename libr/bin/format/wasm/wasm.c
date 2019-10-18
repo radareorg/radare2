@@ -528,6 +528,7 @@ static void *parse_custom_name_entry (RBuffer *b, ut64 max) {
 			goto beach;
 		}
 		if (!(consume_u32_r (b, max, &ptr->local->count))) {
+			free (ptr->local);
 			goto beach;
 		}
 
@@ -536,24 +537,36 @@ static void *parse_custom_name_entry (RBuffer *b, ut64 max) {
 		for (i = 0; i < ptr->local->count; i++) {
 			RBinWasmCustomNameLocalName *local_name = R_NEW0 (RBinWasmCustomNameLocalName);
 			if (!local_name) {
+				free (ptr->local);
+				free (ptr);
 				return NULL;
 			}
 
 			if (!(consume_u32_r (b, max, &local_name->index))) {
 				r_list_free (ptr->local->locals);
+				free (ptr->local);
+				free (local_name);
 				goto beach;
 			}
 
 			local_name->names = r_id_storage_new (0, UT32_MAX);
 			if (!local_name->names) {
+				r_list_free (ptr->local->locals);
+				free (ptr->local);
+				free (local_name);
 				goto beach;
 			}
 
 			if (!parse_namemap (b, max, local_name->names, &local_name->names_count)) {
+				r_id_storage_free (local_name->names);
+				r_list_free (ptr->local->locals);
+				free (ptr->local);
+				free (local_name);
 				goto beach;
 			}
 
 			if (!r_list_append (ptr->local->locals, local_name)) {
+				free (local_name);
 				goto beach;
 			};
 		}

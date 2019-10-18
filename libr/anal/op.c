@@ -176,6 +176,9 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->cycles = defaultCycles (op);
 		}
 	}
+	if (!op->mnemonic && (mask & R_ANAL_OP_MASK_DISASM)) {
+		eprintf ("Warning: unhandled R_ANAL_OP_MASK_DISASM in r_anal_op\n");
+        }
 	if (mask & R_ANAL_OP_MASK_HINT) {
 		RAnalHint *hint = r_anal_hint_get (anal, addr);
 		if (hint) {
@@ -208,75 +211,6 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	r_strbuf_init (&nop->esil);
 	r_strbuf_copy (&nop->esil, &op->esil);
 	return nop;
-}
-
-// TODO: return RAnalException *
-R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
-	while (op) {
-		if (op->delay > 0) {
-			anal->queued = r_anal_op_copy (op);
-			return false;
-		}
-		switch (op->type) {
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_RJMP:
-		case R_ANAL_OP_TYPE_IJMP:
-		case R_ANAL_OP_TYPE_IRJMP:
-		case R_ANAL_OP_TYPE_CALL:
-			break;
-		case R_ANAL_OP_TYPE_ADD:
-			// dst = src[0] + src[1] + src[2]
-			r_anal_value_set_ut64 (anal, op->dst,
-				r_anal_value_to_ut64 (anal, op->src[0]) +
-				r_anal_value_to_ut64 (anal, op->src[1]) +
-				r_anal_value_to_ut64 (anal, op->src[2]));
-			break;
-		case R_ANAL_OP_TYPE_SUB:
-			// dst = src[0] + src[1] + src[2]
-			r_anal_value_set_ut64 (anal, op->dst,
-				r_anal_value_to_ut64 (anal, op->src[0]) -
-				r_anal_value_to_ut64 (anal, op->src[1]) -
-				r_anal_value_to_ut64 (anal, op->src[2]));
-			break;
-		case R_ANAL_OP_TYPE_DIV:
-			{
-			ut64 div = r_anal_value_to_ut64 (anal, op->src[1]);
-			if (div == 0) {
-				eprintf ("r_anal_op_execute: division by zero\n");
-				eprintf ("TODO: throw RAnalException\n");
-			} else {
-				r_anal_value_set_ut64 (anal, op->dst,
-					r_anal_value_to_ut64 (anal, op->src[0]) / div);
-			}
-			}
-			break;
-		case R_ANAL_OP_TYPE_MUL:
-			r_anal_value_set_ut64 (anal, op->dst,
-				r_anal_value_to_ut64 (anal, op->src[0])*
-				r_anal_value_to_ut64 (anal, op->src[1]));
-			break;
-		case R_ANAL_OP_TYPE_MOV:
-			// dst = src[0]
-			r_anal_value_set_ut64 (anal, op->dst,
-				r_anal_value_to_ut64 (anal, op->src[0]));
-			break;
-		case R_ANAL_OP_TYPE_NOP:
-			// do nothing
-			break;
-		}
-		op = op->next;
-	}
-
-	if (anal->queued) {
-		anal->queued->delay--;
-		if (anal->queued->delay == 0) {
-			r_anal_op_execute (anal, anal->queued);
-			r_anal_op_free (anal->queued);
-			anal->queued = NULL;
-		}
-	}
-	return true;
 }
 
 R_API bool r_anal_op_nonlinear(int t) {

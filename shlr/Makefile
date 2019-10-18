@@ -5,6 +5,7 @@ include ../libr/config.mk
 include ../mk/platform.mk
 _INCLUDE_MK_GCC_=
 include ../mk/${COMPILER}.mk
+include ../mk/darwin.mk
 
 # Build against last capstone release or next
 ifeq ($(shell test -d ../.git && echo 1),1)
@@ -37,10 +38,10 @@ CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
 CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20190515
 ifeq ($(CS_NEXT),1)
-CS_TIP=5f200f7bae883467883dc7ef611c25a6c5ac8b10
+CS_TIP=5809774f62847e6755aa054746822ce32e369b3a
 CS_BRA=next
 else
-CS_TIP=c25923bc99fe746686aec571d10fcb7cc9faf885
+CS_TIP=c7d2b984af855ef9fbf8f8fd33ca7005da644b4a
 CS_BRA=v4
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)

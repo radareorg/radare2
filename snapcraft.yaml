@@ -50,7 +50,7 @@ apps:
 
 parts:
   radare2:
-    source: https://github.com/radare/radare2.git
+    source: https://github.com/radareorg/radare2.git
     source-tag: '2.6.0'
     plugin: meson
     meson-parameters: [--prefix=/usr]

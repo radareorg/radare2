@@ -1060,7 +1060,7 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 
 static int cmd_join(void *data, const char *input) { // "join"
 	RCore *core = (RCore *)data;
-	const char *tmp = strdup (input);
+	char *tmp = strdup (input);
 	const char *arg1 = strchr (tmp, ' ');
 	if (!arg1) {
 		goto beach;
@@ -1092,13 +1092,14 @@ static int cmd_join(void *data, const char *input) { // "join"
 				r_cons_print (res);
 				free (res);
 			}
-			R_FREE (tmp);
 		}
 		break;
 	}
+	free (tmp);
 	return 0;
 beach:
 	eprintf ("Usage: join [file1] [file2] # join the contents of the two files\n");
+	free (tmp);
 	return 0;
 }
 
@@ -1282,7 +1283,7 @@ static int cmd_kuery(void *data, const char *input) {
 	const char *sp, *p = "[sdb]> ";
 	const int buflen = sizeof (buf) - 1;
 	Sdb *s = core->sdb;
-	
+
 	char *cur_pos, *cur_cmd, *next_cmd = NULL;
 	char *temp_pos, *temp_cmd, *temp_storage = NULL;
 
@@ -1321,7 +1322,7 @@ static int cmd_kuery(void *data, const char *input) {
 				if (!temp_pos) {
 					break;
 				}
-				
+
 				temp_cmd = r_str_ndup (temp_storage, temp_pos - temp_storage);
 				r_cons_printf ("\"%s\",", temp_cmd);
 				temp_storage += temp_pos - temp_storage + 1;
@@ -1606,7 +1607,7 @@ static int cmd_resize(void *data, const char *input) {
 	switch (*input) {
 	case 'a': // "r..."
 		if (r_str_startswith (input, "adare2")) {
-			__runMain (core->r_main_radare2, input - 1); 
+			__runMain (core->r_main_radare2, input - 1);
 		}
 		return true;
 	case '2': // "r2" // XXX should be handled already in cmd_r2cmd()
@@ -4324,8 +4325,8 @@ R_API void run_pending_anal(RCore *core) {
 	// allow incall events in the run_pending step
 	core->ev->incall = false;
 	if (core && core->anal && core->anal->cmdtail) {
-		char *res = core->anal->cmdtail;
-		core->anal->cmdtail = NULL;
+		char *res = r_strbuf_drain (core->anal->cmdtail);
+		core->anal->cmdtail = r_strbuf_new (NULL);
 		r_core_cmd_lines (core, res);
 		free (res);
 	}
