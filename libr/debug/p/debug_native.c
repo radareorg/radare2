@@ -1114,7 +1114,7 @@ static int io_perms_to_prot (int io_perms) {
 
 
 static int linux_map_thp (RDebug *dbg, ut64 addr, int size) {
-#ifndef __ANDROID__
+#if !defined(__ANDROID__) && defined(MADV_HUGEPAGE)
 	RBuffer *buf = NULL;
 	char code[1024];
 	int ret = true;
