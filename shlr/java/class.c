@@ -519,7 +519,9 @@ R_API void r_bin_java_reset_bin_info(RBinJavaObj *bin) {
 	r_list_free (bin->attrs_list);
 	r_list_free (bin->cp_list);
 	r_list_free (bin->interfaces_list);
+	r_str_constpool_fini (&bin->constpool);
 	memset (bin, 0, sizeof (RBinJavaObj));
+	r_str_constpool_init (&bin->constpool);
 	bin->cf2.flags_str = strdup ("unknown");
 	bin->cf2.this_class_name = strdup ("unknown");
 	bin->imports_list = r_list_newf (free);
@@ -2311,6 +2313,9 @@ R_API ut64 r_bin_java_parse_methods(RBinJavaObj *bin, const ut64 offset, const u
 
 R_API int r_bin_java_new_bin(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const ut8 *buf, ut64 len) {
 	R_BIN_JAVA_GLOBAL_BIN = bin;
+	if (!r_str_constpool_init (&bin->constpool)) {
+		return false;
+	}
 	bin->lines.count = 0;
 	bin->loadaddr = loadaddr;
 	r_bin_java_get_java_null_cp ();
@@ -2595,7 +2600,7 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 	return sym;
 }
 
-R_API RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, ut64 baddr) {
+R_API RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, ut64 baddr) {
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (!sym) {
 		return NULL;
@@ -2608,18 +2613,18 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, 
 		return sym;
 	}
 	if (sym) {
-		class_name = r_bin_java_get_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN,
+		class_name = r_bin_java_get_name_from_bin_cp_list (bin,
 			obj->info.cp_method.class_idx);
-		name = r_bin_java_get_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN,
+		name = r_bin_java_get_name_from_bin_cp_list (bin,
 			obj->info.cp_method.name_and_type_idx);
-		type_name = r_bin_java_get_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN,
+		type_name = r_bin_java_get_name_from_bin_cp_list (bin,
 			obj->info.cp_method.name_and_type_idx);
 		if (name) {
 			sym->name = name;
 			name = NULL;
 		}
 		if (type_name) {
-			sym->type = r_str_const (type_name);
+			sym->type = r_str_constpool_get (&bin->constpool, type_name);
 			R_FREE (type_name);
 		}
 		if (class_name) {
@@ -2763,7 +2768,7 @@ R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx) {
 		if (field->field_ref_cp_obj && 0) {
 			if ((field && field->field_ref_cp_obj->metas->ord == class_idx)) {
 				RBinSymbol *sym = r_bin_java_create_new_symbol_from_ref (
-						field->field_ref_cp_obj, bin->loadaddr);
+						bin, field->field_ref_cp_obj, bin->loadaddr);
 				if (sym) {
 					r_list_append (methods, sym);
 				}
@@ -2918,7 +2923,7 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_cp_idx(ut32 cp_idx, ut64 bad
 		case R_BIN_JAVA_CP_METHODREF:
 		case R_BIN_JAVA_CP_FIELDREF:
 		case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
-			sym = r_bin_java_create_new_symbol_from_ref (obj, baddr);
+			sym = r_bin_java_create_new_symbol_from_ref (R_BIN_JAVA_GLOBAL_BIN, obj, baddr);
 			break;
 		case R_BIN_JAVA_CP_INVOKEDYNAMIC:
 			sym = r_bin_java_create_new_symbol_from_invoke_dynamic (obj, baddr);
@@ -2955,7 +2960,7 @@ R_API void r_bin_add_import(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, const char
 	imp->classname = class_name;
 	imp->name = name;
 	imp->bind = "NONE";
-	imp->type = r_str_const (type);
+	imp->type = r_str_constpool_get (&bin->constpool, type);
 	imp->descriptor = descriptor;
 	imp->ordinal = obj->idx;
 	r_list_append (bin->imports_list, imp);
@@ -3125,6 +3130,7 @@ R_API void *r_bin_java_free(RBinJavaObj *bin) {
 		R_BIN_JAVA_GLOBAL_BIN = NULL;
 	}
 	free (bin->file);
+	r_str_constpool_fini (&bin->constpool);
 	free (bin);
 	return NULL;
 }
