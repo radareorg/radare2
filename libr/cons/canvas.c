@@ -69,7 +69,7 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 		RStrBuf tmp;
 		r_strbuf_init (&tmp);
 		r_strbuf_append_n (&tmp, s, slen);
-		c->attr = r_str_const (r_strbuf_get (&tmp));
+		c->attr = r_str_constpool_get (&c->constpool, r_strbuf_get (&tmp));
 		r_strbuf_fini (&tmp);
 	}
 	return p;
@@ -146,19 +146,21 @@ static bool __expandLine(RConsCanvas *c, int real_len, int utf8_len) {
 }
 
 R_API void r_cons_canvas_free(RConsCanvas *c) {
-	if (c) {
-		if (c->b) {
-			int y;
-			for (y = 0; y < c->h; y++) {
-				free (c->b[y]);
-			}
-			free (c->b);
-		}
-		free (c->bsize);
-		free (c->blen);
-		ht_up_free (c->attrs);
-		free (c);
+	if (!c) {
+		return;
 	}
+	if (c->b) {
+		int y;
+		for (y = 0; y < c->h; y++) {
+			free (c->b[y]);
+		}
+		free (c->b);
+	}
+	free (c->bsize);
+	free (c->blen);
+	ht_up_free (c->attrs);
+	r_str_constpool_fini (&c->constpool);
+	free (c);
 }
 
 static bool attribute_delete_cb(void *user, const ut64 key, const void *value) {
@@ -253,6 +255,9 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	c->w = w;
 	c->h = h;
 	c->x = c->y = 0;
+	if (!r_str_constpool_init (&c->constpool)) {
+		goto beach;
+	}
 	c->attrs = ht_up_new ((HtUPDupValue)strdup, attribute_free_kv, NULL);
 	if (!c->attrs) {
 		goto beach;
@@ -261,6 +266,7 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	r_cons_canvas_clear (c);
 	return c;
 beach: {
+	r_str_constpool_fini (&c->constpool);
 	int j;
 	for (j = 0; j < i; j++) {
 		free (c->b[j]);
