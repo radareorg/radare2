@@ -519,14 +519,7 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 			node = NULL;
 			goto beach;
 		}
-		if (node->value) {
-			ov = strdup (node->value);
-			if (!ov) {
-				node = NULL;
-				goto beach;
-			}
-			free (node->value);
-		}
+		ov = node->value;
 		r_config_node_value_format_i (buf, sizeof (buf), i, NULL);
 		node->value = strdup (buf);
 		if (!node->value) {
@@ -561,7 +554,8 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 		if (!ret) {
 			node->i_value = oi;
 			free (node->value);
-			node->value = strdup (ov? ov: "");
+			node->value = ov? ov: strdup ("");
+			ov = NULL;
 		}
 	}
 beach:
