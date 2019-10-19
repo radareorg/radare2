@@ -1565,7 +1565,6 @@ beach:
 	r_core_fini (&r);
 	r_cons_set_raw (0);
 	free (file);
-	r_str_const_free (NULL);
 	r_cons_free ();
 	LISTS_FREE ();
 	return ret;

@@ -143,10 +143,6 @@ typedef void(*str_operation)(char *c);
 
 R_API int r_str_do_until_token(str_operation op, char *str, const char tok);
 
-R_API const char *r_str_const(const char *ptr);
-R_API const char *r_str_const_at(char ***consts, const char *ptr);
-R_API void r_str_const_free(char ***consts);
-
 R_API void r_str_reverse(char *str);
 R_API int r_str_re_match(const char *str, const char *reg);
 R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
