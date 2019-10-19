@@ -206,7 +206,7 @@ RList *PE_(r_bin_mdmp_pe_get_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) 
 	return ret;
 }
 
-RList *PE_(r_bin_mdmp_pe_get_symbols) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
+RList *PE_(r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
 	ut64 offset;
 	struct r_bin_pe_export_t *symbols = NULL;
@@ -229,7 +229,7 @@ RList *PE_(r_bin_mdmp_pe_get_symbols) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 				offset -= pe_bin->vaddr;
 			}
 			ptr->name = strdup ((char *)symbols[i].name);
-			ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
+			ptr->forwarder = r_str_constpool_get (&rbin->constpool, (char *)symbols[i].forwarder);
 			ptr->bind = R_BIN_BIND_GLOBAL_STR;
 			ptr->type = R_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
