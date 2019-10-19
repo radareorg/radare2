@@ -334,6 +334,7 @@ typedef struct r_bin_t {
 	bool verbose;
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
+	RStrConstPool constpool;
 } RBin;
 
 typedef struct r_bin_xtr_metadata_t {

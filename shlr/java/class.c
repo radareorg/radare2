@@ -303,8 +303,7 @@ R_API ut32 U(r_bin_java_swap_uint)(ut32 x) {
 
 static bool R_BIN_JAVA_NULL_TYPE_INITTED = false;
 // XXX - this is a global variable used while parsing the class file
-// if multi-threaded class parsing is enabled, this variable needs to
-// be guarded with a lock.
+// this variable should DIE.
 static RBinJavaObj *R_BIN_JAVA_GLOBAL_BIN = NULL;
 static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
 	{ "public", R_BIN_JAVA_FIELD_ACC_PUBLIC, 6 },

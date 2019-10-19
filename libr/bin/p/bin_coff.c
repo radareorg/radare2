@@ -41,7 +41,7 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	return NULL;
 }
 
-static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
+static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
 	RBinSymbol *ptr = *sym;
 	struct coff_symbol *s = NULL;
 	if (idx < 0 || idx > bin->hdr.f_nsyms) {
@@ -80,7 +80,7 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 		ptr->type = "STATIC";
 		break;
 	default:
-		ptr->type = r_str_const (sdb_fmt ("%i", s->n_sclass));
+		ptr->type = r_str_constpool_get (&rbin->constpool, sdb_fmt ("%i", s->n_sclass));
 		break;
 	}
 	if (bin->symbols[idx].n_scnum < bin->hdr.f_nscns + 1 &&
@@ -191,7 +191,7 @@ static RList *symbols(RBinFile *bf) {
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
-			if (_fill_bin_symbol (obj, i, &ptr)) {
+			if (_fill_bin_symbol (bf->rbin, obj, i, &ptr)) {
 				r_list_append (ret, ptr);
 			} else {
 				free (ptr);
@@ -264,7 +264,7 @@ static RList *relocs(RBinFile *bf) {
 				if (!symbol) {
 					continue;
 				}
-				if (!_fill_bin_symbol (bin, rel[j].r_symndx, &symbol)) {
+				if (!_fill_bin_symbol (bf->rbin, bin, rel[j].r_symndx, &symbol)) {
 					free (symbol);
 					continue;
 				}
