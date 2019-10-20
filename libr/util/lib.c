@@ -172,6 +172,7 @@ R_API void r_lib_free(RLib *lib) {
 		r_list_free (lib->handlers);
 		r_list_free (lib->plugins);
 		free (lib->symname);
+		free (lib->symnamefunc);
 		free (lib);
 	}
 }
