@@ -1191,8 +1191,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			abs = val>=0? val: -val;
 			// "str x2, [x8], 0x20
 			// "x2,x8,=[8],32,x8,+=",
-			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,%c,=[%d],%"PFMT64d",%s,%c=",
-					REG64(0), abs, MEMBASE64(1), sign, size,
+			r_strbuf_setf (&op->esil, "%s,%s,=[%d],%"PFMT64d",%s,%c=",
+					REG64(0), MEMBASE64(1), size,
 					abs, MEMBASE64(1), sign);
 		} else {
 			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,%c,=[%d]",
@@ -1730,8 +1730,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		if (OPCOUNT() == 3) { // e.g. 'str r2, [r3], 4
 			if (ISIMM(2)) { // e.g. 'str r2, [r3], 4
-				r_strbuf_appendf (&op->esil, "%s,%s,%d,+,0xffffffff,&,=[4],%d,%s,+=",
-					       REG(0), MEMBASE(1), IMM(2), IMM(2), MEMBASE(1));
+				// r2,r3,0xffffffff,&,=[4],4,r3,+=
+				r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[4],%d,%s,+=",
+					       REG(0), MEMBASE(1), IMM(2), MEMBASE(1));
 			}
 			if (ISREG(2)) { // e.g. 'str r2, [r3], r1
 				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
@@ -1842,8 +1843,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		if (OPCOUNT() == 3) { // e.g. 'str r2, [r3], 4
 			if (ISIMM(2)) { // e.g. 'str r2, [r3], 4
-				r_strbuf_appendf (&op->esil, "%s,%s,%d,+,0xffffffff,&,=[2],%d,%s,+=",
-					       REG(0), MEMBASE(1), IMM(2), IMM(2), MEMBASE(1));
+				r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[2],%d,%s,+=",
+					       REG(0), MEMBASE(1), IMM(2), MEMBASE(1));
 			}
 			if (ISREG(2)) { // e.g. 'str r2, [r3], r1
 				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
@@ -1953,8 +1954,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		if (OPCOUNT() == 3) { // e.g. 'str r2, [r3], 4
 			if (ISIMM(2)) { // e.g. 'str r2, [r3], 4
-				r_strbuf_appendf (&op->esil, "%s,%s,%d,+,0xffffffff,&,=[1],%d,%s,+=",
-					       REG(0), MEMBASE(1), IMM(2), IMM(2), MEMBASE(1));
+				r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[1],%d,%s,+=",
+					       REG(0), MEMBASE(1), IMM(2), MEMBASE(1));
 			}
 			if (ISREG(2)) { // e.g. 'str r2, [r3], r1
 				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
