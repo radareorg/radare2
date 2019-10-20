@@ -640,6 +640,7 @@ typedef struct r_bin_java_attr_t {
 	ut16 name_idx; //	ut16 attribute_name_idx;
 	ut32 length;   //ut16 attribute_length;
 	ut64 loadaddr;
+	bool is_attr_in_old_format;
 	union {
 		RBinJavaAnnotationDefaultAttr annotation_default_attr;
 		RBinJavaBootstrapMethodsAttr bootstrap_methods_attr;
@@ -798,7 +799,7 @@ typedef struct r_bin_java_object_allocs_t {
 
 typedef struct r_bin_java_attr_allocs_t {
 	//void (*new_obj) (RBinJavaObj *bin, RBinJavaAttrInfo *obj, ut64 offset) ;
-	RBinJavaAttrInfo* (*new_obj)(ut8* buffer, ut64 sz, ut64 buf_offset);
+	RBinJavaAttrInfo* (*new_obj)(RBinJavaObj *bin, ut8* buffer, ut64 sz, ut64 buf_offset);
 	void (*delete_obj) (void /*RBinJavaAttrInfo*/ *obj);
 	void (*print_summary) (RBinJavaAttrInfo *obj);
 	ut64 (*calc_size)(RBinJavaAttrInfo *obj);
