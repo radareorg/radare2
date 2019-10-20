@@ -2277,7 +2277,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 	if (!size) {
 		return count;
 	}
-	trie = malloc (size);
+	trie = calloc (size + 1, 1);
 	if (!trie) {
 		return count;
 	}
