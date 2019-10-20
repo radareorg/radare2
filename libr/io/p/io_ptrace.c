@@ -178,9 +178,14 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return false;
 }
 
-static inline bool is_pid_already_attached (RIO *io, int pid, siginfo_t *sig) {
-#ifdef __linux__
+static inline bool is_pid_already_attached (RIO *io, int pid, void *data) {
+#if defined(__linux__)
+	siginfo_t *sig = (siginfo_t *)data;
 	return -1 != r_io_ptrace (io, PTRACE_GETSIGINFO, pid, NULL, sig);
+#elif defined(__FreeBSD__)
+	struct ptrace_lwpinfo *info = (struct ptrace_lwpinfo *)data;
+	int len = (int)sizeof (*info);
+	return -1 != r_io_ptrace (io, PT_LWPINFO, pid, info, len);
 #else
 	return false;
 #endif
@@ -189,7 +194,13 @@ static inline bool is_pid_already_attached (RIO *io, int pid, siginfo_t *sig) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *desc = NULL;
 	int ret = -1;
+#if defined(__linux__)
 	siginfo_t sig = { 0 };
+#elif defined(__FreeBSD__)
+	struct ptrace_lwpinfo sig = { 0 };
+#else
+	int sig = 0;
+#endif
 
 	if (!__plugin_open (io, file, 0)) {
 		return NULL;
