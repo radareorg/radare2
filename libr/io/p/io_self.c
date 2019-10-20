@@ -601,6 +601,8 @@ exit:
 		eprintf ("sysctl failed: %s\n", strerror (errno));
 		return false;
 	}
+	endq = size;
+
 	while (sysctl (mib, 3, &entry, &size, NULL, 0) != -1) {
 		int perm = 0;
 		if (entry.kve_end == endq) {
