@@ -227,24 +227,24 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				break;
 			}
 #endif
+			return NULL;
 		} else if (__waitpid (pid)) {
 			ret = pid;
 		} else {
 			eprintf ("Error in waitpid\n");
-		}
-	}
-
-	if (ret != -1) {
-		RIOPtrace *riop = R_NEW0 (RIOPtrace);
-		if (!riop) {
 			return NULL;
 		}
-
-		riop->pid = riop->tid = pid;
-		open_pidmem (riop);
-		desc = r_io_desc_new (io, &r_io_plugin_ptrace, file, rw | R_PERM_X, mode, riop);
-		desc->name = r_sys_pid_to_path (pid);
 	}
+
+	RIOPtrace *riop = R_NEW0 (RIOPtrace);
+	if (!riop) {
+		return NULL;
+	}
+
+	riop->pid = riop->tid = pid;
+	open_pidmem (riop);
+	desc = r_io_desc_new (io, &r_io_plugin_ptrace, file, rw | R_PERM_X, mode, riop);
+	desc->name = r_sys_pid_to_path (pid);
 
 	return desc;
 }
