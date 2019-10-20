@@ -411,6 +411,7 @@ r_util_files = [
   'include/r_util/r_strbuf.h',
   'include/r_util/r_str.h',
   'include/r_util/r_strpool.h',
+  'include/r_util/r_str_constpool.h',
   'include/r_util/r_str_util.h',
   'include/r_util/r_sys.h',
   'include/r_util/r_alloc.h',
