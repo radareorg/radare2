@@ -29,7 +29,7 @@ matrix:
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1 CFLAGS="-DR2_ASSERT_STDOUT=1"
     # OS X with clang
     - os: osx
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1"
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1" LC_CTYPE=C
     # Run Fuzzing Sanity Test on every push
     # XXX its broken it complains about invalid key
     #- os: linux
@@ -82,7 +82,7 @@ before_install:
     elif [ "$TRAVIS_OS_NAME" != "osx" ]; then
       docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis .
     else
-      rm -rf .nvm && git clone -q https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 8.11.3
+      rm -rf .nvm && git clone -q https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 10.16.3
     fi
 
 script:
