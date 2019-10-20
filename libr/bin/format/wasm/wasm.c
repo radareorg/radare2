@@ -171,19 +171,19 @@ static RList *r_bin_wasm_get_sections_by_id (RList *sections, ut8 id) {
 const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type) {
 	switch (type) {
 	case R_BIN_WASM_VALUETYPE_i32:
-		return r_str_const ("i32");
+		return "i32";
 	case R_BIN_WASM_VALUETYPE_i64:
-		return r_str_const ("i62");
+		return "i62";
 	case R_BIN_WASM_VALUETYPE_f32:
-		return r_str_const ("f32");
+		return "f32";
 	case R_BIN_WASM_VALUETYPE_f64:
-		return r_str_const ("f64");
+		return "f64";
 	case R_BIN_WASM_VALUETYPE_ANYFUNC:
-		return r_str_const ("ANYFUNC");
+		return "ANYFUNC";
 	case R_BIN_WASM_VALUETYPE_FUNC:
-		return r_str_const ("FUNC");
+		return "FUNC";
 	default:
-		return r_str_const ("<?>");
+		return "<?>";
 	}
 }
 

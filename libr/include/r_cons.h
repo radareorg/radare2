@@ -16,6 +16,7 @@ extern "C" {
 #include <r_util/r_signal.h>
 #include <r_util/r_stack.h>
 #include <r_util/r_str.h>
+#include <r_util/r_str_constpool.h>
 #include <r_util/r_sys.h>
 #include <r_util/r_file.h>
 #include <r_vector.h>
@@ -354,6 +355,7 @@ typedef struct r_cons_canvas_t {
 	int *bsize;
 	const char *attr; //The current attr (inserted on each write)
 	HtUP *attrs; // all the different attributes <key: unsigned int loc, const char *attr>
+	RStrConstPool constpool; // Pool for non-compile-time attrs
 	int sx; // scrollx
 	int sy; // scrolly
 	int color;

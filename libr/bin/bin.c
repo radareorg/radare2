@@ -497,6 +497,7 @@ R_API void r_bin_free(RBin *bin) {
 		r_list_free (bin->binldrs);
 		sdb_free (bin->sdb);
 		r_id_storage_free (bin->ids);
+		r_str_constpool_fini (&bin->constpool);
 		free (bin);
 	}
 }
@@ -862,6 +863,9 @@ R_API RBin *r_bin_new() {
 	if (!bin) {
 		return NULL;
 	}
+	if (!r_str_constpool_init (&bin->constpool)) {
+		goto trashbin;
+	}
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0 ();
@@ -884,8 +888,7 @@ R_API RBin *r_bin_new() {
 	for (i = 0; bin_xtr_static_plugins[i]; i++) {
 		static_xtr_plugin = R_NEW0 (RBinXtrPlugin);
 		if (!static_xtr_plugin) {
-			free (bin);
-			return NULL;
+			goto trashbin_binxtrs;
 		}
 		*static_xtr_plugin = *bin_xtr_static_plugins[i];
 		r_bin_xtr_add (bin, static_xtr_plugin);
@@ -896,13 +899,22 @@ R_API RBin *r_bin_new() {
 	for (i = 0; bin_ldr_static_plugins[i]; i++) {
 		static_ldr_plugin = R_NEW0 (RBinLdrPlugin);
 		if (!static_ldr_plugin) {
-			free (bin);
-			return NULL;
+			goto trashbin_binldrs;
 		}
 		*static_ldr_plugin = *bin_ldr_static_plugins[i];
 		r_bin_ldr_add (bin, static_ldr_plugin);
 	}
 	return bin;
+trashbin_binldrs:
+	r_list_free (bin->binldrs);
+trashbin_binxtrs:
+	r_list_free (bin->binxtrs);
+	r_list_free (bin->binfiles);
+	r_id_storage_free (bin->ids);
+	r_str_constpool_fini (&bin->constpool);
+trashbin:
+	free(bin);
+	return NULL;
 }
 
 R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {

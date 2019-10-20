@@ -66,8 +66,8 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 			free (symName);
 			break;
 		}
-		sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
-		sym->bind = r_str_const ("NONE");
+		sym->type = R_BIN_TYPE_FUNC_STR;
+		sym->bind = "NONE";
 		sym->size = size;
 
 		if (addr == 0) {
@@ -83,11 +83,11 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 			if (!imp->name) {
 				goto out_walk_symbol;
 			}
-			imp->type = r_str_const ("FUNC");
+			imp->type = "FUNC";
 			if (!imp->type) {
 				goto out_walk_symbol;
 			}
-			imp->bind = r_str_const ("NONE");
+			imp->bind = "NONE";
 			if (!imp->bind) {
 				goto out_walk_symbol;
 			}

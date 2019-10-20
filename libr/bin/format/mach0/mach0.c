@@ -2413,7 +2413,7 @@ static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 
 	sym->paddr = offset;
 	sym->type = "EXT";
 	sym->name = strdup (name);
-	sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
+	sym->bind = R_BIN_BIND_GLOBAL_STR;
 	r_list_append (list, sym);
 }
 

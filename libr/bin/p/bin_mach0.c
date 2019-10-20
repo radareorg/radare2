@@ -227,10 +227,9 @@ static RList *symbols(RBinFile *bf) {
 				}
 			}
 		}
-		ptr->forwarder = r_str_const ("NONE");
-		ptr->bind = r_str_const ((syms[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
-				R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR);
-		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+		ptr->forwarder = "NONE";
+		ptr->bind = (syms[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
+		ptr->type = R_BIN_TYPE_FUNC_STR;
 		ptr->vaddr = syms[i].addr;
 		ptr->paddr = syms[i].offset + obj->boffset;
 		ptr->size = syms[i].size;
@@ -302,7 +301,7 @@ static RList *symbols(RBinFile *bf) {
 }
 #endif // FEATURE_SYMLIST
 
-static RBinImport *import_from_name(const char *orig_name, HtPP *imports_by_name) {
+static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imports_by_name) {
 	if (imports_by_name) {
 		bool found = false;
 		RBinImport *ptr = ht_pp_find (imports_by_name, orig_name, &found);
@@ -336,8 +335,8 @@ static RBinImport *import_from_name(const char *orig_name, HtPP *imports_by_name
 		name++;
 	}
 	ptr->name = strdup (name);
-	ptr->bind = r_str_const ("NONE");
-	ptr->type = r_str_const (type);
+	ptr->bind = "NONE";
+	ptr->type = r_str_constpool_get (&rbin->constpool, type);
 
 	if (imports_by_name) {
 		ht_pp_insert (imports_by_name, orig_name, ptr);
@@ -366,7 +365,7 @@ static RList *imports(RBinFile *bf) {
 	bin->has_sanitizers = false;
 	bin->has_blocks_ext = false;
 	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = import_from_name (imports[i].name, NULL))) {
+		if (!(ptr = import_from_name (bf->rbin, imports[i].name, NULL))) {
 			break;
 		}
 		name = ptr->name;
@@ -420,7 +419,7 @@ static RList *relocs(RBinFile *bf) {
 			ptr->import = bin->imports_by_ord[reloc->ord];
 		} else if (reloc->name[0]) {
 			RBinImport *imp;
-			if (!(imp = import_from_name ((char*) reloc->name, bin->imports_by_name))) {
+			if (!(imp = import_from_name (bf->rbin, (char*) reloc->name, bin->imports_by_name))) {
 				break;
 			}
 			ptr->import = imp;

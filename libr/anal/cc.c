@@ -108,7 +108,7 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 		}
 #endif
 	}
-	return r_str_const (ret);
+	return r_str_constpool_get (&anal->constpool, ret ? ret : "");
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {

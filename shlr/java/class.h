@@ -765,6 +765,8 @@ typedef struct r_bin_java_obj_t {
 	Sdb *kv;
 	Sdb *AllJavaBinObjs;
 	ut32 id;
+
+	RStrConstPool constpool;
 } RBinJavaObj;
 
 R_API RList * U(r_bin_java_get_interface_names)(RBinJavaObj * bin);
@@ -928,7 +930,7 @@ R_API char * r_bin_java_print_class_cp_stringify(RBinJavaCPTypeObj* obj);
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_field_with_access_flags(RBinJavaField *fm_type);
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_cp_idx(ut32 cp_idx, ut64 baddr);
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_invoke_dynamic(RBinJavaCPTypeObj *obj, ut64 baddr);
-R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, ut64 baddr);
+R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, ut64 baddr);
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_method(RBinJavaField *fm_type);
 
 R_API ut64 r_bin_java_get_method_code_offset(RBinJavaField *fm_type);

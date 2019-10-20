@@ -303,8 +303,7 @@ R_API ut32 U(r_bin_java_swap_uint)(ut32 x) {
 
 static bool R_BIN_JAVA_NULL_TYPE_INITTED = false;
 // XXX - this is a global variable used while parsing the class file
-// if multi-threaded class parsing is enabled, this variable needs to
-// be guarded with a lock.
+// this variable should DIE.
 static RBinJavaObj *R_BIN_JAVA_GLOBAL_BIN = NULL;
 static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
 	{ "public", R_BIN_JAVA_FIELD_ACC_PUBLIC, 6 },
@@ -520,7 +519,9 @@ R_API void r_bin_java_reset_bin_info(RBinJavaObj *bin) {
 	r_list_free (bin->attrs_list);
 	r_list_free (bin->cp_list);
 	r_list_free (bin->interfaces_list);
+	r_str_constpool_fini (&bin->constpool);
 	memset (bin, 0, sizeof (RBinJavaObj));
+	r_str_constpool_init (&bin->constpool);
 	bin->cf2.flags_str = strdup ("unknown");
 	bin->cf2.this_class_name = strdup ("unknown");
 	bin->imports_list = r_list_newf (free);
@@ -2312,6 +2313,9 @@ R_API ut64 r_bin_java_parse_methods(RBinJavaObj *bin, const ut64 offset, const u
 
 R_API int r_bin_java_new_bin(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const ut8 *buf, ut64 len) {
 	R_BIN_JAVA_GLOBAL_BIN = bin;
+	if (!r_str_constpool_init (&bin->constpool)) {
+		return false;
+	}
 	bin->lines.count = 0;
 	bin->loadaddr = loadaddr;
 	r_bin_java_get_java_null_cp ();
@@ -2526,24 +2530,24 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 		sym->name = strdup (fm_type->name);
 		// strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
 		if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD) {
-			sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+			sym->type = R_BIN_TYPE_FUNC_STR;
 			sym->paddr = r_bin_java_get_method_code_offset (fm_type);
 			sym->vaddr = r_bin_java_get_method_code_offset (fm_type) + baddr;
 			sym->size = r_bin_java_get_method_code_size (fm_type);
 		} else {
-			sym->type = r_str_const ("FIELD");
+			sym->type = "FIELD";
 			sym->paddr = fm_type->file_offset;// r_bin_java_get_method_code_offset (fm_type);
 			sym->vaddr = fm_type->file_offset + baddr;
 			sym->size = fm_type->size;
 		}
 		if (r_bin_java_is_fm_type_protected (fm_type)) {
-			sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
+			sym->bind = R_BIN_BIND_LOCAL_STR;
 		} else if (r_bin_java_is_fm_type_private (fm_type)) {
-			sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
+			sym->bind = R_BIN_BIND_LOCAL_STR;
 		} else if (r_bin_java_is_fm_type_protected (fm_type)) {
-			sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
+			sym->bind = R_BIN_BIND_GLOBAL_STR;
 		}
-		sym->forwarder = r_str_const ("NONE");
+		sym->forwarder = "NONE";
 		if (fm_type->class_name) {
 			sym->classname = strdup (fm_type->class_name);
 		} else {
@@ -2568,18 +2572,18 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 	// char *new_name = malloc (new_name_len);
 	sym->name = r_str_newf ("meta_%s", fm_type->name);
 	if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD) {
-		sym->type = r_str_const ("FUNC_META");
+		sym->type = "FUNC_META";
 	} else {
-		sym->type = r_str_const ("FIELD_META");
+		sym->type = "FIELD_META";
 	}
 	if (r_bin_java_is_fm_type_protected (fm_type)) {
-		sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
+		sym->bind = R_BIN_BIND_LOCAL_STR;
 	} else if (r_bin_java_is_fm_type_private (fm_type)) {
-		sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
+		sym->bind = R_BIN_BIND_LOCAL_STR;
 	} else if (r_bin_java_is_fm_type_protected (fm_type)) {
-		sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
+		sym->bind = R_BIN_BIND_GLOBAL_STR;
 	}
-	sym->forwarder = r_str_const ("NONE");
+	sym->forwarder = "NONE";
 	if (fm_type->class_name) {
 		sym->classname = strdup (fm_type->class_name);
 	} else {
@@ -2596,7 +2600,7 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 	return sym;
 }
 
-R_API RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, ut64 baddr) {
+R_API RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, ut64 baddr) {
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (!sym) {
 		return NULL;
@@ -2609,18 +2613,18 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, 
 		return sym;
 	}
 	if (sym) {
-		class_name = r_bin_java_get_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN,
+		class_name = r_bin_java_get_name_from_bin_cp_list (bin,
 			obj->info.cp_method.class_idx);
-		name = r_bin_java_get_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN,
+		name = r_bin_java_get_name_from_bin_cp_list (bin,
 			obj->info.cp_method.name_and_type_idx);
-		type_name = r_bin_java_get_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN,
+		type_name = r_bin_java_get_name_from_bin_cp_list (bin,
 			obj->info.cp_method.name_and_type_idx);
 		if (name) {
 			sym->name = name;
 			name = NULL;
 		}
 		if (type_name) {
-			sym->type = r_str_const (type_name);
+			sym->type = r_str_constpool_get (&bin->constpool, type_name);
 			R_FREE (type_name);
 		}
 		if (class_name) {
@@ -2764,7 +2768,7 @@ R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx) {
 		if (field->field_ref_cp_obj && 0) {
 			if ((field && field->field_ref_cp_obj->metas->ord == class_idx)) {
 				RBinSymbol *sym = r_bin_java_create_new_symbol_from_ref (
-						field->field_ref_cp_obj, bin->loadaddr);
+						bin, field->field_ref_cp_obj, bin->loadaddr);
 				if (sym) {
 					r_list_append (methods, sym);
 				}
@@ -2919,7 +2923,7 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_cp_idx(ut32 cp_idx, ut64 bad
 		case R_BIN_JAVA_CP_METHODREF:
 		case R_BIN_JAVA_CP_FIELDREF:
 		case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
-			sym = r_bin_java_create_new_symbol_from_ref (obj, baddr);
+			sym = r_bin_java_create_new_symbol_from_ref (R_BIN_JAVA_GLOBAL_BIN, obj, baddr);
 			break;
 		case R_BIN_JAVA_CP_INVOKEDYNAMIC:
 			sym = r_bin_java_create_new_symbol_from_invoke_dynamic (obj, baddr);
@@ -2955,8 +2959,8 @@ R_API void r_bin_add_import(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, const char
 	descriptor = descriptor ? descriptor : strdup ("INVALID DESCRIPTOR INDEX");
 	imp->classname = class_name;
 	imp->name = name;
-	imp->bind = r_str_const ("NONE");
-	imp->type = r_str_const (type);
+	imp->bind = "NONE";
+	imp->type = r_str_constpool_get (&bin->constpool, type);
 	imp->descriptor = descriptor;
 	imp->ordinal = obj->idx;
 	r_list_append (bin->imports_list, imp);
@@ -3055,7 +3059,7 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 			free (sym);
 			break;
 		}
-		sym->type = r_str_const ("import");
+		sym->type = "import";
 		if (!sym->type) {
 			free (sym);
 			break;
@@ -3126,6 +3130,7 @@ R_API void *r_bin_java_free(RBinJavaObj *bin) {
 		R_BIN_JAVA_GLOBAL_BIN = NULL;
 	}
 	free (bin->file);
+	r_str_constpool_fini (&bin->constpool);
 	free (bin);
 	return NULL;
 }

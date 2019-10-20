@@ -54,6 +54,7 @@ r_util_sources = [
   'spaces.c',
   'stack.c',
   'str.c',
+  'str_constpool.c',
   'str_trim.c',
   'strbuf.c',
   'strpool.c',

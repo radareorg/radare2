@@ -110,8 +110,8 @@ RList *PE_(r_bin_mdmp_pe_get_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 		}
 		filter_import (imports[i].name);
 		ptr->name = strdup ((char *)imports[i].name);
-		ptr->bind = r_str_const ("NONE");
-		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+		ptr->bind = "NONE";
+		ptr->type = R_BIN_TYPE_FUNC_STR;
 		ptr->ordinal = imports[i].ordinal;
 		r_list_append (ret, ptr);
 
@@ -206,7 +206,7 @@ RList *PE_(r_bin_mdmp_pe_get_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) 
 	return ret;
 }
 
-RList *PE_(r_bin_mdmp_pe_get_symbols) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
+RList *PE_(r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
 	ut64 offset;
 	struct r_bin_pe_export_t *symbols = NULL;
@@ -229,9 +229,9 @@ RList *PE_(r_bin_mdmp_pe_get_symbols) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 				offset -= pe_bin->vaddr;
 			}
 			ptr->name = strdup ((char *)symbols[i].name);
-			ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
-			ptr->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
-			ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+			ptr->forwarder = r_str_constpool_get (&rbin->constpool, (char *)symbols[i].forwarder);
+			ptr->bind = R_BIN_BIND_GLOBAL_STR;
+			ptr->type = R_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
 			ptr->vaddr = offset + pe_bin->vaddr;
 			ptr->paddr = symbols[i].paddr + pe_bin->paddr;
@@ -252,8 +252,8 @@ RList *PE_(r_bin_mdmp_pe_get_symbols) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 				offset -= pe_bin->vaddr;
 			}
 			ptr->name = r_str_newf ("imp.%s", imports[i].name);
-			ptr->bind = r_str_const ("NONE");
-			ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+			ptr->bind = "NONE";
+			ptr->type = R_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
 			ptr->vaddr = offset + pe_bin->vaddr;
 			ptr->paddr = imports[i].paddr + pe_bin->paddr;
