@@ -885,7 +885,6 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		i++;
 	}
 
-	op->size = _8051_ops[i].len;
 	op->jump = op->fail = -1;
 	op->ptr = op->val = -1;
 
@@ -895,7 +894,50 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	op->delay = 0;
 	op->cycles = _8051_ops[i].cycles;
 	op->failcycles = _8051_ops[i].cycles;
+	op->nopcode = 1;
+	op->size = _8051_ops[i].len;
 	op->type = _8051_ops[i].type;
+	op->family = R_ANAL_OP_FAMILY_CPU; // maybe also FAMILY_IO...
+	op->id = i;
+
+	switch (_8051_ops[i].instr) {
+	default:
+		op->cond = R_ANAL_COND_AL;
+	break;
+	case OP_CJNE:
+	case OP_DJNZ:
+	case OP_JB:
+	case OP_JBC:
+	case OP_JNZ:
+		op->cond = R_ANAL_COND_NE;
+	break;
+	case OP_JNB:
+	case OP_JZ:
+		op->cond = R_ANAL_COND_EQ;
+	break; case OP_JC:
+		op->cond = R_ANAL_COND_HS;
+	break; case OP_JNC:
+		op->cond = R_ANAL_COND_LO;
+	}
+
+	switch (_8051_ops[i].instr) {
+	default:
+		op->eob = false;
+	break;
+	case OP_CJNE:
+	case OP_DJNZ:
+	case OP_JB:
+	case OP_JBC:
+	case OP_JC:
+	case OP_JMP:
+	case OP_JNB:
+	case OP_JNC:
+	case OP_JNZ:
+	case OP_JZ:
+		op->eob = true;
+	}
+
+	// TODO: op->datatype
 
 	switch (arg1) {
 	case A_DIRECT:
