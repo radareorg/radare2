@@ -880,8 +880,6 @@ static ut32 map_direct_addr(RAnal *anal, ut8 addr) {
 static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	set_cpu_model (anal, false);
 
-	op->delay = 0;
-
 	int i = 0;
 	while (_8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask))	{
 		i++;
@@ -894,6 +892,9 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	ut8 arg1 = _8051_ops[i].arg1;
 	ut8 arg2 = _8051_ops[i].arg2;
 
+	op->delay = 0;
+	op->cycles = _8051_ops[i].cycles;
+	op->failcycles = _8051_ops[i].cycles;
 	op->type = _8051_ops[i].type;
 
 	switch (arg1) {
