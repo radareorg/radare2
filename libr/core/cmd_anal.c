@@ -9008,7 +9008,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		}
 		break;
 	case 't': { // "aat"
-		char *off = r_str_trim_dup (input + 2);
+		char *off = input[1]? r_str_trim_dup (input + 2): NULL;
 		RAnalFunction *fcn;
 		RListIter *it;
 		if (off && *off) {
