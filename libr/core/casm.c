@@ -137,7 +137,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			r_asm_set_pc (core->assembler, addr);
 			if (mode == 'i') {
 				RAnalOp analop = {0};
-				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM) < 1) {
+				ut64 len = R_MIN (15, core->blocksize - idx);
+				if (r_anal_op (core->anal, &analop, addr, buf + idx, len, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM) < 1) {
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
