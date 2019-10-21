@@ -446,8 +446,8 @@ static int checkcmd(const char *c) {
 #endif
 
 R_API int r_sys_crash_handler(const char *cmd) {
-#if __UNIX__
-	struct sigaction sigact;
+	int sig[] = { SIGINT, SIGSEGV, SIGBUS, SIGQUIT, SIGHUP, 0 };
+
 	if (!checkcmd (cmd)) {
 		return false;
 	}
@@ -459,24 +459,9 @@ R_API int r_sys_crash_handler(const char *cmd) {
 
 	free (crash_handler_cmd);
 	crash_handler_cmd = strdup (cmd);
-	sigact.sa_handler = signal_handler;
-	sigemptyset (&sigact.sa_mask);
-	sigact.sa_flags = 0;
-	sigaddset (&sigact.sa_mask, SIGINT);
-	sigaddset (&sigact.sa_mask, SIGSEGV);
-	sigaddset (&sigact.sa_mask, SIGBUS);
-	sigaddset (&sigact.sa_mask, SIGQUIT);
-	sigaddset (&sigact.sa_mask, SIGHUP);
 
-	sigaction (SIGINT, &sigact, (struct sigaction *)NULL);
-	sigaction (SIGSEGV, &sigact, (struct sigaction *)NULL);
-	sigaction (SIGBUS, &sigact, (struct sigaction *)NULL);
-	sigaction (SIGQUIT, &sigact, (struct sigaction *)NULL);
-	sigaction (SIGHUP, &sigact, (struct sigaction *)NULL);
+	r_sys_sigaction (sig, signal_handler);
 	return true;
-#else
-	return false;
-#endif
 }
 
 R_API char *r_sys_getenv(const char *key) {
@@ -668,7 +653,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			close (sh_in[1]);
 		}
 		// we should handle broken pipes somehow better
-		signal (SIGPIPE, SIG_IGN);
+		r_sys_signal (SIGPIPE, SIG_IGN);
 		for (;;) {
 			fd_set rfds, wfds;
 			int nfd;

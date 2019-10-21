@@ -345,7 +345,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		free (argv);
 #if !defined(__WINDOWS__)
 	} else if (!strncmp (cmd, "alarm ", 6)) {
-		signal (SIGALRM, got_alarm);
+		r_sys_signal (SIGALRM, got_alarm);
 		// TODO: use setitimer
 		alarm (atoi (cmd + 6));
 #else

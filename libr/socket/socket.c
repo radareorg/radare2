@@ -153,7 +153,7 @@ static bool __listen_unix (RSocket *s, const char *file) {
 		close (sock);
 		return false;
 	}
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_signal (SIGPIPE, SIG_IGN);
 
 	/* change permissions */
 	if (chmod (unix_name.sun_path, 0777) != 0) {
@@ -177,7 +177,7 @@ R_API RSocket *r_socket_new(bool is_ssl) {
 	s->is_ssl = is_ssl;
 	s->port = 0;
 #if __UNIX_
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	s->local = 0;
 	s->fd = R_INVALID_SOCKET;
@@ -319,7 +319,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	if (!proto) {
 		proto = R_SOCKET_PROTO_TCP;
 	}
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_signal (SIGPIPE, SIG_IGN);
 	if (proto == R_SOCKET_PROTO_UNIX) {
 		if (!__connect_unix (s, host)) {
 			return false;
@@ -539,7 +539,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 		return false;
 	}
 #if __UNIX__
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	if (listen (s->fd, 32) < 0) {
 #ifdef _MSC_VER
@@ -735,7 +735,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 R_API int r_socket_write(RSocket *s, void *buf, int len) {
 	int ret, delta = 0;
 #if __UNIX__
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	for (;;) {
 		int b = 1500; //65536; // Use MTU 1500?
