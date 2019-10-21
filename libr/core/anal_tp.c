@@ -177,29 +177,26 @@ static ut64 get_addr(Sdb *trace, const char *regname, int idx) {
 	return r_num_math (NULL, sdb_const_get (trace, query, 0));
 }
 
-static int cond_invert (int cond) {
-	int res = 0;
+static _RAnalCond cond_invert (_RAnalCond cond) {
 	switch (cond) {
-	case R_ANAL_COND_LE:
-		res = R_ANAL_COND_GT;
-		break;
-	case R_ANAL_COND_LT:
-		res = R_ANAL_COND_GE;
-		break;
-	case R_ANAL_COND_GE:
-		res = R_ANAL_COND_LT;
-		break;
-	case R_ANAL_COND_GT:
-		res = R_ANAL_COND_LE;
-		break;
+	break; case R_ANAL_COND_LE:
+		return R_ANAL_COND_GT;
+	break; case R_ANAL_COND_LT:
+		return R_ANAL_COND_GE;
+	break; case R_ANAL_COND_GE:
+		return R_ANAL_COND_LT;
+	break; case R_ANAL_COND_GT:
+		return R_ANAL_COND_LE;
 	}
-	return res;
+	return 0; // 0 is COND_ALways...
+	/* I haven't looked into it but I suspect that this might be confusing:
+	the opposite of any condition not in the list above is "always"? */
 }
 
 #define RKEY(a,k,d) sdb_fmt ("var.range.0x%"PFMT64x ".%c.%d", a, k, d)
 #define ADB a->sdb_fcns
 
-static void var_add_range (RAnal *a, RAnalVar *var, int cond, ut64 val) {
+static void var_add_range (RAnal *a, RAnalVar *var, _RAnalCond cond, ut64 val) {
 	const char *key = RKEY (var->addr, var->kind, var->delta);
 	sdb_array_append_num (ADB, key, cond, 0);
 	sdb_array_append_num (ADB, key, val, 0);
@@ -217,7 +214,7 @@ R_API RStrBuf *var_get_constraint (RAnal *a, RAnalVar *var) {
 	RStrBuf *sb = r_strbuf_new ("");
 
 	for (i = 0; i < n; i += 2) {
-		ut64 cond = sdb_array_get_num (ADB, key, i, 0);
+		_RAnalCond cond = sdb_array_get_num (ADB, key, i, 0);
 		ut64 val = sdb_array_get_num (ADB, key, i + 1, 0);
 		switch (cond) {
 		case R_ANAL_COND_LE:
@@ -690,7 +687,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						jmp_addr += jmp_op->size;
 						r_anal_op_free (jmp_op);
 					}
-					int cond = jmp? cond_invert (next_op->cond): next_op->cond;
+					_RAnalCond cond = jmp? cond_invert (next_op->cond): next_op->cond;
 					var_add_range (anal, var, cond, aop.val);
 				}
 			}
