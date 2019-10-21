@@ -12,7 +12,7 @@
 #include <8051_ass.h>
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int dlen = _8051_disas (a->pc, op, buf, len);
+	int dlen = r_8051_disas (a->pc, op, buf, len);
 	if (dlen < 0) {
 		dlen = 0;
 	}

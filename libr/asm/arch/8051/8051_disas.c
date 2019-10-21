@@ -42,7 +42,7 @@ static const char *_8051_regs[] = {
 	0, 0, 0, 0, 0, 0, 0, 0  // 0xf8
 };
 
-char* _replace_register (char* disasm, ut8 arg, ut8 val) {
+static char* _replace_register (char* disasm, ut8 arg, ut8 val) {
 	char key[10];
 	char subst[10];
 	if (arg == A_DIRECT) {
@@ -62,7 +62,7 @@ char* _replace_register (char* disasm, ut8 arg, ut8 val) {
 	return disasm;
 }
 
-int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
+int r_8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int i = 0;
 	while (_8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask)) {
 		i++;
