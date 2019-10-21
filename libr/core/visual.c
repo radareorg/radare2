@@ -789,7 +789,6 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 }
 
 R_API int r_core_visual_prompt(RCore *core) {
-	char buf[1024];
 	int ret;
 	if (PIDX != 2) {
 		core->seltab = 0;
@@ -800,10 +799,11 @@ R_API int r_core_visual_prompt(RCore *core) {
 	r_line_set_prompt (":> ");
 #endif
 	r_core_visual_showcursor (core, true);
-	r_cons_fgets (buf, sizeof (buf), 0, NULL);
-	if (!strcmp (buf, "q")) {
+
+	char *buf = r_cons_get_input (NULL);
+	if (buf && !strcmp (buf, "q")) {
 		ret = false;
-	} else if (*buf) {
+	} else if (buf && *buf) {
 		r_line_hist_add (buf);
 		r_core_cmd (core, buf, 0);
 		r_cons_echo (NULL);
@@ -818,6 +818,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 		r_cons_clear00 ();
 		r_core_visual_showcursor (core, false);
 	}
+	free (buf);
 	return ret;
 }
 
