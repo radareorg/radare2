@@ -142,6 +142,54 @@ R_API int r_sys_fork() {
 #endif
 }
 
+#if HAVE_SIGACTION
+R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
+	struct sigaction sigact = { };
+	int ret, i;
+
+	if (!sig) {
+		return -EINVAL;
+	}
+
+	sigact.sa_handler = handler;
+	sigemptyset (&sigact.sa_mask);
+
+	for (i = sig[0]; sig[i] != 0; i++) {
+		sigaddset (&sigact.sa_mask, sig[i]);
+	}
+
+	for (i = sig[0]; sig[i] != 0; i++) {
+		ret = sigaction (sig[i], &sigact, NULL);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+#else
+R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
+	int ret, i;
+
+	if (!sig) {
+		return -EINVAL;
+	}
+
+	for (i = sig[0]; sig[i] != 0; i++) {
+		ret = signal (sig[i], handler);
+		if (ret == SIG_ERR) {
+			return -1;
+		}
+	}
+	return 0;
+}
+#endif
+
+R_API int r_sys_signal(int sig, void (*handler) (int)) {
+	int s[2] = { sig, 0 };
+	return r_sys_sigaction (s, handler);
+}
+
 R_API void r_sys_exit(int status, bool nocleanup) {
 	if (nocleanup) {
 		_exit (status);
