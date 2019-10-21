@@ -251,7 +251,7 @@ bool linux_set_options(RDebug *dbg, int pid) {
 	return true;
 }
 
-static void linux_detach_all (RDebug *dbg) {
+static void linux_detach_all(RDebug *dbg) {
 	RList *th_list = dbg->threads;
 	if (th_list) {
 		RDebugPid *th;
@@ -428,16 +428,16 @@ static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
 			perror ("ptrace (PT_ATTACH)");
 			return false;
 		}
-
-		if (!linux_set_options (dbg, ptid)) {
-			return false;
-		}
 	}
 
+	if (!linux_set_options (dbg, ptid)) {
+		eprintf("failed set_options on %d\n", ptid);
+		return false;
+	}
 	return true;
 }
 
-static RList *get_pid_thread_list (RDebug *dbg, int main_pid) {
+static RList *get_pid_thread_list(RDebug *dbg, int main_pid) {
 	RList *list = r_list_new ();
 	if (list) {
 		list = linux_thread_list (main_pid, list);
@@ -446,7 +446,7 @@ static RList *get_pid_thread_list (RDebug *dbg, int main_pid) {
 	return list;
 }
 
-static void linux_attach_all (RDebug *dbg) {
+static void linux_attach_all(RDebug *dbg) {
 	linux_attach_single_pid (dbg, dbg->main_pid);
 
 	RList *list = dbg->threads;
