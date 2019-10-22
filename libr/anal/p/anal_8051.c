@@ -881,14 +881,13 @@ static ut32 map_direct_addr(RAnal *anal, ut8 addr) {
 static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	set_cpu_model (anal, false);
 
-	if (mask & R_ANAL_OP_MASK_ESIL) {
-		mask |= R_ANAL_OP_MASK_VAL;
-	}
-
 	int i = 0;
 	while (_8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask))	{
 		i++;
 	}
+
+	op->jump = op->fail = -1;
+	op->ptr = op->val = -1;
 
 	ut8 arg1 = _8051_ops[i].arg1;
 	ut8 arg2 = _8051_ops[i].arg2;
@@ -941,92 +940,82 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	// TODO: op->datatype
 
-	if (mask & R_ANAL_OP_MASK_VAL) {
-
-		op->ptr = -1;
-		op->val = -1;
-
-		switch (arg1) {
-		default:
-		break; case A_DIRECT:
-			op->ptr = map_direct_addr (anal, buf[1]);
-		break; case A_BIT:
-			op->ptr = map_direct_addr (anal, arg_bit (buf[1]));
-		break; case A_IMMEDIATE:
-			op->val = buf[1];
-		break; case A_IMM16:
-			op->val = buf[1] * 256 + buf[2];
-			op->ptr = op->val + i8051_reg_read (anal->reg, "_xdata"); // best guess, it's a XRAM pointer
-		}
-
-		switch (arg2) {
-		default:
-		break; case A_DIRECT:
-			if (arg1 == A_RI || arg1 == A_RN) {
-				op->ptr = map_direct_addr (anal, buf[1]);
-			} else if (arg1 != A_DIRECT) {
-				op->ptr = map_direct_addr (anal, buf[2]);
-			}
-		break; case A_BIT:
-			op->ptr = arg_bit ((arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2]);
-			op->ptr = map_direct_addr (anal, op->ptr);
-		break; case A_IMMEDIATE:
-			op->val = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
-		}
-
-		if (op->ptr != -1 && op->refptr == 0) {
-			op->refptr = 1;
-		}
+	switch (arg1) {
+	default:
+	break; case A_DIRECT:
+		op->ptr = map_direct_addr (anal, buf[1]);
+	break; case A_BIT:
+		op->ptr = map_direct_addr (anal, arg_bit (buf[1]));
+	break; case A_IMMEDIATE:
+		op->val = buf[1];
+	break; case A_IMM16:
+		op->val = buf[1] * 256 + buf[2];
+		op->ptr = op->val + i8051_reg_read (anal->reg, "_xdata"); // best guess, it's a XRAM pointer
 	}
-	{ // should this not be masked by R_ANAL_OP_MASK_VAL??
-		op->jump = -1;
-		op->fail = -1;
 
-		switch(_8051_ops[i].instr) {
-		default:
-		break; case OP_PUSH:
-			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = 1;
-		break; case OP_POP:
-			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = -1;
-		break; case OP_RET:
-			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = -2;
-		break; case OP_CALL:
-			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = 2;
-			if (arg1 == A_ADDR11) {
-				op->jump = arg_addr11 (addr + op->size, buf);
-				op->fail = addr + op->size;
-			} else if (arg1 == A_ADDR16) {
-				op->jump = 0x100 * buf[1] + buf[2];
-				op->fail = addr + op->size;
-			}
-		break; case OP_JMP:
-			if (arg1 == A_ADDR11) {
-				op->jump = arg_addr11 (addr + op->size, buf);
-				op->fail = addr + op->size;
-			} else if (arg1 == A_ADDR16) {
-				op->jump = 0x100 * buf[1] + buf[2];
-				op->fail = addr + op->size;
-			} else if (arg1 == A_OFFSET) {
-				op->jump = arg_offset (addr + op->size, buf[1]);
-				op->fail = addr + op->size;
-			}
-		break;
-		case OP_CJNE:
-		case OP_DJNZ:
-		case OP_JC:
-		case OP_JNC:
-		case OP_JZ:
-		case OP_JNZ:
-		case OP_JB:
-		case OP_JBC:
-		case OP_JNB:
-			op->jump = arg_offset (addr + op->size, buf[op->size - op->nopcode]);
+	switch (arg2) {
+	default:
+	break; case A_DIRECT:
+		if (arg1 == A_RI || arg1 == A_RN) {
+			op->ptr = map_direct_addr (anal, buf[1]);
+		} else if (arg1 != A_DIRECT) {
+			op->ptr = map_direct_addr (anal, buf[2]);
+		}
+	break; case A_BIT:
+		op->ptr = arg_bit ((arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2]);
+		op->ptr = map_direct_addr (anal, op->ptr);
+	break; case A_IMMEDIATE:
+		op->val = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
+	}
+
+	switch(_8051_ops[i].instr) {
+	default:
+	break; case OP_PUSH:
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = 1;
+	break; case OP_POP:
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -1;
+	break; case OP_RET:
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -2;
+	break; case OP_CALL:
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = 2;
+		if (arg1 == A_ADDR11) {
+			op->jump = arg_addr11 (addr + op->size, buf);
+			op->fail = addr + op->size;
+		} else if (arg1 == A_ADDR16) {
+			op->jump = 0x100 * buf[1] + buf[2];
 			op->fail = addr + op->size;
 		}
+	break; case OP_JMP:
+		if (arg1 == A_ADDR11) {
+			op->jump = arg_addr11 (addr + op->size, buf);
+			op->fail = addr + op->size;
+		} else if (arg1 == A_ADDR16) {
+			op->jump = 0x100 * buf[1] + buf[2];
+			op->fail = addr + op->size;
+		} else if (arg1 == A_OFFSET) {
+			op->jump = arg_offset (addr + op->size, buf[1]);
+			op->fail = addr + op->size;
+		}
+	break;
+	case OP_CJNE:
+	case OP_DJNZ:
+	case OP_JC:
+	case OP_JNC:
+	case OP_JZ:
+	case OP_JNZ:
+	case OP_JB:
+	case OP_JBC:
+	case OP_JNB:
+		op->jump = arg_offset (addr + op->size, buf[op->size - 1]);
+		op->fail = addr + op->size;
+	}
+
+	if (op->ptr != -1 && op->refptr == 0) {
+		op->refptr = 1;
 	}
 
 	if (mask & R_ANAL_OP_MASK_ESIL) {
