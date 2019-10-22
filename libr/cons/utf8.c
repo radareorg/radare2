@@ -194,20 +194,16 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 R_API bool r_cons_is_utf8() {
 	bool ret = false;
 #if UTF8_DETECT_ENV
-	char *sval = r_sys_getenv ("LC_CTYPE");
-	if (sval) {
-		r_str_case (sval, 0);
-		if (!strcmp (sval, "utf-8")) {
-			ret = true;
+	const char *keys[] = { "LC_ALL", "LC_CTYPE", "LANG", NULL };
+	const char **key = keys;
+	for (; *key; key++) {
+		char *val = r_sys_getenv (*key);
+		if (val) {
+			r_str_case (val, false);
+			ret = strstr (val, "utf-8") || strstr (val, "utf8");
+			free (val);
+			break;
 		}
-		free (sval);
-	}
-	char *lang = r_sys_getenv ("LANG");
-	if (lang) {
-		if (strstr (lang, "UTF-8")) {
-			ret = true;
-		}
-		free (lang);
 	}
 #endif
 #if UTF8_DETECT_LOCALE
