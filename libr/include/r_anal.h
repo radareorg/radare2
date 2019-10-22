@@ -345,7 +345,7 @@ enum {
 };
 
 // anal
-enum {
+typedef enum {
 	R_ANAL_OP_FAMILY_UNKNOWN = -1,
 	R_ANAL_OP_FAMILY_CPU = 0,/* normal cpu instruction */
 	R_ANAL_OP_FAMILY_FPU,    /* fpu (floating point) */
@@ -358,7 +358,7 @@ enum {
 	R_ANAL_OP_FAMILY_PAC,    /* pointer authentication instructions */
 	R_ANAL_OP_FAMILY_IO,     /* IO instructions (i.e. IN/OUT) */
 	R_ANAL_OP_FAMILY_LAST
-};
+} RAnalOpFamily;
 
 #if 0
 On x86 according to Wikipedia
@@ -548,7 +548,7 @@ typedef enum {
 	R_ANAL_BB_TYPE_TAIL = 0x8000,
 } _RAnalBlockType;
 
-enum {
+typedef enum {
 	R_ANAL_STACK_NULL = 0,
 	R_ANAL_STACK_NOP,
 	R_ANAL_STACK_INC,
@@ -556,7 +556,7 @@ enum {
 	R_ANAL_STACK_SET,
 	R_ANAL_STACK_RESET,
 	R_ANAL_STACK_ALIGN,
-};
+} RAnalStackOp;
 
 enum {
 	R_ANAL_REFLINE_TYPE_UTF8 = 1,
@@ -811,12 +811,12 @@ typedef struct r_anal_value_t {
 	RRegItem *regdelta; // register index used (-1 if no reg)
 } RAnalValue;
 
-enum RAnalOpDirection {
+typedef enum {
 	R_ANAL_OP_DIR_READ = 1,
 	R_ANAL_OP_DIR_WRITE = 2,
 	R_ANAL_OP_DIR_EXEC = 4,
 	R_ANAL_OP_DIR_REF = 8,
-};
+} RAnalOpDirection;
 
 typedef enum r_anal_data_type_t {
 	R_ANAL_DATATYPE_NULL = 0,
@@ -834,17 +834,16 @@ typedef enum r_anal_data_type_t {
 typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic.. it actually contains the args too, we should replace rasm with this */
 	ut64 addr;      /* address */
-	ut32 type;      /* type of opcode */
-	ut64 prefix;    /* type of opcode prefix (rep,lock,..) */
-	ut32 type2;	/* used by java */
-	int group;      /* is fpu, is privileged, mmx, etc */
-	int stackop;    /* operation on stack? */
-	int cond;       /* condition type */
+	_RAnalOpType type;	/* type of opcode */
+	RAnalOpPrefix prefix;	/* type of opcode prefix (rep,lock,..) */
+	_RAnalOpType type2;	/* used by java */
+	RAnalStackOp stackop;	/* operation on stack? */
+	_RAnalCond cond;	/* condition type */
 	int size;       /* size in bytes of opcode */
 	int nopcode;    /* number of bytes representing the opcode (not the arguments) TODO: find better name */
 	int cycles;	/* cpu-cycles taken by instruction */
 	int failcycles;	/* conditional cpu-cycles */
-	int family;     /* family of opcode */
+	RAnalOpFamily family;	/* family of opcode */
 	int id;         /* instruction id */
 	bool eob;       /* end of block (boolean) */
 	bool sign;      /* operates on signed values, false by default */
@@ -852,7 +851,7 @@ typedef struct r_anal_op_t {
 	int delay;      /* delay N slots (mips, ..)*/
 	ut64 jump;      /* true jmp */
 	ut64 fail;      /* false jmp */
-	int direction;  /* 1 = read, 2 = write, 4 = exec, 8 = reference,  */
+	RAnalOpDirection direction;
 	st64 ptr;       /* reference to memory */ /* XXX signed? */
 	ut64 val;       /* reference to value */ /* XXX signed? */
 	int ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
