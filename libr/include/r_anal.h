@@ -1263,7 +1263,9 @@ typedef enum {
 
 typedef struct r_anal_esil_dfg_t {
 	ut32 idx;
-	Sdb *latest_nodes;
+//	Sdb *latest_nodes;	//replaced by regs
+	Sdb *regs;		//resolves regnames to intervals
+	RContRBTree *reg_vars;	//vars represented in regs
 	RGraph *flow;
 	RGraphNode *cur;
 	RGraphNode *old;

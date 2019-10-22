@@ -10,6 +10,8 @@ typedef struct r_anal_esil_dfg_filter_t {
 	Sdb *results;
 } RAnalEsilDFGFilter;
 
+
+
 // TODO: simple const propagation - use node->type of srcs to propagate consts of pushed vars
 
 R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c) {
@@ -27,11 +29,11 @@ void _dfg_node_free (RAnalEsilDFGNode *free_me) {
 }
 
 static bool _edf_reg_set(RAnalEsilDFG *edf, const char *reg, RGraphNode *node) {
-	return edf ? !sdb_ptr_set (edf->latest_nodes, reg, node, 0) : false;
+	return edf ? !sdb_ptr_set (edf->regs, reg, node, 0) : false;
 }
 
 static void* _edf_reg_get(RAnalEsilDFG *edf, const char *reg) {
-	return edf ? sdb_ptr_get (edf->latest_nodes, reg, 0) : NULL;
+	return edf ? sdb_ptr_get (edf->regs, reg, 0) : NULL;
 }
 
 static bool edf_consume_2_set_reg(RAnalEsil *esil);
@@ -502,8 +504,8 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_new() {
 		free (dfg);
 		return NULL;
 	}
-	dfg->latest_nodes = sdb_new0 ();
-	if (!dfg->latest_nodes) {
+	dfg->regs = sdb_new0 ();
+	if (!dfg->regs) {
 		r_graph_free (dfg->flow);
 		free (dfg);
 		return NULL;
@@ -521,7 +523,7 @@ R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg) {
 			}
 			r_graph_free (dfg->flow);
 		}
-		sdb_free (dfg->latest_nodes);
+		sdb_free (dfg->regs);
 		free (dfg);
 	}
 }
