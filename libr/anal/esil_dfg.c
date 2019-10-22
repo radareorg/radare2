@@ -2,6 +2,7 @@
 
 #include <r_util.h>
 #include <r_anal.h>
+#include <r_reg.h>
 #include <sdb.h>
 
 typedef struct r_anal_esil_dfg_filter_t {
@@ -28,9 +29,175 @@ void _dfg_node_free (RAnalEsilDFGNode *free_me) {
 	free (free_me);
 }
 
+typedef struct esil_dfg_reg_var_t {
+	ut32 from;
+	ut32 to;
+	RGraphNode *node;
+} EsilDFGRegVar;
+
+
+static int _rv_del_alloc_cmp (void *incoming, void *in, void *user) {
+	EsilDFGRegVar *rv_incoming = (EsilDFGRegVar *)incoming;
+	EsilDFGRegVar *rv_in = (EsilDFGRegVar *)in;
+
+// first handle the simple cases without intersection
+	if (rv_incoming->to < rv_in->from) {
+		return -1;
+	}
+	if (rv_in->to < rv_incoming->from) {
+		return 1;
+	}
+	if (rv_in->from == rv_incoming->from && rv_in->to == rv_incoming->to) {
+		return 0;
+	}
+	RAnalEsilDFG *dfg = (RAnalEsilDFG *)user;
+
+#if 0
+the following cases are about intersection, here some ascii-art, so you understand what I do
+
+     =incoming=
+=========in=========
+
+split in into 2 and reinsert the second half (in2)
+shrink first half (in1)
+
+     =incoming=
+=in1=          =in2=
+
+#endif
+
+	if (rv_in->from < rv_incoming->from && rv_incoming->to < rv_in->to) {
+		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		rv[0] = rv_in[0];
+		rv_in->to = rv_incoming->from - 1;
+		rv->from = rv_incoming + 1;
+		dfg->insert = rv;
+		return 1;
+	}
+
+#if 0
+   =incoming=
+      =in=
+
+enqueue the non-intersecting ends in the todo-queue
+#endif
+
+	if (rv_incoming->from < rv_in->from && rv_in->to < rv_incoming->to) {
+		// lower part
+		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		rv[0] = rv_incoming[0];
+		rv->to = rv_in->from - 1;
+		r_queue_enqueue (dfg->todo, rv);
+		// upper part
+		rv = R_NEW (EsilDFGRegVar);
+		rv[0] = rv_incoming[0];
+		rv->from = rv_in->to + 1;
+		r_queue_enqueue (dfg->todo, rv);
+		return 0;
+	}
+
+#if 0
+   =incoming=
+   =in=
+
+similar to the previous case, but this time only enqueue 1 half
+#endif
+
+	if (rv_incoming->from == rv_in->from && rv_in->to < rv_incoming->to) {
+		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		rv[0] = rv_incoming[0];
+		rv->from = rv_in->to + 1;
+		r_queue_enqueue (dfg->todo, rv);
+		return 0;
+	}
+
+#if 0
+   =incoming=
+         =in=
+
+#endif
+
+	if (rv_incoming->from < rv_in->from && rv_in->to == rv_incoming->to) {
+		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		rv[0] = rv_incoming[0];
+		rv->to = rv_in->from - 1;
+		r_queue_enqueue (dfg->todo, rv);
+		return 0;
+	}
+
+#if 0
+    =incoming=
+===in===
+
+shrink in
+
+    =incoming=
+=in=
+
+#endif
+
+	if (rv_in->to <= rv_incoming->to) {
+		rv_in->to = rv_incoming->from - 1;
+		return 1;
+	}
+
+#if 0
+   =incoming=
+         ===in===
+
+up-shrink in
+
+   =incoming=
+             =in=
+
+#endif
+
+	rv_in->from = rv_incoming->to + 1;
+	return -1;
+}
+
+static int _rv_ins_cmp (void *incoming, void *in, void *user) {
+	EsilDFGRegVar *rv_incoming = (EsilDFGRegVar *)incoming;
+	EsilDFGRegVar *rv_in = (EsilDFGRegVar *)in;
+	return rv_incoming->from - rv_in->from;
+}
+
+static bool _edf_reg_set (RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) {
+	if (!dfg || !sdb_num_exists (dfg->regs, reg)) {
+		return false;
+	}
+	EsilDFGRegVar *rv = R_NEW0 (EsilDFGRegVar);
+	if (!rv) {
+		return false;
+	}
+	const ut64 v = sdb_num_get (dfg->regs, reg, NULL);
+	rv->from = (v & 0xffffffff00000000) >> 32;
+	rv->to = v & 0xffffffff;
+	r_queue_enqueue (dfg->todo, rv);
+	while (!r_queue_is_empty (dfg->todo)) {
+	// this approach is not as fast as it could be
+	// rbtree api does sadly not allow deleting multiple items at once :(
+		rv = r_queue_dequeue (dfg->todo);
+		r_rbtree_cont_delete (dfg->reg_vars, rv, _rv_del_alloc_cmp, dfg);
+		if (dfg->insert) {
+			r_rbtree_cont_insert (dfg->reg_vars, dfg->insert, _rv_ins_cmp, NULL);
+			dfg->insert = NULL;
+		}
+		free (rv);
+	}
+	rv = R_NEW0 (EsilDFGRegVar);
+	rv->from = (v & 0xffffffff00000000) >> 32;
+	rv->to = v & 0xffffffff;
+	rv->node = node;
+	r_rbtree_cont_insert (dfg->reg_vars, rv, _rv_ins_cmp, NULL);
+	return true;
+}
+	
+#if 0
 static bool _edf_reg_set(RAnalEsilDFG *edf, const char *reg, RGraphNode *node) {
 	return edf ? !sdb_ptr_set (edf->regs, reg, node, 0) : false;
 }
+#endif
 
 static void* _edf_reg_get(RAnalEsilDFG *edf, const char *reg) {
 	return edf ? sdb_ptr_get (edf->regs, reg, 0) : NULL;
@@ -494,7 +661,10 @@ static bool edf_consume_1_use_old_new_push_1(RAnalEsil *esil, const char *op_str
 	return r_anal_esil_push (esil, r_strbuf_get (result->content));
 }
 
-R_API RAnalEsilDFG *r_anal_esil_dfg_new() {
+R_API RAnalEsilDFG *r_anal_esil_dfg_new(RReg *regs) {
+	if (!regs) {
+		return NULL;
+	}
 	RAnalEsilDFG *dfg = R_NEW0 (RAnalEsilDFG);
 	if (!dfg) {
 		return NULL;
@@ -510,6 +680,34 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_new() {
 		free (dfg);
 		return NULL;
 	}
+	// rax, eax, ax, ah, al	=> 8 should be enough
+	dfg->todo = r_queue_new (8);
+	if (!dfg->todo) {
+		sdb_free (dfg->regs);
+		r_graph_free (dfg->flow);
+		free (dfg);
+		return NULL;
+	}
+	dfg->reg_vars = r_rbtree_cont_newf (free);
+	if (!dfg->reg_vars) {
+		r_queue_free (dfg->todo);
+		sdb_free (dfg->regs);
+		r_graph_free (dfg->flow);
+		free (dfg);
+		return NULL;
+	}
+
+// this is not exactly necessary
+// could use RReg-API directly in the dfg gen,
+// but sdb as transition table is probably faster
+	RRegItem *ri;
+	RListIter *ator;
+	r_list_foreach (regs->allregs, ator, ri) {
+		const ut32 from = ri->offset;
+		const ut32 to = from + ri->size - 1;	// closed intervals because of FUCK YOU
+		const ut64 v = to | (((ut64)from) << 32);
+		sdb_num_set (dfg->regs, ri->name, v, 0);
+	}
 	return dfg;
 }
 
@@ -524,6 +722,8 @@ R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg) {
 			r_graph_free (dfg->flow);
 		}
 		sdb_free (dfg->regs);
+		r_rbtree_cont_free (dfg->reg_vars);
+		r_queue_free (dfg->todo);
 		free (dfg);
 	}
 }
@@ -538,7 +738,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const c
 	}
 	esil->anal = anal;
 
-	RAnalEsilDFG *edf = dfg ? dfg : r_anal_esil_dfg_new ();
+	RAnalEsilDFG *edf = dfg ? dfg : r_anal_esil_dfg_new (anal->reg);
 	if (!edf) {
 		r_anal_esil_free (esil);
 		return NULL;
