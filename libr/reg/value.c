@@ -237,15 +237,16 @@ R_API R_HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 /* packed registers */
 // packbits can be 8, 16, 32 or 64
 // result value is always casted into ut64
-// TODO: use item->packed_size
+// TODO: support packbits=128 for xmm registers
 R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) {
-	ut64 ret = 0LL;
-	if (!reg || !item) {
-		return 0LL;
-	}
+	r_return_val_if_fail (reg && item, 0LL);
+
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
+	packbits = R_MIN (64, R_MAX (0, packbits));
+
+	ut64 ret = 0LL;
 	const int packbytes = packbits / 8;
 	const int packmod = packbits % 8;
 	if (packmod) {
@@ -264,15 +265,15 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 	return ret;
 }
 
+// TODO: support packbits=128 for xmm registers
 R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
-	r_return_val_if_fail (reg && item, false);
+	r_return_val_if_fail (reg && reg->regset->arena && item, false);
 
-	if (!reg->regset->arena) {
-		return 0LL;
-	}
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
+	packbits = R_MIN (64, R_MAX (0, packbits));
+
 	int packbytes = packbits / 8;
 	int packmod = packbits % 8;
 	if (packidx * packbits > item->size) {
