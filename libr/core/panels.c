@@ -4541,6 +4541,7 @@ void __init_menu_color_settings_layout (void *_core, const char *parent) {
 		}
 		__add_menu (core, parent, pos, __settings_colors_cb);
 	}
+	free (now);
 	r_strbuf_free (buf);
 }
 
@@ -4585,6 +4586,7 @@ static void __init_menu_disasm_asm_settings_layout(void *_core, const char *pare
 			__add_menu (core, parent, r_strbuf_get (rsb), __config_toggle_cb);
 		}
 	}
+	r_list_free (list);
 	r_strbuf_free (rsb);
 }
 
