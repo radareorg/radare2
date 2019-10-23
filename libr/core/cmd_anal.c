@@ -6410,17 +6410,16 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 	r_list_free (ranges);
 }
 
-static void cmd_asf(RCore *core, const char *input) {
-	char *ret;
-	if (input[0] == ' ') {
-		ret = sdb_querys (core->anal->sdb_fcnsign, NULL, 0, input + 1);
+static void cmd_sdbk(Sdb *db, const char *input) {
+	char *out = (input[0] == ' ')
+		? sdb_querys (db, NULL, 0, input + 1)
+		: sdb_querys (db, NULL, 0, "*");
+	if (out) {
+		r_cons_println (out);
+		free (out);
 	} else {
-		ret = sdb_querys (core->anal->sdb_fcnsign, NULL, 0, "*");
+		eprintf ("|ERROR| Usage: ask [query]\n");
 	}
-	if (ret && *ret) {
-		r_cons_println (ret);
-	}
-	free (ret);
 }
 
 static void cmd_anal_syscall(RCore *core, const char *input) {
@@ -6485,7 +6484,10 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		}
 		break;
 	case 'f': // "asf"
-		cmd_asf (core, input + 1);
+		cmd_sdbk (core->anal->sdb_fcnsign, input + 1);
+		break;
+	case 'k': // "ask"
+		cmd_sdbk (core->anal->syscall->db, input + 1);
 		break;
 	case 'l': // "asl"
 		if (input[1] == ' ') {
@@ -6540,15 +6542,6 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		}
 		cmd_syscall_do (core, num, -1);
 		}
-		break;
-	case 'k': // "ask"
-		if (input[1] == ' ') {
-			out = sdb_querys (core->anal->syscall->db, NULL, 0, input + 2);
-			if (out) {
-				r_cons_println (out);
-				free (out);
-			}
-		} else eprintf ("|ERROR| Usage: ask [query]\n");
 		break;
 	default:
 	case '?':
