@@ -1667,6 +1667,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.val != UT64_MAX) {
 				pj_kn (pj, "val", op.val);
 			}
+			if (op.disp && op.disp != UT64_MAX) {
+				pj_kn (pj, "disp", op.disp);
+			}
 			if (op.ptr != UT64_MAX) {
 				pj_kn (pj, "ptr", op.ptr);
 			}
@@ -1800,6 +1803,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			if (op.ptr != UT64_MAX) {
 				printline ("ptr", "0x%08" PFMT64x "\n", op.ptr);
+			}
+			if (op.disp && op.disp != UT64_MAX) {
+				printline ("disp", "0x%08" PFMT64x "\n", op.disp);
 			}
 			if (op.refptr != -1) {
 				printline ("refptr", "%d\n", op.refptr);
@@ -4562,7 +4568,8 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
-		}	break;
+		}
+		break;
 	default:
 		if (type & R_ANAL_ADDR_TYPE_PROGRAM)
 			r_cons_printf ("program\n");
@@ -4588,6 +4595,7 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 			r_cons_printf ("ascii\n");
 		if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
 			r_cons_printf ("sequence\n");
+		break;
 	}
 }
 
