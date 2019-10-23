@@ -1360,22 +1360,27 @@ R_API int r_cons_get_size(int *rows) {
 }
 
 #if __WINDOWS__
-R_API os_info *r_sys_get_osinfo();
 R_API bool r_cons_is_ansicon(void) {
 	DWORD major;
 	DWORD minor;
+	DWORD release = 0;
 	bool win_support = false;
-	os_info *info = r_sys_get_osinfo ();
-	if (info) {
-		major = info->major;
-		minor = info->minor;
+	RSysInfo *info = r_sys_info ();
+	if (info && info->version) {
+		char *dot = strtok (info->version, ".");
+		major = atoi (dot);
+		dot = strtok (NULL, ".");
+		minor = atoi (dot);
+		if (info->release) {
+			release = atoi (info->release);
+		}
 		if (major > 10
 			|| major == 10 && minor > 0
-			|| major == 10 && minor == 0 && info->compilation >= 1703) {
+			|| major == 10 && minor == 0 && release >= 1703) {
 			win_support = true;
 		}
 	}
-	free (info);
+	r_sys_info_free (info);
 	char *ansicon = r_sys_getenv ("ANSICON");
 	if (ansicon) {
 		free (ansicon);
