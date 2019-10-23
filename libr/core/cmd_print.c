@@ -3313,6 +3313,8 @@ static bool checkAnalType(RAnalOp *op, int t) {
 		//case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_CJMP:
 			return true;
+		default:
+			break;
 		}
 	}
 	return false;
