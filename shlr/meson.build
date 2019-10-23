@@ -193,17 +193,10 @@ libr2sdb = static_library('r2sdb', sdb_files,
   c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : [],
 )
 
-if host_machine.system() == 'windows'
-  sdb_dep = declare_dependency(
-    link_whole: libr2sdb,
-    include_directories: sdb_inc
-  )
-else
-  sdb_dep = declare_dependency(
-    link_with: libr2sdb,
-    include_directories: sdb_inc
-  )
-endif
+sdb_dep = declare_dependency(
+  link_whole: libr2sdb,
+  include_directories: sdb_inc
+)
 
 # Create sdb_version.h
 sdb_version = '1.2.0'
@@ -306,8 +299,6 @@ java_inc = [platform_inc, include_directories('java')]
 
 libr2java = static_library('r2java', java_files,
   include_directories: java_inc,
-  # Remove sdb_dep here to avoid LNK2005 error on Windows
-  # dependencies: [sdb_dep],
   implicit_include_directories: false
 )
 

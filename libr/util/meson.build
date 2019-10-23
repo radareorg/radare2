@@ -100,11 +100,6 @@ r_util = library('r_util', r_util_sources,
 r_util_dep = declare_dependency(link_with: r_util,
                                 include_directories: platform_inc)
 
-# Override sdb_dep since r_util exports all sdb symbols
-if host_machine.system() == 'windows'
-  sdb_dep = r_util_dep
-endif
-
 pkgconfig_mod.generate(r_util,
   subdirs: 'libr',
   version: r2_version,

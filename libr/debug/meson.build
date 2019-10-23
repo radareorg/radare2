@@ -49,8 +49,7 @@ r_debug_deps = [
   qnx_dep,
   gdb_dep,
   bochs_dep,
-  r_socket_dep,
-  sdb_dep
+  r_socket_dep
 ]
 
 if host_machine.system() == 'linux'

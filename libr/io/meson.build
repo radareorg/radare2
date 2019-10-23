@@ -51,7 +51,6 @@ endif
 r_io_deps = [
   r_util_dep,
   r_socket_dep,
-  sdb_dep,
   bochs_dep,
   gdb_dep,
   windbg_dep,

@@ -39,8 +39,7 @@ r_main = library('r_main', r_main_sources,
     r_socket_dep,
     r_fs_dep,
     r_magic_dep,
-    r_crypto_dep,
-    sdb_dep
+    r_crypto_dep
   ],
   install: true,
   implicit_include_directories: false,
