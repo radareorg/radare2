@@ -1259,9 +1259,9 @@ R_API RSysInfo *r_sys_info(void) {
 	
 	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
 		KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
-		r_sys_perror ("r_sys_get_winver/RegOpenKeyExA");
+		r_sys_perror ("r_sys_info/RegOpenKeyExA");
 		r_sys_info_free (si);
-		return 0;
+		return NULL;
 	}
 
 	size = sizeof (tmp);
@@ -1302,7 +1302,7 @@ R_API RSysInfo *r_sys_info(void) {
 	si->release = strdup (tmp);
 beach:
 	RegCloseKey (key);
-	return si;	
+	return si;
 #endif
 	return NULL;
 }
