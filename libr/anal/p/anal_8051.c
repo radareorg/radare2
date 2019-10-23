@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake, dkreuter, astuder  */
+/* radare - LGPL - Copyright 2013-2019 - pancake, dkreuter, astuder  */
 
 #include <string.h>
 #include <r_types.h>
@@ -7,7 +7,8 @@
 #include <r_anal.h>
 
 #include <8051_ops.h>
-#include <8051_disas.h>
+//  #include <8051_disas.h>
+#include "../asm/arch/8051/8051_disas.c"
 
 typedef struct {
 	const char *name;
@@ -1024,13 +1025,9 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		analop_esil (anal, op, addr, copy);
 	}
 
-	// It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
-	if (mask & R_ANAL_OP_MASK_DISASM) {
-		RAsmOp*aop = r_asm_op_new ();
-		r_8051_disas (addr, aop, buf, len);
-		op->mnemonic = strdup(r_strbuf_get (&aop->buf_asm));
-		r_asm_op_free (aop);
-	}
+	int olen = 0;
+	op->mnemonic = r_8051_disas (addr, buf, len, &olen);
+	op->size = olen;
 
 	if (mask & R_ANAL_OP_MASK_HINT) {
 		// TODO: op->hint

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2018 - pancake, astuder */
+/* radare2 - LGPL - Copyright 2013-2019 - pancake, astuder */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -12,9 +12,14 @@
 #include <8051_ass.h>
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int dlen = r_8051_disas (a->pc, op, buf, len);
+	int dlen = 0;
+	char *s = r_8051_disas (a->pc, buf, len, &dlen);
 	if (dlen < 0) {
 		dlen = 0;
+	}
+	if (s) {
+		r_strbuf_set (&op->buf_asm, s);
+		free (s);
 	}
 	op->size = dlen;
 	return dlen;
