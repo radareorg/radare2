@@ -3900,6 +3900,12 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 					count++;
 				}
 			}
+			// find references
+			if (op.disp && op.disp && op.disp != UT64_MAX) {
+				if (found_xref (core, op.addr, op.disp, R_ANAL_REF_TYPE_DATA, count, rad, cfg_debug, cfg_anal_strings)) {
+					count++;
+				}
+			}
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
@@ -5092,6 +5098,8 @@ repeat:
 					}
 				}
 			}
+			break;
+		default:
 			break;
 		}
 		r_anal_esil_stack_free (ESIL);
