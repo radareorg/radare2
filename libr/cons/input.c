@@ -271,6 +271,37 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		case '1':
 			ch = r_cons_readchar ();
 			switch (ch) {
+			case '1': ch = R_CONS_KEY_F1; break;
+			case '2': ch = R_CONS_KEY_F2; break;
+			case '3': ch = R_CONS_KEY_F3; break;
+			case '4': ch = R_CONS_KEY_F4; break;
+			case '5': ch = R_CONS_KEY_F5; break;
+			// case '6': ch = R_CONS_KEY_F5; break;
+			case '7': ch = R_CONS_KEY_F6; break;
+			case '8': ch = R_CONS_KEY_F7; break;
+			case '9': ch = R_CONS_KEY_F8; break;
+#if 0
+			case '5':
+				r_cons_readchar ();
+				ch = 0xf5;
+				break;
+			case '6':
+				r_cons_readchar ();
+				ch = 0xf7;
+				break;
+			case '7':
+				r_cons_readchar ();
+				ch = 0xf6;
+				break;
+			case '8':
+				r_cons_readchar ();
+				ch = 0xf7;
+				break;
+			case '9':
+				r_cons_readchar ();
+				ch = 0xf8;
+				break;
+#endif
 			// Support st/st-256color term and others
 			// for shift+arrows
 			case ';': // arrow+mod
@@ -297,32 +328,6 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				case 'C': ch = 'L'; break;
 				case 'D': ch = 'H'; break;
 				}
-				break;
-/*
-			case '1': ch = R_CONS_KEY_F1; break;
-			case '2': ch = R_CONS_KEY_F2; break;
-			case '3': ch = R_CONS_KEY_F3; break;
-			case '4': ch = R_CONS_KEY_F4; break;
-*/
-			case '5':
-				r_cons_readchar ();
-				ch = 0xf5;
-				break;
-			case '6':
-				r_cons_readchar ();
-				ch = 0xf7;
-				break;
-			case '7':
-				r_cons_readchar ();
-				ch = 0xf6;
-				break;
-			case '8':
-				r_cons_readchar ();
-				ch = 0xf7;
-				break;
-			case '9':
-				r_cons_readchar ();
-				ch = 0xf8;
 				break;
 			} // F9-F12 not yet supported!!
 			break;
