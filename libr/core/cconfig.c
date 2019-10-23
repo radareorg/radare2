@@ -212,13 +212,6 @@ static bool cb_analarmthumb(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analeobjmp(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
-	core->anal->opt.eobjmp = node->i_value;
-	return true;
-}
-
 static bool cb_analdepth(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2844,7 +2837,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("anal.timeout", 0, "Stop analyzing after a couple of seconds");
 
 	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
-	SETCB ("anal.jmp.eob", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
 	SETCB ("anal.jmp.after", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
 	SETCB ("anal.endsize", "true", &cb_anal_endsize, "Adjust function size at the end of the analysis (known to be buggy)");
 	SETCB ("anal.delay", "true", &cb_anal_delay, "Enable delay slot analysis if supported by the architecgture");

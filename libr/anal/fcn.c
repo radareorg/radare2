@@ -23,8 +23,6 @@ extern bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_
 #define MAX_FLG_NAME_SIZE 64
 
 #define FIX_JMP_FWD 0
-#define JMP_IS_EOB 1
-#define JMP_IS_EOB_RANGE 64
 
 // 64KB max size
 // 256KB max function size
@@ -1113,14 +1111,10 @@ repeat:
 				gotoBeach (R_ANAL_RET_END);
 			}
 			{
-				bool must_eob = anal->opt.eobjmp;
-				if (!must_eob) {
-					RIOMap *map = anal->iob.map_get (anal->iob.io, addr);
-					if (map) {
-						must_eob = (op.jump < map->itv.addr || op.jump >= map->itv.addr + map->itv.size);
-					} else {
-						must_eob = true;
-					}
+				bool must_eob = true;
+				RIOMap *map = anal->iob.map_get (anal->iob.io, addr);
+				if (map) {
+					must_eob = (op.jump < map->itv.addr || op.jump >= map->itv.addr + map->itv.size);
 				}
 				if (must_eob) {
 					FITFCNSZ ();
@@ -1196,48 +1190,14 @@ repeat:
 				r_anal_fcn_bb (anal, fcn, op.jump, depth);
 				ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
 			} else {
-				// This code seems to break #1519
-				if (anal->opt.eobjmp) {
-#if JMP_IS_EOB
+				ret = r_anal_fcn_bb (anal, fcn, op.jump, depth);
+				ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
+				if (op.jump < fcn->addr) {
 					if (!overlapped) {
 						bb->jump = op.jump;
 						bb->fail = UT64_MAX;
 					}
-					FITFCNSZ ();
-					r_anal_fcn_bb (anal, fcn, op.jump, depth);
-					ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
 					gotoBeach (R_ANAL_RET_END);
-#else
-					// hardcoded jmp size // must be checked at the end wtf?
-					// always fitfcnsz and retend
-					if (op.jump > fcn->addr + JMP_IS_EOB_RANGE) {
-						ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
-						/* jump inside the same function */
-						gotoBeach (R_ANAL_RET_END);
-					} else if (op.jump < fcn->addr - JMP_IS_EOB_RANGE) {
-						ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
-						/* jump inside the same function */
-						gotoBeach (R_ANAL_RET_END);
-					} else {
-						if (op.jump < addr - JMP_IS_EOB_RANGE) {
-							gotoBeach (R_ANAL_RET_END);
-						}
-						if (op.jump > addr + JMP_IS_EOB_RANGE) {
-							gotoBeach (R_ANAL_RET_END);
-						}
-					}
-#endif
-				}
-				ret = r_anal_fcn_bb (anal, fcn, op.jump, depth);
-				ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
-				if (!anal->opt.eobjmp) {
-					if (op.jump < fcn->addr) {
-						if (!overlapped) {
-							bb->jump = op.jump;
-							bb->fail = UT64_MAX;
-						}
-						gotoBeach (R_ANAL_RET_END);
-					}
 				}
 			}
 
