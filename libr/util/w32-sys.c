@@ -27,7 +27,8 @@ static char *getexe(const char *str) {
 	return argv0;
 }
 
-R_API os_info *r_sys_get_winver() {
+// XXX deprecate and just sse r_sys_info()
+R_API os_info *r_sys_get_winver(void) {
 	HKEY key;
 	DWORD type;
 	DWORD size;

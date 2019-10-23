@@ -258,6 +258,8 @@ static const char *help_msg_u[] = {
 	"uw", "", "alias for wc (requires: e io.cache=true)",
 	"us", "", "alias for s- (seek history)",
 	"uc", "", "undo core commands (uc?, ucl, uc*, ..)",
+	"uniq", "", "filter rows to avoid duplicates",
+	"uname", "", "uname - show system information",
 	NULL
 };
 
@@ -357,6 +359,19 @@ static int r_core_cmd_nullcallback(void *data) {
 	return 1;
 }
 
+static int cmd_uname(void *data, const char *input) { // "uniq"
+	RSysInfo *si = r_sys_info();
+	if (si) {
+		r_cons_printf ("%s", si->sysname);
+		if (strstr (input, "-r")) {
+			r_cons_printf (" %s", si->release);
+		}
+		r_cons_newline ();
+		r_sys_info_free (si);
+	}
+	return 0;
+}
+
 static int cmd_uniq(void *data, const char *input) { // "uniq"
 	RCore *core = (RCore *)data;
 	const char *arg = strchr (input, ' ');
@@ -424,7 +439,7 @@ static int cmd_head (void *data, const char *_input) { // "head"
 	return 0;
 }
 
-static int cmd_uname(void *data, const char *input) {
+static int cmd_undo(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '?': // "u?"
@@ -478,8 +493,10 @@ static int cmd_uname(void *data, const char *input) {
 		r_core_cmdf (data, "wc%s", input + 1);
 		return 1;
 	case 'n': // "un"
-		if (input[1] == 'i' && input[2] == 'q') {
-			cmd_uniq (core, input);
+		if (input[1] == 'a') { // "uname"
+			(void)cmd_uname (core, input);
+		} else if (input[1] == 'i' && input[2] == 'q') {
+			(void)cmd_uniq (core, input);
 		}
 		return 1;
 	}
@@ -4818,7 +4835,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"seek",     "seek to an offset", cmd_seek, cmd_seek_init},
 		{"t",        "type information (cparse)", cmd_type, cmd_type_init},
 		{"Text",     "Text log utility", cmd_log, cmd_log_init},
-		{"u",        "uname/undo", cmd_uname},
+		{"u",        "uname/undo", cmd_undo},
 		{"<",        "pipe into RCons.readChar", cmd_pipein},
 		{"Visual",   "enter visual mode", cmd_visual},
 		{"visualPanels",   "enter visual mode", cmd_panels},

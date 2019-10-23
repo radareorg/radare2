@@ -52,6 +52,7 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 # endif
 #endif
 #if __UNIX__
+# include <sys/utsname.h>
 # include <sys/wait.h>
 # include <sys/stat.h>
 # include <errno.h>
@@ -188,38 +189,34 @@ R_API int r_sys_truncate(const char *file, int sz) {
 #endif
 }
 
+// XXX TODO: deprecate. just uses r_sys_info();
 R_API os_info *r_sys_get_osinfo() {
 #if __WINDOWS__
-	return r_sys_get_winver();
+	return r_sys_get_winver ();
+#else
+	RSysInfo *si = r_sys_info ();
+	if (si) {
+		os_info *info = R_NEW0 (os_info);
+		r_str_ncpy (info->name, si->sysname, sizeof (info->name));
+		char *output = si->release;
+		if (output) {
+			char *dot = strtok (output, ".");
+			if (dot) {
+				info->major = atoi (dot);
+			}
+			dot = strtok (NULL, ".");
+			if (dot) {
+				info->minor = atoi (dot);
+			}
+			dot = strtok (NULL, ".");
+			if (dot) {
+				info->patch = atoi (dot);
+			}
+		}
+		r_sys_info_free (si);
+	}
+	return NULL;
 #endif
-	os_info *info = calloc (1, sizeof (os_info));
-	if (!info) {
-		return NULL;
-	}
-	int len = 0;
-	char *output = r_sys_cmd_str ("uname -s", NULL, &len);
-	if (len) {
-		strncpy (info->name, output, sizeof (info->name));
-		info->name[31] = '\0';
-	}
-	free (output);
-	output = r_sys_cmd_str ("uname -r", NULL, &len);
-	if (len) {
-		char *dot = strtok (output, ".");
-		if (dot) {
-			info->major = atoi (dot);
-		}
-		dot = strtok (NULL, ".");
-		if (dot) {
-			info->minor = atoi (dot);
-		}
-		dot = strtok (NULL, ".");
-		if (dot) {
-			info->patch = atoi (dot);
-		}
-	}
-	free (output);
-	return info;
 }
 
 R_API RList *r_sys_dir(const char *path) {
@@ -1262,4 +1259,41 @@ R_API const char *r_sys_prefix(const char *pfx) {
 		prefix = strdup (pfx);
 	}
 	return prefix;
+}
+
+R_API RSysInfo *r_sys_info(void) {
+#if __UNIX__
+	struct utsname un = {{0}};
+	if (uname (&un) != -1) {
+		RSysInfo *si = R_NEW0 (RSysInfo);
+		if (si) {
+			si->sysname  = strdup (un.sysname);
+			si->nodename = strdup (un.nodename);
+			si->release  = strdup (un.release);
+			si->version  = strdup (un.version);
+			si->machine  = strdup (un.machine);
+			return si;
+		}
+	}
+#elif __WINDOWS__
+	os_info *oi = r_sys_get_winver ();
+	if (oi) {
+		RSysInfo *si = R_NEW0 (RSysInfo);
+		if (si) {
+			si->sysname = strdup ("Windows");
+			si->release = r_str_newf ("%d.%d.%d", oi->major, oi->minor, oi->compilation);
+			return si;
+		}
+	}
+#endif
+	return NULL;
+}
+
+R_API void r_sys_info_free(RSysInfo *si) {
+	free (si->sysname);
+	free (si->nodename);
+	free (si->release);
+	free (si->version);
+	free (si->machine);
+	free (si);
 }
