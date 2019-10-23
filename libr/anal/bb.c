@@ -125,6 +125,9 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, const ut8 *buf, ut64
 				}
 			}
 		}
+			break;
+		default:
+			break;
 		}
 		r_anal_op_free (op);
 	}

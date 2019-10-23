@@ -348,72 +348,75 @@ static void gb_anal_xoaasc (RReg *reg, RAnalOp *op, const ut8 *data) {
 	op->src[0]->reg = r_reg_get (reg, regs_x[data[0] & 7], R_REG_TYPE_GPR);
 	op->src[0]->memref = ((data[0] & 7) == 6);
 	switch (op->type) {
-		case R_ANAL_OP_TYPE_XOR:
-			if (op->src[0]->memref) {
-				r_strbuf_setf (&op->esil, "%s,[1],a,^=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_x[data[0] & 7]);
-			} else {
-				r_strbuf_setf (&op->esil, "%s,a,^=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_x[data[0] & 7]);
-			}
-			break;
-		case R_ANAL_OP_TYPE_OR:
-			if (op->src[0]->memref) {
-				r_strbuf_setf (&op->esil, "%s,[1],a,|=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_x[data[0] &7]);
-			} else {
-				r_strbuf_setf (&op->esil, "%s,a,|=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_x[data[0] & 7]);
-			}
-			break;
-		case R_ANAL_OP_TYPE_AND:
-			if (op->src[0]->memref) {
-				r_strbuf_setf (&op->esil, "%s,[1],a,&=,$z,Z,:=,0,N,:=,1,H,:=,0,C,:=", regs_x[data[0] & 7]);
-			} else {
-				r_strbuf_setf (&op->esil, "%s,a,&=,$z,Z,:=,0,N,:=,1,H,:=,0,C,:=", regs_x[data[0] & 7]);
-			}
-			break;
-		case R_ANAL_OP_TYPE_ADD:
-			if (op->src[0]->memref) {
-				if (data[0] > 0x87) {
-					op->src[1] = r_anal_value_new ();
-					op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
-					r_strbuf_setf ( &op->esil, "C,%s,[1],+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
-				} else {
-					r_strbuf_setf (&op->esil, "%s,[1],a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
-				}
-			} else {
-				if (data[0] > 0x87) {
-					op->src[1] = r_anal_value_new ();
-					op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
-					r_strbuf_setf (&op->esil, "C,%s,+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
-				} else {
-					r_strbuf_setf (&op->esil, "%s,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
-				}
-			}
+	case R_ANAL_OP_TYPE_XOR:
+		if (op->src[0]->memref) {
+			r_strbuf_setf (&op->esil, "%s,[1],a,^=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_x[data[0] & 7]);
+		} else {
+			r_strbuf_setf (&op->esil, "%s,a,^=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_x[data[0] & 7]);
+		}
 		break;
-		case R_ANAL_OP_TYPE_SUB:
-			if (op->src[0]->memref) {
-				if (data[0] > 0x97) {
-					op->src[1] = r_anal_value_new ();
-					op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
-					r_strbuf_setf (&op->esil, "C,%s,[1],+,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
-				} else {
-					r_strbuf_setf (&op->esil, "%s,[1],a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
-				}
-			} else {
-				if (data[0] > 0x97) {
-					op->src[1] = r_anal_value_new ();
-					op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
-					r_strbuf_setf (&op->esil, "C,%s,+,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
-				} else {
-					r_strbuf_setf (&op->esil, "%s,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
-				}
-			}
+	case R_ANAL_OP_TYPE_OR:
+		if (op->src[0]->memref) {
+			r_strbuf_setf (&op->esil, "%s,[1],a,|=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_x[data[0] &7]);
+		} else {
+			r_strbuf_setf (&op->esil, "%s,a,|=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", regs_x[data[0] & 7]);
+		}
 		break;
-		case R_ANAL_OP_TYPE_CMP:
-			if (op->src[0]->memref) {
-				r_strbuf_setf (&op->esil, "%s,[1],a,==,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
+	case R_ANAL_OP_TYPE_AND:
+		if (op->src[0]->memref) {
+			r_strbuf_setf (&op->esil, "%s,[1],a,&=,$z,Z,:=,0,N,:=,1,H,:=,0,C,:=", regs_x[data[0] & 7]);
+		} else {
+			r_strbuf_setf (&op->esil, "%s,a,&=,$z,Z,:=,0,N,:=,1,H,:=,0,C,:=", regs_x[data[0] & 7]);
+		}
+		break;
+	case R_ANAL_OP_TYPE_ADD:
+		if (op->src[0]->memref) {
+			if (data[0] > 0x87) {
+				op->src[1] = r_anal_value_new ();
+				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+				r_strbuf_setf ( &op->esil, "C,%s,[1],+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
 			} else {
-				r_strbuf_setf (&op->esil, "%s,a,==,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
+				r_strbuf_setf (&op->esil, "%s,[1],a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
 			}
-			break;
+		} else {
+			if (data[0] > 0x87) {
+				op->src[1] = r_anal_value_new ();
+				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+				r_strbuf_setf (&op->esil, "C,%s,+,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
+			} else {
+				r_strbuf_setf (&op->esil, "%s,a,+=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=,0,N,:=", regs_x[data[0] & 7]);
+			}
+		}
+		break;
+	case R_ANAL_OP_TYPE_SUB:
+		if (op->src[0]->memref) {
+			if (data[0] > 0x97) {
+				op->src[1] = r_anal_value_new ();
+				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+				r_strbuf_setf (&op->esil, "C,%s,[1],+,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
+			} else {
+				r_strbuf_setf (&op->esil, "%s,[1],a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
+			}
+		} else {
+			if (data[0] > 0x97) {
+				op->src[1] = r_anal_value_new ();
+				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+				r_strbuf_setf (&op->esil, "C,%s,+,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
+			} else {
+				r_strbuf_setf (&op->esil, "%s,a,-=,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
+			}
+		}
+		break;
+	case R_ANAL_OP_TYPE_CMP:
+		if (op->src[0]->memref) {
+			r_strbuf_setf (&op->esil, "%s,[1],a,==,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
+		} else {
+			r_strbuf_setf (&op->esil, "%s,a,==,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", regs_x[data[0] & 7]);
+		}
+		break;
+	default:
+		// not handled yet
+		break;
 	}
 }
 
@@ -425,37 +428,37 @@ static void gb_anal_xoaasc_imm (RReg *reg, RAnalOp *op, const ut8 *data)	//xor ,
 	op->src[0]->absolute = true;
 	op->src[0]->imm = data[1];
 	switch (op->type) {
-		case R_ANAL_OP_TYPE_XOR:
-			r_strbuf_setf (&op->esil, "0x%02x,a,^=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", data[1]);
+	case R_ANAL_OP_TYPE_XOR:
+		r_strbuf_setf (&op->esil, "0x%02x,a,^=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", data[1]);
 		break;
-		case R_ANAL_OP_TYPE_OR:
-			r_strbuf_setf (&op->esil, "0x%02x,a,|=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", data[1]);
+	case R_ANAL_OP_TYPE_OR:
+		r_strbuf_setf (&op->esil, "0x%02x,a,|=,$z,Z,:=,0,N,:=,0,H,:=,0,C,:=", data[1]);
 		break;
-		case R_ANAL_OP_TYPE_AND:
-			r_strbuf_setf (&op->esil, "0x%02x,a,&=,$z,Z,:=,0,N,:=,1,H,:=,0,C,:=", data[1]);
+	case R_ANAL_OP_TYPE_AND:
+		r_strbuf_setf (&op->esil, "0x%02x,a,&=,$z,Z,:=,0,N,:=,1,H,:=,0,C,:=", data[1]);
 		break;
-		case R_ANAL_OP_TYPE_ADD:
-			r_strbuf_setf (&op->esil, "0x%02x,", data[1]);
-			if (data[0] == 0xce) {					//adc
-				op->src[1] = r_anal_value_new ();
-				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
-				r_strbuf_append (&op->esil, "a,+=,C,NUM,7,$c,C,:=,3,$c,H,:=,a,+=,7,$c,C,|,C,:=,3,$c,H,|=,a,a,=,$z,Z,:=,0,N,:=");
-			} else {
-				r_strbuf_append (&op->esil, "a,+=,3,$c,H,:=,7,$c,C,:=,0,N,:=,a,a,=,$z,Z,:=");
-			}
-			break;
-		case R_ANAL_OP_TYPE_SUB:
-			r_strbuf_setf (&op->esil, "0x%02x,", data[1]);
-			if (data[0] == 0xde) {					//sbc
-				op->src[1] = r_anal_value_new ();
-				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
-				r_strbuf_append (&op->esil, "a,-=,C,NUM,8,$b,C,:=,4,$b,H,:=,a,-=,8,$b,C,|,C,=,4,$b,H,|,H,=,a,a,=,$z,Z,:=,1,N,:=");
-			} else {
-				r_strbuf_append (&op->esil, "a,-=,4,$b,H,:=,8,$b,C,:=,1,N,:=,a,a,=,$z,Z,:=");
-			}
-			break;
-		case R_ANAL_OP_TYPE_CMP:
-			r_strbuf_setf (&op->esil, "%d,a,==,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", data[1]);
+	case R_ANAL_OP_TYPE_ADD:
+		r_strbuf_setf (&op->esil, "0x%02x,", data[1]);
+		if (data[0] == 0xce) {					//adc
+			op->src[1] = r_anal_value_new ();
+			op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+			r_strbuf_append (&op->esil, "a,+=,C,NUM,7,$c,C,:=,3,$c,H,:=,a,+=,7,$c,C,|,C,:=,3,$c,H,|=,a,a,=,$z,Z,:=,0,N,:=");
+		} else {
+			r_strbuf_append (&op->esil, "a,+=,3,$c,H,:=,7,$c,C,:=,0,N,:=,a,a,=,$z,Z,:=");
+		}
+		break;
+	case R_ANAL_OP_TYPE_SUB:
+		r_strbuf_setf (&op->esil, "0x%02x,", data[1]);
+		if (data[0] == 0xde) {					//sbc
+			op->src[1] = r_anal_value_new ();
+			op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
+			r_strbuf_append (&op->esil, "a,-=,C,NUM,8,$b,C,:=,4,$b,H,:=,a,-=,8,$b,C,|,C,=,4,$b,H,|,H,=,a,a,=,$z,Z,:=,1,N,:=");
+		} else {
+			r_strbuf_append (&op->esil, "a,-=,4,$b,H,:=,8,$b,C,:=,1,N,:=,a,a,=,$z,Z,:=");
+		}
+		break;
+	case R_ANAL_OP_TYPE_CMP:
+		r_strbuf_setf (&op->esil, "%d,a,==,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", data[1]);
 		break;
 	}
 }

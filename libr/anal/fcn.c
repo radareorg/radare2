@@ -628,6 +628,9 @@ R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr
 			r_strbuf_appendf (anal->cmdtail, "afbe 0x%"PFMT64x " 0x%"PFMT64x "\n",
 				addr_bbsw, addr);
 			return idx + oplen;
+		default:
+			// do nothing here
+			break;
 		}
 		idx += oplen;
 	}
@@ -960,6 +963,8 @@ repeat:
 			break;
 		case R_ANAL_STACK_RESET:
 			bb->stackptr = 0;
+			break;
+		default:
 			break;
 		}
 		if (anal->opt.vars && !varset) {
@@ -1495,6 +1500,8 @@ R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 l
 			break;
 		case R_ANAL_OP_TYPE_UNK:
 			return false;
+		default:
+			break;
 		}
 	}
 	return (pushcnt + movcnt + brcnt > 5);
@@ -2387,6 +2394,8 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
     				}
 				break;
 			case R_ANAL_OP_TYPE_POP:
+				break;
+			default:
 				break;
 			}
 			idx += op.size;
