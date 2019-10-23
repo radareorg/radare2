@@ -5975,8 +5975,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		// reloc is true if address in reloc table
 		pj_kb (pj, "reloc", rel);
 		// wanted the numerical values of the type information
-		pj_kn (pj, "type_num", ds->analop.type);
-		pj_kn (pj, "type2_num", ds->analop.type2);
+		pj_kn (pj, "type_num", (ut64)(ds->analop.type & UT64_MAX));
+		pj_kn (pj, "type2_num", (ut64)(ds->analop.type2 & UT64_MAX));
 		// handle switch statements
 		if (ds->analop.switch_op && r_list_length (ds->analop.switch_op->cases) > 0) {
 			// XXX - the java caseop will still be reported in the assembly,
