@@ -7,7 +7,6 @@
 #include <r_anal.h>
 
 #include <8051_ops.h>
-//  #include <8051_disas.h>
 #include "../asm/arch/8051/8051_disas.c"
 
 typedef struct {

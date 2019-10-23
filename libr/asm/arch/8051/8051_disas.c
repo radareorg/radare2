@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "8051_ops.h"
-#include "8051_disas.h"
 
 static const char *_8051_regs[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", // 0x00
@@ -62,8 +61,7 @@ static char* _replace_register(char* disasm, ut8 arg, ut8 val) {
 	return disasm;
 }
 
-// int r_8051_disas(ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
-R_API char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
+static char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 	int i = 0;
 	while (_8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask)) {
 		i++;
