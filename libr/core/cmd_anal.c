@@ -2817,6 +2817,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case '-': // "af-"
 		if (!input[2]) {
 			cmd_anal_fcn (core, "f-$$");
+			r_core_anal_undefine (core, core->offset);
 		} else if (!strcmp (input + 2, "*")) {
 			RAnalFunction *f;
 			RListIter *iter;
@@ -2830,6 +2831,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			ut64 addr = input[2]
 				? r_num_math (core->num, input + 2)
 				: core->offset;
+			r_core_anal_undefine (core, addr);
 			r_anal_fcn_del_locs (core->anal, addr);
 			r_anal_fcn_del (core->anal, addr);
 		}
