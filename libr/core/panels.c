@@ -610,6 +610,7 @@ static void __maximize_panel_size(RPanels *panels);
 static void __handle_tab(RCore *core);
 static void __handle_tab_nth(RCore *core, int ch);
 static void __handle_tab_next(RCore *core);
+static void __handle_print_rotate(RCore *core);
 static void __handle_tab_prev(RCore *core);
 static void __handle_tab_name(RCore *core);
 static void __handle_tab_new(RCore *core);
@@ -6560,25 +6561,33 @@ void __handle_tab_nth(RCore *core, int ch) {
 }
 
 void __handle_tab_next(RCore *core) {
-	if (core->panels_root->n_panels <= 1) {
-		return;
+	if (core->panels_root->n_panels > 1) {
+		core->panels_root->cur_panels++;
+		core->panels_root->cur_panels %= core->panels_root->n_panels;
+		__set_root_state (core, ROTATE);
 	}
-	core->panels_root->cur_panels++;
-	core->panels_root->cur_panels %= core->panels_root->n_panels;
-	__set_root_state (core, ROTATE);
-	return;
 }
 
+void __handle_print_rotate(RCore *core) {
+	if (r_config_get_i (core->config, "asm.pseudo")) {
+		r_config_toggle (core->config, "asm.pseudo");
+		r_config_toggle (core->config, "asm.esil");
+	} else if (r_config_get_i (core->config, "asm.esil")) {
+		r_config_toggle (core->config, "asm.esil");
+	} else {
+		r_config_toggle (core->config, "asm.pseudo");
+	}
+	__set_refresh_all (core, false, false);
+}
 
 void __handle_tab_prev(RCore *core) {
-	if (core->panels_root->n_panels <= 1) {
-		return;
+	if (core->panels_root->n_panels > 1) {
+		core->panels_root->cur_panels--;
+		if (core->panels_root->cur_panels < 0) {
+			core->panels_root->cur_panels = core->panels_root->n_panels - 1;
+		}
+		__set_root_state (core, ROTATE);
 	}
-	core->panels_root->cur_panels--;
-	if (core->panels_root->cur_panels < 0) {
-		core->panels_root->cur_panels = core->panels_root->n_panels - 1;
-	}
-	__set_root_state (core, ROTATE);
 }
 
 void __handle_tab_name(RCore *core) {
@@ -7005,6 +7014,9 @@ repeat:
 		if (__check_root_state (core, ROTATE)) {
 			goto exit;
 		}
+		break;
+	case 'O':
+		__handle_print_rotate (core);
 		break;
 	case 'n':
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {

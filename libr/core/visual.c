@@ -2437,7 +2437,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		}
 		break;
 		case 'o': // tab TAB
-			nextPrintFormat(core);
+			nextPrintFormat (core);
 			break;
 		case 'O': // tab TAB
 		case 9: // tab TAB
@@ -2476,7 +2476,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						}
 					}
 				} else {
-					prevPrintFormat(core);
+					prevPrintFormat (core);
 				}
 			}
 			break;
