@@ -26,6 +26,7 @@ SDB_OBJS+=match.o
 SDB_OBJS+=num.o
 SDB_OBJS+=util.o
 SDB_OBJS+=journal.o
+SDB_OBJS+=diff.o
 
 SDBOBJS=$(addprefix ${SDBPATH},${SDB_OBJS})
 

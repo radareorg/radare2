@@ -38,6 +38,7 @@ libsdb_sources = [
   'src/cdb.c',
   'src/cdb_make.c',
   'src/dict.c',
+  'src/diff.c',
   'src/disk.c',
   'src/fmt.c',
   'src/ht_uu.c',

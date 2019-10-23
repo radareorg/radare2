@@ -143,6 +143,23 @@ SDB_API int sdb_unset(Sdb*, const char *key, ut32 cas);
 SDB_API int sdb_unset_like(Sdb *s, const char *k);
 SDB_API char** sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback cb);
 
+// diffing
+typedef struct sdb_diff_t {
+	const SdbList *path;
+	const char *k;
+	const char *v; // if null, k is a namespace
+	bool add;
+} SdbDiff;
+
+// Format diff in a readable form into str. str, size and return are like in snprintf.
+SDB_API int sdb_diff_format(char *str, int size, const SdbDiff *diff);
+
+typedef void (*SdbDiffCallback)(const SdbDiff *diff, void *user);
+
+// Returns true iff the contents of a and b are equal including contained namespaces
+// If cb is non-null, it will be called subsequently with differences. 
+SDB_API bool sdb_diff(Sdb *a, Sdb *b, SdbDiffCallback cb, void *cb_user);
+
 // Gets a pointer to the value associated with `key`.
 SDB_API char *sdb_get(Sdb*, const char *key, ut32 *cas);
 
