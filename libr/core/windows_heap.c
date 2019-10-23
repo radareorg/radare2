@@ -390,6 +390,7 @@ static DWORD WINAPI __th_QueryDebugBuffer(th_query_params *params) {
 	if (params->hanged) {
 		RtlDestroyQueryDebugBuffer (params->db);
 	}
+	free (params);
 	return 0;
 }
 
@@ -435,22 +436,27 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 	if (!db) {
 		return NULL;
 	}
-	th_query_params params = { dbg, mask, db, 0, false, false };
-	HANDLE th = CreateThread (NULL, 0, __th_QueryDebugBuffer, &params, 0, NULL);
+	th_query_params *params = R_NEW0 (th_query_params);
+	if (!params) {
+		RtlDestroyQueryDebugBuffer (db);
+		return NULL;
+	}
+	*params =  (th_query_params) { dbg, mask, db, 0, false, false };
+	HANDLE th = CreateThread (NULL, 0, __th_QueryDebugBuffer, params, 0, NULL);
 	if (th) {
 		WaitForSingleObject (th, 10000);
 	} else {
 		RtlDestroyQueryDebugBuffer (db);
 		return NULL;
 	}
-	if (!params.fin) {
+	if (!params->fin) {
 		// why after it fails the first time it blocks on the second? That's annoying
 		// It stops blocking if i pause radare in the debugger. is it a race?
 		// why it fails with 1000000 allocs? also with processes with segment heap enabled?
-		params.hanged = true;
+		params->hanged = true;
 		eprintf ("RtlQueryProcessDebugInformation hanged\n");
 		db = NULL;
-	} else if (params.ret){
+	} else if (params->ret) {
 		RtlDestroyQueryDebugBuffer (db);
 		db = NULL;
 		r_sys_perror ("InitHeapInfo");
