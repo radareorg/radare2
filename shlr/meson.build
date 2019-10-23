@@ -165,6 +165,7 @@ sdb_files = [
   'sdb/src/cdb.c',
   'sdb/src/cdb_make.c',
   'sdb/src/dict.c',
+  'sdb/src/diff.c',
   'sdb/src/disk.c',
   'sdb/src/fmt.c',
   'sdb/src/ht_uu.c',
