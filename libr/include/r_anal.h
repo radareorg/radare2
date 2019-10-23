@@ -834,9 +834,9 @@ typedef enum r_anal_data_type_t {
 typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic.. it actually contains the args too, we should replace rasm with this */
 	ut64 addr;      /* address */
-	_RAnalOpType type;	/* type of opcode */
+	ut32 type;	/* type of opcode */
 	RAnalOpPrefix prefix;	/* type of opcode prefix (rep,lock,..) */
-	_RAnalOpType type2;	/* used by java */
+	ut32 type2;	/* used by java */
 	RAnalStackOp stackop;	/* operation on stack? */
 	_RAnalCond cond;	/* condition type */
 	int size;       /* size in bytes of opcode */
