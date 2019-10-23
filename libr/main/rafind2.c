@@ -23,7 +23,7 @@ static bool quiet = false;
 static int mode = R_SEARCH_STRING;
 static ut64 cur = 0;
 static ut8 *buf = NULL;
-static char *curfile = NULL;
+static const char *curfile = NULL;
 static ut64 bsize = 4096;
 static int hexstr = 0;
 static int widestr = 0;
@@ -118,7 +118,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(char *argv0, int line) {
-	printf ("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] file|dir ..\n", argv0);
+	printf ("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
 	}
@@ -147,9 +147,8 @@ static int show_help(char *argv0, int line) {
 	return 0;
 }
 
-static int rafind_open_file(char *file) {
+static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 	RListIter *iter;
-	RIO *io = NULL;
 	RSearch *rs = NULL;
 	const char *kw;
 	bool last = false;
@@ -167,7 +166,7 @@ static int rafind_open_file(char *file) {
 		return 0;
 	}
 
-	io = r_io_new ();
+	RIO *io = r_io_new ();
 	if (!io) {
 		return 1;
 	}
@@ -176,6 +175,10 @@ static int rafind_open_file(char *file) {
 		eprintf ("Cannot open file '%s'\n", file);
 		result = 1;
 		goto err;
+	}
+
+	if (data) {
+		r_io_write_at (io, 0, data, datalen);
 	}
 
 	rs = r_search_new (mode);
@@ -284,10 +287,19 @@ err:
 }
 static int rafind_open_dir(const char *dir);
 
-static int rafind_open(char *file) {
+static int rafind_open(const char *file) {
+	if (!strcmp (file, "-")) {
+		int sz = 0;
+		ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
+		char *ff = r_str_newf ("malloc://%d", sz);
+		int res = rafind_open_file (ff, buf, sz);
+		free (ff);
+		free (buf);
+		return res;
+	}
 	return r_file_is_directory (file)
 		? rafind_open_dir (file)
-		: rafind_open_file (file);
+		: rafind_open_file (file, NULL, -1);
 }
 
 static int rafind_open_dir(const char *dir) {
