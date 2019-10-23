@@ -474,6 +474,7 @@ R_API char *r_table_tojson(RTable *t) {
 }
 
 R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
+	r_return_if_fail (t && un);
 	RTableRow *row;
 	RListIter *iter, *iter2;
 	ut64 uv = r_num_math (NULL, un);
@@ -502,6 +503,7 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 			break;
 		case '~':
 			match = strstr (nn, un) != NULL;
+			break;
 		case '\0':
 			break;
 		}
@@ -626,6 +628,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		eprintf (" col0/gt/0x800        grep rows matching col0 > 0x800\n");
 		eprintf (" col0/lt/0x800        grep rows matching col0 < 0x800\n");
 		eprintf (" col0/eq/0x800        grep rows matching col0 == 0x800\n");
+		eprintf (" name/str/warn        grep rows matching col(name).str(warn)\n");
 		eprintf (" size/sum             sum all the values of given column\n");
 		return false;
 	}
@@ -668,6 +671,10 @@ R_API bool r_table_query(RTable *t, const char *q) {
 			r_list_free (list);
 			r_table_filter (t, 0, '+', op);
 			free (op);
+		} else if (!strcmp (operation, "str")) {
+			if (operand) {
+				r_table_filter (t, col, '~', operand);
+			}
 		} else if (!strcmp (operation, "cols")) {
 			char *op = strdup (operand?operand: "");
 			RList *list = r_str_split_list (op, "/", 0);
