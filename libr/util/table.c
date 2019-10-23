@@ -669,7 +669,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 			r_table_filter (t, 0, '+', op);
 			free (op);
 		} else if (!strcmp (operation, "cols")) {
-			char *op = strdup (operand);
+			char *op = strdup (operand?operand: "");
 			RList *list = r_str_split_list (op, "/", 0);
 			r_list_prepend (list, strdup (columnName));
 			r_table_columns (t, list); // select/reorder columns
