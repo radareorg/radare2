@@ -199,9 +199,119 @@ static bool _edf_reg_set(RAnalEsilDFG *edf, const char *reg, RGraphNode *node) {
 }
 #endif
 
+static int _rv_find_cmp (void *incoming, void *in, void *user) {
+	EsilDFGRegVar *rv_incoming = (EsilDFGRegVar *)incoming;
+	EsilDFGRegVar *rv_in = (EsilDFGRegVar *)in;
+
+// first handle the simple cases without intersection
+	if (rv_incoming->to < rv_in->from) {
+		return -1;
+	}
+	if (rv_in->to < rv_incoming->from) {
+		return 1;
+	}
+
+#if 0
+     =incoming=
+=========in=========
+#endif
+	if (rv_in->from <= rv_incoming->from && rv_in->to <= rv_incoming->to) {
+		return 0;
+	}
+
+#if 0
+   =incoming=
+      =in=
+
+enqueue the non-intersecting ends in the todo-queue
+#endif
+	RAnalEsilDFG *dfg = (RAnalEsilDFG *)user;
+	if (rv_incoming->from < rv_in->from && rv_in->to < rv_incoming->to) {
+		// lower part
+		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		rv[0] = rv_incoming[0];
+		rv->to = rv_in->from - 1;
+		r_queue_enqueue (dfg->todo, rv);
+		// upper part
+		rv = R_NEW (EsilDFGRegVar);
+		rv[0] = rv_incoming[0];
+		rv->from = rv_in->to + 1;
+		r_queue_enqueue (dfg->todo, rv);
+		return 0;
+	}
+
+#if 0
+   =incoming=
+  =in=
+
+similar to the previous case, but this time only enqueue 1 half
+#endif
+	if (rv_in->from <= rv_incoming->from && rv_in->to < rv_incoming->to) {
+		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		rv[0] = rv_incoming[0];
+		rv->from = rv_in->to + 1;
+		r_queue_enqueue (dfg->todo, rv);
+		return 0;
+	}
+
+#if 0
+   =incoming=
+          =in=
+
+#endif
+	EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+	rv[0] = rv_incoming[0];
+	rv->to = rv_in->from - 1;
+	r_queue_enqueue (dfg->todo, rv);
+	return 0;
+}
+
+static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
+	if (!dfg || !sdb_num_exists (dfg->regs, reg)) {
+		return NULL;
+	}
+	EsilDFGRegVar *rv = R_NEW0 (EsilDFGRegVar);
+	if (!rv) {
+		return NULL;
+	}
+	const ut64 v = sdb_num_get (dfg->regs, reg, NULL);
+	rv->from = (v & 0xffffffff00000000) >> 32;
+	rv->to = v & 0xffffffff;
+	r_queue_enqueue (dfg->todo, rv);
+	RQueue *parts = r_queue_new (8);
+	// log2((search_rv.to + 1) - search_rv.from) maybe better?
+	// wat du if this fails?
+	while (!r_queue_is_empty (dfg->todo)) {
+		rv = r_queue_dequeue (dfg->todo);
+		EsilDFGRegVar *part_rv = r_rbtree_cont_find (dfg->reg_vars, rv, _rv_find_cmp, dfg->todo);
+		if (part_rv) {
+			r_queue_enqueue (parts, part_rv->node);
+		}
+		free (rv);
+	}
+	RGraphNode *reg_node = NULL;
+	switch (parts->size) {
+	case 0:
+		break;
+	case 1:
+		reg_node = r_queue_dequeue (parts);
+		break;
+	default:
+		reg_node = r_graph_add_node (dfg->flow, r_anal_esil_dfg_node_new (dfg, "merge"));
+		do {
+			r_graph_add_edge (dfg->flow, r_queue_dequeue(parts), reg_node);
+		} while (!r_queue_is_empty (parts));
+		break;
+	}
+	r_queue_free (parts);
+	return reg_node;
+}
+
+#if 0
 static void* _edf_reg_get(RAnalEsilDFG *edf, const char *reg) {
 	return edf ? sdb_ptr_get (edf->regs, reg, 0) : NULL;
 }
+#endif
 
 static bool edf_consume_2_set_reg(RAnalEsil *esil);
 static bool edf_consume_2_push_1(RAnalEsil *esil);
