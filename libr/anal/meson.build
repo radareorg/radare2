@@ -143,7 +143,6 @@ r_anal = library('r_anal', r_anal_sources,
     r_syscall_dep,
     r_flag_dep,
     r_hash_dep,
-    sdb_dep,
     java_dep,
     capstone_dep
   ],

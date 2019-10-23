@@ -7,8 +7,7 @@ r_syscall = library('r_syscall', r_syscall_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [
-    r_util_dep,
-    sdb_dep
+    r_util_dep
   ],
   install: true,
   implicit_include_directories: false,

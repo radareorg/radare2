@@ -23,7 +23,7 @@ r_cons_sources = [
 r_cons = library('r_cons', r_cons_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
-  dependencies: [r_util_dep, sdb_dep],
+  dependencies: [r_util_dep],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
