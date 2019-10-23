@@ -413,7 +413,7 @@ static int cont_rbtree_cmp_wrapper(const void *incoming, const RBNode *in_tree, 
 static int cont_rbtree_search_cmp_wrapper(const void *incoming, const RBNode *in_tree, void *user) {
 	RCRBCmpWrap *cmp_wrap = (RCRBCmpWrap *)user;
 	RContRBNode *in_tree_node = container_of ((RBNode*)in_tree, RContRBNode, node);
-	return cmp_wrap->cmp ((RBNode*)incoming, in_tree_node->data, user);
+	return cmp_wrap->cmp ((void *)incoming, in_tree_node->data, cmp_wrap->user);
 }
 
 static int cont_rbtree_free_cmp_wrapper(const void *data, const RBNode *in_tree, void *user) {
@@ -463,16 +463,15 @@ static void cont_node_free(RBNode *node) {
 }
 
 R_API bool r_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
-	r_return_val_if_fail (tree && cmp && tree->root, false);
+	if (!(tree && cmp && tree->root)) {
+		return false;
+	}
 	RCRBCmpWrap cmp_wrap = { cmp, tree->free, user };
 	RContRBNode data_wrap = { { { NULL, NULL }, false }, data };
 	RBNode *root_node = &tree->root->node;
 	const bool ret = r_rbtree_aug_delete (&root_node, &data_wrap, cont_rbtree_free_cmp_wrapper, cont_node_free, NULL, &cmp_wrap);
 	if (root_node != (&tree->root->node)) {	//can this crash?
 		tree->root = container_of (root_node, RContRBNode, node); //cursed augmentation garbage
-	}
-	if (!ret) {
-		eprintf ("Deletion failed\n");
 	}
 	return ret;
 }

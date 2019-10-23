@@ -1276,7 +1276,6 @@ typedef struct r_anal_esil_dfg_t {
 typedef struct r_anal_esil_dfg_node_t {
 	// add more info here
 	ut32 idx;
-	RGraphNode *origin;	//this is for regs
 	RStrBuf *content;
 	RAnalEsilDFGBlockType type;
 } RAnalEsilDFGNode;
