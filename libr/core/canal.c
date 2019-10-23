@@ -3901,7 +3901,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				}
 			}
 			// find references
-			if (op.disp && op.disp && op.disp != UT64_MAX) {
+			if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
 				if (found_xref (core, op.addr, op.disp, R_ANAL_REF_TYPE_DATA, count, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
@@ -4609,6 +4609,9 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 						}
 					}
 				}
+				break;
+			default:
+				break;
 			}
 		}
 	}
