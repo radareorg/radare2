@@ -1605,6 +1605,13 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (!*strsub) {
 				r_str_ncpy (strsub, r_asm_op_get_asm (&asmop), sizeof (strsub) -1 );
 			}
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+				if (fcn) {
+					r_parse_varsub (core->parser, fcn, addr, asmop.size,
+							strsub, strsub, sizeof (strsub));
+				}
+			}
 			pj_ks (pj, "disasm", strsub);
 			// apply pseudo if needed
 			{
@@ -1746,6 +1753,13 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			printline ("opcode", "%s\n", r_asm_op_get_asm (&asmop));
 			if (!*disasm) {
 				r_str_ncpy (disasm, r_asm_op_get_asm (&asmop), sizeof (disasm) - 1);
+			}
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+				if (fcn) {
+					r_parse_varsub (core->parser, fcn, addr, asmop.size,
+							disasm, disasm, sizeof (disasm));
+				}
 			}
 			printline ("disasm", "%s\n", disasm);
 			{
