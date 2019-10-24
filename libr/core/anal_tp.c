@@ -239,6 +239,8 @@ R_API RStrBuf *var_get_constraint (RAnal *a, RAnalVar *var) {
 			r_strbuf_append (sb, sdb_fmt ("> 0x%"PFMT64x "", val));
 			high = true;
 			break;
+		default:
+			break;
 		}
 		if (low && high && i != n-2) {
 			r_strbuf_append (sb, " || ");

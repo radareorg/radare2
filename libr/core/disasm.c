@@ -3649,6 +3649,8 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 				r_cons_printf (" ; arg.set %d", v);
 			}
 			break;
+		default:
+			break;
 		}
 	}
 	if (ds->asmop.payload != 0) {

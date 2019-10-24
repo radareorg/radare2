@@ -6430,7 +6430,6 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	RListIter *iter;
 	RList *list;
 	RNum *num = NULL;
-	char *out;
 	int n;
 
 	switch (input[0]) {
