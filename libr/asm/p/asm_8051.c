@@ -8,8 +8,8 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-#include <8051_disas.h>
 #include <8051_ass.h>
+#include "../arch/8051/8051_disas.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int dlen = 0;

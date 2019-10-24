@@ -71,7 +71,7 @@ r_asm_sources = [
   'p/asm_z80.c',
   #'arch/6502/6502dis.c',
   'arch/amd29k/amd29k.c',
-  'arch/8051/8051_disas.c',
+  #'arch/8051/8051_disas.c',
   'arch/8051/8051_ass.c',
   'arch/arc/gnu/arc-dis.c',
   'arch/arc/gnu/arc-ext.c',
