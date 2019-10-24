@@ -400,11 +400,11 @@ static const char *help_msg_drx[] = {
 static const char *help_msg_drm[] = {
 	"Usage: drm", " [reg] [idx] [wordsize] [= value]", "Show multimedia packed registers",
 	"drm", " xmm0", "Show all packings of xmm0",
-	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", //broken
-	"drmb", " <reg>", "Show register as bytes",
-	"drmw", " <reg>", "Show register as words",
-	"drmd", " <reg>", "Show register as doublewords",
-	"drmq", " <reg>", "Show register as quadwords",
+	//	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", //broken
+	"drmb", " [reg]", "Show registers as bytes",
+	"drmw", " [reg]", "Show registers as words",
+	"drmd", " [reg]", "Show registers as doublewords",
+	"drmq", " [reg]", "Show registers as quadwords",
 	NULL
 };
 
