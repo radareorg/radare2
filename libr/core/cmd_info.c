@@ -408,7 +408,8 @@ static int __r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
 	RCoreFile *cf = r_core_file_cur (r);
 	if (cf) {
-		result = r_bin_reload (r->bin, cf->fd, baseaddr);
+		RBinFile *bf = r_bin_file_find_by_fd (r->bin, cf->fd);
+		result = r_bin_reload (r->bin, bf->id, baseaddr);
 	}
 	r_core_bin_set_env (r, r_bin_cur (r->bin));
 	return result;

@@ -228,64 +228,71 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
 	return r_bin_open_io (bin, opt);
 }
 
-// XXX this function is full of mess, shuold be rewritten after the refactorings
-R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
-	RIOBind *iob = &(bin->iob);
+R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
+	r_return_val_if_fail (bin, false);
 
-	r_return_val_if_fail (bin && iob && iob->io, false);
-
-	const char *name = iob->fd_get_name (iob->io, fd);
-	RBinFile *bf = r_bin_file_find_by_name (bin, name);
+	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);
 	if (!bf) {
 		eprintf ("r_bin_reload: No file to reopen\n");
 		return false;
 	}
 	RBinOptions opt;
-	r_bin_options_init (&opt, fd, baseaddr, bf->loadaddr, bin->rawstr);
+	r_bin_options_init (&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
+	opt.filename = bf->file;
 
-	// invalidate current object reference
-	bf->o = NULL;
-	ut64 sz = iob->fd_size (iob->io, fd);
-	if (sz == UT64_MAX) {
-		sz = 128 * 1024;
+	bool res = r_bin_open_buf (bin, bf->buf, &opt);
+	r_bin_file_delete (bin, bf->id);
+	return res;
+}
+
+R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinOptions *opt) {
+	r_return_val_if_fail (bin && opt, false);
+	r_return_val_if_fail ((st64)opt->sz >= 0, false);
+
+	RListIter *it;
+	RBinXtrPlugin *xtr;
+
+	bin->rawstr = opt->rawstr;
+	bin->file = opt->filename;
+	if (opt->loadaddr == UT64_MAX) {
+		opt->loadaddr = 0;
 	}
-	// TODO: deprecate, the code in the else should be enough
-	if (sz == UT64_MAX) {
-		if (!iob->fd_is_dbg (iob->io, fd)) {
-			// too big, probably wrong
-			eprintf ("Warning: file is too big and not in debugger\n");
+	if (!opt->sz) {
+		opt->sz = r_buf_size (buf);
+	}
+
+	RBinFile *bf = NULL;
+	if (bin->use_xtr && !opt->pluginname) {
+		// XXX - for the time being this is fine, but we may want to
+		// change the name to something like
+		// <xtr_name>:<bin_type_name>
+		r_list_foreach (bin->binxtrs, it, xtr) {
+			if (!xtr->check_buffer) {
+				eprintf ("Missing check_buffer callback for '%s'\n", xtr->name);
+				continue;
+			}
+			if (xtr->check_buffer (buf)) {
+				if (xtr->extract_from_buffer || xtr->extractall_from_buffer ||
+				    xtr->extract_from_bytes || xtr->extractall_from_bytes) {
+					bf = r_bin_file_xtr_load_buffer (bin, xtr,
+						bin->file, buf, opt->baseaddr, opt->loadaddr,
+						opt->xtr_idx, opt->fd, bin->rawstr);
+				}
+			}
+		}
+	}
+	if (!bf) {
+		bf = r_bin_file_new_from_buffer (bin, bin->file, buf, bin->rawstr,
+			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname);
+		if (!bf) {
 			return false;
 		}
-		// attempt a local open and read
-		// This happens when a plugin like debugger does not have a
-		// fixed size.
-		// if there is no fixed size or its MAXED, there is no way to
-		// definitively
-		// load the bin-properly.  Many of the plugins require all
-		// content and are not
-		// stream based loaders
-		int tfd = iob->fd_open (iob->io, name, R_PERM_R, 0);
-		if (tfd < 0) {
-			return false;
-		}
-		sz = iob->fd_size (iob->io, tfd);
-		if (sz == UT64_MAX) {
-			iob->fd_close (iob->io, tfd);
-			return false;
-		}
-		iob->fd_close (iob->io, tfd);
+	}
+	if (!r_bin_file_set_cur_binfile (bin, bf)) {
 		return false;
 	}
-	bool res = false;
-	ut8 *buf_bytes = calloc (1, sz + 1);
-	if (buf_bytes) {
-		if (iob->fd_read_at (iob->io, fd, 0LL, buf_bytes, sz)) {
-			r_bin_file_set_bytes (bf, buf_bytes, sz, false);
-			res = true;
-		}
-		free (buf_bytes);
-	}
-	return res && r_bin_open_io (bin, &opt);
+	r_id_storage_set (bin->ids, bin->cur, bf->id);
+	return true;
 }
 
 R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
@@ -294,13 +301,9 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->io: NULL;
-	RListIter *it;
-	RBinXtrPlugin *xtr;
 
 	bool is_debugger = iob->fd_is_dbg (io, opt->fd);
 	const char *fname = iob->fd_get_name (io, opt->fd);
-	bin->rawstr = opt->rawstr;
-	bin->file = fname;
 	if (opt->loadaddr == UT64_MAX) {
 		opt->loadaddr = 0;
 	}
@@ -338,38 +341,10 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		buf = slice;
 	}
 
-	RBinFile *bf = NULL;
-	if (bin->use_xtr && !opt->pluginname) {
-		// XXX - for the time being this is fine, but we may want to
-		// change the name to something like
-		// <xtr_name>:<bin_type_name>
-		r_list_foreach (bin->binxtrs, it, xtr) {
-			if (!xtr->check_buffer) {
-				eprintf ("Missing check_buffer callback for '%s'\n", xtr->name);
-				continue;
-			}
-			if (xtr->check_buffer (buf)) {
-				if (xtr->extract_from_buffer || xtr->extractall_from_buffer ||
-				    xtr->extract_from_bytes || xtr->extractall_from_bytes) {
-					bf = r_bin_file_xtr_load_buffer (bin, xtr,
-						fname, buf, opt->baseaddr, opt->loadaddr,
-						opt->xtr_idx, opt->fd, bin->rawstr);
-				}
-			}
-		}
-	}
-	if (!bf) {
-		bf = r_bin_file_new_from_buffer (bin, fname, buf, bin->rawstr,
-			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname);
-		if (!bf) {
-			return false;
-		}
-	}
-	if (!r_bin_file_set_cur_binfile (bin, bf)) {
-		return false;
-	}
-	r_id_storage_set (bin->ids, bin->cur, bf->id);
-	return true;
+	opt->filename = fname;
+	bool res = r_bin_open_buf (bin, buf, opt);
+	r_buf_free (buf);
+	return res;
 }
 
 R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
