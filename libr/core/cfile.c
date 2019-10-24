@@ -117,8 +117,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	if (file) {
 		bool had_rbin_info = false;
 
-		if (ofile) {
-			if (r_bin_file_delete (core->bin, ofile->fd)) {
+		if (ofile && bf) {
+			if (r_bin_file_delete (core->bin, bf->id)) {
 				had_rbin_info = true;
 			}
 		}

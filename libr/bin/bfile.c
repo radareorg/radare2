@@ -545,19 +545,20 @@ R_API ut64 r_bin_file_delete_all(RBin *bin) {
 	return 0;
 }
 
-R_API bool r_bin_file_delete(RBin *bin, ut32 bin_fd) {
+R_API bool r_bin_file_delete(RBin *bin, ut32 bin_id) {
+	r_return_val_if_fail (bin, false);
+
 	RListIter *iter;
-	RBinFile *bf = r_bin_cur (bin);
-	if (bin && bf) {
-		r_list_foreach (bin->binfiles, iter, bf) {
-			if (bf && bf->fd == bin_fd) {
-				if (bf->fd == bin_fd) {
-					//avoiding UaF due to dead reference
-					bin->cur = NULL;
-				}
-				r_list_delete (bin->binfiles, iter);
-				return true;
+	RBinFile *bf, *cur = r_bin_cur (bin);
+
+	r_list_foreach (bin->binfiles, iter, bf) {
+		if (bf && bf->id == bin_id) {
+			if (cur && cur->id == bin_id) {
+				// avoiding UaF due to dead reference
+				bin->cur = NULL;
 			}
+			r_list_delete (bin->binfiles, iter);
+			return true;
 		}
 	}
 	return false;

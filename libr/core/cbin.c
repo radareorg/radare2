@@ -998,8 +998,7 @@ static int bin_dwarf(RCore *core, int mode) {
 	r_cons_break_pop ();
 	R_FREE (lastFileContents);
 	R_FREE (lastFileContents2);
-	// this list is owned by rbin, not us, we shouldn't free it
-	// r_list_free (list);
+	r_list_free (list);
 	free (lastFileLines);
 	return true;
 }
@@ -2377,6 +2376,7 @@ static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at) {
 		return false;
 	}
 	// let the section refere to the map as a memory-map
+	free (map->name);
 	map->name = r_str_newf ("mmap.%s", sec->name);
 	return true;
 }
@@ -3936,16 +3936,6 @@ R_API bool r_core_bin_delete(RCore *core, ut32 bf_id) {
 	if (bf_id == UT32_MAX) {
 		return false;
 	}
-#if 0
-	if (!r_bin_object_delete (core->bin, bf_id)) {
-		return false;
-	}
-// TODO: use rbinat()
-	RBinFile *bf = r_bin_cur (core->bin);
-	if (bf) {
-		r_io_use_fd (core->io, bf->fd);
-	}
-#endif
 	r_bin_file_delete (core->bin, bf_id);
 	RBinFile *bf = r_bin_file_at (core->bin, core->offset);
 	if (bf) {

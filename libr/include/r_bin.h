@@ -649,6 +649,7 @@ typedef struct r_bin_options_t {
 	int xtr_idx; // load Nth binary
 	int rawstr;
 	int fd;
+	const char *filename;
 } RBinOptions;
 
 R_API RBinImport *r_bin_import_clone(RBinImport *o);
@@ -664,7 +665,8 @@ R_API RBin *r_bin_new(void);
 R_API void r_bin_free(RBin *bin);
 R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt);
 R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt);
-R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
+R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinOptions *opt);
+R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr);
 
 // plugins/bind functions
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
@@ -756,7 +758,7 @@ R_API bool r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd);
 R_API bool r_bin_file_set_cur_by_id(RBin *bin, ut32 bin_id);
 R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name);
 R_API ut64 r_bin_file_delete_all(RBin *bin);
-R_API bool r_bin_file_delete(RBin *bin, ut32 bin_fd);
+R_API bool r_bin_file_delete(RBin *bin, ut32 bin_id);
 R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBinFileHash>*/ **old_file_hashes);
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile);
 R_API void r_bin_file_hash_free(RBinFileHash *fhash);

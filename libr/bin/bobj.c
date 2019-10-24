@@ -335,8 +335,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 				REBASE_PADDR (o, l, RBinReloc);
 				o->relocs = list2rbtree (l);
 				l->free = NULL;
-				// causes double free
-				//r_list_free (l);
+				r_list_free (l);
 			}
 		}
 	}

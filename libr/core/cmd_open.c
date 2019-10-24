@@ -158,17 +158,6 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static RBinFile *find_binfile_by_id(RBin *bin, ut32 id) {
-	RListIter *it;
-	RBinFile *bf;
-	r_list_foreach (bin->binfiles, it, bf) {
-		if (bf->id == id) {
-			return bf;
-		}
-	}
-	return NULL;
-}
-
 static void cmd_open_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, o);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, o*, o_star);
@@ -297,7 +286,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case ' ': // "ob "
 	{
-		ut32 fd;
+		ut32 id;
 		int n;
 		const char *tmp;
 		char *v;
@@ -313,12 +302,12 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			break;
 		}
 		tmp = r_str_word_get0 (v, 0);
-		fd = *v && r_is_valid_input_num_value (core->num, tmp)
+		id = *v && r_is_valid_input_num_value (core->num, tmp)
 			? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		if (n == 2) {
 			tmp = r_str_word_get0 (v, 1);
 		} else {
-			binfile_num = fd;
+			binfile_num = id;
 		}
 		r_core_bin_raise (core, binfile_num);
 		free (v);
@@ -351,23 +340,21 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		if (input[2] == '*') {
 			r_bin_file_delete_all (core->bin);
 		} else {
-			ut32 fd;
+			ut32 id;
 			value = r_str_trim_ro (input + 2);
 			if (!value) {
 				eprintf ("Invalid argument\n");
 				break;
 			}
-			fd = (*value && r_is_valid_input_num_value (core->num, value)) ?
+			id = (*value && r_is_valid_input_num_value (core->num, value)) ?
 					r_get_input_num_value (core->num, value) : UT32_MAX;
-			RBinFile *bf = find_binfile_by_id (core->bin, fd);
+			RBinFile *bf = r_bin_file_find_by_id (core->bin, id);
 			if (!bf) {
 				eprintf ("Invalid binid\n");
 				break;
 			}
-			if (r_core_bin_delete (core, bf->id)) {
-				if (!r_bin_file_delete (core->bin, fd)) {
-					eprintf ("Cannot find an RBinFile associated with that fd.\n");
-				}
+			if (!r_core_bin_delete (core, bf->id)) {
+				eprintf ("Cannot find an RBinFile associated with that id.\n");
 			}
 		}
 		break;
