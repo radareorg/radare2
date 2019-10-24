@@ -2668,7 +2668,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 							continue;
 						}
 						int pi;
-						r_cons_printf("%s = ", item->name);
+						r_cons_printf("%-5s = ", item->name);
 						for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
 							if (pack_show[pi]) {
 								for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
