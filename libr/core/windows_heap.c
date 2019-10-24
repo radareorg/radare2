@@ -74,6 +74,20 @@ static size_t RtlpLFHKeyOffset = 0;
 	}\
 	hb->dwFlags |= ((flags) >> SHIFT) << SHIFT;
 
+static bool __is_windows_ten() {
+	int major = 0;
+	RSysInfo *info = r_sys_info ();
+	if (info && info->version) {
+		char *dot = strchr (info->version, '.');
+		if (dot) {
+			*dot = '\0';
+			major = atoi (info->version);
+		}
+	}
+	r_sys_info_free (info);
+	return major == 10;
+}
+
 static char *get_type(WPARAM flags) {
 	char *state = "";
 	switch (flags & 0xFFFF) {
@@ -376,6 +390,7 @@ static DWORD WINAPI __th_QueryDebugBuffer(th_query_params *params) {
 	if (params->hanged) {
 		RtlDestroyQueryDebugBuffer (params->db);
 	}
+	free (params);
 	return 0;
 }
 
@@ -421,22 +436,27 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 	if (!db) {
 		return NULL;
 	}
-	th_query_params params = { dbg, mask, db, 0, false, false };
-	HANDLE th = CreateThread (NULL, 0, __th_QueryDebugBuffer, &params, 0, NULL);
+	th_query_params *params = R_NEW0 (th_query_params);
+	if (!params) {
+		RtlDestroyQueryDebugBuffer (db);
+		return NULL;
+	}
+	*params =  (th_query_params) { dbg, mask, db, 0, false, false };
+	HANDLE th = CreateThread (NULL, 0, __th_QueryDebugBuffer, params, 0, NULL);
 	if (th) {
 		WaitForSingleObject (th, 10000);
 	} else {
 		RtlDestroyQueryDebugBuffer (db);
 		return NULL;
 	}
-	if (!params.fin) {
+	if (!params->fin) {
 		// why after it fails the first time it blocks on the second? That's annoying
 		// It stops blocking if i pause radare in the debugger. is it a race?
 		// why it fails with 1000000 allocs? also with processes with segment heap enabled?
-		params.hanged = true;
+		params->hanged = true;
 		eprintf ("RtlQueryProcessDebugInformation hanged\n");
 		db = NULL;
-	} else if (params.ret){
+	} else if (params->ret) {
 		RtlDestroyQueryDebugBuffer (db);
 		db = NULL;
 		r_sys_perror ("InitHeapInfo");
@@ -447,13 +467,11 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 	}
 
 	// TODO: Not do this
-	os_info *osi = r_sys_get_osinfo ();
-	if (mask == PDI_HEAPS && osi->major >= 10) {
+	if (mask == PDI_HEAPS && __is_windows_ten ()) {
 		db = RtlCreateQueryDebugBuffer (0, FALSE);
 		if (!db) {
 			return NULL;
 		}
-		free (osi);
 		PHeapInformation heapInfo = R_NEW0 (HeapInformation);
 		if (!heapInfo) {
 			RtlDestroyQueryDebugBuffer (db);
@@ -490,7 +508,6 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 		r_list_free (heaps);
 		return db;
 	}
-	free (osi);
 	return NULL;
 }
 
@@ -1150,11 +1167,9 @@ static void w32_list_heaps(RCore *core, const char format) {
 	ULONG pid = core->dbg->pid;
 	PDEBUG_BUFFER db = InitHeapInfo (core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	if (!db) {
-		os_info *info = r_sys_get_osinfo ();
-		if (info->major >= 10) {
+		if (__is_windows_ten ()) {
 			db = GetHeapBlocks (pid, core->dbg);
 		}
-		free (info);
 		if (!db) {
 			eprintf ("Couldn't get heap info.\n");
 			return;
@@ -1198,14 +1213,12 @@ static void w32_list_heaps(RCore *core, const char format) {
 
 static void w32_list_heaps_blocks(RCore *core, const char format) {
 	DWORD pid = core->dbg->pid;
-	os_info *info = r_sys_get_osinfo ();
 	PDEBUG_BUFFER db;
-	if (info->major >= 10) {
+	if (__is_windows_ten ()) {
 		db = GetHeapBlocks (pid, core->dbg);
 	} else {
 		db = InitHeapInfo (core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	}
-	free (info);
 	if (!db) {
 		eprintf ("Couldn't get heap info.\n");
 		return;

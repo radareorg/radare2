@@ -21,14 +21,6 @@ enum {
 	R_SYS_BITS_64 = 8,
 };
 
-typedef struct _os_info {
-	char name[32];
-	int major;
-	int minor;
-	int patch;
-	int compilation;
-} os_info; // XXX deprecate, just use uname();
-
 typedef struct {
 	char *sysname;
 	char *nodename;
@@ -37,8 +29,6 @@ typedef struct {
 	char *machine;
 } RSysInfo;
 
-R_API os_info *r_sys_get_osinfo(void); // XXX deprecate, just use uname()
-R_API os_info *r_sys_get_winver(void); // XXX deprecate, just use uname()
 R_API RSysInfo *r_sys_info(void);
 R_API void r_sys_info_free(RSysInfo *si);
 
