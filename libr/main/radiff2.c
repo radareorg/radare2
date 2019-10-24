@@ -20,7 +20,8 @@ enum {
 	MODE_DIST_LEVENSTEIN,
 	MODE_CODE,
 	MODE_GRAPH,
-	MODE_COLS
+	MODE_COLS,
+	MODE_COLSII
 };
 
 enum {
@@ -445,6 +446,7 @@ static int show_help(int v) {
 			"  -S [name]  sort code diff (name, namelen, addr, size, type, dist) (only for -C or -g)\n"
 			"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 			"  -x         show two column hexdump diffing\n"
+			"  -X         show two column hexII diffing\n"
 			"  -u         unified output (---+++)\n"
 			"  -U         unified output using system 'diff'\n"
 			"  -v         show version information\n"
@@ -564,6 +566,107 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 			if (!eq) {
 				r_cons_printf (Color_RESET);
 			}
+		}
+		r_cons_printf ("\n");
+		r_cons_flush ();
+	}
+	r_cons_break_end ();
+	r_cons_printf ("\n"Color_RESET);
+	r_cons_flush ();
+	if (as != bs) {
+		r_cons_printf ("...\n");
+	}
+}
+
+static void dump_cols_hexii(ut8 *a, int as, ut8 *b, int bs, int w) {
+	bool spacy = false;
+	ut32 sz = R_MIN (as, bs);
+	ut32 i, j;
+	int ctx = DUMP_CONTEXT;
+	int pad = 0;
+	if (!a || !b || as < 0 || bs < 0) {
+		return;
+	}
+	PrintfCallback p = r_cons_printf;
+	r_cons_break_push (NULL, NULL);
+	for (i = 0; i < sz; i += w) {
+		if (r_cons_is_breaked()) {
+			break;
+		}
+		if (i + w >= sz) {
+			pad = w - sz + i;
+			w = sz - i;
+		}
+		bool eq = !memcmp (a + i, b + i, w);
+		if (eq) {
+			ctx--;
+			if (ctx == -1) {
+				r_cons_printf ("...\n");
+				continue;
+			}
+			if (ctx < 0) {
+				ctx = -1;
+				continue;
+			}
+		} else {
+			ctx = DUMP_CONTEXT;
+		}
+		r_cons_printf (eq? Color_GREEN: Color_RED);
+		r_cons_printf ("0x%08x%c ", i, eq? ' ': '!');
+		r_cons_printf (Color_RESET);
+		for (j = 0; j < w; j++) {
+			bool eq2 = a[i + j] == b[i + j];
+			if (!eq) {
+				r_cons_printf (eq2? Color_GREEN: Color_RED);
+			}
+			ut8 ch = a[i + j];
+			if (spacy) {
+				p (" ");
+			}
+			if (ch == 0x00) {
+				p ("  ");
+			} else if (ch == 0xff) {
+				p ("##");
+			} else if (IS_PRINTABLE (ch)) {
+				p (".%c", ch);
+			} else {
+				p ("%02x", ch);
+			}
+			if (!eq) {
+				r_cons_printf (Color_RESET);
+			}
+		}
+		for (j = 0; j < pad; j++) {
+			r_cons_printf ("  ");
+		}
+		for (j = 0; j < pad; j++) {
+			r_cons_printf (" ");
+		}
+		r_cons_printf ("   ");
+		for (j = 0; j < w; j++) {
+			bool eq2 = a[i + j] == b[i + j];
+			if (!eq) {
+				r_cons_printf (eq2? Color_GREEN: Color_RED);
+			}
+			ut8 ch = b[i + j];
+			if (spacy) {
+				p (" ");
+			}
+			if (ch == 0x00) {
+				p ("  ");
+			} else if (ch == 0xff) {
+				p ("##");
+			} else if (IS_PRINTABLE (ch)) {
+				p (".%c", ch);
+			} else {
+				p ("%02x", ch);
+			}
+			if (!eq) {
+				r_cons_printf (Color_RESET);
+			}
+		}
+		for (j = 0; j < pad; j++) {
+			r_cons_printf ("  ");
 		}
 		r_cons_printf ("\n");
 		r_cons_flush ();
@@ -822,7 +925,7 @@ R_API int r_main_radiff2(int argc, char **argv) {
 	double sim = 0.0;
 	evals = r_list_newf (NULL);
 
-	while ((o = r_getopt (argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxt:zqZ")) != -1) {
+	while ((o = r_getopt (argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxXt:zqZ")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = r_optarg;
@@ -914,6 +1017,9 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			break;
 		case 'x':
 			mode = MODE_COLS;
+			break;
+		case 'X':
+			mode = MODE_COLSII;
 			break;
 		case 'u':
 			diffmode = 'u';
@@ -1072,6 +1178,12 @@ R_API int r_main_radiff2(int argc, char **argv) {
 	(void)r_cons_new ();
 
 	switch (mode) {
+	case MODE_COLSII:
+		if (!c && !r_list_empty (evals)) {
+			c = opencore (NULL);
+		}
+		dump_cols_hexii (bufa, sza, bufb, szb, (r_cons_get_size (NULL) > 112)? 16: 8);
+		break;
 	case MODE_COLS:
 		if (!c && !r_list_empty (evals)) {
 			c = opencore (NULL);
