@@ -74,7 +74,7 @@ endif
 ifeq (1,$(USE_PTRACE_WRAP))
 MODS+=ptrace-wrap
 endif
-SDB_URL=git://github.com/radare/sdb
+SDB_URL=git://github.com/radareorg/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 SPP_URL=git://github.com/radare/spp
 PTRACE_WRAP_URL=git://github.com/thestr4ng3r/ptrace-wrap
