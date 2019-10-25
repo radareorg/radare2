@@ -538,7 +538,13 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 
 	r_list_free (lvls);
 	RAnalRefStr *out = R_NEW0 (RAnalRefStr);
-	out->cols = col_str;
 	out->str = str;
+	out->cols = col_str;
 	return out;
+}
+
+R_API void r_anal_reflines_str_free(RAnalRefStr *refstr) {
+	free (refstr->str);
+	free (refstr->cols);
+	free (refstr);
 }

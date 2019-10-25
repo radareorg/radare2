@@ -295,6 +295,7 @@ static void ds_print_pre(RDisasmState *ds);
 static void ds_pre_line(RDisasmState *ds);
 static void ds_begin_line(RDisasmState *ds);
 static void ds_newline(RDisasmState *ds);
+static void ds_begin_cont(RDisasmState *ds);
 static void ds_print_esil_anal(RDisasmState *ds);
 static void ds_reflines_init(RDisasmState *ds);
 static void ds_align_comment(RDisasmState *ds);
@@ -1229,6 +1230,17 @@ static void ds_newline(RDisasmState *ds) {
 		pj_end (ds->pj);
 	} else {
 		r_cons_newline ();
+	}
+}
+
+static void ds_begin_cont(RDisasmState *ds) {
+	ds_begin_line (ds);
+	ds_setup_print_pre (ds, false, false);
+	if (!ds->linesright && ds->show_lines_bb && ds->line) {
+		RAnalRefStr *refstr = r_anal_reflines_str (ds->core, ds->at,
+		                    ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
+		ds_print_ref_lines (refstr->str, refstr->cols, ds);
+		r_anal_reflines_str_free (refstr);
 	}
 }
 
@@ -3545,18 +3557,7 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 static void ds_begin_nl_comment(RDisasmState *ds) {
 	if (ds->cmtcount > 0 && ds->show_comment_right) {
 		ds_newline (ds);
-		ds_begin_line (ds);
-		ds_setup_print_pre (ds, false, false);
-		if (!ds->linesright && ds->show_lines_bb && ds->line) {
-			RAnalRefStr *refstr = r_anal_reflines_str (ds->core, ds->at,
-			                    ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
-			char *refline = refstr->str;
-			char *reflinecol = refstr->cols;
-			ds_print_ref_lines (refline, reflinecol, ds);
-			free (refline);
-			free (reflinecol);
-			free (refstr);
-		}
+		ds_begin_cont (ds);
 	} else if (ds->cmtcount > 0 || !ds->show_comment_right) {
 		ds_begin_line (ds);
 		ds_pre_xrefs (ds, false);
@@ -4484,18 +4485,7 @@ static void delete_last_comment(RDisasmState *ds) {
 	const char *begin = ll;
 	if (begin) {
 		ds_newline (ds);
-		ds_begin_line (ds);
-		ds_setup_print_pre (ds, false, false);
-		if (!ds->linesright && ds->show_lines_bb && ds->line) {
-			RAnalRefStr *refstr = r_anal_reflines_str (ds->core, ds->at,
-			                    ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
-			char *refline = refstr->str;
-			char *reflinecol = refstr->cols;
-			ds_print_ref_lines (refline, reflinecol, ds);
-			free (refline);
-			free (reflinecol);
-			free (refstr);
-		}
+		ds_begin_cont (ds);
 	}
 }
 
