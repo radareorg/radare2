@@ -60,7 +60,6 @@ static const char* r_vline_uc[] = {
 	"<", // ARROW_LEFT
 };
 
-
 #define DS_PRE_NONE         0
 #define DS_PRE_EMPTY        1
 #define DS_PRE_FCN_HEAD     2
@@ -448,11 +447,7 @@ R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				const char *mn = r_str_lchr (map->name, '/');
-				if (mn) {
-					strncpy (section, mn + 1, sizeof (section) - 1);
-				} else {
-					strncpy (section, map->name, sizeof (section) - 1);
-				}
+				r_str_ncpy (section, mn? mn + 1: map->name, sizeof (section));
 				break;
 			}
 		}
@@ -1822,11 +1817,14 @@ static void ds_show_functions(RDisasmState *ds) {
 		switch (f->type) {
 		case R_ANAL_FCN_TYPE_FCN:
 		case R_ANAL_FCN_TYPE_SYM:
-			fcntype = "fcn"; break;
+			fcntype = "fcn";
+			break;
 		case R_ANAL_FCN_TYPE_IMP:
-			fcntype = "imp"; break;
+			fcntype = "imp";
+			break;
 		default:
-			fcntype = "loc"; break;
+			fcntype = "loc";
+			break;
 		}
 		//ds_set_pre (ds, core->cons->vline[CORNER_TL]);
 		if (ds->show_lines_fcn) {
