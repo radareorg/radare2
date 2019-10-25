@@ -1075,7 +1075,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			ptr = strchr (ptr, ' ');
 			sig = ptr? atoi (ptr + 1): 0;
 			eprintf ("Sending signal '%d' to pid '%d'\n", sig, pid);
-			r_debug_kill (core->dbg, 0, false, sig);
+			r_debug_kill (core->dbg, pid, false, sig);
 		} else eprintf ("cmd_debug_pid: Invalid arguments (%s)\n", input);
 		break;
 	case 'n': // "dpn"
