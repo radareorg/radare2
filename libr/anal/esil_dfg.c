@@ -65,7 +65,7 @@ static int _rv_del_alloc_cmp (void *incoming, void *in, void *user) {
 	}
 	RAnalEsilDFG *dfg = (RAnalEsilDFG *)user;
 
-#if 0
+/*
 the following cases are about intersection, here some ascii-art, so you understand what I do
 
      =incoming=
@@ -77,7 +77,7 @@ shrink first half (in1)
      =incoming=
 =in1=          =in2=
 
-#endif
+*/
 
 	if (rv_in->from < rv_incoming->from && rv_incoming->to < rv_in->to) {
 #if DFG_DEBUG
@@ -91,12 +91,12 @@ shrink first half (in1)
 		return 1;
 	}
 
-#if 0
+/*
    =incoming=
       =in=
 
 enqueue the non-intersecting ends in the todo-queue
-#endif
+*/
 
 	if (rv_incoming->from < rv_in->from && rv_in->to < rv_incoming->to) {
 #if DFG_DEBUG
@@ -115,12 +115,12 @@ enqueue the non-intersecting ends in the todo-queue
 		return 0;
 	}
 
-#if 0
+/*
    =incoming=
    =in=
 
 similar to the previous case, but this time only enqueue 1 half
-#endif
+*/
 
 	if (rv_incoming->from == rv_in->from && rv_in->to < rv_incoming->to) {
 #if DFG_DEBUG
@@ -133,11 +133,11 @@ similar to the previous case, but this time only enqueue 1 half
 		return 0;
 	}
 
-#if 0
+/*
    =incoming=
          =in=
 
-#endif
+*/
 
 	if (rv_incoming->from < rv_in->from && rv_in->to == rv_incoming->to) {
 #if DFG_DEBUG
@@ -156,7 +156,7 @@ similar to the previous case, but this time only enqueue 1 half
 		return 0;
 	}
 
-#if 0
+/*
     =incoming=
 ===in===
 
@@ -164,8 +164,7 @@ shrink in
 
     =incoming=
 =in=
-
-#endif
+*/
 
 	if (rv_in->to <= rv_incoming->to) {
 #if DFG_DEBUG
@@ -179,7 +178,7 @@ shrink in
 		return 1;
 	}
 
-#if 0
+/*
    =incoming=
          ===in===
 
@@ -188,7 +187,7 @@ up-shrink in
    =incoming=
              =in=
 
-#endif
+*/
 
 #if DFG_DEBUG
 	eprintf ("del_alloc_cmp: case 8 - return -1\n");
@@ -216,11 +215,10 @@ static bool _edf_reg_set (RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) 
 		return false;
 	}
 	const ut64 v = sdb_num_get (dfg->regs, reg, NULL);
-	rv->from = (v & 0xffffffff00000000) >> 32;
-	rv->to = v & 0xffffffff;
+	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
+	rv->to = v & UT32_MAX;
 	r_queue_enqueue (dfg->todo, rv);
 	while (!r_queue_is_empty (dfg->todo)) {
-	// this approach is not as fast as it could be
 	// rbtree api does sadly not allow deleting multiple items at once :(
 		rv = r_queue_dequeue (dfg->todo);
 		r_rbtree_cont_delete (dfg->reg_vars, rv, _rv_del_alloc_cmp, dfg);
@@ -231,8 +229,8 @@ static bool _edf_reg_set (RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) 
 		free (rv);
 	}
 	rv = R_NEW0 (EsilDFGRegVar);
-	rv->from = (v & 0xffffffff00000000) >> 32;
-	rv->to = v & 0xffffffff;
+	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
+	rv->to = v & UT32_MAX;
 	rv->node = node;
 	r_rbtree_cont_insert (dfg->reg_vars, rv, _rv_ins_cmp, NULL);
 	return true;
@@ -251,20 +249,20 @@ static int _rv_find_cmp (void *incoming, void *in, void *user) {
 		return 1;
 	}
 
-#if 0
+/*
      =incoming=
 =========in=========
-#endif
+*/
 	if (rv_in->from <= rv_incoming->from && rv_incoming->to <= rv_in->to) {
 		return 0;
 	}
 
-#if 0
+/*
    =incoming=
       =in=
 
 enqueue the non-intersecting ends in the todo-queue
-#endif
+*/
 	RQueue *todo = (RQueue *)user;
 	if (rv_incoming->from < rv_in->from && rv_in->to < rv_incoming->to) {
 		// lower part
@@ -280,12 +278,12 @@ enqueue the non-intersecting ends in the todo-queue
 		return 0;
 	}
 
-#if 0
+/*
    =incoming=
   =in=
 
 similar to the previous case, but this time only enqueue 1 half
-#endif
+*/
 	if (rv_in->from <= rv_incoming->from && rv_in->to < rv_incoming->to) {
 		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
 		rv[0] = rv_incoming[0];
@@ -294,11 +292,11 @@ similar to the previous case, but this time only enqueue 1 half
 		return 0;
 	}
 
-#if 0
+/*
    =incoming=
           =in=
 
-#endif
+*/
 	EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
 	rv[0] = rv_incoming[0];
 	rv->to = rv_in->from - 1;
@@ -343,8 +341,8 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 		return NULL;
 	}
 	const ut64 v = sdb_num_get (dfg->regs, reg, NULL);
-	rv->from = (v & 0xffffffff00000000) >> 32;
-	rv->to = v & 0xffffffff;
+	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
+	rv->to = v & UT32_MAX;
 	r_queue_enqueue (dfg->todo, rv);
 	RQueue *parts = r_queue_new (8);
 
