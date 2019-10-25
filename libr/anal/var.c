@@ -68,13 +68,29 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 	return true;
 }
 
-R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, R_IFNULL("int32_t") const char *type, int size, bool isarg, R_NONNULL const char *name) {
+static const char *__int_type_from_size(int size) {
+	switch (size) {
+	case 1: return "int8_t";
+	case 2: return "int16_t";
+	case 4: return "int32_t";
+	case 8: return "int64_t";
+	default: return NULL;
+	}
+}
+
+R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name) {
 	r_return_val_if_fail (a && name, false);
 	if (!kind) {
 		kind = R_ANAL_VAR_KIND_BPV;
 	}
 	if (!type) {
-		type = "int32_t";
+		type = __int_type_from_size (size);
+		if (!type) {
+			type = __int_type_from_size (a->bits);
+		}
+		if (!type) {
+			type = "int32_t";
+		}
 	}
 	switch (kind) {
 	case R_ANAL_VAR_KIND_BPV: // base pointer var/args
