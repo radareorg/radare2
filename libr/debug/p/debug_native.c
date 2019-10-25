@@ -1514,7 +1514,7 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 	return last;
 }
 
-static bool r_debug_native_kill (RDebug *dbg, int pid, int tid, int sig) {
+static bool r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 	bool ret = false;
 	if (pid == 0) {
 		pid = dbg->pid;

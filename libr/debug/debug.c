@@ -1577,7 +1577,7 @@ R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
 		return false;
 	}
 	if (dbg->h && dbg->h->kill) {
-		if (pid > 0 && tid > 0) {
+		if (pid > 0) {
 			return dbg->h->kill (dbg, pid, tid, sig);
 		}
 		return -1;
