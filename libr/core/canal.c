@@ -728,24 +728,19 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 }
 
 static void set_fcn_name_from_flag(RAnalFunction *fcn, RFlagItem *f, const char *fcnpfx) {
-#define SET_NAME(newname) \
-	R_FREE (fcn->name); \
-	fcn->name = (newname); \
-	is_name_set = true
-
-	bool is_name_set = false;
+	bool nameChanged = false;
 	if (f && f->name) {
 		if (!strncmp (fcn->name, "loc.", 4) || !strncmp (fcn->name, "fcn.", 4)) {
-			SET_NAME (strdup (f->name));
+			r_anal_fcn_rename (fcn, f->name);
+			nameChanged = true;
 		} else if (strncmp (f->name, "sect", 4)) {
-			SET_NAME (strdup (f->name));
+			r_anal_fcn_rename (fcn, f->name);
+			nameChanged = true;
 		}
 	}
-	if (!is_name_set) {
-		SET_NAME (r_str_newf ("%s.%08" PFMT64x, fcnpfx, fcn->addr));
+	if (!nameChanged) {
+		r_anal_fcn_rename (fcn, sdb_fmt ("%s.%08" PFMT64x, fcnpfx, fcn->addr));
 	}
-
-#undef SET_NAME
 }
 
 static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {

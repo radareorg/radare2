@@ -1537,6 +1537,7 @@ R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type);
 R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type);
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);
 R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name);
+R_API void r_anal_fcn_rename(RAnalFunction *f, const char *newName);
 R_API RList *r_anal_fcn_list_new(void);
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_fcn_free(void *fcn);
