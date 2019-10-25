@@ -100,8 +100,6 @@ static int gdbr_connect_lldb(libgdbr_t *g) {
 
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
-	RStrBuf tmp;
-	r_strbuf_init (&tmp);
 	int ret, i;
 	if (!g || !host) {
 		return -1;
@@ -115,14 +113,10 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 			g->stub_features.pkt_sz = R_MAX (env_pktsz, GDB_MAX_PKTSZ);
 		}
 	}
-	ret = snprintf (tmp.buf, sizeof (tmp.buf) - 1, "%d", port);
-	if (!ret) {
-		return -1;
-	}
 	if (*host == '/') {
 		ret = r_socket_connect_serial (g->sock, host, port, 1);
 	} else {
-		ret = r_socket_connect_tcp (g->sock, host, tmp.buf, 400);
+		ret = r_socket_connect_tcp (g->sock, host, sdb_fmt("%d", port), 400);
 	}
 	if (!ret) {
 		return -1;
@@ -188,8 +182,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		// return -1;
 	}
 	// Set thread for "step" and "continue" operations
-	snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hc-1");
-	ret = send_msg (g, tmp.buf);
+	ret = send_msg (g, "Hc-1");
 	if (ret < 0) {
 		return ret;
 	}
@@ -689,11 +682,11 @@ fail:
 }
 
 int gdbr_step(libgdbr_t *g, int tid) {
-	char thread_id[64] = {0};
+	char thread_id[64] = { 0 };
 	if (tid <= 0 || write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid,
 			     g->stub_features.multiprocess) < 0) {
 		send_vcont (g, "vCont?", NULL);
-		send_vcont (g, "Hc0", NULL);
+		send_vcont (g, sdb_fmt ("Hc%d", tid), NULL);
 		return send_vcont (g, CMD_C_STEP, NULL);
 	}
 	return send_vcont (g, CMD_C_STEP, thread_id);
