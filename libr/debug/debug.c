@@ -607,7 +607,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		return false;
 	}
 
-	r_io_system (dbg->iob.io, sdb_fmt ("pid %d", pid));
+	r_io_system (dbg->iob.io, sdb_fmt ("pid %d", tid));
 
 	dbg->pid = pid;
 	dbg->tid = tid;

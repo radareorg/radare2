@@ -33,7 +33,7 @@ static int r_debug_gdb_step(RDebug *dbg) {
 	if (!desc) {
 		return R_DEBUG_REASON_UNKNOWN;
 	}
-	gdbr_step (desc, -1); // TODO handle thread specific step?
+	gdbr_step (desc, dbg->tid);
 	return true;
 }
 
@@ -1065,11 +1065,12 @@ static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int r_debug_gdb_select(RDebug *dbg, int pid, int tid) {
-	if (!desc  || !*origriogdb ) {
+static bool r_debug_gdb_select(RDebug *dbg, int pid, int tid) {
+	if (!desc || !*origriogdb) {
 		desc = NULL;	//TODO hacky fix, please improve. I would suggest using a **desc instead of a *desc, so it is automatically updated
 		return false;
 	}
+
 	return gdbr_select (desc, pid, tid) >= 0;
 }
 
