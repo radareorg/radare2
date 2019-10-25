@@ -1239,12 +1239,8 @@ static void ds_begin_cont(RDisasmState *ds) {
 	if (!ds->linesright && ds->show_lines_bb && ds->line) {
 		RAnalRefStr *refstr = r_anal_reflines_str (ds->core, ds->at,
 		                    ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
-		char *refline = refstr->str;
-		char *reflinecol = refstr->cols;
-		ds_print_ref_lines (refline, reflinecol, ds);
-		free (refline);
-		free (reflinecol);
-		free (refstr);
+		ds_print_ref_lines (refstr->str, refstr->cols, ds);
+		r_anal_reflines_str_free (refstr);
 	}
 }
 
