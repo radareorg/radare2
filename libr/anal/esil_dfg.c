@@ -384,7 +384,11 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 		reg_node = r_queue_dequeue (parts);
 		break;
 	default:
-		reg_node = r_graph_add_node (dfg->flow, r_anal_esil_dfg_node_new (dfg, "merge"));
+		{
+			RAnalEsilDFGNode *_reg_node = r_anal_esil_dfg_node_new (dfg, "merge to ");
+			r_strbuf_appendf (_reg_node->content, "%s:var_%d", reg, dfg->idx++);
+			reg_node = r_graph_add_node (dfg->flow, _reg_node);
+		}
 		do {
 			r_graph_add_edge (dfg->flow, r_queue_dequeue(parts), reg_node);
 		} while (!r_queue_is_empty (parts));
