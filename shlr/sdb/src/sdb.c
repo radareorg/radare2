@@ -1117,6 +1117,21 @@ SDB_API void sdb_drain(Sdb *s, Sdb *f) {
 	}
 }
 
+static int copy_foreach_cb(void *user, const char *k, const char *v) {
+	Sdb *dst = user;
+	sdb_set (dst, k, v, 0);
+	return true;
+}
+
+SDB_API void sdb_copy(Sdb *src, Sdb *dst) {
+	sdb_foreach (src, copy_foreach_cb, dst);
+	SdbListIter *it;
+	SdbNs *ns;
+	ls_foreach (src->ns, it, ns) {
+		sdb_copy (ns->sdb, sdb_ns (dst, ns->name, true));
+	}
+}
+
 typedef struct {
 	Sdb *sdb;
 	const char *key;
