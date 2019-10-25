@@ -1357,7 +1357,7 @@ static int cmd_kuery(void *data, const char *input) {
 	case ' ':
 		out = sdb_querys (s, NULL, 0, input + 1);
 		if (out) {
-			r_cons_println (out);
+			r_cons_print (out);
 		}
 		free (out);
 		break;
