@@ -2931,6 +2931,7 @@ static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name)
 	case 'a':
 	case 't':
 	case 'd':
+	case 'x':
 		return (name[2] == '\0' || name[2] == '.') &&
 			ELF_ST_TYPE (sym->st_info) == STT_NOTYPE &&
 			ELF_ST_BIND (sym->st_info) == STB_LOCAL &&
@@ -2943,6 +2944,7 @@ static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name)
 static bool is_special_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
 	switch (bin->ehdr.e_machine) {
 	case EM_ARM:
+	case EM_AARCH64:
 		return is_special_arm_symbol (bin, sym, name);
 	default:
 		return false;
