@@ -58,7 +58,9 @@ static bool linux_attach_single_pid (RDebug *dbg, int ptid);
 static void linux_attach_all (RDebug *dbg);
 static void linux_remove_thread (RDebug *dbg, int pid);
 static void linux_add_and_attach_new_thread (RDebug *dbg, int tid);
-static int linux_stop_process(int pid);
+static bool linux_stop_thread (int tid);
+static bool linux_kill_thread (int tid, int signo);
+static void linux_dbg_wait_break (RDebug *dbg);
 
 int linux_handle_signals (RDebug *dbg) {
 	int pid = dbg->tid;
@@ -297,12 +299,20 @@ void linux_attach_new_process (RDebug *dbg) {
 		r_list_free (dbg->threads);
 		dbg->threads = NULL;
 	}
-	int stopped = linux_stop_process (dbg->forked_pid);
-	if (!stopped) {
+	if (!linux_stop_thread (dbg->forked_pid)) {
 		eprintf ("Could not stop pid (%d)\n", dbg->forked_pid);
 	}
 	linux_attach (dbg, dbg->forked_pid);
 	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
+}
+
+static void linux_dbg_wait_break(RDebug *dbg) {
+	// Stop the currently debugged thread
+	if (!linux_kill_thread (dbg->tid, SIGSTOP)) {
+		eprintf ("Could not stop pid (%d)\n", dbg->pid);
+		return;
+	}
+	r_cons_break_pop ();
 }
 
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
@@ -313,11 +323,17 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
 	if (pid == -1) {
 		flags |= WNOHANG;
 	}
+
+	r_cons_break_push ((RConsBreak)linux_dbg_wait_break, dbg);
 repeat:
 	for (;;) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		void *bed = r_cons_sleep_begin ();
 		int ret = waitpid (pid, &status, flags);
 		r_cons_sleep_end (bed);
+
 		if (ret < 0) {
 			perror ("waitpid");
 			break;
@@ -406,13 +422,25 @@ static void linux_add_and_attach_new_thread(RDebug *dbg, int tid) {
 	dbg->n_threads++;
 }
 
-static int linux_stop_process(int pid) {
-	int status;
-	int ret = syscall (__NR_tkill, pid, SIGSTOP);
-	if (ret != -1) {
-		ret = waitpid (pid, &status, __WALL);
+static bool linux_kill_thread(int tid, int signo) {
+	int ret = syscall (__NR_tkill, tid, signo);
+
+	if (ret == -1) {
+		perror ("tkill");
+		return false;
 	}
-	return ret == pid;
+
+	return true;
+}
+
+static bool linux_stop_thread(int tid) {
+	int status;
+	int ret = -1;
+	if (linux_kill_thread (tid, SIGSTOP)) {
+		ret = waitpid (tid, &status, __WALL);
+	}
+
+	return ret == tid;
 }
 
 static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
