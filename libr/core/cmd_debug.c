@@ -400,11 +400,11 @@ static const char *help_msg_drx[] = {
 static const char *help_msg_drm[] = {
 	"Usage: drm", " [reg] [idx] [wordsize] [= value]", "Show multimedia packed registers",
 	"drm", " xmm0", "Show all packings of xmm0",
-	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", //broken
-	"drmb", " <reg>", "Show register as bytes",
-	"drmw", " <reg>", "Show register as words",
-	"drmd", " <reg>", "Show register as doublewords",
-	"drmq", " <reg>", "Show register as quadwords",
+	//	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", //broken
+	"drmb", " [reg]", "Show registers as bytes",
+	"drmw", " [reg]", "Show registers as words",
+	"drmd", " [reg]", "Show registers as doublewords",
+	"drmq", " [reg]", "Show registers as quadwords",
 	NULL
 };
 
@@ -2557,11 +2557,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		break;
 	case 'm': // "drm"
 		if (str[1]=='?') {
-			// eprintf ("usage: drm [reg] [idx] [wordsize] [= value]\n");
 			r_core_cmd_help (core, help_msg_drm);
 		} else if (str[1] == ' ' || str[1] == 'b' || str[1] == 'd' || str[1] == 'w' || str[1] == 'q') {
 			char explicit_index = 0;
 			char explicit_size = 0;
+			char explicit_name = 0;
 #define NUM_PACK_TYPES 4
 			int pack_sizes[NUM_PACK_TYPES] = { 8, 16, 32, 64 };
 			char *pack_format[NUM_PACK_TYPES] = { "%s0x%02" PFMT64x, "%s0x%04" PFMT64x, "%s0x%08" PFMT64x, "%s0x%016" PFMT64x };
@@ -2571,8 +2571,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			int size = 0; // auto
 			char *q, *p, *name;
 			char *eq = NULL;
-			if (str[1] == ' ') {
+			if (str[1] == ' ' && str[2] != '\x00') {
 				name = strdup (str + 2);
+				explicit_name = 1;
 				if (eq) {
 					*eq++ = 0;
 				}
@@ -2602,7 +2603,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 			} else {
 				explicit_size = 1;
-				name = strdup (str + 3);
+				if(str[2] == ' ' && str[3] != '\x00')	{
+					name = strdup (str + 3);
+					explicit_name = 1;
+				}
 				if (str[1] == 'b') { // "drmb"
 					size = pack_sizes[0];
 					pack_show[0] = 1;
@@ -2617,41 +2621,69 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					pack_show[3] = 1;
 				}
 			}
-			// TODO: sanity check index, size against item->packed_size
-			RRegItem *item = r_reg_get (core->dbg->reg, name, -1);
-			if (item) {
-				if (eq) { // TODO: fix setting xmm registers
-					ut64 val = r_num_math (core->num, eq);
-					r_reg_set_pack (core->dbg->reg, item, index, size, val);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_MMX, true);
+			if(explicit_name) {
+				// TODO: sanity check index, size against item->packed_size
+				RRegItem *item = r_reg_get(core->dbg->reg, name, -1);
+				if (item) {
+					if (eq) { // TODO: fix setting xmm registers
+						ut64 val = r_num_math(core->num, eq);
+						r_reg_set_pack(core->dbg->reg, item, index, size, val);
+						r_debug_reg_sync(core->dbg, R_REG_TYPE_GPR, true);
+						r_debug_reg_sync(core->dbg, R_REG_TYPE_MMX, true);
+					} else {
+						r_debug_reg_sync(core->dbg, R_REG_TYPE_GPR, false);
+						r_debug_reg_sync(core->dbg, R_REG_TYPE_MMX, false);
+						ut64 res = r_reg_get_pack(core->dbg->reg, item, index, size);
+						// TODO: handle mm
+						if (!explicit_index) {
+							int pi;
+							for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
+								if (!explicit_size || pack_show[pi]) {
+									for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
+										ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
+										pack_print (i, res, pi);
+									}
+									r_cons_printf("\n");
+								}
+							}
+						} else {
+							// print selected index / wordsize
+							r_cons_printf("0x%08" PFMT64x "\n", res);
+						}
+					}
 				} else {
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_MMX, false);
-					ut64 res = r_reg_get_pack (core->dbg->reg, item, index, size);
-					// TODO: handle mm
-					if (!explicit_index) {
+					eprintf ("cannot find multimedia register '%s'\n", name);
+				}
+				free(name);
+			} else {
+				// explicit size no name
+				RListIter *iter;
+				RRegItem *item;
+				RList *head;
+				r_debug_reg_sync(core->dbg, R_REG_TYPE_XMM, false);
+				head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_FPU); // TODO: r_reg_get_list does not follow indirection
+				if (head)	{
+					r_list_foreach (head, iter, item) {
+						if (item->type != R_REG_TYPE_XMM) {
+							continue;
+						}
 						int pi;
+						r_cons_printf("%-5s = ", item->name);
 						for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
-							if (!explicit_size || pack_show[pi]) {
+							if (pack_show[pi]) {
 								for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
-									ut64 res = r_reg_get_pack (core->dbg->reg, item, i, pack_sizes[pi]);
+									ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
 									pack_print (i, res, pi);
 								}
-								r_cons_printf ("\n");
+								r_cons_printf("\n");
 							}
 						}
-					} else {
-						// print selected index / wordsize
-						r_cons_printf ("0x%08" PFMT64x "\n", res);
 					}
 				}
-			} else {
-				eprintf ("cannot find multimedia register '%s'\n", name);
 			}
-			free (name);
 		} else { // drm # no arg
-			r_debug_reg_sync (core->dbg, -R_REG_TYPE_MMX, false); // TODO: fix this, not displaying anything
+			r_debug_reg_sync (core->dbg, -R_REG_TYPE_XMM, false);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_XMM, 128, 0, 0);
 		}
 		//r_debug_drx_list (core->dbg);
 		break;
