@@ -192,15 +192,14 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (!strncmp (cmd, "pid", 3)) {
 		if (cmd[3] == ' ') {
 			int pid = atoi (cmd + 3);
-			if (pid > 0 && pid != iop->pi.dwProcessId) {
-				iop->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, false, pid);
-				if (iop->pi.hProcess) {
-					iop->pi.dwProcessId = iop->pi.dwThreadId = pid;
+			if (pid > 0 && pid != iop->pi.dwThreadId && pid != iop->pi.dwProcessId) {
+				iop->pi.hThread = OpenThread (PROCESS_ALL_ACCESS, FALSE, pid);
+				if (iop->pi.hThread) {
+					iop->pi.dwThreadId = pid;
 				} else {
 					eprintf ("Cannot attach to %d\n", pid);
 				}
 			}
-			/* TODO: Implement child attach */
 		}
 		return r_str_newf ("%d", iop->pi.dwProcessId);
 	} else {
