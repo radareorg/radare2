@@ -241,6 +241,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)(size_t)data) == 0;
 #else
 	int contsig = dbg->reason.signum;
+	int ret = -1;
 
 	if (sig != -1) {
 		contsig = sig;
@@ -250,10 +251,6 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_cons_break_push ((RConsBreak)r_debug_native_stop, dbg);
 	}
 
-	int ret = r_debug_ptrace (dbg, PTRACE_CONT, pid, NULL, (r_ptrace_data_t)(size_t)contsig);
-	if (ret) {
-		perror ("PTRACE_CONT");
-	}
 	if (dbg->continue_all_threads && dbg->n_threads) {
 		RList *list = dbg->threads;
 		RDebugPid *th;
@@ -261,10 +258,19 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 
 		if (list) {
 			r_list_foreach (list, it, th) {
-				if (th->pid && th->pid != pid) {
-					r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, (r_ptrace_data_t)(size_t)contsig);
+				if (th->pid) {
+					ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, NULL, (r_ptrace_data_t)(size_t)contsig);
+					if (ret) {
+						perror ("PTRACE_CONT");
+					}
 				}
 			}
+		}
+	}
+	else {
+		ret = r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, (r_ptrace_data_t)(size_t)contsig);
+		if (ret) {
+			perror ("PTRACE_CONT");
 		}
 	}
 	//return ret >= 0 ? tid : false;
