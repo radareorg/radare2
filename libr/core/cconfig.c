@@ -40,9 +40,6 @@ static void print_node_options(RConfigNode *node) {
 	}
 }
 
-/* TODO: use loop here */
-/*------------------------------------------------------------------------------------------*/
-
 static int compareName(const RAnalFunction *a, const RAnalFunction *b) {
 	return a && b && a->name && b->name && strcmp (a->name, b->name);
 }

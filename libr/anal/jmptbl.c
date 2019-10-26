@@ -114,12 +114,11 @@ R_API int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut6
 			"CCu switch table (%d cases) at 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
 			(int)(offs/sz), jmptbl_loc, ip);
 		r_strbuf_appendf (anal->cmdtail,
-			"f switch.0x%08"PFMT64x" 1 @ 0x%08"PFMT64x"\n",
-			ip, ip);
+			"f switch.0x%08"PFMT64x" 1 @ 0x%08"PFMT64x"\n", ip, ip);
 		if (default_case != 0 && default_case != UT64_MAX) {
 			r_strbuf_appendf (anal->cmdtail,
-					"f case.default.0x%"PFMT64x " 1 @ 0x%08"PFMT64x "\n",
-					default_case, default_case);
+				"f case.default.0x%"PFMT64x " 1 @ 0x%08"PFMT64x "\n",
+				ip, default_case);
 		}
 	}
 
