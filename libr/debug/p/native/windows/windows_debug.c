@@ -1046,9 +1046,16 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 	DWORD continue_status = (sig == DBG_EXCEPTION_NOT_HANDLED)
 		? DBG_EXCEPTION_NOT_HANDLED : DBG_EXCEPTION_HANDLED;
 	dbg->tid = w32_select (dbg, pid, tid);
+	r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
+
+	// Don't continue with a thread that wasn't requested
+	if (dbg->tid != tid) {
+		return false;
+	}
+
 	if (breaked) {
 		breaked = false;
-		return tid;
+		return false;
 	}
 	w32dbg_wrap_instance *inst = rio->inst;
 	inst->params->type = W32_CONTINUE;
@@ -1061,6 +1068,7 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_sys_perror ("w32_continue/ContinueDebugEvent");
 		return false;
 	}
+
 	return tid;
 }
 
