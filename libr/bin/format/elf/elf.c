@@ -1865,6 +1865,8 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, UT64_MAX);
 	ut64 entry = bin->ehdr.e_entry;
 	if (!entry) {
+		return UT64_MAX;
+#if 0
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
 		if (entry != UT64_MAX) {
 			return entry;
@@ -1874,6 +1876,7 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 			return entry;
 		}
 		return Elf_(r_bin_elf_get_section_offset)(bin, ".init");
+#endif
 	}
 	return Elf_(r_bin_elf_v2p) (bin, entry);
 }
