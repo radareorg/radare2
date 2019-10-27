@@ -230,11 +230,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 	return tid;
 #elif __WINDOWS__
-	bool ret = w32_continue (dbg, pid, tid, sig);
-	if (!ret) {
-		return -1;
-	}
-	return tid;
+	return w32_continue (dbg, pid, tid, sig);
 #elif __BSD__
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	ut64 pc = r_debug_reg_get (dbg, "PC");
