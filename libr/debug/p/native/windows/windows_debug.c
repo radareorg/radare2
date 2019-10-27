@@ -422,17 +422,15 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	bool alive = __is_thread_alive (dbg, dbg->tid);
 	HANDLE th = rio->pi.hThread;
 	if (!th || th == INVALID_HANDLE_VALUE) {
-		if (alive) {
-			DWORD flags = THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT;
-			if (dbg->bits == R_SYS_BITS_64) {
-					flags |= THREAD_QUERY_INFORMATION;
-			}
-			th = w32_OpenThread (flags, FALSE, dbg->tid);
-			if (!th) {
-				r_sys_perror ("w32_reg_read/OpenThread");
-				return 0;
-			}
-		} else {
+		DWORD flags = THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT;
+		if (dbg->bits == R_SYS_BITS_64) {
+				flags |= THREAD_QUERY_INFORMATION;
+		}
+		th = w32_OpenThread (flags, FALSE, dbg->tid);
+		if (!th && alive) {
+			r_sys_perror ("w32_reg_read/OpenThread");
+		}
+		if (!th) {
 			return 0;
 		}
 	}
