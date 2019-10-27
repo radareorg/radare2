@@ -11,11 +11,8 @@
 
 #include <windows.h>
 #include <tlhelp32.h>
+#include <w32dbg_wrap.h>
 
-typedef struct {
-	ut64 winbase;
-	PROCESS_INFORMATION pi;
-} RIOW32Dbg;
 #define RIOW32DBG_PID(x) (((RIOW32Dbg*)x->data)->pi.dwProcessId)
 
 #undef R_IO_NFDS
@@ -92,7 +89,7 @@ err_first_th:
 	return pid;
 }
 
-static int __open_proc(RIOW32Dbg *dbg, bool attach) {
+static int __open_proc(RIO *io, RIOW32Dbg *dbg, bool attach) {
 	DEBUG_EVENT de;
 	int ret = -1;
 	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pi.dwProcessId);
@@ -101,14 +98,27 @@ static int __open_proc(RIOW32Dbg *dbg, bool attach) {
 		r_sys_perror ("__open_proc/OpenProcess");
 		goto att_exit;
 	}
+	if (!io->w32dbg_wrap) {
+		io->w32dbg_wrap = w32dbg_wrap_new ();
+	}
 	if (attach) {
 		/* Attach to the process */
-		if (!DebugActiveProcess(dbg->pi.dwProcessId)) {
+		w32dbg_wrap_instance *inst = io->w32dbg_wrap;
+		inst->params->type = W32_ATTACH;
+		inst->params->pid = dbg->pi.dwProcessId;
+		w32dbg_wrap_wait_ret (inst);
+		if (!w32dbgw_intret (inst)) {
+			w32dbgw_err (inst);
 			r_sys_perror ("__open_proc/DebugActiveProcess");
 			goto att_exit;
 		}
 		/* catch create process event */
-		if (!WaitForDebugEvent (&de, 10000)) {
+		inst->params->type = W32_WAIT;
+		inst->params->wait.wait_time = 10000;
+		inst->params->wait.de = &de;
+		w32dbg_wrap_wait_ret (inst);
+		if (!w32dbgw_intret (inst)) {
+			w32dbgw_err (inst);
 			r_sys_perror ("__open_proc/WaitForDebugEvent");
 			goto att_exit;
 		}
@@ -118,6 +128,7 @@ static int __open_proc(RIOW32Dbg *dbg, bool attach) {
 		}
 		dbg->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
 	}
+	dbg->inst = io->w32dbg_wrap;
 	dbg->pi.hProcess = h_proc;
 	dbg->pi.dwProcessId = dbg->pi.dwProcessId;
 	ret = dbg->pi.dwProcessId;
@@ -136,7 +147,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			return NULL;
 		}
 		dbg->pi.dwProcessId = atoi (file + 9);
-		if (__open_proc (dbg, !strncmp (file, "attach://", 9)) == -1) {
+		if (__open_proc (io, dbg, !strncmp (file, "attach://", 9)) == -1) {
 			free (dbg);
 			return NULL;
 		}
@@ -167,7 +178,8 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 
 static int __close(RIODesc *fd) {
 	RIOW32Dbg *iop = fd->data;
-	DebugActiveProcessStop (iop->pi.dwProcessId);
+	iop->inst->params->type = W32_DETTACH;
+	w32dbg_wrap_wait_ret (iop->inst);
 	return false;
 }
 

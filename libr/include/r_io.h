@@ -102,8 +102,11 @@ typedef struct r_io_t {
 	RIOUndo undo;
 	SdbList *plugins;
 	char *runprofile;
-#ifdef USE_PTRACE_WRAP
+#if USE_PTRACE_WRAP
 	struct ptrace_wrap_instance_t *ptrace_wrap;
+#endif
+#if __WINDOWS__
+	struct w32dbg_wrap_instance_t *w32dbg_wrap;
 #endif
 	char *args;
 	void *user;

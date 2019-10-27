@@ -60,11 +60,12 @@ if host_machine.system() == 'linux'
 endif
 
 if host_machine.system() == 'windows'
- r_debug_sources += [
-  'p/native/maps/windows_maps.c',
-  'p/native/windows/windows_debug.c',
-  'p/native/windows/windows_message.c',
- ]
+  r_debug_sources += [
+    'p/native/maps/windows_maps.c',
+    'p/native/windows/windows_debug.c',
+    'p/native/windows/windows_message.c',
+  ]
+  r_debug_deps += w32dbg_wrap_dep
 endif
 
 if host_machine.system() != 'windows'

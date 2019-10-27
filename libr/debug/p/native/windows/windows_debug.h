@@ -15,6 +15,7 @@
 #include <tlhelp32.h> // CreateToolhelp32Snapshot
 #include <psapi.h> // GetModuleFileNameEx, GetProcessImageFileName
 #include <tchar.h>
+#include <w32dbg_wrap.h>
 
 #ifndef XSTATE_GSSE
 #define XSTATE_GSSE 2
@@ -95,11 +96,6 @@ typedef struct _OBJECT_TYPE_INFORMATION {
 	ULONG PagedPoolUsage;
 	ULONG NonPagedPoolUsage;
 } OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
-
-typedef struct {
-	ut64 winbase;
-	PROCESS_INFORMATION pi;
-} RIOW32Dbg;
 
 // thread list
 typedef struct {
