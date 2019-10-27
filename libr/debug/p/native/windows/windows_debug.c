@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2019 - MapleLeaf-X */
 #include <string.h>
 #include "windows_debug.h"
+#include <w32dbg_wrap.h>
 
 const DWORD wait_time = 1000;
 
@@ -500,7 +501,10 @@ int w32_attach(RDebug *dbg, int pid) {
 	if (!ph) {
 		return -1;
 	}
-	if (!DebugActiveProcess (pid)) {
+	rio->inst->params->type = W32_ATTACH;
+	rio->inst->params->pid = pid;
+	w32dbg_wrap_wait_ret (rio->inst);
+	if (!rio->inst->params->ret) {
 		CloseHandle (ph);
 		return -1;
 	}
@@ -529,7 +533,10 @@ int w32_detach(RDebug *dbg, int pid) {
 	RIOW32Dbg *rio = dbg->user;
 	bool ret = false;
 	if (rio->pi.hProcess) {
-		ret = w32_DebugActiveProcessStop (pid);
+		rio->inst->params->type = W32_DETTACH;
+		rio->inst->params->pid = pid;
+		w32dbg_wrap_wait_ret (rio->inst);
+		ret = rio->inst->params->ret;
 	}
 	if (rio->pi.hProcess) {
 		CloseHandle (rio->pi.hProcess);
@@ -755,7 +762,9 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 		return true;
 	}
 	
-	DebugActiveProcessStop (pid);
+	rio->inst->params->type = W32_DETTACH;
+	rio->inst->params->pid = pid;
+	w32dbg_wrap_wait_ret (rio->inst);
 	
 	bool ret = false;
 	if (TerminateProcess (rio->pi.hProcess, 1)) {
@@ -857,10 +866,14 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			return R_DEBUG_REASON_DEAD;
 		}
 		memset (&de, 0, sizeof (DEBUG_EVENT));
-
+		w32dbg_wrap_instance *inst = rio->inst;
 		do {
-			if (!WaitForDebugEvent (&de, wait_time)) {
-				if (GetLastError () != ERROR_SEM_TIMEOUT) {
+			inst->params->type = W32_WAIT;
+			inst->params->wait.de = &de;
+			inst->params->wait.wait_time = wait_time;
+			w32dbg_wrap_wait_ret (rio->inst);
+			if (!w32dbgw_intret (inst)) {
+				if (w32dbgw_err (inst) != ERROR_SEM_TIMEOUT) {
 					r_sys_perror ("w32_dbg_wait/WaitForDebugEvent");
 					return -1;
 				}
@@ -913,7 +926,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			next_event = 0;
 			if (de.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT) {
 				exited_already = pid;
-				ContinueDebugEvent (pid, tid, DBG_CONTINUE);
+				w32_continue (dbg, pid, tid, DBG_CONTINUE);
 				ret = pid == dbg->main_pid ? R_DEBUG_REASON_DEAD : R_DEBUG_REASON_EXIT_PID;
 			} else {
 				ret = R_DEBUG_REASON_EXIT_TID;
@@ -1037,7 +1050,14 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 		breaked = false;
 		return tid;
 	}
-	if (!ContinueDebugEvent (rio->pi.dwProcessId, rio->pi.dwThreadId, continue_status)) {
+	w32dbg_wrap_instance *inst = rio->inst;
+	inst->params->type = W32_CONTINUE;
+	inst->params->pid = rio->pi.dwProcessId;
+	inst->params->tid = rio->pi.dwThreadId;
+	inst->params->continue_status = continue_status;
+	w32dbg_wrap_wait_ret (inst);
+	if (!w32dbgw_intret (inst)) {
+		w32dbgw_err (inst);
 		r_sys_perror ("w32_continue/ContinueDebugEvent");
 		return false;
 	}

@@ -49,6 +49,7 @@
 #include <tlhelp32.h>
 #include <winbase.h>
 #include <psapi.h>
+#include <w32dbg_wrap.h>
 #endif
 
 /*
@@ -62,11 +63,6 @@ typedef struct {
 	HANDLE hnd;
 	ut64 winbase;
 } RIOW32;
-
-typedef struct {
-	ut64 winbase;
-	PROCESS_INFORMATION pi;
-} RIOW32Dbg;
 
 static ut64 winbase;	//HACK
 static int wintid;
@@ -99,6 +95,20 @@ err_enable:
 	return err;
 }
 
+struct __createprocess_params {
+	char *appname;
+	char *cmdline;
+	PROCESS_INFORMATION *pi;
+};
+
+static int __createprocess_wrap(void *params) {
+	STARTUPINFO si = { 0 };
+	struct __createprocess_params *p = params;
+	return CreateProcess (p->appname, p->cmdline, NULL, NULL, FALSE,
+		CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
+		NULL, NULL, &si, p->pi);
+}
+
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si = { 0 } ;
@@ -108,6 +118,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		return -1;
 	}
 	setup_tokens ();
+	if (!io->w32dbg_wrap) {
+		io->w32dbg_wrap = w32dbg_wrap_new ();
+	}
 	char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) :
 		strdup (cmd);
 	char **argv = r_str_argv (_cmd, NULL);
@@ -157,9 +170,14 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	free (cmdline);
 	// TODO: Add DEBUG_PROCESS to support child process debugging
-	if (!CreateProcess (appname_, cmdline_, NULL, NULL, FALSE,
-						 CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
-						 NULL, NULL, &si, &pi)) {
+	struct __createprocess_params p = {appname_, cmdline_, &pi};
+	w32dbg_wrap_instance *inst = io->w32dbg_wrap;
+	inst->params->type = W32_CALL_FUNC;
+	inst->params->func.func = __createprocess_wrap;
+	inst->params->func.user = &p;
+	w32dbg_wrap_wait_ret (inst);
+	if (!w32dbgw_intret (inst)) {
+		w32dbgw_err (inst);
 		r_sys_perror ("fork_and_ptraceme/CreateProcess");
 		free (appname_);
 		free (cmdline_);
@@ -174,7 +192,11 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	tid = pi.dwThreadId;
 
 	/* catch create process event */
-	if (!WaitForDebugEvent (&de, 10000)) goto err_fork;
+	inst->params->type = W32_WAIT;
+	inst->params->wait.wait_time = 10000;
+	inst->params->wait.de = &de;
+	w32dbg_wrap_wait_ret (inst);
+	if (!w32dbgw_intret (inst)) goto err_fork;
 
 	/* check if is a create process debug event */
 	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
@@ -190,6 +212,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 err_fork:
 	eprintf ("ERRFORK\n");
 	TerminateProcess (pi.hProcess, 1);
+	w32dbg_wrap_fini (io->w32dbg_wrap);
+	io->w32dbg_wrap = NULL;
 	CloseHandle (pi.hThread);
 	CloseHandle (pi.hProcess);
 	return -1;

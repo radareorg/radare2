@@ -650,6 +650,9 @@ if use_ptrace_wrap
   subdir('ptrace-wrap')
 endif
 
+if host_machine.system() == 'windows'
+  subdir('w32dbg_wrap')
+endif
 
 # handle mpc dependency
 mpc_files = [
