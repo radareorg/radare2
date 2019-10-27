@@ -135,7 +135,7 @@ static bool init_func() {
 		RtlDestroyQueryDebugBuffer = (NTSTATUS (NTAPI *)(PDEBUG_BUFFER))GetProcAddress (ntdll, "RtlDestroyQueryDebugBuffer");
 	}
 	if (!w32_NtQueryInformationProcess) {
-		w32_NtQueryInformationProcess = (NTSTATUS *)GetProcAddress (ntdll, "NtQueryInformationProcess");
+		w32_NtQueryInformationProcess = (NTSTATUS (NTAPI *)(HANDLE,PROCESSINFOCLASS,PVOID,ULONG,PULONG))GetProcAddress (ntdll, "NtQueryInformationProcess");
 	}
 	return true;
 }
@@ -184,10 +184,10 @@ static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 		index++;
 	} while (block[index].flags & 2);
 
-	hb->index = index;
-
 	WPARAM flags = block[hb->index].flags;
 	UPDATE_FLAGS (hb, flags);
+	
+	hb->index = index;
 	return true;
 }
 
@@ -444,7 +444,7 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 	*params =  (th_query_params) { dbg, mask, db, 0, false, false };
 	HANDLE th = CreateThread (NULL, 0, __th_QueryDebugBuffer, params, 0, NULL);
 	if (th) {
-		WaitForSingleObject (th, 10000);
+		WaitForSingleObject (th, 5000);
 	} else {
 		RtlDestroyQueryDebugBuffer (db);
 		return NULL;
@@ -459,7 +459,7 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 	} else if (params->ret) {
 		RtlDestroyQueryDebugBuffer (db);
 		db = NULL;
-		r_sys_perror ("InitHeapInfo");
+		r_sys_perror ("RtlQueryProcessDebugInformation");
 	}
 	CloseHandle (th);
 	if (db) {
@@ -744,7 +744,6 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 	PHeapInformation heapInfo = db->HeapInformation;
 	int i;
 	for (i = 0; i < heapInfo->count; i++) {
-		size_t tot_allocated = 0;
 		WPARAM from = 0;
 		ut64 count = 0;
 		PDEBUG_HEAP_INFORMATION heap = &heapInfo->heaps[i];
@@ -789,7 +788,6 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 			extra->granularity = sizeof (HEAP_VIRTUAL_ALLOC_ENTRY);
 			extra->unusedBytes = vAlloc.ReserveSize - vAlloc.CommitSize;
 			blocks[count].extra = EXTRA_FLAG | (WPARAM)extra;
-			tot_allocated += blocks[count].size - extra->granularity;
 			count++;
 			entry = vAlloc.Entry.Flink;
 		}
@@ -861,7 +859,6 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 							extra->granularity = sizeof (HEAP_ENTRY);
 							extra->segment = curSubsegment;
 							blocks[count].extra = EXTRA_FLAG | (WPARAM)extra;
-							tot_allocated += blocks[count].size - extra->granularity;
 							count++;
 						}
 						mask <<= 1;
@@ -912,7 +909,6 @@ next_subsegment:
 				blocks[count].flags = heapEntry.Flags | NT_BLOCK | BACKEND_BLOCK;
 				blocks[count].size = real_sz;
 				from += real_sz;
-				tot_allocated += blocks[count].size - extra->granularity;
 				count++;
 			} while (from <= (WPARAM)segment.LastValidEntry);
 next:
@@ -925,7 +921,7 @@ next:
 
 		if (!heap->Committed && !heap->Allocated) {
 			heap->Committed = heapHeader.Counters.TotalMemoryCommitted;
-			heap->Allocated = tot_allocated;
+			heap->Allocated = heapHeader.Counters.LastPolledSize;
 		}
 	}
 	CloseHandle (h_proc);
@@ -1163,6 +1159,17 @@ err:
 	return NULL;
 }
 
+static RTable *__new_heapblock_tbl() {
+	RTable *tbl = r_table_new ();
+	r_table_add_column (tbl, r_table_type ("number"), "HeaderAddress", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "UserAddress", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Size", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Granularity", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Unused", -1);
+	r_table_add_column (tbl, r_table_type ("String"), "Type", -1);
+	return tbl;
+}
+
 static void w32_list_heaps(RCore *core, const char format) {
 	ULONG pid = core->dbg->pid;
 	PDEBUG_BUFFER db = InitHeapInfo (core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
@@ -1178,6 +1185,11 @@ static void w32_list_heaps(RCore *core, const char format) {
 	PHeapInformation heapInfo = db->HeapInformation;
 	CHECK_INFO (heapInfo);
 	int i;
+	RTable *tbl = r_table_new ();
+	r_table_add_column (tbl, r_table_type ("number"), "Address", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Blocks", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Allocated", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Commited", -1);
 	PJ *pj = pj_new ();
 	pj_a (pj);
 	for (i = 0; i < heapInfo->count; i++) {
@@ -1185,17 +1197,14 @@ static void w32_list_heaps(RCore *core, const char format) {
 		switch (format) {
 		case 'j':
 			pj_o (pj);
-			pj_kN (pj, "address", (WPARAM)heap.Base);
-			pj_kN (pj, "count", (WPARAM)heap.BlockCount);
-			pj_kN (pj, "allocated", (WPARAM)heap.Allocated);
-			pj_kN (pj, "commited", (WPARAM)heap.Committed);
+			pj_kN (pj, "address", (ut64)heap.Base);
+			pj_kN (pj, "count", (ut64)heap.BlockCount);
+			pj_kN (pj, "allocated", (ut64)heap.Allocated);
+			pj_kN (pj, "commited", (ut64)heap.Committed);
 			pj_end (pj);
 			break;
 		default:
-			r_cons_printf ("Heap @ 0x%08"PFMT64x":\n", (WPARAM)heap.Base);
-			r_cons_printf ("\tBlocks: %"PFMT64u"\n", (WPARAM)heap.BlockCount);
-			r_cons_printf ("\tAllocated: %"PFMT64u"\n", (WPARAM)heap.Allocated);
-			r_cons_printf ("\tCommited: %"PFMT64u"\n", (WPARAM)heap.Committed);
+			r_table_add_rowf (tbl, "xnnn", (ut64)heap.Base, (ut64)heap.BlockCount, (ut64)heap.Allocated, (ut64)heap.Committed);
 			break;
 		}
 		if (!(db->InfoClassMask & PDI_HEAP_BLOCKS)) {
@@ -1206,7 +1215,10 @@ static void w32_list_heaps(RCore *core, const char format) {
 	if (format == 'j') {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
+	} else {
+		r_cons_println (r_table_tostring (tbl));
 	}
+	r_table_free (tbl);
 	pj_free (pj);
 	RtlDestroyQueryDebugBuffer (db);
 }
@@ -1227,6 +1239,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 	CHECK_INFO (heapInfo);
 	HeapBlock *block = malloc (sizeof (HeapBlock));
 	int i;
+	RTable *tbl = __new_heapblock_tbl ();
 	PJ *pj = pj_new ();
 	pj_a (pj);
 	for (i = 0; i < heapInfo->count; i++) {
@@ -1243,8 +1256,6 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 			pj_k (pj, "blocks");
 			pj_a (pj);
 			break;
-		default:
-			r_cons_printf ("Heap @ 0x%"PFMT64x":\n", heapInfo->heaps[i].Base);
 		}
 		char *type;
 		if (GetFirstHeapBlock (&heapInfo->heaps[i], block) & go) {
@@ -1253,28 +1264,28 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 				if (!type) {
 					type = "";
 				}
-				unsigned short granularity = block->extraInfo ? block->extraInfo->granularity : heapInfo->heaps[i].Granularity;
+				ut64 granularity = block->extraInfo ? block->extraInfo->granularity : heapInfo->heaps[i].Granularity;
+				ut64 address = (ut64)block->dwAddress - granularity;
+				ut64 unusedBytes = block->extraInfo ? block->extraInfo->unusedBytes : 0;
 				switch (format) {
 				case 'f':
 				{
-					ut64 addr = (ut64)block->dwAddress - granularity;
-					char *name = r_str_newf ("alloc.%"PFMT64x"", addr);
-					r_flag_set (core->flags, name, addr, block->dwSize);
+					char *name = r_str_newf ("alloc.%"PFMT64x"", address);
+					r_flag_set (core->flags, name, address, block->dwSize);
 					free (name);
 					break;
 				}
 				case 'j':
 					pj_o (pj);
-					pj_kN (pj, "address", (ut64)block->dwAddress - granularity);
-					pj_kN (pj, "data_address", (ut64)block->dwAddress);
+					pj_kN (pj, "header_address", address);
+					pj_kN (pj, "user_address", (ut64)block->dwAddress);
+					pj_kN (pj, "unused", unusedBytes);
 					pj_kN (pj, "size", block->dwSize);
 					pj_ks (pj, "type", type);
 					pj_end (pj);
 					break;
 				default:
-					r_cons_printf ("\tBlock @ 0x%"PFMT64x" %s:\n", (ut64)block->dwAddress - granularity, type);
-					r_cons_printf ("\t\tSize 0x%"PFMT64x"\n", (ut64)block->dwSize);
-					r_cons_printf ("\t\tData address @ 0x%"PFMT64x"\n", (ut64)block->dwAddress);
+					r_table_add_rowf (tbl, "xxnnns", address, (ut64)block->dwAddress, block->dwSize, granularity, unusedBytes, type);
 					break;
 				}
 			} while (GetNextHeapBlock (&heapInfo->heaps[i], block));
@@ -1292,7 +1303,10 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 	if (format == 'j') {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
+	} else if (format != 'f') {
+		r_cons_println (r_table_tostring (tbl));
 	}
+	r_table_free (tbl);
 	pj_free (pj);
 	RtlDestroyQueryDebugBuffer (db);
 }
@@ -1326,18 +1340,17 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 				type = "";
 			}
 			PJ *pj = pj_new ();
+			RTable *tbl = __new_heapblock_tbl ();
+			ut64 headerAddr = off - granularity;
 			switch (input[0]) {
 			case ' ':
-				r_cons_printf ("Block @ 0x%"PFMT64x" %s\n", off - granularity, type);
-				r_cons_printf ("\tSize: 0x%"PFMT64x"\n", hb->dwSize);
-				if (hb->extraInfo->unusedBytes) {
-					r_cons_printf ("\tUnused: 0x%"PFMT64x"\n", hb->extraInfo->unusedBytes);
-				}
-				r_cons_printf ("\tGranularity: 0x%"PFMT64x"\n", granularity);
+				r_table_add_rowf (tbl, "xxnnns", headerAddr, off, (ut64)hb->dwSize, granularity, (ut64)hb->extraInfo->unusedBytes, type);
+				r_cons_println (r_table_tostring (tbl));
 				break;
 			case 'j':
 				pj_o (pj);
-				pj_kN (pj, "address", off - granularity);
+				pj_kN (pj, "header_address", headerAddr);
+				pj_kN (pj, "user_address", off);
 				pj_ks (pj, "type", type);
 				pj_kN (pj, "size", hb->dwSize);
 				if (hb->extraInfo->unusedBytes) {
@@ -1348,6 +1361,7 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 			}
 			free (hb->extraInfo);
 			free (hb);
+			r_table_free (tbl);
 			pj_free (pj);
 		}
 		return;
