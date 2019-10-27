@@ -984,6 +984,12 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 #endif
 		return (ret != 0) ? false : true;
 	}
+	if (type == R_REG_TYPE_FPU) {
+#if __i386__ || __x86_64__
+		int ret = r_debug_ptrace (dbg, PTRACE_SETFPREGS, pid, 0, (void*)buf);
+		return (ret != 0) ? false : true;
+#endif
+	}
 	return false;
 }
 

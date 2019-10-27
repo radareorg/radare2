@@ -1015,6 +1015,10 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #else
 #warning r_debug_native_reg_write not implemented
 #endif
+	} else if (type == R_REG_TYPE_FPU) {
+#if __linux__
+		return linux_reg_write (dbg, type, buf, size);
+#endif
 	} //else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
 	return false;
 }

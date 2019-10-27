@@ -400,7 +400,7 @@ static const char *help_msg_drx[] = {
 static const char *help_msg_drm[] = {
 	"Usage: drm", " [reg] [idx] [wordsize] [= value]", "Show multimedia packed registers",
 	"drm", " xmm0", "Show all packings of xmm0",
-	//	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", //broken
+	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12",
 	"drmb", " [reg]", "Show registers as bytes",
 	"drmw", " [reg]", "Show registers as words",
 	"drmd", " [reg]", "Show registers as doublewords",
@@ -2565,7 +2565,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 #define NUM_PACK_TYPES 4
 			int pack_sizes[NUM_PACK_TYPES] = { 8, 16, 32, 64 };
 			char *pack_format[NUM_PACK_TYPES] = { "%s0x%02" PFMT64x, "%s0x%04" PFMT64x, "%s0x%08" PFMT64x, "%s0x%016" PFMT64x };
-#define pack_print(i, reg, pack_type_index) r_cons_printf (pack_format[pack_type_index], i != 0? " ": "", reg);
+#define pack_print(i, reg, pack_type_index) r_cons_printf (pack_format[pack_type_index], i != 0 ? " " : "", reg);
 			char pack_show[NUM_PACK_TYPES] = { 0, 0, 0, 0 };
 			int index = 0;
 			int size = 0; // auto
@@ -2574,6 +2574,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (str[1] == ' ' && str[2] != '\x00') {
 				name = strdup (str + 2);
 				explicit_name = 1;
+				eq = strchr (name, '=');
 				if (eq) {
 					*eq++ = 0;
 				}
@@ -2628,11 +2629,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					if (eq) { // TODO: fix setting xmm registers
 						ut64 val = r_num_math(core->num, eq);
 						r_reg_set_pack(core->dbg->reg, item, index, size, val);
-						r_debug_reg_sync(core->dbg, R_REG_TYPE_GPR, true);
-						r_debug_reg_sync(core->dbg, R_REG_TYPE_MMX, true);
+						r_debug_reg_sync(core->dbg, R_REG_TYPE_XMM, true);
 					} else {
-						r_debug_reg_sync(core->dbg, R_REG_TYPE_GPR, false);
-						r_debug_reg_sync(core->dbg, R_REG_TYPE_MMX, false);
+						r_debug_reg_sync(core->dbg, R_REG_TYPE_XMM, false);
 						ut64 res = r_reg_get_pack(core->dbg->reg, item, index, size);
 						// TODO: handle mm
 						if (!explicit_index) {

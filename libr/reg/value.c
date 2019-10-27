@@ -275,19 +275,15 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	packbits = R_MIN (64, R_MAX (0, packbits));
 
 	int packbytes = packbits / 8;
-	int packmod = packbits % 8;
 	if (packidx * packbits > item->size) {
 		eprintf ("Packed index is beyond the register size\n");
 		return false;
 	}
-	if (packmod) {
-		eprintf ("Invalid bit size for packet register\n");
-		return false;
-	}
-	int off = item->offset;
+	int off = BITS2BYTES (item->offset);
+	off += (packidx * packbytes);
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
-		ut8 *dst = reg->regset[item->arena].arena->bytes + BITS2BYTES (off);
-		r_mem_copybits (dst, (ut8 *)&val, packbytes);
+		ut8 *dst = reg->regset[item->arena].arena->bytes + off;
+		memcpy (dst, (ut8*)&val, packbytes);
 		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, val);
