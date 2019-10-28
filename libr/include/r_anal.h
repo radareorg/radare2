@@ -1261,7 +1261,11 @@ typedef enum {
 
 typedef struct r_anal_esil_dfg_t {
 	ut32 idx;
-	Sdb *latest_nodes;
+//	Sdb *latest_nodes;	//replaced by regs
+	Sdb *regs;		//resolves regnames to intervals
+	RContRBTree *reg_vars;	//vars represented in regs
+	RQueue *todo;		//todo-queue allocated in this struct for perf
+	void *insert;		//needed for setting regs in dfg
 	RGraph *flow;
 	RGraphNode *cur;
 	RGraphNode *old;
@@ -1270,7 +1274,6 @@ typedef struct r_anal_esil_dfg_t {
 typedef struct r_anal_esil_dfg_node_t {
 	// add more info here
 	ut32 idx;
-	RGraphNode *origin;	//this is for regs
 	RStrBuf *content;
 	RAnalEsilDFGBlockType type;
 } RAnalEsilDFGNode;
@@ -1993,7 +1996,7 @@ R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg);
 R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg);
 
 R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new (RAnalEsilDFG *edf, const char *c);
-R_API RAnalEsilDFG *r_anal_esil_dfg_new();
+R_API RAnalEsilDFG *r_anal_esil_dfg_new(RReg *regs);
 R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg);
 R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr);
 R_API RStrBuf *r_anal_esil_dfg_filter (RAnalEsilDFG *dfg, const char *reg);
