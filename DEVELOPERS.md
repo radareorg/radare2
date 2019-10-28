@@ -11,8 +11,8 @@ Doxyfile and generate HTML documentation into
 
 If you're contributing code or willing to update existing code, you can use the
 doxygen C-style comments to improve documentation and comments in code.
-See the [Doxygen Manual](https://www.stack.nl/~dimitri/doxygen/manual/index.html)
-for more info. Example usage can be found [here](https://www.stack.nl/~dimitri/doxygen/manual/docblocks.html)
+See the [Doxygen Manual](http://www.doxygen.nl/manual/index.html)
+for more info. Example usage can be found [here](http://www.doxygen.nl/manual/docblocks.html)
 ```c
 /**
  * \brief Find the min and max addresses in an RList of maps.
