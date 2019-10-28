@@ -27,8 +27,9 @@ for a in $ASAN ; do
 	export CFLAGS="${CFLAGS} -fsanitize=$a"
 done
 if [ "`uname`" != Darwin ]; then
-	export CFLAGS="${CFLAGS} -lasan"
-	export LDFLAGS="-lasan"
+	for a in $ASAN ; do
+		export LDFLAGS="${LDFLAGS} -fsanitize=$a"
+	done
 fi
 
 echo 'int main(){return 0;}' > .a.c
