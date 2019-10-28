@@ -303,8 +303,8 @@ static const char *help_msg_pd[] = {
 	"Usage:", "p[dD][ajbrfils] [len]", " # Print Disassembly",
 	"NOTE: ", "len", "parameter can be negative",
 	"NOTE: ", "", "Pressing ENTER on empty command will repeat last print command in next page",
-	"pd", " -N", "disassemble N instructions backward",
 	"pD", " N", "disassemble N bytes",
+	"pd", " -N", "disassemble N instructions backward",
 	"pd", " N", "disassemble N instructions",
 	"pd--", "[n]", "context disassembly of N instructions",
 	"pda", "", "disassemble all possible opcodes (byte per byte)",
@@ -322,8 +322,8 @@ static const char *help_msg_pd[] = {
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
-	"pdt", "", "disassemble the debugger traces (see atd)",
-	"pdx", " [hexpairs]", "alias for pad or pix",
+	"pdt", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
+	"pdx", " [hex]", "alias for pad or pix",
 	NULL
 };
 
@@ -4833,6 +4833,50 @@ static void print_json_string(RCore *core, const char* block, int len, const cha
 	free (str);
 }
 
+static void r_core_disasm_table(RCore * core, int l, const char *input) {
+	int i;
+	RTable *t = r_core_table (core);
+	char *arg = strchr (input, ' ');
+	if (arg) {
+		input = arg + 1;
+	}
+	r_table_set_columnsf (t, "snsss", "name", "addr", "bytes", "disasm", "comment");
+	const int minopsz = 1;
+	const int options = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_DISASM;
+	ut64 ea = core->offset;
+	for (i = 0; i < l; i++) {
+		RAnalOp *op = r_core_anal_op (core, ea, options);
+		if (!op || op->size < 1) {
+			i += minopsz;
+			ea += minopsz;
+			continue;
+		}
+		char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ea);
+		// TODO parse/filter op->mnemonic for better disasm
+		ut8 *bytes = malloc (op->size);
+		if (!bytes) {
+			break;
+		}
+		r_io_read_at (core->io, ea, bytes, op->size); // XXX ranalop should contain the bytes like rasmop do
+		char *sbytes = r_hex_bin2strdup(bytes, op->size);
+		RFlagItem *fi = r_flag_get_i (core->flags, ea);
+		char *fn = fi? fi->name: "";
+		r_table_add_rowf (t, "sXsss", fn, ea, sbytes, op->mnemonic, comment? comment: "");
+		free (comment);
+		free (sbytes);
+		free (bytes);
+		ea += op->size;
+		r_anal_op_free (op);
+	}
+	if (input && *input) {
+		r_table_query (t, input);
+	}
+	char *ts = r_table_tostring (t);
+	r_cons_printf ("%s", ts); // \n?
+	free (ts);
+	r_table_free (t);
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	int i, l, len, ret;
@@ -4854,7 +4898,7 @@ static int cmd_print(void *data, const char *input) {
 		if (p) {
 			l = (int) r_num_math (core->num, p + 1);
 			/* except disasm and memoryfmt (pd, pm) and overlay (po) */
-			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' &&
+			if (input[0] != 'd' && input[0] != 't' && input[0] != 'D' && input[0] != 'm' &&
 				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' &&
 				input[0] != 'I' && input[0] != 'o') {
 				if (l < 0) {
@@ -5469,6 +5513,11 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 			processed_cmd = true;
 			break;
+		case 't': // "pdt" 
+			r_core_disasm_table (core, l, r_str_trim_ro (input + 2));
+			pd_result = 0;
+			processed_cmd = true;
+			break;
 		case 'k': // "pdk" -print class
 		{
 			int len = 0;
@@ -6038,7 +6087,7 @@ l = use_blocksize;
 			break;
 		case '+': // "ps+"
 			if (l > 0) {
-				bool json = input[2] == 'j'; // ps+j
+				const bool json = input[2] == 'j'; // ps+j
 				ut64 bitness = r_config_get_i (core->config, "asm.bits");
 				if (bitness != 32 && bitness != 64) {
 					eprintf ("Error: bitness of %" PFMT64u " not supported\n", bitness);

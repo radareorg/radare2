@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2019 - nibble, pancake, dso */
 
 #include "r_core.h"
-#include "r_cons.h"
 
 #define HASRETRY 1
 #define HAVE_LOCALS 1
