@@ -179,6 +179,8 @@ static const char *help_msg_ae[] = {
 
 static const char *help_detail_ae[] = {
 	"Examples:", "ESIL", " examples and documentation",
+	"=", "", "assign updating internal flags",
+	":=", "", "assign without updating internal flags",
 	"+=", "", "A+=B => B,A,+=",
 	"+", "", "A=A+B => B,A,+,A,=",
 	"++", "", "increment, 2,A,++ == 3 (see rsi,--=[1], ... )",
@@ -195,6 +197,7 @@ static const char *help_detail_ae[] = {
 	"=", "[1]", "mov byte[eax],1 => 1,eax,=[1]",
 	"=", "[8]", "mov [rax],1 => 1,rax,=[8]",
 	"[]", "", "peek from random position",
+	"[N]", "", "peek word of N bytes from popped address",
 	"[*]", "", "peek some from random position",
 	"=", "[*]", "poke some at random position",
 	"$", "", "int 0x80 => 0x80,$",
@@ -220,7 +223,22 @@ static const char *help_detail_ae[] = {
 	"CLEAR", "", "clears the esil stack",
 	"REPEAT", "", "repeat n times",
 	"BREAK", "", "terminates the string parsing",
+	"SETJT", "", "set jump target",
+	"SETJTS", "", "set jump target set",
+	"SETD", "", "set delay slot",
 	"GOTO", "", "jump to the Nth word popped from the stack",
+	"$", "", "esil interrupt",
+	"$z", "", "internal flag: zero",
+	"$c", "", "internal flag: carry",
+	"$b", "", "internal flag: borrow",
+	"$p", "", "internal flag: parity",
+	"$s", "", "internal flag: sign",
+	"$o", "", "internal flag: overflow",
+	"$ds", "", "internal flag: delay-slot",
+	"$jt", "", "internal flag: jump-target",
+	"$js", "", "internal flag: jump-target-set",
+	// DEPRECATED "$r", "", "internal flag: jump-sign",
+	"$$", "", "internal flag: pc address",
 	NULL
 };
 

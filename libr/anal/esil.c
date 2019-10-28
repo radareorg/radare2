@@ -659,23 +659,17 @@ static bool esil_sf(RAnalEsil *esil) {
 }
 
 static bool esil_ds(RAnalEsil *esil) {
-	if (!esil) {
-		return false;
-	}
+	r_return_val_if_fail (esil, false);
 	return r_anal_esil_pushnum (esil, esil->delay);
 }
 
 static bool esil_jt(RAnalEsil *esil) {
-	if (!esil) {
-		return false;
-	}
+	r_return_val_if_fail (esil, false);
 	return r_anal_esil_pushnum (esil, esil->jump_target);
 }
 
 static bool esil_js(RAnalEsil *esil) {
-	if (!esil) {
-		return false;
-	}
+	r_return_val_if_fail (esil, false);
 	return r_anal_esil_pushnum (esil, esil->jump_target_set);
 }
 
@@ -683,24 +677,23 @@ static bool esil_js(RAnalEsil *esil) {
 //can we please deprecate this, it's neither accurate, nor needed
 //plugins should know regsize, and since this is a const even users should know this: ?´e anal.bits´/8
 //	- condret
+// YES PLS KILL IT
 static bool esil_rs(RAnalEsil *esil) {
-	if (!esil || !esil->anal) {
-		return false;
-	}
+	r_return_val_if_fail (esil && esil->anal, false);
 	return r_anal_esil_pushnum (esil, esil->anal->bits >> 3);
 }
 
 //can we please deprecate this, plugins should know their current address
 //even if they don't know it, $$ should be equal to PC register at the begin of each expression
 //	- condret
+// YES PLS KILL IT
 static bool esil_address(RAnalEsil *esil) {
-	if (!esil) {
-		return 0;
-	}
+	r_return_val_if_fail (esil, false);
 	return r_anal_esil_pushnum (esil, esil->address);
 }
 
 static bool esil_weak_eq(RAnalEsil *esil) {
+	r_return_val_if_fail (esil && esil->anal, false);
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
