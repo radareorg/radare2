@@ -1235,30 +1235,48 @@ rep:
 	case '*': // "f*"
 	case 'j': // "fj"
 	case 'q': // "fq"
-		if (input[0] && input[1] == '.' && !input[2]) {
-			RFlagItem *item = r_flag_get_at (core->flags, core->offset, false);
-			if (item) {
-				switch (input[0]) {
+		switch (input[1]) {
+		case 'j':
+		case 'q':
+		case 'n':
+		case '*':
+			input++;
+			break;
+		}
+		if (input[1] == '.') {
+			const int mode = input[2];
+			const RList *list = r_flag_get_list (core->flags, core->offset);
+			PJ *pj = NULL;
+			if (mode == 'j') {
+				pj = pj_new ();
+				pj_a (pj);
+			}
+			RListIter *iter;
+			RFlagItem *item;
+			r_list_foreach (list, iter, item) {
+				switch (mode) {
 				case '*':
 					r_cons_printf ("f %s = 0x%08"PFMT64x"\n", item->name, item->offset);
 					break;
 				case 'j':
 					{
-						PJ *pj = pj_new ();
 						pj_o (pj);
 						pj_ks (pj, "name", item->name);
 						pj_kn (pj, "offset", item->offset);
 						pj_kn (pj, "size", item->size);
 						pj_end (pj);
-						char *s = pj_drain (pj);
-						r_cons_printf ("%s\n", s);
-						free (s);
 					}
 					break;
 				default:
 					r_cons_printf ("%s\n", item->name);
 					break;
 				}
+			}
+			if (mode == 'j') {
+				pj_end (pj);
+				char *s = pj_drain (pj);
+				r_cons_printf ("%s\n", s);
+				free (s);
 			}
 		} else {
 			r_flag_list (core->flags, *input, input[0]? input + 1: "");
