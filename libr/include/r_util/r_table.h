@@ -43,6 +43,7 @@ typedef struct {
 	RList *cols;
 	int totalCols;
 	bool showHeader;
+	bool showJSON;
 	bool showSum;
 	bool adjustedCols;
     	void *cons;
