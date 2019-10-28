@@ -6276,12 +6276,25 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	RAnalMetaItem *meta = NULL;
 toro:
 	for (; pdi_check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
-		RFlagItem *item;
 		if (r_cons_is_breaked ()) {
 			err = 1;
 			break;
 		}
 		ut64 at = core->offset + i;
+		if (flags) {
+			if (fmt != 'e') { // pie
+				RFlagItem *item = r_flag_get_i (core->flags, at);
+				if (item) {
+					if (show_offset) {
+						const int show_offseg = (core->print->flags & R_PRINT_FLAGS_SEGOFF) != 0;
+						const int show_offdec = (core->print->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
+						unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
+						r_print_offset_sg (core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
+					}
+					r_cons_printf ("  %s:\n", item->name);
+				}
+			} // do not show flags in pie
+		}
 		if (show_offset) {
 			const int show_offseg = (core->print->flags & R_PRINT_FLAGS_SEGOFF) != 0;
 			const int show_offdec = (core->print->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
@@ -6373,17 +6386,6 @@ toro:
 			}
 			i += ret;
 			continue;
-		}
-		if (flags) {
-			if (fmt != 'e') { // pie
-				item = r_flag_get_i (core->flags, core->offset + i);
-				if (item) {
-					if (show_offset) {
-						r_cons_printf ("0x%08"PFMT64x "  ", core->offset + i);
-					}
-					r_cons_printf ("  %s:\n", item->name);
-				}
-			} // do not show flags in pie
 		}
 		// r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ret < 1) {
