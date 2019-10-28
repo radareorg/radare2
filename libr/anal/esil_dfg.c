@@ -1,9 +1,12 @@
 /* radare - LGPL - Copyright 2019 - condret */
 
-#include <r_util.h>
 #include <r_anal.h>
-#include <r_reg.h>
-#include <sdb.h>
+
+typedef struct esil_dfg_reg_var_t {
+	ut32 from;
+	ut32 to;
+	RGraphNode *node;
+} EsilDFGRegVar;
 
 typedef struct r_anal_esil_dfg_filter_t {
 	RAnalEsilDFG *dfg;
@@ -12,28 +15,12 @@ typedef struct r_anal_esil_dfg_filter_t {
 } RAnalEsilDFGFilter;
 
 
-// TODO: simple const propagation - use node->type of srcs to propagate consts of pushed vars
-
-R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c) {
-	RAnalEsilDFGNode *ret = R_NEW0 (RAnalEsilDFGNode);
-	ret->content = r_strbuf_new (c);
-	ret->idx = edf->idx++;
-	return ret;
-}
-
-void _dfg_node_free (RAnalEsilDFGNode *free_me) {
+static void _dfg_node_free (RAnalEsilDFGNode *free_me) {
 	if (free_me) {
 		r_strbuf_free (free_me->content);
+		free (free_me);
 	}
-	free (free_me);
 }
-
-typedef struct esil_dfg_reg_var_t {
-	ut32 from;
-	ut32 to;
-	RGraphNode *node;
-} EsilDFGRegVar;
-
 
 static int _rv_del_alloc_cmp (void *incoming, void *in, void *user) {
 	EsilDFGRegVar *rv_incoming = (EsilDFGRegVar *)incoming;
@@ -381,7 +368,6 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	return reg_node;
 }
 
-
 static bool _edf_var_set (RAnalEsilDFG *dfg, const char *var, RGraphNode *node) {
 	r_return_val_if_fail (dfg && var, false);
 	const ut32 _var_strlen = 4 + strlen (var);
@@ -395,7 +381,6 @@ static bool _edf_var_set (RAnalEsilDFG *dfg, const char *var, RGraphNode *node) 
 	free (_var);
 	return ret;
 }
-
 
 static RGraphNode *_edf_var_get (RAnalEsilDFG *dfg, const char *var) {
 	r_return_val_if_fail (dfg && var, NULL);
@@ -765,6 +750,15 @@ static bool edf_consume_1_use_old_new_push_1(RAnalEsil *esil, const char *op_str
 	r_graph_add_edge (edf->flow, latest_old, op_node);
 	r_graph_add_edge (edf->flow, op_node, result_node);
 	return r_anal_esil_push (esil, r_strbuf_get (result->content));
+}
+
+// TODO: simple const propagation - use node->type of srcs to propagate consts of pushed vars
+
+R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c) {
+	RAnalEsilDFGNode *ret = R_NEW0 (RAnalEsilDFGNode);
+	ret->content = r_strbuf_new (c);
+	ret->idx = edf->idx++;
+	return ret;
 }
 
 R_API RAnalEsilDFG *r_anal_esil_dfg_new(RReg *regs) {
