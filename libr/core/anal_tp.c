@@ -177,16 +177,21 @@ static ut64 get_addr(Sdb *trace, const char *regname, int idx) {
 	return r_num_math (NULL, sdb_const_get (trace, query, 0));
 }
 
-static _RAnalCond cond_invert (_RAnalCond cond) {
+static _RAnalCond cond_invert(RAnal *anal, _RAnalCond cond) {
 	switch (cond) {
-	break; case R_ANAL_COND_LE:
+	case R_ANAL_COND_LE:
 		return R_ANAL_COND_GT;
-	break; case R_ANAL_COND_LT:
+	case R_ANAL_COND_LT:
 		return R_ANAL_COND_GE;
-	break; case R_ANAL_COND_GE:
+	case R_ANAL_COND_GE:
 		return R_ANAL_COND_LT;
-	break; case R_ANAL_COND_GT:
+	case R_ANAL_COND_GT:
 		return R_ANAL_COND_LE;
+	default:
+		if (anal->verbose) {
+			eprintf ("Unhandled conditional swap\n");
+		}
+		break;
 	}
 	return 0; // 0 is COND_ALways...
 	/* I haven't looked into it but I suspect that this might be confusing:
@@ -689,7 +694,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						jmp_addr += jmp_op->size;
 						r_anal_op_free (jmp_op);
 					}
-					_RAnalCond cond = jmp? cond_invert (next_op->cond): next_op->cond;
+					_RAnalCond cond = jmp? cond_invert (anal, next_op->cond): next_op->cond;
 					var_add_range (anal, var, cond, aop.val);
 				}
 			}

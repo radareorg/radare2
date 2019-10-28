@@ -996,7 +996,8 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	}
 	// TODO This code block must be deleted when all the anal plugs support disasm
 	if (!op->mnemonic && mask & R_ANAL_OP_MASK_DISASM) {
-		if (anal->verbose) {
+		RAsmOp asmop;
+		if (core->anal->verbose) {
 			eprintf ("WARNING: Implement RAnalOp.MASK_DISASM for current anal.arch. Using the sluggish RAsmOp fallback for now.\n");
 		}
 		r_asm_set_pc (core->assembler, addr);
