@@ -323,9 +323,11 @@ static void r_meta_item_fini(RAnalMetaItem *item) {
 }
 
 R_API void r_meta_item_free(void *_item) {
-	RAnalMetaItem *item = _item;
-	r_meta_item_fini (item);
-	free (item);
+	if (_item) {
+		RAnalMetaItem *item = _item;
+		r_meta_item_fini (item);
+		free (item);
+	}
 }
 
 R_API RAnalMetaItem *r_meta_item_new(int type) {

@@ -2811,9 +2811,9 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	default: return false;
 	}
 	// adjust alignment
-	r_cons_printf ("  ");
 	ut64 n = r_read_ble (buf, core->print->big_endian, size * 8);
 	if (r_config_get_i (core->config, "asm.marks")) {
+		r_cons_printf ("  ");
 		int q = core->print->cur_enabled &&
 			ds->cursor >= ds->index &&
 			ds->cursor < (ds->index + size);
@@ -6269,6 +6269,8 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	int midbb = r_config_get_i (core->config, "asm.bb.middle");
+	bool asmmarks = r_config_get_i (core->config, "asm.marks");
+	r_config_set_i (core->config, "asm.marks", false);
 	i = 0;
 	j = 0;
 	RAnalMetaItem *meta = NULL;
@@ -6279,11 +6281,14 @@ toro:
 			err = 1;
 			break;
 		}
-		if (meta)  {
-			// Release before write, control flow bellow is too messy to
-			// relase after use.
-			r_meta_item_free (meta);
+		ut64 at = core->offset + i;
+		if (show_offset) {
+			const int show_offseg = (core->print->flags & R_PRINT_FLAGS_SEGOFF) != 0;
+			const int show_offdec = (core->print->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
+			unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
+			r_print_offset_sg (core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
 		}
+		r_meta_item_free (meta);
 		meta = r_meta_find (core->anal, core->offset + i,
 			R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (meta && meta->size > 0) {
@@ -6380,14 +6385,6 @@ toro:
 				}
 			} // do not show flags in pie
 		}
-		ut64 at = core->offset + i;
-		if (show_offset) {
-			const int show_offseg = (core->print->flags & R_PRINT_FLAGS_SEGOFF) != 0;
-			const int show_offdec = (core->print->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
-			unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
-
-			r_print_offset_sg (core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
-		}
 		// r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ret < 1) {
 			err = 1;
@@ -6473,9 +6470,8 @@ toro:
 		i = 0;
 		goto toro;
 	}
-	if (meta) {
-		r_meta_item_free (meta);
-	}
+	r_config_set_i (core->config, "asm.marks", asmmarks);
+	r_meta_item_free (meta);
 	r_cons_break_pop ();
 	r_core_seek (core, old_offset, 1);
 	return err;
