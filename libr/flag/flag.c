@@ -309,7 +309,8 @@ static bool print_flag_json(RFlagItem *flag, void *user) {
 		return true;
 	}
 	pj_o (u->pj);
-	pj_ks (u->pj, "name", u->real ? flag->realname : flag->name);
+	pj_ks (u->pj, "name", flag->name); // u->real ? flag->realname : flag->name);
+	pj_ks (u->pj, "realname", flag->realname);
 	pj_ki (u->pj, "size", flag->size);
 	if (flag->alias) {
 		pj_ks (u->pj, "alias", flag->alias);

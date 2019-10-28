@@ -1262,6 +1262,7 @@ rep:
 					{
 						pj_o (pj);
 						pj_ks (pj, "name", item->name);
+						pj_ks (pj, "realname", item->realname);
 						pj_kn (pj, "offset", item->offset);
 						pj_kn (pj, "size", item->size);
 						pj_end (pj);
