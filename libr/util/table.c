@@ -351,6 +351,12 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 }
 
 R_API char *r_table_tostring(RTable *t) {
+	if (t->showJSON) {
+		char *s = r_table_tojson (t);
+		char *q = r_str_newf ("%s\n", s);;
+		free (s);
+		return q;
+	}
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
 	RTableColumn *col;
@@ -462,7 +468,9 @@ R_API char *r_table_tojson(RTable *t) {
 						pj_ks (pj, col->name, item);
 					}
 				} else {
-					pj_ks (pj, col->name, item);
+					if (*item) {
+						pj_ks (pj, col->name, item);
+					}
 				}
 			}
 			c++;
@@ -504,6 +512,15 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 		case '~':
 			match = strstr (nn, un) != NULL;
 			break;
+		case 's':
+			match = strlen (nn) == atoi (un);
+			break;
+		case 'l':
+			match = strlen (nn) > atoi (un);
+			break;
+		case 'L':
+			match = strlen (nn) < atoi (un);
+			break;
 		case '\0':
 			break;
 		}
@@ -535,6 +552,30 @@ R_API void r_table_sort(RTable *t, int nth, bool inc) {
 		Gnth = nth;
 		Gcmp = col->type->cmp;
 		r_list_sort (t->rows, cmp);
+		Gnth = Ginc = 0;
+		Gcmp = NULL;
+	}
+}
+
+static int cmplen(const void *_a, const void *_b) {
+	RTableRow *a = (RTableRow*)_a;
+	RTableRow *b = (RTableRow*)_b;
+	const char *wa = r_list_get_n (a->items, Gnth);
+	const char *wb = r_list_get_n (b->items, Gnth);
+	int res = strlen (wa) - strlen (wb);
+	if (Ginc) {
+		res = -res;
+	}
+	return res;
+}
+
+R_API void r_table_sortlen(RTable *t, int nth, bool inc) {
+	RTableColumn *col = r_list_get_n (t->cols, nth);
+	if (col) {
+		Ginc = inc;
+		Gnth = nth;
+		Gcmp = cmplen;
+		r_list_sort (t->rows, Gcmp);
 		Gnth = Ginc = 0;
 		Gcmp = NULL;
 	}
@@ -618,18 +659,36 @@ R_API void r_table_filter_columns(RTable *t, RList *list) {
 	}
 }
 
+static bool __table_special(RTable *t, const char *columnName) {
+	if (!strcmp (columnName, ":quiet")) {
+		t->showHeader = true;
+		return true;
+	}
+	if (!strcmp (columnName, ":json")) {
+		t->showJSON = true;
+		return true;
+	}
+	return false;
+}
+
 R_API bool r_table_query(RTable *t, const char *q) {
 	r_return_val_if_fail (t, false);
 	q = r_str_trim_ro (q);
 	if (*q == '?') {
 		eprintf ("RTableQuery> comma separated \n");
 		eprintf (" colname/sort/inc     sort rows by given colname\n");
+		eprintf (" name/sortlen/inc     sort rows by strlen()\n");
 		eprintf (" col0/cols/col1/col2  select cols\n");
 		eprintf (" col0/gt/0x800        grep rows matching col0 > 0x800\n");
 		eprintf (" col0/lt/0x800        grep rows matching col0 < 0x800\n");
 		eprintf (" col0/eq/0x800        grep rows matching col0 == 0x800\n");
 		eprintf (" name/str/warn        grep rows matching col(name).str(warn)\n");
+		eprintf (" name/strlen/3        grep rows matching strlen(col) == X\n");
+		eprintf (" name/minlen/3        grep rows matching strlen(col) > X\n");
+		eprintf (" name/maxlen/3        grep rows matching strlen(col) < X\n");
 		eprintf (" size/sum             sum all the values of given column\n");
+		eprintf (" :json                .tostring() == .tojson()\n");
+		eprintf (" :quiet               do not print column names header\n");
 		return false;
 	}
 	// TODO support parenthesis and (or)||
@@ -648,6 +707,9 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		const char *columnName = r_list_get_n (q, 0);
 		const char *operation = r_list_get_n (q, 1);
 		const char *operand = r_list_get_n (q, 2);
+		if (__table_special (t, columnName)) {
+			continue;
+		}
 		int col = r_table_column_nth (t, columnName);
 		if (col == -1) {
 			if (*columnName == '[') {
@@ -661,6 +723,8 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		}
 		if (!strcmp (operation, "sort")) {
 			r_table_sort (t, col, operand && !strcmp (operand, "dec"));
+		} else if (!strcmp (operation, "sortlen")) {
+			r_table_sortlen (t, col, operand && !strcmp (operand, "dec"));
 		} else if (!strcmp (operation, "join")) {
 			// TODO: implement join operation with other command's tables
 		} else if (!strcmp (operation, "sum")) {
@@ -671,6 +735,18 @@ R_API bool r_table_query(RTable *t, const char *q) {
 			r_list_free (list);
 			r_table_filter (t, 0, '+', op);
 			free (op);
+		} else if (!strcmp (operation, "strlen")) {
+			if (operand) {
+				r_table_filter (t, col, 's', operand);
+			}
+		} else if (!strcmp (operation, "minlen")) {
+			if (operand) {
+				r_table_filter (t, col, 'l', operand);
+			}
+		} else if (!strcmp (operation, "maxlen")) {
+			if (operand) {
+				r_table_filter (t, col, 'L', operand);
+			}
 		} else if (!strcmp (operation, "str")) {
 			if (operand) {
 				r_table_filter (t, col, '~', operand);
@@ -683,10 +759,6 @@ R_API bool r_table_query(RTable *t, const char *q) {
 			r_list_free (list);
 			free (op);
 		// TODO	r_table_filter_columns (t, q);
-		} else if (!strcmp (operation, "quiet")) {
-			t->showHeader = false;
-		} else if (!strcmp (operation, "graph")) {
-		// TODO	r_table_rendergraph(t, q);
 		} else {
 			int op = __resolveOperation (operation);
 			if (op == -1) {
