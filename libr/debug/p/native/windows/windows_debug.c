@@ -878,7 +878,8 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 					return -1;
 				}
 				if (!__is_thread_alive (dbg, dbg->tid)) {
-					if (!w32_select (dbg, dbg->pid, dbg->tid)) {
+					ret = w32_select (dbg, dbg->pid, dbg->tid);
+					if (ret == -1) {
 						return R_DEBUG_REASON_DEAD;
 					}
 				}
@@ -1046,9 +1047,16 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 	DWORD continue_status = (sig == DBG_EXCEPTION_NOT_HANDLED)
 		? DBG_EXCEPTION_NOT_HANDLED : DBG_EXCEPTION_HANDLED;
 	dbg->tid = w32_select (dbg, pid, tid);
+	r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
+
+	// Don't continue with a thread that wasn't requested
+	if (dbg->tid != tid) {
+		return -1;
+	}
+
 	if (breaked) {
 		breaked = false;
-		return tid;
+		return -1;
 	}
 	w32dbg_wrap_instance *inst = rio->inst;
 	inst->params->type = W32_CONTINUE;
@@ -1059,8 +1067,9 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (!w32dbgw_intret (inst)) {
 		w32dbgw_err (inst);
 		r_sys_perror ("w32_continue/ContinueDebugEvent");
-		return false;
+		return -1;
 	}
+
 	return tid;
 }
 
