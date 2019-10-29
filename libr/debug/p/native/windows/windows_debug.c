@@ -871,7 +871,9 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			inst->params->type = W32_WAIT;
 			inst->params->wait.de = &de;
 			inst->params->wait.wait_time = wait_time;
+			void *bed = r_cons_sleep_begin ();
 			w32dbg_wrap_wait_ret (rio->inst);
+			r_cons_sleep_end (bed);
 			if (!w32dbgw_intret (inst)) {
 				if (w32dbgw_err (inst) != ERROR_SEM_TIMEOUT) {
 					r_sys_perror ("w32_dbg_wait/WaitForDebugEvent");
