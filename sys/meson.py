@@ -170,7 +170,7 @@ def win_dist(args):
     r2_bat_fname = args.install + r'\bin\r2.bat'
     log.debug('create "%s"', r2_bat_fname)
     with open(r2_bat_fname, 'w') as r2_bat:
-        r2_bat.write('@"%s\\bin\\radare2" %%*\n' % os.path.abspath(args.install))
+        r2_bat.write('@"%~dp0\\radare2" %*\n')
 
     copy(r'{BUILDDIR}\libr\*\*.dll', r'{DIST}\bin')
     makedirs(r'{DIST}\{R2_LIBDIR}')
