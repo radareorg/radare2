@@ -989,7 +989,6 @@ static void add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 
 	r_list_foreach (all_vars, iter, var) {
 		if (var->isarg) {
-			r_cons_printf ("%s %s (%s)\n", var->type, var->name, fcn->name);
 			query = r_str_newf ("anal/types/func.%s.arg.%d=%s,%s", fcn->name, arg_count, var->type, var->name);
 			sdb_querys (core->sdb, NULL, 0, query);
 			++arg_count;
