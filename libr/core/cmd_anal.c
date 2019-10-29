@@ -974,6 +974,23 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	}
 }
 
+// function argument types and names into anal/types
+static void add_vars_sdb(RCore *core, RAnalFunction *fcn) {
+	RAnalFcnVarsCache cache;
+	RListIter *iter;
+	r_anal_fcn_vars_cache_init (core->anal, &cache, fcn);
+	RAnalVar *var;
+	char *query = NULL;
+	int arg_count = 0;
+
+	r_list_foreach (cache.rvars, iter, var) {
+		query = r_str_newf ("anal/types/func.%s.arg.%d=%s,%s", fcn->name, arg_count, var->type, var->name);
+		sdb_querys (core->sdb, NULL, 0, query);
+		++arg_count;
+	}
+	free (query);
+}
+
 static int cmd_an(RCore *core, bool use_json, const char *name)
 {
 	ut64 off = core->offset;
@@ -1131,6 +1148,7 @@ static int var_cmd(RCore *core, const char *str) {
 			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
 			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
 			r_core_recover_vars (core, fcn, false);
+			add_vars_sdb (core, fcn);
 			free (p);
 			return true;
 		} else {
@@ -3727,6 +3745,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			setFunctionName (core, addr, fcn->name, false);
 			if (core->anal->opt.vars) {
 				r_core_recover_vars (core, fcn, true);
+				add_vars_sdb (core, fcn);
 			}
 		}
 		if (analyze_recursively) {
@@ -3784,6 +3803,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				r_list_free (refs);
 				if (core->anal->opt.vars) {
 					r_core_recover_vars (core, fcn, true);
+					add_vars_sdb (core, fcn);
 				}
 			}
 		}
@@ -8997,6 +9017,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						}
 						//extract only reg based var here
 						r_core_recover_vars (core, fcni, true);
+						add_vars_sdb (core, fcni);
 						r_list_free (list);
 					}
 				}
