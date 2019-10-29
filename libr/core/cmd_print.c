@@ -4833,6 +4833,34 @@ static void print_json_string(RCore *core, const char* block, int len, const cha
 	free (str);
 }
 
+static char *__op_refs(RCore *core, RAnalOp *op, int n) {
+	RStrBuf *sb = r_strbuf_new ("");
+	if (n) {
+		// RList *list = r_anal_xrefs_get_from (core->anal, op->addr);
+		RList *list = r_anal_xrefs_get (core->anal, op->addr);
+		RAnalRef *ref;
+		RListIter *iter;
+		r_list_foreach (list, iter, ref) {
+			r_strbuf_appendf (sb, "0x%08"PFMT64x" ", ref->at);
+		}
+	} else {
+		if (op->jump != UT64_MAX) {
+			r_strbuf_appendf (sb, "0x%08"PFMT64x" ", op->jump);
+		}
+		if (op->fail != UT64_MAX) {
+			r_strbuf_appendf (sb, "0x%08"PFMT64x" ", op->fail);
+		}
+		if (op->ptr != UT64_MAX) {
+			if (r_io_is_valid_offset (core->io, op->ptr, false)) {
+				r_strbuf_appendf (sb, "0x%08"PFMT64x" ", op->ptr);
+			}
+		}
+	}
+	char *res = r_strbuf_drain (sb);
+	r_str_trim (res);
+	return res;
+}
+
 static void r_core_disasm_table(RCore * core, int l, const char *input) {
 	int i;
 	RTable *t = r_core_table (core);
@@ -4840,9 +4868,9 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 	if (arg) {
 		input = arg + 1;
 	}
-	r_table_set_columnsf (t, "snsss", "name", "addr", "bytes", "disasm", "comment");
+	r_table_set_columnsf (t, "snssssss", "name", "addr", "bytes", "disasm", "comment", "esil", "refs", "xrefs");
 	const int minopsz = 1;
-	const int options = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_DISASM;
+	const int options = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_DISASM | R_ANAL_OP_MASK_ESIL;
 	ut64 ea = core->offset;
 	for (i = 0; i < l; i++) {
 		RAnalOp *op = r_core_anal_op (core, ea, options);
@@ -4861,10 +4889,15 @@ static void r_core_disasm_table(RCore * core, int l, const char *input) {
 		char *sbytes = r_hex_bin2strdup(bytes, op->size);
 		RFlagItem *fi = r_flag_get_i (core->flags, ea);
 		char *fn = fi? fi->name: "";
-		r_table_add_rowf (t, "sXsss", fn, ea, sbytes, op->mnemonic, comment? comment: "");
+		const char *esil = R_STRBUF_SAFEGET (&op->esil);
+		char *refs = __op_refs (core, op, 0);
+		char *xrefs = __op_refs (core, op, 1);
+		r_table_add_rowf (t, "sXssssss", fn, ea, sbytes, op->mnemonic, comment? comment: "", esil, refs, xrefs);
 		free (comment);
 		free (sbytes);
 		free (bytes);
+		free (xrefs);
+		free (refs);
 		ea += op->size;
 		r_anal_op_free (op);
 	}
