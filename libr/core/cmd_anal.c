@@ -977,16 +977,23 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 // function argument types and names into anal/types
 static void add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	RAnalFcnVarsCache cache;
-	RListIter *iter;
 	r_anal_fcn_vars_cache_init (core->anal, &cache, fcn);
+	RListIter *iter;
 	RAnalVar *var;
 	char *query = NULL;
 	int arg_count = 0;
 
-	r_list_foreach (cache.rvars, iter, var) {
-		query = r_str_newf ("anal/types/func.%s.arg.%d=%s,%s", fcn->name, arg_count, var->type, var->name);
-		sdb_querys (core->sdb, NULL, 0, query);
-		++arg_count;
+	RList *all_vars = cache.bvars;
+	r_list_join (all_vars, cache.svars);
+	r_list_join (all_vars, cache.rvars);
+
+	r_list_foreach (all_vars, iter, var) {
+		if (var->isarg) {
+			r_cons_printf ("%s %s (%s)\n", var->type, var->name, fcn->name);
+			query = r_str_newf ("anal/types/func.%s.arg.%d=%s,%s", fcn->name, arg_count, var->type, var->name);
+			sdb_querys (core->sdb, NULL, 0, query);
+			++arg_count;
+		}
 	}
 	free (query);
 }
