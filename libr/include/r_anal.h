@@ -1261,7 +1261,6 @@ typedef enum {
 
 typedef struct r_anal_esil_dfg_t {
 	ut32 idx;
-//	Sdb *latest_nodes;	//replaced by regs
 	Sdb *regs;		//resolves regnames to intervals
 	RContRBTree *reg_vars;	//vars represented in regs
 	RQueue *todo;		//todo-queue allocated in this struct for perf
@@ -1269,6 +1268,7 @@ typedef struct r_anal_esil_dfg_t {
 	RGraph *flow;
 	RGraphNode *cur;
 	RGraphNode *old;
+	bool malloc_failed;
 } RAnalEsilDFG;
 
 typedef struct r_anal_esil_dfg_node_t {
