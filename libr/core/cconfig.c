@@ -2935,6 +2935,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.midcursor", "false", "Cursor in visual disasm mode breaks the instruction");
 	SETPREF ("asm.cmt.flgrefs", "true", "Show comment flags associated to branch reference");
 	SETPREF ("asm.cmt.right", "true", "Show comments at right of disassembly if they fit in screen");
+	SETPREF ("asm.cmt.esil", "false", "Show ESIL expressions as comments");
 	SETI ("asm.cmt.col", 71, "Column to align comments");
 	SETICB ("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
 	// maybe rename to asm.cmt.calls

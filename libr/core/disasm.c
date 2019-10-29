@@ -154,6 +154,7 @@ typedef struct {
 	int cmtcol;
 	bool show_calls;
 	bool show_cmtflgrefs;
+	bool show_cmtesil;
 	bool show_cycles;
 	bool show_refptr;
 	bool show_stackptr;
@@ -304,11 +305,13 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines);
 static void ds_show_xrefs(RDisasmState *ds);
 static void ds_atabs_option(RDisasmState *ds);
 static void ds_show_functions(RDisasmState *ds);
+static void ds_control_flow_comments(RDisasmState *ds);
+static void ds_adistrick_comments(RDisasmState *ds);
+static void ds_print_comments_right(RDisasmState *ds);
 static void ds_show_comments_right(RDisasmState *ds);
 static void ds_show_flags(RDisasmState *ds);
 static void ds_update_ref_lines(RDisasmState *ds);
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
-static void ds_control_flow_comments(RDisasmState *ds);
 static void ds_print_lines_right(RDisasmState *ds);
 static void ds_print_lines_left(RDisasmState *ds);
 static void ds_print_cycles(RDisasmState *ds);
@@ -317,7 +320,6 @@ static void ds_print_stackptr(RDisasmState *ds);
 static void ds_print_offset(RDisasmState *ds);
 static void ds_print_op_size(RDisasmState *ds);
 static void ds_print_trace(RDisasmState *ds);
-static void ds_adistrick_comments(RDisasmState *ds);
 static void ds_print_opstr(RDisasmState *ds);
 static void ds_print_color_reset(RDisasmState *ds);
 static int ds_print_middle(RDisasmState *ds, int ret);
@@ -329,7 +331,6 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos);
 static void ds_print_dwarf(RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf);
 static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment);
-static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 static void ds_print_demangled(RDisasmState *ds);
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr);
@@ -472,29 +473,6 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	r_cons_printf ("%s%s", nl? "\n": "", sn);
 	ds_print_ref_lines (ds->refline, ds->line_col, ds);
 	r_cons_printf ("  %s %s",up? "": ".-", COLOR (ds, color_comment));
-#if 0
-// r_cons_printf ("(%d)", ds->cmtcount);
-	if (ds->cmtcount == 1) {
-		ds_align_comment (ds);
-		r_cons_printf ("%s%s%s%s%s%s%s  %s %s", nl? "\n": "",
-			COLOR_RESET (ds), COLOR (ds, color_fline),
-			ds->pre, sn, ds->refline, COLOR_RESET (ds),
-			up? "": ".v", COLOR (ds, color_comment));
-	} else {
-		r_cons_printf ("%s%s", COLOR (ds, color_comment), " "); //nl? "\n": "");
-	}
-#if 0
-	if (!up || ds->cmtcount > 1) {
-		r_cons_printf ("%s%s", COLOR (ds, color_comment), nl? "\n": "");
-	} else {
-		ds_align_comment (ds);
-		r_cons_printf ("%s%s%s%s%s%s%s  %s %s", nl? "\n": "",
-			COLOR_RESET (ds), COLOR (ds, color_fline),
-			ds->pre, sn, ds->refline, COLOR_RESET (ds),
-			up? "": "`-", COLOR (ds, color_comment));
-	}
-#endif
-#endif
 }
 #define _ALIGN _ds_comment_align_ (ds, true, false)
 
@@ -512,7 +490,6 @@ static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *forma
 	}
 
 	r_cons_printf_list (format, ap);
-
 	if (!ds->show_comment_right && nl) {
 		ds_newline (ds);
 	}
@@ -541,6 +518,7 @@ DS_COMMENT_FUNC (end, false, true)
 static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
+
 	if (ds->show_comments && up) {
 		ds->show_comment_right ? ds_align_comment (ds) : ds_comment_lineup (ds);
 	}
@@ -744,6 +722,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
 	ds->show_family = r_config_get_i (core->config, "asm.family");
 	ds->cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+	ds->show_cmtesil = r_config_get_i (core->config, "asm.cmt.esil");
 	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmt.flgrefs");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
@@ -5150,6 +5129,23 @@ toro:
 				continue;
 			}
 		}
+		if (!ds->show_comment_right) {
+			if (ds->show_cmtesil) {
+				const char *esil = R_STRBUF_SAFEGET (&ds->analop.esil);
+				// ds_begin_line (ds);
+				ds_pre_line (ds);
+				ds_setup_print_pre (ds, false, false);
+				r_cons_strcat ("      ");
+                                ds_print_lines_left (ds);
+				ds_begin_comment (ds);
+				if (ds->show_color) {
+					ds_comment (ds, true, "; %s%s%s",
+						ds->pal_comment, esil, Color_RESET);
+				} else {
+					ds_comment (ds, true, "; %s", esil);
+				}
+			}
+		}
 		r_core_seek_archbits (core, ds->at); // slow but safe
 		ds->has_description = false;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
@@ -5432,6 +5428,15 @@ toro:
 
 			ds_cdiv_optimization (ds);
 			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
+				if (ds->show_cmtesil) {
+					const char *esil = R_STRBUF_SAFEGET (&ds->analop.esil);
+					if (ds->show_color) {
+						ds_comment (ds, true, "; %s%s%s",
+							ds->pal_comment, esil, Color_RESET);
+					} else {
+						ds_comment (ds, true, "; %s", esil);
+					}
+				}
 				ds_print_ptr (ds, len + 256, idx);
 				ds_print_sysregs (ds);
 				ds_print_fcn_name (ds);
