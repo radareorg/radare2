@@ -2004,6 +2004,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	RListIter *iter;
 	RRegItem *r;
+	PJ *pj;
 	if (use_colors) {
 #undef ConsP
 #define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
@@ -2013,7 +2014,8 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	}
 //	r_debug_map_sync (core->dbg);
 	if (mode == 'j') {
-		r_cons_printf ("[");
+		pj = pj_new ();
+		pj_a (pj);
 	}
 	r_list_foreach (list, iter, r) {
 		char *tmp = NULL;
@@ -2037,12 +2039,14 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		}
 		switch (mode) {
 		case 'j':
-			if (r->flags) {
-				tmp = r_reg_get_bvalue (reg, r);
-				r_cons_printf ("%s{\"reg\":\"%s\",\"value\":\"%s\"", iter->p?",":"", r->name, tmp);
-			} else {
-				r_cons_printf ("%s{\"reg\":\"%s\",\"value\":\"0x%"PFMT64x"\"", iter->p?",":"", r->name, value);
-			}
+				pj_o (pj);
+				pj_ks (pj, "reg", r->name);
+				if (r->flags) {
+					tmp = r_reg_get_bvalue (reg, r);
+					pj_ks (pj, "value", tmp);
+				} else {
+					pj_ks (pj, "value", sdb_fmt ("0x%"PFMT64x, value));
+				}
 			break;
 		default:
 			{
@@ -2078,21 +2082,25 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		}
 		if (rrstr) {
 			if (mode == 'j') {
-				r_cons_printf (",\"ref\":\"%s\"}", rrstr);
+				pj_ks (pj, "ref", rrstr);
+				pj_end (pj);
 			} else {
 				r_cons_printf (" %s\n", rrstr);
 			}
 			free (rrstr);
 		} else {
 			if (mode == 'j') {
-				r_cons_printf (",\"ref\":\"\"}");
+				pj_ks (pj, "ref", "");
+				pj_end (pj);
 			} else {
 				r_cons_printf ("\n");
 			}
 		}
 	}
 	if (mode == 'j') {
-		r_cons_printf("]\n");
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 }
 
