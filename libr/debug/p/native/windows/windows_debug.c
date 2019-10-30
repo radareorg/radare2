@@ -727,7 +727,7 @@ int w32_select(RDebug* dbg, int pid, int tid) {
 	} else if (tid) {
 		// If thread is dead, search for another one
 		r_list_foreach (dbg->threads, it, th) {
-			if (th->bFinished) {
+			if (!__is_thread_alive (dbg, th->tid)) {
 				continue;
 			}
 			__continue_thread (th->hThread, dbg->bits);
@@ -780,21 +780,16 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return ret;
 }
 
-void w32_break_process_wrapper(void *d) {
-	w32_break_process (d);
-}
-
 void w32_break_process(RDebug *dbg) {
 	RIOW32Dbg *rio = dbg->user;
 	if (dbg->corebind.cfggeti (dbg->corebind.core, "dbg.threads")) {
 		w32_select (dbg, rio->pi.dwProcessId, 0); // Suspend all threads
-		breaked = true;
 	} else {
 		if (!w32_DebugBreakProcess (rio->pi.hProcess)) {
 			r_sys_perror ("w32_break_process/DebugBreakProcess");
 		}
 	}
-
+	breaked = true;
 }
 
 static const char *__get_w32_excep_name(DWORD code) {
@@ -859,6 +854,9 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 	char *dllname = NULL;
 	int ret = R_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
+
+	r_cons_break_push (w32_break_process, dbg);
+
 	/* handle debug events */
 	do {
 		/* do not continue when already exited but still open for examination */
@@ -877,12 +875,14 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			if (!w32dbgw_intret (inst)) {
 				if (w32dbgw_err (inst) != ERROR_SEM_TIMEOUT) {
 					r_sys_perror ("w32_dbg_wait/WaitForDebugEvent");
-					return -1;
+					ret = -1;
+					goto end;
 				}
 				if (!__is_thread_alive (dbg, dbg->tid)) {
 					ret = w32_select (dbg, dbg->pid, dbg->tid);
 					if (ret == -1) {
-						return R_DEBUG_REASON_DEAD;
+						ret = R_DEBUG_REASON_DEAD;
+						goto end;
 					}
 				}
 			} else {
@@ -891,7 +891,8 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 		} while (!breaked);
 
 		if (breaked) {
-			return R_DEBUG_REASON_NONE;
+			ret = R_DEBUG_REASON_NONE;
+			goto end;
 		}
 
 		tid = de.dwThreadId;
@@ -902,12 +903,12 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 		/* TODO: DEBUG_CONTROL_C */
 		switch (de.dwDebugEventCode) {
 		case CREATE_PROCESS_DEBUG_EVENT:
-			next_event = 0;
 			__r_debug_thread_add (dbg, pid, tid, de.u.CreateProcessInfo.hThread, de.u.CreateProcessInfo.lpThreadLocalBase, de.u.CreateProcessInfo.lpStartAddress, FALSE);
 			rio->pi.hProcess = de.u.CreateProcessInfo.hProcess;
 			rio->pi.hThread = de.u.CreateProcessInfo.hThread;
 			rio->pi.dwProcessId = pid;
 			ret = R_DEBUG_REASON_NEW_PID;
+			next_event = 0;
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
 			__r_debug_thread_add (dbg, pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, FALSE);
@@ -926,7 +927,6 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			} else {
 				__r_debug_thread_add (dbg, pid, tid, INVALID_HANDLE_VALUE, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, TRUE);
 			}
-			next_event = 0;
 			if (de.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT) {
 				exited_already = pid;
 				w32_continue (dbg, pid, tid, DBG_CONTINUE);
@@ -934,6 +934,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			} else {
 				ret = R_DEBUG_REASON_EXIT_TID;
 			}
+			next_event = 0;
 			break;
 		}
 		case LOAD_DLL_DEBUG_EVENT:
@@ -942,8 +943,8 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 				__r_debug_lstLibAdd (pid,de.u.LoadDll.lpBaseOfDll, de.u.LoadDll.hFile, dllname);
 				free (dllname);
 			}
-			next_event = 0;
 			ret = R_DEBUG_REASON_NEW_LIB;
+			next_event = 0;
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
 			lstLibPtr = (PLIB_ITEM)__r_debug_findlib (de.u.UnloadDll.lpBaseOfDll);
@@ -954,8 +955,8 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 				if (dllname)
 					free (dllname);
 			}
-			next_event = 0;
 			ret = R_DEBUG_REASON_EXIT_LIB;
+			next_event = 0;
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
 		{
@@ -983,9 +984,9 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 		case EXCEPTION_DEBUG_EVENT:
 			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
 			case DBG_CONTROL_C:
-				eprintf ("Received CTRL+C event, continuing\n");
+				eprintf ("Received CTRL+C, suspending execution\n");
 				w32_continue (dbg, pid, tid, DBG_EXCEPTION_NOT_HANDLED);
-				next_event = 1;
+				next_event = 0;
 				break;
 #if _WIN64
 			case 0x4000001f: /* STATUS_WX86_BREAKPOINT */
@@ -1014,7 +1015,8 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		default:
 			eprintf ("(%d) unknown event: %d\n", pid, de.dwDebugEventCode);
-			return -1;
+			ret = -1;
+			goto end;
 		}
 	} while (next_event);
 
@@ -1026,6 +1028,8 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 		__r_debug_thread_add (dbg, pid, tid, w32_OpenThread (w32_THREAD_ALL_ACCESS, FALSE, tid), 0, 0, __is_thread_alive (dbg, tid));
 	}
 
+end:
+	r_cons_break_pop ();
 	return ret;
 }
 
