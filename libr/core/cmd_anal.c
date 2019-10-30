@@ -816,12 +816,11 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 #endif
 
 // function argument types and names into anal/types
-static void add_vars_sdb(RCore *core, RAnalFunction *fcn) {
+static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	RAnalFcnVarsCache cache;
 	r_anal_fcn_vars_cache_init (core->anal, &cache, fcn);
 	RListIter *iter;
 	RAnalVar *var;
-	char *query = NULL;
 	int arg_count = 0;
 
 	RList *all_vars = cache.bvars;
@@ -830,9 +829,10 @@ static void add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 
 	r_list_foreach (all_vars, iter, var) {
 		if (var->isarg) {
-			query = r_str_newf ("anal/types/func.%s.arg.%d=%s,%s", fcn->name, arg_count, var->type, var->name);
+			char *query = r_str_newf ("anal/types/func.%s.arg.%d=%s,%s", fcn->name, arg_count, var->type, var->name);
 			sdb_querys (core->sdb, NULL, 0, query);
-			++arg_count;
+			free (query);
+			arg_count++;
 		}
 	}
 	free (query);
@@ -869,7 +869,7 @@ static bool cmd_anal_aaft(RCore *core) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		add_vars_sdb (core, fcn);
+		__add_vars_sdb (core, fcn);
 	}
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
