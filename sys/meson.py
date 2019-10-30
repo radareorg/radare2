@@ -306,7 +306,7 @@ def main():
           ldflags = os.environ.get('LDFLAGS')
           if not ldflags:
               ldflags = ''
-          os.environ['LDFLAGS'] = ldflags + ' -lasan'
+          os.environ['LDFLAGS'] = ldflags + ' -fsanitize=address'
 
     # Check arguments
     if args.pull:
