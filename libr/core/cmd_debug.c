@@ -2607,10 +2607,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 			} else {
 				explicit_size = 1;
-				if(str[2] == ' ' && str[3] != '\x00')	{
+				if (str[2] == ' ' && str[3] != '\x00')	{
 					name = strdup (str + 3);
 					explicit_name = 1;
 				}
+				// TODO use switch statement here
 				if (str[1] == 'b') { // "drmb"
 					size = pack_sizes[0];
 					pack_show[0] = 1;
@@ -2631,17 +2632,17 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					pack_show[5] = 1;
 				}
 			}
-			if(explicit_name) {
+			if (explicit_name) {
 				// TODO: sanity check index, size against item->packed_size
-				RRegItem *item = r_reg_get(core->dbg->reg, name, -1);
+				RRegItem *item = r_reg_get (core->dbg->reg, name, -1);
 				if (item) {
 					if (eq) {
-						ut64 val = r_num_math(core->num, eq);
-						r_reg_set_pack(core->dbg->reg, item, index, size, val);
-						r_debug_reg_sync(core->dbg, R_REG_TYPE_XMM, true);
+						ut64 val = r_num_math (core->num, eq);
+						r_reg_set_pack (core->dbg->reg, item, index, size, val);
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, true);
 					} else {
-						r_debug_reg_sync(core->dbg, R_REG_TYPE_XMM, false);
-						ut64 res = r_reg_get_pack(core->dbg->reg, item, index, size);
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, false);
+						ut64 res = r_reg_get_pack (core->dbg->reg, item, index, size);
 						// TODO: handle mm
 						if (!explicit_index) {
 							int pi;
@@ -2664,18 +2665,18 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 											pack_print (i, res, pi);
 										}
 									}
-									r_cons_printf("\n");
+									r_cons_newline ();
 								}
 							}
 						} else {
 							// print selected index / wordsize
-							r_cons_printf("0x%08" PFMT64x "\n", res);
+							r_cons_printf ("0x%08" PFMT64x "\n", res);
 						}
 					}
 				} else {
 					eprintf ("cannot find multimedia register '%s'\n", name);
 				}
-				free(name);
+				free (name);
 			} else {
 				// explicit size no name
 				RListIter *iter;
@@ -2689,7 +2690,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 							continue;
 						}
 						int pi;
-						r_cons_printf("%-5s = ", item->name);
+						r_cons_printf ("%-5s = ", item->name);
 						// TODO: factor out these inner loops
 						for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
 							if (pack_show[pi]) {
@@ -2709,7 +2710,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 										pack_print (i, res, pi);
 									}
 								}
-								r_cons_printf("\n");
+								r_cons_newline ();
 							}
 						}
 					}
@@ -2726,7 +2727,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		if (str[1]=='?') {
 			eprintf ("usage: drf [fpureg] [= value]\n");
 		} else if (str[1]==' ') {
-			char *p, *name = strdup (str+2);
+			char *p, *name = strdup (str + 2);
 			char *eq = strchr (name, '=');
 			if (eq) {
 				*eq++ = 0;
@@ -2780,7 +2781,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			rad = str[1];
 			str++;
 			if (rad == 'j' && !str[1]) {
-				r_cons_print("[");
+				// TODO use pj api here
+				r_cons_print ("[");
 				for (i = 0; (name = r_reg_get_type (i)); i++) {
 					if (i) {
 						r_cons_print (",");
