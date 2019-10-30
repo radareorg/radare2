@@ -1574,6 +1574,8 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 }
 
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols) {
+	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
 	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
 	int j = 0;
 	p->cb_printf ("|");
@@ -1587,18 +1589,15 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 		ut64 endB = min + ((j + 1) * mul);
 		if (startA <= endB && endA >= startB) {
 			if (show_colors & isFirst) {
-				p->cb_printf (Color_GREEN "#");
+				p->cb_printf (Color_GREEN);
 				isFirst = false;
-			} else {
-				p->cb_printf ("#");
 			}
+			p->cb_printf (block);
 		} else {
-			if (isFirst) {
-				p->cb_printf ("-");
-			} else {
-				p->cb_printf (Color_RESET "-");
-				isFirst = true;
+			if (!isFirst) {
+				p->cb_printf (Color_RESET);
 			}
+			p->cb_printf (h_line);
 		}
 	}
 	p->cb_printf ("|");
