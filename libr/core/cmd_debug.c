@@ -2558,15 +2558,18 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 'm': // "drm"
 		if (str[1]=='?') {
 			r_core_cmd_help (core, help_msg_drm);
-		} else if (str[1] == ' ' || str[1] == 'b' || str[1] == 'd' || str[1] == 'w' || str[1] == 'q') {
+		} else if (str[1] == ' ' || str[1] == 'b' || str[1] == 'd' || str[1] == 'w' || str[1] == 'q' || str[1] == 'l'
+				   || str[1] == 'f') {
 			char explicit_index = 0;
 			char explicit_size = 0;
 			char explicit_name = 0;
-#define NUM_PACK_TYPES 4
-			int pack_sizes[NUM_PACK_TYPES] = { 8, 16, 32, 64 };
-			char *pack_format[NUM_PACK_TYPES] = { "%s0x%02" PFMT64x, "%s0x%04" PFMT64x, "%s0x%08" PFMT64x, "%s0x%016" PFMT64x };
+#define NUM_PACK_TYPES 6
+#define NUM_INT_PACK_TYPES 4
+			int pack_sizes[NUM_PACK_TYPES] = { 8, 16, 32, 64, 32, 64 };
+			char *pack_format[NUM_PACK_TYPES] = { "%s0x%02" PFMT64x, "%s0x%04" PFMT64x, "%s0x%08" PFMT64x,
+												  "%s0x%016" PFMT64x, "%s%lf" , "%s%lf" };
 #define pack_print(i, reg, pack_type_index) r_cons_printf (pack_format[pack_type_index], i != 0 ? " " : "", reg);
-			char pack_show[NUM_PACK_TYPES] = { 0, 0, 0, 0 };
+			char pack_show[NUM_PACK_TYPES] = { 0, 0, 0, 0, 0, 0};
 			int index = 0;
 			int size = 0; // auto
 			char *q, *p, *name;
@@ -2604,10 +2607,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 			} else {
 				explicit_size = 1;
-				if(str[2] == ' ' && str[3] != '\x00')	{
+				if (str[2] == ' ' && str[3] != '\x00')	{
 					name = strdup (str + 3);
 					explicit_name = 1;
 				}
+				// TODO use switch statement here
 				if (str[1] == 'b') { // "drmb"
 					size = pack_sizes[0];
 					pack_show[0] = 1;
@@ -2620,40 +2624,59 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				} else if (str[1] == 'q') { // "drmq"
 					size = pack_sizes[3];
 					pack_show[3] = 1;
+				} else if (str[1] == 'f') { // "drmf"
+					size = pack_sizes[4];
+					pack_show[4] = 1;
+				} else if (str[1] == 'l') { // "drml"
+					size = pack_sizes[5];
+					pack_show[5] = 1;
 				}
 			}
-			if(explicit_name) {
+			if (explicit_name) {
 				// TODO: sanity check index, size against item->packed_size
-				RRegItem *item = r_reg_get(core->dbg->reg, name, -1);
+				RRegItem *item = r_reg_get (core->dbg->reg, name, -1);
 				if (item) {
-					if (eq) { // TODO: fix setting xmm registers
-						ut64 val = r_num_math(core->num, eq);
-						r_reg_set_pack(core->dbg->reg, item, index, size, val);
-						r_debug_reg_sync(core->dbg, R_REG_TYPE_XMM, true);
+					if (eq) {
+						ut64 val = r_num_math (core->num, eq);
+						r_reg_set_pack (core->dbg->reg, item, index, size, val);
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, true);
 					} else {
-						r_debug_reg_sync(core->dbg, R_REG_TYPE_XMM, false);
-						ut64 res = r_reg_get_pack(core->dbg->reg, item, index, size);
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, false);
+						ut64 res = r_reg_get_pack (core->dbg->reg, item, index, size);
 						// TODO: handle mm
 						if (!explicit_index) {
 							int pi;
+							// TODO: factor out these inner loops
 							for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
 								if (!explicit_size || pack_show[pi]) {
 									for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
 										ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
-										pack_print (i, res, pi);
+										if( pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
+											if (pack_sizes[pi] == 64)	{
+												double dres;
+												memcpy ((void*)&dres, (void*)&res, 8);
+												pack_print (i, dres, pi);
+											} else if (pack_sizes[pi] == 32) {
+												float fres;
+												memcpy ((void*)&fres, (void*)&res, 4);
+												pack_print (i, fres, pi);
+											}
+										} else {
+											pack_print (i, res, pi);
+										}
 									}
-									r_cons_printf("\n");
+									r_cons_newline ();
 								}
 							}
 						} else {
 							// print selected index / wordsize
-							r_cons_printf("0x%08" PFMT64x "\n", res);
+							r_cons_printf ("0x%08" PFMT64x "\n", res);
 						}
 					}
 				} else {
 					eprintf ("cannot find multimedia register '%s'\n", name);
 				}
-				free(name);
+				free (name);
 			} else {
 				// explicit size no name
 				RListIter *iter;
@@ -2667,14 +2690,27 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 							continue;
 						}
 						int pi;
-						r_cons_printf("%-5s = ", item->name);
+						r_cons_printf ("%-5s = ", item->name);
+						// TODO: factor out these inner loops
 						for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
 							if (pack_show[pi]) {
 								for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
 									ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
-									pack_print (i, res, pi);
+									if( pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
+										if (pack_sizes[pi] == 64)	{
+											double dres;
+											memcpy ((void*)&dres, (void*)&res, 8);
+											pack_print (i, dres, pi);
+										} else if (pack_sizes[pi] == 32) {
+											float fres;
+											memcpy ((void*)&fres, (void*)&res, 4);
+											pack_print (i, fres, pi);
+										}
+									} else {
+										pack_print (i, res, pi);
+									}
 								}
-								r_cons_printf("\n");
+								r_cons_newline ();
 							}
 						}
 					}
@@ -2691,7 +2727,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		if (str[1]=='?') {
 			eprintf ("usage: drf [fpureg] [= value]\n");
 		} else if (str[1]==' ') {
-			char *p, *name = strdup (str+2);
+			char *p, *name = strdup (str + 2);
 			char *eq = strchr (name, '=');
 			if (eq) {
 				*eq++ = 0;
@@ -2745,7 +2781,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			rad = str[1];
 			str++;
 			if (rad == 'j' && !str[1]) {
-				r_cons_print("[");
+				// TODO use pj api here
+				r_cons_print ("[");
 				for (i = 0; (name = r_reg_get_type (i)); i++) {
 					if (i) {
 						r_cons_print (",");
