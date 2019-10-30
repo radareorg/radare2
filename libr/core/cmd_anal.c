@@ -835,7 +835,6 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 			arg_count++;
 		}
 	}
-	free (query);
 }
 
 static bool cmd_anal_aaft(RCore *core) {
