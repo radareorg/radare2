@@ -815,6 +815,29 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 }
 #endif
 
+// function argument types and names into anal/types
+static void add_vars_sdb(RCore *core, RAnalFunction *fcn) {
+	RAnalFcnVarsCache cache;
+	r_anal_fcn_vars_cache_init (core->anal, &cache, fcn);
+	RListIter *iter;
+	RAnalVar *var;
+	char *query = NULL;
+	int arg_count = 0;
+
+	RList *all_vars = cache.bvars;
+	r_list_join (all_vars, cache.svars);
+	r_list_join (all_vars, cache.rvars);
+
+	r_list_foreach (all_vars, iter, var) {
+		if (var->isarg) {
+			query = r_str_newf ("anal/types/func.%s.arg.%d=%s,%s", fcn->name, arg_count, var->type, var->name);
+			sdb_querys (core->sdb, NULL, 0, query);
+			++arg_count;
+		}
+	}
+	free (query);
+}
+
 static bool cmd_anal_aaft(RCore *core) {
 	RListIter *it;
 	RAnalFunction *fcn;
@@ -846,6 +869,7 @@ static bool cmd_anal_aaft(RCore *core) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+		add_vars_sdb (core, fcn);
 	}
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
@@ -972,29 +996,6 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 			var_accesses_list (core->anal, fcn, var->delta, typestr);
 		}
 	}
-}
-
-// function argument types and names into anal/types
-static void add_vars_sdb(RCore *core, RAnalFunction *fcn) {
-	RAnalFcnVarsCache cache;
-	r_anal_fcn_vars_cache_init (core->anal, &cache, fcn);
-	RListIter *iter;
-	RAnalVar *var;
-	char *query = NULL;
-	int arg_count = 0;
-
-	RList *all_vars = cache.bvars;
-	r_list_join (all_vars, cache.svars);
-	r_list_join (all_vars, cache.rvars);
-
-	r_list_foreach (all_vars, iter, var) {
-		if (var->isarg) {
-			query = r_str_newf ("anal/types/func.%s.arg.%d=%s,%s", fcn->name, arg_count, var->type, var->name);
-			sdb_querys (core->sdb, NULL, 0, query);
-			++arg_count;
-		}
-	}
-	free (query);
 }
 
 static int cmd_an(RCore *core, bool use_json, const char *name)
@@ -1154,7 +1155,6 @@ static int var_cmd(RCore *core, const char *str) {
 			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
 			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
 			r_core_recover_vars (core, fcn, false);
-			add_vars_sdb (core, fcn);
 			free (p);
 			return true;
 		} else {
@@ -3751,7 +3751,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			setFunctionName (core, addr, fcn->name, false);
 			if (core->anal->opt.vars) {
 				r_core_recover_vars (core, fcn, true);
-				add_vars_sdb (core, fcn);
 			}
 		}
 		if (analyze_recursively) {
@@ -3809,7 +3808,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				r_list_free (refs);
 				if (core->anal->opt.vars) {
 					r_core_recover_vars (core, fcn, true);
-					add_vars_sdb (core, fcn);
 				}
 			}
 		}
@@ -9023,7 +9021,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						}
 						//extract only reg based var here
 						r_core_recover_vars (core, fcni, true);
-						add_vars_sdb (core, fcni);
 						r_list_free (list);
 					}
 				}
