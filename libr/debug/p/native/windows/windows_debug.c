@@ -780,10 +780,6 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return ret;
 }
 
-void w32_break_process_wrapper(void *d) {
-	w32_break_process (d);
-}
-
 void w32_break_process(RDebug *dbg) {
 	RIOW32Dbg *rio = dbg->user;
 	if (dbg->corebind.cfggeti (dbg->corebind.core, "dbg.threads")) {
@@ -859,7 +855,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 	int ret = R_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
 
-	r_cons_break_push (w32_break_process_wrapper, dbg);
+	r_cons_break_push (w32_break_process, dbg);
 
 	/* handle debug events */
 	do {
