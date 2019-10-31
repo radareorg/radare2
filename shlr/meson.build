@@ -232,6 +232,42 @@ sdb_gen_cmd = [
   '@INPUT@'
 ]
 
+# handle tree-sitter dependency
+tree_sitter_files = [
+  'tree-sitter/lib/src/lib.c',
+]
+
+tree_sitter_inc = [platform_inc, include_directories('tree-sitter/lib/src'), include_directories('tree-sitter/lib/include')]
+
+libtree_sitter = static_library('tree_sitter', tree_sitter_files,
+  include_directories: tree_sitter_inc,
+  implicit_include_directories: false
+)
+
+tree_sitter_dep = declare_dependency(
+  link_with: libtree_sitter,
+  include_directories: tree_sitter_inc
+)
+
+
+# handle tree-sitter-r2cmd dependency
+tree_sitter_r2cmd_files = [
+  'tree-sitter-r2cmd/src/parser.c',
+]
+
+tree_sitter_r2cmd_inc = [platform_inc, include_directories('tree-sitter-r2cmd/src/tree_sitter')]
+
+libtree_r2cmd_sitter = static_library('tree_sitter_r2cmd_', tree_sitter_r2cmd_files,
+  include_directories: tree_sitter_r2cmd_inc + tree_sitter_inc,
+  implicit_include_directories: true
+)
+
+tree_sitter_r2cmd_dep = declare_dependency(
+  link_with: libtree_r2cmd_sitter,
+  include_directories: tree_sitter_r2cmd_inc,
+  dependencies: tree_sitter_dep
+)
+
 
 # handle bochs dependency
 bochs_files = [

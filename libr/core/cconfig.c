@@ -2017,6 +2017,13 @@ static bool cb_scrhtml(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scrnewr2cmd(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = (RCore *)user;
+	core->use_tree_sitter_r2cmd = node->i_value;
+	return true;
+}
+
 static bool cb_scrhighlight(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_highlight (node->value);
@@ -3496,6 +3503,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.bgfill", "false", &cb_scr_bgfill, "Fill background for ascii art when possible");
 	SETI ("scr.feedback", 1, "Set visual feedback level (1=arrow on jump, 2=every key (useful for videos))");
 	SETCB ("scr.html", "false", &cb_scrhtml, "Disassembly uses HTML syntax");
+	SETCB ("scr.newr2cmd", "false", &cb_scrnewr2cmd, "Use new tree-sitter-r2cmd parser");
 	n = NODECB ("scr.nkey", "flag", &cb_scrnkey);
 	SETDESC (n, "Select visual seek mode (affects n/N visual commands)");
 	SETOPTIONS (n, "fun", "hit", "flag", NULL);

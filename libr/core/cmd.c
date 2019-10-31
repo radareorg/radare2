@@ -21,11 +21,14 @@
 #include <r_cmd.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <tree_sitter/api.h>
 #include <ctype.h>
 #include <stdarg.h>
 #if __UNIX__
 #include <sys/utsname.h>
 #endif
+
+TSLanguage *tree_sitter_r2cmd ();
 
 R_API void r_save_panels_layout(RCore *core, const char *_name);
 R_API void r_load_panels_layout(RCore *core, const char *_name);
@@ -4349,7 +4352,32 @@ R_API void run_pending_anal(RCore *core) {
 	}
 }
 
+static int core_cmd_tsr2cmd(RCore *core, const char *cstr, int log) {
+	// Create a parser.
+	TSParser *parser = ts_parser_new ();
+
+	// Set the parser's language (JSON in this case).
+	ts_parser_set_language (parser, tree_sitter_r2cmd ());
+
+	// Build a syntax tree based on source code stored in a string.
+	const char *source_code = cstr;
+	TSTree *tree = ts_parser_parse_string (
+		parser,
+		NULL,
+		source_code,
+		strlen (source_code));
+
+	TSNode root_node = ts_tree_root_node (tree);
+	char *string = ts_node_string (root_node);
+	TSSymbol cmds = ts_language_symbol_for_name (tree_sitter_r2cmd (), "commands");
+	printf ("Syntax tree for \"%s\": %s\n", source_code, string);
+}
+
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
+	if (core->use_tree_sitter_r2cmd) {
+		return core_cmd_tsr2cmd (core, cstr, log);
+	}
+
 	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = false, i;
 
