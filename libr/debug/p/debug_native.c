@@ -442,10 +442,15 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
  *
  * Returns R_DEBUG_REASON_*
  */
-static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
+static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 
 #if __WINDOWS__
+	// Store the original TID to attempt to switch back after handling events that
+	// require switching to the event's thread that shouldn't bother the user
+	int orig_tid = dbg->tid;
+	bool restore_thread = false;
+
 	reason = w32_dbg_wait (dbg, pid);
 	if (reason == R_DEBUG_REASON_NEW_LIB) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
@@ -479,6 +484,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			r_cons_printf ("Loading unknown library.\n");
 			r_cons_flush ();
 		}
+		restore_thread = true;
 	} else if (reason == R_DEBUG_REASON_EXIT_LIB) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->lib) {
@@ -491,6 +497,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			r_cons_flush ();
 
 		}
+		restore_thread = true;
 	} else if (reason == R_DEBUG_REASON_NEW_TID) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
@@ -500,7 +507,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 
 			r_debug_info_free (r);
 		}
-
+		restore_thread = true;
 	} else if (reason == R_DEBUG_REASON_EXIT_TID) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
@@ -510,6 +517,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 
 			r_debug_info_free (r);
 		}
+		restore_thread = true;
 	} else if (reason == R_DEBUG_REASON_DEAD) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
@@ -520,6 +528,20 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		}
 		dbg->pid = -1;
 		dbg->tid = -1;
+	}
+
+	if (restore_thread) {
+		// Attempt to return to the original thread after handling the event
+		dbg->tid = w32_select(dbg, dbg->pid, orig_tid);
+		if (dbg->tid == -1) {
+			dbg->pid = -1;
+			reason = R_DEBUG_REASON_DEAD;
+		} else {
+			r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
+			if (dbg->tid != orig_tid) {
+				reason = R_DEBUG_REASON_UNKNOWN;
+			}
+		}
 	}
 #else
 	if (pid == -1) {
