@@ -874,13 +874,13 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			struct user_fpxregs_struct fpxregs;
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
 			if (ret1 == 0) {
-				if (showfpu) print_fpu ((void *)&fpxregs, ret1);
+				if (showfpu) print_fpu ((void *)&fpxregs);
 				if (sizeof(fpxregs) < size) size = sizeof(fpxregs);
 				memcpy (buf, &fpxregs, size);
 				return sizeof(fpxregs);
 			} else {
 				ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-				if (showfpu) print_fpu ((void *)&fpregs, ret1);
+				if (showfpu) print_fpu ((void *)&fpregs);
 				if (ret1 != 0) return false;
 				if (sizeof(fpregs) < size) size = sizeof(fpregs);
 				memcpy (buf, &fpregs, size);
@@ -888,7 +888,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 #else
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-			if (showfpu) print_fpu ((void *)&fpregs, 1);
+			if (showfpu) print_fpu ((void *)&fpregs);
 			if (ret1 != 0) return false;
 			if (sizeof (fpregs) < size) size = sizeof(fpregs);
 			memcpy (buf, &fpregs, size);
