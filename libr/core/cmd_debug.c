@@ -405,6 +405,9 @@ static const char *help_msg_drm[] = {
 	"drmw", " [reg]", "Show registers as words",
 	"drmd", " [reg]", "Show registers as doublewords",
 	"drmq", " [reg]", "Show registers as quadwords",
+	"drmq", " xmm0~[0]", "Show first quadword of xmm0",
+	"drmf", " [reg]", "Show registers as 32-bit floating point",
+	"drml", " [reg]", "Show registers as 64-bit floating point",
 	NULL
 };
 
