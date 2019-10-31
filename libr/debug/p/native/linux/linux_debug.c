@@ -16,6 +16,7 @@
 
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <elf.h>
 
 char *linux_reg_profile (RDebug *dbg) {
 #if __arm__
@@ -39,6 +40,7 @@ char *linux_reg_profile (RDebug *dbg) {
 #endif
 	} else {
 #include "reg/linux-x64.h"
+#include <bits/sigcontext.h>
 	}
 #elif __powerpc__
 	if (dbg->bits & R_SYS_BITS_32) {
@@ -935,6 +937,33 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 			memcpy (buf, &regs, R_MIN (sizeof (regs), size));
 			return sizeof (regs);
+		}
+		break;
+	case R_REG_TYPE_YMM:
+		{
+#if __x86_64__
+		ut32 ymm_space[128];	// full ymm registers
+		struct _xstate xstate;
+		struct iovec iov;
+		iov.iov_base = &xstate;
+		iov.iov_len = sizeof(struct _xstate);
+		ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)NT_X86_XSTATE, &iov);
+		if (ret != 0) {
+			return false;
+		}
+		// stitch together xstate.fpstate._xmm and xstate.ymmh assuming LE
+		int ri,rj;
+		for (ri = 0; ri < 16; ri++)	{
+			for (rj=0; rj < 4; rj++)	{
+				ymm_space[ri*8+rj] = xstate.fpstate._xmm[ri].element[rj];
+			}
+			for (rj=0; rj < 4; rj++)	{
+				ymm_space[ri*8+(rj+4)] = xstate.ymmh.ymmh_space[ri*4+rj];
+			}
+		}
+		memcpy (buf, &ymm_space, sizeof(ymm_space));
+		return sizeof(ymm_space);
+#endif
 		}
 		break;
 	}

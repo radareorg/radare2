@@ -2767,6 +2767,43 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			r_debug_reg_sync (core->dbg, -R_REG_TYPE_FPU, false);
 		}
 		break;
+	case 'y': // "dry"
+		r_debug_reg_sync (core->dbg, R_REG_TYPE_YMM, false);
+		RListIter *iter;
+		RRegItem *item;
+		RList *head;
+		char pack_show[NUM_PACK_TYPES] = { 0, 0, 0, 1, 0, 0};
+
+		// TODO: factor out
+		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_YMM);
+		if (head) {
+			r_list_foreach (head, iter, item) {
+				r_cons_printf("%-5s = ", item->name);
+				int pi;
+				for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
+					if (pack_show[pi]) {
+						for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
+							ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
+							if( pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
+								if (pack_sizes[pi] == 64)	{
+									double dres;
+									memcpy ((void*)&dres, (void*)&res, 8);
+									pack_print (i, dres, pi);
+								} else if (pack_sizes[pi] == 32) {
+									float fres;
+									memcpy ((void*)&fres, (void*)&res, 4);
+									pack_print (i, fres, pi);
+								}
+							} else {
+								pack_print (i, res, pi);
+							}
+						}
+						r_cons_newline ();
+					}
+				}
+			}
+		}
+		break;
 	case 'p': // "drp"
 		cmd_reg_profile (core, 'd', str);
 		break;

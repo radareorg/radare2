@@ -6,7 +6,7 @@
 R_LIB_VERSION (r_reg);
 
 static const char *types[R_REG_TYPE_LAST + 1] = {
-	"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
+	"gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", NULL
 };
 
 // Take the 32bits name of a register, and return the 64 bit name of it.
