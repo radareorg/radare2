@@ -1188,6 +1188,7 @@ repeat:
 		if (reason == R_DEBUG_REASON_NEW_LIB ||
 			reason == R_DEBUG_REASON_EXIT_LIB ||
 			reason == R_DEBUG_REASON_NEW_TID ||
+			reason == R_DEBUG_REASON_NONE ||
 			reason == R_DEBUG_REASON_EXIT_TID ) {
 			goto repeat;
 		}

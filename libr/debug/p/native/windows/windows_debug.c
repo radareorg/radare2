@@ -787,8 +787,10 @@ void w32_break_process(RDebug *dbg) {
 	} else {
 		if (!w32_DebugBreakProcess (rio->pi.hProcess)) {
 			r_sys_perror ("w32_break_process/DebugBreakProcess");
+			eprintf("Could not interrupt program, attempt to press Ctrl-C in the program's console.\n");
 		}
 	}
+
 	breaked = true;
 }
 
@@ -891,8 +893,8 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 		} while (!breaked);
 
 		if (breaked) {
-			ret = R_DEBUG_REASON_NONE;
-			goto end;
+			ret = R_DEBUG_REASON_USERSUSP;
+			breaked = false;
 		}
 
 		tid = de.dwThreadId;
@@ -912,7 +914,9 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
 			__r_debug_thread_add (dbg, pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, FALSE);
-			ret = R_DEBUG_REASON_NEW_TID;
+			if (ret != R_DEBUG_REASON_USERSUSP) {
+				ret = R_DEBUG_REASON_NEW_TID;
+			}
 			next_event = 0;
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT:
@@ -1014,8 +1018,11 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			dbg->reason.signum = de.u.Exception.ExceptionRecord.ExceptionCode;
 			break;
 		default:
-			eprintf ("(%d) unknown event: %d\n", pid, de.dwDebugEventCode);
-			ret = -1;
+			// This case might be reached if break doesn't trigger an event
+			if (ret != R_DEBUG_REASON_USERSUSP) {
+				eprintf ("(%d) unknown event: %d\n", pid, de.dwDebugEventCode);
+				ret = -1;
+			}
 			goto end;
 		}
 	} while (next_event);

@@ -450,6 +450,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	// require switching to the event's thread that shouldn't bother the user
 	int orig_tid = dbg->tid;
 	bool restore_thread = false;
+	RIOW32Dbg *rio = dbg->user;
 
 	reason = w32_dbg_wait (dbg, pid);
 	if (reason == R_DEBUG_REASON_NEW_LIB) {
@@ -495,7 +496,6 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		} else {
 			r_cons_printf ("Unloading unknown library.\n");
 			r_cons_flush ();
-
 		}
 		restore_thread = true;
 	} else if (reason == R_DEBUG_REASON_NEW_TID) {
@@ -517,7 +517,9 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 
 			r_debug_info_free (r);
 		}
-		restore_thread = true;
+		if (dbg->tid != orig_tid) {
+			restore_thread = true;
+		}
 	} else if (reason == R_DEBUG_REASON_DEAD) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
@@ -528,6 +530,23 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		}
 		dbg->pid = -1;
 		dbg->tid = -1;
+	} else if (reason == R_DEBUG_REASON_USERSUSP && dbg->tid != orig_tid) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r && r->thread) {
+			PTHREAD_ITEM item = r->thread;
+			r_cons_printf ("(%d) Created DebugBreak thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
+			r_cons_flush ();
+
+			r_debug_info_free (r);
+		}
+		// DebugProcessBreak creates a new thread that will trigger a breakpoint. We record the
+		// tid here to ignore it once the breakpoint is hit.
+		rio->break_tid = dbg->tid;
+		restore_thread = true;
+	} else if (reason == R_DEBUG_REASON_BREAKPOINT && dbg->tid == rio->break_tid) {
+		rio->break_tid = -2;
+		reason = R_DEBUG_REASON_NONE;
+		restore_thread = true;
 	}
 
 	if (restore_thread) {
