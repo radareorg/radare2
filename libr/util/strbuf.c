@@ -4,6 +4,19 @@
 #include "r_util.h"
 #include <stdio.h>
 
+#define CONST_STRBUF -1
+
+static bool __is_const(RStrBuf *sb) {
+	return sb->ptrlen == CONST_STRBUF;
+}
+
+static void __free_buf(RStrBuf *sb) {
+	if (!__is_const (sb)) {
+		free (sb->ptr);
+	}
+	sb->ptr = NULL;
+}
+
 R_API RStrBuf *r_strbuf_new(const char *str) {
 	RStrBuf *s = R_NEW0 (RStrBuf);
 	if (str) {
@@ -12,12 +25,26 @@ R_API RStrBuf *r_strbuf_new(const char *str) {
 	return s;
 }
 
+R_API RStrBuf *r_strbuf_new_const(const char *str, int len) {
+	RStrBuf *s = R_NEW0 (RStrBuf);
+	r_strbuf_init_const (s, str, len);
+	return s;
+}
+
 R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
 	r_return_val_if_fail (sa && sb, false);
 	if (sa->len != sb->len) {
 		return false;
 	}
+	if (__is_const (sa) && __is_const (sb) && sa->ptr == sb->ptr) {
+		return true;
+	}
 	return strcmp (r_strbuf_get (sa), r_strbuf_get (sb)) == 0;
+}
+
+R_API bool r_strbuf_is_empty(RStrBuf *sb) {
+	r_return_val_if_fail (sb, true);
+	return sb->len == 0;
 }
 
 R_API int r_strbuf_length(RStrBuf *sb) {
@@ -30,8 +57,21 @@ R_API void r_strbuf_init(RStrBuf *sb) {
 	memset (sb, 0, sizeof (RStrBuf));
 }
 
+R_API void r_strbuf_init_const(RStrBuf *sb, const char *str, int len) {
+	r_return_if_fail (sb);
+	memset (sb->buf, 0, sizeof (sb->buf));
+	sb->ptr = str;
+	sb->len = len;
+	sb->ptrlen = CONST_STRBUF;
+}
+
 R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
 	r_return_val_if_fail (dst && src, false);
+	if (__is_const (src)) {
+		r_strbuf_fini (dst);
+		memcpy (dst, src, sizeof (RStrBuf));
+		return true;
+	}
 	if (src->ptr) {
 		char *p = malloc (src->ptrlen);
 		if (!p) {
@@ -52,6 +92,18 @@ R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
 R_API bool r_strbuf_reserve(RStrBuf *sb, int len) {
 	r_return_val_if_fail (sb && len > 0, false);
 
+	if (__is_const (sb)) {
+		bool r = false;
+		int l = R_MAX (len, sb->len);
+		char *p = malloc (l + 1);
+		if (p) {
+			memcpy (p, sb->ptr, sb->len + 1);
+			sb->ptr = p;
+			sb->ptrlen = l + 1;
+			r = true;
+		}
+		return r;
+	}
 	if ((sb->ptr && len < sb->ptrlen) || (!sb->ptr && len < sizeof (sb->buf))) {
 		return true;
 	}
@@ -73,20 +125,19 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
-		if (!ptr || l + 1 > sb->ptrlen) {
+		if (!ptr || (l + 1) > sb->ptrlen || __is_const (sb)) {
 			ptr = malloc (l + 1);
 			if (!ptr) {
 				return false;
 			}
-			R_FREE (sb->ptr);
+			__free_buf (sb);
 			sb->ptrlen = l + 1;
 			sb->ptr = ptr;
 		}
 		memcpy (ptr, s, l);
 		*(ptr + l) = 0;
 	} else {
-		R_FREE (sb->ptr);
-		sb->ptr = NULL;
+		__free_buf (sb);
 		memcpy (sb->buf, s, l);
 		sb->buf[l] = 0;
 	}
@@ -185,17 +236,22 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l);
 		sb->buf[sb->len + l] = 0;
-		R_FREE (sb->ptr);
+		__free_buf (sb);
 	} else {
 		int newlen = sb->len + l + 128;
 		char *p = sb->ptr;
 		bool allocated = true;
 		if (!sb->ptr) {
 			p = malloc (newlen);
-			if (p && sb->len > 0) {
+			if (p) {
 				memcpy (p, sb->buf, sb->len);
 			}
-		} else if (sb->len + l + 1 > sb->ptrlen) {
+		} else if (__is_const (sb)) {
+			p = malloc (newlen);
+			if (p) {
+				memcpy (p, sb->ptr, sb->len);
+			}
+		} else if ((sb->len + l + 1) > sb->ptrlen) {
 			p = realloc (sb->ptr, newlen);
 		} else {
 			allocated = false;
@@ -207,10 +263,8 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 			sb->ptr = p;
 			sb->ptrlen = newlen;
 		}
-		if (p) {
-			memcpy (p + sb->len, s, l);
-			*(p + sb->len + l) = 0;
-		}
+		memcpy (p + sb->len, s, l);
+		*(p + sb->len + l) = 0;
 	}
 	sb->len += l;
 	return true;
@@ -270,7 +324,12 @@ R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {
 
 R_API char *r_strbuf_drain(RStrBuf *sb) {
 	r_return_val_if_fail (sb, NULL);
-	char *ret = sb->ptr ? sb->ptr : strdup (sb->buf);
+	char *ret = NULL;
+	if (__is_const (sb)) {
+		ret = strdup (sb->ptr);
+	} else {
+		ret = sb->ptr ? sb->ptr : strdup (sb->buf);
+	}
 	free (sb);
 	return ret;
 }
@@ -282,6 +341,11 @@ R_API void r_strbuf_free(RStrBuf *sb) {
 
 R_API void r_strbuf_fini(RStrBuf *sb) {
 	if (sb) {
-		R_FREE (sb->ptr);
+		__free_buf (sb);
 	}
+}
+
+R_API void r_strbuf_reset(RStrBuf *sb) {
+	r_strbuf_fini (sb);
+	r_strbuf_init (sb);
 }

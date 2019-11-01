@@ -14,6 +14,7 @@ typedef struct {
 
 #define R_STRBUF_SAFEGET(sb) (r_strbuf_get (sb) ? r_strbuf_get (sb) : "")
 R_API RStrBuf *r_strbuf_new(const char *s);
+R_API RStrBuf *r_strbuf_new_const(const char *str, int len);
 R_API bool r_strbuf_set(RStrBuf *sb, const char *s);
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int len);
 R_API ut8* r_strbuf_getbin(RStrBuf *sb, int *len);
@@ -26,10 +27,13 @@ R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...);
 R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap);
 R_API char *r_strbuf_get(RStrBuf *sb);
 R_API char *r_strbuf_drain(RStrBuf *sb);
+R_API bool r_strbuf_is_empty(RStrBuf *sb);
 R_API int r_strbuf_length(RStrBuf *sb);
 R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);
 R_API void r_strbuf_init(RStrBuf *sb);
+R_API void r_strbuf_init_const(RStrBuf *sb, const char *str, int len);
+R_API void r_strbuf_reset(RStrBuf *sb);
 R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src);
 R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb);
 R_API bool r_strbuf_reserve(RStrBuf *sb, int len);
