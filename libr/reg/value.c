@@ -253,6 +253,10 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 		eprintf ("Invalid bit size for packet register\n");
 		return 0LL;
 	}
+	if (packidx * packbits > item->size) {
+		eprintf ("Packed index is beyond the register size\n");
+		return 0LL;
+	}
 	RRegSet *regset = &reg->regset[item->arena];
 	if (!regset->arena) {
 		return 0LL;

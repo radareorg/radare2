@@ -405,6 +405,9 @@ static const char *help_msg_drm[] = {
 	"drmw", " [reg]", "Show registers as words",
 	"drmd", " [reg]", "Show registers as doublewords",
 	"drmq", " [reg]", "Show registers as quadwords",
+	"drmq", " xmm0~[0]", "Show first quadword of xmm0",
+	"drmf", " [reg]", "Show registers as 32-bit floating point",
+	"drml", " [reg]", "Show registers as 64-bit floating point",
 	NULL
 };
 
@@ -2284,6 +2287,40 @@ static int showreg(RCore *core, const char *str, bool use_color) {
 }
 #endif
 
+// helpers for packed registers
+#define NUM_PACK_TYPES 6
+#define NUM_INT_PACK_TYPES 4
+int pack_sizes[NUM_PACK_TYPES] = { 8, 16, 32, 64, 32, 64 };
+char *pack_format[NUM_PACK_TYPES] = { "%s0x%02" PFMT64x, "%s0x%04" PFMT64x, "%s0x%08" PFMT64x,
+									  "%s0x%016" PFMT64x, "%s%lf" , "%s%lf" };
+#define pack_print(i, reg, pack_type_index) r_cons_printf (pack_format[pack_type_index], i != 0 ? " " : "", reg);
+
+static void cmd_debug_reg_print_packed_reg(RCore *core, RRegItem *item, char explicit_size, char* pack_show)	{
+	int pi, i;
+	for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
+		if (!explicit_size || pack_show[pi]) {
+			for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
+				ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
+				if( pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
+					if (pack_sizes[pi] == 64)	{
+						double dres;
+						memcpy ((void*)&dres, (void*)&res, 8);
+						pack_print (i, dres, pi);
+					} else if (pack_sizes[pi] == 32) {
+						float fres;
+						memcpy ((void*)&fres, (void*)&res, 4);
+						pack_print (i, fres, pi);
+					}
+				} else {
+					pack_print (i, res, pi);
+				}
+			}
+			r_cons_newline ();
+		}
+	}
+}
+
+
 static void cmd_debug_reg(RCore *core, const char *str) {
 	char *arg;
 	struct r_reg_item_t *r;
@@ -2571,12 +2608,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			char explicit_index = 0;
 			char explicit_size = 0;
 			char explicit_name = 0;
-#define NUM_PACK_TYPES 6
-#define NUM_INT_PACK_TYPES 4
-			int pack_sizes[NUM_PACK_TYPES] = { 8, 16, 32, 64, 32, 64 };
-			char *pack_format[NUM_PACK_TYPES] = { "%s0x%02" PFMT64x, "%s0x%04" PFMT64x, "%s0x%08" PFMT64x,
-												  "%s0x%016" PFMT64x, "%s%lf" , "%s%lf" };
-#define pack_print(i, reg, pack_type_index) r_cons_printf (pack_format[pack_type_index], i != 0 ? " " : "", reg);
 			char pack_show[NUM_PACK_TYPES] = { 0, 0, 0, 0, 0, 0};
 			int index = 0;
 			int size = 0; // auto
@@ -2619,29 +2650,37 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					name = strdup (str + 3);
 					explicit_name = 1;
 				}
-				// TODO use switch statement here
-				if (str[1] == 'b') { // "drmb"
-					size = pack_sizes[0];
-					pack_show[0] = 1;
-				} else if (str[1] == 'w') { // "drmw"
-					size = pack_sizes[1];
-					pack_show[1] = 1;
-				} else if (str[1] == 'd') { // "drmd"
-					size = pack_sizes[2];
-					pack_show[2] = 1;
-				} else if (str[1] == 'q') { // "drmq"
-					size = pack_sizes[3];
-					pack_show[3] = 1;
-				} else if (str[1] == 'f') { // "drmf"
-					size = pack_sizes[4];
-					pack_show[4] = 1;
-				} else if (str[1] == 'l') { // "drml"
-					size = pack_sizes[5];
-					pack_show[5] = 1;
+				switch ( str[1])	{
+					case 'b': // "drmb"
+						size = pack_sizes[0];
+						pack_show[0] = 1;
+						break;
+					case 'w': // "drmw"
+						size = pack_sizes[1];
+						pack_show[1] = 1;
+						break;
+					case 'd': // "drmd"
+						size = pack_sizes[2];
+						pack_show[2] = 1;
+						break;
+					case 'q': // "drmq"
+						size = pack_sizes[3];
+						pack_show[3] = 1;
+						break;
+					case 'f': // "drmf"
+						size = pack_sizes[4];
+						pack_show[4] = 1;
+						break;
+					case 'l': // "drml"
+						size = pack_sizes[5];
+						pack_show[5] = 1;
+						break;
+					default:
+						eprintf("Unkown comamnd");
+						return;
 				}
 			}
 			if (explicit_name) {
-				// TODO: sanity check index, size against item->packed_size
 				RRegItem *item = r_reg_get (core->dbg->reg, name, -1);
 				if (item) {
 					if (eq) {
@@ -2650,33 +2689,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, true);
 					} else {
 						r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, false);
-						ut64 res = r_reg_get_pack (core->dbg->reg, item, index, size);
-						// TODO: handle mm
 						if (!explicit_index) {
-							int pi;
-							// TODO: factor out these inner loops
-							for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
-								if (!explicit_size || pack_show[pi]) {
-									for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
-										ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
-										if( pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
-											if (pack_sizes[pi] == 64)	{
-												double dres;
-												memcpy ((void*)&dres, (void*)&res, 8);
-												pack_print (i, dres, pi);
-											} else if (pack_sizes[pi] == 32) {
-												float fres;
-												memcpy ((void*)&fres, (void*)&res, 4);
-												pack_print (i, fres, pi);
-											}
-										} else {
-											pack_print (i, res, pi);
-										}
-									}
-									r_cons_newline ();
-								}
-							}
+							cmd_debug_reg_print_packed_reg(core, item, explicit_size, pack_show);
 						} else {
+							ut64 res = r_reg_get_pack (core->dbg->reg, item, index, size);
 							// print selected index / wordsize
 							r_cons_printf ("0x%08" PFMT64x "\n", res);
 						}
@@ -2697,30 +2713,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						if (item->type != R_REG_TYPE_XMM) {
 							continue;
 						}
-						int pi;
 						r_cons_printf ("%-5s = ", item->name);
-						// TODO: factor out these inner loops
-						for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
-							if (pack_show[pi]) {
-								for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
-									ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
-									if( pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
-										if (pack_sizes[pi] == 64)	{
-											double dres;
-											memcpy ((void*)&dres, (void*)&res, 8);
-											pack_print (i, dres, pi);
-										} else if (pack_sizes[pi] == 32) {
-											float fres;
-											memcpy ((void*)&fres, (void*)&res, 4);
-											pack_print (i, fres, pi);
-										}
-									} else {
-										pack_print (i, res, pi);
-									}
-								}
-								r_cons_newline ();
-							}
-						}
+						cmd_debug_reg_print_packed_reg(core, item, explicit_size, pack_show);
 					}
 				}
 			}
