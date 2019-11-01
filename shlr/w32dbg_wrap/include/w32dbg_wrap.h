@@ -41,6 +41,8 @@ typedef struct {
 	ULONG_PTR winbase;
 	PROCESS_INFORMATION pi;
 	w32dbg_wrap_instance *inst;
+	// Stores the TID of the thread DebugBreakProcess creates to ignore it's breakpoint
+	DWORD break_tid;
 } RIOW32Dbg;
 
 #define w32dbgw_ret(inst) inst->params->ret
