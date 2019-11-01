@@ -28,7 +28,7 @@ PC = 272
 #endif
 
 #endif
-	return strdup (
+	const char *p =
 	"=PC	pc\n"
 	"=SP	sp\n"
 	"=BP	fp\n"
@@ -76,4 +76,5 @@ PC = 272
 	"gpr	ra	.64	248	0\n"
 	/* extra */
 	"gpr	pc	.64	272	0\n"
-	);
+	;
+	return r_strbuf_new_const (p, strlen (p));

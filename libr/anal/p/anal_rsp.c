@@ -582,8 +582,8 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 }
 
 
-static char *get_reg_profile(RAnal *anal) {
-	static const char *p =
+static RStrBuf *get_reg_profile(RAnal *anal) {
+	const char *p =
 		"=PC    pc\n"
 		"=SP    sp\n"
 		"=A0    a0\n"
@@ -683,7 +683,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr    $vce	.128	740	0\n"
 	;
 
-	return strdup (p);
+	return r_strbuf_new_const (p, strlen (p));
 }
 
 static int archinfo(RAnal *anal, int q) {

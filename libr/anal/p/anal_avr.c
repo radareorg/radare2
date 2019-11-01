@@ -676,7 +676,7 @@ INST_HANDLER (fmul) {	// FMUL Rd, Rr
 	ESIL_A ("0xffff,1,r%d,r%d,*,<<,&,r1_r0,=,", r, d);	// 0: r1_r0 = (rd * rr) << 1
 	ESIL_A ("r1_r0,0x8000,&,!,!,cf,:=,");			// C = R/15
 	ESIL_A ("$z,zf,:=");					// Z = !R
-	
+
 }
 
 INST_HANDLER (fmuls) {	// FMULS Rd, Rr
@@ -1918,6 +1918,7 @@ static int esil_avr_fini(RAnalEsil *esil) {
 }
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	const char *p =
 		"=PC	pcl\n"
 		"=SP	sp\n"
@@ -2040,7 +2041,8 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr    spmcsr  .8      64      0\n"
 		;
 
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 static int archinfo(RAnal *anal, int q) {

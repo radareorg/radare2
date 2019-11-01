@@ -451,17 +451,18 @@ static int r_debug_gdb_detach(RDebug *dbg, int pid) {
 	return gdbr_detach_pid (desc, pid);
 }
 
-static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
+static RStrBuf *r_debug_gdb_reg_profile(RDebug *dbg) {
+	const char *p;
 	int arch = r_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->bits;
 	check_connection (dbg);
 	if (desc && desc->target.valid && desc->target.regprofile) {
-		return strdup (desc->target.regprofile);
+		return r_strbuf_new (desc->target.regprofile);
 	}
 	switch (arch) {
 	case R_SYS_ARCH_X86:
 		if (bits == 16 || bits == 32) {
-			return strdup (
+			p =
 				"=PC	eip\n"
 				"=SP	esp\n"
 				"=BP	ebp\n"
@@ -512,10 +513,10 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"gpr	xmm6	.128	272	0\n"
 				"gpr	xmm7	.128	288	0\n"
 				"gpr	mxcsr	.32	304	0\n"
-			*/
-				);
+			*/;
+			return r_strbuf_new_const (p, strlen (p));
 		} else if (dbg->anal->bits == 64) {
-			return strdup (
+			p =
 				"=PC	rip\n"
 				"=SP	rsp\n"
 				"=BP	rbp\n"
@@ -583,10 +584,10 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"gpr	xmm14	.128	500	0\n"
 				"gpr	xmm15	.128	516	0\n"
 				"gpr	mxcsr	.32	532	0\n"
-			*/
-			);
+			*/;
+			return r_strbuf_new_const (p, strlen (p));
 		} else {
-			return strdup (
+			p =
 			"=PC	eip\n"
 			"=SP	esp\n"
 			"=BP	ebp\n"
@@ -609,13 +610,13 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"seg	ds	.32	48	0\n"
 			"seg	es	.32	52	0\n"
 			"seg	fs	.32	56	0\n"
-			"seg	gs	.32	60	0\n"
-			);
+			"seg	gs	.32	60	0\n";
+			return r_strbuf_new_const (p, strlen (p));
 		}
 		break;
 	case R_SYS_ARCH_ARM:
 		if (bits == 64) {
-			return strdup (
+			p =
 			"=PC	pc\n"
 			"=SP	sp\n"
 			"=BP	x29\n"
@@ -661,10 +662,10 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	x30	.64	240	0\n"
 			"gpr	sp	.64	248	0\n"
 			"gpr	pc	.64	256	0\n"
-			"gpr	pstate	.64	264	0\n"
-			);
+			"gpr	pstate	.64	264	0\n";
+			return r_strbuf_new_const (p, strlen (p));
 		} else {
-			return strdup (
+			p =
 #if 0
 			"=PC	r15\n"
 			"=SP	r14\n" // XXX
@@ -761,11 +762,12 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"mmx	d31	.64	316	0\n" // neon
 			"mmx	fpscr	.32	324	0\n" // neon
 #endif
-			);
+			;
+			return r_strbuf_new_const (p, strlen (p));
 		}
 		break;
 	case R_SYS_ARCH_SH:
-		return strdup (
+		p =
 			"=PC    pc\n"
 			"=SP    r15\n"
 			"=BP    r14\n"
@@ -790,11 +792,11 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	sr	.32	72	0\n"
 			"gpr	gbr	.32	76	0\n"
 			"gpr	mach	.32	80	0\n"
-			"gpr	macl	.32	84	0\n"
-		);
+			"gpr	macl	.32	84	0\n";
+		return r_strbuf_new_const (p, strlen (p));
 		break;
 	case R_SYS_ARCH_LM32:
-		return strdup (
+		p =
 			"=PC    PC\n"
 			"=SP    sp\n"
 			"=BP    gp\n"
@@ -836,11 +838,11 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	DEBA	.32	140	0\n"
 			"gpr	IE	.32	144	0\n"
 			"gpr	IM	.32	148	0\n"
-			"gpr	IP	.32	152	0\n"
-		);
+			"gpr	IP	.32	152	0\n";
+		return r_strbuf_new_const (p, strlen (p));
 		break;
 	case R_SYS_ARCH_MIPS:
-		return strdup (
+		p =
 			"=PC    pc\n"
 			"=SP    sp\n"
 			"=BP    gp\n"
@@ -916,10 +918,10 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	f31	.32	276	0\n"
 			"gpr	fsr	.32	280	0\n"
 			"gpr	fir	.32	284	0\n"
-			"gpr	unknw	.32	288	0\n" //Not documented what this part of the register packet is
-		);
+			"gpr	unknw	.32	288	0\n"; //Not documented what this part of the register packet is
+		return r_strbuf_new_const (p, strlen (p));
 	case R_SYS_ARCH_AVR:
-		return strdup (
+		p =
 			"=PC    pc\n"
 			"=SP    sp\n"
 			"gpr	r0	.8	0	0\n"
@@ -958,10 +960,10 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	sp	.16	33	0\n"
 			"gpr	pc2	.32	34	0\n"
 			"gpr	pc	.32	35	0\n"
-	/*		"gpr	pc	.32	39	0\n" */
-	);
+	/*		"gpr	pc	.32	39	0\n" */;
+		return r_strbuf_new_const (p, strlen (p));
 	case R_SYS_ARCH_V850:
-		return strdup (
+		p =
 			"=PC    pc\n"
 			"=SP    sp\n"
 			"gpr	r0	.32	0	0\n"
@@ -1004,8 +1006,8 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	psw	.32	148	0\n"
 			// 5x reserved, sccfg, scbp, eiic, feic, dbic, ctpc, ctpsw, dbpc, dbpsw, ctbp
 			// debug stuff, eiwr, fewr, dbwr, bsel
-			"gpr	pc	.32	256	0\n"
-	);
+			"gpr	pc	.32	256	0\n";
+		return r_strbuf_new_const (p, strlen (p));
 	}
 	return NULL;
 }
@@ -1136,7 +1138,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.breakpoint = &r_debug_gdb_breakpoint,
 	.reg_read = &r_debug_gdb_reg_read,
 	.reg_write = &r_debug_gdb_reg_write,
-	.reg_profile = (void *)r_debug_gdb_reg_profile,
+	.reg_profile = &r_debug_gdb_reg_profile,
 	.kill = &r_debug_gdb_kill,
 	.info = &r_debug_gdb_info,
 	.select = &r_debug_gdb_select,

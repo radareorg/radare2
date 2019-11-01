@@ -42,7 +42,7 @@ PC = 272
    It is using the same arena->size, but we are only using the last 4 bytes
    (LITTLE ENDIAN PROBLEMS?)
 */
-	return strdup (
+	const char *p =
         "=PC    pc\n"
         "=SP    sp\n"
         "=BP    fp\n"
@@ -90,4 +90,5 @@ PC = 272
         "gpr    ra      .32     252     0\n"
         /* extra */
         "gpr    pc      .32     276     0\n"
-	);
+	;
+        return r_strbuf_new_const (p, strlen (p));

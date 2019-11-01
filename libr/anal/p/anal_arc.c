@@ -1083,6 +1083,7 @@ static int archinfo(RAnal *anal, int query) {
 }
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	if (anal->bits != 16) {
 		return -1;
 	}
@@ -1134,7 +1135,8 @@ static int set_reg_profile(RAnal *anal) {
 	/* TODO: */
 	/* Should I add the Auxiliary Register Set? */
 	/* it contains the flag bits, amongst other things */
-	return r_reg_set_profile_string (anal->reg, p16);
+	r_strbuf_init_const (&sb, p16, strlen (p16));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 RAnalPlugin r_anal_plugin_arc = {

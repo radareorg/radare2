@@ -226,9 +226,10 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 #define REG2(n) getreg(&gop, n)
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	const char *p = NULL;
 	if (anal->bits == 32) {
-		p =
+		const char *p =
 			"=PC	pc\n"
 			"=SP	r1\n"
 			"=BP	r31\n"
@@ -328,8 +329,9 @@ static int set_reg_profile(RAnal *anal) {
 			"gpr	dbat2u .32 276 0\n"
 			"gpr	dbat3u .32 284 0\n"
 			"gpr	mask   .32 288 0\n";
+		r_strbuf_init_const (&sb, p, strlen (p));
 	} else {
-		p =
+		const char *p =
 			"=PC	pc\n"
 			"=SP	r1\n"
 			"=SR	srr1\n" // status register ??
@@ -427,8 +429,9 @@ static int set_reg_profile(RAnal *anal) {
 			"gpr	dbat2u .32 476 0\n"
 			"gpr	dbat3u .32 484 0\n"
 			"gpr	mask   .64 488 0\n"; //not a real register used on complex functions
+		r_strbuf_init_const (&sb, p, strlen (p));
 	}
-	return r_reg_set_profile_string (anal->reg, p);
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {

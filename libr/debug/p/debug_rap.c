@@ -48,15 +48,17 @@ static int __rap_detach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static char *__rap_reg_profile(RDebug *dbg) {
-	char *out, *tf = r_file_temp ("rap.XXXXXX");
+static RStrBuf *__rap_reg_profile(RDebug *dbg) {
+	char *tf = r_file_temp ("rap.XXXXXX");
 	int fd = r_cons_pipe_open (tf, 1, 0);
 	r_io_system (dbg->iob.io, "drp");
 	r_cons_flush ();
 	r_cons_pipe_close (fd);
-	out = r_file_slurp (tf, NULL);
+	char *data = r_file_slurp (tf, NULL);
+	RStrBuf *out = r_strbuf_new (data);
 	r_file_rm (tf);
 	free (tf);
+	free (data);
 	return out;
 }
 
@@ -78,7 +80,7 @@ RDebugPlugin r_debug_plugin_rap = {
 	.breakpoint = __rap_breakpoint,
 	.reg_read = &__rap_reg_read,
 	.reg_write = &__rap_reg_write,
-	.reg_profile = (void *)__rap_reg_profile,
+	.reg_profile = &__rap_reg_profile,
 	//.bp_write = &__rap_bp_write,
 	//.bp_read = &__rap_bp_read,
 };

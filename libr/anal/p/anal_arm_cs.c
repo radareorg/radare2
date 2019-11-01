@@ -1787,8 +1787,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						r_strbuf_appendf (&op->esil, ",%d,%s,%c,%s,=",
 								  disp, MEMBASE(2), sign, MEMBASE(2));
 					}
-				} else { 
-					if (ISSHIFTED(2)) { 
+				} else {
+					if (ISSHIFTED(2)) {
 						// it seems strd does not support SHIFT which is good, but have a check nonetheless
 					} else {
 						r_strbuf_appendf (&op->esil, "%s,%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,%s,+,0xffffffff,&,=[4]",
@@ -1807,7 +1807,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					       REG(0), MEMBASE(2), str_ldr_bytes, REG(1), MEMBASE(2), str_ldr_bytes, IMM(3), MEMBASE(2));
 			}
 			if (ISREG(3)) { // e.g. 'strd r2, r3, [r4], r5'
-				if (ISSHIFTED(3)) { 
+				if (ISSHIFTED(3)) {
 					// same as above
 				} else {
 					r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,4,%s,+,0xffffffff,&,=[%d],%s,%s,+=",
@@ -3163,8 +3163,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	return op->size;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static RStrBuf *get_reg_profile(RAnal *anal) {
 	const char *p;
+	int l;
 	if (anal->bits == 64) {
 		p = \
 		"=PC	pc\n"
@@ -3393,6 +3394,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"flg	cf	.1	280.29	0	carry\n" // set if last op carries
 		"flg	zf	.1	280.30	0	zero\n" // set if last op is 0
 		"flg	nf	.1	280.31	0	sign\n"; // msb bit of last op
+		l = strlen (p);
 	} else {
 		p = \
 		"=PC	r15\n"
@@ -3435,33 +3437,34 @@ static char *get_reg_profile(RAnal *anal) {
 		"flg	cpsr	.32	64	0\n"
 		"gpr	blank	.32	68	0\n" // Hack, the bit fields below don't work on the last register??
 
-		  // CPSR bit fields:
-		  // 576-580 Mode fields (and register sets associated to each field):
-		  //10000 	User 	R0-R14, CPSR, PC
-		  //10001 	FIQ 	R0-R7, R8_fiq-R14_fiq, CPSR, SPSR_fiq, PC
-		  //10010 	IRQ 	R0-R12, R13_irq, R14_irq, CPSR, SPSR_irq, PC
-		  //10011 	SVC (supervisor) 	R0-R12, R13_svc R14_svc CPSR, SPSR_irq, PC
-		  //10111 	Abort 	R0-R12, R13_abt R14_abt CPSR, SPSR_abt PC
-		  //11011 	Undefined 	R0-R12, R13_und R14_und, CPSR, SPSR_und PC
-		  //11111 	System (ARMv4+) 	R0-R14, CPSR, PC
+		// CPSR bit fields:
+		// 576-580 Mode fields (and register sets associated to each field):
+		//10000 	User 	R0-R14, CPSR, PC
+		//10001 	FIQ 	R0-R7, R8_fiq-R14_fiq, CPSR, SPSR_fiq, PC
+		//10010 	IRQ 	R0-R12, R13_irq, R14_irq, CPSR, SPSR_irq, PC
+		//10011 	SVC (supervisor) 	R0-R12, R13_svc R14_svc CPSR, SPSR_irq, PC
+		//10111 	Abort 	R0-R12, R13_abt R14_abt CPSR, SPSR_abt PC
+		//11011 	Undefined 	R0-R12, R13_und R14_und, CPSR, SPSR_und PC
+		//11111 	System (ARMv4+) 	R0-R14, CPSR, PC
 		"flg	tf	.1	.517	0	thumb\n" // +5
-		  // 582 FIQ disable bit
-		  // 583 IRQ disable bit
-		  // 584 Disable imprecise aborts flag
+		// 582 FIQ disable bit
+		// 583 IRQ disable bit
+		// 584 Disable imprecise aborts flag
 		"flg	ef	.1	.521	0	endian\n" // +9
 		"flg	itc	.4	.522	0	if_then_count\n" // +10
-		  // Reserved
+		// Reserved
 		"flg	gef	.4	.528	0	great_or_equal\n" // +16
 		"flg	jf	.1	.536	0	java\n" // +24
-		  // Reserved
+		// Reserved
 		"flg	qf	.1	.539	0	sticky_overflow\n" // +27
 		"flg	vf	.1	.540	0	overflow\n" // +28
 		"flg	cf	.1	.541	0	carry\n" // +29
 		"flg	zf	.1	.542	0	zero\n" // +30
 		"flg	nf	.1	.543	0	negative\n" // +31
 		;
+		l = strlen (p);
 	}
-	return strdup (p);
+	return r_strbuf_new_const (p, l);
 }
 
 static int archinfo(RAnal *anal, int q) {

@@ -924,7 +924,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				esilprintf (op, "0,%s,%s,&,==,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,0,cf,:=,0,of,:=",
 					src, dst, bitsize - 1);
 			} else {
-				esilprintf (op, 
+				esilprintf (op,
 					"%s,%s,==,$z,zf,:=,%d,$b,cf,:=,$p,pf,:=,%d,$s,sf,:=,%d,$o,of,:=",
 					src, dst, bitsize, bitsize - 1, bitsize - 1);
 			}
@@ -1878,7 +1878,7 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
 	default:
 		break;
 	}
-	val->reg = &base_regs[x];	
+	val->reg = &base_regs[x];
 }
 
 static void op_fillval(RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn) {
@@ -3133,7 +3133,8 @@ static int esil_x86_cs_fini(RAnalEsil *esil) {
 	return true;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static RStrBuf *get_reg_profile(RAnal *anal) {
+	int l = 0;
 	const char *p = NULL;
 	switch (anal->bits) {
 	case 16: p =
@@ -3189,6 +3190,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"drx	dr6	.32	24	0\n"
 		"drx	dr7	.32	28	0\n"
 #endif
+		l = strlen (p);
 		break;
 	case 32: p =
 		"=PC	eip\n"
@@ -3255,7 +3257,8 @@ static char *get_reg_profile(RAnal *anal) {
 		//"drx	dr5	.32	20	0\n"
 		"drx	dr6	.32	24	0\n"
 		"drx	dr7	.32	28	0\n";
-		 break;
+		l = strlen (p);
+		break;
 	case 64:
 		 p =
 		"# RAX     return value\n"
@@ -3445,6 +3448,7 @@ static char *get_reg_profile(RAnal *anal) {
 		 "fpu    xmm7h .64 272  0\n"
 		 "fpu    xmm7l .64 280  0\n"
 		 "fpu    x64   .64 288  0\n";
+		 l = strlen (p);
 		 break;
 #if 0
 	default: p= /* XXX */
@@ -3510,10 +3514,11 @@ static char *get_reg_profile(RAnal *anal) {
 		 "drx	dr3	.32	12	0\n"
 		 "drx	dr6	.32	24	0\n"
 		 "drx	dr7	.32	28	0\n";
+		 l = strlen (p);
 		 break;
 #endif
 	}
-	return (p && *p)? strdup (p): NULL;
+	return (p && *p)? r_strbuf_new_const (p, l): NULL;
 }
 
 static int archinfo(RAnal *anal, int q) {

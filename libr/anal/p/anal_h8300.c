@@ -685,7 +685,8 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
 }
 
 static int set_reg_profile(RAnal *anal) {
-	char *p =
+	RStrBuf sb;
+	const char *p =
 		"=PC	pc\n"
 		"=SP	r7\n"
 		"gpr	r0	.16	0	0\n"
@@ -722,7 +723,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	Z	.1	.146	0\n"
 		"gpr	V	.1	.145	0\n"
 		"gpr	C	.1	.144	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 RAnalPlugin r_anal_plugin_h8300 = {

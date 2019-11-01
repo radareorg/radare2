@@ -80,7 +80,8 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 }
 
 static int set_reg_profile(RAnal *anal) {
-    const char *p =
+	RStrBuf sb;
+	const char *p =
 	"=PC	srr0\n"
 	"=SR	srr1\n" // status register
 	"=A0	r0\n"
@@ -134,7 +135,8 @@ static int set_reg_profile(RAnal *anal) {
 	"gpr	ctr	.32	148	0\n"
 	"gpr	mq	.32	152	0\n"
 	"gpr	vrsave	.32	156	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 static int archinfo(RAnal *anal, int q) {

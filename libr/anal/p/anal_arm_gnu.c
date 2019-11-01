@@ -415,6 +415,7 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 }
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	// TODO: support 64bit profile
 	const char *p32 =
 		"=PC	r15\n"
@@ -446,7 +447,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	r16	.32	64	0\n"
 		"gpr	r17	.32	68	0\n"
 		"gpr	cpsr	.32	72	0\n";
-	return r_reg_set_profile_string (anal->reg, p32);
+	r_strbuf_init_const (&sb, p32, strlen (p32));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 static int archinfo(RAnal *anal, int q) {

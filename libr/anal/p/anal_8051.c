@@ -812,6 +812,7 @@ static int esil_i8051_fini (RAnalEsil *esil) {
 }
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -861,7 +862,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	_xdata	.32 32 0\n"
 		"gpr	_pdata	.32	36 0\n";
 
-	int retval = r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	int retval = r_reg_set_profile_string (anal->reg, &sb);
 	if (retval) {
 		// reset emulation control registers based on cpu
 		set_cpu_model (anal, true);

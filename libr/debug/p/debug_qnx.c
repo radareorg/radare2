@@ -226,12 +226,13 @@ static int r_debug_qnx_detach (RDebug *dbg, int pid) {
 	return true;
 }
 
-static const char *r_debug_qnx_reg_profile (RDebug *dbg) {
+static RStrBuf *r_debug_qnx_reg_profile (RDebug *dbg) {
+	const char *profile;
 	int arch = r_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->bits;
 	switch (arch) {
 	case R_SYS_ARCH_X86:
-		return strdup (
+		profile =
 			"=PC	eip\n"
 			"=SP	esp\n"
 			"=BP	ebp\n"
@@ -257,10 +258,11 @@ static const char *r_debug_qnx_reg_profile (RDebug *dbg) {
 			"seg	fs	.32	56	0\n"
 			"seg	gs	.32	60	0\n"
 #endif
-			);
+			;
+		return r_strbuf_new_const (profile, strlen (profile));
 	case R_SYS_ARCH_ARM:
 		if (bits == 32) {
-			return strdup (
+			profile =
 				"=PC	r15\n"
 				"=SP	r14\n" // XXX
 				"=A0	r0\n"
@@ -320,7 +322,8 @@ static const char *r_debug_qnx_reg_profile (RDebug *dbg) {
 				"mmx	d30	.64	308	0\n" // neon
 				"mmx	d31	.64	316	0\n" // neon
 				"mmx	fpscr	.32	324	0\n" // neon
-			);
+			;
+			return r_strbuf_new_const (profile, strlen (profile));
 		}
 	}
 	return NULL;
@@ -359,7 +362,7 @@ RDebugPlugin r_debug_plugin_qnx = {
 	.breakpoint = r_debug_qnx_breakpoint,
 	.reg_read = &r_debug_qnx_reg_read,
 	.reg_write = &r_debug_qnx_reg_write,
-	.reg_profile = (void *)r_debug_qnx_reg_profile,
+	.reg_profile = &r_debug_qnx_reg_profile,
 };
 
 #ifndef R2_PLUGIN_INCORE

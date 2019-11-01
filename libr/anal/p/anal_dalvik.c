@@ -704,6 +704,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 }
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	const char *p =
 	"=PC	ip\n"
 	"=SP	sp\n"
@@ -752,7 +753,8 @@ static int set_reg_profile(RAnal *anal) {
 	"gpr	sp	.32	120	0\n"
 	"gpr	bp	.32	124	0\n"
 	;
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 RAnalPlugin r_anal_plugin_dalvik = {

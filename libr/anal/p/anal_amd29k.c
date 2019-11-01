@@ -6,6 +6,7 @@
 
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	const char *p =
 			"=PC	pc\n"
 			"=SP	gp1\n"
@@ -275,7 +276,8 @@ static int set_reg_profile(RAnal *anal) {
 			"gpr	lr126   .32 2024 0\n"
 			"gpr	lr127   .32 2032 0\n"
 			"gpr	lr128   .32 2040 0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 static int archinfo(RAnal *a, int q) {

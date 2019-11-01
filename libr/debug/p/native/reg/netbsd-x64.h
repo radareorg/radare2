@@ -1,4 +1,4 @@
-return strdup (
+const char *p =
 "=PC	rip\n"
 "=SP	rsp\n"
 "=BP	rbp\n"
@@ -87,4 +87,5 @@ return strdup (
 "drx	dr3	.32	12	0\n"
 "drx	dr6	.32	24	0\n"
 "drx	dr7	.32	28	0\n"
-);
+;
+return r_strbuf_new_const (p, strlen (p));

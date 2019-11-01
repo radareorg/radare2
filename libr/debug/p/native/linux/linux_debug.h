@@ -79,7 +79,7 @@ struct powerpc_regs_t {
 
 // typedef ut64 riscv64_regs_t [65];
 // #define R_DEBUG_REG_T riscv64_regs_t
-#define R_DEBUG_REG_T struct user_regs_struct 
+#define R_DEBUG_REG_T struct user_regs_struct
 // #define R_DEBUG_REG_T mcontext_t 77 784 in size (coz the fpu regs)
 
 #elif __mips__
@@ -104,5 +104,5 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size);
 RList *linux_desc_list (int pid);
 int linux_handle_signals (RDebug *dbg);
 int linux_dbg_wait (RDebug *dbg, int pid);
-char *linux_reg_profile (RDebug *dbg);
+RStrBuf *linux_reg_profile (RDebug *dbg);
 int match_pid (const void *pid_o, const void *th_o);

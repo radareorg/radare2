@@ -408,7 +408,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		anal_call(op, insn, addr);
 	} else if(X_OP(insn) == OP_2) {
 		switch(X_OP3(insn))
-		 {
+		{
 		case OP32_INV1:
 		case OP32_INV2:
 		case OP32_INV3:
@@ -439,7 +439,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case OP32_JMPL:
 			anal_jmpl(anal, op, insn, addr);
 			break;
-		 }
+		}
 	} else if (X_OP(insn) == OP_3) {
 		switch(X_OP3(insn)) {
 		case OP33_INV1:
@@ -461,13 +461,14 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->type = R_ANAL_OP_TYPE_ILL;
 			sz = 0; /* make r_core_anal_bb stop */
 			break;
-		 }
+		}
 	}
 
 	return sz;
 }
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	/* As far as I can see, sparc v9 register and instruction set
 	   don't depened  on bits of the running application.
 	   But: They depend on the bits of the consuming application,
@@ -601,7 +602,8 @@ static int set_reg_profile(RAnal *anal) {
 	"fpu	qf60	.128	544	0\n"	/* df60 df62 */
 	"gpr	fsr	.64	560	0\n";	/* note that
 						   we've left out the filler */
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 static int archinfo(RAnal *anal, int q) {

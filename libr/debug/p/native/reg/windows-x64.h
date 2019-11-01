@@ -1,4 +1,4 @@
-return strdup (
+const char *p =
 "=PC	rip\n"
 "=SP	rsp\n"
 "=BP	rbp\n"
@@ -95,4 +95,5 @@ return strdup (
 "gpr	if	.1	.553	0	interrupt\n"
 "gpr	df	.1	.554	0	direction\n"
 "gpr	of	.1	.555	0	overflow\n"
-);
+;
+return r_strbuf_new_const (p, strlen (p));

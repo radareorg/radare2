@@ -1,4 +1,4 @@
-return strdup (
+const char *p =
 	"=PC	eip\n"
 	"=SP	esp\n"
 	"=BP	ebp\n"
@@ -54,4 +54,5 @@ return strdup (
 	"seg	ss	.32	68	0\n"
 	"seg	gs	.32	72	0\n"
 // TODO: implement flags like in linux --those flags are wrong
-	);
+	;
+return r_strbuf_new_const (p, strlen (p));

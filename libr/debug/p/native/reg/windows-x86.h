@@ -1,4 +1,4 @@
-return strdup(
+const char *p =
 "=PC	eip\n"
 "=SP	esp\n"
 "=BP	ebp\n"
@@ -75,4 +75,5 @@ return strdup(
 /* this last register is needed to fit the arena into WINDOWS CONTEXT */
 //"xmm@gpr	endext	.32	712	0\n"
 /* end extended registers */
-);
+;
+return r_strbuf_new_const (p, strlen (p));

@@ -1,5 +1,5 @@
 // 64bit host debugging 64bit target
-return strdup (
+const char *p =
 "=PC	rip\n"
 "=SP	rsp\n"
 "=BP	rbp\n"
@@ -201,5 +201,5 @@ return strdup (
 "xmm@fpu    xmm15   .128	400 16\n"
 "fpu		xmm15h	.64		400	8\n"
 "fpu		xmm15l	.64		408	8\n"
-"fpu	x64	.64	416	0\n"
-);
+"fpu	x64	.64	416	0\n";
+return r_strbuf_new_const (p, strlen (p));

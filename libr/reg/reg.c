@@ -160,7 +160,7 @@ R_API void r_reg_free_internal(RReg *reg, bool init) {
 
 	r_list_free (reg->roregs);
 	reg->roregs = NULL;
-	R_FREE (reg->reg_profile_str);
+	r_strbuf_reset (&reg->reg_profile_str);
 	R_FREE (reg->reg_profile_cmt);
 
 	for (i = 0; i < R_REG_NAME_LAST; i++) {
@@ -267,6 +267,7 @@ R_API RReg *r_reg_new(void) {
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		reg->regset[i].cur = r_list_tail (reg->regset[i].pool);
 	}
+	r_strbuf_init (&reg->reg_profile_str);
 	return reg;
 }
 

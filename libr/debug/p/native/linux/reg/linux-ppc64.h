@@ -1,4 +1,4 @@
-return strdup (
+const char *p =
 "=PC  pc\n"
 "=SP  r1\n"
 "=A0  r3\n"
@@ -53,4 +53,5 @@ return strdup (
 "gpr  dar  .64 328 0\n"
 "gpr  dsisr .64 336 0\n"
 "gpr  result .64 344 0\n"
-);
+;
+return r_strbuf_new_const (p, strlen (p));

@@ -89,9 +89,9 @@ static int __esil_detach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static char *__esil_reg_profile(RDebug *dbg) {
+static RStrBuf *__esil_reg_profile(RDebug *dbg) {
 	if (!strcmp (dbg->arch, "bf")) {
-		return strdup (
+		const char *p =
 			"=PC	pc\n"
 			"=SP	esp\n"
 			"=BP	ptr\n"
@@ -104,8 +104,8 @@ static char *__esil_reg_profile(RDebug *dbg) {
 			"gpr	inp	.32	20	0\n"
 			"gpr	inpi	.32	24	0\n"
 			"gpr	mem	.32	28	0\n"
-			"gpr	memi	.32	32	0\n"
-		      );
+			"gpr	memi	.32	32	0\n";
+		return r_strbuf_new_const (p, strlen (p));
 	}
 	return r_anal_get_reg_profile (dbg->anal);
 }

@@ -27,6 +27,7 @@ static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, in
 }
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	// TODO: Add missing registers
 	const char *p =
 		"=PC	pc\n"
@@ -83,7 +84,8 @@ static int set_reg_profile(RAnal *anal) {
 		"flg	s   .1 132.30 0\n"
 		"flg	z   .1 132.31 0\n";
 
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 RAnalPlugin r_anal_plugin_hexagon = {

@@ -265,7 +265,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 	return false;
 }
 
-R_API char *r_anal_get_reg_profile(RAnal *anal) {
+R_API RStrBuf *r_anal_get_reg_profile(RAnal *anal) {
 	return (anal && anal->cur && anal->cur->get_reg_profile)
 		? anal->cur->get_reg_profile (anal) : NULL;
 }
@@ -276,12 +276,12 @@ R_API bool r_anal_set_reg_profile(RAnal *anal) {
 	if (anal && anal->cur && anal->cur->set_reg_profile) {
 		ret = anal->cur->set_reg_profile (anal);
 	} else {
-		char *p = r_anal_get_reg_profile (anal);
-		if (p && *p) {
+		RStrBuf *p = r_anal_get_reg_profile (anal);
+		if (p && !r_strbuf_is_empty (p)) {
 			r_reg_set_profile_string (anal->reg, p);
 			ret = true;
 		}
-		free (p);
+		r_strbuf_free (p);
 	}
 	return ret;
 }

@@ -517,8 +517,9 @@ fin:
 	return opsize;
 }
 
-// XXX 
+// XXX
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	const char *p = \
 		"=PC    pc\n"
 		"=SP    sp\n"
@@ -528,7 +529,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	sp	.16	48	0\n"
 		"gpr	a0	.16	48	0\n"
 		"gpr	a1	.16	48	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 RAnalPlugin r_anal_plugin_m680x_cs = {

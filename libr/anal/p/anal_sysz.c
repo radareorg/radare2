@@ -146,7 +146,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 }
 
 static int set_reg_profile(RAnal *anal) {
-	char *p =
+	RStrBuf sb;
+	const char *p =
 		"=PC	r15\n"
 		"=LR	r14\n"
 		"=SP	r13\n"
@@ -181,7 +182,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	r14	.32	56	0\n"
 		"gpr	r15	.32	60	0\n"
 	;
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 static int archinfo(RAnal *anal, int q) {

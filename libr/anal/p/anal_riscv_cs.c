@@ -400,7 +400,8 @@ fin:
 	return opsize;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static RStrBuf *get_reg_profile(RAnal *anal) {
+	int l = 0;
 	const char *p = NULL;
 	switch (anal->bits) {
 	case 32: p =
@@ -487,6 +488,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"flg	frm	.3	3077	0\n"
 		;
 
+		l = strlen (p);
 		break;
 	case 64: p =
 		"=PC	pc\n"
@@ -571,9 +573,10 @@ static char *get_reg_profile(RAnal *anal) {
 		"flg	frm	.3	4101	0\n"
 		;
 
+		l = strlen (p);
 		break;
 	}
-	return (p && *p)? strdup (p): NULL;
+	return (p && *p)? r_strbuf_new_const (p, l): NULL;
 }
 
 static int archinfo(RAnal *anal, int q) {

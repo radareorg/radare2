@@ -444,15 +444,16 @@ static int archinfo(RAnal *a, int q) {
 	return 1;
 }
 
-static char *get_reg_profile(RAnal *anal) {
-	return strdup (
+static RStrBuf *get_reg_profile(RAnal *anal) {
+	const char *p =
 		"=PC	pc\n"
 		"=BP	bp\n"
 		"=SP	sp\n"
 		"gpr	sp	.32	0	0\n" // stack pointer
 		"gpr	pc	.32	4	0\n" // program counter
 		"gpr	bp	.32	8	0\n" // base pointer // unused
-	);
+	;
+	return r_strbuf_new_const (p, strlen (p));
 }
 
 RAnalPlugin r_anal_plugin_wasm = {

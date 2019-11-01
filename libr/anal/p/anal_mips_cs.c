@@ -1059,11 +1059,13 @@ fin:
 	return opsize;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static RStrBuf *get_reg_profile(RAnal *anal) {
+	int l = 0;
 	const char *p = NULL;
 	switch (anal->bits) {
 	default:
-	case 32: p =
+	case 32:
+		p = \
 		"=PC    pc\n"
 		"=SP    sp\n"
 		"=BP    fp\n"
@@ -1110,6 +1112,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	hi	.32	132	0\n"
 		"gpr	lo	.32	136	0\n"
 		"gpr	t	.32	140	0\n";
+		l = strlen (p);
 		break;
 	case 64: p =
 		"=PC    pc\n"
@@ -1158,9 +1161,10 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	hi	.64	264	0\n"
 		"gpr	lo	.64	272	0\n"
 		"gpr	t	.64	280	0\n";
+		l = strlen (p);
 		break;
 	}
-	return p? strdup (p): NULL;
+	return r_strbuf_new_const (p, l);
 }
 
 static int archinfo(RAnal *anal, int q) {

@@ -1293,7 +1293,7 @@ typedef int (*RAnalBbCallback)(RAnal *a, RAnalBlock *bb, ut64 addr, const ut8 *d
 typedef int (*RAnalFnCallback)(RAnal *a, RAnalFunction *fcn, ut64 addr, int reftype);
 
 typedef int (*RAnalRegProfCallback)(RAnal *a);
-typedef char*(*RAnalRegProfGetCallback)(RAnal *a);
+typedef RStrBuf*(*RAnalRegProfGetCallback)(RAnal *a);
 typedef int (*RAnalFPBBCallback)(RAnal *a, RAnalBlock *bb);
 typedef int (*RAnalFPFcnCallback)(RAnal *a, RAnalFunction *fcn);
 typedef int (*RAnalDiffBBCallback)(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2);
@@ -1429,7 +1429,7 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo);
 R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API bool r_anal_use(RAnal *anal, const char *name);
 R_API bool r_anal_set_reg_profile(RAnal *anal);
-R_API char *r_anal_get_reg_profile(RAnal *anal);
+R_API RStrBuf *r_anal_get_reg_profile(RAnal *anal);
 R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr);
 R_API bool r_anal_set_bits(RAnal *anal, int bits);
 R_API bool r_anal_set_os(RAnal *anal, const char *os);

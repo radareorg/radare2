@@ -909,7 +909,8 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 }
 
 static int set_reg_profile(RAnal *anal) {
-	char *p =
+	RStrBuf sb;
+	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
 		"gpr	a	.8	0	0\n"
@@ -928,7 +929,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	N	.1	.31	0\n"
 		"gpr	sp	.8	4	0\n"
 		"gpr	pc	.16	5	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 static int esil_6502_init (RAnalEsil *esil) {

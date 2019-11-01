@@ -74,15 +74,17 @@ static int __io_attach(RDebug *dbg, int pid) {
 }
 
 // "drp" register profile
-static char *__io_reg_profile(RDebug *dbg) {
+static RStrBuf *__io_reg_profile(RDebug *dbg) {
 	r_cons_push ();
 	char *drp = dbg->iob.system (dbg->iob.io, "drp");
 	if (drp) {
-		return drp;
+		RStrBuf *ret = r_strbuf_new (drp);
+		free (drp);
+		return ret;
 	}
 	const char *buf = r_cons_get_buffer ();
 	if (buf && *buf) {
-		char *ret = strdup (buf);
+		RStrBuf *ret = r_strbuf_new (buf);
 		r_cons_pop ();
 		return ret;
 	}

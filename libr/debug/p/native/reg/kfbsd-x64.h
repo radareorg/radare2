@@ -1,4 +1,4 @@
-return strdup (
+const char *p =
 "=PC	rip\n"
 "=SP	rsp\n"
 "=BP	rbp\n"
@@ -74,4 +74,5 @@ return strdup (
 "gpr	rflags	.64	152	0	c1p.a.zstido.n.rv\n"
 "gpr	rsp	.64	160	0\n"
 "seg	ss	.64	168	0\n"
-);
+;
+return r_strbuf_new_const (p, strlen (p));

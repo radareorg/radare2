@@ -5,6 +5,7 @@
 #include <r_list.h>
 #include <r_util/r_hex.h>
 #include <r_util/r_assert.h>
+#include <r_util/r_strbuf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,7 +115,7 @@ typedef struct r_reg_set_t {
 typedef struct r_reg_t {
 	char *profile;
 	char *reg_profile_cmt;
-	char *reg_profile_str;
+	RStrBuf reg_profile_str;
 	char *name[R_REG_NAME_LAST]; // aliases
 	RRegSet regset[R_REG_TYPE_LAST];
 	RList *allregs;
@@ -141,7 +142,7 @@ R_API void r_reg_free(RReg *reg);
 R_API void r_reg_free_internal(RReg *reg, bool init);
 R_API RReg *r_reg_new(void);
 R_API bool r_reg_set_name(RReg *reg, int role, const char *name);
-R_API bool r_reg_set_profile_string(RReg *reg, const char *profile);
+R_API bool r_reg_set_profile_string(RReg *reg, const RStrBuf *profile);
 R_API bool r_reg_set_profile(RReg *reg, const char *profile);
 R_API bool r_reg_parse_gdb_profile(const char *profile);
 R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item);

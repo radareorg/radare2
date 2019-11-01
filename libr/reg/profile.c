@@ -120,16 +120,16 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 }
 
 #define PARSER_MAX_TOKENS 8
-R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
+R_API bool r_reg_set_profile_string(RReg *reg, const RStrBuf *str) {
 	char *tok[PARSER_MAX_TOKENS];
 	char tmp[128];
 	int i, j, l;
-	const char *p = str;
+	const char *p = r_strbuf_get (str);
 
-	r_return_val_if_fail (reg && str, false);
+	r_return_val_if_fail (reg && str && !r_strbuf_is_empty (str), false);
 
 	// Same profile, no need to change
-	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str)) {
+	if (r_strbuf_equals (&reg->reg_profile_str, str)) {
 		return true;
 	}
 
@@ -140,7 +140,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	r_reg_arena_shrink (reg);
 
 	// Cache the profile string
-	reg->reg_profile_str = strdup (str);
+	r_strbuf_copy (&reg->reg_profile_str, str);
 
 	// Line number
 	l = 0;
@@ -234,6 +234,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 }
 
 R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
+	RStrBuf sb;
 	char *base, *file;
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
@@ -248,7 +249,10 @@ R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 		eprintf ("r_reg_set_profile: Cannot find '%s'\n", profile);
 		return false;
 	}
-	bool ret = r_reg_set_profile_string (reg, str);
+	r_strbuf_init (&sb);
+	r_strbuf_set (&sb, str);
+	bool ret = r_reg_set_profile_string (reg, &sb);
+	r_strbuf_fini (&sb);
 	free (str);
 	return ret;
 }

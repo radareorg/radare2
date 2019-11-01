@@ -11,7 +11,9 @@ static int null_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 }
 
 static int null_set_reg_profile(RAnal* anal){
-	return r_reg_set_profile_string(anal->reg, "");
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	return r_reg_set_profile_string(anal->reg, &sb);
 }
 
 RAnalPlugin r_anal_plugin_null = {

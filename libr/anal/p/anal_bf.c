@@ -128,8 +128,8 @@ beach:
 	return op->size;
 }
 
-static char *get_reg_profile(RAnal *anal) {
-	return strdup (
+static RStrBuf *get_reg_profile(RAnal *anal) {
+	const char *p = \
 		"=PC	pc\n"
 		"=BP	brk\n"
 		"=SP	ptr\n"
@@ -142,7 +142,8 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	brk	.32	8	0\n" // brackets
 		"gpr	scr	.32	12	0\n" // screen
 		"gpr	kbd	.32	16	0\n" // keyboard
-	);
+	;
+	return r_strbuf_new_const (p, strlen (p));
 }
 
 RAnalPlugin r_anal_plugin_bf = {

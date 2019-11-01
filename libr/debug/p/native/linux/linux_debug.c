@@ -17,7 +17,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-char *linux_reg_profile (RDebug *dbg) {
+RStrBuf *linux_reg_profile (RDebug *dbg) {
 #if __arm__
 #include "reg/linux-arm.h"
 #elif __riscv

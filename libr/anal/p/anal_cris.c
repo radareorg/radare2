@@ -238,6 +238,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 }
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r14\n" // XXX
@@ -271,7 +272,9 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	r15	.32	60	0\n"
 		// ADD P REGISTERS
 		;
-	return r_reg_set_profile_string (anal->reg, p);
+
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 RAnalPlugin r_anal_plugin_cris = {

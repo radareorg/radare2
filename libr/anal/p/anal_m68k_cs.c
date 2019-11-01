@@ -706,6 +706,7 @@ fin:
 }
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	const char *p = \
 		"=PC    pc\n"
 		"=SP    a7\n"
@@ -746,7 +747,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	usp	.32	116	0\n" //user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
 		"gpr	vbr	.32	120	0\n" //vector base register, this is a Address pointer
 		"gpr	cacr	.32	124	0\n" //cache control register, implementation specific
-		"gpr	caar	.32	128	0\n" //cache address register, 68020, 68EC020, 68030 and 68EC030 only.  
+		"gpr	caar	.32	128	0\n" //cache address register, 68020, 68EC020, 68030 and 68EC030 only.
 		"gpr	msp	.32	132	0\n" //master stack pointer, this is an shadow register of A7 supervisor mode, SR bits 0xD && 0xC are set
 		"gpr	isp	.32	136	0\n" //interrupt stack pointer, this is an shadow register of A7  supervisor mode, SR bit 0xD is set, 0xC is not.
 		"gpr	tc	.32	140	0\n"
@@ -760,7 +761,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	fpcr	.32	176	0\n"
 		"gpr	fpsr	.32	180	0\n"
 		"gpr	fpiar	.32	184	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 RAnalPlugin r_anal_plugin_m68k_cs = {

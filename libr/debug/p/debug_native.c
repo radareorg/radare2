@@ -119,7 +119,7 @@ static int r_debug_handle_signals(RDebug *dbg) {
 //this is temporal
 #if __APPLE__ || __linux__
 
-static char *r_debug_native_reg_profile (RDebug *dbg) {
+static RStrBuf *r_debug_native_reg_profile (RDebug *dbg) {
 #if __APPLE__
 	return xnu_reg_profile (dbg);
 #elif __linux__

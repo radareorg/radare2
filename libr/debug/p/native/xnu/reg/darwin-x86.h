@@ -1,4 +1,4 @@
-return strdup (
+const char *p =
 "=PC	eip\n"
 "=SP	esp\n"
 "=BP	ebp\n"
@@ -56,7 +56,8 @@ return strdup (
 "seg@gpr	es	.32	52	0\n"
 "seg@gpr	fs	.32	56	0\n"
 "seg@gpr	gs	.32	60	0\n"
-);
+;
+return r_strbuf_new_const (p, strlen (p));
 
 /*
 _STRUCT_X86_DEBUG_STATE32

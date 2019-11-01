@@ -14,7 +14,7 @@ VFP: FPU
 	ut32 r[64]
 	ut32 fpscr
 #endif
-return strdup (
+const char *p =
 "=PC	r15\n"
 "=LR	r14\n"
 "=SP	r13\n"
@@ -45,4 +45,5 @@ return strdup (
 "gpr	cf	.1	.514	0	carry\n" // set if last op carries
 "gpr	vf	.1	.515	0	overflow\n" // set if overflows
 "gpr	thumb	.1	.517	0	thumb\n"
-);
+;
+return r_strbuf_new_const (p, strlen (p));

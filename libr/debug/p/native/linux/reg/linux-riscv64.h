@@ -1,4 +1,4 @@
-return strdup (
+const char *p =
 	"=PC	pc\n"
 	"=SP	x2\n"
 	"=BP	x4\n"
@@ -45,4 +45,5 @@ return strdup (
 	"gpr	x29	.64	232	0\n"
 	"gpr	x30	.64	240	0\n"
 	"gpr	x31	.64	248	0\n"
-	);
+	;
+return r_strbuf_new_const (p, strlen (p));

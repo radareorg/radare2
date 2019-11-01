@@ -489,7 +489,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	return ret;
 }
 
-static char *get_reg_profile(RAnal *anal) {
+static RStrBuf *get_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r3\n"
@@ -542,7 +542,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"flg	ov  .1 132.29 0\n"
 		"flg	s   .1 132.30 0\n"
 		"flg	z   .1 132.31 0\n";
-	return strdup (p);
+	return r_strbuf_new_const (p, strlen (p));
 }
 
 RAnalPlugin r_anal_plugin_v850 = {

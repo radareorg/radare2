@@ -430,7 +430,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 
 /* Set the profile register */
 static int mips_set_reg_profile(RAnal* anal){
-     const char *p =
+	RStrBuf sb;
+	const char *p=
 #if 0
           "=PC    pc\n"
 	  "=SP    sp\n"
@@ -521,7 +522,8 @@ static int mips_set_reg_profile(RAnal* anal){
 	"gpr	pc	.64	272	0\n"
 	;
 #endif
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 static int archinfo(RAnal *anal, int q) {

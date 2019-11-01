@@ -6,7 +6,7 @@
         __ut64    __pc;             /* Program counter */
         __uint32_t    __cpsr;   /* Current program status register */
 #endif
-return strdup (
+const char *p =
 "=PC	pc\n"
 "=SP	sp\n" // XXX
 "=BP	x30\n" // XXX
@@ -90,5 +90,5 @@ return strdup (
 "gpr	pstate	.64	256	0\n" // FLAGS
 // TODO flags
 "gpr	nf	.1	.2176	0	sign\n" // XXX wrong offset
-);
-
+;
+return r_strbuf_new_const (p, strlen (p));

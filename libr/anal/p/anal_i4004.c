@@ -10,6 +10,7 @@
 #define	AVR_SOFTCAST(x,y)	((x)+((y)*0x100))
 
 static int set_reg_profile(RAnal *anal) {
+	RStrBuf sb;
 	const char *p =
 		"=PC	PC\n"
 		/* syntax not yet supported */
@@ -42,7 +43,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	PC3	.64	34	0\n"
 		;
 
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 /* That 3 is a hack */
@@ -154,7 +156,7 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case 6: //snprintf (basm, basz, "inc r%d", low); break;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
-	case 7: //snprintf (basm, basz, "isz r%d, 0x%02x", low, buf[1]); 
+	case 7: //snprintf (basm, basz, "isz r%d, 0x%02x", low, buf[1]);
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->fail = (addr & (~0xFF)) + buf[1];
 		op->jump = addr + rlen;

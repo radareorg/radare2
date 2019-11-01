@@ -1,5 +1,5 @@
 // NGREG 34
-return strdup (
+const char *p =
 "=PC	pc\n"
 "=BP	x29\n"
 "=SP	sp\n"
@@ -204,4 +204,5 @@ return strdup (
 "gpr	cf	.1	.258	0	carry\n" // set if last op carries
 "gpr	vf	.1	.259	0	overflow\n" // set if overflows
 #endif
-);
+;
+return r_strbuf_new_const (p, strlen (p));

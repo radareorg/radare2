@@ -1977,8 +1977,8 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origin
 	return op->size;
 }
 
-static char *get_reg_profile(RAnal *anal) {
-	return strdup (
+static RStrBuf *get_reg_profile(RAnal *anal) {
+	const char *p =
 		// Assuming call0 ABI
 		"# a0		return address\n"
 		"# a1		stack pointer\n"
@@ -2016,7 +2016,8 @@ static char *get_reg_profile(RAnal *anal) {
 
 		// sr
 		"gpr	sar	.32	72	0\n"
-	);
+	;
+	return r_strbuf_new_const (p, strlen (p));
 }
 
 RAnalPlugin r_anal_plugin_xtensa = {

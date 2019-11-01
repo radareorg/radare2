@@ -709,10 +709,10 @@ static bool cb_asmbits(void *user, void *data) {
 				core->dbg->bits = R_SYS_BITS_64;
 #endif
 #endif
-				char *rp = core->dbg->h->reg_profile (core->dbg);
+				RStrBuf *rp = core->dbg->h->reg_profile (core->dbg);
 				r_reg_set_profile_string (core->dbg->reg, rp);
 				r_reg_set_profile_string (core->anal->reg, rp);
-				free (rp);
+				r_strbuf_free (rp);
 			}
 		} else {
 			(void)r_anal_set_reg_profile (core->anal);

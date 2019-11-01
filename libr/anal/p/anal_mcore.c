@@ -49,8 +49,9 @@ static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 }
 
 static int set_reg_profile(RAnal *anal) {
-	const char *p;
-	p = "=PC	pc\n"
+	RStrBuf sb;
+	const char *p = \
+		"=PC	pc\n"
 		"=SP	r1\n"
 		"=SR	sr\n"
 		"=A0	r3\n"
@@ -111,7 +112,8 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	cr30  .32 184 0\n"
 		"gpr	cr31  .32 188 0\n"
 		"gpr	pc	.32 192 0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	r_strbuf_init_const (&sb, p, strlen (p));
+	return r_reg_set_profile_string (anal->reg, &sb);
 }
 
 static int archinfo(RAnal *anal, int q) {

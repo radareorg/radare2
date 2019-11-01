@@ -1,5 +1,5 @@
 // NGREG 34
-return strdup (
+const char *p =
 "=PC	pc\n"
 "=BP	x29\n"
 "=SP	sp\n"
@@ -190,4 +190,5 @@ return strdup (
 "flg	cf	.1	264.29	0	carry\n"
 "flg	zf	.1	264.30	0	zero\n"
 "flg	nf	.1	264.31	0	sign\n"
-);
+;
+return r_strbuf_new_const (p, strlen (p));

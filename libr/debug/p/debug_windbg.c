@@ -134,7 +134,7 @@ static int r_debug_windbg_detach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static char *r_debug_windbg_reg_profile(RDebug *dbg) {
+static RStrBuf *r_debug_windbg_reg_profile(RDebug *dbg) {
 	if (!dbg) {
 		return NULL;
 	}

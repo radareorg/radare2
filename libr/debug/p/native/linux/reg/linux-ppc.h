@@ -1,4 +1,4 @@
-return strdup (
+const char *p =
 "=PC	srr0\n"
 "=SP	srr1\n"
 "=SR	srr1\n" // status register ??
@@ -53,5 +53,5 @@ return strdup (
 "gpr	ctr	.32	148	0\n"
 "gpr	mq	.32	152	0\n"
 "gpr	vrsave	.32	156	0\n"
-);
-
+;
+return r_strbuf_new_const (p, strlen (p));

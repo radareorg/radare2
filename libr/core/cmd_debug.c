@@ -1965,7 +1965,7 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 		}
 		r_list_append (list, r->name);
 	}
-	
+
 	RList *sorted = r_list_newf (free);
 	ht_up_foreach (db, regcb, sorted);
 	ut64 *addr;
@@ -1991,7 +1991,7 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 			if (rrstr && *rrstr && strchr (rrstr, 'R')) {
 				r_cons_printf ("    ;%s"Color_RESET, rrstr);
 			}
-			r_cons_newline ();	
+			r_cons_newline ();
 		}
 	}
 	r_list_free (sorted);
@@ -2136,8 +2136,8 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 	const char *ptr;
 	switch (str[1]) {
 	case '\0': // "drp"
-		if (core->dbg->reg->reg_profile_str) {
-			r_cons_println (core->dbg->reg->reg_profile_str);
+		if (!r_strbuf_is_empty (&core->dbg->reg->reg_profile_str)) {
+			r_cons_println (r_strbuf_get (&core->dbg->reg->reg_profile_str));
 		} else {
 			eprintf ("No register profile defined. Try 'dr.'\n");
 		}

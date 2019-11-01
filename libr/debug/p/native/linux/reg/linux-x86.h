@@ -1,5 +1,5 @@
 // 32bit host debugging 32bit target
-return strdup (
+const char *p =
 "=PC	eip\n"
 "=SP	esp\n"
 "=BP	ebp\n"
@@ -119,5 +119,6 @@ return strdup (
 "fpu	xmm7l	.64	280	0\n"
 "fpu	x86	.64	288	0\n"
 
-);
+;
+return r_strbuf_new_const (p, strlen (p));
 
