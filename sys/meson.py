@@ -299,7 +299,7 @@ def main():
             log.error("Asan insupported under OpenBSD")
             sys.exit(1)
         # sanitizers = 'address,signed-integer-overflow'  # Faster build
-        sanitizers = 'address,undefined'
+        sanitizers = 'address,undefined,signed-integer-overflow'
         cflags = os.environ.get('CFLAGS')
         if not cflags:
             cflags = ''

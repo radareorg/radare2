@@ -1,7 +1,7 @@
 #!/bin/sh
 # ASAN="address leak memory undefined"
 # ASAN="address signed-integer-overflow"  # Faster build
-ASAN=${ASAN:="address undefined"}
+ASAN=${ASAN:="address undefined signed-integer-overflow"}
 
 printf "\033[32m"
 echo "========================================================================="
