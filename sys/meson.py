@@ -298,15 +298,17 @@ def main():
         if os.uname().sysname == 'OpenBSD':
             log.error("Asan insupported under OpenBSD")
             sys.exit(1)
+        # sanitizers = 'address,signed-integer-overflow'  # Faster build
+        sanitizers = 'address,undefined,signed-integer-overflow'
         cflags = os.environ.get('CFLAGS')
         if not cflags:
             cflags = ''
-        os.environ['CFLAGS'] = cflags + ' -fsanitize=address'
+        os.environ['CFLAGS'] = cflags + ' -fsanitize=' + sanitizers
         if os.uname().sysname != 'Darwin':
           ldflags = os.environ.get('LDFLAGS')
           if not ldflags:
               ldflags = ''
-          os.environ['LDFLAGS'] = ldflags + ' -fsanitize=address'
+          os.environ['LDFLAGS'] = ldflags + ' -fsanitize=' + sanitizers
 
     # Check arguments
     if args.pull:
