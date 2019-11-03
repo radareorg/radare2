@@ -103,6 +103,7 @@ struct __createprocess_params {
 
 static int __createprocess_wrap(void *params) {
 	STARTUPINFO si = { 0 };
+	// TODO: Add DEBUG_PROCESS to support child process debugging
 	struct __createprocess_params *p = params;
 	return CreateProcess (p->appname, p->cmdline, NULL, NULL, FALSE,
 		CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
@@ -111,7 +112,8 @@ static int __createprocess_wrap(void *params) {
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	PROCESS_INFORMATION pi;
-	STARTUPINFO si = { 0 } ;
+	STARTUPINFO si = { 0 };
+	si.cb = sizeof (si);
 	DEBUG_EVENT de;
 	int pid, tid;
 	if (!*cmd) {
@@ -124,52 +126,18 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) :
 		strdup (cmd);
 	char **argv = r_str_argv (_cmd, NULL);
+	char *cmdline = NULL;
 	// We need to build a command line with quoted argument and escaped quotes
-	int cmd_len = 0;
 	int i = 0;
-
-	si.cb = sizeof (si);
 	while (argv[i]) {
-		char *current = argv[i];
-		int quote_count = 0;
-		while ((current = strchr (current, '"'))) {
-			quote_count ++;
-		}
-		cmd_len += strlen (argv[i]);
-		cmd_len += quote_count; // The quotes will add one backslash each
-		cmd_len += 2; // Add two enclosing quotes;
+		r_str_arg_unescape (argv[i]);
+		cmdline = r_str_appendf (cmdline, "\"%s\" ", argv[i]);
 		i++;
 	}
-	cmd_len += i-1; // Add argc-1 spaces
-
-	char *cmdline = malloc ((cmd_len + 1) * sizeof (char));
-	int cmd_i = 0; // Next character to write in cmdline
-	i = 0;
-	while (argv[i]) {
-		if (i != 0) {
-			cmdline[cmd_i++] = ' ';
-		}
-		cmdline[cmd_i++] = '"';
-
-		int arg_i = 0; // Index of current character in orginal argument
-		while (argv[i][arg_i]) {
-			char c = argv[i][arg_i];
-			if (c == '"') {
-				cmdline[cmd_i++] = '\\';
-			}
-			cmdline[cmd_i++] = c;
-			arg_i++;
-		}
-
-		cmdline[cmd_i++] = '"';
-		i++;
-	}
-	cmdline[cmd_i] = '\0';
 
 	LPTSTR appname_ = r_sys_conv_utf8_to_win (argv[0]);
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	free (cmdline);
-	// TODO: Add DEBUG_PROCESS to support child process debugging
 	struct __createprocess_params p = {appname_, cmdline_, &pi};
 	w32dbg_wrap_instance *inst = io->w32dbg_wrap;
 	inst->params->type = W32_CALL_FUNC;
@@ -642,6 +610,12 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				return NULL;
 			}
 			ret = _plugin->open (io, uri, rw, mode);
+#if __WINDOWS__
+			if (ret) {
+				RIOW32Dbg *w32 = (RIOW32Dbg *)ret->data;
+				*(RIOW32Dbg *)((RCore *)io->user)->dbg->user = *w32;
+			}
+#endif
 		}
 		if (ret) {
 			ret->plugin = _plugin;

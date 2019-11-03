@@ -264,7 +264,7 @@ static BOOL CALLBACK __enum_childs(
 	}
 	win->tid = GetWindowThreadProcessId (hwnd, NULL);
 	win->h = hwnd;
-	const size_t sz = MAX_CLASS_NAME * sizeof (TCHAR);
+	const size_t sz = MAX_CLASS_NAME * sizeof (WCHAR);
 	char *tmp = malloc (sz);
 	if (!tmp) {
 		r_list_free (windows);
@@ -283,7 +283,6 @@ static BOOL CALLBACK __enum_childs(
 }
 
 static RList *__get_windows(RDebug *dbg) {
-	GetWindowLongPtrW;
 	RList *windows = r_list_newf((RListFree)__free_window);
 	HWND hCurWnd = NULL;
 	do {

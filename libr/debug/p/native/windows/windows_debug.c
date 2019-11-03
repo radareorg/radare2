@@ -29,15 +29,24 @@ bool setup_debug_privileges(bool b) {
 }
 
 int w32_init(RDebug *dbg) {
-	if (!dbg->user) {
-		RIOW32Dbg *rio = R_NEW0 (RIOW32Dbg);
+	RIOW32Dbg *rio = dbg->user;
+	if (!rio) {
+		rio = R_NEW0 (RIOW32Dbg);
 		if (rio) {
 			rio->pi.dwProcessId = dbg->pid;
 			rio->pi.dwThreadId = dbg->tid;
+		} else {
+			return false;
 		}
 		dbg->user = rio;
 	}
-
+	if (!rio->inst) {
+		if (dbg->iob.io->w32dbg_wrap) {
+			rio->inst = dbg->iob.io->w32dbg_wrap;
+		} else {
+			rio->inst = dbg->iob.io->w32dbg_wrap = w32dbg_wrap_new ();
+		}
+	}
 	// escalate privs (required for win7/vista)
 	setup_debug_privileges (true);
 
@@ -505,6 +514,8 @@ int w32_attach(RDebug *dbg, int pid) {
 	rio->inst->params->pid = pid;
 	w32dbg_wrap_wait_ret (rio->inst);
 	if (!rio->inst->params->ret) {
+		w32dbgw_err (rio->inst);
+		r_sys_perror ("DebugActiveProcess");
 		CloseHandle (ph);
 		return -1;
 	}
