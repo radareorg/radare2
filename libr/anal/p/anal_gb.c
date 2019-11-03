@@ -1145,7 +1145,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->cycles = 16;
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = 2;
-			op->type = R_ANAL_OP_TYPE_PUSH;
+			op->type = R_ANAL_OP_TYPE_RPUSH;
 			break;
 		case 0xc1:
 		case 0xd1:
