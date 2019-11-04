@@ -909,10 +909,10 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		r_config_set_i (r->config, "dbg.swstep", swstep);
 		// Set the correct debug handle
 		if (fd->plugin && fd->plugin->isdbg) {
-			const char *dh = r_str_ndup (file, (strstr (file, "://") - file));
+			char *dh = r_str_ndup (file, (strstr (file, "://") - file));
 			if (dh) {
 				r_debug_use (r->dbg, dh);
-				free(dh);
+				free (dh);
 			}
 		}
 	}
