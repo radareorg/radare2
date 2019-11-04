@@ -232,7 +232,32 @@ sdb_gen_cmd = [
   '@INPUT@'
 ]
 
+
 # handle tree-sitter dependency
+tree_sitter_path = join_paths(meson.current_source_dir(), 'tree-sitter')
+res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(tree_sitter_path))
+if res.returncode() == 0
+  if not git_exe.found()
+    error('Cannot load tree-sitter library. Either provide tree-sitter in ./shlr/tree-sitter or install git, so it can be downloaded')
+  endif
+
+  TS_TIP = '80008b0bccbddffc8e68f66a5f173ef71fd125e3'
+  TS_BRA = 'master'
+
+  message('Cloning tree-sitter ' + TS_BRA + ' branch, commit ' + TS_TIP + ', into ' + tree_sitter_path)
+  git_cmd = 'clone -b @0@ https://github.com/tree-sitter/tree-sitter.git @1@'.format(TS_BRA, tree_sitter_path)
+  clone_cmd = run_command(git_exe, git_cmd.split())
+  if clone_cmd.returncode() != 0
+    error('Cannot execute git clone command')
+  endif
+
+  reset_cmd_str = '-C @0@ reset --hard @1@'.format(tree_sitter_path, TS_TIP)
+  reset_cmd = run_command(git_exe, reset_cmd_str.split())
+  if reset_cmd.returncode() != 0
+    error('Cannot execute git reset command')
+  endif
+endif
+
 tree_sitter_files = [
   'tree-sitter/lib/src/lib.c',
 ]
@@ -251,6 +276,31 @@ tree_sitter_dep = declare_dependency(
 
 
 # handle tree-sitter-r2cmd dependency
+tree_sitter_r2cmd_path = join_paths(meson.current_source_dir(), 'tree-sitter-r2cmd')
+res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(tree_sitter_r2cmd_path))
+if res.returncode() == 0
+  if not git_exe.found()
+    error('Cannot load tree-sitter-r2cmd library. Either provide tree-sitter in ./shlr/tree-sitter-r2cmd or install git, so it can be downloaded')
+  endif
+
+  TSCMD_TIP = 'dfb12492f4052b5a6c64fc626e9bf65ccb7b5522'
+  TSCMD_BRA = 'master'
+  tree_sitter_r2cmd_user = 'ret2libc'
+
+  message('Cloning tree-sitter-r2cmd ' + TSCMD_BRA + ' branch, commit ' + TSCMD_TIP + ', into ' + tree_sitter_r2cmd_path)
+  git_cmd = 'clone -b @0@ https://github.com/@1@/tree-sitter.git @2@'.format(TSCMD_BRA, tree_sitter_r2cmd_user, tree_sitter_r2cmd_path)
+  clone_cmd = run_command(git_exe, git_cmd.split())
+  if clone_cmd.returncode() != 0
+    error('Cannot execute git clone command')
+  endif
+
+  reset_cmd_str = '-C @0@ reset --hard @1@'.format(tree_sitter_r2cmd_path, TS_TIP)
+  reset_cmd = run_command(git_exe, reset_cmd_str.split())
+  if reset_cmd.returncode() != 0
+    error('Cannot execute git reset command')
+  endif
+endif
+
 tree_sitter_r2cmd_files = [
   'tree-sitter-r2cmd/src/parser.c',
 ]
