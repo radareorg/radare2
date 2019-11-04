@@ -95,6 +95,8 @@ ${PACKAGE_DIR}/build: ${PACKAGE_DIR}/debian-binary ${PACKAGE_DIR}/control \
 	cp ${PACKAGE_DIR}/debian-binary $@/
 	cd ${PACKAGE_DIR}/control && tar cJvf $@/control.tar.xz *
 	cd ${PACKAGE_DIR}/data && \
+		find . -type f -perm ++x | xargs strip -s
+	cd ${PACKAGE_DIR}/data && \
 		COPY_EXTENDED_ATTRIBUTES_DISABLE=true \
 		COPYFILE_DISABLE=true \
 		tar cpJvf $@/data.tar.xz ./*

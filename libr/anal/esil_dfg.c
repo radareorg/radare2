@@ -1,6 +1,10 @@
 /* radare - LGPL - Copyright 2019 - condret */
 
+//#include <r_util.h>
 #include <r_anal.h>
+//#include <r_reg.h>
+//#include <sdb.h>
+
 
 typedef struct esil_dfg_reg_var_t {
 	ut32 from;
@@ -8,12 +12,21 @@ typedef struct esil_dfg_reg_var_t {
 	RGraphNode *node;
 } EsilDFGRegVar;
 
+
 typedef struct r_anal_esil_dfg_filter_t {
 	RAnalEsilDFG *dfg;
 	RContRBTree *tree;
 	Sdb *results;
 } RAnalEsilDFGFilter;
 
+// TODO: simple const propagation - use node->type of srcs to propagate consts of pushed vars
+
+R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c) {
+	RAnalEsilDFGNode *ret = R_NEW0 (RAnalEsilDFGNode);
+	ret->content = r_strbuf_new (c);
+	ret->idx = edf->idx++;
+	return ret;
+}
 
 static void _dfg_node_free (RAnalEsilDFGNode *free_me) {
 	if (free_me) {
@@ -22,9 +35,15 @@ static void _dfg_node_free (RAnalEsilDFGNode *free_me) {
 	}
 }
 
+
 static int _rv_del_alloc_cmp (void *incoming, void *in, void *user) {
 	EsilDFGRegVar *rv_incoming = (EsilDFGRegVar *)incoming;
 	EsilDFGRegVar *rv_in = (EsilDFGRegVar *)in;
+	RAnalEsilDFG *dfg = (RAnalEsilDFG *)user;
+
+	if (dfg->malloc_failed) {
+		return -1;
+	}
 
 	// first handle the simple cases without intersection
 	if (rv_incoming->to < rv_in->from) {
@@ -36,7 +55,6 @@ static int _rv_del_alloc_cmp (void *incoming, void *in, void *user) {
 	if (rv_in->from == rv_incoming->from && rv_in->to == rv_incoming->to) {
 		return 0;
 	}
-	RAnalEsilDFG *dfg = (RAnalEsilDFG *)user;
 
 	/*
 	the following cases are about intersection, here some ascii-art, so you understand what I do
@@ -53,6 +71,10 @@ static int _rv_del_alloc_cmp (void *incoming, void *in, void *user) {
 
 	if (rv_in->from < rv_incoming->from && rv_incoming->to < rv_in->to) {
 		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		if (!rv) {
+			dfg->malloc_failed = true;
+			return -1;
+		}
 		rv[0] = rv_in[0];
 		rv_in->to = rv_incoming->from - 1;
 		rv->from = rv_incoming->to + 1;
@@ -70,11 +92,19 @@ static int _rv_del_alloc_cmp (void *incoming, void *in, void *user) {
 	if (rv_incoming->from < rv_in->from && rv_in->to < rv_incoming->to) {
 		// lower part
 		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		if (!rv) {
+			dfg->malloc_failed = true;
+			return -1;
+		}
 		rv[0] = rv_incoming[0];
 		rv->to = rv_in->from - 1;
 		r_queue_enqueue (dfg->todo, rv);
 		// upper part
 		rv = R_NEW (EsilDFGRegVar);
+		if (!rv) {
+			dfg->malloc_failed = true;
+			return -1;
+		}
 		rv[0] = rv_incoming[0];
 		rv->from = rv_in->to + 1;
 		r_queue_enqueue (dfg->todo, rv);
@@ -90,6 +120,10 @@ static int _rv_del_alloc_cmp (void *incoming, void *in, void *user) {
 
 	if (rv_incoming->from == rv_in->from && rv_in->to < rv_incoming->to) {
 		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		if (!rv) {
+			dfg->malloc_failed = true;
+			return -1;
+		}
 		rv[0] = rv_incoming[0];
 		rv->from = rv_in->to + 1;
 		r_queue_enqueue (dfg->todo, rv);
@@ -103,6 +137,10 @@ static int _rv_del_alloc_cmp (void *incoming, void *in, void *user) {
 
 	if (rv_incoming->from < rv_in->from && rv_in->to == rv_incoming->to) {
 		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		if (!rv) {
+			dfg->malloc_failed = true;
+			return -1;
+		}
 		rv[0] = rv_incoming[0];
 		rv->to = rv_in->from - 1;
 		r_queue_enqueue (dfg->todo, rv);
@@ -145,7 +183,7 @@ static int _rv_ins_cmp (void *incoming, void *in, void *user) {
 }
 
 static bool _edf_reg_set (RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) {
-	r_return_val_if_fail (dfg && reg, false);
+	r_return_val_if_fail (dfg && !dfg->malloc_failed && reg, false);
 	const ut32 _reg_strlen = 4 + strlen (reg);
 	char *_reg = R_NEWS0 (char, _reg_strlen + 1);
 	if (!_reg) {
@@ -169,15 +207,21 @@ static bool _edf_reg_set (RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) 
 	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
 	rv->to = v & UT32_MAX;
 	r_queue_enqueue (dfg->todo, rv);
-	while (!r_queue_is_empty (dfg->todo)) {
+	while (!r_queue_is_empty (dfg->todo) && !dfg->malloc_failed) {
 		// rbtree api does sadly not allow deleting multiple items at once :(
 		rv = r_queue_dequeue (dfg->todo);
 		r_rbtree_cont_delete (dfg->reg_vars, rv, _rv_del_alloc_cmp, dfg);
-		if (dfg->insert) {
+		if (dfg->insert && !dfg->malloc_failed) {
 			r_rbtree_cont_insert (dfg->reg_vars, dfg->insert, _rv_ins_cmp, NULL);
 			dfg->insert = NULL;
 		}
 		free (rv);
+	}
+	if (dfg->malloc_failed) {
+		while (!r_queue_is_empty (dfg->todo)) {
+			free (r_queue_dequeue (dfg->todo));
+		}
+		return false;
 	}
 	rv = R_NEW0 (EsilDFGRegVar);
 	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
@@ -191,6 +235,11 @@ static bool _edf_reg_set (RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) 
 static int _rv_find_cmp (void *incoming, void *in, void *user) {
 	EsilDFGRegVar *rv_incoming = (EsilDFGRegVar *)incoming;
 	EsilDFGRegVar *rv_in = (EsilDFGRegVar *)in;
+
+	RAnalEsilDFG *dfg = (RAnalEsilDFG *)user;
+	if (dfg->malloc_failed) {
+		return -1;
+	}
 
 	// first handle the simple cases without intersection
 	if (rv_incoming->to < rv_in->from) {
@@ -214,18 +263,25 @@ static int _rv_find_cmp (void *incoming, void *in, void *user) {
 
 	enqueue the non-intersecting ends in the todo-queue
 	*/
-	RQueue *todo = (RQueue *)user;
 	if (rv_incoming->from < rv_in->from && rv_in->to < rv_incoming->to) {
 		// lower part
 		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		if (!rv) {
+			dfg->malloc_failed = true;
+			return -1;
+		}
 		rv[0] = rv_incoming[0];
 		rv->to = rv_in->from - 1;
-		r_queue_enqueue (todo, rv);
+		r_queue_enqueue (dfg->todo, rv);
 		// upper part
 		rv = R_NEW (EsilDFGRegVar);
+		if (!rv) {
+			dfg->malloc_failed = true;
+			return -1;
+		}
 		rv[0] = rv_incoming[0];
 		rv->from = rv_in->to + 1;
-		r_queue_enqueue (todo, rv);
+		r_queue_enqueue (dfg->todo, rv);
 		return 0;
 	}
 
@@ -237,21 +293,28 @@ static int _rv_find_cmp (void *incoming, void *in, void *user) {
 	*/
 	if (rv_in->from <= rv_incoming->from && rv_in->to < rv_incoming->to) {
 		EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+		if (!rv) {
+			dfg->malloc_failed = true;
+			return -1;
+		}
 		rv[0] = rv_incoming[0];
 		rv->from = rv_in->to + 1;
-		r_queue_enqueue (todo, rv);
+		r_queue_enqueue (dfg->todo, rv);
 		return 0;
 	}
 
 	/*
 	   =incoming=
-          =in=
-
+	          =in=
 	*/
 	EsilDFGRegVar *rv = R_NEW (EsilDFGRegVar);
+	if (!rv) {
+		dfg->malloc_failed = true;
+		return -1;
+	}
 	rv[0] = rv_incoming[0];
 	rv->to = rv_in->from - 1;
-	r_queue_enqueue (todo, rv);
+	r_queue_enqueue (dfg->todo, rv);
 	return 0;
 }
 
@@ -315,8 +378,12 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	free (_reg);
 	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
 	rv->to = v & UT32_MAX;
-	r_queue_enqueue (dfg->todo, rv);
 	RQueue *parts = r_queue_new (8);
+	if (!parts) {
+		free (rv);
+		return NULL;
+	}
+	r_queue_enqueue (dfg->todo, rv);
 
 	// log2((search_rv.to + 1) - search_rv.from) maybe better?
 	// wat du if this fails?
@@ -324,13 +391,18 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	RGraphNode *reg_node = NULL;
 	while (!r_queue_is_empty (dfg->todo)) {
 		rv = r_queue_dequeue (dfg->todo);
-		EsilDFGRegVar *part_rv = r_rbtree_cont_find (dfg->reg_vars, rv, _rv_find_cmp, dfg->todo);
+		EsilDFGRegVar *part_rv = r_rbtree_cont_find (dfg->reg_vars, rv, _rv_find_cmp, dfg);
 		if (part_rv) {
 			r_queue_enqueue (parts, part_rv->node);
 		} else if (!reg_node) {
 			reg_node = _edf_origin_reg_get (dfg, reg);
 			//insert in the gap
 			part_rv = R_NEW (EsilDFGRegVar);
+			if (!part_rv) {
+				R_FREE (rv);
+				dfg->malloc_failed = true;
+				break;
+			}
 			part_rv[0] = rv[0];
 			part_rv->node = reg_node;
 			r_rbtree_cont_insert (dfg->reg_vars, part_rv, _rv_ins_cmp, NULL);
@@ -340,6 +412,11 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 			//initial regnode was already created
 			//only need to insert in the tree
 			part_rv = R_NEW (EsilDFGRegVar);
+			if (!part_rv) {
+				R_FREE (part_rv);
+				dfg->malloc_failed = true;
+				break;
+			}
 			part_rv[0] = rv[0];
 			part_rv->node = reg_node;
 			r_rbtree_cont_insert (dfg->reg_vars, part_rv, _rv_ins_cmp, NULL);
@@ -347,6 +424,12 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 		free (rv);
 	}
 	reg_node = NULL;	// is this needed?
+	if (dfg->malloc_failed) {
+		while (!r_queue_is_empty(dfg->todo)) {
+			free (r_queue_dequeue (dfg->todo));
+			goto beach;
+		}
+	}
 	switch (parts->size) {
 	case 0:
 		break;
@@ -356,17 +439,35 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	default:
 		{
 			RAnalEsilDFGNode *_reg_node = r_anal_esil_dfg_node_new (dfg, "merge to ");
+			if (!_reg_node) {
+				while (!r_queue_is_empty (dfg->todo)) {
+					free (r_queue_dequeue (dfg->todo));
+				}
+				dfg->malloc_failed = true;
+				goto beach;
+			}
+
 			r_strbuf_appendf (_reg_node->content, "%s:var_%d", reg, dfg->idx++);
 			reg_node = r_graph_add_node (dfg->flow, _reg_node);
+			if (!reg_node) {
+				_dfg_node_free (_reg_node);
+				while (!r_queue_is_empty (dfg->todo)) {
+					free (r_queue_dequeue (dfg->todo));
+				}
+				dfg->malloc_failed = true;
+				goto beach;
+			}
 		}
 		do {
 			r_graph_add_edge (dfg->flow, r_queue_dequeue(parts), reg_node);
 		} while (!r_queue_is_empty (parts));
 		break;
 	}
+beach:
 	r_queue_free (parts);
 	return reg_node;
 }
+
 
 static bool _edf_var_set (RAnalEsilDFG *dfg, const char *var, RGraphNode *node) {
 	r_return_val_if_fail (dfg && var, false);
@@ -381,6 +482,7 @@ static bool _edf_var_set (RAnalEsilDFG *dfg, const char *var, RGraphNode *node) 
 	free (_var);
 	return ret;
 }
+
 
 static RGraphNode *_edf_var_get (RAnalEsilDFG *dfg, const char *var) {
 	r_return_val_if_fail (dfg && var, NULL);
@@ -750,15 +852,6 @@ static bool edf_consume_1_use_old_new_push_1(RAnalEsil *esil, const char *op_str
 	r_graph_add_edge (edf->flow, latest_old, op_node);
 	r_graph_add_edge (edf->flow, op_node, result_node);
 	return r_anal_esil_push (esil, r_strbuf_get (result->content));
-}
-
-// TODO: simple const propagation - use node->type of srcs to propagate consts of pushed vars
-
-R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c) {
-	RAnalEsilDFGNode *ret = R_NEW0 (RAnalEsilDFGNode);
-	ret->content = r_strbuf_new (c);
-	ret->idx = edf->idx++;
-	return ret;
 }
 
 R_API RAnalEsilDFG *r_anal_esil_dfg_new(RReg *regs) {

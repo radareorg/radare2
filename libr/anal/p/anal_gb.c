@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2012 - pancake<nopcode.org>
-			     2015 - condret
+			     2019 - condret
 
 	this file was based on anal_i8080.c */
 
@@ -714,8 +714,31 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	int ilen = gbOpLength (gb_op[data[0]].type);
 	if (ilen > len) {
 		ilen = 0;
+	} else if (mask & R_ANAL_OP_MASK_DISASM) {
+		memset (op, '\0', sizeof (RAnalOp));
+		char mn[32];
+		memset (mn, '\0', sizeof (char) * sizeof (mn));
+		switch (gb_op[data[0]].type) {
+		case GB_8BIT:
+			sprintf (mn, "%s", gb_op[data[0]].name);
+			break;
+		case GB_16BIT:
+			sprintf (mn, "%s %s", cb_ops[data[1] >> 3], cb_regs[data[1] & 7]);
+			break;
+		case GB_8BIT + ARG_8:
+			sprintf (mn, gb_op[data[0]].name, data[1]);
+			break;
+		case GB_8BIT + ARG_16:
+			sprintf (mn, gb_op[data[0]].name, data[1] | (data[2] << 8));
+			break;
+		case GB_8BIT + ARG_8 + GB_IO:
+			sprintf (mn, gb_op[data[0]].name, 0xff00 | data[1]);
+			break;
+		}
+		op->mnemonic = strdup (mn);
+	} else {
+		memset (op, '\0', sizeof (RAnalOp));
 	}
-	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = ilen;
@@ -1145,7 +1168,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->cycles = 16;
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = 2;
-			op->type = R_ANAL_OP_TYPE_PUSH;
+			op->type = R_ANAL_OP_TYPE_RPUSH;
 			break;
 		case 0xc1:
 		case 0xd1:

@@ -170,7 +170,7 @@ def win_dist(args):
     r2_bat_fname = args.install + r'\bin\r2.bat'
     log.debug('create "%s"', r2_bat_fname)
     with open(r2_bat_fname, 'w') as r2_bat:
-        r2_bat.write('@"%s\\bin\\radare2" %%*\n' % os.path.abspath(args.install))
+        r2_bat.write('@"%~dp0\\radare2" %*\n')
 
     copy(r'{BUILDDIR}\libr\*\*.dll', r'{DIST}\bin')
     makedirs(r'{DIST}\{R2_LIBDIR}')
@@ -254,8 +254,10 @@ def main():
 
     # Create parser
     parser = argparse.ArgumentParser(description='Mesonbuild scripts for radare2')
-    parser.add_argument('--asan', action='store_true',
-            help='Build radare2 with ASAN support.')
+    # --asan=address,signed-integer-overflow for faster build
+    parser.add_argument('--asan', nargs='?',
+            const='address,undefined,signed-integer-overflow', metavar='sanitizers',
+            help='Build radare2 with ASAN support (default sanitizers: %(const)s)')
     parser.add_argument('--project', action='store_true',
             help='Create a visual studio project and do not build.')
     parser.add_argument('--release', action='store_true',
@@ -301,12 +303,12 @@ def main():
         cflags = os.environ.get('CFLAGS')
         if not cflags:
             cflags = ''
-        os.environ['CFLAGS'] = cflags + ' -fsanitize=address'
+        os.environ['CFLAGS'] = cflags + ' -fsanitize=' + args.asan
         if os.uname().sysname != 'Darwin':
           ldflags = os.environ.get('LDFLAGS')
           if not ldflags:
               ldflags = ''
-          os.environ['LDFLAGS'] = ldflags + ' -lasan'
+          os.environ['LDFLAGS'] = ldflags + ' -fsanitize=' + args.asan
 
     # Check arguments
     if args.pull:

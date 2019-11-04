@@ -425,7 +425,7 @@ R_API void r_cons_canvas_print(RConsCanvas *c) {
 }
 
 R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
-	if (!c || w < 0) {
+	if (!c || w < 0 || h <= 0) {
 		return false;
 	}
 	int *newblen = realloc (c->blen, sizeof *c->blen * h);
