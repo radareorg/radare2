@@ -294,7 +294,7 @@ if res.returncode() == 0
     error('Cannot execute git clone command')
   endif
 
-  reset_cmd_str = '-C @0@ reset --hard @1@'.format(tree_sitter_r2cmd_path, TS_TIP)
+  reset_cmd_str = '-C @0@ reset --hard @1@'.format(tree_sitter_r2cmd_path, TSCMD_TIP)
   reset_cmd = run_command(git_exe, reset_cmd_str.split())
   if reset_cmd.returncode() != 0
     error('Cannot execute git reset command')
