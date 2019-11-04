@@ -288,7 +288,7 @@ if res.returncode() == 0
   tree_sitter_r2cmd_user = 'ret2libc'
 
   message('Cloning tree-sitter-r2cmd ' + TSCMD_BRA + ' branch, commit ' + TSCMD_TIP + ', into ' + tree_sitter_r2cmd_path)
-  git_cmd = 'clone -b @0@ https://github.com/@1@/tree-sitter.git @2@'.format(TSCMD_BRA, tree_sitter_r2cmd_user, tree_sitter_r2cmd_path)
+  git_cmd = 'clone -b @0@ https://github.com/@1@/tree-sitter-r2cmd.git @2@'.format(TSCMD_BRA, tree_sitter_r2cmd_user, tree_sitter_r2cmd_path)
   clone_cmd = run_command(git_exe, git_cmd.split())
   if clone_cmd.returncode() != 0
     error('Cannot execute git clone command')
