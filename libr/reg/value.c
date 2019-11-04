@@ -51,7 +51,7 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 		break;
 	case 256:// qword + qword + qword + qword
 		if (regset->arena->bytes && (off + 32 <= regset->arena->size)) {
-			val->v256.Low.Low  = *((ut64 *)(regset->arena->bytes + off));
+			val->v256.Low.Low = *((ut64 *)(regset->arena->bytes + off));
 			val->v256.Low.High = *((ut64 *)(regset->arena->bytes + off + 8));
 			val->v256.High.Low = *((ut64 *)(regset->arena->bytes + off + 16));
 			val->v256.High.High = *((ut64 *)(regset->arena->bytes + off + 24));
