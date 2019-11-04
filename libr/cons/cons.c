@@ -1465,10 +1465,13 @@ R_API void r_cons_set_utf8(bool b) {
 				r_sys_perror ("r_cons_set_utf8");
 			}
 #if UNICODE
-			if (!SetConsoleCP (CP_UTF8)) {
+			UINT inCP = CP_UTF8;
+#else
+			UINT inCP = GetACP ();
+#endif
+			if (!SetConsoleCP (inCP)) {
 				r_sys_perror ("r_cons_set_utf8");
 			}
-#endif
 		} else {
 			R_LOG_WARN ("UTF-8 Codepage not installed.\n");
 		}
