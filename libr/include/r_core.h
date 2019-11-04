@@ -236,8 +236,6 @@ typedef struct r_core_t {
 	ut32 blocksize;
 	ut32 blocksize_max;
 	ut8 *block;
-	ut8 *oobi; /* out of band input ; used for multiline or file input */
-	int oobi_len;
 	RBuffer *yank_buf;
 	ut64 yank_addr;
 	bool tmpseek;

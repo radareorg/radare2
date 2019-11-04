@@ -2683,8 +2683,6 @@ R_API bool r_core_init(RCore *core) {
 	core->log = r_core_log_new ();
 	core->times = R_NEW0 (RCoreTimes);
 	core->vmode = false;
-	core->oobi = NULL;
-	core->oobi_len = 0;
 	core->printidx = 0;
 	core->lastcmd = NULL;
 	core->stkcmd = NULL;
