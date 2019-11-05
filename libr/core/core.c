@@ -2459,7 +2459,7 @@ static void __init_autocomplete_default (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "wtf", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "wxf", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "dml", R_CORE_AUTOCMPLT_FILE, true);
-	r_core_autocomplete_add (core->autocomplete, "vim", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "vi", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "less", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "head", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "tail", R_CORE_AUTOCMPLT_FILE, true);
@@ -3529,7 +3529,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 	return true;
 }
 
-R_API char *r_core_editor (const RCore *core, const char *file, const char *str) {
+R_API char *r_core_editor(const RCore *core, const char *file, const char *str) {
 	const bool interactive = r_cons_is_interactive ();
 	const char *editor = r_config_get (core->config, "cfg.editor");
 	char *name = NULL, *ret = NULL;
@@ -3538,9 +3538,14 @@ R_API char *r_core_editor (const RCore *core, const char *file, const char *str)
 	if (!interactive || !editor || !*editor) {
 		return NULL;
 	}
+	bool readonly = false;
 	if (file && *file != '*') {
 		name = strdup (file);
 		fd = r_sandbox_open (file, O_RDWR, 0644);
+		if (fd == -1) {
+			fd = r_sandbox_open (file, O_RDONLY, 0644);
+			readonly = true;
+		}
 	} else {
 		fd = r_file_mkstemp (file, &name);
 	}
@@ -3548,8 +3553,12 @@ R_API char *r_core_editor (const RCore *core, const char *file, const char *str)
 		free (name);
 		return NULL;
 	}
-	if (str) {
-		write (fd, str, strlen (str));
+	if (readonly) {
+		eprintf ("Opening in read-only\n");
+	} else {
+		if (str) {
+			write (fd, str, strlen (str));
+		}
 	}
 	close (fd);
 

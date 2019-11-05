@@ -1755,9 +1755,9 @@ static int cmd_panels(void *data, const char *input) {
 	}
 	if (*input == '?') {
 		eprintf ("Usage: v[*i]\n");
-		eprintf ("v.test    # save curren layout with name test\n");
+		eprintf ("v.test    # save current layout with name test\n");
 		eprintf ("v test    # load saved layout with name test\n");
-		eprintf ("vi ...    # launch 'vim'\n");
+		eprintf ("vi ...    # launch 'cfg.editor'\n");
 		return false;
 	}
 	if (*input == ' ') {
@@ -1773,7 +1773,16 @@ static int cmd_panels(void *data, const char *input) {
 		return true;
 	}
 	if (*input == 'i') {
-		r_sys_cmdf ("v%s", input);
+		char *sp = strchr (input, ' ');
+		if (sp) {
+			char *r = r_core_editor (core, sp + 1, NULL);
+			if (r) {
+				free (r);
+			} else {
+				eprintf ("Cannot open file (%s)\n", sp + 1);
+			}
+		}
+		////r_sys_cmdf ("v%s", input);
 		return false;
 	}
 	r_core_visual_panels_root (core, core->panels_root);
