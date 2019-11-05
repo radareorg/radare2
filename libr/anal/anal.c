@@ -173,6 +173,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->fcn_tree = NULL;
 	anal->fcn_addr_tree = NULL;
 	anal->refs = r_anal_ref_list_new ();
+	anal->leaddrs = NULL;
 	r_anal_set_bits (anal, 32);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
@@ -213,6 +214,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free);
 	ht_up_free (a->dict_refs);
 	ht_up_free (a->dict_xrefs);
+	r_list_free (a->leaddrs);
 	a->sdb = NULL;
 	sdb_ns_free (a->sdb);
 	if (a->esil) {

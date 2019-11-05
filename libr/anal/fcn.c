@@ -747,10 +747,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
-	static RList *leaddrs = NULL;
-	if (!leaddrs) {
-		leaddrs = r_list_new (); // TODO: leaks
-		if (!leaddrs) {
+	if (!anal->leaddrs) {
+		anal->leaddrs = r_list_newf (free);
+		if (!anal->leaddrs) {
 			eprintf ("Cannot create leaddr list\n");
 			return R_ANAL_RET_ERROR;
 		}
@@ -1021,7 +1020,7 @@ repeat:
 					}
 					pair->op_addr = op.addr;
 					pair->leaddr = op.ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
-					r_list_append (leaddrs, pair);
+					r_list_append (anal->leaddrs, pair);
 				}
 				if (op.dst && op.dst->reg && op.dst->reg->name && op.ptr > 0 && op.ptr != UT64_MAX) {
 					free (last_reg_mov_lea_name);
@@ -1272,7 +1271,7 @@ repeat:
 					RListIter *iter;
 					leaddr_pair *pair;
 					// find nearest candidate leaddr before op.addr
-					r_list_foreach (leaddrs, iter, pair) {
+					r_list_foreach (anal->leaddrs, iter, pair) {
 						if (pair->op_addr >= op.addr) {
 							continue;
 						}
@@ -1283,7 +1282,7 @@ repeat:
 						}
 					}
 					if (lea_op_iter) {
-						r_list_delete (leaddrs, lea_op_iter);
+						r_list_delete (anal->leaddrs, lea_op_iter);
 					}
 					ut64 table_size = cmpval + 1;
 					ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, jmptbl_base, jmptbl_base, 4, table_size, -1, ret);
