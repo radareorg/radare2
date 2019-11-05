@@ -106,6 +106,10 @@ static const char *help_msg_dollar[] = {
 	"$", "", "list all defined aliases",
 	"$*", "", "list all the aliases as r2 commands in base64",
 	"$**", "", "same as above, but using plain text",
+	"$", "foo:=123", "alias for 'f foo=123'",
+	"$", "foo-=4", "alias for 'f foo-=4'",
+	"$", "foo+=4", "alias for 'f foo+=4'",
+	"$", "foo", "alias for 's foo' (note that command aliases can override flag resolution)",
 	"$", "dis=base64:AAA==", "alias this base64 encoded text to be printed when $dis is called",
 	"$", "dis=$hello world", "alias this text to be printed when $dis is called",
 	"$", "dis=-", "open cfg.editor to set the new value for dis alias",
@@ -531,10 +535,45 @@ static int cmd_alias(void *data, const char *input) {
 	char *desc = strchr (buf, '?');
 	char *nonl = strchr (buf, 'n');
 
+	int defmode = 0;
+	if (def && def > buf) {
+		char *prev = def - 1;
+		switch (*prev) {
+		case ':':
+			defmode = *prev;
+			*prev = 0;
+			break;
+		case '+':
+			defmode = *prev;
+			*prev = 0;
+			break;
+		case '-':
+			defmode = *prev;
+			*prev = 0;
+			break;
+		}
+	}
+
 	/* create alias */
 	if ((def && q && (def < q)) || (def && !q)) {
 		*def++ = 0;
 		size_t len = strlen (def);
+		if (defmode) {
+			ut64 at = r_num_math (core->num, def);
+			switch (defmode) {
+			case ':':
+				r_flag_set (core->flags, buf + 1, at, 1);
+				return 1;
+			case '+':
+				at = r_num_get (core->num, buf + 1) + at;
+				r_flag_set (core->flags, buf + 1, at, 1);
+				return 1;
+			case '-':
+				at = r_num_get (core->num, buf + 1) - at;
+				r_flag_set (core->flags, buf + 1, at, 1);
+				return 1;
+			}
+		}
 		/* Remove quotes */
 		if (len > 0 && (def[0] == '\'') && (def[len - 1] == '\'')) {
 			def[len - 1] = 0x00;
@@ -609,7 +648,12 @@ static int cmd_alias(void *data, const char *input) {
 				r_core_cmd0 (core, v);
 			}
 		} else {
-			eprintf ("unknown key '%s'\n", buf);
+			ut64 at = r_num_get (core->num, buf + 1);
+			if (at != UT64_MAX) {
+				r_core_seek (core, at, 1);
+			} else {
+				eprintf ("Unknown alias '%s'\n", buf + 1);
+			}
 		}
 	}
 	free (buf);
