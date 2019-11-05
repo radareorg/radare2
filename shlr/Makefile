@@ -63,7 +63,7 @@ CS_REV=
 CS_PATCHES=1
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync tree-sitter-r2cmd-sync
 
 HOST_CC?=gcc
 SHLR?=$(shell pwd)
@@ -327,28 +327,28 @@ else
 	cd ../../radare2-webui/www/m && git pull ; npm i ; $(MAKE) release
 endif
 
-tree-sitter-build: tree-sitter-sync tree-sitter/libtree-sitter.$(EXT_AR)
+tree-sitter-build: tree-sitter/libtree-sitter.$(EXT_AR)
 
 tree-sitter/libtree-sitter.$(EXT_AR): tree-sitter/lib/src/lib.o
 	$(AR) rvs $@ $<
 	$(RANLIB) $@
 
-tree-sitter/lib/src/lib.o: tree-sitter/lib/src/lib.c
-	$(CC) -c $< -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
+tree-sitter/lib/src/lib.o: tree-sitter-sync
+	$(CC) -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
 
 tree-sitter-sync:
 	"$(SHELL)" tree_sitter.sh "${TS_URL}" "${TS_BRA}" "${TS_TIP}"
 
-tree-sitter-r2cmd-build: tree-sitter-r2cmd-sync tree-sitter-build tree-sitter-r2cmd/libtree-sitter-r2cmd.$(EXT_AR)
+tree-sitter-r2cmd-build: tree-sitter-r2cmd/libtree-sitter-r2cmd.$(EXT_AR)
 
 tree-sitter-r2cmd/libtree-sitter-r2cmd.$(EXT_AR): tree-sitter-r2cmd/src/parser.o
 	$(AR) rvs $@ $<
 	$(RANLIB) $@
 
-tree-sitter-r2cmd/src/parser.o: tree-sitter-r2cmd/src/parser.c
-	$(CC) -c $< -o $@ -Itree-sitter-r2cmd/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
+tree-sitter-r2cmd/src/parser.o: tree-sitter-r2cmd-sync
+	$(CC) -c tree-sitter-r2cmd/src/parser.c -o $@ -Itree-sitter-r2cmd/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
 
-tree-sitter-r2cmd-sync:
+tree-sitter-r2cmd-sync: tree-sitter-sync
 	"$(SHELL)" tree_sitter_r2cmd.sh "${TSCMD_URL}" "${TSCMD_BRA}" "${TSCMD_TIP}"
 
 
