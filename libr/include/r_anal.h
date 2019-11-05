@@ -728,6 +728,7 @@ typedef struct r_anal_t {
 	RList *imports; // global imports
 	SetU *visited;
 	RStrConstPool constpool;
+	RList *leaddrs;
 } RAnal;
 
 typedef struct r_anal_hint_t {

@@ -815,6 +815,18 @@ rep:
 		char* comment = NULL;
 		bool comment_needs_free = false;
 		ut32 bsze = 1; //core->blocksize;
+		int eqdir = 0;
+
+		if (eq && eq > cstr) {
+			char *prech = eq - 1;
+			if (*prech == '+') {
+				eqdir = 1;
+				*prech = 0;
+			} else if (*prech == '-') {
+				eqdir = -1;
+				*prech = 0;
+			}
+		}
 
 		// Get outta here as fast as we can so we can make sure that the comment
 		// buffer used on later code can be freed properly if necessary.
@@ -824,9 +836,14 @@ rep:
 		}
 		// Check base64 padding
 		if (eq && !(b64 && eq > b64 && (eq[1] == '\0' || (eq[1] == '=' && eq[2] == '\0')))) {
-			// TODO: add support for '=' char in non-base64 flag comments
 			*eq = 0;
-			off = r_num_math (core->num, eq + 1);
+			ut64 arg = r_num_math (core->num, eq + 1);
+			RFlagItem *item = r_flag_get (core->flags, cstr);
+			if (eqdir && item) {
+				off = item->offset + (arg * eqdir);
+			} else {
+				off = arg;
+			}
 		}
 		if (s) {
 			*s = '\0';
@@ -847,17 +864,7 @@ rep:
 					}
 				}
 			}
-#if 1
 			bsze = (s[1] == '=') ? 1 : r_num_math (core->num, s + 1);
-#else
-			if (*s && s[1]) {
-				if (s[1] != '=') {
-					bsze = r_num_math (core->num, s + 1);
-				} else {
-					bsze = 1;
-				}
-			}
-#endif
 		}
 
 		bool addFlag = true;
@@ -923,8 +930,8 @@ rep:
 				if (name) {
 					char *eq = strchr (name, '=');
 					if (eq) {
-						*eq ++ = 0;
-						off = r_num_math (core->num, eq);
+						*eq = 0;
+						off = r_num_math (core->num, eq + 1);
 					}
 					r_str_trim (name);
 					if (fcn) {

@@ -109,6 +109,10 @@ static const char *help_msg_dollar[] = {
 	"$", "", "list all defined aliases",
 	"$*", "", "list all the aliases as r2 commands in base64",
 	"$**", "", "same as above, but using plain text",
+	"$", "foo:=123", "alias for 'f foo=123'",
+	"$", "foo-=4", "alias for 'f foo-=4'",
+	"$", "foo+=4", "alias for 'f foo+=4'",
+	"$", "foo", "alias for 's foo' (note that command aliases can override flag resolution)",
 	"$", "dis=base64:AAA==", "alias this base64 encoded text to be printed when $dis is called",
 	"$", "dis=$hello world", "alias this text to be printed when $dis is called",
 	"$", "dis=-", "open cfg.editor to set the new value for dis alias",
@@ -534,10 +538,45 @@ static int cmd_alias(void *data, const char *input) {
 	char *desc = strchr (buf, '?');
 	char *nonl = strchr (buf, 'n');
 
+	int defmode = 0;
+	if (def && def > buf) {
+		char *prev = def - 1;
+		switch (*prev) {
+		case ':':
+			defmode = *prev;
+			*prev = 0;
+			break;
+		case '+':
+			defmode = *prev;
+			*prev = 0;
+			break;
+		case '-':
+			defmode = *prev;
+			*prev = 0;
+			break;
+		}
+	}
+
 	/* create alias */
 	if ((def && q && (def < q)) || (def && !q)) {
 		*def++ = 0;
 		size_t len = strlen (def);
+		if (defmode) {
+			ut64 at = r_num_math (core->num, def);
+			switch (defmode) {
+			case ':':
+				r_flag_set (core->flags, buf + 1, at, 1);
+				return 1;
+			case '+':
+				at = r_num_get (core->num, buf + 1) + at;
+				r_flag_set (core->flags, buf + 1, at, 1);
+				return 1;
+			case '-':
+				at = r_num_get (core->num, buf + 1) - at;
+				r_flag_set (core->flags, buf + 1, at, 1);
+				return 1;
+			}
+		}
 		/* Remove quotes */
 		if (len > 0 && (def[0] == '\'') && (def[len - 1] == '\'')) {
 			def[len - 1] = 0x00;
@@ -612,7 +651,12 @@ static int cmd_alias(void *data, const char *input) {
 				r_core_cmd0 (core, v);
 			}
 		} else {
-			eprintf ("unknown key '%s'\n", buf);
+			ut64 at = r_num_get (core->num, buf + 1);
+			if (at != UT64_MAX) {
+				r_core_seek (core, at, 1);
+			} else {
+				eprintf ("Unknown alias '%s'\n", buf + 1);
+			}
 		}
 	}
 	free (buf);
@@ -1714,9 +1758,9 @@ static int cmd_panels(void *data, const char *input) {
 	}
 	if (*input == '?') {
 		eprintf ("Usage: v[*i]\n");
-		eprintf ("v.test    # save curren layout with name test\n");
+		eprintf ("v.test    # save current layout with name test\n");
 		eprintf ("v test    # load saved layout with name test\n");
-		eprintf ("vi ...    # launch 'vim'\n");
+		eprintf ("vi ...    # launch 'cfg.editor'\n");
 		return false;
 	}
 	if (*input == ' ') {
@@ -1732,7 +1776,16 @@ static int cmd_panels(void *data, const char *input) {
 		return true;
 	}
 	if (*input == 'i') {
-		r_sys_cmdf ("v%s", input);
+		char *sp = strchr (input, ' ');
+		if (sp) {
+			char *r = r_core_editor (core, sp + 1, NULL);
+			if (r) {
+				free (r);
+			} else {
+				eprintf ("Cannot open file (%s)\n", sp + 1);
+			}
+		}
+		////r_sys_cmdf ("v%s", input);
 		return false;
 	}
 	r_core_visual_panels_root (core, core->panels_root);
@@ -2196,7 +2249,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	// exec radare command
 	r_core_cmd (core, radare_cmd, 0);
 
-	HANDLE th = CreateThread (NULL, 0, r_cons_flush, NULL, 0, NULL);
+	HANDLE th = CreateThread (NULL, 0,(LPTHREAD_START_ROUTINE) r_cons_flush, NULL, 0, NULL);
 	if (!th) {
 		__CLOSE_DUPPED_PIPES ();
 		goto err_r_w32_cmd_pipe;

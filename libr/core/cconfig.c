@@ -3159,6 +3159,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	SETCB ("cfg.newshell", "false", &cb_newshell, "Use new commands parser");
+	SETI ("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */
 	// R2_LOGLEVEL / log.level
