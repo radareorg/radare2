@@ -259,7 +259,7 @@ if res.returncode() == 0
 endif
 
 tree_sitter_files = [
-  'tree-sitter/lib/src/lib.c',
+  join_paths(tree_sitter_path, 'lib/src/lib.c'),
 ]
 
 tree_sitter_inc = [platform_inc, include_directories('tree-sitter/lib/src'), include_directories('tree-sitter/lib/include')]
@@ -302,7 +302,7 @@ if res.returncode() == 0
 endif
 
 tree_sitter_r2cmd_files = [
-  'tree-sitter-r2cmd/src/parser.c',
+  join_paths(tree_sitter_r2cmd_path, 'src/parser.c'),
 ]
 
 tree_sitter_r2cmd_inc = [platform_inc, include_directories('tree-sitter-r2cmd/src/tree_sitter')]
