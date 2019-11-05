@@ -1235,6 +1235,8 @@ R_API int r_main_radare2(int argc, char **argv) {
 			lock = r_th_lock_new (false);
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
 			if (rabin_th) {
+				int cpuaff = (int)r_config_get_i (r.config, "cfg.cpuaffinity");
+				r_th_setaffinity (rabin_th, cpuaff);
 				r_th_setname (rabin_th, "rabin_th");
 			}
 			// rabin_delegate (NULL);

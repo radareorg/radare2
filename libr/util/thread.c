@@ -2,6 +2,12 @@
 
 #include <r_th.h>
 
+#if __APPLE__
+// Here to avoid polluting mach types macro redefinitions...
+#include <mach/thread_act.h>
+#include <mach/thread_policy.h>
+#endif
+
 #if __WINDOWS__
 static DWORD WINAPI _r_th_launcher(void *_th) {
 #else
@@ -95,6 +101,54 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 #else
 #pragma message("warning r_th_getname not implemented")
 #endif
+#endif
+	return true;
+}
+
+R_API bool r_th_setaffinity(RThread *th, int cpuid) {
+#if __linux__
+	cpu_set_t c;
+	CPU_ZERO(&c);
+	CPU_SET(cpuid, &c);
+
+	if (sched_setaffinity (th->tid, sizeof (c), &c) != 0) {
+		eprintf ("Failed to set cpu affinity\n");
+		return false;
+	}
+#elif __FreeBSD__ || __DragonFly__
+	cpuset_t c;
+	CPU_ZERO(&c);
+	CPU_SET(cpuid, &c);
+
+	if (pthread_setaffinity_np (th->tid, sizeof (c), &c) != 0) {
+		eprintf ("Failed to set cpu affinity\n");
+		return false;
+	}
+#elif __NetBSD__
+	cpuset_t *c;
+	c = cpuset_create ();
+
+	if (pthread_setaffinity_np (th->tid, cpuset_size(c), c) != 0) {
+		cpuset_destroy (c);
+		eprintf ("Failed to set cpu affinity\n");
+		return false;
+	}
+
+	cpuset_destroy (c);
+#elif __APPLE__
+	thread_affinity_policy_data_t c = {cpuid};
+	if (thread_policy_set (pthread_mach_thread_np (th->tid),
+		THREAD_AFFINITY_POLICY, (thread_policy_t)&c, 1) != KERN_SUCCESS) {
+		eprintf ("Failed to set cpu affinity\n");
+		return false;
+	}
+#elif _WINDOWS
+	if (SetThreadAffinityMask (th->tid, (DWORD_PTR)1 << cpuid) == 0) {
+		eprintf ("Failed to set cpu affinity\n");
+		return false;
+	}
+#else
+#pragma message("warning r_th_setaffinity not implemented")
 #endif
 	return true;
 }
