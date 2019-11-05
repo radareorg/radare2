@@ -4459,20 +4459,11 @@ static bool handle_ts_commands(RCore *core, const char *cstr, TSNode node, bool 
 }
 
 static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log) {
-	// Create a parser.
 	TSParser *parser = ts_parser_new ();
 
-	// Set the parser's language (JSON in this case).
 	ts_parser_set_language (parser, tree_sitter_r2cmd ());
 
-	// Build a syntax tree based on source code stored in a string.
-	const char *source_code = cstr;
-	TSTree *tree = ts_parser_parse_string (
-		parser,
-		NULL,
-		source_code,
-		strlen (source_code));
-
+	TSTree *tree = ts_parser_parse_string (parser, NULL, cstr, strlen (cstr));
 	TSNode root = ts_tree_root_node (tree);
 	bool res = false;
 	if (is_ts_commands (root) && !ts_node_has_error (root)) {
