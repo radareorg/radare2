@@ -234,7 +234,7 @@ sdb_gen_cmd = [
 
 
 # handle tree-sitter dependency
-tree_sitter_path = join_paths(meson.current_source_dir(), 'tree-sitter')
+tree_sitter_path = join_paths(meson.current_build_dir(), 'tree-sitter')
 res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(tree_sitter_path))
 if res.returncode() == 0
   if not git_exe.found()
@@ -276,7 +276,7 @@ tree_sitter_dep = declare_dependency(
 
 
 # handle tree-sitter-r2cmd dependency
-tree_sitter_r2cmd_path = join_paths(meson.current_source_dir(), 'tree-sitter-r2cmd')
+tree_sitter_r2cmd_path = join_paths(meson.current_build_dir(), 'tree-sitter-r2cmd')
 res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(tree_sitter_r2cmd_path))
 if res.returncode() == 0
   if not git_exe.found()
