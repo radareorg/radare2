@@ -142,6 +142,11 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 		eprintf ("Failed to set cpu affinity\n");
 		return false;
 	}
+#elif _WINDOWS
+	if (SetThreadAffinityMask (th->tid, (DWORD_PTR)1 << cpuid) == 0) {
+		eprintf ("Failed to set cpu affinity\n");
+		return false;
+	}
 #else
 #pragma message("warning r_th_setaffinity not implemented")
 #endif
