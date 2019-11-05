@@ -337,7 +337,7 @@ tree-sitter/lib/src/lib.o: tree-sitter-sync
 	$(CC) -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
 
 tree-sitter-sync:
-	"$(SHELL)" tree_sitter.sh "${TS_URL}" "${TS_BRA}" "${TS_TIP}"
+	"$(SHELL)" clone_3rd_repo.sh tree-sitter "${TS_URL}" "${TS_BRA}" "${TS_TIP}"
 
 tree-sitter-r2cmd-build: tree-sitter-r2cmd/libtree-sitter-r2cmd.$(EXT_AR)
 
@@ -349,7 +349,7 @@ tree-sitter-r2cmd/src/parser.o: tree-sitter-r2cmd-sync
 	$(CC) -c tree-sitter-r2cmd/src/parser.c -o $@ -Itree-sitter-r2cmd/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
 
 tree-sitter-r2cmd-sync: tree-sitter-sync
-	"$(SHELL)" tree_sitter_r2cmd.sh "${TSCMD_URL}" "${TSCMD_BRA}" "${TSCMD_TIP}"
+	"$(SHELL)" clone_3rd_repo.sh tree-sitter-r2cmd "${TSCMD_URL}" "${TSCMD_BRA}" "${TSCMD_TIP}"
 
 
 www-sync-m sync-www-m: ../../radare2-webui/dist/m
