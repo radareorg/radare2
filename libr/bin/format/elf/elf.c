@@ -1861,10 +1861,21 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
 	return 0;
 }
 
+static bool isExecutable(ELFOBJ *bin) {
+	switch (bin->ehdr.e_type) {
+	case ET_EXEC: return true;
+	case ET_DYN:  return true;
+	}
+	return false;
+}
+
 ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, UT64_MAX);
 	ut64 entry = bin->ehdr.e_entry;
 	if (!entry) {
+		if (!isExecutable (bin)) {
+			return UT64_MAX;
+		}
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
 		if (entry != UT64_MAX) {
 			return entry;
@@ -2348,11 +2359,8 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 }
 
 char* Elf_(r_bin_elf_get_file_type)(ELFOBJ *bin) {
-	ut32 e_type;
-	if (!bin) {
-		return NULL;
-	}
-	e_type = (ut32)bin->ehdr.e_type; // cast to avoid warn in iphone-gcc, must be ut16
+	r_return_val_if_fail (bin, NULL);
+	ut32 e_type = (ut32)bin->ehdr.e_type; // cast to avoid warn in iphone-gcc, must be ut16
 	switch (e_type) {
 	case ET_NONE: return strdup ("NONE (None)");
 	case ET_REL:  return strdup ("REL (Relocatable file)");
