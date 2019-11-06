@@ -21,11 +21,14 @@
 #include <r_cmd.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <tree_sitter/api.h>
 #include <ctype.h>
 #include <stdarg.h>
 #if __UNIX__
 #include <sys/utsname.h>
 #endif
+
+TSLanguage *tree_sitter_r2cmd ();
 
 R_API void r_save_panels_layout(RCore *core, const char *_name);
 R_API void r_load_panels_layout(RCore *core, const char *_name);
@@ -4336,7 +4339,136 @@ R_API void run_pending_anal(RCore *core) {
 	}
 }
 
+static inline bool is_ts_commands(TSNode node) {
+	return strcmp (ts_node_type (node), "commands") == 0;
+}
+
+static inline bool is_ts_arged_command(TSNode node) {
+	return strcmp (ts_node_type (node), "arged_command") == 0;
+}
+
+static inline bool is_ts_tmp_seek_command(TSNode node) {
+	return strcmp (ts_node_type (node), "tmp_seek_command") == 0;
+}
+
+static inline bool is_ts_interpret_command(TSNode node) {
+	return strcmp (ts_node_type (node), "interpret_command") == 0;
+}
+
+static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool log);
+static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log);
+
+static bool handle_ts_arged_command(RCore *core, const char *cstr, TSNode node) {
+	TSNode command = ts_node_named_child (node, 0);
+	ut32 cmd_start_byte = ts_node_start_byte (command);
+	ut32 cmd_end_byte = ts_node_end_byte (command);
+	R_LOG_DEBUG ("command: '%.*s'\n", cmd_end_byte - cmd_start_byte, cstr + cmd_start_byte);
+
+	ut32 child_count = ts_node_child_count (node);
+	ut32 last_end_byte = cmd_end_byte;
+	int i;
+	for (i = 1; i < child_count; ++i) {
+		TSNode arg = ts_node_named_child (node, i);
+		ut32 start_byte = ts_node_start_byte (arg);
+		ut32 end_byte = ts_node_end_byte (arg);
+		if (last_end_byte < end_byte) {
+			last_end_byte = end_byte;
+		}
+		R_LOG_DEBUG ("arg: '%.*s'\n", end_byte - start_byte, cstr + start_byte);
+	}
+	char *cmd_string = r_str_newf ("%.*s", last_end_byte - cmd_start_byte, cstr + cmd_start_byte);
+	bool res = r_cmd_call (core->rcmd, cmd_string) != -1;
+	free (cmd_string);
+	return res;
+}
+
+static bool handle_ts_tmp_seek_command(RCore *core, const char *cstr, TSNode node, bool log) {
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode offset = ts_node_named_child (node, 1);
+	ut32 offset_start = ts_node_start_byte (offset);
+	ut32 offset_end = ts_node_end_byte (offset);
+	char *offset_string = r_str_newf ("%.*s", offset_end - offset_start, cstr + offset_start);
+	ut64 orig_offset = core->offset;
+	R_LOG_DEBUG ("tmp_seek command, command X on tmp_seek %s\n", offset_string);
+	r_core_seek (core, r_num_math (core->num, offset_string), 1);
+	bool res = handle_ts_command (core, cstr, command, log);
+	r_core_seek (core, orig_offset, 1);
+	free (offset_string);
+	return res;
+}
+
+static bool handle_ts_interpret_command(RCore *core, const char *cstr, TSNode node, bool log) {
+	TSNode command = ts_node_named_child (node, 0);
+	ut32 command_start = ts_node_start_byte (command);
+	ut32 command_end = ts_node_end_byte (command);
+	char *cmd_string = r_str_newf ("%.*s", command_end - command_start, cstr + command_start);
+	char *str = r_core_cmd_str (core, cmd_string);
+	R_LOG_DEBUG ("interpret_command cmd_string = '%s', result to interpret = '%s'\n", cmd_string, str);
+	free (cmd_string);
+	bool res = core_cmd_tsr2cmd (core, str, log);
+	free (str);
+	return res;
+}
+
+static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool log) {
+	bool ret = false;
+
+	if (log) {
+		r_line_hist_add (cstr);
+	}
+	if (is_ts_arged_command (node)) {
+		ret = handle_ts_arged_command (core, cstr, node);
+	} else if (is_ts_tmp_seek_command (node)) {
+		ret = handle_ts_tmp_seek_command (core, cstr, node, log);
+	} else if (is_ts_interpret_command (node)) {
+		ret = handle_ts_interpret_command (core, cstr, node, log);
+	}
+	/* run pending analysis commands */
+	run_pending_anal (core);
+	return ret;
+}
+
+static bool handle_ts_commands(RCore *core, const char *cstr, TSNode node, bool log) {
+	ut32 child_count = ts_node_named_child_count (node);
+	bool res = true;
+	int i;
+
+	R_LOG_DEBUG ("commands with %d childs\n", child_count);
+	for (i = 0; i < child_count; ++i) {
+		TSNode command = ts_node_named_child (node, i);
+		res &= handle_ts_command (core, cstr, command, log);
+		if (!res) {
+			eprintf ("Error while parsing command: %s\n", cstr);
+			return false;
+		}
+	}
+	return res;
+}
+
+static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log) {
+	TSParser *parser = ts_parser_new ();
+
+	ts_parser_set_language (parser, tree_sitter_r2cmd ());
+
+	TSTree *tree = ts_parser_parse_string (parser, NULL, cstr, strlen (cstr));
+	TSNode root = ts_tree_root_node (tree);
+	bool res = false;
+	if (is_ts_commands (root) && !ts_node_has_error (root)) {
+		res = handle_ts_commands (core, cstr, root, log);
+	} else {
+		eprintf ("Error while parsing command: `%s`\n", cstr);
+	}
+
+	ts_tree_delete (tree);
+	ts_parser_delete (parser);
+	return res;
+}
+
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
+	if (core->use_tree_sitter_r2cmd) {
+		return core_cmd_tsr2cmd (core, cstr, log)? 0: 1;
+	}
+
 	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = false, i;
 

@@ -233,6 +233,102 @@ sdb_gen_cmd = [
 ]
 
 
+# handle tree-sitter dependency
+if get_option('tree_sitter_in_builddir')
+  tree_sitter_path = join_paths(meson.current_build_dir(), 'tree-sitter')
+else
+  tree_sitter_path = join_paths(meson.current_source_dir(), 'tree-sitter')
+endif
+res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(tree_sitter_path))
+if res.returncode() == 0
+  if not git_exe.found()
+    error('Cannot load tree-sitter library. Either provide tree-sitter in ./shlr/tree-sitter or install git, so it can be downloaded')
+  endif
+
+  # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/Makefile
+  TS_TIP = '80008b0bccbddffc8e68f66a5f173ef71fd125e3'
+  TS_BRA = 'master'
+
+  message('Cloning tree-sitter ' + TS_BRA + ' branch, commit ' + TS_TIP + ', into ' + tree_sitter_path)
+  git_cmd = 'clone -b @0@ https://github.com/tree-sitter/tree-sitter.git @1@'.format(TS_BRA, tree_sitter_path)
+  clone_cmd = run_command(git_exe, git_cmd.split())
+  if clone_cmd.returncode() != 0
+    error('Cannot execute git clone command')
+  endif
+
+  reset_cmd_str = '-C @0@ reset --hard @1@'.format(tree_sitter_path, TS_TIP)
+  reset_cmd = run_command(git_exe, reset_cmd_str.split())
+  if reset_cmd.returncode() != 0
+    error('Cannot execute git reset command')
+  endif
+endif
+
+tree_sitter_files = [
+  join_paths(tree_sitter_path, 'lib/src/lib.c'),
+]
+
+tree_sitter_inc = [platform_inc, include_directories('tree-sitter/lib/src'), include_directories('tree-sitter/lib/include')]
+
+libtree_sitter = static_library('tree_sitter', tree_sitter_files,
+  include_directories: tree_sitter_inc,
+  implicit_include_directories: false
+)
+
+tree_sitter_dep = declare_dependency(
+  link_with: libtree_sitter,
+  include_directories: tree_sitter_inc
+)
+
+
+# handle radare2-shell-parser dependency
+if get_option('shell_parser_in_builddir')
+  shell_parser_path = join_paths(meson.current_build_dir(), 'radare2-shell-parser')
+else
+  shell_parser_path = join_paths(meson.current_source_dir(), 'radare2-shell-parser')
+endif
+res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(shell_parser_path))
+if res.returncode() == 0
+  if not git_exe.found()
+    error('Cannot load radare2-shell-parser library. Either provide radare2-shell-parser in ./shlr/radare2-shell-parser or install git, so it can be downloaded')
+  endif
+
+  # NOTE: when you update SHELLPARSER_TIP or SHELLPARSER_BRA, also update them in shlr/Makefile
+  SHELLPARSER_TIP = 'dfb12492f4052b5a6c64fc626e9bf65ccb7b5522'
+  SHELLPARSER_BRA = 'master'
+  shell_parser_user = 'ret2libc'
+
+  message('Cloning radare2-shell-parser ' + SHELLPARSER_BRA + ' branch, commit ' + SHELLPARSER_TIP + ', into ' + shell_parser_path)
+  git_cmd = 'clone -b @0@ https://github.com/@1@/radare2-shell-parser.git @2@'.format(SHELLPARSER_BRA, shell_parser_user, shell_parser_path)
+  clone_cmd = run_command(git_exe, git_cmd.split())
+  if clone_cmd.returncode() != 0
+    error('Cannot execute git clone command')
+  endif
+
+  reset_cmd_str = '-C @0@ reset --hard @1@'.format(shell_parser_path, SHELLPARSER_TIP)
+  reset_cmd = run_command(git_exe, reset_cmd_str.split())
+  if reset_cmd.returncode() != 0
+    error('Cannot execute git reset command')
+  endif
+endif
+
+shell_parser_files = [
+  join_paths(shell_parser_path, 'src/parser.c'),
+]
+
+shell_parser_inc = [platform_inc, include_directories('radare2-shell-parser/src/tree_sitter')]
+
+libshell_parser = static_library('shell_parser', shell_parser_files,
+  include_directories: shell_parser_inc + tree_sitter_inc,
+  implicit_include_directories: true
+)
+
+shell_parser_dep = declare_dependency(
+  link_with: libshell_parser,
+  include_directories: shell_parser_inc,
+  dependencies: tree_sitter_dep
+)
+
+
 # handle bochs dependency
 bochs_files = [
   'bochs/src/libbochs.c'

@@ -14,6 +14,7 @@ OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o anal_objc.o blaze.o cundo.o
 OBJS+=esil_data_flow.o
 
 CFLAGS+=-I../../shlr/heap/include
+CFLAGS+=-I../../shlr/tree-sitter/lib/include -I../../shlr/radare2-shell-parser/src/tree_parser
 CFLAGS+=-DR2_PLUGIN_INCORE -I../../shlr
 LDFLAGS+=${DL_LIBS}
 
@@ -41,6 +42,7 @@ OBJS+=$(STATIC_OBJS)
 #STATIC_OBJS=$(subst ..,p/..,$(subst core_,p/core_,$(STATIC_OBJ)))
 
 include $(TOP)/shlr/gdb/deps.mk
+include $(TOP)/shlr/radare2-shell-parser-deps.mk
 include $(LTOP)/rules.mk
 
 # include plugins

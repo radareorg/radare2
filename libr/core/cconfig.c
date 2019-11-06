@@ -2017,6 +2017,13 @@ static bool cb_scrhtml(void *user, void *data) {
 	return true;
 }
 
+static bool cb_newshell(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = (RCore *)user;
+	core->use_tree_sitter_r2cmd = node->i_value;
+	return true;
+}
+
 static bool cb_scrhighlight(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_highlight (node->value);
@@ -3151,6 +3158,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
+	SETCB ("cfg.newshell", "false", &cb_newshell, "Use new commands parser");
 	SETI ("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */
