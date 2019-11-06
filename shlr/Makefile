@@ -26,13 +26,15 @@ else
 WGET?=curl -o
 endif
 
+# NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/meson.build
 TS_URL=https://github.com/tree-sitter/tree-sitter.git
 TS_BRA=master
 TS_TIP=80008b0bccbddffc8e68f66a5f173ef71fd125e3
 
-TSCMD_URL=https://github.com/ret2libc/tree-sitter-r2cmd.git
-TSCMD_BRA=master
-TSCMD_TIP=dfb12492f4052b5a6c64fc626e9bf65ccb7b5522
+# NOTE: when you update SHELLPARSER_TIP or SHELLPARSER_BRA, also update them in shlr/meson.build
+SHELLPARSER_URL=https://github.com/ret2libc/radare2-shell-parser.git
+SHELLPARSER_BRA=master
+SHELLPARSER_TIP=dfb12492f4052b5a6c64fc626e9bf65ccb7b5522
 
 ifeq ($(CS_RELEASE),1)
 CS_VER=4.0.1
@@ -63,7 +65,7 @@ CS_REV=
 CS_PATCHES=1
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync tree-sitter-r2cmd-sync
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync radare2-shell-parser-sync
 
 HOST_CC?=gcc
 SHLR?=$(shell pwd)
@@ -95,7 +97,7 @@ all:
 	exit 1
 endif
 
-preall: targets libwindbg capstone-build tree-sitter-build tree-sitter-r2cmd-build bochs
+preall: targets libwindbg capstone-build tree-sitter-build radare2-shell-parser-build bochs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -339,17 +341,17 @@ tree-sitter/lib/src/lib.o: tree-sitter-sync
 tree-sitter-sync:
 	"$(SHELL)" clone_3rd_repo.sh tree-sitter "${TS_URL}" "${TS_BRA}" "${TS_TIP}"
 
-tree-sitter-r2cmd-build: tree-sitter-r2cmd/libtree-sitter-r2cmd.$(EXT_AR)
+radare2-shell-parser-build: radare2-shell-parser/libshell-parser.$(EXT_AR)
 
-tree-sitter-r2cmd/libtree-sitter-r2cmd.$(EXT_AR): tree-sitter-r2cmd/src/parser.o
+radare2-shell-parser/libshell-parser.$(EXT_AR): radare2-shell-parser/src/parser.o
 	$(AR) rvs $@ $<
 	$(RANLIB) $@
 
-tree-sitter-r2cmd/src/parser.o: tree-sitter-r2cmd-sync
-	$(CC) -c tree-sitter-r2cmd/src/parser.c -o $@ -Itree-sitter-r2cmd/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
+radare2-shell-parser/src/parser.o: radare2-shell-parser-sync
+	$(CC) -c radare2-shell-parser/src/parser.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
 
-tree-sitter-r2cmd-sync: tree-sitter-sync
-	"$(SHELL)" clone_3rd_repo.sh tree-sitter-r2cmd "${TSCMD_URL}" "${TSCMD_BRA}" "${TSCMD_TIP}"
+radare2-shell-parser-sync: tree-sitter-sync
+	"$(SHELL)" clone_3rd_repo.sh radare2-shell-parser "${SHELLPARSER_URL}" "${SHELLPARSER_BRA}" "${SHELLPARSER_TIP}"
 
 
 www-sync-m sync-www-m: ../../radare2-webui/dist/m
@@ -393,7 +395,7 @@ SHLRS+=java/libr_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
 SHLRS+=tree-sitter/libtree-sitter.a
-SHLRS+=tree-sitter-r2cmd/libtree-sitter-r2cmd.a
+SHLRS+=radare2-shell-parser/libshell-parser.a
 #SHLRS+=sdb/src/libsdb.a
 #SHLRS+=tcc/libr_tcc.a
 SHLRS+=windbg/libr_windbg.a

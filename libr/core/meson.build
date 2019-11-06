@@ -103,7 +103,7 @@ r_core_deps = [
   spp_dep,
   gdb_dep,
   java_dep,
-  tree_sitter_r2cmd_dep
+  shell_parser_dep
 ]
 
 if use_libuv
