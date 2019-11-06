@@ -1693,15 +1693,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	default:
 	case '?': // "w?"
-		if (core->oobi) {
-			eprintf ("Writing oobi buffer!\n");
-			r_io_use_fd (core->io, core->file->fd);
-			r_io_write (core->io, core->oobi, core->oobi_len);
-			WSEEK (core, core->oobi_len);
-			r_core_block_read (core);
-		} else {
-			r_core_cmd_help (core, help_msg_w);
-		}
+		r_core_cmd_help (core, help_msg_w);
 		break;
 	}
 	R_FREE (ostr);

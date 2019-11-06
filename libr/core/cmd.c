@@ -2885,9 +2885,6 @@ escape_pipe:
 		ptr = strchr (cmd, '&');
 	}
 
-	/* Out Of Band Input */
-	R_FREE (core->oobi);
-
 	ptr = strstr (cmd, "?*");
 	if (ptr && (ptr == cmd || ptr[-1] != '~')) {
 		ptr[0] = 0;
@@ -2914,69 +2911,6 @@ escape_pipe:
 		}
 	}
 
-#if 0
-	ptr = strchr (cmd, '<');
-	if (ptr) {
-		ptr[0] = '\0';
-		if (r_cons_singleton ()->is_interactive) {
-			if (ptr[1] == '<') {
-				/* this is a bit mess */
-				//const char *oprompt = strdup (r_line_singleton ()->prompt);
-				//oprompt = ">";
-				for (str = ptr + 2; str[0] == ' '; str++) {
-					//nothing to see here
-				}
-				eprintf ("==> Reading from stdin until '%s'\n", str);
-				free (core->oobi);
-				core->oobi = malloc (1);
-				if (core->oobi) {
-					core->oobi[0] = '\0';
-				}
-				core->oobi_len = 0;
-				for (;;) {
-					char buf[1024];
-					int ret;
-					write (1, "> ", 2);
-					fgets (buf, sizeof (buf) - 1, stdin); // XXX use r_line ??
-					if (feof (stdin)) {
-						break;
-					}
-					if (*buf) buf[strlen (buf) - 1]='\0';
-					ret = strlen (buf);
-					core->oobi_len += ret;
-					core->oobi = realloc (core->oobi, core->oobi_len + 1);
-					if (core->oobi) {
-						if (!strcmp (buf, str)) {
-							break;
-						}
-						strcat ((char *)core->oobi, buf);
-					}
-				}
-				//r_line_set_prompt (oprompt);
-			} else {
-				for (str = ptr + 1; *str == ' '; str++) {
-					//nothing to see here
-				}
-				if (!*str) {
-					goto next;
-				}
-				eprintf ("Slurping file '%s'\n", str);
-				free (core->oobi);
-				core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
-				if (!core->oobi) {
-					eprintf ("cannot open file\n");
-				} else if (ptr == cmd) {
-					return r_core_cmd_buffer (core, (const char *)core->oobi);
-				}
-			}
-		} else {
-			eprintf ("Cannot slurp with << in non-interactive mode\n");
-			r_list_free (tmpenvs);
-			return 0;
-		}
-	}
-next:
-#endif
 	/* pipe console to file */
 	ptr = (char *)r_str_firstbut (cmd, '>', "\"");
 	// TODO honor `
@@ -4464,8 +4398,6 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->cons->context->cmd_depth < 1) {
 		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
 		free (ocmd);
-		R_FREE (core->oobi);
-		core->oobi_len = 0;
 		goto beach;
 	}
 	core->cons->context->cmd_depth--;
@@ -4488,8 +4420,6 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	run_pending_anal (core);
 	core->cons->context->cmd_depth++;
 	free (ocmd);
-	R_FREE (core->oobi);
-	core->oobi_len = 0;
 	return ret;
 beach:
 	if (r_list_empty (core->tasks)) {
