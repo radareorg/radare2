@@ -2333,10 +2333,10 @@ static void ds_show_flags(RDisasmState *ds) {
 		}
 		nth++;
 	}
-	if (nth > 0) {
-		r_cons_printf (":");
-	}
 	if (!outline && *comma) {
+		if (nth > 0) {
+			r_cons_printf (":");
+		}
 		ds_newline (ds);
 	}
 	r_list_free (uniqlist);
