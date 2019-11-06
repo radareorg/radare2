@@ -144,7 +144,6 @@ static void decode_buffer(const ut8* start, const ut8* end, ut32 padcnt, bool de
 				ft32* f = (ft32*) &var32;
 				st32* i = (st32*) &var32;
 				bytes_read = read_u32_leb128 (buffer, end, &var32);
-				pad (padcnt);
 				r_cons_printf (": %u | %d | %f\n", var32, *i, *f);
 			}
 			break;
