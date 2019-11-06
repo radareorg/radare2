@@ -66,6 +66,7 @@ extern char **environ;
 #if __WINDOWS__
 # include <io.h>
 # include <winbase.h>
+# include <signal.h>
 #define TMP_BUFSIZE	4096
 #ifdef _MSC_VER
 #include <psapi.h>
@@ -446,6 +447,7 @@ static int checkcmd(const char *c) {
 #endif
 
 R_API int r_sys_crash_handler(const char *cmd) {
+#ifndef __WINDOWS__
 	int sig[] = { SIGINT, SIGSEGV, SIGBUS, SIGQUIT, SIGHUP, 0 };
 
 	if (!checkcmd (cmd)) {
@@ -461,6 +463,9 @@ R_API int r_sys_crash_handler(const char *cmd) {
 	crash_handler_cmd = strdup (cmd);
 
 	r_sys_sigaction (sig, signal_handler);
+#else
+#pragma message ("r_sys_crash_handler : unimplemented for this platform")
+#endif
 	return true;
 }
 
