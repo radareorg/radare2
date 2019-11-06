@@ -5,8 +5,8 @@
 #define HASRETRY 1
 #define HAVE_LOCALS 1
 #define DEFAULT_NARGS 4
-#define FLAG_PREFIX "; "
-// #define FLAG_PREFIX ";-- "
+// #define FLAG_PREFIX "; "
+#define FLAG_PREFIX ";-- "
 
 #define COLOR(ds, field) ((ds)->show_color ? (ds)->field : "")
 #define COLOR_ARG(ds, field) ((ds)->show_color && (ds)->show_color_args ? (ds)->field : "")
