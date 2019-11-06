@@ -376,6 +376,7 @@ r_util_files = [
   'include/r_util/r_ascii_table.h',
   'include/r_util/r_asn1.h',
   'include/r_util/r_assert.h',
+  'include/r_util/r_protobuf.h',
   'include/r_util/r_base64.h',
   'include/r_util/r_base91.h',
   'include/r_util/r_big.h',
