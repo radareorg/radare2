@@ -65,9 +65,6 @@ typedef struct r_anal_range_t {
 	RBNode rb;
 } RAnalRange;
 
-#define R_ANAL_UNMASK_TYPE(x) (x&R_ANAL_VAR_TYPE_SIZE_MASK)
-#define R_ANAL_UNMASK_SIGN(x) (((x& R_ANAL_VAR_TYPE_SIGN_MASK)>> R_ANAL_VAR_TYPE_SIGN_SHIFT)==R_ANAL_VAR_TYPE_UNSIGNED)?0:1
-
 #define R_ANAL_GET_OFFSET(x,y,z) \
 	(x && x->binb.bin && x->binb.get_offset)? \
 		x->binb.get_offset (x->binb.bin, y, z): -1

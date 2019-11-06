@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2009-2019 - pancake, maijin */
 
-#include "r_util.h"
-#include "r_core.h"
-#include "r_anal.h"
+#include <r_core.h>
 
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
@@ -459,6 +457,7 @@ static const char *help_msg_afv[] = {
 	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
 	"afvn", " [new_name] ([old_name])", "rename argument/local",
 	"afvt", " [name] [new_type]", "change type for given argument/local",
+	"afvf", "", "show BP relative stackframe variables",
 	"afv-", "([name])", "remove all or given var",
 	NULL
 };
@@ -1101,6 +1100,46 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 	return 0;
 }
 
+// EBP BASED
+static int delta_cmp(const void *a, const void *b) {
+	const RAnalVar *va = a;
+	const RAnalVar *vb = b;
+	return vb->delta - va->delta;
+}
+
+static int delta_cmp2(const void *a, const void *b) {
+	const RAnalVar *va = a;
+	const RAnalVar *vb = b;
+	return va->delta - vb->delta;
+}
+
+static void __cmd_afvf(RCore *core, const char *input) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+	RListIter *iter;
+	RAnalVar *p;
+	RList *list = r_anal_var_all_list (core->anal, fcn);
+	r_list_sort (list, delta_cmp2);
+	r_list_foreach (list, iter, p) {
+		if (p->isarg || p->delta > 0) {
+			continue;
+		}
+		char *pad = r_str_pad (' ', 10 - strlen (p->name));
+		r_cons_printf ("0x%08"PFMT64x"  %s:%s%s\n", (ut64)-p->delta, p->name, pad, p->type);
+	}
+	r_list_sort (list, delta_cmp);
+	r_list_foreach (list, iter, p) {
+		if (!p->isarg && p->delta < 0) {
+			continue;
+		}
+		// TODO: only stack vars if (p->kind == 's') { }
+		char *pad = r_str_pad (' ', 10 - strlen (p->name));
+		// XXX this 0x6a is a hack
+		r_cons_printf ("0x%08"PFMT64x"  %s:%s%s\n", ((ut64)p->delta) - 0x6a, p->name, pad, p->type);
+	}
+	r_list_free (list);
+
+}
+
 static int var_cmd(RCore *core, const char *str) {
 	int delta, type = *str, res = true;
 	RAnalVar *v1;
@@ -1243,6 +1282,9 @@ static int var_cmd(RCore *core, const char *str) {
 			r_list_free (list);
 		}
 		return true;
+	case 'f': // "afvf"
+		__cmd_afvf (core, ostr);
+		break;
 	case 't':
 		if (fcn) { // "afvt"
 			p = strchr (ostr, ' ');
