@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-R_API void r_protobuf_decode(const ut8* buffer, const ut64 size, bool debug);
+R_API char *r_protobuf_decode(const ut8* buffer, const ut64 size, bool debug);
 
 #ifdef __cplusplus
 }

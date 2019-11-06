@@ -37,10 +37,10 @@ static const char* s_wire(const ut8 byte) {
 	}
 }
 
-static void pad(ut32 count) {
+static void pad(RStrBuf *sb, ut32 count) {
 	ut32 i;
 	for (i = 0; i < count; i++) {
-		r_cons_printf ("    ");
+		r_strbuf_appendf (sb, "    ");
 	}
 }
 
@@ -55,15 +55,15 @@ static bool is_string(const ut8* start, const ut8* end) {
 	return true;
 }
 
-static void decode_array(const ut8* start, const ut8* end) {
+static void decode_array(RStrBuf *sb, const ut8* start, const ut8* end) {
 	while (start < end) {
-		r_cons_printf ("%02x ", *start);
+		r_strbuf_appendf (sb, "%02x ", *start);
 		start++;
 	}
-	r_cons_printf ("\n");
+	r_strbuf_appendf (sb, "\n");
 }
 
-static void decode_buffer(const ut8* start, const ut8* end, ut32 padcnt, bool debug) {
+static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 padcnt, bool debug) {
 	size_t bytes_read = 0;
 	ut32 var32 = 0;
 	ut64 var64 = 0;
@@ -73,7 +73,7 @@ static void decode_buffer(const ut8* start, const ut8* end, ut32 padcnt, bool de
 		if (!*buffer) {
 			return;
 		}
-		ut8 byte = *buffer;
+		//ut8 byte = *buffer;
 		h = (proto_head_t*) buffer;
 		buffer++;
 		if (buffer < start || buffer >= end) {
@@ -84,11 +84,11 @@ static void decode_buffer(const ut8* start, const ut8* end, ut32 padcnt, bool de
 			return;
 		}
 		if (h->wire != WIRE_END_GRP) {
-			pad (padcnt);
+			pad (sb, padcnt);
 			if (debug) {
-				r_cons_printf ("%u %-13s", h->number, s_wire(h->wire));
+				r_strbuf_appendf (sb, "%u %-13s", h->number, s_wire(h->wire));
 			} else {
-				r_cons_printf ("%u", h->number);
+				r_strbuf_appendf (sb, "%u", h->number);
 			}
 		}
 		switch(h->wire) {
@@ -96,7 +96,7 @@ static void decode_buffer(const ut8* start, const ut8* end, ut32 padcnt, bool de
 			{
 				st64* i = (st64*) &var64;
 				bytes_read = read_u64_leb128 (buffer, end, &var64);
-				r_cons_printf (": %"PFMT64u" | %"PFMT64d"\n", var64, *i);
+				r_strbuf_appendf (sb, ": %"PFMT64u" | %"PFMT64d"\n", var64, *i);
 			}
 			break;
 		case WIRE_64_BIT:
@@ -104,7 +104,7 @@ static void decode_buffer(const ut8* start, const ut8* end, ut32 padcnt, bool de
 				ft64* f = (ft64*) &var64;
 				st64* i = (st64*) &var64;
 				bytes_read = read_u64_leb128 (buffer, end, &var64);
-				r_cons_printf (": %"PFMT64u" | %"PFMT64d" | %f\n", var64, *i, *f);
+				r_strbuf_appendf (sb, ": %"PFMT64u" | %"PFMT64d" | %f\n", var64, *i, *f);
 			}
 			break;
 		case WIRE_LEN_DELIM:
@@ -114,12 +114,12 @@ static void decode_buffer(const ut8* start, const ut8* end, ut32 padcnt, bool de
 				const ut8* pe = ps + var64;
 				if (ps > buffer && pe <= end) {
 					if (is_string (ps, pe)) {
-						r_cons_printf (": \"%.*s\"\n", var64, (const char*) ps);
+						r_strbuf_appendf (sb, ": \"%.*s\"\n", var64, (const char*) ps);
 					} else {
-						r_cons_printf (" {\n");
-						decode_buffer (ps, pe, padcnt + 1, debug);
-						pad (padcnt);
-						r_cons_printf ("}\n");
+						r_strbuf_appendf (sb, " {\n");
+						decode_buffer (sb, ps, pe, padcnt + 1, debug);
+						pad (sb, padcnt);
+						r_strbuf_appendf (sb, "}\n");
 					}
 					bytes_read += var64;
 				} else {
@@ -129,37 +129,39 @@ static void decode_buffer(const ut8* start, const ut8* end, ut32 padcnt, bool de
 			}
 			break;
 		case WIRE_START_GRP:
-			r_cons_printf (" {\n");
+			r_strbuf_appendf (sb, " {\n");
 			padcnt++;
 			break;
 		case WIRE_END_GRP:
 			if (padcnt > 1) {
 				padcnt--;
 			}
-			pad (padcnt);
-			r_cons_printf ("}\n");
+			pad (sb, padcnt);
+			r_strbuf_appendf (sb, "}\n");
 			break;
 		case WIRE_32_BIT:
 			{
 				ft32* f = (ft32*) &var32;
 				st32* i = (st32*) &var32;
 				bytes_read = read_u32_leb128 (buffer, end, &var32);
-				r_cons_printf (": %u | %d | %f\n", var32, *i, *f);
+				r_strbuf_appendf (sb, ": %u | %d | %f\n", var32, *i, *f);
 			}
 			break;
 		default:
-			decode_array(buffer - 1, end);
+			decode_array (sb, buffer - 1, end);
 			return;
 		}
 		buffer += bytes_read;
 	}
 }
 
-void r_protobuf_decode(const ut8* start, const ut64 size, bool debug) {
+R_API char *r_protobuf_decode(const ut8* start, const ut64 size, bool debug) {
 	if (!start || !size) {
 		eprintf ("Invalid buffer pointer or size.\n");
-		return;
+		return NULL;
 	}
 	const ut8* end = start + size;
-	decode_buffer (start, end, 0u, debug);
+	RStrBuf *sb = r_strbuf_new ("");
+	decode_buffer (sb, start, end, 0u, debug);
+	return r_strbuf_drain (sb);
 }

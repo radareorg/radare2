@@ -1203,7 +1203,11 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'b': // "pFb"
 		{
-			r_protobuf_decode(data, size, input[1] == 'v');
+			char *s = r_protobuf_decode(data, size, input[1] == 'v');
+			if (s) {
+				r_cons_printf ("%s", s);
+				free (s);
+			}
 		}
 		break;
 	default:
