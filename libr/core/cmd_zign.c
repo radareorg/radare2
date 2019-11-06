@@ -183,13 +183,22 @@ static char *getFcnComments(RCore *core, RAnalFunction *fcn) {
 #endif
 
 static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
+	char *ptr = NULL;
+	char *zignspace = NULL;
 	char *zigname = NULL;
 	const RSpace *curspace = r_spaces_current (&core->anal->zign_spaces);
+	int len = 0;
 
 	if (name) {
 		zigname = r_str_new (name);
 	} else {
-		if (curspace) {
+		// If the user has set funtion names containing a single ':' then we assume
+		// ZIGNSPACE:FUNCTION, and for now we only support the 'zg' command
+		if ((ptr = strchr (fcn->name, ':')) != NULL) {
+			len = ptr - fcn->name;
+			zignspace = r_str_newlen (fcn->name, len);
+			r_spaces_push (&core->anal->zign_spaces, zignspace);
+		} else if (curspace) {
 			zigname = r_str_newf ("%s:", curspace->name);
 		}
 		zigname = r_str_appendf (zigname, "%s", fcn->name);
@@ -215,6 +224,10 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	r_sign_add_addr (core->anal, zigname, fcn->addr);
 
 	free (zigname);
+	if (zignspace) {
+		r_spaces_pop (&core->anal->zign_spaces);
+		free (zignspace);
+	}
 }
 
 static bool parseGraphMetrics(const char *args0, int nargs, RSignGraph *graph) {
