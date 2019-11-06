@@ -2181,7 +2181,7 @@ static void __preline_flag(RDisasmState *ds, RFlagItem *flag) {
 	if (!ds->show_offset) {
 		r_cons_printf ("     ");
 	}
-	r_cons_printf (FLAG_PREFIX);
+	// r_cons_printf (FLAG_PREFIX);
 }
 
 #define printPre (outline || !*comma)
@@ -2268,30 +2268,25 @@ static void ds_show_flags(RDisasmState *ds) {
 			}
 		}
 
-		if (!ds->show_flgoff || fake_flag_marks) {
-			if (printPre) {
-				r_cons_printf (FLAG_PREFIX);
-			}
-		}
-
 		if (ds->asm_demangle && flag->realname) {
 			if (!strncmp (flag->name, "switch.", 7)) {
-				r_cons_printf ("switch:");
+				r_cons_printf (FLAG_PREFIX"switch");
 			} else if (!strncmp (flag->name, "case.", 5)) {
 				if (nth > 0) {
 					__preline_flag (ds, flag);
 				}
 				if (!strncmp (flag->name + 5, "default", 7)) {
-					r_cons_printf ("default:"); // %s:", flag->name);
+					r_cons_printf (FLAG_PREFIX "default:"); // %s:", flag->name);
 					r_str_ncpy (addr, flag->name + 5 + strlen ("default."), sizeof (addr));
+					nth = 0;
 				} else if (case_prev != case_start) {
-					r_cons_printf ("case %d...%d:", case_start, case_prev);
+					r_cons_printf (FLAG_PREFIX "case %d...%d:", case_start, case_prev);
 					if (iter != uniqlist->head) {
 						iter = iter->p;
 					}
 					case_start = case_current;
 				} else {
-					r_cons_printf ("case %d:", case_prev);
+					r_cons_printf (FLAG_PREFIX "case %d:", case_prev);
 					case_start = -1;
 				}
 				case_prev = case_current;
@@ -2308,6 +2303,7 @@ static void ds_show_flags(RDisasmState *ds) {
 				}
 				if (name) {
 					r_str_ansi_filter (name, NULL, NULL, -1);
+					r_cons_printf (FLAG_PREFIX);
 					if (outline) {
 						r_cons_printf ("%s:", name);
 					} else {
@@ -2318,7 +2314,7 @@ static void ds_show_flags(RDisasmState *ds) {
 			}
 		} else {
 			if (outline) {
-				r_cons_printf ("%s:", flag->name);
+				r_cons_printf ("%s", flag->name);
 			} else {
 				r_cons_printf ("%s%s", comma, flag->name);
 			}
