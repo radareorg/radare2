@@ -198,11 +198,11 @@ static void inferior_abort_handler(int pid) {
 
 static void trace_me (void) {
 #if __APPLE__
-	signal (SIGTRAP, SIG_IGN); //NEED BY STEP
+	r_sys_signal (SIGTRAP, SIG_IGN); //NEED BY STEP
 #endif
 #if __APPLE__ || __BSD__
 	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
-	signal (SIGABRT, inferior_abort_handler);
+	r_sys_signal (SIGABRT, inferior_abort_handler);
 	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
 		r_sys_perror ("ptrace-traceme");
 	}

@@ -14,7 +14,7 @@ static void rarun2_tty() {
 	r_sys_cmd ("tty");
 	close(1);
 	dup2(2, 1);
-	signal (SIGINT, fwd);
+	r_sys_signal (SIGINT, fwd);
 	for (;;) {
 		sleep (1);
 	}

@@ -2333,7 +2333,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	radare_cmd = (char*)r_str_trim_head (radare_cmd);
 	shell_cmd = (char*)r_str_trim_head (shell_cmd);
 
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_signal (SIGPIPE, SIG_IGN);
 	stdout_fd = dup (1);
 	if (stdout_fd != -1) {
 		if (pipe (fds) == 0) {

@@ -8,9 +8,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#if __UNIX__
-#include <signal.h>
-#endif
 
 #define COUNT_LINES 1
 #define CTX(x) I.context->x
@@ -293,7 +290,7 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 	if (r_stack_is_empty (context->break_stack)) {
 #if __UNIX__
 		if (sig && r_cons_context_is_main ()) {
-			signal (SIGINT, __break_signal);
+			r_sys_signal (SIGINT, __break_signal);
 		}
 #endif
 		context->breaked = false;
@@ -322,7 +319,7 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 		//there is not more elements in the stack
 #if __UNIX__
 		if (sig && r_cons_context_is_main ()) {
-			signal (SIGINT, SIG_IGN);
+			r_sys_signal (SIGINT, SIG_IGN);
 		}
 #endif
 		context->breaked = false;
@@ -404,7 +401,7 @@ R_API void r_cons_break_end() {
 	I.context->breaked = false;
 	I.timeout = 0;
 #if __UNIX__
-	signal (SIGINT, SIG_IGN);
+	r_sys_signal (SIGINT, SIG_IGN);
 #endif
 	if (!r_stack_is_empty (I.context->break_stack)) {
 		//free all the stack
@@ -554,7 +551,7 @@ R_API RCons *r_cons_new() {
 	I.term_raw.c_cflag &= ~(CSIZE|PARENB);
 	I.term_raw.c_cflag |= CS8;
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
-	signal (SIGWINCH, resize);
+	r_sys_signal (SIGWINCH, resize);
 #elif __WINDOWS__
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &I.term_buf);
