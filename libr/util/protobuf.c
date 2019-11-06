@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2018 - wargio */
+/* radare2 - LGPL - Copyright 2017-2019 - wargio */
 
 #include <r_util.h>
 #include <r_cons.h>
@@ -19,7 +19,7 @@ typedef R_PACKED (struct _proto_head {
 }) proto_head_t;
 
 static const char* s_wire(const ut8 byte) {
-	switch(byte) {
+	switch (byte) {
 	case WIRE_VARINT:
 		return "[VARINT]";
 	case WIRE_64_BIT:
@@ -157,7 +157,7 @@ static void decode_buffer(const ut8* start, const ut8* end, ut32 padcnt, bool de
 
 void r_protobuf_decode(const ut8* start, const ut64 size, bool debug) {
 	if (!start || !size) {
-		eprintf ("\ninvalid buffer pointer or size.\n");
+		eprintf ("Invalid buffer pointer or size.\n");
 		return;
 	}
 	const ut8* end = start + size;
