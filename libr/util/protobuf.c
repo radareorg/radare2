@@ -22,22 +22,16 @@ static const char* s_wire(const ut8 byte) {
 	switch(byte) {
 	case WIRE_VARINT:
 		return "[VARINT]";
-		break;
 	case WIRE_64_BIT:
 		return "[64_BIT]";
-		break;
 	case WIRE_LEN_DELIM:
 		return "[LEN_DELIM]";
-		break;
 	case WIRE_START_GRP:
 		return "[START_GROUP]";
-		break;
 	case WIRE_END_GRP:
 		return "[END_GROUP]";
-		break;
 	case WIRE_32_BIT:
 		return "[32_BIT]";
-		break;
 	default:
 		return "[UNKN]";
 	}
@@ -46,13 +40,14 @@ static const char* s_wire(const ut8 byte) {
 static void pad(ut32 count) {
 	ut32 i;
 	for (i = 0; i < count; i++) {
-		r_cons_printf("    ");
+		r_cons_printf ("    ");
 	}
 }
 
 static bool is_string(const ut8* start, const ut8* end) {
 	while (start < end) {
-		if (!IS_PRINTABLE(*start)) {
+		// TODO UTF-8 Support.
+		if (!IS_PRINTABLE (*start)) {
 			return false;
 		}
 		start++;
@@ -62,10 +57,10 @@ static bool is_string(const ut8* start, const ut8* end) {
 
 static void decode_array(const ut8* start, const ut8* end) {
 	while (start < end) {
-		r_cons_printf("%02x ", *start);
+		r_cons_printf ("%02x ", *start);
 		start++;
 	}
-	r_cons_printf("\n");
+	r_cons_printf ("\n");
 }
 
 static void decode_buffer(const ut8* start, const ut8* end, ut32 padcnt, bool debug) {
