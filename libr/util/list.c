@@ -80,7 +80,7 @@ R_API void r_list_purge(RList *list) {
 R_API void r_list_free(RList *list) {
 	if (list) {
 		r_list_purge (list);
-		R_FREE (list);
+		free (list);
 	}
 }
 
