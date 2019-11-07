@@ -399,6 +399,7 @@ static const char *help_msg_drx[] = {
 
 static const char *help_msg_drm[] = {
 	"Usage: drm", " [reg] [idx] [wordsize] [= value]", "Show multimedia packed registers",
+	"drm", "", "Show XMM registers",
 	"drm", " xmm0", "Show all packings of xmm0",
 	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12",
 	"drmb", " [reg]", "Show registers as bytes",
@@ -408,6 +409,13 @@ static const char *help_msg_drm[] = {
 	"drmq", " xmm0~[0]", "Show first quadword of xmm0",
 	"drmf", " [reg]", "Show registers as 32-bit floating point",
 	"drml", " [reg]", "Show registers as 64-bit floating point",
+	"drmyb", " [reg]", "Show YMM registers as bytes",
+	"drmyw", " [reg]", "Show YMM registers as words",
+	"drmyd", " [reg]", "Show YMM registers as doublewords",
+	"drmyq", " [reg]", "Show YMM registers as quadwords",
+	"drmq", " ymm0~[3]", "Show fourth quadword of ymm0",
+	"drmyf", " [reg]", "Show YMM registers as 32-bit floating point",
+	"drmyl", " [reg]", "Show YMM registers as 64-bit floating point",
 	NULL
 };
 
@@ -616,6 +624,10 @@ static int showreg(RCore *core, const char *str) {
 				break;
 			case 128:
 				r_cons_printf ("0x%016"PFMT64x"%016"PFMT64x"\n", value.v128.High, value.v128.Low);
+				break;
+			case 256:
+				r_cons_printf ("0x%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"\n",
+					   value.v256.High.High, value.v256.High.Low, value.v256.Low.High, value.v256.Low.Low);
 				break;
 			default:
 				r_cons_printf ("Error while retrieving reg '%s' of %i bits\n", str +1, r->size);
@@ -2604,7 +2616,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		if (str[1]=='?') {
 			r_core_cmd_help (core, help_msg_drm);
 		} else if (str[1] == ' ' || str[1] == 'b' || str[1] == 'd' || str[1] == 'w' || str[1] == 'q' || str[1] == 'l'
-				   || str[1] == 'f') {
+				   || str[1] == 'f' || (str[1] == 'y' && str[2] != '\x00')) {
 			char explicit_index = 0;
 			char explicit_size = 0;
 			char explicit_name = 0;
@@ -2613,7 +2625,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			int size = 0; // auto
 			char *q, *p, *name;
 			char *eq = NULL;
-			if (str[1] == ' ' && str[2] != '\x00') {
+			RRegisterType reg_type = R_REG_TYPE_XMM;
+			if ((str[1] == ' ' && str[2] != '\x00') || (str[1] == 'y' && str[2] == ' ' && str[3] != '\x00')) {
+				if (str[1] == 'y') { // support `drmy ymm0` and `drm ymm0`
+					str = str + 1;
+				}
 				name = strdup (str + 2);
 				explicit_name = 1;
 				eq = strchr (name, '=');
@@ -2646,51 +2662,60 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 			} else {
 				explicit_size = 1;
-				if (str[2] == ' ' && str[3] != '\x00')	{
+				if (str[1] == 'y') {
+					reg_type = R_REG_TYPE_YMM;
+					str = str + 1;
+				}
+				if (str[2] == ' ' && str[3] != '\x00') {
 					name = strdup (str + 3);
 					explicit_name = 1;
 				}
-				switch ( str[1])	{
-					case 'b': // "drmb"
-						size = pack_sizes[0];
-						pack_show[0] = 1;
-						break;
-					case 'w': // "drmw"
-						size = pack_sizes[1];
-						pack_show[1] = 1;
-						break;
-					case 'd': // "drmd"
-						size = pack_sizes[2];
-						pack_show[2] = 1;
-						break;
-					case 'q': // "drmq"
-						size = pack_sizes[3];
-						pack_show[3] = 1;
-						break;
-					case 'f': // "drmf"
-						size = pack_sizes[4];
-						pack_show[4] = 1;
-						break;
-					case 'l': // "drml"
-						size = pack_sizes[5];
-						pack_show[5] = 1;
-						break;
-					default:
-						eprintf("Unkown comamnd");
-						return;
+				switch (str[1])	{
+				case 'b': // "drmb"
+					size = pack_sizes[0];
+					pack_show[0] = 1;
+					break;
+				case 'w': // "drmw"
+					size = pack_sizes[1];
+					pack_show[1] = 1;
+					break;
+				case 'd': // "drmd"
+					size = pack_sizes[2];
+					pack_show[2] = 1;
+					break;
+				case 'q': // "drmq"
+					size = pack_sizes[3];
+					pack_show[3] = 1;
+					break;
+				case 'f': // "drmf"
+					size = pack_sizes[4];
+					pack_show[4] = 1;
+					break;
+				case 'l': // "drml"
+					size = pack_sizes[5];
+					pack_show[5] = 1;
+					break;
+				default:
+					eprintf ("Unkown comamnd");
+					return;
 				}
 			}
 			if (explicit_name) {
 				RRegItem *item = r_reg_get (core->dbg->reg, name, -1);
 				if (item) {
 					if (eq) {
-						ut64 val = r_num_math (core->num, eq);
-						r_reg_set_pack (core->dbg->reg, item, index, size, val);
-						r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, true);
+						// TODO: support setting YMM registers
+						if (reg_type == R_REG_TYPE_YMM) {
+							eprintf ("Setting ymm registers not supported yet!\n");
+						} else {
+							ut64 val = r_num_math (core->num, eq);
+							r_reg_set_pack (core->dbg->reg, item, index, size, val);
+							r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, true);
+						}
 					} else {
-						r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, false);
+						r_debug_reg_sync (core->dbg, reg_type, false);
 						if (!explicit_index) {
-							cmd_debug_reg_print_packed_reg(core, item, explicit_size, pack_show);
+							cmd_debug_reg_print_packed_reg (core, item, explicit_size, pack_show);
 						} else {
 							ut64 res = r_reg_get_pack (core->dbg->reg, item, index, size);
 							// print selected index / wordsize
@@ -2706,21 +2731,31 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				RListIter *iter;
 				RRegItem *item;
 				RList *head;
-				r_debug_reg_sync(core->dbg, R_REG_TYPE_XMM, false);
-				head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_FPU); // TODO: r_reg_get_list does not follow indirection
-				if (head)	{
+				r_debug_reg_sync (core->dbg, reg_type, false);
+				if (reg_type == R_REG_TYPE_XMM) {
+					head = r_reg_get_list (core->dbg->reg,
+						R_REG_TYPE_FPU); // TODO: r_reg_get_list does not follow indirection
+				} else {
+					head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_YMM);
+				}
+				if (head) {
 					r_list_foreach (head, iter, item) {
-						if (item->type != R_REG_TYPE_XMM) {
+						if (item->type != reg_type) {
 							continue;
 						}
 						r_cons_printf ("%-5s = ", item->name);
-						cmd_debug_reg_print_packed_reg(core, item, explicit_size, pack_show);
+						cmd_debug_reg_print_packed_reg (core, item, explicit_size, pack_show);
 					}
 				}
 			}
 		} else { // drm # no arg
-			r_debug_reg_sync (core->dbg, -R_REG_TYPE_XMM, false);
-			r_debug_reg_list (core->dbg, R_REG_TYPE_XMM, 128, 0, 0);
+			if (str[1] == 'y') { // drmy
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_YMM, false);
+				r_debug_reg_list (core->dbg, R_REG_TYPE_YMM, 256, 0, 0);
+			} else { // drm
+				r_debug_reg_sync (core->dbg, -R_REG_TYPE_XMM, false);
+				r_debug_reg_list (core->dbg, R_REG_TYPE_XMM, 128, 0, 0);
+			}
 		}
 		//r_debug_drx_list (core->dbg);
 		break;
