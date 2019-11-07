@@ -1134,7 +1134,7 @@ rep:
 			}
 			fi = r_flag_get (core->flags, arg);
 			if (fi) {
-				ret = r_flag_color (core->flags, fi, color);
+				ret = r_flag_item_set_color (fi, color);
 				if (!color && ret)
 					r_cons_println (ret);
 			} else {
