@@ -65,6 +65,13 @@ R_API void r_spaces_fini(RSpaces *sp) {
 	R_FREE (sp->name);
 }
 
+R_API void r_spaces_purge(RSpaces *sp) {
+	sp->current = NULL;
+	r_list_purge (sp->spacestack);
+	r_rbtree_free (sp->spaces, space_node_free);
+	sp->spaces = NULL;
+}
+
 static int name_space_cmp(const void *incoming, const RBNode *rb, void *user) {
 	const RSpace *s = container_of (rb, const RSpace, rb);
 	return strcmp (incoming, s->name);
