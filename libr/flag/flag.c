@@ -282,6 +282,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	sdb_free (f->tags);
 	r_spaces_fini (&f->spaces);
 	r_num_free (f->num);
+	r_list_free (f->zones);
 	free (f);
 	return NULL;
 }
