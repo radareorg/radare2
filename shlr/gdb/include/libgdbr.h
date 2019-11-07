@@ -10,6 +10,7 @@ typedef unsigned int ssize_t;
 #include "arch.h"
 #include "r_types_base.h"
 #include "r_socket.h"
+#include "r_th.h"
 
 #define MSG_OK 0
 #define MSG_NOT_SUPPORTED -1
@@ -185,6 +186,8 @@ typedef struct libgdbr_t {
 	bool server_debug;
 	bool get_baddr;
 	libgdbr_stop_reason_t stop_reason;
+
+	RThreadLock *gdbr_lock;
 
 	// parsed from target
 	struct {
