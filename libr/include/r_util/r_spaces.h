@@ -67,6 +67,8 @@ R_API bool r_spaces_init(RSpaces *sp, const char *name);
 R_API void r_spaces_fini(RSpaces *sp);
 // Finalize and free an existing RSpaces
 R_API void r_spaces_free(RSpaces *sp);
+// Delete all spaces
+R_API void r_spaces_purge(RSpaces *sp);
 // Get the RSpace with the given name
 R_API RSpace *r_spaces_get(RSpaces *sp, const char *name);
 // Add a new RSpace if one does not already exist, otherwise return the existing one
