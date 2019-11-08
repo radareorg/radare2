@@ -209,8 +209,8 @@ static int __gettid(RIODesc *fd) {
 	return desc ? desc->tid : -1;
 }
 
-extern int send_msg (libgdbr_t *g, const char *command);
-extern int read_packet (libgdbr_t *instance);
+extern int send_msg(libgdbr_t *g, const char *command);
+extern int read_packet(libgdbr_t *instance);
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!desc) {
