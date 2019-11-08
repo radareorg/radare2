@@ -31,36 +31,24 @@ const ut8 table_sbox[256] = {
 };
 
 static int aes256_key_test(const unsigned char *buf) {
-	int aes256;
-
-	aes256 = buf[32] == (buf[0] ^ table_sbox[buf[29]] ^ 1) \
+	return (buf[32] == (buf[0] ^ table_sbox[buf[29]] ^ 1) \
 		&& buf[33] == (buf[1] ^ table_sbox[buf[30]]) \
 		&& buf[34] == (buf[2] ^ table_sbox[buf[31]]) \
-		&& buf[35] == (buf[3] ^ table_sbox[buf[28]])?1:0;
-
-	return (aes256);
+		&& buf[35] == (buf[3] ^ table_sbox[buf[28]]));
 }
 
 static int aes192_key_test(const unsigned char *buf) {
-	int aes192;
-
-	aes192 = buf[24] == (buf[0] ^ table_sbox[buf[21]] ^ 1) \
+	return (buf[24] == (buf[0] ^ table_sbox[buf[21]] ^ 1) \
 		&& buf[25] == (buf[1] ^ table_sbox[buf[22]]) \
 		&& buf[26] == (buf[2] ^ table_sbox[buf[23]]) \
-		&& buf[27] == (buf[3] ^ table_sbox[buf[20]])?1:0;
-
-	return (aes192);
+		&& buf[27] == (buf[3] ^ table_sbox[buf[20]]));
 }
 
 static int aes128_key_test(const unsigned char *buf) {
-	int aes128;
-
-	aes128 = buf[16] == (buf[0] ^ table_sbox[buf[13]] ^ 1) \
+	return (buf[16] == (buf[0] ^ table_sbox[buf[13]] ^ 1) \
 		&& buf[17] == (buf[1] ^ table_sbox[buf[14]]) \
 		&& buf[18] == (buf[2] ^ table_sbox[buf[15]]) \
-		&& buf[19] == (buf[3] ^ table_sbox[buf[12]])?1:0;
-
-	return (aes128);
+		&& buf[19] == (buf[3] ^ table_sbox[buf[12]]));
 }
 
 R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
