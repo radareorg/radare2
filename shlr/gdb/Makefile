@@ -17,10 +17,12 @@ LD=$(CC)
 ifeq ($(LD),cccl)
 LDFLAGS+=-L${LIBR}/socket -llibr_socket
 LDFLAGS+=-L${LIBR}/util -llibr_util
+LDFLAGS+=-L${LIBR}/cons -llibr_cons
 EXT_AR?=lib
 else
 LDFLAGS+=-L${LIBR}/socket -lr_socket
 LDFLAGS+=-L${LIBR}/util -lr_util
+LDFLAGS+=-L${LIBR}/cons -lr_cons
 EXT_AR?=a
 endif
 
