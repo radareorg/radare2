@@ -1152,16 +1152,18 @@ static bool desc_list_cb(void *user, void *data, ut32 id) {
 }
 
 static bool desc_list_json_cb(void *user, void *data, ut32 id) {
-	RPrint *p = (RPrint *)user;
+	PJ *pj = (PJ *)user;
 	RIODesc *desc = (RIODesc *)data;
 	// TODO: from is always 0? See libr/core/file.c:945
 	ut64 from = 0LL;
-	p->cb_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
-			PFMT64d ",\"writable\":%s,\"size\":%" PFMT64d "}%s",
-			r_str_bool (desc->io && (desc->io->desc == desc)),
-			desc->fd, desc->uri, from,
-			r_str_bool ((desc->perm & R_PERM_W)),
-			r_io_desc_size (desc), (desc->io->files->top_id == id) ? "" : ",");
+	pj_o (pj);
+	pj_kb (pj, "raised", desc->io && (desc->io->desc == desc));
+	pj_kN (pj, "fd", desc->fd);
+	pj_ks (pj, "uri", desc->uri);
+	pj_kn (pj, "from", from);
+	pj_kb (pj, "writable", desc->perm & R_PERM_W);
+	pj_kN (pj, "size", r_io_desc_size (desc));
+	pj_end (pj);
 	return true;
 }
 
@@ -1413,9 +1415,12 @@ static int cmd_open(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_oj);
 			break;
 		}
-		core->print->cb_printf ("[");
-		r_id_storage_foreach (core->io->files, desc_list_json_cb, core->print);
-		core->print->cb_printf ("]\n");
+		PJ *pj = pj_new ();
+		pj_a (pj);
+		r_id_storage_foreach (core->io->files, desc_list_json_cb, pj);
+		pj_end (pj);
+		core->print->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 		break;
 	case 'L': // "oL"
 		if (r_sandbox_enable (0)) {
