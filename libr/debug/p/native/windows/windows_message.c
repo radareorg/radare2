@@ -283,7 +283,7 @@ static BOOL CALLBACK __enum_childs(
 }
 
 static RList *__get_windows(RDebug *dbg) {
-	RList *windows = r_list_newf((RListFree)__free_window);
+	RList *windows = r_list_newf ((RListFree)__free_window);
 	HWND hCurWnd = NULL;
 	do {
 		hCurWnd = FindWindowEx (NULL, hCurWnd, NULL, NULL);
