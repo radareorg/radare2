@@ -1338,7 +1338,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 	    || g->data_len == 0 || g->data[0] != 'm') {
 		return NULL;
 	}
-	if (!(list = r_list_new())) {
+	if (!(list = r_list_new ())) {
 		return NULL;
 	}
 	while (1) {

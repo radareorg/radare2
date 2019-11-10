@@ -2827,7 +2827,7 @@ R_API int is_class_interface(RBinJavaObj *bin, RBinJavaCPTypeObj *cp_obj) {
 }
 /*
    R_API RList * r_bin_java_get_interface_classes(RBinJavaObj * bin) {
-        RList *interfaces_names = r_list_new();
+        RList *interfaces_names = r_list_new ();
         RListIter *iter;
         RBinJavaInterfaceInfo *ifobj;
         r_list_foreach(bin->interfaces_list, iter, iinfo) {

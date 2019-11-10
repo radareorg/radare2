@@ -136,7 +136,7 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 	}
 	stream_file_read (stream_file, size, dbiexhdr_data);
 
-	dbi_stream->dbiexhdrs = r_list_new();
+	dbi_stream->dbiexhdrs = r_list_new ();
 	p_tmp = dbiexhdr_data;
 	while (i < size) {
 		dbi_ex_header = (SDBIExHeader *) malloc (sizeof(SDBIExHeader));

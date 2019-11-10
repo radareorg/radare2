@@ -176,7 +176,7 @@ static RList *mem (RBinFile *bf) {
 	RList *ret;
 	RBinMem *m;
 	RBinMem *m_bak;
-	if (!(ret = r_list_new())) {
+	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;

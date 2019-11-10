@@ -43,7 +43,7 @@ void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file)
 	stream_file_get_data(stream_file, data);
 
 	fpo_stream = (SFPOStream *) stream;
-	fpo_stream->fpo_data_list = r_list_new();
+	fpo_stream->fpo_data_list = r_list_new ();
 	ptmp = data;
 	while (read_bytes < data_size) {
 		fpo_data = (SFPO_DATA *) malloc(sizeof(SFPO_DATA));
