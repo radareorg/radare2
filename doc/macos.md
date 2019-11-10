@@ -87,7 +87,7 @@ To create a macOS .pkg just run the following command:
 Uninstall
 ---------
 
-To uninstall the .pkg downloaded from the r2 website or the one you have generated with `sys/osx-pkg.sh`
+To uninstall the .pkg downloaded from the r2 website or the one you have generated with `sys/osx-pkg.sh`, run the following as root:
 
-	$ pkgutil --only-files --files radare2.pkg | tr '\n' '\0' | xargs -n 1 -0 sudo rm -i
+	$ pkgutil --only-files --files org.radare.radare2 | sed 's/^/\//' | tr '\n' '\0' | xargs -o -n 1 -0 rm -i
 
