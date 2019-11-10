@@ -135,6 +135,7 @@ end:
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
 	int ret, i;
+
 	if (!g || !host) {
 		return -1;
 	}
@@ -164,8 +165,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 	read_packet (g, true); // vcont=true lets us skip if we get no reply
 	g->connected = 1;
+	void *bed = r_cons_sleep_begin ();
 	// TODO add config possibility here
-	for (i = 0; i < QSUPPORTED_MAX_RETRIES; i++) {
+	for (i = 0; i < QSUPPORTED_MAX_RETRIES && !_isbreaked; i++) {
 		ret = send_msg (g, message);
 		if (ret < 0) {
 			continue;
@@ -179,6 +181,12 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 			continue;
 		}
 		break;
+	}
+	r_cons_sleep_end (bed);
+	if (_isbreaked) {
+		_isbreaked = false;
+		ret = -1;
+		goto end;
 	}
 	if (ret < 0) {
 		goto end;
