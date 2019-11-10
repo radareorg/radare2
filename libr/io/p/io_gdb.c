@@ -209,8 +209,8 @@ static int __gettid(RIODesc *fd) {
 	return desc ? desc->tid : -1;
 }
 
-int send_msg(libgdbr_t* g, const char* command);
-int read_packet(libgdbr_t* instance);
+extern int send_msg(libgdbr_t *g, const char *command);
+extern int read_packet(libgdbr_t *instance);
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!desc) {
@@ -265,16 +265,16 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "pkt ")) {
-		if (send_msg (desc, cmd + 4) == -1) {
-			return NULL;
+		gdbr_lock_enter (desc);
+		if (send_msg (desc, cmd + 4) >= 0) {
+			(void)read_packet (desc);
+			desc->data[desc->data_len] = '\0';
+			io->cb_printf ("reply:\n%s\n", desc->data);
+			if (!desc->no_ack) {
+				eprintf ("[waiting for ack]\n");
+			}
 		}
-		(void)read_packet (desc);
-		desc->data[desc->data_len] = '\0';
-		io->cb_printf ("reply:\n%s\n", desc->data);
-		if (!desc->no_ack) {
-			eprintf ("[waiting for ack]\n");
-		}
-		// return r >= 0;
+		gdbr_lock_leave (desc);
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "pid")) {

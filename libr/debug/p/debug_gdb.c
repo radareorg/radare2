@@ -1060,7 +1060,9 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 	// TODO kill based on pid and signal
 	if (sig != 0) {
-		return gdbr_kill (desc);
+		if (gdbr_kill (desc) < 0) {
+			return false;
+		}
 	}
 	return true;
 }

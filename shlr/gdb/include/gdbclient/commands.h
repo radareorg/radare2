@@ -5,6 +5,16 @@
 #include "r_types_base.h"
 #include <r_util.h>
 
+/*!
+ * \brief Acquires the gdbr lock and sets up breaking
+ * \returns true on success, false on failure
+ */
+bool gdbr_lock_enter(libgdbr_t *g);
+
+/*!
+ * \brief Releases the gdbr lock
+ */
+void gdbr_lock_leave(libgdbr_t *g);
 
 /*!
  * \brief Function connects to a gdbserver instance
@@ -68,8 +78,8 @@ int gdbr_detach_pid(libgdbr_t *g, int pid);
  * \param pid of the process to detach from (only the multiprocess/pid variant)
  * \retuns a failure code (currently -1) or 0 if call successfully
  */
-bool gdbr_kill(libgdbr_t *g);
-bool gdbr_kill_pid(libgdbr_t *g, int pid);
+int gdbr_kill(libgdbr_t *g);
+int gdbr_kill_pid(libgdbr_t *g, int pid);
 
 // Commands
 int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig);

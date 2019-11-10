@@ -347,41 +347,6 @@ bochs_dep = declare_dependency(
 )
 
 
-# handle gdb dependency
-gdb_files = [
-  'gdb/src/arch.c',
-  'gdb/src/common.c',
-  'gdb/src/packet.c',
-  'gdb/src/utils.c',
-  'gdb/src/libgdbr.c',
-
-  'gdb/src/gdbclient/core.c',
-  'gdb/src/gdbclient/responses.c',
-  'gdb/src/gdbclient/xml.c',
-
-  'gdb/src/gdbserver/core.c',
-]
-
-gdb_inc = [
-  platform_inc,
-  include_directories(
-    './gdb/include',
-    './gdb/include/gdbclient',
-    './gdb/include/gdbserver'
-  )
-]
-
-libr2gdb = static_library('r2gdb', gdb_files,
-  include_directories: gdb_inc,
-  implicit_include_directories: false
-)
-
-gdb_dep = declare_dependency(
-  link_with: libr2gdb,
-  include_directories: gdb_inc
-)
-
-
 # handle java dependency
 java_files = [
   'java/class.c',
