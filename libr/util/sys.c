@@ -155,13 +155,14 @@ R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
 	sigact.sa_handler = handler;
 	sigemptyset (&sigact.sa_mask);
 
-	for (i = sig[0]; sig[i] != 0; i++) {
+	for (i = 0; sig[i] != 0; i++) {
 		sigaddset (&sigact.sa_mask, sig[i]);
 	}
 
-	for (i = sig[0]; sig[i] != 0; i++) {
+	for (i = 0; sig[i] != 0; i++) {
 		ret = sigaction (sig[i], &sigact, NULL);
 		if (ret) {
+			eprintf ("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
 			return ret;
 		}
 	}
@@ -176,9 +177,10 @@ R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
 		return -EINVAL;
 	}
 
-	for (i = sig[0]; sig[i] != 0; i++) {
+	for (i = 0; sig[i] != 0; i++) {
 		ret = signal (sig[i], handler);
 		if (ret == SIG_ERR) {
+			eprintf ("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
 			return -1;
 		}
 	}
