@@ -345,9 +345,14 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		free (argv);
 #if !defined(__WINDOWS__)
 	} else if (!strncmp (cmd, "alarm ", 6)) {
+		struct itimerval tmout;
+		int secs = atoi (cmd + 6);
+		r_return_val_if_fail (secs >= 0, NULL);
+
+		tmout.it_value.tv_sec = secs;
+		tmout.it_value.tv_usec = 0;
 		r_sys_signal (SIGALRM, got_alarm);
-		// TODO: use setitimer
-		alarm (atoi (cmd + 6));
+		setitimer (ITIMER_REAL, &tmout, NULL);
 #else
 #ifdef _MSC_VER
 #pragma message ("self:// alarm is not implemented for this platform yet")
