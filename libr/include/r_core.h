@@ -387,8 +387,8 @@ R_API RConfig *r_core_get_config (RCore *core);
 R_API bool r_core_init(RCore *core);
 R_API void r_core_bind_cons(RCore *core); // to restore pointers in cons
 R_API RCore *r_core_new(void);
-R_API RCore *r_core_free(RCore *core);
-R_API RCore *r_core_fini(RCore *c);
+R_API void r_core_free(RCore *core);
+R_API void r_core_fini(RCore *c);
 R_API void r_core_wait(RCore *core);
 R_API RCore *r_core_ncast(ut64 p);
 R_API RCore *r_core_cast(void *p);
