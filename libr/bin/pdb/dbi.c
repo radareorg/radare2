@@ -17,7 +17,7 @@ static void free_dbi_stream(void *stream) {
 		free(dbi_ex_header->objName.name);
 		free(dbi_ex_header);
 	}
-	r_list_free(t->dbiexhdrs);
+	r_list_free (t->dbiexhdrs);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

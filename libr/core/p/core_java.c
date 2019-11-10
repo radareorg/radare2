@@ -1502,8 +1502,8 @@ static int r_cmd_java_print_method_definitions ( RBinJavaObj *obj ) {
 		idx++;
 	}
 
-	r_list_free(the_list);
-	r_list_free(off_list);
+	r_list_free (the_list);
+	r_list_free (off_list);
 	return true;
 }
 
@@ -1520,8 +1520,8 @@ static int r_cmd_java_print_field_definitions ( RBinJavaObj *obj ) {
 		idx++;
 	}
 
-	r_list_free(the_list);
-	r_list_free(off_list);
+	r_list_free (the_list);
+	r_list_free (off_list);
 	return true;
 }
 
@@ -1532,7 +1532,7 @@ static int r_cmd_java_print_import_definitions ( RBinJavaObj *obj ) {
 	r_list_foreach (the_list, iter, str) {
 		r_cons_printf("import %s;\n", str);
 	}
-	r_list_free(the_list);
+	r_list_free (the_list);
 	return true;
 }
 

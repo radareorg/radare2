@@ -73,7 +73,7 @@ void free_fpo_stream(void *stream)
 		fpo_data = (SFPO_DATA *) r_list_iter_get(it);
 		free(fpo_data);
 	}
-	r_list_free(fpo_stream->fpo_data_list);
+	r_list_free (fpo_stream->fpo_data_list);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,7 +88,7 @@ void free_fpo_new_stream(void *stream)
 		fpo_data = (SFPO_DATA_V2 *) r_list_iter_get(it);
 		free(fpo_data);
 	}
-	r_list_free(fpo_stream->fpo_data_list);
+	r_list_free (fpo_stream->fpo_data_list);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
