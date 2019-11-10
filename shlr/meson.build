@@ -18,10 +18,10 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
     use_capstone5 = get_option('use_capstone5')
     if use_capstone5
-      CS_TIP = '5809774f62847e6755aa054746822ce32e369b3a'
+      CS_TIP = 'caacf11822683d8a317efee727c428db254670a9'
       CS_BRA = 'next'
     else
-      CS_TIP = 'c7d2b984af855ef9fbf8f8fd33ca7005da644b4a'
+      CS_TIP = 'a22aef2a18e6f6d8d30af4a1595af17337408e45'
       CS_BRA = 'v4'
     endif
 
