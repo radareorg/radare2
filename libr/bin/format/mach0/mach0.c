@@ -2898,13 +2898,13 @@ static void parse_relocation_info (struct MACH0_(obj_t) *bin, RSkipList * relocs
 	}
 
 	ut64 total_size = num * sizeof (struct relocation_info);
-	struct relocation_info *info = calloc (1, total_size);
+	struct relocation_info *info = calloc (num, sizeof (struct relocation_info));
 	if (!info) {
 		return;
 	}
 
 	if (r_buf_read_at (bin->b, offset, (ut8 *) info, total_size) < total_size) {
-		R_FREE (info);
+		free (info);
 		return;
 	}
 

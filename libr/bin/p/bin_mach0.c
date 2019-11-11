@@ -544,7 +544,7 @@ static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t
 	}
 
 	ut8 buf[8];
-	r_write_ble(buf, val, false, reloc->size * 8);
+	r_write_ble (buf, val, false, reloc->size * 8);
 	iob->write_at (iob->io, reloc->addr, buf, reloc->size);
 
 	return true;
@@ -562,8 +562,9 @@ static RList* patch_relocs(RBin *b) {
 	r_return_val_if_fail (b, NULL);
 
 	io = b->iob.io;
-	if (!io || !io->desc)
+	if (!io || !io->desc) {
 		return NULL;
+	}
 	obj = r_bin_cur_object (b);
 	if (!obj) {
 		return NULL;
