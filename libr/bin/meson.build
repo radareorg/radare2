@@ -47,6 +47,7 @@ r_bin_sources = [
   'p/bin_pe.c',
   'p/bin_pe64.c',
   'p/bin_pebble.c',
+  'p/bin_prg.c',
   'p/bin_psxexe.c',
   'p/bin_qnx.c',
   'p/bin_sfc.c',

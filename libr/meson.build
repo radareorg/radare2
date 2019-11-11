@@ -156,6 +156,7 @@ bin_plugins = [
   'pe',
   'pe64',
   'pebble',
+  'prg',
   'psxexe',
   'sfc',
   'smd',
