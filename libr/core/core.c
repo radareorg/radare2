@@ -2782,7 +2782,7 @@ R_API void r_core_fini(RCore *c) {
 	free (c->cmdlog);
 	r_th_lock_free (c->lock);
 	free (c->lastsearch);
-	free (c->cons->pager);
+	R_FREE (c->cons->pager);
 	free (c->cmdqueue);
 	free (c->lastcmd);
 	free (c->stkcmd);
