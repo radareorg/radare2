@@ -2892,8 +2892,56 @@ static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
 	return a->addr - b->addr;
 }
 
+static void parse_relocation_info (struct MACH0_(obj_t) *bin, RSkipList * relocs, ut32 offset, ut32 num) {
+	if (!num || !offset) {
+		return;
+	}
+
+	ut64 total_size = num * sizeof (struct relocation_info);
+	struct relocation_info *info = calloc (num, sizeof (struct relocation_info));
+	if (!info) {
+		return;
+	}
+
+	if (r_buf_read_at (bin->b, offset, (ut8 *) info, total_size) < total_size) {
+		free (info);
+		return;
+	}
+
+	int i;
+	for (i = 0; i < num; i++) {
+		struct relocation_info a_info = info[i];
+		ut32 sym_num = a_info.r_symbolnum;
+		if (sym_num > bin->nsymtab) {
+			continue;
+		}
+
+		ut32 stridx = bin->symtab[sym_num].n_strx;
+		char *sym_name = get_name (bin, stridx, false);
+		if (!sym_name) {
+			continue;
+		}
+
+		struct reloc_t *reloc = R_NEW0 (struct reloc_t);
+		if (!reloc) {
+			return;
+		}
+
+		reloc->addr = offset_to_vaddr (bin, a_info.r_address);
+		reloc->offset = a_info.r_address;
+		reloc->ord = sym_num;
+		reloc->type = a_info.r_type; // enum RelocationInfoType
+		reloc->external = a_info.r_extern;
+		reloc->pc_relative = a_info.r_pcrel;
+		reloc->size = a_info.r_length;
+		r_str_ncpy (reloc->name, sym_name, 256);
+
+		r_skiplist_insert (relocs, reloc);
+	}
+}
+
 RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
-	RSkipList *relocs;
+	RSkipList *relocs = NULL;
 	ulebr ur = {NULL};
 	int wordsize = MACH0_(get_bits)(bin) / 8;
 	if (bin->dyld_info) {
@@ -3097,25 +3145,42 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			}
 		}
 		R_FREE (opcodes);
-	} else {
+	}
+
+	if (bin->symtab && bin->symstr && bin->sects && bin->indirectsyms) {
 		int j;
-		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms) {
-			return NULL;
-		}
 		int amount = bin->dysymtab.nundefsym;
 		if (amount < 0) {
 			amount = 0;
 		}
-		relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);
 		if (!relocs) {
-			return NULL;
+			relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);
+			if (!relocs) {
+				return NULL;
+			}
 		}
 		for (j = 0; j < amount; j++) {
 			struct reloc_t *reloc = R_NEW0 (struct reloc_t);
+			if (!reloc) {
+				break;
+			}
 			if (parse_import_ptr (bin, reloc, bin->dysymtab.iundefsym + j)) {
 				reloc->ord = j;
+				r_skiplist_insert (relocs, reloc);
+			} else {
+				R_FREE (reloc);
 			}
 		}
+	}
+
+	if (bin->symtab && bin->dysymtab.extreloff && bin->dysymtab.nextrel) {
+		if (!relocs) {
+			relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);
+			if (!relocs) {
+				return NULL;
+			}
+		}
+		parse_relocation_info (bin, relocs, bin->dysymtab.extreloff, bin->dysymtab.nextrel);
 	}
 beach:
 	return relocs;
