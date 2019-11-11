@@ -557,15 +557,10 @@ static RList* patch_relocs(RBin *b) {
 	struct MACH0_(obj_t) *bin = NULL;
 	RIOMap *g = NULL, *s = NULL;
 	HtUU *relocs_by_sym = NULL;
-	SdbListIter *iter;
-	RBinInfo *info;
-	int cdsz;
-	ut64 n_vaddr, vaddr, size, offset = 0;
 	RIODesc *gotr2desc = NULL;
 
-	if (!b) {
-		return NULL;
-	}
+	r_return_val_if_fail (b, NULL);
+
 	io = b->iob.io;
 	if (!io || !io->desc)
 		return NULL;
@@ -601,9 +596,10 @@ static RList* patch_relocs(RBin *b) {
 		goto beach;
 	}
 
-	info = obj ? obj->info: NULL;
-	cdsz = info? info->bits / 8 : 8;
+	int cdsz = obj->info ? obj->info->bits / 8 : 8;
 
+	SdbListIter *iter;
+	ut64 offset = 0;
 	ls_foreach (io->maps, iter, s) {
 		if (s->itv.addr > offset) {
 			offset = s->itv.addr;
@@ -613,8 +609,8 @@ static RList* patch_relocs(RBin *b) {
 	if (!g) {
 		goto beach;
 	}
-	n_vaddr = g->itv.addr + g->itv.size;
-	size = num_ext_relocs * cdsz;
+	ut64 n_vaddr = g->itv.addr + g->itv.size;
+	ut64 size = num_ext_relocs * cdsz;
 	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
 	gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
 	free (muri);
@@ -631,11 +627,10 @@ static RList* patch_relocs(RBin *b) {
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		goto beach;
 	}
-	HtUUOptions opt = { 0 };
-	if (!(relocs_by_sym = ht_uu_new_opt (&opt))) {
+	if (!(relocs_by_sym = ht_uu_new0 ())) {
 		goto beach;
 	}
-	vaddr = n_vaddr;
+	ut64 vaddr = n_vaddr;
 	RListIter *liter;
 	r_list_foreach (ext_relocs, liter, reloc) {
 		ut64 sym_addr = 0;
@@ -663,7 +658,7 @@ static RList* patch_relocs(RBin *b) {
 		ptr->import = imp;
 		r_list_append (ret, ptr);
 	}
-	if (!r_list_length (ret)) {
+	if (r_list_empty (ret)) {
 		goto beach;
 	}
 	ht_uu_free (relocs_by_sym);
