@@ -586,7 +586,7 @@ static RList* patch_relocs(RBin *b) {
 		}
 		r_list_append (ext_relocs, reloc);
 	}
-	int num_ext_relocs = r_list_length (ext_relocs);
+	ut64 num_ext_relocs = r_list_length (ext_relocs);
 	if (!num_ext_relocs) {
 		goto beach;
 	}
