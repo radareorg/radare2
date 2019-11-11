@@ -86,7 +86,9 @@ static void reg_cache_init(libgdbr_t *g) {
 
 static bool _isbreaked = false;
 
-static void gdbr_break_process(libgdbr_t *g) {
+static void gdbr_break_process(void *arg) {
+	libgdbr_t *g = (libgdbr_t *)arg;
+	(void)g;
 	_isbreaked = true;
 }
 
@@ -135,6 +137,7 @@ end:
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
 	int ret, i;
+	ret = -1;
 
 	if (!g || !host) {
 		return -1;
@@ -407,7 +410,7 @@ end:
 
 int gdbr_attach(libgdbr_t *g, int pid) {
 	int ret = -1;
-	char *cmd;
+	char *cmd = NULL;
 	size_t buffer_size;
 
 	if (!g || !g->sock) {
@@ -487,7 +490,7 @@ end:
 }
 
 int gdbr_detach_pid(libgdbr_t *g, int pid) {
-	char *cmd;
+	char *cmd = NULL;
 	int ret = -1;
 	size_t buffer_size;
 
@@ -572,7 +575,7 @@ end:
 }
 
 int gdbr_kill_pid(libgdbr_t *g, int pid) {
-	char *cmd;
+	char *cmd = NULL;
 	int ret = -1;
 	size_t buffer_size;
 
@@ -699,6 +702,8 @@ end:
 static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
 	char command[128] = { 0 };
 	int last, ret_len, pkt;
+	ret_len = 0;
+
 	if (!g) {
 		return -1;
 	}
@@ -947,6 +952,7 @@ end:
 int gdbr_write_bin_registers(libgdbr_t *g){
 	int ret = -1;
 	uint64_t buffer_size;
+	char *command = NULL;
 
 	if (!g) {
 		return -1;
@@ -959,7 +965,7 @@ int gdbr_write_bin_registers(libgdbr_t *g){
 	buffer_size = g->data_len * 2 + 8;
 	reg_cache.valid = false;
 
-	char *command = calloc (buffer_size, sizeof (char));
+	command = calloc (buffer_size, sizeof (char));
 	if (!command) {
 		ret = -1;
 		goto end;
@@ -1069,6 +1075,8 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 	unsigned int x, len;
 	char *command, *reg, *buff, *value;
 	// read current register set
+	
+	command = buff = value = NULL;
 
 	if (!g) {
 		return -1;
@@ -1179,6 +1187,7 @@ end:
 int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	char tmp[255] = { 0 };
 	int ret = -1;
+	void *bed = NULL;
 
 	if (!g) {
 		return -1;
@@ -1244,7 +1253,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 		return ret;
 	}
 
-	void *bed = r_cons_sleep_begin ();
+	bed = r_cons_sleep_begin ();
 	while ((ret = read_packet (g, true)) < 0 && !_isbreaked && r_socket_is_connected (g->sock));
 	if (_isbreaked) {
 		_isbreaked = false;
@@ -1452,6 +1461,7 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 	int ret, ret1;
 	char command[64];
 	ut64 data_sz;
+	ret = 0;
 	if (!g || !buf || !max_len) {
 		return -1;
 	}
