@@ -196,6 +196,8 @@ typedef struct libgdbr_t {
 		int arch, bits;
 		bool valid;
 	} target;
+
+	bool isbreaked;
 } libgdbr_t;
 
 /*!

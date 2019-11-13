@@ -84,12 +84,10 @@ static void reg_cache_init(libgdbr_t *g) {
 	}
 }
 
-static bool _isbreaked = false;
-
 static void gdbr_break_process(void *arg) {
 	libgdbr_t *g = (libgdbr_t *)arg;
 	(void)g;
-	_isbreaked = true;
+	g->isbreaked = true;
 }
 
 bool gdbr_lock_tryenter(libgdbr_t *g) {
@@ -105,7 +103,7 @@ bool gdbr_lock_enter(libgdbr_t *g) {
 	void *bed = r_cons_sleep_begin ();
 	r_th_lock_enter (g->gdbr_lock);
 	r_cons_sleep_end (bed);
-	if (_isbreaked) {
+	if (g->isbreaked) {
 		return false;
 	}
 	return true;
@@ -114,6 +112,10 @@ bool gdbr_lock_enter(libgdbr_t *g) {
 void gdbr_lock_leave(libgdbr_t *g) {
 	r_cons_break_pop ();
 	r_th_lock_leave (g->gdbr_lock);
+	// if this is the last lock this thread holds make sure that we disable the break
+	if (!r_th_lock_check (g->gdbr_lock)) {
+		g->isbreaked = false;
+	}
 }
 
 static int gdbr_connect_lldb(libgdbr_t *g) {
@@ -178,7 +180,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	g->connected = 1;
 	void *bed = r_cons_sleep_begin ();
 	// TODO add config possibility here
-	for (i = 0; i < QSUPPORTED_MAX_RETRIES && !_isbreaked; i++) {
+	for (i = 0; i < QSUPPORTED_MAX_RETRIES && !g->isbreaked; i++) {
 		ret = send_msg (g, message);
 		if (ret < 0) {
 			continue;
@@ -194,8 +196,8 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		break;
 	}
 	r_cons_sleep_end (bed);
-	if (_isbreaked) {
-		_isbreaked = false;
+	if (g->isbreaked) {
+		g->isbreaked = false;
 		ret = -1;
 		goto end;
 	}
@@ -1261,9 +1263,9 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	}
 
 	bed = r_cons_sleep_begin ();
-	while ((ret = read_packet (g, true)) < 0 && !_isbreaked && r_socket_is_connected (g->sock));
-	if (_isbreaked) {
-		_isbreaked = false;
+	while ((ret = read_packet (g, true)) < 0 && !g->isbreaked && r_socket_is_connected (g->sock));
+	if (g->isbreaked) {
+		g->isbreaked = false;
 		// Stop target
 		r_socket_write (g->sock, "\x03", 1);
 		// Read the stop reason
