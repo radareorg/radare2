@@ -34,12 +34,12 @@ R_API int r_utf16_decode(const ut8 *ptr, int ptrlen, RRune *ch, bool bigendian) 
 
 /* Convert an UTF-16LE buf into a unicode RRune */
 R_API int r_utf16le_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
-	return r_utf16_decode(ptr, ptrlen, ch, false);
+	return r_utf16_decode (ptr, ptrlen, ch, false);
 }
 
 /* Convert an UTF-16BE buf into a unicode RRune */
 R_API int r_utf16be_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
-	return r_utf16_decode(ptr, ptrlen, ch, true);
+	return r_utf16_decode (ptr, ptrlen, ch, true);
 }
 
 /* Convert a unicode RRune into a UTF-16LE buf */
