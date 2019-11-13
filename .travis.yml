@@ -30,6 +30,21 @@ matrix:
     # OS X with clang
     - os: osx
       env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with GCC on PowerPC
+    - os: linux
+      arch: ppc64le
+      dist: bionic
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with GCC on System Z
+    - os: linux
+      arch: s390x
+      dist: bionic
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with GCC on ARMv8 (64bit)
+    - os: linux
+      arch: arm64
+      dist: bionic
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Run Fuzzing Sanity Test on every push
     # XXX its broken it complains about invalid key
     #- os: linux
@@ -63,6 +78,18 @@ matrix:
       os: linux
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_TESTS_DISABLE=1
   allow_failures:
+    # Linux with GCC on PowerPC
+    - os: linux
+      arch: ppc64le
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with GCC on System Z
+    - os: linux
+      arch: s390x
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with GCC on ARMv8 (64bit)
+    - os: linux
+      arch: arm64
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DR2_ASSERT_STDOUT=1"
 
@@ -79,7 +106,7 @@ before_install:
   - |
     if [ "${FUZZIT}" == "1" ]; then
       docker pull gcr.io/fuzzit-public/builders:llvm9.v1
-    elif [ "$TRAVIS_OS_NAME" != "osx" ]; then
+    elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ]; then
       docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis .
     else
       rm -rf .nvm && git clone -q https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 10.16.3
@@ -88,13 +115,13 @@ before_install:
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
   - |
-    if [ "$TRAVIS_OS_NAME" != "osx" ]; then
+    if [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ]; then
       $SHELL ./travis-extract-var.sh > ${TRAVIS_BUILD_DIR}/docker-env.sh ; cat ${TRAVIS_BUILD_DIR}/docker-env.sh
     fi
   - |
     if [ "${FUZZIT}" == "1" ] ; then
       docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" gcr.io/fuzzit-public/builders:llvm9.v1 -c "cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
-    elif [ "$TRAVIS_OS_NAME" != "osx" ] ; then
+    elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ] ; then
       docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" radareorg/r2-travis:latest -c ". /src/.nvm/nvm.sh; cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
     else
       $SHELL travis-script
