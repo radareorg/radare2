@@ -43,6 +43,7 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 		return -1;
 	}
 	g->remote_type = GDB_REMOTE_TYPE_GDB;
+	g->isbreaked = false;
 	return 0;
 }
 
