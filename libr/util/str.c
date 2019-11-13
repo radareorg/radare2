@@ -1347,11 +1347,12 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 	}
 	switch (enc) {
 	case R_STRING_ENC_UTF16LE:
+	case R_STRING_ENC_UTF16BE:
 	case R_STRING_ENC_UTF32LE:
 		if (buf_size < 0) {
 			return NULL;
 		}
-		if (enc == R_STRING_ENC_UTF16LE) {
+		if (enc == R_STRING_ENC_UTF16LE || enc == R_STRING_ENC_UTF16BE) {
 			end = (char *)r_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0", 2, 2);
 		} else {
 			end = (char *)r_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0\0\0", 4, 4);
@@ -1375,10 +1376,13 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 	while (p < end) {
 		switch (enc) {
 		case R_STRING_ENC_UTF16LE:
+		case R_STRING_ENC_UTF16BE:
 		case R_STRING_ENC_UTF32LE:
-			ch_bytes = (enc == R_STRING_ENC_UTF16LE ?
-				    r_utf16le_decode ((ut8 *)p, end - p, &ch) :
-				    r_utf32le_decode ((ut8 *)p, end - p, &ch));
+			if (enc == R_STRING_ENC_UTF16LE || enc == R_STRING_ENC_UTF16BE) {
+				ch_bytes = r_utf16_decode ((ut8 *)p, end - p, &ch, enc == R_STRING_ENC_UTF16BE);
+			} else {
+				ch_bytes = r_utf32le_decode ((ut8 *)p, end - p, &ch);
+			}
 			if (ch_bytes == 0) {
 				p++;
 				continue;
@@ -1400,10 +1404,11 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 				*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 			}
 		} else {
-			r_str_byte_escape (p, &q, false, false, esc_bslash);
+			r_str_byte_escape (p + (enc == R_STRING_ENC_UTF16BE), &q, false, false, esc_bslash);
 		}
 		switch (enc) {
 		case R_STRING_ENC_UTF16LE:
+		case R_STRING_ENC_UTF16BE:
 			p += ch_bytes < 2 ? 2 : ch_bytes;
 			break;
 		case R_STRING_ENC_UTF32LE:
@@ -1427,6 +1432,10 @@ R_API char *r_str_escape_utf16le(const char *buf, int buf_size, bool show_asciid
 
 R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
 	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot, esc_bslash);
+}
+
+R_API char *r_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16BE, show_asciidot, esc_bslash);
 }
 
 // JSON has special escaping requirements

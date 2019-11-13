@@ -14,6 +14,7 @@ typedef enum {
 	R_STRING_ENC_UTF8 = '8',
 	R_STRING_ENC_UTF16LE = 'u',
 	R_STRING_ENC_UTF32LE = 'U',
+	R_STRING_ENC_UTF16BE = 'b',
 	R_STRING_ENC_GUESS = 'g',
 } RStrEnc;
 
@@ -153,6 +154,7 @@ R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bs
 R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot, bool esc_bslash);
 R_API char *r_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
 R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
+R_API char *r_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
 R_API void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash);
 R_API void r_str_uri_decode(char *buf);
 R_API char *r_str_uri_encode(const char *buf);
