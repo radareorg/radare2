@@ -99,6 +99,7 @@ typedef struct libgdbr_stub_features_t {
 	struct {
 		bool c, C, s, S, t, r;
 	} vcont;
+	bool P;
 } libgdbr_stub_features_t;
 
 /*!
