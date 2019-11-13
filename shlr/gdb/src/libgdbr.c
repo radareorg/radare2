@@ -13,6 +13,7 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	g->no_ack = false;
 	g->stub_features.extended_mode = -1;
 	g->stub_features.pkt_sz = 64;
+	g->stub_features.P = true;
 	g->remote_file_fd = -1;
 	g->is_server = is_server;
 	g->send_max = 2500;

@@ -1000,7 +1000,7 @@ end:
 int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 	int ret = -1;
 	char command[255] = { 0 };
-	if (!g) {
+	if (!g || !g->stub_features.P) {
 		return -1;
 	}
 	if (!gdbr_lock_enter (g)) {
@@ -1014,14 +1014,21 @@ int gdbr_write_register(libgdbr_t *g, int index, char *value, int len) {
 		ret = -1;
 		goto end;
 	}
-	memcpy (command + ret, value, len);
+	// Pad with zeroes
+	memset (command + ret, atoi ("0"), len);
 	pack_hex (value, len, (command + ret));
 	if (send_msg (g, command) < 0) {
 		ret = -1;
 		goto end;
 	}
-	if (read_packet (g, false) >= 0) {
-		handle_P (g);
+	if (read_packet (g, false) < 0 || handle_P (g) < 0) {
+		ret = -1;
+		goto end;
+	}
+	if (g->last_code == MSG_NOT_SUPPORTED) {
+		g->stub_features.P = false;
+		ret = -1;
+		goto end;
 	}
 
 	ret = 0;
@@ -1031,9 +1038,6 @@ end:
 }
 
 int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
-	// static variable that keeps the information if writing
-	// register through packet <P> was possible
-	static int P = 1;
 	int i = 0;
 	int ret = -1;
 	if (!g) {
@@ -1056,13 +1060,11 @@ int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
 		ret = -1;
 		goto end;
 	}
-	if (P) {
-		gdbr_write_register (g, i, value, len);
-		if (g->last_code == MSG_OK) {
-			return 0;
-		}
-		P = 0;
+	if (g->stub_features.P && (ret = gdbr_write_register (g, i, value, len)) == 0) {
+		goto end;
 	}
+
+	// Use 'G' if write_register failed/isn't supported
 	gdbr_read_registers (g);
 	memcpy (g->data + g->registers[i].offset, value, len);
 	gdbr_write_bin_registers (g);
