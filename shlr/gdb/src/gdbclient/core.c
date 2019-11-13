@@ -92,6 +92,14 @@ static void gdbr_break_process(void *arg) {
 	_isbreaked = true;
 }
 
+bool gdbr_lock_tryenter(libgdbr_t *g) {
+	if (!r_th_lock_tryenter (g->gdbr_lock)) {
+		return false;
+	}
+	r_cons_break_push (gdbr_break_process, g);
+	return true;
+}
+
 bool gdbr_lock_enter(libgdbr_t *g) {
 	r_cons_break_push (gdbr_break_process, g);
 	void *bed = r_cons_sleep_begin ();
@@ -668,13 +676,10 @@ int gdbr_read_registers(libgdbr_t *g) {
 	// Don't wait on the lock in read_registers since it's frequently called, including
 	// each time "enter" is pressed. Otherwise the user will be forced to interrupt exit
 	// read_registers constantly while another task is in progress
-	if (r_th_lock_check (g->gdbr_lock)) {
-		return -1;
-	}
-
-	if (!gdbr_lock_enter (g)) {
+	if (!gdbr_lock_tryenter (g)) {
 		goto end;
 	}
+
 	if (g->remote_type == GDB_REMOTE_TYPE_LLDB && !g->stub_features.lldb.g) {
 		ret = gdbr_read_registers_lldb (g);
 		goto end;
