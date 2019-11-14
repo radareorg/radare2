@@ -2227,7 +2227,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 					if (op->operands[1].offset > 127) {
 						data[l++] = 0x80 | op->operands[0].reg << 3 | op->operands[1].regs[0];
 					} else {
-						data[l++] = 0x40 | op->operands[1].regs[0];
+						data[l++] = 0x40 | op->operands[0].reg << 3 | op->operands[1].regs[0];
 					}
 				}
 				if (op->operands[1].offset > 127) {
