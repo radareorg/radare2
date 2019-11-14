@@ -1595,7 +1595,7 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                 : (current && color_current)
                                                 ? pal_curr
                                                 : pal_box4;
-                                        const char *fill_color = (current || label_color == pal_traced)? pal_traced: "white";
+                                        const char *fill_color = ((current && color_current) || label_color == pal_traced)? pal_traced: "white";
                                         nodes++;
                                         if (is_star) {
                                                 char *title = get_title (bbi->addr);
