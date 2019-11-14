@@ -4295,7 +4295,7 @@ LookupTable oplookup[] = {
 	{"jpo", 0, &opjc, 0},
 	{"js", 0, &opjc, 0},
 	{"jz", 0, &opjc, 0},
-	{"lahf", 0, NULL, 0x9f},
+	{"lahf", 0, NULL, 0x9f, 1},
 	{"lea", 0, &oplea, 0},
 	{"leave", 0, NULL, 0xc9, 1},
 	{"les", 0, &oples, 0},
