@@ -333,8 +333,6 @@ static int count_functions(RCore *core) {
 R_API int r_core_search_preludes(RCore *core, bool log) {
 	int ret = -1;
 	const char *prelude = r_config_get (core->config, "anal.prelude");
-	const char *arch = r_config_get (core->config, "asm.arch");
-	int bits = r_config_get_i (core->config, "asm.bits");
 	ut64 from = UT64_MAX;
 	ut64 to = UT64_MAX;
 	const char *where = r_config_get (core->config, "anal.in");
@@ -364,60 +362,20 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 			int kwlen = r_hex_str2bin (prelude, kw);
 			ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
 			free (kw);
-		} else if (strstr (arch, "ppc")) {
-			ret = r_core_search_prelude (core, from, to,
-				(const ut8 *) "\x7c\x08\x02\xa6", 4, NULL, 0);
-		} else if (strstr (arch, "arm")) {
-			switch (bits) {
-			case 16:
-				r_core_search_prelude (core, from, to,
-					(const ut8 *) "\x00\xb5", 2, (const ut8*)"\x0f\xff", 2);
-				ret = r_core_search_prelude (core, from, to,
-					(const ut8 *) "\x08\xb5", 2, (const ut8*)"\x0f\xff", 2);
-				break;
-			case 32:
-				ret = r_core_search_prelude (core, from, to,
-					(const ut8 *) "\x00\x00\x2d\xe9", 4,
-					(const ut8 *) "\x0f\x0f\xff\xff", 4);
-				break;
-			case 64:
-				r_core_search_prelude (core, from, to, (const ut8 *) "\xf0\x00\x00\xd1", 4, (const ut8*)"\xf0\x00\x00\xff", 4);
-				r_core_search_prelude (core, from, to, (const ut8 *) "\xf0\x00\x00\xa9", 4, (const ut8*)"\xf0\x00\x00\xff", 4);
-				// PACISB : 7f2303d5 ff
-				r_core_search_prelude (core, from, to, (const ut8 *) "\x7f\x23\x03\xd5\xff", 5, NULL, 0);
-				break;
-			default:
-				if (log) {
-					eprintf ("ap: Unsupported bits: %d\n", bits);
-				}
-			}
-		} else if (strstr (arch, "mips")) {
-			ret = r_core_search_prelude (core, from, to,
-				(const ut8 *) "\x27\xbd\x00", 3, NULL, 0);
-		} else if (strstr (arch, "x86")) {
-			switch (bits) {
-			case 32:
-				r_core_search_prelude (core, from, to, // mov edi, edi;push ebp; mov ebp,esp
-					(const ut8 *) "\x8b\xff\x55\x8b\xec", 5, NULL, 0);
-				r_core_search_prelude (core, from, to,
-					(const ut8 *) "\x55\x89\xe5", 3, NULL, 0);
-				r_core_search_prelude (core, from, to, // push ebp; mov ebp, esp
-					(const ut8 *) "\x55\x8b\xec", 3, NULL, 0);
-				break;
-			case 64:
-				r_core_search_prelude (core, from, to,
-					(const ut8 *) "\x55\x48\x89\xe5", 4, NULL, 0);
-				r_core_search_prelude (core, from, to,
-					(const ut8 *) "\x55\x48\x8b\xec", 4, NULL, 0);
-				break;
-			default:
-				if (log) {
-					eprintf ("ap: Unsupported bits: %d\n", bits);
-				}
-			}
 		} else {
-			if (log) {
-				eprintf ("ap: Unsupported asm.arch and asm.bits\n");
+			RList *preds = r_anal_preludes (core->anal);
+			if (preds) {
+				RListIter *iter;
+				RSearchKeyword *kw;
+				r_list_foreach (preds, iter, kw) {
+					ret = r_core_search_prelude (core, from, to,
+						kw->bin_keyword, kw->keyword_length,
+						kw->bin_binmask, kw->binmask_length);
+				}
+			} else {
+				if (log) {
+					eprintf ("ap: Unsupported asm.arch and asm.bits\n");
+				}
 			}
 		}
 		if (log) {

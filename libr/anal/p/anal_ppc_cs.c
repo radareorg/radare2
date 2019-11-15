@@ -1226,6 +1226,14 @@ static int archinfo(RAnal *a, int q) {
 	return 4;
 }
 
+static RList *anal_preludes(RAnal *anal) {
+#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
+	RSearchKeyword* kw;
+	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
+	KW ("\x7c\x08\x02\xa6", 4, NULL, 0);
+	return l;
+}
+
 RAnalPlugin r_anal_plugin_ppc_cs = {
 	.name = "ppc",
 	.desc = "Capstone PowerPC analysis",
@@ -1234,6 +1242,7 @@ RAnalPlugin r_anal_plugin_ppc_cs = {
 	.arch = "ppc",
 	.bits = 32 | 64,
 	.archinfo = archinfo,
+	.preludes = anal_preludes,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,
 };

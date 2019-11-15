@@ -929,6 +929,7 @@ static void flag_every_function(RCore *core) {
 	RAnalFunction *fcn;
 	r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
+eprintf ("--- %s %llx\n", fcn->name, fcn->addr);
 		r_flag_set (core->flags, fcn->name,
 			fcn->addr, r_anal_fcn_size (fcn));
 	}
@@ -2539,16 +2540,16 @@ static char * getFunctionName (RCore *core, ut64 off, const char *name, bool pre
 }
 
 /* TODO: move into r_anal_fcn_rename(); */
-static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefix) {
+static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool prefix) {
 	r_return_val_if_fail (core && _name, false);
-	char *name = getFunctionName (core, off, _name, prefix);
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, R_ANAL_FCN_TYPE_ANY);
+	char *name = getFunctionName (core, addr, _name, prefix);
+	// RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
+	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
 	if (fcn) {
 		free (fcn->name);
 		fcn->name = name;
 		if (core->anal->cb.on_fcn_rename) {
-			core->anal->cb.on_fcn_rename (core->anal,
-					core->anal->user, fcn, name);
+			core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, name);
 		}
 		return true;
 	}
@@ -3312,7 +3313,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					if (fcnname) {
 						fcnname++;
 						 if (strcmp (fcn->name, fcnname)) {
-							setFunctionName (core, addr, fcnname, false);
+							(void)__setFunctionName (core, addr, fcnname, false);
 							f = r_anal_get_fcn_in (core->anal, addr, -1);
 						 }
 						 r_anal_str_to_fcn (core->anal, f, fcnstr);
@@ -3641,7 +3642,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (*name == '?') {
 				eprintf ("Usage: afn newname [off]   # set new name to given function\n");
 			} else {
-				if (!*name || !setFunctionName (core, off, name, false)) {
+				if (!*name || !__setFunctionName (core, off, name, false)) {
 					eprintf ("Cannot find function at 0x%08" PFMT64x "\n", off);
 				}
 			}
@@ -3783,13 +3784,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			// depth = 1; // or 1?
 			// disable hasnext
 		}
-
 		//r_core_anal_undefine (core, core->offset);
 		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 		if (fcn) {
 			/* ensure we use a proper name */
-			setFunctionName (core, addr, fcn->name, false);
+			__setFunctionName (core, addr, fcn->name, false);
 			if (core->anal->opt.vars) {
 				r_core_recover_vars (core, fcn, true);
 			}
@@ -3853,8 +3853,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 		}
 		if (name) {
-			if (*name && !setFunctionName (core, addr, name, true)) {
-				eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", (ut64)addr);
+			if (*name && !__setFunctionName (core, addr, name, true)) {
+				eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
 			}
 			free (name);
 		}

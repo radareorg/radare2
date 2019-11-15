@@ -3528,6 +3528,28 @@ static int archinfo(RAnal *anal, int q) {
 	return 0;
 }
 
+static RList *anal_preludes(RAnal *anal) {
+#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
+	RSearchKeyword* kw;
+	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
+	switch (anal->bits) {
+	case 32:
+		KW ("\x8b\xff\x55\x8b\xec", 5, NULL, 0);
+		KW ("\x55\x89\xe5", 3, NULL, 0);
+		KW ("\x55\x8b\xec", 3, NULL, 0);
+		break;
+	case 64:
+		KW ("\x55\x48\x89\xe5", 4, NULL, 0);
+		KW ("\x55\x48\x8b\xec", 4, NULL, 0);
+		break;
+	default:
+		r_list_free (l);
+		l = NULL;
+		break;
+	}
+	return l;
+}
+
 RAnalPlugin r_anal_plugin_x86_cs = {
 	.name = "x86",
 	.desc = "Capstone X86 analysis",
@@ -3536,6 +3558,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.arch = "x86",
 	.bits = 16|32|64,
 	.op = &analop,
+	.preludes = anal_preludes,
 	.archinfo = archinfo,
 	.get_reg_profile = &get_reg_profile,
 	.init = init,
