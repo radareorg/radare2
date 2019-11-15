@@ -1316,6 +1316,8 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                         char *from = get_title (bbi->addr);
                                         char *to = get_title (bbi->jump);
                                         r_cons_printf ("age %s %s\n", from, to);
+                                        free(from);
+                                        free(to);
                                 } else {
                                         r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
                                                         "[color=\"%s\"];\n", bbi->addr, bbi->jump,
@@ -1335,6 +1337,8 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                         char *from = get_title (bbi->addr);
                                         char *to = get_title (bbi->fail);
                                         r_cons_printf ("age %s %s\n", from, to);
+                                        free(from);
+                                        free(to);
                                 } else {
                                         r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
                                                         "[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
@@ -1356,6 +1360,8 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                                 char *from = get_title (bbi->addr);
                                                 char *to = get_title (bbi->fail);
                                                 r_cons_printf ("%age %s %s\n", from, to);
+                                                free(from);
+                                                free(to);
                                         } else {
                                                 r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
                                                                        "[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
@@ -1383,6 +1389,8 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                                 char *from = get_title (caseop->addr);
                                                 char *to = get_title (caseop->jump);
                                                 r_cons_printf ("age %s %s\n", from ,to);
+                                                free(from);
+                                                free(to);
                                         } else {
                                                 r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" " \
                                                 "[color2=\"%s\"];\n", caseop->addr, caseop->jump, pal_fail);
@@ -1392,6 +1400,9 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                         }
                 }
         }
+        free(pal_jump);
+        free(pal_fail);
+        free(pal_trfa);
         return nodes;
 }
 
