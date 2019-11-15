@@ -3,7 +3,7 @@
 language: generic
 dist: bionic
 conditions: v1
-sudo: required
+sudo: true
 
 branches:
   only:
