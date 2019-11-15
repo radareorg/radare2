@@ -1319,7 +1319,7 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                         free(from);
                                         free(to);
                                 } else {
-                                        r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+                                        r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
                                                         "[color=\"%s\"];\n", bbi->addr, bbi->jump,
                                                         bbi->fail != -1 ? pal_jump : pal_trfa);
                                         core_anal_color_curr_node (core, bbi);
@@ -1340,7 +1340,7 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                         free(from);
                                         free(to);
                                 } else {
-                                        r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+                                        r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
                                                         "[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
                                         core_anal_color_curr_node (core, bbi);
                                 }
@@ -1363,7 +1363,7 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                                 free(from);
                                                 free(to);
                                         } else {
-                                                r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+                                                r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
                                                                        "[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
                                                 core_anal_color_curr_node (core, bbi);
                                         }
@@ -1392,7 +1392,7 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                                 free(from);
                                                 free(to);
                                         } else {
-                                                r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" " \
+                                                r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" " \
                                                 "[color2=\"%s\"];\n", caseop->addr, caseop->jump, pal_fail);
                                                 core_anal_color_curr_node (core, bbi);
                                         }
