@@ -92,6 +92,7 @@ int gdbr_cleanup(libgdbr_t *g) {
 	g->send_len = 0;
 	R_FREE (g->send_buff);
 	R_FREE (g->read_buff);
+	r_socket_free (g->sock);
 	r_th_lock_free (g->gdbr_lock);
 	return 0;
 }
