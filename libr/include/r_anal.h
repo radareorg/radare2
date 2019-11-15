@@ -12,6 +12,7 @@
 #include <r_io.h>
 #include <r_reg.h>
 #include <r_list.h>
+#include <r_search.h>
 #include <r_util.h>
 #include <r_bind.h>
 #include <r_syscall.h>
@@ -627,6 +628,7 @@ typedef struct r_anal_options_t {
 	bool armthumb; //
 	bool endsize; // chop function size which is known to be buggy but goodie too
 	bool delay;
+	int tailcall;
 } RAnalOptions;
 
 typedef enum {
@@ -1320,6 +1322,7 @@ typedef struct r_anal_plugin_t {
 	int (*reset_counter) (RAnal *anal, ut64 start_addr);
 	int (*archinfo)(RAnal *anal, int query);
 	ut8* (*anal_mask)(RAnal *anal, int size, const ut8 *data, ut64 at);
+	RList* (*preludes)(RAnal *anal);
 
 	// legacy r_anal_functions
 	RAnalOpCallback op;
@@ -1929,6 +1932,9 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode);
 R_API void r_anal_rtti_recover_all(RAnal *anal);
 
 R_API void r_anal_colorize_bb(RAnal *anal, ut64 addr, ut32 color);
+
+R_API RList *r_anal_preludes(RAnal *anal);
+R_API bool r_anal_is_prelude(RAnal *anal, const ut8 *data, int len);
 
 /* classes */
 typedef struct r_anal_method_t {

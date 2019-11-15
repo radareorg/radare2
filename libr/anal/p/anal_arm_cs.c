@@ -3606,6 +3606,30 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	return ret;
 }
 
+static RList *anal_preludes(RAnal *anal) {
+#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
+	RSearchKeyword* kw;
+	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
+	switch (anal->bits) {
+	case 16:
+		KW ("\x00\xb5", 2, "\x0f\xff", 2);
+		KW ("\x08\xb5", 2, "\x0f\xff", 2);
+		break;
+	case 32:
+		KW("\x00\x00\x2d\xe9", 4, "\x0f\x0f\xff\xff", 4);
+		break;
+	case 64:
+		KW ("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
+		KW ("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
+		KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0); 
+		break;
+	default:
+		r_list_free (l);
+		l = NULL;
+	}
+	return l;
+}
+
 RAnalPlugin r_anal_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM analyzer",
@@ -3615,6 +3639,7 @@ RAnalPlugin r_anal_plugin_arm_cs = {
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
 	.anal_mask = anal_mask,
+	.preludes = anal_preludes,
 	.bits = 16 | 32 | 64,
 	.op = &analop,
 };

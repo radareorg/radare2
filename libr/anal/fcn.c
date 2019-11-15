@@ -1133,7 +1133,22 @@ repeat:
 			}
 			ret = r_anal_fcn_bb (anal, fcn, op.jump, depth);
 			FITFCNSZ ();
-
+			int tc = anal->opt.tailcall;
+			if (tc) {
+				// eprintf ("TAIL CALL AT 0x%llx\n", op.addr);
+				int diff = op.jump - op.addr;
+				if (tc < 0) {
+					ut8 buf[32];
+					(void)anal->iob.read_at (anal->iob.io, op.jump, (ut8 *) buf, sizeof (buf));
+					if (r_anal_is_prelude (anal, buf, sizeof (buf))) {
+						fcn_recurse (anal, fcn, op.jump, anal->opt.bb_max_size, depth - 1);
+					}
+				} else if (R_ABS (diff) > tc) {
+					(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
+					fcn_recurse (anal, fcn, op.jump, anal->opt.bb_max_size, depth - 1);
+					return R_ANAL_RET_END;
+				}
+			}
 			goto beach;
 #endif
 			break;
@@ -1217,7 +1232,7 @@ repeat:
 			(void) r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
 
 			if (op.ptr != UT64_MAX && r_anal_noreturn_at (anal, op.ptr)) {
-				RAnalFunction *f = r_anal_get_fcn_at(anal, op.ptr, 0);
+				RAnalFunction *f = r_anal_get_fcn_at (anal, op.ptr, 0);
 				if (f) {
 					f->is_noreturn = true;
 				}
@@ -1230,7 +1245,7 @@ repeat:
 			(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
 
 			if (r_anal_noreturn_at (anal, op.jump)) {
-				RAnalFunction *f = r_anal_get_fcn_at(anal, op.jump, 0);
+				RAnalFunction *f = r_anal_get_fcn_at (anal, op.jump, 0);
 				if (f) {
 					f->is_noreturn = true;
 				}
@@ -1408,30 +1423,12 @@ R_API int r_anal_fcn_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth) {
 	return ret;
 }
 
-static bool check_preludes(ut8 *buf, ut16 bufsz) {
-	if (bufsz < 10) {
-		return false;
-	}
-	if (!memcmp (buf, (const ut8 *) "\x55\x89\xe5", 3)) {
-		return true;
-	} else if (!memcmp (buf, (const ut8 *) "\x55\x8b\xec", 3)) {
-		return true;
-	} else if (!memcmp (buf, (const ut8 *) "\x8b\xff", 2)) {
-		return true;
-	} else if (!memcmp (buf, (const ut8 *) "\x55\x48\x89\xe5", 4)) {
-		return true;
-	} else if (!memcmp (buf, (const ut8 *) "\x55\x48\x8b\xec", 4)) {
-		return true;
-	}
-	return false;
-}
-
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
 	RAnalOp op = {
 		0
 	};
 	int i, oplen, opcnt = 0, pushcnt = 0, movcnt = 0, brcnt = 0;
-	if (check_preludes (buf, bufsz)) {
+	if (r_anal_is_prelude (anal, buf, bufsz)) {
 		return true;
 	}
 	for (i = 0; i < bufsz && opcnt < 10; i += oplen, opcnt++) {
