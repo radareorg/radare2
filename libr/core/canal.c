@@ -1311,36 +1311,36 @@ static int core_anal_graph_construct_edges (RCore *core, RAnalFunction *fcn, int
                                 r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
                                         "  <img class=\"connector-end\" src=\"img/arrow.gif\" /></div>\n",
                                         bbi->addr, bbi->jump);
-                                } else if (!is_json && !is_keva) {
-                                        if (is_star) {
-                                                char *from = get_title (bbi->addr);
-                                                char *to = get_title (bbi->jump);
-                                                r_cons_printf ("age %s %s\n", from, to);
-                                        } else {
-                                                r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-                                                               "[color=\"%s\"];\n", bbi->addr, bbi->jump,
-                                                               bbi->fail != -1 ? pal_jump : pal_trfa);
-                                                core_anal_color_curr_node (core, bbi);
-                                        }
+                        } else if (!is_json && !is_keva) {
+                                if (is_star) {
+                                        char *from = get_title (bbi->addr);
+                                        char *to = get_title (bbi->jump);
+                                        r_cons_printf ("age %s %s\n", from, to);
+                                } else {
+                                        r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+                                                        "[color=\"%s\"];\n", bbi->addr, bbi->jump,
+                                                        bbi->fail != -1 ? pal_jump : pal_trfa);
+                                        core_anal_color_curr_node (core, bbi);
                                 }
+                        }
                 }
                 if (bbi->fail != -1) {
                         nodes++;
                         if (is_html) {
                                 r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
-                                                       "  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
-                                                       bbi->addr, bbi->fail);
-                                } else if (!is_keva && !is_json) {
-                                        if (is_star) {
-                                                char *from = get_title (bbi->addr);
-                                                char *to = get_title (bbi->fail);
-                                                r_cons_printf ("age %s %s\n", from, to);
-                                        } else {
-                                                r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-                                                               "[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
-                                                core_anal_color_curr_node (core, bbi);
-                                        }
+                                                    "  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
+                                                    bbi->addr, bbi->fail);
+                        } else if (!is_keva && !is_json) {
+                                if (is_star) {
+                                        char *from = get_title (bbi->addr);
+                                        char *to = get_title (bbi->fail);
+                                        r_cons_printf ("age %s %s\n", from, to);
+                                } else {
+                                        r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+                                                        "[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
+                                        core_anal_color_curr_node (core, bbi);
                                 }
+                        }
                 }
                 if (bbi->switch_op) {
                         RAnalCaseOp *caseop;
