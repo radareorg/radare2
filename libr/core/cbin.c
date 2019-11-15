@@ -224,21 +224,19 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	RListIter *last_processed = NULL;
 	RBinString *string;
 	RBinSection *section;
-	char *q;
+	PJ *pj = NULL;
 
 	bin->minstrlen = minstr;
 	bin->maxstrlen = maxstr;
 	if (IS_MODE_JSON (mode)) {
-		r_cons_printf ("[");
-	}
-	if (IS_MODE_RAD (mode)) {
+		pj = pj_new ();
+		pj_a (pj);
+	} else if (IS_MODE_RAD (mode)) {
 		r_cons_println ("fs strings");
-	}
-	if (IS_MODE_SET (mode) && r_config_get_i (r->config, "bin.strings")) {
+	} else if (IS_MODE_SET (mode) && r_config_get_i (r->config, "bin.strings")) {
 		r_flag_space_set (r->flags, R_FLAGS_FS_STRINGS);
 		r_cons_break_push (NULL, NULL);
-	}
-	if (IS_MODE_NORMAL (mode)) {
+	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("[Strings]\n");
 		r_table_set_columnsf (table, "nXXnnsss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
 	}
@@ -299,14 +297,15 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			r_cons_println (string->string);
 		} else if (IS_MODE_JSON (mode)) {
 			int *block_list;
-			q = r_base64_encode_dyn (string->string, -1);
-			r_cons_printf ("%s{\"vaddr\":%"PFMT64u
-				",\"paddr\":%"PFMT64u",\"ordinal\":%d"
-				",\"size\":%d,\"length\":%d,\"section\":\"%s\","
-				"\"type\":\"%s\",\"string\":\"%s\"",
-				last_processed ? ",": "",
-				vaddr, paddr, string->ordinal, string->size,
-				string->length, section_name, type_string, q);
+			pj_o (pj);
+			pj_kn (pj, "vaddr", vaddr);
+			pj_kn (pj, "paddr", paddr);
+			pj_kn (pj, "ordinal", string->ordinal);
+			pj_kn (pj, "size", string->size);
+			pj_kn (pj, "length", string->length);
+			pj_ks (pj, "section", section_name);
+			pj_ks (pj, "type", type_string);
+			pj_ks (pj, "string", string->string);
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
@@ -320,20 +319,17 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 						break;
 					}
 					int *block_ptr = block_list;
-					r_cons_printf (",\"blocks\":[");
+					pj_k (pj, "blocks");
+					pj_a (pj);
 					for (; *block_ptr != -1; block_ptr++) {
-						if (block_ptr != block_list) {
-							r_cons_printf (",");
-						}
 						const char *utfName = r_utf_block_name (*block_ptr);
-						r_cons_printf ("\"%s\"", utfName? utfName: "");
+						pj_s (pj, utfName? utfName: "");
 					}
-					r_cons_printf ("]");
+					pj_end (pj);
 					R_FREE (block_list);
 				}
 			}
-			r_cons_printf ("}");
-			free (q);
+			pj_end (pj);
 		} else if (IS_MODE_RAD (mode)) {
 			char *f_name = strdup (string->string);
 			r_name_filter (f_name, R_FLAG_NAME_SIZE);
@@ -411,12 +407,13 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	}
 	R_FREE (b64.string);
 	if (IS_MODE_JSON (mode)) {
-		r_cons_printf ("]");
-	}
-	if (IS_MODE_SET (mode)) {
+		pj_end (pj);
+		r_cons_printf ("%s", pj_string (pj));
+		pj_free (pj);
+		pj = NULL;
+	} else if (IS_MODE_SET (mode)) {
 		r_cons_break_pop ();
-	}
-	if (IS_MODE_NORMAL (mode)) {
+	} else if (IS_MODE_NORMAL (mode)) {
 		if (r->table_query) {
 			r_table_query (table, r->table_query);
 		}
@@ -486,24 +483,20 @@ static bool bin_strings(RCore *r, int mode, int va) {
 	RBinFile *binfile = r_bin_cur (r->bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	int rawstr = r_config_get_i (r->config, "bin.rawstr");
-	if (!binfile) {
+	if (!binfile || !plugin) {
 		return false;
 	}
 	if (!r_config_get_i (r->config, "bin.strings")) {
 		return false;
 	}
-	if (!plugin) {
-		return false;
-	}
 	if (plugin->info && plugin->name) {
 		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
 			if (IS_MODE_JSON (mode)) {
-				r_cons_print("[]");
+				r_cons_print ("[]");
 			}
 			return false;
 		}
 	}
-
 	if (!(list = r_bin_get_strings (r->bin))) {
 		return false;
 	}
@@ -3780,11 +3773,10 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		r_core_cmd0 (core, "aar");
 	}
 #endif
-	if ((action & R_CORE_BIN_ACC_STRINGS)) {
-		ret &= bin_strings (core, mode, va);
-	}
 	if ((action & R_CORE_BIN_ACC_RAW_STRINGS)) {
 		ret &= bin_raw_strings (core, mode, va);
+	} else if ((action & R_CORE_BIN_ACC_STRINGS)) {
+		ret &= bin_strings (core, mode, va);
 	}
 	if ((action & R_CORE_BIN_ACC_INFO)) {
 		ret &= bin_info (core, mode, loadaddr);
