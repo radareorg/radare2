@@ -785,3 +785,26 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	}
 	return list;
 }
+
+R_API RStrEnc r_utf_bom_encoding(const ut8 *ptr, int ptrlen) {
+	if (ptrlen > 3) {
+		if (ptr[0] == 0xff && ptr[1] == 0xfe && !ptr[2] && !ptr[3]) {
+			return R_STRING_ENC_UTF32LE;
+		}
+		/* TODO: R_STRING_ENC_UTF32BE */
+	}
+	if (ptrlen > 2) {
+		if (ptr[0] == 0xef && ptr[1] == 0xbb && ptr[2] == 0xbf) {
+			return R_STRING_ENC_UTF8;
+		}
+	}
+	if (ptrlen > 1) {
+		if (ptr[0] == 0xff && ptr[1] == 0xfe) {
+			return R_STRING_ENC_UTF16LE;
+		}
+		if (ptr[0] == 0xfe && ptr[1] == 0xff) {
+			return R_STRING_ENC_UTF16BE;
+		}
+	}
+	return R_STRING_ENC_GUESS;
+}

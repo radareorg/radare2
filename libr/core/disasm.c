@@ -3697,7 +3697,11 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	char *escstr = NULL;
 	const char *prefix = "";
 	bool esc_bslash = ds->core->print->esc_bslash;
-	switch (ds->strenc) {
+	RStrEnc strenc = ds->strenc;
+	if (strenc == R_STRING_ENC_GUESS) {
+		strenc = r_utf_bom_encoding ((ut8 *)str, len);
+	}
+	switch (strenc) {
 	case R_STRING_ENC_LATIN1:
 		escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash, is_comment);
 		break;
@@ -4005,9 +4009,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		}
 		bool print_msg = true;
 #if 1
-		if (ds->strenc == R_STRING_ENC_GUESS &&
-		    !(IS_PRINTABLE (*msg) || IS_WHITECHAR (*msg)
-		      || (len > 1 && !memcmp (msg, "\xff\xfe", 2)))) {
+		if (ds->strenc == R_STRING_ENC_GUESS
+		    && r_utf_bom_encoding ((ut8 *)msg, len) == R_STRING_ENC_GUESS
+		    && !(IS_PRINTABLE (*msg) || IS_WHITECHAR (*msg))) {
 			print_msg = false;
 		} else {
 			msg[len - 1] = 0;
