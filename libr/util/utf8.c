@@ -791,7 +791,9 @@ R_API RStrEnc r_utf_bom_encoding(const ut8 *ptr, int ptrlen) {
 		if (ptr[0] == 0xff && ptr[1] == 0xfe && !ptr[2] && !ptr[3]) {
 			return R_STRING_ENC_UTF32LE;
 		}
-		/* TODO: R_STRING_ENC_UTF32BE */
+		if (!ptr[0] && !ptr[1] && ptr[2] == 0xfe && ptr[3] == 0xff) {
+			return R_STRING_ENC_UTF32BE;
+		}
 	}
 	if (ptrlen > 2) {
 		if (ptr[0] == 0xef && ptr[1] == 0xbb && ptr[2] == 0xbf) {

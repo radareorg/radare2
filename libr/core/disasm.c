@@ -746,6 +746,8 @@ static RDisasmState * ds_init(RCore *core) {
 		ds->strenc = R_STRING_ENC_UTF32LE;
 	} else if (!strcmp (strenc_str, "utf16be")) {
 		ds->strenc = R_STRING_ENC_UTF16BE;
+	} else if (!strcmp (strenc_str, "utf32be")) {
+		ds->strenc = R_STRING_ENC_UTF32BE;
 	} else {
 		ds->strenc = R_STRING_ENC_GUESS;
 	}
@@ -3719,6 +3721,10 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	case R_STRING_ENC_UTF16BE:
 		escstr = r_str_escape_utf16be (str, len, ds->show_asciidot, esc_bslash);
 		prefix = "ub";
+		break;
+	case R_STRING_ENC_UTF32BE:
+		escstr = r_str_escape_utf32be (str, len, ds->show_asciidot, esc_bslash);
+		prefix = "Ub";
 		break;
 	default:
 		str_len = strlen (str);
