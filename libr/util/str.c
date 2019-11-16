@@ -1349,6 +1349,7 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 	case R_STRING_ENC_UTF16LE:
 	case R_STRING_ENC_UTF16BE:
 	case R_STRING_ENC_UTF32LE:
+	case R_STRING_ENC_UTF32BE:
 		if (buf_size < 0) {
 			return NULL;
 		}
@@ -1378,10 +1379,11 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 		case R_STRING_ENC_UTF16LE:
 		case R_STRING_ENC_UTF16BE:
 		case R_STRING_ENC_UTF32LE:
+		case R_STRING_ENC_UTF32BE:
 			if (enc == R_STRING_ENC_UTF16LE || enc == R_STRING_ENC_UTF16BE) {
 				ch_bytes = r_utf16_decode ((ut8 *)p, end - p, &ch, enc == R_STRING_ENC_UTF16BE);
 			} else {
-				ch_bytes = r_utf32le_decode ((ut8 *)p, end - p, &ch);
+				ch_bytes = r_utf32_decode ((ut8 *)p, end - p, &ch, enc == R_STRING_ENC_UTF32BE);
 			}
 			if (ch_bytes == 0) {
 				p++;
@@ -1404,7 +1406,8 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 				*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 			}
 		} else {
-			r_str_byte_escape (p + (enc == R_STRING_ENC_UTF16BE), &q, false, false, esc_bslash);
+			int offset = enc == R_STRING_ENC_UTF16BE ? 1 : enc == R_STRING_ENC_UTF32BE ? 3 : 0;
+			r_str_byte_escape (p + offset, &q, false, false, esc_bslash);
 		}
 		switch (enc) {
 		case R_STRING_ENC_UTF16LE:
@@ -1412,6 +1415,7 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 			p += ch_bytes < 2 ? 2 : ch_bytes;
 			break;
 		case R_STRING_ENC_UTF32LE:
+		case R_STRING_ENC_UTF32BE:
 			p += 4;
 			break;
 		default:
@@ -1436,6 +1440,10 @@ R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciid
 
 R_API char *r_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
 	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16BE, show_asciidot, esc_bslash);
+}
+
+R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash);
 }
 
 // JSON has special escaping requirements
