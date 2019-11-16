@@ -929,7 +929,6 @@ static void flag_every_function(RCore *core) {
 	RAnalFunction *fcn;
 	r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-eprintf ("--- %s %llx\n", fcn->name, fcn->addr);
 		r_flag_set (core->flags, fcn->name,
 			fcn->addr, r_anal_fcn_size (fcn));
 	}
