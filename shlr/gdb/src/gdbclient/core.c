@@ -965,9 +965,9 @@ end:
 	return ret;
 }
 
-int gdbr_write_bin_registers(libgdbr_t *g){
+int gdbr_write_bin_registers(libgdbr_t *g, const char *regs, int len) {
 	int ret = -1;
-	uint64_t buffer_size;
+	uint64_t buffer_size = 0;
 	char *command = NULL;
 
 	if (!g) {
@@ -978,7 +978,7 @@ int gdbr_write_bin_registers(libgdbr_t *g){
 		goto end;
 	}
 
-	buffer_size = g->data_len * 2 + 8;
+	buffer_size = len * 2 + 8;
 	reg_cache.valid = false;
 
 	command = calloc (buffer_size, sizeof (char));
@@ -987,7 +987,7 @@ int gdbr_write_bin_registers(libgdbr_t *g){
 		goto end;
 	}
 	snprintf (command, buffer_size, "%s", CMD_WRITEREGS);
-	pack_hex (g->data, g->data_len, command + 1);
+	pack_hex (regs, len, command + 1);
 	if (send_msg (g, command) < 0) {
 		ret = -1;
 		goto end;
@@ -1078,7 +1078,7 @@ int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
 	// Use 'G' if write_register failed/isn't supported
 	gdbr_read_registers (g);
 	memcpy (g->data + g->registers[i].offset, value, len);
-	gdbr_write_bin_registers (g);
+	gdbr_write_bin_registers (g, g->data, g->data_len);
 
 	ret = 0;
 end:

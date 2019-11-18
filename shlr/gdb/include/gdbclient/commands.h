@@ -94,7 +94,7 @@ int gdbr_read_registers(libgdbr_t *g);
  * i.e. eax=0x123,ebx=0x234
  * \returns a failurre code (currently -1) or 0 if call successfully
  */
-int gdbr_write_bin_registers(libgdbr_t *g);
+int gdbr_write_bin_registers(libgdbr_t *g, const char *regs, int len);
 int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len);
 int gdbr_write_register(libgdbr_t *g, int index, char *value, int len);
 int gdbr_write_registers(libgdbr_t *g, char *registers);
