@@ -27,7 +27,6 @@ gdb_reg_t gdb_regs_x86_64[] = {
 	{ "es", 152, 4 },
 	{ "fs", 156, 4 },
 	{ "gs", 160, 4 },
-/* Commented until the long registers are implemented
 	{ "st0", 164, 10 },
 	{ "st1", 174, 10 },
 	{ "st2", 184, 10 },
@@ -61,7 +60,6 @@ gdb_reg_t gdb_regs_x86_64[] = {
 	{ "xmm14", 500, 16 },
 	{ "xmm15", 516, 16 },
 	{ "mxcsr", 532, 4 },
-*/
 	{ "", 0, 0 }
 };
 
@@ -83,7 +81,6 @@ gdb_reg_t gdb_regs_x86_32[] = {
 	{ "es", 52, 4 },
 	{ "fs", 56, 4 },
 	{ "gs", 60, 4 },
-/* Commented until the long registers are implemented
 	{ "st0", 64, 10 },
 	{ "st1", 74, 10 },
 	{ "st2", 84, 10 },
@@ -109,7 +106,6 @@ gdb_reg_t gdb_regs_x86_32[] = {
 	{ "xmm6", 272, 16 },
 	{ "xmm7", 288, 16 },
 	{ "mxcsr", 304, 4 },
-*/
 	{ "", 0, 0 }
 };
 

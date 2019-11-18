@@ -162,11 +162,6 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		if (!tmpreg) {
 			continue;
 		}
-		// regsize > 64 not supported by r2 currently
-		if (tmpreg->size > 8) {
-			regoff += tmpreg->size;
-			continue;
-		}
 		memcpy (arch_regs[regnum].name, tmpreg->name, sizeof (tmpreg->name));
 		arch_regs[regnum].size = tmpreg->size;
 		arch_regs[regnum].offset = regoff;
@@ -491,7 +486,7 @@ exit_err:
 }
 
 static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias) {
-	char *regstr_end, *regname, *regtype, *tmp1;
+	char *regstr_end, *regname, *regtype, *tmp1, *tmpregstr, *feature_end, *typegroup;
 	ut32 flagnum, regname_len, regsize, regnum;
 	RList *regs;
 	RListIter *iter;
@@ -500,10 +495,37 @@ static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias) {
 	if (!(regs = r_list_new ())) {
 		return NULL;
 	}
-	while ((regstr = strstr (regstr, "<reg"))) {
-		if (!(regstr_end = strchr (regstr, '/'))) {
+	// Set gpr as the default register type for all of the following registers until `feature` is found
+	typegroup = "gpr";
+	while ((tmpregstr = strstr (regstr, "<reg"))) {
+		if (!(regstr_end = strchr (tmpregstr, '/'))) {
 			goto exit_err;
 		}
+		// Most regs don't have group/type params, attempt to get the type from `feature`.
+		// Multiple registers can be wrapped with a certain feature so this typegroup
+		// applies on all of the following registers until </feature>
+		if (r_str_startswith (regstr, "<feature")) {
+			// Verify that we found the feature in the current node
+			feature_end = strstr (regstr, ">");
+			if ((tmp1 = strstr (regstr, "core")) != NULL && tmp1 < feature_end) {
+				typegroup = "gpr";
+			} else if ((tmp1 = strstr (regstr, "segments")) != NULL && tmp1 < feature_end) {
+				typegroup = "seg";
+			} else if ((tmp1 = strstr (regstr, "linux")) != NULL && tmp1 < feature_end) {
+				typegroup = "gpr";
+			} else if ((tmp1 = strstr (regstr, "avx")) != NULL && tmp1 < feature_end) {
+				typegroup = "ymm";
+			} else if ((tmp1 = strstr (regstr, "mpx")) != NULL && tmp1 < feature_end) {
+				typegroup = "flg";
+			} else {
+				typegroup = "gpr";
+			}
+		}
+		// Reset to typegroup in case the previous register had a group/type parameter
+		// that indicated it's specific type which doesn't correspond to type defined by
+		// the parent feature tag
+		regtype = typegroup;
+		regstr = tmpregstr;
 		*regstr_end = '\0';
 		// name
 		if (!(regname = strstr (regstr, "name="))) {
@@ -532,13 +554,19 @@ static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias) {
 			}
 			regnum = strtoul (tmp1, NULL, 10);
 		}
-		// type
-		regtype = "gpr";
 		flagnum = r_list_length (flags);
 		if ((tmp1 = strstr (regstr, "group="))) {
 			tmp1 += 7;
 			if (r_str_startswith (tmp1, "float")) {
 				regtype = "fpu";
+			} else if (r_str_startswith (tmp1, "mmx")) {
+				regtype = "mmx";
+			} else if (r_str_startswith (tmp1, "sse")) {
+				regtype = "xmm";
+			} else if (r_str_startswith (tmp1, "vector")) {
+				regtype = "ymm";
+			} else if (r_str_startswith (tmp1, "system")) {
+				regtype = "seg";
 			}
 			// We need type information in r2 register profiles
 		} else if ((tmp1 = strstr (regstr, "type="))) {
@@ -596,7 +624,12 @@ static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias) {
 			r_list_set_n (regs, regnum, tmpreg);
 		}
 		*regstr_end = '/';
-		regstr = regstr_end + 2;
+		regstr = regstr_end + 3;
+		if (r_str_startswith (regstr, "</feature>")) {
+			regstr += sizeof ("</feature>");
+			// Revert to default
+			typegroup = "gpr";
+		}
 	}
 	regs->free = free;
 	return regs;
