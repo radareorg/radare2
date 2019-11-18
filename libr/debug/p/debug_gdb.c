@@ -291,7 +291,7 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	// some implementations of the gdb protocol are acting weird.
 	// so winedbg is not able to write registers through the <G> packet
-	// and also it does not return the whole gdb register profile after\n"
+	// and also it does not return the whole gdb register profile after
 	// calling <g>
 	// so this workaround resizes the small register profile buffer
 	// to the whole set and fills the rest with 0
@@ -309,29 +309,13 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	// since this was the behaviour prior to the change.
 	bool bigendian = dbg->corebind.core && \
 					 dbg->corebind.cfggeti (dbg->corebind.core, "cfg.bigendian");
+	RRegArena *arena = dbg->reg->regset[type].arena;
 	for (;;) {
 		current = r_reg_next_diff (dbg->reg, type, reg_buf, buflen, current, bits);
 		if (!current) {
 			break;
 		}
-		ut64 val = r_reg_get_value (dbg->reg, current);
-		int bytes = bits / 8;
-		if (bigendian) {
-			// TODO: validate that it's correct for all kinds of archs
-			switch (bytes) {
-			case 2:
-				val = r_swap_ut16 (val);
-				break;
-			case 4:
-				val = r_swap_ut32 (val);
-				break;
-			case 8:
-			default:
-				val = r_swap_ut64 (val);
-				break;
-			}
-		}
-		gdbr_write_reg (desc, current->name, (char*)&val, bytes);
+		gdbr_write_reg (desc, current->name, (char*)arena->bytes + (current->offset / 8), current->size / 8);
 	}
 	return true;
 }
