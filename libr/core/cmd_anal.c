@@ -425,6 +425,7 @@ static const char *help_msg_afll[] = {
 static const char *help_msg_afn[] = {
 	"Usage:", "afn[sa]", " Analyze function names",
 	"afn", " [name]", "rename the function",
+	"afn", " base64:encodedname", "rename the function",
 	"afn.", "", "same as afn without arguments. show the function name in current offset",
 	"afna", "", "construct a function name for the current offset",
 	"afns", "", "list all strings associated with the current function",
@@ -3641,6 +3642,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (*name == '?') {
 				eprintf ("Usage: afn newname [off]   # set new name to given function\n");
 			} else {
+				if (r_str_startswith (name, "base64:")) {
+					char *res = (char *)r_base64_decode_dyn (name + 7, -1);
+					if (res) {
+						free (name);
+						name = res;
+					}
+				}
 				if (!*name || !__setFunctionName (core, off, name, false)) {
 					eprintf ("Cannot find function at 0x%08" PFMT64x "\n", off);
 				}
