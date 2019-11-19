@@ -340,6 +340,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str);
 static void ds_start_line_highlight(RDisasmState *ds);
 static void ds_end_line_highlight(RDisasmState *ds);
 static bool line_highlighted(RDisasmState *ds);
+static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos);
 
 R_API ut64 r_core_pava (RCore *core, ut64 addr) {
 	if (core->print->pava) {
@@ -2927,13 +2928,25 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 	snprintf (key, sizeof (key), "meta.0x%" PFMT64x, ds->at);
 	const char *infos = sdb_const_get (s, key, 0);
 #endif
-
 	RList *list = r_meta_find_list_in (core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
-
 	if (list) {
+		bool once = true;
 		fmi = NULL;
 		r_list_foreach (list, iter, mi) {
-			if (mi->type == R_META_TYPE_STRING) {
+			switch (mi->type) {
+			case R_META_TYPE_DATA:
+				if (once) {
+					if (ds->asm_hint_pos == 0) {
+						if (ds->asm_hint_lea) {
+							ds_print_shortcut (ds, mi->from, 0);
+						} else {
+							r_cons_strcat ("   ");
+						}
+					}
+					once = false;
+				}
+				break;
+			case R_META_TYPE_STRING:
 				fmi = mi;
 				break;
 			}
