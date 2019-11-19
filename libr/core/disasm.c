@@ -2186,7 +2186,6 @@ static void __preline_flag(RDisasmState *ds, RFlagItem *flag) {
 	if (!ds->show_offset) {
 		r_cons_printf ("     ");
 	}
-	// r_cons_printf (FLAG_PREFIX);
 }
 
 #define printPre (outline || !*comma)
@@ -2308,7 +2307,9 @@ static void ds_show_flags(RDisasmState *ds) {
 				}
 				if (name) {
 					r_str_ansi_filter (name, NULL, NULL, -1);
-					r_cons_printf (FLAG_PREFIX);
+					if (!ds->flags_inline || nth == 0) {
+						r_cons_printf (FLAG_PREFIX);
+					}
 					if (outline) {
 						r_cons_printf ("%s:", name);
 					} else {
