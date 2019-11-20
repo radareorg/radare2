@@ -507,16 +507,32 @@ static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias) {
 		if (r_str_startswith (regstr, "<feature")) {
 			// Verify that we found the feature in the current node
 			feature_end = strstr (regstr, ">");
+			// To parse features of other architectures refer to:
+			// https://sourceware.org/gdb/onlinedocs/gdb/Standard-Target-Features.html#Standard-Target-Features
+            // - x86
 			if ((tmp1 = strstr (regstr, "core")) != NULL && tmp1 < feature_end) {
 				typegroup = "gpr";
 			} else if ((tmp1 = strstr (regstr, "segments")) != NULL && tmp1 < feature_end) {
 				typegroup = "seg";
 			} else if ((tmp1 = strstr (regstr, "linux")) != NULL && tmp1 < feature_end) {
 				typegroup = "gpr";
+			// Includes avx.512
 			} else if ((tmp1 = strstr (regstr, "avx")) != NULL && tmp1 < feature_end) {
 				typegroup = "ymm";
 			} else if ((tmp1 = strstr (regstr, "mpx")) != NULL && tmp1 < feature_end) {
 				typegroup = "flg";
+			// - arm
+			} else if ((tmp1 = strstr (regstr, "m-profile")) != NULL && tmp1 < feature_end) {
+				typegroup = "gpr";
+			} else if ((tmp1 = strstr (regstr, "pfe")) != NULL && tmp1 < feature_end) {
+				typegroup = "fpu";
+			} else if ((tmp1 = strstr (regstr, "vfp")) != NULL && tmp1 < feature_end) {
+				typegroup = "fpu";
+			} else if ((tmp1 = strstr (regstr, "iwmmxt")) != NULL && tmp1 < feature_end) {
+				typegroup = "xmm";
+			// -- Aarch64
+			} else if ((tmp1 = strstr (regstr, "sve")) != NULL && tmp1 < feature_end) {
+				typegroup = "ymm";
 			} else {
 				typegroup = "gpr";
 			}
@@ -594,6 +610,12 @@ static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias) {
 				}
 			}
 			// We need type information in r2 register profiles
+		}
+		// Move unidentified vector/large registers from gpr to xmm since r2 set/get
+		// registers doesn't support >64bit registers atm(but it's still possible to
+		// read them using gdbr's implementation through dr/drt)
+		if (regsize > 64 && !strcmp (regtype, "gpr")) {
+			regtype = "xmm";
 		}
 		if (!(tmpreg = calloc (1, sizeof (gdbr_xml_reg_t)))) {
 			goto exit_err;
