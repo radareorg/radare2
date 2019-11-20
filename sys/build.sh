@@ -79,24 +79,26 @@ fi
 
 [ -z "${PREFIX}" ] && PREFIX="${DEFAULT_PREFIX}"
 
-case "$1" in
--h|--help)
-	echo "Usage: sys/build.sh [/usr]"
-	exit 0
-	;;
-'')
-	:
-	;;
--)
-	shift
-	CFGARG="${CFGARG} $*"
-	;;
-*)
-	PREFIX="$1"
-	;;
-esac
+for a in $* ; do
+	case "$a" in
+	-h|--help)
+		echo "Usage: sys/build.sh [/usr]"
+		exit 0
+		;;
+	'')
+		:
+		;;
+	--**|-)
+		shift
+		CFGARG="${CFGARG} $a"
+		;;
+	*)
+		PREFIX="$a"
+		;;
+	esac
+done
 
-if [ "$USE_CS5" = 1 ]; then
+if [ "${USE_CS5}" = 1 ]; then
 	CFGARG="${CFGARG} --with-capstone5"
 fi
 
@@ -142,6 +144,7 @@ if [ -z "${KEEP_PLUGINS_CFG}" ]; then
 fi
 unset DEPS
 pwd
+
 ./configure ${CFGARG} --prefix="${PREFIX}" || exit 1
 ${MAKE} -s -j${MAKE_JOBS} MAKE_JOBS=${MAKE_JOBS} || exit 1
 if [ "`uname`" = Darwin ]; then
