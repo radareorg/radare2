@@ -1,7 +1,5 @@
 #!/bin/sh
 
-
-echo "BUILD $*"
 GetPlatform() {
 	# Get OS and platform to decide if we need to limit memory usage
 	# during the build
