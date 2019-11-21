@@ -4554,7 +4554,6 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	free (ocmd);
 	return ret;
 beach:
-	r_th_lock_leave (core->lock);
 	/* run pending analysis commands */
 	run_pending_anal (core);
 	return ret;

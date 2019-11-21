@@ -316,7 +316,6 @@ typedef struct r_core_t {
 	char *lastsearch;
 	char *cmdfilter;
 	bool break_loop;
-	RThreadLock *lock;
 	RList *undos;
 	bool binat;
 	bool fixedbits;
