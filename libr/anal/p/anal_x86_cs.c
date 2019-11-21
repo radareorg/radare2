@@ -2098,6 +2098,12 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
+	case X86_INS_BT:
+	case X86_INS_BTC:
+	case X86_INS_BTR:
+	case X86_INS_BTS:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		break;
 	case X86_INS_FABS:
 		op->type = R_ANAL_OP_TYPE_ABS;
 		op->family = R_ANAL_OP_FAMILY_FPU;
