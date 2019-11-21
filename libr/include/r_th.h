@@ -67,10 +67,6 @@ typedef struct r_th_cond_t {
 
 typedef struct r_th_t {
 	R_TH_TID tid;
-#if HAVE_PTHREAD
-	pthread_mutex_t _mutex;
-	pthread_cond_t _cond;
-#endif
 	RThreadLock *lock;
 	R_TH_FUNCTION(fun);
 	void *user;    // user pointer
@@ -94,8 +90,6 @@ R_API void r_th_break(RThread *th);
 R_API void *r_th_free(RThread *th);
 R_API void *r_th_kill_free(RThread *th);
 R_API bool r_th_kill(RThread *th, bool force);
-R_API bool r_th_pause(RThread *th, bool enable);
-R_API bool r_th_try_pause(RThread *th);
 R_API R_TH_TID r_th_self(void);
 R_API bool r_th_setname(RThread *th, const char *name);
 R_API bool r_th_getname(RThread *th, char *name, size_t len);
