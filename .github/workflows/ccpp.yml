@@ -22,6 +22,7 @@ jobs:
       run: ./configure
     - name: make
       run: make
-    - name: make tests
-      run: make tests
+    # Disabled until NodeJS/r2pipe.js problems are solved
+    #- name: make tests
+    #  run: make tests
 
