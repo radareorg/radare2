@@ -778,6 +778,27 @@ R_API bool r_str_ccmp(const char *dst, const char *src, int ch) {
 	return false;
 }
 
+// Returns true if item is in sep-separated list
+R_API bool r_str_cmp_list(const char *list, const char *item, char sep) {
+	if (!list || !item) {
+		return false;
+	}
+	int i = 0, j = 0;
+	for (; list[i] && list[i] != sep; i++, j++) {
+		if (item[j] != list[i]) {
+			while (list[i] && list[i] != sep) {
+				i++;
+			}
+			if (!list[i]) {
+				return false;
+			}
+			j = -1;
+			continue;
+		}
+	}
+	return true;
+}
+
 // like strncmp, but checking for null pointers
 R_API int r_str_cmp(const char *a, const char *b, int len) {
 	if ((a == b) || (!a && !b)) {

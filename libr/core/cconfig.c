@@ -874,6 +874,11 @@ static bool cb_asmparser(void *user, void *data) {
 	return r_parse_use (core->parser, node->value);
 }
 
+typedef struct {
+	const char *name;
+	const char *aliases;
+} namealiases_pair;
+
 static bool cb_binstrenc (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
@@ -883,7 +888,28 @@ static bool cb_binstrenc (void *user, void *data) {
 		               "if utf8 char detected then utf8 else latin1\n");
 		return false;
 	}
-	return true;
+	const namealiases_pair names[] = {
+		{ "guess", NULL },
+		{ "latin1", NULL },
+		{ "utf8", "utf-8" },
+		{ "utf16le", "utf-16le,utf16-le" },
+		{ "utf32le", "utf-32le,utf32-le" },
+		{ "utf16be", "utf-16be,utf16-be" },
+		{ "utf32be", "utf-32be,utf32-be" } };
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		const namealiases_pair *pair = &names[i];
+		if (!strcmp (pair->name, node->value)) {
+			return true;
+		}
+		if (r_str_cmp_list (pair->aliases, node->value, ',')) {
+			free (node->value);
+			node->value = strdup (pair->name);
+			return true;
+		}
+	}
+	eprintf ("Unknown encoding: %s\n", node->value);
+	return false;
 }
 
 static bool cb_binfilter(void *user, void *data) {
