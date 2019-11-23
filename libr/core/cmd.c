@@ -4554,15 +4554,6 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	free (ocmd);
 	return ret;
 beach:
-	if (r_list_empty (core->tasks)) {
-		r_th_lock_leave (core->lock);
-	} else {
-		RListIter *iter;
-		RCoreTask *task;
-		r_list_foreach (core->tasks, iter, task) {
-			r_th_pause (task->thread, false);
-		}
-	}
 	/* run pending analysis commands */
 	run_pending_anal (core);
 	return ret;
