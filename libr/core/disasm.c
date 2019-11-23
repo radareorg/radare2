@@ -737,7 +737,9 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp (core->print->strconv_mode, "asciidot");
 	const char *strenc_str = r_config_get (core->config, "bin.str.enc");
-	if (!strcmp (strenc_str, "latin1")) {
+	if (!strenc_str) {
+		ds->strenc = R_STRING_ENC_GUESS;
+	} else if (!strcmp (strenc_str, "latin1")) {
 		ds->strenc = R_STRING_ENC_LATIN1;
 	} else if (!strcmp (strenc_str, "utf8")) {
 		ds->strenc = R_STRING_ENC_UTF8;
