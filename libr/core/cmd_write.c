@@ -1553,8 +1553,10 @@ static int cmd_write(void *data, const char *input) {
 						}
 						if (*b) {
 							RAsmCode *ac = r_asm_massemble (core->assembler, b);
-							r_io_write_at (core->io, addr, ac->bytes, ac->len);
-							r_asm_code_free (ac);
+							if (ac) {
+								r_io_write_at (core->io, addr, ac->bytes, ac->len);
+								r_asm_code_free (ac);
+							}
 						}
 						b = a;
 						addr = nextaddr;
