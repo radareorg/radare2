@@ -390,7 +390,7 @@ R_API void r_cons_break_timeout(int timeout) {
 		I.timeout = 0;
 	} else {
 		if (timeout) {
-			I.timeout = r_sys_now () + (timeout * 1000000);
+			I.timeout = r_sys_now () + ((ut64) timeout << 20);
 		} else {
 			I.timeout = 0;
 		}
