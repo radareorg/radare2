@@ -738,7 +738,6 @@ int windbg_continue(WindCtx *ctx) {
 	if (ret == KD_E_OK) {
 		ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 		if (ret == KD_E_OK) {
-			// XXX What about DbgKdContinueApi ?
 			r_list_free (ctx->plist_cache);
 			ctx->plist_cache = NULL;
 			return true;
