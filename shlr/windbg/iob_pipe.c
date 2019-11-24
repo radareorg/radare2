@@ -88,13 +88,19 @@ static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int 
 	int fd = (int) (size_t) p;
 	struct timeval tv;
 	tv.tv_sec = 0;
-	tv.tv_usec = timeout;
+	// Convert from ms
+	tv.tv_usec = timeout * 1000;
 	for (;;) {
 		FD_ZERO (&readset);
 		FD_SET (fd, &readset);
 		result = select (fd + 1, &readset, NULL, NULL, &tv);
 		if (result < 1) {
-			if (errno == EINTR) continue;
+			if (errno == EINTR) {
+				continue;
+			}
+			if (result == 0) {
+				return 0;
+			}
 			return -1;
 		}
 		if (FD_ISSET (fd, &readset)) {
