@@ -19,7 +19,6 @@
 #include <kd.h>
 
 static WindCtx *wctx = NULL;
-static bool dbreak = false;
 
 static int r_debug_windbg_step(RDebug *dbg) {
 	return true;
@@ -54,27 +53,15 @@ static int r_debug_windbg_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return windbg_continue(wctx);
 }
 
-#if 0
-static void wstatic_debug_break(void *u) {
-	dbreak = true;
-	windbg_break_read (wctx);
-}
-#endif
-
 static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
-	dbreak = false;
-
+	r_cons_break_push (windbg_break, wctx);
 	for (;;) {
+		void *bed = r_cons_sleep_begin ();
 		int ret = windbg_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
-		if (dbreak) {
-			dbreak = false;
-			windbg_break (wctx);
-			R_FREE (pkt);
-			continue;
-		}
+		r_cons_sleep_end (bed);
 		if (ret != KD_E_OK || !pkt) {
 			reason = R_DEBUG_REASON_ERROR;
 			break;
@@ -95,6 +82,7 @@ static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 		}
 		R_FREE (pkt);
 	}
+	r_cons_break_pop ();
 	free (pkt);
 	return reason;
 }

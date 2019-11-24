@@ -11,7 +11,7 @@
 #include "kd.h"
 
 #define O_FLAG_XPVAD 1
-#define WIND_DBG if (true)
+#define WIND_DBG if (false)
 #define O_(n) ctx->os_profile->f[n]
 #include "profiles.h"
 
@@ -80,6 +80,7 @@ struct _WindCtx {
 	RList *tlist_cache;
 	ut64 dbg_addr;
 	WindProc *target;
+	RThreadLock *dontmix;
 };
 
 int windbg_get_bits(WindCtx *ctx) {
@@ -157,6 +158,7 @@ WindCtx *windbg_ctx_new(void *io_ptr) {
 	if (!ctx) {
 		return NULL;
 	}
+	ctx->dontmix = r_th_lock_new (true);
 	ctx->io_ptr = io_ptr;
 	return ctx;
 }
@@ -168,6 +170,7 @@ void windbg_ctx_free(WindCtx **ctx) {
 	r_list_free ((*ctx)->plist_cache);
 	r_list_free ((*ctx)->tlist_cache);
 	iob_close ((*ctx)->io_ptr);
+	r_th_lock_free ((*ctx)->dontmix);
 	R_FREE (*ctx);
 }
 
@@ -197,21 +200,34 @@ static int do_io_reply(WindCtx *ctx, kd_packet_t *pkt) {
 	kd_ioc_t ioc = {
 		0
 	};
+	static int id = 0;
+	if (id == pkt->id) {
+		WIND_DBG eprintf("Host resent io packet, ignoring.\n");
+		return true;
+	}
 	int ret;
 	ioc.req = 0x3430;
 	ioc.ret = KD_RET_ENOENT;
+	r_th_lock_enter (ctx->dontmix);
+	id = pkt->id;
 	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_FILE_IO,
 		(ctx->seq_id ^= 1), (uint8_t *) &ioc, sizeof (kd_ioc_t), NULL, 0);
 	if (ret != KD_E_OK) {
-		return false;
+		goto error;
 	}
 	WIND_DBG eprintf("Waiting for io_reply ack...\n");
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
-		return false;
+		goto error;
 	}
+	id = 0;
+	r_th_lock_leave (ctx->dontmix);
 	WIND_DBG eprintf("Ack received, restore flow\n");
 	return true;
+error:
+	id = 0;
+	r_th_lock_leave (ctx->dontmix);
+	return 0;
 }
 
 int windbg_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
@@ -231,14 +247,14 @@ int windbg_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 
 		// eprintf ("Received %08x\n", pkt->type);
 		if (pkt->type != type) {
-			eprintf ("We were not waiting for this... %08x\n", pkt->type);
+			WIND_DBG eprintf ("We were not waiting for this... %08x\n", pkt->type);
 		}
 		if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_STATE_CHANGE64) {
 			// dump_stc (pkt);
-			eprintf ("State64\n");
+			WIND_DBG eprintf ("State64\n");
 		}
 		if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_FILE_IO) {
-			eprintf ("Replying IO\n");
+			WIND_DBG eprintf ("Replying IO\n");
 			do_io_reply (ctx, pkt);
 		}
 
@@ -246,9 +262,9 @@ int windbg_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 		// The host didn't like our request
 		if (pkt->leader == KD_PACKET_CTRL && pkt->type == KD_PACKET_TYPE_RESEND) {
 			r_sys_backtrace ();
-			eprintf ("Waoh. You probably sent a malformed packet !\n");
+			WIND_DBG eprintf ("Waoh. You probably sent a malformed packet !\n");
 			ret = KD_E_MALFORMED;
-			//break;
+			break;
 		}
 	} while (pkt->type != type && retries--);
 
@@ -563,21 +579,25 @@ bool windbg_read_ver(WindCtx *ctx) {
 	req.req = 0x3146;
 	req.cpu = ctx->cpu;
 
+	r_th_lock_enter (ctx->dontmix);
+
 	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE,
 		(ctx->seq_id ^= 1), (uint8_t *) &req, sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
+
+	r_th_lock_leave (ctx->dontmix);
 
 	kd_req_t *rr = PKT_REQ (pkt);
 
@@ -640,6 +660,9 @@ bool windbg_read_ver(WindCtx *ctx) {
 	}
 	free (pkt);
 	return true;
+error:
+	r_th_lock_leave (ctx->dontmix);
+	return 0;
 }
 
 int windbg_sync(WindCtx *ctx) {
@@ -740,21 +763,25 @@ bool windbg_write_reg(WindCtx *ctx, const uint8_t *buf, int size) {
 
 	WIND_DBG eprintf("Regwrite() size: %x\n", size);
 
+	r_th_lock_enter (ctx->dontmix);
+
 	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE,
 		(ctx->seq_id ^= 1), (uint8_t *) &req, sizeof(kd_req_t), buf, size);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
+
+	r_th_lock_leave (ctx->dontmix);
 
 	kd_req_t *rr = PKT_REQ (pkt);
 
@@ -767,6 +794,9 @@ bool windbg_write_reg(WindCtx *ctx, const uint8_t *buf, int size) {
 	free (pkt);
 
 	return size;
+error:
+	r_th_lock_leave (ctx->dontmix);
+	return 0;
 }
 
 int windbg_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
@@ -785,21 +815,25 @@ int windbg_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 
 	req.r_ctx.flags = 0x1003F;
 
+	r_th_lock_enter (ctx->dontmix);
+
 	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *) &req,
 		sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
+
+	r_th_lock_leave (ctx->dontmix);
 
 	kd_req_t *rr = PKT_REQ (pkt);
 
@@ -809,11 +843,14 @@ int windbg_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 		return 0;
 	}
 
-	memcpy (buf, rr->data, size);
+	memcpy (buf, rr->data, R_MIN (size, pkt->length - sizeof (rr)));
 
 	free (pkt);
 
 	return size;
+error:
+	r_th_lock_leave (ctx->dontmix);
+	return 0;
 }
 
 int windbg_query_mem(WindCtx *ctx, const ut64 addr, int *address_space, int *flags) {
@@ -833,21 +870,25 @@ int windbg_query_mem(WindCtx *ctx, const ut64 addr, int *address_space, int *fla
 	req.r_query_mem.addr = addr;
 	req.r_query_mem.address_space = 0;	// Tells the kernel that 'addr' is a virtual address
 
+	r_th_lock_enter (ctx->dontmix);
+
 	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *) &req,
 		sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
+
+	r_th_lock_leave (ctx->dontmix);
 
 	kd_req_t *rr = PKT_REQ (pkt);
 
@@ -866,6 +907,9 @@ int windbg_query_mem(WindCtx *ctx, const ut64 addr, int *address_space, int *fla
 	free (pkt);
 
 	return ret;
+error:
+	r_th_lock_leave (ctx->dontmix);
+	return 0;
 
 }
 
@@ -889,21 +933,25 @@ int windbg_bkpt(WindCtx *ctx, const ut64 addr, const int set, const int hw, int 
 		req.r_del_bp.handle = *handle;
 	}
 
+	r_th_lock_enter (ctx->dontmix);
+
 	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *) &req,
 		sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
+
+	r_th_lock_leave (ctx->dontmix);
 
 	kd_req_t *rr = PKT_REQ (pkt);
 
@@ -915,6 +963,9 @@ int windbg_bkpt(WindCtx *ctx, const ut64 addr, const int set, const int hw, int 
 	ret = !!rr->ret;
 	free (pkt);
 	return ret;
+error:
+	r_th_lock_leave (ctx->dontmix);
+	return 0;
 }
 
 int windbg_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count) {
@@ -933,21 +984,25 @@ int windbg_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int
 	req.r_mem.length = R_MIN (count, KD_MAX_PAYLOAD);
 	req.r_mem.read = 0;	// Default caching option
 
+	r_th_lock_enter (ctx->dontmix);
+
 	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1),
 		(uint8_t *) &req, sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
+
+	r_th_lock_leave (ctx->dontmix);
 
 	rr = PKT_REQ (pkt);
 
@@ -960,6 +1015,9 @@ int windbg_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int
 	ret = rr->r_mem.read;
 	free (pkt);
 	return ret;
+error:
+	r_th_lock_leave (ctx->dontmix);
+	return 0;
 }
 
 int windbg_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count) {
@@ -976,20 +1034,26 @@ int windbg_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int coun
 	req.cpu = ctx->cpu;
 	req.r_mem.addr = offset;
 	req.r_mem.length = R_MIN (count, KD_MAX_PAYLOAD);
+
+	r_th_lock_enter (ctx->dontmix);
+
 	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE,
 		(ctx->seq_id ^= 1), (uint8_t *) &req, sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
 		return 0;
 	}
+
+	r_th_lock_leave (ctx->dontmix);
+
 	rr = PKT_REQ (pkt);
 
 	if (rr->ret) {
@@ -1001,6 +1065,9 @@ int windbg_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int coun
 	ret = rr->r_mem.read;
 	free (pkt);
 	return ret;
+error:
+	r_th_lock_leave (ctx->dontmix);
+	return 0;
 }
 
 int windbg_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count) {
@@ -1020,22 +1087,26 @@ int windbg_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const i
 	req.r_mem.addr = offset;
 	req.r_mem.length = payload;
 
+	r_th_lock_enter (ctx->dontmix);
+
 	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE,
 		(ctx->seq_id ^= 1), (uint8_t *) &req,
 		sizeof(kd_req_t), buf, payload);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
+
+	r_th_lock_leave (ctx->dontmix);
 
 	rr = PKT_REQ (pkt);
 
@@ -1047,6 +1118,9 @@ int windbg_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const i
 	ret = rr->r_mem.read;
 	free (pkt);
 	return ret;
+error:
+	r_th_lock_leave (ctx->dontmix);
+	return 0;
 }
 
 int windbg_write_at_phys(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count) {
@@ -1070,21 +1144,25 @@ int windbg_write_at_phys(WindCtx *ctx, const uint8_t *buf, const ut64 offset, co
 	req.r_mem.length = payload;
 	req.r_mem.read = 0;	// Default caching option
 
+	r_th_lock_enter (ctx->dontmix);
+
 	ret = kd_send_data_packet (ctx->io_ptr, KD_PACKET_TYPE_STATE_MANIPULATE,
 		(ctx->seq_id ^= 1), (uint8_t *) &req, sizeof(kd_req_t), buf, payload);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
 
 	ret = windbg_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
-		return 0;
+		goto error;
 	}
+
+	r_th_lock_leave (ctx->dontmix);
 
 	kd_req_t *rr = PKT_REQ (pkt);
 
@@ -1095,10 +1173,16 @@ int windbg_write_at_phys(WindCtx *ctx, const uint8_t *buf, const ut64 offset, co
 	ret = rr->r_mem.read;
 	free (pkt);
 	return ret;
+error:
+	r_th_lock_leave (ctx->dontmix);
+	return 0;
 }
 
 bool windbg_break(WindCtx *ctx) {
-	return iob_write (ctx->io_ptr, (const uint8_t *) "b", 1) == 1;
+	r_th_lock_enter (ctx->dontmix);
+	bool ret = iob_write (ctx->io_ptr, (const uint8_t *) "b", 1) == 1;
+	r_th_lock_leave (ctx->dontmix);
+	return ret;
 }
 
 int windbg_break_read(WindCtx *ctx) {
