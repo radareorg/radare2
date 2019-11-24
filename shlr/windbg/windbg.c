@@ -726,7 +726,7 @@ int windbg_continue(WindCtx *ctx) {
 	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return 0;
 	}
-	req.req = DbgKdContinueApi2;
+	req.req = DbgKdContinueApi;
 	req.cpu = ctx->cpu;
 	req.r_cont.reason = 0x10001;
 	// The meaning of 0x400 is unknown, but Windows doesn't
