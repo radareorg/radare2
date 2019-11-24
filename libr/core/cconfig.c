@@ -897,18 +897,22 @@ static bool cb_binstrenc (void *user, void *data) {
 		{ "utf16be", "utf-16be,utf16-be" },
 		{ "utf32be", "utf-32be,utf32-be" } };
 	int i;
+	char *enc = strdup (node->value);
+	if (!enc) {
+		return false;
+	}
+	r_str_case (enc, false);
 	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
 		const namealiases_pair *pair = &names[i];
-		if (!strcmp (pair->name, node->value)) {
-			return true;
-		}
-		if (r_str_cmp_list (pair->aliases, node->value, ',')) {
+		if (!strcmp (pair->name, enc) || r_str_cmp_list (pair->aliases, enc, ',')) {
 			free (node->value);
 			node->value = strdup (pair->name);
+			free (enc);
 			return true;
 		}
 	}
 	eprintf ("Unknown encoding: %s\n", node->value);
+	free (enc);
 	return false;
 }
 
