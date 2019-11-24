@@ -548,18 +548,25 @@ static int cmd_seek(void *data, const char *input) {
 				}
 				r_list_free (list);
 			}
-			r_cons_printf ("[");
+			PJ *pj = pj_new ();
+			pj_a (pj);
 			for (i = 0; i < lsz; ++i) {
 				ut64 *addr = r_list_get_n (addrs, i);
 				const char *name = r_list_get_n (names, i);
-				// XXX(should the "name" field be optional? That might make
-				// a bit more sense.
-				r_cons_printf ("{\"offset\":%"PFMT64d",\"symbol\":\"%s\"}", *addr, name);
-				if (i != lsz - 1) {
-					r_cons_printf (",");
+				pj_o (pj);
+				pj_kn (pj, "offset", *addr);
+				if (name && *name) {
+					pj_ks (pj, "name", name);
 				}
+				if (core->io->undo.idx == i) {
+					pj_kb (pj, "current", true);
+				}
+				pj_end (pj);
 			}
-			r_cons_printf ("]\n");
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_printf ("%s\n", s);
+			free (s);
 			r_list_free (addrs);
 			r_list_free (names);
 		}

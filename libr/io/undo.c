@@ -151,6 +151,7 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 			}
 			break;
 		case 'j':
+			// XXX not used, because the code is in cmd_seek().. we may probably kill that
 			if (j < undos) {
 				io->cb_printf ("%"PFMT64d"%s", addr, notLast? ",": "");
 				comma = ",";
