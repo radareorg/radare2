@@ -98,4 +98,7 @@ int windbg_write_at_phys (WindCtx *ctx, const uint8_t *buf, const ut64 offset, c
 bool windbg_va_to_pa (WindCtx *ctx, ut64 va, ut64 *pa);
 bool windbg_break (WindCtx *ctx);
 int windbg_break_read(WindCtx *ctx);
+bool windbg_lock_enter(WindCtx *ctx);
+bool windbg_lock_leave(WindCtx *ctx);
+bool windbg_lock_tryenter(WindCtx *ctx);
 #endif
