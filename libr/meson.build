@@ -89,6 +89,7 @@ asm_plugins = [
   'mips_gnu',
   'msp430',
   'nios2',
+  'or1k',
   'pic',
   'ppc_cs',
   'ppc_gnu',
