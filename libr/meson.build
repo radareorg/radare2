@@ -27,6 +27,7 @@ anal_plugins = [
   'msp430',
   'nios2',
   'null',
+  'or1k',
   'pic',
   'ppc_cs',
   'ppc_gnu',
