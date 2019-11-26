@@ -2256,7 +2256,7 @@ static bool cb_seggrn(void *user, void *data) {
 
 static bool cb_cmtoff(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	if (node->i_value || !strcmp (node->value, "0")) {
+	if (node->i_value || r_str_is_false (node->value)) {
 		free (node->value);
 		node->value = strdup (r_str_bool (node->i_value));
 	}
