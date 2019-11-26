@@ -1685,16 +1685,16 @@ static int cmd_open(void *data, const char *input) {
 				eprintf ("This command is disabled in sandbox mode\n");
 				return 0;
 			}
-			if (core->current_task != core->main_task) {
+			if (core->tasks.current_task != core->tasks.main_task) {
 				eprintf ("This command can only be executed on the main task!\n");
 				return 0;
 			}
 			// memleak? lose all settings wtf
 			// if load fails does not fallbacks to previous file
-			r_core_task_sync_end (core);
+			r_core_task_sync_end (&core->tasks);
 			r_core_fini (core);
 			r_core_init (core);
-			r_core_task_sync_begin (core);
+			r_core_task_sync_begin (&core->tasks);
 			if (!r_core_file_open (core, input + 2, R_PERM_R, 0)) {
 				eprintf ("Cannot open file\n");
 			}
