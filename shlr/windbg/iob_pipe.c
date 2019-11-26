@@ -25,16 +25,20 @@ static int iob_pipe_close(void *p) {
 static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int timeout) {
 	DWORD c = 0;
 	OVERLAPPED ov = {0};
+	ov.hEvent = CreateEvent (NULL, FALSE, FALSE, NULL);
+	if (!ov.hEvent) {
+		return 0;
+	}
 	if (!ReadFile (p, buf, count, NULL, &ov) &&
 		GetLastError () != ERROR_IO_PENDING) {
 		r_sys_perror ("ReadFile");
 		return -1;
 	}
-	if (!GetOverlappedResultEx (p, &ov, &c, timeout, FALSE)
-		&& GetLastError () == WAIT_TIMEOUT) {
+	if (WaitForSingleObject (ov.hEvent, timeout) == WAIT_TIMEOUT) {
 		CancelIo (p);
-		GetOverlappedResult (p, &ov, &c, TRUE);
 	}
+	GetOverlappedResult (p, &ov, &c, TRUE);
+	CloseHandle (ov.hEvent);
 	return c;
 }
 
