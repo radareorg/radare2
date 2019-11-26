@@ -38,6 +38,12 @@ typedef struct WindThread {
 	ut64 entrypoint;
 } WindThread;
 
+typedef struct WindModule {
+	char *name;
+	ut64 addr;
+	ut64 size;
+} WindModule;
+
 enum {
 	K_PaeEnabled = 0x036,
 	K_PsActiveProcessHead = 0x050,
@@ -78,6 +84,7 @@ ut32 windbg_get_target(WindCtx *ctx);
 bool windbg_set_target(WindCtx *ctx, ut32 pid);
 RList *windbg_list_process(WindCtx *ctx);
 RList *windbg_list_threads(WindCtx *ctx);
+RList *windbg_list_modules(WindCtx *ctx);
 int windbg_get_cpus(WindCtx *ctx);
 bool windbg_set_cpu(WindCtx *ctx, int cpu);
 int windbg_get_cpu(WindCtx *ctx);
