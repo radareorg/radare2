@@ -93,6 +93,7 @@ R_API char *r_str_newlen(const char *str, int len);
 R_API char *r_str_trunc_ellipsis(const char *str, int len);
 R_API const char *r_str_bool(int b);
 R_API bool r_str_is_true(const char *s);
+R_API bool r_str_is_false(const char *s);
 R_API bool r_str_is_bool(const char *val);
 R_API const char *r_str_ansi_chrn(const char *str, int n);
 R_API int r_str_ansi_len(const char *str);
