@@ -3481,16 +3481,7 @@ R_API bool r_str_is_false(const char *s) {
 }
 
 R_API bool r_str_is_bool(const char *val) {
-	if (!r_str_casecmp (val, "true") || !r_str_casecmp (val, "false")) {
-		return true;
-	}
-	if (!r_str_casecmp (val, "on") || !r_str_casecmp (val, "off")) {
-		return true;
-	}
-	if (!r_str_casecmp (val, "yes") || !r_str_casecmp (val, "no")) {
-		return true;
-	}
-	return false;
+	return r_str_is_true (val) || r_str_is_false (val);
 }
 
 R_API char *r_str_nextword(char *s, char ch) {
