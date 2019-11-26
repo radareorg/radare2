@@ -232,6 +232,37 @@ static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
 	return ret;
 }
 
+static RList *r_debug_windbg_modules(RDebug *dbg, int pid) {
+	RListIter *it;
+	WindModule *m;
+
+	RList *ret = r_list_newf (free);
+	if (!ret) {
+		return NULL;
+	}
+
+	RList *modules = windbg_list_modules (wctx);
+	if (!modules) {
+		r_list_free (ret);
+		return NULL;
+	}
+
+	r_list_foreach (modules, it, m) {
+		RDebugMap *mod = R_NEW0 (RDebugMap);
+		if (!mod) {
+			r_list_free (ret);
+			return NULL;
+		}
+		mod->file = m->name;
+		mod->size = m->size;
+		mod->addr = m->addr;
+		mod->addr_end = m->addr + m->size;
+		r_list_append (ret, mod);
+	}
+
+	return ret;
+}
+
 RDebugPlugin r_debug_plugin_windbg = {
 	.name = "windbg",
 	.license = "LGPL3",
@@ -249,7 +280,8 @@ RDebugPlugin r_debug_plugin_windbg = {
 	.reg_read = &r_debug_windbg_reg_read,
 	.reg_write = &r_debug_windbg_reg_write,
 	.reg_profile = &r_debug_windbg_reg_profile,
-	.threads = &r_debug_windbg_threads
+	.threads = &r_debug_windbg_threads,
+	.modules_get = &r_debug_windbg_modules
 };
 
 #ifndef R2_PLUGIN_INCORE
