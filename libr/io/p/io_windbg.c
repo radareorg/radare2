@@ -54,11 +54,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 	}
 	if (windbg_get_target (fd->data)) {
-		ut64 va;
-		if (!windbg_va_to_pa (fd->data, io->off, &va)) {
-			return -1;
-		}
-		return windbg_write_at_phys (fd->data, buf, va, count);
+		return windbg_write_at_uva (fd->data, buf, io->off, count);
 	}
 	return windbg_write_at (fd->data, buf, io->off, count);
 }
@@ -82,11 +78,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 
 	if (windbg_get_target (fd->data)) {
-		ut64 va;
-		if (!windbg_va_to_pa (fd->data, io->off, &va)) {
-			return -1;
-		}
-		return windbg_read_at_phys (fd->data, buf, va, count);
+		return windbg_read_at_uva (fd->data, buf, io->off, count);
 	}
 
 	return windbg_read_at (fd->data, buf, io->off, count);

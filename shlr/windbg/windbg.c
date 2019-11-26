@@ -162,12 +162,8 @@ ut64 windbg_get_target_base(WindCtx *ctx) {
 		return 0;
 	}
 
-	if (!windbg_va_to_pa (ctx, ctx->target->peb, &ppeb)) {
-		return 0;
-	}
-
-	if (!windbg_read_at_phys (ctx, (uint8_t *) &base,
-		    ppeb + O_(P_ImageBaseAddress), 4 << ctx->is_x64)) {
+	if (!windbg_read_at_uva (ctx, (uint8_t *) &base,
+		    ctx->target->peb + O_(P_ImageBaseAddress), 4 << ctx->is_x64)) {
 		return 0;
 	}
 
@@ -418,6 +414,42 @@ RList *windbg_list_process(WindCtx *ctx) {
 	return ret;
 }
 
+int windbg_write_at_uva(WindCtx *ctx, const uint8_t *buf, ut64 offset, int count) {
+	ut64 pa;
+	ut32 totwritten = 0;
+	while (totwritten < count) {
+		if (!windbg_va_to_pa (ctx, offset, &pa)) {
+			return 0;
+		}
+		ut32 restOfPage = 0x1000 - (offset & 0xfff);
+		int written = windbg_write_at_phys (ctx, buf + totwritten, pa, R_MIN (count - totwritten, restOfPage));
+		if (!written) {
+			break;
+		}
+		offset += written;
+		totwritten += written;
+	}
+	return totwritten;
+}
+
+int windbg_read_at_uva(WindCtx *ctx, uint8_t *buf, ut64 offset, int count) {
+	ut64 pa;
+	ut32 totread = 0;
+	while (totread < count) {
+		if (!windbg_va_to_pa (ctx, offset, &pa)) {
+			return 0;
+		}
+		ut32 restOfPage = 0x1000 - (offset & 0xfff);
+		int read = windbg_read_at_phys (ctx, buf + totread, pa, R_MIN (count - totread, restOfPage));
+		if (!read) {
+			break;
+		}
+		offset += read;
+		totread += read;
+	}
+	return totread;
+}
+
 RList *windbg_list_threads(WindCtx *ctx) {
 	RList *ret;
 	ut64 ptr, base;
@@ -431,13 +463,13 @@ RList *windbg_list_threads(WindCtx *ctx) {
 	}
 
 	if (!ctx->target) {
-		WIND_DBG eprintf ("No target process\n");
+		eprintf ("No target process\n");
 		return NULL;
 	}
 
 	ptr = ctx->target->eprocess;
 	if (!ptr) {
-		WIND_DBG eprintf ("No _EPROCESS\n");
+		eprintf ("No _EPROCESS\n");
 		return NULL;
 	}
 
@@ -456,7 +488,7 @@ RList *windbg_list_threads(WindCtx *ctx) {
 
 		windbg_read_at (ctx, (uint8_t *) &next, ptr, 4 << ctx->is_x64);
 		if (!next) {
-			WIND_DBG eprintf ("Corrupted ThreadListEntry found at: 0x%"PFMT64x"\n", ptr);
+			eprintf ("Corrupted ThreadListEntry found at: 0x%"PFMT64x"\n", ptr);
 			break;
 		}
 
