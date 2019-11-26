@@ -3010,7 +3010,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 }
 
 static void r_core_visual_anal_refresh_oneshot (RCore *core) {
-	r_core_task_enqueue_oneshot (core, (RCoreTaskOneShot) r_core_visual_anal_refresh, core);
+	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) r_core_visual_anal_refresh, core);
 }
 
 static void r_core_visual_debugtraces_help(RCore *core) {

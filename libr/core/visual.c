@@ -4123,7 +4123,7 @@ static void visual_refresh(RCore *core) {
 }
 
 static void visual_refresh_oneshot(RCore *core) {
-	r_core_task_enqueue_oneshot (core, (RCoreTaskOneShot) visual_refresh, core);
+	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) visual_refresh, core);
 }
 
 R_API void r_core_visual_disasm_up(RCore *core, int *cols) {

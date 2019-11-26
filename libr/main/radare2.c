@@ -479,7 +479,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 	r.r_main_rasm2 = r_main_rasm2;
 	r.r_main_rax2 = r_main_rax2;
 
-	r_core_task_sync_begin (&r);
+	r_core_task_sync_begin (&r.tasks);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (&r, 0);
 		r_cons_flush ();
@@ -1482,10 +1482,10 @@ R_API int r_main_radare2(int argc, char **argv) {
 				bool y_kill_debug = (ret & 4) >> 2;
 				bool y_save_project = (ret & 8) >> 3;
 
-				if (r_core_task_running_tasks_count (&r) > 0) {
+				if (r_core_task_running_tasks_count (&r.tasks) > 0) {
 					if (r_cons_yesno ('y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
-						r_core_task_break_all (&r);
-						r_core_task_join (&r, r.main_task, -1);
+						r_core_task_break_all (&r.tasks);
+						r_core_task_join (&r.tasks, r.tasks.main_task, -1);
 					} else {
 						continue;
 					}
@@ -1552,7 +1552,7 @@ beach:
 		return ret;
 	}
 
-	r_core_task_sync_end (&r);
+	r_core_task_sync_end (&r.tasks);
 
 	// not really needed, cause r_core_fini will close the file
 	// and this fh may be come stale during the command

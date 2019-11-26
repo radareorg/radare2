@@ -5177,7 +5177,7 @@ void __do_panels_refresh(RCore *core) {
 }
 
 void __do_panels_refreshOneShot(RCore *core) {
-	r_core_task_enqueue_oneshot (core, (RCoreTaskOneShot) __do_panels_refresh, core);
+	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) __do_panels_refresh, core);
 }
 
 void __panel_single_step_in(RCore *core) {
