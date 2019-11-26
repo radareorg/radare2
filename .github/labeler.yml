@@ -1,0 +1,147 @@
+radare2:
+  - binr/radare2/*
+  - libr/main/radare2.c
+
+rabin2:
+  - binr/rabin2/*
+  - libr/main/rabin2.c
+
+radiff2:
+  - binr/radiff2/*
+  - libr/main/radiff2.c
+
+rafind2:
+  - binr/rafind2/*
+  - libr/main/rafind2.c
+
+ragg2:
+  - binr/ragg2/*
+  - libr/main/ragg2.c
+
+rahash2:
+  - binr/rahash2/*
+  - libr/main/rahash2.c
+
+rarun2:
+  - binr/rarun2/*
+  - libr/main/rarun2.c
+
+rasm2:
+  - binr/rasm2/*
+  - libr/main/rasm2.c
+
+rax2:
+  - binr/rax2/*
+  - libr/main/rax2.c
+
+RAnal:
+  - libr/anal/**/*
+
+#RAsm:
+#  - libr/asm/**/*
+
+RAsm-Assembler:
+  - libr/asm/**/*ass*
+  - libr/asm/asm_x86_nz.c
+
+RAsm-Disassembler:
+  - libr/asm/**/*dis*
+
+RBin:
+  - libr/bin/**/*
+
+RBreakpoint:
+  - libr/bp/**/*
+
+RConfig:
+  - libr/config/**/*
+
+RCons:
+  - libr/cons/**/*
+
+RCore:
+  - libr/core/**/*
+
+RCrypto:
+  - libr/crypto/**/*
+
+RDebug:
+  - libr/debug/**/*
+
+REgg:
+  - libr/egg/**/*
+
+RFlag:
+  - libr/flag/**/*
+
+RFS:
+  - libr/fs/**/*
+
+RHash:
+  - libr/hash/**/*
+
+RIO:
+  - libr/io/**/*
+
+RLang:
+  - libr/lang/**/*
+
+RMagic:
+  - libr/magic/**/*
+
+RParse:
+  - libr/parse/**/*
+
+RReg:
+  - libr/reg/**/*
+
+RSearch:
+  - libr/search/**/*
+
+RSocket:
+  - libr/socket/**/*
+
+RSyscall:
+  - libr/syscall/**/*
+
+RUtil:
+  - libr/util/**/*
+
+API:
+  - libr/include/**/*
+
+buildsystem:
+  - sys/**/*
+
+command:
+  - libr/core/cmd*
+
+documentation:
+  - doc/**/*
+
+ESIL:
+  - libr/anal/esil*
+
+gdb:
+  - shlr/gdb/**/*
+
+infrastructure:
+  - .appveyor.yml
+  - .travis.yml
+  - .lgtm.yml
+  - .builds/**/*
+
+java:
+  - shlr/java/**/*
+
+WinDbg:
+  - shlr/windbg/**/*
+
+webui:
+  - shlr/www/**/*
+
+visual:
+  - libr/core/visual.c
+
+panel:
+  - libr/core/panels.c
