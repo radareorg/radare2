@@ -2258,7 +2258,7 @@ static bool cb_cmtoff(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value || !strcmp (node->value, "0")) {
 		free (node->value);
-		node->value = strdup (node->i_value ? "true" : "false");
+		node->value = strdup (r_str_bool (node->i_value));
 	}
 	return true;
 }
