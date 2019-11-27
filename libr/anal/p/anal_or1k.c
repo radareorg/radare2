@@ -8,6 +8,22 @@
 ut32 cpu[32] = {0}; /* register contents */
 ut32 cpu_enable; /* allows to treat only registers with known value as valid */
 
+/**
+ * \brief Convert raw N operand to complete address
+ *
+ * \param n immediate, as appearing in instruction
+ * \param mask n operand mask
+ * \param addr address of current instruction
+ *
+ * \return 64-bit address
+ */
+static ut64 n_oper_to_addr(ut32 n, ut32 mask, ut64 addr) {
+	/* sign extension returns 32b unsigned N, then it is multiplied by 4, made
+	 * signed to support negative offsets, added to address and made unsigned
+	 * again */
+	return (ut64) ((st64) ((st32) (sign_extend(n, mask) << 2)) + addr);
+}
+
 static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct {
 	ut32 rd;
@@ -38,30 +54,38 @@ static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extr
 	case 0x00: /* l.j */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->eob = true;
-		op->jump = (sign_extend(o.n, get_operand_mask(type_descr, INSN_OPER_N)) << 2) + addr;
+		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
 		op->delay = 1;
 		break;
 	case 0x01: /* l.jal */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->eob = true;
-		op->jump = (sign_extend(o.n, get_operand_mask(type_descr, INSN_OPER_N)) << 2) + addr;
+		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
 		op->delay = 1;
 		break;
 	case 0x03: /* l.bnf */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->cond = R_ANAL_COND_NE;
-		op->jump = (sign_extend(o.n, get_operand_mask(type_descr, INSN_OPER_N)) << 2) + addr;
+		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
 		op->fail = addr + 8;
 		op->delay = 1;
 		break;
 	case 0x04: /* l.bf */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->cond = R_ANAL_COND_EQ;
-		op->jump = (ut64) ((st64) ((st32) (sign_extend(o.n, get_operand_mask(type_descr, INSN_OPER_N)) << 2)) + addr);
+		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
 		op->fail = addr + 8;
 		op->delay = 1;
 		break;
 	case 0x11: /* l.jr */
+		o.rb = get_operand_value(insn, type_descr, INSN_OPER_B);
+		op->eob = true;
+		if (cpu_enable & (1 << o.rb)) {
+			op->jump = cpu[o.rb];
+		}
+		op->delay = 1;
+		break;
+	case 0x12: /* l.jalr */
 		o.rb = get_operand_value(insn, type_descr, INSN_OPER_B);
 		op->eob = true;
 		if (cpu_enable & (1 << o.rb)) {
@@ -81,6 +105,17 @@ static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extr
 			break;
 		}
 		break;
+	case 0x27: /* l.addi */
+		o.rd = get_operand_value(insn, type_descr, INSN_OPER_D);
+		o.ra = get_operand_value(insn, type_descr, INSN_OPER_A);
+		o.i = get_operand_value(insn, type_descr, INSN_OPER_I);
+		if (cpu_enable & (1 << o.ra) & cpu_enable & (1 << o.rd)) {
+			cpu[o.rd] = cpu[o.ra] | o.i;
+			cpu_enable |= (1 << o.rd);
+			op->ptr = cpu[o.rd];
+			op->direction = 8; /* reference */
+		}
+		break;
 	case 0x2a: /* l.ori */
 		o.rd = get_operand_value(insn, type_descr, INSN_OPER_D);
 		o.ra = get_operand_value(insn, type_descr, INSN_OPER_A);
@@ -88,15 +123,18 @@ static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extr
 		if (cpu_enable & (1 << o.ra)) {
 			cpu[o.rd] = cpu[o.ra] | o.i;
 			cpu_enable |= (1 << o.rd);
-			op->val = cpu[o.rd];
 			op->ptr = cpu[o.rd];
 			op->direction = 8; /* reference */
 		}
 		break;
+	default:
+		/* if unknown instruction encountered, better forget state */
+		cpu_enable = 0;
 	}
 
 	/* temporary solution to prevent using wrong register values */
 	if ((op->type & R_ANAL_OP_TYPE_JMP) == R_ANAL_OP_TYPE_JMP) {
+		/* FIXME: handle delay slot after branches */
 		cpu_enable = 0;
 	}
 	return 4;

@@ -328,7 +328,7 @@ insn_t insns[] = {
 	[0x0f] = {(0x0f<<26)},
 	[0x10] = {(0x10<<26)},
 	[0x11] = {(0x11<<26), "l.jr", INSN_B, R_ANAL_OP_TYPE_JMP},
-	[0x12] = {(0x12<<26), "l.jalr", INSN_B},
+	[0x12] = {(0x12<<26), "l.jalr", INSN_B, R_ANAL_OP_TYPE_CALL},
 	[0x13] = {(0x13<<26), "l.maci", INSN_AI},
 	[0x14] = {(0x14<<26)},
 	[0x15] = {(0x15<<26)},
@@ -349,7 +349,7 @@ insn_t insns[] = {
 	[0x24] = {(0x24<<26), "l.lbs", INSN_DAI},
 	[0x25] = {(0x25<<26), "l.lhz", INSN_DAI},
 	[0x26] = {(0x26<<26), "l.lhs", INSN_DAI},
-	[0x27] = {(0x27<<26), "l.addi", INSN_DAI},
+	[0x27] = {(0x27<<26), "l.addi", INSN_DAI, R_ANAL_OP_TYPE_LOAD},
 	[0x28] = {(0x28<<26), "l.addic", INSN_DAI},
 	[0x29] = {(0x29<<26), "l.andi", INSN_DAK},
 	[0x2a] = {(0x2a<<26), "l.ori", INSN_DAK, R_ANAL_OP_TYPE_LOAD},
@@ -389,7 +389,7 @@ insn_extra_t *find_extra_descriptor(insn_extra_t *extra_descr, ut32 insn) {
 	}
 	if (extra_descr->type != INSN_END) {
 		return extra_descr;
-	}  else {
+	} else {
 		return NULL;
 	}
 }
