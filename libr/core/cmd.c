@@ -4307,6 +4307,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_cons_pop ();
 					r_cons_strcat (buf);
 					free (buf);
+					r_core_task_yield (&core->tasks);
 				}
 
 				r_list_free (match_flag_items);
@@ -4597,11 +4598,13 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 				break;
 			}
 			data = nl + 1;
+			r_core_task_yield (&core->tasks);
 		} while ((nl = strchr (data, '\n')));
 		r_cons_break_pop ();
 	}
 	if (ret >= 0 && data && *data) {
 		r_core_cmd (core, data, 0);
+		r_core_task_yield (&core->tasks);
 	}
 	free (odata);
 	return ret;
