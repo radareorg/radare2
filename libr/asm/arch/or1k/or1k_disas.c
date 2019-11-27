@@ -3,9 +3,6 @@
 #include <r_anal.h>
 #include "or1k_disas.h"
 
-/** Mask for K operand */
-const ut32 INSN_DK_K_MASK = 0b111111111111111111111;
-
 insn_type_descr_t types[] = {
 	[INSN_X] = {INSN_X, "%s",
 		{

@@ -24,9 +24,6 @@
 /** Mask for K operand */
 #define INSN_K_MASK 0b1111111111111111
 
-/** Mask for K operand */
-const ut32 INSN_DK_K_MASK;
-
 /** Shift for B operand */
 #define INSN_B_SHIFT 11
 /** Mask for B operand */
