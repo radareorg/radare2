@@ -6,7 +6,8 @@
 #include <or1k_disas.h>
 
 ut32 cpu[32] = {0}; /* register contents */
-ut32 cpu_enable; /* allows to treat only registers with known value as valid */
+ut32 cpu_enable; /* allows to treat only registers with known value as
+	valid */
 
 /**
  * \brief Convert raw N operand to complete address
@@ -54,26 +55,30 @@ static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extr
 	case 0x00: /* l.j */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->eob = true;
-		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
+		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
+				addr);
 		op->delay = 1;
 		break;
 	case 0x01: /* l.jal */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->eob = true;
-		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
+		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
+				addr);
 		op->delay = 1;
 		break;
 	case 0x03: /* l.bnf */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->cond = R_ANAL_COND_NE;
-		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
+		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
+				addr);
 		op->fail = addr + 8;
 		op->delay = 1;
 		break;
 	case 0x04: /* l.bf */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->cond = R_ANAL_COND_EQ;
-		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
+		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
+				addr);
 		op->fail = addr + 8;
 		op->delay = 1;
 		break;
@@ -170,7 +175,8 @@ static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, R
 	/* if name is null, but extra is present, it means 6 most significant bits
 	 * are not enough to decode instruction */
 	if ((insn_descr->name == NULL) && (insn_descr->extra != NULL)) {
-		if ((extra_descr = find_extra_descriptor(insn_descr->extra, insn)) != NULL) {
+		extra_descr = find_extra_descriptor(insn_descr->extra, insn);
+		if (extra_descr != NULL) {
 			insn_to_op(a, op, addr, insn_descr, extra_descr, insn);
 		}
 		else {
