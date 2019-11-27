@@ -155,7 +155,6 @@ uint32_t windbg_get_target(WindCtx *ctx) {
 }
 
 ut64 windbg_get_target_base(WindCtx *ctx) {
-	ut64 ppeb;
 	ut64 base = 0;
 
 	if (!ctx || !ctx->io_ptr || !ctx->syncd || !ctx->target) {
@@ -1348,11 +1347,11 @@ error:
 	return 0;
 }
 
-bool windbg_break(WindCtx *ctx) {
+void windbg_break(void *arg) {
 	// This command shouldn't be wrapped by locks since it can always be sent and we don't
 	// want break queued up after another background task
-	bool ret = iob_write (ctx->io_ptr, (const uint8_t *)"b", 1) == 1;
-	return ret;
+	WindCtx *ctx = (WindCtx *)arg;
+	(void)iob_write (ctx->io_ptr, (const uint8_t *)"b", 1);
 }
 
 int windbg_break_read(WindCtx *ctx) {
