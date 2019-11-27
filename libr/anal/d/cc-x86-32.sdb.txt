@@ -17,7 +17,7 @@ cc.optlink.argn=stack
 cc.optlink.ret=eax
 
 stdcall=cc
-cc.stdcall.argn=stack_rev
+cc.stdcall.argn=stack
 cc.stdcall.ret=eax
 
 fastcall=cc
