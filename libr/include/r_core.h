@@ -909,7 +909,7 @@ R_API void r_core_task_enqueue_oneshot(RCoreTaskScheduler *scheduler, RCoreTaskO
 R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task);
 R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler);
 R_API void r_core_task_sync_end(RCoreTaskScheduler *scheduler);
-R_API void r_core_task_continue(RCoreTask *t);
+R_API void r_core_task_yield(RCoreTaskScheduler *scheduler);
 R_API void r_core_task_sleep_begin(RCoreTask *task);
 R_API void r_core_task_sleep_end(RCoreTask *task);
 R_API void r_core_task_break(RCoreTaskScheduler *scheduler, int id);

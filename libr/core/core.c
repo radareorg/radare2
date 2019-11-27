@@ -2310,11 +2310,6 @@ static bool r_core_anal_read_at(struct r_anal_t *anal, ut64 addr, ut8 *buf, int 
 }
 
 static void r_core_break (RCore *core) {
-	// if we are not in the main thread we hold in a lock
-	RCoreTask *task = r_core_task_self (&core->tasks);
-	if (task) {
-		r_core_task_continue (task);
-	}
 }
 
 static void *r_core_sleep_begin (RCore *core) {

@@ -377,8 +377,12 @@ static void task_wakeup(RCoreTask *current) {
 	}
 }
 
-R_API void r_core_task_continue(RCoreTask *t) {
-	r_core_task_schedule (t, R_CORE_TASK_STATE_RUNNING);
+R_API void r_core_task_yield(RCoreTaskScheduler *scheduler) {
+	RCoreTask *task = r_core_task_self (scheduler);
+	if (!task) {
+		return;
+	}
+	r_core_task_schedule (task, R_CORE_TASK_STATE_RUNNING);
 }
 
 static void task_end(RCoreTask *t) {
