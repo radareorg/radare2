@@ -5,6 +5,18 @@
 #include <r_lib.h>
 #include <or1k_disas.h>
 
+struct operands {
+  ut32 rd;
+  ut32 ra;
+  ut32 rb;
+  ut32 n;
+  ut32 k1;
+  ut32 k2;
+  ut32 k;
+  ut32 i;
+  ut32 l;
+};
+
 ut32 cpu[32] = {0}; /* register contents */
 ut32 cpu_enable; /* allows to treat only registers with known value as
 	valid */
@@ -26,17 +38,7 @@ static ut64 n_oper_to_addr(ut32 n, ut32 mask, ut64 addr) {
 }
 
 static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
-	struct {
-	ut32 rd;
-	ut32 ra;
-	ut32 rb;
-	ut32 n;
-	ut32 k1;
-	ut32 k2;
-	ut32 k;
-	ut32 i;
-	ut32 l;
-	} o = {};
+	struct operands o = {};
 	insn_type_t type = type_of_opcode(descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
 
