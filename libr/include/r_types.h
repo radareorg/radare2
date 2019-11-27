@@ -29,6 +29,7 @@
 #define R_INOUT /* parameter is read and written */
 #define R_NONNULL /* nonnull */
 #define R_NULLABLE /* pointer can be null */
+#define R_DEPRECATE /* should not be used in new code and should/will be removed in the future */
 #define R_IFNULL(x) /* default value for the pointer when null */
 #ifdef __GNUC__
 #define R_UNUSED __attribute__((__unused__))

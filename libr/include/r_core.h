@@ -86,11 +86,13 @@ R_LIB_VERSION_HEADER(r_core);
 #define RTR_MAX_HOSTS 255
 
 /* visual mode */
-#define R_CORE_VISUAL_MODE_PX  0
-#define R_CORE_VISUAL_MODE_PD  1
-#define R_CORE_VISUAL_MODE_DB  2
-#define R_CORE_VISUAL_MODE_OV  3
-#define R_CORE_VISUAL_MODE_CD  4
+typedef enum {
+	R_CORE_VISUAL_MODE_PX = 0,
+	R_CORE_VISUAL_MODE_PD = 1,
+	R_CORE_VISUAL_MODE_DB = 2,
+	R_CORE_VISUAL_MODE_OV = 3,
+	R_CORE_VISUAL_MODE_CD = 4
+} RCoreVisualMode;
 
 /*
 #define R_CORE_VISUAL_MODE_PC    4
@@ -148,15 +150,10 @@ typedef struct r_core_times_t {
 	ut64 file_open_time;
 } RCoreTimes;
 
-#define R_CORE_ASMSTEPS 128
 #define R_CORE_ASMQJMPS_NUM 10
 #define R_CORE_ASMQJMPS_LETTERS 26
 #define R_CORE_ASMQJMPS_MAX_LETTERS (26 * 26 * 26 * 26 * 26)
 #define R_CORE_ASMQJMPS_LEN_LETTERS 5
-typedef struct r_core_asmsteps_t {
-	ut64 offset;
-	int cols;
-} RCoreAsmsteps;
 
 typedef enum r_core_autocomplete_types_t {
 	R_CORE_AUTOCMPLT_DFLT = 0,
@@ -244,8 +241,8 @@ typedef struct r_core_tasks_t {
 typedef struct r_core_t {
 	RBin *bin;
 	RConfig *config;
-	ut64 offset;
-	ut64 prompt_offset;
+	ut64 offset; // current seek
+	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks
 	ut32 blocksize;
 	ut32 blocksize_max;
 	ut8 *block;
@@ -285,15 +282,12 @@ typedef struct r_core_t {
 	char *cmdqueue;
 	char *lastcmd;
 	char *cmdlog;
-	bool cfglog;
-	int cmdrepeat;
-	const char *cmdtimes;
-	bool cmd_in_backticks;
-	ut64 inc;
+	bool cfglog; // cfg.corelog
+	int cmdrepeat; // cmd.repeat
+	const char *cmdtimes; // cmd.times
+	R_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
-	int curasmstep;
-	RCoreAsmsteps asmsteps[R_CORE_ASMSTEPS];
 	ut64 *asmqjmps;
 	int asmqjmps_count;
 	int asmqjmps_size;
@@ -303,9 +297,8 @@ typedef struct r_core_t {
 	// visual // TODO: move them into RCoreVisual
 	int http_up;
 	int gdbserver_up;
-	int printidx;
+	RCoreVisualMode printidx;
 	char *stkcmd;
-	int vseek;
 	bool in_search;
 	RList *watchers;
 	RList *scriptstack;
