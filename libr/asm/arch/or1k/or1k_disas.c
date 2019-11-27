@@ -3,52 +3,8 @@
 #include <r_anal.h>
 #include "or1k_disas.h"
 
-/** Default mask for opcode */
-const int INSN_OPCODE_MASK = 0b111111 << 26;
-const int INSN_OPCODE_SHIFT = 26;
-
-/** Empty mask for unused operands */
-const ut32 INSN_EMPTY_MASK = 0;
-const ut32 INSN_EMPTY_SHIFT = 0;
-
-/** Mask for N operand */
-const ut32 INSN_N_MASK = 0b11111111111111111111111111;
-
-/** Shift for D operand */
-const ut32 INSN_D_SHIFT = 21;
-/** Mask for D operand */
-const ut32 INSN_D_MASK = 0b11111 << INSN_D_SHIFT;
-
-/** Mask for K operand */
-const ut32 INSN_K_MASK = 0b1111111111111111;
-
 /** Mask for K operand */
 const ut32 INSN_DK_K_MASK = 0b111111111111111111111;
-
-/** Shift for B operand */
-const ut32 INSN_B_SHIFT = 11;
-/** Mask for B operand */
-const ut32 INSN_B_MASK = 0b11111 << INSN_B_SHIFT;
-
-/** Shift for A operand */
-const ut32 INSN_A_SHIFT = 16;
-/** Mask for A operand */
-const ut32 INSN_A_MASK = 0b11111 << INSN_A_SHIFT;
-
-/** Mask for I operand */
-const ut32 INSN_I_MASK = 0b1111111111111111;
-
-/** Mask for L operand */
-const ut32 INSN_L_MASK = 0b111111;
-
-/** Shift for first K operand */
-const ut32 INSN_K1_SHIFT = 21;
-/** Mask for first K operand */
-const ut32 INSN_K1_MASK = 0b11111 << INSN_K1_SHIFT;
-
-/** Mask for second K operand */
-const ut32 INSN_K2_MASK = 0b11111111111;
-
 
 insn_type_descr_t types[] = {
 	[INSN_X] = {INSN_X, "%s",

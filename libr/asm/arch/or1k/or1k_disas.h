@@ -6,50 +6,50 @@
 #define OR1K_DISAS_H
 
 /** Default mask for opcode */
-const int INSN_OPCODE_MASK;
-const int INSN_OPCODE_SHIFT;
+#define INSN_OPCODE_MASK (0b111111 * 0x4000000)
+#define INSN_OPCODE_SHIFT 26
 
 /** Empty mask for unused operands */
-const ut32 INSN_EMPTY_MASK;
-const ut32 INSN_EMPTY_SHIFT;
+#define INSN_EMPTY_SHIFT 0
+#define INSN_EMPTY_MASK 0
 
 /** Mask for N operand */
-const ut32 INSN_N_MASK;
+#define INSN_N_MASK 0b11111111111111111111111111
 
 /** Shift for D operand */
-const ut32 INSN_D_SHIFT;
+#define INSN_D_SHIFT 21
 /** Mask for D operand */
-const ut32 INSN_D_MASK;
+#define INSN_D_MASK (0b11111 * 0x200000)
 
 /** Mask for K operand */
-const ut32 INSN_K_MASK;
+#define INSN_K_MASK 0b1111111111111111
 
 /** Mask for K operand */
 const ut32 INSN_DK_K_MASK;
 
 /** Shift for B operand */
-const ut32 INSN_B_SHIFT;
+#define INSN_B_SHIFT 11
 /** Mask for B operand */
-const ut32 INSN_B_MASK;
+#define INSN_B_MASK (0b11111 * 0x800)
 
 /** Shift for A operand */
-const ut32 INSN_A_SHIFT;
+#define INSN_A_SHIFT 16
 /** Mask for A operand */
-const ut32 INSN_A_MASK;
+#define INSN_A_MASK (0b11111 * 0x10000)
 
 /** Mask for I operand */
-const ut32 INSN_I_MASK;
+#define INSN_I_MASK 0b1111111111111111
 
 /** Mask for L operand */
-const ut32 INSN_L_MASK;
+#define INSN_L_MASK 0b111111
 
 /** Shift for first K operand */
-const ut32 INSN_K1_SHIFT;
+#define INSN_K1_SHIFT 21
 /** Mask for first K operand */
-const ut32 INSN_K1_MASK;
+#define INSN_K1_MASK (0b11111 * 0x200000)
 
 /** Mask for second K operand */
-const ut32 INSN_K2_MASK;
+#define INSN_K2_MASK 0b11111111111
 
 typedef enum insn_type {
 	INSN_END = 0, /**< end of array indicator */
