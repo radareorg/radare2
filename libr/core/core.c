@@ -2592,7 +2592,6 @@ R_API bool r_core_init(RCore *core) {
 	core->cmdrepeat = true;
 	core->yank_buf = r_buf_new ();
 	core->num = r_num_new (&num_callback, &str_callback, core);
-	core->curasmstep = 0;
 	core->egg = r_egg_new ();
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 

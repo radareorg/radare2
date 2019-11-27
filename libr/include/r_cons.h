@@ -503,7 +503,7 @@ typedef struct r_cons_t {
 	struct r_line_t *line;
 	const char **vline;
 	int refcnt;
-	bool newline;
+	R_DEPRECATE bool newline;
 #if __WINDOWS__
 	int ansicon;
 #endif
