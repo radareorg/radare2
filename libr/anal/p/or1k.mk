@@ -1,4 +1,5 @@
 OBJ_OR1K=anal_or1k.o
+CFLAGS+=-I../asm/arch/or1k
 
 STATIC_OBJ+=${OBJ_OR1K}
 TARGET_OR1K=anal_or1k.${EXT_SO}
