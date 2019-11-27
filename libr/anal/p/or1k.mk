@@ -1,5 +1,5 @@
 OBJ_OR1K=anal_or1k.o
-OBJ_OR1K+=../arch/or1k/or1k_disas.o
+OBJ_OR1K+=../../asm/arch/or1k/or1k_disas.o
 CFLAGS+=-I../asm/arch/or1k
 
 STATIC_OBJ+=${OBJ_OR1K}
