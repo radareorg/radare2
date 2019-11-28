@@ -252,32 +252,93 @@ void __free_window (void *ptr) {
 	free (win);
 }
 
+static window *__window_from_handle(HANDLE hwnd) {
+	r_return_val_if_fail (hwnd, NULL);
+	window *win = R_NEW0 (window);
+	if (!win) {
+		return NULL;
+	}
+	win->h = hwnd;
+	win->tid = GetWindowThreadProcessId (hwnd, &win->pid);
+	win->proc = GetClassLongPtrW (hwnd, GCLP_WNDPROC);
+	const size_t sz = MAX_CLASS_NAME * sizeof (WCHAR);
+	wchar_t *tmp = malloc (sz);
+	if (!tmp) {
+		free (win);
+		return NULL;
+	}
+	GetClassNameW (hwnd, tmp, MAX_CLASS_NAME);
+	win->name = r_utf16_to_utf8 (tmp);
+	free (tmp);
+	if (!win->name) {
+		win->name = strdup ("");
+	}
+	return win;
+}
+
+static RTable *__create_window_table(void) {
+	RTable *tbl = r_table_new ();
+	if (!tbl) {
+		return NULL;
+	}
+	r_table_add_column (tbl, r_table_type ("number"), "Handle", ST32_MAX);
+	r_table_add_column (tbl, r_table_type ("number"), "PID", ST32_MAX);
+	r_table_add_column (tbl, r_table_type ("number"), "TID", ST32_MAX);
+	r_table_add_column (tbl, r_table_type ("string"), "Class Name", ST32_MAX);
+	return tbl;
+}
+
+static void __add_window_to_table(RTable *tbl, window *win) {
+	r_return_if_fail (tbl && win);
+	char *handle = r_str_newf ("0x%08"PFMT64x"", win->h);
+	char *pid = r_str_newf ("%"PFMT32u"", win->pid);
+	char *tid = r_str_newf ("%"PFMT32u"", win->tid);
+	r_table_add_row (tbl, handle, pid, tid, win->name, NULL);
+	free (handle);
+	free (tid);
+	free (pid);
+}
+
+R_API void r_w32_identify_window(void) {
+	while (!r_cons_yesno ('y', "Move cursor to the window to be identified. Ready?"));
+	POINT p;
+	GetCursorPos (&p);
+	HANDLE hwnd = WindowFromPoint (p);
+	window *win = NULL;
+	if (hwnd) {
+		if (r_cons_yesno ('y', "Try to get the child?")) {
+			HANDLE child = ChildWindowFromPoint (hwnd, p);
+			hwnd = child ? child : hwnd;
+		}
+		win = __window_from_handle (hwnd);
+	} else {
+		eprintf ("No window found\n");
+		return;
+	}
+	if (!win) {
+		eprintf ("Error trying to get information from 0x%08"PFMT64x"\n", (ut64)hwnd);
+		return;
+	}
+	RTable *tbl = __create_window_table ();
+	if (!tbl) {
+		return;
+	}
+	__add_window_to_table (tbl, win);
+	char *tbl_str = r_table_tofancystring (tbl);
+	r_cons_print (tbl_str);
+	free (tbl_str);
+	r_table_free (tbl);
+}
+
 static BOOL CALLBACK __enum_childs(
 	_In_ HWND   hwnd,
 	_In_ LPARAM lParam
 ) {
-	RList *windows = lParam;
-	window *win = R_NEW0 (window);
+	RList *windows = (RList *)lParam;
+	window *win = __window_from_handle (hwnd);
 	if (!win) {
-		r_list_free (windows);
 		return false;
 	}
-	win->tid = GetWindowThreadProcessId (hwnd, NULL);
-	win->h = hwnd;
-	const size_t sz = MAX_CLASS_NAME * sizeof (WCHAR);
-	char *tmp = malloc (sz);
-	if (!tmp) {
-		r_list_free (windows);
-		free (win);
-		return false;
-	}
-	GetClassNameW (hwnd, tmp, MAX_CLASS_NAME);
-	win->proc = GetClassLongPtrW (hwnd, GCLP_WNDPROC);
-	win->name = r_utf16_to_utf8 (tmp);
-	if (!win->name) {
-		win->name = strdup ("");
-	}
-	free (tmp);
 	r_list_push (windows, win);
 	return true;
 }
@@ -288,36 +349,19 @@ static RList *__get_windows(RDebug *dbg) {
 	do {
 		hCurWnd = FindWindowEx (NULL, hCurWnd, NULL, NULL);
 		DWORD dwProcessID = 0;
-		int tid = GetWindowThreadProcessId (hCurWnd, &dwProcessID);
+		GetWindowThreadProcessId (hCurWnd, &dwProcessID);
 		if (dbg->pid == dwProcessID) {
-			EnumChildWindows (hCurWnd, __enum_childs, windows);
-			window *win = R_NEW0 (window);
+			EnumChildWindows (hCurWnd, __enum_childs, (LPARAM)windows);
+			window *win = __window_from_handle (hCurWnd);
 			if (!win) {
 				r_list_free (windows);
 				return NULL;
 			}
-			win->tid = tid;
-			win->h = hCurWnd;
-			const size_t sz = MAX_CLASS_NAME * sizeof (WCHAR);
-			char *tmp = malloc (sz);
-			if (!tmp) {
-				r_list_free (windows);
-				free (win);
-				return NULL;
-			}
-			GetClassNameW (hCurWnd, tmp, MAX_CLASS_NAME);
-			win->proc = GetClassLongPtrW (hCurWnd, GCLP_WNDPROC);
-			win->name = r_utf16_to_utf8 (tmp);
-			if (!win->name) {
-				win->name = strdup ("");
-			}
-			free (tmp);
 			r_list_push (windows, win);
 		}
 	} while (hCurWnd != NULL);
 	return windows;
 }
-
 
 static ut64 __get_dispatchmessage_offset(RDebug *dbg) {
 	RList *modlist = r_debug_modules_list (dbg);
@@ -333,7 +377,7 @@ static ut64 __get_dispatchmessage_offset(RDebug *dbg) {
 	if (!found) {
 		return 0;
 	}
-	char *res = dbg->corebind.cmdstr (dbg->corebind.core,"f~DispatchMessageW");
+	char *res = dbg->corebind.cmdstr (dbg->corebind.core, "f~DispatchMessageW");
 	if (!*res) {
 		free (res);
 		return 0;
@@ -344,7 +388,7 @@ static ut64 __get_dispatchmessage_offset(RDebug *dbg) {
 		char *sym = strrchr (line, ' ');
 		if (sym && r_str_startswith (sym + 1, "sym.imp")) {
 			offset = r_num_math (NULL, line);
-			dbg->iob.read_at (dbg->iob.io, offset, &offset, sizeof (offset));
+			dbg->iob.read_at (dbg->iob.io, offset, (ut8 *)&offset, sizeof (offset));
 			break;
 		}
 	} while (line = strtok (NULL, "\n"));
@@ -372,21 +416,18 @@ static DWORD __get_msg_type(char *name) {
 		int type = r_num_math (NULL, type_str);
 		return type;
 	}
-	return NULL;
+	return 0;
 }
 
 static void __print_windows(RDebug *dbg, RList *windows) {
-	RTable *tbl = r_table_new ();
-	r_table_add_column (tbl, r_table_type ("number"), "Handle", ST32_MAX);
-	r_table_add_column (tbl, r_table_type ("number"), "TID", ST32_MAX);
-	r_table_add_column (tbl, r_table_type ("string"), "Class Name", ST32_MAX);
+	RTable *tbl = __create_window_table ();
+	if (!tbl) {
+		return;
+	}
 	RListIter *it;
 	window *win;
 	r_list_foreach (windows, it, win) {
-		char *handle = r_str_newf ("0x%08"PFMT32x"", win->h);
-		char *tid = r_str_newf ("%"PFMT32u"", win->tid);
-		r_table_add_row (tbl, handle, tid, win->name, NULL);
-		free (handle);
+		__add_window_to_table (tbl, win);
 	}
 	char *t = r_table_tofancystring (tbl);
 	dbg->cb_printf (t);
@@ -428,7 +469,7 @@ R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, char *name) {
 		RListIter *it;
 		window *win;
 		r_list_foreach (windows, it, win) {
-			if (win->h == win_h || !strnicmp (win->name, window_id, strlen (window_id))) {
+			if ((ut64)win->h == win_h || !strnicmp (win->name, window_id, strlen (window_id))) {
 				offset = win->proc;
 				break;
 			}
