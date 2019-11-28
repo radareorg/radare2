@@ -167,6 +167,8 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 						// Current position gets pushed before seek, so there
 						// is no valid offset when we are at the end of list.
 						memcpy (u, undo, sizeof (RIOUndos));
+					} else {
+						u->off = io->off;
 					}
 					r_list_append (list, u);
 				}
