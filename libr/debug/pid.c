@@ -45,6 +45,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 			switch (fmt) {
 			case 'j':
 				pj_o (j);
+				pj_kb (j, "current", dbg->pid == p->pid);
 				pj_ki (j, "pid", p->pid);
 				pj_ki (j, "uid", p->uid);
 				pj_ks (j, "status", &p->status);
