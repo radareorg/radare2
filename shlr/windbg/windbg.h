@@ -105,7 +105,7 @@ int windbg_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const i
 int windbg_write_at_uva(WindCtx *ctx, const uint8_t *buf, ut64 offset, int count);
 int windbg_write_at_phys(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count);
 bool windbg_va_to_pa(WindCtx *ctx, ut64 va, ut64 *pa);
-bool windbg_break(WindCtx *ctx);
+void windbg_break(void *ctx);
 int windbg_break_read(WindCtx *ctx);
 bool windbg_lock_enter(WindCtx *ctx);
 bool windbg_lock_leave(WindCtx *ctx);
