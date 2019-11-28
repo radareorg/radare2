@@ -61,7 +61,7 @@ static int insn_to_str(RAsm *a, char **line, insn_t *descr, insn_extra_t *extra,
 		*line = sdb_fmt(type_descr->format, name, o.rd, o.k);
 		break;
 	case INSN_DN:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.n);
+		*line = sdb_fmt(type_descr->format, name, o.rd, o.n << 13);
 		break;
 	case INSN_B:
 		*line = sdb_fmt(type_descr->format, name, o.rb);
