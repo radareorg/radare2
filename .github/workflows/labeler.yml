@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: paulfantom/periodic-labeler@v0.0.1
-      with:
-        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITHUB_REPOSITORY: ${{ github.repository }}
         LABEL_MAPPINGS_FILE: .github/labeler.yml
