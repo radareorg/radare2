@@ -706,6 +706,8 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexObj *bin,
 			rbindwardrow->address = pos->address;
 			rbindwardrow->line = pos->line;
 			r_list_append (dex->lines_list, rbindwardrow);
+		} else {
+			free (rbindwardrow);
 		}
 	}
 #endif
@@ -1718,13 +1720,15 @@ static bool dex_loadcode(RBinFile *bf) {
 	}
 	bin->lines_list = r_list_newf ((RListFree)free);
 	if (!bin->lines_list) {
+		r_list_free (bin->methods_list);
+		r_list_free (bin->imports_list);
 		return false;
 	}
 	bin->classes_list = r_list_newf ((RListFree)r_bin_class_free);
 	if (!bin->classes_list) {
 		r_list_free (bin->methods_list);
-		r_list_free (bin->lines_list);
 		r_list_free (bin->imports_list);
+		r_list_free (bin->lines_list);
 		return false;
 	}
 
@@ -2178,14 +2182,34 @@ static RList *dex_fields(RBinFile *bf) {
 	return ret;
 }
 
+static int cmp_path(const void *a, const void *b) {
+	if (!a || !b) {
+		return 0;
+	}
+	return strcmp ((const char*)a, (const char*)b);
+}
+
 static RList* libs(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	char *path = r_file_dirname (bf->file);
-	RList *files = r_sys_dir (path);
-	RList *ret = r_list_newf (free);
-	if (!ret) {
+	if (r_str_startswith (path, "./")) {
+		// avoids stuff like .//.//.//.//.//
+		free (path);
 		return NULL;
 	}
+	RList *files = r_sys_dir (path);
+	if (!files) {
+		free (path);
+		return NULL;
+	}
+	RList *ret = r_list_newf (free);
+	if (!ret) {
+		free (path);
+		r_list_free (files);
+		return NULL;
+	}
+	/* opening dex files in order. */
+	r_list_sort(files, cmp_path);
 	RListIter *iter;
 	char *file;
 	r_list_foreach (files, iter, file) {
