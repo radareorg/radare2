@@ -17,8 +17,8 @@ struct operands {
 	ut32 l;
 };
 
-ut32 cpu[32] = {0}; /* register contents */
-ut32 cpu_enable; /* allows to treat only registers with known value as
+static ut32 cpu[32] = {0}; /* register contents */
+static ut32 cpu_enable; /* allows to treat only registers with known value as
 	valid */
 
 /**
