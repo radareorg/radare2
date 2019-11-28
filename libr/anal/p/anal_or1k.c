@@ -181,8 +181,6 @@ static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, R
 		if (extra_descr != NULL) {
 			insn_to_op(a, op, addr, insn_descr, extra_descr, insn);
 		}
-		else {
-		}
 	}
 	else {
 		/* otherwise basic descriptor is enough */
