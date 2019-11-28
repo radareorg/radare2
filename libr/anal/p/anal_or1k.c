@@ -38,7 +38,7 @@ static ut64 n_oper_to_addr(ut32 n, ut32 mask, ut64 addr) {
 }
 
 static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
-	struct operands o = {};
+	struct operands o = {0};
 	insn_type_t type = type_of_opcode(descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
 

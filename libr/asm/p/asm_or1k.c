@@ -17,7 +17,7 @@ struct operands {
 };
 
 static int insn_to_str(RAsm *a, char **line, insn_t *descr, insn_extra_t *extra, ut32 insn) {
-	struct operands o = {};
+	struct operands o = {0};
 	char *name;
 	insn_type_t type = type_of_opcode(descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];

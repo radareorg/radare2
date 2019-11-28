@@ -123,13 +123,13 @@ size_t types_count = sizeof(types) / sizeof(insn_type_descr_t);
 
 insn_extra_t extra_0x5[] = {
 	{(0x05<<26)|(0b01<<24), "l.nop", INSN_K, INSN_OPCODE_MASK | (0b11 << 24), R_ANAL_OP_TYPE_NOP},
-	{}
+	{0}
 };
 
 insn_extra_t extra_0x6[] = {
 	{(0x06<<26)|(0<<16), "l.movhi", INSN_DK, INSN_OPCODE_MASK | (1 << 16)},
 	{(0x06<<26)|(1<<16), "l.macrc", INSN_D, INSN_OPCODE_MASK | (1 << 16)},
-	{}
+	{0}
 };
 
 insn_extra_t extra_0x8[] = {
@@ -138,7 +138,7 @@ insn_extra_t extra_0x8[] = {
 	{(0x08<<26)|(0b10000000000000000000000000), "l.msync", INSN_X, INSN_OPCODE_MASK | 0x3ffffff},
 	{(0x08<<26)|(0b10100000000000000000000000), "l.psync", INSN_X, INSN_OPCODE_MASK | 0x3ffffff},
 	{(0x08<<26)|(0b11000000000000000000000000), "l.csync", INSN_X, INSN_OPCODE_MASK | 0x3ffffff},
-	{}
+	{0}
 };
 
 insn_extra_t extra_0x2e[] = {
@@ -146,7 +146,7 @@ insn_extra_t extra_0x2e[] = {
 	{(0x2e<<26)|(0b01<<6), "l.srli", INSN_DAL, INSN_OPCODE_MASK | (0b11 << 6)},
 	{(0x2e<<26)|(0b10<<6), "l.srai", INSN_DAL, INSN_OPCODE_MASK | (0b11 << 6)},
 	{(0x2e<<26)|(0b11<<6), "l.rori", INSN_DAL, INSN_OPCODE_MASK | (0b11 << 6)},
-	{}
+	{0}
 };
 
 insn_extra_t extra_0x2f[] = {
@@ -160,7 +160,7 @@ insn_extra_t extra_0x2f[] = {
 	{(0x2f<<26)|(0b01011<<21), "l.sfgesi", INSN_AI, INSN_OPCODE_MASK | (0b11111 << 21)}, /* FIXME: signed */
 	{(0x2f<<26)|(0b01100<<21), "l.sfltsi", INSN_AI, INSN_OPCODE_MASK | (0b11111 << 21)}, /* FIXME: signed */
 	{(0x2f<<26)|(0b01101<<21), "l.sflesi", INSN_AI, INSN_OPCODE_MASK | (0b11111 << 21)}, /* FIXME: signed */
-	{}
+	{0}
 };
 
 insn_extra_t extra_0x31[] = {
@@ -168,7 +168,7 @@ insn_extra_t extra_0x31[] = {
 	{(0x31<<26)|(0b0011), "l.macu", INSN_AB, INSN_OPCODE_MASK | (0b1111)},
 	{(0x31<<26)|(0b0010), "l.msb", INSN_AB, INSN_OPCODE_MASK | (0b1111)},
 	{(0x31<<26)|(0b0100), "l.msbu", INSN_AB, INSN_OPCODE_MASK | (0b1111)},
-	{}
+	{0}
 };
 
 insn_extra_t extra_0x32[] = {
@@ -216,7 +216,7 @@ insn_extra_t extra_0x32[] = {
 	{(0x32<<26)|(0b00010010), "lf.mul.d", INSN_DAB, INSN_OPCODE_MASK | (0b11111111)},
 	{(0x32<<26)|(0b00010011), "lf.div.d", INSN_DAB, INSN_OPCODE_MASK | (0b11111111)},
 	{(0x32<<26)|(0b00010111), "lf.madd.d", INSN_DAB, INSN_OPCODE_MASK | (0b11111111)},
-	{}
+	{0}
 };
 
 insn_extra_t extra_0x38[] = {
@@ -245,7 +245,7 @@ insn_extra_t extra_0x38[] = {
 	{(0x38<<26)|(0b11<<8)|(0b1010), "l.divu", INSN_DAB, INSN_OPCODE_MASK | (0x3 << 8) | 0xf},
 	{(0x38<<26)|(0b11<<8)|(0b1011), "l.mulu", INSN_DAB, INSN_OPCODE_MASK | (0x3 << 8) | 0xf},
 	{(0x38<<26)|(0b11<<8)|(0b1100), "l.muldu", INSN_AB, INSN_OPCODE_MASK | (0x3 << 8) | 0xf},
-	{}
+	{0}
 };
 
 insn_extra_t extra_0x39[] = {
@@ -259,7 +259,7 @@ insn_extra_t extra_0x39[] = {
 	{(0x39<<26)|(0b01011<<21), "l.sfges", INSN_AB, INSN_OPCODE_MASK | (0b11111 << 21)},
 	{(0x39<<26)|(0b01100<<21), "l.sflts", INSN_AB, INSN_OPCODE_MASK | (0b11111 << 21)},
 	{(0x39<<26)|(0b01101<<21), "l.sfles", INSN_AB, INSN_OPCODE_MASK | (0b11111 << 21)},
-	{}
+	{0}
 };
 
 insn_t insns[] = {
