@@ -37,6 +37,7 @@ static const char *help_msg_d[] = {
 	"dw", " <pid>", "Block prompt until pid dies",
 #if __WINDOWS__
 	"dW", "", "List process windows",
+	"dWi", "", "Identify window under cursor",
 #endif
 	"dx", "[?]", "Inject and run code on target process (See gs)",
 	NULL
@@ -5319,7 +5320,11 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 #if __WINDOWS__
 	case 'W': // "dW"
-		r_w32_print_windows (core->dbg);
+		if (input[1] == 'i') {
+			r_w32_identify_window ();
+		} else {
+			r_w32_print_windows (core->dbg);
+		}
 		break;
 #endif
 	case 'w': // "dw"
