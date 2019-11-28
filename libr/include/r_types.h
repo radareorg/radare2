@@ -24,10 +24,11 @@
 #define R_MODE_EQUAL 0x080
 
 #define R_IN /* do not use, implicit */
-#define R_OWN /* pointer ownership is transferred */
 #define R_OUT /* parameter is written, not read */
 #define R_INOUT /* parameter is read and written */
-#define R_NONNULL /* nonnull */
+#define R_OWN /* pointer ownership is transferred */
+#define R_BORROW /* pointer ownership is not transferred, it must not be freed by the receiver */
+#define R_NONNULL /* pointer can not be null */
 #define R_NULLABLE /* pointer can be null */
 #define R_DEPRECATE /* should not be used in new code and should/will be removed in the future */
 #define R_IFNULL(x) /* default value for the pointer when null */
