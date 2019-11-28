@@ -285,7 +285,7 @@ while_end:
 			if (p[2]) {
 				grep->l_line = r_num_get (cons->num, p + 2);
 			} else {
-				grep->l_line = -1;
+				grep->l_line = 0;
 			}
 		}
 	}
@@ -584,7 +584,7 @@ R_API void r_cons_grepbuf() {
 		if (grep->f_line < 0) {
 			grep->f_line = total_lines + grep->f_line;
 		}
-		if (grep->l_line < 0) {
+		if (grep->l_line <= 0) {
 			grep->l_line = total_lines + grep->l_line;
 		}
 	}
