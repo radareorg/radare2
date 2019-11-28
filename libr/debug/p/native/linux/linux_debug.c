@@ -596,6 +596,10 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 			break;
 		}
 	}
+	ptr = strstr (info, "PPid:");
+	if (ptr) {
+		pid_info->ppid = atoi (ptr + 5);
+	}
 	ptr = strstr (info, "Uid:");
 	if (ptr) {
 		pid_info->uid = atoi (ptr + 5);
@@ -611,9 +615,46 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	return pid_info;
 }
 
+RList *linux_pid_list(int pid, RList *list) {
+	list->free = (RListFree)&r_debug_pid_free;
+	DIR *dh = NULL;
+	struct dirent *de = NULL;
+	char path[PATH_MAX], info[PATH_MAX];
+	int i = -1;
+	RDebugPid *pid_info = NULL;
+	dh = opendir ("/proc");
+	if (!dh) {
+		r_sys_perror ("opendir /proc");
+		r_list_free (list);
+		return NULL;
+	}
+	while ((de = readdir (dh))) {
+		path[0] = 0;
+		info[0] = 0;
+		// For each existing pid file
+		if ((i = atoi (de->d_name)) <= 0) {
+			continue;
+		}
+
+		procfs_pid_slurp (i, "cmdline", path, sizeof (path));
+		if (!procfs_pid_slurp (i, "status", info, sizeof (info))) {
+			// Get information about pid (status, pc, etc.)
+			pid_info = fill_pid_info (info, path, i);
+		} else {
+			pid_info = r_debug_pid_new (path, i, 0, R_DBG_PROC_STOP, 0);
+		}
+		// Only add the request pid and it's child processes
+		if (i == pid || pid_info->ppid == pid) {
+			r_list_append (list, pid_info);
+		}
+	}
+	closedir (dh);
+	return list;
+}
+
 RList *linux_thread_list(int pid, RList *list) {
 	int i, thid = 0;
-	char *ptr, buf[1024];
+	char *ptr, buf[PATH_MAX];
 
 	if (!pid) {
 		r_list_free (list);
@@ -631,7 +672,7 @@ RList *linux_thread_list(int pid, RList *list) {
 				continue;
 			}
 			int tid = atoi (de->d_name);
-			char info[1024];
+			char info[PATH_MAX];
 			int uid = 0;
 			if (!procfs_pid_slurp (tid, "status", info, sizeof (info))) {
 				ptr = strstr (info, "Uid:");
@@ -645,7 +686,7 @@ RList *linux_thread_list(int pid, RList *list) {
 						// If we want to attach to just one thread, don't attach to the parent
 						continue;
 					}
-                                }
+				}
 			}
 
 			if (procfs_pid_slurp (tid, "comm", buf, sizeof (buf)) == -1) {
