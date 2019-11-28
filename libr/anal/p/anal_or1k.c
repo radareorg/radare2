@@ -6,15 +6,15 @@
 #include <or1k_disas.h>
 
 struct operands {
-  ut32 rd;
-  ut32 ra;
-  ut32 rb;
-  ut32 n;
-  ut32 k1;
-  ut32 k2;
-  ut32 k;
-  ut32 i;
-  ut32 l;
+	ut32 rd;
+	ut32 ra;
+	ut32 rb;
+	ut32 n;
+	ut32 k1;
+	ut32 k2;
+	ut32 k;
+	ut32 i;
+	ut32 l;
 };
 
 ut32 cpu[32] = {0}; /* register contents */
