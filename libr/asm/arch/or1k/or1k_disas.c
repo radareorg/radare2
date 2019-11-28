@@ -6,6 +6,7 @@
 insn_type_descr_t types[] = {
 	[INSN_X] = {INSN_X, "%s",
 		{
+			0
 		}
 	},
 	/* ------KKKKKAAAAABBBBBKKKKKKKKKKK */
