@@ -2134,7 +2134,7 @@ static ut64 size(RBinFile *bf) {
 	return off + r_read_le32 (u32s);
 }
 
-static RList *lines(RBinFile *bf) {
+static R_BORROW RList *lines(RBinFile *bf) {
 	struct r_bin_dex_obj_t *dex = bf->o->bin_obj;
 	/// XXX this is called more than once
 	// r_sys_backtrace();
