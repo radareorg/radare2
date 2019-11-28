@@ -717,7 +717,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			// PLT finding
 			RFlagItem *impsym = r_flag_get (r->flags, sdb_fmt ("sym.imp.%s", imp->name));
 			if (!impsym) {
-				eprintf ("Cannot find '%s' import in the PLT\n", imp->name);
+				//eprintf ("Cannot find '%s' import in the PLT\n", imp->name);
 				continue;
 			}
 			ut64 imp_addr = impsym->offset;

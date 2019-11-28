@@ -873,6 +873,7 @@ static int bin_dwarf(RCore *core, int mode) {
 	RList *list = NULL;
 	RList *ownlist = NULL;
 	if (plugin && plugin->lines) {
+		// list is not cloned to improve speed. avoid use after free
 		list = plugin->lines (binfile);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
