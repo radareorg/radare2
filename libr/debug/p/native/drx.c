@@ -129,7 +129,7 @@ ut64 drx_get(drxt *drx, int n, int *rwx, int *len, int *global, int *enabled) {
 		*global = I386_DR_IS_LOCAL_ENABLED (drx[7], n);
 	}
 	if (len) {
-		switch (ret & 0xA) {
+		switch (ret & 0xC) {
 		case DR_LEN_1: *len = 1; break;
 		case DR_LEN_2: *len = 2; break;
 		case DR_LEN_4: *len = 4; break;
