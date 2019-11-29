@@ -1146,7 +1146,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 				for (x = 0; x < register_size; x++) {
 					g->data[offset + register_size - x - 1] = hex2char (&value[x * 2]);
 				}
-				free (value);
+				R_FREE (value);
 			}
 			i++;
 		}
