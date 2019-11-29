@@ -141,13 +141,14 @@ static int __close(RIODesc *fd) {
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case SEEK_SET:
+	case R_IO_SEEK_SET:
 		io->off = offset;
-		return offset;
-	case SEEK_CUR:
-		return io->off + offset;
-	case SEEK_END:
-		return UT64_MAX;
+		break;
+	case R_IO_SEEK_CUR:
+		io->off += offset;
+		break;
+	case R_IO_SEEK_END:
+		io->off = ST64_MAX;
 	}
 	io->off = offset;
 	return offset;

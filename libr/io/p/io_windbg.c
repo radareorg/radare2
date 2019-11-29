@@ -66,7 +66,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	case R_IO_SEEK_CUR:
 		return io->off + offset;
 	case R_IO_SEEK_END:
-		return UT64_MAX;
+		return ST64_MAX;
 	default:
 		return offset;
 	}
