@@ -655,7 +655,7 @@ R_API wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
 	return rutf16;
 }
 
-R_API char *r_utf8_to_acp_l(const ut8 *str, int len) {
+R_API char *r_utf8_to_acp_l(const char *str, int len) {
 	if (!str || !len || len < -1) {
 		return NULL;
 	}
@@ -684,7 +684,7 @@ R_API char *r_utf8_to_acp_l(const ut8 *str, int len) {
 	return acp;
 }
 
-R_API char *r_acp_to_utf8_l(const ut8 *str, int len) {
+R_API char *r_acp_to_utf8_l(const char *str, int len) {
 	if (!str || !len || len < -1) {
 		return NULL;
 	}
