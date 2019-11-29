@@ -28,7 +28,7 @@ environment:
       BUILD_DIR: build
     # VS2019 64
     - builder: vs2019_64
-      PYTHON: 'C:\\Python37-x64'
+      PYTHON: 'C:\\Python38-x64'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       BUILD_DIR: build
@@ -40,9 +40,9 @@ environment:
       BUILD_DIR: build
     # Clang-cl 64 (Dynamic linking)
     - builder: clang_cl_64_dyn
-      PYTHON: 'C:\\Python37'
-      INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      PYTHON: 'C:\\Python38'
+      INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       BUILD_DIR: build
 
 # Init
