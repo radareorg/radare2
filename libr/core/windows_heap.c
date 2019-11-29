@@ -170,7 +170,7 @@ static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 		if (index > heapInfo->BlockCount) {
 			return false;
 		}
-		hb->dwAddress = (void *)block[index].address;
+		hb->dwAddress = block[index].address;
 		hb->dwSize = block->size;
 		if (block[index].extra & EXTRA_FLAG) {
 			PHeapBlockExtraInfo extra = (PHeapBlockExtraInfo)(block[index].extra & ~EXTRA_FLAG);
@@ -209,7 +209,7 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 			}
 
 			// new address = curBlockAddress + Granularity;
-			hb->dwAddress = (void *)(block[index].address + heapInfo->Granularity);
+			hb->dwAddress = block[index].address + heapInfo->Granularity;
 
 			index++;
 			hb->dwSize = block->size;
@@ -221,7 +221,7 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 			PHeapBlockExtraInfo extra = (PHeapBlockExtraInfo)(block[index].extra & ~EXTRA_FLAG);
 			hb->extraInfo = extra;
 			hb->dwSize -= extra->unusedBytes;
-			hb->dwAddress = (void *)(block[index].address + extra->granularity);
+			hb->dwAddress = block[index].address + extra->granularity;
 		} else {
 			hb->extraInfo = NULL;
 			hb->dwAddress = (WPARAM)hb->dwAddress + hb->dwSize;
@@ -352,11 +352,11 @@ static bool GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) 
 static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
 	r_return_val_if_fail (heap && entry, false);
 	if (dbg->bits == R_SYS_BITS_64) {
-		entry = (WPARAM)entry + dbg->bits;
+		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
 	if (heap->EncodeFlagMask && (*(UINT32 *)entry & heap->EncodeFlagMask)) {
 		if (dbg->bits == R_SYS_BITS_64) {
-			heap = (WPARAM)heap + dbg->bits;
+			heap = (PHEAP)((ut8 *)heap + dbg->bits);
 		}
 		*(WPARAM *)entry ^= *(WPARAM *)&heap->Encoding;
 	}
@@ -366,7 +366,7 @@ static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
 static bool DecodeLFHEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr) {
 	r_return_val_if_fail (heap && entry, false);
 	if (dbg->bits == R_SYS_BITS_64) {
-		entry = (WPARAM)entry + dbg->bits;
+		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
 
 	if (heap->EncodeFlagMask) {
@@ -407,10 +407,10 @@ static RList *GetListOfHeaps(RDebug *dbg, HANDLE ph) {
 	PVOID *processHeaps;
 	ULONG numberOfHeaps;
 	if (dbg->bits == R_SYS_BITS_64) {
-		processHeaps = *((ut64 *)(((ut8 *)&peb) + 0xF0));
+		processHeaps = *((PVOID *)(((ut8 *)&peb) + 0xF0));
 		numberOfHeaps = *((ULONG *)(((ut8 *)& peb) + 0xE8));
 	} else {
-		processHeaps = *((ut64 *)(((ut8 *)&peb) + 0x90));
+		processHeaps = *((PVOID *)(((ut8 *)&peb) + 0x90));
 		numberOfHeaps = *((ULONG *)(((ut8 *)& peb) + 0x88));
 	}
 	do {
@@ -986,7 +986,7 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 				HEAP_VS_CHUNK_HEADER header;
 				ReadProcessMemory (h_proc, (PVOID)(headerOff - sizeof (HEAP_VS_CHUNK_HEADER)), &header, sizeof (HEAP_VS_CHUNK_HEADER), NULL);
 				header.Sizes.HeaderBits ^= RtlpHpHeapGlobal ^ headerOff;
-				hb->dwAddress = (PVOID)offset;
+				hb->dwAddress = offset;
 				hb->dwSize = header.Sizes.UnsafeSize * sizeof (HEAP_VS_CHUNK_HEADER);
 				hb->dwFlags = 1 | SEGMENT_HEAP_BLOCK | VS_BLOCK;
 				extra->granularity = granularity + sizeof (HEAP_VS_CHUNK_HEADER);
@@ -1001,7 +1001,7 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 			WPARAM lfhKey;
 			GetLFHKey (dbg, h_proc, true, &lfhKey);
 			subsegment.BlockOffsets.EncodedData ^= (DWORD)lfhKey ^ ((DWORD)subsegmentOffset >> 0xC);
-			hb->dwAddress = (PVOID)offset;
+			hb->dwAddress = offset;
 			hb->dwSize = subsegment.BlockOffsets.BlockSize;
 			hb->dwFlags = 1 | SEGMENT_HEAP_BLOCK | LFH_BLOCK;
 			extra->granularity = granularity;
@@ -1028,11 +1028,11 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 			} else if ((offset & ~0xFFFFULL) < VirtualAddess) {
 				curr = (WPARAM)node.Left;
 			} else {
-				hb->dwAddress = (PVOID)VirtualAddess;
+				hb->dwAddress = VirtualAddess;
 				hb->dwSize = ((entry.AllocatedPages >> 12) << 12) - entry.UnusedBytes;
 				hb->dwFlags = SEGMENT_HEAP_BLOCK | LARGE_BLOCK | 1;
 				extra->unusedBytes = entry.UnusedBytes;
-				ReadProcessMemory (h_proc, hb->dwAddress, &extra->granularity, sizeof (USHORT), NULL);
+				ReadProcessMemory (h_proc, (PVOID)hb->dwAddress, &extra->granularity, sizeof (USHORT), NULL);
 				return hb;
 			}
 			if (curr) {
@@ -1095,7 +1095,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 			HEAP_ENTRY tmpEntry = entry;
 			if (DecodeHeapEntry (dbg, &h, &tmpEntry)) {
 				entry = tmpEntry;
-				hb->dwAddress = (PVOID)offset;
+				hb->dwAddress = offset;
 				UPDATE_FLAGS (hb, (DWORD)entry.Flags | NT_BLOCK);
 				if (entry.UnusedBytes == 0x4) {
 					HEAP_VIRTUAL_ALLOC_ENTRY largeEntry;
@@ -1133,7 +1133,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 					if (!ReadProcessMemory (h_proc, (PVOID)UserBlocks.SubSegment, &subsegment, sizeof (HEAP_SUBSEGMENT), NULL)) {
 						continue;
 					}
-					hb->dwAddress = (PVOID)offset;
+					hb->dwAddress = offset;
 					hb->dwSize = (WPARAM)subsegment.BlockSize * heap.Granularity;
 					hb->dwFlags = 1 | LFH_BLOCK | NT_BLOCK;
 					break;

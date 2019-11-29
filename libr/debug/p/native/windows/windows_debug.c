@@ -468,7 +468,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
 static void __transfer_drx(RDebug *dbg, ut8 *buf) {
 	CONTEXT cur_ctx;
-	if (w32_reg_read (dbg, R_REG_TYPE_ALL, &cur_ctx, sizeof (CONTEXT))) {
+	if (w32_reg_read (dbg, R_REG_TYPE_ALL, (ut8 *)&cur_ctx, sizeof (CONTEXT))) {
 		CONTEXT *new_ctx = (CONTEXT *)buf;
 		size_t drx_size = offsetof (CONTEXT, Dr7) - offsetof (CONTEXT, Dr0) + sizeof (new_ctx->Dr7);
 		memcpy (&cur_ctx.Dr0, &new_ctx->Dr0, drx_size);
@@ -890,7 +890,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			void *bed = r_cons_sleep_begin ();
 			w32dbg_wrap_wait_ret (rio->inst);
 			r_cons_sleep_end (bed);
-			if (!w32dbgw_intret (inst)) {
+			if (!w32dbgw_ret (inst)) {
 				if (w32dbgw_err (inst) != ERROR_SEM_TIMEOUT) {
 					r_sys_perror ("w32_dbg_wait/WaitForDebugEvent");
 					ret = -1;
@@ -925,7 +925,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			rio->pi.hProcess = de.u.CreateProcessInfo.hProcess;
 			rio->pi.hThread = de.u.CreateProcessInfo.hThread;
 			rio->pi.dwProcessId = pid;
-			rio->winbase = de.u.CreateProcessInfo.lpBaseOfImage;
+			rio->winbase = (ULONG_PTR)de.u.CreateProcessInfo.lpBaseOfImage;
 			ret = R_DEBUG_REASON_NEW_PID;
 			next_event = 0;
 			break;
@@ -1094,7 +1094,7 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 	inst->params->tid = rio->pi.dwThreadId;
 	inst->params->continue_status = continue_status;
 	w32dbg_wrap_wait_ret (inst);
-	if (!w32dbgw_intret (inst)) {
+	if (!w32dbgw_ret (inst)) {
 		w32dbgw_err (inst);
 		r_sys_perror ("w32_continue/ContinueDebugEvent");
 		return -1;

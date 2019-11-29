@@ -232,7 +232,7 @@ static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
 	return ret;
 }
 
-static RList *r_debug_windbg_modules(RDebug *dbg, int pid) {
+static RList *r_debug_windbg_modules(RDebug *dbg) {
 	RListIter *it;
 	WindModule *m;
 

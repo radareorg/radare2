@@ -144,7 +144,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	inst->params->func.func = __createprocess_wrap;
 	inst->params->func.user = &p;
 	w32dbg_wrap_wait_ret (inst);
-	if (!w32dbgw_intret (inst)) {
+	if (!w32dbgw_ret (inst)) {
 		w32dbgw_err (inst);
 		r_sys_perror ("fork_and_ptraceme/CreateProcess");
 		free (appname_);
@@ -164,7 +164,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	inst->params->wait.wait_time = 10000;
 	inst->params->wait.de = &de;
 	w32dbg_wrap_wait_ret (inst);
-	if (!w32dbgw_intret (inst)) goto err_fork;
+	if (!w32dbgw_ret (inst)) goto err_fork;
 
 	/* check if is a create process debug event */
 	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {

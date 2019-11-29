@@ -26,7 +26,7 @@ typedef struct {
 			void *user;
 		} func;
 	};
-	void *ret;
+	int ret;
 	DWORD err;
 } w32dbg_wrap_params;
 
@@ -46,7 +46,6 @@ typedef struct {
 } RIOW32Dbg;
 
 #define w32dbgw_ret(inst) inst->params->ret
-#define w32dbgw_intret(inst) PtrToInt (w32dbgw_ret(inst))
 #define w32dbgw_err(inst) (SetLastError (inst->params->err), inst->params->err)
 
 w32dbg_wrap_instance *w32dbg_wrap_new(void);
