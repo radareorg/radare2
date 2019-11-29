@@ -6,7 +6,7 @@
 #define OR1K_DISAS_H
 
 /** Default mask for opcode */
-#define INSN_OPCODE_MASK (0b111111 * 0x4000000)
+#define INSN_OPCODE_MASK (0b111111ULL * 0x4000000)
 #define INSN_OPCODE_SHIFT 26
 
 /** Empty mask for unused operands */

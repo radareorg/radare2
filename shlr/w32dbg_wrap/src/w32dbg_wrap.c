@@ -61,5 +61,5 @@ void w32dbg_wrap_fini(w32dbg_wrap_instance *inst) {
 int w32dbg_wrap_wait_ret(w32dbg_wrap_instance *inst) {
 	ReleaseSemaphore (inst->request_sem, 1, NULL);
 	WaitForSingleObject (inst->result_sem, INFINITE);
-	return w32dbgw_intret(inst);
+	return w32dbgw_ret(inst);
 }

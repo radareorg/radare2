@@ -933,7 +933,7 @@ typedef struct _HeapBlockExtraInfo { // think of extra stuff to put here
 } HeapBlockExtraInfo, *PHeapBlockExtraInfo;
 
 typedef struct _HeapBlock {
-	PVOID dwAddress;
+	ULONG_PTR dwAddress;
 	SIZE_T dwSize;
 	DWORD dwFlags;
 	SIZE_T index;

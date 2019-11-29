@@ -78,16 +78,16 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #define W32_TCHAR_FSTR "%S"
 #define W32_TCALL(name) name"W"
 #define r_sys_conv_utf8_to_win(buf) r_utf8_to_utf16 (buf)
-#define r_sys_conv_utf8_to_win_l(buf, len) r_utf8_to_utf16_l (buf, len)
+#define r_sys_conv_utf8_to_win_l(buf, len) r_utf8_to_utf16_l ((ut8 *)buf, len)
 #define r_sys_conv_win_to_utf8(buf) r_utf16_to_utf8 (buf)
-#define r_sys_conv_win_to_utf8_l(buf, len) r_utf16_to_utf8_l (buf, len)
+#define r_sys_conv_win_to_utf8_l(buf, len) r_utf16_to_utf8_l ((wchar_t *)buf, len)
 #else
 #define W32_TCHAR_FSTR "%s"
 #define W32_TCALL(name) name"A"
 #define r_sys_conv_utf8_to_win(buf) r_utf8_to_acp (buf)
-#define r_sys_conv_utf8_to_win_l(buf, len) r_utf8_to_acp_l (buf, len)
+#define r_sys_conv_utf8_to_win_l(buf, len) r_utf8_to_acp_l ((ut8 *)buf, len)
 #define r_sys_conv_win_to_utf8(buf) r_acp_to_utf8 (buf)
-#define r_sys_conv_win_to_utf8_l(buf, len) r_acp_to_utf8_l (buf, len)
+#define r_sys_conv_win_to_utf8_l(buf, len) r_acp_to_utf8_l ((ut8 *)buf, len)
 #endif
 R_API char *r_sys_get_src_dir_w32(void);
 R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr);
