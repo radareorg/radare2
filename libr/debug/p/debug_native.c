@@ -828,7 +828,10 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 			kp = KVM_GETPROCS (kd, KERN_PROC_PID, KP_PPID(kp), &cnt);
                         if (cnt == 1) {
 				RDebugPid *p = r_debug_pid_new (KP_COMM(kp), KP_PID(kp), KP_UID(kp), 's', 0);
-				if (p) r_list_append (list, p);
+				if (p) {
+					p->ppid = KP_PPID(kp);
+					r_list_append (list, p);
+				}
 			}
 		}
 	} else {
@@ -837,6 +840,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 		for (i = 0; i < cnt; i++) {
 			RDebugPid *p = r_debug_pid_new (KP_COMM(kp + i), KP_PID(kp + i), KP_UID(kp), 's', 0);
 			if (p) {
+				p->ppid = KP_PPID(kp);
 				r_list_append (list, p);
 			}
 		}
