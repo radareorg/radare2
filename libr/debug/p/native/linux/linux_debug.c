@@ -643,8 +643,8 @@ RList *linux_pid_list(int pid, RList *list) {
 		} else {
 			pid_info = r_debug_pid_new (path, i, 0, R_DBG_PROC_STOP, 0);
 		}
-		// Only add the request pid and it's child processes
-		if (i == pid || pid_info->ppid == pid) {
+		// Unless pid 0 is requested, only add the requested pid and it's child processes
+		if (0 == pid || i == pid || pid_info->ppid == pid) {
 			r_list_append (list, pid_info);
 		}
 	}
