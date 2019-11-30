@@ -64,7 +64,7 @@ install:
 build_script:
   - appveyor AddMessage "Compiling radare2 %R2_VERSION% (%builder%)"
 
-  - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && python sys\meson.py --backend vs2017 --release --xp --install="%DIST_FOLDER%" --webui --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && set CL=/DONE_STREAM_HACK#1 && python sys\meson.py --backend vs2017 --release --xp --install="%DIST_FOLDER%" --webui --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
   - cmd: if %builder% == vs2019_64 ( choco install mingw && refreshenv && set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && python sys\meson.py --backend vs2019 --release --install="%DIST_FOLDER%" --webui --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 

@@ -562,6 +562,7 @@ R_API RCons *r_cons_new() {
 #endif
 	I.pager = NULL; /* no pager by default */
 	I.mouse = 0;
+	I.onestream = false;
 	I.show_vals = false;
 	r_cons_reset ();
 	r_cons_rgb_init ();
@@ -1137,6 +1138,24 @@ R_API int r_cons_printf(const char *format, ...) {
 
 	return 0;
 }
+
+#if ONE_STREAM_HACK
+R_API int r_cons_onestream_printf(const char *format, ...) {
+	va_list ap;
+	if (!format || !*format) {
+		return -1;
+	}
+	va_start (ap, format);
+	if (I.onestream) {
+		r_cons_printf_list (format, ap);
+	} else {
+		vfprintf (stderr, format, ap);
+	}
+	va_end (ap);
+
+	return 0;
+}
+#endif
 
 R_API int r_cons_get_column() {
 	char *line = strrchr (I.context->buffer, '\n');
