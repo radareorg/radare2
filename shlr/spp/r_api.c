@@ -147,3 +147,11 @@ err_r_sys_get_env:
 	return b? strdup (b): NULL;
 #endif
 }
+
+unsigned int r_sys_getpid() {
+#if __WINDOWS__
+	return (unsigned int)GetCurrentProcessId();
+#else
+	return (unsigned int)getpid();
+#endif
+}

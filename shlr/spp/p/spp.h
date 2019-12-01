@@ -87,7 +87,7 @@ static TAG_CALLBACK(spp_getrandom) {
 		return 0;
 	}
 	// XXX srsly? this is pretty bad random
-	srandom (getpid ()); // TODO: change this to be portable
+	srandom (r_sys_getpid()); // TODO: change this to be portable
 	max = atoi (buf);
 	if (max > 0) {
 		max = (int)(rand () % max);
