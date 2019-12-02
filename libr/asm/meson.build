@@ -183,7 +183,7 @@ r_asm_inc = [
 
 r_asm = library('r_asm', r_asm_sources,
   include_directories: r_asm_inc,
-  c_args: library_cflags,
+  c_args: library_cflags + ['-DR_ASM_SRC=1'],
   dependencies: [
     r_util_dep,
     r_syscall_dep,
