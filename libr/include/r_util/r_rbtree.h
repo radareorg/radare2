@@ -23,7 +23,11 @@ typedef struct r_rb_node_t {
 
 typedef RBNode* RBTree;
 
-typedef int (*RBComparator)(const void *incoming, const RBNode *in_tree, void *user);		//here needs to be a void *user
+// incoming < in_tree  => return < 0
+// incoming == in_tree => return == 0
+// incoming > in_tree  => return > 0
+typedef int (*RBComparator)(const void *incoming, const RBNode *in_tree, void *user);
+
 typedef void (*RBNodeFree)(RBNode *node, void *user);
 typedef void (*RBNodeSum)(RBNode *node);
 
@@ -52,8 +56,8 @@ typedef struct r_containing_rb_tree_t {
 // Routines for augmented red-black trees. The user should provide an aggregation (monoid sum) callback `sum`
 // to calculate extra information such as size, sum, ...
 R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum);
-R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, RBNodeSum sum, void *user);
-R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBComparator cmp, RBNodeSum sum, void *user);
+R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum);
+R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum);
 
 R_API bool r_rbtree_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user);
 R_API RBNode *r_rbtree_find(RBNode *root, void *data, RBComparator cmp, void *user);

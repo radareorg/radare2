@@ -175,7 +175,7 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 }
 
 // Returns true if stuff got inserted, else false
-R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, RBNodeSum sum, void *user) {
+R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
 	node->child[0] = node->child[1] = NULL;
 	if (!*root) {
 		*root = node;
@@ -220,7 +220,7 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 		if (done) {
 			break;
 		}
-		d = cmp (data, q, user);
+		d = cmp (data, q, cmp_user);
 		t = g;
 		g = p;
 		p = q;
@@ -247,7 +247,7 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 }
 
 // returns true if the sum has been updated, false if node has not been found
-R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBComparator cmp, RBNodeSum sum, void *user) {
+R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
 	int dep = 0;
 	RBNode *path[R_RBTREE_MAX_HEIGHT];
 	RBNode *cur = root;
@@ -265,7 +265,7 @@ R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBCom
 			break;
 		}
 
-		int d = cmp (data, cur, user);
+		int d = cmp (data, cur, cmp_user);
 		if (d < 0) {
 			cur = cur->child[0];
 		} else {
@@ -306,7 +306,7 @@ R_API void r_rbtree_free(RBNode *x, RBNodeFree freefn, void *user) {
 }
 
 R_API void r_rbtree_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *user) {
-	r_rbtree_aug_insert (root, data, node, cmp, NULL, user);
+	r_rbtree_aug_insert (root, data, node, cmp, user, NULL);
 }
 
 R_API RBNode *r_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, void *user) {
@@ -447,7 +447,7 @@ R_API bool r_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp, v
 	RCRBCmpWrap cmp_wrap = { cmp, NULL, user };
 	RBNode *root_node = &tree->root->node;
 	const bool ret = r_rbtree_aug_insert (&root_node, incoming_node,
-		&incoming_node->node, cont_rbtree_cmp_wrapper, NULL, &cmp_wrap);
+		&incoming_node->node, cont_rbtree_cmp_wrapper, &cmp_wrap, NULL);
 	if (root_node != (&tree->root->node)) {
 		tree->root = container_of (root_node, RContRBNode, node); //cursed augmentation garbage
 	}
