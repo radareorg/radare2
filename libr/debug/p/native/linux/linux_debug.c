@@ -309,8 +309,8 @@ bool linux_attach_new_process(RDebug *dbg, int pid) {
 	}
 
 	// Call select to syncrhonize the thread's data.
-	// We have to set RDebug's pid to avoid returning to this if.
 	dbg->pid = pid;
+	dbg->tid = pid;
 	r_debug_select (dbg, pid, pid);
 
 	return true;
@@ -340,6 +340,7 @@ repeat:
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+
 		void *bed = r_cons_sleep_begin ();
 		int ret = waitpid (pid, &status, flags);
 		r_cons_sleep_end (bed);
