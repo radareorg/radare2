@@ -48,6 +48,7 @@ r_util_sources = [
   'randomart.c',
   'range.c',
   'rbtree.c',
+  'rangetree.c',
   'sandbox.c',
   'signal.c',
   'skiplist.c',
