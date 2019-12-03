@@ -191,7 +191,7 @@ static int r_debug_native_select(RDebug *dbg, int pid, int tid) {
 #if __WINDOWS__
 	return w32_select (dbg, pid, tid);
 #elif __linux__
-	return linux_select_thread (dbg, pid, tid);
+	return linux_select (dbg, pid, tid);
 #else
 	return -1;
 #endif
