@@ -558,7 +558,7 @@ static int cmd_seek(void *data, const char *input) {
 				if (name && *name) {
 					pj_ks (pj, "name", name);
 				}
-				if (core->io->undo.idx == i) {
+				if (core->io->undo.undos == i) {
 					pj_kb (pj, "current", true);
 				}
 				pj_end (pj);
