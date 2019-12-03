@@ -49,7 +49,7 @@ static void space_free(RSpace *s) {
 	}
 }
 
-static void space_node_free(RBNode *n) {
+static void space_node_free(RBNode *n, void *user) {
 	RSpace *s = container_of (n, RSpace, rb);
 	space_free (s);
 }
@@ -57,7 +57,7 @@ static void space_node_free(RBNode *n) {
 R_API void r_spaces_fini(RSpaces *sp) {
 	r_list_free (sp->spacestack);
 	sp->spacestack = NULL;
-	r_rbtree_free (sp->spaces, space_node_free);
+	r_rbtree_free (sp->spaces, space_node_free, NULL);
 	sp->spaces = NULL;
 	r_event_free (sp->event);
 	sp->event = NULL;
@@ -68,7 +68,7 @@ R_API void r_spaces_fini(RSpaces *sp) {
 R_API void r_spaces_purge(RSpaces *sp) {
 	sp->current = NULL;
 	r_list_purge (sp->spacestack);
-	r_rbtree_free (sp->spaces, space_node_free);
+	r_rbtree_free (sp->spaces, space_node_free, NULL);
 	sp->spaces = NULL;
 }
 
@@ -133,7 +133,7 @@ static bool spaces_unset_single(RSpaces *sp, const char *name) {
 	if (sp->current == space) {
 		sp->current = NULL;
 	}
-	return r_rbtree_delete (&sp->spaces, (void *)name, name_space_cmp, space_node_free, NULL);
+	return r_rbtree_delete (&sp->spaces, (void *)name, name_space_cmp, NULL, space_node_free, NULL);
 }
 
 R_API bool r_spaces_unset(RSpaces *sp, const char *name) {
@@ -218,7 +218,7 @@ R_API bool r_spaces_rename(RSpaces *sp, const char *oname, const char *nname) {
 	};
 	r_event_send (sp->event, R_SPACE_EVENT_RENAME, &ev);
 
-	r_rbtree_delete (&sp->spaces, (void *)s->name, name_space_cmp, NULL, NULL);
+	r_rbtree_delete (&sp->spaces, (void *)s->name, name_space_cmp, NULL, NULL, NULL);
 	free (s->name);
 	s->name = strdup (nname);
 	r_rbtree_insert (&sp->spaces, s, &s->rb, space_cmp, NULL);

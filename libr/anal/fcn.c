@@ -183,7 +183,7 @@ static void _fcn_tree_calc_max_addr(RBNode *node) {
 	}
 }
 
-static void _fcn_tree_free(RBNode *node) {
+static void _fcn_tree_free(RBNode *node, void *user) {
 	// TODO RB tree is an intrusive data structure by embedding RBNode into RAnalFunction.
 	// Currently fcns takes the ownership of the resources.
 	// If the ownership transfers from fcns to fcn_tree:
@@ -219,8 +219,8 @@ static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) 
 }
 
 R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *fcn) {
-	bool ret_min = !!r_rbtree_aug_delete (&anal->fcn_tree, fcn, _fcn_tree_cmp, _fcn_tree_free, _fcn_tree_calc_max_addr, NULL);
-	bool ret_addr = !!r_rbtree_delete (&anal->fcn_addr_tree, fcn, _fcn_addr_tree_cmp, NULL, NULL);
+	bool ret_min = !!r_rbtree_aug_delete (&anal->fcn_tree, fcn, _fcn_tree_cmp, NULL, _fcn_tree_free, NULL, _fcn_tree_calc_max_addr);
+	bool ret_addr = !!r_rbtree_delete (&anal->fcn_addr_tree, fcn, _fcn_addr_tree_cmp, NULL, NULL, NULL);
 	if (ret_min != ret_addr) {
 		eprintf ("WARNING: r_anal_fcn_tree_delete: check 'ret_min == ret_addr' failed\n");
 		return false;
