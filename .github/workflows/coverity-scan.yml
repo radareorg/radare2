@@ -1,0 +1,44 @@
+name: coverity-scan
+on:
+  schedule:
+    - cron: '0 18 * * 1,4' # Bi-weekly at 18:00 UTC on Monday and Thursday
+
+jobs:
+  latest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Download Coverity Build Tool
+        run: |
+          wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=radare2" -O cov-analysis-linux64.tar.gz
+          mkdir cov-analysis-linux64
+          tar xzf cov-analysis-linux64.tar.gz --strip 1 -C cov-analysis-linux64
+        env:
+          TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+
+      - name: Fixed world writable dirs
+        run: |
+          chmod go-w $HOME
+          sudo chmod -R go-w /usr/share
+          
+      - name: Configure
+        run: ./configure
+
+      - name: Build with cov-build
+        run: |
+          export PATH=`pwd`/cov-analysis-linux64/bin:$PATH
+          cov-build --dir cov-int make
+
+      - name: Submit the result to Coverity Scan
+        run: |
+          tar czvf radare2.tgz cov-int
+          curl \
+            --form project=radare2 \
+            --form token=$TOKEN \
+            --form email=noreply@radare.org \
+            --form file=@radare2.tgz \
+            --form version=trunk \
+            --form description="radare2" \
+            https://scan.coverity.com/builds?project=radare2
+        env:
+          TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
