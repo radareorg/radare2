@@ -308,10 +308,6 @@ bool linux_attach_new_process(RDebug *dbg, int pid) {
 		return false;
 	}
 
-	if (!linux_stop_thread (pid)) {
-		eprintf ("Could not stop pid (%d)\n", pid);
-	}
-
 	// Call select to syncrhonize the thread's data.
 	// We have to set RDebug's pid to avoid returning to this if.
 	dbg->pid = pid;
@@ -471,6 +467,12 @@ static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
 			(r_ptrace_data_t)NULL) == -1) {
 			perror ("ptrace (PT_ATTACH)");
 			return false;
+		}
+
+		// Make sure SIGSTOP is delivered and wait for it since we can't affect the pid
+		// until it hits SIGSTOP.
+		if (!linux_stop_thread (ptid)) {
+			eprintf ("Could not stop pid (%d)\n", ptid);
 		}
 	}
 
