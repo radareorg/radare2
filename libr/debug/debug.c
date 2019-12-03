@@ -1158,12 +1158,12 @@ repeat:
 #if DEBUGGER
 			/// if the plugin is not compiled link fails, so better do runtime linking
 			/// until this code gets fixed
-			static void (*linux_attach_new_process) (RDebug *dbg) = NULL;
+			static bool (*linux_attach_new_process) (RDebug *dbg, int pid) = NULL;
 			if (!linux_attach_new_process) {
 				linux_attach_new_process = r_lib_dl_sym (NULL, "linux_attach_new_process");
 			}
 			if (linux_attach_new_process) {
-				linux_attach_new_process (dbg);
+				linux_attach_new_process (dbg, dbg->forked_pid);
 			}
 #endif
 			goto repeat;
