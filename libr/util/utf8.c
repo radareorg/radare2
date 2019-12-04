@@ -655,7 +655,7 @@ R_API wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
 	return rutf16;
 }
 
-R_API char *r_utf8_to_acp_l(const ut8 *str, int len) {
+R_API char *r_utf8_to_acp_l(const char *str, int len) {
 	if (!str || !len || len < -1) {
 		return NULL;
 	}
@@ -684,7 +684,7 @@ R_API char *r_utf8_to_acp_l(const ut8 *str, int len) {
 	return acp;
 }
 
-R_API const char *r_acp_to_utf8_l(const ut8 *str, int len) {
+R_API char *r_acp_to_utf8_l(const char *str, int len) {
 	if (!str || !len || len < -1) {
 		return NULL;
 	}
@@ -697,7 +697,7 @@ R_API const char *r_acp_to_utf8_l(const ut8 *str, int len) {
 			if (len != -1) {
 				rutf16[wcsize - 1] = L'\0';
 			}
-			const char *ret = r_utf16_to_utf8_l (rutf16, wcsize);
+			char *ret = r_utf16_to_utf8_l (rutf16, wcsize);
 			free (rutf16);
 			return ret;
 		}
@@ -784,4 +784,29 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 		block_freq[*list_ptr] = 0;
 	}
 	return list;
+}
+
+R_API RStrEnc r_utf_bom_encoding(const ut8 *ptr, int ptrlen) {
+	if (ptrlen > 3) {
+		if (ptr[0] == 0xff && ptr[1] == 0xfe && !ptr[2] && !ptr[3]) {
+			return R_STRING_ENC_UTF32LE;
+		}
+		if (!ptr[0] && !ptr[1] && ptr[2] == 0xfe && ptr[3] == 0xff) {
+			return R_STRING_ENC_UTF32BE;
+		}
+	}
+	if (ptrlen > 2) {
+		if (ptr[0] == 0xef && ptr[1] == 0xbb && ptr[2] == 0xbf) {
+			return R_STRING_ENC_UTF8;
+		}
+	}
+	if (ptrlen > 1) {
+		if (ptr[0] == 0xff && ptr[1] == 0xfe) {
+			return R_STRING_ENC_UTF16LE;
+		}
+		if (ptr[0] == 0xfe && ptr[1] == 0xff) {
+			return R_STRING_ENC_UTF16BE;
+		}
+	}
+	return R_STRING_ENC_GUESS;
 }

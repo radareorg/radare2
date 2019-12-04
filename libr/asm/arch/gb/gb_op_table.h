@@ -12,14 +12,12 @@ typedef struct{
 	const int type;
 } gb_opcode;
 
-#ifndef GB_DIS_LEN_ONLY
 static const char *cb_ops[]={	"rlc","rrc","rl","rr","sla","sra","swap","srl",
 				"bit 0,","bit 1,","bit 2,","bit 3,","bit 4,","bit 5,","bit 6,","bit 7,",
 				"res 0,","res 1,","res 2,","res 3,","res 4,","res 5,","res 6,","res 7,",
 				"set 0,","set 1,","set 2,","set 3,","set 4,","set 5,","set 6,","set 7,"};
 
 static const char *cb_regs[]={	"b","c","d","e","h","l","[hl]","a"};
-#endif
 
 static gb_opcode gb_op[] = {
 	{"nop"			,GB_8BIT},			//0x00

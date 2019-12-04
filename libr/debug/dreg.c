@@ -196,6 +196,10 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				case 128:
 					snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"", valueBig.v128.High, valueBig.v128.Low);
 					break;
+				case 256:
+					snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"",
+						valueBig.v256.High.High, valueBig.v256.High.Low, valueBig.v256.Low.High, valueBig.v256.Low.Low);
+					break;
 				default:
 					snprintf (strvalue, sizeof (strvalue), "ERROR");
 				}

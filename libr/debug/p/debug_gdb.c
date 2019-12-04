@@ -291,7 +291,7 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	// some implementations of the gdb protocol are acting weird.
 	// so winedbg is not able to write registers through the <G> packet
-	// and also it does not return the whole gdb register profile after\n"
+	// and also it does not return the whole gdb register profile after
 	// calling <g>
 	// so this workaround resizes the small register profile buffer
 	// to the whole set and fills the rest with 0
@@ -309,29 +309,13 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	// since this was the behaviour prior to the change.
 	bool bigendian = dbg->corebind.core && \
 					 dbg->corebind.cfggeti (dbg->corebind.core, "cfg.bigendian");
+	RRegArena *arena = dbg->reg->regset[type].arena;
 	for (;;) {
 		current = r_reg_next_diff (dbg->reg, type, reg_buf, buflen, current, bits);
 		if (!current) {
 			break;
 		}
-		ut64 val = r_reg_get_value (dbg->reg, current);
-		int bytes = bits / 8;
-		if (bigendian) {
-			// TODO: validate that it's correct for all kinds of archs
-			switch (bytes) {
-			case 2:
-				val = r_swap_ut16 (val);
-				break;
-			case 4:
-				val = r_swap_ut32 (val);
-				break;
-			case 8:
-			default:
-				val = r_swap_ut64 (val);
-				break;
-			}
-		}
-		gdbr_write_reg (desc, current->name, (char*)&val, bytes);
+		gdbr_write_reg (desc, current->name, (char*)arena->bytes + (current->offset / 8), current->size / 8);
 	}
 	return true;
 }
@@ -502,17 +486,15 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"gpr	foseg	.32	164	0\n"
 				"gpr	fooff	.32	168	0\n"
 				"gpr	fop	.32	172	0\n"
-			/* Commented until the long registers will be implemented
-				"gpr	xmm0	.128	176	0\n"
-				"gpr	xmm1	.128	192	0\n"
-				"gpr	xmm2	.128	208	0\n"
-				"gpr	xmm3	.128	224	0\n"
-				"gpr	xmm4	.128	240	0\n"
-				"gpr	xmm5	.128	256	0\n"
-				"gpr	xmm6	.128	272	0\n"
-				"gpr	xmm7	.128	288	0\n"
+				"fpu	xmm0	.128	176	0\n"
+				"fpu	xmm1	.128	192	0\n"
+				"fpu	xmm2	.128	208	0\n"
+				"fpu	xmm3	.128	224	0\n"
+				"fpu	xmm4	.128	240	0\n"
+				"fpu	xmm5	.128	256	0\n"
+				"fpu	xmm6	.128	272	0\n"
+				"fpu	xmm7	.128	288	0\n"
 				"gpr	mxcsr	.32	304	0\n"
-			*/
 				);
 		} else if (dbg->anal->bits == 64) {
 			return strdup (
@@ -565,25 +547,23 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"gpr	foseg	.32	264	0\n"
 				"gpr	fooff	.32	268	0\n"
 				"gpr	fop	.32	272	0\n"
-			/* Commented until the long registers will be implemented
-				"gpr	xmm0	.128	276	0\n"
-				"gpr	xmm1	.128	292	0\n"
-				"gpr	xmm2	.128	308	0\n"
-				"gpr	xmm3	.128	324	0\n"
-				"gpr	xmm4	.128	340	0\n"
-				"gpr	xmm5	.128	356	0\n"
-				"gpr	xmm6	.128	372	0\n"
-				"gpr	xmm7	.128	388	0\n"
-				"gpr	xmm8	.128	404	0\n"
-				"gpr	xmm9	.128	420	0\n"
-				"gpr	xmm10	.128	436	0\n"
-				"gpr	xmm11	.128	452	0\n"
-				"gpr	xmm12	.128	468	0\n"
-				"gpr	xmm13	.128	484	0\n"
-				"gpr	xmm14	.128	500	0\n"
-				"gpr	xmm15	.128	516	0\n"
-				"gpr	mxcsr	.32	532	0\n"
-			*/
+				"fpu	xmm0	.128	276	0\n"
+				"fpu	xmm1	.128	292	0\n"
+				"fpu	xmm2	.128	308	0\n"
+				"fpu	xmm3	.128	324	0\n"
+				"fpu	xmm4	.128	340	0\n"
+				"fpu	xmm5	.128	356	0\n"
+				"fpu	xmm6	.128	372	0\n"
+				"fpu	xmm7	.128	388	0\n"
+				"fpu	xmm8	.128	404	0\n"
+				"fpu	xmm9	.128	420	0\n"
+				"fpu	xmm10	.128	436	0\n"
+				"fpu	xmm11	.128	452	0\n"
+				"fpu	xmm12	.128	468	0\n"
+				"fpu	xmm13	.128	484	0\n"
+				"fpu	xmm14	.128	500	0\n"
+				"fpu	xmm15	.128	516	0\n"
+				"fpu	mxcsr	.32	532	0\n"
 			);
 		} else {
 			return strdup (
@@ -1060,7 +1040,9 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 	// TODO kill based on pid and signal
 	if (sig != 0) {
-		return gdbr_kill (desc);
+		if (gdbr_kill (desc) < 0) {
+			return false;
+		}
 	}
 	return true;
 }

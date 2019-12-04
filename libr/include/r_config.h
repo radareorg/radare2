@@ -37,8 +37,6 @@ R_API const char *r_config_node_type(RConfigNode *node);
 
 typedef struct r_config_t {
 	int lock;
-	int last_notfound;
-	int n_nodes;
 	void *user;
 	RNum *num;
 	PrintfCallback cb_printf;

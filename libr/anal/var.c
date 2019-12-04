@@ -1006,13 +1006,9 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					pj_k (pj, "ref");
 					pj_o (pj);
 					pj_ks (pj, "base", anal->reg->name[R_REG_NAME_SP]);
-					char print_offset[32];
-					sprintf (print_offset, "-%"PFMT64d"", (st64)R_ABS(var->delta)); 
-					char *printoffset = strdup (print_offset);
-					pj_ks (pj, "offset", printoffset);
+					pj_kn (pj, "offset", (st64)(-R_ABS (var->delta)));
 					pj_end (pj);
 					pj_end (pj);
-					free (printoffset);
 				}
 				break;
 			}

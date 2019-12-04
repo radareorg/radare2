@@ -49,8 +49,17 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 		}
 		ret = val->v128.Low;
 		break;
-	//case 256:// qword + qword + qword + qword
-	//	break;
+	case 256:// qword + qword + qword + qword
+		if (regset->arena->bytes && (off + 32 <= regset->arena->size)) {
+			val->v256.Low.Low = *((ut64 *)(regset->arena->bytes + off));
+			val->v256.Low.High = *((ut64 *)(regset->arena->bytes + off + 8));
+			val->v256.High.Low = *((ut64 *)(regset->arena->bytes + off + 16));
+			val->v256.High.High = *((ut64 *)(regset->arena->bytes + off + 24));
+		} else {
+			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		}
+		ret = val->v256.Low.Low;
+		break;
 	default:
 		eprintf ("r_reg_get_value_big: Bit size %d not supported\n", item->size);
 		break;
@@ -251,6 +260,10 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 	const int packmod = packbits % 8;
 	if (packmod) {
 		eprintf ("Invalid bit size for packet register\n");
+		return 0LL;
+	}
+	if (packidx * packbits > item->size) {
+		eprintf ("Packed index is beyond the register size\n");
 		return 0LL;
 	}
 	RRegSet *regset = &reg->regset[item->arena];

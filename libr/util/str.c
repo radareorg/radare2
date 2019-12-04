@@ -778,6 +778,27 @@ R_API bool r_str_ccmp(const char *dst, const char *src, int ch) {
 	return false;
 }
 
+// Returns true if item is in sep-separated list
+R_API bool r_str_cmp_list(const char *list, const char *item, char sep) {
+	if (!list || !item) {
+		return false;
+	}
+	int i = 0, j = 0;
+	for (; list[i] && list[i] != sep; i++, j++) {
+		if (item[j] != list[i]) {
+			while (list[i] && list[i] != sep) {
+				i++;
+			}
+			if (!list[i]) {
+				return false;
+			}
+			j = -1;
+			continue;
+		}
+	}
+	return true;
+}
+
 // like strncmp, but checking for null pointers
 R_API int r_str_cmp(const char *a, const char *b, int len) {
 	if ((a == b) || (!a && !b)) {
@@ -1347,17 +1368,19 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 	}
 	switch (enc) {
 	case R_STRING_ENC_UTF16LE:
+	case R_STRING_ENC_UTF16BE:
 	case R_STRING_ENC_UTF32LE:
+	case R_STRING_ENC_UTF32BE:
 		if (buf_size < 0) {
 			return NULL;
 		}
-		if (enc == R_STRING_ENC_UTF16LE) {
+		if (enc == R_STRING_ENC_UTF16LE || enc == R_STRING_ENC_UTF16BE) {
 			end = (char *)r_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0", 2, 2);
 		} else {
 			end = (char *)r_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0\0\0", 4, 4);
 		}
 		if (!end) {
-			end = buf + buf_size - 1;
+			end = buf + buf_size - 1; /* TODO: handle overlong strings properly */
 		}
 		len = end - buf;
 		break;
@@ -1375,10 +1398,14 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 	while (p < end) {
 		switch (enc) {
 		case R_STRING_ENC_UTF16LE:
+		case R_STRING_ENC_UTF16BE:
 		case R_STRING_ENC_UTF32LE:
-			ch_bytes = (enc == R_STRING_ENC_UTF16LE ?
-				    r_utf16le_decode ((ut8 *)p, end - p, &ch) :
-				    r_utf32le_decode ((ut8 *)p, end - p, &ch));
+		case R_STRING_ENC_UTF32BE:
+			if (enc == R_STRING_ENC_UTF16LE || enc == R_STRING_ENC_UTF16BE) {
+				ch_bytes = r_utf16_decode ((ut8 *)p, end - p, &ch, enc == R_STRING_ENC_UTF16BE);
+			} else {
+				ch_bytes = r_utf32_decode ((ut8 *)p, end - p, &ch, enc == R_STRING_ENC_UTF32BE);
+			}
 			if (ch_bytes == 0) {
 				p++;
 				continue;
@@ -1400,13 +1427,16 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 				*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 			}
 		} else {
-			r_str_byte_escape (p, &q, false, false, esc_bslash);
+			int offset = enc == R_STRING_ENC_UTF16BE ? 1 : enc == R_STRING_ENC_UTF32BE ? 3 : 0;
+			r_str_byte_escape (p + offset, &q, false, false, esc_bslash);
 		}
 		switch (enc) {
 		case R_STRING_ENC_UTF16LE:
+		case R_STRING_ENC_UTF16BE:
 			p += ch_bytes < 2 ? 2 : ch_bytes;
 			break;
 		case R_STRING_ENC_UTF32LE:
+		case R_STRING_ENC_UTF32BE:
 			p += 4;
 			break;
 		default:
@@ -1427,6 +1457,14 @@ R_API char *r_str_escape_utf16le(const char *buf, int buf_size, bool show_asciid
 
 R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
 	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot, esc_bslash);
+}
+
+R_API char *r_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16BE, show_asciidot, esc_bslash);
+}
+
+R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash);
 }
 
 // JSON has special escaping requirements
@@ -3429,23 +3467,21 @@ R_API const char *r_str_bool(int b) {
 }
 
 R_API bool r_str_is_true(const char *s) {
-	return !r_str_casecmp ("yes", s) \
-		|| !r_str_casecmp ("on", s) \
-		|| !r_str_casecmp ("true", s) \
+	return !r_str_casecmp ("yes", s)
+		|| !r_str_casecmp ("on", s)
+		|| !r_str_casecmp ("true", s)
 		|| !r_str_casecmp ("1", s);
 }
 
+R_API bool r_str_is_false(const char *s) {
+	return !r_str_casecmp ("no", s)
+		|| !r_str_casecmp ("off", s)
+		|| !r_str_casecmp ("false", s)
+		|| !r_str_casecmp ("0", s);
+}
+
 R_API bool r_str_is_bool(const char *val) {
-	if (!r_str_casecmp (val, "true") || !r_str_casecmp (val, "false")) {
-		return true;
-	}
-	if (!r_str_casecmp (val, "on") || !r_str_casecmp (val, "off")) {
-		return true;
-	}
-	if (!r_str_casecmp (val, "yes") || !r_str_casecmp (val, "no")) {
-		return true;
-	}
-	return false;
+	return r_str_is_true (val) || r_str_is_false (val);
 }
 
 R_API char *r_str_nextword(char *s, char ch) {

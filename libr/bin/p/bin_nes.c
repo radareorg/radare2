@@ -142,7 +142,7 @@ static RList *mem(RBinFile *bf) {
 	if (!(n = R_NEW0 (RBinMem))) {
 		return ret;
 	}
-	m->mirrors = r_list_new();
+	m->mirrors = r_list_new ();
 	n->name = strdup ("RAM_MIRROR_2");
 	n->addr = RAM_MIRROR_2_ADDRESS;
 	n->size = RAM_MIRROR_2_SIZE;

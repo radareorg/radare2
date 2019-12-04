@@ -19,7 +19,6 @@
 #include <kd.h>
 
 static WindCtx *wctx = NULL;
-static bool dbreak = false;
 
 static int r_debug_windbg_step(RDebug *dbg) {
 	return true;
@@ -54,27 +53,15 @@ static int r_debug_windbg_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return windbg_continue(wctx);
 }
 
-#if 0
-static void wstatic_debug_break(void *u) {
-	dbreak = true;
-	windbg_break_read (wctx);
-}
-#endif
-
 static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
-	dbreak = false;
-
+	windbg_lock_enter (wctx);
 	for (;;) {
+		void *bed = r_cons_sleep_begin ();
 		int ret = windbg_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
-		if (dbreak) {
-			dbreak = false;
-			windbg_break (wctx);
-			R_FREE (pkt);
-			continue;
-		}
+		r_cons_sleep_end (bed);
 		if (ret != KD_E_OK || !pkt) {
 			reason = R_DEBUG_REASON_ERROR;
 			break;
@@ -95,6 +82,7 @@ static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 		}
 		R_FREE (pkt);
 	}
+	windbg_lock_leave (wctx);
 	free (pkt);
 	return reason;
 }
@@ -244,6 +232,37 @@ static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
 	return ret;
 }
 
+static RList *r_debug_windbg_modules(RDebug *dbg) {
+	RListIter *it;
+	WindModule *m;
+
+	RList *ret = r_list_newf (free);
+	if (!ret) {
+		return NULL;
+	}
+
+	RList *modules = windbg_list_modules (wctx);
+	if (!modules) {
+		r_list_free (ret);
+		return NULL;
+	}
+
+	r_list_foreach (modules, it, m) {
+		RDebugMap *mod = R_NEW0 (RDebugMap);
+		if (!mod) {
+			r_list_free (ret);
+			return NULL;
+		}
+		mod->file = m->name;
+		mod->size = m->size;
+		mod->addr = m->addr;
+		mod->addr_end = m->addr + m->size;
+		r_list_append (ret, mod);
+	}
+
+	return ret;
+}
+
 RDebugPlugin r_debug_plugin_windbg = {
 	.name = "windbg",
 	.license = "LGPL3",
@@ -261,7 +280,8 @@ RDebugPlugin r_debug_plugin_windbg = {
 	.reg_read = &r_debug_windbg_reg_read,
 	.reg_write = &r_debug_windbg_reg_write,
 	.reg_profile = &r_debug_windbg_reg_profile,
-	.threads = &r_debug_windbg_threads
+	.threads = &r_debug_windbg_threads,
+	.modules_get = &r_debug_windbg_modules
 };
 
 #ifndef R2_PLUGIN_INCORE

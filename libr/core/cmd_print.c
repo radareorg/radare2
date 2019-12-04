@@ -50,9 +50,11 @@ static const char *help_msg_p6[] = {
 };
 
 static const char *help_msg_pF[] = {
-	"Usage: pF[apd]", "[len]", "parse ASN1, PKCS, X509, DER",
+	"Usage: pF[apdb]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf",
 	"pFa", "[len]", "decode ASN1 from current block",
 	"pFaq", "[len]", "decode ASN1 from current block (quiet output)",
+	"pFb", "[len]", "decode raw proto buffers.",
+	"pFbv", "[len]", "decode raw proto buffers (verbose).",
 	"pFo", "[len]", "decode ASN1 OID",
 	"pFp", "[len]", "decode PKCS7",
 	"pFx", "[len]", "Same with X509",
@@ -1196,6 +1198,15 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				r_pkcs7_free_cms (cms);
 			} else {
 				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			}
+		}
+		break;
+	case 'b': // "pFb"
+		{
+			char *s = r_protobuf_decode(data, size, input[1] == 'v');
+			if (s) {
+				r_cons_printf ("%s", s);
+				free (s);
 			}
 		}
 		break;

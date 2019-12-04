@@ -933,7 +933,7 @@ typedef struct _HeapBlockExtraInfo { // think of extra stuff to put here
 } HeapBlockExtraInfo, *PHeapBlockExtraInfo;
 
 typedef struct _HeapBlock {
-	PVOID dwAddress;
+	ULONG_PTR dwAddress;
 	SIZE_T dwSize;
 	DWORD dwFlags;
 	SIZE_T index;
@@ -1003,7 +1003,7 @@ NTSTATUS (NTAPI *RtlDestroyQueryDebugBuffer)(
 	IN PDEBUG_BUFFER DebugBuffer
 );
 
-__kernel_entry NTSTATUS (*w32_NtQueryInformationProcess)(
+__kernel_entry NTSTATUS (NTAPI *w32_NtQueryInformationProcess)(
   IN HANDLE           ProcessHandle,
   IN PROCESSINFOCLASS ProcessInformationClass,
   OUT PVOID           ProcessInformation,

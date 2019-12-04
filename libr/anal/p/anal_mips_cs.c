@@ -1167,6 +1167,14 @@ static int archinfo(RAnal *anal, int q) {
 	return 4;
 }
 
+static RList *anal_preludes(RAnal *anal) {
+#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
+	RSearchKeyword* kw;
+	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
+	KW ("\x27\xbd\x00", 3, NULL, 0);
+	return l;
+}
+
 RAnalPlugin r_anal_plugin_mips_cs = {
 	.name = "mips",
 	.desc = "Capstone MIPS analyzer",
@@ -1175,6 +1183,7 @@ RAnalPlugin r_anal_plugin_mips_cs = {
 	.arch = "mips",
 	.get_reg_profile = get_reg_profile,
 	.archinfo = archinfo,
+	.preludes = anal_preludes,
 	.bits = 16|32|64,
 	.op = &analop,
 };

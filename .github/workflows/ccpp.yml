@@ -1,0 +1,28 @@
+name: Radare2 CI
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node_version: ['12']
+        os: [ubuntu-latest, macOS-latest]
+    
+    steps:
+    - uses: actions/checkout@v1
+    - name: configure
+      run: ./configure
+    - name: make
+      run: make
+    # Disabled until NodeJS/r2pipe.js problems are solved
+    #- name: make tests
+    #  run: make tests
+

@@ -43,7 +43,7 @@ void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file)
 	stream_file_get_data(stream_file, data);
 
 	fpo_stream = (SFPOStream *) stream;
-	fpo_stream->fpo_data_list = r_list_new();
+	fpo_stream->fpo_data_list = r_list_new ();
 	ptmp = data;
 	while (read_bytes < data_size) {
 		fpo_data = (SFPO_DATA *) malloc(sizeof(SFPO_DATA));
@@ -73,7 +73,7 @@ void free_fpo_stream(void *stream)
 		fpo_data = (SFPO_DATA *) r_list_iter_get(it);
 		free(fpo_data);
 	}
-	r_list_free(fpo_stream->fpo_data_list);
+	r_list_free (fpo_stream->fpo_data_list);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,7 +88,7 @@ void free_fpo_new_stream(void *stream)
 		fpo_data = (SFPO_DATA_V2 *) r_list_iter_get(it);
 		free(fpo_data);
 	}
-	r_list_free(fpo_stream->fpo_data_list);
+	r_list_free (fpo_stream->fpo_data_list);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

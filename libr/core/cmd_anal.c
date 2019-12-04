@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2009-2019 - pancake, maijin */
 
-#include "r_util.h"
-#include "r_core.h"
-#include "r_anal.h"
+#include <r_core.h>
 
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
@@ -427,6 +425,7 @@ static const char *help_msg_afll[] = {
 static const char *help_msg_afn[] = {
 	"Usage:", "afn[sa]", " Analyze function names",
 	"afn", " [name]", "rename the function",
+	"afn", " base64:encodedname", "rename the function",
 	"afn.", "", "same as afn without arguments. show the function name in current offset",
 	"afna", "", "construct a function name for the current offset",
 	"afns", "", "list all strings associated with the current function",
@@ -459,6 +458,7 @@ static const char *help_msg_afv[] = {
 	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
 	"afvn", " [new_name] ([old_name])", "rename argument/local",
 	"afvt", " [name] [new_type]", "change type for given argument/local",
+	"afvf", "", "show BP relative stackframe variables",
 	"afv-", "([name])", "remove all or given var",
 	NULL
 };
@@ -815,6 +815,28 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 }
 #endif
 
+// function argument types and names into anal/types
+static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
+	RAnalFcnVarsCache cache;
+	r_anal_fcn_vars_cache_init (core->anal, &cache, fcn);
+	RListIter *iter;
+	RAnalVar *var;
+	int arg_count = 0;
+
+	RList *all_vars = cache.bvars;
+	r_list_join (all_vars, cache.svars);
+	r_list_join (all_vars, cache.rvars);
+
+	r_list_foreach (all_vars, iter, var) {
+		if (var->isarg) {
+			char *query = r_str_newf ("anal/types/func.%s.arg.%d=%s,%s", fcn->name, arg_count, var->type, var->name);
+			sdb_querys (core->sdb, NULL, 0, query);
+			free (query);
+			arg_count++;
+		}
+	}
+}
+
 static bool cmd_anal_aaft(RCore *core) {
 	RListIter *it;
 	RAnalFunction *fcn;
@@ -846,6 +868,7 @@ static bool cmd_anal_aaft(RCore *core) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+		__add_vars_sdb (core, fcn);
 	}
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
@@ -1078,6 +1101,46 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 	return 0;
 }
 
+// EBP BASED
+static int delta_cmp(const void *a, const void *b) {
+	const RAnalVar *va = a;
+	const RAnalVar *vb = b;
+	return vb->delta - va->delta;
+}
+
+static int delta_cmp2(const void *a, const void *b) {
+	const RAnalVar *va = a;
+	const RAnalVar *vb = b;
+	return va->delta - vb->delta;
+}
+
+static void __cmd_afvf(RCore *core, const char *input) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+	RListIter *iter;
+	RAnalVar *p;
+	RList *list = r_anal_var_all_list (core->anal, fcn);
+	r_list_sort (list, delta_cmp2);
+	r_list_foreach (list, iter, p) {
+		if (p->isarg || p->delta > 0) {
+			continue;
+		}
+		const char *pad = r_str_pad (' ', 10 - strlen (p->name));
+		r_cons_printf ("0x%08"PFMT64x"  %s:%s%s\n", (ut64)-p->delta, p->name, pad, p->type);
+	}
+	r_list_sort (list, delta_cmp);
+	r_list_foreach (list, iter, p) {
+		if (!p->isarg && p->delta < 0) {
+			continue;
+		}
+		// TODO: only stack vars if (p->kind == 's') { }
+		const char *pad = r_str_pad (' ', 10 - strlen (p->name));
+		// XXX this 0x6a is a hack
+		r_cons_printf ("0x%08"PFMT64x"  %s:%s%s\n", ((ut64)p->delta) - 0x6a, p->name, pad, p->type);
+	}
+	r_list_free (list);
+
+}
+
 static int var_cmd(RCore *core, const char *str) {
 	int delta, type = *str, res = true;
 	RAnalVar *v1;
@@ -1220,6 +1283,9 @@ static int var_cmd(RCore *core, const char *str) {
 			r_list_free (list);
 		}
 		return true;
+	case 'f': // "afvf"
+		__cmd_afvf (core, ostr);
+		break;
 	case 't':
 		if (fcn) { // "afvt"
 			p = strchr (ostr, ' ');
@@ -1688,7 +1754,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				pj_j (pj, opexstr);
 			}
 			pj_kn (pj, "addr", core->offset + idx);
-			pj_ks (pj, "bytes", r_hex_bin2strdup (buf, ret));
+			pj_ks (pj, "bytes", r_hex_bin2strdup (buf + idx, ret));
 			if (op.val != UT64_MAX) {
 				pj_kn (pj, "val", op.val);
 			}
@@ -2474,16 +2540,16 @@ static char * getFunctionName (RCore *core, ut64 off, const char *name, bool pre
 }
 
 /* TODO: move into r_anal_fcn_rename(); */
-static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefix) {
+static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool prefix) {
 	r_return_val_if_fail (core && _name, false);
-	char *name = getFunctionName (core, off, _name, prefix);
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, R_ANAL_FCN_TYPE_ANY);
+	char *name = getFunctionName (core, addr, _name, prefix);
+	// RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
+	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
 	if (fcn) {
 		free (fcn->name);
 		fcn->name = name;
 		if (core->anal->cb.on_fcn_rename) {
-			core->anal->cb.on_fcn_rename (core->anal,
-					core->anal->user, fcn, name);
+			core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, name);
 		}
 		return true;
 	}
@@ -3247,7 +3313,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					if (fcnname) {
 						fcnname++;
 						 if (strcmp (fcn->name, fcnname)) {
-							setFunctionName (core, addr, fcnname, false);
+							(void)__setFunctionName (core, addr, fcnname, false);
 							f = r_anal_get_fcn_in (core->anal, addr, -1);
 						 }
 						 r_anal_str_to_fcn (core->anal, f, fcnstr);
@@ -3576,7 +3642,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (*name == '?') {
 				eprintf ("Usage: afn newname [off]   # set new name to given function\n");
 			} else {
-				if (!*name || !setFunctionName (core, off, name, false)) {
+				if (r_str_startswith (name, "base64:")) {
+					char *res = (char *)r_base64_decode_dyn (name + 7, -1);
+					if (res) {
+						free (name);
+						name = res;
+					}
+				}
+				if (!*name || !__setFunctionName (core, off, name, false)) {
 					eprintf ("Cannot find function at 0x%08" PFMT64x "\n", off);
 				}
 			}
@@ -3718,13 +3791,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			// depth = 1; // or 1?
 			// disable hasnext
 		}
-
 		//r_core_anal_undefine (core, core->offset);
 		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 		if (fcn) {
 			/* ensure we use a proper name */
-			setFunctionName (core, addr, fcn->name, false);
+			__setFunctionName (core, addr, fcn->name, false);
 			if (core->anal->opt.vars) {
 				r_core_recover_vars (core, fcn, true);
 			}
@@ -3788,8 +3860,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 		}
 		if (name) {
-			if (*name && !setFunctionName (core, addr, name, true)) {
-				eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", (ut64)addr);
+			if (*name && !__setFunctionName (core, addr, name, true)) {
+				eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
 			}
 			free (name);
 		}
@@ -8889,6 +8961,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 			r_core_anal_all (core);
 			r_print_rowlog_done (core->print, oldstr);
+			r_core_task_yield (&core->tasks);
 			// Run pending analysis immediately after analysis
 			// Usefull when running commands with ";" or via r2 -c,-i
 			run_pending_anal (core);
@@ -8913,9 +8986,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "aF @@ sym.go.*");
 					r_print_rowlog_done (core->print, oldstr);
 				}
+				r_core_task_yield (&core->tasks);
 				if (!cfg_debug) {
 					if (dh_orig && strcmp (dh_orig, "esil")) {
 						r_core_cmd0 (core, "dL esil");
+						r_core_task_yield (&core->tasks);
 					}
 				}
 				int c = r_config_get_i (core->config, "anal.calls");
@@ -8931,6 +9006,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				// oldstr = r_print_rowlog (core->print, "Analyze data refs as code (LEA)");
 				// (void) cmd_anal_aad (core, NULL); // "aad"
 				r_print_rowlog_done (core->print, oldstr);
+				r_core_task_yield (&core->tasks);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
@@ -8940,6 +9016,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					(void)r_core_search_preludes (core, false); // "aap"
 					didAap = true;
 					r_print_rowlog_done (core->print, oldstr);
+					r_core_task_yield (&core->tasks);
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
 					}
@@ -8948,6 +9025,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				oldstr = r_print_rowlog (core->print, "Analyze len bytes of instructions for references (aar)");
 				(void)r_core_anal_refs (core, ""); // "aar"
 				r_print_rowlog_done (core->print, oldstr);
+				r_core_task_yield (&core->tasks);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
@@ -8955,22 +9033,28 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				oldstr = r_print_rowlog (core->print, "Check for objc references");
 				r_print_rowlog_done (core->print, oldstr);
 				cmd_anal_objc (core, input + 1, true);
+				r_core_task_yield (&core->tasks);
 				oldstr = r_print_rowlog (core->print, "Check for vtables");
 				r_core_cmd0 (core, "avrr");
 				r_print_rowlog_done (core->print, oldstr);
+				r_core_task_yield (&core->tasks);
 				r_config_set_i (core->config, "anal.calls", c);
+				r_core_task_yield (&core->tasks);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
 				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
 					r_core_cmd0 (core, "aav");
+					r_core_task_yield (&core->tasks);
 					bool ioCache = r_config_get_i (core->config, "io.pcache");
 					r_config_set_i (core->config, "io.pcache", 1);
 					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
 					r_core_cmd0 (core, "aae");
 					r_print_rowlog_done (core->print, oldstr);
+					r_core_task_yield (&core->tasks);
 					if (!ioCache) {
 						r_core_cmd0 (core, "wc-*");
+						r_core_task_yield (&core->tasks);
 					}
 					r_config_set_i (core->config, "io.pcache", ioCache);
 					if (r_cons_is_breaked ()) {
@@ -8982,6 +9066,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					                         "for fcn.* and sym.func.* functions (aan)");
 					r_core_anal_autoname_all_fcns (core);
 					r_print_rowlog_done (core->print, oldstr);
+					r_core_task_yield (&core->tasks);
 				}
 				if (core->anal->opt.vars) {
 					RAnalFunction *fcni;
@@ -8999,20 +9084,24 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						r_core_recover_vars (core, fcni, true);
 						r_list_free (list);
 					}
+					r_core_task_yield (&core->tasks);
 				}
 				if (!sdb_isempty (core->anal->sdb_zigns)) {
 					oldstr = r_print_rowlog (core->print, "Check for zignature from zigns folder (z/)");
 					r_core_cmd0 (core, "z/");
 					r_print_rowlog_done (core->print, oldstr);
+					r_core_task_yield (&core->tasks);
 				}
 
 				oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
 				r_core_cmd0 (core, "aaft");
 				r_print_rowlog_done (core->print, oldstr);
+				r_core_task_yield (&core->tasks);
 
 				oldstr = r_print_rowlog (core->print, "Propagate noreturn information");
-				r_print_rowlog_done (core->print, oldstr);
 				r_core_anal_propagate_noreturn (core);
+				r_print_rowlog_done (core->print, oldstr);
+				r_core_task_yield (&core->tasks);
 
 				oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 				r_print_rowlog_done (core->print, oldstr);
@@ -9022,6 +9111,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						oldstr = r_print_rowlog (core->print, "Finding function preludes");
 						(void)r_core_search_preludes (core, false); // "aap"
 						r_print_rowlog_done (core->print, oldstr);
+						r_core_task_yield (&core->tasks);
 					}
 
 					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
@@ -9031,6 +9121,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {
 					r_core_cmdf (core, "dL %s", dh_orig);
+					r_core_task_yield (&core->tasks);
 				}
 			}
 			r_core_seek (core, curseek, 1);

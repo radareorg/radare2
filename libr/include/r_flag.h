@@ -55,7 +55,7 @@ typedef struct r_flag_t {
 	Sdb *tags;
 	RNum *num;
 	RSkipList *by_off; /* flags sorted by offset, value=RFlagsAtOffset */
-	HtPP *ht_name; /* hashmap key=item name, value=RList of items */
+	HtPP *ht_name; /* hashmap key=item name, value=RFlagItem * */
 	PrintfCallback cb_printf;
 #if R_FLAG_ZONE_USE_SDB
 	Sdb *zones;
@@ -120,6 +120,7 @@ R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free (RFlagItem *item);
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
 R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname);
+R_API const char *r_flag_item_set_color(RFlagItem *item, const char *color);
 R_API RFlagItem *r_flag_item_clone(RFlagItem *item);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);

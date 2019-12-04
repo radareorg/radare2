@@ -428,7 +428,7 @@ typedef struct r_bin_plugin_t {
 	RBinAddr* (*binsym)(RBinFile *bf, int num);
 	RList/*<RBinAddr>*/* (*entries)(RBinFile *bf);
 	RList/*<RBinSection>*/* (*sections)(RBinFile *bf);
-	RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
+	R_BORROW RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
 	RList/*<RBinSymbol>*/* (*symbols)(RBinFile *bf);
 	RList/*<RBinImport>*/* (*imports)(RBinFile *bf);
 	RList/*<RBinString>*/* (*strings)(RBinFile *bf);
@@ -864,6 +864,7 @@ extern RBinPlugin r_bin_plugin_nro;
 extern RBinPlugin r_bin_plugin_nso;
 extern RBinPlugin r_bin_plugin_sfc;
 extern RBinPlugin r_bin_plugin_z64;
+extern RBinPlugin r_bin_plugin_prg;
 
 #ifdef __cplusplus
 }

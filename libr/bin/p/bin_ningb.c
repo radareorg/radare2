@@ -67,7 +67,7 @@ static RList* sections(RBinFile *bf){
 		return NULL;
 	}
 
-	ret = r_list_new();
+	ret = r_list_new ();
 	if (!ret) {
 		return NULL;
 	}

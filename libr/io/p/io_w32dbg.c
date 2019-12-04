@@ -107,7 +107,7 @@ static int __open_proc(RIO *io, RIOW32Dbg *dbg, bool attach) {
 		inst->params->type = W32_ATTACH;
 		inst->params->pid = dbg->pi.dwProcessId;
 		w32dbg_wrap_wait_ret (inst);
-		if (!w32dbgw_intret (inst)) {
+		if (!w32dbgw_ret (inst)) {
 			w32dbgw_err (inst);
 			r_sys_perror ("__open_proc/DebugActiveProcess");
 			goto att_exit;
@@ -117,7 +117,7 @@ static int __open_proc(RIO *io, RIOW32Dbg *dbg, bool attach) {
 		inst->params->wait.wait_time = 10000;
 		inst->params->wait.de = &de;
 		w32dbg_wrap_wait_ret (inst);
-		if (!w32dbgw_intret (inst)) {
+		if (!w32dbgw_ret (inst)) {
 			w32dbgw_err (inst);
 			r_sys_perror ("__open_proc/WaitForDebugEvent");
 			goto att_exit;

@@ -16,6 +16,7 @@
 
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <elf.h>
 
 char *linux_reg_profile (RDebug *dbg) {
 #if __arm__
@@ -39,6 +40,7 @@ char *linux_reg_profile (RDebug *dbg) {
 #endif
 	} else {
 #include "reg/linux-x64.h"
+#include <bits/sigcontext.h>
 	}
 #elif __powerpc__
 	if (dbg->bits & R_SYS_BITS_32) {
@@ -288,22 +290,30 @@ static void linux_remove_thread (RDebug *dbg, int pid) {
 	}
 }
 
-bool linux_select_thread(RDebug *dbg, int pid, int tid) {
+bool linux_select(RDebug *dbg, int pid, int tid) {
+	if (dbg->pid != -1 && dbg->pid != pid) {
+		return linux_attach_new_process (dbg, pid);
+	}
 	return linux_attach (dbg, tid);
 }
 
-void linux_attach_new_process (RDebug *dbg) {
+bool linux_attach_new_process(RDebug *dbg, int pid) {
 	linux_detach_all (dbg);
-
 	if (dbg->threads) {
 		r_list_free (dbg->threads);
 		dbg->threads = NULL;
 	}
-	if (!linux_stop_thread (dbg->forked_pid)) {
-		eprintf ("Could not stop pid (%d)\n", dbg->forked_pid);
+
+	if (!linux_attach (dbg, pid)) {
+		return false;
 	}
-	linux_attach (dbg, dbg->forked_pid);
-	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
+
+	// Call select to syncrhonize the thread's data.
+	dbg->pid = pid;
+	dbg->tid = pid;
+	r_debug_select (dbg, pid, pid);
+
+	return true;
 }
 
 static void linux_dbg_wait_break(RDebug *dbg) {
@@ -330,6 +340,7 @@ repeat:
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+
 		void *bed = r_cons_sleep_begin ();
 		int ret = waitpid (pid, &status, flags);
 		r_cons_sleep_end (bed);
@@ -437,7 +448,9 @@ static bool linux_stop_thread(int tid) {
 	int status;
 	int ret = -1;
 	if (linux_kill_thread (tid, SIGSTOP)) {
-		ret = waitpid (tid, &status, __WALL);
+		if ((ret = waitpid (tid, &status, __WALL)) == -1) {
+			perror("waitpid");
+		}
 	}
 
 	return ret == tid;
@@ -455,6 +468,12 @@ static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
 			(r_ptrace_data_t)NULL) == -1) {
 			perror ("ptrace (PT_ATTACH)");
 			return false;
+		}
+
+		// Make sure SIGSTOP is delivered and wait for it since we can't affect the pid
+		// until it hits SIGSTOP.
+		if (!linux_stop_thread (ptid)) {
+			eprintf ("Could not stop pid (%d)\n", ptid);
 		}
 	}
 
@@ -594,6 +613,10 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 			break;
 		}
 	}
+	ptr = strstr (info, "PPid:");
+	if (ptr) {
+		pid_info->ppid = atoi (ptr + 5);
+	}
 	ptr = strstr (info, "Uid:");
 	if (ptr) {
 		pid_info->uid = atoi (ptr + 5);
@@ -609,9 +632,46 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	return pid_info;
 }
 
+RList *linux_pid_list(int pid, RList *list) {
+	list->free = (RListFree)&r_debug_pid_free;
+	DIR *dh = NULL;
+	struct dirent *de = NULL;
+	char path[PATH_MAX], info[PATH_MAX];
+	int i = -1;
+	RDebugPid *pid_info = NULL;
+	dh = opendir ("/proc");
+	if (!dh) {
+		r_sys_perror ("opendir /proc");
+		r_list_free (list);
+		return NULL;
+	}
+	while ((de = readdir (dh))) {
+		path[0] = 0;
+		info[0] = 0;
+		// For each existing pid file
+		if ((i = atoi (de->d_name)) <= 0) {
+			continue;
+		}
+
+		procfs_pid_slurp (i, "cmdline", path, sizeof (path));
+		if (!procfs_pid_slurp (i, "status", info, sizeof (info))) {
+			// Get information about pid (status, pc, etc.)
+			pid_info = fill_pid_info (info, path, i);
+		} else {
+			pid_info = r_debug_pid_new (path, i, 0, R_DBG_PROC_STOP, 0);
+		}
+		// Unless pid 0 is requested, only add the requested pid and it's child processes
+		if (0 == pid || i == pid || pid_info->ppid == pid) {
+			r_list_append (list, pid_info);
+		}
+	}
+	closedir (dh);
+	return list;
+}
+
 RList *linux_thread_list(int pid, RList *list) {
 	int i, thid = 0;
-	char *ptr, buf[1024];
+	char *ptr, buf[PATH_MAX];
 
 	if (!pid) {
 		r_list_free (list);
@@ -629,7 +689,7 @@ RList *linux_thread_list(int pid, RList *list) {
 				continue;
 			}
 			int tid = atoi (de->d_name);
-			char info[1024];
+			char info[PATH_MAX];
 			int uid = 0;
 			if (!procfs_pid_slurp (tid, "status", info, sizeof (info))) {
 				ptr = strstr (info, "Uid:");
@@ -643,7 +703,7 @@ RList *linux_thread_list(int pid, RList *list) {
 						// If we want to attach to just one thread, don't attach to the parent
 						continue;
 					}
-                                }
+				}
 			}
 
 			if (procfs_pid_slurp (tid, "comm", buf, sizeof (buf)) == -1) {
@@ -716,11 +776,10 @@ RList *linux_thread_list(int pid, RList *list) {
 	r_cons_printf ("foo = 0x%04lx          \n", (fpregs).foo);\
 	r_cons_printf ("fos = 0x%04lx              ", (fpregs).fos)
 
-void print_fpu (void *f){
-#if __x86_64__ || __i386__
+static void print_fpu(void *f){
+#if __x86_64__
 	int i,j;
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
-#if __x86_64__
 #if __ANDROID__
 	PRINT_FPU (fpregs);
 	for (i = 0;i < 8; i++) {
@@ -761,48 +820,47 @@ void print_fpu (void *f){
 	}
 #endif // __ANDROID__
 #elif __i386__
-	if (!r) {
-#if !__ANDROID__
-		struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct*)f;
-		r_cons_printf ("---- x86-32 ----\n");
-		r_cons_printf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
-		r_cons_printf ("swd = 0x%04x  ; status\n", fpxregs.swd);
-		r_cons_printf ("twd = 0x%04x ", fpxregs.twd);
-		r_cons_printf ("fop = 0x%04x\n", fpxregs.fop);
-		r_cons_printf ("fip = 0x%08x\n", (ut32)fpxregs.fip);
-		r_cons_printf ("fcs = 0x%08x\n", (ut32)fpxregs.fcs);
-		r_cons_printf ("foo = 0x%08x\n", (ut32)fpxregs.foo);
-		r_cons_printf ("fos = 0x%08x\n", (ut32)fpxregs.fos);
-		r_cons_printf ("mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
-		for(i = 0; i < 8; i++) {
-			ut32 *a = (ut32*)(&fpxregs.xmm_space);
-			ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
-			ut32 *c = (ut32*)&fpxregs.st_space;
-			float *f = (float *)&fpxregs.st_space;
-			a = a + (i * 4);
-			c = c + (i * 4);
-			f = f + (i * 4);
-			r_cons_printf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
-				(int)a[1], (int)a[2], (int)a[3] );
-			r_cons_printf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
-				"%0.3f (0x%08x)\n", i,
-				(double)*((double*)(&fpxregs.st_space[i*4])), b[0],
-				f[0], c[0], f[1], c[1]);
-		}
-#endif // !__ANDROID__
-	} else {
-		r_cons_printf ("---- x86-32-noxmm ----\n");
-		PRINT_FPU_NOXMM (fpregs);
-		for(i = 0; i < 8; i++) {
-			ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
-			double *d = (double*)b;
-			ut32 *c = (ut32*)&fpregs.st_space;
-			float *f = (float *)&fpregs.st_space;
-			c = c + (i * 4);
-			f = f + (i * 4);
-			r_cons_printf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
-				"%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
-		}
+	int i,j;
+#if __ANDROID__
+	struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct*)f;
+	r_cons_printf ("---- x86-32 ----\n");
+	r_cons_printf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
+	r_cons_printf ("swd = 0x%04x  ; status\n", fpxregs.swd);
+	r_cons_printf ("twd = 0x%04x ", fpxregs.twd);
+	r_cons_printf ("fop = 0x%04x\n", fpxregs.fop);
+	r_cons_printf ("fip = 0x%08x\n", (ut32)fpxregs.fip);
+	r_cons_printf ("fcs = 0x%08x\n", (ut32)fpxregs.fcs);
+	r_cons_printf ("foo = 0x%08x\n", (ut32)fpxregs.foo);
+	r_cons_printf ("fos = 0x%08x\n", (ut32)fpxregs.fos);
+	r_cons_printf ("mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
+	for(i = 0; i < 8; i++) {
+		ut32 *a = (ut32*)(&fpxregs.xmm_space);
+		ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
+		ut32 *c = (ut32*)&fpxregs.st_space;
+		float *f = (float *)&fpxregs.st_space;
+		a = a + (i * 4);
+		c = c + (i * 4);
+		f = f + (i * 4);
+		r_cons_printf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
+			(int)a[1], (int)a[2], (int)a[3] );
+		r_cons_printf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
+			"%0.3f (0x%08x)\n", i,
+			(double)*((double*)(&fpxregs.st_space[i*4])), b[0],
+			f[0], c[0], f[1], c[1]);
+	}
+#else
+	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
+	r_cons_printf ("---- x86-32-noxmm ----\n");
+	PRINT_FPU_NOXMM (fpregs);
+	for(i = 0; i < 8; i++) {
+		ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
+		double *d = (double*)b;
+		ut32 *c = (ut32*)&fpregs.st_space;
+		float *f = (float *)&fpregs.st_space;
+		c = c + (i * 4);
+		f = f + (i * 4);
+		r_cons_printf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
+			"%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
 	}
 #endif
 #else
@@ -876,13 +934,13 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			struct user_fpxregs_struct fpxregs;
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
 			if (ret1 == 0) {
-				if (showfpu) print_fpu ((void *)&fpxregs, ret1);
+				if (showfpu) print_fpu ((void *)&fpxregs);
 				if (sizeof(fpxregs) < size) size = sizeof(fpxregs);
 				memcpy (buf, &fpxregs, size);
 				return sizeof(fpxregs);
 			} else {
 				ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-				if (showfpu) print_fpu ((void *)&fpregs, ret1);
+				if (showfpu) print_fpu ((void *)&fpregs);
 				if (ret1 != 0) return false;
 				if (sizeof(fpregs) < size) size = sizeof(fpregs);
 				memcpy (buf, &fpregs, size);
@@ -890,7 +948,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 #else
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-			if (showfpu) print_fpu ((void *)&fpregs, 1);
+			if (showfpu) print_fpu ((void *)&fpregs);
 			if (ret1 != 0) return false;
 			if (sizeof (fpregs) < size) size = sizeof(fpregs);
 			memcpy (buf, &fpregs, size);
@@ -937,6 +995,33 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 			memcpy (buf, &regs, R_MIN (sizeof (regs), size));
 			return sizeof (regs);
+		}
+		break;
+	case R_REG_TYPE_YMM:
+		{
+#if __x86_64__
+		ut32 ymm_space[128];	// full ymm registers
+		struct _xstate xstate;
+		struct iovec iov;
+		iov.iov_base = &xstate;
+		iov.iov_len = sizeof(struct _xstate);
+		ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)NT_X86_XSTATE, &iov);
+		if (ret != 0) {
+			return false;
+		}
+		// stitch together xstate.fpstate._xmm and xstate.ymmh assuming LE
+		int ri,rj;
+		for (ri = 0; ri < 16; ri++)	{
+			for (rj=0; rj < 4; rj++)	{
+				ymm_space[ri*8+rj] = xstate.fpstate._xmm[ri].element[rj];
+			}
+			for (rj=0; rj < 4; rj++)	{
+				ymm_space[ri*8+(rj+4)] = xstate.ymmh.ymmh_space[ri*4+rj];
+			}
+		}
+		memcpy (buf, &ymm_space, sizeof(ymm_space));
+		return sizeof(ymm_space);
+#endif
 		}
 		break;
 	}

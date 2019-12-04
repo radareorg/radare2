@@ -40,9 +40,6 @@ static void print_node_options(RConfigNode *node) {
 	}
 }
 
-/* TODO: use loop here */
-/*------------------------------------------------------------------------------------------*/
-
 static int compareName(const RAnalFunction *a, const RAnalFunction *b) {
 	return a && b && a->name && b->name && strcmp (a->name, b->name);
 }
@@ -202,6 +199,13 @@ static bool cb_debug_hitinfo(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->hitinfo = node->i_value;
+	return true;
+}
+
+static bool cb_anal_jmptailcall(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.tailcall = node->i_value;
 	return true;
 }
 
@@ -870,6 +874,11 @@ static bool cb_asmparser(void *user, void *data) {
 	return r_parse_use (core->parser, node->value);
 }
 
+typedef struct {
+	const char *name;
+	const char *aliases;
+} namealiases_pair;
+
 static bool cb_binstrenc (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
@@ -879,7 +888,32 @@ static bool cb_binstrenc (void *user, void *data) {
 		               "if utf8 char detected then utf8 else latin1\n");
 		return false;
 	}
-	return true;
+	const namealiases_pair names[] = {
+		{ "guess", NULL },
+		{ "latin1", NULL },
+		{ "utf8", "utf-8" },
+		{ "utf16le", "utf-16le,utf16-le" },
+		{ "utf32le", "utf-32le,utf32-le" },
+		{ "utf16be", "utf-16be,utf16-be" },
+		{ "utf32be", "utf-32be,utf32-be" } };
+	int i;
+	char *enc = strdup (node->value);
+	if (!enc) {
+		return false;
+	}
+	r_str_case (enc, false);
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		const namealiases_pair *pair = &names[i];
+		if (!strcmp (pair->name, enc) || r_str_cmp_list (pair->aliases, enc, ',')) {
+			free (node->value);
+			node->value = strdup (pair->name);
+			free (enc);
+			return true;
+		}
+	}
+	eprintf ("Unknown encoding: %s\n", node->value);
+	free (enc);
+	return false;
 }
 
 static bool cb_binfilter(void *user, void *data) {
@@ -2017,6 +2051,13 @@ static bool cb_scrhtml(void *user, void *data) {
 	return true;
 }
 
+static bool cb_newshell(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = (RCore *)user;
+	core->use_tree_sitter_r2cmd = node->i_value;
+	return true;
+}
+
 static bool cb_scrhighlight(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_highlight (node->value);
@@ -2213,6 +2254,14 @@ static bool cb_seggrn(void *user, void *data) {
 	return true;
 }
 
+static bool cb_cmtoff(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value || r_str_is_false (node->value)) {
+		free (node->value);
+		node->value = strdup (r_str_bool (node->i_value));
+	}
+	return true;
+}
 
 static bool cb_stopthreads(void *user, void *data) {
 	RCore *core = (RCore *) user;
@@ -2245,6 +2294,12 @@ static bool cb_consbreak(void *user, void *data) {
 static bool cb_teefile(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->teefile = node->value;
+	return true;
+}
+
+static bool cb_onestream(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton ()->onestream = node->i_value;
 	return true;
 }
 
@@ -2835,6 +2890,7 @@ R_API int r_core_config_init(RCore *core) {
 		"anal.fcn", "anal.bb",
 	NULL);
 	SETI ("anal.timeout", 0, "Stop analyzing after a couple of seconds");
+	SETICB ("anal.jmp.tailcall", 0, &cb_anal_jmptailcall, "Consume a branch as a call if delta is big");
 
 	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
 	SETCB ("anal.jmp.after", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
@@ -3081,7 +3137,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.marks", "true", "Show marks before the disassembly");
 	SETPREF ("asm.cmt.refs", "false", "Show flag and comments from refs in disasm");
 	SETPREF ("asm.cmt.patch", "false", "Show patch comments in disasm");
-	SETPREF ("asm.cmt.off", "nodup", "Show offset comment in disasm (true, false, nodup)");
+	SETCB ("asm.cmt.off", "nodup", &cb_cmtoff, "Show offset comment in disasm (true, false, nodup)");
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
 
 	/* bin */
@@ -3110,7 +3166,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "Maximum size of range to load strings from");
 	n = NODECB ("bin.str.enc", "guess", &cb_binstrenc);
 	SETDESC (n, "Default string encoding of binary");
-	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "guess", NULL);
+	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
 	SETCB ("bin.prefix", NULL, &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB ("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETCB ("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
@@ -3151,6 +3207,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
+	SETCB ("cfg.newshell", "false", &cb_newshell, "Use new commands parser");
+	SETI ("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */
 	// R2_LOGLEVEL / log.level
@@ -3528,6 +3586,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "Convert string before display");
 	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
 	SETPREF ("scr.confirmquit", "false", "Confirm on quit");
+	SETCB ("scr.onestream", "false", &cb_onestream, "Force stderr output into stdout (works only if -DONE_STREAM_HACK=1)");
 
 	/* str */
 	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");

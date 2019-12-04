@@ -3556,7 +3556,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 }
 
 static void agraph_refresh_oneshot(struct agraph_refresh_data *grd) {
-	r_core_task_enqueue_oneshot (grd->core, (RCoreTaskOneShot) agraph_refresh, grd);
+	r_core_task_enqueue_oneshot (&grd->core->tasks, (RCoreTaskOneShot) agraph_refresh, grd);
 }
 
 static void agraph_toggle_speed(RAGraph *g, RCore *core) {

@@ -8,9 +8,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#if __UNIX__
-#include <signal.h>
-#endif
 
 #define COUNT_LINES 1
 #define CTX(x) I.context->x
@@ -293,7 +290,7 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 	if (r_stack_is_empty (context->break_stack)) {
 #if __UNIX__
 		if (sig && r_cons_context_is_main ()) {
-			signal (SIGINT, __break_signal);
+			r_sys_signal (SIGINT, __break_signal);
 		}
 #endif
 		context->breaked = false;
@@ -322,7 +319,7 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 		//there is not more elements in the stack
 #if __UNIX__
 		if (sig && r_cons_context_is_main ()) {
-			signal (SIGINT, SIG_IGN);
+			r_sys_signal (SIGINT, SIG_IGN);
 		}
 #endif
 		context->breaked = false;
@@ -393,7 +390,7 @@ R_API void r_cons_break_timeout(int timeout) {
 		I.timeout = 0;
 	} else {
 		if (timeout) {
-			I.timeout = r_sys_now () + (timeout * 1000000);
+			I.timeout = r_sys_now () + ((ut64) timeout << 20);
 		} else {
 			I.timeout = 0;
 		}
@@ -404,7 +401,7 @@ R_API void r_cons_break_end() {
 	I.context->breaked = false;
 	I.timeout = 0;
 #if __UNIX__
-	signal (SIGINT, SIG_IGN);
+	r_sys_signal (SIGINT, SIG_IGN);
 #endif
 	if (!r_stack_is_empty (I.context->break_stack)) {
 		//free all the stack
@@ -554,7 +551,7 @@ R_API RCons *r_cons_new() {
 	I.term_raw.c_cflag &= ~(CSIZE|PARENB);
 	I.term_raw.c_cflag |= CS8;
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
-	signal (SIGWINCH, resize);
+	r_sys_signal (SIGWINCH, resize);
 #elif __WINDOWS__
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &I.term_buf);
@@ -565,6 +562,7 @@ R_API RCons *r_cons_new() {
 #endif
 	I.pager = NULL; /* no pager by default */
 	I.mouse = 0;
+	I.onestream = false;
 	I.show_vals = false;
 	r_cons_reset ();
 	r_cons_rgb_init ();
@@ -1141,6 +1139,24 @@ R_API int r_cons_printf(const char *format, ...) {
 	return 0;
 }
 
+#if ONE_STREAM_HACK
+R_API int r_cons_onestream_printf(const char *format, ...) {
+	va_list ap;
+	if (!format || !*format) {
+		return -1;
+	}
+	va_start (ap, format);
+	if (I.onestream) {
+		r_cons_printf_list (format, ap);
+	} else {
+		vfprintf (stderr, format, ap);
+	}
+	va_end (ap);
+
+	return 0;
+}
+#endif
+
 R_API int r_cons_get_column() {
 	char *line = strrchr (I.context->buffer, '\n');
 	if (!line) {
@@ -1465,10 +1481,13 @@ R_API void r_cons_set_utf8(bool b) {
 				r_sys_perror ("r_cons_set_utf8");
 			}
 #if UNICODE
-			if (!SetConsoleCP (CP_UTF8)) {
+			UINT inCP = CP_UTF8;
+#else
+			UINT inCP = GetACP ();
+#endif
+			if (!SetConsoleCP (inCP)) {
 				r_sys_perror ("r_cons_set_utf8");
 			}
-#endif
 		} else {
 			R_LOG_WARN ("UTF-8 Codepage not installed.\n");
 		}

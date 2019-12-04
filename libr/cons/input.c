@@ -683,7 +683,7 @@ R_API char *r_cons_password(const char *msg) {
 	// // cannot read when enabled in this way
 	// a->term_raw.c_lflag |= ICANON;
 	tcsetattr (0, TCSADRAIN, &a->term_raw);
-	signal (SIGTSTP, SIG_IGN);
+	r_sys_signal (SIGTSTP, SIG_IGN);
 #endif
 	while (i < sizeof (buf) - 1) {
 		int ch = r_cons_readchar ();
@@ -703,7 +703,7 @@ R_API char *r_cons_password(const char *msg) {
 	r_cons_set_raw (0);
 	printf ("\n");
 #if __UNIX__
-	signal (SIGTSTP, SIG_DFL);
+	r_sys_signal (SIGTSTP, SIG_DFL);
 #endif
 	return strdup (buf);
 }

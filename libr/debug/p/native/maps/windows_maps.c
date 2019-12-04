@@ -245,7 +245,7 @@ R_API RList *r_w32_dbg_maps(RDebug *dbg) {
 	LPVOID cur_addr;
 	MEMORY_BASIC_INFORMATION mbi;
 	RWinModInfo mod_inf = {0};
-	RList *map_list = r_list_new(), *mod_list = NULL;
+	RList *map_list = r_list_new (), *mod_list = NULL;
 	RIOW32Dbg *rio = dbg->user;
 
 	GetSystemInfo (&si);

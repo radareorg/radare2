@@ -191,7 +191,7 @@ static int r_debug_native_select(RDebug *dbg, int pid, int tid) {
 #if __WINDOWS__
 	return w32_select (dbg, pid, tid);
 #elif __linux__
-	return linux_select_thread (dbg, pid, tid);
+	return linux_select (dbg, pid, tid);
 #else
 	return -1;
 #endif
@@ -442,10 +442,16 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
  *
  * Returns R_DEBUG_REASON_*
  */
-static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
+static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 
 #if __WINDOWS__
+	// Store the original TID to attempt to switch back after handling events that
+	// require switching to the event's thread that shouldn't bother the user
+	int orig_tid = dbg->tid;
+	bool restore_thread = false;
+	RIOW32Dbg *rio = dbg->user;
+
 	reason = w32_dbg_wait (dbg, pid);
 	if (reason == R_DEBUG_REASON_NEW_LIB) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
@@ -479,6 +485,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			r_cons_printf ("Loading unknown library.\n");
 			r_cons_flush ();
 		}
+		restore_thread = true;
 	} else if (reason == R_DEBUG_REASON_EXIT_LIB) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->lib) {
@@ -489,8 +496,8 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		} else {
 			r_cons_printf ("Unloading unknown library.\n");
 			r_cons_flush ();
-
 		}
+		restore_thread = true;
 	} else if (reason == R_DEBUG_REASON_NEW_TID) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
@@ -500,7 +507,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 
 			r_debug_info_free (r);
 		}
-
+		restore_thread = true;
 	} else if (reason == R_DEBUG_REASON_EXIT_TID) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
@@ -509,6 +516,9 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			r_cons_flush ();
 
 			r_debug_info_free (r);
+		}
+		if (dbg->tid != orig_tid) {
+			restore_thread = true;
 		}
 	} else if (reason == R_DEBUG_REASON_DEAD) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
@@ -520,6 +530,37 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		}
 		dbg->pid = -1;
 		dbg->tid = -1;
+	} else if (reason == R_DEBUG_REASON_USERSUSP && dbg->tid != orig_tid) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r && r->thread) {
+			PTHREAD_ITEM item = r->thread;
+			r_cons_printf ("(%d) Created DebugBreak thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
+			r_cons_flush ();
+
+			r_debug_info_free (r);
+		}
+		// DebugProcessBreak creates a new thread that will trigger a breakpoint. We record the
+		// tid here to ignore it once the breakpoint is hit.
+		rio->break_tid = dbg->tid;
+		restore_thread = true;
+	} else if (reason == R_DEBUG_REASON_BREAKPOINT && dbg->tid == rio->break_tid) {
+		rio->break_tid = -2;
+		reason = R_DEBUG_REASON_NONE;
+		restore_thread = true;
+	}
+
+	if (restore_thread) {
+		// Attempt to return to the original thread after handling the event
+		dbg->tid = w32_select(dbg, dbg->pid, orig_tid);
+		if (dbg->tid == -1) {
+			dbg->pid = -1;
+			reason = R_DEBUG_REASON_DEAD;
+		} else {
+			r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
+			if (dbg->tid != orig_tid) {
+				reason = R_DEBUG_REASON_UNKNOWN;
+			}
+		}
 	}
 #else
 	if (pid == -1) {
@@ -731,76 +772,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 #elif __WINDOWS__
 	return w32_pid_list (dbg, pid, list);
 #elif __linux__
-	list->free = (RListFree)&r_debug_pid_free;
-	DIR *dh;
-	struct dirent *de;
-	char *ptr, st, buf[1024];
-	int i, uid;
-	if (pid) {
-		/* add the requested pid. should we do this? we don't even know if it's valid still.. */
-		r_list_append (list, r_debug_pid_new ("(current)", pid, 0, 's', 0));
-	}
-	dh = opendir ("/proc");
-	if (!dh) {
-		r_sys_perror ("opendir /proc");
-		r_list_free (list);
-		return NULL;
-	}
-	while ((de = readdir (dh))) {
-		uid = 0;
-		st = ' ';
-		/* for each existing pid file... */
-		i = atoi (de->d_name);
-		if (i <= 0) {
-			continue;
-		}
-
-		/* try to read the status */
-		buf[0] = 0;
-		if (procfs_pid_slurp (i, "status", buf, sizeof (buf)) == -1) {
-			continue;
-		}
-		buf[sizeof (buf) - 1] = 0;
-
-		// get process State
-		ptr = strstr (buf, "State:");
-		if (ptr) {
-			st = ptr[7];
-		}
-		/* look for the parent process id */
-		ptr = strstr (buf, "PPid:");
-		if (pid && ptr) {
-			int ppid = atoi (ptr + 5);
-
-			/* if this is the requested process... */
-			if (i == pid) {
-				// append it to the list with parent
-				r_list_append (list, r_debug_pid_new (
-					"(ppid)", ppid, uid, st, 0));
-			}
-
-			/* ignore it if it is not one of our children */
-			if (ppid != pid) {
-				continue;
-			}
-		}
-
-		// get process Uid
-		ptr = strstr (buf, "Uid:");
-		if (ptr) {
-			uid = atoi (ptr + 4);
-		}
-		// TODO: add support for gid in RDebugPid.new()
-		// ptr = strstr (buf, "Gid:");
-		// if (ptr) {
-		// 	gid = atoi (ptr + 4);
-		// }
-		if (procfs_pid_slurp (i, "cmdline", buf, sizeof (buf)) == -1) {
-			continue;
-		}
-		r_list_append (list, r_debug_pid_new (buf, i, uid, st, 0));
-	}
-	closedir (dh);
+	return linux_pid_list (pid, list);
 #else /* rest is BSD */
 #ifdef __NetBSD__
 # define KVM_OPEN_FLAG KVM_NO_FILES
@@ -850,21 +822,25 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 	if (pid) {
 		kp = KVM_GETPROCS (kd, KERN_PROC_PID, pid, &cnt);
 		if (cnt == 1) {
-			RDebugPid *p = r_debug_pid_new (KP_COMM(kp), pid, KP_UID(kp), 's', 0);
+			RDebugPid *p = r_debug_pid_new (KP_COMM (kp), pid, KP_UID (kp), 's', 0);
 			if (p) r_list_append (list, p);
 			/* we got our process, now fetch the parent process */
 			kp = KVM_GETPROCS (kd, KERN_PROC_PID, KP_PPID(kp), &cnt);
                         if (cnt == 1) {
-				RDebugPid *p = r_debug_pid_new (KP_COMM(kp), KP_PID(kp), KP_UID(kp), 's', 0);
-				if (p) r_list_append (list, p);
+				RDebugPid *p = r_debug_pid_new (KP_COMM (kp), KP_PID (kp), KP_UID (kp), 's', 0);
+				if (p) {
+					p->ppid = KP_PPID (kp);
+					r_list_append (list, p);
+				}
 			}
 		}
 	} else {
 		kp = KVM_GETPROCS (kd, KERN_PROC_UID, geteuid(), &cnt);
 		int i;
 		for (i = 0; i < cnt; i++) {
-			RDebugPid *p = r_debug_pid_new (KP_COMM(kp + i), KP_PID(kp + i), KP_UID(kp), 's', 0);
+			RDebugPid *p = r_debug_pid_new (KP_COMM (kp + i), KP_PID (kp + i), KP_UID (kp), 's', 0);
 			if (p) {
+				p->ppid = KP_PPID (kp);
 				r_list_append (list, p);
 			}
 		}
@@ -1857,7 +1833,7 @@ static RList *xnu_desc_list (int pid) {
 #else
 #define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 	RDebugDesc *desc;
-	RList *ret = r_list_new();
+	RList *ret = r_list_new ();
 	struct vnode_fdinfowithpath vi;
 	int i, nb, type = 0;
 	int maxfd = getMaxFiles();

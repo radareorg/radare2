@@ -177,7 +177,9 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 	}
 	if (!op->mnemonic && (mask & R_ANAL_OP_MASK_DISASM)) {
-		eprintf ("Warning: unhandled R_ANAL_OP_MASK_DISASM in r_anal_op\n");
+		if (anal->verbose) {
+			eprintf ("Warning: unhandled R_ANAL_OP_MASK_DISASM in r_anal_op\n");
+		}
         }
 	if (mask & R_ANAL_OP_MASK_HINT) {
 		RAnalHint *hint = r_anal_hint_get (anal, addr);

@@ -77,7 +77,6 @@ else
 endif
 r_core_inc = [platform_inc, include_directories(r_core_inc)]
 
-
 r_core_deps = [
   r_util_dep,
   r_reg_dep,
@@ -103,7 +102,8 @@ r_core_deps = [
   platform_deps,
   spp_dep,
   gdb_dep,
-  java_dep
+  java_dep,
+  shell_parser_dep
 ]
 
 if use_libuv

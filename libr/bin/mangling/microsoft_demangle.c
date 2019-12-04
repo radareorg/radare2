@@ -602,7 +602,7 @@ get_namespace_and_name_err:
 		}
 		free(str_info);
 	}
-	r_list_free(names_l);
+	r_list_free (names_l);
 
 	return read_len;
 }

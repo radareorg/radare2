@@ -341,7 +341,8 @@ foreach item : [
     ['arc4random_uniform', '#include <stdlib.h>'],
     ['explicit_bzero', '#include <string.h>'],
     ['explicit_memset', '#include <string.h>'],
-    ['clock_nanosleep', '#include <time.h>']
+    ['clock_nanosleep', '#include <time.h>'],
+    ['sigaction', '#include <signal.h>']
   ]
   func = item[0]
   ok = cc.has_function(func, prefix: item[1])
@@ -389,10 +390,11 @@ subdir('libr/util')
 subdir('libr/hash')
 subdir('libr/crypto')
 subdir('libr/socket')
+subdir('libr/cons')
+subdir('shlr/gdb')
 subdir('libr/io')
 subdir('libr/bp')
 subdir('libr/syscall')
-subdir('libr/cons')
 subdir('libr/search')
 subdir('libr/magic')
 subdir('libr/flag')

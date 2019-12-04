@@ -282,6 +282,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	sdb_free (f->tags);
 	r_spaces_fini (&f->spaces);
 	r_num_free (f->num);
+	r_list_free (f->zones);
 	free (f);
 	return NULL;
 }
@@ -765,6 +766,14 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
 	item->realname = R_STR_ISEMPTY (realname)? NULL: strdup (realname);
 }
 
+/* add/replace/remove the color of a flag item */
+R_API const char *r_flag_item_set_color(RFlagItem *item, const char *color) {
+	r_return_val_if_fail (item, NULL);
+	free (item->color);
+	item->color = (color && *color) ? strdup (color) : NULL;
+	return item->color;
+}
+
 /* change the name of a flag item, if the new name is available.
  * true is returned if everything works well, false otherwise */
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
@@ -883,16 +892,6 @@ R_API bool r_flag_move(RFlag *f, ut64 at, ut64 to) {
 		return true;
 	}
 	return false;
-}
-
-R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color) {
-	r_return_val_if_fail (f && it, NULL);
-	if (!color) {
-		return it->color;
-	}
-	free (it->color);
-	it->color = *color ? strdup (color) : NULL;
-	return it->color;
 }
 
 // BIND

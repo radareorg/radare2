@@ -215,13 +215,14 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	//does this really work, or do we have to handler debuggers ugly
 	uri = old->referer? old->referer: old->uri;
 #if __WINDOWS__ //TODO: workaround, see https://github.com/radareorg/radare2/issues/8840
-	if (!r_io_desc_close (old)) {
+	if (old->plugin->close && old->plugin->close (old)) {
 		return false; // TODO: this is an unrecoverable scenario
 	}
 	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
 		return false;
 	}
 	r_io_desc_exchange (io, old->fd, new->fd);
+	r_io_desc_del (io, old->fd);
 	return true;
 #else
 	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {

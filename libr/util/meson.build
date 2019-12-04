@@ -77,6 +77,7 @@ r_util_sources = [
   'vector.c',
   'w32-sys.c',
   'zip.c',
+  'protobuf.c',
   'regex/regcomp.c',
   'regex/regexec.c',
   'regex/regerror.c'
@@ -90,7 +91,7 @@ endif
 
 r_util = library('r_util', r_util_sources,
   include_directories: platform_inc,
-  c_args: library_cflags,
+  c_args: library_cflags + ['-DR_UTIL_SRC=1'],
   dependencies: r_util_deps,
   install: true,
   implicit_include_directories: false,

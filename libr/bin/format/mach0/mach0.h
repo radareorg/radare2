@@ -71,6 +71,9 @@ struct reloc_t {
 	int ord;
 	int last;
 	char name[256];
+	bool external;
+	bool pc_relative;
+	ut8 size;
 };
 
 struct addr_t {

@@ -254,8 +254,10 @@ def main():
 
     # Create parser
     parser = argparse.ArgumentParser(description='Mesonbuild scripts for radare2')
-    parser.add_argument('--asan', action='store_true',
-            help='Build radare2 with ASAN support.')
+    # --sanitize=address,signed-integer-overflow for faster build
+    parser.add_argument('--sanitize', nargs='?',
+            const='address,undefined,signed-integer-overflow', metavar='sanitizers',
+            help='Build radare2 with sanitizer support (default: %(const)s)')
     parser.add_argument('--project', action='store_true',
             help='Create a visual studio project and do not build.')
     parser.add_argument('--release', action='store_true',
@@ -294,19 +296,19 @@ def main():
     if args.alias:
         print("alias m=\"" + os.path.abspath(__file__) + "\"")
         sys.exit(0);
-    if args.asan:
+    if args.sanitize:
         if os.uname().sysname == 'OpenBSD':
-            log.error("Asan insupported under OpenBSD")
+            log.error("Sanitizers unsupported under OpenBSD")
             sys.exit(1)
         cflags = os.environ.get('CFLAGS')
         if not cflags:
             cflags = ''
-        os.environ['CFLAGS'] = cflags + ' -fsanitize=address'
+        os.environ['CFLAGS'] = cflags + ' -fsanitize=' + args.sanitize
         if os.uname().sysname != 'Darwin':
           ldflags = os.environ.get('LDFLAGS')
           if not ldflags:
               ldflags = ''
-          os.environ['LDFLAGS'] = ldflags + ' -lasan'
+          os.environ['LDFLAGS'] = ldflags + ' -fsanitize=' + args.sanitize
 
     # Check arguments
     if args.pull:

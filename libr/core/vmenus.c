@@ -3010,7 +3010,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 }
 
 static void r_core_visual_anal_refresh_oneshot (RCore *core) {
-	r_core_task_enqueue_oneshot (core, (RCoreTaskOneShot) r_core_visual_anal_refresh, core);
+	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) r_core_visual_anal_refresh, core);
 }
 
 static void r_core_visual_debugtraces_help(RCore *core) {
@@ -3824,7 +3824,7 @@ onemoretime:
 				r_cons_flush ();
 				r_line_set_prompt ("color: ");
 				if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) > 0) {
-					r_flag_color (core->flags, item, cmd);
+					r_flag_item_set_color (item, cmd);
 					r_cons_set_raw (1);
 					r_cons_show_cursor (false);
 				}

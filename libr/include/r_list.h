@@ -41,7 +41,7 @@ typedef struct r_oflist_t {
 #endif
 
 #ifdef R_API
-//#define R_LIST_NEW(x,y) x=r_list_new();x->free=(RListFree)y
+// #define R_LIST_NEW(x,y) x = r_list_new (); x->free = (RListFree)y
 #define r_list_foreach(list, it, pos)\
 	if (list)\
 		for (it = list->head; it && (pos = it->data, 1); it = it->n)

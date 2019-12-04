@@ -71,7 +71,7 @@ static int __anal_hint_range_tree_cmp(const void *a_, const RBNode *b_, void *us
 	return 0;
 }
 
-static void __anal_hint_range_tree_free(RBNode *node) {
+static void __anal_hint_range_tree_free(RBNode *node, void *user) {
 	free (container_of (node, RAnalRange, rb));
 }
 
@@ -173,6 +173,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->fcn_tree = NULL;
 	anal->fcn_addr_tree = NULL;
 	anal->refs = r_anal_ref_list_new ();
+	anal->leaddrs = NULL;
 	r_anal_set_bits (anal, 32);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
@@ -210,9 +211,10 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_syscall_free (a->syscall);
 	r_reg_free (a->reg);
 	r_anal_op_free (a->queued);
-	r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free);
+	r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free, NULL);
 	ht_up_free (a->dict_refs);
 	ht_up_free (a->dict_xrefs);
+	r_list_free (a->leaddrs);
 	a->sdb = NULL;
 	sdb_ns_free (a->sdb);
 	if (a->esil) {
@@ -769,7 +771,7 @@ R_API void r_anal_merge_hint_ranges(RAnal *a) {
 		SdbKv *kv;
 		SdbList *sdb_range = sdb_foreach_list (a->sdb_hints, true);
 		int range_bits = 0;
-		r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free);
+		r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free, NULL);
 		a->rb_hints_ranges = NULL;
 		ls_foreach (sdb_range, iter, kv) {
 			ut64 addr = sdb_atoi (sdbkv_key (kv) + 5);
@@ -795,4 +797,28 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 		b->get_fcn_in = r_anal_get_fcn_in;
 		b->get_hint = r_anal_hint_get;
 	}
+}
+
+R_API RList *r_anal_preludes(RAnal *anal) {
+	if (anal->cur && anal->cur->preludes ) {
+		return anal->cur->preludes (anal);
+	}
+	return NULL;
+}
+
+R_API bool r_anal_is_prelude(RAnal *anal, const ut8 *data, int len) {
+	RList *l = r_anal_preludes (anal);
+	if (l) {
+		RSearchKeyword *kw;
+		RListIter *iter;
+		r_list_foreach (l, iter, kw) {
+			int ks = kw->keyword_length;
+			if (len >= ks && !memcmp (data, kw->bin_keyword, ks)) {
+				r_list_free (l);
+				return true;
+			}
+		}
+		r_list_free (l);
+	}
+	return false;
 }

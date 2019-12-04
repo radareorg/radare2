@@ -2224,11 +2224,8 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				if (op->operands[1].regs[0] == X86R_RIP) {
 					data[l++] = 0x5;
 				} else {
-					if (op->operands[1].offset > 127) {
-						data[l++] = 0x80 | op->operands[0].reg << 3 | op->operands[1].regs[0];
-					} else {
-						data[l++] = 0x40 | op->operands[1].regs[0];
-					}
+					const ut8 pfx = (op->operands[1].offset > 127)? 0x80: 0x40;
+					data[l++] = pfx | op->operands[0].reg << 3 | op->operands[1].regs[0];
 				}
 				if (op->operands[1].offset > 127) {
 					mod = 0x1;
@@ -4295,7 +4292,7 @@ LookupTable oplookup[] = {
 	{"jpo", 0, &opjc, 0},
 	{"js", 0, &opjc, 0},
 	{"jz", 0, &opjc, 0},
-	{"lahf", 0, NULL, 0x9f},
+	{"lahf", 0, NULL, 0x9f, 1},
 	{"lea", 0, &oplea, 0},
 	{"leave", 0, NULL, 0xc9, 1},
 	{"les", 0, &oples, 0},

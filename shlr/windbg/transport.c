@@ -1,5 +1,6 @@
 // Copyright (c) 2014-2017, The Lemon Man, All rights reserved. LGPLv3
 #include <stdio.h>
+#include <r_util.h>
 #include "transport.h"
 
 extern io_backend_t iob_pipe;
@@ -60,11 +61,14 @@ int iob_config(void *fp, void *cfg) {
 
 int iob_write(void *fp, const uint8_t *buf, const uint32_t buf_len) {
 	uint32_t done;
-
+	static RThreadLock *lock = NULL;
+	if (!lock) {
+		lock = r_th_lock_new (true);
+	}
 	if (!sel_backend) {
 		return E_NOIF;
 	}
-
+	r_th_lock_enter (lock);
 	for (done = 0; done < buf_len;) {
 		int ret = sel_backend->write (fp, buf + done, buf_len - done, 100);
 		if (ret < 1) {
@@ -72,24 +76,27 @@ int iob_write(void *fp, const uint8_t *buf, const uint32_t buf_len) {
 		}
 		done += ret;
 	}
-
+	r_th_lock_leave (lock);
 	return done;
 }
 
 int iob_read(void *fp, uint8_t *buf, const uint32_t buf_len) {
 	uint32_t done;
-
+	static RThreadLock *lock = NULL;
+	if (!lock) {
+		lock = r_th_lock_new (true);
+	}
 	if (!sel_backend) {
 		return E_NOIF;
 	}
-
+	r_th_lock_enter (lock);
 	for (done = 0; done < buf_len;) {
 		int ret = sel_backend->read (fp, buf + done, buf_len - done, 100);
-		if (ret < 1) {
+		if (ret < 0) {
 			break;
 		}
 		done += ret;
 	}
-
+	r_th_lock_leave (lock);
 	return done;
 }

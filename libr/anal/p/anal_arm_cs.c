@@ -1653,8 +1653,6 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%s,?{,%"PFMT32u",pc,=,}",
 			REG(0), IMM(1));
 		break;
-		// TODO (maybe?): ARM Cortex allows for a STRD "double word" 64-bit store
-		// e.g. 'strD r1, r2, [r3]'
 		// Encapsulated STR/H/B into a code section
 	case ARM_INS_STRT:
 	case ARM_INS_STR:
@@ -1662,7 +1660,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_STRH:
 	case ARM_INS_STRBT:
 	case ARM_INS_STRB:
+	case ARM_INS_STRD:
 		switch(insn->id) {
+		case ARM_INS_STRD:
+			str_ldr_bytes = 8; // just an indication, won't be used in esil code
+			break;
 		case ARM_INS_STRHT:
 		case ARM_INS_STRH:
 			str_ldr_bytes = 2;
@@ -1772,6 +1774,44 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				} else { // No shift
 					r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%s,+=",
 						       REG(0), MEMBASE(1), str_ldr_bytes, REG(2), MEMBASE(1));
+				}
+			}
+			if (ISREG(1) && str_ldr_bytes==8) { // e.g. 'strd r2, r3, [r4]', normally should be the only case for ISREG(1).
+				if (!HASMEMINDEX(2)) {
+					int disp = MEMDISP(2);
+					char sign = disp>=0?'+':'-';
+					disp = disp>=0?disp:-disp;
+					r_strbuf_appendf (&op->esil, "%s,%d,%s,%c,0xffffffff,&,=[4],%s,4,%d,+,%s,%c,0xffffffff,&,=[4]",
+							  REG(0), disp, MEMBASE(2), sign, REG(1), disp, MEMBASE(2), sign);
+					if (insn->detail->arm.writeback) {
+						r_strbuf_appendf (&op->esil, ",%d,%s,%c,%s,=",
+								  disp, MEMBASE(2), sign, MEMBASE(2));
+					}
+				} else { 
+					if (ISSHIFTED(2)) { 
+						// it seems strd does not support SHIFT which is good, but have a check nonetheless
+					} else {
+						r_strbuf_appendf (&op->esil, "%s,%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,%s,+,0xffffffff,&,=[4]",
+								  REG(0), MEMINDEX(2), MEMBASE(2), REG(1), MEMINDEX(2), MEMBASE(2));
+						if (insn->detail->arm.writeback) {
+							r_strbuf_appendf (&op->esil, ",%s,%s,+,%s,=",
+									  MEMINDEX(2), MEMBASE(2), MEMBASE(2));
+						}
+					}
+				}
+			}
+		}
+		if (OPCOUNT() == 4) { // e.g. 'strd r2, r3, [r4], 4' or 'strd r2, r3, [r4], r5'
+			if (ISIMM(3)) { // e.g. 'strd r2, r3, [r4], 4'
+				r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,4,%s,+,0xffffffff,&,=[%d],%d,%s,+=,",
+					       REG(0), MEMBASE(2), str_ldr_bytes, REG(1), MEMBASE(2), str_ldr_bytes, IMM(3), MEMBASE(2));
+			}
+			if (ISREG(3)) { // e.g. 'strd r2, r3, [r4], r5'
+				if (ISSHIFTED(3)) { 
+					// same as above
+				} else {
+					r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,4,%s,+,0xffffffff,&,=[%d],%s,%s,+=",
+						       REG(0), MEMBASE(2), str_ldr_bytes, REG(1), MEMBASE(2), str_ldr_bytes, REG(3), MEMBASE(2));
 				}
 			}
 		}
@@ -3566,6 +3606,30 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	return ret;
 }
 
+static RList *anal_preludes(RAnal *anal) {
+#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
+	RSearchKeyword* kw;
+	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
+	switch (anal->bits) {
+	case 16:
+		KW ("\x00\xb5", 2, "\x0f\xff", 2);
+		KW ("\x08\xb5", 2, "\x0f\xff", 2);
+		break;
+	case 32:
+		KW("\x00\x00\x2d\xe9", 4, "\x0f\x0f\xff\xff", 4);
+		break;
+	case 64:
+		KW ("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
+		KW ("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
+		KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0); 
+		break;
+	default:
+		r_list_free (l);
+		l = NULL;
+	}
+	return l;
+}
+
 RAnalPlugin r_anal_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM analyzer",
@@ -3575,6 +3639,7 @@ RAnalPlugin r_anal_plugin_arm_cs = {
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
 	.anal_mask = anal_mask,
+	.preludes = anal_preludes,
 	.bits = 16 | 32 | 64,
 	.op = &analop,
 };

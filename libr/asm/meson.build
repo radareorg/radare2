@@ -39,6 +39,7 @@ r_asm_sources = [
   'p/asm_mips_gnu.c',
   'p/asm_msp430.c',
   'p/asm_nios2.c',
+  'p/asm_or1k.c',
   'p/asm_pic.c',
   'p/asm_mcore.c',
   'p/asm_ppc_cs.c',
@@ -115,6 +116,7 @@ r_asm_sources = [
   'arch/msp430/msp430_disas.c',
   'arch/nios/gnu/nios2-dis.c',
   'arch/nios/gnu/nios2-opc.c',
+  'arch/or1k/or1k_disas.c',
   'arch/pic/pic_baseline.c',
   'arch/pic/pic_midrange.c',
   'arch/pic/pic_pic18.c',
@@ -174,13 +176,14 @@ r_asm_inc = [
     'arch/ebc',
     'arch/cr16',
     'arch/8051',
-    'arch/v810'
+    'arch/v810',
+    'arch/or1k'
   )
 ]
 
 r_asm = library('r_asm', r_asm_sources,
   include_directories: r_asm_inc,
-  c_args: library_cflags,
+  c_args: library_cflags + ['-DR_ASM_SRC=1'],
   dependencies: [
     r_util_dep,
     r_syscall_dep,

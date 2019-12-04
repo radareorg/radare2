@@ -80,7 +80,7 @@ R_API void r_list_purge(RList *list) {
 R_API void r_list_free(RList *list) {
 	if (list) {
 		r_list_purge (list);
-		R_FREE (list);
+		free (list);
 	}
 }
 
@@ -106,7 +106,7 @@ R_API void r_list_delete(RList *list, RListIter *iter) {
 		list->free (iter->data);
 	}
 	iter->data = NULL;
-	R_FREE (iter);
+	free (iter);
 }
 
 R_API void r_list_split(RList *list, void *ptr) {

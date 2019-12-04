@@ -471,16 +471,6 @@ have been reported classified with labels by difficulty, type,
 milestone, etc. It is a good place to start if you are looking
 to contribute.
 
-## Contributing with patches
-
-All the development happens in the git repository. It is
-good that all patches can be applied against the `git HEAD`.
-
-I can get patches in unidiff format like this:
-```sh
-   git diff > p
-```
-
 ## HOW TO RELEASE
 
  - Set `RELEASE=1` in global.mk and r2-bindings/config.mk.acr.

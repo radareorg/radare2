@@ -153,7 +153,7 @@ static bool __listen_unix (RSocket *s, const char *file) {
 		close (sock);
 		return false;
 	}
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_signal (SIGPIPE, SIG_IGN);
 
 	/* change permissions */
 	if (chmod (unix_name.sun_path, 0777) != 0) {
@@ -177,7 +177,7 @@ R_API RSocket *r_socket_new(bool is_ssl) {
 	s->is_ssl = is_ssl;
 	s->port = 0;
 #if __UNIX_
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	s->local = 0;
 	s->fd = R_INVALID_SOCKET;
@@ -319,7 +319,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	if (!proto) {
 		proto = R_SOCKET_PROTO_TCP;
 	}
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_signal (SIGPIPE, SIG_IGN);
 	if (proto == R_SOCKET_PROTO_UNIX) {
 		if (!__connect_unix (s, host)) {
 			return false;
@@ -348,44 +348,29 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				s->fd = -1;
 				continue;
 			}
-			if (timeout > 0) {
-				r_socket_block_time (s, 1, timeout, 0);
-				//fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
-			}
+
+			r_socket_block_time (s, 0, 0, 0);
 			ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
 
-			if (timeout == 0 && ret == 0) {
+			if (ret == 0) {
 				freeaddrinfo (res);
 				return true;
 			}
-			if (ret == 0 /* || nonblocking */) {
+			if (errno == EINPROGRESS) {
 				struct timeval tv;
-				fd_set fdset, errset;
-				FD_ZERO (&fdset);
-				FD_SET (s->fd, &fdset);
-				tv.tv_sec = 1; //timeout;
+				tv.tv_sec = timeout;
 				tv.tv_usec = 0;
 
-				if (r_socket_is_connected (s)) {
-					freeaddrinfo (res);
-					return true;
-				}
-				if (select (s->fd + 1, NULL, NULL, &errset, &tv) == 1) {
-					int so_error;
-					socklen_t len = sizeof so_error;
-					ret = getsockopt (s->fd, SOL_SOCKET,
-						SO_ERROR, &so_error, &len);
-
-					if (ret == 0 && so_error == 0) {
-						//fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
-						//r_socket_block_time (s, 0, 0);
+				if ((ret = select (s->fd + 1, NULL, NULL, NULL, &tv)) != -1) {
+					if (r_socket_is_connected (s)) {
 						freeaddrinfo (res);
 						return true;
 					}
+				} else {
+					perror ("connect");
 				}
 			}
-			close (s->fd);
-			s->fd = -1;
+			r_socket_close (s);
 		}
 		freeaddrinfo (res);
 		if (!rp) {
@@ -539,7 +524,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 		return false;
 	}
 #if __UNIX__
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	if (listen (s->fd, 32) < 0) {
 #ifdef _MSC_VER
@@ -638,6 +623,7 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 	return NULL;
 }
 
+// Only applies to read in UNIX
 R_API int r_socket_block_time(RSocket *s, int block, int sec, int usec) {
 #if __UNIX__
 	int ret, flags;
@@ -735,7 +721,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 R_API int r_socket_write(RSocket *s, void *buf, int len) {
 	int ret, delta = 0;
 #if __UNIX__
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	for (;;) {
 		int b = 1500; //65536; // Use MTU 1500?
