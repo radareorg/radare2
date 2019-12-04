@@ -36,7 +36,18 @@ typedef struct r_interval_tree_t {
 
 R_API void r_interval_tree_init(RIntervalTree *tree, RIntervalNodeFree free);
 R_API void r_interval_tree_fini(RIntervalTree *tree);
+
+// return false if the insertion failed.
 R_API bool r_interval_tree_insert(RIntervalTree *tree, ut64 start, ut64 end, void *data);
+
+// Removes a given node from the tree. The node will be freed.
+// If free is true, the data in the node is freed as well.
+// false if the removal failed
+R_API bool r_interval_tree_delete(RIntervalTree *tree, RIntervalNode *node, bool free);
+
+// Change start/end of a given node.
+// It is more efficient if only the end changed, but time complexity is O(log n) in both cases.
+R_API bool r_interval_tree_resize(RIntervalTree *tree, RIntervalNode *node, ut64 new_start, ut64 new_end);
 
 // Returns a node that starts at exactly start or NULL
 R_API RIntervalNode *r_interval_tree_node_at(RIntervalTree *tree, ut64 start);
@@ -53,9 +64,11 @@ typedef void (*RIntervalIterCb)(RIntervalNode *node, void *user);
 R_API void r_interval_tree_all_at(RIntervalTree *tree, ut64 start, RIntervalIterCb cb, void *user);
 
 // Call cb for all entries whose intervals contain value
+// end_inclusive if true, all start/end values are considered inclusive/inclusive, else inclusive/exclusive
 R_API void r_interval_tree_all_in(RIntervalTree *tree, ut64 value, bool end_inclusive, RIntervalIterCb cb, void *user);
 
 // Call cb for all entries whose intervals intersect the given interval (might not contain it completely)
+// end_inclusive if true, all start/end values are considered inclusive/inclusive, else inclusive/exclusive
 R_API void r_interval_tree_all_intersect(RIntervalTree *tree, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user);
 
 #define r_interval_tree_foreach(tree, it, dat) \
