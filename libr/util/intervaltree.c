@@ -169,7 +169,7 @@ R_API void r_interval_tree_all_at(RIntervalTree *tree, ut64 start, RIntervalIter
 	RBIter it;
 	it.len = 0;
 	RBNode *node;
-	for (node = &top_intervalnode->node; node && unwrap (node->child[0])->start == start; node = node->child[0]) {
+	for (node = &top_intervalnode->node; node && unwrap (node)->start == start; node = node->child[0]) {
 		it.path[it.len++] = node;
 	}
 	while (r_rbtree_iter_has (&it)) {
