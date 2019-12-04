@@ -105,7 +105,7 @@ R_API void r_range_tree_all_at(RRangeTree *tree, ut64 start, RRangeIterCb cb, vo
 	}
 }
 
-R_API void r_range_node_all_in(RRangeNode *node, ut64 value, RRangeIterCb cb, void *user) {
+R_API void r_range_node_all_in(RRangeNode *node, ut64 value, bool end_inclusive, RRangeIterCb cb, void *user) {
 	while (node && value < node->start) {
 		// less than the current node, but might still be contained further down
 		node = unwrap (node->node.child[0]);
@@ -113,41 +113,41 @@ R_API void r_range_node_all_in(RRangeNode *node, ut64 value, RRangeIterCb cb, vo
 	if (!node) {
 		return;
 	}
-	if (value >= node->max_end) {
+	if (end_inclusive ? value >= node->max_end : value > node->max_end) {
 		return;
 	}
-	if (value < node->end) {
+	if (end_inclusive ? value < node->end : value <= node->end) {
 		cb (node, user);
 	}
 	// This can be done more efficiently by building the stack manually
-	r_range_node_all_in (unwrap (node->node.child[0]), value, cb, user);
-	r_range_node_all_in (unwrap (node->node.child[1]), value, cb, user);
+	r_range_node_all_in (unwrap (node->node.child[0]), value, end_inclusive, cb, user);
+	r_range_node_all_in (unwrap (node->node.child[1]), value, end_inclusive, cb, user);
 }
 
-R_API void r_range_tree_all_in(RRangeTree *tree, ut64 value, RRangeIterCb cb, void *user) {
+R_API void r_range_tree_all_in(RRangeTree *tree, ut64 value, bool end_inclusive, RRangeIterCb cb, void *user) {
 	// all in! 🂡
-	r_range_node_all_in (tree->root, value, cb, user);
+	r_range_node_all_in (tree->root, value, end_inclusive, cb, user);
 }
 
-static void r_range_node_all_intersect(RRangeNode *node, ut64 start, ut64 end, RRangeIterCb cb, void *user) {
-	while (node && end <= node->start) {
+static void r_range_node_all_intersect(RRangeNode *node, ut64 start, ut64 end, bool end_inclusive, RRangeIterCb cb, void *user) {
+	while (node && (end_inclusive ? end < node->start : end <= node->start)) {
 		// less than the current node, but might still be contained further down
 		node = unwrap (node->node.child[0]);
 	}
 	if (!node) {
 		return;
 	}
-	if (start >= node->max_end) {
+	if (end_inclusive ? start > node->max_end : start >= node->max_end) {
 		return;
 	}
 	if (end <= node->end) {
 		cb (node, user);
 	}
 	// This can be done more efficiently by building the stack manually
-	r_range_node_all_intersect (unwrap (node->node.child[0]), start, end, cb, user);
-	r_range_node_all_intersect (unwrap (node->node.child[1]), start, end, cb, user);
+	r_range_node_all_intersect (unwrap (node->node.child[0]), start, end, end_inclusive, cb, user);
+	r_range_node_all_intersect (unwrap (node->node.child[1]), start, end, end_inclusive, cb, user);
 }
 
-R_API void r_range_tree_all_intersect(RRangeTree *tree, ut64 start, ut64 end, RRangeIterCb cb, void *user) {
-	r_range_node_all_intersect (tree->root, start, end, cb, user);
+R_API void r_range_tree_all_intersect(RRangeTree *tree, ut64 start, ut64 end, bool end_inclusive, RRangeIterCb cb, void *user) {
+	r_range_node_all_intersect (tree->root, start, end, end_inclusive, cb, user);
 }

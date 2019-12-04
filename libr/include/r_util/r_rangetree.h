@@ -22,7 +22,7 @@
 typedef struct r_range_node_t {
 	RBNode node;
 	ut64 start; // inclusive, key of the node
-	ut64 end; // exclusive
+	ut64 end; // may be inclusive or exclusive, this is only determined by how they are queried
 	ut64 max_end; // augmented value, maximum end of this node and all of its children
 	void *data;
 } RRangeNode;
@@ -53,10 +53,10 @@ typedef void (*RRangeIterCb)(RRangeNode *node, void *user);
 R_API void r_range_tree_all_at(RRangeTree *tree, ut64 start, RRangeIterCb cb, void *user);
 
 // Call cb for all entries whose ranges contain value
-R_API void r_range_tree_all_in(RRangeTree *tree, ut64 value, RRangeIterCb cb, void *user);
+R_API void r_range_tree_all_in(RRangeTree *tree, ut64 value, bool end_inclusive, RRangeIterCb cb, void *user);
 
 // Call cb for all entries whose ranges intersect the given range (might not contain it completely)
-R_API void r_range_tree_all_intersect(RRangeTree *tree, ut64 start, ut64 end, RRangeIterCb cb, void *user);
+R_API void r_range_tree_all_intersect(RRangeTree *tree, ut64 start, ut64 end, bool end_inclusive, RRangeIterCb cb, void *user);
 
 #define r_range_tree_foreach(tree, it, dat) \
 	for ((it) = r_rbtree_first (&tree->root->node); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RRangeNode, node)->data); r_rbtree_iter_next (&(it)))
