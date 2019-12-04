@@ -71,7 +71,7 @@ static int __anal_hint_range_tree_cmp(const void *a_, const RBNode *b_, void *us
 	return 0;
 }
 
-static void __anal_hint_range_tree_free(RBNode *node) {
+static void __anal_hint_range_tree_free(RBNode *node, void *user) {
 	free (container_of (node, RAnalRange, rb));
 }
 
@@ -211,7 +211,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_syscall_free (a->syscall);
 	r_reg_free (a->reg);
 	r_anal_op_free (a->queued);
-	r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free);
+	r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free, NULL);
 	ht_up_free (a->dict_refs);
 	ht_up_free (a->dict_xrefs);
 	r_list_free (a->leaddrs);
@@ -771,7 +771,7 @@ R_API void r_anal_merge_hint_ranges(RAnal *a) {
 		SdbKv *kv;
 		SdbList *sdb_range = sdb_foreach_list (a->sdb_hints, true);
 		int range_bits = 0;
-		r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free);
+		r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free, NULL);
 		a->rb_hints_ranges = NULL;
 		ls_foreach (sdb_range, iter, kv) {
 			ut64 addr = sdb_atoi (sdbkv_key (kv) + 5);
