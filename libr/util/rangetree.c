@@ -113,10 +113,10 @@ R_API void r_range_node_all_in(RRangeNode *node, ut64 value, bool end_inclusive,
 	if (!node) {
 		return;
 	}
-	if (end_inclusive ? value >= node->max_end : value > node->max_end) {
+	if (end_inclusive ? value > node->max_end : value >= node->max_end) {
 		return;
 	}
-	if (end_inclusive ? value < node->end : value <= node->end) {
+	if (end_inclusive ? value <= node->end : value < node->end) {
 		cb (node, user);
 	}
 	// This can be done more efficiently by building the stack manually
@@ -140,7 +140,7 @@ static void r_range_node_all_intersect(RRangeNode *node, ut64 start, ut64 end, b
 	if (end_inclusive ? start > node->max_end : start >= node->max_end) {
 		return;
 	}
-	if (end <= node->end) {
+	if (end_inclusive ? start <= node->end : start < node->end) {
 		cb (node, user);
 	}
 	// This can be done more efficiently by building the stack manually
