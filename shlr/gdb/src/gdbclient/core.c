@@ -1723,6 +1723,106 @@ end:
 	return ret;
 }
 
+RList* gdbr_pids_list(libgdbr_t *g, int pid) {
+	int ret = -1;
+	RList *list = NULL;
+	int tpid = -1, ttid = -1;
+	char *ptr, *ptr2, *exec_file;
+	RDebugPid *dpid;
+	RListIter *iter;
+
+	if (!g) {
+		return NULL;
+	}
+
+	if (!gdbr_lock_enter (g)) {
+		goto end;
+	}
+	if (!(list = r_list_new ())) {
+		ret = -1;
+		goto end;
+	}
+	// Use qfThreadInfo as a fallback since it doesn't actually show all children
+	if (g->stub_features.qXfer_threads_read) {
+		if (gdbr_read_processes_xml(g, pid, list) == 0) {
+			ret = 0;
+			goto end;
+		}
+	}
+	// Child processes will only show up in ThreadInfo if gdbr is currently processing a
+	// fork/vfork/exec event or if the children weren't detached yet. This is intended
+	// gdb `info inferiors` behavior that can only be avoided using xml.
+	eprintf ("WARNING: Showing possibly incomplete pid list due to xml protocol failure\n");
+
+	list->free = &r_debug_pid_free;
+	if (!g->stub_features.qXfer_exec_file_read
+		    || !(exec_file = gdbr_exec_file_read (g, pid))) {
+		exec_file = "";
+	}
+	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0
+		    || g->data_len == 0 || g->data[0] != 'm') {
+		ret = -1;
+		goto end;
+	}
+	while (1) {
+		g->data[g->data_len] = '\0';
+		ptr = g->data + 1;
+		while (ptr) {
+			if ((ptr2 = strchr (ptr, ','))) {
+				*ptr2 = '\0';
+				ptr2++;
+			}
+			if (read_thread_id (ptr, &tpid, &ttid, g->stub_features.multiprocess) < 0) {
+				ptr = ptr2;
+				continue;
+			}
+			// Avoid adding the same pid twice(could show more than once if it has threads)
+			r_list_foreach (list, iter, dpid) {
+				if (tpid == dpid->pid) {
+					continue;
+				}
+			}
+			if (!(dpid = R_NEW0 (RDebugPid)) || !(dpid->path = strdup (exec_file))) {
+				ret = -1;
+				goto end;
+			}
+			dpid->pid = tpid;
+			// If the pid isn't the debugged pid it must be a child pid
+			if (tpid != g->pid) {
+				dpid->ppid = g->pid;
+			}
+			dpid->uid = dpid->gid = -1;
+			dpid->runnable = true;
+			dpid->status = R_DBG_PROC_STOP;
+			r_list_append (list, dpid);
+			ptr = ptr2;
+		}
+		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g, false) < 0
+			    || send_ack (g) < 0 || g->data_len == 0
+			    || (g->data[0] != 'm' && g->data[0] != 'l')) {
+			ret = -1;
+			goto end;
+		}
+		if (g->data[0] == 'l') {
+			break;
+		}
+	}
+
+	ret = 0;
+end:
+	gdbr_lock_leave (g);
+	if (ret != 0) {
+		if (dpid) {
+			free (dpid);
+		}
+		if (list) {
+			r_list_free (list);
+		}
+		return NULL;
+	}
+	return list;
+}
+
 RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 	int ret = -1;
 	RList *list = NULL;
