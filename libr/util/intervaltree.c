@@ -1,18 +1,18 @@
 /* radare2 - LGPL - Copyright 2019 - thestr4ng3r */
 
-#include <r_util/r_rangetree.h>
+#include <r_util/r_intervaltree.h>
 
-#define unwrap(rbnode) container_of (rbnode, RRangeNode, node)
+#define unwrap(rbnode) container_of (rbnode, RIntervalNode, node)
 
 static void node_max(RBNode *node) {
-	RRangeNode *rangenode = unwrap (node);
-	rangenode->max_end = rangenode->end;
+	RIntervalNode *intervalnode = unwrap (node);
+	intervalnode->max_end = intervalnode->end;
 	int i;
 	for (i = 0; i < 2; i++) {
 		if (node->child[i]) {
 			ut64 end = unwrap (node->child[i])->max_end;
-			if (end > rangenode->max_end) {
-				rangenode->max_end = end;
+			if (end > intervalnode->max_end) {
+				intervalnode->max_end = end;
 			}
 		}
 	}
@@ -20,7 +20,7 @@ static void node_max(RBNode *node) {
 
 static int cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 incoming_start = *(ut64 *)incoming;
-	ut64 other_start = container_of (in_tree, const RRangeNode, node)->start;
+	ut64 other_start = container_of (in_tree, const RIntervalNode, node)->start;
 	if(incoming_start < other_start)
 		return -1;
 	if(incoming_start > other_start)
@@ -28,28 +28,28 @@ static int cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	return 0;
 }
 
-R_API void r_range_tree_init(RRangeTree *tree, RRangeNodeFree free) {
+R_API void r_interval_tree_init(RIntervalTree *tree, RIntervalNodeFree free) {
 	tree->root = NULL;
 	tree->free = free;
 }
 
-static void range_node_free(RBNode *node, void *user) {
-	RRangeNode *ragenode /* >:-O */ = unwrap (node);
+static void interval_node_free(RBNode *node, void *user) {
+	RIntervalNode *ragenode /* >:-O */ = unwrap (node);
 	if (user) {
 		((RContRBFree)user) (ragenode->data);
 	}
 	free (ragenode);
 }
 
-R_API void r_range_tree_fini(RRangeTree *tree) {
+R_API void r_interval_tree_fini(RIntervalTree *tree) {
 	if (!tree || !tree->root) {
 		return;
 	}
-	r_rbtree_free (&tree->root->node, range_node_free, tree->free);
+	r_rbtree_free (&tree->root->node, interval_node_free, tree->free);
 }
 
-R_API bool r_range_tree_insert(RRangeTree *tree, ut64 start, ut64 end, void *data) {
-	RRangeNode *node = R_NEW0 (RRangeNode);
+R_API bool r_interval_tree_insert(RIntervalTree *tree, ut64 start, ut64 end, void *data) {
+	RIntervalNode *node = R_NEW0 (RIntervalNode);
 	if (!node) {
 		return false;
 	}
@@ -66,9 +66,9 @@ R_API bool r_range_tree_insert(RRangeTree *tree, ut64 start, ut64 end, void *dat
 }
 
 // This must always return the topmost node that matches start!
-// Otherwise r_range_node_all_at will break.
-R_API RRangeNode *r_range_tree_node_at(RRangeTree *tree, ut64 start) {
-	RRangeNode *node = tree->root;
+// Otherwise r_interval_node_all_at will break.
+R_API RIntervalNode *r_interval_tree_node_at(RIntervalTree *tree, ut64 start) {
+	RIntervalNode *node = tree->root;
 	while (node) {
 		if (start < node->start) {
 			node = unwrap (node->node.child[0]);
@@ -81,10 +81,10 @@ R_API RRangeNode *r_range_tree_node_at(RRangeTree *tree, ut64 start) {
 	return NULL;
 }
 
-R_API void r_range_tree_all_at(RRangeTree *tree, ut64 start, RRangeIterCb cb, void *user) {
+R_API void r_interval_tree_all_at(RIntervalTree *tree, ut64 start, RIntervalIterCb cb, void *user) {
 	// Find the topmost node matching start so we have a sub-tree with all entries that we want to find.
-	RRangeNode *top_rangenode = r_range_tree_node_at (tree, start);
-	if (!top_rangenode) {
+	RIntervalNode *top_intervalnode = r_interval_tree_node_at (tree, start);
+	if (!top_intervalnode) {
 		return;
 	}
 
@@ -93,19 +93,19 @@ R_API void r_range_tree_all_at(RRangeTree *tree, ut64 start, RRangeIterCb cb, vo
 	RBIter it;
 	it.len = 0;
 	RBNode *node;
-	for (node = &top_rangenode->node; node && unwrap (node->child[0])->start == start; node = node->child[0]) {
+	for (node = &top_intervalnode->node; node && unwrap (node->child[0])->start == start; node = node->child[0]) {
 		it.path[it.len++] = node;
 	}
 	while (r_rbtree_iter_has (&it)) {
-		RRangeNode *rangenode = r_rbtree_iter_get (&it, RRangeNode, node);
-		if (rangenode->start != start) {
+		RIntervalNode *intervalnode = r_rbtree_iter_get (&it, RIntervalNode, node);
+		if (intervalnode->start != start) {
 			break;
 		}
-		cb (rangenode, user);
+		cb (intervalnode, user);
 	}
 }
 
-R_API void r_range_node_all_in(RRangeNode *node, ut64 value, bool end_inclusive, RRangeIterCb cb, void *user) {
+R_API void r_interval_node_all_in(RIntervalNode *node, ut64 value, bool end_inclusive, RIntervalIterCb cb, void *user) {
 	while (node && value < node->start) {
 		// less than the current node, but might still be contained further down
 		node = unwrap (node->node.child[0]);
@@ -120,16 +120,16 @@ R_API void r_range_node_all_in(RRangeNode *node, ut64 value, bool end_inclusive,
 		cb (node, user);
 	}
 	// This can be done more efficiently by building the stack manually
-	r_range_node_all_in (unwrap (node->node.child[0]), value, end_inclusive, cb, user);
-	r_range_node_all_in (unwrap (node->node.child[1]), value, end_inclusive, cb, user);
+	r_interval_node_all_in (unwrap (node->node.child[0]), value, end_inclusive, cb, user);
+	r_interval_node_all_in (unwrap (node->node.child[1]), value, end_inclusive, cb, user);
 }
 
-R_API void r_range_tree_all_in(RRangeTree *tree, ut64 value, bool end_inclusive, RRangeIterCb cb, void *user) {
+R_API void r_interval_tree_all_in(RIntervalTree *tree, ut64 value, bool end_inclusive, RIntervalIterCb cb, void *user) {
 	// all in! 🂡
-	r_range_node_all_in (tree->root, value, end_inclusive, cb, user);
+	r_interval_node_all_in (tree->root, value, end_inclusive, cb, user);
 }
 
-static void r_range_node_all_intersect(RRangeNode *node, ut64 start, ut64 end, bool end_inclusive, RRangeIterCb cb, void *user) {
+static void r_interval_node_all_intersect(RIntervalNode *node, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user) {
 	while (node && (end_inclusive ? end < node->start : end <= node->start)) {
 		// less than the current node, but might still be contained further down
 		node = unwrap (node->node.child[0]);
@@ -144,10 +144,10 @@ static void r_range_node_all_intersect(RRangeNode *node, ut64 start, ut64 end, b
 		cb (node, user);
 	}
 	// This can be done more efficiently by building the stack manually
-	r_range_node_all_intersect (unwrap (node->node.child[0]), start, end, end_inclusive, cb, user);
-	r_range_node_all_intersect (unwrap (node->node.child[1]), start, end, end_inclusive, cb, user);
+	r_interval_node_all_intersect (unwrap (node->node.child[0]), start, end, end_inclusive, cb, user);
+	r_interval_node_all_intersect (unwrap (node->node.child[1]), start, end, end_inclusive, cb, user);
 }
 
-R_API void r_range_tree_all_intersect(RRangeTree *tree, ut64 start, ut64 end, bool end_inclusive, RRangeIterCb cb, void *user) {
-	r_range_node_all_intersect (tree->root, start, end, end_inclusive, cb, user);
+R_API void r_interval_tree_all_intersect(RIntervalTree *tree, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user) {
+	r_interval_node_all_intersect (tree->root, start, end, end_inclusive, cb, user);
 }
