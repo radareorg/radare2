@@ -21,8 +21,8 @@ OBJS+=seven.o randomart.o zip.o debruijn.o log.o getopt.o table.o
 OBJS+=utf8.o utf16.o utf32.o strbuf.o lib.o name.o spaces.o signal.o syscmd.o
 OBJS+=diff.o bdiff.o stack.o queue.o tree.o idpool.o assert.o
 OBJS+=punycode.o pkcs7.o x509.o asn1.o astr.o json_indent.o skiplist.o pj.o
-OBJS+=rbtree.o qrcode.o vector.o str_constpool.o str_trim.o ascii_table.o
-OBJS+=protobuf.o
+OBJS+=rbtree.o intervaltree.o qrcode.o vector.o str_constpool.o str_trim.o
+OBJS+=ascii_table.o protobuf.o
 
 # DO NOT BUILD r_big api (not yet used and its buggy)
 ifeq (1,0)
