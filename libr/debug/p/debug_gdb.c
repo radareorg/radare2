@@ -45,6 +45,14 @@ static RList* r_debug_gdb_threads(RDebug *dbg, int pid) {
 	return list;
 }
 
+static RList* r_debug_gdb_pids(RDebug *dbg, int pid) {
+	RList *list;
+	if ((list = gdbr_pids_list (desc, pid))) {
+		list->free = (RListFree) &r_debug_pid_free;
+	}
+	return list;
+}
+
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int copy_size;
 	int buflen = 0;
@@ -1111,6 +1119,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.attach = &r_debug_gdb_attach,
 	.detach = &r_debug_gdb_detach,
 	.threads = &r_debug_gdb_threads,
+	.pids = &r_debug_gdb_pids,
 	.canstep = 1,
 	.wait = &r_debug_gdb_wait,
 	.map_get = r_debug_gdb_map_get,

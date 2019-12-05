@@ -1,11 +1,15 @@
 /* libgdbr - LGPL - Copyright 2017-2018 - srimanta.barua1 */
 
 #include "gdbclient/xml.h"
+#include "gdbclient/commands.h"
 #include "gdbclient/core.h"
 #include "arch.h"
 #include "gdbr_common.h"
 #include "packet.h"
 #include <r_util.h>
+#include <r_debug.h>
+
+#define MAX_PID_CHARS (5)
 
 static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 	ut64 retlen = 0, retmax = 0, off = 0, len = g->stub_features.pkt_sz - 2,
@@ -103,6 +107,47 @@ exit_err:
 	return NULL;
 }
 
+static char *gdbr_read_osdata(libgdbr_t *g, const char *file, ut64 *tot_len) {
+	ut64 retlen = 0, retmax = 0, off = 0, len = g->stub_features.pkt_sz - 2,
+		blksz = g->data_max, subret_space = 0, subret_len = 0;
+	char *tmp, *tmp2, *tmp3, *ret = NULL, *subret = NULL, msg[128] = { 0 }, status, tmpchar;
+	while (1) {
+		snprintf (msg, sizeof (msg), "qXfer:osdata:read:%s:%" PFMT64x ",%" PFMT64x, file, off, len);
+		if (send_msg (g, msg) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
+			goto exit_err;
+		}
+		if (g->data_len == 0) {
+			goto exit_err;
+		}
+		if (g->data_len == 1 && g->data[0] == 'l') {
+			break;
+		}
+		status = g->data[0];
+		if (retmax - retlen < g->data_len) {
+			if (!(tmp = realloc (ret, retmax + blksz))) {
+				goto exit_err;
+			}
+			retmax += blksz;
+			ret = tmp;
+		}
+		strcpy (ret + retlen, g->data + 1);
+		retlen += g->data_len - 1;
+		off = retlen;
+		if (status == 'l') {
+			break;
+		}
+	}
+	if (!ret) {
+		*tot_len = 0;
+		return NULL;
+	}
+	*tot_len = retlen;
+	return ret;
+exit_err:
+	free (ret);
+	*tot_len = 0;
+	return NULL;
+}
 
 typedef struct {
 	char type[32];
@@ -124,8 +169,9 @@ typedef struct {
 
 static void _write_flag_bits(char *buf, const gdbr_xml_flags_t *flags);
 static int _resolve_arch(libgdbr_t *g, char *xml_data);
-static RList* _extract_flags(char *flagstr);
-static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias);
+static RList *_extract_flags(char *flagstr);
+static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias);
+static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid);
 
 static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	char *regstr, *flagstr, *tmp, *profile = NULL, pc_alias[64], flag_bits[65];
@@ -294,6 +340,112 @@ exit_err:
 	return -1;
 }
 
+/* Reference:
+<osdata type="processes">
+<item>
+<column name="pid">1</column>
+<column name="user">root</column>
+<column name="command">/sbin/init maybe-ubiquity </column>
+<column name="cores">0</column>
+</item>
+</osdata>
+*/
+static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int pid, RList *list) {
+	char pidstr[MAX_PID_CHARS + 1], status[1024], cmdline[1024];
+	char *itemstr, *itemstr_end, *column, *column_end, *proc_filename;
+	int ret = -1, ipid, column_data_len;
+	RDebugPid *pid_info = NULL;
+
+	// Make sure the given xml is valid
+	if (!r_str_startswith (xml_data, "<osdata type=\"processes\">")) {
+		ret = -1;
+		goto end;
+	}
+
+	column = xml_data;
+	while ((itemstr = strstr (column, "<item>"))) {
+		if (!(itemstr_end = strstr (itemstr, "</item>"))) {
+			ret = -1;
+			goto end;
+		}
+		// Get PID
+		if (!(column = strstr (itemstr, "<column name=\"pid\">"))) {
+			ret = -1;
+			goto end;
+		}
+		if (!(column_end = strstr (column, "</column>"))) {
+			ret = -1;
+			goto end;
+		}
+
+		column += sizeof ("<column name=\"pid\">") - 1;
+		column_data_len = column_end - column;
+
+		memcpy (pidstr, column, column_data_len);
+		pidstr[column_data_len] = '\0';
+
+		ipid = atoi (pidstr);
+
+		// Get cmdline
+		if (!(column = strstr (itemstr, "<column name=\"command\">"))) {
+			ret = -1;
+			goto end;
+		}
+		if (!(column_end = strstr (column, "</column>"))) {
+			ret = -1;
+			goto end;
+		}
+
+		column += sizeof ("<column name=\"command\">") - 1;
+		column_data_len = column_end - column;
+
+		memcpy (cmdline, column, column_data_len);
+		cmdline[column_data_len] = '\0';
+
+		// Attempt to read the pid's info from /proc. Non UNIX systems will have the
+		// correct pid and cmdline from the xml with everything else set to default
+		proc_filename = r_str_newf ("/proc/%d/status", ipid);
+		if (gdbr_open_file (g, proc_filename, O_RDONLY, 0) == 0) {
+			if (gdbr_read_file (g, (unsigned char *)status, sizeof (status)) != -1) {
+				pid_info = _extract_pid_info (status, cmdline, ipid);
+			} else {
+				eprintf ("Failed to read from data from procfs file of pid (%d)\n", ipid);
+			}
+			if (gdbr_close_file (g) != 0) {
+				eprintf ("Failed to close procfs file of pid (%d)\n", ipid);
+			}
+		} else {
+			eprintf ("Failed to open procfs file of pid (%d)\n", ipid);
+			if (!(pid_info = R_NEW0 (RDebugPid)) || !(pid_info->path = strdup (cmdline))) {
+				ret = -1;
+				goto end;
+			}
+			pid_info->pid = ipid;
+			pid_info->ppid = 0;
+			pid_info->uid = pid_info->gid = -1;
+			pid_info->runnable = true;
+			pid_info->status = R_DBG_PROC_STOP;
+		}
+		// Unless pid 0 is requested, only add the requested pid and it's child processes
+		if (0 == pid || ipid == pid || pid_info->ppid == pid) {
+			r_list_append (list, pid_info);
+		} else {
+			if (pid_info) {
+				free (pid_info);
+			}
+		}
+	}
+
+	ret = 0;
+end:
+	if (ret != 0) {
+		if (pid_info) {
+			free (pid_info);
+		}
+	}
+	return ret;
+}
+
 // If xml target description is supported, read it
 int gdbr_read_target_xml(libgdbr_t *g) {
 	if (!g->stub_features.qXfer_features_read) {
@@ -307,6 +459,32 @@ int gdbr_read_target_xml(libgdbr_t *g) {
 	gdbr_parse_target_xml (g, data, len);
 	free (data);
 	return 0;
+}
+
+int gdbr_read_processes_xml(libgdbr_t *g, int pid, RList *list) {
+	if (!g->stub_features.qXfer_features_read) {
+		return -1;
+	}
+	ut64 len;
+	int ret = -1;
+	char *data;
+
+	if (!(data = gdbr_read_osdata (g, "processes", &len))) {
+		ret = -1;
+		goto end;
+	}
+
+	if (gdbr_parse_processes_xml (g, data, len, pid, list) != 0) {
+		ret = -1;
+		goto end;
+	}
+
+	ret = 0;
+end:
+	if (data) {
+		free (data);
+	}
+	return ret;
 }
 
 // sizeof (buf) needs to be atleast flags->num_bits + 1
@@ -378,7 +556,7 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 	return 0;
 }
 
-static RList* _extract_flags(char *flagstr) {
+static RList *_extract_flags(char *flagstr) {
 	char *tmp1, *tmp2, *flagsend, *field_start, *field_end;
 	ut64 num_fields, type_sz, name_sz;
 	gdbr_xml_flags_t *tmpflag = NULL;
@@ -485,7 +663,55 @@ exit_err:
 	return NULL;
 }
 
-static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias) {
+static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid) {
+	RDebugPid *pid_info = R_NEW0 (RDebugPid);
+	if (!pid_info) {
+		return NULL;
+	}
+	char *ptr = strstr (info, "State:");
+	if (ptr) {
+		switch (*(ptr + 7)) {
+		case 'R':
+			pid_info->status = R_DBG_PROC_RUN;
+			break;
+		case 'S':
+			pid_info->status = R_DBG_PROC_SLEEP;
+			break;
+		case 'T':
+		case 't':
+			pid_info->status = R_DBG_PROC_STOP;
+			break;
+		case 'Z':
+			pid_info->status = R_DBG_PROC_ZOMBIE;
+			break;
+		case 'X':
+			pid_info->status = R_DBG_PROC_DEAD;
+			break;
+		default:
+			pid_info->status = R_DBG_PROC_SLEEP;
+			break;
+		}
+	}
+	ptr = strstr (info, "PPid:");
+	if (ptr) {
+		pid_info->ppid = atoi (ptr + 5);
+	}
+	ptr = strstr (info, "Uid:");
+	if (ptr) {
+		pid_info->uid = atoi (ptr + 5);
+	}
+	ptr = strstr (info, "Gid:");
+	if (ptr) {
+		pid_info->gid = atoi (ptr + 5);
+	}
+	pid_info->pid = tid;
+	pid_info->path = path ? strdup (path) : NULL;
+	pid_info->runnable = true;
+	pid_info->pc = 0;
+	return pid_info;
+}
+
+static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 	char *regstr_end, *regname, *regtype, *tmp1, *tmpregstr, *feature_end, *typegroup;
 	ut32 flagnum, regname_len, regsize, regnum;
 	RList *regs;
