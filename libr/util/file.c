@@ -309,7 +309,7 @@ R_API char *r_stdin_slurp (int *sz) {
 		close (newfd);
 		return NULL;
 	}
-	for (i = ret = 0; ; i += ret) {
+	for (i = ret = 0; i >= 0; i += ret) {
 		char *new = realloc (buf, i + BS);
 		if (!new) {
 			eprintf ("Cannot realloc to %d\n", i+BS);
@@ -321,9 +321,14 @@ R_API char *r_stdin_slurp (int *sz) {
 			break;
 		}
 	}
-	buf[i] = 0;
-	dup2 (newfd, 0);
-	close (newfd);
+	if (i < 1) {
+		i = 0;
+		R_FREE (buf);
+	} else {
+		buf[i] = 0;
+		dup2 (newfd, 0);
+		close (newfd);
+	}
 	if (sz) {
 		*sz = i;
 	}
