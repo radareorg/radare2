@@ -769,26 +769,31 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 		} else {
 			content = r_file_slurp (file, &length);
 			if (content) {
-				if (len && len > 0 && len < length) {
-					length = len;
-				}
-				content[length] = '\0';
-				if (skip && length > skip) {
-					if (bin) {
-						memmove (content, content + skip, length - skip);
-						length -= skip;
-					}
-				}
-				if (dis) {
-					ret = rasm_disasm (as, content, offset,
-							length, as->a->bits, ascii, bin, dis - 1);
-				} else if (analinfo) {
-					ret = show_analinfo (as, (const char *)content, offset);
+				if (length < 0) {
+					eprintf ("rasm2: File %s is too big\n", file);
+					ret = 1;
 				} else {
-					ret = print_assembly_output (as, content, offset, length,
-							as->a->bits, bin, use_spp, rad, hexwords, arch);
+					if (len && len > 0 && len < length) {
+						length = len;
+					}
+					content[length] = '\0';
+					if (skip && length > skip) {
+						if (bin) {
+							memmove (content, content + skip, length - skip);
+							length -= skip;
+						}
+					}
+					if (dis) {
+						ret = rasm_disasm (as, content, offset,
+								length, as->a->bits, ascii, bin, dis - 1);
+					} else if (analinfo) {
+						ret = show_analinfo (as, (const char *)content, offset);
+					} else {
+						ret = print_assembly_output (as, content, offset, length,
+								as->a->bits, bin, use_spp, rad, hexwords, arch);
+					}
+					ret = !ret;
 				}
-				ret = !ret;
 				free (content);
 			} else {
 				eprintf ("rasm2: Cannot open file %s\n", file);
