@@ -72,10 +72,10 @@ R_API void r_interval_tree_all_in(RIntervalTree *tree, ut64 value, bool end_incl
 R_API void r_interval_tree_all_intersect(RIntervalTree *tree, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user);
 
 #define r_interval_tree_foreach(tree, it, dat) \
-	for ((it) = r_rbtree_first (&tree->root->node); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RIntervalNode, node)->data); r_rbtree_iter_next (&(it)))
+	for ((it) = r_rbtree_first (&(tree)->root->node); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RIntervalNode, node)->data); r_rbtree_iter_next (&(it)))
 
 #define r_interval_tree_foreach_prev(tree, it, dat) \
-	for ((it) = r_rbtree_last (&tree->root->node); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RIntervalNode, node)->data); r_rbtree_iter_prev (&(it)))
+	for ((it) = r_rbtree_last (&(tree)->root->node); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RIntervalNode, node)->data); r_rbtree_iter_prev (&(it)))
 
 
 #endif //R_INTERVALTREE_H

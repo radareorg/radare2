@@ -33,7 +33,7 @@ static int cmp(const void *incoming, const RBNode *in_tree, void *user) {
 // like cmp, but handles searches for an exact RIntervalNode * in the tree instead of only comparing the start values
 static int cmp_exact_node(const void *incoming, const RBNode *in_tree, void *user) {
 	RIntervalNode *incoming_node = (RIntervalNode *)incoming;
-	RIntervalNode *node = container_of (in_tree, const RIntervalNode, node);
+	const RIntervalNode *node = container_of (in_tree, const RIntervalNode, node);
 	if (node == incoming_node) {
 		return 0;
 	}
@@ -51,7 +51,7 @@ static int cmp_exact_node(const void *incoming, const RBNode *in_tree, void *use
 	if (!path_cache->len) {
 		RBNode *cur;
 		// go down to the leftmost child that has the same start
-		for (cur = &node->node; cur && unwrap (cur->child[0])->start == incoming_node->start; cur = cur->child[0]) {
+		for (cur = (RBNode *)&node->node; cur && unwrap (cur->child[0])->start == incoming_node->start; cur = cur->child[0]) {
 			path_cache->path[path_cache->len++] = cur;
 		}
 		// iterate through all children with the same start and stop when the pointer is identical
@@ -168,10 +168,16 @@ R_API void r_interval_tree_all_at(RIntervalTree *tree, ut64 start, RIntervalIter
 	// Start with the leftmost child that matches start and iterate from there
 	RBIter it;
 	it.len = 0;
-	RBNode *node;
-	for (node = &top_intervalnode->node; node && unwrap (node)->start == start; node = node->child[0]) {
-		it.path[it.len++] = node;
+	RBNode *node = &top_intervalnode->node;
+	while (node) {
+		if (start <= unwrap (node)->start) {
+			it.path[it.len++] = node;
+			node = node->child[0];
+		} else {
+			node = node->child[1];
+		}
 	}
+
 	while (r_rbtree_iter_has (&it)) {
 		RIntervalNode *intervalnode = r_rbtree_iter_get (&it, RIntervalNode, node);
 		if (intervalnode->start != start) {
