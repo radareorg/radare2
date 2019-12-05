@@ -47,7 +47,10 @@ static RList* r_debug_gdb_threads(RDebug *dbg, int pid) {
 
 static RList* r_debug_gdb_pids(RDebug *dbg, int pid) {
 	RList *list;
-	return gdbr_pids_list (desc, pid);
+	if ((list = gdbr_pids_list (desc, pid))) {
+		list->free = (RListFree) &r_debug_pid_free;
+	}
+	return list;
 }
 
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {

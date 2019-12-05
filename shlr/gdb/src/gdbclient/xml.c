@@ -350,29 +350,32 @@ exit_err:
 </item>
 </osdata>
 */
-static RList *gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int pid, RList *list) {
-	list->free = (RListFree)&r_debug_pid_free;
+static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int pid, RList *list) {
 	char pidstr[MAX_PID_CHARS + 1], status[1024], cmdline[1024];
 	char *itemstr, *itemstr_end, *column, *column_end, *proc_filename;
-	int ipid, column_data_len;
+	int ret = -1, ipid, column_data_len;
 	RDebugPid *pid_info = NULL;
 
 	// Make sure the given xml is valid
 	if (!r_str_startswith (xml_data, "<osdata type=\"processes\">")) {
-		goto exit_err;
+		ret = -1;
+		goto end;
 	}
 
 	column = xml_data;
 	while ((itemstr = strstr (column, "<item>"))) {
 		if (!(itemstr_end = strstr (itemstr, "</item>"))) {
-			goto exit_err;
+			ret = -1;
+			goto end;
 		}
 		// Get PID
 		if (!(column = strstr (itemstr, "<column name=\"pid\">"))) {
-			goto exit_err;
+			ret = -1;
+			goto end;
 		}
 		if (!(column_end = strstr (column, "</column>"))) {
-			goto exit_err;
+			ret = -1;
+			goto end;
 		}
 
 		column += sizeof ("<column name=\"pid\">") - 1;
@@ -385,10 +388,12 @@ static RList *gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, i
 
 		// Get cmdline
 		if (!(column = strstr (itemstr, "<column name=\"command\">"))) {
-			goto exit_err;
+			ret = -1;
+			goto end;
 		}
 		if (!(column_end = strstr (column, "</column>"))) {
-			goto exit_err;
+			ret = -1;
+			goto end;
 		}
 
 		column += sizeof ("<column name=\"command\">") - 1;
@@ -401,7 +406,7 @@ static RList *gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, i
 		// correct pid and cmdline from the xml with everything else set to default
 		proc_filename = r_str_newf ("/proc/%d/status", ipid);
 		if (gdbr_open_file (g, proc_filename, O_RDONLY, 0) == 0) {
-			if (gdbr_read_file (g, status, sizeof (status)) != -1) {
+			if (gdbr_read_file (g, (unsigned char *)status, sizeof (status)) != -1) {
 				pid_info = _extract_pid_info (status, cmdline, ipid);
 			} else {
 				eprintf ("Failed to read from data from procfs file of pid (%d)\n", ipid);
@@ -411,7 +416,15 @@ static RList *gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, i
 			}
 		} else {
 			eprintf ("Failed to open procfs file of pid (%d)\n", ipid);
-			pid_info = r_debug_pid_new (cmdline, ipid, 0, R_DBG_PROC_STOP, 0);
+			if (!(pid_info = R_NEW0 (RDebugPid)) || !(pid_info->path = strdup (cmdline))) {
+				ret = -1;
+				goto end;
+			}
+			pid_info->pid = ipid;
+			pid_info->ppid = 0;
+			pid_info->uid = pid_info->gid = -1;
+			pid_info->runnable = true;
+			pid_info->status = R_DBG_PROC_STOP;
 		}
 		// Unless pid 0 is requested, only add the requested pid and it's child processes
 		if (0 == pid || ipid == pid || pid_info->ppid == pid) {
@@ -423,12 +436,14 @@ static RList *gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, i
 		}
 	}
 
-	return list;
-exit_err:
-	if (list) {
-		r_list_free (list);
+	ret = 0;
+end:
+	if (ret != 0) {
+		if (pid_info) {
+			free (pid_info);
+		}
 	}
-	return NULL;
+	return ret;
 }
 
 // If xml target description is supported, read it
@@ -451,16 +466,25 @@ int gdbr_read_processes_xml(libgdbr_t *g, int pid, RList *list) {
 		return -1;
 	}
 	ut64 len;
+	int ret = -1;
 	char *data;
 
 	if (!(data = gdbr_read_osdata (g, "processes", &len))) {
-		return -1;
+		ret = -1;
+		goto end;
 	}
 
-	list = gdbr_parse_processes_xml (g, data, len, pid, list);
+	if (gdbr_parse_processes_xml (g, data, len, pid, list) != 0) {
+		ret = -1;
+		goto end;
+	}
 
-	free (data);
-	return 0;
+	ret = 0;
+end:
+	if (data) {
+		free (data);
+	}
+	return ret;
 }
 
 // sizeof (buf) needs to be atleast flags->num_bits + 1

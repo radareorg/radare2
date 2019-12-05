@@ -1754,7 +1754,6 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 	// gdb `info inferiors` behavior that can only be avoided using xml.
 	eprintf ("WARNING: Showing possibly incomplete pid list due to xml protocol failure\n");
 
-	list->free = &r_debug_pid_free;
 	if (!g->stub_features.qXfer_exec_file_read
 		    || !(exec_file = gdbr_exec_file_read (g, pid))) {
 		exec_file = "";
@@ -1815,7 +1814,14 @@ end:
 		if (dpid) {
 			free (dpid);
 		}
+		// We can't use r_debug_pid_free here
 		if (list) {
+			r_list_foreach (list, iter, dpid) {
+				if (dpid->path) {
+					free (dpid->path);
+				}
+				free (dpid);
+			}
 			r_list_free (list);
 		}
 		return NULL;
@@ -1829,6 +1835,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 	int tpid = -1, ttid = -1;
 	char *ptr, *ptr2, *exec_file;
 	RDebugPid *dpid;
+	RListIter *iter;
 
 	if (!g) {
 		return NULL;
@@ -1895,7 +1902,6 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 			break;
 		}
 	}
-	RListIter *iter;
 	// This is the all I've been able to extract from gdb so far
 	r_list_foreach (list, iter, dpid) {
 		if (gdbr_is_thread_dead (g, pid, dpid->pid)) {
@@ -1910,7 +1916,14 @@ end:
 		if (dpid) {
 			free (dpid);
 		}
+		// We can't use r_debug_pid_free here
 		if (list) {
+			r_list_foreach (list, iter, dpid) {
+				if (dpid->path) {
+					free (dpid->path);
+				}
+				free (dpid);
+			}
 			r_list_free (list);
 		}
 		return NULL;
