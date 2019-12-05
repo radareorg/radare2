@@ -753,13 +753,15 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			((ptr = strchr (tokens[ctr], ';')) ||
 			(ptr = strchr (tokens[ctr], '\n')) ||
 			(ptr = strchr (tokens[ctr], '\r')));) {
-		ctr++;
-		if (ctr >= tokens_size) {
+		if (ctr + 1 >= tokens_size) {
 			const int new_tokens_size = tokens_size * 2;
 			char **new_tokens = realloc (tokens, sizeof (char*) * new_tokens_size);
 			if (new_tokens) {
 				tokens_size = new_tokens_size;
 				tokens = new_tokens;
+				ctr++;
+			} else {
+				break;
 			}
 		}
 		*ptr = '\0';
