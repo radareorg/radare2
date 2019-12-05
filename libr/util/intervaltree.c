@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2019 - thestr4ng3r */
 
 #include <r_util/r_intervaltree.h>
+#include <r_util/r_assert.h>
 
 #define unwrap(rbnode) container_of (rbnode, RIntervalNode, node)
 
@@ -21,10 +22,10 @@ static void node_max(RBNode *node) {
 static int cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 incoming_start = *(ut64 *)incoming;
 	ut64 other_start = container_of (in_tree, const RIntervalNode, node)->start;
-	if(incoming_start < other_start) {
+	if (incoming_start < other_start) {
 		return -1;
 	}
-	if(incoming_start > other_start) {
+	if (incoming_start > other_start) {
 		return 1;
 	}
 	return 0;
@@ -37,44 +38,63 @@ static int cmp_exact_node(const void *incoming, const RBNode *in_tree, void *use
 	if (node == incoming_node) {
 		return 0;
 	}
-	if(incoming_node->start < node->start) {
+	if (incoming_node->start < node->start) {
 		return -1;
 	}
-	if(incoming_node->start > node->start) {
+	if (incoming_node->start > node->start) {
 		return 1;
 	}
 	// Here we have the same start value, but a different pointer.
 	// This means we need to guide the caller into the direction where the actual node is.
-	// Since we have nothing to compare anymore, we have to iterate through all the same-start children to find the path.
-	RBNode *next_child = NULL;
+	// Since we have nothing to compare anymore, we have to iterate through all the same-start children to find the correct path.
 	RBIter *path_cache = user;
 	if (!path_cache->len) {
-		RBNode *cur;
+		RBNode *cur = (RBNode *)&node->node;
 		// go down to the leftmost child that has the same start
-		for (cur = (RBNode *)&node->node; cur && unwrap (cur->child[0])->start == incoming_node->start; cur = cur->child[0]) {
+		while (cur) {
 			path_cache->path[path_cache->len++] = cur;
+			if (incoming_node->start <= unwrap (cur)->start) {
+				cur = cur->child[0];
+			} else {
+				cur = cur->child[1];
+			}
 		}
 		// iterate through all children with the same start and stop when the pointer is identical
+		// The RBIter works a bit different than normal here. We store each node in the path, including right-descended ones
+		// because we want to get the full path in the end.
 		while (r_rbtree_iter_has (path_cache)) {
 			RIntervalNode *intervalnode = r_rbtree_iter_get (path_cache, RIntervalNode, node);
-			if (intervalnode == incoming_node) {
-				next_child = path_cache->path[0];
+			if (intervalnode == incoming_node || intervalnode->start > incoming_node->start) {
 				break;
 			}
-			r_rbtree_iter_next (path_cache);
-		}
-	} else {
-		// Path has already been found by a previous call of this function
-		// Go through the path to find the next node one step down
-		size_t i;
-		for (i = 0; i < path_cache->len - 1; i++) {
-			if (unwrap (path_cache->path[i]) == node) {
-				next_child = path_cache->path[i + 1];
+			// r_rbtree_iter_next does not work here
+			RBNode *rbnode = &intervalnode->node;
+			if (rbnode->child[1]) {
+				// next node after the current is always the leftmost in the right branch
+				for (rbnode = rbnode->child[1]; rbnode; rbnode = rbnode->child[0]) {
+					path_cache->path[path_cache->len++] = rbnode;
+				}
+			} else {
+				// if there is no right branch, go up
+				do {
+					rbnode = path_cache->path[--path_cache->len];
+				} while (path_cache->len && path_cache->path[path_cache->len - 1]->child[1] == rbnode);
 			}
 		}
 	}
+
+	RBNode *next_child = NULL;
+	// Go through the path to find the next node one step down
+	size_t i;
+	for (i = 0; i < path_cache->len - 1; i++) {
+		if (unwrap (path_cache->path[i]) == node) {
+			next_child = path_cache->path[i + 1];
+			break;
+		}
+	}
+
 	// Determine the direction from the next child node
-	return node->node.child[0] == next_child ? -1 : 1;
+	return (next_child && node->node.child[0] == next_child) ? -1 : 1;
 }
 
 R_API void r_interval_tree_init(RIntervalTree *tree, RIntervalNodeFree free) {
@@ -98,6 +118,7 @@ R_API void r_interval_tree_fini(RIntervalTree *tree) {
 }
 
 R_API bool r_interval_tree_insert(RIntervalTree *tree, ut64 start, ut64 end, void *data) {
+	r_return_val_if_fail (end >= start, false);
 	RIntervalNode *node = R_NEW0 (RIntervalNode);
 	if (!node) {
 		return false;
@@ -118,11 +139,12 @@ R_API bool r_interval_tree_delete(RIntervalTree *tree, RIntervalNode *node, bool
 	RBNode *root = &tree->root->node;
 	RBIter path_cache = { 0 };
 	bool r = r_rbtree_aug_delete (&root, node, cmp_exact_node, &path_cache, interval_node_free, free ? tree->free : NULL, node_max);
-	tree->root = unwrap (root);
+	tree->root = root ? unwrap (root) : NULL;
 	return r;
 }
 
 R_API bool r_interval_tree_resize(RIntervalTree *tree, RIntervalNode *node, ut64 new_start, ut64 new_end) {
+	r_return_val_if_fail (new_end >= new_start, false);
 	if (node->start != new_start) {
 		// Start change means the tree needs a different structure
 		void *data = node->data;
@@ -142,7 +164,7 @@ R_API bool r_interval_tree_resize(RIntervalTree *tree, RIntervalNode *node, ut64
 }
 
 // This must always return the topmost node that matches start!
-// Otherwise r_interval_node_all_at will break.
+// Otherwise r_interval_tree_first_at will break!!!
 R_API RIntervalNode *r_interval_tree_node_at(RIntervalTree *tree, ut64 start) {
 	RIntervalNode *node = tree->root;
 	while (node) {
@@ -157,17 +179,17 @@ R_API RIntervalNode *r_interval_tree_node_at(RIntervalTree *tree, ut64 start) {
 	return NULL;
 }
 
-R_API void r_interval_tree_all_at(RIntervalTree *tree, ut64 start, RIntervalIterCb cb, void *user) {
+R_API RBIter r_interval_tree_first_at(RIntervalTree *tree, ut64 start) {
+	RBIter it;
+	it.len = 0;
+
 	// Find the topmost node matching start so we have a sub-tree with all entries that we want to find.
 	RIntervalNode *top_intervalnode = r_interval_tree_node_at (tree, start);
 	if (!top_intervalnode) {
-		return;
+		return it;
 	}
 
 	// If there are more nodes with the same key, they can be in both children.
-	// Start with the leftmost child that matches start and iterate from there
-	RBIter it;
-	it.len = 0;
 	RBNode *node = &top_intervalnode->node;
 	while (node) {
 		if (start <= unwrap (node)->start) {
@@ -178,6 +200,26 @@ R_API void r_interval_tree_all_at(RIntervalTree *tree, ut64 start, RIntervalIter
 		}
 	}
 
+	return it;
+}
+
+R_API RIntervalNode *r_interval_tree_node_at_data(RIntervalTree *tree, ut64 start, void *data) {
+	RBIter it = r_interval_tree_first_at (tree, start);
+	while (r_rbtree_iter_has (&it)) {
+		RIntervalNode *intervalnode = r_rbtree_iter_get (&it, RIntervalNode, node);
+		if (intervalnode->start != start) {
+			break;
+		}
+		if (intervalnode->data == data) {
+			return intervalnode;
+		}
+		r_rbtree_iter_next (&it);
+	}
+	return NULL;
+}
+
+R_API void r_interval_tree_all_at(RIntervalTree *tree, ut64 start, RIntervalIterCb cb, void *user) {
+	RBIter it = r_interval_tree_first_at (tree, start);
 	while (r_rbtree_iter_has (&it)) {
 		RIntervalNode *intervalnode = r_rbtree_iter_get (&it, RIntervalNode, node);
 		if (intervalnode->start != start) {
@@ -213,6 +255,7 @@ R_API void r_interval_tree_all_in(RIntervalTree *tree, ut64 value, bool end_incl
 }
 
 static void r_interval_node_all_intersect(RIntervalNode *node, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user) {
+	r_return_if_fail (end >= start);
 	while (node && (end_inclusive ? end < node->start : end <= node->start)) {
 		// less than the current node, but might still be contained further down
 		node = unwrap (node->node.child[0]);

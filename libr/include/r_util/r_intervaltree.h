@@ -43,14 +43,24 @@ R_API bool r_interval_tree_insert(RIntervalTree *tree, ut64 start, ut64 end, voi
 // Removes a given node from the tree. The node will be freed.
 // If free is true, the data in the node is freed as well.
 // false if the removal failed
+// Complexity is O(log(n) + m) if there are m nodes with the same start as the given node.
 R_API bool r_interval_tree_delete(RIntervalTree *tree, RIntervalNode *node, bool free);
 
 // Change start/end of a given node.
-// It is more efficient if only the end changed, but time complexity is O(log n) in both cases.
+// It is more efficient if only the end changed.
+// The RIntervalNode pointer is INVALID after this operation!
+// Complexity is O(log(n) + m) if there are m nodes with the same start as the given node.
 R_API bool r_interval_tree_resize(RIntervalTree *tree, RIntervalNode *node, ut64 new_start, ut64 new_end);
+
+// Returns an iterator that starts at the leftmost node that has the given start
+// Iterating over it will yield all nodes with given start, then all with a higher one.
+R_API RBIter r_interval_tree_first_at(RIntervalTree *tree, ut64 start);
 
 // Returns a node that starts at exactly start or NULL
 R_API RIntervalNode *r_interval_tree_node_at(RIntervalTree *tree, ut64 start);
+
+// Returns a node that starts at exactly start and contains data or NULL
+R_API RIntervalNode *r_interval_tree_node_at_data(RIntervalTree *tree, ut64 start, void *data);
 
 // Same as r_interval_tree_node_at, but directly returns the contained value or NULL
 static inline void *r_interval_tree_at(RIntervalTree *tree, ut64 start) {

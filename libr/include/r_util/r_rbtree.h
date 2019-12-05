@@ -38,6 +38,8 @@ typedef struct r_rb_iter_t {
 	int len;
 
 	// current path from root to the current node
+	// excluding nodes into whose right (or left, for reverse iteration) branch the iterator has descended
+	// (these nodes are before the current)
 	RBNode *path[R_RBTREE_MAX_HEIGHT];
 } RBIter;
 
