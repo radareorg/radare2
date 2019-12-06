@@ -79,7 +79,6 @@ test_script:
   - radare2 -v
   - ps: Install-Product node $env:nodejs_version
   - node --version
-  - git clone https://github.com/radareorg/radare2-regressions
   - cd test
   - git clone --depth 1 https://github.com/thestr4ng3r/radare2-testbins bins
   - git clone --depth 1 https://github.com/thestr4ng3r/radare2-fuzztargets fuzz/targets

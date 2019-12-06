@@ -14,7 +14,7 @@ else
 	while [ ! -x r2r ]; do
 		cd ..
 		if [ "`pwd`" = / ]; then
-			echo "Cannot find radare2-regressions/"
+			echo "Cannot find test/"
 			exit 1
 		fi
 	done
