@@ -10,6 +10,7 @@
 #include <windows.h>
 #define printf(...) r_cons_win_printf (false, __VA_ARGS__)
 #define USE_UTF8 1
+static int r_line_readchar_win(ut8 *s, int slen);
 #else
 #include <sys/ioctl.h>
 #include <termios.h>
@@ -261,9 +262,8 @@ static int r_line_readchar_win(ut8 *s, int slen) { // this function handle the i
 	INPUT_RECORD irInBuf;
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
-	ut8 buf[5] = {0};
+	char buf[5] = {0};
 	HANDLE h;
-	int i;
 	void *bed;
 
 	if (I.zerosep) {
@@ -321,9 +321,9 @@ do_it_again:
 	if (!buf[0]) {
 		goto do_it_again;
 	}
-	strncpy_s (s, slen, buf, sizeof (buf));
+	strncpy_s ((char *)s, slen, buf, sizeof (buf));
 	SetConsoleMode (h, mode);
-	return strlen (s);
+	return strlen ((char *)s);
 }
 
 #endif

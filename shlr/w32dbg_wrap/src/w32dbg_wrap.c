@@ -23,6 +23,8 @@ static DWORD WINAPI __w32dbg_thread(LPVOID param) {
 		case W32_STOP:
 			params->ret = DebugActiveProcessStop (params->pid);
 			break;
+		default:
+			break;
 		}
 		if (!params->ret) {
 			params->err = GetLastError ();

@@ -86,13 +86,12 @@ int kd_read_packet(void *fp, kd_packet_t **p) {
 
 	if (!kd_packet_is_valid (&pkt)) {
 		KD_DBG eprintf ("invalid leader %08x, trying to recover\n", pkt.leader);
-		char ch;
 		while (!kd_packet_is_valid (&pkt)) {
 			kd_send_ctrl_packet (fp, KD_PACKET_TYPE_RESEND, 0);
 			char sig[4];
 			// Read byte-by-byte searching for the start of a packet
 			int ret;
-			while (ret = iob_read (fp, (uint8_t *)&sig, 1) > 0) {
+			while ((ret = iob_read (fp, (uint8_t *)&sig, 1)) > 0) {
 				if (sig[0] == '0' || sig[0] == 'i') {
 					if (iob_read (fp, (uint8_t *)&sig + 1, 3) == 3) {
 						if (strncmp (sig, "000", 3) && strncmp (sig, "iii", 3)) {

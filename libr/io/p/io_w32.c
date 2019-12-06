@@ -43,10 +43,6 @@ static bool w32__plugin_open(RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "w32://", 6));
 }
 
-static inline int getw32fd (RIOW32 *w32) {
-	return (int)(size_t)w32->hnd;
-}
-
 static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "w32://", 6)) {
 		RIOW32 *w32 = R_NEW0 (RIOW32);

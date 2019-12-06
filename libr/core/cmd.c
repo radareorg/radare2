@@ -2192,6 +2192,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	char *_shell_cmd = NULL;
 	LPTSTR _shell_cmd_ = NULL;
 	DWORD mode;
+	TCHAR *systemdir = NULL;
 	GetConsoleMode (GetStdHandle (STD_OUTPUT_HANDLE), &mode);
 
 	sa.nLength = sizeof (SECURITY_ATTRIBUTES);
@@ -2224,7 +2225,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	if (!_shell_cmd_) {
 		goto err_r_w32_cmd_pipe;
 	}
-	TCHAR *systemdir = calloc (MAX_PATH, sizeof (TCHAR));
+	systemdir = calloc (MAX_PATH, sizeof (TCHAR));
 	if (!systemdir) {
 		goto err_r_w32_cmd_pipe;
 	}

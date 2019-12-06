@@ -31,6 +31,7 @@
 #include <r_userconf.h>
 #include <r_types.h>
 #ifdef _MSC_VER
+#include <io.h>
 #include <sys\stat.h>
 #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)

@@ -69,7 +69,7 @@ static int wrapline(const char *s, int len) {
 		l = r_str_len_utf8char (s+n, (len-n));
 		n += l;
 	}
-	return n - (n > len)? l: 1;
+	return n - ((n > len) ? l : 1);
 }
 
 // Dupe from canvas.c
@@ -99,12 +99,12 @@ static int bytes_utf8len(const char *s, int n) {
 	return ret;
 }
 
-static int r_cons_w32_hprint(DWORD hdl, const ut8 *ptr, int len, bool vmode) {
+static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 	HANDLE hConsole = GetStdHandle (hdl);
 	int fd = hdl == STD_OUTPUT_HANDLE ? 1 : 2;
 	int esc = 0;
 	int bg = 0, fg = 1|2|4|8;
-	const ut8 *ptr_end, *str = ptr;
+	const char *ptr_end, *str = ptr;
 	int ret = 0;
 	int inv = 0;
 	int linelen = 0;
@@ -393,7 +393,7 @@ static int r_cons_w32_hprint(DWORD hdl, const ut8 *ptr, int len, bool vmode) {
 	return ret;
 }
 
-R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
+R_API int r_cons_w32_print(const char *ptr, int len, bool vmode) {
 	return r_cons_w32_hprint (STD_OUTPUT_HANDLE, ptr, len, vmode);
 }
 

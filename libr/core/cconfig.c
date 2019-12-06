@@ -2065,7 +2065,7 @@ static bool cb_scrhighlight(void *user, void *data) {
 }
 
 #if __WINDOWS__
-static int scr_ansicon(void *user, void *data) {
+static bool scr_ansicon(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (!strcmp (node->value, "true")) {
 		node->i_value = 1;
@@ -2833,7 +2833,7 @@ R_API int r_core_config_init(RCore *core) {
 	{
 		char *pfx = r_sys_getenv("R2_PREFIX");
 #if __WINDOWS__
-		char *invoke_dir = r_sys_prefix (NULL);
+		const char *invoke_dir = r_sys_prefix (NULL);
 		if (!pfx && invoke_dir) {
 			pfx = strdup (invoke_dir);
 		}

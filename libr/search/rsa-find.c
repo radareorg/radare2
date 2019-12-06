@@ -14,7 +14,7 @@ Parses a single field of the key, beginning at start.  Each field
 consists of a type, a length, and a value.  Puts the type of field
 into type, the number of bytes into len, and returns a pointer to
 the beginning of the value. */
-static ut8 *parse_next_rsa_field(ut8 *start, ut32 *len) {
+static const ut8 *parse_next_rsa_field(const ut8 *start, ut32 *len) {
 	*len = 0;
 	if (!(start[1] & 0x80)) {
 		*len = (ut32)start[1];
@@ -36,9 +36,8 @@ three fields of the key */
 static int check_rsa_fields(const ut8 *start) {
 #define KEY_MAX_LEN 26000
 	ut32 len = 0;
-	int i;
 	// skip sequence field
-	ut8 *ptr = parse_next_rsa_field (start, &len);
+	const ut8 *ptr = parse_next_rsa_field (start, &len);
 
 	if (!len || len > KEY_MAX_LEN) {
 		return false;

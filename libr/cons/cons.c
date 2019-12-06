@@ -136,7 +136,7 @@ static inline void __cons_write_ll(const char *buf, int len) {
 		(void) write (I.fdout, buf, len);
 	} else {
 		if (I.fdout == 1) {
-			r_cons_w32_print ((const ut8*)buf, len, false);
+			r_cons_w32_print (buf, len, false);
 		} else {
 			(void) write (I.fdout, buf, len);
 		}
@@ -968,7 +968,7 @@ R_API void r_cons_visual_flush() {
 		if (I.ansicon) {
 			r_cons_visual_write (I.context->buffer);
 		} else {
-			r_cons_w32_print ((const ut8*)I.context->buffer, I.context->buffer_len, true);
+			r_cons_w32_print (I.context->buffer, I.context->buffer_len, true);
 		}
 #else
 		r_cons_visual_write (I.context->buffer);
@@ -1301,7 +1301,7 @@ R_API int r_cons_get_size(int *rows) {
 	bool ret = GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
 	I.columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 	I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
- 	if (!ret || I.columns == -1 && I.rows == 0) {
+ 	if (!ret || (I.columns == -1 && I.rows == 0)) {
 		// Stdout is probably redirected so we set default values
 		I.columns = 80;
 		I.rows = 23;
@@ -1391,8 +1391,8 @@ R_API bool r_cons_is_ansicon(void) {
 			release = atoi (info->release);
 		}
 		if (major > 10
-			|| major == 10 && minor > 0
-			|| major == 10 && minor == 0 && release >= 1703) {
+			|| (major == 10 && minor > 0)
+			|| (major == 10 && minor == 0 && release >= 1703)) {
 			win_support = true;
 		}
 	}

@@ -424,7 +424,6 @@ static int __cons_readchar_w32(ut32 usec) {
 	DWORD mode, out;
 	HANDLE h;
 	INPUT_RECORD irInBuf;
-	int i, o;
 	bool resize = false;
 	bool click_n_drag = false;
 	void *bed;
@@ -593,7 +592,6 @@ extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
 R_API int r_cons_readchar() {
-	void *bed;
 	char buf[2];
 	buf[0] = -1;
 	if (readbuffer_length > 0) {
@@ -606,7 +604,7 @@ R_API int r_cons_readchar() {
 	return __cons_readchar_w32 (0);
 #else
 	r_cons_set_raw (1);
-	bed = r_cons_sleep_begin ();
+	void *bed = r_cons_sleep_begin ();
 
 	// Blocks until either stdin has something to read or a signal happens.
 	// This serves to check if the terminal window was resized. It avoids the race
