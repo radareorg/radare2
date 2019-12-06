@@ -44,6 +44,7 @@ typedef struct r_bp_item_t {
 	char *module_name; /*module where you get the base address*/
 	st64 module_delta; /*delta to apply to module */
 	ut64 addr;
+	ut64 delta;
 	int size; /* size of breakpoint area */
 	int recoil; /* recoil */
 	bool swstep; 	/* is this breakpoint from a swstep? */
@@ -83,6 +84,7 @@ typedef struct r_bp_t {
 	RBreakpointItem **bps_idx;
 	int bps_idx_count;
 	st64 delta;
+	ut64 baddr;
 } RBreakpoint;
 
 // DEPRECATED: USE R_PERM

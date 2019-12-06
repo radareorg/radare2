@@ -166,7 +166,14 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		return NULL;
 	}
 	b = r_bp_item_new (bp);
+	if (!b) {
+		return NULL;
+	}
 	b->addr = addr + bp->delta;
+	if (bp->baddr > addr) {
+		eprintf ("base addr should not be larger than the breakpoint address.\n");
+	}
+	b->delta = addr - bp->baddr;
 	b->size = size;
 	b->enabled = true;
 	b->perm = perm;

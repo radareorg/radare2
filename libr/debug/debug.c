@@ -390,6 +390,7 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->bp = r_bp_new ();
 		r_debug_plugin_init (dbg);
 		dbg->bp->iob.init = false;
+		dbg->bp->baddr = 0;
 	}
 	return dbg;
 }
@@ -1701,4 +1702,16 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	}
 	return 0LL;
 #endif
+}
+
+R_API void r_debug_bp_rebase(RDebug *dbg, ut64 baddr) {
+	RBreakpointItem *bp;
+	RListIter *iter;
+	// update bp->baddr
+	dbg->bp->baddr = baddr;
+
+	// update bp's address
+	r_list_foreach (dbg->bp->bps, iter, bp) {
+		bp->addr = baddr + bp->delta;
+	}
 }

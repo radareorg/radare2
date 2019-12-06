@@ -516,7 +516,7 @@ static void cmd_omf(RCore *core, const char *input) {
 
 static void r_core_cmd_omt(RCore *core, const char *arg) {
 	RTable *t = r_table_new ();
-	
+
 	r_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
 
 	SdbListIter *iter;
@@ -805,7 +805,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case '=': // "om=" 
+	case '=': // "om="
 		{
 		RList *list = r_list_newf ((RListFree) r_listinfo_free);
 		if (!list) {
@@ -1046,6 +1046,9 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 	ht_up_foreach (old_xrefs, __rebase_refs, &reb);
 	ht_up_free (old_refs);
 	ht_up_free (old_xrefs);
+
+	// BREAKPOINTS
+	r_debug_bp_rebase (core->dbg, new_base);
 }
 
 R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
@@ -1663,6 +1666,7 @@ static int cmd_open(void *data, const char *input) {
 						r_bin_set_baddr (core->bin, orig_baddr);
 						r_config_set_i (core->config, "bin.baddr", orig_baddr);
 						r_core_bin_rebase (core, orig_baddr);
+						r_debug_bp_rebase (core->dbg, orig_baddr);
 						r_core_cmdf (core, "o %s", file);
 						free (file);
 					} else {
