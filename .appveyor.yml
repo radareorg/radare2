@@ -80,7 +80,7 @@ test_script:
   - ps: Install-Product node $env:nodejs_version
   - node --version
   - cd test
-  - git clone --depth 1 https://github.com/thestr4ng3r/radare2-testbins bins
+  - git clone --depth 1 https://github.com/radareorg/radare2-testbins bins
   - cd new
   - npm install
   - set NOOK=1

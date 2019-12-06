@@ -23,10 +23,10 @@ apply-overlay overlay-apply:
 alltargets: js-tests unit_tests
 
 bins:
-	git clone --depth 1 https://github.com/thestr4ng3r/radare2-testbins bins
+	git clone --depth 1 https://github.com/radareorg/radare2-testbins bins
 
 fuzz/targets:
-	git clone --depth 1 https://github.com/thestr4ng3r/radare2-fuzztargets fuzz/targets
+	git clone --depth 1 https://github.com/radareorg/radare2-fuzztargets fuzz/targets
 
 R2R=$(shell cd new ; npm bin)/r2r
 
