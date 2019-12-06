@@ -138,12 +138,10 @@ R_API char *r_str_trim_head(char *str) {
 // Remove whitespace chars from the tail of the string, replacing them with
 // null bytes. The string is changed in-place.
 R_API char *r_str_trim_tail(char *str) {
-	int length;
-
 	if (!str) {
 		return NULL;
 	}
-	length = strlen (str);
+	size_t length = strlen (str);
 	if (!length) {
 		return str;
 	}
