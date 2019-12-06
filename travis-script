@@ -45,7 +45,9 @@ elif [ "${INSTALL_SYSTEM}" == "static" ]; then
 	./sys/static.sh || exit 1
 	echo "Compiling Fuzzing Target"
 	export RADARE2_STATIC_BUILD=$(pwd)/r2-static
-	cd test/fuzz/targets
+	cd test
+	make fuzz/targets
+	cd fuzz/targets
 	git remote -v
 	git branch
 	git rev-parse HEAD
