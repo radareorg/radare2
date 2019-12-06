@@ -755,15 +755,20 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			(ptr = strchr (tokens[ctr], '\r')));) {
 		if (ctr + 1 >= tokens_size) {
 			const int new_tokens_size = tokens_size * 2;
-			char **new_tokens = realloc (tokens, sizeof (char*) * new_tokens_size);
-			if (new_tokens) {
-				tokens_size = new_tokens_size;
-				tokens = new_tokens;
-				ctr++;
-			} else {
-				break;
+			if (new_tokens_size < tokens_size) {
+				// overflow
+				eprintf ("Too many tokens\n");
+				goto fail;
 			}
+			char **new_tokens = realloc (tokens, sizeof (char*) * new_tokens_size);
+			if (!new_tokens) {
+				eprintf ("Too many tokens\n");
+				goto fail;
+			}
+			tokens_size = new_tokens_size;
+			tokens = new_tokens;
 		}
+		ctr++;
 		*ptr = '\0';
 		tokens[ctr] = ptr + 1;
 	}
@@ -968,18 +973,14 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 					ret = r_asm_pseudo_incbin (&op, ptr + 8);
 				} else {
 					eprintf ("Unknown directive (%s)\n", ptr);
-					free (tokens);
-					free(lbuf);
-					return r_asm_code_free (acode);
+					goto fail;
 				}
 				if (!ret) {
 					continue;
 				}
 				if (ret < 0) {
 					eprintf ("!!! Oops (%s)\n", ptr);
-					free (tokens);
-					free (lbuf);
-					return r_asm_code_free (acode);
+					goto fail;
 				}
 			} else { /* Instruction */
 				char *str = ptr_start;
@@ -1004,16 +1005,12 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			if (stage == STAGES - 1) {
 				if (ret < 1) {
 					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
-					free (lbuf);
-					free (tokens);
-					return r_asm_code_free (acode);
+					goto fail;
 				}
 				acode->len = idx + ret;
 				char *newbuf = realloc (acode->bytes, (idx + ret) * 2);
 				if (!newbuf) {
-					free (lbuf);
-					free (tokens);
-					return r_asm_code_free (acode);
+					goto fail;
 				}
 				acode->bytes = (ut8*)newbuf;
 				memcpy (acode->bytes + idx, r_strbuf_get (&op.buf), r_strbuf_length (&op.buf));
@@ -1032,6 +1029,10 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 	free (lbuf);
 	free (tokens);
 	return acode;
+fail:
+	free (lbuf);
+	free (tokens);
+	return r_asm_code_free (acode);
 }
 
 R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val) {
