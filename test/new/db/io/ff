@@ -1,0 +1,59 @@
+NAME=io ff
+FILE=../bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+ffffffff
+EOF
+CMDS=<<EOF
+p8 4 @ 0x999999999
+EOF
+RUN
+
+NAME=io ff based on seek
+FILE=../bins/pe/b.exe
+EXPECT=<<EOF
+00000000000000000000
+00000000000000000000
+EOF
+CMDS=<<EOF
+s 0x0040200b
+p8 10
+s +1
+p8 10
+EOF
+RUN
+
+NAME=presection read
+FILE=../bins/mach0/ls-ios
+EXPECT=<<EOF
+00009de404108de2014080e2042181e0
+0000009de404108de2014080e2042181
+EOF
+CMDS=<<EOF
+s 0x8000
+p8 16
+s 0x8000-1
+p8 16
+EOF
+RUN
+
+NAME=pre-0x0-read1
+FILE=malloc://32
+EXPECT=<<EOF
+ff00
+EOF
+CMDS=<<EOF
+e io.va=true
+p8 2 @ -1
+EOF
+RUN
+
+NAME=pre-0x0-read2
+FILE=malloc://32
+EXPECT=<<EOF
+ffff0000
+EOF
+CMDS=<<EOF
+e io.va=true
+p8 4 @ -2
+EOF
+RUN

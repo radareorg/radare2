@@ -1,0 +1,28 @@
+NAME=PE: corkami aslr-ld.exe - open
+FILE=../bins/pe/aslr-ld.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN
+
+NAME=PE: corkami aslr-ld.exe - entrypoint
+FILE=../bins/pe/aslr-ld.exe
+EXPECT=<<EOF
+0x401000
+EOF
+CMDS=<<EOF
+s
+EOF
+RUN
+
+NAME=PE: corkami aslr-ld.exe - pi 1
+FILE=../bins/pe/aslr-ld.exe
+EXPECT=<<EOF
+inc dword [0x401088]
+EOF
+CMDS=<<EOF
+pi 1
+EOF
+RUN

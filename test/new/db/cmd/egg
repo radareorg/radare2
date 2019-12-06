@@ -1,0 +1,51 @@
+# XXX its green on mac, but it's os-specific test and will fail on travis
+NAME=ragg2 eggtest.c
+BROKEN=1
+FILE=-
+EXPECT=<<EOF
+rabin2 -o '../bins/src/eggtest.c.text' -O d/S/'0..__text' '../bins/src/eggtest.c.o'
+e900000000662e0f1f8400000000009050c744240400000000bf01000000488d3543000000ba06000000e80000000031d289042489d059c30f1f840000000000897c24fc48897424f0895424ec8b7c24fc488b7424f048634424ec48894424d8ba0400000289d0488b5424d80f0548894424e0488b4424e089c1894c24d48b4424d4c348656c6c6f0a00
+EOF
+CMDS=<<EOF
+!ragg2 ../bins/src/eggtest.c
+EOF
+RUN
+
+NAME=egg: darwin-x86-64 syscall close 
+FILE=malloc://1024
+EXPECT=<<EOF
+48c7c00300000050488b3c2448c7c0060000020f054883c408ccc3
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=darwin
+gs close 3
+EOF
+RUN
+
+NAME=egg: linux-x86-64 syscall close 
+FILE=malloc://1024
+EXPECT=<<EOF
+48c7c00300000050488b3c2448c7c0030000000f054883c408ccc3
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+gs close 3
+EOF
+RUN
+
+NAME=egg: linux-x86-32 syscall close 
+FILE=malloc://1024
+EXPECT=<<EOF
+6a038b1c24b806000000cd8083c404ccc3
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e asm.os=linux
+gs close 3
+EOF
+RUN

@@ -1,0 +1,68 @@
+ad "add r20, r24" 480f
+ad "adc r21, r25" 591f
+ad "adiw r24, 0x01" 0196
+ad "andi r24, 0xef" 8f7e
+ad "bld r14, 1" e1f8
+ad "brcc 0x4" 08f4
+ad "cli" f894
+ad "clr r15" ff24
+ad "call 0x2016" 0e940b10
+ad "com r24" 8095
+ad "cp r18, r24" 2817
+ad "cpi r24, 0xf5" 853f
+ad "cpc r25, r18" 9207
+ad "dec r0" 0a94
+ad "eor r24, r25" 8927
+ad "elpm r0, z+" 0790
+ad "in r28, 0x3d" cdb7
+ad "inc r14" e394
+ad "jmp 0x246" 0c942301
+ad "jmp 0x20246" 0d942301
+ad "jmp 0x2c0246" bc942301
+ad "jmp 0x400246" 0c952301
+ad "ld r24, z" 8081
+ad "ldi r25, 0x07" 97e0
+ad "ldd r9, z+1" 9180
+ad "lds r24, 0x102" 80910201
+ad "lsl r24" 880f
+ad "mov r0, r31" 0f2e
+ad "movw r22, r18" b901
+ad "ori r24, 0x01" 8160
+ad "out 0x3e, r25" 9ebf
+ad "push r29" df93
+ad "rcall 0x4" 01d0
+ad "rjmp 0x4" 01c0
+ad "pop r28" cf91
+ad "ret" 0895
+ad "reti" 1895
+ad "rol r25" 991f
+ad "sbc r19, r25" 390b
+ad "sbci r19, 0xff" 3f4f
+ad "sbiw r24, 0x01" 0197
+ad "sei" 7894
+ad "ser r24" 8fef
+ad "std z+0, r1" 1082
+ad "std z+1, r1" 1182
+ad "sts 0x7c0, r25" 9093c007
+ad "sub r18, r24" 281b
+ad "subi r18, 0xff" 2f5f
+ad "tst r24" 8823
+d "invalid" 0e
+d "call 0x16" 0e940b00 0x2d0
+ad "brcc 0x4" 08f4 0
+ad "brne 0x6" 09f4 2
+ad "brpl 0x8" 0af4 4
+ad "brvc 0xa" 0bf4 6
+ad "brge 0xc" 0cf4 8
+ad "brhc 0xe" 0df4 0xa
+ad "brtc 0x10" 0ef4 0xc
+ad "brid 0x12" 0ff4 0xe
+ad "brcc 0x4" 08f4 0
+ad "brcs 0x4" 08f0 0
+ad "breq 0x6" 09f0 2
+ad "brmi 0x8" 0af0 4
+ad "brvs 0xa" 0bf0 6
+ad "brlt 0xc" 0cf0 8
+ad "brhs 0xe" 0df0 0xa
+ad "brts 0x10" 0ef0 0xc
+ad "brie 0x12" 0ff0 0xe

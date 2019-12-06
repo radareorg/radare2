@@ -1,0 +1,32 @@
+NAME=aek-
+FILE=-
+EXPECT=<<EOF
+1
+0
+EOF
+CMDS=<<EOF
+e asm.arch = x86
+e anal.arch = x86
+e esil.stats = true
+wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528
+aei
+aeim
+aeip
+aes
+aek *~?mem.write
+aek-
+aek *~?
+EOF
+RUN
+
+NAME=aek- - crash
+FILE=-
+BROKEN=1
+EXPECT=<<EOF
+1
+0
+EOF
+CMDS=<<EOF
+aek-
+EOF
+RUN

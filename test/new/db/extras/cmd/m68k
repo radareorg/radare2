@@ -1,0 +1,148 @@
+NAME='negative branch bug 8bit'
+FILE=malloc://1024
+CMDS=<<EXPECT
+e asm.arch=m68k
+s 4
+wx 60fc
+ao | grep jump:
+EXPECT=<<RUN
+jump: 0x00000002
+RUN
+
+NAME='negative branch bug 16bit'
+FILE=malloc://1024
+CMDS=<<EXPECT
+e asm.arch=m68k
+s 0x200
+wx 6000fe10
+ao | grep jump:
+EXPECT=<<RUN
+jump: 0x00000012
+RUN
+
+NAME='negative branch bug 32bit'
+FILE=malloc://1024
+CMDS=<<EXPECT
+e asm.arch=m68k
+s 4
+wx 60fffffffffc
+ao | grep jump:
+EXPECT=<<RUN
+jump: 0x00000002
+RUN
+
+
+NAME='jsr.l should not terminate function'
+
+FILE=malloc://1024
+CMDS=<<EXPECT
+e asm.arch=m68k
+wx 80004eb90000100080004e75
+af
+afl~[2]
+EXPECT=<<RUN
+12
+RUN
+
+NAME='jsr.w should not terminate function'
+FILE=malloc://1024
+CMDS=<<EXPECT
+e asm.arch=m68k
+wx 80004eb8100080004e75
+af
+afl~[2]
+EXPECT=<<RUN
+10
+RUN
+
+
+NAME="m68k: m68k filter"
+CMDS=<<EXPECT
+e asm.arch=m68k
+e asm.bits=32
+wx 33fc010000a10000
+pi 1
+f foo.bar = 0xa10000
+pi 1
+EXPECT=<<RUN
+move.w 0x100, 0xa10000.l
+move.w 0x100, foo.bar
+RUN
+
+NAME="m68k: m68k filter2"
+CMDS=<<EXPECT
+e asm.arch=m68k
+e asm.bits=32
+wx 33fc010000a10000
+pi 1
+f foo.bar = 0x100
+pi 1
+EXPECT=<<RUN
+move.w 0x100, 0xa10000.l
+move.w foo.bar, 0xa10000.l
+RUN
+
+NAME="m68k: m68k 8bit negative branch"
+
+CMDS=<<EXPECT
+e asm.arch=m68k
+s 0x100
+wx 6afc
+pi 1
+EXPECT=<<RUN
+bpl.b 0xfe
+RUN
+
+NAME="m68k: m68k 16bit negative branch bug"
+
+CMDS=<<EXPECT
+e asm.arch=m68k
+s 0x100
+wx 6a00ff7e
+pi 1
+EXPECT=<<RUN
+bpl.w 0x80
+RUN
+
+NAME="m68k: m68k 32bit negative branch"
+CMDS=<<EXPECT
+e asm.arch=m68k
+s 0x100
+wx 6affffffff7e
+pi 1
+EXPECT=<<RUN
+bpl.l 0x80
+RUN
+
+NAME="m68k: m68k symbolic labels"
+FILE=../../bins/smd/LiquidSpaceDodgerV3.bin
+CMDS=<<EXPECT
+e asm.arch=m68k
+s 0x21a
+f sym.z80BusReq @ 0x00a11100
+pi 1
+EXPECT=<<RUN
+move.w 0x100, sym.z80BusReq
+RUN
+
+NAME='backwards seek'
+FILE=malloc://1024
+CMDS=<<EXPECT
+e asm.arch=m68k
+e scr.interactive=true
+wx 381869000010533912345678680000202049
+s 0x10
+Vpkq
+s
+Vkq
+s
+Vkq
+s
+Vkq
+s
+EXPECT=<<RUN
+0xc
+0x6
+0x2
+0x0
+RUN

@@ -1,0 +1,16 @@
+NAME='dbg.dcu'
+FILE=/bin/test
+ARGS=-d
+BROKEN=1
+CMDS=<<EXPECT
+?v $$
+dcu entry0
+ieq
+sr PC
+?v $$
+EXPECT=<<RUN
+0x7fff5fc01000
+0x10000134c
+0x10000134c
+RUN
+

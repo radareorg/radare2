@@ -1,0 +1,99 @@
+NAME=Cvb variable null pointer deref
+FILE=../bins/elf/analysis/x64-simple
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+aaa
+Cvb local_10
+EOF
+RUN
+
+NAME=CL FAIL if no file
+BROKEN=1
+FILE=--
+EXPECT=<<EOF
+foo
+EOF
+CMDS=<<EOF
+CL $$ foo
+CL.
+EOF
+RUN
+
+NAME=CL FAIL if no rbinfile
+BROKEN=1
+FILE=-
+EXPECT=<<EOF
+foo
+EOF
+CMDS=<<EOF
+CL $$ foo
+CL.
+EOF
+RUN
+
+NAME=CL base64
+FILE=../bins/elf/arg
+EXPECT=<<EOF
+HELLO WORLD
+EOF
+CMDS=<<EOF
+CL $$ base64:SEVMTE8gV09STEQ=
+CL*
+EOF
+RUN
+
+NAME=CC.
+FILE=-
+EXPECT=<<EOF
+hello
+hello
+0x0000000a CCu "hello"
+EOF
+CMDS=<<EOF
+CC hello @ 10
+CC.
+CC.10
+CC.@10
+CC@10
+EOF
+RUN
+
+NAME=CL add
+FILE=-
+BROKEN=1
+EXPECT=<<EOF
+0x00000000      0000           add byte [rax], al ; foo:123
+0x00000000      0000           add byte [rax], al
+EOF
+CMDS=<<EOF
+CL $$ foo.c:123
+e asm.lines=0
+e asm.flags=0
+e asm.dwarf=1
+e asm.cmt.col=20
+CC-*
+pd 1
+CL-*
+pd 1
+EOF
+RUN
+
+NAME=CL add ok
+FILE=../bins/elf/hello.ppc
+EXPECT=<<EOF
+0x10000308      7c290b78       mr r9, r1 ; foo.c:123
+0x10000308      7c290b78       mr r9, r1
+EOF
+CMDS=<<EOF
+CL $$ foo.c:123
+e asm.lines=0
+e asm.flags=0
+e asm.dwarf=1
+e asm.cmt.col=20
+CC-*
+pd 1
+CL-*
+pd 1
+EOF
+RUN

@@ -87,13 +87,6 @@ before_install:
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
-  - export DEFAULT_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d'/' -f1)
-  - export R2R_DEFAULT_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${DEFAULT_NAME}/g")
-  - export R2R_DEFAULT_BRANCH=master
-  - export USER_NAME=$([ -n "${PR_NAME}" ] && echo "${PR_NAME}" || echo "${DEFAULT_NAME}")
-  - export R2R_BRANCH=$([ -n "${TRAVIS_PULL_REQUEST_BRANCH}" ] && echo "${TRAVIS_PULL_REQUEST_BRANCH}" || echo "${R2R_DEFAULT_BRANCH}")
-  - if [ "${R2R_BRANCH}" = master ]; then USER_NAME=radare; fi
-  - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${USER_NAME}/g")
   - |
     if [ "$TRAVIS_OS_NAME" != "osx" ]; then
       $SHELL ./travis-extract-var.sh > ${TRAVIS_BUILD_DIR}/docker-env.sh ; cat ${TRAVIS_BUILD_DIR}/docker-env.sh

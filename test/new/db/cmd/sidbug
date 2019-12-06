@@ -1,0 +1,24 @@
+NAME=sidbug1
+FILE=../bins/other/pvm2-indiecito.sid
+EXPECT=<<EOF
+0x000011fe hit0_0 01010102
+EOF
+CMDS=<<EOF
+/x 01010102
+EOF
+RUN
+
+NAME=sidbug2
+FILE=-
+EXPECT=<<EOF
+0x00000001 hit0_0 01010102
+EOF
+CMDS=<<EOF
+e search.from=0
+e search.to=10
+e search.in=raw
+b 10
+wx 0101010102
+/x 01010102
+EOF
+RUN

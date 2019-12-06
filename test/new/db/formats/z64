@@ -1,0 +1,9 @@
+NAME=z64: Open/iI
+FILE=../bins/z64/demo.z64
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+iI~?n64
+EOF
+RUN

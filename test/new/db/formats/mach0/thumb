@@ -1,0 +1,45 @@
+NAME=mach0 thumb entrypoint bits
+FILE=../bins/mach0/thumb-test
+EXPECT=<<EOF
+16
+EOF
+CMDS=<<EOF
+e asm.bits
+EOF
+RUN
+
+NAME=mach0 thumb entrypoint info
+FILE=../bins/mach0/thumb-test
+EXPECT=<<EOF
+vaddr=0x0000bfa4 paddr=0x00007fa4 haddr=0x00000344 type=program
+EOF
+CMDS=<<EOF
+ie~vaddr
+EOF
+RUN
+
+NAME=mach0 non-thumb symbol on thumb bin
+FILE=../bins/mach0/thumb-test
+EXPECT=<<EOF
+ldr pc, [reloc.strcmp]
+EOF
+CMDS=<<EOF
+pi 1@ sym.imp.strcmp
+EOF
+RUN
+
+NAME=BatteryLife thumb/arm
+FILE=../bins/mach0/BatteryLife.arm_32.0
+EXPECT=<<EOF
+  0x00015e24      push {r4, r5, r6, r7, lr}
+  0x00015e24      push {r4, r5, r6, r7, lr}
+EOF
+CMDS=<<EOF
+e asm.bytes=0
+e asm.lines.bb=0
+e asm.comments=0
+pd 1~push
+aae
+pd 1~push
+EOF
+RUN

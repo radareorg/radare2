@@ -1,0 +1,18 @@
+NAME=bitmask cmp data
+FILE=-
+EXPECT=<<EOF
+thats fine
+EOF
+CMDS=<<EOF
+b 16
+wx 414243
+e scr.null=1
+cx 41..43 2>/dev/null
+e scr.null=0
+?! ?e thats fine
+e scr.null=1
+cx 41..11 2>/dev/null
+e scr.null=0
+?! ?e thats wrong
+EOF
+RUN

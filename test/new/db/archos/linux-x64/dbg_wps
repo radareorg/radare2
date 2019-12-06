@@ -1,0 +1,12 @@
+NAME='rwatchpoint test'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+BROKEN=1
+CMDS=<<EXPECT
+dbw 0x80484b0 r
+dc
+dr rip
+dk 9
+EXPECT=<<RUN
+0x08048409
+RUN

@@ -1,0 +1,29 @@
+NAME=PE: corkami d_resource-ld.exe - open
+FILE=../bins/pe/d_resource-ld.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN
+
+NAME=PE: corkami d_resource-ld.exe - entrypoint
+FILE=../bins/pe/d_resource-ld.exe
+EXPECT=<<EOF
+0x401000
+EOF
+CMDS=<<EOF
+s
+EOF
+RUN
+
+NAME=PE: corkami d_resource-ld.exe - pi 1
+FILE=../bins/pe/d_resource-ld.exe
+EXPECT=<<EOF
+push 2
+EOF
+CMDS=<<EOF
+e asm.filter=false
+pi 1
+EOF
+RUN

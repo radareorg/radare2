@@ -1,0 +1,29 @@
+NAME=PE: corkami dllcfgdup.dll - open
+FILE=../bins/pe/dllcfgdup.dll
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN
+
+NAME=PE: corkami dllcfgdup.dll - entrypoint
+FILE=../bins/pe/dllcfgdup.dll
+EXPECT=<<EOF
+0x10001000
+EOF
+CMDS=<<EOF
+s
+EOF
+RUN
+
+NAME=PE: corkami dllcfgdup.dll - pi 1
+FILE=../bins/pe/dllcfgdup.dll
+EXPECT=<<EOF
+cmp dword [esp + 8], 1
+EOF
+CMDS=<<EOF
+e asm.filter=false
+pi 1
+EOF
+RUN

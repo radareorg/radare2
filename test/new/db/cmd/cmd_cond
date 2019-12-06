@@ -1,0 +1,79 @@
+NAME=condition 33??
+FILE=-
+EXPECT=<<EOF
+win
+EOF
+CMDS=<<EOF
+?= 33
+?? ?e win
+EOF
+RUN
+
+NAME=condition 33?!
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+?= 33
+?! ?e win
+EOF
+RUN
+
+NAME=condition 0??
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+?= 0
+?? ?e win
+EOF
+RUN
+
+NAME=condition 0?!
+FILE=-
+EXPECT=<<EOF
+win
+EOF
+CMDS=<<EOF
+?= 0
+?! ?e win
+EOF
+RUN
+
+NAME=oneline condition 33??
+FILE=-
+EXPECT=<<EOF
+win
+EOF
+CMDS=<<EOF
+?= 33;?? ?e win
+EOF
+RUN
+
+NAME=oneline condition 33?!
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+?= 33;?! ?e win
+EOF
+RUN
+
+NAME=oneline condition 0?!
+FILE=-
+EXPECT=<<EOF
+win
+EOF
+CMDS=<<EOF
+?= 0;?! ?e win
+EOF
+RUN
+
+NAME=oneline condition 0??
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+?= 0;?? ?e win
+EOF
+RUN

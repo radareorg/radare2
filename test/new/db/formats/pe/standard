@@ -1,0 +1,8 @@
+NAME=PE: corkami standard.exe - open
+FILE=../bins/pe/standard.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

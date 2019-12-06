@@ -1,0 +1,9 @@
+a "lea eax, [ecx+1024]" 8d8100040000
+aB "lea ebp, [eax+3]" 8d6803
+a "lea ebp, [esp+3]" 8dac2403000000
+a "lea ebp, [ecx+eax]" 8d2c08
+a "lea edx, [edx+ecx]" 8d1411
+a "lea eax, [3]" 8d0503000000
+aB "lea eax, [eax+3]" 8d4003
+aB "lea ebp, [ebp+3]" 8d6d03
+a "lea ebp, [esp+0x28]" 8dac2428000000

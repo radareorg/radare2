@@ -1,0 +1,9 @@
+NAME=NRO: Open/iI
+FILE=../bins/nds/bin
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+iI~?Nintendo
+EOF
+RUN

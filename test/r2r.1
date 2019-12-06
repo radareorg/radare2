@@ -1,0 +1,39 @@
+.Dd Apr 12, 2016
+.Dt R2R 1
+.Sh NAME
+.Nm r2r
+.Nd radare regression testsuite
+.Sh SYNOPSIS
+.Nm r2r
+.Op Fl s
+.Op Fl p
+.Op Fl P
+.Op Fl v
+.Op [keyword]
+.Sh DESCRIPTION
+Run all the radare2-regressions tests matching a specific word in the name.
+.Pp
+You need radare2 to be available in $PATH.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl s
+Only show the list of tests that will run, but not running any of them.
+.El
+.Sh USAGE
+.Pp
+Use the -s flag to search and show the results and not run the tests.
+.Pp
+  $ r2r -s msp
+  t.asm/msp430
+.Pp
+Without any flag, r2r will run the tests matching the name.
+.Pp
+  $ r2r msp
+  ...
+.Pp
+.Sh SEE ALSO
+.Pp
+.Xr radare2(1) ,
+.Sh AUTHORS
+.Pp
+Written by pancake <pancake@nopcode.org>.

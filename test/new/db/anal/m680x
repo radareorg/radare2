@@ -1,0 +1,16 @@
+NAME=6502 af bug introduced in 36e42b3
+FILE=malloc://1024
+EXPECT=<<EOF
+fs blocks
+f bb.00000 = 0x00000000
+f bb.00024 = 0x00000024
+f bb.00027 = 0x00000027
+f bb.0002c = 0x0000002c
+EOF
+CMDS=<<EOF
+wx 4fc600d73dc664d73cc613d7395fd722d724c604d73fc601d72bc62cd72d4fce00442003a700088c012b26f8bf0040ce01ff35bd803a
+e asm.arch=m680x
+af
+afb*
+EOF
+RUN

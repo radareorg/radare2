@@ -1,0 +1,27 @@
+NAME=mach0 swift demangle methods
+FILE=../bins/mach0/swift-main
+EXPECT=<<EOF
+0x1000047a0 0 FooClass.bar.method__String..init.witnesstable
+0x100004788 0 FooClass.foo.method__Swift.Int..init.witnesstable
+0x1000017a0 0 main.FooClass.foo.method__Swift.Int
+0x100001860 0 main.FooClass.bar.method__String
+EOF
+CMDS=<<EOF
+isq~&FooClass,method
+EOF
+RUN
+
+NAME=mach0 swift-x86-64 aav
+FILE=../bins/mach0/swift-main
+EXPECT=<<EOF
+114
+134
+134
+EOF
+CMDS=<<EOF
+C*~Cd?
+aav
+C*~Cd?
+Cd~?
+EOF
+RUN

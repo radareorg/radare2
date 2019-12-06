@@ -1,0 +1,29 @@
+NAME=issue 3479
+FILE=malloc://1024
+EXPECT=<<EOF
+616163
+0x00000000 hit0_0 616163
+1
+EOF
+CMDS=<<EOF
+w aac
+p8 3
+/x 616163
+f~?
+EOF
+RUN
+
+NAME=issue 3479
+FILE=malloc://1024
+EXPECT=<<EOF
+616163
+0x00000001 hit0_0 6163
+1
+EOF
+CMDS=<<EOF
+w aac
+p8 3
+/x 6163
+f~?
+EOF
+RUN

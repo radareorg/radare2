@@ -7,8 +7,7 @@ B=$(DESTDIR)$(BINDIR)
 L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
-R2R=radare2-regressions
-R2R_URL=$(shell doc/repo REGRESSIONS)
+R2R=test
 R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
@@ -378,11 +377,6 @@ shot:
 		radare.org:/srv/http/radareorg/get/shot
 
 tests:
-	@if [ -d $(R2R) ]; then \
-		cd $(R2R) ; git clean -xdf ; git pull ; \
-	else \
-		git clone --depth 1 "${R2R_URL}" "$(R2R)"; \
-	fi
 	$(MAKE) -C $(R2R)
 
 macos-sign:

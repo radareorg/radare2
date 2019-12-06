@@ -1,0 +1,9 @@
+NAME=PE: corkami tinydll.dll - open
+FILE=../bins/pe/tinydll.dll
+ARGS=-A
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

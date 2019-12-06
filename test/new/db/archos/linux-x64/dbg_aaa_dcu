@@ -1,0 +1,11 @@
+NAME='dbg.aaa'
+FILE=../bins/elf/true
+ARGS=-dA
+CMDS=<<EXPECT
+dcu main
+fd
+afi main~?name: main
+EXPECT=<<RUN
+main
+1
+RUN

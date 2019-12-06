@@ -1,0 +1,33 @@
+NAME=asm.segoff
+FILE=malloc://1024
+EXPECT=<<EOF
+true
+0000:0000
+true
+0000:0000
+true
+0000:0000
+false
+0x00000000
+true
+0000:0000
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+?e true
+pd 1~[0]
+e asm.segoff=true
+?e true
+pd 1~[0]
+e asm.segoff=true
+?e true
+pd 1~[0]
+e asm.segoff=false
+?e false
+pd 1~[0]
+e asm.segoff=true
+?e true
+pd 1~[0]
+EOF
+RUN

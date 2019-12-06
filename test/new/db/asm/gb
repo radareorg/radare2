@@ -1,0 +1,500 @@
+d "adc 0x00" ce00
+d "adc [hl]" 8e
+d "adc a" 8f
+d "adc b" 88
+d "adc c" 89
+d "adc d" 8a
+d "adc e" 8b
+d "adc h" 8c
+d "adc l" 8d
+d "add 0x00" c600
+d "add [hl]" 86
+d "add a" 87
+d "add b" 80
+d "add c" 81
+d "add d" 82
+d "add e" 83
+d "add h" 84
+d "add hl, bc" 09
+d "add hl, de" 19
+d "add hl, hl" 29
+d "add hl, sp" 39
+d "add l" 85
+d "add sp, 0x00" e800
+d "and 0x00" e600
+d "and [hl]" a6
+d "and a" a7
+d "and b" a0
+d "and c" a1
+d "and d" a2
+d "and e" a3
+d "and h" a4
+d "and l" a5
+d "bit 0, [hl]" cb46
+d "bit 0, a" cb47
+d "bit 0, b" cb40
+d "bit 0, c" cb41
+d "bit 0, d" cb42
+d "bit 0, e" cb43
+d "bit 0, h" cb44
+d "bit 0, l" cb45
+d "bit 1, [hl]" cb4e
+d "bit 1, a" cb4f
+d "bit 1, b" cb48
+d "bit 1, c" cb49
+d "bit 1, d" cb4a
+d "bit 1, e" cb4b
+d "bit 1, h" cb4c
+d "bit 1, l" cb4d
+d "bit 2, [hl]" cb56
+d "bit 2, a" cb57
+d "bit 2, b" cb50
+d "bit 2, c" cb51
+d "bit 2, d" cb52
+d "bit 2, e" cb53
+d "bit 2, h" cb54
+d "bit 2, l" cb55
+d "bit 3, [hl]" cb5e
+d "bit 3, a" cb5f
+d "bit 3, b" cb58
+d "bit 3, c" cb59
+d "bit 3, d" cb5a
+d "bit 3, e" cb5b
+d "bit 3, h" cb5c
+d "bit 3, l" cb5d
+d "bit 4, [hl]" cb66
+d "bit 4, a" cb67
+d "bit 4, b" cb60
+d "bit 4, c" cb61
+d "bit 4, d" cb62
+d "bit 4, e" cb63
+d "bit 4, h" cb64
+d "bit 4, l" cb65
+d "bit 5, [hl]" cb6e
+d "bit 5, a" cb6f
+d "bit 5, b" cb68
+d "bit 5, c" cb69
+d "bit 5, d" cb6a
+d "bit 5, e" cb6b
+d "bit 5, h" cb6c
+d "bit 5, l" cb6d
+d "bit 6, [hl]" cb76
+d "bit 6, a" cb77
+d "bit 6, b" cb70
+d "bit 6, c" cb71
+d "bit 6, d" cb72
+d "bit 6, e" cb73
+d "bit 6, h" cb74
+d "bit 6, l" cb75
+d "bit 7, [hl]" cb7e
+d "bit 7, a" cb7f
+d "bit 7, b" cb78
+d "bit 7, c" cb79
+d "bit 7, d" cb7a
+d "bit 7, e" cb7b
+d "bit 7, h" cb7c
+d "bit 7, l" cb7d
+d "call 0x0000" cd0000
+d "call C, 0x0000" dc0000
+d "call Z, 0x0000" cc0000
+d "call nC, 0x0000" d40000
+d "call nZ, 0x0000" c40000
+d "ccf" 3f
+d "cp 0x00" fe00
+d "cp [hl]" be
+d "cp a" bf
+d "cp b" b8
+d "cp c" b9
+d "cp d" ba
+d "cp e" bb
+d "cp h" bc
+d "cp l" bd
+d "cpl" 2f
+d "daa" 27
+d "dec [hl]" 35
+d "dec a" 3d
+d "dec b" 05
+d "dec bc" 0b
+d "dec c" 0d
+d "dec d" 15
+d "dec de" 1b
+d "dec e" 1d
+d "dec h" 25
+d "dec hl" 2b
+d "dec l" 2d
+d "dec sp" 3b
+d "di" f3
+d "ei" fb
+d "halt" 76
+d "inc [hl]" 34
+d "inc a" 3c
+d "inc b" 04
+d "inc bc" 03
+d "inc c" 0c
+d "inc d" 14
+d "inc de" 13
+d "inc e" 1c
+d "inc h" 24
+d "inc hl" 23
+d "inc l" 2c
+d "inc sp" 33
+d "jp 0x0000" c30000
+d "jp C, 0x0000" da0000
+d "jp Z, 0x0000" ca0000
+d "jp hl" e9
+d "jp nC, 0x0000" d20000
+d "jp nZ, 0x0000" c20000
+d "jr 0x00" 1800
+d "jr C, 0x00" 3800
+d "jr Z, 0x00" 2800
+d "jr nC, 0x00" 3000
+d "jr nZ, 0x00" 2000
+d "ld [0x0000], a" ea0000
+d "ld [0x0000], sp" 080000
+d "ld [0xff00 + c], a" e2
+d "ld [0xff00], a" e000
+d "ld [bc], a" 02
+d "ld [de], a" 12
+d "ld [hl], 0x00" 3600
+d "ld [hl], a" 77
+d "ld [hl], b" 70
+d "ld [hl], c" 71
+d "ld [hl], d" 72
+d "ld [hl], e" 73
+d "ld [hl], h" 74
+d "ld [hl], l" 75
+d "ld a, 0x00" 3e00
+d "ld a, [0x0000]" fa0000
+d "ld a, [0xff00 + c]" f2
+d "ld a, [0xff00]" f000
+d "ld a, [bc]" 0a
+d "ld a, [de]" 1a
+d "ld a, [hl]" 7e
+d "ld a, a" 7f
+d "ld a, b" 78
+d "ld a, c" 79
+d "ld a, d" 7a
+d "ld a, e" 7b
+d "ld a, h" 7c
+d "ld a, l" 7d
+d "ld b, 0x00" 0600
+d "ld b, [hl]" 46
+d "ld b, a" 47
+d "ld b, b" 40
+d "ld b, c" 41
+d "ld b, d" 42
+d "ld b, e" 43
+d "ld b, h" 44
+d "ld b, l" 45
+d "ld bc, 0x0000" 010000
+d "ld c, 0x00" 0e00
+d "ld c, [hl]" 4e
+d "ld c, a" 4f
+d "ld c, b" 48
+d "ld c, c" 49
+d "ld c, d" 4a
+d "ld c, e" 4b
+d "ld c, h" 4c
+d "ld c, l" 4d
+d "ld d, 0x00" 1600
+d "ld d, [hl]" 56
+d "ld d, a" 57
+d "ld d, b" 50
+d "ld d, c" 51
+d "ld d, d" 52
+d "ld d, e" 53
+d "ld d, h" 54
+d "ld d, l" 55
+d "ld de, 0x0000" 110000
+d "ld e, 0x00" 1e00
+d "ld e, [hl]" 5e
+d "ld e, a" 5f
+d "ld e, b" 58
+d "ld e, c" 59
+d "ld e, d" 5a
+d "ld e, e" 5b
+d "ld e, h" 5c
+d "ld e, l" 5d
+d "ld h, 0x00" 2600
+d "ld h, [hl]" 66
+d "ld h, a" 67
+d "ld h, b" 60
+d "ld h, c" 61
+d "ld h, d" 62
+d "ld h, e" 63
+d "ld h, h" 64
+d "ld h, l" 65
+d "ld hl, 0x0000" 210000
+d "ld hl, sp + 0x00" f800
+d "ld l, 0x00" 2e00
+d "ld l, [hl]" 6e
+d "ld l, a" 6f
+d "ld l, b" 68
+d "ld l, c" 69
+d "ld l, d" 6a
+d "ld l, e" 6b
+d "ld l, h" 6c
+d "ld l, l" 6d
+d "ld sp, 0x0000" 310000
+d "ld sp, hl" f9
+d "ldd [hl], a" 32
+d "ldd a, [hl]" 3a
+d "ldi [hl], a" 22
+d "ldi a, [hl]" 2a
+d "nop" 00
+d "or 0x00" f600
+d "or [hl]" b6
+d "or a" b7
+d "or b" b0
+d "or c" b1
+d "or d" b2
+d "or e" b3
+d "or h" b4
+d "or l" b5
+d "pop af" f1
+d "pop bc" c1
+d "pop de" d1
+d "pop hl" e1
+d "push af" f5
+d "push bc" c5
+d "push de" d5
+d "push hl" e5
+d "res 0, [hl]" cb86
+d "res 0, a" cb87
+d "res 0, b" cb80
+d "res 0, c" cb81
+d "res 0, d" cb82
+d "res 0, e" cb83
+d "res 0, h" cb84
+d "res 0, l" cb85
+d "res 1, [hl]" cb8e
+d "res 1, a" cb8f
+d "res 1, b" cb88
+d "res 1, c" cb89
+d "res 1, d" cb8a
+d "res 1, e" cb8b
+d "res 1, h" cb8c
+d "res 1, l" cb8d
+d "res 2, [hl]" cb96
+d "res 2, a" cb97
+d "res 2, b" cb90
+d "res 2, c" cb91
+d "res 2, d" cb92
+d "res 2, e" cb93
+d "res 2, h" cb94
+d "res 2, l" cb95
+d "res 3, [hl]" cb9e
+d "res 3, a" cb9f
+d "res 3, b" cb98
+d "res 3, c" cb99
+d "res 3, d" cb9a
+d "res 3, e" cb9b
+d "res 3, h" cb9c
+d "res 3, l" cb9d
+d "res 4, [hl]" cba6
+d "res 4, a" cba7
+d "res 4, b" cba0
+d "res 4, c" cba1
+d "res 4, d" cba2
+d "res 4, e" cba3
+d "res 4, h" cba4
+d "res 4, l" cba5
+d "res 5, [hl]" cbae
+d "res 5, a" cbaf
+d "res 5, b" cba8
+d "res 5, c" cba9
+d "res 5, d" cbaa
+d "res 5, e" cbab
+d "res 5, h" cbac
+d "res 5, l" cbad
+d "res 6, [hl]" cbb6
+d "res 6, a" cbb7
+d "res 6, b" cbb0
+d "res 6, c" cbb1
+d "res 6, d" cbb2
+d "res 6, e" cbb3
+d "res 6, h" cbb4
+d "res 6, l" cbb5
+d "res 7, [hl]" cbbe
+d "res 7, a" cbbf
+d "res 7, b" cbb8
+d "res 7, c" cbb9
+d "res 7, d" cbba
+d "res 7, e" cbbb
+d "res 7, h" cbbc
+d "res 7, l" cbbd
+d "ret C" d8
+d "ret Z" c8
+d "ret nC" d0
+d "ret nZ" c0
+d "ret" c9
+d "reti" d9
+d "rl [hl]" cb16
+d "rl a" cb17
+d "rl b" cb10
+d "rl c" cb11
+d "rl d" cb12
+d "rl e" cb13
+d "rl h" cb14
+d "rl l" cb15
+d "rla" 17
+d "rlc [hl]" cb06
+d "rlc a" cb07
+d "rlc b" cb00
+d "rlc c" cb01
+d "rlc d" cb02
+d "rlc e" cb03
+d "rlc h" cb04
+d "rlc l" cb05
+d "rlca" 07
+d "rr [hl]" cb1e
+d "rr a" cb1f
+d "rr b" cb18
+d "rr c" cb19
+d "rr d" cb1a
+d "rr e" cb1b
+d "rr h" cb1c
+d "rr l" cb1d
+d "rra" 1f
+d "rrc [hl]" cb0e
+d "rrc a" cb0f
+d "rrc b" cb08
+d "rrc c" cb09
+d "rrc d" cb0a
+d "rrc e" cb0b
+d "rrc h" cb0c
+d "rrc l" cb0d
+d "rrca" 0f
+d "rst 0" c7
+d "rst 16" d7
+d "rst 24" df
+d "rst 32" e7
+d "rst 40" ef
+d "rst 48" f7
+d "rst 56" ff
+d "rst 8" cf
+d "sbc 0x00" de00
+d "sbc [hl]" 9e
+d "sbc a" 9f
+d "sbc b" 98
+d "sbc c" 99
+d "sbc d" 9a
+d "sbc e" 9b
+d "sbc h" 9c
+d "sbc l" 9d
+d "scf" 37
+d "set 0, [hl]" cbc6
+d "set 0, a" cbc7
+d "set 0, b" cbc0
+d "set 0, c" cbc1
+d "set 0, d" cbc2
+d "set 0, e" cbc3
+d "set 0, h" cbc4
+d "set 0, l" cbc5
+d "set 1, [hl]" cbce
+d "set 1, a" cbcf
+d "set 1, b" cbc8
+d "set 1, c" cbc9
+d "set 1, d" cbca
+d "set 1, e" cbcb
+d "set 1, h" cbcc
+d "set 1, l" cbcd
+d "set 2, [hl]" cbd6
+d "set 2, a" cbd7
+d "set 2, b" cbd0
+d "set 2, c" cbd1
+d "set 2, d" cbd2
+d "set 2, e" cbd3
+d "set 2, h" cbd4
+d "set 2, l" cbd5
+d "set 3, [hl]" cbde
+d "set 3, a" cbdf
+d "set 3, b" cbd8
+d "set 3, c" cbd9
+d "set 3, d" cbda
+d "set 3, e" cbdb
+d "set 3, h" cbdc
+d "set 3, l" cbdd
+d "set 4, [hl]" cbe6
+d "set 4, a" cbe7
+d "set 4, b" cbe0
+d "set 4, c" cbe1
+d "set 4, d" cbe2
+d "set 4, e" cbe3
+d "set 4, h" cbe4
+d "set 4, l" cbe5
+d "set 5, [hl]" cbee
+d "set 5, a" cbef
+d "set 5, b" cbe8
+d "set 5, c" cbe9
+d "set 5, d" cbea
+d "set 5, e" cbeb
+d "set 5, h" cbec
+d "set 5, l" cbed
+d "set 6, [hl]" cbf6
+d "set 6, a" cbf7
+d "set 6, b" cbf0
+d "set 6, c" cbf1
+d "set 6, d" cbf2
+d "set 6, e" cbf3
+d "set 6, h" cbf4
+d "set 6, l" cbf5
+d "set 7, [hl]" cbfe
+d "set 7, a" cbff
+d "set 7, b" cbf8
+d "set 7, c" cbf9
+d "set 7, d" cbfa
+d "set 7, e" cbfb
+d "set 7, h" cbfc
+d "set 7, l" cbfd
+d "sla [hl]" cb26
+d "sla a" cb27
+d "sla b" cb20
+d "sla c" cb21
+d "sla d" cb22
+d "sla e" cb23
+d "sla h" cb24
+d "sla l" cb25
+d "sra [hl]" cb2e
+d "sra a" cb2f
+d "sra b" cb28
+d "sra c" cb29
+d "sra d" cb2a
+d "sra e" cb2b
+d "sra h" cb2c
+d "sra l" cb2d
+d "srl [hl]" cb3e
+d "srl a" cb3f
+d "srl b" cb38
+d "srl c" cb39
+d "srl d" cb3a
+d "srl e" cb3b
+d "srl h" cb3c
+d "srl l" cb3d
+d "stop" 10
+d "sub 0x00" d600
+d "sub [hl]" 96
+d "sub a" 97
+d "sub b" 90
+d "sub c" 91
+d "sub d" 92
+d "sub e" 93
+d "sub h" 94
+d "sub l" 95
+d "swap [hl]" cb36
+d "swap a" cb37
+d "swap b" cb30
+d "swap c" cb31
+d "swap d" cb32
+d "swap e" cb33
+d "swap h" cb34
+d "swap l" cb35
+d "xor 0x00" ee00
+d "xor [hl]" ae
+d "xor a" af
+d "xor b" a8
+d "xor c" a9
+d "xor d" aa
+d "xor e" ab
+d "xor h" ac
+d "xor l" ad

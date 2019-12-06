@@ -1,0 +1,1020 @@
+a "lea rax, [0x1000]" 488d05f90f0000
+d "lea rax, [rip + 0xff9]" 488d05f90f0000
+ad "nop" 90
+ad "ret" c3
+a "add r13, r15" 4d01fd
+a "add r15, rbx" 4901df
+a "add rax, 44" 4883c02c
+a "add rax, r8" 4c01c0
+a "add r10, r9" 4d01ca
+a "add rax, rcx" 4801c8
+aB "and dword [ebp + 128], eax" 48218580000000
+a "call rbx" ffd3
+a "cdqe" 4898
+a "cmp rax, 33" 4883f821
+a "cmp rax, rbx" 4839d8
+a "cmp rbx, rax" 4839c3
+a "cmp rdx, rsi" 4839f2
+a "inc rdx" 48ffc2
+a "jmp rbx" ffe3
+a "lea rax, [rax+0]" 488d00
+a "lea rax, [rax+1]" 488d4001
+a "lea rax, [rax-0]" 488d00
+a "lea rax, [rax-1]" 488d40ff
+a "lea rax, [rax]" 488d00
+aB "lea rax,[rel -10]" 488d06f6ffffff
+aB "lea rax,[rel 0]" 488d0500000000
+aB "lea rax,[rel 10]" 488d050a000000
+a "lea rax,[rip+0]" 488d0500000000
+a "lea rax,[rip+10]" 488d050a000000
+a "lea rax,[rip-0]" 488d0500000000
+a "lea rax,[rip-10]" 488d05f6ffffff
+a "lea rax,[rip]" 488d0500000000
+a "lea rdi,[rip+0x1011]" 488d3d11100000
+aB "lea rax, [0x803]" 488d042503080000
+aB "lea rax, 0x803" 488d042503080000
+a "mov [rsi], rbx" 48891e
+a "mov rax, 0x1122334455667788" 48b88877665544332211
+aB "mov rax, 0x112233445566778899" 00
+a "mov rax, 3" 48c7c003000000
+a "mov rax, 33" 48c7c021000000
+a "mov rax, [rax+0]" 488b00
+a "mov rax, [rax+1]" 488b4001
+a "mov rax, [rax-0]" 488b00
+a "mov rax, [rax-1]" 488b40ff
+a "mov rax, [rax]" 488b00
+aB "mov rax,[rel -10]" 488b05f6ffffff
+aB "mov rax,[rel 0]" 488b0500000000
+aB "mov rax,[rel 10]" 488b050a000000
+a "mov rax,[rip+0]" 488b0500000000
+a "mov rax,[rip+10]" 488b050a000000
+a "mov rax,[rip-0]" 488b0500000000
+a "mov rax,[rip-10]" 488b05f6ffffff
+a "mov rax,[rip]" 488b0500000000
+a "mov rbx, 3" 48c7c303000000
+a "mov edx, [rbp-4]" 8b55fc
+a "mov rbx, rax" 4889c3
+a "mov rcx, -0x1122334455667788" 48b9788899aabbccddee
+aB "mov rcx, -0x112233445566778899" 00
+a "mov rsi, rbx" 4889de
+a "mov rcx, r9" 4c89c9
+a "mov r10, rax" 4989c2
+a "mov r12, r9" 4d89cc
+a "mov rcx, rbp" 4889e9
+a "mov al, [0xbeef]" a0efbe000000000000
+a "mov ax, [0xbeef]" 66a1efbe000000000000
+a "mov eax, [0xbeef]" a1efbe000000000000
+a "mov rax, [0xbeef]" 48a1efbe000000000000
+a "mov rax, [0x1122334455667788]" 48a18877665544332211
+a "mov rax, [rax + 0xbeef]" 488b80efbe0000
+a "mov rax, [rbx + 0xbeef]" 488b83efbe0000
+a "mov rcx, [rbx + 0xbeef]" 488b8befbe0000
+a "mov rbx, [rbp + 0xbeef]" 488b9defbe0000
+a "mov rax, [rip + 0xbeef]" 488b05efbe0000
+aB "mov sil, 0" 40b600
+aB "mov dil, -5" 40b7fb
+aB "mov spl, bpl" 4088ec
+a "pop rax" 58
+aB "prefetcht1 [eax]" 670f1810
+aB "prefetcht1 [rax]" 0f1810
+aB "prefetcht1 byte [eax]" 670f1810
+aB "prefetcht1 byte [rax]" 0f1810
+a "shl rdx, 5" 48c1e205
+a "sub rax, 44" 4883e82c
+a "sub rax, rbx" 4829d8
+a "sub r9, rbx" 4929d9
+a "sub rcx, r10" 4c29d1
+a "sub r12, r11" 4d29dc
+a "test ebx, 0x12345678" f7c378563412
+a "test rbx, 0x12345678" 48f7c378563412
+a "test dword [eax], 0x12345678" 67f70078563412
+a "test dword [rax], 0x12345678" f70078563412
+a "test qword [rcx], 0x12345678" 48f70178563412
+a "test rax, rbx" 4885d8
+a "test rcx, rcx" 4885c9
+a "test rdx, rsi" 4885f2
+a "test r8, r8" 4d85c0
+a "xor [rax], rax" 483100
+a "xor [rsi], rbx" 48311e
+a "xor rax, rax" 4831c0
+a "xor rdx, rdx" 4831d2
+a "rep movsd" f3a5
+a "repnz stosd" f2ab
+a "repz monitor" f30f01c8
+a "repe vmcall" f30f01c1
+a "repne sfence" f20faef8
+a "rep rdpmc" f30f33
+a "mov eax, 33" b821000000
+a "mov rax, 33" 48c7c021000000
+a "mov dword ptr [rbp+4],0" c7450400000000
+a "mov qword ptr [rbp+4],0" 48c7450400000000
+a "mov [rbp+4],0" 48c7450400000000
+a "mov [ebp+4],0" 67c7450400000000
+ad "push r8" 4150
+ad "push r9" 4151
+ad "push r10" 4152
+ad "push r11" 4153
+ad "push r12" 4154
+ad "push r13" 4155
+ad "push r14" 4156
+ad "push r15" 4157
+
+ad "call r8" 41ffd0
+ad "call r9" 41ffd1
+ad "call r10" 41ffd2
+ad "call r11" 41ffd3
+ad "call r12" 41ffd4
+ad "call r13" 41ffd5
+ad "call r14" 41ffd6
+ad "call r15" 41ffd7
+a "mov dword ptr [rax],0x1" c70001000000
+a "mov qword [rax], 0x1" 48c70001000000
+a "mov [rax], 0x1" 48c70001000000
+a "mov byte ptr [rip+0x203cb8],0x1" c605b83c200001
+a "mov dword ptr [rip+0x203817],0x42" c7051738200042000000
+a "mov dword ptr [rip+0x20380b],0x54" c7050b38200054000000
+a "mov dword ptr [rip+0x2037ff],0x4f" c705ff3720004f000000
+a "mov dword ptr [rip+0x2037f3],0x49" c705f337200049000000
+a "mov dword ptr [rip+0x2037e7],0x30" c705e737200030000000
+a "mov byte ptr [rbp-0x110a],0x49" c685f6eeffff49
+a "mov dword ptr [rbp-0x1100],0x0" c78500efffff00000000
+a "mov dword ptr [rbp-0x10fc],0x0" c78504efffff00000000
+a "mov byte ptr [rbp-0x110a],0x49" c685f6eeffff49
+a "mov byte ptr [rbp-0x110a],0x66" c685f6eeffff66
+a "mov qword ptr [rbp-0x10b0],0x0" 48c78550efffff00000000
+a "mov dword ptr [rbp-0x10f8],0x0" c78508efffff00000000
+a "mov dword ptr [rbp-0x10f8],0x0" c78508efffff00000000
+a "mov dword ptr [rbp-0x10d4],0xc" c7852cefffff0c000000
+a "mov dword ptr [rbp-0x1100],0x0" c78500efffff00000000
+a "mov byte ptr [rbp-0x110a],0x42" c685f6eeffff42
+a "mov byte ptr [rbp-0x110a],0x54" c685f6eeffff54
+a "mov byte ptr [rbp-0x110a],0x46" c685f6eeffff46
+a "mov byte ptr [rax],0x30" c60030
+a "mov byte ptr [rbp-0x110a],0x42" c685f6eeffff42
+a "mov byte ptr [rax],0x30" c60030
+a "mov byte ptr [rbp-0x110a],0x54" c685f6eeffff54
+a "mov byte ptr [rax],0x30" c60030
+a "mov byte ptr [rbp-0x110a],0x4f" c685f6eeffff4f
+a "mov byte ptr [rax],0x30" c60030
+a "mov byte ptr [rbp-0x110a],0x49" c685f6eeffff49
+a "mov byte ptr [rax],0x62" c60062
+a "mov byte ptr [rbp-0x110a],0x49" c685f6eeffff49
+a "mov byte ptr [rax],0x74" c60074
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x10],0x0" c745f000000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x10],0xffffffff" c745f0ffffffff
+a "mov dword ptr [rbp-0x10],0x1" c745f001000000
+a "mov dword ptr [rbp-0x4],0x1" c745fc01000000
+a "mov byte ptr [rip+0x207200],0x1" c6050072200001
+a "mov dword ptr [rbp-0xc],0x0" c745f400000000
+a "mov qword ptr [rip+0x2687bd],0x0" 48c705bd87260000000000
+a "mov dword ptr [rbp-0x18c],0x0" c78574feffff00000000
+a "mov dword ptr [rbp-0x18c],0x1" c78574feffff01000000
+a "mov dword ptr [rbp-0x114],0x0" c785ecfeffff00000000
+a "mov qword ptr [rbp-0x20],0x0" 48c745e000000000
+a "mov qword ptr [rbp-0x18],0x0" 48c745e800000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov qword ptr [rip+0x2068f4],0x0" 48c705f468200000000000
+a "mov byte ptr [rbp-0x31],0x0" c645cf00
+a "mov byte ptr [rbp-0x31],0x1" c645cf01
+a "mov qword ptr [rbp-0x28],0x0" 48c745d800000000
+a "mov qword ptr [rbp-0x288],0x0" 48c78578fdffff00000000
+a "mov qword ptr [rbp-0x280],0x0" 48c78580fdffff00000000
+a "mov qword ptr [rbp-0x270],0x0" 48c78590fdffff00000000
+a "mov qword ptr [rbp-0x268],0x0" 48c78598fdffff00000000
+a "mov qword ptr [rbp-0x260],0x0" 48c785a0fdffff00000000
+a "mov qword ptr [rbp-0x1d0],0x0" 48c78530feffff00000000
+a "mov dword ptr [rbp-0x2c4],0x0" c7853cfdffff00000000
+a "mov dword ptr [rbp-0x2c0],0x0" c78540fdffff00000000
+a "mov dword ptr [rbp-0x2bc],0x0" c78544fdffff00000000
+a "mov byte ptr [rbp-0x2d4],0x0" c6852cfdffff00
+a "mov dword ptr [rbp-0x2b8],0x0" c78548fdffff00000000
+a "mov byte ptr [rbp-0x2d3],0x0" c6852dfdffff00
+a "mov dword ptr [rbp-0x2b4],0x0" c7854cfdffff00000000
+a "mov dword ptr [rbp-0x2b0],0x1" c78550fdffff01000000
+a "mov dword ptr [rbp-0x2ac],0x1" c78554fdffff01000000
+a "mov dword ptr [rbp-0x2a4],0x5" c7855cfdffff05000000
+a "mov byte ptr [rbp-0x2d2],0x0" c6852efdffff00
+a "mov byte ptr [rbp-0x2d1],0x0" c6852ffdffff00
+a "mov qword ptr [rbp-0x248],0x0" 48c785b8fdffff00000000
+a "mov qword ptr [rbp-0x240],0x0" 48c785c0fdffff00000000
+a "mov qword ptr [rbp-0x230],0x0" 48c785d0fdffff00000000
+a "mov qword ptr [rbp-0x228],0x0" 48c785d8fdffff00000000
+a "mov qword ptr [rbp-0x220],0x0" 48c785e0fdffff00000000
+a "mov qword ptr [rbp-0x218],0x0" 48c785e8fdffff00000000
+a "mov qword ptr [rbp-0x210],0x0" 48c785f0fdffff00000000
+a "mov qword ptr [rbp-0x208],0x0" 48c785f8fdffff00000000
+a "mov byte ptr [rbp-0x2d0],0x0" c68530fdffff00
+a "mov byte ptr [rbp-0x2cf],0x0" c68531fdffff00
+a "mov dword ptr [rbp-0x2a0],0x0" c78560fdffff00000000
+a "mov qword ptr [rbp-0x200],0x0" 48c78500feffff00000000
+a "mov byte ptr [rbp-0x2ce],0x0" c68532fdffff00
+a "mov dword ptr [rbp-0x2b8],0x1" c78548fdffff01000000
+a "mov dword ptr [rbp-0x2b8],0x0" c78548fdffff00000000
+a "mov dword ptr [rip+0x267855],0x1" c7055578260001000000
+a "mov byte ptr [rbp-0x2ce],0x1" c68532fdffff01
+a "mov byte ptr [rbp-0x2d3],0x1" c6852dfdffff01
+a "mov byte ptr [rbp-0x2d0],0x1" c68530fdffff01
+a "mov dword ptr [rbp-0x2bc],0x1" c78544fdffff01000000
+a "mov dword ptr [rbp-0x2c4],0x1" c7853cfdffff01000000
+a "mov dword ptr [rbp-0x2c4],0x2" c7853cfdffff02000000
+a "mov byte ptr [rbp-0x2d4],0x1" c6852cfdffff01
+a "mov byte ptr [rbp-0x2d1],0x1" c6852ffdffff01
+a "mov dword ptr [rbp-0x2ac],0x0" c78554fdffff00000000
+a "mov byte ptr [rbp-0x2d0],0x1" c68530fdffff01
+a "mov byte ptr [rbp-0x2cf],0x1" c68531fdffff01
+a "mov byte ptr [rbp-0x2d0],0x1" c68530fdffff01
+a "mov byte ptr [rip+0x205ab2],0x1" c605b25a200001
+a "mov byte ptr [rbp-0x2d2],0x1" c6852efdffff01
+a "mov byte ptr [rip+0x205a32],0x1" c605325a200001
+a "mov word ptr [rbp-0x98],0x6c" 66c78568ffffff6c00
+a "mov qword ptr [rbp-0x1f8],0x0" 48c78508feffff00000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov qword ptr [rbp-0x248],0x0" 48c785b8fdffff00000000
+a "mov byte ptr [rip+0x205443],0x1" c6054354200001
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x2c4],0x2" c7853cfdffff02000000
+a "mov dword ptr [rbp-0x2e4],0x2" c7851cfdffff02000000
+a "mov qword ptr [rbp-0x158],0x0" 48c785a8feffff00000000
+a "mov qword ptr [rbp-0x148],0x0" 48c785b8feffff00000000
+a "mov dword ptr [rbp-0x2a4],0x7" c7855cfdffff07000000
+a "mov dword ptr [rbp-0x2a4],0x5" c7855cfdffff05000000
+a "mov dword ptr [rbp-0x2c4],0x2" c7853cfdffff02000000
+a "mov qword ptr [rbp-0x120],0x0" 48c785e0feffff00000000
+a "mov qword ptr [rbp-0x1e0],0x0" 48c78520feffff00000000
+a "mov qword ptr [rbp-0x248],0x0" 48c785b8fdffff00000000
+a "mov qword ptr [rbp-0x1d8],0x0" 48c78528feffff00000000
+a "mov dword ptr [rbp-0x2b0],0xffffffff" c78550fdffffffffffff
+a "mov dword ptr [rax+0x8],0xffffffff" c74008ffffffff
+a "mov dword ptr [rbp-0x2a8],0x0" c78558fdffff00000000
+a "mov qword ptr [rax+0x10],0x0" 48c7401000000000
+a "mov dword ptr [rax+0x8],0xffffffff" c74008ffffffff
+a "mov qword ptr [rax+0x10],0x0" 48c7401000000000
+a "mov qword ptr [rbp-0x288],0x0" 48c78578fdffff00000000
+a "mov qword ptr [rbp-0x280],0x0" 48c78580fdffff00000000
+a "mov byte ptr [rip+0x2049a0],0x1" c605a049200001
+a "mov qword ptr [rip+0x20489f],0x0" 48c7059f48200000000000
+a "mov qword ptr [rip+0x2047f9],0x0" 48c705f947200000000000
+a "mov dword ptr [rip+0x2047c7],0x1" c705c747200001000000
+a "mov dword ptr [rip+0x2047b6],0x0" c705b647200000000000
+a "mov dword ptr [rbp-0x4],0x0" c745fc00000000
+a "mov dword ptr [rbp-0x78],0x0" c7458800000000
+a "mov byte ptr [rbp-0x79],0x1" c6458701
+a "mov qword ptr [rbp-0x60],0x1" 48c745a001000000
+a "mov byte ptr [rbp-0x79],0x0" c6458700
+a "mov qword ptr [rbp-0x60],0x1" 48c745a001000000
+a "mov qword ptr [rbp-0x20],0x0" 48c745e000000000
+a "mov qword ptr [rbp-0x20],0x0" 48c745e000000000
+a "mov dword ptr [rbp-0x28],0x0" c745d800000000
+a "mov dword ptr [rbp-0x24],0x0" c745dc00000000
+a "mov dword ptr [rbp-0xd8],0x0" c78528ffffff00000000
+a "mov dword ptr [rbp-0xd4],0x0" c7852cffffff00000000
+a "mov dword ptr [rbp-0xd0],0x0" c78530ffffff00000000
+a "mov dword ptr [rbp-0xcc],0x0" c78534ffffff00000000
+a "mov qword ptr [rbp-0x98],0x0" 48c78568ffffff00000000
+a "mov qword ptr [rbp-0x90],0x0" 48c78570ffffff00000000
+a "mov qword ptr [rbp-0x88],0x0" 48c78578ffffff00000000
+a "mov qword ptr [rbp-0x80],0x0" 48c7458000000000
+a "mov qword ptr [rbp-0x78],0x0" 48c7458800000000
+a "mov dword ptr [rbp-0xc8],0xffffffff" c78538ffffffffffffff
+a "mov qword ptr [rbp-0x70],0x0" 48c7459000000000
+a "mov qword ptr [rbp-0x68],0x0" 48c7459800000000
+a "mov qword ptr [rbp-0x60],0x0" 48c745a000000000
+a "mov qword ptr [rbp-0x58],0x0" 48c745a800000000
+a "mov dword ptr [rbp-0xc4],0xffffffff" c7853cffffffffffffff
+a "mov dword ptr [rbp-0xc0],0x0" c78540ffffff00000000
+a "mov qword ptr [rbp-0x50],0x0" 48c745b000000000
+a "mov dword ptr [rbp-0xd8],0x6a" c78528ffffff6a000000
+a "mov dword ptr [rbp-0xd0],0x1" c78530ffffff01000000
+a "mov dword ptr [rbp-0xcc],0x1" c78534ffffff01000000
+a "mov dword ptr [rbp-0xd8],0x1" c78528ffffff01000000
+a "mov dword ptr [rbp-0xd8],0x2" c78528ffffff02000000
+a "mov dword ptr [rip+0x2032e9],0x0" c705e932200000000000
+a "mov dword ptr [rbp-0xc0],0x0" c78540ffffff00000000
+a "mov dword ptr [rbp-0xc0],0x1" c78540ffffff01000000
+a "mov byte ptr [rbp-0xe1],0x0" c6851fffffff00
+a "mov qword ptr [rip+0x202ebe],0x0" 48c705be2e200000000000
+a "mov dword ptr [rbp-0xe0],0x0" c78520ffffff00000000
+a "mov qword ptr [rbp-0x50],0x0" 48c745b000000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rax],0x0" c60000
+a "mov qword ptr [rbp-0xa8],0x1" 48c78558ffffff01000000
+a "mov qword ptr [rip+0x202865],0x0" 48c7056528200000000000
+a "mov dword ptr [rbp-0xe0],0x0" c78520ffffff00000000
+a "mov dword ptr [rbp-0xdc],0x0" c78524ffffff00000000
+a "mov byte ptr [rip+0x2013e0],0x1" c605e013200001
+a "mov byte ptr [rbp-0x2d],0x0" c645d300
+a "mov dword ptr [rbp-0x28],0x0" c745d800000000
+a "mov byte ptr [rbp-0x2d],0x1" c645d301
+a "mov byte ptr [rip+0x201f30],0x1" c605301f200001
+a "mov dword ptr [rbp-0xc],0x0" c745f400000000
+a "mov dword ptr [rax],0x2e2e2e" c7002e2e2e00
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rbp-0x2d],0x0" c645d300
+a "mov byte ptr [rbp-0x2d],0x1" c645d301
+a "mov dword ptr [rip+0x2015f2],0x1" c705f215200001000000
+a "mov byte ptr [rip+0x201606],0x1" c6050616200001
+a "mov dword ptr [rip+0x2015f3],0x1" c705f315200001000000
+a "mov dword ptr [rip+0x20159c],0x7" c7059c15200007000000
+a "mov dword ptr [rip+0x20158d],0x1" c7058d15200001000000
+a "mov dword ptr [rip+0x2015eb],0x0" c705eb15200000000000
+a "mov dword ptr [rip+0x201558],0x0" c7055815200000000000
+a "mov dword ptr [rip+0x2015b6],0x0" c705b615200000000000
+a "mov dword ptr [rip+0x2015b0],0x0" c705b015200000000000
+a "mov dword ptr [rip+0x201519],0x0" c7051915200000000000
+a "mov dword ptr [rip+0x201577],0x0" c7057715200000000000
+a "mov dword ptr [rip+0x201571],0x1" c7057115200001000000
+a "mov dword ptr [rip+0x2014b7],0x0" c705b714200000000000
+a "mov dword ptr [rip+0x201515],0x1" c7051515200001000000
+a "mov dword ptr [rip+0x20150f],0x0" c7050f15200000000000
+a "mov dword ptr [rip+0x2013e2],0x3" c705e213200003000000
+a "mov dword ptr [rip+0x2013fe],0x1" c705fe13200001000000
+a "mov byte ptr [rip+0x204578],0x1" c6057845200001
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x168],0x0" c78598feffff00000000
+a "mov dword ptr [rbp-0x168],0x0" c78598feffff00000000
+a "mov dword ptr [rbp-0x168],0x0" c78598feffff00000000
+a "mov dword ptr [rbp-0x168],0x0" c78598feffff00000000
+a "mov dword ptr [rip+0x203d10],0x1" c705103d200001000000
+a "mov dword ptr [rbp-0x168],0x0" c78598feffff00000000
+a "mov dword ptr [rbp-0x168],0x0" c78598feffff00000000
+a "mov dword ptr [rbp-0x164],0x0" c7859cfeffff00000000
+a "mov dword ptr [rbp-0x168],0x0" c78598feffff00000000
+a "mov dword ptr [rbp-0x160],0x0" c785a0feffff00000000
+a "mov dword ptr [rbp-0x168],0x0" c78598feffff00000000
+a "mov qword ptr [rbp-0x10],0x0" 48c745f000000000
+a "mov word ptr [rbp-0x3c],0x0" 66c745c40000
+a "mov dword ptr [rbp-0x38],0x0" c745c800000000
+a "mov byte ptr [rbp-0x3d],0x0" c645c300
+a "mov word ptr [rbp-0x3a],0x0" 66c745c60000
+a "mov dword ptr [rbp-0x34],0x0" c745cc00000000
+a "mov byte ptr [rbp-0x3e],0xf9" c645c2f9
+a "mov byte ptr [rbp-0x3e],0xfc" c645c2fc
+a "mov byte ptr [rbp-0x3e],0xff" c645c2ff
+a "mov dword ptr [rbp-0x2c],0x7fffffff" c745d4ffffff7f
+a "mov qword ptr [rbp-0x20],0x0" 48c745e000000000
+a "mov byte ptr [rbp-0x2c],0xf7" c645d4f7
+a "mov byte ptr [rbp-0x2c],0xf8" c645d4f8
+a "mov dword ptr [rbp-0x30],0x7fffffff" c745d0ffffff7f
+a "mov qword ptr [rbp-0x18],0x0" 48c745e800000000
+a "mov byte ptr [rbp-0x2c],0xf8" c645d4f8
+a "mov dword ptr [rbp-0xc],0x2" c745f402000000
+a "mov dword ptr [rbp-0x8],0x0" c745f800000000
+a "mov dword ptr [rbp-0x14],0x0" c745ec00000000
+a "mov dword ptr [rbp-0xc],0xffffffff" c745f4ffffffff
+a "mov dword ptr [rbp-0xc],0x2" c745f402000000
+a "mov dword ptr [rbp-0x10],0x0" c745f000000000
+a "mov dword ptr [rbp-0x10],0x0" c745f000000000
+a "mov dword ptr [rbp-0x10],0x0" c745f000000000
+a "mov dword ptr [rbp-0x10],0x0" c745f000000000
+a "mov dword ptr [rbp-0x10],0x0" c745f000000000
+a "mov dword ptr [rbp-0x10],0x0" c745f000000000
+a "mov dword ptr [rbp-0x10],0x0" c745f000000000
+a "mov dword ptr [rbp-0x14],0x0" c745ec00000000
+a "mov dword ptr [rbp-0x14],0x0" c745ec00000000
+a "mov qword ptr [rbp-0x20],0x0" 48c745e000000000
+a "mov qword ptr [rbp-0x20],0x0" 48c745e000000000
+a "mov qword ptr [rbp-0x38],0x0" 48c745c800000000
+a "mov dword ptr [rax],0x0" c70000000000
+a "mov qword ptr [rbp-0x38],0x0" 48c745c800000000
+a "mov byte ptr [rax],0xa" c6000a
+a "mov byte ptr [rax],0x0" c60000
+a "mov qword ptr [rbp-0x28],0x0" 48c745d800000000
+a "mov dword ptr [rax],0x0" c70000000000
+a "mov qword ptr [rbp-0x28],0x0" 48c745d800000000
+a "mov byte ptr [rax],0xa" c6000a
+a "mov byte ptr [rax],0x0" c60000
+a "mov qword ptr [rbp-0x70],0x0" 48c7459000000000
+a "mov qword ptr [rbp-0x68],0x0" 48c7459800000000
+a "mov qword ptr [rbp-0x80],0x0" 48c7458000000000
+a "mov qword ptr [rbp-0x50],0x0" 48c745b000000000
+a "mov dword ptr [rbp-0x98],0x0" c78568ffffff00000000
+a "mov dword ptr [rbp-0x94],0x0" c7856cffffff00000000
+a "mov dword ptr [rbp-0x90],0x0" c78570ffffff00000000
+a "mov dword ptr [rbp-0x8c],0xffffffff" c78574ffffffffffffff
+a "mov dword ptr [rip+0x202447],0x42" c7054724200042000000
+a "mov dword ptr [rip+0x2023db],0x0" c705db23200000000000
+a "mov dword ptr [rip+0x202408],0x72" c7050824200072000000
+a "mov dword ptr [rbp-0x94],0x7" c7856cffffff07000000
+a "mov dword ptr [rip+0x2023b3],0x1" c705b323200001000000
+a "mov dword ptr [rbp-0x94],0x6" c7856cffffff06000000
+a "mov dword ptr [rbp-0x94],0x2" c7856cffffff02000000
+a "mov dword ptr [rip+0x20238e],0x1" c7058e23200001000000
+a "mov dword ptr [rbp-0x90],0x1" c78570ffffff01000000
+a "mov dword ptr [rbp-0x98],0x1" c78568ffffff01000000
+a "mov byte ptr [rip+0x202337],0x1" c6053723200001
+a "mov byte ptr [rip+0x20232f],0x0" c6052f23200000
+a "mov dword ptr [rbp-0x94],0x6" c7856cffffff06000000
+a "mov byte ptr [rip+0x202319],0x1" c6051923200001
+a "mov dword ptr [rbp-0x94],0x5" c7856cffffff05000000
+a "mov dword ptr [rbp-0x94],0x4" c7856cffffff04000000
+a "mov dword ptr [rbp-0x94],0x3" c7856cffffff03000000
+a "mov dword ptr [rbp-0x94],0x8" c7856cffffff08000000
+a "mov dword ptr [rip+0x20229f],0x75" c7059f22200075000000
+a "mov dword ptr [rip+0x202293],0x55" c7059322200055000000
+a "mov byte ptr [rip+0x20227f],0x1" c6057f22200001
+a "mov byte ptr [rip+0x202294],0x1" c6059422200001
+a "mov dword ptr [rip+0x202264],0x6a" c705642220006a000000
+a "mov dword ptr [rbp-0x94],0x1" c7856cffffff01000000
+a "mov dword ptr [rbp-0x94],0x0" c7856cffffff00000000
+a "mov dword ptr [rbp-0x88],0x40" c78578ffffff40000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rax+0x24],0x6c" c740246c000000
+a "mov dword ptr [rax+0x24],0x6d" c740246d000000
+a "mov dword ptr [rax+0x24],0x0" c7402400000000
+a "mov byte ptr [rip+0x206cd8],0x1" c605d86c200001
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x64],0x0" c7459c00000000
+a "mov qword ptr [rbp-0x50],0x0" 48c745b000000000
+a "mov qword ptr [rbp-0x20],0x0" 48c745e000000000
+a "mov qword ptr [rbp-0x48],0x0" 48c745b800000000
+a "mov qword ptr [rbp-0x40],0x0" 48c745c000000000
+a "mov qword ptr [rbp-0x38],0x0" 48c745c800000000
+a "mov dword ptr [rbp-0x60],0x0" c745a000000000
+a "mov dword ptr [rbp-0x5c],0x0" c745a400000000
+a "mov byte ptr [rbp-0x65],0x0" c6459b00
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rbp-0x65],0x0" c6459b00
+a "mov byte ptr [rbp-0x65],0x1" c6459b01
+a "mov qword ptr [rax+0x8],0x0" 48c7400800000000
+a "mov qword ptr [rbp-0x10],0x0" 48c745f000000000
+a "mov dword ptr [rbp-0x20],0x0" c745e000000000
+a "mov dword ptr [rbp-0x1c],0x0" c745e400000000
+a "mov dword ptr [rbp-0x34],0x20" c745cc20000000
+a "mov qword ptr [rbp-0x20],0x0" 48c745e000000000
+a "mov qword ptr [rbp-0x38],0x0" 48c745c800000000
+a "mov qword ptr [rbp-0x30],0x0" 48c745d000000000
+a "mov byte ptr [rbp-0x3d],0x1" c645c301
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rax],0x0" c60000
+a "mov qword ptr [rbp-0x8],0x0" 48c745f800000000
+a "mov dword ptr [rbp-0x4],0x0" c745fc00000000
+a "mov dword ptr [rbp-0x4],0x6a" c745fc6a000000
+a "mov dword ptr [rbp-0x4],0x71" c745fc71000000
+a "mov qword ptr [rbp-0x61920],0x0" 48c785e0e6f9ff00000000
+a "mov dword ptr [rbp-0x61954],0x0" c785ace6f9ff00000000
+a "mov dword ptr [rbp-0x61958],0x0" c785a8e6f9ff00000000
+a "mov dword ptr [rbp-0x61950],0x0" c785b0e6f9ff00000000
+a "mov qword ptr [rbp-0x61918],0x0" 48c785e8e6f9ff00000000
+a "mov qword ptr [rbp-0x61910],0x0" 48c785f0e6f9ff00000000
+a "mov qword ptr [rbp-0x61908],0x0" 48c785f8e6f9ff00000000
+a "mov qword ptr [rbp-0x61900],0x0" 48c78500e7f9ff00000000
+a "mov qword ptr [rbp-0x618f8],0x0" 48c78508e7f9ff00000000
+a "mov qword ptr [rbp-0x618f0],0x0" 48c78510e7f9ff00000000
+a "mov qword ptr [rbp-0x618d0],0x0" 48c78530e7f9ff00000000
+a "mov dword ptr [rbp-0x61938],0x0" c785c8e6f9ff00000000
+a "mov dword ptr [rbp-0x6194c],0x0" c785b4e6f9ff00000000
+a "mov dword ptr [rbp-0x61948],0xffffffff" c785b8e6f9ffffffffff
+a "mov dword ptr [rip+0x20531b],0x8" c7051b53200008000000
+a "mov dword ptr [rax+0x190],0x0" c7809001000000000000
+a "mov dword ptr [rip+0x20525c],0x40" c7055c52200040000000
+a "mov dword ptr [rbp-0x6194c],0x2" c785b4e6f9ff02000000
+a "mov dword ptr [rbp-0x6194c],0x1" c785b4e6f9ff01000000
+a "mov dword ptr [rip+0x204e5f],0x1" c7055f4e200001000000
+a "mov dword ptr [rip+0x204d51],0x0" c705514d200000000000
+a "mov dword ptr [rip+0x204d6a],0x1" c7056a4d200001000000
+a "mov dword ptr [rip+0x204cdc],0x0" c705dc4c200000000000
+a "mov qword ptr [rbp-0x618e8],0x0" 48c78518e7f9ff00000000
+a "mov qword ptr [rbp-0x618e0],0x0" 48c78520e7f9ff00000000
+a "mov qword ptr [rbp-0x618e0],0x0" 48c78520e7f9ff00000000
+a "mov qword ptr [rip+0x2049d8],0x0" 48c705d849200000000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov qword ptr [rbp-0x618d8],0x0" 48c78528e7f9ff00000000
+a "mov qword ptr [rbp-0x61898],0x0" 48c78568e7f9ff00000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rax],0x0" c60000
+a "mov qword ptr [rbp-0x618d8],0x0" 48c78528e7f9ff00000000
+a "mov dword ptr [rbp-0x61944],0x0" c785bce6f9ff00000000
+a "mov dword ptr [rbp-0x61954],0x20" c785ace6f9ff20000000
+a "mov dword ptr [rbp-0x6193c],0x0" c785c4e6f9ff00000000
+a "mov dword ptr [rbp-0x6193c],0x1" c785c4e6f9ff01000000
+a "mov dword ptr [rbp-0x6194c],0x0" c785b4e6f9ff00000000
+a "mov dword ptr [rax+0x40c],0x0" c7800c04000000000000
+a "mov qword ptr [rbp-0x618c8],0x0" 48c78538e7f9ff00000000
+a "mov byte ptr [rip+0x2037e8],0x1" c605e837200001
+a "mov qword ptr [rbp-0x4a0],0x0" 48c78560fbffff00000000
+a "mov qword ptr [rbp-0x508],0x0" 48c785f8faffff00000000
+a "mov qword ptr [rbp-0x500],0x0" 48c78500fbffff00000000
+a "mov qword ptr [rbp-0x4f8],0x0" 48c78508fbffff00000000
+a "mov qword ptr [rbp-0x4f0],0x0" 48c78510fbffff00000000
+a "mov dword ptr [rbp-0x550],0x0" c785b0faffff00000000
+a "mov dword ptr [rbp-0x54c],0x1" c785b4faffff01000000
+a "mov dword ptr [rbp-0x548],0x0" c785b8faffff00000000
+a "mov dword ptr [rbp-0x544],0x0" c785bcfaffff00000000
+a "mov dword ptr [rbp-0x540],0x0" c785c0faffff00000000
+a "mov dword ptr [rbp-0x53c],0x0" c785c4faffff00000000
+a "mov qword ptr [rbp-0x4d0],0x0" 48c78530fbffff00000000
+a "mov qword ptr [rbp-0x4c8],0x0" 48c78538fbffff00000000
+a "mov qword ptr [rbp-0x4c0],0x0" 48c78540fbffff00000000
+a "mov qword ptr [rbp-0x4b8],0x0" 48c78548fbffff00000000
+a "mov dword ptr [rbp-0x538],0x40" c785c8faffff40000000
+a "mov dword ptr [rbp-0x534],0x0" c785ccfaffff00000000
+a "mov qword ptr [rbp-0x4b0],0x0" 48c78550fbffff00000000
+a "mov dword ptr [rbp-0x530],0x0" c785d0faffff00000000
+a "mov dword ptr [rbp-0x548],0x1" c785b8faffff01000000
+a "mov dword ptr [rbp-0x54c],0x0" c785b4faffff00000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x540],0x1" c785c0faffff01000000
+a "mov dword ptr [rbp-0x540],0x1" c785c0faffff01000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rax],0x3a" c6003a
+a "mov dword ptr [rbp-0x530],0x1" c785d0faffff01000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x548],0x0" c785b8faffff00000000
+a "mov dword ptr [rbp-0x548],0x0" c785b8faffff00000000
+a "mov dword ptr [rbp-0x548],0x1" c785b8faffff01000000
+a "mov dword ptr [rbp-0x54c],0x0" c785b4faffff00000000
+a "mov dword ptr [rbp-0x544],0x1" c785bcfaffff01000000
+a "mov dword ptr [rbp-0x550],0x1" c785b0faffff01000000
+a "mov dword ptr [rbp-0x53c],0x1" c785c4faffff01000000
+a "mov qword ptr [rbp-0x4d0],0x1" 48c78530fbffff01000000
+a "mov dword ptr [rbp-0x534],0x61" c785ccfaffff61000000
+a "mov dword ptr [rbp-0x534],0x0" c785ccfaffff00000000
+a "mov qword ptr [rbp-0x4f8],0x0" 48c78508fbffff00000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x52c],0x0" c785d4faffff00000000
+a "mov dword ptr [rbp-0x52c],0x0" c785d4faffff00000000
+a "mov byte ptr [rip+0x201148],0x1" c6054811200001
+a "mov dword ptr [rbp-0x5c],0x3" c745a403000000
+a "mov dword ptr [rbp-0x64],0x0" c7459c00000000
+a "mov dword ptr [rbp-0x60],0x0" c745a000000000
+a "mov byte ptr [rbp-0x65],0x1" c6459b01
+a "mov byte ptr [rbp-0x65],0x0" c6459b00
+a "mov dword ptr [rbp-0x60],0x1" c745a001000000
+a "mov dword ptr [rbp-0x64],0x1" c7459c01000000
+a "mov qword ptr [rbp-0x38],0x0" 48c745c800000000
+a "mov qword ptr [rbp-0x38],0x0" 48c745c800000000
+a "mov byte ptr [rip+0x204568],0x1" c6056845200001
+a "mov dword ptr [rbp-0x210],0x0" c785f0fdffff00000000
+a "mov dword ptr [rbp-0x1d0],0x0" c78530feffff00000000
+a "mov dword ptr [rbp-0x70],0x0" c7459000000000
+a "mov byte ptr [rbp-0x30],0x0" c645d000
+a "mov word ptr [rax],0x3732" 66c7003237
+a "mov byte ptr [rax+0x2],0x0" c6400200
+a "mov word ptr [rax],0x2038" 66c7003820
+a "mov byte ptr [rax+0x2],0x0" c6400200
+a "mov dword ptr [rax],0x203631" c70031362000
+a "mov dword ptr [rax],0x203233" c70033322000
+a "mov dword ptr [rax],0x203436" c70036342000
+a "mov qword ptr [rbp-0x18],0x0" 48c745e800000000
+a "mov qword ptr [rbp-0x10],0x0" 48c745f000000000
+a "mov qword ptr [rbp-0x338],0x0" 48c785c8fcffff00000000
+a "mov dword ptr [rbp-0x340],0x0" c785c0fcffff00000000
+a "mov qword ptr [rbp-0x330],0x0" 48c785d0fcffff00000000
+a "mov dword ptr [rbp-0x340],0x0" c785c0fcffff00000000
+a "mov dword ptr [rbp-0x2f0],0x0" c78510fdffff00000000
+a "mov dword ptr [rbp-0x320],0x1" c785e0fcffff01000000
+a "mov dword ptr [rbp-0x4],0x1" c745fc01000000
+a "mov dword ptr [rbp-0x4],0x1" c745fc01000000
+a "mov dword ptr [rbp-0x14],0x0" c745ec00000000
+a "mov dword ptr [rbp-0x1c],0x0" c745e400000000
+a "mov dword ptr [rbp-0x18],0x0" c745e800000000
+a "mov dword ptr [rbp-0x4],0x0" c745fc00000000
+a "mov qword ptr [rbp-0x1d8],0x0" 48c78528feffff00000000
+a "mov qword ptr [rbp-0x1d0],0x0" 48c78530feffff00000000
+a "mov qword ptr [rbp-0x1c8],0x0" 48c78538feffff00000000
+a "mov qword ptr [rbp-0x1c0],0x0" 48c78540feffff00000000
+a "mov qword ptr [rbp-0x1b8],0x0" 48c78548feffff00000000
+a "mov byte ptr [rbp-0x215],0x0" c685ebfdffff00
+a "mov byte ptr [rbp-0x214],0x0" c685ecfdffff00
+a "mov byte ptr [rbp-0x213],0x0" c685edfdffff00
+a "mov qword ptr [rbp-0x1b0],0x0" 48c78550feffff00000000
+a "mov dword ptr [rbp-0x20c],0xffffffff" c785f4fdffffffffffff
+a "mov dword ptr [rbp-0x208],0x0" c785f8fdffff00000000
+a "mov dword ptr [rbp-0x204],0x0" c785fcfdffff00000000
+a "mov dword ptr [rbp-0x200],0x0" c78500feffff00000000
+a "mov dword ptr [rbp-0x1fc],0x0" c78504feffff00000000
+a "mov dword ptr [rbp-0x1f8],0x20" c78508feffff20000000
+a "mov dword ptr [rbp-0x1f4],0x0" c7850cfeffff00000000
+a "mov dword ptr [rbp-0x1f0],0x0" c78510feffff00000000
+a "mov qword ptr [rbp-0x1a8],0x0" 48c78558feffff00000000
+a "mov qword ptr [rbp-0x1a0],0x0" 48c78560feffff00000000
+a "mov qword ptr [rbp-0x198],0x0" 48c78568feffff00000000
+a "mov byte ptr [rbp-0x212],0x0" c685eefdffff00
+a "mov dword ptr [rbp-0x1e8],0x40" c78518feffff40000000
+a "mov byte ptr [rbp-0x212],0x1" c685eefdffff01
+a "mov dword ptr [rbp-0x200],0x1" c78500feffff01000000
+a "mov dword ptr [rip+0x202b89],0x1" c705892b200001000000
+a "mov dword ptr [rbp-0x208],0x1" c785f8fdffff01000000
+a "mov dword ptr [rbp-0x208],0x2" c785f8fdffff02000000
+a "mov byte ptr [rbp-0x215],0x1" c685ebfdffff01
+a "mov dword ptr [rbp-0x208],0x3" c785f8fdffff03000000
+a "mov byte ptr [rip+0x202af2],0x1" c605f22a200001
+a "mov dword ptr [rbp-0x1fc],0x1" c78504feffff01000000
+a "mov byte ptr [rbp-0x213],0x1" c685edfdffff01
+a "mov byte ptr [rip+0x2029f3],0x1" c605f329200001
+a "mov byte ptr [rbp-0x214],0x1" c685ecfdffff01
+a "mov dword ptr [rbp-0x1f4],0x1" c7850cfeffff01000000
+a "mov dword ptr [rbp-0x1fc],0x0" c78504feffff00000000
+a "mov dword ptr [rbp-0x204],0x1" c785fcfdffff01000000
+a "mov dword ptr [rbp-0x1fc],0x0" c78504feffff00000000
+a "mov dword ptr [rbp-0x1fc],0x0" c78504feffff00000000
+a "mov dword ptr [rbp-0x1fc],0x1" c78504feffff01000000
+a "mov dword ptr [rbp-0x1fc],0x0" c78504feffff00000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rax],0x3a" c6003a
+a "mov dword ptr [rbp-0x210],0x0" c785f0fdffff00000000
+a "mov byte ptr [rbp+rax*1-0x120],0x0" c68405e0feffff00
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x1fc],0x1" c78504feffff01000000
+a "mov byte ptr [rbp+rax*1-0x120],0x0" c68405e0feffff00
+a "mov byte ptr [rbp+rax*1-0x120],0x0" c68405e0feffff00
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rip+0x201cd3],0x1" c605d31c200001
+a "mov byte ptr [rip+0x206f90],0x1" c605906f200001
+a "mov qword ptr [rbp-0x10],0x0" 48c745f000000000
+a "mov byte ptr [rax+0xc8],0x0" c680c800000000
+a "mov dword ptr [rax+0xb0],0xffffffff" c780b0000000ffffffff
+a "mov dword ptr [rax+0x74],0x40" c7407440000000
+a "mov dword ptr [rax+0xbc],0xffffffff" c780bc000000ffffffff
+a "mov qword ptr [rax+0x10],0x9c4" 48c74010c4090000
+a "mov dword ptr [rax+0x6c],0x1000" c7406c00100000
+a "mov dword ptr [rax+0xc0],0xa" c780c00000000a000000
+a "mov qword ptr [rax+0x8],0x0" 48c7400800000000
+a "mov qword ptr [rax+0x20],0x1000" 48c7402000100000
+a "mov qword ptr [rax],0x0" 48c70000000000
+a "mov dword ptr [rax+0x60],0x0" c7406000000000
+a "mov dword ptr [rax+0x38],0x0" c7403800000000
+a "mov qword ptr [rax+0x48],0x0" 48c7404800000000
+a "mov qword ptr [rax+0x50],0x1000" 48c7405000100000
+a "mov qword ptr [rax],0x0" 48c70000000000
+a "mov qword ptr [rax+0x18],0x0" 48c7401800000000
+a "mov dword ptr [rax+0xc4],0x0" c780c400000000000000
+a "mov qword ptr [rax+0x40],0x0" 48c7404000000000
+a "mov qword ptr [rax+0x8],0x0" 48c7400800000000
+a "mov qword ptr [rax],0x0" 48c70000000000
+a "mov qword ptr [rax+0x18],0x0" 48c7401800000000
+a "mov dword ptr [rbp-0x8],0x0" c745f800000000
+a "mov dword ptr [rbp-0x4],0x0" c745fc00000000
+a "mov byte ptr [rbp-0xa],0x1" c645f601
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x8],0x0" c745f800000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov qword ptr [rax+0x28],0x0" 48c7402800000000
+a "mov byte ptr [rax+0x4],0x0" c6400400
+a "mov byte ptr [rax+0x5],0x0" c6400500
+a "mov dword ptr [rax+0x8],0x1" c7400801000000
+a "mov byte ptr [rbp-0xa],0x0" c645f600
+a "mov qword ptr [rbp-0x20],0x0" 48c745e000000000
+a "mov dword ptr [rbp-0x18],0x0" c745e800000000
+a "mov qword ptr [rax+0x48],0x0" 48c7404800000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov qword ptr [rax+0x48],0x0" 48c7404800000000
+a "mov dword ptr [rbp-0x2c],0x0" c745d400000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rax],0x0" c60000
+a "mov byte ptr [rax],0x24" c60024
+a "mov qword ptr [rax+0x8],0x1" 48c7400801000000
+a "mov byte ptr [rax],0x7d" c6007d
+a "mov dword ptr [rbp-0x14],0x0" c745ec00000000
+a "mov dword ptr [rbp-0x14],0x22" c745ec22000000
+a "mov dword ptr [rbp-0x14],0x7e" c745ec7e000000
+a "mov byte ptr [rax],0x2a" c6002a
+a "mov byte ptr [rax],0x0" c60000
+a "mov qword ptr [rbp-0x18],0x0" 48c745e800000000
+a "mov dword ptr [rax+0xc4],0x1" c780c400000001000000
+a "mov dword ptr [rax+0xc4],0x1" c780c400000001000000
+a "mov dword ptr [rax+0xc4],0x1" c780c400000001000000
+a "mov byte ptr [rbp-0x1],0x0" c645ff00
+a "mov qword ptr [rbp-0x8],0x0" 48c745f800000000
+a "mov qword ptr [rbp-0x8],0x0" 48c745f800000000
+a "mov dword ptr [rbp-0x8],0x0" c745f800000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x1c],0x0" c745e400000000
+a "mov dword ptr [rbp-0x18],0x0" c745e800000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rbp-0x84],0x0" c7857cffffff00000000
+a "mov byte ptr [rax],0x0" c60000
+a "mov dword ptr [rax],0xffffffff" c700ffffffff
+a "mov dword ptr [rax],0xffffffff" c700ffffffff
+a "mov dword ptr [rax],0xffffffff" c700ffffffff
+a "mov dword ptr [esp+0x1c],0xc6670001" 67c744241c010067c6
+a "mov byte ptr [esi],0x86" 67c60686
+a "mov word ptr [esi],0x4020" 6766c7062040
+a "mov word ptr [esi],0x4020" 6766c7062040
+a "mov dword ptr [esi],0x404020" 67c70620404000
+a "mov byte ptr [esp+0x25],0xc0" 67c6442425c0
+a "mov dword ptr [esp+0x20],0x66670014" 67c744242014006766
+a "mov dword ptr [esp+0x1c],0x534d4150" 67c744241c50414d53
+a "mov dword ptr [edx],0x74000000" 67c70200000074
+a "mov dword ptr [eax+eax*1],0xa740000" 67c704000000740a
+a "mov dword ptr [esp],0x1" 67c7042401000000
+a "mov dword ptr [esp+0x4],0x0" 67c744240400000000
+a "mov dword ptr [esp+0x4],0x0" 67c744240400000000
+a "mov dword ptr [esi],0xb0003e04" 67c706043e00b0
+a "mov dword ptr [esi],0xb8003e04" 67c706043e00b8
+a "mov word ptr [esi],0x3d04" 6766c706043d
+a "mov dword ptr [esp+0xc],0x3" 67c744240c03000000
+a "mov dword ptr [esp+0xc],0x1" 67c744240c01000000
+a "mov word ptr [esp+0x10],0x0" 6766c74424100000
+a "mov word ptr [esp+0x14],0x0" 6766c74424140000
+a "mov dword ptr [esp+0x24],0x66671a00" 67c7442424001a6766
+a "mov word ptr [esi],0x5078" 6766c7067850
+a "mov byte ptr [esi],0x7f" 67c6067f
+a "mov dword ptr [esi],0x15078" 67c70678500100
+a "mov word ptr [esi],0x5078" 6766c7067850
+a "mov dword ptr [esp+0x24],0x66670f00" 67c7442424000f6766
+a "mov word ptr [esi],0x5084" 6766c7068450
+a "mov dword ptr [ebp-0x44],0x31660305" 67c745bc05036631
+a "mov dword ptr [ebp-0x4c],0x47534943" 67c745b443495347
+aB "mov rax, qword[r12]" 498b0424
+aB "mov rax, qword[r13]" 498b4500
+aB "mov rsp, qword[r12 - 0x12]"  498b6424ee
+aB "mov qword[r12], rsp" 49892424
+aB "mov qword[r8 + 0x20], rax" 49894020
+aB "mov r12, qword[r12]" 4d8b2424
+a "mov eax,r12d" 4489e0
+a "inc al" fec0
+a "inc BYTE PTR [r12]" 41fe0424
+a "inc BYTE PTR [rbx+0x18]" fe4318
+a "inc BYTE PTR [rdi+0x18]" fe4718
+a "inc BYTE PTR [rsi+0x1a]" fe461a
+a "inc cl" fec1
+a "inc dl" fec2
+a "inc DWORD PTR [r12]" 41ff0424
+a "inc DWORD PTR [r12+0x28]" 41ff442428
+a "inc DWORD PTR [r13+0x70]" 41ff4570
+a "inc DWORD PTR [r14]" 41ff06
+a "inc DWORD PTR [r14+0x134]" 41ff8634010000
+a "inc DWORD PTR [r15]" 41ff07
+a "inc DWORD PTR [r15+0x88]" 41ff8788000000
+a "inc DWORD PTR [rax]" ff00
+a "inc DWORD PTR [rax+0x14c]" ff804c010000
+a "inc DWORD PTR [rax+rdx*1]" ff0410
+a "inc DWORD PTR [rax+rdx*1+0x109]" ff841009010000
+a "inc DWORD PTR [rbp+0x10]" ff4510
+a "inc DWORD PTR [rbx]" ff03
+a "inc DWORD PTR [rbx+0x18]" ff4318
+a "inc DWORD PTR [rbx+0x20]" ff4320
+a "inc DWORD PTR [rcx]" ff01
+a "inc DWORD PTR [rcx+0x4]" ff4104
+a "inc DWORD PTR [rdi]" ff07
+a "inc DWORD PTR [rdi+0x28]" ff4728
+a "inc DWORD PTR [rdx]" ff02
+a "inc DWORD PTR [rdx+0x10]" ff4210
+a "inc DWORD PTR [rdx+rax*1]" ff0402
+a "inc DWORD PTR [rip+0x2009c8]" ff05c8092000
+a "inc DWORD PTR [rsi+0x8]" ff4608
+a "inc DWORD PTR [rsp]" ff0424
+a "inc DWORD PTR [rsp+0x10]" ff442410
+a "inc DWORD PTR [rsp+rax*4+0x400]" ff848400040000
+a "inc DWORD PTR [rsp+rbp*4+0x2b8]" ff84acb8020000
+a "inc eax" ffc0
+a "inc ebp" ffc5
+a "inc ebx" ffc3
+a "inc ecx" ffc1
+a "inc edi" ffc7
+a "inc edx" ffc2
+a "inc QWORD PTR [r10]" 49ff02
+a "inc QWORD PTR [r10+rax*1]" 49ff0402
+a "inc QWORD PTR [r11]" 49ff03
+a "inc QWORD PTR [r11+0x18]" 49ff4318
+a "inc QWORD PTR [r12]" 49ff0424
+a "inc QWORD PTR [r12+0x20]" 49ff442420
+a "inc QWORD PTR [r13+0x0]" 49ff4500
+a "inc QWORD PTR [r14]" 49ff06
+a "inc QWORD PTR [r14+0x20]" 49ff4620
+a "inc QWORD PTR [r15]" 49ff07
+a "inc QWORD PTR [r8]" 49ff00
+a "inc QWORD PTR [r9]" 49ff01
+a "inc QWORD PTR [rax]" 48ff00
+a "inc QWORD PTR [rax+0x20]" 48ff4020
+a "inc QWORD PTR [rax-0x8]" 48ff40f8
+a "inc QWORD PTR [rbp+0xb0]" 48ff85b0000000
+a "inc QWORD PTR [rbx]" 48ff03
+a "inc QWORD PTR [rbx+0x138]" 48ff8338010000
+a "inc QWORD PTR [rcx]" 48ff01
+a "inc QWORD PTR [rcx+0x8]" 48ff4108
+a "inc QWORD PTR [rdi]" 48ff07
+a "inc QWORD PTR [rdi+0x10]" 48ff4710
+a "inc QWORD PTR [rdi+rax*1+0xe1]" 48ff8407e1000000
+a "inc QWORD PTR [rdx]" 48ff02
+a "inc QWORD PTR [rdx+0x10]" 48ff4210
+a "inc QWORD PTR [rip+0x2121a1]" 48ff05a1212100
+a "inc QWORD PTR [rsi]" 48ff06
+a "inc QWORD PTR [rsp]" 48ff0424
+a "inc QWORD PTR [rsp+0x1b8]" 48ff8424b8010000
+a "inc r10" 49ffc2
+a "inc r10d" 41ffc2
+a "inc r11" 49ffc3
+a "inc r11d" 41ffc3
+a "inc r12" 49ffc4
+a "inc r12d" 41ffc4
+a "inc r13" 49ffc5
+a "inc r13d" 41ffc5
+a "inc r14" 49ffc6
+a "inc r14d" 41ffc6
+a "inc r15" 49ffc7
+a "inc r15d" 41ffc7
+a "inc r8" 49ffc0
+a "inc r8d" 41ffc0
+a "inc r9" 49ffc1
+a "inc r9d" 41ffc1
+a "inc rax" 48ffc0
+a "inc rbp" 48ffc5
+a "inc rbx" 48ffc3
+a "inc rcx" 48ffc1
+a "inc rdi" 48ffc7
+a "inc rdx" 48ffc2
+a "inc rsi" 48ffc6
+a "inc WORD PTR [rdi+0x88]" 66ff8788000000
+a "dec al" fec8
+a "dec BYTE PTR [r12]" 41fe0c24
+a "dec BYTE PTR [rbx+0x18]" fe4b18
+a "dec BYTE PTR [rdi+0x18]" fe4f18
+a "dec BYTE PTR [rsi+0x1a]" fe4e1a
+a "dec cl" fec9
+a "dec dl" feca
+a "dec DWORD PTR [r12]" 41ff0c24
+a "dec DWORD PTR [r12+0x28]" 41ff4c2428
+a "dec DWORD PTR [r13+0x70]" 41ff4d70
+a "dec DWORD PTR [r14]" 41ff0e
+a "dec DWORD PTR [r14+0x134]" 41ff8e34010000
+a "dec DWORD PTR [r15]" 41ff0f
+a "dec DWORD PTR [r15+0x88]" 41ff8f88000000
+a "dec DWORD PTR [rax]" ff08
+a "dec DWORD PTR [rax+0x14c]" ff884c010000
+a "dec DWORD PTR [rax+rdx*1]" ff0c10
+a "dec DWORD PTR [rax+rdx*1+0x109]" ff8c1009010000
+a "dec DWORD PTR [rbp+0x10]" ff4d10
+a "dec DWORD PTR [rbx]" ff0b
+a "dec DWORD PTR [rbx+0x18]" ff4b18
+a "dec DWORD PTR [rbx+0x20]" ff4b20
+a "dec DWORD PTR [rcx]" ff09
+a "dec DWORD PTR [rcx+0x4]" ff4904
+a "dec DWORD PTR [rdi]" ff0f
+a "dec DWORD PTR [rdi+0x28]" ff4f28
+a "dec DWORD PTR [rdx]" ff0a
+a "dec DWORD PTR [rdx+0x10]" ff4a10
+a "dec DWORD PTR [rdx+rax*1]" ff0c02
+a "dec DWORD PTR [rip+0x2009c8]" ff0dc8092000
+a "dec DWORD PTR [rsi+0x8]" ff4e08
+a "dec DWORD PTR [rsp]" ff0c24
+a "dec DWORD PTR [rsp+0x10]" ff4c2410
+a "dec DWORD PTR [rsp+rax*4+0x400]" ff8c8400040000
+a "dec DWORD PTR [rsp+rbp*4+0x2b8]" ff8cacb8020000
+a "dec eax" ffc8
+a "dec ebp" ffcd
+a "dec ebx" ffcb
+a "dec ecx" ffc9
+a "dec edi" ffcf
+a "dec edx" ffca
+a "dec QWORD PTR [r10]" 49ff0a
+a "dec QWORD PTR [r10+rax*1]" 49ff0c02
+a "dec QWORD PTR [r11]" 49ff0b
+a "dec QWORD PTR [r11+0x18]" 49ff4b18
+a "dec QWORD PTR [r12]" 49ff0c24
+a "dec QWORD PTR [r12+0x20]" 49ff4c2420
+a "dec QWORD PTR [r13+0x0]" 49ff4d00
+a "dec QWORD PTR [r14]" 49ff0e
+a "dec QWORD PTR [r14+0x20]" 49ff4e20
+a "dec QWORD PTR [r15]" 49ff0f
+a "dec QWORD PTR [r8]" 49ff08
+a "dec QWORD PTR [r9]" 49ff09
+a "dec QWORD PTR [rax]" 48ff08
+a "dec QWORD PTR [rax+0x20]" 48ff4820
+a "dec QWORD PTR [rax-0x8]" 48ff48f8
+a "dec QWORD PTR [rbp+0xb0]" 48ff8db0000000
+a "dec QWORD PTR [rbx]" 48ff0b
+a "dec QWORD PTR [rbx+0x138]" 48ff8b38010000
+a "dec QWORD PTR [rcx]" 48ff09
+a "dec QWORD PTR [rcx+0x8]" 48ff4908
+a "dec QWORD PTR [rdi]" 48ff0f
+a "dec QWORD PTR [rdi+0x10]" 48ff4f10
+a "dec QWORD PTR [rdi+rax*1+0xe1]" 48ff8c07e1000000
+a "dec QWORD PTR [rdx]" 48ff0a
+a "dec QWORD PTR [rdx+0x10]" 48ff4a10
+a "dec QWORD PTR [rip+0x2121a1]" 48ff0da1212100
+a "dec QWORD PTR [rsi]" 48ff0e
+a "dec QWORD PTR [rsp]" 48ff0c24
+a "dec QWORD PTR [rsp+0x1b8]" 48ff8c24b8010000
+a "dec r10" 49ffca
+a "dec r10d" 41ffca
+a "dec r11" 49ffcb
+a "dec r11d" 41ffcb
+a "dec r12" 49ffcc
+a "dec r12d" 41ffcc
+a "dec r13" 49ffcd
+a "dec r13d" 41ffcd
+a "dec r14" 49ffce
+a "dec r14d" 41ffce
+a "dec r15" 49ffcf
+a "dec r15d" 41ffcf
+a "dec r8" 49ffc8
+a "dec r8d" 41ffc8
+a "dec r9" 49ffc9
+a "dec r9d" 41ffc9
+a "dec rax" 48ffc8
+a "dec rbp" 48ffcd
+a "dec rbx" 48ffcb
+a "dec rcx" 48ffc9
+a "dec rdi" 48ffcf
+a "dec rdx" 48ffca
+a "dec rsi" 48ffce
+a "dec WORD PTR [rdi+0x88]" 66ff8f88000000
+d "call qword [rip + 0x3a8f3e]" 48ff153e8f3a00
+d "call qword [rip + 0x1d638f]" 48ff158f631d00
+a "fmul st2, st0" dcca
+a "fdiv st0, st1" d8f1
+a "fdiv st(0), st(1)" d8f1
+a "fdiv st0, st7" d8f7
+a "fdiv st(0), st(7)" d8f7
+a "fcmove st0, st1" dac9
+a "fcmovbe st0, st1" dad1
+a "fcmovu st0, st1" dad9
+a "fcmovnb st0, st1" dbc1
+a "fcmovne st0, st1" dbc9
+a "fcmovnbe st0, st1" dbd1
+a "fcmovnu st0, st1" dbd9
+a "ffree st0" ddc0
+a "ffree st(7)" ddc7
+a "frstor [eax]" dd20
+a "fxch" d9c9
+a "fxch st2" d9ca
+a "fucom" dde1
+a "fucom st(2)" dde2
+a "fucomp" dde9
+a "fucomp st(2)" ddea
+a "faddp" dec1
+a "faddp st2, st0" dec2
+a "fiadd word [rax]" de00
+a "fiadd dword [rax]" da00
+a "fadd dword [rax]" d800
+a "fadd qword [rax]" dc00
+a "ficom word [rax]" de10
+a "ficom dword [rax]" da10
+a "ficomp word [rax]" de18
+a "ficomp dword [rax]" da18
+a "fild word [rax]" df00
+a "fild dword [rax]" db00
+a "fild qword [rax]" df28
+a "fldcw word [rax]" d928
+a "fldenv [rax]" d920
+a "fbld tbyte [rax]" df20
+a "fbstp tbyte [rax]" df30
+a "fxrstor [rax]" 0fae08
+a "fxsave [rax]" 0fae00
+a "fist word [rax]" df10
+a "fist dword [rax]" db10
+a "fistp word [rax]" df18
+a "fistp dword [rax]" db18
+a "fistp qword [rax]" df38
+a "fisttp word [rax]" df08
+a "fisttp dword [rax]" db08
+a "fisttp qword [rax]" dd08
+a "fstenv [rcx]" 9bd931
+a "fnstenv [rcx]" d931
+a "fdiv dword[rax]" d830
+a "fdiv qword [rax]" dc30
+a "fdiv st0, st7" d8f7
+a "fdiv st6, st0" dcfe
+a "fdivp" def9
+a "fdivp st2, st0" defa
+a "fidiv word [rax]" de30
+a "fidiv dword [rax]" da30
+a "fdivr dword[rax]" d838
+a "fdivr qword [rax]" dc38
+a "fdivr st0, st7" d8ff
+a "fdivr st6, st0" dcf6
+a "fdivrp" def1
+a "fdivrp st2, st0" def2
+a "fidivr word [rax]" de38
+a "fidivr dword [rax]" da38
+a "fmul dword[rax]" d808
+a "fmul qword [rax]" dc08
+a "fmul st0, st7" d8cf
+a "fmul st6, st0" dcce
+a "fmulp" dec9
+a "fmulp st2, st0" deca
+a "fimul word [rax]" de08
+a "fimul dword [rax]" da08
+a "fsub dword[rax]" d820
+a "fsub qword [rax]" dc20
+a "fsub st0, st7" d8e7
+a "fsub st6, st0" dcee
+a "fsubp" dee9
+a "fsubp st2, st0" deea
+a "fisub word [rax]" de20
+a "fisub dword [rax]" da20
+a "fsubr dword[rax]" d828
+a "fsubr qword [rax]" dc28
+a "fsubr st0, st7" d8ef
+a "fsubr st6, st0" dce6
+a "fsubrp" dee1
+a "fsubrp st2, st0" dee2
+a "fisubr word [rax]" de28
+a "fisubr dword [rax]" da28
+a "fstcw word [rcx]" 9bd939
+a "fnstcw word [rcx]" d939
+a "fstsw word [rcx]" 9bdd39
+a "fnstsw word [rcx]" dd39
+a "fstsw ax" 9bdfe0
+a "fnstsw ax" dfe0
+a "fsave dword [rax]" 9bdd30
+a "fnsave dword [rax]" dd30
+aB "fnsave dword [rdi + rdi*8]" dd34ff

@@ -1,0 +1,32 @@
+NAME=capstone pade 31ed
+FILE=-
+ARGS=-a x86 -b 32
+EXPECT=<<EOF
+ebp,ebp,^=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=
+EOF
+CMDS=<<EOF
+pade 31ed
+EOF
+RUN
+
+NAME=pade 40
+FILE=-
+ARGS=-a x86 -b 32
+EXPECT=<<EOF
+eax,++=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,$p,pf,:=
+EOF
+CMDS=<<EOF
+pade 40
+EOF
+RUN
+
+NAME=pade 48
+FILE=-
+ARGS=-a x86 -b 32
+EXPECT=<<EOF
+eax,--=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,$p,pf,:=
+EOF
+CMDS=<<EOF
+pade 48
+EOF
+RUN

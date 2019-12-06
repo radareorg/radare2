@@ -1,0 +1,74 @@
+NAME=t/md5sha1
+FILE=-
+EXPECT=<<EOF
+3b5d3c7d207e37dceeedd301e35e2e58
+fa8715078d45101200a6e2bf7321aa04
+5eb63bbbe01eeed093cb22bb8f5acdc3
+5eb63bbbe01eeed093cb22bb8f5acdc3
+2aae6c35c94fcfb415dbe95f408b9ce91ee846ed
+11
+EOF
+CMDS=<<EOF
+b 100
+ph md5 64
+ph md5 99
+w hello world
+ph md5 11
+ph md5 @!11
+ph sha1 11
+ph pcprint
+EOF
+RUN
+
+NAME=ph crc32
+FILE=-
+EXPECT=<<EOF
+39c1
+39c1
+0d4a1185
+0d4a1185
+EOF
+CMDS=<<EOF
+b 12
+w hello world
+!rahash2 -qa crc16 -s "hello world"
+ph crc16 11
+!rahash2 -qa crc32 -s "hello world"
+ph crc32 11
+EOF
+RUN
+
+NAME=crca 'hello world'
+FILE=-
+EXPECT=<<EOF
+a8
+727a
+ae06
+2238
+efeb
+b03cb7
+c99465aa
+ac86f845
+a8
+727a
+ae06
+2238
+efeb
+b03cb7
+c99465aa
+ac86f845
+EOF
+CMDS=<<EOF
+b 12
+w hello world
+!rahash2 -qa rahash2 -a crc8smbus,crc15can,crc16hdlc,crc16usb,crc16citt,crc24,crc32c,crc32ecma267 -s "hello world"
+ph crc8smbus 11
+ph crc15can 11
+ph crc16hdlc 11
+ph crc16usb 11
+ph crc16citt 11
+ph crc24 11
+ph crc32c 11
+ph crc32ecma267 11
+EOF
+RUN

@@ -1,0 +1,25 @@
+{
+  "author": "pancake",
+  "description": "r2 travis logs helper",
+  "homepage": "https://www.radare.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radareorg/radare2.git"
+  },
+  "keywords": [
+    "radare2"
+  ],
+  "maintainers": [
+    "pancake <pancake@nopcode.org>"
+  ],
+  "name": "travis-logstat",
+  "main": "index",
+  "version": "1.6.0-git",
+  "bugs": {
+    "url": "https://github.com/radareorg/radare2/issues"
+  },
+  "dependencies": {
+    "colors": "^1.1.2",
+    "simple-get": "^2.7.0"
+  }
+}

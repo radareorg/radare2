@@ -1,0 +1,33 @@
+NAME=arj x86 16 bits
+FILE=malloc://0x100
+EXPECT='{"ip":0,"ax":0,"bx":0,"cx":0,"dx":0,"sp":0,"bp":0,"si":0,"di":0,"flags":0}
+'
+CMDS=<<EOF
+e asm.arch = x86
+e anal.arch = x86
+e asm.bits=16
+arj
+EOF
+RUN
+
+NAME=lcall offset (#12284)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+wx 9a34002001
+?v $j
+EOF
+EXPECT=0x1234
+RUN
+
+NAME=ljmp offset (#12284)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+wx ea34002001
+?v $j
+EOF
+EXPECT=0x1234
+RUN

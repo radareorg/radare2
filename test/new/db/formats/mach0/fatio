@@ -1,0 +1,67 @@
+NAME=fatmach0 IO test 32bit
+FILE=../bins/mach0/fatmach0-3true
+ARGS=-a x86 -b32
+EXPECT=<<EOF
+0x1f44
+6a0089e583e4f083
+EOF
+CMDS=<<EOF
+?v entry0;p8 8 @ entry0
+EOF
+RUN
+
+NAME=fatmach0 IO test 64bit
+FILE=../bins/mach0/fatmach0-3true
+ARGS=-a x86 -b64
+EXPECT=<<EOF
+0x100000ef8
+6a004889e54883e4
+EOF
+CMDS=<<EOF
+?v entry0;p8 8 @ entry0
+EOF
+RUN
+
+NAME=fatmach0 PPC entry0
+FILE=../bins/mach0/fatmach0-3true
+ARGS=-a ppc -b32
+EXPECT=<<EOF
+0x1f64
+EOF
+CMDS=<<EOF
+?v entry0
+EOF
+RUN
+
+NAME=fatmach0 io symbol test
+FILE=../bins/mach0/fatmach0-3true
+ARGS=-a x86 -b64
+EXPECT=<<EOF
+jmp qword [reloc.exit]
+EOF
+CMDS=<<EOF
+pi 1 @ sym.imp.exit
+EOF
+RUN
+
+NAME=fatmach0 SDB uuid 64bit
+FILE=../bins/mach0/fatmach0-3true
+ARGS=-a x86 -b64
+EXPECT=<<EOF
+34045671455b7d71054acff65f0ddac1
+EOF
+CMDS=<<EOF
+k bin/cur/info/uuid.0
+EOF
+RUN
+
+NAME=fatmach0 SDB uuid 32bit
+FILE=../bins/mach0/fatmach0-3true
+ARGS=-a x86 -b32
+EXPECT=<<EOF
+5478cf56325ebbbc6ad071df5885e983
+EOF
+CMDS=<<EOF
+k bin/cur/info/uuid.0
+EOF
+RUN

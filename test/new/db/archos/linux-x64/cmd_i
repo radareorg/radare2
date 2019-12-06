@@ -1,0 +1,18 @@
+# Should not be run on Windows
+NAME=utf8 (possibly malformed) filenames with non-printable chars
+FILE=-
+CMDS=<<EOF
+cd `e dir.tmp`
+e io.cache=true
+"(show_fname fname, wz $0, wtf `prz`, o `prz`, i~file, ij, rm `prz`)"
+.(show_fname A\x1b¢\302\200€𝄞\363\240\201\201\\.bin)
+.(show_fname B\x1b¢\302\200€𝄞\363\240\201\201\\.bin)
+# INVALID FILENAME .(show_fname B\x1b¢\302\200\200€𝄞\363\240\201\201\\.bin)
+EOF
+EXPECT=<<EOF
+file     A�€𝄞󠁁\.bin
+{"core":{"type":"","file":"A\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":4,"size":256,"humansz":"256","iorw":true,"mode":"r-x","obsz":0,"block":256,"format":"any"}}
+file     B�€𝄞󠁁\.bin
+{"core":{"type":"","file":"B\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":5,"size":256,"humansz":"256","iorw":true,"mode":"r-x","obsz":0,"block":256,"format":"any"}}
+EOF
+RUN

@@ -1,0 +1,272 @@
+NAME=obb baddrs
+FILE=../bins/mach0/mac-ls2
+ARGS=-B0x50000
+CMDS=<<EOF
+s
+o ../bins/mach0/mac-ls
+s
+obb 0
+s
+obb 1
+s
+EOF
+EXPECT=<<EOF
+0x511e8
+0x100001058
+0x511e8
+0x100001058
+EOF
+RUN
+
+NAME=oom
+FILE=../bins/elf/libmagic.so
+CMDS=<<EOF
+o~?
+oom
+o~malloc?
+EOF
+EXPECT=<<EOF
+2
+1
+EOF
+RUN
+
+NAME=oi-
+FILE=malloc://1024
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+oi-
+EOF
+RUN
+
+NAME=oi-2
+FILE=--
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+o bins/mach0/fatmach0-3true
+EOF
+RUN
+
+NAME=o-3
+FILE=malloc://1024
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+o-`o~[0]`;o
+EOF
+RUN
+
+NAME=oj-
+FILE=malloc://1024
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+o-`oj~{[0].fd}`;o
+EOF
+RUN
+
+NAME=o -
+FILE=malloc://1024
+EXPECT=<<EOF
+2
+EOF
+CMDS=<<EOF
+e file.nowarn=true
+e file.loadmethod=append
+o -;o~?
+EOF
+RUN
+
+NAME=om
+FILE=malloc://1024
+EXPECT=<<EOF
+2
+EOF
+CMDS=<<EOF
+om `o~[0]` 0x4000
+om~?
+EOF
+RUN
+
+NAME=om2
+FILE=malloc://1024
+EXPECT=<<EOF
+3
+EOF
+CMDS=<<EOF
+om `o~[0]` 0x4000
+om `o~[0]` 0x4000
+om~?
+EOF
+RUN
+
+NAME=omn - crash
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+omn
+EOF
+RUN
+
+NAME=oob 10
+FILE=../bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+xor ebp, ebp
+EOF
+CMDS=<<EOF
+10oob
+pi 1
+EOF
+RUN
+
+NAME=oo+ 10
+FILE=../bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+xor ebp, ebp
+EOF
+CMDS=<<EOF
+10oo+
+pi 1
+EOF
+RUN
+
+NAME=oob consider baddr
+FILE=../bins/mach0/mac-ls
+CMDS=<<EXPECT
+e bin.baddr = 0xf00000
+k old_v=`ieq`
+oob
+iI~baddr[1]
+ie~vaddr[1]
+p8 10 @ entry0
+p8 10 @ `k old_v`
+EXPECT=<<RUN
+0xf00000
+0x00f01058
+554889e5415741564155
+ffffffffffffffffffff
+RUN
+
+NAME=oob consider laddr 32bit
+FILE=../bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 32
+CMDS=<<EXPECT
+e bin.laddr = 0x5000
+e bin.baddr = -1
+oob
+iI~laddr[1]
+iI~baddr[1]
+EXPECT=<<RUN
+0x0
+0x1000
+RUN
+
+NAME=oob consider laddr 64bit
+FILE=../bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
+CMDS=<<EXPECT
+e bin.laddr = 0x5000
+e bin.baddr = -1
+oob
+iI~laddr[1]
+iI~baddr[1]
+EXPECT=<<RUN
+0x0
+0x100000000
+RUN
+
+NAME=oob from malloc
+FILE=malloc://1024
+EXPECT=<<EOF
+elf
+b32ae931000000000200
+EOF
+CMDS=<<EOF
+wx 7f454c4601010100b32ae9310000000002000300010000000800200020000000010000000000000000002000010000001b0300001b0300000700000000100000e901000000b0e8a502000049e7551ff1c2a03ff17995d4f3f241adf35954d7a87b543f48e7551ff1c3a03ff179bc17f3795487eb79543fc0b0ddf14b78543ff1b4d41632fc944be0c0563ed179e60b197f563ff190273df179bf3e412aeda9f3595485f579543f1987553ff1914c3df1796722677b743f856aeddaf159548dec91813ef179bd7df379544dc722d1e48491ed09f05954859979543f19c3553ff190733df1795e1fa60b3b519659245e820a2350831d781f8216264d88577a11fb73546c9e0b2646d11b214bd10d3c5ad1092650921c274cd10a315a9c0a744b9e59365ad10d265e921c3011df57747d881c7a11df735412cf59074a921a314c8259751ed13a3b51960b354b8415354b98163a4cdf577a35d1597901d1203b4ad11a3551d10a31519559395ad1003b4a835927509d0c20569e177b5c9e14395a9f0d271f900d744b991c745e9316225ad11435569d59355b950b7a11df7354c511b6cac511c2838b48c9899750f5818854b6c7c55fff99915eb199c552e48b865afb8fc512a4e0c511b6cac511bbc7c81cbbc7c81cbbc7c81cbbc7c81cbbc7c81cbbc7c81cbbc7c81cbbc7c81cbbe0ef65fe839611f9848011fe8b9611f7ca9550e49e8c52e3868443fa93c542fb8b895db6998c4bf3c4cb1f9ca28a41f3ca9016fa86c556f39ec542f9878011f09f8b11e1839159b683911f9ce0bc5ee3ca8650f8ca8f5eff84c55cf3ca8445b693845fff99915ed6849049f38ecb5ee48dc55ee4ca8a5fb6c99654f58e8047d68c9754f3848a55f3c48b54e2e0ef74f89e8043b69e8d54b6ba8442e59d8a43f2cadf11b6cae53196ea3ff17954d6f079543f414894b632c950f271bae4d6f079543fd24894b63287978ff2b4d4fc41f092b606f08d92c0a9ffdd0bbabd3cf179548f393a65ff78baede0f37954fe187bea37f1595492f0bab6c4708a3f3bf92c972d2390b84b00200089c689f7b9a5020000c1e902ad35f179543fabe2f7c3e9010000003231c089c3fec0cd80c3
+oba
+i~bintype[1]
+.ie*
+p8 10 @ entry0
+EOF
+RUN
+
+NAME=ob select files
+FILE=malloc://1024
+CMDS=<<EXPECT
+e scr.null=true
+o malloc://512
+e scr.null=false
+i~file[1]
+obo 3
+i~file[1]
+obo 4
+i~file[1]
+obo 3
+i~file[1]
+EXPECT=<<RUN
+malloc://512
+malloc://1024
+malloc://512
+malloc://1024
+RUN
+
+NAME=ob select files binobj
+FILE=../bins/elf/libmagic.so
+EXPECT=<<EOF
+38
+0
+EOF
+CMDS=<<EOF
+iiq~?
+e scr.null=true
+o malloc://1024
+e scr.null=false
+iiq~?
+EOF
+RUN
+
+NAME=ob select files binobj2
+FILE=../bins/elf/libmagic.so
+EXPECT=<<EOF
+408
+46
+408
+EOF
+CMDS=<<EOF
+isq~?
+e scr.null=true
+o ../bins/elf/true32
+e scr.null=false
+isq~?
+# raise back
+op `o~:0[0]`
+isq~?
+EOF
+RUN
+
+NAME=o-*
+FILE=-
+EXPECT=<<EOF
+0
+EOF
+CMDS=<<EOF
+o -
+o-*
+o~?
+EOF
+RUN
+
+NAME=o-3
+FILE=-
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+o -
+o-3
+o~?
+EOF
+RUN

@@ -1,0 +1,90 @@
+NAME=radiff2 -c
+FILE=-
+CMDS=!radiff2 -c ../bins/other/radiff2/radiff2_c_1 ../bins/other/radiff2/radiff2_c_2
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=radiff2 -a -O x86
+FILE=-
+CMDS=!radiff2 -a x86 -O ../bins/other/radiff2/radiff2_c_1 ../bins/other/radiff2/radiff2_c_2
+EXPECT=<<EOF
+0x00000000 91 => 90 0x00000000
+EOF
+RUN
+
+NAME=radiff2 -g
+FILE=-
+CMDS=!!radiff2 -g main -m d ../bins/other/radiff2/false ../bins/other/radiff2/true~digrap
+EXPECT=<<EOF
+digraph code {
+EOF
+RUN
+
+NAME=radiff2 -v~commit?"
+FILE=-
+CMDS=!!radiff2 -v~commit?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=radiff2 -h~Usage?"
+FILE=-
+CMDS=!!radiff2 -h~Usage?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=radiff2 string comparsion
+FILE=-
+CMDS=!!radiff2 -z ../bins/elf/elf_one_symbol_shdr ../bins/elf/elf_one_symbol_shdr1
+EXPECT=<<EOF
+0x00000000 48656c6c => 41414141 0x00000000
+EOF
+RUN
+
+NAME=radiff2 unified string comparsion
+FILE=-
+CMDS=!!radiff2 -quz ../bins/elf/elf_one_symbol_shdr ../bins/elf/elf_one_symbol_shdr1
+EXPECT=<<EOF
+-0x00000000:48656c6c "Hello world!\n"
++0x00000000:41414141
+EOF
+RUN
+
+NAME=radiff2 gnu unified string comparsion
+FILE=-
+BROKEN=1
+CMDS=!!radiff2 -Uz ../bins/elf/elf_one_symbol_shdr ../bins/elf/elf_one_symbol_shdr1 | tail -n 2
+EXPECT=<<EOF
+-Hello world!
++AAAAo world!
+EOF
+RUN
+
+NAME=radiff2 -AC (elf files)
+FILE=-
+CMDS=!!radiff2 -AC ../bins/other/radiff2/true ../bins/other/radiff2/false~?(1.000000)
+EXPECT=<<EOF
+54
+EOF
+RUN
+
+NAME=radiff2 -AC (mach0 fat files)
+FILE=-
+CMDS=!!radiff2 -AC ../bins/other/radiff2/hellocxx-osx-fat-intel_1 ../bins/other/radiff2/hellocxx-osx-fat-intel_2~?(1.000000)
+EXPECT=<<EOF
+17
+EOF
+RUN
+
+NAME=radiff2 -B (GDIFF support) #1
+FILE=-
+CMDS=!!radiff2 -B ../bins/other/radiff2/radiff2_c_1 ../bins/other/radiff2/radiff2_c_2 | rax2 -S
+EXPECT=<<EOF
+d1ffd1ff04019000
+EOF
+RUN

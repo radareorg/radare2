@@ -1,0 +1,9 @@
+NAME=ELF: PHDR Linux reload trick
+FILE=../bins/elf/textile_hitcon2017
+EXPECT=<<EOF
+call sym.imp.memcmp
+EOF
+CMDS=<<EOF
+pi 1 @ 0x4011FA
+EOF
+RUN

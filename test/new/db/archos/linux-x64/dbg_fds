@@ -1,0 +1,35 @@
+NAME='dbg.fds.count'
+FILE=../bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=<<EXPECT
+dd~?
+dk 9
+EXPECT=<<RUN
+3
+RUN
+
+NAME='dbg.fds.close'
+FILE=../bins/elf/analysis/elf-nx
+ARGS=-d
+BROKEN=1
+CMDS=<<EXPECT
+dd~?
+dd-1
+dd~?
+dk 9
+EXPECT=<<RUN
+3
+2
+RUN
+
+NAME='dbg.fds.count'
+FILE=../bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=<<EXPECT
+dd~?
+dk 9
+EXPECT=<<RUN
+3
+RUN
+
+

@@ -1,0 +1,29 @@
+NAME=PE: corkami dllbound-redirld.exe - open
+FILE=../bins/pe/dllbound-redirld.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN
+
+NAME=PE: corkami dllbound-redirld.exe - entrypoint
+FILE=../bins/pe/dllbound-redirld.exe
+EXPECT=<<EOF
+0x401000
+EOF
+CMDS=<<EOF
+s
+EOF
+RUN
+
+NAME=PE: corkami dllbound-redirld.exe - pi 1
+FILE=../bins/pe/dllbound-redirld.exe
+EXPECT=<<EOF
+call dword [0x401060]
+EOF
+CMDS=<<EOF
+e asm.filter=false
+pi 1
+EOF
+RUN

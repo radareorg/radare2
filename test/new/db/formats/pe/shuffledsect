@@ -1,0 +1,8 @@
+NAME=PE: corkami shuffledsect.exe - open
+FILE=../bins/pe/shuffledsect.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

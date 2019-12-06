@@ -1,0 +1,28 @@
+NAME=asm/callflag
+FILE=-
+EXPECT=<<EOF
+ffd0
+e81c000000
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+f eax=33
+pa call eax
+f test=eax
+pa call test
+EOF
+RUN
+
+NAME=asm.assembler
+FILE=-
+EXPECT=<<EOF
+ffd0
+1021
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+pa call eax
+e asm.assembler=java
+pa bipush 33
+EOF
+RUN

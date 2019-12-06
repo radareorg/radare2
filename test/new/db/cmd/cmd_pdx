@@ -1,0 +1,53 @@
+NAME=pdx medium size instructions
+FILE=-
+ARGS=-a x86 -b 32
+EXPECT=<<EOF
+nop
+nop
+nop
+nop
+nop
+EOF
+CMDS=<<EOF
+pdx 9090909090
+EOF
+RUN
+
+NAME=pdx smaller instruction
+FILE=-
+ARGS=-a x86 -b 32
+EXPECT=<<EOF
+push edx
+out dx, al
+EOF
+CMDS=<<EOF
+pdx 52ee
+EOF
+RUN
+
+NAME=pdx large instruction
+FILE=-
+ARGS=-a x86 -b 32
+EXPECT=<<EOF
+xor eax, eax
+cdq
+push edx
+push 0x7461632f
+push 0x6e69622f
+mov ebx, esp
+push edx
+push 0x64777373
+push 0x61702f2f
+push 0x6374652f
+mov ecx, esp
+mov al, 0xb
+push edx
+push ecx
+push ebx
+mov ecx, esp
+int 0x80
+EOF
+CMDS=<<EOF
+pdx 31c09952682f636174682f62696e89e3526873737764682f2f7061682f65746389e1b00b52515389e1cd80
+EOF
+RUN

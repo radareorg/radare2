@@ -1,0 +1,10 @@
+NAME=ds help changing seek
+FILE=-
+EXPECT=<<EOF
+0x8
+EOF
+CMDS=<<EOF
+s 8;ds? > /dev/null
+s
+EOF
+RUN

@@ -1,0 +1,9 @@
+NAME=PE: corkami tls_import.exe - open
+FILE=../bins/pe/tls_import.exe
+ARGS=-A
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

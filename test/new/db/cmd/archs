@@ -1,0 +1,177 @@
+NAME=endian tests: mips
+FILE=-
+EXPECT=<<EOF
+j 0x806103c
+jal 0xe100428
+EOF
+CMDS=<<EOF
+wx 0f84010a
+e asm.arch=mips
+e asm.bits=32
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+EOF
+RUN
+
+NAME=endian tests: arm
+FILE=-
+EXPECT=<<EOF
+beq 0x61044
+svceq 0x84010a
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 0f84010a
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+EOF
+RUN
+
+NAME=endian tests: thumb
+FILE=-
+EXPECT=<<EOF
+strh r7, [r1, 0x20]
+lsrs r4, r0, 0x1e
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 0f84010a
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+EOF
+RUN
+
+NAME=endian tests: arm64
+FILE=-
+EXPECT=<<EOF
+bic w24, w1, w20, lsr 0
+strb w10, [x0], 7
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+wx 3800740a
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+EOF
+RUN
+
+NAME=endian tests: sparc
+FILE=-
+EXPECT=<<EOF
+call 0x55222794
+invalid
+EOF
+CMDS=<<EOF
+e asm.arch=sparc
+wx 554889e5
+e cfg.bigendian=true
+pi 1
+e cfg.bigendian=false
+pi 1
+EOF
+RUN
+
+NAME=endian tests: sparc.gnu
+FILE=-
+EXPECT=<<EOF
+call 0x55222794
+invalid
+EOF
+CMDS=<<EOF
+e asm.arch=sparc.gnu
+wx 554889e5
+e cfg.bigendian=true
+pi 1
+e cfg.bigendian=false
+pi 1
+EOF
+RUN
+
+NAME=tests: ppcps
+FILE=malloc://256
+EXPECT=<<EOF
+0x00000000             e003d004  psq_l fr0 0x7(r1) 0x5
+0x00000004             e4223008  psq_lu fr1 0xa(r0) 0x3
+0x00000008             1045254c  psq_lux fr2 fr5 fr4 0x1 0x2
+0x0000000c             1062228c  psq_lx fr3 fr2 fr4 0x0 0x5
+0x00000010             f0623008  psq_st fr3 0xa(r0) 0x3
+0x00000014             f4627008  psq_stu fr3 0xa(r0) 0x7
+0x00000018             104322ce  psq_stux fr2 fr3 fr4 0x0 0x5
+0x0000001c             10c7460e  psq_stx fr6 fr7 fr8 0x1 0x4
+0x00000020             10a03a10  ps_abs fr5 fr7
+0x00000024             10a03a11  ps_abs. fr5 fr7
+0x00000028             1022182a  ps_add fr1 fr2 fr3
+0x0000002c             1022182b  ps_add. fr1 fr2 fr3
+0x00000030             11822040  ps_cmpo0 cr3 fr2 fr4
+0x00000034             118220c0  ps_cmpo1 cr3 fr2 fr4
+0x00000038             11822000  ps_cmpu0 cr3 fr2 fr4
+0x0000003c             11822080  ps_cmpu1 cr3 fr2 fr4
+0x00000040             10443024  ps_div fr2 fr4 fr6
+0x00000044             10443025  ps_div. fr2 fr4 fr6
+0x00000048             100118ba  ps_madd fr0 fr1 fr2 fr3
+0x0000004c             100118bb  ps_madd. fr0 fr1 fr2 fr3
+0x00000050             102220dc  ps_madds0 fr1 fr2 fr3 fr4
+0x00000054             102220dd  ps_madds0. fr1 fr2 fr3 fr4
+0x00000058             102220de  ps_madds1 fr1 fr2 fr3 fr4
+0x0000005c             102220df  ps_madds1. fr1 fr2 fr3 fr4
+0x00000060             10443420  ps_merge00 fr2 fr4 fr6
+0x00000064             10443421  ps_merge00. fr2 fr4 fr6
+0x00000068             10443460  ps_merge01 fr2 fr4 fr6
+0x0000006c             10443461  ps_merge01. fr2 fr4 fr6
+0x00000070             104434a0  ps_merge10 fr2 fr4 fr6
+0x00000074             104434a1  ps_merge10. fr2 fr4 fr6
+0x00000078             104434e0  ps_merge11 fr2 fr4 fr6
+0x0000007c             104434e1  ps_merge11. fr2 fr4 fr6
+0x00000080             10602890  ps_mr fr3 fr5
+0x00000084             10602891  ps_mr. fr3 fr5
+0x00000088             104441b8  ps_msub fr2 fr4 fr6 fr8
+0x0000008c             104441b9  ps_msub. fr2 fr4 fr6 fr8
+0x00000090             10430172  ps_mul fr2 fr3 fr5
+0x00000094             10430173  ps_mul. fr2 fr3 fr5
+0x00000098             106401d8  ps_muls0 fr3 fr4 fr7
+0x0000009c             106401d9  ps_muls0. fr3 fr4 fr7
+0x000000a0             106401da  ps_muls1 fr3 fr4 fr7
+0x000000a4             106401db  ps_muls1. fr3 fr4 fr7
+0x000000a8             10202910  ps_nabs fr1 fr5
+0x000000ac             10202911  ps_nabs. fr1 fr5
+0x000000b0             10202850  ps_neg fr1 fr5
+0x000000b4             10202851  ps_neg. fr1 fr5
+0x000000b8             1023397e  ps_nmadd fr1 fr3 fr5 fr7
+0x000000bc             1023397f  ps_nmadd. fr1 fr3 fr5 fr7
+0x000000c0             1023397c  ps_nmsub fr1 fr3 fr5 fr7
+0x000000c4             1023397d  ps_nmsub. fr1 fr3 fr5 fr7
+0x000000c8             11201830  ps_res fr9 fr3
+0x000000cc             11201831  ps_res. fr9 fr3
+0x000000d0             11201834  ps_rsqrte fr9 fr3
+0x000000d4             11201835  ps_rsqrte. fr9 fr3
+0x000000d8             102220ee  ps_sel fr1 fr2 fr3 fr4
+0x000000dc             102220ef  ps_sel. fr1 fr2 fr3 fr4
+0x000000e0             10ab1028  ps_sub fr5 fr11 fr2
+0x000000e4             10ab1029  ps_sub. fr5 fr11 fr2
+0x000000e8             10455254  ps_sum0 fr2 fr5 fr9 fr10
+0x000000ec             10455255  ps_sum0. fr2 fr5 fr9 fr10
+0x000000f0             10455256  ps_sum1 fr2 fr5 fr9 fr10
+0x000000f4             10455257  ps_sum1. fr2 fr5 fr9 fr10
+0x000000f8             10032fec  dcbz_l fr3 fr5
+0x000000fc             f3e10028  psq_st fr31 0x29(r1) 0x0
+EOF
+CMDS=<<EOF
+wb E003D004E42230081045254C1062228CF0623008F4627008104322CE10C7460E10A03A1010A03A111022182A1022182B11822040118220C011822000118220801044302410443025100118BA100118BB102220DC102220DD102220DE102220DF10443420104434211044346010443461104434A0104434A1104434E0104434E11060289010602891104441B8104441B91043017210430173106401D8106401D9106401DA106401DB102029101020291110202850102028511023397E1023397F1023397C1023397D11201830112018311120183411201835102220EE102220EF10AB102810AB10291045525410455255104552561045525710032FECF3E10028
+e asm.arch=ppc
+e cfg.bigendian = true
+e asm.cpu=ps
+pdi 64
+EOF
+RUN
+
+

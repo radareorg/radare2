@@ -1,0 +1,67 @@
+NAME=visual_dw
+FILE=-
+EXPECT=<<EOF
+10
+EOF
+CMDS=<<EOF
+Vc10dwq @e:scr.interactive=true > /dev/null
+pd 20~dword?
+EOF
+RUN
+
+NAME=Vc+cq
+FILE=-
+EXPECT=<<EOF
+01
+EOF
+CMDS=<<EOF
+e scr.interactive=true
+Vc+cq
+p8 1
+EOF
+RUN
+
+NAME=visual hex scroll
+FILE=-
+EXPECT=<<EOF
+0x10
+EOF
+CMDS=<<EOF
+e scr.interactive=true
+e asm.arch=x86
+e asm.bits=64
+wx 4889e54889e5
+Vjq
+s
+EOF
+RUN
+
+NAME=visual op scroll
+FILE=-
+EXPECT=<<EOF
+0x3
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e scr.interactive=true
+wx 4889e54889e5
+Vpjq
+s
+EOF
+RUN
+
+NAME=visual hex pP scroll
+FILE=-
+EXPECT=<<EOF
+0x10
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e scr.interactive=true
+wx 4889e54889e5
+VpPjq
+s
+EOF
+RUN

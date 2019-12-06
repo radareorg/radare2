@@ -1,0 +1,27 @@
+NAME=afn normal function
+FILE=-
+CMDS=<<EOF
+e asm.arch = avr
+wa ret
+af
+afn foobar
+afn
+EOF
+EXPECT=<<EOF
+foobar
+EOF
+RUN
+
+NAME=afn interrupt handler
+FILE=-
+CMDS=<<EOF
+e asm.arch = avr
+wa reti
+af
+afn foobar
+afn
+EOF
+EXPECT=<<EOF
+foobar
+EOF
+RUN

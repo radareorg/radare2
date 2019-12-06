@@ -1,0 +1,28 @@
+NAME=avrD msvc simple
+FILE=--
+CMDS=<<EOF
+e anal.cpp.abi=msvc;"avrD .?AVClassName@@"
+EOF
+EXPECT=<<EOF
+ClassName
+EOF
+RUN
+
+NAME=avrD msvc empty
+FILE=--
+CMDS=<<EOF
+e anal.cpp.abi=msvc;"avrD .?AV@@"
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=avrD msvc namespaces
+FILE=--
+CMDS=<<EOF
+e anal.cpp.abi=msvc;"avrD .?AVClassInInnerNamespace@InnerNamespace@OuterNamespace@@"
+EOF
+EXPECT=<<EOF
+OuterNamespace::InnerNamespace::ClassInInnerNamespace
+EOF
+RUN

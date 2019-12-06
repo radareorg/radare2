@@ -1,0 +1,589 @@
+NAME=f?flag
+FILE=-
+EXPECT=<<EOF
+hello
+EOF
+CMDS=<<EOF
+f foo=123
+f?foo;?? ?e hello
+f?bar;?? ?e world
+EOF
+RUN
+
+NAME=fs-fd-flags-visibility
+FILE=-
+EXPECT=<<EOF
+visible
+0x00000000 1 visible
+EOF
+CMDS=<<EOF
+fs jeje
+f hidden
+fs jojo
+f visible
+fd
+f
+EOF
+RUN
+
+NAME=f command with space
+FILE=-
+EXPECT=<<EOF
+0x00001000 1 foobar
+EOF
+CMDS=<<EOF
+f  foobar=0x1000
+f
+EOF
+RUN
+
+NAME=no flags
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+f
+EOF
+RUN
+
+NAME=no flags*
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+f*
+EOF
+RUN
+
+NAME=1: fs *
+FILE=../bins/elf/analysis/main
+EXPECT=<<EOF
+0
+EOF
+CMDS=<<EOF
+fs *
+fs~?^*
+EOF
+RUN
+
+NAME=2: fs *
+FILE=../bins/elf/analysis/main
+EXPECT=<<EOF
+8
+EOF
+CMDS=<<EOF
+fs *
+fs~?*
+EOF
+RUN
+
+NAME=3: fs *
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000000 1 flag_in_fs1
+0x00000000 1 flag_in_fs2
+EOF
+CMDS=<<EOF
+fs-*
+fs flagspace_1
+f flag_in_fs1
+fs flagspace_2
+f flag_in_fs2
+fs *
+f
+EOF
+RUN
+
+NAME=fs test_flagspace
+FILE=../bins/elf/analysis/main
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+fs test_flagspace
+fs~?test_flagspace
+EOF
+RUN
+
+NAME=fs-test_flagspace
+FILE=../bins/elf/analysis/main
+EXPECT=<<EOF
+0
+EOF
+CMDS=<<EOF
+fs test_flagspace
+fs-test_flagspace
+fs~?test_flagspace
+EOF
+RUN
+
+NAME=fs-test_flagspace
+FILE=../bins/elf/analysis/main
+EXPECT=<<EOF
+0
+EOF
+CMDS=<<EOF
+fs-*
+fs~?0
+EOF
+RUN
+
+NAME=fs-.
+FILE=malloc://1024
+EXPECT=<<EOF
+0
+EOF
+CMDS=<<EOF
+fs test_flagspace
+fs test_bloh
+fs test_blah
+fs-.
+fs~?test_blah
+EOF
+RUN
+
+NAME=fsm
+FILE=../bins/elf/analysis/main
+EXPECT=<<EOF
+    1 * test
+EOF
+CMDS=<<EOF
+fs-*
+fs test
+fsm str.Hello_World test
+fs
+EOF
+RUN
+
+NAME=fsr
+FILE=../bins/elf/analysis/main
+EXPECT=<<EOF
+    0 * test2
+EOF
+CMDS=<<EOF
+fs-*
+fs test
+fs test
+fsr test2
+fs
+EOF
+RUN
+
+NAME=fSn
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000000 1 c
+0x00000000 1 b
+0x00000000 1 a
+EOF
+CMDS=<<EOF
+f c @ 0x00000000
+f b @ 0x00000000
+f a @ 0x00000000
+fSn
+f
+EOF
+RUN
+
+NAME=fSo
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000000 1 c
+0x00000001 1 b
+0x00000002 1 a
+EOF
+CMDS=<<EOF
+f a @ 0x00000002
+f b @ 0x00000001
+f c @ 0x00000000
+fSo
+f
+EOF
+RUN
+
+NAME=fr
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000000 1 bloh
+EOF
+CMDS=<<EOF
+f blah
+fr blah bloh
+f
+EOF
+RUN
+
+NAME=fm
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000010 1 blah
+EOF
+CMDS=<<EOF
+f blah
+fm 0x10
+f
+EOF
+RUN
+
+NAME=fl
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000003
+0x00000021 12 test
+0x00000021 333 test
+EOF
+CMDS=<<EOF
+f blah 0x0000000a
+fl blah 0x00000003
+fl
+f-blah
+f test 12 @ 33
+f
+fl test 333
+f
+EOF
+RUN
+
+NAME=fj
+FILE=malloc://1024
+EXPECT='[{"name":"bloh","size":3,"offset":2},{"name":"blah","size":10,"offset":11}]
+'
+CMDS=<<EOF
+f blah 0x0000000a @ 0x0000000b
+f bloh 0x00000003 @ 0x00000002
+fj
+EOF
+RUN
+
+NAME=fe
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000000 1 a.0
+0x00000000 1 a.1
+0x00000000 1 a.2
+0x00000000 1 b.0
+0x00000000 1 b.1
+0x00000000 1 b.2
+EOF
+CMDS=<<EOF
+fe a
+fe a
+fe a
+fe-
+fe b
+fe b
+fe b
+f
+EOF
+RUN
+
+NAME=fd
+FILE=malloc://1024
+EXPECT=<<EOF
+a.0 + 256
+EOF
+CMDS=<<EOF
+fe a
+fd 0x100
+EOF
+RUN
+
+NAME=fd. with flags
+FILE=malloc://1024
+EXPECT=<<EOF
+flag1
+flag2
+flag3
+EOF
+CMDS=<<EOF
+wx 9090909090909090
+f flag1 @ 0x5
+f flag2 @ 0x5
+f flag3 @ 0x5
+fd. 0x5
+EOF
+RUN
+
+NAME=fC
+FILE=malloc://1024
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+f a
+fC a blabla
+pd~?blabla
+EOF
+RUN
+
+NAME=fb
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000100 1 a
+EOF
+CMDS=<<EOF
+fb 0x100
+f a
+f
+EOF
+RUN
+
+NAME=fb2
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000100 1 a.0
+0x00000100 1 a.1
+0x00000100 1 a.2
+EOF
+CMDS=<<EOF
+fe a
+fe a
+fe a
+fb 0x100 a.*
+f
+EOF
+RUN
+
+NAME=f--
+FILE=malloc://1024
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+f a
+f--
+f
+EOF
+RUN
+
+NAME=f.
+FILE=../bins/elf/analysis/main
+EXPECT=<<EOF
+0x00400410 blah   [entry0 + 0]
+EOF
+CMDS=<<EOF
+aaa
+f.blah
+f.
+f.-blah@entry0
+f.
+EOF
+RUN
+
+NAME=f.-
+FILE=../bins/elf/analysis/main
+CMDS=<<EOF
+af
+f.patata
+f.
+f.-patata
+f.
+EOF
+EXPECT=<<EOF
+0x00400410 patata   [entry0 + 0]
+EOF
+RUN
+
+NAME=f-.
+FILE=../bins/elf/analysis/main
+CMDS=<<EOF
+af
+f.patata
+f.
+f-.patata
+f.
+EOF
+EXPECT=<<EOF
+0x00400410 patata   [entry0 + 0]
+EOF
+RUN
+
+NAME=f. display
+FILE=../bins/elf/analysis/main
+EXPECT=<<EOF
+           .blah:
+               31ed           xor ebp, ebp
+EOF
+CMDS=<<EOF
+aaa
+e asm.arch=x86
+e asm.bits=32
+s entry0
+e asm.reflines=false
+e asm.offset=false
+e asm.functions=false
+e asm.comments=false
+f--
+f.blah
+pd 1
+EOF
+RUN
+
+NAME=Set/get
+FILE=-
+EXPECT=<<EOF
+0x00000000 1 cat
+0x00000000 12 rimmer
+0x0000000c 1 skutter
+0x0000029a 32 lister
+0x0000029a 32 kryten
+EOF
+CMDS=<<EOF
+f cat
+f rimmer 12
+f lister 32@666
+f kryten 32 666
+f+skutter 1 @ 12
+f
+EOF
+RUN
+
+NAME=flags (JSON)
+FILE=-
+EXPECT='[{"name":"cat","size":1,"offset":0},{"name":"rimmer","size":12,"offset":0},{"name":"skutter","size":1,"offset":12},{"name":"lister","size":32,"offset":666},{"name":"kryten","size":32,"offset":666}]
+'
+CMDS=<<EOF
+# Add flags.
+f cat
+f rimmer 12
+f lister 32@666
+f kryten 32 666
+f+skutter 1 @ 12
+fj
+EOF
+RUN
+
+NAME=flag alias
+FILE=-
+EXPECT=<<EOF
+0x6
+EOF
+CMDS=<<EOF
+fa foo=bar+3
+f bar=3
+?v foo
+EOF
+RUN
+
+NAME=flag alias 2
+FILE=-
+EXPECT=<<EOF
+0x6
+EOF
+CMDS=<<EOF
+fa foo bar+3
+f bar=3
+?v foo
+EOF
+RUN
+
+NAME=flag alias infinite check
+FILE=-
+EXPECT=<<EOF
+0x3
+EOF
+CMDS=<<EOF
+fa foo=foo+3
+?v foo
+EOF
+RUN
+
+NAME=flag prefix dump
+FILE=-
+EXPECT=<<EOF
+101
+102
+EOF
+CMDS=<<EOF
+f jiji=1
+f jojo=2
+f base=100
+.f*base
+?vi jiji
+?vi jojo
+EOF
+RUN
+
+NAME=rename flags from bin
+FILE=../bins/elf/analysis/main
+EXPECT=<<EOF
+0x00400520 137 sym.__libc_csu_init
+0x00400520 137 newname
+EOF
+CMDS=<<EOF
+f~sym.__libc_csu_init
+fr sym.__libc_csu_init newname
+f~sym.__libc_csu_init
+f~newname
+EOF
+RUN
+
+NAME=f+
+FILE=-
+EXPECT=<<EOF
+2
+EOF
+CMDS=<<EOF
+f+foo=10
+f+bar=20
+f+cow=10
+f+low=20
+f~?
+EOF
+RUN
+
+NAME=dup flags with filter
+FILE=../bins/elf/ifunc_rel64
+EXPECT=<<EOF
+0x0049ad40 168 obj._IO_helper_jumps
+0x0049b680 168 obj._IO_helper_jumps_1
+EOF
+CMDS=<<EOF
+f~obj._IO_helper_jumps
+EOF
+RUN
+
+NAME=flag renaming and reusing the old name for something new
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000100 0 bloh
+0x00000200 0 blah
+EOF
+CMDS=<<EOF
+f blah = 0x100
+fr blah bloh
+f blah = 0x200
+f
+EOF
+RUN
+
+NAME=base64 armored flags
+FILE=malloc://1024
+EXPECT=<<EOF
+fs *
+f direct1 1 0x00000000 base64:dmVyYmF0aW0=
+fs *
+f direct2 1 0x00000010 base64:ImJhc2U2NCBhcm1vcmVkIg==
+fs *
+f indirect 1 0x00000020 base64:d29ya3MgdG9v
+[{"name":"direct1","size":1,"offset":0,"comment":"verbatim"},{"name":"direct2","size":1,"offset":16,"comment":"\"base64 armored\""},{"name":"indirect","size":1,"offset":32,"comment":"works too"}]
+EOF
+CMDS=<<EOF
+f direct1 1 0 verbatim
+f direct2 1 16 base64:ImJhc2U2NCBhcm1vcmVkIg==
+f indirect=32
+fC indirect base64:d29ya3MgdG9v
+f*
+fj
+EOF
+RUN
+
+NAME=f base64:NotB64=100
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000064 1 base64:NotB64
+EOF
+CMDS=<<EOF
+f base64:NotB64=100
+f
+EOF
+RUN

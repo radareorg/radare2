@@ -1,0 +1,29 @@
+NAME=PE: corkami delaycorrupt.exe - open
+FILE=../bins/pe/delaycorrupt.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN
+
+NAME=PE: corkami delaycorrupt.exe - entrypoint
+FILE=../bins/pe/delaycorrupt.exe
+EXPECT=<<EOF
+0x401000
+EOF
+CMDS=<<EOF
+s
+EOF
+RUN
+
+NAME=PE: corkami delaycorrupt.exe - pi 1
+FILE=../bins/pe/delaycorrupt.exe
+EXPECT=<<EOF
+push 0x401018
+EOF
+CMDS=<<EOF
+e asm.filter=false
+pi 1
+EOF
+RUN

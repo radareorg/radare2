@@ -1,0 +1,51 @@
+NAME=sub
+FILE=-
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+ae 1,1,-,!,?{,1,}{,2,}
+EOF
+RUN
+
+NAME=cond
+FILE=-
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+ae 1,1,==,$z,?{,1,}{,2,}
+EOF
+RUN
+
+NAME=cond tail
+FILE=-
+EXPECT=<<EOF
+3
+1
+EOF
+CMDS=<<EOF
+ae 1,1,==,$z,?{,1,}{,2,},3
+EOF
+RUN
+
+NAME=cond neg
+FILE=-
+EXPECT=<<EOF
+2
+EOF
+CMDS=<<EOF
+ae 1,1,==,$z,!,?{,1,}{,2,}
+EOF
+RUN
+
+NAME=cond neg tail
+FILE=-
+EXPECT=<<EOF
+3
+2
+EOF
+CMDS=<<EOF
+ae 1,1,==,$z,!,?{,1,}{,2,},3
+EOF
+RUN

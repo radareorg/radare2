@@ -1,0 +1,1136 @@
+d "adc a, 0x00" ce00
+d "adc a, [hl]" 8e
+d "adc a, [ix+0x00]" dd8e00
+d "adc a, [iy+0x00]" fd8e00
+d "adc a, a" 8f
+d "adc a, b" 88
+d "adc a, c" 89
+d "adc a, d" 8a
+d "adc a, e" 8b
+d "adc a, h" 8c
+d "adc a, ixh" dd8c
+d "adc a, ixl" dd8d
+d "adc a, iyh" fd8c
+d "adc a, iyl" fd8d
+d "adc a, l" 8d
+d "adc hl, bc" ed4a
+d "adc hl, de" ed5a
+d "adc hl, hl" ed6a
+d "adc hl, sp" ed7a
+d "add a, 0x00" c600
+d "add a, [hl]" 86
+d "add a, [ix+0x00]" dd8600
+d "add a, [iy+0x00]" fd8600
+d "add a, a" 87
+d "add a, b" 80
+d "add a, c" 81
+d "add a, d" 82
+d "add a, e" 83
+d "add a, h" 84
+d "add a, ixh" dd84
+d "add a, ixl" dd85
+d "add a, iyh" fd84
+d "add a, iyl" fd85
+d "add a, l" 85
+d "add hl, bc" 09
+d "add hl, de" 19
+d "add hl, hl" 29
+d "add hl, sp" 39
+d "add ix, bc" dd09
+d "add ix, de" dd19
+d "add ix, ix" dd29
+d "add ix, sp" dd39
+d "add iy, bc" fd09
+d "add iy, de" fd19
+d "add iy, iy" fd29
+d "add iy, sp" fd39
+d "and 0x00" e600
+d "and [hl]" a6
+d "and [ix+0x00]" dda600
+d "and [iy+0x00]" fda600
+d "and a" a7
+d "and b" a0
+d "and c" a1
+d "and d" a2
+d "and e" a3
+d "and h" a4
+d "and ixh" dda4
+d "and ixl" dda5
+d "and iyh" fda4
+d "and iyl" fda5
+d "and l" a5
+d "bit 0, [hl]" cb46
+d "bit 0, [ix+0x00]" ddcb0046
+d "bit 0, [iy+0x00]" fdcb0046
+d "bit 0, a" cb47
+d "bit 0, b" cb40
+d "bit 0, c" cb41
+d "bit 0, d" cb42
+d "bit 0, e" cb43
+d "bit 0, h" cb44
+d "bit 0, l" cb45
+d "bit 1, [hl]" cb4e
+d "bit 1, [ix+0x00]" ddcb004e
+d "bit 1, [iy+0x00]" fdcb004e
+d "bit 1, a" cb4f
+d "bit 1, b" cb48
+d "bit 1, c" cb49
+d "bit 1, d" cb4a
+d "bit 1, e" cb4b
+d "bit 1, h" cb4c
+d "bit 1, l" cb4d
+d "bit 2, [hl]" cb56
+d "bit 2, [ix+0x00]" ddcb0056
+d "bit 2, [iy+0x00]" fdcb0056
+d "bit 2, a" cb57
+d "bit 2, b" cb50
+d "bit 2, c" cb51
+d "bit 2, d" cb52
+d "bit 2, e" cb53
+d "bit 2, h" cb54
+d "bit 2, l" cb55
+d "bit 3, [hl]" cb5e
+d "bit 3, [ix+0x00]" ddcb005e
+d "bit 3, [iy+0x00]" fdcb005e
+d "bit 3, a" cb5f
+d "bit 3, b" cb58
+d "bit 3, c" cb59
+d "bit 3, d" cb5a
+d "bit 3, e" cb5b
+d "bit 3, h" cb5c
+d "bit 3, l" cb5d
+d "bit 4, [hl]" cb66
+d "bit 4, [ix+0x00]" ddcb0066
+d "bit 4, [iy+0x00]" fdcb0066
+d "bit 4, a" cb67
+d "bit 4, b" cb60
+d "bit 4, c" cb61
+d "bit 4, d" cb62
+d "bit 4, e" cb63
+d "bit 4, h" cb64
+d "bit 4, l" cb65
+d "bit 5, [hl]" cb6e
+d "bit 5, [ix+0x00]" ddcb006e
+d "bit 5, [iy+0x00]" fdcb006e
+d "bit 5, a" cb6f
+d "bit 5, b" cb68
+d "bit 5, c" cb69
+d "bit 5, d" cb6a
+d "bit 5, e" cb6b
+d "bit 5, h" cb6c
+d "bit 5, l" cb6d
+d "bit 6, [hl]" cb76
+d "bit 6, [ix+0x00]" ddcb0076
+d "bit 6, [iy+0x00]" fdcb0076
+d "bit 6, a" cb77
+d "bit 6, b" cb70
+d "bit 6, c" cb71
+d "bit 6, d" cb72
+d "bit 6, e" cb73
+d "bit 6, h" cb74
+d "bit 6, l" cb75
+d "bit 7, [hl]" cb7e
+d "bit 7, [ix+0x00]" ddcb007e
+d "bit 7, [iy+0x00]" fdcb007e
+d "bit 7, a" cb7f
+d "bit 7, b" cb78
+d "bit 7, c" cb79
+d "bit 7, d" cb7a
+d "bit 7, e" cb7b
+d "bit 7, h" cb7c
+d "bit 7, l" cb7d
+d "call 0x0000" cd0000
+d "call c, 0x0000" dc0000
+d "call m, 0x0000" fc0000
+d "call nc, 0x0000" d40000
+d "call nz, 0x0000" c40000
+d "call p, 0x0000" f40000
+d "call pe, 0x0000" ec0000
+d "call po, 0x0000" e40000
+d "call z, 0x0000" cc0000
+d "ccf" 3f
+d "cp 0x00" fe00
+d "cp [hl]" be
+d "cp [ix+0x00]" ddbe00
+d "cp [iy+0x00]" fdbe00
+d "cp a" bf
+d "cp b" b8
+d "cp c" b9
+d "cp d" ba
+d "cp e" bb
+d "cp h" bc
+d "cp ixh" ddbc
+d "cp ixl" ddbd
+d "cp iyh" fdbc
+d "cp iyl" fdbd
+d "cp l" bd
+d "cpd" eda9
+d "cpdr" edb9
+d "cpi" eda1
+d "cpir" edb1
+d "cpl" 2f
+d "daa" 27
+d "dec [hl]" 35
+d "dec [ix+0x00]" dd3500
+d "dec [iy+0x00]" fd3500
+d "dec a" 3d
+d "dec b" 05
+d "dec bc" 0b
+d "dec c" 0d
+d "dec d" 15
+d "dec de" 1b
+d "dec e" 1d
+d "dec h" 25
+d "dec hl" 2b
+d "dec ix" dd2b
+d "dec ixh" dd25
+d "dec ixl" dd2d
+d "dec iy" fd2b
+d "dec iyh" fd25
+d "dec iyl" fd2d
+d "dec l" 2d
+d "dec sp" 3b
+d "di" f3
+d "djnz 0xfe" 10fe
+d "ei" fb
+d "ex [sp], hl" e3
+d "ex [sp], ix" dde3
+d "ex [sp], iy" fde3
+d "ex af, af'" 08
+d "ex de, hl" eb
+d "exx" d9
+d "halt" 76
+d "im 0" ed46
+d "im 1" ed56
+d "im 2" ed5e
+d "in [c]" ed70
+d "in a, [0x00]" db00
+d "in a, [c]" ed78
+d "in b, [c]" ed40
+d "in c, [c]" ed48
+d "in d, [c]" ed50
+d "in e, [c]" ed58
+d "in h, [c]" ed60
+d "in l, [c]" ed68
+d "inc [hl]" 34
+d "inc [ix+0x00]" dd3400
+d "inc [iy+0x00]" fd3400
+d "inc a" 3c
+d "inc b" 04
+d "inc bc" 03
+d "inc c" 0c
+d "inc d" 14
+d "inc de" 13
+d "inc e" 1c
+d "inc h" 24
+d "inc hl" 23
+d "inc ix" dd23
+d "inc ixh" dd24
+d "inc ixl" dd2c
+d "inc iy" fd23
+d "inc iyh" fd24
+d "inc iyl" fd2c
+d "inc l" 2c
+d "inc sp" 33
+d "ind" edaa
+d "indr" edba
+d "ini" eda2
+d "inir" edb2
+d "jp 0x0000" c30000
+d "jp [hl]" e9
+d "jp [ix]" dde9
+d "jp [iy]" fde9
+d "jp c, 0x0000" da0000
+d "jp m, 0x0000" fa0000
+d "jp nc, 0x0000" d20000
+d "jp nz, 0x0000" c20000
+d "jp p, 0x0000" f20000
+d "jp pe, 0x0000" ea0000
+d "jp po, 0x0000" e20000
+d "jp z, 0x0000" ca0000
+d "jr 0xfe" 18fe
+d "jr c, 0xfe" 38fe
+d "jr nc, 0xfe" 30fe
+d "jr nz, 0xfe" 20fe
+d "jr z, 0xfe" 28fe
+d "ld [0x0000], a" 320000
+d "ld [0x0000], bc" ed430000
+d "ld [0x0000], de" ed530000
+d "ld [0x0000], hl" 220000
+d "ld [0x0000], ix" dd220000
+d "ld [0x0000], iy" fd220000
+d "ld [0x0000], sp" ed730000
+d "ld [bc], a" 02
+d "ld [de], a" 12
+d "ld [hl], 0x00" 3600
+d "ld [hl], a" 77
+d "ld [hl], b" 70
+d "ld [hl], c" 71
+d "ld [hl], d" 72
+d "ld [hl], e" 73
+d "ld [hl], h" 74
+d "ld [hl], l" 75
+d "ld [ix+0x00], 0x00" dd360000
+d "ld [ix+0x00], a" dd7700
+d "ld [ix+0x00], b" dd7000
+d "ld [ix+0x00], c" dd7100
+d "ld [ix+0x00], d" dd7200
+d "ld [ix+0x00], e" dd7300
+d "ld [ix+0x00], h" dd7400
+d "ld [ix+0x00], l" dd7500
+d "ld [iy+0x00], 0x00" fd360000
+d "ld [iy+0x00], a" fd7700
+d "ld [iy+0x00], b" fd7000
+d "ld [iy+0x00], c" fd7100
+d "ld [iy+0x00], d" fd7200
+d "ld [iy+0x00], e" fd7300
+d "ld [iy+0x00], h" fd7400
+d "ld [iy+0x00], l" fd7500
+ad "ld a, 0x00" 3e00
+d "ld a, [0x0000]" 3a0000
+d "ld a, [bc]" 0a
+d "ld a, [de]" 1a
+d "ld a, [hl]" 7e
+d "ld a, [ix+0x00]" dd7e00
+d "ld a, [iy+0x00]" fd7e00
+ad "ld a, a" 7f
+ad "ld a, b" 78
+ad "ld a, c" 79
+ad "ld a, d" 7a
+ad "ld a, e" 7b
+ad "ld a, h" 7c
+ad "ld a, i" ed57
+d "ld a, ixh" dd7c
+d "ld a, ixl" dd7d
+d "ld a, iyh" fd7c
+d "ld a, iyl" fd7d
+ad "ld a, l" 7d
+ad "ld a, r" ed5f
+ad "ld b, 0x00" 0600
+d "ld b, [hl]" 46
+d "ld b, [ix+0x00]" dd4600
+d "ld b, [iy+0x00]" fd4600
+ad "ld b, a" 47
+ad "ld b, b" 40
+ad "ld b, c" 41
+ad "ld b, d" 42
+ad "ld b, e" 43
+ad "ld b, h" 44
+d "ld b, ixh" dd44
+d "ld b, ixl" dd45
+d "ld b, iyh" fd44
+d "ld b, iyl" fd45
+ad "ld b, l" 45
+d "ld bc, 0x0000" 010000
+d "ld bc, [0x0000]" ed4b0000
+ad "ld c, 0x00" 0e00
+d "ld c, [hl]" 4e
+d "ld c, [ix+0x00]" dd4e00
+d "ld c, [iy+0x00]" fd4e00
+ad "ld c, a" 4f
+ad "ld c, b" 48
+ad "ld c, c" 49
+ad "ld c, d" 4a
+ad "ld c, e" 4b
+ad "ld c, h" 4c
+d "ld c, ixh" dd4c
+d "ld c, ixl" dd4d
+d "ld c, iyh" fd4c
+d "ld c, iyl" fd4d
+ad "ld c, l" 4d
+d "ld d, 0x00" 1600
+d "ld d, [hl]" 56
+d "ld d, [ix+0x00]" dd5600
+d "ld d, [iy+0x00]" fd5600
+ad "ld d, a" 57
+ad "ld d, b" 50
+ad "ld d, c" 51
+ad "ld d, d" 52
+ad "ld d, e" 53
+ad "ld d, h" 54
+d "ld d, ixh" dd54
+d "ld d, ixl" dd55
+d "ld d, iyh" fd54
+d "ld d, iyl" fd55
+ad "ld d, l" 55
+d "ld de, 0x0000" 110000
+d "ld de, [0x0000]" ed5b0000
+ad "ld e, 0x00" 1e00
+d "ld e, [hl]" 5e
+d "ld e, [ix+0x00]" dd5e00
+d "ld e, [iy+0x00]" fd5e00
+ad "ld e, a" 5f
+ad "ld e, b" 58
+ad "ld e, c" 59
+ad "ld e, d" 5a
+ad "ld e, e" 5b
+ad "ld e, h" 5c
+d "ld e, ixh" dd5c
+d "ld e, ixl" dd5d
+d "ld e, iyh" fd5c
+d "ld e, iyl" fd5d
+ad "ld e, l" 5d
+d "ld h, 0x00" 2600
+d "ld h, [hl]" 66
+d "ld h, [ix+0x00]" dd6600
+d "ld h, [iy+0x00]" fd6600
+ad "ld h, a" 67
+ad "ld h, b" 60
+ad "ld h, c" 61
+ad "ld h, d" 62
+ad "ld h, e" 63
+ad "ld h, h" 64
+ad "ld h, l" 65
+d "ld hl, 0x0000" 210000
+d "ld hl, [0x0000]" 2a0000
+ad "ld i, a" ed47
+d "ld ix, 0x0000" dd210000
+d "ld ix, [0x0000]" dd2a0000
+d "ld ixh, 0x00" dd2600
+d "ld ixh, a" dd67
+d "ld ixh, b" dd60
+d "ld ixh, c" dd61
+d "ld ixh, d" dd62
+d "ld ixh, e" dd63
+d "ld ixh, ixh" dd64
+d "ld ixh, ixl" dd65
+d "ld ixl, 0x00" dd2e00
+d "ld ixl, a" dd6f
+d "ld ixl, b" dd68
+d "ld ixl, c" dd69
+d "ld ixl, d" dd6a
+d "ld ixl, e" dd6b
+d "ld ixl, ixh" dd6c
+d "ld ixl, ixl" dd6d
+d "ld iy, 0x0000" fd210000
+d "ld iy, [0x0000]" fd2a0000
+d "ld iyh, 0x00" fd2600
+d "ld iyh, a" fd67
+d "ld iyh, b" fd60
+d "ld iyh, c" fd61
+d "ld iyh, d" fd62
+d "ld iyh, e" fd63
+d "ld iyh, iyh" fd64
+d "ld iyh, iyl" fd65
+d "ld iyl, 0x00" fd2e00
+d "ld iyl, a" fd6f
+d "ld iyl, b" fd68
+d "ld iyl, c" fd69
+d "ld iyl, d" fd6a
+d "ld iyl, e" fd6b
+d "ld iyl, iyh" fd6c
+d "ld iyl, iyl" fd6d
+ad "ld l, 0x00" 2e00
+d "ld l, [hl]" 6e
+d "ld l, [ix+0x00]" dd6e00
+d "ld l, [iy+0x00]" fd6e00
+ad "ld l, a" 6f
+ad "ld l, b" 68
+ad "ld l, c" 69
+ad "ld l, d" 6a
+ad "ld l, e" 6b
+ad "ld l, h" 6c
+ad "ld l, l" 6d
+ad "ld r, a" ed4f
+d "ld sp, 0x0000" 310000
+d "ld sp, [0x0000]" ed7b0000
+d "ld sp, hl" f9
+d "ld sp, ix" ddf9
+d "ld sp, iy" fdf9
+d "ldd" eda8
+d "lddr" edb8
+d "ldi" eda0
+d "ldir" edb0
+d "neg" ed44
+d "nop" 00
+d "or 0x00" f600
+d "or [hl]" b6
+d "or [ix+0x00]" ddb600
+d "or [iy+0x00]" fdb600
+d "or a" b7
+d "or b" b0
+d "or c" b1
+d "or d" b2
+d "or e" b3
+d "or h" b4
+d "or ixh" ddb4
+d "or ixl" ddb5
+d "or iyh" fdb4
+d "or iyl" fdb5
+d "or l" b5
+d "otdr" edbb
+d "otir" edb3
+d "out [0x00], a" d300
+d "out [c], 0" ed71
+d "out [c], a" ed79
+d "out [c], b" ed41
+d "out [c], c" ed49
+d "out [c], d" ed51
+d "out [c], e" ed59
+d "out [c], h" ed61
+d "out [c], l" ed69
+d "outd" edab
+d "outi" eda3
+d "pop af" f1
+d "pop bc" c1
+d "pop de" d1
+d "pop hl" e1
+d "pop ix" dde1
+d "pop iy" fde1
+d "push af" f5
+d "push bc" c5
+d "push de" d5
+d "push hl" e5
+d "push ix" dde5
+d "push iy" fde5
+d "res 0, [hl]" cb86
+d "res 0, [ix+0x00]" ddcb0086
+d "res 0, [ix+0x00], a" ddcb0087
+d "res 0, [ix+0x00], b" ddcb0080
+d "res 0, [ix+0x00], c" ddcb0081
+d "res 0, [ix+0x00], d" ddcb0082
+d "res 0, [ix+0x00], e" ddcb0083
+d "res 0, [ix+0x00], h" ddcb0084
+d "res 0, [ix+0x00], l" ddcb0085
+d "res 0, [iy+0x00]" fdcb0086
+d "res 0, [iy+0x00], a" fdcb0087
+d "res 0, [iy+0x00], b" fdcb0080
+d "res 0, [iy+0x00], c" fdcb0081
+d "res 0, [iy+0x00], d" fdcb0082
+d "res 0, [iy+0x00], e" fdcb0083
+d "res 0, [iy+0x00], h" fdcb0084
+d "res 0, [iy+0x00], l" fdcb0085
+d "res 0, a" cb87
+d "res 0, b" cb80
+d "res 0, c" cb81
+d "res 0, d" cb82
+d "res 0, e" cb83
+d "res 0, h" cb84
+d "res 0, l" cb85
+d "res 1, [hl]" cb8e
+d "res 1, [ix+0x00]" ddcb008e
+d "res 1, [ix+0x00], a" ddcb008f
+d "res 1, [ix+0x00], b" ddcb0088
+d "res 1, [ix+0x00], c" ddcb0089
+d "res 1, [ix+0x00], d" ddcb008a
+d "res 1, [ix+0x00], e" ddcb008b
+d "res 1, [ix+0x00], h" ddcb008c
+d "res 1, [ix+0x00], l" ddcb008d
+d "res 1, [iy+0x00]" fdcb008e
+d "res 1, [iy+0x00], a" fdcb008f
+d "res 1, [iy+0x00], b" fdcb0088
+d "res 1, [iy+0x00], c" fdcb0089
+d "res 1, [iy+0x00], d" fdcb008a
+d "res 1, [iy+0x00], e" fdcb008b
+d "res 1, [iy+0x00], h" fdcb008c
+d "res 1, [iy+0x00], l" fdcb008d
+d "res 1, a" cb8f
+d "res 1, b" cb88
+d "res 1, c" cb89
+d "res 1, d" cb8a
+d "res 1, e" cb8b
+d "res 1, h" cb8c
+d "res 1, l" cb8d
+d "res 2, [hl]" cb96
+d "res 2, [ix+0x00]" ddcb0096
+d "res 2, [ix+0x00], a" ddcb0097
+d "res 2, [ix+0x00], b" ddcb0090
+d "res 2, [ix+0x00], c" ddcb0091
+d "res 2, [ix+0x00], d" ddcb0092
+d "res 2, [ix+0x00], e" ddcb0093
+d "res 2, [ix+0x00], h" ddcb0094
+d "res 2, [ix+0x00], l" ddcb0095
+d "res 2, [iy+0x00]" fdcb0096
+d "res 2, [iy+0x00], a" fdcb0097
+d "res 2, [iy+0x00], b" fdcb0090
+d "res 2, [iy+0x00], c" fdcb0091
+d "res 2, [iy+0x00], d" fdcb0092
+d "res 2, [iy+0x00], e" fdcb0093
+d "res 2, [iy+0x00], h" fdcb0094
+d "res 2, [iy+0x00], l" fdcb0095
+d "res 2, a" cb97
+d "res 2, b" cb90
+d "res 2, c" cb91
+d "res 2, d" cb92
+d "res 2, e" cb93
+d "res 2, h" cb94
+d "res 2, l" cb95
+d "res 3, [hl]" cb9e
+d "res 3, [ix+0x00]" ddcb009e
+d "res 3, [ix+0x00], a" ddcb009f
+d "res 3, [ix+0x00], b" ddcb0098
+d "res 3, [ix+0x00], c" ddcb0099
+d "res 3, [ix+0x00], d" ddcb009a
+d "res 3, [ix+0x00], e" ddcb009b
+d "res 3, [ix+0x00], h" ddcb009c
+d "res 3, [ix+0x00], l" ddcb009d
+d "res 3, [iy+0x00]" fdcb009e
+d "res 3, [iy+0x00], a" fdcb009f
+d "res 3, [iy+0x00], b" fdcb0098
+d "res 3, [iy+0x00], c" fdcb0099
+d "res 3, [iy+0x00], d" fdcb009a
+d "res 3, [iy+0x00], e" fdcb009b
+d "res 3, [iy+0x00], h" fdcb009c
+d "res 3, [iy+0x00], l" fdcb009d
+d "res 3, a" cb9f
+d "res 3, b" cb98
+d "res 3, c" cb99
+d "res 3, d" cb9a
+d "res 3, e" cb9b
+d "res 3, h" cb9c
+d "res 3, l" cb9d
+d "res 4, [hl]" cba6
+d "res 4, [ix+0x00]" ddcb00a6
+d "res 4, [ix+0x00], a" ddcb00a7
+d "res 4, [ix+0x00], b" ddcb00a0
+d "res 4, [ix+0x00], c" ddcb00a1
+d "res 4, [ix+0x00], d" ddcb00a2
+d "res 4, [ix+0x00], e" ddcb00a3
+d "res 4, [ix+0x00], h" ddcb00a4
+d "res 4, [ix+0x00], l" ddcb00a5
+d "res 4, [iy+0x00]" fdcb00a6
+d "res 4, [iy+0x00], a" fdcb00a7
+d "res 4, [iy+0x00], b" fdcb00a0
+d "res 4, [iy+0x00], c" fdcb00a1
+d "res 4, [iy+0x00], d" fdcb00a2
+d "res 4, [iy+0x00], e" fdcb00a3
+d "res 4, [iy+0x00], h" fdcb00a4
+d "res 4, [iy+0x00], l" fdcb00a5
+d "res 4, a" cba7
+d "res 4, b" cba0
+d "res 4, c" cba1
+d "res 4, d" cba2
+d "res 4, e" cba3
+d "res 4, h" cba4
+d "res 4, l" cba5
+d "res 5, [hl]" cbae
+d "res 5, [ix+0x00]" ddcb00ae
+d "res 5, [ix+0x00], a" ddcb00af
+d "res 5, [ix+0x00], b" ddcb00a8
+d "res 5, [ix+0x00], c" ddcb00a9
+d "res 5, [ix+0x00], d" ddcb00aa
+d "res 5, [ix+0x00], e" ddcb00ab
+d "res 5, [ix+0x00], h" ddcb00ac
+d "res 5, [ix+0x00], l" ddcb00ad
+d "res 5, [iy+0x00]" fdcb00ae
+d "res 5, [iy+0x00], a" fdcb00af
+d "res 5, [iy+0x00], b" fdcb00a8
+d "res 5, [iy+0x00], c" fdcb00a9
+d "res 5, [iy+0x00], d" fdcb00aa
+d "res 5, [iy+0x00], e" fdcb00ab
+d "res 5, [iy+0x00], h" fdcb00ac
+d "res 5, [iy+0x00], l" fdcb00ad
+d "res 5, a" cbaf
+d "res 5, b" cba8
+d "res 5, c" cba9
+d "res 5, d" cbaa
+d "res 5, e" cbab
+d "res 5, h" cbac
+d "res 5, l" cbad
+d "res 6, [hl]" cbb6
+d "res 6, [ix+0x00]" ddcb00b6
+d "res 6, [ix+0x00], a" ddcb00b7
+d "res 6, [ix+0x00], b" ddcb00b0
+d "res 6, [ix+0x00], c" ddcb00b1
+d "res 6, [ix+0x00], d" ddcb00b2
+d "res 6, [ix+0x00], e" ddcb00b3
+d "res 6, [ix+0x00], h" ddcb00b4
+d "res 6, [ix+0x00], l" ddcb00b5
+d "res 6, [iy+0x00]" fdcb00b6
+d "res 6, [iy+0x00], a" fdcb00b7
+d "res 6, [iy+0x00], b" fdcb00b0
+d "res 6, [iy+0x00], c" fdcb00b1
+d "res 6, [iy+0x00], d" fdcb00b2
+d "res 6, [iy+0x00], e" fdcb00b3
+d "res 6, [iy+0x00], h" fdcb00b4
+d "res 6, [iy+0x00], l" fdcb00b5
+d "res 6, a" cbb7
+d "res 6, b" cbb0
+d "res 6, c" cbb1
+d "res 6, d" cbb2
+d "res 6, e" cbb3
+d "res 6, h" cbb4
+d "res 6, l" cbb5
+d "res 7, [hl]" cbbe
+d "res 7, [ix+0x00]" ddcb00be
+d "res 7, [ix+0x00], a" ddcb00bf
+d "res 7, [ix+0x00], b" ddcb00b8
+d "res 7, [ix+0x00], c" ddcb00b9
+d "res 7, [ix+0x00], d" ddcb00ba
+d "res 7, [ix+0x00], e" ddcb00bb
+d "res 7, [ix+0x00], h" ddcb00bc
+d "res 7, [ix+0x00], l" ddcb00bd
+d "res 7, [iy+0x00]" fdcb00be
+d "res 7, [iy+0x00], a" fdcb00bf
+d "res 7, [iy+0x00], b" fdcb00b8
+d "res 7, [iy+0x00], c" fdcb00b9
+d "res 7, [iy+0x00], d" fdcb00ba
+d "res 7, [iy+0x00], e" fdcb00bb
+d "res 7, [iy+0x00], h" fdcb00bc
+d "res 7, [iy+0x00], l" fdcb00bd
+d "res 7, a" cbbf
+d "res 7, b" cbb8
+d "res 7, c" cbb9
+d "res 7, d" cbba
+d "res 7, e" cbbb
+d "res 7, h" cbbc
+d "res 7, l" cbbd
+d "ret c" d8
+d "ret m" f8
+d "ret nc" d0
+d "ret nz" c0
+d "ret p" f0
+d "ret pe" e8
+d "ret po" e0
+d "ret z" c8
+d "ret" c9
+d "reti" ed4d
+d "retn" ed45
+d "rl [hl]" cb16
+d "rl [ix+0x00]" ddcb0016
+d "rl [ix+0x00], a" ddcb0017
+d "rl [ix+0x00], b" ddcb0010
+d "rl [ix+0x00], c" ddcb0011
+d "rl [ix+0x00], d" ddcb0012
+d "rl [ix+0x00], e" ddcb0013
+d "rl [ix+0x00], h" ddcb0014
+d "rl [ix+0x00], l" ddcb0015
+d "rl [iy+0x00]" fdcb0016
+d "rl a" cb17
+d "rl a, [iy+0x00]" fdcb0017
+d "rl b" cb10
+d "rl b, [iy+0x00]" fdcb0010
+d "rl c" cb11
+d "rl c, [iy+0x00]" fdcb0011
+d "rl d" cb12
+d "rl d, [iy+0x00]" fdcb0012
+d "rl e" cb13
+d "rl e, [iy+0x00]" fdcb0013
+d "rl h" cb14
+d "rl h, [iy+0x00]" fdcb0014
+d "rl l" cb15
+d "rl l, [iy+0x00]" fdcb0015
+d "rla" 17
+d "rlc [hl]" cb06
+d "rlc [ix+0x00]" ddcb0006
+d "rlc [ix+0x00], a" ddcb0007
+d "rlc [ix+0x00], b" ddcb0000
+d "rlc [ix+0x00], c" ddcb0001
+d "rlc [ix+0x00], d" ddcb0002
+d "rlc [ix+0x00], e" ddcb0003
+d "rlc [ix+0x00], h" ddcb0004
+d "rlc [ix+0x00], l" ddcb0005
+d "rlc [iy+0x00]" fdcb0006
+d "rlc a" cb07
+d "rlc a, [iy+0x00]" fdcb0007
+d "rlc b" cb00
+d "rlc b, [iy+0x00]" fdcb0000
+d "rlc c" cb01
+d "rlc c, [iy+0x00]" fdcb0001
+d "rlc d" cb02
+d "rlc d, [iy+0x00]" fdcb0002
+d "rlc e" cb03
+d "rlc e, [iy+0x00]" fdcb0003
+d "rlc h" cb04
+d "rlc h, [iy+0x00]" fdcb0004
+d "rlc l" cb05
+d "rlc l, [iy+0x00]" fdcb0005
+d "rlca" 07
+d "rld" ed6f
+d "rr [hl]" cb1e
+d "rr [ix+0x00]" ddcb001e
+d "rr [ix+0x00], a" ddcb001f
+d "rr [ix+0x00], b" ddcb0018
+d "rr [ix+0x00], c" ddcb0019
+d "rr [ix+0x00], d" ddcb001a
+d "rr [ix+0x00], e" ddcb001b
+d "rr [ix+0x00], h" ddcb001c
+d "rr [ix+0x00], l" ddcb001d
+d "rr [iy+0x00]" fdcb001e
+d "rr a" cb1f
+d "rr a, [iy+0x00]" fdcb001f
+d "rr b" cb18
+d "rr b, [iy+0x00]" fdcb0018
+d "rr c" cb19
+d "rr c, [iy+0x00]" fdcb0019
+d "rr d" cb1a
+d "rr d, [iy+0x00]" fdcb001a
+d "rr e" cb1b
+d "rr e, [iy+0x00]" fdcb001b
+d "rr h" cb1c
+d "rr h, [iy+0x00]" fdcb001c
+d "rr l" cb1d
+d "rr l, [iy+0x00]" fdcb001d
+d "rra" 1f
+d "rrc [hl]" cb0e
+d "rrc [ix+0x00]" ddcb000e
+d "rrc [ix+0x00], a" ddcb000f
+d "rrc [ix+0x00], b" ddcb0008
+d "rrc [ix+0x00], c" ddcb0009
+d "rrc [ix+0x00], d" ddcb000a
+d "rrc [ix+0x00], e" ddcb000b
+d "rrc [ix+0x00], h" ddcb000c
+d "rrc [ix+0x00], l" ddcb000d
+d "rrc [iy+0x00]" fdcb000e
+d "rrc a" cb0f
+d "rrc a, [iy+0x00]" fdcb000f
+d "rrc b" cb08
+d "rrc b, [iy+0x00]" fdcb0008
+d "rrc c" cb09
+d "rrc c, [iy+0x00]" fdcb0009
+d "rrc d" cb0a
+d "rrc d, [iy+0x00]" fdcb000a
+d "rrc e" cb0b
+d "rrc e, [iy+0x00]" fdcb000b
+d "rrc h" cb0c
+d "rrc h, [iy+0x00]" fdcb000c
+d "rrc l" cb0d
+d "rrc l, [iy+0x00]" fdcb000d
+d "rrca" 0f
+d "rrd" ed67
+d "rst 0x00" c7
+d "rst 0x08" cf
+d "rst 0x10" d7
+d "rst 0x18" df
+d "rst 0x20" e7
+d "rst 0x28" ef
+d "rst 0x30" f7
+d "rst 0x38" ff
+d "sbc a, 0x00" de00
+d "sbc a, [hl]" 9e
+d "sbc a, [ix+0x00]" dd9e00
+d "sbc a, [iy+0x00]" fd9e00
+d "sbc a, a" 9f
+d "sbc a, b" 98
+d "sbc a, c" 99
+d "sbc a, d" 9a
+d "sbc a, e" 9b
+d "sbc a, h" 9c
+d "sbc a, ixh" dd9c
+d "sbc a, ixl" dd9d
+d "sbc a, iyh" fd9c
+d "sbc a, iyl" fd9d
+d "sbc a, l" 9d
+d "sbc hl, bc" ed42
+d "sbc hl, de" ed52
+d "sbc hl, hl" ed62
+d "sbc hl, sp" ed72
+d "scf" 37
+d "set 0, [hl]" cbc6
+d "set 0, [ix+0x00]" ddcb00c6
+d "set 0, [ix+0x00], a" ddcb00c7
+d "set 0, [ix+0x00], b" ddcb00c0
+d "set 0, [ix+0x00], c" ddcb00c1
+d "set 0, [ix+0x00], d" ddcb00c2
+d "set 0, [ix+0x00], e" ddcb00c3
+d "set 0, [ix+0x00], h" ddcb00c4
+d "set 0, [ix+0x00], l" ddcb00c5
+d "set 0, [iy+0x00]" fdcb00c6
+d "set 0, [iy+0x00], a" fdcb00c7
+d "set 0, [iy+0x00], b" fdcb00c0
+d "set 0, [iy+0x00], c" fdcb00c1
+d "set 0, [iy+0x00], d" fdcb00c2
+d "set 0, [iy+0x00], e" fdcb00c3
+d "set 0, [iy+0x00], h" fdcb00c4
+d "set 0, [iy+0x00], l" fdcb00c5
+d "set 0, a" cbc7
+d "set 0, b" cbc0
+d "set 0, c" cbc1
+d "set 0, d" cbc2
+d "set 0, e" cbc3
+d "set 0, h" cbc4
+d "set 0, l" cbc5
+d "set 1, [hl]" cbce
+d "set 1, [ix+0x00]" ddcb00ce
+d "set 1, [ix+0x00], a" ddcb00cf
+d "set 1, [ix+0x00], b" ddcb00c8
+d "set 1, [ix+0x00], c" ddcb00c9
+d "set 1, [ix+0x00], d" ddcb00ca
+d "set 1, [ix+0x00], e" ddcb00cb
+d "set 1, [ix+0x00], h" ddcb00cc
+d "set 1, [ix+0x00], l" ddcb00cd
+d "set 1, [iy+0x00]" fdcb00ce
+d "set 1, [iy+0x00], a" fdcb00cf
+d "set 1, [iy+0x00], b" fdcb00c8
+d "set 1, [iy+0x00], c" fdcb00c9
+d "set 1, [iy+0x00], d" fdcb00ca
+d "set 1, [iy+0x00], e" fdcb00cb
+d "set 1, [iy+0x00], h" fdcb00cc
+d "set 1, [iy+0x00], l" fdcb00cd
+d "set 1, a" cbcf
+d "set 1, b" cbc8
+d "set 1, c" cbc9
+d "set 1, d" cbca
+d "set 1, e" cbcb
+d "set 1, h" cbcc
+d "set 1, l" cbcd
+d "set 2, [hl]" cbd6
+d "set 2, [ix+0x00]" ddcb00d6
+d "set 2, [ix+0x00], a" ddcb00d7
+d "set 2, [ix+0x00], b" ddcb00d0
+d "set 2, [ix+0x00], c" ddcb00d1
+d "set 2, [ix+0x00], d" ddcb00d2
+d "set 2, [ix+0x00], e" ddcb00d3
+d "set 2, [ix+0x00], h" ddcb00d4
+d "set 2, [ix+0x00], l" ddcb00d5
+d "set 2, [iy+0x00]" fdcb00d6
+d "set 2, [iy+0x00], a" fdcb00d7
+d "set 2, [iy+0x00], b" fdcb00d0
+d "set 2, [iy+0x00], c" fdcb00d1
+d "set 2, [iy+0x00], d" fdcb00d2
+d "set 2, [iy+0x00], e" fdcb00d3
+d "set 2, [iy+0x00], h" fdcb00d4
+d "set 2, [iy+0x00], l" fdcb00d5
+d "set 2, a" cbd7
+d "set 2, b" cbd0
+d "set 2, c" cbd1
+d "set 2, d" cbd2
+d "set 2, e" cbd3
+d "set 2, h" cbd4
+d "set 2, l" cbd5
+d "set 3, [hl]" cbde
+d "set 3, [ix+0x00]" ddcb00de
+d "set 3, [ix+0x00], a" ddcb00df
+d "set 3, [ix+0x00], b" ddcb00d8
+d "set 3, [ix+0x00], c" ddcb00d9
+d "set 3, [ix+0x00], d" ddcb00da
+d "set 3, [ix+0x00], e" ddcb00db
+d "set 3, [ix+0x00], h" ddcb00dc
+d "set 3, [ix+0x00], l" ddcb00dd
+d "set 3, [iy+0x00]" fdcb00de
+d "set 3, [iy+0x00], a" fdcb00df
+d "set 3, [iy+0x00], b" fdcb00d8
+d "set 3, [iy+0x00], c" fdcb00d9
+d "set 3, [iy+0x00], d" fdcb00da
+d "set 3, [iy+0x00], e" fdcb00db
+d "set 3, [iy+0x00], h" fdcb00dc
+d "set 3, [iy+0x00], l" fdcb00dd
+d "set 3, a" cbdf
+d "set 3, b" cbd8
+d "set 3, c" cbd9
+d "set 3, d" cbda
+d "set 3, e" cbdb
+d "set 3, h" cbdc
+d "set 3, l" cbdd
+d "set 4, [hl]" cbe6
+d "set 4, [ix+0x00]" ddcb00e6
+d "set 4, [ix+0x00], a" ddcb00e7
+d "set 4, [ix+0x00], b" ddcb00e0
+d "set 4, [ix+0x00], c" ddcb00e1
+d "set 4, [ix+0x00], d" ddcb00e2
+d "set 4, [ix+0x00], e" ddcb00e3
+d "set 4, [ix+0x00], h" ddcb00e4
+d "set 4, [ix+0x00], l" ddcb00e5
+d "set 4, [iy+0x00]" fdcb00e6
+d "set 4, [iy+0x00], a" fdcb00e7
+d "set 4, [iy+0x00], b" fdcb00e0
+d "set 4, [iy+0x00], c" fdcb00e1
+d "set 4, [iy+0x00], d" fdcb00e2
+d "set 4, [iy+0x00], e" fdcb00e3
+d "set 4, [iy+0x00], h" fdcb00e4
+d "set 4, [iy+0x00], l" fdcb00e5
+d "set 4, a" cbe7
+d "set 4, b" cbe0
+d "set 4, c" cbe1
+d "set 4, d" cbe2
+d "set 4, e" cbe3
+d "set 4, h" cbe4
+d "set 4, l" cbe5
+d "set 5, [hl]" cbee
+d "set 5, [ix+0x00]" ddcb00ee
+d "set 5, [ix+0x00], a" ddcb00ef
+d "set 5, [ix+0x00], b" ddcb00e8
+d "set 5, [ix+0x00], c" ddcb00e9
+d "set 5, [ix+0x00], d" ddcb00ea
+d "set 5, [ix+0x00], e" ddcb00eb
+d "set 5, [ix+0x00], h" ddcb00ec
+d "set 5, [ix+0x00], l" ddcb00ed
+d "set 5, [iy+0x00]" fdcb00ee
+d "set 5, [iy+0x00], a" fdcb00ef
+d "set 5, [iy+0x00], b" fdcb00e8
+d "set 5, [iy+0x00], c" fdcb00e9
+d "set 5, [iy+0x00], d" fdcb00ea
+d "set 5, [iy+0x00], e" fdcb00eb
+d "set 5, [iy+0x00], h" fdcb00ec
+d "set 5, [iy+0x00], l" fdcb00ed
+d "set 5, a" cbef
+d "set 5, b" cbe8
+d "set 5, c" cbe9
+d "set 5, d" cbea
+d "set 5, e" cbeb
+d "set 5, h" cbec
+d "set 5, l" cbed
+d "set 6, [hl]" cbf6
+d "set 6, [ix+0x00]" ddcb00f6
+d "set 6, [ix+0x00], a" ddcb00f7
+d "set 6, [ix+0x00], b" ddcb00f0
+d "set 6, [ix+0x00], c" ddcb00f1
+d "set 6, [ix+0x00], d" ddcb00f2
+d "set 6, [ix+0x00], e" ddcb00f3
+d "set 6, [ix+0x00], h" ddcb00f4
+d "set 6, [ix+0x00], l" ddcb00f5
+d "set 6, [iy+0x00]" fdcb00f6
+d "set 6, [iy+0x00], a" fdcb00f7
+d "set 6, [iy+0x00], b" fdcb00f0
+d "set 6, [iy+0x00], c" fdcb00f1
+d "set 6, [iy+0x00], d" fdcb00f2
+d "set 6, [iy+0x00], e" fdcb00f3
+d "set 6, [iy+0x00], h" fdcb00f4
+d "set 6, [iy+0x00], l" fdcb00f5
+d "set 6, a" cbf7
+d "set 6, b" cbf0
+d "set 6, c" cbf1
+d "set 6, d" cbf2
+d "set 6, e" cbf3
+d "set 6, h" cbf4
+d "set 6, l" cbf5
+d "set 7, [hl]" cbfe
+d "set 7, [ix+0x00]" ddcb00fe
+d "set 7, [ix+0x00], a" ddcb00ff
+d "set 7, [ix+0x00], b" ddcb00f8
+d "set 7, [ix+0x00], c" ddcb00f9
+d "set 7, [ix+0x00], d" ddcb00fa
+d "set 7, [ix+0x00], e" ddcb00fb
+d "set 7, [ix+0x00], h" ddcb00fc
+d "set 7, [ix+0x00], l" ddcb00fd
+d "set 7, [iy+0x00]" fdcb00fe
+d "set 7, [iy+0x00], a" fdcb00ff
+d "set 7, [iy+0x00], b" fdcb00f8
+d "set 7, [iy+0x00], c" fdcb00f9
+d "set 7, [iy+0x00], d" fdcb00fa
+d "set 7, [iy+0x00], e" fdcb00fb
+d "set 7, [iy+0x00], h" fdcb00fc
+d "set 7, [iy+0x00], l" fdcb00fd
+d "set 7, a" cbff
+d "set 7, b" cbf8
+d "set 7, c" cbf9
+d "set 7, d" cbfa
+d "set 7, e" cbfb
+d "set 7, h" cbfc
+d "set 7, l" cbfd
+d "sla [hl]" cb26
+d "sla [ix+0x00]" ddcb0026
+d "sla [ix+0x00], a" ddcb0027
+d "sla [ix+0x00], b" ddcb0020
+d "sla [ix+0x00], c" ddcb0021
+d "sla [ix+0x00], d" ddcb0022
+d "sla [ix+0x00], e" ddcb0023
+d "sla [ix+0x00], h" ddcb0024
+d "sla [ix+0x00], l" ddcb0025
+d "sla [iy+0x00]" fdcb0026
+d "sla a" cb27
+d "sla a, [iy+0x00]" fdcb0027
+d "sla b" cb20
+d "sla b, [iy+0x00]" fdcb0020
+d "sla c" cb21
+d "sla c, [iy+0x00]" fdcb0021
+d "sla d" cb22
+d "sla d, [iy+0x00]" fdcb0022
+d "sla e" cb23
+d "sla e, [iy+0x00]" fdcb0023
+d "sla h" cb24
+d "sla h, [iy+0x00]" fdcb0024
+d "sla l" cb25
+d "sla l, [iy+0x00]" fdcb0025
+d "sll [hl]" cb36
+d "sll [ix+0x00]" ddcb0036
+d "sll [ix+0x00], a" ddcb0037
+d "sll [ix+0x00], b" ddcb0030
+d "sll [ix+0x00], c" ddcb0031
+d "sll [ix+0x00], d" ddcb0032
+d "sll [ix+0x00], e" ddcb0033
+d "sll [ix+0x00], h" ddcb0034
+d "sll [ix+0x00], l" ddcb0035
+d "sll [iy+0x00]" fdcb0036
+d "sll a" cb37
+d "sll a, [iy+0x00]" fdcb0037
+d "sll b" cb30
+d "sll b, [iy+0x00]" fdcb0030
+d "sll c" cb31
+d "sll c, [iy+0x00]" fdcb0031
+d "sll d" cb32
+d "sll d, [iy+0x00]" fdcb0032
+d "sll e" cb33
+d "sll e, [iy+0x00]" fdcb0033
+d "sll h" cb34
+d "sll h, [iy+0x00]" fdcb0034
+d "sll l" cb35
+d "sll l, [iy+0x00]" fdcb0035
+d "sra [hl]" cb2e
+d "sra [ix+0x00]" ddcb002e
+d "sra [ix+0x00], a" ddcb002f
+d "sra [ix+0x00], b" ddcb0028
+d "sra [ix+0x00], c" ddcb0029
+d "sra [ix+0x00], d" ddcb002a
+d "sra [ix+0x00], e" ddcb002b
+d "sra [ix+0x00], h" ddcb002c
+d "sra [ix+0x00], l" ddcb002d
+d "sra [iy+0x00]" fdcb002e
+d "sra a" cb2f
+d "sra a, [iy+0x00]" fdcb002f
+d "sra b" cb28
+d "sra b, [iy+0x00]" fdcb0028
+d "sra c" cb29
+d "sra c, [iy+0x00]" fdcb0029
+d "sra d" cb2a
+d "sra d, [iy+0x00]" fdcb002a
+d "sra e" cb2b
+d "sra e, [iy+0x00]" fdcb002b
+d "sra h" cb2c
+d "sra h, [iy+0x00]" fdcb002c
+d "sra l" cb2d
+d "sra l, [iy+0x00]" fdcb002d
+d "srl [hl]" cb3e
+d "srl [ix+0x00]" ddcb003e
+d "srl [ix+0x00], a" ddcb003f
+d "srl [ix+0x00], b" ddcb0038
+d "srl [ix+0x00], c" ddcb0039
+d "srl [ix+0x00], d" ddcb003a
+d "srl [ix+0x00], e" ddcb003b
+d "srl [ix+0x00], h" ddcb003c
+d "srl [ix+0x00], l" ddcb003d
+d "srl [iy+0x00]" fdcb003e
+d "srl a" cb3f
+d "srl a, [iy+0x00]" fdcb003f
+d "srl b" cb38
+d "srl b, [iy+0x00]" fdcb0038
+d "srl c" cb39
+d "srl c, [iy+0x00]" fdcb0039
+d "srl d" cb3a
+d "srl d, [iy+0x00]" fdcb003a
+d "srl e" cb3b
+d "srl e, [iy+0x00]" fdcb003b
+d "srl h" cb3c
+d "srl h, [iy+0x00]" fdcb003c
+d "srl l" cb3d
+d "srl l, [iy+0x00]" fdcb003d
+d "sub 0x00" d600
+d "sub [hl]" 96
+d "sub [ix+0x00]" dd9600
+d "sub [iy+0x00]" fd9600
+d "sub a" 97
+d "sub a, ixh" dd94
+d "sub a, ixl" dd95
+d "sub b" 90
+d "sub c" 91
+d "sub d" 92
+d "sub e" 93
+d "sub h" 94
+d "sub iyh" fd94
+d "sub iyl" fd95
+d "sub l" 95
+d "xor 0x00" ee00
+d "xor [hl]" ae
+d "xor [ix+0x00]" ddae00
+d "xor [iy+0x00]" fdae00
+d "xor a" af
+d "xor b" a8
+d "xor c" a9
+d "xor d" aa
+d "xor e" ab
+d "xor h" ac
+d "xor ixh" ddac
+d "xor ixl" ddad
+d "xor iyh" fdac
+d "xor iyl" fdad
+d "xor l" ad

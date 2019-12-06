@@ -1,0 +1,215 @@
+FILE=malloc://1024
+NAME=?vi-1
+CMDS=<<EXPECT
+?vi 0xffffffff
+?vi8 0xffffffff
+?vi4 0xffffffff
+?vi2 0xffffffff
+?vi1 0xffffffff
+?vi4 0xffffffff
+?vi2 0xffff
+?vi1 0xff
+EXPECT=<<RUN
+4294967295
+4294967295
+-1
+-1
+-1
+-1
+-1
+-1
+RUN
+
+FILE=malloc://1024
+NAME=?vi-8
+CMDS=<<EXPECT
+?vi 0xfffffff8
+?vi4 0xfffffff8
+?vi2 0xfffffff8
+?vi1 0xfffffff8
+?vi4 0xfffffff8
+?vi2 0xfff8
+?vi1 0xf8
+EXPECT=<<RUN
+4294967288
+-8
+-8
+-8
+-8
+-8
+-8
+RUN
+
+FILE=malloc://1024
+CMDS=<<EXPECT
+?v
+?=
+??
+?e
+?b
+?f
+?p
+?s
+?x
+?X
+?l
+?t
+?!
+?+
+?-
+EXPECT=<<RUN
+0
+0x0
+0
+
+0b
+0x00000000
+
+0
+0
+0x0
+0x0
+0x0
+RUN
+
+NAME='?e'
+FILE=malloc://1024
+CMDS=<<EXPECT
+?e fuck
+?e yeah
+EXPECT=<<RUN
+fuck
+yeah
+RUN
+
+
+NAME='?v'
+FILE=--
+CMDS=<<EXPECT
+?v 1024
+?v 0x42
+EXPECT=<<RUN
+0x400
+0x42
+RUN
+
+
+NAME="?v 'A'"
+FILE=--
+CMDS=<<EXPECT
+?v 'A'
+EXPECT=<<RUN
+0x41
+RUN
+
+NAME="?v 'A'+3"
+FILE=--
+CMDS=<<EXPECT
+?v 'A'+3
+EXPECT=<<RUN
+0x44
+RUN
+
+NAME="?v 3+'A'-3"
+FILE=--
+CMDS=<<EXPECT
+?v 3+'A'-3
+EXPECT=<<RUN
+0x41
+RUN
+
+NAME="?v 33^'A'"
+FILE=--
+CMDS=<<EXPECT
+?v 32^'A'
+EXPECT=<<RUN
+0x61
+RUN
+
+NAME="? 1;?v"
+FILE=--
+CMDS=<<EXPECT
+? 1;?v
+EXPECT=<<RUN
+int32   1
+uint32  1
+hex     0x1
+octal   01
+unit    1
+segment 0000:0001
+string  "\x01"
+fvalue: 1.0
+float:  0.000000f
+double: 0.000000
+binary  0b00000001
+trits   0t1
+1
+RUN
+
+NAME="? 0;?v"
+FILE=--
+CMDS=<<EXPECT
+? 0;?v
+EXPECT=<<RUN
+int32   0
+uint32  0
+hex     0x0
+octal   00
+unit    0
+segment 0000:0000
+string  "\0"
+fvalue: 0.0
+float:  0.000000f
+double: 0.000000
+binary  0b00000000
+trits   0t0
+0
+RUN
+
+NAME="? -1"
+FILE=--
+CMDS=<<EXPECT
+? -1
+EXPECT=<<RUN
+int64   -1
+uint64  18446744073709551615
+hex     0xffffffffffffffff
+octal   01777777777777777777777
+unit    16E
+segment fffff000:0fff
+string  "\xff\xff\xff\xff\xff\xff\xff\xff"
+fvalue: -1.0
+float:  nanf
+double: nan
+binary  0b1111111111111111111111111111111111111111111111111111111111111111
+trits   0t11112220022122120101211020120210210211220
+RUN
+
+NAME="? 2*1.5"
+FILE=--
+CMDS=<<EXPECT
+? 2*1.5
+EXPECT=<<RUN
+int32   2
+uint32  2
+hex     0x2
+octal   02
+unit    2
+segment 0000:0002
+string  "\x02"
+fvalue: 3.0
+float:  0.000000f
+double: 0.000000
+binary  0b00000010
+trits   0t2
+RUN
+
+NAME="?*"
+FILE=--
+CMDS=<<EXPECT
+?*~?display zignspace
+?*~?List all loaded types as json
+EXPECT=<<RUN
+1
+1
+RUN

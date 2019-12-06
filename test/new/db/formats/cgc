@@ -1,0 +1,22 @@
+NAME=CGC: Open/iI
+FILE=../bins/cgc/CADET_00001
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+i~?format   cgc
+EOF
+RUN
+
+NAME=CGC: Create
+FILE=-
+EXPECT=<<EOF
+121
+EOF
+CMDS=<<EOF
+rm ./cgc.cgc__
+!rabin2 -C elf64:cc -a x86 -b 64 ./cgc.cgc____
+ls -l ./cgc.cgc__~[3]
+rm ./cgc.cgc____
+EOF
+RUN

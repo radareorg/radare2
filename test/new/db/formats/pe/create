@@ -1,0 +1,35 @@
+NAME='create pe x86-64'
+FILE=-
+BROKEN=1
+CMDS=<<EXPECT
+rm ./tiny64.pe__
+!rabin2 -C pe64:cc -a x86 -b 64 ./tiny64.pe__
+ls -l ./tiny64.pe__~[3]
+rm ./tiny64.pe__
+EXPECT=<<RUN
+125
+RUN
+
+NAME='create pe x86-64 auto-pe64'
+FILE=-
+CMDS=<<EXPECT
+rm ./tiny64.pe__2
+!rabin2 -C pe:cc -a x86 -b 64 ./tiny64.pe__2
+ls -l ./tiny64.pe__2~[3]
+rm ./tiny64.pe__2
+EXPECT=<<RUN
+125
+RUN
+
+NAME='create pe x86-32'
+FILE=-
+ARGS=
+CMDS=<<EXPECT
+rm ./tiny32.pe__
+!rabin2 -C pe:cc -a x86 -b 32 ./tiny32.pe__
+ls -l ./tiny32.pe__~[3]
+rm ./tiny32.pe__
+EXPECT=<<RUN
+125
+RUN
+

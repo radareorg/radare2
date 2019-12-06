@@ -1,0 +1,10 @@
+NAME=labels replacements (single line)
+FILE=malloc://1024
+CMDS=<<EXPECT
+e asm.arch=x86
+e asm.bits=32
+"wa nop;nop;label:;call label;"
+p8 7@0
+EXPECT=<<RUN
+9090e8fbffffff
+RUN

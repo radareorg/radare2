@@ -1,0 +1,113 @@
+NAME="dwarf: idd and idda"
+FILE=../../bins/elf/bomb
+CMDS=<<EXPECT
+e io.cache = 1
+iddi ../../bins/elf/bomb
+wx 900d400000000000b00d400000000000
+idd _IO_marker
+idd _IO_marker._pos
+idda _IO_marker._sbuf._IO_read_base
+EXPECT=<<RUN
+_next = 0x400d90,
+_sbuf = 0x400db0,
+_pos = 0x22a0c0c7
+addr = 0x400ca0
+addr = 0x400dc8
+RUN
+
+NAME="dwarf: iddv"
+FILE=../../bins/elf/bomb
+CMDS=<<EXPECT
+e io.cache = 1
+iddi ../../bins/elf/bomb
+wx 900d400000000000b00d400000000000
+iddv _IO_marker._sbuf._flags
+EXPECT=<<RUN
+0x2029b4
+RUN
+
+NAME="dwarf: iddlf"
+CMDS=<<EXPECT
+iddi ../../bins/elf/bomb
+iddlf
+EXPECT=<<RUN
+f sym.main 311 @ 0x400da0
+RUN
+
+NAME="dwarf: iddlg"
+CMDS=<<EXPECT
+iddi ../../bins/elf/analysis/pie
+iddlg
+EXPECT=<<RUN
+f sym._IO_stdin_used 4 @ 0x65c
+RUN
+
+NAME="dwarf: iddd -- without array"
+CMDS=<<EXPECT
+iddi ../../bins/elf/bomb
+iddd _IO_marker
+EXPECT=<<RUN
+struct _IO_marker {
+  struct _IO_marker *_next;
+  struct _IO_FILE *_sbuf;
+  int _pos;
+};
+RUN
+
+NAME="dwarf: iddt"
+CMDS=<<EXPECT
+iddi ../../bins/elf/bomb
+iddt _IO_marker._sbuf
+iddt _IO_marker._pos
+EXPECT=<<RUN
+type : struct _IO_FILE *
+size : 8
+type : int 
+size : 4
+RUN
+
+NAME="dwarf: iddd -- array"
+CMDS=<<EXPECT
+iddi ../../bins/elf/ezpz
+iddd _IO_FILE
+EXPECT=<<RUN
+struct _IO_FILE {
+  int _flags;
+  char *_IO_read_ptr;
+  char *_IO_read_end;
+  char *_IO_read_base;
+  char *_IO_write_base;
+  char *_IO_write_ptr;
+  char *_IO_write_end;
+  char *_IO_buf_base;
+  char *_IO_buf_end;
+  char *_IO_save_base;
+  char *_IO_backup_base;
+  char *_IO_save_end;
+  struct _IO_marker *_markers;
+  struct _IO_FILE *_chain;
+  int _fileno;
+  int _flags2;
+  __off_t _old_offset;
+  short unsigned int _cur_column;
+  signed char _vtable_offset;
+  char _shortbuf[1];
+  _IO_lock_t *_lock;
+  __off64_t _offset;
+  void *__pad1;
+  void *__pad2;
+  void *__pad3;
+  void *__pad4;
+  size_t __pad5;
+  int _mode;
+  char _unused2[20];
+};
+RUN
+
+NAME="dwarf: idddj"
+CMDS=<<EXPECT
+iddi ../../bins/elf/ezpz
+idddj _IO_FILE
+EXPECT=<<RUN
+{"name":"_IO_FILE","size":216,"inbits":false,"struct":true,"members":[{"name":"_flags","type":"int ","typedef":false,"struct":false,"union":false,"pointer":0,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":4,"inbits":false,"offset":0},{"name":"_IO_read_ptr","type":"char *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":8},{"name":"_IO_read_end","type":"char *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":16},{"name":"_IO_read_base","type":"char *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":24},{"name":"_IO_write_base","type":"char *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":32},{"name":"_IO_write_ptr","type":"char *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":40},{"name":"_IO_write_end","type":"char *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":48},{"name":"_IO_buf_base","type":"char *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":56},{"name":"_IO_buf_end","type":"char *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":64},{"name":"_IO_save_base","type":"char *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":72},{"name":"_IO_backup_base","type":"char *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":80},{"name":"_IO_save_end","type":"char *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":88},{"name":"_markers","type":"struct _IO_marker *","typedef":false,"struct":true,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":96},{"name":"_chain","type":"struct _IO_FILE *","typedef":false,"struct":true,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":104},{"name":"_fileno","type":"int ","typedef":false,"struct":false,"union":false,"pointer":0,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":4,"inbits":false,"offset":112},{"name":"_flags2","type":"int ","typedef":false,"struct":false,"union":false,"pointer":0,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":4,"inbits":false,"offset":116},{"name":"_old_offset","type":"__off_t ","typedef":true,"struct":false,"union":false,"pointer":0,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":120},{"name":"_cur_column","type":"short unsigned int ","typedef":false,"struct":false,"union":false,"pointer":0,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":2,"inbits":false,"offset":128},{"name":"_vtable_offset","type":"signed char ","typedef":false,"struct":false,"union":false,"pointer":0,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":1,"inbits":false,"offset":130},{"name":"_shortbuf","type":"char ","typedef":false,"struct":false,"union":false,"pointer":0,"const":false,"volatile":false,"function":false,"enum":false,"array":true,"array_dimension":[1],"size":1,"inbits":false,"offset":131},{"name":"_lock","type":"_IO_lock_t *","typedef":true,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":136},{"name":"_offset","type":"__off64_t ","typedef":true,"struct":false,"union":false,"pointer":0,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":144},{"name":"__pad1","type":"void *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":152},{"name":"__pad2","type":"void *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":160},{"name":"__pad3","type":"void *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":168},{"name":"__pad4","type":"void *","typedef":false,"struct":false,"union":false,"pointer":1,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":176},{"name":"__pad5","type":"size_t ","typedef":true,"struct":false,"union":false,"pointer":0,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":8,"inbits":false,"offset":184},{"name":"_mode","type":"int ","typedef":false,"struct":false,"union":false,"pointer":0,"const":false,"volatile":false,"function":false,"enum":false,"array":false,"size":4,"inbits":false,"offset":192},{"name":"_unused2","type":"char ","typedef":false,"struct":false,"union":false,"pointer":0,"const":false,"volatile":false,"function":false,"enum":false,"array":true,"array_dimension":[20],"size":20,"inbits":false,"offset":196}]}
+RUN

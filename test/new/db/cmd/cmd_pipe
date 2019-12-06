@@ -1,0 +1,9 @@
+NAME=pipe args
+FILE=-
+EXPECT=<<EOF
+hello world
+EOF
+CMDS=<<EOF
+#!pipe echo hello world
+EOF
+RUN

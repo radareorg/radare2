@@ -1,0 +1,180 @@
+NAME='dbg.dc+ds.swstep'
+FILE=../bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=<<EXPECT
+e scr.color=0
+e dbg.swstep=true
+s 0
+db entry0
+dc
+db-entry0
+dr PC
+ds
+dr PC
+p8 1@sym.main
+dk 9
+EXPECT=<<RUN
+0x080482d0
+0x080482d2
+55
+RUN
+
+NAME='dbg.dc+ds.swstep2'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS=<<EXPECT
+e scr.color=0
+e dbg.swstep=true
+db sym.main
+dc
+dr PC
+ds
+dr PC
+p8 1@sym.main
+dk 9
+EXPECT=<<RUN
+0x08048400
+0x08048401
+55
+RUN
+
+NAME='dbg.dc+ds.hwstep'
+FILE=../bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=<<EXPECT
+e scr.color=0
+e dbg.swstep=false
+s 0
+db entry0
+dc
+db-entry0
+dr PC
+ds
+dr PC
+p8 1@sym.main
+dk 9
+EXPECT=<<RUN
+0x080482d0
+0x080482d2
+55
+RUN
+
+NAME='dbg.dc+ds.hwstep2'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS=<<EXPECT
+e scr.color=0
+e dbg.swstep=false
+db sym.main
+dc
+dr PC
+ds
+dr PC
+p8 1@sym.main
+dk 9
+EXPECT=<<RUN
+0x08048400
+0x08048401
+55
+RUN
+
+NAME='dbg.dcC+ds.swstep1'
+FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
+ARGS=-d
+CMDS=<<EXPECT
+e scr.color=0
+e dbg.swstep=true
+f times=5
+(times_stop,?e Loop `?vi times`,f times=`?vi times-1`,?= times)
+db 0x4000ce
+dbC 0x4000ce .(times_stop)
+dc
+dk 9
+EXPECT=<<RUN
+Loop 5
+Loop 4
+Loop 3
+Loop 2
+Loop 1
+RUN
+
+NAME='dbg.dcC+ds.swstep2'
+FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
+ARGS=-d
+CMDS=<<EXPECT
+e scr.color=0
+e dbg.swstep=true
+e cmd.hitinfo=0
+(break_rax,f reg_rax=`dr rax`,f test=`?vi reg_rax-0x31c0`,?= test)
+db 0x4000ce
+dbC 0x4000ce .(break_rax)
+dc
+dr rax
+dr rip
+dk 9
+EXPECT=<<RUN
+0x000031c0
+0x004000ce
+RUN
+
+NAME='dbg.dcC+ds.swstep3'
+FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
+ARGS=-d
+CMDS=<<EXPECT
+e scr.color=0
+e dbg.swstep=true
+e cmd.hitinfo=0
+(trace_rax,dr rax,f reg_rax=`dr rax`,f test=`?vi reg_rax-0x0440`,?= test)
+db 0x4000ce
+dbC 0x4000ce .(trace_rax)
+dc
+dk 9
+EXPECT=<<RUN
+0x00000000
+0x00000220
+0x000031c0
+0x000033c2
+0x00000249
+0x00000440
+RUN
+
+NAME='dbg.dbd+dbe'
+FILE=../bins/elf/analysis/x64-loop
+ARGS=-d
+CMDS=<<EXPECT
+e scr.color=0
+db 0x400523
+db 0x40051a
+dc
+dr PC
+dc
+dr PC
+dbd 0x400523
+dc
+dr PC
+dbe 0x400523
+dc
+dr PC
+EXPECT=<<RUN
+0x00400523
+0x0040051a
+0x0040051a
+0x00400523
+RUN
+
+NAME='dbg.dc+db'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS=<<EXPECT
+e dbg.swstep=true
+e scr.null=true
+db entry0
+dc
+dc
+s entry0
+e scr.null=false
+p8 4
+EXPECT=<<RUN
+Hello world!
+31ed5e89
+RUN

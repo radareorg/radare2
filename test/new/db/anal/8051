@@ -1,0 +1,246 @@
+NAME=8051: checking bitness (asm.bits)
+FILE=malloc://32
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+e asm.arch=8051
+e asm.bits=8
+EOF
+RUN
+
+NAME=8051: checking bitness writing (asm.bits)
+FILE=malloc://32
+EXPECT=<<EOF
+8
+EOF
+CMDS=<<EOF
+e asm.arch=8051
+e asm.bits
+EOF
+RUN
+
+NAME=8051 instruction length
+FILE=malloc://32
+EXPECT=<<EOF
+size: 3
+size: 2
+size: 1
+EOF
+CMDS=<<EOF
+e asm.arch=8051
+wx 30450d @ 0
+wx d268 @ 3
+wx ef @ 3+2
+ao 3~size
+EOF
+RUN
+
+NAME=: [DJNZ r0,offs] - length check
+FILE=malloc://32
+EXPECT=<<EOF
+size: 2
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; wx d8fc ; ao 1~size
+EOF
+RUN
+
+NAME=8051: [ACALL addr11] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00001723
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx f123 ; ao 1~jump
+EOF
+RUN
+
+NAME=8051: [AJMP addr11] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00001723
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx e123 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [CJNE a,imm,offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00001216
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx b4ab13 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [CJNE a,dir,offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x0000121b
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx b56018 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [CJNE @r1,imm,offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00001235
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx b72432 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [CJNE r7,imm,offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00001208
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx bf0205 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [DJNZ dir,offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x0000118b
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx d54088 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [DJNZ r0,offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x000011fe
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx d8fc ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [DJNZ r0,offs] - length check
+FILE=malloc://32
+EXPECT=<<EOF
+size: 2
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; wx d8fc ; ao 1~size
+EOF
+RUN
+
+NAME=8051: [DJNZ r7,offs] - length check
+FILE=malloc://32
+EXPECT=<<EOF
+size: 2
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; wx dffa ; ao 1~size
+EOF
+RUN
+
+NAME=8051: [JB bit,offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00001206
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx 207d03 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [JBC bit,offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x0000120b
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx 101508 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [JC offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00001205
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx 4003 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [JNB bit,offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x0000120b
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx 305108 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [JNC offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00001209
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx 5007 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [JNZ offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00001215
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx 7013 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [JZ offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00001217
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx 6015 ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [LCALL add16] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x0000b6cf
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx 12b6cf ; ao 1~jump
+EOF
+RUN
+
+NAME=8051: [LJMP addr16] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00002c0d
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx 022c0d ; ao 1~^jump
+EOF
+RUN
+
+NAME=8051: [SJMP offs] - jump check
+FILE=malloc://10000
+EXPECT=<<EOF
+jump: 0x00001216
+EOF
+CMDS=<<EOF
+e asm.arch=8051 ; s 0x1200 ; wx 8014 ; ao 1~^jump
+EOF
+RUN

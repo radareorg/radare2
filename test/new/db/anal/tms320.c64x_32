@@ -1,0 +1,43 @@
+NAME=320c64 OPEX
+FILE=malloc://512280
+EXPECT=<<EOF
+[
+  {
+    "opcode": "b 0x20de8",
+    "disasm": "b 0x20de8",
+    "pseudo": "b 0x20de8 ",
+    "mnemonic": "b",
+    "mask": "ff000000",
+    "jump": 134632,
+    "sign": false,
+    "prefix": 0,
+    "id": 17,
+    "opex": {
+      "operands": [
+        {
+          "type": "imm",
+          "value": 134632
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "0041bd10",
+    "size": 4,
+    "type": "jmp",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+EOF
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c64x
+wx 0041bd10
+aoj~{}
+EOF
+RUN

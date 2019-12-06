@@ -1,0 +1,20 @@
+NAME=io/neg
+FILE=-
+EXPECT=<<EOF
+ffff0000
+EOF
+CMDS=<<EOF
+p8 4 @ 0-2
+EOF
+RUN
+
+NAME=io/neg 2
+FILE=-
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+s- 1000
+? $o~?0x0
+EOF
+RUN

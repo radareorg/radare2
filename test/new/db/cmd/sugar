@@ -1,0 +1,13 @@
+NAME=t/sugar
+FILE=-
+EXPECT=<<EOF
+5d41402abc4b2a76b9719d911017c592
+5d41402abc4b2a76b9719d911017c592
+08d6c05a21512a79a1dfeb9d2a8f262f
+EOF
+CMDS=<<EOF
+ph md5@s:hello
+ph md5 @ s:hello
+ph md5@x:01020304
+EOF
+RUN

@@ -1,0 +1,29 @@
+NAME=PE: corkami dllemptyexp.dll - open
+FILE=../bins/pe/dllemptyexp.dll
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN
+
+NAME=PE: corkami dllemptyexp.dll - entrypoint
+FILE=../bins/pe/dllemptyexp.dll
+EXPECT=<<EOF
+0x1001000
+EOF
+CMDS=<<EOF
+s
+EOF
+RUN
+
+NAME=PE: corkami dllemptyexp.dll - pi 1
+FILE=../bins/pe/dllemptyexp.dll
+EXPECT=<<EOF
+push 1
+EOF
+CMDS=<<EOF
+e asm.filter=false
+pi 1
+EOF
+RUN

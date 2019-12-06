@@ -1,0 +1,60 @@
+NAME=to
+FILE=-
+EXPECT=<<EOF
+pf ddd x y z
+EOF
+CMDS=<<EOF
+to ../bins/headers/s1.h;t S1
+EOF
+RUN
+
+NAME=to
+FILE=-
+EXPECT=<<EOF
+pf ddd x test z
+EOF
+CMDS=<<EOF
+to ../bins/headers/s2.h; t S1
+EOF
+RUN
+
+NAME=to
+FILE=-
+EXPECT=<<EOF
+pf ddd x test z
+EOF
+CMDS=<<EOF
+to ../bins/headers/s1.h; to ../bins/headers/s2.h; t S1
+EOF
+RUN
+
+NAME=to perturbated
+FILE=-
+EXPECT=<<EOF
+pf ddd x test z
+EOF
+CMDS=<<EOF
+to ../bins/headers/s1.h; to ../bins/headers/s4.h; t S1
+EOF
+RUN
+
+NAME=to arrays
+FILE=-
+EXPECT=<<EOF
+pf [3]d[4]dd x y z
+struct
+x,y,z
+int32_t,0,3
+int32_t,12,4
+int32_t,28,0
+EOF
+CMDS=<<EOF
+to ../bins/headers/s3.h
+t S1
+tk S1
+tk struct.S1
+tk struct.S1.x
+tk struct.S1.y
+tk struct.S1.z
+EOF
+RUN

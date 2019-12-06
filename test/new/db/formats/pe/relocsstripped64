@@ -1,0 +1,8 @@
+NAME=PE: corkami relocsstripped64.exe - open
+FILE=../bins/pe/relocsstripped64.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN
