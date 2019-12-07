@@ -1035,7 +1035,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 		default:
 			// This case might be reached if break doesn't trigger an event
 			if (ret != R_DEBUG_REASON_USERSUSP) {
-				eprintf ("(%d) unknown event: %ul\n", pid, de.dwDebugEventCode);
+				eprintf ("(%d) unknown event: %lu\n", pid, de.dwDebugEventCode);
 				ret = -1;
 			}
 			goto end;
