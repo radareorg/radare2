@@ -59,6 +59,10 @@ R_API char *r_cons_hud_string(const char *s) {
 static bool __matchString(char *entry, char *filter, char *mask, const int mask_size) {
 	char *p, *current_token = filter;
 	const char *filter_end = filter + strlen (filter);
+	char *ansi_filtered = strdup (entry);
+	int *cps;
+	r_str_ansi_filter (ansi_filtered, NULL, &cps, -1);
+	entry = ansi_filtered;
 	// first we separate the filter in words (include the terminator char
 	// to avoid special handling of the last token)
 	for (p = filter; p <= filter_end; p++) {
@@ -76,22 +80,27 @@ static bool __matchString(char *entry, char *filter, char *mask, const int mask_
 			token_len = strlen (current_token);
 			// look for all matches of the current_token in this entry
 			while ((next_match = r_str_casestr (entry_ptr, current_token))) {
-				int i;
-				for (i = next_match - entry;
-				     (i < next_match - entry + token_len) && i < mask_size;
-				     i++) {
-					mask[i] = 'x';
+				int real_pos, filtered_pos = next_match - entry;
+				int end_pos = cps[filtered_pos + token_len];
+				for (real_pos = cps[filtered_pos];
+					real_pos < end_pos && real_pos < mask_size;
+					real_pos = cps[++filtered_pos]) {
+					mask[real_pos] = 'x';
 				}
 				entry_ptr += token_len;
 			}
 			*p = old_char;
 			if (entry_ptr == entry) {
 				// the word is not present in the target
+				free (cps);
+				free (ansi_filtered);
 				return false;
 			}
 			current_token = p + 1;
 		}
 	}
+	free (cps);
+	free (ansi_filtered);
 	return true;
 }
 
