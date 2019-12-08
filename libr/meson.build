@@ -408,6 +408,7 @@ r_util_files = [
   'include/r_util/r_queue.h',
   'include/r_util/r_range.h',
   'include/r_util/r_rbtree.h',
+  'include/r_util/r_intervaltree.h',
   'include/r_util/r_sandbox.h',
   'include/r_util/r_signal.h',
   'include/r_util/r_spaces.h',
