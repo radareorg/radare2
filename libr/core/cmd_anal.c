@@ -570,12 +570,12 @@ static const char *help_msg_ah[] = {
 	"ahh", " 0x804840", "highlight this address offset in disasm",
 	"ahi", "[?] 10", "define numeric base for immediates (1, 8, 10, 16, s)",
 	"ahj", "", "list hints in JSON",
-	"aho", " call", "change opcode type (see aho?)",
+	"aho", " call", "change opcode type (see aho?) (deprecated, moved to \"ahd\")",
 	"ahp", " addr", "set pointer hint",
 	"ahr", " val", "set hint for return value of a function",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
-	"aht", " [?] <type>", "Mark immediate as a type offset",
+	"aht", " [?] <type>", "Mark immediate as a type offset (deprecated, moved to \"aho\")",
 	"ahv", " val", "change opcode's val field (useful to set jmptbl sizes in jmp rax)",
 	NULL
 };
@@ -7317,7 +7317,6 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		}
 		break;
 	case 'o': // "aho"
-		eprintf ("[WARNING] Former \"aho\" is deprecated and has been moved to \"ahd\".\n");
 		if (input[1] == ' ') {
 			const char *arg = r_str_trim_ro (input + 1);
 			int type = r_anal_optype_from_string (arg);
@@ -7509,7 +7508,6 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_clear (core->anal);
 		} break;
 	case 't': // "aht"
-		eprintf ("[WARNING] Former \"aht\" is deprecated and has been moved to \"aho\".\n");
 		switch (input[1]) {
 		case 's': { // "ahts"
 			char *off = strdup (input + 2);
