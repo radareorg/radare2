@@ -327,10 +327,10 @@ typedef struct _HEAP_SUBALLOCATOR_CALLBACKS {
 } HEAP_SUBALLOCATOR_CALLBACKS, *PHEAP_SUBALLOCATOR_CALLBACKS;
 
 typedef struct _RTL_HP_VS_CONFIG {
-	struct Flags {
+	struct {
 		ULONG PageAlignLargeAllocs : 1;
 		ULONG FullDecommit : 1;
-	};
+	} Flags;
 } RTL_HP_VS_CONFIG, *PRTL_HP_VS_CONFIG;
 
 typedef struct _HEAP_VS_SUBSEGMENT {

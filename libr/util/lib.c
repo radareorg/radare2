@@ -93,7 +93,7 @@ R_API char *r_lib_path(const char *libname) {
 	}
 	WCHAR *name = r_utf8_to_utf16 (tmp);
 	free (tmp);
-	char *path = NULL;
+	WCHAR *path = NULL;
 	if (!name) {
 		goto err;
 	}
@@ -113,11 +113,12 @@ R_API char *r_lib_path(const char *libname) {
 		goto err;
 	}
 	tmp = r_utf16_to_utf8 (path);
+	free (name);
 	free (path);
-	path = tmp;
+	return tmp;
 err:
 	free (name);
-	return path;
+	return NULL;
 #else
 #if __APPLE__
 	char *env = r_sys_getenv ("DYLD_LIBRARY_PATH");

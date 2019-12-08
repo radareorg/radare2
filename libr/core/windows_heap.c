@@ -256,7 +256,6 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	RDebugMap *map;
 	bool found = false;
 	const char ntdll[] = "ntdll.dll";
-	int oldfd = 0;
 	static ut64 lastNdtllAddr = 0;
 	r_list_foreach (modules, it, map) {
 		if (!strncmp(map->name, ntdll, sizeof (ntdll))) {
@@ -276,7 +275,6 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 		for (int i = 0; i < 3; i++) {
 			saddr = strtok (NULL, " ");
 		}
-		ut64 addr = r_num_math (NULL, saddr + 3);
 		if (doopen) {
 			// Close to reopen at the right address
 			int fd = atoi (ntdllopen);
@@ -384,7 +382,8 @@ typedef struct _th_query_params {
 	bool hanged;
 } th_query_params;
 
-static DWORD WINAPI __th_QueryDebugBuffer(th_query_params *params) {
+static DWORD WINAPI __th_QueryDebugBuffer(void *param) {
+	th_query_params *params = (th_query_params *)param;
 	params->ret = RtlQueryProcessDebugInformation (params->dbg->pid, params->mask, params->db);
 	params->fin = true;
 	if (params->hanged) {
@@ -442,7 +441,7 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 		return NULL;
 	}
 	*params =  (th_query_params) { dbg, mask, db, 0, false, false };
-	HANDLE th = CreateThread (NULL, 0, __th_QueryDebugBuffer, params, 0, NULL);
+	HANDLE th = CreateThread (NULL, 0, &__th_QueryDebugBuffer, params, 0, NULL);
 	if (th) {
 		WaitForSingleObject (th, 5000);
 	} else {
@@ -779,7 +778,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 			DecodeHeapEntry (dbg, &heapHeader, &vAlloc.BusyBlock);
 			GROW_BLOCKS ();
 			blocks[count].address = (WPARAM)entry;
-			blocks[count].flags = 1 | (vAlloc.BusyBlock.Flags | NT_BLOCK | LARGE_BLOCK) & ~2ULL;
+			blocks[count].flags = 1 | ((vAlloc.BusyBlock.Flags | NT_BLOCK | LARGE_BLOCK) & ~2ULL);
 			blocks[count].size = vAlloc.ReserveSize;
 			PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 			if (!extra) {
@@ -1329,7 +1328,6 @@ static const char *help_msg_block[] = {
 static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 	char *space = strchr (input, ' ');
 	ut64 off = 0;
-	PHeapBlock hb = NULL;
 	if (space) {
 		off = r_num_math (core->num, space + 1);
 		PHeapBlock hb = GetSingleBlock (core->dbg, off);

@@ -291,8 +291,8 @@ static RTable *__create_window_table(void) {
 static void __add_window_to_table(RTable *tbl, window *win) {
 	r_return_if_fail (tbl && win);
 	char *handle = r_str_newf ("0x%08"PFMT64x"", win->h);
-	char *pid = r_str_newf ("%"PFMT32u"", win->pid);
-	char *tid = r_str_newf ("%"PFMT32u"", win->tid);
+	char *pid = r_str_newf ("%ul", win->pid);
+	char *tid = r_str_newf ("%ul", win->tid);
 	r_table_add_row (tbl, handle, pid, tid, win->name, NULL);
 	free (handle);
 	free (tid);
@@ -391,7 +391,7 @@ static ut64 __get_dispatchmessage_offset(RDebug *dbg) {
 			dbg->iob.read_at (dbg->iob.io, offset, (ut8 *)&offset, sizeof (offset));
 			break;
 		}
-	} while (line = strtok (NULL, "\n"));
+	} while ((line = strtok (NULL, "\n")));
 	free (res);
 	return offset;
 }
@@ -400,7 +400,7 @@ static void __init_msg_types(Sdb **msg_types) {
 	*msg_types = sdb_new0 ();
 	int i;
 	char *cur_type;
-	for (i = 0; cur_type = msg_types_arr[i]; i++) {
+	for (i = 0; (cur_type = msg_types_arr[i]); i++) {
 		sdb_query (*msg_types, cur_type);
 	}
 }
@@ -410,7 +410,7 @@ static DWORD __get_msg_type(char *name) {
 	if (!msg_types) {
 		__init_msg_types (&msg_types);
 	}
-	int found;
+	ut32 found;
 	const char *type_str = sdb_const_get (msg_types, name, &found);
 	if (found) {
 		int type = r_num_math (NULL, type_str);
@@ -447,8 +447,9 @@ R_API void r_w32_print_windows(RDebug *dbg) {
 	r_list_free (windows);
 }
 
-R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, char *name) {
-	r_return_val_if_fail (dbg && name, false);
+R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, const char *input) {
+	r_return_val_if_fail (dbg && input, false);
+	char *name = strdup (input);
 	r_str_trim (name);
 	char *window_id = strchr (name, ' ');
 	if (window_id) {
@@ -457,6 +458,7 @@ R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, char *name) {
 	}
 	DWORD type = __get_msg_type (name);
 	if (!type) {
+		free (name);
 		return false;
 	}
 	ut64 offset = 0;
@@ -483,6 +485,7 @@ R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, char *name) {
 		offset = __get_dispatchmessage_offset (dbg);
 	}
 	if (!offset) {
+		free (name);
 		return false;
 	}
 	r_debug_bp_add (dbg, offset, 0, 0, 0, NULL, 0);
@@ -499,5 +502,6 @@ R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, char *name) {
 		cond = r_str_newf ("?= `ae %d,%s,%d,+,[4],-`", type, reg, dbg->bits);
 	}
 	dbg->corebind.cmdf (dbg->corebind.core, "\"dbC 0x%"PFMT64x" %s\"", offset, cond);
+	free (name);
 	return true;
 }

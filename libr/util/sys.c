@@ -1075,7 +1075,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	HANDLE processHandle;
 	const DWORD maxlength = MAX_PATH;
 	TCHAR filename[MAX_PATH];
-	const char *result;
+	char *result = NULL;
 
 	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (!processHandle) {

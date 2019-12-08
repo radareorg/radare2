@@ -138,7 +138,6 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 		list = r_list_newf (free);
 		break;
 	}
-	const char *comma = "";
 	for (i = start;/* condition at the end of loop */; i = (i + 1) % R_IO_UNDOS) {
 		int idx = (j < undos)? undos - j - 1: j - undos - 1;
 		RIOUndos *undo = &io->undo.seek[i];

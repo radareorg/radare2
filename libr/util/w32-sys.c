@@ -12,21 +12,6 @@ void r_sys_perror_str(const char *fun);
 #define ErrorExit(x) { r_sys_perror(x); return false; }
 char *ReadFromPipe(HANDLE fh, int *outlen);
 
-// HACKY
-static char *getexe(const char *str) {
-	char *ptr, *targv, *argv0 = strdup (str);
-	ptr = strchr (argv0, ' ');
-	if (ptr) *ptr = '\0';
-	targv = realloc (argv0, strlen (argv0)+8);
-	if (!targv) {
-		free (argv0);
-		return NULL;
-	}
-	argv0 = targv;
-	strcat (argv0, ".exe");
-	return argv0;
-}
-
 R_API char *r_sys_get_src_dir_w32() {
 	TCHAR fullpath[MAX_PATH + 1];
 	TCHAR shortpath[MAX_PATH + 1];

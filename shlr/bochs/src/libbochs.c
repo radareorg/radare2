@@ -12,7 +12,7 @@ static char *lpTmpBuffer; //[0x2800u];
 #endif
 int RunRemoteThread_(libbochs_t* b, const ut8 *lpBuffer, ut32 dwSize, int a4, ut32 *lpExitCode) {
 	LPVOID pProcessMemory;
-	HANDLE hInjectThread;
+	HANDLE hInjectThread = NULL;
 	int result = 0;
 	SIZE_T NumberOfBytesWritten;
 
@@ -118,18 +118,16 @@ bool bochs_wait(libbochs_t *b) {
 void bochs_send_cmd(libbochs_t* b, const char *cmd, bool bWait) {
 	char *cmdbuff = r_str_newf ("%s\n", cmd);
 	bochs_reset_buffer (b);
-#if __WINDOWS__
-	{
-		DWORD dwWritten;
-		WriteFile (b->hWritePipeOut, cmdbuff, strlen (cmdbuff), &dwWritten, NULL);
-	}
-#else
 	size_t cmdlen = strlen (cmdbuff);
+#if __WINDOWS__
+	DWORD dwWritten;
+	if (!WriteFile (b->hWritePipeOut, cmdbuff, cmdlen, &dwWritten, NULL)) {
+#else
 	if (write (b->hWritePipeOut, cmdbuff, cmdlen) != cmdlen) {
+#endif
 		eprintf ("boch_send_cmd failed\n");
 		goto beach;
 	}
-#endif
 	if (bWait)
 		bochs_wait (b);
 beach:

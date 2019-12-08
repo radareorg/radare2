@@ -1653,9 +1653,6 @@ R_API int r_debug_drx_unset(RDebug *dbg, int idx) {
 }
 
 R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
-	char *abspath;
-	RListIter *iter;
-	RDebugMap *map;
 	if (!dbg || !dbg->iob.io || !dbg->iob.io->desc) {
 		return 0LL;
 	}
@@ -1675,9 +1672,11 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	ut64 base;
 	return r_io_desc_get_base (dbg->iob.io->desc, &base), base;
 #else
+	RListIter *iter;
+	RDebugMap *map;
 	r_debug_select (dbg, pid, tid);
 	r_debug_map_sync (dbg);
-	abspath = r_sys_pid_to_path (pid);
+	char *abspath = r_sys_pid_to_path (pid);
 	if (!abspath) {
 		abspath = r_file_abspath (file);
 	}

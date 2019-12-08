@@ -886,7 +886,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			free (pfile);
 			return 1;
 		}
-		if (chdir (argv[r_optind])) {
+		if (r_sys_chdir (argv[r_optind])) {
 			eprintf ("[d] Cannot open directory\n");
 			LISTS_FREE ();
 			free (pfile);
