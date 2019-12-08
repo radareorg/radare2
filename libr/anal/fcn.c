@@ -1559,6 +1559,9 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	}
 	r_anal_fcn_set_size (NULL, fcn, 0); // fcn is not yet in anal => pass NULL
 	fcn->maxstack = 0;
+	if (fcn->cc && !strcmp (fcn->cc, "ms")) {
+		fcn->stack = fcn->maxstack = 0x28; // Shadow store for the first 4 args + Return addr
+	}
 	int ret = r_anal_fcn_bb (anal, fcn, addr, anal->opt.depth);
 	if (ret == -1) {
 		if (anal->verbose) {
