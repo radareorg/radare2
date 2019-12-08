@@ -1,0 +1,8 @@
+NAME=PE: corkami ss63.exe - open
+FILE=../bins/pe/ss63.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

@@ -1,0 +1,14 @@
+NAME='dbg.dc+ds.swstep'
+FILE=../bins/arm/elf/hello_world
+ARGS=-d
+CMDS=<<EXPECT
+e scr.color=0
+e scr.null=true
+s entry0
+s +8
+db $$
+dc
+dc
+EXPECT=<<RUN
+Hello world!
+RUN

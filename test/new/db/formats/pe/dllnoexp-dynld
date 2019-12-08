@@ -1,0 +1,8 @@
+NAME=PE: corkami dllnoexp-dynld.exe - open
+FILE=../bins/pe/dllnoexp-dynld.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

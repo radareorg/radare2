@@ -1,0 +1,122 @@
+NAME=jp nnn
+FILE=malloc://1024
+EXPECT=<<EOF
+jump: 0x00000240
+EOF
+CMDS=<<EOF
+e asm.arch=chip8
+s 0x200
+wx 1240
+ao~^jump
+EOF
+RUN
+
+NAME=jp v0, nnn
+FILE=malloc://1024
+EXPECT=<<EOF
+jump: 0x00000220
+EOF
+CMDS=<<EOF
+e asm.arch=chip8
+s 0x200
+wx b220
+ao~^jump
+EOF
+RUN
+
+NAME=call nnn
+FILE=malloc://1024
+EXPECT=<<EOF
+jump: 0x00000224
+EOF
+CMDS=<<EOF
+e asm.arch=chip8
+s 0x200
+wx 2224
+ao~jump
+EOF
+RUN
+
+NAME=se vx, kk
+FILE=malloc://1024
+EXPECT=<<EOF
+jump: 0x00000204
+fail: 0x00000202
+EOF
+CMDS=<<EOF
+e asm.arch=chip8
+s 0x200
+wx 3a00
+ao~jump,fail
+EOF
+RUN
+
+NAME=se vx, vy
+FILE=malloc://1024
+EXPECT=<<EOF
+jump: 0x00000204
+fail: 0x00000202
+EOF
+CMDS=<<EOF
+e asm.arch=chip8
+s 0x200
+wx 5ab0
+ao~jump,fail
+EOF
+RUN
+
+NAME=sne vx, kk
+FILE=malloc://1024
+EXPECT=<<EOF
+jump: 0x00000204
+fail: 0x00000202
+EOF
+CMDS=<<EOF
+e asm.arch=chip8
+s 0x200
+wx 4a00
+ao~jump,fail
+EOF
+RUN
+
+NAME=sne vx, vy
+FILE=malloc://1024
+EXPECT=<<EOF
+jump: 0x00000204
+fail: 0x00000202
+EOF
+CMDS=<<EOF
+e asm.arch=chip8
+s 0x200
+wx 9ab0
+ao~jump,fail
+EOF
+RUN
+
+NAME=skp vx
+FILE=malloc://1024
+EXPECT=<<EOF
+jump: 0x00000204
+fail: 0x00000202
+EOF
+CMDS=<<EOF
+e asm.arch=chip8
+s 0x200
+wx ea9e
+ao~jump,fail
+EOF
+RUN
+
+NAME=sknp vx
+FILE=malloc://1024
+EXPECT=<<EOF
+jump: 0x00000204
+fail: 0x00000202
+EOF
+CMDS=<<EOF
+e asm.arch=chip8
+s 0x200
+wx eaa1
+ao~jump,fail
+EOF
+RUN

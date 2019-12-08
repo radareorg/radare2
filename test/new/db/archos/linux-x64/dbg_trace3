@@ -1,0 +1,14 @@
+NAME='dbg.trace instructions'
+FILE=../bins/elf/analysis/x86-simple
+ARGS=-d
+BROKEN=1
+CMDS=<<EXPECT
+ds
+sr eip
+e dbg.trace = true
+2ds
+"pi 1 @ `atd~:0[3]`;pi 1 @ `atd~:1[3]`"
+EXPECT=<<RUN
+pop ebx
+mov eax, 1
+RUN

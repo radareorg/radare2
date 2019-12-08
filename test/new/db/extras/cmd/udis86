@@ -1,0 +1,113 @@
+NAME=String udis86
+FILE=../../bins/elf/analysis/main
+EXPECT=<<EOF
+|           0x0040050a      bfc4054000     mov edi, str.Hello_World    ; 0x4005c4 ; "Hello World"
+EOF
+CMDS=<<EOF
+e asm.arch = x86.udis
+e asm.arch=x86
+e asm.bits=32
+e scr.columns = 90
+aa
+pd 1 @ 0x0040050a
+EOF
+RUN
+
+
+NAME="16bit segment bounds"
+FILE=malloc://1024k
+CMDS=<<EXPECT
+e asm.arch=x86.udis
+e asm.bits=16
+e anal.hasnext=0
+wx e9c300 @ f000:ffaa
+s f000:ffaa
+pi 1
+EXPECT=<<RUN
+jmp 0xf0070
+RUN
+
+NAME="udis1"
+CMDS=<<EXPECT
+e asm.arch=x86.udis
+e asm.bits=32
+e anal.hasnext=0
+b 0x4e
+wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
+af
+pif~?
+afi $$~size[1]
+EXPECT=<<RUN
+32
+78
+RUN
+
+NAME="udis2"
+CMDS=<<EXPECT
+e asm.arch=x86.udis
+e asm.bits=32
+e anal.hasnext=0
+b 0x4e
+wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
+af
+pdr~true?
+EXPECT=<<RUN
+8
+RUN
+
+NAME="udis3"
+CMDS=<<EXPECT
+e asm.arch=x86.udis
+e asm.bits=32
+e anal.hasnext=0
+b 0x4e
+wx 5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3
+af
+pdr~true?
+pdr~false?
+EXPECT=<<RUN
+3
+1
+RUN
+
+NAME="axt udis86"
+FILE=../../bins/elf/analysis/main
+CMDS=<<EXPECT
+e asm.arch = x86.udis
+e anal.arch = x86.udis
+e scr.color = false
+e scr.wheel = false
+aa
+axt @ str.Hello_World
+EXPECT=<<RUN
+sym.main 0x40050a [data] mov edi, str.Hello_World
+RUN
+
+NAME="axt udis86: IOLI0"
+FILE=../../bins/elf/ioli/crackme0x00
+CMDS=<<EXPECT
+e asm.arch = x86.udis
+e anal.arch = x86.udis
+e scr.color=false
+e scr.wheel = false
+aa
+axt @ str.Password:
+EXPECT=<<RUN
+main 0x804843c [data] mov dword [esp], str.Password:
+RUN
+
+NAME="axf string ref udis86"
+BROKEN=
+FILE=../../bins/elf/ioli/crackme0x03
+CMDS=<<EXPECT
+e asm.arch = x86.udis
+e anal.arch = x86.udis
+e scr.color = false
+e scr.wheel = false
+aa
+axt str.Sdvvzrug_RN
+axf 0x804848a
+EXPECT=<<RUN
+sym.test 0x804848a [data] mov dword [esp], str.Sdvvzrug_RN
+d 0x804848a mov dword [esp], str.Sdvvzrug_RN
+RUN

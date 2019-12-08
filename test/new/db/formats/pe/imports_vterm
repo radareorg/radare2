@@ -1,0 +1,8 @@
+NAME=PE: corkami imports_vterm.exe - open
+FILE=../bins/pe/imports_vterm.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

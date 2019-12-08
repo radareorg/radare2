@@ -1,0 +1,8 @@
+NAME=PE: corkami fakerelocs.exe - open
+FILE=../bins/pe/fakerelocs.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

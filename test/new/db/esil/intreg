@@ -1,0 +1,21 @@
+NAME=intreg $$
+FILE=-
+EXPECT=<<EOF
+0xa
+EOF
+CMDS=<<EOF
+s 10
+"ae $$,0,+"
+EOF
+RUN
+
+NAME=intreg $$
+FILE=-
+EXPECT=<<EOF
+0xa
+EOF
+CMDS=<<EOF
+s 10
+"ae 0,$$,+"
+EOF
+RUN

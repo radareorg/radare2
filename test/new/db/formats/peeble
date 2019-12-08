@@ -1,0 +1,9 @@
+NAME=Peeble: Open/iI
+FILE=../bins/pebble/pebble-app.bin
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+iI~?pebble
+EOF
+RUN

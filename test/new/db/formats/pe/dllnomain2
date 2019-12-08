@@ -1,0 +1,8 @@
+NAME=PE: corkami dllnomain2.dll - open
+FILE=../bins/pe/dllnomain2.dll
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

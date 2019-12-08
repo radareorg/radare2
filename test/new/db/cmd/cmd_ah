@@ -1,0 +1,195 @@
+NAME=ah- offset
+FILE=-
+EXPECT=<<EOF
+before:
+ 0x00000000 - 0x00000000 => immbase=10
+ 0x00000010 - 0x00000010 => immbase=8
+after:
+ 0x00000000 - 0x00000000 => immbase=10
+EOF
+CMDS=<<EOF
+ahi 10 @ 0
+ahi 8 @ 16
+?e before:
+ah
+ah- 0x10
+?e after:
+ah
+EOF
+RUN
+
+NAME=ah-offset
+FILE=-
+EXPECT=<<EOF
+before:
+ 0x00000000 - 0x00000000 => immbase=10
+ 0x00000010 - 0x00000010 => immbase=8
+after:
+ 0x00000000 - 0x00000000 => immbase=10
+EOF
+CMDS=<<EOF
+ahi 10 @ 0
+ahi 8 @ 16
+?e before:
+ah
+ah-0x10
+?e after:
+ah
+EOF
+RUN
+
+NAME=ah
+FILE=-
+EXPECT=<<EOF
+all:
+ 0x00000815 - 0x00000815 => immbase=17185
+ 0x00001337 - 0x0000133b => arch='ppc' bits=16 type='call' size=4 opcode='foo a0,33' syntax='jz' immbase=10 esil='3,eax,+=' ptr=0xc0ff33 jump=0x00804804 fail=0x00012345 ret=0x0000002a high=true stackframe=0x10
+--
+at 0x1337:
+ 0x00001337 - 0x0000133b => arch='ppc' bits=16 type='call' size=4 opcode='foo a0,33' syntax='jz' immbase=10 esil='3,eax,+=' ptr=0xc0ff33 jump=0x00804804 fail=0x00012345 ret=0x0000002a high=true stackframe=0x10
+EOF
+CMDS=<<EOF
+s 0x1337
+aha ppc
+ahb 16
+ahc 0x804804
+ahe 3,eax,+=
+ahf 0x12345
+ahF 0x10
+ahh
+ahi 10
+ahd foo a0,33
+ahp 0xc0ff33
+ahr 42
+ahs 4
+ahS jz
+aho call
+
+ahi 0x4321 @ 0x0815
+?e all:
+ah
+?e --
+?e at 0x1337:
+ah. @ 0x1337
+EOF
+RUN
+
+NAME=ah*
+FILE=-
+EXPECT=<<EOF
+all:
+ahi 17185 @ 0x815
+aha ppc @ 0x1337
+ahb 16 @ 0x1337
+aho call @ 0x1337
+ahs 4 @ 0x1337
+ahd foo a0,33 @ 0x1337
+ahS jz @ 0x1337
+ahi 10 @ 0x1337
+ahe 3,eax,+= @ 0x1337
+ahp 0xc0ff33 @ 0x1337
+ahc 0x804804 @ 0x1337
+ahf 0x12345 @ 0x1337
+ahr 0x2a @ 0x1337
+ahh @ 0x1337
+ahF 0x10 @ 0x1337
+--
+at 0x1337:
+aha ppc @ 0x1337
+ahb 16 @ 0x1337
+aho call @ 0x1337
+ahs 4 @ 0x1337
+ahd foo a0,33 @ 0x1337
+ahS jz @ 0x1337
+ahi 10 @ 0x1337
+ahe 3,eax,+= @ 0x1337
+ahp 0xc0ff33 @ 0x1337
+ahc 0x804804 @ 0x1337
+ahf 0x12345 @ 0x1337
+ahr 0x2a @ 0x1337
+ahh @ 0x1337
+ahF 0x10 @ 0x1337
+EOF
+CMDS=<<EOF
+s 0x1337
+aha ppc
+ahb 16
+ahc 0x804804
+ahe 3,eax,+=
+ahf 0x12345
+ahF 0x10
+ahh
+ahi 10
+ahd foo a0,33
+ahp 0xc0ff33
+ahr 42
+ahs 4
+ahS jz
+aho call
+
+ahi 0x4321 @ 0x0815
+?e all:
+ah*
+?e --
+?e at 0x1337:
+ah* 0x1337
+EOF
+RUN
+
+NAME=ahj
+FILE=-
+EXPECT=<<EOF
+all:
+[{"from":2069,"to":2069,"immbase":17185},{"from":4919,"to":4923,"arch":"ppc","bits":16,"type":"call","size":4,"opcode":"foo a0,33","syntax":"jz","immbase":10,"esil":"3,eax,+=","ptr":12648243,"jump":8407044,"fail":74565,"ret":42,"high":true,"stackframe":16}]
+--
+at 0x1337:
+[{"from":4919,"to":4923,"arch":"ppc","bits":16,"type":"call","size":4,"opcode":"foo a0,33","syntax":"jz","immbase":10,"esil":"3,eax,+=","ptr":12648243,"jump":8407044,"fail":74565,"ret":42,"high":true,"stackframe":16}]
+EOF
+CMDS=<<EOF
+s 0x1337
+aha ppc
+ahb 16
+ahc 0x804804
+ahe 3,eax,+=
+ahf 0x12345
+ahF 0x10
+ahh
+ahi 10
+ahd foo a0,33
+ahp 0xc0ff33
+ahr 42
+ahs 4
+ahS jz
+aho call
+
+ahi 0x4321 @ 0x0815
+?e all:
+ahj
+?e --
+?e at 0x1337:
+ahj 0x1337
+EOF
+RUN
+
+NAME=ahd with asm.tabs
+FILE=../bins/mach0/mac-ls
+CMDS=<<EOF
+e asm.flags=0
+pd 3
+ahd hello world
+pd 3
+e asm.tabs=1
+pd 3
+EOF
+EXPECT=<<EOF
+            0x100001058      55             push rbp
+            0x100001059      4889e5         mov rbp, rsp
+            0x10000105c      4157           push r15
+            0x100001058      55             hello world
+            0x100001059      4889e5         mov rbp, rsp
+            0x10000105c      4157           push r15
+            0x100001058      55             hello world
+            0x100001059      4889e5         mov rbp, rsp
+            0x10000105c      4157           push r15
+EOF
+RUN

@@ -1,0 +1,75 @@
+NAME=ara swap
+FILE=-
+EXPECT=<<EOF
+0x00000021
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+ara+
+ar rax=33
+ar rax
+aras
+ar rax
+EOF
+RUN
+
+NAME=ara swap 2
+FILE=-
+EXPECT=<<EOF
+0x00000021
+0x00000000
+0x00000021
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+ara+
+ar rax=33
+ar rax
+aras
+ar rax
+aras
+ar rax
+EOF
+RUN
+
+NAME=ara push
+FILE=-
+EXPECT=<<EOF
+16
+24
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+ara~?
+ara+
+ara~?
+EOF
+RUN
+
+NAME=ara pop
+FILE=-
+EXPECT=<<EOF
+16
+24
+16
+8
+8
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+ara~?
+ara+
+ara~?
+ara-
+ara~?
+ara-
+ara~?
+ara-
+ara~?
+EOF
+RUN

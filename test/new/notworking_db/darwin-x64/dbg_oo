@@ -1,0 +1,68 @@
+NAME='dbg.oo 10'
+FILE=/bin/ls
+ARGS=-d
+BROKEN=1
+CMDS=<<EXPECT
+10oo
+e file.path
+EXPECT=<<RUN
+dbg:///bin/ls
+RUN
+
+NAME='dc - i386'
+BROKEN=1
+FILE=../bins/mach0/hello-osx-i386
+ARGS=-d
+CMDS=<<EXPECT
+dc
+EXPECT=<<RUN
+Hello world!
+RUN
+
+NAME='dc - i386 forced'
+BROKEN=1
+FILE=../bins/mach0/hello-osx-i386
+ARGS="-b 32 -d"
+CMDS=<<EXPECT
+dc
+EXPECT=<<RUN
+Hello World
+RUN
+
+NAME='oo ; dc - i386'
+FILE=../bins/mach0/hello-osx-i386
+BROKEN=1
+ARGS=-d
+CMDS=<<EXPECT
+oo
+dc
+EXPECT=<<RUN
+Hello world!
+RUN
+
+NAME='oo ; dc'
+BROKEN=1
+FILE=../bins/mach0/hello-osx-x86_64
+ARGS=-d
+CMDS=<<EXPECT
+oo
+dc
+EXPECT=<<RUN
+Hello World
+RUN
+
+NAME='ood'
+BROKEN=1
+FILE=../bins/mach0/hello-osx-x86_64
+ARGS=-d
+CMDS=<<EXPECT
+ds
+dr rip
+ood
+dr rip
+dc
+EXPECT=<<RUN
+0x7fff5fc01001
+0x7fff5fc01000
+Hello World
+RUN

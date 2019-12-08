@@ -1,0 +1,8 @@
+NAME=crash aae oob
+FILE=../bins/elf/arm32esilcrash
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+aae
+EOF
+RUN

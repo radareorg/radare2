@@ -1,0 +1,87 @@
+NAME=!
+FILE=-
+EXPECT=<<EOF
+fuck
+yeah
+fuck
+yeah
+EOF
+CMDS=<<EOF
+?e fuck
+?e yeah
+!echo fuck
+!echo yeah
+EOF
+RUN
+
+NAME=!| grep
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+!echo fuck|grep bob
+EOF
+RUN
+
+NAME=!| sed
+FILE=-
+EXPECT=<<EOF
+yeah
+EOF
+CMDS=<<EOF
+!echo fuck|sed -e s,fuck,yeah,
+EOF
+RUN
+
+NAME=?e|
+FILE=-
+EXPECT=<<EOF
+yeah
+EOF
+CMDS=<<EOF
+?e fuck|sed -e s,fuck,yeah,
+EOF
+RUN
+
+NAME=p8 `?e 3`
+FILE=-
+EXPECT=<<EOF
+000000
+EOF
+CMDS=<<EOF
+p8 `?e 3`
+EOF
+RUN
+
+NAME=p8 `!echo 3`
+FILE=-
+EXPECT=<<EOF
+000000
+EOF
+CMDS=<<EOF
+p8 `!echo 3`
+EOF
+RUN
+
+NAME=!echo "test"
+FILE=-
+EXPECT=<<EOF
+test
+test
+EOF
+CMDS=<<EOF
+!echo test
+"!echo test"
+EOF
+RUN
+
+NAME=%ENV=33 !echo "${ENV}"
+FILE=-
+EXPECT=<<EOF
+World
+EOF
+CMDS=<<EOF
+%ENV=World
+!echo ${ENV}
+EOF
+RUN

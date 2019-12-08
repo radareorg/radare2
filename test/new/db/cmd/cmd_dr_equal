@@ -1,0 +1,10 @@
+NAME=dr= double 0x bug
+FILE=-
+EXPECT=<<EOF
+0
+EOF
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+dr=~?0x0x
+EOF
+RUN

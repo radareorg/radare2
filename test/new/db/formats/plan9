@@ -1,0 +1,9 @@
+NAME=Plan9: Open/iI
+FILE=../bins/plan9/bin
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+iI~?plan9
+EOF
+RUN

@@ -79,10 +79,9 @@ test_script:
   - radare2 -v
   - ps: Install-Product node $env:nodejs_version
   - node --version
-  - git clone https://github.com/radareorg/radare2-regressions
-  - cd radare2-regressions/new
-  - ps: $env:pull_owner=($env:APPVEYOR_PULL_REQUEST_HEAD_REPO_NAME -split "/")[0]
-  - ps: if (-not [string]::IsNullOrWhiteSpace($env:pull_owner)) {cmd /c "(git fetch git://github.com/%pull_owner%/radare2-regressions %APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%:%pull_owner%_%APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH% && git checkout %pull_owner%_%APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH%) > nul 2>&1 || exit 0"} else {echo "Using master"}
+  - cd test
+  - git clone -q --depth 1 https://github.com/radareorg/radare2-testbins bins
+  - cd new
   - npm install
   - set NOOK=1
   - node_modules/.bin/r2r

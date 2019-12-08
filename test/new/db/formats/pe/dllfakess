@@ -1,0 +1,8 @@
+NAME=PE: corkami dllfakess.dll - open
+FILE=../bins/pe/dllfakess.dll
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

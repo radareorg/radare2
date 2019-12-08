@@ -1,0 +1,6 @@
+NAME=r2agent -v
+FILE=-
+CMDS=!r2agent -v | grep -c build
+EXPECT=<<RUN
+1
+RUN

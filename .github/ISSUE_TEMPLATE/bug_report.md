@@ -27,7 +27,7 @@ Make sure you are testing using the latest git version of radare2 before submitt
 - Please share the binary if it is shareable by drag and dropping it here in a zip archive (mandatory)
 - Use asciinema to describe the issue and share the link here (mandatory if u can't share the binary) 
 - Use code markdown `CODE` to make your code visible
-- Or even better, create a Pull-Request for the https://github.com/radareorg/radare2-regressions containing the test case examples can be found in the t/ folder see for example https://github.com/radareorg/radare2-regressions/blob/master/t/cmd_search#L7
+- Or even better, create a Pull-Request containing the test case in the test/ folder. See for example test/new/db/cmd/cmd_search.
 
 ### Additional Logs, screenshots, source-code,  configuration dump, ...
 

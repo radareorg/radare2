@@ -1,0 +1,67 @@
+aB "add r13, r15" 4d01f5
+a "add r15, rbx" 4901df
+a "add rax, 44" 4883c02c
+a "add rax, r8" 4c01c0
+a "add rax, rcx" 4801c8
+a "call rbx" ffd3
+a "cmp rax, 33" 4883f821
+a "cmp rax, rbx" 4839d8
+a "cmp rbx, rax" 4839c3
+a "cmp rdx, rsi" 4839f2
+a "inc rdx" 48ffc2
+a "jmp rbx" ffe3
+aB "lea rax, [rax+0]" 488d4000
+a "lea rax, [rax+1]" 488d4001
+aB "lea rax, [rax-0]" 488d4000
+a "lea rax, [rax-1]" 488d40ff
+a "lea rax, [rax]" 488d00
+a "lea rax,[rel -10]" 488d05f6ffffff
+a "lea rax,[rel 0]" 488d0500000000
+a "lea rax,[rel 10]" 488d050a000000
+a "lea rax,[rip+0]" 488d0500000000
+a "lea rax,[rip+10]" 488d050a000000
+a "lea rax,[rip-0]" 488d0500000000
+a "lea rax,[rip-10]" 488d05f6ffffff
+a "lea rax,[rip]" 488d0500000000
+a "mov [rsi], rbx" 48891e
+a "mov edx, [rbp-4]" 8b55fc
+a "mov rax, 0x1122334455667788" 48b88877665544332211
+aB "mov rax, 0x112233445566778899" 00
+a "mov rax, 3" 48c7c003000000
+a "mov rax, 33" 48c7c021000000
+aB "mov rax, [rax+0]" 488b4000
+a "mov rax, [rax+1]" 488b4001
+aB "mov rax, [rax-0]" 488b4000
+a "mov rax, [rax-1]" 488b40ff
+a "mov rax, [rax]" 488b00
+a "mov rax,[rel -10]" 488b05f6ffffff
+a "mov rax,[rel 0]" 488b0500000000
+a "mov rax,[rel 10]" 488b050a000000
+a "mov rax,[rip+0]" 488b0500000000
+a "mov rax,[rip+10]" 488b050a000000
+a "mov rax,[rip-0]" 488b0500000000
+a "mov rax,[rip-10]" 488b05f6ffffff
+a "mov rax,[rip]" 488b0500000000
+a "mov rbx, 3" 48c7c303000000
+a "mov rbx, rax" 4889c3
+a "mov rcx, -0x1122334455667788" 48b9788899aabbccddee
+aB "mov rcx, -0x112233445566778899" 00
+a "mov rsi, rbx" 4889de
+a "mov sil, 0" 40b600
+a "mov dil, -5" 40b7fb
+a "mov spl, bpl" 4088ec
+a "pop rax" 58
+a "prefetcht1 [eax]" 670f1810
+a "prefetcht1 [rax]" 0f1810
+a "prefetcht1 byte [eax]" 670f1810
+a "prefetcht1 byte [rax]" 0f1810
+aB "shl rdx, 5" 48c1f205
+a "sub rax, 44" 4883e82c
+a "sub rax, rbx" 4829d8
+a "test rax, rbx" 4885d8
+a "test rcx, rcx" 4885c9
+a "test rdx, rsi" 4885f2
+a "xor [rax], rax" 483100
+a "xor [rsi], rbx" 48311e
+a "xor rax, rax" 4831c0
+a "xor rdx, rdx" 4831d2

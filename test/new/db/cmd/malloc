@@ -1,0 +1,24 @@
+NAME=t/malloc
+FILE=malloc://1024
+EXPECT=<<EOF
+0x666
+0xf
+0x1c
+0x1
+0x5
+EOF
+CMDS=<<EOF
+s 0x666
+s
+s 15
+s
+s 034
+s
+s 0
+s+2
+s -1
+s
+s+0x4
+s
+EOF
+RUN

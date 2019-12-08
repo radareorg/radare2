@@ -1,0 +1,10 @@
+NAME=NSO: Open/iI
+ARGS=-e io.cache=true
+FILE=../bins/nso/application.nso
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+iI~?switch
+EOF
+RUN

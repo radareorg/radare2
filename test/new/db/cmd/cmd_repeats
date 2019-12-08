@@ -1,0 +1,58 @@
+NAME=3p8
+FILE=-
+EXPECT=<<EOF
+00
+00
+00
+hi
+EOF
+CMDS=<<EOF
+3p8 1
+?e hi
+EOF
+RUN
+
+NAME=3p8;?e hi
+FILE=-
+EXPECT=<<EOF
+00
+00
+00
+hi
+EOF
+CMDS=<<EOF
+3p8 1;?e hi
+EOF
+RUN
+
+NAME=2p8 1;?e hi
+FILE=-
+EXPECT=<<EOF
+00
+00
+hi
+EOF
+CMDS=<<EOF
+2p8 1;?e hi
+EOF
+RUN
+
+NAME=3p8 1 && 2p8 4
+FILE=-
+EXPECT=<<EOF
+00
+00
+00
+0000
+0000
+00
+00
+00
+EOF
+CMDS=<<EOF
+b 4
+wx 0000ffff
+3p8 1 ; 2p8 2
+3p8 1
+EOF
+RUN

@@ -1,0 +1,13 @@
+NAME=M68k anal jump
+FILE=../bins/smd/LiquidSpaceDodgerV3.bin
+BROKEN=1
+EXPECT=<<EOF
+0x000009f2
+EOF
+CMDS=<<EOF
+ao @ 0x00000230~jump[1]
+EOF
+RUN
+
+
+

@@ -1,0 +1,236 @@
+dB "+execute-inline {v1, v0}, method+3" EE2003000100
+d "+iget-object-quick v1, v3, [obj+000c]" F4310C00
+d "+iget-quick v1, v2, [obj+0010]" F2211000
+d "+iget-wide-quick v4, v6, [obj+0130]" F3643001
+d "+invoke-object-init-range {v0}, method+2294" F010F6080000
+d "+invoke-virtual-quick {v15, v12}, [00b8]" F820B800CF00
+d "+invoke-virtual-quick/range {v0..v5}, [0018]" F90618000000
+d "+invoke-virtual-quick/range {v0..v5}, [001b]" F9061B000000
+d "+iput-object-quick v1, v0, [obj+004c]" F7014C00
+d "+iput-quick v1, v2, [obj+0010]" F5211000
+d "+iput-wide-quick v2, v5, [obj+0170]" F6527001
+d "add-double v0, v3, v5" AB000305
+d "add-double/2addr v0, v7" CB70
+d "add-float v0, v2, v3" A6000203
+d "add-float/2addr v0, v4" C640
+d "add-int v0, v2, v3" 90000203
+d "add-int/2addr v0, v1" B010
+d "add-int/lit16 v1, v0, 0x4d2" D001D204
+d "add-int/lit8 v0, v2, 0x1" D8000201
+d "add-long v0, v3, v5" 9B000305
+d "add-long/2addr v0, v2" BB20
+d "aget v7, v3, v6" 44070306
+d "aget-boolean v0, v0, v1" 47000001
+d "aget-byte v0, v0, v1" 48000001
+d "aget-char v5, v0, v3" 49050003
+d "aget-object v2, v2, v0" 46020200
+d "aget-short v0, v0, v1" 4A000001
+d "aget-wide v5, v1, v4" 45050104
+d "and-int v3, v0, v1" 95030001
+d "and-int/2addr v0, v1" B510
+d "and-int/lit16 v1, v0, 0x4d2" D501D204
+d "and-int/lit8 v0, v2, 0x3" DD000203
+d "and-long v6, v0, v2" A0060002
+d "and-long/2addr v0, v2" C020
+d "aput v0, v3, v5" 4B000305
+d "aput-boolean v1, v0, v2" 4E010002
+d "aput-byte v2, v0, v1" 4F020001
+d "aput-char v3, v0, v1" 50030001
+d "aput-object v2, v1, v0" 4D020100
+d "aput-short v2, v0, v1" 51020001
+d "aput-wide v5, v1, v4" 4C050104
+d "array-length v1, v1" 2111
+d "check-cast v3, class+2" 1F030200
+d "check-cast v4, class+1" 1F040100
+d "check-cast v5, class+256" 1F050001
+d "cmp-long v0, v2, v4" 31000204
+d "cmpg-double v0, v8, v10" 3000080A
+d "cmpg-float v0, v6, v7" 2E000607
+d "cmpl-double v25, v6, v8" 2F190608
+d "cmpl-float v0, v6, v7" 2D000607
+d "const v0, 0x00bc614e" 14004E61BC00
+d "const-class v0, class+1" 1C000100
+d "const-string v8, string+0" 1A080000
+d "const-string/jumbo v8, string+0" 1B0800000000
+d "const-wide v2:v3, 0x2bdc545d6b4b87" 1802874b6b5d54dc2b00
+d "const-wide/16 v0, 0000" 16000000
+d "const-wide/32 v2:v3, 0x00bc614e" 17024e61bc00
+d "const-wide/high16 v0:v1, 0x40240000" 19002440
+d "const/16 v0, 0x0a" 13000A00
+d "const/4 v1, 0x2" 1221
+d "const/high16 v0, 0x41200000" 15002041
+d "div-double v6, v0, v2" AE060002
+d "div-double/2addr v0, v2" CE20
+d "div-float v3, v0, v1" A9030001
+d "div-float/2addr v0, v1" C910
+d "div-int v3, v0, v1" 93030001
+d "div-int/2addr v0, v1" B310
+d "div-int/lit16 v1, v0, 0x4d2" D301D204
+d "div-int/lit8 v0, v2, 0x3" DB000203
+d "div-long v6, v0, v2" 9E060002
+d "div-long/2addr v0, v2" BE20
+d "double-to-float v0, v4" 8C40
+d "double-to-int v0, v4" 8A40
+d "double-to-long v0, v4" 8B40
+d "fill-array-data v6, 0x00000052" 260625000000
+d "filled-new-array {v0, v0}, class+1" 242001000000
+d "filled-new-array/range {v19..v21}, class+6" 250306001300
+d "float-to-double v0, v3" 8930
+d "float-to-int v0, v3" 8730
+d "float-to-long v0, v3" 8830
+d "goto 0xffffffffffffffe0" 28F0
+d "goto/16 0xfffffffffffffc1e" 29000FFE
+d "goto/32 0x0001fc1e" 2A000FFE0000
+d "if-eq v3, v11, 0x00000000" 32b30000
+d "if-eqz v2, 0x00000000" 38020000
+d "if-ge v0, v1, 0x00000000" 35100000
+d "if-gez v0, 0x00000000" 3B000000
+d "if-gt v0, v1, 0x00000000" 36100000
+d "if-gtz v0, 0x00000000" 3C000000
+d "if-le v6, v5, 0x00000000" 37560000
+d "if-lez v0, 0x00000000" 3D000000
+d "if-lt v2, v3, 0x00000000" 34320000
+d "if-ltz v0, 0x00000000" 3A000000
+d "if-ne v3, v10, 0x00000000" 33A30000
+d "if-nez v2, 0x00000000" 39020000
+d "iget v0, v1, field+3" 52100300
+d "iget-boolean v12, v15, field+0" 55FC0000
+d "iget-byte v2, v3, field+1" 56320100
+d "iget-char v0, v2, field+3" 57200300
+d "iget-object v0, v2, field+4" 54200400
+d "iget-short v0, v3, field+8" 58300800
+d "iget-wide v0, v2, field+4" 53200400
+d "instance-of v0, v4, class+1" 20400100
+d "int-to-byte v0, v0" 8D00
+d "int-to-char v3, v3" 8E33
+d "int-to-double v6, v0" 8306
+d "int-to-float v6, v0" 8206
+d "int-to-long v6, v0" 8106
+d "int-to-short v0, v0" 8F00
+d "invoke-custom {v0, v1}, call_site+0" FC2000001000
+d "invoke-custom/range {v6..v9}, call_site+3091" FD04130C0600
+d "invoke-direct {v1}, method+8" 701008000100
+d "invoke-direct/range {v19..v21}, method+58" 76033A001300
+d "invoke-interface {v1, v3, v4, v5}, method+545" 724021023154
+d "invoke-interface/range {v1..v64}, method+545" 784021020100
+d "invoke-polymorphic {v0, v1, v2}, method+12, proto+6" FA300C0010020600
+d "invoke-polymorphic {v3, v2, v5}, method+4124, proto+35175" FA301C1023456789
+d "invoke-polymorphic/range {v16..v21}, method+46, proto+15" FB062E0010000F00
+d "invoke-static {v4}, method+52" 711034000400
+d "invoke-static/range {v19..v21}, method+58" 77033A001300
+d "invoke-super {v1}, method+422" 6F10A6010100
+d "invoke-super/range {v1..v1}, method+422" 7501A6010100
+d "invoke-virtual {v4, v0, v1, v2, v3}, method+6" 6E5306000421
+d "invoke-virtual/range {v19..v21}, method+6" 740306001300
+d "iput v0, v2, field+2" 59200200
+d "iput-boolean v0, v3, field+0" 5C300000
+d "iput-byte v0, v2, field+1" 5D200100
+d "iput-char v0, v2, field+3" 5E200300
+d "iput-object v0, v2, field+0" 5B200000
+d "iput-short v1, v2, field+8" 5F210800
+d "iput-wide v0, v2, field+0" 5A200000
+d "long-to-double v0, v1" 8610
+d "long-to-float v0, v1" 8510
+d "long-to-int v4, v2" 8424
+d "monitor-enter v3" 1D03
+d "monitor-exit v3" 1E03
+d "move v0, v1" 0110
+d "move-exception v25" 0D19
+d "move-object v1, v8" 0781
+d "move-object/16 v0, v0" 090000000000
+d "move-object/from16 v1, v21" 08011500
+d "move-result v0" 0A00
+d "move-result-object v0" 0C00
+d "move-result-wide v2" 0B02
+d "move-wide v0, v0" 0400
+d "move-wide/16 v0, v0" 060000000000
+d "move-wide/from16 v22, v0" 05160000
+d "move/16 v0, v0" 030000000000
+d "move/from16 v0, v25" 02001900
+d "mul-double v6, v0, v2" AD060002
+d "mul-double/2addr v0, v2" CD20
+d "mul-float v3, v0, v1" A8030001
+d "mul-float/2addr v0, v1" C810
+d "mul-int v0, v2, v3" 92000203
+d "mul-int/2addr v0, v1" B210
+d "mul-int/lit16 v1, v0, 0x4d2" D201D204
+d "mul-int/lit8 v0, v0, 0x2" DA000002
+d "mul-long v0, v3, v5" 9D000305
+d "mul-long/2addr v0, v7" BD70
+d "neg-double v2, v0" 8002
+d "neg-float v1, v0" 7F01
+d "neg-int v1, v0" 7B01
+d "neg-long v2, v0" 7D02
+d "new-array v2, v1, class+1" 23120100
+d "new-instance v0, class+1" 22000100
+d "nop" 0000
+d "not-int v1, v0" 7C01
+d "not-long v2, v0" 7E02
+d "or-int v3, v0, v1" 96030001
+d "or-int/2addr v0, v1" B610
+d "or-int/lit16 v1, v0, 0x4d2" D601D204
+d "or-int/lit8 v0, v2, 0x3" DE000203
+d "or-long v6, v0, v2" A1060002
+d "or-long/2addr v0, v2" C120
+d "packed-switch v2, 0x00000020" 2B020C000000
+d "rem-double v6, v0, v2" AF060002
+d "rem-double/2addr v0, v2" CF20
+d "rem-float v3, v0, v1" AA030001
+d "rem-float/2addr v0, v1" CA10
+d "rem-int v0, v2, v3" 94000203
+d "rem-int/2addr v0, v1" B410
+d "rem-int/lit16 v1, v0, 0x4d2" D401D204
+d "rem-int/lit8 v0, v2, 0x3" DC000203
+d "rem-long v6, v0, v2" 9F060002
+d "rem-long/2addr v0, v2" BF20
+d "return v0" 0F00
+d "return-object v0" 1100
+d "return-void" 0E00
+d "return-wide v0" 1000
+d "rsub-int v1, v0, 0x4d2" D101D204
+d "rsub-int/lit8 v0, v2, 0x1" D9000201
+d "sget v0, field+7" 60000700
+d "sget-boolean v0, field+12" 63000C00
+d "sget-byte v0, field+2" 64000200
+d "sget-char v0, field+7" 65000700
+d "sget-object v1, field+12" 62010C00
+d "sget-short v0, field+11" 66000B00
+d "sget-wide v0, field+5" 61000500
+d "shl-int v2, v0, v1" 98020001
+d "shl-int/2addr v0, v1" B810
+d "shl-int/lit8 v1, v0, 0x1" E0010001
+d "shl-long v2, v0, v4" A3020004
+d "shl-long/2addr v0, v2" C320
+d "shr-int v2, v0, v1" 99020001
+d "shr-int/2addr v0, v1" B910
+d "shr-int/lit8 v1, v0, 0x1" E1010001
+d "shr-long v2, v0, v4" A4020004
+d "shr-long/2addr v0, v2" C420
+d "sparse-switch v2, 0x00000020" 2C020c000000
+d "sput v0, field+1" 67000100
+d "sput-boolean v0, field+3" 6A000300
+d "sput-byte v0, field+2" 6B000200
+d "sput-char v1, field+7" 6C010700
+d "sput-object v0, field+12" 69000c00
+d "sput-short v0, field+11" 6D000B00
+d "sput-wide v0, field+5" 68000500
+d "sub-double v0, v3, v5" AC000305
+d "sub-double/2addr v0, v7" CC70
+d "sub-float v0, v2, v3" A7000203
+d "sub-float/2addr v0, v4" C740
+d "sub-int v0, v2, v3" 91000203
+d "sub-int/2addr v0, v4" B140
+d "sub-long v0, v3, v5" 9C000305
+d "sub-long/2addr v0, v7" BC70
+d "throw v0" 2700
+d "ushr-int v2, v0, v1" 9A020001
+d "ushr-int/2addr v0, v1" BA10
+d "ushr-int/lit8 v1, v0, 0x1" E2010001
+d "ushr-long v2, v0, v4" A5020004
+d "ushr-long/2addr v0, v2" C520
+d "xor-int v3, v0, v1" 97030001
+d "xor-int/2addr v0, v1" B710
+d "xor-int/lit16 v1, v0, 0x4d2" D701D204
+d "xor-int/lit8 v0, v2, 0x3" DF000203
+d "xor-long v6, v0, v2" A2060002
+d "xor-long/2addr v0, v2" C220

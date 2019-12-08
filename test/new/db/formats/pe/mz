@@ -1,0 +1,22 @@
+NAME=PE: corkami mz.exe - open
+FILE=../bins/pe/mz.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN
+
+NAME=PE: corkami mz.exe - dis
+FILE=../bins/pe/mz.exe
+EXPECT=<<EOF
+0x00401000   section.sect_0:
+0x00401000           6818104000  push 0x401018
+0x00401005         ff15c8104000  call dword [sym.imp.msvcrt.dll_printf]
+0x0040100b               83c404  add esp, 4
+0x0040100e                   90  nop
+EOF
+CMDS=<<EOF
+pid 4
+EOF
+RUN

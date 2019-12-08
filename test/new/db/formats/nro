@@ -1,0 +1,9 @@
+NAME=NRO: Open/iI
+FILE=../bins/nro/appstore.nro
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+iI~?switch
+EOF
+RUN

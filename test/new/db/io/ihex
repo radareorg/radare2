@@ -1,0 +1,10 @@
+NAME=pic18c
+FILE=ihex://../bins/pic18c/FreeRTOS-pic18c.hex
+CMDS=<<EXPECT
+e asm.arch=pic
+e asm.cpu=pic18
+pi 2
+EXPECT=<<RUN
+goto 0x246e
+return 0
+RUN

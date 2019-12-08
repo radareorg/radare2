@@ -3,8 +3,6 @@ set -x
 
 export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
 export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib/$(uname -m)-linux-gnu:${TRAVIS_BUILD_DIR}/install/lib:${TRAVIS_BUILD_DIR}/install/lib64:${LD_LIBRARY_PATH}
-git clone -q --depth 1 --branch "${R2R_BRANCH}" "${R2R_REPO}" || true # If cloning fails that's not an error: we simply fallback to master.
-ls radare2-regressions >/dev/null 2>&1 || git clone -q --depth 1 --branch "${R2R_DEFAULT_BRANCH}" "${R2R_DEFAULT_REPO}"
 
 if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     echo "Installing with meson + ninja"
@@ -47,7 +45,9 @@ elif [ "${INSTALL_SYSTEM}" == "static" ]; then
 	./sys/static.sh || exit 1
 	echo "Compiling Fuzzing Target"
 	export RADARE2_STATIC_BUILD=$(pwd)/r2-static
-	cd radare2-regressions/fuzz/targets
+	cd test
+	make fuzz/targets
+	cd fuzz/targets
 	git remote -v
 	git branch
 	git rev-parse HEAD
@@ -81,10 +81,7 @@ fi
 if [ "${R2_TESTS_DISABLE}" != "1" ] ; then
     export NOOK=1
     export NOREPORT=1
-    cd radare2-regressions
-    git remote -v
-    git branch
-    git rev-parse HEAD
+    cd test
     VERBOSE=1 make -k all || exit 1
 
     if [ "${COVERAGE}" == "1" ] ; then

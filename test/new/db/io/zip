@@ -1,0 +1,55 @@
+NAME=io-zip
+FILE=zip://../bins/java/example.zip
+EXPECT=<<EOF
+0 research_data/experiment/decompiler/dumped_jar_dec/c.class
+EOF
+CMDS=<<EOF
+q
+EOF
+RUN
+
+NAME=io-zip entrypoints for c.class
+FILE=zip://../bins/java/example.zip//research_data/experiment/decompiler/dumped_jar_dec/c.class
+EXPECT=<<EOF
+0x000002af
+0x000002da
+0x00000312
+0x000003ab
+EOF
+CMDS=<<EOF
+ieq
+EOF
+RUN
+
+NAME=io-zip entrypoints for c.class
+FILE=zip://../bins/java/example.zip::0
+EXPECT=<<EOF
+0x000002af
+0x000002da
+0x00000312
+0x000003ab
+EOF
+CMDS=<<EOF
+ieq
+EOF
+RUN
+
+NAME=io-zip hello.apk
+FILE=apk://../bins/dex/Hello.apk
+EXPECT=<<EOF
+0x000001c0
+EOF
+CMDS=<<EOF
+ieq
+EOF
+RUN
+
+NAME=io-zip hello.apk
+FILE=zip://../bins/dex/Hello.apk
+EXPECT=<<EOF
+0 classes.dex
+EOF
+CMDS=<<EOF
+ieq
+EOF
+RUN

@@ -1,0 +1,168 @@
+NAME=afcl: x86-64
+FILE=--
+BROKEN=1
+EXPECT=<<EOF
+amd64
+ms
+EOF
+CMDS=<<EOF
+e asm.bits = 32
+e asm.arch = x86
+e asm.bits = 64
+afcl
+EOF
+RUN
+
+NAME=afcl: x86-64-override
+FILE=/../bins/elf/true32
+BROKEN=1
+EXPECT=<<EOF
+amd64
+ms
+EOF
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+afcl
+EOF
+RUN
+
+NAME=afcl: x86-32
+FILE=--
+BROKEN=1
+EXPECT=<<EOF
+pascal
+optlink
+stdcall
+cdecl
+fastcall
+borland
+watcom
+EOF
+CMDS=<<EOF
+e asm.bits = 64
+e asm.arch = x86
+e asm.bits = 32
+afcl
+EOF
+RUN
+
+NAME=afcl: x86-32-override
+FILE=/../bins/elf/bomb
+BROKEN=1
+EXPECT=<<EOF
+pascal
+optlink
+stdcall
+cdecl
+fastcall
+borland
+watcom
+EOF
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+afcl
+EOF
+RUN
+
+
+NAME=afcl: arm-64
+FILE=--
+BROKEN=1
+EXPECT=<<EOF
+arm64
+EOF
+CMDS=<<EOF
+e asm.bits = 32
+e asm.arch = arm
+e asm.bits = 64
+afcl
+EOF
+RUN
+
+NAME=afcl: arm-64-override
+FILE=/../bins/elf/libmagic.so
+BROKEN=1
+EXPECT=<<EOF
+arm64
+EOF
+ARGS=-a arm -b 64
+CMDS=<<EOF
+afcl
+EOF
+RUN
+
+NAME=afcl: arm-32
+FILE=--
+BROKEN=1
+EXPECT=<<EOF
+arm32
+EOF
+CMDS=<<EOF
+e asm.bits = 64
+e asm.arch = arm
+e asm.bits = 32
+afcl
+EOF
+RUN
+
+NAME=afcl: arm-32-override
+FILE=/../bins/elf/libc.so.6
+BROKEN=1
+EXPECT=<<EOF
+arm32
+EOF
+ARGS=-a arm -b 32
+CMDS=<<EOF
+afcl
+EOF
+RUN
+
+NAME=afcl: arm-16
+FILE=--
+BROKEN=1
+EXPECT=<<EOF
+arm32
+EOF
+CMDS=<<EOF
+e asm.bits = 64
+e asm.arch = arm
+e asm.bits = 16
+afcl
+EOF
+RUN
+
+NAME=afcl: arm-16-override
+FILE=/../bins/elf/libmagic.so
+BROKEN=1
+EXPECT=<<EOF
+arm32
+EOF
+ARGS=-a arm -b 16
+CMDS=<<EOF
+afcl
+EOF
+RUN
+
+NAME=afcl: mips-32
+FILE=--
+EXPECT=<<EOF
+n32
+o32
+EOF
+CMDS=<<EOF
+e asm.bits = 64
+e asm.arch = mips
+e asm.bits = 32
+afcl
+EOF
+RUN
+
+NAME=afcl: mips-32-override
+FILE=/../bins/elf/libc.so.0
+EXPECT=<<EOF
+EOF
+ARGS=-a mips -b 64
+CMDS=<<EOF
+afcl
+EOF
+RUN

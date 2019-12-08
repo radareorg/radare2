@@ -1,0 +1,29 @@
+NAME='dbg.dcu+step'
+FILE=../bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=<<EXPECT
+e scr.color=0
+dcu entry0
+dr PC
+ds
+dr PC
+dk 9
+EXPECT=<<RUN
+0x080482d0
+0x080482d2
+RUN
+
+NAME='dbg.dcu+step'
+FILE=../bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=<<EXPECT
+e scr.color=0
+dcu entry0
+dr PC
+3ds
+dr PC
+dk 9
+EXPECT=<<RUN
+0x080482d0
+0x080482d5
+RUN

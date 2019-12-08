@@ -1,0 +1,35 @@
+NAME='dbg.readpc'
+FILE=/bin/ls
+ARGS=-d
+CMDS=<<EXPECT
+sr PC
+p8 4
+dk 9
+NOT_EXPECT=1
+EXPECT=<<RUN
+4889e7e8
+RUN
+
+NAME='dbg.read.entry0'
+FILE=../bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=<<EXPECT
+s entry0
+p8 4
+EXPECT=<<RUN
+31ed5e89
+RUN
+
+NAME='dbg.write'
+FILE=/bin/ls
+ARGS=-d
+CMDS=<<EXPECT
+s entry0
+p8 2
+wx 9090
+p8 2
+dk 9
+EXPECT=<<RUN
+31ed
+9090
+RUN

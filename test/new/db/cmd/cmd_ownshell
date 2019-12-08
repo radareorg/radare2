@@ -1,0 +1,47 @@
+NAME=mkdir; ls
+FILE=-
+EXPECT=<<EOF
+.tmp/blah/bleh
+EOF
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/blah/bleh
+rm .tmp/blah
+mkdir .tmp/blah
+? 1+1 > .tmp/blah/bleh
+ls -l .tmp/blah~bleh[4]
+rm .tmp/blah/bleh
+rm .tmp/blah
+EOF
+RUN
+
+NAME=mkdir -p (without specifying directory)
+FILE=-
+EXPECT=<<EOF
+Usage: mkdir [-p] [directory]
+EOF
+CMDS=<<EOF
+mkdir -p
+EOF
+RUN
+
+NAME=mkdir -p
+FILE=-
+BROKEN=1
+EXPECT=<<EOF
+/tmp/foo/bar/foo/./  /tmp/foo/bar/foo/../  /tmp/foo/bar/foo/fooz
+EOF
+CMDS=<<EOF
+rm /tmp/foo/bar/foo/fooz
+rm /tmp/foo/bar/foo
+rm /tmp/foo/bar
+rm /tmp/foo
+mkdir -p /tmp/foo/bar/foo
+? 1+1 > /tmp/foo/bar/foo/fooz
+ls /tmp/foo/bar/foo
+rm /tmp/foo/bar/foo/fooz
+rm /tmp/foo/bar/foo
+rm /tmp/foo/bar
+rm /tmp/foo
+EOF
+RUN

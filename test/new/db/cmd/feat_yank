@@ -1,0 +1,74 @@
+NAME=yank-segfault
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+y -2
+EOF
+RUN
+
+NAME=yank-and-paste
+FILE=-
+EXPECT=<<EOF
+hello hello
+EOF
+CMDS=<<EOF
+b 64
+w hello world
+y 5
+yy@6
+psz
+EOF
+RUN
+
+NAME=yank-segfault2
+FILE=-
+EXPECT=<<EOF
+0x00000000 20 0000000000000000000000000000000000000000
+ok
+EOF
+CMDS=<<EOF
+y 0
+y 10
+y 10
+y 20
+y;
+y 0
+y 0
+?e ok
+EOF
+RUN
+
+NAME=yank-segfault3
+FILE=-
+EXPECT=<<EOF
+ok
+EOF
+CMDS=<<EOF
+y #
+?e ok
+EOF
+RUN
+
+NAME=yank-segfault4
+FILE=-
+EXPECT=<<EOF
+ok
+EOF
+CMDS=<<EOF
+y 1000000000
+?e ok
+EOF
+RUN
+
+NAME=yank-doublefree
+FILE=-
+EXPECT=<<EOF
+ok
+EOF
+CMDS=<<EOF
+y -5
+y -5
+?e ok
+EOF
+RUN

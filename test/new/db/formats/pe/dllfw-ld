@@ -1,0 +1,8 @@
+NAME=PE: corkami dllfw-ld.exe - open
+FILE=../bins/pe/dllfw-ld.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

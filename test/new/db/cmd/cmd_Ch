@@ -1,0 +1,10 @@
+NAME=Ch offset
+FILE=malloc://1024
+EXPECT=<<EOF
+            0x00000000 (1024 bytes hidden)
+EOF
+CMDS=<<EOF
+Ch 1024
+pD 1024
+EOF
+RUN

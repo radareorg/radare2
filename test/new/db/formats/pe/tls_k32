@@ -1,0 +1,9 @@
+NAME=PE: corkami tls_k32.exe - open
+FILE=../bins/pe/tls_k32.exe
+ARGS=-A
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

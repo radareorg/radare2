@@ -1,0 +1,25 @@
+NAME=1: k syscall/
+FILE=malloc://512
+EXPECT=<<EOF
+stat
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+k syscall/0x80.4
+EOF
+RUN
+
+NAME=2: k syscall/
+FILE=malloc://512
+EXPECT=<<EOF
+0x80,4,2,
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+k syscall/stat
+EOF
+RUN

@@ -1,0 +1,705 @@
+NAME=m128 parsing test
+FILE=-
+EXPECT=<<EOF
+_ZNSt2147483648ios_base4InitD1Ev
+EOF
+CMDS=<<EOF
+"!rabin2 -D cxx _ZNSt2147483648ios_base4InitD1Ev"
+EOF
+RUN
+
+NAME=m128 parsing test
+FILE=-
+EXPECT=<<EOF
+__m128 var__m128
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var__m128@@3T__m128@@A"
+EOF
+RUN
+
+NAME=m64 parsing test
+FILE=-
+EXPECT=<<EOF
+__m64 var__m64
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var__m64@@3T__m64@@A"
+EOF
+RUN
+
+NAME=m128d parsing test
+FILE=-
+EXPECT=<<EOF
+__m128d var__m128d
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var__m128d@@3U__m128d@@A"
+EOF
+RUN
+
+NAME=m128i parsing test
+FILE=-
+EXPECT=<<EOF
+__m128i var__m128i
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var__m128i@@3T__m128i@@A"
+EOF
+RUN
+
+NAME=m256 parsing test
+FILE=-
+EXPECT=<<EOF
+__m256 var__m256
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var__m256@@3T__m256@@A"
+EOF
+RUN
+
+NAME=m256d parsing test
+FILE=-
+EXPECT=<<EOF
+__m256d var__m256d
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var__m256d@@3U__m256d@@A"
+EOF
+RUN
+
+NAME=m256i parsing test
+FILE=-
+EXPECT=<<EOF
+__m256i var__m256i
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var__m256i@@3T__m256i@@A"
+EOF
+RUN
+
+NAME=void bin mangling rust swift parsing test
+FILE=-
+EXPECT=<<EOF
+void * __ptr64 var_voidptr
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_voidptr@@3PEAXA"
+EOF
+RUN
+
+NAME=bool parsing test
+FILE=-
+EXPECT=<<EOF
+bool var_bool
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_bool@@3_NA"
+EOF
+RUN
+
+NAME=char parsing test
+FILE=-
+EXPECT=<<EOF
+char var_char
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_char@@3DA"
+EOF
+RUN
+
+NAME=signed char parsing test
+FILE=-
+EXPECT=<<EOF
+signed char var_signed_char
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_signed_char@@3CA"
+EOF
+RUN
+
+NAME=unsigned char parsing test
+FILE=-
+EXPECT=<<EOF
+unsigned char var_unsigned_char
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_unsigned_char@@3EA"
+EOF
+RUN
+
+NAME=short int parsing test
+FILE=-
+EXPECT=<<EOF
+short int var_short_int
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_short_int@@3FA"
+EOF
+RUN
+
+NAME=int parsing test
+FILE=-
+EXPECT=<<EOF
+int var_int
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_int@@3HA"
+EOF
+RUN
+
+NAME=unsigned int parsing test
+FILE=-
+EXPECT=<<EOF
+unsigned int var_unsigned_int
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_unsigned_int@@3IA"
+EOF
+RUN
+
+NAME=long int parsing test
+FILE=-
+EXPECT=<<EOF
+long int var_long_int
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_long_int@@3JA"
+EOF
+RUN
+
+NAME=unsigned long int parsing test
+FILE=-
+EXPECT=<<EOF
+unsigned long int var_unsigned_long_int
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_unsigned_long_int@@3KA"
+EOF
+RUN
+
+NAME=long long parsing test
+FILE=-
+EXPECT=<<EOF
+long long(__int64) var_long_long
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_long_long@@3_JA"
+EOF
+RUN
+
+NAME=unsigned long long parsing test
+FILE=-
+EXPECT=<<EOF
+unsigned long long(unsigned __int64) var_unsigned_long_long
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_unsigned_long_long@@3_KA"
+EOF
+RUN
+
+NAME="whcar_t parsing test"
+FILE=-
+EXPECT=<<EOF
+wchar_t var_wchar_t
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_wchar_t@@3_WA"
+EOF
+RUN
+
+NAME=float parsing test
+FILE=-
+EXPECT=<<EOF
+float var_float
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_float@@3MA"
+EOF
+RUN
+
+NAME=double parsing test
+FILE=-
+EXPECT=<<EOF
+double var_double
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_double@@3NA"
+EOF
+RUN
+
+NAME=long double parsing test
+FILE=-
+EXPECT=<<EOF
+long double var_long_double
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_long_double@@3OA"
+EOF
+RUN
+
+NAME=int bin mangling rust swift parsing test
+FILE=-
+EXPECT=<<EOF
+int * __ptr64 var_int_ptr
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_int_ptr@@3PEAHA"
+EOF
+RUN
+
+NAME=const int bin mangling rust swift const parsing test
+FILE=-
+EXPECT=<<EOF
+int const * __ptr64 const __ptr64 var_const_int_ptr
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_const_int_ptr@@3PEBHEB"
+EOF
+RUN
+
+NAME=int volatile bin mangling rust swift volatile const parsing test
+FILE=-
+EXPECT=<<EOF
+int volatile * __ptr64 volatile __ptr64 var_volatile_int_ptr
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_volatile_int_ptr@@3PECHEC"
+EOF
+RUN
+
+NAME=int const volatile bin mangling rust swift const volatile parsing test
+FILE=-
+EXPECT=<<EOF
+int const volatile * __ptr64 const volatile __ptr64 var_const_volatile_int_ptr
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_const_volatile_int_ptr@@3PEDHED"
+EOF
+RUN
+
+NAME=int bin mangling rust swift volatile parsing test
+FILE=-
+EXPECT=<<EOF
+int * volatile __ptr64 __ptr64 var_int_ptr_volatile
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_int_ptr_volatile@@3REAHEA"
+EOF
+RUN
+
+NAME=arr parsing test
+FILE=-
+EXPECT=<<EOF
+int * arr
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?arr@@3PAHA"
+EOF
+RUN
+
+NAME=arr[][] parsing test
+FILE=-
+EXPECT=<<EOF
+int (*)[8] arr2
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?arr2@@3PAY07HA"
+EOF
+RUN
+
+NAME=arr[][][] parsing test
+FILE=-
+EXPECT=<<EOF
+int (*)[16][5] arr3
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?arr3@@3PAY1BA@4HA"
+EOF
+RUN
+
+NAME=union parsing test
+FILE=-
+EXPECT=<<EOF
+union UNION_TEST var_union
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_union@@3TUNION_TEST@@A"
+EOF
+RUN
+
+NAME=class parsing test
+FILE=-
+EXPECT=<<EOF
+class CLASS_TEST var_class
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_class@@3VCLASS_TEST@@A"
+EOF
+RUN
+
+NAME=enum parsing test
+FILE=-
+EXPECT=<<EOF
+enum ENUM_TEST var_enum
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_enum@@3W4ENUM_TEST@@A"
+EOF
+RUN
+
+NAME=union with namespace parsing test
+FILE=-
+EXPECT=<<EOF
+union UNION_TEST TEST_NAMESPACE::var_union_with_namespace
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_union_with_namespace@TEST_NAMESPACE@@3TUNION_TEST@@A"
+EOF
+RUN
+
+NAME=class with namespace parsing test
+FILE=-
+EXPECT=<<EOF
+class CLASS_TEST TEST_NAMESPACE::var_class_with_namespace
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_class_with_namespace@TEST_NAMESPACE@@3VCLASS_TEST@@A"
+EOF
+RUN
+
+NAME=enum with namespace parsing test
+FILE=-
+EXPECT=<<EOF
+enum ENUM_TEST TEST_NAMESPACE::var_enum_with_namespace
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_enum_with_namespace@TEST_NAMESPACE@@3W4ENUM_TEST@@A"
+EOF
+RUN
+
+NAME=ptr with namespace parsing test
+FILE=-
+EXPECT=<<EOF
+struct STRUCT_TEST * __ptr64 __ptr64 TEST_NAMESPACE::var_ptr_with_namespace
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?var_ptr_with_namespace@TEST_NAMESPACE@@3PEAUSTRUCT_TEST@@EA"
+EOF
+RUN
+
+NAME=copy constructor demangler test
+FILE=-
+EXPECT=<<EOF
+public: void __cdecl TEST_CLASS::constructor(class TEST_CLASS const & __ptr64) __ptr64
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ??0TEST_CLASS@@QEAA@AEBV0@@Z"
+EOF
+RUN
+
+NAME=constructor demangler test
+FILE=-
+EXPECT=<<EOF
+public: void __cdecl TEST_CLASS::constructor(int) __ptr64
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ??0TEST_CLASS@@QEAA@H@Z"
+EOF
+RUN
+
+NAME=destructor demangler test
+FILE=-
+EXPECT=<<EOF
+public: void __cdecl TEST_CLASS::~destructor(void) __ptr64
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ??1TEST_CLASS@@QEAA@XZ"
+EOF
+RUN
+
+NAME=operator= demangler test
+FILE=-
+EXPECT=<<EOF
+public: class TEST_CLASS & __ptr64 __cdecl TEST_CLASS::operator=(class TEST_CLASS const & __ptr64) __ptr64
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ??4TEST_CLASS@@QEAAAEAV0@AEBV0@@Z "
+EOF
+RUN
+
+NAME=operator+ demangler test
+FILE=-
+EXPECT=<<EOF
+public: class TEST_CLASS __cdecl TEST_CLASS::operator+(class TEST_CLASS const & __ptr64) __ptr64
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ??HTEST_CLASS@@QEAA?AV0@AEBV0@@Z "
+EOF
+RUN
+
+NAME=public function demangler test
+FILE=-
+EXPECT=<<EOF
+public: int __cdecl TEST_CLASS::public_func(void) __ptr64
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?public_func@TEST_CLASS@@QEAAHXZ"
+EOF
+RUN
+
+NAME=static function demangler test
+FILE=-
+EXPECT=<<EOF
+public: static void __cdecl TEST_CLASS::static_func(int)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?static_func@TEST_CLASS@@SAXH@Z"
+EOF
+RUN
+
+NAME=private function demangler test
+FILE=-
+EXPECT=<<EOF
+private: void __cdecl TEST_CLASS::private_func(void) __ptr64
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?private_func@TEST_CLASS@@AEAAXXZ"
+EOF
+RUN
+
+NAME=Abbreviation Of Repetead Types demangler test
+FILE=-
+EXPECT=<<EOF
+bool __cdecl AbbreviationOfRepeteadTypes(int * __ptr64, int, int, int * __ptr64, bool, bool, bool * __ptr64)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?AbbreviationOfRepeteadTypes@@YA_NPEAHHH0_N1PEA_N@Z"
+EOF
+RUN
+
+NAME=Abbreviation Of Repetead Names demangler test
+FILE=-
+EXPECT=<<EOF
+class TEST_CLASS * __ptr64 __cdecl AbbreviationOfRepeteadNames(class TEST_CLASS * __ptr64, class TEST_CLASS * __ptr64, class TEST_CLASS * __ptr64, class TEST_CLASS & __ptr64)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?AbbreviationOfRepeteadNames@@YAPEAVTEST_CLASS@@PEAV1@00AEAV1@@Z"
+EOF
+RUN
+
+NAME=Abbreviation Of Name tests demangler test3
+FILE=-
+EXPECT=<<EOF
+class Class1 * __cdecl SomeFunction(class Class1 *, class Class2 *, class Class2 *, class Class2 &)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?SomeFunction@@YAPAVClass1@@PAV1@PAVClass2@@1AAV2@@Z"
+EOF
+RUN
+
+NAME=Function pointer demangler test
+FILE=-
+EXPECT=<<EOF
+int __cdecl Fx_i(int (__cdecl*)(int))
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?Fx_i@@YAHP6AHH@Z@Z"
+EOF
+RUN
+
+NAME=Function pointer with abbreviation of types demangler test
+FILE=-
+EXPECT=<<EOF
+int __cdecl Fxix_i(int (__cdecl*)(int), int, int (__cdecl*)(int))
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?Fxix_i@@YAHP6AHH@ZH0@Z"
+EOF
+RUN
+
+NAME=Function pointer with 2 abbreviation of types demangler test
+FILE=-
+EXPECT=<<EOF
+int __cdecl Fxyxy_i(int (__cdecl*)(int), int (__cdecl*)(short int), int (__cdecl*)(int), int (__cdecl*)(short int))
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?Fxyxy_i@@YAHP6AHH@ZP6AHF@Z01@Z"
+EOF
+RUN
+
+NAME=Function pointer with abbreviation of types demangler test 2
+FILE=-
+EXPECT=<<EOF
+int __cdecl Fxyxy_i_x64(int (__cdecl*)(int * __ptr64, int * __ptr64, int), int (__cdecl*)(int * __ptr64, int, int * __ptr64), int (__cdecl*)(int), int (__cdecl*)(short int))
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?Fxyxy_i_x64@@YAHP6AHPEAH0H@ZP6AH0H0@ZP6AHH@ZP6AHF@Z@Z"
+EOF
+RUN
+
+NAME=func_with_arg_union_from_namespace demangler test
+FILE=-
+EXPECT=<<EOF
+void __cdecl func_with_arg_union_from_namespace(union UNION_TEST::UNION_TEST)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?func_with_arg_union_from_namespace@@YAXTUNION_TEST@1@@Z"
+EOF
+RUN
+
+NAME=func_with_arg_class_from_namespace demangler test 2
+FILE=-
+EXPECT=<<EOF
+void __cdecl func_with_arg_class_from_namespace(class TEST::TEST)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?func_with_arg_class_from_namespace@@YAXVTEST@1@@Z"
+EOF
+RUN
+
+NAME=Abbreviation Of Repetead Names (Name with Template Arguments) demangler test
+FILE=-
+EXPECT=<<EOF
+void __cdecl abc<class def<int>, void *>::xyz(void)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?xyz@?\$abc@V?\$def@H@@PAX@@YAXXZ"
+EOF
+RUN
+
+NAME=Abbreviation Of Name with template demangler test
+FILE=-
+EXPECT=<<EOF
+public: void __thiscall Class1::MyTemplateFunction<class Class1>(class Class1 *)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ??\$MyTemplateFunction@VClass1@@@Class1@@QAEXPAV0@@Z"
+EOF
+RUN
+
+NAME=void __cdecl f1(union UNION_TEST::UNION_TEST,union UNION_TEST::UNION_TEST) test
+FILE=-
+EXPECT=<<EOF
+void __cdecl f1(union UNION_TEST::UNION_TEST, union UNION_TEST::UNION_TEST)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?f1@@YAXTUNION_TEST@1@0@Z"
+EOF
+RUN
+
+NAME=void __cdecl f2(union UNION_TEST::UNION_TEST,class TEST::TEST,union UNION_TEST::UNION_TEST) test
+FILE=-
+EXPECT=<<EOF
+void __cdecl f2(union UNION_TEST::UNION_TEST, class TEST::TEST, union UNION_TEST::UNION_TEST)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?f2@@YAXTUNION_TEST@1@VTEST@2@0@Z"
+EOF
+RUN
+
+NAME=void __cdecl f3(union UNION_TEST_NEW) test
+FILE=-
+EXPECT=<<EOF
+void __cdecl f3(union UNION_TEST_NEW)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?f3@@YAXTUNION_TEST_NEW@@@Z"
+EOF
+RUN
+
+NAME=void __cdecl f4(union NAMESPACE_1::NAMESPACE_2::UNION_NAMESPACE_2,class TEST::TEST,union UNION_TEST::UNION_TEST) test
+FILE=-
+EXPECT=<<EOF
+void __cdecl f4(union NAMESPACE_1::NAMESPACE_2::UNION_NAMESPACE_2, class TEST::TEST, union UNION_TEST::UNION_TEST)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?f4@@YAXTUNION_NAMESPACE_2@NAMESPACE_2@NAMESPACE_1@@VTEST@4@TUNION_TEST@5@@Z"
+EOF
+RUN
+
+NAME=void __cdecl f5(union NAMESPACE_1::UNION_TEST::UNION_TEST,class TEST::TEST,union UNION_TEST::UNION_TEST) test
+FILE=-
+EXPECT=<<EOF
+void __cdecl f5(union NAMESPACE_1::UNION_TEST::UNION_TEST, class TEST::TEST, union UNION_TEST::UNION_TEST)
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ?f5@@YAXTUNION_TEST@1NAMESPACE_1@@VTEST@3@T11@@Z"
+EOF
+RUN
+
+NAME=class OuterNamespace::InnerNamespace::ClassInInnerNamespace
+FILE=-
+EXPECT=<<EOF
+class OuterNamespace::InnerNamespace::ClassInInnerNamespace
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc .?AVClassInInnerNamespace@InnerNamespace@OuterNamespace@@"
+EOF
+RUN
+
+NAME=class ns::FunctionT<void (__cdecl*)(void *)>
+FILE=-
+EXPECT=<<EOF
+class ns::FunctionT<void (__cdecl*)(void *)>
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc .?AV?\$FunctionT@P6AXPAX@Z@ns@@"
+EOF
+RUN
+
+NAME=class ABC::DEF::GHI<1, class JKL::MNO::PQR>
+FILE=-
+EXPECT=<<EOF
+class ABC::DEF::GHI<1, class JKL::MNO::PQR>
+class ABC::DEF::GHI<1, class JKL::MNO::PQR>
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc .?AV?\$GHI@\$00VPQR@MNO@JKL@@@DEF@ABC@@"
+"!rabin2 -D msvc .?AV?\$GHI@\$H0VPQR@MNO@JKL@@@DEF@ABC@@"
+EOF
+RUN
+
+NAME=class ABC::DEF::GHI<{1, 2}, class JKL::MNO::PQR>
+FILE=-
+EXPECT=<<EOF
+class ABC::DEF::GHI<{1, 2}, class JKL::MNO::PQR>
+class ABC::DEF::GHI<{1, 2}, class JKL::MNO::PQR>
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc .?AV?\$GHI@\$FB@C@VPQR@MNO@JKL@@@DEF@ABC@@"
+"!rabin2 -D msvc .?AV?\$GHI@\$IB@C@VPQR@MNO@JKL@@@DEF@ABC@@"
+EOF
+RUN
+
+NAME=class ABC::DEF::GHI<{1, 2, 3}, class JKL::MNO::PQR>
+FILE=-
+EXPECT=<<EOF
+class ABC::DEF::GHI<{1, 2, 3}, class JKL::MNO::PQR>
+class ABC::DEF::GHI<{1, 2, 3}, class JKL::MNO::PQR>
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc .?AV?\$GHI@\$GB@C@D@VPQR@MNO@JKL@@@DEF@ABC@@"
+"!rabin2 -D msvc .?AV?\$GHI@\$JB@C@D@VPQR@MNO@JKL@@@DEF@ABC@@"
+EOF
+RUN
+
+NAME=public: void __cdecl ABC::operator()<char>(char const * __ptr64 const)const __ptr64
+FILE=-
+EXPECT=<<EOF
+public: void __cdecl ABC::operator()<char>(char const * const __ptr64)const __ptr64
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ??\$?RD@ABC@@QEBAXQEBD@Z"
+EOF
+RUN
+
+NAME=public: bool __cdecl ABC<char, struct DEF>::operator bool(void)const __ptr64
+FILE=-
+EXPECT=<<EOF
+public: bool __cdecl ABC<char, struct DEF>::operator bool(void)const __ptr64
+EOF
+CMDS=<<EOF
+"!rabin2 -D msvc ??B?\$ABC@DUDEF@@@@QEBA_NXZ"
+EOF
+RUN

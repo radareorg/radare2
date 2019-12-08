@@ -1,0 +1,137 @@
+NAME=(msg x,?e $0)
+FILE=-
+EXPECT=<<EOF
+HelloWorld
+EOF
+CMDS=<<EOF
+"(msg x,?e $0)"
+.(msg HelloWorld)
+EOF
+RUN
+
+NAME=(msg x,?e $0)
+
+FILE=-
+EXPECT=<<EOF
+HelloWorld
+EOF
+CMDS=<<EOF
+"(msg x,?e $0)"
+.(msg HelloWorld)
+EOF
+RUN
+
+NAME=(msg x,?e $0)
+
+FILE=-
+EXPECT=<<EOF
+HelloWorld
+hiz
+EOF
+CMDS=<<EOF
+"(msg x,?e $0)"
+.(msg HelloWorld)
+?e hiz
+EOF
+RUN
+
+NAME=.(msg x y,?e $0 $1)
+FILE=-
+EXPECT=<<EOF
+Hello World
+EOF
+CMDS=<<EOF
+"(msg x y,?e $0 $1)"
+.(msg Hello World)
+EOF
+RUN
+
+NAME=.(msg "foo bar")
+FILE=-
+EXPECT=<<EOF
+Hello World
+EOF
+CMDS=<<EOF
+"(msg x,?e $0)"
+.(msg "Hello World")
+EOF
+RUN
+
+NAME=.(msg foo\ bar)
+FILE=-
+EXPECT=<<EOF
+Hello World
+EOF
+CMDS=<<EOF
+"(msg x,?e $0)"
+.(msg Hello\ World)
+EOF
+RUN
+
+NAME=(*~?
+FILE=-
+EXPECT=<<EOF
+2
+EOF
+CMDS=<<EOF
+(foo,bar)
+(bar,cow)
+(*~?
+EOF
+RUN
+
+NAME=3(foo,p8 4,s+$0)(1)
+FILE=-
+EXPECT=<<EOF
+01020304
+02030405
+03040506
+EOF
+CMDS=<<EOF
+wx 010203040506070809
+3(foo,p8 4,s+$0)(1)
+EOF
+RUN
+
+NAME=3(foo,?e a,?e b)()
+FILE=-
+EXPECT=<<EOF
+a
+b
+a
+b
+EOF
+CMDS=<<EOF
+2(foo,?e a,?e b)()
+EOF
+RUN
+
+NAME=?v $$ @@ foo*
+FILE=-
+EXPECT=<<EOF
+0x1
+0x2
+0x3
+EOF
+CMDS=<<EOF
+f foo.one = 1
+f foo.bar = 2
+f foo.cow = 3
+?v $$ @@ foo*
+EOF
+RUN
+
+NAME=?v
+FILE=-
+EXPECT=<<EOF
+0x1
+0x2
+0x3
+EOF
+CMDS=<<EOF
+f foo.one = 1
+f foo.bar = 2
+f foo.cow = 3
+(,?v $$)() @@ foo*
+EOF
+RUN

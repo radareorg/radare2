@@ -1,0 +1,21 @@
+NAME=aex 40 (aka INC)
+FILE=-
+ARGS=-a x86 -b32
+EXPECT=<<EOF
+0x00000002
+EOF
+CMDS=<<EOF
+ar eax=1;aex 40;ar eax
+EOF
+RUN
+
+NAME=aex 48 (aka DEC)
+FILE=-
+ARGS=-a x86 -b32
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+ar eax=4;aex 48;ar eax
+EOF
+RUN

@@ -1,0 +1,12 @@
+NAME='dbg.readpc'
+FILE=/bin/ls
+ARGS=-d
+BROKEN=1
+CMDS=<<EXPECT
+sr pc
+p8 4
+NOT_EXPECT=1
+EXPECT=<<RUN
+ffffffff
+RUN
+

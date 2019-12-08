@@ -1,0 +1,20 @@
+NAME=dh esil
+FILE=-
+ARGS=-a x86 -b 32
+EXPECT=<<EOF
+0x00107ffc
+0x1234
+EOF
+CMDS=<<EOF
+aei
+aeim
+aeip
+dr esp=0x00108000
+.dr*
+"wa mov eax, 0x1234;push eax"
+ds 2
+.dr*
+dr?esp
+?v [esp]
+EOF
+RUN

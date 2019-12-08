@@ -1,0 +1,35 @@
+NAME=PE: checksum 1
+FILE=../bins/pe/a.exe
+ARGS=-A
+EXPECT=<<EOF
+cmp.csum 0x00005ee2
+hdr.csum 0x00005ee2
+EOF
+CMDS=<<EOF
+i~csum
+EOF
+RUN
+
+NAME=PE: checksum 2
+FILE=../bins/pe/a2.exe
+ARGS=-A
+EXPECT=<<EOF
+cmp.csum 0x000079a3
+hdr.csum 0x000079a3
+EOF
+CMDS=<<EOF
+i~csum
+EOF
+RUN
+
+NAME=PE: checksum 3
+FILE=../bins/pe/base.exe
+ARGS=-A
+EXPECT=<<EOF
+cmp.csum 0x0003881f
+hdr.csum 0x0003881f
+EOF
+CMDS=<<EOF
+i~csum
+EOF
+RUN

@@ -1,0 +1,8 @@
+NAME=PE: corkami dotnet20.exe - open
+FILE=../bins/pe/dotnet20.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

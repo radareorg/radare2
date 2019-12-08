@@ -45,7 +45,7 @@ OBJS=${STATIC_OBJS} ${OBJLIBS} ${ASMOBJS}
 test tests: tests-esil
 
 tests-esil:
-	cd ../../radare2-regressions ; \
+	cd ../../test ; \
 		sh run_tests.sh t.esil
 
 .PHONY: do doclean

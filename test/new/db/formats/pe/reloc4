@@ -1,0 +1,8 @@
+NAME=PE: corkami reloc4.exe - open
+FILE=../bins/pe/reloc4.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN

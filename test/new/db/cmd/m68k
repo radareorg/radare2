@@ -1,0 +1,25 @@
+NAME="m68k: m68k filter"
+CMDS=<<EXPECT
+e asm.arch=m68k
+e asm.bits=32
+wx 33fc010000a10000
+pi 1
+f foo.bar = 0xa10000
+pi 1
+EXPECT=<<RUN
+move.w 0x100, 0xa10000.l
+move.w 0x100, foo.bar
+RUN
+
+NAME="m68k: m68k filter2"
+CMDS=<<EXPECT
+e asm.arch=m68k
+e asm.bits=32
+wx 33fc010000a10000
+pi 1
+f foo.bar = 0x100
+pi 1
+EXPECT=<<RUN
+move.w 0x100, 0xa10000.l
+move.w foo.bar, 0xa10000.l
+RUN

@@ -1,0 +1,10 @@
+NAME=env FOO
+FILE=-
+EXPECT=<<EOF
+BAR
+EOF
+CMDS=<<EOF
+env FOO=BAR
+env FOO
+EOF
+RUN

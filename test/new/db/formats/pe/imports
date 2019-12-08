@@ -1,0 +1,23 @@
+NAME=PE: corkami imports.exe - open
+FILE=../bins/pe/imports.exe
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type name
+-----------------------------
+1   0x004010c0 NONE FUNC kernel32.dll_ExitProcess
+1   0x004010c8 NONE FUNC msvcrt.dll_printf
+
+[Symbols]
+
+nth paddr       vaddr      bind type size name
+----------------------------------------------
+1    0x000002c0 0x004010c0 NONE FUNC 0    imp.kernel32.dll_ExitProcess
+1    0x000002c8 0x004010c8 NONE FUNC 0    imp.msvcrt.dll_printf
+0x4010c8
+EOF
+CMDS=<<EOF
+ii
+is
+?v sym.imp.msvcrt.dll_printf
+EOF
+RUN

@@ -1,0 +1,14 @@
+NAME=t/retries
+FILE=-
+EXPECT=<<EOF
+2
+3
+20
+EOF
+CMDS=<<EOF
+b 10
+pd~?
+pd 3~?
+pd 20~?
+EOF
+RUN

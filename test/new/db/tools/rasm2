@@ -1,0 +1,467 @@
+NAME=rasm2 arm asm/dis endian
+FILE=-
+CMDS=<<EXPECT
+!rasm2 -a arm -b32 "mov r0, 3"
+!rasm2 -a arm -b32 -e "mov r0, 3"
+!rasm2 -a arm -b32 -d 0300a0e3
+!rasm2 -a arm -b32 -e -d e3a00003
+EXPECT=<<RUN
+0300a0e3
+e3a00003
+mov r0, 3
+mov r0, 3
+RUN
+
+NAME=1: rasm2
+FILE=-
+CMDS=!rasm2 -a arm -b32 "mov r0, 3"
+EXPECT=<<RUN
+0300a0e3
+RUN
+
+NAME=rasm2 blx arm/thumb
+FILE=-
+CMDS=!rasm2 -o 0x4000 -a arm -b 16 -d 80f018ea
+EXPECT=<<RUN
+blx 0x84434
+RUN
+
+NAME=rasm2 blx arm/thumb 2
+FILE=-
+CMDS=!rasm2 -o 0x4000 -a arm -b 16 -d 80f018ea
+EXPECT=<<RUN
+blx 0x84434
+RUN
+
+NAME=rasm2 arm/thumb branch errors
+BROKEN=1
+FILE=-
+CMDS=<<EXPECT
+!rasm2 -a arm -b 16 'b.n 8'
+!rasm2 -a arm -b 16 'b.w 8'
+!rasm2 -a arm -b 16 'bl 8'
+!rasm2 -a arm -b 16 'blx 8'
+!rasm2 -a arm -b 16 'b.n 9'
+!rasm2 -a arm -b 16 'b.w 9'
+!rasm2 -a arm -b 16 'bl 9'
+!rasm2 -a arm -b 16 'blx 9'
+!rasm2 -a arm -b 16 'b.w 0x1000000'
+!rasm2 -a arm -b 16 'bl 0x1000000'
+!rasm2 -a arm -b 16 'blx 0x1000000'
+!rasm2 -a arm -b 16 'b.w 0x1000004'
+!rasm2 -a arm -b 16 'bl 0x1000004'
+!rasm2 -a arm -b 16 'blx 0x1000004'
+EXPECT=<<RUN
+02e0
+00f002b8
+00f002f8
+00f002e8
+fff3fe97
+fff3fed7
+fff3fec7
+RUN
+
+NAME=2: rasm2
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 -d "5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3" 
+EXPECT=<<RUN
+push rbp
+mov ebp, esp
+sub esp, 0x20
+cmp eax, 0
+jne 0x16
+mov eax, 0
+jmp 0x1b
+mov eax, 1
+add esp, 0x20
+pop rbp
+ret
+RUN
+
+NAME=rasm2 #1167
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 "cmp rax,rbx" 
+EXPECT=<<RUN
+4839d8
+RUN
+
+NAME=rasm2 #1167 2
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 "test rax, rbx" 
+EXPECT=<<RUN
+4885d8
+RUN
+
+NAME=rasm2 #1167 3
+FILE=-
+CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax" 
+EXPECT=<<RUN
+4885d8
+RUN
+
+NAME=rasm2 #1167 4
+FILE=-
+CMDS=!rasm2 -s intel -a x86.as -b 64 "test rax, rbx" 
+EXPECT=<<RUN
+4885d8
+RUN
+
+NAME=rasm2 #1167 5
+FILE=-
+CMDS=!rasm2 -s att -a x86.as -b 64 "add \$33, %rbx"
+EXPECT=<<RUN
+4883c321
+RUN
+
+NAME=rasm2 #1167 6
+FILE=-
+CMDS=!rasm2 -s intel -a x86.as -b 64 "add rbx, 33" 
+EXPECT=<<RUN
+4883c321
+RUN
+
+NAME=rasm2 #1900
+FILE=-
+CMDS=<<EXPECT
+!rasm2 -a x86 -b 32 "mov [0x33], eax"
+!rasm2 -a x86 -b 32 "mov eax, 33"
+!rasm2 -a x86 -b 32 "mov eax, 0x33"
+EXPECT=<<RUN
+890533000000
+b821000000
+b833000000
+RUN
+
+NAME=rasm2 #1900 (detect syntax error - case 1)
+FILE=-
+CMDS=!rasm2 -a x86 -b 32 "mov hello, eax"
+EXPECT=<<EXPECT_ERR
+EXPECT_ERR=<<RUN
+Cannot assemble 'mov hello, eax' at line 3
+invalid
+RUN
+
+NAME=rasm2 #1900 (detect syntax error - case 2)
+FILE=-
+CMDS=!rasm2 -a x86 -b 32 "mov 33, eax"
+EXPECT=<<EXPECT_ERR
+EXPECT_ERR=<<RUN
+Cannot assemble 'mov 33, eax' at line 3
+invalid
+RUN
+
+NAME=rasm2 #1900 (detect syntax error - case 3)
+FILE=-
+CMDS=!rasm2 -a x86 -b 32 "mov eax, hello"
+EXPECT=<<EXPECT_ERR
+EXPECT_ERR=<<RUN
+Cannot assemble 'mov eax, hello' at line 3
+invalid
+RUN
+
+NAME=rasm2 #9197
+FILE=-
+CMDS=!rasm2 -a arm -b 64 "ldur x1, [x29, -8]" 
+EXPECT=<<RUN
+a1835ff8
+RUN
+
+NAME=rasm2 -h~Usage?"
+FILE=-
+CMDS=!!rasm2 -h~Usage?
+EXPECT=<<RUN
+1
+RUN
+
+NAME=rasm2 -C
+FILE=-
+CMDS=!rasm2 -C -a x86 -b 32 "mov eax, 33"
+EXPECT=<<RUN
+"\xb8\x21\x00\x00\x00"
+RUN
+
+NAME=rasm2 -d
+FILE=-
+CMDS=!rasm2 -d -a x86 -b 32 "b821000000"
+EXPECT=<<RUN
+mov eax, 0x21
+RUN
+
+NAME=rasm2 -D
+FILE=-
+CMDS=!rasm2 -D -a x86 -b 32 "b821000000"
+EXPECT=<<RUN
+0x00000000   5               b821000000  mov eax, 0x21
+RUN
+
+NAME=rasm2 -s
+FILE=-
+CMDS=!rasm2 -s att -a x86 -b 32 -D "31ed"
+EXPECT=<<RUN
+0x00000000   2                     31ed  xorl %ebp, %ebp
+RUN
+
+NAME=rasm2 -o
+FILE=-
+CMDS=!rasm2 -s att -o 0xa -a x86 -b 32 -D "31ed"
+EXPECT=<<RUN
+0x0000000a   2                     31ed  xorl %ebp, %ebp
+RUN
+
+NAME=rasm2 -F pseudo
+FILE=-
+CMDS=!rasm2 -a x86 -b 32 -o 0xa -F x86.pseudo -D 31ed 
+EXPECT=<<RUN
+0x0000000a   2                     31ed  ebp = 0
+RUN
+
+NAME=rasm2 -F
+FILE=-
+CMDS=!rasm2 -o 0xa -a x86 -b 32 -D 31ed
+EXPECT=<<RUN
+0x0000000a   2                     31ed  xor ebp, ebp
+RUN
+
+NAME=rasm2 -F -o order bug
+FILE=-
+CMDS=!rasm2 -a x86 -b 32 -o 0xa -D 31ed
+EXPECT=<<RUN
+0x0000000a   2                     31ed  xor ebp, ebp
+RUN
+
+NAME=rasm2 -B
+FILE=-
+CMDS=!rasm2 -a x86 -b16 -B "xor al, 0x34";ps
+EXPECT=<<RUN
+44
+RUN
+
+NAME=rasm2 -s att -ax86.as -b 64 movq %rdx, %rax
+FILE=-
+CMDS=!rasm2 -s att -a x86.as -b 64 "movq %rdx, %rax"
+EXPECT=<<RUN
+4889d0
+RUN
+
+NAME=rasm2 -v~commit?"
+FILE=-
+CMDS=!!rasm2 -v~commit?
+EXPECT=<<RUN
+1
+RUN
+
+NAME=rasm2 -w
+FILE=-
+CMDS=!rasm2 -w -a x86 -b 32 "mov"
+EXPECT=<<RUN
+moves data from src to dst
+RUN
+
+NAME=rasm2  dissassemble ARM32 binary file
+FILE=-
+CMDS=!rasm2 -DB -a arm -o 0x200 -b 32 -f ../bins/other/rasm2/testARM32.bin
+EXPECT=<<RUN
+0x00000200   4                 4661b0e1  asrs r6, r6, 2
+0x00000204   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
+0x00000208   4                 0040a0e3  mov r4, 0
+0x0000020c   4                 014084e2  add r4, r4, 1
+0x00000210   4                 043095e4  ldr r3, [r5], 4
+0x00000214   4                 0920a0e1  mov r2, sb
+0x00000218   4                 0810a0e1  mov r1, r8
+0x0000021c   4                 0700a0e1  mov r0, r7
+0x00000220   4                 33ff2fe1  blx r3
+0x00000224   4                 060054e1  cmp r4, r6
+RUN
+
+NAME=rasm2  dissassemble ARM32 binary file with skip
+FILE=-
+CMDS=!rasm2 -DB -a arm -o 0x200 -b 32 -f ../bins/other/rasm2/testARM32.bin -i 4
+EXPECT=<<RUN
+0x00000200   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
+0x00000204   4                 0040a0e3  mov r4, 0
+0x00000208   4                 014084e2  add r4, r4, 1
+0x0000020c   4                 043095e4  ldr r3, [r5], 4
+0x00000210   4                 0920a0e1  mov r2, sb
+0x00000214   4                 0810a0e1  mov r1, r8
+0x00000218   4                 0700a0e1  mov r0, r7
+0x0000021c   4                 33ff2fe1  blx r3
+0x00000220   4                 060054e1  cmp r4, r6
+RUN
+
+NAME=rasm2 endian test 1
+FILE=-
+CMDS=!rasm2 -e -a arm -b 32 -d 0ad0a0e1
+EXPECT=<<RUN
+beq 0xff42838c
+RUN
+
+NAME=rasm2 endian test 2
+FILE=-
+CMDS=!rasm2 -e -a arm -b 32 -d fff0a0e3
+EXPECT=<<RUN
+invalid
+RUN
+
+NAME=rasm2  SPP include directive
+FILE=-
+CMDS=!rasm2 -a x86 -b 32 -p -f ../bins/other/rasm2/asm/include.asm
+EXPECT=<<RUN
+9083e803bb00000000cd80c3
+RUN
+
+NAME=rasm2  SPP nested conditionals
+FILE=-
+CMDS=!rasm2 -a x86 -b 32 -p -f ../bins/other/rasm2/asm/nest.asm
+EXPECT=<<EXPECT_ERR
+83c10283e90583c301b90200000090
+EXPECT_ERR=<<RUN
+WARNING: WARN (line=1)
+ERROR: ERR (line=1)
+RUN
+
+NAME=rasm2 x86.asm.32
+FILE=-
+CMDS=!rasm2 -f ../bins/elf/analysis/hello.asm
+EXPECT=<<RUN
+ba0e000000b91d000000bb01000000b804000000cd80b801000000cd8048656c6c6f2c20776f726c64210a00
+RUN
+
+NAME=rasm2 bswap x64 #8095
+FILE=-
+CMDS='"!rasm2 -a x86 -b 64 \"bswap rax;bswap rbx;bswap rcx;bswap rdx\""'
+EXPECT=<<RUN
+480fc8480fcb480fc9480fca
+RUN
+
+NAME=rasm2 mov eax, [eax * 2 + 8]
+FILE=-
+CMDS=!rasm2 -b32 "mov eax, [eax * 2 + 8]"
+EXPECT=<<RUN
+8b044508000000
+RUN
+
+NAME=rasm2 -A 0x55
+FILE=-
+CMDS=!rasm2 -A 0x55
+EXPECT=<<RUN
+offset:   0x00000000
+bytes:    55
+type:     rpush
+stackop:  unknown
+esil:     rbp,8,rsp,-,=[8],8,rsp,-=
+stackptr: 8
+
+RUN
+
+NAME=rasm2 -c
+FILE=-
+CMDS=!rasm2 -a arm -b 16 -d -c cortex 0x80f30988
+EXPECT=<<RUN
+msr psp, r0
+RUN
+
+NAME=rasm2 -k
+FILE=-
+CMDS=!rasm2 -k darwin 0x90
+EXPECT=<<RUN
+RUN
+
+NAME=rasm2 -E 0x55
+FILE=-
+CMDS=!rasm2 -E 0x55
+EXPECT=<<RUN
+rbp,8,rsp,-,=[8],8,rsp,-=
+RUN
+
+NAME=rasm2 -Aj 0x55
+FILE=-
+CMDS=!rasm2 -Aj 0x55
+EXPECT='[{"opcode":0,"bytes":"55","type":"rpush","stackop":"unknown","esil":"rbp,8,rsp,-,=[8],8,rsp,-=","stackptr":8}]
+'
+RUN
+
+NAME=rasm2 -L
+BROKEN=1
+FILE=-
+CMDS=!rasm2 -L | grep -c arm.gnu
+EXPECT=<<RUN
+1
+RUN
+
+NAME=rasm2 -qL
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -qL | grep -c arm.gnu
+EXPECT=<<RUN
+1
+RUN
+
+NAME=rasm2 -v
+FILE=-
+CMDS=!rasm2 -v  | grep -c build
+EXPECT=<<RUN
+1
+RUN
+
+NAME=rasm2 -r push ebp
+FILE=-
+CMDS=!rasm2 -r push ebp
+EXPECT=<<RUN
+e asm.arch=x86
+e asm.bits=64
+wx 6a00
+f entry = $$
+f label.main = $$ + 1
+RUN
+
+NAME=rasm -a sh -e -d
+FILE=-
+CMDS=!rasm2 -a sh -e -d "8d00 000b 2029 8ffb 0009 420b 31e0"
+EXPECT=<<RUN
+bt.s 0x00000004
+rts
+and r2, r0
+bf.s 0x00000000
+nop
+jsr @r2
+cmp/eq r14, r1
+RUN
+
+NAME=rasm -a sh -e -D
+FILE=-
+CMDS=!rasm2 -a sh -e -D "8d00 000b 2029 8ffb 0009 420b 31e0"
+EXPECT=<<RUN
+0x00000000   2                     8d00  bt.s 0x00000004
+0x00000002   2                     000b  rts
+0x00000004   2                     2029  and r2, r0
+0x00000006   2                     8ffb  bf.s 0x00000000
+0x00000008   2                     0009  nop
+0x0000000a   2                     420b  jsr @r2
+0x0000000c   2                     31e0  cmp/eq r14, r1
+RUN
+
+NAME=rasm -a sh -d
+FILE=-
+CMDS=!rasm2 -a sh -d "008d 0b00 2920 fb8f 0900 0b42 e031"
+EXPECT=<<RUN
+bt.s 0x00000004
+rts
+and r2, r0
+bf.s 0x00000000
+nop
+jsr @r2
+cmp/eq r14, r1
+RUN
+
+NAME=rasm -a sh -D
+FILE=-
+CMDS=!rasm2 -a sh -D "008d 0b00 2920 fb8f 0900 0b42 e031"
+EXPECT=<<RUN
+0x00000000   2                     008d  bt.s 0x00000004
+0x00000002   2                     0b00  rts
+0x00000004   2                     2920  and r2, r0
+0x00000006   2                     fb8f  bf.s 0x00000000
+0x00000008   2                     0900  nop
+0x0000000a   2                     0b42  jsr @r2
+0x0000000c   2                     e031  cmp/eq r14, r1
+RUN

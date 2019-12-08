@@ -1,0 +1,8 @@
+NAME=PE: corkami exports_doc.exe - open
+FILE=../bins/pe/exports_doc.exe
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+q!
+EOF
+RUN
