@@ -29,7 +29,8 @@ static const char *help_msg_d[] = {
 	"dL", "[?]", "List or set debugger handler",
 	"dm", "[?]", "Show memory maps",
 	"do", "[?]", "Open process (reload, alias for 'oo')",
-	"doo", "[args]", "Reopen in debugger mode with args (alias for 'ood')",
+	"doo", "[args]", "Reopen in debug mode with args (alias for 'ood')",
+	"doof", "[file]", "Reopen in debug mode from file (alias for 'oodf')",
 	"dp", "[?]", "List, attach to process or thread id",
 	"dr", "[?]", "Cpu registers",
 	"ds", "[?]", "Step, over, source line",
@@ -286,7 +287,8 @@ static const char *help_msg_do[] = {
 	"Usage:", "do", " # Debug (re)open commands",
 	"do", "", "Open process (reload, alias for 'oo')",
 	"dor", " [rarun2]", "Comma separated list of k=v rarun2 profile options (e dbg.profile)",
-	"doo", " [args]", "Reopen in debugger mode with args (alias for 'ood')",
+	"doo", " [args]", "Reopen in debug mode with args (alias for 'ood')",
+	"doof", " [args]", "Reopen in debug mode from file (alias for 'oodf')",
 	NULL
 };
 
@@ -5301,7 +5303,7 @@ static int cmd_debug(void *data, const char *input) {
 		case '\0': // "do"
 			r_core_file_reopen (core, input[1] ? input + 2: NULL, 0, 1);
 			break;
-		case 'r': //"dor" : rarun profile
+		case 'r': // "dor" : rarun profile
 			if (input[2] == ' ') {
 				setRarunProfileString (core, input + 3);
 			} else {
@@ -5309,8 +5311,12 @@ static int cmd_debug(void *data, const char *input) {
 				r_sys_cmd ("rarun2 -h");
 			}
 			break;
-		case 'o': //"doo" : reopen in debugger
-			r_core_file_reopen_debug (core, input + 2);
+		case 'o': // "doo" : reopen in debug mode
+			if (input[2] == 'f') { // "doof" : reopen in debug mode from the given file
+				r_core_cmd0 (core, sdb_fmt ("oodf %s", input + 3));
+			} else {
+				r_core_file_reopen_debug (core, input + 2);
+			}
 			break;
 		case '?': // "do?"
 		default:
