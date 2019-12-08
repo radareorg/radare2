@@ -680,7 +680,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 	ut64 off, pc;
 
 	char *buf_token = NULL;
-	int tokens_size = 32;
+	size_t tokens_size = 32;
 	char **tokens = calloc (sizeof (char*), tokens_size);
 	if (!tokens) {
 		return NULL;
@@ -754,8 +754,8 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			(ptr = strchr (tokens[ctr], '\n')) ||
 			(ptr = strchr (tokens[ctr], '\r')));) {
 		if (ctr + 1 >= tokens_size) {
-			const int new_tokens_size = tokens_size * 2;
-			if (new_tokens_size < tokens_size) {
+			const size_t new_tokens_size = tokens_size * 2;
+			if (sizeof (char*) * new_tokens_size <= sizeof (char*) * tokens_size) {
 				// overflow
 				eprintf ("Too many tokens\n");
 				goto fail;
