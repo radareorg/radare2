@@ -67,9 +67,11 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 #define mu_sysfail(message) do { perror(message); mu_fail(message); } while(0)
 
 #define mu_assert_eq(actual, expected, message) do { \
-		char _meqstr[2048]; \
-		sprintf(_meqstr, "%s: expected %" PFMT64d ", got %" PFMT64d ".", (message), (ut64)(expected), (ut64)(actual)); \
-		mu_assert(_meqstr, (expected) == (actual)); \
+		if ((expected) != (actual)) { \
+			char _meqstr[2048]; \
+			sprintf(_meqstr, "%s: expected %" PFMT64d ", got %" PFMT64d ".", (message), (ut64)(expected), (ut64)(actual)); \
+			mu_assert(_meqstr, false); \
+		} \
 } while(0)
 
 #define mu_assert_neq(actual, expected, message) do { \
@@ -103,9 +105,11 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 } while(0)
 
 #define mu_assert_eq_fmt(actual, expected, message, fmt) do { \
-		char _meqstr[2048]; \
-		sprintf(_meqstr, "%s: expected "fmt", got "fmt".", (message), (expected), (actual)); \
-		mu_assert(_meqstr, (expected) == (actual)); \
+		if ((expected) != (actual)) { \
+			char _meqstr[2048]; \
+			sprintf(_meqstr, "%s: expected "fmt", got "fmt".", (message), (expected), (actual)); \
+			mu_assert(_meqstr, false); \
+		} \
 } while(0)
 
 #define mu_assert_streq(actual, expected, message) do { \
