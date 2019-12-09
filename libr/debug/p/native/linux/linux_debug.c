@@ -145,6 +145,39 @@ int linux_handle_signals (RDebug *dbg) {
 #define PT_GETEVENTMSG
 #endif
 
+// Used to remove breakpoints before detaching from a fork, without it the child
+// will die upon hitting a breakpoint while not being traced
+static void linux_remove_fork_bps(RDebug *dbg) {
+	RListIter *iter;
+	RBreakpointItem *b;
+	int prev_pid = dbg->pid;
+	int prev_tid = dbg->tid;
+
+	// Set dbg tid to the new child temporarily
+	dbg->pid = dbg->forked_pid;
+	dbg->tid = dbg->forked_pid;
+	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
+
+	// Unset all hw breakpoints in the child process
+	r_debug_reg_sync (dbg, R_REG_TYPE_DRX, false);
+	r_list_foreach (dbg->bp->bps, iter, b) {
+		r_debug_drx_unset (dbg, r_bp_get_index_at (dbg->bp, b->addr));
+	}
+	r_debug_reg_sync (dbg, R_REG_TYPE_DRX, true);
+
+	// Unset software breakpoints in the child process
+	r_debug_bp_update (dbg);
+	r_bp_restore (dbg->bp, false);
+
+	// Return to the parent
+	dbg->pid = prev_pid;
+	dbg->tid = prev_tid;
+	r_debug_select (dbg, dbg->pid, dbg->pid);
+
+	// Restore sw breakpoints in the parent
+	r_bp_restore (dbg->bp, true);
+}
+
 #ifdef PT_GETEVENTMSG
 /*
  * Handle PTRACE_EVENT_*
@@ -181,25 +214,32 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 				r_sys_perror ("ptrace GETEVENTMSG");
 				return R_DEBUG_REASON_ERROR;
 			}
-		//	eprintf ("PTRACE_EVENT_CLONE new_thread=%"PFMT64d"\n", (ut64)data);
 			linux_add_and_attach_new_thread (dbg, (int)data);
 			return R_DEBUG_REASON_NEW_TID;
 		}
 		break;
+	case PTRACE_EVENT_VFORK:
 	case PTRACE_EVENT_FORK:
-		if (dbg->trace_forks) {
-			if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
-				r_sys_perror ("ptrace GETEVENTMSG");
-				return R_DEBUG_REASON_ERROR;
-			}
-
-		//	eprintf ("PTRACE_EVENT_FORK new_pid=%"PFMT64d"\n", (ut64)data);
-			dbg->forked_pid = data;
-			// TODO: more handling here?
-			/* we have a new process that we are already tracing */
-			return R_DEBUG_REASON_NEW_PID;
+		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
+			r_sys_perror ("ptrace GETEVENTMSG");
+			return R_DEBUG_REASON_ERROR;
 		}
-		break;
+
+		dbg->forked_pid = data;
+		if (!dbg->trace_forks) {
+			// The new child has a pending SIGSTOP.  We can't affect it until it
+			// hits the SIGSTOP, but we're already attached.  */
+			if (waitpid (dbg->forked_pid, &status, __WALL) == -1) {
+				perror ("waitpid");
+			}
+			// We need to do this even if the new process will be detached since the
+			// breakpoints are inherited from the parent
+			linux_remove_fork_bps (dbg);
+			if (r_debug_ptrace (dbg, PTRACE_DETACH, dbg->forked_pid, NULL, (r_ptrace_data_t)(size_t)NULL) == -1) {
+				perror ("PTRACE_DETACH");
+			}
+		}
+		return R_DEBUG_REASON_NEW_PID;
 	case PTRACE_EVENT_EXIT:
 		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
 			r_sys_perror ("ptrace GETEVENTMSG");
@@ -232,9 +272,9 @@ int linux_step(RDebug *dbg) {
 
 bool linux_set_options(RDebug *dbg, int pid) {
 	int traceflags = 0;
+	traceflags |= PTRACE_O_TRACEFORK;
+	traceflags |= PTRACE_O_TRACEVFORK;
 	if (dbg->trace_forks) {
-		traceflags |= PTRACE_O_TRACEFORK;
-		traceflags |= PTRACE_O_TRACEVFORK;
 		traceflags |= PTRACE_O_TRACEVFORKDONE;
 	}
 	if (dbg->trace_clone) {
@@ -353,6 +393,10 @@ repeat:
 		} else {
 			int pid = ret;
 			reason = linux_ptrace_event (dbg, pid, status);
+
+			if (reason == R_DEBUG_REASON_NEW_PID) {
+				break;
+			}
 
 			if (reason == R_DEBUG_REASON_EXIT_TID) {
 				r_debug_ptrace (dbg, PTRACE_CONT, pid, NULL, 0);
