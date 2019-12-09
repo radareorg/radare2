@@ -1,5 +1,6 @@
 module main
 
+// vim: set ft=vlang
 import (
 	os
 	sync
@@ -247,7 +248,7 @@ fn (r2r mut R2R)test_failed(test R2RCmdTest, a string, b string) string {
 	println(term.fail_message(a))
 	println(term.ok_message(b))
 	r2r.failed++
-	return '\x1b[31mXX\x1b[0m'
+	return term.red('XX')
 }
 
 fn (r2r mut R2R)test_fixed(test R2RCmdTest) string {
@@ -264,10 +265,10 @@ fn (r2r mut R2R)run_dis_test(test R2RAsmTest) {
 	os.rm(tmp_output)
 	os.rmdir(tmp_dir)
 
-	mut mark := '\x1b[32mOK\x1b[0m'
+	mut mark := term.green('OK')
 	test_expect := test.inst.trim_space()
 	if res.trim_space() != test_expect {
-		mark = '\x1b[31mXX\x1b[0m'
+		mark = term.red('XX')
 	} else {
 		if test.mode.contains('B') {
 			mark = 'BR'
@@ -290,10 +291,10 @@ fn (r2r mut R2R)run_asm_test(test R2RAsmTest) {
 	os.rm(tmp_output)
 	os.rmdir(tmp_dir)
 
-	mut mark := '\x1b[32mOK\x1b[0m'
+	mut mark := term.green('OK')
 	test_expect := test.data.trim_space()
 	if res.trim_space() != test_expect {
-		mark = '\x1b[31mXX\x1b[0m'
+		mark = term.red('XX')
 	} else {
 		if test.mode.contains('B') {
 			mark = 'BR'
@@ -326,7 +327,7 @@ fn (r2r mut R2R)run_cmd_test(test R2RCmdTest) {
 	os.rm(tmp_stderr)
 	os.rmdir(tmp_dir)
 
-	mut mark := '\x1b[32mOK\x1b[0m'
+	mut mark := term.green('OK')
 	test_expect := test.expect.trim_space()
 	if res.trim_space() != test_expect {
 		mark = r2r.test_failed(test, test_expect, res)
