@@ -1,10 +1,10 @@
 a "addeq r1, r1, r0" 00108100
 a "ands R2, r2" 022012e0
-aB "02118100" addeq r1, r1, r2, lsl #2
+aB "addeq r1, r1, r2, lsl #2" 02118100
 a "addne r1, r1, ip" 0c108110
-aB "00118110" addne r1, r1, r0, lsl #2
+aB "addne r1, r1, r0, lsl #2" 00118110
 a "andeq r0, r0, 1" 01000002
-aB "02310502" andeq r3, r5 -2147483648
+aB "andeq r3, r5 -2147483648" 02310502
 a "andne r3, r3, r2" 02300310
 a "andne ip, ip, r7" 07c00c10
 aB "cc0fa001" asreq r0, ip, 31
@@ -16,32 +16,32 @@ a "blx 0x1" fefffffa
 a "blx 0x2" fefffffb
 a "blx 0xa" 000000fb
 a "blx 0xc" 010000fa
-aB "1eff2f01" bxeq Lr
+aB "bxeq Lr" 1eff2f01
 aB "1eff2f11" bxne Lr
 aB "1a5f6f11" clzne r5, sl
 aB "40005a01" cmpeq sl, r4
 a "cmpne r7, r6" 06005711
 a "eoreq r2, r2, 1" 01202202
 a "eorne r0, r0, r3" 03002010
-aB "230c2010" eorne r0, r0, r3, lsr #24
+aB "eorne r0, r0, r3, lsr #24" 230c2010
 a "eors R2, r2" 022032e0
-aB "03001209" ldmdbeQ r2, {r0, r1}
-aB "0f009308" ldmeq r3, {r0, r1, r2, r3}
-aB "07009508" ldmeq r5, {r0, r1, r2}
-aB "03009608" ldmeq r6, {r0, r1}
-aB "01505705" ldrbeq r5, [r7, -1]
-aB "dc208311" LDRDNE r2, [r3, ip]
-aB "b4001b05" ldreq r0, [fp, -180]
-aB "b0009301" ldrheq r0, [r3, r0]
-aB "9f0f93e1" ldrex r0, [r3]
-aB "0111a011" lslne r1, r1, 2
-aB "2008a001" lsreq r0, r0, 16
-aB "a004a011" lsrne r0, r0, 9
-aB "95072700" mlaeq r7, r5, r7, r0
-aB "91232310" mlane r3, r1, r3, r2
+aB "ldmdbeQ r2, {r0, r1}" 03001209
+aB "ldmeq r3, {r0, r1, r2, r3}" 0f009308
+aB "ldmeq r5, {r0, r1, r2}" 07009508
+aB "ldmeq r6, {r0, r1}" 03009608
+aB "ldrbeq r5, [r7, -1]" 01505705
+aB "ldrne r2, [r3, ip]" dc208311
+aB "ldreq r0, [fp, -180]" b4001b05
+aB "ldrheq r0, [r3, r0]" b0009301
+aB "ldrex r0, [r3]" 9f0f93e1
+aB "lslne r1, r1, 2" 0111a011
+aB "lsreq r0, r0, 16" 2008a001
+aB "lsrne r0, r0, 9" a004a011
+aB "mlaeq r7, r5, r7, r0" 95072700
+aB "mlane r3, r1, r3, r2" 91232310
 a "moveq r0, sl" 0a00a001
 a "movne r0, r9" 0900a011
-aB "93000310" mulne r3, r3, r0
+aB "mulne r3, r3, r02 93000310
 a "mul r2, r3, r4" 930402e0
 a "mul r6, r2" 960206e0
 a "smull r4, r1, r2, r3" 9243c1e0

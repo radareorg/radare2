@@ -1,6 +1,5 @@
 module main
 
-// vim: set ft=vlang
 import (
 	os
 	sync
@@ -13,7 +12,7 @@ import (
 
 const (
 	default_threads = 1
-	default_bits = 32
+	default_asm_bits = 32
 	r2r_version = '0.1'
 )
 
@@ -104,6 +103,9 @@ mut:
 	mode string
 	inst string
 	data string
+	offs u64
+	bige bool
+	cpu  string
 }
 
 fn (test R2RCmdTest) parse_slurp(v string) (string, string) {
@@ -256,55 +258,56 @@ fn (r2r mut R2R)test_fixed(test R2RCmdTest) string {
 	return 'FX'
 }
 
-fn (r2r mut R2R)run_dis_test(test R2RAsmTest) {
+fn (r2r mut R2R)run_asm_test(test R2RAsmTest, dismode bool) {
+	// TODO: use the r2 api instead of spawning all the time
+	mut args := []string
+	args << '-a ${test.arch}'
+	args << '-b ${test.bits}'
+	if test.cpu != '' {
+		args << '-c ${test.cpu}'
+	}
+	if test.offs != 0 {
+		args << '-o ${test.offs}'
+	}
+	if test.mode.contains('E') {
+		args << '-e'
+	}
+	if dismode {
+		args << '-d'
+		args << test.data
+	} else {
+		args << '"${test.inst}"'
+	}
+	rasm2_flags := args.join(' ')
+
 	time_start := time.ticks()
 	tmp_dir := mktmpdir('')
 	tmp_output := filepath.join(tmp_dir, 'output.txt')
-	os.system('rasm2 -a ${test.arch} -b ${test.bits} -d "${test.data}" > ${tmp_output}')
+	os.system('rasm2 ${rasm2_flags} > ${tmp_output}')
 	res := os.read_file(tmp_output) or { panic(err) }
 	os.rm(tmp_output)
 	os.rmdir(tmp_dir)
 
 	mut mark := term.green('OK')
-	test_expect := test.inst.trim_space()
-	if res.trim_space() != test_expect {
-		mark = term.red('XX')
+	test_expect := if dismode {
+		test.inst.trim_space()
+	} else {
+		test.data.trim_space()
+	}
+	if res.trim_space() == test_expect {
+		if test.mode.contains('B') {
+			mark = term.yellow('FX')
+		}
 	} else {
 		if test.mode.contains('B') {
-			mark = 'BR'
-			mark = 'FX'
+			mark = term.blue('BR')
+		} else {
+			mark = term.red('XX')
 		}
 	}
 	time_end := time.ticks()
 	times := time_end - time_start
-	println('[${mark}] D (time ${times}) ${test.arch} ${test.bits} : ${test.data} ${test.inst}')
-	// count results
-	r2r.wg.done()
-}
-
-fn (r2r mut R2R)run_asm_test(test R2RAsmTest) {
-	time_start := time.ticks()
-	tmp_dir := mktmpdir('')
-	tmp_output := filepath.join(tmp_dir, 'output.txt')
-	os.system('rasm2 -a ${test.arch} -b ${test.bits} "${test.inst}" > ${tmp_output}')
-	res := os.read_file(tmp_output) or { panic(err) }
-	os.rm(tmp_output)
-	os.rmdir(tmp_dir)
-
-	mut mark := term.green('OK')
-	test_expect := test.data.trim_space()
-	if res.trim_space() != test_expect {
-		mark = term.red('XX')
-	} else {
-		if test.mode.contains('B') {
-			mark = 'BR'
-			// mark = 'FX'
-		}
-	}
-	time_end := time.ticks()
-	times := time_end - time_start
-	println('[${mark}] A (time ${times}) ${test.arch} ${test.bits} : ${test.data} ${test.inst}')
-	// count results
+	println('[${mark}] ${test.mode} (time ${times}) ${test.arch} ${test.bits} : ${test.data} ${test.inst}')
 	r2r.wg.done()
 }
 
@@ -352,18 +355,40 @@ fn (r2r R2R)run_fuz_tests(threads int) {
 fn (r2r mut R2R)load_asm_test(testfile string) {
 	lines := os.read_lines(testfile) or { panic(err) }
 	for line in lines {
+		if line.starts_with('#') {
+			continue
+		}
 		words := line.split('"')
 		if words.len == 3 {
 			mut at := R2RAsmTest{}
 			at.mode = words[0].trim_space()
 			at.inst = words[1].trim_space()
-			at.data = words[2].trim_space()
+			data := words[2].trim_space()
+			if data.contains(' ') {
+				w := data.split(' ')
+				at.data = w[0].trim_space()
+				at.offs = w[1].trim_space().u64()
+			} else {
+				at.data = data
+			}
 			abs := testfile.split('/')
-			arch_bits := abs[abs.len-1].split('_')
-			at.arch = arch_bits[0]
-			at.bits = default_bits
-			if arch_bits.len > 1 {
-				at.bits = arch_bits[1].int()
+			values := abs[abs.len-1].split('_')
+			if values.len == 1 {
+				at.arch = values[0]
+				at.bits = default_asm_bits
+			} else if values.len == 2 {
+				at.arch = values[0]
+				at.bits = values[1].int()
+			} else if values.len == 3 {
+				at.arch = values[0]
+				at.cpu = values[1]
+				at.bits = values[2].int()
+			} else {
+				eprintln('Warning: Invalid asm/cpu/bits filename ${abs}')
+			}
+			if at.bits == 0 {
+				eprintln('Warning: Invalid asm.bits settings in ${abs}')
+				at.bits = default_asm_bits
 			}
 			r2r.asm_tests << at
 		} else {
@@ -396,7 +421,7 @@ fn (r2r mut R2R)run_asm_tests(threads int) {
 		if at.mode.contains('a') {
 			if c-- > 0 {
 				r2r.wg.add(1)
-				r2r.run_asm_test(at)
+				r2r.run_asm_test(at, false)
 			} else {
 				r2r.wg.wait()
 				c = threads
@@ -405,7 +430,7 @@ fn (r2r mut R2R)run_asm_tests(threads int) {
 		if at.mode.contains('d') {
 			if c-- > 0 {
 				r2r.wg.add(1)
-				r2r.run_dis_test(at)
+				r2r.run_asm_test(at, true)
 			} else {
 				r2r.wg.wait()
 				c = threads
