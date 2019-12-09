@@ -193,83 +193,83 @@ d "uxtheq r0, r0" 7000ff06
 d "vstreq d0, [r0]" 000b800d
 d "blne 0x1900" 8374211b 0xff7a46ec
 a "addeq r1, r1, r0" 00108100
-aB "addeq r1, r1, r2, lsl 2\ 02118100
+aB "addeq r1, r1, r2, lsl 2" 02118100
 a "addne r1, r1, ip" 0c108110
-aB "addne r1, r1, r0, lsl 2\ 00118110
+aB "addne r1, r1, r0, lsl 2" 00118110
 a "andeq r0, r0, 1" 01000002
-aB "andeq r3, r5, 0x80000000\ 02310502
+aB "andeq r3, r5, 0x80000000" 02310502
 a "andne r3, r3, r2" 02300310
 a "andne ip, ip, r7" 07c00c10
-aB "asreq r0, ip, 0x1f\ cc0fa001
-aB "asrne r0, r4, 0x1f\ c40fa011
+aB "asreq r0, ip, 0x1f" cc0fa001
+aB "asrne r0, r4, 0x1f" c40fa011
 a "beq 8" 0000000a
-aB "biceq r3, r3, 7\ 0730c303
+aB "biceq r3, r3, 7" 0730c303
 aB "blne 0x1900" 3E06001B
 a "bl 0x1900" 3e0600eb
 a "b 0x1900" 3e0600ea
-aB "bxeq lr\ 1eff2f01
-aB "bxne lr\ 1eff2f11
-aB "clzne r5, sl\ 1a5f6f11
-aB "cmpeq sl, r0, asr 32\ 40005a01
+aB "bxeq lr" 1eff2f01
+aB "bxne lr" 1eff2f11
+aB "clzne r5, sl" 1a5f6f11
+aB "cmpeq sl, r0, asr 32" 40005a01
 a "cmpne r7, r6" 06005711
 a "eoreq r2, r2, 1" 01202202
 a "eorne r0, r0, r3" 03002010
-aB "eorne r0, r0, r3, lsr 24\ 230c2010
-aB "ldmdbeq r2, {r0, r1}\ 03001209
-aB "ldmeq r3, {r0, r1, r2, r3}\ 0f009308
-aB "ldmeq r5, {r0, r1, r2}\ 07009508
-aB "ldmeq r6, {r0, r1}\ 03009608
-aB "ldrbeq r5, [r7, -1]\ 01505705
-aB "ldrdne r2, r3, [r3, ip]\ dc208311
-aB "ldreq r0, [fp, -0xb4]\ b4001b05
-aB "ldrheq r0, [r3, r0]\ b0009301
-aB "lslne r1, r1, 2\ 0111a011
-aB "lsreq r0, r0, 0x10\ 2008a001
-aB "lsrne r0, r0, 9\ a004a011
-aB "mlaeq r7, r5, r7, r0\ 95072700
-aB "mlane r3, r1, r3, r2\ 91232310
+aB "eorne r0, r0, r3, lsr 24" 230c2010
+aB "ldmdbeq r2, {r0, r1}" 03001209
+aB "ldmeq r3, {r0, r1, r2, r3}" 0f009308
+aB "ldmeq r5, {r0, r1, r2}" 07009508
+aB "ldmeq r6, {r0, r1}" 03009608
+aB "ldrbeq r5, [r7, -1]" 01505705
+aB "ldrdne r2, r3, [r3, ip]" dc208311
+aB "ldreq r0, [fp, -0xb4]" b4001b05
+aB "ldrheq r0, [r3, r0]" b0009301
+aB "lslne r1, r1, 2" 0111a011
+aB "lsreq r0, r0, 0x10" 2008a001
+aB "lsrne r0, r0, 9" a004a011
+aB "mlaeq r7, r5, r7, r0" 95072700
+aB "mlane r3, r1, r3, r2" 91232310
 a "moveq r0, sl" 0a00a001
-aB "movne r0, sb\ 0900a011
-aB "mulne r3, r3, r0\ 93000310
+aB "movne r0, sb" 0900a011
+aB "mulne r3, r3, r0" 93000310
 a "mvneq r0, 0x15" 1500e003
-aB "mvneq r0, 0x80000000\ 0201e003
+aB "mvneq r0, 0x80000000" 0201e003
 a "orreq r5, r5, r3" 03508501
-aB "orreq r6, r6, r2, lsr 1\ a2608601
-aB "orreq r3, r3, 0x80000000\ 02318303
-aB "orrne r0, r0, r1, lsl ip\ 110c8011
+aB "orreq r6, r6, r2, lsr 1" a2608601
+aB "orreq r3, r3, 0x80000000" 02318303
+aB "orrne r0, r0, r1, lsl ip" 110c8011
 a "orrne r1, r1, r3" 03108111
-aB "popeq {pc}\ 04f09d04
+aB "popeq {pc}" 04f09d04
 a "popeq {r4, pc}" 1080bd08
 a "popeq {r4, r5, pc}" 3080bd08
 a "popeq {r3, r4, r5, pc}" 3880bd08
 a "popeq {r4, r5, r6, r7, pc}" f080bd08
 a "popeq {r3, r4, r5, r6, r7, pc}" f880bd08
 a "popeq {r3, r4, r5, r6, r7, r8, sl, pc}" f885bd08
-aB "popeq {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}\ f88fbd08
-aB "reveq r3, r3\ 333fbf06
+aB "popeq {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}" f88fbd08
+aB "reveq r3, r3" 333fbf06
 a "rsbeq ip, r1, r7" 07c06100
 a "rsbne r6, r0, r6" 06606010
-aB "stmeq r0, {r2, r3}\ 0c008008
-aB "stmeq ip, {r0, r1, r2}\ 07008c08
-aB "stmeq ip, {r0, r1, r2, r3}\ 0f008c08
-aB "strbeq ip, [r2, -1]\ 01c04205
-aB "strbeq r3, [r5]\ 0030c505
-aB "strdeq r2, r3, [r4]\ f020c401
-aB "strdeq r4, r5, [r8, 0x50]\ f045c801
-aB "streq r3, [r5, -4]\ 04300505
-aB "streq r1, [fp, -0x130]\ 30110b05
-aB "strhne r3, [fp, -0x32]\ b2334b11
-aB "strheq r3, [fp, -0x38]\ b8334b01
-aB "strheq r1, [r0]\ b010c001
-aB "strhne r1, [r2, r3]\ b3108211
+aB "stmeq r0, {r2, r3}" 0c008008
+aB "stmeq ip, {r0, r1, r2}" 07008c08
+aB "stmeq ip, {r0, r1, r2, r3}" 0f008c08
+aB "strbeq ip, [r2, -1]" 01c04205
+aB "strbeq r3, [r5]" 0030c505
+aB "strdeq r2, r3, [r4]" f020c401
+aB "strdeq r4, r5, [r8, 0x50]" f045c801
+aB "streq r3, [r5, -4]" 04300505
+aB "streq r1, [fp, -0x130]" 30110b05
+aB "strhne r3, [fp, -0x32]" b2334b11
+aB "strheq r3, [fp, -0x38]" b8334b01
+aB "strheq r1, [r0]" b010c001
+aB "strhne r1, [r2, r3]" b3108211
 a "subeq ip, r0, 0x20" 20c04002
-aB "subne r6, r3, r6, asr 1\ c6604310
+aB "subne r6, r3, r6, asr 1" c6604310
 a "subne r5, r5, r3" 03504510
 a "svceq 0" 0000000f
-aB "umlalne r4, r5, r3, r7\ 9347a510
-aB "uxtbeq r1, r0\ 7010ef06
-aB "uxtheq r0, r0\ 7000ff06
-aB "vstreq d0, [r0]\ 000b800d
+aB "umlalne r4, r5, r3, r7" 9347a510
+aB "uxtbeq r1, r0" 7010ef06
+aB "uxtheq r0, r0" 7000ff06
+aB "vstreq d0, [r0]" 000b800d
 a "lsr r0, r1, r3" 3103a0e1
 a "lsl r2, r8, r5" 1825a0e1
 a "asr r4, r5, r0" 5540a0e1

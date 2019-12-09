@@ -366,7 +366,7 @@ fn (r2r mut R2R)load_asm_test(testfile string) {
 			}
 			r2r.asm_tests << at
 		} else {
-			println('Wrong line in asm test: ${line}')
+			eprintln('Warning: Invalid asm test for ${testfile} in ${line}')
 		}
 	}
 }
