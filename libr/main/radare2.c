@@ -15,12 +15,6 @@
 #include <r_core.h>
 #include <r_main.h>
 
-
-#if USE_THREADS
-static char *rabin_cmd = NULL;
-#endif
-static RThread *thread = NULL;
-static bool threaded = false;
 static bool haveRarunProfile = false;
 static struct r_core_t r;
 static int do_analysis = 0;
@@ -96,31 +90,6 @@ static int r_main_version_verify(int show) {
 		}
 	}
 	return ret;
-}
-
-static RThreadFunctionRet loading_thread(RThread *th) {
-	const char *tok = "\\|/-";
-	int i = 0;
-	if (th) {
-		while (!th->breaked) {
-			eprintf ("%c] Loading..%c     \r[", tok[i%4], "."[i%2]);
-			r_sys_usleep (100000);
-			i++;
-		}
-	}
-	return R_TH_STOP;
-}
-
-static void loading_start() {
-	thread = r_th_new (loading_thread, NULL, 1);
-	if (r_th_start (thread, true)) {
-		r_th_setname (thread, "r2_th");
-	}
-}
-
-static void loading_stop() {
-	r_th_kill_free (thread);
-	thread = NULL;
 }
 
 static int main_help(int line) {
@@ -274,43 +243,6 @@ static int main_print_var(const char *var_name) {
 	return 0;
 }
 
-// Load the binary information from rabin2
-// TODO: use thread to load this, split contents line, per line and use global lock
-#if USE_THREADS
-static RThreadFunctionRet rabin_delegate(RThread *th) {
-	RIODesc *d = r_io_desc_get (r.io, r.file->fd);
-	if (rabin_cmd && r_file_exists (d->name)) {
-		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
-		ptr = cmd;
-		if (ptr) {
-			do {
-				if (th) {
-					r_th_lock_enter (th->user);
-				}
-				nptr = strchr (ptr, '\n');
-				if (nptr) {
-					*nptr = 0;
-				}
-				r_core_cmd (&r, ptr, 0);
-				if (nptr) {
-					ptr = nptr + 1;
-				}
-				if (th) {
-					r_th_lock_leave (th->user);
-				}
-			} while (nptr);
-		}
-		//r_core_cmd (&r, cmd, 0);
-		free (rabin_cmd);
-		rabin_cmd = NULL;
-	}
-	if (th) {
-		eprintf ("rabin2: done\n");
-	}
-	return R_TH_STOP;
-}
-#endif
-
 static bool run_commands(RList *cmds, RList *files, bool quiet) {
 	RListIter *iter;
 	const char *cmdn;
@@ -398,10 +330,6 @@ static void set_color_default(void) {
 }
 
 R_API int r_main_radare2(int argc, char **argv) {
-#if USE_THREADS
-	RThreadLock *lock = NULL;
-	RThread *rabin_th = NULL;
-#endif
 	RListIter *iter;
 	char *cmdn, *tmp;
 	RCoreFile *fh = NULL;
@@ -818,7 +746,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 
 	prj = r_config_get (r.config, "prj.name");
 	if (prj && *prj) {
-		r_core_project_open (&r, prj, threaded);
+		r_core_project_open (&r, prj, false);
 		r_config_set (r.config, "bin.strings", "false");
 	}
 
@@ -930,9 +858,6 @@ R_API int r_main_radare2(int argc, char **argv) {
 			return 1;
 		}
 	} else if (strcmp (argv[r_optind - 1], "--") && !(r_config_get (r.config, "prj.name") && r_config_get (r.config, "prj.name")[0]) ) {
-		if (threaded) {
-			loading_start ();
-		}
 		if (debug) {
 			if (asmbits) {
 				r_config_set (r.config, "asm.bits", asmbits);
@@ -1093,28 +1018,23 @@ R_API int r_main_radare2(int argc, char **argv) {
 							iod->perm |= R_PERM_X;
 						}
 						if (load_bin == LOAD_BIN_ALL) {
-#if USE_THREADS
-							if (!rabin_th)
-#endif
-							{
-								const char *filepath = NULL;
-								if (debug) {
-									// XXX: incorrect for PIE binaries
-									filepath = file? strstr (file, "://"): NULL;
-									filepath = filepath ? filepath + 3 : pfile;
-								}
-								if (r.file && iod && (iod->fd == r.file->fd) && iod->name) {
-									filepath = iod->name;
-								}
-								/* Load rbin info from r2 dbg:// or r2 /bin/ls */
-								/* the baddr should be set manually here */
-								(void)r_core_bin_load (&r, filepath, baddr);
-								// check if bin info is loaded and complain if -B was used
-								RBinFile *bi = r_bin_cur (r.bin);
-								bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
-								if (!haveBinInfo && baddr != UT64_MAX) {
-									eprintf ("Warning: Don't use -B on unknown files. Consider using -m.\n");
-								}
+							const char *filepath = NULL;
+							if (debug) {
+								// XXX: incorrect for PIE binaries
+								filepath = file? strstr (file, "://"): NULL;
+								filepath = filepath ? filepath + 3 : pfile;
+							}
+							if (r.file && iod && (iod->fd == r.file->fd) && iod->name) {
+								filepath = iod->name;
+							}
+							/* Load rbin info from r2 dbg:// or r2 /bin/ls */
+							/* the baddr should be set manually here */
+							(void)r_core_bin_load (&r, filepath, baddr);
+							// check if bin info is loaded and complain if -B was used
+							RBinFile *bi = r_bin_cur (r.bin);
+							bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
+							if (!haveBinInfo && baddr != UT64_MAX) {
+								eprintf ("Warning: Don't use -B on unknown files. Consider using -m.\n");
 							}
 						} else {
 							r_io_map_new (r.io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod));
@@ -1225,23 +1145,6 @@ R_API int r_main_radare2(int argc, char **argv) {
 		}
 		r_core_cmd0 (&r, "=!"); // initalize io subsystem
 		iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
-#if USE_THREADS
-		if (iod && load_bin == LOAD_BIN_ALL && threaded) {
-			// XXX: if no rabin2 in path that may fail
-			// TODO: pass -B 0 ? for pie bins?
-			rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
-					(debug || (r.io && r.io->va)) ? "" : "p", iod->name);
-			/* TODO: only load data if no project is used */
-			lock = r_th_lock_new (false);
-			rabin_th = r_th_new (&rabin_delegate, lock, 0);
-			if (rabin_th) {
-				int cpuaff = (int)r_config_get_i (r.config, "cfg.cpuaffinity");
-				r_th_setaffinity (rabin_th, cpuaff);
-				r_th_setname (rabin_th, "rabin_th");
-			}
-			// rabin_delegate (NULL);
-		} // else eprintf ("Metadata loaded from 'prj.name'\n");
-#endif
 		if (mapaddr) {
 			r_core_seek (&r, mapaddr, 1);
 		}
@@ -1308,7 +1211,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 		if (iod && !strstr (iod->uri, "://")) {
 			const char *npath;
 			char *path = strdup (r_config_get (r.config, "file.path"));
-			has_project = r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
+			has_project = r_core_project_open (&r, r_config_get (r.config, "prj.name"), false);
 			iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
@@ -1442,37 +1345,8 @@ R_API int r_main_radare2(int argc, char **argv) {
 				r_core_cmd0 (&r, "aeip");
 			}
 		}
-		loading_stop ();
 		for (;;) {
-#if USE_THREADS
-			do {
-				int err = r_core_prompt (&r, false);
-				if (err < 1) {
-					// handle ^D
-					r.num->value = 0;
-					break;
-				}
-				if (lock) {
-					r_th_lock_enter (lock);
-				}
-				/* -1 means invalid command, -2 means quit prompt loop */
-				if ((ret = r_core_prompt_exec (&r)) == -2) {
-					break;
-				}
-				if (lock) {
-					r_th_lock_leave (lock);
-				}
-				if (rabin_th && !r_th_wait_async (rabin_th)) {
-					// eprintf ("rabin thread end \n");
-					r_th_kill_free (rabin_th);
-					r_th_lock_free (lock);
-					lock = NULL;
-					rabin_th = NULL;
-				}
-			} while (ret != R_CORE_CMD_EXIT);
-#else
 			r_core_prompt_loop (&r);
-#endif
 			ret = r.num->value;
 			debug = r_config_get_i (r.config, "cfg.debug");
 			if (ret != -1 && r_cons_is_interactive ()) {
@@ -1542,7 +1416,6 @@ R_API int r_main_radare2(int argc, char **argv) {
 	if (mustSaveHistory (r.config)) {
 		r_line_hist_save (R2_HOME_HISTORY);
 	}
-	// TODO: kill thread
 
 	/* capture return value */
 	ret = r.num->value;
