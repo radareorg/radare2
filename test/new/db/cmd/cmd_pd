@@ -576,10 +576,10 @@ RUN
 NAME=pd asm.var.subonly
 FILE=malloc://1024
 EXPECT=<<EOF
-     ; var int64_t var_40h @ rsp+0x40
-     mov rax, qword [var_40h]
-     ; var int64_t var_40h @ rsp+0x40
-     mov rax, qword [rsp + var_40h]
+     ; var int64_t var_28h @ rsp+0x40
+     mov rax, qword [var_28h]
+     ; var int64_t var_28h @ rsp+0x40
+     mov rax, qword [rsp + var_28h]
 EOF
 CMDS=<<EOF
 e asm.arch=x86

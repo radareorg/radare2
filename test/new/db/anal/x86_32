@@ -7,7 +7,7 @@ pdb
 EXPECT=<<EOF
 / 2628: entry0 ();
 |           0x006453a1      e8d8170000     call fcn.00646b7e
-|           0x006453a6      8d642444       lea esp, [var_44h]
+|           0x006453a6      8d642444       lea esp, [var_2ch]
 |       ,=< 0x006453aa      0f85a6300000   jne 0x648456
 EOF
 RUN
@@ -3173,9 +3173,9 @@ aa > /dev/null
 pd 38
 EXPECT=<<EOF
 ┌ (fcn) fcn.00000000 1645
-│           ; var int32_t var_4h @ esp+0x4
-│           ; var int32_t var_1ch @ esp+0x1c
-│           ; var int32_t var_2ch @ esp+0x2c
+│           ; arg int32_t arg_4h @ esp+0x4
+│           ; var int32_t var_30h @ esp+0x1c
+│           ; var int32_t var_20h @ esp+0x2c
 │           0x00000000      xor eax, eax
 │           0x00000002      cmp esi, edx
 │       ┌─< 0x00000004      jb 0x50
@@ -3187,10 +3187,10 @@ EXPECT=<<EOF
 │     ╎││   0x00000015      mov eax, ebp
 │     ╎││   0x00000017      div ecx
 │     ╎││   0x00000019      xor edx, edx
-│     ╎││   0x0000001b      mov dword [var_1ch], eax
+│     ╎││   0x0000001b      mov dword [var_30h], eax
 │     ╎││   0x0000001f      mov eax, edi
 │     ╎││   0x00000021      div ecx
-│     ╎││   0x00000023      cmp dword [var_1ch], eax
+│     ╎││   0x00000023      cmp dword [var_30h], eax
 │    ┌────< 0x00000027      jbe 0x90
 │    │╎││   0x00000029      mov edx, dword [ebx + 0x208]
 │    │╎││   0x0000002f      mov eax, dword [edx]
@@ -3235,9 +3235,9 @@ aa >/dev/null
 pd 38
 EXPECT=<<EOF
 / (fcn) fcn.00000000 1645
-|           ; var int32_t var_4h @ esp+0x4
-|           ; var int32_t var_1ch @ esp+0x1c
-|           ; var int32_t var_2ch @ esp+0x2c
+|           ; arg int32_t arg_4h @ esp+0x4
+|           ; var int32_t var_30h @ esp+0x1c
+|           ; var int32_t var_20h @ esp+0x2c
 |           0x00000000      xor eax, eax
 |           0x00000002      cmp esi, edx
 |       ,=< 0x00000004      jb 0x50
@@ -3249,10 +3249,10 @@ EXPECT=<<EOF
 |     :||   0x00000015      mov eax, ebp
 |     :||   0x00000017      div ecx
 |     :||   0x00000019      xor edx, edx
-|     :||   0x0000001b      mov dword [var_1ch], eax
+|     :||   0x0000001b      mov dword [var_30h], eax
 |     :||   0x0000001f      mov eax, edi
 |     :||   0x00000021      div ecx
-|     :||   0x00000023      cmp dword [var_1ch], eax
+|     :||   0x00000023      cmp dword [var_30h], eax
 |    ,====< 0x00000027      jbe 0x90
 |    |:||   0x00000029      mov edx, dword [ebx + 0x208]
 |    |:||   0x0000002f      mov eax, dword [edx]
@@ -3298,41 +3298,41 @@ NAME=afva for esp based vars
 FILE=malloc://1024
 EXPECT=<<EOF
 / (fcn) fcn.00000000 89
-|           ; var int32_t var_4h @ esp+0x4
+|           ; var int32_t var_ch @ esp+0x4
 |           ; var int32_t var_8h @ esp+0x8
-|           ; var int32_t var_ch @ esp+0xc
-|           ; arg int32_t arg_14h @ esp+0x14
-|           ; arg int32_t arg_18h @ esp+0x18
-|           ; arg int32_t arg_1ch @ esp+0x1c
-|           ; arg int32_t arg_20h @ esp+0x20
-|           ; arg int32_t arg_28h @ esp+0x28
-|           ; arg int32_t arg_2ch @ esp+0x2c
+|           ; var int32_t var_4h @ esp+0xc
+|           ; arg int32_t arg_4h @ esp+0x14
+|           ; arg int32_t arg_8h @ esp+0x18
+|           ; arg int32_t arg_ch @ esp+0x1c
+|           ; arg int32_t arg_10h @ esp+0x20
+|           ; arg int32_t arg_18h @ esp+0x28
+|           ; arg int32_t arg_1ch @ esp+0x2c
 |           0x00000000      83ec10         sub esp, 0x10
-|           0x00000003      8b442418       mov eax, dword [arg_18h]
+|           0x00000003      8b442418       mov eax, dword [arg_8h]
 |           0x00000007      99             cdq
-|           0x00000008      f77c241c       idiv dword [arg_1ch]
-|           0x0000000c      8b442414       mov eax, dword [arg_14h]
+|           0x00000008      f77c241c       idiv dword [arg_ch]
+|           0x0000000c      8b442414       mov eax, dword [arg_4h]
 |           0x00000010      01d0           add eax, edx
-|           0x00000012      8944240c       mov dword [var_ch], eax
-|           0x00000016      8b442420       mov eax, dword [arg_20h]
+|           0x00000012      8944240c       mov dword [var_4h], eax
+|           0x00000016      8b442420       mov eax, dword [arg_10h]
 |           0x0000001a      99             cdq
-|           0x0000001b      f77c2428       idiv dword [arg_28h]
-|           0x0000001f      8b44240c       mov eax, dword [var_ch]
+|           0x0000001b      f77c2428       idiv dword [arg_18h]
+|           0x0000001f      8b44240c       mov eax, dword [var_4h]
 |           0x00000023      01d0           add eax, edx
 |           0x00000025      89442408       mov dword [var_8h], eax
-|           0x00000029      8b542414       mov edx, dword [arg_14h]
-|           0x0000002d      8b44240c       mov eax, dword [var_ch]
+|           0x00000029      8b542414       mov edx, dword [arg_4h]
+|           0x0000002d      8b44240c       mov eax, dword [var_4h]
 |           0x00000031      8d0c02         lea ecx, [edx + eax]
-|           0x00000034      8b44242c       mov eax, dword [arg_2ch]
+|           0x00000034      8b44242c       mov eax, dword [arg_1ch]
 |           0x00000038      99             cdq
 |           0x00000039      f7f9           idiv ecx
 |           0x0000003b      8b442408       mov eax, dword [var_8h]
 |           0x0000003f      01d0           add eax, edx
-|           0x00000041      89442404       mov dword [var_4h], eax
-|           0x00000045      8b54240c       mov edx, dword [var_ch]
+|           0x00000041      89442404       mov dword [var_ch], eax
+|           0x00000045      8b54240c       mov edx, dword [var_4h]
 |           0x00000049      8b442408       mov eax, dword [var_8h]
 |           0x0000004d      01c2           add edx, eax
-|           0x0000004f      8b442404       mov eax, dword [var_4h]
+|           0x0000004f      8b442404       mov eax, dword [var_ch]
 |           0x00000053      01d0           add eax, edx
 |           0x00000055      83c410         add esp, 0x10
 \           0x00000058      c3             ret

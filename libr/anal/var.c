@@ -579,7 +579,7 @@ static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char 
 
 
 //Variable recovery functions
-static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {
+static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx, int delta) {
 	char *varname = r_str_newf ("%s_%xh", pfx, idx);
 	int i = 2;
 	char v_kind = 0;
@@ -595,7 +595,7 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 			v_delta = r_num_math (NULL, comma + 1);
 			v_kind = *name_value;
 		}
-		if (v_kind == type && R_ABS (v_delta) == idx) {
+		if (v_kind == type && v_delta == delta) {
 			free (name_value);
 			return varname;
 		}
@@ -658,16 +658,24 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? 1 : 0;
 	if (*sign == '+') {
-		const bool isarg = fcn->bp_frame && ((ptr >= fcn->maxstack) || (type != 's'));
+		const bool isarg = fcn->bp_frame && ((ptr >= fcn->stack) || (type != 's'));
 		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
-		char *varname = get_varname (anal, fcn, type, pfx, R_ABS (ptr));
+		ut64 bp_off = R_ABS (ptr);
+		if (type == 's') {
+			if (isarg) {
+				bp_off = ptr - fcn->stack;
+			} else {
+				bp_off = fcn->stack - ptr;
+			}
+		}
+		char *varname = get_varname (anal, fcn, type, pfx, bp_off, ptr);
 		if (varname) {
 			r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, isarg, varname);
 			r_anal_var_access (anal, fcn->addr, type, 1, ptr, rw, op->addr);
 			free (varname);
 		}
 	} else {
-		char *varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
+		char *varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr), -ptr);
 		if (varname) {
 			r_anal_var_add (anal, fcn->addr, 1, -ptr, type, NULL, anal->bits / 8, 0, varname);
 			r_anal_var_access (anal, fcn->addr, type, 1, -ptr, rw, op->addr);

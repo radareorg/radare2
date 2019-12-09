@@ -450,6 +450,7 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 		bb->jump = UT64_MAX;
 		bb->fail = UT64_MAX;
 		bb->type = 0; // TODO
+		bb->parent_stackptr = fcn->stack;
 		r_anal_fcn_bbadd (fcn, bb);
 		if (anal->cb.on_fcn_bb_new) {
 			anal->cb.on_fcn_bb_new (anal, anal->user, fcn, bb);
@@ -1200,12 +1201,17 @@ repeat:
 					}
 				}
 			}
+			int saved_stack = fcn->stack;
 			if (continue_after_jump) {
 				r_anal_fcn_bb (anal, fcn, op.jump, depth);
+				fcn->stack = saved_stack;
 				ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
+				fcn->stack = saved_stack;
 			} else {
 				ret = r_anal_fcn_bb (anal, fcn, op.jump, depth);
+				fcn->stack = saved_stack;
 				ret = r_anal_fcn_bb (anal, fcn, op.fail, depth);
+				fcn->stack = saved_stack;
 				if (op.jump < fcn->addr) {
 					if (!overlapped) {
 						bb->jump = op.jump;
@@ -1902,6 +1908,7 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, 
 		bb->jump = bbi->jump;
 		bb->fail = bbi->fail;
 		bb->conditional = bbi->conditional;
+		bb->parent_stackptr = bbi->stackptr;
 	}
 	FITFCNSZ ();
 	bbi->size = addr - bbi->addr;

@@ -777,27 +777,27 @@ RUN
 NAME=sp vars arm16
 FILE=malloc://1024
 EXPECT=<<EOF
-var int16_t var_0h @ sp+0x0
-var int16_t var_4h @ sp+0x4
-var int16_t var_8h @ sp+0x8
-var int16_t var_ch @ sp+0xc
-var int16_t var_10h @ sp+0x10
-var int16_t var_14h @ sp+0x14
-var int16_t var_18h @ sp+0x18
-var int16_t var_1ch @ sp+0x1c
-var int16_t var_20h @ sp+0x20
-var int16_t var_24h @ sp+0x24
-var int16_t var_28h @ sp+0x28
-var int16_t var_2ch @ sp+0x2c
-var int16_t var_30h @ sp+0x30
-var int16_t var_34h @ sp+0x34
-var int16_t var_38h @ sp+0x38
-var int16_t var_3ch @ sp+0x3c
-var int16_t var_40h @ sp+0x40
-var int16_t var_44h @ sp+0x44
-var int16_t var_48h @ sp+0x48
-var int16_t var_4ch @ sp+0x4c
-var int16_t var_50h @ sp+0x50
+var int16_t var_54h @ sp+0x0
+var int16_t var_50h @ sp+0x4
+var int16_t var_4ch @ sp+0x8
+var int16_t var_48h @ sp+0xc
+var int16_t var_44h @ sp+0x10
+var int16_t var_40h @ sp+0x14
+var int16_t var_3ch @ sp+0x18
+var int16_t var_38h @ sp+0x1c
+var int16_t var_34h @ sp+0x20
+var int16_t var_30h @ sp+0x24
+var int16_t var_2ch @ sp+0x28
+var int16_t var_28h @ sp+0x2c
+var int16_t var_24h @ sp+0x30
+var int16_t var_20h @ sp+0x34
+var int16_t var_1ch @ sp+0x38
+var int16_t var_18h @ sp+0x3c
+var int16_t var_14h @ sp+0x40
+var int16_t var_10h @ sp+0x44
+var int16_t var_ch @ sp+0x48
+var int16_t var_8h @ sp+0x4c
+var int16_t var_4h @ sp+0x50
 EOF
 CMDS=<<EOF
 e asm.arch=arm

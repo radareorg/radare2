@@ -14,9 +14,9 @@ RUN
 NAME=xtensa stackframe
 FILE=malloc://512
 EXPECT=<<EOF
-var int32_t var_4h @ a1+0x4
+var int32_t var_ch @ a1+0x4
 var int32_t var_8h @ a1+0x8
-var int32_t var_ch @ a1+0xc
+var int32_t var_4h @ a1+0xc
 EOF
 CMDS=<<EOF
 e asm.arch=xtensa
