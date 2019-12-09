@@ -78,13 +78,13 @@ EXPECT=<<EOF
 / 42: int main (int argc, char **argv, char **envp);
 | 0x004004a6      pushq %rbp
 | 0x004004a7      movq %rsp, %rbp
-| 0x004004aa      movq arg_8h, %rax
+| 0x004004aa      movq arg_0h, %rax
 | 0x004004af      movq -8(%rsp), %rax
-| 0x004004b4      movq arg_8h_2, %rax
+| 0x004004b4      movq arg_8h, %rax
 | 0x004004b8      movq var_8h, %rax
-| 0x004004bc      movq arg_18h, %rax
+| 0x004004bc      movq arg_10h, %rax
 | 0x004004c1      movq -0x18(%rsp), %rax
-| 0x004004c6      movq arg_18h_2, %rax
+| 0x004004c6      movq arg_18h, %rax
 | 0x004004ca      movq var_18h, %rax
 | 0x004004ce      leave
 \ 0x004004cf      retq
@@ -106,13 +106,13 @@ EXPECT=<<EOF
 / 42: int main (int argc, char **argv, char **envp);
 | 0x004004a6      pushq %rbp
 | 0x004004a7      movq %rsp, %rbp
-| 0x004004aa      movq arg_8h(%rsp), %rax
+| 0x004004aa      movq arg_0h(%rsp), %rax
 | 0x004004af      movq -8(%rsp), %rax
-| 0x004004b4      movq arg_8h_2(%rbp), %rax
+| 0x004004b4      movq arg_8h(%rbp), %rax
 | 0x004004b8      movq var_8h(%rbp), %rax
-| 0x004004bc      movq arg_18h(%rsp), %rax
+| 0x004004bc      movq arg_10h(%rsp), %rax
 | 0x004004c1      movq -0x18(%rsp), %rax
-| 0x004004c6      movq arg_18h_2(%rbp), %rax
+| 0x004004c6      movq arg_18h(%rbp), %rax
 | 0x004004ca      movq var_18h(%rbp), %rax
 | 0x004004ce      leave
 \ 0x004004cf      retq

@@ -94,11 +94,11 @@ EOF
 EXPECT=<<EOF
 | ; var struct JNINativeInterface @ sp+0x12c
 | 0x00000f74      4b93           str r3, [sp + JNINativeInterface]
-| 0x00000f76      039b           ldr r3, [sp + var_ch]                 ; JNINativeInterface.reserved0
+| 0x00000f76      039b           ldr r3, [sp + var_128h]               ; JNINativeInterface.reserved0
 | 0x00000f7e      d358           ldr r3, [r2, r3]                      ; JNINativeInterface.GetStringUTFChars
-| 0x00000f82      019a           ldr r2, [sp + var_4h]                 ; JNINativeInterface.reserved0
+| 0x00000f82      019a           ldr r2, [sp + var_130h]               ; JNINativeInterface.reserved0
 | 0x0000100e      d358           ldr r3, [r2, r3]                      ; JNINativeInterface.GetStringLength
-| 0x00001012      019a           ldr r2, [sp + var_4h]                 ; JNINativeInterface.reserved0
+| 0x00001012      019a           ldr r2, [sp + var_130h]               ; JNINativeInterface.reserved0
 | 0x00001066      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
 | 0x00001114      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
 | 0x0000112e      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
@@ -1259,7 +1259,7 @@ af
 aaft
 afv
 EXPECT=<<RUN
-var int32_t var_0h @ sp+0x0
+var int32_t var_1454h @ sp+0x0
 var int32_t var_48h @ fp-0x48
 var char * s1 @ fp-0x44
 var int32_t var_40h @ fp-0x40
@@ -1339,9 +1339,9 @@ FILE=../bins/elf/movstr
 CMDS=<<EXPECT
 aaa
 s main
-afv~var_4h
+afv~var_28h
 EXPECT=<<RUN
-var char * var_4h @ esp+0x4
+var char * var_28h @ esp+0x4
 RUN
 
 NAME=ret type pointer

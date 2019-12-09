@@ -1835,9 +1835,9 @@ FILE=../bins/elf/crackme0x05
 EXPECT=<<EOF
 
    var_78h  0x8048577,0x804858a
-    var_4h  
+   var_88h  
    var_78h  
-    var_4h  0x804857a
+   var_88h  0x804857a
 EOF
 CMDS=<<EOF
 aa

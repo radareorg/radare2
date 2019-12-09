@@ -3322,6 +3322,8 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 		if (bb->size > max_bb_size) {
 			continue;
 		}
+		int saved_stack = fcn->stack;
+		fcn->stack = bb->parent_stackptr;
 		ut64 pos = bb->addr;
 		while (pos < bb->addr + bb->size) {
 			if (r_cons_is_breaked ()) {
@@ -3334,6 +3336,11 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 			}
 			r_anal_extract_rarg (core->anal, op, fcn, reg_set, &count);
 			if (!argonly) {
+				if (op->stackop == R_ANAL_STACK_INC) {
+					fcn->stack += op->stackptr;
+				} else if (op->stackop == R_ANAL_STACK_RESET) {
+					fcn->stack = 0;
+				}
 				r_anal_extract_vars (core->anal, fcn, op);
 			}
 			int opsize = op->size;
@@ -3343,6 +3350,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 			}
 			pos += opsize;
 		}
+		fcn->stack = saved_stack;
 	}
 }
 

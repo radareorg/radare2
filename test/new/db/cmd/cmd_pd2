@@ -68,9 +68,9 @@ afb+ 0x00560e67 0x00560eb1 297
 pdf
 EXPECT=<<RUN
 / 318: fcn.00560e67 ();
-|       :   ; var int32_t var_4h @ esp+0x4
-|       :   ; var int32_t var_8h @ esp+0x8
-|       :   ; var int32_t var_10h @ esp+0x10
+|       :   ; var int32_t var_1ch @ esp+0x4
+|       :   ; var int32_t var_ch @ esp+0x8
+|       :   ; var int32_t var_4h @ esp+0x10
 |       :   0x00560e67      push esi
 |      ,==< 0x00560e68      jmp 0x560e7d
 ..
@@ -91,7 +91,7 @@ EXPECT=<<RUN
 |     ||:   0x00560eb9      mov dword [esp], 0x4b7dbaf4
 |     ||:   0x00560ec0      mov dword [esp], ebx
 |     ||:   0x00560ec3      mov ebx, 0x60
-|     ||:   0x00560ec8      mov dword [var_4h], ebx
+|     ||:   0x00560ec8      mov dword [var_1ch], ebx
 |     ||:   0x00560ecc      pop ebx
 |     ||:   0x00560ecd      push ecx
 |     ||:   0x00560ece      mov dword [esp], 0x7fdd7312
@@ -126,7 +126,7 @@ EXPECT=<<RUN
 |       :   0x00560f3c      xor ecx, dword [esp]
 |       :   0x00560f3f      pop esp
 |       :   0x00560f40      mov dword [esp], ebx
-|       :   0x00560f43      push dword [var_10h]
+|       :   0x00560f43      push dword [var_4h]
 |       :   0x00560f47      mov eax, dword [esp]
 |       :   0x00560f4a      push esi
 |       :   0x00560f4b      mov esi, esp
@@ -140,7 +140,7 @@ EXPECT=<<RUN
 |       :   0x00560f67      add esi, 4
 |       :   0x00560f6d      xchg dword [esp], esi
 |       :   0x00560f70      pop esp
-|       :   0x00560f71      push dword [var_8h]
+|       :   0x00560f71      push dword [var_ch]
 |       :   0x00560f75      push dword [esp]
 |       :   0x00560f78      mov ebx, dword [esp]
 |       :   0x00560f7b      push ebx
@@ -150,8 +150,8 @@ EXPECT=<<RUN
 |       :   0x00560f8a      xchg dword [esp], ebx
 |       :   0x00560f8d      pop esp
 |       :   0x00560f8e      add esp, 4
-|       :   0x00560f91      mov dword [var_8h], eax
-|       :   0x00560f95      mov dword [var_10h], ebx
+|       :   0x00560f91      mov dword [var_ch], eax
+|       :   0x00560f95      mov dword [var_4h], ebx
 |       :   0x00560f99      push dword [esp]
 |       :   0x00560f9c      pop ebx
 |       :   0x00560f9d      push ebx
@@ -159,7 +159,7 @@ EXPECT=<<RUN
 |       :   0x00560fa0      add ebx, 4
 |       :   0x00560fa6      add ebx, 4
 |       :   0x00560fa9      push ebx
-|       :   0x00560faa      push dword [var_4h]
+|       :   0x00560faa      push dword [var_1ch]
 |       :   0x00560fae      pop ebx
 |       :   0x00560faf      pop dword [esp]
 |       :   0x00560fb2      mov esp, dword [esp]
@@ -416,7 +416,7 @@ EXPECT=<<RUN
 |      |    |
 |     ,=.-> 0x0000423d      jne 0x4b1c
 |     ||:   |
-|     |`--> 0x00004243      lea r12, [var_30h]
+|     |`--> 0x00004243      lea r12, [var_58h]
 |     | :   0x00004248      xor eax, eax
 |     | `=< 0x0000424a      jb 0x423d
 |     |     |
@@ -470,7 +470,7 @@ EXPECT=<<RUN
   },
   {
     "offset": 16963,
-    "text": "|     |`--> 0x00004243      lea r12, [var_30h]"
+    "text": "|     |`--> 0x00004243      lea r12, [var_58h]"
   },
   {
     "offset": 16968,
