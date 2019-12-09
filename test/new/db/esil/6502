@@ -2212,7 +2212,7 @@ RUN
 NAME=op: bit $80 - bis
 FILE=malloc://0x200
 EXPECT=<<EOF
-0x00000002
+0x000000c2
 EOF
 CMDS=<<EOF
 e asm.arch=6502;e asm.bits=8; aei

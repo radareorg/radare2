@@ -460,7 +460,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	case 0x2c: // bit $ffff
 		op->type = R_ANAL_OP_TYPE_MOV;
 		_6502_anal_esil_get_addr_pattern3 (op, data, len, addrbuf, buffsize, 0);
-		r_strbuf_setf (&op->esil, "a,%s,[1],&,0x80,&,!,!,N,=,a,%s,[1],&,0x40,&,!,!,V,=,a,%s,[1],&,0xff,&,!,Z,=",addrbuf, addrbuf, addrbuf);
+		r_strbuf_setf (&op->esil, "%s,[1],0x80,&,!,!,N,=,%s,[1],0x40,&,!,!,V,=,a,%s,[1],&,0xff,&,!,Z,=", addrbuf, addrbuf, addrbuf);
 		break;
 	// ADC
 	case 0x69: // adc #$ff
