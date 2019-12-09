@@ -2446,6 +2446,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	 * nested call of this function */
 	ut64 orig_offset = core->offset;
 	icmd = strdup (cmd);
+	if (!icmd) {
+		goto beach;
+	}
 
 	if (core->max_cmd_depth - core->cons->context->cmd_depth == 1) {
 		core->prompt_offset = core->offset;
