@@ -2447,7 +2447,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	ut64 orig_offset = core->offset;
 	icmd = strdup (cmd);
 	if (!icmd) {
-		eprintf ("Command line too long\n");
 		goto beach;
 	}
 
