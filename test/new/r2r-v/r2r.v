@@ -12,22 +12,23 @@ import (
 
 const (
 	default_threads = 1
+	default_bits = 32
 	r2r_version = '0.1'
 )
 
 pub fn main() {
 	mut fp := flag.new_flag_parser(os.args)
 	fp.application(os.filename(os.executable()))
-	fp.version(r2r_version)
+	// fp.version(r2r_version)
 	show_norun := fp.bool_('norun', `n`, false, 'Dont run the tests')
 	run_tests := !show_norun
 	show_help := fp.bool_('help', `h`, false, 'Show this help screen')
 	threads := fp.int_('threads', `j`, default_threads, 'Spawn N threads in parallel to run tests')
+	show_version := fp.bool_('version', `v`, false, 'Show version information')
 	if show_help {
 		println(fp.usage())
 		return
 	}
-	show_version := fp.bool_('version', `v`, false, 'Show version information')
 	if show_version {
 		println(r2r_version)
 		return
@@ -45,9 +46,9 @@ pub fn main() {
 	os.chdir('..')
 	mut r2r := R2R{}
 	r2r.load_tests()
+		r2r.run_asm_tests(threads)
 	if run_tests {
 		r2r.run_cmd_tests(threads)
-		r2r.run_asm_tests(threads)
 		r2r.run_fuz_tests(threads)
 		r2r.run_jsn_tests(threads)
 	}
@@ -71,7 +72,8 @@ fn mktmpdir(template string) string {
 
 struct R2R {
 mut:
-	cmd_tests []R2RTest
+	cmd_tests []R2RCmdTest
+	asm_tests []R2RAsmTest
 //	r2 &r2.R2
 	wg sync.WaitGroup
 	failed int
@@ -79,7 +81,7 @@ mut:
 	broken int
 }
 
-struct R2RTest {
+struct R2RCmdTest {
 mut:
 	name string
 	file string
@@ -94,7 +96,16 @@ mut:
 	fixed bool
 }
 
-fn (test R2RTest) parse_slurp(v string) (string, string) {
+struct R2RAsmTest {
+mut:
+	arch string
+	bits int
+	mode string
+	inst string
+	data string
+}
+
+fn (test R2RCmdTest) parse_slurp(v string) (string, string) {
 	mut res := ''
 	mut slurp_token := ''
 	if v.starts_with("'") || v.starts_with("'") {
@@ -111,10 +122,10 @@ fn (test R2RTest) parse_slurp(v string) (string, string) {
 }
 
 fn (r2r mut R2R) load_cmd_test(testfile string) {
-	mut test := R2RTest{}
+	mut test := R2RCmdTest{}
 	lines := os.read_lines(testfile) or { panic(err) }
 	mut slurp_target := &test.cmds
-	mut slurp_token := '' 
+	mut slurp_token := ''
 	mut slurp_data := ''
 	test.source = testfile
 	for line in lines {
@@ -204,16 +215,17 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 						}
 						r2r.cmd_tests << test
 					}
-					test = R2RTest{}
+					test = R2RCmdTest{}
 					test.source = testfile
 				}
 			}
+			else { }
 		}
 	}
 }
 
 /*
-fn (r2r R2R)run_commands(test R2RTest) string {
+fn (r2r R2R)run_commands(test R2RCmdTest) string {
 	res := ''
 	for cmd in cmds {
 		if isnil(cmd) {
@@ -225,7 +237,7 @@ fn (r2r R2R)run_commands(test R2RTest) string {
 }
 */
 
-fn (r2r mut R2R)test_failed(test R2RTest, a string, b string) string {
+fn (r2r mut R2R)test_failed(test R2RCmdTest, a string, b string) string {
 	if test.broken {
 		r2r.broken++
 		return 'BR'
@@ -235,15 +247,67 @@ fn (r2r mut R2R)test_failed(test R2RTest, a string, b string) string {
 	println(term.fail_message(a))
 	println(term.ok_message(b))
 	r2r.failed++
-	return 'XX'
+	return '\x1b[31mXX\x1b[0m'
 }
 
-fn (r2r mut R2R)test_fixed(test R2RTest) string {
+fn (r2r mut R2R)test_fixed(test R2RCmdTest) string {
 	r2r.fixed++
 	return 'FX'
 }
 
-fn (r2r mut R2R)run_test(test R2RTest) {
+fn (r2r mut R2R)run_dis_test(test R2RAsmTest) {
+	time_start := time.ticks()
+	tmp_dir := mktmpdir('')
+	tmp_output := filepath.join(tmp_dir, 'output.txt')
+	os.system('rasm2 -a ${test.arch} -b ${test.bits} -d "${test.data}" > ${tmp_output}')
+	res := os.read_file(tmp_output) or { panic(err) }
+	os.rm(tmp_output)
+	os.rmdir(tmp_dir)
+
+	mut mark := '\x1b[32mOK\x1b[0m'
+	test_expect := test.inst.trim_space()
+	if res.trim_space() != test_expect {
+		mark = '\x1b[31mXX\x1b[0m'
+	} else {
+		if test.mode.contains('B') {
+			mark = 'BR'
+			mark = 'FX'
+		}
+	}
+	time_end := time.ticks()
+	times := time_end - time_start
+	println('[${mark}] D (time ${times}) ${test.arch} ${test.bits} : ${test.data} ${test.inst}')
+	// count results
+	r2r.wg.done()
+}
+
+fn (r2r mut R2R)run_asm_test(test R2RAsmTest) {
+	time_start := time.ticks()
+	tmp_dir := mktmpdir('')
+	tmp_output := filepath.join(tmp_dir, 'output.txt')
+	os.system('rasm2 -a ${test.arch} -b ${test.bits} "${test.inst}" > ${tmp_output}')
+	res := os.read_file(tmp_output) or { panic(err) }
+	os.rm(tmp_output)
+	os.rmdir(tmp_dir)
+
+	mut mark := '\x1b[32mOK\x1b[0m'
+	test_expect := test.data.trim_space()
+	if res.trim_space() != test_expect {
+		mark = '\x1b[31mXX\x1b[0m'
+	} else {
+		if test.mode.contains('B') {
+			mark = 'BR'
+			// mark = 'FX'
+		}
+	}
+	time_end := time.ticks()
+	times := time_end - time_start
+	println('[${mark}] A (time ${times}) ${test.arch} ${test.bits} : ${test.data} ${test.inst}')
+	// count results
+	r2r.wg.done()
+}
+
+fn (r2r mut R2R)run_cmd_test(test R2RCmdTest) {
 	time_start := time.ticks()
 	// eprintln(test)
 	tmp_dir := mktmpdir('')
@@ -284,8 +348,70 @@ fn (r2r R2R)run_fuz_tests(threads int) {
 	// open and analyze all the files in bins/fuzzed
 }
 
-fn (r2r R2R)run_asm_tests(threads int) {
+fn (r2r mut R2R)load_asm_test(testfile string) {
+	lines := os.read_lines(testfile) or { panic(err) }
+	for line in lines {
+		words := line.split('"')
+		if words.len == 3 {
+			mut at := R2RAsmTest{}
+			at.mode = words[0].trim_space()
+			at.inst = words[1].trim_space()
+			at.data = words[2].trim_space()
+			abs := testfile.split('/')
+			arch_bits := abs[abs.len-1].split('_')
+			at.arch = arch_bits[0]
+			at.bits = default_bits
+			if arch_bits.len > 1 {
+				at.bits = arch_bits[1].int()
+			}
+			r2r.asm_tests << at
+		} else {
+			println('Wrong line in asm test: ${line}')
+		}
+	}
+}
+
+fn (r2r mut R2R)load_asm_tests(testpath string) {
+	r2r.wg = sync.new_waitgroup()
+	files := os.ls(testpath) or { panic(err) }
+	for file in files {
+		if file.starts_with('.') {
+			continue
+		}
+		f := filepath.join(testpath, file)
+		if os.is_dir (f) {
+			r2r.load_asm_tests(f)
+		} else {
+			r2r.load_asm_test(f)
+		}
+	}
+	r2r.wg.wait()
+}
+
+fn (r2r mut R2R)run_asm_tests(threads int) {
+	mut c := threads
 	// assemble/disassemble and compare
+	for at in r2r.asm_tests {
+		if at.mode.contains('a') {
+			if c-- > 0 {
+				r2r.wg.add(1)
+				r2r.run_asm_test(at)
+			} else {
+				r2r.wg.wait()
+				c = threads
+			}
+		}
+		if at.mode.contains('d') {
+			if c-- > 0 {
+				r2r.wg.add(1)
+				r2r.run_dis_test(at)
+			} else {
+				r2r.wg.wait()
+				c = threads
+			}
+		}
+	}
+	r2r.wg.wait()
 }
 
 fn (r2r R2R)run_jsn_tests(threads int) {
@@ -303,12 +429,11 @@ fn (r2r mut R2R)run_cmd_tests(threads int) {
 	for t in r2r.cmd_tests {
 		if c-- > 0 {
 			r2r.wg.add(1)
-			go r2r.run_test(t)
+			go r2r.run_cmd_test(t)
 		} else {
 			r2r.wg.wait()
 			c = threads
 		}
-	//	r2r.run_test(t)
 	}
 	r2r.wg.wait()
 
@@ -323,6 +448,9 @@ fn (r2r mut R2R)run_cmd_tests(threads int) {
 fn (r2r mut R2R)load_cmd_tests(testpath string) {
 	files := os.ls(testpath) or { panic(err) }
 	for file in files {
+		if file.starts_with('.') {
+			continue
+		}
 		f := filepath.join(testpath, file)
 		if os.is_dir (f) {
 			r2r.load_cmd_tests(f)
@@ -336,10 +464,6 @@ fn (r2r R2R)load_jsn_tests(testpath string) {
 	println('TODO: json tests')
 }
 
-fn (r2r R2R)load_asm_tests(testpath string) {
-	println('TODO: asm tests')
-}
-
 fn (r2r mut R2R)load_tests() {
 	r2r.cmd_tests = []
 	db_path := 'db'
@@ -348,9 +472,9 @@ fn (r2r mut R2R)load_tests() {
 		if dir == 'archos' {
 			println('TODO: archos tests')
 		} else if dir == 'json' {
-			r2r.load_jsn_tests('$(db_path)/$(dir)')
+			r2r.load_jsn_tests('${db_path}/${dir}')
 		} else if dir == 'asm' {
-			r2r.load_asm_tests('$(db_path)/$(dir)')
+			r2r.load_asm_tests('${db_path}/${dir}')
 		} else {
 			r2r.load_cmd_tests('${db_path}/${dir}')
 		}
