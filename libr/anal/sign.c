@@ -67,6 +67,40 @@ R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
+R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
+
+	// From anal/types/*:
+	// Get key-value types from sdb matching "func.%s", fcn->name
+	// Get func.%s.args (number of args)
+	// Get type,name pairs
+	// Put everything in RList following the next format:
+	// types: main.ret=%type%, main.args=%num%, main.arg.0="int,argc", ...
+
+	r_return_val_if_fail (a && fcn, NULL);
+
+	RList *ret = r_list_newf ((RListFree) free);
+	char *args_expr = r_str_newf ("func.%s.args", fcn->name), *arg = NULL;
+	const char *ret_type = sdb_const_get (a->sdb_types, r_str_newf ("func.%s.ret", fcn->name), 0);
+	const char *fcntypes = sdb_const_get (a->sdb_types, args_expr, 0);
+	int argc = 0;
+
+	if (fcntypes) {
+		if (ret_type) {
+			r_list_append (ret, r_str_newf ("func.%s.ret=%s", fcn->name, ret_type));
+		}
+		argc = atoi (fcntypes);
+		r_list_append (ret, r_str_newf ("func.%s.args=%d", fcn->name, argc));
+		for (int i = 0; i < argc; i++) {
+			arg = sdb_get (a->sdb_types, r_str_newf ("func.%s.arg.%d", fcn->name, i), 0);
+			r_list_append (ret, r_str_newf ("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
+		}
+	}
+
+	free (arg);
+	free (args_expr);
+	return ret;
+}
+
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalRef *refi = NULL;
@@ -119,12 +153,35 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
+static RList *zign_types_to_list(RAnal *a, char *types) {
+	RList *ret = r_list_newf ((RListFree) free);
+	unsigned int i = 0, prev = 0, len = strlen (types);
+	bool quoted = false;
+	char *token = NULL;
+
+	for (i = 0; i <= len; i++) {
+		if (types[i] == '"') {
+			quoted = !quoted;
+		}
+		else if ((types[i] == ',' && !quoted) || types[i] == '\0') {
+			token = r_str_ndup (types + prev, i - prev);
+			if (token) {
+				prev = i + 1;
+				r_list_append (ret, strdup (token));
+			}
+		}
+	}
+
+	free (token);
+	return ret;
+}
+
 R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	char *refs = NULL;
 	char *vars = NULL;
 	char *types = NULL;
 	const char *token = NULL;
-	int i = 0, n = 0, nrefs = 0, nvars = 0, ntypes = 0, size = 0, w = 0;
+	int i = 0, n = 0, nrefs = 0, nvars = 0, size = 0, w = 0;
 
 	r_return_val_if_fail (a && it && k && v, false);
 
@@ -225,13 +282,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			break;
 		case R_SIGN_TYPES:
 			types = r_str_new (token);
-			ntypes = r_str_split (types, ',');
-			if (ntypes > 0) {
-				it->types = r_list_newf ((RListFree) free);
-				for (i = 0; i < ntypes; i++) {
-					r_list_append (it->types, r_str_newf (r_str_word_get0 (types, i)));
-				}
-			}
+			it->types = zign_types_to_list (a, types);
 			break;
 		case R_SIGN_BBHASH:
 			if (token[0] != 0) {
@@ -2081,7 +2132,7 @@ static int typesMatchCB(RSignItem *it, void *user) {
 		return 1;
 	}
 	// TODO(nibble | oxcabe): slow operation, add cache
-	types = r_anal_types_from_fcn (ctx->anal, ctx->fcn);
+	types = r_sign_fcn_types (ctx->anal, ctx->fcn);
 	if (!types) {
 		return 1;
 	}

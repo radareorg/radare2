@@ -132,6 +132,7 @@ R_API void r_sign_item_free(RSignItem *item);
 R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn);
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn);
 R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn);
+R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn);
 
 R_API int r_sign_is_flirt(RBuffer *buf);
 R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file);

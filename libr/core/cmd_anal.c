@@ -833,6 +833,11 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 			arg_count++;
 		}
 	}
+	if (arg_count > 0) {
+		char *query = r_str_newf ("anal/types/func.%s.args=%d", fcn->name, arg_count);
+		sdb_querys (core->sdb, NULL, 0, query);
+		free (query);
+	}
 }
 
 static bool cmd_anal_aaft(RCore *core) {

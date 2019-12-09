@@ -161,7 +161,7 @@ static bool addFcnVars(RCore *core, RAnalFunction *fcn, const char *name) {
 }
 
 static bool addFcnTypes(RCore *core, RAnalFunction *fcn, const char *name) {
-	RList *types = r_anal_types_from_fcn (core->anal, fcn);
+	RList *types = r_sign_fcn_types (core->anal, fcn);
 	if (!types) {
 		return false;
 	}
@@ -884,7 +884,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 	}
 
 	// Function search
-	// TODO (oxcabe): This big conditionals should be refactored into a variable
+	// TODO (oxcabe): Refactor big conditional
 	if (useGraph || useOffset || useRefs || useHash || (useBytes && only_func) || useTypes) {
 		eprintf ("[+] searching function metrics\n");
 		r_cons_break_push (NULL, NULL);
