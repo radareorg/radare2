@@ -12,7 +12,9 @@ import (
 
 const (
 	default_threads = 1
+	default_timeout = 3
 	default_asm_bits = 32
+	default_radare2 = 'r2'
 	r2r_version = '0.1'
 )
 
@@ -49,8 +51,8 @@ pub fn main() {
 	// add option to specify which tests to run
 	if run_tests {
 		r2r.run_asm_tests(threads)
-		r2r.run_cmd_tests(threads)
 		r2r.run_fuz_tests(threads)
+		r2r.run_cmd_tests(threads)
 		r2r.run_jsn_tests(threads)
 	}
 }
@@ -59,14 +61,14 @@ pub fn main() {
 fn C.mkdtemp(template charptr) byteptr
 
 fn mktmpdir(template string) string {
-        tp := if template == '' {
-                'temp.XXXXXX'
-        } else {
-                template
-        }
-        dir := filepath.join(os.tmpdir(),tp)
-        res := C.mkdtemp(dir.str)
-        return tos_clone(res)
+	tp := if template == '' {
+		'temp.XXXXXX'
+	} else {
+		template
+	}
+	dir := filepath.join(os.tmpdir(),tp)
+	res := C.mkdtemp(dir.str)
+	return tos_clone(res)
 }
 
 /////////////////
@@ -398,8 +400,26 @@ fn (r2r mut R2R)run_cmd_test(test R2RCmdTest) {
 	r2r.wg.done()
 }
 
+fn (r2r R2R)run_fuz_test(fuzzfile string) bool {
+	// cmd := '${default_radare2} -qq -A "${fuzzfile}"'
+	cmd := 'rarun2 timeout=${default_timeout} system="${default_radare2} -qq -A ${fuzzfile}"'
+	// TODO: support timeout
+	res := os.system(cmd)
+	return res == 0
+}
+
 fn (r2r R2R)run_fuz_tests(threads int) {
+	fuzz_path := '../bins/fuzzed'
 	// open and analyze all the files in bins/fuzzed
+	if !os.is_dir(fuzz_path) {
+		os.system('make -C .. bins')
+	}
+	files := os.ls(fuzz_path) or { panic(err) }
+	for file in files {
+		ff := filepath.join(fuzz_path, file)
+		mark := if r2r.run_fuz_test(ff) { term.green('OK') } else { term.red('XX') }
+		println('[${mark}] ${ff}')
+	}
 }
 
 fn (r2r mut R2R)load_asm_test(testfile string) {
