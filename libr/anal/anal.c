@@ -126,7 +126,7 @@ R_API RAnal *r_anal_new(void) {
 		free (anal);
 		return NULL;
 	}
-	anal->ht_bbs = ht_up_new0 ();
+	anal->bb_tree = NULL;
 	anal->ht_addr_fun = ht_up_new0 ();
 	anal->ht_name_fun = ht_pp_new0 ();
 	anal->os = strdup (R_SYS_OS);
@@ -193,12 +193,13 @@ R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	}
 }
 
+void __block_free_rb(RBNode *node, void *user);
+
 R_API RAnal *r_anal_free(RAnal *a) {
 	if (!a) {
 		return NULL;
 	}
 	/* TODO: Free anals here */
-	ht_up_free (a->ht_bbs);
 	ht_up_free (a->ht_addr_fun);
 	ht_pp_free (a->ht_name_fun);
 	set_u_free (a->visited);
@@ -208,6 +209,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_list_free (a->plugins);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
+	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
 	r_spaces_fini (&a->meta_spaces);
 	r_spaces_fini (&a->zign_spaces);
 	r_anal_pin_fini (a);

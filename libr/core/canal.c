@@ -1727,7 +1727,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 addr, int head) {
 	}
 	bool newBB = false;
 #if 1
-	RAnalBlock *bb = r_anal_get_block (core->anal, addr);
+	RAnalBlock *bb = r_anal_get_block_in (core->anal, addr);
 	if (bb) {
 		if (!core->anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bb, addr)) {
 			ret = r_anal_fcn_split_bb (core->anal, fcn, bb, addr);
