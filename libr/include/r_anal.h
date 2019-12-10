@@ -296,7 +296,7 @@ typedef struct r_anal_function_t {
 	RList *locs; // list of local variables
 	RList *fcn_locs; //sorted list of a function *.loc refs
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
-	RList *bbs;
+	RList *bbs; // TODO: should be RPVector
 	RAnalFcnMeta meta;
 	RRangeTiny bbr;
 	RBNode rb;
@@ -649,12 +649,12 @@ typedef struct r_anal_t {
 	RAnalCPPABI cpp_abi;
 	void *user;
 	ut64 gp; // global pointer. used for mips. but can be used by other arches too in the future
+	RBTree bb_tree; // all basic blocks by address. They must not overlap.
 	RList *fcns;
 	HtUP *ht_addr_fun; // address => function
 	HtPP *ht_name_fun; // name => function
 	RBNode *fcn_tree; // keyed on meta.min
 	RBNode *fcn_addr_tree; // keyed on addr
-	RListRange *fcnstore;
 	RList *refs;
 	RList *vartypes;
 	RReg *reg;
@@ -728,7 +728,6 @@ typedef struct r_anal_t {
 	SetU *visited;
 	RStrConstPool constpool;
 	RList *leaddrs;
-	HtUP *ht_bbs;
 } RAnal;
 
 typedef struct r_anal_hint_t {
@@ -881,11 +880,12 @@ typedef struct r_anal_cond_t {
 } RAnalCond;
 
 typedef struct r_anal_bb_t {
+	RBNode rb;
 	ut64 addr;
+	ut64 size;
 	ut64 jump;
 	ut64 type2;
 	ut64 fail;
-	int size;
 	int type;
 	int ninstr;
 	bool conditional;
@@ -1420,13 +1420,15 @@ R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
 
 /* block.c */
-R_API RAnalBlock *r_anal_block_new(RAnal *anal, ut64 addr, int size);
+R_API RAnalBlock *r_anal_block_new(RAnal *anal, ut64 addr, ut64 size);
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr);
 R_API void r_anal_block_free(RAnalBlock *bb);
 
 R_API bool r_anal_add_block(RAnal *anal, RAnalBlock *bb);
 R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb);
-R_API RAnalBlock *r_anal_get_block(RAnal *anal, ut64 addr);
+R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr);
+R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr);
+R_API void r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size, R_OUT RPVector *out);
 // lifetime
 R_API void r_anal_block_ref(RAnalBlock *bb);
 R_API void r_anal_block_unref(RAnalBlock *bb);

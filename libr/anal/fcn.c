@@ -414,11 +414,8 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn->attr);
 	r_tinyrange_fini (&fcn->bbr);
 	r_list_free (fcn->fcn_locs);
-	if (fcn->bbs) {
-		fcn->bbs->free = (RListFree)r_anal_bb_free;
-		r_list_free (fcn->bbs);
-		fcn->bbs = NULL;
-	}
+	r_list_free (fcn->bbs);
+	fcn->bbs = NULL;
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
 	free (fcn->args);
@@ -441,7 +438,7 @@ static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr, bool jumpmid) {
 		return NULL;
 	}
 	// blocks are universal!
-	return r_anal_get_block (fcn->anal, addr);
+	return r_anal_get_block_at (fcn->anal, addr);
 }
 
 // TODO: split between bb.new and append_bb()
@@ -1827,7 +1824,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 		r_warn_if_reached ();
 		return false;
 	}
-	RAnalBlock *bbi = r_anal_get_block (fcn->anal, addr);
+	RAnalBlock *bbi = r_anal_get_block_at (fcn->anal, addr);
 	if (bbi) {
 		if (addr == bbi->addr) {
 			bb = bbi;
@@ -2137,7 +2134,7 @@ R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut6
 
 R_API RAnalBlock *r_anal_fcn_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	r_return_val_if_fail (fcn && addr != UT64_MAX, NULL);
-	RAnalBlock *b = r_anal_get_block (anal, addr);
+	RAnalBlock *b = r_anal_get_block_at (anal, addr);
 	if (b) {
 		return b;
 	}
