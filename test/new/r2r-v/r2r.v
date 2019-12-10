@@ -50,10 +50,10 @@ pub fn main() {
 	r2r.load_tests()
 	// add option to specify which tests to run
 	if run_tests {
+		r2r.run_jsn_tests(threads)
 		r2r.run_asm_tests(threads)
 		r2r.run_fuz_tests(threads)
 		r2r.run_cmd_tests(threads)
-		r2r.run_jsn_tests(threads)
 	}
 }
 
@@ -557,7 +557,23 @@ fn (r2r mut R2R)load_cmd_tests(testpath string) {
 	}
 }
 
-fn (r2r R2R)load_jsn_tests(testpath string) {
+fn (r2r mut R2R)run_jsn_test(cmd string) bool {
+	r2r.r2 = r2.new()
+	jsonstr := r2r.r2.cmd(cmd)
+	return os.system("echo '${jsonstr}' | jq . > /dev/null") == 0
+	// r2r.r2.free()
+}
+
+fn (r2r mut R2R)load_jsn_tests(testpath string) {
+	files := os.ls(testpath) or { panic(err) }
+	for file in files {
+		f := filepath.join(testpath, file)
+		lines := os.read_lines(f) or { panic(err) }
+		for line in lines {
+			mark := if r2r.run_jsn_test(line) { term.green('OK') } else { term.red('XX') }
+			println('[${mark}] json ${line}')
+		}
+	}
 	println('TODO: json tests')
 }
 
