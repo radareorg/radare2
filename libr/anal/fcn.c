@@ -1793,7 +1793,7 @@ R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) 
 
 R_API RAnalFunction *r_anal_fcn_find_name(RAnal *a, const char *name) {
 	bool found = false;
-	RAnalFunction *f = ht_pp_find (a->ht_fun, name, &found);
+	RAnalFunction *f = ht_pp_find (a->ht_name_fun, name, &found);
 	if (f && found) {
 		return f;
 	}
