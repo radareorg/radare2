@@ -9,7 +9,7 @@ R_API void r_anal_function_ref (RAnalFunction *fcn) {
 }
 
 R_API const RList *r_anal_get_functions(RAnal *anal, ut64 addr) {
-	RAnalBlock *bb = r_anal_get_block (anal, addr);
+	RAnalBlock *bb = r_anal_get_block_in (anal, addr);
 	return bb? bb->fcns: NULL;
 }
 
@@ -29,14 +29,14 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 		eprintf ("TODO: Empty function name, we must auto generate one\n");
 		return true;
 	}
-	RAnalFunction *f = ht_pp_find (anal->ht_fun, name, &found);
+	RAnalFunction *f = ht_pp_find (anal->ht_name_fun, name, &found);
 	if (f && found) {
 		eprintf ("Invalid function name '%s' at 0x%08"PFMT64x"\n", name, addr);
 		return true;
 	}
 	// check if there's a function already in the given address
 	found = false;
-	f = ht_up_find (anal->ht_fua, addr, &found);
+	f = ht_up_find (anal->ht_addr_fun, addr, &found);
 	if (f && found) {
 		eprintf ("Function already defined in 0x%08"PFMT64x"\n", addr);
 		return true;
@@ -46,7 +46,7 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 
 R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
 	bool found = false;
-	RAnalFunction *f = ht_up_find (anal->ht_fua, addr, &found);
+	RAnalFunction *f = ht_up_find (anal->ht_addr_fun, addr, &found);
 	if (f && found) {
 		return f;
 	}
@@ -61,8 +61,8 @@ R_API bool r_anal_add_function_ll(RAnal *anal, RAnalFunction *fcn) {
 	r_anal_function_ref (fcn);
 	r_list_append (anal->fcns, fcn);
 	r_anal_function_ref (fcn);
-	ht_pp_insert (anal->ht_fun, fcn->name, fcn);
-	ht_up_insert (anal->ht_fua, fcn->addr, fcn);
+	ht_pp_insert (anal->ht_name_fun, fcn->name, fcn);
+	ht_up_insert (anal->ht_addr_fun, fcn->addr, fcn);
 	return true;
 }
 
@@ -127,8 +127,8 @@ R_API void r_anal_function_unref(RAnalFunction *fcn) {
 R_API bool r_anal_del_function(RAnalFunction *fcn) {
 	RAnal *anal = fcn->anal;
 	eprintf ("del fun\n");
-	ht_up_delete (anal->ht_fua, fcn->addr);
-	ht_pp_delete (anal->ht_fun, fcn->name);
+	ht_up_delete (anal->ht_addr_fun, fcn->addr);
+	ht_pp_delete (anal->ht_name_fun, fcn->name);
 	r_list_delete_data (anal->fcns, fcn);
 	r_anal_fcn_tree_delete (anal, fcn);
 	if (!r_anal_fcn_tree_delete (anal, fcn)) {
@@ -147,7 +147,7 @@ R_API bool r_anal_del_function(RAnalFunction *fcn) {
 #endif
 	//r_list_delete (a->fcns, iter);
 	r_list_delete_data (anal->fcns, fcn);
-	ht_up_delete (anal->ht_bbs, fcn->addr);
+	//ht_up_delete (anal->ht_bbs, fcn->addr);
 	D eprintf ("delete data\n");
 	r_anal_fcn_free (fcn);
 	r_list_free (fcn->bbs);
