@@ -7,7 +7,7 @@ import (
 	term
 	flag
 	filepath
-// 	radare.r2
+	radare.r2
 )
 
 const (
@@ -46,8 +46,9 @@ pub fn main() {
 	os.chdir('..')
 	mut r2r := R2R{}
 	r2r.load_tests()
-		r2r.run_asm_tests(threads)
+	// add option to specify which tests to run
 	if run_tests {
+		r2r.run_asm_tests(threads)
 		r2r.run_cmd_tests(threads)
 		r2r.run_fuz_tests(threads)
 		r2r.run_jsn_tests(threads)
@@ -74,7 +75,7 @@ struct R2R {
 mut:
 	cmd_tests []R2RCmdTest
 	asm_tests []R2RAsmTest
-//	r2 &r2.R2
+	r2 &r2.R2
 	wg sync.WaitGroup
 	failed int
 	fixed int
@@ -159,7 +160,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 						slurp_target = &test.cmds
 					}
 				} else {
-				 	panic('Missing arg to cmds')
+					panic('Missing arg to cmds')
 				}
 			}
 			'EXPECT' {
@@ -171,7 +172,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 						slurp_target = &test.expect
 					}
 				} else {
-				 	eprintln('Missing arg to cmds')
+					eprintln('Missing arg to cmds')
 				}
 			}
 			'EXPECT_ERR' {
@@ -183,7 +184,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 						slurp_target = &test.expect_err
 					}
 				} else {
-				 	eprintln('Missing arg to cmds')
+					eprintln('Missing arg to cmds')
 				}
 			}
 			'BROKEN' {
@@ -258,7 +259,56 @@ fn (r2r mut R2R)test_fixed(test R2RCmdTest) string {
 	return 'FX'
 }
 
+fn (r2r mut R2R)run_asm_test_native(test R2RAsmTest, dismode bool) {
+	test_expect := if dismode {
+		test.inst.trim_space()
+	} else {
+		test.data.trim_space()
+	}
+	time_start := time.ticks()
+	r2r.r2.cmd('e asm.arch=${test.arch}')
+	r2r.r2.cmd('e asm.bits=${test.bits}')
+	if test.cpu != '' {
+		r2r.r2.cmd('e asm.cpu=${test.cpu}')
+	}
+	if test.offs != 0 {
+		r2r.r2.cmd('s ${test.offs}')
+	} else {
+		r2r.r2.cmd('s 0')
+	}
+	if test.mode.contains('E') {
+		r2r.r2.cmd('e cfg.bigendian=true')
+	} else {
+		r2r.r2.cmd('e cfg.bigendian=false')
+	}
+	res := if dismode {
+		r2r.r2.cmd('"pad ${test.data}"')
+	} else {
+		r2r.r2.cmd('"pa ${test.inst}"')
+	}
+	mut mark := term.green('OK')
+	if res.trim_space() == test_expect {
+		if test.mode.contains('B') {
+			mark = term.yellow('FX')
+		}
+	} else {
+		if test.mode.contains('B') {
+			mark = term.blue('BR')
+		} else {
+			mark = term.red('XX')
+		}
+	}
+	time_end := time.ticks()
+	times := time_end - time_start
+	println('[${mark}] ${test.mode} (time ${times}) ${test.arch} ${test.bits} : ${test.data} ${test.inst}')
+	r2r.wg.done()
+}
+
 fn (r2r mut R2R)run_asm_test(test R2RAsmTest, dismode bool) {
+	if !isnil(r2r.r2) {
+		r2r.run_asm_test_native(test, dismode)
+		return
+	}
 	// TODO: use the r2 api instead of spawning all the time
 	mut args := []string
 	args << '-a ${test.arch}'
@@ -416,6 +466,7 @@ fn (r2r mut R2R)load_asm_tests(testpath string) {
 
 fn (r2r mut R2R)run_asm_tests(threads int) {
 	mut c := threads
+	r2r.r2 = r2.new()
 	// assemble/disassemble and compare
 	for at in r2r.asm_tests {
 		if at.mode.contains('a') {
@@ -496,7 +547,19 @@ fn (r2r mut R2R)load_tests() {
 	dirs := os.ls(db_path) or { panic(err) }
 	for dir in dirs {
 		if dir == 'archos' {
-			println('TODO: archos tests')
+			$if x64 {
+				$if linux {
+					r2r.load_cmd_tests('${db_path}/${dir}/linux-x64/')
+				} $else {
+					$if macos {
+						r2r.load_cmd_tests('${db_path}/${dir}/darwin-x64/')
+					} $else {
+						eprintln('Warning: archos tests not supported for current platform')
+					}
+				}
+			} $else {
+				eprintln('Warning: archos tests not supported for current platform')
+			}
 		} else if dir == 'json' {
 			r2r.load_jsn_tests('${db_path}/${dir}')
 		} else if dir == 'asm' {

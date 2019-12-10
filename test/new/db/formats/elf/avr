@@ -1,15 +1,17 @@
 NAME=avr entrypoint
 FILE=../bins/elf/analysis/bugurtos-avr.elf
 CMDS=ie~program
-EXPECT=<<RUN
+EXPECT=<<EOF
 vaddr=0x00000000 paddr=0x00000074 haddr=0x00000018 hvaddr=0x00000018 type=program
+EOF
 RUN
 
 NAME=avr baddr
 FILE=../bins/elf/analysis/bugurtos-avr.elf
 CMDS=iI~baddr[1]
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x0
+EOF
 RUN
 
 NAME=avr main address

@@ -1,7 +1,7 @@
 NAME='dbg.dc+ds.swstep'
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 s 0
@@ -13,16 +13,18 @@ ds
 dr PC
 p8 1@sym.main
 dk 9
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x080482d0
 0x080482d2
 55
+EOF
 RUN
 
 NAME='dbg.dc+ds.swstep2'
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 db sym.main
@@ -32,16 +34,18 @@ ds
 dr PC
 p8 1@sym.main
 dk 9
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x08048400
 0x08048401
 55
+EOF
 RUN
 
 NAME='dbg.dc+ds.hwstep'
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=false
 s 0
@@ -53,10 +57,12 @@ ds
 dr PC
 p8 1@sym.main
 dk 9
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x080482d0
 0x080482d2
 55
+EOF
 RUN
 
 NAME='dbg.dc+ds.hwstep2'
@@ -72,16 +78,17 @@ ds
 dr PC
 p8 1@sym.main
 dk 9
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x08048400
 0x08048401
 55
+EOF
 RUN
 
 NAME='dbg.dcC+ds.swstep1'
 FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 f times=5
@@ -90,18 +97,20 @@ db 0x4000ce
 dbC 0x4000ce .(times_stop)
 dc
 dk 9
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 Loop 5
 Loop 4
 Loop 3
 Loop 2
 Loop 1
+EOF
 RUN
 
 NAME='dbg.dcC+ds.swstep2'
 FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 e cmd.hitinfo=0
@@ -112,15 +121,17 @@ dc
 dr rax
 dr rip
 dk 9
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x000031c0
 0x004000ce
+EOF
 RUN
 
 NAME='dbg.dcC+ds.swstep3'
 FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 e cmd.hitinfo=0
@@ -129,19 +140,21 @@ db 0x4000ce
 dbC 0x4000ce .(trace_rax)
 dc
 dk 9
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000000
 0x00000220
 0x000031c0
 0x000033c2
 0x00000249
 0x00000440
+EOF
 RUN
 
 NAME='dbg.dbd+dbe'
 FILE=../bins/elf/analysis/x64-loop
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=0
 db 0x400523
 db 0x40051a
@@ -155,17 +168,19 @@ dr PC
 dbe 0x400523
 dc
 dr PC
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00400523
 0x0040051a
 0x0040051a
 0x00400523
+EOF
 RUN
 
 NAME='dbg.dc+db'
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 e dbg.swstep=true
 e scr.null=true
 db entry0
@@ -174,7 +189,9 @@ dc
 s entry0
 e scr.null=false
 p8 4
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 Hello world!
 31ed5e89
+EOF
 RUN
