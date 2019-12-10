@@ -49,7 +49,7 @@ RUN
 
 NAME=@@= `prz` fix
 FILE=-
-ONE_STREAM=true
+ONE_STREAM=1
 CMDS=<<EXPECT
 wz 1 2 3 4
 pd 1 @@= `prz`
