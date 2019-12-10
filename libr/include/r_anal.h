@@ -650,8 +650,8 @@ typedef struct r_anal_t {
 	void *user;
 	ut64 gp; // global pointer. used for mips. but can be used by other arches too in the future
 	RList *fcns;
-	HtUP *ht_fua;
-	HtPP *ht_fun;
+	HtUP *ht_addr_fun; // address => function
+	HtPP *ht_name_fun; // name => function
 	RBNode *fcn_tree; // keyed on meta.min
 	RBNode *fcn_addr_tree; // keyed on addr
 	RListRange *fcnstore;
