@@ -438,7 +438,7 @@ RUN
 
 NAME=pf?
 FILE=-
-ONE_STREAM=true
+ONE_STREAM=1
 CMDS=<<EXPECT
 pfo elf32
 pf?elf_header

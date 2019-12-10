@@ -1025,8 +1025,7 @@ EOF
 RUN
 
 NAME=bin.str.enc alias and error handling
-ONE_STREAM=true
-ARGS=-e scr.onestream=true
+ONE_STREAM=1
 FILE=../bins/elf/strenc
 CMDS=<<EOF
 e asm.filter=false
