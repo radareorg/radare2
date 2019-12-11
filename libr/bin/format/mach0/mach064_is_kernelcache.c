@@ -8,6 +8,11 @@ static bool is_kernelcache_buffer(RBuffer *b) {
 		return false;
 	}
 
+	ut32 flags = r_buf_read_le32_at (b, 24);
+	if (!(flags & 0x200000)) {
+		return false;
+	}
+
 	int i, ncmds = r_buf_read_le32_at (b, 16);
 	bool has_unixthread = false;
 	bool has_negative_vaddr = false;
