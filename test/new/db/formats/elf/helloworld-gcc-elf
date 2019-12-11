@@ -18,6 +18,7 @@ pi 1@@f
 EOF
 EXPECT=<<EOF
 mov.w fp, 0
+add ip, pc, 0, 12
 ldr r3, [0x00000460]
 ldr r0, [0x00000484]
 ldr r0, [0x000004b8]
@@ -30,7 +31,6 @@ push.w {r3, r4, r5, r6, r7, r8, sb, lr}
 push {r7, lr}
 add ip, pc, 0, 12
 push {r3, lr}
-add ip, pc, 0, 12
 add ip, pc, 0, 12
 EOF
 RUN
