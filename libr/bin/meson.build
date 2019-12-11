@@ -68,6 +68,7 @@ r_bin_sources = [
   'p/bin_xtr_dyldcache.c',
   'p/bin_xtr_fatmach0.c',
   'p/bin_xtr_pemixed.c',
+  'p/bin_xtr_sep64.c',
   'p/bin_z64.c',
   'p/bin_zimg.c',
 
