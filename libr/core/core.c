@@ -2059,8 +2059,8 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
 }
 
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
-	r_return_val_if_fail (core && value != UT64_MAX, NULL);
-	if (depth < 1) {
+	r_return_val_if_fail (core, NULL);
+	if (depth < 1 || value == UT64_MAX) {
 		return NULL;
 	}
 	RStrBuf *s = r_strbuf_new (NULL);
