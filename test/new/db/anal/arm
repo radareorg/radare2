@@ -881,3 +881,47 @@ pds 1@0x2e~:1
 EXPECT=<<RUN
 0x0000002e switch table (91 cases) at 0x32
 RUN
+
+NAME=ao 16 after ao 32
+FILE=../bins/arm/elf/hello_world
+CMDS=<<EXPECT
+e asm.bits=16
+ao@0x568
+?e --
+ao@0x50e
+EXPECT=<<RUN
+address: 0x568
+opcode: push {r3, lr}
+disasm: push {r3, lr}
+pseudo: push (r3, lr) 
+mnemonic: push
+mask: ffffffff
+prefix: 0
+id: 424
+bytes: 08402de9
+refptr: 0
+size: 4
+sign: false
+type: push
+cycles: 1
+esil: 8,sp,-=,lr,r3,2,sp,=[*]
+family: cpu
+--
+address: 0x50e
+opcode: add r7, sp, 0
+disasm: add r7, sp, 0
+pseudo: r7 = sp + 0
+mnemonic: add
+description: add two values
+mask: ffff
+prefix: 0
+id: 2
+bytes: 00af
+refptr: 0
+size: 2
+sign: false
+type: add
+cycles: 1
+esil: 0,sp,+,0xffffffff,&,r7,=
+family: cpu
+RUN

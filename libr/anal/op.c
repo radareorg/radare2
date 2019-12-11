@@ -137,19 +137,19 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
-	if (anal->pcalign && addr % anal->pcalign) {
-		op->type = R_ANAL_OP_TYPE_ILL;
-		op->addr = addr;
-		// eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", anal->bits, addr);
-		op->size = 1;
-		return -1;
-	}
 	int ret = R_MIN (2, len);
 	if (len > 0 && anal->cur && anal->cur->op) {
 		//use core binding to set asm.bits correctly based on the addr
 		//this is because of the hassle of arm/thumb
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
+		}
+		if (anal->pcalign && addr % anal->pcalign) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+			op->addr = addr;
+			// eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", anal->bits, addr);
+			op->size = 1;
+			return -1;
 		}
 		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
