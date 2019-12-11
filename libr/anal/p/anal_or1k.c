@@ -169,7 +169,7 @@ static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, R
 	}
 
 	/* if instruction is marked as invalid finish processing now */
-	insn_descr = &insns[opcode_idx];
+	insn_descr = &or1k_insns[opcode_idx];
 	if (insn_descr->type == INSN_INVAL) {
 		return op->size;
 	}
