@@ -263,7 +263,7 @@ insn_extra_t extra_0x39[] = {
 	{0}
 };
 
-insn_t insns[] = {
+insn_t or1k_insns[] = {
 	[0x00] = {(0x00<<26), "l.j", INSN_N, R_ANAL_OP_TYPE_JMP},
 	[0x01] = {(0x01<<26), "l.jal", INSN_N, R_ANAL_OP_TYPE_CALL},
 	[0x02] = {(0x02<<26), "l.adrp", INSN_DN},
@@ -330,7 +330,7 @@ insn_t insns[] = {
 	[0x3f] = {(0x3f<<26), "l.cust8", INSN_X},
 };
 
-size_t insns_count = sizeof(insns) / sizeof(insn_t);
+size_t insns_count = sizeof(or1k_insns) / sizeof(insn_t);
 
 insn_extra_t *find_extra_descriptor(insn_extra_t *extra_descr, ut32 insn) {
 	ut32 opcode;

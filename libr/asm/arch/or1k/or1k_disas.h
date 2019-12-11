@@ -130,7 +130,7 @@ extern insn_extra_t extra_0x32[];
 extern insn_extra_t extra_0x38[];
 extern insn_extra_t extra_0x39[];
 
-extern insn_t insns[];
+extern insn_t or1k_insns[];
 extern size_t insns_count;
 
 insn_extra_t *find_extra_descriptor(insn_extra_t *extra_descr, ut32 insn);

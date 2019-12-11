@@ -133,7 +133,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	/* if instruction is marked as invalid finish processing now */
-	insn_descr = &insns[opcode_idx];
+	insn_descr = &or1k_insns[opcode_idx];
 	if (insn_descr->type == INSN_INVAL) {
 		line = sdb_fmt("invalid");
 		r_strbuf_set (&op->buf_asm, line);
