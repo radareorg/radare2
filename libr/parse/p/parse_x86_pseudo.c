@@ -422,9 +422,9 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	}
 
 	if (!p->varlist) {
-                free (tstr);
+		free (tstr);
 		return false;
-        }
+	}
 	bpargs = p->varlist (anal, f, 'b');
 	spargs = p->varlist (anal, f, 's');
 	/* Iterate over stack pointer arguments/variables */
@@ -438,6 +438,9 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	}
 	r_list_foreach (spargs, spiter, sparg) {
 		// assuming delta always positive?
+		if (p->get_ptr_at) {
+			sparg->delta = p->get_ptr_at (p->user, sparg, addr);
+		}
 		mk_reg_str (anal->reg->name[R_REG_NAME_SP], sparg->delta, true, att, ireg, oldstr, sizeof (oldstr));
 
 		if (ucase) {

@@ -764,7 +764,7 @@ RUN
 NAME=ELF ARM: vars
 FILE=../bins/elf/analysis/arm-ls
 EXPECT=<<EOF
-14
+16
 EOF
 CMDS=<<EOF
 e asm.calls=false

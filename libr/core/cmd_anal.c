@@ -1380,8 +1380,9 @@ static int var_cmd(RCore *core, const char *str) {
 				break;
 			}
 			rw = (str[1] == 'g')? 0: 1;
+			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
 			r_anal_var_access (core->anal, fcn->addr, str[0],
-					R_ANAL_VAR_SCOPE_LOCAL, idx, rw, addr);
+					R_ANAL_VAR_SCOPE_LOCAL, idx, ptr, rw, addr);
 			r_anal_var_free (var);
 		} else {
 			eprintf ("Missing argument\n");

@@ -1529,15 +1529,15 @@ FILE=../bins/elf/analysis/fast
 EXPECT=<<EOF
 fastcall
             ; CALL XREF from main @ 0x80484c7
-/ 59: sym.fastcaslled (int32_t arg2, int32_t arg1, int32_t arg_8h, int32_t arg_ch);
+/ 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
 |           ; var int32_t var_20h @ ebp-0x20
 |           ; var int32_t var_1ch @ ebp-0x1c
 |           ; var int32_t var_10h @ ebp-0x10
 |           ; var int32_t var_ch @ ebp-0xc
 |           ; arg int32_t arg_8h @ ebp+0x8
 |           ; arg int32_t arg_ch @ ebp+0xc
-|           ; arg int32_t arg2 @ edx
 |           ; arg int32_t arg1 @ ecx
+|           ; arg int32_t arg2 @ edx
 |           0x0804841b      55             push ebp
 |           0x0804841c      89e5           mov ebp, esp
 |           0x0804841e      83ec28         sub esp, 0x28

@@ -5,9 +5,9 @@ aa
 e asm.var=false
 pdb
 EXPECT=<<EOF
-/ 2628: entry0 ();
+/ 2628: entry0 (int32_t arg_24h, int32_t arg_40h, int32_t arg_44h);
 |           0x006453a1      e8d8170000     call fcn.00646b7e
-|           0x006453a6      8d642444       lea esp, [var_2ch]
+|           0x006453a6      8d642444       lea esp, [arg_44h]
 |       ,=< 0x006453aa      0f85a6300000   jne 0x648456
 EOF
 RUN
@@ -236,15 +236,15 @@ RUN
 NAME=x86: fastcall argument analysis
 FILE=../bins/elf/analysis/fast
 EXPECT=<<EOF
-/ 59: sym.fastcaslled (int32_t arg2, int32_t arg1, int32_t arg_8h, int32_t arg_ch);
+/ 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
 |           ; var int32_t var_20h @ ebp-0x20
 |           ; var int32_t var_1ch @ ebp-0x1c
 |           ; var int32_t var_10h @ ebp-0x10
 |           ; var int32_t var_ch @ ebp-0xc
 |           ; arg int32_t arg_8h @ ebp+0x8
 |           ; arg int32_t arg_ch @ ebp+0xc
-|           ; arg int32_t arg2 @ edx
 |           ; arg int32_t arg1 @ ecx
+|           ; arg int32_t arg2 @ edx
 |           0x08048421      894de4         mov dword [var_1ch], ecx    ; arg1
 |           0x08048424      8955e0         mov dword [var_20h], edx    ; arg2
 |           0x08048427      8b55e4         mov edx, dword [var_1ch]
@@ -3173,9 +3173,11 @@ aa > /dev/null
 pd 38
 EXPECT=<<EOF
 ┌ (fcn) fcn.00000000 1645
-│           ; arg int32_t arg_4h @ esp+0x4
 │           ; var int32_t var_30h @ esp+0x1c
 │           ; var int32_t var_20h @ esp+0x2c
+│           ; arg int32_t arg_4h @ esp+0x50
+│           ; arg int32_t arg_1ch @ esp+0x68
+│           ; arg int32_t arg_2ch @ esp+0x78
 │           0x00000000      xor eax, eax
 │           0x00000002      cmp esi, edx
 │       ┌─< 0x00000004      jb 0x50
@@ -3187,10 +3189,10 @@ EXPECT=<<EOF
 │     ╎││   0x00000015      mov eax, ebp
 │     ╎││   0x00000017      div ecx
 │     ╎││   0x00000019      xor edx, edx
-│     ╎││   0x0000001b      mov dword [var_30h], eax
+│     ╎││   0x0000001b      mov dword [arg_1ch], eax
 │     ╎││   0x0000001f      mov eax, edi
 │     ╎││   0x00000021      div ecx
-│     ╎││   0x00000023      cmp dword [var_30h], eax
+│     ╎││   0x00000023      cmp dword [arg_1ch], eax
 │    ┌────< 0x00000027      jbe 0x90
 │    │╎││   0x00000029      mov edx, dword [ebx + 0x208]
 │    │╎││   0x0000002f      mov eax, dword [edx]
@@ -3235,9 +3237,11 @@ aa >/dev/null
 pd 38
 EXPECT=<<EOF
 / (fcn) fcn.00000000 1645
-|           ; arg int32_t arg_4h @ esp+0x4
 |           ; var int32_t var_30h @ esp+0x1c
 |           ; var int32_t var_20h @ esp+0x2c
+|           ; arg int32_t arg_4h @ esp+0x50
+|           ; arg int32_t arg_1ch @ esp+0x68
+|           ; arg int32_t arg_2ch @ esp+0x78
 |           0x00000000      xor eax, eax
 |           0x00000002      cmp esi, edx
 |       ,=< 0x00000004      jb 0x50
@@ -3249,10 +3253,10 @@ EXPECT=<<EOF
 |     :||   0x00000015      mov eax, ebp
 |     :||   0x00000017      div ecx
 |     :||   0x00000019      xor edx, edx
-|     :||   0x0000001b      mov dword [var_30h], eax
+|     :||   0x0000001b      mov dword [arg_1ch], eax
 |     :||   0x0000001f      mov eax, edi
 |     :||   0x00000021      div ecx
-|     :||   0x00000023      cmp dword [var_30h], eax
+|     :||   0x00000023      cmp dword [arg_1ch], eax
 |    ,====< 0x00000027      jbe 0x90
 |    |:||   0x00000029      mov edx, dword [ebx + 0x208]
 |    |:||   0x0000002f      mov eax, dword [edx]

@@ -975,6 +975,32 @@ static char *get_op_ireg (void *user, ut64 addr) {
 	return res;
 }
 
+static int get_ptr_at(void *user, RAnalVar *var, ut64 addr) {
+	RCore *core = (RCore *)user;
+	const char *var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access",
+			var->addr, 1, var->delta);
+	char *vars = sdb_get (core->anal->sdb_fcns, var_access, NULL);
+	const ut64 offset = addr - var->addr;
+	if (vars) {
+		char *next = NULL, *ptr = vars;
+		sdb_anext (vars, &next);
+		while (ptr) {
+			ut64 off = r_num_math (NULL, ptr);
+			if (offset == off) {
+				int ret = atoi (strchr (ptr, '.') + 1);
+				free (vars);
+				return ret;
+			}
+			if (!next) {
+				break;
+			}
+			ptr = sdb_anext (next, &next);
+		}
+	}
+	free (vars);
+	return INT_MAX;
+}
+
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
 	if (ds->use_esil) {
@@ -1009,6 +1035,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		RAnalFunction *f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL);
 		core->parser->varlist = r_anal_var_list_dynamic;
 		core->parser->get_op_ireg = get_op_ireg;
+		core->parser->get_ptr_at = get_ptr_at;
 		r_parse_varsub (core->parser, f, at, ds->analop.size,
 			ds->opstr, ds->strsub, sizeof (ds->strsub));
 		if (*ds->strsub) {
@@ -1907,7 +1934,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				switch (var->kind) {
 				case R_ANAL_VAR_KIND_BPV: {
 					char sign = var->delta > 0 ? '+' : '-';
-					bool is_var = var->delta <= 0;
+					bool is_var = !var->isarg;
 					ds_show_functions_argvar (ds, var,
 						anal->reg->name[R_REG_NAME_BP], is_var, sign);
 					}
@@ -1934,9 +1961,12 @@ static void ds_show_functions(RDisasmState *ds) {
 					break;
 				case R_ANAL_VAR_KIND_SPV: {
 					bool is_var = !var->isarg;
+					int saved_delta = var->delta;
+					var->delta = f->maxstack + var->delta;
 					ds_show_functions_argvar (ds, var,
 						anal->reg->name[R_REG_NAME_SP],
 						is_var, '+');
+					var->delta = saved_delta;
 					}
 					break;
 				}
