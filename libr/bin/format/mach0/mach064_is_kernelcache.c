@@ -1,3 +1,5 @@
+#include "mach0_defines.h"
+
 static bool is_kernelcache_buffer(RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length < sizeof (struct MACH0_(mach_header))) {
@@ -9,7 +11,7 @@ static bool is_kernelcache_buffer(RBuffer *b) {
 	}
 
 	ut32 flags = r_buf_read_le32_at (b, 24);
-	if (!(flags & 0x200000)) {
+	if (!(flags & MH_PIE)) {
 		return false;
 	}
 
