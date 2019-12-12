@@ -488,7 +488,7 @@ static const char* bgets (char *line, size_t line_sz, const char *data) {
 	}
 	const char *nl = strchr (data, '\n');
 	const int nlsz = nl
-		? nl - data
+		? nl - data + 1
 		: R_MIN (line_sz, strlen (data));
 	r_str_ncpy (line, data, nlsz);
 	if (!data[nlsz]) {
@@ -498,11 +498,10 @@ static const char* bgets (char *line, size_t line_sz, const char *data) {
 }
 
 static void load_b(RMagic *ms, int action, const char *data, int *errs, struct r_magic_entry **marray, ut32 *marraycount) {
-	const char *ndata;
 	char line[BUFSIZ];
 	size_t lineno = 0;
 	/* read and parse this file */
-	for (ms->line = 1; (ndata = bgets (line, sizeof (line), data)) != NULL; ms->line++) {
+	for (ms->line = 1; (data = bgets (line, sizeof (line), data)) != NULL; ms->line++) {
 		size_t len = strlen (line);
 		if (len == 0) { /* null line, garbage, etc */
 			continue;
@@ -528,7 +527,6 @@ static void load_b(RMagic *ms, int action, const char *data, int *errs, struct r
 		if (parse (ms, marray, marraycount, line, lineno, action) != 0) {
 			(*errs)++;
 		}
-		data = ndata;
 	}
 }
 

@@ -244,6 +244,28 @@ R_API bool r_magic_load_buffer(RMagic* ms, const char *magicdata) {
 }
 
 R_API bool r_magic_load(RMagic* ms, const char *magicfile) {
+const char *foo = \
+"# testing\n"
+"0           string                  \177ELF         ELF,\n"
+">4          byte                    0               {invalid}\n"
+">4          byte                    1               32-bit\n"
+"# only for MIPS - in the future, the ABI field of e_flags should be used.\n"
+">>18        leshort                 8\n"
+">>>36       lelong                  &0x20           N32\n"
+">>18        leshort                 10\n"
+">>>36       lelong                  &0x20           N32\n"
+">>18        beshort                 8\n"
+">>>36       belong                  &0x20           N32\n"
+">>18        beshort                 10\n"
+">>>36       belong                  &0x20           N32\n"
+">4          byte                    2               64-bit\n"
+">4          byte                    >2\n"
+">>4         byte                    x               unknown ELF class: 0x%X\n"
+">5          byte                    !1\n"
+">>5         byte                    !2              {invalid}\n"
+">5          byte                    1               LSB\n";
+return r_magic_load_buffer(ms, foo);
+
 	struct mlist *ml = file_apprentice (ms, magicfile, FILE_LOAD);
 	if (ml) {
 		free_mlist (ms->mlist);
