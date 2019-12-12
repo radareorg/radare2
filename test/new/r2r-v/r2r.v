@@ -512,7 +512,15 @@ fn (r2r mut R2R)run_asm_tests(threads int) {
 }
 
 fn (r2r R2R)run_jsn_tests(threads int) {
-	// verify if the output of a command contains valid json
+	files := os.ls(testpath) or { panic(err) }
+	for file in files {
+		f := filepath.join(testpath, file)
+		lines := os.read_lines(f) or { panic(err) }
+		for line in lines {
+			mark := if r2r.run_jsn_test(line) { term.green('OK') } else { term.red('XX') }
+			println('[${mark}] json ${line}')
+		}
+	}
 }
 
 fn (r2r mut R2R)run_cmd_tests(threads int) {
@@ -565,16 +573,8 @@ fn (r2r mut R2R)run_jsn_test(cmd string) bool {
 }
 
 fn (r2r mut R2R)load_jsn_tests(testpath string) {
-	files := os.ls(testpath) or { panic(err) }
-	for file in files {
-		f := filepath.join(testpath, file)
-		lines := os.read_lines(f) or { panic(err) }
-		for line in lines {
-			mark := if r2r.run_jsn_test(line) { term.green('OK') } else { term.red('XX') }
-			println('[${mark}] json ${line}')
-		}
-	}
-	println('TODO: json tests')
+	// implementation is in run_jsn_tests
+	// nothing to load for now
 }
 
 fn (r2r mut R2R)load_tests() {
