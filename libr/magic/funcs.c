@@ -40,21 +40,8 @@
 #include <wchar.h>
 #endif
 
-/*
- * Like printf, only we append to a buffer.
- */
-int file_printf(RMagic *ms, const char *fmt, ...) {
-	va_list ap;
-	int ret;
-
-	va_start (ap, fmt);
-	ret = file_vprintf (ms, fmt, ap);
-	va_end (ap);
-	return ret;
-}
-
 // copypasta to fix an OPENBSDBUG
-int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
+static int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 	va_list ap2;
 	int len;
 	char cbuf[4096];
@@ -99,6 +86,19 @@ int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 out:
 	file_error (ms, errno, "vasprintf failed");
 	return -1;
+}
+
+/*
+ * Like printf, only we append to a buffer.
+ */
+int file_printf(RMagic *ms, const char *fmt, ...) {
+	va_list ap;
+	int ret;
+
+	va_start (ap, fmt);
+	ret = file_vprintf (ms, fmt, ap);
+	va_end (ap);
+	return ret;
 }
 
 /*
