@@ -483,12 +483,18 @@ static void set_test_type(struct r_magic *mstart, struct r_magic *m) {
  * Load and parse from buffer.
  */
 static const char* bgets (char *line, size_t line_sz, const char *data) {
+	if (!*data) {
+		return NULL;
+	}
 	const char *nl = strchr (data, '\n');
 	const int nlsz = nl
-		? (nl? nl-data: strlen (data))
+		? nl - data
 		: R_MIN (line_sz, strlen (data));
 	r_str_ncpy (line, data, nlsz);
-	return data + nlsz;
+	if (!data[nlsz]) {
+		return NULL;
+	}
+	return data + nlsz + 1;
 }
 
 static void load_b(RMagic *ms, int action, const char *data, int *errs, struct r_magic_entry **marray, ut32 *marraycount) {
