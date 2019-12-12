@@ -1,6 +1,6 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
-#include "r_core.h"
+#include <r_core.h>
 
 /* ugly global vars */
 static int magicdepth = 99; //XXX: do not use global var here
@@ -67,7 +67,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		if (file) {
 			free (ofile);
 			ofile = strdup (file);
-			if (r_magic_load (ck, file) == -1) {
+			if (!r_magic_load (ck, file)) {
 				eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
 				ck = NULL;
 				ret = -1;
@@ -75,7 +75,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			}
 		} else {
 			const char *magicpath = r_config_get (core->config, "dir.magic");
-			if (r_magic_load (ck, magicpath) == -1) {
+			if (!r_magic_load (ck, magicpath)) {
 				ck = NULL;
 				eprintf ("failed r_magic_load (dir.magic) %s\n", r_magic_error (ck));
 				ret = -1;
@@ -172,10 +172,6 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	}
 	adelta ++;
 	delta ++;
-#if 0
-	if((core->blocksize-delta)>16)
-		goto repeat;
-#endif
 #if 0
 	r_magic_free (ck);
 	ck = NULL;
