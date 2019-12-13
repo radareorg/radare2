@@ -511,10 +511,11 @@ fn (r2r mut R2R)run_asm_tests(threads int) {
 	r2r.wg.wait()
 }
 
-fn (r2r R2R)run_jsn_tests(threads int) {
-	files := os.ls(testpath) or { panic(err) }
+fn (r2r mut R2R)run_jsn_tests(threads int) {
+	json_path := 'db/json'
+	files := os.ls(json_path) or { panic(err) }
 	for file in files {
-		f := filepath.join(testpath, file)
+		f := filepath.join(json_path, file)
 		lines := os.read_lines(f) or { panic(err) }
 		for line in lines {
 			mark := if r2r.run_jsn_test(line) { term.green('OK') } else { term.red('XX') }
@@ -572,7 +573,7 @@ fn (r2r mut R2R)run_jsn_test(cmd string) bool {
 	// r2r.r2.free()
 }
 
-fn (r2r mut R2R)load_jsn_tests(testpath string) {
+fn (r2r R2R)load_jsn_tests(testpath string) {
 	// implementation is in run_jsn_tests
 	// nothing to load for now
 }
