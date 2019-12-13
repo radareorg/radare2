@@ -1261,6 +1261,7 @@ static int parse_btype(CType *type, AttributeDef *ad) {
 		/* int8_t, uint8_t, char */
 		case TOK_UINT8:
 			t |= VT_UNSIGNED;
+			/* fall through */
 		case TOK_INT8:
 			u = VT_INT8;
 			goto basic_type;
@@ -1287,6 +1288,7 @@ basic_type1:
 		/* int16_t, uint16_t, short */
 		case TOK_UINT16:
 			t |= VT_UNSIGNED;
+			/* fall through */
 		case TOK_INT16:
 		case TOK_SHORT:
 			u = VT_INT16;
@@ -1295,6 +1297,7 @@ basic_type1:
 		/* int32_t, uint32_t, int */
 		case TOK_UINT32:
 			t |= VT_UNSIGNED;
+			/* fall through */
 		case TOK_INT32:
 			u = VT_INT32;
 			goto basic_type;
@@ -1306,6 +1309,7 @@ basic_type1:
 		/* int64_t, uint64_t, long, long long */
 		case TOK_UINT64:
 			t |= VT_UNSIGNED;
+			/* fall through */
 		case TOK_INT64:
 			u = VT_INT64;
 			goto basic_type;
@@ -1889,7 +1893,9 @@ tok_next:
 		type.t = VT_INT8;
 		mk_pointer (&type);
 		type.t |= VT_ARRAY;
-		type.ref->c = len;
+		if (type.ref) {
+			type.ref->c = len;
+		}
 		// XXX ptr is NULL HERE WTF
 		// memcpy(ptr, funcname, len);
 		next ();

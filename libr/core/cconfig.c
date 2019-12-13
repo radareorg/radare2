@@ -736,9 +736,7 @@ static bool cb_asmbits(void *user, void *data) {
 			r_bp_use (core->dbg->bp, asmarch, core->anal->bits);
 			r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
 		}
-	}
-	/* set pcalign */
-	{
+		/* set pcalign */
 		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 		r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	}

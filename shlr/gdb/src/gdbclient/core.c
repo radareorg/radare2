@@ -1728,7 +1728,7 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 	RList *list = NULL;
 	int tpid = -1, ttid = -1;
 	char *ptr, *ptr2, *exec_file;
-	RDebugPid *dpid;
+	RDebugPid *dpid = NULL;
 	RListIter *iter;
 
 	if (!g) {

@@ -312,7 +312,7 @@ const char *msg =
 	} else if (!strncmp (cmd, "dr", 2)) {
 		printcmd (io, "info reg");
 	} else if (!strncmp (cmd, "db ", 3)) {
-		free (runcmd (sdb_fmt ("break *%"PFMT64x, r_num_get (NULL, cmd + 3) || io->off)));
+		free (runcmd (sdb_fmt ("break *%x", r_num_get (NULL, cmd + 3) || io->off)));
 	} else if (!strncmp (cmd, "ds", 2)) {
 		free (runcmd ("stepi"));
 	} else if (!strncmp (cmd, "dc", 2)) {

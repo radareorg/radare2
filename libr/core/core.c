@@ -1404,6 +1404,7 @@ static void autocomplete_sdb (RCore *core, RLineCompletion *completion, const ch
 				if (!strncmp (tmp, cur_cmd, n)) {
 					char *cmplt = r_str_newf ("anal/%s/", cur_cmd);
 					r_line_completion_push (completion, cmplt);
+					free (cmplt);
 				}
 				out += cur_pos - out + 1;
 			}
@@ -1416,6 +1417,7 @@ static void autocomplete_sdb (RCore *core, RLineCompletion *completion, const ch
 			next_cmd = r_str_newf ("anal/%s/*", ns);
 			out = sdb_querys (sdb, NULL, 0, next_cmd);
 			if (!out) {
+				free (lpath);
 				return;
 			}
 			while (*out) {

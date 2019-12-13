@@ -5821,6 +5821,7 @@ bool r_load_panels_layout(RCore *core, const char *_name) {
 	p_cfg += strlen (p_cfg) + 1;
 	free (panels_config);
 	if (!panels->n_panels) {
+		free (tmp_cfg);
 		return false;
 	}
 	__set_refresh_all (core, true, false);

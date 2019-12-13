@@ -2077,7 +2077,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 #else
 				const int ws = 4;
 #endif
-				s->format = r_str_newf ("Cd %d[%d]", ws, s->vsize / ws);
+				s->format = r_str_newf ("Cd %d[%"PFMT64d"]", ws, s->vsize / ws);
 			}
 			r_list_append (list, s);
 		}

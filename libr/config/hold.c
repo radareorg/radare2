@@ -72,11 +72,11 @@ R_API RConfigHold* r_config_hold_new(RConfig *cfg) {
 }
 
 R_API void r_config_hold_restore(RConfigHold *h) {
-	RConfig *cfg = h->cfg;
 	RListIter *iter;
 	RConfigHoldChar *hchar;
 	RConfigHoldNum *hnum;
 	if (h) {
+		RConfig *cfg = h->cfg;
 		r_list_foreach (h->list_num, iter, hnum) {
 			(void)r_config_set_i (cfg, hnum->key, hnum->value);
 		}

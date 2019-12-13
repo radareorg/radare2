@@ -33,7 +33,7 @@ static inline bool is_word_break_char(char ch, bool mode) {
 	int i;
 	if (mode == MAJOR_BREAK) {
 		return ch == ' ';
-	} 
+	}
 	int len =
 		sizeof (word_break_characters) /
 		sizeof (word_break_characters[0]);
@@ -617,7 +617,7 @@ static void selection_widget_down(int steps) {
 
 static void print_rline_task(void *core) {
 	r_cons_clear_line (0);
-	r_cons_printf ("%s%s%s", Color_RESET, I.prompt,  I.buffer.data); 
+	r_cons_printf ("%s%s%s", Color_RESET, I.prompt,  I.buffer.data);
 	r_cons_flush ();
 }
 
@@ -883,7 +883,7 @@ static inline void delete_till_end() {
 static void __print_prompt() {
         RCons *cons = r_cons_singleton ();
 	int columns = r_cons_get_size (NULL) - 2;
-	int chars = R_MAX (1, strlen (I.buffer.data));	
+	int chars = R_MAX (1, strlen (I.buffer.data));
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt) - 2);
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
                 r_cons_gotoxy (0,  cons->rows);
@@ -924,9 +924,9 @@ static inline void __move_cursor_left() {
 static inline void vi_cmd_b() {
 	int i;
 	for (i = I.buffer.index - 2; i >= 0; i--) {
-		if ((is_word_break_char (I.buffer.data[i], MINOR_BREAK) 
+		if ((is_word_break_char (I.buffer.data[i], MINOR_BREAK)
 		 && !is_word_break_char (I.buffer.data[i], MAJOR_BREAK))
-		 || (is_word_break_char (I.buffer.data[i - 1], MINOR_BREAK) 
+		 || (is_word_break_char (I.buffer.data[i - 1], MINOR_BREAK)
 		 && !is_word_break_char (I.buffer.data[i], MINOR_BREAK))) {
 			I.buffer.index = i;
 			break;
@@ -1074,7 +1074,7 @@ static void __vi_mode() {
 			*I.buffer.data = '\0';
 			gcomp = 0;
 			return;
-		case 'D':  
+		case 'D':
 			delete_till_end ();
 			break;
 		case 'r': {
@@ -1083,9 +1083,9 @@ static void __vi_mode() {
 			} break;
 		case 'x':
 			while (rep--) {
-				__delete_next_char (); 
+				__delete_next_char ();
 			} break;
-		case 'c': 
+		case 'c':
 			I.vi_mode = INSERT_MODE;			// goto insert mode
 		case 'd': {
 			char c = r_cons_readchar ();
@@ -1110,7 +1110,7 @@ static void __vi_mode() {
 				case 'w':
 					kill_word ();
 					break;
-				case 'B': 
+				case 'B':
 					backward_kill_Word ();
 					break;
 				case 'b':
@@ -1139,8 +1139,9 @@ static void __vi_mode() {
 				I.hud->vi = false;
 			}
 			I.vi_mode = INSERT_MODE;
+			/* fall through */
 		case '^':
-		case '0': 
+		case '0':
 			if (gcomp) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.length = strlen (I.buffer.data);
@@ -1151,7 +1152,8 @@ static void __vi_mode() {
 			break;
 		case 'A':
 			I.vi_mode = INSERT_MODE;
-		case '$': 
+			/* fall through */
+		case '$':
 			if (gcomp) {
 				strcpy (I.buffer.data, gcomp_line);
 				I.buffer.index = strlen (I.buffer.data);
@@ -1160,23 +1162,23 @@ static void __vi_mode() {
 			} else {
 				I.buffer.index = I.buffer.length;
 			} break;
-		case 'p': 
+		case 'p':
 			while (rep--) {
 				paste ();
 			} break;
 		case 'a':
 			__move_cursor_right ();
-		case 'i': 
+		case 'i':
 			I.vi_mode = INSERT_MODE;
 			if (I.hud) {
 				I.hud->vi = false;
 			}
 			break;
-		case 'h': 
+		case 'h':
 			while (rep--) {
 				__move_cursor_left ();
 			} break;
-		case 'l': 
+		case 'l':
 			while (rep--) {
 				__move_cursor_right ();
 			} break;
@@ -1188,19 +1190,19 @@ static void __vi_mode() {
 			while (rep--) {
 				vi_cmd_e ();
 			} break;
-		case 'B': 
+		case 'B':
 			while (rep--) {
 				vi_cmd_B ();
 			} break;
-		case 'b': 
+		case 'b':
 			while (rep--) {
 				vi_cmd_b ();
 			} break;
-		case 'W': 
+		case 'W':
 			while (rep--) {
 				vi_cmd_W ();
 			} break;
-		case 'w': 
+		case 'w':
 			while (rep--) {
 				vi_cmd_w ();
 			} break;
@@ -1254,7 +1256,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	if (I.hud && I.hud->vi) {
 		__vi_mode ();
 		goto _end;
-	} 
+	}
 	if (I.contents) {
 		memmove (I.buffer.data, I.contents,
 			R_MIN (strlen (I.contents) + 1, R_LINE_BUFSIZE - 1));
@@ -1483,7 +1485,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			paste ();
 			yank_flag = 1;
 			break;
-		case 29:  // ^^ - rotate kill ring 
+		case 29:  // ^^ - rotate kill ring
 			rotate_kill_ring ();
 			yank_flag = enable_yank_pop ? 1 : 0;
 			break;
@@ -1491,7 +1493,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			kill_word ();
 			break;
 		case 15: // ^o kill backward
-			backward_kill_word ();	
+			backward_kill_word ();
 			break;
 		case 14:// ^n
 			if (I.hud) {
@@ -1531,7 +1533,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 #else
 			buf[0] = r_cons_readchar_timeout (50);
-#endif	
+#endif
 			switch (buf[0]) {
 			case 127: // alt+bkspace
 				backward_kill_word ();

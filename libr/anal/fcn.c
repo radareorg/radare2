@@ -2305,7 +2305,7 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	char str_to_find[40] = "\"type\":\"reg\",\"value\":\"";
 	char *pos;
-	strcat (str_to_find, anal->reg->name[R_REG_NAME_BP]);
+	strncat (str_to_find, anal->reg->name[R_REG_NAME_BP], 39);
 	if (!fcn) {
 		return;
 	}

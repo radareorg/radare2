@@ -890,7 +890,6 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
-	bool debugMode = r_config_get_i (core->config, "cfg.debug");
 
 	RList *optypes_list = NULL;
 	RListIter *iter;
@@ -907,6 +906,7 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 		goto end;
 	}
 
+	bool debugMode = r_config_get_i (core->config, "cfg.debug");
 	optypes_list = r_str_split_list (optypes, " ", 0);
 
 	r_cons_break_push (NULL, NULL);

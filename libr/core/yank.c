@@ -199,7 +199,9 @@ R_API int r_core_yank_paste(RCore *core, ut64 addr, int len) {
 		return false;
 	}
 	r_buf_read_at (core->yank_buf, 0, buf, len);
-	r_core_write_at (core, addr, buf, len);
+	if (!r_core_write_at (core, addr, buf, len)) {
+		return false;
+	}
 	return true;
 }
 

@@ -31,7 +31,7 @@ R_API void r_anal_cc_set(RAnal *anal, const char *expr) {
 			const char *ret = r_list_get_n (retName, 0);
 			const char *name = r_list_get_n (retName, 1);
 			sdb_set (DB, name, "cc", 0);
-			sdb_set (DB, sdb_fmt ("cc.%s.ret"), ret, 0);
+			sdb_set (DB, sdb_fmt ("cc.%s.ret", name), ret, 0);
 			RListIter *iter;
 			const char *arg;
 			int n = 0;
