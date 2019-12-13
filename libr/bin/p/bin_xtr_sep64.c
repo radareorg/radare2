@@ -231,7 +231,7 @@ beach:
 }
 
 static void sep64_xtr_ctx_free(void * p) {
-	if (p == NULL) {
+	if (!p) {
 		return;
 	}
 
@@ -412,7 +412,7 @@ beach:
 }
 
 static void mach0_info_free(RSepMachoInfo * info) {
-	if (info == NULL) {
+	if (!info) {
 		return;
 	}
 
