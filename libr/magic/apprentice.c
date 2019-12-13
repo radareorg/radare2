@@ -38,7 +38,7 @@
 #include "file.h"
 #include "patchlevel.h"
 
-#if __UNIX__
+#if __UNIX__ && !defined(_MSC_VER)
 # define QUICK 1
 # include <sys/mman.h>
 # include <sys/param.h>
