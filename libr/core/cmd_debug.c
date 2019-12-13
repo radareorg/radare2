@@ -5,6 +5,9 @@
 #include <sdb/sdb.h>
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u
+#ifndef SIGKILL
+#define SIGKILL 9
+#endif
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 #include "r_heap_glibc.h"
@@ -31,6 +34,7 @@ static const char *help_msg_d[] = {
 	"do", "[?]", "Open process (reload, alias for 'oo')",
 	"doo", "[args]", "Reopen in debug mode with args (alias for 'ood')",
 	"doof", "[file]", "Reopen in debug mode from file (alias for 'oodf')",
+	"doc", "", "Close debug session",
 	"dp", "[?]", "List, attach to process or thread id",
 	"dr", "[?]", "Cpu registers",
 	"ds", "[?]", "Step, over, source line",
@@ -289,6 +293,7 @@ static const char *help_msg_do[] = {
 	"dor", " [rarun2]", "Comma separated list of k=v rarun2 profile options (e dbg.profile)",
 	"doo", " [args]", "Reopen in debug mode with args (alias for 'ood')",
 	"doof", " [args]", "Reopen in debug mode from file (alias for 'oodf')",
+	"doc", "", "Close debug session",
 	NULL
 };
 
@@ -4732,6 +4737,8 @@ static int cmd_debug(void *data, const char *input) {
 	ut64 addr;
 	int min;
 	RListIter *iter;
+	RList *list;
+	RDebugPid *p;
 	RDebugTracepoint *trace;
 	RAnalOp *op;
 
@@ -5317,6 +5324,27 @@ static int cmd_debug(void *data, const char *input) {
 			} else {
 				r_core_file_reopen_debug (core, input + 2);
 			}
+			break;
+		case 'c': // "doc" : close current debug session
+			if (!core || !core->io || !core->io->desc || !r_config_get_i (core->config, "cfg.debug")) {
+				eprintf ("No open debug session\n");
+				break;
+			}
+			// Kill debugee and all child processes
+			if (core->dbg && core->dbg->h && core->dbg->h->pids && core->dbg->pid == -1) {
+				list = core->dbg->h->pids (core->dbg, core->dbg->pid);
+				if (list) {
+					r_list_foreach (list, iter, p) {
+						r_debug_kill (core->dbg, p->pid, p->pid, SIGKILL);
+					}
+				} else {
+					r_debug_kill (core->dbg, core->dbg->pid, core->dbg->pid, SIGKILL);
+				}
+			}
+			// Reopen and rebase the original file
+			r_core_cmd0 (core, "oo");
+			// Remove registers from the flag list
+			r_core_cmd0 (core, "~dr-");
 			break;
 		case '?': // "do?"
 		default:

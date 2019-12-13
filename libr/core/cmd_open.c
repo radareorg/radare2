@@ -1711,7 +1711,6 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		case '\0': // "oo"
 			if (core && core->io && core->io->desc) {
-				//does not work for debugging
 				int fd;
 				if ((ptr = strrchr (input, ' ')) && ptr[1]) {
 					fd = (int)r_num_math (core->num, ptr + 1);
@@ -1722,15 +1721,19 @@ static int cmd_open(void *data, const char *input) {
 					RBinFile *bf = r_bin_cur (core->bin);
 					if (bf && r_file_exists (bf->file)) {
 						char *file = strdup (bf->file);
+						// Backup the baddr and sections that were already rebased to
+						// revert the rebase after the debug session is closed
+						ut64 orig_baddr = r_config_get_i (core->config, "bin.baddr");
+						RList *orig_sections = __save_old_sections (core);
+
 						r_core_cmd0 (core, "ob-*");
 						r_io_close_all (core->io);
 						r_config_set (core->config, "cfg.debug", "false");
-						ut64 orig_baddr = sdb_num_get (core->sdb, "orig_baddr", 0);
-						r_bin_set_baddr (core->bin, orig_baddr);
-						r_config_set_i (core->config, "bin.baddr", orig_baddr);
-						r_core_bin_rebase (core, orig_baddr);
-						r_debug_bp_rebase (core->dbg, orig_baddr);
 						r_core_cmdf (core, "o %s", file);
+
+						r_core_block_read (core);
+						__rebase_everything (core, orig_sections, orig_baddr);
+						r_list_free (orig_sections);
 						free (file);
 					} else {
 						eprintf ("Nothing to do.\n");
