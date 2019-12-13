@@ -26,6 +26,7 @@ FORMATS+=mdmp.mk z64.mk qnx.mk prg.mk
 
 FORMATS+=xtr_dyldcache.mk
 FORMATS+=xtr_fatmach0.mk
+FORMATS+=xtr_sep64.mk
 
 include $(FORMATS)
 
