@@ -674,6 +674,13 @@ static bool __table_special(RTable *t, const char *columnName) {
 R_API bool r_table_query(RTable *t, const char *q) {
 	r_return_val_if_fail (t, false);
 	q = r_str_trim_ro (q);
+	// TODO support parenthesis and (or)||
+	// split by "&&" (or comma) -> run .filter on each
+	// addr/gt/200,addr/lt/400,addr/sort/dec,offset/sort/inc
+	if (!q || !*q) {
+		__table_adjust (t);
+		return true;
+	}
 	if (*q == '?') {
 		eprintf ("RTableQuery> comma separated \n");
 		eprintf (" colname/sort/inc     sort rows by given colname\n");
@@ -691,13 +698,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		eprintf (" :quiet               do not print column names header\n");
 		return false;
 	}
-	// TODO support parenthesis and (or)||
-	// split by "&&" (or comma) -> run .filter on each
-	// addr/gt/200,addr/lt/400,addr/sort/dec,offset/sort/inc
-	if (!q || !*q) {
-		__table_adjust (t);
-		return true;
-	}
+
 	RListIter *iter;
 	char *qq = strdup (q);
 	RList *queries = r_str_split_list (qq, ",",  0);

@@ -887,6 +887,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 
 	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
+		free (cnk);
+		free (cnk_next);
 		return;
 	}
 

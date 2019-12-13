@@ -250,6 +250,7 @@ static RList *r_debug_windbg_modules(RDebug *dbg) {
 	r_list_foreach (modules, it, m) {
 		RDebugMap *mod = R_NEW0 (RDebugMap);
 		if (!mod) {
+			r_list_free (modules);
 			r_list_free (ret);
 			return NULL;
 		}

@@ -296,6 +296,9 @@ R_API bool r_oids_add(ROIDStorage *storage, void *data, ut32 *id, ut32 *od) {
 		r_id_storage_delete (storage->data, *id);
 		return false;
 	}
+	if (!storage->permutation) {
+		return false;
+	}
 	*od = storage->ptop;
 	storage->permutation[*od] = *id;
 	storage->ptop++;

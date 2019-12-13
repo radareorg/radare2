@@ -1450,7 +1450,7 @@ static const ut8 *parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClas
 				if (!mdb) {
 					mdb = sdb_new0 ();
 				}
-				sdb_num_set (mdb, sdb_fmt ("method.%d", MI), sym->paddr, 0);
+				sdb_num_set (mdb, sdb_fmt ("method.%"PFMT64d, MI), sym->paddr, 0);
 				// -----------------
 				// WORK IN PROGRESS
 				// -----------------

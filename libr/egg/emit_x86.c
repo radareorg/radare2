@@ -146,7 +146,7 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 			} else if (k < 0) {
 				r_egg_printf (egg, "  mov %s, ["R_SP"%d]\n", reg, k);
 			} else {
-				r_egg_printf (egg, "  mov %s, ["R_SP"]\n", reg, k);
+				r_egg_printf (egg, "  mov %s, ["R_SP"]\n", reg);
 			}
 		}
 	}

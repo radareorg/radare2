@@ -158,7 +158,7 @@ static RList* libs(RBinFile *bf) {
 			return ret;
 		}
 		for (i = 0; !libs[i].last; i++) {
-			ptr = r_str_newf ("[0x%.08x] - %s", pe64_bin->vaddr, libs[i].name);
+			ptr = r_str_newf ("[0x%.08"PFMT64x"] - %s", pe64_bin->vaddr, libs[i].name);
 			r_list_append (ret, ptr);
 		}
 		free (libs);
@@ -338,7 +338,9 @@ static RList *mem(RBinFile *bf) {
 			a_protect = mem_info->allocation_protect;
 		}
 		location = &(module->memory);
-		ptr->name = strdup (sdb_fmt ("paddr=0x%08x state=0x%08x type=0x%08x allocation_protect=0x%08x Memory_Section", location->rva, state, type, a_protect));
+		ptr->name = strdup (sdb_fmt ("paddr=0x%08"PFMT64x" state=0x%08"PFMT64x
+					" type=0x%08"PFMT64x" allocation_protect=0x%08"PFMT64x" Memory_Section",
+					location->rva, state, type, a_protect));
 
 		r_list_append (ret, ptr);
 	}
@@ -359,7 +361,9 @@ static RList *mem(RBinFile *bf) {
 			type = mem_info->type;
 			a_protect = mem_info->allocation_protect;
 		}
-		ptr->name = strdup (sdb_fmt ("paddr=0x%08x state=0x%08x type=0x%08x allocation_protect=0x%08x Memory_Section", index, state, type, a_protect));
+		ptr->name = strdup (sdb_fmt ("paddr=0x%08"PFMT64x" state=0x%08"PFMT64x
+					" type=0x%08"PFMT64x" allocation_protect=0x%08"PFMT64x" Memory_Section",
+					index, state, type, a_protect));
 
 		index += module64->data_size;
 

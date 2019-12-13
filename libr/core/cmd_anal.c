@@ -8779,10 +8779,10 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			}
 			pj_end (pj);
 			r_cons_println (pj_string (pj));
-			pj_free (pj);
 			r_list_purge (paths);
 			free (paths);
 		}
+		pj_free (pj);
 	}
 	break;
 	case ' ': {

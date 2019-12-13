@@ -1130,6 +1130,9 @@ static int cmd_join(void *data, const char *input) { // "join"
 		goto beach;
 	}
 	arg1 = r_str_trim_ro (arg1);
+	if (!arg1) {
+		goto beach;
+	}
 	char *end = strchr (arg1, ' ');
 	if (!end) {
 		goto beach;
@@ -2595,8 +2598,9 @@ static void tmpenvs_free(void *item) {
 static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
 	if (!tmparch) {
 		eprintf ("tmparch should be set\n");
+	} else {
+		*tmparch = strdup (r_config_get (core->config, "asm.arch"));
 	}
-	*tmparch = strdup (r_config_get (core->config, "asm.arch"));
 	r_config_set (core->config, "asm.arch", arch);
 	core->fixedarch = true;
 	return true;
@@ -2605,8 +2609,9 @@ static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
 static bool set_tmp_bits(RCore *core, int bits, char **tmpbits) {
 	if (!tmpbits) {
 		eprintf ("tmpbits should be set\n");
+	} else {
+		*tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 	}
-	*tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 	r_config_set_i (core->config, "asm.bits", bits);
 	core->fixedbits = true;
 	return true;
@@ -4334,8 +4339,10 @@ out_finish:
 }
 
 R_API void run_pending_anal(RCore *core) {
-	// allow incall events in the run_pending step
-	core->ev->incall = false;
+	if (core && core->ev) {
+		// allow incall events in the run_pending step
+		core->ev->incall = false;
+	}
 	if (core && core->anal && core->anal->cmdtail) {
 		char *res = r_strbuf_drain (core->anal->cmdtail);
 		core->anal->cmdtail = r_strbuf_new (NULL);

@@ -180,14 +180,14 @@ static RList* sections(RBinFile *bf) {
 #else
 				int wordsize = 4;
 #endif
-				ptr->format = r_str_newf ("Cd %d[%d]", wordsize, section[i].size / wordsize);
+				ptr->format = r_str_newf ("Cd %d[%"PFMT64d"]", wordsize, section[i].size / wordsize);
 			} else if (strstr (ptr->name, ".rela.")) {
 #if R_BIN_ELF64
 				int wordsize = 8;
 #else
 				int wordsize = 4;
 #endif
-				ptr->format = r_str_newf ("Cd %d[%d]", wordsize, section[i].size / wordsize);
+				ptr->format = r_str_newf ("Cd %d[%"PFMT64d"]", wordsize, section[i].size / wordsize);
 			}
 			ptr->size = section[i].type != SHT_NOBITS ? section[i].size : 0;
 			ptr->vsize = section[i].size;

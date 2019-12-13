@@ -5,13 +5,11 @@
 //#include <r_reg.h>
 //#include <sdb.h>
 
-
 typedef struct esil_dfg_reg_var_t {
 	ut32 from;
 	ut32 to;
 	RGraphNode *node;
 } EsilDFGRegVar;
-
 
 typedef struct r_anal_esil_dfg_filter_t {
 	RAnalEsilDFG *dfg;
@@ -34,7 +32,6 @@ static void _dfg_node_free (RAnalEsilDFGNode *free_me) {
 		free (free_me);
 	}
 }
-
 
 static int _rv_del_alloc_cmp (void *incoming, void *in, void *user) {
 	EsilDFGRegVar *rv_incoming = (EsilDFGRegVar *)incoming;
@@ -201,7 +198,7 @@ static bool _edf_reg_set (RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) 
 	if (!rv) {
 		return false;
 	}
-	
+
 	const ut64 v = sdb_num_get (dfg->regs, _reg, NULL);
 	free (_reg);
 	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
@@ -230,7 +227,6 @@ static bool _edf_reg_set (RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) 
 	r_rbtree_cont_insert (dfg->reg_vars, rv, _rv_ins_cmp, NULL);
 	return true;
 }
-
 
 static int _rv_find_cmp (void *incoming, void *in, void *user) {
 	EsilDFGRegVar *rv_incoming = (EsilDFGRegVar *)incoming;

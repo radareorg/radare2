@@ -332,9 +332,9 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 					r_asm_set_cpu (a, NULL);
 					sdb_free (a->pair);
 					a->pair = sdb_new (NULL, file, 0);
-					free (r2prefix);
 					free (file);
 				}
+				free (r2prefix);
 			}
 			a->cur = h;
 			return true;
