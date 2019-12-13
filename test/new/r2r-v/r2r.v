@@ -39,20 +39,22 @@ pub fn main() {
 		eprintln('Invalid number of thread selected with -j')
 		exit(1)
 	}
-	targets := fp.finalize() or { eprintln('Error: ' + err) exit(1) }
-	for target in targets {
+	mut r2r := R2R{}
+	r2r.targets = fp.finalize() or { eprintln('Error: ' + err) exit(1) }
+	for target in r2r.targets {
 		println(target)
 	}
 
 	println('Loading tests')
 	os.chdir('..')
-	mut r2r := R2R{}
 	r2r.load_tests()
-	// add option to specify which tests to run
+	// TODO: support specifying json, asm, fuzz tests to run and multiple specific tests, globbing
 	if run_tests {
-		r2r.run_jsn_tests(threads)
-		r2r.run_asm_tests(threads)
-		r2r.run_fuz_tests(threads)
+		if r2r.targets.len < 2 {  // WIP
+			r2r.run_jsn_tests(threads)
+			r2r.run_asm_tests(threads)
+			r2r.run_fuz_tests(threads)
+		}
 		r2r.run_cmd_tests(threads)
 	}
 }
@@ -77,6 +79,7 @@ struct R2R {
 mut:
 	cmd_tests []R2RCmdTest
 	asm_tests []R2RAsmTest
+	targets []string
 	r2 &r2.R2
 	wg sync.WaitGroup
 	failed int
@@ -128,6 +131,9 @@ fn (test R2RCmdTest) parse_slurp(v string) (string, string) {
 }
 
 fn (r2r mut R2R) load_cmd_test(testfile string) {
+	if r2r.targets.len > 1 && !testfile.ends_with('/${r2r.targets[1]}') {  // WIP
+		return
+	}
 	mut test := R2RCmdTest{}
 	lines := os.read_lines(testfile) or { panic(err) }
 	mut slurp_target := &test.cmds
@@ -597,9 +603,9 @@ fn (r2r mut R2R)load_tests() {
 			} $else {
 				eprintln('Warning: archos tests not supported for current platform')
 			}
-		} else if dir == 'json' {
+		} else if dir == 'json' && r2r.targets.len < 2 {
 			r2r.load_jsn_tests('${db_path}/${dir}')
-		} else if dir == 'asm' {
+		} else if dir == 'asm' && r2r.targets.len < 2 {
 			r2r.load_asm_tests('${db_path}/${dir}')
 		} else {
 			r2r.load_cmd_tests('${db_path}/${dir}')
