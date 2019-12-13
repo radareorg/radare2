@@ -11,46 +11,46 @@
 
 /* at offset 0x10f8 (pointer to it stored right after "legion2") */
 typedef struct _RSepHdr64 {
-    ut8 kernel_uuid[16];
-    ut64 unknown0;
-    ut64 kernel_base_paddr;
-    ut64 kernel_max_paddr;
-    ut64 app_images_base_paddr;
-    ut64 app_images_max_paddr;
-    ut64 paddr_max; /* size of SEP firmware image */
-    ut64 unknown1;
-    ut64 unknown2;
-    ut64 unknown3;
-    ut64 init_base_paddr;
-    ut64 unknown4;
-    ut64 unknown5;
-    ut64 unknown6;
-    ut64 unknown7;
-    ut64 unknown8;
-    ut64 unknown9;
-    char init_name[16];
-    ut8 init_uuid[16];
-    ut64 unknown10;
-    ut64 unknown11;
-    ut64 n_apps;
+	ut8 kernel_uuid[16];
+	ut64 unknown0;
+	ut64 kernel_base_paddr;
+	ut64 kernel_max_paddr;
+	ut64 app_images_base_paddr;
+	ut64 app_images_max_paddr;
+	ut64 paddr_max; /* size of SEP firmware image */
+	ut64 unknown1;
+	ut64 unknown2;
+	ut64 unknown3;
+	ut64 init_base_paddr;
+	ut64 unknown4;
+	ut64 unknown5;
+	ut64 unknown6;
+	ut64 unknown7;
+	ut64 unknown8;
+	ut64 unknown9;
+	char init_name[16];
+	ut8 init_uuid[16];
+	ut64 unknown10;
+	ut64 unknown11;
+	ut64 n_apps;
 } RSepHdr64;
 
 /* right after the above, from offset 0x11c0 */
 typedef struct _RSepApp64 {
-    ut64 phys_text;
-    ut64 size_text;
-    ut64 phys_data;
-    ut64 size_data;
-    ut64 virt;
-    ut64 entry;
-    ut64 unknown4;
-    ut64 unknown5;
-    ut64 unknown6;
-    ut32 minus_one;
-    ut32 unknown7;
-    char app_name[16];
-    ut8 app_uuid[16];
-    ut64 unknown8;
+	ut64 phys_text;
+	ut64 size_text;
+	ut64 phys_data;
+	ut64 size_data;
+	ut64 virt;
+	ut64 entry;
+	ut64 unknown4;
+	ut64 unknown5;
+	ut64 unknown6;
+	ut32 minus_one;
+	ut32 unknown7;
+	char app_name[16];
+	ut8 app_uuid[16];
+	ut64 unknown8;
 } RSepApp64;
 
 typedef struct _RSepMachoInfo {
