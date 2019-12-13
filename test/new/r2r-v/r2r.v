@@ -50,7 +50,7 @@ pub fn main() {
 	r2r.load_tests(targets)
 	// TODO: support specifying json, asm, fuzz tests to run and multiple specific tests, globbing
 	if run_tests {
-		if targets.len <= 1 {  // WIP
+		if targets.len < 2 {  // WIP
 			r2r.run_jsn_tests(threads)
 			r2r.run_asm_tests(threads)
 			r2r.run_fuz_tests(threads)
@@ -602,9 +602,9 @@ fn (r2r mut R2R)load_tests(targets []string) {
 			} $else {
 				eprintln('Warning: archos tests not supported for current platform')
 			}
-		} else if dir == 'json' && targets.len <= 1 {
+		} else if dir == 'json' && targets.len < 2 {
 			r2r.load_jsn_tests('${db_path}/${dir}')
-		} else if dir == 'asm' && targets.len <= 1 {
+		} else if dir == 'asm' && targets.len < 2 {
 			r2r.load_asm_tests('${db_path}/${dir}')
 		} else {
 			r2r.load_cmd_tests('${db_path}/${dir}', targets)
