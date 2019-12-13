@@ -38,7 +38,7 @@
 #include "file.h"
 #include "patchlevel.h"
 
-#if __UNIX__
+#if __UNIX__ && !defined(_MSC_VER)
 # define QUICK 1
 # include <sys/mman.h>
 # include <sys/param.h>
@@ -1851,7 +1851,7 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 		goto error1;
 	}
 
-#ifdef QUICK
+#if QUICK
 	if ((mm = mmap (0, (size_t)st.st_size, PROT_READ, //OPENBSDBUG  |PROT_WRITE,
 	    MAP_PRIVATE|MAP_FILE, fd, (off_t)0)) == MAP_FAILED) {
 		file_error (ms, errno, "cannot map `%s'", dbname);
@@ -1908,7 +1908,7 @@ error1:
 		(void)close (fd);
 	}
 	if (mm) {
-#ifdef QUICK
+#if QUICK
 		(void)munmap((void *)mm, (size_t)st.st_size);
 #else
 		free(mm);
