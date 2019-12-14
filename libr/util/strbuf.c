@@ -20,6 +20,10 @@ R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
 	return strcmp (r_strbuf_get (sa), r_strbuf_get (sb)) == 0;
 }
 
+R_API bool r_strbuf_is_empty(RStrBuf *sb) {
+	return sb->len == 0;
+}
+
 R_API int r_strbuf_length(RStrBuf *sb) {
 	r_return_val_if_fail (sb, 0);
 	return sb->len;
