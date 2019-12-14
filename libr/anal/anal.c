@@ -215,7 +215,6 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	ht_up_free (a->dict_refs);
 	ht_up_free (a->dict_xrefs);
 	r_list_free (a->leaddrs);
-	a->sdb = NULL;
 	sdb_ns_free (a->sdb);
 	if (a->esil) {
 		r_anal_esil_free (a->esil);
