@@ -19,13 +19,14 @@ const (
 )
 
 pub fn main() {
+	mut r2r := R2R{}
 	mut fp := flag.new_flag_parser(os.args)
 	fp.application(os.filename(os.executable()))
 	// fp.version(r2r_version)
 	show_norun := fp.bool_('norun', `n`, false, 'Dont run the tests')
 	run_tests := !show_norun
 	show_help := fp.bool_('help', `h`, false, 'Show this help screen')
-	threads := fp.int_('threads', `j`, default_threads, 'Spawn N threads in parallel to run tests')
+	r2r.threads = fp.int_('threads', `j`, default_threads, 'Spawn N threads in parallel to run tests')
 	show_version := fp.bool_('version', `v`, false, 'Show version information')
 	if show_help {
 		println(fp.usage())
@@ -35,11 +36,10 @@ pub fn main() {
 		println(r2r_version)
 		return
 	}
-	if threads < 1 {
+	if r2r.threads < 1 {
 		eprintln('Invalid number of thread selected with -j')
 		exit(1)
 	}
-	mut r2r := R2R{}
 	r2r.targets = fp.finalize() or { eprintln('Error: ' + err) exit(1) }
 	for target in r2r.targets {
 		println(target)
@@ -51,11 +51,11 @@ pub fn main() {
 	// TODO: support specifying json, asm, fuzz tests to run and multiple specific tests, globbing
 	if run_tests {
 		if r2r.targets.len < 2 {  // WIP
-			r2r.run_jsn_tests(threads)
-			r2r.run_asm_tests(threads)
-			r2r.run_fuz_tests(threads)
+			r2r.run_jsn_tests()
+			r2r.run_asm_tests()
+			r2r.run_fuz_tests()
 		}
-		r2r.run_cmd_tests(threads)
+		r2r.run_cmd_tests()
 	}
 }
 
@@ -81,6 +81,7 @@ mut:
 	asm_tests []R2RAsmTest
 	targets []string
 	r2 &r2.R2
+	threads int
 	wg sync.WaitGroup
 	failed int
 	fixed int
@@ -414,7 +415,7 @@ fn (r2r R2R)run_fuz_test(fuzzfile string) bool {
 	return res == 0
 }
 
-fn (r2r R2R)run_fuz_tests(threads int) {
+fn (r2r R2R)run_fuz_tests() {
 	fuzz_path := '../bins/fuzzed'
 	// open and analyze all the files in bins/fuzzed
 	if !os.is_dir(fuzz_path) {
@@ -490,8 +491,8 @@ fn (r2r mut R2R)load_asm_tests(testpath string) {
 	r2r.wg.wait()
 }
 
-fn (r2r mut R2R)run_asm_tests(threads int) {
-	mut c := threads
+fn (r2r mut R2R)run_asm_tests() {
+	mut c := r2r.threads
 	r2r.r2 = r2.new()
 	// assemble/disassemble and compare
 	for at in r2r.asm_tests {
@@ -501,7 +502,7 @@ fn (r2r mut R2R)run_asm_tests(threads int) {
 				r2r.run_asm_test(at, false)
 			} else {
 				r2r.wg.wait()
-				c = threads
+				c = r2r.threads
 			}
 		}
 		if at.mode.contains('d') {
@@ -510,14 +511,14 @@ fn (r2r mut R2R)run_asm_tests(threads int) {
 				r2r.run_asm_test(at, true)
 			} else {
 				r2r.wg.wait()
-				c = threads
+				c = r2r.threads
 			}
 		}
 	}
 	r2r.wg.wait()
 }
 
-fn (r2r mut R2R)run_jsn_tests(threads int) {
+fn (r2r mut R2R)run_jsn_tests() {
 	json_path := 'db/json'
 	files := os.ls(json_path) or { panic(err) }
 	for file in files {
@@ -530,21 +531,21 @@ fn (r2r mut R2R)run_jsn_tests(threads int) {
 	}
 }
 
-fn (r2r mut R2R)run_cmd_tests(threads int) {
+fn (r2r mut R2R)run_cmd_tests() {
 	println('Running tests')
 	// r2r.r2 = r2.new()
 	// TODO: use lock
 	r2r.wg = sync.new_waitgroup()
 	println('Adding ${r2r.cmd_tests.len} watchgooses')
 	// r2r.wg.add(r2r.cmd_tests.len)
-	mut c := threads
+	mut c := r2r.threads
 	for t in r2r.cmd_tests {
 		if c-- > 0 {
 			r2r.wg.add(1)
 			go r2r.run_cmd_test(t)
 		} else {
 			r2r.wg.wait()
-			c = threads
+			c = r2r.threads
 		}
 	}
 	r2r.wg.wait()
