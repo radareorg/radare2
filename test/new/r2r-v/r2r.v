@@ -498,7 +498,11 @@ fn (r2r mut R2R)run_asm_tests() {
 	for at in r2r.asm_tests {
 		if at.mode.contains('a') {
 			r2r.wg.add(1)
-			r2r.run_asm_test(at, false)
+			if isnil(r2r.r2) {
+				go r2r.run_asm_test(at, false)
+			} else {
+				r2r.run_asm_test(at, false)
+			}
 			c--
 			if c < 1 {
 				r2r.wg.wait()
@@ -507,7 +511,11 @@ fn (r2r mut R2R)run_asm_tests() {
 		}
 		if at.mode.contains('d') {
 			r2r.wg.add(1)
-			r2r.run_asm_test(at, true)
+			if isnil(r2r.r2) {
+				go r2r.run_asm_test(at, true)
+			} else {
+				r2r.run_asm_test(at, true)
+			}
 			c--
 			if c < 1 {
 				r2r.wg.wait()
