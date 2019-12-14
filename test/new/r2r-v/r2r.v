@@ -497,19 +497,19 @@ fn (r2r mut R2R)run_asm_tests() {
 	// assemble/disassemble and compare
 	for at in r2r.asm_tests {
 		if at.mode.contains('a') {
-			if c-- > 0 {
-				r2r.wg.add(1)
-				r2r.run_asm_test(at, false)
-			} else {
+			r2r.wg.add(1)
+			r2r.run_asm_test(at, false)
+			c--
+			if c < 1 {
 				r2r.wg.wait()
 				c = r2r.threads
 			}
 		}
 		if at.mode.contains('d') {
-			if c-- > 0 {
-				r2r.wg.add(1)
-				r2r.run_asm_test(at, true)
-			} else {
+			r2r.wg.add(1)
+			r2r.run_asm_test(at, true)
+			c--
+			if c < 1 {
 				r2r.wg.wait()
 				c = r2r.threads
 			}
@@ -540,10 +540,10 @@ fn (r2r mut R2R)run_cmd_tests() {
 	// r2r.wg.add(r2r.cmd_tests.len)
 	mut c := r2r.threads
 	for t in r2r.cmd_tests {
-		if c-- > 0 {
-			r2r.wg.add(1)
-			go r2r.run_cmd_test(t)
-		} else {
+		r2r.wg.add(1)
+		go r2r.run_cmd_test(t)
+		c--
+		if c < 1 {
 			r2r.wg.wait()
 			c = r2r.threads
 		}
