@@ -422,7 +422,7 @@ static int get_template(char *buf, SStrInfo *str_info) {
 		copy_string(&type_code_str, name->str_ptr, name->len);
 		r_list_free (names_l);
 	} else {
-		char *tmp = strstr(buf, "@");
+		char *tmp = strchr(buf, '@');
 		if (!tmp) {
 			goto get_template_err;
 		}

@@ -1082,7 +1082,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			// HACK to do varsub outside rparse becacuse the whole rparse api must be rewritten
 			char *ox = strstr (ds->str, "0x");
 			if (ox) {
-				char *e = strstr (ox, "]");
+				char *e = strchr (ox, ']');
 				if (e) {
 					e = strdup (e);
 					ut64 addr = r_num_get (NULL, ox);
@@ -3100,7 +3100,7 @@ static void ds_cdiv_optimization(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_MUL:
 		esil = R_STRBUF_SAFEGET (&ds->analop.esil);
 		while (esil) {
-			comma = strstr (esil, ",");
+			comma = strchr (esil, ',');
 			if (!comma) {
 				break;
 			}

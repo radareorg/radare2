@@ -140,7 +140,7 @@ static char *swift_demangle_cmd(const char *s) {
 		}
 	}
 	if (swift_demangle) {
-		if (strstr (s, "'") || strstr (s, "\\")) {
+		if (strchr (s, '\'') || strchr (s, '\\')) {
 			/* nice try */
 			return NULL;
 		}
@@ -567,7 +567,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 					if (n) {
 						q = n + 1;
 					} else {
-						n = strstr (q, "_");
+						n = strchr (q, '_');
 						if (n) {
 							q = n + 1;
 						} else {

@@ -2708,7 +2708,7 @@ static void __updateStats(RCore *core, Sdb *db, ut64 addr, int statsMode) {
 		sdb_num_inc (db, type, 1, 0);
 	} else {
 		char *mnem = strdup (op->mnemonic);
-		char *sp = strstr (mnem, " ");
+		char *sp = strchr (mnem, ' ');
 		if (sp) {
 			*sp = 0;
 			//memmove (mnem, sp + 1, strlen (sp));
@@ -2810,7 +2810,7 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	RList *dbs = r_list_newf ((RListFree)sdb_free);
 	Sdb *d = sdb_new0 ();
 	ut64 oseek = core->offset;
-	bool isJson = strstr (input, "j") != NULL;
+	bool isJson = strchr (input, 'j') != NULL;
 	
 	char *inp = r_str_newf ("*%s", input);
 	r_list_foreach (core->anal->fcns, iter, fcn) {

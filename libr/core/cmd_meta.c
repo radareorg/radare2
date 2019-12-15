@@ -970,7 +970,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		break;
 	case ' ': { // "Cv "
 		// TODO check that idx exist
-		char *comment = strstr (name, " ");
+		char *comment = strchr (name, ' ');
 		if (comment) { // new comment given
 			if (*comment) {
 				*comment++ = 0;

@@ -266,7 +266,7 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 		if (varlist && *varlist) {
 			do {
 				char *word = sdb_anext (ptr, &next);
-				char *sign = strstr (word, "_");
+				char *sign = strchr (word, '_');
 				const char *vardef = sdb_const_get (DB, sdb_fmt (
 						"var.0x%"PFMT64x ".%c.%s",
 						fcn->addr, kind, word), 0);

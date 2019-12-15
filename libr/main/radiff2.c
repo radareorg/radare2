@@ -1111,7 +1111,7 @@ R_API int r_main_radiff2(int argc, char **argv) {
 				depth = 64;
 			}
 			char *words = strdup (addr? addr: "0");
-			char *second = strstr (words, ",");
+			char *second = strchr (words, ',');
 			if (second) {
 				*second++ = 0;
 				ut64 off = r_num_math (c->num, words);

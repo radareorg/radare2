@@ -732,7 +732,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 		// applies on all of the following registers until </feature>
 		if (r_str_startswith (regstr, "<feature")) {
 			// Verify that we found the feature in the current node
-			feature_end = strstr (regstr, ">");
+			feature_end = strchr (regstr, '>');
 			// To parse features of other architectures refer to:
 			// https://sourceware.org/gdb/onlinedocs/gdb/Standard-Target-Features.html#Standard-Target-Features
             // - x86

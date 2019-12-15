@@ -1031,7 +1031,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 
 	if (grep) {
 		start = grep;
-		end = strstr (grep, ";");
+		end = strchr (grep, ';');
 		if (!end) { // We filter on a single opcode, so no ";"
 			end = start + strlen (grep);
 		}
@@ -1100,7 +1100,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		if (search_hit) {
 			if (end[0] == ';') { // fields are semicolon-separated
 				start = end + 1; // skip the ;
-				end = strstr (start, ";");
+				end = strchr (start, ';');
 				end = end? end: start + strlen (start); // latest field?
 				free (grep_str);
 				grep_str = calloc (1, end - start + 1);
@@ -2204,7 +2204,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	RIOMap *map;
 	bool regexp = input[1] == '/'; // "/c/"
 	bool everyByte = regexp && input[2] == 'a';
-	char *end_cmd = strstr (input, " ");
+	char *end_cmd = strchr (input, ' ');
 	switch ((end_cmd ? *(end_cmd - 1) : input[1])) {
 	case 'j':
 		param->outmode = R_MODE_JSON;
