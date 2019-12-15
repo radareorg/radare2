@@ -2571,7 +2571,7 @@ r_cons_pop();
 	for (i = 0; i < count; i++) {
 		ut64 addr = UT64_MAX;
 		ox = strstr (line, "0x");
-		qo = strstr (line, "\"");
+		qo = strchr (line, '\"');
 		R_FREE (string);
 		if (ox) {
 			addr = r_num_get (NULL, ox);
@@ -2697,7 +2697,7 @@ r_cons_pop();
 		}
 		if (str) {
 			str = strdup (str);
-			char *qoe = strstr (str, ";");
+			char *qoe = strchr (str, ';');
 			if (qoe) {
 				char* t = str;
 				str = r_str_ndup (str, qoe - str);

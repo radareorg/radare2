@@ -280,10 +280,10 @@ static bool bin_strfilter(RBin *bin, const char *str) {
 		break;
 	case 'e': // emails
 		if (str && *str) {
-			if (!strstr (str + 1, "@")) {
+			if (!strchr (str + 1, '@')) {
 				return false;
 			}
-			if (!strstr (str + 1, ".")) {
+			if (!strchr (str + 1, '.')) {
 				return false;
 			}
 		} else {
@@ -292,7 +292,7 @@ static bool bin_strfilter(RBin *bin, const char *str) {
 		break;
 	case 'f': // format-string
 		if (str && *str) {
-			if (!strstr (str + 1, "%")) {
+			if (!strchr (str + 1, '%')) {
 				return false;
 			}
 		} else {

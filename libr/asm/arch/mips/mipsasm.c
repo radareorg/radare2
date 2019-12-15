@@ -154,7 +154,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	*out = 0;
 	*w0=*w1=*w2=*w3=0;
 
-	if (!strncmp (s, "jalr", 4) && !strstr (s, ",")) {
+	if (!strncmp (s, "jalr", 4) && !strchr (s, ',')) {
 		char opstr[32];
 		const char *arg = strchr (s, ' ');
 		if (arg) {
