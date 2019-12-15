@@ -259,7 +259,7 @@ static char *getNameDelta(RCore *core, ut64 addr) {
 }
 
 static void archbits(RCore *core, ut64 addr) {
-	r_core_seek_archbits (core, addr);
+	r_core_seek_arch_bits (core, addr);
 }
 
 static int cfggeti(RCore *core, const char *k) {
