@@ -1524,9 +1524,10 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 
 /* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
-	RList *list = r_meta_find_list_in (anal, addr, -1, 4);
 	RListIter *iter;
 	RAnalMetaItem *meta;
+
+	RList *list = r_meta_find_list_in (anal, addr, -1, 4);
 	r_list_foreach (list, iter, meta) {
 		switch (meta->type) {
 		case R_META_TYPE_DATA:
@@ -1569,7 +1570,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 		fcn->stack = fcn->maxstack = 0x28; // Shadow store for the first 4 args + Return addr
 	}
 	int ret = r_anal_fcn_bb (anal, fcn, addr, anal->opt.depth);
-	if (ret == -1) {
+	if (ret < 0) {
 		if (anal->verbose) {
 			eprintf ("Failed to analyze basic block at 0x%"PFMT64x"\n", addr);
 		}
