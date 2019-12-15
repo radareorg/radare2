@@ -5331,14 +5331,16 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			}
 			// Kill debugee and all child processes
-			if (core->dbg && core->dbg->h && core->dbg->h->pids && core->dbg->pid == -1) {
+			if (core->dbg && core->dbg->h && core->dbg->h->pids && core->dbg->pid != -1) {
 				list = core->dbg->h->pids (core->dbg, core->dbg->pid);
 				if (list) {
 					r_list_foreach (list, iter, p) {
 						r_debug_kill (core->dbg, p->pid, p->pid, SIGKILL);
+						r_debug_detach (core->dbg, p->pid);
 					}
 				} else {
 					r_debug_kill (core->dbg, core->dbg->pid, core->dbg->pid, SIGKILL);
+					r_debug_detach (core->dbg, core->dbg->pid);
 				}
 			}
 			// Reopen and rebase the original file
