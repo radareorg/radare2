@@ -17,7 +17,6 @@ typedef struct {
 
 static int __close(RIODesc *fd);
 static libgdbr_t *desc = NULL;
-static RIODesc *riogdb = NULL;
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "gdb://", 6));
@@ -52,6 +51,7 @@ static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+	RIODesc *riogdb = NULL;
 	RIOGdb *riog;
 	char host[128], *port, *pid;
 	int i_port = -1;
@@ -59,10 +59,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 	if (!__plugin_open (io, file, 0)) {
 		return NULL;
-	}
-	if (riogdb) {
-		// FIX: Don't allocate more than one gdb RIODesc
-		return riogdb;
 	}
 	strncpy (host, file + 6, sizeof (host) - 1);
 	host [sizeof (host) - 1] = '\0';
@@ -179,9 +175,6 @@ static int __close(RIODesc *fd) {
 	}
 	gdbr_disconnect (desc);
 	gdbr_cleanup (desc);
-	if (riogdb) {	//TODO is there a less band-aid fix to do this?
-		riogdb->data = NULL;
-	}
 	R_FREE (desc);
 	return -1;
 }

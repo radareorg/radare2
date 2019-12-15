@@ -435,10 +435,17 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 }
 
 static int r_debug_gdb_detach(RDebug *dbg, int pid) {
+	int ret = 0;
+
 	if (pid <= 0 || !desc->stub_features.multiprocess) {
-		return gdbr_detach (desc);
+		ret = gdbr_detach (desc);
 	}
-	return gdbr_detach_pid (desc, pid);
+	ret = gdbr_detach_pid (desc, pid);
+
+	if (dbg->pid == pid) {
+		desc = NULL;
+	}
+	return ret;
 }
 
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
