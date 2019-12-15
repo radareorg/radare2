@@ -5,9 +5,9 @@
 
 insn_type_descr_t types[] = {
 	[INSN_X] = {INSN_X, "%s",
-		{
+		{{
 			0
-		}
+		}}
 	},
 	/* ------KKKKKAAAAABBBBBKKKKKKKKKKK */
 	[INSN_KABK] = {INSN_KABK, "%s r%d, r%d, 0x%x",
