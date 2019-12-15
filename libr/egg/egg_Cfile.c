@@ -212,6 +212,10 @@ fail:
 static bool r_egg_Cfile_parseCompiled(const char *file) {
 	char *fileExt = r_str_newf ("%s.tmp", file);
 	char *buffer = r_file_slurp (fileExt, NULL);
+	if (!buffer) {
+		eprintf ("Could not open '%s'.\n", fileExt);
+		goto fail;
+	}
 
 	buffer = r_str_replace (buffer, "rdata", "text", false);
 	buffer = r_str_replace (buffer, "rodata", "text", false);

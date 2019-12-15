@@ -216,6 +216,10 @@ R_API int r_lang_run_file(RLang *lang, const char *file) {
 		if (!lang->cur->run_file) {
 			if (lang->cur->run) {
 				char *code = r_file_slurp (file, &len);
+				if (!code) {
+					eprintf ("Could not open '%s'.\n", file);
+					return 0;
+				}
 				ret = lang->cur->run (lang, code, len);
 				free (code);
 			}

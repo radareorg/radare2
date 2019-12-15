@@ -55,7 +55,6 @@ RUN
 NAME=p3 0
 FILE=../bins/elf/analysis/hello-arm32
 EXPECT=<<EOF
-
 EOF
 CMDS=<<EOF
 p3 0

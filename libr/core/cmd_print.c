@@ -6355,6 +6355,10 @@ l = use_blocksize;
 			eprintf ("Usage: p3 [file] - print 3D stereogram image of current block\n");
 		} else if (input[1] == ' ') {
 			char *data = r_file_slurp (input + 2, NULL);
+			if (!data) {
+				eprintf ("Could not open '%s'.\n", input + 2);
+				break;
+			}
 			char *res = r_print_stereogram (data, 78, 20);
 			r_print_stereogram_print (core->print, res);
 			// if (data) eprintf ("%s\n", data);
