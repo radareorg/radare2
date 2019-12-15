@@ -925,3 +925,25 @@ cycles: 1
 esil: 0,sp,+,0xffffffff,&,r7,=
 family: cpu
 RUN
+
+NAME=arm aae with bit switch
+FILE=../bins/arm/elf/hello_world
+EXPECT=<<EOF
+            ;-- main:
+            0x0000050c      80b5           push {r7, lr}
+            0x0000050e      00af           add r7, sp, 0
+            0x00000510      034b           ldr r3, [0x00000520]        ; [0x520:4]=94 ; 1312
+            0x00000512      7b44           add r3, pc                  ; 0x574 ; "Hello world!"
+            0x00000514      1846           mov r0, r3
+            0x00000516      fff75aef       blx sym.imp.puts
+            0x0000051a      0023           movs r3, 0
+            0x0000051c      1846           mov r0, r3
+            0x0000051e      80bd           pop {r7, pc}
+EOF
+CMDS=<<EOF
+aei
+e asm.bits=32
+aae 20 @ main
+pd 9 @ main
+EOF
+RUN

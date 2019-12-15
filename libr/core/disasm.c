@@ -5225,7 +5225,7 @@ toro:
 				}
 			}
 		}
-		r_core_seek_archbits (core, ds->at); // slow but safe
+		r_core_seek_arch_bits (core, ds->at); // slow but safe
 		ds->has_description = false;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		ds->printed_str_addr = UT64_MAX;
@@ -5710,7 +5710,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		ds->at = core->offset + i;
 		ds->vat = r_core_pava (core, ds->at);
 		hasanal = false;
-		r_core_seek_archbits (core, ds->at);
+		r_core_seek_arch_bits (core, ds->at);
 		if (r_cons_is_breaked ()) {
 			break;
 		}

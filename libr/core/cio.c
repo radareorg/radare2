@@ -333,23 +333,41 @@ static void __choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
 	}
 }
 
-R_API void r_core_seek_archbits(RCore *core, ut64 addr) {
+// Get address-specific bits and arch at a certain address.
+// If there are no specific infos (i.e. asm.bits and asm.arch should apply), the bits and arch will be 0 or NULL respectively!
+R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bits, R_OUT R_BORROW R_NULLABLE const char **arch) {
+	int bitsval = 0;
+	const char *archval = NULL;
+	RBinObject *o = r_bin_cur_object (core->bin);
+	RBinSection *s = o ? r_bin_get_section_at (o, addr, core->io->va) : NULL;
+	if (s) {
+		if (!core->fixedarch) {
+			archval = s->arch;
+		}
+		if (!core->fixedbits) {
+			bitsval = s->bits;
+		}
+	}
+	if (bits && !bitsval && !core->fixedbits) {
+		//if we found bits related with anal hints pick it up
+		__choose_bits_anal_hints (core, addr, &bitsval);
+	}
+	if (bits) {
+		*bits = bitsval;
+	}
+	if (arch) {
+		*arch = archval;
+	}
+}
+
+R_API void r_core_seek_arch_bits(RCore *core, ut64 addr) {
 	int bits = 0;
 	const char *arch = NULL;
-	RBinObject *o = r_bin_cur_object (core->bin);
-	RBinSection *s = o? r_bin_get_section_at (o, addr, core->io->va): NULL;
-	if (s) {
-		arch = s->arch;
-		bits = s->bits;
-	}
-	if (!bits && !core->fixedbits) {
-		//if we found bits related with anal hints pick it up
-		__choose_bits_anal_hints (core, addr, &bits);
-	}
-	if (bits && !core->fixedbits) {
+	r_core_arch_bits_at (core, addr, &bits, &arch);
+	if (bits) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
-	if (arch && !core->fixedarch) {
+	if (arch) {
 		r_config_set (core->config, "asm.arch", arch);
 	}
 }

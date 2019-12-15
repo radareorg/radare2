@@ -1845,7 +1845,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	//update bits based on the core->offset otherwise we could have the
 	//last value set and blow everything up
-	r_core_seek_archbits (core, at);
+	r_core_seek_arch_bits (core, at);
 
 	if (core->io->va) {
 		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
@@ -4870,7 +4870,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		arch = R2_ARCH_MIPS;
 	}
 
-	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 	if (!sn) {
 		eprintf ("Warning: No SN reg alias for current architecture.\n");
@@ -4905,10 +4904,14 @@ repeat:
 				r_list_free (list);
 			}
 		}
+
 		/* realign address if needed */
+		r_core_seek_arch_bits (core, cur);
+		int opalign = core->anal->pcalign;
 		if (opalign > 0) {
 			cur -= (cur % opalign);
 		}
+
 		r_anal_op_fini (&op);
 		r_asm_set_pc (core->assembler, cur);
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) {
