@@ -163,6 +163,10 @@ static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
 	int skip = (int)r_num_math (NULL, r_str_word_get0 (input, 1));
 	int count = (int)r_num_math (NULL,r_str_word_get0 (input, 2));
 	char *content = r_file_slurp (input, &bytes_read);
+	if (!content) {
+		eprintf ("Could not open '%s'.\n", input);
+		return -1;
+	}
 	if (skip > 0) {
 		skip = skip > bytes_read ? bytes_read : skip;
 	}
