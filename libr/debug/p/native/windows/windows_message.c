@@ -291,8 +291,8 @@ static RTable *__create_window_table(void) {
 static void __add_window_to_table(RTable *tbl, window *win) {
 	r_return_if_fail (tbl && win);
 	char *handle = r_str_newf ("0x%08"PFMT64x"", win->h);
-	char *pid = r_str_newf ("%ul", win->pid);
-	char *tid = r_str_newf ("%ul", win->tid);
+	char *pid = r_str_newf ("%lu", win->pid);
+	char *tid = r_str_newf ("%lu", win->tid);
 	r_table_add_row (tbl, handle, pid, tid, win->name, NULL);
 	free (handle);
 	free (tid);
