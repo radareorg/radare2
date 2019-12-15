@@ -2709,6 +2709,7 @@ R_API bool r_core_init(RCore *core) {
 	core->io->cb_printf = r_cons_printf;
 	core->dbg->cb_printf = r_cons_printf;
 	core->dbg->bp->cb_printf = r_cons_printf;
+	core->dbg->ev = core->ev;
 	// initialize config before any corebind
 	r_core_config_init (core);
 
