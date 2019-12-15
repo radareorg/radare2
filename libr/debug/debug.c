@@ -696,6 +696,10 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 		reason = dbg->h->wait (dbg, dbg->pid);
 		if (reason == R_DEBUG_REASON_DEAD) {
 			eprintf ("\n==> Process finished\n\n");
+			REventDebugProcessFinished event = {
+				.pid = dbg->pid
+			};
+			r_event_send (dbg->ev, R_EVENT_DEBUG_PROCESS_FINISHED, &event);
 			// XXX(jjd): TODO: handle fallback or something else
 			//r_debug_select (dbg, -1, -1);
 			return R_DEBUG_REASON_DEAD;
