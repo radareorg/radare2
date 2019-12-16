@@ -94,7 +94,8 @@ static int rabin_show_help(int v) {
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		" RABIN2_PDBSERVER: e pdb.server       # use alternative PDB server\n"
 		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
-		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n");
+		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
+		" R2_CONFIG:        # sdb config file\n");
 	}
 	return 1;
 }
@@ -590,6 +591,16 @@ R_API int r_main_rabin2(int argc, char **argv) {
 	}
 	free (tmp);
 
+	if ((tmp = r_sys_getenv ("R2_CONFIG"))) {
+		Sdb *config_sdb = sdb_new (NULL, tmp, 0);
+		if (config_sdb) {
+			r_config_unserialize (core.config, config_sdb, NULL);
+			sdb_free (config_sdb);
+		} else {
+			printf ("Cannot open file specified in RADARE2_CONFIG\n");
+		}
+		free (tmp);
+	}
 	if ((tmp = r_sys_getenv ("RABIN2_DMNGLRCMD"))) {
 		r_config_set (core.config, "bin.demanglecmd", tmp);
 		free (tmp);

@@ -95,6 +95,9 @@ R_API bool r_config_readonly (RConfig *cfg, const char *key);
 R_API void r_config_set_sort_column (char *column);
 R_API bool r_config_set_setter (RConfig *cfg, const char *key, RConfigCallback cb);
 R_API bool r_config_set_getter (RConfig *cfg, const char *key, RConfigCallback cb);
+
+R_API void r_config_serialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db);
+R_API bool r_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_NULLABLE char **err);
 #endif
 
 #ifdef __cplusplus
