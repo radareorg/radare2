@@ -21,7 +21,6 @@ R_LIB_VERSION (r_magic);
 // we keep this code just to make debian happy, but we should use
 // our own magic implementation for consistency reasons
 #include <magic.h>
-#define RMagic void
 #undef R_API
 #define R_API
 
