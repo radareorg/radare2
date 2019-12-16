@@ -336,7 +336,7 @@ tree-sitter/libtree-sitter.$(EXT_AR): tree-sitter/lib/src/lib.o
 	$(RANLIB) $@
 
 tree-sitter/lib/src/lib.o: tree-sitter-sync
-	$(CC) std=c99 -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
+	$(CC) -std=c99 -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
 
 tree-sitter-sync:
 	"$(SHELL)" clone_3rd_repo.sh tree-sitter "${TS_URL}" "${TS_BRA}" "${TS_TIP}"
