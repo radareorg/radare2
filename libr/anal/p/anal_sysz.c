@@ -17,10 +17,10 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	r_strbuf_init (buf);
 	r_strbuf_append (buf, "{");
-	cs_ppc *x = &insn->detail->ppc;
+	cs_sysz *x = &insn->detail->sysz;
 	r_strbuf_append (buf, "\"operands\":[");
 	for (i = 0; i < x->op_count; i++) {
-		cs_ppc_op *op = &x->operands[i];
+		cs_sysz_op *op = &x->operands[i];
 		if (i > 0) {
 			r_strbuf_append (buf, ",");
 		}
