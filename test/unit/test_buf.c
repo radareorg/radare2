@@ -394,6 +394,7 @@ bool test_r_buf_slice_too_big(void) {
 	mu_assert ("the resize should be successful", res);
 	sz = r_buf_size (sl);
 	mu_assert_eq (sz, 3, "but it should just use the biggest value");
+	r_buf_free (sl);
 	r_buf_free (buf);
 	mu_end;
 }
