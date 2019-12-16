@@ -719,9 +719,35 @@ static void __r_debug_lstLibAdd(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, cha
 
 static bool breaked = false;
 
+int w32_attach_new_process(RDebug* dbg, int pid) {
+	int tid = -1;
+
+	if (!w32_detach(dbg, dbg->pid)) {
+		eprintf ("Failed to detach from (%d)\n", dbg->pid);
+		return -1;
+	}
+
+	if ((tid = w32_attach(dbg, pid)) < 0) {
+		eprintf ("Failed to attach to (%d)\n", pid);
+		return -1;
+	}
+
+	dbg->tid = tid;
+	dbg->pid = pid;
+	// Call select to sync the new pid's data
+	r_debug_select(dbg, pid, tid);
+	return dbg->tid;
+}
+
 int w32_select(RDebug* dbg, int pid, int tid) {
 	RListIter *it;
 	RIOW32Dbg *rio = dbg->user;
+
+	// Re-attach to a different pid
+	if (dbg->pid > -1 && dbg->pid != pid) {
+		return w32_attach_new_process (dbg, pid);
+	}
+
 	if (!dbg->threads) {
 		dbg->threads = r_list_newf (free);
 	}
@@ -798,7 +824,7 @@ void w32_break_process(void *user) {
 	RDebug *dbg = (RDebug *)user;
 	RIOW32Dbg *rio = dbg->user;
 	if (dbg->corebind.cfggeti (dbg->corebind.core, "dbg.threads")) {
-		w32_select (dbg, rio->pi.dwProcessId, 0); // Suspend all threads
+		w32_select (dbg, rio->pi.dwProcessId, -1); // Suspend all threads
 	} else {
 		if (!w32_DebugBreakProcess (rio->pi.hProcess)) {
 			r_sys_perror ("w32_break_process/DebugBreakProcess");
@@ -1298,7 +1324,7 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	return rdi;
 }
 
-static RDebugPid *__build_debug_pid(int pid, HANDLE ph, const TCHAR* name) {
+static RDebugPid *__build_debug_pid(int pid, int ppid, HANDLE ph, const TCHAR* name) {
 	char *path = NULL;
 	int uid = -1;
 	if (!ph) {
@@ -1325,6 +1351,7 @@ static RDebugPid *__build_debug_pid(int pid, HANDLE ph, const TCHAR* name) {
 	}
 	// it is possible to get pc for a non debugged process but the operation is expensive and might be risky
 	RDebugPid *ret = r_debug_pid_new (path, pid, uid, 's', 0);
+	ret->ppid = ppid;
 	free (path);
 	return ret;
 }
@@ -1343,7 +1370,8 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 		do {
 			if (all || pe.th32ProcessID == pid || (b = pe.th32ParentProcessID == pid)) {
 				// Returns NULL if process is inaccessible unless if its a child process of debugged process
-				RDebugPid *dbg_pid = __build_debug_pid (pe.th32ProcessID, b ? rio->pi.hProcess : NULL, pe.szExeFile);
+				RDebugPid *dbg_pid = __build_debug_pid (pe.th32ProcessID, pe.th32ParentProcessID,
+					b ? rio->pi.hProcess : NULL, pe.szExeFile);
 				if (dbg_pid) {
 					r_list_append (list, dbg_pid);
 				}
