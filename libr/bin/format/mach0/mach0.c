@@ -2080,6 +2080,8 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 				s->format = r_str_newf ("Cd %d[%"PFMT64d"]", ws, s->vsize / ws);
 			}
 			r_list_append (list, s);
+			free (segment_name);
+			free (section_name);
 		}
 	}
 	return list;

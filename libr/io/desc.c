@@ -163,9 +163,6 @@ R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 	if (!buf || !desc || !desc->plugin || !(desc->perm & R_PERM_R)) {
 		return -1;
 	}
-	if (desc < 0) {
-		return -1;
-	}
 	ut64 seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
 	if (desc->io->cachemode) {
 		if (seek != UT64_MAX && r_io_cache_at (desc->io, seek)) {

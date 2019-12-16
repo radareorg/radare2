@@ -1070,7 +1070,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 			for (j = i; j < i + inc; j++) {
 				if (j!=i && use_align && rowbytes == inc) {
-					int sz = p->offsize (p->user, addr + j);
+					int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
 					if (sz >= 0) {
 						rowbytes = bytes;
 					}

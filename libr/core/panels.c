@@ -1182,16 +1182,14 @@ void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
 		char *white = (char*)r_str_pad (' ', 128);
 		int idx = R_MIN (-sx, strlen (white) - 1);
 		white[idx] = 0;
-		text = r_str_ansi_crop (r_str_new (cmdstr),
-				0, sy, w + sx - 3, h - 2 + sy);
+		text = r_str_ansi_crop (cmdstr, 0, sy, w + sx - 3, h - 2 + sy);
 		char *newText = r_str_prefix_all (text, white);
 		if (newText) {
 			free (text);
 			text = newText;
 		}
 	} else {
-		text = r_str_ansi_crop (r_str_new (cmdstr),
-				sx, sy, w + sx - 3, h - 2 + sy);
+		text = r_str_ansi_crop (cmdstr, sx, sy, w + sx - 3, h - 2 + sy);
 	}
 	if (text) {
 		r_cons_canvas_write (can, text);
@@ -4543,6 +4541,7 @@ void __init_menu_color_settings_layout (void *_core, const char *parent) {
 		__add_menu (core, parent, pos, __settings_colors_cb);
 	}
 	free (now);
+	r_list_free (list);
 	r_strbuf_free (buf);
 }
 
@@ -4565,6 +4564,7 @@ void __init_menu_disasm_settings_layout (void *_core, const char *parent) {
 		}
 		i++;
 	}
+	r_list_free (list);
 	r_strbuf_free (rsb);
 }
 
