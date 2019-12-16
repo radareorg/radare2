@@ -46,6 +46,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 			case 'j':
 				pj_o (j);
 				pj_kb (j, "current", dbg->pid == p->pid);
+				pj_ki (j, "ppid", p->ppid);
 				pj_ki (j, "pid", p->pid);
 				pj_ki (j, "uid", p->uid);
 				pj_ks (j, "status", &p->status);
@@ -53,9 +54,9 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 				pj_end (j);
 				break;
 			default:
-				dbg->cb_printf (" %c %d uid:%d %c %s\n",
+				dbg->cb_printf (" %c %d ppid:%d uid:%d %c %s\n",
 					dbg->pid == p->pid? '*': '-',
-					p->pid, p->uid, p->status, p->path);
+					p->pid, p->ppid, p->uid, p->status, p->path);
 				break;
 			}
 		}
