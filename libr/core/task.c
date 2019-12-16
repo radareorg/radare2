@@ -290,7 +290,6 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 
 	if (stop) {
 		scheduler->tasks_running--;
-		r_th_lock_leave (current->dispatch_lock);
 	}
 
 	// oneshots always have priority.
@@ -308,6 +307,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 
 	if (next && !stop) {
 		r_list_append (scheduler->tasks_queue, current);
+		r_th_lock_enter (current->dispatch_lock);
 	}
 
 	tasks_lock_leave (scheduler, &old_sigset);
@@ -323,6 +323,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 				r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
 			}
 			current->dispatched = false;
+			r_th_lock_leave (current->dispatch_lock);
 		}
 	}
 
@@ -367,6 +368,8 @@ static void task_wakeup(RCoreTask *current) {
 		}
 		current->dispatched = false;
 	}
+
+	r_th_lock_leave (current->dispatch_lock);
 
 	scheduler->current_task = current;
 
