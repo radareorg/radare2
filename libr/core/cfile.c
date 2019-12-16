@@ -252,7 +252,7 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	return ret;
 }
 
-#if !__linux__
+#if !__linux__ && !__WINDOWS__
 static ut64 get_base_from_maps(RCore *core, const char *file) {
 	RDebugMap *map;
 	RListIter *iter;

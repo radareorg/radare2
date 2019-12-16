@@ -3536,7 +3536,6 @@ static int archinfo(RAnal *anal, int q) {
 
 static RList *anal_preludes(RAnal *anal) {
 #define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
-	RSearchKeyword* kw;
 	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
 	switch (anal->bits) {
 	case 32:

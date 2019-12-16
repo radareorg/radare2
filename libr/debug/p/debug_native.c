@@ -105,7 +105,7 @@ R_API RList *r_w32_dbg_maps(RDebug *);
 /* begin of debugger code */
 #if DEBUGGER
 
-#if __WINDOWS__ || (!__APPLE__ && defined(WAIT_ON_ALL_CHILDREN))
+#if !__WINDOWS__ || (!__APPLE__ && defined(WAIT_ON_ALL_CHILDREN))
 static int r_debug_handle_signals(RDebug *dbg) {
 #if __linux__
 	return linux_handle_signals (dbg);

@@ -464,7 +464,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return size;
 }
 
-static void __transfer_drx(RDebug *dbg, ut8 *buf) {
+static void __transfer_drx(RDebug *dbg, const ut8 *buf) {
 	CONTEXT cur_ctx;
 	if (w32_reg_read (dbg, R_REG_TYPE_ALL, (ut8 *)&cur_ctx, sizeof (CONTEXT))) {
 		CONTEXT *new_ctx = (CONTEXT *)buf;
