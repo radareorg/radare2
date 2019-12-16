@@ -292,7 +292,7 @@ static RList *parse_format(RCore *core, char *fmt) {
 }
 
 #define DEFAULT_MAX 3
-#define REG_SZ 10
+#define REGNAME_SIZE 10
 #define MAX_INSTR 5
 
 static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const char* cc,
@@ -348,7 +348,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 			//XXX: param arg_num must be fixed to support floating point register
 			place = r_anal_cc_arg (anal, cc, arg_num);
 		}
-		char regname[REG_SZ] = {0};
+		char regname[REGNAME_SIZE] = {0};
 		ut64 xaddr = UT64_MAX;
 		bool memref = false;
 		bool cmt_set = false;
@@ -436,7 +436,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 					}
 				}
 			} else if (var && res && xaddr && (xaddr != UT64_MAX)) { // Type progation using value
-				char tmp[REG_SZ] = {0};
+				char tmp[REGNAME_SIZE] = {0};
 				get_src_regname (core, instr_addr, tmp, sizeof (tmp));
 				ut64 ptr = get_addr (trace, tmp, j);
 				if (ptr == xaddr) {
@@ -606,7 +606,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				}
 			} else if (!resolved && ret_type && ret_reg) {
 				// Forward propgation of function return type
-				char src[REG_SZ] = {0};
+				char src[REGNAME_SIZE] = {0};
 				const char *query = sdb_fmt ("%d.reg.write", cur_idx);
 				char *cur_dest = sdb_get (trace, query, 0);
 				get_src_regname (core, aop.addr, src, sizeof (src));
@@ -633,7 +633,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						// Progate return type passed using pointer
 						// int *ret; *ret = strlen(s);
 						// TODO: memref check , dest and next src match
-						char nsrc[REG_SZ] = {0};
+						char nsrc[REGNAME_SIZE] = {0};
 						get_src_regname (core, next_op->addr, nsrc, sizeof (nsrc));
 						if (ret_reg && *nsrc && strstr (ret_reg, nsrc) && var &&
 								aop.direction == R_ANAL_OP_DIR_READ) {
@@ -662,7 +662,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				// lea rax , str.hello  ; mov [local_ch], rax;
 				// mov rdx , [local_4h] ; mov [local_8h], rdx;
 				if (prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
-					char reg[REG_SZ] = {0};
+					char reg[REGNAME_SIZE] = {0};
 					get_src_regname (core, addr, reg, sizeof (reg));
 					bool match = strstr (prev_dest, reg)? true: false;
 					if (str_flag && match) {

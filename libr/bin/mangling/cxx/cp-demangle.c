@@ -125,7 +125,7 @@ extern char *alloca ();
 
 #include <limits.h>
 #ifndef INT_MAX
-# define INT_MAX       (int)(((unsigned int) ~0) >> 1)          /* 0x7FFFFFFF */ 
+# define INT_MAX       (int)(((unsigned int) ~0) >> 1)          /* 0x7FFFFFFF */
 #endif
 
 #include "ansidecl.h"

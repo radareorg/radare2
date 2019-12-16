@@ -150,7 +150,6 @@ static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extr
 static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	ut32 insn, opcode;
 	ut8 opcode_idx;
-	char *line = NULL;
 	insn_t *insn_descr;
 	insn_extra_t *extra_descr;
 
