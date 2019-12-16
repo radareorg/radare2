@@ -719,9 +719,35 @@ static void __r_debug_lstLibAdd(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, cha
 
 static bool breaked = false;
 
+int w32_attach_new_process(RDebug* dbg, int pid) {
+	int tid = -1;
+
+	if (!w32_detach(dbg, dbg->pid)) {
+		eprintf ("Failed to detach from (%d)\n", dbg->pid);
+		return -1;
+	}
+
+	if ((tid = w32_attach(dbg, pid)) < 0) {
+		eprintf ("Failed to attach to (%d)\n", pid);
+		return -1;
+	}
+
+	dbg->tid = tid;
+	dbg->pid = pid;
+	// Call select to sync the new pid's data
+	r_debug_select(dbg, pid, tid);
+	return dbg->tid;
+}
+
 int w32_select(RDebug* dbg, int pid, int tid) {
 	RListIter *it;
 	RIOW32Dbg *rio = dbg->user;
+
+	// Re-attach to a different pid
+	if (dbg->pid > -1 && dbg->pid != pid) {
+		return w32_attach_new_process (dbg, pid);
+	}
+
 	if (!dbg->threads) {
 		dbg->threads = r_list_newf (free);
 	}
@@ -798,7 +824,7 @@ void w32_break_process(void *user) {
 	RDebug *dbg = (RDebug *)user;
 	RIOW32Dbg *rio = dbg->user;
 	if (dbg->corebind.cfggeti (dbg->corebind.core, "dbg.threads")) {
-		w32_select (dbg, rio->pi.dwProcessId, 0); // Suspend all threads
+		w32_select (dbg, rio->pi.dwProcessId, -1); // Suspend all threads
 	} else {
 		if (!w32_DebugBreakProcess (rio->pi.hProcess)) {
 			r_sys_perror ("w32_break_process/DebugBreakProcess");

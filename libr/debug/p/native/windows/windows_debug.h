@@ -149,6 +149,7 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size);
 
 int w32_attach(RDebug *dbg, int pid);
 int w32_detach(RDebug *dbg, int pid);
+int w32_attach_new_process(RDebug* dbg, int pid);
 int w32_select(RDebug *dbg, int pid, int tid);
 int w32_kill(RDebug *dbg, int pid, int tid, int sig);
 void w32_break_process(void *user);
