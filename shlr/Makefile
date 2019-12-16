@@ -29,7 +29,7 @@ endif
 # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/meson.build
 TS_URL=https://github.com/tree-sitter/tree-sitter.git
 TS_BRA=master
-TS_TIP=80008b0bccbddffc8e68f66a5f173ef71fd125e3
+TS_TIP=9f77afcd1ff050855259f83fcf50056ad842a790
 
 # NOTE: when you update SHELLPARSER_TIP or SHELLPARSER_BRA, also update them in shlr/meson.build
 SHELLPARSER_URL=https://github.com/ret2libc/radare2-shell-parser.git
@@ -336,7 +336,7 @@ tree-sitter/libtree-sitter.$(EXT_AR): tree-sitter/lib/src/lib.o
 	$(RANLIB) $@
 
 tree-sitter/lib/src/lib.o: tree-sitter-sync
-	$(CC) -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
+	$(CC) -std=c99 -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
 
 tree-sitter-sync:
 	"$(SHELL)" clone_3rd_repo.sh tree-sitter "${TS_URL}" "${TS_BRA}" "${TS_TIP}"

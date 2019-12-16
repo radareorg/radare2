@@ -246,7 +246,7 @@ if res.returncode() == 0
   endif
 
   # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/Makefile
-  TS_TIP = '80008b0bccbddffc8e68f66a5f173ef71fd125e3'
+  TS_TIP = '9f77afcd1ff050855259f83fcf50056ad842a790'
   TS_BRA = 'master'
 
   message('Cloning tree-sitter ' + TS_BRA + ' branch, commit ' + TS_TIP + ', into ' + tree_sitter_path)
@@ -271,7 +271,8 @@ tree_sitter_inc = [platform_inc, include_directories('tree-sitter/lib/src'), inc
 
 libtree_sitter = static_library('tree_sitter', tree_sitter_files,
   include_directories: tree_sitter_inc,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  c_args: ['-std=c99']
 )
 
 tree_sitter_dep = declare_dependency(
