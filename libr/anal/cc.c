@@ -90,25 +90,18 @@ R_API bool r_anal_cc_exist (RAnal *anal, const char *convention) {
 	return x && *x && !strcmp (x, "cc");
 }
 
-// TODO: all callers to this function expect NON-NULL, so lets return "" on fail for now
 R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 	r_return_val_if_fail (anal && convention, NULL);
 	if (n < 0) {
-		return "";
+		return NULL;
 	}
 	const char *query = sdb_fmt ("cc.%s.arg%d", convention, n);
 	const char *ret = sdb_const_get (DB, query, 0);
 	if (!ret) {
 		query = sdb_fmt ("cc.%s.argn", convention);
 		ret = sdb_const_get (DB, query, 0);
-#if 0
-		if (!strcmp (ret, "stack")) {
-			// TODO handle stack arguments here
-			return NULL;
-		}
-#endif
 	}
-	return r_str_constpool_get (&anal->constpool, ret ? ret : "");
+	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {

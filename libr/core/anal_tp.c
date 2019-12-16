@@ -312,10 +312,10 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 	const char *place = r_anal_cc_arg (anal, cc, 0);
 	r_cons_break_push (NULL, NULL);
 
-	if (!strcmp (place, "stack_rev")) {
+	if (place && !strcmp (place, "stack_rev")) {
 		stack_rev = true;
 	}
-	if (!strncmp (place, "stack", 5)) {
+	if (place && !strncmp (place, "stack", 5)) {
 		in_stack = true;
 	}
 	if (verbose && !strncmp (fcn_name, "sym.imp.", 8)) {
@@ -374,7 +374,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 			const char *key = NULL;
 			RAnalVar *var = op->var;
 			if (!in_stack) {
-				key = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", caddr, place);
+				key = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", caddr, place? place: "");
 			} else {
 				key = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%d", caddr, size);
 			}
