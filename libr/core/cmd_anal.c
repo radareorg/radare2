@@ -3800,6 +3800,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (core->anal->opt.vars) {
 				r_core_recover_vars (core, fcn, true);
 			}
+		} else {
+			if (core->anal->verbose) {
+				eprintf ("Warning: Unable to analyze function at 0x%08"PFMT64x"\n", addr);
+			}
 		}
 		if (analyze_recursively) {
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip

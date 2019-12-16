@@ -743,7 +743,7 @@ static void set_fcn_name_from_flag(RAnalFunction *fcn, RFlagItem *f, const char 
 	}
 }
 
-static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
+static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (depth < 0) {
 //		printf ("Too deep for 0x%08"PFMT64x"\n", at);
 //		r_sys_backtrace ();
@@ -1849,6 +1849,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	if (core->io->va) {
 		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
+			if (core->anal->verbose) {
+				eprintf ("Warning: Address not mapped or not executable at 0x%08"PFMT64x"\n", at);
+			}
 			return false;
 		}
 	}
@@ -1878,6 +1881,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		return false;
 	}
 	if (depth < 0) {
+		if (core->anal->verbose) {
+			eprintf ("Warning: anal depth reached\n");
+		}
 		return false;
 	}
 	if (r_cons_is_breaked ()) {
@@ -1910,7 +1916,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			return true;
 		}
 	}
-	if (core_anal_fcn (core, at, from, reftype, depth - 1)) {
+	if (__core_anal_fcn (core, at, from, reftype, depth - 1)) {
 		// split function if overlaps
 		if (fcn) {
 			r_anal_fcn_resize (core->anal, fcn, at - fcn->addr);
