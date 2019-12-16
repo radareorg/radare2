@@ -1344,12 +1344,15 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs) {
 			goto error;
 		}
 		if (!(klass->methods = r_list_new ())) {
+			R_FREE (klass);
 			goto error;
 		}
 		if (!(klass->fields = r_list_new ())) {
+			R_FREE (klass);
 			goto error;
 		}
 		if (!read_ptr_pa (bf, paddr + i, &p)) {
+			R_FREE (klass);
 			goto error;
 		}
 		MACH0_(get_category_t) (p, bf, klass, relocs);

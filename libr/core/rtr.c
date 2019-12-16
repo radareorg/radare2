@@ -1049,7 +1049,11 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 			return;
 		}
 		r_socket_close (s);
-		r_socket_connect (s, rh->host, sdb_fmt ("%d", rh->port), R_SOCKET_PROTO_TCP, 0);
+		if (!r_socket_connect (s, rh->host, sdb_fmt ("%d", rh->port), R_SOCKET_PROTO_TCP, 0)) {
+			eprintf ("Error: Cannot connect to '%s' (%d)\n", rh->host, rh->port);
+			r_socket_free (s);
+			return;
+		}
 		r_socket_write (s, (ut8*)cmd, cmd_len);
 		r_socket_write (s, "\n", 2);
 		int maxlen = 4096; // r_read_le32 (blen);

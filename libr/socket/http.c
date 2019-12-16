@@ -95,6 +95,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 				*rlen = strlen (res);
 			}
 		}
+		free (curl_env);
 		return res;
 	}
 	free (curl_env);

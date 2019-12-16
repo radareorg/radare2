@@ -712,7 +712,7 @@ int nto_send_arg (libqnxr_t *g, const char *arg) {
 	if (!g) return 0;
 
 	len = strlen (arg) + 1;
-	if (len > DS_DATA_MAX_SIZE) {
+	if (len > DS_DATA_MAX_SIZE - 4) {
 		eprintf ("Argument too long: %.40s...\n", arg);
 		return 0;
 	}
