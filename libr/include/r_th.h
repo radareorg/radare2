@@ -57,7 +57,6 @@ typedef struct r_th_sem_t {
 } RThreadSemaphore;
 
 typedef struct r_th_lock_t {
-	int refs;
 	R_TH_LOCK_T lock;
 } RThreadLock;
 
@@ -102,7 +101,6 @@ R_API void r_th_sem_wait(RThreadSemaphore *sem);
 
 R_API RThreadLock *r_th_lock_new(bool recursive);
 R_API int r_th_lock_wait(RThreadLock *th);
-R_API int r_th_lock_check(RThreadLock *thl);
 R_API int r_th_lock_tryenter(RThreadLock *thl);
 R_API int r_th_lock_enter(RThreadLock *thl);
 R_API int r_th_lock_leave(RThreadLock *thl);

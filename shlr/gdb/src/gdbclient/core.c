@@ -23,6 +23,8 @@
 #include <signal.h>
 #endif
 
+#include <assert.h>
+
 #define QSUPPORTED_MAX_RETRIES 5
 
 extern char hex2char (char *hex);
@@ -94,6 +96,7 @@ bool gdbr_lock_tryenter(libgdbr_t *g) {
 	if (!r_th_lock_tryenter (g->gdbr_lock)) {
 		return false;
 	}
+	g->gdbr_lock_depth++;
 	r_cons_break_push (gdbr_break_process, g);
 	return true;
 }
@@ -102,6 +105,7 @@ bool gdbr_lock_enter(libgdbr_t *g) {
 	r_cons_break_push (gdbr_break_process, g);
 	void *bed = r_cons_sleep_begin ();
 	r_th_lock_enter (g->gdbr_lock);
+	g->gdbr_lock_depth++;
 	r_cons_sleep_end (bed);
 	if (g->isbreaked) {
 		return false;
@@ -111,9 +115,11 @@ bool gdbr_lock_enter(libgdbr_t *g) {
 
 void gdbr_lock_leave(libgdbr_t *g) {
 	r_cons_break_pop ();
+	assert (g->gdbr_lock_depth > 0);
+	bool last_leave = g->gdbr_lock_depth == 1;
 	r_th_lock_leave (g->gdbr_lock);
 	// if this is the last lock this thread holds make sure that we disable the break
-	if (!r_th_lock_check (g->gdbr_lock)) {
+	if (last_leave) {
 		g->isbreaked = false;
 	}
 }

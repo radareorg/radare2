@@ -189,6 +189,7 @@ typedef struct libgdbr_t {
 	libgdbr_stop_reason_t stop_reason;
 
 	RThreadLock *gdbr_lock;
+	int gdbr_lock_depth; // current depth inside the recursive lock
 
 	// parsed from target
 	struct {
