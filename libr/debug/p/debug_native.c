@@ -110,6 +110,39 @@ static int r_debug_handle_signals(RDebug *dbg) {
 #if __linux__
 	return linux_handle_signals (dbg);
 #elif __KFBSD__
+	// Trying to figure out a bit by the signal
+	struct ptrace_lwpinfo linfo = {0};
+	siginfo_t siginfo;
+	int ret = ptrace (PT_LWPINFO, dbg->pid, (char *)&linfo, sizeof (linfo));
+	if (ret == -1) {
+		if (errno == ESRCH) {
+			dbg->reason.type = R_DEBUG_REASON_DEAD;
+			return 0;
+		}
+		r_sys_perror ("ptrace PTRACE_LWPINFO");
+		return -1;
+	}
+
+	// Not stopped by the signal
+	if (linfo.pl_event == PL_EVENT_NONE) {
+		dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
+		return 0;
+	}
+
+	siginfo = linfo.pl_siginfo;
+	dbg->reason.type = R_DEBUG_REASON_SIGNAL;
+	dbg->reason.signum = siginfo.si_signo;
+
+	switch (dbg->reason.signum) {
+		case SIGABRT:
+			dbg->reason.type = R_DEBUG_REASON_ABORT;
+			break;
+		case SIGSEGV:
+			dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
+			break;
+	}
+
+	return 0;
 #else
 	return -1;
 #endif
@@ -661,43 +694,8 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			 *
 			 * this might modify dbg->reason.signum
 			 */
-#if __FreeBSD__ || __OpenBSD__ || __NetBSD__
+#if __OpenBSD__ || __NetBSD__
 			reason = R_DEBUG_REASON_BREAKPOINT;
-#elif __KFBSD__
-			// Trying to figure out a bit by the signal
-			struct ptrace_lwpinfo linfo = {0};
-			siginfo_t siginfo;
-			int ret = ptrace (PT_LWPINFO, dbg->pid, (char *)&linfo, sizeof (linfo));
-			if (ret == -1) {
-				if (errno == ESRCH) {
-					dbg->reason.type = R_DEBUG_REASON_DEAD;
-					goto reason;
-				}
-				r_sys_perror ("ptrace PTRACCE_LWPINFO");
-				return -1;
-			} else {
-				// Not stopped by the signal
-				if (linfo.pl_event == PL_EVENT_NONE) {
-					dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
-					goto reason;
-				}
-			}
-
-			siginfo = linfo.pl_siginfo;
-			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
-			dbg->reason.signum = siginfo.si_signo;
-
-			switch (dbg->reason.signum) {
-				case SIGABRT:
-					dbg->reason.type = R_DEBUG_REASON_ABORT;
-					break;
-				case SIGSEGV:
-					dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
-					break;
-			}
-
-reason:
-			reason = dbg->reason.type;
 #else
 			if (!r_debug_handle_signals (dbg)) {
 				return R_DEBUG_REASON_ERROR;
