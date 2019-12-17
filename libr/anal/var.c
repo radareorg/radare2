@@ -868,6 +868,22 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 				av->isarg = vt.isarg;
 				av->size = vt.size;
 				av->type = strdup (vt.type);
+				if (av->isarg && kind == 'r') {
+					RRegItem *reg = r_reg_index_get (a->reg, delta);
+					int i;
+					int arg_max = fcn->cc ? r_anal_cc_max_arg (a, fcn->cc) : 0;
+					bool found = false;
+					for (i = 0; i < arg_max; i++) {
+						if (!strcmp (reg->name, r_anal_cc_arg (a, fcn->cc, i))) {
+							av->argnum = i;
+							found = true;
+							break;
+						}
+					}
+					if (!found) {
+						av->argnum = delta;
+					}
+				}
 				r_list_append (list, av);
 				if (dynamicVars) { // make dynamic variables like structure fields
 					var_add_structure_fields_to_list (a, av, vt.name, delta, list);
@@ -913,6 +929,11 @@ R_API RList *r_anal_var_list_dynamic(RAnal *a, RAnalFunction *fcn, int kind) {
 static int var_comparator(const RAnalVar *a, const RAnalVar *b){
 	// avoid NULL dereference
 	return (a && b)? a->delta > b->delta: false;
+}
+
+static int regvar_comparator(const RAnalVar *a, const RAnalVar *b){
+	// avoid NULL dereference
+	return (a && b)? a->argnum > b->argnum: false;
 }
 
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ *pj) {
@@ -1074,7 +1095,7 @@ R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAn
 	cache->rvars = r_anal_var_list (anal, fcn, 'r');
 	cache->svars = r_anal_var_list (anal, fcn, 's');
 	r_list_sort (cache->bvars, (RListComparator)var_comparator);
-	r_list_sort (cache->rvars, (RListComparator)var_comparator);
+	r_list_sort (cache->rvars, (RListComparator)regvar_comparator);
 	r_list_sort (cache->svars, (RListComparator)var_comparator);
 }
 

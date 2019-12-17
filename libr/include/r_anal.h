@@ -790,6 +790,7 @@ typedef struct r_anal_var_t {
 	ut64 eaddr;  // not used correctly?
 	int size;
 	bool isarg;
+	int argnum;
 	int delta;   /* delta offset inside stack frame */
 	int scope;   /* global, local... | in, out... */
 	/* probably dupped or so */
