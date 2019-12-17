@@ -1,6 +1,5 @@
 NAME=rarun2 -v 
 FILE=-
-BROKEN=1
 CMDS=!rarun2 -v | grep -c build
 EXPECT=<<EOF
 1

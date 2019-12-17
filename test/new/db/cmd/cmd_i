@@ -4324,7 +4324,6 @@ EXPECT=<<RUN
 RUN
 
 NAME=icqq (file Java)
-BROKEN=1
 FILE=../bins/java/Hello.class
 CMDS=icqq
 EXPECT=<<RUN

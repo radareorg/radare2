@@ -425,7 +425,6 @@ RUN
 
 NAME=lsl wzr, w0, 0x1f
 FILE=malloc://0x200
-BROKEN=1
 EXPECT=<<EOF
 0x00000000
 EOF
@@ -442,7 +441,6 @@ RUN
 
 NAME=eon xzr, x14, x19, asr 39
 FILE=malloc://0x200
-BROKEN=1
 EXPECT=<<EOF
 0x00000000
 EOF
