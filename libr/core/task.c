@@ -334,8 +334,6 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 		} else {
 			r_cons_context_reset ();
 		}
-	} else {
-		r_cons_context_reset ();
 	}
 }
 
