@@ -229,7 +229,7 @@ def build(args):
               release=args.release, shared=args.shared, options=options)
     if args.backend != 'ninja':
         # XP support was dropped in Visual Studio 2019 v142 platform
-        if args.backend != 'vs2019' and args.xp:
+        if args.backend == 'vs2017' and args.xp:
             xp_compat(r2_builddir)
         if not args.project:
             project = os.path.join(r2_builddir, 'radare2.sln')
