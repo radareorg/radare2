@@ -475,15 +475,19 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
  *
  * Returns R_DEBUG_REASON_*
  */
+#if __WINDOWS__
 static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
-
-#if __WINDOWS__
 	// Store the original TID to attempt to switch back after handling events that
 	// require switching to the event's thread that shouldn't bother the user
 	int orig_tid = dbg->tid;
 	bool restore_thread = false;
 	RIOW32Dbg *rio = dbg->user;
+
+	if (pid == -1) {
+		eprintf ("ERROR: r_debug_native_wait called with pid -1\n");
+		return R_DEBUG_REASON_ERROR;
+	}
 
 	reason = w32_dbg_wait (dbg, pid);
 	if (reason == R_DEBUG_REASON_NEW_LIB) {
@@ -494,7 +498,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			}
 
 			/* Check if autoload PDB is set, and load PDB information if yes */
-			RCore* core = dbg->corebind.core;
+			RCore *core = dbg->corebind.core;
 			bool autoload_pdb = dbg->corebind.cfggeti (core, "pdb.autoload");
 			if (autoload_pdb) {
 				dbg->corebind.cmdf (core, "o %s 0x%p", ((PLIB_ITEM)(r->lib))->Path, ((PLIB_ITEM)(r->lib))->BaseOfDll);
@@ -595,9 +599,46 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			}
 		}
 	}
-#else
+
+	dbg->reason.tid = pid;
+	dbg->reason.type = reason;
+	return reason;
+}
+// FIXME: Should WAIT_ON_ALL_CHILDREN be a compilation flag instead of runtime debug config?
+#elif __linux__ && !defined(WAIT_ON_ALL_CHILDREN) // __WINDOWS__
+static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
+	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
+
 	if (pid == -1) {
-		eprintf ("r_debug_native_wait called with -1 pid!\n");
+		eprintf ("ERROR: r_debug_native_wait called with pid -1\n");
+		return R_DEBUG_REASON_ERROR;
+	}
+
+	reason = linux_dbg_wait (dbg, dbg->tid);
+	if (reason == R_DEBUG_REASON_NEW_TID) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r) {
+			eprintf ("(%d) Created thread %d\n", r->pid, r->tid);
+			r_debug_info_free (r);
+		}
+	} else if (reason == R_DEBUG_REASON_EXIT_TID) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r) {
+			eprintf ("(%d) Finished thread %d Exit code\n", r->pid, r->tid);
+			r_debug_info_free (r);
+		}
+	}
+
+	dbg->reason.tid = pid;
+	dbg->reason.type = reason;
+	return reason;
+}
+#else // if __WINDOWS__ & elif __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
+static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
+	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
+
+	if (pid == -1) {
+		eprintf ("ERROR: r_debug_native_wait called with pid -1\n");
 		return R_DEBUG_REASON_ERROR;
 	}
 
@@ -620,22 +661,6 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		break;
 	} while (true);
 	r_cons_break_pop ();
-#else
-#if __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
-	reason = linux_dbg_wait (dbg, dbg->tid);
-	if (reason == R_DEBUG_REASON_NEW_TID) {
-		RDebugInfo *r = r_debug_native_info (dbg, "");
-		if (r) {
-			eprintf ("(%d) Created thread %d\n", r->pid, r->tid);
-			r_debug_info_free (r);
-		}
-	} else if (reason == R_DEBUG_REASON_EXIT_TID) {
-		RDebugInfo *r = r_debug_native_info (dbg, "");
-		if (r) {
-			eprintf ("(%d) Finished thread %d Exit code\n", r->pid, r->tid);
-			r_debug_info_free (r);
-		}
-	}
 #else
 	int status = -1;
 	// XXX: this is blocking, ^C will be ignored
@@ -662,6 +687,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	}
 #endif // WAIT_ON_ALL_CHILDREN
 	// TODO: switch status and handle reasons here
+	// FIXME: Remove linux handling from this function?
 #if __linux__ && defined(PT_GETEVENTMSG)
 	reason = linux_ptrace_event (dbg, pid, status);
 #endif // __linux__
@@ -730,13 +756,12 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		eprintf ("%s: no idea what happened... wtf?!?!\n", __func__);
 		reason = R_DEBUG_REASON_ERROR;
 	}
-#endif // __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
 #endif // __APPLE__
-#endif // __WINDOWS__
 	dbg->reason.tid = pid;
 	dbg->reason.type = reason;
 	return reason;
 }
+#endif // __WINDOWS__
 
 #undef MAXPID
 #define MAXPID 99999
@@ -747,7 +772,7 @@ static RList *r_debug_native_tids (RDebug *dbg, int pid) {
 	return NULL;
 }
 
-static RList *r_debug_native_pids (RDebug *dbg, int pid) {
+static RList *r_debug_native_pids(RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
