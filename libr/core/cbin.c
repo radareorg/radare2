@@ -2498,7 +2498,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		r_flag_space_set (r->flags, print_segments? R_FLAGS_FS_SEGMENTS: R_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_table_set_columnsf (table, "dXxXxss", "nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+		r_table_set_columnsf (table, "dXxXxss",
+			"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
 		// r_table_align (table, 0, R_TABLE_ALIGN_CENTER);
 		r_table_align (table, 2, R_TABLE_ALIGN_RIGHT);
 		r_table_align (table, 4, R_TABLE_ALIGN_RIGHT);
@@ -2716,6 +2717,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			const char *name = (r->bin->prefix)
 				? sdb_fmt ("%s.%s", r->bin->prefix, section->name)
 				: section->name;
+			// seems like asm.bits is a bitmask that seems to be always 32,64
+			// const char *asmbits = r_str_sysbits (bits);
 			r_table_add_rowf (table, "dXxXxss", i,
 				(ut64)section->paddr, (ut64)section->size,
 				(ut64)addr, (ut64)section->vsize,
