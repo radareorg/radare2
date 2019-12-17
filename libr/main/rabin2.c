@@ -597,7 +597,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			r_config_unserialize (core.config, config_sdb, NULL);
 			sdb_free (config_sdb);
 		} else {
-			printf ("Cannot open file specified in R2_CONFIG\n");
+			eprintf ("Cannot open file specified in R2_CONFIG\n");
 		}
 		free (tmp);
 	}
