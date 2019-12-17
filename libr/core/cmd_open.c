@@ -1101,10 +1101,21 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	RCoreFile *ofile = core->file;
 	RIODesc *desc;
+
 	if (!ofile || !(desc = r_io_desc_get (core->io, ofile->fd)) || !desc->uri) {
 		eprintf ("No file open?\n");
 		return;
 	}
+
+	// Reopen the original file as read only since we can't open native debug while the
+	// file is open with write permissions
+	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & R_PERM_W)) {
+		eprintf ("Cannot debug file (%s) with permissions set to 0x%x.\n"
+			"Reopening the original file in read-only mode.\n", desc->name, desc->perm);
+		r_io_reopen (core->io, ofile->fd, R_PERM_R, 644);
+		desc = r_io_desc_get (core->io, ofile->fd);
+	}
+
 	RBinFile *bf = r_bin_file_find_by_fd (core->bin, ofile->fd);
 	char *binpath = (bf && bf->file) ? strdup (bf->file) : NULL;
 	if (!binpath) {
