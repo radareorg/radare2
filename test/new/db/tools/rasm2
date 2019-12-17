@@ -381,7 +381,6 @@ EXPECT='[{"opcode":0,"bytes":"55","type":"rpush","stackop":"unknown","esil":"rbp
 RUN
 
 NAME=rasm2 -L
-BROKEN=1
 FILE=-
 CMDS=!rasm2 -L | grep -c arm.gnu
 EXPECT=<<RUN
@@ -390,7 +389,6 @@ RUN
 
 NAME=rasm2 -qL
 FILE=-
-BROKEN=1
 CMDS=!rasm2 -qL | grep -c arm.gnu
 EXPECT=<<RUN
 1

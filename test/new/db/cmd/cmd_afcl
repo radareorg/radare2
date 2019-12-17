@@ -1,6 +1,5 @@
 NAME=afcl: x86-64
 FILE=--
-BROKEN=1
 EXPECT=<<EOF
 amd64
 ms
@@ -67,7 +66,6 @@ RUN
 
 NAME=afcl: arm-64
 FILE=--
-BROKEN=1
 EXPECT=<<EOF
 arm64
 EOF

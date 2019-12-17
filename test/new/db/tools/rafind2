@@ -69,7 +69,6 @@ RUN
 
 NAME=rafind2 -v
 FILE=-
-BROKEN=1
 CMDS=!rafind2 -v | grep -c build
 EXPECT=<<EOF
 1

@@ -240,7 +240,6 @@ RUN
 
 NAME='Save project for a binary after analysis'
 FILE='../bins/elf/analysis/main'
-BROKEN=1
 ARGS=''
 CMDS=<<EXPECT
 e dir.projects = .tmp/
