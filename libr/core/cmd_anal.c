@@ -1380,8 +1380,9 @@ static int var_cmd(RCore *core, const char *str) {
 				break;
 			}
 			rw = (str[1] == 'g')? 0: 1;
+			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
 			r_anal_var_access (core->anal, fcn->addr, str[0],
-					R_ANAL_VAR_SCOPE_LOCAL, idx, rw, addr);
+					R_ANAL_VAR_SCOPE_LOCAL, idx, ptr, rw, addr);
 			r_anal_var_free (var);
 		} else {
 			eprintf ("Missing argument\n");
@@ -3407,6 +3408,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				char *cc = argument;
 				r_str_trim (cc);
 				r_core_cmdf (core, "k anal/cc/default.cc=%s", cc);
+				r_anal_set_reg_profile (core->anal);
 				free (argument);
 			} else {
 				r_core_cmd0 (core, "k anal/cc/default.cc");

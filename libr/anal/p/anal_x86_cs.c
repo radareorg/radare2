@@ -3263,7 +3263,10 @@ static char *get_reg_profile(RAnal *anal) {
 		"drx	dr7	.32	28	0\n";
 		 break;
 	case 64:
-		 p =
+	{
+		const char *cc = r_anal_cc_default (anal);
+		const char *args_prof = cc && !strcmp (cc, "ms")
+		? // Microsoft x64 CC
 		"# RAX     return value\n"
 		"# RCX     argument 1\n"
 		"# RDX     argument 2\n"
@@ -3277,6 +3280,15 @@ static char *get_reg_profile(RAnal *anal) {
 		 "=PC	rip\n"
 		 "=SP	rsp\n"
 		 "=BP	rbp\n"
+		 "=A0	rcx\n"
+		 "=A1	rdx\n"
+		 "=A2	r8\n"
+		 "=A3	r9\n"
+		 "=SN	rax\n"
+		 : // System V AMD64 ABI
+		 "=PC	rip\n"
+		 "=SP	rsp\n"
+		 "=BP	rbp\n"
 		 "=A0	rdi\n"
 		 "=A1	rsi\n"
 		 "=A2	rdx\n"
@@ -3285,7 +3297,8 @@ static char *get_reg_profile(RAnal *anal) {
 		 "=A5	r9\n"
 		 "=A6	r10\n"
 		 "=A7	r11\n"
-		 "=SN	rax\n"
+		 "=SN	rax\n";
+		char *prof = r_str_newf ("%s%s", args_prof,
 		 "gpr	rax	.64	80	0\n"
 		 "gpr	eax	.32	80	0\n"
 		 "gpr	ax	.16	80	0\n"
@@ -3450,8 +3463,9 @@ static char *get_reg_profile(RAnal *anal) {
 		 "fpu    xmm7  .64 272  4\n"
 		 "fpu    xmm7h .64 272  0\n"
 		 "fpu    xmm7l .64 280  0\n"
-		 "fpu    x64   .64 288  0\n";
-		 break;
+		 "fpu    x64   .64 288  0\n");
+		return prof;
+	}
 #if 0
 	default: p= /* XXX */
 		 "=PC	rip\n"

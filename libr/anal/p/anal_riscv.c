@@ -353,10 +353,24 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		// math
 		else if (!strncmp (name, "addi16sp", 8)) {
 			esilprintf (op, "%s,sp,+,%s,=", ARG (1), ARG (0));
+			if (!strcmp (ARG (0), riscv_gpr_names[X_SP])) {
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = r_num_math (NULL, ARG (1));
+			}
 		} else if (!strncmp (name, "add", 3)) {
 			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
+			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
+				!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = -(signed)r_num_math (NULL, ARG (2));
+			}
 		} else if (!strncmp (name, "sub", 3)) {
 			esilprintf (op, "%s,%s,-,%s,=", ARG (2), ARG (1), ARG (0));
+			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
+				!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = r_num_math (NULL, ARG (2));
+			}
 		} else if (!strncmp (name, "mul", 3)) {
 			esilprintf (op, "%s,%s,*,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "div", 3)) {

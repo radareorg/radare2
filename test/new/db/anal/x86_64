@@ -1529,15 +1529,15 @@ FILE=../bins/elf/analysis/fast
 EXPECT=<<EOF
 fastcall
             ; CALL XREF from main @ 0x80484c7
-/ 59: sym.fastcaslled (int32_t arg2, int32_t arg1, int32_t arg_8h, int32_t arg_ch);
+/ 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
 |           ; var int32_t var_20h @ ebp-0x20
 |           ; var int32_t var_1ch @ ebp-0x1c
 |           ; var int32_t var_10h @ ebp-0x10
 |           ; var int32_t var_ch @ ebp-0xc
 |           ; arg int32_t arg_8h @ ebp+0x8
 |           ; arg int32_t arg_ch @ ebp+0xc
-|           ; arg int32_t arg2 @ edx
 |           ; arg int32_t arg1 @ ecx
+|           ; arg int32_t arg2 @ edx
 |           0x0804841b      55             push ebp
 |           0x0804841c      89e5           mov ebp, esp
 |           0x0804841e      83ec28         sub esp, 0x28
@@ -3171,5 +3171,53 @@ e anal.noncode=false
 e anal.calls=true
 af
 afl~?str.
+EOF
+RUN
+
+NAME=Microsoft x64 CC Args/Vars
+FILE=../bins/pe/testx64.exe
+EXPECT=<<EOF
+/ 82: fcn.140001080 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
+|           ; var int64_t var_50h @ rsp+0x20
+|           ; var int64_t var_20h @ rsp+0x50
+|           ; var int64_t var_18h @ rsp+0x58
+|           ; var int64_t var_10h @ rsp+0x60
+|           ; var int64_t var_8h @ rsp+0x68
+|           ; arg int64_t arg1 @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           ; arg int64_t arg3 @ r8
+|           ; arg int64_t arg4 @ r9
+|           0x140001080      48894c2408     mov qword [var_20h], rcx
+|           0x140001085      4889542410     mov qword [var_18h], rdx
+|           0x14000108a      4c89442418     mov qword [var_10h], r8
+|           0x14000108f      4c894c2420     mov qword [var_8h], r9
+|           0x140001094      53             push rbx
+|           0x140001095      56             push rsi
+|           0x140001096      57             push rdi
+|           0x140001097      4883ec30       sub rsp, 0x30
+|           0x14000109b      488bf9         mov rdi, rcx
+|           0x14000109e      488d742458     lea rsi, [var_18h]
+|           0x1400010a3      33c9           xor ecx, ecx
+|           0x1400010a5      ff15cd100000   call qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll___acrt_iob_func]
+|           0x1400010ab      488bd8         mov rbx, rax
+|           0x1400010ae      e85dffffff     call fcn.140001010
+|           0x1400010b3      4533c9         xor r9d, r9d
+|           0x1400010b6      4889742420     mov qword [var_50h], rsi
+|           0x1400010bb      4c8bc7         mov r8, rdi
+|           0x1400010be      488bd3         mov rdx, rbx
+|           0x1400010c1      488b08         mov rcx, qword [rax]
+|           0x1400010c4      ff159e100000   call qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll___stdio_common_vfscanf]
+|           0x1400010ca      4883c430       add rsp, 0x30
+|           0x1400010ce      5f             pop rdi
+|           0x1400010cf      5e             pop rsi
+|           0x1400010d0      5b             pop rbx
+\           0x1400010d1      c3             ret
+EOF
+CMDS=<<EOF
+e asm.comments=0
+s 0x140001080
+afc=ms
+af
+pdf
 EOF
 RUN

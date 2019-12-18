@@ -970,9 +970,14 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 			RList *var_list = r_anal_var_all_list (core->anal, fcn);
 			RAnalVar *var;
 			r_list_foreach (var_list, ititit, var) {
+				const char *var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", var->addr, 1, var->delta);
+				char *access = sdb_get (core->anal->sdb_fcns, var_access, NULL);
 				r_anal_var_delete (core->anal, var->addr, var->kind, 1, var->delta);
 				var->addr += diff;
 				r_anal_var_add (core->anal, var->addr, 1, var->delta, var->kind, var->type, var->size, var->isarg, var->name);
+				var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", var->addr, 1, var->delta);
+				sdb_set (core->anal->sdb_fcns, var_access, access, NULL);
+				free (access);
 			}
 			r_list_free (var_list);
 			r_anal_fcn_tree_delete (core->anal, fcn);

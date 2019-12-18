@@ -1036,7 +1036,7 @@ s main
 aaft
 afv
 EXPECT=<<RUN
-arg int32_t arg_4h @ esp+0x4
+arg int32_t arg_4h @ esp+0x44
 var char * src @ ebp-0x1c
 var char * s2 @ ebp-0x18
 var size_t var_14h @ ebp-0x14
@@ -1260,8 +1260,11 @@ aaft
 afv
 EXPECT=<<RUN
 var int32_t var_1454h @ sp+0x0
+var void * var_1440h @ fp-0x1440
+var char * s1 @ fp-0x1040
+var int32_t wstatus @ fp-0x4c
 var int32_t var_48h @ fp-0x48
-var char * s1 @ fp-0x44
+var char * var_44h @ fp-0x44
 var int32_t var_40h @ fp-0x40
 var int32_t var_3ch @ fp-0x3c
 var int32_t var_38h @ fp-0x38
@@ -1275,6 +1278,7 @@ var char * s @ fp-0x1c
 var char * var_18h @ fp-0x18
 var int32_t var_14h @ fp-0x14
 var int32_t var_10h @ fp-0x10
+var char * option @ fp-0xc
 arg int argc @ r0
 arg char ** argv @ r1
 RUN

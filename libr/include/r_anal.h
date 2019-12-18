@@ -790,6 +790,7 @@ typedef struct r_anal_var_t {
 	ut64 eaddr;  // not used correctly?
 	int size;
 	bool isarg;
+	int argnum;
 	int delta;   /* delta offset inside stack frame */
 	int scope;   /* global, local... | in, out... */
 	/* probably dupped or so */
@@ -1630,7 +1631,7 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 
 /* var.c */
 R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int index);
-R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int index, int xs_type, ut64 xs_addr);
+R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int delta, int ptr, int xs_type, ut64 xs_addr);
 R_API RAnalVar *r_anal_var_new(void);
 R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind,
 		const char *old_name, const char *new_name, bool verbose);

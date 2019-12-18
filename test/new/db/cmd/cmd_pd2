@@ -67,10 +67,12 @@ afb+ 0x00560e67 0x00560e96 7 0x00560eb1
 afb+ 0x00560e67 0x00560eb1 297
 pdf
 EXPECT=<<RUN
-/ 318: fcn.00560e67 ();
+/ 318: fcn.00560e67 (int32_t arg_0h);
 |       :   ; var int32_t var_1ch @ esp+0x4
-|       :   ; var int32_t var_ch @ esp+0x8
-|       :   ; var int32_t var_4h @ esp+0x10
+|       :   ; var int32_t var_ch @ esp+0x14
+|       :   ; var int32_t var_8h @ esp+0x18
+|       :   ; var int32_t var_4h @ esp+0x1c
+|       :   ; arg int32_t arg_0h @ esp+0x20
 |       :   0x00560e67      push esi
 |      ,==< 0x00560e68      jmp 0x560e7d
 ..
@@ -91,7 +93,7 @@ EXPECT=<<RUN
 |     ||:   0x00560eb9      mov dword [esp], 0x4b7dbaf4
 |     ||:   0x00560ec0      mov dword [esp], ebx
 |     ||:   0x00560ec3      mov ebx, 0x60
-|     ||:   0x00560ec8      mov dword [var_1ch], ebx
+|     ||:   0x00560ec8      mov dword [var_8h], ebx
 |     ||:   0x00560ecc      pop ebx
 |     ||:   0x00560ecd      push ecx
 |     ||:   0x00560ece      mov dword [esp], 0x7fdd7312
@@ -126,7 +128,7 @@ EXPECT=<<RUN
 |       :   0x00560f3c      xor ecx, dword [esp]
 |       :   0x00560f3f      pop esp
 |       :   0x00560f40      mov dword [esp], ebx
-|       :   0x00560f43      push dword [var_4h]
+|       :   0x00560f43      push dword [arg_0h]
 |       :   0x00560f47      mov eax, dword [esp]
 |       :   0x00560f4a      push esi
 |       :   0x00560f4b      mov esi, esp
