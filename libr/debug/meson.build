@@ -84,8 +84,11 @@ if host_machine.system() == 'darwin'
   ]
 endif
 
-if ['netbsd', 'freebsd', 'dragonfly'].contains(host_machine.system())
+if ['netbsd', 'openbsd', 'freebsd', 'dragonfly'].contains(host_machine.system())
   r_debug_deps += cc.find_library('kvm', required: true)
+  r_debug_sources += [
+    'p/native/bsd/bsd_debug.c',
+  ]
 endif
 
 r_debug_inc = [

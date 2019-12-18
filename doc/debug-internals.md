@@ -193,6 +193,10 @@ following files:
     libr/debug/p/native/xnu/reg/darwin-arm64.h
     libr/debug/p/native/xnu/reg/darwin-x64.h
 
+    // platform-specific debugger code on BSD
+    libr/debug/p/native/bsd/bsd_debug.c         // main BSD debugging code
+    libr/debug/p/native/bsd/bsd_debug.h
+
 
 ### libr/debug/p/debug_qnx.c
 
