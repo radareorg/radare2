@@ -43,6 +43,12 @@ OBJS+= p/${COREDUMP_OBJS}
 endif
 endif
 
+ifneq (,$(findstring bsd,$(OSTYPE))$(findstring dragonfly,$(OSTYPE)))
+ifneq (${NATIVE_OBJS},)
+OBJS+=$(addprefix p/,$(NATIVE_OBJS))
+endif
+endif
+
 plugins:
 	$(MAKE) -C p all
 
