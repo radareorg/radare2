@@ -1026,8 +1026,8 @@ aB "blendps xmm0, xmm0, 0" 660f3a0cc000
 aB "blendvpd xmm0, xmm0" 660f3815c0
 aB "blendvps xmm0, xmm0" 660f3814c0
 aB "bound eax, qword [eax]" 6200
-aB "bsf eax, dword [eax]" 0fbc00
-aB "bsr eax, dword [eax]" 0fbd00
+a "bsf eax, dword [eax]" 0fbc00
+a "bsr eax, dword [eax]" 0fbd00
 a "bswap eax" 0fc8
 a "bswap ebp" 0fcd
 a "bswap ebx" 0fcb
