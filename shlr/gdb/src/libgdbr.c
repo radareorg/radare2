@@ -32,6 +32,7 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	}
 	g->sock = r_socket_new (0);
 	g->gdbr_lock = r_th_lock_new (true);
+	g->gdbr_lock_depth = 0;
 	g->last_code = MSG_OK;
 	g->connected = 0;
 	g->data_len = 0;
