@@ -645,21 +645,25 @@ static bool esil_of(RAnalEsil *esil) {
 
 //checks sign bit at x (x,$s)
 static bool esil_sf(RAnalEsil *esil) {
-	char *p_size = r_anal_esil_pop (esil);
+	r_return_val_if_fail (esil, false);
 
-	if (!p_size) {
-		return false;
-	}
+	char *p_size = r_anal_esil_pop (esil);
+	r_return_val_if_fail (p_size, false);
 
 	if (r_anal_esil_get_parm_type (esil, p_size) != R_ANAL_ESIL_PARM_NUM) {
 		free (p_size);
 		return false;
 	}
-	ut64 size;
+	ut64 size, num;
 	r_anal_esil_get_parm (esil, p_size, &size);
 	free (p_size);
 
-	ut64 res = r_anal_esil_pushnum (esil, (esil->cur >> size) & 1);
+	if (size > 63) {
+		num = 0;
+	} else {
+		num = (esil->cur >> size) & 1;
+	}
+	ut64 res = r_anal_esil_pushnum (esil, num);
 	return res;
 }
 
