@@ -156,6 +156,19 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 	return j;
 }
 
+R_API const char *r_str_sysbits(const int v) {
+	switch (v) {
+	case R_SYS_BITS_8: return "8";
+	case R_SYS_BITS_16: return "16";
+	case R_SYS_BITS_32: return "32";
+	case R_SYS_BITS_64: return "64";
+	case R_SYS_BITS_16 | R_SYS_BITS_32: return "16,32";
+	case R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64: return "16,32,64";
+	case R_SYS_BITS_32 | R_SYS_BITS_64: return "32,64";
+	}
+	return "?";
+}
+
 // In-place trims a bitstring to groups of 8 bits.
 // For example, the bitstring 1000000000000000 will not be modified, but the
 // bitstring 0000000001000000 will be changed to 01000000.

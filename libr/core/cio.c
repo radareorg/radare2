@@ -344,18 +344,25 @@ R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bit
 		if (!core->fixedarch) {
 			archval = s->arch;
 		}
-		if (!core->fixedbits) {
-			bitsval = s->bits;
+		if (!core->fixedbits && s->bits) {
+			// only enforce if there's one bits set
+			switch (s->bits) {
+			case R_SYS_BITS_16:
+			case R_SYS_BITS_32:
+			case R_SYS_BITS_64:
+				bitsval = s->bits;
+				break;
+			}
 		}
 	}
 	if (bits && !bitsval && !core->fixedbits) {
 		//if we found bits related with anal hints pick it up
 		__choose_bits_anal_hints (core, addr, &bitsval);
 	}
-	if (bits) {
+	if (bits && bitsval) {
 		*bits = bitsval;
 	}
-	if (arch) {
+	if (arch && archval) {
 		*arch = archval;
 	}
 }
