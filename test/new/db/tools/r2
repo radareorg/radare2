@@ -53,7 +53,7 @@ EOF
 RUN
 
 NAME=r2 -V
-BROKEN=1 # on Travis/macOS only wtf
+BROKEN=1 # Only at Windows
 FILE=-
 CMDS=!!r2 -V~r_anal?
 EXPECT=<<EOF
@@ -62,8 +62,8 @@ EOF
 RUN
 
 NAME=r2 -h
+BROKEN=1 # Only at Windows
 FILE=-
-BROKEN=1 # on Travis/macOS only wtf
 CMDS=!!r2 -h~Usage?
 EXPECT=<<EOF
 1
@@ -71,8 +71,8 @@ EOF
 RUN
 
 NAME=r2 -hh
+BROKEN=1 # Only at Windows
 FILE=-
-BROKEN=1 # on Travis/macOS only wtf
 CMDS=!!r2 -hh~R2_USER_PLUGINS?
 EXPECT=<<EOF
 1
@@ -80,8 +80,8 @@ EOF
 RUN
 
 NAME=r2 -L
+BROKEN=1 # Only at Windows
 FILE=-
-BROKEN=1 # on Travis/macOS only wtf
 CMDS=!!r2 -L~default?
 EXPECT=<<EOF
 1

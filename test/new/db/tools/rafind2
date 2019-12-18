@@ -92,8 +92,8 @@ EOF
 RUN
 
 NAME=rafind2 -i
+BROKEN=1
 FILE=-
-BROKEN=1 ## travis/macos only
 CMDS=!!rafind2 -i ../bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x00000000 1 ELF 32-bit LSB executable, Intel 80386, version 1
@@ -101,8 +101,8 @@ EOF
 RUN
 
 NAME=rafind2 -m
+BROKEN=1
 FILE=-
-BROKEN=1 ## travis/macos only
 CMDS=!!rafind2 -m ../bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x00000000 1 ELF 32-bit LSB executable, Intel 80386, version 1

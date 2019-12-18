@@ -34,7 +34,7 @@ blx 0x84434
 RUN
 
 NAME=rasm2 arm/thumb branch errors
-BROKEN=1
+BROKEN=1 # Only at Windows
 FILE=-
 CMDS=<<EXPECT
 !rasm2 -a arm -b 16 'b.n 8'

@@ -232,7 +232,7 @@ a "moveq r0, sl" 0a00a001
 aB "movne r0, sb" 0900a011
 aB "mulne r3, r3, r0" 93000310
 a "mvneq r0, 0x15" 1500e003
-aB "mvneq r0, 0x80000000" 0201e003
+a "mvneq r0, 0x80000000" 0201e003
 a "orreq r5, r5, r3" 03508501
 aB "orreq r6, r6, r2, lsr 1" a2608601
 aB "orreq r3, r3, 0x80000000" 02318303

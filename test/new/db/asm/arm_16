@@ -219,7 +219,7 @@ dB "cdp p5, 13, c6, c9, c2, 3" d9ee6265
 a "cdp p8, 2, c3, c1, c4" 21ee0438
 dB "cdp p8, 2, c3, c1, c4" 21ee0438
 a "cdp2 p2, 5, c4, c8, c0, 7" 58fee042
-dB "cdp2 p2, 5, c4, c8, c0, 7" 58fee042
+d "cdp2 p2, 5, c4, c8, c0, 7" 58fee042
 ad "clrex" bff32f8f
 d "clz r8, sb" b9fa89f8
 a "clz r8, r9" b9fa89f8
@@ -436,7 +436,7 @@ dB "mcr2 p11, 5, r6, c4, c14, 2" a4fe5e6b
 a "mcr2 p11, 5, r6, c4, c14, 2" a4fe5e6b
 d "mcrr p12, 0xe, r6, sb, c10" 49ecea6c
 a "mcrr p12, 14, r6, r9, c10" 49ecea6c
-dB "mcrr2 p6, 2, r7, r2, c3" 42fc2376
+d "mcrr2 p6, 2, r7, r2, c3" 42fc2376
 a "mcrr2 p6, 2, r7, r2, c3" 42fc2376
 d "mla r6, r2, sl, sp" 02fb0ad6
 a "mla r6, r2, r10, r13" 02fb0ad6
@@ -461,7 +461,7 @@ a "mov.w r12, r5" 4fea050c
 ad "movt r8, 0xf3a3" cff2a338
 d "mrc p12, 3, sb, c3, c13, 0" 73ee1d9c
 a "mrc p12, 3, r9, c3, c13" 73ee1d9c
-dB "mrc2 p5, 7, r3, c15, c2, 2" fffe5235
+d "mrc2 p5, 7, r3, c15, c2, 2" fffe5235
 a "mrc2 p5, 7, r3, c15, c2, 2" fffe5235
 d "mrrc p6, 0xc, r4, ip, c9" 5cecc946
 a "mrrc p6, 12, r4, r12, c9" 5cecc946
@@ -816,7 +816,7 @@ ad "ssub8 r1, r4, r2" c4fa02f1
 d "ssub8 r8, r8, r5" c8fa05f8
 a "ssub8 r8, r5" c8fa05f8
 ad "stc p6, c8, [r8, 0x254]" 88ed9586
-dB "stc2 p9, c5, [r3]" 83fd0059
+d "stc2 p9, c5, [r3]" 83fd0059
 a "stc2 p9, c5, [r3]" 83fd0059
 d "stcl p3, c2, [sb], -0x5c" 69ec1723
 a "stcl p3, c2, [r9], -0x5c" 69ec1723
