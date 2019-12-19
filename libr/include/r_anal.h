@@ -1428,7 +1428,7 @@ R_API bool r_anal_add_block(RAnal *anal, RAnalBlock *bb);
 R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb);
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr);
 R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr);
-R_API void r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size, R_OUT RPVector *out);
+R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size);
 // lifetime
 R_API void r_anal_block_ref(RAnalBlock *bb);
 R_API void r_anal_block_unref(RAnalBlock *bb);
