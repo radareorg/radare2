@@ -85,8 +85,6 @@ static int check_addr_in_code (RBinJavaField *method, ut64 addr);
 static int check_addr_less_end (RBinJavaField *method, ut64 addr);
 static int check_addr_less_start (RBinJavaField *method, ut64 addr);
 
-static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr);
-
 static RBinJavaObj * get_java_bin_obj(RAnal *anal) {
 	RBin *b = anal->binb.bin;
 	RBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
@@ -130,17 +128,6 @@ static int java_new_method (ut64 method_start) {
 
 static ut64 java_get_method_start () {
 	return METHOD_START;
-}
-
-static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
-	r_return_val_if_fail (anal && state, R_ANAL_RET_ERROR);
-	RAnalBlock *bb = state->current_bb;
-	r_return_val_if_fail (bb, R_ANAL_RET_ERROR);
-	if (bb->type & R_ANAL_BB_TYPE_TAIL) {
-		// XXX should i do this instead -> r_anal_ex_perform_post_anal_bb_cb (anal, state, addr+offset);
-		state->done = 1;
-	}
-	return R_ANAL_RET_END;
 }
 
 static int java_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
@@ -936,7 +923,6 @@ RAnalPlugin r_anal_plugin_java = {
 	.reset_counter = java_reset_counter,
 	.analyze_fns = java_analyze_fns,
 	.post_anal_bb_cb = java_recursive_descent,
-	.revisit_bb_anal = java_revisit_bb_anal_recursive_descent,
 #endif
 	.op = &java_op,
 	.cmd_ext = java_cmd_ext,
@@ -954,7 +940,6 @@ RAnalPlugin r_anal_plugin_java_ls = {
 	.analyze_fns = java_analyze_fns,
 	.post_anal_bb_cb = java_linear_sweep,
 	.post_anal = java_post_anal_linear_sweep,
-	.revisit_bb_anal = java_revisit_bb_anal_recursive_descent,
 #endif
 	.op = &java_op,
 	.cmd_ext = java_cmd_ext,
