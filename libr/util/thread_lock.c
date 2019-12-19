@@ -45,9 +45,9 @@ R_API int r_th_lock_enter(RThreadLock *thl) {
 
 R_API int r_th_lock_tryenter(RThreadLock *thl) {
 #if HAVE_PTHREAD
-	return pthread_mutex_trylock (&thl->lock);
+	return !pthread_mutex_trylock (&thl->lock);
 #elif __WINDOWS__
-	return TryEnterCriticalSection (&thl->lock) ? 0 : -1;
+	return TryEnterCriticalSection (&thl->lock);
 #endif
 }
 
