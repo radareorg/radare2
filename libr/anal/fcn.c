@@ -903,7 +903,7 @@ repeat:
 			// note, we have still increased size of basic block
 			// (and function)
 			if (anal->verbose) {
-				eprintf("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%d\n", at - oplen, bb->size);
+				eprintf("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%"PFMT64u"\n", at - oplen, bb->size);
 			}
 			delay.idx = idx - oplen;
 			delay.cnt = op.delay;
@@ -918,7 +918,7 @@ repeat:
 			delay.cnt--;
 			if (!delay.cnt) {
 				if (anal->verbose) {
-					eprintf("Last branch delayed opcode at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
+					eprintf("Last branch delayed opcode at 0x%08"PFMT64x ". bb->sz=%"PFMT64u"\n", addr + idx - oplen, bb->size);
 				}
 				delay.after = idx;
 				idx = delay.idx;
@@ -930,7 +930,7 @@ repeat:
 			}
 		} else if (op.delay > 0 && delay.pending) {
 			if (anal->verbose) {
-				eprintf ("Revisit branch delay jump at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
+				eprintf ("Revisit branch delay jump at 0x%08"PFMT64x ". bb->sz=%"PFMT64u"\n", addr + idx - oplen, bb->size);
 			}
 			// This is the second pass of the branch delaying opcode
 			// But we also already counted this instruction in the
@@ -939,7 +939,7 @@ repeat:
 				bb->size -= oplen;
 				fcn->ninstr--;
 				if (anal->verbose) {
-					eprintf ("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%d f.uncorr=%d\n",
+					eprintf ("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%"PFMT64u" f.uncorr=%d\n",
 					addr + idx - oplen, bb->addr, bb->size, r_anal_fcn_size (fcn));
 				}
 				FITFCNSZ ();
@@ -1397,7 +1397,7 @@ analopfinish:
 			}
 			if (!op.cond) {
 				if (anal->verbose) {
-					eprintf ("RET 0x%08"PFMT64x ". overlap=%s %d %d\n",
+					eprintf ("RET 0x%08"PFMT64x ". overlap=%s %"PFMT64u" %d\n",
 						addr + delay.un_idx - oplen, r_str_bool (overlapped),
 						bb->size, r_anal_fcn_size (fcn));
 				}
