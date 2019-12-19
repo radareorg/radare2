@@ -888,16 +888,19 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 				av->size = vt.size;
 				av->type = strdup (vt.type);
 				if (av->isarg && kind == 'r') {
-					RRegItem *reg = r_reg_index_get (a->reg, delta);
-					int i;
-					int arg_max = fcn->cc ? r_anal_cc_max_arg (a, fcn->cc) : 0;
 					bool found = false;
-					for (i = 0; i < arg_max; i++) {
-						if (!strcmp (reg->name, r_anal_cc_arg (a, fcn->cc, i))) {
-							av->argnum = i;
-							found = true;
-							break;
+					RRegItem *reg = r_reg_index_get (a->reg, delta);
+					if (reg) {
+						int i;
+						int arg_max = fcn->cc ? r_anal_cc_max_arg (a, fcn->cc) : 0;
+						for (i = 0; i < arg_max; i++) {
+							if (!strcmp (reg->name, r_anal_cc_arg (a, fcn->cc, i))) {
+								av->argnum = i;
+								found = true;
+								break;
+							}
 						}
+
 					}
 					if (!found) {
 						av->argnum = delta;
