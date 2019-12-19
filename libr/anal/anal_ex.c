@@ -144,9 +144,6 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 		return NULL;
 	}
 	r_anal_ex_op_to_bb (anal, state, current_bb, op);
-	if (r_anal_op_is_eob (op)) {
-		current_bb->type |= R_ANAL_BB_TYPE_LAST;
-	}
 	if (!current_bb->op_bytes) {
 		current_bb->op_sz = state->current_op->size;
 		current_bb->op_bytes = malloc (current_bb->op_sz);
@@ -265,9 +262,6 @@ R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalBlock *bb, RA
 	bb->jump = op->jump;
 
 	bb->conditional = R_ANAL_EX_COND_OP & op->type2 ? R_ANAL_OP_TYPE_COND : 0;
-	if (r_anal_op_is_eob (op)) {
-		bb->type |= R_ANAL_BB_TYPE_LAST;
-	}
 	r_anal_ex_clone_op_switch_to_bb (bb, op);
 }
 
@@ -310,16 +304,7 @@ R_API ut64 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type) {
 	} else if (code_op_val & R_ANAL_EX_CODEOP_LEAVE ||
 				code_op_val & R_ANAL_EX_CODEOP_RET ) {
 		bb_type |= R_ANAL_BB_TYPE_RET;
-		bb_type |= R_ANAL_BB_TYPE_LAST;
 		bb_type |= R_ANAL_BB_TYPE_TAIL;
-	}
-
-	if (ranal2_op_type & R_ANAL_EX_UNK_OP && code_op_val & R_ANAL_EX_CODEOP_JMP) {
-		bb_type |= R_ANAL_BB_TYPE_FOOT;
-	}
-
-	if (conditional && code_op_val & R_ANAL_EX_CODEOP_JMP) {
-		bb_type |= R_ANAL_BB_TYPE_BODY;
 	}
 
 	return bb_type;

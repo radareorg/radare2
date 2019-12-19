@@ -528,10 +528,6 @@ typedef enum {
 
 typedef enum {
 	R_ANAL_BB_TYPE_NULL = 0,
-	R_ANAL_BB_TYPE_HEAD = 0x1,     /* first block */
-	R_ANAL_BB_TYPE_BODY = 0x2,     /* conditional jump */
-	R_ANAL_BB_TYPE_LAST = 0x4,     /* ret */
-	R_ANAL_BB_TYPE_FOOT = 0x8,     /* unknown jump */
 	R_ANAL_BB_TYPE_SWITCH = 0x10,   /* TODO: switch */
 
 	R_ANAL_BB_TYPE_RET  = 0x0020,   /* return bb */
@@ -885,7 +881,6 @@ typedef struct r_anal_bb_t {
 	ut64 fail;
 	int size;
 	int type;
-	int type_ex;
 	int ninstr;
 	bool conditional;
 	int traced;
