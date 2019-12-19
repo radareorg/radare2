@@ -1060,13 +1060,13 @@ static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int r_debug_gdb_select(RDebug *dbg, int pid, int tid) {
+static bool r_debug_gdb_select(RDebug *dbg, int pid, int tid) {
 	if (!desc || !*origriogdb) {
 		desc = NULL;	//TODO hacky fix, please improve. I would suggest using a **desc instead of a *desc, so it is automatically updated
-		return -1;
+		return false;
 	}
 
-	return gdbr_select (desc, pid, tid);
+	return gdbr_select (desc, pid, tid) >= 0;
 }
 
 static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {

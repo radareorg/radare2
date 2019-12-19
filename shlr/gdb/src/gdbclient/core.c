@@ -118,6 +118,7 @@ void gdbr_lock_leave(libgdbr_t *g) {
 	assert (g->gdbr_lock_depth > 0);
 	bool last_leave = g->gdbr_lock_depth == 1;
 	r_th_lock_leave (g->gdbr_lock);
+	g->gdbr_lock_depth--;
 	// if this is the last lock this thread holds make sure that we disable the break
 	if (last_leave) {
 		g->isbreaked = false;
