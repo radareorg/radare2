@@ -77,9 +77,13 @@ R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr) {
 	return NULL;
 }
 
-R_API void r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size, R_OUT RPVector *out) {
-	BBAPI_PRELUDE(x)
-	r_pvector_clear (out);
+R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
+	BBAPI_PRELUDE (x)
+	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
+	// TODO: should we ref every returned block and use unref as free in the returned list?
 	RBIter it = r_rbtree_lower_bound_forward (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
 	while (r_rbtree_iter_has (&it)) {
 		RAnalBlock *block = r_rbtree_iter_get (&it, RAnalBlock, rb);
@@ -87,24 +91,23 @@ R_API void r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size, R_OUT 
 			break;
 		}
 		if (block->addr + size > addr) {
-			r_pvector_push (out, block);
+			r_list_push (ret, block);
 		}
 		r_rbtree_iter_next (&it);
 	}
+	return ret;
 }
 
 R_API bool r_anal_add_block(RAnal *anal, RAnalBlock *bb) {
 	BBAPI_PRELUDE (NULL);
 	r_return_val_if_fail (anal && bb, false);
-	RPVector intersecting;
-	r_pvector_init (&intersecting, NULL);
-	r_anal_get_blocks_intersect (anal, bb->addr, bb->size, &intersecting);
-	if (!r_pvector_empty (&intersecting)) {
+	RList *intersecting = r_anal_get_blocks_intersect (anal, bb->addr, bb->size);
+	if (intersecting && intersecting->length) {
 D eprintf ("TODO SPLIT\n");
-		r_pvector_clear (&intersecting);
+		r_list_free (intersecting);
 		return false;
 	}
-	r_pvector_clear (&intersecting);
+	r_list_free (intersecting);
 	bb->anal = anal;
 	r_anal_block_ref (bb);
 	r_rbtree_insert (&anal->bb_tree, &bb->addr, &bb->rb, __bb_addr_cmp, NULL);
@@ -116,30 +119,8 @@ R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb) {
 D eprintf ("del block (%d) %llx\n", bb->ref, bb->addr);
 	BBAPI_PRELUDE (NULL);
 	r_anal_block_ref (bb);
-	/*
-	RList *list = ht_up_find (anal->ht_bbs, k, NULL);
-	if (list) {
-		RAnalBlock *b;
-		RAnalFunction *f;
-		RListIter *iter, *iter2;
-		r_list_foreach_safe (list, iter, iter2, b) {
-			// TODO: wtf, why R_BETWEEN?
-			if (R_BETWEEN (b->addr, bb->addr, b->addr + b->size)) {
-#if 0
-				r_list_foreach (b->fcns, iter2, f) {
-if (b != bb)
-					r_anal_block_unref (b);
-				}
-#endif
-D eprintf ("DELETE BLOCK\n");
-				r_list_delete (list, iter);
-			//	break;
-			}
-		}
-	}*/
 	r_list_free (bb->fcns);
 	r_anal_block_unref (bb);
-	// bbs.del(bb);
 }
 
 R_API void r_anal_block_unref(RAnalBlock *bb) {
