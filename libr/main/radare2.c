@@ -1039,9 +1039,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 						} else {
 							r_io_map_new (r.io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod));
 							if (load_bin == LOAD_BIN_STRUCTURES_ONLY) {
-								// PoC -- must move -rk functionalitiy into rcore
-								// this may be used with caution (r2 -nn $FILE)
-								r_core_cmdf (&r, ".!rabin2 -rk. \"%s\"", iod->name);
+								r_core_bin_load_structs (&r, iod->name);
 							}
 						}
 					}
