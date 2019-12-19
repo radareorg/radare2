@@ -1674,16 +1674,21 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	}
 #if __WINDOWS__
 	ut64 base;
-	return r_io_desc_get_base (dbg->iob.io->desc, &base), base;
-#else
+	bool ret = r_io_desc_get_base (dbg->iob.io->desc, &base);
+	if (ret) {
+		return base;
+	}
+#endif
 	RListIter *iter;
 	RDebugMap *map;
 	r_debug_select (dbg, pid, tid);
 	r_debug_map_sync (dbg);
 	char *abspath = r_sys_pid_to_path (pid);
+#if !__WINDOWS__
 	if (!abspath) {
 		abspath = r_file_abspath (file);
 	}
+#endif
 	if (!abspath) {
 		abspath = strdup (file);
 	}
@@ -1704,7 +1709,6 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		}
 	}
 	return 0LL;
-#endif
 }
 
 R_API void r_debug_bp_rebase(RDebug *dbg, ut64 baddr) {
