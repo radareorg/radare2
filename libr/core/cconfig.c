@@ -2252,15 +2252,6 @@ static bool cb_seggrn(void *user, void *data) {
 	return true;
 }
 
-static bool cb_cmtoff(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
-	if (node->i_value || r_str_is_false (node->value)) {
-		free (node->value);
-		node->value = strdup (r_str_bool (node->i_value));
-	}
-	return true;
-}
-
 static bool cb_stopthreads(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3135,7 +3126,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.marks", "true", "Show marks before the disassembly");
 	SETPREF ("asm.cmt.refs", "false", "Show flag and comments from refs in disasm");
 	SETPREF ("asm.cmt.patch", "false", "Show patch comments in disasm");
-	SETCB ("asm.cmt.off", "nodup", &cb_cmtoff, "Show offset comment in disasm (true, false, nodup)");
+	SETPREF ("asm.cmt.off", "nodup", "Show offset comment in disasm (true, false, nodup)");
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
 
 	/* bin */
