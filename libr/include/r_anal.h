@@ -901,11 +901,6 @@ typedef struct r_anal_bb_t {
 	int op_pos_size;
 	ut8 *op_bytes;
 	ut8 op_sz;
-	/* deprecate ??? where is this used? */
-	/* iirc only java. we must use r_anal_bb_from_offset(); instead */
-	RAnalBlock *head;
-	RAnalBlock *tail;
-	RAnalBlock *next;
 	/* these are used also in pdr: */
 	RAnalBlock *prev;
 	RAnalBlock *failbb;
@@ -960,7 +955,6 @@ typedef struct r_anal_state_type_t {
 	RAnalFunction *current_fcn;
 	RAnalOp *current_op;
 	RAnalBlock *current_bb;
-	RAnalBlock *current_bb_head;
 	ut8 done;
 	int anal_ret_val;
 	ut32 current_depth;

@@ -85,28 +85,6 @@ static void r_anal_ex_perform_revisit_bb_cb(RAnal *anal, RAnalState *state, ut64
 	}
 }
 
-R_API int r_anal_ex_bb_address_comparator(RAnalBlock *a, RAnalBlock *b){
-	if (a->addr == b->addr) {
-		return 0;
-	}
-	if (a->addr < b->addr) {
-		return -1;
-	}
-	// a->addr > b->addr
-	return 1;
-}
-
-R_API int r_anal_ex_bb_head_comparator(RAnalBlock *a, RAnalBlock *b){
-	if (a->head == b->head) {
-		return 0;
-	}
-	if (a->head < b->head) {
-		return -1;
-	}
-	// a->head > b->head
-	return 1;
-}
-
 R_API void r_anal_ex_clone_op_switch_to_bb (RAnalBlock *bb, RAnalOp *op) {
 	RListIter *iter;
 	RAnalCaseOp *caseop = NULL;
@@ -190,26 +168,6 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	return current_bb;
 }
 
-R_API void r_anal_ex_update_bb_cfg_head_tail( RAnalBlock *start, RAnalBlock * head, RAnalBlock * tail ) {
-	RAnalBlock *bb = start;
-
-	if (bb) {
-		bb->head = head;
-		bb->tail = tail;
-	}
-
-	if (bb && bb->next){
-		bb->head = head;
-		bb->tail = tail;
-		do {
-			bb->next->prev = bb;
-			bb = bb->next;
-			bb->head = head;
-			bb->tail = tail;
-		} while (bb->next && !(bb->type & R_ANAL_BB_TYPE_TAIL));
-	}
-}
-
 R_API RList* r_anal_ex_perform_analysis(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (anal && anal->cur && anal->cur->analysis_algorithm) {
 		return anal->cur->analysis_algorithm (anal, state, addr);
@@ -220,8 +178,7 @@ R_API RList* r_anal_ex_perform_analysis(RAnal *anal, RAnalState *state, ut64 add
 R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr ) {
 	ut64 consumed_iter = 0;
 	ut64 bytes_consumed = 0, len = r_anal_state_get_len (state, addr);
-	RAnalBlock *pcurrent_bb   = state->current_bb,
-		   *pcurrent_head = state->current_bb_head, *past_bb = NULL;
+	RAnalBlock *pcurrent_bb   = state->current_bb, *past_bb = NULL;
 	RAnalOp *pcurrent_op = state->current_op;
 	ut64 backup_addr = state->current_addr;
 	state->current_addr = addr;
@@ -231,7 +188,6 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 	if (state->done) {
 		return bb_list;
 	}
-	state->current_bb_head = NULL;
 	state->current_bb = NULL;
 	state->current_op = NULL;
 
@@ -265,14 +221,7 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 		if (!r_anal_ex_get_bb (anal, state, state->current_addr)) {
 			break;
 		}
-		if (!state->current_bb_head) {
-			state->current_bb_head = state->current_bb;
-			if (state->current_bb_head) {
-				state->current_bb_head->type |= R_ANAL_BB_TYPE_HEAD;
-			}
-		}
 		if (past_bb) {
-			past_bb->next = state->current_bb;
 			state->current_bb->prev = past_bb;
 		}
 		past_bb = state->current_bb;
@@ -302,7 +251,6 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 	r_anal_ex_perform_post_anal (anal, state, addr);
 	state->current_op = pcurrent_op;
 	state->current_bb = pcurrent_bb;
-	state->current_bb_head = pcurrent_head;
 	state->current_addr = backup_addr;
 	return bb_list;
 }
