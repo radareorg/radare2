@@ -631,7 +631,10 @@ static void selection_widget_erase() {
 		RCons *cons = r_cons_singleton ();
 		if (cons->event_resize && cons->event_data) {
 			cons->event_resize (cons->event_data);
-			cons->cb_task_oneshot (cons->user, print_rline_task, NULL);
+			RCore *core = (RCore *)(cons->user);
+			if (core) {
+				cons->cb_task_oneshot (&core->tasks, print_rline_task, core);
+			}
 		}
 		printf ("%s", R_CONS_CLEAR_FROM_CURSOR_TO_END);
 	}
