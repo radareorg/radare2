@@ -700,6 +700,9 @@ static bool noreturn_recurse(RAnal *anal, ut64 addr) {
 }
 
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
+	if (!addr || addr == UT64_MAX) {
+		return false;
+	}
 	if (r_anal_noreturn_at_addr (anal, addr)) {
 		return true;
 	}
