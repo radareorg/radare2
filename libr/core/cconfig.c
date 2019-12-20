@@ -2698,7 +2698,8 @@ static bool cb_linesabs(void *user, void *data) {
 	core->print->lines_abs = node->i_value;
 	if (core->print->lines_abs && core->print->lines_cache_sz <= 0) {
 		ut64 from = (ut64)r_config_get_i (core->config, "lines.from");
-		ut64 to = (ut64)r_config_get_i (core->config, "lines.to");
+		const char *to_str = r_config_get (core->config, "lines.to");
+		ut64 to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
 		core->print->lines_cache_sz = r_core_lines_initcache (core, from, to);
 		if (core->print->lines_cache_sz == -1) {
 			eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
