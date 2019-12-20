@@ -140,3 +140,80 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 		//r_anal_block_free (bb);
 	}
 }
+
+typedef bool (*RAnalBlockCb)(RAnalBlock *block, void *user);
+typedef bool (*RAnalAddrCb)(ut64 addr, void *user);
+
+R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb cb, void *user) {
+#define CB_ADDR(addr) do { \
+		if (addr == UT64_MAX) { \
+			break; \
+		} \
+		if (!cb (addr, user)) { \
+			return false; \
+		} \
+	} while(0);
+
+	CB_ADDR (block->jump);
+	CB_ADDR (block->fail);
+	if (block->switch_op && block->switch_op->cases) {
+		RListIter *iter;
+		RAnalCaseOp *caseop;
+		r_list_foreach (block->switch_op->cases, iter, caseop) {
+			CB_ADDR (caseop->jump);
+		}
+	}
+	// TODO: please review if there can be any other successors of a block
+
+	return true;
+#undef CB_ADDR
+}
+
+typedef struct r_anal_block_recurse_context_t {
+	RAnal *anal;
+	RPVector/*<RAnalBlock>*/ to_visit;
+	HtUP *visited;
+} RAnalBlockRecurseContext;
+
+static bool block_recurse_successor_cb(ut64 addr, void *user) {
+	RAnalBlockRecurseContext *ctx = user;
+	if (ht_up_find_kv (ctx->visited, addr, NULL)) {
+		// already visited
+		return true;
+	}
+	ht_up_insert (ctx->visited, addr, NULL);
+	RAnalBlock *block = r_anal_get_block_at (ctx->anal, addr);
+	if (!block) {
+		return true;
+	}
+	r_pvector_push (&ctx->to_visit, block);
+	return true;
+}
+
+R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user) {
+	bool breaked = false;
+	RAnalBlockRecurseContext ctx;
+	ctx.anal = block->anal;
+	r_pvector_init (&ctx.to_visit, NULL);
+	ctx.visited = ht_up_new0 ();
+	if (!ctx.visited) {
+		goto beach;
+	}
+
+	ht_up_insert (ctx.visited, block->addr, NULL);
+	r_pvector_push (&ctx.to_visit, block);
+
+	while (!r_pvector_empty (&ctx.to_visit)) {
+		RAnalBlock *cur = r_pvector_pop (&ctx.to_visit);
+		breaked = !cb (cur, user);
+		if (breaked) {
+			break;
+		}
+		r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
+	}
+
+beach:
+	ht_up_free (ctx.visited);
+	r_pvector_clear (&ctx.to_visit);
+	return !breaked;
+}
