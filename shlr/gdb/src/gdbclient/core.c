@@ -117,8 +117,8 @@ void gdbr_lock_leave(libgdbr_t *g) {
 	r_cons_break_pop ();
 	assert (g->gdbr_lock_depth > 0);
 	bool last_leave = g->gdbr_lock_depth == 1;
-	r_th_lock_leave (g->gdbr_lock);
 	g->gdbr_lock_depth--;
+	r_th_lock_leave (g->gdbr_lock);
 	// if this is the last lock this thread holds make sure that we disable the break
 	if (last_leave) {
 		g->isbreaked = false;
@@ -695,7 +695,7 @@ int gdbr_read_registers(libgdbr_t *g) {
 	// each time "enter" is pressed. Otherwise the user will be forced to interrupt exit
 	// read_registers constantly while another task is in progress
 	if (!gdbr_lock_tryenter (g)) {
-		goto end;
+		return -1;
 	}
 
 	if (g->remote_type == GDB_REMOTE_TYPE_LLDB && !g->stub_features.lldb.g) {
@@ -1275,7 +1275,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	g->stop_reason.is_valid = false;
 	ret = send_msg (g, tmp);
 	if (ret < 0) {
-		return ret;
+		goto end;
 	}
 
 	bed = r_cons_sleep_begin ();
