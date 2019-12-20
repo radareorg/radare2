@@ -1354,7 +1354,7 @@ static HtUP *rel_cache_new(ELFOBJ *bin) {
 			goto out;
 		}
 
-		if (!ht_up_insert (rel_cache, REL_SYM, rel)) {
+		if (!ht_up_insert (rel_cache, k, rel)) {
 			free (rel);
 		}
 	}
