@@ -584,7 +584,7 @@ typedef struct r_anal_switch_obj_t {
 	ut64 min_val;
 	ut64 def_val;
 	ut64 max_val;
-	RList *cases;
+	RList/*<RAnalCaseOp>*/ *cases;
 } RAnalSwitchOp;
 
 struct r_anal_t;
@@ -1432,6 +1432,17 @@ R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size);
 // lifetime
 R_API void r_anal_block_ref(RAnalBlock *bb);
 R_API void r_anal_block_unref(RAnalBlock *bb);
+
+typedef bool (*RAnalBlockCb)(RAnalBlock *block, void *user);
+typedef bool (*RAnalAddrCb)(ut64 addr, void *user);
+
+// Call cb on every direct successor address of block
+// returns false iff the loop was breaked by cb
+R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb cb, void *user);
+
+// Call cb on block and every (recursive) successor of it
+// returns false iff the loop was breaked by cb
+R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user);
 
 /* function.c */
 R_API RAnalFunction *r_anal_add_function(RAnal *anal, const char *name, ut64 addr);
