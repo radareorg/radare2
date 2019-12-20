@@ -1,7 +1,5 @@
 /* Copyright radare2 2014-2019 - Author: pancake, vane11ope */
 
-// pls move the typedefs into roons and rename it -> RConsPanel
-
 #include <r_core.h>
 
 #define PANEL_NUM_LIMIT 64
@@ -1869,12 +1867,19 @@ bool __handle_cursor_mode(RCore *core, const int key) {
 	case 'h':
 	case 'j':
 	case 'k':
+	case 'J':
+	case 'K':
 	case 'l':
 	case 'm':
 	case 'Z':
 	case '"':
 	case 9:
 		return false;
+	case 'g':
+		cur->view->curpos = 0;
+		__reset_scroll_pos (cur);
+		cur->view->refresh = true;
+		break;
 	case ']':
 		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
 			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
@@ -3671,6 +3676,9 @@ void __set_curnode(RCore *core, int idx) {
 		idx = panels->n_panels - 1;
 	}
 	panels->curnode = idx;
+
+	RPanel *cur = __get_cur_panel (panels);
+	cur->view->curpos = cur->view->sy;
 }
 
 void __set_mode(RCore *core, RPanelsMode mode) {
