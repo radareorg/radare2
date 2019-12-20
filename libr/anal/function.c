@@ -154,3 +154,19 @@ R_API bool r_anal_del_function(RAnalFunction *fcn) {
 	r_anal_fcn_tree_delete (anal, fcn);
 	return true;
 }
+
+R_API bool r_anal_function_blocks_foreach(RAnalFunction *fcn, RAnalBlockCb cb, void *user) {
+	RAnalBlock *entry = r_anal_get_block_at (fcn->anal, fcn->addr);
+	if (!entry) {
+		return true;
+	}
+	return r_anal_block_recurse (entry, cb, user);
+}
+
+R_API RList *r_anal_function_blocks_list(RAnalFunction *fcn) {
+	RAnalBlock *entry = r_anal_get_block_at (fcn->anal, fcn->addr);
+	if (!entry) {
+		return r_list_newf ((RListFree)r_anal_block_unref);
+	}
+	return r_anal_block_recurse_list (entry);
+}

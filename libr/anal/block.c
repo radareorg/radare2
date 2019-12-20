@@ -217,3 +217,19 @@ beach:
 	r_pvector_clear (&ctx.to_visit);
 	return !breaked;
 }
+
+static bool recurse_list_cb(RAnalBlock *block, void *user) {
+	RList *list = user;
+	r_anal_block_ref (block);
+	r_list_push (list, block);
+	return true;
+}
+
+R_API RList *r_anal_block_recurse_list(RAnalBlock *block) {
+	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
+	if (!ret) {
+		return NULL;
+	}
+	r_anal_block_recurse (block, recurse_list_cb, ret);
+	return ret;
+}
