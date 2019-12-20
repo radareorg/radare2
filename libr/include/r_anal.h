@@ -1444,15 +1444,22 @@ R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb c
 // returns false iff the loop was breaked by cb
 R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user);
 
+// same as r_anal_block_recurse, but returns the blocks as a list
+R_API RList *r_anal_block_recurse_list(RAnalBlock *block);
+
 /* function.c */
 R_API RAnalFunction *r_anal_add_function(RAnal *anal, const char *name, ut64 addr);
 R_API const RList *r_anal_get_functions(RAnal *anal, ut64 addr);
 R_API bool r_anal_del_function(RAnalFunction *fcn);
+R_API bool r_anal_function_blocks_foreach(RAnalFunction *fcn, RAnalBlockCb cb, void *user);
+R_API RList *r_anal_function_blocks_list(RAnalFunction *fcn);
+
 // actions on basic blocks QUESTION: what about using ut64 as key instead of passing a bb? at least for del-block?
 R_API RAnalBlock *r_anal_function_add_block(RAnalFunction *fcn, ut64 addr, int size);
 R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
 R_API bool r_anal_function_add_block_ll(RAnalFunction *fcn, RAnalBlock *bb);
 R_API void r_anal_function_del_block(RAnalFunction *fcn, RAnalBlock *bb);
+
 // low level
 R_API void r_anal_function_ref(RAnalFunction *fcn);
 R_API void r_anal_function_unref(RAnalFunction *fcn);
