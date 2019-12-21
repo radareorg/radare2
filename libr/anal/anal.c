@@ -170,7 +170,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->stackptr = 0;
 	anal->rb_hints_ranges = NULL;
 	anal->lineswidth = 0;
-	anal->fcns = r_anal_fcn_list_new ();
+	anal->fcns = r_list_new ();
 	anal->fcn_tree = NULL;
 	anal->fcn_addr_tree = NULL;
 	anal->refs = r_anal_ref_list_new ();
@@ -495,7 +495,7 @@ R_API int r_anal_purge (RAnal *anal) {
 	sdb_reset (anal->sdb_classes);
 	sdb_reset (anal->sdb_classes_attrs);
 	r_list_free (anal->fcns);
-	anal->fcns = r_anal_fcn_list_new ();
+	anal->fcns = r_list_new ();
 	anal->fcn_tree = NULL;
 	anal->fcn_addr_tree = NULL;
 	r_list_free (anal->refs);

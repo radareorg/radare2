@@ -1845,7 +1845,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 		r_list_purge (core->anal->fcns);
 		core->anal->fcn_tree = NULL;
 		core->anal->fcn_addr_tree = NULL;
-		if (!(core->anal->fcns = r_anal_fcn_list_new ())) {
+		if (!(core->anal->fcns = r_list_new ())) {
 			return false;
 		}
 	} else {
@@ -4391,7 +4391,7 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 				max = bb->addr + bb->size;
 			}
 		}
-		r_anal_function_add_block_ll (f1, bb);
+		r_anal_function_block_add (f1, bb);
 	}
 	// TODO: import data/code/refs
 	// update size
