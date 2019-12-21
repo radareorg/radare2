@@ -2252,15 +2252,6 @@ static bool cb_seggrn(void *user, void *data) {
 	return true;
 }
 
-static bool cb_cmtoff(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
-	if (node->i_value || r_str_is_false (node->value)) {
-		free (node->value);
-		node->value = strdup (r_str_bool (node->i_value));
-	}
-	return true;
-}
-
 static bool cb_stopthreads(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2707,7 +2698,8 @@ static bool cb_linesabs(void *user, void *data) {
 	core->print->lines_abs = node->i_value;
 	if (core->print->lines_abs && core->print->lines_cache_sz <= 0) {
 		ut64 from = (ut64)r_config_get_i (core->config, "lines.from");
-		ut64 to = (ut64)r_config_get_i (core->config, "lines.to");
+		const char *to_str = r_config_get (core->config, "lines.to");
+		ut64 to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
 		core->print->lines_cache_sz = r_core_lines_initcache (core, from, to);
 		if (core->print->lines_cache_sz == -1) {
 			eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
@@ -3135,7 +3127,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.marks", "true", "Show marks before the disassembly");
 	SETPREF ("asm.cmt.refs", "false", "Show flag and comments from refs in disasm");
 	SETPREF ("asm.cmt.patch", "false", "Show patch comments in disasm");
-	SETCB ("asm.cmt.off", "nodup", &cb_cmtoff, "Show offset comment in disasm (true, false, nodup)");
+	SETPREF ("asm.cmt.off", "nodup", "Show offset comment in disasm (true, false, nodup)");
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
 
 	/* bin */

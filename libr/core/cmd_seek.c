@@ -73,7 +73,8 @@ static void __init_seek_line(RCore *core) {
 
 	r_config_bump (core->config, "lines.to");
 	from = r_config_get_i (core->config, "lines.from");
-	to = r_config_get_i (core->config, "lines.to");
+	const char *to_str = r_config_get (core->config, "lines.to");
+	to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
 	if (r_core_lines_initcache (core, from, to) == -1) {
 		eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
 	}

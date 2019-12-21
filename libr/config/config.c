@@ -417,17 +417,23 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 				if (node->value == value) {
 					goto beach;
 				}
-				char *tmp = node->value;
-				node->value = strdup (value);
-				free (tmp);
-				if (IS_DIGIT (*value)) {
+				free (node->value);
+				if (r_str_is_false (value)) {
+					node->value = strdup ("false");
+					node->i_value = 0;
+				} else if (r_str_is_true (value)) {
+					node->value = strdup ("true");
+					node->i_value = 1;
+				} else {
+					node->value = strdup (value);
+					node->i_value = 2;
+				}
+				if (IS_DIGIT (*value) || (value[0] == '-' && IS_DIGIT (value[1]))) {
 					if (strchr (value, '/')) {
 						node->i_value = r_num_get (cfg->num, value);
 					} else {
 						node->i_value = r_num_math (cfg->num, value);
 					}
-				} else {
-					node->i_value = 0;
 				}
 				node->flags |= CN_INT;
 			}
