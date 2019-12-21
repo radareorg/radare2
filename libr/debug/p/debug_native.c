@@ -642,9 +642,7 @@ static RList *r_debug_native_threads (RDebug *dbg, int pid) {
 #elif __linux__
 	return linux_thread_list (pid, list);
 #else
-	eprintf ("TODO: list threads\n");
-	r_list_free (list);
-	return NULL;
+	return bsd_thread_list (dbg, pid, list);
 #endif
 }
 

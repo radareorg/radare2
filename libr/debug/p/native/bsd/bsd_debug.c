@@ -496,5 +496,70 @@ RList *bsd_desc_list(int pid) {
 
 	free (buf);
 	return ret;
+#else
+	return false;
+#endif
+}
+
+#if __KFBSD__
+static int get_r2_status(int stat) {
+	switch (stat) {
+	case SRUN:
+	case SIDL:
+	case SLOCK:
+	case SWAIT:
+		return R_DBG_PROC_RUN;
+	case SSTOP:
+		return R_DBG_PROC_STOP;
+	case SZOMB:
+		return R_DBG_PROC_ZOMBIE;
+	case SSLEEP:
+		return R_DBG_PROC_SLEEP;
+	default:
+		return R_DBG_PROC_DEAD;
+	}
+}
+#endif
+
+RList *bsd_thread_list(RDebug *dbg, int pid, RList *list) {
+#if __KFBSD__
+	int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID | KERN_PROC_INC_THREAD, pid };
+	struct kinfo_proc *kp;
+	size_t len = 0;
+	size_t max;
+	int i = 0;
+
+	if (sysctl (mib, 4, NULL, &len, NULL, 0) == -1) {
+		r_list_free (list);
+		return NULL;
+	}
+
+	len += sizeof(*kp) + len / 10;
+	kp = malloc(len);
+	if (sysctl (mib, 4, kp, &len, NULL, 0) == -1) {
+		free (kp);
+		r_list_free (list);
+		return NULL;
+	}
+
+	max = len / sizeof(*kp);
+	for (i = 0; i < max; i ++) {
+		RDebugPid *pid_info;
+		char tpath[64];
+		int pid_stat;
+
+		snprintf(tpath, sizeof (tpath), "%lx:%s", (long)kp[i].ki_wchan, kp[i].ki_comm);
+		pid_stat = get_r2_status (kp[i].ki_stat);
+		pid_info = r_debug_pid_new (tpath, kp[i].ki_tid,
+			kp[i].ki_uid, pid_stat, 0);
+		r_list_append (list, pid_info);
+	}
+
+	free (kp);
+	return list;
+#else
+	eprintf ("bsd_thread_list unsupported on this platform\n");
+	r_list_free (list);
+	return NULL;
 #endif
 }
