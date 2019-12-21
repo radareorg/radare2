@@ -14,7 +14,7 @@
 #define IFINT if(0)
 
 static void kv_anal_bb_free(HtUPKv *kv) {
-	r_anal_bb_free (kv->value);
+	// TODO r_anal_bb_free (kv->value);
 }
 
 R_API RAnalState * r_anal_state_new(ut64 start, ut8* buffer, ut64 len) {
@@ -31,7 +31,7 @@ R_API RAnalState * r_anal_state_new(ut64 start, ut8* buffer, ut64 len) {
 	state->current_fcn = NULL;
 	state->ht = ht_up_new (NULL, (HtUPKvFreeFunc)kv_anal_bb_free, NULL);
 	state->ht_sz = 512;
-	state->bbs = r_list_newf ((RListFree)r_anal_bb_free);
+	state->bbs = r_list_new (); // TOOD: unref? r_list_newf ((RListFree)r_anal_bb_free);
 	state->max_depth = 50;
 	state->current_depth = 0;
 	return state;

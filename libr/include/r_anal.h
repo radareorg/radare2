@@ -303,7 +303,6 @@ typedef struct r_anal_function_t {
 	RBNode addr_rb;
 	RList *imports; // maybe bound to class?
 	struct r_anal_t *anal; // this function is associated with this instance
-	int ref; // reference counter
 } RAnalFunction;
 
 typedef struct r_anal_func_arg_t {
@@ -1422,10 +1421,15 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
 /* block.c */
 R_API RAnalBlock *r_anal_block_new(RAnal *anal, ut64 addr, ut64 size);
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr);
-R_API void r_anal_block_free(RAnalBlock *bb);
+R_API void r_anal_block_free(RAnalBlock *block);
 
-R_API bool r_anal_add_block(RAnal *anal, RAnalBlock *bb);
+// Create one or more blocks covering the given range.
+// Multiple blocks will be created if the range overlaps another block.
+R_API RList *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size);
+
+// Manually delete a block and remove it from all its functions
 R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb);
+
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr);
 R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr);
 R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size);
@@ -1451,18 +1455,17 @@ R_API RList *r_anal_block_recurse_list(RAnalBlock *block);
 R_API RAnalFunction *r_anal_add_function(RAnal *anal, const char *name, ut64 addr);
 R_API const RList *r_anal_get_functions(RAnal *anal, ut64 addr);
 R_API bool r_anal_del_function(RAnalFunction *fcn);
+#if 0
 R_API bool r_anal_function_blocks_foreach(RAnalFunction *fcn, RAnalBlockCb cb, void *user);
 R_API RList *r_anal_function_blocks_list(RAnalFunction *fcn);
+#endif
 
 // actions on basic blocks QUESTION: what about using ut64 as key instead of passing a bb? at least for del-block?
-R_API RAnalBlock *r_anal_function_add_block(RAnalFunction *fcn, ut64 addr, int size);
 R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
-R_API bool r_anal_function_add_block_ll(RAnalFunction *fcn, RAnalBlock *bb);
-R_API void r_anal_function_del_block(RAnalFunction *fcn, RAnalBlock *bb);
+R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb);
+R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb);
 
 // low level
-R_API void r_anal_function_ref(RAnalFunction *fcn);
-R_API void r_anal_function_unref(RAnalFunction *fcn);
 R_API bool r_anal_add_function_ll(RAnal *anal, RAnalFunction *fcn);
 
 

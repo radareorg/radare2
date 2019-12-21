@@ -139,7 +139,7 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (!op || !r_anal_state_addr_is_valid (state, addr)) {
 		return NULL;
 	}
-	current_bb = r_anal_bb_new ();
+	current_bb = NULL; // TODO r_anal_bb_new ();
 	if (!current_bb) {
 		return NULL;
 	}
@@ -150,7 +150,7 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 		if (current_bb->op_bytes) {
 			int buf_len = r_anal_state_get_len (state, addr);
 			if (current_bb->op_sz > buf_len) {
-				r_anal_bb_free (current_bb);
+				// TODO r_anal_bb_free (current_bb);
 				return NULL;
 			}
 			memcpy (current_bb->op_bytes,
