@@ -3,6 +3,8 @@
 #include <r_anal.h>
 #include <r_util/pj.h>
 
+#include <assert.h>
+
 #define NEWBBAPI 1
 
 #if NEWBBAPI
@@ -35,24 +37,51 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr) {
 	return NULL;
 }
 
+#define DFLT_NINSTR 3
+
+// TODO: this should be private, new blocks should should be created from outside using only r_anal_create_block()
 R_API RAnalBlock *r_anal_block_new(RAnal *a, ut64 addr, ut64 size) {
-	RAnalBlock *b = r_anal_bb_new ();
-	if (!b) {
+	RAnalBlock *block = R_NEW0 (RAnalBlock);
+	if (!block) {
 		return NULL;
 	}
-	b->addr = addr;
-	b->size = size;
-	b->anal = a;
-	return b;
+	block->addr = addr;
+	block->size = size;
+	block->anal = a;
+	block->ref = 1;
+	block->jump = UT64_MAX;
+	block->fail = UT64_MAX;
+	block->type = R_ANAL_BB_TYPE_NULL;
+	block->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
+	block->op_pos_size = DFLT_NINSTR;
+	block->stackptr = 0;
+	block->parent_stackptr = INT_MAX;
+	block->cmpval = UT64_MAX;
+	block->fcns = r_list_new ();
+	return block;
 }
 
-static void __block_free(RAnalBlock *bb) {
-	r_anal_bb_free (bb);
+// TODO: this should be private, from outside only unref must be used
+R_API void r_anal_block_free(RAnalBlock *block) {
+	if (!block) {
+		return;
+	}
+	r_list_free (block->fcns);
+	r_anal_cond_free (block->cond);
+	free (block->fingerprint);
+	r_anal_diff_free (block->diff);
+	free (block->op_bytes);
+	r_anal_switch_op_free (block->switch_op);
+	r_list_free (block->fcns);
+	free (block->label);
+	free (block->op_pos);
+	free (block->parent_reg_arena);
+	free (block);
 }
 
 void __block_free_rb(RBNode *node, void *user) {
 	RAnalBlock *block = container_of (node, RAnalBlock, rb);
-	__block_free (block);
+	r_anal_block_free (block);
 }
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
@@ -98,20 +127,27 @@ R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 	return ret;
 }
 
-R_API bool r_anal_add_block(RAnal *anal, RAnalBlock *bb) {
+R_API RList *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size) {
 	BBAPI_PRELUDE (NULL);
-	r_return_val_if_fail (anal && bb, false);
-	RList *intersecting = r_anal_get_blocks_intersect (anal, bb->addr, bb->size);
+	r_return_val_if_fail (anal, NULL);
+	RList *intersecting = r_anal_get_blocks_intersect (anal, addr, size);
 	if (intersecting && intersecting->length) {
 D eprintf ("TODO SPLIT\n");
 		r_list_free (intersecting);
 		return false;
 	}
 	r_list_free (intersecting);
-	bb->anal = anal;
-	r_anal_block_ref (bb);
-	r_rbtree_insert (&anal->bb_tree, &bb->addr, &bb->rb, __bb_addr_cmp, NULL);
-	return true;
+	RAnalBlock *block = r_anal_block_new (anal, addr, size);
+	if (!block) {
+		return NULL;
+	}
+	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
+	if (!ret) {
+		r_anal_block_free (block);
+		return NULL;
+	}
+	r_rbtree_insert (&anal->bb_tree, &block->addr, &block->rb, __bb_addr_cmp, NULL);
+	return ret;
 }
 
 R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb) {
@@ -119,25 +155,33 @@ R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb) {
 D eprintf ("del block (%d) %llx\n", bb->ref, bb->addr);
 	BBAPI_PRELUDE (NULL);
 	r_anal_block_ref (bb);
+	RAnalFunction *fcn;
+	RListIter *iter;
+	r_list_foreach (bb->fcns, iter, fcn) {
+		// TODO: corrupts tinyrange
+		r_list_delete_data (fcn->bbs, bb);
+	}
 	r_list_free (bb->fcns);
 	r_anal_block_unref (bb);
 }
 
 R_API void r_anal_block_unref(RAnalBlock *bb) {
-	RAnal *anal = bb->anal;
 	bb->ref--;
-	RListIter *iter, *iter2;
-	RAnalFunction *fcn;
-	D eprintf("unref bb %d\n", bb->ref);
-	r_list_foreach_safe (bb->fcns, iter, iter2, fcn) {
-		D eprintf("miss unref\n");
-		r_list_delete (bb->fcns, iter);
-		//r_anal_function_unref (fcn);
-	}
-	D eprintf("unref2 bb %d\n", bb->ref);
 	if (bb->ref < 1) {
-		r_anal_del_block (bb->anal, bb);
-		//r_anal_block_free (bb);
+		RAnal *anal = bb->anal;
+		RListIter *iter, *iter2;
+		RAnalFunction *fcn;
+		D eprintf("unref bb %d\n", bb->ref);
+		/*r_list_foreach_safe (bb->fcns, iter, iter2, fcn) {
+			D eprintf("miss unref\n");
+			r_list_delete (bb->fcns, iter);
+			//r_anal_function_unref (fcn);
+		}*/
+		assert (!bb->fcns); // on
+		D eprintf("unref2 bb %d\n", bb->ref);
+		if (bb->ref < 1) {
+			r_rbtree_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL);
+		}
 	}
 }
 

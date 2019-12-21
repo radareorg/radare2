@@ -5,40 +5,6 @@
 #include <r_list.h>
 #include <limits.h>
 
-#define DFLT_NINSTR 3
-
-R_API RAnalBlock *r_anal_bb_new() {
-	RAnalBlock *bb = R_NEW0 (RAnalBlock);
-	if (bb) {
-		bb->addr = UT64_MAX;
-		bb->jump = UT64_MAX;
-		bb->fail = UT64_MAX;
-		bb->type = R_ANAL_BB_TYPE_NULL;
-		bb->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
-		bb->op_pos_size = DFLT_NINSTR;
-		bb->stackptr = 0;
-		bb->parent_stackptr = INT_MAX;
-		bb->cmpval = UT64_MAX;
-		bb->fcns = r_list_newf ((RListFree)r_anal_function_unref);
-	}
-	return bb;
-}
-
-R_API void r_anal_bb_free(RAnalBlock *bb) {
-	if (bb) {
-		r_anal_cond_free (bb->cond);
-		free (bb->fingerprint);
-		r_anal_diff_free (bb->diff);
-		free (bb->op_bytes);
-		r_anal_switch_op_free (bb->switch_op);
-		r_list_free (bb->fcns);
-		free (bb->label);
-		free (bb->op_pos);
-		free (bb->parent_reg_arena);
-		free (bb);
-	}
-}
-
 // TODO: remove the const ut8*buf, int len, and use the r_buf/r_io api instead
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, const ut8 *buf, ut64 len, int head) {
 	r_return_val_if_fail (anal && bb && addr != UT64_MAX, R_ANAL_RET_END);

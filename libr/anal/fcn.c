@@ -184,9 +184,9 @@ static void _fcn_tree_free(RBNode *node, void *user) {
 	// Currently fcns takes the ownership of the resources.
 	// If the ownership transfers from fcns to fcn_tree:
 	//
-	// r_anal_fcn_free (FCN_CONTAINER (node));
-	RAnalFunction *fcn = FCN_CONTAINER (node);
-	r_anal_function_unref (fcn);
+	r_anal_fcn_free (FCN_CONTAINER (node));
+	//RAnalFunction *fcn = FCN_CONTAINER (node);
+	// r_anal_function_unref (fcn);
 }
 
 // Descent x_ to find the first node whose interval intersects [from, to)
@@ -224,15 +224,13 @@ R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *fcn) {
 		eprintf ("WARNING: r_anal_fcn_tree_delete: check 'ret_min == ret_addr' failed\n");
 		return false;
 	}
-	r_anal_function_unref (fcn);
+	//r_anal_function_unref (fcn);
 	// r_return_val_if_fail (ret_min == ret_addr, false);
 	return ret_min;
 }
 
 R_API void r_anal_fcn_tree_insert(RAnal *anal, RAnalFunction *fcn) {
-	r_anal_function_ref (fcn);
 	r_rbtree_aug_insert (&anal->fcn_tree, fcn, &(fcn->rb), _fcn_tree_cmp, NULL, _fcn_tree_calc_max_addr);
-	r_anal_function_ref (fcn);
 	r_rbtree_insert (&anal->fcn_addr_tree, fcn, &(fcn->addr_rb), _fcn_addr_tree_cmp, NULL);
 }
 
@@ -387,7 +385,6 @@ R_API RAnalFunction *r_anal_fcn_new(RAnal *anal) {
 	/* Function calling convention: cdecl/stdcall/fastcall/etc */
 	/* Function attributes: weak/noreturn/format/etc */
 	fcn->addr = UT64_MAX;
-	fcn->ref = 1;
 	fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 	fcn->bits = anal->bits;
 	fcn->bbs = r_list_newf ((RListFree)r_anal_block_unref);
@@ -398,10 +395,6 @@ R_API RAnalFunction *r_anal_fcn_new(RAnal *anal) {
 	r_tinyrange_init (&fcn->bbr);
 	fcn->meta.min = UT64_MAX;
 	return fcn;
-}
-
-R_API RList *r_anal_fcn_list_new() {
-	return r_list_newf ((RListFree)r_anal_function_unref);
 }
 
 R_API void r_anal_fcn_free(void *_fcn) {
@@ -444,7 +437,8 @@ static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr, bool jumpmid) {
 // TODO: split between bb.new and append_bb()
 static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	r_return_val_if_fail (anal && fcn, NULL);
-	return r_anal_function_add_block (fcn, addr, 0);
+	//return r_anal_function_block_add (fcn, addr, 0);
+	return NULL; // TODO
 #if 0
 	RAnalBlock *bb = r_anal_block_new (anal, addr, 0);
 	if (bb) {
@@ -1657,7 +1651,6 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 			continue;
 		}
 		if (r_anal_fcn_in (fcn, addr)) {
-			r_anal_function_unref (fcn);
 			r_list_delete (anal->fcns, iter);
 		}
 	}

@@ -4,10 +4,6 @@
 
 #define D if (anal->verbose)
 
-R_API void r_anal_function_ref (RAnalFunction *fcn) {
-	fcn->ref++;
-}
-
 R_API const RList *r_anal_get_functions(RAnal *anal, ut64 addr) {
 	RAnalBlock *bb = r_anal_get_block_in (anal, addr);
 	return bb? bb->fcns: NULL;
@@ -55,12 +51,10 @@ R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
 
 R_API bool r_anal_add_function_ll(RAnal *anal, RAnalFunction *fcn) {
 	if (__fcn_exists (anal, fcn->name, fcn->addr)) {
-		return NULL;
+		return false;
 	}
 	r_anal_fcn_tree_insert (anal, fcn);
-	r_anal_function_ref (fcn);
 	r_list_append (anal->fcns, fcn);
-	r_anal_function_ref (fcn);
 	ht_pp_insert (anal->ht_name_fun, fcn->name, fcn);
 	ht_up_insert (anal->ht_addr_fun, fcn->addr, fcn);
 	return true;
@@ -82,46 +76,21 @@ R_API RAnalFunction *r_anal_add_function(RAnal *anal, const char *name, ut64 add
 	return NULL;
 }
 
-R_API RAnalBlock *r_anal_function_add_block(RAnalFunction *fcn, ut64 addr, int size) {
-	RAnalBlock *bb = r_anal_block_new(fcn->anal, addr, size);
-	if (r_anal_function_add_block_ll (fcn, bb)) {
-		return bb;
+R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb) {
+	if (r_list_contains (fcn->bbs, bb)) { // TODO: might be slow
+		return;
 	}
-	return NULL;
-}
-
-R_API bool r_anal_function_add_block_ll(RAnalFunction *fcn, RAnalBlock *bb) {
-	RAnal *anal = fcn->anal;
-	if (!r_anal_add_block (anal, bb)) { // register basic block globally
-		D eprintf ("There's a block %llx vs %llx\n", fcn->addr, bb->addr);
-	}
-	D eprintf ("add bl\n");
-	r_anal_function_ref (fcn);
 	r_list_append (bb->fcns, fcn); // associate the given fcn with this bb
 	r_anal_block_ref (bb);
-	r_list_append (fcn->bbs, bb); // TODO: avoid double insert the same bb
-	if (anal->cb.on_fcn_bb_new) {
-		anal->cb.on_fcn_bb_new (anal, anal->user, fcn, bb);
+	r_list_append (fcn->bbs, bb);
+	if (fcn->anal->cb.on_fcn_bb_new) {
+		fcn->anal->cb.on_fcn_bb_new (fcn->anal, fcn->anal->user, fcn, bb);
 	}
-//	eprintf ("Cannot add block., already there\n");
-	return true;
 }
 
-R_API void r_anal_function_del_block(RAnalFunction *fcn, RAnalBlock *bb) {
+R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb) {
 	r_list_delete_data (bb->fcns, fcn);
-	r_list_delete_data (fcn->bbs, bb);
-	(void)r_anal_del_block (fcn->anal, bb); // TODO: honor unref
-}
-
-R_API void r_anal_function_unref(RAnalFunction *fcn) {
-	RAnal *anal = fcn->anal;
-	D eprintf ("unref fun %d 0x%llx\n", fcn->ref, fcn->addr);
-	fcn->ref--;
-	D eprintf ("unref2 eliminating %d bbs\n", r_list_length (fcn->bbs));
-	D eprintf ("unref2 fun %d\n", fcn->ref);
-	if (fcn->ref < 1) {
-		r_anal_del_function (fcn);
-	}
+	r_list_delete_data (fcn->bbs, bb); // unrefs the bb
 }
 
 R_API bool r_anal_del_function(RAnalFunction *fcn) {
@@ -155,6 +124,8 @@ R_API bool r_anal_del_function(RAnalFunction *fcn) {
 	return true;
 }
 
+#if 0
+
 R_API bool r_anal_function_blocks_foreach(RAnalFunction *fcn, RAnalBlockCb cb, void *user) {
 	RAnalBlock *entry = r_anal_get_block_at (fcn->anal, fcn->addr);
 	if (!entry) {
@@ -170,3 +141,4 @@ R_API RList *r_anal_function_blocks_list(RAnalFunction *fcn) {
 	}
 	return r_anal_block_recurse_list (entry);
 }
+#endif

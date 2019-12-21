@@ -1733,7 +1733,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 addr, int head) {
 			ret = r_anal_fcn_split_bb (core->anal, fcn, bb, addr);
 		}
 	} else {
-		bb = r_anal_bb_new ();
+		bb = NULL; // TODO r_anal_bb_new ();
 		if (!bb) {
 			return false;
 		}
@@ -1791,7 +1791,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 addr, int head) {
 			if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
 				ret = r_anal_fcn_bb_overlaps (fcn, bb);
 				if (ret == R_ANAL_RET_NEW) {
-					r_anal_function_add_block_ll (fcn, bb);
+					r_anal_function_block_add (fcn, bb);
 					fail = bb->fail;
 					jump = bb->jump;
 					if (fail != -1) {
@@ -1813,7 +1813,7 @@ fin:
 	if (newBB) {
 		r_anal_block_unref (bb);
 		r_list_delete_data (fcn->bbs, bb);
-		r_anal_bb_free (bb);
+		//r_anal_bb_free (bb);
 	}
 	free (buf);
 	return rc;
@@ -1960,7 +1960,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 		r_list_purge (core->anal->fcns);
 		core->anal->fcn_tree = NULL;
 		core->anal->fcn_addr_tree = NULL;
-		if (!(core->anal->fcns = r_anal_fcn_list_new ())) {
+		if (!(core->anal->fcns = r_list_new ())) {
 			return false;
 		}
 	} else {
@@ -4506,7 +4506,7 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 				max = bb->addr + bb->size;
 			}
 		}
-		r_anal_function_add_block_ll (f1, bb);
+		r_anal_function_block_add (f1, bb);
 	}
 	// TODO: import data/code/refs
 	// update size
