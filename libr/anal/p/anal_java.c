@@ -85,8 +85,6 @@ static int check_addr_in_code (RBinJavaField *method, ut64 addr);
 static int check_addr_less_end (RBinJavaField *method, ut64 addr);
 static int check_addr_less_start (RBinJavaField *method, ut64 addr);
 
-static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr);
-
 static RBinJavaObj * get_java_bin_obj(RAnal *anal) {
 	RBin *b = anal->binb.bin;
 	RBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
@@ -132,28 +130,10 @@ static ut64 java_get_method_start () {
 	return METHOD_START;
 }
 
-static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
-	r_return_val_if_fail (anal && state, R_ANAL_RET_ERROR);
-	RAnalBlock *head = state->current_bb_head;
-	RAnalBlock *bb = state->current_bb;
-	r_return_val_if_fail (bb && head, R_ANAL_RET_ERROR);
-	if (bb->type & R_ANAL_BB_TYPE_TAIL) {
-		r_anal_ex_update_bb_cfg_head_tail (head, head, bb);
-		// XXX should i do this instead -> r_anal_ex_perform_post_anal_bb_cb (anal, state, addr+offset);
-		state->done = 1;
-	}
-	return R_ANAL_RET_END;
-}
-
 static int java_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
-	r_return_val_if_fail (anal && state && state->current_bb && state->current_bb_head, 0);
+	r_return_val_if_fail (anal && state && state->current_bb, 0);
 
 	RAnalBlock *bb = state->current_bb;
-	RAnalBlock *head = state->current_bb_head;
-
-	if (head && bb->type & R_ANAL_BB_TYPE_TAIL) {
-		r_anal_ex_update_bb_cfg_head_tail (head, head, bb);
-	}
 
 	// basic filter for handling the different type of operations
 	// depending on flags some may be called more than once
@@ -178,9 +158,6 @@ static int java_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
 
 static int java_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr) {
 	RAnalBlock *bb = state->current_bb;
-	if (state->current_bb_head && state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
-		//r_anal_ex_update_bb_cfg_head_tail (state->current_bb_head, state->current_bb_head, state->current_bb);
-	}
 
 	// basic filter for handling the different type of operations
 	// depending on flags some may be called more than once
@@ -946,7 +923,6 @@ RAnalPlugin r_anal_plugin_java = {
 	.reset_counter = java_reset_counter,
 	.analyze_fns = java_analyze_fns,
 	.post_anal_bb_cb = java_recursive_descent,
-	.revisit_bb_anal = java_revisit_bb_anal_recursive_descent,
 #endif
 	.op = &java_op,
 	.cmd_ext = java_cmd_ext,
@@ -964,7 +940,6 @@ RAnalPlugin r_anal_plugin_java_ls = {
 	.analyze_fns = java_analyze_fns,
 	.post_anal_bb_cb = java_linear_sweep,
 	.post_anal = java_post_anal_linear_sweep,
-	.revisit_bb_anal = java_revisit_bb_anal_recursive_descent,
 #endif
 	.op = &java_op,
 	.cmd_ext = java_cmd_ext,

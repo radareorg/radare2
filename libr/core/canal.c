@@ -2448,23 +2448,7 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 		r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %d ",
 			       fcn->addr, bbi->addr, bbi->size);
 		r_cons_printf ("0x%08"PFMT64x" ", bbi->jump);
-		r_cons_printf ("0x%08"PFMT64x" ", bbi->fail);
-		if (bbi->type != R_ANAL_BB_TYPE_NULL) {
-			if ((bbi->type & R_ANAL_BB_TYPE_BODY)) {
-				r_cons_printf ("b");
-			}
-			if ((bbi->type & R_ANAL_BB_TYPE_FOOT)) {
-				r_cons_printf ("f");
-			}
-			if ((bbi->type & R_ANAL_BB_TYPE_HEAD)) {
-				r_cons_printf ("h");
-			}
-			if ((bbi->type & R_ANAL_BB_TYPE_LAST)) {
-				r_cons_printf ("l");
-			}
-		} else {
-			r_cons_printf ("n");
-		}
+		r_cons_printf ("0x%08"PFMT64x, bbi->fail);
 		if (bbi->diff) {
 			if (bbi->diff->type == R_ANAL_DIFF_TYPE_MATCH) {
 				r_cons_printf (" m");

@@ -318,11 +318,6 @@ R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr, RAna
 R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr);
 R_API void r_anal_ex_clone_op_switch_to_bb (RAnalBlock *bb, RAnalOp *op);
 
-// used to perform comparisons on BB to determine if BB are in same body
-R_API int r_anal_ex_bb_head_comparator(RAnalBlock *a, RAnalBlock *b);
-// compare two BB to see if they are equal
-R_API int r_anal_ex_bb_address_comparator(RAnalBlock *a, RAnalBlock *b);
-
 
 // Type definitions to strings
 #define R_ANAL_EX_TYPE_REF_NULL_STR "null"

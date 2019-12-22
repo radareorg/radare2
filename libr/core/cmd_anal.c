@@ -335,7 +335,7 @@ static const char *help_msg_afb[] = {
 	"afb", " [addr]", "list basic blocks of function",
 	"afb.", " [addr]", "show info of current basic block",
 	"afb=", "", "display ascii-art bars for basic block regions",
-	"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add basic block by hand",
+	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
 	"afbc", " [addr] [color(ut32)]", "set a color for the bb at a given address",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afbi", "", "print current basic block information",
@@ -2327,7 +2327,7 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 	ptr = strdup (input);
 
 	switch (r_str_word_set0 (ptr)) {
-	case 7:
+	case 6:
 		ptr2 = r_str_word_get0 (ptr, 6);
 		if (!(diff = r_anal_diff_new ())) {
 			eprintf ("error: Cannot init RAnalDiff\n");
@@ -2338,20 +2338,6 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 			diff->type = R_ANAL_DIFF_TYPE_MATCH;
 		} else if (ptr2[0] == 'u') {
 			diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
-		}
-	case 6:
-		ptr2 = r_str_word_get0 (ptr, 5);
-		if (strchr (ptr2, 'h')) {
-			type |= R_ANAL_BB_TYPE_HEAD;
-		}
-		if (strchr (ptr2, 'b')) {
-			type |= R_ANAL_BB_TYPE_BODY;
-		}
-		if (strchr (ptr2, 'l')) {
-			type |= R_ANAL_BB_TYPE_LAST;
-		}
-		if (strchr (ptr2, 'f')) {
-			type |= R_ANAL_BB_TYPE_FOOT;
 		}
 	case 5: // get fail
 		fail = r_num_math (core->num, r_str_word_get0 (ptr, 4));

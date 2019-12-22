@@ -1916,13 +1916,6 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, 
 	bbi->jump = addr;
 	bbi->fail = -1;
 	bbi->conditional = false;
-	if (bbi->type & R_ANAL_BB_TYPE_HEAD) {
-		bb->type = bbi->type ^ R_ANAL_BB_TYPE_HEAD;
-		bbi->type = R_ANAL_BB_TYPE_HEAD;
-	} else {
-		bb->type = bbi->type;
-		bbi->type = R_ANAL_BB_TYPE_BODY;
-	}
 	// recalculate offset of instructions in both bb and bbi
 	i = 0;
 	while (i < bbi->ninstr && r_anal_bb_offset_inst (bbi, i) < bbi->size) {
@@ -1955,12 +1948,6 @@ R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 			bb->jump = bbi->addr;
 			bb->fail = -1;
 			bb->conditional = false;
-			if (bbi->type & R_ANAL_BB_TYPE_HEAD) {
-				bb->type = R_ANAL_BB_TYPE_HEAD;
-				bbi->type = bbi->type ^ R_ANAL_BB_TYPE_HEAD;
-			} else {
-				bb->type = R_ANAL_BB_TYPE_BODY;
-			}
 			r_list_append (fcn->bbs, bb);
 			return R_ANAL_RET_END;
 		}

@@ -528,10 +528,6 @@ typedef enum {
 
 typedef enum {
 	R_ANAL_BB_TYPE_NULL = 0,
-	R_ANAL_BB_TYPE_HEAD = 0x1,     /* first block */
-	R_ANAL_BB_TYPE_BODY = 0x2,     /* conditional jump */
-	R_ANAL_BB_TYPE_LAST = 0x4,     /* ret */
-	R_ANAL_BB_TYPE_FOOT = 0x8,     /* unknown jump */
 	R_ANAL_BB_TYPE_SWITCH = 0x10,   /* TODO: switch */
 
 	R_ANAL_BB_TYPE_RET  = 0x0020,   /* return bb */
@@ -885,7 +881,6 @@ typedef struct r_anal_bb_t {
 	ut64 fail;
 	int size;
 	int type;
-	int type_ex;
 	int ninstr;
 	bool conditional;
 	int traced;
@@ -901,11 +896,6 @@ typedef struct r_anal_bb_t {
 	int op_pos_size;
 	ut8 *op_bytes;
 	ut8 op_sz;
-	/* deprecate ??? where is this used? */
-	/* iirc only java. we must use r_anal_bb_from_offset(); instead */
-	RAnalBlock *head;
-	RAnalBlock *tail;
-	RAnalBlock *next;
 	/* these are used also in pdr: */
 	RAnalBlock *prev;
 	RAnalBlock *failbb;
@@ -960,7 +950,6 @@ typedef struct r_anal_state_type_t {
 	RAnalFunction *current_fcn;
 	RAnalOp *current_op;
 	RAnalBlock *current_bb;
-	RAnalBlock *current_bb_head;
 	ut8 done;
 	int anal_ret_val;
 	ut32 current_depth;

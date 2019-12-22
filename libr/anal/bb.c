@@ -75,9 +75,6 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, const ut8 *buf, ut64
 		r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
 		idx += oplen;
 		bb->size += oplen;
-		if (head) {
-			bb->type = R_ANAL_BB_TYPE_HEAD;
-		}
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_CMP:
 			r_anal_cond_free (bb->cond);
@@ -95,20 +92,14 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, const ut8 *buf, ut64
 			bb->conditional = true;
 			bb->fail = op->fail;
 			bb->jump = op->jump;
-			bb->type |= R_ANAL_BB_TYPE_BODY;
 			goto beach;
 		case R_ANAL_OP_TYPE_JMP:
 			bb->jump = op->jump;
-			bb->type |= R_ANAL_BB_TYPE_BODY;
 			goto beach;
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_IJMP:
 		case R_ANAL_OP_TYPE_RJMP:
 		case R_ANAL_OP_TYPE_IRJMP:
-			bb->type |= R_ANAL_BB_TYPE_FOOT;
-			goto beach;
-		case R_ANAL_OP_TYPE_RET:
-			bb->type |= R_ANAL_BB_TYPE_LAST;
 			goto beach;
 		case R_ANAL_OP_TYPE_LEA:
 		{
