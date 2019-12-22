@@ -254,8 +254,9 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 
 R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalBlock *bb, RAnalOp *op) {
 	//ut64 cnd_jmp = (R_ANAL_EX_COND_OP | R_ANAL_EX_CODEOP_JMP);
-	bb->addr = op->addr;
-	bb->size = op->size;
+	eprintf ("this is wrong\n");
+	bb->addr = op->addr; // TODO: this is wrong with anal-block
+	bb->size = op->size; // TODO: this is wrong too
 	bb->type2 = op->type2;
 	bb->type = r_anal_ex_map_anal_ex_to_anal_bb_type ( op->type2 );
 	bb->fail = op->fail;
