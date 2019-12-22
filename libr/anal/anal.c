@@ -199,6 +199,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	if (!a) {
 		return NULL;
 	}
+	r_anal_block_check_invariants (a);
 	/* TODO: Free anals here */
 	ht_up_free (a->ht_addr_fun);
 	ht_pp_free (a->ht_name_fun);

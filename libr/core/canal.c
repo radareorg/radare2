@@ -1272,7 +1272,7 @@ static char *palColorFor(const char *k) {
 static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
 	bool color_current = r_config_get_i (core->config, "graph.gv.current");
 	char *pal_curr = palColorFor ("graph.current");
-	bool current = r_anal_bb_is_in_offset (bbi, core->offset);
+	bool current = r_anal_block_contains (bbi, core->offset);
 
 	if (current && color_current) {
 		r_cons_printf ("\t\"0x%08"PFMT64x"\" ", bbi->addr);
@@ -1600,7 +1600,7 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                 top += 250;
                                         }
                                 } else if (!is_json && !is_keva) {
-                                        bool current = r_anal_bb_is_in_offset (bbi, core->offset);
+                                        bool current = r_anal_block_contains (bbi, core->offset);
                                         const char *label_color = bbi->traced
                                                 ? pal_traced
                                                 : (current && color_current)
@@ -1729,11 +1729,16 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 addr, int head) {
 #if 1
 	RAnalBlock *bb = r_anal_get_block_in (core->anal, addr);
 	if (bb) {
-		if (!core->anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bb, addr)) {
-			ret = r_anal_fcn_split_bb (core->anal, fcn, bb, addr);
+		if (bb->addr == addr) {
+			ret = R_ANAL_RET_DUP;
+		} else {
+			bb = r_anal_block_split (bb, addr);
+			if (!bb) {
+				return false;
+			}
 		}
 	} else {
-		bb = NULL; // TODO r_anal_bb_new ();
+		bb = r_anal_block_new (core->anal, 0, 0);
 		if (!bb) {
 			return false;
 		}
@@ -1791,6 +1796,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 addr, int head) {
 			if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
 				ret = r_anal_fcn_bb_overlaps (fcn, bb);
 				if (ret == R_ANAL_RET_NEW) {
+					// TODO: really add the block to anal, this is not enough:
 					r_anal_function_block_add (fcn, bb);
 					fail = bb->fail;
 					jump = bb->jump;
@@ -3385,7 +3391,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	ht_up_update (state, from, bb);
 
 	// try to find the target in the current function
-	if (r_anal_bb_is_in_offset (bb, to) ||
+	if (r_anal_block_contains (bb, to) ||
 		((!ht_up_find (avoid, bb->jump, NULL) &&
 			!ht_up_find (state, bb->jump, NULL) &&
 			anal_path_exists (core, bb->jump, to, bbs, depth - 1, state, avoid))) ||
@@ -3405,7 +3411,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 		if (refs) {
 			r_list_foreach (refs, iter, refi) {
 				if (refi->type == R_ANAL_REF_TYPE_CALL) {
-					if (r_anal_bb_is_in_offset (bb, refi->at)) {
+					if (r_anal_block_contains (bb, refi->at)) {
 						if ((refi->at != refi->addr) && !ht_up_find (state, refi->addr, NULL) && anal_path_exists (core, refi->addr, to, bbs, depth - 1, state, avoid)) {
 							r_list_prepend (bbs, bb);
 							r_list_free (refs);
