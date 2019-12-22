@@ -77,7 +77,7 @@ R_API RAnalFunction *r_anal_add_function(RAnal *anal, const char *name, ut64 add
 }
 
 R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb) {
-	if (r_list_contains (fcn->bbs, bb)) { // TODO: might be slow
+	if (r_list_contains (fcn->bbs, bb)) { // TODO: might be slow, use bb->fcns instead?
 		return;
 	}
 	r_list_append (bb->fcns, fcn); // associate the given fcn with this bb

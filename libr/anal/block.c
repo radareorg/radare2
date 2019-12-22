@@ -28,14 +28,10 @@ static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user
 #define D if (anal && anal->verbose)
 
 R_API void r_anal_block_ref(RAnalBlock *bb) {
+	assert (bb->ref > 0); // 0-refd must already be freed.
 	bb->ref++;
 }
 
-R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr) {
-	eprintf ("TODO: blockk.split not yet implemented\n");
-	// R_API int r_anal_fcn_split_bb (RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, ut64 addr) {
-	return NULL;
-}
 
 #define DFLT_NINSTR 3
 
@@ -66,7 +62,6 @@ R_API void r_anal_block_free(RAnalBlock *block) {
 	if (!block) {
 		return;
 	}
-	r_list_free (block->fcns);
 	r_anal_cond_free (block->cond);
 	free (block->fingerprint);
 	r_anal_diff_free (block->diff);
@@ -77,6 +72,54 @@ R_API void r_anal_block_free(RAnalBlock *block) {
 	free (block->op_pos);
 	free (block->parent_reg_arena);
 	free (block);
+}
+
+// TODO: this can be moved to unit tests later
+R_API void r_anal_block_check_invariants(RAnal *anal) {
+	RBIter iter;
+	RAnalBlock *block;
+	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, rb) {
+		if (block->ref < 1) {
+			eprintf("FUCK: block->ref < 1, but it is still in the tree\n");
+		}
+		if (block->ref < r_list_length (block->fcns)) {
+			eprintf("FUCK: block->ref < r_list_length (block->fcns)\n");
+		}
+		RListIter *fcniter;
+		RAnalFunction *fcn;
+		r_list_foreach (block->fcns, fcniter, fcn) {
+			RListIter *fcniter2;
+			RAnalFunction *fcn2;
+			for (fcniter2 = fcniter->n; fcniter2 && (fcn2 = fcniter2->data, 1); fcniter2 = fcniter2->n) {
+				if (fcn == fcn2) {
+					eprintf("FUCK: Duplicate function %s in basic block @ 0x%"PFMT64x"\n", fcn->name, block->addr);
+					break;
+				}
+			}
+			if (!r_list_contains (fcn->bbs, block)) {
+				eprintf("FUCK: Fcn %s is referenced by block @ 0x%"PFMT64x", but block is not referenced by function\n", fcn->name, block->addr);
+			}
+		}
+	}
+
+	RListIter *fcniter;
+	RAnalFunction *fcn;
+	r_list_foreach (anal->fcns, fcniter, fcn) {
+		RListIter *blockiter;
+		r_list_foreach (fcn->bbs, blockiter, block) {
+			RListIter *blockiter2;
+			RAnalBlock *block2;
+			for (blockiter2 = blockiter->n; blockiter2 && (block2 = blockiter2->data, 1); blockiter2 = blockiter2->n) {
+				if (block == block2) {
+					eprintf("FUCK: Duplicate basic block @ 0x%"PFMT64x" in function %s\n", block->addr, fcn->name);
+					break;
+				}
+			}
+			if (!r_list_contains (block->fcns, fcn)) {
+				eprintf("FUCK: block @ 0x%"PFMT64x" is referenced by Fcn %s, not the other way around\n", block->addr, fcn->name);
+			}
+		}
+	}
 }
 
 void __block_free_rb(RBNode *node, void *user) {
@@ -127,7 +170,7 @@ R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 	return ret;
 }
 
-R_API RList *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size) {
+R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 	BBAPI_PRELUDE (NULL);
 	r_return_val_if_fail (anal, NULL);
 	RList *intersecting = r_anal_get_blocks_intersect (anal, addr, size);
@@ -141,6 +184,24 @@ D eprintf ("TODO SPLIT\n");
 	if (!block) {
 		return NULL;
 	}
+	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
+	if (!ret) {
+		r_anal_block_free (block);
+		return NULL;
+	}
+	r_rbtree_insert (&anal->bb_tree, &block->addr, &block->rb, __bb_addr_cmp, NULL);
+	r_list_push (ret, block);
+	return ret;
+}
+
+R_API RList *r_anal_block_add(RAnal *anal, R_OWN RAnalBlock *block) {
+	RList *intersecting = r_anal_get_blocks_intersect (anal, block->addr, block->size);
+	if (intersecting && intersecting->length) {
+		D eprintf ("TODO SPLIT\n");
+		r_list_free (intersecting);
+		return false;
+	}
+	r_anal_block_ref (block);
 	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
 	if (!ret) {
 		r_anal_block_free (block);
@@ -165,8 +226,79 @@ D eprintf ("del block (%d) %llx\n", bb->ref, bb->addr);
 	r_anal_block_unref (bb);
 }
 
+R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size) {
+	RAnal *anal = bb->anal;
+	if (addr == bb->addr) {
+		// easier if the address stays the same
+		if (size > bb->size) {
+			// find the next block
+			ut64 searchaddr = addr + 1;
+			RBNode *node = r_rbtree_lower_bound (anal->bb_tree, &searchaddr, __bb_addr_cmp, NULL);
+			if (node && container_of (node, RAnalBlock, rb)->addr < addr + size) {
+				// would overlap with the next block
+				return false;
+			}
+		}
+		bb->size = size;
+		return true;
+	}
+	D eprintf("r_anal_block_try_resize_atomic with different addr not implemented\n");
+	return false;
+}
+
+R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
+	RAnal *anal = bbi->anal;
+	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
+	if (addr == bbi->addr) {
+		return bbi;
+	}
+
+	ut64 fullsize = bbi->size;
+
+	bool success = r_anal_block_try_resize_atomic (bbi, bbi->addr, addr - bbi->addr);
+	r_return_val_if_fail (success, NULL);
+	bbi->jump = addr;
+	bbi->fail = UT64_MAX;
+	bbi->conditional = false;
+
+	RAnalBlock *bb = r_anal_block_new (anal, addr, bbi->addr + fullsize - addr);
+	if (!bb) {
+		return NULL;
+	}
+	r_rbtree_insert (&anal->bb_tree, &bb->addr, &bb->rb, __bb_addr_cmp, NULL);
+	bb->jump = bbi->jump;
+	bb->fail = bbi->fail;
+	bb->conditional = bbi->conditional;
+	bb->parent_stackptr = bbi->stackptr;
+
+	// recalculate offset of instructions in both bb and bbi
+	int i;
+	i = 0;
+	while (i < bbi->ninstr && r_anal_bb_offset_inst (bbi, i) < bbi->size) {
+		i++;
+	}
+	int new_bbi_instr = i;
+	if (bb->addr - bbi->addr == r_anal_bb_offset_inst (bbi, i)) {
+		bb->ninstr = 0;
+		while (i < bbi->ninstr) {
+			ut16 off_op = r_anal_bb_offset_inst (bbi, i);
+			if (off_op >= bbi->size + bb->size) {
+				break;
+			}
+			r_anal_bb_set_offset (bb, bb->ninstr, off_op - bbi->size);
+			bb->ninstr++;
+			i++;
+		}
+	}
+	bbi->ninstr = new_bbi_instr;
+	return R_ANAL_RET_END;
+}
+
 R_API void r_anal_block_unref(RAnalBlock *bb) {
+	assert (bb->ref > 0);
+	r_anal_block_check_invariants (bb->anal);
 	bb->ref--;
+	assert (bb->ref >= r_list_length (bb->fcns));
 	if (bb->ref < 1) {
 		RAnal *anal = bb->anal;
 		RListIter *iter, *iter2;
@@ -177,11 +309,9 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 			r_list_delete (bb->fcns, iter);
 			//r_anal_function_unref (fcn);
 		}*/
-		assert (!bb->fcns); // on
+		assert (!bb->fcns || r_list_empty (bb->fcns)); // on
 		D eprintf("unref2 bb %d\n", bb->ref);
-		if (bb->ref < 1) {
-			r_rbtree_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL);
-		}
+		r_rbtree_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL);
 	}
 }
 

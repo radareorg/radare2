@@ -7,10 +7,6 @@
 
 #define DFLT_NINSTR 3
 
-R_API bool r_anal_bb_is_in_offset(RAnalBlock *bb, ut64 off) {
-	return (off >= bb->addr && off < bb->addr + bb->size);
-}
-
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
@@ -24,7 +20,7 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 				if (r_anal_bb_op_starts_at (bb, off)) {
 					return bb;
 				}
-				if (r_anal_bb_is_in_offset (bb, off) && (!nearest_bb || nearest_bb->addr < bb->addr)) {
+				if (r_anal_block_contains (bb, off) && (!nearest_bb || nearest_bb->addr < bb->addr)) {
 					nearest_bb = bb;
 				}
 			}
@@ -33,7 +29,7 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		r_list_foreach (fcn->bbs, iter2, bb) {
-			if (r_anal_bb_is_in_offset (bb, off)) {
+			if (r_anal_block_contains (bb, off)) {
 				return bb;
 			}
 		}
@@ -123,7 +119,7 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 	ut16 delta, delta_off, last_delta;
 	int i;
 
-	if (!r_anal_bb_is_in_offset (bb, off)) {
+	if (!r_anal_block_contains (bb, off)) {
 		return UT64_MAX;
 	}
 	last_delta = 0;
@@ -143,7 +139,7 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr) {
 	int i;
 
-	if (!r_anal_bb_is_in_offset (bb, addr)) {
+	if (!r_anal_block_contains (bb, addr)) {
 		return false;
 	}
 	ut16 off = addr - bb->addr;

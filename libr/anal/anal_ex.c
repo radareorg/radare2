@@ -139,7 +139,7 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (!op || !r_anal_state_addr_is_valid (state, addr)) {
 		return NULL;
 	}
-	current_bb = NULL; // TODO r_anal_bb_new ();
+	current_bb = r_anal_block_new (anal, 0, 0);
 	if (!current_bb) {
 		return NULL;
 	}
