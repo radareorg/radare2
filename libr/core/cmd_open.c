@@ -1415,7 +1415,8 @@ static int cmd_open(void *data, const char *input) {
 		}
 		{
 			const char *argv0 = argv ? argv[0] : ptr;
-			r_str_arg_unescape (argv0);
+			// Unescape spaces from the path
+			r_str_replace ((char *)argv0, "\\ ", " ", true);
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
 				core->num->value = fd;
@@ -1716,7 +1717,7 @@ static int cmd_open(void *data, const char *input) {
 					RBinFile *bf = r_bin_cur (core->bin);
 					if (bf && r_file_exists (bf->file)) {
 						// Escape spaces so that o's argv parse will detect the path properly
-						char *file = r_str_arg_escape (bf->file);
+						char *file = r_str_replace (strdup (bf->file), " ", "\\ ", true);
 						// Backup the baddr and sections that were already rebased to
 						// revert the rebase after the debug session is closed
 						ut64 orig_baddr = core->bin->cur->o->baddr_shift;
