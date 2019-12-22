@@ -80,9 +80,8 @@ bool check(RBNode *tree) {
 	return check1 (tree, 0, 0, true);
 }
 
-bool test_r_rbtree_bound(void) {
-	const int key1 = 0x24;
-	struct Node key = {.key = key1};
+bool test_r_rbtree_bound_iterate() {
+	struct Node key = { 0 };
 	RBIter it;
 	RBNode *tree = NULL;
 	struct Node *x;
@@ -92,39 +91,80 @@ bool test_r_rbtree_bound(void) {
 	mu_assert_eq (f.len, 0, "iter with 0 length");
 
 	for (i = 0; i < 99; i++) {
-		x = make (i);
+		x = make (i * 2);
 		r_rbtree_insert (&tree, x, &x->rb, cmp, NULL);
 	}
 
 	// lower_bound
+	key.key = 0x24;
 	it = r_rbtree_lower_bound_forward (tree, &key, cmp, NULL);
-	i = key1;
+	i = 0x24;
 	r_rbtree_iter_while (it, x, struct Node, rb) {
-		mu_assert_eq (i, x->key, "lower_bound_forward");
-		i++;
+		mu_assert_eq (x->key, i, "lower_bound_forward equal");
+		i += 2;
 	}
-	it = r_rbtree_lower_bound_backward (tree, &key, cmp, NULL);
-	i = key1 - 1;
-	r_rbtree_iter_while_prev (it, x, struct Node, rb) {
-		mu_assert_eq (i, x->key, "lower_bound_backward");
-		i--;
+	mu_assert_eq (i - 2, 98 * 2, "lower_bound_forward complete");
+
+	key.key = 0x25;
+	it = r_rbtree_lower_bound_forward (tree, &key, cmp, NULL);
+	i = 0x26;
+	r_rbtree_iter_while (it, x, struct Node, rb) {
+		mu_assert_eq (x->key, i, "lower_bound_forward more");
+		i += 2;
 	}
+	mu_assert_eq (i - 2, 98 * 2, "lower_bound_forward complete");
 
 	// upper_bound
-	it = r_rbtree_upper_bound_forward (tree, &key, cmp, NULL);
-	i = key1 + 1;
-	r_rbtree_iter_while (it, x, struct Node, rb) {
-		mu_assert_eq (i, x->key, "upper_bound_forward");
-		i++;
-	}
+	key.key = 0x24;
 	it = r_rbtree_upper_bound_backward (tree, &key, cmp, NULL);
-	i = key1;
+	i = 0x24;
 	r_rbtree_iter_while_prev (it, x, struct Node, rb) {
-		mu_assert_eq (i, x->key, "upper_bound_backward");
-		i--;
+		mu_assert_eq (x->key, i, "upper_bound_backward");
+		i -= 2;
 	}
+	mu_assert_eq (i + 2, 0, "upper_bound_backward complete");
+
+	key.key = 0x25;
+	it = r_rbtree_upper_bound_backward (tree, &key, cmp, NULL);
+	i = 0x24;
+	r_rbtree_iter_while_prev (it, x, struct Node, rb) {
+		mu_assert_eq (x->key, i, "upper_bound_backward less");
+		i -= 2;
+	}
+	mu_assert_eq (i + 2, 0, "upper_bound_backward complete");
 
 	r_rbtree_free (tree, freefn, NULL);
+	mu_end;
+}
+
+bool test_r_rbtree_bound() {
+	struct Node key = { 0 };
+	RBIter it;
+	RBNode *tree = NULL;
+	struct Node *x;
+	int i;
+
+	for (i = 0; i < 99; i++) {
+		x = make (i*2);
+		r_rbtree_insert (&tree, x, &x->rb, cmp, NULL);
+	}
+
+	key.key = 0x24;
+	x = container_of (r_rbtree_lower_bound (tree, &key, cmp, NULL), struct Node, rb);
+	mu_assert_eq (x->key, 0x24, "lower bound equal");
+
+	key.key = 0x25;
+	x = container_of (r_rbtree_lower_bound (tree, &key, cmp, NULL), struct Node, rb);
+	mu_assert_eq (x->key, 0x26, "lower bound more");
+
+	key.key = 0x24;
+	x = container_of (r_rbtree_upper_bound (tree, &key, cmp, NULL), struct Node, rb);
+	mu_assert_eq (x->key, 0x24, "upper bound equal");
+
+	key.key = 0x25;
+	x = container_of (r_rbtree_upper_bound (tree, &key, cmp, NULL), struct Node, rb);
+	mu_assert_eq (x->key, 0x24, "upper bound less");
+
 	mu_end;
 }
 
@@ -261,6 +301,7 @@ bool test_r_rbtree_traverse(void) {
 
 int all_tests() {
 	mu_run_test (test_r_rbtree_bound);
+	mu_run_test (test_r_rbtree_bound_iterate);
 	mu_run_test (test_r_rbtree_insert_delete);
 	mu_run_test (test_r_rbtree_traverse);
 	mu_run_test (test_r_rbtree_augmented_insert_delete);
