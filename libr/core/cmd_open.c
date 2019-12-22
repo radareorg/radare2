@@ -1415,6 +1415,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		{
 			const char *argv0 = argv ? argv[0] : ptr;
+			r_str_arg_unescape (argv0);
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
 				core->num->value = fd;
@@ -1714,7 +1715,8 @@ static int cmd_open(void *data, const char *input) {
 				if (r_config_get_i (core->config, "cfg.debug")) {
 					RBinFile *bf = r_bin_cur (core->bin);
 					if (bf && r_file_exists (bf->file)) {
-						char *file = strdup (bf->file);
+						// Escape spaces so that o's argv parse will detect the path properly
+						char *file = r_str_arg_escape (bf->file);
 						// Backup the baddr and sections that were already rebased to
 						// revert the rebase after the debug session is closed
 						ut64 orig_baddr = core->bin->cur->o->baddr_shift;
