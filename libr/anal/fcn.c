@@ -5,6 +5,8 @@
 #include <r_util.h>
 #include <r_list.h>
 
+#include <assert.h>
+
 extern int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, int jmptbl_size, ut64 default_case, int ret0);
 extern bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case);
 #define READ_AHEAD 1
@@ -360,7 +362,8 @@ R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
 			continue;
 		}
 		if (bb->addr + bb->size >= eof) {
-			bb->size = eof - bb->addr;
+			bool succ = r_anal_block_try_resize_atomic (bb, bb->addr, eof - bb->addr);
+			assert (succ);
 		}
 		if (bb->jump != UT64_MAX && bb->jump >= eof) {
 			bb->jump = UT64_MAX;
@@ -584,8 +587,7 @@ static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb,
 			snprintf (tmp_buf + 5, MAX_FLG_NAME_SIZE - 6, "%"PFMT64u, addr);
 			anal->flb.set (anal->flb.f, tmp_buf, addr, oplen);
 			fcn->addr += oplen;
-			bb->size -= oplen;
-			bb->addr += oplen;
+			r_anal_block_try_resize_atomic (bb, bb->addr + oplen, bb->size - oplen);
 			*idx = un_idx;
 			return 1;
 		}
@@ -671,6 +673,7 @@ typedef struct {
 } leaddr_pair;
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
+	r_anal_block_check_invariants (anal);
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
 	RAnalBlock *bb = NULL;
@@ -725,6 +728,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		// eprintf ("WIP: function found at 0x%08"PFMT64x" from 0x%08"PFMT64x"\n", fcn_at_addr, addr);
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
+	r_anal_block_check_invariants (anal);
 
 	RAnalBlock *existing_bb = r_anal_get_block_in (anal, addr);
 	if (existing_bb) {
@@ -743,6 +747,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		}
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
+	r_anal_block_check_invariants (anal);
 
 	RList *created = r_anal_block_create (anal, addr, 0);
 	// We checked before if there is a block at addr and our size == 0
@@ -752,6 +757,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	r_list_free (created);
 	r_anal_function_block_add (fcn, bb);
 
+	r_anal_block_check_invariants (anal);
 	if (!anal->leaddrs) {
 		anal->leaddrs = r_list_newf (free);
 		if (!anal->leaddrs) {
@@ -778,6 +784,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		}
 		r_list_free (list);
 	}
+	r_anal_block_check_invariants (anal);
 	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov reg,[R*4+B]"
 	ut8 buf[32]; // 32 bytes is enough to hold any instruction.
 	int maxlen = len * addrbytes;
@@ -796,7 +803,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		}
 	}
 
+	r_anal_block_check_invariants (anal);
+
 	while (addrbytes * idx < maxlen) {
+		r_anal_block_check_invariants (anal);
 		if (!last_is_reg_mov_lea) {
 			free (last_reg_mov_lea_name);
 			last_reg_mov_lea_name = NULL;
@@ -928,7 +938,7 @@ repeat:
 			// But we also already counted this instruction in the
 			// size of the current basic block, so we need to fix that
 			if (delay.adjust) {
-				bb->size -= oplen;
+				r_anal_block_try_resize_atomic (bb, bb->addr, bb->size - oplen);
 				fcn->ninstr--;
 				if (anal->verbose) {
 					eprintf ("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%"PFMT64u" f.uncorr=%d\n",
@@ -1069,7 +1079,7 @@ repeat:
 		case R_ANAL_OP_TYPE_ADD:
 			if (anal->opt.ijmp) {
 				if ((op.size + 4 <= bytes_read) && !memcmp (buf + op.size, "\x00\x00\x00\x00", 4)) {
-					bb->size -= oplen;
+					r_anal_block_try_resize_atomic (bb, bb->addr, bb->size - oplen);
 					op.type = R_ANAL_OP_TYPE_RET;
 					gotoBeach (R_ANAL_RET_END);
 				}
@@ -1406,6 +1416,7 @@ analopfinish:
 		if (is_arm && op.type != R_ANAL_OP_TYPE_MOV) {
 			last_is_mov_lr_pc = false;
 		}
+		r_anal_block_check_invariants (anal);
 	}
 beach:
 	r_anal_op_fini (&op);
@@ -1804,6 +1815,7 @@ eprintf ("ULTRA SLOW\n");
 /* rename RAnalFunctionBB.add() */
 R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {
 	eprintf("TODO: implement r_anal_fcn_add_bb\n");
+	return false;
 #if 0
 	RAnalBlock *bb = NULL;
 	bool mid = false;

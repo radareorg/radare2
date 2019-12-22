@@ -78,12 +78,25 @@ R_API void r_anal_block_free(RAnalBlock *block) {
 R_API void r_anal_block_check_invariants(RAnal *anal) {
 	RBIter iter;
 	RAnalBlock *block;
+	ut64 last_start = 0;
+	ut64 last_end = 0;
+	RAnalBlock *last_block = NULL;
 	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, rb) {
+		if (block->addr < last_end) {
+			eprintf ("FUCK: Overlapping block @ 0x%"PFMT64x" of size %"PFMT64u" with %"PFMT64u"\n", block->addr, block->size, last_block->size);
+		}
+		if (block->addr < last_start) {
+			eprintf ("FUUUUUUCK: Binary tree is corrupted!!!!\n");
+		}
+		last_start = block->addr;
+		last_end = block->addr + block->size;
+		last_block = block;
+
 		if (block->ref < 1) {
-			eprintf("FUCK: block->ref < 1, but it is still in the tree\n");
+			eprintf ("FUCK: block->ref < 1, but it is still in the tree\n");
 		}
 		if (block->ref < r_list_length (block->fcns)) {
-			eprintf("FUCK: block->ref < r_list_length (block->fcns)\n");
+			eprintf ("FUCK: block->ref < r_list_length (block->fcns)\n");
 		}
 		RListIter *fcniter;
 		RAnalFunction *fcn;
@@ -92,12 +105,12 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 			RAnalFunction *fcn2;
 			for (fcniter2 = fcniter->n; fcniter2 && (fcn2 = fcniter2->data, 1); fcniter2 = fcniter2->n) {
 				if (fcn == fcn2) {
-					eprintf("FUCK: Duplicate function %s in basic block @ 0x%"PFMT64x"\n", fcn->name, block->addr);
+					eprintf ("FUCK: Duplicate function %s in basic block @ 0x%"PFMT64x"\n", fcn->name, block->addr);
 					break;
 				}
 			}
 			if (!r_list_contains (fcn->bbs, block)) {
-				eprintf("FUCK: Fcn %s is referenced by block @ 0x%"PFMT64x", but block is not referenced by function\n", fcn->name, block->addr);
+				eprintf ("FUCK: Fcn %s is referenced by block @ 0x%"PFMT64x", but block is not referenced by function\n", fcn->name, block->addr);
 			}
 		}
 	}
@@ -138,7 +151,8 @@ R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
 
 R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr) {
 	BBAPI_PRELUDE(x)
-	RBNode *node = r_rbtree_lower_bound (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
+	r_anal_block_check_invariants (anal);
+	RBNode *node = r_rbtree_upper_bound (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
 	if (!node) {
 		return NULL;
 	}
@@ -239,7 +253,9 @@ R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size) 
 				return false;
 			}
 		}
+		r_anal_block_check_invariants (bb->anal);
 		bb->size = size;
+		r_anal_block_check_invariants (bb->anal);
 		return true;
 	}
 	D eprintf("r_anal_block_try_resize_atomic with different addr not implemented\n");

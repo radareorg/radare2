@@ -994,6 +994,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 					// Todo: Find better way to check if bb was already rebased
 					continue;
 				}
+				eprintf ("fix this in the tree\n");
 				bb->addr += diff;
 				if (bb->jump != UT64_MAX) {
 					bb->jump += diff;

@@ -5,8 +5,6 @@
 #include <r_list.h>
 #include <limits.h>
 
-#define DFLT_NINSTR 3
-
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
