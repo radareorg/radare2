@@ -14,6 +14,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, const ut8 *buf, ut64
 	int oplen, idx = 0;
 
 	if (bb->addr == UT64_MAX) {
+		eprintf ("this is wrong, why should it even bt UT64_MAX?\n");
 		bb->addr = addr;
 	}
 	while (idx < (len - maxOpLen)) {
@@ -38,7 +39,9 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, const ut8 *buf, ut64
 		}
 		r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
 		idx += oplen;
-		bb->size += oplen;
+		if (!r_anal_block_try_resize_atomic (bb, bb->addr, bb->size + oplen)) {
+			eprintf ("overlap\n");
+		}
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_CMP:
 			r_anal_cond_free (bb->cond);
