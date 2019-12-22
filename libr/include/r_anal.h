@@ -1419,16 +1419,33 @@ R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
 
 /* block.c */
+R_API void r_anal_block_check_invariants(RAnal *anal);
+
 R_API RAnalBlock *r_anal_block_new(RAnal *anal, ut64 addr, ut64 size);
-R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr);
 R_API void r_anal_block_free(RAnalBlock *block);
+
+static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
+	return addr >= bb->addr && addr < bb->addr + bb->size;
+}
+
+R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr);
 
 // Create one or more blocks covering the given range.
 // Multiple blocks will be created if the range overlaps another block.
-R_API RList *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size);
+R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size);
+
+// Add a block created outside already.
+// Because this block could overlap existing blocks, it may be split.
+// Return value is like r_anal_create_block()
+R_API RList *r_anal_block_add(RAnal *anal, R_OWN RAnalBlock *block);
 
 // Manually delete a block and remove it from all its functions
 R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb);
+
+// Try to set addr and size of the block without splitting it
+// This will fail if the block would overlap another block after the operation
+// returns true on success
+R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size);
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr);
 R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr);
@@ -1497,10 +1514,8 @@ R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name);
 R_API const char *r_anal_get_fcnsign(RAnal *anal, const char *sym);
 
 /* bb.c */
-R_API RAnalBlock *r_anal_bb_new(void);
-R_API void r_anal_bb_free(RAnalBlock *bb);
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off);
-R_API bool r_anal_bb_is_in_offset(RAnalBlock *bb, ut64 addr);
+R_API bool r_anal_block_contains(RAnalBlock *bb, ut64 addr);
 R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v);
 R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_i(RAnalBlock *bb, int i);
@@ -1635,7 +1650,6 @@ R_API ut32 r_anal_fcn_contsize(const RAnalFunction *fcn);
 R_API ut32 r_anal_fcn_realsize(const RAnalFunction *fcn);
 R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_loops(RAnalFunction *fcn);
-R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, ut64 addr);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);
 R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn);

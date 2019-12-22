@@ -1262,7 +1262,7 @@ static char *palColorFor(const char *k) {
 static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
 	bool color_current = r_config_get_i (core->config, "graph.gv.current");
 	char *pal_curr = palColorFor ("graph.current");
-	bool current = r_anal_bb_is_in_offset (bbi, core->offset);
+	bool current = r_anal_block_contains (bbi, core->offset);
 
 	if (current && color_current) {
 		r_cons_printf ("\t\"0x%08"PFMT64x"\" ", bbi->addr);
@@ -1590,7 +1590,7 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                 top += 250;
                                         }
                                 } else if (!is_json && !is_keva) {
-                                        bool current = r_anal_bb_is_in_offset (bbi, core->offset);
+                                        bool current = r_anal_block_contains (bbi, core->offset);
                                         const char *label_color = bbi->traced
                                                 ? pal_traced
                                                 : (current && color_current)
@@ -3270,7 +3270,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	ht_up_update (state, from, bb);
 
 	// try to find the target in the current function
-	if (r_anal_bb_is_in_offset (bb, to) ||
+	if (r_anal_block_contains (bb, to) ||
 		((!ht_up_find (avoid, bb->jump, NULL) &&
 			!ht_up_find (state, bb->jump, NULL) &&
 			anal_path_exists (core, bb->jump, to, bbs, depth - 1, state, avoid))) ||
@@ -3290,7 +3290,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 		if (refs) {
 			r_list_foreach (refs, iter, refi) {
 				if (refi->type == R_ANAL_REF_TYPE_CALL) {
-					if (r_anal_bb_is_in_offset (bb, refi->at)) {
+					if (r_anal_block_contains (bb, refi->at)) {
 						if ((refi->at != refi->addr) && !ht_up_find (state, refi->addr, NULL) && anal_path_exists (core, refi->addr, to, bbs, depth - 1, state, avoid)) {
 							r_list_prepend (bbs, bb);
 							r_list_free (refs);

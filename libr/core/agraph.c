@@ -2322,7 +2322,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			if (!curbb) {
 				curbb = bb;
 			}
-			if (r_anal_bb_is_in_offset (bb, core->offset)) {
+			if (r_anal_block_contains (bb, core->offset)) {
 				curbb = bb;
 				break;
 			}
