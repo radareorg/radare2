@@ -287,6 +287,12 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	bb->conditional = bbi->conditional;
 	bb->parent_stackptr = bbi->stackptr;
 
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (bbi->fcns, iter, fcn) {
+		r_anal_function_block_add (fcn, bb);
+	}
+
 	// recalculate offset of instructions in both bb and bbi
 	int i;
 	i = 0;
