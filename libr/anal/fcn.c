@@ -723,7 +723,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-	RAnalFunction *fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0);
+	RAnalFunction *fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0); // TODO: Does this still make sense?
 	if (fcn_at_addr && fcn_at_addr != fcn) {
 		// eprintf ("WIP: function found at 0x%08"PFMT64x" from 0x%08"PFMT64x"\n", fcn_at_addr, addr);
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
@@ -736,8 +736,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		existing_bb = r_anal_block_split (existing_bb, addr);
 		if (!existing_in_fcn) {
 			r_anal_function_block_add (fcn, existing_bb);
-
-			// TODO: walk recursively through successors of existing_bb and add to the fcn
+			eprintf ("TODO: walk recursively through successors of existing_bb and add to the fcn\n");
 		}
 		if (anal->opt.recont) {
 			return R_ANAL_RET_END;
@@ -874,6 +873,14 @@ repeat:
 				fcn->ninstr++;
 				// FITFCNSZ(); // defer this, in case this instruction is a branch delay entry
 				// fcn->size += oplen; /// XXX. must be the sum of all the bblocks
+			} else {
+				bb->jump = at;
+				// TODO: why if (anal->opt.jmpmid && is_x86) {
+				// 	r_anal_fcn_split_bb (anal, fcn, bbg, at);
+				// }
+				if (anal->verbose) {
+					eprintf ("Overlapped at 0x%08"PFMT64x "\n", at);
+				}
 			}
 		}
 		if (anal->opt.trycatch) {

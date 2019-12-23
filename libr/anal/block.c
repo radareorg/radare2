@@ -269,24 +269,27 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 		return bbi;
 	}
 
-	ut64 fullsize = bbi->size;
+	// create the second block
+	RAnalBlock *bb = r_anal_block_new (anal, addr, bbi->addr + bbi->size - addr);
+	if (!bb) {
+		return NULL;
+	}
+	bb->jump = bbi->jump;
+	bb->fail = bbi->fail;
+	bb->conditional = bbi->conditional;
+	bb->parent_stackptr = bbi->stackptr;
 
+	// resize the first block
 	bool success = r_anal_block_try_resize_atomic (bbi, bbi->addr, addr - bbi->addr);
 	r_return_val_if_fail (success, NULL);
 	bbi->jump = addr;
 	bbi->fail = UT64_MAX;
 	bbi->conditional = false;
 
-	RAnalBlock *bb = r_anal_block_new (anal, addr, bbi->addr + fullsize - addr);
-	if (!bb) {
-		return NULL;
-	}
+	// insert the second block into the tree
 	r_rbtree_insert (&anal->bb_tree, &bb->addr, &bb->rb, __bb_addr_cmp, NULL);
-	bb->jump = bbi->jump;
-	bb->fail = bbi->fail;
-	bb->conditional = bbi->conditional;
-	bb->parent_stackptr = bbi->stackptr;
 
+	// insert the second block into all functions of the first
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (bbi->fcns, iter, fcn) {
@@ -313,7 +316,7 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 		}
 	}
 	bbi->ninstr = new_bbi_instr;
-	return R_ANAL_RET_END;
+	return bb;
 }
 
 R_API void r_anal_block_unref(RAnalBlock *bb) {
