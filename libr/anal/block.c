@@ -76,6 +76,8 @@ R_API void r_anal_block_free(RAnalBlock *block) {
 
 // TODO: this can be moved to unit tests later
 R_API void r_anal_block_check_invariants(RAnal *anal) {
+#define DEEPCHECKS 0
+#if DEEPCHECKS
 	RBIter iter;
 	RAnalBlock *block;
 	ut64 last_start = 0;
@@ -133,6 +135,7 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 			}
 		}
 	}
+#endif
 }
 
 void __block_free_rb(RBNode *node, void *user) {

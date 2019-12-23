@@ -1669,9 +1669,14 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 			continue;
 		}
 		if (r_anal_fcn_in (fcn, addr)) {
+			// TODO: is there no generic fcn_del? Why do it manually?
+			if (!r_anal_fcn_tree_delete (anal, fcn)) {
+				return false;
+			}
 			r_list_delete (anal->fcns, iter);
 		}
 	}
+	r_anal_fcn_del (anal, addr);
 	return true;
 }
 
@@ -1747,14 +1752,24 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 
 #else
 
-#define BBAPI 0
+#define BBAPI 1
 #if BBAPI
-	// RAnalBlock *b = r_anal_get_block (anal, addr);
 	const RList *list = r_anal_get_functions (anal, addr);
-	if (list) {
+	if (!list || r_list_empty (list)) {
+		return NULL;
+	}
+	if (type == R_ANAL_FCN_TYPE_ROOT) {
+		RAnalFunction *fcn;
+		RListIter *iter;
+		r_list_foreach (list, iter, fcn) {
+			if (fcn->addr == addr) {
+				return fcn;
+			}
+		}
+		return NULL;
+	} else {
 		return r_list_first (list);
 	}
-	return NULL;
 #else
 	// Interval tree query
 	RAnalFunction *fcn;
