@@ -6,6 +6,7 @@
 
 R_API const RList *r_anal_get_functions(RAnal *anal, ut64 addr) {
 	RAnalBlock *bb = r_anal_get_block_in (anal, addr);
+	// TODO: this might be a bit dangerous. If the bb gets unrefd, the list must not be touched anymore.
 	return bb? bb->fcns: NULL;
 }
 
