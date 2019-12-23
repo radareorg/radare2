@@ -36,23 +36,30 @@ static inline RBNode *zig_zag(RBNode *x, int dir, RBNodeSum sum) {
 	return z;
 }
 
-static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool upper, bool backward, void *user) {
+static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool upper, void *user) {
 	RBIter it;
 	it.len = 0;
 	while (x) {
 		int d = cmp (data, x, user);
-		if (upper ? d < 0 : d <= 0) {
-			if (!backward) {
+
+		if (d == 0) {
+			it.path[it.len++] = x;
+			return it;
+		}
+
+		if (d < 0) {
+			if (!upper) {
 				it.path[it.len++] = x;
 			}
 			x = x->child[0];
 		} else {
-			if (backward) {
+			if (upper) {
 				it.path[it.len++] = x;
 			}
 			x = x->child[1];
 		}
 	}
+
 	return it;
 }
 
@@ -323,12 +330,8 @@ R_API RBNode *r_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, void
 	return ret;
 }
 
-R_API RBIter r_rbtree_lower_bound_backward(RBNode *root, void *data, RBComparator cmp, void *user) {
-	return bound_iter (root, data, cmp, false, true, user);
-}
-
 R_API RBIter r_rbtree_lower_bound_forward(RBNode *root, void *data, RBComparator cmp, void *user) {
-	return bound_iter (root, data, cmp, false, false, user);
+	return bound_iter (root, data, cmp, false, user);
 }
 
 R_API RBNode *r_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, void *user) {
@@ -336,9 +339,9 @@ R_API RBNode *r_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, void
 	while (x) {
 		int d = cmp (data, x, user);
 		if (d < 0) {
-			ret = x;
 			x = x->child[0];
 		} else {
+			ret = x;
 			x = x->child[1];
 		}
 	}
@@ -346,11 +349,7 @@ R_API RBNode *r_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, void
 }
 
 R_API RBIter r_rbtree_upper_bound_backward(RBNode *root, void *data, RBComparator cmp, void *user) {
-	return bound_iter (root, data, cmp, true, true, user);
-}
-
-R_API RBIter r_rbtree_upper_bound_forward(RBNode *root, void *data, RBComparator cmp, void *user) {
-	return bound_iter (root, data, cmp, true, false, user);
+	return bound_iter (root, data, cmp, true, user);
 }
 
 static RBIter _first(RBNode *x, int dir) {

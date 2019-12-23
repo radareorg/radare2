@@ -67,21 +67,18 @@ R_API void r_rbtree_free(RBNode *root, RBNodeFree freefn, void *user);
 R_API void r_rbtree_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *user);
 // Return the smallest node that is greater than or equal to `data`
 R_API RBNode *r_rbtree_lower_bound(RBNode *root, void *data, RBComparator cmp, void *user);
-// Return the smallest node that is greater than `data`
+// Return the greatest node that is less than or equal to `data`
 R_API RBNode *r_rbtree_upper_bound(RBNode *root, void *data, RBComparator cmp, void *user);
 
 // Create a forward iterator starting from the leftmost node
 R_API RBIter r_rbtree_first(RBNode *root);
 // Create a backward iterator starting from the rightmost node
 R_API RBIter r_rbtree_last(RBNode *root);
-// Iterate [lower_bound, end) forward, used with r_rbtree_iter_next
-R_API RBIter r_rbtree_lower_bound_backward(RBNode *root, void *data, RBComparator cmp, void *user);
-// Iterate [begin, lower_bound) backward, used with r_rbtree_iter_prev
+
+// Iterate [lower_bound, end] forward, used with r_rbtree_iter_next
 R_API RBIter r_rbtree_lower_bound_forward(RBNode *root, void *data, RBComparator cmp, void *user);
-// Iterate [upper_bound, end) forward, used with r_rbtree_iter_next
+// Iterate [begin, upper_bound] backward, used with r_rbtree_iter_prev
 R_API RBIter r_rbtree_upper_bound_backward(RBNode *root, void *data, RBComparator cmp, void *user);
-// Iterate [begin, upper_bound) backward, used with r_rbtree_iter_prev
-R_API RBIter r_rbtree_upper_bound_forward(RBNode *root, void *data, RBComparator cmp, void *user);
 
 // struct Node { int key; RBNode rb; };
 // r_rbtree_iter_get (it, struct Node, rb)
