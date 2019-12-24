@@ -90,11 +90,30 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 		ptr[l] = 0;
 	} else {
 		R_FREE (sb->ptr);
-		sb->ptr = NULL;
 		memcpy (sb->buf, s, l);
 		sb->buf[l] = 0;
 	}
 	sb->len = l;
+	return true;
+}
+
+// TODO: can be optimized
+R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len) {
+	r_return_val_if_fail (sb && from >= 0 && len >= 0, false);
+	if (from < 1 && len >= sb->len) {
+		return false;
+	}
+	// XXX use ansilen
+	char *s = r_str_newlen (r_strbuf_get (sb), len);
+	r_strbuf_fini (sb);
+	r_strbuf_init (sb);
+	if (from >= len) {
+		r_strbuf_set (sb, "");
+		free (s);
+		return false;
+	}
+	r_strbuf_set (sb, s);
+	free (s);
 	return true;
 }
 

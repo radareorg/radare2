@@ -1131,6 +1131,8 @@ void __update_panel_title(RCore *core, RPanel *panel) {
 		}
 		r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
 	}
+	r_strbuf_slice (title, 0, panel->view->pos.w);
+	r_strbuf_slice (cache_title, 0, panel->view->pos.w);
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
 		r_cons_canvas_write (can, r_strbuf_get (title));
 	}
