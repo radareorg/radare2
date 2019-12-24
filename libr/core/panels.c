@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-#define PANEL_NUM_LIMIT 64
+#define PANEL_NUM_LIMIT 9
 
 #define PANEL_TITLE_SYMBOLS          "Symbols"
 #define PANEL_TITLE_STACK            "Stack"
