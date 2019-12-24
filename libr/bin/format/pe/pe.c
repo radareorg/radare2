@@ -445,7 +445,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 				if (db) {
 					symname = resolveModuleOrdinal (db, symdllname, import_ordinal);
 					if (symname) {
-						snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, symname);
+						snprintf (import_name, PE_NAME_LENGTH, "%s", symname);
 						R_FREE (symname);
 					}
 				} else {
@@ -473,7 +473,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					break;
 				}
 				name[PE_NAME_LENGTH] = '\0';
-				int len = snprintf (import_name, sizeof (import_name), "%s_%s", dll_name, name);
+				int len = snprintf (import_name, sizeof (import_name), "%s" , name);
 				if (len >= sizeof (import_name)) {
 					eprintf ("Import name '%s' has been truncated.\n", import_name);
 				}
@@ -486,6 +486,8 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 			*importp = new_importp;
 			memcpy ((*importp)[*nimp].name, import_name, PE_NAME_LENGTH);
 			(*importp)[*nimp].name[PE_NAME_LENGTH] = '\0';
+			memcpy ((*importp)[*nimp].libname, dll_name, PE_NAME_LENGTH);
+			(*importp)[*nimp].libname[PE_NAME_LENGTH] = '\0';
 			(*importp)[*nimp].vaddr = bin_pe_rva_to_va (bin, FirstThunk + i * sizeof (PE_DWord));
 			(*importp)[*nimp].paddr = bin_pe_rva_to_paddr (bin, FirstThunk) + i * sizeof(PE_DWord);
 			(*importp)[*nimp].hint = import_hint;
@@ -3022,7 +3024,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			}
 			dll_name[PE_NAME_LENGTH] = '\0';
 			function_name[PE_NAME_LENGTH] = '\0';
-			int len = snprintf (export_name, sizeof (export_name), "%s_%s", dll_name, function_name);
+			int len = snprintf (export_name, sizeof (export_name), "%s", function_name);
 			if (len >= sizeof (export_name)) {
 				eprintf ("Export name '%s' has been truncated\n", export_name);
 			}

@@ -227,7 +227,8 @@ static RList* symbols(RBinFile *bf) {
 				break;
 			}
 			//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-			ptr->name = r_str_newf ("imp.%s", imports[i].name);
+			ptr->name = r_str_newf ("%s", imports[i].name);
+			ptr->libname = r_str_newf ("%s", imports[i].libname);
 			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
 			ptr->bind = "NONE";
 			ptr->type = R_BIN_TYPE_FUNC_STR;
@@ -287,6 +288,7 @@ static RList* imports(RBinFile *bf) {
 		}
 		filter_import (imports[i].name);
 		ptr->name = strdup ((char*)imports[i].name);
+		ptr->libname = strdup ((char*)imports[i].libname);
 		ptr->bind = "NONE";
 		ptr->type = "FUNC";
 		ptr->ordinal = imports[i].ordinal;

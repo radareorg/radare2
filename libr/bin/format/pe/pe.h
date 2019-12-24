@@ -33,6 +33,7 @@ struct r_bin_pe_section_t {
 
 struct r_bin_pe_import_t {
 	ut8 name[PE_NAME_LENGTH + 1];
+	ut8 libname[PE_NAME_LENGTH + 1];
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 hint;
