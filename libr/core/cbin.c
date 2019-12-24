@@ -1839,6 +1839,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			continue;
 		}
 		char *symname = strdup (import->name);
+		char *libname = strdup (import->libname);
 		ut64 addr = lit ? r_core_bin_impaddr (r->bin, va, symname): 0;
 		if (bin_demangle) {
 			char *dname = r_bin_demangle (r->bin->cur, NULL, symname, addr, keep_lib);
@@ -1877,8 +1878,8 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 					import->classname,
 					import->descriptor);
 			}
-			r_cons_printf ("\"name\":\"%s\",\"plt\":%"PFMT64d"}",
-				str, addr);
+			r_cons_printf ("\"name\":\"%s\",\"libname\":\"%s\",\"plt\":%"PFMT64d"}",
+				str, libname, addr);
 			free (str);
 		} else if (IS_MODE_RAD (mode)) {
 			// TODO(eddyb) symbols that are imports.
@@ -1953,6 +1954,7 @@ static char *construct_symbol_flagname(const char *pfx, const char *symname, int
 typedef struct {
 	const char *pfx; // prefix for flags
 	char *name;      // raw symbol name
+	char *libname;   // name of the lib this symbol is specific to, if any
 	char *nameflag;  // flag name for symbol
 	char *demname;   // demangled raw symbol name
 	char *demflag;   // flag name for demangled symbol
@@ -1969,6 +1971,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 		return;
 	}
 	sn->name = strdup (sym->name);
+	sn->libname = strdup (sym->libname);
 	const char *pfx = getPrefixFor (sym->type);
 	sn->nameflag = construct_symbol_flagname (pfx, r_bin_symbol_name (sym), MAXFLAG_LEN_DEFAULT);
 	if (sym->classname && sym->classname[0]) {
@@ -1997,6 +2000,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 
 static void snFini(SymName *sn) {
 	R_FREE (sn->name);
+	R_FREE (sn->libname);
 	R_FREE (sn->nameflag);
 	R_FREE (sn->demname);
 	R_FREE (sn->demflag);
@@ -2193,14 +2197,16 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					}
 				}
 			} else {
-				const char *n = sn.demname ? sn.demname : sn.name;
-				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
+				const char *n = r_str_newf("%s.%s", sn.libname, sn.name);
+				const char *rn = sn.demname ? sn.demname : sn.name;
+				// ITAY: THIS SETS THE NAME OF THE FLAG DISPLAYED
+				const char *fn = r_str_newf("imp.%s.%s", sn.libname, sn.demflag ? sn.demflag : sn.name);
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
 					strdup (fn);
 				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 				if (fi) {
-					r_flag_item_set_realname (fi, n);
+					r_flag_item_set_realname (fi, rn);
 					fi->demangled = (bool)(size_t)sn.demname;
 				} else {
 					if (fn) {

@@ -508,6 +508,7 @@ typedef struct r_bin_symbol_t {
 	/* heap-allocated */
 	char *name;
 	char *dname;
+	char *libname;
 	char *classname;
 	/* const-unique-strings */
 	const char *forwarder;
@@ -531,6 +532,7 @@ typedef struct r_bin_symbol_t {
 
 typedef struct r_bin_import_t {
 	char *name;
+	char *libname;
 	const char *bind;
 	const char *type;
 	char *classname;

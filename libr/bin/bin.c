@@ -167,6 +167,7 @@ R_API void r_bin_import_free(void *_imp) {
 	RBinImport *imp = (RBinImport *)_imp;
 	if (imp) {
 		R_FREE (imp->name);
+		R_FREE (imp->libname);
 		R_FREE (imp->classname);
 		R_FREE (imp->descriptor);
 		free (imp);
@@ -194,6 +195,7 @@ R_API void r_bin_symbol_free(void *_sym) {
 	RBinSymbol *sym = (RBinSymbol *)_sym;
 	if (sym) {
 		free (sym->name);
+		free (sym->libname);
 		free (sym->classname);
 		free (sym);
 	}
