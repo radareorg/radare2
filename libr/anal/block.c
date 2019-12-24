@@ -80,15 +80,18 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 #if DEEPCHECKS
 	RBIter iter;
 	RAnalBlock *block;
-	ut64 last_start = 0;
+	ut64 last_start = UT64_MAX;
 	ut64 last_end = 0;
 	RAnalBlock *last_block = NULL;
 	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, rb) {
 		if (block->addr < last_end) {
 			eprintf ("FUCK: Overlapping block @ 0x%"PFMT64x" of size %"PFMT64u" with %"PFMT64u"\n", block->addr, block->size, last_block->size);
 		}
-		if (block->addr < last_start) {
+		if (last_start != UT64_MAX && block->addr < last_start) {
 			eprintf ("FUUUUUUCK: Binary tree is corrupted!!!!\n");
+		}
+		if (last_start != UT64_MAX && block->addr == last_start) {
+			eprintf ("FUUUUUUUUUUCK: Double blocks!!!!!!\n");
 		}
 		last_start = block->addr;
 		last_end = block->addr + block->size;
@@ -206,7 +209,9 @@ D eprintf ("TODO SPLIT\n");
 		r_anal_block_free (block);
 		return NULL;
 	}
+	r_anal_block_check_invariants (anal);
 	r_rbtree_insert (&anal->bb_tree, &block->addr, &block->rb, __bb_addr_cmp, NULL);
+	r_anal_block_check_invariants (anal);
 	r_list_push (ret, block);
 	return ret;
 }
@@ -224,7 +229,9 @@ R_API RList *r_anal_block_add(RAnal *anal, R_OWN RAnalBlock *block) {
 		r_anal_block_free (block);
 		return NULL;
 	}
+	r_anal_block_check_invariants (anal);
 	r_rbtree_insert (&anal->bb_tree, &block->addr, &block->rb, __bb_addr_cmp, NULL);
+	r_anal_block_check_invariants (anal);
 	return ret;
 }
 

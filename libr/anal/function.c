@@ -91,7 +91,8 @@ R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb) {
 
 R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb) {
 	r_list_delete_data (bb->fcns, fcn);
-	r_list_delete_data (fcn->bbs, bb); // unrefs the bb
+	r_list_delete_data (fcn->bbs, bb);
+	r_anal_block_unref (bb);
 }
 
 R_API bool r_anal_del_function(RAnalFunction *fcn) {
