@@ -1841,12 +1841,6 @@ eprintf ("ULTRA SLOW\n");
 
 /* rename RAnalFunctionBB.add() */
 R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {
-	eprintf("TODO: implement r_anal_fcn_add_bb\n");
-	return false;
-#if 0
-	RAnalBlock *bb = NULL;
-	bool mid = false;
-	st64 n;
 	D eprintf ("Add bb\n");
 	if (size == 0) { // empty basic blocks allowed?
 		eprintf ("Warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
@@ -1858,6 +1852,33 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 		r_warn_if_reached ();
 		return false;
 	}
+	RList *blocks = r_anal_block_create (a, addr, size);
+	if (!blocks || r_list_empty (blocks)) {
+		return false;
+	}
+	RAnalBlock *last = r_list_last (blocks);
+	last->jump = jump;
+	last->fail = fail;
+	// TODO: wat do with type and diff?
+
+	RAnalBlock *block;
+	RListIter *iter;
+	r_list_foreach (blocks, iter, block) {
+		r_anal_function_block_add (fcn, block);
+	}
+	r_anal_fcn_update_tinyrange_bbs (fcn);
+	st64 n = last->addr + last->size - fcn->addr;
+	if (n >= 0 && r_anal_fcn_size (fcn) < n) {
+		// If fcn is in anal->fcn_tree (which reflects anal->fcns), update fcn_tree because fcn->_size has changed.
+		r_anal_fcn_set_size (a, fcn, n);
+	}
+
+	r_list_free (blocks);
+	return true;
+#if 0
+	RAnalBlock *bb = NULL;
+	bool mid = false;
+	st64 n;
 	RAnalBlock *bbi = r_anal_get_block_at (fcn->anal, addr);
 	if (bbi) {
 		if (addr == bbi->addr) {
