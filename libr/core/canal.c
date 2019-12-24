@@ -4772,7 +4772,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	if (!sn) {
 		eprintf ("Warning: No SN reg alias for current architecture.\n");
 	}
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	r_reg_arena_push (core->anal->reg);
 	for (i = 0; i < iend; i++) {
 repeat:
@@ -4784,12 +4784,6 @@ repeat:
 			break;
 		}
 		cur = addr + i;
-		if (core->io->va) {
-			if (!r_io_is_valid_offset (core->io, cur, !core->anal->opt.noncode)) {
-				i += mininstrsz - 1;
-				continue;
-			}
-		}
 		{
 			RList *list = r_meta_find_list_in (core->anal, cur, -1, 4);
 			RListIter *iter;
@@ -4823,7 +4817,7 @@ repeat:
 		}
 		// if (op.type & 0x80000000 || op.type == 0) {
 		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK) {
-			i += mininstrsz - 1;
+			// i += 2
 			r_anal_op_fini (&op);
 			continue;
 		}
