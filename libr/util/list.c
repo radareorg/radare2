@@ -362,7 +362,7 @@ R_API void r_list_reverse(RList *list) {
 	list->tail = tmp;
 }
 
-R_API RList *r_list_clone(RList *list) {
+R_API RList *r_list_clone(const RList *list) {
 	RList *l = NULL;
 	RListIter *iter;
 	void *data;
