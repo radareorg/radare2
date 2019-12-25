@@ -109,7 +109,10 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			newtid = newpid;
 #endif
 		}
-		//reopen and attach
+		// Reset previous pid and tid
+		core->dbg->pid = -1;
+		core->dbg->tid = -1;
+		// Reopen and attach
 		r_core_setup_debugger (core, "native", true);
 		r_debug_select (core->dbg, newpid, newtid);
 	}

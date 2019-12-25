@@ -572,10 +572,15 @@ R_API int r_debug_start(RDebug *dbg, const char *cmd) {
 }
 
 R_API int r_debug_detach(RDebug *dbg, int pid) {
+	int ret = 0;
 	if (dbg->h && dbg->h->detach) {
-		return dbg->h->detach (dbg, pid);
+		ret = dbg->h->detach (dbg, pid);
+		if (dbg->pid == pid) {
+			dbg->pid = -1;
+			dbg->tid = -1;
+		}
 	}
-	return false;
+	return ret;
 }
 
 R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
