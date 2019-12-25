@@ -3696,7 +3696,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case 'e':
+	case 'e': // "dbe"
 		for (p = input + 2; *p == ' '; p++);
 		if (*p == '*') r_bp_enable_all (core->dbg->bp,true);
 		else {
@@ -3704,7 +3704,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, r_num_math (core->num, p));
 		}
 		break;
-	case 'd':
+	case 'd': // "dbd"
 		for (p = input + 2; *p == ' '; p++);
 		if (*p == '*') r_bp_enable_all (core->dbg->bp, false);
 		else {
@@ -3712,7 +3712,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), false, r_num_math (core->num, p));
 		}
 		break;
-	case 'h':
+	case 'h': // "dbh"
 		switch (input[2]) {
 		case 0:
 			r_bp_plugin_list (core->dbg->bp);
