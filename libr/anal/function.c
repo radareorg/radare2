@@ -105,7 +105,6 @@ R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb) {
 		}
 	}
 	r_anal_fcn_set_size (fcn->anal, fcn, size);
-	r_anal_fcn_update_tinyrange_bbs (fcn);
 }
 
 R_API bool r_anal_del_function(RAnalFunction *fcn) {

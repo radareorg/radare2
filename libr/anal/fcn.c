@@ -105,16 +105,6 @@ static int cmpaddr(const void *_a, const void *_b) {
 	return (a->addr - b->addr);
 }
 
-R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn) {
-	RAnalBlock *bb;
-	RListIter *iter;
-	r_list_sort (fcn->bbs, &cmpaddr);
-	r_tinyrange_fini (&fcn->bbr);
-	r_list_foreach (fcn->bbs, iter, bb) {
-		r_tinyrange_add (&fcn->bbr, bb->addr, bb->addr + bb->size);
-	}
-}
-
 static void set_meta_if_needed(RAnalFunction *x) {
 	if (x->meta.min == UT64_MAX) {
 		ut64 min = UT64_MAX;
@@ -373,7 +363,6 @@ R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
 			bb->fail = UT64_MAX;
 		}
 	}
-	r_anal_fcn_update_tinyrange_bbs (fcn);
 	return true;
 }
 
@@ -396,7 +385,6 @@ R_API RAnalFunction *r_anal_fcn_new(RAnal *anal) {
 	fcn->has_changed = true;
 	fcn->bp_frame = true;
 	fcn->is_noreturn = false;
-	r_tinyrange_init (&fcn->bbr);
 	fcn->meta.min = UT64_MAX;
 	return fcn;
 }
@@ -420,7 +408,6 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	fcn->_size = 0;
 	free (fcn->name);
 	free (fcn->attr);
-	r_tinyrange_fini (&fcn->bbr);
 	r_list_free (fcn->fcn_locs);
 	fcn->bbs = NULL;
 	free (fcn->fingerprint);
@@ -1456,7 +1443,6 @@ unrefbb:
 
 R_API int r_anal_fcn_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth) {
 	int ret = fcn_recurse (anal, fcn, addr, anal->opt.bb_max_size, depth - 1);
-	r_anal_fcn_update_tinyrange_bbs (fcn);
 	if (ret != -1) {
 		r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));
 	}
@@ -1733,6 +1719,13 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 }
 
 R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type) {
+#if 1
+	RList *list = r_anal_get_functions (anal, addr);
+	if (!list) {
+		return NULL;
+	}
+	return r_list_clone (list);
+#else
 	RList *list = r_list_newf (NULL);
 	// Interval tree query
 	RAnalFunction *fcn;
@@ -1745,6 +1738,7 @@ R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type) {
 		}
 	}
 	return list;
+#endif
 }
 
 R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
@@ -1810,7 +1804,8 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 }
 
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr) {
-	return fcn? r_tinyrange_in (&fcn->bbr, addr): false;
+	const RList *fcns = r_anal_get_functions (fcn->anal, addr);
+	return fcns && r_list_contains (fcns, fcn);
 }
 
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) {
@@ -1898,7 +1893,6 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 		r_anal_function_block_add (fcn, block);
 	}
 
-	r_anal_fcn_update_tinyrange_bbs (fcn);
 	st64 n = (st64)(last->addr + last->size - fcn->addr);
 	if (n >= 0 && r_anal_fcn_size (fcn) < n) {
 		// If fcn is in anal->fcn_tree (which reflects anal->fcns), update fcn_tree because fcn->_size has changed.

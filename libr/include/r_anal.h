@@ -298,7 +298,6 @@ typedef struct r_anal_function_t {
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs; // TODO: should be RPVector
 	RAnalFcnMeta meta;
-	RRangeTiny bbr;
 	RBNode rb;
 	RBNode addr_rb;
 	RList *imports; // maybe bound to class?
@@ -1615,7 +1614,6 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
 		ut64 addr, ut64 size,
 		ut64 jump, ut64 fail, int type, R_BORROW RAnalDiff *diff);
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
-R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn);
 R_API void r_anal_fcn_invalidate_read_ahead_cache(void);
 R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn);
 
