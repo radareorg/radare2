@@ -338,6 +338,7 @@ static void _fcn_tree_iter_next(FcnTreeIter *it, ut64 from, ut64 to) {
 }
 
 R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
+	// TODO: deprecate?
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
 
@@ -736,9 +737,23 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	if (existing_bb) {
 		bool existing_in_fcn = r_list_contains (existing_bb->fcns, fcn);
 		existing_bb = r_anal_block_split (existing_bb, addr);
-		if (!existing_in_fcn) {
-			r_anal_function_block_add (fcn, existing_bb);
-			eprintf ("TODO: walk recursively through successors of existing_bb and add to the fcn\n");
+		if (!existing_in_fcn && existing_bb) {
+			RList *blocks = r_anal_block_recurse_list (existing_bb);
+			RListIter *iter;
+			RAnalBlock *existing_rec_block;
+			r_list_foreach (blocks, iter, existing_rec_block) {
+#define TAKEOVER 1
+#if TAKEOVER
+				while (!r_list_empty (existing_rec_block->fcns)) {
+					RAnalFunction *existing_fcn = r_list_first (existing_rec_block->fcns);
+					//if (existing_fcn != fcn) {
+						r_anal_function_block_remove (existing_fcn, existing_rec_block);
+					//}
+				}
+#endif
+				r_anal_function_block_add (fcn, existing_rec_block);
+			}
+			r_list_free (blocks);
 		}
 		if (anal->opt.recont) {
 			return R_ANAL_RET_END;
