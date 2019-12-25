@@ -947,7 +947,7 @@ repeat:
 			// But we also already counted this instruction in the
 			// size of the current basic block, so we need to fix that
 			if (delay.adjust) {
-				r_anal_block_try_resize_atomic (bb, bb->addr, bb->size - oplen);
+				r_anal_block_try_resize_atomic (bb, bb->addr, addrbytes * delay.after);
 				fcn->ninstr--;
 				if (anal->verbose) {
 					eprintf ("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%"PFMT64u" f.uncorr=%d\n",
