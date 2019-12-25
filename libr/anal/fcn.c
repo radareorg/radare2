@@ -741,6 +741,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 				r_anal_function_block_add (fcn, existing_rec_block);
 			}
 			r_list_free (blocks);
+			return R_ANAL_RET_END;
 		}
 		if (anal->opt.recont) {
 			return R_ANAL_RET_END;

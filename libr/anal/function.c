@@ -84,6 +84,10 @@ R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb) {
 	r_list_append (bb->fcns, fcn); // associate the given fcn with this bb
 	r_anal_block_ref (bb);
 	r_list_append (fcn->bbs, bb);
+	st64 size_candidate = (st64)(bb->addr + bb->size - fcn->addr);
+	if (size_candidate > fcn->_size) {
+		r_anal_fcn_set_size (fcn->anal, fcn, size_candidate);
+	}
 	if (fcn->anal->cb.on_fcn_bb_new) {
 		fcn->anal->cb.on_fcn_bb_new (fcn->anal, fcn->anal->user, fcn, bb);
 	}
