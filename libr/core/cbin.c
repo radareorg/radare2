@@ -1839,7 +1839,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			continue;
 		}
 		char *symname = strdup (import->name);
-		char *libname = strdup (import->libname);
+		char *libname = import->libname ? strdup (import->libname) : NULL;
 		ut64 addr = lit ? r_core_bin_impaddr (r->bin, va, symname): 0;
 		if (bin_demangle) {
 			char *dname = r_bin_demangle (r->bin->cur, NULL, symname, addr, keep_lib);
@@ -1971,7 +1971,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 		return;
 	}
 	sn->name = strdup (sym->name);
-	sn->libname = strdup (sym->libname);
+	sn->libname = sn->libname ? strdup (sym->libname) : NULL;
 	const char *pfx = getPrefixFor (sym->type);
 	sn->nameflag = construct_symbol_flagname (pfx, r_bin_symbol_name (sym), MAXFLAG_LEN_DEFAULT);
 	if (sym->classname && sym->classname[0]) {
