@@ -107,7 +107,7 @@ R_API void *r_list_get_bottom(const RList *list);
 R_API void *r_list_pop(RList *list);
 R_API void *r_list_pop_head(RList *list);
 R_API void r_list_reverse(RList *list);
-R_API RList *r_list_clone(RList *list);
+R_API RList *r_list_clone(const RList *list);
 R_API char *r_list_to_str(RList *list, char ch);
 
 /* hashlike api */
