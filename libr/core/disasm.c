@@ -353,7 +353,7 @@ R_API ut64 r_core_pava (RCore *core, ut64 addr) {
 }
 
 static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
-	if (ds->fcn && r_tinyrange_in (&ds->fcn->bbr, at)) {
+	if (ds->fcn && r_anal_fcn_in (ds->fcn, at)) {
 		return ds->fcn;
 	}
 	return r_anal_get_fcn_in (ds->core->anal, at, type);

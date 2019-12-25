@@ -989,9 +989,6 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 				fcn->meta.min += diff;
 			}
 			int j;
-			for (j = 0; j < fcn->bbr.pairs * 2; j++) {
-				fcn->bbr.ranges[j] += diff;
-			}
 			r_anal_fcn_tree_insert (core->anal, fcn);
 			RAnalBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;
