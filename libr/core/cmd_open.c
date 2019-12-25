@@ -1045,7 +1045,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 	ht_up_free (old_xrefs);
 
 	// BREAKPOINTS
-	r_debug_bp_rebase (core->dbg, new_base);
+	r_debug_bp_rebase (core->dbg, old_base, new_base);
 }
 
 R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
