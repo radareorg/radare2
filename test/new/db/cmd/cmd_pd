@@ -1886,48 +1886,54 @@ FILE=../bins/elf/padding_in_func
 CMDS=<<EXPECT
 s main
 af
-pdfj~{} | grep opcode
+pdf
 EXPECT=<<RUN
-      "opcode": "push rbp",
-      "opcode": "push rbx",
-      "opcode": "push rax",
-      "opcode": "mov ebx, edi",
-      "opcode": "cmp ebx, 2",
-      "opcode": "mov eax, 0x5758554a",
-      "opcode": "mov ebp, 0x10c2377a",
-      "opcode": "cmovl ebp, eax",
-      "opcode": "mov eax, 0xbaad0c8f",
-      "opcode": "cmp eax, 0xccdab13a",
-      "opcode": "jg 0x40058a",
-      "opcode": "jmp 0x4005ae",
-      "opcode": "mov edi, 0x400664",
-      "opcode": "xor eax, eax",
-      "opcode": "mov esi, ebx",
-      "opcode": "call 0x400440",
-      "opcode": "mov eax, 0xccdab13b",
-      "opcode": "cmp eax, 0xccdab13a",
-      "opcode": "jle 0x4005ae",
-      "opcode": "cmp eax, 0x10c2377a",
-      "opcode": "je 0x400570",
-      "opcode": "cmp eax, 0x5758554a",
-      "opcode": "jne 0x4005b9",
-      "opcode": "mov edi, 0x40066d",
-      "opcode": "call 0x400430",
-      "opcode": "mov eax, 0xccdab13b",
-      "opcode": "cmp eax, 0xccdab13a",
-      "opcode": "jg 0x40058a",
-      "opcode": "cmp eax, 0xbaad0c8f",
-      "opcode": "mov eax, ebp",
-      "opcode": "je 0x400583",
-      "opcode": "jmp 0x4005d0",
-      "opcode": "cmp eax, 0xccdab13b",
-      "opcode": "jne 0x4005d0",
-      "opcode": "xor eax, eax",
-      "opcode": "add rsp, 8",
-      "opcode": "pop rbx",
-      "opcode": "pop rbp",
-      "opcode": "ret",
-      "opcode": "jmp 0x4005d0",
+/ 126: int main (int argc, char **argv, char **envp);
+|           ; arg int argc @ rdi
+|           0x00400540      55             push rbp
+|           0x00400541      53             push rbx
+|           0x00400542      50             push rax
+|           0x00400543      89fb           mov ebx, edi                ; argc
+|           0x00400545      83fb02         cmp ebx, 2                  ; 2
+|           0x00400548      b84a555857     mov eax, 0x5758554a         ; 'JUXW'
+|           0x0040054d      bd7a37c210     mov ebp, 0x10c2377a
+|           0x00400552      0f4ce8         cmovl ebp, eax
+|           0x00400555      b88f0cadba     mov eax, 0xbaad0c8f
+|           0x0040055a      3d3ab1dacc     cmp eax, 0xccdab13a
+|       ,=< 0x0040055f      7f29           jg 0x40058a
+|      ,==< 0x00400561      eb4b           jmp 0x4005ae
+..
+|     .---> 0x00400570      bf64064000     mov edi, str.d_args         ; 0x400664 ; "%d args\n"
+|     :||   0x00400575      31c0           xor eax, eax
+|     :||   0x00400577      89de           mov esi, ebx
+|     :||   0x00400579      e8c2feffff     call sym.imp.printf
+|     :||   0x0040057e      b83bb1dacc     mov eax, 0xccdab13b
+|    .----> 0x00400583      3d3ab1dacc     cmp eax, 0xccdab13a
+|   ,=====< 0x00400588      7e24           jle 0x4005ae
+|  .----`-> 0x0040058a      3d7a37c210     cmp eax, 0x10c2377a
+|  :|:`===< 0x0040058f      74df           je 0x400570
+|  :|: |    0x00400591      3d4a555857     cmp eax, 0x5758554a
+|  :|: |,=< 0x00400596      7521           jne 0x4005b9
+|  :|: ||   0x00400598      bf6d064000     mov edi, str.no_args        ; 0x40066d ; "no args"
+|  :|: ||   0x0040059d      e88efeffff     call sym.imp.puts
+|  :|: ||   0x004005a2      b83bb1dacc     mov eax, 0xccdab13b
+|  :|: ||   0x004005a7      3d3ab1dacc     cmp eax, 0xccdab13a
+|  `======< 0x004005ac      7fdc           jg 0x40058a
+|   |: ||   ; CODE XREF from main @ 0x400561
+|   `--`--> 0x004005ae      3d8f0cadba     cmp eax, 0xbaad0c8f
+|    :  |   0x004005b3      89e8           mov eax, ebp
+|    `====< 0x004005b5      74cc           je 0x400583
+|      ,==< 0x004005b7      eb17           jmp 0x4005d0
+|      |`-> 0x004005b9      3d3bb1dacc     cmp eax, 0xccdab13b
+|      |,=< 0x004005be      7510           jne 0x4005d0
+|      ||   0x004005c0      31c0           xor eax, eax
+|      ||   0x004005c2      4883c408       add rsp, 8
+|      ||   0x004005c6      5b             pop rbx
+|      ||   0x004005c7      5d             pop rbp
+|      ||   0x004005c8      c3             ret
+..
+|     @||   ; CODE XREF from main @ 0x4005b7
+\     @``-> 0x004005d0      ebfe           jmp 0x4005d0
 RUN
 
 NAME=asm.imm.str, mov and movabs (#10473)
