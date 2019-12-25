@@ -1413,6 +1413,8 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (argv) {
+			// Unescape spaces from the path
+			r_str_replace (argv[0], "\\ ", " ", true);
 			if (argc == 2) {
 				if (r_num_is_valid_input (core->num, argv[1])) {
 					addr = r_num_math (core->num, argv[1]);
@@ -1427,8 +1429,6 @@ static int cmd_open(void *data, const char *input) {
 		}
 		{
 			const char *argv0 = argv ? argv[0] : ptr;
-			// Unescape spaces from the path
-			r_str_replace ((char *)argv0, "\\ ", " ", true);
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
 				core->num->value = fd;
