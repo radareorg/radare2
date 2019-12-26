@@ -698,7 +698,11 @@ repeat:
 			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
 		}
 		if (!overlapped) {
-			overlapped = !r_anal_block_try_resize_atomic (bb, bb->addr, bb->size + oplen);
+			ut64 newbbsize = bb->size + oplen;
+			if (newbbsize > MAX_FCN_SIZE) {
+				return R_ANAL_RET_ERROR;
+			}
+			overlapped = !r_anal_block_try_resize_atomic (bb, bb->addr, newbbsize);
 			if (!overlapped) {
 				r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
 				fcn->ninstr++;
