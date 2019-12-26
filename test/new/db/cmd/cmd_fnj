@@ -5,8 +5,8 @@ EXPECT=<<CMDS
 {"name":"reloc.operator_delete_void","realname":"reloc.operator delete(void*)","size":8,"offset":16432}
 CMDS=<<RUN
 aaa
-fj~{268}
-fnj~{268}
+fj~{266}
+fnj~{266}
 RUN
 
 NAME=fn.j fnj.
