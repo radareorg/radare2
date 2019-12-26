@@ -85,25 +85,25 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 	return bb->size;
 }
 
-R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn) {
+R_API size_t r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
-	int len = 0;
 
 	if (anal && anal->cur && anal->cur->fingerprint_fcn) {
 		return (anal->cur->fingerprint_fcn (anal, fcn));
 	}
 
 	fcn->fingerprint = NULL;
+	fcn->fingerprint_size = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		len += bb->size;
-		fcn->fingerprint = realloc (fcn->fingerprint, len + 1);
+		fcn->fingerprint_size += bb->size;
+		fcn->fingerprint = realloc (fcn->fingerprint, fcn->fingerprint_size + 1);
 		if (!fcn->fingerprint) {
 			return 0;
 		}
-		memcpy (fcn->fingerprint+len-bb->size, bb->fingerprint, bb->size);
+		memcpy (fcn->fingerprint + fcn->fingerprint_size - bb->size, bb->fingerprint, bb->size);
 	}
-	return len;
+	return fcn->fingerprint_size;
 }
 
 R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) {
@@ -189,8 +189,8 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 				if (fcn->name && fcn2->name && strcmp (fcn->name, fcn2->name)) {
 					continue;
 				}
-				r_diff_buffers_distance (NULL, fcn->fingerprint, r_anal_fcn_linear_size (fcn),
-						fcn2->fingerprint, r_anal_fcn_linear_size (fcn2),
+				r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size,
+						fcn2->fingerprint, fcn2->fingerprint_size,
 						NULL, &t);
 				/* Set flag in matched functions */
 				fcn->diff->type = fcn2->diff->type = (t >= 1)
@@ -252,7 +252,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 				eprintf ("Function %s type not supported\n", fcn2->name);
 				continue;
 			}
-			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn_size, fcn2->fingerprint, fcn2_size, NULL, &t);
+			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size, fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
 			fcn->diff->dist = fcn2->diff->dist = t;
 			if (t > anal->diff_thfcn && t > ot) {
 				ot = t;
