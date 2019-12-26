@@ -442,6 +442,7 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 		eprintf ("Core file not open\n");
 		if (IS_MODE_JSON (mode)) {
 			r_cons_print ("[]");
+			return true;
 		}
 		return false;
 	}
@@ -494,6 +495,7 @@ static bool bin_strings(RCore *r, int mode, int va) {
 		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
 			if (IS_MODE_JSON (mode)) {
 				r_cons_print ("[]");
+				return true;
 			}
 			return false;
 		}
@@ -619,6 +621,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 	if (!bf || !info || !obj) {
 		if (mode & R_MODE_JSON) {
 			r_cons_printf ("{}");
+			return true;
 		}
 		return false;
 	}
@@ -1643,6 +1646,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	db = NULL;
 
 	R_TIME_END;
+    if (IS_MODE_JSON (mode) && relocs == NULL) {
+        return true;
+    }
 	return relocs != NULL;
 }
 
@@ -2984,6 +2990,7 @@ static int bin_classes(RCore *r, int mode) {
 	if (!cs) {
 		if (IS_MODE_JSON (mode)) {
 			r_cons_print ("[]");
+			return true;
 		}
 		return false;
 	}
@@ -3246,6 +3253,7 @@ static int bin_mem(RCore *r, int mode) {
 	if (!(mem = r_bin_get_mem (r->bin))) {
 		if (IS_MODE_JSON (mode)) {
 			r_cons_print("[]");
+			return true;
 		}
 		return false;
 	}
