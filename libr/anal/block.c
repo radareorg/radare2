@@ -188,7 +188,7 @@ R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr) {
 
 R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 	BBAPI_PRELUDE (x)
-	RList *ret = r_list_new ();
+	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
 	if (!ret) {
 		return NULL;
 	}
@@ -200,6 +200,7 @@ R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 			break;
 		}
 		if (block->addr + size > addr) {
+			r_anal_block_ref (block);
 			r_list_push (ret, block);
 		}
 		r_rbtree_iter_next (&it);
@@ -207,29 +208,58 @@ R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 	return ret;
 }
 
+// TODO: unit-test this HARD!!
 R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 	BBAPI_PRELUDE (NULL);
 	r_return_val_if_fail (anal, NULL);
-	RList *intersecting = r_anal_get_blocks_intersect (anal, addr, size);
-	if (intersecting && intersecting->length) {
-D eprintf ("TODO SPLIT\n");
-		r_list_free (intersecting);
-		return false;
-	}
-	r_list_free (intersecting);
-	RAnalBlock *block = r_anal_block_new (anal, addr, size);
-	if (!block) {
-		return NULL;
-	}
+
 	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
 	if (!ret) {
-		r_anal_block_free (block);
 		return NULL;
 	}
+
+	RList *intersecting = r_anal_get_blocks_intersect (anal, addr, size);
+	if (!r_list_empty (intersecting)) {
+		RAnalBlock *first = r_list_first (intersecting);
+		if (first->addr < addr) {
+			r_list_pop_head (intersecting);
+			RAnalBlock *newfirst = r_anal_block_split (first, addr);
+			r_list_prepend (intersecting, newfirst);
+			r_anal_block_unref (first);
+		}
+		RAnalBlock *last = r_list_last (intersecting);
+		if (last->addr + size > addr + size) {
+			RAnalBlock *tail = r_anal_block_split (last, addr + size);
+			r_anal_block_unref (tail);
+		}
+	}
+
+	ut64 cur = addr;
+	ut64 end = addr + size;
+	while (cur < end) {
+		RAnalBlock *newblock = NULL;
+		RAnalBlock *insect = NULL;
+		if (r_list_empty (intersecting)) {
+			newblock = r_anal_block_new (anal, cur, end - cur);
+			cur = end;
+		} else {
+			insect = r_list_pop_head (intersecting);
+			if (insect->addr > cur) {
+				newblock = r_anal_block_new (anal, cur, insect->addr - cur);
+			}
+			cur = insect->addr + insect->size;
+		}
+		if (newblock) {
+			r_rbtree_insert (&anal->bb_tree, &newblock->addr, &newblock->rb, __bb_addr_cmp, NULL);
+			r_list_push (ret, newblock);
+		}
+		if (insect) {
+			r_list_push (ret, insect);
+		}
+		r_anal_block_check_invariants (anal);
+	}
+	r_list_free (intersecting);
 	r_anal_block_check_invariants (anal);
-	r_rbtree_insert (&anal->bb_tree, &block->addr, &block->rb, __bb_addr_cmp, NULL);
-	r_anal_block_check_invariants (anal);
-	r_list_push (ret, block);
 	return ret;
 }
 
