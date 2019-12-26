@@ -103,7 +103,7 @@ R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb) {
 	r_list_delete_data (bb->fcns, fcn);
 
 	if (fcn->meta._min != UT64_MAX
-		&& (fcn->meta._min == bb->addr || fcn->meta._min == bb->addr + bb->size)) {
+		&& (fcn->meta._min == bb->addr || fcn->meta._max == bb->addr + bb->size)) {
 		// If a block is removed at the beginning or end, updating min/max is not trivial anymore, just invalidate
 		fcn->meta._min = UT64_MAX;
 	}

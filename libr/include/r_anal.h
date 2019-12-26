@@ -1430,7 +1430,15 @@ static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
 	return addr >= bb->addr && addr < bb->addr + bb->size;
 }
 
+// Split the block at the given address into two blocks.
+// bb will stay the first block, the second block will be returned (or NULL on failure)
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr);
+
+// Merge block b into a.
+// b will be FREED (not just unrefd) and is NOT VALID anymore if this function is successful!
+// This only works if b follows directly after a and their function lists are identical.
+// returns true iff the blocks could be merged
+R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b);
 
 // Create one or more blocks covering the given range.
 // Multiple blocks will be created if the range overlaps another block.

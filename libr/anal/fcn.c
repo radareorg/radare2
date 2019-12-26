@@ -1523,31 +1523,14 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 	const RList *fcns = r_anal_get_functions (a, addr);
 	RAnalFunction *fcn;
 	RListIter *iter, *iter2;
-	if (r_list_empty (fcns)) {
-		eprintf ("Cannot find any function here\n");
-	} else {
-		r_list_foreach_safe (a->fcns, iter, iter2, fcn) {
-			D eprintf ("fcn at %llx %llx\n", fcn->addr, addr);
-			if (fcn->addr == addr) {
-				r_anal_del_function (fcn);
-			}
-		}
-		return true;
-	}
-	return false;
-#if 0
-	RAnalFunction *fcni;
-	RListIter *iter_tmp;
-	r_list_foreach_safe (a->fcns, iter, iter_tmp, fcni) {
-		if (r_anal_fcn_in (fcni, addr) || fcni->addr == addr) {
-			if (a->cb.on_fcn_delete) {
-				a->cb.on_fcn_delete (a, a->user, fcni);
-			}
-			r_anal_function_unref (fcni);
+	r_list_foreach_safe (fcns, iter, iter2, fcn) {
+		D eprintf ("fcn at %llx %llx\n", fcn->addr, addr);
+		if (fcn->addr == addr) {
+			r_anal_del_function (fcn);
 		}
 	}
+	r_anal_block_check_invariants (a);
 	return true;
-#endif
 }
 
 R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type) {
@@ -1704,6 +1687,8 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 
 	RAnalBlock *block;
 	RListIter *iter;
+
+	// apply data and add blocks to function
 	r_list_foreach (blocks, iter, block) {
 		if (type) {
 			block->type = type;
@@ -1723,6 +1708,18 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 			}
 		}
 		r_anal_function_block_add (fcn, block);
+	}
+
+	// try to merge the blocks as hard as possible
+	RListIter *tmpiter;
+	r_list_foreach_safe (blocks, iter, tmpiter, block) {
+		if (!iter->p) {
+			continue;
+		}
+		if (r_anal_block_merge (iter->p->data, block)) {
+			iter->data = NULL; // block has been freed already by r_anal_block_merge()
+			r_list_delete (blocks, iter);
+		}
 	}
 
 	r_list_free (blocks);
@@ -2007,8 +2004,8 @@ static void ensure_fcn_range(RAnalFunction *fcn) {
 	if (fcn->meta._min != UT64_MAX) { // recalculate only if invalid
 		return;
 	}
-	ut64 minval = fcn->addr;
-	ut64 maxval = minval;
+	ut64 minval = UT64_MAX;
+	ut64 maxval = UT64_MIN;
 	RAnalBlock *block;
 	RListIter *iter;
 	r_list_foreach (fcn->bbs, iter, block) {
