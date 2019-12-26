@@ -84,6 +84,16 @@ R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb) {
 	r_list_append (bb->fcns, fcn); // associate the given fcn with this bb
 	r_anal_block_ref (bb);
 	r_list_append (fcn->bbs, bb);
+
+	if (fcn->meta._min != UT64_MAX) {
+		if (bb->addr + bb->size > fcn->meta._max) {
+			fcn->meta._max = bb->addr + bb->size;
+		}
+		if (bb->addr < fcn->meta._min) {
+			fcn->meta._min = bb->addr;
+		}
+	}
+
 	if (fcn->anal->cb.on_fcn_bb_new) {
 		fcn->anal->cb.on_fcn_bb_new (fcn->anal, fcn->anal->user, fcn, bb);
 	}
@@ -91,6 +101,13 @@ R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb) {
 
 R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb) {
 	r_list_delete_data (bb->fcns, fcn);
+
+	if (fcn->meta._min != UT64_MAX
+		&& (fcn->meta._min == bb->addr || fcn->meta._min == bb->addr + bb->size)) {
+		// If a block is removed at the beginning or end, updating min/max is not trivial anymore, just invalidate
+		fcn->meta._min = UT64_MAX;
+	}
+
 	r_list_delete_data (fcn->bbs, bb);
 	r_anal_block_unref (bb);
 }
