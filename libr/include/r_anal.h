@@ -256,9 +256,12 @@ typedef struct r_anal_fcn_store_t {
 /* Stores useful function metadata */
 /* TODO: Think about moving more stuff to this structure? */
 typedef struct r_anal_fcn_meta_t {
-	// TODO: enable these later again as private fields for caching
-	// ut64 min;           // min address
-	// ut64 max;           // max address
+	// _min and _max are calculated lazily when queried.
+	// On changes, they will either be updated (if this can be done trivially) or invalidated.
+	// They are invalid iff _min == UT64_MAX.
+	ut64 _min;          // PRIVATE, min address, use r_anal_fcn_min_addr() to access
+	ut64 _max;          // PRIVATE, max address, use r_anal_fcn_max_addr() to access
+
 	int numrefs;        // number of cross references
 	int numcallrefs;    // number of calls
 	int sgnc;           // node cardinality of the functions callgraph
@@ -1640,27 +1643,24 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
 
 /* vars // globals. not here  */
 R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type);
-R_API void r_anal_fcn_get_range(const RAnalFunction *fcn, ut64 *min, ut64 *max);
-static inline ut64 r_anal_fcn_linear_size(const RAnalFunction *fcn) {
-	ut64 min;
-	ut64 max;
-	r_anal_fcn_get_range (fcn, &min, &max);
-	return max - min;
-}
-static inline ut64 r_anal_fcn_min_addr(const RAnalFunction *fcn) {
-	ut64 min;
-	r_anal_fcn_get_range (fcn, &min, NULL);
-	return min;
-}
-static inline ut64 r_anal_fcn_max_addr(const RAnalFunction *fcn) {
-	ut64 max;
-	r_anal_fcn_get_range (fcn, NULL, &max);
-	return max;
-}
-static inline ut64 r_anal_fcn_size_from_entry(const RAnalFunction *fcn) {
-	return r_anal_fcn_max_addr (fcn) - fcn->addr;
-}
+
+// size of the entire range that the function spans, including holes.
+// this is exactly r_anal_fcn_max_addr() - r_anal_fcn_min_addr()
+R_API ut64 r_anal_fcn_linear_size(RAnalFunction *fcn);
+
+// lowest address covered by the function
+R_API ut64 r_anal_fcn_min_addr(RAnalFunction *fcn);
+
+// first address directly after the function
+R_API ut64 r_anal_fcn_max_addr(RAnalFunction *fcn);
+
+// size from the function entrypoint (fcn->addr) to the end of the function (r_anal_fcn_max_addr)
+R_API ut64 r_anal_fcn_size_from_entry(RAnalFunction *fcn);
+
+// the "real" size of the function, that is the sum of the size of the
+// basicblocks this function is composed of
 R_API ut64 r_anal_fcn_realsize(const RAnalFunction *fcn);
+
 R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_loops(RAnalFunction *fcn);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);

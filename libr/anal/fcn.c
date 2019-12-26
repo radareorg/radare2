@@ -226,6 +226,7 @@ R_API RAnalFunction *r_anal_fcn_new(RAnal *anal) {
 	fcn->has_changed = true;
 	fcn->bp_frame = true;
 	fcn->is_noreturn = false;
+	fcn->meta._min = UT64_MAX;
 	return fcn;
 }
 
@@ -1987,12 +1988,12 @@ R_API RAnalBlock *r_anal_fcn_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr
 	return NULL;
 }
 
-/* returns the linear range the function spans.
- * The range may not be covered entirely by the function and min may not be the entrypoint of the function. */
-R_API void r_anal_fcn_get_range(const RAnalFunction *fcn, ut64 *min, ut64 *max) {
+static void ensure_fcn_range(RAnalFunction *fcn) {
+	if (fcn->meta._min != UT64_MAX) { // recalculate only if invalid
+		return;
+	}
 	ut64 minval = fcn->addr;
 	ut64 maxval = minval;
-
 	RAnalBlock *block;
 	RListIter *iter;
 	r_list_foreach (fcn->bbs, iter, block) {
@@ -2003,17 +2004,30 @@ R_API void r_anal_fcn_get_range(const RAnalFunction *fcn, ut64 *min, ut64 *max) 
 			maxval = block->addr + block->size;
 		}
 	}
-
-	if (min) {
-		*min = minval;
-	}
-	if (max) {
-		*max = maxval;
-	}
+	fcn->meta._min = minval;
+	fcn->meta._max = minval;
 }
 
-/* return the "real" size of the function, that is the sum of the size of the
- * basicblocks this function is composed of. */
+R_API ut64 r_anal_fcn_linear_size(RAnalFunction *fcn) {
+	ensure_fcn_range (fcn);
+	return fcn->meta._max - fcn->meta._min;
+}
+
+R_API ut64 r_anal_fcn_min_addr(RAnalFunction *fcn) {
+	ensure_fcn_range (fcn);
+	return fcn->meta._min;
+}
+
+R_API ut64 r_anal_fcn_max_addr(RAnalFunction *fcn) {
+	ensure_fcn_range (fcn);
+	return fcn->meta._max;
+}
+
+R_API ut64 r_anal_fcn_size_from_entry(RAnalFunction *fcn) {
+	ensure_fcn_range (fcn);
+	return fcn->meta._max - fcn->addr;
+}
+
 R_API ut64 r_anal_fcn_realsize(const RAnalFunction *fcn) {
 	RListIter *iter, *fiter;
 	RAnalBlock *bb;
@@ -2028,7 +2042,6 @@ R_API ut64 r_anal_fcn_realsize(const RAnalFunction *fcn) {
 				sz += bb->size;
 			}
 		}
-		// fcn->_size = sz;
 	}
 	return sz;
 }

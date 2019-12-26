@@ -124,9 +124,19 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 	RAnalFunction *fcn;
 	r_list_foreach (anal->fcns, fcniter, fcn) {
 		RListIter *blockiter;
+		ut64 min = fcn->addr;
+		ut64 max = fcn->addr;
+		ut64 realsz = 0;
 		r_list_foreach (fcn->bbs, blockiter, block) {
 			RListIter *blockiter2;
 			RAnalBlock *block2;
+			if (block->addr < min) {
+				min = block->addr;
+			}
+			if (block->addr + block->size > max) {
+				max = block->addr + block->size;
+			}
+			realsz += block->size;
 			for (blockiter2 = blockiter->n; blockiter2 && (block2 = blockiter2->data, 1); blockiter2 = blockiter2->n) {
 				if (block == block2) {
 					eprintf("FUCK: Duplicate basic block @ 0x%"PFMT64x" in function %s\n", block->addr, fcn->name);
@@ -136,6 +146,13 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 			if (!r_list_contains (block->fcns, fcn)) {
 				eprintf("FUCK: block @ 0x%"PFMT64x" is referenced by Fcn %s, not the other way around\n", block->addr, fcn->name);
 			}
+		}
+
+		if (fcn->meta._min != UT64_MAX && (fcn->meta._min != min || fcn->meta._max != max)) {
+			eprintf("SHIP: min/max wrong!!!!!\n");
+		}
+		if (r_anal_fcn_realsize (fcn) != realsz) {
+			eprintf("SHIP: realsize wrong!!!!!!\n");
 		}
 	}
 #endif
@@ -264,11 +281,20 @@ R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size) 
 			}
 		}
 		r_anal_block_check_invariants (bb->anal);
+
+		RAnalFunction *fcn;
+		RListIter *iter;
+		r_list_foreach (bb->fcns, iter, fcn) {
+			if (fcn->meta._min != UT64_MAX && fcn->meta._max == bb->addr + bb->size) {
+				fcn->meta._max = bb->addr + size;
+			}
+		}
+
 		bb->size = size;
 		r_anal_block_check_invariants (bb->anal);
 		return true;
 	}
-	D eprintf("r_anal_block_try_resize_atomic with different addr not implemented\n");
+	eprintf("r_anal_block_try_resize_atomic with different addr not implemented\n");
 	return false;
 }
 
