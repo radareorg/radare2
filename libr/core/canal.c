@@ -4317,8 +4317,7 @@ R_API void r_core_anal_undefine(RCore *core, ut64 off) {
 		if (!strncmp (f->name, "fcn.", 4)) {
 			r_flag_unset_name (core->flags, f->name);
 		}
-		// TODO: this is probably completely wrong, should only delete stuff inside bbs
-		r_meta_del (core->anal, R_META_TYPE_ANY, off, r_anal_fcn_linear_size (f));
+		r_meta_del (core->anal, R_META_TYPE_ANY, r_anal_fcn_min_addr (f), r_anal_fcn_linear_size (f));
 	}
 	r_anal_fcn_del_locs (core->anal, off);
 	r_anal_fcn_del (core->anal, off);
