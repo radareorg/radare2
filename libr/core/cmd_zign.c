@@ -126,7 +126,7 @@ static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 	};
 	// XXX ebbs doesnt gets initialized if calling this from inside the struct
 	graph.edges = r_anal_fcn_count_edges (fcn, &graph.ebbs);
-	graph.bbsum = r_anal_fcn_size (fcn);
+	graph.bbsum = r_anal_fcn_realsize (fcn);
 	return r_sign_add_graph (core->anal, name, graph);
 }
 

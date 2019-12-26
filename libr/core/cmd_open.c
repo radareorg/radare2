@@ -982,13 +982,6 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 			r_list_free (var_list);
 			r_anal_fcn_tree_delete (core->anal, fcn);
 			fcn->addr += diff;
-			if (fcn->meta.max) {
-				fcn->meta.max += diff;
-			}
-			if (fcn->meta.min) {
-				fcn->meta.min += diff;
-			}
-			int j;
 			r_anal_fcn_tree_insert (core->anal, fcn);
 			RAnalBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;

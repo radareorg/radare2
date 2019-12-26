@@ -336,14 +336,7 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 	assert (bb->ref >= r_list_length (bb->fcns));
 	if (bb->ref < 1) {
 		RAnal *anal = bb->anal;
-		RListIter *iter, *iter2;
-		RAnalFunction *fcn;
 		D eprintf("unref bb %d\n", bb->ref);
-		/*r_list_foreach_safe (bb->fcns, iter, iter2, fcn) {
-			D eprintf("miss unref\n");
-			r_list_delete (bb->fcns, iter);
-			//r_anal_function_unref (fcn);
-		}*/
 		assert (!bb->fcns || r_list_empty (bb->fcns)); // on
 		D eprintf("unref2 bb %d\n", bb->ref);
 		r_rbtree_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL);

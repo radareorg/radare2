@@ -1663,7 +1663,7 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 //TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
 static ut32 tmp_get_realsize (RAnalFunction *f) {
 	ut32 size = r_anal_fcn_realsize (f);
-	return (size > 0) ? size : r_anal_fcn_size (f);
+	return (size > 0) ? size : r_anal_fcn_linear_size (f);
 }
 
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char *base, bool is_var, char sign) {
@@ -1824,8 +1824,8 @@ static void ds_show_functions(RDisasmState *ds) {
 		r_cons_printf ("%s%s ", COLOR (ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-
 		if (!showSig) {
-			r_cons_printf ("%s%s%s %d", COLOR (ds, color_floc),
-					fcn_name, COLOR_RESET (ds), r_anal_fcn_size (f));
+			r_cons_printf ("%s%s%s %"PFMT64u, COLOR (ds, color_floc),
+					fcn_name, COLOR_RESET (ds), r_anal_fcn_linear_size (f));
 			ds_newline (ds);
 		}
 	} else {
@@ -2019,12 +2019,12 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 	RAnalFunction *f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (f) {
 		if (f->addr == ds->at) {
-			if (ds->analop.size == r_anal_fcn_size (f) && !middle) {
+			if (ds->analop.size == r_anal_fcn_linear_size (f) && !middle) {
 				ds->pre = DS_PRE_FCN_TAIL;
 			} else {
 				ds->pre = DS_PRE_FCN_MIDDLE;
 			}
-		} else if (f->addr + r_anal_fcn_size (f) - ds->analop.size == ds->at) {
+		} else if (r_anal_fcn_max_addr (f) - ds->analop.size == ds->at) {
 			ds->pre = DS_PRE_FCN_TAIL;
 		} else if (r_anal_fcn_is_in_offset (f, ds->at)) {
 			ds->pre = DS_PRE_FCN_MIDDLE;
@@ -5275,7 +5275,7 @@ toro:
 		// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		f = ds->fcn = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (f && f->folded && r_anal_fcn_is_in_offset (f, ds->at)) {
-			int delta = (ds->at <= f->addr)? (ds->at - f->addr + r_anal_fcn_size (f)): 0;
+			int delta = (ds->at <= f->addr)? (ds->at - r_anal_fcn_max_addr (f)): 0;
 			if (of != f) {
 				char cmt[32];
 				get_bits_comment (core, f, cmt, sizeof (cmt));
@@ -5291,7 +5291,7 @@ toro:
 				ds_setup_print_pre (ds, true, false);
 				ds_print_lines_left (ds);
 				ds_print_offset (ds);
-				r_cons_printf ("(%d byte folded function)\n", r_anal_fcn_size (f));
+				r_cons_printf ("(%d byte folded function)\n", r_anal_fcn_linear_size (f));
 				//r_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
 				if (delta < 0) {
 					delta = -delta;
@@ -6063,7 +6063,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		pj_s (pj, R_STRBUF_SAFEGET (&ds->analop.esil));
 		pj_kb (pj, "refptr", ds->analop.refptr);
 		pj_kn (pj, "fcn_addr", f ? f->addr : 0);
-		pj_kn (pj, "fcn_last", f ? f->addr + r_anal_fcn_size (f) - ds->oplen : 0);
+		pj_kn (pj, "fcn_last", f ? r_anal_fcn_max_addr (f) - ds->oplen : 0);
 		pj_ki (pj, "size", ds->analop.size);
 		pj_ks (pj, "opcode", opstr);
 		pj_ks (pj, "disasm", str);

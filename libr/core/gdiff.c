@@ -59,8 +59,8 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 		}
 		/* Fingerprint fcn */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
-			int newsize = r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
-			r_anal_fcn_set_size (cores[i]->anal, fcn, newsize);
+			/*int newsize = */r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
+			// r_anal_fcn_set_size (cores[i]->anal, fcn, newsize);
 		}
 	}
 	/* Diff functions */
@@ -98,7 +98,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
         RListIter *iter;
         RAnalFunction *f;
         int maxnamelen = 0;
-        int maxsize = 0;
+        ut64 maxsize = 0;
         int digits = 1;
         int len;
 
@@ -106,8 +106,8 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                 if (f->name && (len = strlen (f->name)) > maxnamelen) {
                         maxnamelen = len;
 		}
-                if (r_anal_fcn_size (f) > maxsize) {
-                        maxsize = r_anal_fcn_size (f);
+                if (r_anal_fcn_linear_size (f) > maxsize) {
+                        maxsize = r_anal_fcn_linear_size (f);
 		}
         }
         fcns = r_anal_get_fcns (c2->anal);
@@ -115,8 +115,8 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                 if (f->name && (len = strlen (f->name)) > maxnamelen) {
                         maxnamelen = len;
 		}
-                if (r_anal_fcn_size (f) > maxsize) {
-                        maxsize = r_anal_fcn_size (f);
+                if (r_anal_fcn_linear_size (f) > maxsize) {
+                        maxsize = r_anal_fcn_linear_size (f);
 		}
         }
         while (maxsize > 9) {
@@ -146,7 +146,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                                 match = "NEW";
 				f->diff->dist = 0;
                         }
-                        diffrow (f->addr, f->name, r_anal_fcn_size (f), maxnamelen, digits,
+                        diffrow (f->addr, f->name, r_anal_fcn_linear_size (f), maxnamelen, digits,
 				f->diff->addr, f->diff->name, f->diff->size,
 				match, f->diff->dist, bare);
                         break;
@@ -159,7 +159,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                 case R_ANAL_FCN_TYPE_FCN:
                 case R_ANAL_FCN_TYPE_SYM:
                         if (f->diff->type == R_ANAL_DIFF_TYPE_NULL) {
-                                diffrow (f->addr, f->name, r_anal_fcn_size (f), maxnamelen,
+                                diffrow (f->addr, f->name, r_anal_fcn_linear_size (f), maxnamelen,
 					digits, f->diff->addr, f->diff->name, f->diff->size,
 					"NEW", 0, bare); //f->diff->dist, bare);
 			}
