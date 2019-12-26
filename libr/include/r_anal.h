@@ -295,6 +295,7 @@ typedef struct r_anal_function_t {
 	bool is_noreturn; // true if function does not return
 	RAnalType *args; // list of arguments
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
+	size_t fingerprint_size;
 	RAnalDiff *diff;
 	RList *locs; // list of local variables
 	RList *fcn_locs; //sorted list of a function *.loc refs
@@ -1755,7 +1756,7 @@ R_API void r_anal_diff_setup(RAnal *anal, int doops, double thbb, double thfcn);
 R_API void r_anal_diff_setup_i(RAnal *anal, int doops, int thbb, int thfcn);
 R_API void* r_anal_diff_free(RAnalDiff *diff);
 R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb);
-R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn);
+R_API size_t r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2);
 R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2);
 R_API int r_anal_diff_eval(RAnal *anal);
