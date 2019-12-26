@@ -233,25 +233,6 @@ D eprintf ("TODO SPLIT\n");
 	return ret;
 }
 
-R_API RList *r_anal_block_add(RAnal *anal, R_OWN RAnalBlock *block) {
-	RList *intersecting = r_anal_get_blocks_intersect (anal, block->addr, block->size);
-	if (intersecting && intersecting->length) {
-		D eprintf ("TODO SPLIT\n");
-		r_list_free (intersecting);
-		return false;
-	}
-	r_anal_block_ref (block);
-	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
-	if (!ret) {
-		r_anal_block_free (block);
-		return NULL;
-	}
-	r_anal_block_check_invariants (anal);
-	r_rbtree_insert (&anal->bb_tree, &block->addr, &block->rb, __bb_addr_cmp, NULL);
-	r_anal_block_check_invariants (anal);
-	return ret;
-}
-
 R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb) {
 	r_return_if_fail (anal && bb);
 D eprintf ("del block (%d) %llx\n", bb->ref, bb->addr);
@@ -260,7 +241,6 @@ D eprintf ("del block (%d) %llx\n", bb->ref, bb->addr);
 	RAnalFunction *fcn;
 	RListIter *iter;
 	r_list_foreach (bb->fcns, iter, fcn) {
-		// TODO: corrupts tinyrange
 		r_list_delete_data (fcn->bbs, bb);
 	}
 	r_list_free (bb->fcns);

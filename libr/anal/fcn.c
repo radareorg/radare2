@@ -278,7 +278,8 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 }
 #endif
 
-#define gotoBeach(x) ret = x; goto beach;
+#define gotoRet(x, label) ret = x; goto label;
+#define gotoBeach(x) gotoRet(x, beach)
 
 static bool isInvalidMemory(RAnal *anal, const ut8 *buf, int len) {
 	if (anal->opt.nonull > 0) {
@@ -593,7 +594,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		anal->leaddrs = r_list_newf (free);
 		if (!anal->leaddrs) {
 			eprintf ("Cannot create leaddr list\n");
-			return R_ANAL_RET_ERROR;
+			gotoRet (R_ANAL_RET_ERROR, unrefbb);
 		}
 	}
 	static ut64 lea_jmptbl_ip = UT64_MAX;
@@ -700,7 +701,7 @@ repeat:
 		if (!overlapped) {
 			ut64 newbbsize = bb->size + oplen;
 			if (newbbsize > MAX_FCN_SIZE) {
-				return R_ANAL_RET_ERROR;
+				gotoRet (R_ANAL_RET_ERROR, unrefbb);
 			}
 			overlapped = !r_anal_block_try_resize_atomic (bb, bb->addr, newbbsize);
 			if (!overlapped) {
@@ -732,8 +733,18 @@ repeat:
 						bb->fail = handle_addr;
 						ret = r_anal_fcn_bb (anal, fcn, handle_addr, depth);
 						eprintf ("(%s) 0x%08"PFMT64x"\n", handle, handle_addr);
-						r_anal_block_add (anal, bb);
-						bb = r_anal_block_new (anal, addr, 0);
+						if (bb->size == 0) {
+							r_anal_function_block_remove (fcn, bb);
+						}
+						r_anal_block_unref (bb);
+						bb = NULL;
+						created = r_anal_block_create (anal, addr, 0);
+						if (r_list_empty (created)) {
+							gotoRet (R_ANAL_RET_ERROR, unrefbb);
+						}
+						bb = r_list_pop (created);
+						r_list_free (created);
+						r_anal_function_block_add (fcn, bb);
 					}
 				}
 			}
@@ -970,7 +981,7 @@ repeat:
 			bb->jump = op.jump;
 			bb->fail = UT64_MAX;
 			FITFCNSZ ();
-			return R_ANAL_RET_END;
+			gotoRet (R_ANAL_RET_END, unrefbb);
 #else
 			if (!overlapped) {
 				bb->jump = op.jump;
@@ -990,7 +1001,7 @@ repeat:
 				} else if (R_ABS (diff) > tc) {
 					(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
 					fcn_recurse (anal, fcn, op.jump, anal->opt.bb_max_size, depth - 1);
-					return R_ANAL_RET_END;
+					gotoRet (R_ANAL_RET_END, unrefbb);
 				}
 			}
 			goto beach;
@@ -1260,9 +1271,10 @@ analopfinish:
 beach:
 	r_anal_op_fini (&op);
 	free (last_reg_mov_lea_name);
-	if (bb->size == 0) {
+	if (bb && bb->size == 0) {
 		r_anal_function_block_remove (fcn, bb);
 	}
+unrefbb:
 	r_anal_block_unref (bb);
 	return ret;
 }
