@@ -1436,11 +1436,6 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr);
 // Multiple blocks will be created if the range overlaps another block.
 R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size);
 
-// Add a block created outside already.
-// Because this block could overlap existing blocks, it may be split.
-// Return value is like r_anal_create_block()
-R_API RList *r_anal_block_add(RAnal *anal, R_OWN RAnalBlock *block);
-
 // Manually delete a block and remove it from all its functions
 R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb);
 
