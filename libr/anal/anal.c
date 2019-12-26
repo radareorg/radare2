@@ -170,7 +170,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->stackptr = 0;
 	anal->rb_hints_ranges = NULL;
 	anal->lineswidth = 0;
-	anal->fcns = r_list_new ();
+	anal->fcns = r_list_newf (r_anal_fcn_free);
 	anal->fcn_addr_tree = NULL;
 	anal->refs = r_anal_ref_list_new ();
 	anal->leaddrs = NULL;
