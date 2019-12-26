@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2019 - GustavoLCR */
+
 #include "ne.h"
 
 static char *__get_target_os(r_bin_ne_obj_t *bin) {
@@ -80,7 +82,7 @@ RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 		}
 		bs->size = se->length;
 		bs->vsize = se->minAllocSz ? se->minAllocSz : 64000;
-		bs->bits = 16;
+		bs->bits = R_SYS_BITS_16;
 		bs->is_data = se->flags & IS_DATA;
 		bs->perm = __translate_perms (se->flags);
 		bs->paddr = (ut64)se->offset * bin->alignment;

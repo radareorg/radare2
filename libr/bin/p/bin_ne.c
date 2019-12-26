@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2019 - GustavoLCR, nibble, pancake, alvarofe */
 
 #include <r_bin.h>
-#include <r_lib.h>
 #include "../i/private.h"
 #include "../format/ne/ne.h"
 
@@ -110,6 +109,7 @@ RList *relocs(RBinFile *bf) {
 RBinPlugin r_bin_plugin_ne = {
 	.name = "ne",
 	.desc = "NE format r2 plugin",
+	.author = "GustavoLCR",
 	.license = "LGPL3",
 	.check_buffer = &check_buffer,
 	.load_buffer = &load_buffer,

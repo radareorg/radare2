@@ -108,7 +108,7 @@ static RList *sections(RBinFile *bf) {
 		/* All TE files have _TEXT_RE section, which is 16-bit, because of
 		 * CPU start in this mode */
 		if (!strncmp (ptr->name, "_TEXT_RE", 8)) {
-			ptr->bits = 16;
+			ptr->bits = R_SYS_BITS_16;
 		}
 		r_list_append (ret, ptr);
 	}

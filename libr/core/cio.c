@@ -350,7 +350,7 @@ R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bit
 			case R_SYS_BITS_16:
 			case R_SYS_BITS_32:
 			case R_SYS_BITS_64:
-				bitsval = s->bits;
+				bitsval = s->bits * 8;
 				break;
 			}
 		}

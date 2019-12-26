@@ -138,6 +138,7 @@ bin_plugins = [
   'elf64',
   'fs',
   'java',
+  'le',
   'mach0',
   'mach064',
   'mbn',
