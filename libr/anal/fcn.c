@@ -1508,7 +1508,6 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 }
 
 R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
-	eprintf ("r_anal_fcn_del: deprecated. use ref/unref\n");
 	const RList *fcns = r_anal_get_functions (a, addr);
 	RAnalFunction *fcn;
 	RListIter *iter, *iter2;

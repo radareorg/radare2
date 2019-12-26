@@ -114,7 +114,6 @@ R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb) {
 
 R_API bool r_anal_del_function(RAnalFunction *fcn) {
 	RAnal *anal = fcn->anal;
-	eprintf ("del fun\n");
 	ht_up_delete (anal->ht_addr_fun, fcn->addr);
 	ht_pp_delete (anal->ht_name_fun, fcn->name);
 	r_list_delete_data (anal->fcns, fcn);
