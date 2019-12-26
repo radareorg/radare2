@@ -84,10 +84,6 @@ R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb) {
 	r_list_append (bb->fcns, fcn); // associate the given fcn with this bb
 	r_anal_block_ref (bb);
 	r_list_append (fcn->bbs, bb);
-	st64 size_candidate = (st64)(bb->addr + bb->size - fcn->addr);
-	if (size_candidate > fcn->_size) {
-		r_anal_fcn_set_size (fcn->anal, fcn, size_candidate);
-	}
 	if (fcn->anal->cb.on_fcn_bb_new) {
 		fcn->anal->cb.on_fcn_bb_new (fcn->anal, fcn->anal->user, fcn, bb);
 	}
@@ -97,18 +93,6 @@ R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb) {
 	r_list_delete_data (bb->fcns, fcn);
 	r_list_delete_data (fcn->bbs, bb);
 	r_anal_block_unref (bb);
-
-	// TODO: this might be quite heavy all the time
-	ut64 size = 0;
-	RAnalBlock *block;
-	RListIter *iter;
-	r_list_foreach (fcn->bbs, iter, block) {
-		ut64 d = block->addr + block->size - fcn->addr;
-		if (d > size) {
-			size = d;
-		}
-	}
-	r_anal_fcn_set_size (fcn->anal, fcn, size);
 }
 
 R_API bool r_anal_del_function(RAnalFunction *fcn) {

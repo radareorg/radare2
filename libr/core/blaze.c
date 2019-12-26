@@ -35,9 +35,9 @@ static int __isdata(RCore *core, ut64 addr) {
 		// eprintf ("Warning: Invalid memory address at 0x%08"PFMT64x"\n", addr);
 		return 4;
 	}
-	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	if (fcn) {
-		return r_anal_fcn_size (fcn);
+	RAnalBlock *block = r_anal_get_block_in (core->anal, addr);
+	if (block) {
+		return 1;
 	}
 	RList *list = r_meta_find_list_in (core->anal, addr, -1, 4);
 	RListIter *iter;
@@ -217,7 +217,6 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	f->addr = fcn->addr;
 	f->bits = core->anal->bits;
 	f->cc = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
-	r_anal_fcn_set_size (NULL, f, fcn->size);
 	f->type = R_ANAL_FCN_TYPE_FCN;
 
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {

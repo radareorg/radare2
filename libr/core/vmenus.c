@@ -2659,7 +2659,7 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 			r_flag_unset_name (core->flags, fcn->name);
 			free (fcn->name);
 			fcn->name = strdup (name);
-			r_flag_set (core->flags, name, addr, r_anal_fcn_size (fcn));
+			r_flag_set (core->flags, name, addr, r_anal_fcn_size_from_entry (fcn));
 			break;
 		}
 	}
@@ -4005,25 +4005,13 @@ onemoretime:
 		break;
 	case 'f':
 		{
-			int funsize = 0;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				r_anal_fcn_resize (core->anal, fcn, core->offset - fcn->addr);
 			}
-			//int depth = r_config_get_i (core->config, "anal.depth");
-			if (core->print->cur_enabled) {
-				if (core->print->ocur != -1) {
-					funsize = 1 + R_ABS (core->print->cur - core->print->ocur);
-				}
-				//depth = 0;
-			}
 			r_cons_break_push (NULL, NULL);
 			r_core_cmdf (core, "af @ 0x%08" PFMT64x, off); // required for thumb autodetection
 			r_cons_break_pop ();
-			if (funsize) {
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, off, -1);
-				r_anal_fcn_set_size (core->anal, f, funsize);
-			}
 		}
 		break;
 	case 'v':
