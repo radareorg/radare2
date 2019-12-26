@@ -237,33 +237,41 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 		}
 	}
 
-	// create blocks in the holes and fill the return list
-	ut64 cur = addr;
-	ut64 end = addr + size;
-	while (cur < end) {
-		RAnalBlock *newblock = NULL;
-		RAnalBlock *insect = NULL;
+	if (size == 0) {
 		if (r_list_empty (intersecting)) {
-			newblock = r_anal_block_new (anal, cur, end - cur);
-			cur = end;
-		} else {
-			insect = r_list_pop_head (intersecting);
-			if (insect->addr > cur) {
-				newblock = r_anal_block_new (anal, cur, insect->addr - cur);
-			}
-			cur = insect->addr + insect->size;
-		}
-		if (newblock) {
+			RAnalBlock *newblock = r_anal_block_new (anal, addr, size);
 			r_rbtree_insert (&anal->bb_tree, &newblock->addr, &newblock->rb, __bb_addr_cmp, NULL);
 			r_list_push (ret, newblock);
 		}
-		if (insect) {
-			r_list_push (ret, insect);
+	} else {
+		// create blocks in the holes and fill the return list
+		ut64 cur = addr;
+		ut64 end = addr + size;
+		while (cur < end) {
+			RAnalBlock *newblock = NULL;
+			RAnalBlock *insect = NULL;
+			if (r_list_empty (intersecting)) {
+				newblock = r_anal_block_new (anal, cur, end - cur);
+				cur = end;
+			} else {
+				insect = r_list_pop_head (intersecting);
+				if (insect->addr > cur) {
+					newblock = r_anal_block_new (anal, cur, insect->addr - cur);
+				}
+				cur = insect->addr + insect->size;
+			}
+			if (newblock) {
+				r_rbtree_insert (&anal->bb_tree, &newblock->addr, &newblock->rb, __bb_addr_cmp, NULL);
+				r_list_push (ret, newblock);
+			}
+			if (insect) {
+				r_list_push (ret, insect);
+			}
+			r_anal_block_check_invariants (anal);
 		}
+		r_list_free (intersecting);
 		r_anal_block_check_invariants (anal);
 	}
-	r_list_free (intersecting);
-	r_anal_block_check_invariants (anal);
 	return ret;
 }
 
