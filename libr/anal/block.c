@@ -124,8 +124,8 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 	RAnalFunction *fcn;
 	r_list_foreach (anal->fcns, fcniter, fcn) {
 		RListIter *blockiter;
-		ut64 min = fcn->addr;
-		ut64 max = fcn->addr;
+		ut64 min = UT64_MAX;
+		ut64 max = UT64_MIN;
 		ut64 realsz = 0;
 		r_list_foreach (fcn->bbs, blockiter, block) {
 			RListIter *blockiter2;
@@ -218,8 +218,10 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 		return NULL;
 	}
 
+	// get all intersecting blocks
 	RList *intersecting = r_anal_get_blocks_intersect (anal, addr, size);
 	if (!r_list_empty (intersecting)) {
+		// split the first at addr if necessary and ignore the first part
 		RAnalBlock *first = r_list_first (intersecting);
 		if (first->addr < addr) {
 			r_list_pop_head (intersecting);
@@ -227,6 +229,7 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 			r_list_prepend (intersecting, newfirst);
 			r_anal_block_unref (first);
 		}
+		// split the last at addr + size if necessary and ignore the second part
 		RAnalBlock *last = r_list_last (intersecting);
 		if (last->addr + size > addr + size) {
 			RAnalBlock *tail = r_anal_block_split (last, addr + size);
@@ -234,6 +237,7 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 		}
 	}
 
+	// create blocks in the holes and fill the return list
 	ut64 cur = addr;
 	ut64 end = addr + size;
 	while (cur < end) {
@@ -363,6 +367,55 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	}
 	bbi->ninstr = new_bbi_instr;
 	return bb;
+}
+
+R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
+	r_anal_block_check_invariants (a->anal);
+	if (a->addr + a->size != b->addr) {
+		return false;
+	}
+
+	// check if function lists are identical
+	RAnalFunction *fcn;
+	RListIter *iter;
+	r_list_foreach (a->fcns, iter, fcn) {
+		if (!r_list_contains (b->fcns, fcn)) {
+			return false;
+		}
+	}
+	r_list_foreach (b->fcns, iter, fcn) {
+		if (!r_list_contains (a->fcns, fcn)) {
+			return false;
+		}
+	}
+
+	// Keep a ref to b, but remove all references of b from its functions
+	r_anal_block_ref (b);
+	while (!r_list_empty (b->fcns)) {
+		r_anal_function_block_remove (r_list_first (b->fcns), b);
+	}
+
+	// merge ops from b into a
+	size_t i;
+	for (i = 0; i < b->ninstr; i++) {
+		r_anal_bb_set_offset (a, a->ninstr++, a->size + r_anal_bb_offset_inst (b, i));
+	}
+
+	// merge everything else into a
+	a->size += b->size;
+	a->jump = b->jump;
+	a->fail = b->fail;
+
+	// kill b completely
+	r_rbtree_delete (&a->anal->bb_tree, &b->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL);
+
+	// invalidate ranges of a's functions
+	r_list_foreach (a->fcns, iter, fcn) {
+		fcn->meta._min = UT64_MAX;
+	}
+
+	r_anal_block_check_invariants (a->anal);
+	return true;
 }
 
 R_API void r_anal_block_unref(RAnalBlock *bb) {
