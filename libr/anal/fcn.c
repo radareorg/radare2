@@ -2017,7 +2017,7 @@ static void ensure_fcn_range(RAnalFunction *fcn) {
 		}
 	}
 	fcn->meta._min = minval;
-	fcn->meta._max = maxval;
+	fcn->meta._max = minval == UT64_MAX ? UT64_MAX : maxval;
 }
 
 R_API ut64 r_anal_fcn_linear_size(RAnalFunction *fcn) {
