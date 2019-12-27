@@ -1579,7 +1579,6 @@ R_API ut32 r_anal_fcn_realsize(const RAnalFunction *fcn);
 R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_loops(RAnalFunction *fcn);
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, ut64 addr);
-R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);
 R_API void r_anal_fcn_fit_overlaps (RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn);

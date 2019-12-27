@@ -1938,23 +1938,6 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, 
 	return R_ANAL_RET_END;
 }
 
-// TODO: rename fcn_bb_overlap()
-R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
-	RAnalBlock *bbi;
-	RListIter *iter;
-	r_list_foreach (fcn->bbs, iter, bbi) {
-		if (bb->addr + bb->size > bbi->addr && bb->addr + bb->size <= bbi->addr + bbi->size) {
-			bb->size = bbi->addr - bb->addr;
-			bb->jump = bbi->addr;
-			bb->fail = -1;
-			bb->conditional = false;
-			r_list_append (fcn->bbs, bb);
-			return R_ANAL_RET_END;
-		}
-	}
-	return R_ANAL_RET_NEW;
-}
-
 R_API int r_anal_fcn_loops(RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
