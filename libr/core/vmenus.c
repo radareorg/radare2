@@ -1261,6 +1261,10 @@ R_API int r_core_visual_classes(RCore *core) {
 				r_core_seek (core, mur->vaddr, true);
 				return true;
 			}
+			if (fur) {
+				r_core_seek (core, fur->vaddr, true);
+				return true;
+			}
 			if (cur) {
 				oldcur = index;
 				index = 0;
