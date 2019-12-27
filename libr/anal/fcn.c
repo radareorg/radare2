@@ -553,7 +553,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		bool existing_in_fcn = r_list_contains (existing_bb->fcns, fcn);
 		existing_bb = r_anal_block_split (existing_bb, addr);
 		if (!existing_in_fcn && existing_bb) {
-			RList *blocks = r_anal_block_recurse_list (existing_bb);
+			RList *blocks = r_anal_block_recurse_list (existing_bb); // TODO: use ..._recurse without list
 			RListIter *iter;
 			RAnalBlock *existing_rec_block;
 			r_list_foreach (blocks, iter, existing_rec_block) {
@@ -717,6 +717,7 @@ repeat:
 				if (anal->verbose) {
 					eprintf ("Overlapped at 0x%08"PFMT64x "\n", at);
 				}
+				gotoBeach (R_ANAL_RET_END);
 			}
 		}
 		if (anal->opt.trycatch) {
