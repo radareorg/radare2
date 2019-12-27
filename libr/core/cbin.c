@@ -3278,6 +3278,8 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 	const char *format_string = "%s/string%d";
 	if (!IS_MODE_JSON (mode)) {
 		r_cons_printf ("=== VS_VERSIONINFO ===\n\n");
+	} else {
+		r_cons_print ("{");
 	}
 	bool firstit_dowhile = true;
 	do {
@@ -3289,7 +3291,7 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 			r_cons_printf (",");
 		}
 		if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("{\"VS_FIXEDFILEINFO\":{");
+			r_cons_printf ("\"VS_FIXEDFILEINFO\":{");
 		} else {
 			r_cons_printf ("# VS_FIXEDFILEINFO\n\n");
 		}
@@ -3387,11 +3389,14 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 			free (path_stringtable);
 		}
 		if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("}}");
+			r_cons_printf ("}");
 		}
 		num_version++;
 		firstit_dowhile = false;
 	} while (sdb);
+	if (IS_MODE_JSON (mode)) {
+		r_cons_printf ("}");
+	}
 }
 
 static void bin_elf_versioninfo(RCore *r, int mode) {
