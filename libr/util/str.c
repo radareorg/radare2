@@ -675,9 +675,6 @@ R_API const char *r_str_rstr(const char *base, const char *p) {
 
 R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
 	r_return_val_if_fail (base, NULL);
-	if (!base) {
-		return NULL;
-	}
 	if (!p) {
 		p = base + strlen (base);
 	}
