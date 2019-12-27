@@ -883,9 +883,13 @@ RUN
 
 NAME=rabin2 -E
 FILE=../bins/pe/dll.dll
-CMDS=!rabin2 -E ${R2_FILE} | grep -c dll_export
+CMDS=!rabin2 -E ${R2_FILE}
 EXPECT=<<EOF
-1
+[Exports]
+
+nth paddr       vaddr      bind   type size library name
+--------------------------------------------------------
+0    0x00000224 0x01001024 GLOBAL FUNC 0    dll.dll export
 EOF
 RUN
 

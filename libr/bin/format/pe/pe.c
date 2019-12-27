@@ -2939,7 +2939,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	PE_Word function_ordinal;
 	PE_VWord functions_paddr, names_paddr, ordinals_paddr, function_rva, name_vaddr, name_paddr;
 	char function_name[PE_NAME_LENGTH + 1], forwarder_name[PE_NAME_LENGTH + 1];
-	char dll_name[PE_NAME_LENGTH + 1], export_name[256];
+	char dll_name[PE_NAME_LENGTH + 1];
 	PE_(image_data_directory) * data_dir_export;
 	PE_VWord export_dir_rva;
 	int n,i, export_dir_size;
@@ -3024,17 +3024,15 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			}
 			dll_name[PE_NAME_LENGTH] = '\0';
 			function_name[PE_NAME_LENGTH] = '\0';
-			int len = snprintf (export_name, sizeof (export_name), "%s", function_name);
-			if (len >= sizeof (export_name)) {
-				eprintf ("Export name '%s' has been truncated\n", export_name);
-			}
 			exports[i].vaddr = bin_pe_rva_to_va (bin, function_rva);
 			exports[i].paddr = bin_pe_rva_to_paddr (bin, function_rva);
 			exports[i].ordinal = function_ordinal;
 			memcpy (exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
 			exports[i].forwarder[PE_NAME_LENGTH] = '\0';
-			memcpy (exports[i].name, export_name, PE_NAME_LENGTH);
+			memcpy (exports[i].name, function_name, PE_NAME_LENGTH);
 			exports[i].name[PE_NAME_LENGTH] = '\0';
+			memcpy (exports[i].libname, dll_name, PE_NAME_LENGTH);
+			exports[i].libname[PE_NAME_LENGTH] = '\0';
 			exports[i].last = 0;
 		}
 		exports[i].last = 1;

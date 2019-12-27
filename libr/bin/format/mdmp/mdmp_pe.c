@@ -229,6 +229,7 @@ RList *PE_(r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin)
 				offset -= pe_bin->vaddr;
 			}
 			ptr->name = strdup ((char *)symbols[i].name);
+			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = r_str_constpool_get (&rbin->constpool, (char *)symbols[i].forwarder);
 			ptr->bind = R_BIN_BIND_GLOBAL_STR;
 			ptr->type = R_BIN_TYPE_FUNC_STR;

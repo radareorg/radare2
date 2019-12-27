@@ -207,6 +207,7 @@ static RList* symbols(RBinFile *bf) {
 				break;
 			}
 			ptr->name = strdup ((char *)symbols[i].name);
+			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbols[i].forwarder);
 			//strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 			ptr->bind = R_BIN_BIND_GLOBAL_STR;
