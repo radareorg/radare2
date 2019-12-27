@@ -42,6 +42,10 @@ R_API bool r_bp_restore_except(RBreakpoint *bp, bool set, ut64 addr) {
 		if (addr && b->addr == addr) {
 			continue;
 		}
+		// Avoid restoring disabled breakpoints
+		if (set && !b->enabled) {
+			continue;
+		}
 		if (bp->breakpoint && bp->breakpoint (bp, b, set)) {
 			continue;
 		}
