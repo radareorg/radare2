@@ -976,7 +976,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 				var->addr += diff;
 				r_anal_var_add (core->anal, var->addr, 1, var->delta, var->kind, var->type, var->size, var->isarg, var->name);
 				var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", var->addr, 1, var->delta);
-				sdb_set (core->anal->sdb_fcns, var_access, access, NULL);
+				sdb_set (core->anal->sdb_fcns, var_access, access, 0);
 				free (access);
 			}
 			r_list_free (var_list);
