@@ -1647,7 +1647,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 
 	R_TIME_END;
 	if (IS_MODE_JSON (mode) && relocs == NULL) {
-	    return true;
+		return true;
 	}
 	return relocs != NULL;
 }
