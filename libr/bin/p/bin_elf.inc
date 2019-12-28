@@ -231,6 +231,7 @@ static RList* sections(RBinFile *bf) {
 				break;
 			case PT_LOAD:
 				ptr->name = r_str_newf ("LOAD%d", n++);
+				ptr->perm |= R_PERM_R;
 				found_load = 1;
 				ptr->add = true;
 				break;
