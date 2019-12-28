@@ -1422,6 +1422,9 @@ R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
 
 /* block.c */
+typedef bool (*RAnalBlockCb)(RAnalBlock *block, void *user);
+typedef bool (*RAnalAddrCb)(ut64 addr, void *user);
+
 R_API void r_anal_block_check_invariants(RAnal *anal);
 
 static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
@@ -1458,14 +1461,13 @@ R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size);
 R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size);
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr);
-R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr);
-R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size);
+R_API void r_anal_get_blocks_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user);
+R_API RList *r_anal_get_blocks_in_list(RAnal *anal, ut64 addr);
+R_API void r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size, RAnalBlockCb cb, void *user);
+R_API RList *r_anal_get_blocks_intersect_list(RAnal *anal, ut64 addr, ut64 size);
 // lifetime
 R_API void r_anal_block_ref(RAnalBlock *bb);
 R_API void r_anal_block_unref(RAnalBlock *bb);
-
-typedef bool (*RAnalBlockCb)(RAnalBlock *block, void *user);
-typedef bool (*RAnalAddrCb)(ut64 addr, void *user);
 
 // Call cb on every direct successor address of block
 // returns false iff the loop was breaked by cb
@@ -1480,7 +1482,7 @@ R_API RList *r_anal_block_recurse_list(RAnalBlock *block);
 
 /* function.c */
 R_API RAnalFunction *r_anal_add_function(RAnal *anal, const char *name, ut64 addr);
-R_API const RList *r_anal_get_functions(RAnal *anal, ut64 addr);
+R_API RList *r_anal_get_functions(RAnal *anal, ut64 addr);
 R_API bool r_anal_del_function(RAnalFunction *fcn);
 #if 0
 R_API bool r_anal_function_blocks_foreach(RAnalFunction *fcn, RAnalBlockCb cb, void *user);

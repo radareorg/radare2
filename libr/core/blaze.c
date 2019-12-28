@@ -30,15 +30,25 @@ typedef struct fcn {
 	ut64 ends;
 } fcn_t;
 
+static bool __is_data_block_cb(RAnalBlock *block, void *user) {
+	bool *block_exists = user;
+	*block_exists = true;
+	return false;
+}
+
 static int __isdata(RCore *core, ut64 addr) {
 	if (!r_io_is_valid_offset (core->io, addr, false)) {
 		// eprintf ("Warning: Invalid memory address at 0x%08"PFMT64x"\n", addr);
 		return 4;
 	}
-	RAnalBlock *block = r_anal_get_block_in (core->anal, addr);
-	if (block) {
+
+	bool block_exists = false;
+	// This will just set block_exists = true if there is any basic block at this addr
+	r_anal_get_blocks_in (core->anal, addr, __is_data_block_cb, &block_exists);
+	if (block_exists) {
 		return 1;
 	}
+
 	RList *list = r_meta_find_list_in (core->anal, addr, -1, 4);
 	RListIter *iter;
 	RAnalMetaItem *meta;
