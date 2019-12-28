@@ -442,6 +442,7 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 		eprintf ("Core file not open\n");
 		if (IS_MODE_JSON (mode)) {
 			r_cons_print ("[]");
+			return true;
 		}
 		return false;
 	}
@@ -494,6 +495,7 @@ static bool bin_strings(RCore *r, int mode, int va) {
 		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
 			if (IS_MODE_JSON (mode)) {
 				r_cons_print ("[]");
+				return true;
 			}
 			return false;
 		}
@@ -619,6 +621,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 	if (!bf || !info || !obj) {
 		if (mode & R_MODE_JSON) {
 			r_cons_printf ("{}");
+			return true;
 		}
 		return false;
 	}
@@ -1643,6 +1646,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	db = NULL;
 
 	R_TIME_END;
+	if (IS_MODE_JSON (mode) && relocs == NULL) {
+		return true;
+	}
 	return relocs != NULL;
 }
 
@@ -2984,6 +2990,7 @@ static int bin_classes(RCore *r, int mode) {
 	if (!cs) {
 		if (IS_MODE_JSON (mode)) {
 			r_cons_print ("[]");
+			return true;
 		}
 		return false;
 	}
@@ -3246,6 +3253,7 @@ static int bin_mem(RCore *r, int mode) {
 	if (!(mem = r_bin_get_mem (r->bin))) {
 		if (IS_MODE_JSON (mode)) {
 			r_cons_print("[]");
+			return true;
 		}
 		return false;
 	}
@@ -3270,6 +3278,8 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 	const char *format_string = "%s/string%d";
 	if (!IS_MODE_JSON (mode)) {
 		r_cons_printf ("=== VS_VERSIONINFO ===\n\n");
+	} else {
+		r_cons_print ("{");
 	}
 	bool firstit_dowhile = true;
 	do {
@@ -3281,7 +3291,7 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 			r_cons_printf (",");
 		}
 		if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("{\"VS_FIXEDFILEINFO\":{");
+			r_cons_printf ("\"VS_FIXEDFILEINFO\":{");
 		} else {
 			r_cons_printf ("# VS_FIXEDFILEINFO\n\n");
 		}
@@ -3379,11 +3389,14 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 			free (path_stringtable);
 		}
 		if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("}}");
+			r_cons_printf ("}");
 		}
 		num_version++;
 		firstit_dowhile = false;
 	} while (sdb);
+	if (IS_MODE_JSON (mode)) {
+		r_cons_printf ("}");
+	}
 }
 
 static void bin_elf_versioninfo(RCore *r, int mode) {
