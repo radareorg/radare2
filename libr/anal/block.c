@@ -77,6 +77,7 @@ R_API void r_anal_block_free(RAnalBlock *block) {
 // TODO: this can be moved to unit tests later
 R_API void r_anal_block_check_invariants(RAnal *anal) {
 #define DEEPCHECKS 0
+#define DEEPERCHECKS 0
 #if DEEPCHECKS
 	RBIter iter;
 	RAnalBlock *block;
@@ -103,6 +104,7 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 		if (block->ref < r_list_length (block->fcns)) {
 			eprintf ("FUCK: block->ref < r_list_length (block->fcns)\n");
 		}
+#if DEEPERCHECKS
 		RListIter *fcniter;
 		RAnalFunction *fcn;
 		r_list_foreach (block->fcns, fcniter, fcn) {
@@ -118,8 +120,10 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 				eprintf ("FUCK: Fcn %s is referenced by block @ 0x%"PFMT64x", but block is not referenced by function\n", fcn->name, block->addr);
 			}
 		}
+#endif
 	}
 
+#if DEEPERCHECKS
 	RListIter *fcniter;
 	RAnalFunction *fcn;
 	r_list_foreach (anal->fcns, fcniter, fcn) {
@@ -155,6 +159,7 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 			eprintf("SHIP: realsize wrong!!!!!!\n");
 		}
 	}
+#endif
 #endif
 }
 
@@ -291,33 +296,54 @@ D eprintf ("del block (%d) %llx\n", bb->ref, bb->addr);
 
 R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size) {
 	RAnal *anal = bb->anal;
-	if (addr == bb->addr) {
-		// easier if the address stays the same
-		if (size > bb->size) {
-			// find the next block
-			ut64 searchaddr = addr + 1;
-			RBNode *node = r_rbtree_lower_bound (anal->bb_tree, &searchaddr, __bb_addr_cmp, NULL);
-			if (node && container_of (node, RAnalBlock, rb)->addr < addr + size) {
-				// would overlap with the next block
-				return false;
-			}
-		}
-		r_anal_block_check_invariants (bb->anal);
 
-		RAnalFunction *fcn;
-		RListIter *iter;
-		r_list_foreach (bb->fcns, iter, fcn) {
-			if (fcn->meta._min != UT64_MAX && fcn->meta._max == bb->addr + bb->size) {
-				fcn->meta._max = bb->addr + size;
-			}
-		}
-
-		bb->size = size;
-		r_anal_block_check_invariants (bb->anal);
+	if (bb->addr == addr && bb->size == size) {
 		return true;
 	}
-	eprintf("r_anal_block_try_resize_atomic with different addr not implemented\n");
-	return false;
+
+	r_anal_block_check_invariants (bb->anal);
+
+	ut64 cur_end = bb->addr + bb->size;
+	ut64 new_end = addr + size;
+	if (new_end > cur_end) {
+		// find the next block
+		ut64 searchaddr = bb->addr + 1;
+		RBNode *node = r_rbtree_lower_bound (anal->bb_tree, &searchaddr, __bb_addr_cmp, NULL);
+		if (node && container_of (node, RAnalBlock, rb)->addr < addr + size) {
+			// would overlap with the next block
+			return false;
+		}
+	}
+
+	if (addr < bb->addr) {
+		// find the previous block
+		ut64 searchaddr = bb->addr - 1; // This is fine, addr < bb->addr ==> bb->addr > 0
+		RBNode *node = r_rbtree_upper_bound (anal->bb_tree, &searchaddr, __bb_addr_cmp, NULL);
+		if (node && container_of (node, RAnalBlock, rb)->addr + container_of (node, RAnalBlock, rb)->size >= addr) {
+			// would overlap with the previous block
+			return false;
+		}
+	}
+
+	// Invalidate the block's function's cached ranges
+	RAnalFunction *fcn;
+	RListIter *iter;
+	r_list_foreach (bb->fcns, iter, fcn) {
+		if (fcn->meta._min != UT64_MAX) {
+			if (fcn->meta._max == bb->addr + bb->size) {
+				fcn->meta._max = addr + size;
+			}
+			if (fcn->meta._min == bb->addr) {
+				fcn->meta._min = addr;
+			}
+		}
+	}
+
+	bb->addr = addr;
+	bb->size = size;
+
+	r_anal_block_check_invariants (bb->anal);
+	return true;
 }
 
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
