@@ -13,9 +13,25 @@
 #define BBAPI_PRELUDE(x) return x
 #endif
 
+#define unwrap(rbnode) container_of (rbnode, RAnalBlock, _rb)
+
+static void __max(RBNode *node) {
+	RAnalBlock *block = unwrap (node);
+	block->_max_end = block->addr + block->size;
+	int i;
+	for (i = 0; i < 2; i++) {
+		if (node->child[i]) {
+			ut64 end = unwrap (node->child[i])->_max_end;
+			if (end > block->_max_end) {
+				block->_max_end = end;
+			}
+		}
+	}
+}
+
 static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 incoming_addr = *(ut64 *)incoming;
-	const RAnalBlock *in_tree_block = container_of (in_tree, const RAnalBlock, rb);
+	const RAnalBlock *in_tree_block = container_of (in_tree, const RAnalBlock, _rb);
 	if (incoming_addr < in_tree_block->addr) {
 		return -1;
 	}
@@ -75,7 +91,7 @@ static void block_free(RAnalBlock *block) {
 
 // TODO: this can be moved to unit tests later
 R_API void r_anal_block_check_invariants(RAnal *anal) {
-#define DEEPCHECKS 0
+#define DEEPCHECKS 1
 #define DEEPERCHECKS 0
 #if DEEPCHECKS
 	RBIter iter;
@@ -83,13 +99,28 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 	ut64 last_start = UT64_MAX;
 	ut64 last_end = 0;
 	RAnalBlock *last_block = NULL;
-	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, rb) {
+	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, _rb) {
 		if (block->addr < last_end) {
 			eprintf ("FUCK: Overlapping block @ 0x%"PFMT64x" of size %"PFMT64u" with %"PFMT64u"\n", block->addr, block->size, last_block->size);
 		}
 		if (last_start != UT64_MAX && block->addr < last_start) {
 			eprintf ("FUUUUUUCK: Binary tree is corrupted!!!!\n");
 		}
+
+		ut64 max_end = block->addr + block->size;
+		for (int i = 0; i < 2; i++) {
+			if (!block->_rb.child[i]) {
+				continue;
+			}
+			RAnalBlock *child = unwrap (block->_rb.child[i]);
+			if (child->_max_end > max_end) {
+				max_end = child->_max_end;
+			}
+		}
+		if (block->_max_end != max_end) {
+			eprintf ("FUUUUUUUUUUFUFUFUFUUUUUUUUUUUCK: Augmented binary tree corrupted!!!\n");
+		}
+
 		if (last_start != UT64_MAX && block->addr == last_start) {
 			eprintf ("FUUUUUUUUUUCK: Double blocks!!!!!!\n");
 		}
@@ -163,7 +194,7 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 }
 
 void __block_free_rb(RBNode *node, void *user) {
-	RAnalBlock *block = container_of (node, RAnalBlock, rb);
+	RAnalBlock *block = unwrap (node);
 	block_free (block);
 }
 
@@ -173,7 +204,7 @@ R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
 	if (!node) {
 		return NULL;
 	}
-	return container_of (node, RAnalBlock, rb);
+	return unwrap (node);
 }
 
 R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr) {
@@ -183,7 +214,7 @@ R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr) {
 	if (!node) {
 		return NULL;
 	}
-	RAnalBlock *block = container_of (node, RAnalBlock, rb);
+	RAnalBlock *block = unwrap (node);
 	if (addr - block->addr < block->size) {
 		return block;
 	}
@@ -191,6 +222,7 @@ R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr) {
 }
 
 R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
+	// TODO: this is wrong now after augmentation
 	BBAPI_PRELUDE (x)
 	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
 	if (!ret) {
@@ -198,7 +230,7 @@ R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 	}
 	RBIter it = r_rbtree_lower_bound_forward (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
 	while (r_rbtree_iter_has (&it)) {
-		RAnalBlock *block = r_rbtree_iter_get (&it, RAnalBlock, rb);
+		RAnalBlock *block = r_rbtree_iter_get (&it, RAnalBlock, _rb);
 		if (block->addr >= addr + size) {
 			break;
 		}
@@ -243,7 +275,7 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 	if (size == 0) {
 		if (r_list_empty (intersecting)) {
 			RAnalBlock *newblock = block_new (anal, addr, size);
-			r_rbtree_insert (&anal->bb_tree, &newblock->addr, &newblock->rb, __bb_addr_cmp, NULL);
+			r_rbtree_aug_insert (&anal->bb_tree, &newblock->addr, &newblock->_rb, __bb_addr_cmp, NULL, __max);
 			r_list_push (ret, newblock);
 		}
 	} else {
@@ -264,7 +296,7 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 				cur = insect->addr + insect->size;
 			}
 			if (newblock) {
-				r_rbtree_insert (&anal->bb_tree, &newblock->addr, &newblock->rb, __bb_addr_cmp, NULL);
+				r_rbtree_aug_insert (&anal->bb_tree, &newblock->addr, &newblock->_rb, __bb_addr_cmp, NULL, __max);
 				r_list_push (ret, newblock);
 			}
 			if (insect) {
@@ -289,7 +321,7 @@ R_API RAnalBlock *r_anal_block_create_atomic(RAnal *anal, ut64 addr, ut64 size) 
 	if (!block) {
 		return NULL;
 	}
-	r_rbtree_insert (&anal->bb_tree, &block->addr, &block->rb, __bb_addr_cmp, NULL);
+	r_rbtree_aug_insert (&anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max);
 	return block;
 }
 
@@ -307,6 +339,17 @@ D eprintf ("del block (%d) %llx\n", bb->ref, bb->addr);
 	r_anal_block_unref (bb);
 }
 
+R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size) {
+	if (block->size == size) {
+		return;
+	}
+	block->size = size;
+	ut64 addr = block->addr;
+	r_rbtree_aug_update_sum (block->anal->bb_tree, &addr, &block->_rb, __bb_addr_cmp, NULL, __max);
+	r_anal_block_check_invariants (block->anal);
+}
+
+#if 0
 R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size) {
 	RAnal *anal = bb->anal;
 
@@ -322,7 +365,7 @@ R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size) 
 		// find the next block
 		ut64 searchaddr = bb->addr + 1;
 		RBNode *node = r_rbtree_lower_bound (anal->bb_tree, &searchaddr, __bb_addr_cmp, NULL);
-		if (node && container_of (node, RAnalBlock, rb)->addr < addr + size) {
+		if (node && unwrap (node)->addr < addr + size) {
 			// would overlap with the next block
 			return false;
 		}
@@ -332,7 +375,7 @@ R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size) 
 		// find the previous block
 		ut64 searchaddr = bb->addr - 1; // This is fine, addr < bb->addr ==> bb->addr > 0
 		RBNode *node = r_rbtree_upper_bound (anal->bb_tree, &searchaddr, __bb_addr_cmp, NULL);
-		if (node && container_of (node, RAnalBlock, rb)->addr + container_of (node, RAnalBlock, rb)->size >= addr) {
+		if (node && unwrap (node)->addr + unwrap (node)->size >= addr) {
 			// would overlap with the previous block
 			return false;
 		}
@@ -358,12 +401,18 @@ R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size) 
 	r_anal_block_check_invariants (bb->anal);
 	return true;
 }
+#endif
 
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	RAnal *anal = bbi->anal;
 	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
 	if (addr == bbi->addr) {
 		return bbi;
+	}
+
+	if (r_anal_get_block_at (bbi->anal, addr)) {
+		// can't have two bbs at the same addr
+		return NULL;
 	}
 
 	// create the second block
@@ -377,14 +426,13 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	bb->parent_stackptr = bbi->stackptr;
 
 	// resize the first block
-	bool success = r_anal_block_try_resize_atomic (bbi, bbi->addr, addr - bbi->addr);
-	r_return_val_if_fail (success, NULL);
+	r_anal_block_set_size (bbi, addr - bbi->addr);
 	bbi->jump = addr;
 	bbi->fail = UT64_MAX;
 	bbi->conditional = false;
 
 	// insert the second block into the tree
-	r_rbtree_insert (&anal->bb_tree, &bb->addr, &bb->rb, __bb_addr_cmp, NULL);
+	r_rbtree_aug_insert (&anal->bb_tree, &bb->addr, &bb->_rb, __bb_addr_cmp, NULL, __max);
 
 	// insert the second block into all functions of the first
 	RListIter *iter;

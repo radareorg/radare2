@@ -880,7 +880,9 @@ typedef struct r_anal_cond_t {
 } RAnalCond;
 
 typedef struct r_anal_bb_t {
-	RBNode rb;
+	RBNode _rb;     // private, node in the RBTree
+	ut64 _max_end;  // private, augmented value for RBTree
+
 	ut64 addr;
 	ut64 size;
 	ut64 jump;
@@ -1447,10 +1449,13 @@ R_API RAnalBlock *r_anal_block_create_atomic(RAnal *anal, ut64 addr, ut64 size);
 // Manually delete a block and remove it from all its functions
 R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb);
 
+#if 0
 // Try to set addr and size of the block without splitting it and without moving it beyond its previous or following blocks.
 // This will fail if the block would overlap another block after the operation
 // returns true on success
 R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size);
+#endif
+R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size);
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr);
 R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr);
