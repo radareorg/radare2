@@ -299,7 +299,7 @@ enum {
 
 // BB and OP 
 R_API ut64 r_anal_ex_map_anal_ex_to_anal_op_type(ut64 ranal2_op_type);
-R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalBlock *bb, RAnalOp *op);
+R_API RAnalBlock *r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalOp *op);
 R_API int r_anal_ex_is_op_type_eop(ut64 x);
 
 R_API ut64 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type);

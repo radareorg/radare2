@@ -35,8 +35,7 @@ R_API void r_anal_block_ref(RAnalBlock *bb) {
 
 #define DFLT_NINSTR 3
 
-// TODO: this should be private, new blocks should should be created from outside using only r_anal_create_block()
-R_API RAnalBlock *r_anal_block_new(RAnal *a, ut64 addr, ut64 size) {
+static RAnalBlock *block_new(RAnal *a, ut64 addr, ut64 size) {
 	RAnalBlock *block = R_NEW0 (RAnalBlock);
 	if (!block) {
 		return NULL;
@@ -58,7 +57,7 @@ R_API RAnalBlock *r_anal_block_new(RAnal *a, ut64 addr, ut64 size) {
 }
 
 // TODO: this should be private, from outside only unref must be used
-R_API void r_anal_block_free(RAnalBlock *block) {
+static void block_free(RAnalBlock *block) {
 	if (!block) {
 		return;
 	}
@@ -165,7 +164,7 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 
 void __block_free_rb(RBNode *node, void *user) {
 	RAnalBlock *block = container_of (node, RAnalBlock, rb);
-	r_anal_block_free (block);
+	block_free (block);
 }
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
@@ -197,7 +196,6 @@ R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 	if (!ret) {
 		return NULL;
 	}
-	// TODO: should we ref every returned block and use unref as free in the returned list?
 	RBIter it = r_rbtree_lower_bound_forward (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
 	while (r_rbtree_iter_has (&it)) {
 		RAnalBlock *block = r_rbtree_iter_get (&it, RAnalBlock, rb);
@@ -244,7 +242,7 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 
 	if (size == 0) {
 		if (r_list_empty (intersecting)) {
-			RAnalBlock *newblock = r_anal_block_new (anal, addr, size);
+			RAnalBlock *newblock = block_new (anal, addr, size);
 			r_rbtree_insert (&anal->bb_tree, &newblock->addr, &newblock->rb, __bb_addr_cmp, NULL);
 			r_list_push (ret, newblock);
 		}
@@ -256,12 +254,12 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 			RAnalBlock *newblock = NULL;
 			RAnalBlock *insect = NULL;
 			if (r_list_empty (intersecting)) {
-				newblock = r_anal_block_new (anal, cur, end - cur);
+				newblock = block_new (anal, cur, end - cur);
 				cur = end;
 			} else {
 				insect = r_list_pop_head (intersecting);
 				if (insect->addr > cur) {
-					newblock = r_anal_block_new (anal, cur, insect->addr - cur);
+					newblock = block_new (anal, cur, insect->addr - cur);
 				}
 				cur = insect->addr + insect->size;
 			}
@@ -278,6 +276,21 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 		r_anal_block_check_invariants (anal);
 	}
 	return ret;
+}
+
+R_API RAnalBlock *r_anal_block_create_atomic(RAnal *anal, ut64 addr, ut64 size) {
+	RList *intersecting = r_anal_get_blocks_intersect (anal, addr, size);
+	bool fail = !r_list_empty (intersecting);
+	r_list_free (intersecting);
+	if (fail) {
+		return NULL;
+	}
+	RAnalBlock *block = block_new (anal, addr, size);
+	if (!block) {
+		return NULL;
+	}
+	r_rbtree_insert (&anal->bb_tree, &block->addr, &block->rb, __bb_addr_cmp, NULL);
+	return block;
 }
 
 R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb) {
@@ -354,7 +367,7 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	}
 
 	// create the second block
-	RAnalBlock *bb = r_anal_block_new (anal, addr, bbi->addr + bbi->size - addr);
+	RAnalBlock *bb = block_new (anal, addr, bbi->addr + bbi->size - addr);
 	if (!bb) {
 		return NULL;
 	}
