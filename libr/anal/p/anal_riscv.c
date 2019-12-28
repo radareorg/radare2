@@ -374,7 +374,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strncmp (name, "mul", 3)) {
 			esilprintf (op, "%s,%s,*,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "div", 3)) {
-			esilprintf (op, "%s,%s,*,%s,=", ARG (2), ARG (1), ARG (0));
+			esilprintf (op, "%s,%s,/,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "rem", 3)) {
 			esilprintf (op, "%s,%s,%%,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "xor", 3)) {
