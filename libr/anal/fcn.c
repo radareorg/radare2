@@ -194,8 +194,7 @@ R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
 			continue;
 		}
 		if (bb->addr + bb->size >= eof) {
-			bool succ = r_anal_block_try_resize_atomic (bb, bb->addr, eof - bb->addr);
-			assert (succ);
+			r_anal_block_set_size (bb, eof - bb->addr);
 		}
 		if (bb->jump != UT64_MAX && bb->jump >= eof) {
 			bb->jump = UT64_MAX;
@@ -387,6 +386,8 @@ static bool regs_exist(RAnalValue *src, RAnalValue *dst) {
 // 0 if not skipped; 1 if skipped; 2 if skipped before
 static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb, ut64 addr,
                    char *tmp_buf, int oplen, int un_idx, int *idx) {
+	// TODO: implement this
+#if 0
 	// this step is required in order to prevent infinite recursion in some cases
 	if ((addr + un_idx - oplen) == fcn->addr) {
 		// use addr instead of op->addr to mark repeat
@@ -400,6 +401,7 @@ static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb,
 		}
 		return 2;
 	}
+#endif
 	return 0;
 }
 
@@ -478,6 +480,24 @@ typedef struct {
 	ut64 op_addr;
 	ut64 leaddr;
 } leaddr_pair;
+
+static RAnalBlock *overlapping_bb(RAnalBlock *block, ut64 size_add, bool jumpmid) {
+	RList *intersecting = r_anal_get_blocks_intersect (block->anal, block->addr, size_add);
+	RListIter *iter;
+	RAnalBlock *bb;
+
+	ut64 newend = block->addr + block->size + size_add;
+
+	r_list_foreach (intersecting, iter, bb) {
+		ut64 eaddr = bb->addr + bb->size;
+		if (((bb->addr >= eaddr && newend == bb->addr)
+		     || r_anal_block_contains (bb, newend))
+		    && (!jumpmid || r_anal_bb_op_starts_at (bb, newend))) {
+			return bb;
+		}
+	}
+	return NULL;
+}
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	r_anal_block_check_invariants (anal);
@@ -660,6 +680,8 @@ repeat:
 			gotoBeach (R_ANAL_RET_END);
 		}
 		if (anal->opt.nopskip && fcn->addr == at) {
+			// TODO: implement this
+#if 0
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 			if (!fi || strncmp (fi->name, "sym.", 4)) {
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
@@ -679,31 +701,27 @@ repeat:
 				fcn->addr = addr;
 				goto repeat;
 			}
+#endif
 		}
 		if (op.hint.new_bits) {
 			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
 		}
-		if (!overlapped) {
-			ut64 newbbsize = bb->size + oplen;
-			if (newbbsize > MAX_FCN_SIZE) {
-				gotoRet (R_ANAL_RET_ERROR, unrefbb);
-			}
-			overlapped = !r_anal_block_try_resize_atomic (bb, bb->addr, newbbsize);
-			if (!overlapped) {
-				r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
-				fcn->ninstr++;
-				// FITFCNSZ(); // defer this, in case this instruction is a branch delay entry
-				// fcn->size += oplen; /// XXX. must be the sum of all the bblocks
-			} else {
+		if (idx > 0 && !overlapped) {
+			bbg = overlapping_bb (bb, oplen, anal->opt.jmpmid && is_x86);
+			if (bbg && bbg != bb) {
 				bb->jump = at;
-				// TODO: why if (anal->opt.jmpmid && is_x86) {
-				// 	r_anal_fcn_split_bb (anal, fcn, bbg, at);
-				// }
+				// TODO if (anal->opt.jmpmid && is_x86) {
+				// TODO 	r_anal_fcn_split_bb (anal, fcn, bbg, at);
+				// TODO }
 				if (anal->verbose) {
 					eprintf ("Overlapped at 0x%08"PFMT64x "\n", at);
 				}
-				gotoBeach (R_ANAL_RET_END);
 			}
+		}
+		if (!overlapped) {
+			r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
+			r_anal_block_set_size (bb, bb->size + oplen);
+			fcn->ninstr++;
 		}
 		if (anal->opt.trycatch) {
 			const char *name = anal->coreb.getName (anal->coreb.core, at);
@@ -773,7 +791,7 @@ repeat:
 			// But we also already counted this instruction in the
 			// size of the current basic block, so we need to fix that
 			if (delay.adjust) {
-				r_anal_block_try_resize_atomic (bb, bb->addr, (ut64)addrbytes * (ut64)delay.after);
+				r_anal_block_set_size (bb, (ut64)addrbytes * (ut64)delay.after);
 				fcn->ninstr--;
 				if (anal->verbose) {
 					eprintf ("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%"PFMT64u" f.uncorr=%"PFMT64u"\n",
@@ -913,7 +931,7 @@ repeat:
 		case R_ANAL_OP_TYPE_ADD:
 			if (anal->opt.ijmp) {
 				if ((op.size + 4 <= bytes_read) && !memcmp (buf + op.size, "\x00\x00\x00\x00", 4)) {
-					r_anal_block_try_resize_atomic (bb, bb->addr, bb->size - oplen);
+					r_anal_block_set_size (bb, bb->size - oplen);
 					op.type = R_ANAL_OP_TYPE_RET;
 					gotoBeach (R_ANAL_RET_END);
 				}
