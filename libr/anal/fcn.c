@@ -481,12 +481,12 @@ typedef struct {
 	ut64 leaddr;
 } leaddr_pair;
 
-static RAnalBlock *overlapping_bb(RAnalBlock *block, ut64 size_add, bool jumpmid) {
-	RList *intersecting = r_anal_get_blocks_intersect_list (block->anal, block->addr, size_add);
+static RAnalBlock *overlapping_bb(RAnalBlock *block, ut64 at, ut64 size_add, bool jumpmid) {
+	RList *intersecting = r_anal_get_blocks_in_list (block->anal, at); //r_anal_get_blocks_intersect_list (block->anal, block->addr + block->size, size_add);
 	RListIter *iter;
 	RAnalBlock *bb;
 
-	ut64 newend = block->addr + block->size + size_add;
+	ut64 newend = at; //block->addr + block->size + size_add;
 
 	RAnalBlock *ret = NULL;
 	r_list_foreach (intersecting, iter, bb) {
@@ -737,12 +737,13 @@ repeat:
 			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
 		}
 		if (idx > 0 && !overlapped) {
-			bbg = overlapping_bb (bb, oplen, anal->opt.jmpmid && is_x86);
+			bbg = overlapping_bb (bb, at, oplen, anal->opt.jmpmid && is_x86);
 			if (bbg && bbg != bb) {
 				bb->jump = at;
 				// TODO if (anal->opt.jmpmid && is_x86) {
 				// TODO 	r_anal_fcn_split_bb (anal, fcn, bbg, at);
 				// TODO }
+				overlapped = true;
 				if (anal->verbose) {
 					eprintf ("Overlapped at 0x%08"PFMT64x "\n", at);
 				}
