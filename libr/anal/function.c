@@ -4,10 +4,26 @@
 
 #define D if (anal->verbose)
 
-R_API const RList *r_anal_get_functions(RAnal *anal, ut64 addr) {
-	RAnalBlock *bb = r_anal_get_block_in (anal, addr);
-	// TODO: this might be a bit dangerous. If the bb gets unrefd, the list must not be touched anymore.
-	return bb? bb->fcns: NULL;
+static bool get_functions_block_cb(RAnalBlock *block, void *user) {
+	RList *list = user;
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (block->fcns, iter, fcn) {
+		if (r_list_contains (list, fcn)) {
+			continue;
+		}
+		r_list_push (list, fcn);
+	}
+	return true;
+}
+
+R_API RList *r_anal_get_functions(RAnal *anal, ut64 addr) {
+	RList *list = r_list_new ();
+	if (!list) {
+		return NULL;
+	}
+	r_anal_get_blocks_in (anal, addr, get_functions_block_cb, list);
+	return list;
 }
 
 R_API char *r_anal_new_name(RAnal *anal, const char *name) {

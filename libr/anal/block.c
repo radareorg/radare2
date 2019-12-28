@@ -91,7 +91,7 @@ static void block_free(RAnalBlock *block) {
 
 // TODO: this can be moved to unit tests later
 R_API void r_anal_block_check_invariants(RAnal *anal) {
-#define DEEPCHECKS 1
+#define DEEPCHECKS 0
 #define DEEPERCHECKS 0
 #if DEEPCHECKS
 	RBIter iter;
@@ -100,9 +100,10 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 	ut64 last_end = 0;
 	RAnalBlock *last_block = NULL;
 	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, _rb) {
+		/* overlap now allowed
 		if (block->addr < last_end) {
 			eprintf ("FUCK: Overlapping block @ 0x%"PFMT64x" of size %"PFMT64u" with %"PFMT64u"\n", block->addr, block->size, last_block->size);
-		}
+		}*/
 		if (last_start != UT64_MAX && block->addr < last_start) {
 			eprintf ("FUUUUUUCK: Binary tree is corrupted!!!!\n");
 		}
@@ -199,7 +200,6 @@ void __block_free_rb(RBNode *node, void *user) {
 }
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
-	// TODO: this might be a bit faster using a ht
 	RBNode *node = r_rbtree_find (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
 	if (!node) {
 		return NULL;
@@ -207,40 +207,77 @@ R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
 	return unwrap (node);
 }
 
-R_API RAnalBlock *r_anal_get_block_in(RAnal *anal, ut64 addr) {
-	BBAPI_PRELUDE(x)
-	r_anal_block_check_invariants (anal);
-	RBNode *node = r_rbtree_upper_bound (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
+// This is a special case of what r_interval_node_all_in() does
+static void all_in(RAnalBlock *node, ut64 addr, RAnalBlockCb cb, void *user) {
+	while (node && addr < node->addr) {
+		// less than the current node, but might still be contained further down
+		node = unwrap (node->_rb.child[0]);
+	}
 	if (!node) {
-		return NULL;
+		return;
 	}
-	RAnalBlock *block = unwrap (node);
-	if (addr - block->addr < block->size) {
-		return block;
+	if (addr >= node->_max_end) {
+		return;
 	}
-	return NULL;
+	if (addr < node->addr + node->size) {
+		cb (node, user);
+	}
+	// This can be done more efficiently by building the stack manually
+	all_in (unwrap (node->_rb.child[0]), addr, cb, user);
+	all_in (unwrap (node->_rb.child[1]), addr, cb, user);
 }
 
-R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
-	// TODO: this is wrong now after augmentation
-	BBAPI_PRELUDE (x)
-	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
-	if (!ret) {
+R_API void r_anal_get_blocks_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user) {
+	all_in (anal->bb_tree ? unwrap (anal->bb_tree) : NULL, addr, cb, user);
+}
+
+static bool block_list_cb(RAnalBlock *block, void *user) {
+	RList *list = user;
+	r_anal_block_ref (block);
+	r_list_push (list, block);
+	return true;
+}
+
+R_API RList *r_anal_get_blocks_in_list(RAnal *anal, ut64 addr) {
+	RList *list = r_list_newf ((RListFree)r_anal_block_unref);
+	if (!list) {
 		return NULL;
 	}
-	RBIter it = r_rbtree_lower_bound_forward (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
-	while (r_rbtree_iter_has (&it)) {
-		RAnalBlock *block = r_rbtree_iter_get (&it, RAnalBlock, _rb);
-		if (block->addr >= addr + size) {
-			break;
-		}
-		if (block->addr + size > addr) {
-			r_anal_block_ref (block);
-			r_list_push (ret, block);
-		}
-		r_rbtree_iter_next (&it);
+	r_anal_get_blocks_in (anal, addr, block_list_cb, list);
+	return list;
+}
+
+static void all_intersect(RAnalBlock *node, ut64 addr, ut64 size, RAnalBlockCb cb, void *user) {
+	ut64 end = addr + size;
+	while (node && end <= node->addr) {
+		// less than the current node, but might still be contained further down
+		node = unwrap (node->_rb.child[0]);
 	}
-	return ret;
+	if (!node) {
+		return;
+	}
+	if (addr >= node->_max_end) {
+		return;
+	}
+	if (addr < node->addr + node->size) {
+		cb (node, user);
+	}
+	// This can be done more efficiently by building the stack manually
+	all_intersect (unwrap (node->_rb.child[0]), addr, size, cb, user);
+	all_intersect (unwrap (node->_rb.child[1]), addr, size, cb, user);
+}
+
+R_API void r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size, RAnalBlockCb cb, void *user) {
+	all_intersect (anal->bb_tree ? unwrap (anal->bb_tree) : NULL, addr, size, cb, user);
+}
+
+R_API RList *r_anal_get_blocks_intersect_list(RAnal *anal, ut64 addr, ut64 size) {
+	RList *list = r_list_newf ((RListFree)r_anal_block_unref);
+	if (!list) {
+		return NULL;
+	}
+	r_anal_get_blocks_intersect (anal, addr, size, block_list_cb, list);
+	return list;
 }
 
 // TODO: unit-test this HARD!!
@@ -254,7 +291,7 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 	}
 
 	// get all intersecting blocks
-	RList *intersecting = r_anal_get_blocks_intersect (anal, addr, size);
+	RList *intersecting = r_anal_get_blocks_intersect_list (anal, addr, size);
 	if (!r_list_empty (intersecting)) {
 		// split the first at addr if necessary and ignore the first part
 		RAnalBlock *first = r_list_first (intersecting);
@@ -311,10 +348,7 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 }
 
 R_API RAnalBlock *r_anal_block_create_atomic(RAnal *anal, ut64 addr, ut64 size) {
-	RList *intersecting = r_anal_get_blocks_intersect (anal, addr, size);
-	bool fail = !r_list_empty (intersecting);
-	r_list_free (intersecting);
-	if (fail) {
+	if (r_anal_get_block_at (anal, addr)) {
 		return NULL;
 	}
 	RAnalBlock *block = block_new (anal, addr, size);
@@ -523,7 +557,7 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 		D eprintf("unref bb %d\n", bb->ref);
 		assert (!bb->fcns || r_list_empty (bb->fcns)); // on
 		D eprintf("unref2 bb %d\n", bb->ref);
-		r_rbtree_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL);
+		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max);
 	}
 }
 

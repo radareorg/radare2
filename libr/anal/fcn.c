@@ -482,21 +482,51 @@ typedef struct {
 } leaddr_pair;
 
 static RAnalBlock *overlapping_bb(RAnalBlock *block, ut64 size_add, bool jumpmid) {
-	RList *intersecting = r_anal_get_blocks_intersect (block->anal, block->addr, size_add);
+	RList *intersecting = r_anal_get_blocks_intersect_list (block->anal, block->addr, size_add);
 	RListIter *iter;
 	RAnalBlock *bb;
 
 	ut64 newend = block->addr + block->size + size_add;
 
+	RAnalBlock *ret = NULL;
 	r_list_foreach (intersecting, iter, bb) {
 		ut64 eaddr = bb->addr + bb->size;
 		if (((bb->addr >= eaddr && newend == bb->addr)
 		     || r_anal_block_contains (bb, newend))
 		    && (!jumpmid || r_anal_bb_op_starts_at (bb, newend))) {
-			return bb;
+			ret = bb;
+			break;
 		}
 	}
-	return NULL;
+	r_list_free (intersecting);
+	return ret;
+}
+
+// When analyzing fcn and hitting addr, this checks what basic blocks are at this address
+// and returns the one that is most important in the sense that we should stop analysis there.
+static RAnalBlock *most_important_existing_bb_at(RAnal *anal, RAnalFunction *fcn, ut64 addr, bool midjump) {
+	RList *bbs = r_anal_get_blocks_in_list (anal, addr); // TODO: use non-list variant of this function
+	if (!bbs) {
+		return NULL;
+	}
+	RAnalBlock *ret = NULL;
+	RListIter *iter;
+	RAnalBlock *block;
+	r_list_foreach (bbs, iter, block) {
+		if (!ret) { // First block, just consider this first
+			ret = block;
+			continue;
+		}
+		if (block->addr == addr) { // highest prio: exact hit
+			ret = block;
+			break;
+		}
+		if (midjump && r_anal_bb_op_starts_at (block, addr)) {
+			ret = block;
+		}
+	}
+	r_list_free (bbs);
+	return ret;
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
@@ -557,7 +587,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 	r_anal_block_check_invariants (anal);
 
-	RAnalBlock *existing_bb = r_anal_get_block_in (anal, addr);
+	RAnalBlock *existing_bb = most_important_existing_bb_at (anal, fcn, addr, anal->opt.jmpmid && is_x86);
 	if (existing_bb) {
 		bool existing_in_fcn = r_list_contains (existing_bb->fcns, fcn);
 		existing_bb = r_anal_block_split (existing_bb, addr);
@@ -1535,11 +1565,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 
 R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type) {
 #if 1
-	const RList *list = r_anal_get_functions (anal, addr);
-	if (!list) {
-		return NULL;
-	}
-	return r_list_clone (list);
+	return r_anal_get_functions (anal, addr);
 #else
 	RList *list = r_list_newf (NULL);
 	// Interval tree query
@@ -1583,22 +1609,24 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 
 #define BBAPI 1
 #if BBAPI
-	const RList *list = r_anal_get_functions (anal, addr);
-	if (!list || r_list_empty (list)) {
-		return NULL;
-	}
-	if (type == R_ANAL_FCN_TYPE_ROOT) {
-		RAnalFunction *fcn;
-		RListIter *iter;
-		r_list_foreach (list, iter, fcn) {
-			if (fcn->addr == addr) {
-				return fcn;
+	RList *list = r_anal_get_functions (anal, addr);
+	RAnalFunction *ret = NULL;
+	if (list && !r_list_empty (list)) {
+		if (type == R_ANAL_FCN_TYPE_ROOT) {
+			RAnalFunction *fcn;
+			RListIter *iter;
+			r_list_foreach (list, iter, fcn) {
+				if (fcn->addr == addr) {
+					ret = fcn;
+					break;
+				}
 			}
+		} else {
+			ret = r_list_first (list);
 		}
-		return NULL;
-	} else {
-		return r_list_first (list);
 	}
+	r_list_free (list);
+	return ret;
 #else
 	// Interval tree query
 	RAnalFunction *fcn;
