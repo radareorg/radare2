@@ -4055,7 +4055,8 @@ onemoretime:
 		if ((off & mask) <= N) {
 			start_off = (off & ~mask) ^ N;
 		} else {
-			start_off = ((off & ~mask) ^ incr) ^ N;
+			//TODO: Please test this
+			start_off = N & mask;
 		}
 
 		ut64 try_off;
