@@ -353,7 +353,6 @@ static inline void *r_new_copy(int size, void *data) {
 
 #ifndef HAVE_EPRINTF
 #define eprintf(...) fprintf(stderr,__VA_ARGS__)
-#define eprint(x) fprintf(stderr,"%s\n",x)
 #define HAVE_EPRINTF 1
 #endif
 
