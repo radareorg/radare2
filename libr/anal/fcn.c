@@ -256,27 +256,16 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn);
 }
 
-// TODO: split between bb.new and append_bb()
-#if 0
-static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	r_return_val_if_fail (anal && fcn, NULL);
-	//return r_anal_function_block_add (fcn, addr, 0);
-	return NULL; // TODO
-#if 0
-	RAnalBlock *bb = r_anal_block_new (anal, addr, 0);
-	if (bb) {
-		if (anal->verbose) {
-			eprintf ("Append bb at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x ")\n", addr, fcn->addr);
-		}
-		r_anal_function_add_block_ll (fcn, bb);
-		if (anal->cb.on_fcn_bb_new) {
-			anal->cb.on_fcn_bb_new (anal, anal->user, fcn, bb);
-		}
+// Create a new 0-sized basic block inside the function
+static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
+	RAnalBlock *bb = r_anal_block_create_atomic (anal, addr, 0);
+	if (!bb) {
+		return NULL;
 	}
+	r_anal_function_block_add (fcn, bb);
+	bb->parent_stackptr = fcn->stack;
 	return bb;
-#endif
 }
-#endif
 
 #define gotoRet(x, label) ret = x; goto label;
 #define gotoBeach(x) gotoRet(x, beach)
@@ -581,13 +570,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 	r_anal_block_check_invariants (anal);
 
-	RList *created = r_anal_block_create (anal, addr, 0);
-	// We checked before if there is a block at addr and our size == 0
-	// so we can assert that the above created exactly one block.
-	r_return_val_if_fail (created && r_list_length (created) == 1, R_ANAL_RET_ERROR);
-	bb = r_list_pop (created);
-	r_list_free (created);
-	r_anal_function_block_add (fcn, bb);
+	bb = fcn_append_basic_block (anal, fcn, addr);
+	// we checked before whether there is a bb at addr, so the create should have succeeded
+	r_return_val_if_fail (bb, R_ANAL_RET_ERROR);
 
 	r_anal_block_check_invariants (anal);
 	if (!anal->leaddrs) {
@@ -738,14 +723,10 @@ repeat:
 							r_anal_function_block_remove (fcn, bb);
 						}
 						r_anal_block_unref (bb);
-						bb = NULL;
-						created = r_anal_block_create (anal, addr, 0);
-						if (r_list_empty (created)) {
+						bb = fcn_append_basic_block (anal, fcn, addr);
+						if (!bb) {
 							gotoRet (R_ANAL_RET_ERROR, unrefbb);
 						}
-						bb = r_list_pop (created);
-						r_list_free (created);
-						r_anal_function_block_add (fcn, bb);
 					}
 				}
 			}
