@@ -1447,7 +1447,7 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size);
 // Manually delete a block and remove it from all its functions
 R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb);
 
-// Try to set addr and size of the block without splitting it
+// Try to set addr and size of the block without splitting it and without moving it beyond its previous or following blocks.
 // This will fail if the block would overlap another block after the operation
 // returns true on success
 R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size);
