@@ -64,7 +64,7 @@ static char *__read_nonnull_str_at(RBuffer *buf, ut64 *offset) {
 	}
 	(*offset)++;
 	char *str = calloc ((ut64)size + 1, sizeof (char));
-	r_buf_read_at (buf, *offset, str, size);
+	r_buf_read_at (buf, *offset, (ut8 *)str, size);
 	*offset += size;
 	return str;
 }
@@ -454,7 +454,6 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 			ordinal = r_buf_read8_at (bin->buf, offset);
 			offset += sizeof (ut8);
 		}
-		ut32 addend = 0;
 		switch (header.target & F_TARGET_TYPE_MASK) {
 		case INTERNAL:
 			rel->addend = bin->objtbl[ordinal - 1].reloc_base_addr;
@@ -580,7 +579,7 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 }
 
 static bool __init_header(r_bin_le_obj_t *bin, RBuffer *buf) {
-	char magic[2];
+	ut8 magic[2];
 	r_buf_read_at (buf, 0, magic, sizeof (magic));
 	if (!memcmp (&magic, "MZ", 2)) {
 		bin->headerOff = r_buf_read_le16_at (buf, 0x3c);
@@ -611,7 +610,7 @@ r_bin_le_obj_t *r_bin_le_new_buf(RBuffer *buf) {
 
 	__init_header (bin, buf);
 	LE_image_header *h = bin->header;
-	if (!strncmp ("LE", h->magic, 2)) {
+	if (!memcmp ("LE", h->magic, 2)) {
 		bin->is_le = true;
 	}
 	bin->type = __get_module_type (bin);

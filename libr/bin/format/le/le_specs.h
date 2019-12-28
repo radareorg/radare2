@@ -47,28 +47,27 @@ typedef struct LE_entry_bundle_header_s {
 #define ENTRY_EXPORTED         0x01
 #define ENTRY_PARAM_COUNT_MASK 0xF8
 
-R_PACKED (
-typedef union LE_entry_bundle_entry_u {
-	struct {
+typedef R_PACKED (union LE_entry_bundle_entry_u {
+	R_PACKED (struct {
 		ut8 flags;   // First bit set if exported, mask with 0xF8 to get parameters count
 		ut16 offset; // This is the offset in the object for the entry point defined at this ordinal number.
-	} entry_16;
-	struct {
+	}) entry_16;
+	R_PACKED (struct {
 		ut8 flags;   // First bit set if exported, mask with 0xF8 to get parameters count
 		ut16 offset; // This is the offset in the object for the entry point defined at this ordinal number.
 		ut16 callgate_sel; // The callgate selector for references to ring 2 entry points.
-	} callgate;
-	struct {
+	}) callgate;
+	R_PACKED (struct {
 		ut8 flags;   // First bit set if exported, mask with 0xF8 to get parameters count
 		ut32 offset; // This is the offset in the object for the entry point defined at this ordinal number.
-	} entry_32;
-	struct {
+	}) entry_32;
+	R_PACKED (struct {
 		ut8 flags; // First bit set if import by ordinal
 		ut16 import_ord; // This is the index into the Import Module Name Table for this forwarder.
 		ut32 offset; // If import by ordinal, is the ordinal number into the Entry Table of the target module, else is the offset into the Procedure Names Table of the target module.
-	} forwarder;
-} LE_entry_bundle_entry;
-)
+	}) forwarder;
+}) LE_entry_bundle_entry;
+
 
 #define F_SOURCE_TYPE_MASK 0xF
 #define F_SOURCE_ALIAS 0x10
