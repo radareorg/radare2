@@ -5,7 +5,7 @@
 
 static bool check_buffer(RBuffer *b) {
 	ut64 length = r_buf_size (b);
-	if (length <= 0x3d) {
+	if (length < 2) {
 		return false;
 	}
 	ut16 idx = r_buf_read_le16_at (b, 0x3c);
@@ -14,7 +14,8 @@ static bool check_buffer(RBuffer *b) {
 		r_buf_read_at (b, 0, buf, sizeof (buf));
 		if (!memcmp (buf, "LX", 2) || !memcmp (buf, "LE", 2)) {
 			return true;
-		} else if (!memcmp (buf, "MZ", 2)) {
+		}
+		if (!memcmp (buf, "MZ", 2)) {
 			r_buf_read_at (b, idx, buf, sizeof (buf));
 			if (!memcmp (buf, "LX", 2) || !memcmp (buf, "LE", 2)) {
 				return true;
@@ -39,60 +40,65 @@ static void destroy(RBinFile *bf) {
 }
 
 static void header(RBinFile *bf) {
+	r_return_if_fail (bf && bf->rbin && bf->o && bf->o->bin_obj);
 	RBin *rbin = bf->rbin;
 	r_bin_le_obj_t *bin = bf->o->bin_obj;
 	LE_image_header *h = bin->header;
-	rbin->cb_printf("Signature: %2s\n", h->magic);
-	rbin->cb_printf("Byte Order: %s\n", h->border ? "Big" : "Little");
-	rbin->cb_printf("Word Order: %s\n", h->worder ? "Big" : "Little");
-	rbin->cb_printf("Format Level: %u\n", h->level);
-	rbin->cb_printf("CPU: %s\n", bin->cpu);
-	rbin->cb_printf("OS: %s\n", bin->os);
-	rbin->cb_printf("Version: %u\n", h->ver);
-	rbin->cb_printf("Flags: 0x%04x\n", h->mflags);
-	rbin->cb_printf("Pages: %u\n", h->mpages);
-	rbin->cb_printf("InitialEipObj: %u\n", h->startobj);
-	rbin->cb_printf("InitialEip: 0x%04x\n", h->eip);
-	rbin->cb_printf("InitialStackObj: %u\n", h->stackobj);
-	rbin->cb_printf("InitialEsp: 0x%04x\n", h->esp);
-	rbin->cb_printf("Page Size: 0x%04x\n", h->pagesize);
-	if (bin->is_le) {
-		rbin->cb_printf("Last Page Size: 0x%04x\n", h->pageshift);
-	} else {
-		rbin->cb_printf("Page Shift: 0x%04x\n", h->pageshift);
+	PrintfCallback p = rbin->cb_printf;
+	if (!h || !p) {
+		return;
 	}
-	rbin->cb_printf("Fixup Size: 0x%04x\n", h->fixupsize);
-	rbin->cb_printf("Fixup Checksum: 0x%04x\n", h->fixupsum);
-	rbin->cb_printf("Loader Size: 0x%04x\n", h->ldrsize);
-	rbin->cb_printf("Loader Checksum: 0x%04x\n", h->ldrsum);
-	rbin->cb_printf("Obj Table: 0x%04x\n", h->objtab);
-	rbin->cb_printf("Obj Count: %u\n", h->objcnt);
-	rbin->cb_printf("Obj Page Map: 0x%04x\n", h->objmap);
-	rbin->cb_printf("Obj Iter Data Map: 0x%04x\n", h->itermap);
-	rbin->cb_printf("Resource Table: 0x%04x\n", h->rsrctab);
-	rbin->cb_printf("Resource Count: %u\n", h->rsrccnt);
-	rbin->cb_printf("Resident Name Table: 0x%04x\n", h->restab);
-	rbin->cb_printf("Entry Table: 0x%04x\n", h->enttab);
-	rbin->cb_printf("Directives Table: 0x%04x\n", h->dirtab);
-	rbin->cb_printf("Directives Count: %u\n", h->dircnt);
-	rbin->cb_printf("Fixup Page Table: 0x%04x\n", h->fpagetab);
-	rbin->cb_printf("Fixup Record Table: 0x%04x\n", h->frectab);
-	rbin->cb_printf("Import Module Name Table: 0x%04x\n", h->impmod);
-	rbin->cb_printf("Import Module Name Count: %u\n", h->impmodcnt);
-	rbin->cb_printf("Import Procedure Name Table: 0x%04x\n", h->impproc);
-	rbin->cb_printf("Per-Page Checksum Table: 0x%04x\n", h->pagesum);
-	rbin->cb_printf("Enumerated Data Pages: 0x%04x\n", h->datapage);
-	rbin->cb_printf("Number of preload pages: %u\n", h->preload);
-	rbin->cb_printf("Non-resident Names Table: 0x%04x\n", h->nrestab);
-	rbin->cb_printf("Size Non-resident Names: %u\n", h->cbnrestab);
-	rbin->cb_printf("Checksum Non-resident Names: 0x%04x\n", h->nressum);
-	rbin->cb_printf("Autodata Obj: %u\n", h->autodata);
-	rbin->cb_printf("Debug Info: 0x%04x\n", h->debuginfo);
-	rbin->cb_printf("Debug Length: 0x%04x\n", h->debuglen);
-	rbin->cb_printf("Preload pages: %u\n", h->instpreload);
-	rbin->cb_printf("Demand pages: %u\n", h->instdemand);
-	rbin->cb_printf("Heap Size: 0x%04x\n", h->heapsize);
-	rbin->cb_printf("Stack Size: 0x%04x\n", h->stacksize);
+	p ("Signature: %2s\n", h->magic);
+	p ("Byte Order: %s\n", h->border ? "Big" : "Little");
+	p ("Word Order: %s\n", h->worder ? "Big" : "Little");
+	p ("Format Level: %u\n", h->level);
+	p ("CPU: %s\n", bin->cpu);
+	p ("OS: %s\n", bin->os);
+	p ("Version: %u\n", h->ver);
+	p ("Flags: 0x%04x\n", h->mflags);
+	p ("Pages: %u\n", h->mpages);
+	p ("InitialEipObj: %u\n", h->startobj);
+	p ("InitialEip: 0x%04x\n", h->eip);
+	p ("InitialStackObj: %u\n", h->stackobj);
+	p ("InitialEsp: 0x%04x\n", h->esp);
+	p ("Page Size: 0x%04x\n", h->pagesize);
+	if (bin->is_le) {
+		p ("Last Page Size: 0x%04x\n", h->pageshift);
+	} else {
+		p ("Page Shift: 0x%04x\n", h->pageshift);
+	}
+	p ("Fixup Size: 0x%04x\n", h->fixupsize);
+	p ("Fixup Checksum: 0x%04x\n", h->fixupsum);
+	p ("Loader Size: 0x%04x\n", h->ldrsize);
+	p ("Loader Checksum: 0x%04x\n", h->ldrsum);
+	p ("Obj Table: 0x%04x\n", h->objtab);
+	p ("Obj Count: %u\n", h->objcnt);
+	p ("Obj Page Map: 0x%04x\n", h->objmap);
+	p ("Obj Iter Data Map: 0x%04x\n", h->itermap);
+	p ("Resource Table: 0x%04x\n", h->rsrctab);
+	p ("Resource Count: %u\n", h->rsrccnt);
+	p ("Resident Name Table: 0x%04x\n", h->restab);
+	p ("Entry Table: 0x%04x\n", h->enttab);
+	p ("Directives Table: 0x%04x\n", h->dirtab);
+	p ("Directives Count: %u\n", h->dircnt);
+	p ("Fixup Page Table: 0x%04x\n", h->fpagetab);
+	p ("Fixup Record Table: 0x%04x\n", h->frectab);
+	p ("Import Module Name Table: 0x%04x\n", h->impmod);
+	p ("Import Module Name Count: %u\n", h->impmodcnt);
+	p ("Import Procedure Name Table: 0x%04x\n", h->impproc);
+	p ("Per-Page Checksum Table: 0x%04x\n", h->pagesum);
+	p ("Enumerated Data Pages: 0x%04x\n", h->datapage);
+	p ("Number of preload pages: %u\n", h->preload);
+	p ("Non-resident Names Table: 0x%04x\n", h->nrestab);
+	p ("Size Non-resident Names: %u\n", h->cbnrestab);
+	p ("Checksum Non-resident Names: 0x%04x\n", h->nressum);
+	p ("Autodata Obj: %u\n", h->autodata);
+	p ("Debug Info: 0x%04x\n", h->debuginfo);
+	p ("Debug Length: 0x%04x\n", h->debuglen);
+	p ("Preload pages: %u\n", h->instpreload);
+	p ("Demand pages: %u\n", h->instdemand);
+	p ("Heap Size: 0x%04x\n", h->heapsize);
+	p ("Stack Size: 0x%04x\n", h->stacksize);
 }
 
 static RList *sections(RBinFile *bf) {
