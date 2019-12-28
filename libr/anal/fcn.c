@@ -386,7 +386,7 @@ static bool regs_exist(RAnalValue *src, RAnalValue *dst) {
 // 0 if not skipped; 1 if skipped; 2 if skipped before
 static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb, ut64 addr,
                    char *tmp_buf, int oplen, int un_idx, int *idx) {
-	// TODO: implement this
+	// TODO: enable this, but I have no idea what it is for
 #if 0
 	// this step is required in order to prevent infinite recursion in some cases
 	if ((addr + un_idx - oplen) == fcn->addr) {
@@ -395,7 +395,7 @@ static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb,
 			snprintf (tmp_buf + 5, MAX_FLG_NAME_SIZE - 6, "%"PFMT64u, addr);
 			anal->flb.set (anal->flb.f, tmp_buf, addr, oplen);
 			fcn->addr += oplen;
-			r_anal_block_try_resize_atomic (bb, bb->addr + oplen, bb->size - oplen);
+			r_anal_block_relocate (bb, bb->addr + oplen, bb->size - oplen);
 			*idx = un_idx;
 			return 1;
 		}
