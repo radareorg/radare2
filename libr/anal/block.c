@@ -377,9 +377,19 @@ R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size) {
 	if (block->size == size) {
 		return;
 	}
+
+	// Update the block's function's cached ranges
+	RAnalFunction *fcn;
+	RListIter *iter;
+	r_list_foreach (block->fcns, iter, fcn) {
+		if (fcn->meta._min != UT64_MAX && fcn->meta._max == block->addr + block->size) {
+			fcn->meta._max = block->addr + size;
+		}
+	}
+
+	// Do the actual resize
 	block->size = size;
-	ut64 addr = block->addr;
-	r_rbtree_aug_update_sum (block->anal->bb_tree, &addr, &block->_rb, __bb_addr_cmp, NULL, __max);
+	r_rbtree_aug_update_sum (block->anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max);
 	r_anal_block_check_invariants (block->anal);
 }
 
@@ -391,6 +401,21 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 		// Two blocks at the same addr is illegle you know...
 		return false;
 	}
+
+	// Update the block's function's cached ranges
+	RAnalFunction *fcn;
+	RListIter *iter;
+	r_list_foreach (block->fcns, iter, fcn) {
+		if (fcn->meta._min != UT64_MAX) {
+			if (fcn->meta._max == block->addr + block->size) {
+				fcn->meta._max = addr + size;
+			}
+			if (fcn->meta._min == block->addr) {
+				fcn->meta._min = addr;
+			}
+		}
+	}
+
 	r_rbtree_aug_delete (&block->anal->bb_tree, &block->addr, __bb_addr_cmp, NULL, NULL, NULL, __max);
 	block->addr = addr;
 	block->size = size;
