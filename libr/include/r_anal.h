@@ -1423,9 +1423,6 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
 /* block.c */
 R_API void r_anal_block_check_invariants(RAnal *anal);
 
-R_API RAnalBlock *r_anal_block_new(RAnal *anal, ut64 addr, ut64 size);
-R_API void r_anal_block_free(RAnalBlock *block);
-
 static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
 	return addr >= bb->addr && addr < bb->addr + bb->size;
 }
@@ -1443,6 +1440,10 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b);
 // Create one or more blocks covering the given range.
 // Multiple blocks will be created if the range overlaps another block.
 R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size);
+
+// Create one block covering the given range.
+// This will fail if the range overlaps any existing blocks.
+R_API RAnalBlock *r_anal_block_create_atomic(RAnal *anal, ut64 addr, ut64 size);
 
 // Manually delete a block and remove it from all its functions
 R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb);

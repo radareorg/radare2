@@ -139,18 +139,17 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (!op || !r_anal_state_addr_is_valid (state, addr)) {
 		return NULL;
 	}
-	current_bb = r_anal_block_new (anal, 0, 0);
+	current_bb = r_anal_ex_op_to_bb (anal, state, op);
 	if (!current_bb) {
 		return NULL;
 	}
-	r_anal_ex_op_to_bb (anal, state, current_bb, op);
 	if (!current_bb->op_bytes) {
 		current_bb->op_sz = state->current_op->size;
 		current_bb->op_bytes = malloc (current_bb->op_sz);
 		if (current_bb->op_bytes) {
 			int buf_len = r_anal_state_get_len (state, addr);
 			if (current_bb->op_sz > buf_len) {
-				// TODO r_anal_bb_free (current_bb);
+				r_anal_block_unref (current_bb);
 				return NULL;
 			}
 			memcpy (current_bb->op_bytes,
@@ -233,11 +232,12 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 		if (state->current_bb) {
 			bytes_consumed += state->current_bb->op_sz;
 			consumed_iter += state->current_bb->op_sz;
+			r_anal_block_unref (state->current_bb);
+			state->current_bb = NULL;
 		}
 		state->current_addr = state->next_addr;
 		r_anal_op_free (state->current_op);
 		state->current_op = NULL;
-		state->current_bb = NULL;
 		if (!consumed_iter) {
 			eprintf ("No bytes consumed, bailing!\n");
 			break;
@@ -252,18 +252,15 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 	return bb_list;
 }
 
-R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalBlock *bb, RAnalOp *op) {
-	//ut64 cnd_jmp = (R_ANAL_EX_COND_OP | R_ANAL_EX_CODEOP_JMP);
-	eprintf ("this is wrong\n");
-	bb->addr = op->addr; // TODO: this is wrong with anal-block
-	bb->size = op->size; // TODO: this is wrong too
-	bb->type2 = op->type2;
-	bb->type = r_anal_ex_map_anal_ex_to_anal_bb_type ( op->type2 );
-	bb->fail = op->fail;
-	bb->jump = op->jump;
-
-	bb->conditional = R_ANAL_EX_COND_OP & op->type2 ? R_ANAL_OP_TYPE_COND : 0;
-	r_anal_ex_clone_op_switch_to_bb (bb, op);
+R_API RAnalBlock *r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalOp *op) {
+	RAnalBlock *block = r_anal_block_create_atomic (anal, op->addr, op->size);
+	block->type2 = op->type2;
+	block->type = r_anal_ex_map_anal_ex_to_anal_bb_type ( op->type2 );
+	block->fail = op->fail;
+	block->jump = op->jump;
+	block->conditional = R_ANAL_EX_COND_OP & op->type2 ? R_ANAL_OP_TYPE_COND : 0;
+	r_anal_ex_clone_op_switch_to_bb (block, op);
+	return block;
 }
 
 R_API ut64 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type) {

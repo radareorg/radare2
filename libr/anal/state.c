@@ -46,7 +46,7 @@ R_API void r_anal_state_insert_bb(RAnalState* state, RAnalBlock *bb) {
 		return;
 	}
 	if (!r_anal_state_search_bb (state, bb->addr) && state->current_fcn) {
-		r_list_append (state->current_fcn->bbs, bb);
+		r_anal_function_block_add (state->current_fcn, bb);
 		state->bytes_consumed += state->current_bb->op_sz;
 		if (!ht_up_insert (state->ht, bb->addr, bb)) {
 			eprintf ("Inserted bb 0x%04"PFMT64x" failure\n", bb->addr);
