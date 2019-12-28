@@ -710,28 +710,26 @@ repeat:
 			gotoBeach (R_ANAL_RET_END);
 		}
 		if (anal->opt.nopskip && fcn->addr == at) {
-			// TODO: implement this
-#if 0
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 			if (!fi || strncmp (fi->name, "sym.", 4)) {
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
-					fcn->addr += oplen;
-					r_anal_block_try_resize_atomic (bb, bb->addr + oplen, bb->addr - oplen);
-					idx = delay.un_idx;
-					goto repeat;
+					if (r_anal_block_relocate (bb, bb->addr + oplen, bb->size - oplen)) {
+						fcn->addr += oplen;
+						idx = delay.un_idx;
+						goto repeat;
+					}
 				}
 			}
 			switch (op.type & R_ANAL_OP_TYPE_MASK) {
 			case R_ANAL_OP_TYPE_TRAP:
 			case R_ANAL_OP_TYPE_ILL:
 			case R_ANAL_OP_TYPE_NOP:
-				// TODO: wtf is this?
-				addr = at + op.size;
-				r_anal_block_try_resize_atomic (bb, addr, bb->size);
-				fcn->addr = addr;
-				goto repeat;
+				if (r_anal_block_relocate (bb, at + op.size, bb->size)) {
+					addr = at + op.size;
+					fcn->addr = addr;
+					goto repeat;
+				}
 			}
-#endif
 		}
 		if (op.hint.new_bits) {
 			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
@@ -740,9 +738,12 @@ repeat:
 			bbg = overlapping_bb (bb, at, oplen, anal->opt.jmpmid && is_x86);
 			if (bbg && bbg != bb) {
 				bb->jump = at;
-				// TODO if (anal->opt.jmpmid && is_x86) {
-				// TODO 	r_anal_fcn_split_bb (anal, fcn, bbg, at);
-				// TODO }
+				if (anal->opt.jmpmid && is_x86) {
+					// This happens when we purposefully walked over another block and overlapped it
+					// and now we hit an offset where the instructions match again.
+					// So we need to split the overwalked block.
+					r_anal_block_split (bbg, at);
+				}
 				overlapped = true;
 				if (anal->verbose) {
 					eprintf ("Overlapped at 0x%08"PFMT64x "\n", at);

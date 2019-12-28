@@ -1460,6 +1460,7 @@ R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb);
 R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size);
 #endif
 R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size);
+R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size);
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr);
 R_API void r_anal_get_blocks_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user);
