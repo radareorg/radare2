@@ -383,6 +383,21 @@ R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size) {
 	r_anal_block_check_invariants (block->anal);
 }
 
+R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
+	if (block->addr == addr) {
+		return true;
+	}
+	if (r_anal_get_block_at (block->anal, addr)) {
+		// Two blocks at the same addr is illegle you know...
+		return false;
+	}
+	r_rbtree_aug_delete (&block->anal->bb_tree, &block->addr, __bb_addr_cmp, NULL, NULL, NULL, __max);
+	block->addr = addr;
+	block->size = size;
+	r_rbtree_aug_insert (&block->anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max);
+	return true;
+}
+
 #if 0
 R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size) {
 	RAnal *anal = bb->anal;
@@ -536,7 +551,7 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 	a->fail = b->fail;
 
 	// kill b completely
-	r_rbtree_delete (&a->anal->bb_tree, &b->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL);
+	r_rbtree_aug_delete (&a->anal->bb_tree, &b->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max);
 
 	// invalidate ranges of a's functions
 	r_list_foreach (a->fcns, iter, fcn) {
