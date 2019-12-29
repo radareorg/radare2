@@ -596,7 +596,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			RListIter *iter;
 			RAnalBlock *existing_rec_block;
 			r_list_foreach (blocks, iter, existing_rec_block) {
-#define TAKEOVER 1
+#define TAKEOVER 0
 #if TAKEOVER
 				while (!r_list_empty (existing_rec_block->fcns)) {
 					RAnalFunction *existing_fcn = r_list_first (existing_rec_block->fcns);
@@ -608,7 +608,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 				r_anal_function_block_add (fcn, existing_rec_block);
 			}
 			r_list_free (blocks);
-			return R_ANAL_RET_END;
 		}
 		if (anal->opt.recont) {
 			return R_ANAL_RET_END;
