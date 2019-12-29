@@ -1803,7 +1803,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	bool showSig = ds->show_fcnsig && ds->show_calls;
 	bool call = r_config_get_i (core->config, "asm.calls");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
-	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+	f = r_anal_get_function_at (core->anal, ds->at);
 	if (!f || (f->addr != ds->at)) {
 		return;
 	}
