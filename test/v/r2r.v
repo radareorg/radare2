@@ -89,7 +89,7 @@ fn (r2r mut R2R)run_tests() {
 	if r2r.wants('fuzz') {
 		r2r.run_fuz_tests()
 	}
-	if r2r.wants('cmd') {
+	if r2r.wants('arch') || r2r.wants('cmd') {
 		r2r.run_cmd_tests()
 	}
 }
