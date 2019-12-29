@@ -16,7 +16,8 @@ RUN
 NAME=aeaj 5
 FILE=-
 ARGS=-a x86 -b64
-EXPECT='{
+EXPECT=<<EOF
+{
   "A": [
     "rsp",
     "rbp",
@@ -56,7 +57,7 @@ EXPECT='{
     "rsp"
   ]
 }
-'
+EOF
 CMDS=<<EOF
 wx 4889e5b8ffff000089c2c1ea1f01d0;aeaj 5~{}
 EOF

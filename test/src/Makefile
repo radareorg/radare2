@@ -2,11 +2,11 @@
 
 BINDIR=$(shell r2 -H R2_PREFIX)/bin
 CWD=$(shell pwd)
-V=v/v
+V=v
 
 all: $(V)
-	$(V) -prod r2r.v
-	#$(V) -g r2r.v
+	#$(V) -prod r2r.v
+	$(V) -g r2r.v
 
 clean:
 	rm -f r2r

@@ -1,6 +1,7 @@
 NAME=test pDj missing newline issue
 FILE=-
-EXPECT='[
+EXPECT=<<EOF
+[
   {
     "offset": 0,
     "ptr": 104,
@@ -20,7 +21,7 @@ EXPECT='[
     "type2_num": 0
   }
 ]
-'
+EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -29,16 +30,17 @@ pDj 4~{}
 EOF
 RUN
 
-NAME=/j with backlsash
+NAME=/j with backslash
 FILE=../bins/pe/ConsoleApplication1.exe
-EXPECT='[
+EXPECT=<<EOF
+[
   {
     "offset": 4203952,
     "type": "string",
     "data": "cation1\\Release\\ConsoleApplication1.pdb  "
   }
 ]
-'
+EOF
 CMDS=<<EOF
 /j ConsoleApplication1.pdb~{}
 EOF
@@ -46,8 +48,9 @@ RUN
 
 NAME=empty irj should print empty array
 FILE=-
-EXPECT='[]
-'
+EXPECT=<<EOF
+[]
+EOF
 CMDS=<<EOF
 irj
 EOF

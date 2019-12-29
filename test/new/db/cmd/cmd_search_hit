@@ -14,9 +14,10 @@ RUN
 
 NAME=cmd.hit sugar for /j
 FILE=malloc://1024
-EXPECT='[{"offset":10,"type":"string","data":"hello"}hello
+EXPECT=<<EOF
+[{"offset":10,"type":"string","data":"hello"}hello
 ]
-'
+EOF
 CMDS=<<EOF
 w hello @ 10
 psz @@/j hello
@@ -25,8 +26,9 @@ RUN
 
 NAME=/xj utf16
 FILE=malloc://1024
-EXPECT='[{"offset":0,"type":"hexpair","data":"005c"}]
-'
+EXPECT=<<EOF
+[{"offset":0,"type":"hexpair","data":"005c"}]
+EOF
 CMDS=<<EOF
 wx 005c
 /xj 005c
@@ -35,8 +37,9 @@ RUN
 
 NAME=/j utf16
 FILE=malloc://1024
-EXPECT='[{"offset":1,"type":"string","data":"g"}]
-'
+EXPECT=<<EOF
+[{"offset":1,"type":"string","data":"g"}]
+EOF
 CMDS=<<EOF
 wx 0067
 /j g

@@ -333,7 +333,7 @@ RList *r_bin_le_get_sections(r_bin_le_obj_t *bin) {
 		}
 		int j;
 		ut32 page_size_sum = 0;
-		ut32 next_idx = i < h->objcnt - 1 ? bin->objtbl[i + 1].page_tbl_idx - 1 : UT64_MAX;
+		ut32 next_idx = i < h->objcnt - 1 ? bin->objtbl[i + 1].page_tbl_idx - 1 : UT32_MAX;
 		ut32 objmaptbloff = h->objmap + bin->headerOff;
 		ut64 objpageentrysz =  bin->is_le ? sizeof (ut32) : sizeof (LE_object_page_entry);
 		for (j = 0; j < entry->page_tbl_entries; j++) {

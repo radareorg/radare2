@@ -20,7 +20,7 @@ CAPSTONE_CFLAGS?=-g
 # CAPSTONE_MAKEFLAGS?=CAPSTONE_ARCHS="arm aarch64"
 
 GIT?=git
-ifeq ($(shell type wget && echo 1),1)
+ifeq ($(shell type wget 2> /dev/null && echo 1),1)
 WGET?=wget -c --no-check-certificate -O
 else
 WGET?=curl -o
@@ -49,10 +49,10 @@ CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20190515
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 ifeq ($(CS_NEXT),1)
-CS_TIP=caacf11822683d8a317efee727c428db254670a9
+CS_TIP=aaffb38c44fa58f510ba9b6264f7079bfbba4c8e
 CS_BRA=next
 else
-CS_TIP=a22aef2a18e6f6d8d30af4a1595af17337408e45
+CS_TIP=c7fe0f8aaaa1bce78cb20491cd08470f570c4237
 CS_BRA=v4
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)

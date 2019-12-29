@@ -41,7 +41,7 @@ aB "mlaeq r7, r5, r7, r0" 95072700
 aB "mlane r3, r1, r3, r2" 91232310
 a "moveq r0, sl" 0a00a001
 a "movne r0, r9" 0900a011
-aB "mulne r3, r3, r02 93000310
+aB "mulne r3, r3, r0" 93000310
 a "mul r2, r3, r4" 930402e0
 a "mul r6, r2" 960206e0
 a "smull r4, r1, r2, r3" 9243c1e0

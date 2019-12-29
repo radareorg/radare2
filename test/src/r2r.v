@@ -49,6 +49,10 @@ pub fn main() {
 		println(fp.usage())
 		println('ARGS:')
 		println('  ${default_targets}')
+		println('\nExamples:')
+		println('  \$ r2r cmd /write       run only the cmd tests in the /write file')
+		println('  \$ time r2r -n          benchmark time spent parsing test files')
+		println('  \$ r2r -j 4 json asm    run json and asm tests using 4 jobs in parallel')
 		return
 	}
 	if show_version {
@@ -78,9 +82,6 @@ pub fn main() {
 	if r2r.targets.index('help') != -1 {
 		eprintln(default_targets)
 		exit(0)
-	}
-	for target in r2r.targets {
-		println('target ${target}')
 	}
 	println('[r2r] Loading tests')
 	// os.chdir('..')
@@ -193,7 +194,18 @@ fn (test R2RCmdTest) parse_slurp(v string) (string,string) {
 }
 
 fn (r2r mut R2R) load_cmd_test(testfile string) {
-	if r2r.targets.len > 0 && !testfile.ends_with('/${r2r.targets[0]}') {
+	mut haspaz := false
+	mut found := false
+	for target in r2r.targets {
+		if target.contains('/') {
+			haspaz = true
+			if testfile.contains(target) {
+				found = true
+				break
+			}
+		}
+	}
+	if haspaz && !found {
 		return
 	}
 	mut test := R2RCmdTest{}
@@ -524,7 +536,7 @@ fn (r2r mut R2R) load_asm_test(testfile string) {
 		panic(err)
 	}
 	for line in lines {
-		if line.starts_with('#') {
+		if line.len == 0 || line.starts_with('#') {
 			continue
 		}
 		words := line.split('"')
@@ -755,6 +767,7 @@ struct DummyStruct {
 fn (r2r mut R2R) run_jsn_test(cmd string) bool {
 	if isnil(r2r.r2) {
 		r2r.r2 = r2.new()
+		// _ = r2r.r2.cmd('o /bin/ls')
 	}
 	jsonstr := r2r.r2.cmd(cmd)
 	if jsonstr.trim_space() == '' {

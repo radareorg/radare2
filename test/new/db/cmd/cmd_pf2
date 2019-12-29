@@ -15,8 +15,9 @@ RUN
 
 NAME=JSON output
 FILE=malloc://1024
-EXPECT='[[{"index":0,"offset":0},{"name":"blah","type":"w","offset":0,"value":4660},{"name":"meh","type":"w","offset":2,"value":26505},{"name":"Buh","type":"plop","offset":4,"value":[{"name":"first","type":"i","offset":4,"value":666},{"name":"Boh","type":"troll","offset":8,"value":[{"name":"integer","type":"i","offset":8,"value":4000},{"name":"word","type":"w","offset":12,"value":42},{"name":"Bah","type":"troll*","offset":14,"value":48},{"name":"integer","type":"i","offset":48,"value":20},{"name":"word","type":"w","offset":52,"value":5732},{"name":"Bah","type":"troll*","offset":54,"value":32},{"name":"integer","type":"i","offset":32,"value":1664},{"name":"word","type":"w","offset":36,"value":16384},{"name":"Bah","type":"troll*","offset":38,"value":"NULL"}]},{"name":"bwa","type":"w","offset":18,"value":16916}]},{"name":"foo","type":"x","offset":20,"value":5732}],[{"index":1,"offset":24},{"name":"blah","type":"w","offset":24,"value":0},{"name":"meh","type":"w","offset":26,"value":0},{"name":"Buh","type":"plop","offset":28,"value":[{"name":"first","type":"i","offset":28,"value":0},{"name":"Boh","type":"troll","offset":32,"value":[{"name":"integer","type":"i","offset":32,"value":1664},{"name":"word","type":"w","offset":36,"value":16384},{"name":"Bah","type":"troll*","offset":38,"value":"NULL"}]},{"name":"bwa","type":"w","offset":42,"value":0}]},{"name":"foo","type":"x","offset":44,"value":0}]]
-'
+EXPECT=<<EOF
+[[{"index":0,"offset":0},{"name":"blah","type":"w","offset":0,"value":4660},{"name":"meh","type":"w","offset":2,"value":26505},{"name":"Buh","type":"plop","offset":4,"value":[{"name":"first","type":"i","offset":4,"value":666},{"name":"Boh","type":"troll","offset":8,"value":[{"name":"integer","type":"i","offset":8,"value":4000},{"name":"word","type":"w","offset":12,"value":42},{"name":"Bah","type":"troll*","offset":14,"value":48},{"name":"integer","type":"i","offset":48,"value":20},{"name":"word","type":"w","offset":52,"value":5732},{"name":"Bah","type":"troll*","offset":54,"value":32},{"name":"integer","type":"i","offset":32,"value":1664},{"name":"word","type":"w","offset":36,"value":16384},{"name":"Bah","type":"troll*","offset":38,"value":"NULL"}]},{"name":"bwa","type":"w","offset":18,"value":16916}]},{"name":"foo","type":"x","offset":20,"value":5732}],[{"index":1,"offset":24},{"name":"blah","type":"w","offset":24,"value":0},{"name":"meh","type":"w","offset":26,"value":0},{"name":"Buh","type":"plop","offset":28,"value":[{"name":"first","type":"i","offset":28,"value":0},{"name":"Boh","type":"troll","offset":32,"value":[{"name":"integer","type":"i","offset":32,"value":1664},{"name":"word","type":"w","offset":36,"value":16384},{"name":"Bah","type":"troll*","offset":38,"value":"NULL"}]},{"name":"bwa","type":"w","offset":42,"value":0}]},{"name":"foo","type":"x","offset":44,"value":0}]]
+EOF
 CMDS=<<EOF
 e asm.bits=32
 wx 341289679a020000a00f00002a003000000014426416
@@ -242,7 +243,7 @@ RUN
 
 NAME=pf *z (64bit addr)
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e io.cache=true
 e asm.bits=64
 wz root @ 0x0000000100000faf
@@ -255,53 +256,61 @@ e cfg.bigendian=true
 16wxs cc @ 0x200
 wv8 0x0000000100000faf @ 0x204
 pf *z @ 0x204
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x100000faf = "root"
 (*0x100000faf)0x00000204 = "root"
 (*0x100000faf)0x00000204 = "root"
+EOF
 RUN
 
 NAME=pf F max precision (#13027)
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 wv8 0x400921fb54442d18
 pf F
 ?e
 wv8 0x3e901b2b20000000
 pf q
 pf F
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000000 = 3.1415926535897931
 
 0x00000000 = (qword)0x3e901b2b20000000
 0x00000000 = 2.3999999143597961e-07
+EOF
 RUN
 
 NAME=pf f max precision
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 wv4 0x40490fdb
 pf f
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000000 = 3.14159274
+EOF
 RUN
 
 NAME=pfj z not-at-start fix
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 wx 46
 wz ABCDE @ 0x1
 pf bz
 pfj bz
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000000 = 0x46
 0x00000001 = "ABCDE"
 [{"type":"b","offset":0,"value":70},{"type":"z","offset":1,"value":"ABCDE"}]
+EOF
 RUN
 
 NAME=pf/pfj z with size
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 wz ABCDE
 (pf2 format, pf $0, pfj $0)
 .(pf2 z)
@@ -309,7 +318,8 @@ wz ABCDE
 .(pf2 [3]z)
 ?e
 .(pf2 [7]z)
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000000 = "ABCDE"
 [{"type":"z","offset":0,"value":"ABCDE"}]
 
@@ -318,12 +328,13 @@ EXPECT=<<RUN
 
 0x00000000 = "ABCDE"
 [{"type":"z","offset":0,"value":"ABCDE"}]
+EOF
 RUN
 
 NAME=pf z overflow
 FILE=malloc://2048
 ARGS=-m 1000
-CMDS=<<EXPECT
+CMDS=<<EOF
 e io.cache=false
 om* > $initial_map
 ?e --- io.unalloc = true ---
@@ -379,7 +390,8 @@ pf [2]z
 pf z
 pf [5]z
 pf z @ 0xfffff
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 --- io.unalloc = true ---
 
 0x00000be6 = "AB"
@@ -413,12 +425,13 @@ EXPECT=<<RUN
 0x00000be6 = ovf "AB\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
 0x00000be6 = "AB\xff\xff\xff"
 0x000fffff = ovf "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+EOF
 RUN
 
 NAME=pfj z overflow
 FILE=malloc://2048
 ARGS=-m 1000
-CMDS=<<EXPECT
+CMDS=<<EOF
 e io.unalloc=true
 s 3046
 w AB
@@ -428,24 +441,28 @@ pfj [5]z
 pfj z @ 0xfffff
 e io.unalloc=false
 pfj z @ 0xfffff
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 [{"type":"z","offset":3046,"value":"AB"}]
 [{"type":"z","offset":3046,"value":"AB","overflow":true}]
 [{"type":"z","offset":3046,"value":"AB","overflow":true}]
 [{"type":"z","offset":1048575,"value":"","overflow":true}]
 [{"type":"z","offset":1048575,"value":"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff","overflow":true}]
+EOF
 RUN
 
 NAME=pf?
 FILE=-
 ONE_STREAM=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 pfo elf32
 pf?elf_header
 pf? elf_header
 pf?pe_header
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 ?[2]E[2]E[4]Exxxxwwwwww (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 ?[2]E[2]E[4]Exxxxwwwwww (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 Struct pe_header is not defined
+EOF
 RUN
