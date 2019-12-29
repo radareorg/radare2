@@ -307,48 +307,16 @@ R_API int r_anal_var_delete(RAnal *a, ut64 addr, const char kind, int scope, int
 }
 
 R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, const char *name) {
-	char *varlist;
 	if (!a || !fcn) {
 		return false;
 	}
-	varlist = sdb_get (DB, sdb_fmt ("fcn.0x%"PFMT64x ".%c",
-			fcn->addr, kind), 0);
-	if (varlist) {
-		char *next, *ptr = varlist;
-		if (varlist && *varlist) {
-			do {
-				char *word = sdb_anext (ptr, &next);
-				char *sign = strchr (word, '_');
-				const char *vardef = sdb_const_get (DB, sdb_fmt (
-						"var.0x%"PFMT64x ".%c.%s",
-						fcn->addr, kind, word), 0);
-				if (sign) {
-					*sign = '-';
-				}
-				int delta = strlen (word) < 3? -1: atoi (word + 2);
-				if (vardef) {
-					const char *p = strchr (vardef, ',');
-					if (p) {
-						p = strchr (p + 1, ',');
-						if (p) {
-							p = strchr (p + 1, ',');
-							if (p) {
-								if (!strcmp (p + 1, name)) {
-									return r_anal_var_delete (a, fcn->addr,
-										kind, 1, delta);
-								}
-							}
-						}
-					}
-				} else {
-					eprintf ("Inconsistent Sdb storage, Cannot find '%s'\n", word);
-				}
-				ptr = next;
-			} while (next);
-		}
+	bool ret = false;
+	RAnalVar *var = r_anal_var_get_byname (a, fcn->addr, name);
+	if (var) {
+		ret = r_anal_var_delete (a, fcn->addr, var->kind, 1, var->delta);
+		r_anal_var_free (var);
 	}
-	free (varlist);
-	return false;
+	return ret;
 }
 
 R_API RAnalVar *r_anal_var_get_byname(RAnal *a, ut64 addr, const char *name) {
@@ -408,10 +376,10 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	av->scope = scope;
 	av->delta = delta;
 	av->isarg = vt.isarg;
-	av->name = vt.name? strdup (vt.name): strdup ("unkown_var");
+	av->name = strdup (vt.name ? vt.name : "unkown_var");
 	av->size = vt.size;
-	av->type = vt.type? strdup (vt.type): strdup ("unkown_type");
-	av->regname = vt.regname? strdup (vt.regname): strdup ("unkown_regname");
+	av->type = strdup (vt.type ? vt.type : "unkown_type");
+	av->regname = strdup (vt.regname ? vt.regname : "unkown_regname");
 	av->kind = kind;
 	sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 	// TODO:
@@ -423,16 +391,10 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 
 R_API void r_anal_var_free(RAnalVar *av) {
 	if (av) {
-		if (av->name) {
-			free (av->name);
-		}
-		if (av->regname) {
-			free (av->regname);
-		}
-		if (av->type) {
-			free (av->type);
-		}
-		R_FREE (av);
+		free (av->name);
+		free (av->regname);
+		free (av->type);
+		free (av);
 	}
 }
 
