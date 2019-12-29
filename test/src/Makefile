@@ -8,6 +8,12 @@ all: $(V)
 	$(V) -prod r2r.v
 	#$(V) -g r2r.v
 
+clean:
+	rm -f r2r
+
+mrproper: clean
+	rm -rf v
+
 $(V): v
 	cd v && git pull
 	$(MAKE) -C v

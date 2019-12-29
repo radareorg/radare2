@@ -4061,8 +4061,12 @@ onemoretime:
 		ut64 try_off;
 		bool found = false;
 		for (try_off = start_off; try_off < start_off + incr*16; try_off += incr) {
-			r_anal_op (core->anal, &op, try_off,
+			int ret = r_anal_op (core->anal, &op, try_off,
 				core->block + try_off - core->offset, 32, R_ANAL_OP_MASK_ALL);
+			if (ret < 1) {
+				// anal failure
+				break;
+			}
 			if (op.var) {
 				found = true;
 				break;
