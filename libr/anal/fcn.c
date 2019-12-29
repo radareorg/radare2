@@ -1978,10 +1978,12 @@ R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut6
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
+	const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (r_anal_block_contains (bb, addr)) {
+		if (addr >= bb->addr && addr < (bb->addr + bb->size)
+			&& (!anal->opt.jmpmid || !is_x86 || r_anal_bb_op_starts_at (bb, addr))) {
 			return bb;
 		}
 	}
