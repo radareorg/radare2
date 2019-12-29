@@ -11,4 +11,5 @@ RDebugInfo *bsd_info (RDebug *dbg, const char *arg);
 RList *bsd_pid_list(RDebug *dbg, RList *list);
 RList *bsd_native_sysctl_map(RDebug *dbg);
 RList *bsd_desc_list(int pid);
+RList *bsd_thread_list(RDebug *dbg, int pid, RList *list);
 #endif
