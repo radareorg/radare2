@@ -612,6 +612,9 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *bf = r_bin_cur (r->bin);
 	if (!bf) {
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("{}");
+		}
 		return false;
 	}
 	RBinObject *obj = bf->o;
@@ -1764,8 +1767,10 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	char *str;
 	int i = 0;
 
-
 	if (!info) {
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("[]");
+		}
 		return false;
 	}
 
