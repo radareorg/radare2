@@ -1544,7 +1544,6 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 			continue;
 		}
 		if (r_anal_fcn_in (fcn, addr)) {
-			// TODO: is there no generic fcn_del? Why do it manually?
 			if (!r_anal_fcn_tree_delete (anal, fcn)) {
 				return false;
 			}
@@ -1556,10 +1555,9 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 }
 
 R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
-	const RList *fcns = r_anal_get_functions (a, addr);
 	RAnalFunction *fcn;
-	RListIter *iter, *iter2;
-	r_list_foreach_safe (fcns, iter, iter2, fcn) {
+	RListIter *iter, *iter_tmp;
+	r_list_foreach_safe (a->fcns, iter, iter_tmp, fcn) {
 		D eprintf ("fcn at %llx %llx\n", fcn->addr, addr);
 		if (fcn->addr == addr) {
 			r_anal_del_function (fcn);

@@ -132,30 +132,8 @@ R_API bool r_anal_del_function(RAnalFunction *fcn) {
 	RAnal *anal = fcn->anal;
 	ht_up_delete (anal->ht_addr_fun, fcn->addr);
 	ht_pp_delete (anal->ht_name_fun, fcn->name);
-	r_list_delete_data (anal->fcns, fcn);
 	r_anal_fcn_tree_delete (anal, fcn);
-	if (!r_anal_fcn_tree_delete (anal, fcn)) {
-		return false;
-	}
-	r_list_free (fcn->bbs);
-	fcn->bbs = NULL;
-#if 0
-	RListIter *iter, *iter2;
-	RAnalBlock *bb;
-	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
-		r_list_free (bb->fcns);
-		//r_anal_block_unref (bb);
-		r_list_delete (fcn->bbs, iter);
-	}
-#endif
-	//r_list_delete (a->fcns, iter);
-	r_list_delete_data (anal->fcns, fcn);
-	//ht_up_delete (anal->ht_bbs, fcn->addr);
-	D eprintf ("delete data\n");
-	r_anal_fcn_free (fcn);
-	r_list_free (fcn->bbs);
-	r_anal_fcn_tree_delete (anal, fcn);
-	return true;
+	return r_list_delete_data (anal->fcns, fcn);
 }
 
 #if 0
