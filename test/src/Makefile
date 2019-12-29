@@ -11,6 +11,7 @@ all: $(V)
 $(V): v
 	cd v && git pull
 	$(MAKE) -C v
+	$(V) install radare.r2
 
 fmt:
 	$(V) fmt -w r2r.v
