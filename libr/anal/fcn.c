@@ -506,7 +506,7 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
-	eprintf("fcn_recurse 0x%"PFMT64x", bbs: %d\n", addr, fcn->bbs->length);
+	//eprintf("fcn_recurse 0x%"PFMT64x", bbs: %d\n", addr, fcn->bbs->length);
 	r_anal_block_check_invariants (anal);
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
