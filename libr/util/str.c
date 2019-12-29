@@ -2128,6 +2128,52 @@ R_API int r_str_arg_unescape(char *arg) {
 	return dest_i;
 }
 
+R_API char *r_str_path_escape(const char *path) {
+	char *str;
+	int dest_i = 0, src_i = 0;
+
+	if (!path) {
+		return NULL;
+	}
+	// Worst case when every character need to be escaped
+	str = malloc ((2 * strlen (path) + 1) * sizeof (char));
+	if (!str) {
+		return NULL;
+	}
+
+	for (src_i = 0; path[src_i] != '\0'; src_i++) {
+		char c = path[src_i];
+		switch (c) {
+		case ' ':
+			str[dest_i++] = '\\';
+			str[dest_i++] = c;
+			break;
+		default:
+			str[dest_i++] = c;
+			break;
+		}
+	}
+
+	str[dest_i] = '\0';
+	return realloc (str, (strlen (str) + 1) * sizeof (char));
+}
+
+R_API int r_str_path_unescape(char *path) {
+	int i;
+
+	for (i = 0; path[i]; i++) {
+		if (path[i] != '\\') {
+			continue;
+		}
+		if (path[i + 1] == ' ') {
+			path[i] = ' ';
+			memmove (path + i + 1, path + i + 2, strlen (path + i + 2) + 1);
+		}
+	}
+
+	return i;
+}
+
 R_API char **r_str_argv(const char *cmdline, int *_argc) {
 	int argc = 0;
 	int argv_len = 128; // Begin with that, argv will reallocated if necessary

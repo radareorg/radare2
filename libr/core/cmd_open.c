@@ -1402,7 +1402,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		if (argv) {
 			// Unescape spaces from the path
-			r_str_replace (argv[0], "\\ ", " ", true);
+			r_str_path_unescape (argv[0]);
 			if (argc == 2) {
 				if (r_num_is_valid_input (core->num, argv[1])) {
 					addr = r_num_math (core->num, argv[1]);
@@ -1717,7 +1717,7 @@ static int cmd_open(void *data, const char *input) {
 					RBinFile *bf = r_bin_cur (core->bin);
 					if (bf && r_file_exists (bf->file)) {
 						// Escape spaces so that o's argv parse will detect the path properly
-						char *file = r_str_replace (strdup (bf->file), " ", "\\ ", true);
+						char *file = r_str_path_escape (bf->file);
 						// Backup the baddr and sections that were already rebased to
 						// revert the rebase after the debug session is closed
 						ut64 orig_baddr = core->bin->cur->o->baddr_shift;
