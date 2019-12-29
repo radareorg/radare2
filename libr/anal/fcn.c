@@ -506,7 +506,7 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
-	//eprintf("fcn_recurse 0x%"PFMT64x", bbs: %d\n", addr, fcn->bbs->length);
+	eprintf("fcn_recurse 0x%"PFMT64x", bbs: %d\n", addr, fcn->bbs->length);
 	r_anal_block_check_invariants (anal);
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -573,17 +573,18 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			RList *blocks = r_anal_block_recurse_list (existing_bb); // TODO: use ..._recurse without list
 			RListIter *iter;
 			RAnalBlock *existing_rec_block;
-			r_list_foreach (blocks, iter, existing_rec_block) {
-#define TAKEOVER 0
+			if (existing_bb->addr == fcn->addr) {
+				// our function starts directly there, so we steal what is ours!
+				r_list_foreach (blocks, iter, existing_rec_block) {
+#define TAKEOVER 1
 #if TAKEOVER
-				while (!r_list_empty (existing_rec_block->fcns)) {
-					RAnalFunction *existing_fcn = r_list_first (existing_rec_block->fcns);
-					//if (existing_fcn != fcn) {
+					while (!r_list_empty (existing_rec_block->fcns)) {
+						RAnalFunction *existing_fcn = r_list_first (existing_rec_block->fcns);
 						r_anal_function_block_remove (existing_fcn, existing_rec_block);
-					//}
-				}
+					}
 #endif
-				r_anal_function_block_add (fcn, existing_rec_block);
+					r_anal_function_block_add (fcn, existing_rec_block);
+				}
 			}
 			r_list_free (blocks);
 		}

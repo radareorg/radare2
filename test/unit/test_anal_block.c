@@ -6,7 +6,7 @@ static bool check_invariants(RAnal *anal) {
 	RAnalBlock *block;
 	ut64 last_start = UT64_MAX;
 	ut64 last_end = 0;
-	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, rb) {
+	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, _rb) {
 		mu_assert ("overlapping block", block->addr >= last_end);
 		if (last_start != UT64_MAX) {
 			mu_assert ("corrupted binary tree", block->addr >= last_start);
@@ -63,7 +63,19 @@ static bool check_invariants(RAnal *anal) {
 	return true;
 }
 
+R_API bool check_leaks(RAnal *anal) {
+	RBIter iter;
+	RAnalBlock *block;
+	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, _rb) {
+		if (block->ref != r_list_length (block->fcns))  {
+			mu_assert ("leaked basic block", false);
+		}
+	}
+	return true;
+}
+
 #define assert_invariants(anal) do { if (!check_invariants (anal)) { return false; } } while (0)
+#define assert_leaks(anal) do { if (!check_leaks (anal)) { return false; } } while (0)
 
 bool test_r_anal_block_create(void) {
 	RAnal *anal = r_anal_new ();
@@ -75,7 +87,9 @@ bool test_r_anal_block_create(void) {
 	RAnalBlock *block = r_list_first (created);
 	mu_assert_eq (block->addr, 0x1337, "created addr");
 	mu_assert_eq (block->size, 42, "created size");
+	r_anal_block_unref (block);
 
+	assert_leaks (anal);
 	r_anal_free (anal);
 	mu_end;
 }
