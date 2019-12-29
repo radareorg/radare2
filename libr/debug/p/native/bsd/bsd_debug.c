@@ -101,6 +101,26 @@ int bsd_handle_signals(RDebug *dbg) {
 #endif
 }
 
+int bsd_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+	int r = -1;
+	switch (type) {
+		case R_REG_TYPE_GPR:
+			r = ptrace (PT_SETREGS, dbg->pid,
+				(caddr_t)buf, sizeof (struct reg));
+			break;
+		case R_REG_TYPE_DRX:
+#if __KFBSD__ || __NetBSD__
+			r = ptrace (PT_SETDBREGS, dbg->pid, (caddr_t)buf, sizeof (struct dbreg));
+#endif
+			break;
+		case R_REG_TYPE_FPU:
+			r = ptrace (PT_SETFPREGS, dbg->pid, (caddr_t)buf, sizeof (struct fpreg));
+			break;
+	}
+
+	return (r == 0 ? true : false);
+}
+
 RDebugInfo *bsd_info(RDebug *dbg, const char *arg) {
 #if __KFBSD__
 	struct kinfo_proc *kp;
