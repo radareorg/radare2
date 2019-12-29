@@ -8,7 +8,10 @@ LIBDIR=$(DESTDIR)/$(PREFIX)/lib
 
 -include config.mk
 
-all: js-tests unit_tests
+all: js-tests unit_tests src/r2r
+
+src/r2r:
+	$(MAKE) -C src
 
 bins:
 	git clone --depth 1 https://github.com/radareorg/radare2-testbins bins

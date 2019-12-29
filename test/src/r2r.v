@@ -60,12 +60,21 @@ pub fn main() {
 		eprintln('Invalid number of thread selected with -j')
 		exit(1)
 	}
-	r2r.targets = fp.finalize() or {
+	args := fp.finalize() or {
 		eprintln('Error: ' + err)
 		exit(1)
 	}
+	r2r.targets = args[1..]
 	if r2r.interactive {
 		eprintln('Warning: interactive mode not yet implemented in V. Use the node testsuite for this')
+		p := filepath.join(r2r.r2r_home, 'new')
+		if !os.is_dir(filepath.join(p, 'node_modules')) {
+			exit(1)
+		}
+		a := r2r.targets.join(' ')
+		_ = os.system('cd $p && npm i')
+		r := os.system('cd $p && node_modules/.bin/r2r -i $a')
+		exit(r)
 	}
 	if r2r.targets.index('help') != -1 {
 		eprintln(default_targets)
@@ -185,8 +194,7 @@ fn (test R2RCmdTest) parse_slurp(v string) (string,string) {
 }
 
 fn (r2r mut R2R) load_cmd_test(testfile string) {
-	if r2r.targets.len > 1 && !testfile.ends_with('/${r2r.targets[1]}') {
-		// WIP
+	if r2r.targets.len > 0 && !testfile.ends_with('/${r2r.targets[0]}') {
 		return
 	}
 	mut test := R2RCmdTest{
@@ -334,7 +342,7 @@ fn (r2r R2R) wants(s string) bool {
 	if s.contains('/') {
 		return true
 	}
-	if r2r.targets.len < 2 {
+	if r2r.targets.len < 1 {
 		return true
 	}
 	return r2r.targets.index(s) != -1
@@ -588,6 +596,7 @@ fn (r2r mut R2R) load_asm_tests(testpath string) {
 
 fn (r2r mut R2R) run_unit_tests() bool {
 	wd := os.getwd()
+	_ = os.system('make -C ${r2r.r2r_home}/unit')
 	unit_path := '${r2r.db_path}/../../unit/bin'
 	if !os.is_dir(unit_path) {
 		eprintln('Cannot open unit_path')
@@ -756,7 +765,7 @@ fn (r2r mut R2R) run_jsn_test(cmd string) bool {
 		return true
 	}
 	// verify json
-	r := json.decode(DummyStruct, jsonstr) or {
+	_ = json.decode(DummyStruct, jsonstr) or {
 		eprintln('[r2r] json ${cmd} = ${jsonstr}')
 		return false
 	}
