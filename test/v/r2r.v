@@ -22,10 +22,12 @@ const (
 )
 
 fn autodetect_dbpath() string {
-	if !os.is_dir(default_dbpath) {
-		return '../${default_dbpath}'
-	}
-	return default_dbpath
+	return filepath.join(r2r_home(), default_dbpath)
+}
+
+fn r2r_home() string {
+	home := filepath.basedir (os.realpath( os.executable() ))
+	return filepath.join(home, '..')
 }
 
 pub fn main() {
@@ -39,7 +41,9 @@ pub fn main() {
 	r2r.jobs = fp.int_('jobs', `j`, default_jobs, 'Spawn N jobs in parallel to run tests ($default_jobs)')
 	r2r.timeout = fp.int_('timeout', `t`, default_timeout, 'How much time to wait to consider a fail ($default_timeout}')
 	show_version := fp.bool_('version', `v`, false, 'Show version information')
+	r2r.r2r_home = r2r_home()
 	r2r.show_quiet = fp.bool_('quiet', `q`, false, 'Silent output of OK tests')
+	r2r.interactive = fp.bool_('interactive', `i`, false, 'Prompt to manually fix failing tests (TODO)')
 	r2r.db_path = fp.string_('dbpath', `d`, autodetect_dbpath(), 'Set database path db/')
 	r2r.r2_path = fp.string_('r2', `r`, default_radare2, 'Set path/name to radare2 executable')
 	if show_help {
@@ -59,6 +63,9 @@ pub fn main() {
 	r2r.targets = fp.finalize() or {
 		eprintln('Error: ' + err)
 		exit(1)
+	}
+	if r2r.interactive {
+		eprintln('Warning: interactive mode not yet implemented in V. Use the node testsuite for this')
 	}
 	if r2r.targets.index('help') != -1 {
 		eprintln(default_targets)
@@ -122,6 +129,8 @@ mut:
 	db_path   string
 	r2_path   string
 	show_quiet bool
+	interactive bool
+	r2r_home  string
 }
 
 struct R2RCmdTest {
@@ -306,7 +315,6 @@ fn (r2r R2R)run_commands(test R2RCmdTest) string {
 	return res
 }
 */
-
 
 fn (r2r mut R2R) test_failed(test R2RCmdTest, a string, b string) string {
 	if test.broken {

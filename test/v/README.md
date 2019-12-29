@@ -11,17 +11,21 @@ Reasons behind using V are:
 
 The current testsuite is written in NodeJS and have some issues:
 
-* Few people write decent js code, few contributors and lot of crap
-* Some lost promises happen
+* Hard to architect structured js, ts helps, but its just layers on layers
+* Some lost promises happen in travis which are hard to debug
 * Simplify the testsuite to cleanup broken or badly written tests
 * Have a single entrypoint to run ALL the tests (unit, fuzz, asm, ..)
 * Latest versions of NodeJS don't run on net/open/free-BSD
 
-Pending things
+Things to be done:
 
-* the fuzz suite
-* proper error handling
-* timeouts without using rarun2
-* improve r2pipe.v performance
+* Implement the interactive mode to fix failing tests
+* Clone+build V if not in the $PATH
+
+Stuff to improve:
+
+* Proper error handling
+* Timeouts without using rarun2
+* Improve r2pipe.v performance
 
 --pancake

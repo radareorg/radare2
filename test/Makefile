@@ -1,7 +1,7 @@
 DESTDIR?=/
 PREFIX?=/usr/local
 BINDIR=$(DESTDIR)/$(PREFIX)/bin
-PWD=$(shell pwd)
+CWD=$(shell pwd)
 
 TDIRS=$(shell ls -d t*| grep -v tmp) bins
 LIBDIR=$(DESTDIR)/$(PREFIX)/lib
@@ -55,19 +55,11 @@ clean:
 
 symstall:
 	mkdir -p $(BINDIR)
-	chmod +x r2-v r2r
-	ln -fs $(PWD)/r2-v $(BINDIR)/r2-v
-	ln -fs $(PWD)/r2r $(BINDIR)/r2r
-
-
-t:
-	echo $(TDIRS)
+	ln -fs $(CWD)/r2r $(BINDIR)/r2r
 
 install:
 	mkdir -p $(BINDIR)
-	sed -e 's,@R2RDIR@,$(LIBDIR)/radare2-regressions,g' < $(PWD)/r2-v > $(BINDIR)/r2-v
-	sed -e 's,@R2RDIR@,$(LIBDIR)/radare2-regressions,g' < $(PWD)/r2r > $(BINDIR)/r2r
-	chmod +x $(BINDIR)/r2-v
+	sed -e 's,@R2RDIR@,$(LIBDIR)/radare2-regressions,g' < $(CWD)/r2r > $(BINDIR)/r2r
 	chmod +x $(BINDIR)/r2r
 	mkdir -p $(LIBDIR)/radare2-regressions
 	cp -rf $(TDIRS) $(LIBDIR)/radare2-regressions
