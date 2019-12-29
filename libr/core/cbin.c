@@ -2029,6 +2029,9 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	RTable *table = r_core_table (r);
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (!info) {
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("[]");
+		}
 		return 0;
 	}
 
