@@ -1699,142 +1699,51 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 		r_warn_if_reached ();
 		return false;
 	}
-	RList *blocks = r_anal_block_create (a, addr, size);
-	if (!blocks || r_list_empty (blocks)) {
-		return false;
-	}
-	RAnalBlock *last = r_list_last (blocks);
-	last->jump = jump;
-	last->fail = fail;
 
-	RAnalBlock *block;
-	RListIter *iter;
-
-	// apply data and add blocks to function
-	r_list_foreach (blocks, iter, block) {
-		if (type) {
-			block->type = type;
-		}
-
-		if (diff) {
-			if (!block->diff) {
-				block->diff = r_anal_diff_new ();
-			}
-			if (block->diff) {
-				block->diff->type = diff->type;
-				block->diff->addr = diff->addr;
-				if (diff->name) {
-					R_FREE (block->diff->name);
-					block->diff->name = strdup (diff->name);
-				}
-			}
-		}
-		r_anal_function_block_add (fcn, block);
+	RAnalBlock *block = r_anal_get_block_at (a, addr);
+	if (block) {
+		r_anal_block_delete (block);
+		block = NULL;
 	}
 
-	// try to merge the blocks as hard as possible
-	RListIter *tmpiter;
-	r_list_foreach_safe (blocks, iter, tmpiter, block) {
-		if (!iter->p) {
-			continue;
-		}
-		if (r_anal_block_merge (iter->p->data, block)) {
-			iter->data = NULL; // block has been freed already by r_anal_block_merge()
-			r_list_delete (blocks, iter);
-		}
-	}
-
-	r_list_free (blocks);
-	return true;
-#if 0
-	RAnalBlock *bb = NULL;
-	bool mid = false;
-	st64 n;
-	RAnalBlock *bbi = r_anal_get_block_at (fcn->anal, addr);
-	if (bbi) {
-		if (addr == bbi->addr) {
-			bb = bbi;
-			mid = false;
-		} else {
-			mid = true;
-		}
-	}
-	if (mid) {
-		// eprintf ("Basic Block overlaps another one that should be shrunk\n");
-		if (bbi) {
-			/* shrink overlapped basic block */
-			bbi->size = addr - (bbi->addr);
-			r_anal_fcn_update_tinyrange_bbs (fcn);
-		}
-	}
-// TODO fix this x86-ism
-#if 1
 	const bool is_x86 = a->cur->arch && !strcmp (a->cur->arch, "x86");
+	// TODO fix this x86-ism
 	if (is_x86) {
-		if (bb) {
-			r_list_delete_data (fcn->bbs, bb);
-		}
 		r_anal_fcn_invalidate_read_ahead_cache ();
 		fcn_recurse (a, fcn, addr, size, 1);
-		r_anal_fcn_update_tinyrange_bbs (fcn);
-		r_anal_fcn_set_size (a, fcn, r_anal_fcn_size (fcn));
-		bb = r_anal_fcn_bbget_at (a, fcn, addr);
-		if (!bb) {
-			if (fcn->addr == addr) {
-				return true;
-			}
-			D eprintf ("Warning: r_anal_fcn_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x"\n", fcn->addr, addr);
-			return false;
+		block = r_anal_get_block_at (a, addr);
+		if (block) {
+			r_anal_block_set_size (block, size);
 		}
 	} else {
-		if (!bb) {
-			bb = appendBasicBlock (a, fcn, addr);
-			if (!bb) {
-				eprintf ("appendBasicBlock failed\n");
-				return false;
-			}
-		}
-		bb->addr = addr;
+		block = r_anal_block_create_atomic (a, addr, size);
 	}
-#else
-	if (!bb) {
-		bb = appendBasicBlock (anal, fcn, addr);
-		if (!bb) {
-			eprintf ("appendBasicBlock failed\n");
-			return false;
-		}
+
+	if (!block) {
+		D eprintf ("Warning: r_anal_fcn_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x"\n", fcn->addr, addr);
+		return false;
 	}
-	bb->addr = addr;
-	r_anal_fcn_invalidate_read_ahead_cache ();
-	fcn_recurse (anal, fcn, addr, size, 1);
-	r_anal_fcn_update_tinyrange_bbs (fcn);
-	r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));
-#endif
-	bb->size = size;
-	bb->jump = jump;
-	bb->fail = fail;
-	bb->type = type;
+
+	r_anal_function_block_add (fcn, block);
+
+	block->jump = jump;
+	block->fail = fail;
+	block->fail = fail;
+	block->type = type;
 	if (diff) {
-		if (!bb->diff) {
-			bb->diff = r_anal_diff_new ();
+		if (!block->diff) {
+			block->diff = r_anal_diff_new ();
 		}
-		if (bb->diff) {
-			bb->diff->type = diff->type;
-			bb->diff->addr = diff->addr;
+		if (block->diff) {
+			block->diff->type = diff->type;
+			block->diff->addr = diff->addr;
 			if (diff->name) {
-				R_FREE (bb->diff->name);
-				bb->diff->name = strdup (diff->name);
+				R_FREE (block->diff->name);
+				block->diff->name = strdup (diff->name);
 			}
 		}
-	}
-	r_anal_fcn_update_tinyrange_bbs (fcn);
-	n = bb->addr + bb->size - fcn->addr;
-	if (n >= 0 && r_anal_fcn_size (fcn) < n) {
-		// If fcn is in anal->fcn_tree (which reflects anal->fcns), update fcn_tree because fcn->_size has changed.
-		r_anal_fcn_set_size (a, fcn, n);
 	}
 	return true;
-#endif
 }
 
 R_API int r_anal_fcn_loops(RAnalFunction *fcn) {

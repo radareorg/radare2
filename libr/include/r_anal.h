@@ -1452,7 +1452,8 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size);
 R_API RAnalBlock *r_anal_block_create_atomic(RAnal *anal, ut64 addr, ut64 size);
 
 // Manually delete a block and remove it from all its functions
-R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb);
+// If there are more references to it than from its functions only, it will not be removed immediately!
+R_API void r_anal_block_delete(RAnalBlock *bb);
 
 #if 0
 // Try to set addr and size of the block without splitting it and without moving it beyond its previous or following blocks.

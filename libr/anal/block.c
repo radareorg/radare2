@@ -72,7 +72,6 @@ static RAnalBlock *block_new(RAnal *a, ut64 addr, ut64 size) {
 	return block;
 }
 
-// TODO: this should be private, from outside only unref must be used
 static void block_free(RAnalBlock *block) {
 	if (!block) {
 		return;
@@ -376,18 +375,15 @@ R_API RAnalBlock *r_anal_block_create_atomic(RAnal *anal, ut64 addr, ut64 size) 
 	return block;
 }
 
-R_API void r_anal_del_block(RAnal *anal, RAnalBlock *bb) {
-	r_return_if_fail (anal && bb);
-D eprintf ("del block (%d) %llx\n", bb->ref, bb->addr);
+R_API void r_anal_block_delete(RAnalBlock *bb) {
 	BBAPI_PRELUDE (NULL);
+	RAnal *anal = bb->anal;
 	r_anal_block_ref (bb);
-	RAnalFunction *fcn;
-	RListIter *iter;
-	r_list_foreach (bb->fcns, iter, fcn) {
-		r_list_delete_data (fcn->bbs, bb);
+	while (!r_list_empty (bb->fcns)) {
+		r_anal_function_block_remove (r_list_first (bb->fcns), bb);
 	}
-	r_list_free (bb->fcns);
 	r_anal_block_unref (bb);
+	r_anal_block_check_invariants (anal);
 }
 
 R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size) {
