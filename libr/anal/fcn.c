@@ -170,7 +170,6 @@ static void _fcn_tree_print_dot(RBNode *n) {
 #endif
 
 R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
-	// TODO: deprecate?
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
 
@@ -186,11 +185,12 @@ R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
 		return true;
 	}
 
-	ut64 eof = r_anal_fcn_max_addr (fcn);
+	ut64 eof = fcn->addr + newsize;
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
 		if (bb->addr >= eof) {
 			// already called by r_list_delete r_anal_bb_free (bb);
 			// XXX ref/unref crash here r_list_delete (fcn->bbs, iter);
+			r_anal_function_block_remove (fcn, bb);
 			continue;
 		}
 		if (bb->addr + bb->size >= eof) {
