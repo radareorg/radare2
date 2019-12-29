@@ -481,19 +481,17 @@ typedef struct {
 	ut64 leaddr;
 } leaddr_pair;
 
-static RAnalBlock *overlapping_bb(RAnalBlock *block, ut64 at, ut64 size_add, bool jumpmid) {
-	RList *intersecting = r_anal_get_blocks_in_list (block->anal, at); //r_anal_get_blocks_intersect_list (block->anal, block->addr + block->size, size_add);
+static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
+	RList *intersecting = r_anal_get_blocks_in_list (anal, addr);
 	RListIter *iter;
 	RAnalBlock *bb;
-
-	ut64 newend = at; //block->addr + block->size + size_add;
 
 	RAnalBlock *ret = NULL;
 	r_list_foreach (intersecting, iter, bb) {
 		ut64 eaddr = bb->addr + bb->size;
-		if (((bb->addr >= eaddr && newend == bb->addr)
-		     || r_anal_block_contains (bb, newend))
-		    && (!jumpmid || r_anal_bb_op_starts_at (bb, newend))) {
+		if (((bb->addr >= eaddr && addr == bb->addr)
+		     || r_anal_block_contains (bb, addr))
+		    && (!jumpmid || r_anal_bb_op_starts_at (bb, addr))) {
 			ret = bb;
 			break;
 		}
@@ -502,34 +500,8 @@ static RAnalBlock *overlapping_bb(RAnalBlock *block, ut64 at, ut64 size_add, boo
 	return ret;
 }
 
-// When analyzing fcn and hitting addr, this checks what basic blocks are at this address
-// and returns the one that is most important in the sense that we should stop analysis there.
-static RAnalBlock *most_important_existing_bb_at(RAnal *anal, RAnalFunction *fcn, ut64 addr, bool midjump) {
-	RList *bbs = r_anal_get_blocks_in_list (anal, addr); // TODO: use non-list variant of this function
-	if (!bbs) {
-		return NULL;
-	}
-	RAnalBlock *ret = NULL;
-	RListIter *iter;
-	RAnalBlock *block;
-	r_list_foreach (bbs, iter, block) {
-		if (!ret) { // First block, just consider this first
-			ret = block;
-			continue;
-		}
-		if (block->addr == addr) { // highest prio: exact hit
-			ret = block;
-			break;
-		}
-		if (midjump && r_anal_bb_op_starts_at (block, addr)) {
-			ret = block;
-		}
-	}
-	r_list_free (bbs);
-	return ret;
-}
-
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
+	//eprintf("fcn_recurse 0x%"PFMT64x", bbs: %d\n", addr, fcn->bbs->length);
 	r_anal_block_check_invariants (anal);
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -587,7 +559,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 	r_anal_block_check_invariants (anal);
 
-	RAnalBlock *existing_bb = most_important_existing_bb_at (anal, fcn, addr, anal->opt.jmpmid && is_x86);
+	//RAnalBlock *existing_bb = most_important_existing_bb_at (anal, fcn, addr, anal->opt.jmpmid && is_x86);
+	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid && is_x86);
 	if (existing_bb) {
 		bool existing_in_fcn = r_list_contains (existing_bb->fcns, fcn);
 		existing_bb = r_anal_block_split (existing_bb, addr);
@@ -734,7 +707,7 @@ repeat:
 			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
 		}
 		if (idx > 0 && !overlapped) {
-			bbg = overlapping_bb (bb, at, oplen, anal->opt.jmpmid && is_x86);
+			bbg = bbget (anal, at, anal->opt.jmpmid && is_x86);
 			if (bbg && bbg != bb) {
 				bb->jump = at;
 				if (anal->opt.jmpmid && is_x86) {
