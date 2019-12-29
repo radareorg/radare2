@@ -12,9 +12,10 @@ struct VarType {
 	char *type;
 	int size;
 	char *name;
+	char *regname;
 };
 
-#define SDB_VARTYPE_FMT "bzdz"
+#define SDB_VARTYPE_FMT "bzdzz"
 
 #define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
 #define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
@@ -78,8 +79,44 @@ static const char *__int_type_from_size(int size) {
 	}
 }
 
+R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff) {
+	r_return_val_if_fail (a && fcn, false);
+	RListIter *it;
+	RAnalVar *var;
+	struct VarType vt = { 0 };
+	RList *var_list = r_anal_var_all_list (a, fcn);
+	r_return_val_if_fail (var_list, false);
+
+	r_list_foreach (var_list, it, var) {
+		const char *var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", var->addr, 1, var->delta);
+		char *access = sdb_get (a->sdb_fcns, var_access, NULL);
+		r_anal_var_delete (a, var->addr, var->kind, 1, var->delta);
+
+		// Resync delta in case the registers list changed
+		if (var->isarg && var->kind == 'r') {
+			RRegItem *reg = r_reg_get (a->reg, var->regname, -1);
+			if (reg) {
+				if (var->delta != reg->index) {
+					var->delta = reg->index;
+				}
+			}
+		}
+
+		var->addr += diff;
+
+		r_anal_var_add (a, var->addr, 1, var->delta, var->kind, var->type, var->size, var->isarg, var->name);
+		var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", var->addr, 1, var->delta);
+		sdb_set (a->sdb_fcns, var_access, access, 0);
+		free (access);
+	}
+
+	r_list_free (var_list);
+	return true;
+}
+
 R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name) {
 	r_return_val_if_fail (a && name, false);
+	RRegItem *reg = NULL;
 	if (!kind) {
 		kind = R_ANAL_VAR_KIND_BPV;
 	}
@@ -101,7 +138,14 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
-	const char *var_def = sdb_fmt ("%d,%s,%d,%s", isarg, type, size, name);
+	if (kind == 'r') {
+		reg = r_reg_index_get (a->reg, R_ABS (delta));
+		if (!reg) {
+			eprintf ("Register wasn't found at the given delta\n");
+			return false;
+		}
+	}
+	const char *var_def = sdb_fmt ("%d,%s,%d,%s,%s", isarg, type, size, name, reg? reg->name : NULL);
 	if (scope > 0) {
 		const char *sign = "";
 		if (delta < 0) {
@@ -132,6 +176,7 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 
 R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, 
 		bool isarg, const char *name) {
+	RRegItem *reg = NULL;
 	if (!a) {
 		return false;
 	}
@@ -145,7 +190,7 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 	if (!fcn) {
 		return false;
 	}
-	if ((size == -1) && (delta == -1) ) {
+	if ((size == -1) && (delta == -1)) {
 		RList *list = r_anal_var_list (a, fcn, kind);
 		RListIter *iter;
 		RAnalVar *var;
@@ -167,14 +212,21 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
-	const char *var_def = sdb_fmt ("%d,%s,%d,%s", isarg, type, size, name);
+	if (kind == 'r') {
+		reg = r_reg_index_get (a->reg, R_ABS (delta));
+		if (!reg) {
+			eprintf ("Register wasn't found at the given delta\n");
+			return false;
+		}
+	}
+	const char *var_def = sdb_fmt ("%d,%s,%d,%s,%s", isarg, type, size, name, reg ? reg->name : NULL);
 	if (scope > 0) {
 		char *sign = delta >= 0 ? "": "_";
 		/* local variable */
 		const char *fcn_key = sdb_fmt ("fcn.0x%"PFMT64x ".%c", fcn->addr, kind);
-		const char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", fcn->addr, kind, scope, sign, R_ABS(delta));
+		const char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", fcn->addr, kind, scope, sign, R_ABS (delta));
 		const char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, scope, name);
-		const char *shortvar = sdb_fmt ("%d.%s%d", scope, sign, R_ABS(delta));
+		const char *shortvar = sdb_fmt ("%d.%s%d", scope, sign, R_ABS (delta));
 		const char *name_val = sdb_fmt ("%c,%d", kind, delta);
 		sdb_array_add (DB, fcn_key, shortvar, 0);
 		sdb_set (DB, var_key, var_def, 0);
@@ -359,6 +411,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	av->name = vt.name? strdup (vt.name): strdup ("unkown_var");
 	av->size = vt.size;
 	av->type = vt.type? strdup (vt.type): strdup ("unkown_type");
+	av->regname = vt.regname? strdup (vt.regname): strdup ("unkown_regname");
 	av->kind = kind;
 	sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 	// TODO:
@@ -370,8 +423,15 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 
 R_API void r_anal_var_free(RAnalVar *av) {
 	if (av) {
-		free (av->name);
-		free (av->type);
+		if (av->name) {
+			free (av->name);
+		}
+		if (av->regname) {
+			free (av->regname);
+		}
+		if (av->type) {
+			free (av->type);
+		}
 		R_FREE (av);
 	}
 }
@@ -569,6 +629,7 @@ static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char 
 				fav->delta = delta + field_offset;
 				fav->kind = av->kind;
 				fav->name = new_name;
+				fav->regname = strdup (av->regname);
 				fav->size = field_size;
 				fav->type = strdup (field_type);
 				r_list_append (list, fav);
@@ -885,22 +946,25 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 				av->kind = kind;
 				av->name = strdup (vt.name);
 				av->isarg = vt.isarg;
+				av->regname = strdup (vt.regname);
 				av->size = vt.size;
 				av->type = strdup (vt.type);
-				if (av->isarg && kind == 'r') {
+				if (av->isarg && kind == R_ANAL_VAR_KIND_REG) {
 					bool found = false;
-					RRegItem *reg = r_reg_index_get (a->reg, delta);
+					RRegItem *reg = r_reg_get (a->reg, vt.regname, -1);
 					if (reg) {
 						int i;
 						int arg_max = fcn->cc ? r_anal_cc_max_arg (a, fcn->cc) : 0;
 						for (i = 0; i < arg_max; i++) {
 							if (!strcmp (reg->name, r_anal_cc_arg (a, fcn->cc, i))) {
+								if (delta != reg->index) {
+									delta = reg->index;
+								}
 								av->argnum = i;
 								found = true;
 								break;
 							}
 						}
-
 					}
 					if (!found) {
 						av->argnum = delta;

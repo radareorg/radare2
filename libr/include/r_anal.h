@@ -779,11 +779,12 @@ typedef const char *(*RAnalLabelAt) (RAnal *a, RAnalFunction *fcn, ut64);
 
 // generic for args and locals
 typedef struct r_anal_var_t {
-	char *name;  /* name of the variable */
-	char *type;  // cparse type of the variable
-	char kind;   // reg , stack ...
-	ut64 addr;   // not used correctly?
-	ut64 eaddr;  // not used correctly?
+	char *name; // name of the variable
+	char *regname; // name of the register
+	char *type; // cparse type of the variable
+	char kind; // reg , stack ...
+	ut64 addr; // not used correctly?
+	ut64 eaddr; // not used correctly?
 	int size;
 	bool isarg;
 	int argnum;
@@ -1622,6 +1623,7 @@ R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int 
 R_API RAnalVar *r_anal_var_new(void);
 R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind,
 		const char *old_name, const char *new_name, bool verbose);
+R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff);
 R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kind,
 		const char *type, int size, bool isarg, const char *name);
 R_API RAnalVarAccess *r_anal_var_access_new(void);
