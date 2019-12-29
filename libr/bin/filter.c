@@ -240,34 +240,47 @@ R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
 	return purge;
 }
 
+static int get_char_ratio(char ch, const char *str) {
+	int i;
+	int ch_count = 0;
+	for (i = 0; str[i]; i++) {
+		if (str[i] == ch) {
+			ch_count++;
+		}
+	}
+	return i ? ch_count * 100 / i : 0;
+}
+
 static bool bin_strfilter(RBin *bin, const char *str) {
 	int i;
+	bool got_uppercase, in_esc_seq;
 	switch (bin->strfilter) {
 	case 'U': // only uppercase strings
+		got_uppercase = false;
+		in_esc_seq = false;
 		for (i = 0; str[i]; i++) {
 			char ch = str[i];
-			if (ch == ' ') {
-				continue;
+			if (ch == ' ' ||
+			    (in_esc_seq && (ch == 't' || ch == 'n' || ch == 'r'))) {
+				goto loop_end;
 			}
-			if (ch < '@'|| ch > 'Z') {
+			if (ch < 0 || !IS_PRINTABLE (ch) || IS_LOWER (ch)) {
 				return false;
 			}
-			if (ch < 0 || !IS_PRINTABLE (ch)) {
-				return false;
+			if (IS_UPPER (ch)) {
+				got_uppercase = true;
 			}
+loop_end:
+			in_esc_seq = in_esc_seq ? false : ch == '\\';
 		}
-		if (str[0] && str[1]) {
-			for (i = 2; i<6 && str[i]; i++) {
-				if (str[i] == str[0]) {
-					return false;
-				}
-				if (str[i] == str[1]) {
-					return false;
-				}
-			}
+		if (get_char_ratio (str[0], str) >= 60) {
+			return false;
 		}
-		if (str[0] == str[2]) {
-			return false; // rm false positives
+		if (str[0] && get_char_ratio (str[1], str) >= 60) {
+			return false;
+		}
+		if (!got_uppercase) {
+			return false;
 		}
 		break;
 	case 'a': // only alphanumeric - plain ascii
