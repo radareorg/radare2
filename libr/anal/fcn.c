@@ -751,8 +751,12 @@ repeat:
 			}
 		}
 		if (!overlapped) {
+			ut64 newbbsize = bb->size + oplen;
+			if (newbbsize > MAX_FCN_SIZE) {
+				gotoRet (R_ANAL_RET_ERROR, unrefbb);
+			}
 			r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
-			r_anal_block_set_size (bb, bb->size + oplen);
+			r_anal_block_set_size (bb, newbbsize);
 			fcn->ninstr++;
 		}
 		if (anal->opt.trycatch) {
