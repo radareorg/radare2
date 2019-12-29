@@ -194,6 +194,16 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 #endif
 }
 
+R_API void r_anal_block_check_leaks(RAnal *anal) {
+	RBIter iter;
+	RAnalBlock *block;
+	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, _rb) {
+		if (block->ref != r_list_length (block->fcns))  {
+			eprintf ("LEEEEEEEEEEEEEAK!!! bb: 0x%"PFMT64x"\n", block->addr);
+		}
+	}
+}
+
 void __block_free_rb(RBNode *node, void *user) {
 	RAnalBlock *block = unwrap (node);
 	block_free (block);
@@ -208,27 +218,34 @@ R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
 }
 
 // This is a special case of what r_interval_node_all_in() does
-static void all_in(RAnalBlock *node, ut64 addr, RAnalBlockCb cb, void *user) {
+static bool all_in(RAnalBlock *node, ut64 addr, RAnalBlockCb cb, void *user) {
 	while (node && addr < node->addr) {
 		// less than the current node, but might still be contained further down
 		node = unwrap (node->_rb.child[0]);
 	}
 	if (!node) {
-		return;
+		return true;
 	}
 	if (addr >= node->_max_end) {
-		return;
+		return true;
 	}
 	if (addr < node->addr + node->size) {
-		cb (node, user);
+		if (!cb (node, user)) {
+			return false;
+		}
 	}
 	// This can be done more efficiently by building the stack manually
-	all_in (unwrap (node->_rb.child[0]), addr, cb, user);
-	all_in (unwrap (node->_rb.child[1]), addr, cb, user);
+	if (!all_in (unwrap (node->_rb.child[0]), addr, cb, user)) {
+		return false;
+	}
+	if (!all_in (unwrap (node->_rb.child[1]), addr, cb, user)) {
+		return false;
+	}
+	return true;
 }
 
-R_API void r_anal_get_blocks_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user) {
-	all_in (anal->bb_tree ? unwrap (anal->bb_tree) : NULL, addr, cb, user);
+R_API bool r_anal_get_blocks_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user) {
+	return all_in (anal->bb_tree ? unwrap (anal->bb_tree) : NULL, addr, cb, user);
 }
 
 static bool block_list_cb(RAnalBlock *block, void *user) {
@@ -535,6 +552,7 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 		}
 	}
 	bbi->ninstr = new_bbi_instr;
+	r_anal_block_unref (bb);
 	return bb;
 }
 

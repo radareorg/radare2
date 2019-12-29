@@ -129,11 +129,7 @@ R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb) {
 }
 
 R_API bool r_anal_del_function(RAnalFunction *fcn) {
-	RAnal *anal = fcn->anal;
-	ht_up_delete (anal->ht_addr_fun, fcn->addr);
-	ht_pp_delete (anal->ht_name_fun, fcn->name);
-	r_anal_fcn_tree_delete (anal, fcn);
-	return r_list_delete_data (anal->fcns, fcn);
+	return r_list_delete_data (fcn->anal->fcns, fcn);
 }
 
 #if 0

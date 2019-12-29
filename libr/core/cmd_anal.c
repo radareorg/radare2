@@ -2896,7 +2896,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_list_foreach (core->anal->fcns, iter, f) {
 				r_anal_del_jmprefs (core->anal, f);
 			}
+			r_anal_block_check_leaks (core->anal);
 			r_list_purge (core->anal->fcns);
+			r_anal_block_check_leaks (core->anal);
 			core->anal->fcn_addr_tree = NULL;
 		} else {
 			ut64 addr = input[2]
@@ -3778,7 +3780,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		//r_core_anal_undefine (core, core->offset);
 		r_anal_block_check_invariants (core->anal);
+		r_anal_block_check_leaks (core->anal);
 		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
+		r_anal_block_check_leaks (core->anal);
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 		if (fcn) {
 			/* ensure we use a proper name */
@@ -3855,6 +3859,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			free (name);
 		}
+		r_anal_block_check_leaks (core->anal);
 		r_core_anal_propagate_noreturn (core);
 #if 0
 		// XXX THIS IS VERY SLOW
@@ -3870,6 +3875,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 #endif
 		flag_every_function (core);
+		r_anal_block_check_leaks (core->anal);
 	}
 		break;
 	default:

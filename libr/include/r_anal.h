@@ -1427,6 +1427,7 @@ typedef bool (*RAnalBlockCb)(RAnalBlock *block, void *user);
 typedef bool (*RAnalAddrCb)(ut64 addr, void *user);
 
 R_API void r_anal_block_check_invariants(RAnal *anal);
+R_API void r_anal_block_check_leaks(RAnal *anal);
 
 static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
 	return addr >= bb->addr && addr < bb->addr + bb->size;
@@ -1463,7 +1464,7 @@ R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size);
 R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size);
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr);
-R_API void r_anal_get_blocks_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user);
+R_API bool r_anal_get_blocks_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user);
 R_API RList *r_anal_get_blocks_in_list(RAnal *anal, ut64 addr);
 R_API void r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size, RAnalBlockCb cb, void *user);
 R_API RList *r_anal_get_blocks_intersect_list(RAnal *anal, ut64 addr, ut64 size);

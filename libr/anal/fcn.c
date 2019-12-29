@@ -245,6 +245,11 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	r_list_free (fcn->bbs);
 	r_anal_block_check_invariants (fcn->anal);
 
+	RAnal *anal = fcn->anal;
+	ht_up_delete (anal->ht_addr_fun, fcn->addr);
+	ht_pp_delete (anal->ht_name_fun, fcn->name);
+	r_anal_fcn_tree_delete (anal, fcn);
+
 	free (fcn->name);
 	free (fcn->attr);
 	r_list_free (fcn->fcn_locs);
@@ -1405,7 +1410,9 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	if (fcn->cc && !strcmp (fcn->cc, "ms")) {
 		fcn->stack = fcn->maxstack = 0x28; // Shadow store for the first 4 args + Return addr
 	}
+	r_anal_block_check_leaks (anal);
 	int ret = r_anal_fcn_bb (anal, fcn, addr, anal->opt.depth);
+	r_anal_block_check_leaks (anal);
 	if (ret < 0) {
 		if (anal->verbose) {
 			eprintf ("Failed to analyze basic block at 0x%"PFMT64x"\n", addr);
@@ -1622,9 +1629,19 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 #endif
 }
 
+static bool fcn_in_cb(RAnalBlock *block, void *user) {
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (block->fcns, iter, fcn) {
+		if (fcn == user) {
+			return false;
+		}
+	}
+	return true;
+}
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr) {
-	const RList *fcns = r_anal_get_functions (fcn->anal, addr);
-	return fcns && r_list_contains (fcns, fcn);
+	// fcn_in_cb breaks with false if it finds the fcn
+	return !r_anal_get_blocks_in (fcn->anal, addr, fcn_in_cb, fcn);
 }
 
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) {

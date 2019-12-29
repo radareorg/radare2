@@ -200,6 +200,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	}
 	r_anal_block_check_invariants (a); // TODO: remove this later, but it's good to have it checked for now.
 	/* TODO: Free anals here */
+	r_list_free (a->fcns);
 	ht_up_free (a->ht_addr_fun);
 	ht_pp_free (a->ht_name_fun);
 	set_u_free (a->visited);
@@ -207,8 +208,6 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	free (a->os);
 	free (a->zign_path);
 	r_list_free (a->plugins);
-	a->fcns->free = r_anal_fcn_free;
-	r_list_free (a->fcns);
 	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
 	r_spaces_fini (&a->meta_spaces);
 	r_spaces_fini (&a->zign_spaces);
@@ -495,7 +494,7 @@ R_API int r_anal_purge (RAnal *anal) {
 	sdb_reset (anal->sdb_classes);
 	sdb_reset (anal->sdb_classes_attrs);
 	r_list_free (anal->fcns);
-	anal->fcns = r_list_new ();
+	anal->fcns = r_list_newf (r_anal_fcn_free);
 	anal->fcn_addr_tree = NULL;
 	r_list_free (anal->refs);
 	anal->refs = r_anal_ref_list_new ();
