@@ -8,6 +8,7 @@ Originally based on work by and now in collaboration with pancake.
 Directory Hierarchy
 -------------------
 
+ * src/:         SuperDuper new testsuite written in V.
  * new/:         New testsuite written in NodeJS.
  * unit/:        Unit tests (written in C, using minunit).
  * bins/:        Sample binaries.
@@ -119,11 +120,10 @@ Example commands tests for the other `new/` folders:
 You must end the test by adding RUN keyword
 
 Advices
-------------------
+-------
 
-* Never use shell pipes, use `~`
+* For portability reasons Do not use shell pipes, use `~`
 * dont use `pd` if not necessary, use `pi`
-
 
 License
 -------

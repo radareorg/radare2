@@ -158,11 +158,13 @@ bool test_r_buf_mmap(void) {
 	mu_assert_notnull (b, "r_buf_new_mmap failed");
 
 	if (test_buf (b) != MU_PASSED) {
+		unlink(filename);
 		mu_fail ("test failed");
 	}
 
 	// Cleanup
 	r_buf_free (b);
+	unlink(filename);
 	mu_end;
 }
 

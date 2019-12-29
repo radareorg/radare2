@@ -1,19 +1,17 @@
-VERSION=3.4.0
 DESTDIR?=/
 PREFIX?=/usr/local
 BINDIR=$(DESTDIR)/$(PREFIX)/bin
-PWD=$(shell pwd)
-PKG=radare2-regressions
-TAR=tar -cvf
-TAREXT=tar.xz
-CZ=xz -f
+CWD=$(shell pwd)
 
 TDIRS=$(shell ls -d t*| grep -v tmp) bins
 LIBDIR=$(DESTDIR)/$(PREFIX)/lib
 
 -include config.mk
 
-all: js-tests unit_tests
+all: js-tests unit_tests src/r2r
+
+src/r2r:
+	$(MAKE) -C src
 
 bins:
 	git clone --depth 1 https://github.com/radareorg/radare2-testbins bins
@@ -23,41 +21,35 @@ fuzz/targets:
 
 R2R=$(shell cd new ; npm bin)/r2r
 
+RUNTEST=cd new && npm install ; $(R2R)
+
 js-tests: bins
-	cd new && npm install
-	cd new && $(R2R)
+	${RUNTEST}
 
 keystone: bins
-	cd new && npm install
-	cd new && $(R2R) db/extras/asm/x86.ks_
+	${RUNTEST} db/extras/asm/x86.ks_
 
 swf: bins
-	cd new && npm install
-	cd new && $(R2R) db/extras/asm/swf
+	${RUNTEST} db/extras/asm/swf
 
 m68k-extras: bins
-	cd new && npm install
-	cd new && $(R2R) db/extras/asm/m68k
+	${RUNTEST} db/extras/asm/m68k
 
 mc6809: bins
-	cd new && npm install
-	cd new && $(R2R) db/extras/asm/x86.udis
+	${RUNTEST} db/extras/asm/x86.udis
 
 microblaze: bins
-	cd new && npm install
-	cd new && $(R2R) db/extras/asm/microblaze.gnu
+	${RUNTEST} db/extras/asm/microblaze.gnu
 
 udis86: bins
-	cd new && npm install
-	cd new && $(R2R) db/extras/asm/mc6809
+	${RUNTEST} db/extras/asm/mc6809
 
 olly-extras: bins
-	cd new && npm install
-	cd new && $(R2R) db/extras/asm/x86.olly
+	${RUNTEST} db/extras/asm/x86.olly
 
 dwarf: bins
-	cd new && npm install
-	cd new && $(R2R) db/extras/asm/dwarf
+	${RUNTEST} db/extras/asm/dwarf
+
 broken:
 	grep BROKEN=1 t -r -l
 
@@ -66,15 +58,11 @@ clean:
 
 symstall:
 	mkdir -p $(BINDIR)
-	chmod +x r2-v r2r
-	ln -fs $(PWD)/r2-v $(BINDIR)/r2-v
-	ln -fs $(PWD)/r2r $(BINDIR)/r2r
+	ln -fs $(CWD)/r2r $(BINDIR)/r2r
 
 install:
 	mkdir -p $(BINDIR)
-	sed -e 's,@R2RDIR@,$(LIBDIR)/radare2-regressions,g' < $(PWD)/r2-v > $(BINDIR)/r2-v
-	sed -e 's,@R2RDIR@,$(LIBDIR)/radare2-regressions,g' < $(PWD)/r2r > $(BINDIR)/r2r
-	chmod +x $(BINDIR)/r2-v
+	sed -e 's,@R2RDIR@,$(LIBDIR)/radare2-regressions,g' < $(CWD)/r2r > $(BINDIR)/r2r
 	chmod +x $(BINDIR)/r2r
 	mkdir -p $(LIBDIR)/radare2-regressions
 	cp -rf $(TDIRS) $(LIBDIR)/radare2-regressions
@@ -101,10 +89,4 @@ untested: bins
 allbins: bins
 	find bins -type f
 
-dist:
-	git clone . $(PKG)-$(VERSION)
-	rm -rf $(PKG)-$(VERSION)/.git
-	$(TAR) "$(PKG)-${VERSION}.tar" "$(PKG)-$(VERSION)"
-	${CZ} "$(PKG)-${VERSION}.tar"
-
-.PHONY: all clean allbins dist
+.PHONY: all clean allbins

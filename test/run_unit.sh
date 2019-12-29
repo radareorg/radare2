@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# XXX: remove and just do 'r2r unit'
+# TODO: seems like this KCOV thing should be implemented in V's r2r
+
 # To run with kcov
 # export KCOV="kcov /path/to/output"
 # kcov output will be placed in the /path/to/output/index.html

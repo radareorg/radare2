@@ -2703,7 +2703,7 @@ NAME=iSS (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EXPECT
 iSS
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Segments]
 
 nth paddr        size vaddr       vsize perm name
@@ -2718,28 +2718,31 @@ nth paddr        size vaddr       vsize perm name
 7   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK
 8   0x00000000   0x34 0x08048000   0x34 -rw- ehdr
 
+EOF
 RUN
 
 NAME=iSj
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EXPECT
 iSj
-EXPECT=<<RUN
+EXPECT=<<EOF
 [{"name":"","size":0,"vsize":0,"perm":"----","paddr":0,"vaddr":0},{"name":".interp","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":".note.ABI_tag","size":32,"vsize":32,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":".note.gnu.build_id","size":36,"vsize":36,"perm":"-r--","paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","paddr":1716,"vaddr":0},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","paddr":1733,"vaddr":0},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","paddr":3196,"vaddr":0},{"name":".strtab","size":599,"vsize":599,"perm":"----","paddr":4300,"vaddr":0}]
+EOF
 RUN
 
 NAME=iSSj
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EXPECT
 iSSj
-EXPECT=<<RUN
+EXPECT=<<EOF
 [{"name":"PHDR","size":256,"vsize":256,"perm":"-r-x","paddr":52,"vaddr":134512692},{"name":"INTERP","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":"LOAD0","size":1436,"vsize":1436,"perm":"-r-x","paddr":0,"vaddr":134512640},{"name":"LOAD1","size":280,"vsize":284,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":"DYNAMIC","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":"NOTE","size":68,"vsize":68,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":"GNU_EH_FRAME","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":"GNU_STACK","size":0,"vsize":0,"perm":"-rw-","paddr":0,"vaddr":0},{"name":"ehdr","size":52,"vsize":52,"perm":"-rw-","paddr":0,"vaddr":134512640}]
+EOF
 RUN
 
 NAME=iSq
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSq
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x0 0x0 ---- 
 0x8048134 0x8048147 -r-- .interp
 0x8048148 0x8048168 -r-- .note.ABI_tag
@@ -2770,12 +2773,13 @@ EXPECT=<<RUN
 0x0 0x106 ---- .shstrtab
 0x0 0x450 ---- .symtab
 0x0 0x257 ---- .strtab
+EOF
 RUN
 
 NAME=iSSq
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSSq
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x8048034 0x8048134 -r-x PHDR
 0x8048134 0x8048147 -r-- INTERP
 0x8048000 0x804859c -r-x LOAD0
@@ -2785,6 +2789,7 @@ EXPECT=<<RUN
 0x80484c0 0x80484ec -r-- GNU_EH_FRAME
 0x0 0x0 -rw- GNU_STACK
 0x8048000 0x8048034 -rw- ehdr
+EOF
 RUN
 
 NAME=section comment
@@ -2792,19 +2797,20 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EXPECT
 e asm.bytes = false
 pd 1 @ 0x080495a8
-EXPECT=<<RUN
+EXPECT=<<EOF
             ;-- section..dynamic:
             ;-- segment.DYNAMIC:
             ;-- .dynamic:
             ;-- _DYNAMIC:
             0x080495a8      add dword [eax], eax                       ; [21] -rw- section size 232 named .dynamic
+EOF
 RUN
 
 NAME=bss section comment
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EXPECT
 pd 3 @ section..bss
-EXPECT=<<RUN
+EXPECT=<<EOF
             ;-- section..bss:
             ;-- .bss:
             ;-- completed.5979:
@@ -2815,6 +2821,7 @@ EXPECT=<<RUN
             0x080496b6      0000           add byte [eax], al
             ;-- _end:
             0x080496b8      ff             invalid
+EOF
 RUN
 
 NAME=il (file x86)
@@ -3175,7 +3182,7 @@ NAME=iSS (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 CMDS=<<EXPECT
 iSS
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Segments]
 
 nth paddr        size vaddr       vsize perm name
@@ -3190,6 +3197,7 @@ nth paddr        size vaddr       vsize perm name
 7   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK
 8   0x00000000   0x40 0x00400000   0x40 -rw- ehdr
 
+EOF
 RUN
 
 NAME=il (file x86_64)
@@ -3755,19 +3763,20 @@ CMDS=<<EXPECT
 iee~type=preinit
 e asm.bytes=false
 pd 1 @ 0x0804849f
-EXPECT=<<RUN
+EXPECT=<<EOF
 vaddr=0x08048486 paddr=0x00000486 hvaddr=0x08049ed4 hpaddr=0x00000ed4 type=preinit
 vaddr=0x0804849f paddr=0x0000049f hvaddr=0x08049ed8 hpaddr=0x00000ed8 type=preinit
             ;-- entry.preinit1:
             ;-- preinit2:
             0x0804849f      push ebp
+EOF
 RUN
 
 NAME=iee* preinit
 FILE=../bins/elf/before-after-main
 CMDS=<<EXPECT
 iee*
-EXPECT=<<RUN
+EXPECT=<<EOF
 fs symbols
 "f entry.preinit0 1 0x08048486"
 "f entry.preinit0_hpaddr 1 0x00000ed4"
@@ -3805,13 +3814,14 @@ fs symbols
 "f entry.fini4 1 0x080485e7"
 "f entry.fini4_hpaddr 1 0x00000f00"
 "s entry.fini4"
+EOF
 RUN
 
 NAME=iS entropy and iSS entropy
 FILE=../bins/elf/crackme0x05
 CMDS=<<EXPECT
 iS entropy; iSS entropy
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Sections]
 
 nth paddr        size vaddr       vsize perm name
@@ -3861,6 +3871,7 @@ nth paddr        size vaddr       vsize perm name
 8   0x00000000    0x0 0x00000000    0x0 ---- NONE
 9   0x00000000   0x34 0x08048000   0x34 -rw- ehdr
 
+EOF
 RUN
 
 NAME=is sht null
@@ -3937,14 +3948,15 @@ RUN
 NAME=ieej
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=ieej
-EXPECT=<<RUN
+EXPECT=<<EOF
 [{"vaddr":134513616,"paddr":976,"baddr":134512640,"laddr":0,"hvaddr":134518172,"hpaddr":1436,"type":"init"},{"vaddr":134513584,"paddr":944,"baddr":134512640,"laddr":0,"hvaddr":134518176,"hpaddr":1440,"type":"fini"}]
+EOF
 RUN
 
 NAME=ieeej
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=ieeej~{}
-EXPECT=<<RUN
+EXPECT=<<EOF
 {
   "initfini": [
     {
@@ -3978,6 +3990,7 @@ EXPECT=<<RUN
     }
   ]
 }
+EOF
 RUN
 
 NAME=iee elf Cd (32-bit)
@@ -3988,7 +4001,7 @@ pD $SS @ section..preinit_array
 pD $SS @ section..init_array
 ?e
 pD $SS @ section..fini_array
-EXPECT=<<RUN
+EXPECT=<<EOF
             ;-- section..preinit_array:
             ;-- segment.LOAD1:
             ;-- segment.GNU_RELRO:
@@ -4021,6 +4034,7 @@ EXPECT=<<RUN
             ;-- __fini:
             0x08049efc      .dword 0x080485ce ; entry.fini3 ; sym.fini
             0x08049f00      .dword 0x080485e7 ; entry.fini4 ; sym.destructor
+EOF
 RUN
 
 NAME=iee elf Cd (64-bit)
@@ -4041,25 +4055,28 @@ EXPECT=<<EXPECT_ERR
 
             ;-- section..fini_array:
             0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [19] -rw- section size 8 named .fini_array
-EXPECT_ERR=<<RUN
+EXPECT_ERR=<<EOF
 Cannot seek to unknown address 'section..preinit_array'
+EOF
 RUN
 
 NAME=iX
 FILE=../bins/elf/analysis/dwarf_load
 CMDS=iX
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Source file]
 /home/landley/work/ab7/build/temp-armv6l/gcc-core/gcc/config/arm/ieee754-df.S
 /home/landley/work/ab7/build/temp-armv6l/gcc-core/gcc/config/arm/lib1funcs.asm
+EOF
 RUN
 
 NAME=iM main sym
 FILE=../bins/elf/before-after-main
 CMDS=iM
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Main]
 vaddr=0x0804854e paddr=0x0000054e
+EOF
 RUN
 
 NAME=iSj
@@ -4115,21 +4132,23 @@ RUN
 NAME=ii dupped imports
 FILE=../bins/elf/varsub
 CMDS=ii
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Imports]
 nth vaddr      bind   type   name
 ---------------------------------
 1   0x00000000 GLOBAL FUNC   __libc_start_main
 2   0x00000000 WEAK   NOTYPE __gmon_start__
 
+EOF
 RUN
 
 NAME=iI~laddr
 FILE=../bins/mach0/fatmach0-3true
 ARGS=-m 0x5000
 CMDS=iI~laddr
-EXPECT=<<RUN
+EXPECT=<<EOF
 laddr    0x0
+EOF
 RUN
 
 NAME=ik-macho
@@ -4137,8 +4156,9 @@ FILE=../bins/mach0/fatmach0-3true
 CMDS=<<EOF
 ik info/mach0.entry.vaddr~?0x100000ef8
 EOF
-EXPECT=<<RUN
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME=ikv
@@ -4146,8 +4166,9 @@ FILE=../bins/mach0/fatmach0-3true
 CMDS=<<EOF
 ikv info/mach0.entry.vaddr
 EOF
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x100000ef8
+EOF
 RUN
 
 NAME=ik.
@@ -4155,29 +4176,32 @@ FILE=../bins/mach0/fatmach0-3true
 CMDS=<<EOF
 ik. info/mach0.entry.vaddr
 EOF
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x100000ef8
+EOF
 RUN
 
 NAME=ik*
 FILE=../bins/mach0/fatmach0-3true
 CMDS=ik*~?mach0_segment64_0
-EXPECT=<<RUN
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME=ik?
 BROKEN=1
 FILE=../bins/mach0/fatmach0-3true
 CMDS=ik?~?Usage
-EXPECT=<<RUN
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME=iS=
 FILE=../bins/mach0/fatmach0-3true
 CMDS=iS=
-EXPECT=<<RUN
+EXPECT=<<EOF
 
 0*  0x100000ef8 ######------------------------ 0x100000f3f r-x   71    0.__TEXT.__text
 1   0x100000f40 ------#----------------------- 0x100000f46 r-x   6     1.__TEXT.__symbol_stub1
@@ -4190,22 +4214,25 @@ EXPECT=<<RUN
 8   0x100001048 ----------------------------## 0x100001068 rw-   32    8.__DATA.__data
 =>  0x100000ef8 ------------------------------ 0x100000ef7             
 
+EOF
 RUN
 
 NAME=iSq.
 FILE=../bins/mach0/fatmach0-3true
 CMDS=iSq.
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x100000ef8 0x100000f3f -r-x 0.__TEXT.__text
+EOF
 RUN
 
 NAME=isqq
 FILE=../bins/mach0/fatmach0-3true
 CMDS=isqq
-EXPECT=<<RUN
+EXPECT=<<EOF
 __mh_execute_header
 radr://5614542
 imp.exit
+EOF
 RUN
 
 NAME=iR*
@@ -4223,8 +4250,9 @@ RUN
 NAME=izzz*
 FILE=../bins/mach0/fatmach0-3true
 CMDS=izzz*~str.http:__www.apple.com_appleca_codesigning.crl0
-EXPECT=<<RUN
+EXPECT=<<EOF
 f str.http:__www.apple.com_appleca_codesigning.crl0 48 @ 0x00002f3c
+EOF
 RUN
 
 NAME=it
@@ -4234,12 +4262,13 @@ CMDS=it ; wx 0x90 ; it
 EXPECT=<<EXPECT_ERR
 md5 bf619eac0cdf3f68d496ea9344137e8b
 sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
-EXPECT_ERR=<<RUN
+EXPECT_ERR=<<EOF
 File has been modified.
 - md5 bf619eac0cdf3f68d496ea9344137e8b
 + md5 afd010a5a5456c232dee59d59bd75cf6
 - sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
 + sha1 3bfd02bb4fac6499c89278254f04a081887c38ea
+EOF
 RUN
 
 # XXX modifying files is a very bad idea
@@ -4254,9 +4283,10 @@ EXPECT_ERR='File has been modified.
 - sha1 9016e215a321184c42c28ab03847554851932713
 + sha1 17c5b6331a420fc3b48defe782090295294fee2e
 '
-EXPECT=<<RUN
+EXPECT=<<EOF
 md5 84144530144b53a704c84d9c65ab5f92
 sha1 9016e215a321184c42c28ab03847554851932713
+EOF
 RUN
 
 NAME=isq. (malloc)
@@ -4275,19 +4305,21 @@ RUN
 NAME=ic?~ (match all)
 FILE=malloc://512
 CMDS=ic?~List
-EXPECT=<<RUN
+EXPECT=<<EOF
 | ic                 List classes, methods and fields
 | icc                List classes, methods and fields in Header Format
 | icg                List classes as agn/age commands to create class hirearchy graphs
 | icq                List classes, in quiet mode (just the classname)
 | icqq               List classes, in quieter mode (only show non-system classnames)
+EOF
 RUN
 
 NAME=ic?~ (match one)
 FILE=malloc://512
 CMDS=ic?~Header
-EXPECT=<<RUN
+EXPECT=<<EOF
 | icc                List classes, methods and fields in Header Format
+EOF
 RUN
 
 NAME=ic?~ (match none)
@@ -4299,35 +4331,39 @@ RUN
 NAME=ascii substring detection (#14499)
 FILE=../bins/pe/Reborn_Stub-strings.exe
 CMDS=izz~pomf
-EXPECT=<<RUN
+EXPECT=<<EOF
 7168 0x00087f8a 0x00489d8a 26  53   .text   utf16le http://pomf.cat/upload.php
 7173 0x000880dd 0x00489edd 19  39   .text   utf16le https://a.pomf.cat/
 7336 0x00089bed 0x0048b9ed 26  53   .text   utf16le http://pomf.cat/upload.php
 7337 0x00089c22 0x0048ba22 19  40   .text   utf16le https://a.pomf.cat/
+EOF
 RUN
 
 NAME=ic (file Java)
 FILE=../bins/java/Hello.class
 CMDS=ic
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x00000000 [0x0000022b - 0x000002aa]    127 class 0 Hello :: java/lang/Object
 0x0000022b method 0      <init>
 0x00000263 method 1      say
 0x000002aa method 2      main
+EOF
 RUN
 
 NAME=icq (file Java)
 FILE=../bins/java/Hello.class
 CMDS=icq
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x00000000 [0x0000022b - 0x000002aa] Hello java/lang/Object
+EOF
 RUN
 
 NAME=icqq (file Java)
 FILE=../bins/java/Hello.class
 CMDS=icqq
-EXPECT=<<RUN
+EXPECT=<<EOF
 Hello
+EOF
 RUN
 
 NAME=icqq (file x86)
@@ -4340,8 +4376,9 @@ NAME=iqqc (file Java)
 BROKEN=1
 FILE=../bins/java/Hello.class
 CMDS=iqqc
-EXPECT=<<RUN
+EXPECT=<<EOF
 Hello
+EOF
 RUN
 
 NAME=iqqc (file x86)
@@ -4355,8 +4392,9 @@ NAME=iqcq (file Java)
 BROKEN=1
 FILE=../bins/java/Hello.class
 CMDS=iqcq
-EXPECT=<<RUN
+EXPECT=<<EOF
 Hello
+EOF
 RUN
 
 NAME=iqcq (file x86)
