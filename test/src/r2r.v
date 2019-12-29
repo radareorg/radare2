@@ -22,17 +22,16 @@ const (
 )
 
 fn autodetect_dbpath() string {
-	return filepath.join(r2r_home(), default_dbpath)
+	return filepath.join(r2r_home(),default_dbpath)
 }
 
 fn r2r_home() string {
-	home := filepath.basedir (os.realpath( os.executable() ))
-	return filepath.join(home, '..')
+	home := filepath.basedir(os.realpath(os.executable()))
+	return filepath.join(home,'..')
 }
 
 pub fn main() {
-	mut r2r := R2R{
-	}
+	mut r2r := R2R{}
 	mut fp := flag.new_flag_parser(os.args)
 	fp.application(filepath.filename(os.executable()))
 	// fp.version(r2r_version)
@@ -67,8 +66,8 @@ pub fn main() {
 	r2r.targets = args[1..]
 	if r2r.interactive {
 		eprintln('Warning: interactive mode not yet implemented in V. Use the node testsuite for this')
-		p := filepath.join(r2r.r2r_home, 'new')
-		if !os.is_dir(filepath.join(p, 'node_modules')) {
+		p := filepath.join(r2r.r2r_home,'new')
+		if !os.is_dir(filepath.join(p,'node_modules')) {
 			exit(1)
 		}
 		a := r2r.targets.join(' ')
@@ -92,7 +91,7 @@ pub fn main() {
 	}
 }
 
-fn (r2r mut R2R)run_tests() {
+fn (r2r mut R2R) run_tests() {
 	if r2r.wants('json') {
 		r2r.run_jsn_tests()
 	}
@@ -124,22 +123,22 @@ fn mktmpdir(template string) string {
 // ///////////////
 struct R2R {
 mut:
-	cmd_tests []R2RCmdTest
-	asm_tests []R2RAsmTest
-	targets   []string
-	r2        &r2.R2
-	jobs   int
-	timeout   int
-	wg        sync.WaitGroup
-	success   int
-	failed    int
-	fixed     int
-	broken    int
-	db_path   string
-	r2_path   string
-	show_quiet bool
+	cmd_tests   []R2RCmdTest
+	asm_tests   []R2RAsmTest
+	targets     []string
+	r2          &r2.R2
+	jobs        int
+	timeout     int
+	wg          sync.WaitGroup
+	success     int
+	failed      int
+	fixed       int
+	broken      int
+	db_path     string
+	r2_path     string
+	show_quiet  bool
 	interactive bool
-	r2r_home  string
+	r2r_home    string
 }
 
 struct R2RCmdTest {
@@ -197,8 +196,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 	if r2r.targets.len > 0 && !testfile.ends_with('/${r2r.targets[0]}') {
 		return
 	}
-	mut test := R2RCmdTest{
-	}
+	mut test := R2RCmdTest{}
 	lines := os.read_lines(testfile) or {
 		panic(err)
 	}
@@ -301,13 +299,12 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 						}
 						r2r.cmd_tests << test
 					}
-					test = R2RCmdTest{
-					}
+					test = R2RCmdTest{}
 					test.source = testfile
 				}
 			}
-			else {
-			}}
+			else {}
+	}
 	}
 }
 
@@ -323,6 +320,7 @@ fn (r2r R2R)run_commands(test R2RCmdTest) string {
 	return res
 }
 */
+
 
 fn (r2r mut R2R) test_failed(test R2RCmdTest, a string, b string) string {
 	if test.broken {
@@ -531,8 +529,7 @@ fn (r2r mut R2R) load_asm_test(testfile string) {
 		}
 		words := line.split('"')
 		if words.len == 3 {
-			mut at := R2RAsmTest{
-			}
+			mut at := R2RAsmTest{}
 			at.mode = words[0].trim_space()
 			at.inst = words[1].trim_space()
 			data := words[2].trim_space()
@@ -610,15 +607,12 @@ fn (r2r mut R2R) run_unit_tests() bool {
 	for file in files {
 		if is_executable(file) {
 			// TODO: filter OK
-			cmd := if r2r.show_quiet {
-				'(./$file ;echo \$? > .a) | grep -v OK || [ "\$(shell cat .a)" = 0 ]'
-			} else {
-				'./$file'
-			}
+			cmd := if r2r.show_quiet { '(./$file ;echo \$? > .a) | grep -v OK || [ "\$(shell cat .a)" = 0 ]' } else { './$file' }
 			if os.system(cmd) == 0 {
-				r2r.success ++
-			} else {
-				r2r.failed ++
+				r2r.success++
+			}
+			else {
+				r2r.failed++
 			}
 		}
 	}
@@ -688,11 +682,13 @@ fn (r2r mut R2R) run_jsn_tests() {
 			mut mark := term.green('OK')
 			if ok {
 				r2r.success++
-			} else {
+			}
+			else {
 				if line.contains('BROKEN') {
 					mark = term.blue('BR')
 					r2r.broken++
-				} else {
+				}
+				else {
 					mark = term.red('XX')
 					r2r.failed++
 				}
@@ -724,7 +720,7 @@ fn (r2r mut R2R) run_cmd_tests() {
 	r2r.wg.wait()
 }
 
-fn (r2r R2R)show_report() {
+fn (r2r R2R) show_report() {
 	total := r2r.broken + r2r.fixed + r2r.failed + r2r.success
 	println('')
 	println('Broken: ${r2r.broken}')
@@ -765,7 +761,7 @@ fn (r2r mut R2R) run_jsn_test(cmd string) bool {
 		return true
 	}
 	// verify json
-	_ = json.decode(DummyStruct, jsonstr) or {
+	_ = json.decode(DummyStruct,jsonstr) or {
 		eprintln('[r2r] json ${cmd} = ${jsonstr}')
 		return false
 	}
@@ -776,37 +772,37 @@ fn (r2r mut R2R) run_jsn_test(cmd string) bool {
 fn (r2r R2R) load_jsn_tests(testpath string) {
 	// implementation is in run_jsn_tests
 	// nothing to load for now
-}
+	}
 
-fn (r2r mut R2R) load_tests() {
-	r2r.cmd_tests = []
-	if !os.is_dir(r2r.db_path) {
-		eprintln('Cannot open -d ${r2r.db_path}')
-		return
-	}
-	if r2r.wants('json') {
-		r2r.load_jsn_tests('${r2r.db_path}/json')
-	}
-	if r2r.wants('asm') {
-		r2r.load_asm_tests('${r2r.db_path}/asm')
-	}
-	if r2r.wants('cmd') {
-		r2r.load_cmd_tests('${r2r.db_path}/cmd')
-	}
-	if r2r.wants('arch') {
-		$if x64 {
-			p := '${r2r.db_path}/archos'
-			$if linux {
-				r2r.load_cmd_tests('$p/linux-x64/')
-			} $else {
-				$if macos {
-					r2r.load_cmd_tests('$p/darwin-x64/')
+	fn (r2r mut R2R) load_tests() {
+		r2r.cmd_tests = []
+		if !os.is_dir(r2r.db_path) {
+			eprintln('Cannot open -d ${r2r.db_path}')
+			return
+		}
+		if r2r.wants('json') {
+			r2r.load_jsn_tests('${r2r.db_path}/json')
+		}
+		if r2r.wants('asm') {
+			r2r.load_asm_tests('${r2r.db_path}/asm')
+		}
+		if r2r.wants('cmd') {
+			r2r.load_cmd_tests('${r2r.db_path}/cmd')
+		}
+		if r2r.wants('arch') {
+			$if x64 {
+				p := '${r2r.db_path}/archos'
+				$if linux {
+					r2r.load_cmd_tests('$p/linux-x64/')
 				} $else {
-					eprintln('Warning: archos tests not supported for current platform')
+					$if macos {
+						r2r.load_cmd_tests('$p/darwin-x64/')
+					} $else {
+						eprintln('Warning: archos tests not supported for current platform')
+					}
 				}
+			} $else {
+				eprintln('Warning: archos tests not supported for current platform')
 			}
-		} $else {
-			eprintln('Warning: archos tests not supported for current platform')
 		}
 	}
-}

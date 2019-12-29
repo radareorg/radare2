@@ -12,6 +12,9 @@ $(V): v
 	cd v && git pull
 	$(MAKE) -C v
 
+fmt:
+	$(V) fmt -w r2r.v
+
 v:
 	git clone https://github.com/vlang/v
 
