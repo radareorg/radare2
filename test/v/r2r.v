@@ -17,7 +17,7 @@ const (
 	default_timeout = 3
 	default_asm_bits = 32
 	default_radare2 = 'radare2'
-	default_dbpath = 'new/db'
+	default_dbpath = 'new/db' // XXX use execpath as relative reference to it
 	r2r_version = '0.2'
 )
 
@@ -592,7 +592,13 @@ fn (r2r mut R2R) run_unit_tests() bool {
 	}
 	for file in files {
 		if is_executable(file) {
-			if os.system('./$file') == 0 {
+			// TODO: filter OK
+			cmd := if r2r.show_quiet {
+				'(./$file ;echo \$? > .a) | grep -v OK || [ "\$(shell cat .a)" = 0 ]'
+			} else {
+				'./$file'
+			}
+			if os.system(cmd) == 0 {
 				r2r.success ++
 			} else {
 				r2r.failed ++
@@ -674,7 +680,9 @@ fn (r2r mut R2R) run_jsn_tests() {
 					r2r.failed++
 				}
 			}
-			println('[${mark}] json ${line}')
+			if !ok || !r2r.show_quiet {
+				println('[${mark}] json ${line}')
+			}
 		}
 	}
 }
