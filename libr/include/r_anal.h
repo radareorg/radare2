@@ -1443,13 +1443,9 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr);
 // returns true iff the blocks could be merged
 R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b);
 
-// Create one or more blocks covering the given range.
-// Multiple blocks will be created if the range overlaps another block.
-R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size);
-
 // Create one block covering the given range.
 // This will fail if the range overlaps any existing blocks.
-R_API RAnalBlock *r_anal_block_create_atomic(RAnal *anal, ut64 addr, ut64 size);
+R_API RAnalBlock *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size);
 
 // Manually delete a block and remove it from all its functions
 // If there are more references to it than from its functions only, it will not be removed immediately!
@@ -1485,13 +1481,13 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user);
 R_API RList *r_anal_block_recurse_list(RAnalBlock *block);
 
 /* function.c */
-R_API RAnalFunction *r_anal_add_function(RAnal *anal, const char *name, ut64 addr);
-R_API RList *r_anal_get_functions(RAnal *anal, ut64 addr);
-R_API bool r_anal_del_function(RAnalFunction *fcn);
-#if 0
-R_API bool r_anal_function_blocks_foreach(RAnalFunction *fcn, RAnalBlockCb cb, void *user);
-R_API RList *r_anal_function_blocks_list(RAnalFunction *fcn);
-#endif
+// Create a new function and add it to anal
+R_API RAnalFunction *r_anal_function_create(RAnal *anal, const char *name, ut64 addr);
+
+// returns all functions that have a basic block containing the given address
+R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr);
+
+R_API bool r_anal_function_delete(RAnalFunction *fcn);
 
 // actions on basic blocks QUESTION: what about using ut64 as key instead of passing a bb? at least for del-block?
 R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);

@@ -262,7 +262,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 
 // Create a new 0-sized basic block inside the function
 static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	RAnalBlock *bb = r_anal_block_create_atomic (anal, addr, 0);
+	RAnalBlock *bb = r_anal_block_create (anal, addr, 0);
 	if (!bb) {
 		return NULL;
 	}
@@ -1474,7 +1474,7 @@ R_API bool r_anal_fcn_insert(RAnal *a, RAnalFunction *fcn) {
 }
 
 R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int type, RAnalDiff *diff) {
-	RAnalFunction * fcn = r_anal_add_function (a, name, addr);
+	RAnalFunction * fcn = r_anal_function_create (a, name, addr);
 	return fcn != NULL;
 	// TODO: the code belw must be momved into function.c
 #if 0
@@ -1540,7 +1540,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 	r_list_foreach_safe (a->fcns, iter, iter_tmp, fcn) {
 		D eprintf ("fcn at %llx %llx\n", fcn->addr, addr);
 		if (fcn->addr == addr) {
-			r_anal_del_function (fcn);
+			r_anal_function_delete (fcn);
 		}
 	}
 	r_anal_block_check_invariants (a);
@@ -1549,7 +1549,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 
 R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type) {
 #if 1
-	return r_anal_get_functions (anal, addr);
+	return r_anal_get_functions_in (anal, addr);
 #else
 	RList *list = r_list_newf (NULL);
 	// Interval tree query
@@ -1593,7 +1593,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 
 #define BBAPI 1
 #if BBAPI
-	RList *list = r_anal_get_functions (anal, addr);
+	RList *list = r_anal_get_functions_in (anal, addr);
 	RAnalFunction *ret = NULL;
 	if (list && !r_list_empty (list)) {
 		if (type == R_ANAL_FCN_TYPE_ROOT) {
@@ -1716,7 +1716,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 			r_anal_block_set_size (block, size);
 		}
 	} else {
-		block = r_anal_block_create_atomic (a, addr, size);
+		block = r_anal_block_create (a, addr, size);
 	}
 
 	if (!block) {

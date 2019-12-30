@@ -5,14 +5,6 @@
 
 #include <assert.h>
 
-#define NEWBBAPI 1
-
-#if NEWBBAPI
-#define BBAPI_PRELUDE(x)
-#else
-#define BBAPI_PRELUDE(x) return x
-#endif
-
 #define unwrap(rbnode) container_of (rbnode, RAnalBlock, _rb)
 
 static void __max_end(RBNode *node) {
@@ -193,6 +185,7 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 #endif
 }
 
+// TODO: this can be removed just before merging too
 R_API void r_anal_block_check_leaks(RAnal *anal) {
 	RBIter iter;
 	RAnalBlock *block;
@@ -296,74 +289,7 @@ R_API RList *r_anal_get_blocks_intersect_list(RAnal *anal, ut64 addr, ut64 size)
 	return list;
 }
 
-// TODO: unit-test this HARD!!
-R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
-	BBAPI_PRELUDE (NULL);
-	r_return_val_if_fail (anal, NULL);
-
-	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
-	if (!ret) {
-		return NULL;
-	}
-
-	// get all intersecting blocks
-	RList *intersecting = r_anal_get_blocks_intersect_list (anal, addr, size);
-	if (!r_list_empty (intersecting)) {
-		// split the first at addr if necessary and ignore the first part
-		RAnalBlock *first = r_list_first (intersecting);
-		if (first->addr < addr) {
-			r_list_pop_head (intersecting);
-			RAnalBlock *newfirst = r_anal_block_split (first, addr);
-			r_list_prepend (intersecting, newfirst);
-			r_anal_block_unref (first);
-		}
-		// split the last at addr + size if necessary and ignore the second part
-		RAnalBlock *last = r_list_last (intersecting);
-		if (last->addr + size > addr + size) {
-			RAnalBlock *tail = r_anal_block_split (last, addr + size);
-			r_anal_block_unref (tail);
-		}
-	}
-
-	if (size == 0) {
-		if (r_list_empty (intersecting)) {
-			RAnalBlock *newblock = block_new (anal, addr, size);
-			r_rbtree_aug_insert (&anal->bb_tree, &newblock->addr, &newblock->_rb, __bb_addr_cmp, NULL, __max_end);
-			r_list_push (ret, newblock);
-		}
-	} else {
-		// create blocks in the holes and fill the return list
-		ut64 cur = addr;
-		ut64 end = addr + size;
-		while (cur < end) {
-			RAnalBlock *newblock = NULL;
-			RAnalBlock *insect = NULL;
-			if (r_list_empty (intersecting)) {
-				newblock = block_new (anal, cur, end - cur);
-				cur = end;
-			} else {
-				insect = r_list_pop_head (intersecting);
-				if (insect->addr > cur) {
-					newblock = block_new (anal, cur, insect->addr - cur);
-				}
-				cur = insect->addr + insect->size;
-			}
-			if (newblock) {
-				r_rbtree_aug_insert (&anal->bb_tree, &newblock->addr, &newblock->_rb, __bb_addr_cmp, NULL, __max_end);
-				r_list_push (ret, newblock);
-			}
-			if (insect) {
-				r_list_push (ret, insect);
-			}
-			r_anal_block_check_invariants (anal);
-		}
-		r_list_free (intersecting);
-		r_anal_block_check_invariants (anal);
-	}
-	return ret;
-}
-
-R_API RAnalBlock *r_anal_block_create_atomic(RAnal *anal, ut64 addr, ut64 size) {
+R_API RAnalBlock *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 	if (r_anal_get_block_at (anal, addr)) {
 		return NULL;
 	}
@@ -376,7 +302,6 @@ R_API RAnalBlock *r_anal_block_create_atomic(RAnal *anal, ut64 addr, ut64 size) 
 }
 
 R_API void r_anal_block_delete(RAnalBlock *bb) {
-	BBAPI_PRELUDE (NULL);
 	RAnal *anal = bb->anal;
 	r_anal_block_ref (bb);
 	while (!r_list_empty (bb->fcns)) {
@@ -435,60 +360,6 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 	r_rbtree_aug_insert (&block->anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
 	return true;
 }
-
-#if 0
-R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size) {
-	RAnal *anal = bb->anal;
-
-	if (bb->addr == addr && bb->size == size) {
-		return true;
-	}
-
-	r_anal_block_check_invariants (bb->anal);
-
-	ut64 cur_end = bb->addr + bb->size;
-	ut64 new_end = addr + size;
-	if (new_end > cur_end) {
-		// find the next block
-		ut64 searchaddr = bb->addr + 1;
-		RBNode *node = r_rbtree_lower_bound (anal->bb_tree, &searchaddr, __bb_addr_cmp, NULL);
-		if (node && unwrap (node)->addr < addr + size) {
-			// would overlap with the next block
-			return false;
-		}
-	}
-
-	if (addr < bb->addr) {
-		// find the previous block
-		ut64 searchaddr = bb->addr - 1; // This is fine, addr < bb->addr ==> bb->addr > 0
-		RBNode *node = r_rbtree_upper_bound (anal->bb_tree, &searchaddr, __bb_addr_cmp, NULL);
-		if (node && unwrap (node)->addr + unwrap (node)->size >= addr) {
-			// would overlap with the previous block
-			return false;
-		}
-	}
-
-	// Invalidate the block's function's cached ranges
-	RAnalFunction *fcn;
-	RListIter *iter;
-	r_list_foreach (bb->fcns, iter, fcn) {
-		if (fcn->meta._min != UT64_MAX) {
-			if (fcn->meta._max == bb->addr + bb->size) {
-				fcn->meta._max = addr + size;
-			}
-			if (fcn->meta._min == bb->addr) {
-				fcn->meta._min = addr;
-			}
-		}
-	}
-
-	bb->addr = addr;
-	bb->size = size;
-
-	r_anal_block_check_invariants (bb->anal);
-	return true;
-}
-#endif
 
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	RAnal *anal = bbi->anal;
@@ -605,12 +476,10 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 	assert (bb->ref > 0);
 	r_anal_block_check_invariants (bb->anal);
 	bb->ref--;
-	assert (bb->ref >= r_list_length (bb->fcns));
+	assert (bb->ref >= r_list_length (bb->fcns)); // all of the block's functions must hold a reference to it
 	if (bb->ref < 1) {
 		RAnal *anal = bb->anal;
-		D eprintf("unref bb %d\n", bb->ref);
-		assert (!bb->fcns || r_list_empty (bb->fcns)); // on
-		D eprintf("unref2 bb %d\n", bb->ref);
+		assert (!bb->fcns || r_list_empty (bb->fcns));
 		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 	}
 }

@@ -17,18 +17,13 @@ static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	return true;
 }
 
-R_API RList *r_anal_get_functions(RAnal *anal, ut64 addr) {
+R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr) {
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
 	}
 	r_anal_get_blocks_in (anal, addr, get_functions_block_cb, list);
 	return list;
-}
-
-R_API char *r_anal_new_name(RAnal *anal, const char *name) {
-	// check if name exists, if so suggest a new name
-	return NULL;
 }
 
 static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
@@ -77,7 +72,7 @@ R_API bool r_anal_add_function_ll(RAnal *anal, RAnalFunction *fcn) {
 	return true;
 }
 
-R_API RAnalFunction *r_anal_add_function(RAnal *anal, const char *name, ut64 addr) {
+R_API RAnalFunction *r_anal_function_create(RAnal *anal, const char *name, ut64 addr) {
 	RAnalFunction *fcn = r_anal_fcn_new (anal);
 	if (fcn) {
 		fcn->addr = addr;
@@ -128,25 +123,6 @@ R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb) {
 	r_anal_block_unref (bb);
 }
 
-R_API bool r_anal_del_function(RAnalFunction *fcn) {
+R_API bool r_anal_function_delete(RAnalFunction *fcn) {
 	return r_list_delete_data (fcn->anal->fcns, fcn);
 }
-
-#if 0
-
-R_API bool r_anal_function_blocks_foreach(RAnalFunction *fcn, RAnalBlockCb cb, void *user) {
-	RAnalBlock *entry = r_anal_get_block_at (fcn->anal, fcn->addr);
-	if (!entry) {
-		return true;
-	}
-	return r_anal_block_recurse (entry, cb, user);
-}
-
-R_API RList *r_anal_function_blocks_list(RAnalFunction *fcn) {
-	RAnalBlock *entry = r_anal_get_block_at (fcn->anal, fcn->addr);
-	if (!entry) {
-		return r_list_newf ((RListFree)r_anal_block_unref);
-	}
-	return r_anal_block_recurse_list (entry);
-}
-#endif
