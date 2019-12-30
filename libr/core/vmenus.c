@@ -4028,7 +4028,6 @@ onemoretime:
 		break;
         case 'v':
         {
-		RAnalOp op;
 		ut64 N;
 		char *endptr = NULL;
 		char *end_off = r_cons_input ("Last hexadecimal digits of instruction: ");
@@ -4060,24 +4059,23 @@ onemoretime:
 
 		ut64 try_off;
 		bool found = false;
-		const int op_mask = R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT;
-		for (try_off = start_off; !found && try_off < start_off + incr*16; try_off += incr) {
-			if (core->offset > try_off) {
+		RAnalOp *op = NULL;
+		for (try_off = start_off; try_off < start_off + incr*16; try_off += incr) {
+			r_anal_op_free (op);
+			op = r_core_anal_op (core, try_off, R_ANAL_OP_MASK_ALL);
+			if (!op) {
 				break;
 			}
-			RAnalOp *o = r_core_anal_op (core, try_off, op_mask);
-			if (!o) {
-				// anal failure
+			if (op->var) {
+				found = true;
 				break;
 			}
-			found = o->var != NULL;
-			r_anal_op_free (o);
 		}
 
 		if (found) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
-				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn->addr, op.var->name);
+				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn->addr, op->var->name);
 				if (bar) {
 					char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", bar->name));
 					if (newname && *newname) {
@@ -4098,7 +4096,7 @@ onemoretime:
 			r_cons_any_key (NULL);
 		}
 
-		r_anal_op_fini (&op);
+		r_anal_op_free (op);
 		break;
         }
 	case 'Q':
