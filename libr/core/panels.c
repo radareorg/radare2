@@ -301,11 +301,7 @@ static void __create_default_panels(RCore *core);
 static RConsCanvas *__create_new_canvas(RCore *core, int w, int h);
 
 /* free */
-static void __panels_free(RPanelsRoot *panels_root, int i, RPanels *panels);
 static void __free_panel_model(RPanel *panel);
-static void __free_panel_view(RPanel *panel);
-static void __free_single_panel(RPanel *panel);
-static void __free_all_panels(RPanels *panels);
 static void __free_menu_item(RPanelsMenuItem *item);
 
 /* get */
@@ -313,7 +309,6 @@ static RPanel *__get_panel(RPanels *panels, int i);
 static RPanel *__get_cur_panel(RPanels *panels);
 static int __get_panel_idx_in_pos(RCore *core, int x, int y);
 static RPanels *__get_panels(RPanelsRoot *panels_root, int i);
-static RPanels *__get_cur_panels(RPanelsRoot *panels_root);
 static char *get_word_from_canvas(RCore *core, RPanels *panels, int x, int y);
 static char *get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y);
 
@@ -4966,25 +4961,6 @@ void __free_modal(RModal **modal) {
 	*modal = NULL;
 }
 
-void __free_panel_view(RPanel *panel) {
-	free (panel->view);
-}
-
-void __free_single_panel(RPanel *panel) {
-	__free_panel_model (panel);
-	__free_panel_view (panel);
-	free (panel);
-}
-
-void __free_all_panels(RPanels *panels) {
-	int i;
-	for (i = 0; i < panels->n_panels; i++) {
-		RPanel *p = __get_panel (panels, i);
-		__free_single_panel (p);
-	}
-	free (panels->panel);
-}
-
 void __free_menu_item(RPanelsMenuItem *item) {
 	if (!item) {
 		return;
@@ -5985,22 +5961,6 @@ void __renew_filter(RPanel *panel, int n) {
 	panel->model->filter = filter;
 }
 
-void __panels_free(RPanelsRoot *panels_root, int i, RPanels *panels) {
-	r_cons_switchbuf (true);
-	if (panels) {
-		__free_all_panels (panels);
-		r_cons_canvas_free (panels->can);
-		sdb_free (panels->db);
-		sdb_free (panels->rotate_db);
-		sdb_free (panels->almighty_db);
-		if (panels_root->n_panels <= 1) {
-			ht_pp_free (panels->mht);
-		}
-		free (panels);
-		panels_root->panels[i] = NULL;
-	}
-}
-
 bool __move_to_direction(RCore *core, Direction direction) {
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
@@ -6518,7 +6478,6 @@ void __del_panels(RCore *core) {
 	for (i = panels_root->cur_panels; i < panels_root->n_panels - 1; i++) {
 		panels_root->panels[i] = panels_root->panels[i + 1];
 	}
-	__panels_free (panels_root, panels_root->cur_panels, __get_cur_panels (panels_root));
 	panels_root->n_panels--;
 	if (panels_root->cur_panels >= panels_root->n_panels) {
 		panels_root->cur_panels = panels_root->n_panels - 1;
@@ -6530,10 +6489,6 @@ RPanels *__get_panels(RPanelsRoot *panels_root, int i) {
 		return NULL;
 	}
 	return panels_root->panels[i];
-}
-
-RPanels *__get_cur_panels(RPanelsRoot *panels_root) {
-	return __get_panels (panels_root, panels_root->cur_panels);
 }
 
 void __handle_tab(RCore *core) {
