@@ -7239,6 +7239,9 @@ repeat:
 			(void)r_core_cmd0 (core, cmd);
 		} else {
 			__panel_single_step_in (core);
+			if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
+				__set_panel_addr (core, cur, core->offset);
+			}
 			__set_refresh_all (core, false, false);
 		}
 		break;
@@ -7248,6 +7251,9 @@ repeat:
 			(void)r_core_cmd0 (core, cmd);
 		} else {
 			__panel_single_step_over (core);
+			if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
+				__set_panel_addr (core, cur, core->offset);
+			}
 			__set_refresh_all (core, false, false);
 		}
 		break;
