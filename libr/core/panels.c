@@ -1935,6 +1935,10 @@ bool __handle_cursor_mode(RCore *core, const int key) {
 	case 'b':
 		__set_breakpoints_on_cursor (core, cur);
 		break;
+	case 'H':
+		cur->view->curpos = cur->view->sy;
+		cur->view->refresh = true;
+		break;
 	}
 	return true;
 }
