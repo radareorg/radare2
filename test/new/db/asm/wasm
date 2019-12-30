@@ -17,4 +17,5 @@ d "get_local 0" 2000
 d "get_local 1" 2001
 d "get_local 2" 2002
 d "i64.extend_u/i32"
-ad "i64.const 32" 4220
+d "i64.const 32" 4220
+aB "i64.const 32" 4220
