@@ -194,9 +194,14 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 		// check state for bb
 		if (state->current_bb) {
 			// TODO something special should happen here.
+			r_anal_block_ref (state->current_bb);
 			r_anal_ex_perform_revisit_bb_cb (anal, state, state->current_addr);
 			consumed_iter += state->current_bb->op_sz;
 			bytes_consumed += state->current_bb->op_sz;
+			if (state->current_bb) {
+				r_anal_block_unref (state->current_bb);
+				state->current_bb = NULL;
+			}
 			if (state->done) {
 				break;
 			}
