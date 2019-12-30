@@ -2,6 +2,9 @@
 
 #include <r_core.h>
 #include <r_util.h>
+
+#include <setjmp.h>
+#include <signal.h>
 #include <string.h>
 
 #define MAX_FORMAT 3
@@ -3571,6 +3574,15 @@ static void handleHints(RCore *core) {
 	}
 }
 
+/**
+ * Does non local goto into segfaulty function
+ */
+sigjmp_buf point;
+static void segfaulty_action_handler(int sig, siginfo_t *dont_care, void *dont_care_either)
+{
+	longjmp(point, 1);
+}
+
 R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 	int plen = core->blocksize;
 	ut64 off = core->offset;
@@ -4052,7 +4064,7 @@ onemoretime:
 		ut64 mask = incr - 1;
 
 		ut64 start_off;
-		if ((off & mask) <= N) {
+		if ((off & ~mask) <= N) {
 			start_off = (off & ~mask) ^ N;
 		} else {
 			start_off = ((off & ~mask) ^ incr) ^ N;
@@ -4061,8 +4073,26 @@ onemoretime:
 		ut64 try_off;
 		bool found = false;
 		for (try_off = start_off; try_off < start_off + incr*16; try_off += incr) {
-			int ret = r_anal_op (core->anal, &op, try_off,
-				core->block + try_off - core->offset, 32, R_ANAL_OP_MASK_ALL);
+            
+			// Prepares jump to segfaulty r_anal_op function
+			struct sigaction sa;
+			memset(&sa, 0, sizeof(sigaction));
+			sigemptyset(&sa.sa_mask);
+			sa.sa_flags = SA_NODEFER;
+			sa.sa_sigaction = segfaulty_action_handler;
+			sigaction(SIGSEGV, &sa, NULL);
+			
+			int ret;
+			if (setjmp(point) == 0)
+			{
+			    // Call segfaulty function
+			    ret = r_anal_op (core->anal, &op, try_off, core->block + try_off - core->offset, 32, R_ANAL_OP_MASK_ALL);
+			}
+			else
+			{
+			    // Segfault happened in r_anal_op
+			    break;
+			}
 			if (ret < 1) {
 				// anal failure
 				break;
