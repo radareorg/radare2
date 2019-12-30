@@ -586,7 +586,7 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 
 	while (offset < buf_len) {
 		ut64 length = buf_len - offset;
-		RAnalFunction *fcn = r_anal_fcn_new (anal);
+		RAnalFunction *fcn = r_anal_function_new (anal);
 		fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 		result = analyze_from_code_buffer ( anal, fcn, addr, buffer+offset, length );
 		if (result == R_ANAL_RET_ERROR) {
@@ -635,7 +635,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 			if ((method && analyze_all) ||
 			    (check_addr_less_start (method, end) ||
 			     check_addr_in_code (method, end))) {
-				RAnalFunction *fcn = r_anal_fcn_new (anal);
+				RAnalFunction *fcn = r_anal_function_new (anal);
 				fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 				java_set_function_prototype (anal, fcn, method);
 				result = analyze_from_code_attr (anal, fcn, method, loadaddr);
@@ -645,7 +645,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 					// XXX - TO Stop or not to Stop ??
 				}
 				//r_listrange_add (anal->fcnstore, fcn);
-				r_anal_add_function_ll (anal, fcn);
+				r_anal_function_add (anal, fcn);
 			}
 		} // End of methods loop
 	}// end of bin_objs list loop

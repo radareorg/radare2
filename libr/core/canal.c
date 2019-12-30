@@ -35,10 +35,9 @@ static void loganal(ut64 from, ut64 to, int depth) {
 	eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x" %d\r", from, to, depth);
 }
 
-static int cmpsize (const void *_a, const void *_b) {
-	const RAnalFunction *a = _a, *b = _b;
-	ut64 as = r_anal_fcn_linear_size (a);
-	ut64 bs = r_anal_fcn_linear_size (b);
+static int cmpsize (const void *a, const void *b) {
+	ut64 as = r_anal_fcn_linear_size ((RAnalFunction *)a);
+	ut64 bs = r_anal_fcn_linear_size ((RAnalFunction *)b);
 	return (as> bs)? 1: (as< bs)? -1: 0;
 }
 
@@ -754,7 +753,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	int i, nexti = 0;
 	ut64 *next = NULL;
 	int fcnlen;
-	RAnalFunction *fcn = r_anal_fcn_new (core->anal);
+	RAnalFunction *fcn = r_anal_function_new (core->anal);
 	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 	if (!fcnpfx) {
 		fcnpfx = "fcn";
@@ -851,7 +850,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 				r_anal_xrefs_set (core->anal, from, fcn->addr, reftype);
 			}
 			// XXX: this is wrong. See CID 1134565
-			r_anal_fcn_insert (core->anal, fcn);
+			r_anal_function_add (core->anal, fcn);
 			if (has_next) {
 				ut64 addr = r_anal_fcn_max_addr (fcn);
 				RIOMap *map = r_io_map_get (core->io, addr);
@@ -926,7 +925,7 @@ error:
 				r_flag_set (core->flags, fcn->name, at, r_anal_fcn_linear_size (fcn));
 				r_flag_space_pop (core->flags);
 			}
-			r_anal_fcn_insert (core->anal, fcn);
+			r_anal_function_add (core->anal, fcn);
 		}
 		if (fcn && has_next) {
 			ut64 newaddr = r_anal_fcn_max_addr (fcn);

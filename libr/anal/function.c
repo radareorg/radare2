@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - pancake */
+/* radare - LGPL - Copyright 2019 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
 
@@ -22,7 +22,7 @@ R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr) {
 	if (!list) {
 		return NULL;
 	}
-	r_anal_get_blocks_in (anal, addr, get_functions_block_cb, list);
+	r_anal_block_get_in (anal, addr, get_functions_block_cb, list);
 	return list;
 }
 
@@ -52,18 +52,37 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 	return false;
 }
 
-R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
-	bool found = false;
-	RAnalFunction *f = ht_up_find (anal->ht_addr_fun, addr, &found);
-	if (f && found) {
-		return f;
+R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
+	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
+	if (!fcn) {
+		return NULL;
 	}
-	return NULL;
+	fcn->anal = anal;
+	/* Function qualifier: static/volatile/inline/naked/virtual */
+	fcn->fmod = R_ANAL_FQUALIFIER_NONE;
+	/* Function calling convention: cdecl/stdcall/fastcall/etc */
+	/* Function attributes: weak/noreturn/format/etc */
+	fcn->addr = UT64_MAX;
+	fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
+	fcn->bits = anal->bits;
+	fcn->bbs = r_list_new ();
+	fcn->diff = r_anal_diff_new ();
+	fcn->has_changed = true;
+	fcn->bp_frame = true;
+	fcn->is_noreturn = false;
+	fcn->meta._min = UT64_MAX;
+	return fcn;
 }
 
-R_API bool r_anal_add_function_ll(RAnal *anal, RAnalFunction *fcn) {
+R_API bool r_anal_function_add(RAnal *anal, RAnalFunction *fcn) {
 	if (__fcn_exists (anal, fcn->name, fcn->addr)) {
 		return false;
+	}
+	if (anal->cb.on_fcn_new) {
+		anal->cb.on_fcn_new (anal, anal->user, fcn);
+	}
+	if (anal->flg_fcn_set) {
+		anal->flg_fcn_set (anal->flb.f, fcn->name, fcn->addr, r_anal_fcn_size_from_entry (fcn));
 	}
 	r_anal_fcn_tree_insert (anal, fcn);
 	r_list_append (anal->fcns, fcn);
@@ -73,17 +92,31 @@ R_API bool r_anal_add_function_ll(RAnal *anal, RAnalFunction *fcn) {
 }
 
 R_API RAnalFunction *r_anal_function_create(RAnal *anal, const char *name, ut64 addr) {
-	RAnalFunction *fcn = r_anal_fcn_new (anal);
-	if (fcn) {
-		fcn->addr = addr;
-		if (name) {
-			free (fcn->name);
-			fcn->name = strdup (name);
-		}
-		if (r_anal_add_function_ll (anal, fcn)) {
-			return fcn;
-		}
+	RAnalFunction *fcn = r_anal_function_new (anal);
+	if (!fcn) {
+		return NULL;
+	}
+	fcn->addr = addr;
+	if (name) {
+		free (fcn->name);
+		fcn->name = strdup (name);
+	}
+	if (!r_anal_function_add (anal, fcn)) {
 		r_anal_fcn_free (fcn);
+		return NULL;
+	}
+	return fcn;
+}
+
+R_API bool r_anal_function_delete(RAnalFunction *fcn) {
+	return r_list_delete_data (fcn->anal->fcns, fcn);
+}
+
+R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
+	bool found = false;
+	RAnalFunction *f = ht_up_find (anal->ht_addr_fun, addr, &found);
+	if (f && found) {
+		return f;
 	}
 	return NULL;
 }
@@ -121,8 +154,4 @@ R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb) {
 
 	r_list_delete_data (fcn->bbs, bb);
 	r_anal_block_unref (bb);
-}
-
-R_API bool r_anal_function_delete(RAnalFunction *fcn) {
-	return r_list_delete_data (fcn->anal->fcns, fcn);
 }

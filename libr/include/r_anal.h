@@ -1429,6 +1429,10 @@ typedef bool (*RAnalAddrCb)(ut64 addr, void *user);
 R_API void r_anal_block_check_invariants(RAnal *anal);
 R_API void r_anal_block_check_leaks(RAnal *anal);
 
+// lifetime
+R_API void r_anal_block_ref(RAnalBlock *bb);
+R_API void r_anal_block_unref(RAnalBlock *bb);
+
 static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
 	return addr >= bb->addr && addr < bb->addr + bb->size;
 }
@@ -1451,23 +1455,17 @@ R_API RAnalBlock *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size);
 // If there are more references to it than from its functions only, it will not be removed immediately!
 R_API void r_anal_block_delete(RAnalBlock *bb);
 
-#if 0
-// Try to set addr and size of the block without splitting it and without moving it beyond its previous or following blocks.
-// This will fail if the block would overlap another block after the operation
-// returns true on success
-R_API bool r_anal_block_try_resize_atomic(RAnalBlock *bb, ut64 addr, ut64 size);
-#endif
 R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size);
+
+// Set the address and size of the block.
+// This can fail (and return false) if there is already another block at the new addrress
 R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size);
 
-R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr);
-R_API bool r_anal_get_blocks_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user);
-R_API RList *r_anal_get_blocks_in_list(RAnal *anal, ut64 addr);
-R_API void r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size, RAnalBlockCb cb, void *user);
-R_API RList *r_anal_get_blocks_intersect_list(RAnal *anal, ut64 addr, ut64 size);
-// lifetime
-R_API void r_anal_block_ref(RAnalBlock *bb);
-R_API void r_anal_block_unref(RAnalBlock *bb);
+R_API RAnalBlock *r_anal_block_get_at(RAnal *anal, ut64 addr);
+R_API bool r_anal_block_get_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user);
+R_API RList *r_anal_block_get_in_list(RAnal *anal, ut64 addr);
+R_API void r_anal_blocks_get_intersect(RAnal *anal, ut64 addr, ut64 size, RAnalBlockCb cb, void *user);
+R_API RList *r_anal_block_get_intersect_list(RAnal *anal, ut64 addr, ut64 size);
 
 // Call cb on every direct successor address of block
 // returns false iff the loop was breaked by cb
@@ -1480,22 +1478,28 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user);
 // same as r_anal_block_recurse, but returns the blocks as a list
 R_API RList *r_anal_block_recurse_list(RAnalBlock *block);
 
+// ---------------------------------------
+
 /* function.c */
-// Create a new function and add it to anal
+
+R_API RAnalFunction *r_anal_function_new(RAnal *anal);
+
+// Add a function created with r_anal_function_new() to anal
+R_API bool r_anal_function_add(RAnal *anal, RAnalFunction *fcn);
+
+// Create a new function and add it to anal (r_anal_function_new()+r_anal_function_add())
 R_API RAnalFunction *r_anal_function_create(RAnal *anal, const char *name, ut64 addr);
 
 // returns all functions that have a basic block containing the given address
 R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr);
 
+// returns the function that has its entrypoint at addr
+R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
+
 R_API bool r_anal_function_delete(RAnalFunction *fcn);
 
-// actions on basic blocks QUESTION: what about using ut64 as key instead of passing a bb? at least for del-block?
-R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
 R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb);
 R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb);
-
-// low level
-R_API bool r_anal_add_function_ll(RAnal *anal, RAnalFunction *fcn);
 
 
 /* anal.c */
@@ -1606,7 +1610,6 @@ R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *data);
 R_API void r_anal_fcn_tree_insert(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_count_edges(const RAnalFunction *fcn, int *ebbs);
-R_API RAnalFunction *r_anal_fcn_new(RAnal *anal);
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr);
 R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type);
@@ -1615,8 +1618,6 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type);
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);
 R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name);
 R_API void r_anal_fcn_rename(RAnalFunction *f, const char *newName);
-R_API RList *r_anal_fcn_list_new(void);
-R_API bool r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_fcn_free(void *fcn);
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype);
 R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,

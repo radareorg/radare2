@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - pancake */
+/* radare - LGPL - Copyright 2019 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
 #include <r_util/pj.h>
@@ -201,7 +201,7 @@ void __block_free_rb(RBNode *node, void *user) {
 	block_free (block);
 }
 
-R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
+R_API RAnalBlock *r_anal_block_get_at(RAnal *anal, ut64 addr) {
 	RBNode *node = r_rbtree_find (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
 	if (!node) {
 		return NULL;
@@ -236,7 +236,7 @@ static bool all_in(RAnalBlock *node, ut64 addr, RAnalBlockCb cb, void *user) {
 	return true;
 }
 
-R_API bool r_anal_get_blocks_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user) {
+R_API bool r_anal_block_get_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user) {
 	return all_in (anal->bb_tree ? unwrap (anal->bb_tree) : NULL, addr, cb, user);
 }
 
@@ -247,12 +247,12 @@ static bool block_list_cb(RAnalBlock *block, void *user) {
 	return true;
 }
 
-R_API RList *r_anal_get_blocks_in_list(RAnal *anal, ut64 addr) {
+R_API RList *r_anal_block_get_in_list(RAnal *anal, ut64 addr) {
 	RList *list = r_list_newf ((RListFree)r_anal_block_unref);
 	if (!list) {
 		return NULL;
 	}
-	r_anal_get_blocks_in (anal, addr, block_list_cb, list);
+	r_anal_block_get_in (anal, addr, block_list_cb, list);
 	return list;
 }
 
@@ -276,21 +276,21 @@ static void all_intersect(RAnalBlock *node, ut64 addr, ut64 size, RAnalBlockCb c
 	all_intersect (unwrap (node->_rb.child[1]), addr, size, cb, user);
 }
 
-R_API void r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size, RAnalBlockCb cb, void *user) {
+R_API void r_anal_blocks_get_intersect(RAnal *anal, ut64 addr, ut64 size, RAnalBlockCb cb, void *user) {
 	all_intersect (anal->bb_tree ? unwrap (anal->bb_tree) : NULL, addr, size, cb, user);
 }
 
-R_API RList *r_anal_get_blocks_intersect_list(RAnal *anal, ut64 addr, ut64 size) {
+R_API RList *r_anal_block_get_intersect_list(RAnal *anal, ut64 addr, ut64 size) {
 	RList *list = r_list_newf ((RListFree)r_anal_block_unref);
 	if (!list) {
 		return NULL;
 	}
-	r_anal_get_blocks_intersect (anal, addr, size, block_list_cb, list);
+	r_anal_blocks_get_intersect (anal, addr, size, block_list_cb, list);
 	return list;
 }
 
 R_API RAnalBlock *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
-	if (r_anal_get_block_at (anal, addr)) {
+	if (r_anal_block_get_at (anal, addr)) {
 		return NULL;
 	}
 	RAnalBlock *block = block_new (anal, addr, size);
@@ -333,9 +333,10 @@ R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size) {
 
 R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 	if (block->addr == addr) {
+		r_anal_block_set_size (block, size);
 		return true;
 	}
-	if (r_anal_get_block_at (block->anal, addr)) {
+	if (r_anal_block_get_at (block->anal, addr)) {
 		// Two blocks at the same addr is illegle you know...
 		return false;
 	}
@@ -368,7 +369,7 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 		return bbi;
 	}
 
-	if (r_anal_get_block_at (bbi->anal, addr)) {
+	if (r_anal_block_get_at (bbi->anal, addr)) {
 		// can't have two bbs at the same addr
 		return NULL;
 	}
@@ -525,7 +526,7 @@ static bool block_recurse_successor_cb(ut64 addr, void *user) {
 		return true;
 	}
 	ht_up_insert (ctx->visited, addr, NULL);
-	RAnalBlock *block = r_anal_get_block_at (ctx->anal, addr);
+	RAnalBlock *block = r_anal_block_get_at (ctx->anal, addr);
 	if (!block) {
 		return true;
 	}
