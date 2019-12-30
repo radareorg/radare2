@@ -369,10 +369,6 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				}
 			}
 
-
-			if (str == no_dbl_bslash_str) {
-				R_FREE (str);
-			}
 			RStrBuf *buf = r_strbuf_new (str);
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:
@@ -403,6 +399,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				(int)string->length, (int)string->size, section_name,
 				type_string, bufstr);
 			free (bufstr);
+			free (no_dbl_bslash_str);
 		}
 		last_processed = iter;
 	}

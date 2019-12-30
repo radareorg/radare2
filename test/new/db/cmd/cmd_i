@@ -3536,6 +3536,7 @@ NAME=str.escbslash and iz
 FILE=../bins/elf/strenc
 EXPECT=<<EOF
 16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
 EOF
 CMDS=<<EOF
 e str.escbslash=true
@@ -3556,6 +3557,34 @@ CMDS=<<EOF
 iz~ABCDEF
 iz~abcdef
 iz~123456
+EOF
+RUN
+
+NAME=izz escaping backslash
+FILE=-
+CMDS=<<EOF
+wz QUVWXWYZ[\\]^_R
+px 16
+?e
+e str.escbslash=false  # default
+izz
+?e
+e str.escbslash=true
+izz
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  5155 5657 5857 595a 5b5c 5d5e 5f52 0000  QUVWXWYZ[\]^_R..
+
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x00000000 0x00000000 14  15           ascii QUVWXWYZ[\]^_R
+
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x00000000 0x00000000 14  15           ascii QUVWXWYZ[\\]^_R
 EOF
 RUN
 
