@@ -1890,7 +1890,7 @@ R_API ut64 r_anal_fcn_max_addr(RAnalFunction *fcn) {
 
 R_API ut64 r_anal_fcn_size_from_entry(RAnalFunction *fcn) {
 	ensure_fcn_range (fcn);
-	return fcn->meta._max - fcn->addr;
+	return fcn->meta._min == UT64_MAX ? 0 : fcn->meta._max - fcn->addr;
 }
 
 R_API ut64 r_anal_fcn_realsize(const RAnalFunction *fcn) {
