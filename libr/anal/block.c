@@ -15,7 +15,7 @@
 
 #define unwrap(rbnode) container_of (rbnode, RAnalBlock, _rb)
 
-static void __max(RBNode *node) {
+static void __max_end(RBNode *node) {
 	RAnalBlock *block = unwrap (node);
 	block->_max_end = block->addr + block->size;
 	int i;
@@ -328,7 +328,7 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 	if (size == 0) {
 		if (r_list_empty (intersecting)) {
 			RAnalBlock *newblock = block_new (anal, addr, size);
-			r_rbtree_aug_insert (&anal->bb_tree, &newblock->addr, &newblock->_rb, __bb_addr_cmp, NULL, __max);
+			r_rbtree_aug_insert (&anal->bb_tree, &newblock->addr, &newblock->_rb, __bb_addr_cmp, NULL, __max_end);
 			r_list_push (ret, newblock);
 		}
 	} else {
@@ -349,7 +349,7 @@ R_API RList *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size) {
 				cur = insect->addr + insect->size;
 			}
 			if (newblock) {
-				r_rbtree_aug_insert (&anal->bb_tree, &newblock->addr, &newblock->_rb, __bb_addr_cmp, NULL, __max);
+				r_rbtree_aug_insert (&anal->bb_tree, &newblock->addr, &newblock->_rb, __bb_addr_cmp, NULL, __max_end);
 				r_list_push (ret, newblock);
 			}
 			if (insect) {
@@ -371,7 +371,7 @@ R_API RAnalBlock *r_anal_block_create_atomic(RAnal *anal, ut64 addr, ut64 size) 
 	if (!block) {
 		return NULL;
 	}
-	r_rbtree_aug_insert (&anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max);
+	r_rbtree_aug_insert (&anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
 	return block;
 }
 
@@ -402,7 +402,7 @@ R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size) {
 
 	// Do the actual resize
 	block->size = size;
-	r_rbtree_aug_update_sum (block->anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max);
+	r_rbtree_aug_update_sum (block->anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
 	r_anal_block_check_invariants (block->anal);
 }
 
@@ -429,10 +429,10 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 		}
 	}
 
-	r_rbtree_aug_delete (&block->anal->bb_tree, &block->addr, __bb_addr_cmp, NULL, NULL, NULL, __max);
+	r_rbtree_aug_delete (&block->anal->bb_tree, &block->addr, __bb_addr_cmp, NULL, NULL, NULL, __max_end);
 	block->addr = addr;
 	block->size = size;
-	r_rbtree_aug_insert (&block->anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max);
+	r_rbtree_aug_insert (&block->anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
 	return true;
 }
 
@@ -519,7 +519,7 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	bbi->conditional = false;
 
 	// insert the second block into the tree
-	r_rbtree_aug_insert (&anal->bb_tree, &bb->addr, &bb->_rb, __bb_addr_cmp, NULL, __max);
+	r_rbtree_aug_insert (&anal->bb_tree, &bb->addr, &bb->_rb, __bb_addr_cmp, NULL, __max_end);
 
 	// insert the second block into all functions of the first
 	RListIter *iter;
@@ -590,7 +590,7 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 	a->fail = b->fail;
 
 	// kill b completely
-	r_rbtree_aug_delete (&a->anal->bb_tree, &b->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max);
+	r_rbtree_aug_delete (&a->anal->bb_tree, &b->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 
 	// invalidate ranges of a's functions
 	r_list_foreach (a->fcns, iter, fcn) {
@@ -611,7 +611,7 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 		D eprintf("unref bb %d\n", bb->ref);
 		assert (!bb->fcns || r_list_empty (bb->fcns)); // on
 		D eprintf("unref2 bb %d\n", bb->ref);
-		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max);
+		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 	}
 }
 
