@@ -101,7 +101,6 @@ EXPECT=<<EOF
 | 0x00000f82      019a           ldr r2, [sp + var_130h]               ; JNINativeInterface.reserved0
 | 0x0000100e      d358           ldr r3, [r2, r3]                      ; JNINativeInterface.GetStringLength
 | 0x00001012      019a           ldr r2, [sp + var_130h]               ; JNINativeInterface.reserved0
-| 0x00001040      439a           ldr r2, [sp + var_28h]                ; JNINativeInterface.reserved0
 | 0x00001066      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
 | 0x00001114      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
 | 0x0000112e      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
