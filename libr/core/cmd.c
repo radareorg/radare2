@@ -80,6 +80,11 @@ R_API void r_load_panels_layout(RCore *core, const char *_name);
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon, bool *tmpseek);
 
+static int bb_cmpaddr(const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
+	return (a->addr - b->addr);
+}
+
 static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_quit.c"
 #include "cmd_hash.c"

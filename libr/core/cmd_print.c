@@ -5705,6 +5705,7 @@ static int cmd_print(void *data, const char *input) {
 						r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0, pj);
 						free (loc_buf);
 					}
+					r_list_sort (f->bbs, bb_cmpaddr);
 					r_list_foreach (f->bbs, locs_it, b) {
 
 						ut8 *buf = malloc (b->size);

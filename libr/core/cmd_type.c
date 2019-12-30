@@ -824,11 +824,6 @@ beach:
 	return;
 }
 
-static int bb_cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
-	return (a->addr - b->addr);
-}
-
 R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
