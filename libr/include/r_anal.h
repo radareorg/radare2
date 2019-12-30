@@ -1614,8 +1614,7 @@ R_API int r_anal_fcn_count_edges(const RAnalFunction *fcn, int *ebbs);
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr);
 R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type);
-R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type);
-R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type);
+R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type); // use r_anal_function_get_at/r_anal_function_get_in
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);
 R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name);
 R_API void r_anal_fcn_rename(RAnalFunction *f, const char *newName);

@@ -1036,7 +1036,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			eprintf ("Cannot find function\n");
 		}
 	} else if (tgt_addr != UT64_MAX) {
-		RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, tgt_addr, R_ANAL_FCN_TYPE_NULL);
+		RAnalFunction *fcn = r_anal_function_get_at (core->anal, tgt_addr);
 		RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);
 		if (fcn) {
 			if (name) {
@@ -2349,7 +2349,7 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 		fcnaddr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 	}
 	// also get by name!!
-	fcn = r_anal_get_fcn_at (core->anal, fcnaddr, 0);
+	fcn = r_anal_function_get_at (core->anal, fcnaddr);
 //eprintf ("AT %llx = %p\n", fcnaddr, fcn);
 	if (fcn) {
 		if (!r_anal_fcn_add_bb (core->anal, fcn, addr, size, jump, fail, type, diff))
@@ -2531,7 +2531,7 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 	r_return_val_if_fail (core && _name, false);
 	char *name = getFunctionName (core, addr, _name, prefix);
 	// RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
-	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
+	RAnalFunction *fcn = r_anal_function_get_at (core->anal, addr);
 	if (fcn) {
 		free (fcn->name);
 		fcn->name = name;
@@ -3815,7 +3815,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
 					/* use recursivity here */
 #if 1
-					RAnalFunction *f = r_anal_get_fcn_at (core->anal, ref->addr, 0);
+					RAnalFunction *f = r_anal_function_get_at (core->anal, ref->addr);
 					if (f) {
 						RListIter *iter;
 						RAnalRef *ref;
@@ -3838,7 +3838,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 							r_anal_fcn_resize (core->anal, f, addr - fcn->addr);
 							r_core_anal_fcn (core, ref->addr, fcn->addr,
 									R_ANAL_REF_TYPE_CALL, depth);
-							f = r_anal_get_fcn_at (core->anal, fcn->addr, 0);
+							f = r_anal_function_get_at (core->anal, fcn->addr);
 						}
 						if (!f) {
 							eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
@@ -6807,7 +6807,7 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 }
 
 static void cmd_anal_ucall_ref (RCore *core, ut64 addr) {
-	RAnalFunction * fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	RAnalFunction * fcn = r_anal_function_get_at (core->anal, addr);
 	if (fcn) {
 		r_cons_printf (" ; %s", fcn->name);
 	} else {
@@ -9144,7 +9144,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		RListIter *it;
 		if (off && *off) {
 			ut64 addr = r_num_math (NULL, off);
-			fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+			fcn = r_anal_function_get_at (core->anal, core->offset);
 			if (fcn) {
 				r_core_link_stroff (core, fcn);
 			} else {
@@ -9653,7 +9653,7 @@ bool go_on = true;
 	const char *fcn_name = NULL;
 	RAnalFunction *fcn;
 	if (go_on) {
-		fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
+		fcn = r_anal_function_get_at (core->anal, pcv);
 		if (fcn) {
 			fcn_name = fcn->name;
 		} else {

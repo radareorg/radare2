@@ -3045,7 +3045,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		return 0;
 	}
 	if (*rad == '.') {
-		RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+		RAnalFunction *fcn = r_anal_function_get_at (core->anal, core->offset);
 		__fcn_print_default (core, fcn, false);
 		return 0;
 	}
@@ -4330,8 +4330,8 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	ut64 max = 0;
 	int first = 1;
 	RAnalBlock *bb;
-	RAnalFunction *f1 = r_anal_get_fcn_at (core->anal, addr, 0);
-	RAnalFunction *f2 = r_anal_get_fcn_at (core->anal, addr2, 0);
+	RAnalFunction *f1 = r_anal_function_get_at (core->anal, addr);
+	RAnalFunction *f2 = r_anal_function_get_at (core->anal, addr2);
 	RAnalFunction *f3 = NULL;
 	if (!f1 || !f2) {
 		eprintf ("Cannot find function\n");
@@ -5478,7 +5478,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 			// big depth results on infinite loops :( but this is a different issue
 			r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 3);
 
-			f = r_anal_get_fcn_at (core->anal, addr, 0);
+			f = r_anal_function_get_at (core->anal, addr);
 			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
 				continue;
 			}

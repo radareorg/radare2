@@ -3724,7 +3724,7 @@ reread:
 			if (input[1]) {
 				addr = r_num_math (core->num, input + 2);
 			} else {
-				RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, 0);
+				RAnalFunction *fcn = r_anal_function_get_at (core->anal, addr);
 				if (fcn) {
 					addr = fcn->addr;
 				} else {

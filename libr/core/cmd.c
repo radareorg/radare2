@@ -4027,7 +4027,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		{
 			RListIter *iter;
 			RAnalBlock *bb;
-			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+			RAnalFunction *fcn = r_anal_function_get_at (core->anal, core->offset);
 			int bs = core->blocksize;
 			if (fcn) {
 				r_list_sort (fcn->bbs, bb_cmp);
@@ -4074,7 +4074,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RListIter *iter;
 			RAnalBlock *bb;
 			int i;
-			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+			RAnalFunction *fcn = r_anal_function_get_at (core->anal, core->offset);
 			if (fcn) {
 				r_list_sort (fcn->bbs, bb_cmp);
 				r_list_foreach (fcn->bbs, iter, bb) {

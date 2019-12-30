@@ -505,7 +505,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			if (!off) {
 				off = core->offset;
 			}
-			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, off, 0);
+			RAnalFunction *fcn = r_anal_function_get_at (core->anal, off);
 			if (fcn) {
 				if (ok) {
 					*ok = true;

@@ -503,7 +503,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-	RAnalFunction *fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0); // TODO: Does this still make sense?
+	RAnalFunction *fcn_at_addr = r_anal_function_get_at (anal, addr); // TODO: Does this still make sense?
 	if (fcn_at_addr && fcn_at_addr != fcn) {
 		// eprintf ("WIP: function found at 0x%08"PFMT64x" from 0x%08"PFMT64x"\n", fcn_at_addr, addr);
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
@@ -1052,7 +1052,7 @@ repeat:
 			(void) r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
 
 			if (r_anal_noreturn_at (anal, op.ptr)) {
-				RAnalFunction *f = r_anal_get_fcn_at (anal, op.ptr, 0);
+				RAnalFunction *f = r_anal_function_get_at (anal, op.ptr);
 				if (f) {
 					f->is_noreturn = true;
 				}
@@ -1065,7 +1065,7 @@ repeat:
 			(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
 
 			if (r_anal_noreturn_at (anal, op.jump)) {
-				RAnalFunction *f = r_anal_get_fcn_at (anal, op.jump, 0);
+				RAnalFunction *f = r_anal_function_get_at (anal, op.jump);
 				if (f) {
 					f->is_noreturn = true;
 				}
@@ -1739,54 +1739,6 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	}
 
 	return true;
-}
-
-R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {
-	return r_anal_function_get_at (anal, addr);
-#if 0
-	// mark blocks as entrypoints to functions? is this
-	RAnalBlock *bb = r_anal_get_block (anal, addr);
-	if (bb) {
-		// eprintf ("FAST FAILURE %p\n", bb->fcns);
-		return r_list_first (bb->fcns);
-	}
-#if 0
-	// Linear scan
-	RAnalFunction *fcn, *ret = NULL;
-	RListIter *iter;
-	if (type == R_ANAL_FCN_TYPE_ROOT) {
-		r_list_foreach (anal->fcns, iter, fcn) {
-			if (addr == fcn->addr) {
-				return fcn;
-			}
-		}
-		return NULL;
-	}
-	r_list_foreach (anal->fcns, iter, fcn) {
-		if (!type || (fcn->type & type)) {
-			if (addr == fcn->addr) {
-				ret = fcn;
-			}
-		}
-	}
-	return ret;
-#else
-	// Interval tree query
-	RAnalFunction *fcn;
-	FcnTreeIter it;
-	if (type == R_ANAL_FCN_TYPE_ROOT) {
-		return _fcn_addr_tree_find_addr (anal, addr);
-	}
-	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
-		if (!type || (fcn && fcn->type & type)) {
-		//	if (addr == fcn->addr) {
-				return fcn;
-		//	}
-		}
-	}
-	return NULL;
-#endif
-#endif
 }
 
 R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr) {

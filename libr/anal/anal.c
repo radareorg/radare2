@@ -711,7 +711,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 		return true;
 	}
 	/* XXX this is very slow */
-	RAnalFunction *f = r_anal_get_fcn_at (anal, addr, 0);
+	RAnalFunction *f = r_anal_function_get_at (anal, addr);
 	if (f) {
 		if (r_anal_noreturn_at_name (anal, f->name)) {
 			return true;
