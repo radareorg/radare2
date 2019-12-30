@@ -2024,7 +2024,7 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 			} else {
 				ds->pre = DS_PRE_FCN_MIDDLE;
 			}
-		} else if (r_anal_fcn_max_addr (f) - ds->analop.size == ds->at) {
+		} else if (r_anal_fcn_max_addr (f) - ds->analop.size == ds->at && f->addr == r_anal_fcn_min_addr (f)) {
 			ds->pre = DS_PRE_FCN_TAIL;
 		} else if (r_anal_fcn_is_in_offset (f, ds->at)) {
 			ds->pre = DS_PRE_FCN_MIDDLE;
