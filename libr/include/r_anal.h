@@ -1492,10 +1492,10 @@ R_API bool r_anal_function_add(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalFunction *r_anal_function_create(RAnal *anal, const char *name, ut64 addr);
 
 // returns all functions that have a basic block containing the given address
-R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr);
+R_API RList *r_anal_function_get_in(RAnal *anal, ut64 addr);
 
-// returns the function that has its entrypoint at addr
-R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
+// returns the function that has its entrypoint at addr or NULL
+R_API RAnalFunction *r_anal_function_get_at(RAnal *anal, ut64 addr);
 
 R_API bool r_anal_function_delete(RAnalFunction *fcn);
 

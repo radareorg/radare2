@@ -17,7 +17,7 @@ static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	return true;
 }
 
-R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr) {
+R_API RList *r_anal_function_get_in(RAnal *anal, ut64 addr) {
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
@@ -143,7 +143,7 @@ R_API bool r_anal_function_delete(RAnalFunction *fcn) {
 	return r_list_delete_data (fcn->anal->fcns, fcn);
 }
 
-R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
+R_API RAnalFunction *r_anal_function_get_at(RAnal *anal, ut64 addr) {
 	bool found = false;
 	RAnalFunction *f = ht_up_find (anal->ht_addr_fun, addr, &found);
 	if (f && found) {

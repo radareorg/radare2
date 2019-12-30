@@ -1469,7 +1469,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 
 R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type) {
 #if 1
-	return r_anal_get_functions_in (anal, addr);
+	return r_anal_function_get_in (anal, addr);
 #else
 	RList *list = r_list_newf (NULL);
 	// Interval tree query
@@ -1513,7 +1513,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 
 #define BBAPI 1
 #if BBAPI
-	RList *list = r_anal_get_functions_in (anal, addr);
+	RList *list = r_anal_function_get_in (anal, addr);
 	RAnalFunction *ret = NULL;
 	if (list && !r_list_empty (list)) {
 		if (type == R_ANAL_FCN_TYPE_ROOT) {
@@ -1742,7 +1742,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 }
 
 R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {
-	return r_anal_get_function_at (anal, addr);
+	return r_anal_function_get_at (anal, addr);
 #if 0
 	// mark blocks as entrypoints to functions? is this
 	RAnalBlock *bb = r_anal_get_block (anal, addr);
