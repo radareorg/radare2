@@ -213,6 +213,7 @@ static int handle_bb_cf_recursive_descent(RAnal *anal, RAnalState *state) {
 				jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
 				if (jmp_list) {
 					bb->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+					r_list_free (jmp_list);
 				}
 				if (bb->jumpbb) {
 					bb->jump = bb->jumpbb->addr;
@@ -241,6 +242,7 @@ static int handle_bb_cf_recursive_descent(RAnal *anal, RAnalState *state) {
 				jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
 				if (jmp_list) {
 					bb->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+					r_list_free (jmp_list);
 				}
 				if (bb->jumpbb) {
 					bb->jump = bb->jumpbb->addr;
@@ -260,6 +262,7 @@ static int handle_bb_cf_recursive_descent(RAnal *anal, RAnalState *state) {
 				jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->fail );
 				if (jmp_list) {
 					bb->failbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+					r_list_free (jmp_list);
 				}
 				if (bb->failbb) {
 					bb->fail = bb->failbb->addr;
@@ -299,6 +302,7 @@ static int handle_bb_cf_recursive_descent(RAnal *anal, RAnalState *state) {
 						jmp_list = r_anal_ex_perform_analysis (anal, state, caseop->jump );
 						if (jmp_list) {
 							caseop->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+							r_list_free (jmp_list);
 						}
 						if (state->done == 1) {
 							IFDBG eprintf (" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
@@ -489,6 +493,7 @@ static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 		r_anal_fcn_set_size (fcn, code_length);
 #endif
 	}
+	r_anal_state_free (state);
 	return result;
 }
 
@@ -536,13 +541,13 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 
 static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	// deallocate niceties
-	r_list_free (fcn->bbs);
-	fcn->bbs = r_list_newf ((RListFree)r_anal_block_unref);
+	while (!r_list_empty (fcn->bbs)) {
+		r_anal_function_block_remove (fcn, r_list_first (fcn->bbs));
+	}
 	java_new_method (fcn->addr);
 	state->current_fcn = fcn;
-	// Not a resource leak.  Basic blocks should be stored in the state->fcn
-	// TODO: ? RList *bbs =
-	r_anal_ex_perform_analysis (anal, state, fcn->addr);
+	RList *bbs = r_anal_ex_perform_analysis (anal, state, fcn->addr);
+	r_list_free (bbs);
 	return state->anal_ret_val;
 }
 

@@ -15,6 +15,7 @@
 
 static void kv_anal_bb_free(HtUPKv *kv) {
 	// TODO r_anal_bb_free (kv->value);
+	r_anal_block_unref (kv->value);
 }
 
 R_API RAnalState * r_anal_state_new(ut64 start, ut8* buffer, ut64 len) {
@@ -31,7 +32,7 @@ R_API RAnalState * r_anal_state_new(ut64 start, ut8* buffer, ut64 len) {
 	state->current_fcn = NULL;
 	state->ht = ht_up_new (NULL, (HtUPKvFreeFunc)kv_anal_bb_free, NULL);
 	state->ht_sz = 512;
-	state->bbs = r_list_new (); // TOOD: unref? r_list_newf ((RListFree)r_anal_bb_free);
+	state->bbs = r_list_newf ((RListFree)r_anal_block_unref);
 	state->max_depth = 50;
 	state->current_depth = 0;
 	return state;
@@ -48,7 +49,9 @@ R_API void r_anal_state_insert_bb(RAnalState* state, RAnalBlock *bb) {
 	if (!r_anal_state_search_bb (state, bb->addr) && state->current_fcn) {
 		r_anal_function_block_add (state->current_fcn, bb);
 		state->bytes_consumed += state->current_bb->op_sz;
+		r_anal_block_ref (bb);
 		if (!ht_up_insert (state->ht, bb->addr, bb)) {
+			r_anal_block_unref (bb);
 			eprintf ("Inserted bb 0x%04"PFMT64x" failure\n", bb->addr);
 		}
 	}

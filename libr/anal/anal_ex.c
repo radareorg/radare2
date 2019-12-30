@@ -174,16 +174,17 @@ R_API RList* r_anal_ex_perform_analysis(RAnal *anal, RAnalState *state, ut64 add
 R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr ) {
 	ut64 consumed_iter = 0;
 	ut64 bytes_consumed = 0, len = r_anal_state_get_len (state, addr);
-	RAnalBlock *pcurrent_bb   = state->current_bb, *past_bb = NULL;
+	RAnalBlock *past_bb = NULL;
 	RAnalOp *pcurrent_op = state->current_op;
 	ut64 backup_addr = state->current_addr;
 	state->current_addr = addr;
 	RList *bb_list = r_list_newf ((RListFree)r_anal_block_unref);
-	bb_list->free = NULL; // avoid dblfree
 
 	if (state->done) {
 		return bb_list;
 	}
+
+	RAnalBlock *prev_current_bb = state->current_bb;
 	state->current_bb = NULL;
 	state->current_op = NULL;
 
@@ -224,7 +225,10 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 		//state->current_bb is shared in two list and one ht!!! 
 		//source of UAF this should be rewritten to avoid such errors 
 		r_anal_state_insert_bb (state, state->current_bb);
+
+		r_anal_block_ref (state->current_bb);
 		r_list_append (bb_list, state->current_bb);
+
 		r_anal_ex_perform_post_anal_bb_cb (anal, state, state->current_addr);
 		if (state->done) {
 			break;
@@ -244,16 +248,23 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 		}
 		consumed_iter = 0;
 	}
+
+	if (state->current_bb) {
+		r_anal_block_unref (state->current_bb);
+	}
 	r_anal_op_free (state->current_op);
 	r_anal_ex_perform_post_anal (anal, state, addr);
 	state->current_op = pcurrent_op;
-	state->current_bb = pcurrent_bb;
+	state->current_bb = prev_current_bb;
 	state->current_addr = backup_addr;
 	return bb_list;
 }
 
 R_API RAnalBlock *r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalOp *op) {
 	RAnalBlock *block = r_anal_block_create_atomic (anal, op->addr, op->size);
+	if (!block) {
+		return NULL;
+	}
 	block->type2 = op->type2;
 	block->type = r_anal_ex_map_anal_ex_to_anal_bb_type ( op->type2 );
 	block->fail = op->fail;
