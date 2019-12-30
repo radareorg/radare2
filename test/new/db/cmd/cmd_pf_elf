@@ -138,8 +138,9 @@ RUN
 
 NAME=Issue 5640 pfj produce wrong json
 FILE=../bins/elf/analysis/main
-EXPECT='[{"name":"","type":"elf_phdr","offset":64,"value":[{"name":"type","type":"E","offset":64,"value":6,"label":"PT_PHDR","enum":"elf_p_type"},{"name":"flags","type":"E","offset":68,"value":5,"label":"PF_Read_Exec","enum":"elf_p_flags"},{"name":"offset","type":"q","offset":72,"value":64},{"name":"vaddr","type":"q","offset":80,"value":4194368},{"name":"paddr","type":"q","offset":88,"value":4194368},{"name":"filesz","type":"q","offset":96,"value":448},{"name":"memsz","type":"q","offset":104,"value":448},{"name":"align","type":"q","offset":112,"value":8}]}]
-'
+EXPECT=<<EOF
+[{"name":"","type":"elf_phdr","offset":64,"value":[{"name":"type","type":"E","offset":64,"value":6,"label":"PT_PHDR","enum":"elf_p_type"},{"name":"flags","type":"E","offset":68,"value":5,"label":"PF_Read_Exec","enum":"elf_p_flags"},{"name":"offset","type":"q","offset":72,"value":64},{"name":"vaddr","type":"q","offset":80,"value":4194368},{"name":"paddr","type":"q","offset":88,"value":4194368},{"name":"filesz","type":"q","offset":96,"value":448},{"name":"memsz","type":"q","offset":104,"value":448},{"name":"align","type":"q","offset":112,"value":8}]}]
+EOF
 ARGS=-nn
 CMDS=<<EOF
 pfj {1}? (elf_phdr) @ 0x0000000000000040

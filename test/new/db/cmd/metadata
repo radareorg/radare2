@@ -433,8 +433,9 @@ RUN
 
 NAME=Csj ascii/latin1
 FILE=../bins/pe/testapp-msvc64.exe
-EXPECT='[{"offset":5368799392,"type":"Cs","name":"bGF0aW4xIGdhdGU6IM67q84=","enc":"latin1","ascii":false},{"offset":5368799416,"type":"Cs","name":"ICAtLSBpbiBDb25FbXUsIHJ1biBgY2hjcCAyODU5MWAgdG8gc2VlIHRoZSBnYXRlLg==","enc":"latin1","ascii":true}]
-'
+EXPECT=<<EOF
+[{"offset":5368799392,"type":"Cs","name":"bGF0aW4xIGdhdGU6IM67q84=","enc":"latin1","ascii":false},{"offset":5368799416,"type":"Cs","name":"ICAtLSBpbiBDb25FbXUsIHJ1biBgY2hjcCAyODU5MWAgdG8gc2VlIHRoZSBnYXRlLg==","enc":"latin1","ascii":true}]
+EOF
 ARGS=-z
 CMDS=<<EOF
 Csa @ 0x1400160a0
@@ -483,10 +484,11 @@ RUN
 
 NAME=Csg, Csa and Csj
 FILE=../bins/pe/testapp-msvc64.exe
-EXPECT='[{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"iz","ascii":true}]
+EXPECT=<<EOF
+[{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"iz","ascii":true}]
 [{"offset":5368799256,"type":"Cs","name":"CQ==","enc":"latin1","ascii":true}]
 [{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtoQ0K","enc":"latin1","ascii":false}]
-'
+EOF
 ARGS=-e bin.str.purge=all,!0x140016018
 CMDS=<<EOF
 s 0x140016018
@@ -529,9 +531,10 @@ RUN
 
 NAME=Cs8 and Csj
 FILE=../bins/elf/strenc
-EXPECT='[{"offset":4203007,"type":"Cs","name":"dXRmOD4gXFx1MDBhMlxcdTIwYWNcXFUwMDAxMDM0OCBpbiB5ZWxsb3c6XGVbMzNtIMKi4oKs8JCNiCBcZVswbVxu","enc":"iz","ascii":false}]
+EXPECT=<<EOF
+[{"offset":4203007,"type":"Cs","name":"dXRmOD4gXFx1MDBhMlxcdTIwYWNcXFUwMDAxMDM0OCBpbiB5ZWxsb3c6XGVbMzNtIMKi4oKs8JCNiCBcZVswbVxu","enc":"iz","ascii":false}]
 [{"offset":4203007,"type":"Cs","name":"dXRmOD4gXHUwMGEyXHUyMGFjXFUwMDAxMDM0OCBpbiB5ZWxsb3c6G1szM20gwqLigqzwkI2IIBtbMG0K","enc":"utf8","ascii":false}]
-'
+EOF
 ARGS=-e bin.str.purge=all,!0x004021ff
 CMDS=<<EOF
 s 0x004021ff
@@ -676,26 +679,30 @@ RUN
 
 NAME=Cd. (#10856)
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 s 0x50
 Cd 4 2
 Cd.
 s 0x100
 Cd. @ 0x50
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 4
 4
+EOF
 RUN
 
 NAME=C.
 FILE=../bins/elf/arm1.bin
-CMDS=<<EXPECT
+CMDS=<<EOF
 s 0x0007a23c
 C.
 s 0x00083fc4 
 C.
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x0007a23c ascii[13] "match_symbol"
 0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
 0x00083fc4 data Cd 4
+EOF
 RUN

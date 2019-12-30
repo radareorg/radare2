@@ -6,7 +6,7 @@ a "jne 0x14" 7512
 a "jnz 0x94" 660f858d000000
 a "jnz -0x94" 660f8565ffffff
 a "jno -0x34" 71ca
-d "jmp 0xfec50" e95bec f000:fff2
+dB "jmp 0xfec50" e95bec f000:fff2
 d "jmp 0x1fec50" e95bec 0x001ffff2
 a "mov al, [0xbeef]" a0efbe
 a "mov ax, [0xbeef]" a1efbe

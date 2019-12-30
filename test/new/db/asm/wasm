@@ -13,4 +13,9 @@ d "drop" 1a
 d "select" 1b
 d "get_local 7" 2007
 d "call 1881" 10d90e
-d "get_local 0" 2000 "get_local 1" 2001 "get_local 2" 2002 "i64.extend_u/i32" ad "i64.const 32" 4220
+d "get_local 0" 2000
+d "get_local 1" 2001
+d "get_local 2" 2002
+dB "i64.extend_u/i32"
+d "i64.const 32" 4220
+aB "i64.const 32" 4220

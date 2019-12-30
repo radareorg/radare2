@@ -97,7 +97,8 @@ RUN
 
 NAME=pij asm.midflags=0
 FILE=malloc://1024
-EXPECT='[
+EXPECT=<<EOF
+[
   {
     "offset": 0,
     "esil": "rbp,8,rsp,-,=[8],8,rsp,-=",
@@ -163,7 +164,7 @@ EXPECT='[
     "type2_num": 0
   }
 ]
-'
+EOF
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
@@ -177,7 +178,8 @@ RUN
 
 NAME=pij asm.midflags=2
 FILE=malloc://1024
-EXPECT='[
+EXPECT=<<EOF
+[
   {
     "offset": 0,
     "esil": "rbp,8,rsp,-,=[8],8,rsp,-=",
@@ -246,7 +248,7 @@ EXPECT='[
     "type2_num": 0
   }
 ]
-'
+EOF
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
