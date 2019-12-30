@@ -910,7 +910,7 @@ error:
 	// ugly hack to free fcn
 	if (fcn) {
 		if (!r_anal_fcn_realsize (fcn) || fcn->addr == UT64_MAX) {
-			r_anal_fcn_free (fcn);
+			r_anal_function_free (fcn);
 			fcn = NULL;
 		} else {
 			// TODO: mark this function as not properly analyzed

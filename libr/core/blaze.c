@@ -237,7 +237,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	}
 	if (!r_anal_function_add (core->anal, f)) {
 		// eprintf ("Failed to insert function\n");
-		r_anal_fcn_free (f);
+		r_anal_function_free (f);
 		//TODO free not added function
 		return;
 	}

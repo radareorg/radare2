@@ -206,37 +206,6 @@ R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
 	return true;
 }
 
-R_API void r_anal_fcn_free(void *_fcn) {
-	RAnalFunction *fcn = _fcn;
-	if (!_fcn) {
-		return;
-	}
-
-	RAnalBlock *block;
-	RListIter *iter;
-	r_anal_block_check_invariants (fcn->anal);
-	r_list_foreach (fcn->bbs, iter, block) {
-		r_list_delete_data (block->fcns, fcn);
-		r_anal_block_unref (block);
-	}
-	r_list_free (fcn->bbs);
-	r_anal_block_check_invariants (fcn->anal);
-
-	RAnal *anal = fcn->anal;
-	ht_up_delete (anal->ht_addr_fun, fcn->addr);
-	ht_pp_delete (anal->ht_name_fun, fcn->name);
-	r_anal_fcn_tree_delete (anal, fcn);
-
-	free (fcn->name);
-	free (fcn->attr);
-	r_list_free (fcn->fcn_locs);
-	fcn->bbs = NULL;
-	free (fcn->fingerprint);
-	r_anal_diff_free (fcn->diff);
-	free (fcn->args);
-	free (fcn);
-}
-
 // Create a new 0-sized basic block inside the function
 static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock *bb = r_anal_block_create (anal, addr, 0);

@@ -5281,7 +5281,7 @@ static int cmd_print(void *data, const char *input) {
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 			if (f) {
 				r_core_print_disasm_instructions (core,
-					r_anal_fcn_linear_size (f), 0);
+					r_anal_fcn_linear_size ((RAnalFunction *)f), 0);
 				break;
 			}
 		}

@@ -754,10 +754,9 @@ static int cmpname (const void *_a, const void *_b) {
 	return (int)strcmp (a->name, b->name);
 }
 
-static int cmpsize (const void *_a, const void *_b) {
-	const RAnalFunction *a = _a, *b = _b;
-	ut64 sa = (int)r_anal_fcn_linear_size (a);
-	ut64 sb = (int)r_anal_fcn_linear_size (b);
+static int cmpsize (const void *a, const void *b) {
+	ut64 sa = (int)r_anal_fcn_linear_size ((RAnalFunction *)a);
+	ut64 sb = (int)r_anal_fcn_linear_size ((RAnalFunction *)b);
 	return (sa > sb)? -1: (sa < sb)? 1 : 0;
 }
 
