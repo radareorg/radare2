@@ -186,6 +186,8 @@ R_API void r_anal_block_check_invariants(RAnal *anal) {
 
 // TODO: this can be removed just before merging too
 R_API void r_anal_block_check_leaks(RAnal *anal) {
+#define LEAKCHECK 0
+#if LEAKCHECK
 	RBIter iter;
 	RAnalBlock *block;
 	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, _rb) {
@@ -193,6 +195,7 @@ R_API void r_anal_block_check_leaks(RAnal *anal) {
 			eprintf ("LEEEEEEEEEEEEEAK!!! bb: 0x%"PFMT64x"\n", block->addr);
 		}
 	}
+#endif
 }
 
 void __block_free_rb(RBNode *node, void *user) {
