@@ -542,7 +542,7 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	// deallocate niceties
 	while (!r_list_empty (fcn->bbs)) {
-		r_anal_function_block_remove (fcn, r_list_first (fcn->bbs));
+		r_anal_function_remove_block (fcn, r_list_first (fcn->bbs));
 	}
 	java_new_method (fcn->addr);
 	state->current_fcn = fcn;
@@ -645,7 +645,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 					// XXX - TO Stop or not to Stop ??
 				}
 				//r_listrange_add (anal->fcnstore, fcn);
-				r_anal_function_add (anal, fcn);
+				r_anal_add_function (anal, fcn);
 			}
 		} // End of methods loop
 	}// end of bin_objs list loop

@@ -9,8 +9,8 @@
 
 R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 	RList *la, *lb;
-	RAnalFunction *fa = r_anal_function_get_at (c->anal, addr);
-	RAnalFunction *fb = r_anal_function_get_at (c->anal, addr2);
+	RAnalFunction *fa = r_anal_get_function_at (c->anal, addr);
+	RAnalFunction *fb = r_anal_get_function_at (c->anal, addr2);
 	if (!fa || !fb) {
 		return false;
 	}

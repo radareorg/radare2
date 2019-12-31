@@ -47,7 +47,7 @@ R_API void r_anal_state_insert_bb(RAnalState* state, RAnalBlock *bb) {
 		return;
 	}
 	if (!r_anal_state_search_bb (state, bb->addr) && state->current_fcn) {
-		r_anal_function_block_add (state->current_fcn, bb);
+		r_anal_function_add_block (state->current_fcn, bb);
 		state->bytes_consumed += state->current_bb->op_sz;
 		r_anal_block_ref (bb);
 		if (!ht_up_insert (state->ht, bb->addr, bb)) {

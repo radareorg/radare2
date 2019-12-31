@@ -190,7 +190,7 @@ R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
 		if (bb->addr >= eof) {
 			// already called by r_list_delete r_anal_bb_free (bb);
 			// XXX ref/unref crash here r_list_delete (fcn->bbs, iter);
-			r_anal_function_block_remove (fcn, bb);
+			r_anal_function_remove_block (fcn, bb);
 			continue;
 		}
 		if (bb->addr + bb->size >= eof) {
@@ -208,11 +208,11 @@ R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
 
 // Create a new 0-sized basic block inside the function
 static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	RAnalBlock *bb = r_anal_block_create (anal, addr, 0);
+	RAnalBlock *bb = r_anal_create_block (anal, addr, 0);
 	if (!bb) {
 		return NULL;
 	}
-	r_anal_function_block_add (fcn, bb);
+	r_anal_function_add_block (fcn, bb);
 	bb->parent_stackptr = fcn->stack;
 	return bb;
 }
@@ -433,7 +433,7 @@ typedef struct {
 } leaddr_pair;
 
 static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
-	RList *intersecting = r_anal_block_get_in_list (anal, addr);
+	RList *intersecting = r_anal_get_blocks_in_list (anal, addr);
 	RListIter *iter;
 	RAnalBlock *bb;
 
@@ -503,7 +503,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-	RAnalFunction *fcn_at_addr = r_anal_function_get_at (anal, addr); // TODO: Does this still make sense?
+	RAnalFunction *fcn_at_addr = r_anal_get_function_at (anal, addr); // TODO: Does this still make sense?
 	if (fcn_at_addr && fcn_at_addr != fcn) {
 		// eprintf ("WIP: function found at 0x%08"PFMT64x" from 0x%08"PFMT64x"\n", fcn_at_addr, addr);
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
@@ -526,10 +526,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 #if TAKEOVER
 					while (!r_list_empty (existing_rec_block->fcns)) {
 						RAnalFunction *existing_fcn = r_list_first (existing_rec_block->fcns);
-						r_anal_function_block_remove (existing_fcn, existing_rec_block);
+						r_anal_function_remove_block (existing_fcn, existing_rec_block);
 					}
 #endif
-					r_anal_function_block_add (fcn, existing_rec_block);
+						r_anal_function_add_block (fcn, existing_rec_block);
 				}
 			}
 			r_list_free (blocks);
@@ -700,7 +700,7 @@ repeat:
 						ret = r_anal_fcn_bb (anal, fcn, handle_addr, depth);
 						eprintf ("(%s) 0x%08"PFMT64x"\n", handle, handle_addr);
 						if (bb->size == 0) {
-							r_anal_function_block_remove (fcn, bb);
+							r_anal_function_remove_block (fcn, bb);
 						}
 						r_anal_block_unref (bb);
 						bb = fcn_append_basic_block (anal, fcn, addr);
@@ -1054,7 +1054,7 @@ repeat:
 			(void) r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
 
 			if (r_anal_noreturn_at (anal, op.ptr)) {
-				RAnalFunction *f = r_anal_function_get_at (anal, op.ptr);
+				RAnalFunction *f = r_anal_get_function_at (anal, op.ptr);
 				if (f) {
 					f->is_noreturn = true;
 				}
@@ -1067,7 +1067,7 @@ repeat:
 			(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
 
 			if (r_anal_noreturn_at (anal, op.jump)) {
-				RAnalFunction *f = r_anal_function_get_at (anal, op.jump);
+				RAnalFunction *f = r_anal_get_function_at (anal, op.jump);
 				if (f) {
 					f->is_noreturn = true;
 				}
@@ -1234,7 +1234,7 @@ beach:
 	r_anal_op_fini (&op);
 	free (last_reg_mov_lea_name);
 	if (bb && bb->size == 0) {
-		r_anal_function_block_remove (fcn, bb);
+		r_anal_function_remove_block (fcn, bb);
 	}
 unrefbb:
 	r_anal_block_unref (bb);
@@ -1396,7 +1396,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 }
 
 R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int type, RAnalDiff *diff) {
-	RAnalFunction * fcn = r_anal_function_create (a, name, addr);
+	RAnalFunction * fcn = r_anal_create_function (a, name, addr);
 	return fcn != NULL;
 	// TODO: the code belw must be momved into function.c
 #if 0
@@ -1471,7 +1471,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 
 R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type) {
 #if 1
-	return r_anal_function_get_in (anal, addr);
+	return r_anal_get_functions_in (anal, addr);
 #else
 	RList *list = r_list_newf (NULL);
 	// Interval tree query
@@ -1515,7 +1515,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 
 #define BBAPI 1
 #if BBAPI
-	RList *list = r_anal_function_get_in (anal, addr);
+	RList *list = r_anal_get_functions_in (anal, addr);
 	RAnalFunction *ret = NULL;
 	if (list && !r_list_empty (list)) {
 		if (type == R_ANAL_FCN_TYPE_ROOT) {
@@ -1564,7 +1564,7 @@ static bool fcn_in_cb(RAnalBlock *block, void *user) {
 }
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr) {
 	// fcn_in_cb breaks with false if it finds the fcn
-	return !r_anal_block_get_in (fcn->anal, addr, fcn_in_cb, fcn);
+	return !r_anal_get_blocks_in (fcn->anal, addr, fcn_in_cb, fcn);
 }
 
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) {
@@ -1622,7 +1622,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 		return false;
 	}
 
-	RAnalBlock *block = r_anal_block_get_at (a, addr);
+	RAnalBlock *block = r_anal_get_block_at (a, addr);
 	if (block) {
 		r_anal_block_delete (block);
 		block = NULL;
@@ -1633,12 +1633,12 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 	if (is_x86) {
 		r_anal_fcn_invalidate_read_ahead_cache ();
 		fcn_recurse (a, fcn, addr, size, 1);
-		block = r_anal_block_get_at (a, addr);
+		block = r_anal_get_block_at (a, addr);
 		if (block) {
 			r_anal_block_set_size (block, size);
 		}
 	} else {
-		block = r_anal_block_create (a, addr, size);
+		block = r_anal_create_block (a, addr, size);
 	}
 
 	if (!block) {
@@ -1646,7 +1646,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 		return false;
 	}
 
-	r_anal_function_block_add (fcn, block);
+	r_anal_function_add_block (fcn, block);
 
 	block->jump = jump;
 	block->fail = fail;
@@ -1793,7 +1793,7 @@ R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut6
 
 R_API RAnalBlock *r_anal_fcn_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	r_return_val_if_fail (fcn && addr != UT64_MAX, NULL);
-	RAnalBlock *b = r_anal_block_get_at (anal, addr);
+	RAnalBlock *b = r_anal_get_block_at (anal, addr);
 	if (b) {
 		return b;
 	}

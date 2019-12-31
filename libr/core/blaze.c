@@ -44,7 +44,7 @@ static int __isdata(RCore *core, ut64 addr) {
 
 	bool block_exists = false;
 	// This will just set block_exists = true if there is any basic block at this addr
-	r_anal_block_get_in (core->anal, addr, __is_data_block_cb, &block_exists);
+	r_anal_get_blocks_in (core->anal, addr, __is_data_block_cb, &block_exists);
 	if (block_exists) {
 		return 1;
 	}
@@ -235,7 +235,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 		}
 		r_anal_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, 0, NULL);
 	}
-	if (!r_anal_function_add (core->anal, f)) {
+	if (!r_anal_add_function (core->anal, f)) {
 		// eprintf ("Failed to insert function\n");
 		r_anal_function_free (f);
 		//TODO free not added function

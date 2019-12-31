@@ -1454,7 +1454,7 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b);
 
 // Create one block covering the given range.
 // This will fail if the range overlaps any existing blocks.
-R_API RAnalBlock *r_anal_block_create(RAnal *anal, ut64 addr, ut64 size);
+R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size);
 
 // Manually delete a block and remove it from all its functions
 // If there are more references to it than from its functions only, it will not be removed immediately!
@@ -1466,11 +1466,11 @@ R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size);
 // This can fail (and return false) if there is already another block at the new addrress
 R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size);
 
-R_API RAnalBlock *r_anal_block_get_at(RAnal *anal, ut64 addr);
-R_API bool r_anal_block_get_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user);
-R_API RList *r_anal_block_get_in_list(RAnal *anal, ut64 addr);
-R_API void r_anal_blocks_get_intersect(RAnal *anal, ut64 addr, ut64 size, RAnalBlockCb cb, void *user);
-R_API RList *r_anal_block_get_intersect_list(RAnal *anal, ut64 addr, ut64 size);
+R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr);
+R_API bool r_anal_get_blocks_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user);
+R_API RList *r_anal_get_blocks_in_list(RAnal *anal, ut64 addr);
+R_API void r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size, RAnalBlockCb cb, void *user);
+R_API RList *r_anal_get_blocks_intersect_list(RAnal *anal, ut64 addr, ut64 size);
 
 // Call cb on every direct successor address of block
 // returns false iff the loop was breaked by cb
@@ -1491,21 +1491,21 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal);
 R_API void r_anal_function_free(void *fcn);
 
 // Add a function created with r_anal_function_new() to anal
-R_API bool r_anal_function_add(RAnal *anal, RAnalFunction *fcn);
+R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn);
 
-// Create a new function and add it to anal (r_anal_function_new()+r_anal_function_add())
-R_API RAnalFunction *r_anal_function_create(RAnal *anal, const char *name, ut64 addr);
+// Create a new function and add it to anal (r_anal_function_new()+r_anal_add_function())
+R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 addr);
 
 // returns all functions that have a basic block containing the given address
-R_API RList *r_anal_function_get_in(RAnal *anal, ut64 addr);
+R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr);
 
 // returns the function that has its entrypoint at addr or NULL
-R_API RAnalFunction *r_anal_function_get_at(RAnal *anal, ut64 addr);
+R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
 
 R_API bool r_anal_function_delete(RAnalFunction *fcn);
 
-R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb);
-R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb);
+R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb);
+R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb);
 
 
 /* anal.c */
@@ -1619,7 +1619,7 @@ R_API int r_anal_fcn_count_edges(const RAnalFunction *fcn, int *ebbs);
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr);
 R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type);
-R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type); // use r_anal_function_get_at/r_anal_function_get_in
+R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type); // use r_anal_get_function_at/r_anal_get_functions_in
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);
 R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name);
 R_API void r_anal_fcn_rename(RAnalFunction *f, const char *newName);

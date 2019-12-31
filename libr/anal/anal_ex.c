@@ -266,7 +266,7 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 }
 
 R_API RAnalBlock *r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalOp *op) {
-	RAnalBlock *block = r_anal_block_create (anal, op->addr, op->size);
+	RAnalBlock *block = r_anal_create_block (anal, op->addr, op->size);
 	if (!block) {
 		return NULL;
 	}

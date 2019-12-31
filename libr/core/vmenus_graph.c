@@ -180,7 +180,7 @@ static void __toggleSort (RCoreVisualViewGraph *status) {
 
 static void __reset_status(RCoreVisualViewGraph *status) {
 	status->addr = status->core->offset;
-	status->fcn = r_anal_function_get_at (status->core->anal, status->addr);
+	status->fcn = r_anal_get_function_at (status->core->anal, status->addr);
 	
 	status->mainCol = __fcns (status->core);
 	__sort (status, status->mainCol);

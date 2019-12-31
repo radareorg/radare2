@@ -850,7 +850,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 				r_anal_xrefs_set (core->anal, from, fcn->addr, reftype);
 			}
 			// XXX: this is wrong. See CID 1134565
-			r_anal_function_add (core->anal, fcn);
+			r_anal_add_function (core->anal, fcn);
 			if (has_next) {
 				ut64 addr = r_anal_fcn_max_addr (fcn);
 				RIOMap *map = r_io_map_get (core->io, addr);
@@ -925,7 +925,7 @@ error:
 				r_flag_set (core->flags, fcn->name, at, r_anal_fcn_linear_size (fcn));
 				r_flag_space_pop (core->flags);
 			}
-			r_anal_function_add (core->anal, fcn);
+			r_anal_add_function (core->anal, fcn);
 		}
 		if (fcn && has_next) {
 			ut64 newaddr = r_anal_fcn_max_addr (fcn);
@@ -3045,7 +3045,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		return 0;
 	}
 	if (*rad == '.') {
-		RAnalFunction *fcn = r_anal_function_get_at (core->anal, core->offset);
+		RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
 		__fcn_print_default (core, fcn, false);
 		return 0;
 	}
@@ -4330,8 +4330,8 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	ut64 max = 0;
 	int first = 1;
 	RAnalBlock *bb;
-	RAnalFunction *f1 = r_anal_function_get_at (core->anal, addr);
-	RAnalFunction *f2 = r_anal_function_get_at (core->anal, addr2);
+	RAnalFunction *f1 = r_anal_get_function_at (core->anal, addr);
+	RAnalFunction *f2 = r_anal_get_function_at (core->anal, addr2);
 	RAnalFunction *f3 = NULL;
 	if (!f1 || !f2) {
 		eprintf ("Cannot find function\n");
@@ -4371,7 +4371,7 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 				max = bb->addr + bb->size;
 			}
 		}
-		r_anal_function_block_add (f1, bb);
+			r_anal_function_add_block (f1, bb);
 	}
 	// TODO: import data/code/refs
 	// update size
@@ -5478,7 +5478,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 			// big depth results on infinite loops :( but this is a different issue
 			r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 3);
 
-			f = r_anal_function_get_at (core->anal, addr);
+			f = r_anal_get_function_at (core->anal, addr);
 			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
 				continue;
 			}

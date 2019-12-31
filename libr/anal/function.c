@@ -17,12 +17,12 @@ static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	return true;
 }
 
-R_API RList *r_anal_function_get_in(RAnal *anal, ut64 addr) {
+R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr) {
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
 	}
-	r_anal_block_get_in (anal, addr, get_functions_block_cb, list);
+	r_anal_get_blocks_in (anal, addr, get_functions_block_cb, list);
 	return list;
 }
 
@@ -105,7 +105,7 @@ R_API void r_anal_function_free(void *_fcn) {
 	free (fcn);
 }
 
-R_API bool r_anal_function_add(RAnal *anal, RAnalFunction *fcn) {
+R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	if (__fcn_exists (anal, fcn->name, fcn->addr)) {
 		return false;
 	}
@@ -122,7 +122,7 @@ R_API bool r_anal_function_add(RAnal *anal, RAnalFunction *fcn) {
 	return true;
 }
 
-R_API RAnalFunction *r_anal_function_create(RAnal *anal, const char *name, ut64 addr) {
+R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 addr) {
 	RAnalFunction *fcn = r_anal_function_new (anal);
 	if (!fcn) {
 		return NULL;
@@ -132,7 +132,7 @@ R_API RAnalFunction *r_anal_function_create(RAnal *anal, const char *name, ut64 
 		free (fcn->name);
 		fcn->name = strdup (name);
 	}
-	if (!r_anal_function_add (anal, fcn)) {
+	if (!r_anal_add_function (anal, fcn)) {
 		r_anal_function_free (fcn);
 		return NULL;
 	}
@@ -143,7 +143,7 @@ R_API bool r_anal_function_delete(RAnalFunction *fcn) {
 	return r_list_delete_data (fcn->anal->fcns, fcn);
 }
 
-R_API RAnalFunction *r_anal_function_get_at(RAnal *anal, ut64 addr) {
+R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
 	bool found = false;
 	RAnalFunction *f = ht_up_find (anal->ht_addr_fun, addr, &found);
 	if (f && found) {
@@ -152,7 +152,7 @@ R_API RAnalFunction *r_anal_function_get_at(RAnal *anal, ut64 addr) {
 	return NULL;
 }
 
-R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb) {
+R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	if (r_list_contains (bb->fcns, fcn)) {
 		return;
 	}
@@ -174,7 +174,7 @@ R_API void r_anal_function_block_add(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 }
 
-R_API void r_anal_function_block_remove(RAnalFunction *fcn, RAnalBlock *bb) {
+R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	r_list_delete_data (bb->fcns, fcn);
 
 	if (fcn->meta._min != UT64_MAX

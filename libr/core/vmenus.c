@@ -3798,7 +3798,7 @@ onemoretime:
 				r_sys_sleep (1);
 			}
 		} else if (tgt_addr != UT64_MAX) {
-			RAnalFunction *fcn = r_anal_function_get_at (core->anal, tgt_addr);
+			RAnalFunction *fcn = r_anal_get_function_at (core->anal, tgt_addr);
 			RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);
 			if (fcn) {
 				q = r_str_newf ("?i Rename function %s to;afn `yp` 0x%"PFMT64x,

@@ -557,7 +557,7 @@ static int module_match_buffer(RAnal *anal, const RFlirtModule *module,
 		// Once the first module function is found, we need to go through the module->public_functions
 		// list to identify the others. See flirt doc for more information
 
-		next_module_function = r_anal_function_get_at ((RAnal *) anal, address + flirt_func->offset);
+		next_module_function = r_anal_get_function_at ((RAnal *) anal, address + flirt_func->offset);
 		if (next_module_function) {
 			char *name;
 			int name_offs = 0;
