@@ -328,24 +328,19 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			RCore *core = dbg->corebind.core;
 			bool autoload_pdb = dbg->corebind.cfggeti (core, "pdb.autoload");
 			if (autoload_pdb) {
-				dbg->corebind.cmdf (core, "o %s 0x%p", ((PLIB_ITEM)(r->lib))->Path, ((PLIB_ITEM)(r->lib))->BaseOfDll);
-				char *o_res = dbg->corebind.cmdstrf (core, "o~+%s", ((PLIB_ITEM)(r->lib))->Path);
+				PLIB_ITEM lib = r->lib;
+				dbg->corebind.cmdf (core, "\"o \\\"%s\\\" 0x%p\"", lib->Path, lib->BaseOfDll);
+				char *o_res = dbg->corebind.cmdstrf (core, "o~+%s", lib->Name);
 				int fd = atoi (o_res);
 				free (o_res);
-				char *pdb_path = dbg->corebind.cmdstr (core, "i~pdb");
-				if (*pdb_path == 0) {
-					eprintf ("Failure...\n");
-					dbg->corebind.cmd (core, "i");
-				} else {
-					pdb_path = strchr (pdb_path, ' ') + 1;
+				if (fd) {
+					dbg->corebind.cmdf (core, "idpd");
 					dbg->corebind.cmdf (core, "idp");
+					dbg->corebind.cmdf (core, "o-%d", fd);
 				}
-				free (pdb_path);
-				dbg->corebind.cmdf (core, "o-%d", fd);
 			}
 			r_debug_info_free (r);
 		} else {
-			//eprintf ("Loading unknown library.\n");
 			r_cons_printf ("Loading unknown library.\n");
 			r_cons_flush ();
 		}

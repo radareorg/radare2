@@ -31,6 +31,7 @@ static int download(struct SPDBDownloader *pd) {
 	char *curl_cmd = NULL;
 	char *extractor_cmd = NULL;
 	char *abspath_to_archive = NULL;
+	char *abspath_to_file = NULL;
 	char *archive_name = NULL;
 	size_t archive_name_len = 0;
 	char *symbol_store_path = NULL;
@@ -64,13 +65,21 @@ static int download(struct SPDBDownloader *pd) {
 	user_agent = r_str_escape (opt->user_agent);
 	symbol_server = r_str_escape (opt->symbol_server);
 
+	abspath_to_archive = r_str_newf ("%s%s%s%s%s%s%s",
+			    symbol_store_path, R_SYS_DIR,
+			    dbg_file, R_SYS_DIR,
+			    guid, R_SYS_DIR,
+			    archive_name_escaped);
+
+	abspath_to_file = strdup (abspath_to_archive);
+	abspath_to_file[strlen (abspath_to_file) - 1] = 'b';
+	if (r_file_exists (abspath_to_file)) {
+		eprintf ("File already downloaded.\n");
+		return 1;
+	}
+
 	if (checkExtract () || opt->extract == 0) {
 		res = 1;
-		abspath_to_archive = r_str_newf ("%s%s%s%s%s%s%s",
-						    symbol_store_path, R_SYS_DIR,
-						    dbg_file, R_SYS_DIR,
-						    guid, R_SYS_DIR,
-						    archive_name_escaped);
 
 		curl_cmd = r_str_newf ("curl -sfLA \"%s\" \"%s/%s/%s/%s\" --create-dirs -o \"%s\"",
 		                       user_agent,
@@ -82,8 +91,6 @@ static int download(struct SPDBDownloader *pd) {
 #if __WINDOWS__
 		const char *cabextractor = "expand";
 		const char *format = "%s %s %s";
-		char *abspath_to_file = strdup (abspath_to_archive);
-		abspath_to_file[strlen (abspath_to_file) - 1] = 'b';
 
 		// extractor_cmd -> %1 %2 %3
 		// %1 - 'expand'
@@ -101,7 +108,7 @@ static int download(struct SPDBDownloader *pd) {
 		extractor_cmd = r_str_newf (format, cabextractor, abspath_to_dir, abspath_to_archive);
 		R_FREE (abspath_to_dir);
 #endif
-		eprintf ("Attempting to download compressed pdb in %s\n",abspath_to_archive);
+		eprintf ("Attempting to download compressed pdb in %s\n", abspath_to_archive);
 		if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
 			eprintf("curl exited with error %d\n", cmd_ret);
 			res = 0;
@@ -115,19 +122,12 @@ static int download(struct SPDBDownloader *pd) {
 			r_file_rm (abspath_to_archive);
 		}
 		R_FREE (curl_cmd);
-		R_FREE (abspath_to_archive);
 	}
 	if (res == 0) {
 		eprintf ("Falling back to uncompressed pdb\n");
 		res = 1;
-		archive_name[archive_name_len - 1] = 'b';
-		R_FREE (archive_name_escaped);
-		archive_name_escaped = r_str_escape (archive_name);
-		abspath_to_archive = r_str_newf("%s%s%s%s%s%s%s",
-		    symbol_store_path, R_SYS_DIR,
-		    dbg_file, R_SYS_DIR,
-		    guid, R_SYS_DIR,
-		    archive_name_escaped);
+
+		archive_name_escaped[strlen (archive_name_escaped) - 1] = 'b';
 
 		curl_cmd = r_str_newf ("curl -sfLA \"%s\" \"%s/%s/%s/%s\" --create-dirs -o \"%s\"",
 		                       opt->user_agent,
@@ -135,15 +135,16 @@ static int download(struct SPDBDownloader *pd) {
 		                       opt->dbg_file,
 		                       opt->guid,
 		                       archive_name_escaped,
-		                       abspath_to_archive);
-		eprintf ("Attempting to download uncompressed pdb in %s\n",abspath_to_archive);
+		                       abspath_to_file);
+		eprintf ("Attempting to download uncompressed pdb in %s\n", abspath_to_file);
 		if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
 			eprintf("curl exited with error %d\n", cmd_ret);
 			res = 0;
 		}
 		R_FREE (curl_cmd);
-		R_FREE (abspath_to_archive);
 	}
+	R_FREE (abspath_to_archive);
+	R_FREE (abspath_to_file);
 	R_FREE (archive_name);
 	R_FREE (extractor_cmd);
 	R_FREE (symbol_store_path);
