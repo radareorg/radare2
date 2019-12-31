@@ -4026,7 +4026,7 @@ onemoretime:
 			}
 		}
 		break;
-        case 'v':
+	case 'v':
         {
 		ut64 N;
 		char *endptr = NULL;
@@ -4050,11 +4050,13 @@ onemoretime:
 		}
 		ut64 mask = incr - 1;
 
-		ut64 start_off;
-		if ((off & mask) <= N) {
-			start_off = (off & ~mask) ^ N;
-		} else {
-			start_off = ((off & ~mask) ^ incr) ^ N;
+		ut64 start_off = (off & ~mask) ^ N;
+		if ((off & mask) > N) {
+			if (start_off > incr) {
+				start_off -= incr;
+			} else {
+				start_off = N;
+			}
 		}
 
 		ut64 try_off;
