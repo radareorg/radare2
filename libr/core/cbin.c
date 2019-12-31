@@ -1978,7 +1978,9 @@ static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
 		// is in the middle of the code and it would make the code less
 		// readable.
 	} else {
-		R_LOG_WARN ("Special symbol %s not handled\n", symbol->name);
+		if (core->bin->verbose) {
+			R_LOG_WARN ("Special symbol %s not handled\n", symbol->name);
+		}
 	}
 }
 
