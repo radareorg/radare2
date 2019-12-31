@@ -3919,7 +3919,7 @@ static void _pointer_table(RCore *core, ut64 origin, ut64 offset, const ut8 *buf
 
 // TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
 static ut32 tmp_get_contsize(RAnalFunction *f) {
-	return r_anal_fcn_linear_size (f);
+	return r_anal_function_linear_size (f);
 }
 
 static void __printPattern(RCore *core, const char *_input) {
@@ -4457,7 +4457,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	// XXX: hack must be reviewed/fixed in code analysis
 	if (!b) {
 		if (r_list_length (f->bbs) >= 1) {
-			ut32 fcn_size = r_anal_fcn_realsize (f);
+			ut32 fcn_size = r_anal_function_realsize (f);
 			b = r_list_get_top (f->bbs);
 			if (b->size > fcn_size) {
 				b->size = fcn_size;
@@ -4992,7 +4992,7 @@ static int cmd_print(void *data, const char *input) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 		// R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) {
-			len = r_anal_fcn_linear_size (f);
+			len = r_anal_function_linear_size (f);
 			if (len > core->blocksize) {
 				len = core->blocksize;
 			}
@@ -5281,7 +5281,7 @@ static int cmd_print(void *data, const char *input) {
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 			if (f) {
 				r_core_print_disasm_instructions (core,
-					r_anal_fcn_linear_size ((RAnalFunction *)f), 0);
+												  r_anal_function_linear_size ((RAnalFunction *) f), 0);
 				break;
 			}
 		}
@@ -5433,8 +5433,8 @@ static int cmd_print(void *data, const char *input) {
 						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 					if (f) {
 						ut32 bsz = core->blocksize;
-						// int fsz = r_anal_fcn_realsize (f);
-						int fsz = r_anal_fcn_linear_size (f); // we want max-min here
+						// int fsz = r_anal_function_realsize (f);
+						int fsz = r_anal_function_linear_size (f); // we want max-min here
 						r_core_block_size (core, fsz);
 						r_core_print_disasm_instructions (core, fsz, 0);
 						r_core_block_size (core, bsz);
@@ -5655,8 +5655,8 @@ static int cmd_print(void *data, const char *input) {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 				if (f) {
-					ut32 rs = r_anal_fcn_realsize (f);
-					ut32 fs = r_anal_fcn_linear_size (f);
+					ut32 rs = r_anal_function_realsize (f);
+					ut32 fs = r_anal_function_linear_size (f);
 					r_core_seek (core, oseek, SEEK_SET);
 					r_core_block_size (core, R_MAX (rs, fs));
 					disasm_strings (core, input, f);
@@ -5679,7 +5679,7 @@ static int cmd_print(void *data, const char *input) {
 				if (f && input[2] == 'j') { // "pdfj"
 					ut8 *loc_buf = NULL;
 					RAnalBlock *b;
-					ut32 fcn_size = r_anal_fcn_realsize (f);
+					ut32 fcn_size = r_anal_function_realsize (f);
 					const char *orig_bb_middle = r_config_get (core->config, "asm.bb.middle");
 					r_config_set_i (core->config, "asm.bb.middle", false);
 					pj = pj_new ();
@@ -5693,7 +5693,7 @@ static int cmd_print(void *data, const char *input) {
 					pj_k (pj, "ops");
 					pj_a (pj);
 					// instructions are all outputted as a json list
-					//  DEAD CODE cont_size = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
+					//  DEAD CODE cont_size = f->_size > 0 ? f->_size : r_anal_function_realsize (f);
 					// TODO: can loc jump to another locs?
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 						if (tmp_func->addr > f->addr) {
@@ -5743,8 +5743,8 @@ static int cmd_print(void *data, const char *input) {
 					}
 					cont_size = tmp_get_contsize (f);
 #endif
-					ut64 linearsz = r_anal_fcn_linear_size (f);
-					ut64 realsz = r_anal_fcn_realsize (f);
+					ut64 linearsz = r_anal_function_linear_size (f);
+					ut64 realsz = r_anal_function_realsize (f);
 					if (realsz + 4096 < linearsz) {
 						eprintf ("Linear size differs too much from the bbsum, please use pdr instead.\n");
 					} else {
@@ -5754,7 +5754,7 @@ static int cmd_print(void *data, const char *input) {
 						(void)r_io_read_at (core->io, at, buf, sz);
 						core->num->value = r_core_print_disasm (core->print, core, at, buf, sz, sz, 0, 1, 0, NULL, f);
 						free (buf);
-						// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_fcn_realsize (f), f->addr);
+						// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_function_realsize (f), f->addr);
 					}
 #if 0
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {

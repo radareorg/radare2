@@ -1873,7 +1873,7 @@ static bool fcnMetricsCmp(RSignItem *it, RAnalFunction *fcn) {
 	if (graph->ebbs != -1 && graph->ebbs != ebbs) {
 		return false;
 	}
-	if (graph->bbsum > 0 && matchCount (graph->bbsum, r_anal_fcn_linear_size (fcn))) {
+	if (graph->bbsum > 0 && matchCount (graph->bbsum, r_anal_function_linear_size (fcn))) {
 		return false;
 	}
 	return true;

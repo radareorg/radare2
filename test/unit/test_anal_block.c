@@ -57,7 +57,7 @@ static bool check_invariants(RAnal *anal) {
 			mu_assert_eq (fcn->meta._max, max, "function max wrong");
 		}
 
-		mu_assert_eq (r_anal_fcn_realsize (fcn), realsz, "realsize wrong");
+		mu_assert_eq (r_anal_function_realsize (fcn), realsz, "realsize wrong");
 	}
 	return true;
 }

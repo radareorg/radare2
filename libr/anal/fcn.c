@@ -757,7 +757,7 @@ repeat:
 				fcn->ninstr--;
 				if (anal->verbose) {
 					eprintf ("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%"PFMT64u" f.uncorr=%"PFMT64u"\n",
-					addr + idx - oplen, bb->addr, bb->size, r_anal_fcn_linear_size (fcn));
+					addr + idx - oplen, bb->addr, bb->size, r_anal_function_linear_size (fcn));
 				}
 			}
 			// Next time, we go to the opcode after the delay count
@@ -1213,7 +1213,7 @@ analopfinish:
 				if (anal->verbose) {
 					eprintf ("RET 0x%08"PFMT64x ". overlap=%s %"PFMT64u" %"PFMT64u"\n",
 						addr + delay.un_idx - oplen, r_str_bool (overlapped),
-						bb->size, r_anal_fcn_linear_size (fcn));
+							 bb->size, r_anal_function_linear_size (fcn));
 				}
 				gotoBeach (R_ANAL_RET_END);
 			}
@@ -1367,7 +1367,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 			eprintf ("Failed to analyze basic block at 0x%"PFMT64x"\n", addr);
 		}
 	}
-	if (anal->opt.endsize && ret == R_ANAL_RET_END && r_anal_fcn_realsize (fcn)) {   // cfg analysis completed
+	if (anal->opt.endsize && ret == R_ANAL_RET_END && r_anal_function_realsize (fcn)) {   // cfg analysis completed
 		RListIter *iter;
 		RAnalBlock *bb;
 		ut64 endaddr = fcn->addr;
@@ -1805,64 +1805,6 @@ R_API RAnalBlock *r_anal_fcn_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr
 		}
 	}
 	return NULL;
-}
-
-static void ensure_fcn_range(RAnalFunction *fcn) {
-	if (fcn->meta._min != UT64_MAX) { // recalculate only if invalid
-		return;
-	}
-	ut64 minval = UT64_MAX;
-	ut64 maxval = UT64_MIN;
-	RAnalBlock *block;
-	RListIter *iter;
-	r_list_foreach (fcn->bbs, iter, block) {
-		if (block->addr < minval) {
-			minval = block->addr;
-		}
-		if (block->addr + block->size > maxval) {
-			maxval = block->addr + block->size;
-		}
-	}
-	fcn->meta._min = minval;
-	fcn->meta._max = minval == UT64_MAX ? UT64_MAX : maxval;
-}
-
-R_API ut64 r_anal_fcn_linear_size(RAnalFunction *fcn) {
-	ensure_fcn_range (fcn);
-	return fcn->meta._max - fcn->meta._min;
-}
-
-R_API ut64 r_anal_fcn_min_addr(RAnalFunction *fcn) {
-	ensure_fcn_range (fcn);
-	return fcn->meta._min;
-}
-
-R_API ut64 r_anal_fcn_max_addr(RAnalFunction *fcn) {
-	ensure_fcn_range (fcn);
-	return fcn->meta._max;
-}
-
-R_API ut64 r_anal_fcn_size_from_entry(RAnalFunction *fcn) {
-	ensure_fcn_range (fcn);
-	return fcn->meta._min == UT64_MAX ? 0 : fcn->meta._max - fcn->addr;
-}
-
-R_API ut64 r_anal_fcn_realsize(const RAnalFunction *fcn) {
-	RListIter *iter, *fiter;
-	RAnalBlock *bb;
-	RAnalFunction *f;
-	ut64 sz = 0;
-	if (!sz) {
-		r_list_foreach (fcn->bbs, iter, bb) {
-			sz += bb->size;
-		}
-		r_list_foreach (fcn->fcn_locs, fiter, f) {
-			r_list_foreach (f->bbs, iter, bb) {
-				sz += bb->size;
-			}
-		}
-	}
-	return sz;
 }
 
 // compute the cyclomatic cost

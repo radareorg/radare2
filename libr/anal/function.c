@@ -113,7 +113,7 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 		anal->cb.on_fcn_new (anal, anal->user, fcn);
 	}
 	if (anal->flg_fcn_set) {
-		anal->flg_fcn_set (anal->flb.f, fcn->name, fcn->addr, r_anal_fcn_size_from_entry (fcn));
+		anal->flg_fcn_set (anal->flb.f, fcn->name, fcn->addr, r_anal_function_size_from_entry (fcn));
 	}
 	r_anal_fcn_tree_insert (anal, fcn);
 	r_list_append (anal->fcns, fcn);
@@ -185,4 +185,62 @@ R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 
 	r_list_delete_data (fcn->bbs, bb);
 	r_anal_block_unref (bb);
+}
+
+static void ensure_fcn_range(RAnalFunction *fcn) {
+	if (fcn->meta._min != UT64_MAX) { // recalculate only if invalid
+		return;
+	}
+	ut64 minval = UT64_MAX;
+	ut64 maxval = UT64_MIN;
+	RAnalBlock *block;
+	RListIter *iter;
+	r_list_foreach (fcn->bbs, iter, block) {
+			if (block->addr < minval) {
+				minval = block->addr;
+			}
+			if (block->addr + block->size > maxval) {
+				maxval = block->addr + block->size;
+			}
+		}
+	fcn->meta._min = minval;
+	fcn->meta._max = minval == UT64_MAX ? UT64_MAX : maxval;
+}
+
+R_API ut64 r_anal_function_linear_size(RAnalFunction *fcn) {
+	ensure_fcn_range (fcn);
+	return fcn->meta._max - fcn->meta._min;
+}
+
+R_API ut64 r_anal_function_min_addr(RAnalFunction *fcn) {
+	ensure_fcn_range (fcn);
+	return fcn->meta._min;
+}
+
+R_API ut64 r_anal_function_max_addr(RAnalFunction *fcn) {
+	ensure_fcn_range (fcn);
+	return fcn->meta._max;
+}
+
+R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn) {
+	ensure_fcn_range (fcn);
+	return fcn->meta._min == UT64_MAX ? 0 : fcn->meta._max - fcn->addr;
+}
+
+R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn) {
+	RListIter *iter, *fiter;
+	RAnalBlock *bb;
+	RAnalFunction *f;
+	ut64 sz = 0;
+	if (!sz) {
+		r_list_foreach (fcn->bbs, iter, bb) {
+				sz += bb->size;
+			}
+		r_list_foreach (fcn->fcn_locs, fiter, f) {
+				r_list_foreach (f->bbs, iter, bb) {
+						sz += bb->size;
+					}
+			}
+	}
+	return sz;
 }

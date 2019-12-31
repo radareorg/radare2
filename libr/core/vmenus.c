@@ -2659,7 +2659,7 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 			r_flag_unset_name (core->flags, fcn->name);
 			free (fcn->name);
 			fcn->name = strdup (name);
-			r_flag_set (core->flags, name, addr, r_anal_fcn_size_from_entry (fcn));
+			r_flag_set (core->flags, name, addr, r_anal_function_size_from_entry (fcn));
 			break;
 		}
 	}
@@ -2735,13 +2735,13 @@ static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 					var_functions = r_str_newf ("%c%c %s0x%08"PFMT64x"" Color_RESET" %4d %s%s"Color_RESET"",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
-							color_addr, fcn->addr, r_anal_fcn_realsize (fcn),
-							color_fcn, fcn->name);
+												color_addr, fcn->addr, r_anal_function_realsize (fcn),
+												color_fcn, fcn->name);
 				} else {
 					var_functions = r_str_newf ("%c%c 0x%08"PFMT64x" %4d %s",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
-							fcn->addr, r_anal_fcn_realsize (fcn), fcn->name);
+												fcn->addr, r_anal_function_realsize (fcn), fcn->name);
 				}
 				if (var_functions) {
 					if (!r_cons_singleton ()->show_vals) {
