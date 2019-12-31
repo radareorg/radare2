@@ -4195,19 +4195,18 @@ void __print_decompiler_cb(void *user, void *p) {
 		cmdstr = r_core_cmd_str (core, "pdc");
 	}
 	if (cmdstr) {
-		__update_panel_contents (core, panel, cmdstr);
-		return;
-	}
-	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
-	if (update) {
-		cmdstr = __handle_cmd_str_cache (core, panel, false);
 		__update_pdc_contents (core, panel, cmdstr);
 		return;
 	}
+	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
 	cmdstr = __find_cmd_str_cache (core, panel);
-	if (cmdstr) {
-		__update_panel_contents (core, panel, cmdstr);
+	if (update || !cmdstr) {
+		cmdstr = __handle_cmd_str_cache (core, panel, false);
+		if (panel->model->cache && panel->model->cmdStrCache) {
+			__reset_scroll_pos (panel);
+		}
 	}
+	__update_pdc_contents (core, panel, cmdstr);
 }
 
 void __print_disasmsummary_cb (void *user, void *p) {
