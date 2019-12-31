@@ -83,7 +83,6 @@ R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff) {
 	r_return_val_if_fail (a && fcn, false);
 	RListIter *it;
 	RAnalVar *var;
-	struct VarType vt = { 0 };
 	RList *var_list = r_anal_var_all_list (a, fcn);
 	r_return_val_if_fail (var_list, false);
 
@@ -687,7 +686,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP 
 			&& op->type != R_ANAL_OP_TYPE_RET && r_str_isnumber (addr)) {
 			ptr = (st64)r_num_get (NULL, addr);
-			if (ptr && op->src && op->src[0] && ptr == op->src[0]->imm) {
+			if (ptr && op->src[0] && ptr == op->src[0]->imm) {
 				goto beach;
 			}
 		} else if ((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET)) {
