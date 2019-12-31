@@ -82,7 +82,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon, bool *tmpseek
 
 static int bb_cmpaddr(const void *_a, const void *_b) {
 	const RAnalBlock *a = _a, *b = _b;
-	return (a->addr - b->addr);
+	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
 static void cmd_debug_reg(RCore *core, const char *str);

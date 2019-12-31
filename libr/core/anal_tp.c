@@ -455,7 +455,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 
 static int bb_cmpaddr(const void *_a, const void *_b) {
 	const RAnalBlock *a = _a, *b = _b;
-	return (a->addr - b->addr);
+	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
