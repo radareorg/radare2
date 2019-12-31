@@ -3471,15 +3471,17 @@ w abcd\00012345\0efghi\0
 izzzj~{}
 EOF
 EXPECT=<<EOF
-{
+[
   {
     "string": "abcd"
-  }{
+  },
+  {
     "string": "12345"
-  }{
+  },
+  {
     "string": "efghi"
   }
-}
+]
 EOF
 RUN
 

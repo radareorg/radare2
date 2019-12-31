@@ -30,7 +30,7 @@ static ut64 binobj_a2b(RBinObject *o, ut64 addr) {
 	return o ? addr + o->baddr_shift : addr;
 }
 
-static void print_string(RBinFile *bf, RBinString *string, int raw) {
+static void print_string(RBinFile *bf, RBinString *string, int raw, bool first) {
 	r_return_if_fail (bf && string);
 
 	int mode = bf->strmode;
@@ -62,7 +62,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw) {
 				pj_o (pj);
 				pj_ks (pj, "string", string->string);
 				pj_end (pj);
-				io->cb_printf ("%s\n", pj_string (pj));
+				io->cb_printf ("%s%s\n", first ? "" : ",", pj_string (pj));
 				pj_free (pj);
 			}
 		}
@@ -138,6 +138,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	st64 vdelta = 0, pdelta = 0;
 	RBinSection *s = NULL;
 	bool ascii_only = false;
+	bool first = true;
 	r_buf_read_at (bf->buf, from, buf, len);
 	// may oobread
 	while (needle < to) {
@@ -329,8 +330,11 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 					ht_up_insert (bf->o->strings_db, bs->vaddr, bs);
 				}
 			} else {
-				print_string (bf, bs, raw);
+				print_string (bf, bs, raw, first);
 				r_bin_string_free (bs);
+				if (first) {
+					first = false;
+				}
 			}
 			if (from == 0 && to == bf->size) {
 				/* force lookup section at the next one */
