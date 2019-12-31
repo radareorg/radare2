@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "radare2 regressions testsuite",
   "dependencies": {
-    "node-r2r": "^0.2.6"
+    "node-r2r": "^0.2.7"
   },
   "author": "pancake <pancake@nopcode.org>",
   "license": "MIT"
