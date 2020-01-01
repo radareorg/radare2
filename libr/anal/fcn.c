@@ -428,11 +428,13 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 
 static bool fcn_takeover_block_recursive_cb(RAnalBlock *block, void *user) {
 	RAnalFunction *our_fcn = user;
+	r_anal_block_ref (block);
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
 		r_anal_function_remove_block (other_fcn, block);
 	}
 	r_anal_function_add_block (our_fcn, block);
+	r_anal_block_unref (block);
 	return true;
 }
 
