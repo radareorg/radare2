@@ -1850,8 +1850,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	} else {
 		r_list_foreach_safe (core->anal->fcns, iter, iter_tmp, fcni) {
 			if (r_anal_fcn_in (fcni, addr)) {
-				r_anal_fcn_tree_delete (core->anal, fcni);
-				r_list_delete (core->anal->fcns, iter);
+				r_anal_function_delete (fcni);
 			}
 		}
 	}
@@ -4332,7 +4331,6 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	RAnalBlock *bb;
 	RAnalFunction *f1 = r_anal_get_function_at (core->anal, addr);
 	RAnalFunction *f2 = r_anal_get_function_at (core->anal, addr2);
-	RAnalFunction *f3 = NULL;
 	if (!f1 || !f2) {
 		eprintf ("Cannot find function\n");
 		return;
@@ -4371,20 +4369,12 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 				max = bb->addr + bb->size;
 			}
 		}
-			r_anal_function_add_block (f1, bb);
+		r_anal_function_add_block (f1, bb);
 	}
 	// TODO: import data/code/refs
+	r_anal_function_delete (f2);
 	// update size
-	f1->addr = R_MIN (addr, addr2);
-	// resize
-	f2->bbs = NULL;
-	r_anal_fcn_tree_delete (core->anal, f2);
-	r_list_foreach (core->anal->fcns, iter, f2) {
-		if (f2 == f3) {
-			r_list_delete (core->anal->fcns, iter);
-			f3->bbs = NULL;
-		}
-	}
+	r_anal_function_relocate (f2, R_MIN (addr, addr2));
 }
 
 static bool esil_anal_stop = false;

@@ -302,7 +302,6 @@ typedef struct r_anal_function_t {
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs; // TODO: should be RPVector
 	RAnalFcnMeta meta;
-	RBNode rb;
 	RBNode addr_rb;
 	RList *imports; // maybe bound to class?
 	struct r_anal_t *anal; // this function is associated with this instance
@@ -1504,6 +1503,10 @@ R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
 
 R_API bool r_anal_function_delete(RAnalFunction *fcn);
 
+// Change the entrypoint of fcn
+// This can fail (and return false) if there is already another function at the new addrress
+R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr);
+
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb);
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb);
 
@@ -1630,8 +1633,6 @@ R_API void r_anal_pin_list(RAnal *a);
 
 /* fcn.c */
 R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn);
-R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *data);
-R_API void r_anal_fcn_tree_insert(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_count_edges(const RAnalFunction *fcn, int *ebbs);
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr);

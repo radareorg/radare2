@@ -594,9 +594,7 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 			// XXX - TO Stop or not to Stop ??
 			break;
 		}
-		//r_listrange_add (anal->fcnstore, fcn);
-		r_anal_fcn_tree_insert (anal, fcn);
-		r_list_append (anal->fcns, fcn);
+		r_anal_add_function (anal, fcn);
 		offset += r_anal_function_linear_size (fcn);
 		if (!analyze_all) {
 			break;

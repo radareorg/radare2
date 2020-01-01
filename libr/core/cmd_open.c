@@ -974,9 +974,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 				continue;
 			}
 			r_anal_var_rebase (core->anal, fcn, diff);
-			r_anal_fcn_tree_delete (core->anal, fcn);
-			fcn->addr += diff;
-			r_anal_fcn_tree_insert (core->anal, fcn);
+			r_anal_function_relocate (fcn, fcn->addr + diff);
 			RAnalBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;
 			r_list_foreach (fcn->bbs, ititit, bb) {

@@ -34,9 +34,6 @@ extern bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_
 #define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
 #define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
 
-#define FCN_CONTAINER(x) container_of ((RBNode*)(x), RAnalFunction, rb)
-#define ADDR_FCN_CONTAINER(x) container_of ((RBNode*)(x), RAnalFunction, addr_rb)
-
 typedef struct fcn_tree_iter_t {
 	int len;
 	RBNode *cur;
@@ -100,26 +97,7 @@ R_API void r_anal_fcn_invalidate_read_ahead_cache() {
 
 static int cmpaddr(const void *_a, const void *_b) {
 	const RAnalBlock *a = _a, *b = _b;
-	return (a->addr - b->addr);
-}
-
-static int _fcn_addr_tree_cmp(const void *a_, const RBNode *b_, void *user) {
-	const RAnalFunction *a = (const RAnalFunction *)a_;
-	const RAnalFunction *b = ADDR_FCN_CONTAINER (b_);
-	ut64 from0 = a->addr, from1 = b->addr;
-	if (from0 != from1) {
-		return from0 < from1 ? -1 : 1;
-	}
-	return 0;
-}
-
-R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *fcn) {
-	r_return_val_if_fail (anal && fcn, false);
-	return !!r_rbtree_delete (&anal->fcn_addr_tree, fcn, _fcn_addr_tree_cmp, NULL, NULL, NULL);
-}
-
-R_API void r_anal_fcn_tree_insert(RAnal *anal, RAnalFunction *fcn) {
-	r_rbtree_insert (&anal->fcn_addr_tree, fcn, &(fcn->addr_rb), _fcn_addr_tree_cmp, NULL);
+	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
 #if 0
@@ -1399,10 +1377,7 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 			continue;
 		}
 		if (r_anal_fcn_in (fcn, addr)) {
-			if (!r_anal_fcn_tree_delete (anal, fcn)) {
-				return false;
-			}
-			r_list_delete (anal->fcns, iter);
+			r_anal_function_delete (fcn);
 		}
 	}
 	r_anal_fcn_del (anal, addr);
