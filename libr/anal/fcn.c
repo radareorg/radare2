@@ -426,6 +426,21 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 	return ret;
 }
 
+static bool fcn_takeover_block_recursive_cb(RAnalBlock *block, void *user) {
+	RAnalFunction *our_fcn = user;
+	while (!r_list_empty (block->fcns)) {
+		RAnalFunction *other_fcn = r_list_first (block->fcns);
+		r_anal_function_remove_block (other_fcn, block);
+	}
+	r_anal_function_add_block (our_fcn, block);
+	return true;
+}
+
+// Remove block and all of its recursive successors from all its functions and add them only to fcn
+static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_block) {
+	r_anal_block_recurse (start_block, fcn_takeover_block_recursive_cb, fcn);
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	//eprintf("fcn_recurse 0x%"PFMT64x", bbs: %d\n", addr, fcn->bbs->length);
 	r_anal_block_check_invariants (anal);
@@ -485,26 +500,15 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 	r_anal_block_check_invariants (anal);
 
-	//RAnalBlock *existing_bb = most_important_existing_bb_at (anal, fcn, addr, anal->opt.jmpmid && is_x86);
 	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid && is_x86);
 	if (existing_bb) {
 		bool existing_in_fcn = r_list_contains (existing_bb->fcns, fcn);
 		existing_bb = r_anal_block_split (existing_bb, addr);
 		if (!existing_in_fcn && existing_bb) {
-			RList *blocks = r_anal_block_recurse_list (existing_bb); // TODO: use ..._recurse without list
-			RListIter *iter;
-			RAnalBlock *existing_rec_block;
 			if (existing_bb->addr == fcn->addr) {
 				// our function starts directly there, so we steal what is ours!
-				r_list_foreach (blocks, iter, existing_rec_block) {
-					while (!r_list_empty (existing_rec_block->fcns)) {
-						RAnalFunction *existing_fcn = r_list_first (existing_rec_block->fcns);
-						r_anal_function_remove_block (existing_fcn, existing_rec_block);
-					}
-					r_anal_function_add_block (fcn, existing_rec_block);
-				}
+				fcn_takeover_block_recursive (fcn, existing_bb);
 			}
-			r_list_free (blocks);
 		}
 		r_anal_block_unref (existing_bb);
 		if (anal->opt.recont) {
