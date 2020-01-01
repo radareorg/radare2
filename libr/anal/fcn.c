@@ -166,8 +166,6 @@ R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
 	ut64 eof = fcn->addr + newsize;
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
 		if (bb->addr >= eof) {
-			// already called by r_list_delete r_anal_bb_free (bb);
-			// XXX ref/unref crash here r_list_delete (fcn->bbs, iter);
 			r_anal_function_remove_block (fcn, bb);
 			continue;
 		}
@@ -195,8 +193,7 @@ static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 
 	return bb;
 }
 
-#define gotoRet(x, label) ret = x; goto label;
-#define gotoBeach(x) gotoRet(x, beach)
+#define gotoBeach(x) ret = x; goto beach;
 
 static bool isInvalidMemory(RAnal *anal, const ut8 *buf, int len) {
 	if (anal->opt.nonull > 0) {
@@ -444,7 +441,6 @@ static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_b
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
-	//eprintf("fcn_recurse 0x%"PFMT64x", bbs: %d\n", addr, fcn->bbs->length);
 	r_anal_block_check_invariants (anal);
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -495,11 +491,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
+#if 0 // TODO: remove this part if green
 	RAnalFunction *fcn_at_addr = r_anal_get_function_at (anal, addr); // TODO: Does this still make sense?
 	if (fcn_at_addr && fcn_at_addr != fcn) {
 		// eprintf ("WIP: function found at 0x%08"PFMT64x" from 0x%08"PFMT64x"\n", fcn_at_addr, addr);
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
+#endif
 	r_anal_block_check_invariants (anal);
 
 	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid && is_x86);
