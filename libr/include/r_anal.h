@@ -1503,9 +1503,13 @@ R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
 
 R_API bool r_anal_function_delete(RAnalFunction *fcn);
 
-// Change the entrypoint of fcn
-// This can fail (and return false) if there is already another function at the new addrress
+// rhange the entrypoint of fcn
+// This can fail (and return false) if there is already another function at the new address
 R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr);
+
+// rename the given function
+// This can fail (and return false) if there is another function with the name given
+R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name);
 
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb);
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb);

@@ -1895,8 +1895,3 @@ R_API const char *r_anal_label_at(RAnal *a, ut64 addr) {
 	return fcn? r_anal_fcn_label_at (a, fcn, addr): NULL;
 }
 
-// TODO Move to r_anal_function when the anal-block branch is ready to be merged
-R_API void r_anal_fcn_rename(RAnalFunction *f, const char *newName) {
-	free (f->name);
-	f->name = strdup (newName);
-}

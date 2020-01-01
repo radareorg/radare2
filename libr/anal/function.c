@@ -202,6 +202,30 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 	return true;
 }
 
+R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
+	RAnal *anal = fcn->anal;
+	RAnalFunction *existing = ht_pp_find (anal->ht_name_fun, name, NULL);
+	if (existing) {
+		if (existing == fcn) {
+			// fcn->name == name, nothing to do
+			return true;
+		}
+		return false;
+	}
+	char *newname = strdup (name);
+	if (!newname) {
+		return false;
+	}
+	bool in_tree = ht_pp_delete (anal->ht_name_fun, fcn->name);
+	free (fcn->name);
+	fcn->name = newname;
+	if (in_tree) {
+		// only re-insert if it really was in the tree before
+		ht_pp_insert (anal->ht_name_fun, fcn->name, fcn);
+	}
+	return true;
+}
+
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	if (r_list_contains (bb->fcns, fcn)) {
 		return;
