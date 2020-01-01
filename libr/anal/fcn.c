@@ -491,13 +491,11 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-#if 0 // TODO: remove this part if green
-	RAnalFunction *fcn_at_addr = r_anal_get_function_at (anal, addr); // TODO: Does this still make sense?
+	RAnalFunction *fcn_at_addr = r_anal_get_function_at (anal, addr);
 	if (fcn_at_addr && fcn_at_addr != fcn) {
-		// eprintf ("WIP: function found at 0x%08"PFMT64x" from 0x%08"PFMT64x"\n", fcn_at_addr, addr);
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
-#endif
+	
 	r_anal_block_check_invariants (anal);
 
 	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid && is_x86);
