@@ -495,7 +495,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	if (fcn_at_addr && fcn_at_addr != fcn) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
-	
+
 	r_anal_block_check_invariants (anal);
 
 	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid && is_x86);
@@ -1399,52 +1399,7 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 	return true;
 }
 
-R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type) {
-#if 1
-	return r_anal_get_functions_in (anal, addr);
-#else
-	RList *list = r_list_newf (NULL);
-	// Interval tree query
-	RAnalFunction *fcn;
-	FcnTreeIter it;
-	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
-		if (!type || (fcn && fcn->type & type)) {
-			if (r_tinyrange_in (&fcn->bbr, addr) || fcn->addr == addr) {
-				r_list_append (list, fcn);
-			}
-		}
-	}
-	return list;
-#endif
-}
-
 R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
-#if 0
-  // Linear scan
-	RAnalFunction *fcn, *ret = NULL;
-	RListIter *iter;
-	if (type == R_ANAL_FCN_TYPE_ROOT) {
-		r_list_foreach (anal->fcns, iter, fcn) {
-			if (addr == fcn->addr) {
-				return fcn;
-			}
-		}
-		return NULL;
-	}
-	r_list_foreach (anal->fcns, iter, fcn) {
-		if (!type || (fcn && fcn->type & type)) {
-			if (r_tinyrange_in (&fcn->bbr, addr) || fcn->addr == addr) {
-				ret = fcn;
-				break;
-			}
-		}
-	}
-	return ret;
-
-#else
-
-#define BBAPI 1
-#if BBAPI
 	RList *list = r_anal_get_functions_in (anal, addr);
 	RAnalFunction *ret = NULL;
 	if (list && !r_list_empty (list)) {
@@ -1463,23 +1418,6 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	}
 	r_list_free (list);
 	return ret;
-#else
-	// Interval tree query
-	RAnalFunction *fcn;
-	FcnTreeIter it;
-	if (type == R_ANAL_FCN_TYPE_ROOT) {
-		return _fcn_addr_tree_find_addr (anal, addr);
-	}
-	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
-		if (!type || (fcn && fcn->type & type)) {
-			if (r_tinyrange_in (&fcn->bbr, addr) || fcn->addr == addr) {
-				return fcn;
-			}
-		}
-	}
-	return NULL;
-#endif
-#endif
 }
 
 static bool fcn_in_cb(RAnalBlock *block, void *user) {
@@ -1492,6 +1430,7 @@ static bool fcn_in_cb(RAnalBlock *block, void *user) {
 	}
 	return true;
 }
+
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr) {
 	// fcn_in_cb breaks with false if it finds the fcn
 	return !r_anal_get_blocks_in (fcn->anal, addr, fcn_in_cb, fcn);
@@ -1525,17 +1464,6 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *a, const char *name) {
 		return f;
 	}
 	return NULL;
-#if 0
-	RAnalFunction *fcn = NULL;
-eprintf ("ULTRA SLOW\n");
-	RListIter *iter;
-	r_list_foreach (a->fcns, iter, fcn) {
-		if (!strcmp (name, fcn->name)) {
-			return fcn;
-		}
-	}
-	return NULL;
-#endif
 }
 
 /* rename RAnalFunctionBB.add() */
@@ -1896,4 +1824,3 @@ R_API const char *r_anal_label_at(RAnal *a, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
 	return fcn? r_anal_fcn_label_at (a, fcn, addr): NULL;
 }
-
