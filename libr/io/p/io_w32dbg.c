@@ -18,17 +18,65 @@
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
 
-static int debug_os_read_at(RIOW32Dbg *dbg, void *buf, int len, ut64 addr) {
-	SIZE_T ret;
-	ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret);
-//	if (len != ret)
-//		eprintf ("Cannot read 0x%08llx\n", addr);
-	return len; // XXX: Handle read correctly and not break r2 shell
-	//return (int)ret; //(int)len; //ret;
+static ut64 __find_next_valid_addr(HANDLE h, ut64 from, ut64 to) {
+	// Align to next page and try to get to next valid addr
+	const int page_size = 0x1000;
+	from = ((from + page_size) / page_size) * page_size;
+	ut8 buf;
+	while (from < to && !ReadProcessMemory (h, (void *)from, &buf, 1, NULL)) {
+		from += page_size;
+	}
+	return from < to ? from : UT64_MAX;
+}
+
+static int debug_os_read_at(RIOW32Dbg *dbg, ut8 *buf, int len, ut64 addr) {
+	SIZE_T ret = 0;
+	const int page_size = 0x1000;
+	if (!ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret)
+		&& GetLastError () == ERROR_PARTIAL_COPY) {
+		int skipped = 0;
+		if (!ReadProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, 1, &ret)) {
+			// We are starting a read from invalid memory
+			ut64 valid_addr = __find_next_valid_addr (dbg->pi.hProcess, addr, addr + len);
+			if (valid_addr == UT64_MAX) {
+				return len;
+			}
+			skipped = valid_addr - addr;
+			memset (buf, '\xff', skipped);
+			addr = valid_addr;
+			buf += skipped;
+		}
+		// We are in a valid page now, try to read again
+		int read_len = len - skipped;
+		int totRead = skipped;
+		while (totRead < len) {
+			while (!ReadProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, read_len, &ret)) {
+				// Maybe read_len is too big, we are reaching invalid memory
+				read_len /= 2;
+				if (!read_len) {
+					// Reached the end of valid memory, find another to continue reading if possible
+					ut64 valid_addr = __find_next_valid_addr (dbg->pi.hProcess, addr, addr + len - totRead);
+					if (valid_addr == UT64_MAX) {
+						return len;
+					}
+					skipped = valid_addr - addr;
+					addr = valid_addr;
+					memset (buf, '\xff', skipped);
+					buf += skipped;
+					totRead += skipped;
+					read_len = len - totRead;
+				}
+			}
+			buf += ret;
+			addr += ret;
+			totRead += ret;
+			read_len = R_MIN (read_len, len - totRead);
+		}
+	}
+	return len;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
-	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
 	return debug_os_read_at (fd->data, buf, len, io->off);
 }
 
