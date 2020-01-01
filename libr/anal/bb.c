@@ -5,34 +5,42 @@
 #include <r_list.h>
 #include <limits.h>
 
+typedef struct {
+	ut64 addr;
+	RAnalBlock *ret;
+} BBFromOffsetJmpmidCtx;
+
+static bool bb_from_offset_jmpmid_cb(RAnalBlock *block, void *user) {
+	BBFromOffsetJmpmidCtx *ctx = user;
+	// If an instruction starts exactly at the search addr, return that block immediately
+	if (r_anal_bb_op_starts_at (block, ctx->addr)) {
+		ctx->ret = block;
+		return false;
+	}
+	// else search the closest one
+	if (!ctx->ret || ctx->ret->addr < block->addr) {
+		ctx->ret = block;
+	}
+	return true;
+}
+
+static bool bb_from_offset_first_cb(RAnalBlock *block, void *user) {
+	RAnalBlock **ret = user;
+	*ret = block;
+	return false;
+}
+
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
-	RListIter *iter, *iter2;
-	RAnalFunction *fcn;
-	RAnalBlock *bb;
 	const bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 	if (anal->opt.jmpmid && x86) {
-		RAnalBlock *nearest_bb = NULL;
-		// TODO: too slow. use the block api
-		r_list_foreach (anal->fcns, iter, fcn) {
-			r_list_foreach (fcn->bbs, iter2, bb) {
-				if (r_anal_bb_op_starts_at (bb, off)) {
-					return bb;
-				}
-				if (r_anal_block_contains (bb, off) && (!nearest_bb || nearest_bb->addr < bb->addr)) {
-					nearest_bb = bb;
-				}
-			}
-		}
-		return nearest_bb;
+		BBFromOffsetJmpmidCtx ctx = { off, NULL };
+		r_anal_get_blocks_in (anal, off, bb_from_offset_jmpmid_cb, &ctx);
+		return ctx.ret;
 	}
-	r_list_foreach (anal->fcns, iter, fcn) {
-		r_list_foreach (fcn->bbs, iter2, bb) {
-			if (r_anal_block_contains (bb, off)) {
-				return bb;
-			}
-		}
-	}
-	return NULL;
+
+	RAnalBlock *ret = NULL;
+	r_anal_get_blocks_in (anal, off, bb_from_offset_first_cb, &ret);
+	return ret;
 }
 
 R_API RAnalBlock *r_anal_bb_get_jumpbb(RAnalFunction *fcn, RAnalBlock *bb) {
