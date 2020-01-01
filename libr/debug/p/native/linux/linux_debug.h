@@ -98,7 +98,7 @@ int linux_attach(RDebug *dbg, int pid);
 bool linux_attach_new_process(RDebug *dbg, int pid);
 RDebugInfo *linux_info(RDebug *dbg, const char *arg);
 RList *linux_pid_list(int pid, RList *list);
-RList *linux_thread_list(int pid, RList *list);
+RList *linux_thread_list(RDebug *dbg, int pid, RList *list);
 bool linux_select(RDebug *dbg, int pid, int tid);
 RDebugPid *fill_pid_info(const char *info, const char *path, int tid);
 int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
