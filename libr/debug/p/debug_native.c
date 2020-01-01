@@ -334,8 +334,13 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 				int fd = atoi (o_res);
 				free (o_res);
 				if (fd) {
-					dbg->corebind.cmdf (core, "idpd");
-					dbg->corebind.cmdf (core, "idp");
+					char *pdb_file = dbg->corebind.cmdstr (core, "i~dbg_file");
+					if (pdb_file && (r_str_trim (pdb_file), *pdb_file)) {
+						if (!r_file_exists (pdb_file + 9)) {
+							dbg->corebind.cmdf (core, "idpd");
+						}
+						dbg->corebind.cmdf (core, "idp");
+					}
 					dbg->corebind.cmdf (core, "o-%d", fd);
 				}
 			}
