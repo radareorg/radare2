@@ -337,8 +337,6 @@ static bool regs_exist(RAnalValue *src, RAnalValue *dst) {
 // 0 if not skipped; 1 if skipped; 2 if skipped before
 static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb, ut64 addr,
                    char *tmp_buf, int oplen, int un_idx, int *idx) {
-	// TODO: enable this, but I have no idea what it is for
-#if 0
 	// this step is required in order to prevent infinite recursion in some cases
 	if ((addr + un_idx - oplen) == fcn->addr) {
 		// use addr instead of op->addr to mark repeat
@@ -352,7 +350,6 @@ static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb,
 		}
 		return 2;
 	}
-#endif
 	return 0;
 }
 
@@ -522,14 +519,11 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			if (existing_bb->addr == fcn->addr) {
 				// our function starts directly there, so we steal what is ours!
 				r_list_foreach (blocks, iter, existing_rec_block) {
-#define TAKEOVER 1
-#if TAKEOVER
 					while (!r_list_empty (existing_rec_block->fcns)) {
 						RAnalFunction *existing_fcn = r_list_first (existing_rec_block->fcns);
 						r_anal_function_remove_block (existing_fcn, existing_rec_block);
 					}
-#endif
-						r_anal_function_add_block (fcn, existing_rec_block);
+					r_anal_function_add_block (fcn, existing_rec_block);
 				}
 			}
 			r_list_free (blocks);
@@ -554,7 +548,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		anal->leaddrs = r_list_newf (free);
 		if (!anal->leaddrs) {
 			eprintf ("Cannot create leaddr list\n");
-			gotoRet (R_ANAL_RET_ERROR, unrefbb);
+			gotoBeach (R_ANAL_RET_ERROR);
 		}
 	}
 	static ut64 lea_jmptbl_ip = UT64_MAX;
@@ -679,7 +673,7 @@ repeat:
 		if (!overlapped) {
 			ut64 newbbsize = bb->size + oplen;
 			if (newbbsize > MAX_FCN_SIZE) {
-				gotoRet (R_ANAL_RET_ERROR, unrefbb);
+				gotoBeach (R_ANAL_RET_ERROR);
 			}
 			r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
 			r_anal_block_set_size (bb, newbbsize);
@@ -705,7 +699,7 @@ repeat:
 						r_anal_block_unref (bb);
 						bb = fcn_append_basic_block (anal, fcn, addr);
 						if (!bb) {
-							gotoRet (R_ANAL_RET_ERROR, unrefbb);
+							gotoBeach (R_ANAL_RET_ERROR);
 						}
 					}
 				}
@@ -943,7 +937,7 @@ repeat:
 			bb->jump = op.jump;
 			bb->fail = UT64_MAX;
 			FITFCNSZ ();
-			gotoRet (R_ANAL_RET_END, unrefbb);
+			gotoBeach (R_ANAL_RET_END);
 #else
 			if (!overlapped) {
 				bb->jump = op.jump;
@@ -963,7 +957,7 @@ repeat:
 				} else if (R_ABS (diff) > tc) {
 					(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
 					fcn_recurse (anal, fcn, op.jump, anal->opt.bb_max_size, depth - 1);
-					gotoRet (R_ANAL_RET_END, unrefbb);
+					gotoBeach (R_ANAL_RET_END);
 				}
 			}
 			goto beach;
@@ -1236,7 +1230,6 @@ beach:
 	if (bb && bb->size == 0) {
 		r_anal_function_remove_block (fcn, bb);
 	}
-unrefbb:
 	r_anal_block_unref (bb);
 	return ret;
 }
@@ -1393,46 +1386,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 		r_anal_trim_jmprefs (anal, fcn);
 	}
 	return ret;
-}
-
-R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int type, RAnalDiff *diff) {
-	RAnalFunction * fcn = r_anal_create_function (a, name, addr);
-	return fcn != NULL;
-	// TODO: the code belw must be momved into function.c
-#if 0
-	bool append = false;
-	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, R_ANAL_FCN_TYPE_ROOT);
-	if (!fcn) {
-		if (!(fcn = r_anal_fcn_new (a))) {
-			return false;
-		}
-		append = true;
-	}
-	fcn->addr = fcn->meta.min = addr;
-	fcn->cc = r_str_constpool_get (&a->constpool, r_anal_cc_default (a));
-	fcn->bits = a->bits;
-	r_anal_fcn_set_size (append ? NULL : a, fcn, size);
-	free (fcn->name);
-	if (name) {
-		fcn->name = strdup (name);
-	} else {
-		const char *fcnprefix = a->coreb.cfgGet? a->coreb.cfgGet (a->coreb.core, "anal.fcnprefix"): NULL;
-		if (!fcnprefix) {
-			fcnprefix = "fcn";
-		}
-		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnprefix, fcn->addr);
-	}
-	fcn->type = type;
-	if (diff) {
-		fcn->diff->type = diff->type;
-		fcn->diff->addr = diff->addr;
-		R_FREE (fcn->diff->name);
-		if (diff->name) {
-			fcn->diff->name = strdup (diff->name);
-		}
-	}
-	return append? r_anal_fcn_insert (a, fcn): true;
-#endif
 }
 
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {

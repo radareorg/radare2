@@ -1493,8 +1493,8 @@ R_API void r_anal_function_free(void *fcn);
 // Add a function created with r_anal_function_new() to anal
 R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn);
 
-// Create a new function and add it to anal (r_anal_function_new()+r_anal_add_function())
-R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 addr);
+// Create a new function and add it to anal (r_anal_function_new() + set members + r_anal_add_function())
+R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 addr, int type, RAnalDiff *diff);
 
 // returns all functions that have a basic block containing the given address
 R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr);
@@ -1641,8 +1641,6 @@ R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);
 R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name);
 R_API void r_anal_fcn_rename(RAnalFunction *f, const char *newName);
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype);
-R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,
-		const char *name, int type, RAnalDiff *diff);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr);
 R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,

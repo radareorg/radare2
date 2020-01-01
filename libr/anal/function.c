@@ -122,15 +122,32 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	return true;
 }
 
-R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 addr) {
+R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 addr, int type, RAnalDiff *diff) {
 	RAnalFunction *fcn = r_anal_function_new (anal);
 	if (!fcn) {
 		return NULL;
 	}
 	fcn->addr = addr;
+	fcn->type = type;
+	fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
+	fcn->bits = anal->bits;
 	if (name) {
 		free (fcn->name);
 		fcn->name = strdup (name);
+	} else {
+		const char *fcnprefix = anal->coreb.cfgGet ? anal->coreb.cfgGet (anal->coreb.core, "anal.fcnprefix") : NULL;
+		if (!fcnprefix) {
+			fcnprefix = "fcn";
+		}
+		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnprefix, fcn->addr);
+	}
+	if (diff) {
+		fcn->diff->type = diff->type;
+		fcn->diff->addr = diff->addr;
+		R_FREE (fcn->diff->name);
+		if (diff->name) {
+			fcn->diff->name = strdup (diff->name);
+		}
 	}
 	if (!r_anal_add_function (anal, fcn)) {
 		r_anal_function_free (fcn);

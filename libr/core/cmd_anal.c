@@ -3026,13 +3026,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		int n = r_str_word_set0 (ptr);
 		const char *name = NULL;
 		ut64 addr = UT64_MAX;
-		ut64 size = 0LL;
 		RAnalDiff *diff = NULL;
 		int type = R_ANAL_FCN_TYPE_FCN;
 		if (n > 1) {
 			switch (n) {
-			case 5:
-				size = r_num_math (core->num, r_str_word_get0 (ptr, 4));
 			case 4:
 				ptr2 = r_str_word_get0 (ptr, 3);
 				if (!(diff = r_anal_diff_new ())) {
@@ -3061,7 +3058,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			case 1:
 				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			}
-			if (!r_anal_fcn_add (core->anal, addr, size, name, type, diff)) {
+			RAnalFunction *fcn = r_anal_create_function (core->anal, name, addr, type, diff);
+			if (!fcn) {
 				eprintf ("Cannot add function (duplicated)\n");
 			}
 		}
