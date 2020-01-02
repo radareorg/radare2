@@ -8,6 +8,7 @@
 #include <r_reg.h>
 #include <r_lib.h>
 #include <r_anal.h>
+#include <r_core.h>
 #include <signal.h>
 #include <sys/uio.h>
 #include <errno.h>
@@ -502,6 +503,11 @@ static bool linux_stop_thread(int tid) {
 
 static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
 	siginfo_t sig = { 0 };
+
+	if (ptid < 0) {
+		return false;
+	}
+
 	// Safely check if the PID has already been attached to avoid printing errors.
 	// Attaching to a process that has already been started with PTRACE_TRACEME.
 	// sets errno to "Operation not permitted" which may be misleading.
@@ -531,7 +537,7 @@ static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
 static RList *get_pid_thread_list(RDebug *dbg, int main_pid) {
 	RList *list = r_list_new ();
 	if (list) {
-		list = linux_thread_list (main_pid, list);
+		list = linux_thread_list (dbg, main_pid, list);
 		dbg->main_pid = main_pid;
 	}
 	return list;
@@ -599,7 +605,7 @@ RDebugInfo *linux_info(RDebug *dbg, const char *arg) {
 		th_list = r_list_new ();
 		list_alloc = true;
 		if (th_list) {
-			th_list = linux_thread_list (dbg->pid, th_list);
+			th_list = linux_thread_list (dbg, dbg->pid, th_list);
 		}
 	}
 	RDebugPid *th;
@@ -713,9 +719,15 @@ RList *linux_pid_list(int pid, RList *list) {
 	return list;
 }
 
-RList *linux_thread_list(int pid, RList *list) {
-	int i, thid = 0;
+RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
+	int i = 0, thid = 0;
 	char *ptr, buf[PATH_MAX];
+	RDebugPid *pid_info = NULL;
+	RCore *core = (RCore *)dbg->corebind.core;
+	ut64 pc = 0;
+	RAnalFunction *fcn = NULL;
+	RDebugMap *map = NULL;
+	int prev_tid = dbg->tid;
 
 	if (!pid) {
 		r_list_free (list);
@@ -728,10 +740,13 @@ RList *linux_thread_list(int pid, RList *list) {
 	if (r_file_is_directory (buf)) {
 		struct dirent *de;
 		DIR *dh = opendir (buf);
+		// Update the process' memory maps to set correct paths
+		r_debug_map_sync (core->dbg);
 		while ((de = readdir (dh))) {
 			if (!strcmp (de->d_name, ".") || !strcmp (de->d_name, "..")) {
 				continue;
 			}
+			RStrBuf *path = r_strbuf_new (NULL);
 			int tid = atoi (de->d_name);
 			char info[PATH_MAX];
 			int uid = 0;
@@ -744,30 +759,49 @@ RList *linux_thread_list(int pid, RList *list) {
 				if (ptr) {
 					int tgid = atoi (ptr + 5);
 					if (tgid != pid) {
-						// If we want to attach to just one thread, don't attach to the parent
+						/* Ignore threads that aren't in the pid's thread group */
 						continue;
 					}
 				}
 			}
 
-			if (procfs_pid_slurp (tid, "comm", buf, sizeof (buf)) == -1) {
-				/* fall back to auto-id */
-				snprintf (buf, sizeof (buf), "thread_%d %s", thid++, pid == tid ? "(current)" : NULL);
-				buf[sizeof (buf) - 1] = 0;
+			// Switch to the currently inspected thread to get it's program counter
+			if (dbg->tid != tid) {
+				linux_attach_single_pid (dbg, tid);
+				dbg->tid = tid;
 			}
 
-			RDebugPid *pid_info;
+			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+			pc = r_debug_reg_get (dbg, "PC");
+
+			map = r_debug_map_get (dbg, pc);
+			if (map && map->name && map->name[0]) {
+				r_strbuf_appendf (path, "%s ", map->name);
+			}
+
+			r_strbuf_appendf (path, "(0x%" PFMT64x")", pc);
+
+			fcn = r_anal_get_fcn_in (core->anal, pc, 0);
+			if (fcn) {
+				r_strbuf_appendf (path, " in %s+0x%" PFMT64x, fcn->name, (pc - fcn->addr));
+			}
+
 			if (!procfs_pid_slurp (tid, "status", info, sizeof (info))) {
 				// Get information about pid (status, pc, etc.)
-				pid_info = fill_pid_info (info, buf, tid);
+				pid_info = fill_pid_info (info, r_strbuf_get (path), tid);
 			} else {
-				pid_info = r_debug_pid_new (buf, tid, uid, 's', 0);
+				pid_info = r_debug_pid_new (r_strbuf_get (path), tid, uid, 's', 0);
 			}
 			r_list_append (list, pid_info);
+			r_strbuf_free (path);
 		}
 		closedir (dh);
+		// Return to the original thread
+		linux_attach_single_pid (dbg, prev_tid);
+		dbg->tid = prev_tid;
+		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 	} else {
-		/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
+		/* Some linux configurations might hide threads from /proc, use this workaround instead */
 #undef MAXPID
 #define MAXPID 99999
 		/* otherwise, brute force the pids */
