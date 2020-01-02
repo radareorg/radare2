@@ -322,7 +322,7 @@ static void __set_cursor(RCore *core, bool cur);
 static void __set_dcb(RCore *core, RPanel *p);
 static void __set_rcb(RPanels *ps, RPanel *p);
 static void __set_pcb(RPanel *p);
-static void __set_read_only(RPanel *p, char *s);
+static void __set_read_only(RCore *core, RPanel *p, char *s);
 static void __set_pos(RPanelPos *pos, int x, int y);
 static void __set_size(RPanelPos *pos, int w, int h);
 static void __set_geometry(RPanelPos *pos, int x, int y, int w, int h);
@@ -334,7 +334,7 @@ static void __reset_scroll_pos(RPanel *p);
 
 /* update */
 static void __update_disassembly_or_open(RCore *core);
-static void __update_help(RPanels *ps);
+static void __update_help(RCore *core, RPanels *ps);
 static void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
 static void __update_edge_x(RCore *core, int x);
 static void __update_edge_y(RCore *core, int y);
@@ -910,9 +910,11 @@ void __set_cmd_str_cache(RCore *core, RPanel *p, char *s) {
 	__set_pcb (p);
 }
 
-void __set_read_only(RPanel *p, char *s) {
+void __set_read_only(RCore *core, RPanel *p, char *s) {
 	free (p->model->readOnly);
-	p->model->readOnly = s;
+	p->model->readOnly = r_str_new (s);
+	__set_dcb (core, p);
+	__set_pcb (p);
 }
 
 void __set_pos(RPanelPos *pos, int x, int y) {
@@ -3122,7 +3124,7 @@ void __init_panel_param(RCore *core, RPanel *p, const char *title, const char *c
 	__set_panel_addr (core, p, core->offset);
 	m->rotateCb = NULL;
 	__set_cmd_str_cache (core, p, NULL);
-	__set_read_only(p, NULL);
+	__set_read_only (core, p, NULL);
 	m->funcName = NULL;
 	v->refresh = true;
 	if (title) {
@@ -3156,15 +3158,15 @@ void __init_panel_param(RCore *core, RPanel *p, const char *title, const char *c
 }
 
 void __set_dcb(RCore *core, RPanel *p) {
+	if ((p->model->cache && p->model->cmdStrCache) || p->model->readOnly) {
+		p->model->directionCb = __direction_default_cb;
+		return;
+	}
 	if (!p->model->cmd) {
 		return;
 	}
 	if (__check_panel_type (p, PANEL_CMD_GRAPH)) {
 		p->model->directionCb = __direction_graph_cb;
-		return;
-	}
-	if ((p->model->cache && p->model->cmdStrCache) || p->model->readOnly) {
-		p->model->directionCb = __direction_default_cb;
 		return;
 	}
 	if (__check_panel_type (p, PANEL_CMD_STACK)) {
@@ -3308,12 +3310,10 @@ int __show_all_decompiler_cb(void *user) {
 			continue;
 		}
 		r_config_set (core->config, "cmd.pdc", opt);
-		if (panels->n_panels <= i) {
-			panels->n_panels++;
-		}
 		RPanel *panel = __get_panel (panels, i++);
+		panels->n_panels = i;
 		panel->model->title = r_str_new (opt);
-		panel->model->readOnly = r_core_cmd_str (core, opt);
+		__set_read_only (core, panel, r_core_cmd_str (core, opt));
 	}
 	__layout_equal_hor (panels);
 	r_list_free (optl);
@@ -3686,10 +3686,10 @@ void __set_mode(RCore *core, RPanelsMode mode) {
 	RPanels *panels = core->panels;
 	__set_cursor (core, false);
 	panels->mode = mode;
-	__update_help (panels);
+	__update_help (core, panels);
 }
 
-void __update_help(RPanels *ps) {
+void __update_help(RCore *core, RPanels *ps) {
 	int i;
 	for (i = 0; i < ps->n_panels; i++) {
 		RPanel *p = __get_panel (ps, i);
@@ -3720,7 +3720,7 @@ void __update_help(RPanels *ps) {
 			if (!rsb) {
 				return;
 			}
-			__set_read_only (p, r_strbuf_drain (rsb));
+			__set_read_only (core, p, r_strbuf_drain (rsb));
 			p->view->refresh = true;
 		}
 	}
@@ -5815,7 +5815,7 @@ bool r_load_panels_layout(RCore *core, const char *_name) {
 			if (!rsb) {
 				return false;
 			}
-			__set_read_only (p, r_strbuf_drain (rsb));
+			__set_read_only (core, p, r_strbuf_drain (rsb));
 		}
 		tmp_cfg += strlen (tmp_cfg) + 1;
 	}
@@ -5889,7 +5889,7 @@ void __toggle_help(RCore *core) {
 	if (ps->mode == PANEL_MODE_MENU) {
 		__set_mode (core, PANEL_MODE_DEFAULT);
 	}
-	__update_help (ps);
+	__update_help (core, ps);
 }
 
 void __set_breakpoints_on_cursor(RCore *core, RPanel *panel) {
