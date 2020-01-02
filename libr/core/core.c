@@ -2701,6 +2701,7 @@ R_API bool r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->dbg->iob));
 	r_io_bind (core->io, &(core->dbg->bp->iob));
 	r_core_bind (core, &core->dbg->corebind);
+	r_core_bind (core, &core->dbg->bp->corebind);
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
 // XXX pushing uninitialized regstate results in trashed reg values
