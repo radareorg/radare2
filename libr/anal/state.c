@@ -14,7 +14,6 @@
 #define IFINT if(0)
 
 static void kv_anal_bb_free(HtUPKv *kv) {
-	// TODO r_anal_bb_free (kv->value);
 	r_anal_block_unref (kv->value);
 }
 
