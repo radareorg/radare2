@@ -1366,12 +1366,12 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 	pe.dwSize = sizeof (pe);
 	if (Process32First (sh, &pe)) {
 		RIOW32Dbg *rio = dbg->user;
-		bool all = pid == 0, b = false;
+		bool all = pid == 0;
 		do {
-			if (all || pe.th32ProcessID == pid || (b = pe.th32ParentProcessID == pid)) {
+			if (all || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
 				// Returns NULL if process is inaccessible unless if its a child process of debugged process
 				RDebugPid *dbg_pid = __build_debug_pid (pe.th32ProcessID, pe.th32ParentProcessID,
-					b ? rio->pi.hProcess : NULL, pe.szExeFile);
+					dbg->pid == pe.th32ProcessID ? rio->pi.hProcess : NULL, pe.szExeFile);
 				if (dbg_pid) {
 					r_list_append (list, dbg_pid);
 				}
