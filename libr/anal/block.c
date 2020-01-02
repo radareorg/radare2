@@ -431,15 +431,13 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 	}
 
 	// check if function lists are identical
+	if (r_list_length (a->fcns) != r_list_length (b->fcns)) {
+		return false;
+	}
 	RAnalFunction *fcn;
 	RListIter *iter;
 	r_list_foreach (a->fcns, iter, fcn) {
 		if (!r_list_contains (b->fcns, fcn)) {
-			return false;
-		}
-	}
-	r_list_foreach (b->fcns, iter, fcn) {
-		if (!r_list_contains (a->fcns, fcn)) {
 			return false;
 		}
 	}
