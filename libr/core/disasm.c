@@ -353,7 +353,7 @@ R_API ut64 r_core_pava (RCore *core, ut64 addr) {
 }
 
 static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
-	if (ds->fcn && r_anal_fcn_in (ds->fcn, at)) {
+	if (ds->fcn && r_anal_function_contains (ds->fcn, at)) {
 		return ds->fcn;
 	}
 	return r_anal_get_fcn_in (ds->core->anal, at, type);
@@ -2025,7 +2025,7 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 			}
 		} else if (r_anal_function_max_addr (f) - ds->analop.size == ds->at && f->addr == r_anal_function_min_addr (f)) {
 			ds->pre = DS_PRE_FCN_TAIL;
-		} else if (r_anal_fcn_is_in_offset (f, ds->at)) {
+		} else if (r_anal_function_contains (f, ds->at)) {
 			ds->pre = DS_PRE_FCN_MIDDLE;
 		}
 		if (tail) {
@@ -5288,7 +5288,7 @@ toro:
 		}
 		// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		f = ds->fcn = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
-		if (f && f->folded && r_anal_fcn_is_in_offset (f, ds->at)) {
+		if (f && f->folded && r_anal_function_contains (f, ds->at)) {
 			int delta = (ds->at <= f->addr) ? (ds->at - r_anal_function_max_addr (f)) : 0;
 			if (of != f) {
 				char cmt[32];

@@ -1532,6 +1532,10 @@ R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn);
 // basicblocks this function is composed of
 R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn);
 
+// returns whether the function contains a basic block that contains addr
+// This is completely independent of fcn->addr, which is only the entrypoint!
+R_API bool r_anal_function_contains(RAnalFunction *fcn, ut64 addr);
+
 /* anal.c */
 R_API RAnal *r_anal_new(void);
 R_API int r_anal_purge (RAnal *anal);
@@ -1639,7 +1643,6 @@ R_API void r_anal_pin_list(RAnal *a);
 R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_count_edges(const RAnalFunction *fcn, int *ebbs);
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
-R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr);
 R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type);
 R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type); // use r_anal_get_function_at/r_anal_get_functions_in
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);
@@ -1691,7 +1694,6 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_fcn_count (RAnal *a, ut64 from, ut64 to);
 R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API RAnalBlock *r_anal_fcn_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr);
-R_API bool r_anal_fcn_contains(RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
 R_API int r_anal_fcn_resize (RAnal *anal, RAnalFunction *fcn, int newsize);
 R_API bool r_anal_fcn_get_purity(RAnal *anal, RAnalFunction *fcn);

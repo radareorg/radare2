@@ -1810,7 +1810,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 			return 0;  // already analyzed function
 		}
-		if (r_anal_fcn_is_in_offset (fcn, from)) { // inner function
+		if (r_anal_function_contains (fcn, from)) { // inner function
 			RList *l = r_anal_xrefs_get (core->anal, from);
 			if (l && !r_list_empty (l)) {
 				r_list_free (l);
@@ -1849,7 +1849,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 		}
 	} else {
 		r_list_foreach_safe (core->anal->fcns, iter, iter_tmp, fcni) {
-			if (r_anal_fcn_in (fcni, addr)) {
+			if (r_anal_function_contains (fcni, addr)) {
 				r_anal_function_delete (fcni);
 			}
 		}
@@ -2867,7 +2867,7 @@ static bool is_fcn_traced(RDebugTrace *traced, RAnalFunction *fcn) {
 
 	r_list_foreach (traced->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
-			if (r_anal_fcn_in (fcn, trace->addr)) {
+			if (r_anal_function_contains (fcn, trace->addr)) {
 				r_cons_printf ("\ntraced: %d\n", trace->times);
 				return true;
 			}
@@ -3070,7 +3070,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		if (!input || r_anal_fcn_in (fcn, addr) || (!strcmp (name, fcn->name))) {
+		if (!input || r_anal_function_contains (fcn, addr) || (!strcmp (name, fcn->name))) {
 			r_list_append (fcns, fcn);
 		}
 	}
@@ -5404,7 +5404,7 @@ static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
 				r_anal_op_free (op);
 				return false;
 			case R_ANAL_OP_TYPE_JMP:
-				if (!r_anal_fcn_in (f, op->jump)) {
+				if (!r_anal_function_contains (f, op->jump)) {
 					r_anal_op_free (op);
 					return false;
 				}

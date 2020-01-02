@@ -5,8 +5,6 @@
 #include <r_util.h>
 #include <r_list.h>
 
-#include <assert.h>
-
 extern int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, int jmptbl_size, ut64 default_case, int ret0);
 extern bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case);
 #define READ_AHEAD 1
@@ -1265,8 +1263,8 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86"); // HACK
 
 	r_list_foreach (refs, iter, ref) {
-		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_fcn_is_in_offset (fcn, ref->addr)
-		    && (!is_x86 || !r_anal_fcn_is_in_offset (fcn, ref->at))) {
+		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_function_contains (fcn, ref->addr)
+		    && (!is_x86 || !r_anal_function_contains (fcn, ref->at))) {
 			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
 		}
 	}
@@ -1378,7 +1376,7 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 		if (fcn->type != R_ANAL_FCN_TYPE_LOC) {
 			continue;
 		}
-		if (r_anal_fcn_in (fcn, addr)) {
+		if (r_anal_function_contains (fcn, addr)) {
 			r_anal_function_delete (fcn);
 		}
 	}
@@ -1420,22 +1418,6 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	return ret;
 }
 
-static bool fcn_in_cb(RAnalBlock *block, void *user) {
-	RListIter *iter;
-	RAnalFunction *fcn;
-	r_list_foreach (block->fcns, iter, fcn) {
-		if (fcn == user) {
-			return false;
-		}
-	}
-	return true;
-}
-
-R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr) {
-	// fcn_in_cb breaks with false if it finds the fcn
-	return !r_anal_get_blocks_in (fcn->anal, addr, fcn_in_cb, fcn);
-}
-
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) {
 	RAnalFunction *fcn, *ret = NULL;
 	RListIter *iter;
@@ -1449,7 +1431,7 @@ R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) 
 	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || (fcn && fcn->type & type)) {
-			if (r_anal_fcn_in (fcn, addr)) {
+			if (r_anal_function_contains (fcn, addr)) {
 				return fcn;
 			}
 		}
@@ -1612,10 +1594,6 @@ R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr) {
 		}
 	}
 	return closer;
-}
-
-R_API int r_anal_fcn_is_in_offset(RAnalFunction *fcn, ut64 addr) {
-	return r_anal_fcn_in (fcn, addr);
 }
 
 R_API int r_anal_fcn_count(RAnal *anal, ut64 from, ut64 to) {

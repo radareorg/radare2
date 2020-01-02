@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2019 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
-#include <r_util/pj.h>
 
 #include <assert.h>
 

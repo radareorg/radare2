@@ -318,3 +318,19 @@ R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn) {
 	}
 	return sz;
 }
+
+static bool fcn_in_cb(RAnalBlock *block, void *user) {
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (block->fcns, iter, fcn) {
+		if (fcn == user) {
+			return false;
+		}
+	}
+	return true;
+}
+
+R_API bool r_anal_function_contains(RAnalFunction *fcn, ut64 addr) {
+	// fcn_in_cb breaks with false if it finds the fcn
+	return !r_anal_get_blocks_in (fcn->anal, addr, fcn_in_cb, fcn);
+}
