@@ -218,12 +218,11 @@ bool drx_add(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 bool drx_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 	if (bp->nhwbps > 0) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_DRX, false);
-		r_debug_drx_set (dbg, bp->nhwbps, 0, 0, 0, 0);
+		r_debug_drx_unset (dbg, bp->nhwbps - 1);
 		r_debug_reg_sync (dbg, R_REG_TYPE_DRX, true);
 		bp->nhwbps--;
-		return true;
 	}
-	return false;
+	return true;
 }
 
 #if MAIN
