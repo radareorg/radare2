@@ -46,6 +46,11 @@ R_API bool r_bp_restore_except(RBreakpoint *bp, bool set, ut64 addr) {
 		if (set && !b->enabled) {
 			continue;
 		}
+		// Check if the breakpoint is in a valid map
+		if (set && !r_bp_is_valid (bp, b)) {
+			b->valid = false;
+			continue;
+		}
 		if (bp->breakpoint && bp->breakpoint (bp, b, set)) {
 			continue;
 		}

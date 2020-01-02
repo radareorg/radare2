@@ -1,6 +1,8 @@
 /* radare2 - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_bp.h>
+#include <r_core.h>
+#include <r_debug.h>
 #include <config.h>
 
 R_LIB_VERSION (r_bp);
@@ -203,6 +205,13 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		}
 		b->recoil = ret;
 	}
+	// Check if the breakpoint is set in a valid location
+	if (r_bp_is_valid (bp, b)) {
+		b->valid = true;
+	} else {
+		b->valid = false;
+	}
+
 	bp->nbps++;
 	r_list_append (bp->bps, b);
 	return b;
@@ -288,7 +297,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 		switch (rad) {
 		case 0:
 			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x \
-				" %d %c%c%c %s %s %s cmd=\"%s\" cond=\"%s\" " \
+				" %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" " \
 				"name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
 				((b->perm & R_BP_PROT_READ) | (b->perm & R_BP_PROT_ACCESS)) ? 'r' : '-',
@@ -297,6 +306,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->hw ? "hw": "sw",
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
+				b->valid ? "valid" : "invalid",
 				r_str_get2 (b->data),
 				r_str_get2 (b->cond),
 				r_str_get2 (b->name),
@@ -319,7 +329,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,"
 				"\"prot\":\"%c%c%c\",\"hw\":%s,"
 				"\"trace\":%s,\"enabled\":%s,"
-				"\"data\":\"%s\","
+				"\"valid\":%s,\"data\":\"%s\","
 				"\"cond\":\"%s\"}",
 				iter->p ? "," : "",
 				b->addr, b->size,
@@ -329,6 +339,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->hw ? "true" : "false",
 				b->trace ? "true" : "false",
 				b->enabled ? "true" : "false",
+				b->valid ? "true" : "false",
 				r_str_get2 (b->data),
 				r_str_get2 (b->cond));
 			break;
@@ -408,4 +419,23 @@ R_API int r_bp_size(RBreakpoint *bp) {
 		}
 	}
 	return bpsize;
+}
+
+// Check if the breakpoint is inside a valid map
+R_API bool r_bp_is_valid(RBreakpoint *bp, RBreakpointItem *b) {
+	RDebugMap *map;
+	RListIter *iter;
+	RCore *core = (RCore*)bp->corebind.core;
+	if (!r_config_get_i (core->config, "dbg.bpinmaps")) {
+		return true;
+	}
+
+	r_debug_map_sync (core->dbg);
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (b->addr >= map->addr && b->addr < map->addr_end && map->perm & b->perm ) {
+			return true;
+		}
+	}
+
+	return false;
 }

@@ -1727,5 +1727,11 @@ R_API void r_debug_bp_rebase(RDebug *dbg, ut64 old_base, ut64 new_base) {
 	r_list_foreach (dbg->bp->bps, iter, bp) {
 		bp->addr += diff;
 		bp->delta = bp->addr - dbg->bp->baddr;
+		// Check if the breakpoints are in valid maps after the rebase
+		if (r_bp_is_valid (dbg->bp, bp)) {
+			bp->valid = true;
+		} else {
+			bp->valid = false;
+		}
 	}
 }
