@@ -3023,6 +3023,23 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	}
 }
 
+static int validAddress(RCore *core, ut64 addr) {
+	RDebugMap *map;
+	RListIter *iter;
+	if (!r_config_get_i (core->config, "dbg.bpinmaps")) {
+		return core->num->value = 1;
+	}
+	r_debug_map_sync (core->dbg);
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (addr >= map->addr && addr < map->addr_end) {
+			return core->num->value = 1;
+		}
+	}
+	// TODO: try to read memory, expect no 0xffff
+	// TODO: check map permissions
+	return core->num->value = 0;
+}
+
 static void backtrace_vars(RCore *core, RList *frames) {
 	RDebugFrame *f;
 	RListIter *iter;
@@ -3350,9 +3367,13 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case '.':
 		if (input[2]) {
 			ut64 addr = r_num_tail (core->num, core->offset, input + 2);
-			bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
-			if (!bpi) {
-				eprintf ("Unable to add breakpoint (%s)\n", input + 2);
+			if (validAddress (core, addr)) {
+				bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
+				if (!bpi) {
+					eprintf ("Unable to add breakpoint (%s)\n", input + 2);
+				}
+			} else {
+				eprintf ("Invalid address\n");
 			}
 		} else {
 			bpi = r_bp_get_at (core->dbg->bp, core->offset);
@@ -3759,25 +3780,30 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 					}
 				}
 				addr = r_num_math (core->num, DB_ARG (i));
-				bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
-				if (bpi) {
-					free (bpi->name);
-					if (!strcmp (DB_ARG (i), "$$")) {
-						RFlagItem *f = r_core_flag_get_by_spaces (core->flags, addr);
-						if (f) {
-							if (addr > f->offset) {
-								bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
+				if (validAddress (core, addr)) {
+					bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
+					if (bpi) {
+						free (bpi->name);
+						if (!strcmp (DB_ARG (i), "$$")) {
+							RFlagItem *f = r_core_flag_get_by_spaces (core->flags, addr);
+							if (f) {
+								if (addr > f->offset) {
+									bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
+								} else {
+									bpi->name = strdup (f->name);
+								}
 							} else {
-								bpi->name = strdup (f->name);
+								bpi->name = r_str_newf ("0x%08" PFMT64x, addr);
 							}
 						} else {
-							bpi->name = r_str_newf ("0x%08" PFMT64x, addr);
+							bpi->name = strdup (DB_ARG (i));
 						}
 					} else {
-						bpi->name = strdup (DB_ARG (i));
+						eprintf ("Cannot set breakpoint at '%s'\n", DB_ARG (i));
 					}
 				} else {
-					eprintf ("Cannot set breakpoint at '%s'\n", DB_ARG (i));
+					eprintf ("Cannot place a breakpoint on 0x%08"PFMT64x" unmapped memory."
+								"See e? dbg.bpinmaps\n", addr);
 				}
 			}
 		}
