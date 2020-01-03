@@ -4,7 +4,7 @@ FILE=../bins/elf/analysis/hello-objc-linux
 BROKEN=1
 ARGS=-d
 CMDS=<<EXPECT
-db main;db~1[13];
+db main;db~1[14];
 EXPECT=<<RUN
 "main"
 RUN

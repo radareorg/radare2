@@ -14,6 +14,7 @@ static const char *help_msg_c[] = {
 	"cc", " [at]", "Compares in two hexdump columns of block size",
 	"ccc", " [at]", "Same as above, but only showing different lines",
 	"ccd", " [at]", "Compares in two disasm columns of block size",
+	"ccdd", " [at]", "Compares decompiler output (e cmd.pdc=pdg|pdd)",
 	// "cc", " [offset]", "code bindiff current block against offset"
 	// "cD", " [file]", "like above, but using radiff -b",
 	"cf", " [file]", "Compare contents of file at current seek",
@@ -366,6 +367,13 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	}
 	r_io_read_at (core->io, off, buf, core->blocksize + 32);
 	switch (mode) {
+	case 'd': // decompiler
+		r_core_cmdf (core, "pdc @ 0x%"PFMT64x">.a", off);
+		r_core_cmdf (core, "pdc @ 0x%"PFMT64x">.b", core->offset);
+		r_core_cmdf (core, "!!radiff2 -U .a .b");
+		r_file_rm (".a");
+		r_file_rm (".b");
+		break;
 	case 'c': // columns
 		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
 			// dis A
@@ -733,8 +741,14 @@ static int cmd_cmp(void *data, const char *input) {
 		val = radare_compare (core, block, (ut8 *) &v64, sizeof (v64), 0);
 		break;
 	case 'c': // "cc"
-		if (input[1] == 'd') { // "ccd"
-			cmd_cmp_disasm (core, input + 2, 'c');
+		if (input[1] == '?') { // "cc?"
+			r_core_cmd0 (core, "c?~cc");
+		} else if (input[1] == 'd') { // "ccd"
+			if (input[2] == 'd') { // "ccdd"
+				cmd_cmp_disasm (core, input + 3, 'd');
+			} else {
+				cmd_cmp_disasm (core, input + 2, 'c');
+			}
 		} else {
 			ut32 oflags = core->print->flags;
 			ut64 addr = 0; // TOTHINK: Not sure what default address should be
