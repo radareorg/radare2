@@ -435,6 +435,7 @@ static char *__apply_filter_cmd(RCore *core, RPanel *panel);
 static int __add_cmd_panel(void *user);
 static int __add_cmdf_panel(RCore *core, char *input, char *str);
 static void __set_cmd_str_cache(RCore *core, RPanel *p, char *s);
+static void __set_decompiler_cache(RCore *core, char *s);
 static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache);
 static char *__find_cmd_str_cache(RCore *core, RPanel *panel);
 static char *__load_cmdf(RCore *core, RPanel *p, char *input, char *str);
@@ -910,6 +911,23 @@ void __set_cmd_str_cache(RCore *core, RPanel *p, char *s) {
 	__set_pcb (p);
 }
 
+void __set_decompiler_cache(RCore *core, char *s) {
+	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	if (func) {
+		if (core->panels_root->cur_pdc_cache) {
+			sdb_ptr_set (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), r_str_new (s), 0);
+		} else {
+			Sdb *sdb = sdb_new0 ();
+			const char *pdc_now = r_config_get (core->config, "cmd.pdc");
+			sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), r_str_new (s), 0);
+			core->panels_root->cur_pdc_cache = sdb;
+			if (!sdb_exists (core->panels_root->pdc_caches, pdc_now)) {
+				sdb_ptr_set (core->panels_root->pdc_caches, r_str_new (pdc_now), sdb, 0);
+			}
+		}
+	}
+}
+
 void __set_read_only(RCore *core, RPanel *p, char *s) {
 	free (p->model->readOnly);
 	p->model->readOnly = r_str_new (s);
@@ -1145,7 +1163,6 @@ void __update_panel_title(RCore *core, RPanel *panel) {
 void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
-	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	int sx = panel->view->sx;
 	int sy = R_MAX (panel->view->sy, 0);
 	int x = panel->view->pos.x;
@@ -1153,23 +1170,6 @@ void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
 	int w = panel->view->pos.w;
 	int h = panel->view->pos.h;
 	char *text = NULL;
-
-	if (func) {
-		if (core->panels_root->cur_pdc_cache) {
-			sdb_ptr_set (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), r_str_new (cmdstr), 0);
-		} else {
-			Sdb *sdb = sdb_new0 ();
-			const char *pdc_now = r_config_get (core->config, "cmd.pdc");
-			sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), r_str_new (cmdstr), 0);
-			core->panels_root->cur_pdc_cache = sdb;
-			if (!sdb_exists (core->panels_root->pdc_caches, pdc_now)) {
-				sdb_ptr_set (core->panels_root->pdc_caches, r_str_new (pdc_now), sdb, 0);
-			}
-		}
-	}
-	if (panel->model->cmdStrCache) {
-		__reset_scroll_pos (panel);
-	}
 
 	(void) r_cons_canvas_gotoxy (can, x + 2, y + 2);
 
@@ -4185,28 +4185,32 @@ void __print_decompiler_cb(void *user, void *p) {
 	//TODO: Also, __check_func_diff should use addr not name
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
-	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
 	char *cmdstr = NULL;
+	if (!update) {
+		cmdstr = __find_cmd_str_cache (core, panel);
+		if (cmdstr) {
+			__update_pdc_contents (core, panel, cmdstr);
+		}
+		return;
+	}
+	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (func && core->panels_root->cur_pdc_cache) {
 		cmdstr = r_str_new ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
 					r_num_as_string (NULL, func->addr, false), 0));
-	}
-	if (!cmdstr) {
-		cmdstr = r_core_cmd_str (core, "pdc");
-	}
-	if (cmdstr) {
-		__update_pdc_contents (core, panel, cmdstr);
-		return;
-	}
-	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
-	cmdstr = __find_cmd_str_cache (core, panel);
-	if (update || !cmdstr) {
-		cmdstr = __handle_cmd_str_cache (core, panel, false);
-		if (panel->model->cache && panel->model->cmdStrCache) {
+		if (cmdstr) {
+			__set_cmd_str_cache (core, panel, cmdstr);
 			__reset_scroll_pos (panel);
+			__update_pdc_contents (core, panel, cmdstr);
+			return;
 		}
 	}
-	__update_pdc_contents (core, panel, cmdstr);
+	cmdstr = __handle_cmd_str_cache (core, panel, false);
+	if (cmdstr) {
+		__reset_scroll_pos (panel);
+		__set_decompiler_cache (core, cmdstr);
+		__update_pdc_contents (core, panel, cmdstr);
+	}
 }
 
 void __print_disasmsummary_cb (void *user, void *p) {
