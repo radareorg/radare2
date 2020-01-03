@@ -3,6 +3,8 @@
 #ifndef R2_BIND_H
 #define R2_BIND_H
 
+#include <r_list.h>
+
 // TODO: move riobind here too?
 // TODO: move rprint here too
 
@@ -21,6 +23,8 @@ typedef void (*RCoreSeekArchBits)(void *core, ut64 addr);
 typedef int (*RCoreConfigGetI)(void *core, const char *key);
 typedef const char *(*RCoreConfigGet)(void *core, const char *key);
 typedef ut64 (*RCoreNumGet)(void *core, const char *str);
+typedef RList *(*RCoreDebugMapsGet)(void *core);
+typedef int (*RCoreDebugMapsSync)(void *core);
 
 typedef struct r_core_bind_t {
 	void *core;
@@ -39,6 +43,8 @@ typedef struct r_core_bind_t {
 	RCoreConfigGet cfgGet;
 	RCoreNumGet numGet;
 	RCoreIsMapped isMapped;
+	RCoreDebugMapsGet getDebugMaps;
+	RCoreDebugMapsSync syncDebugMaps;
 } RCoreBind;
 
 #endif

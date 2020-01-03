@@ -282,6 +282,20 @@ static bool __isMapped(RCore *core, ut64 addr) {
 	return r_io_map_is_mapped (core->io, addr);
 }
 
+static RList *__getDebugMaps(RCore *core) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		return core->dbg->maps;
+	}
+	return NULL;
+}
+
+static int __syncDebugMaps(RCore *core) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		return r_debug_map_sync (core->dbg);
+	}
+	return NULL;
+}
+
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
@@ -299,6 +313,8 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->cfgGet = (RCoreConfigGet)cfgget;
 	bnd->numGet = (RCoreNumGet)numget;
 	bnd->isMapped = (RCoreIsMapped)__isMapped;
+	bnd->getDebugMaps = (RCoreDebugMapsGet)__getDebugMaps;
+	bnd->syncDebugMaps = (RCoreDebugMapsSync)__syncDebugMaps;
 	return true;
 }
 
