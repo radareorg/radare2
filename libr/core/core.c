@@ -274,6 +274,14 @@ static ut64 numget(RCore *core, const char *k) {
 	return r_num_math (core->num, k);
 }
 
+static bool __isMapped(RCore *core, ut64 addr) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		r_debug_map_sync (core->dbg);
+		return r_debug_map_get (core->dbg, addr) != NULL;
+	}
+	return r_io_map_is_mapped (core->io, addr);
+}
+
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
@@ -290,6 +298,7 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->cfggeti = (RCoreConfigGetI)cfggeti;
 	bnd->cfgGet = (RCoreConfigGet)cfgget;
 	bnd->numGet = (RCoreNumGet)numget;
+	bnd->isMapped = (RCoreIsMapped)__isMapped;
 	return true;
 }
 
