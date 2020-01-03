@@ -984,8 +984,8 @@ static int bin_dwarf(RCore *core, int mode) {
 				free (cmt);
 #endif
 			} else if(IS_MODE_JSON(mode)) {
-				r_cons_printf("%s[", last_processed ? "," : "");
-				r_cons_printf("{\"name\":\"%s\","
+				r_cons_printf ("%s[", last_processed ? "," : "");
+				r_cons_printf ("{\"name\":\"%s\","
 						"\"file\":\"%s\","
 						"\"line_num\":%d,"
 						"\"addr\":%" PFMT64d "},"
