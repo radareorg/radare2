@@ -1,7 +1,5 @@
 NAME='Can set db on main'
 FILE=../bins/elf/analysis/hello-objc-linux
-# db output has changed
-BROKEN=1
 ARGS=-d
 CMDS=<<EXPECT
 db main;db~1[14];
