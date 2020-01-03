@@ -2848,15 +2848,12 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			size = atoi (regname);
 			if (size < 1) {
 				char *arg = strchr (str + 2, ' ');
-				size = -1;
+				size = 0;
 				if (arg) {
 					*arg++ = 0;
 					size = atoi (arg);
 				}
 				type = r_reg_type_by_name (str + 2);
-				if (size < 0) {
-					size = core->dbg->bits * 8;
-				}
 				r_debug_reg_sync (core->dbg, type, false);
 				r_debug_reg_list (core->dbg, type, size, rad, use_color);
 			} else {
