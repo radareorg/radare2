@@ -910,6 +910,11 @@ static int bin_dwarf(RCore *core, int mode) {
 	int *lfl = NULL;
 	char *lfc = NULL;
 	int lflc = 0;
+	PJ *j = NULL;
+	if (IS_MODE_JSON (mode)) {
+		j = pj_new ();
+		pj_a (j);
+	}
 
 	//TODO we should need to store all this in sdb, or do a filecontentscache in libr/util
 	//XXX this whole thing has leaks
@@ -978,6 +983,25 @@ static int bin_dwarf(RCore *core, int mode) {
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, row->address, cmt);
 				free (cmt);
 #endif
+			} else if(IS_MODE_JSON(mode)) {
+				pj_a (j);
+
+				pj_o (j);
+				pj_ks (j, "name", "CC");
+				pj_ks (j, "file", file);
+				pj_ki (j, "line_num", (int) row->line);
+				pj_kn (j, "addr", row->address);
+				pj_end (j);
+
+				pj_o (j);
+				pj_ks (j, "name", "CL");
+				pj_ks (j, "file", file);
+				pj_ki (j, "line_num", (int) row->line);
+				pj_ks (j, "line", line ? line : "");
+				pj_kn (j, "addr", row->address);
+				pj_end (j);
+
+				pj_end (j);
 			} else {
 				r_cons_printf ("CL %s:%d 0x%08" PFMT64x "\n",
 					       file, (int)row->line,
@@ -993,6 +1017,12 @@ static int bin_dwarf(RCore *core, int mode) {
 			r_cons_printf ("0x%08" PFMT64x "\t%s\t%d\n",
 				       row->address, row->file, row->line);
 		}
+	}
+	if (IS_MODE_JSON(mode)) {
+		pj_end (j);
+		r_cons_printf ("%s", pj_string (j));
+		pj_free (j);
+		j = NULL;
 	}
 	r_cons_break_pop ();
 	R_FREE (lastFileContents);
