@@ -2072,12 +2072,13 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 	__set_refresh_all (core, true, true);
 	RPanel *ppos = __get_panel(panels, idx);
 	if (word) {
+		const ut64 addr = r_num_math (core->num, word);
 		if (__check_panel_type (panel, PANEL_CMD_FUNCTION) &&
 				__check_if_addr (word, strlen (word))) {
-			const ut64 addr = r_num_math (core->num, word);
 			r_core_seek (core, addr, 1);
 			__set_addr_by_type (core, PANEL_CMD_DISASSEMBLY, addr);
 		}
+		r_flag_set (core->flags, "panel.addr", addr, 1);
 		r_config_set (core->config, "scr.highlight", word);
 #if 1
 // TODO implement sync
@@ -2157,7 +2158,7 @@ void __cursor_del_breakpoints(RCore *core, RPanel *panel) {
 	int i = 0;
 	r_list_foreach (core->dbg->bp->bps, iter, b) {
 		if (panel->view->curpos == i++) {
-			r_bp_del(core->dbg->bp, b->addr);
+			r_bp_del (core->dbg->bp, b->addr);
 			__set_refresh_all (core, false, false);
 		}
 	}
@@ -2201,10 +2202,10 @@ void __handle_refs(RCore *core, RPanel *panel, ut64 tmp) {
 	int key = __show_status(core, "xrefs:x refs:X ");
 	switch (key) {
 	case 'x':
-		(void)r_core_visual_refs(core, true, false);
+		(void)r_core_visual_refs (core, true, false);
 		break;
 	case 'X':
-		(void)r_core_visual_refs(core, false, false);
+		(void)r_core_visual_refs (core, false, false);
 		break;
 	default:
 		break;
@@ -3051,6 +3052,7 @@ void __seek_all(RCore *core, ut64 addr) {
 		panel->model->addr = addr;
 	}
 }
+
 void __set_refresh_all(RCore *core, bool clearCache, bool force_refresh) {
 	RPanels *panels = core->panels;
 	int i;

@@ -1,6 +1,10 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, nikolai */
+/* radare - LGPL - Copyright 2009-2020 - pancake, nikolai */
 
 #include <r_diff.h>
+
+// the non-system-diff doesnt work well
+#define USE_SYSTEM_DIFF 1
+
 
 R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
 	RDiff *d = R_NEW0 (RDiff);
@@ -38,7 +42,12 @@ typedef struct {
 	char *str;
 } RDiffUser;
 
-#if 0
+#if USE_SYSTEM_DIFF
+R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+	return r_diff_buffers_unified (d, a, la, b, lb);
+}
+
+#else
 // XXX buffers_static doesnt constructs the correct string in this callback
 static int tostring(RDiff *d, void *user, RDiffOp *op) {
 	RDiffUser *u = (RDiffUser*)user;
@@ -71,12 +80,8 @@ static int tostring(RDiff *d, void *user, RDiffOp *op) {
 	}
 	return 1;
 }
-#endif
 
 R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
-#if 1
-	return r_diff_buffers_unified (d, a, la, b, lb);
-#else
 	// XXX buffers_static doesnt constructs the correct string in this callback
 	void *c = d->callback;
 	void *u = d->user;
@@ -87,7 +92,18 @@ R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *
 	d->callback = c;
 	d->user = u;
 	return du.str;
+}
 #endif
+
+#define diffHit() {\
+	const size_t i_hit = i - hit;\
+	int ra = la - i_hit;\
+	int rb = lb - i_hit;\
+	struct r_diff_op_t o = {\
+		.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = R_MIN (hit, ra),\
+		.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = R_MIN (hit, rb)\
+	};\
+	d->callback (d, d->user, &o);\
 }
 
 R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
@@ -106,33 +122,21 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 			hit++;
 		} else {
 			if (hit > 0) {
-				int ra = la - (i - hit);
-				int rb = lb - (i - hit);
-				struct r_diff_op_t o = {
-					.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = R_MIN (hit, ra),
-					.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = R_MIN (hit, rb)
-				};
-				d->callback (d, d->user, &o);
+				diffHit ();
 				hit = 0;
 			}
 		}
 	}
 	if (hit > 0) {
-		int ra = la - (i - hit);
-		int rb = lb - (i - hit);
-		struct r_diff_op_t o = {
-			.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = R_MIN (hit, ra),
-			.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = R_MIN (hit, rb)
-		};
-		d->callback (d, d->user, &o);
+		diffHit ();
 	}
 	return 0;
 }
 
 // XXX: temporary files are
 R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
-		r_file_dump (".a", a, la, 0);
-		r_file_dump (".b", b, lb, 0);
+	r_file_dump (".a", a, la, 0);
+	r_file_dump (".b", b, lb, 0);
 #if 0
 	if (r_mem_is_printable (a, R_MIN (5, la))) {
 		r_file_dump (".a", a, la, 0);
@@ -145,7 +149,7 @@ R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b,
 	char* err = NULL;
 	char* out = NULL;
 	int out_len;
-	(void)r_sys_cmd_str_full ("/usr/bin/diff -u .a .b", NULL, &out, &out_len, &err);
+	(void)r_sys_cmd_str_full ("diff -u .a .b", NULL, &out, &out_len, &err);
 	r_file_rm (".a");
 	r_file_rm (".b");
 	free (err);
@@ -153,10 +157,9 @@ R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b,
 }
 
 R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb) {
-	if (d->delta) {
-		return r_diff_buffers_delta (d, a, la, b, lb);
-	}
-	return r_diff_buffers_static (d, a, la, b, lb);
+	return d->delta
+		? r_diff_buffers_delta (d, a, la, b, lb)
+		: r_diff_buffers_static (d, a, la, b, lb);
 }
 
 R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
