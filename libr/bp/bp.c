@@ -1,7 +1,6 @@
 /* radare2 - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_bp.h>
-#include <r_debug.h>
 #include <config.h>
 
 R_LIB_VERSION (r_bp);
@@ -415,23 +414,9 @@ R_API int r_bp_size(RBreakpoint *bp) {
 
 // Check if the breakpoint is in a valid map
 R_API bool r_bp_is_valid(RBreakpoint *bp, RBreakpointItem *b) {
-	RDebugMap *map;
-	RListIter *iter;
-	RList *maps;
 	if (!bp->bpinmaps) {
 		return true;
 	}
 
-	if (!(maps = bp->corebind.getDebugMaps (bp->corebind.core))) {
-		// isMapped isn't used for all cases since it doesn't check permissions
-		return bp->corebind.isMapped (bp->corebind.core, b->addr);
-	}
-
-	r_list_foreach (maps, iter, map) {
-		if (b->addr >= map->addr && b->addr < map->addr_end && map->perm & b->perm ) {
-			return true;
-		}
-	}
-
-	return false;
+	return bp->corebind.isMapped (bp->corebind.core, b->addr, b->perm);
 }

@@ -274,19 +274,28 @@ static ut64 numget(RCore *core, const char *k) {
 	return r_num_math (core->num, k);
 }
 
-static bool __isMapped(RCore *core, ut64 addr) {
+static bool __isMapped(RCore *core, ut64 addr, int perm) {
 	if (r_config_get_i (core->config, "cfg.debug")) {
-		r_debug_map_sync (core->dbg);
-		return r_debug_map_get (core->dbg, addr) != NULL;
-	}
-	return r_io_map_is_mapped (core->io, addr);
-}
+		RList *maps = core->dbg->maps;
+		RDebugMap *map = NULL;
+		RListIter *iter = NULL;
 
-static RList *__getDebugMaps(RCore *core) {
-	if (r_config_get_i (core->config, "cfg.debug")) {
-		return core->dbg->maps;
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				if (perm > 0) {
+					if (map->perm & perm) {
+						return true;
+					}
+				} else {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
-	return NULL;
+
+	return r_io_map_is_mapped (core->io, addr);
 }
 
 static int __syncDebugMaps(RCore *core) {
@@ -313,7 +322,6 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->cfgGet = (RCoreConfigGet)cfgget;
 	bnd->numGet = (RCoreNumGet)numget;
 	bnd->isMapped = (RCoreIsMapped)__isMapped;
-	bnd->getDebugMaps = (RCoreDebugMapsGet)__getDebugMaps;
 	bnd->syncDebugMaps = (RCoreDebugMapsSync)__syncDebugMaps;
 	return true;
 }
