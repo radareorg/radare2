@@ -179,6 +179,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	RListIter *iter;
 	gdbr_xml_flags_t *tmpflag;
 	gdbr_xml_reg_t *tmpreg;
+	int packed_size = 0;
 	ut64 profile_len = 0, profile_max_len, regnum = 0, regoff = 0;
 	pc_alias[0] = '\0';
 	gdb_reg_t *arch_regs = NULL;
@@ -224,9 +225,17 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			tmpflag = r_list_get_n (flags, tmpreg->flagnum);
 			_write_flag_bits (flag_bits, tmpflag);
 		}
-		profile_len += snprintf (profile + profile_len, 128, "%s\t%s\t"
-					".%u\t%"PFMT64d"\t0\t%s\n", tmpreg->type,
-					tmpreg->name, tmpreg->size * 8, regoff, flag_bits);
+		packed_size = 0;
+		if (tmpreg->size >= 8 && (strstr (tmpreg->type, "fpu") ||
+			  strstr (tmpreg->type, "mmx") || strstr (tmpreg->type, "xmm") ||
+			  strstr (tmpreg->type, "ymm"))) {
+			packed_size = tmpreg->size;
+		}
+		profile_len += snprintf (profile + profile_len, 128,
+			"%s\t%s\t.%u\t%" PFMT64d "\t%d\t%s\n", tmpreg->type,
+			tmpreg->name, tmpreg->size * 8, regoff,
+			packed_size,
+			flag_bits);
 		// TODO write flag subregisters
 		if (tmpflag) {
 			int i;
@@ -746,7 +755,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 			} else if ((tmp1 = strstr (regstr, "avx")) != NULL && tmp1 < feature_end) {
 				typegroup = "ymm";
 			} else if ((tmp1 = strstr (regstr, "mpx")) != NULL && tmp1 < feature_end) {
-				typegroup = "flg";
+				typegroup = "seg";
 			// - arm
 			} else if ((tmp1 = strstr (regstr, "m-profile")) != NULL && tmp1 < feature_end) {
 				typegroup = "gpr";
@@ -841,6 +850,10 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 		// registers doesn't support >64bit registers atm(but it's still possible to
 		// read them using gdbr's implementation through dr/drt)
 		if (regsize > 64 && !strcmp (regtype, "gpr")) {
+			regtype = "xmm";
+		}
+		// Move appropriately sized unidentified xmm registers from fpu to xmm
+		if (regsize == 128 && !strcmp (regtype, "fpu")) {
 			regtype = "xmm";
 		}
 		if (!(tmpreg = calloc (1, sizeof (gdbr_xml_reg_t)))) {
