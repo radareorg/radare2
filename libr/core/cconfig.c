@@ -1329,6 +1329,13 @@ static bool cb_dbg_unlibs(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dbg_bpinmaps(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->dbg->bp->bpinmaps = node->i_value;
+	return true;
+}
+
 static bool cb_dbg_forks(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -3290,7 +3297,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("dbg.slow", "false", "Show stack and regs in visual mode in a slow but verbose mode");
 	SETPREF ("dbg.funcarg", "false", "Display arguments to function call in visual mode");
 
-	SETPREF ("dbg.bpinmaps", "true", "Force breakpoints to be inside a valid map");
+	SETCB ("dbg.bpinmaps", "true", &cb_dbg_bpinmaps, "Activate breakpoints only if they are inside a valid map");
 	SETCB ("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
 	n = NODECB ("dbg.btalgo", "fuzzy", &cb_dbg_btalgo);
 	SETDESC (n, "Select backtrace algorithm");
