@@ -1880,7 +1880,9 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			}
 
 			pj_ks (pj, "name", str);
-			pj_ks (pj, "libname", libname);
+			if (libname) {
+				pj_ks (pj, "libname", libname);
+			}
 			pj_kn (pj, "plt", addr);
 			pj_end (pj);
 			free (str);
