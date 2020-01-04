@@ -534,6 +534,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			}
 			r_list_free (blocks);
 		}
+		r_anal_block_unref (existing_bb);
 		if (anal->opt.recont) {
 			return R_ANAL_RET_END;
 		}
@@ -666,7 +667,8 @@ repeat:
 					// This happens when we purposefully walked over another block and overlapped it
 					// and now we hit an offset where the instructions match again.
 					// So we need to split the overwalked block.
-					r_anal_block_split (bbg, at);
+					RAnalBlock *split = r_anal_block_split (bbg, at);
+					r_anal_block_unref (split);
 				}
 				overlapped = true;
 				if (anal->verbose) {

@@ -366,6 +366,7 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	RAnal *anal = bbi->anal;
 	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
 	if (addr == bbi->addr) {
+		r_anal_block_ref (bbi); // ref to be consistent with splitted return refcount
 		return bbi;
 	}
 
@@ -420,7 +421,6 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 		}
 	}
 	bbi->ninstr = new_bbi_instr;
-	r_anal_block_unref (bb);
 	return bb;
 }
 

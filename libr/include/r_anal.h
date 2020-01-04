@@ -1433,12 +1433,17 @@ R_API void r_anal_block_check_leaks(RAnal *anal);
 R_API void r_anal_block_ref(RAnalBlock *bb);
 R_API void r_anal_block_unref(RAnalBlock *bb);
 
+// Create one block covering the given range.
+// This will fail if the range overlaps any existing blocks.
+R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size);
+
 static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
 	return addr >= bb->addr && addr < bb->addr + bb->size;
 }
 
 // Split the block at the given address into two blocks.
 // bb will stay the first block, the second block will be returned (or NULL on failure)
+// The returned block will always be refd, i.e. it is necessary to always call r_anal_block_unref() on the return value!
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr);
 
 // Merge block b into a.
