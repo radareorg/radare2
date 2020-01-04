@@ -1910,7 +1910,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	}
 
 	if (IS_MODE_JSON (mode)) {
-			pj_end (pj);
+		pj_end (pj);
 	} else if (IS_MODE_NORMAL (mode)) {
 		if (r->table_query) {
 			r_table_query (table, r->table_query);
