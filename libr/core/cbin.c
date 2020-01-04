@@ -1816,6 +1816,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	bool lit = info ? info->has_lit: false;
 	char *str;
 	int i = 0;
+	PJ *pj = NULL; 
 
 	if (!info) {
 		if (IS_MODE_JSON (mode)) {
@@ -1827,7 +1828,8 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	RList *imports = r_bin_get_imports (r->bin);
 	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	if (IS_MODE_JSON (mode)) {
-		r_cons_print ("[");
+		pj = pj_new ();
+		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_println ("fs imports");
 	} else if (IS_MODE_NORMAL (mode)) {
@@ -1863,23 +1865,24 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		} else if (IS_MODE_SIMPLE (mode) || IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (symname);
 		} else if (IS_MODE_JSON (mode)) {
+
+			pj_o (pj);
+
 			str = r_str_escape_utf8_for_json (symname, -1);
 			str = r_str_replace (str, "\"", "\\\"", 1);
-			r_cons_printf ("%s{\"ordinal\":%d,"
-				"\"bind\":\"%s\","
-				"\"type\":\"%s\",",
-				iter->p ? "," : "",
-				import->ordinal,
-				import->bind,
-				import->type);
+
+			pj_ki (pj, "ordinal", import->ordinal);
+			pj_ks (pj, "bind", import->bind);
+			pj_ks (pj, "type", import->type);
 			if (import->classname && import->classname[0]) {
-				r_cons_printf ("\"classname\":\"%s\","
-					"\"descriptor\":\"%s\",",
-					import->classname,
-					import->descriptor);
+				pj_ks (pj, "classname", import->classname);
+				pj_ks (pj, "descriptor", import->descriptor);
 			}
-			r_cons_printf ("\"name\":\"%s\",\"libname\":\"%s\",\"plt\":%"PFMT64d"}",
-				str, libname, addr);
+
+			pj_ks (pj, "name", str);
+			pj_ks (pj, "libname", libname);
+			pj_kn (pj, "plt", addr);
+			pj_end (pj);
 			free (str);
 		} else if (IS_MODE_RAD (mode)) {
 			// TODO(eddyb) symbols that are imports.
@@ -1905,7 +1908,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	}
 
 	if (IS_MODE_JSON (mode)) {
-		r_cons_print ("]");
+			pj_end (pj);
 	} else if (IS_MODE_NORMAL (mode)) {
 		if (r->table_query) {
 			r_table_query (table, r->table_query);
@@ -1914,6 +1917,13 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_printf ("%s\n", s);
 		free (s);
 	}
+
+	if (pj) {
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	}
+
 	r_table_free (table);
 #if MYDB
 	// NOTE: if we comment out this, it will leak.. but it will be faster
