@@ -1471,8 +1471,10 @@ void __set_cursor(RCore *core, bool cur) {
 void __activate_cursor(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
-	if (__is_normal_cursor_type (cur) || __is_abnormal_cursor_type (core, cur)) {
-		if (cur->model->cache) {
+	bool normal = __is_normal_cursor_type (cur);
+	bool abnormal = __is_abnormal_cursor_type (core, cur);
+	if (normal || abnormal) {
+		if (normal && cur->model->cache) {
 			if (__show_status_yesno (core, 1, "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
 				cur->model->cache = false;
 				__set_cmd_str_cache (core, cur, NULL);
@@ -3034,7 +3036,7 @@ bool __check_func_diff(RCore *core, RPanel *p) {
 		if (R_STR_ISEMPTY (p->model->funcName)) {
 			return false;
 		}
-		p->model->funcName = r_str_dup (p->model->funcName, "");
+		p->model->funcName = NULL;
 		return true;
 	}
 	if (!p->model->funcName || strcmp (p->model->funcName, func->name)) {
@@ -3160,6 +3162,11 @@ void __init_panel_param(RCore *core, RPanel *p, const char *title, const char *c
 }
 
 void __set_dcb(RCore *core, RPanel *p) {
+	if (__is_abnormal_cursor_type (core, p)) {
+		p->model->cache = true;
+		p->model->directionCb = __direction_panels_cursor_cb;
+		return;
+	}
 	if ((p->model->cache && p->model->cmdStrCache) || p->model->readOnly) {
 		p->model->directionCb = __direction_default_cb;
 		return;
@@ -3179,8 +3186,6 @@ void __set_dcb(RCore *core, RPanel *p) {
 		p->model->directionCb = __direction_register_cb;
 	} else if (__check_panel_type (p, PANEL_CMD_HEXDUMP)) {
 		p->model->directionCb = __direction_hexdump_cb;
-	} else if (__is_abnormal_cursor_type (core, p)) {
-		p->model->directionCb = __direction_panels_cursor_cb;
 	} else {
 		p->model->directionCb = __direction_default_cb;
 	}
