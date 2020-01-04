@@ -274,12 +274,35 @@ static ut64 numget(RCore *core, const char *k) {
 	return r_num_math (core->num, k);
 }
 
-static bool __isMapped(RCore *core, ut64 addr) {
+static bool __isMapped(RCore *core, ut64 addr, int perm) {
 	if (r_config_get_i (core->config, "cfg.debug")) {
-		r_debug_map_sync (core->dbg);
-		return r_debug_map_get (core->dbg, addr) != NULL;
+		RList *maps = core->dbg->maps;
+		RDebugMap *map = NULL;
+		RListIter *iter = NULL;
+
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				if (perm > 0) {
+					if (map->perm & perm) {
+						return true;
+					}
+				} else {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
+
 	return r_io_map_is_mapped (core->io, addr);
+}
+
+static int __syncDebugMaps(RCore *core) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		return r_debug_map_sync (core->dbg);
+	}
+	return NULL;
 }
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
@@ -299,6 +322,7 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->cfgGet = (RCoreConfigGet)cfgget;
 	bnd->numGet = (RCoreNumGet)numget;
 	bnd->isMapped = (RCoreIsMapped)__isMapped;
+	bnd->syncDebugMaps = (RCoreDebugMapsSync)__syncDebugMaps;
 	return true;
 }
 
@@ -2710,6 +2734,7 @@ R_API bool r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->dbg->iob));
 	r_io_bind (core->io, &(core->dbg->bp->iob));
 	r_core_bind (core, &core->dbg->corebind);
+	r_core_bind (core, &core->dbg->bp->corebind);
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
 // XXX pushing uninitialized regstate results in trashed reg values
