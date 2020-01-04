@@ -448,6 +448,7 @@ static int cmd_info(void *data, const char *input) {
 	int mode = 0; //R_MODE_SIMPLE;
 	bool rdump = false;
 	int is_array = 0;
+	bool is_zz = false;
 	Sdb *db;
 
 	for (i = 0; input[i] && input[i] != ' '; i++)
@@ -462,7 +463,7 @@ static int cmd_info(void *data, const char *input) {
 	if (mode == R_MODE_JSON) {
 		int suffix_shift = 0;
 		if (!strncmp (input, "SS", 2) || !strncmp (input, "ee", 2)
-			|| !strncmp (input, "zz", 2)) {
+		    || (is_zz = !strncmp (input, "zz", 2))) {
 			suffix_shift = 1;
 		}
 		if (strlen (input + 1 + suffix_shift) > 1) {
@@ -470,7 +471,7 @@ static int cmd_info(void *data, const char *input) {
 		}
 	}
 	if (is_array) {
-		r_cons_printf ("{");
+		r_cons_printf (is_zz ? "[" : "{");
 	}
 	if (!*input) {
 		cmd_info_bin (core, va, mode);
@@ -1234,7 +1235,7 @@ static int cmd_info(void *data, const char *input) {
 	}
 done:
 	if (is_array) {
-		r_cons_printf ("}\n");
+		r_cons_printf ("%s\n", is_zz ? "]" : "}");
 	}
 	if (newline) {
 		r_cons_newline ();

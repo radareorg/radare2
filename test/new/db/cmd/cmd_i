@@ -3464,6 +3464,27 @@ izzj
 EXPECT='[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]'
 RUN
 
+NAME=izzzj
+FILE=-
+CMDS=<<EOF
+w abcd\00012345\0efghi\0
+izzzj~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "string": "abcd"
+  },
+  {
+    "string": "12345"
+  },
+  {
+    "string": "efghi"
+  }
+]
+EOF
+RUN
+
 NAME=i (no rbin - file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
