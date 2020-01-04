@@ -368,11 +368,23 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	r_io_read_at (core->io, off, buf, core->blocksize + 32);
 	switch (mode) {
 	case 'd': // decompiler
-		r_core_cmdf (core, "pdc @ 0x%"PFMT64x">.a", off);
-		r_core_cmdf (core, "pdc @ 0x%"PFMT64x">.b", core->offset);
-		r_core_cmdf (core, "!!radiff2 -U .a .b");
-		r_file_rm (".a");
-		r_file_rm (".b");
+		{
+#if 0
+		char *a = r_core_cmd_strf (core, "pdc @ 0x%"PFMT64x, off);
+		char *b = r_core_cmd_strf (core, "pdc @ 0x%"PFMT64x, core->offset);
+		RDiff *d = r_diff_new ();
+		char *s = r_diff_buffers_unified (d, a, strlen(a), b, strlen(b));
+		r_cons_printf ("%s\n", s);
+		free (a);
+		free (b);
+		free (s);
+		r_diff_free (d);
+#else
+		r_core_cmdf (core, "pdc @ 0x%"PFMT64x">$a", off);
+		r_core_cmdf (core, "pdc @ 0x%"PFMT64x">$b", core->offset);
+		r_core_cmd0 (core, "diff $a $b;rm $a;rm $b");
+#endif
+		}
 		break;
 	case 'c': // columns
 		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {

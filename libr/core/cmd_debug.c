@@ -5185,7 +5185,7 @@ static int cmd_debug(void *data, const char *input) {
 					P ("stopreason=%d\n", stop);
 				}
 				break;
-			case 'f': // "dif"
+			case 'f': // "dif" "diff"
 				if (input[1] == '?') {
 					eprintf ("Usage: dif $a $b  # diff two alias files\n");
 				} else {
