@@ -91,11 +91,11 @@ static const char *help_msg_slash_a[] = {
 };
 
 static const char *help_msg_slash_c[] = {
-	"Usage: /c", "[acdr] [algorithm] [digest]", "Search for crypto materials",
+	"Usage: /c", "", "Search for crypto materials",
 	"/ca", "", "Search for AES keys expanded in memory",
 	"/cc", "[algo] [digest]", "Find collisions (bruteforce block length values until given checksum is found)",
 	"/cd", "", "Search for ASN1/DER certificates",
-	"/cr", "", "Search for private RSA keys",
+	"/cr", "", "Search for ASN1/DER private keys (RSA and ECC)",
 	NULL
 };
 
@@ -152,7 +152,7 @@ struct search_parameters {
 	bool inverse;
 	bool crypto_search;
 	bool aes_search;
-	bool rsa_search;
+	bool privkey_search;
 };
 
 struct endlist_pair {
@@ -2394,8 +2394,8 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					int delta = 0;
 					if (param->aes_search) {
 						delta = r_search_aes_update (core->search, at, buf, len);
-					} else if (param->rsa_search) {
-						delta = r_search_rsa_update (core->search, at, buf, len);
+					} else if (param->privkey_search) {
+						delta = r_search_privkey_update (core->search, at, buf, len);
 					}
 					if (delta != -1) {
 						int t = r_search_hit_new (core->search, &aeskw, at + delta);
@@ -2901,7 +2901,7 @@ static int cmd_search(void *data, const char *input) {
 		.inverse = false,
 		.crypto_search = false,
 		.aes_search = false,
-		.rsa_search = false,
+		.privkey_search = false,
 	};
 	if (!param.cmd_hit) {
 		param.cmd_hit = "";
@@ -3323,7 +3323,7 @@ reread:
 			param.aes_search = true;
 			break;
 		case 'r':
-			param.rsa_search = true;
+			param.privkey_search = true;
 			break;
 		default: {
 			dosearch = false;

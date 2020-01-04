@@ -160,6 +160,16 @@ CMDS=<<EOF
 EOF
 RUN
 
+NAME=cmd.hit for /cr on edd448
+FILE=../bins/other/ed448-private.key
+EXPECT=<<EOF
+0x000000f5 hit0_0 3047020100300506032b6571043b0439176449168ec8fc66d9e67d375d1ea3
+EOF
+CMDS=<<EOF
+/cr
+EOF
+RUN
+
 NAME=cmd.hit for /cd
 FILE=../bins/other/certificate.ber
 EXPECT=<<EOF
