@@ -217,3 +217,33 @@ EXPECT=<<RUN
 "valid"
 EOF
 RUN
+
+NAME='dbg.bp_remove_index'
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS=<<EOF
+db main
+db main+1
+db main+2
+db main+4
+dbi~[0,2]
+db-*
+dbi
+db main
+db main+1
+dbi- 1
+?e ----------
+dbi~[0,2]
+dbi- 0
+dbi~[0,2]
+EOF
+EXPECT=<<EOF
+0 E:1
+1 E:1
+2 E:1
+3 E:1
+----------
+0 E:1
+Hello world!
+EOF
+RUN
