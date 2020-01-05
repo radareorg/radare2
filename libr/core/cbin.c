@@ -2211,7 +2211,6 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			} else {
 				const char *n = r_str_newf("%s.%s", sn.libname, sn.name);
 				const char *rn = sn.demname ? sn.demname : sn.name;
-				// ITAY: THIS SETS THE NAME OF THE FLAG DISPLAYED [REMOE THIS]
 				const char *fn ;
 				if (sn.libname) {
 					fn = r_str_newf("imp.%s.%s", sn.libname, sn.demflag ? sn.demflag : sn.name);
