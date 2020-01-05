@@ -236,8 +236,12 @@ R_API RBreakpointItem* r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int per
 }
 
 R_API int r_bp_del_all(RBreakpoint *bp) {
+	int i;
 	if (!r_list_empty (bp->bps)) {
 		r_list_purge (bp->bps);
+		for (i = 0; i < bp->bps_idx_count; i++) {
+			bp->bps_idx[i] = NULL;
+		}
 		return true;
 	}
 	return false;
@@ -388,7 +392,7 @@ R_API int r_bp_get_index_at (RBreakpoint *bp, ut64 addr) {
 R_API int r_bp_del_index(RBreakpoint *bp, int idx) {
 	if (idx >= 0 && idx < bp->bps_idx_count) {
 		r_list_delete_data (bp->bps, bp->bps_idx[idx]);
-		R_FREE (bp->bps_idx[idx]);
+		bp->bps_idx[idx] = 0;
 		return true;
 	}
 	return false;
