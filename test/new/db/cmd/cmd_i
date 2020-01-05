@@ -3468,42 +3468,9 @@ NAME=izzzj
 FILE=-
 CMDS=<<EOF
 w abcd\00012345\0efghi\0
-izzzj~{}
+izzzj
 EOF
-EXPECT=<<EOF
-[
-  {
-    "vaddr": 0,
-    "paddr": 0,
-    "ordinal": 0,
-    "size": 5,
-    "length": 4,
-    "section": "",
-    "type": "ascii",
-    "string": "abcd"
-  },
-  {
-    "vaddr": 5,
-    "paddr": 5,
-    "ordinal": 1,
-    "size": 6,
-    "length": 5,
-    "section": "",
-    "type": "ascii",
-    "string": "12345"
-  },
-  {
-    "vaddr": 11,
-    "paddr": 11,
-    "ordinal": 2,
-    "size": 6,
-    "length": 5,
-    "section": "",
-    "type": "ascii",
-    "string": "efghi"
-  }
-]
-EOF
+EXPECT='[{"vaddr":0,"paddr":0,"ordinal":0,"size":5,"length":4,"section":"","type":"ascii","string":"abcd"},{"vaddr":5,"paddr":5,"ordinal":1,"size":6,"length":5,"section":"","type":"ascii","string":"12345"},{"vaddr":11,"paddr":11,"ordinal":2,"size":6,"length":5,"section":"","type":"ascii","string":"efghi"}]'
 RUN
 
 NAME=i (no rbin - file x86_64)
