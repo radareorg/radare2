@@ -4,7 +4,7 @@ r_search_sources = [
   'keyword.c',
   # 'old_xrefs.c',
   'regexp.c',
-  'rsa-find.c',
+  'privkey-find.c',
   'search.c',
   'strings.c',
   'xrefs.c',
