@@ -1167,6 +1167,21 @@ R_API int r_str_unescape(char *buf) {
 		case 'n':
 			buf[i] = 0x0a;
 			break;
+		case 'a':
+			buf[i] = 0x07;
+			break;
+		case 'b':
+			buf[i] = 0x08;
+			break;
+		case 't':
+			buf[i] = 0x09;
+			break;
+		case 'v':
+			buf[i] = 0x0b;
+			break;
+		case 'f':
+			buf[i] = 0x0c;
+			break;
 		case 'x':
 			err = ch2 = ch = 0;
 			if (!buf[i + 2] || !buf[i + 3]) {
