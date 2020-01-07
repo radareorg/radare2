@@ -388,6 +388,7 @@ R_API void r_core_fini(RCore *c);
 R_API void r_core_wait(RCore *core);
 R_API RCore *r_core_ncast(ut64 p);
 R_API RCore *r_core_cast(void *p);
+R_API bool r_core_bin_load_structs(RCore *core, const char *file);
 R_API int r_core_config_init(RCore *core);
 R_API void r_core_config_update(RCore *core);
 R_API void r_core_parse_radare2rc(RCore *r);
