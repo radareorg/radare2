@@ -565,13 +565,11 @@ RList *bsd_thread_list(RDebug *dbg, int pid, RList *list) {
 	max = len / sizeof(*kp);
 	for (i = 0; i < max; i ++) {
 		RDebugPid *pid_info;
-		char tpath[64];
 		int pid_stat;
 
-		snprintf(tpath, sizeof (tpath), "%lx:%s", (long)kp[i].ki_wchan, kp[i].ki_comm);
 		pid_stat = get_r2_status (kp[i].ki_stat);
-		pid_info = r_debug_pid_new (tpath, kp[i].ki_tid,
-			kp[i].ki_uid, pid_stat, 0);
+		pid_info = r_debug_pid_new (kp[i].ki_comm, kp[i].ki_tid,
+			kp[i].ki_uid, pid_stat, (ut64)kp[i].ki_wchan);
 		r_list_append (list, pid_info);
 	}
 
