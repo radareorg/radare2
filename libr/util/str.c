@@ -1153,19 +1153,36 @@ R_API int r_str_unescape(char *buf) {
 		if (buf[i] != '\\') {
 			continue;
 		}
-		if (buf[i+1] == 'e') {
+		int esc_seq_len = 2;
+		switch (buf[i + 1]) {
+		case 'e':
 			buf[i] = 0x1b;
-			memmove (buf + i + 1, buf + i + 2, strlen (buf + i + 2) + 1);
-		} else if (buf[i + 1] == '\\') {
+			break;
+		case '\\':
 			buf[i] = '\\';
-			memmove (buf + i + 1, buf + i + 2, strlen (buf + i + 2) + 1);
-		} else if (buf[i+1] == 'r') {
+			break;
+		case 'r':
 			buf[i] = 0x0d;
-			memmove (buf + i + 1, buf + i + 2, strlen (buf + i + 2) + 1);
-		} else if (buf[i+1] == 'n') {
+			break;
+		case 'n':
 			buf[i] = 0x0a;
-			memmove (buf + i + 1, buf + i + 2, strlen (buf + i + 2) + 1);
-		} else if (buf[i + 1] == 'x') {
+			break;
+		case 'a':
+			buf[i] = 0x07;
+			break;
+		case 'b':
+			buf[i] = 0x08;
+			break;
+		case 't':
+			buf[i] = 0x09;
+			break;
+		case 'v':
+			buf[i] = 0x0b;
+			break;
+		case 'f':
+			buf[i] = 0x0c;
+			break;
+		case 'x':
 			err = ch2 = ch = 0;
 			if (!buf[i + 2] || !buf[i + 3]) {
 				eprintf ("Unexpected end of string.\n");
@@ -1178,24 +1195,27 @@ R_API int r_str_unescape(char *buf) {
 				return 0; // -1?
 			}
 			buf[i] = (ch << 4) + ch2;
-			memmove (buf + i + 1, buf + i + 4, strlen (buf + i + 4) + 1);
-		} else if (IS_OCTAL (buf[i + 1])) {
-			int num_digits = 1;
-			buf[i] = buf[i + 1] - '0';
-			if (IS_OCTAL (buf[i + 2])) {
-				num_digits++;
-				buf[i] = (ut8)buf[i] * 8 + (buf[i + 2] - '0');
-				if (IS_OCTAL (buf[i + 3])) {
+			esc_seq_len = 4;
+			break;
+		default:
+			if (IS_OCTAL (buf[i + 1])) {
+				int num_digits = 1;
+				buf[i] = buf[i + 1] - '0';
+				if (IS_OCTAL (buf[i + 2])) {
 					num_digits++;
-					buf[i] = (ut8)buf[i] * 8 + (buf[i + 3] - '0');
+					buf[i] = (ut8)buf[i] * 8 + (buf[i + 2] - '0');
+					if (IS_OCTAL (buf[i + 3])) {
+						num_digits++;
+						buf[i] = (ut8)buf[i] * 8 + (buf[i + 3] - '0');
+					}
 				}
+				esc_seq_len = 1 + num_digits;
+			} else {
+				eprintf ("Error: Unknown escape sequence.\n");
+				return 0; // -1?
 			}
-			memmove (buf + i + 1, buf + i + 1 + num_digits,
-			         strlen (buf + i + 1 + num_digits) + 1);
-		} else {
-			eprintf ("'\\x' expected.\n");
-			return 0; // -1?
 		}
+		memmove (buf + i + 1, buf + i + esc_seq_len, strlen (buf + i + esc_seq_len) + 1);
 	}
 	return i;
 }
