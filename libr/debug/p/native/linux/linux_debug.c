@@ -8,7 +8,6 @@
 #include <r_reg.h>
 #include <r_lib.h>
 #include <r_anal.h>
-#include <r_core.h>
 #include <signal.h>
 #include <sys/uio.h>
 #include <errno.h>
@@ -675,6 +674,7 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	if (ptr) {
 		pid_info->gid = atoi (ptr + 5);
 	}
+
 	pid_info->pid = tid;
 	pid_info->path = path ? strdup (path) : NULL;
 	pid_info->runnable = true;
@@ -723,10 +723,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 	int i = 0, thid = 0;
 	char *ptr, buf[PATH_MAX];
 	RDebugPid *pid_info = NULL;
-	RCore *core = (RCore *)dbg->corebind.core;
 	ut64 pc = 0;
-	RAnalFunction *fcn = NULL;
-	RDebugMap *map = NULL;
 	int prev_tid = dbg->tid;
 
 	if (!pid) {
@@ -741,12 +738,11 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 		struct dirent *de;
 		DIR *dh = opendir (buf);
 		// Update the process' memory maps to set correct paths
-		r_debug_map_sync (core->dbg);
+		dbg->corebind.syncDebugMaps (dbg->corebind.core);
 		while ((de = readdir (dh))) {
 			if (!strcmp (de->d_name, ".") || !strcmp (de->d_name, "..")) {
 				continue;
 			}
-			RStrBuf *path = r_strbuf_new (NULL);
 			int tid = atoi (de->d_name);
 			char info[PATH_MAX];
 			int uid = 0;
@@ -774,26 +770,14 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 			pc = r_debug_reg_get (dbg, "PC");
 
-			map = r_debug_map_get (dbg, pc);
-			if (map && map->name && map->name[0]) {
-				r_strbuf_appendf (path, "%s ", map->name);
-			}
-
-			r_strbuf_appendf (path, "(0x%" PFMT64x")", pc);
-
-			fcn = r_anal_get_fcn_in (core->anal, pc, 0);
-			if (fcn) {
-				r_strbuf_appendf (path, " in %s+0x%" PFMT64x, fcn->name, (pc - fcn->addr));
-			}
-
 			if (!procfs_pid_slurp (tid, "status", info, sizeof (info))) {
 				// Get information about pid (status, pc, etc.)
-				pid_info = fill_pid_info (info, r_strbuf_get (path), tid);
+				pid_info = fill_pid_info (info, NULL, tid);
+				pid_info->pc = pc;
 			} else {
-				pid_info = r_debug_pid_new (r_strbuf_get (path), tid, uid, 's', 0);
+				pid_info = r_debug_pid_new (NULL, tid, uid, 's', pc);
 			}
 			r_list_append (list, pid_info);
-			r_strbuf_free (path);
 		}
 		closedir (dh);
 		// Return to the original thread
