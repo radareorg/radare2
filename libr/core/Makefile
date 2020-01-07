@@ -14,7 +14,9 @@ OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o anal_objc.o blaze.o cundo.o
 OBJS+=esil_data_flow.o
 
 CFLAGS+=-I../../shlr/heap/include
+ifeq ($(USE_TREESITTER),1)
 CFLAGS+=-I../../shlr/tree-sitter/lib/include -I../../shlr/radare2-shell-parser/src/tree_parser
+endif
 CFLAGS+=-DR2_PLUGIN_INCORE -I../../shlr
 LDFLAGS+=${DL_LIBS}
 

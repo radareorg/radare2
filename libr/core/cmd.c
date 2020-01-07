@@ -21,14 +21,16 @@
 #include <r_cmd.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <tree_sitter/api.h>
 #include <ctype.h>
 #include <stdarg.h>
 #if __UNIX__
 #include <sys/utsname.h>
 #endif
 
+#if USE_TREESITTER
+#include <tree_sitter/api.h>
 TSLanguage *tree_sitter_r2cmd ();
+#endif
 
 R_API void r_save_panels_layout(RCore *core, const char *_name);
 R_API void r_load_panels_layout(RCore *core, const char *_name);
@@ -4351,6 +4353,7 @@ R_API void run_pending_anal(RCore *core) {
 	}
 }
 
+#if USE_TREESITTER
 static inline bool is_ts_commands(TSNode node) {
 	return strcmp (ts_node_type (node), "commands") == 0;
 }
@@ -4475,10 +4478,15 @@ static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log) {
 	ts_parser_delete (parser);
 	return res;
 }
+#endif
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
+#if USE_TREESITTER
 		return core_cmd_tsr2cmd (core, cstr, log)? 0: 1;
+#else
+		R_LOG_WARN ("No compilation support for radare2-shell-parser\n");
+#endif
 	}
 
 	char *cmd, *ocmd, *ptr, *rcmd;
