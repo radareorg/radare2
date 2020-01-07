@@ -44,7 +44,9 @@ OBJS+=$(STATIC_OBJS)
 #STATIC_OBJS=$(subst ..,p/..,$(subst core_,p/core_,$(STATIC_OBJ)))
 
 include $(TOP)/shlr/gdb/deps.mk
+ifeq ($(USE_TREESITTER),1)
 include $(TOP)/shlr/radare2-shell-parser-deps.mk
+endif
 include $(LTOP)/rules.mk
 
 # include plugins
