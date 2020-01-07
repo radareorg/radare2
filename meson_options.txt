@@ -27,6 +27,7 @@ option('use_sys_lz4', type: 'boolean', value: false)
 option('use_sys_xxhash', type: 'boolean', value: false)
 option('use_sys_openssl', type: 'boolean', value: false)
 option('use_libuv', type: 'boolean', value: true)
+option('use_treesitter', type: 'boolean', value: false)
 option('debugger', type: 'boolean', value: true)
 
 option('use_webui', type: 'boolean', value: false, description: 'install different WebUIs for radare2')

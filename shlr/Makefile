@@ -329,6 +329,7 @@ else
 	cd ../../radare2-webui/www/m && git pull ; npm i ; $(MAKE) release
 endif
 
+ifeq ($(USE_TREESITTER),1)
 tree-sitter-build: tree-sitter/libtree-sitter.$(EXT_AR)
 
 tree-sitter/libtree-sitter.$(EXT_AR): tree-sitter/lib/src/lib.o
@@ -353,6 +354,12 @@ radare2-shell-parser/src/parser.o: radare2-shell-parser-sync
 radare2-shell-parser-sync: tree-sitter-sync
 	"$(SHELL)" clone_3rd_repo.sh radare2-shell-parser "${SHELLPARSER_URL}" "${SHELLPARSER_BRA}" "${SHELLPARSER_TIP}"
 
+SHLRS+=tree-sitter/libtree-sitter.a
+SHLRS+=radare2-shell-parser/libshell-parser.a
+else
+tree-sitter-build:
+radare2-shell-parser-build:
+endif
 
 www-sync-m sync-www-m: ../../radare2-webui/dist/m
 	cp -rf ../../radare2-webui/dist/m www/m.tmp
@@ -394,8 +401,6 @@ SHLRS+=grub/libgrubfs.a
 SHLRS+=java/libr_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
-SHLRS+=tree-sitter/libtree-sitter.a
-SHLRS+=radare2-shell-parser/libshell-parser.a
 #SHLRS+=sdb/src/libsdb.a
 #SHLRS+=tcc/libr_tcc.a
 SHLRS+=windbg/libr_windbg.a
