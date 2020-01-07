@@ -280,7 +280,7 @@ static bool __isMapped(RCore *core, ut64 addr, int perm) {
 		RDebugMap *map = NULL;
 		RListIter *iter = NULL;
 
-		r_list_foreach (core->dbg->maps, iter, map) {
+		r_list_foreach (maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				if (perm > 0) {
 					if (map->perm & perm) {
@@ -298,11 +298,11 @@ static bool __isMapped(RCore *core, ut64 addr, int perm) {
 	return r_io_map_is_mapped (core->io, addr);
 }
 
-static int __syncDebugMaps(RCore *core) {
+static bool __syncDebugMaps(RCore *core) {
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		return r_debug_map_sync (core->dbg);
 	}
-	return 0;
+	return false;
 }
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {

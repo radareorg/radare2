@@ -300,7 +300,7 @@ R_API RList *r_debug_modules_list(RDebug *dbg) {
 		dbg->h->modules_get (dbg): NULL;
 }
 
-R_API int r_debug_map_sync(RDebug *dbg) {
+R_API bool r_debug_map_sync(RDebug *dbg) {
 	bool ret = false;
 	if (dbg && dbg->h && dbg->h->map_get) {
 		RList *newmaps = dbg->h->map_get (dbg);
@@ -310,7 +310,7 @@ R_API int r_debug_map_sync(RDebug *dbg) {
 			ret = true;
 		}
 	}
-	return (int)ret;
+	return ret;
 }
 
 R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
