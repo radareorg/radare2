@@ -98,7 +98,7 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 	}
 	sym->dup_count = 0;
 
-	const char *oname = sdb_fmt ("o.%" PFMT64x ".%s", 0, name);
+	const char *oname = sdb_fmt ("o.0.%s", name);
 	RBinSymbol *prev_sym = ht_pp_find (ht, oname, NULL);
 	if (!prev_sym) {
 		if (!ht_pp_insert (ht, oname, sym)) {
