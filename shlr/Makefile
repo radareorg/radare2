@@ -353,6 +353,9 @@ radare2-shell-parser/src/parser.o: radare2-shell-parser-sync
 
 radare2-shell-parser-sync: tree-sitter-sync
 	"$(SHELL)" clone_3rd_repo.sh radare2-shell-parser "${SHELLPARSER_URL}" "${SHELLPARSER_BRA}" "${SHELLPARSER_TIP}"
+
+SHLRS+=tree-sitter/libtree-sitter.a
+SHLRS+=radare2-shell-parser/libshell-parser.a
 else
 tree-sitter-build:
 radare2-shell-parser-build:
@@ -398,8 +401,6 @@ SHLRS+=grub/libgrubfs.a
 SHLRS+=java/libr_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
-SHLRS+=tree-sitter/libtree-sitter.a
-SHLRS+=radare2-shell-parser/libshell-parser.a
 #SHLRS+=sdb/src/libsdb.a
 #SHLRS+=tcc/libr_tcc.a
 SHLRS+=windbg/libr_windbg.a
