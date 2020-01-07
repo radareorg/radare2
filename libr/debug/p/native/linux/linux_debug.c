@@ -20,36 +20,38 @@
 
 char *linux_reg_profile (RDebug *dbg) {
 #if __arm__
-#include "reg/linux-arm.h"
+#	include "reg/linux-arm.h"
 #elif __riscv
-#include "reg/linux-riscv64.h"
+#	include "reg/linux-riscv64.h"
 #elif __arm64__ || __aarch64__
-#include "reg/linux-arm64.h"
+#	include "reg/linux-arm64.h"
 #elif __mips__
 	if ((dbg->bits & R_SYS_BITS_32) && (dbg->bp->endian == 1)) {
-#include "reg/linux-mips.h"
+#		include "reg/linux-mips.h"
 	} else {
-#include "reg/linux-mips64.h"
+#		include "reg/linux-mips64.h"
 	}
 #elif (__i386__ || __x86_64__)
 	if (dbg->bits & R_SYS_BITS_32) {
 #if __x86_64__
-#include "reg/linux-x64-32.h"
+#		include "reg/linux-x64-32.h"
 #else
-#include "reg/linux-x86.h"
+#		include "reg/linux-x86.h"
 #endif
 	} else {
-#include "reg/linux-x64.h"
-#include <bits/sigcontext.h>
+#		include "reg/linux-x64.h"
+#		include <bits/sigcontext.h>
 	}
 #elif __powerpc__
 	if (dbg->bits & R_SYS_BITS_32) {
-#include "reg/linux-ppc.h"
+#		include "reg/linux-ppc.h"
 	} else {
-#include "reg/linux-ppc64.h"
+#		include "reg/linux-ppc64.h"
 	}
+#elif __s390x__
+#	include "reg/linux-s390x.h"
 #else
-#error "Unsupported Linux CPU"
+#	error "Unsupported Linux CPU"
 	return NULL;
 #endif
 }
