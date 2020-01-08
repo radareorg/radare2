@@ -25,9 +25,13 @@ fmt:
 v:
 	git clone https://github.com/vlang/v
 
-install:
+install: uninstall
 	v -prod r2r.v
 	rm -f $(BINDIR)/r2r
 	ln -fs $(CWD)/r2r $(shell r2 -H R2_PREFIX)/bin
 	mkdir -p "${DESTDIR}${MANDIR}/man1"
 	cp -rf r2r.1 "${DESTDIR}${MANDIR}/man1"
+
+uninstall:
+	rm -f $(BINDIR)/r2r
+	rm -f "${DESTDIR}${MANDIR}/man1/r2r.1"

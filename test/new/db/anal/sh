@@ -1,22 +1,25 @@
 NAME=SuperH iI elf
 FILE=../bins/sh/loop.elf
-CMDS=<<EXPECT
+CMDS=<<EOF
 iI~arch
 iI~endian
 iI~machine
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 arch     sh
 endian   big
 machine  Hitachi SH
+EOF
 RUN
 
 NAME=SuperH s af pif
 FILE=../bins/sh/loop.elf
-CMDS=<<EXPECT
+CMDS=<<EOF
 s sym._called_in_loop
 af
 pif
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 mov.l r14, @-r15
 mov r15, r14
 mov.l @(0x14,pc), r1
@@ -30,4 +33,5 @@ mov r14, r15
 mov.l @r15+, r14
 rts
 nop
+EOF
 RUN

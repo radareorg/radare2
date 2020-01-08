@@ -622,21 +622,23 @@ fn (r2r mut R2R) load_asm_tests(testpath string) {
 
 fn (r2r mut R2R) run_unit_tests() bool {
 	wd := os.getwd()
-	_ = os.system('make -C ${r2r.r2r_home}/unit')
+	_ = os.system('make -C ${r2r.r2r_home}/unit') // TODO: rewrite in V instead of depending on a makefile
 	unit_path := '${r2r.db_path}/../../unit/bin'
+	unit_home := '${r2r.db_path}/../..'
 	if !os.is_dir(unit_path) {
 		eprintln('Cannot open unit_path')
 		return false
 	}
-	os.chdir(unit_path)
+	os.chdir(unit_home)
 	println('[r2r] Running unit tests from ${unit_path}')
-	files := os.ls('.') or {
+	files := os.ls(unit_path) or {
 		return false
 	}
 	for file in files {
-		if is_executable(file) {
+		fpath := filepath.join(unit_path, file)
+		if is_executable(fpath, file) {
 			// TODO: filter OK
-			cmd := if r2r.show_quiet { '(./$file ;echo \$? > .a) | grep -v OK || [ "\$(shell cat .a)" = 0 ]' } else { './$file' }
+			cmd := if r2r.show_quiet { '(${fpath} ;echo \$? > .a) | grep -v OK || [ "\$(shell cat .a)" = 0 ]' } else { '$fpath' }
 			if os.system(cmd) == 0 {
 				r2r.success++
 			}
@@ -649,14 +651,14 @@ fn (r2r mut R2R) run_unit_tests() bool {
 	return true
 }
 
-fn is_executable(f string) bool {
-	if f.starts_with('r2-') {
+fn is_executable(abspath, filename string) bool {
+	if filename.starts_with('r2-') {
 		return false
 	}
-	if os.is_dir(f) {
+	if os.is_dir(abspath) {
 		return false
 	}
-	return true
+	return os.is_executable(abspath)
 }
 
 fn (r2r mut R2R) run_asm_tests() {
@@ -707,6 +709,9 @@ fn (r2r mut R2R) run_jsn_tests() {
 			panic(err)
 		}
 		for line in lines {
+			if line.trim_space().len == 0 {
+				continue
+			}
 			ok := r2r.run_jsn_test(line)
 			mut mark := term.green('OK')
 			if ok {
@@ -802,37 +807,37 @@ fn (r2r mut R2R) run_jsn_test(cmd string) bool {
 fn (r2r R2R) load_jsn_tests(testpath string) {
 	// implementation is in run_jsn_tests
 	// nothing to load for now
-	}
+}
 
-	fn (r2r mut R2R) load_tests() {
-		r2r.cmd_tests = []
-		if !os.is_dir(r2r.db_path) {
-			eprintln('Cannot open -d ${r2r.db_path}')
-			return
-		}
-		if r2r.wants('json') {
-			r2r.load_jsn_tests('${r2r.db_path}/json')
-		}
-		if r2r.wants('asm') {
-			r2r.load_asm_tests('${r2r.db_path}/asm')
-		}
-		if r2r.wants('cmd') {
-			r2r.load_cmd_tests('${r2r.db_path}/cmd')
-		}
-		if r2r.wants('arch') {
-			$if x64 {
-				p := '${r2r.db_path}/archos'
-				$if linux {
-					r2r.load_cmd_tests('$p/linux-x64/')
-				} $else {
-					$if macos {
-						r2r.load_cmd_tests('$p/darwin-x64/')
-					} $else {
-						eprintln('Warning: archos tests not supported for current platform')
-					}
-				}
+fn (r2r mut R2R) load_tests() {
+	r2r.cmd_tests = []
+	if !os.is_dir(r2r.db_path) {
+		eprintln('Cannot open -d ${r2r.db_path}')
+		return
+	}
+	if r2r.wants('json') {
+		r2r.load_jsn_tests('${r2r.db_path}/json')
+	}
+	if r2r.wants('asm') {
+		r2r.load_asm_tests('${r2r.db_path}/asm')
+	}
+	if r2r.wants('cmd') {
+		r2r.load_cmd_tests('${r2r.db_path}/cmd')
+	}
+	if r2r.wants('arch') {
+		$if x64 {
+			p := '${r2r.db_path}/archos'
+			$if linux {
+				r2r.load_cmd_tests('$p/linux-x64/')
 			} $else {
-				eprintln('Warning: archos tests not supported for current platform')
+				$if macos {
+					r2r.load_cmd_tests('$p/darwin-x64/')
+				} $else {
+					eprintln('Warning: archos tests not supported for current platform')
+				}
 			}
+		} $else {
+			eprintln('Warning: archos tests not supported for current platform')
 		}
 	}
+}
