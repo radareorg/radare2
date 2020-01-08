@@ -2214,21 +2214,14 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					}
 				}
 			} else {
-				const char *n = r_str_newf("%s.%s", sn.libname, sn.name);
-				const char *rn = sn.demname ? sn.demname : sn.name;
-				const char *fn ;
-				if (sn.libname) {
-					fn = r_str_newf("imp.%s.%s", sn.libname, sn.demflag ? sn.demflag : sn.name);
-				} else {
-					fn = r_str_newf("imp.%s", sn.demflag ? sn.demflag : sn.name);
-				}
-
+				const char *n = sn.demname ? sn.demname : sn.name;
+				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
 					strdup (fn);
 				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 				if (fi) {
-					r_flag_item_set_realname (fi, rn);
+					r_flag_item_set_realname (fi, n);
 					fi->demangled = (bool)(size_t)sn.demname;
 				} else {
 					if (fn) {
