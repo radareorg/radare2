@@ -1618,8 +1618,6 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				// check if name is available
 				if (relname && *relname) {
 					pj_ks (pj, "name", relname);
-				} else {
-					pj_knull (pj, "name");
 				}
 				pj_ks (pj, "demname", mn ? mn : "");
 				pj_ks (pj, "type", bin_reloc_type_name (reloc));
