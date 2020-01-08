@@ -50,9 +50,6 @@ olly-extras: bins
 dwarf: bins
 	${RUNTEST} db/extras/asm/dwarf
 
-broken:
-	grep BROKEN=1 t -r -l
-
 clean:
 	rm -rf tmp
 
@@ -60,33 +57,22 @@ symstall:
 	mkdir -p $(BINDIR)
 	ln -fs $(CWD)/r2r $(BINDIR)/r2r
 
-install:
-	mkdir -p $(BINDIR)
-	sed -e 's,@R2RDIR@,$(LIBDIR)/radare2-regressions,g' < $(CWD)/r2r > $(BINDIR)/r2r
-	chmod +x $(BINDIR)/r2r
-	mkdir -p $(LIBDIR)/radare2-regressions
-	cp -rf $(TDIRS) $(LIBDIR)/radare2-regressions
-	cp -rf *.sh $(LIBDIR)/radare2-regressions
+install: src/r2r
+	$(MAKE) -C src install
+	#mkdir -p $(BINDIR)
+	#sed -e 's,@R2RDIR@,$(LIBDIR)/radare2-regressions,g' < $(CWD)/r2r > $(BINDIR)/r2r
+	#chmod +x $(BINDIR)/r2r
+	#mkdir -p $(LIBDIR)/radare2-regressions
+	#cp -rf $(TDIRS) $(LIBDIR)/radare2-regressions
+	#cp -rf *.sh $(LIBDIR)/radare2-regressions
 
 uninstall:
-	rm -f $(BINDIR)/r2r
-	rm -f $(BINDIR)/r2-v
+	$(MAKE) -C src uninstall
 	rm -rf $(LIBDIR)/radare2-regressions
+	#rm -f $(BINDIR)/r2r
+	#rm -f $(BINDIR)/r2-v
 
-unit_tests: bins
-	@make -C ./unit all
-	@./run_unit.sh
+unit unit_tests: bins src/r2r
+	src/r2r unit
 
-tested: bins
-	@grep -re FILE= t*  | cut -d : -f 2- | sed -e 's/^.*bins\///g' |sort -u | grep -v FILE
-
-untested: bins
-	@${MAKE} -s tested > .a
-	@${MAKE} -s allbins > .b
-	@diff -ru .a .b | grep ^+ | grep -v +++ | cut -c 2-
-	@rm -f .a .b
-
-allbins: bins
-	find bins -type f
-
-.PHONY: all clean allbins
+.PHONY: all clean unit install uninstall

@@ -5,7 +5,7 @@ asj
 avj
 axfj
 axfj @ sym.main
-axgj @ str.Invalid_phase_s BROKEN
+axgj @ str.Invalid_phase_s
 axj @ sym.main
 axtj
 axtj @ sym.main
@@ -17,7 +17,7 @@ dLj
 dmj
 dplj
 drj
-drlj BROKEN
+drlj
 drrj
 ecj
 ecoj
@@ -26,4 +26,4 @@ fj
 fsj
 iaj
 iAj
-iCj BROKEN
+iCj
