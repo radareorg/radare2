@@ -3740,7 +3740,11 @@ static int bin_signature(RCore *r, int mode) {
 	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
 	if (plg && plg->signature) {
 		const char *signature = plg->signature (cur, IS_MODE_JSON (mode));
-		r_cons_println (signature);
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("{\"signature\":%s}", signature);
+		} else {
+			r_cons_println (signature);
+		}
 		free ((char*) signature);
 		return true;
 	}

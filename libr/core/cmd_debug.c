@@ -2408,36 +2408,30 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		break;
 	case 'l': // "drl[j]"
 		{
-			bool json_out = false;
-			switch (str[1]) {
-			case 'j':
-				json_out = true;
-				/* fall trhu */
-			case 0:
-				{
-					RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
-					if (rs) {
-						RRegItem *r;
-						RListIter *iter;
-						i = 0;
-						if (json_out) {
-							r_cons_printf ("[");
-						}
-						r_list_foreach (rs->regs, iter, r) {
-							if (json_out) {
-								r_cons_printf ("%s\"%s\"",
-									(i ? "," : ""),
-									r->name);
-								i++;
-							} else {
-								r_cons_println (r->name);
-							}
-						}
-						if (json_out) {
-							r_cons_printf ("]");
-						}
+			const bool json_out = str[1] == 'j';
+			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+			if (rs) {
+				RRegItem *r;
+				RListIter *iter;
+				i = 0;
+				PJ *pj = NULL;
+				if (json_out) {
+					pj = pj_new ();
+					pj_a (pj);
+				}
+				r_list_foreach (rs->regs, iter, r) {
+					if (json_out) {
+						pj_s (pj, r->name);
+						i++;
+					} else {
+						r_cons_println (r->name);
 					}
-					break;
+				}
+				if (json_out) {
+					pj_end (pj);
+					const char *s = pj_string (pj);
+					r_cons_println (s);
+					pj_free (pj);
 				}
 			}
 		}

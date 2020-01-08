@@ -1009,19 +1009,23 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	}
 	Sdb *binfile_sdb = binfile? binfile->sdb: NULL;
 	if (!binfile_sdb) {
-		eprintf ("Cannot find SDB!\n");
+	//	eprintf ("Cannot find SDB!\n");
 		return;
 	}
 	if (!binfile) {
-		eprintf ("Binary format not currently loaded!\n");
+	//	eprintf ("Binary format not currently loaded!\n");
 		return;
 	}
 	sdb_unset (binfile_sdb, ARCHS_KEY, 0);
+	PJ *pj = pj_new ();
+	pj_o (pj);
 	if (mode == 'j') {
-		bin->cb_printf ("\"bins\":[");
+		pj_k (pj, "bins");
+		pj_a (pj);
 	}
 	RBinFile *nbinfile = r_bin_file_find_by_name_n (bin, name, i);
 	if (!nbinfile) {
+		pj_free (pj);
 		return;
 	}
 	i = -1;
@@ -1047,11 +1051,15 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			bin->cb_printf ("%s\n", arch);
 			break;
 		case 'j':
-			bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-					"\"offset\":%" PFMT64u ",\"size\":%" PFMT64u ","
-					"\"machine\":\"%s\"}",
-					i? ",": "", arch, bits,
-					boffset, obj_size, machine);
+			pj_o (pj);
+			pj_ks (pj, "arch", arch);
+			pj_ki (pj, "bits", bits);
+			pj_kn (pj, "offset", boffset);
+			pj_kn (pj, "size", obj_size);
+			if (machine) {
+				pj_ks (pj, "machine", machine);
+			}
+			pj_end (pj);
 			break;
 		default:
 			r_table_add_rowf (table, "nXnss", i, boffset, obj_size, sdb_fmt ("%s_%i", arch, bits), machine);
@@ -1069,11 +1077,15 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				bin->cb_printf ("%s\n", arch);
 				break;
 			case 'j':
-				bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-						"\"offset\":%" PFMT64u ",\"size\":%" PFMT64u ","
-						"\"machine\":\"%s\"}",
-						i? ",": "", arch, bits,
-						boffset, obj_size, machine);
+				pj_o (pj);
+				pj_ks (pj, "arch", arch);
+				pj_ki (pj, "bits", bits);
+				pj_kn (pj, "offset", boffset);
+				pj_kn (pj, "size", obj_size);
+				if (machine) {
+					pj_ks (pj, "machine", machine);
+				}
+				pj_end (pj);
 				break;
 			default:
 				r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%08" PFMT64x , boffset), obj_size, sdb_fmt("%s_%i", arch, bits), "");
@@ -1088,11 +1100,15 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				bin->cb_printf ("%s\n", arch);
 				break;
 			case 'j':
-				bin->cb_printf ("%s{\"arch\":\"unk_%d\",\"bits\":%d,"
-						"\"offset\":%" PFMT64u ",\"size\":%" PFMT64u ","
-						"\"machine\":\"%s\"}",
-						i? ",": "", i, bits,
-						boffset, obj_size, machine);
+				pj_o (pj);
+				pj_ks (pj, "arch", arch);
+				pj_ki (pj, "bits", bits);
+				pj_kn (pj, "offset", boffset);
+				pj_kn (pj, "size", obj_size);
+				if (machine) {
+					pj_ks (pj, "machine", machine);
+				}
+				pj_end (pj);
 				break;
 			default:
 				r_table_add_rowf (table, "nsnss", i, sdb_fmt ("0x%08" PFMT64x , boffset), obj_size, "", "");
@@ -1107,8 +1123,14 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 		//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
 	}
 	if (mode == 'j') {
-		bin->cb_printf ("]");
+		pj_end (pj);
+		pj_end (pj);
+		const char *s = pj_string (pj);
+		if (s) {
+			bin->cb_printf ("%s\n", s);
+		}
 	}
+	pj_free (pj);
 	r_table_free (table);
 }
 
