@@ -180,8 +180,7 @@ R_API RIntervalNode *r_interval_tree_node_at(RIntervalTree *tree, ut64 start) {
 }
 
 R_API RBIter r_interval_tree_first_at(RIntervalTree *tree, ut64 start) {
-	RBIter it;
-	it.len = 0;
+	RBIter it = { 0 };
 
 	// Find the topmost node matching start so we have a sub-tree with all entries that we want to find.
 	RIntervalNode *top_intervalnode = r_interval_tree_node_at (tree, start);

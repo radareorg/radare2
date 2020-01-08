@@ -27,6 +27,7 @@ R_API void r_core_fortune_list(RCore *core) {
 			char *file = getFortuneFile(core, fortunes[i]);
 			char *str = r_file_slurp (file, NULL);
 			if (!str) {
+				free (file);
 				continue;
 			}
 			for (j = 0; str[j]; j++) {

@@ -880,8 +880,12 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 
 	GHT next_chunk = initial_brk, prev_chunk = next_chunk;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
+	if (!cnk) {
+		return;
+	}
 	GH(RHeapChunk) *cnk_next = R_NEW0 (GH(RHeapChunk));
-	if (!cnk || !cnk_next) {
+	if (!cnk_next) {
+		free (cnk);
 		return;
 	}
 

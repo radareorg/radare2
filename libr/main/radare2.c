@@ -624,21 +624,25 @@ R_API int r_main_radare2(int argc, char **argv) {
 	if (noStderr) {
 		if (-1 == close (2)) {
 			eprintf ("Failed to close stderr");
+			LISTS_FREE ();
 			return 1;
 		}
 		const char nul[] = R_SYS_DEVNULL;
 		int new_stderr = open (nul, O_RDWR);
 		if (-1 == new_stderr) {
 			eprintf ("Failed to open %s", nul);
+			LISTS_FREE ();
 			return 1;
 		}
 		if (2 != new_stderr) {
 			if (-1 == dup2 (new_stderr, 2)) {
 				eprintf ("Failed to dup2 stderr");
+				LISTS_FREE ();
 				return 1;
 			}
 			if (-1 == close (new_stderr)) {
 				eprintf ("Failed to close %s", nul);
+				LISTS_FREE ();
 				return 1;
 			}
 		}

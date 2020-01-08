@@ -324,6 +324,7 @@ RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
 		}
 		ut8 sz = r_buf_read8_at (bin->buf, off);
 		if (!sz) {
+			r_bin_import_free (imp);
 			break;
 		}
 		off++;

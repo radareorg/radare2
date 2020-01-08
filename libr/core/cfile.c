@@ -257,7 +257,9 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	// dump current config file so other r2 tools can use the same options
 	char *config_sdb_path = NULL;
 	int config_sdb_fd = r_file_mkstemp (NULL, &config_sdb_path);
-	close (config_sdb_fd);
+	if (config_sdb_fd >= 0) {
+		close (config_sdb_fd);
+	}
 
 	Sdb *config_sdb = sdb_new (NULL, config_sdb_path, 0);
 	r_config_serialize (core->config, config_sdb);
@@ -272,6 +274,7 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	r_sys_setenv ("R2_COLOR", r_config_get_i (core->config, "scr.color")? "1": "0");
 	r_sys_setenv ("R2_DEBUG", r_config_get_i (core->config, "cfg.debug")? "1": "0");
 	r_sys_setenv ("R2_IOVA", r_config_get_i (core->config, "io.va")? "1": "0");
+	free (config_sdb_path);
 	return ret;
 }
 

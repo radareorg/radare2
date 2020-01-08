@@ -2087,6 +2087,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("[]");
 		}
+		r_table_free (table);
 		return 0;
 	}
 
