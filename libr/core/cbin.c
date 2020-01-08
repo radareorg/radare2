@@ -1781,7 +1781,6 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 #endif
 
 /* XXX: This is a hack to get PLT references in rabin2 -i */
-/* imp. is a prefix that can be rewritten by the symbol table */
 R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	RList *symbols;
 
@@ -1791,11 +1790,10 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	if (!(symbols = r_bin_get_symbols (bin))) {
 		return false;
 	}
-	char *impname = r_str_newf ("imp.%s", name);
-	RBinSymbol *s = get_symbol (bin, symbols, impname, 0LL);
+	RBinSymbol *s = get_symbol (bin, symbols, name, 0LL);
 	// maybe ut64_MAX to indicate import not found?
 	ut64 addr = 0LL;
-	if (s) {
+	if (s && s->is_imported) {
 		if (va) {
 			if (s->paddr == UT64_MAX) {
 				addr = s->vaddr;
@@ -1806,7 +1804,6 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 			addr = s->paddr;
 		}
 	}
-	free (impname);
 	return addr;
 }
 
