@@ -1711,12 +1711,12 @@ static int bin_relocs(RCore *r, int mode, int va) {
 }
 
 #define MYDB 1
-/* this is a hacky workaround that needs proper refactoring in Rbin to use Sdb */
+/* this is a VERY VERY VERY hacky and bad workaround that needs proper refactoring in Rbin to use Sdb */
 #if MYDB
-static Sdb *mydb = NULL;
-static RList *osymbols = NULL;
+R_DEPRECATE static Sdb *mydb = NULL;
+R_DEPRECATE static RList *osymbols = NULL;
 
-static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 addr) {
+R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RList *symbols, const char *name, ut64 addr) {
 	RBinSymbol *symbol, *res = NULL;
 	RListIter *iter;
 	if (mydb && symbols && symbols != osymbols) {
@@ -1735,7 +1735,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 	} else {
 		mydb = sdb_new0 ();
 		r_list_foreach (symbols, iter, symbol) {
-			if (!symbol->name) {
+			if (!symbol->name || !symbol->is_imported) {
 				continue;
 			}
 			/* ${name}=${ptrToSymbol} */
@@ -1790,10 +1790,10 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	if (!(symbols = r_bin_get_symbols (bin))) {
 		return false;
 	}
-	RBinSymbol *s = get_symbol (bin, symbols, name, 0LL);
+	RBinSymbol *s = get_import (bin, symbols, name, 0LL);
 	// maybe ut64_MAX to indicate import not found?
 	ut64 addr = 0LL;
-	if (s && s->is_imported) {
+	if (s) {
 		if (va) {
 			if (s->paddr == UT64_MAX) {
 				addr = s->vaddr;

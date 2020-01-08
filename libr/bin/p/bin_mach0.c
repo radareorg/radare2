@@ -209,7 +209,8 @@ static RList *symbols(RBinFile *bf) {
 			break;
 		}
 		ptr->name = strdup ((char*)syms[i].name);
-		if (ptr->name[0] == '_' && strncmp (ptr->name, "imp.", 4)) {
+		ptr->is_imported = syms[i].is_imported;
+		if (ptr->name[0] == '_' && !ptr->is_imported) {
 			char *dn = r_bin_demangle (bf, ptr->name, ptr->name, ptr->vaddr, false);
 			if (dn) {
 				ptr->dname = dn;
