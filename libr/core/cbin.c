@@ -1962,8 +1962,8 @@ static const char *getPrefixFor(RBinSymbol *sym) {
 
 #define MAXFLAG_LEN_DEFAULT 128
 
-static char *construct_symbol_flagname(const char *pfx, const char *symname, int len) {
-	char *r = r_str_newf ("%s.%s", pfx, symname);
+static char *construct_symbol_flagname(const char *pfx, const char *libname, const char *symname, int len) {
+	char *r = r_str_newf ("%s.%s%s%s", pfx, libname ? libname : "", libname ? "_" : "", symname);
 	if (r) {
 		r_name_filter (r, len); // maybe unnecessary..
 		char *R = __filterQuotedShell (r);
@@ -1992,10 +1992,10 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	if (!r || !sym || !sym->name) {
 		return;
 	}
-	sn->name = strdup (sym->name);
+	sn->name = r_str_newf ("%s%s", sym->is_imported ? ".imp" : "", sym->name);
 	sn->libname = sym->libname ? strdup (sym->libname) : NULL;
 	const char *pfx = getPrefixFor (sym);
-	sn->nameflag = construct_symbol_flagname (pfx, r_bin_symbol_name (sym), MAXFLAG_LEN_DEFAULT);
+	sn->nameflag = construct_symbol_flagname (pfx, sym->libname, r_bin_symbol_name (sym), MAXFLAG_LEN_DEFAULT);
 	if (sym->classname && sym->classname[0]) {
 		sn->classname = strdup (sym->classname);
 		sn->classflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
@@ -2015,7 +2015,12 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	if (bin_demangle && sym->paddr) {
 		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
 		if (sn->demname) {
-			sn->demflag = construct_symbol_flagname (pfx, sn->demname, -1);
+			if (sym->is_imported) {
+				char *demname = sn->demname;
+				sn->demname = r_str_newf ("imp.%s", demname);
+				free (demname);
+			}
+			sn->demflag = construct_symbol_flagname (pfx, sym->libname, sn->demname, -1);
 		}
 	}
 }
@@ -2294,7 +2299,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				lastfs = 's';
 			}
 			if (r->bin->prefix || *name) { // we don't want unnamed symbol flags
-				char *flagname = construct_symbol_flagname ("sym", name, MAXFLAG_LEN_DEFAULT);
+				char *flagname = construct_symbol_flagname ("sym", sn.libname, name, MAXFLAG_LEN_DEFAULT);
 				if (!flagname) {
 					goto next;
 				}
