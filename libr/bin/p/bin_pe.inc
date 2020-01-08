@@ -230,6 +230,7 @@ static RList* symbols(RBinFile *bf) {
 			//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
 			ptr->name = r_str_newf ("%s", imports[i].name);
 			ptr->libname = r_str_newf ("%s", imports[i].libname);
+			ptr->is_imported = true;
 			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
 			ptr->bind = "NONE";
 			ptr->type = R_BIN_TYPE_FUNC_STR;

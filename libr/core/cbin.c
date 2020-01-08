@@ -2147,7 +2147,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_table_set_columnsf (table, "dssssdss", "nth", "paddr","vaddr","bind", "type", "size", "library", "name");
+		r_table_set_columnsf (table, "dssssdss", "nth", "paddr","vaddr","bind", "type", "size", "lib", "name");
 	}
 
 	size_t count = 0;
