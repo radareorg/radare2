@@ -4651,7 +4651,7 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 }
 
 R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang) {
-	int i, w = p->cols * 0.7;
+	int i, w = (int)(p->cols * 0.7);
 	if (w < 1) {
 		w = 1;
 	}
@@ -5557,7 +5557,7 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 			processed_cmd = true;
 			break;
-		case 't': // "pdt" 
+		case 't': // "pdt"
 			r_core_disasm_table (core, l, r_str_trim_ro (input + 2));
 			pd_result = 0;
 			processed_cmd = true;

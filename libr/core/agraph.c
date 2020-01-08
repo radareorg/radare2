@@ -2095,6 +2095,8 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		r_str_trim (res);
 		res = r_str_trim_lines (res);
 		r_core_visual_toggle_decompiler_disasm (core, true, false);
+		r_config_hold_restore (hc);
+		r_config_hold_free (hc);
 		return res;
 	}
 	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";

@@ -302,7 +302,7 @@ static int __syncDebugMaps(RCore *core) {
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		return r_debug_map_sync (core->dbg);
 	}
-	return NULL;
+	return 0;
 }
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
@@ -1268,6 +1268,7 @@ static void autocompleteFilename(RLineCompletion *completion, RLineBuffer *buf, 
 			break;
 		}
 		autocomplete_process_path (completion, buf->data, s);
+		free (s);
 	}
 out:
 	free (args);
@@ -1405,6 +1406,7 @@ static void autocomplete_flags(RCore *core, RLineCompletion *completion, const c
 	r_flag_foreach_prefix (core->flags, str, n, add_argv, completion);
 }
 
+// TODO: Should be refactored
 static void autocomplete_sdb (RCore *core, RLineCompletion *completion, const char *str) {
 	r_return_if_fail (core && completion && str);
 	char *pipe = strchr (str, '>');
@@ -1464,6 +1466,7 @@ static void autocomplete_sdb (RCore *core, RLineCompletion *completion, const ch
 				if (!strncmp (tmp, temp_cmd, n)) {
 					char *cmplt = r_str_newf ("anal/%s/%s", ns, temp_cmd);
 					r_line_completion_push (completion, cmplt);
+					free (cmplt);
 				}
 				out += temp_pos - out + 1;
 			}

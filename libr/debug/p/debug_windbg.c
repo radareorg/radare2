@@ -261,6 +261,7 @@ static RList *r_debug_windbg_modules(RDebug *dbg) {
 		r_list_append (ret, mod);
 	}
 
+	r_list_free (modules);
 	return ret;
 }
 

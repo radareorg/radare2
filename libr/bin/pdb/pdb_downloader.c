@@ -75,6 +75,14 @@ static int download(struct SPDBDownloader *pd) {
 	abspath_to_file[strlen (abspath_to_file) - 1] = 'b';
 	if (r_file_exists (abspath_to_file)) {
 		eprintf ("File already downloaded.\n");
+		R_FREE (user_agent);
+		R_FREE (abspath_to_archive);
+		R_FREE (archive_name_escaped);
+		R_FREE (symbol_store_path);
+		R_FREE (guid);
+		R_FREE (archive_name);
+		R_FREE (abspath_to_file);
+		R_FREE (symbol_server);
 		return 1;
 	}
 
