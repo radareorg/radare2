@@ -1989,7 +1989,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	if (!r || !sym || !sym->name) {
 		return;
 	}
-	sn->name = r_str_newf ("%s%s", sym->is_imported ? ".imp" : "", sym->name);
+	sn->name = r_str_newf ("%s%s", sym->is_imported ? "imp." : "", sym->name);
 	sn->libname = sym->libname ? strdup (sym->libname) : NULL;
 	const char *pfx = getPrefixFor (sym);
 	sn->nameflag = construct_symbol_flagname (pfx, sym->libname, r_bin_symbol_name (sym), MAXFLAG_LEN_DEFAULT);
@@ -2253,7 +2253,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				"\"size\":%d,"
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
-				"\"paddr\":%"PFMT64d"}",
+				"\"paddr\":%"PFMT64d","
+				"\"is_imported\":%s}",
 				((exponly && firstexp) || printHere) ? "" : (iter->p ? "," : ""),
 				str,
 				sn.demname? sn.demname: "",
@@ -2262,7 +2263,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				symbol->bind,
 				(int)symbol->size,
 				symbol->type,
-				(ut64)addr, (ut64)symbol->paddr);
+				(ut64)addr, (ut64)symbol->paddr,
+				symbol->is_imported ? "true" : "false");
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			const char *name = sn.demname? sn.demname: r_symbol_name;
@@ -2331,7 +2333,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		} else {
 			const char *bind = symbol->bind? symbol->bind: "NONE";
 			const char *type = symbol->type? symbol->type: "NONE";
-			const char *name = r_str_get (sn.demname? sn.demname: r_symbol_name);
+			const char *name = r_str_get (sn.demname? sn.demname: sn.name);
 			// const char *fwd = r_str_get (symbol->forwarder);
 			r_table_add_rowf (table, "dssssdss",
 					symbol->ordinal,
