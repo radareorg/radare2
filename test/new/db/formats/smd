@@ -138,7 +138,7 @@ RUN
 NAME=smd strings
 FILE=malloc://256k
 CMDS=<<EOF
-. db/scripts/smd_strings.r2
+. scripts/smd_strings.r2
 e bin.str.filter=U
 izz
 EOF
