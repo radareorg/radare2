@@ -1942,14 +1942,19 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	return true;
 }
 
-static const char *getPrefixFor(const char *s) {
-	if (s) {
-		// workaround for ELF
-		if (!strcmp (s, R_BIN_TYPE_NOTYPE_STR)) {
-			return "loc";
+static const char *getPrefixFor(RBinSymbol *sym) {
+	if (sym) {
+		if (sym->is_imported) {
+			return "sym.imp";
 		}
-		if (!strcmp (s, R_BIN_TYPE_OBJECT_STR)) {
-			return "obj";
+		// workaround for ELF
+		if (sym->type) {
+			if (!strcmp (sym->type, R_BIN_TYPE_NOTYPE_STR)) {
+				return "loc";
+			}
+			if (!strcmp (sym->type, R_BIN_TYPE_OBJECT_STR)) {
+				return "obj";
+			}
 		}
 	}
 	return "sym";

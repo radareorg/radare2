@@ -93,7 +93,8 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 			}
 			imp->ordinal = bin->imports_list->length;
 			r_list_append (bin->imports_list, imp);
-			sym->name = r_str_newf ("imp.%s", symName);
+			sym->is_imported = true;
+			sym->name = strdup (symName);
 			if (!sym->name) {
 				goto out_walk_symbol;
 			}

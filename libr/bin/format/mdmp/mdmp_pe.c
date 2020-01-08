@@ -252,7 +252,8 @@ RList *PE_(r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin)
 			if (offset > pe_bin->vaddr) {
 				offset -= pe_bin->vaddr;
 			}
-			ptr->name = r_str_newf ("imp.%s", imports[i].name);
+			ptr->name = strdup ((const char *)imports[i].name);
+			ptr->is_imported = true;
 			ptr->bind = "NONE";
 			ptr->type = R_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;

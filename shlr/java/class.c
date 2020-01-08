@@ -3059,7 +3059,8 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 		if (imp->classname && !strncmp (imp->classname, "kotlin/jvm", 10)) {
 			bin->lang = "kotlin";
 		}
-		sym->name = r_str_newf ("imp.%s", imp->name);
+		sym->name = strdup (imp->name);
+		sym->is_imported = true;
 		if (!sym->name) {
 			free (sym);
 			break;

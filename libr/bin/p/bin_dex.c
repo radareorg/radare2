@@ -1823,7 +1823,8 @@ static bool dex_loadcode(RBinFile *bf) {
 					free (class_name);
 					return false;
 				}
-				sym->name = r_str_newf ("imp.%s", imp->name);
+				sym->name = strdup (imp->name);
+				sym->is_imported = true;
 				sym->type = R_BIN_TYPE_FUNC_STR;
 				sym->bind = "NONE";
 				//XXX so damn unsafe check buffer boundaries!!!!
