@@ -1994,7 +1994,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	}
 	sn->name = strdup (sym->name);
 	sn->libname = sym->libname ? strdup (sym->libname) : NULL;
-	const char *pfx = getPrefixFor (sym->type);
+	const char *pfx = getPrefixFor (sym);
 	sn->nameflag = construct_symbol_flagname (pfx, r_bin_symbol_name (sym), MAXFLAG_LEN_DEFAULT);
 	if (sym->classname && sym->classname[0]) {
 		sn->classname = strdup (sym->classname);
