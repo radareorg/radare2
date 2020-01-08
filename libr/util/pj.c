@@ -102,6 +102,13 @@ R_API PJ *pj_k(PJ *j, const char *k) {
 	return j;
 }
 
+R_API PJ *pj_knull(PJ *j, const char *k) {
+	r_return_val_if_fail (j && k, j);
+	pj_k (j, k);
+	pj_null (j);
+	return j;
+}
+
 R_API PJ *pj_kn(PJ *j, const char *k, ut64 n) {
 	r_return_val_if_fail (j && k, j);
 	pj_k (j, k);
@@ -149,6 +156,12 @@ R_API PJ *pj_kb(PJ *j, const char *k, bool v) {
 	r_return_val_if_fail (j && k, j);
 	pj_k (j, k);
 	pj_b (j, v);
+	return j;
+}
+
+R_API PJ *pj_null(PJ *j) {
+	r_return_val_if_fail (j, j);
+	pj_raw (j, "null");
 	return j;
 }
 
