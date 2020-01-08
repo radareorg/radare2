@@ -3984,13 +3984,26 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	switch (str[0]) {
 	case 'l': // "arl"
 	{
+		const bool use_json = str[1] == 'j';
 		RRegSet *rs = r_reg_regset_get (core->anal->reg, R_REG_TYPE_GPR);
 		if (rs) {
 			RRegItem *r;
 			RListIter *iter;
+			PJ *pj = pj_new ();
+			pj_a (pj);
 			r_list_foreach (rs->regs, iter, r) {
-				r_cons_println (r->name);
+				if (use_json) {
+					pj_s (pj, r->name);
+				} else {
+					r_cons_println (r->name);
+				}
 			}
+			if (use_json) {
+				pj_end (pj);
+				const char *s = pj_string (pj);
+				r_cons_println (s);
+			}
+			pj_free (pj);
 		}
 	} break;
 	case '0': // "ar0"
