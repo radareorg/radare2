@@ -1649,8 +1649,13 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				}
 			}
 			RStrBuf *buf = r_strbuf_new ("");
+			if (reloc->import && reloc->import->libname) {
+				r_strbuf_appendf (buf, "%s", reloc->import->libname);
+			} else if (reloc->symbol && reloc->symbol->libname) {
+				r_strbuf_appendf (buf, "%s", reloc->symbol->libname);
+			}
 			if ((reloc->import && reloc->import->name[0]) || (reloc->symbol && name && name[0])) {
-				r_strbuf_appendf (buf, " %s", name);
+				r_strbuf_appendf (buf, "%s%s", r_strbuf_is_empty (buf) ? "" : "_", name);
 			}
 			R_FREE (name);
 			if (reloc->addend) {

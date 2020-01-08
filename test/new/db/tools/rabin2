@@ -571,10 +571,10 @@ libc.so.6
 
 vaddr      paddr      type   name
 ---------------------------------
-0x08049690 0x00000690 SET_32  __gmon_start__
-0x080496a0 0x000006a0 SET_32  puts
-0x080496a4 0x000006a4 SET_32  __gmon_start__
-0x080496a8 0x000006a8 SET_32  __libc_start_main
+0x08049690 0x00000690 SET_32 __gmon_start__
+0x080496a0 0x000006a0 SET_32 puts
+0x080496a4 0x000006a4 SET_32 __gmon_start__
+0x080496a8 0x000006a8 SET_32 __libc_start_main
 
 
 4 relocations
