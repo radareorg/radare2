@@ -1386,6 +1386,11 @@ static int cmd_write(void *data, const char *input) {
 		cmd_wf (core, input);
 		break;
 	case 'w': // "ww"
+		len = r_str_unescape (str);
+		if (len < 1) {
+			break;
+		}
+		len++;
 		str++;
 		len = (len - 1) << 1;
 		tmp = (len > 0) ? malloc (len + 1) : NULL;

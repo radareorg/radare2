@@ -1798,8 +1798,7 @@ e str.escbslash=false
 pd 1
 pdJ 1
 s 0x3000
-  # ww doesn't support esc seqs
-ww path"C:\Program
+ww path"C:\\Program\r
 f wide_str
 s 0x4000
 "wa mov ebx, 0x3000"
@@ -1821,14 +1820,14 @@ EXPECT=<<RUN
 [{"offset":8192,"text":"            0x00002000      mov eax, 0x1000                            ; ansi_str ; \"path\\\"C:\\\\Program\\n\""}]
             0x00002000      mov eax, 0x1000                            ; ansi_str ; "path\"C:\Program\n"
 [{"offset":8192,"text":"            0x00002000      mov eax, 0x1000                            ; ansi_str ; \"path\\\"C:\\Program\\n\""}]
-            0x00004000      mov ebx, 0x3000                            ; wide_str ; u"path\"C:\Program"
-[{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; u\"path\\\"C:\\Program\""}]
+            0x00004000      mov ebx, 0x3000                            ; wide_str ; u"path\"C:\Program\r"
+[{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; u\"path\\\"C:\\Program\\r\""}]
             0x00004000      mov ebx, 0x3000                            ; wide_str ; "p"
 [{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; \"p\""}]
-            0x00004000      mov ebx, 0x3000                            ; wide_str ; u"path\"C:\\Program"
-[{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; u\"path\\\"C:\\\\Program\""}]
-            0x00004000      mov ebx, 0x3000                            ; wide_str ; u"path\"C:\Program"
-[{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; u\"path\\\"C:\\Program\""}]
+            0x00004000      mov ebx, 0x3000                            ; wide_str ; u"path\"C:\\Program\r"
+[{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; u\"path\\\"C:\\\\Program\\r\""}]
+            0x00004000      mov ebx, 0x3000                            ; wide_str ; u"path\"C:\Program\r"
+[{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; u\"path\\\"C:\\Program\\r\""}]
 RUN
 
 NAME=arm asm.var.sub, asm.ucase and asm.pseudo (fp)
