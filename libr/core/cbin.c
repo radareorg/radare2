@@ -2009,11 +2009,6 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	if (bin_demangle && sym->paddr) {
 		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
 		if (sn->demname) {
-			if (sym->is_imported) {
-				char *demname = sn->demname;
-				sn->demname = r_str_newf ("imp.%s", demname);
-				free (demname);
-			}
 			sn->demflag = construct_symbol_flagname (pfx, sym->libname, sn->demname, -1);
 		}
 	}
@@ -2154,30 +2149,25 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		if (!symbol->name) {
 			continue;
 		}
-		char *r_symbol_name = r_str_escape_utf8 (symbol->name, false, true);
-		ut64 addr = compute_addr (r->bin, symbol->paddr, symbol->vaddr, va);
-		int len = symbol->size ? symbol->size : 32;
-		SymName sn = {0};
-
 		if (exponly && !isAnExport (symbol)) {
-			free (r_symbol_name);
 			continue;
 		}
-		if (name && strcmp (r_symbol_name, name)) {
-			free (r_symbol_name);
+		if (name && strcmp (symbol->name, name)) {
 			continue;
 		}
+		ut64 addr = compute_addr (r->bin, symbol->paddr, symbol->vaddr, va);
+		ut32 len = symbol->size ? symbol->size : 32;
 		if (at && (!symbol->size || !is_in_range (at, addr, symbol->size))) {
-			free (r_symbol_name);
 			continue;
 		}
 		if ((printHere && !is_in_range (r->offset, symbol->paddr, len))
-				&& (printHere && !is_in_range (r->offset, addr, len))) {
-			free (r_symbol_name);
+			&& (printHere && !is_in_range (r->offset, addr, len))) {
 			continue;
 		}
+		SymName sn = {0};
 		count ++;
 		snInit (r, &sn, symbol, lang);
+		char *r_symbol_name = r_str_escape_utf8 (symbol->name, false, true);
 
 		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
 			/*
@@ -2218,14 +2208,14 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					}
 				}
 			} else {
-				const char *n = sn.demname ? sn.demname : sn.name;
+				const char *n = sn.demname ? sn.demname : symbol->name;
 				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
 					strdup (fn);
 				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 				if (fi) {
-					r_flag_item_set_realname (fi, n);
+					r_flag_item_set_realname (fi, symbol->name);
 					fi->demangled = (bool)(size_t)sn.demname;
 				} else {
 					if (fn) {
