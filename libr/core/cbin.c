@@ -1941,20 +1941,17 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 
 static const char *getPrefixFor(RBinSymbol *sym) {
 	if (sym) {
-		if (sym->is_imported) {
-			return "sym.imp";
-		}
 		// workaround for ELF
 		if (sym->type) {
 			if (!strcmp (sym->type, R_BIN_TYPE_NOTYPE_STR)) {
-				return "loc";
+				return sym->is_imported ? "loc.imp" : "loc";
 			}
 			if (!strcmp (sym->type, R_BIN_TYPE_OBJECT_STR)) {
-				return "obj";
+				return sym->is_imported ? "obj.imp" : "obj";
 			}
 		}
 	}
-	return "sym";
+	return sym->is_imported ? "sym.imp" : "sym";
 }
 
 #define MAXFLAG_LEN_DEFAULT 128
