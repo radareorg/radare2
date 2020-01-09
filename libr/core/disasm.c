@@ -4833,7 +4833,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 		}
 	} else if (ds->analop.ptr != UT64_MAX) {
 		RFlagItem *flag = r_flag_get_i (ds->core->flags, ds->analop.ptr);
-		if (flag && r_str_startswith (flag->realname, "imp.")) {
+		if (flag && flag->space && !strcmp (flag->space->name, R_FLAGS_FS_IMPORTS)) {
 			full_name = flag->realname;
 		}
 	}
