@@ -199,10 +199,10 @@ RUN
 NAME=: 32bit - imports resolving
 FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
-17  0x00406148 NONE FUNC KERNEL32.dll_TerminateProcess
+17  0x00406148 NONE FUNC KERNEL32.dll                                  TerminateProcess
 EOF
 CMDS=<<EOF
-ii~TerminateProcess
+ii~TerminateProcess~KERNEL32.dll
 EOF
 RUN
 
@@ -239,7 +239,7 @@ RUN
 NAME=: 32bit - relocs resolving
 FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
-0x00406160 0x0009dd32 SET_32  msvcrt.dll___dllonexit
+0x00406160 0x0009dd32 SET_32 msvcrt.dll___dllonexit
 EOF
 CMDS=<<EOF
 ir~__dllonexit
@@ -332,10 +332,10 @@ RUN
 NAME=: 64bit - symbols resolving 1
 FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
-1     0x0009ae8b 0x004081fc    NONE   FUNC 0    imp.KERNEL32.dll_DeleteCriticalSection
+1     0x0009ae8b 0x004081fc    NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
 EOF
 CMDS=<<EOF
-is~DeleteCriticalSection
+is~imp.DeleteCriticalSection~KERNEL32.dll
 EOF
 RUN
 
@@ -362,10 +362,10 @@ RUN
 NAME=: 64bit - imports resolving
 FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
-4   0x00408214    NONE FUNC KERNEL32.dll_GetCurrentProcessId
+4   0x00408214    NONE FUNC KERNEL32.dll                                  GetCurrentProcessId
 EOF
 CMDS=<<EOF
-ii~GetCurrentProcessId
+ii~KERNEL32.dll~GetCurrentProcessId
 EOF
 RUN
 
@@ -402,10 +402,10 @@ RUN
 NAME=: 64bit - relocs resolving
 FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
-0x004081fc    0x0009ae8b SET_64  KERNEL32.dll_DeleteCriticalSection
+0x004081fc    0x0009ae8b SET_64 KERNEL32.dll_DeleteCriticalSection
 EOF
 CMDS=<<EOF
-ir~DeleteCriticalSection
+ir~KERNEL32.dll_DeleteCriticalSection
 EOF
 RUN
 
