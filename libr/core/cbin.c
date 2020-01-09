@@ -2031,7 +2031,7 @@ static void snFini(SymName *sn) {
 
 static bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
-	if (!strncmp (s->name, "imp.", 4)) {
+	if (s->is_imported) {
 		return false;
 	}
 	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
