@@ -165,7 +165,7 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 			return false;
 		}
 	}
-	if (strchr (file, '\'') || strchr (file, '\\')) {
+	if (strstr (file, "\\'") || strchr (file, '\'')) {
 		eprintf ("Invalid chars found in filename\n");
 		return false;
 	}

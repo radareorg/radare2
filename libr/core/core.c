@@ -276,7 +276,7 @@ static ut64 numget(RCore *core, const char *k) {
 
 static bool __isMapped(RCore *core, ut64 addr, int perm) {
 	if (r_config_get_i (core->config, "cfg.debug")) {
-		RList *maps = core->dbg->maps;
+		// RList *maps = core->dbg->maps;
 		RDebugMap *map = NULL;
 		RListIter *iter = NULL;
 
