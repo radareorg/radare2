@@ -1032,7 +1032,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			R_DEBUG_REG_T regs;
 			memset (&regs, 0, sizeof (regs));
 			memset (buf, 0, size);
-#if __arm64__ || __aarch64__
+#if __arm64__ || __aarch64__ || __s390x__
 			struct iovec io = {
 				.iov_base = &regs,
 				.iov_len = sizeof (regs)
@@ -1083,13 +1083,14 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				ymm_space[ri*8+(rj+4)] = xstate.ymmh.ymmh_space[ri*4+rj];
 			}
 		}
-		memcpy (buf, &ymm_space, sizeof(ymm_space));
-		return sizeof(ymm_space);
+		memcpy (buf, &ymm_space, sizeof (ymm_space));
+		return sizeof (ymm_space);
 #endif
+		return false;
 		}
 		break;
 	}
-	return true;
+	return false;
 }
 
 int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
@@ -1115,7 +1116,7 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 #endif
 	}
 	if (type == R_REG_TYPE_GPR) {
-#if __arm64__ || __aarch64__
+#if __arm64__ || __aarch64__ || __s390x__
 		struct iovec io = {
 			.iov_base = (void*)buf,
 			.iov_len = sizeof (R_DEBUG_REG_T)
