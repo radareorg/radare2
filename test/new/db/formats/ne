@@ -31,12 +31,12 @@ NAME=NE Module imports
 FILE=../bins/ne/anim8.exe
 EXPECT=<<CMDS
 [Imports]
-nth vaddr      bind type name
------------------------------
-1   0x00000000 NONE NONE KERNEL
-2   0x00000000 NONE NONE USER
-3   0x00000000 NONE NONE GDI
-4   0x00000000 NONE NONE WIN87EM
+nth vaddr      bind type lib name
+---------------------------------
+1   0x00000000 NONE NONE     KERNEL
+2   0x00000000 NONE NONE     USER
+3   0x00000000 NONE NONE     GDI
+4   0x00000000 NONE NONE     WIN87EM
 
 CMDS=<<RUN
 ii

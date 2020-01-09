@@ -245,10 +245,10 @@ FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -a x86 -b 32 -i ${R2_FILE}
 EXPECT=<<RUN
 [Imports]
-nth vaddr      bind type name
------------------------------
-0   0x00001f94 NONE FUNC exit
-1   0x00000000 NONE FUNC dyld_stub_binder
+nth vaddr      bind type lib name
+---------------------------------
+0   0x00001f94 NONE FUNC     exit
+1   0x00000000 NONE FUNC     dyld_stub_binder
 
 RUN
 
@@ -257,10 +257,10 @@ FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x5000 -i ${R2_FILE}
 EXPECT=<<RUN
 [Imports]
-nth vaddr      bind type name
------------------------------
-0   0x00001f94 NONE FUNC exit
-1   0x00000000 NONE FUNC dyld_stub_binder
+nth vaddr      bind type lib name
+---------------------------------
+0   0x00001f94 NONE FUNC     exit
+1   0x00000000 NONE FUNC     dyld_stub_binder
 
 RUN
 
@@ -446,11 +446,11 @@ vaddr=0x080483b0 paddr=0x000003b0 hvaddr=0x080495a0 hpaddr=0x000005a0 type=fini
 [Main]
 vaddr=0x08048400 paddr=0x00000400
 [Imports]
-nth vaddr      bind   type   name
----------------------------------
-1   0x080482d0 GLOBAL FUNC   puts
-2   0x080482e0 WEAK   NOTYPE __gmon_start__
-3   0x080482f0 GLOBAL FUNC   __libc_start_main
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x080482d0 GLOBAL FUNC       puts
+2   0x080482e0 WEAK   NOTYPE     __gmon_start__
+3   0x080482f0 GLOBAL FUNC       __libc_start_main
 
 [Symbols]
 
