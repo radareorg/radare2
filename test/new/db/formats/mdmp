@@ -169,7 +169,7 @@ RUN
 NAME=: 32bit - symbols resolving 1
 FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
-1     0x0009dcda 0x00406108 NONE   FUNC 0    imp.KERNEL32.dll_DeleteCriticalSection
+1     0x0009dcda 0x00406108 NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
 EOF
 CMDS=<<EOF
 is~DeleteCriticalSection:0
@@ -179,7 +179,7 @@ RUN
 NAME=: 32bit - symbols resolving 2
 FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
-358   0x001c2176 0x76fb05a4 NONE   FUNC 0    imp.ntdll.dll_RtlDeleteCriticalSection
+358   0x001c2176 0x76fb05a4 NONE   FUNC 0    ntdll.dll                                     imp.RtlDeleteCriticalSection
 EOF
 CMDS=<<EOF
 is~RtlDeleteCriticalSection:0
@@ -219,7 +219,7 @@ RUN
 NAME=: 32bit - exports resolving
 FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
-1992  0x0041f1f2 0x77802620 GLOBAL FUNC 0    ntdll.dll_Ordinal_1
+1992  0x0041f1f2 0x77802620 GLOBAL FUNC 0    ntdll.dll      Ordinal_1
 EOF
 CMDS=<<EOF
 iE~Ordinal_1
@@ -342,7 +342,7 @@ RUN
 NAME=: 64bit - symbols resolving 2
 FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
-8     0x001eb87f 0x77728bf0    GLOBAL FUNC 0    ntdll.dll_A_SHAFinal
+8     0x001eb87f 0x77728bf0    GLOBAL FUNC 0    ntdll.dll                                     A_SHAFinal
 EOF
 CMDS=<<EOF
 is~A_SHAFinal
@@ -382,7 +382,7 @@ RUN
 NAME=: 64bit - exports resolving
 FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
-38    0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll_CsrVerifyRegion
+38    0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll      CsrVerifyRegion
 EOF
 CMDS=<<EOF
 iE~CsrVerifyRegion
