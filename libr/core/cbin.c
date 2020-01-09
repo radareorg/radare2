@@ -2208,7 +2208,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					}
 				}
 			} else {
-				const char *n = symbol->dname ? symbol->dname : symbol->name;
+				const char *n = sn.demname ? sn.demname : symbol->name;
 				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
