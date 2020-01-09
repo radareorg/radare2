@@ -64,10 +64,9 @@ static bool linux_stop_thread (int tid);
 static bool linux_kill_thread (int tid, int signo);
 static void linux_dbg_wait_break (RDebug *dbg);
 
-int linux_handle_signals (RDebug *dbg) {
-	int pid = dbg->tid;
+int linux_handle_signals (RDebug *dbg, int tid) {
 	siginfo_t siginfo = { 0 };
-	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
+	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0, (r_ptrace_data_t)(size_t)&siginfo);
 	if (ret == -1) {
 		/* ESRCH means the process already went away :-/ */
 		if (errno == ESRCH) {
@@ -115,6 +114,9 @@ int linux_handle_signals (RDebug *dbg) {
 				dbg->reason.type != R_DEBUG_REASON_EXIT_LIB) {
 				dbg->reason.bp_addr = (ut64)(size_t)siginfo.si_addr;
 				dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
+				// Switch to the thread that hit the breakpoint
+				r_debug_select (dbg, dbg->pid, tid);
+				dbg->tid = tid;
 			}
 		}
 			break;
@@ -126,6 +128,7 @@ int linux_handle_signals (RDebug *dbg) {
 			break;
 		case SIGCHLD:
 			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
+			break;
 		default:
 			break;
 		}
@@ -361,27 +364,32 @@ static void linux_dbg_wait_break(RDebug *dbg) {
 		eprintf ("Could not stop pid (%d)\n", dbg->pid);
 		return;
 	}
-	r_cons_break_pop ();
 }
 
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	int pid = dbg->tid;
 	int status, flags = __WALL;
+	int ret = -1;
 
 	if (pid == -1) {
 		flags |= WNOHANG;
 	}
 
+	// Ignore keyboard interrupt while waiting to avoid signaling the child process twice on
+	// break(SIGSTOP is sent by wait_break) which forced the user to continue an extra time
+	// to handle SIGINT
+	r_sys_signal (SIGINT, SIG_IGN);
 	r_cons_break_push ((RConsBreak)linux_dbg_wait_break, dbg);
 repeat:
 	for (;;) {
 		if (r_cons_is_breaked ()) {
+			reason = R_DEBUG_REASON_USERSUSP;
 			break;
 		}
 
 		void *bed = r_cons_sleep_begin ();
-		int ret = waitpid (pid, &status, flags);
+		ret = waitpid (-1, &status, flags);
 		r_cons_sleep_end (bed);
 
 		if (ret < 0) {
@@ -390,7 +398,7 @@ repeat:
 		} else if (!ret) {
 			flags &= ~WNOHANG;
 		} else {
-			int pid = ret;
+			pid = ret;
 			reason = linux_ptrace_event (dbg, pid, status);
 
 			if (reason == R_DEBUG_REASON_NEW_PID) {
@@ -420,10 +428,14 @@ repeat:
 			} else if (WIFSTOPPED (status)) {
 				if (WSTOPSIG (status) != SIGTRAP &&
 					WSTOPSIG (status) != SIGSTOP) {
+					if (WSTOPSIG (status) == SIGINT) {
+						reason = R_DEBUG_REASON_USERSUSP;
+						break;
+					}
 					eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
 					reason = R_DEBUG_REASON_DEAD;
 				}
-				if (!linux_handle_signals (dbg)) {
+				if (!linux_handle_signals (dbg, pid)) {
 					eprintf ("can't handle signals\n");
 					return R_DEBUG_REASON_ERROR;
 				}
@@ -451,6 +463,9 @@ repeat:
 			}
 		}
 	}
+	r_cons_break_pop ();
+	r_sys_signal (SIGINT, SIG_DFL);
+	dbg->reason.tid = pid;
 	return reason;
 }
 
@@ -489,13 +504,33 @@ static bool linux_kill_thread(int tid, int signo) {
 static bool linux_stop_thread(int tid) {
 	int status;
 	int ret = -1;
+
 	if (linux_kill_thread (tid, SIGSTOP)) {
-		if ((ret = waitpid (tid, &status, __WALL)) == -1) {
+		if ((ret = waitpid (tid, &status, WUNTRACED)) == -1) {
 			perror("waitpid");
 		}
 	}
 
 	return ret == tid;
+}
+
+bool linux_stop_threads(RDebug *dbg, int except) {
+	// Stop all currently debugged threads
+	RList *list = dbg->threads;
+	bool ret = true;
+	if (list) {
+		RDebugPid *th;
+		RListIter *it;
+		r_list_foreach (list, it, th) {
+			if (th->pid && th->pid != except) {
+				if (!linux_stop_thread (th->pid)) {
+					eprintf ("Could not stop pid (%d)\n", th->pid);
+					ret = false;
+				}
+			}
+		}
+	}
+	return ret;
 }
 
 static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
