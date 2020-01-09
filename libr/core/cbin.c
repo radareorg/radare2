@@ -2167,7 +2167,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		SymName sn = {0};
 		count ++;
 		snInit (r, &sn, symbol, lang);
-		char *r_symbol_name = r_str_escape_utf8 (symbol->name, false, true);
+		char *r_symbol_name = r_str_escape_utf8 (sn.name, false, true);
 
 		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
 			/*
@@ -2208,14 +2208,14 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					}
 				}
 			} else {
-				const char *n = sn.demname ? sn.demname : symbol->name;
+				const char *n = symbol->dname ? symbol->dname : symbol->name;
 				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
 					strdup (fn);
 				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 				if (fi) {
-					r_flag_item_set_realname (fi, symbol->name);
+					r_flag_item_set_realname (fi, n);
 					fi->demangled = (bool)(size_t)sn.demname;
 				} else {
 					if (fn) {
