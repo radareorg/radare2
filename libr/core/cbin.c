@@ -1864,7 +1864,10 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			if (strstr (symname, ".dll_") && cdsz) {
 				r_meta_add (r->anal, R_META_TYPE_DATA, addr, addr + cdsz, NULL);
 			}
-		} else if (IS_MODE_SIMPLE (mode) || IS_MODE_SIMPLEST (mode)) {
+		} else if (IS_MODE_SIMPLE (mode)) {
+			r_cons_printf ("%s%s%s\n",
+					libname ? libname : "", libname ? " " : "", symname);
+		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (symname);
 		} else if (IS_MODE_JSON (mode)) {
 
@@ -2255,8 +2258,10 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			const char *name = sn.demname? sn.demname: r_symbol_name;
-			r_cons_printf ("0x%08"PFMT64x" %d %s\n",
-				addr, (int)symbol->size, name);
+			r_cons_printf ("0x%08"PFMT64x" %d %s%s%s\n",
+				addr, (int)symbol->size,
+				sn.libname ? sn.libname : "", sn.libname ? " " : "",
+				name);
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			const char *name = sn.demname? sn.demname: r_symbol_name;
 			r_cons_printf ("%s\n", name);

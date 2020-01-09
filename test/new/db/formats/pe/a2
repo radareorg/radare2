@@ -52,35 +52,35 @@ EXPECT=<<EOF
 0x00401cb0 0 _LeaveCriticalSection@4
 0x00401c30 0 _printf
 0x00401c40 0 _vfprintf
-0x004060b8 0 imp.KERNEL32.dll_DeleteCriticalSection
-0x004060bc 0 imp.KERNEL32.dll_EnterCriticalSection
-0x004060c0 0 imp.KERNEL32.dll_ExitProcess
-0x004060c4 0 imp.KERNEL32.dll_GetLastError
-0x004060c8 0 imp.KERNEL32.dll_GetModuleHandleA
-0x004060cc 0 imp.KERNEL32.dll_GetProcAddress
-0x004060d0 0 imp.KERNEL32.dll_InitializeCriticalSection
-0x004060d4 0 imp.KERNEL32.dll_LeaveCriticalSection
-0x004060d8 0 imp.KERNEL32.dll_SetUnhandledExceptionFilter
-0x004060dc 0 imp.KERNEL32.dll_TlsGetValue
-0x004060e0 0 imp.KERNEL32.dll_VirtualProtect
-0x004060e4 0 imp.KERNEL32.dll_VirtualQuery
-0x004060ec 0 imp.msvcrt.dll___getmainargs
-0x004060f0 0 imp.msvcrt.dll___p__environ
-0x004060f4 0 imp.msvcrt.dll___p__fmode
-0x004060f8 0 imp.msvcrt.dll___set_app_type
-0x004060fc 0 imp.msvcrt.dll__cexit
-0x00406100 0 imp.msvcrt.dll__iob
-0x00406104 0 imp.msvcrt.dll__onexit
-0x00406108 0 imp.msvcrt.dll__setmode
-0x0040610c 0 imp.msvcrt.dll_abort
-0x00406110 0 imp.msvcrt.dll_atexit
-0x00406114 0 imp.msvcrt.dll_calloc
-0x00406118 0 imp.msvcrt.dll_free
-0x0040611c 0 imp.msvcrt.dll_fwrite
-0x00406120 0 imp.msvcrt.dll_memcpy
-0x00406124 0 imp.msvcrt.dll_printf
-0x00406128 0 imp.msvcrt.dll_signal
-0x0040612c 0 imp.msvcrt.dll_vfprintf
+0x004060b8 0 KERNEL32.dll imp.DeleteCriticalSection
+0x004060bc 0 KERNEL32.dll imp.EnterCriticalSection
+0x004060c0 0 KERNEL32.dll imp.ExitProcess
+0x004060c4 0 KERNEL32.dll imp.GetLastError
+0x004060c8 0 KERNEL32.dll imp.GetModuleHandleA
+0x004060cc 0 KERNEL32.dll imp.GetProcAddress
+0x004060d0 0 KERNEL32.dll imp.InitializeCriticalSection
+0x004060d4 0 KERNEL32.dll imp.LeaveCriticalSection
+0x004060d8 0 KERNEL32.dll imp.SetUnhandledExceptionFilter
+0x004060dc 0 KERNEL32.dll imp.TlsGetValue
+0x004060e0 0 KERNEL32.dll imp.VirtualProtect
+0x004060e4 0 KERNEL32.dll imp.VirtualQuery
+0x004060ec 0 msvcrt.dll imp.__getmainargs
+0x004060f0 0 msvcrt.dll imp.__p__environ
+0x004060f4 0 msvcrt.dll imp.__p__fmode
+0x004060f8 0 msvcrt.dll imp.__set_app_type
+0x004060fc 0 msvcrt.dll imp._cexit
+0x00406100 0 msvcrt.dll imp._iob
+0x00406104 0 msvcrt.dll imp._onexit
+0x00406108 0 msvcrt.dll imp._setmode
+0x0040610c 0 msvcrt.dll imp.abort
+0x00406110 0 msvcrt.dll imp.atexit
+0x00406114 0 msvcrt.dll imp.calloc
+0x00406118 0 msvcrt.dll imp.free
+0x0040611c 0 msvcrt.dll imp.fwrite
+0x00406120 0 msvcrt.dll imp.memcpy
+0x00406124 0 msvcrt.dll imp.printf
+0x00406128 0 msvcrt.dll imp.signal
+0x0040612c 0 msvcrt.dll imp.vfprintf
 EOF
 CMDS=<<EOF
 isq

@@ -42,15 +42,15 @@ RUN
 NAME=PE: export function names SIMPLE
 FILE=../bins/pe/Lab05-01.dll
 EXPECT=<<EOF
-0x1000d847 0 xdll.dll_InstallRT
-0x1000dec1 0 xdll.dll_InstallSA
-0x1000e892 0 xdll.dll_InstallSB
-0x10007025 0 xdll.dll_PSLIST
-0x1000cf30 0 xdll.dll_ServiceMain
-0x10007ecb 0 xdll.dll_StartEXS
-0x1000f405 0 xdll.dll_UninstallRT
-0x1000ea05 0 xdll.dll_UninstallSA
-0x1000f138 0 xdll.dll_UninstallSB
+0x1000d847 0 xdll.dll InstallRT
+0x1000dec1 0 xdll.dll InstallSA
+0x1000e892 0 xdll.dll InstallSB
+0x10007025 0 xdll.dll PSLIST
+0x1000cf30 0 xdll.dll ServiceMain
+0x10007ecb 0 xdll.dll StartEXS
+0x1000f405 0 xdll.dll UninstallRT
+0x1000ea05 0 xdll.dll UninstallSA
+0x1000f138 0 xdll.dll UninstallSB
 EOF
 CMDS=<<EOF
 iEq
