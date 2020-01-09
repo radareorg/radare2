@@ -416,6 +416,7 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 	ut64 cur_page_offset = cur_section ? cur_section->vaddr : 0;
 	while (cur_page < h->mpages) {
 		RBinReloc *rel = R_NEW0 (RBinReloc);
+		bool rel_appended = false; // whether rel has been appended to l and must not be freed
 		if (!rel) {
 			break;
 		}
@@ -537,6 +538,7 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 			rel->vaddr = cur_page_offset + source;
 			rel->paddr = cur_section ? cur_section->paddr + source : 0;
 			r_list_append (l, rel);
+			rel_appended = true;
 		}
 
 		if (header.target & F_TARGET_CHAIN) {
@@ -575,7 +577,9 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 			cur_section = (RBinSection *)r_list_get_n (sections, cur_page);
 			cur_page_offset = cur_section ? cur_section->vaddr : 0;
 		}
-		free (rel);
+		if (!rel_appended) {
+			free (rel);
+		}
 	}
 	r_list_free (entries);
 	r_list_free (sections);
