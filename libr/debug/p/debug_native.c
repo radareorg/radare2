@@ -442,13 +442,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	}
 
 	reason = linux_dbg_wait (dbg, dbg->tid);
-	if (reason == R_DEBUG_REASON_NEW_TID) {
-		RDebugInfo *r = r_debug_native_info (dbg, "");
-		if (r) {
-			eprintf ("(%d) Created thread %d\n", r->pid, r->tid);
-			r_debug_info_free (r);
-		}
-	} else if (reason == R_DEBUG_REASON_EXIT_TID) {
+	if (reason == R_DEBUG_REASON_EXIT_TID) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r) {
 			eprintf ("(%d) Finished thread %d Exit code\n", r->pid, r->tid);
