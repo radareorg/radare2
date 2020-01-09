@@ -6432,9 +6432,12 @@ R_API bool r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 	}
 	RPanels *panels = panels_root->panels[panels_root->cur_panels];
 	if (panels) {
-		RPanel *cur = __get_cur_panel (panels);
-		if (cur) {
-			cur->model->addr = core->offset;
+		int i = 0;
+		for (; i < panels->n_panels; i++) {
+			RPanel *cur = __get_panel (panels, i);
+			if (cur) {
+				cur->model->addr = core->offset;
+			}
 		}
 	}
 	while (panels_root->n_panels) {
