@@ -20,36 +20,38 @@
 
 char *linux_reg_profile (RDebug *dbg) {
 #if __arm__
-#include "reg/linux-arm.h"
+#	include "reg/linux-arm.h"
 #elif __riscv
-#include "reg/linux-riscv64.h"
+#	include "reg/linux-riscv64.h"
 #elif __arm64__ || __aarch64__
-#include "reg/linux-arm64.h"
+#	include "reg/linux-arm64.h"
 #elif __mips__
 	if ((dbg->bits & R_SYS_BITS_32) && (dbg->bp->endian == 1)) {
-#include "reg/linux-mips.h"
+#		include "reg/linux-mips.h"
 	} else {
-#include "reg/linux-mips64.h"
+#		include "reg/linux-mips64.h"
 	}
 #elif (__i386__ || __x86_64__)
 	if (dbg->bits & R_SYS_BITS_32) {
 #if __x86_64__
-#include "reg/linux-x64-32.h"
+#		include "reg/linux-x64-32.h"
 #else
-#include "reg/linux-x86.h"
+#		include "reg/linux-x86.h"
 #endif
 	} else {
-#include "reg/linux-x64.h"
-#include <bits/sigcontext.h>
+#		include "reg/linux-x64.h"
+#		include <bits/sigcontext.h>
 	}
 #elif __powerpc__
 	if (dbg->bits & R_SYS_BITS_32) {
-#include "reg/linux-ppc.h"
+#		include "reg/linux-ppc.h"
 	} else {
-#include "reg/linux-ppc64.h"
+#		include "reg/linux-ppc64.h"
 	}
+#elif __s390x__
+#	include "reg/linux-s390x.h"
 #else
-#error "Unsupported Linux CPU"
+#	error "Unsupported Linux CPU"
 	return NULL;
 #endif
 }
@@ -1030,7 +1032,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			R_DEBUG_REG_T regs;
 			memset (&regs, 0, sizeof (regs));
 			memset (buf, 0, size);
-#if __arm64__ || __aarch64__
+#if __arm64__ || __aarch64__ || __s390x__
 			struct iovec io = {
 				.iov_base = &regs,
 				.iov_len = sizeof (regs)
@@ -1081,13 +1083,14 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				ymm_space[ri*8+(rj+4)] = xstate.ymmh.ymmh_space[ri*4+rj];
 			}
 		}
-		memcpy (buf, &ymm_space, sizeof(ymm_space));
-		return sizeof(ymm_space);
+		memcpy (buf, &ymm_space, sizeof (ymm_space));
+		return sizeof (ymm_space);
 #endif
+		return false;
 		}
 		break;
 	}
-	return true;
+	return false;
 }
 
 int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
@@ -1113,7 +1116,7 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 #endif
 	}
 	if (type == R_REG_TYPE_GPR) {
-#if __arm64__ || __aarch64__
+#if __arm64__ || __aarch64__ || __s390x__
 		struct iovec io = {
 			.iov_base = (void*)buf,
 			.iov_len = sizeof (R_DEBUG_REG_T)
