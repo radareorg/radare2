@@ -93,9 +93,7 @@ R_API RList *r_w32_dbg_maps(RDebug *);
 
 #if !__WINDOWS__ || (!__APPLE__ && defined(WAIT_ON_ALL_CHILDREN))
 static int r_debug_handle_signals(RDebug *dbg) {
-#if __linux__
-	return linux_handle_signals (dbg);
-#elif __KFBSD__
+#if __KFBSD__
 	return bsd_handle_signals (dbg);
 #else
 	return -1;
@@ -201,11 +199,19 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 
 #if !__WINDOWS__ && !__APPLE__ && !__BSD__
 /* Callback to trigger SIGINT signal */
-static void r_debug_native_stop(RDebug *dbg) {
+static void interrupt_process(RDebug *dbg) {
 	r_debug_kill (dbg, dbg->pid, dbg->tid, SIGINT);
 	r_cons_break_pop ();
 }
 #endif
+
+static int r_debug_native_stop(RDebug *dbg) {
+#if __linux__
+	return linux_stop_threads (dbg, dbg->reason.tid);
+#else
+	return 0;
+#endif
+}
 
 /* TODO: specify thread? */
 /* TODO: must return true/false */
@@ -231,7 +237,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 	/* SIGINT handler for attached processes: dbg.consbreak (disabled by default) */
 	if (dbg->consbreak) {
-		r_cons_break_push ((RConsBreak)r_debug_native_stop, dbg);
+		r_cons_break_push ((RConsBreak)interrupt_process, dbg);
 	}
 
 	if (dbg->continue_all_threads && dbg->n_threads) {
@@ -450,7 +456,6 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		}
 	}
 
-	dbg->reason.tid = pid;
 	dbg->reason.type = reason;
 	return reason;
 }
@@ -1649,6 +1654,7 @@ RDebugPlugin r_debug_plugin_native = {
 	.init = &r_debug_native_init,
 	.step = &r_debug_native_step,
 	.cont = &r_debug_native_continue,
+	.stop = &r_debug_native_stop,
 	.contsc = &r_debug_native_continue_syscall,
 	.attach = &r_debug_native_attach,
 	.detach = &r_debug_native_detach,

@@ -1202,11 +1202,10 @@ repeat:
 			goto repeat;
 		}
 #endif
-#if __WINDOWS__
 		if (reason != R_DEBUG_REASON_DEAD) {
-			// XXX(jjd): returning a thread id?!
 			ret = dbg->tid;
 		}
+#if __WINDOWS__
 		if (reason == R_DEBUG_REASON_NEW_LIB ||
 			reason == R_DEBUG_REASON_EXIT_LIB ||
 			reason == R_DEBUG_REASON_NEW_TID ||
@@ -1239,7 +1238,9 @@ repeat:
 
 		/* choose the thread that was returned from the continue function */
 		// XXX(jjd): there must be a cleaner way to do this...
-		r_debug_select (dbg, dbg->pid, ret);
+		if (ret != dbg->tid) {
+			r_debug_select (dbg, dbg->pid, ret);
+		}
 		sig = 0; // clear continuation after signal if needed
 
 		/* handle general signals here based on the return from the wait
@@ -1272,6 +1273,11 @@ repeat:
 	}
 #if __WINDOWS__
 	r_cons_break_pop ();
+#elif __linux__
+	// Letting threads continue after the debugger breaks is currently problematic in linux
+	if (dbg->continue_all_threads) {
+		r_debug_stop (dbg);
+	}
 #endif
 	// Unset breakpoints before leaving
 	if (reason != R_DEBUG_REASON_BREAKPOINT) {
