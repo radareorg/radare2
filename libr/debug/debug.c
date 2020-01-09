@@ -905,11 +905,16 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 		return false;
 	}
 	reason = r_debug_wait (dbg, NULL);
-	/* TODO: handle better */
-	if (reason == R_DEBUG_REASON_ERROR) {
+	if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 		return false;
 	}
-	if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
+	// Unset breakpoints before leaving
+	if (reason != R_DEBUG_REASON_BREAKPOINT && reason != R_DEBUG_REASON_COND &&
+		reason != R_DEBUG_REASON_TRACEPOINT) {
+		r_bp_restore (dbg->bp, false);
+	}
+	/* TODO: handle better */
+	if (reason == R_DEBUG_REASON_ERROR) {
 		return false;
 	}
 	return true;
@@ -1268,8 +1273,11 @@ repeat:
 #if __WINDOWS__
 	r_cons_break_pop ();
 #endif
+	// Unset breakpoints before leaving
+	if (reason != R_DEBUG_REASON_BREAKPOINT) {
+		r_bp_restore (dbg->bp, false);
+	}
 	return ret;
-
 }
 
 R_API int r_debug_continue(RDebug *dbg) {
