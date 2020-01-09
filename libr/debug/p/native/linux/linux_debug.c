@@ -211,15 +211,16 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 		/* NOTE: this case is handled by linux_handle_signals */
 		break;
 	case PTRACE_EVENT_CLONE:
-		if (dbg->trace_clone) {
-			if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
-				r_sys_perror ("ptrace GETEVENTMSG");
-				return R_DEBUG_REASON_ERROR;
-			}
-			linux_add_and_attach_new_thread (dbg, (int)data);
-			return R_DEBUG_REASON_NEW_TID;
+		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
+			r_sys_perror ("ptrace GETEVENTMSG");
+			return R_DEBUG_REASON_ERROR;
 		}
-		break;
+		linux_add_and_attach_new_thread (dbg, (int)data);
+		if (dbg->trace_clone) {
+			r_debug_select (dbg, dbg->pid, (int)data);
+		}
+		eprintf ("(%d) Created thread %d\n", dbg->pid, (int)data);
+		return R_DEBUG_REASON_NEW_TID;
 	case PTRACE_EVENT_VFORK:
 	case PTRACE_EVENT_FORK:
 		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
@@ -276,11 +277,9 @@ bool linux_set_options(RDebug *dbg, int pid) {
 	int traceflags = 0;
 	traceflags |= PTRACE_O_TRACEFORK;
 	traceflags |= PTRACE_O_TRACEVFORK;
+	traceflags |= PTRACE_O_TRACECLONE;
 	if (dbg->trace_forks) {
 		traceflags |= PTRACE_O_TRACEVFORKDONE;
-	}
-	if (dbg->trace_clone) {
-		traceflags |= PTRACE_O_TRACECLONE;
 	}
 	if (dbg->trace_execs) {
 		traceflags |= PTRACE_O_TRACEEXEC;
@@ -473,9 +472,8 @@ static void linux_add_and_attach_new_thread(RDebug *dbg, int tid) {
 	} else {
 		tid_info = r_debug_pid_new ("new_path", tid, uid, 's', 0);
 	}
-	(void) linux_attach (dbg, tid);
+	(void) linux_attach_single_pid (dbg, tid);
 	r_list_append (dbg->threads, tid_info);
-	dbg->tid = tid;
 	dbg->n_threads++;
 }
 
