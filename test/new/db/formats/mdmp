@@ -172,7 +172,7 @@ EXPECT=<<EOF
 1     0x0009dcda 0x00406108 NONE   FUNC 0    imp.KERNEL32.dll_DeleteCriticalSection
 EOF
 CMDS=<<EOF
-is~imp.KERNEL32.dll_DeleteCriticalSection:0
+is~DeleteCriticalSection:0
 EOF
 RUN
 
@@ -182,7 +182,7 @@ EXPECT=<<EOF
 358   0x001c2176 0x76fb05a4 NONE   FUNC 0    imp.ntdll.dll_RtlDeleteCriticalSection
 EOF
 CMDS=<<EOF
-is~ntdll.dll_RtlDeleteCriticalSection:0
+is~RtlDeleteCriticalSection:0
 EOF
 RUN
 
@@ -202,7 +202,7 @@ EXPECT=<<EOF
 17  0x00406148 NONE FUNC KERNEL32.dll_TerminateProcess
 EOF
 CMDS=<<EOF
-ii~KERNEL32.dll_TerminateProcess
+ii~TerminateProcess
 EOF
 RUN
 
@@ -222,7 +222,7 @@ EXPECT=<<EOF
 1992  0x0041f1f2 0x77802620 GLOBAL FUNC 0    ntdll.dll_Ordinal_1
 EOF
 CMDS=<<EOF
-iE~ntdll.dll_Ordinal_1
+iE~Ordinal_1
 EOF
 RUN
 
@@ -242,7 +242,7 @@ EXPECT=<<EOF
 0x00406160 0x0009dd32 SET_32  msvcrt.dll___dllonexit
 EOF
 CMDS=<<EOF
-ir~msvcrt.dll___dllonexit
+ir~__dllonexit
 EOF
 RUN
 
@@ -335,7 +335,7 @@ EXPECT=<<EOF
 1     0x0009ae8b 0x004081fc    NONE   FUNC 0    imp.KERNEL32.dll_DeleteCriticalSection
 EOF
 CMDS=<<EOF
-is~imp.KERNEL32.dll_DeleteCriticalSection
+is~DeleteCriticalSection
 EOF
 RUN
 
@@ -345,7 +345,7 @@ EXPECT=<<EOF
 8     0x001eb87f 0x77728bf0    GLOBAL FUNC 0    ntdll.dll_A_SHAFinal
 EOF
 CMDS=<<EOF
-is~ntdll.dll_A_SHAFinal
+is~A_SHAFinal
 EOF
 RUN
 
@@ -365,7 +365,7 @@ EXPECT=<<EOF
 4   0x00408214    NONE FUNC KERNEL32.dll_GetCurrentProcessId
 EOF
 CMDS=<<EOF
-ii~KERNEL32.dll_GetCurrentProcessId
+ii~GetCurrentProcessId
 EOF
 RUN
 
@@ -385,7 +385,7 @@ EXPECT=<<EOF
 38    0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll_CsrVerifyRegion
 EOF
 CMDS=<<EOF
-iE~ntdll.dll_CsrVerifyRegion
+iE~CsrVerifyRegion
 EOF
 RUN
 
@@ -405,7 +405,7 @@ EXPECT=<<EOF
 0x004081fc    0x0009ae8b SET_64  KERNEL32.dll_DeleteCriticalSection
 EOF
 CMDS=<<EOF
-ir~KERNEL32.dll_DeleteCriticalSection
+ir~DeleteCriticalSection
 EOF
 RUN
 
