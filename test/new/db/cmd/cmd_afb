@@ -1,0 +1,14 @@
+NAME=af localflag
+FILE=../bins/mach0/mac-ls2
+CMDS=<<EOF
+aaa
+afi~?
+afi.
+afb.
+EOF
+EXPECT=<<EOF
+32
+main
+0x1000011e8 0x100001211 01:08AB 41 j 0x100001216 f 0x100001211
+EOF
+RUN
