@@ -91,10 +91,10 @@ RUN
 NAME=C++ demangle exported GLIBCXX symbols
 FILE=../bins/elf/libstdc++.so.6
 EXPECT=<<CMDS
-3770  0x0008ce50 0x0008ce50 GLOBAL FUNC 609  std::istream::ignore(long)
-3771  0x0008ce50 0x0008ce50 GLOBAL FUNC 609  std::istream::ignore(long)
-5087  0x0008ce50 0x0008ce50 GLOBAL FUNC 609  std::istream::ignore(long)
-5345  0x0008ce50 0x0008ce50 GLOBAL FUNC 609  std::istream::ignore(long)
+3770  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
+3771  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
+5087  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
+5345  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
 CMDS=<<RUN
 iE~0x0008ce50
 RUN

@@ -5,11 +5,11 @@ EXPECT=<<EOF
 
 vaddr      paddr      type   name
 ---------------------------------
-0x00600988 0x00000988 SET_64  __gmon_start__
-0x006009a8 0x000009a8 SET_64  write
-0x006009b0 0x000009b0 SET_64  close
-0x006009b8 0x000009b8 SET_64  __libc_start_main
-0x006009c0 0x000009c0 SET_64  open
+0x00600988 0x00000988 SET_64 __gmon_start__
+0x006009a8 0x000009a8 SET_64 write
+0x006009b0 0x000009b0 SET_64 close
+0x006009b8 0x000009b8 SET_64 __libc_start_main
+0x006009c0 0x000009c0 SET_64 open
 
 
 5 relocations

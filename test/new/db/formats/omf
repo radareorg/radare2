@@ -23,9 +23,9 @@ FILE=../bins/omf/hello_world
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind type size name
-----------------------------------------------
-1    0x00000073 0x00001000 NONE NONE 0    _start
+nth paddr       vaddr      bind type size lib name
+--------------------------------------------------
+1    0x00000073 0x00001000 NONE NONE 0        _start
 EOF
 CMDS=<<EOF
 is
@@ -96,9 +96,9 @@ FILE=../bins/omf/hello_world32
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind type size name
-----------------------------------------------
-1    0x00000074 0x00001000 NONE NONE 0    _start
+nth paddr       vaddr      bind type size lib name
+--------------------------------------------------
+1    0x00000074 0x00001000 NONE NONE 0        _start
 EOF
 CMDS=<<EOF
 is
@@ -136,10 +136,10 @@ FILE=../bins/omf/multi_pubdef
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind type size name
-----------------------------------------------
-1    0x00000084 0x00001000 NONE NONE 0    _start
-2    0x00000097 0x00001013 NONE NONE 0    second_symbol
+nth paddr       vaddr      bind type size lib name
+--------------------------------------------------
+1    0x00000084 0x00001000 NONE NONE 0        _start
+2    0x00000097 0x00001013 NONE NONE 0        second_symbol
 EOF
 CMDS=<<EOF
 is
@@ -151,9 +151,9 @@ FILE=../bins/omf/null_checks
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind type size name
-----------------------------------------------
-1    0x00000073 0x00001000 NONE NONE 0    _start
+nth paddr       vaddr      bind type size lib name
+--------------------------------------------------
+1    0x00000073 0x00001000 NONE NONE 0        _start
 EOF
 CMDS=<<EOF
 is
