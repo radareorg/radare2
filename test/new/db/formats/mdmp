@@ -249,7 +249,7 @@ RUN
 NAME=: 32bit - relocs following
 FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
-            ;-- msvcrt.dll_vfprintf:
+            ;-- vfprintf:
             0x773e7430      8bff           mov edi, edi
             0x773e7432      55             push rbp
             0x773e7433      8bec           mov ebp, esp
@@ -412,7 +412,7 @@ RUN
 NAME=: 64bit - relocs following
 FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
-            ;-- msvcrt.dll_vfprintf:
+            ;-- vfprintf:
             0x7fefdb0a1a4      4883ec38       sub rsp, 0x38
             0x7fefdb0a1a8      4c89442420     mov qword [rsp + 0x20], r8
             0x7fefdb0a1ad      4c8bc2         mov r8, rdx
