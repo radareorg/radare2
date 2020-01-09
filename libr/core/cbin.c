@@ -2088,7 +2088,7 @@ static void handle_arm_entry(RCore *core, RBinAddr *entry, RBinInfo *info, int v
 }
 
 static void select_flag_space(RCore *core, RBinSymbol *symbol) {
-	if (!strncmp (symbol->name, "imp.", 4)) {
+	if (symbol->is_imported) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_IMPORTS);
 	} else if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_SECTION_STR)) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS_SECTIONS);
