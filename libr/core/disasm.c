@@ -4872,7 +4872,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 			free (type);
 		}
 	}
-	ds_comment (ds, true, cmt);
+	ds_comment (ds, true, "%s", cmt);
 	ds_print_color_reset (ds);
 	free (cmt);
 	free (name);
