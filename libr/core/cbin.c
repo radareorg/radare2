@@ -1836,7 +1836,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_println ("fs imports");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Imports]");
-		r_table_set_columnsf (table, "nXsss", "nth", "vaddr", "bind", "type", "name");
+		r_table_set_columnsf (table, "nXssss", "nth", "vaddr", "bind", "type", "lib", "name");
 	}
 	r_list_foreach (imports, iter, import) {
 		if (name && strcmp (import->name, name)) {
@@ -1894,9 +1894,9 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			const char *bind = import->bind? import->bind: "NONE";
 			const char *type = import->type? import->type: "NONE";
 			if (import->classname && import->classname[0]) {
-				r_table_add_rowf (table, "nXsss", import->ordinal, addr, bind, type, sdb_fmt ("%s.%s", import->classname, symname));
+				r_table_add_rowf (table, "nXssss", import->ordinal, addr, bind, type, libname ? libname : "", sdb_fmt ("%s.%s", import->classname, symname));
 			} else {
-				r_table_add_rowf (table, "nXsss", import->ordinal, addr, bind, type, symname);
+				r_table_add_rowf (table, "nXssss", import->ordinal, addr, bind, type, libname ? libname : "", symname);
 			}
 
 			if (import->descriptor && import->descriptor[0]) {
