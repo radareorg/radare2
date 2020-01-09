@@ -109,7 +109,8 @@ RList *PE_(r_bin_mdmp_pe_get_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 			break;
 		}
 		filter_import (imports[i].name);
-		ptr->name = strdup ((char *)imports[i].name);
+		ptr->name = strdup ((const char *)imports[i].name);
+		ptr->libname = *imports[i].libname ? strdup ((const char *)imports[i].libname) : NULL;
 		ptr->bind = "NONE";
 		ptr->type = R_BIN_TYPE_FUNC_STR;
 		ptr->ordinal = imports[i].ordinal;
@@ -253,6 +254,7 @@ RList *PE_(r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin)
 				offset -= pe_bin->vaddr;
 			}
 			ptr->name = strdup ((const char *)imports[i].name);
+			ptr->libname = *imports[i].libname ? strdup ((const char *)imports[i].libname) : NULL;
 			ptr->is_imported = true;
 			ptr->bind = "NONE";
 			ptr->type = R_BIN_TYPE_FUNC_STR;
