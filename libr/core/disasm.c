@@ -5068,6 +5068,9 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 				if (flag) {
 					if (strchr (flag->name, '.')) {
 						name = flag->name;
+						if (f->realnames && flag->realname) {
+							name = flag->realname;
+						}
 					}
 				}
 			}
