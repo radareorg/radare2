@@ -18,6 +18,12 @@
 #include <unistd.h>
 #include <elf.h>
 
+#ifdef __GLIBC__
+#define HAVE_YMM 1
+#else
+#define HAVE_YMM 0
+#endif
+
 char *linux_reg_profile (RDebug *dbg) {
 #if __arm__
 #	include "reg/linux-arm.h"
@@ -40,7 +46,9 @@ char *linux_reg_profile (RDebug *dbg) {
 #endif
 	} else {
 #		include "reg/linux-x64.h"
-#		include <asm/sigcontext.h>
+#if HAVE_YMM
+#		include <bits/sigcontext.h>
+#endif
 	}
 #elif __powerpc__
 	if (dbg->bits & R_SYS_BITS_32) {
@@ -1096,7 +1104,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		break;
 	case R_REG_TYPE_YMM:
 		{
-#if __x86_64__
+#if HAVE_YMM && __x86_64__
 		ut32 ymm_space[128];	// full ymm registers
 		struct _xstate xstate;
 		struct iovec iov;
