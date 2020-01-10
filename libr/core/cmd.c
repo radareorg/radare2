@@ -1962,12 +1962,12 @@ static inline void print_dict(RCoreAutocomplete* a, int sub) {
 	}
 	int i, j;
 	const char* name = "unknown";
-	for (i = 0; i < a->n_subcmds; ++i) {
+	for (i = 0; i < a->n_subcmds; i++) {
 		RCoreAutocomplete* b = a->subcmds[i];
 		if (b->locked) {
 			continue;
 		}
-		for (j = 0; j < R_CORE_AUTOCMPLT_END; ++j) {
+		for (j = 0; j < R_CORE_AUTOCMPLT_END; j++) {
 			if (b->type == autocomplete_flags[j].type) {
 				name = autocomplete_flags[j].name;
 				break;
@@ -1980,7 +1980,7 @@ static inline void print_dict(RCoreAutocomplete* a, int sub) {
 
 static int autocomplete_type(const char* strflag) {
 	int i;
-	for (i = 0; i < R_CORE_AUTOCMPLT_END; ++i) {
+	for (i = 0; i < R_CORE_AUTOCMPLT_END; i++) {
 		if (autocomplete_flags[i].desc && !strncmp (strflag, autocomplete_flags[i].name, 5)) {
 			return autocomplete_flags[i].type;
 		}
@@ -2001,7 +2001,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_triple_exclamation);
 		int i;
 		r_cons_printf ("|Types:\n");
-		for (i = 0; i < R_CORE_AUTOCMPLT_END; ++i) {
+		for (i = 0; i < R_CORE_AUTOCMPLT_END; i++) {
 			if (autocomplete_flags[i].desc) {
 				r_cons_printf ("| %s     %s\n",
 					autocomplete_flags[i].name,

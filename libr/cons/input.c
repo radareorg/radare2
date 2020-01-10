@@ -59,7 +59,7 @@ static int __parseMouseEvent() {
 	if (ch2 == ';') {
 		int i;
 		// read until next ;
-		for (i = 0; i < sizeof (xpos); i++) {
+		for (i = 0; i < sizeof (xpos) - 1; i++) {
 			char ch = r_cons_readchar ();
 			if (ch == ';' || ch == 'M') {
 				break;
@@ -67,7 +67,7 @@ static int __parseMouseEvent() {
 			xpos[i] = ch;
 		}
 		xpos[i] = 0;
-		for (i = 0; i < sizeof (ypos); i++) {
+		for (i = 0; i < sizeof (ypos) - 1; i++) {
 			char ch = r_cons_readchar ();
 			if (ch == ';' || ch == 'M') {
 				break;
