@@ -5291,6 +5291,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'o': // "doo" : reopen in debug mode
 			if (input[2] == 'f') { // "doof" : reopen in debug mode from the given file
+				r_config_set_i (core->config, "cfg.debug", true);
 				r_core_cmd0 (core, sdb_fmt ("oodf %s", input + 3));
 			} else {
 				r_core_file_reopen_debug (core, input + 2);
