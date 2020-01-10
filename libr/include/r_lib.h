@@ -61,7 +61,7 @@ typedef struct r_lib_struct_t {
 	void (*free)(void *data);
 } RLibStruct;
 
-typedef RLibStruct* (*RLibStructFunc) ();
+typedef RLibStruct* (*RLibStructFunc) (void);
 
 // order matters because of libr/util/lib.c
 enum {

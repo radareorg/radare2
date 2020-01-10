@@ -105,7 +105,7 @@ R_API void r_rbtree_iter_prev(RBIter *it);
 	for ((it) = r_rbtree_last (root); r_rbtree_iter_has(&it) && (data = r_rbtree_iter_get (&it, struc, rb)); r_rbtree_iter_prev (&(it)))
 
 
-R_API RContRBTree *r_rbtree_cont_new();
+R_API RContRBTree *r_rbtree_cont_new(void);
 R_API RContRBTree *r_rbtree_cont_newf(RContRBFree f);
 R_API bool r_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
 R_API bool r_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
