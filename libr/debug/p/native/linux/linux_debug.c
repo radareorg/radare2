@@ -40,7 +40,9 @@ char *linux_reg_profile (RDebug *dbg) {
 #endif
 	} else {
 #		include "reg/linux-x64.h"
+#ifndef __MUSL__
 #		include <bits/sigcontext.h>
+#endif
 	}
 #elif __powerpc__
 	if (dbg->bits & R_SYS_BITS_32) {
