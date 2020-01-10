@@ -2059,8 +2059,17 @@ FILE=../bins/elf/crackme0x05
 EXPECT=<<EOF
             0x08048566      e829feffff     call sym.imp.printf
             0x08048566      e829feffff     call printf                 ; sym.imp.printf
+0x08048394    1 6            sym.imp.printf
+|           0x08048566      e829feffff     call sym.imp.printf         ; int printf(const char *format)
+|           0x08048566      e829feffff     call printf                 ; sym.imp.printf ; int printf(const char *format)
 EOF
 CMDS=<<EOF
+e asm.flags.real=false
+pd 1 @ 0x8048566
+e asm.flags.real=true
+pd 1 @ 0x8048566
+aaa
+afl~printf
 e asm.flags.real=false
 pd 1 @ 0x8048566
 e asm.flags.real=true
