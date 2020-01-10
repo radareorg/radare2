@@ -1349,6 +1349,24 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	return (foo && *foo) ? foo : NULL;
 }
 
+// name can be optionally used to explicitly set the used base name (for example for demangling)
+// otherwise the import name will be used.
+static char *construct_reloc_name(R_NONNULL RBinReloc *reloc, R_NULLABLE const char *name) {
+	if (!name && reloc->import) {
+		name = reloc->import->name;
+	}
+	RStrBuf *buf = r_strbuf_new ("");
+	if (reloc->import && reloc->import->libname) {
+		r_strbuf_appendf (buf, "%s", reloc->import->libname);
+	} else if (reloc->symbol && reloc->symbol->libname) {
+		r_strbuf_appendf (buf, "%s", reloc->symbol->libname);
+	}
+	if ((reloc->import && reloc->import->name[0]) || (reloc->symbol && name && name[0])) {
+		r_strbuf_appendf (buf, "%s%s", r_strbuf_is_empty (buf) ? "" : "_", name);
+	}
+	return r_strbuf_drain (buf);
+}
+
 static char *get_reloc_name(RCore *r, RBinReloc *reloc, ut64 addr) {
 	char *reloc_name = NULL;
 	char *demangled_name = NULL;
@@ -1356,6 +1374,7 @@ static char *get_reloc_name(RCore *r, RBinReloc *reloc, ut64 addr) {
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
 	if (reloc->import && reloc->import->name) {
+		// TODO: this is (more or less) dead code, checked by if (reloc->import && reloc->import->name[0]) in set_bin_relocs
 		if (bin_demangle) {
 			demangled_name = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr, keep_lib);
 		}
@@ -1449,7 +1468,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
 			r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
 		}
-		reloc_name = reloc->import->name;
+		reloc_name = construct_reloc_name (reloc, NULL); // reloc->import->name;
 		if (r->bin->prefix) {
 			snprintf (str, R_FLAG_NAME_SIZE, "%s.reloc.%s", r->bin->prefix, reloc_name);
 		} else {
@@ -1648,15 +1667,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 					name = mn;
 				}
 			}
-			RStrBuf *buf = r_strbuf_new ("");
-			if (reloc->import && reloc->import->libname) {
-				r_strbuf_appendf (buf, "%s", reloc->import->libname);
-			} else if (reloc->symbol && reloc->symbol->libname) {
-				r_strbuf_appendf (buf, "%s", reloc->symbol->libname);
-			}
-			if ((reloc->import && reloc->import->name[0]) || (reloc->symbol && name && name[0])) {
-				r_strbuf_appendf (buf, "%s%s", r_strbuf_is_empty (buf) ? "" : "_", name);
-			}
+			char *reloc_name = construct_reloc_name (reloc, name);
+			RStrBuf *buf = r_strbuf_new (reloc_name ? reloc_name : "");
+			free (reloc_name);
 			R_FREE (name);
 			if (reloc->addend) {
 				if ((reloc->import || (reloc->symbol && !R_STR_ISEMPTY (name))) && reloc->addend > 0) {
