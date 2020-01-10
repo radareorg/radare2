@@ -20,3 +20,19 @@ CMDS=<<EOF
 pid 4
 EOF
 RUN
+
+NAME=PE: corkami mz.exe - dis asm.flags.real
+FILE=../bins/pe/mz.exe
+EXPECT=<<EOF
+push 0x401018
+call dword [printf]
+add esp, 4
+nop
+push 0
+call dword [ExitProcess]
+EOF
+CMDS=<<EOF
+e asm.flags.real=true
+pi 6
+EOF
+RUN

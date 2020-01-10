@@ -21,3 +21,31 @@ is
 ?v sym.imp.msvcrt.dll_printf
 EOF
 RUN
+
+
+NAME=PE: corkami imports.exe - json output
+FILE=../bins/pe/imports.exe
+EXPECT=<<EOF
+[
+  {
+    "ordinal": 1,
+    "bind": "NONE",
+    "type": "FUNC",
+    "name": "ExitProcess",
+    "libname": "kernel32.dll",
+    "plt": 4198592
+  },
+  {
+    "ordinal": 1,
+    "bind": "NONE",
+    "type": "FUNC",
+    "name": "printf",
+    "libname": "msvcrt.dll",
+    "plt": 4198600
+  }
+]
+EOF
+CMDS=<<EOF
+iij~{}   
+EOF
+RUN

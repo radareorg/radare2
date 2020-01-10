@@ -2032,3 +2032,24 @@ EXPECT=<<RUN
 
 [{"offset":134513684,"text":"            0x08048414      c3             ret"},{"offset":134513684,"text":"            ; --------------------------------------"},{"offset":134513685,"text":"            0x08048415      90             nop"}]
 RUN
+
+
+NAME=disassemble PE withh asm.flags.real enabled
+FILE=../bins/pe/ConsoleApplication1.exe
+EXPECT=<<EOF
+call 0x401836
+jmp 0x401322
+push ebp
+mov ebp, esp
+push 0
+call dword [SetUnhandledExceptionFilter]
+push dword [ebp + 8]
+call dword [UnhandledExceptionFilter]
+push 0xc0000409
+call dword [GetCurrentProcess]
+EOF
+CMDS=<<EOF
+e asm.flags.real=true
+pi 10
+EOF
+RUN
