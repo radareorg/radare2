@@ -410,7 +410,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 			if (import_table & ILT_MASK1) {
 				import_ordinal = import_table & ILT_MASK2;
 				import_hint = 0;
-				snprintf (import_name, PE_NAME_LENGTH, "%s_Ordinal_%i", dll_name, import_ordinal);
+				snprintf (import_name, PE_NAME_LENGTH, "Ordinal_%i", import_ordinal);
 				free (symdllname);
 				strncpy (name, dll_name, sizeof (name) - 1);
 				name[sizeof(name) - 1] = 0;

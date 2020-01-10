@@ -1383,18 +1383,23 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 	bool is_pe = true;
 	int is_sandbox = r_sandbox_enable (0);
 
-	if (is_pe && !is_sandbox && reloc->import && strstr (reloc->import->name, "Ordinal")) {
-		const char *TOKEN = ".dll_Ordinal_";
-		char *module = strdup (reloc->import->name);
-		char *import = strstr (module, TOKEN);
-
+	if (is_pe && !is_sandbox && reloc->import
+			&& reloc->import->name && reloc->import->libname
+			&& r_str_startswith (reloc->import->name, "Ordinal_")) {
+		char *module = reloc->import->libname;
 		r_str_case (module, false);
+
+		// strip trailing ".dll"
+		size_t module_len = strlen (module);
+		if (module_len > 4 && !strcmp (module + module_len - 4, ".dll")) {
+			module[module_len - 4] = '\0';
+		}
+
+		char *import = strdup (reloc->import->name + strlen ("Ordinal_"));
+
 		if (import) {
 			char *filename = NULL;
-			int ordinal;
-			*import = 0;
-			import += strlen (TOKEN);
-			ordinal = atoi (import);
+			int ordinal = atoi (import);
 			if (!*sdb_module || strcmp (module, *sdb_module)) {
 				sdb_free (*db);
 				*db = NULL;
@@ -1420,16 +1425,14 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 				if (symname) {
 					if (r->bin->prefix) {
 						reloc->import->name = r_str_newf
-							("%s.%s.%s", r->bin->prefix, module, symname);
+							("%s.%s", r->bin->prefix, symname);
+						R_FREE (symname);
 					} else {
-						reloc->import->name = r_str_newf
-							("%s.%s", module, symname);
+						reloc->import->name = symname;
 					}
-					R_FREE (symname);
 				}
 			}
 		}
-		free (module);
 		r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
 		r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
 	}
