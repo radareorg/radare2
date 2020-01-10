@@ -602,10 +602,12 @@ R_API int r_main_radare2(int argc, char **argv) {
 			if (quiet) {
 				printf ("%s\n", R2_VERSION);
 				LISTS_FREE ();
+				free (customRarunProfile);
 				return 0;
 			} else {
 				r_main_version_verify (0);
 				LISTS_FREE ();
+				free (customRarunProfile);
 				return r_main_version_print ("radare2");
 			}
 		case 'V':
@@ -859,6 +861,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			// TODO: load rbin thing
 		} else {
 			eprintf ("Cannot slurp from stdin\n");
+			LISTS_FREE ();
 			return 1;
 		}
 	} else if (strcmp (argv[r_optind - 1], "--") && !(r_config_get (r.config, "prj.name") && r_config_get (r.config, "prj.name")[0]) ) {
