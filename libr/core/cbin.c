@@ -1874,7 +1874,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		if (IS_MODE_SET (mode)) {
 			// TODO(eddyb) symbols that are imports.
 			// Add a dword/qword for PE imports
-			if (strstr (symname, ".dll_") && cdsz) {
+			if (libname && strstr (libname, ".dll") && cdsz) {
 				r_meta_add (r->anal, R_META_TYPE_DATA, addr, addr + cdsz, NULL);
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
@@ -2290,7 +2290,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			if (!name) {
 				goto next;
 			}
-			if (!strncmp (name, "imp.", 4)) {
+			if (symbol->is_imported) {
 				if (lastfs != 'i') {
 					r_cons_printf ("fs imports\n");
 				}
@@ -2318,7 +2318,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				if (r_str_startswith (plugin->name, "pe")) {
 					char *module = strdup (r_symbol_name);
 					char *p = strstr (module, ".dll_");
-					if (p && strstr (module, "imp.")) {
+					if (p && symbol->is_imported) {
 						char *symname = __filterShell (p + 5);
 						char *m = __filterShell (module);
 						*p = 0;
