@@ -243,7 +243,6 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	RBin *bin = r->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
 	RListIter *iter;
-	RListIter *last_processed = NULL;
 	RBinString *string;
 	RBinSection *section;
 	PJ *pj = NULL;
@@ -422,7 +421,6 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			free (bufstr);
 			free (no_dbl_bslash_str);
 		}
-		last_processed = iter;
 	}
 	R_FREE (b64.string);
 	if (IS_MODE_JSON (mode)) {
@@ -1349,157 +1347,124 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	return (foo && *foo) ? foo : NULL;
 }
 
-// name can be optionally used to explicitly set the used base name (for example for demangling)
-// otherwise the import name will be used.
+// name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
 static char *construct_reloc_name(R_NONNULL RBinReloc *reloc, R_NULLABLE const char *name) {
-	if (!name && reloc->import) {
-		name = reloc->import->name;
-	}
 	RStrBuf *buf = r_strbuf_new ("");
-	if (reloc->import && reloc->import->libname) {
-		r_strbuf_appendf (buf, "%s", reloc->import->libname);
-	} else if (reloc->symbol && reloc->symbol->libname) {
-		r_strbuf_appendf (buf, "%s", reloc->symbol->libname);
-	}
-	if ((reloc->import && reloc->import->name[0]) || (reloc->symbol && name && name[0])) {
-		r_strbuf_appendf (buf, "%s%s", r_strbuf_is_empty (buf) ? "" : "_", name);
-	}
-	return r_strbuf_drain (buf);
-}
 
-static char *get_reloc_name(RCore *r, RBinReloc *reloc, ut64 addr) {
-	char *reloc_name = NULL;
-	char *demangled_name = NULL;
-	const char *lang = r_config_get (r->config, "bin.lang");
-	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
-	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
-	if (reloc->import && reloc->import->name) {
-		// TODO: this is (more or less) dead code, checked by if (reloc->import && reloc->import->name[0]) in set_bin_relocs
-		if (bin_demangle) {
-			demangled_name = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr, keep_lib);
-		}
-		reloc_name = sdb_fmt ("reloc.%s_%d", demangled_name ? demangled_name : reloc->import->name,
-				      (int)(addr & 0xff));
-		if (!reloc_name) {
-			free (demangled_name);
-			return NULL;
-		}
-		r_str_replace_char (reloc_name, '$', '_');
-	} else if (reloc->symbol && reloc->symbol->name) {
-		if (bin_demangle) {
-			demangled_name = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr, keep_lib);
-		}
-		reloc_name = sdb_fmt ("reloc.%s_%d", demangled_name ? demangled_name : reloc->symbol->name,
-				      (int)(addr & 0xff));
-		if (!reloc_name) {
-			free (demangled_name);
-			return NULL;
-		}
-		r_str_replace_char (reloc_name, '$', '_');
+	// (optional) libname_
+	if (reloc->import && reloc->import->libname) {
+		r_strbuf_appendf (buf, "%s_", reloc->import->libname);
+	} else if (reloc->symbol && reloc->symbol->libname) {
+		r_strbuf_appendf (buf, "%s_", reloc->symbol->libname);
+	}
+
+	// actual name
+	if (name) {
+		r_strbuf_append (buf, name);
+	} else if (reloc->import && reloc->import->name && *reloc->import->name) {
+		r_strbuf_append (buf, reloc->import->name);
+	} else if (reloc->symbol && reloc->symbol->name && *reloc->symbol->name) {
+		r_strbuf_appendf (buf, "%s", reloc->symbol->name);
 	} else if (reloc->is_ifunc) {
 		// addend is the function pointer for the resolving ifunc
-		reloc_name = sdb_fmt ("reloc.ifunc_%"PFMT64x, reloc->addend);
+		r_strbuf_appendf (buf, "ifunc_%"PFMT64x, reloc->addend);
 	} else {
 		// TODO(eddyb) implement constant relocs.
+		r_strbuf_set (buf, "");
 	}
-	free (demangled_name);
-	return reloc_name;
+
+	return r_strbuf_drain (buf);
 }
 
 static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = r_config_get (r->config, "bin.lang");
-	char *reloc_name, *demname = NULL;
 	bool is_pe = true;
 	int is_sandbox = r_sandbox_enable (0);
 
-	if (reloc->import && reloc->import->name[0]) {
-		char str[R_FLAG_NAME_SIZE];
-		RFlagItem *fi;
+	if (is_pe && !is_sandbox && reloc->import && strstr (reloc->import->name, "Ordinal")) {
+		const char *TOKEN = ".dll_Ordinal_";
+		char *module = strdup (reloc->import->name);
+		char *import = strstr (module, TOKEN);
 
-		if (is_pe && !is_sandbox && strstr (reloc->import->name, "Ordinal")) {
-			const char *TOKEN = ".dll_Ordinal_";
-			char *module = strdup (reloc->import->name);
-			char *import = strstr (module, TOKEN);
-
-			r_str_case (module, false);
-			if (import) {
-				char *filename = NULL;
-				int ordinal;
-				*import = 0;
-				import += strlen (TOKEN);
-				ordinal = atoi (import);
-				if (!*sdb_module || strcmp (module, *sdb_module)) {
-					sdb_free (*db);
-					*db = NULL;
-					free (*sdb_module);
-					*sdb_module = strdup (module);
-					/* always lowercase */
-					filename = sdb_fmt ("%s.sdb", module);
-					r_str_case (filename, false);
+		r_str_case (module, false);
+		if (import) {
+			char *filename = NULL;
+			int ordinal;
+			*import = 0;
+			import += strlen (TOKEN);
+			ordinal = atoi (import);
+			if (!*sdb_module || strcmp (module, *sdb_module)) {
+				sdb_free (*db);
+				*db = NULL;
+				free (*sdb_module);
+				*sdb_module = strdup (module);
+				/* always lowercase */
+				filename = sdb_fmt ("%s.sdb", module);
+				r_str_case (filename, false);
+				if (r_file_exists (filename)) {
+					*db = sdb_new (NULL, filename, 0);
+				} else {
+					const char *dirPrefix = r_sys_prefix (NULL);
+					filename = sdb_fmt (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
+						dirPrefix, module);
 					if (r_file_exists (filename)) {
 						*db = sdb_new (NULL, filename, 0);
+					}
+				}
+			}
+			if (*db) {
+				// ordinal-1 because we enumerate starting at 0
+				char *symname = resolveModuleOrdinal (*db, module, ordinal - 1);  // uses sdb_get
+				if (symname) {
+					if (r->bin->prefix) {
+						reloc->import->name = r_str_newf
+							("%s.%s.%s", r->bin->prefix, module, symname);
 					} else {
-						const char *dirPrefix = r_sys_prefix (NULL);
-						filename = sdb_fmt (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
-							dirPrefix, module);
-						if (r_file_exists (filename)) {
-							*db = sdb_new (NULL, filename, 0);
-						}
+						reloc->import->name = r_str_newf
+							("%s.%s", module, symname);
 					}
-				}
-				if (*db) {
-					// ordinal-1 because we enumerate starting at 0
-					char *symname = resolveModuleOrdinal (*db, module, ordinal - 1);  // uses sdb_get
-					if (symname) {
-						if (r->bin->prefix) {
-							reloc->import->name = r_str_newf
-								("%s.%s.%s", r->bin->prefix, module, symname);
-						} else {
-							reloc->import->name = r_str_newf
-								("%s.%s", module, symname);
-						}
-						R_FREE (symname);
-					}
+					R_FREE (symname);
 				}
 			}
-			free (module);
-			r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
-			r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
 		}
-		reloc_name = construct_reloc_name (reloc, NULL); // reloc->import->name;
-		if (r->bin->prefix) {
-			snprintf (str, R_FLAG_NAME_SIZE, "%s.reloc.%s", r->bin->prefix, reloc_name);
-		} else {
-			snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
-		}
-		if (bin_demangle) {
-			demname = r_bin_demangle (r->bin->cur, lang, str, addr, keep_lib);
-			if (demname) {
-				snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s", demname);
-			}
-		}
-		r_name_filter (str, 0);
-		fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc));
-		if (demname) {
-			char *realname;
-			if (r->bin->prefix) {
-				realname = sdb_fmt ("%s.reloc.%s", r->bin->prefix, demname);
-			} else {
-				realname = sdb_fmt ("reloc.%s", demname);
-			}
-			r_flag_item_set_realname (fi, realname);
-		}
-		free (demname);
+		free (module);
+		r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
+		r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
+	}
+
+	char flagname[R_FLAG_NAME_SIZE];
+	char *reloc_name = construct_reloc_name (reloc, NULL);
+	if (!reloc_name || !*reloc_name) {
+		free (reloc_name);
+		return;
+	}
+	if (r->bin->prefix) {
+		snprintf (flagname, R_FLAG_NAME_SIZE, "%s.reloc.%s", r->bin->prefix, reloc_name);
 	} else {
-		char *reloc_name = get_reloc_name (r, reloc, addr);
-		if (reloc_name) {
-			r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
-		} else {
-			// eprintf ("Cannot find a name for 0x%08"PFMT64x"\n", addr);
+		snprintf (flagname, R_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
+	}
+	free (reloc_name);
+	char *demname = NULL;
+	if (bin_demangle) {
+		demname = r_bin_demangle (r->bin->cur, lang, flagname, addr, keep_lib);
+		if (demname) {
+			snprintf (flagname, R_FLAG_NAME_SIZE, "reloc.%s", demname);
 		}
 	}
+	r_name_filter (flagname, 0);
+	RFlagItem *fi = r_flag_set (r->flags, flagname, addr, bin_reloc_size (reloc));
+	if (demname) {
+		char *realname;
+		if (r->bin->prefix) {
+			realname = sdb_fmt ("%s.reloc.%s", r->bin->prefix, demname);
+		} else {
+			realname = sdb_fmt ("reloc.%s", demname);
+		}
+		r_flag_item_set_realname (fi, realname);
+	}
+	free (demname);
 }
 
 /* Define new data at relocation address if it's not in an executable section */
@@ -1659,7 +1624,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				? strdup (reloc->import->name)
 				: reloc->symbol
 				? strdup (reloc->symbol->name)
-				: strdup ("null");
+				: NULL;
 			if (bin_demangle) {
 				char *mn = r_bin_demangle (r->bin->cur, NULL, name, addr, keep_lib);
 				if (mn && *mn) {
@@ -1672,7 +1637,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			free (reloc_name);
 			R_FREE (name);
 			if (reloc->addend) {
-				if ((reloc->import || (reloc->symbol && !R_STR_ISEMPTY (name))) && reloc->addend > 0) {
+				if ((reloc->import || reloc->symbol) && !r_strbuf_is_empty (buf) && reloc->addend > 0) {
 					r_strbuf_append (buf," +");
 				}
 				if (reloc->addend < 0) {
