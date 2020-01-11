@@ -1892,6 +1892,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			}
 		}
 		R_FREE (symname);
+		R_FREE (libname);
 		i++;
 	}
 
