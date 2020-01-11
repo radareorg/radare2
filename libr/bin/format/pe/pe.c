@@ -696,7 +696,8 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 							sprintf ((char*) exp[symctr].name, "unk_%d", symctr);
 						}
 					}
-					exp[symctr].name[PE_NAME_LENGTH] = 0;
+					exp[symctr].name[PE_NAME_LENGTH] = '\0';
+					exp[symctr].libname[0] = '\0';
 					exp[symctr].vaddr = bin_pe_rva_to_va (bin, text_rva + sr->value);
 					exp[symctr].paddr = text_off + sr->value;
 					exp[symctr].ordinal = symctr;
