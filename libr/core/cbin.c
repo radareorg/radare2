@@ -171,7 +171,7 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	}
 	// TODO use the RBin API, not cmdf()
 	// r_core_bin_export_info_rad (core);
-	r_core_cmdf (core, ".!rabin2 -rk. \"%s\"", file);
+	r_core_cmdf (core, "\".!rabin2 -rk. %s\"", file);
 	return true;
 }
 
