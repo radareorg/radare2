@@ -904,12 +904,13 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 		}
 		o->info->file_hashes = NULL;
 	}
-	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
+	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1 | R_HASH_SHA256);
 	while (r + blocksize < buf_len) {
 		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
 		int b = r_io_desc_read (iod, buf, blocksize);
 		(void)r_hash_do_md5 (ctx, buf, blocksize);
 		(void)r_hash_do_sha1 (ctx, buf, blocksize);
+		(void)r_hash_do_sha256 (ctx, buf, blocksize);
 		r += b;
 	}
 	if (r < buf_len) {
@@ -921,6 +922,7 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 		} else {
 			(void)r_hash_do_md5 (ctx, buf, b);
 			(void)r_hash_do_sha1 (ctx, buf, b);
+			(void)r_hash_do_sha256 (ctx, buf, b);
 		}
 	}
 	r_hash_do_end (ctx, R_HASH_MD5);
@@ -941,6 +943,15 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 		sha1h->type = strdup ("sha1");
 		sha1h->hex = strdup (hash);
 		r_list_push (o->info->file_hashes, sha1h);
+	}
+	r_hash_do_end (ctx, R_HASH_SHA256);
+	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA256, hash);
+
+	RBinFileHash *sha256h = R_NEW0 (RBinFileHash);
+	if (sha256h) {
+		sha256h->type = strdup ("sha256");
+		sha256h->hex = strdup (hash);
+		r_list_push (o->info->file_hashes, sha256h);
 	}
 	// TODO: add here more rows
 
