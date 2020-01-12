@@ -767,3 +767,28 @@ EXPECT=<<RUN
                  mov esi, obj.utf32be_bom                              ; 0x4041e0 ; Ub"\ufeffUTF32BE_BOM"
                  mov esi, obj.utf32be_bom                              ; Ub"\ufeffUTF32BE_BOM"
 RUN
+
+NAME=no-anal asm.symbol from fcn mid
+FILE=../bins/elf/analysis/tiny1
+CMDS=<<EOF
+e asm.symbol=true
+e asm.bytes=false
+e asm.offset=false
+e asm.comments=false
+s entry0 + 2
+pd 2
+?e
+s segment.LOAD0 + 83
+pd 4
+EOF
+EXPECT=<<EOF
+   entry0 + 2                   xor eax, eax
+   entry0 + 4                   inc eax
+
+   segment.LOAD0 + 83              ~   add byte [ebx + 0x40c0312a], dh
+   entry0 + 0                   ;-- entry0:
+   entry0 + 0                   mov bl, 0x2a
+   entry0 + 2                   xor eax, eax
+   entry0 + 4                   inc eax
+EOF
+RUN

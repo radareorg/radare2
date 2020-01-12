@@ -2675,6 +2675,9 @@ static void ds_print_lines_left(RDisasmState *ds) {
 			ds->lastflag = &sfi;
 		} else {
 			RFlagItem *fi = r_flag_get_at (core->flags, ds->at, false);
+			if (!fi && !ds->lastflag) {
+				fi = r_flag_get_at (core->flags, ds->at, true);
+			}
 			if (fi) { // && (!ds->lastflag || fi->offset != ds->at))
 				sfi.offset = fi->offset;
 				sfi.name = fi->name;
