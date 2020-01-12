@@ -32,9 +32,9 @@ FILE=../bins/xbe/default.xbe
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind type size name
-----------------------------------------------
-0    0x000016c0 0x000116c0 NONE NONE 4    kt.vsnprintf
+nth paddr       vaddr      bind type size lib name
+--------------------------------------------------
+0    0x000016c0 0x000116c0 NONE NONE 4        kt.vsnprintf
 EOF
 CMDS=<<EOF
 is

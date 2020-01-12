@@ -43,8 +43,8 @@ RUN
 NAME=PE: corkami imports
 FILE=../bins/pe/normal64.exe
 EXPECT=<<EOF
-kernel32.dll_ExitProcess
-msvcrt.dll_printf
+kernel32.dll ExitProcess
+msvcrt.dll printf
 EOF
 CMDS=<<EOF
 iiq

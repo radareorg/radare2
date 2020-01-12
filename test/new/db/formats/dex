@@ -224,15 +224,15 @@ NAME=DEX HelloWorld.dex imports (ii command)
 FILE=../bins/dex/HelloWorld.dex
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type name
------------------------------
-0   0x000001b0 NONE FUNC Ljava/io/PrintStream.method.println(Ljava/lang/String;)V
-1   0x000001b8 NONE FUNC Ljava/lang/Integer.method.<init>(I)V
-2   0x000001c0 NONE FUNC Ljava/lang/Integer.method.toString()Ljava/lang/String;
-3   0x000001c8 NONE FUNC Ljava/lang/Object.method.<init>()V
-4   0x000001d0 NONE FUNC Ljava/lang/StringBuilder.method.<init>()V
-5   0x000001d8 NONE FUNC Ljava/lang/StringBuilder.method.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-6   0x000001e0 NONE FUNC Ljava/lang/StringBuilder.method.toString()Ljava/lang/String;
+nth vaddr      bind type lib name
+---------------------------------
+0   0x000001b0 NONE FUNC     Ljava/io/PrintStream.method.println(Ljava/lang/String;)V
+1   0x000001b8 NONE FUNC     Ljava/lang/Integer.method.<init>(I)V
+2   0x000001c0 NONE FUNC     Ljava/lang/Integer.method.toString()Ljava/lang/String;
+3   0x000001c8 NONE FUNC     Ljava/lang/Object.method.<init>()V
+4   0x000001d0 NONE FUNC     Ljava/lang/StringBuilder.method.<init>()V
+5   0x000001d8 NONE FUNC     Ljava/lang/StringBuilder.method.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+6   0x000001e0 NONE FUNC     Ljava/lang/StringBuilder.method.toString()Ljava/lang/String;
 
 EOF
 CMDS=<<EOF
@@ -245,13 +245,13 @@ FILE=../bins/dex/HelloWorld.dex
 EXPECT=<<EOF
 [Exports]
 
-nth paddr       vaddr      bind   type size name
-------------------------------------------------
-2    0x00000238 0x00000238 GLOBAL FUNC 20   LHello.method.<init>()V
-3    0x0000025c 0x0000025c GLOBAL FUNC 34   LHello.method.main([Ljava/lang/String;)V
-4    0x00000290 0x00000290 GLOBAL FUNC 84   LHello.method.foo(I)V
-7    0x000002f4 0x000002f4 GLOBAL FUNC 20   LWorld.method.<init>()V
-8    0x00000318 0x00000318 GLOBAL FUNC 68   LWorld.method.foo(I)V
+nth paddr       vaddr      bind   type size lib name
+----------------------------------------------------
+2    0x00000238 0x00000238 GLOBAL FUNC 20       LHello.method.<init>()V
+3    0x0000025c 0x0000025c GLOBAL FUNC 34       LHello.method.main([Ljava/lang/String;)V
+4    0x00000290 0x00000290 GLOBAL FUNC 84       LHello.method.foo(I)V
+7    0x000002f4 0x000002f4 GLOBAL FUNC 20       LWorld.method.<init>()V
+8    0x00000318 0x00000318 GLOBAL FUNC 68       LWorld.method.foo(I)V
 EOF
 CMDS=<<EOF
 iE

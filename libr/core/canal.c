@@ -3895,10 +3895,8 @@ static bool isSkippable(RBinSymbol *s) {
 			return true;
 		}
 		if (!strcmp (s->bind, "NONE")) {
-			if (r_str_startswith (s->name, "imp.")) {
-				if (strstr (s->name, ".dll_")) {
-					return true;
-				}
+			if (s->is_imported && s->libname && strstr(s->libname, ".dll")) {
+				return true;
 			}
 		}
 	}

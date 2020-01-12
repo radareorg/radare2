@@ -257,11 +257,11 @@ ARGS=-a x86 -b32 -B 0x90000000
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind   type size name
-------------------------------------------------
-0    0x00005000 0x90000000 GLOBAL FUNC 0    __mh_execute_header
-1    0x00005000 0x95613542 LOCAL  FUNC 0    radr://5614542
-2    0x00005f94 0x90000f94 LOCAL  FUNC 0    imp.exit
+nth paddr       vaddr      bind   type size lib name
+----------------------------------------------------
+0    0x00005000 0x90000000 GLOBAL FUNC 0        __mh_execute_header
+1    0x00005000 0x95613542 LOCAL  FUNC 0        radr://5614542
+2    0x00005f94 0x90000f94 LOCAL  FUNC 0        imp.exit
 EOF
 CMDS=<<EOF
 is

@@ -2172,6 +2172,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 	symbol->offset = 0LL;
 	symbol->addr = 0LL;
 	symbol->name[0] = '\0';
+	symbol->is_imported = true;
 
 	if (!bin || !bin->sects) {
 		return false;
@@ -2222,7 +2223,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 				if (*symstr == '_') {
 					symstr++;
 				}
-				snprintf (symbol->name, R_BIN_MACH0_STRING_LENGTH, "imp.%s", symstr);
+				snprintf (symbol->name, R_BIN_MACH0_STRING_LENGTH, "%s", symstr);
 				return true;
 			}
 		}
@@ -2545,6 +2546,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			if (!sym->name) {
 				sym->name = r_str_newf ("unk%d", i);
 			}
+			sym->is_imported = symbol.is_imported;
 			r_list_append (list, sym);
 		}
 	}
@@ -2561,6 +2563,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			/* is symbol */
 			sym->vaddr = st->n_value;
 			sym->paddr = addr_to_offset (bin, symbols[j].addr);
+			sym->is_imported = symbols[j].is_imported;
 			if (st->n_type & N_EXT) {
 				sym->type = "EXT";
 			} else {
@@ -2679,6 +2682,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
 				symbols[j].addr = bin->symtab[i].n_value;
 				symbols[j].size = 0; /* TODO: Is it anywhere? */
+				symbols[j].is_imported = false;
 				if (bin->symtab[i].n_type & N_EXT) {
 					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
 				} else {

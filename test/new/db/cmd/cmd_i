@@ -198,13 +198,13 @@ static   true
 stripped false
 va       false
 [Imports]
-nth vaddr bind type name
-------------------------
+nth vaddr bind type lib name
+----------------------------
 
 [Exports]
 
-nth paddr vaddr bind type size name
------------------------------------
+nth paddr vaddr bind type size lib name
+---------------------------------------
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
@@ -213,8 +213,8 @@ fs imports
 fs symbols
 fs exports
 [Imports]
-nth vaddr bind type name
-------------------------
+nth vaddr bind type lib name
+----------------------------
 
 fs imports
 [Entrypoints]
@@ -223,8 +223,8 @@ fs imports
 fs symbols
 [Symbols]
 
-nth paddr vaddr bind type size name
------------------------------------
+nth paddr vaddr bind type size lib name
+---------------------------------------
 fs symbols
 [Sections]
 
@@ -1485,11 +1485,11 @@ NAME=ii (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind   type   name
----------------------------------
-1   0x080482d0 GLOBAL FUNC   puts
-2   0x080482e0 WEAK   NOTYPE __gmon_start__
-3   0x080482f0 GLOBAL FUNC   __libc_start_main
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x080482d0 GLOBAL FUNC       puts
+2   0x080482e0 WEAK   NOTYPE     __gmon_start__
+3   0x080482f0 GLOBAL FUNC       __libc_start_main
 
 EOF
 CMDS=<<EOF
@@ -2854,10 +2854,10 @@ EXPECT=<<EOF
 
 vaddr      paddr      type   name
 ---------------------------------
-0x08049690 0x00000690 SET_32  __gmon_start__
-0x080496a0 0x000006a0 SET_32  puts
-0x080496a4 0x000006a4 SET_32  __gmon_start__
-0x080496a8 0x000006a8 SET_32  __libc_start_main
+0x08049690 0x00000690 SET_32 __gmon_start__
+0x080496a0 0x000006a0 SET_32 puts
+0x080496a4 0x000006a4 SET_32 __gmon_start__
+0x080496a8 0x000006a8 SET_32 __libc_start_main
 
 
 4 relocations
@@ -2903,73 +2903,73 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind   type   size name
---------------------------------------------------
-4    0x000004ac 0x080484ac GLOBAL OBJ    4    _IO_stdin_used
-1    0x00000134 0x08048134 LOCAL  SECT   0    .interp
-2    0x00000148 0x08048148 LOCAL  SECT   0    .note.ABI-tag
-3    0x00000168 0x08048168 LOCAL  SECT   0    .note.gnu.build-id
-4    0x0000018c 0x0804818c LOCAL  SECT   0    .gnu.hash
-5    0x000001ac 0x080481ac LOCAL  SECT   0    .dynsym
-6    0x000001fc 0x080481fc LOCAL  SECT   0    .dynstr
-7    0x00000246 0x08048246 LOCAL  SECT   0    .gnu.version
-8    0x00000250 0x08048250 LOCAL  SECT   0    .gnu.version_r
-9    0x00000270 0x08048270 LOCAL  SECT   0    .rel.dyn
-10   0x00000278 0x08048278 LOCAL  SECT   0    .rel.plt
-11   0x00000290 0x08048290 LOCAL  SECT   0    .init
-12   0x000002c0 0x080482c0 LOCAL  SECT   0    .plt
-13   0x00000300 0x08048300 LOCAL  SECT   0    .text
-14   0x00000494 0x08048494 LOCAL  SECT   0    .fini
-15   0x000004a8 0x080484a8 LOCAL  SECT   0    .rodata
-16   0x000004c0 0x080484c0 LOCAL  SECT   0    .eh_frame_hdr
-17   0x000004ec 0x080484ec LOCAL  SECT   0    .eh_frame
-18   0x0000059c 0x0804959c LOCAL  SECT   0    .init_array
-19   0x000005a0 0x080495a0 LOCAL  SECT   0    .fini_array
-20   0x000005a4 0x080495a4 LOCAL  SECT   0    .jcr
-21   0x000005a8 0x080495a8 LOCAL  SECT   0    .dynamic
-22   0x00000690 0x08049690 LOCAL  SECT   0    .got
-23   0x00000694 0x08049694 LOCAL  SECT   0    .got.plt
-24   0x000006ac 0x080496ac LOCAL  SECT   0    .data
-25   ---------- 0x080496b4 LOCAL  SECT   0    .bss
-26   ---------- 0x00000000 LOCAL  SECT   0    .comment
-27   ---------- 0x00000000 LOCAL  FILE   0    init.c
-28   ---------- 0x00000000 LOCAL  FILE   0    
-29   ---------- 0x00000000 LOCAL  FILE   0    crtstuff.c
-30   0x000005a4 0x080495a4 LOCAL  OBJ    0    __JCR_LIST__
-31   0x00000340 0x08048340 LOCAL  FUNC   0    deregister_tm_clones
-32   0x00000370 0x08048370 LOCAL  FUNC   0    register_tm_clones
-33   0x000003b0 0x080483b0 LOCAL  FUNC   0    __do_global_dtors_aux
-34   ---------- 0x080496b4 LOCAL  OBJ    1    completed.5979
-35   0x000005a0 0x080495a0 LOCAL  OBJ    0    __do_global_dtors_aux_fini_array_entry
-36   0x000003d0 0x080483d0 LOCAL  FUNC   0    frame_dummy
-37   0x0000059c 0x0804959c LOCAL  OBJ    0    __frame_dummy_init_array_entry
-38   ---------- 0x00000000 LOCAL  FILE   0    hello.c
-39   ---------- 0x00000000 LOCAL  FILE   0    crtstuff.c
-40   0x00000598 0x08048598 LOCAL  OBJ    0    __FRAME_END__
-41   0x000005a4 0x080495a4 LOCAL  OBJ    0    __JCR_END__
-42   ---------- 0x00000000 LOCAL  FILE   0    
-43   0x000005a0 0x080495a0 LOCAL  NOTYPE 0    __init_array_end
-44   0x000005a8 0x080495a8 LOCAL  OBJ    0    _DYNAMIC
-45   0x0000059c 0x0804959c LOCAL  NOTYPE 0    __init_array_start
-46   0x00000694 0x08049694 LOCAL  OBJ    0    _GLOBAL_OFFSET_TABLE_
-47   0x00000490 0x08048490 GLOBAL FUNC   2    __libc_csu_fini
-49   0x00000330 0x08048330 GLOBAL FUNC   4    __x86.get_pc_thunk.bx
-50   0x000006ac 0x080496ac WEAK   NOTYPE 0    data_start
-51   ---------- 0x080496b4 GLOBAL NOTYPE 0    _edata
-52   0x00000494 0x08048494 GLOBAL FUNC   0    _fini
-53   0x000006ac 0x080496ac GLOBAL NOTYPE 0    __data_start
-56   0x000006b0 0x080496b0 GLOBAL OBJ    0    __dso_handle
-59   0x00000420 0x08048420 GLOBAL FUNC   97   __libc_csu_init
-60   ---------- 0x080496b8 GLOBAL NOTYPE 0    _end
-61   0x00000300 0x08048300 GLOBAL FUNC   0    _start
-62   0x000004a8 0x080484a8 GLOBAL OBJ    4    _fp_hw
-63   ---------- 0x080496b4 GLOBAL NOTYPE 0    __bss_start
-64   0x00000400 0x08048400 GLOBAL FUNC   28   main
-66   ---------- 0x080496b4 GLOBAL OBJ    0    __TMC_END__
-68   0x00000290 0x08048290 GLOBAL FUNC   0    _init
-1    0x000002d0 0x080482d0 GLOBAL FUNC   16   imp.puts
-2    0x000002e0 0x080482e0 WEAK   NOTYPE 16   imp.__gmon_start__
-3    0x000002f0 0x080482f0 GLOBAL FUNC   16   imp.__libc_start_main
+nth paddr       vaddr      bind   type   size lib name
+------------------------------------------------------
+4    0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
+1    0x00000134 0x08048134 LOCAL  SECT   0        .interp
+2    0x00000148 0x08048148 LOCAL  SECT   0        .note.ABI-tag
+3    0x00000168 0x08048168 LOCAL  SECT   0        .note.gnu.build-id
+4    0x0000018c 0x0804818c LOCAL  SECT   0        .gnu.hash
+5    0x000001ac 0x080481ac LOCAL  SECT   0        .dynsym
+6    0x000001fc 0x080481fc LOCAL  SECT   0        .dynstr
+7    0x00000246 0x08048246 LOCAL  SECT   0        .gnu.version
+8    0x00000250 0x08048250 LOCAL  SECT   0        .gnu.version_r
+9    0x00000270 0x08048270 LOCAL  SECT   0        .rel.dyn
+10   0x00000278 0x08048278 LOCAL  SECT   0        .rel.plt
+11   0x00000290 0x08048290 LOCAL  SECT   0        .init
+12   0x000002c0 0x080482c0 LOCAL  SECT   0        .plt
+13   0x00000300 0x08048300 LOCAL  SECT   0        .text
+14   0x00000494 0x08048494 LOCAL  SECT   0        .fini
+15   0x000004a8 0x080484a8 LOCAL  SECT   0        .rodata
+16   0x000004c0 0x080484c0 LOCAL  SECT   0        .eh_frame_hdr
+17   0x000004ec 0x080484ec LOCAL  SECT   0        .eh_frame
+18   0x0000059c 0x0804959c LOCAL  SECT   0        .init_array
+19   0x000005a0 0x080495a0 LOCAL  SECT   0        .fini_array
+20   0x000005a4 0x080495a4 LOCAL  SECT   0        .jcr
+21   0x000005a8 0x080495a8 LOCAL  SECT   0        .dynamic
+22   0x00000690 0x08049690 LOCAL  SECT   0        .got
+23   0x00000694 0x08049694 LOCAL  SECT   0        .got.plt
+24   0x000006ac 0x080496ac LOCAL  SECT   0        .data
+25   ---------- 0x080496b4 LOCAL  SECT   0        .bss
+26   ---------- 0x00000000 LOCAL  SECT   0        .comment
+27   ---------- 0x00000000 LOCAL  FILE   0        init.c
+28   ---------- 0x00000000 LOCAL  FILE   0        
+29   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+30   0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_LIST__
+31   0x00000340 0x08048340 LOCAL  FUNC   0        deregister_tm_clones
+32   0x00000370 0x08048370 LOCAL  FUNC   0        register_tm_clones
+33   0x000003b0 0x080483b0 LOCAL  FUNC   0        __do_global_dtors_aux
+34   ---------- 0x080496b4 LOCAL  OBJ    1        completed.5979
+35   0x000005a0 0x080495a0 LOCAL  OBJ    0        __do_global_dtors_aux_fini_array_entry
+36   0x000003d0 0x080483d0 LOCAL  FUNC   0        frame_dummy
+37   0x0000059c 0x0804959c LOCAL  OBJ    0        __frame_dummy_init_array_entry
+38   ---------- 0x00000000 LOCAL  FILE   0        hello.c
+39   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+40   0x00000598 0x08048598 LOCAL  OBJ    0        __FRAME_END__
+41   0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_END__
+42   ---------- 0x00000000 LOCAL  FILE   0        
+43   0x000005a0 0x080495a0 LOCAL  NOTYPE 0        __init_array_end
+44   0x000005a8 0x080495a8 LOCAL  OBJ    0        _DYNAMIC
+45   0x0000059c 0x0804959c LOCAL  NOTYPE 0        __init_array_start
+46   0x00000694 0x08049694 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
+47   0x00000490 0x08048490 GLOBAL FUNC   2        __libc_csu_fini
+49   0x00000330 0x08048330 GLOBAL FUNC   4        __x86.get_pc_thunk.bx
+50   0x000006ac 0x080496ac WEAK   NOTYPE 0        data_start
+51   ---------- 0x080496b4 GLOBAL NOTYPE 0        _edata
+52   0x00000494 0x08048494 GLOBAL FUNC   0        _fini
+53   0x000006ac 0x080496ac GLOBAL NOTYPE 0        __data_start
+56   0x000006b0 0x080496b0 GLOBAL OBJ    0        __dso_handle
+59   0x00000420 0x08048420 GLOBAL FUNC   97       __libc_csu_init
+60   ---------- 0x080496b8 GLOBAL NOTYPE 0        _end
+61   0x00000300 0x08048300 GLOBAL FUNC   0        _start
+62   0x000004a8 0x080484a8 GLOBAL OBJ    4        _fp_hw
+63   ---------- 0x080496b4 GLOBAL NOTYPE 0        __bss_start
+64   0x00000400 0x08048400 GLOBAL FUNC   28       main
+66   ---------- 0x080496b4 GLOBAL OBJ    0        __TMC_END__
+68   0x00000290 0x08048290 GLOBAL FUNC   0        _init
+1    0x000002d0 0x080482d0 GLOBAL FUNC   16       imp.puts
+2    0x000002e0 0x080482e0 WEAK   NOTYPE 16       imp.__gmon_start__
+3    0x000002f0 0x080482f0 GLOBAL FUNC   16       imp.__libc_start_main
 EOF
 CMDS=<<EOF
 is
@@ -3082,11 +3082,11 @@ NAME=ii (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind   type   name
----------------------------------
-1   0x004003e0 GLOBAL FUNC   puts
-2   0x004003f0 GLOBAL FUNC   __libc_start_main
-3   0x00400400 WEAK   NOTYPE __gmon_start__
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x004003e0 GLOBAL FUNC       puts
+2   0x004003f0 GLOBAL FUNC       __libc_start_main
+3   0x00400400 WEAK   NOTYPE     __gmon_start__
 
 EOF
 CMDS=<<EOF
@@ -3220,10 +3220,10 @@ EXPECT=<<EOF
 
 vaddr      paddr      type   name
 ---------------------------------
-0x006008c8 0x000008c8 SET_64  __gmon_start__
-0x006008e8 0x000008e8 SET_64  puts
-0x006008f0 0x000008f0 SET_64  __libc_start_main
-0x006008f8 0x000008f8 SET_64  __gmon_start__
+0x006008c8 0x000008c8 SET_64 __gmon_start__
+0x006008e8 0x000008e8 SET_64 puts
+0x006008f0 0x000008f0 SET_64 __libc_start_main
+0x006008f8 0x000008f8 SET_64 __gmon_start__
 
 
 4 relocations
@@ -3240,16 +3240,16 @@ EXPECT=<<EOF
 
 vaddr      paddr      type   name
 ---------------------------------
-0x006b17d0 0x000b17d0 SET_64  0x00416530 (ifunc)
-0x006b17d8 0x000b17d8 SET_64  0x004193a0 (ifunc)
-0x006b17e0 0x000b17e0 SET_64  0x004199b0 (ifunc)
-0x006b17e8 0x000b17e8 SET_64  0x00418a50 (ifunc)
-0x006b17f0 0x000b17f0 SET_64  0x00418de0 (ifunc)
-0x006b17f8 0x000b17f8 SET_64  0x00419ad0 (ifunc)
-0x006b1800 0x000b1800 SET_64  0x004193f0 (ifunc)
-0x006b1808 0x000b1808 SET_64  0x00414300 (ifunc)
-0x006b1810 0x000b1810 SET_64  0x00479800 (ifunc)
-0x006b1818 0x000b1818 SET_64  0x004140b0 (ifunc)
+0x006b17d0 0x000b17d0 SET_64 ifunc_416530 0x00416530 (ifunc)
+0x006b17d8 0x000b17d8 SET_64 ifunc_4193a0 0x004193a0 (ifunc)
+0x006b17e0 0x000b17e0 SET_64 ifunc_4199b0 0x004199b0 (ifunc)
+0x006b17e8 0x000b17e8 SET_64 ifunc_418a50 0x00418a50 (ifunc)
+0x006b17f0 0x000b17f0 SET_64 ifunc_418de0 0x00418de0 (ifunc)
+0x006b17f8 0x000b17f8 SET_64 ifunc_419ad0 0x00419ad0 (ifunc)
+0x006b1800 0x000b1800 SET_64 ifunc_4193f0 0x004193f0 (ifunc)
+0x006b1808 0x000b1808 SET_64 ifunc_414300 0x00414300 (ifunc)
+0x006b1810 0x000b1810 SET_64 ifunc_479800 0x00479800 (ifunc)
+0x006b1818 0x000b1818 SET_64 ifunc_4140b0 0x004140b0 (ifunc)
 
 
 10 relocations
@@ -3264,71 +3264,71 @@ FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind   type   size name
---------------------------------------------------
-1    0x00000200 0x00400200 LOCAL  SECT   0    .interp
-2    0x0000021c 0x0040021c LOCAL  SECT   0    .note.ABI-tag
-3    0x0000023c 0x0040023c LOCAL  SECT   0    .note.gnu.build-id
-4    0x00000260 0x00400260 LOCAL  SECT   0    .gnu.hash
-5    0x00000280 0x00400280 LOCAL  SECT   0    .dynsym
-6    0x000002e0 0x004002e0 LOCAL  SECT   0    .dynstr
-7    0x0000031e 0x0040031e LOCAL  SECT   0    .gnu.version
-8    0x00000328 0x00400328 LOCAL  SECT   0    .gnu.version_r
-9    0x00000348 0x00400348 LOCAL  SECT   0    .rela.dyn
-10   0x00000360 0x00400360 LOCAL  SECT   0    .rela.plt
-11   0x000003a8 0x004003a8 LOCAL  SECT   0    .init
-12   0x000003d0 0x004003d0 LOCAL  SECT   0    .plt
-13   0x00000410 0x00400410 LOCAL  SECT   0    .text
-14   0x000005b4 0x004005b4 LOCAL  SECT   0    .fini
-15   0x000005c0 0x004005c0 LOCAL  SECT   0    .rodata
-16   0x000005d0 0x004005d0 LOCAL  SECT   0    .eh_frame_hdr
-17   0x00000608 0x00400608 LOCAL  SECT   0    .eh_frame
-18   0x000006e0 0x006006e0 LOCAL  SECT   0    .init_array
-19   0x000006e8 0x006006e8 LOCAL  SECT   0    .fini_array
-20   0x000006f0 0x006006f0 LOCAL  SECT   0    .jcr
-21   0x000006f8 0x006006f8 LOCAL  SECT   0    .dynamic
-22   0x000008c8 0x006008c8 LOCAL  SECT   0    .got
-23   0x000008d0 0x006008d0 LOCAL  SECT   0    .got.plt
-24   0x00000900 0x00600900 LOCAL  SECT   0    .data
-25   ---------- 0x00600910 LOCAL  SECT   0    .bss
-26   ---------- 0x00000000 LOCAL  SECT   0    .comment
-27   ---------- 0x00000000 LOCAL  FILE   0    init.c
-28   ---------- 0x00000000 LOCAL  FILE   0    
-29   ---------- 0x00000000 LOCAL  FILE   0    crtstuff.c
-30   0x000006f0 0x006006f0 LOCAL  OBJ    0    __JCR_LIST__
-31   0x00000440 0x00400440 LOCAL  FUNC   0    deregister_tm_clones
-32   0x00000470 0x00400470 LOCAL  FUNC   0    register_tm_clones
-33   0x000004b0 0x004004b0 LOCAL  FUNC   0    __do_global_dtors_aux
-34   ---------- 0x00600910 LOCAL  OBJ    1    completed.6724
-35   0x000006e8 0x006006e8 LOCAL  OBJ    0    __do_global_dtors_aux_fini_array_entry
-36   0x000004d0 0x004004d0 LOCAL  FUNC   0    frame_dummy
-37   0x000006e0 0x006006e0 LOCAL  OBJ    0    __frame_dummy_init_array_entry
-38   ---------- 0x00000000 LOCAL  FILE   0    hello.c
-39   ---------- 0x00000000 LOCAL  FILE   0    crtstuff.c
-40   0x000006d8 0x004006d8 LOCAL  OBJ    0    __FRAME_END__
-41   0x000006f0 0x006006f0 LOCAL  OBJ    0    __JCR_END__
-42   ---------- 0x00000000 LOCAL  FILE   0    
-43   0x000006e8 0x006006e8 LOCAL  NOTYPE 0    __init_array_end
-44   0x000006f8 0x006006f8 LOCAL  OBJ    0    _DYNAMIC
-45   0x000006e0 0x006006e0 LOCAL  NOTYPE 0    __init_array_start
-46   0x000008d0 0x006008d0 LOCAL  OBJ    0    _GLOBAL_OFFSET_TABLE_
-47   0x000005b0 0x004005b0 GLOBAL FUNC   2    __libc_csu_fini
-49   0x00000900 0x00600900 WEAK   NOTYPE 0    data_start
-51   ---------- 0x00600910 GLOBAL NOTYPE 0    _edata
-52   0x000005b4 0x004005b4 GLOBAL FUNC   0    _fini
-54   0x00000900 0x00600900 GLOBAL NOTYPE 0    __data_start
-56   0x00000908 0x00600908 GLOBAL OBJ    0    __dso_handle
-57   0x000005c0 0x004005c0 GLOBAL OBJ    4    _IO_stdin_used
-58   0x00000520 0x00400520 GLOBAL FUNC   137  __libc_csu_init
-59   ---------- 0x00600918 GLOBAL NOTYPE 0    _end
-60   0x00000410 0x00400410 GLOBAL FUNC   0    _start
-61   ---------- 0x00600910 GLOBAL NOTYPE 0    __bss_start
-62   0x000004fc 0x004004fc GLOBAL FUNC   21   main
-64   ---------- 0x00600910 GLOBAL OBJ    0    __TMC_END__
-66   0x000003a8 0x004003a8 GLOBAL FUNC   0    _init
-1    0x000003e0 0x004003e0 GLOBAL FUNC   16   imp.puts
-2    0x000003f0 0x004003f0 GLOBAL FUNC   16   imp.__libc_start_main
-3    0x00000400 0x00400400 WEAK   NOTYPE 16   imp.__gmon_start__
+nth paddr       vaddr      bind   type   size lib name
+------------------------------------------------------
+1    0x00000200 0x00400200 LOCAL  SECT   0        .interp
+2    0x0000021c 0x0040021c LOCAL  SECT   0        .note.ABI-tag
+3    0x0000023c 0x0040023c LOCAL  SECT   0        .note.gnu.build-id
+4    0x00000260 0x00400260 LOCAL  SECT   0        .gnu.hash
+5    0x00000280 0x00400280 LOCAL  SECT   0        .dynsym
+6    0x000002e0 0x004002e0 LOCAL  SECT   0        .dynstr
+7    0x0000031e 0x0040031e LOCAL  SECT   0        .gnu.version
+8    0x00000328 0x00400328 LOCAL  SECT   0        .gnu.version_r
+9    0x00000348 0x00400348 LOCAL  SECT   0        .rela.dyn
+10   0x00000360 0x00400360 LOCAL  SECT   0        .rela.plt
+11   0x000003a8 0x004003a8 LOCAL  SECT   0        .init
+12   0x000003d0 0x004003d0 LOCAL  SECT   0        .plt
+13   0x00000410 0x00400410 LOCAL  SECT   0        .text
+14   0x000005b4 0x004005b4 LOCAL  SECT   0        .fini
+15   0x000005c0 0x004005c0 LOCAL  SECT   0        .rodata
+16   0x000005d0 0x004005d0 LOCAL  SECT   0        .eh_frame_hdr
+17   0x00000608 0x00400608 LOCAL  SECT   0        .eh_frame
+18   0x000006e0 0x006006e0 LOCAL  SECT   0        .init_array
+19   0x000006e8 0x006006e8 LOCAL  SECT   0        .fini_array
+20   0x000006f0 0x006006f0 LOCAL  SECT   0        .jcr
+21   0x000006f8 0x006006f8 LOCAL  SECT   0        .dynamic
+22   0x000008c8 0x006008c8 LOCAL  SECT   0        .got
+23   0x000008d0 0x006008d0 LOCAL  SECT   0        .got.plt
+24   0x00000900 0x00600900 LOCAL  SECT   0        .data
+25   ---------- 0x00600910 LOCAL  SECT   0        .bss
+26   ---------- 0x00000000 LOCAL  SECT   0        .comment
+27   ---------- 0x00000000 LOCAL  FILE   0        init.c
+28   ---------- 0x00000000 LOCAL  FILE   0        
+29   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+30   0x000006f0 0x006006f0 LOCAL  OBJ    0        __JCR_LIST__
+31   0x00000440 0x00400440 LOCAL  FUNC   0        deregister_tm_clones
+32   0x00000470 0x00400470 LOCAL  FUNC   0        register_tm_clones
+33   0x000004b0 0x004004b0 LOCAL  FUNC   0        __do_global_dtors_aux
+34   ---------- 0x00600910 LOCAL  OBJ    1        completed.6724
+35   0x000006e8 0x006006e8 LOCAL  OBJ    0        __do_global_dtors_aux_fini_array_entry
+36   0x000004d0 0x004004d0 LOCAL  FUNC   0        frame_dummy
+37   0x000006e0 0x006006e0 LOCAL  OBJ    0        __frame_dummy_init_array_entry
+38   ---------- 0x00000000 LOCAL  FILE   0        hello.c
+39   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+40   0x000006d8 0x004006d8 LOCAL  OBJ    0        __FRAME_END__
+41   0x000006f0 0x006006f0 LOCAL  OBJ    0        __JCR_END__
+42   ---------- 0x00000000 LOCAL  FILE   0        
+43   0x000006e8 0x006006e8 LOCAL  NOTYPE 0        __init_array_end
+44   0x000006f8 0x006006f8 LOCAL  OBJ    0        _DYNAMIC
+45   0x000006e0 0x006006e0 LOCAL  NOTYPE 0        __init_array_start
+46   0x000008d0 0x006008d0 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
+47   0x000005b0 0x004005b0 GLOBAL FUNC   2        __libc_csu_fini
+49   0x00000900 0x00600900 WEAK   NOTYPE 0        data_start
+51   ---------- 0x00600910 GLOBAL NOTYPE 0        _edata
+52   0x000005b4 0x004005b4 GLOBAL FUNC   0        _fini
+54   0x00000900 0x00600900 GLOBAL NOTYPE 0        __data_start
+56   0x00000908 0x00600908 GLOBAL OBJ    0        __dso_handle
+57   0x000005c0 0x004005c0 GLOBAL OBJ    4        _IO_stdin_used
+58   0x00000520 0x00400520 GLOBAL FUNC   137      __libc_csu_init
+59   ---------- 0x00600918 GLOBAL NOTYPE 0        _end
+60   0x00000410 0x00400410 GLOBAL FUNC   0        _start
+61   ---------- 0x00600910 GLOBAL NOTYPE 0        __bss_start
+62   0x000004fc 0x004004fc GLOBAL FUNC   21       main
+64   ---------- 0x00600910 GLOBAL OBJ    0        __TMC_END__
+66   0x000003a8 0x004003a8 GLOBAL FUNC   0        _init
+1    0x000003e0 0x004003e0 GLOBAL FUNC   16       imp.puts
+2    0x000003f0 0x004003f0 GLOBAL FUNC   16       imp.__libc_start_main
+3    0x00000400 0x00400400 WEAK   NOTYPE 16       imp.__gmon_start__
 EOF
 CMDS=<<EOF
 is
@@ -3920,31 +3920,31 @@ EOF
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind   type   size name
---------------------------------------------------
-8    0x00000590 0x00000590 GLOBAL FUNC   60   main
-9    0x0000064c 0x0000064c GLOBAL OBJ    4    _IO_stdin_used
-1    0x00000000 0x00000000 WEAK   NOTYPE 16   imp._ITM_deregisterTMCloneTable
-2    0x00000000 0x00000000 WEAK   FUNC   16   imp.__cxa_finalize
-3    0x000003f0 0x000003f0 GLOBAL FUNC   16   imp.puts
-4    0x00000000 0x00000000 WEAK   NOTYPE 16   imp.__gmon_start__
-5    0x00000400 0x00000400 GLOBAL FUNC   16   imp.__libc_start_main
-6    0x00000000 0x00000000 WEAK   NOTYPE 16   imp._Jv_RegisterClasses
-7    0x00000000 0x00000000 WEAK   NOTYPE 16   imp._ITM_registerTMCloneTable
+nth paddr       vaddr      bind   type   size lib name
+------------------------------------------------------
+8    0x00000590 0x00000590 GLOBAL FUNC   60       main
+9    0x0000064c 0x0000064c GLOBAL OBJ    4        _IO_stdin_used
+1    0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_deregisterTMCloneTable
+2    0x00000000 0x00000000 WEAK   FUNC   16       imp.__cxa_finalize
+3    0x000003f0 0x000003f0 GLOBAL FUNC   16       imp.puts
+4    0x00000000 0x00000000 WEAK   NOTYPE 16       imp.__gmon_start__
+5    0x00000400 0x00000400 GLOBAL FUNC   16       imp.__libc_start_main
+6    0x00000000 0x00000000 WEAK   NOTYPE 16       imp._Jv_RegisterClasses
+7    0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_registerTMCloneTable
 [Relocations]
 
 vaddr      paddr      type   name
 ---------------------------------
 0x00001eec 0x00000eec SET_32 
 0x00001ef0 0x00000ef0 SET_32 
-0x00001fe8 0x00000fe8 SET_32  _ITM_deregisterTMCloneTable
-0x00001fec 0x00000fec SET_32  __cxa_finalize
-0x00001ff0 0x00000ff0 SET_32  __gmon_start__
+0x00001fe8 0x00000fe8 SET_32 _ITM_deregisterTMCloneTable
+0x00001fec 0x00000fec SET_32 __cxa_finalize
+0x00001ff0 0x00000ff0 SET_32 __gmon_start__
 0x00001ff4 0x00000ff4 SET_32 
-0x00001ff8 0x00000ff8 SET_32  _Jv_RegisterClasses
-0x00001ffc 0x00000ffc SET_32  _ITM_registerTMCloneTable
-0x0000200c 0x0000100c SET_32  puts
-0x00002010 0x00001010 SET_32  __libc_start_main
+0x00001ff8 0x00000ff8 SET_32 _Jv_RegisterClasses
+0x00001ffc 0x00000ffc SET_32 _ITM_registerTMCloneTable
+0x0000200c 0x0000100c SET_32 puts
+0x00002010 0x00001010 SET_32 __libc_start_main
 0x00002018 0x00001018 SET_32 
 
 
@@ -4172,10 +4172,10 @@ FILE=../bins/elf/varsub
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind   type   name
----------------------------------
-1   0x00000000 GLOBAL FUNC   __libc_start_main
-2   0x00000000 WEAK   NOTYPE __gmon_start__
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x00000000 GLOBAL FUNC       __libc_start_main
+2   0x00000000 WEAK   NOTYPE     __gmon_start__
 
 EOF
 RUN

@@ -556,7 +556,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					}
 				} else if (aop.ptr != UT64_MAX) {
 					RFlagItem *flag = r_flag_get_i (core->flags, aop.ptr);
-					if (flag && r_str_startswith (flag->realname, "imp.")) {
+					if (flag && flag->space && flag->space->name && !strcmp (flag->space->name, R_FLAGS_FS_IMPORTS) && flag->realname) {
 						full_name = flag->realname;
 						callee_addr = aop.ptr;
 					}

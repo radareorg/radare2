@@ -508,12 +508,14 @@ typedef struct r_bin_symbol_t {
 	/* heap-allocated */
 	char *name;
 	char *dname;
+	char *libname;
 	char *classname;
 	/* const-unique-strings */
 	const char *forwarder;
 	const char *bind;
 	const char *type;
   	const char *rtype;
+	bool is_imported;
 	/* only used by java */
 	const char *visibility_str;
 	// ----------------
@@ -531,6 +533,7 @@ typedef struct r_bin_symbol_t {
 
 typedef struct r_bin_import_t {
 	char *name;
+	char *libname;
 	const char *bind;
 	const char *type;
 	char *classname;

@@ -77,13 +77,14 @@ RUN
 NAME=MSVC import symbol demangling
 FILE=../bins/pe/libzmq-v100-mt-4_0_4.dll
 CMDS=f~0x1004e0f4[2]
-EXPECT=sym.public:_void___thiscall_std::basic_ostream_char__struct_std::char_traits_char__::_Osfx_void
+EXPECT='sym.imp.MSVCP100.dll_public:_void___thiscall_std::basic_ostream_char__struct_std::char_traits_char__::_Osfx_void
+'
 RUN
 
 NAME=C++ demangle relocs
 FILE=../bins/elf/libstdc++.so.6
 EXPECT=<<CMDS
-            0x00091004      488b159d880f.  mov rdx, qword [reloc.vtable_for_std::bad_alloc_168] ; [0x1898a8:8]=0
+            0x00091004      488b159d880f.  mov rdx, qword [reloc.vtable_for_std::bad_alloc] ; [0x1898a8:8]=0
 CMDS=<<RUN
 pd 1 @0x00091004
 RUN
@@ -91,10 +92,10 @@ RUN
 NAME=C++ demangle exported GLIBCXX symbols
 FILE=../bins/elf/libstdc++.so.6
 EXPECT=<<CMDS
-3770  0x0008ce50 0x0008ce50 GLOBAL FUNC 609  std::istream::ignore(long)
-3771  0x0008ce50 0x0008ce50 GLOBAL FUNC 609  std::istream::ignore(long)
-5087  0x0008ce50 0x0008ce50 GLOBAL FUNC 609  std::istream::ignore(long)
-5345  0x0008ce50 0x0008ce50 GLOBAL FUNC 609  std::istream::ignore(long)
+3770  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
+3771  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
+5087  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
+5345  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
 CMDS=<<RUN
 iE~0x0008ce50
 RUN
@@ -135,21 +136,21 @@ e asm.demangle=false
 EXPECT=<<RUN
             0x0804921a      call sym.__x86.get_pc_thunk.si
             0x08049249      call method QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*) ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-            0x08049278      call sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; sym.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+            0x08049278      call sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
 
             0x0804921a      call sym.__x86.get_pc_thunk.si
             ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
             0x08049249      call method QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*)
-            ; sym.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+            ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
             0x08049278      call sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>)
 
 |           0x0804921a      call sym.__x86.get_pc_thunk.si
 |           0x08049249      call method QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*) ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-|           0x08049278      call sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; sym.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+|           0x08049278      call sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
 
 |           0x0804921a      call sym.__x86.get_pc_thunk.si
 |           0x08049249      call method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-|           0x08049278      call sym.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+|           0x08049278      call sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
 RUN
 
 NAME=c++ xref demangling (xref from fcn)
