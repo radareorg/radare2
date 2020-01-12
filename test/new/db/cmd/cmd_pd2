@@ -782,10 +782,10 @@ s segment.LOAD0 + 83
 pd 4
 EOF
 EXPECT=<<EOF
-    + 0                   xor eax, eax
-    + 0                   inc eax
+   entry0 + 2                   xor eax, eax
+   entry0 + 4                   inc eax
 
-    + 0               ~   add byte [ebx + 0x40c0312a], dh
+   segment.LOAD0 + 83              ~   add byte [ebx + 0x40c0312a], dh
    entry0 + 0                   ;-- entry0:
    entry0 + 0                   mov bl, 0x2a
    entry0 + 2                   xor eax, eax
