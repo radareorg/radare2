@@ -97,7 +97,12 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 
 	// This is optional
 	if (n == 6) {
-		item->flags = strdup (tok[5]);
+		if (*tok[5] == '#') {
+			// Remove # from the comment
+			item->comment = strdup (tok[5] + 1);
+		} else {
+			item->flags = strdup (tok[5]);
+		}
 	}
 
 	item->arena = type2;
@@ -166,20 +171,23 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			while (*p == ' ' || *p == '\t') {
 				p++;
 			}
-			// Skip the rest of the line is a comment is encountered
-			if (*p == '#') {
-				while (*p != '\n') {
-					p++;
-				}
-			}
 			// EOL ?
 			if (*p == '\n') {
 				break;
 			}
-			// Gather a handful of chars
-			// Use isgraph instead of isprint because the latter considers ' ' printable
-			for (i = 0; isgraph ((const unsigned char)*p) && i < sizeof (tmp) - 1;) {
-				tmp[i++] = *p++;
+			if (*p == '#') {
+				// Place the rest of the line in the token if a comment is encountered
+				for (i = 0; *p != '\n'; p++) {
+					if (i < sizeof (tmp) - 1) {
+						tmp[i++] = *p;
+					}
+				}
+			} else {
+				// Save all characters up to a space/tab
+				// Use isgraph instead of isprint because the latter considers ' ' printable
+				for (i = 0; isgraph ((const unsigned char)*p) && i < sizeof (tmp) - 1;) {
+					tmp[i++] = *p++;
+				}
 			}
 			tmp[i] = '\0';
 			// Limit the number of tokens
