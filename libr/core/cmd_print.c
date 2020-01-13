@@ -295,6 +295,7 @@ static const char *help_msg_pc[] = {
 	"pcS", "", "shellscript that reconstructs the bin",
 	"pcs", "", "string",
 	"pcv", "", "JaVa",
+	"pcV", "", "V (vlang.io)",
 	"pcw", "", "C words (4 byte)",
 	"pcy", "", "yara",
 	"pcz", "", "Swift",
@@ -4766,6 +4767,18 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 			r_print_cursor (p, i, 1, 0);
 		}
 		p->cb_printf ("};\n");
+		break;
+	case 'V': // "pcV" // vlang.io
+		p->cb_printf ("data := [ byte(%d),\n  ", buf[0]);
+		for (i = 1; !p->interrupt && i < len; i++) {
+			r_print_cursor (p, i, 1, 1);
+			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? ", ": "");
+			r_print_cursor (p, i, 1, 0);
+			if ((i %10) == 0) {
+				p->cb_printf ("\n  ");
+			}
+		}
+		p->cb_printf ("\n]\n");
 		break;
 	case 'y': // "pcy"
 		p->cb_printf ("$hex_%"PFMT64x" = {");
