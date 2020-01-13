@@ -22,7 +22,7 @@ jobs:
       run: ./configure
     - name: make
       run: make
-    # Disabled until NodeJS/r2pipe.js problems are solved
-    #- name: make tests
-    #  run: make tests
+    # Running the new V suite
+    - name: make tests
+      run: cd test && make src/r2r
 
