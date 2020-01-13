@@ -2295,14 +2295,14 @@ static bool anal_fcn_del_bb(RCore *core, const char *input) {
 	if (fcn) {
 		if (!strcmp (input, "*")) {
 			while (!r_list_empty (fcn->bbs)) {
-				r_anal_function_block_remove (fcn, r_list_first (fcn->bbs));
+				r_anal_function_remove_block (fcn, r_list_first (fcn->bbs));
 			}
 		} else {
 			RAnalBlock *b;
 			RListIter *iter;
 			r_list_foreach (fcn->bbs, iter, b) {
 				if (b->addr == addr) {
-					r_anal_function_block_remove (fcn, b);
+					r_anal_function_remove_block (fcn, b);
 					return true;
 				}
 			}
