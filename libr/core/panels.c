@@ -6616,7 +6616,6 @@ void __handle_tab_new_with_cur_panel (RCore *core) {
 	if (!new_panels) {
 		return;
 	}
-	new_panels->addr = core->offset;
 	root->panels[root->n_panels] = new_panels;
 
 	RPanels *prev = core->panels;
@@ -6723,7 +6722,6 @@ void __panels_process(RCore *core, RPanels *panels) {
 	RPanels *prev;
 	prev = core->panels;
 	core->panels = panels;
-	core->offset = panels->addr;
 	panels->autoUpdate = true;
 	int h, w = r_cons_get_size (&h);
 	panels->can = __create_new_canvas (core, w, h);
@@ -7328,7 +7326,6 @@ repeat:
 	}
 	goto repeat;
 exit:
-	core->panels->addr = core->offset;
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
 	core->print->cur = originCursor;
