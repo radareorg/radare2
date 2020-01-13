@@ -335,7 +335,7 @@ static const char *help_msg_dr[] = {
 	"dra", "[?]", "Manage register arenas. see ara?",
 	"drb", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"drc", " [name]", "Related to conditional flag registers",
-	"drC", "", "Show register profile comments",
+	"drC", " [register]", "Show register comments",
 	"drd", "", "Show only different registers",
 	"drf", "", "Show fpu registers (80 bit long double)",
 	"dri", "", "Show inverse registers dump (sorted by value)",
@@ -345,6 +345,7 @@ static const char *help_msg_dr[] = {
 	"dro", "", "Show previous (old) values of registers",
 	"drp", "", "Display current register profile",
 	"drp", "[?] <file>", "Load register metadata file",
+	"drpc", "", "Show register profile comments",
 	"drpi", "", "Display current internal representation of the register profile",
 	"drps", "", "Fake register profile size",
 	"drpj", "", "Show the current register profile (JSON)",
@@ -2163,6 +2164,11 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 			eprintf ("No register profile defined. Try 'dr.'\n");
 		}
 		break;
+	case 'c': // drpc
+		if (core->dbg->reg->reg_profile_cmt) {
+			r_cons_println (core->dbg->reg->reg_profile_cmt);
+		}
+		break;
 	case ' ': // "drp "
 		ptr = str + 2;
 		while (isspace ((ut8)*ptr)) {
@@ -2365,8 +2371,37 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	}
 	switch (str[0]) {
 	case 'C': // "drC"
-		if (core->dbg->reg->reg_profile_cmt) {
-			r_cons_println (core->dbg->reg->reg_profile_cmt);
+		{
+			const bool json_out = str[1] == 'j';
+			name = json_out ? str + 3 : str + 2;
+			if (name) {
+				r = r_reg_get (core->dbg->reg, name , -1);
+				if (r) {
+					if (json_out) {
+						PJ *pj = pj_new ();
+						pj_o (pj);
+						if (r->comment) {
+							pj_ks (pj, r->name, r->comment);
+						} else {
+							pj_knull (pj, r->name);
+						}
+						pj_end (pj);
+						const char *s = pj_string (pj);
+						r_cons_println (s);
+						pj_free (pj);
+					} else {
+						if (r->comment) {
+							r_cons_printf ("%s\n", r->comment);
+						} else {
+							eprintf ("Register %s doesn't have any comments\n", name);
+						}
+					}
+				} else {
+					eprintf ("Register %s not found\n", name);
+				}
+			} else {
+				eprintf ("usage: drC [register]\n");
+			}
 		}
 		break;
 	case '-': // "dr-"
