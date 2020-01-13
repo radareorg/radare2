@@ -280,7 +280,7 @@ static bool __isMapped(RCore *core, ut64 addr, int perm) {
 		RDebugMap *map = NULL;
 		RListIter *iter = NULL;
 
-		r_list_foreach (maps, iter, map) {
+		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				if (perm > 0) {
 					if (map->perm & perm) {
