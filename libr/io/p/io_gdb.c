@@ -216,6 +216,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("Usage: =!cmd args\n"
 			 " =!pid             - show targeted pid\n"
 			 " =!pkt s           - send packet 's'\n"
+			 " =!rd              - show reverse debugging availability\n"
+			 " =!dsb             - step backwards\n"
+			 " =!dcb             - continue backwards\n"
 			 " =!monitor cmd     - hex-encode monitor command and pass"
 			                     " to target interpreter\n"
 			 " =!detach [pid]    - detach from remote/detach specific pid\n"
@@ -266,6 +269,62 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (!desc->no_ack) {
 				eprintf ("[waiting for ack]\n");
 			}
+		}
+		gdbr_lock_leave (desc);
+		return NULL;
+	}
+	if (r_str_startswith (cmd, "rd")) {
+		PJ *pj = pj_new ();
+		pj_o (pj);
+		pj_kb (pj, "reverse-continue", desc->stub_features.ReverseStep);
+		pj_kb (pj, "reverse-step", desc->stub_features.ReverseContinue);
+		pj_end (pj);
+		io->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+		return NULL;
+	}
+	if (r_str_startswith (cmd, "dsb")) {
+		if (!desc->stub_features.ReverseStep) {
+			eprintf ("Stepping backwards is not supported in this gdbserver implementation\n");
+			return NULL;
+		}
+		gdbr_lock_enter (desc);
+		if (send_msg (desc, "bs") >= 0) {
+			(void)read_packet (desc);
+			desc->data[desc->data_len] = '\0';
+			if (!desc->no_ack) {
+				eprintf ("[waiting for ack]\n");
+			} else {
+				handle_stop_reason (desc);
+				if (desc->stop_reason.is_valid == false) {
+					eprintf("Thread (%d) stopped for an invalid reason: %d\n",
+						desc->stop_reason.thread, desc->stop_reason.reason);
+				}
+			}
+			gdbr_invalidate_reg_cache ();
+		}
+		gdbr_lock_leave (desc);
+		return NULL;
+	}
+	if (r_str_startswith (cmd, "dcb")) {
+		if (!desc->stub_features.ReverseContinue) {
+			eprintf ("Continue backwards is not supported in this gdbserver implementation\n");
+			return NULL;
+		}
+		gdbr_lock_enter (desc);
+		if (send_msg (desc, "bc") >= 0) {
+			(void)read_packet (desc);
+			desc->data[desc->data_len] = '\0';
+			if (!desc->no_ack) {
+				eprintf ("[waiting for ack]\n");
+			} else {
+				handle_stop_reason (desc);
+				if (desc->stop_reason.is_valid == false) {
+					eprintf("Thread (%d) stopped for an invalid reason: %d\n",
+						desc->stop_reason.thread, desc->stop_reason.reason);
+				}
+			}
+			gdbr_invalidate_reg_cache ();
 		}
 		gdbr_lock_leave (desc);
 		return NULL;
