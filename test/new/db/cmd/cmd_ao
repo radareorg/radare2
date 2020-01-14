@@ -1,0 +1,9 @@
+NAME=a8
+FILE=-
+CMDS=<<EOF
+a8 c745f400000000~type
+EOF
+EXPECT=<<EOF
+type: mov
+EOF
+RUN
