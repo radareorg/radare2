@@ -262,6 +262,7 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *ma
 
 	RPrelinkRange *prelink_range = R_NEW0 (RPrelinkRange);
 	if (!prelink_range) {
+		R_FREE (sections);
 		return NULL;
 	}
 

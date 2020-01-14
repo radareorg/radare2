@@ -79,6 +79,7 @@ static int download(struct SPDBDownloader *pd) {
 		R_FREE (abspath_to_archive);
 		R_FREE (archive_name_escaped);
 		R_FREE (symbol_store_path);
+		R_FREE (dbg_file);
 		R_FREE (guid);
 		R_FREE (archive_name);
 		R_FREE (abspath_to_file);

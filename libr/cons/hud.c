@@ -218,7 +218,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	for (;;) {
 		r_cons_gotoxy (0, 0);
 		hud->current_entry_n = 0;
-		
+
 		if (hud->top_entry_n < 0) {
 			hud->top_entry_n = 0;
 		}
@@ -252,7 +252,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		(void) r_line_readline ();
 		memset (user_input, 0, HUD_BUF_SIZE);
 		memset (hud_prompt, 0, HUD_BUF_SIZE + 1);
-		strcpy (user_input, I(line)->buffer.data); 				// to search
+		strncpy (user_input, I(line)->buffer.data, HUD_BUF_SIZE - 1); 				// to search
 		strcpy (hud_prompt, user_input); 					// to display
 		int i;
 		for (i = I(line)->buffer.length; i > I(line)->buffer.index; i--) {
@@ -269,7 +269,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 					r_cons_show_cursor (true);
 					r_cons_set_raw (false);
 					return strdup (selected_entry);
-				} 
+				}
 			} else {
 				goto _beach;
 			}

@@ -3105,6 +3105,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_list_sort (fcns, cmpaddr);
 		RList *flist = r_list_newf ((RListFree) r_listinfo_free);
 		if (!flist) {
+			r_list_free (fcns);
 			return -1;
 		}
 		ls_foreach (fcns, iter, fcn) {

@@ -230,6 +230,7 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 	}
 	if (!no_key_mode && keylen < 1) {
 		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
+		free (binkey);
 		return false;
 	}
 	RCrypto *cry = r_crypto_new ();
