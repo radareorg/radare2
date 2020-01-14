@@ -249,7 +249,6 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 
 R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinOptions *opt) {
 	r_return_val_if_fail (bin && opt, false);
-	r_return_val_if_fail ((st64)opt->sz >= 0, false);
 
 	RListIter *it;
 	RBinXtrPlugin *xtr;
@@ -258,9 +257,6 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinOptions *opt) {
 	bin->file = opt->filename;
 	if (opt->loadaddr == UT64_MAX) {
 		opt->loadaddr = 0;
-	}
-	if (!opt->sz) {
-		opt->sz = r_buf_size (buf);
 	}
 
 	RBinFile *bf = NULL;
