@@ -87,6 +87,7 @@ typedef struct r_cmd_descriptor_t {
 	struct r_cmd_descriptor_t *sub[127];
 } RCmdDescriptor;
 
+// TODO: move into r_core.h
 typedef struct r_core_plugin_t {
 	const char *name;
 	const char *desc;
