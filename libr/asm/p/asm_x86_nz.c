@@ -2364,6 +2364,10 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 				data[l++] = 0x41;
 			}
 			ut8 base = 0x50;
+			if (op->operands[0].reg == X86R_RIP) {
+				eprintf ("Invalid register\n");
+				return -1;
+			}
 			data[l++] = base + op->operands[0].reg;
 		}
 	} else if (op->operands[0].type & OT_MEMORY) {
