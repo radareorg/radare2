@@ -3948,11 +3948,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				ut64 relsub_addr = core->parser->relsub_addr;
 				if (relsub_addr && relsub_addr != p) {
 					f2 = r_core_flag_get_by_spaces (core->flags, relsub_addr);
-					f2_in_opstr = f2 && ds->opstr && strstr (ds->opstr, f2->name);
+					f2_in_opstr = f2 && ds->opstr && (strstr (ds->opstr, f2->name) || strstr (ds->opstr, f2->realname)) ;
 				}
 				refaddr = p;
 				if (!flag_printed && !is_filtered_flag (ds, f->name)
-				    && (!ds->opstr || !strstr (ds->opstr, f->name))
+				    && (!ds->opstr || (!strstr (ds->opstr, f->name) && !strstr (ds->opstr, f->realname)))
 				    && !f2_in_opstr) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; %s", f->name);
@@ -4088,7 +4088,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					ds_print_str (ds, msg, len, refaddr);
 					string_printed = true;
 				}
-			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
+			} else if (!flag_printed && (!ds->opstr || 
+						(!strstr (ds->opstr, f->name) && !strstr (ds->opstr, f->realname)))) {
 				ds_begin_nl_comment (ds);
 				ds_comment (ds, true, "; %s", f->name);
 				ds->printed_flag_addr = refaddr;
