@@ -37,7 +37,8 @@ pub fn main() {
 	// fp.version(r2r_version)
 	show_norun := fp.bool_('norun', `n`, false, 'Dont run the tests')
 	show_help := fp.bool_('help', `h`, false, 'Show this help screen')
-	r2r.jobs = fp.int_('jobs', `j`, default_jobs, 'Spawn N jobs in parallel to run tests ($default_jobs)')
+	r2r.jobs = fp.int_('jobs', `j`, default_jobs, 'Spawn N jobs in parallel to run tests ($default_jobs).' +
+	                                              ' Set to 0 for 1 job per test.')
 	r2r.timeout = fp.int_('timeout', `t`, default_timeout, 'How much time to wait to consider a fail ($default_timeout}')
 	show_version := fp.bool_('version', `v`, false, 'Show version information')
 	r2r.r2r_home = r2r_home()
@@ -59,7 +60,7 @@ pub fn main() {
 		println(r2r_version)
 		return
 	}
-	if r2r.jobs < 1 {
+	if r2r.jobs < 0 {
 		eprintln('Invalid number of thread selected with -j')
 		exit(1)
 	}
@@ -674,10 +675,12 @@ fn (r2r mut R2R) run_asm_tests() {
 			else {
 				r2r.run_asm_test(at, false)
 			}
-			c--
-			if c < 1 {
-				r2r.wg.wait()
-				c = r2r.jobs
+			if r2r.jobs > 0 {
+				c--
+				if c < 1 {
+					r2r.wg.wait()
+					c = r2r.jobs
+				}
 			}
 		}
 		if at.mode.contains('d') {
@@ -688,10 +691,12 @@ fn (r2r mut R2R) run_asm_tests() {
 			else {
 				r2r.run_asm_test(at, true)
 			}
-			c--
-			if c < 1 {
-				r2r.wg.wait()
-				c = r2r.jobs
+			if r2r.jobs > 0 {
+				c--
+				if c < 1 {
+					r2r.wg.wait()
+					c = r2r.jobs
+				}
 			}
 		}
 	}
@@ -745,10 +750,12 @@ fn (r2r mut R2R) run_cmd_tests() {
 	for t in r2r.cmd_tests {
 		r2r.wg.add(1)
 		go r2r.run_cmd_test(t)
-		c--
-		if c < 1 {
-			r2r.wg.wait()
-			c = r2r.jobs
+		if r2r.jobs > 0 {
+			c--
+			if c < 1 {
+				r2r.wg.wait()
+				c = r2r.jobs
+			}
 		}
 	}
 	r2r.wg.wait()
