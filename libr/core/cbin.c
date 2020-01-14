@@ -1711,7 +1711,7 @@ R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RList *symbols, const char 
 				sdb_num_get (mydb, sdb_fmt ("%x", sdb_hash (name)), NULL);
 		} else {
 			res = (RBinSymbol*)(void*)(size_t)
-				sdb_num_get (mydb, sdb_fmt ("0x"PFMT64x, addr), NULL);
+				sdb_num_get (mydb, sdb_fmt ("0x%08"PFMT64x, addr), NULL);
 		}
 	} else {
 		mydb = sdb_new0 ();
@@ -1724,7 +1724,7 @@ R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RList *symbols, const char 
 			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			/* 0x${vaddr}=${ptrToSymbol} */
-			if (!sdb_num_add (mydb, sdb_fmt ("0x"PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0)) {
+			if (!sdb_num_add (mydb, sdb_fmt ("0x%08"PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0)) {
 			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			if (name) {
@@ -1935,8 +1935,9 @@ static const char *getPrefixFor(RBinSymbol *sym) {
 				return sym->is_imported ? "obj.imp" : "obj";
 			}
 		}
+		return sym->is_imported ? "sym.imp" : "sym";
 	}
-	return sym->is_imported ? "sym.imp" : "sym";
+	return "sym";
 }
 
 #define MAXFLAG_LEN_DEFAULT 128
@@ -2197,7 +2198,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
-					strdup (fn);
+					strdup (fn? fn: "");
 				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 				if (fi) {
 					r_flag_item_set_realname (fi, n);
