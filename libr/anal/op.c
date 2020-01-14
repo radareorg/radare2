@@ -339,23 +339,8 @@ R_API int r_anal_optype_from_string(const char *type) {
 }
 
 R_API const char *r_anal_optype_to_string(int t) {
-	switch (t) {
-	case R_ANAL_OP_TYPE_RPUSH:
-		return "rpush";
-	default:
-		/* nothing */
-		break;
-	}
-	// t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
-#if 0
-	int i;
-	// this is slower than a switch table :(
-	for  (i = 0; optypes[i].name;i++) {
-		if (optypes[i].type == t) {
-			return optypes[i].name;
-		}
-	}
-#endif
+	bool once = true;
+repeat:
 	// TODO: delete
 	switch (t) {
 	case R_ANAL_OP_TYPE_IO    : return "io";
@@ -387,6 +372,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_OR    : return "or";
 	case R_ANAL_OP_TYPE_POP   : return "pop";
 	case R_ANAL_OP_TYPE_PUSH  : return "push";
+	case R_ANAL_OP_TYPE_RPUSH : return "rpush";
 	case R_ANAL_OP_TYPE_REP   : return "rep";
 	case R_ANAL_OP_TYPE_RET   : return "ret";
 	case R_ANAL_OP_TYPE_ROL   : return "rol";
@@ -418,6 +404,11 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_CASE  : return "case";
 	case R_ANAL_OP_TYPE_CPL   : return "cpl";
 	case R_ANAL_OP_TYPE_CRYPTO: return "crypto";
+	}
+	if (once) {
+		once = false;
+		t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
+		goto repeat;
 	}
 	return "undefined";
 }
