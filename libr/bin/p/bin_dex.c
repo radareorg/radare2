@@ -1553,6 +1553,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		    dex->header.data_offset + dex->header.data_size) {
 		int types_list_size = r_buf_read_le32_at (bf->buf, c->interfaces_offset);
 		if (types_list_size < 0 || types_list_size >= dex->header.types_size ) {
+			free (str);
 			return;
 		}
 		for (z = 0; z < types_list_size; z++) {

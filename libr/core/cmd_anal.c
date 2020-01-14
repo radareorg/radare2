@@ -9640,6 +9640,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 	}
 	RAnalOp* op = r_core_anal_op (core, pcv, -1);
 	if (!op) {
+		r_strbuf_free (sb);
 		return;
 	}
 bool go_on = true;

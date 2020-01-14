@@ -1789,6 +1789,7 @@ static int cmd_open(void *data, const char *input) {
 				}
 			}
 			if ((fdx == -1) || (fd == -1) || (fdx == fd)) {
+				free (inp);
 				break;
 			}
 			r_io_desc_exchange (core->io, fd, fdx);

@@ -1007,15 +1007,18 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	//are we with xtr format?
 	if (binfile && binfile->curxtr) {
 		list_xtr_archs (bin, mode);
+		r_table_free (table);
 		return;
 	}
 	Sdb *binfile_sdb = binfile? binfile->sdb: NULL;
 	if (!binfile_sdb) {
 	//	eprintf ("Cannot find SDB!\n");
+		r_table_free (table);
 		return;
 	}
 	if (!binfile) {
 	//	eprintf ("Binary format not currently loaded!\n");
+		r_table_free (table);
 		return;
 	}
 	sdb_unset (binfile_sdb, ARCHS_KEY, 0);
@@ -1028,6 +1031,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	RBinFile *nbinfile = r_bin_file_find_by_name_n (bin, name, i);
 	if (!nbinfile) {
 		pj_free (pj);
+		r_table_free (table);
 		return;
 	}
 	i = -1;

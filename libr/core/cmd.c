@@ -916,7 +916,9 @@ static char *langFromHashbang(RCore *core, const char *file) {
 			if (nl) {
 				*nl = 0;
 			}
-			return strdup (firstLine + 2);
+			nl = strdup (firstLine + 2);
+			r_sandbox_close (fd);
+			return nl;
 		}
 		r_sandbox_close (fd);
 	}
