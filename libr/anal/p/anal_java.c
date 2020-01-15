@@ -907,7 +907,7 @@ static int java_reset_counter (RAnal *anal, ut64 start_addr ) {
 	return true;
 }
 
-#define USE_CUSTOM_ANAL 1
+#define USE_CUSTOM_ANAL 0
 
 RAnalPlugin r_anal_plugin_java = {
 	.name = "java",
