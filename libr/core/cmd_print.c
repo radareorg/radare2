@@ -2544,7 +2544,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	if (!strncmp (input, "dsb", 3)) {
 		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
 		if (bb) {
-			line = s = r_core_cmd_strf (core, "pD %i @ 0x%08"PFMT64x, bb->size, bb->addr);
+			line = s = r_core_cmd_strf (core, "pD %"PFMT64u" @ 0x%08"PFMT64x, bb->size, bb->addr);
 		}
 	} else if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
@@ -4082,8 +4082,8 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	}
 	r_config_set_i (core->config, "asm.bb.middle", false);
 	p_type == 'D'
-	? r_core_cmdf (core, "pD %d @0x%"PFMT64x, b->size, b->addr)
-	: r_core_cmdf (core, "pI %d @0x%"PFMT64x, b->size, b->addr);
+	? r_core_cmdf (core, "pD %"PFMT64u" @0x%"PFMT64x, b->size, b->addr)
+	: r_core_cmdf (core, "pI %"PFMT64u" @0x%"PFMT64x, b->size, b->addr);
 	r_config_set (core->config, "asm.bb.middle", orig_bb_middle);
 
 	if (b->jump != UT64_MAX) {
@@ -4497,7 +4497,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 					r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 					free (buf);
 				} else {
-					eprintf ("cannot allocate %d byte(s)\n", b->size);
+					eprintf ("cannot allocate %"PFMT64u" byte(s)\n", b->size);
 				}
 			}
 		}
@@ -4520,7 +4520,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 				free (buf);
 			} else {
-				eprintf ("cannot allocate %d byte(s)\n", b->size);
+				eprintf ("cannot allocate %"PFMT64u" byte(s)\n", b->size);
 			}
 		}
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
@@ -4545,7 +4545,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 					r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 					free (buf);
 				} else {
-					eprintf ("cannot allocate %d byte(s)\n", b->size);
+					eprintf ("cannot allocate %"PFMT64u" byte(s)\n", b->size);
 				}
 			}
 		}
@@ -5729,7 +5729,7 @@ static int cmd_print(void *data, const char *input) {
 							r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 							free (buf);
 						} else {
-							eprintf ("cannot allocate %d byte(s)\n", b->size);
+							eprintf ("cannot allocate %"PFMT64u" byte(s)\n", b->size);
 						}
 					}
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
