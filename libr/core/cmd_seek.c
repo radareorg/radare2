@@ -729,7 +729,7 @@ static int cmd_seek(void *data, const char *input) {
 		case '\0': // "sf"
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
-				r_core_seek (core, fcn->addr + r_anal_fcn_size (fcn), 1);
+				r_core_seek (core, r_anal_function_max_addr (fcn), 1);
 			}
 			break;
 		case ' ': // "sf "

@@ -30,15 +30,25 @@ typedef struct fcn {
 	ut64 ends;
 } fcn_t;
 
+static bool __is_data_block_cb(RAnalBlock *block, void *user) {
+	bool *block_exists = user;
+	*block_exists = true;
+	return false;
+}
+
 static int __isdata(RCore *core, ut64 addr) {
 	if (!r_io_is_valid_offset (core->io, addr, false)) {
 		// eprintf ("Warning: Invalid memory address at 0x%08"PFMT64x"\n", addr);
 		return 4;
 	}
-	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	if (fcn) {
-		return r_anal_fcn_size (fcn);
+
+	bool block_exists = false;
+	// This will just set block_exists = true if there is any basic block at this addr
+	r_anal_blocks_foreach_in (core->anal, addr, __is_data_block_cb, &block_exists);
+	if (block_exists) {
+		return 1;
 	}
+
 	RList *list = r_meta_find_list_in (core->anal, addr, -1, 4);
 	RListIter *iter;
 	RAnalMetaItem *meta;
@@ -207,7 +217,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 		pfx = "fcn";
 	}
 
-	RAnalFunction *f = r_anal_fcn_new ();
+	RAnalFunction *f = r_anal_function_new (core->anal);
 	if (!f) {
 		eprintf ("Failed to create new function\n");
 		return;
@@ -217,7 +227,6 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	f->addr = fcn->addr;
 	f->bits = core->anal->bits;
 	f->cc = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
-	r_anal_fcn_set_size (NULL, f, fcn->size);
 	f->type = R_ANAL_FCN_TYPE_FCN;
 
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {
@@ -226,10 +235,9 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 		}
 		r_anal_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, 0, NULL);
 	}
-	if (!r_anal_fcn_insert (core->anal, f)) {
+	if (!r_anal_add_function (core->anal, f)) {
 		// eprintf ("Failed to insert function\n");
-		r_anal_fcn_free (f);
-		//TODO free not added function
+		r_anal_function_free (f);
 		return;
 	}
 }

@@ -170,7 +170,7 @@ R_API void r_core_print_func_args(RCore *core) {
 		if (pcv == UT64_MAX) {
 			pcv = op->ptr;
 		}
-		fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
+		fcn = r_anal_get_function_at (core->anal, pcv);
 		if (fcn) {
 			fcn_name = fcn->name;
 		} else {

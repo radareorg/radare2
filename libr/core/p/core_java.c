@@ -1868,7 +1868,7 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 	fmt = "addr:0x%"PFMT64x" method_name:\"%s\", op:\"%s\" type:\"%s\" info:\"%s\"\n";
 
 	r_list_foreach (anal->fcns, fcn_iter, fcn) {
-		ut8 do_this_one = func_addr == -1 || r_anal_fcn_is_in_offset (fcn, func_addr);
+		ut8 do_this_one = func_addr == -1 || r_anal_function_contains (fcn, func_addr);
 		if (!do_this_one) {
 			continue;
 		}

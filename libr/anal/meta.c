@@ -792,7 +792,7 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	if (!meta_deserialize (ui->anal, &it, k, v)) {
 		return 1;
 	}
-	if (ui->fcn && !r_anal_fcn_in (ui->fcn, it.from)) {
+	if (ui->fcn && !r_anal_function_contains (ui->fcn, it.from)) {
 		goto beach;
 	}
 	if (!it.str) {
@@ -963,7 +963,7 @@ static int get_meta_size(void *user, const char *k, const char *v) {
 	if (!meta_deserialize (ui->anal, &it, k, v)) {
 		return -1;
 	}
-	if (ui->fcn && !r_anal_fcn_in (ui->fcn, it.from)) {
+	if (ui->fcn && !r_anal_function_contains (ui->fcn, it.from)) {
 		goto beach;
 	}
 	if (!it.str) {

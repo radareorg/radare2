@@ -213,6 +213,7 @@ static int handle_bb_cf_recursive_descent(RAnal *anal, RAnalState *state) {
 				jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
 				if (jmp_list) {
 					bb->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+					r_list_free (jmp_list);
 				}
 				if (bb->jumpbb) {
 					bb->jump = bb->jumpbb->addr;
@@ -241,6 +242,7 @@ static int handle_bb_cf_recursive_descent(RAnal *anal, RAnalState *state) {
 				jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
 				if (jmp_list) {
 					bb->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+					r_list_free (jmp_list);
 				}
 				if (bb->jumpbb) {
 					bb->jump = bb->jumpbb->addr;
@@ -260,6 +262,7 @@ static int handle_bb_cf_recursive_descent(RAnal *anal, RAnalState *state) {
 				jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->fail );
 				if (jmp_list) {
 					bb->failbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+					r_list_free (jmp_list);
 				}
 				if (bb->failbb) {
 					bb->fail = bb->failbb->addr;
@@ -299,6 +302,7 @@ static int handle_bb_cf_recursive_descent(RAnal *anal, RAnalState *state) {
 						jmp_list = r_anal_ex_perform_analysis (anal, state, caseop->jump );
 						if (jmp_list) {
 							caseop->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+							r_list_free (jmp_list);
 						}
 						if (state->done == 1) {
 							IFDBG eprintf (" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
@@ -466,7 +470,6 @@ static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 
 	fcn->name = r_str_newf ("sym.%08"PFMT64x, addr);
 	fcn->dsc = strdup ("unknown");
-	r_anal_fcn_set_size (NULL, fcn, code_length);
 	fcn->type = R_ANAL_FCN_TYPE_FCN;
 	fcn->addr = addr;
 	state = r_anal_state_new (addr, (ut8*) code_buf, code_length);
@@ -478,12 +481,11 @@ static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 	r_list_foreach (fcn->bbs, bb_iter, bb) {
 		actual_size += bb->size;
 	}
-	r_anal_fcn_set_size (NULL, fcn, state->bytes_consumed);
 	r_list_free (nodes->cfg_node_addrs);
 	free (nodes);
 	//leak to avoid UAF is the easy solution otherwise a whole rewrite is needed
 	//r_anal_state_free (state);
-	if (r_anal_fcn_size (fcn) != code_length) {
+	if (r_anal_function_linear_size (fcn) != code_length) {
 		return R_ANAL_RET_ERROR;
 #if 0
 		eprintf ("WARNING Analysis of %s Incorrect: Code Length: 0x%"PFMT64x", Function size reported 0x%x\n", fcn->name, code_length, r_anal_fcn_size(fcn));
@@ -491,6 +493,7 @@ static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 		r_anal_fcn_set_size (fcn, code_length);
 #endif
 	}
+	r_anal_state_free (state);
 	return result;
 }
 
@@ -501,7 +504,6 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 	if (!code_attr) {
 		fcn->name = strdup ("sym.UNKNOWN");
 		fcn->dsc = strdup ("unknown");
-		r_anal_fcn_set_size (NULL, fcn, 1); // code_length);
 		fcn->type = R_ANAL_FCN_TYPE_FCN;
 		fcn->addr = 0;
 		return R_ANAL_RET_ERROR;
@@ -539,13 +541,13 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 
 static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	// deallocate niceties
-	r_list_free (fcn->bbs);
-	fcn->bbs = r_anal_bb_list_new ();
+	while (!r_list_empty (fcn->bbs)) {
+		r_anal_function_remove_block (fcn, r_list_first (fcn->bbs));
+	}
 	java_new_method (fcn->addr);
 	state->current_fcn = fcn;
-	// Not a resource leak.  Basic blocks should be stored in the state->fcn
-	// TODO: ? RList *bbs =
-	r_anal_ex_perform_analysis (anal, state, fcn->addr);
+	RList *bbs = r_anal_ex_perform_analysis (anal, state, fcn->addr);
+	r_list_free (bbs);
 	return state->anal_ret_val;
 }
 
@@ -584,8 +586,7 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 
 	while (offset < buf_len) {
 		ut64 length = buf_len - offset;
-
-		RAnalFunction *fcn = r_anal_fcn_new ();
+		RAnalFunction *fcn = r_anal_function_new (anal);
 		fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 		result = analyze_from_code_buffer ( anal, fcn, addr, buffer+offset, length );
 		if (result == R_ANAL_RET_ERROR) {
@@ -593,10 +594,8 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 			// XXX - TO Stop or not to Stop ??
 			break;
 		}
-		//r_listrange_add (anal->fcnstore, fcn);
-		r_anal_fcn_tree_insert (anal, fcn);
-		r_list_append (anal->fcns, fcn);
-		offset += r_anal_fcn_size (fcn);
+		r_anal_add_function (anal, fcn);
+		offset += r_anal_function_linear_size (fcn);
 		if (!analyze_all) {
 			break;
 		}
@@ -634,7 +633,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 			if ((method && analyze_all) ||
 			    (check_addr_less_start (method, end) ||
 			     check_addr_in_code (method, end))) {
-				RAnalFunction *fcn = r_anal_fcn_new ();
+				RAnalFunction *fcn = r_anal_function_new (anal);
 				fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 				java_set_function_prototype (anal, fcn, method);
 				result = analyze_from_code_attr (anal, fcn, method, loadaddr);
@@ -644,9 +643,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 					// XXX - TO Stop or not to Stop ??
 				}
 				//r_listrange_add (anal->fcnstore, fcn);
-				r_anal_fcn_update_tinyrange_bbs (fcn);
-				r_anal_fcn_tree_insert (anal, fcn);
-				r_list_append (anal->fcns, fcn);
+				r_anal_add_function (anal, fcn);
 			}
 		} // End of methods loop
 	}// end of bin_objs list loop
