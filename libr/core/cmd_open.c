@@ -974,19 +974,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 				continue;
 			}
 			r_anal_var_rebase (core->anal, fcn, diff);
-			r_anal_fcn_tree_delete (core->anal, fcn);
-			fcn->addr += diff;
-			if (fcn->meta.max) {
-				fcn->meta.max += diff;
-			}
-			if (fcn->meta.min) {
-				fcn->meta.min += diff;
-			}
-			int j;
-			for (j = 0; j < fcn->bbr.pairs * 2; j++) {
-				fcn->bbr.ranges[j] += diff;
-			}
-			r_anal_fcn_tree_insert (core->anal, fcn);
+			r_anal_function_relocate (fcn, fcn->addr + diff);
 			RAnalBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;
 			r_list_foreach (fcn->bbs, ititit, bb) {
@@ -994,7 +982,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 					// Todo: Find better way to check if bb was already rebased
 					continue;
 				}
-				bb->addr += diff;
+				r_anal_block_relocate (bb, bb->addr + diff, bb->size);
 				if (bb->jump != UT64_MAX) {
 					bb->jump += diff;
 				}

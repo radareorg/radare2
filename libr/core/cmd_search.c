@@ -837,7 +837,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 			R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (f) {
-			ut64 from = f->addr, size = r_anal_fcn_size (f);
+			ut64 from = f->addr, size = r_anal_function_size_from_entry (f);
 
 			/* Search only inside the basic block */
 			if (!strcmp (mode, "anal.bb")) {
@@ -3724,7 +3724,7 @@ reread:
 			if (input[1]) {
 				addr = r_num_math (core->num, input + 2);
 			} else {
-				RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, 0);
+				RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
 				if (fcn) {
 					addr = fcn->addr;
 				} else {

@@ -58,7 +58,7 @@ static int compareType(const RAnalFunction *a, const RAnalFunction *b) {
 
 static int compareSize(const RAnalFunction *a, const RAnalFunction *b) {
 	// return a && b && a->_size < b->_size;
-	return a && b && r_anal_fcn_realsize (a) > r_anal_fcn_realsize (b);
+	return a && b && r_anal_function_realsize (a) > r_anal_function_realsize (b);
 }
 
 static int compareDist(const RAnalFunction *a, const RAnalFunction *b) {

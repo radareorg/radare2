@@ -126,10 +126,11 @@ R_API RAnal *r_anal_new(void) {
 		free (anal);
 		return NULL;
 	}
+	anal->bb_tree = NULL;
+	anal->ht_addr_fun = ht_up_new0 ();
+	anal->ht_name_fun = ht_pp_new0 ();
 	anal->os = strdup (R_SYS_OS);
-	anal->reflines = NULL;
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
-	anal->limit = NULL;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->gp = 0LL;
@@ -169,8 +170,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->stackptr = 0;
 	anal->rb_hints_ranges = NULL;
 	anal->lineswidth = 0;
-	anal->fcns = r_anal_fcn_list_new ();
-	anal->fcn_tree = NULL;
+	anal->fcns = r_list_newf (r_anal_function_free);
 	anal->fcn_addr_tree = NULL;
 	anal->refs = r_anal_ref_list_new ();
 	anal->leaddrs = NULL;
@@ -192,18 +192,22 @@ R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	}
 }
 
+void __block_free_rb(RBNode *node, void *user);
+
 R_API RAnal *r_anal_free(RAnal *a) {
 	if (!a) {
 		return NULL;
 	}
 	/* TODO: Free anals here */
+	r_list_free (a->fcns);
+	ht_up_free (a->ht_addr_fun);
+	ht_pp_free (a->ht_name_fun);
 	set_u_free (a->visited);
 	free (a->cpu);
 	free (a->os);
 	free (a->zign_path);
 	r_list_free (a->plugins);
-	a->fcns->free = r_anal_fcn_free;
-	r_list_free (a->fcns);
+	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
 	r_spaces_fini (&a->meta_spaces);
 	r_spaces_fini (&a->zign_spaces);
 	r_anal_pin_fini (a);
@@ -489,8 +493,7 @@ R_API int r_anal_purge (RAnal *anal) {
 	sdb_reset (anal->sdb_classes);
 	sdb_reset (anal->sdb_classes_attrs);
 	r_list_free (anal->fcns);
-	anal->fcns = r_anal_fcn_list_new ();
-	anal->fcn_tree = NULL;
+	anal->fcns = r_list_newf (r_anal_function_free);
 	anal->fcn_addr_tree = NULL;
 	r_list_free (anal->refs);
 	anal->refs = r_anal_ref_list_new ();
@@ -707,7 +710,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 		return true;
 	}
 	/* XXX this is very slow */
-	RAnalFunction *f = r_anal_get_fcn_at (anal, addr, 0);
+	RAnalFunction *f = r_anal_get_function_at (anal, addr);
 	if (f) {
 		if (r_anal_noreturn_at_name (anal, f->name)) {
 			return true;

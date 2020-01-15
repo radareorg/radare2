@@ -557,7 +557,7 @@ static int module_match_buffer(RAnal *anal, const RFlirtModule *module,
 		// Once the first module function is found, we need to go through the module->public_functions
 		// list to identify the others. See flirt doc for more information
 
-		next_module_function = r_anal_get_fcn_at ((RAnal *) anal, address + flirt_func->offset, 0);
+		next_module_function = r_anal_get_function_at ((RAnal *) anal, address + flirt_func->offset);
 		if (next_module_function) {
 			char *name;
 			int name_offs = 0;
@@ -576,7 +576,7 @@ static int module_match_buffer(RAnal *anal, const RFlirtModule *module,
 				next_flirt_func_it = next_flirt_func_it->n;
 			}
 			// resize function if needed
-			next_module_function_size = r_anal_fcn_size (next_module_function);
+			next_module_function_size = r_anal_function_linear_size (next_module_function);
 			if (next_module_function_size < flirt_fcn_size) {
 				RListIter *iter;
 				RListIter *iter_tmp;
@@ -592,7 +592,7 @@ static int module_match_buffer(RAnal *anal, const RFlirtModule *module,
 					}
 				}
 				r_anal_fcn_resize (anal, next_module_function, flirt_fcn_size);
-				next_module_function_size = r_anal_fcn_size (next_module_function);
+				next_module_function_size = r_anal_function_linear_size (next_module_function);
 				r_anal_trim_jmprefs ((RAnal *)anal, next_module_function);
 			}
 
@@ -675,7 +675,7 @@ static int node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 			continue;
 		}
 
-		int func_size = r_anal_fcn_size (func);
+		int func_size = r_anal_function_linear_size (func);
 		func_buf = malloc (func_size);
 		if (!anal->iob.read_at (anal->iob.io, func->addr, func_buf, func_size)) {
 			eprintf ("Couldn't read function\n");

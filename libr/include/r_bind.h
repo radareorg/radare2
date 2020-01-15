@@ -15,7 +15,7 @@ typedef char* (*RCoreCmdStrF)(void *core, const char *cmd, ...);
 typedef void (*RCorePuts)(const char *cmd);
 typedef void (*RCoreSetArchBits)(void *core, const char *arch, int bits);
 typedef bool (*RCoreIsMapped)(void *core, ut64 addr, int perm);
-typedef int (*RCoreDebugMapsSync)(void *core);
+typedef bool (*RCoreDebugMapsSync)(void *core);
 typedef const char *(*RCoreGetName)(void *core, ut64 off);
 typedef char *(*RCoreGetNameDelta)(void *core, ut64 off);
 typedef void (*RCoreSeekArchBits)(void *core, ut64 addr); 

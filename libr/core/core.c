@@ -298,11 +298,11 @@ static bool __isMapped(RCore *core, ut64 addr, int perm) {
 	return r_io_map_is_mapped (core->io, addr);
 }
 
-static int __syncDebugMaps(RCore *core) {
+static bool __syncDebugMaps(RCore *core) {
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		return r_debug_map_sync (core->dbg);
 	}
-	return 0;
+	return false;
 }
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
@@ -505,7 +505,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			if (!off) {
 				off = core->offset;
 			}
-			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, off, 0);
+			RAnalFunction *fcn = r_anal_get_function_at (core->anal, off);
 			if (fcn) {
 				if (ok) {
 					*ok = true;
@@ -786,8 +786,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				switch (str[2]) {
 				/* function bounds (uppercase) */
 				case 'B': return fcn->addr; // begin
-				case 'E': return fcn->addr + fcn->_size; // end
-				case 'S': return (str[3]=='S')? r_anal_fcn_realsize (fcn): r_anal_fcn_size (fcn);
+				case 'E': return r_anal_function_max_addr (fcn); // end
+				case 'S': return (str[3]=='S') ? r_anal_function_realsize (fcn) : r_anal_function_linear_size (fcn);
 				case 'I': return fcn->ninstr;
 				/* basic blocks (lowercase) */
 				case 'b': return bbBegin (fcn, core->offset);

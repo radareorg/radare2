@@ -353,7 +353,7 @@ R_API ut64 r_core_pava (RCore *core, ut64 addr) {
 }
 
 static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
-	if (ds->fcn && r_tinyrange_in (&ds->fcn->bbr, at)) {
+	if (ds->fcn && r_anal_function_contains (ds->fcn, at)) {
 		return ds->fcn;
 	}
 	return r_anal_get_fcn_in (ds->core->anal, at, type);
@@ -1299,8 +1299,7 @@ static void ds_show_refs(RDisasmState *ds) {
 			r_io_read_at (ds->core->io, ref->at, buf, sizeof (buf));
 			r_anal_op (ds->core->anal, &aop, ref->at, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
 			if ((aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
-				RAnalFunction * fcn = r_anal_get_fcn_at (ds->core->anal,
-					ref->addr, R_ANAL_FCN_TYPE_NULL);
+				RAnalFunction * fcn = r_anal_get_function_at (ds->core->anal, ref->addr);
 				ds_begin_comment (ds);
 				if (fcn) {
 					ds_comment (ds, true, "; %s", fcn->name);
@@ -1441,7 +1440,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					ds_comment (ds, false, "%s%s0x%"PFMT64x, it == addrs->head ? "" : ", ", plus, *addrptr);
 				}
 			}
-			if (realname && (!fun || r_anal_get_fcn_at (core->anal, ds->at, R_ANAL_FCN_TYPE_ROOT))) {
+			if (realname && (!fun || r_anal_get_function_at (core->anal, ds->at))) {
 				const char *pad = ds->show_comment_right ? "" : " ";
 				if (!ds->show_comment_right) {
 					ds_newline (ds);
@@ -1662,8 +1661,8 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 
 //TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
 static ut32 tmp_get_realsize (RAnalFunction *f) {
-	ut32 size = r_anal_fcn_realsize (f);
-	return (size > 0) ? size : r_anal_fcn_size (f);
+	ut32 size = r_anal_function_realsize (f);
+	return (size > 0) ? size : r_anal_function_linear_size (f);
 }
 
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char *base, bool is_var, char sign) {
@@ -1803,8 +1802,8 @@ static void ds_show_functions(RDisasmState *ds) {
 	bool showSig = ds->show_fcnsig && ds->show_calls;
 	bool call = r_config_get_i (core->config, "asm.calls");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
-	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-	if (!f || (f->addr != ds->at)) {
+	f = r_anal_get_function_at (core->anal, ds->at);
+	if (!f) {
 		return;
 	}
 	if (demangle) {
@@ -1824,8 +1823,8 @@ static void ds_show_functions(RDisasmState *ds) {
 		r_cons_printf ("%s%s ", COLOR (ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-
 		if (!showSig) {
-			r_cons_printf ("%s%s%s %d", COLOR (ds, color_floc),
-					fcn_name, COLOR_RESET (ds), r_anal_fcn_size (f));
+			r_cons_printf ("%s%s%s %"PFMT64u, COLOR (ds, color_floc),
+					fcn_name, COLOR_RESET (ds), r_anal_function_linear_size (f));
 			ds_newline (ds);
 		}
 	} else {
@@ -1893,7 +1892,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_pre (ds, true);
 			r_cons_printf ("%s  ", COLOR_RESET (ds));
 		}
-		r_cons_printf ("%d: ", r_anal_fcn_realsize (f));
+		r_cons_printf ("%d: ", r_anal_function_realsize (f));
 		char *sig = r_anal_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
 		if (sig) {
 			r_cons_print (sig);
@@ -2019,14 +2018,14 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 	RAnalFunction *f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (f) {
 		if (f->addr == ds->at) {
-			if (ds->analop.size == r_anal_fcn_size (f) && !middle) {
+			if (ds->analop.size == r_anal_function_linear_size (f) && !middle) {
 				ds->pre = DS_PRE_FCN_TAIL;
 			} else {
 				ds->pre = DS_PRE_FCN_MIDDLE;
 			}
-		} else if (f->addr + r_anal_fcn_size (f) - ds->analop.size == ds->at) {
+		} else if (r_anal_function_max_addr (f) - ds->analop.size == ds->at && f->addr == r_anal_function_min_addr (f)) {
 			ds->pre = DS_PRE_FCN_TAIL;
-		} else if (r_anal_fcn_is_in_offset (f, ds->at)) {
+		} else if (r_anal_function_contains (f, ds->at)) {
 			ds->pre = DS_PRE_FCN_MIDDLE;
 		}
 		if (tail) {
@@ -2236,7 +2235,7 @@ static void ds_show_flags(RDisasmState *ds) {
 	char addr[64];
 	ut64 switch_addr = UT64_MAX;
 	int case_start = -1, case_prev = 0, case_current = 0;
-	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
+	f = r_anal_get_function_at (ds->core->anal, ds->at);
 	const RList *flaglist = r_flag_get_list (core->flags, ds->at);
 	RList *uniqlist = flaglist? r_list_uniq (flaglist, flagCmp): NULL;
 	int count = 0;
@@ -2753,7 +2752,7 @@ static void ds_print_offset(RDisasmState *ds) {
 		unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
 
 		if (ds->show_reloff) {
-			RAnalFunction *f = r_anal_get_fcn_at (core->anal, at, R_ANAL_FCN_TYPE_NULL);
+			RAnalFunction *f = r_anal_get_function_at (core->anal, at);
 			if (!f) {
 				f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL); // r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 			}
@@ -4509,7 +4508,7 @@ static void ds_print_bbline(RDisasmState *ds) {
 		RAnalBlock *bb = NULL;
 		RAnalFunction *f_before = NULL;
 		if (ds->fcn) {
-			bb = r_anal_fcn_bbget_at (ds->fcn, ds->at);
+			bb = r_anal_fcn_bbget_at (ds->core->anal, ds->fcn, ds->at);
 		} else {
 			f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
 		}
@@ -4679,7 +4678,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_JMP:
 		{
 			ut64 addr = ds->analop.jump;
-			if (!r_anal_get_fcn_at (ds->core->anal, addr, R_ANAL_FCN_TYPE_NULL)
+			if (!r_anal_get_function_at (ds->core->anal, addr)
 					&& !r_flag_get_at (core->flags, addr, false)) {
 				break;
 			}
@@ -4706,7 +4705,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					}
 				}
 			}
-			fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
+			fcn = r_anal_get_function_at (core->anal, pcv);
 			if (fcn) {
 				fcn_name = fcn->name;
 			} else {
@@ -5055,7 +5054,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	}
 	ut64 addr = ds->analop.jump;
 
-	RAnalFunction *fcn = r_anal_get_fcn_at (anal, addr, 0);
+	RAnalFunction *fcn = r_anal_get_function_at (anal, addr);
 	if (fcn) {
 		if (!set_jump_realname (ds, addr, &kw, &name)) {
 			name = fcn->name;
@@ -5287,8 +5286,8 @@ toro:
 		}
 		// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		f = ds->fcn = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
-		if (f && f->folded && r_anal_fcn_is_in_offset (f, ds->at)) {
-			int delta = (ds->at <= f->addr)? (ds->at - f->addr + r_anal_fcn_size (f)): 0;
+		if (f && f->folded && r_anal_function_contains (f, ds->at)) {
+			int delta = (ds->at <= f->addr) ? (ds->at - r_anal_function_max_addr (f)) : 0;
 			if (of != f) {
 				char cmt[32];
 				get_bits_comment (core, f, cmt, sizeof (cmt));
@@ -5304,7 +5303,7 @@ toro:
 				ds_setup_print_pre (ds, true, false);
 				ds_print_lines_left (ds);
 				ds_print_offset (ds);
-				r_cons_printf ("(%d byte folded function)\n", r_anal_fcn_size (f));
+				r_cons_printf ("(%d byte folded function)\n", r_anal_function_linear_size (f));
 				//r_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
 				if (delta < 0) {
 					delta = -delta;
@@ -5465,7 +5464,7 @@ toro:
 		if (fcn) {
 			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, ds->at);
 			if (!bb) {
-				fcn = r_anal_get_fcn_at (core->anal, ds->at, 0);
+				fcn = r_anal_get_function_at (core->anal, ds->at);
 				if (fcn) {
 					bb = r_anal_fcn_bbget_in (core->anal, fcn, ds->at);
 				}
@@ -6076,7 +6075,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		pj_s (pj, R_STRBUF_SAFEGET (&ds->analop.esil));
 		pj_kb (pj, "refptr", ds->analop.refptr);
 		pj_kn (pj, "fcn_addr", f ? f->addr : 0);
-		pj_kn (pj, "fcn_last", f ? f->addr + r_anal_fcn_size (f) - ds->oplen : 0);
+		pj_kn (pj, "fcn_last", f ? r_anal_function_max_addr (f) - ds->oplen : 0);
 		pj_ki (pj, "size", ds->analop.size);
 		pj_ks (pj, "opcode", opstr);
 		pj_ks (pj, "disasm", str);

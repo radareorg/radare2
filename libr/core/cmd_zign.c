@@ -100,7 +100,7 @@ static bool addFcnHash(RCore *core, RAnalFunction *fcn, const char *name) {
 static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	r_return_val_if_fail (core && fcn && name, false);
 	int maxsz = r_config_get_i (core->config, "zign.maxsz");
-	int fcnlen = r_anal_fcn_realsize (fcn);
+	int fcnlen = r_anal_function_realsize (fcn);
 	int len = R_MIN (core->io->addrbytes * fcnlen, maxsz);
 
 	ut8 *buf = malloc (len);
@@ -126,7 +126,7 @@ static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 	};
 	// XXX ebbs doesnt gets initialized if calling this from inside the struct
 	graph.edges = r_anal_fcn_count_edges (fcn, &graph.ebbs);
-	graph.bbsum = r_anal_fcn_size (fcn);
+	graph.bbsum = r_anal_function_realsize (fcn);
 	return r_sign_add_graph (core->anal, name, graph);
 }
 
@@ -758,7 +758,7 @@ static int searchHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user)
 static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
 	// TODO(nibble): use one counter per metric zign instead of ctx->count
-	addFlag (ctx->core, it, fcn->addr, r_anal_fcn_realsize (fcn), ctx->count, ctx->prefix, ctx->rad);
+	addFlag (ctx->core, it, fcn->addr, r_anal_function_realsize (fcn), ctx->count, ctx->prefix, ctx->rad);
 	ctx->count++;
 	return 1;
 }
@@ -917,7 +917,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 			}
 			if (useBytes && only_func) {
 				eprintf ("Matching func %d / %d (hits %d)\n", count, r_list_length (core->anal->fcns), bytes_search_ctx.count);
-				int fcnlen = r_anal_fcn_realsize (fcni);
+				int fcnlen = r_anal_function_realsize (fcni);
 				int len = R_MIN (core->io->addrbytes * fcnlen, maxsz);
 				retval &= searchRange2 (core, ss, fcni->addr, fcni->addr + len, rad, &bytes_search_ctx);
 			}

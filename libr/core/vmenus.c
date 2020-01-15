@@ -2659,7 +2659,7 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 			r_flag_unset_name (core->flags, fcn->name);
 			free (fcn->name);
 			fcn->name = strdup (name);
-			r_flag_set (core->flags, name, addr, r_anal_fcn_size (fcn));
+			r_flag_set (core->flags, name, addr, r_anal_function_size_from_entry (fcn));
 			break;
 		}
 	}
@@ -2735,13 +2735,13 @@ static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 					var_functions = r_str_newf ("%c%c %s0x%08"PFMT64x"" Color_RESET" %4d %s%s"Color_RESET"",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
-							color_addr, fcn->addr, r_anal_fcn_realsize (fcn),
+							color_addr, fcn->addr, r_anal_function_realsize (fcn),
 							color_fcn, fcn->name);
 				} else {
 					var_functions = r_str_newf ("%c%c 0x%08"PFMT64x" %4d %s",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
-							fcn->addr, r_anal_fcn_realsize (fcn), fcn->name);
+							fcn->addr, r_anal_function_realsize (fcn), fcn->name);
 				}
 				if (var_functions) {
 					if (!r_cons_singleton ()->show_vals) {
@@ -3798,7 +3798,7 @@ onemoretime:
 				r_sys_sleep (1);
 			}
 		} else if (tgt_addr != UT64_MAX) {
-			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, tgt_addr, R_ANAL_FCN_TYPE_NULL);
+			RAnalFunction *fcn = r_anal_get_function_at (core->anal, tgt_addr);
 			RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);
 			if (fcn) {
 				q = r_str_newf ("?i Rename function %s to;afn `yp` 0x%"PFMT64x,
@@ -4005,25 +4005,13 @@ onemoretime:
 		break;
 	case 'f':
 		{
-			int funsize = 0;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				r_anal_fcn_resize (core->anal, fcn, core->offset - fcn->addr);
 			}
-			//int depth = r_config_get_i (core->config, "anal.depth");
-			if (core->print->cur_enabled) {
-				if (core->print->ocur != -1) {
-					funsize = 1 + R_ABS (core->print->cur - core->print->ocur);
-				}
-				//depth = 0;
-			}
 			r_cons_break_push (NULL, NULL);
 			r_core_cmdf (core, "af @ 0x%08" PFMT64x, off); // required for thumb autodetection
 			r_cons_break_pop ();
-			if (funsize) {
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, off, -1);
-				r_anal_fcn_set_size (core->anal, f, funsize);
-			}
 		}
 		break;
 	case 'v':

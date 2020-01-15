@@ -139,18 +139,17 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (!op || !r_anal_state_addr_is_valid (state, addr)) {
 		return NULL;
 	}
-	current_bb = r_anal_bb_new ();
+	current_bb = r_anal_ex_op_to_bb (anal, state, op);
 	if (!current_bb) {
 		return NULL;
 	}
-	r_anal_ex_op_to_bb (anal, state, current_bb, op);
 	if (!current_bb->op_bytes) {
 		current_bb->op_sz = state->current_op->size;
 		current_bb->op_bytes = malloc (current_bb->op_sz);
 		if (current_bb->op_bytes) {
 			int buf_len = r_anal_state_get_len (state, addr);
 			if (current_bb->op_sz > buf_len) {
-				r_anal_bb_free (current_bb);
+				r_anal_block_unref (current_bb);
 				return NULL;
 			}
 			memcpy (current_bb->op_bytes,
@@ -175,16 +174,17 @@ R_API RList* r_anal_ex_perform_analysis(RAnal *anal, RAnalState *state, ut64 add
 R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr ) {
 	ut64 consumed_iter = 0;
 	ut64 bytes_consumed = 0, len = r_anal_state_get_len (state, addr);
-	RAnalBlock *pcurrent_bb   = state->current_bb, *past_bb = NULL;
+	RAnalBlock *past_bb = NULL;
 	RAnalOp *pcurrent_op = state->current_op;
 	ut64 backup_addr = state->current_addr;
 	state->current_addr = addr;
-	RList *bb_list = r_anal_bb_list_new ();
-	bb_list->free = NULL; // avoid dblfree
+	RList *bb_list = r_list_newf ((RListFree)r_anal_block_unref);
 
 	if (state->done) {
 		return bb_list;
 	}
+
+	RAnalBlock *prev_current_bb = state->current_bb;
 	state->current_bb = NULL;
 	state->current_op = NULL;
 
@@ -194,9 +194,14 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 		// check state for bb
 		if (state->current_bb) {
 			// TODO something special should happen here.
+			r_anal_block_ref (state->current_bb);
 			r_anal_ex_perform_revisit_bb_cb (anal, state, state->current_addr);
 			consumed_iter += state->current_bb->op_sz;
 			bytes_consumed += state->current_bb->op_sz;
+			if (state->current_bb) {
+				r_anal_block_unref (state->current_bb);
+				state->current_bb = NULL;
+			}
 			if (state->done) {
 				break;
 			}
@@ -225,7 +230,10 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 		//state->current_bb is shared in two list and one ht!!! 
 		//source of UAF this should be rewritten to avoid such errors 
 		r_anal_state_insert_bb (state, state->current_bb);
+
+		r_anal_block_ref (state->current_bb);
 		r_list_append (bb_list, state->current_bb);
+
 		r_anal_ex_perform_post_anal_bb_cb (anal, state, state->current_addr);
 		if (state->done) {
 			break;
@@ -233,36 +241,42 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 		if (state->current_bb) {
 			bytes_consumed += state->current_bb->op_sz;
 			consumed_iter += state->current_bb->op_sz;
+			r_anal_block_unref (state->current_bb);
+			state->current_bb = NULL;
 		}
 		state->current_addr = state->next_addr;
 		r_anal_op_free (state->current_op);
 		state->current_op = NULL;
-		state->current_bb = NULL;
 		if (!consumed_iter) {
 			eprintf ("No bytes consumed, bailing!\n");
 			break;
 		}
 		consumed_iter = 0;
 	}
+
+	if (state->current_bb) {
+		r_anal_block_unref (state->current_bb);
+	}
 	r_anal_op_free (state->current_op);
 	r_anal_ex_perform_post_anal (anal, state, addr);
 	state->current_op = pcurrent_op;
-	state->current_bb = pcurrent_bb;
+	state->current_bb = prev_current_bb;
 	state->current_addr = backup_addr;
 	return bb_list;
 }
 
-R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalBlock *bb, RAnalOp *op) {
-	//ut64 cnd_jmp = (R_ANAL_EX_COND_OP | R_ANAL_EX_CODEOP_JMP);
-	bb->addr = op->addr;
-	bb->size = op->size;
-	bb->type2 = op->type2;
-	bb->type = r_anal_ex_map_anal_ex_to_anal_bb_type ( op->type2 );
-	bb->fail = op->fail;
-	bb->jump = op->jump;
-
-	bb->conditional = R_ANAL_EX_COND_OP & op->type2 ? R_ANAL_OP_TYPE_COND : 0;
-	r_anal_ex_clone_op_switch_to_bb (bb, op);
+R_API RAnalBlock *r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalOp *op) {
+	RAnalBlock *block = r_anal_create_block (anal, op->addr, op->size);
+	if (!block) {
+		return NULL;
+	}
+	block->type2 = op->type2;
+	block->type = r_anal_ex_map_anal_ex_to_anal_bb_type ( op->type2 );
+	block->fail = op->fail;
+	block->jump = op->jump;
+	block->conditional = R_ANAL_EX_COND_OP & op->type2 ? R_ANAL_OP_TYPE_COND : 0;
+	r_anal_ex_clone_op_switch_to_bb (block, op);
+	return block;
 }
 
 R_API ut64 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type) {

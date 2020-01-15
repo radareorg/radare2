@@ -50,7 +50,6 @@ static const char *attr_type_id(RAnalClassAttrType attr_type) {
 	}
 }
 
-
 R_API void r_anal_class_create(RAnal *anal, const char *name) {
 	char *name_sanitized = r_str_sanitize_sdb_key (name);
 	if (!name_sanitized) {
