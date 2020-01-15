@@ -59,6 +59,7 @@ typedef struct r_lib_struct_t {
 	void *data; /* pointer to data handled by plugin handler */
 	const char *version; /* r2 version */
 	void (*free)(void *data);
+	const char *pkgname; /* pkgname associated to this plugin */
 } RLibStruct;
 
 typedef RLibStruct* (*RLibStructFunc) (void);
