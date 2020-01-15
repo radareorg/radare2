@@ -731,9 +731,80 @@ struct ctxSearchCB {
 	const char *prefix;
 };
 
+static char *types_list_to_fcnstr(RList *types) {
+	char *type_kv = NULL, *k = NULL, *v = NULL;
+	char *field = NULL, *name = NULL, *rettype = NULL;
+	char **args, *ret = NULL;
+	int nargs = 0, i = 0, j = 0;
+	RListIter *iter;
+
+	r_list_foreach(types, iter, type_kv) {
+		k = strtok (type_kv, "=");
+		v = strtok (NULL, "\0");
+
+		strtok (k, ".");
+		name = strtok (NULL, ".");
+		field = strtok (NULL, ".");
+
+		while (strcmp (field, "ret") && strcmp (field, "args") &&
+		  strcmp (field, "arg") && strcmp (field, r_str_newf ("%d", i))) {
+			name = field;
+			field = strtok (NULL, ".");
+
+		if (!strcmp (field, "args")) {
+			nargs = atoi (v);
+			args = (char **)malloc (nargs * sizeof (char *));
+		} else if (!strcmp (field, "ret")) {
+			rettype = v;
+		} else {
+			if (i < nargs && args) {
+				args[i] = r_str_ndup (v + 1, strlen (v) - 2);
+				for (j = 0; j < strlen (args[i]); j++) {
+					if (args[i][j] == ',') {
+						args[i][j] = ' ';
+					}
+				}
+			}
+			i++;
+		}
+
+		if (!rettype) {
+			rettype = strdup ("");
+		}
+
+		ret = r_str_newf ("%s %s(", rettype, name);
+		for (j = 0; j < nargs - 1; j++) {
+			ret = r_str_newf ("%s%s, ", ret, args[j]);
+		}
+		if (nargs > 0) {
+			ret = r_str_newf ("%s%s);", ret, args[nargs - 1]);
+		} else {
+			ret = r_str_newf ("%s);", ret);
+		}
+	}
+
+	if (args) {
+		while (i > 0) {
+			i--;
+			free (args[i]);
+		}
+		free (args);
+	}
+	return ret;
+}
+
+// TODO (oxcabe):
 static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, const char* prefix, bool rad) {
+	RAnalFunction *fcn = NULL;
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	char *name = r_str_newf ("%s.%s.%s_%d", zign_prefix, prefix, it->name, count);
+	char *fcnstr = NULL;
+
+	if (it->types) {
+		fcnstr = types_list_to_fcnstr (it->types);
+		fcn = r_anal_get_fcn_at (core->anal, it->addr, 0);
+		r_anal_str_to_fcn (core->anal, fcn, fcnstr);
+	}
 	if (!name) {
 		return;
 	}
@@ -943,7 +1014,7 @@ TODO: add useXRefs, useName
 	}
 
 	hits = bytes_search_ctx.count + graph_match_ctx.count +
-		offset_match_ctx.count + refs_match_ctx.count + hash_match_ctx.count;
+		offset_match_ctx.count + refs_match_ctx.count + hash_match_ctx.count + types_match_ctx.count;
 	eprintf ("hits: %d\n", hits);
 
 	return retval;
