@@ -2744,25 +2744,13 @@ static bool cb_dbgsnap(void *user, void *data) {
 
 static bool cb_log_config_level(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
-	const char *value = node->value;
-	char *bad_data = NULL;
-	long int ival = strtol (value, &bad_data, 10);
-	if (*bad_data) {
-		return false;
-	}
-	r_log_set_level (ival);
+	r_log_set_level (node->i_value);
 	return true;
 }
 
 static bool cb_log_config_traplevel(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
-	const char *value = node->value;
-	char *bad_data = NULL;
-	long int ival = strtol (value, &bad_data, 10);
-	if (*bad_data) {
-		return false;
-	}
-	r_log_set_traplevel (ival);
+	r_log_set_traplevel (node->i_value);
 	return true;
 }
 
