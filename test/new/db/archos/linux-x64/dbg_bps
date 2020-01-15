@@ -197,24 +197,28 @@ EOF
 RUN
 
 NAME='valid db'
-FILE=../bins/elf/analysis/x86-helloworld-gcc
+FILE=../bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
-db 0x0
-db~1[12];
-EXPECT=<<RUN
-"invalid"
+e scr.color=0
+db main
+db~1[8]
+EOF
+EXPECT=<<EOF
+valid
 EOF
 RUN
 
 NAME='invalid db'
-FILE=../bins/elf/analysis/x86-helloworld-gcc
+FILE=../bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
-db entry0
-db~1[12]
-EXPECT=<<RUN
-"valid"
+e scr.color=0
+db 0x0
+db~1[8]
+EOF
+EXPECT=<<EOF
+invalid
 EOF
 RUN
 
