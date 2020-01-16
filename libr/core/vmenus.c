@@ -2070,7 +2070,7 @@ R_API int r_core_visual_comments (RCore *core) {
 static void config_visual_hit_i(RCore *core, const char *name, int delta) {
 	struct r_config_node_t *node;
 	node = r_config_node_get (core->config, name);
-	if (node && ((node->flags & CN_INT) || (node->flags & CN_OFFT))) {
+	if (node && r_config_node_is_int (node)) {
 		int hitDelta = r_config_get_i (core->config, name) + delta;
 		(void) r_config_set_i (core->config, name, hitDelta);
 	}
@@ -2084,7 +2084,7 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 	if (!(node = r_config_node_get (core->config, name))) {
 		return;
 	}
-	if (node->flags & CN_BOOL) {
+	if (r_config_node_is_bool (node)) {
 		r_config_set_i (core->config, name, node->i_value? 0:1);
 	} else {
 // XXX: must use config_set () to run callbacks!
