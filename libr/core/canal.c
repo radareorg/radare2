@@ -1748,7 +1748,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	const bool use_esil = r_config_get_i (core->config, "anal.esil");
 	RAnalFunction *fcn;
-	RListIter *iter;
 
 	//update bits based on the core->offset otherwise we could have the
 	//last value set and blow everything up

@@ -31,7 +31,6 @@ r_anal_sources = [
   'rtti_itanium.c',
   'session.c',
   'sign.c',
-  'state.c',
   'switch.c',
   'type.c',
   'value.c',

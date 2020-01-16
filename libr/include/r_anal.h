@@ -208,14 +208,7 @@ enum {
 	R_ANAL_FCN_TYPE_ANY = -1       /* all the bits set */
 };
 
-#define R_ANAL_VARSUBS 32
-
 #define RAnalBlock struct r_anal_bb_t
-
-typedef struct r_anal_varsub_t {
-	char pat[128];
-	char sub[128];
-} RAnalVarSub;
 
 enum {
 	R_ANAL_DIFF_TYPE_NULL = 0,
@@ -230,28 +223,12 @@ typedef struct r_anal_diff_t {
 	char *name;
 	ut32 size;
 } RAnalDiff;
-
-typedef struct r_anal_locals_t {
-	RAnalType *items;
-} RAnalLocals;
-
-typedef struct r_anal_fcn_local_t {
-	ut64 index;
-	char* name;
-	char* type;
-} RAnalFcnLocal;
-
 typedef struct r_anal_attr_t RAnalAttr;
 struct r_anal_attr_t {
 	char *key;
 	long value;
 	RAnalAttr *next;
 };
-
-typedef struct r_anal_fcn_store_t {
-	HtPP *h;
-	RList *l;
-} RAnalFcnStore;
 
 /* Stores useful function metadata */
 /* TODO: Think about moving more stuff to this structure? */
@@ -264,8 +241,6 @@ typedef struct r_anal_fcn_meta_t {
 
 	int numrefs;        // number of cross references
 	int numcallrefs;    // number of calls
-	int sgnc;           // node cardinality of the functions callgraph
-	int sgec;           // edge cardinality of the functions callgraph
 } RAnalFcnMeta;
 
 /* Store various function information,
@@ -397,7 +372,7 @@ On x86 according to Wikipedia
 #define R_ANAL_OP_HINT_MASK 0xf0000000
 typedef enum {
 	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix?
-	//TODO: MOVE TO PREFIX .. it is used by anal_ex.. must be updated
+	//TODO: MOVE TO PREFIX .. it is used by anal_java.. must be updated
 	R_ANAL_OP_TYPE_REP   = 0x40000000, /* repeats next instruction N times */
 	R_ANAL_OP_TYPE_MEM   = 0x20000000, // TODO must be moved to prefix?
 	R_ANAL_OP_TYPE_REG   = 0x10000000, // operand is a register
@@ -945,28 +920,6 @@ typedef struct r_anal_refline_t {
 	int direction;
 } RAnalRefline;
 
-typedef struct r_anal_state_type_t {
-	ut64 start;
-	ut64 end;
-	const ut8* buffer;
-	ut64 len;
-	ut64 bytes_consumed;
-	ut64 last_addr;
-	ut64 current_addr;
-	ut64 next_addr;
-	RList *bbs;
-	HtUP *ht;
-	ut64 ht_sz;
-	RAnalFunction *current_fcn;
-	RAnalOp *current_op;
-	RAnalBlock *current_bb;
-	ut8 done;
-	int anal_ret_val;
-	ut32 current_depth;
-	ut32 max_depth;
-	void *user_state;
-} RAnalState;
-
 typedef struct r_anal_cycle_frame_t {
 	ut64 naddr;			//next addr
 	RList *hooks;
@@ -1279,18 +1232,9 @@ typedef struct r_anal_esil_dfg_node_t {
 } RAnalEsilDFGNode;
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
-typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
-typedef int (*RAnalExCallback)(RAnal *a, struct r_anal_state_type_t *state, ut64 addr);
-typedef RList *(*RAnalExAnalysisAlgorithm)(RAnal *a, struct r_anal_state_type_t *state, ut64 addr);
-
-typedef RAnalOp * (*RAnalOpFromBuffer)      (RAnal *a, ut64 addr, const ut8* buf, ut64 len);
-typedef RAnalBlock * (*RAnalBbFromBuffer)   (RAnal *a, ut64 addr, const ut8* buf, ut64 len);
-typedef RAnalFunction * (*RAnalFnFromBuffer)(RAnal *a, ut64 addr, const ut8* buf, ut64 len);
 
 // TODO: rm data + len
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
-//typedef int (*RAnalBbCallback)(RAnal *a, RAnalBlock *bb, ut64 addr, const ut8 *data, int len);
-//typedef int (*RAnalFnCallback)(RAnal *a, RAnalFunction *fcn, ut64 addr, int reftype);
 
 typedef int (*RAnalRegProfCallback)(RAnal *a);
 typedef char*(*RAnalRegProfGetCallback)(RAnal *a);
@@ -1299,8 +1243,6 @@ typedef int (*RAnalFPFcnCallback)(RAnal *a, RAnalFunction *fcn);
 typedef int (*RAnalDiffBBCallback)(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2);
 typedef int (*RAnalDiffFcnCallback)(RAnal *anal, RList *fcns, RList *fcns2);
 typedef int (*RAnalDiffEvalCallback)(RAnal *anal);
-
-typedef bool (*RAnalIsValidOffsetCB)(RAnal *anal, ut64 offset, int hasperm);
 
 typedef int (*RAnalEsilCB)(RAnalEsil *esil);
 typedef int (*RAnalEsilLoopCB)(RAnalEsil *esil, RAnalOp *op);
@@ -1325,51 +1267,6 @@ typedef struct r_anal_plugin_t {
 
 	// legacy r_anal_functions
 	RAnalOpCallback op;
-	//RAnalBbCallback bb;
-	//RAnalFnCallback fcn;
-
-	// override the default analysis function in r_core_anal_fcn
-	RAnalAnalyzeFunctions analyze_fns;
-
-	// parse elements from a buffer
-	RAnalOpFromBuffer op_from_buffer;
-	RAnalBbFromBuffer bb_from_buffer;
-	RAnalFnFromBuffer fn_from_buffer;
-
-	// analysis algorithm to use instead of the default
-	// r_anal_java_recursive_descent when using perform_analysis from
-	// RAnalEx stuffs
-	RAnalExAnalysisAlgorithm analysis_algorithm;
-	// order in which these call backs are
-	// used with the recursive descent disassembler
-	// analysis
-	// 0) Before performing any analysis is start, opportunity to do any pre analysis.
-	// in the current function
-	RAnalExCallback pre_anal;
-	// 1) Before any ops are bbs are created
-	RAnalExCallback pre_anal_fn_cb;
-	// 2) Just Before an op is created.
-	// if current_op is set in state, then an op in the main alg wont be processed
-	RAnalExCallback pre_anal_op_cb;
-	// 3) After a op is created.
-	// the current_op in state is used to fix-up the state of op before creating a bb
-	RAnalExCallback post_anal_op_cb;
-	// 4) Before a bb is created.
-	// if current_op is set in state, then an op in the main alg wont be processed
-	RAnalExCallback pre_anal_bb_cb;
-	// 5) After a bb is created.
-	// the current_bb in state is used to fix-up the state of before performing analysis
-	// with the current bb
-	RAnalExCallback post_anal_bb_cb;
-	// 6) After processing is bb and cb is completed, opportunity to do any post analysis.
-	// in the current function
-	RAnalExCallback post_anal_fn_cb;
-
-	// 6) After bb in a node is completed, opportunity to do any post analysis.
-	// in the current function
-	RAnalExCallback post_anal;
-
-	RAnalExCallback revisit_bb_anal;
 
 	// command extension to directly call any analysis functions
 	RAnalCmdExt cmd_ext;
@@ -1422,9 +1319,6 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
 /* block.c */
 typedef bool (*RAnalBlockCb)(RAnalBlock *block, void *user);
 typedef bool (*RAnalAddrCb)(ut64 addr, void *user);
-
-R_API void r_anal_block_check_invariants(RAnal *anal);
-R_API void r_anal_block_check_leaks(RAnal *anal);
 
 // lifetime
 R_API void r_anal_block_ref(RAnalBlock *bb);
@@ -1933,22 +1827,6 @@ R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut
 R_API RAnalCycleFrame* r_anal_cycle_frame_new (void);
 R_API void r_anal_cycle_frame_free (RAnalCycleFrame *cf);
 
-/*
- * RAnalState maintains state during analysis.
- * there are standard values current_fcn, current_op, current_bb, addr,
- * data buffer, etc. but there is also a void * for user defined structures
- * that can be updated during the callbacks.
- */
-R_API RAnalState * r_anal_state_new (ut64 start, ut8* buffer, ut64 len);
-R_API void r_anal_state_insert_bb (RAnalState* state, RAnalBlock *bb);
-R_API int r_anal_state_need_rehash (RAnalState* state, RAnalBlock *bb);
-R_API RAnalBlock * r_anal_state_search_bb (RAnalState* state, ut64 addr);
-R_API void r_anal_state_free (RAnalState * state);
-R_API ut64 r_anal_state_get_len (RAnalState *state, ut64 addr);
-R_API const ut8 * r_anal_state_get_buf_by_addr (RAnalState *state, ut64 addr);
-R_API bool r_anal_state_addr_is_valid (RAnalState *state, ut64 addr);
-R_API void r_anal_state_merge_bb_list (RAnalState *state, RList* bbs);
-R_API void r_anal_state_set_depth(RAnalState *state, ut32 depth);
 
 /* labels */
 R_API ut64 r_anal_fcn_label_get (RAnal *anal, RAnalFunction *fcn, const char *name);

@@ -154,7 +154,7 @@ ut64 extract_load_store_op(ut64 ranal2_op_type) {
 	return R_ANAL_OP_TYPE_UNK;
 }
 
-static ut64 r_anal_java_map_anal_ex_to_anal_op_type (ut64 t) {
+static ut64 map_java_op_to_anal_op_type (ut64 t) {
 	ut64 t2 = extract_bin_op(t);
 	if (t2 != R_ANAL_OP_TYPE_UNK) {
 		return t2;
@@ -178,7 +178,7 @@ static ut64 r_anal_java_map_anal_ex_to_anal_op_type (ut64 t) {
 			return extract_code_op (t);
 		}
 		if (t & R_ANAL_JAVA_REP_OP) {
-			ut64 ret = r_anal_java_map_anal_ex_to_anal_op_type (t & ~R_ANAL_JAVA_REP_OP);
+			ut64 ret = map_java_op_to_anal_op_type (t & ~R_ANAL_JAVA_REP_OP);
 			return R_ANAL_OP_TYPE_REP | ret;
 		}
 		if (t & (R_ANAL_JAVA_LOAD_OP | R_ANAL_JAVA_STORE_OP)) {
@@ -226,7 +226,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->size = sz;
 	op->id = data[0];
 	op->type2 = JAVA_OPS[op_byte].op_type;
-	op->type = r_anal_java_map_anal_ex_to_anal_op_type (op->type2);
+	op->type = map_java_op_to_anal_op_type (op->type2);
 	// handle lookup and table switch offsets
 	if (op_byte == 0xaa || op_byte == 0xab) {
 		java_switch_op (anal, op, addr, data, len);
