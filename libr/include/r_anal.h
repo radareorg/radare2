@@ -1337,7 +1337,7 @@ typedef struct r_anal_plugin_t {
 	RAnalFnFromBuffer fn_from_buffer;
 
 	// analysis algorithm to use instead of the default
-	// r_anal_ex_recursive_descent when using perform_analysis from
+	// r_anal_java_recursive_descent when using perform_analysis from
 	// RAnalEx stuffs
 	RAnalExAnalysisAlgorithm analysis_algorithm;
 	// order in which these call backs are

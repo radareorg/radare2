@@ -1891,7 +1891,7 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 				R_FREE (full_bird);
 				R_FREE (type);
 				R_FREE (operation);
-			} else if ( (bb->type2 &  R_ANAL_EX_CODEOP_CALL) == R_ANAL_EX_CODEOP_CALL) {
+			} else if ( (bb->type2 &  R_ANAL_JAVA_CODEOP_CALL) == R_ANAL_JAVA_CODEOP_CALL) {
 				ut8 op_byte = bb->op_bytes[0];
 				// look at the bytes determine if it belongs to this class
 				switch (op_byte) {
@@ -1925,19 +1925,19 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 					addr = -1;
 					break;
 				}
-			} else if ( (bb->type2 & R_ANAL_EX_LDST_LOAD_GET_STATIC) == R_ANAL_EX_LDST_LOAD_GET_STATIC) {
+			} else if ( (bb->type2 & R_ANAL_JAVA_LDST_LOAD_GET_STATIC) == R_ANAL_JAVA_LDST_LOAD_GET_STATIC) {
 				operation = strdup ("read static");
 				type = strdup ("FIELD");
 				addr = bb->addr;
-			} else if ( (bb->type2 & R_ANAL_EX_LDST_LOAD_GET_FIELD)  == R_ANAL_EX_LDST_LOAD_GET_FIELD) {
+			} else if ( (bb->type2 & R_ANAL_JAVA_LDST_LOAD_GET_FIELD)  == R_ANAL_JAVA_LDST_LOAD_GET_FIELD) {
 				operation = strdup ("read dynamic");
 				type = strdup ("FIELD");
 				addr = bb->addr;
-			} else if ( (bb->type2 & R_ANAL_EX_LDST_STORE_PUT_STATIC) == R_ANAL_EX_LDST_STORE_PUT_STATIC) {
+			} else if ( (bb->type2 & R_ANAL_JAVA_LDST_STORE_PUT_STATIC) == R_ANAL_JAVA_LDST_STORE_PUT_STATIC) {
 				operation = strdup ("write static");
 				type = strdup ("FIELD");
 				addr = bb->addr;
-			} else if ( (bb->type2 & R_ANAL_EX_LDST_STORE_PUT_FIELD)  == R_ANAL_EX_LDST_STORE_PUT_FIELD) {
+			} else if ( (bb->type2 & R_ANAL_JAVA_LDST_STORE_PUT_FIELD)  == R_ANAL_JAVA_LDST_STORE_PUT_FIELD) {
 				operation = strdup ("write dynamic");
 				type = strdup ("FIELD");
 				addr = bb->addr;
