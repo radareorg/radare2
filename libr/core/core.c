@@ -244,7 +244,14 @@ static void setab(RCore *core, const char *arch, int bits) {
 
 static const char *getName(RCore *core, ut64 addr) {
 	RFlagItem *item = r_flag_get_i (core->flags, addr);
-	return item ? item->name : NULL;
+	if (item) {
+		if (core->flags->realnames) {
+			return item->realname
+				? item->realname: item->name;
+		}
+		return item->name;
+	}
+	return NULL;
 }
 
 static char *getNameDelta(RCore *core, ut64 addr) {
@@ -2013,10 +2020,9 @@ static int r_core_print_offsize(void *p, ut64 addr) {
 static int __disasm(void *_core, ut64 addr) {
 	RCore *core = _core;
 	ut64 prevaddr = core->offset;
-	int len;
 
 	r_core_seek (core, addr, true);
-	len = r_core_print_disasm_instructions (core, 0, 1);
+	int len = r_core_print_disasm_instructions (core, 0, 1);
 	r_core_seek (core, prevaddr, true);
 
 	return len;
