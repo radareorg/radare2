@@ -424,7 +424,7 @@ zigs:main:
   realname: main
   refs: sym.print
   vars: b-4, b-16, r110, r114
-  types: int, char **, int64_t
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 CMDS=<<EOF
@@ -447,7 +447,7 @@ zigs:main:
   realname: main
   refs: sym.print
   vars: b-4, b-16, r110, r114
-  types: int, char **, int64_t
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 CMDS=<<EOF
@@ -469,7 +469,7 @@ main:
   addr: 0x0040055b
   refs: sym.print
   vars: b-4, b-16, r110, r114
-  types: int, char **, int64_t
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 CMDS=<<EOF
@@ -491,7 +491,7 @@ foobar:
   realname: main
   refs: sym.print
   vars: b-4, b-16, r110, r114
-  types: int, char **, int64_t
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 CMDS=<<EOF
@@ -514,7 +514,7 @@ foobar:
   realname: main
   refs: sym.print
   vars: b-4, b-16, r110, r114
-  types: int, char **, int64_t
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 CMDS=<<EOF

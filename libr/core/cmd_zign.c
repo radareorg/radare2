@@ -161,7 +161,7 @@ static bool addFcnVars(RCore *core, RAnalFunction *fcn, const char *name) {
 }
 
 static bool addFcnTypes(RCore *core, RAnalFunction *fcn, const char *name) {
-	RList *types = r_anal_types_from_fcn (core->anal, fcn);
+	RList *types = r_sign_fcn_types (core->anal, fcn);
 	if (!types) {
 		return false;
 	}
@@ -731,21 +731,116 @@ struct ctxSearchCB {
 	const char *prefix;
 };
 
-static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, const char* prefix, bool rad) {
-	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
-	char *name = r_str_newf ("%s.%s.%s_%d", zign_prefix, prefix, it->name, count);
-	if (!name) {
-		return;
-	}
-	if (rad) {
-		r_cons_printf ("f %s %d @ 0x%08"PFMT64x"\n", name, size, addr);
-		if (it->realname) {
-			r_cons_printf ("\"afn %s @ 0x%08"PFMT64x"\"\n", it->realname, addr); // XXX command injection
+static bool __fcnstrValidField(char *field, int i) {
+	char *arg_number = r_str_newf ("%d", i);
+	int is_ret = strcmp (field, "ret");
+	int is_args = strcmp (field, "args");
+	int is_arg = strcmp (field, "arg");
+	int is_arg_number = strcmp (field, arg_number);
+
+	free (arg_number);
+
+	return !(is_ret && is_args && is_arg && is_arg_number);
+}
+
+static const char *types_list_to_fcnstr(RList *types) {
+	char *type_kv = NULL, *k = NULL, *v = NULL;
+	char *field = NULL, *name = NULL, *rettype = NULL;
+	char *arg = NULL, *ret = NULL;
+	int nargs = 0, i = 0, j = 0;
+	RList *args = r_list_new ();
+	RListIter *iter;
+
+	r_list_foreach (types, iter, type_kv) {
+		k = strtok (type_kv, "=");
+		v = strtok (NULL, "\0");
+
+		strtok (k, ".");
+		name = strtok (NULL, ".");
+		field = strtok (NULL, ".");
+
+		while (!__fcnstrValidField (field, i) && field) {
+			name = field;
+			field = strtok (NULL, ".");
 		}
-	} else {
-		r_flag_set (core->flags, name, addr, size);
+
+		if (!strcmp (field, "args")) {
+			nargs = atoi (v);
+		} else if (!strcmp (field, "ret")) {
+			rettype = v;
+		} else {
+			if (i < nargs) {
+				arg = strdup (v);
+				for (j = 0; j < strlen (arg); j++) {
+					if (arg[j] == ',') {
+						arg[j] = ' ';
+					}
+				}
+				r_list_append (args, r_str_ndup (arg + 1,
+					strlen (arg) - 2));
+				free (arg);
+			}
+			i++;
+		}
 	}
-	free (name);
+
+	if (!rettype) {
+		rettype = strdup ("void"); // workaround for "afs" bug
+	}
+
+	ret = r_str_newf ("%s %s(", rettype, name);
+
+	r_list_foreach (args, iter, arg) {
+		if (iter != r_list_tail (args)) {
+			ret = r_str_newf ("%s%s, ", ret, arg);
+		}
+	}
+
+	if (r_list_length (args) > 0) {
+		ret = r_str_newf ("%s%s);", ret, (char *)r_list_get_top (args));
+	} else {
+		ret = r_str_newf ("%s);", ret);
+	}
+
+	r_list_free (args);
+	return ret;
+}
+
+static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, const char* prefix, bool rad) {
+	RAnalFunction *fcn = NULL;
+	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
+	char *name = NULL;
+
+	if (it->types) {
+		const char *fcnstr = types_list_to_fcnstr (it->types);
+		char *fcnstr_copy = strdup (fcnstr);
+		fcn = r_anal_get_fcn_in (core->anal, it->addr, 0);
+		if (fcn) {
+			const char *fcn_name = strrchr (r_str_trim_tail (strtok (fcnstr_copy, "(")), ' ');
+			// __setFunctionName() ; cmd_anal.c:2535 ; Expand into R_API function
+			free (fcn->name);
+			fcn->name = strdup (fcn_name + 1);
+			if (core->anal->cb.on_fcn_rename) {
+				core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, fcn->name);
+			}
+			r_anal_str_to_fcn (core->anal, fcn, fcnstr);
+		}
+		if (fcnstr_copy) {
+			free (fcnstr_copy);
+		}
+	}
+	name = r_name_filter2 (r_str_newf ("%s.%s.%s_%d", zign_prefix, prefix, it->name, count));
+	if (name) {
+		if (rad) {
+			r_cons_printf ("f %s %d @ 0x%08"PFMT64x"\n", name, size, addr);
+			if (it->realname) {
+				r_cons_printf ("\"afn %s @ 0x%08"PFMT64x"\"\n", it->realname, addr); // XXX command injection
+			}
+		} else {
+			r_flag_set (core->flags, name, addr, size);
+		}
+		free (name);
+	}
 }
 
 static int searchHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user) {
@@ -884,7 +979,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 	}
 
 	// Function search
-	// TODO (oxcabe): This big conditionals should be refactored into a variable
+	// TODO (oxcabe): Refactor big conditional
 	if (useGraph || useOffset || useRefs || useHash || (useBytes && only_func) || useTypes) {
 		eprintf ("[+] searching function metrics\n");
 		r_cons_break_push (NULL, NULL);
@@ -943,7 +1038,7 @@ TODO: add useXRefs, useName
 	}
 
 	hits = bytes_search_ctx.count + graph_match_ctx.count +
-		offset_match_ctx.count + refs_match_ctx.count + hash_match_ctx.count;
+		offset_match_ctx.count + refs_match_ctx.count + hash_match_ctx.count + types_match_ctx.count;
 	eprintf ("hits: %d\n", hits);
 
 	return retval;
