@@ -723,7 +723,6 @@ typedef struct r_anal_t {
 	int seggrn;
 	RFlagGetAtAddr flag_get;
 	REvent *ev;
-	bool use_ex;
 	RList *imports; // global imports
 	SetU *visited;
 	RStrConstPool constpool;
@@ -1290,8 +1289,8 @@ typedef RAnalFunction * (*RAnalFnFromBuffer)(RAnal *a, ut64 addr, const ut8* buf
 
 // TODO: rm data + len
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
-typedef int (*RAnalBbCallback)(RAnal *a, RAnalBlock *bb, ut64 addr, const ut8 *data, int len);
-typedef int (*RAnalFnCallback)(RAnal *a, RAnalFunction *fcn, ut64 addr, int reftype);
+//typedef int (*RAnalBbCallback)(RAnal *a, RAnalBlock *bb, ut64 addr, const ut8 *data, int len);
+//typedef int (*RAnalFnCallback)(RAnal *a, RAnalFunction *fcn, ut64 addr, int reftype);
 
 typedef int (*RAnalRegProfCallback)(RAnal *a);
 typedef char*(*RAnalRegProfGetCallback)(RAnal *a);
@@ -1317,18 +1316,17 @@ typedef struct r_anal_plugin_t {
 	int bits;
 	int esil; // can do esil or not
 	int fileformat_type;
-	int custom_fn_anal;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	int (*reset_counter) (RAnal *anal, ut64 start_addr);
+	//int (*reset_counter) (RAnal *anal, ut64 start_addr);
 	int (*archinfo)(RAnal *anal, int query);
 	ut8* (*anal_mask)(RAnal *anal, int size, const ut8 *data, ut64 at);
 	RList* (*preludes)(RAnal *anal);
 
 	// legacy r_anal_functions
 	RAnalOpCallback op;
-	RAnalBbCallback bb;
-	RAnalFnCallback fcn;
+	//RAnalBbCallback bb;
+	//RAnalFnCallback fcn;
 
 	// override the default analysis function in r_core_anal_fcn
 	RAnalAnalyzeFunctions analyze_fns;

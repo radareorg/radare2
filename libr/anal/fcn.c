@@ -1310,12 +1310,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	if (fcn->addr == UT64_MAX) {
 		fcn->addr = addr;
 	}
-	if (anal->cur && anal->cur->fcn) {
-		int result = anal->cur->fcn (anal, fcn, addr, reftype);
-		if (anal->use_ex && anal->cur->custom_fn_anal) {
-			return result;
-		}
-	}
 	fcn->maxstack = 0;
 	if (fcn->cc && !strcmp (fcn->cc, "ms")) {
 		fcn->stack = fcn->maxstack = 0x28; // Shadow store for the first 4 args + Return addr
