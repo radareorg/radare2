@@ -418,7 +418,7 @@ R_API int r_list_set_n(RList *list, int n, void *p) {
 	r_return_val_if_fail (list, false);
 	for (it = list->head, i = 0; it ; it = it->n, i++) {
 		if (i == n) {
-			if (list->free && it->data) {
+			if (list->free) {
 				list->free (it->data);
 			}
 			it->data = p;
