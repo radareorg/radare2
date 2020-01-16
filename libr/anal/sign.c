@@ -83,6 +83,7 @@ R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
 	const char *ret_type = sdb_const_get (a->sdb_types, r_str_newf ("func.%s.ret", fcn->name), 0);
 	const char *fcntypes = sdb_const_get (a->sdb_types, args_expr, 0);
 	int argc = 0;
+	int i;
 
 	if (fcntypes) {
 		if (ret_type) {
@@ -90,7 +91,7 @@ R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
 		}
 		argc = atoi (fcntypes);
 		r_list_append (ret, r_str_newf ("func.%s.args=%d", fcn->name, argc));
-		for (int i = 0; i < argc; i++) {
+		for (i = 0; i < argc; i++) {
 			arg = sdb_get (a->sdb_types, r_str_newf ("func.%s.arg.%d", fcn->name, i), 0);
 			r_list_append (ret, r_str_newf ("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
 		}
