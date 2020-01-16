@@ -1,10 +1,8 @@
 /* radare - Apache 2.0 - Copyright 2013 - Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 #include <r_anal.h>
 
-#ifndef R2_ANAL_EX_H
-#define R2_ANAL_EX_H
-#undef R_API
-#define R_API
+#ifndef R2_JAVA_OPS_H
+#define R2_JAVA_OPS_H
 
 enum {
 	R_ANAL_EX_ILL_OP  =-1,   /* illegal instruction // trap */
@@ -25,10 +23,10 @@ enum {
 
 enum {
 	R_ANAL_EX_TYPE_REF_NULL  = 0,
-	R_ANAL_EX_TYPE_REF_UNK   = 1 << 1, 
-	R_ANAL_EX_TYPE_REF	   = 1 << 2, 
+	R_ANAL_EX_TYPE_REF_UNK   = 1 << 1,
+	R_ANAL_EX_TYPE_REF	   = 1 << 2,
 	R_ANAL_EX_TYPE_SIGNED	= 1 << 3,
-	R_ANAL_EX_TYPE_PRIM	  = 1 << 4, 
+	R_ANAL_EX_TYPE_PRIM	  = 1 << 4,
 	R_ANAL_EX_TYPE_CONST	 = 1 << 5,
 	R_ANAL_EX_TYPE_STATIC	= 1 << 6,
 	R_ANAL_EX_TYPE_VOLATILE  = 1 << 7,
@@ -39,11 +37,11 @@ enum {
 	R_ANAL_EX_TYPE_SHORT  = 1 << 12,
 	R_ANAL_EX_TYPE_INT32  = 1 << 13,
 	R_ANAL_EX_TYPE_INTEGER = 1 << 13,
-	R_ANAL_EX_TYPE_INT64  = 1 << 14, 
-	R_ANAL_EX_TYPE_LONG   = 1 << 14, 
-	R_ANAL_EX_TYPE_FLOAT  = 1 << 15, 
-	R_ANAL_EX_TYPE_DOUBLE = 1 << 16, 
-	R_ANAL_EX_TYPE_STRING = 1 << 17, 
+	R_ANAL_EX_TYPE_INT64  = 1 << 14,
+	R_ANAL_EX_TYPE_LONG   = 1 << 14,
+	R_ANAL_EX_TYPE_FLOAT  = 1 << 15,
+	R_ANAL_EX_TYPE_DOUBLE = 1 << 16,
+	R_ANAL_EX_TYPE_STRING = 1 << 17,
 	R_ANAL_EX_TYPE_CHAR   = 1 << 18,
 	R_ANAL_EX_TYPE_VOID   = 1 << 19,
 };
@@ -64,7 +62,7 @@ enum {
 
 enum {
 	// call return types
-	R_ANAL_EX_RET_TYPE_REF_NULL = 1 << 10,
+			R_ANAL_EX_RET_TYPE_REF_NULL = 1 << 10,
 	R_ANAL_EX_RET_TYPE_REF	  = 1 << 11 ,
 	R_ANAL_EX_RET_TYPE_PRIM	 = 1 << 12 ,
 	R_ANAL_EX_RET_TYPE_CONST	= 1 << 13,
@@ -75,7 +73,7 @@ enum {
 enum {
 	// TODO these should be mapped to some sort of
 	// flags register
-	R_ANAL_EX_COND_EQ  = 1 << 11,
+			R_ANAL_EX_COND_EQ  = 1 << 11,
 	R_ANAL_EX_COND_NE  = 1 << 12,
 	R_ANAL_EX_COND_GE  = 1 << 13,
 	R_ANAL_EX_COND_GT  = 1 << 14,
@@ -130,7 +128,7 @@ enum {
 	R_ANAL_EX_LDST_FROM_VAR   =  1 << 5,
 
 	// If indirect load, where are we getting the indirection,
-	R_ANAL_EX_LDST_INDIRECT_REF  = 1 << 6,
+			R_ANAL_EX_LDST_INDIRECT_REF  = 1 << 6,
 	R_ANAL_EX_LDST_INDIRECT_MEM  = 1 << 6,
 
 	R_ANAL_EX_LDST_INDIRECT_REG   =  1 << 7,
@@ -139,7 +137,7 @@ enum {
 	R_ANAL_EX_LDST_INDIRECT_VAR   =  1 << 10,
 
 	// Location to put the item,
-	R_ANAL_EX_LDST_TO_REF  = 1 << 11,
+			R_ANAL_EX_LDST_TO_REF  = 1 << 11,
 	R_ANAL_EX_LDST_TO_MEM  = 1 << 11,
 
 	R_ANAL_EX_LDST_TO_REG = 1 << 12,
@@ -147,7 +145,7 @@ enum {
 	R_ANAL_EX_LDST_TO_VAR =    1 << 14,
 
 	// Stack, Memory, Register, Bss, Data ,
-	R_ANAL_EX_LDST_OP_PUSH  = 1 << 15  ,
+			R_ANAL_EX_LDST_OP_PUSH  = 1 << 15  ,
 	R_ANAL_EX_LDST_OP_POP   = 1 << 16,
 	R_ANAL_EX_LDST_OP_MOV   = 1 << 17 ,
 	R_ANAL_EX_LDST_OP_EFF_ADDR   = 1 << 18,

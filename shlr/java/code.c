@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <r_anal_ex.h>
+#include "ops.h"
 #include "code.h"
 #include "class.h"
 

@@ -7,8 +7,8 @@
 #include <r_cons.h>
 #include <string.h>
 #include <r_anal.h>
-#include <r_anal_ex.h>
 
+#include "../../../shlr/java/ops.h"
 #include "../../../shlr/java/class.h"
 #include "../../../shlr/java/code.h"
 #include "../../../shlr/java/dsojson.h"
