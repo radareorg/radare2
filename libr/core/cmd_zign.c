@@ -806,7 +806,6 @@ static const char *types_list_to_fcnstr(RList *types) {
 	return ret;
 }
 
-// TODO (oxcabe):
 static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, const char* prefix, bool rad) {
 	RAnalFunction *fcn = NULL;
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
@@ -815,7 +814,7 @@ static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, 
 	if (it->types) {
 		const char *fcnstr = types_list_to_fcnstr (it->types);
 		char *fcnstr_copy = strdup (fcnstr);
-		fcn = r_anal_get_fcn_at (core->anal, it->addr, 0);
+		fcn = r_anal_get_fcn_in (core->anal, it->addr, 0);
 		if (fcn) {
 			const char *fcn_name = strrchr (r_str_trim_tail (strtok (fcnstr_copy, "(")), ' ');
 			// __setFunctionName() ; cmd_anal.c:2535 ; Expand into R_API function
@@ -830,7 +829,7 @@ static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, 
 			free (fcnstr_copy);
 		}
 	}
-	name = r_str_newf ("%s.%s.%s_%d", zign_prefix, prefix, it->name, count);
+	name = r_name_filter2 (r_str_newf ("%s.%s.%s_%d", zign_prefix, prefix, it->name, count));
 	if (name) {
 		if (rad) {
 			r_cons_printf ("f %s %d @ 0x%08"PFMT64x"\n", name, size, addr);
