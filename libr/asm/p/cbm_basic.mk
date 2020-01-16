@@ -1,0 +1,13 @@
+OBJ_CBM_BASIC=asm_cbm_basic.o
+CBM_BASIC_ROOT=$(LIBR)/asm/arch/cbm_basic
+OBJ_CBM_BASIC+=$(CBM_BASIC_ROOT)/cbm_basic_dis.o $(CBM_BASIC_ROOT)/petscii.o
+
+STATIC_OBJ+=${OBJ_CBM_BASIC}
+TARGET_CBM_BASIC=asm_cbm_basic.${EXT_SO}
+
+ifeq ($(WITHPIC),1)
+ALL_TARGETS+=${TARGET_CBM_BASIC}
+
+${TARGET_CBM_BASIC}: ${OBJ_CBM_BASIC}
+	${CC} ${LDFLAGS} ${CFLAGS} -o ${TARGET_CBM_BASIC} ${OBJ_CBM_BASIC}
+endif

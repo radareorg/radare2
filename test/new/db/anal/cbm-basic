@@ -1,0 +1,35 @@
+NAME=cbm-basic
+FILE=-
+EXPECT=<<EOF
+{->0xdead} 1337 PRINT "HELLO R2!♥":GOTO 1337
+EOF
+CMDS=<<EOF
+e asm.arch=cbm-basic
+wx adde390599202248454c4c4f2052322173223a89203133333700
+pi 1
+EOF
+RUN
+
+NAME=cbm-basic program end
+FILE=-
+EXPECT=<<EOF
+{->0x0000} {PROGRAM END}
+EOF
+CMDS=<<EOF
+e asm.arch=cbm-basic
+wx 0000
+pi 1
+EOF
+RUN
+
+NAME=cbm-basic quoted PETSCII
+FILE=-
+EXPECT=<<EOF
+{->0x1337} 10 ♠ATN"♠♠"♠ATN
+EOF
+CMDS=<<EOF
+e asm.arch=cbm-basic
+wx 37130a0061c12261c12261c1
+pi 1
+EOF
+RUN

@@ -211,6 +211,7 @@ extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_avr;
 extern RAsmPlugin r_asm_plugin_bf;
 extern RAsmPlugin r_asm_plugin_null;
+extern RAsmPlugin r_asm_plugin_cbm_basic;
 extern RAsmPlugin r_asm_plugin_chip8;
 extern RAsmPlugin r_asm_plugin_cr16;
 extern RAsmPlugin r_asm_plugin_cris_gnu;
