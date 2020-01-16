@@ -18,6 +18,7 @@ const (
 	default_asm_bits = 32
 	default_radare2 = 'radare2'
 	default_dbpath = 'new/db' // XXX use execpath as relative reference to it
+	cmd_test_paths = ['cmd', 'extras'] // all dirs under db/ that contain regular command tests
 	r2r_version = '0.2'
 )
 
@@ -106,7 +107,7 @@ fn (r2r mut R2R) run_tests() {
 	if r2r.wants('fuzz') {
 		r2r.run_fuz_tests()
 	}
-	if r2r.wants('arch') || r2r.wants('cmd') {
+	if r2r.wants_any_cmd_tests() {
 		r2r.run_cmd_tests()
 	}
 }
@@ -357,6 +358,18 @@ fn (r2r R2R) wants(s string) bool {
 		return true
 	}
 	return r2r.targets.index(s) != -1
+}
+
+fn (r2r R2R) wants_any_cmd_tests() bool {
+	if r2r.wants('arch') {
+		return true
+	}
+	for cmd_test_path in cmd_test_paths {
+		if r2r.wants(cmd_test_path) {
+			return true
+		}
+	}
+	return false
 }
 
 fn (r2r mut R2R) test_fixed(test R2RCmdTest) string {
@@ -828,8 +841,10 @@ fn (r2r mut R2R) load_tests() {
 	if r2r.wants('asm') {
 		r2r.load_asm_tests('${r2r.db_path}/asm')
 	}
-	if r2r.wants('cmd') {
-		r2r.load_cmd_tests('${r2r.db_path}/cmd')
+	for cmd_test_path in cmd_test_paths {
+		if r2r.wants(cmd_test_path) {
+			r2r.load_cmd_tests('${r2r.db_path}/${cmd_test_path}')
+		}
 	}
 	if r2r.wants('arch') {
 		$if x64 {
