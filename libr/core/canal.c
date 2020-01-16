@@ -1748,7 +1748,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	const bool use_esil = r_config_get_i (core->config, "anal.esil");
 	RAnalFunction *fcn;
-	RListIter *iter;
 
 	//update bits based on the core->offset otherwise we could have the
 	//last value set and blow everything up
@@ -1770,19 +1769,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		return r_core_anal_esil_fcn (core, at, from, reftype, depth);
 	}
 
-	/* if there is an anal plugin and it wants to analyze the function itself,
-	 * run it instead of the normal analysis */
-	if (core->anal->use_ex && core->anal->cur && core->anal->cur->analyze_fns) {
-		int result = R_ANAL_RET_ERROR;
-		result = core->anal->cur->analyze_fns (core->anal, at, from, reftype, depth);
-		/* update the flags after running the analysis function of the plugin */
-		r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
-		r_list_foreach (core->anal->fcns, iter, fcn) {
-			r_flag_set (core->flags, fcn->name, fcn->addr, r_anal_function_linear_size (fcn));
-		}
-		r_flag_space_pop (core->flags);
-		return result;
-	}
 	if ((from != UT64_MAX && !at) || at == UT64_MAX) {
 		eprintf ("Invalid address from 0x%08"PFMT64x"\n", from);
 		return false;

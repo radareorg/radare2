@@ -7,8 +7,8 @@
 #include <r_cons.h>
 #include <string.h>
 #include <r_anal.h>
-#include <r_anal_ex.h>
 
+#include "../../../shlr/java/ops.h"
 #include "../../../shlr/java/class.h"
 #include "../../../shlr/java/code.h"
 #include "../../../shlr/java/dsojson.h"
@@ -105,8 +105,6 @@ static const char * r_cmd_get_next_classname_str (const char * str, const char *
 
 static int r_cmd_java_handle_summary_info (RCore *core, const char *cmd);
 static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd);
-static int r_cmd_java_handle_list_code_references (RCore *core, const char *cmd);
-static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx);
 
 static int r_cmd_java_handle_print_exceptions (RCore *core, const char *input);
 static int r_cmd_java_handle_insert_method_ref (RCore *core, const char *input);
@@ -251,7 +249,6 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{REPLACE_CLASS_NAME, REPLACE_CLASS_NAME_ARGS, REPLACE_CLASS_NAME_DESC, REPLACE_CLASS_NAME_LEN, r_cmd_java_handle_replace_classname_value},
 	{RELOAD_BIN, RELOAD_BIN_ARGS, RELOAD_BIN_DESC, RELOAD_BIN_LEN, r_cmd_java_handle_reload_bin},
 	{SUMMARY_INFO, SUMMARY_INFO_ARGS, SUMMARY_INFO_DESC, SUMMARY_INFO_LEN, r_cmd_java_handle_summary_info},
-	{LIST_CODE_REFS, LIST_CODE_REFS_ARGS, LIST_CODE_REFS_DESC, LIST_CODE_REFS_LEN, r_cmd_java_handle_list_code_references},
 	{PRINT_EXC, PRINT_EXC_ARGS, PRINT_EXC_DESC, PRINT_EXC_LEN, r_cmd_java_handle_print_exceptions},
 	{YARA_CODE_REFS, YARA_CODE_REFS_ARGS, YARA_CODE_REFS_DESC, YARA_CODE_REFS_LEN, r_cmd_java_handle_yara_code_extraction_refs},
 	{INSERT_MREF, INSERT_MREF_ARGS, INSERT_MREF_DESC, INSERT_MREF_LEN, r_cmd_java_handle_insert_method_ref},
@@ -1808,155 +1805,6 @@ static int r_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx) {
 		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
 	}
 	free (res);
-	return true;
-}
-static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx) {
-	char *class_name = NULL, *fullname = NULL, *name = NULL, *descriptor = NULL;
-	RBinJavaCPTypeObj * obj = r_bin_java_get_item_from_bin_cp_list (bin, idx);
-	char * prototype = NULL;
-	if (idx == 0) {
-		prototype = strdup ("NULL");
-		return prototype;
-	}
-
-	if (obj->tag == R_BIN_JAVA_CP_INTERFACEMETHOD_REF ||
-		obj->tag == R_BIN_JAVA_CP_METHODREF ||
-		obj->tag == R_BIN_JAVA_CP_FIELDREF) {
-		class_name = r_bin_java_get_name_from_bin_cp_list (bin, obj->info.cp_method.class_idx);
-		name = r_bin_java_get_item_name_from_bin_cp_list (bin, obj);
-		descriptor = r_bin_java_get_item_desc_from_bin_cp_list (bin, obj);
-	}
-
-	if (class_name && name) {
-		ut32 fn_len = 0;
-		fn_len += strlen (class_name);
-		fn_len += strlen (name);
-		fn_len += 2; // dot + null
-		fullname = malloc (fn_len);
-		snprintf (fullname, fn_len, "%s.%s", class_name, name);
-	}
-	if (fullname) {
-		prototype = r_bin_java_unmangle_without_flags (fullname, descriptor);
-	}
-	free (class_name);
-	free (name);
-	free (descriptor);
-	free (fullname);
-	return prototype;
-}
-
-static int r_cmd_java_handle_list_code_references (RCore *core, const char *input) {
-	RAnal *anal = get_anal (core);
-	RBinJavaObj *bin = anal ? (RBinJavaObj *) r_cmd_java_get_bin_obj (anal) : NULL;
-	RAnalBlock *bb = NULL;
-	RAnalFunction *fcn = NULL;
-	RListIter *bb_iter = NULL, *fcn_iter = NULL;
-	ut64 func_addr = -1;
-	const char *fmt, *p = r_cmd_java_consumetok (input, ' ', -1);
-	func_addr = p && *p && r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : -1;
-
-
-	if (!core || !anal || !bin) {
-		eprintf ("Unable to access the current bin.\n");
-		return false;
-	}
-	if (r_list_length (anal->fcns) == 0) {
-		eprintf ("Unable to access the current analysis, perform 'af' for function analysis.\n");
-		return true;
-	}
-
-	fmt = "addr:0x%"PFMT64x" method_name:\"%s\", op:\"%s\" type:\"%s\" info:\"%s\"\n";
-
-	r_list_foreach (anal->fcns, fcn_iter, fcn) {
-		ut8 do_this_one = func_addr == -1 || r_anal_function_contains (fcn, func_addr);
-		if (!do_this_one) {
-			continue;
-		}
-		r_list_foreach (fcn->bbs, bb_iter, bb) {
-			char *operation = NULL, *type = NULL;
-			ut64 addr = -1;
-			ut16 cp_ref_idx = -1;
-			char *full_bird = NULL;
-			// if bb_type is a call
-			if (bb->op_bytes[0] == 0x01) {
-				continue;
-			}
-			if (bb->op_bytes[0] == 0x12) {
-				// loading a constant
-				addr = bb->addr;
-				full_bird = r_bin_java_resolve_without_space(bin, bb->op_bytes[1]);
-				operation = strdup ("read constant");
-				type = r_bin_java_resolve_cp_idx_type (bin, bb->op_bytes[1]);
-				r_cons_printf (fmt, addr, fcn->name, operation, type, full_bird);
-				R_FREE (full_bird);
-				R_FREE (type);
-				R_FREE (operation);
-			} else if ( (bb->type2 &  R_ANAL_EX_CODEOP_CALL) == R_ANAL_EX_CODEOP_CALL) {
-				ut8 op_byte = bb->op_bytes[0];
-				// look at the bytes determine if it belongs to this class
-				switch (op_byte) {
-				case 0xb6: // invokevirtual
-					operation = strdup ("call virtual");
-					type = strdup ("FUNCTION");
-					addr = bb->addr;
-					break;
-				case 0xb7: // invokespecial
-					operation = strdup ("call special");
-					type = strdup ("FUNCTION");
-					addr = bb->addr;
-					break;
-				case 0xb8: // invokestatic
-					operation = strdup ("call static");
-					type = strdup ("FUNCTION");
-					addr = bb->addr;
-					break;
-				case 0xb9: // invokeinterface
-					operation = strdup ("call interface");
-					type = strdup ("FUNCTION");
-					addr = bb->addr;
-					break;
-				case 0xba: // invokedynamic
-					operation = strdup ("call dynamic");
-					type = strdup ("FUNCTION");
-					addr = bb->addr;
-					break;
-				default:
-					operation = NULL;
-					addr = -1;
-					break;
-				}
-			} else if ( (bb->type2 & R_ANAL_EX_LDST_LOAD_GET_STATIC) == R_ANAL_EX_LDST_LOAD_GET_STATIC) {
-				operation = strdup ("read static");
-				type = strdup ("FIELD");
-				addr = bb->addr;
-			} else if ( (bb->type2 & R_ANAL_EX_LDST_LOAD_GET_FIELD)  == R_ANAL_EX_LDST_LOAD_GET_FIELD) {
-				operation = strdup ("read dynamic");
-				type = strdup ("FIELD");
-				addr = bb->addr;
-			} else if ( (bb->type2 & R_ANAL_EX_LDST_STORE_PUT_STATIC) == R_ANAL_EX_LDST_STORE_PUT_STATIC) {
-				operation = strdup ("write static");
-				type = strdup ("FIELD");
-				addr = bb->addr;
-			} else if ( (bb->type2 & R_ANAL_EX_LDST_STORE_PUT_FIELD)  == R_ANAL_EX_LDST_STORE_PUT_FIELD) {
-				operation = strdup ("write dynamic");
-				type = strdup ("FIELD");
-				addr = bb->addr;
-			}
-
-			if (operation) {
-				cp_ref_idx = R_BIN_JAVA_USHORT (bb->op_bytes, 1);
-				full_bird = r_cmd_java_get_descriptor (core, bin, cp_ref_idx);
-				if (!full_bird) {
-					eprintf ("Error identifying reference @ 0x%"PFMT64x"\n", bb->addr);
-					full_bird = strdup ("ANALYSIS_ERROR");
-				}
-				r_cons_printf (fmt, addr, fcn->name, operation, type, full_bird);
-			}
-			free (full_bird);
-			free (type);
-			free (operation);
-		}
-	}
 	return true;
 }
 

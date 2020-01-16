@@ -399,8 +399,8 @@ stripped false
 subsys   any
 va       false
   ;-- entry1:
-  ;-- method.TestVariableSwitchUp.TestMultipleVariable:
-/ (fcn) sym.TestVariableSwitchUp.TestMultipleVariable 37
+  ;-- sym.TestVariableSwitchUp.TestMultipleVariable:
+/ (fcn) method.TestVariableSwitchUp.TestMultipleVariable 37
 | 0x000002fd      1064           bipush 100
 | 0x000002ff      b8000f         invokestatic java/lang/Integer/valueOf(I)Ljava/lang/Integer;
 | 0x00000302      4b             astore_0

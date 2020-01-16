@@ -1,6 +1,5 @@
 r_anal_sources = [
   'anal.c',
-  'anal_ex.c',
   'bb.c',
   'block.c',
   'function.c',
@@ -32,7 +31,6 @@ r_anal_sources = [
   'rtti_itanium.c',
   'session.c',
   'sign.c',
-  'state.c',
   'switch.c',
   'type.c',
   'value.c',

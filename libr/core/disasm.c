@@ -5173,9 +5173,6 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	{ /* used by asm.emu */
 		r_reg_arena_push (core->anal->reg);
 	}
-	if (core->anal->use_ex && core->anal->cur && core->anal->cur->reset_counter) {
-		core->anal->cur->reset_counter (core->anal, addr);
-	}
 
 	ds_reflines_init (ds);
 	/* reset jmp table if not asked to keep it */
@@ -5728,11 +5725,6 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		}
 	}
 
-	// XXX - is there a better way to reset a the analysis counter so that
-	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal->cur && core->anal->cur->reset_counter) {
-		core->anal->cur->reset_counter (core->anal, core->offset);
-	}
 	ds = ds_init (core);
 	ds->l = nb_opcodes;
 	ds->len = nb_opcodes * 8;
@@ -5951,11 +5943,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	}
 	core->offset = addr;
 
-	// XXX - is there a better way to reset a the analysis counter so that
-	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal && core->anal->cur && core->anal->cur->reset_counter) {
-		core->anal->cur->reset_counter (core->anal, addr);
-	}
 	// TODO: add support for anal hints
 	// If using #bytes i = j
 	// If using #opcodes, j is the offset from start address. i is the
@@ -6379,12 +6366,6 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 			// workaround for the `for` loop below
 			nb_bytes = core->blocksize;
 		}
-	}
-
-	// XXX - is there a better way to reset a the analysis counter so that
-	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal && core->anal->cur && core->anal->cur->reset_counter) {
-		core->anal->cur->reset_counter (core->anal, core->offset);
 	}
 
 	int len = (nb_opcodes + nb_bytes) * 5;
