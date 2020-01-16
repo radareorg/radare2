@@ -322,7 +322,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 		if (tmp_aop.val == UT64_MAX && tmp_aop.refptr == 0) {
 			isValid = true;
 			*table_size = 0;
-		} else if (tmp_aop.refptr == 0) {
+		} else if (tmp_aop.refptr == 0 || tmp_aop.val != UT64_MAX) {
 			isValid = tmp_aop.val < 0x200;
 			*table_size = tmp_aop.val + 1;
 		} else {
