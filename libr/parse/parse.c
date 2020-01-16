@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2019 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2020 - nibble, pancake, maijin */
 
 #include <stdio.h>
 
@@ -100,12 +100,9 @@ R_API bool r_parse_assemble(RParse *p, char *data, char *str) {
 // TODO: refactooring, this should return char * instead
 R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
 	r_return_val_if_fail (p && data && str, false);
-	if (p && data && *data && p->cur && p->cur->parse) {
-		return p->cur->parse (p, data, str);
-	}
-	return false;
+	return (p && data && *data && p->cur && p->cur->parse)
+		? p->cur->parse (p, data, str) : false;
 }
-
 
 R_API char *r_parse_immtrim(char *opstr) {
 	if (!opstr || !*opstr) {

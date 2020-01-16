@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -153,11 +153,11 @@ static int replace (int argc, char *argv[], char *newstr) {
 	}
 
 	/* TODO: this is slow */
-	if (newstr != NULL) {
+	if (newstr) {
 		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
+		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i== argc - 1)?" ":",");
+			strcat (newstr, (i == 0 || i == argc - 1)? " ": ",");
 		}
 	}
 	return false;
