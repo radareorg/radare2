@@ -5,10 +5,8 @@
 
 #include <r_types.h>
 #include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
 #include <r_anal_ex.h>
-#include <r_cons.h>
 
 #include "../../../shlr/java/code.h"
 #include "../../../shlr/java/class.h"
