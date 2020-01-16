@@ -2110,8 +2110,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	RList *symbols = r_bin_get_symbols (r->bin);
 	r_spaces_push (&r->anal->meta_spaces, "bin");
 
+	pj_a (pj);
 	if (IS_MODE_JSON (mode) && !printHere) {
-		pj_a (pj);
 		// r_cons_printf ("[");
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
@@ -2344,7 +2344,7 @@ next:
 			}
 		}
 	}
-	if (IS_MODE_JSON (mode) && !printHere) {
+	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
 	}
