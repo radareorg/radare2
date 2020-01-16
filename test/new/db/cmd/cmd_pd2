@@ -18,24 +18,26 @@ RUN
 
 NAME=bytes for invalid insn (#11434)
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 60; pd 2
 ?e
 wx 906090; pd 3
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x00000000      60             invalid
             0x00000001      0000           add byte [rax], al
 
             0x00000000      90             nop
             0x00000001      60             invalid
             0x00000002      90             nop
+EOF
 RUN
 
 NAME=arm indirect relsub fix (#11780)
 FILE=../bins/elf/analysis/arm_32_flags0
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e asm.cmt.right=true
 pd 1 @ 0x000102e0
@@ -44,7 +46,8 @@ pd 1 @ 0x000102e8
 e asm.cmt.right=false
 pd 1 @ 0x000102e0
 pd 1 @ 0x000102e8
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x000102e0      ldr ip, sym.__libc_csu_fini                ; [0x102f8:4]=0x10494 sym.__libc_csu_fini
             0x000102e8      ldr r0, main                               ; [0x102fc:4]=0x10408 sym.main
 
@@ -52,11 +55,12 @@ EXPECT=<<RUN
             0x000102e0      ldr ip, sym.__libc_csu_fini
             ; [0x102fc:4]=0x10408 sym.main
             0x000102e8      ldr r0, main
+EOF
 RUN
 
 NAME=realign after sparse (#11810)
 FILE=../bins/pe/cmd_adf_sample0.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false
 s 0x560e67
@@ -66,7 +70,8 @@ afb+ 0x00560e67 0x00560e7d 8 0x00560e96
 afb+ 0x00560e67 0x00560e96 7 0x00560eb1
 afb+ 0x00560e67 0x00560eb1 297
 pdf
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 / 318: fcn.00560e67 (int32_t arg_0h);
 |       :   ; var int32_t var_1ch @ esp+0x4
 |       :   ; var int32_t var_ch @ esp+0x14
@@ -175,11 +180,12 @@ EXPECT=<<RUN
 |       :   0x00560fcf      xchg dword [esp], eax
 |       :   0x00560fd2      mov esp, dword [esp]
 \       `=< 0x00560fd5      jmp 0x43d3f7
+EOF
 RUN
 
 NAME=pdf hidden code in sparse fix
 FILE=../bins/pe/cmd_adf_sample0.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.var=false
 e io.cache=true
 wx 90eb09 @ 0x560e71
@@ -195,7 +201,8 @@ afb+ 0x00560e67 0x00560eb1 6
 pdf
 ?e
 pdr.
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 / 30: fcn.00560e67 ();
 |       :   0x00560e67      56             push esi
 |      ,==< 0x00560e68      e904000000     jmp 0x560e71
@@ -240,11 +247,12 @@ EXPECT=<<RUN
 | 0x00560eb1      5a             pop edx
 \ 0x00560eb2      e940c5edff     jmp 0x43d3f7
 
+EOF
 RUN
 
 NAME=esil func cmts
 FILE=../bins/elf/arm1.bin
-CMDS=<<EXPECT
+CMDS=<<EOF
 tn- __libc_start_main
 e asm.emu=true
 e emu.write=true
@@ -257,7 +265,8 @@ e asm.cmt.right=false
 pdf
 ?e
 agf
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 / 8: fcn.00008174 ();
 |           0x00008174      b80000eb       bl sym.__libc_start_main    ; lr=0x8178 -> 0xeb0002a4 ; pc=0x845c -> 0xe92d41f0
 |                                                                      ; int __libc_start_main(?, -1, ?, ?, ?, ?, -1)
@@ -287,27 +296,30 @@ EXPECT=<<RUN
 |    ; void abort(void)                              |
 | bl sym.abort;[ob]                                  |
 `----------------------------------------------------'
+EOF
 RUN
 
 NAME=esil func cmt refline
 FILE=../bins/elf/ls
-CMDS=<<EXPECT
+CMDS=<<EOF
 e io.cache=true
 e asm.emu=true
 e asm.types=2
 wx 7d0a7f08eb00 @ 0x5b02
 pd 4 @ 0x5b02
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
         ,=< 0x00005b02      7d0a           jge 0x5b0e                  ; rip=0x5b0e -> 0x8d4890f4 ; likely
        ,==< 0x00005b04      7f08           jg 0x5b0e                   ; rip=0x5b0e -> 0x8d4890f4 ; likely
       ,===< 0x00005b06      eb00           jmp 0x5b08                  ; rip=0x5b08 -> 0xc30a15ff
       `---> 0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0 ; rsp=0xfffffffffffffff8 ; rip=0x0
        ||                                                              ; int __libc_start_main(func: unk_size_format, -1, char **: unk_size_format, func: unk_size_format, func: unk_size_format, func: unk_size_format, -1)
+EOF
 RUN
 
 NAME=aht asm.cmt.right=false fix (#12330)
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e io.cache=true
@@ -318,14 +330,16 @@ e asm.cmt.right=true
 pd 1
 e asm.cmt.right=false
 pd 1
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x00000000      488b4608       mov rax, qword [rsi + ms.member1]
             0x00000000      488b4608       mov rax, qword [rsi + ms.member1]
+EOF
 RUN
 
 NAME=asm.bb.line fcnline glitches fix, bblines btw bb & non-bb
 FILE=../bins/elf/before-after-main
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bb.line=true
 e asm.bytes=false
 e asm.comments=false
@@ -343,7 +357,8 @@ s entry.fini0
 aF
 s entry.fini0+32
 pd 3
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x080483cf      nop
 / (fcn) sym.deregister_tm_clones 40
 |   40: sym.deregister_tm_clones ();
@@ -362,6 +377,7 @@ EXPECT=<<RUN
             0x08048471      lea esi, [esi]
             |
 \           0x08048478      ret
+EOF
 RUN
 
 # asm.bb.line with no analysis is not supported, since backward jump targets
@@ -369,7 +385,7 @@ RUN
 # (assuming no jumps from outside the function into the middle)
 NAME=asm.bb.line no-anal
 FILE=../bins/elf/lab2
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bb.line=true
 e asm.bytes=false
 e asm.comments=false
@@ -378,7 +394,8 @@ wx 907f04 @ 0x08048597
 wx 75f3909090 @ 0x080485bc
 s 0x08048598
 pd 11
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
         ,=< 0x08048598      jg 0x804859e
         |   0x0804859a      cmp al, byte [esp + 0x27]
        ,`-> 0x0804859e      je 0x80485b3
@@ -390,11 +407,12 @@ EXPECT=<<RUN
       | :   0x080485b8      mov ebx, dword [esp + 0x20]
       | `=< 0x080485bc      jne 0x80485b1
       |     0x080485be      nop
+EOF
 RUN
 
 NAME=asm.bb.line glitch fix (#12516)
 FILE=../bins/elf/ls
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bb.line=true
 e asm.bytes=false
 e asm.comments=false
@@ -407,7 +425,8 @@ s 0x4233
 pd 9
 ?e
 pdJ 9~{}
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 |       ,=< 0x00004233      jg 0x4238
 |       |   |
 |       |   0x00004235      test rax, rax
@@ -492,11 +511,12 @@ EXPECT=<<RUN
     "text": "|     |     0x0000424c      nop"
   }
 ]
+EOF
 RUN
 
 NAME=flag-func_sig order
 FILE=../bins/elf/abcde-qt32
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.demangle=true
 e asm.bytes=false
 e asm.filter=false
@@ -509,7 +529,8 @@ pd 1 @ 0x080493ca
 e asm.cmt.right=false
 pd 1 @ 0x080493b4
 pd 1 @ 0x080493ca
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 |           0x080493b4      call 0x80490b0                             ; sym.imp.strlen ; size_t strlen(const char *s)
 |           0x080493ca      call 0x80490e0                             ; sym.imp.QString::fromAscii_helper_char_const___int
 |                                                                      ; QString::fromAscii_helper(char const*, int)
@@ -520,11 +541,12 @@ EXPECT=<<RUN
 |           ; sym.imp.QString::fromAscii_helper_char_const___int
 |           ; QString::fromAscii_helper(char const*, int)
 |           0x080493ca      call 0x80490e0
+EOF
 RUN
 
 NAME=newlined-comment-refline fix (#14627), wayward rip-relative flag fixes
 FILE=../bins/elf/ls
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e asm.filter=true
 (pd_tests, e asm.relsub=true, pd 15, ?e, e asm.relsub=false, pd 1 @ 0x000041ee, pd 1 @ 0x00004225)
@@ -540,7 +562,8 @@ e io.cache=true
 wx 483b1592770100483b354bd80100 @ 0x000041e7  # cmp rdx, [rip + 0x17792]; cmp rsi, [rip + 0x1d84b]
 wx 483b3df6470100 @ 0x00004225  # cmp rdi, [rip + 0x147f6]
 .(insn_tests)
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
         ,=< 0x000041e0      je 0x421a
         |   0x000041e2      mov ecx, 4
         |   0x000041e7      lea rdx, [0x0001b980]
@@ -666,28 +689,32 @@ EXPECT=<<RUN
             [32m0x000041ee[0m      [36mcmp[36m rsi[0m,[36m qword [0m[[36mrip [0m+[36m[36m [33m0x1d84b[0m][36m[0m[0m[31m             ; [[31m0x21a40[31m:8]=0x18d31 str.literal[0m
             [32m0x00004225[0m      [36mcmp[36m rdi[0m,[36m qword [0m[[36mrip [0m+[36m[36m [33m0x147f6[0m][36m[0m[0m[31m             ; str.COLUMNS
             [31m                                                           ; [[31m0x18a22[31m:8]=0x534e4d554c4f43[31m ; "COLUMNS"[0m
+EOF
 RUN
 
 NAME=lea section flag bracket fix
 FILE=../bins/elf/analysis/ls-alxchk
-CMDS=<<EXPECT
+CMDS=<<EOF
 s 0x5e6e
 e scr.color=0
 pd 1
 e scr.color=1
 pd 1
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x00005e6e      488d3d339b01.  lea rdi, section..fini_array ; 0x1f9a8
             [32m0x00005e6e[0m      [33m48[37m8d[33m3d[33m33[37m9b[37m01[37m.[0m  [37mlea[36m rdi[0m,[36m[36m [0m[36msection..fini_array[0m[36m[0m[0m[31m ; 0x1f9a8[0m
+EOF
 RUN
 
 NAME=pi no-color rip-relative addr fix
 FILE=../bins/elf/ls
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=0
 s 0x000041e0
 pi 15
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 je 0x421a
 mov ecx, 4
 lea rdx, [0x0001b980]
@@ -703,22 +730,25 @@ mov esi, dword [rdx + rax*4]
 call 0x13c50
 mov qword [0x000232b0], 0x50
 lea rdi, str.COLUMNS
+EOF
 RUN
 
 NAME=esil call no-fcn-name cmt alignment
 FILE=../bins/elf/analysis/arm-ls
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e emu.pre=true
 e emu.str=true
 pd 1 @ 0x00011ee4
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x00011ee4      bl 0x2258c                                 ; 0x2258c(0x19ac0, 0x25c0c, 0x0, 0x372cc)
+EOF
 RUN
 
 NAME=bin.str.enc no-guess with initial null
 FILE=../bins/elf/utfbe&bom
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e asm.offset=false
 e asm.cmt.off=false
@@ -728,7 +758,8 @@ aar
 .(pdstr 16)
 ?e
 .(pdstr 32)
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
                  mov esi, obj.utf16be
                  mov esi, obj.utf16be                                  ; u"\u5500\u5400\u4600\u3100\u3600\u4200\u4500"
                  mov esi, obj.utf16be                                  ; ub"UTF16BE"
@@ -736,11 +767,12 @@ EXPECT=<<RUN
                  mov esi, obj.utf32be
                  mov esi, obj.utf32be                                  ; U"\U55000000\U54000000\U46000000\U33000000\U32000000\U42000000\U45000000"
                  mov esi, obj.utf32be                                  ; Ub"UTF32BE"
+EOF
 RUN
 
 NAME=bin.str.enc guess bom, asm.cmt.off=0/1
 FILE=../bins/elf/utfbe&bom
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=0
 e asm.offset=0
 e asm.cmt.off=0
@@ -757,7 +789,8 @@ e asm.cmt.off=1
 .(pdstr utf32be_bom)
 e asm.cmt.off=off
 .(pdstr utf32be_bom)
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
                  mov esi, obj.utf8_bom                                 ; "\ufeffUTF8_BOM"
                  mov esi, obj.utf16le_bom                              ; u"\ufeffUTF16LE_BOM"
                  mov esi, obj.utf16be_bom                              ; ub"\ufeffUTF16BE_BOM"
@@ -766,6 +799,7 @@ EXPECT=<<RUN
 
                  mov esi, obj.utf32be_bom                              ; 0x4041e0 ; Ub"\ufeffUTF32BE_BOM"
                  mov esi, obj.utf32be_bom                              ; Ub"\ufeffUTF32BE_BOM"
+EOF
 RUN
 
 NAME=no-anal asm.symbol from fcn mid

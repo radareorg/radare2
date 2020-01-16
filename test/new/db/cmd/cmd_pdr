@@ -49,7 +49,7 @@ RUN
 
 NAME=pdrj and pirj ignore asm.bb.middle
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e anal.nopskip=false
 e anal.jmp.mid=true
 e io.cache=true
@@ -65,6 +65,7 @@ pdrj~{}
 pir
 ?e
 pirj~{}
+EOF
 EXPECT=%
 / 24: fcn.00000000 ();
 | 0x00000000      0f1f440000     nop dword [rax + rax]
@@ -402,10 +403,11 @@ RUN
 
 NAME=pdr with backwards jmp
 FILE=../bins/elf/ls
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 pdr @ entry.init0
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 | ; CODE XREF from entry.init0 @ 0x5bd4
 | 0x00005b40      488d3d21c701.  lea rdi, loc._edata                   ; loc.__bss_start
 |                                                                      ; 0x22268
@@ -431,4 +433,5 @@ EXPECT=<<RUN
 | 0x00005bd0      f30f1efa       endbr64
 | 0x00005bd4      e967ffffff     jmp 0x5b40
 | ----------- true: 0x00005b40
+EOF
 RUN

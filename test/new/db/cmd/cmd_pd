@@ -427,16 +427,18 @@ RUN
 
 NAME=pdj -1
 FILE=malloc://1024
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 wx 56687cd3400090
 aaa
 s 6
 pdj -1
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 [{"offset":1,"ptr":4248444,"val":4248444,"esil":"4248444,4,esp,-,=[4],4,esp,-=","refptr":false,"fcn_addr":0,"fcn_last":1020,"size":5,"opcode":"push 0x40d37c","disasm":"push 0x40d37c","bytes":"687cd34000","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":0}]
 
+EOF
 RUN
 
 NAME=pdj 3 @ main
@@ -645,7 +647,7 @@ RUN
 
 NAME=pdf fcnline
 FILE=../bins/pe/a.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.lines.fcn=true
 s 0x004017c0
 af+ 0x004017c0 fcn2.0x004017c0
@@ -654,7 +656,8 @@ pdf
 ?e
 e asm.lines.fcn=false
 pdf
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 / 13: fcn2.0x004017c0 ();
 |           0x004017c0      51             push ecx
 |           0x004017c1      89e1           mov ecx, esp
@@ -668,6 +671,7 @@ EXPECT=<<RUN
           0x004017c3      83c108         add ecx, 8
           0x004017c6      3d00100000     cmp eax, 0x1000
       ,=< 0x004017cb      7210           jb 0x4017dd
+EOF
 RUN
 
 NAME=r_str_escape anal
@@ -1343,11 +1347,13 @@ RUN
 
 NAME=pdJ asm.emu=1 comment
 FILE=../bins/elf/crackme0x05
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.emu=1
 pdJ 1 @ 0x08048566
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 [{"offset":134514022,"text":"            0x08048566      e829feffff     call sym.imp.printf         ; esp=0xfffffffffffffffc ; eip=0x8048394 -> 0xa00c25ff"},{"offset":134514022,"text":"                                                                       ; int printf(-1)"}]
+EOF
 RUN
 
 NAME=pdJ asm.emu=1 string
@@ -1637,7 +1643,7 @@ RUN
 
 NAME=emu.strinv
 FILE=../bins/elf/redpill
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=1
 e asm.bytes=false
 e emu.pre=true
@@ -1657,7 +1663,8 @@ e emu.str.inv=true
 pd 1 @ 0x161d
 e emu.str.inv=false
 pd 1 @ 0x161d
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m                 ; 0x21f7[31m ; "abcdefghi"[0m[31m ; [7m"\n  Blue Pill"[27m str.Blue_Pill[0m
             [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m                 ; 0x21f7[31m ; [7m"abcdefghi"[27m[0m[31m ; "\n  Blue Pill" str.Blue_Pill[0m
 
@@ -1669,11 +1676,12 @@ EXPECT=<<RUN
             [31m; [7m"abcdefghi"[27m
 [0m[31m[0m               [31m; "\n  Blue Pill" str.Blue_Pill
 [0m            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m
+EOF
 RUN
 
 NAME=emu.strflag
 FILE=../bins/elf/redpill
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e emu.pre=true
 e emu.str=true
@@ -1682,10 +1690,12 @@ pd 1 @ 0x161d
 e emu.str.flag=false
 pd 1 @ 0x161d
 pd 1 @ 0x1447
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x0000161d      lea eax, [esi - 0x21f7]                    ; "\n  Blue Pill" str.Blue_Pill
             0x0000161d      lea eax, [esi - 0x21f7]                    ; "\n  Blue Pill"
             0x00001447      add esi, 0x2bb9                            ; section..got.plt
+EOF
 RUN
 
 NAME=ctrl chars
@@ -1747,7 +1757,7 @@ RUN
 
 NAME=two-operand line highlight; asm.highlight ecHw fix; ec wordhl/linehl
 FILE=../bins/elf/redpill
-CMDS=<<EXPECT
+CMDS=<<EOF
 . ../bins/other/palette.r2
 e scr.color=3
 e emu.str=true
@@ -1769,7 +1779,8 @@ ecHw eax
 e asm.highlight=0x1457
 s 0
 pd 1 @ 0x1457
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             [48;2;0;0;128m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea[38;2;58;150;221m eax[27;22;24;25;28;39m,[38;2;58;150;221m [27;22;24;25;28;39m[[38;2;58;150;221mesi [27;22;24;25;28;39m-[38;2;58;150;221m[38;2;58;150;221m [38;2;193;156;0m0x2277[27;22;24;25;28;39m][38;2;58;150;221m[27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m     ; " Take the Red Pill!! \n"[0m
             [38;2;19;161;14m0x0000145d[27;22;24;25;28;39m      [38;2;193;156;0m50[27;22;24;25;28;39m             [38;2;136;23;152mpush[38;2;58;150;221m eax[0m[0m[0m[38;2;197;15;31m[0m
             [38;2;19;161;14m0x0000145e[27;22;24;25;28;39m      [38;2;204;204;204m8b[38;2;204;204;204m86[38;2;204;204;204mf0[38;2;197;15;31mff[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mmov[38;2;58;150;221m eax[0m,[38;2;58;150;221m dword [0m[[38;2;58;150;221mesi [0m-[38;2;58;150;221m[38;2;58;150;221m [38;2;193;156;0m0x10[0m][38;2;58;150;221m[0m[0m[0m[38;2;197;15;31m[0m
@@ -1777,11 +1788,12 @@ EXPECT=<<RUN
             [48;2;0;0;0m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea[38;2;58;150;221m eax[27;22;24;25;28;39m,[38;2;58;150;221m [27;22;24;25;28;39m[[38;2;58;150;221mesi [27;22;24;25;28;39m-[38;2;58;150;221m[38;2;58;150;221m [38;2;193;156;0m0x2277[27;22;24;25;28;39m][38;2;58;150;221m[27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m     ; " Take the Red Pill!! \n"[0m
             [48;2;0;47;0m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea[38;2;58;150;221m eax[27;22;24;25;28;39m,[38;2;58;150;221m [27;22;24;25;28;39m[[38;2;58;150;221mesi [27;22;24;25;28;39m-[38;2;58;150;221m[38;2;58;150;221m [38;2;193;156;0m0x2277[27;22;24;25;28;39m][38;2;58;150;221m[27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m     ; " Take the Red Pill!! \n"[0m
             [48;2;0;47;0m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea[38;2;58;150;221m [48;2;128;0;0meax[48;2;0;47;0m[27;22;24;25;28;39m,[38;2;58;150;221m [27;22;24;25;28;39m[[38;2;58;150;221mesi [27;22;24;25;28;39m-[38;2;58;150;221m[38;2;58;150;221m [38;2;193;156;0m0x2277[27;22;24;25;28;39m][38;2;58;150;221m[27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m     ; " Take the Red Pill!! \n"[0m
+EOF
 RUN
 
 NAME=pdJ with backslashes, quotation marks, str.escbslash and bin.str.enc
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e io.cache=true
 e asm.arch=x86
 e asm.bits=32
@@ -1815,7 +1827,8 @@ pdJ 1
 e str.escbslash=false
 pd 1
 pdJ 1
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x00002000      mov eax, 0x1000                            ; ansi_str ; "path\"C:\\Program\n"
 [{"offset":8192,"text":"            0x00002000      mov eax, 0x1000                            ; ansi_str ; \"path\\\"C:\\\\Program\\n\""}]
             0x00002000      mov eax, 0x1000                            ; ansi_str ; "path\"C:\Program\n"
@@ -1828,11 +1841,12 @@ EXPECT=<<RUN
 [{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; u\"path\\\"C:\\\\Program\\r\""}]
             0x00004000      mov ebx, 0x3000                            ; wide_str ; u"path\"C:\Program\r"
 [{"offset":16384,"text":"            0x00004000      mov ebx, 0x3000                            ; wide_str ; u\"path\\\"C:\\Program\\r\""}]
+EOF
 RUN
 
 NAME=arm asm.var.sub, asm.ucase and asm.pseudo (fp)
 FILE=../bins/elf/analysis/armcall
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false
 e io.cache=true
@@ -1858,7 +1872,8 @@ s main
 afvn local2 var_ch
 afvn arg1 arg_8h
 pd 4 @ 0x0001045c
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 |           0x0001045c      STR R0, [var_8h]
 |           0x00010460      STR R1, [var_ch]
 |           0x00010464      LDR R0, [arg_8h]
@@ -1878,15 +1893,17 @@ EXPECT=<<RUN
 |           0x00010460      [local2] = r1
 |           0x00010464      r0 = [arg1]
 |           0x00010468      r1 = [arg_ch]
+EOF
 RUN
 
 NAME=pdfj with padding
 FILE=../bins/elf/padding_in_func
-CMDS=<<EXPECT
+CMDS=<<EOF
 s main
 af
 pdfj~{} | grep opcode
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
       "opcode": "push rbp",
       "opcode": "push rbx",
       "opcode": "push rax",
@@ -1927,51 +1944,58 @@ EXPECT=<<RUN
       "opcode": "pop rbp",
       "opcode": "ret",
       "opcode": "jmp 0x4005d0",
+EOF
 RUN
 
 NAME=asm.imm.str, mov and movabs (#10473)
 FILE=../bins/elf/echo-bin
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e asm.imm.str=true
 pd 1 @ 0x9a2
 pd 1 @ 0x9a9
 pd 1 @ 0x9b3
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x000009a2      mov dword [rbp - 0x30], 0x3c3c2b3e         ; '>+<<'
             0x000009a9      mov word [rbp - 0x2c], 0x3e5d              ; ']>'
             0x000009b3      movabs rax, 0x3c2b3c3c5b3e3e3e             ; '>>>[<<+<'
+EOF
 RUN
 
 NAME=asm.imm.str, asm.cmd.right=false, pd and pdJ
 FILE=../bins/elf/echo-bin
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.imm.str=true
 e asm.cmt.right=false
 pd 1 @ 0x9b3
 ?e
 pdJ 1 @ 0x9b3
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             ; '>>>[<<+<'
             0x000009b3      48b83e3e3e5b.  movabs rax, 0x3c2b3c3c5b3e3e3e
 
 [{"offset":2483,"text":"            ; '>>>[<<+<'"},{"offset":2483,"text":"            0x000009b3      48b83e3e3e5b.  movabs rax, 0x3c2b3c3c5b3e3e3e"}]
+EOF
 RUN
 
 NAME=asm.imm.str short false positive
 FILE=../bins/elf/analysis/fast
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e asm.imm.str=true
 f- @ 0x08048574
 pd 1 @ 0x08048444
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x08048444      push 0x8048574
+EOF
 RUN
 
 NAME=asm.imm.str and flag
 FILE=../bins/elf/strenc
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e asm.imm.str=true
 e bin.str.enc=utf16le
@@ -1979,28 +2003,33 @@ pd 1 @ 0x004016ca
 f str.fence @ 0x40235a
 e asm.cmt.off=false
 pd 1 @ 0x004016ca
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x004016ca      mov edi, 0x40235a                          ; 'Z#@' ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
             0x004016ca      mov edi, str.fence                         ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
+EOF
 RUN
 
 NAME=#10989 double pre-disasm
 FILE=../bins/elf/echo-bin
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e asm.cmt.right=false
 pd 1 @ 0xe78
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             ; 'f'
             0x00000e78      mov byte [rbp - 0x274e], 0x66
+EOF
 RUN
 
 NAME=pdf show entry0 disasm instead of main
 FILE=../bins/elf/ls
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 pdf
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 / 46: entry0 (int64_t arg3);
 |           ; arg int64_t arg3 @ rdx
 |           0x00005ae0      f30f1efa       endbr64
@@ -2015,22 +2044,25 @@ EXPECT=<<RUN
 |           0x00005afa      488d0def0b01.  lea rcx, [0x000166f0]
 |           0x00005b01      488d3d68e5ff.  lea rdi, [main]             ; 0x4070 ; "AWAVAUATU\x89\xfdSH\x89\xf3H\x83\xecXH\x8b>dH\x8b\x04%("
 \           0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0
+EOF
 RUN
 
 NAME=asm.lines.ret, pd and pdJ
 FILE=../bins/elf/crackme0x05
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.lines.ret=1
 s 0x08048414
 pd 2
 ?e
 pdJ 2
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x08048414      c3             ret
             ; --------------------------------------
             0x08048415      90             nop
 
 [{"offset":134513684,"text":"            0x08048414      c3             ret"},{"offset":134513684,"text":"            ; --------------------------------------"},{"offset":134513685,"text":"            0x08048415      90             nop"}]
+EOF
 RUN
 
 
