@@ -860,7 +860,6 @@ typedef struct r_anal_bb_t {
 	ut64 addr;
 	ut64 size;
 	ut64 jump;
-	ut64 type2;
 	ut64 fail;
 	int type;
 	int ninstr;
