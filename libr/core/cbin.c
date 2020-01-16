@@ -2099,6 +2099,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		return 0;
 	}
 
+	PJ *pj = pj_new ();
 	if (args && *args == '.') {
 		printHere = true;
 	}
@@ -2110,7 +2111,8 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	r_spaces_push (&r->anal->meta_spaces, "bin");
 
 	if (IS_MODE_JSON (mode) && !printHere) {
-		r_cons_printf ("[");
+		pj_a (pj);
+		// r_cons_printf ("[");
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
 	} else if (!at && exponly) {
@@ -2217,27 +2219,21 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			r_flag_space_pop (r->flags);
 		} else if (IS_MODE_JSON (mode)) {
 			char *str = r_str_escape_utf8_for_json (r_symbol_name, -1);
-			// str = r_str_replace (str, "\"", "\\\"", 1);
-			r_cons_printf ("%s{\"name\":\"%s\","
-				"\"demname\":\"%s\","
-				"\"flagname\":\"%s\","
-				"\"ordinal\":%d,"
-				"\"bind\":\"%s\","
-				"\"size\":%d,"
-				"\"type\":\"%s\","
-				"\"vaddr\":%"PFMT64d","
-				"\"paddr\":%"PFMT64d","
-				"\"is_imported\":%s}",
-				((exponly && firstexp) || printHere) ? "" : (iter->p ? "," : ""),
-				str,
-				sn.demname? sn.demname: "",
-				sn.nameflag,
-				symbol->ordinal,
-				symbol->bind,
-				(int)symbol->size,
-				symbol->type,
-				(ut64)addr, (ut64)symbol->paddr,
-				symbol->is_imported ? "true" : "false");
+			pj_o (pj);
+			pj_ks (pj, "name", str);
+			if (sn.demname) {
+				pj_ks (pj, "demname", sn.demname);
+			}
+			pj_ks (pj, "flagname", sn.nameflag);
+			pj_ks (pj, "realname", symbol->name);
+			pj_ki (pj, "ordinal", symbol->ordinal);
+			pj_ks (pj, "bind", symbol->bind);
+			pj_kn (pj, "size", (ut64)symbol->size);
+			pj_ks (pj, "type", symbol->type);
+			pj_kn (pj, "vaddr", addr);
+			pj_kn (pj, "paddr", symbol->paddr);
+			pj_kb (pj, "is_imported", symbol->is_imported);
+			pj_end (pj);
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			const char *name = sn.demname? sn.demname: r_symbol_name;
@@ -2339,10 +2335,6 @@ next:
 		r_cons_printf ("\n%s", s);
 		free (s);
 	}
-	if (count == 0 && IS_MODE_JSON (mode)) {
-		r_cons_printf ("{}");
-	}
-
 
 	//handle thumb and arm for entry point since they are not present in symbols
 	if (is_arm) {
@@ -2353,8 +2345,10 @@ next:
 		}
 	}
 	if (IS_MODE_JSON (mode) && !printHere) {
-		r_cons_printf ("]");
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
 	}
+	pj_free (pj);
 
 	r_spaces_pop (&r->anal->meta_spaces);
 	r_table_free (table);
