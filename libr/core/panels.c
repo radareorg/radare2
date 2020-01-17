@@ -621,12 +621,10 @@ static bool __handle_console(RCore *core, RPanel *panel, const int key);
 static void __toggle_cache (RCore *core, RPanel *p);
 static bool __move_to_direction(RCore *core, Direction direction);
 static void __toggle_help(RCore *core);
-static void __check_edge(RPanels *panels);
 static void __call_visual_graph(RCore *core);
 static void __refresh_core_offset (RCore *core);
 static char *__search_db(RCore *core, const char *title);
 static void __handle_visual_mark(RCore *core);
-static void __fit_to_canvas(RPanels *panels);
 static void __handle_tab_key(RCore *core, bool shift);
 static void __handle_refs(RCore *core, RPanel *panel, ut64 tmp);
 static void __undo_seek(RCore *core);
@@ -1279,23 +1277,30 @@ void __panels_layout (RPanels *panels) {
 }
 
 void __layout_default(RPanels *panels) {
-	int h, w = r_cons_get_size (&h);
-	int ph = (h - 1) / (panels->n_panels - 1);
-	int i;
-	int colpos = w - panels->columnWidth;
 	RPanel *p0 = __get_panel (panels, 0);
+	int h, w = r_cons_get_size (&h);
 	if (panels->n_panels <= 1) {
 		__set_geometry (&p0->view->pos, 0, 1, w, h - 1);
 		return;
 	}
+
+	int ph = (h - 1) / (panels->n_panels - 1);
+	int colpos = w - panels->columnWidth;
 	__set_geometry (&p0->view->pos, 0, 1, colpos + 1, h - 1);
 
 	int pos_x = p0->view->pos.x + p0->view->pos.w - 1;
+	int i, total_h = 0;
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *p = __get_panel (panels, i);
 		int tmp_w = R_MAX (w - colpos, 0);
-		int tmp_h = (i + 1) == panels->n_panels ? h - p->view->pos.y : ph;
-		__set_geometry(&p->view->pos, pos_x, 2 + (ph * (i - 1)) - 1, tmp_w, tmp_h + 1);
+		int tmp_h = 0;
+		if (i + 1 == panels->n_panels) {
+			tmp_h = h - total_h;
+		} else {
+			tmp_h = ph;
+		}
+		__set_geometry (&p->view->pos, pos_x, 2 + (ph * (i - 1)) - 1, tmp_w, tmp_h + 1);
+		total_h += 2 + (ph * (i - 1)) - 1 + tmp_h + 1;
 	}
 }
 
@@ -1433,7 +1438,6 @@ void __split_panel_horizontal(RCore *core, RPanel *p, const char *name, const ch
 
 void __panels_layout_refresh(RCore *core) {
 	__del_invalid_panels (core);
-	__check_edge (core->panels);
 	__panels_check_stackbase (core);
 	__panels_refresh (core);
 }
@@ -2758,64 +2762,6 @@ beach:
 	free (targets2);
 	free (targets3);
 	free (targets4);
-}
-
-void __check_edge(RPanels *panels) {
-	int i, tmpright, tmpbottom, maxright = 0, maxbottom = 0;
-	for (i = 0; i < panels->n_panels; i++) {
-		RPanel *panel = __get_panel (panels, i);
-		if (!panel) {
-			continue;
-		}
-		tmpright = panel->view->pos.x + panel->view->pos.w;
-		tmpbottom = panel->view->pos.y + panel->view->pos.h;
-		if (tmpright > maxright) {
-			maxright = tmpright;
-		}
-		if (tmpbottom > maxbottom) {
-			maxbottom = tmpbottom;
-		}
-	}
-	int f1, f2;
-	for (i = 0; i < panels->n_panels; i++) {
-		RPanel *panel = __get_panel (panels, i);
-		if (!panel) {
-			continue;
-		}
-		f1 = f2 = 0;
-		if (panel->view->pos.x + panel->view->pos.w == maxright) {
-			f1 = (1 << PANEL_EDGE_RIGHT);
-		}
-		if (panel->view->pos.y + panel->view->pos.h == maxbottom) {
-			f2 = (1 << PANEL_EDGE_BOTTOM);
-		}
-		panel->view->edgeflag = f1 | f2;
-	}
-}
-
-void __fit_to_canvas(RPanels *panels) {
-	RConsCanvas *can = panels->can;
-	int i, w, h;
-	for (i = 0; i < panels->n_panels; i++) {
-		RPanel *panel = __get_panel (panels, i);
-		if (!panel) {
-			continue;
-		}
-		if (panel->view->edgeflag & 1 << PANEL_EDGE_RIGHT && panel->view->pos.x < can->w) {
-			w = can->w - panel->view->pos.x;
-			if (w != panel->view->pos.w) {
-				panel->view->pos.w = w;
-				panel->view->refresh = true;
-			}
-		}
-		if (panel->view->edgeflag & 1 << PANEL_EDGE_BOTTOM && panel->view->pos.y < can->h) {
-			h = can->h - panel->view->pos.y;
-			if (h != panel->view->pos.h) {
-				panel->view->pos.h = h;
-				panel->view->refresh = true;
-			}
-		}
-	}
 }
 
 void __del_panel(RCore *core, int pi) {
@@ -5073,7 +5019,6 @@ void __panels_refresh(RCore *core) {
 		}
 		__set_refresh_all (core, false, false);
 	}
-	__fit_to_canvas (panels);
 	//TODO use getPanel
 	for (i = 0; i < panels->n_panels; i++) {
 		if (i != panels->curnode) {
