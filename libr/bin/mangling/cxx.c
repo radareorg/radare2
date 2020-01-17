@@ -45,8 +45,8 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 		}
 	}
 #if WITH_GPL
-	// char *out = cplus_demangle_v3 (p, flags);
-	char *out = cplus_demangle (p, flags);
+	char *out = cplus_demangle_v3 (p, flags);
+	// char *out = cplus_demangle (p, flags);
 #else
 	/* TODO: implement a non-gpl alternative to c++v3 demangler */
 	char *out = NULL;
