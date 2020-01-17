@@ -310,6 +310,7 @@ mov eax, 'VMXh'
 EOF
 CMDS=<<EOF
 wx b868584d56
+e asm.arch=x86
 e asm.bits=64
 ahi s
 pi 1

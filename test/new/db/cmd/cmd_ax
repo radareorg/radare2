@@ -21,6 +21,8 @@ RUN
 NAME=axf
 FILE=-
 CMDS=<<EXPECT
+e asm.arch=x86
+e asm.bits=64
 s 0
 ax 0x42
 ax 0x43

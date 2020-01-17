@@ -31,6 +31,8 @@ EXPECT=<<EOF
             0x00000000      0000           add byte [rax], al
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 f foo
 fr foo bar
 f

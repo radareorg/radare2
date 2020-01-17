@@ -246,6 +246,7 @@ EXPECT=<<EOF
             0x00000000      b804000000     4,rax,=
 EOF
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 wa mov eax, 4
 e asm.esil=true

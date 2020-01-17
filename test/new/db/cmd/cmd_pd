@@ -65,8 +65,8 @@ EXPECT=<<EOF
 EOF
 CMDS=<<EOF
 e asm.bits=64
-e asm.arch = x86
-e anal.arch = x86
+e asm.arch=x86
+e anal.arch=x86
 wx 6833320000
 e asm.imm.str=1
 pd 1
@@ -80,7 +80,9 @@ EXPECT=<<EOF
 EOF
 CMDS=<<EOF
 wx 4889e5
-e asm.pseudo =1
+e asm.arch=x86
+e asm.bits=64
+e asm.pseudo=1
 e asm.cmtright =0
 pd 1
 EOF
@@ -120,6 +122,8 @@ EXPECT=<<EOF
   0x00000000      90             nop
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 90
 e asm.lines.bb=0
 b 1
@@ -149,6 +153,8 @@ EXPECT=<<EOF
   0x00000000      90             nop
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e asm.lines.bb=0
 pd@x:90
 EOF

@@ -236,7 +236,7 @@ EXPECT=<<RUN
 44
 RUN
 
-NAME=rasm2 -s att -ax86.as -b 64 movq %rdx, %rax
+NAME=rasm2 -s att -a x86.as -b 64 movq %rdx, %rax
 FILE=-
 CMDS=!rasm2 -s att -a x86.as -b 64 "movq %rdx, %rax"
 EXPECT=<<RUN
@@ -335,14 +335,14 @@ RUN
 
 NAME=rasm2 mov eax, [eax * 2 + 8]
 FILE=-
-CMDS=!rasm2 -b32 "mov eax, [eax * 2 + 8]"
+CMDS=!rasm2 -a x86 -b 32 "mov eax, [eax * 2 + 8]"
 EXPECT=<<RUN
 8b044508000000
 RUN
 
-NAME=rasm2 -A 0x55
+NAME=rasm2 -a x86 -b 64 -A 0x55
 FILE=-
-CMDS=!rasm2 -A 0x55
+CMDS=!rasm2 -a x86 -b 64 -A 0x55
 EXPECT=<<RUN
 offset:   0x00000000
 bytes:    55
@@ -366,16 +366,16 @@ CMDS=!rasm2 -k darwin 0x90
 EXPECT=<<RUN
 RUN
 
-NAME=rasm2 -E 0x55
+NAME=rasm2 -a x86 -b 64 -E 0x55
 FILE=-
-CMDS=!rasm2 -E 0x55
+CMDS=!rasm2 -a x86 -b 64 -E 0x55
 EXPECT=<<RUN
 rbp,8,rsp,-,=[8],8,rsp,-=
 RUN
 
-NAME=rasm2 -Aj 0x55
+NAME=rasm2 -a x86 -b 64 -Aj 0x55
 FILE=-
-CMDS=!rasm2 -Aj 0x55
+CMDS=!rasm2 -a x86 -b 64 -Aj 0x55
 EXPECT='[{"opcode":0,"bytes":"55","type":"rpush","stackop":"unknown","esil":"rbp,8,rsp,-,=[8],8,rsp,-=","stackptr":8}]
 '
 RUN
@@ -401,9 +401,9 @@ EXPECT=<<RUN
 1
 RUN
 
-NAME=rasm2 -r push ebp
+NAME=rasm2 -a x86 -r push ebp
 FILE=-
-CMDS=!rasm2 -r push ebp
+CMDS=!rasm2 -a x86 -r push ebp
 EXPECT=<<RUN
 e asm.arch=x86
 e asm.bits=64
