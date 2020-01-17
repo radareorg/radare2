@@ -16,13 +16,6 @@ typedef enum {
 	PANEL_TYPE_MENU = 1
 } RPanelType;
 
-typedef enum {
-	PANEL_EDGE_NONE,
-	PANEL_EDGE_RIGHT,
-	PANEL_EDGE_BOTTOM
-} RPanelEdge;
-
-
 typedef void (*RPanelMenuUpdateCallback)(void *user, const char *parent);
 typedef void (*RPanelDirectionCallback)(void *user, int direction);
 typedef void (*RPanelRotateCallback)(void *user, bool rev);
