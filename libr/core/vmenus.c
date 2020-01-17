@@ -2976,8 +2976,10 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 			r_cons_strcat ("\n" Color_RESET);
 		}
 		r_core_vmenu_append_help (buf, help_var_visual);
-		r_cons_printf ("%s", r_strbuf_drain (buf));
+		char *drained = r_strbuf_drain (buf);
+		r_cons_printf ("%s", drained);
 		addr = var_variables_show (core, option, &variable_option, 1, cols);
+		free (drained);
 		// var_index_show (core->anal, fcn, addr, option);
 		break;
 	case 2:

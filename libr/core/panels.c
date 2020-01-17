@@ -2660,6 +2660,7 @@ void __fix_layout_h (RCore *core) {
 			p->view->pos.h += t;
 		}
 	}
+	r_list_free (list);
 }
 
 void __resize_panel_down(RPanels *panels) {
@@ -3219,6 +3220,7 @@ int __settings_decompiler_cb(void *user) {
 			char *cmdstr = r_core_cmd_strf (core, "pdc@0x%08"PFMT64x, panel->model->addr);
 			__update_panel_contents (core, panel, cmdstr);
 			__reset_scroll_pos (panel);
+			free (cmdstr);
 		}
 	}
 	__set_refresh_all (core, true, false);
@@ -3648,7 +3650,9 @@ void __update_help(RCore *core, RPanels *ps) {
 			if (!rsb) {
 				return;
 			}
-			__set_read_only (core, p, r_strbuf_drain (rsb));
+			char *drained = r_strbuf_drain (rsb);
+			__set_read_only (core, p, drained);
+			free (drained);
 			p->view->refresh = true;
 		}
 	}

@@ -57,10 +57,13 @@ static void screenlock(RCore *core) {
 	}
 	char *again = r_cons_password (Color_INVERT "Type it again:"Color_INVERT_RESET);
 	if (!again || !*again) {
+		free (pass);
 		return;
 	}
 	if (strcmp (pass, again)) {
 		eprintf ("Password mismatch!\n");
+		free (pass);
+		free (again);
 		return;
 	}
 	bool running = true;
