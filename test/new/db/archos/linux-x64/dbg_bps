@@ -68,7 +68,7 @@ RUN
 NAME='dbg.dc+ds.hwstep2'
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=false
 db sym.main
@@ -78,6 +78,7 @@ ds
 dr PC
 p8 1@sym.main
 dk 9
+EOF
 EXPECT=<<EOF
 0x08048400
 0x08048401

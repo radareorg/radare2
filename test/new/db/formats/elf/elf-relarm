@@ -21,12 +21,13 @@ RUN
 NAME='ELF: ppc relocs'
 FILE=../bins/elf/hello.ppc
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 ii
 s main
 af
 pdsf
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 [Imports]
    1 0x10020064  GLOBAL    FUNC printf
    2 0x10020074    WEAK  NOTYPE __gmon_start__
@@ -34,4 +35,5 @@ EXPECT=<<RUN
 ;-- main:
 0x100004a0 str.Simple_PPC_program. str.Simple_PPC_program.
 0x100004a4 sym.imp.printf
+EOF
 RUN

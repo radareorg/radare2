@@ -2,9 +2,11 @@ NAME='dbg.di'
 FILE=/bin/ls
 ARGS=-d
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 di~baddr
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 baddr=0x100000000
+EOF
 RUN
 

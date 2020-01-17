@@ -1,13 +1,15 @@
 NAME='use of dmh, then any command which use grep and index'
 FILE=../bins/elf/simple_malloc_x86_64
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 db sym.main
 dc
 dmh > /dev/null
 aa > /dev/null
 pdf @sym.main~:1
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 / 91: int main (int argc, char **argv, char **envp);
 p=3
+EOF
 RUN

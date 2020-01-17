@@ -1,7 +1,7 @@
 NAME='dbg.stepback'
 FILE=../bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 db main
 db 0x004028fe
 dc
@@ -10,15 +10,17 @@ dc
 dsb
 dr rip
 dk 9
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x004028f9
+EOF
 RUN
 
 NAME='debug stepback from callee'
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-d
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 db main
 db 0x0040052f
 dc
@@ -27,15 +29,17 @@ dc
 dsb
 dr rip
 dk 9
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00400575
+EOF
 RUN
 
 NAME='debug stepback from caller'
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-d
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 db main
 db 0x0040057c
 dc
@@ -43,7 +47,9 @@ dts+
 dc
 dsb
 dr rip
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x0040053b
 Hello world
+EOF
 RUN

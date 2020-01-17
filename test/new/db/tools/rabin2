@@ -82,231 +82,261 @@ RUN
 NAME=rabin2 -s file elf
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -s ${R2_FILE}|wc -l|awk "{print \$1}"
-EXPECT=<<RUN
+EXPECT=<<EOF
 69
+EOF
 RUN
 
 NAME=rabin2 -S, -SS, -rS and -rSS file elf
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
+CMDS=<<EOF
 !rabin2 -S ${R2_FILE}|wc -l|awk "{print \$1}"
 !rabin2 -SS ${R2_FILE}|wc -l|awk "{print \$1}"
 !env RABIN2_PREFIX=prixfixe rabin2 -S ${R2_FILE} |grep prixfixe. |wc -l |awk "{print \$1}"
 !env RABIN2_PREFIX=prixfixe rabin2 -SS ${R2_FILE} |grep prixfixe. |wc -l |awk "{print \$1}"
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 35
 14
 30
 9
+EOF
 RUN
 
 NAME=rabin2 -z pe
 FILE=../bins/pe/a.exe
 CMDS=!rabin2 -z ${R2_FILE}|wc -l|awk "{print \$1}"
-EXPECT=<<RUN
+EXPECT=<<EOF
 7
+EOF
 RUN
 
 NAME=rabin2 -zz pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zz ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 86  0x00002619 0x00404019 10  11   .rdata  ascii   Password: 
+EOF
 RUN
 
 NAME=rabin2 -zzz pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zzz ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 086 0x00002619 0x00404019  10  11 (.rdata) ascii Password: 
+EOF
 RUN
 
 NAME=rabin2 -zzq pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zzq ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x404019 11 10 Password: 
+EOF
 RUN
 
 NAME=rabin2 -zzzq pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zzzq ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x00404019 Password: 
+EOF
 RUN
 
 NAME=rabin2 -zzqq pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zzqq ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 Password: 
+EOF
 RUN
 
 NAME=rabin2 -zzzqq pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zzzqq ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 Password: 
+EOF
 RUN
 
 NAME=rabin2 -z elf
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -z ${R2_FILE}|wc -l|awk "{print \$1}"
-EXPECT=<<RUN
+EXPECT=<<EOF
 4
+EOF
 RUN
 
 NAME=rabin2 -G 0x1000 -rs fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x1000 -rs ${R2_FILE}|grep "f " | wc -l|awk "{print \$1}"
-EXPECT=<<RUN
+EXPECT=<<EOF
 3
+EOF
 RUN
 
 NAME=rabin2 -G 0x1300 -rs fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x1300 -rs ${R2_FILE}|wc -l|awk "{print \$1}"
-EXPECT=<<RUN
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME=rabin2 -G 0x1000 -e fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x1000 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x100000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=rabin2 -e fatmach0
 BROKEN=1
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x100000ef8 paddr=0x00001ef8 baddr=0x100000000 laddr=0x00001000 haddr=0x00000570 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=rabin2 -G 0x5000 -e fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x5000 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00001f44 paddr=0x00005f44 haddr=0x00000420 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=rabin2 -a x86 -b 32 -e fatmach0
 BROKEN=1
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -a x86 -b 32 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00001f44 paddr=0x00005f44 baddr=0x00001000 laddr=0x00005000 haddr=0x00000420 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=rabin2 -B 0x2000000 -G 0x1000 -e fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -B 0x2000000 -G 0x1000 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x02000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=TODO: test on pie fatmach0
 BROKEN=1
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -B 0x2000000 -G 0x1000 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 ???
+EOF
 RUN
 
 NAME=rabin2 -B 0x2000000 -e arm64
 FILE=../bins/mach0/hello-ios-arm64
 CMDS=!rabin2 -B 0x2000000 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x02007f34 paddr=0x00007f34 haddr=0x00000468 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=rabin2 -a x86 -b 32 -i fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -a x86 -b 32 -i ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type lib name
 ---------------------------------
 0   0x00001f94 NONE FUNC     exit
 1   0x00000000 NONE FUNC     dyld_stub_binder
 
+EOF
 RUN
 
 NAME=rabin2 -G 0x5000 -i fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x5000 -i ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type lib name
 ---------------------------------
 0   0x00001f94 NONE FUNC     exit
 1   0x00000000 NONE FUNC     dyld_stub_binder
 
+EOF
 RUN
 
 NAME=rabin2 -qqz
 FILE=../bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -qqz ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 Hello World
+EOF
 RUN
 
 NAME=rabin2 -qqzz
 FILE=../bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EXPECT
+CMDS=<<EOF
 !!rabin2 -qqzz ${R2_FILE}~do_global_dtors_aux_fini_array_entry
 !!rabin2 -qqzz ${R2_FILE}~?
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
 82
+EOF
 RUN
 
 NAME=rabin2 -qqzzz
 FILE=../bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EXPECT
+CMDS=<<EOF
 !!rabin2 -qqzzz ${R2_FILE}~do_global_dtors_aux_fini_array_entry
 !!rabin2 -qqzzz ${R2_FILE}~?
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
 82
+EOF
 RUN
 
 NAME=rabin2 -qOr
 FILE=../bins/elf/analysis/ls-linux-x86_64-zlul
-CMDS=<<EXPECT
+CMDS=<<EOF
 !rabin2 -qOr/.data/-1 ${FILE}
 !rabin2 -qOr/.data/-1 ${FILE}
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=rabin2 -qOp/.data/rwx on PE32
 FILE=../bins/pe/test.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 mkdir .tmp
 rm .tmp/rabin2testpe1.exe
 !rabin2 -qOp/.data/rwx -o.tmp/rabin2testpe1.exe ${R2_FILE}
 !rabin2 -S .tmp/rabin2testpe1.exe
 rm .tmp/rabin2testpe1.exe
+EOF
 EXPECT=<<EOF
 wx e0000040 @ 0x244
 [Sections]
@@ -598,9 +628,10 @@ RUN
 NAME=rabin2 -x pemixed.exe
 BROKEN=1
 FILE=../bins/pe/pemixed.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 !rabin2 -x ../bins/pe/pemixed.exe
 !rm -r pemixed.exe.fat
+EOF
 EXPECT=<<EOF
 pemixed.exe.fat/pemixed.exe.unknown_0.0 created (248)
 pemixed.exe.fat/pemixed.exe.unknown_0.1 created (35328)

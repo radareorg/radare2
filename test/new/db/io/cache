@@ -141,24 +141,28 @@ RUN
 
 NAME=io.cache: cache write, cache undo
 FILE=malloc://1024
-CMDS=<<EXPECT
+CMDS=<<EOF
 e io.cache=1
 w a
 w b @ 1
 p8 2
 wc- 0 2
 p8 2
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 6162
 0000
+EOF
 RUN
 
 NAME=io.cache: cache reset
 FILE=malloc://32
-CMDS=<<EXPECT_ERR
+CMDS=<<EOF
 e io.cache=1
 wx 90
 wcr
 wx 90
-EXPECT_ERR=<<RUN
+EOF
+EXPECT_ERR=<<EOF
+EOF
 RUN

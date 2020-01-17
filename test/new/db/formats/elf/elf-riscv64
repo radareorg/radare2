@@ -1,11 +1,12 @@
 NAME=ELF: riscv64: entrypoint
 FILE=../bins/elf/analysis/guess-number-riscv64
 CMDS=ie
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00010000 paddr=0x00001000 haddr=0x00000018 hvaddr=0x00010018 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=ELF: riscv64: symbols

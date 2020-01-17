@@ -1,11 +1,12 @@
 NAME=aFr on ELF
 FILE=../bins/elf/msp430.elf
-CMDS=<<EXPECT
+CMDS=<<EOF
 s main
 aFr
 pif
 afi
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 add 0xff9c, sp
 mov loc..strings, r15
 call loc.puts
@@ -48,18 +49,20 @@ data-xrefs:
 locals: 0
 args: 0
 diff: type: new
+EOF
 RUN
 
 NAME=aFr on same but ihex and .r2 script
 BROKEN=1
 FILE=ihex://../bins/microcorruption/tutorial
-CMDS=<<EXPECT
+CMDS=<<EOF
 . ../bins/microcorruption/tutorial.r2
 s main
 aFr
 pif
 afi
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 add 0xff9c, sp
 mov loc..strings, r15
 call loc.puts
@@ -103,4 +106,5 @@ data-xrefs:
 locals: 0
 args: 0
 diff: type: new
+EOF
 RUN

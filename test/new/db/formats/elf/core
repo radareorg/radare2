@@ -21,9 +21,10 @@ RUN
 
 NAME=core registers
 FILE=../bins/elf/analysis/core.1159
-CMDS=<<EXPECT
+CMDS=<<EOF
 dr
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 rax = 0x00000000
 rbx = 0x00000000
 rcx = 0x00000000
@@ -42,21 +43,24 @@ rip = 0x004004c6
 rbp = 0x7ffe70e05950
 rflags = 0x00010246
 rsp = 0x7ffe70e05950
+EOF
 RUN
 
 NAME=segment comment
 FILE=../bins/elf/analysis/core.1159
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.cmt.right=true
 pd 1 @ 0x7ffe70f68000
 ?e
 e asm.cmt.right=false
 pd 1 @ 0x7ffe70f68000
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             ;-- segment.LOAD14:
         ,=< 0x7ffe70f68000      7f45           jg 0x7ffe70f68047       ; [15] -r-x segment size 8192 named LOAD14
 
             ; [15] -r-x segment size 8192 named LOAD14
             ;-- segment.LOAD14:
         ,=< 0x7ffe70f68000      7f45           jg 0x7ffe70f68047
+EOF
 RUN

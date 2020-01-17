@@ -135,7 +135,7 @@ RUN
 
 NAME=oob consider baddr
 FILE=../bins/mach0/mac-ls
-CMDS=<<EXPECT
+CMDS=<<EOF
 e bin.baddr = 0xf00000
 k old_v=`ieq`
 oob
@@ -143,39 +143,45 @@ iI~baddr[1]
 ie~vaddr[1]
 p8 10 @ entry0
 p8 10 @ `k old_v`
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0xf00000
 0x00f01058
 554889e5415741564155
 ffffffffffffffffffff
+EOF
 RUN
 
 NAME=oob consider laddr 32bit
 FILE=../bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 32
-CMDS=<<EXPECT
+CMDS=<<EOF
 e bin.laddr = 0x5000
 e bin.baddr = -1
 oob
 iI~laddr[1]
 iI~baddr[1]
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x0
 0x1000
+EOF
 RUN
 
 NAME=oob consider laddr 64bit
 FILE=../bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 64
-CMDS=<<EXPECT
+CMDS=<<EOF
 e bin.laddr = 0x5000
 e bin.baddr = -1
 oob
 iI~laddr[1]
 iI~baddr[1]
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x0
 0x100000000
+EOF
 RUN
 
 NAME=oob from malloc
@@ -195,7 +201,7 @@ RUN
 
 NAME=ob select files
 FILE=malloc://1024
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.null=true
 o malloc://512
 e scr.null=false
@@ -206,11 +212,13 @@ obo 4
 i~file[1]
 obo 3
 i~file[1]
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 malloc://512
 malloc://1024
 malloc://512
 malloc://1024
+EOF
 RUN
 
 NAME=ob select files binobj

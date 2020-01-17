@@ -1,6 +1,7 @@
 NAME=multiple files opened
 FILE=- - -
 CMDS=o~?
-EXPECT=<<RUN
+EXPECT=<<EOF
 3
+EOF
 RUN

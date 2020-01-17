@@ -86,13 +86,14 @@ RUN
 
 NAME=missing bb fix
 FILE=../bins/elf/before-after-main
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false
 s sym.register_tm_clones
 af
 pdf
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 / 53: sym.register_tm_clones ();
 |           0x08048410      mov eax, obj.completed.6891
 |           0x08048415      sub eax, obj.completed.6891
@@ -116,11 +117,12 @@ EXPECT=<<RUN
 |      ||   0x08048443      ret
 ..
 \      ``-> 0x08048448      ret
+EOF
 RUN
 
 NAME=afb+
 FILE=../bins/pe/a.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 s 0x004017c0
 af+ 0x004017c0 fcn2.0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
@@ -142,7 +144,8 @@ afi~size
 afb
 ?e
 pdf
-EXPECT=<<EXPECT_ERR
+EOF
+EXPECT=<<EOF
 size: 13
 0x004017c0 0x004017cd 00:0000 13 j 0x004017dd f 0x004017cd
 
@@ -169,12 +172,13 @@ size: 11
 |           0x004017c1      89e1           mov ecx, esp
 |           0x004017c3      83c108         add ecx, 8
 \           0x004017c6      3d00100000     cmp eax, 0x1000
+EOF
 EXPECT_ERR=
 RUN
 
 NAME=afb+ with wrong size
 FILE=../bins/pe/a.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 s 0x004017c0
 af+ 0x004017c0 fcn2.0x004017c0
 afb+ 0x4017c0 0x4017c0 9 0x4017dd 0x4017cd
@@ -192,6 +196,7 @@ afb
 pdf
 ?e
 pdr
+EOF
 EXPECT=<<EOF
 size: 9
 0x004017c0 0x004017c9 00:0000 9 j 0x004017dd f 0x004017cd
@@ -260,10 +265,11 @@ RUN
 NAME=float args afli
 FILE=../bins/elf/float_point
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 afi sym.sum_float
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 #
 offset: 0x00001119
 name: sym.sum_float
@@ -291,15 +297,17 @@ var int local_4h @ rbp-0x4
 arg int arg1 @ xmm0
 arg int arg2 @ xmm1
 diff: type: new
+EOF
 RUN
 
 NAME=double args afli
 FILE=../bins/elf/float_point
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 afi sym.sum_double
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 #
 offset: 0x00001133
 name: sym.sum_double
@@ -327,4 +335,5 @@ var int local_8h @ rbp-0x8
 arg int arg1 @ xmm0
 arg int arg2 @ xmm1
 diff: type: new
+EOF
 RUN

@@ -1,6 +1,6 @@
 NAME=asm.bb.middle disasm
 FILE=../bins/pe/cmd_adf_sample0.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false
 e asm.var=false
@@ -11,7 +11,8 @@ pD 0x560eb3-$$
 ?e
 e asm.bb.middle=false
 pD 0x560eb3-$$
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 / 6412: fcn.00560e67 (int32_t arg_0h);
 |           0x00560e67      push esi
 |       ,=< 0x00560e68      jmp 0x560e7d
@@ -77,11 +78,12 @@ EXPECT=<<RUN
        ||   0x00560eae      inc ecx
        ||   0x00560eaf      mov byte [eax + 0x5a], dl
 |      ||   0x00560eb2      pop eax
+EOF
 RUN
 
 NAME=asm.bb.middle json
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e anal.nopskip=false
 e anal.jmp.mid=true
 e io.cache=true
@@ -102,7 +104,8 @@ pDj 19~{}
 ?e
 e asm.bb.middle=true
 pdfj~{}
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 
 ----1----
 
@@ -511,11 +514,12 @@ EXPECT=<<RUN
     }
   ]
 }
+EOF
 RUN
 
 NAME=asm.bb.middle and pdi
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e anal.nopskip=false
 e anal.jmp.mid=true
 e io.cache=true
@@ -526,7 +530,8 @@ pdi 6
 ?e
 e asm.bb.middle=false
 pdi 6
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000000   fcn.00000000:
 0x00000000           0f1f440000  nop dword [rax + rax]
 0x00000003                 0000  add byte [rax], al
@@ -542,11 +547,12 @@ EXPECT=<<RUN
 0x0000000c           bb2c000000  mov ebx, 0x2c
 0x00000011                 ebf0  jmp 3
 0x00000013                 0000  add byte [rax], al
+EOF
 RUN
 
 NAME=asm.bb.middle and pif
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e anal.nopskip=false
 e anal.jmp.mid=true
 e io.cache=true
@@ -557,7 +563,8 @@ pif
 ?e
 e asm.bb.middle=false
 pif
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 nop dword [rax + rax]
 add byte [rax], al
 mov eax, 0xc1000021
@@ -570,11 +577,12 @@ mov eax, 0xc1000021
 jmp 9
 mov ebx, 0x2c
 jmp 3
+EOF
 RUN
 
 NAME=asm.bb.middle and asm.flags.middle
 FILE=../bins/pe/cmd_adf_sample0.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=true
 e asm.xrefs=false
 s 0x560e67
@@ -592,7 +600,8 @@ pd 2 @ 0x560e95
 ?e
 fm 0x560e97 @ sym.dummy
 pd 3 @ 0x560e95
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
 |           ;-- sym.dummy:
 |           0x00560e7d      5e             pop esi
@@ -610,4 +619,5 @@ EXPECT=<<RUN
 |           0x00560e96  ~   0f31           rdtsc
 |           ;-- sym.dummy:
 |           0x00560e97      31e9           xor ecx, ebp
+EOF
 RUN

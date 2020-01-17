@@ -30,9 +30,10 @@ RUN
 
 NAME=ELF: .plt/.plt.sec sections
 FILE=../bins/elf/ls-cet
-CMDS=<<EXPECT
+CMDS=<<EOF
 pdi 10 @ main + 0x28
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00004e98                 31c0  xor eax, eax
 0x00004e9a           e8a1e60000  call 0x13540
 0x00004e9f       488d351e4a0100  lea rsi, [rip + 0x14a1e]
@@ -43,26 +44,31 @@ EXPECT=<<RUN
 0x00004ebe           e81dfaffff  call sym.imp.bindtextdomain
 0x00004ec3       488d3d2b4b0100  lea rdi, [rip + 0x14b2b]
 0x00004eca           e8d1f9ffff  call sym.imp.textdomain
+EOF
 RUN
 
 NAME=ELF: use reloc table in dyn entry
 FILE=../bins/elf/ls-linux-wrong-rela
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.comments=false
 e asm.lines=false
 pd 15 @ entry0~call
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x000068e8      ff15b2c60100   call qword [reloc.__libc_start_main]
+EOF
 RUN
 
 NAME=ELF: R_X86_64_PLT32 patch reloc
 FILE=../bins/elf/radare2.c.obj
 ARGS=-e io.cache=true
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.comments=false
 e asm.lines=false
 pd 1 @ 0x0800005e
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x0800005e      e878840300     call r_spaces_set
+EOF
 RUN

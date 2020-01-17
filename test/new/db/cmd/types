@@ -884,7 +884,7 @@ RUN
 
 NAME=typedef struct
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 to ../bins/headers/12272.h
 ts 0
 ts 1
@@ -897,6 +897,7 @@ tk~^0,1
 tk~typedef.A=,typedef.B=,typedef.O=,struct.0,struct.1,struct.A,struct.B,struct.O
 ?e
 ts~0,1,A,B,O
+EOF
 EXPECT=<<EOF
 pf dF num num2
 pf c ch
@@ -936,7 +937,7 @@ RUN
 
 NAME=typedef struct double header
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 to ../bins/headers/hdr1.h
 to ../bins/headers/hdr2.h
 ts A
@@ -947,6 +948,7 @@ to ../bins/headers/hdr2.h
 tk~^struct.0,struct.1,struct.2,struct.3
 ?e
 ts~^0,1,2,3,A,B
+EOF
 EXPECT=<<EOF
 pf f num
 pf c ch
@@ -979,11 +981,12 @@ RUN
 
 NAME=Backward param type propgation
 FILE=../bins/elf/back1
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 s main
 aaft
 afv
+EOF
 EXPECT=<<EOF
 var size_t size @ rbp-0x14
 var char * dest @ rbp-0x10
@@ -993,11 +996,12 @@ RUN
 
 NAME=Forward param type propgation
 FILE=../bins/elf/forward1
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 s main
 aaft
 afv
+EOF
 EXPECT=<<EOF
 var size_t size @ rbp-0x14
 var char * ptr @ rbp-0x10
@@ -1007,11 +1011,12 @@ RUN
 
 NAME=Propgation via value
 FILE=../bins/elf/follow_ptr
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 s main
 aaft
 afv
+EOF
 EXPECT=<<EOF
 var size_t var_1ch @ rbp-0x1c
 var char * var_18h @ rbp-0x18
@@ -1022,11 +1027,12 @@ RUN
 
 NAME=General type propgation
 FILE=../bins/elf/hello_world
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 s main
 aaft
 afv
+EOF
 EXPECT=<<EOF
 var size_t var_20h @ rbp-0x20
 var size_t size @ rbp-0x1c
@@ -1038,11 +1044,12 @@ RUN
 
 NAME=32-bit bin type propgation
 FILE=../bins/elf/hello_world32
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 s main
 aaft
 afv
+EOF
 EXPECT=<<EOF
 arg int32_t arg_4h @ esp+0x44
 var char * src @ ebp-0x1c
@@ -1056,10 +1063,11 @@ RUN
 
 NAME=Register based var
 FILE=../bins/elf/arg
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 s sym.funcarg
 afvr
+EOF
 EXPECT=<<EOF
 arg int64_t arg1 @ rdi
 arg int64_t arg2 @ rsi
@@ -1070,11 +1078,12 @@ RUN
 
 NAME=Type propgation for reg based arg
 FILE=../bins/elf/arg
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 aaft
 s sym.funcarg
 afvr
+EOF
 EXPECT=<<EOF
 arg char * arg1 @ rdi
 arg char * arg2 @ rsi
@@ -1085,13 +1094,14 @@ RUN
 
 NAME=Caller to callee propgation (64 bits)
 FILE=../bins/elf/arg_down_prop
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.lines = false
 e asm.xrefs = false
 aa
 aaft
 s sym.funcarg
 pd 1
+EOF
 EXPECT=<<EOF
 154: sym.funcarg (char *arg1, uint32_t arg2);
 ; var uint32_t var_ch @ rbp-0xc
@@ -1104,13 +1114,14 @@ RUN
 
 NAME=Caller to caller propgation (32 bits)
 FILE=../bins/elf/arg_down_32
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.lines = false
 e asm.xrefs = false
 aa
 aaft
 s sym.funcarg
 pd 1
+EOF
 EXPECT=<<EOF
 147: sym.funcarg (char *arg_8h, uint32_t arg_ch);
 ; var int32_t var_4h @ ebp-0x4
@@ -1123,7 +1134,7 @@ RUN
 NAME=Type Propagation
 FILE=../bins/pe/debugme.exe
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 aaaa
 pd 1 @ 0x00401792~?[n
 pd 1 @ 0x00401796~?[c
@@ -1138,6 +1149,7 @@ pd 1 @ 0x00401537~?[lpDialogFunc
 pd 1 @ 0x0040153f~?[hWndParent
 pd 1 @ 0x00401547~?[lpTemplateName
 pd 1 @ 0x00401554~?[hInstance
+EOF
 EXPECT=<<EOF
 1
 1
@@ -1157,11 +1169,12 @@ RUN
 
 NAME=Double pointer test
 FILE=../bins/elf/double_ptr
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 aaft
 s main
 afv~ptr
+EOF
 EXPECT=<<EOF
 var char ** ptr @ rbp-0x18
 EOF
@@ -1169,12 +1182,13 @@ RUN
 
 NAME=Signed and unsigned test
 FILE=../bins/elf/signed_test
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 aaft
 s main
 afv~sign
 afv~uint
+EOF
 EXPECT=<<EOF
 var signed int64_t var_34h @ rbp-0x34
 var signed int64_t var_30h @ rbp-0x30
@@ -1184,11 +1198,12 @@ RUN
 
 NAME=flagspace analysis
 FILE=../bins/elf/flagspace
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 aaft
 s main
 afv
+EOF
 EXPECT=<<EOF
 var int64_t var_34h @ rbp-0x34
 var signed int64_t var_30h @ rbp-0x30
@@ -1203,13 +1218,14 @@ RUN
 
 NAME=bashbot test (x86_64)
 FILE=../bins/elf/bashbot.x86_64.O0.elf
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 aaft
 s main
 afv
 s sym.processCmd
 afv
+EOF
 EXPECT=<<EOF
 var char ** var_14e0h @ rbp-0x14e0
 var int64_t var_14d4h @ rbp-0x14d4
@@ -1271,11 +1287,12 @@ RUN
 
 NAME=bashbot test (arm 32-bits)
 FILE=../bins/elf/bashbot.arm.gcc.O0.elf
-CMDS=<<EXPECT
+CMDS=<<EOF
 s main
 af
 aaft
 afv
+EOF
 EXPECT=<<EOF
 var int32_t var_1454h @ sp+0x0
 var void * var_1440h @ fp-0x1440
@@ -1304,11 +1321,12 @@ RUN
 
 NAME=format string parse
 FILE=../bins/elf/format
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 aaft
 s main
 afv
+EOF
 EXPECT=<<EOF
 var int64_t var_25h @ rbp-0x25
 var signed int64_t var_24h @ rbp-0x24
@@ -1322,11 +1340,12 @@ RUN
 
 NAME=local to register var type propgation
 FILE=../bins/elf/l2rbin
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 aaft
 s main
 afv
+EOF
 EXPECT=<<EOF
 var char ** var_28h @ rbp-0x28
 var char ** var_20h @ rbp-0x20
@@ -1341,7 +1360,7 @@ RUN
 
 NAME=constrained type
 FILE=../bins/elf/constr_type
-CMDS=<<EXPECT
+CMDS=<<EOF
 e anal.types.constraint = true
 aaa
 s sym.single_cond
@@ -1352,6 +1371,7 @@ s sym.range_high
 pd 1~4h
 s sym.range_or
 pd 1~4h
+EOF
 EXPECT=<<EOF
 |           ; var signed int64_t var_4h  { > 0xa} @ rbp-0x4
 |           ; var signed int64_t var_14h  { > 0x0 && <= 0x9} @ rbp-0x14
@@ -1362,10 +1382,11 @@ RUN
 
 NAME=mov str
 FILE=../bins/elf/movstr
-CMDS=<<EXPECT
+CMDS=<<EOF
 aaa
 s main
 afv~var_28h
+EOF
 EXPECT=<<EOF
 var char * var_28h @ esp+0x4
 EOF
@@ -1373,10 +1394,11 @@ RUN
 
 NAME=ret type pointer
 FILE=../bins/elf/tie-test
-CMDS=<<EXPECT
+CMDS=<<EOF
 aaa
 s sym.foo
 afv~var_20h
+EOF
 EXPECT=<<EOF
 var size_t * var_20h @ rbp-0x20
 EOF

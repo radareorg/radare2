@@ -1,9 +1,10 @@
 NAME=ec* fgbg
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 eco sepia
 ec*
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 ec comment rgb:f0d090
 ec usrcmt rgb:f0f0f0
 ec args rgb:b0b070
@@ -73,15 +74,17 @@ ec gui.alt_background rgb:ffffff
 ec gui.border rgb:000000
 ec wordhl rgb:ff0000
 ec linehl rgb:201000
+EOF
 RUN
 
 NAME=ansicon ecs
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=1
 e scr.ansicon=true
 ecs
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 [30m[40m__[0m black
 [31m[41m__[0m red
 [37m[47m__[0m white
@@ -100,18 +103,20 @@ EXPECT=<<RUN
 [96m[106m__[0m bcyan
 [94m[104m__[0m bblue
 [0m[0m__[0m none
+EOF
 RUN
 
 NAME=ecd and eco bright
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=1
 ecd
 ec
 ?e
 eco bright
 ec
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
  [31m##[0m  comment
  [37m##[0m  usrcmt
  [33m##[0m  args
@@ -251,11 +256,12 @@ EXPECT=<<RUN
  [30m##[0m  gui.border
  [101m##[0m  wordhl
  [44m##[0m  linehl
+EOF
 RUN
 
 NAME=ec* and attributes
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 eco bright
 ec*~pop
 eco white2
@@ -263,10 +269,12 @@ ec*~bin
 ec*~cjmp
 ec*~comment
 ec*~fname
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 ec pop rgb:ff00ff . bold
 ec bin rgb:4f1900 . bold
 ec cjmp rgb:376b4c . bold underline
 ec comment rgb:001296 . italic
 ec fname rgb:8d0004 . bold italic
+EOF
 RUN

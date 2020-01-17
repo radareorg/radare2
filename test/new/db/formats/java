@@ -69,10 +69,12 @@ RUN
 
 NAME=java old format support
 FILE=../bins/java/invisible.class
-CMDS=<<EXPECT
+CMDS=<<EOF
 pi 3
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 getstatic java/lang/System/out Ljava/io/PrintStream;
 ldc "See if you can decompile/disassemble me!"
 invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V
+EOF
 RUN

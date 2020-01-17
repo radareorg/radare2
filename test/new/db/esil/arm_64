@@ -718,7 +718,7 @@ RUN
 
 NAME=cmp flags
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
 wx 1ffc0371 # cmp w0, 0xff
@@ -730,13 +730,15 @@ aer nf
 aer zf
 aer cf
 aer vf
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x0
 0x80000000
 0x00000001
 0x00000000
 0x00000000
 0x00000000
+EOF
 RUN
 
 NAME=cbz/cbnz likeliness
@@ -830,21 +832,23 @@ RUN
 
 NAME=lr correct after bl
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
 wx 02000094 # bl 8
 aes
 aer lr
 aer pc
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000004
 0x00000008
+EOF
 RUN
 
 NAME=ubfx x0, x8, 0, 3
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
 wx 000940d3 # ubfx x0, x8, 0, 3
@@ -852,6 +856,8 @@ aeip
 aer x8=5
 aes
 aer x0
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000005
+EOF
 RUN
