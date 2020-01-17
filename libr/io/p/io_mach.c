@@ -422,6 +422,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 	riom = R_NEW0 (RIOMach);
 	if (!riom) {
+		R_FREE (iodd);
 		return NULL;
 	}
 	riom->task = task;
