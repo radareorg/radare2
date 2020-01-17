@@ -776,7 +776,7 @@ EXPECT='
 nth paddr       vaddr      bind   type size lib name
 ----------------------------------------------------
 22   0x000009b7 0x080489b7 GLOBAL FUNC 189      decrypt
-{"name":"prog_timeout","demname":"","flagname":"sym.prog_timeout","ordinal":35,"bind":"GLOBAL","size":17,"type":"FUNC","vaddr":134515110,"paddr":2470,"is_imported":false}'
+{"name":"prog_timeout","flagname":"sym.prog_timeout","realname":"prog_timeout","ordinal":35,"bind":"GLOBAL","size":17,"type":"FUNC","vaddr":134515110,"paddr":2470,"is_imported":false}'
 CMDS=<<EOF
 s 0x080489b9
 iE.
