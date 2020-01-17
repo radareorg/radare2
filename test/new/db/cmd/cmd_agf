@@ -12,6 +12,8 @@ RUN
 NAME=agfJ
 FILE=-
 CMDS=<<EXPECT
+e asm.arch=x86
+e asm.bits=64
 s 0x42
 wx 00004883f80074060000000000000000c3
 af
