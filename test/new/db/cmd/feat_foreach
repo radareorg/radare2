@@ -50,12 +50,14 @@ RUN
 NAME=@@= `prz` fix
 FILE=-
 ONE_STREAM=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 wz 1 2 3 4
 pd 1 @@= `prz`
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x00000001      2032           and byte [rdx], dh
             0x00000002      3220           xor ah, byte [rax]
             0x00000003      2033           and byte [rbx], dh
             0x00000004      3320           xor esp, dword [rax]
+EOF
 RUN

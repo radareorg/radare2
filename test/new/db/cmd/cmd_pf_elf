@@ -149,10 +149,11 @@ RUN
 
 NAME=32: Elf header
 FILE=../bins/elf/analysis/tiny1
-CMDS=<<EXPECT
+CMDS=<<EOF
 pfo elf32
 pf.elf_header @ 0x8048000
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
      ident : 
                 struct<elf_ident>
            magic : 0x08048000 = "\x7fELF"
@@ -172,14 +173,16 @@ EXPECT=<<RUN
  shentsize : 0x0804802e = 0x0000
      shnum : 0x08048030 = 0x0000
   shstrndx : 0x08048032 = 0x0000
+EOF
 RUN
 
 NAME=64: Elf header
 FILE=../bins/elf/analysis/x64-simple
-CMDS=<<EXPECT
+CMDS=<<EOF
 pfo elf64
 pf.elf_header @ `i~baddr[1]`
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
      ident : 
                 struct<elf_ident>
            magic : 0x00400000 = "\x7fELF"
@@ -199,17 +202,19 @@ EXPECT=<<RUN
  shentsize : 0x0040003a = 0x0040
      shnum : 0x0040003c = 0x0003
   shstrndx : 0x0040003e = 0x0002
+EOF
 RUN
 
 NAME=32: -nn elf header
 FILE=../bins/elf/analysis/tiny1
 ARGS=-nn
-CMDS=<<EXPECT
+CMDS=<<EOF
 e io.va=0
 pf.elf_header @ elf_header
 ?e
 pfj.elf_header @ elf_header ~{}
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
      ident : 
                 struct<elf_ident>
            magic : 0x00000000 = "\x7fELF"
@@ -353,15 +358,17 @@ EXPECT=<<RUN
     "value": 0
   }
 ]
+EOF
 RUN
 
 NAME=64: -nn elf header
 FILE=../bins/elf/analysis/x64-simple
 ARGS=-nn
-CMDS=<<EXPECT
+CMDS=<<EOF
 e io.va=0
 pf.elf_header @ elf_header
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
      ident : 
                 struct<elf_ident>
            magic : 0x00000000 = "\x7fELF"
@@ -381,11 +388,12 @@ EXPECT=<<RUN
  shentsize : 0x0000003a = 0x0040
      shnum : 0x0000003c = 0x0003
   shstrndx : 0x0000003e = 0x0002
+EOF
 RUN
 
 NAME=pf elf_header times fix
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 pfo elf32
 pf? elf_header
 pfs.elf_header
@@ -395,7 +403,8 @@ wz `pf? elf_header`
 .(pfelf 1)
 ?e
 .(pfelf 2)
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 ?[2]E[2]E[4]Exxxxwwwwww (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 52
 
@@ -404,4 +413,5 @@ EXPECT=<<RUN
 
 {2}?[2]E[2]E[4]Exxxxwwwwww (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 104
+EOF
 RUN

@@ -1,9 +1,10 @@
 NAME=hang-on-aa/-aac fix (#15004)
 FILE=../bins/pe/15004.file
-CMDS=<<EXPECT
+CMDS=<<EOF
 aa
 e asm.var=false
 pdb
+EOF
 EXPECT=<<EOF
 / 337: entry0 (int32_t arg_24h, int32_t arg_40h, int32_t arg_44h);
 |           0x006453a1      e8d8170000     call fcn.00646b7e
@@ -42,10 +43,11 @@ RUN
 
 NAME=aac pe trampoline fcn name 32bit
 FILE=../bins/pe/testx32.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 e anal.autoname=false
 aac
 pd 1 @ 0x004017f6
+EOF
 EXPECT=<<EOF
 |           0x004017f6      e8c5040000     call sub.KERNEL32.dll_IsProcessorFeaturePresent ; BOOL IsProcessorFeaturePresent(DWORD ProcessorFeature)
 EOF
@@ -176,12 +178,13 @@ RUN
 NAME=lab1B
 FILE=../bins/elf/lab1B
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 s 0x08048a8b
 af
 afb
 ?e
 pdf
+EOF
 EXPECT=<<EOF
 0x08048a8b 0x08048a91 00:0000 6 j 0x08048bd5 f 0x08048a91
 0x08048a91 0x08048aa0 00:0000 15
@@ -1451,8 +1454,9 @@ RUN
 
 NAME=resolve reloc symbols 1
 FILE=../bins/elf/libc.so.6
-EXPECT=<<CMDS
+EXPECT=<<EOF
             0x0003a4af      ff15f33a1800   call qword [reloc.free]     ; [0x1bdfa8:8]=0
+EOF
 CMDS=<<EOF
 s 0x0003a4af
 pd 1
@@ -1461,7 +1465,7 @@ RUN
 
 NAME=resolve reloc symbols 2
 FILE=../bins/elf/libc.so.6
-EXPECT=<<CMDS
+EXPECT=<<EOF
 0x001bf3c0
 _res
 0x00023a90
@@ -2814,6 +2818,7 @@ _IO_2_1_stderr_
 _IO_2_1_stdout_
 _IO_2_1_stdin_
 0x00024480
+EOF
 CMDS=<<EOF
 ir~0x[3]
 EOF
@@ -2850,9 +2855,10 @@ RUN
 NAME=long basic blocks
 FILE=../bins/elf/analysis/movfuscator
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 af
 afb
+EOF
 EXPECT=<<EOF
 0x0804827c 0x0804c2fc 00:0000 16512
 EOF
@@ -3157,7 +3163,7 @@ RUN
 
 NAME=reflines offset
 FILE=malloc://1023
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.calls=false
 e asm.bits=32
 e asm.leahints=false
@@ -3171,6 +3177,7 @@ e scr.color=false
 wx 31c039d6724aeb72908db426000000008d7e0131d289e8f7f131d28944241c89f8f7f13944241c76678b93080200008b028b50143b5018736dc6020983c20189501489f031d201cef7f129d639f5762a8b8b8c05000085c975b683c6018b93080200008b028b50143b50187327c6022083c20139f589501477d68b44242c65330514000000753783c43c5b5e5f5dc39089feebc9c744240420000000890424e87cc9ffffeba6c744240409000000890424e86ac9ffff8b8b8c050000eb84e87d1001008db6000000008dbc270000000055575653e8f7f0ffff81c32b9d010083ec3c658b0d14000000894c242c31c98b6a0c8b720889e929f1c1e90285c9894c241c0f848100000039f50f84930000008b7a1801fdf7d721fd8b7a1089e9896a0c2b4a0489fd2b6a0439e97f718b7a0c31ed
 aa > /dev/null
 pd 38
+EOF
 EXPECT=<<EOF
 ┌ (fcn) fcn.00000000 1645
 │           ; var int32_t var_30h @ esp+0x1c
@@ -3221,7 +3228,7 @@ RUN
 
 NAME=reflines offset (ascii)
 FILE=malloc://1023
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.calls=false
 e asm.bits=32
 e asm.leahints=false
@@ -3235,6 +3242,7 @@ e scr.color=false
 wx 31c039d6724aeb72908db426000000008d7e0131d289e8f7f131d28944241c89f8f7f13944241c76678b93080200008b028b50143b5018736dc6020983c20189501489f031d201cef7f129d639f5762a8b8b8c05000085c975b683c6018b93080200008b028b50143b50187327c6022083c20139f589501477d68b44242c65330514000000753783c43c5b5e5f5dc39089feebc9c744240420000000890424e87cc9ffffeba6c744240409000000890424e86ac9ffff8b8b8c050000eb84e87d1001008db6000000008dbc270000000055575653e8f7f0ffff81c32b9d010083ec3c658b0d14000000894c242c31c98b6a0c8b720889e929f1c1e90285c9894c241c0f848100000039f50f84930000008b7a1801fdf7d721fd8b7a1089e9896a0c2b4a0489fd2b6a0439e97f718b7a0c31ed
 aa >/dev/null
 pd 38
+EOF
 EXPECT=<<EOF
 / (fcn) fcn.00000000 1645
 |           ; var int32_t var_30h @ esp+0x1c

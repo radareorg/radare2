@@ -1,8 +1,9 @@
 NAME='dbg.dL'
 FILE=/bin/ls
-CMDS=<<EXPECT
+CMDS=<<EOF
 dL
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0  ---  bf       LGPL3
 1  ---  bochs    LGPL3
 2  ---  esil     LGPL3
@@ -13,4 +14,5 @@ EXPECT=<<RUN
 7  ---  qnx      LGPL3
 8  ---  rap      LGPL3
 9  ---  windbg   LGPL3
+EOF
 RUN

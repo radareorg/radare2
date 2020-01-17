@@ -11,22 +11,26 @@ RUN
 NAME=ELF: entrypoint with baddr
 FILE=../bins/elf/analysis/pie
 ARGS=-B 0x300000
-CMDS=<<EXPECT
+CMDS=<<EOF
 iI~baddr
 ie~program
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 baddr    0x300000
 vaddr=0x00300450 paddr=0x00000450 haddr=0x00000018 hvaddr=0x00300018 type=program
+EOF
 RUN
 
 NAME=ELF: rabin2 entrypoint with baddr
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 !rabin2 -I -B 0x300000 ../bins/elf/analysis/pie | grep baddr
 !rabin2 -e -B 0x300000 ../bins/elf/analysis/pie | sed -n '2 p'
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 baddr    0x300000
 vaddr=0x00300450 paddr=0x00000450 haddr=0x00000018 hvaddr=0x00300018 type=program
+EOF
 RUN
 
 NAME=ELF: sym.main

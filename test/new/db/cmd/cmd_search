@@ -872,9 +872,10 @@ RUN
 
 NAME='search escaped string'
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
+CMDS=<<EOF
 / \x90\x66~[0]
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x08048323
 0x08048325
 0x08048327
@@ -887,6 +888,7 @@ EXPECT=<<RUN
 0x0804833b
 0x0804833d
 0x0804841d
+EOF
 RUN
 
 NAME=search range /c in arm

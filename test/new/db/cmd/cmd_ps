@@ -63,27 +63,31 @@ RUN
 
 NAME=psx escapes newlines (#10037)
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 wz abc\n123\n
 psx 9
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 abc\x0a123\x0a\x00
+EOF
 RUN
 
 NAME=ps N and initial nulls (#10037)
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 ps 1
 ps 2
 ps 3
 ps 4
 ps 8
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 \x00
 \x00\x00
 \x00\x00\x00
 \x00\x00\x00\x00
 \x00\x00\x00\x00\x00\x00\x00\x00
+EOF
 RUN
 
 NAME=ps+ libc++ 16bit error

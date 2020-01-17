@@ -2701,8 +2701,9 @@ RUN
 
 NAME=iSS (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
+CMDS=<<EOF
 iSS
+EOF
 EXPECT=<<EOF
 [Segments]
 
@@ -2723,8 +2724,9 @@ RUN
 
 NAME=iSj
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
+CMDS=<<EOF
 iSj
+EOF
 EXPECT=<<EOF
 [{"name":"","size":0,"vsize":0,"perm":"----","paddr":0,"vaddr":0},{"name":".interp","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":".note.ABI_tag","size":32,"vsize":32,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":".note.gnu.build_id","size":36,"vsize":36,"perm":"-r--","paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","paddr":1716,"vaddr":0},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","paddr":1733,"vaddr":0},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","paddr":3196,"vaddr":0},{"name":".strtab","size":599,"vsize":599,"perm":"----","paddr":4300,"vaddr":0}]
 EOF
@@ -2732,8 +2734,9 @@ RUN
 
 NAME=iSSj
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
+CMDS=<<EOF
 iSSj
+EOF
 EXPECT=<<EOF
 [{"name":"PHDR","size":256,"vsize":256,"perm":"-r-x","paddr":52,"vaddr":134512692},{"name":"INTERP","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":"LOAD0","size":1436,"vsize":1436,"perm":"-r-x","paddr":0,"vaddr":134512640},{"name":"LOAD1","size":280,"vsize":284,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":"DYNAMIC","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":"NOTE","size":68,"vsize":68,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":"GNU_EH_FRAME","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":"GNU_STACK","size":0,"vsize":0,"perm":"-rw-","paddr":0,"vaddr":0},{"name":"ehdr","size":52,"vsize":52,"perm":"-rw-","paddr":0,"vaddr":134512640}]
 EOF
@@ -2794,9 +2797,10 @@ RUN
 
 NAME=section comment
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes = false
 pd 1 @ 0x080495a8
+EOF
 EXPECT=<<EOF
             ;-- section..dynamic:
             ;-- segment.DYNAMIC:
@@ -2808,8 +2812,9 @@ RUN
 
 NAME=bss section comment
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
+CMDS=<<EOF
 pd 3 @ section..bss
+EOF
 EXPECT=<<EOF
             ;-- section..bss:
             ;-- .bss:
@@ -3180,8 +3185,9 @@ RUN
 
 NAME=iSS (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EXPECT
+CMDS=<<EOF
 iSS
+EOF
 EXPECT=<<EOF
 [Segments]
 
@@ -3797,10 +3803,11 @@ RUN
 
 NAME=iee preinit
 FILE=../bins/elf/before-after-main
-CMDS=<<EXPECT
+CMDS=<<EOF
 iee~type=preinit
 e asm.bytes=false
 pd 1 @ 0x0804849f
+EOF
 EXPECT=<<EOF
 vaddr=0x08048486 paddr=0x00000486 hvaddr=0x08049ed4 hpaddr=0x00000ed4 type=preinit
 vaddr=0x0804849f paddr=0x0000049f hvaddr=0x08049ed8 hpaddr=0x00000ed8 type=preinit
@@ -3812,8 +3819,9 @@ RUN
 
 NAME=iee* preinit
 FILE=../bins/elf/before-after-main
-CMDS=<<EXPECT
+CMDS=<<EOF
 iee*
+EOF
 EXPECT=<<EOF
 fs symbols
 "f entry.preinit0 1 0x08048486"
@@ -3857,8 +3865,9 @@ RUN
 
 NAME=iS entropy and iSS entropy
 FILE=../bins/elf/crackme0x05
-CMDS=<<EXPECT
+CMDS=<<EOF
 iS entropy; iSS entropy
+EOF
 EXPECT=<<EOF
 [Sections]
 
@@ -4033,12 +4042,13 @@ RUN
 
 NAME=iee elf Cd (32-bit)
 FILE=../bins/elf/before-after-main
-CMDS=<<EXPECT
+CMDS=<<EOF
 pD $SS @ section..preinit_array
 ?e
 pD $SS @ section..init_array
 ?e
 pD $SS @ section..fini_array
+EOF
 EXPECT=<<EOF
             ;-- section..preinit_array:
             ;-- segment.LOAD1:
@@ -4077,14 +4087,15 @@ RUN
 
 NAME=iee elf Cd (64-bit)
 FILE=../bins/elf/analysis/ls-linux64
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.interactive=true
 s section..preinit_array
 ?e
 pD $SS @ section..init_array
 ?e
 pD $SS @ section..fini_array
-EXPECT=<<EXPECT_ERR
+EOF
+EXPECT=<<EOF
 
             ;-- section..init_array:
             ;-- segment.LOAD1:
@@ -4093,6 +4104,7 @@ EXPECT=<<EXPECT_ERR
 
             ;-- section..fini_array:
             0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [19] -rw- section size 8 named .fini_array
+EOF
 EXPECT_ERR=<<EOF
 Cannot seek to unknown address 'section..preinit_array'
 EOF
@@ -4297,10 +4309,11 @@ NAME=it
 FILE=-
 ARGS=-w
 CMDS=it ; wx 0x90 ; it
-EXPECT=<<EXPECT_ERR
+EXPECT=<<EOF
 md5 bf619eac0cdf3f68d496ea9344137e8b
 sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
 sha256 076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560
+EOF
 EXPECT_ERR=<<EOF
 File has been modified.
 - md5 bf619eac0cdf3f68d496ea9344137e8b

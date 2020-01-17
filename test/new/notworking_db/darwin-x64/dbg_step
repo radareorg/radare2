@@ -2,7 +2,7 @@ NAME='dbg.step'
 FILE=/bin/ls
 ARGS=-d
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 .dr*
 s rip
 f a=rip
@@ -11,17 +11,21 @@ pi 1 # hack this shouldnt be here
 ds
 .dr*
 ?v rip-a
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 nop
 0x1
+EOF
 RUN
 
 NAME='dbg.symbols'
 FILE=/bin/ls
 ARGS=-d
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 is~?
 ?!?e zerosyms
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
+EOF
 RUN

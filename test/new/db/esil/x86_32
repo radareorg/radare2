@@ -1255,16 +1255,18 @@ RUN
 
 NAME=aae after aF
 FILE=../bins/elf/redpill
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 s main
 aF
 aae
 pd 1 @ 0x1557
 pd 1 @ 0x1523
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 |           0x00001557      lea eax, str.fwhibbit                      ; 0x1df4 ; "  fwhibbit{"
 |           0x00001523      lea eax, str.Red_Pill                      ; 0x1de8 ; "\n  Red Pill"
+EOF
 RUN
 
 NAME=cmova eax, ecx
@@ -2332,13 +2334,14 @@ RUN
 
 NAME=pdj: bts dword [esp], eax (#12575)
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e io.cache=true
 wx 0fab0424
 pdj 1~{}
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 [
   {
     "offset": 0,
@@ -2358,6 +2361,7 @@ EXPECT=<<RUN
   }
 ]
 
+EOF
 RUN
 
 NAME=bsf reg32, reg32

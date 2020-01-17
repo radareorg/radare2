@@ -821,44 +821,52 @@ RUN
 
 NAME=arm jump table
 FILE=../bins/elf/analysis/callback.elf
-CMDS=<<EXPECT
+CMDS=<<EOF
 af @ sym.input_handler2
 CC. @ 0x000105b8~?(7
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME=arm jump table
 FILE=../bins/elf/analysis/mobile_bank.45115ff5f655d94fc26cb5244928b3fc
-CMDS=<<EXPECT
+CMDS=<<EOF
 af @ 0x11284
 CC. @ 0x000112b0~?(8
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME=arm main analyzed with aaa
 FILE=../bins/elf/analysis/ch23.bin
-CMDS=<<EXPECT
+CMDS=<<EOF
 aaa
 afl~?0x00008470
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME=arm main in disassembly
 FILE=../bins/elf/analysis/ch23.bin
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 aaa
 pd 1 @ 0x000083d8~[5]
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 main
+EOF
 RUN
 
 NAME=tbh jump table
 FILE=malloc://2048
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wxs 01380793d3b24ff00109024600bf00bf00bf00bf59b2a1f120005a28139200f28d81404d02eb8004082601270122dfe810f09700850185015c0085015b008501850185018501a2
@@ -878,18 +886,21 @@ wxs d90d9828440d90139d109c
 s 0
 af
 pds 1@0x2e~:1
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x0000002e switch table (91 cases) at 0x32
+EOF
 RUN
 
 NAME=ao 16 after ao 32
 FILE=../bins/arm/elf/hello_world
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bits=16
 ao@0x568
 ?e --
 ao@0x50e
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 address: 0x568
 opcode: push {r3, lr}
 disasm: push {r3, lr}
@@ -924,6 +935,7 @@ type: add
 cycles: 1
 esil: 0,sp,+,0xffffffff,&,r7,=
 family: cpu
+EOF
 RUN
 
 NAME=arm aae with bit switch

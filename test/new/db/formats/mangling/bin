@@ -83,21 +83,25 @@ RUN
 
 NAME=C++ demangle relocs
 FILE=../bins/elf/libstdc++.so.6
-EXPECT=<<CMDS
+EXPECT=<<EOF
             0x00091004      488b159d880f.  mov rdx, qword [reloc.vtable_for_std::bad_alloc] ; [0x1898a8:8]=0
-CMDS=<<RUN
+EOF
+CMDS=<<EOF
 pd 1 @0x00091004
+EOF
 RUN
 
 NAME=C++ demangle exported GLIBCXX symbols
 FILE=../bins/elf/libstdc++.so.6
-EXPECT=<<CMDS
+EXPECT=<<EOF
 3770  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
 3771  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
 5087  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
 5345  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
-CMDS=<<RUN
+EOF
+CMDS=<<EOF
 iE~0x0008ce50
+EOF
 RUN
 
 NAME=demangle in irj
@@ -117,7 +121,7 @@ RUN
 
 NAME=c++ disasm call demangling
 FILE=../bins/elf/abcde-qt32
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.demangle=true
 e asm.bytes=false
 (pd_calls, pd 1 @ 0x0804921a, pd 1 @ 0x08049249, pd 1 @ 0x08049278)
@@ -133,7 +137,8 @@ aa
 ?e
 e asm.demangle=false
 .(pd_calls)
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             0x0804921a      call sym.__x86.get_pc_thunk.si
             0x08049249      call method QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*) ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
             0x08049278      call sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
@@ -151,11 +156,12 @@ EXPECT=<<RUN
 |           0x0804921a      call sym.__x86.get_pc_thunk.si
 |           0x08049249      call method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
 |           0x08049278      call sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+EOF
 RUN
 
 NAME=c++ xref demangling (xref from fcn)
 FILE=../bins/elf/abcde-qt32
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.var=false
 e asm.bytes=false
 aa
@@ -174,7 +180,8 @@ pd 1
 ?e
 e asm.demangle=false
 pd 1
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             ; CALL XREF from sym._init @ 0x8049008
             ; CALL XREF from QtPrivate::RefCount::deref() @ 0x8049349 ; method.QtPrivate::RefCount.deref
             ; CALL XREF from QString::QString(char const*) @ 0x804939d ; method.QString.QString_char_const
@@ -212,11 +219,12 @@ EXPECT=<<RUN
 
 |           ; CODE XREFS from method.QtPrivate::RefCount.deref @ 0x8049371, 0x804937e
 |           0x08049390      mov ebx, dword [var_4h]
+EOF
 RUN
 
 NAME=c++ xref demangling (xref not from fcn)
 FILE=../bins/elf/redpill
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.var=false
 e asm.bytes=false
 aaa
@@ -225,7 +233,8 @@ pd 1 @ sym.imp._Unwind_Resume
 ?e
 e asm.demangle=false
 pd 1 @ sym.imp._Unwind_Resume
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             ; CALL XREF from main @ +0x222
             ; CALL XREF from fcn.00001717 @ +0xbb
             ; CALL XREF from std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string<char*, void>(char*, char*, std::allocator<char> const&) @ +0x66 ; sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char___void__char___char___std::allocator_char__const
@@ -239,4 +248,5 @@ EXPECT=<<RUN
             ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
 / 6: sym.imp._Unwind_Resume ();
 \           0x00000f10      jmp dword [ebx + 0x70]
+EOF
 RUN

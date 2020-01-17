@@ -33,12 +33,13 @@ RUN
 
 NAME=seek undo/redo
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 wx 01
 s 1
 s-
 s+
 pb 8
+EOF
 EXPECT=<<EOF
 00000000
 EOF

@@ -82,16 +82,17 @@ RUN
 
 NAME=ELF: phdr override
 FILE=../bins/elf/analysis/phdr-override
-EXPECT=<<CMDS
+EXPECT=<<EOF
 printf
 __libc_start_main
 __gmon_start__
+EOF
 CMDS=iiq
 RUN
 
 NAME=ELF: phdr override 2
 FILE=../bins/elf/busybox-phdr-shdr
-EXPECT=<<CMDS
+EXPECT=<<EOF
 7   0x00000000 GLOBAL OBJ      __environ
 43  0x00000000 GLOBAL OBJ      __ctype_tolower
 145 0x00000000 GLOBAL OBJ      __stdout
@@ -104,15 +105,17 @@ EXPECT=<<CMDS
 667 0x00000000 GLOBAL OBJ      __ctype_b
 706 0x00000000 GLOBAL OBJ      allCountryList
 718 0x00000000 GLOBAL OBJ      stdout
+EOF
 CMDS=ii~OBJ
 RUN
 
 NAME=ELF: no symbol overwrite
 FILE=../bins/elf/libc.so.6
-CMDS=<<EXPECT
+CMDS=<<EOF
 is~getpid
 f~getpid
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 581   0x000c9420 0x000c9420 WEAK   FUNC   12        getpid
 965   0x000c9420 0x000c9420 GLOBAL FUNC   12        __getpid
 3577  0x000c9420 0x000c9420 LOCAL  FUNC   12        __GI___getpid
@@ -121,4 +124,5 @@ EXPECT=<<RUN
 0x000c9420 12 sym.__getpid
 0x000c9420 12 sym.__GI___getpid
 0x000c9420 12 sym.__GI_getpid
+EOF
 RUN

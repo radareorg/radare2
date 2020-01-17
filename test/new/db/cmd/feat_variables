@@ -55,7 +55,7 @@ RUN
 
 NAME=$$$ (malloc)
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 ?v $$ @ 0x300
 ?v $$$ @ 0x300
 s 0x123
@@ -71,7 +71,8 @@ s
 s
 .(test2) @ 0x300
 s
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x300
 0x0
 0x300
@@ -84,34 +85,39 @@ EXPECT=<<RUN
 0x123
 0x123
 0x123
+EOF
 RUN
 
 NAME=nested $$
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 (nested_seek, ?v $$)
 .(nested_seek) @ 0x500
 (nested_seek2, ?v $$, .(nested_seek) @ 0x600, ?v $$)
 .(nested_seek2) @ 0x700
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x500
 0x700
 0x600
 0x700
+EOF
 RUN
 
 NAME=no seek change on pdf @ addr (#10007)
 FILE=../bins/elf/redpill
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 af @ 0x1a71
 s entry0
 s
 pdf @ 0x1a71 > /dev/null
 s  # should be the same as before
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0xf40
 0xf40
+EOF
 RUN
 
 NAME=$o (malloc)
@@ -386,7 +392,7 @@ RUN
 
 NAME=$s{flag} and $SS (sections context)
 FILE=../bins/elf/before-after-main
-CMDS=<<EXPECT
+CMDS=<<EOF
 iSS~LOAD1
 iS~.preinit_array
 ?e
@@ -394,11 +400,13 @@ s segment.LOAD1
 ?vi $s{segment.LOAD1}
 ?vi $s{section..preinit_array}
 ?vi $SS
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 3   0x00000ed4  0x14c 0x08049ed4  0x150 -rw- LOAD1
 18  0x00000ed4    0x8 0x08049ed4    0x8 -rw- .preinit_array
 
 336
 8
 8
+EOF
 RUN

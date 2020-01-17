@@ -1,81 +1,93 @@
 NAME='dbg.maps.count/'
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 dm~?/
 dk 9
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 4
+EOF
 RUN
 
 NAME='dbg.maps.count'
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 dm~?
 dk 9
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 7
+EOF
 RUN
 
 NAME='dbg.maps.count.after.map'
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 dm~?
 db sym.imp.puts
 dc~?
 dm~?
 dc
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 7
 0
 14
 Hello world!
+EOF
 RUN
 
 NAME='dbg.modules.count'
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 dmm~?
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 2
+EOF
 RUN
 
 NAME='dbg.curmod.count'
 BROKEN=1
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 dmm.~?
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME='db.maps.symbols.after.map.complete'
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 dm~?
 db sym.imp.puts
 dc~?
 dmi libc~?
 dmi libc~libc|wc -l
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 7
 0
 2392
 45
 Hello world!
+EOF
 RUN
 
 NAME='dbg.maps.sections.after.map.only_filtered'
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 dm~?
 db sym.imp.puts
 dc~?
@@ -83,7 +95,8 @@ dmS libc~?
 dmS libc~libc|wc -l
 dmS* libc~?
 dmS* libc~libc|wc -l
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 7
 0
 80
@@ -91,6 +104,7 @@ EXPECT=<<RUN
 314
 312
 Hello world!
+EOF
 RUN
 
 
@@ -98,7 +112,7 @@ NAME='dbg.maps.sections.after.map.complete'
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 dm~?
 db sym.imp.puts
 dc~?
@@ -110,7 +124,8 @@ dmS~?
 dmS*~?
 dmS~libc|wc -l
 dmS*~libc|wc -l
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 7
 0
 80
@@ -122,13 +137,14 @@ EXPECT=<<RUN
 78
 312
 Hello world!
+EOF
 RUN
 
 NAME='db.maps.sections.are.singletons'
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 dmm~?
 db sym.imp.puts
 dc~?
@@ -138,7 +154,8 @@ dmS hello~.text|wc -l
 dmS~x86-helloworld-gcc..text|wc -l
 dmS~libc-2.19.so..text|wc -l
 dmS~ld-2.19.so..text|wc -l
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 2
 0
 3
@@ -148,13 +165,14 @@ EXPECT=<<RUN
 1
 1
 Hello world!
+EOF
 RUN
 
 NAME='db.maps.current.section.after.dmS'
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 dmm~?
 db sym.imp.puts
 dc~?
@@ -163,7 +181,8 @@ s map._lib_i386_linux_gnu_ld_2.19.so._r_x
 S.~?
 .dmS*~?
 S.~libc-2.19.so..text|wc -l
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 2
 0
 3
@@ -171,4 +190,5 @@ EXPECT=<<RUN
 3
 1
 Hello world!
+EOF
 RUN
