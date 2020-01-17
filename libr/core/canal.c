@@ -260,9 +260,9 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				if (map->name && map->name[0] == '/') {
 					if (core->io && core->io->desc &&
-					    core->io->desc->name &&
-					    !strcmp (map->name,
-						     core->io->desc->name)) {
+						core->io->desc->name &&
+						!strcmp (map->name,
+							 core->io->desc->name)) {
 						types |= R_ANAL_ADDR_TYPE_PROGRAM;
 					} else {
 						types |= R_ANAL_ADDR_TYPE_LIBRARY;
@@ -538,7 +538,7 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 		ut32 delta = r_read_le32 (temp_delta);
 		ut64 func_offset = gopclntab + delta;
 		if (!r_io_nread_at (core->io, func_offset, temp_func_addr, 4) ||
-		    !r_io_nread_at (core->io, func_offset + ptr_size, temp_func_name, 4)) {
+			!r_io_nread_at (core->io, func_offset + ptr_size, temp_func_name, 4)) {
 			break;
 		}
 		ut32 func_addr = r_read_le32 (temp_func_addr);
@@ -591,7 +591,7 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 	r_list_foreach (refs, iter, ref) {
 		if (ref->type == R_ANAL_REF_TYPE_DATA &&
-		    r_bin_is_string (core->bin, ref->addr)) {
+			r_bin_is_string (core->bin, ref->addr)) {
 			r_anal_xrefs_set (core->anal, ref->at, ref->addr, R_ANAL_REF_TYPE_STRING);
 		}
 	}
@@ -1167,6 +1167,7 @@ R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 	if (pj) {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 	free (hint);
 }
@@ -1501,7 +1502,7 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                         r_config_set_i (core->config, "asm.lines.fcn", 0);
                                         r_config_set_i (core->config, "asm.bytes", 0);
                                         if (!is_star) {
-						r_config_set_i (core->config, "scr.color", 0);	// disable color for dot
+                                            r_config_set_i (core->config, "scr.color", 0);	// disable color for dot
                                         }
 
                                         if (bbi->diff && bbi->diff->type != R_ANAL_DIFF_TYPE_MATCH && core->c2) {
@@ -1515,18 +1516,18 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                         (const ut8*)str, strlen (str),
                                                         (const ut8*)str2, strlen (str2));
 
-						if (diffstr) {
-							char *nl = strchr (diffstr, '\n');
-							if (nl) {
-								nl = strchr (nl + 1, '\n');
-								if (nl) {
-									nl = strchr (nl + 1, '\n');
-									if (nl) {
-										r_str_cpy (diffstr, nl + 1);
-									}
-								}
-							}
-						}
+                                                if (diffstr) {
+                                                    char *nl = strchr (diffstr, '\n');
+                                                    if (nl) {
+                                                        nl = strchr (nl + 1, '\n');
+                                                        if (nl) {
+                                                            nl = strchr (nl + 1, '\n');
+                                                            if (nl) {
+                                                                r_str_cpy (diffstr, nl + 1);
+                                                            }
+                                                        }
+                                                    }
+                                                }
 
                                                 if (is_star) {
                                                         char *title = get_title (bbi->addr);
@@ -1541,8 +1542,8 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                         free (body_b64);
                                                         free (title);
                                                 } else {
-							diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
-							diffstr = r_str_replace (diffstr, "\"", "'", 1);
+                                                        diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
+                                                        diffstr = r_str_replace (diffstr, "\"", "'", 1);
                                                         r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
                                                         "color=\"black\", fontname=\"Courier\","
                                                         " label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
@@ -1559,6 +1560,7 @@ static int core_anal_graph_construct_nodes (RCore *core, RAnalFunction *fcn, int
                                                         if (!title  || !body_b64) {
                                                                 free (body_b64);
                                                                 free (title);
+                                                                r_diff_free (d);
                                                                 return false;
                                                         }
                                                         body_b64 = r_str_prepend (body_b64, "base64:");
@@ -2337,7 +2339,7 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
 		r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %d ",
-			       fcn->addr, bbi->addr, bbi->size);
+				   fcn->addr, bbi->addr, bbi->size);
 		r_cons_printf ("0x%08"PFMT64x" ", bbi->jump);
 		r_cons_printf ("0x%08"PFMT64x, bbi->fail);
 		if (bbi->diff) {
@@ -2678,7 +2680,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 				outdegree++;
 			}
 			if (refi->type == R_ANAL_REF_TYPE_CODE ||
-			    refi->type == R_ANAL_REF_TYPE_CALL) {
+				refi->type == R_ANAL_REF_TYPE_CALL) {
 				pj_o (pj);
 				pj_kn (pj, "addr", refi->addr);
 				pj_ks (pj, "type", r_anal_xrefs_type_tostring (refi->type));
@@ -2706,7 +2708,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 		pj_a (pj);
 		r_list_foreach (xrefs, iter, refi) {
 			if (refi->type == R_ANAL_REF_TYPE_CODE ||
-			    refi->type == R_ANAL_REF_TYPE_CALL) {
+				refi->type == R_ANAL_REF_TYPE_CALL) {
 				indegree++;
 				pj_o (pj);
 				pj_kn (pj, "addr", refi->addr);
@@ -3390,14 +3392,16 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	if (is_json) {
 		pj = pj_new ();
 		if (!pj) {
+			r_config_hold_restore (hc);
+			r_config_hold_free (hc);
 			return false;
 		}
 		pj_a (pj);
 	}
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN |
-		                  R_ANAL_FCN_TYPE_LOC) &&
-		    (addr == UT64_MAX || r_anal_get_fcn_in (core->anal, addr, 0) == fcni)) {
+						  R_ANAL_FCN_TYPE_LOC) &&
+			(addr == UT64_MAX || r_anal_get_fcn_in (core->anal, addr, 0) == fcni)) {
 			if (addr == UT64_MAX && (from != UT64_MAX && to != UT64_MAX)) {
 				if (fcni->addr < from || fcni->addr > to) {
 					continue;
@@ -3413,8 +3417,8 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		if (!is_html && !is_json && !is_keva) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (is_star) {
-			        char *name = get_title(fcn ? fcn->addr: addr);
-			        r_cons_printf ("agn %s;", name);
+					char *name = get_title(fcn ? fcn->addr: addr);
+					r_cons_printf ("agn %s;", name);
 			}else {
                                 r_cons_printf ("\t\"0x%08"PFMT64x"\";\n", fcn? fcn->addr: addr);
 			}
@@ -3540,9 +3544,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				break;
 			}
 			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;
-			     (!bckwrds && i < core->blocksize - OPSZ) ||
-			     (bckwrds && i > 0);
-			     bckwrds ? i-- : i++) {
+				 (!bckwrds && i < core->blocksize - OPSZ) ||
+				 (bckwrds && i > 0);
+				 bckwrds ? i-- : i++) {
 				// TODO: honor anal.align
 				if (r_cons_is_breaked ()) {
 					break;
@@ -4475,7 +4479,7 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	ut64 at = *val;
 	if (anal && anal->opt.armthumb) {
 		if (anal->cur && anal->cur->arch && anal->bits < 33 &&
-		    strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
+			strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
 			switch (op->type) {
 			case R_ANAL_OP_TYPE_UCALL: // BLX
 			case R_ANAL_OP_TYPE_UJMP: // BX
@@ -5031,7 +5035,7 @@ static bool stringAt(RCore *core, ut64 addr) {
 }
 
 R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 vmin,
-				     ut64 vmax, int vsize, inRangeCb cb, void *cb_user) {
+					 ut64 vmax, int vsize, inRangeCb cb, void *cb_user) {
 	int i, align = core->search->align, hitctr = 0;
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
 	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");

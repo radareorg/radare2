@@ -767,7 +767,7 @@ static const char *types_list_to_fcnstr(RList *types) {
 		if (!strcmp (field, "args")) {
 			nargs = atoi (v);
 		} else if (!strcmp (field, "ret")) {
-			rettype = v;
+			rettype = strdup (v);
 		} else {
 			if (i < nargs) {
 				arg = strdup (v);
@@ -803,6 +803,7 @@ static const char *types_list_to_fcnstr(RList *types) {
 	}
 
 	r_list_free (args);
+	free (rettype);
 	return ret;
 }
 
@@ -812,7 +813,7 @@ static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, 
 	char *name = NULL;
 
 	if (it->types) {
-		const char *fcnstr = types_list_to_fcnstr (it->types);
+		char *fcnstr = types_list_to_fcnstr (it->types);
 		char *fcnstr_copy = strdup (fcnstr);
 		fcn = r_anal_get_fcn_in (core->anal, it->addr, 0);
 		if (fcn) {
@@ -828,6 +829,7 @@ static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, 
 		if (fcnstr_copy) {
 			free (fcnstr_copy);
 		}
+		free (fcnstr);
 	}
 	name = r_name_filter2 (r_str_newf ("%s.%s.%s_%d", zign_prefix, prefix, it->name, count));
 	if (name) {

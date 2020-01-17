@@ -487,6 +487,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 				pj_s (pj, flg);
 			}
 			pj_end (pj);
+			r_list_free (flags);
 		}
 		pj_end (pj);
 		r_list_free (list);

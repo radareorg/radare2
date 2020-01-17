@@ -2643,9 +2643,11 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 		symbols_size = (symbols_count + 1) * 2 * sizeof (struct symbol_t);
 
 		if (symbols_size < 1) {
+			ht_pp_free (hash);
 			return NULL;
 		}
 		if (!(symbols = calloc (1, symbols_size))) {
+			ht_pp_free (hash);
 			return NULL;
 		}
 		bin->main_addr = 0;
@@ -2777,9 +2779,11 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 	} else {
 		symbols_size = (symbols_count + 1) * sizeof (struct symbol_t);
 		if (symbols_size < 1) {
+			ht_pp_free (hash);
 			return NULL;
 		}
 		if (!(symbols = calloc (1, symbols_size))) {
+			ht_pp_free (hash);
 			return NULL;
 		}
 	}

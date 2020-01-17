@@ -169,6 +169,8 @@ static RList *zign_types_to_list(RAnal *a, char *types) {
 			if (token) {
 				prev = i + 1;
 				r_list_append (ret, strdup (token));
+				free (token);
+				token = NULL;
 			}
 		}
 	}
@@ -343,6 +345,7 @@ out:
 	free (v2);
 	free (refs);
 	free (vars);
+	free (types);
 	return (w == n);
 }
 

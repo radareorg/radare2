@@ -599,6 +599,7 @@ repeat:
 	switch (r_cons_readchar ()) {
 	case 'q':
 		r_strbuf_free (p);
+		r_strbuf_free (q);
 		return ret;
 	case '!':
 		r_core_visual_panels_root (core, core->panels_root);

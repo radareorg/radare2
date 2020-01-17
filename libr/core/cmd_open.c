@@ -826,9 +826,11 @@ static void cmd_open_map(RCore *core, const char *input) {
 		RTable *table = r_core_table (core);
 		r_table_visual_list (table, list, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
-		r_cons_printf ("\n%s\n", r_table_tostring (table));
+		char *tablestr = r_table_tostring (table);
+		r_cons_printf ("\n%s\n", tablestr);
 		r_table_free (table);
 		r_list_free (list);
+		free (tablestr);
 		} break;
 	default:
 	case '?':

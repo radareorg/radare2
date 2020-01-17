@@ -851,7 +851,9 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 			}
 			r_table_add_rowf (table, "sssssss", "=>", sdb_fmt ("0x%08"PFMT64x"", seek),
 			    r_strbuf_drain (buf),  sdb_fmt ("0x%08"PFMT64x"", seek + len), "", "", "");
-		}
+		} else {
+            r_strbuf_free (buf);
+        }
 	}
 }
 
