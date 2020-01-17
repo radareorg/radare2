@@ -9,7 +9,7 @@ r2_version = 'unknown-error'
 r2_version_major = 0
 r2_version_minor = 0
 r2_version_patch = 0
-r = run_command(py3_exe, 'sys/version.py')
+r = run_command(py3_exe, 'sys/version.py', '--full-version')
 if r.returncode() == 0
   vers = r.stdout().strip().split('\n')
   r2_version = vers[0]
