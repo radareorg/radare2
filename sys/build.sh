@@ -131,7 +131,7 @@ fi
 ${MAKE} mrproper > /dev/null 2>&1
 [ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed ${LDFLAGS}"
 [ -z "${KEEP_PLUGINS_CFG}" ] && rm -f plugins.cfg
-unset DEPS
+unset R2DEPS
 pwd
 
 ./configure ${CFGARG} --prefix="${PREFIX}" || exit 1

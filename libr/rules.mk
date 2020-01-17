@@ -108,9 +108,9 @@ pkgcfg:
 	@echo 'Name: ${NAME}' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Description: radare foundation libraries' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Version: @VERSION@' >> ../../pkgcfg/${NAME}.pc.acr
-	@echo 'Requires: $(filter r_%,${DEPS})' >> ../../pkgcfg/${NAME}.pc.acr
+	@echo 'Requires: $(filter r_%,${R2DEPS})' >> ../../pkgcfg/${NAME}.pc.acr
 	@if [ "${NAME}" = "libr" ]; then NAME=''; else NAME=${NAME}; fi ;\
-	echo 'Libs: -L$${libdir} -l${NAME} $(filter-out r_%,${DEPS}) ${PCLIBS}' >> ../../pkgcfg/${NAME}.pc.acr
+	echo 'Libs: -L$${libdir} -l${NAME} $(filter-out r_%,${R2DEPS}) ${PCLIBS}' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Cflags: -I$${includedir}/libr ${PCCFLAGS}' >> ../../pkgcfg/${NAME}.pc.acr
 
 clean:: ${EXTRA_CLEAN}

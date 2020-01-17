@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_syscall
-DEPS=r_util
+R2DEPS=r_util
 
 OBJS=syscall.o ioports.o
 CFLAGS+=-D__UNIX__ -Wall
