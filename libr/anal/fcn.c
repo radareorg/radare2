@@ -503,7 +503,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 				fcn_takeover_block_recursive (fcn, existing_bb);
 			}
 		}
-		r_anal_block_unref (existing_bb);
+		if (existing_bb) {
+			r_anal_block_unref (existing_bb);
+		}
 		if (anal->opt.recont) {
 			return R_ANAL_RET_END;
 		}
