@@ -2087,23 +2087,20 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	RBinAddr *entry;
 	RListIter *iter;
 	bool firstexp = true;
-	bool printHere = false;
+	bool printHere = (args && *args == '.');
+
 	int i = 0, lastfs = 's';
 	RTable *table = r_core_table (r);
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (!info) {
 		if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("[]");
+			r_cons_printf (printHere? "{}": "[]");
 		}
 		r_table_free (table);
 		return 0;
 	}
 
 	PJ *pj = pj_new ();
-	if (args && *args == '.') {
-		printHere = true;
-	}
-
 	bool is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
 	const char *lang = bin_demangle ? r_config_get (r->config, "bin.lang") : NULL;
 
@@ -2347,7 +2344,8 @@ next:
 		if (!printHere) {
 			pj_end (pj);
 		}
-		r_cons_printf ("%s\n", pj_string (pj));
+		const char *js = pj_string (pj);
+		r_cons_printf ("%s", (js && *js)? js: "{}");
 	}
 	pj_free (pj);
 
