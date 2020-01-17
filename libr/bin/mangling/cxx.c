@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2019 - pancake */
+/* radare - LGPL - Copyright 2013-2020 - pancake */
 
 #include <r_bin.h>
 #include "../i/private.h"
@@ -10,6 +10,7 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	int i;
 #if WITH_GPL
 	int flags = DMGL_NO_OPTS | DMGL_PARAMS;
+	// int flags = DMGL_AUTO; // DMGL_NO_OPTS | DMGL_PARAMS | DMGL_TYPES | DMGL_RET_POSTFIX
 #endif
 	const char *prefixes[] = {
 		"__symbol_stub1_",
@@ -44,7 +45,8 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 		}
 	}
 #if WITH_GPL
-	char *out = cplus_demangle_v3 (p, flags);
+	// char *out = cplus_demangle_v3 (p, flags);
+	char *out = cplus_demangle (p, flags);
 #else
 	/* TODO: implement a non-gpl alternative to c++v3 demangler */
 	char *out = NULL;

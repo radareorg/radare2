@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake */
+/* radare - LGPL - Copyright 2011-2020 - pancake */
 
 #include <r_bin.h>
 #include "i/private.h"
@@ -128,7 +128,11 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	case R_BIN_NM_SWIFT: demangled = r_bin_demangle_swift (str, bin? bin->demanglercmd: false); break;
 	case R_BIN_NM_CXX: demangled = r_bin_demangle_cxx (bf, str, vaddr); break;
 	case R_BIN_NM_MSVC: demangled = r_bin_demangle_msvc (str); break;
+#if WITH_GPL
+	case R_BIN_NM_DLANG: demangled = dlang_demangle (str, 0); break;
+#else
 	case R_BIN_NM_DLANG: demangled = r_bin_demangle_plugin (bin, "dlang", str); break;
+#endif
 	}
 	if (libs && demangled && lib) {
 		char *d = r_str_newf ("%s_%s", lib, demangled);

@@ -19,7 +19,11 @@ static bool replace_seq (const char **in, char **out, const char *seq, char valu
 	return true;
 }
 
+// the new mangling/rust should be used when GNU is available
 R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr) {
+#if WITH_GPL
+	return rust_demangle (sym, 0);
+#else
 	int len;
 	char *str, *out, *in;
 
@@ -73,4 +77,5 @@ R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr)
 	*out = '\0';
 
 	return str;
+#endif
 }

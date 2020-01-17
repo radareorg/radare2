@@ -40,6 +40,13 @@
 extern "C" {
 #endif
 
+
+#define ISXDIGIT isxdigit
+#define ISDIGIT isdigit
+#define ISLOWER islower
+#define ISPRINT isprint
+#define ISUPPER isupper
+
 #include "ansidecl.h"
 
 /* Get a definition for size_t.  */
@@ -294,13 +301,13 @@ extern void xmalloc_failed (size_t) ATTRIBUTE_NORETURN;
    message to stderr (using the name set by xmalloc_set_program_name,
    if any) and then call xexit.  */
 
-extern void *xmalloc (size_t) ATTRIBUTE_MALLOC;
+// extern void *xmalloc (size_t) ATTRIBUTE_MALLOC;
 
 /* Reallocate memory without fail.  This works like xmalloc.  Note,
    realloc type functions are not suitable for attribute malloc since
    they may return the same address across multiple calls. */
 
-extern void *xrealloc (void *, size_t);
+// extern void *xrealloc (void *, size_t);
 
 /* Allocate memory without fail and set it to zero.  This works like
    xmalloc.  */
@@ -309,7 +316,10 @@ extern void *xcalloc (size_t, size_t) ATTRIBUTE_MALLOC;
 
 /* Copy a string into a memory buffer without fail.  */
 
-extern char *xstrdup (const char *) ATTRIBUTE_MALLOC;
+// extern char *xstrdup (const char *) ATTRIBUTE_MALLOC;
+#define xrealloc realloc
+#define xstrdup strdup
+#define xmalloc malloc
 
 /* Copy at most N characters from string into a buffer without fail.  */
 

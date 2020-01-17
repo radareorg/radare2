@@ -96,7 +96,7 @@ static void pair(const char *a, const char *b) {
 	r_cons_printf ("%s%s%s\n", a, ws, b);
 }
 
-static bool demangle_internal(RCore *core, const char *lang, const char *s) {
+static bool __demangle_internal(RCore *core, const char *lang, const char *s) {
 	char *res = NULL;
 	int type = r_bin_demangle_type (lang);
 	switch (type) {
@@ -120,7 +120,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	return true;
 }
 
-static bool demangle(RCore *core, const char *s) {
+static bool __demangle(RCore *core, const char *s) {
 	r_return_val_if_fail (core && s, false);
 	const char *ss = strchr (s, ' ');
 	if (!*s) {
@@ -128,13 +128,13 @@ static bool demangle(RCore *core, const char *s) {
 	}
 	if (!ss) {
 		const char *lang = r_config_get (core->config, "bin.lang");
-		demangle_internal (core, lang, s);
+		__demangle_internal (core, lang, s);
 		return true;
 	}
 	char *p = strdup (s);
 	char *q = p + (ss - s);
 	*q = 0;
-	demangle_internal (core, p, q + 1);
+	__demangle_internal (core, p, q + 1);
 	free (p);
 	return true;
 }
@@ -1182,7 +1182,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'D': // "iD"
-			if (input[1] != ' ' || !demangle (core, input + 2)) {
+			if (input[1] != ' ' || !__demangle (core, input + 2)) {
 				eprintf ("|Usage: iD lang symbolname\n");
 			}
 			return 0;
