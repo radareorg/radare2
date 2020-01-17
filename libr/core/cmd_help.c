@@ -224,6 +224,10 @@ static const char *help_msg_question_v[] = {
 static const char *help_msg_question_V[] = {
 	"Usage: ?V[jq]","","",
 	"?V", "", "show version information",
+	"?V0", "", "show major version",
+	"?V1", "", "show minor version",
+	"?V2", "", "show patch version",
+	"?Vn", "", "show numeric version (2)",
 	"?Vc", "", "show numeric version",
 	"?Vj", "", "same as above but in JSON",
 	"?Vq", "", "quiet mode, just show the version number",
@@ -841,16 +845,39 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%d\n", vernum (R2_VERSION));
 			break;
 		case 'j': // "?Vj"
-			r_cons_printf ("{\"archos\":\"%s-%s\"", R_SYS_OS, R_SYS_ARCH);
-			r_cons_printf (",\"arch\":\"%s\"", R_SYS_ARCH);
-			r_cons_printf (",\"os\":\"%s\"", R_SYS_OS);
-			r_cons_printf (",\"commit\":%d", R2_VERSION_COMMIT);
-			r_cons_printf (",\"tap\":\"%s\"", R2_GITTAP);
-			r_cons_printf (",\"nversion\":%d", vernum (R2_VERSION));
-			r_cons_printf (",\"version\":\"%s\"}\n", R2_VERSION);
+			{
+				PJ *pj = pj_new ();
+				pj_o (pj);
+				pj_ks (pj, "arch", R_SYS_ARCH);
+				pj_ks (pj, "os", R_SYS_OS);
+				pj_ki (pj, "bits", R_SYS_BITS);
+				pj_ki (pj, "commit", R2_VERSION_COMMIT);
+				pj_ks (pj, "tap", R2_GITTAP);
+				pj_ki (pj, "major", R2_VERSION_MAJOR);
+				pj_ki (pj, "minor", R2_VERSION_MINOR);
+				pj_ki (pj, "patch", R2_VERSION_PATCH);
+				pj_ki (pj, "number", R2_VERSION_NUMBER);
+				pj_ki (pj, "nversion", vernum (R2_VERSION));
+				pj_ks (pj, "version", R2_VERSION);
+				pj_end (pj);
+				r_cons_printf ("%s\n", pj_string (pj));
+				pj_free (pj);
+			}
+			break;
+		case 'n': // "?Vn"
+			r_cons_printf ("%d\n", R2_VERSION_NUMBER);
 			break;
 		case 'q': // "?Vq"
 			r_cons_println (R2_VERSION);
+			break;
+		case '0':
+			r_cons_printf ("%d\n", R2_VERSION_MAJOR);
+			break;
+		case '1':
+			r_cons_printf ("%d\n", R2_VERSION_MINOR);
+			break;
+		case '2':
+			r_cons_printf ("%d\n", R2_VERSION_PATCH);
 			break;
 		}
 		break;
