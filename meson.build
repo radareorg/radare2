@@ -9,6 +9,7 @@ r2_version = 'unknown-error'
 r2_version_major = 0
 r2_version_minor = 0
 r2_version_patch = 0
+r2_version_number = 0
 r = run_command(py3_exe, 'sys/version.py', '--full-version')
 if r.returncode() == 0
   vers = r.stdout().strip().split('\n')
@@ -16,6 +17,7 @@ if r.returncode() == 0
   r2_version_major = vers[1]
   r2_version_minor = vers[2]
   r2_version_patch = vers[3]
+  r2_version_number = vers[4]
   if host_machine.system() == 'darwin'
     r2_version = r2_version.split('-')[0]
   endif
@@ -370,6 +372,7 @@ versionconf.set('VERSIONCOMMIT', version_commit)
 versionconf.set('R2_VERSION_MAJOR', r2_version_major)
 versionconf.set('R2_VERSION_MINOR', r2_version_minor)
 versionconf.set('R2_VERSION_PATCH', r2_version_patch)
+versionconf.set('R2_VERSION_NUMBER', r2_version_number)
 versionconf.set('R2_VERSION', r2_version)
 versionconf.set('R2_GITTAP', gittap)
 versionconf.set('R2_GITTIP', gittip)
