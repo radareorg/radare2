@@ -1159,7 +1159,6 @@ typedef struct r_panels_t {
 	int curnode;
 	int mouse_orig_x;
 	int mouse_orig_y;
-	bool isResizing;
 	bool autoUpdate;
 	bool mouse_on_edge_x;
 	bool mouse_on_edge_y;
