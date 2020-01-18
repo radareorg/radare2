@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -11,6 +11,7 @@ static const char *help_msg_f[] = {
 	"f."," [*[*]]","list local per-function flags (*) as r2 commands",
 	"f.","blah=$$+12","set local function label named 'blah'",
 	"f."," fname","list all local labels for the given function",
+	"f,","","table output for flags",
 	"f*","","list flags in r commands",
 	"f"," name 12 @ 33","set flag 'name' with length 12 at offset 33",
 	"f"," name = 33","alias for 'f name @ 33' or 'f name 1 33'",
@@ -418,6 +419,47 @@ static int flag_to_flag(RCore *core, const char *glob) {
 		return u.next - core->offset;
 	}
 	return 0;
+}
+
+typedef struct {
+	RTable *t;
+} FlagTableData;
+
+static bool __tableItemCallback(RFlagItem *flag, void *user) {
+	FlagTableData *ftd = user;
+	if (flag->name && *flag->name) {
+		RTable *t = ftd->t;
+		const char *spaceName = (flag->space && flag->space->name)? flag->space->name: "";
+		const char *addr = sdb_fmt ("0x%08"PFMT64x, flag->offset);
+		r_table_add_row (t, addr, sdb_fmt ("%d", flag->size), spaceName, flag->name, NULL);
+	}
+	return true;
+}
+
+static void cmd_flag_table(RCore *core, const char *input) {
+	const char fmt = *input++;
+	const char *q = input;
+	FlagTableData ftd = {0};
+	RTable *t = r_core_table (core);
+	ftd.t = t;
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeNumber = r_table_type ("number");
+	r_table_add_column (t, typeNumber, "addr", 0);
+	r_table_add_column (t, typeNumber, "size", 0);
+	r_table_add_column (t, typeString, "space", 0);
+	r_table_add_column (t, typeString, "name", 0);
+
+	RSpace *curSpace = r_flag_space_cur (core->flags);
+	r_flag_foreach_space (core->flags, curSpace, __tableItemCallback, &ftd);
+	if (r_table_query (t, q)) {
+		char *s = (fmt == 'j')
+			? r_table_tojson (t)
+			: r_table_tofancystring (t);
+		// char *s = r_table_tostring (t);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
+	r_table_free (t);
 }
 
 static void cmd_flag_tags(RCore *core, const char *input) {
@@ -1030,6 +1072,9 @@ rep:
 		} else {
 			eprintf ("Missing arguments\n");
 		}
+		break;
+	case ',': // "f,"
+		cmd_flag_table (core, input);
 		break;
 	case 't': // "ft"
 		cmd_flag_tags (core, input);
