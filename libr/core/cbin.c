@@ -292,7 +292,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			}
 		}
 		if (IS_MODE_SET (mode)) {
-			char *f_name, *f_realname, *str;
+			char *f_name, *str;
 			if (r_cons_is_breaked ()) {
 				break;
 			}
@@ -301,16 +301,12 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			r_name_filter (f_name, -1);
 			if (r->bin->prefix) {
 				str = r_str_newf ("%s.str.%s", r->bin->prefix, f_name);
-				f_realname = r_str_newf ("%s.\"%s\"", r->bin->prefix, string->string);
 			} else {
 				str = r_str_newf ("str.%s", f_name);
-				f_realname = r_str_newf ("\"%s\"", string->string);
 			}
 			RFlagItem *flag = r_flag_set (r->flags, str, vaddr, string->size);
-			r_flag_item_set_realname (flag, f_realname);
 			free (str);
 			free (f_name);
-			free (f_realname);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", vaddr,
 				string->size, string->length, string->string);
