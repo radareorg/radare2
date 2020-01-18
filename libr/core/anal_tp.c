@@ -390,11 +390,16 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 					cmt_set = true;
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp (name, "format")) {
 						RFlagItem *f = r_flag_get_i (core->flags, op->ptr);
-						if (f && !strncmp (f->name, "str", 3)) {
-							if ((types = parse_format (core, f->realname))) {
-								max += r_list_length (types);
+						if (f && f->space && !strcmp (f->space->name, R_FLAGS_FS_STRINGS)) {
+							char formatstr[0x200];
+							int read = r_io_nread_at (core->io, f->offset, (ut8 *)formatstr, R_MIN (sizeof (formatstr) - 1, f->size));
+							if (read > 0) {
+								formatstr[read] = '\0';
+								if ((types = parse_format (core, formatstr))) {
+									max += r_list_length (types);
+								}
+								format = true;
 							}
-							format = true;
 						}
 					}
 				}
