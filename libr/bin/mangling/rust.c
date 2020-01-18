@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2011-2018 - pancake */
+/* radare - LGPL - Copyright 2011-2020 - pancake */
 
 #include <r_bin.h>
 
+#define USE_GNU_RUST 0
 #define RS(from, to) (replace_seq ((const char **)&in, &out, (const char *)(from), to))
 
 static bool replace_seq (const char **in, char **out, const char *seq, char value) {
@@ -21,7 +22,7 @@ static bool replace_seq (const char **in, char **out, const char *seq, char valu
 
 // the new mangling/rust should be used when GNU is available
 R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr) {
-#if WITH_GPL
+#if WITH_GPL && USE_GNU_RUST
 	return rust_demangle (sym, 0);
 #else
 	int len;
