@@ -82,13 +82,12 @@ R_API void r_fs_add(RFS* fs, RFSPlugin* p) {
 		p->init ();
 	}
 	RFSPlugin* sp = R_NEW0 (RFSPlugin);
-	if (!sp) {
-		return;
+	if (sp) {
+		if (p) {
+			memcpy (sp, p, sizeof (RFSPlugin));
+		}
+		r_list_append (fs->plugins, sp);
 	}
-	if (p) {
-		memcpy (sp, p, sizeof (RFSPlugin));
-	}
-	r_list_append (fs->plugins, sp);
 }
 
 R_API void r_fs_del(RFS* fs, RFSPlugin* p) {
@@ -161,9 +160,9 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		free (heapFsType);
 		return NULL;
 	}
+	// TODO: we should just construct the root with the rfs instance
 	root = r_fs_root_new (str, delta);
 	root->p = p;
-	//memcpy (&root->iob, &fs->iob, sizeof (root->iob));
 	root->iob = fs->iob;
 	root->cob = fs->cob;
 	if (!p->mount (root)) {

@@ -64,12 +64,16 @@ R_LIB_VERSION_HEADER(r_cons);
 typedef int (*RConsGetSize)(int *rows);
 typedef int (*RConsGetCursor)(int *rows);
 typedef bool (*RConsIsBreaked)(void);
+typedef void (*RConsFlush)(void);
+typedef void (*RConsGrepCallback)(const char *grep);
 
 typedef struct r_cons_bind_t {
 	RConsGetSize get_size;
 	RConsGetCursor get_cursor;
 	PrintfCallback cb_printf;
 	RConsIsBreaked is_breaked;
+	RConsFlush cb_flush;
+	RConsGrepCallback cb_grep;
 } RConsBind;
 
 typedef struct r_cons_grep_t {
@@ -866,6 +870,7 @@ R_API void r_cons_set_raw(bool b);
 R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_last_interactive(void);
 R_API void r_cons_set_utf8(bool b);
+R_API void r_cons_grep(const char *grep);
 
 /* output */
 R_API int r_cons_printf(const char *format, ...);

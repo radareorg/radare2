@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2019 - nibble, alvaro, pancake */
+/* radare - LGPL - Copyright 2010-2020 - nibble, alvaro, pancake */
 
 #include <r_anal.h>
 #include <r_parse.h>
@@ -441,6 +441,7 @@ static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_b
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
+	char *last_reg_mov_lea_name = NULL;
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END, skip_ret = 0;
@@ -527,7 +528,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		}
 	}
 	static ut64 lea_jmptbl_ip = UT64_MAX;
-	char *last_reg_mov_lea_name = NULL;
 	ut64 last_reg_mov_lea_val = UT64_MAX;
 	bool last_is_reg_mov_lea = false;
 	bool last_is_push = false;
@@ -1196,7 +1196,7 @@ analopfinish:
 	}
 beach:
 	r_anal_op_fini (&op);
-	free (last_reg_mov_lea_name);
+	R_FREE (last_reg_mov_lea_name);
 	if (bb && bb->size == 0) {
 		r_anal_function_remove_block (fcn, bb);
 	}
