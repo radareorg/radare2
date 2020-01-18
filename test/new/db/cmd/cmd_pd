@@ -1399,7 +1399,7 @@ RUN
 
 NAME=pdJ escape flagname
 FILE=../bins/elf/crackme
-EXPECT='[{"offset":4196399,"text":"            ;-- \"Password Correct!\":"},{"offset":4196399,"text":"            0x0040082f     .string \"Password Correct!\" ; len=18"}]
+EXPECT='[{"offset":4196399,"text":"            ;-- str.Password_Correct:"},{"offset":4196399,"text":"            0x0040082f     .string \"Password Correct!\" ; len=18"}]
 '
 CMDS='pdJ 1 @ 0x0040082f
 '

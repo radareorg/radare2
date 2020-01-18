@@ -450,12 +450,12 @@ EXPECT=<<EOF
 Csa 2 @ 0x140016018 # \t
 "\t"
 ascii[2] "\t"
-            ;-- "\twide\\esc: \e[0m":
+            ;-- str.wide__esc:__e_0m:
             0x140016018     .string "\t" ; len=2
 Cs 19 @ 0x140016018 # \twide\\esc: \x1b[0m\xa1\r\n
 "\twide\\esc: \x1b[0m\xa1\r\n"
 latin1[19] "\twide\\esc: \x1b[0m\xa1\r\n"
-            ;-- "\twide\\esc: \e[0m":
+            ;-- str.wide__esc:__e_0m:
             0x140016018     .string "\twide\\esc: \x1b[0m\xa1\r\n" ; len=19
 ascii[4] "\t"
 ascii[4] "\twid"
@@ -506,12 +506,12 @@ EXPECT=<<EOF
 Cs 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n
 "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
 latin1[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
-            ;-- "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n":
+            ;-- str.utf8____u00a2__u20ac__U00010348_in_yellow:_e_33m____________e_0m:
             0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n" ; len=61
 Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n
 "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
 utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
-            ;-- "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n":
+            ;-- str.utf8____u00a2__u20ac__U00010348_in_yellow:_e_33m____________e_0m:
             0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n" ; len=61
 EOF
 CMDS=<<EOF
@@ -549,12 +549,12 @@ FILE=../bins/pe/testapp-msvc64.exe
 EXPECT=<<EOF
 "\tANSI\\esc: \x1b[33m\r\n"
 ascii[19] "\tANSI\\esc: \x1b[33m\r\n"
-            ;-- "\tANSI\\esc: \e[33m\r\n":
+            ;-- str.ANSI__esc:__e_33m:
             ;-- section..data:
             0x140016000     .string "\tANSI\\esc: \x1b[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
 "\tANSI\esc: \x1b[33m\r\n"
 ascii[19] "\tANSI\esc: \x1b[33m\r\n"
-            ;-- "\tANSI\\esc: \e[33m\r\n":
+            ;-- str.ANSI__esc:__e_33m:
             ;-- section..data:
             0x140016000     .string "\tANSI\esc: \x1b[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
 EOF

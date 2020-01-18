@@ -14,7 +14,7 @@ RUN
 NAME=#3829 remove comment where another meta is already defined
 FILE=../bins/elf/analysis/main
 EXPECT=<<EOF
-            ;-- "Hello World":
+            ;-- str.Hello_World:
             0x004005c4     .string "Hello World" ; len=12
 EOF
 CMDS=<<EOF
