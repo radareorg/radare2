@@ -328,6 +328,7 @@ static const char *help_msg_dr[] = {
 	"dr", "", "Show 'gpr' registers",
 	"dr", " <register>=<val>", "Set register value",
 	"dr.", " >$snapshot", "Capture current register values in r2 alias file",
+	"dr,", " [table-query]", "Enumerate registers in table format",
 	"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"dr=", "", "Show registers in columns",
 	"dr?", "<register>", "Show value of given register",
@@ -2347,6 +2348,58 @@ static void cmd_debug_reg_print_packed_reg(RCore *core, RRegItem *item, char exp
 	}
 }
 
+static char *__table_format_string(RTable *t, int fmt) {
+	switch (fmt) {
+	case 'j': return r_table_tojson (t);
+	case 's': return r_table_tostring (t);
+	}
+	return r_table_tofancystring (t);
+}
+
+static void __tableRegList (RCore *core, RReg *reg, const char *str) {
+	int i;
+	RRegItem *e;
+	RTable *t = r_core_table (core);
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeNumber = r_table_type ("number");
+	RTableColumnType *typeBoolean = r_table_type ("boolean");
+	r_table_add_column (t, typeNumber, "offset", 0);
+	r_table_add_column (t, typeNumber, "size", 0);
+	r_table_add_column (t, typeNumber, "psize", 0);
+	r_table_add_column (t, typeNumber, "index", 0);
+	r_table_add_column (t, typeNumber, "arena", 0);
+	r_table_add_column (t, typeBoolean, "float", 0);
+	r_table_add_column (t, typeString, "name", 0);
+	r_table_add_column (t, typeString, "flags", 0);
+	r_table_add_column (t, typeString, "comment", 0);
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		RList *list = r_reg_get_list (reg, i);
+		RListIter *iter;
+		r_list_foreach (list, iter, e) {
+			// sdb_fmt is not thread safe
+			r_table_add_row (t,
+					sdb_fmt ("%d", e->offset),
+					sdb_fmt ("%d", e->size),
+					sdb_fmt ("%d", e->packed_size),
+					sdb_fmt ("%d", e->index),
+					sdb_fmt ("%d", e->arena),
+					r_str_bool (e->is_float),
+					e->name? e->name: "",
+					e->flags? e->flags: "",
+					e->comment? e->comment: "",
+					NULL
+					);
+		}
+	}
+	const char fmt = *str++;
+	const char *q = str;
+	if (r_table_query (t, q)) {
+		char *s = __table_format_string (t, fmt);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
+	r_table_free (t);
+}
 
 static void cmd_debug_reg(RCore *core, const char *str) {
 	char *arg;
@@ -2921,6 +2974,13 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		r_reg_arena_swap (core->dbg->reg, false);
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_color); // xxx detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, false);
+		break;
+	case ',': // "dr,"
+		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
+			__tableRegList (core, core->dbg->reg, str + 1);
+		} else {
+			eprintf ("cannot retrieve registers from pid %d\n", core->dbg->pid);
+		}
 		break;
 	case '=': // "dr="
 		{

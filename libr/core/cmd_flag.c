@@ -427,7 +427,7 @@ typedef struct {
 
 static bool __tableItemCallback(RFlagItem *flag, void *user) {
 	FlagTableData *ftd = user;
-	if (flag->name && *flag->name) {
+	if (!R_STR_ISEMPTY (flag->name)) {
 		RTable *t = ftd->t;
 		const char *spaceName = (flag->space && flag->space->name)? flag->space->name: "";
 		const char *addr = sdb_fmt ("0x%08"PFMT64x, flag->offset);

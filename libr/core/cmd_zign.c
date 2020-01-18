@@ -743,7 +743,7 @@ static bool __fcnstrValidField(char *field, int i) {
 	return !(is_ret && is_args && is_arg && is_arg_number);
 }
 
-static const char *types_list_to_fcnstr(RList *types) {
+static char *__types_list_to_fcnstr(RList *types) {
 	char *type_kv = NULL, *k = NULL, *v = NULL;
 	char *field = NULL, *name = NULL, *rettype = NULL;
 	char *arg = NULL, *ret = NULL;
@@ -796,11 +796,9 @@ static const char *types_list_to_fcnstr(RList *types) {
 		}
 	}
 
-	if (r_list_length (args) > 0) {
-		ret = r_str_newf ("%s%s);", ret, (char *)r_list_get_top (args));
-	} else {
-		ret = r_str_newf ("%s);", ret);
-	}
+	ret = (r_list_length (args) > 0)
+		? r_str_newf ("%s%s);", ret, (char *)r_list_get_top (args))
+		: r_str_newf ("%s);", ret);
 
 	r_list_free (args);
 	free (rettype);
@@ -813,7 +811,7 @@ static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, 
 	char *name = NULL;
 
 	if (it->types) {
-		char *fcnstr = types_list_to_fcnstr (it->types);
+		char *fcnstr = __types_list_to_fcnstr (it->types);
 		char *fcnstr_copy = strdup (fcnstr);
 		fcn = r_anal_get_fcn_in (core->anal, it->addr, 0);
 		if (fcn) {
