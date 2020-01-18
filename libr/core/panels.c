@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2019 - Author: pancake, vane11ope */
+/* Copyright radare2 2014-2020 - Author: pancake, vane11ope */
 
 #include <r_core.h>
 
@@ -1000,7 +1000,6 @@ void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
 	if (!can || !panel|| !panel->view->refresh) {
 		return;
 	}
-
 	if (can->w <= panel->view->pos.x || can->h <= panel->view->pos.y) {
 		return;
 	}
@@ -1011,10 +1010,13 @@ void __panel_print(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
 	} else {
 		__default_panel_print (core, panel);
 	}
+	int w, h;
+	w = R_MIN (panel->view->pos.w, can->w - panel->view->pos.x);
+	h = R_MIN (panel->view->pos.h, can->h - panel->view->pos.y);
 	if (color) {
-		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, core->cons->context->pal.graph_box2);
+		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box2);
 	} else {
-		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, core->cons->context->pal.graph_box);
+		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box);
 	}
 }
 
@@ -1092,6 +1094,12 @@ void __update_panel_contents(RCore *core, RPanel *panel, const char *cmdstr) {
 	int sy = R_MAX (panel->view->sy, 0);
 	int x = panel->view->pos.x;
 	int y = panel->view->pos.y;
+	if (x >= core->panels->can->w) {
+		return;
+	}
+	if (y >= core->panels->can->h) {
+		return;
+	}
 	int w = panel->view->pos.w;
 	int h = panel->view->pos.h;
 	int graph_pad = __check_panel_type (panel, PANEL_CMD_GRAPH) ? 1 : 0;
@@ -5012,13 +5020,10 @@ void __panels_refresh(RCore *core) {
 	}
 	__refresh_core_offset (core);
 	r_cons_gotoxy (0, 0);
-	if (panels->isResizing || (can->w != w || can->h != h)) {
-		panels->isResizing = false;
-		if (!r_cons_canvas_resize (can, w, h)) {
-			return;
-		}
-		__set_refresh_all (core, false, false);
+	if (!r_cons_canvas_resize (can, w, h)) {
+		return;
 	}
+	__set_refresh_all (core, false, false);
 	//TODO use getPanel
 	for (i = 0; i < panels->n_panels; i++) {
 		if (i != panels->curnode) {
