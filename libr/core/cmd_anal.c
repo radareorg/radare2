@@ -620,6 +620,7 @@ static const char *help_msg_ar[] = {
 	"Usage: ar", "", "# Analysis Registers",
 	"ar", "", "Show 'gpr' registers",
 	"ar.", ">$snapshot", "Show r2 commands to set register values to the current state",
+	"ar,", "", "Show registers in table format (see dr,)",
 	".ar*", "", "Import register values as flags",
 	".ar-", "", "Unflag all registers",
 	"ar0", "", "Reset register arenas to 0",
@@ -4005,6 +4006,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			pj_free (pj);
 		}
 	} break;
+	case ',': // "ar,"
+		__tableRegList (core, core->anal->reg, str + 1);
+		break;
 	case '0': // "ar0"
 		r_reg_arena_zero (core->anal->reg);
 		break;
