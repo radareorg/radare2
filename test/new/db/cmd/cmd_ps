@@ -93,8 +93,9 @@ RUN
 NAME=ps+ libc++ 16bit error
 FILE=-
 CMDS=<<EOF
-f obj.empty_str 12 0x0804a064
+e asm.arch=x86
 e asm.bits=16
+f obj.empty_str 12 0x0804a064
 ps+ @ obj.empty_str
 EOF
 EXPECT_ERR=<<EOF

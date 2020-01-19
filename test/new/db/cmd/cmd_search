@@ -188,6 +188,7 @@ EXPECT=<<EOF
 0x00000000 hit0_0 83c408
 EOF
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 "wa add esp,8;pop ebx; pop ebp; ret"
 /a add esp, 8
@@ -378,8 +379,8 @@ EXPECT=<<EOF
 
 EOF
 CMDS=<<EOF
-e asm.arch = x86
-e anal.arch = x86
+e asm.arch=x86
+e anal.arch=x86
 e asm.bits=32
 "wa add esp,8;pop ebx; pop ebp; ret"
 e scr.color=false
@@ -396,8 +397,8 @@ EXPECT=<<EOF
 
 EOF
 CMDS=<<EOF
-e asm.arch = x86
-e anal.arch = x86
+e asm.arch=x86
+e anal.arch=x86
 e asm.bits=32
 "wa add esp,8;pop ebx; pop ebp; ret"
 e scr.color=false

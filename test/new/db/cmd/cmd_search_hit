@@ -66,6 +66,8 @@ EXPECT=<<EOF
 33
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 w A @ 10
 wx 33 @@/ A
 p8 1 @ 10
@@ -190,8 +192,9 @@ pop ebp
 ret
 EOF
 CMDS=<<EOF
-e cmd.hit = pi 4
+e asm.arch=x86
 e asm.bits=32
+e cmd.hit=pi 4
 "wa add esp,8;pop ebx; pop ebp; ret"
 /a add esp, 8
 EOF
@@ -307,6 +310,8 @@ EXPECT=<<EOF
 add dword [rax], eax
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 01
 e cmd.hit = pi 1
 e search.in =raw

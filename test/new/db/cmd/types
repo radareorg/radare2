@@ -1,6 +1,8 @@
 NAME=typelinks
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249803000031c0e82fb30000488d35d54e0100bf0600000 
 e asm.comments=false
 s 2
@@ -27,6 +29,8 @@ RUN
 NAME=typelinks 2
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 48656c6c341248656c6c6f00000000000000000048656c6c6f0000000000000000009090
 tk WORD=type
 tk type.WORD=w
@@ -609,7 +613,7 @@ RUN
 NAME=aht and mips
 FILE=-
 CMDS=<<EOF
-e asm.arch = mips
+e asm.arch=mips
 wx 08007fac040053800800538c
 "td struct foo {int a; int b; int c;};"
 aht foo.c @ 0x00000000
@@ -629,7 +633,8 @@ RUN
 NAME=struct offset for dst operand with aht
 FILE=-
 CMDS=<<EOF
-e asm.bits = 32
+e asm.arch=x86
+e asm.bits=32
 "td struct foo {int a; int b ; int c;}"
 wx 8b40048951048d500883780800
 ?e
@@ -651,6 +656,8 @@ RUN
 NAME=struct offset propagate via tl
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e asm.comments = false
 "td struct bar {int a ; int b; int c;}"
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
@@ -671,6 +678,8 @@ RUN
 NAME=aat with single struct
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e asm.comments = false
 "td struct bar {int a ; int b; int c;}"
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
@@ -692,6 +701,8 @@ RUN
 NAME=aat with multiple struct
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e asm.comments = false
 e asm.flags = false
 "td struct bar {int x; int y; int z;};"

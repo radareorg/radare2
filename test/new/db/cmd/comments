@@ -95,6 +95,7 @@ EXPECT=<<EOF
             0x00000202      0000           add byte [eax], al
 EOF
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 CC hello @ 0x200
 CC world @ 0x200
@@ -115,6 +116,8 @@ EXPECT=<<EOF
             0x00000000      90             nop
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 CC hello
 e scr.color=false
 wx 90

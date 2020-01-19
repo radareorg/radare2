@@ -914,6 +914,8 @@ EXPECT=<<EOF
 0x00000021
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 000000
 ahe 33,rax,=
 aes
@@ -933,6 +935,8 @@ temp_proj
             0x00000000      57             push rdi
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 pd 1
 Cf 1 x
 pd 1
@@ -1815,6 +1819,8 @@ EXPECT=<<EOF
 |           ; arg int var_8h @ rbp+0x8    ; comment
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 af
 afvb 8 var_8h int
 Cvb 0x8 comment
@@ -2300,6 +2306,8 @@ RUN
 NAME=r_anal_fcn_split_bb FITFCNSZ fix (#12008)
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e anal.jmp.mid=false
 e io.cache=true
 wx b8210000c1ebfdbb2c000000000
@@ -2357,6 +2365,8 @@ RUN
 NAME=overlapping basic blocks and anal.jmp.mid
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e anal.nopskip=false
 e asm.bb.middle=true
 e anal.jmp.mid=true
@@ -2729,6 +2739,8 @@ RUN
 NAME=so -N and overlapping basic blocks
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e anal.jmp.mid=true
 e io.cache=true
 e anal.nopskip=false
