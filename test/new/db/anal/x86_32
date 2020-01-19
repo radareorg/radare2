@@ -1233,21 +1233,6 @@ ao 1~jump
 EOF
 RUN
 
-NAME=16bit segment bounds 2 - capstone
-FILE=malloc://1024k
-EXPECT=<<EOF
-jump: 0x000f008e
-EOF
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=16
-e io.va=1
-wx e97ae7 @ f000:1911
-s f000:1911
-ao 1~jump
-EOF
-RUN
-
 NAME=sar on x86-32
 FILE=-
 EXPECT=<<EOF
