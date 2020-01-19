@@ -367,7 +367,8 @@ R_API int r_cons_get_cur_line() {
 #if __UNIX__
 		char buf[8];
 		struct termios save,raw;
-		fflush(stdout);			// flush the Arrow keys escape keys which was messing up the output
+		// flush the Arrow keys escape keys which was messing up the output
+		fflush (stdout);
 		(void) tcgetattr (0, &save);
 		cfmakeraw (&raw);
 		(void) tcsetattr (0, TCSANOW, &raw);
@@ -386,15 +387,8 @@ R_API int r_cons_get_cur_line() {
 }
 
 R_API void r_cons_break_timeout(int timeout) {
-	if (!timeout && I.timeout) {
-		I.timeout = 0;
-	} else {
-		if (timeout) {
-			I.timeout = r_sys_now () + ((ut64) timeout << 20);
-		} else {
-			I.timeout = 0;
-		}
-	}
+	I.timeout = (timeout && !I.timeout) 
+		? r_sys_now () + ((ut64) timeout << 20) : 0;
 }
 
 R_API void r_cons_break_end() {
@@ -404,9 +398,9 @@ R_API void r_cons_break_end() {
 	r_sys_signal (SIGINT, SIG_IGN);
 #endif
 	if (!r_stack_is_empty (I.context->break_stack)) {
-		//free all the stack
+		// free all the stack
 		r_stack_free (I.context->break_stack);
-		//create another one
+		// create another one
 		I.context->break_stack = r_stack_newf (6, break_stack_free);
 		I.context->event_interrupt_data = NULL;
 		I.context->event_interrupt = NULL;
@@ -421,10 +415,9 @@ R_API void *r_cons_sleep_begin(void) {
 }
 
 R_API void r_cons_sleep_end(void *user) {
-	if (!I.cb_sleep_end) {
-		return;
+	if (I.cb_sleep_end) {
+		I.cb_sleep_end (I.user, user);
 	}
-	I.cb_sleep_end (I.user, user);
 }
 
 #if __WINDOWS__
@@ -464,7 +457,7 @@ R_API bool r_cons_get_click(int *x, int *y) {
 		*y = I.click_y;
 	}
 	bool set = I.click_set;
-	I.click_set = false;;
+	I.click_set = false;
 	return set;
 }
 
@@ -1733,24 +1726,24 @@ R_API void r_cons_bind(RConsBind *bind) {
 	bind->get_size = r_cons_get_size;
 	bind->get_cursor = r_cons_get_cursor;
 	bind->cb_printf = r_cons_printf;
+	bind->cb_flush = r_cons_flush;
+	bind->cb_grep = r_cons_grep;
 	bind->is_breaked = r_cons_is_breaked;
 }
 
 R_API const char* r_cons_get_rune(const ut8 ch) {
-	if (ch >= RUNECODE_MIN && ch < RUNECODE_MAX) {
-		switch (ch) {
-		case RUNECODE_LINE_HORIZ: return RUNE_LINE_HORIZ;
-		case RUNECODE_LINE_VERT:  return RUNE_LINE_VERT;
-		case RUNECODE_LINE_CROSS: return RUNE_LINE_CROSS;
-		case RUNECODE_CORNER_TL:  return RUNE_CORNER_TL;
-		case RUNECODE_CORNER_TR:  return RUNE_CORNER_TR;
-		case RUNECODE_CORNER_BR:  return RUNE_CORNER_BR;
-		case RUNECODE_CORNER_BL:  return RUNE_CORNER_BL;
-		case RUNECODE_CURVE_CORNER_TL:  return RUNE_CURVE_CORNER_TL;
-		case RUNECODE_CURVE_CORNER_TR:  return RUNE_CURVE_CORNER_TR;
-		case RUNECODE_CURVE_CORNER_BR:  return RUNE_CURVE_CORNER_BR;
-		case RUNECODE_CURVE_CORNER_BL:  return RUNE_CURVE_CORNER_BL;
-		}
+	switch (ch) {
+	case RUNECODE_LINE_HORIZ: return RUNE_LINE_HORIZ;
+	case RUNECODE_LINE_VERT:  return RUNE_LINE_VERT;
+	case RUNECODE_LINE_CROSS: return RUNE_LINE_CROSS;
+	case RUNECODE_CORNER_TL:  return RUNE_CORNER_TL;
+	case RUNECODE_CORNER_TR:  return RUNE_CORNER_TR;
+	case RUNECODE_CORNER_BR:  return RUNE_CORNER_BR;
+	case RUNECODE_CORNER_BL:  return RUNE_CORNER_BL;
+	case RUNECODE_CURVE_CORNER_TL:  return RUNE_CURVE_CORNER_TL;
+	case RUNECODE_CURVE_CORNER_TR:  return RUNE_CURVE_CORNER_TR;
+	case RUNECODE_CURVE_CORNER_BR:  return RUNE_CURVE_CORNER_BR;
+	case RUNECODE_CURVE_CORNER_BL:  return RUNE_CURVE_CORNER_BL;
 	}
 	return NULL;
 }

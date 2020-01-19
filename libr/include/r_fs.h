@@ -6,6 +6,7 @@
 #include <r_bind.h> // RCoreBind
 #include <r_io.h> // RIOBind
 #include <r_util.h>
+#include <r_cons.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +21,7 @@ struct r_fs_t;
 typedef struct r_fs_t {
 	RIOBind iob;
 	RCoreBind cob;
+	RConsBind csb;
 	RList /*<RFSPlugin>*/ *plugins;
 	RList /*<RFSRoot>*/ *roots;
 	int view;
@@ -49,6 +51,7 @@ typedef struct r_fs_root_t {
 	ut64 delta;
 	struct r_fs_plugin_t *p;
 	void *ptr;
+	// TODO: deprecate
 	RIOBind iob;
 	RCoreBind cob;
 } RFSRoot;

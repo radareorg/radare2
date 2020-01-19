@@ -56,6 +56,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 		strcpy (path, "/");
 	}
 
+	PrintfCallback cb_printf = fs->csb.cb_printf;
 	for (;;) {
 		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, path);
 		if (shell) {
@@ -95,6 +96,10 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			}
 			buf[strlen (buf) - 1] = '\0';
 		}
+		char *wave = strchr (buf, '~');
+		if (wave) {
+			*wave++ = 0;
+		}
 
 		if (!strcmp (buf, "q") || !strcmp (buf, "exit")) {
 			r_list_free (list);
@@ -112,7 +117,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 		} else if (!strncmp (buf, "echo", 4)) {
 			char *msg = r_str_trim_dup (buf + 4);
 			if (!handlePipes (fs, msg, NULL, path)) {
-				printf ("%s\n", msg);
+				cb_printf ("%s\n", msg);
 			}
 			free (msg);
 		} else if (!strncmp (buf, "ls", 2)) {
@@ -134,7 +139,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			}
 			if (list) {
 				r_list_foreach (list, iter, file) {
-					printf ("%c %s\n", file->type, file->name);
+					cb_printf ("%c %s\n", file->type, file->name);
 				}
 			}
 			// mountpoints if any
@@ -149,7 +154,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				}
 				// TODO: adjust contents between //
 				if (!strcmp (me, base)) {
-					printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
+					cb_printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
 				}
 				free (base);
 			}
@@ -221,7 +226,9 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				}
 				r_fs_read (fs, file, 0, file->size);
 				if (!handlePipes (fs, str, file->data, path)) {
-					write (1, file->data, file->size);
+					char *s = r_str_ndup ((const char *)file->data, file->size);
+					cb_printf ("%s\n", s);
+					free (s);
 				}
 				write (1, "\n", 1);
 				r_fs_close (fs, file);
@@ -231,7 +238,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 		} else if (!memcmp (buf, "mount", 5)) {
 			RFSRoot* r;
 			r_list_foreach (fs->roots, iter, r) {
-				eprintf ("%s %s\n", r->path, r->p->name);
+				cb_printf ("%s %s\n", r->path, r->p->name);
 			}
 		} else if (!memcmp (buf, "get ", 4)) {
 			char* s = 0;
@@ -271,13 +278,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				input -= 2; //OMFG!!!! O_O
 				memcpy (input, "./", 2);
 				if (!r_fs_dir_dump (fs, s, input)) {
-					printf ("Cannot open file\n");
+					eprintf ("Cannot open file\n");
 				}
 			}
 			free (s);
 		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {
-			eprintf (
-				"Commands:\n"
+			cb_printf (
+				"Usage: [command (arguments)]([~grep-expression])\n"
 				" !cmd        ; escape to system\n"
 				" :cmd        ; escape to the r2 repl\n"
 				" ls [path]   ; list current directory\n"
@@ -292,6 +299,10 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				eprintf ("Unknown command %s\n", buf);
 			}
 		}
+		if (wave) {
+			fs->csb.cb_grep (wave);
+		}
+		fs->csb.cb_flush ();
 	}
 beach:
 	clearerr (stdin);
