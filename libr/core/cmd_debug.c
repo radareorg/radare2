@@ -2059,11 +2059,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			r_reg_arena_swap (core->dbg->reg, false);
 			delta = value-diff;
 		}
-		if(delta && use_color){
-			color = use_color;
-		} else {
-			color = "";
-		}
+		color = (delta && use_color)? use_color: "";
 		switch (mode) {
 		case 'j':
 				pj_o (pj);
@@ -2128,9 +2124,9 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
-	}
-	if (use_colors) {
-		r_config_set_i (core->config, "scr.color", true);
+		if (use_colors) {
+			r_config_set_i (core->config, "scr.color", use_colors);
+		}
 	}
 }
 
