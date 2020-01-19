@@ -4360,58 +4360,80 @@ R_API void run_pending_anal(RCore *core) {
 	}
 }
 
+static int run_cmd_depth(RCore *core, char *cmd);
+
 #if USE_TREESITTER
-static inline bool is_ts_commands(TSNode node) {
-	return strcmp (ts_node_type (node), "commands") == 0;
+#define TS_START_END(node, start, end) do {		\
+		start = ts_node_start_byte (node);	\
+		end = ts_node_end_byte (node);		\
+	} while (0)
+
+static char *ts_node_sub_string(TSNode node, const char *cstr) {
+	ut32 start, end;
+	TS_START_END (node, start, end);
+	return r_str_newf ("%.*s", end - start, cstr + start);
 }
 
-static inline bool is_ts_arged_command(TSNode node) {
-	return strcmp (ts_node_type (node), "arged_command") == 0;
-}
+// TODO: use integer type instead of string-based one
+#define DEFINE_IS_TS_FCN(name) static inline bool is_ts_##name(TSNode node) { \
+		return strcmp (ts_node_type (node), #name) == 0;	\
+	}
 
-static inline bool is_ts_tmp_seek_command(TSNode node) {
-	return strcmp (ts_node_type (node), "tmp_seek_command") == 0;
-}
-
-static inline bool is_ts_interpret_command(TSNode node) {
-	return strcmp (ts_node_type (node), "interpret_command") == 0;
-}
+#define DEFINE_HANDLE_TS_FCN(name) \
+	DEFINE_IS_TS_FCN (name) \
+	static bool handle_ts_##name##internal(RCore *core, const char *cstr, TSNode node, bool log, char *node_string); \
+	static bool handle_ts_##name(RCore *core, const char *cstr, TSNode node, bool log) { \
+		char *cmd_string = ts_node_sub_string (node, cstr);	\
+		R_LOG_DEBUG (#name ": '%s'\n", cmd_string);		\
+		bool res = handle_ts_##name##internal (core, cstr, node, log, cmd_string); \
+		free (cmd_string);					\
+		return res;						\
+	} \
+	static bool handle_ts_##name##internal(RCore *core, const char *cstr, TSNode node, bool log, char *node_string)
 
 static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool log);
 static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log);
 
-static bool handle_ts_arged_command(RCore *core, const char *cstr, TSNode node) {
-	TSNode command = ts_node_named_child (node, 0);
-	ut32 cmd_start_byte = ts_node_start_byte (command);
-	ut32 cmd_end_byte = ts_node_end_byte (command);
-	R_LOG_DEBUG ("command: '%.*s'\n", cmd_end_byte - cmd_start_byte, cstr + cmd_start_byte);
-
-	ut32 child_count = ts_node_named_child_count (node);
-	ut32 last_end_byte = cmd_end_byte;
-	int i;
-	for (i = 1; i < child_count; ++i) {
-		TSNode arg = ts_node_named_child (node, i);
-		ut32 start_byte = ts_node_start_byte (arg);
-		ut32 end_byte = ts_node_end_byte (arg);
-		if (last_end_byte < end_byte) {
-			last_end_byte = end_byte;
-		}
-		R_LOG_DEBUG ("arg: '%.*s'\n", end_byte - start_byte, cstr + start_byte);
-	}
-	char *cmd_string = r_str_newf ("%.*s", last_end_byte - cmd_start_byte, cstr + cmd_start_byte);
-	bool res = r_cmd_call (core->rcmd, cmd_string) != -1;
-	free (cmd_string);
-	return res;
+DEFINE_HANDLE_TS_FCN(legacy_quoted_command) {
+	return run_cmd_depth (core, node_string) != -1;
 }
 
-static bool handle_ts_tmp_seek_command(RCore *core, const char *cstr, TSNode node, bool log) {
+DEFINE_HANDLE_TS_FCN(arged_command) {
+	return r_cmd_call (core->rcmd, node_string) != -1;
+}
+
+DEFINE_HANDLE_TS_FCN(out_redirect_command) {
+	return false;
+}
+
+DEFINE_HANDLE_TS_FCN(err_redirect_command) {
+	return false;
+}
+
+DEFINE_HANDLE_TS_FCN(html_redirect_command) {
+	return false;
+}
+
+DEFINE_HANDLE_TS_FCN(out_append_redirect_command) {
+	return false;
+}
+
+DEFINE_HANDLE_TS_FCN(err_append_redirect_command) {
+	return false;
+}
+
+DEFINE_HANDLE_TS_FCN(help_command) {
+	// TODO: traverse command tree to print help
+	return r_cmd_call (core->rcmd, node_string) != -1;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_seek_command) {
+	// TODO: handle offsets like "+30", "-13", etc.
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode offset = ts_node_named_child (node, 1);
-	ut32 offset_start = ts_node_start_byte (offset);
-	ut32 offset_end = ts_node_end_byte (offset);
-	char *offset_string = r_str_newf ("%.*s", offset_end - offset_start, cstr + offset_start);
+	char *offset_string = ts_node_sub_string (offset, cstr);
 	ut64 orig_offset = core->offset;
-	R_LOG_DEBUG ("tmp_seek command, command X on tmp_seek %s\n", offset_string);
+	R_LOG_DEBUG ("tmp_seek_command, changing offset to %s\n", offset_string);
 	r_core_seek (core, r_num_math (core->num, offset_string), 1);
 	bool res = handle_ts_command (core, cstr, command, log);
 	r_core_seek (core, orig_offset, 1);
@@ -4419,13 +4441,11 @@ static bool handle_ts_tmp_seek_command(RCore *core, const char *cstr, TSNode nod
 	return res;
 }
 
-static bool handle_ts_interpret_command(RCore *core, const char *cstr, TSNode node, bool log) {
+DEFINE_HANDLE_TS_FCN(interpret_command) {
 	TSNode command = ts_node_named_child (node, 0);
-	ut32 command_start = ts_node_start_byte (command);
-	ut32 command_end = ts_node_end_byte (command);
-	char *cmd_string = r_str_newf ("%.*s", command_end - command_start, cstr + command_start);
+	char *cmd_string = ts_node_sub_string (command, cstr);
 	char *str = r_core_cmd_str (core, cmd_string);
-	R_LOG_DEBUG ("interpret_command cmd_string = '%s', result to interpret = '%s'\n", cmd_string, str);
+	R_LOG_DEBUG ("interpret_command: about to run = '%s'\n", str);
 	free (cmd_string);
 	bool res = core_cmd_tsr2cmd (core, str, log);
 	free (str);
@@ -4438,12 +4458,26 @@ static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool l
 	if (log) {
 		r_line_hist_add (cstr);
 	}
-	if (is_ts_arged_command (node)) {
-		ret = handle_ts_arged_command (core, cstr, node);
+	if (is_ts_legacy_quoted_command (node)) {
+		ret = handle_ts_legacy_quoted_command (core, cstr, node, log);
+	} else if (is_ts_out_redirect_command (node)) {
+		ret = handle_ts_out_redirect_command (core, cstr, node, log);
+	} else if (is_ts_err_redirect_command (node)) {
+		ret = handle_ts_err_redirect_command (core, cstr, node, log);
+	} else if (is_ts_html_redirect_command (node)) {
+		ret = handle_ts_html_redirect_command (core, cstr, node, log);
+	} else if (is_ts_out_append_redirect_command (node)) {
+		ret = handle_ts_out_append_redirect_command (core, cstr, node, log);
+	} else if (is_ts_err_append_redirect_command (node)) {
+		ret = handle_ts_err_append_redirect_command (core, cstr, node, log);
+	} else if (is_ts_arged_command (node)) {
+		ret = handle_ts_arged_command (core, cstr, node, log);
 	} else if (is_ts_tmp_seek_command (node)) {
 		ret = handle_ts_tmp_seek_command (core, cstr, node, log);
 	} else if (is_ts_interpret_command (node)) {
 		ret = handle_ts_interpret_command (core, cstr, node, log);
+	} else if (is_ts_help_command (node)) {
+		ret = handle_ts_help_command (core, cstr, node, log);
 	} else {
 		R_LOG_WARN ("No handler for this kind of command `%s`\n", ts_node_type (node));
 	}
@@ -4452,7 +4486,7 @@ static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool l
 	return ret;
 }
 
-static bool handle_ts_commands(RCore *core, const char *cstr, TSNode node, bool log) {
+DEFINE_HANDLE_TS_FCN(commands) {
 	ut32 child_count = ts_node_named_child_count (node);
 	bool res = true;
 	int i;
@@ -4489,6 +4523,37 @@ static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log) {
 }
 #endif
 
+static int run_cmd_depth(RCore *core, char *cmd) {
+	char *rcmd;
+	int ret = false;
+
+	if (core->cons->context->cmd_depth < 1) {
+		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
+		run_pending_anal (core);
+		return false;
+	}
+	core->cons->context->cmd_depth--;
+	for (rcmd = cmd;;) {
+		char *ptr = strchr (rcmd, '\n');
+		if (ptr) {
+			*ptr = '\0';
+		}
+		ret = r_core_cmd_subst (core, rcmd);
+		if (ret == -1) {
+			eprintf ("|ERROR| Invalid command '%s' (0x%02x)\n", rcmd, *rcmd);
+			break;
+		}
+		if (!ptr) {
+			break;
+		}
+		rcmd = ptr + 1;
+	}
+	/* run pending analysis commands */
+	run_pending_anal (core);
+	core->cons->context->cmd_depth++;
+	return ret;
+}
+
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
 #if USE_TREESITTER
@@ -4498,7 +4563,6 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 #endif
 	}
 
-	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = false, i;
 
 	if (core->cmdfilter) {
@@ -4547,8 +4611,8 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		core->lastcmd = strdup (cstr);
 	}
 
-	ocmd = cmd = malloc (strlen (cstr) + 4096);
-	if (!ocmd) {
+	char *cmd = malloc (strlen (cstr) + 4096);
+	if (!cmd) {
 		goto beach;
 	}
 	r_str_cpy (cmd, cstr);
@@ -4556,31 +4620,8 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		r_line_hist_add (cstr);
 	}
 
-	if (core->cons->context->cmd_depth < 1) {
-		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
-		free (ocmd);
-		goto beach;
-	}
-	core->cons->context->cmd_depth--;
-	for (rcmd = cmd;;) {
-		ptr = strchr (rcmd, '\n');
-		if (ptr) {
-			*ptr = '\0';
-		}
-		ret = r_core_cmd_subst (core, rcmd);
-		if (ret == -1) {
-			eprintf ("|ERROR| Invalid command '%s' (0x%02x)\n", rcmd, *rcmd);
-			break;
-		}
-		if (!ptr) {
-			break;
-		}
-		rcmd = ptr + 1;
-	}
-	/* run pending analysis commands */
-	run_pending_anal (core);
-	core->cons->context->cmd_depth++;
-	free (ocmd);
+	ret = run_cmd_depth (core, cmd);
+	free (cmd);
 	return ret;
 beach:
 	/* run pending analysis commands */
