@@ -4386,7 +4386,7 @@ static bool handle_ts_arged_command(RCore *core, const char *cstr, TSNode node) 
 	ut32 cmd_end_byte = ts_node_end_byte (command);
 	R_LOG_DEBUG ("command: '%.*s'\n", cmd_end_byte - cmd_start_byte, cstr + cmd_start_byte);
 
-	ut32 child_count = ts_node_child_count (node);
+	ut32 child_count = ts_node_named_child_count (node);
 	ut32 last_end_byte = cmd_end_byte;
 	int i;
 	for (i = 1; i < child_count; ++i) {
@@ -4444,6 +4444,8 @@ static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool l
 		ret = handle_ts_tmp_seek_command (core, cstr, node, log);
 	} else if (is_ts_interpret_command (node)) {
 		ret = handle_ts_interpret_command (core, cstr, node, log);
+	} else {
+		R_LOG_WARN ("No handler for this kind of command `%s`\n", ts_node_type (node));
 	}
 	/* run pending analysis commands */
 	run_pending_anal (core);
