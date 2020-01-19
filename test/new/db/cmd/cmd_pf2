@@ -218,6 +218,7 @@ EXPECT=<<EOF
 (*0x23)pop rax
 EOF
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 wx 5558 @ 0x22
 wv8 0x22 @ 0x50
@@ -233,6 +234,7 @@ EXPECT=<<EOF
 (*0x23)pop eax
 EOF
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx 5558 @ 0x22
 wv4 0x22 @ 0x50

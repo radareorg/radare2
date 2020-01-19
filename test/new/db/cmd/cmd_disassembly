@@ -158,8 +158,8 @@ add byte [bx + si], al
 EOF
 CMDS=<<EOF
 wx 00000000
-e asm.bits=16
 e asm.arch=arm
+e asm.bits=16
 pi 2
 e asm.arch=x86
 pi 1 @ 1

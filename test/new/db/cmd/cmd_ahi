@@ -340,6 +340,8 @@ RUN
 NAME=ahi nword
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e asm.bytes=false
 wx c7458843c6ff00
 pid 1

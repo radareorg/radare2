@@ -51,6 +51,8 @@ NAME=@@= `prz` fix
 FILE=-
 ONE_STREAM=1
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wz 1 2 3 4
 pd 1 @@= `prz`
 EOF

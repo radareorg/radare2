@@ -6,10 +6,10 @@ EXPECT=<<EOF
         ,=< 0x00000008      7f00           jg 0xa
 EOF
 CMDS=<<EOF
-e anal.hasnext=0
-e asm.linesup=0
 e asm.arch=x86
 e asm.bits=64
+e anal.hasnext=0
+e asm.linesup=0
 wx b8010000004839ca7f00
 pD -10 @ 0xa
 EOF
@@ -23,10 +23,10 @@ EXPECT=<<EOF
         ,=< 0x00000008      7f00           jg 0xa
 EOF
 CMDS=<<EOF
-e anal.hasnext=0
 e asm.arch=x86
-e asm.linesup=false
 e asm.bits=64
+e anal.hasnext=0
+e asm.linesup=false
 wx b8010000004839ca7f00
 pD -10 @ 10
 EOF
@@ -38,9 +38,9 @@ EXPECT=<<EOF
             0x00000000      b801000000     mov eax, 1
 EOF
 CMDS=<<EOF
-e anal.hasnext=0
 e asm.arch=x86
 e asm.bits=64
+e anal.hasnext=0
 wx b8010000004839ca7f00
 pD 5
 EOF
@@ -52,9 +52,9 @@ EXPECT=<<EOF
 [{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
 EOF
 CMDS=<<EOF
-e anal.hasnext=0
 e asm.arch=x86
 e asm.bits=64
+e anal.hasnext=0
 wx b8010000004839ca7f00
 pDj 5 @ 0
 EOF
@@ -75,6 +75,8 @@ EXPECT=<<EOF
             0x00000009      90             nop
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e asm.linesup=0
 wx 90909090909090909090 ; s 10 ; pD -10
 EOF

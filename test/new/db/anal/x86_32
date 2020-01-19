@@ -30,6 +30,8 @@ RUN
 NAME=anal.pushret
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 "wa push 10;ret;nop;nop;nop;nop;nop;nop;nop;ret"
 e anal.pushret=true
 af
@@ -1205,8 +1207,8 @@ EXPECT=<<EOF
 jmp 0xf0070
 EOF
 CMDS=<<EOF
-e asm.arch = x86
-e anal.arch = x86
+e asm.arch=x86
+e anal.arch=x86
 e asm.bits=16
 e anal.hasnext=0
 wx e9c300 @ f000:ffaa
@@ -1237,7 +1239,7 @@ EXPECT=<<EOF
 jump: 0x000f008e
 EOF
 CMDS=<<EOF
-e asm.arch=x86.cs
+e asm.arch=x86
 e asm.bits=16
 e io.va=1
 wx e97ae7 @ f000:1911
@@ -1297,6 +1299,8 @@ EXPECT=<<EOF
 cmpsb
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 a8 f3a6~mnemonic[1]
 EOF
 RUN

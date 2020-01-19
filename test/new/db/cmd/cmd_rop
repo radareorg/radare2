@@ -57,6 +57,7 @@ EOF
 ARGS=-n
 CMDS=<<EOF
 e asm.nbytes=8
+e asm.arch=x86
 e asm.bits=32
 /R
 EOF
@@ -80,6 +81,7 @@ EXPECT=<<EOF
 EOF
 ARGS=-n
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 /R/ mov e[abcd]x
 EOF
@@ -95,6 +97,7 @@ EXPECT=<<EOF
 EOF
 ARGS=-n
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 /Rq
 EOF
@@ -123,7 +126,9 @@ EXPECT=<<EOF
 EOF
 ARGS=-n
 CMDS=<<EOF
-e asm.bits=32; /R ecx
+e asm.arch=x86
+e asm.bits=32
+/R ecx
 EOF
 RUN
 
@@ -134,7 +139,9 @@ EXPECT='[{"opcodes":[{"offset":180,"size":2,"opcode":"int 0x80","type":"swi"},{"
 '
 ARGS=-n
 CMDS=<<EOF
-e asm.bits=32; /Rj ecx
+e asm.arch=x86
+e asm.bits=32
+/Rj ecx
 EOF
 RUN
 
@@ -167,6 +174,7 @@ EXPECT=<<EOF
 EOF
 ARGS=-n
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 "/R/ (ecx|eax)"
 EOF

@@ -22,6 +22,8 @@ push r15
 0x00000004                 4157  push r15
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=2
 f dat.sym = 2
@@ -39,6 +41,8 @@ push r15
 push r14
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=1
 f dat.sym = 2
@@ -55,6 +59,8 @@ push r15
 push r14
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=0
 f dat.sym = 2
@@ -72,6 +78,8 @@ EXPECT=<<EOF
 0x00000004                 4157  push r15
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.midflags=2
 f dat.sym = 2
@@ -88,6 +96,8 @@ EXPECT=<<EOF
 0x00000006                 4156  push r14
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=0
 f dat.sym = 2

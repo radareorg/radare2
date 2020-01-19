@@ -490,6 +490,8 @@ nop
 nop
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 90909090909090909090 ; s 10 ; pi -10
 EOF
 RUN
@@ -675,6 +677,8 @@ nop
 nop
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 90909090909090909090
 b 1
 pI 10

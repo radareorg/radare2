@@ -166,6 +166,8 @@ EXPECT=<<EOF
             0x00000002      89e5           mov ebp, esp
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e scr.color=false
 wx 554889e54883c768
 Ch 2

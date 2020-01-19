@@ -84,6 +84,8 @@ RUN
 NAME=asm.bb.middle json
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e anal.nopskip=false
 e anal.jmp.mid=true
 e io.cache=true
@@ -520,6 +522,8 @@ RUN
 NAME=asm.bb.middle and pdi
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e anal.nopskip=false
 e anal.jmp.mid=true
 e io.cache=true
@@ -553,6 +557,8 @@ RUN
 NAME=asm.bb.middle and pif
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e anal.nopskip=false
 e anal.jmp.mid=true
 e io.cache=true

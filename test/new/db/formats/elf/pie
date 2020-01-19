@@ -75,6 +75,7 @@ ret
 EOF
 CMDS=<<EOF
 .!rabin2 -rps ../bins/elf/analysis/pie
+e asm.arch=x86
 e asm.bits=32
 pi 5 @ sym.main
 EOF

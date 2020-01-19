@@ -1242,6 +1242,8 @@ FILE=malloc://128
 EXPECT='[{"offset":0,"text":"  0x00000000      90             nop"},{"offset":1,"text":"  0x00000001      90             nop"}]
 '
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 9090
 e asm.lines.bb=0
 pdJ 2
@@ -1255,6 +1257,8 @@ EXPECT='[{"offset":0,"text":"  0x00000000      90             nop               
 [{"offset":0,"text":"  ; test \"with quotes\"\n"},{"offset":0,"text":"  0x00000000      90             nop"}]
 '
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 90
 e asm.lines.bb=0
 CCu base64:dGVzdAo=
@@ -1294,6 +1298,8 @@ FILE=malloc://8
 EXPECT='[{"offset":0,"text":"(reloc.test)"},{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
 '
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 f reloc.test @ 0x1
 pdJ 1 @ 0x0
 EOF
@@ -1387,6 +1393,8 @@ EXPECT='[{"offset":0,"text":"            ; XREFS: CODE 0x00000001  "},{"offset":
 [{"offset":0,"text":"            ; XREFS(1)"},{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
 '
 CMDS='s 0
+e asm.arch=x86
+e asm.bits=64
 axc 0 1
 e asm.xrefs.fold=0
 e asm.xrefs.max=5
@@ -1537,6 +1545,8 @@ e asm.functions=false
 e asm.lines.bb=false
 e asm.comments=false
 e scr.color=0
+e asm.arch=x86
+e asm.bits=64
 wx 83f803740e
 af
 pd 1 @B:0
