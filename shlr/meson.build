@@ -295,7 +295,7 @@ if get_option('use_treesitter')
     endif
 
     # NOTE: when you update SHELLPARSER_TIP or SHELLPARSER_BRA, also update them in shlr/Makefile
-    SHELLPARSER_TIP = 'dfb12492f4052b5a6c64fc626e9bf65ccb7b5522'
+    SHELLPARSER_TIP = 'aef62b4bc6b9654e54bd59bee1cb8cea16e3aa96'
     SHELLPARSER_BRA = 'master'
     shell_parser_user = 'ret2libc'
 
@@ -315,6 +315,7 @@ if get_option('use_treesitter')
 
   shell_parser_files = [
     join_paths(shell_parser_path, 'src/parser.c'),
+    join_paths(shell_parser_path, 'src/scanner.c'),
   ]
 
   shell_parser_inc = [platform_inc, include_directories('radare2-shell-parser/src/tree_sitter')]
