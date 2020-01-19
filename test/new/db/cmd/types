@@ -1464,6 +1464,24 @@ func.main.ret=int32_t
 EOF
 RUN
 
+NAME=afs without type
+FILE=../bins/elf/analysis/pid_stripped
+CMDS=<<EOF
+s 0x4e2420
+af
+afs
+"afs no_type(int a, char **b);"
+afs
+"afs char type(int a, char **b);"
+afs
+EOF
+EXPECT=<<EOF
+fcn.004e2420 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
+int32_t no_type (int32_t a, char **b);
+char type (int32_t a, char **b);
+EOF
+RUN
+
 NAME=td crash
 FILE=-
 CMDS=<<EOF

@@ -3298,15 +3298,24 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					// parse function signature here
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 					char *fcnstr = r_str_newf ("%s;", arg), *fcnstr_copy = strdup (fcnstr);
-					char *fcnname = strrchr (r_str_trim_tail (strtok (fcnstr_copy, "(")), ' ');
+					char *fcnname_aux = r_str_trim_tail (strtok (fcnstr_copy, "("));
+					char *fcnname = NULL;
+					int i, last_space = 0;
+					for (i = 0; i < strlen (fcnname_aux); i++) {
+						if (fcnname_aux[i] == ' ') {
+							last_space = i + 1;
+						}
+					}
+					fcnname = strdup (fcnname_aux + last_space);
 					if (fcnname) {
-						fcnname++;
-						 if (strcmp (fcn->name, fcnname)) {
+						// TODO: move this into r_anal_str_to_fcn()
+						if (strcmp (fcn->name, fcnname)) {
 							(void)__setFunctionName (core, addr, fcnname, false);
 							f = r_anal_get_fcn_in (core->anal, addr, -1);
-						 }
-						 r_anal_str_to_fcn (core->anal, f, fcnstr);
+						}
+						r_anal_str_to_fcn (core->anal, f, fcnstr);
 					}
+					free (fcnname);
 					free (fcnstr_copy);
 					free (fcnstr);
 				} else {
