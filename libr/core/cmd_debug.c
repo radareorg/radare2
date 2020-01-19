@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
 #include <r_debug.h>
@@ -2040,6 +2040,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	}
 //	r_debug_map_sync (core->dbg);
 	if (mode == 'j') {
+		r_config_set_i (core->config, "scr.color", false);
 		pj = pj_new ();
 		pj_a (pj);
 	}
@@ -2127,6 +2128,9 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
+	}
+	if (use_colors) {
+		r_config_set_i (core->config, "scr.color", true);
 	}
 }
 
