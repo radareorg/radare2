@@ -27,7 +27,7 @@ jobs:
         # Install the radare2
         export PATH=${HOME}/install/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/install/lib:${HOME}/install/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/pkgcfg:${PKG_CONFIG_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
         make install
         # Running the new V suite
         cd test && make src/r2r
