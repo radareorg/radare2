@@ -304,7 +304,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			} else {
 				str = r_str_newf ("str.%s", f_name);
 			}
-			RFlagItem *flag = r_flag_set (r->flags, str, vaddr, string->size);
+			(void)r_flag_set (r->flags, str, vaddr, string->size);
 			free (str);
 			free (f_name);
 		} else if (IS_MODE_SIMPLE (mode)) {
