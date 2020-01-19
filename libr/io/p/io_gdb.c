@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 pancake */
+/* radare - LGPL - Copyright 2010-2020 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -8,6 +8,7 @@
 #define IRAPI static inline
 #include <libgdbr.h>
 #include <gdbclient/commands.h>
+#include <gdbclient/responses.h>
 
 typedef struct {
 	libgdbr_t desc;
@@ -298,7 +299,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				handle_stop_reason (desc);
 				if (desc->stop_reason.is_valid == false) {
 					eprintf("Thread (%d) stopped for an invalid reason: %d\n",
-						desc->stop_reason.thread, desc->stop_reason.reason);
+						desc->stop_reason.thread.tid, desc->stop_reason.reason);
 				}
 			}
 			gdbr_invalidate_reg_cache ();
@@ -321,7 +322,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				handle_stop_reason (desc);
 				if (desc->stop_reason.is_valid == false) {
 					eprintf("Thread (%d) stopped for an invalid reason: %d\n",
-						desc->stop_reason.thread, desc->stop_reason.reason);
+						desc->stop_reason.thread.tid, desc->stop_reason.reason);
 				}
 			}
 			gdbr_invalidate_reg_cache ();

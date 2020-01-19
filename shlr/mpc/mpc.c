@@ -978,7 +978,7 @@ enum {
 static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_err_t **e) {
   
   int j = 0, k = 0;
-  mpc_result_t results_stk[MPC_PARSE_STACK_MIN] = { 0 };
+  mpc_result_t results_stk[MPC_PARSE_STACK_MIN] = {{ 0 }};
   mpc_result_t *results;
   int results_slots = MPC_PARSE_STACK_MIN;
   
