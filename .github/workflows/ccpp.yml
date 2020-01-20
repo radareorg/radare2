@@ -14,12 +14,12 @@ jobs:
     strategy:
       matrix:
         node_version: ['12']
-        os: [ubuntu-latest, macOS-latest]
+        os: [ubuntu-latest, macos-latest]
     
     steps:
     - uses: actions/checkout@v1
-    - name: My first step
-      if: matrix.os == 'macOS-latest'
+    - name: Install pkg-config with Homebrew
+      if: matrix.os == 'macos-latest'
       run: brew install pkg-config
     - name: Configure with ACR
       run: ./configure --prefix=${HOME}
