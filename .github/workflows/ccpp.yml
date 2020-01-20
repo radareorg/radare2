@@ -18,6 +18,9 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+    - name: My first step
+      if: matrix.os = macOS-latest
+      run: brew install pkg-config
     - name: Configure with ACR
       run: ./configure --prefix=${HOME}
     - name: Build
