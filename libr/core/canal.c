@@ -791,7 +791,9 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 			r_anal_set_stringrefs (core, fcn);
 		}
 		if (fcnlen == 0) {
-			eprintf ("Cannot analyze at 0x%08"PFMT64x"\n", at + delta);
+			if (core->anal->verbose) {
+				eprintf ("Analyzed function size is 0 at 0x%08"PFMT64x"\n", at + delta);
+			}
 			goto error;
 		}
 		if (fcnlen < 0) {
