@@ -221,6 +221,37 @@ static ut32 mov(ArmOp *op) {
 	return data;
 }
 
+static ut32 cb(ArmOp *op) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+    if (!strncmp (op->mnemonic, "cbnz", 4)) {
+        if (op->operands[0].reg_type & ARM_REG64) {
+            k =  0x000000b5;
+        } else if (op->operands[0].reg_type & ARM_REG32) {
+            k =  0x00000035;
+        } else {
+            return UT32_MAX;
+        }
+    } else if (!strncmp (op->mnemonic, "cbz", 3)) {
+        if (op->operands[0].reg_type & ARM_REG64) {
+            k =  0x000000b4;
+        } else if (op->operands[0].reg_type & ARM_REG32) {
+            k =  0x00000034;
+        } else {
+            return UT32_MAX;
+        }
+    } else {
+        return UT32_MAX;
+    }
+    //printf ("%s %d, %llu\n", op->mnemonic, op->operands[0].reg, op->operands[1].immediate);
+    ut32 imm = op->operands[1].immediate;
+	data = k | (op->operands[0].reg << 24) | ((imm & 0x1c) << 27) | ((imm & 0x1fe0) << 11);
+    data = data | ((imm & 0x1fe000) >> 5);
+
+	return data;
+}
+
+
 static ut32 cmp(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
@@ -1021,6 +1052,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	/* TODO: write tests for this and move out the regsize logic into the mov */
 	if (!strncmp (str, "mov", 3)) {
 		*op = mov (&ops);
+		return *op != -1;
+	}
+	if (!strncmp (str, "cb", 2)) {
+		*op = cb (&ops);
 		return *op != -1;
 	}
 	if (!strncmp (str, "cmp", 3)) {
