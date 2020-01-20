@@ -14,15 +14,24 @@ jobs:
     strategy:
       matrix:
         node_version: ['12']
-        os: [ubuntu-latest, macOS-latest]
+        os: [ubuntu-latest, macos-latest]
     
     steps:
     - uses: actions/checkout@v1
-    - name: configure
-      run: ./configure
-    - name: make
+    - name: Install pkg-config with Homebrew
+      if: matrix.os == 'macos-latest'
+      run: brew install pkg-config
+    - name: Configure with ACR
+      run: ./configure --prefix=${HOME}
+    - name: Build
       run: make
-    # Disabled until NodeJS/r2pipe.js problems are solved
-    #- name: make tests
-    #  run: make tests
+    - name: Install and run tests
+      run: |
+        # Install the radare2
+        export PATH=${HOME}/install/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/install/lib:${HOME}/install/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
+        make install
+        # Running the new V suite
+        cd test && make src/r2r
 
