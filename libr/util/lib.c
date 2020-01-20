@@ -304,7 +304,12 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 			eprintf ("Module version mismatch %s (%s) vs (%s)\n",
 				file, stru->version, R2_VERSION);
 			if (stru->pkgname) {
-				printf ("r2pm -ci %s\n", stru->pkgname);
+				const char *dot = strchr (stru->version, '.');
+				int major = atoi (stru->version);
+				int minor = atoi (dot + 1);
+				if (major >= R2_VERSION_MAJOR && minor >= R2_VERSION_MINOR) {
+					printf ("r2pm -ci %s\n", stru->pkgname);
+				}
 			}
 			return -1;
 		}
