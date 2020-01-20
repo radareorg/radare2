@@ -352,6 +352,7 @@ static bool __check_if_mouse_x_illegal(RCore *core, int x);
 static bool __check_if_mouse_y_illegal(RCore *core, int y);
 static bool __check_if_mouse_x_on_edge(RCore *core, int x, int y);
 static bool __check_if_mouse_y_on_edge(RCore *core, int x, int y);
+static void __check_edge(RCore *core);
 
 /* add */
 static void __add_help_panel(RCore *core);
@@ -391,6 +392,7 @@ static void __insert_panel(RCore *core, int n, const char *name, const char*cmd)
 static void __dismantle_del_panel(RCore *core, RPanel *p, int pi);
 static void __dismantle_panel(RPanels *ps, RPanel *p);
 static void __panels_refresh(RCore *core);
+static void __do_panels_resize(RCore *core);
 static void __do_panels_refresh(RCore *core);
 static void __do_panels_refreshOneShot(RCore *core);
 static void __panel_all_clear(RPanels *panels);
@@ -742,6 +744,24 @@ bool __check_if_addr(const char *c, int len) {
 		}
 	}
 	return false;
+}
+
+void __check_edge(RCore *core) {
+	RPanels *panels = core->panels;
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = __get_panel (panels, i);
+		if (panel->view->pos.x + panel->view->pos.w == core->panels->can->w) {
+			panel->view->edge |= (1 << PANEL_EDGE_RIGHT);
+		} else {
+			panel->view->edge &= (1 << PANEL_EDGE_BOTTOM);
+		}
+		if (panel->view->pos.y + panel->view->pos.h == core->panels->can->h) {
+			panel->view->edge |= (1 << PANEL_EDGE_BOTTOM);
+		} else {
+			panel->view->edge &= (1 << PANEL_EDGE_RIGHT);
+		}
+	}
 }
 
 void __shrink_panels_forward(RCore *core, int target) {
@@ -1436,6 +1456,7 @@ void __split_panel_horizontal(RCore *core, RPanel *p, const char *name, const ch
 
 void __panels_layout_refresh(RCore *core) {
 	__del_invalid_panels (core);
+	__check_edge (core);
 	__panels_check_stackbase (core);
 	__panels_refresh (core);
 }
@@ -3061,6 +3082,7 @@ void __init_panel_param(RCore *core, RPanel *p, const char *title, const char *c
 	__set_read_only (core, p, NULL);
 	m->funcName = NULL;
 	v->refresh = true;
+	v->edge = 0;
 	if (title) {
 		m->title = r_str_dup (m->title, title);
 		if (cmd) {
@@ -5087,6 +5109,22 @@ void __panels_refresh(RCore *core) {
 	}
 }
 
+void __do_panels_resize(RCore *core) {
+	RPanels *panels = core->panels;
+	int i;
+	int h, w = r_cons_get_size (&h);
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = __get_panel (panels, i);
+		if (panel->view->edge & (1 << PANEL_EDGE_BOTTOM)) {
+			panel->view->pos.h = h - panel->view->pos.y;
+		}
+		if (panel->view->edge & (1 << PANEL_EDGE_RIGHT)) {
+			panel->view->pos.w = w - panel->view->pos.x;
+		}
+	}
+	__do_panels_refresh (core);
+}
+
 void __do_panels_refresh(RCore *core) {
 	if (!core->panels) {
 		return;
@@ -5096,7 +5134,7 @@ void __do_panels_refresh(RCore *core) {
 }
 
 void __do_panels_refreshOneShot(RCore *core) {
-	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) __do_panels_refresh, core);
+	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) __do_panels_resize, core);
 }
 
 void __panel_single_step_in(RCore *core) {
