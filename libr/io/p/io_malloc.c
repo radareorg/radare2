@@ -117,6 +117,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		count = mallocsz - _io_malloc_off (fd);
 	}
 	memcpy (buf, _io_malloc_buf (fd) + _io_malloc_off (fd), count);
+	_io_malloc_set_off (fd, _io_malloc_off (fd) + count);
 	return count;
 }
 
