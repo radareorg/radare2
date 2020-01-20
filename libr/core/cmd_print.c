@@ -6180,10 +6180,14 @@ l = use_blocksize;
 				"| e dir.magic  # defaults to " R_JOIN_2_PATHS ("{R2_PREFIX}", R2_SDB_MAGIC) "\n"
 				"| /m           # search for magic signatures\n"
 				);
+		} else if (input[1] == 'j') { // "pmj"
+			if (l > 0) {
+				r_core_magic (core, input + 2, true, true);
+			}
 		} else {
 			// XXX: need cmd_magic header for r_core_magic
 			if (l > 0) {
-				r_core_magic (core, input + 1, true);
+				r_core_magic (core, input + 1, true, false);
 			}
 		}
 		break;
