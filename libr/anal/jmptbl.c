@@ -293,7 +293,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 		if (hint->val != UT64_MAX) {
 			*table_size = hint->val;
 		}
-		eprintf ("TMPAPVAL %llx, %llx\n", addr, tmp_aop.val);
+		// eprintf ("TMPAPVAL %llx, %llx\n", addr, tmp_aop.val);
 		r_anal_hint_free (hint);
 		return true;
 	}

@@ -161,19 +161,11 @@ NAME=cyclomatic
 FILE=../bins/pe/rabin2.exe
 CMDS=<<EOF
 s 0x140002510;af;afi~complex[1]
+afb.@0x14000253e
 EOF
 EXPECT=<<EOF
-12
-EOF
-RUN
-
-NAME=cyclomatic endsize
-FILE=../bins/pe/rabin2.exe
-CMDS=<<EOF
-s 0x140002510;af;afi~complex[1]
-EOF
-EXPECT=<<EOF
-12
+10
+0x14000253e 0x14000255e 00:0000 32 s 0x140002579 s 0x14000255e s 0x14000258c s 0x1400025a1 s 0x1400025b6 s 0x1400025c9 s 0x1400025e1
 EOF
 RUN
 
@@ -1161,6 +1153,9 @@ EXPECT=<<EOF
 0x08048c16 1 case.0x8048bd6.2
 0x08048c28 1 case.0x8048bd6.3
 0x08048c40 1 case.0x8048bd6.4
+0x08048c52 1 case.0x8048bd6.5
+0x08048c64 1 case.0x8048bd6.6
+0x08048c76 1 case.0x8048bd6.7
 0x08048c88 1 case.default.0x8048bd6
 EOF
 CMDS=<<EOF
