@@ -308,7 +308,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 				int major = atoi (stru->version);
 				int minor = dot ? atoi (dot + 1) : 0;
 				// The pkgname member was introduced in 4.2.0
-				if (major >= 4 || (major == 4 && minor >= 2)) {
+				if (major > 4 || (major == 4 && minor >= 2)) {
 					printf ("r2pm -ci %s\n", stru->pkgname);
 				}
 			}
