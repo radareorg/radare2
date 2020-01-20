@@ -4381,18 +4381,24 @@ static char *ts_node_sub_string(TSNode node, const char *cstr) {
 
 #define DEFINE_HANDLE_TS_FCN(name) \
 	DEFINE_IS_TS_FCN (name) \
-	static bool handle_ts_##name##internal(RCore *core, const char *cstr, TSNode node, bool log, char *node_string); \
+	static bool handle_ts_##name##_internal(RCore *core, const char *cstr, TSNode node, bool log, char *node_string); \
 	static bool handle_ts_##name(RCore *core, const char *cstr, TSNode node, bool log) { \
 		char *cmd_string = ts_node_sub_string (node, cstr);	\
 		R_LOG_DEBUG (#name ": '%s'\n", cmd_string);		\
-		bool res = handle_ts_##name##internal (core, cstr, node, log, cmd_string); \
+		bool res = handle_ts_##name##_internal (core, cstr, node, log, cmd_string); \
 		free (cmd_string);					\
 		return res;						\
 	} \
-	static bool handle_ts_##name##internal(RCore *core, const char *cstr, TSNode node, bool log, char *node_string)
+	static bool handle_ts_##name##_internal(RCore *core, const char *cstr, TSNode node, bool log, char *node_string)
 
 static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool log);
 static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log);
+
+DEFINE_IS_TS_FCN(fdn_redirect_operator)
+DEFINE_IS_TS_FCN(fdn_append_operator)
+DEFINE_IS_TS_FCN(html_redirect_operator)
+DEFINE_IS_TS_FCN(html_append_operator)
+
 
 DEFINE_HANDLE_TS_FCN(legacy_quoted_command) {
 	return run_cmd_depth (core, node_string) != -1;
@@ -4402,24 +4408,69 @@ DEFINE_HANDLE_TS_FCN(arged_command) {
 	return r_cmd_call (core->rcmd, node_string) != -1;
 }
 
-DEFINE_HANDLE_TS_FCN(out_redirect_command) {
-	return false;
-}
+DEFINE_HANDLE_TS_FCN(redirect_command) {
+	int pipecolor = r_config_get_i (core->config, "scr.color.pipe");
+	int ocolor = r_config_get_i (core->config, "scr.color");
+	int scr_html = -1;
+	bool res = false, is_append = false, is_html = false;
+	int fdn = 1;
 
-DEFINE_HANDLE_TS_FCN(err_redirect_command) {
-	return false;
-}
+	TSNode redirect_op = ts_node_child_by_field_name (node, "redirect_operator", strlen ("redirect_operator"));
+	if (is_ts_fdn_redirect_operator (redirect_op)) {
+	} else if (is_ts_fdn_append_operator (redirect_op)) {
+		is_append = true;
+	} else if (is_ts_html_redirect_operator (redirect_op)) {
+		is_html = true;
+	} else if (is_ts_html_append_operator (redirect_op)) {
+		is_html = true;
+		is_append = true;
+	} else {
+		R_LOG_ERROR ("This should never happen, redirect_operator is no known type");
+		r_warn_if_reached ();
+	}
 
-DEFINE_HANDLE_TS_FCN(html_redirect_command) {
-	return false;
-}
+	if (is_html) {
+		scr_html = r_config_get_i (core->config, "scr.html");
+		r_config_set_i (core->config, "scr.html", true);
+		pipecolor = true;
+	} else {
+		TSNode fd_desc = ts_node_named_child (redirect_op, 0);
+		if (!ts_node_is_null (fd_desc)) {
+			char *fd_str = ts_node_sub_string (fd_desc, cstr);
+			fdn = atoi (fd_str);
+			free (fd_str);
+		}
+	}
 
-DEFINE_HANDLE_TS_FCN(out_append_redirect_command) {
-	return false;
-}
+	r_cons_set_interactive (false);
+	// TODO: allow to use editor as the old behaviour
 
-DEFINE_HANDLE_TS_FCN(err_append_redirect_command) {
-	return false;
+	// extract the string of the filename we need to write to
+	TSNode arg = ts_node_child_by_field_name (node, "arg", strlen ("arg"));
+	char *arg_str = ts_node_sub_string (arg, cstr);
+
+	int pipefd = r_cons_pipe_open (arg_str, fdn, is_append);
+	if (pipefd != -1) {
+		if (!pipecolor) {
+			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+		}
+		TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+		res = handle_ts_command (core, cstr, command, log);
+		r_cons_flush ();
+		r_cons_pipe_close (pipefd);
+	} else {
+		R_LOG_WARN ("Could not open pipe to %d", fdn);
+	}
+	free (arg_str);
+	r_cons_set_last_interactive ();
+	if (!pipecolor) {
+		r_config_set_i (core->config, "scr.color", ocolor);
+	}
+	if (scr_html != -1) {
+		r_config_set_i (core->config, "scr.html", scr_html);
+	}
+	core->cons->use_tts = false;
+	return res;
 }
 
 DEFINE_HANDLE_TS_FCN(help_command) {
@@ -4460,16 +4511,8 @@ static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool l
 	}
 	if (is_ts_legacy_quoted_command (node)) {
 		ret = handle_ts_legacy_quoted_command (core, cstr, node, log);
-	} else if (is_ts_out_redirect_command (node)) {
-		ret = handle_ts_out_redirect_command (core, cstr, node, log);
-	} else if (is_ts_err_redirect_command (node)) {
-		ret = handle_ts_err_redirect_command (core, cstr, node, log);
-	} else if (is_ts_html_redirect_command (node)) {
-		ret = handle_ts_html_redirect_command (core, cstr, node, log);
-	} else if (is_ts_out_append_redirect_command (node)) {
-		ret = handle_ts_out_append_redirect_command (core, cstr, node, log);
-	} else if (is_ts_err_append_redirect_command (node)) {
-		ret = handle_ts_err_append_redirect_command (core, cstr, node, log);
+	} else if (is_ts_redirect_command (node)) {
+		ret = handle_ts_redirect_command (core, cstr, node, log);
 	} else if (is_ts_arged_command (node)) {
 		ret = handle_ts_arged_command (core, cstr, node, log);
 	} else if (is_ts_tmp_seek_command (node)) {
