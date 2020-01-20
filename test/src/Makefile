@@ -1,5 +1,6 @@
 -include ../../config-user.mk
 
+VCOMMIT=a9127bedf7a5efd3dc70c8f6acb95056f9eb7989
 BINDIR=$(shell r2 -H R2_PREFIX)/bin
 CWD=$(shell pwd)
 V=v/v
@@ -16,6 +17,7 @@ mrproper: clean
 
 $(V): v
 	cd v && git pull
+	cd v && git reset --hard $(VCOMMIT)
 	$(MAKE) -C v
 	$(V) install radare.r2
 
@@ -24,6 +26,7 @@ fmt:
 
 v:
 	git clone https://github.com/vlang/v
+	cd v && git reset --hard $(VCOMMIT)
 
 install: uninstall
 	v -prod r2r.v
