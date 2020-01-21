@@ -153,3 +153,5 @@ brab=branch with pointer authentication using B key
 brabz=variant of brabz
 stadd=atomic add word (arm v8.1)
 staddl=atomic add dword (arm v8.1)
+cbnz=compare and branch on non-zero
+cbz=compare and branch on zero

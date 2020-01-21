@@ -258,3 +258,5 @@ a "mrs x3, SP_EL0" 034138d5
 a "msr 0xc208, x3" 034118d5
 a "msr SP_EL0, x3" 034118d5
 a "msr sp_el0, x3" 034118d5
+a "cbnz w3, 0x1fffd4" a3feff35
+a "cbz x3, 0x1fffe8" 43ffffb4
