@@ -55,8 +55,8 @@ static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
 		if (!strncmp (val, "0x", 2)) {
 			ut64 n = r_num_get (NULL, val);
 			cfg->cb_printf ("%"PFMT64d, n);
-		} else if (r_str_isnumber (val) || r_str_is_bool (val)) {
-			cfg->cb_printf ("%s", val);
+		} else if (r_str_isnumber (val) || (*val /* HACK */ && r_str_is_bool (val))) {
+			cfg->cb_printf ("%s", val);  // TODO: always use true/false for bool json str
 		} else {
 			cfg->cb_printf ("\"%s\"", sval);
 		}

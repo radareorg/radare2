@@ -28,6 +28,8 @@ e asm.cmt.off=0
 e asm.cmt.off
 e asm.cmt.off=1
 e asm.cmt.off
+e asm.cmt.off=
+e asm.cmt.off
 EOF
 EXPECT=<<EOF
 1
@@ -38,5 +40,6 @@ false
 true
 false
 true
+false
 EOF
 RUN
