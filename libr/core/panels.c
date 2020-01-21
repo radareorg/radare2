@@ -5115,10 +5115,12 @@ void __do_panels_resize(RCore *core) {
 	int h, w = r_cons_get_size (&h);
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
-		if (panel->view->edge & (1 << PANEL_EDGE_BOTTOM)) {
+		if ((panel->view->edge & (1 << PANEL_EDGE_BOTTOM))
+				&& (panel->view->pos.y + panel->view->pos.h < h)) {
 			panel->view->pos.h = h - panel->view->pos.y;
 		}
-		if (panel->view->edge & (1 << PANEL_EDGE_RIGHT)) {
+		if ((panel->view->edge & (1 << PANEL_EDGE_RIGHT))
+				&& (panel->view->pos.x + panel->view->pos.w < w)) {
 			panel->view->pos.w = w - panel->view->pos.x;
 		}
 	}
