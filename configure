@@ -123,12 +123,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2' ; VERSION='4.2.0' ; VERSION_MAJOR=4; VERSION_MINOR=2; VERSION_PATCH=0; VERSION_NUMBER=40200; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='4.3.0-git' ; VERSION_MAJOR=4; VERSION_MINOR=3; VERSION_PATCH=0; VERSION_NUMBER=40300; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-4.2.0 to adapt to many kinds of systems.
+'configure' configures radare2-4.3.0-git to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -216,7 +216,7 @@ take_environ() {
 }
 
 show_version() {
-echo "radare2-4.2.0 configuration script done with acr v1.8.1.
+echo "radare2-4.3.0-git configuration script done with acr v1.8.1.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -240,7 +240,7 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   radare2"
-echo "VERSION:   4.2.0"
+echo "VERSION:   4.3.0-git"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
