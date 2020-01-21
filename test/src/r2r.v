@@ -132,7 +132,7 @@ mut:
 	r2          &r2.R2
 	jobs        int
 	timeout     int
-	wg          sync.WaitGroup
+	wg          &sync.WaitGroup
 	success     int
 	failed      int
 	fixed       int
