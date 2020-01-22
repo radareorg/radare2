@@ -360,6 +360,52 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 	recursive_help_go (core, detail, desc);
 }
 
+static bool lastcmd_repeat(RCore *core, int next) {
+	int res = -1;
+	// Fix for backtickbug px`~`
+	if (!core->lastcmd || core->cons->context->cmd_depth < 1) {
+		return false;
+	}
+	switch (*core->lastcmd) {
+	case '.':
+		if (core->lastcmd[1] == '(') { // macro call
+			res = r_core_cmd0 (core, core->lastcmd);
+		}
+		break;
+	case 'd': // debug
+		res = r_core_cmd0 (core, core->lastcmd);
+		switch (core->lastcmd[1]) {
+		case 's':
+		case 'c':
+			r_core_cmd0 (core, "sr PC;pd 1");
+		}
+		break;
+	case 'p': // print
+	case 'x':
+	case '$':
+		if (!strncmp (core->lastcmd, "pd", 2)) {
+			if (core->lastcmd[2]== ' ') {
+				r_core_cmdf (core, "so %s", core->lastcmd + 3);
+			} else {
+				r_core_cmd0 (core, "so `pi~?`");
+			}
+		} else {
+			if (next) {
+				r_core_seek (core, core->offset + core->blocksize, 1);
+			} else {
+				if (core->blocksize > core->offset) {
+					r_core_seek (core, 0, 1);
+				} else {
+					r_core_seek (core, core->offset - core->blocksize, 1);
+				}
+			}
+		}
+		res = r_core_cmd0 (core, core->lastcmd);
+		break;
+	}
+	return res != -1;
+}
+
 static int r_core_cmd_nullcallback(void *data) {
 	RCore *core = (RCore*) data;
 	if (core->cons->context->breaked) {
@@ -369,7 +415,7 @@ static int r_core_cmd_nullcallback(void *data) {
 	if (!core->cmdrepeat) {
 		return 0;
 	}
-	r_core_cmd_repeat (core, true);
+	lastcmd_repeat (core, true);
 	return 1;
 }
 
@@ -1195,7 +1241,7 @@ static int cmd_interpret(void *data, const char *input) {
 
 	switch (*input) {
 	case '\0': // "."
-		r_core_cmd_repeat (core, 0);
+		lastcmd_repeat (core, 0);
 		break;
 	case ':': // ".:"
 		if ((ptr = strchr (input + 1, ' '))) {
@@ -1224,7 +1270,7 @@ static int cmd_interpret(void *data, const char *input) {
 	case '.': // ".." same as \n
 		if (input[1] == '.') { // "..." run the last command repeated
 			// same as \n with e cmd.repeat=true
-			r_core_cmd_repeat (core, 1);
+			lastcmd_repeat (core, 1);
 		} else if (input[1]) {
 			char *str = r_core_cmd_str_pipe (core, r_str_trim_ro (input));
 			if (str) {
@@ -2469,7 +2515,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!*cmd) {
 		if (core->cmdrepeat > 0) {
-			r_core_cmd_repeat (core, true);
+			lastcmd_repeat (core, true);
 			ret = r_core_cmd_nullcallback (core);
 		}
 		goto beach;
@@ -4405,6 +4451,17 @@ DEFINE_HANDLE_TS_FCN(legacy_quoted_command) {
 }
 
 DEFINE_HANDLE_TS_FCN(arged_command) {
+	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+	r_return_val_if_fail (!ts_node_is_null (command), false);
+	char *command_str = ts_node_sub_string (command, cstr);
+	R_LOG_DEBUG ("arged_command command: %s\n", command_str);
+	TSNode args = ts_node_child_by_field_name (node, "args", strlen ("args"));
+	if (!ts_node_is_null (args)) {
+		char *args_str = ts_node_sub_string (args, cstr);
+		R_LOG_DEBUG ("arged_command args: %s\n", args_str);
+		free (args_str);
+	}
+	free (command_str);
 	return r_cmd_call (core->rcmd, node_string) != -1;
 }
 
@@ -4492,19 +4549,24 @@ DEFINE_HANDLE_TS_FCN(tmp_seek_command) {
 	return res;
 }
 
-DEFINE_HANDLE_TS_FCN(interpret_command) {
-	TSNode command = ts_node_named_child (node, 0);
-	char *cmd_string = ts_node_sub_string (command, cstr);
-	char *str = r_core_cmd_str (core, cmd_string);
-	R_LOG_DEBUG ("interpret_command: about to run = '%s'\n", str);
-	free (cmd_string);
-	bool res = core_cmd_tsr2cmd (core, str, log);
-	free (str);
+DEFINE_HANDLE_TS_FCN(last_command) {
+	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+	char *command_str = ts_node_sub_string (command, cstr);
+	bool res = false;
+	if (!strcmp (command_str, ".")) {
+		res = lastcmd_repeat (core, 0);
+	} else if (!strcmp (command_str, "...")) {
+		res = lastcmd_repeat (core, 1);
+	} else {
+		r_warn_if_reached ();
+	}
+	free (command_str);
 	return res;
 }
 
 static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool log) {
 	bool ret = false;
+	bool is_last_command = false;
 
 	if (log) {
 		r_line_hist_add (cstr);
@@ -4517,12 +4579,17 @@ static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool l
 		ret = handle_ts_arged_command (core, cstr, node, log);
 	} else if (is_ts_tmp_seek_command (node)) {
 		ret = handle_ts_tmp_seek_command (core, cstr, node, log);
-	} else if (is_ts_interpret_command (node)) {
-		ret = handle_ts_interpret_command (core, cstr, node, log);
+	} else if (is_ts_last_command (node)) {
+		is_last_command = true;
+		ret = handle_ts_last_command (core, cstr, node, log);
 	} else if (is_ts_help_command (node)) {
 		ret = handle_ts_help_command (core, cstr, node, log);
 	} else {
 		R_LOG_WARN ("No handler for this kind of command `%s`\n", ts_node_type (node));
+	}
+	if (log && !is_last_command) {
+		free (core->lastcmd);
+		core->lastcmd = ts_node_sub_string (node, cstr);
 	}
 	/* run pending analysis commands */
 	run_pending_anal (core);
@@ -4535,6 +4602,16 @@ DEFINE_HANDLE_TS_FCN(commands) {
 	int i;
 
 	R_LOG_DEBUG ("commands with %d childs\n", child_count);
+	if (child_count == 0 && !*cstr) {
+		if (core->cons->context->breaked) {
+			core->cons->context->breaked = false;
+			return false;
+		}
+		if (!core->cmdrepeat) {
+			return false;
+		}
+		return lastcmd_repeat (core, true);
+	}
 	for (i = 0; i < child_count; ++i) {
 		TSNode command = ts_node_named_child (node, i);
 		res &= handle_ts_command (core, cstr, command, log);
@@ -4907,50 +4984,6 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	r_cons_pop ();
 	r_cons_echo (NULL);
 	return retstr;
-}
-
-R_API void r_core_cmd_repeat(RCore *core, int next) {
-	// Fix for backtickbug px`~`
-	if (!core->lastcmd || core->cons->context->cmd_depth < 1) {
-		return;
-	}
-	switch (*core->lastcmd) {
-	case '.':
-		if (core->lastcmd[1] == '(') { // macro call
-			r_core_cmd0 (core, core->lastcmd);
-		}
-		break;
-	case 'd': // debug
-		r_core_cmd0 (core, core->lastcmd);
-		switch (core->lastcmd[1]) {
-		case 's':
-		case 'c':
-			r_core_cmd0 (core, "sr PC;pd 1");
-		}
-		break;
-	case 'p': // print
-	case 'x':
-	case '$':
-		if (!strncmp (core->lastcmd, "pd", 2)) {
-			if (core->lastcmd[2]== ' ') {
-				r_core_cmdf (core, "so %s", core->lastcmd + 3);
-			} else {
-				r_core_cmd0 (core, "so `pi~?`");
-			}
-		} else {
-			if (next) {
-				r_core_seek (core, core->offset + core->blocksize, 1);
-			} else {
-				if (core->blocksize > core->offset) {
-					r_core_seek (core, 0, 1);
-				} else {
-					r_core_seek (core, core->offset - core->blocksize, 1);
-				}
-			}
-		}
-		r_core_cmd0 (core, core->lastcmd);
-		break;
-	}
 }
 
 /* run cmd in the main task synchronously */
