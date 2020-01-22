@@ -196,20 +196,32 @@ static ut32 mov(ArmOp *op) {
 		}
 	} else if (!strncmp (op->mnemonic, "mov", 3)) {
 		//printf ("%d - %d [%d]\n", op->operands[0].type, op->operands[1].type, ARM_GPR);
+		if (op->operands[0].reg_type & ARM_REG64) {
+            if (op->operands[1].reg_type & ARM_REG64) {
+                k = 0xe00300aa;
+            } else if (op->operands[1].type & ARM_CONSTANT) {
+                k = 0x80d2;
+            } else {
+                return data;
+            }
+        } else if (op->operands[0].reg_type & ARM_REG32) {
+            if (op->operands[1].reg_type & ARM_REG32) {
+                k = 0xe003002a;
+            } else if (op->operands[1].type & ARM_CONSTANT) {
+                k = 0x8052;
+            } else {
+                return data;
+            }
+        }
 		if (op->operands[0].type & ARM_GPR) {
-			if (op->operands[1].type & ARM_GPR) {
-				if (op->operands[1].reg_type & ARM_REG64) {
-					k = 0xe00300aa;
-				} else {
-					k = 0xe003002a;
-				}
-				data = k | op->operands[1].reg << 8;
-			} else if (op->operands[1].type & ARM_CONSTANT) {
-				k = 0x80d2;
-				data = k | op->operands[1].immediate << 29;
-			}
+            if (op->operands[1].type & ARM_GPR) {
+                data = k | op->operands[1].reg << 8;
+            } else if (op->operands[1].type & ARM_CONSTANT) {
+                ut32 imm = op->operands[1].immediate << 1;
+                data = k | ((imm & 0xf) << 28) | ((imm & 0x1f0) << 12) ;
+            }
 			data |=  op->operands[0].reg << 24;
-		}
+        }
 		return data;
 	}
 
