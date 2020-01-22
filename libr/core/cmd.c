@@ -4532,6 +4532,25 @@ DEFINE_HANDLE_TS_FCN(redirect_command) {
 
 DEFINE_HANDLE_TS_FCN(help_command) {
 	// TODO: traverse command tree to print help
+	// FIXME: once we have a command tree, this special handling should be removed
+	if (node_string[0] == '@') {
+		if (node_string[1] == '?') {
+			r_core_cmd_help (core, help_msg_at);
+			return true;
+		}
+		if (node_string[1] == '@') {
+			if (node_string[2] == '?') {
+				r_core_cmd_help (core, help_msg_at_at);
+				return true;
+			}
+			if (node_string[2] == '@') {
+				if (node_string[3] == '?') {
+					r_core_cmd_help (core, help_msg_at_at_at);
+					return true;
+				}
+			}
+		}
+	}
 	return r_cmd_call (core->rcmd, node_string) != -1;
 }
 
