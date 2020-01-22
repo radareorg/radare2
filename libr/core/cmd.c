@@ -360,6 +360,52 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 	recursive_help_go (core, detail, desc);
 }
 
+static bool lastcmd_repeat(RCore *core, int next) {
+	int res = -1;
+	// Fix for backtickbug px`~`
+	if (!core->lastcmd || core->cons->context->cmd_depth < 1) {
+		return false;
+	}
+	switch (*core->lastcmd) {
+	case '.':
+		if (core->lastcmd[1] == '(') { // macro call
+			res = r_core_cmd0 (core, core->lastcmd);
+		}
+		break;
+	case 'd': // debug
+		res = r_core_cmd0 (core, core->lastcmd);
+		switch (core->lastcmd[1]) {
+		case 's':
+		case 'c':
+			r_core_cmd0 (core, "sr PC;pd 1");
+		}
+		break;
+	case 'p': // print
+	case 'x':
+	case '$':
+		if (!strncmp (core->lastcmd, "pd", 2)) {
+			if (core->lastcmd[2]== ' ') {
+				r_core_cmdf (core, "so %s", core->lastcmd + 3);
+			} else {
+				r_core_cmd0 (core, "so `pi~?`");
+			}
+		} else {
+			if (next) {
+				r_core_seek (core, core->offset + core->blocksize, 1);
+			} else {
+				if (core->blocksize > core->offset) {
+					r_core_seek (core, 0, 1);
+				} else {
+					r_core_seek (core, core->offset - core->blocksize, 1);
+				}
+			}
+		}
+		res = r_core_cmd0 (core, core->lastcmd);
+		break;
+	}
+	return res != -1;
+}
+
 static int r_core_cmd_nullcallback(void *data) {
 	RCore *core = (RCore*) data;
 	if (core->cons->context->breaked) {
@@ -369,7 +415,7 @@ static int r_core_cmd_nullcallback(void *data) {
 	if (!core->cmdrepeat) {
 		return 0;
 	}
-	r_core_cmd_repeat (core, true);
+	lastcmd_repeat (core, true);
 	return 1;
 }
 
@@ -1195,7 +1241,7 @@ static int cmd_interpret(void *data, const char *input) {
 
 	switch (*input) {
 	case '\0': // "."
-		r_core_cmd_repeat (core, 0);
+		lastcmd_repeat (core, 0);
 		break;
 	case ':': // ".:"
 		if ((ptr = strchr (input + 1, ' '))) {
@@ -1224,7 +1270,7 @@ static int cmd_interpret(void *data, const char *input) {
 	case '.': // ".." same as \n
 		if (input[1] == '.') { // "..." run the last command repeated
 			// same as \n with e cmd.repeat=true
-			r_core_cmd_repeat (core, 1);
+			lastcmd_repeat (core, 1);
 		} else if (input[1]) {
 			char *str = r_core_cmd_str_pipe (core, r_str_trim_ro (input));
 			if (str) {
@@ -2469,7 +2515,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!*cmd) {
 		if (core->cmdrepeat > 0) {
-			r_core_cmd_repeat (core, true);
+			lastcmd_repeat (core, true);
 			ret = r_core_cmd_nullcallback (core);
 		}
 		goto beach;
@@ -4360,58 +4406,161 @@ R_API void run_pending_anal(RCore *core) {
 	}
 }
 
+static int run_cmd_depth(RCore *core, char *cmd);
+
 #if USE_TREESITTER
-static inline bool is_ts_commands(TSNode node) {
-	return strcmp (ts_node_type (node), "commands") == 0;
+#define TS_START_END(node, start, end) do {		\
+		start = ts_node_start_byte (node);	\
+		end = ts_node_end_byte (node);		\
+	} while (0)
+
+static char *ts_node_sub_string(TSNode node, const char *cstr) {
+	ut32 start, end;
+	TS_START_END (node, start, end);
+	return r_str_newf ("%.*s", end - start, cstr + start);
 }
 
-static inline bool is_ts_arged_command(TSNode node) {
-	return strcmp (ts_node_type (node), "arged_command") == 0;
-}
+// TODO: use integer type instead of string-based one
+#define DEFINE_IS_TS_FCN(name) static inline bool is_ts_##name(TSNode node) { \
+		return strcmp (ts_node_type (node), #name) == 0;	\
+	}
 
-static inline bool is_ts_tmp_seek_command(TSNode node) {
-	return strcmp (ts_node_type (node), "tmp_seek_command") == 0;
-}
-
-static inline bool is_ts_interpret_command(TSNode node) {
-	return strcmp (ts_node_type (node), "interpret_command") == 0;
-}
+#define DEFINE_HANDLE_TS_FCN(name) \
+	DEFINE_IS_TS_FCN (name) \
+	static bool handle_ts_##name##_internal(RCore *core, const char *cstr, TSNode node, bool log, char *node_string); \
+	static bool handle_ts_##name(RCore *core, const char *cstr, TSNode node, bool log) { \
+		char *cmd_string = ts_node_sub_string (node, cstr);	\
+		R_LOG_DEBUG (#name ": '%s'\n", cmd_string);		\
+		bool res = handle_ts_##name##_internal (core, cstr, node, log, cmd_string); \
+		free (cmd_string);					\
+		return res;						\
+	} \
+	static bool handle_ts_##name##_internal(RCore *core, const char *cstr, TSNode node, bool log, char *node_string)
 
 static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool log);
 static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log);
 
-static bool handle_ts_arged_command(RCore *core, const char *cstr, TSNode node) {
-	TSNode command = ts_node_named_child (node, 0);
-	ut32 cmd_start_byte = ts_node_start_byte (command);
-	ut32 cmd_end_byte = ts_node_end_byte (command);
-	R_LOG_DEBUG ("command: '%.*s'\n", cmd_end_byte - cmd_start_byte, cstr + cmd_start_byte);
+DEFINE_IS_TS_FCN(fdn_redirect_operator)
+DEFINE_IS_TS_FCN(fdn_append_operator)
+DEFINE_IS_TS_FCN(html_redirect_operator)
+DEFINE_IS_TS_FCN(html_append_operator)
 
-	ut32 child_count = ts_node_named_child_count (node);
-	ut32 last_end_byte = cmd_end_byte;
-	int i;
-	for (i = 1; i < child_count; ++i) {
-		TSNode arg = ts_node_named_child (node, i);
-		ut32 start_byte = ts_node_start_byte (arg);
-		ut32 end_byte = ts_node_end_byte (arg);
-		if (last_end_byte < end_byte) {
-			last_end_byte = end_byte;
-		}
-		R_LOG_DEBUG ("arg: '%.*s'\n", end_byte - start_byte, cstr + start_byte);
+
+DEFINE_HANDLE_TS_FCN(legacy_quoted_command) {
+	return run_cmd_depth (core, node_string) != -1;
+}
+
+DEFINE_HANDLE_TS_FCN(arged_command) {
+	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+	r_return_val_if_fail (!ts_node_is_null (command), false);
+	char *command_str = ts_node_sub_string (command, cstr);
+	R_LOG_DEBUG ("arged_command command: %s\n", command_str);
+	TSNode args = ts_node_child_by_field_name (node, "args", strlen ("args"));
+	if (!ts_node_is_null (args)) {
+		char *args_str = ts_node_sub_string (args, cstr);
+		R_LOG_DEBUG ("arged_command args: %s\n", args_str);
+		free (args_str);
 	}
-	char *cmd_string = r_str_newf ("%.*s", last_end_byte - cmd_start_byte, cstr + cmd_start_byte);
-	bool res = r_cmd_call (core->rcmd, cmd_string) != -1;
-	free (cmd_string);
+	free (command_str);
+	return r_cmd_call (core->rcmd, node_string) != -1;
+}
+
+DEFINE_HANDLE_TS_FCN(redirect_command) {
+	int pipecolor = r_config_get_i (core->config, "scr.color.pipe");
+	int ocolor = r_config_get_i (core->config, "scr.color");
+	int scr_html = -1;
+	bool res = false, is_append = false, is_html = false;
+	int fdn = 1;
+
+	TSNode redirect_op = ts_node_child_by_field_name (node, "redirect_operator", strlen ("redirect_operator"));
+	if (is_ts_fdn_redirect_operator (redirect_op)) {
+	} else if (is_ts_fdn_append_operator (redirect_op)) {
+		is_append = true;
+	} else if (is_ts_html_redirect_operator (redirect_op)) {
+		is_html = true;
+	} else if (is_ts_html_append_operator (redirect_op)) {
+		is_html = true;
+		is_append = true;
+	} else {
+		R_LOG_ERROR ("This should never happen, redirect_operator is no known type");
+		r_warn_if_reached ();
+	}
+
+	if (is_html) {
+		scr_html = r_config_get_i (core->config, "scr.html");
+		r_config_set_i (core->config, "scr.html", true);
+		pipecolor = true;
+	} else {
+		TSNode fd_desc = ts_node_named_child (redirect_op, 0);
+		if (!ts_node_is_null (fd_desc)) {
+			char *fd_str = ts_node_sub_string (fd_desc, cstr);
+			fdn = atoi (fd_str);
+			free (fd_str);
+		}
+	}
+
+	r_cons_set_interactive (false);
+	// TODO: allow to use editor as the old behaviour
+
+	// extract the string of the filename we need to write to
+	TSNode arg = ts_node_child_by_field_name (node, "arg", strlen ("arg"));
+	char *arg_str = ts_node_sub_string (arg, cstr);
+
+	int pipefd = r_cons_pipe_open (arg_str, fdn, is_append);
+	if (pipefd != -1) {
+		if (!pipecolor) {
+			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+		}
+		TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+		res = handle_ts_command (core, cstr, command, log);
+		r_cons_flush ();
+		r_cons_pipe_close (pipefd);
+	} else {
+		R_LOG_WARN ("Could not open pipe to %d", fdn);
+	}
+	free (arg_str);
+	r_cons_set_last_interactive ();
+	if (!pipecolor) {
+		r_config_set_i (core->config, "scr.color", ocolor);
+	}
+	if (scr_html != -1) {
+		r_config_set_i (core->config, "scr.html", scr_html);
+	}
+	core->cons->use_tts = false;
 	return res;
 }
 
-static bool handle_ts_tmp_seek_command(RCore *core, const char *cstr, TSNode node, bool log) {
+DEFINE_HANDLE_TS_FCN(help_command) {
+	// TODO: traverse command tree to print help
+	// FIXME: once we have a command tree, this special handling should be removed
+	if (node_string[0] == '@') {
+		if (node_string[1] == '?') {
+			r_core_cmd_help (core, help_msg_at);
+			return true;
+		}
+		if (node_string[1] == '@') {
+			if (node_string[2] == '?') {
+				r_core_cmd_help (core, help_msg_at_at);
+				return true;
+			}
+			if (node_string[2] == '@') {
+				if (node_string[3] == '?') {
+					r_core_cmd_help (core, help_msg_at_at_at);
+					return true;
+				}
+			}
+		}
+	}
+	return r_cmd_call (core->rcmd, node_string) != -1;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_seek_command) {
+	// TODO: handle offsets like "+30", "-13", etc.
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode offset = ts_node_named_child (node, 1);
-	ut32 offset_start = ts_node_start_byte (offset);
-	ut32 offset_end = ts_node_end_byte (offset);
-	char *offset_string = r_str_newf ("%.*s", offset_end - offset_start, cstr + offset_start);
+	char *offset_string = ts_node_sub_string (offset, cstr);
 	ut64 orig_offset = core->offset;
-	R_LOG_DEBUG ("tmp_seek command, command X on tmp_seek %s\n", offset_string);
+	R_LOG_DEBUG ("tmp_seek_command, changing offset to %s\n", offset_string);
 	r_core_seek (core, r_num_math (core->num, offset_string), 1);
 	bool res = handle_ts_command (core, cstr, command, log);
 	r_core_seek (core, orig_offset, 1);
@@ -4419,45 +4568,69 @@ static bool handle_ts_tmp_seek_command(RCore *core, const char *cstr, TSNode nod
 	return res;
 }
 
-static bool handle_ts_interpret_command(RCore *core, const char *cstr, TSNode node, bool log) {
-	TSNode command = ts_node_named_child (node, 0);
-	ut32 command_start = ts_node_start_byte (command);
-	ut32 command_end = ts_node_end_byte (command);
-	char *cmd_string = r_str_newf ("%.*s", command_end - command_start, cstr + command_start);
-	char *str = r_core_cmd_str (core, cmd_string);
-	R_LOG_DEBUG ("interpret_command cmd_string = '%s', result to interpret = '%s'\n", cmd_string, str);
-	free (cmd_string);
-	bool res = core_cmd_tsr2cmd (core, str, log);
-	free (str);
+DEFINE_HANDLE_TS_FCN(last_command) {
+	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+	char *command_str = ts_node_sub_string (command, cstr);
+	bool res = false;
+	if (!strcmp (command_str, ".")) {
+		res = lastcmd_repeat (core, 0);
+	} else if (!strcmp (command_str, "...")) {
+		res = lastcmd_repeat (core, 1);
+	} else {
+		r_warn_if_reached ();
+	}
+	free (command_str);
 	return res;
 }
 
 static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool log) {
 	bool ret = false;
+	bool is_last_command = false;
 
 	if (log) {
 		r_line_hist_add (cstr);
 	}
-	if (is_ts_arged_command (node)) {
-		ret = handle_ts_arged_command (core, cstr, node);
+	if (is_ts_legacy_quoted_command (node)) {
+		ret = handle_ts_legacy_quoted_command (core, cstr, node, log);
+	} else if (is_ts_redirect_command (node)) {
+		ret = handle_ts_redirect_command (core, cstr, node, log);
+	} else if (is_ts_arged_command (node)) {
+		ret = handle_ts_arged_command (core, cstr, node, log);
 	} else if (is_ts_tmp_seek_command (node)) {
 		ret = handle_ts_tmp_seek_command (core, cstr, node, log);
-	} else if (is_ts_interpret_command (node)) {
-		ret = handle_ts_interpret_command (core, cstr, node, log);
+	} else if (is_ts_last_command (node)) {
+		is_last_command = true;
+		ret = handle_ts_last_command (core, cstr, node, log);
+	} else if (is_ts_help_command (node)) {
+		ret = handle_ts_help_command (core, cstr, node, log);
 	} else {
 		R_LOG_WARN ("No handler for this kind of command `%s`\n", ts_node_type (node));
+	}
+	if (log && !is_last_command) {
+		free (core->lastcmd);
+		core->lastcmd = ts_node_sub_string (node, cstr);
 	}
 	/* run pending analysis commands */
 	run_pending_anal (core);
 	return ret;
 }
 
-static bool handle_ts_commands(RCore *core, const char *cstr, TSNode node, bool log) {
+DEFINE_HANDLE_TS_FCN(commands) {
 	ut32 child_count = ts_node_named_child_count (node);
 	bool res = true;
 	int i;
 
 	R_LOG_DEBUG ("commands with %d childs\n", child_count);
+	if (child_count == 0 && !*cstr) {
+		if (core->cons->context->breaked) {
+			core->cons->context->breaked = false;
+			return false;
+		}
+		if (!core->cmdrepeat) {
+			return false;
+		}
+		return lastcmd_repeat (core, true);
+	}
 	for (i = 0; i < child_count; ++i) {
 		TSNode command = ts_node_named_child (node, i);
 		res &= handle_ts_command (core, cstr, command, log);
@@ -4489,6 +4662,37 @@ static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log) {
 }
 #endif
 
+static int run_cmd_depth(RCore *core, char *cmd) {
+	char *rcmd;
+	int ret = false;
+
+	if (core->cons->context->cmd_depth < 1) {
+		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
+		run_pending_anal (core);
+		return false;
+	}
+	core->cons->context->cmd_depth--;
+	for (rcmd = cmd;;) {
+		char *ptr = strchr (rcmd, '\n');
+		if (ptr) {
+			*ptr = '\0';
+		}
+		ret = r_core_cmd_subst (core, rcmd);
+		if (ret == -1) {
+			eprintf ("|ERROR| Invalid command '%s' (0x%02x)\n", rcmd, *rcmd);
+			break;
+		}
+		if (!ptr) {
+			break;
+		}
+		rcmd = ptr + 1;
+	}
+	/* run pending analysis commands */
+	run_pending_anal (core);
+	core->cons->context->cmd_depth++;
+	return ret;
+}
+
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
 #if USE_TREESITTER
@@ -4498,7 +4702,6 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 #endif
 	}
 
-	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = false, i;
 
 	if (core->cmdfilter) {
@@ -4547,8 +4750,8 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		core->lastcmd = strdup (cstr);
 	}
 
-	ocmd = cmd = malloc (strlen (cstr) + 4096);
-	if (!ocmd) {
+	char *cmd = malloc (strlen (cstr) + 4096);
+	if (!cmd) {
 		goto beach;
 	}
 	r_str_cpy (cmd, cstr);
@@ -4556,31 +4759,8 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		r_line_hist_add (cstr);
 	}
 
-	if (core->cons->context->cmd_depth < 1) {
-		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
-		free (ocmd);
-		goto beach;
-	}
-	core->cons->context->cmd_depth--;
-	for (rcmd = cmd;;) {
-		ptr = strchr (rcmd, '\n');
-		if (ptr) {
-			*ptr = '\0';
-		}
-		ret = r_core_cmd_subst (core, rcmd);
-		if (ret == -1) {
-			eprintf ("|ERROR| Invalid command '%s' (0x%02x)\n", rcmd, *rcmd);
-			break;
-		}
-		if (!ptr) {
-			break;
-		}
-		rcmd = ptr + 1;
-	}
-	/* run pending analysis commands */
-	run_pending_anal (core);
-	core->cons->context->cmd_depth++;
-	free (ocmd);
+	ret = run_cmd_depth (core, cmd);
+	free (cmd);
 	return ret;
 beach:
 	/* run pending analysis commands */
@@ -4823,50 +5003,6 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	r_cons_pop ();
 	r_cons_echo (NULL);
 	return retstr;
-}
-
-R_API void r_core_cmd_repeat(RCore *core, int next) {
-	// Fix for backtickbug px`~`
-	if (!core->lastcmd || core->cons->context->cmd_depth < 1) {
-		return;
-	}
-	switch (*core->lastcmd) {
-	case '.':
-		if (core->lastcmd[1] == '(') { // macro call
-			r_core_cmd0 (core, core->lastcmd);
-		}
-		break;
-	case 'd': // debug
-		r_core_cmd0 (core, core->lastcmd);
-		switch (core->lastcmd[1]) {
-		case 's':
-		case 'c':
-			r_core_cmd0 (core, "sr PC;pd 1");
-		}
-		break;
-	case 'p': // print
-	case 'x':
-	case '$':
-		if (!strncmp (core->lastcmd, "pd", 2)) {
-			if (core->lastcmd[2]== ' ') {
-				r_core_cmdf (core, "so %s", core->lastcmd + 3);
-			} else {
-				r_core_cmd0 (core, "so `pi~?`");
-			}
-		} else {
-			if (next) {
-				r_core_seek (core, core->offset + core->blocksize, 1);
-			} else {
-				if (core->blocksize > core->offset) {
-					r_core_seek (core, 0, 1);
-				} else {
-					r_core_seek (core, core->offset - core->blocksize, 1);
-				}
-			}
-		}
-		r_core_cmd0 (core, core->lastcmd);
-		break;
-	}
 }
 
 /* run cmd in the main task synchronously */
