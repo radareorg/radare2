@@ -18,7 +18,7 @@ const (
 	default_asm_bits = 32
 	default_radare2 = 'radare2'
 	default_dbpath = 'new/db' // XXX use execpath as relative reference to it
-	cmd_test_paths = ['cmd', 'extras'] // all dirs under db/ that contain regular command tests
+	cmd_test_paths = ['cmd', 'extras', 'tools'] // all dirs under db/ that contain regular command tests
 	r2r_version = '0.2'
 )
 
