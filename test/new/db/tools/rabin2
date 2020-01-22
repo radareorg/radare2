@@ -688,7 +688,7 @@ bintype  elf
 bits     64
 canary   false
 class    ELF64
-compiler GCC: (Debian 8.2.0-5) 8.2.0/clang version 6.0.1-6 (tags/RELEASE_601/final)
+compiler GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
 crypto   false
 endian   little
 havecode true
