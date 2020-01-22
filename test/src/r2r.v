@@ -875,11 +875,12 @@ fn (r2r mut R2R) load_tests() {
 	}
 	if r2r.wants('arch') {
 		$if x64 {
-			p := '${r2r.db_path}/archos'
 			$if linux {
+			  p := '${r2r.db_path}/archos'
 				r2r.load_cmd_tests('$p/linux-x64/')
 			} $else {
 				$if macos {
+			    p := '${r2r.db_path}/archos'
 					r2r.load_cmd_tests('$p/darwin-x64/')
 				} $else {
 					eprintln('Warning: archos tests not supported for current platform')
