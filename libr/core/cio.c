@@ -324,15 +324,6 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	return ret;
 }
 
-static void __choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
-	if (core->anal) {
-		int ret =  r_anal_range_tree_find_bits_at (core->anal->rb_hints_ranges, addr);
-		if (ret) {
-			*bits = ret;
-		}
-	}
-}
-
 // Get address-specific bits and arch at a certain address.
 // If there are no specific infos (i.e. asm.bits and asm.arch should apply), the bits and arch will be 0 or NULL respectively!
 R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bits, R_OUT R_BORROW R_NULLABLE const char **arch) {
@@ -355,10 +346,10 @@ R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bit
 			}
 		}
 	}
-	if (bits && !bitsval && !core->fixedbits) {
-		//if we found bits related with anal hints pick it up
-		__choose_bits_anal_hints (core, addr, &bitsval);
-	}
+	//if we found bits related with anal hints pick it up
+	r_anal_hint_arch_bits_at (core->anal, addr,
+			bits && !bitsval && !core->fixedbits ? &bitsval : NULL,
+			arch && !archval && !core->fixedarch ? &archval : NULL);
 	if (bits && bitsval) {
 		*bits = bitsval;
 	}

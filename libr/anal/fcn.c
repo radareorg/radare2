@@ -622,7 +622,7 @@ repeat:
 			}
 		}
 		if (op.hint.new_bits) {
-			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
+			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits, UT64_MAX);
 		}
 		if (idx > 0 && !overlapped) {
 			bbg = bbget (anal, at, anal->opt.jmpmid && is_x86);

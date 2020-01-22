@@ -5219,7 +5219,6 @@ toro:
 	if (!ds->l) {
 		ds->l = core->blocksize;
 	}
-	r_anal_merge_hint_ranges (core->anal);
 	r_cons_break_push (NULL, NULL);
 	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
@@ -5736,7 +5735,6 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	if (!ds->l) {
 		ds->l = ds->len;
 	}
-	r_anal_merge_hint_ranges (core->anal);
 	r_cons_break_push (NULL, NULL);
 	//build ranges to map addr with bits
 #define isNotTheEnd (nb_opcodes ? j < nb_opcodes: addrbytes * i < nb_bytes)

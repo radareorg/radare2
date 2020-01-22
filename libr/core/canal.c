@@ -1148,9 +1148,12 @@ static int cb(void *p, const char *k, const char *v) {
 	if (hls->mode == 's') {
 		r_cons_printf ("%s=%s\n", k, v);
 	} else {
+#if 0
+		// TODO
 		RAnalHint *hint = r_anal_hint_from_string (hls->a, sdb_atoi (k + 5), v);
 		anal_hint_print (hint, hls->mode, hls->pj);
 		free (hint);
+#endif
 	}
 	return 1;
 }
@@ -1187,6 +1190,8 @@ R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 		hls.pj = pj_new ();
 		pj_a (hls.pj);
 	}
+#if 0
+	// TODO
 	SdbList *ls = sdb_foreach_list (a->sdb_hints, true);
 	SdbListIter *lsi;
 	SdbKv *kv;
@@ -1198,6 +1203,7 @@ R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 		pj_end (hls.pj);
 		r_cons_printf ("%s\n", pj_string (hls.pj));
 	}
+#endif
 }
 
 static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
@@ -4486,12 +4492,12 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 			case R_ANAL_OP_TYPE_UJMP: // BX
 				// maybe UJMP/UCALL is enough here
 				if (!(*val & 1)) {
-					r_anal_hint_set_bits (anal, *val, 32);
+					r_anal_hint_set_bits (anal, *val, UT64_MAX, 32);
 				} else {
 					ut64 snv = r_reg_getv (anal->reg, "pc");
 					if (snv != UT32_MAX && snv != UT64_MAX) {
 						if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
-							r_anal_hint_set_bits (anal, *val - 1, 16);
+							r_anal_hint_set_bits (anal, *val - 1, UT64_MAX, 16);
 						}
 					}
 				}
