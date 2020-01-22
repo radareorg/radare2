@@ -523,10 +523,8 @@ fn (r2r mut R2R) run_cmd_test(test R2RCmdTest) {
 }
 
 fn (r2r R2R) run_fuz_test(fuzzfile string) bool {
-	// cmd := 'rarun2 timeout=${default_timeout} system="${r2r.r2_path} -qq -n ${fuzzfile}"'
-	// TODO: support timeout
-	res := os.system('true') // cmd)
-	return res == 0
+	cmd := 'rarun2 timeout=${default_timeout} system="${r2r.r2_path} -qq -A -n ${fuzzfile}"'
+	return os.system(cmd) == 0
 }
 
 fn (r2r R2R) git_clone(ghpath, localpath string) {
