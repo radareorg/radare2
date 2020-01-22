@@ -3969,7 +3969,7 @@ char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
 	const size_t buflen = strlen (buf);
 	char *nullbyte = buf + buflen;
 	if (nullbyte[1] && buflen < sz) {
-		nullbyte[0] = '/';
+		nullbyte[0] = ' ';
 	}
 	buf[sz] = 0;
 	r_str_trim (buf);
