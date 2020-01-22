@@ -26,6 +26,9 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     if [ "${R2_SYS_OPENSSL}" != "" ] ; then
         OPTS="${OPTS} -D use_sys_openssl=${R2_SYS_OPENSSL}"
     fi
+    if [ "${R2_NEWSHELL}" != "" ] ; then
+        OPTS="${OPTS} -D use_treesitter=${R2_NEWSHELL}"
+    fi
     if [ "${COVERAGE}" == "1" ] ; then
         OPTS="${OPTS} -Db_coverage=true"
     fi
