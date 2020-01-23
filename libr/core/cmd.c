@@ -4456,13 +4456,24 @@ DEFINE_HANDLE_TS_FCN(arged_command) {
 	char *command_str = ts_node_sub_string (command, cstr);
 	R_LOG_DEBUG ("arged_command command: %s\n", command_str);
 	TSNode args = ts_node_child_by_field_name (node, "args", strlen ("args"));
+	char *args_str = NULL;
 	if (!ts_node_is_null (args)) {
-		char *args_str = ts_node_sub_string (args, cstr);
+		args_str = ts_node_sub_string (args, cstr);
 		R_LOG_DEBUG ("arged_command args: %s\n", args_str);
-		free (args_str);
 	}
+	// FIXME: this special handling should be removed once we have a proper
+	//        command tree
+	char *exec_string = node_string;
+	if (!strcmp (command_str, "|.")) {
+		exec_string = r_str_newf (".%s", args_str);
+	}
+	free (args_str);
 	free (command_str);
-	return r_cmd_call (core->rcmd, node_string) != -1;
+	bool res = r_cmd_call (core->rcmd, exec_string) != -1;
+	if (exec_string != node_string) {
+		free (exec_string);
+	}
+	return res;
 }
 
 DEFINE_HANDLE_TS_FCN(redirect_command) {
@@ -4533,25 +4544,18 @@ DEFINE_HANDLE_TS_FCN(redirect_command) {
 DEFINE_HANDLE_TS_FCN(help_command) {
 	// TODO: traverse command tree to print help
 	// FIXME: once we have a command tree, this special handling should be removed
-	if (node_string[0] == '@') {
-		if (node_string[1] == '?') {
-			r_core_cmd_help (core, help_msg_at);
-			return true;
-		}
-		if (node_string[1] == '@') {
-			if (node_string[2] == '?') {
-				r_core_cmd_help (core, help_msg_at_at);
-				return true;
-			}
-			if (node_string[2] == '@') {
-				if (node_string[3] == '?') {
-					r_core_cmd_help (core, help_msg_at_at_at);
-					return true;
-				}
-			}
-		}
+	if (!strcmp (node_string, "@?")) {
+		r_core_cmd_help (core, help_msg_at);
+	} else if (!strcmp (node_string, "@@?")) {
+		r_core_cmd_help (core, help_msg_at_at);
+	} else if (!strcmp (node_string, "@@@?")) {
+		r_core_cmd_help (core, help_msg_at_at_at);
+	} else if (!strcmp (node_string, "|?")) {
+		r_core_cmd_help (core, help_msg_vertical_bar);
+	} else {
+		return r_cmd_call (core->rcmd, node_string) != -1;
 	}
-	return r_cmd_call (core->rcmd, node_string) != -1;
+	return true;
 }
 
 DEFINE_HANDLE_TS_FCN(tmp_seek_command) {
@@ -4583,6 +4587,71 @@ DEFINE_HANDLE_TS_FCN(last_command) {
 	return res;
 }
 
+DEFINE_HANDLE_TS_FCN(grep_command) {
+	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+	TSNode specifier = ts_node_child_by_field_name (node, "specifier", strlen ("specifier"));
+	char *specifier_str = ts_node_sub_string (specifier, cstr);
+	bool res = handle_ts_command (core, cstr, command, log);
+	r_cons_grep_process (specifier_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(html_disable_command) {
+	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+	int scr_html = r_config_get_i (core->config, "scr.html");
+	r_config_set_i (core->config, "scr.html", 0);
+	int scr_color = r_config_get_i (core->config, "scr.color");
+	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+	bool res = handle_ts_command (core, cstr, command, log);
+	if (scr_html != -1) {
+		r_cons_flush ();
+		r_config_set_i (core->config, "scr.html", scr_html);
+	}
+	if (scr_color != -1) {
+		r_config_set_i (core->config, "scr.color", scr_color);
+	}
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(html_enable_command) {
+	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+	int scr_html = r_config_get_i (core->config, "scr.html");
+	r_config_set_i (core->config, "scr.html", true);
+	bool res = handle_ts_command (core, cstr, command, log);
+	if (scr_html != -1) {
+		r_cons_flush ();
+		r_config_set_i (core->config, "scr.html", scr_html);
+	}
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(pipe_command) {
+	TSNode first_cmd = ts_node_named_child (node, 0);
+	r_return_val_if_fail (!ts_node_is_null (first_cmd), false);
+	TSNode second_cmd = ts_node_named_child (node, 1);
+	r_return_val_if_fail (!ts_node_is_null (second_cmd), false);
+	char *first_str = ts_node_sub_string (first_cmd, cstr);
+	char *second_str = ts_node_sub_string (second_cmd, cstr);
+	int value = core->num->value;
+	bool res = r_core_cmd_pipe (core, first_str, second_str) != -1;
+	core->num->value = value;
+	free (first_str);
+	free (second_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(scr_tts_command) {
+	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+	int scr_color = r_config_get_i (core->config, "scr.color");
+	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+	core->cons->use_tts = true;
+	bool res = handle_ts_command (core, cstr, command, log);
+	if (scr_color != -1) {
+		r_config_set_i (core->config, "scr.color", scr_color);
+	}
+	return res;
+}
+
 static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool log) {
 	bool ret = false;
 	bool is_last_command = false;
@@ -4603,6 +4672,16 @@ static bool handle_ts_command(RCore *core, const char *cstr, TSNode node, bool l
 		ret = handle_ts_last_command (core, cstr, node, log);
 	} else if (is_ts_help_command (node)) {
 		ret = handle_ts_help_command (core, cstr, node, log);
+	} else if (is_ts_grep_command (node)) {
+		ret = handle_ts_grep_command (core, cstr, node, log);
+	} else if (is_ts_html_disable_command (node)) {
+		ret = handle_ts_html_disable_command (core, cstr, node, log);
+	} else if (is_ts_html_enable_command (node)) {
+		ret = handle_ts_html_enable_command (core, cstr, node, log);
+	} else if (is_ts_pipe_command (node)) {
+		ret = handle_ts_pipe_command (core, cstr, node, log);
+	} else if (is_ts_scr_tts_command (node)) {
+		ret = handle_ts_scr_tts_command (core, cstr, node, log);
 	} else {
 		R_LOG_WARN ("No handler for this kind of command `%s`\n", ts_node_type (node));
 	}

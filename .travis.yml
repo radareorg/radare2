@@ -45,6 +45,9 @@ matrix:
       arch: arm64
       dist: bionic
       env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with new shell parser enabled
+    - os: linux
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_NEWSHELL=true CFLAGS="-DR2_ASSERT_STDOUT=1" R2_CFG_NEWSHELL=1
     # Run Fuzzing Sanity Test on every push
     # XXX its broken it complains about invalid key
     #- os: linux
@@ -92,6 +95,9 @@ matrix:
       env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with new shell parser enabled
+    - os: linux
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_NEWSHELL=true CFLAGS="-DR2_ASSERT_STDOUT=1" R2_CFG_NEWSHELL=1
 
 cache:
   - ccache
