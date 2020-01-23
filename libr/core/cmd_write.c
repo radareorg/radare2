@@ -14,6 +14,7 @@ static const char *help_msg_w[] = {
 	"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
 	"wa","[?] push ebp","write opcode, separated by ';' (use '\"' around the command)",
 	"waf"," f.asm","assemble file and write bytes",
+	"waF"," f.asm","assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
 	"wao","[?] op","modify opcode (change conditional of jump. nop, etc)",
 	"wA","[?] r 0","alter/modify opcode at current seek (see wA?)",
 	"wb"," 010203","fill current block with cyclic hexpairs",
@@ -45,6 +46,7 @@ static const char *help_msg_wa[] = {
 	"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
 	"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
 	"waf", " f.asm" , "assemble file and write bytes",
+	"waF"," f.asm","assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
 	"wao?", "", "show help for assembler operation on current opcode (hack)",
 	NULL
 };
