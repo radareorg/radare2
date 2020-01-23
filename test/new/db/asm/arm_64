@@ -158,6 +158,8 @@ a "ldrsh w3, [x8, 236]" 03d9c179
 a "ldrsh w3, [x8, x3]" 0369e378
 a "mov x20, x0" f40300aa
 a "mov x9, 5" a90080d2
+a "mov x7, 0x51" 270a80d2
+a "mov w19, 0x9a" 53138052
 a "movk x16, 15" f00180f2
 a "movn x6, 2" 46008092
 a "movz x1, 5" a10080d2
