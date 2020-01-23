@@ -196,6 +196,7 @@ static bool _edf_reg_set (RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) 
 	}
 	EsilDFGRegVar *rv = R_NEW0 (EsilDFGRegVar);
 	if (!rv) {
+		free (_reg);
 		return false;
 	}
 
