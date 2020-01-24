@@ -177,7 +177,7 @@ mut:
 	name string
 }
 
-fn (test R2RCmdTest) get_kw_arg(line string) (string,string) {
+fn get_kw_arg(line string) (string,string) {
 	pos_eq := line.index('=') or {
 		return line,''
 	}
@@ -240,7 +240,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 			}
 			continue
 		}
-		kw,arg := test.get_kw_arg(line)
+		kw,arg := get_kw_arg(line)
 		match kw {
 			'CMDS' {
 				if arg.len > 0 {
