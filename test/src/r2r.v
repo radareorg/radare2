@@ -181,7 +181,7 @@ fn get_kv(line string) (string,string) {
 	i := line.index('=') or {
 		return line,''
 	}
-	return line.substr(0, i),line.substr(i + 1, line.len)
+	return line[0..i],line[i + 1..line.len]
 }
 
 fn (test R2RCmdTest) parse_slurp(v string) (string,string) {
