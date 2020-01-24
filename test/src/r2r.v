@@ -178,10 +178,10 @@ mut:
 }
 
 fn get_kw_arg(line string) (string,string) {
-	pos_eq := line.index('=') or {
+	i := line.index('=') or {
 		return line,''
 	}
-	return line.substr(0, pos_eq),line.substr(pos_eq + 1, line.len)
+	return line.substr(0, i),line.substr(i + 1, line.len)
 }
 
 fn (test R2RCmdTest) parse_slurp(v string) (string,string) {
