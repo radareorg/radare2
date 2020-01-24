@@ -47,6 +47,7 @@ static const char *help_msg_wa[] = {
 	"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
 	"waf", " f.asm" , "assemble file and write bytes",
 	"waF"," f.asm","assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
+	"waF*"," f.asm","assemble file and show 'wx' op with hexpair bytes of assembled code",
 	"wao?", "", "show help for assembler operation on current opcode (hack)",
 	NULL
 };
@@ -1587,7 +1588,7 @@ static int cmd_write(void *data, const char *input) {
 					if (acode) {
 						char* hex = r_asm_code_get_hex (acode);
 						if (input[2] == '*') {
-							cmd_write_hexpair (core, hex);
+							r_cons_printf ("wx %s\n", hex);
 						} else {
 							if (r_config_get_i (core->config, "scr.prompt")) {
 								eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, hex);
