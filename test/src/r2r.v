@@ -177,6 +177,13 @@ mut:
 	name string
 }
 
+fn (test R2RCmdTest) get_kw_arg(line string) (string,string) {
+	pos_eq := line.index('=') or {
+		return line,''
+	}
+	return line.substr(0, pos_eq),line.substr(pos_eq + 1, line.len)
+}
+
 fn (test R2RCmdTest) parse_slurp(v string) (string,string) {
 	mut res := ''
 	mut slurp_token := ''
@@ -233,14 +240,11 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 			}
 			continue
 		}
-		kv := line.split_nth('=', 2)
-		if kv.len == 0 {
-			continue
-		}
-		match kv[0] {
+		kw,arg := test.get_kw_arg(line)
+		match kw {
 			'CMDS' {
-				if kv.len > 1 {
-					a,b := test.parse_slurp(kv[1])
+				if arg.len > 0 {
+					a,b := test.parse_slurp(arg)
 					test.cmds = a
 					slurp_token = b
 					if slurp_token.len > 0 {
@@ -252,8 +256,8 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 				}
 			}
 			'EXPECT' {
-				if kv.len > 1 {
-					a,b := test.parse_slurp(kv[1])
+				if arg.len > 0 {
+					a,b := test.parse_slurp(arg)
 					test.expect = a
 					slurp_token = b
 					if slurp_token.len > 0 {
@@ -265,8 +269,8 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 				}
 			}
 			'EXPECT_ERR' {
-				if kv.len > 1 {
-					a,b := test.parse_slurp(kv[1])
+				if arg.len > 0 {
+					a,b := test.parse_slurp(arg)
 					test.expect_err = a
 					slurp_token = b
 					if slurp_token.len > 0 {
@@ -278,15 +282,15 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 				}
 			}
 			'BROKEN' {
-				if kv.len > 1 {
-					test.broken = kv[1].len > 0 && kv[1] == '1'
+				if arg.len > 0 {
+					test.broken = arg == '1'
 				}
 				else {
 					eprintln('Warning: Missing value for BROKEN in ${test.source}')
 				}
 			}
 			'ARGS' {
-				if kv.len > 0 {
+				if arg.len > 0 {
 					test.args = line[5..line.len]
 				}
 				else {
@@ -318,7 +322,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 				}
 			}
 			else {}
-	}
+		}
 	}
 }
 
