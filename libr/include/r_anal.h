@@ -629,7 +629,6 @@ typedef struct r_anal_t {
 	RList *fcns;
 	HtUP *ht_addr_fun; // address => function
 	HtPP *ht_name_fun; // name => function
-	RBNode *fcn_addr_tree; // keyed on addr
 	RList *refs;
 	RList *vartypes;
 	RReg *reg;
