@@ -3,26 +3,6 @@
 #include <r_anal.h>
 
 #define D if (anal->verbose)
-#define ADDR_FCN_CONTAINER(x) container_of ((RBNode*)(x), RAnalFunction, addr_rb)
-
-static int _fcn_addr_tree_cmp(const void *a_, const RBNode *b_, void *user) {
-	const RAnalFunction *a = (const RAnalFunction *)a_;
-	const RAnalFunction *b = ADDR_FCN_CONTAINER (b_);
-	ut64 from0 = a->addr, from1 = b->addr;
-	if (from0 != from1) {
-		return from0 < from1 ? -1 : 1;
-	}
-	return 0;
-}
-
-static bool _fcn_tree_delete(RAnal *anal, RAnalFunction *fcn) {
-	r_return_val_if_fail (anal && fcn, false);
-	return !!r_rbtree_delete (&anal->fcn_addr_tree, fcn, _fcn_addr_tree_cmp, NULL, NULL, NULL);
-}
-
-static void _fcn_tree_insert(RAnal *anal, RAnalFunction *fcn) {
-	r_rbtree_insert (&anal->fcn_addr_tree, fcn, &(fcn->addr_rb), _fcn_addr_tree_cmp, NULL);
-}
 
 static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
@@ -111,7 +91,6 @@ R_API void r_anal_function_free(void *_fcn) {
 	RAnal *anal = fcn->anal;
 	ht_up_delete (anal->ht_addr_fun, fcn->addr);
 	ht_pp_delete (anal->ht_name_fun, fcn->name);
-	_fcn_tree_delete (anal, fcn);
 
 	free (fcn->name);
 	free (fcn->attr);
@@ -133,7 +112,6 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	if (anal->flg_fcn_set) {
 		anal->flg_fcn_set (anal->flb.f, fcn->name, fcn->addr, r_anal_function_size_from_entry (fcn));
 	}
-	_fcn_tree_insert (anal, fcn);
 	r_list_append (anal->fcns, fcn);
 	ht_pp_insert (anal->ht_name_fun, fcn->name, fcn);
 	ht_up_insert (anal->ht_addr_fun, fcn->addr, fcn);
@@ -194,9 +172,9 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 	if (r_anal_get_function_at (fcn->anal, addr)) {
 		return false;
 	}
-	_fcn_tree_delete (fcn->anal, fcn);
+	ht_up_delete (fcn->anal->ht_addr_fun, fcn->addr);
 	fcn->addr = addr;
-	_fcn_tree_insert (fcn->anal, fcn);
+	ht_up_insert (fcn->anal->ht_addr_fun, addr, fcn);
 	return true;
 }
 
