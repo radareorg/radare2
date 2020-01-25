@@ -1200,6 +1200,21 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 		}
+	case ARM64_INS_BIC:
+        if (OPCOUNT64 () == 2) {
+            if (REGSIZE64(0) == 4) {
+                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=",REG64 (1),REG64 (0));
+            } else {
+                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&=",REG64 (1),REG64 (0));
+            }
+        } else {
+            if (REGSIZE64(0) == 4) {
+                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=",REG64 (2),REG64 (1),REG64 (0));
+            } else {
+                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&,%s,=",REG64 (2),REG64 (1),REG64 (0));
+            }
+        }
+        break;
 	case ARM64_INS_CBZ:
 		r_strbuf_setf (&op->esil, "%s,!,?{,%"PFMT64d",pc,=,}",
 			REG64(0), IMM64(1));
