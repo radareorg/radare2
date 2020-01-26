@@ -84,8 +84,55 @@ void meta_gb_hardware_cmt(RAnal *a, const ut8 hw, ut64 addr) {
 		case 0x46:
 			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "DMA");
 			break;
-		case 0xff:
-			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "Interrupt Enable Flag");
-
-	}
+	    case 0x47:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "BGP - BG Palette Data");
+		    break;
+	    case 0x48:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "OBP0 - Object Palette 0 Data");
+		    break;
+	    case 0x49:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "OBP1 - Object Palette 1 Data");
+		    break;
+	    case 0x4a:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "WY - Window Y Position");
+		    break;
+	    case 0x4b:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "WX - Window X Position");
+		    break;
+	    case 0x4d:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "KEY1 - Select CPU Speed");
+		    break;
+	    case 0x4f:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "VBK - Select Video RAM Bank");
+		    break;
+	    // DMA registers (0xff51 to 0xff55)
+	    case 0x51:
+	    case 0x52:
+	    case 0x53:
+	    case 0x54:
+	    case 0x55:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "HDMA - Horizontal Blanking, General Purpose DMA");
+		    break;
+	    case 0x56:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "RP - Infrared Communications Port");
+		    break;
+	    case 0x68:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "BCPS - Background Color Palette Specification");
+		    break;
+	    case 0x69:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "BCPD - Background Color Palette Data");
+		    break;
+	    case 0x6a:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "OCPS - Object Color Palette Specification");
+		    break;
+	    case 0x6b:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "OCPD - Object Color Palette Data");
+		    break;
+	    case 0x70:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "SVBK - Select Main RAM Bank");
+		    break;
+	    case 0xff:
+		    r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "Interrupt Enable Flag");
+		    break;
+	    }
 }
