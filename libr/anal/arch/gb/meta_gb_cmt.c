@@ -38,31 +38,80 @@ void meta_gb_hardware_cmt(RAnal *a, const ut8 hw, ut64 addr) {
 			r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "IF - Interrupt Flag");
 			break;
 		case 0x10:
-		case 0x11:
-		case 0x12:
-		case 0x13:
-		case 0x14:
-		case 0x16:
-		case 0x17:
-		case 0x18:
-		case 0x19:
-		case 0x1a:
-		case 0x1b:
-		case 0x1c:
-		case 0x1d:
-		case 0x1e:
-		case 0x20:
-		case 0x21:
-		case 0x22:
-		case 0x23:
-		case 0x24:
-		case 0x25:
-		case 0x26:
-			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "SOUND");
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD1SWEEP - Sweep Register");
 			break;
+		case 0x11:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD1LEN - Sound length/Wave pattern duty");
+			break;
+		case 0x12:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD1ENV - Envelope");
+			break;
+		case 0x13:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD1LOW - Frequency low");
+			break;
+		case 0x14:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD1HIGH - Frequency high");
+			break;
+		case 0x16:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD2LEN - Sound length/Wave pattern duty");
+			break;
+		case 0x17:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD2ENV - Envelope");
+			break;
+		case 0x18:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD2LOW - Frequency low");
+			break;
+		case 0x19:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD2HIGH - Frequency high");
+			break;
+		case 0x1a:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD3ENA - Sound on/off");
+			break;
+		case 0x1b:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD3LEN - Sound length");
+			break;
+		case 0x1c:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD3LEVEL - Select output level");
+			break;
+		case 0x1d:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD3LOW - Frequency low");
+			break;
+		case 0x1e:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD3HIGH - Frequency high");
+			break;
+		case 0x20:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD4LEN - Sound length");
+			break;
+		case 0x21:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD4ENV - Envelope");
+			break;
+		case 0x22:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD4POLY - Polynomial counter");
+			break;
+		case 0x23:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUD4GO");
+			break;
+		case 0x24:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUDVOL - Channel control / ON-OFF / Volume");
+			break;
+		case 0x25:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUDTERM - Selection of Sound output terminal");
+			break;
+		case 0x26:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "AUDENA - Sound on/off");
+			break;
+		case 0x76:
+			r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "PCM12 - Sound Channel 1&2 PCM amplitude");
+			break;
+		case 0x77:
+			r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "PCM34 - Sound Channel 3&4 PCM amplitude");
+			break;
+		/*
+		// Wrong name and value in Dr.Pan's doc. Not a register. Delete?
 		case 0x30:
 			r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "Wave Pattern RAM/SOUND");
 			break;
+		*/
 		case 0x40:
 			r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "LCDC - LCD Control");
 			break;
