@@ -1831,7 +1831,6 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 
 	if (!addr) {
 		r_list_purge (core->anal->fcns);
-		core->anal->fcn_addr_tree = NULL;
 		if (!(core->anal->fcns = r_list_new ())) {
 			return false;
 		}
