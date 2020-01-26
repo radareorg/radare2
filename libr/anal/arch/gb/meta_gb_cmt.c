@@ -181,7 +181,7 @@ void meta_gb_hardware_cmt(RAnal *a, const ut8 hw, ut64 addr) {
 			r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "SVBK - Select Main RAM Bank");
 			break;
 		case 0xff:
-			r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "Interrupt Enable Flag");
+			r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "IE - Interrupt Enable Flag");
 			break;
 		}
 }
