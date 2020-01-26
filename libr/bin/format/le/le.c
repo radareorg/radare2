@@ -208,7 +208,9 @@ RList *r_bin_le_get_entrypoints(r_bin_le_obj_t *bin) {
 	}
 	RBinAddr *entry = R_NEW0 (RBinAddr);
 	if (entry) {
-		entry->vaddr = (ut64)bin->objtbl[bin->header->startobj - 1].reloc_base_addr + bin->header->eip;
+		if ((bin->header->startobj - 1) < bin->header->objcnt){
+			entry->vaddr = (ut64)bin->objtbl[bin->header->startobj - 1].reloc_base_addr + bin->header->eip;
+		}
 	}
 	r_list_append (l, entry);
 
@@ -459,14 +461,16 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 		}
 		switch (header.target & F_TARGET_TYPE_MASK) {
 		case INTERNAL:
+			if ((ordinal - 1) < bin->header->objcnt) {
 			rel->addend = bin->objtbl[ordinal - 1].reloc_base_addr;
-			if ((header.source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
-				if (header.target & F_TARGET_OFF32) {
-					rel->addend += r_buf_read_ble32_at (bin->buf, offset, h->worder);
-					offset += sizeof (ut32);
-				} else {
-					rel->addend += r_buf_read_ble16_at (bin->buf, offset, h->worder);
-					offset += sizeof (ut16);
+				if ((header.source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
+					if (header.target & F_TARGET_OFF32) {
+						rel->addend += r_buf_read_ble32_at (bin->buf, offset, h->worder);
+						offset += sizeof (ut32);
+					} else {
+						rel->addend += r_buf_read_ble16_at (bin->buf, offset, h->worder);
+						offset += sizeof (ut16);
+					}
 				}
 			}
 			break;
