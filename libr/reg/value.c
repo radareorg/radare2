@@ -79,7 +79,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	switch (item->size) {
 	case 1: {
 		int offset = item->offset / 8;
-		if (offset + item->size >= regset->arena->size) {
+		if (offset >= regset->arena->size) {
 			break;
 		}
 		return (regset->arena->bytes[offset] &
