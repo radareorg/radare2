@@ -627,7 +627,7 @@ prl 1~[0]
 EOF
 RUN
 
-NAME=pib from begining of bb
+NAME=pib from beginning of bb
 FILE=../bins/elf/analysis/x64-loop
 EXPECT=<<EOF
 push rbp

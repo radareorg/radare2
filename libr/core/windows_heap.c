@@ -1199,7 +1199,7 @@ static void w32_list_heaps(RCore *core, const char format) {
 			pj_kN (pj, "address", (ut64)heap.Base);
 			pj_kN (pj, "count", (ut64)heap.BlockCount);
 			pj_kN (pj, "allocated", (ut64)heap.Allocated);
-			pj_kN (pj, "commited", (ut64)heap.Committed);
+			pj_kN (pj, "committed", (ut64)heap.Committed);
 			pj_end (pj);
 			break;
 		default:

@@ -38,7 +38,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=radiff2 string comparsion
+NAME=radiff2 string comparison
 FILE=-
 CMDS=!!radiff2 -z ../bins/elf/elf_one_symbol_shdr ../bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
@@ -46,7 +46,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=radiff2 unified string comparsion
+NAME=radiff2 unified string comparison
 FILE=-
 CMDS=!!radiff2 -quz ../bins/elf/elf_one_symbol_shdr ../bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
@@ -55,7 +55,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=radiff2 gnu unified string comparsion
+NAME=radiff2 gnu unified string comparison
 FILE=-
 BROKEN=1
 CMDS=!!radiff2 -Uz ../bins/elf/elf_one_symbol_shdr ../bins/elf/elf_one_symbol_shdr1 | tail -n 2
