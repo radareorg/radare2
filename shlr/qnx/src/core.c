@@ -250,7 +250,7 @@ ptid_t qnxr_run (libqnxr_t *g, const char *file, char **args, char **env) {
 		errors += !nto_send_env (g, *env);
 
 	if (errors) {
-		eprintf ("%s: error(s) occured while sending environment\n", __func__);
+		eprintf ("%s: error(s) occurred while sending environment\n", __func__);
 	}
 
 	nto_send_init (g, DStMsg_env, DSMSG_ENV_CLEARARGV, SET_CHANNEL_DEBUG);
@@ -271,7 +271,7 @@ ptid_t qnxr_run (libqnxr_t *g, const char *file, char **args, char **env) {
 			errors |= !nto_send_arg (g, *argv);
 
 		if (errors) {
-			eprintf ("%s: error(s) occured while sending args\n", __func__);
+			eprintf ("%s: error(s) occurred while sending args\n", __func__);
 		}
 	}
 
@@ -689,7 +689,7 @@ int nto_send_env (libqnxr_t *g, const char *env) {
 			if (!nto_send (g, offsetof (DStMsg_env_t, data) +
 						  DS_DATA_MAX_SIZE,
 				       1)) {
-				/* An error occured.  */
+				/* An error occurred.  */
 				return 0;
 			}
 			len -= DS_DATA_MAX_SIZE;

@@ -509,7 +509,7 @@ static void _write_flag_bits(char *buf, const gdbr_xml_flags_t *flags) {
 			continue;
 		}
 		// To avoid duplicates. This skips flags if first char is same. i.e.
-		// for x86_64, it will skip VIF because VM already occured. This is
+		// for x86_64, it will skip VIF because VM already occurred. This is
 		// same as default reg-profiles in r2
 		c = tolower (flags->fields[i].name[0]) - 'a';
 		if (fc[c]) {

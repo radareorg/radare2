@@ -529,7 +529,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 // branch/jumps/calls/rets
 	if (is_any ("jal")) {
-		// decide wether it's ret or call
+		// decide whether it's ret or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
 		op->type = (rd == 0) ? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_CALL;
 		op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
