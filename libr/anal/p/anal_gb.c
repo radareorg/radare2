@@ -11,6 +11,7 @@
 #include <r_reg.h>
 #define GB_DIS_LEN_ONLY
 #include "../../asm/arch/gb/gbdis.c"
+#include "../arch/gb/gb_makros.h"
 #include "../arch/gb/meta_gb_cmt.c"
 #include <gb_makros.h>
 #include <gb.h>
@@ -718,6 +719,8 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		memset (op, '\0', sizeof (RAnalOp));
 		char mn[32];
 		memset (mn, '\0', sizeof (char) * sizeof (mn));
+		char reg[32];
+		memset (reg, '\0', sizeof (char) * sizeof (reg));
 		switch (gb_op[data[0]].type) {
 		case GB_8BIT:
 			sprintf (mn, "%s", gb_op[data[0]].name);
@@ -732,7 +735,8 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			sprintf (mn, gb_op[data[0]].name, data[1] | (data[2] << 8));
 			break;
 		case GB_8BIT + ARG_8 + GB_IO:
-			sprintf (mn, gb_op[data[0]].name, 0xff00 | data[1]);
+			gb_hardware_register_name (reg, data[1]);
+			sprintf (mn, gb_op[data[0]].name, reg);
 			break;
 		}
 		op->mnemonic = strdup (mn);
@@ -845,7 +849,6 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_STORE;	//LD
 			break;
 		case 0xe0:
-			meta_gb_hardware_cmt (anal, data[1], addr);
 			gb_anal_store (anal->reg, op, data);
 			op->cycles = 12;
 			op->type = R_ANAL_OP_TYPE_STORE;
@@ -918,7 +921,6 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case 0xf0:
 			gb_anal_load (anal->reg, op, data);
-			meta_gb_hardware_cmt (anal, data[1], addr);
 			op->cycles = 12;
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
