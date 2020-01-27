@@ -99,7 +99,7 @@ static const char *help_msg_ab[] = {
 static const char *help_msg_abt[] = {
 	"Usage:", "abt", "[addr] [num] # find num paths from current offset to addr",
 	"abt", " [addr] [num]", "find num paths from current offset to addr",
-	"abte", " [addr]", "emulate from begining of function to the given address",
+	"abte", " [addr]", "emulate from beginning of function to the given address",
 	"abtj", " [addr] [num]", "display paths in JSON",
 	NULL
 };
@@ -8723,7 +8723,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		int n = 1;
 		char *p = strchr (input + 1, ' ');
 		if (!p) {
-			eprintf ("Usage: abte [addr] # emulate from begining of function to the given address.\n");
+			eprintf ("Usage: abte [addr] # emulate from beginning of function to the given address.\n");
 			return;
 		}
 		ut64 addr = r_num_math (core->num, p + 1);

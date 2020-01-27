@@ -290,7 +290,7 @@ static const char *help_msg_visual[] = {
 	"??", "show this help",
 	"$", "set the program counter to the current offset + cursor",
 	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
-	"^", "seek to the begining of the function",
+	"^", "seek to the beginning of the function",
 	"!", "enter into the visual panels mode",
 	"TAB", "switch to the next print mode (or element in cursor mode)",
 	"_", "enter the flag/comment/functions/.. hud (same as VF_)",

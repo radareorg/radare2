@@ -1327,7 +1327,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	if (!xrefs) {
 		return;
 	}
-	// only show fcnline in xrefs when addr is not the begining of a function
+	// only show fcnline in xrefs when addr is not the beginning of a function
 	bool fcnlines = (ds->fcn && ds->fcn->addr == ds->at);
 	if (r_list_length (xrefs) > ds->maxrefs) {
 		ds_begin_line (ds);
