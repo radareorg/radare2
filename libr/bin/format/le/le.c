@@ -630,6 +630,9 @@ r_bin_le_obj_t *r_bin_le_new_buf(RBuffer *buf) {
 	bin->os = __get_os_type (bin);
 	bin->arch = __get_arch (bin);
 	bin->objtbl = calloc (h->objcnt, sizeof (LE_object_entry));
+	if (!bin->objtbl) {
+		return NULL;
+	}
 	ut64 offset = (ut64)bin->headerOff + h->restab;
 	bin->filename = __read_nonnull_str_at (buf, &offset);
 	r_buf_read_at (buf, (ut64)h->objtab + bin->headerOff, (ut8 *)bin->objtbl, h->objcnt * sizeof (LE_object_entry));
