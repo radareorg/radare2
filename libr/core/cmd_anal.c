@@ -8063,7 +8063,8 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case ' ':
 		case 0: {
 			core->graph->is_callgraph = true;
-			r_core_cmdf (core, "ag-; .agC*; agg%s;", input + 1);
+			r_core_cmdf (core, "ag-; .agC*;");
+			r_core_agraph_print(core, -1, input + 1);
 			core->graph->is_callgraph = false;
 			break;
 			}
@@ -8087,49 +8088,21 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		break;
 	case 'r': // "agr" references graph
 		switch (input[1]) {
-		case 'v':
-		case 't':
-		case 'd':
-		case 'J':
-		case 'j':
-		case 'g':
-		case 'k':
-		case 'w':
-		case ' ': {
-			core->graph->is_callgraph = true;
-			r_core_cmdf (core, "ag-; .agr* @ %"PFMT64u"; agg%s;", core->offset, input + 1);
-			core->graph->is_callgraph = false;
-			break;
-			}
 		case '*': {
 			r_core_anal_coderefs (core, core->offset);
 			}
 			break;
-		case 0:
-			r_core_cmd0 (core, "ag-; .agr* $$; agg;");
+		default: {
+			core->graph->is_callgraph = true;
+			r_core_cmdf (core, "ag-; .agr* @ %"PFMT64u";", core->offset);
+			r_core_agraph_print(core, -1, input + 1);
+			core->graph->is_callgraph = false;
 			break;
-		default:
-			eprintf ("Usage: see ag?\n");
-			break;
+			}
 		}
 		break;
 	case 'R': // "agR" global refs
 		switch (input[1]) {
-		case 'v':
-		case 't':
-		case 'd':
-		case 'J':
-		case 'j':
-		case 'g':
-		case 'k':
-		case 'w':
-		case ' ':
-		case 0: {
-			core->graph->is_callgraph = true;
-			r_core_cmdf (core, "ag-; .agR*; agg%s;", input + 1);
-			core->graph->is_callgraph = false;
-			break;
-			}
 		case '*': {
 			ut64 from = r_config_get_i (core->config, "graph.from");
 			ut64 to = r_config_get_i (core->config, "graph.to");
@@ -8142,56 +8115,36 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			}
 			break;
 			}
-		default:
-			eprintf ("Usage: see ag?\n");
+		default: {
+			core->graph->is_callgraph = true;
+			r_core_cmdf (core, "ag-; .agR*;");
+			r_core_agraph_print(core, -1, input + 1);
+			core->graph->is_callgraph = false;
 			break;
+			}
 		}
 		break;
 	case 'x': // "agx" cross refs
 		switch (input[1]) {
-		case 'v':
-		case 't':
-		case 'd':
-		case 'J':
-		case 'j':
-		case 'g':
-		case 'k':
-		case 'w':
-		case ' ': {
-			r_core_cmdf (core, "ag-; .agx* @ %"PFMT64u"; agg%s;", core->offset, input + 1);
-			break;
-			}
 		case '*': {
 			r_core_anal_codexrefs (core, core->offset);
 			}
 			break;
-		case 0:
-			r_core_cmd0 (core, "ag-; .agx* $$; agg;");
+		default: {
+			r_core_cmdf (core, "ag-; .agx* @ %"PFMT64u";", core->offset);
+			r_core_agraph_print(core, -1, input + 1);
 			break;
-		default:
-			eprintf ("Usage: see ag?\n");
-			break;
+			}
 		}
 		break;
 	case 'i': // "agi" import graph
 		switch (input[1]) {
-		case 'v':
-		case 't':
-		case 'd':
-		case 'J':
-		case 'j':
-		case 'g':
-		case 'k':
-		case 'w':
-		case ' ':
-		case 0:
-			r_core_cmdf (core, "ag-; .agi*; agg%s;", input + 1);
-			break;
 		case '*':
 			r_core_anal_importxrefs (core);
 			break;
 		default:
-			eprintf ("Usage: see ag?\n");
+			r_core_cmdf (core, "ag-; .agi*;");
+			r_core_agraph_print(core, -1, input + 1);
 			break;
 		}
 		break;
@@ -8248,45 +8201,18 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		break;
 	case 'a': // "aga"
 		switch (input[1]) {
-		case 'v':
-		case 't':
-		case 'k':
-		case 'w':
-		case 'g':
-		case 'j':
-		case 'J':
-		case 'd':
-		case ' ': {
-			r_core_cmdf (core, "ag-; .aga* @ %"PFMT64u"; agg%s;", core->offset, input + 1);
-			break;
-			}
-		case 0:
-			r_core_cmd0 (core, "ag-; .aga* $$; agg;");
-			break;
 		case '*': {
 			r_core_anal_datarefs (core, core->offset);
 			break;
 			}
 		default:
-			 eprintf ("Usage: see ag?\n");
-			 break;
+			r_core_cmdf (core, "ag-; .aga* @ %"PFMT64u";", core->offset);
+			r_core_agraph_print(core, -1, input + 1);
+			break;
 		}
 		break;
 	case 'A': // "agA" global data refs
 		switch (input[1]) {
-		case 'v':
-		case 't':
-		case 'd':
-		case 'J':
-		case 'j':
-		case 'g':
-		case 'k':
-		case 'w':
-		case ' ':
-		case 0: {
-			r_core_cmdf (core, "ag-; .agA*; agg%c;", input[1]);
-			break;
-			}
 		case '*': {
 			ut64 from = r_config_get_i (core->config, "graph.from");
 			ut64 to = r_config_get_i (core->config, "graph.to");
@@ -8300,7 +8226,8 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 			}
 		default:
-			eprintf ("Usage: see ag?\n");
+			r_core_cmdf (core, "ag-; .agA*;");
+			r_core_agraph_print(core, -1, input + 1);
 			break;
 		}
 		break;
