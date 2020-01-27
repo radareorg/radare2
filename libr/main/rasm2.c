@@ -765,6 +765,7 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 				ret = print_assembly_output (as, (char *)buf, offset, len,
 					as->a->bits, bin, use_spp, rad, hexwords, arch);
 			}
+			ret = !ret;
 			free (buf);
 		} else {
 			content = r_file_slurp (file, &length);
