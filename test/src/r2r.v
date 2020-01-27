@@ -177,13 +177,6 @@ mut:
 	name string
 }
 
-fn get_kv(line string) (string,string) {
-	i := line.index('=') or {
-		return line,''
-	}
-	return line[0..i],line[i + 1..line.len]
-}
-
 fn (test R2RCmdTest) parse_slurp(v string) (string,string) {
 	mut res := ''
 	mut slurp_token := ''
@@ -240,7 +233,12 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 			}
 			continue
 		}
-		k,v := get_kv(line)
+		kv := line.split_nth('=', 2)
+		if kv.len == 0 {
+			continue
+		}
+		k := kv[0]
+		v := if kv.len == 2 { kv[1] } else { '' }
 		match k {
 			'CMDS' {
 				if v.len > 0 {

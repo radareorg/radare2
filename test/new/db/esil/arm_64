@@ -770,6 +770,38 @@ pd 8
 EOF
 RUN
 
+NAME=bic 64-bit register
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x1122334455667700
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 4a012b8a #bic x10, x11
+aer x10=0x1122334455667788
+aer x11=0xff
+aes
+aer x10
+EOF
+RUN
+
+NAME=bic 32-bit register
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x12345670
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 4a012b0a #bic w10, w11
+aer x10=0x12345678
+aer x11=0xf
+aes
+aer x10
+EOF
+RUN
+
 NAME=rev 64-bit register
 FILE=malloc://0x200
 EXPECT=<<EOF
