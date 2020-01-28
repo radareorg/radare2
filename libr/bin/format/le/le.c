@@ -610,15 +610,9 @@ static bool __init_header(r_bin_le_obj_t *bin, RBuffer *buf) {
 
 void r_bin_le_free(r_bin_le_obj_t *bin) {
 	r_return_if_fail (bin);
-	if (bin->header) {
-		free (bin->header);
-	}
-	if (bin->objtbl) {
-		free (bin->objtbl);
-	}
-	if (bin->filename) {
-		free (bin->filename);
-	}
+	free (bin->header);
+	free (bin->objtbl);
+	free (bin->filename);
 	free (bin);
 }
 
