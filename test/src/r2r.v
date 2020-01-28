@@ -180,8 +180,15 @@ mut:
 fn (test R2RCmdTest) parse_slurp(v string) (string,string) {
 	mut res := ''
 	mut slurp_token := ''
-	if v.starts_with("'") || v.starts_with("'") {
+	if v.starts_with("'") {
 		eprintln('Warning: Deprecated syntax, use <<EOF in ${test.source} @ ${test.name}')
+		right_quote := v.last_index("'") or {
+			// Can't happen
+			panic("Can't find right quote")
+		}
+		if right_quote != 0 {
+			res = v[1..right_quote]
+		}
 	}
 	else if v.starts_with('<<') {
 		slurp_token = v[2..v.len]
