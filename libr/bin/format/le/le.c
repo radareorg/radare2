@@ -609,9 +609,11 @@ static bool __init_header(r_bin_le_obj_t *bin, RBuffer *buf) {
 }
 
 void r_bin_le_free(r_bin_le_obj_t *bin) {
+	r_return_if_fail (bin);
 	free (bin->header);
 	free (bin->objtbl);
 	free (bin->filename);
+	free (bin);
 }
 
 r_bin_le_obj_t *r_bin_le_new_buf(RBuffer *buf) {
@@ -631,6 +633,7 @@ r_bin_le_obj_t *r_bin_le_new_buf(RBuffer *buf) {
 	bin->arch = __get_arch (bin);
 	bin->objtbl = calloc (h->objcnt, sizeof (LE_object_entry));
 	if (!bin->objtbl) {
+		r_bin_le_free (bin);
 		return NULL;
 	}
 	ut64 offset = (ut64)bin->headerOff + h->restab;
