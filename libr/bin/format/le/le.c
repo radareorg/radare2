@@ -609,9 +609,7 @@ static bool __init_header(r_bin_le_obj_t *bin, RBuffer *buf) {
 }
 
 void r_bin_le_free(r_bin_le_obj_t *bin) {
-	if (!bin) {
-		return;
-	}
+	r_return_if_fail (bin);
 	if (bin->header) {
 		free (bin->header);
 	}
