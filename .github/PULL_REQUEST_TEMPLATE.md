@@ -8,7 +8,7 @@
 
 **Detailed description**
 
-<!-- Explain the **details** for making this change. Is a new feature implemented? What existing problem does the pull request solve? How the pull request solves these issues? Please provide enough information so that others can review your pull request. -->
+<!-- Explain the **details** for making this change. Is a new feature implemented? What existing problem does the pull request solve? How does the pull request solve these issues? Please provide enough information so that others can review your pull request. -->
 
 ...
 
