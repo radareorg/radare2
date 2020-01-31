@@ -322,6 +322,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	}
 
 	if (r_optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset && !str) {
+		free (sequence);
 		r_egg_free (egg);
 		return usage (0);
 	} else {
@@ -406,6 +407,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	if (!r_egg_compile (egg)) {
 		if (!fmt) {
 			eprintf ("r_egg_compile: fail\n");
+			free (sequence);
 			r_egg_free (egg);
 			return 1;
 		}
@@ -435,8 +437,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	if (shellcode) {
 		if (!r_egg_shellcode (egg, shellcode)) {
 			eprintf ("Unknown shellcode '%s'\n", shellcode);
-			r_egg_free (egg);
-			return 1;
+			goto fail;
 		}
 	}
 
@@ -447,8 +448,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		if (len > 0) {
 			if (!r_egg_raw (egg, b, len)) {
 				eprintf ("Unknown '%s'\n", shellcode);
-				r_egg_free (egg);
-				return 1;
+				goto fail;
 			}
 		} else {
 			eprintf ("Invalid hexpair string for -B\n");
@@ -496,8 +496,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	if (encoder) {
 		if (!r_egg_encode (egg, encoder)) {
 			eprintf ("Invalid encoder '%s'\n", encoder);
-			r_egg_free (egg);
-			return 1;
+			goto fail;
 		}
 	}
 
@@ -590,9 +589,11 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			r_print_free (p);
 		}
 	}
+	free (sequence);
 	r_egg_free (egg);
 	return 0;
 fail:
+	free (sequence);
 	r_egg_free (egg);
 	return 1;
 }
