@@ -4891,6 +4891,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	}
 	if (ret >= 0 && data && *data) {
 		r_core_cmd (core, data, 0);
+		r_cons_flush ();
 		r_core_task_yield (&core->tasks);
 	}
 	free (odata);
