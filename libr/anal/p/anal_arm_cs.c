@@ -1696,7 +1696,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				int disp = MEMDISP(1);
 				char sign = disp>=0?'+':'-';
 				disp = disp>=0?disp:-disp;
-				r_strbuf_appendf (&op->esil, "%s,0x%"PFMT64x",%s,%c,0xffffffff,&,=[%d]",
+				r_strbuf_appendf (&op->esil, "%s,0x%x,%s,%c,0xffffffff,&,=[%d]",
 						  REG(0), disp, MEMBASE(1), sign, str_ldr_bytes);
 				if (insn->detail->arm.writeback) {
 					r_strbuf_appendf (&op->esil, ",%d,%s,%c,%s,=",
