@@ -102,3 +102,14 @@ CMDS=!radare2 -i scripts/no-nl-at-eof.r2 -NQ -
 EXPECT=1
 EXPECT_ERR=
 RUN
+
+NAME=radare2 -i -Q with missing script
+FILE=-
+CMDS=<<EOF
+# Should not hang
+!radare2 -i script/missing.r2 -NQ -
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=Script 'script/missing.r2' not found.
+RUN
