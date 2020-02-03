@@ -252,7 +252,7 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 	r_list_foreach (files, iter, file) {
 		if (!r_file_exists (file)) {
 			eprintf ("Script '%s' not found.\n", file);
-			return false;
+			goto beach;
 		}
 		ret = r_core_run_script (&r, file);
 		if (ret == -2) {
@@ -269,6 +269,7 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 		r_core_cmd (&r, cmdn, false);
 		r_cons_flush ();
 	}
+beach:
 	if (quiet) {
 		if (do_analysis) {
 			return true;
