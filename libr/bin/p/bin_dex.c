@@ -2029,7 +2029,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->size = ptr->vsize = sizeof (struct dex_header_t);
 		ptr->paddr= ptr->vaddr = 0;
 		ptr->perm = R_PERM_R;
-		ptr->add = true;
+		ptr->add = false;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
@@ -2045,7 +2045,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = ptr->size;
 		ptr->format = r_str_newf ("Cd %d[%d]", 4, ptr->vsize / 4);
 		ptr->perm = R_PERM_R;
-		ptr->add = true;
+		ptr->add = false;
 		r_list_append (ret, ptr);
 		// Define as dwords!
 	}
@@ -2055,7 +2055,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->size = bin->code_to - ptr->paddr;
 		ptr->vsize = ptr->size;
 		ptr->perm = R_PERM_RX;
-		ptr->add = true;
+		ptr->add = false;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
@@ -2071,7 +2071,7 @@ static RList *sections(RBinFile *bf) {
 			//ptr->size = ptr->vsize = 1024;
 		}
 		ptr->perm = R_PERM_R; //|2;
-		ptr->add = true;
+		ptr->add = false;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
@@ -2081,6 +2081,27 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = ptr->size;
 		ptr->perm = R_PERM_R;
 		// ptr->format = strdup ("Cs 4");
+		ptr->add = false;
+		r_list_append (ret, ptr);
+	}
+
+	if ((ptr = R_NEW0 (RBinSection))) {
+		ptr->name = strdup ("code");
+		ptr->vaddr = ptr->paddr = bin->code_from;
+		ptr->size = bin->code_to - ptr->paddr;
+		ptr->vsize = ptr->size;
+		ptr->perm = R_PERM_RX;
+		ptr->is_segment = true;
+		ptr->add = true;
+		r_list_append (ret, ptr);
+	}
+	if ((ptr = R_NEW0 (RBinSection))) {
+		ptr->name = strdup ("file");
+		ptr->vaddr = ptr->paddr = 0;
+		ptr->size = r_buf_size (bf->buf);
+		ptr->vsize = ptr->size;
+		ptr->perm = R_PERM_R;
+		ptr->is_segment = true;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}

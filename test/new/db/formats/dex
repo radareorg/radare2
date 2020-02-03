@@ -1,9 +1,6 @@
 NAME=invalid codesize DEX file
 FILE=../bins/dex/Call.dex
 EXPECT=<<EOF
- 4 fd: 3 +0x00000000 0x00000000 - 0x0000006f r-- fmap.header
- 3 fd: 3 +0x00000070 0x00000070 - 0x0000035c r-- fmap.constpool
- 2 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-- fmap.data
  1 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-- fmap.file
 0x35d
 EOF
@@ -172,6 +169,7 @@ FILE=../bins/dex/HelloWorld.dex
 EXPECT=<<EOF
 0x00000000 112 section.header
 0x00000000 1460 section.file
+0x00000000 1460 segment.file
 0x00000070 440 section.constpool
 0x00000160 0 sym.LHello.ifield_localVar:I
 0x00000168 0 sym.LHello.sfield_localVar2:I
@@ -187,6 +185,7 @@ EXPECT=<<EOF
 0x000001e8 1 class.LHello
 0x00000208 1 class.LWorld
 0x00000228 308 section.code
+0x00000228 308 segment.code
 0x00000238 20 sym.LHello.method._init___V
 0x00000238 1 method.public.constructor.LHello.LHello.method._init___V
 0x0000025c 1 entry0
