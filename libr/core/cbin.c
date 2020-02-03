@@ -2023,11 +2023,11 @@ static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
 	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
 	if (!strcmp (symbol->name, "$a")) {
-		r_anal_hint_set_bits (core->anal, addr, UT64_MAX, 32);
+		r_anal_hint_set_bits (core->anal, addr, 32);
 	} else if (!strcmp (symbol->name, "$x")) {
-		r_anal_hint_set_bits (core->anal, addr, UT64_MAX, 64);
+		r_anal_hint_set_bits (core->anal, addr, 64);
 	} else if (!strcmp (symbol->name, "$t")) {
-		r_anal_hint_set_bits (core->anal, addr, UT64_MAX, 16);
+		r_anal_hint_set_bits (core->anal, addr, 16);
 	} else if (!strcmp (symbol->name, "$d")) {
 		// TODO: we could add data meta type at addr, but sometimes $d
 		// is in the middle of the code and it would make the code less
@@ -2054,7 +2054,7 @@ static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr,
 		force_bits = 32;
 	}
 	if (force_bits) {
-		r_anal_hint_set_bits (core->anal, addr, UT64_MAX, force_bits);
+		r_anal_hint_set_bits (core->anal, addr, force_bits);
 	}
 }
 

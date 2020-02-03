@@ -4492,12 +4492,12 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 			case R_ANAL_OP_TYPE_UJMP: // BX
 				// maybe UJMP/UCALL is enough here
 				if (!(*val & 1)) {
-					r_anal_hint_set_bits (anal, *val, UT64_MAX, 32);
+					r_anal_hint_set_bits (anal, *val, 32);
 				} else {
 					ut64 snv = r_reg_getv (anal->reg, "pc");
 					if (snv != UT32_MAX && snv != UT64_MAX) {
 						if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
-							r_anal_hint_set_bits (anal, *val - 1, UT64_MAX, 16);
+							r_anal_hint_set_bits (anal, *val - 1, 16);
 						}
 					}
 				}

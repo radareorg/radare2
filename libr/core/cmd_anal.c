@@ -3522,8 +3522,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				int bits = atoi (input + 3);
-				r_anal_hint_set_bits (core->anal, r_anal_function_min_addr (fcn), UT64_MAX, bits);
-				r_anal_hint_set_bits (core->anal, r_anal_function_max_addr (fcn), UT64_MAX, core->anal->bits);
+				r_anal_hint_set_bits (core->anal, r_anal_function_min_addr (fcn), bits);
+				r_anal_hint_set_bits (core->anal, r_anal_function_max_addr (fcn), core->anal->bits);
 				fcn->bits = bits;
 			} else {
 				eprintf ("afB: Cannot find function to set bits at 0x%08"PFMT64x"\n", core->offset);
@@ -7368,7 +7368,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				r_num_math (core->num, r_str_word_get0 (ptr, 1));
 			}
 			bits = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-			r_anal_hint_set_bits (core->anal, core->offset, UT64_MAX, bits);
+			r_anal_hint_set_bits (core->anal, core->offset, bits);
 			free (ptr);
 		}  else if (input[1] == '-') {
 			r_anal_hint_unset_bits (core->anal, core->offset);

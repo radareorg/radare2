@@ -46,6 +46,36 @@ typedef struct r_anal_addr_hint_record_t {
 	};
 } RAnalAddrHintRecord;
 
+// Common base-struct for hints which affect an entire range as opposed to only one single address
+// They are saved in a RBTree per hint type.
+// Each ranged record in a tree affects every address address greater or equal to its specified address until
+// the next record or the end of the address space.
+typedef struct r_anal_ranged_hint_record_base_t {
+	RBNode rb;
+	ut64 addr;
+} RAnalRangedHintRecordBase;
+
+typedef struct r_anal_arch_hint_record_t {
+	RAnalRangedHintRecordBase base; // MUST be the first member!
+	char *arch; // NULL => reset to global
+} RAnalArchHintRecord;
+
+typedef struct r_anal_bits_hint_record_t {
+	RAnalRangedHintRecordBase base; // MUST be the first member!
+	int bits; // 0 => reset to global
+} RAnalBitsHintRecord;
+
+static int ranged_hint_record_cmp(const void *incoming, const RBNode *in_tree, void *user) {
+	ut64 addr = *(const ut64 *)incoming;
+	const RAnalRangedHintRecordBase *in_tree_record = container_of (in_tree, const RAnalRangedHintRecordBase, rb);
+	if (addr < in_tree_record->addr) {
+		return -1;
+	} else if (addr > in_tree_record->addr) {
+		return 1;
+	}
+	return 0;
+}
+
 static void addr_hint_record_fini(void *element, void *user) {
 	(void)user;
 	RAnalAddrHintRecord *record = element;
@@ -71,16 +101,22 @@ static void addr_hint_record_ht_free(HtUPKv *kv) {
 	r_vector_free (kv->value);
 }
 
+static void ranged_hint_record_free(RBNode *node, void *user) {
+	free (container_of (node, RAnalRangedHintRecordBase, rb));
+}
+
 // used in anal.c, but no API needed
 void r_anal_hint_storage_init(RAnal *a) {
 	a->addr_hints = ht_up_new (NULL, addr_hint_record_ht_free, NULL);
-	//r_interval_tree_init (&a->hints, (RIntervalNodeFree) addr_hint_record_free);
+	a->arch_hints = NULL;
+	a->bits_hints = NULL;
 }
 
 // used in anal.c, but no API needed
 void r_anal_hint_storage_fini(RAnal *a) {
 	ht_up_free (a->addr_hints);
-	//r_interval_tree_fini (&a->hints);
+	r_rbtree_free (a->arch_hints, ranged_hint_record_free, NULL);
+	r_rbtree_free (a->bits_hints, ranged_hint_record_free, NULL);
 }
 
 R_API void r_anal_hint_clear(RAnal *a) {
@@ -162,6 +198,25 @@ static RAnalAddrHintRecord *ensure_addr_hint_record(RAnal *anal, RAnalAddrHintTy
 	} \
 	setcode \
 } while(0)
+
+static void unset_ranged_hint_record(RBTree *tree, ut64 addr) {
+	r_rbtree_delete (tree, &addr, ranged_hint_record_cmp, NULL, ranged_hint_record_free, NULL);
+}
+
+static RAnalRangedHintRecordBase *ensure_ranged_hint_record(RBTree *tree, ut64 addr, size_t sz) {
+	RBNode *node = r_rbtree_find (*tree, &addr, ranged_hint_record_cmp, NULL);
+	if (node) {
+		return container_of (node, RAnalRangedHintRecordBase, rb);
+	}
+	RAnalRangedHintRecordBase *record = malloc (sz);
+	memset (record, 0, sz);
+	if (!record) {
+		return NULL;
+	}
+	record->addr = addr;
+	r_rbtree_insert (tree, &addr, &record->rb, ranged_hint_record_cmp, NULL);
+	return record;
+}
 
 R_API void r_anal_hint_set_offset(RAnal *a, ut64 addr, const char *typeoff) {
 	SET_HINT (R_ANAL_HINT_TYPE_TYPE_OFFSET,
@@ -253,14 +308,21 @@ R_API void r_anal_hint_set_val(RAnal *a, ut64 addr, ut64 v) {
 }
 
 R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, const char *arch) {
-// TODO	SET_HINT (R_ANAL_HINT_TYPE_ARCH, r->arch = strdup (arch););
-	//setHint (a, "arch:", addr, r_str_trim_ro (arch), 0);
+	RAnalArchHintRecord *record = (RAnalArchHintRecord *)ensure_ranged_hint_record (&a->arch_hints, addr, sizeof (RAnalArchHintRecord));
+	if (!record) {
+		return;
+	}
+	free (record->arch);
+	record->arch = arch ? strdup (arch) : NULL;
 }
 
-R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, ut64 size, int bits) {
-// TODO	SET_HINT_RANGE (R_ANAL_HINT_TYPE_BITS, size, r->bits = bits;);
-	//setHint (a, "bits:", addr, NULL, bits);
-	if (a && a->hint_cbs.on_bits) {
+R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits) {
+	RAnalBitsHintRecord *record = (RAnalBitsHintRecord *)ensure_ranged_hint_record (&a->bits_hints, addr, sizeof (RAnalBitsHintRecord));
+	if (!record) {
+		return;
+	}
+	record->bits = bits;
+	if (a->hint_cbs.on_bits) {
 		a->hint_cbs.on_bits (a, addr, bits, true);
 	}
 }
@@ -336,16 +398,11 @@ R_API void r_anal_hint_unset_stackframe(RAnal *a, ut64 addr) {
 }
 
 R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr) {
-// TODO	unset_addr_hint_record (a, R_ANAL_HINT_TYPE_ARCH, addr);
-	//unsetHint(a, "arch:", addr);
+	unset_ranged_hint_record(&a->arch_hints, addr);
 }
 
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr) {
-	// TODO unset_addr_hint_record (a, R_ANAL_HINT_TYPE_BITS, addr);
-	//unsetHint(a, "bits:", addr);
-	if (a && a->hint_cbs.on_bits) {
-		a->hint_cbs.on_bits (a, addr, 0, false);
-	}
+	unset_ranged_hint_record(&a->bits_hints, addr);
 }
 
 R_API void r_anal_hint_free(RAnalHint *h) {

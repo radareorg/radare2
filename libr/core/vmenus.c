@@ -3563,7 +3563,7 @@ static void handleHints(RCore *core) {
 			{
 			int bits = atoi (r_str_trim_head_tail (ch + 1));
 			if (bits == 8 || bits == 16 || bits == 32 || bits == 64) {
-				r_anal_hint_set_bits (core->anal, core->offset, UT64_MAX, bits);
+				r_anal_hint_set_bits (core->anal, core->offset, bits);
 			}
 			}
 			break;

@@ -675,13 +675,14 @@ typedef struct r_anal_t {
 	Sdb *sdb_args;  //
 	Sdb *sdb_vars; // globals?
 #endif
-	HtUP/*<RVector<RAnalAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a
+	HtUP/*<RVector<RAnalAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address
+	RBTree/*<RAnalArchHintRecord>*/ arch_hints;
+	RBTree/*<RAnalArchBitsRecord>*/ bits_hints;
 	RHintCb hint_cbs;
 	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
-	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
 	RAnalOptions opt;
 	RList *reflines;
@@ -1783,8 +1784,6 @@ R_API void r_anal_hint_set_nword(RAnal *a, ut64 addr, int nword);
 R_API void r_anal_hint_set_offset(RAnal *a, ut64 addr, const char *typeoff);
 R_API void r_anal_hint_set_fail(RAnal *a, ut64 addr, ut64 fail);
 R_API void r_anal_hint_set_immbase(RAnal *a, ut64 addr, int base);
-R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, ut64 size, int bits);
-R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, const char *arch);
 R_API void r_anal_hint_set_size(RAnal *a, ut64 addr, ut64 size);
 R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, const char *str);
 R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, const char *str);
@@ -1793,14 +1792,14 @@ R_API void r_anal_hint_set_ret(RAnal *a, ut64 addr, ut64 val);
 R_API void r_anal_hint_set_high(RAnal *a, ut64 addr);
 R_API void r_anal_hint_set_stackframe(RAnal *a, ut64 addr, ut64 size);
 R_API void r_anal_hint_set_val (RAnal *a, ut64 addr, ut64 v);
+R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, R_NULLABLE const char *arch); // arch == NULL => use global default
+R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits); // bits == NULL => use global default
 R_API void r_anal_hint_unset_val (RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_high(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr);
-R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_type(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_esil(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_opcode(RAnal *a, ut64 addr);
-R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_syntax(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_pointer(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_ret(RAnal *a, ut64 addr);
@@ -1808,6 +1807,8 @@ R_API void r_anal_hint_unset_offset(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_jump(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_fail(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_stackframe(RAnal *a, ut64 addr);
+R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr);
+R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr);
 
 R_API void r_anal_hint_arch_bits_at(RAnal *a, ut64 addr, R_OUT R_NULLABLE int *bits, R_OUT R_BORROW R_NULLABLE const char **arch);
 
