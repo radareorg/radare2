@@ -1069,6 +1069,9 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 				} else {
 					pj_ks (pj, "name", f->name);
 				}
+				if (f->realname) {
+					pj_ks (pj, "realname", f->realname);
+				}
 				pj_ks (pj, "type", "flag");
 				pj_kn (pj, "offset", tgt_addr);
 				pj_end (pj);
