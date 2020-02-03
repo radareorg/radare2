@@ -675,7 +675,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_args;  //
 	Sdb *sdb_vars; // globals?
 #endif
-	RIntervalTree hints;
+	HtUP/*<RVector<RAnalAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a
 	RHintCb hint_cbs;
 	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions

@@ -61,8 +61,8 @@ static void zign_rename_for(REvent *ev, int type, void *user, void *data) {
 		se->data.rename.oldname, se->data.rename.newname);
 }
 
-void r_anal_hint_tree_init(RAnal *a);
-void r_anal_hint_tree_fini(RAnal *a);
+void r_anal_hint_storage_init(RAnal *a);
+void r_anal_hint_storage_fini(RAnal *a);
 
 R_API RAnal *r_anal_new(void) {
 	int i;
@@ -96,7 +96,7 @@ R_API RAnal *r_anal_new(void) {
 	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_RENAME, zign_rename_for, NULL);
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
-	r_anal_hint_tree_init (anal);
+	r_anal_hint_storage_init (anal);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->sdb_fmts = sdb_ns (anal->sdb, "spec", 1);
 	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
