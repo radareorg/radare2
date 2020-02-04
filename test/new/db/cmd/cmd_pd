@@ -2124,3 +2124,27 @@ e asm.flags.real=true
 pd 1 @ 0x8048566
 EOF
 RUN
+
+NAME=pd grep chain
+FILE=malloc://8
+EXPECT=<<EOF
+            0x00000002      51             push rcx
+            0x00000003      52             push rdx
+            0x00000004      53             push rbx
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 90905152539090 ; pd 7 ~&5,push
+EOF
+RUN
+
+NAME=pd grep chain fail
+FILE=malloc://8
+EXPECT=''
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 90905152539090 ; pd 7 ~ 5 ~ push
+EOF
+RUN
