@@ -1772,11 +1772,10 @@ R_API void r_anal_build_range_on_hints (RAnal *a, ut64 addr, int bits);
 R_API void r_anal_merge_hint_ranges(RAnal *a);
 //R_API void r_anal_hint_list (RAnal *anal, int mode);
 
-// delete all hints that are contained entirely within the given range
+// delete all hints that are contained within the given range, if size > 1, this operation is quite heavy!
 R_API void r_anal_hint_del(RAnal *anal, ut64 addr, ut64 size);
 R_API void r_anal_hint_clear (RAnal *a);
 R_API void r_anal_hint_free (RAnalHint *h);
-R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr);
 R_API void r_anal_hint_set_syntax (RAnal *a, ut64 addr, const char *syn);
 R_API void r_anal_hint_set_type(RAnal *a, ut64 addr, int type);
 R_API void r_anal_hint_set_jump(RAnal *a, ut64 addr, ut64 jump);
@@ -1809,8 +1808,9 @@ R_API void r_anal_hint_unset_fail(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_stackframe(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr);
-
-R_API void r_anal_hint_arch_bits_at(RAnal *a, ut64 addr, R_OUT R_NULLABLE int *bits, R_OUT R_BORROW R_NULLABLE const char **arch);
+R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr); // accumulate all available hints affecting the given address
+R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr);
+R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr);
 
 R_API int r_anal_esil_eval(RAnal *anal, const char *str);
 

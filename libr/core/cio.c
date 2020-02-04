@@ -347,9 +347,12 @@ R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT R_NULLABLE int *bit
 		}
 	}
 	//if we found bits related with anal hints pick it up
-	r_anal_hint_arch_bits_at (core->anal, addr,
-			bits && !bitsval && !core->fixedbits ? &bitsval : NULL,
-			arch && !archval && !core->fixedarch ? &archval : NULL);
+	if (bits && !bitsval && !core->fixedbits) {
+		bitsval = r_anal_hint_bits_at (core->anal, addr);
+	}
+	if (arch && !archval && !core->fixedarch) {
+		archval = r_anal_hint_arch_at (core->anal, addr);
+	}
 	if (bits && bitsval) {
 		*bits = bitsval;
 	}
