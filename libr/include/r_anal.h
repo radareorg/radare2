@@ -625,7 +625,7 @@ typedef struct r_anal_t {
 	RAnalCPPABI cpp_abi;
 	void *user;
 	ut64 gp; // global pointer. used for mips. but can be used by other arches too in the future
-	RBTree bb_tree; // all basic blocks by address. They must not overlap.
+	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
 	RList *fcns;
 	HtUP *ht_addr_fun; // address => function
 	HtPP *ht_name_fun; // name => function
