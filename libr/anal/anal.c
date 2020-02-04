@@ -148,6 +148,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	ht_up_free (a->ht_addr_fun);
 	ht_pp_free (a->ht_name_fun);
 	set_u_free (a->visited);
+	r_anal_hint_storage_fini (a);
 	free (a->cpu);
 	free (a->os);
 	free (a->zign_path);

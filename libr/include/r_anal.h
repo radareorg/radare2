@@ -718,10 +718,6 @@ typedef struct r_anal_hint_t {
 	ut64 size;
 	int bits;
 	int new_bits; // change asm.bits after evaluating this instruction
-#if 0
-	int new_endian; // change the endianness
-	int new_bank; // select bank switch
-#endif
 	int immbase;
 	bool high; // highlight hint
 	int nword;
@@ -1768,33 +1764,30 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, PJ *pj, bool show_f
 
 /* hints */
 
-R_API void r_anal_build_range_on_hints (RAnal *a, ut64 addr, int bits);
-R_API void r_anal_merge_hint_ranges(RAnal *a);
-//R_API void r_anal_hint_list (RAnal *anal, int mode);
-
-// delete all hints that are contained within the given range, if size > 1, this operation is quite heavy!
-R_API void r_anal_hint_del(RAnal *anal, ut64 addr, ut64 size);
+R_API void r_anal_hint_del(RAnal *anal, ut64 addr, ut64 size); // delete all hints that are contained within the given range, if size > 1, this operation is quite heavy!
 R_API void r_anal_hint_clear (RAnal *a);
 R_API void r_anal_hint_free (RAnalHint *h);
 R_API void r_anal_hint_set_syntax (RAnal *a, ut64 addr, const char *syn);
 R_API void r_anal_hint_set_type(RAnal *a, ut64 addr, int type);
 R_API void r_anal_hint_set_jump(RAnal *a, ut64 addr, ut64 jump);
+R_API void r_anal_hint_set_fail(RAnal *a, ut64 addr, ut64 fail);
 R_API void r_anal_hint_set_nword(RAnal *a, ut64 addr, int nword);
 R_API void r_anal_hint_set_offset(RAnal *a, ut64 addr, const char *typeoff);
-R_API void r_anal_hint_set_fail(RAnal *a, ut64 addr, ut64 fail);
 R_API void r_anal_hint_set_immbase(RAnal *a, ut64 addr, int base);
 R_API void r_anal_hint_set_size(RAnal *a, ut64 addr, ut64 size);
-R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, const char *str);
-R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, const char *str);
-R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 jump);
+R_API void r_anal_hint_set_opcode(RAnal *a, ut64 addr, const char *str);
+R_API void r_anal_hint_set_esil(RAnal *a, ut64 addr, const char *str);
+R_API void r_anal_hint_set_pointer(RAnal *a, ut64 addr, ut64 ptr);
 R_API void r_anal_hint_set_ret(RAnal *a, ut64 addr, ut64 val);
 R_API void r_anal_hint_set_high(RAnal *a, ut64 addr);
 R_API void r_anal_hint_set_stackframe(RAnal *a, ut64 addr, ut64 size);
-R_API void r_anal_hint_set_val (RAnal *a, ut64 addr, ut64 v);
+R_API void r_anal_hint_set_val(RAnal *a, ut64 addr, ut64 v);
 R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, R_NULLABLE const char *arch); // arch == NULL => use global default
 R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits); // bits == NULL => use global default
 R_API void r_anal_hint_unset_val (RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_high(RAnal *a, ut64 addr);
+R_API void r_anal_hint_unset_immbase(RAnal *a, ut64 addr);
+R_API void r_anal_hint_unset_nword(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_type(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_esil(RAnal *a, ut64 addr);
@@ -1811,8 +1804,6 @@ R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr);
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr); // accumulate all available hints affecting the given address
 R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr);
 R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr);
-
-R_API int r_anal_esil_eval(RAnal *anal, const char *str);
 
 /* switch.c APIs */
 R_API RAnalSwitchOp * r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val);

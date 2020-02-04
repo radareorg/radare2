@@ -4,6 +4,7 @@ if get_option('build_tests')
     'addr_interval',
     'anal_block',
     'anal_function',
+    'anal_hints',
     'base64',
     'bin',
     'bitmap',

@@ -118,6 +118,12 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 		mu_assert(_meqstr, strcmp((expected), (actual)) == 0); \
 } while(0)
 
+#define mu_assert_nullable_streq(actual, expected, message) do { \
+		char _meqstr[2048]; \
+		sprintf(_meqstr, "%s: expected %s, got %s.", (message), (expected), (actual)); \
+		mu_assert(_meqstr, ((actual) == NULL && (expected) == NULL) || ((actual) != NULL && (expected) != NULL && strcmp((expected), (actual)) == 0)); \
+} while(0)
+
 #define mu_assert_memeq(actual, expected, len, message) do { \
 		char _meqstr[2048]; \
 		sprintf(_meqstr, "%s: expected ", message); \

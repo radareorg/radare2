@@ -262,12 +262,12 @@ R_API void r_anal_hint_set_jump(RAnal *a, ut64 addr, ut64 jump) {
 	SET_HINT (R_ANAL_HINT_TYPE_JUMP, r->jump = jump;);
 }
 
-R_API void r_anal_hint_set_newbits(RAnal *a, ut64 addr, int bits) {
-	SET_HINT (R_ANAL_HINT_TYPE_NEW_BITS, r->newbits = bits;);
-}
-
 R_API void r_anal_hint_set_fail(RAnal *a, ut64 addr, ut64 fail) {
 	SET_HINT (R_ANAL_HINT_TYPE_FAIL, r->fail = fail;);
+}
+
+R_API void r_anal_hint_set_newbits(RAnal *a, ut64 addr, int bits) {
+	SET_HINT (R_ANAL_HINT_TYPE_NEW_BITS, r->newbits = bits;);
 }
 
 R_API void r_anal_hint_set_high(RAnal *a, ut64 addr) {
@@ -312,7 +312,7 @@ R_API void r_anal_hint_set_esil(RAnal *a, ut64 addr, const char *esil) {
 }
 
 R_API void r_anal_hint_set_type (RAnal *a, ut64 addr, int type) {
-	SET_HINT (R_ANAL_HINT_TYPE_OPTYPE, r->type = type;);
+	SET_HINT (R_ANAL_HINT_TYPE_OPTYPE, r->optype = type;);
 }
 
 R_API void r_anal_hint_set_size(RAnal *a, ut64 addr, ut64 size) {
@@ -361,6 +361,10 @@ R_API void r_anal_hint_unset_opcode(RAnal *a, ut64 addr) {
 
 R_API void r_anal_hint_unset_high(RAnal *a, ut64 addr) {
 	unset_addr_hint_record (a, R_ANAL_HINT_TYPE_HIGH, addr);
+}
+
+R_API void r_anal_hint_unset_immbase(RAnal *a, ut64 addr) {
+	unset_addr_hint_record (a, R_ANAL_HINT_TYPE_IMMBASE, addr);
 }
 
 R_API void r_anal_hint_unset_nword(RAnal *a, ut64 addr) {
@@ -498,6 +502,7 @@ R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
 	if (!hint) {
 		return NULL;
 	}
+	hint->addr = addr;
 	hint->jump = UT64_MAX;
 	hint->fail = UT64_MAX;
 	hint->ret = UT64_MAX;
@@ -510,7 +515,7 @@ R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
 			hint_merge (hint, record);
 		}
 	}
-	hint->arch = r_anal_hint_arch_at (a, addr);
+	hint->arch = r_anal_hint_arch_at (a, addr); // TODO: strdup
 	hint->bits = r_anal_hint_bits_at (a, addr);
 	return hint;
 }
