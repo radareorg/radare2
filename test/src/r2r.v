@@ -281,7 +281,8 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 			}
 			'BROKEN' {
 				if v.len > 0 {
-					test.broken = v == '1'
+					first_token := v.split_nth(' ', 2)[0]
+					test.broken = first_token == '1'
 				}
 				else {
 					eprintln('Warning: Missing value for BROKEN in ${test.source}')
