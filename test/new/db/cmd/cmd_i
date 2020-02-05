@@ -502,7 +502,8 @@ RUN
 
 NAME=icj
 FILE=../bins/elf/libmagic.so
-EXPECT='[
+EXPECT=<<EOF
+[
   {
     "classname": "_JNIEnv",
     "addr": 0,
@@ -983,7 +984,8 @@ EXPECT='[
       
     ]
   }
-]'
+]
+EOF
 CMDS=<<EOF
 icj~{}
 EOF
@@ -1474,8 +1476,9 @@ RUN
 
 NAME=iej (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-EXPECT='[{"vaddr":134513408,"paddr":768,"baddr":134512640,"laddr":0,"hvaddr":134512664,"haddr":24,"type":"program"}]
-'
+EXPECT=<<EOF
+[{"vaddr":134513408,"paddr":768,"baddr":134512640,"laddr":0,"hvaddr":134512664,"haddr":24,"type":"program"}]
+EOF
 CMDS=<<EOF
 iej
 EOF
@@ -1540,7 +1543,8 @@ RUN
 NAME=iIj
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=iIj~{}
-EXPECT='{
+EXPECT=<<EOF
+{
   "arch": "x86",
   "baddr": 134512640,
   "binsz": 4899,
@@ -1578,21 +1582,24 @@ EXPECT='{
   "checksums": {
     
   }
-}'
+}
+EOF
 RUN
 
 NAME=iI-rust
 FILE=../bins/elf/analysis/rust_full
 CMDS=iI~lang
-EXPECT='lang     rust
-'
+EXPECT=<<EOF
+lang     rust
+EOF
 RUN
 
 NAME=iI-msvc
 FILE=../bins/pe/libzmq-v100-mt-4_0_4.dll
 CMDS=iI~lang
-EXPECT='lang     msvc
-'
+EXPECT=<<EOF
+lang     msvc
+EOF
 RUN
 
 NAME=im
@@ -3447,27 +3454,34 @@ NAME=izz (no rbin - file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 ARGS=-n
 CMDS=izz~puts
-EXPECT='4   0x000002fa 0x000002fa 4   5            ascii   puts
+EXPECT=<<EOF
+4   0x000002fa 0x000002fa 4   5            ascii   puts
 65  0x00001953 0x00001953 17  18           ascii   puts@@GLIBC_2.2.5
-'
+EOF
 RUN
 
 NAME=izzj (no rbin - file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 ARGS=-n
-CMDS='e bin.str.purge=all,!0x2fa,!0x1953
+CMDS=<<EOF
+e bin.str.purge=all,!0x2fa,!0x1953
 izzj
-'
-EXPECT='[{"vaddr":762,"paddr":762,"ordinal":4,"size":5,"length":4,"section":"","type":"ascii","string":"puts"},{"vaddr":6483,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":"","type":"ascii","string":"puts@@GLIBC_2.2.5"}]'
+EOF
+EXPECT=<<EOF
+[{"vaddr":762,"paddr":762,"ordinal":4,"size":5,"length":4,"section":"","type":"ascii","string":"puts"},{"vaddr":6483,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":"","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
+EOF
 RUN
 
 NAME=izzj 2 (no rbin - file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 ARGS=
-CMDS='e bin.str.purge=all,!0x4002fa,!0x15b
+CMDS=<<EOF
+e bin.str.purge=all,!0x4002fa,!0x15b
 izzj
-'
-EXPECT='[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]'
+EOF
+EXPECT=<<EOF
+[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
+EOF
 RUN
 
 NAME=izzzj
@@ -3476,7 +3490,9 @@ CMDS=<<EOF
 w abcd\00012345\0efghi\0
 izzzj
 EOF
-EXPECT='[{"vaddr":0,"paddr":0,"ordinal":0,"size":5,"length":4,"section":"","type":"ascii","string":"abcd"},{"vaddr":5,"paddr":5,"ordinal":1,"size":6,"length":5,"section":"","type":"ascii","string":"12345"},{"vaddr":11,"paddr":11,"ordinal":2,"size":6,"length":5,"section":"","type":"ascii","string":"efghi"}]'
+EXPECT=<<EOF
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":5,"length":4,"section":"","type":"ascii","string":"abcd"},{"vaddr":5,"paddr":5,"ordinal":1,"size":6,"length":5,"section":"","type":"ascii","string":"12345"},{"vaddr":11,"paddr":11,"ordinal":2,"size":6,"length":5,"section":"","type":"ascii","string":"efghi"}]
+EOF
 RUN
 
 NAME=i (no rbin - file x86_64)
@@ -3675,7 +3691,9 @@ RUN
 
 NAME=izj unicode blocks
 FILE=../bins/elf/strenc
-EXPECT='[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":8,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]'
+EXPECT=<<EOF
+[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":8,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
+EOF
 CMDS=<<EOF
 e bin.str.purge=all,!4202996,!4203007,!4203208
 izj
@@ -3684,7 +3702,9 @@ RUN
 
 NAME=izzj unicode blocks
 FILE=../bins/elf/strenc-guess-utf32le
-EXPECT='[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]'
+EXPECT=<<EOF
+[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
+EOF
 CMDS=<<EOF
 e bin.str.purge=all,!4195920
 izzj
@@ -3780,25 +3800,30 @@ RUN
 
 NAME=iz-
 FILE=-
-CMDS='iz- @ 0x412420
+CMDS=<<EOF
+iz- @ 0x412420
 e bin.str.purge
 iz- @ 0x4028a0
 e bin.str.purge
 iz- 0x414fbf
 e bin.str.purge
-'
-EXPECT='0x412420
+EOF
+EXPECT=<<EOF
+0x412420
 0x412420,0x4028a0
 0x412420,0x4028a0,0x414fbf
-'
+EOF
 RUN
 
 NAME=regression for #9370
 FILE=../bins/elf/analysis/hello-arm32
 ARGS=-m 0x10000
-CMDS='izz~Hello'
-EXPECT='6   0x00000200 0x00010200 11  12   .rodata         ascii   Hello World
-'
+CMDS=<<EOF
+izz~Hello
+EOF
+EXPECT=<<EOF
+6   0x00000200 0x00010200 11  12   .rodata         ascii   Hello World
+EOF
 RUN
 
 NAME=iee preinit
@@ -4131,7 +4156,8 @@ RUN
 
 NAME=iSj
 FILE=../bins/pe/hello-mingw32
-EXPECT='[
+EXPECT=<<EOF
+[
   {
     "name": ".text",
     "size": 2560,
@@ -4173,7 +4199,7 @@ EXPECT='[
     "vaddr": 4214784
   }
 ]
-'
+EOF
 CMDS=<<EOF
 iSj~{}
 EOF
@@ -4288,13 +4314,15 @@ RUN
 NAME=iR*
 FILE=../bins/pe/standard.exe
 CMDS=iR*
-EXPECT='fs resources
+EXPECT=<<EOF
+fs resources
 f resource.0 5672 0x00401180
 f resource.1 76 0x00402a10
 f resource.2 20 0x004027b0
 f resource.3 452 0x004027d0
 f resource.4 74 0x004029a0
-fs *'
+fs *
+EOF
 RUN
 
 NAME=izzz*
@@ -4331,12 +4359,13 @@ FILE=../bins/mach0/fatmach0-3true
 ARGS=-w
 BROKEN=1
 CMDS=it ; wx 0x90 ; it
-EXPECT_ERR='File has been modified.
+EXPECT_ERR=<<EOF
+File has been modified.
 - md5 84144530144b53a704c84d9c65ab5f92
 + md5 9a99cca7bf3e27ee1c8964141cfad053
 - sha1 9016e215a321184c42c28ab03847554851932713
 + sha1 17c5b6331a420fc3b48defe782090295294fee2e
-'
+EOF
 EXPECT=<<EOF
 md5 84144530144b53a704c84d9c65ab5f92
 sha1 9016e215a321184c42c28ab03847554851932713
@@ -4346,14 +4375,16 @@ RUN
 NAME=isq. (malloc)
 FILE=malloc://512
 CMDS=isq.
-EXPECT=''
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=isq. (file x86)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 CMDS=isq.
-EXPECT='0x00400410 0 .text
-'
+EXPECT=<<EOF
+0x00400410 0 .text
+EOF
 RUN
 
 NAME=ic?~ (match all)
@@ -4379,7 +4410,8 @@ RUN
 NAME=ic?~ (match none)
 FILE=malloc://512
 CMDS=ic?~Guess
-EXPECT=''
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=ascii substring detection (#14499)
@@ -4423,7 +4455,8 @@ RUN
 NAME=icqq (file x86)
 FILE=../bins/elf/ls
 CMDS=icqq
-EXPECT=''
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=iqqc (file Java)
@@ -4439,7 +4472,8 @@ NAME=iqqc (file x86)
 BROKEN=1
 FILE=../bins/elf/ls
 CMDS=iqqc
-EXPECT=''
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=iqcq (file Java)
@@ -4455,5 +4489,6 @@ NAME=iqcq (file x86)
 BROKEN=1
 FILE=../bins/elf/ls
 CMDS=iqcq
-EXPECT=''
+EXPECT=<<EOF
+EOF
 RUN
