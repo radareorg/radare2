@@ -1,0 +1,72 @@
+
+if get_option('build_tests')
+  tests = [
+    'addr_interval',
+    'anal_block',
+    'anal_function',
+    'base64',
+    'bin',
+    'bitmap',
+    'buf',
+    'contrbtree',
+    'debruijn',
+    'diff',
+    'esil_dfg_filter',
+    'event',
+    'flags',
+    'glob',
+    'hex',
+    'intervaltree',
+    'io',
+    'list',
+    'parse_ctype',
+    'queue',
+    'range',
+    'rbtree',
+    'skiplist',
+    'spaces',
+    'sparse',
+    'stack',
+    'str',
+    'strbuf',
+    'table',
+    'tree',
+    'uleb128',
+    'unum',
+    'util',
+    'vector'
+  ]
+
+  foreach test : tests
+    exe = executable('test_@0@'.format(test), 'test_@0@.c'.format(test),
+      include_directories: [platform_inc],
+      dependencies: [
+        r_util_dep,
+        r_main_dep,
+        r_socket_dep,
+        r_core_dep,
+        r_io_dep,
+        r_fs_dep,
+        r_bin_dep,
+        r_flag_dep,
+        r_cons_dep,
+        r_asm_dep,
+        r_debug_dep,
+        r_config_dep,
+        r_bp_dep,
+        r_reg_dep,
+        r_syscall_dep,
+        r_anal_dep,
+        r_parse_dep,
+        r_egg_dep,
+        r_search_dep,
+        r_hash_dep,
+        r_crypto_dep,
+        r_magic_dep
+      ],
+      install: false,
+      install_rpath: rpath,
+      implicit_include_directories: false)
+    test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'))
+  endforeach
+endif
