@@ -485,6 +485,8 @@ if get_option('use_webui')
   )
 endif
 
+subdir('test/unit')
+
 install_data(
   'doc/fortunes.creepy',
   'doc/fortunes.fun',
