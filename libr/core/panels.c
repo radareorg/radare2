@@ -1967,7 +1967,7 @@ bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 	if (__drag_and_resize (core)) {
 		return true;
 	}
-	if (*key == 0) {
+	if (!*key) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
 			if (y == MENU_Y && __handle_mouse_on_top (core, x, y)) {
