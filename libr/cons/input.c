@@ -208,13 +208,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				}
 				pos[p++] = 0;
 				y = atoi (pos);
-				// M is mouse down , m is mouse up
-				if (ch == 'M' || ch == 'm') {
-					r_cons_set_click (x, y);
-					if (ch == 'm') {
-						return INT8_MAX - 1;
-					}
-				}
+				r_cons_set_click (x, y);
 			}
 			return 0;
 		case '[':
