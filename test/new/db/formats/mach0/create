@@ -1,7 +1,8 @@
 
 # undefined behaviour somehow
 NAME='create mach0 x86-64'
-BROKEN=1 # Sometimes fails on Clang for Linux and Windows
+# Sometimes fails on Clang for Linux and Windows
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 rm ./tiny64.mach0__
