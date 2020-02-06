@@ -3475,7 +3475,6 @@ static void add_breakpoint(RCore *core, char *input, bool hwbp, bool watch) {
 	}
 
 	free (str);
-	return true;
 }
 
 static void r_core_cmd_bp(RCore *core, const char *input) {
