@@ -252,3 +252,16 @@ EXPECT=<<EOF
 Hello world!
 EOF
 RUN
+
+NAME='dbH'
+FILE=../bins/elf/analysis/x64-loop
+ARGS=-d
+CMDS=<<EOF
+e scr.color=0
+dbH main
+db~1[5]
+EOF
+EXPECT=<<EOF
+hw
+EOF
+RUN
