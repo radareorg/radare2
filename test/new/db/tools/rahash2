@@ -102,19 +102,19 @@ RUN
 NAME=rahash2 -D base64 -s "YWRtaW4="
 FILE=-
 CMDS=!rahash2 -D base64 -s "YWRtaW4="
-EXPECT='admin'
+EXPECT=admin
 RUN
 
 NAME=rahash2 -E base64 -s "admin"
 FILE=-
 CMDS=!rahash2 -E base64 -s "admin"
-EXPECT='YWRtaW4='
+EXPECT=YWRtaW4=
 RUN
 
 NAME=rahash2 -E base64 -x "61646d696e"
 FILE=-
 CMDS=!rahash2 -E base64 -x "61646d696e"
-EXPECT='YWRtaW4='
+EXPECT=YWRtaW4=
 RUN
 
 NAME=rahash2 -a md5 -x "61646d696e"
@@ -601,7 +601,7 @@ RUN
 NAME=rahash2 -D aes-ecb 128 bit
 FILE=-
 CMDS=!rahash2 -E aes-ecb -S "11111111111111111111111111111111" -s "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" | rahash2 -D aes-ecb -S "11111111111111111111111111111111" -s -
-EXPECT='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+EXPECT=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 RUN
 
 NAME=rahash2 -E aes-ecb 192 bit
@@ -719,13 +719,13 @@ RUN
 NAME=rahash2 -E base91
 FILE=-
 CMDS=!rahash2 -E base91 -s "hello world\n"
-EXPECT='TPwJh>Io2Tv!^aB'
+EXPECT=TPwJh>Io2Tv!^aB
 RUN
 
 NAME=rahash2 -D base91
 FILE=-
 CMDS=!rahash2 -E base91 -s "hello world" | rahash2 -D base91 -s -
-EXPECT='hello world'
+EXPECT=hello world
 RUN
 
 NAME=rahash2 -E rc2
@@ -739,13 +739,13 @@ RUN
 NAME=rahash2 -D rc2
 FILE=-
 CMDS=!rahash2 -E rc2 -S key -s "helloworld123456" | rahash2 -D rc2 -S key -s -
-EXPECT='helloworld123456'
+EXPECT=helloworld123456
 RUN
 
 NAME=rahash2 -E punycode
 FILE=-
 CMDS=!rahash2 -E punycode -x 57696c6c73742064752064696520426cc3bc74686520646573206672c3bc68656e2c20646965204672c3bc6368746520646573207370c3a4746572656e204a6168726573
-EXPECT='Willst du die Blthe des frhen, die Frchte des spteren Jahres-x9e96lkal'
+EXPECT=Willst du die Blthe des frhen, die Frchte des spteren Jahres-x9e96lkal
 RUN
 
 NAME=rahash2 -D punycode
@@ -759,7 +759,7 @@ RUN
 NAME=rahash2 -E punycode[1]
 FILE=-
 CMDS=!rahash2 -E punycode -x f09f918d
-EXPECT='yp8h'
+EXPECT=yp8h
 RUN
 
 NAME=rahash2 -D punycode[1]
@@ -861,7 +861,7 @@ RUN
 NAME=rahash2 -D des-ecb STRING
 FILE=-
 CMDS=!rahash2 -D "des-ecb" -S s:"savethat" -x "c3868da6e3d787c88e5a61a7c333cd802e5cee17d7b09555572a35e120fb8e36dc9f0722976934b9453a3a4e741f27c8"
-EXPECT='How does a passionate magic wipe a reactionary?.'
+EXPECT=How does a passionate magic wipe a reactionary?.
 RUN
 
 NAME=rahash2 -E serpent-ecb 128 bit

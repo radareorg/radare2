@@ -9,7 +9,7 @@ RUN
 NAME=rax2 -E | rax2 -D
 FILE=-
 CMDS=!rax2 -E hello |rax2 -D |rax2 -E | rax2 -D  |rax2 -E|rax2 -D |rax2 -E | rax2 -D
-EXPECT='hello'
+EXPECT=hello
 RUN
 
 NAME=rax2 -E | rax2 -D 2
@@ -28,17 +28,18 @@ hello
 EOF
 RUN
 
-NAME=rax2 -S hello |rax2 -s
+NAME=rax2 -S hello | rax2 -s
 FILE=-
-CMDS=!rax2 -S hello |rax2 -s
-EXPECT='hello'
+CMDS=!rax2 -S hello | rax2 -s
+EXPECT=hello
 RUN
 
-NAME=rax2 -S hello |rax2 -s 2
+NAME=rax2 -S hello | rax2 -s 2
 FILE=-
 CMDS=!echo hello | rax2 -S | rax2 -s
-EXPECT='hello
-'
+EXPECT=<<EOF
+hello
+EOF
 RUN
 
 NAME=rax2 -S hello | rax2 -s (2)
@@ -52,20 +53,21 @@ RUN
 NAME=rax2 -E | rax2 -D -E
 FILE=-
 CMDS=!echo hello | rax2 -E |rax2 -D |rax2 -E | rax2 -D  |rax2 -E|rax2 -D |rax2 -E | rax2 -D
-EXPECT='hello
-'
+EXPECT=<<EOF
+hello
+EOF
 RUN
 
 NAME=rax2 -b 01101000011001010110110001101100011011110111011101101111011100100110110001100100
 FILE=-
 CMDS=!rax2 -b 01101000011001010110110001101100011011110111011101101111011100100110110001100100
-EXPECT='helloworld'
+EXPECT=helloworld
 RUN
 
 NAME=rax2 -B hello world
 FILE=-
 CMDS=!rax2 -B hello world
-EXPECT='01101000011001010110110001101100011011110111011101101111011100100110110001100100'
+EXPECT=01101000011001010110110001101100011011110111011101101111011100100110110001100100
 RUN
 
 NAME=rax2 10
@@ -199,13 +201,13 @@ RUN
 NAME=echo "414141" | rax2 -s
 FILE=-
 CMDS=!printf 414141 | rax2 -s
-EXPECT='AAA'
+EXPECT=AAA
 RUN
 
 NAME=rax2 -b 01000101 01110110
 FILE=-
 CMDS=!rax2 -b 01000101 01110110
-EXPECT='Ev'
+EXPECT=Ev
 RUN
 
 NAME=rax2 -k 33+3
@@ -331,13 +333,13 @@ RUN
 NAME=rax2 -s 43 4a 50
 FILE=-
 CMDS=!rax2 -s 43 4a 50
-EXPECT='CJP'
+EXPECT=CJP
 RUN
 
 NAME=rax2 -s 434a50
 FILE=-
 CMDS=!rax2 -s 434a50
-EXPECT='CJP'
+EXPECT=CJP
 RUN
 
 NAME=rax2 -S "hello\x2Aworld ZYX\234abc\n"
@@ -495,7 +497,7 @@ FILE=-
 CMDS=<<EOF
 !rax2 -o 162 62
 EOF
-EXPECT='r2'
+EXPECT=r2
 RUN
 
 NAME=rax2 -r 0x1234

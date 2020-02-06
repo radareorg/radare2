@@ -1,4 +1,4 @@
-NAME='dbg.step'
+NAME=dbg.step
 FILE=/bin/ls
 ARGS=-d
 BROKEN=1
@@ -18,7 +18,7 @@ nop
 EOF
 RUN
 
-NAME='dbg.symbols'
+NAME=dbg.symbols
 FILE=/bin/ls
 ARGS=-d
 BROKEN=1
