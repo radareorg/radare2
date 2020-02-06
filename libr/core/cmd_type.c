@@ -195,6 +195,7 @@ static void __core_cmd_tcc(RCore *core, const char *input) {
 	case 'j':
 		{
 			char *ccs = r_core_cmd_strf (core, "afcl");
+			r_str_trim_head_tail (ccs);
 			RList *list = r_str_split_list (ccs, "\n", 0);
 			RListIter *iter;
 			const char *cc;
@@ -216,6 +217,7 @@ static void __core_cmd_tcc(RCore *core, const char *input) {
 	case 'l':
 		{
 			char *ccs = r_core_cmd_strf (core, "afcl");
+			r_str_trim_head_tail (ccs);
 			RList *list = r_str_split_list (ccs, "\n", 0);
 			RListIter *iter;
 			const char *cc;
@@ -231,6 +233,7 @@ static void __core_cmd_tcc(RCore *core, const char *input) {
 	case '*':
 		{
 			char *ccs = r_core_cmd_strf (core, "afcl");
+			r_str_trim_head_tail (ccs);
 			RList *list = r_str_split_list (ccs, "\n", 0);
 			RListIter *iter;
 			const char *cc;
