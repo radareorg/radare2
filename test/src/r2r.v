@@ -14,7 +14,7 @@ import (
 const (
 	default_jobs = 2
 	default_targets = 'arch json asm fuzz cmd unit'
-	default_timeout = 3
+	default_timeout = 10
 	default_asm_bits = 32
 	default_radare2 = 'radare2'
 	default_dbpath = 'new/db' // XXX use execpath as relative reference to it
@@ -51,6 +51,7 @@ pub fn main() {
 		println(fp.usage())
 		println('ARGS:')
 		println('  ${default_targets}')
+		println('  or path/to/test/file')
 		println('\nExamples:')
 		println('  \$ r2r cmd /write       run only the cmd tests in the /write file')
 		println('  \$ time r2r -n          benchmark time spent parsing test files')
@@ -70,6 +71,10 @@ pub fn main() {
 		exit(1)
 	}
 	r2r.targets = args[1..]
+	for a in r2r.targets {
+		a.index('/') or { continue }
+		r2r.filter_by_files << a
+	}
 	if r2r.interactive {
 		eprintln('Warning: interactive mode not yet implemented in V. Use the node testsuite for this')
 		p := filepath.join(r2r.r2r_home,'new')
@@ -86,7 +91,6 @@ pub fn main() {
 		exit(0)
 	}
 	println('[r2r] Loading tests')
-	// os.chdir('..')
 	r2r.load_tests()
 	if !show_norun {
 		r2r.run_tests()
@@ -142,6 +146,7 @@ mut:
 	show_quiet  bool
 	interactive bool
 	r2r_home    string
+	filter_by_files []string
 }
 
 struct R2RCmdTest {
@@ -196,18 +201,7 @@ fn (test R2RCmdTest) parse_slurp(v string) (string,string) {
 }
 
 fn (r2r mut R2R) load_cmd_test(testfile string) {
-	mut haspaz := false
-	mut found := false
-	for target in r2r.targets {
-		if target.contains('/') {
-			haspaz = true
-			if testfile.contains(target) {
-				found = true
-				break
-			}
-		}
-	}
-	if haspaz && !found {
+	if r2r.filtered_file(testfile) {
 		return
 	}
 	mut test := R2RCmdTest{}
@@ -300,6 +294,11 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 			}
 			'NAME' {
 				test.name = line[5..]
+				for t in r2r.cmd_tests {
+					if t.name == test.name {
+						eprintln('Warning: Duplicated test name "${t.name}" in test.source')
+					}
+				}
 			}
 			'RUN' {
 				if test.name.len == 0 {
@@ -325,6 +324,8 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 }
 
 /*
+// only useful for r2pipe mode, right now we do plain spawns with pipes
+
 fn (r2r R2R)run_commands(test R2RCmdTest) string {
 	res := ''
 	for cmd in cmds {
@@ -337,15 +338,15 @@ fn (r2r R2R)run_commands(test R2RCmdTest) string {
 }
 */
 
-
 fn (r2r mut R2R) test_failed(test R2RCmdTest, a string, b string) string {
 	if test.broken {
 		r2r.broken++
 		return 'BR'
 	}
-	println(test.file)
+	println('# File: ${test.file}')
 	println(term.ok_message(test.cmds))
 	println(term.fail_message(a))
+	println('# ----')
 	println(term.ok_message(b))
 	r2r.failed++
 	return term.red('XX')
@@ -393,13 +394,12 @@ fn (r2r mut R2R) run_asm_test_native(test R2RAsmTest, dismode bool) {
 	else {
 		r2r.r2.cmd('s 0')
 	}
-	if test.mode.contains('E') {
-		r2r.r2.cmd('e cfg.bigendian=true')
-	}
-	else {
-		r2r.r2.cmd('e cfg.bigendian=false')
-	}
-	res := if dismode { r2r.r2.cmd('"pad ${test.data}"') } else { r2r.r2.cmd('"pa ${test.inst}"') }
+
+	be := if test.mode.contains('E') { 'true' } else { 'false' }
+	r2r.r2.cmd('e cfg.bigendian=${be}')
+
+	res := r2r.r2.cmd(if dismode { '"pad ${test.data}"' } else { '"pa ${test.inst}"' })
+
 	mut mark := term.green('OK')
 	if res.trim_space() == test_expect {
 		if test.mode.contains('B') {
@@ -493,7 +493,10 @@ fn (r2r mut R2R) run_cmd_test(test R2RCmdTest) {
 	os.write_file(tmp_script, test.cmds)
 	// TODO: handle timeout
 	r2 := '${r2r.r2_path} -e scr.utf8=0 -e scr.interactive=0 -e scr.color=0 -NQ'
+	cwd := os.getwd()
+	os.chdir('../new') // fix runnig directory
 	os.system('${r2} -i ${tmp_script} ${test.args} ${test.file} 2> ${tmp_stderr} > ${tmp_output}')
+	os.chdir(cwd)
 	res := os.read_file(tmp_output) or {
 		panic(err)
 	}
@@ -752,6 +755,18 @@ fn (r2r mut R2R) run_jsn_tests() {
 	}
 }
 
+fn (r2r R2R)filtered_file(file string) bool {
+	if r2r.filter_by_files.len == 0 {
+		return false
+	}
+	for fbf in r2r.filter_by_files {
+		if file.ends_with(fbf) {
+			return false
+		}
+	}
+	return true
+}
+
 fn (r2r mut R2R) run_cmd_tests() {
 	println('[r2r] Running cmd tests')
 	// r2r.r2 = r2.new()
@@ -761,6 +776,9 @@ fn (r2r mut R2R) run_cmd_tests() {
 	// r2r.wg.add(r2r.cmd_tests.len)
 	mut c := r2r.jobs
 	for t in r2r.cmd_tests {
+		if r2r.filtered_file(t.source) {
+			continue
+		}
 		r2r.wg.add(1)
 		go r2r.run_cmd_test(t)
 		if r2r.jobs > 0 {
@@ -777,11 +795,11 @@ fn (r2r mut R2R) run_cmd_tests() {
 fn (r2r R2R) show_report() {
 	total := r2r.broken + r2r.fixed + r2r.failed + r2r.success
 	println('')
-	println('Broken: ${r2r.broken}')
-	println('Fixxed: ${r2r.fixed}')
-	println('Succes: ${r2r.success}')
-	println('Failed: ${r2r.failed}')
-	println('Tottal: ${total}')
+	println(' Broken: ${r2r.broken}')
+	println('  Fixed: ${r2r.fixed}')
+	println('Success: ${r2r.success}')
+	println(' Failed: ${r2r.failed}')
+	println('  Total: ${total}')
 }
 
 fn (r2r mut R2R) load_cmd_tests(testpath string) {
@@ -840,6 +858,11 @@ fn (r2r mut R2R) load_tests() {
 	}
 	if r2r.wants('asm') {
 		r2r.load_asm_tests('${r2r.db_path}/asm')
+	}
+	for f in r2r.filter_by_files {
+		if os.exists(f) {
+			r2r.load_cmd_test(f)
+		}
 	}
 	for cmd_test_path in cmd_test_paths {
 		if r2r.wants(cmd_test_path) {

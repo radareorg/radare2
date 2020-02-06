@@ -1,4 +1,4 @@
-NAME='dbg.cmdbps'
+NAME=dbg.cmdbps
 FILE=/bin/ls
 ARGS=-d
 BROKEN=1

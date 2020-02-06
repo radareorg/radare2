@@ -1,6 +1,5 @@
 NAME=quoted comments bug
 FILE=malloc://1024
-ARGS=
 CMDS=<<EOF
 "w hello # world"
 ps
@@ -12,7 +11,6 @@ RUN
 
 NAME=labels replacements (common prefix)
 FILE=malloc://1024
-ARGS=
 BROKEN=1
 CMDS=<<EOF
 e asm.arch=x86
@@ -157,7 +155,6 @@ RUN
 
 NAME=wxf
 FILE=malloc://1024
-ARGS=
 CMDS=<<EOF
 wxf ../bins/other/hexpairs
 p8 4
@@ -192,7 +189,6 @@ RUN
 NAME=wt
 FILE=-
 #../bins/pe/b.exe
-ARGS=
 CMDS=<<EOF
 wt a_piece_of_ls_saved_to_PWD 0x400
 ls -l a_piece_of_ls_saved_to_PWD~[3]
@@ -225,7 +221,6 @@ RUN
 
 NAME=wv endian
 FILE=malloc://1024
-ARGS=
 CMDS=<<EOF
 e cfg.bigendian=false
 wv4 0x1234
@@ -242,7 +237,6 @@ RUN
 NAME=wx 0x should behave like wv? imho nope
 FILE=malloc://1024
 BROKEN=1
-ARGS=
 CMDS=<<EOF
 e cfg.bigendian=false
 wx 0x1234
@@ -259,7 +253,6 @@ RUN
 NAME=wci should commit the changes to the file
 FILE=malloc://1024
 BROKEN=1
-ARGS=
 EXPECT=<<EOF
 File size
 EOF
@@ -279,7 +272,6 @@ RUN
 
 NAME=wci should commit all the changes
 FILE=malloc://512
-ARGS=
 EXPECT=<<EOF
 idx=0 addr=0x00000000 size=3 000000 -> 909090 (written)
 idx=1 addr=0x00000003 size=3 000000 -> 909090 (written)
@@ -297,7 +289,6 @@ RUN
 NAME=wx pcache
 FILE=../bins/pe/b.exe
 
-ARGS=
 CMDS=<<EOF
 
 e io.va=0
@@ -320,7 +311,6 @@ RUN
 
 NAME=w octal esc
 FILE=malloc://16
-ARGS=
 CMDS=<<EOF
 w 0123456789abcde
 w a\57b\0
@@ -341,7 +331,6 @@ RUN
 
 NAME=wen
 FILE=malloc://4
-ARGS=
 CMDS=<<EOF
 
 wx 01020304
@@ -356,7 +345,6 @@ RUN
 
 NAME=wen should insert X null bytes even if io.cache=false
 FILE=--
-ARGS=
 EXPECT=<<EOF
 216607
 216608

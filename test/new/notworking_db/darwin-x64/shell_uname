@@ -1,4 +1,4 @@
-NAME='uname'
+NAME=uname
 FILE=-
 ARGS=
 BROKEN=
