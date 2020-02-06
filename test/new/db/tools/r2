@@ -54,7 +54,8 @@ EOF
 RUN
 
 NAME=r2 -V
-BROKEN=1 # Only at Windows
+# Only on Windows
+BROKEN=1
 FILE=-
 CMDS=!!r2 -V~r_anal?
 EXPECT=<<EOF
@@ -63,7 +64,8 @@ EOF
 RUN
 
 NAME=r2 -h
-BROKEN=1 # Only at Windows
+# Only on Windows
+BROKEN=1
 FILE=-
 CMDS=!!r2 -h~Usage?
 EXPECT=<<EOF
@@ -72,7 +74,8 @@ EOF
 RUN
 
 NAME=r2 -hh
-BROKEN=1 # Only at Windows
+# Only on Windows
+BROKEN=1
 FILE=-
 CMDS=!!r2 -hh~R2_USER_PLUGINS?
 EXPECT=<<EOF
@@ -81,7 +84,8 @@ EOF
 RUN
 
 NAME=r2 -L
-BROKEN=1 # Only at Windows
+# Only on Windows
+BROKEN=1
 FILE=-
 CMDS=!!r2 -L~default?
 EXPECT=<<EOF
