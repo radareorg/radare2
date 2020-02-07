@@ -1,4 +1,4 @@
-NAME='dbg.dcu'
+NAME=dbg.dcu
 FILE=/bin/test
 ARGS=-d
 BROKEN=1
@@ -15,4 +15,3 @@ EXPECT=<<EOF
 0x10000134c
 EOF
 RUN
-

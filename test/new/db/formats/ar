@@ -1,4 +1,4 @@
-NAME='ar file sections'
+NAME=ar file sections
 BROKEN=1
 FILE=ar://../../bins/ar/libgdbr.a//responses.o
 CMDS=<<EOF
@@ -9,7 +9,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='ar file symbols'
+NAME=ar file symbols
 FILE=ar://../../bins/ar/libgdbr.a//xml.o
 BROKEN=1
 CMDS=<<EOF
@@ -22,7 +22,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='ar file content'
+NAME=ar file content
 BROKEN=1
 FILE=ar://../../bins/ar/libgdbr.a//xml.o
 CMDS=<<EOF
@@ -37,7 +37,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='ar file content'
+NAME=ar file content
 BROKEN=1
 FILE=ar://../../bins/ar/libgdbr.a//core.o
 CMDS=<<EOF

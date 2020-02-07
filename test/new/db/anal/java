@@ -190,7 +190,7 @@ EOF
 RUN
 
 NAME=af java multiple classes loaded via malloc and ib
-BROKEN=11
+BROKEN=1
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.calls=false

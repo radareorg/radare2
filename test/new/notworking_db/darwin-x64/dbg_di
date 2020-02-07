@@ -1,4 +1,4 @@
-NAME='dbg.di'
+NAME=dbg.di
 FILE=/bin/ls
 ARGS=-d
 BROKEN=1

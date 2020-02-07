@@ -1,4 +1,4 @@
-NAME='negative branch bug 8bit'
+NAME=negative branch bug 8bit
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=m68k
@@ -11,7 +11,7 @@ jump: 0x00000002
 EOF
 RUN
 
-NAME='negative branch bug 16bit'
+NAME=negative branch bug 16bit
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=m68k
@@ -24,7 +24,7 @@ jump: 0x00000012
 EOF
 RUN
 
-NAME='negative branch bug 32bit'
+NAME=negative branch bug 32bit
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=m68k
@@ -38,7 +38,7 @@ EOF
 RUN
 
 
-NAME='jsr.l should not terminate function'
+NAME=jsr.l should not terminate function
 
 FILE=malloc://1024
 CMDS=<<EOF
@@ -52,7 +52,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='jsr.w should not terminate function'
+NAME=jsr.w should not terminate function
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=m68k
@@ -147,7 +147,7 @@ move.w 0x100, sym.z80BusReq
 EOF
 RUN
 
-NAME='backwards seek'
+NAME=backwards seek
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=m68k

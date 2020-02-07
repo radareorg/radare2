@@ -1,4 +1,4 @@
-NAME='dbg.oo 10'
+NAME=dbg.oo 10
 FILE=/bin/ls
 ARGS=-d
 BROKEN=1
@@ -11,7 +11,7 @@ dbg:///bin/ls
 EOF
 RUN
 
-NAME='dc - i386'
+NAME=dc - i386
 BROKEN=1
 FILE=../bins/mach0/hello-osx-i386
 ARGS=-d
@@ -23,10 +23,10 @@ Hello world!
 EOF
 RUN
 
-NAME='dc - i386 forced'
+NAME=dc - i386 forced
 BROKEN=1
 FILE=../bins/mach0/hello-osx-i386
-ARGS="-b 32 -d"
+ARGS=-b 32 -d
 CMDS=<<EOF
 dc
 EOF
@@ -35,7 +35,7 @@ Hello World
 EOF
 RUN
 
-NAME='oo ; dc - i386'
+NAME=oo ; dc - i386
 FILE=../bins/mach0/hello-osx-i386
 BROKEN=1
 ARGS=-d
@@ -48,7 +48,7 @@ Hello world!
 EOF
 RUN
 
-NAME='oo ; dc'
+NAME=oo ; dc
 BROKEN=1
 FILE=../bins/mach0/hello-osx-x86_64
 ARGS=-d
@@ -61,7 +61,7 @@ Hello World
 EOF
 RUN
 
-NAME='ood'
+NAME=ood
 BROKEN=1
 FILE=../bins/mach0/hello-osx-x86_64
 ARGS=-d
