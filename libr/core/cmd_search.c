@@ -3546,27 +3546,27 @@ reread:
 		dosearch = true;
 		break;
 	case 'w': // "/w" search wide string, includes ignorecase search functionality (/wi cmd)!
-		if (input[1]) {
-			if (input[2]) {
+			if (input[2] ) {
 				if (input[1] == 'j' || input[2] == 'j') {
 					param.outmode = R_MODE_JSON;
 				}
 				if (input[1] == 'i' || input[2] == 'i') {
 					ignorecase = true;
 				}
-			}
+			} else {
+					param.outmode = R_MODE_RADARE;
+            }
 
 			size_t shift = 1 + ignorecase;
 			if (param.outmode == R_MODE_JSON) {
 				shift++;
 			}
-			if (input[shift] == ' ') {
-				size_t strstart, len;
+				size_t strstart, len1;
 				const char *p2;
 				char *p, *str;
 				strstart = shift + 1;
-				len = strlen (input + strstart);
-				str = calloc ((len + 1), 2);
+				len1 = strlen (input + strstart);
+				str = calloc ((len1 + 1), 2);
 				for (p2 = input + strstart, p = str; *p2; p += 2, p2++) {
 					if (ignorecase) {
 						p[0] = tolower ((const ut8) *p2);
@@ -3579,7 +3579,7 @@ reread:
 				r_search_set_distance (core->search, (int)
 					r_config_get_i (core->config, "search.distance"));
 				RSearchKeyword *skw;
-				skw = r_search_keyword_new ((const ut8 *) str, len * 2, NULL, 0, NULL);
+				skw = r_search_keyword_new ((const ut8 *) str, len1 * 2, NULL, 0, NULL);
 				free (str);
 				if (skw) {
 					skw->icase = ignorecase;
@@ -3590,9 +3590,6 @@ reread:
 					eprintf ("Invalid keyword\n");
 					break;
 				}
-			}
-		}
-		break;
 	case 'i': // "/i"
 		if (input[param_offset - 1] != ' ') {
 			eprintf ("Missing ' ' after /i\n");
