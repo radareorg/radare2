@@ -193,7 +193,8 @@ static void gb_hardware_register_name (char *reg, ut8 offset) {
 		r_str_cpy (reg, "rIE")
 		break;
 	default:
-		sprintf (reg, "rNR%d", offset);
+		// If unknown, return the original address
+		sprintf (reg, "0xff%02x", offset);
 		break;
 	}
 }
