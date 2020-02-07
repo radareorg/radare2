@@ -54,6 +54,7 @@ static const char *help_msg_db[] = {
 	"db*", "", "List breakpoints in r commands",
 	"db", " sym.main", "Add breakpoint into sym.main",
 	"db", " <addr>", "Add breakpoint",
+	"dbH", " <addr>", "Add hardware breakpoint",
 	"db-", " <addr>", "Remove breakpoint",
 	"db-*", "", "Remove all the breakpoints",
 	"db.", "", "Show breakpoint info in current offset",
@@ -3419,6 +3420,63 @@ static void core_cmd_dbi (RCore *core, const char *input, ut64 idx) {
 #include "..\debug\p\native\windows\windows_message.h"
 #endif
 
+#define DB_ARG(x) r_str_word_get0(str, x)
+static void add_breakpoint(RCore *core, char *input, bool hwbp, bool watch) {
+	RBreakpointItem *bpi;
+	ut64 addr;
+	int rw = 0, i = 0;
+
+	char *str = strdup (r_str_trim_ro (input + 1));
+	int sl = r_str_word_set0 (str);
+	// For dbw every second argument is 'rw', so we need to skip it.
+	for (; i < sl; i += 1 + (watch ? 1 : 0)) {
+		if (*DB_ARG (i) == '-') {
+			r_bp_del (core->dbg->bp, r_num_math (core->num, DB_ARG (i) + 1));
+		} else {
+			if (watch) {
+				if (sl % 2 == 0) {
+					if (!strcmp (DB_ARG (i + 1), "r")) {
+						rw = R_BP_PROT_READ;
+					} else if (!strcmp (DB_ARG (i + 1), "w")) {
+						rw = R_BP_PROT_WRITE;
+					} else if (!strcmp (DB_ARG (i + 1), "rw")) {
+						rw = R_BP_PROT_ACCESS;
+					} else {
+						r_core_cmd_help (core, help_msg_dbw);
+						break;
+					}
+				} else {
+					r_core_cmd_help (core, help_msg_dbw);
+					break;
+				}
+			}
+			addr = r_num_math (core->num, DB_ARG (i));
+			bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
+			if (bpi) {
+				free (bpi->name);
+				if (!strcmp (DB_ARG (i), "$$")) {
+					RFlagItem *f = r_core_flag_get_by_spaces (core->flags, addr);
+					if (f) {
+						if (addr > f->offset) {
+							bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
+						} else {
+							bpi->name = strdup (f->name);
+						}
+					} else {
+						bpi->name = r_str_newf ("0x%08" PFMT64x, addr);
+					}
+				} else {
+					bpi->name = strdup (DB_ARG (i));
+				}
+			} else {
+				eprintf ("Cannot set breakpoint at '%s'\n", DB_ARG (i));
+			}
+		}
+	}
+
+	free (str);
+}
+
 static void r_core_cmd_bp(RCore *core, const char *input) {
 	RBreakpointItem *bpi;
 	int i, hwbp = r_config_get_i (core->config, "dbg.hwbp");
@@ -3820,59 +3878,13 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 #endif
 	case 'w': // "dbw"
-		input++; // skip 'w'
-		watch = true;
-		// passthru
-	case ' ': ;// "db"
-		#define DB_ARG(x) r_str_word_get0(str, x)
-		str = strdup (r_str_trim_ro (input + 1));
-		int i = 0;
-		int sl = r_str_word_set0 (str);
-		// For dbw every second argument is 'rw', so we need to skip it.
-		for ( ; i < sl; i += 1 + (watch ? 1 : 0)) {
-			if (*DB_ARG(i) == '-') {
-				r_bp_del (core->dbg->bp, r_num_math (core->num, DB_ARG (i) + 1));
-			} else {
-				if (watch) {
-					if (sl % 2 == 0) {
-						if (!strcmp (DB_ARG (i + 1), "r")) {
-							rw = R_BP_PROT_READ;
-						} else if (!strcmp (DB_ARG (i + 1), "w")) {
-							rw = R_BP_PROT_WRITE;
-						} else if (!strcmp (DB_ARG (i + 1), "rw")) {
-							rw = R_BP_PROT_ACCESS;
-						} else {
-							r_core_cmd_help (core, help_msg_dbw);
-							break;
-						}
-					} else {
-						r_core_cmd_help (core, help_msg_dbw);
-						break;
-					}
-				}
-				addr = r_num_math (core->num, DB_ARG (i));
-				bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
-				if (bpi) {
-					free (bpi->name);
-					if (!strcmp (DB_ARG (i), "$$")) {
-						RFlagItem *f = r_core_flag_get_by_spaces (core->flags, addr);
-						if (f) {
-							if (addr > f->offset) {
-								bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
-							} else {
-								bpi->name = strdup (f->name);
-							}
-						} else {
-							bpi->name = r_str_newf ("0x%08" PFMT64x, addr);
-						}
-					} else {
-						bpi->name = strdup (DB_ARG (i));
-					}
-				} else {
-					eprintf ("Cannot set breakpoint at '%s'\n", DB_ARG (i));
-				}
-			}
-		}
+		add_breakpoint (core, input + 1, hwbp, true);
+		break;
+	case 'H': // "dbH"
+		add_breakpoint (core, input + 1, true, watch);
+		break;
+	case ' ': // "db"
+		add_breakpoint (core, input++, hwbp, watch);
 		break;
 	case 'i':
 		core_cmd_dbi (core, input, idx);
