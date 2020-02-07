@@ -18,8 +18,9 @@ static int gbOpLength(int gboptype){
 		return 2;
 	case GB_8BIT + ARG_16:
 		return 3;
+	default:
+		return 0;
 	}
-	return 0;
 }
 
 static void gb_hardware_register_name (char *reg, ut8 offset) {
@@ -207,13 +208,13 @@ static int gbDisass(RAsmOp *op, const ut8 *buf, int len){
 	}
 	const char *buf_asm = "invalid";
 	char reg[32];
-	memset (reg, '\0', sizeof (char) * sizeof (reg));
+	memset (reg, '\0', sizeof (reg));
 	switch (gb_op[buf[0]].type) {
 	case GB_8BIT:
 		buf_asm = sdb_fmt ("%s", gb_op[buf[0]].name);
 		break;
 	case GB_16BIT:
-		buf_asm = sdb_fmt ("%s %s", cb_ops[buf[1] >> 3], cb_regs[buf[1] & 7]);
+		buf_asm = sdb_fmt ("%s %s", cb_ops[buf[1] >> 3u], cb_regs[buf[1] & 7u]);
 		break;
 	case GB_8BIT + ARG_8:
 		buf_asm = sdb_fmt (gb_op[buf[0]].name, buf[1]);
