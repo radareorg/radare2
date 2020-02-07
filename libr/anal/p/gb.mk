@@ -9,4 +9,4 @@ CFLAGS += -Iarch/gb/
 
 ${TARGET_GB}: ${OBJ_GB}
 	${CC} $(call libname,anal_gb) ${LDFLAGS} ${CFLAGS} \
-		-o anal_gb.${EXT_SO} ${OBJ_GB}
+		-o ${TARGET_GB} ${OBJ_GB}
