@@ -39,8 +39,7 @@ EOF
 RUN
 
 NAME=rasm2 arm/thumb branch errors
-# Only on Windows
-BROKEN=1
+BROKEN=1 # Only on Windows
 FILE=-
 CMDS=<<EOF
 !rasm2 -a arm -b 16 'b.n 8'
