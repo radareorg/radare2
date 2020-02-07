@@ -244,7 +244,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 					}
 				}
 				else {
-					panic('Missing arg to cmds')
+					panic('Warning: Missing arg to CMDS')
 				}
 			}
 			'EXPECT' {
@@ -257,7 +257,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 					}
 				}
 				else {
-					eprintln('Missing arg to cmds')
+					eprintln('Warning: Missing value for EXPECT')
 				}
 			}
 			'EXPECT_ERR' {
@@ -270,7 +270,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 					}
 				}
 				else {
-					eprintln('Missing arg to cmds')
+					eprintln('Warning: Missing value for EXPECT_ERR')
 				}
 			}
 			'BROKEN' {
@@ -294,6 +294,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 			}
 			'NAME' {
 				test.name = line[5..]
+				// XXX this is slow. we need a hashtable for O(1)
 				for t in r2r.cmd_tests {
 					if t.name == test.name {
 						eprintln('Warning: Duplicated test name "${t.name}" in test.source')
@@ -301,8 +302,11 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 				}
 			}
 			'RUN' {
+				if v.len > 0 {
+					eprintln('Warning: RUN statement doesnt require a value')
+				}
 				if test.name.len == 0 {
-					eprintln('Invalid test name in ${test.source}')
+					eprintln('Warning: Invalid test name in ${test.source}')
 				}
 				else {
 					if test.name == '' {
