@@ -3421,7 +3421,7 @@ static void core_cmd_dbi (RCore *core, const char *input, ut64 idx) {
 #endif
 
 #define DB_ARG(x) r_str_word_get0(str, x)
-static void add_breakpoint(RCore *core, char *input, bool hwbp, bool watch) {
+static void add_breakpoint(RCore *core, const char *input, bool hwbp, bool watch) {
 	RBreakpointItem *bpi;
 	ut64 addr;
 	int rw = 0, i = 0;
@@ -3485,7 +3485,6 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	const char *p;
 	bool hex_format;
 	bool watch = false;
-	int rw = 0;
 	RList *list;
 	ut64 addr, idx;
 	p = strchr (input, ' ');
