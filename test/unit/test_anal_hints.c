@@ -133,6 +133,10 @@ bool test_r_anal_addr_hints() {
 	cur.val = 0x112358d;
 	CHECK
 
+	r_anal_hint_set_newbits (anal, 0x1337, 16);
+	cur.new_bits = 16;
+	CHECK
+
 	// unset --------
 
 	r_anal_hint_unset_syntax (anal, 0x1337);
@@ -193,6 +197,10 @@ bool test_r_anal_addr_hints() {
 
 	r_anal_hint_unset_val (anal, 0x1337);
 	cur.val = UT64_MAX;
+	CHECK
+
+	r_anal_hint_unset_newbits (anal, 0x1337);
+	cur.new_bits = 0;
 	CHECK
 
 	r_anal_free (anal);

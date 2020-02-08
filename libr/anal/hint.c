@@ -395,6 +395,10 @@ R_API void r_anal_hint_unset_fail(RAnal *a, ut64 addr) {
 	unset_addr_hint_record (a, R_ANAL_HINT_TYPE_FAIL, addr);
 }
 
+R_API void r_anal_hint_unset_newbits(RAnal *a, ut64 addr) {
+	unset_addr_hint_record (a, R_ANAL_HINT_TYPE_NEW_BITS, addr);
+}
+
 R_API void r_anal_hint_unset_val (RAnal *a, ut64 addr) {
 	unset_addr_hint_record (a, R_ANAL_HINT_TYPE_VAL, addr);
 }
