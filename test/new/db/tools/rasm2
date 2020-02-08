@@ -370,9 +370,18 @@ ba0e000000b91d000000bb01000000b804000000cd80b801000000cd8048656c6c6f2c20776f726c
 EOF
 RUN
 
-NAME=rasm2 bswap x64 #8095
+NAME=rasm2 bswap x64 #8095 (with double quotes)
+BROKEN=1 # Only with node-r2r
 FILE=-
-CMDS='"!rasm2 -a x86 -b 64 \"bswap rax;bswap rbx;bswap rcx;bswap rdx\""'
+CMDS="!rasm2 -a x86 -b 64 \"bswap rax;bswap rbx;bswap rcx;bswap rdx\""
+EXPECT=<<EOF
+480fc8480fcb480fc9480fca
+EOF
+RUN
+
+NAME=rasm2 bswap x64 #8095 (with single quotes)
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 'bswap rax;bswap rbx;bswap rcx;bswap rdx'
 EXPECT=<<EOF
 480fc8480fcb480fc9480fca
 EOF
