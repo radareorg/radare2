@@ -200,8 +200,126 @@ bool test_r_anal_addr_hints() {
 #undef CHECK
 }
 
+bool test_r_anal_hints_arch() {
+	RAnal *anal = r_anal_new ();
+
+	mu_assert_null (r_anal_hint_arch_at (anal, 0x1337), "no arch");
+
+	//--
+	r_anal_hint_set_arch (anal, 0x1337, "6502");
+
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, 0x1337), "6502", "arch at addr");
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, 0x1338), "6502", "arch after addr");
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, UT64_MAX), "6502", "arch after addr");
+	mu_assert_null (r_anal_hint_arch_at (anal, 0x1336), "no arch before addr");
+	mu_assert_null (r_anal_hint_arch_at (anal, 0), "no arch before addr");
+
+	RAnalHint cur = empty_hint;
+	cur.arch = "6502";
+	RAnalHint *hint = r_anal_hint_get (anal, 0x1337);
+	assert_hint_eq (hint, &cur);
+	r_anal_hint_free (hint);
+	hint = r_anal_hint_get (anal, 0x1338);
+	assert_hint_eq (hint, &cur);
+	r_anal_hint_free (hint);
+	hint = r_anal_hint_get (anal, 0x1336);
+	assert_hint_eq (hint, &empty_hint);
+	r_anal_hint_free (hint);
+
+	//--
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, 0xdeadbeef), "6502", "before reset arch at addr");
+	r_anal_hint_set_arch (anal, 0xdeadbeef, NULL);
+	mu_assert_null (r_anal_hint_arch_at (anal, 0xdeadbeef), "reset arch at addr");
+	mu_assert_null (r_anal_hint_arch_at (anal, 0xdeadbeef + 1), "reset arch after addr");
+	mu_assert_null (r_anal_hint_arch_at (anal, UT64_MAX), "reset arch after addr");
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, 0xdeadbeef - 1), "6502", "arch before addr");
+
+	//--
+	r_anal_hint_unset_arch (anal, 0xdeadbeef);
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, 0x1337), "6502", "arch at addr");
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, 0x1338), "6502", "arch after addr");
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, UT64_MAX), "6502", "arch after addr");
+	mu_assert_null (r_anal_hint_arch_at (anal, 0x1336), "no arch before addr");
+	mu_assert_null (r_anal_hint_arch_at (anal, 0), "no arch before addr");
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, 0xdeadbeef), "6502", "unset reset arch at addr");
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, 0xdeadbeef + 1), "6502", "unset reset arch after addr");
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, UT64_MAX), "6502", "unset reset arch after addr");
+	mu_assert_nullable_streq (r_anal_hint_arch_at (anal, 0xdeadbeef - 1), "6502", "arch before addr");
+
+	//--
+	r_anal_hint_unset_arch (anal, 0x1337);
+	mu_assert_null (r_anal_hint_arch_at (anal, 0x1336), "unset arch");
+	mu_assert_null (r_anal_hint_arch_at (anal, 0), "unset arch");
+	mu_assert_null (r_anal_hint_arch_at (anal, 0x1337), "unset arch");
+	mu_assert_null (r_anal_hint_arch_at (anal, 0x1338), "unset arch");
+	mu_assert_null (r_anal_hint_arch_at (anal, UT64_MAX), "unset arch");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_hints_bits() {
+	RAnal *anal = r_anal_new ();
+
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0x1337), 0, "no bits");
+
+	//--
+	r_anal_hint_set_bits (anal, 0x1337, 16);
+
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0x1337), 16, "bits at addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0x1338), 16, "bits after addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, UT64_MAX), 16, "bits after addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0x1336), 0, "no bits before addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0), 0, "no bits before addr");
+
+	RAnalHint cur = empty_hint;
+	cur.bits = 16;
+	RAnalHint *hint = r_anal_hint_get (anal, 0x1337);
+	assert_hint_eq (hint, &cur);
+	r_anal_hint_free (hint);
+	hint = r_anal_hint_get (anal, 0x1338);
+	assert_hint_eq (hint, &cur);
+	r_anal_hint_free (hint);
+	hint = r_anal_hint_get (anal, 0x1336);
+	assert_hint_eq (hint, &empty_hint);
+	r_anal_hint_free (hint);
+
+	//--
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0xdeadbeef), 16, "before reset bits at addr");
+	r_anal_hint_set_bits (anal, 0xdeadbeef, 0);
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0xdeadbeef), 0, "reset bits at addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0xdeadbeef + 1), 0, "reset bits after addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, UT64_MAX), 0, "reset bits after addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0xdeadbeef - 1), 16, "bits before addr");
+
+	//--
+	r_anal_hint_unset_bits (anal, 0xdeadbeef);
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0x1337), 16, "bits at addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0x1338), 16, "bits after addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, UT64_MAX), 16, "bits after addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0x1336), 0, "no bits before addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0), 0, "no bits before addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0xdeadbeef), 16, "unset reset bits at addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0xdeadbeef + 1), 16, "unset reset bits after addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, UT64_MAX), 16, "unset reset bits after addr");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0xdeadbeef - 1), 16, "bits before addr");
+
+	//--
+	r_anal_hint_unset_bits (anal, 0x1337);
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0x1336), 0, "unset bits");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0), 0, "unset bits");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0x1337), 0, "unset bits");
+	mu_assert_eq (r_anal_hint_bits_at (anal, 0x1338), 0, "unset bits");
+	mu_assert_eq (r_anal_hint_bits_at (anal, UT64_MAX), 0, "unset bits");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_r_anal_addr_hints);
+	mu_run_test(test_r_anal_hints_arch);
+	mu_run_test(test_r_anal_hints_bits);
 	return tests_passed != tests_run;
 }
 

@@ -436,7 +436,7 @@ R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr
 }
 
 R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr) {
-	RBNode *node = r_rbtree_upper_bound (anal->arch_hints, &addr, ranged_hint_record_cmp, NULL);
+	RBNode *node = r_rbtree_upper_bound (anal->bits_hints, &addr, ranged_hint_record_cmp, NULL);
 	if (!node) {
 		return 0;
 	}
@@ -515,7 +515,8 @@ R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
 			hint_merge (hint, record);
 		}
 	}
-	hint->arch = r_anal_hint_arch_at (a, addr); // TODO: strdup
+	const char *arch = r_anal_hint_arch_at (a, addr);
+	hint->arch = arch ? strdup (arch) : NULL;
 	hint->bits = r_anal_hint_bits_at (a, addr);
 	return hint;
 }
