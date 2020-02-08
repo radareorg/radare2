@@ -3601,7 +3601,7 @@ reread:
 		}
 		ignorecase = true;
 	case 'j': // "/j"
-		if (input[0] == 'j') {
+		if (input[0] == 'j' && input[1] == ' ') {
 			param.outmode = R_MODE_JSON;
 		}
 		// fallthrough
