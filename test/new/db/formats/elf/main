@@ -44,7 +44,7 @@ RUN
 NAME=ELF: main rebased 3
 FILE=-
 ARGS=-B 0x200000
-EXPECT='2098438'
+EXPECT=2098438
 CMDS=<<EOF
 !rabin2 -qMB 0x200000 ../bins/elf/analysis/main
 EOF
