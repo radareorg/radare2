@@ -173,7 +173,8 @@ size: 11
 |           0x004017c3      83c108         add ecx, 8
 \           0x004017c6      3d00100000     cmp eax, 0x1000
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+EOF
 RUN
 
 NAME=afb+ with wrong size
