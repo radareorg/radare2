@@ -1012,54 +1012,84 @@ typedef struct {
 	};
 } HintNode;
 
-#define HINTCMD_ADDR(hint,fmt,x) r_cons_printf (fmt" @ 0x%"PFMT64x"\n", x, (hint)->addr)
-#define HINTCMD(hint,fmt,x) r_cons_printf (fmt"", x)
-
 static void print_hint_h_format(HintNode *node) {
-#if 0
-	// TODO
-	r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x" =>", hint->addr, hint->addr + hint->size);
-	HINTCMD (hint, arch, " arch='%s'");
-	HINTCMD (hint, bits, " bits=%d");
-	if (hint->type) {
-		const char *type = r_anal_optype_to_string (hint->type);
-		if (type) {
-			r_cons_printf (" type='%s'", type);
+	r_cons_printf (" 0x%08"PFMT64x" =>", node->addr);
+	switch (node->type) {
+	case HINT_NODE_ADDR: {
+		const RAnalAddrHintRecord *record;
+		r_vector_foreach (node->addr_hints, record) {
+			switch (record->type) {
+			case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
+				r_cons_printf (" immbase=%d", record->immbase);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_JUMP:
+				r_cons_printf (" jump=0x%08"PFMT64x, record->jump);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_FAIL:
+				r_cons_printf (" fail=0x%08"PFMT64x, record->fail);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_STACKFRAME:
+				r_cons_printf (" stackframe=0x%"PFMT64x, record->stackframe);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_PTR:
+				r_cons_printf (" ptr=0x%"PFMT64x, record->ptr);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_NWORD:
+				r_cons_printf (" nword=%d", record->nword);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_RET:
+				r_cons_printf (" ret=0x%08"PFMT64x, record->retval);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_NEW_BITS:
+				r_cons_printf (" newbits=%d", record->newbits);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_SIZE:
+				r_cons_printf (" size=%"PFMT64u, record->size);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_SYNTAX:
+				r_cons_printf (" syntax='%s'", record->syntax);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_OPTYPE: {
+				const char *type = r_anal_optype_to_string (record->optype);
+				if (type) {
+					r_cons_printf (" type='%s'", type);
+				}
+				break;
+			}
+			case R_ANAL_ADDR_HINT_TYPE_OPCODE:
+				r_cons_printf (" opcode='%s'", record->opcode);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
+				r_cons_printf (" offset='%s'", record->type_offset);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_ESIL:
+				r_cons_printf (" esil='%s'", record->esil);
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_HIGH:
+				r_cons_printf (" high=true");
+				break;
+			case R_ANAL_ADDR_HINT_TYPE_VAL:
+				r_cons_printf (" val=0x%08"PFMT64x, record->val);
+				break;
+			}
 		}
+		break;
 	}
-	HINTCMD (hint, size, " size=%d");
-	HINTCMD (hint, opcode, " opcode='%s'");
-	HINTCMD (hint, syntax, " syntax='%s'");
-	HINTCMD (hint, immbase, " immbase=%d");
-	HINTCMD (hint, esil, " esil='%s'");
-	HINTCMD (hint, ptr, " ptr=0x%"PFMT64x);
-	HINTCMD (hint, offset, " offset='%s'");
-	if (hint->val != UT64_MAX) {
-		r_cons_printf (" val=0x%08"PFMT64x, hint->val);
-	}
-	if (hint->jump != UT64_MAX) {
-		r_cons_printf (" jump=0x%08"PFMT64x, hint->jump);
-	}
-	if (hint->fail != UT64_MAX) {
-		r_cons_printf (" fail=0x%08"PFMT64x, hint->fail);
-	}
-	if (hint->ret != UT64_MAX) {
-		r_cons_printf (" ret=0x%08"PFMT64x, hint->ret);
-	}
-	if (hint->high) {
-		r_cons_printf (" high=true");
-	}
-	if (hint->stackframe != UT64_MAX) {
-		r_cons_printf (" stackframe=0x%"PFMT64x, hint->stackframe);
+	case HINT_NODE_ARCH:
+		r_cons_printf (" arch='%s'", node->arch);
+		break;
+	case HINT_NODE_BITS:
+		r_cons_printf (" bits=%d", node->bits);
+		break;
 	}
 	r_cons_newline ();
-#endif
 }
 
 // if mode == 'j', pj must be an existing PJ!
 static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 	switch (mode) {
 	case '*':
+#define HINTCMD_ADDR(hint,fmt,x) r_cons_printf (fmt" @ 0x%"PFMT64x"\n", x, (hint)->addr)
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
 			const RAnalAddrHintRecord *record;
@@ -1128,64 +1158,81 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 			HINTCMD_ADDR (node, "ahb %d", node->bits);
 			break;
 		}
+#undef HINTCMD_ADDR
 		break;
-#if 0
-	// TODO
 	case 'j':
 		pj_o (pj);
-		pj_kn (pj, "from", hint->addr);
-		pj_kn (pj, "to", hint->addr + hint->size);
-		if (hint->arch) {
-			pj_ks (pj, "arch", hint->arch);
-		}
-		if (hint->bits) {
-			pj_ki (pj, "bits", hint->bits);
-		}
-		if (hint->type) {
-			const char *type = r_anal_optype_to_string (hint->type);
-			if (type) {
-				pj_ks (pj, "type", type);
+		pj_kn (pj, "addr", node->addr);
+		switch (node->type) {
+		case HINT_NODE_ADDR: {
+			const RAnalAddrHintRecord *record;
+			r_vector_foreach (node->addr_hints, record) {
+				switch (record->type) {
+				case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
+					pj_ki (pj, "immbase", record->immbase);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_JUMP:
+					pj_kn (pj, "jump", record->jump);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_FAIL:
+					pj_kn (pj, "fail", record->fail);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_STACKFRAME:
+					pj_kn (pj, "stackframe", record->stackframe);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_PTR:
+					pj_kn (pj, "ptr", record->ptr);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_NWORD:
+					pj_ki (pj, "nword", record->nword);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_RET:
+					pj_kn (pj, "ret", record->retval);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_NEW_BITS:
+					pj_ki (pj, "newbits", record->newbits);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_SIZE:
+					pj_kn (pj, "size", record->size);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_SYNTAX:
+					pj_ks (pj, "syntax", record->syntax);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_OPTYPE: {
+					const char *type = r_anal_optype_to_string (record->optype);
+					if (type) {
+						pj_ks (pj, "type", type);
+					}
+					break;
+				}
+				case R_ANAL_ADDR_HINT_TYPE_OPCODE:
+					pj_ks (pj, "opcode", record->opcode);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
+					pj_ks (pj, "offset", record->type_offset);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_ESIL:
+					pj_ks (pj, "esil", record->esil);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_HIGH:
+					pj_kb (pj, "high", true);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_VAL:
+					pj_kn (pj, "val", record->val);
+					break;
+				}
 			}
+			break;
 		}
-		if (hint->size) {
-			pj_ki (pj, "size", hint->size);
-		}
-		if (hint->opcode) {
-			pj_ks (pj, "opcode", hint->opcode);
-		}
-		if (hint->syntax) {
-			pj_ks (pj, "syntax", hint->syntax);
-		}
-		if (hint->immbase) {
-			pj_ki (pj, "immbase", hint->immbase);
-		}
-		if (hint->esil) {
-			pj_ks (pj, "esil", hint->esil);
-		}
-		if (hint->ptr) {
-			pj_kn (pj, "ptr", hint->ptr);
-		}
-		if (hint->jump != UT64_MAX) {
-			pj_kn (pj, "jump", hint->jump);
-		}
-		if (hint->fail != UT64_MAX) {
-			pj_kn (pj, "fail", hint->fail);
-		}
-		if (hint->ret != UT64_MAX) {
-			pj_kn (pj, "ret", hint->ret);
-		}
-		if (hint->high) {
-			pj_kb (pj, "high", true);
-		}
-		if (hint->stackframe != UT64_MAX) {
-			pj_kn (pj, "stackframe", hint->stackframe);
-		}
-		if (hint->offset) {
-			pj_ks (pj, "offset", hint->offset);
+		case HINT_NODE_ARCH:
+			pj_ks (pj, "arch", node->arch);
+			break;
+		case HINT_NODE_BITS:
+			pj_ki (pj, "bits", node->bits);
+			break;
 		}
 		pj_end (pj);
 		break;
-#endif
 	default:
 		print_hint_h_format (node);
 		break;
