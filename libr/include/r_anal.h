@@ -702,6 +702,46 @@ typedef struct r_anal_t {
 	RList *leaddrs;
 } RAnal;
 
+typedef enum r_anal_addr_hint_type_t {
+	R_ANAL_HINT_TYPE_IMMBASE,
+	R_ANAL_HINT_TYPE_JUMP,
+	R_ANAL_HINT_TYPE_FAIL,
+	R_ANAL_HINT_TYPE_STACKFRAME,
+	R_ANAL_HINT_TYPE_PTR,
+	R_ANAL_HINT_TYPE_NWORD,
+	R_ANAL_HINT_TYPE_RET,
+	R_ANAL_HINT_TYPE_NEW_BITS,
+	R_ANAL_HINT_TYPE_SIZE,
+	R_ANAL_HINT_TYPE_SYNTAX,
+	R_ANAL_HINT_TYPE_OPTYPE,
+	R_ANAL_HINT_TYPE_OPCODE,
+	R_ANAL_HINT_TYPE_TYPE_OFFSET,
+	R_ANAL_HINT_TYPE_ESIL,
+	R_ANAL_HINT_TYPE_HIGH,
+	R_ANAL_HINT_TYPE_VAL
+} RAnalAddrHintType;
+
+typedef struct r_anal_addr_hint_record_t {
+	RAnalAddrHintType type;
+	union {
+		char *type_offset;
+		int nword;
+		ut64 jump;
+		ut64 fail;
+		int newbits;
+		int immbase;
+		ut64 ptr;
+		ut64 retval;
+		char *syntax;
+		char *opcode;
+		char *esil;
+		int optype;
+		ut64 size;
+		ut64 stackframe;
+		ut64 val;
+	};
+} RAnalAddrHintRecord;
+
 typedef struct r_anal_hint_t {
 	ut64 addr;
 	ut64 ptr;
@@ -1803,9 +1843,16 @@ R_API void r_anal_hint_unset_newbits(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_stackframe(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr);
-R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr); // accumulate all available hints affecting the given address
+R_API R_NULLABLE const RVector/*<const RAnalAddrHintRecord>*/ *r_anal_addr_hints_at(RAnal *anal, ut64 addr);
+typedef bool (*RAnalAddrHintRecordsCb)(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ *records, void *user);
+R_API void r_anal_addr_hints_foreach(RAnal *anal, RAnalAddrHintRecordsCb cb, void *user);
+typedef bool (*RAnalArchHintCb)(ut64 addr, R_NULLABLE const char *arch, void *user);
+R_API void r_anal_arch_hints_foreach(RAnal *anal, RAnalArchHintCb cb, void *user);
+typedef bool (*RAnalBitsHintCb)(ut64 addr, int bits, void *user);
+R_API void r_anal_bits_hints_foreach(RAnal *anal, RAnalBitsHintCb cb, void *user);
 R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr);
 R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr);
+R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr); // accumulate all available hints affecting the given address
 
 /* switch.c APIs */
 R_API RAnalSwitchOp * r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val);

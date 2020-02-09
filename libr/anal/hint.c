@@ -2,50 +2,6 @@
 
 #include <r_anal.h>
 
-typedef enum r_anal_hint_type_t {
-	R_ANAL_HINT_TYPE_IMMBASE,
-	R_ANAL_HINT_TYPE_JUMP,
-	R_ANAL_HINT_TYPE_FAIL,
-	R_ANAL_HINT_TYPE_STACKFRAME,
-	R_ANAL_HINT_TYPE_PTR,
-	R_ANAL_HINT_TYPE_NWORD,
-	R_ANAL_HINT_TYPE_RET,
-	//R_ANAL_HINT_TYPE_BITS,
-	R_ANAL_HINT_TYPE_NEW_BITS,
-	R_ANAL_HINT_TYPE_SIZE,
-	R_ANAL_HINT_TYPE_SYNTAX,
-	R_ANAL_HINT_TYPE_OPTYPE,
-	R_ANAL_HINT_TYPE_OPCODE,
-	R_ANAL_HINT_TYPE_TYPE_OFFSET,
-	R_ANAL_HINT_TYPE_ESIL,
-	//R_ANAL_HINT_TYPE_ARCH,
-	R_ANAL_HINT_TYPE_HIGH,
-	R_ANAL_HINT_TYPE_VAL
-} RAnalAddrHintType;
-
-typedef struct r_anal_addr_hint_record_t {
-	RAnalAddrHintType type;
-	union {
-		char *type_offset;
-		int nword;
-		ut64 jump;
-		ut64 fail;
-		int newbits;
-		int immbase;
-		ut64 ptr;
-		ut64 retval;
-		//char *arch;
-		char *syntax;
-		char *opcode;
-		char *esil;
-		int optype;
-		//int bits;
-		ut64 size;
-		ut64 stackframe;
-		ut64 val;
-	};
-} RAnalAddrHintRecord;
-
 // Common base-struct for hints which affect an entire range as opposed to only one single address
 // They are saved in a RBTree per hint type.
 // Each ranged record in a tree affects every address address greater or equal to its specified address until
@@ -128,11 +84,6 @@ void r_anal_hint_storage_fini(RAnal *a) {
 R_API void r_anal_hint_clear(RAnal *a) {
 	r_anal_hint_storage_fini (a);
 	r_anal_hint_storage_init (a);
-}
-
-static void interval_tree_list(RIntervalNode *node, void *user) {
-	RList *r = user;
-	r_list_push (r, user);
 }
 
 typedef struct {
@@ -448,6 +399,47 @@ R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr) {
 	return record->bits;
 }
 
+R_API R_NULLABLE const RVector/*<const RAnalAddrHintRecord>*/ *r_anal_addr_hints_at(RAnal *anal, ut64 addr) {
+	return ht_up_find (anal->addr_hints, addr, NULL);
+}
+
+typedef struct {
+	RAnalAddrHintRecordsCb cb;
+	void *user;
+} AddrHintForeachCtx;
+
+static bool addr_hint_foreach_cb(void *user, const ut64 key, const void *value) {
+	AddrHintForeachCtx *ctx = user;
+	return ctx->cb (key, value, ctx->user);
+}
+
+R_API void r_anal_addr_hints_foreach(RAnal *anal, RAnalAddrHintRecordsCb cb, void *user) {
+	AddrHintForeachCtx ctx = { cb, user };
+	ht_up_foreach (anal->addr_hints, addr_hint_foreach_cb, &ctx);
+}
+
+R_API void r_anal_arch_hints_foreach(RAnal *anal, RAnalArchHintCb cb, void *user) {
+	RBIter iter;
+	RAnalRangedHintRecordBase *record;
+	r_rbtree_foreach (anal->bb_tree, iter, record, RAnalRangedHintRecordBase, rb) {
+		bool cont = cb (record->addr, ((RAnalArchHintRecord *)record)->arch, user);
+		if (!cont) {
+			break;
+		}
+	}
+}
+
+R_API void r_anal_bits_hints_foreach(RAnal *anal, RAnalBitsHintCb cb, void *user) {
+	RBIter iter;
+	RAnalRangedHintRecordBase *record;
+	r_rbtree_foreach (anal->bb_tree, iter, record, RAnalRangedHintRecordBase, rb) {
+		bool cont = cb (record->addr, ((RAnalBitsHintRecord *)record)->bits, user);
+		if (!cont) {
+			break;
+		}
+	}
+}
+
 static void hint_merge(RAnalHint *hint, RAnalAddrHintRecord *record) {
 	switch (record->type) {
 	case R_ANAL_HINT_TYPE_IMMBASE:
@@ -512,7 +504,7 @@ R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
 	hint->ret = UT64_MAX;
 	hint->val = UT64_MAX;
 	hint->stackframe = UT64_MAX;
-	RVector *records = ht_up_find (a->addr_hints, addr, NULL);
+	const RVector *records = r_anal_addr_hints_at (a, addr);
 	if (records) {
 		RAnalAddrHintRecord *record;
 		r_vector_foreach (records, record) {

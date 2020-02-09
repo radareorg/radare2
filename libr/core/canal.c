@@ -1142,22 +1142,6 @@ static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
 	}
 }
 
-// TODO: move this into anal/hint.c ?
-static int cb(void *p, const char *k, const char *v) {
-	HintListState *hls = p;
-	if (hls->mode == 's') {
-		r_cons_printf ("%s=%s\n", k, v);
-	} else {
-#if 0
-		// TODO
-		RAnalHint *hint = r_anal_hint_from_string (hls->a, sdb_atoi (k + 5), v);
-		anal_hint_print (hint, hls->mode, hls->pj);
-		free (hint);
-#endif
-	}
-	return 1;
-}
-
 R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 	RAnalHint *hint = r_anal_hint_get (a, addr);
 	if (!hint) {
@@ -1177,33 +1161,75 @@ R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 	free (hint);
 }
 
+// TODO: move to r_util
+typedef struct {
+	RBNode rb;
+	ut64 addr;
+} AddrNode;
+
+int addr_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
+	ut64 ia = *(ut64 *)incoming;
+	ut64 ta = container_of (in_tree, const AddrNode, rb)->addr;
+	if (ia < ta) {
+		return -1;
+	} else if (ia > ta) {
+		return 1;
+	}
+	return 0;
+}
+
+static void addr_tree_add_addr(RBTree *tree, ut64 addr) {
+	if (r_rbtree_find (*tree, &addr, addr_node_cmp, NULL)) {
+		return;
+	}
+	AddrNode *node = R_NEW0 (AddrNode);
+	if (!node) {
+		return;
+	}
+	node->addr = addr;
+	r_rbtree_insert (tree, &addr, &node->rb, addr_node_cmp, NULL);
+}
+
+bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ *records, void *user) {
+	addr_tree_add_addr (user, addr);
+	return true;
+}
+
+bool print_arch_hint_cb(ut64 addr, R_NULLABLE const char *arch, void *user) {
+	addr_tree_add_addr (user, addr);
+	return true;
+}
+
+bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
+	addr_tree_add_addr (user, addr);
+	return true;
+}
+
 R_API void r_core_anal_hint_list(RAnal *a, int mode) {
-#ifdef _MSC_VER
-	HintListState hls = {0};
-#else
-	HintListState hls = {};
-#endif
-	hls.mode = mode;
-	hls.a = a;
-	hls.pj = NULL;
+	RBTree addr_tree = NULL;
+	// Collect all addrs that have hints in the addr_tree, which will automatically sort them
+	r_anal_addr_hints_foreach (a, print_addr_hint_cb, &addr_tree);
+	r_anal_arch_hints_foreach (a, print_arch_hint_cb, &addr_tree);
+	r_anal_bits_hints_foreach (a, print_bits_hint_cb, &addr_tree);
+
+	PJ *pj = NULL;
 	if (mode == 'j') {
-		hls.pj = pj_new ();
-		pj_a (hls.pj);
+		pj = pj_new ();
+		pj_a (pj);
 	}
-#if 0
-	// TODO
-	SdbList *ls = sdb_foreach_list (a->sdb_hints, true);
-	SdbListIter *lsi;
-	SdbKv *kv;
-	ls_foreach (ls, lsi, kv) {
-		cb (&hls, sdbkv_key (kv), sdbkv_value (kv));
+	RBIter it;
+	AddrNode *node;
+	r_rbtree_foreach (addr_tree, it, node, AddrNode, rb) {
+		RAnalHint *hint = r_anal_hint_get (a, node->addr);
+		if (!hint) {
+			continue;
+		}
+		anal_hint_print (hint, mode, pj);
 	}
-	ls_free (ls);
-	if (hls.pj) {
-		pj_end (hls.pj);
-		r_cons_printf ("%s\n", pj_string (hls.pj));
+	if (pj) {
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
 	}
-#endif
 }
 
 static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
