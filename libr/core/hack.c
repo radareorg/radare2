@@ -31,6 +31,8 @@ R_API bool r_core_hack_dalvik(RCore *core, const char *op, const RAnalOp *analop
 		r_core_cmdf (core, "wx 0000");
 	} else if (!strcmp (op, "ret2")) {
 		r_core_cmdf (core, "wx 12200f00"); // mov v0, 2;ret v0
+	} else if (!strcmp (op, "jinf")) {
+		r_core_cmd0 (core, "wx 2800\n");
 	} else if (!strcmp (op, "ret1")) {
 		r_core_cmdf (core, "wx 12100f00"); // mov v0, 1;ret v0
 	} else if (!strcmp (op, "ret0")) {
