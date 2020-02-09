@@ -115,21 +115,27 @@ RList *__get_entries(r_bin_le_obj_t *bin) {
 			r_buf_read_at (bin->buf, offset, (ut8 *)&e, sizeof (e));
 			switch (header.type & ~ENTRY_PARAMETER_TYPING_PRESENT) {
 			case ENTRY16:
-				entry = (ut64)e.entry_16.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				if ((header.objnum - 1) < bin->header->objcnt) {
+					entry = (ut64)e.entry_16.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				}
 				offset += sizeof (e.entry_16);
 				if (typeinfo) {
 					offset += (ut64)(e.entry_16.flags & ENTRY_PARAM_COUNT_MASK) * 2;
 				}
 				break;
 			case CALLGATE:
-				entry = (ut64)e.callgate.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				if ((header.objnum - 1) < bin->header->objcnt) {
+					entry = (ut64)e.callgate.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				}
 				offset += sizeof (e.callgate);
 				if (typeinfo) {
 					offset += (ut64)(e.callgate.flags & ENTRY_PARAM_COUNT_MASK) * 2;
 				}
 				break;
 			case ENTRY32:
-				entry = (ut64)e.entry_32.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				if ((header.objnum - 1) < bin->header->objcnt) {
+					entry = (ut64)e.entry_32.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				}
 				offset += sizeof (e.entry_32);
 				if (typeinfo) {
 					offset += (ut64)(e.entry_32.flags & ENTRY_PARAM_COUNT_MASK) * 2;
