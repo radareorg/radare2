@@ -449,7 +449,8 @@ RUN
 
 NAME=x86 - pdj 4
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-EXPECT='[
+EXPECT=<<EOF
+[
   {
     "offset": 134513408,
     "esil": "ebp,ebp,^=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
@@ -525,7 +526,7 @@ EXPECT='[
 ]
 
 
-'
+EOF
 CMDS=<<EOF
 pdj 4~{}
 ?e

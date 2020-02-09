@@ -77,8 +77,9 @@ RUN
 NAME=MSVC import symbol demangling
 FILE=../bins/pe/libzmq-v100-mt-4_0_4.dll
 CMDS=f~0x1004e0f4[2]
-EXPECT='sym.imp.MSVCP100.dll_public:_void___thiscall_std::basic_ostream_char__struct_std::char_traits_char__::_Osfx_void
-'
+EXPECT=<<EOF
+sym.imp.MSVCP100.dll_public:_void___thiscall_std::basic_ostream_char__struct_std::char_traits_char__::_Osfx_void
+EOF
 RUN
 
 NAME=C++ demangle relocs
@@ -106,16 +107,18 @@ RUN
 
 NAME=demangle in irj
 FILE=../bins/elf/demangle-test-cpp
-EXPECT='{"name":"_ZSt20__throw_length_errorPKc","demname":"std::__throw_length_error(char const*)","type":"SET_64","vaddr":16424,"paddr":12328,"is_ifunc":false}
-'
+EXPECT=<<EOF
+{"name":"_ZSt20__throw_length_errorPKc","demname":"std::__throw_length_error(char const*)","type":"SET_64","vaddr":16424,"paddr":12328,"is_ifunc":false}
+EOF
 CMDS=irj~{9}
 RUN
 
 NAME=demangle obj in pd
 FILE=../bins/elf/ch25.bin
-EXPECT='            0x08048aac      c7042460b004.  mov dword [esp], obj.std::cerr ; sym..bss
+EXPECT=<<EOF
+            0x08048aac      c7042460b004.  mov dword [esp], obj.std::cerr ; sym..bss
                                                                        ; [0x804b060:4]=0
-'
+EOF
 CMDS=pd 1 @0x08048aac
 RUN
 

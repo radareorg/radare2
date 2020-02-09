@@ -449,9 +449,10 @@ RUN
 
 NAME=pdj 3 @ main
 FILE=../bins/elf/analysis/main
-EXPECT='[{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
+EXPECT=<<EOF
+[{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
 
-'
+EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -461,9 +462,10 @@ RUN
 
 NAME=pdj -3 @ 0x0040050f
 FILE=../bins/elf/analysis/main
-EXPECT='[{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
+EXPECT=<<EOF
+[{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
 
-'
+EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -473,9 +475,10 @@ RUN
 
 NAME=pdj str in opcode
 FILE=../bins/java/Hello.class
-EXPECT='[{"offset":686,"esil":"","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc \"World\"","disasm":"ldc \"World\"","bytes":"120b","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":2138640}]
+EXPECT=<<EOF
+[{"offset":686,"esil":"","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc \"World\"","disasm":"ldc \"World\"","bytes":"120b","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":2138640}]
 
-'
+EOF
 CMDS=<<EOF
 pdj 1 @ 0x000002ae
 EOF
@@ -1239,8 +1242,9 @@ RUN
 
 NAME=pdJ 2
 FILE=malloc://128
-EXPECT='[{"offset":0,"text":"  0x00000000      90             nop"},{"offset":1,"text":"  0x00000001      90             nop"}]
-'
+EXPECT=<<EOF
+[{"offset":0,"text":"  0x00000000      90             nop"},{"offset":1,"text":"  0x00000001      90             nop"}]
+EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -1252,10 +1256,11 @@ RUN
 
 NAME=pdJ comments
 FILE=malloc://128
-EXPECT='[{"offset":0,"text":"  0x00000000      90             nop                                   ; test"}]
+EXPECT=<<EOF
+[{"offset":0,"text":"  0x00000000      90             nop                                   ; test"}]
 [{"offset":0,"text":"  0x00000000      90             nop                                   ; test \"with quotes\""}]
 [{"offset":0,"text":"  ; test \"with quotes\"\n"},{"offset":0,"text":"  0x00000000      90             nop"}]
-'
+EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -1272,8 +1277,9 @@ RUN
 
 NAME=pdJ string comment
 FILE=../bins/elf/analysis/main
-EXPECT='[{"offset":4195594,"text":"|           0x0040050a      bfc4054000     mov edi, str.Hello_World    ; 0x4005c4 ; \"Hello World\""}]
-'
+EXPECT=<<EOF
+[{"offset":4195594,"text":"|           0x0040050a      bfc4054000     mov edi, str.Hello_World    ; 0x4005c4 ; \"Hello World\""}]
+EOF
 CMDS=<<EOF
 aa
 pdJ 1 @ 0x0040050a
@@ -1282,9 +1288,10 @@ RUN
 
 NAME=pdJ flags
 FILE=../bins/elf/analysis/main
-EXPECT='[{"offset":4195590,"text":"            ;-- main:"},{"offset":4195590,"text":"            0x00400506      55             push rbp"}]
+EXPECT=<<EOF
+[{"offset":4195590,"text":"            ;-- main:"},{"offset":4195590,"text":"            0x00400506      55             push rbp"}]
 [{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d"},{"offset":4195590,"text":"/ 16: int main (int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push rbp"}]
-'
+EOF
 CMDS=<<EOF
 s main
 pdJ 1 @ 0x00400506
@@ -1295,8 +1302,9 @@ RUN
 
 NAME=pdJ midflags reloc
 FILE=malloc://8
-EXPECT='[{"offset":0,"text":"(reloc.test)"},{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
-'
+EXPECT=<<EOF
+[{"offset":0,"text":"(reloc.test)"},{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
+EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -1307,8 +1315,9 @@ RUN
 
 NAME=pdJ string
 FILE=malloc://128
-EXPECT='[{"offset":0,"text":"            0x00000000     .string \"Snoo\\\"ping as\\\" usual,\" ; len=30"}]
-'
+EXPECT=<<EOF
+[{"offset":0,"text":"            0x00000000     .string \"Snoo\\\"ping as\\\" usual,\" ; len=30"}]
+EOF
 CMDS=<<EOF
 w Snoo"ping as" usual,
 \I see...
@@ -1319,8 +1328,9 @@ RUN
 
 NAME=pdJ str in opcode
 FILE=../bins/java/Hello.class
-EXPECT='[{"offset":686,"text":"            0x000002ae      120b           ldc \"World\""}]
-'
+EXPECT=<<EOF
+[{"offset":686,"text":"            0x000002ae      120b           ldc \"World\""}]
+EOF
 CMDS=<<EOF
 pdJ 1 @ 0x000002ae
 EOF
@@ -1328,24 +1338,28 @@ RUN
 
 NAME=pdJ asm.cmt.right=0 + html
 FILE=../bins/elf/crackme0x05
-CMDS='aaa
+CMDS=<<EOF
+aaa
 e asm.cmt.right=0
 e scr.colors=1
 e scr.html=1
 e str.escbslash=1
 pdJ 1 @ 0x08048532
-'
-EXPECT='[{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;[0x8048679:4]=0x73736150"},{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;\"Password&nbsp;Incorrect!\\n\""},{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x08048532&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c70424798604.&nbsp;&nbsp;mov&nbsp;dword&nbsp;[esp],&nbsp;str.Password_Incorrect"}]
-'
+EOF
+EXPECT=<<EOF
+[{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;[0x8048679:4]=0x73736150"},{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;\"Password&nbsp;Incorrect!\\n\""},{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x08048532&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c70424798604.&nbsp;&nbsp;mov&nbsp;dword&nbsp;[esp],&nbsp;str.Password_Incorrect"}]
+EOF
 RUN
 
 NAME=pdJ asm.cmt.right=0 fcn name
 FILE=../bins/elf/crackme0x05
-EXPECT='[{"offset":134514169,"arrow":134514133,"text":"|       `=< 0x080485f9      72da           if (((unsigned) var) < 0) goto 0x80485d5"}]
+EXPECT=<<EOF
+[{"offset":134514169,"arrow":134514133,"text":"|       `=< 0x080485f9      72da           if (((unsigned) var) < 0) goto 0x80485d5"}]
 [{"offset":134513644,"text":"            ; sym.imp.__libc_start_main"},{"offset":134513644,"text":"            ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"},{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[],eip,="}]
 [{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[],eip,= ; sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"}]
-'
-CMDS='af@sym.imp.__libc_start_main
+EOF
+CMDS=<<EOF
+af@sym.imp.__libc_start_main
 af@0x080485a0
 e asm.pseudo=1
 e asm.cmt.right=0
@@ -1354,7 +1368,7 @@ e asm.esil=1
 pdJ 1 @ 0x080483ec
 e asm.cmt.right=1
 pdJ 1 @ 0x080483ec
-'
+EOF
 RUN
 
 NAME=pdJ asm.emu=1 comment
@@ -1376,7 +1390,8 @@ EXPECT=<<EOF
             [32m0x080484aa[0m      [37mb8[37me1[37m85[37m04[37m08[0m     [37mmov[36m eax[0m,[36m[36m [33m0x80485e1[0m[0m[0m[31m          ; eax=0x80485e1 [7m"%ls"[27m[0m
 [{"offset":134513834,"text":"            \u001b[32m0x080484aa\u001b[0m      \u001b[37mb8\u001b[37me1\u001b[37m85\u001b[37m04\u001b[37m08\u001b[0m     \u001b[37mmov\u001b[36m eax\u001b[0m,\u001b[36m\u001b[36m \u001b[33m0x80485e1\u001b[0m\u001b[0m\u001b[0m\u001b[31m          ; eax=0x80485e1 \u001b[7m\"%ls\"\u001b[27m\u001b[0m"}]
 EOF
-CMDS='s 0x080484aa
+CMDS=<<EOF
+s 0x080484aa
 e asm.emu=1
 e scr.color=0
 pd 1
@@ -1384,15 +1399,17 @@ pdJ 1
 e scr.color=1
 pd 1
 pdJ 1
-'
+EOF
 RUN
 
 NAME=pdJ asm.xrefs.fold asm.xrefs.max
 FILE=-
-EXPECT='[{"offset":0,"text":"            ; XREFS: CODE 0x00000001  "},{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
+EXPECT=<<EOF
+[{"offset":0,"text":"            ; XREFS: CODE 0x00000001  "},{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
 [{"offset":0,"text":"            ; XREFS(1)"},{"offset":0,"text":"            0x00000000      0000           add byte [rax], al"}]
-'
-CMDS='s 0
+EOF
+CMDS=<<EOF
+s 0
 e asm.arch=x86
 e asm.bits=64
 axc 0 1
@@ -1402,15 +1419,17 @@ pdJ 1
 e asm.xrefs.fold=5
 e asm.xrefs.max=0
 pdJ 1
-'
+EOF
 RUN
 
 NAME=pdJ escape flagname
 FILE=../bins/elf/crackme
-EXPECT='[{"offset":4196399,"text":"            ;-- str.Password_Correct:"},{"offset":4196399,"text":"            0x0040082f     .string \"Password Correct!\" ; len=18"}]
-'
-CMDS='pdJ 1 @ 0x0040082f
-'
+EXPECT=<<EOF
+[{"offset":4196399,"text":"            ;-- str.Password_Correct:"},{"offset":4196399,"text":"            0x0040082f     .string \"Password Correct!\" ; len=18"}]
+EOF
+CMDS=<<EOF
+pdJ 1 @ 0x0040082f
+EOF
 RUN
 
 NAME=pd0~{} - crash
@@ -1631,30 +1650,34 @@ RUN
 
 NAME=pd bin.str.filter
 FILE=../bins/elf/analysis/ls2
-CMDS='e asm.bytes=false
+CMDS=<<EOF
+e asm.bytes=false
 e asm.cmt.off=false
 s 0x004028e0
 e bin.str.filter=
 pd 1
 e bin.str.filter=U
 pd 1
-'
-EXPECT='            0x004028e0      mov esi, str.usr_share_locale              ; "/usr/share/locale"
+EOF
+EXPECT=<<EOF
+            0x004028e0      mov esi, str.usr_share_locale              ; "/usr/share/locale"
             0x004028e0      mov esi, str.usr_share_locale
-'
+EOF
 RUN
 
 NAME=emu.str dup str/flag cmt fix
 FILE=../bins/elf/analysis/ls2
-CMDS='e emu.str=true
+CMDS=<<EOF
+e emu.str=true
 e asm.filter=true
 pd 1 @ 0x00402a5f
 e asm.filter=false
 pd 1 @ 0x00402a5f
-'
-EXPECT='            0x00402a5f      bfdf4f4100     mov edi, str.COLUMNS        ; 0x414fdf ; "COLUMNS"
+EOF
+EXPECT=<<EOF
+            0x00402a5f      bfdf4f4100     mov edi, str.COLUMNS        ; 0x414fdf ; "COLUMNS"
             0x00402a5f      bfdf4f4100     mov edi, 0x414fdf           ; str.COLUMNS ; "COLUMNS"
-'
+EOF
 RUN
 
 NAME=emu.strinv
@@ -1716,59 +1739,69 @@ RUN
 
 NAME=ctrl chars
 FILE=../bins/elf/strenc-ctrlchars
-CMDS='e asm.bytes=false
+CMDS=<<EOF
+e asm.bytes=false
 e asm.cmt.off=false
 pd 1 @ 0x0040040b
-'
-EXPECT='            0x0040040b      mov edi, str.Control_chars:                ; "Control chars: \b\v\f\n\r\t\a"
-'
+EOF
+EXPECT=<<EOF
+            0x0040040b      mov edi, str.Control_chars:                ; "Control chars: \b\v\f\n\r\t\a"
+EOF
 RUN
 
 NAME=data ref with no analop.ptr (#9610)
 FILE=../bins/firmware/main.bin
-CMDS='f str.hello 12 @ 0x276
+CMDS=<<EOF
+f str.hello 12 @ 0x276
 axd str.hello @ 0x260
 pd 1 @ 0x260
-'
-EXPECT='            0x00000260      80e0           ldi r24, 0x00               ; 0x276 ; "hello world!"
-'
+EOF
+EXPECT=<<EOF
+            0x00000260      80e0           ldi r24, 0x00               ; 0x276 ; "hello world!"
+EOF
 RUN
 
 NAME=@b and @addr should coexist
 FILE=../bins/firmware/armthumb.bin
 ARGS=-aarm -b32
-CMDS='pd 1 @b:32 @0xc
-'
-EXPECT='            0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
-'
+CMDS=<<EOF
+pd 1 @b:32 @0xc
+EOF
+EXPECT=<<EOF
+            0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
+EOF
 RUN
 
 NAME=ahb should not be deleted with @b (#9751)
 FILE=../bins/firmware/armthumb.bin
 ARGS=-aarm -b32
-CMDS='ahb 16 @0xc
+CMDS=<<EOF
+ahb 16 @0xc
 ah*
 pd 1 @b:32 @0xc
 ah*
-'
-EXPECT='ahb 16 @ 0xc
+EOF
+EXPECT=<<EOF
+ahb 16 @ 0xc
             0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
 ahb 16 @ 0xc
-'
+EOF
 RUN
 
 NAME=ahb should not override @b
 FILE=../bins/firmware/armthumb.bin
 ARGS=-aarm -b32
-CMDS='ahb 16 @0xc
+CMDS=<<EOF
+ahb 16 @0xc
 pd 5 @b:32
-'
-EXPECT='            0x00000000      0000a0e1       mov r0, r0
+EOF
+EXPECT=<<EOF
+            0x00000000      0000a0e1       mov r0, r0
             0x00000004      010000eb       bl 0x10
         @-> 0x00000008      feffffea       b 8
             0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
             0x00000010      00c09fe5       ldr ip, [pc]                ; [0x18:4]=13 ; 24
-'
+EOF
 RUN
 
 NAME=two-operand line highlight; asm.highlight ecHw fix; ec wordhl/linehl
@@ -2141,7 +2174,8 @@ RUN
 
 NAME=pd grep chain fail
 FILE=malloc://8
-EXPECT=''
+EXPECT=<<EOF
+EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

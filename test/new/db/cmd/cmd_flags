@@ -246,8 +246,9 @@ RUN
 
 NAME=fj
 FILE=malloc://1024
-EXPECT='[{"name":"bloh","size":3,"offset":2},{"name":"blah","size":10,"offset":11}]
-'
+EXPECT=<<EOF
+[{"name":"bloh","size":3,"offset":2},{"name":"blah","size":10,"offset":11}]
+EOF
 CMDS=<<EOF
 f blah 0x0000000a @ 0x0000000b
 f bloh 0x00000003 @ 0x00000002
@@ -439,8 +440,9 @@ RUN
 
 NAME=flags (JSON)
 FILE=-
-EXPECT='[{"name":"cat","size":1,"offset":0},{"name":"rimmer","size":12,"offset":0},{"name":"skutter","size":1,"offset":12},{"name":"lister","size":32,"offset":666},{"name":"kryten","size":32,"offset":666}]
-'
+EXPECT=<<EOF
+[{"name":"cat","size":1,"offset":0},{"name":"rimmer","size":12,"offset":0},{"name":"skutter","size":1,"offset":12},{"name":"lister","size":32,"offset":666},{"name":"kryten","size":32,"offset":666}]
+EOF
 CMDS=<<EOF
 # Add flags.
 f cat

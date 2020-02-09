@@ -3,10 +3,11 @@ FILE=../bins/elf/pngrutil_o
 CMDS=<<EOF
 ie
 EOF
-EXPECT='[Entrypoints]
+EXPECT=<<EOF
+[Entrypoints]
 
 0 entrypoints
-'
+EOF
 RUN
 
 
