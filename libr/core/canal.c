@@ -9,17 +9,6 @@
 
 #include <string.h>
 
-#define HINTCMD_ADDR(hint,x,y) if((hint)->x) \
-	r_cons_printf (y" @ 0x%"PFMT64x"\n", (hint)->x, (hint)->addr)
-#define HINTCMD(hint,x,y) if((hint)->x) \
-	r_cons_printf (y"", (hint)->x)
-
-typedef struct {
-	RAnal *a;
-	int mode;
-	PJ *pj;
-} HintListState;
-
 // used to speedup strcmp with rconfig.get in loops
 enum {
 	R2_ARCH_THUMB,
@@ -1007,7 +996,28 @@ err_op:
 	return NULL;
 }
 
-static void print_hint_h_format(RAnalHint* hint) {
+// Node for tree-sorting anal hints or collecting hint records at a single addr
+typedef struct {
+	RBNode rb;
+	ut64 addr;
+	enum {
+		HINT_NODE_ADDR,
+		HINT_NODE_ARCH,
+		HINT_NODE_BITS
+	} type;
+	union {
+		const RVector/*<const RAnalAddrHintRecord>*/ *addr_hints;
+		const char *arch;
+		int bits;
+	};
+} HintNode;
+
+#define HINTCMD_ADDR(hint,fmt,x) r_cons_printf (fmt" @ 0x%"PFMT64x"\n", x, (hint)->addr)
+#define HINTCMD(hint,fmt,x) r_cons_printf (fmt"", x)
+
+static void print_hint_h_format(HintNode *node) {
+#if 0
+	// TODO
 	r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x" =>", hint->addr, hint->addr + hint->size);
 	HINTCMD (hint, arch, " arch='%s'");
 	HINTCMD (hint, bits, " bits=%d");
@@ -1043,45 +1053,84 @@ static void print_hint_h_format(RAnalHint* hint) {
 		r_cons_printf (" stackframe=0x%"PFMT64x, hint->stackframe);
 	}
 	r_cons_newline ();
+#endif
 }
 
 // if mode == 'j', pj must be an existing PJ!
-static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
+static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 	switch (mode) {
 	case '*':
-		HINTCMD_ADDR (hint, arch, "aha %s");
-		HINTCMD_ADDR (hint, bits, "ahb %d");
-		if (hint->type) {
-			const char *type = r_anal_optype_to_string (hint->type);
-			if (type) {
-				r_cons_printf ("aho %s @ 0x%"PFMT64x"\n", type, hint->addr);
+		switch (node->type) {
+		case HINT_NODE_ADDR: {
+			const RAnalAddrHintRecord *record;
+			r_vector_foreach (node->addr_hints, record) {
+				switch (record->type) {
+				case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
+					HINTCMD_ADDR (node, "ahi %d", record->immbase);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_JUMP:
+					HINTCMD_ADDR (node, "ahc 0x%"PFMT64x, record->jump);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_FAIL:
+					HINTCMD_ADDR (node, "ahf 0x%"PFMT64x, record->fail);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_STACKFRAME:
+					HINTCMD_ADDR (node, "ahF 0x%"PFMT64x, record->stackframe);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_PTR:
+					HINTCMD_ADDR (node, "ahp 0x%"PFMT64x, record->ptr);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_NWORD:
+					// no command for this
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_RET:
+					HINTCMD_ADDR (node, "ahr 0x%"PFMT64x, record->retval);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_NEW_BITS:
+					// no command for this
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_SIZE:
+					HINTCMD_ADDR (node, "ahs 0x%"PFMT64x, record->size);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_SYNTAX:
+					HINTCMD_ADDR (node, "ahS %s", record->syntax); // TODO: escape for newcmd
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_OPTYPE: {
+					const char *type = r_anal_optype_to_string (record->optype);
+					if (type) {
+						HINTCMD_ADDR (node, "aho %s", type); // TODO: escape for newcmd
+					}
+					break;
+				}
+				case R_ANAL_ADDR_HINT_TYPE_OPCODE:
+					HINTCMD_ADDR (node, "ahd %s", record->opcode);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
+					HINTCMD_ADDR (node, "aht %s", record->type_offset); // TODO: escape for newcmd
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_ESIL:
+					HINTCMD_ADDR (node, "ahe %s", record->esil); // TODO: escape for newcmd
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_HIGH:
+					r_cons_printf ("ahh @ 0x%"PFMT64x"\n", node->addr);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_VAL:
+					// no command for this
+					break;
+				}
 			}
+			break;
 		}
-		HINTCMD_ADDR (hint, size, "ahs %d");
-		HINTCMD_ADDR (hint, opcode, "ahd %s");
-		HINTCMD_ADDR (hint, syntax, "ahS %s");
-		HINTCMD_ADDR (hint, immbase, "ahi %d");
-		HINTCMD_ADDR (hint, esil, "ahe %s");
-		HINTCMD_ADDR (hint, ptr, "ahp 0x%" PFMT64x);
-		if (hint->offset) {
-			r_cons_printf ("aht %s @ Ox%" PFMT64x "\n", hint->offset, hint->addr);
-		}
-		if (hint->jump != UT64_MAX) {
-			r_cons_printf ("ahc 0x%" PFMT64x " @ 0x%" PFMT64x "\n", hint->jump, hint->addr);
-		}
-		if (hint->fail != UT64_MAX) {
-			r_cons_printf ("ahf 0x%" PFMT64x " @ 0x%" PFMT64x "\n", hint->fail, hint->addr);
-		}
-		if (hint->ret != UT64_MAX) {
-			r_cons_printf ("ahr 0x%" PFMT64x " @ 0x%" PFMT64x "\n", hint->ret, hint->addr);
-		}
-		if (hint->high) {
-			r_cons_printf ("ahh @ 0x%" PFMT64x "\n", hint->addr);
-		}
-		if (hint->stackframe != UT64_MAX) {
-			r_cons_printf ("ahF 0x%" PFMT64x " @ 0x%" PFMT64x "\n", hint->stackframe, hint->addr);
+		case HINT_NODE_ARCH:
+			HINTCMD_ADDR (node, "aha %s", node->arch);
+			break;
+		case HINT_NODE_BITS:
+			HINTCMD_ADDR (node, "ahb %d", node->bits);
+			break;
 		}
 		break;
+#if 0
+	// TODO
 	case 'j':
 		pj_o (pj);
 		pj_kn (pj, "from", hint->addr);
@@ -1136,40 +1185,31 @@ static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
 		}
 		pj_end (pj);
 		break;
+#endif
 	default:
-		print_hint_h_format (hint);
+		print_hint_h_format (node);
 		break;
 	}
 }
 
 R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
-	RAnalHint *hint = r_anal_hint_get (a, addr);
-	if (!hint) {
-		return;
-	}
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = pj_new ();
 		pj_a (pj);
 	}
-	anal_hint_print (hint, mode, pj);
+	// TODO:
+	// hint_node_print (hint, mode, pj);
 	if (pj) {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	}
-	free (hint);
 }
 
-// TODO: move to r_util
-typedef struct {
-	RBNode rb;
-	ut64 addr;
-} AddrNode;
-
-int addr_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
+int hint_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 ia = *(ut64 *)incoming;
-	ut64 ta = container_of (in_tree, const AddrNode, rb)->addr;
+	ut64 ta = container_of (in_tree, const HintNode, rb)->addr;
 	if (ia < ta) {
 		return -1;
 	} else if (ia > ta) {
@@ -1178,39 +1218,45 @@ int addr_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	return 0;
 }
 
-static void addr_tree_add_addr(RBTree *tree, ut64 addr) {
-	if (r_rbtree_find (*tree, &addr, addr_node_cmp, NULL)) {
-		return;
-	}
-	AddrNode *node = R_NEW0 (AddrNode);
-	if (!node) {
-		return;
-	}
-	node->addr = addr;
-	r_rbtree_insert (tree, &addr, &node->rb, addr_node_cmp, NULL);
-}
-
 bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ *records, void *user) {
-	addr_tree_add_addr (user, addr);
+	HintNode *node = R_NEW0 (HintNode);
+	if (!node) {
+		return false;
+	}
+	node->type = HINT_NODE_ADDR;
+	node->addr_hints = records;
+	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
 	return true;
 }
 
 bool print_arch_hint_cb(ut64 addr, R_NULLABLE const char *arch, void *user) {
-	addr_tree_add_addr (user, addr);
+	HintNode *node = R_NEW0 (HintNode);
+	if (!node) {
+		return false;
+	}
+	node->type = HINT_NODE_ARCH;
+	node->arch = arch;
+	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
 	return true;
 }
 
 bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
-	addr_tree_add_addr (user, addr);
+	HintNode *node = R_NEW0 (HintNode);
+	if (!node) {
+		return false;
+	}
+	node->type = HINT_NODE_BITS;
+	node->bits = bits;
+	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
 	return true;
 }
 
 R_API void r_core_anal_hint_list(RAnal *a, int mode) {
-	RBTree addr_tree = NULL;
-	// Collect all addrs that have hints in the addr_tree, which will automatically sort them
-	r_anal_addr_hints_foreach (a, print_addr_hint_cb, &addr_tree);
-	r_anal_arch_hints_foreach (a, print_arch_hint_cb, &addr_tree);
-	r_anal_bits_hints_foreach (a, print_bits_hint_cb, &addr_tree);
+	RBTree tree = NULL;
+	// Collect all hints in the tree to sort them
+	r_anal_addr_hints_foreach (a, print_addr_hint_cb, &tree);
+	r_anal_arch_hints_foreach (a, print_arch_hint_cb, &tree);
+	r_anal_bits_hints_foreach (a, print_bits_hint_cb, &tree);
 
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -1218,13 +1264,9 @@ R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 		pj_a (pj);
 	}
 	RBIter it;
-	AddrNode *node;
-	r_rbtree_foreach (addr_tree, it, node, AddrNode, rb) {
-		RAnalHint *hint = r_anal_hint_get (a, node->addr);
-		if (!hint) {
-			continue;
-		}
-		anal_hint_print (hint, mode, pj);
+	HintNode *node;
+	r_rbtree_foreach (tree, it, node, HintNode, rb) {
+		hint_node_print (node, mode, pj);
 	}
 	if (pj) {
 		pj_end (pj);
