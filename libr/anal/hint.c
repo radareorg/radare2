@@ -514,5 +514,10 @@ R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
 	const char *arch = r_anal_hint_arch_at (a, addr);
 	hint->arch = arch ? strdup (arch) : NULL;
 	hint->bits = r_anal_hint_bits_at (a, addr);
+	if ((!records || r_vector_empty (records)) && !hint->arch && !hint->bits) {
+		// no hints found
+		free (hint);
+		return NULL;
+	}
 	return hint;
 }
