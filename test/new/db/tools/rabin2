@@ -50,7 +50,8 @@ RUN
 NAME=rabin -k file
 FILE=../bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -k ${R2_FILE}
-EXPECT=''
+EXPECT=<<EOF
+EOF
 EXPECT_ERR=Missing file.
 RUN
 
@@ -375,7 +376,8 @@ RUN
 NAME=rabin2 -ee -j
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=!!rabin2 -ee -j ${R2_FILE}~{}
-EXPECT='{
+EXPECT=<<EOF
+{
   "initfini": [
     {
       "vaddr": 134513616,
@@ -396,7 +398,8 @@ EXPECT='{
       "type": "fini"
     }
   ]
-}'
+}
+EOF
 RUN
 
 NAME=-ee baddr 0

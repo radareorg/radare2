@@ -1,7 +1,8 @@
 NAME=java prototypes in json
 FILE=../bins/java/jdwpexeccmd.class
-EXPECT='{"access_flags":33,"is_public":1,"is_final":0,"is_super":1,"is_interface":0,"is_abstract":0,"is_synthetic":0,"is_annotation":0,"is_enum":0,"name":"JDWPExecCmd","super":"java/lang/Object","interfaces":[],"methods":[],"fields":[],"imports":[]}
-'
+EXPECT=<<EOF
+{"access_flags":33,"is_public":1,"is_final":0,"is_super":1,"is_interface":0,"is_abstract":0,"is_synthetic":0,"is_annotation":0,"is_enum":0,"name":"JDWPExecCmd","super":"java/lang/Object","interfaces":[],"methods":[],"fields":[],"imports":[]}
+EOF
 CMDS=<<EOF
 java prototypes j
 EOF

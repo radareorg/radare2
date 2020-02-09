@@ -2850,8 +2850,9 @@ RUN
 
 NAME=arj x86 32 bits
 FILE=malloc://0x100
-EXPECT='{"oeax":0,"eax":0,"ebx":0,"ecx":0,"edx":0,"esi":0,"edi":0,"esp":0,"ebp":0,"eip":0,"eflags":0}
-'
+EXPECT=<<EOF
+{"oeax":0,"eax":0,"ebx":0,"ecx":0,"edx":0,"esi":0,"edi":0,"esp":0,"ebp":0,"eip":0,"eflags":0}
+EOF
 CMDS=<<EOF
 e asm.arch = x86
 e anal.arch = x86
@@ -3094,7 +3095,8 @@ RUN
 
 NAME=aoj 31c0
 FILE=-
-EXPECT='[
+EXPECT=<<EOF
+[
   {
     "opcode": "xor eax, eax",
     "disasm": "xor eax, eax",
@@ -3136,7 +3138,7 @@ EXPECT='[
     "family": "cpu"
   }
 ]
-'
+EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32

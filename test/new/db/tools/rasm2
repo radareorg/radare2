@@ -441,8 +441,9 @@ RUN
 NAME=rasm2 -a x86 -b 64 -Aj 0x55
 FILE=-
 CMDS=!rasm2 -a x86 -b 64 -Aj 0x55
-EXPECT='[{"opcode":0,"bytes":"55","type":"rpush","stackop":"unknown","esil":"rbp,8,rsp,-,=[8],8,rsp,-=","stackptr":8}]
-'
+EXPECT=<<EOF
+[{"opcode":0,"bytes":"55","type":"rpush","stackop":"unknown","esil":"rbp,8,rsp,-,=[8],8,rsp,-=","stackptr":8}]
+EOF
 RUN
 
 NAME=rasm2 -L
