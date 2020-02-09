@@ -100,7 +100,8 @@ NAME=no-nl-at-eof script
 FILE=-
 CMDS=!radare2 -i scripts/no-nl-at-eof.r2 -NQ -
 EXPECT=1
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+EOF
 RUN
 
 NAME=radare2 -i -Q with missing script
