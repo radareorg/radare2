@@ -1239,19 +1239,8 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 	}
 }
 
-R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
-	PJ *pj = NULL;
-	if (mode == 'j') {
-		pj = pj_new ();
-		pj_a (pj);
-	}
-	// TODO:
-	// hint_node_print (hint, mode, pj);
-	if (pj) {
-		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
-	}
+void hint_node_free(RBNode *node, void *user) {
+	free (container_of (node, HintNode, rb));
 }
 
 int hint_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
@@ -1270,6 +1259,7 @@ bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ 
 	if (!node) {
 		return false;
 	}
+	node->addr = addr;
 	node->type = HINT_NODE_ADDR;
 	node->addr_hints = records;
 	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
@@ -1281,6 +1271,7 @@ bool print_arch_hint_cb(ut64 addr, R_NULLABLE const char *arch, void *user) {
 	if (!node) {
 		return false;
 	}
+	node->addr = addr;
 	node->type = HINT_NODE_ARCH;
 	node->arch = arch;
 	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
@@ -1292,19 +1283,14 @@ bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
 	if (!node) {
 		return false;
 	}
+	node->addr = addr;
 	node->type = HINT_NODE_BITS;
 	node->bits = bits;
 	r_rbtree_insert (user, &addr, &node->rb, hint_node_cmp, NULL);
 	return true;
 }
 
-R_API void r_core_anal_hint_list(RAnal *a, int mode) {
-	RBTree tree = NULL;
-	// Collect all hints in the tree to sort them
-	r_anal_addr_hints_foreach (a, print_addr_hint_cb, &tree);
-	r_anal_arch_hints_foreach (a, print_arch_hint_cb, &tree);
-	r_anal_bits_hints_foreach (a, print_bits_hint_cb, &tree);
-
+static void print_hint_tree(RBTree tree, int mode) {
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = pj_new ();
@@ -1319,6 +1305,35 @@ R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
 	}
+}
+
+R_API void r_core_anal_hint_list(RAnal *a, int mode) {
+	RBTree tree = NULL;
+	// Collect all hints in the tree to sort them
+	r_anal_addr_hints_foreach (a, print_addr_hint_cb, &tree);
+	r_anal_arch_hints_foreach (a, print_arch_hint_cb, &tree);
+	r_anal_bits_hints_foreach (a, print_bits_hint_cb, &tree);
+	print_hint_tree (tree, mode);
+	r_rbtree_free (tree, hint_node_free, NULL);
+}
+
+R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
+	RBTree tree = NULL;
+	const RVector *addr_hints = r_anal_addr_hints_at (a, addr);
+	if (addr_hints) {
+		print_addr_hint_cb (addr, addr_hints, &tree);
+	}
+	ut64 hint_addr = UT64_MAX;
+	const char *arch = r_anal_hint_arch_at(a, addr, &hint_addr);
+	if (hint_addr != UT64_MAX) {
+		print_arch_hint_cb (hint_addr, arch, NULL);
+	}
+	int bits = r_anal_hint_bits_at (a, addr, &hint_addr);
+	if (hint_addr != UT64_MAX) {
+		print_bits_hint_cb (hint_addr, bits, NULL);
+	}
+	print_hint_tree (tree, mode);
+	r_rbtree_free (tree, hint_node_free, NULL);
 }
 
 static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {

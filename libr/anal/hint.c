@@ -381,21 +381,33 @@ R_API void r_anal_hint_free(RAnalHint *h) {
 	}
 }
 
-R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr) {
+R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr) {
 	RBNode *node = r_rbtree_upper_bound (anal->arch_hints, &addr, ranged_hint_record_cmp, NULL);
 	if (!node) {
+		if (hint_addr) {
+			*hint_addr = UT64_MAX;
+		}
 		return NULL;
 	}
 	RAnalArchHintRecord *record = (RAnalArchHintRecord *)container_of (node, RAnalRangedHintRecordBase, rb);
+	if (hint_addr) {
+		*hint_addr = record->base.addr;
+	}
 	return record->arch;
 }
 
-R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr) {
+R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr) {
 	RBNode *node = r_rbtree_upper_bound (anal->bits_hints, &addr, ranged_hint_record_cmp, NULL);
 	if (!node) {
+		if (hint_addr) {
+			*hint_addr = UT64_MAX;
+		}
 		return 0;
 	}
 	RAnalBitsHintRecord *record = (RAnalBitsHintRecord *)container_of (node, RAnalRangedHintRecordBase, rb);
+	if (hint_addr) {
+		*hint_addr = record->base.addr;
+	}
 	return record->bits;
 }
 
@@ -511,9 +523,9 @@ R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
 			hint_merge (hint, record);
 		}
 	}
-	const char *arch = r_anal_hint_arch_at (a, addr);
+	const char *arch = r_anal_hint_arch_at (a, addr, NULL);
 	hint->arch = arch ? strdup (arch) : NULL;
-	hint->bits = r_anal_hint_bits_at (a, addr);
+	hint->bits = r_anal_hint_bits_at (a, addr, NULL);
 	if ((!records || r_vector_empty (records)) && !hint->arch && !hint->bits) {
 		// no hints found
 		free (hint);

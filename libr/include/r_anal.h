@@ -1850,8 +1850,17 @@ typedef bool (*RAnalArchHintCb)(ut64 addr, R_NULLABLE const char *arch, void *us
 R_API void r_anal_arch_hints_foreach(RAnal *anal, RAnalArchHintCb cb, void *user);
 typedef bool (*RAnalBitsHintCb)(ut64 addr, int bits, void *user);
 R_API void r_anal_bits_hints_foreach(RAnal *anal, RAnalBitsHintCb cb, void *user);
-R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr);
-R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr);
+
+// get the hint-specified arch value to be considered at addr
+// hint_addr will optionally be set to the address where the hint that specifies this arch is placed or UT64_MAX
+// if there is no hint affecting addr.
+R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr);
+
+// get the hint-specified bits value to be considered at addr
+// hint_addr will optionally be set to the address where the hint that specifies this arch is placed or UT64_MAX
+// if there is no hint affecting addr.
+R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr);
+
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr); // accumulate all available hints affecting the given address
 
 /* switch.c APIs */

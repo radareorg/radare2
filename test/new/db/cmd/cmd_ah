@@ -1,12 +1,10 @@
 NAME=ah- offset
 FILE=-
-EXPECT=<<EOF
-before:
- 0x00000000 - 0x00000000 => immbase=10
- 0x00000010 - 0x00000010 => immbase=8
+EXPECT='before:
+ 0x00000000 => immbase=10
+ 0x00000010 => immbase=8
 after:
- 0x00000000 - 0x00000000 => immbase=10
-EOF
+ 0x00000000 => immbase=10'
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16
@@ -20,13 +18,11 @@ RUN
 
 NAME=ah-offset
 FILE=-
-EXPECT=<<EOF
-before:
- 0x00000000 - 0x00000000 => immbase=10
- 0x00000010 - 0x00000010 => immbase=8
+EXPECT='before:
+ 0x00000000 => immbase=10
+ 0x00000010 => immbase=8
 after:
- 0x00000000 - 0x00000000 => immbase=10
-EOF
+ 0x00000000 => immbase=10'
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16
