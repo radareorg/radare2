@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
 
@@ -3456,6 +3456,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("tcp.islocal", "false", "Bind a loopback for tcp command server");
 
 	/* graph */
+	SETBPREF ("graph.aeab", "false", "Show aeab info on each basic block instead of disasm");
 	SETBPREF ("graph.trace", "false", "Fold all non-traced basic blocks");
 	SETBPREF ("graph.dummy", "true", "Create dummy nodes in the graph for better layout (20% slower)");
 	SETBPREF ("graph.few", "false", "Show few basic blocks in the graph");
