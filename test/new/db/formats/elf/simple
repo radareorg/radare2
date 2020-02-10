@@ -74,7 +74,8 @@ RUN
 
 NAME=ELF: local symbols
 FILE=../bins/elf/analysis/example.elf
-EXPECT=''
+EXPECT=<<EOF
+EOF
 CMDS=<<EOF
 is*~d_41
 EOF

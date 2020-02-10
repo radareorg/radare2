@@ -88,8 +88,9 @@ RUN
 
 NAME=/j escaped
 FILE=../bins/mach0/escaped
-EXPECT='[{"offset":8019,"type":"string","data":"]c:\\hello\\worldM"}]
-'
+EXPECT=<<EOF
+[{"offset":8019,"type":"string","data":"]c:\\hello\\worldM"}]
+EOF
 CMDS=<<EOF
 /j hello
 EOF
@@ -126,8 +127,9 @@ RUN
 
 NAME=/j search
 FILE=malloc://1024
-EXPECT='[{"offset":0,"type":"string","data":"foo\\"}]
-'
+EXPECT=<<EOF
+[{"offset":0,"type":"string","data":"foo\\"}]
+EOF
 CMDS=<<EOF
 wx 666f6f005c
 /j foo
@@ -537,8 +539,9 @@ RUN
 
 NAME=/mj test json output
 FILE=../bins/elf/analysis/x86-simple
-EXPECT='[{"offset":134512640,"depth":1,"info":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
-'
+EXPECT=<<EOF
+[{"offset":134512640,"depth":1,"info":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
+EOF
 CMDS=<<EOF
 /mj
 EOF
@@ -584,8 +587,9 @@ RUN
 
 NAME=/v4j search 4 byte with json output
 FILE=-
-EXPECT='[{"offset":0,"type":"hexpair","data":"12345678"},{"offset":10,"type":"hexpair","data":"12345678"}]
-'
+EXPECT=<<EOF
+[{"offset":0,"type":"hexpair","data":"12345678"},{"offset":10,"type":"hexpair","data":"12345678"}]
+EOF
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
 /v4j 0x78563412
@@ -605,8 +609,9 @@ RUN
 
 NAME=/V4j search 4 byte with json
 FILE=-
-EXPECT='[{"offset":0,"value":2018915346},{"offset":10,"value":2018915346}]
-'
+EXPECT=<<EOF
+[{"offset":0,"value":2018915346},{"offset":10,"value":2018915346}]
+EOF
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
 /V4j 0x78563412 0x78563420

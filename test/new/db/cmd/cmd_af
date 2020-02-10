@@ -173,7 +173,8 @@ size: 11
 |           0x004017c3      83c108         add ecx, 8
 \           0x004017c6      3d00100000     cmp eax, 0x1000
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+EOF
 RUN
 
 NAME=afb+ with wrong size
@@ -237,11 +238,12 @@ RUN
 
 NAME=afcf
 FILE=../bins/elf/crackme0x05
-CMDS='af@main
+CMDS=<<EOF
+af@main
 afcf main @ 0
 afcf @ main
 afcfj @ main
-'
+EOF
 EXPECT=<<EOF
 int main (int argc, char **argv, char **envp);
 int main (int argc, char **argv, char **envp);
@@ -251,11 +253,12 @@ RUN
 
 NAME=afcf (vars)
 FILE=../bins/elf/ls
-CMDS='s 0x00013c70
+CMDS=<<EOF
+s 0x00013c70
 af
 afcf
 afcfj
-'
+EOF
 EXPECT=<<EOF
 fcn.00013c70 (int64_t arg1, int64_t arg2, int64_t arg3);
 [{"name":"fcn.00013c70","args":[{"name":"arg1","type":"int64_t"},{"name":"arg2","type":"int64_t"},{"name":"arg3","type":"int64_t"}],"count":3}]

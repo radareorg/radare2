@@ -1,7 +1,8 @@
 NAME=arj x86 16 bits
 FILE=malloc://0x100
-EXPECT='{"ip":0,"ax":0,"bx":0,"cx":0,"dx":0,"sp":0,"bp":0,"si":0,"di":0,"flags":0}
-'
+EXPECT=<<EOF
+{"ip":0,"ax":0,"bx":0,"cx":0,"dx":0,"sp":0,"bp":0,"si":0,"di":0,"flags":0}
+EOF
 CMDS=<<EOF
 e asm.arch = x86
 e anal.arch = x86
