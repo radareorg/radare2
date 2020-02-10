@@ -319,7 +319,7 @@ d "mulss xmm0, dword [eax]" f30f5900
 d "mwait" 0f01c9
 d "neg byte [eax]" f618
 d "neg eax" f7d8
-aB "neg eax" f7d8
+a "neg eax" f7d8
 d "nop" 90
 d "not byte [eax]" f610
 d "or al, 0" 0c00
