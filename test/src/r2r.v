@@ -11,6 +11,13 @@ import (
 	radare.r2
 )
 
+/*
+ fn C.r_cons_begin() bool
+ fn C.r_cons_is_breaked() bool
+ fn C.r_cons_break_push(a, b voidptr) bool
+ fn C.r_cons_break_pop() bool
+*/
+
 const (
 	default_jobs = 2
 	default_targets = 'arch json asm fuzz cmd unit'
@@ -29,6 +36,11 @@ fn autodetect_dbpath() string {
 fn r2r_home() string {
 	home := filepath.basedir(os.realpath(os.executable()))
 	return filepath.join(home,'..')
+}
+
+fn control_c() {
+	println('\nInterrupted.')
+	exit(1)
 }
 
 pub fn main() {
@@ -75,6 +87,7 @@ pub fn main() {
 		a.index('/') or { continue }
 		r2r.filter_by_files << a
 	}
+
 	if r2r.interactive {
 		eprintln('Warning: interactive mode not yet implemented in V. Use the node testsuite for this')
 		p := filepath.join(r2r.r2r_home,'new')
@@ -385,6 +398,7 @@ fn (r2r mut R2R) test_fixed(test R2RCmdTest) string {
 }
 
 fn (r2r mut R2R) run_asm_test_native(test R2RAsmTest, dismode bool) {
+	r2r.r2.break_begin()
 	test_expect := if dismode { test.inst.trim_space() } else { test.data.trim_space() }
 	time_start := time.ticks()
 	r2r.r2.cmd('e asm.arch=${test.arch}')
@@ -427,6 +441,10 @@ fn (r2r mut R2R) run_asm_test_native(test R2RAsmTest, dismode bool) {
 	times := time_end - time_start
 	if !r2r.show_quiet || !mark.contains('OK') {
 		println('[${mark}] ${test.mode} (time ${times}) ${test.arch} ${test.bits} : ${test.data} ${test.inst}')
+	}
+	if r2r.r2.break_end() {
+		eprintln('Interrupted')
+		exit(1)
 	}
 	r2r.wg.done()
 }
@@ -487,9 +505,17 @@ fn (r2r mut R2R) run_asm_test(test R2RAsmTest, dismode bool) {
 	r2r.wg.done()
 }
 
+fn handle_control_c() {
+	$if windows {
+		// ^C not handled on windows
+	} $else {
+		os.signal(C.SIGINT, control_c)
+	}
+}
+
 fn (r2r mut R2R) run_cmd_test(test R2RCmdTest) {
+	r2r.wg.add(1)
 	time_start := time.ticks()
-	// eprintln(test)
 	tmp_dir := mktmpdir('')
 	tmp_script := filepath.join(tmp_dir,'script.r2')
 	tmp_stderr := filepath.join(tmp_dir,'stderr.txt')
@@ -527,6 +553,7 @@ fn (r2r mut R2R) run_cmd_test(test R2RCmdTest) {
 			r2r.success++
 		}
 	}
+	handle_control_c()
 	time_end := time.ticks()
 	times := time_end - time_start
 	println('[${mark}] (time ${times}) ${test.source} : ${test.name}')
@@ -534,9 +561,24 @@ fn (r2r mut R2R) run_cmd_test(test R2RCmdTest) {
 	r2r.wg.done()
 }
 
-fn (r2r R2R) run_fuz_test(fuzzfile string) bool {
-	cmd := 'rarun2 timeout=${default_timeout} system="${r2r.r2_path} -qq -A -n ${fuzzfile}"'
-	return os.system(cmd) == 0
+fn (r2r mut R2R) run_fuz_test(ff string, pc int) bool {
+	r2r.wg.add(1)
+	handle_control_c()
+	cmd := 'rarun2 timeout=${default_timeout} system="${r2r.r2_path} -qq -A -n ${ff}"'
+	res := os.system(cmd) == 0
+	handle_control_c()
+
+	mark := if res { term.green('OK') } else { term.red('XX') }
+	if res {
+		r2r.success++
+	} else {
+		r2r.failed++
+	}
+	if !r2r.show_quiet || !res {
+		println('[${mark}] ${pc}% ${ff}')
+	}
+	r2r.wg.done()
+	return res
 }
 
 fn (r2r R2R) git_clone(ghpath, localpath string) {
@@ -545,6 +587,7 @@ fn (r2r R2R) git_clone(ghpath, localpath string) {
 
 fn (r2r mut R2R) run_fuz_tests() {
 	fuzz_path := '../bins/fuzzed'
+	r2r.wg = sync.new_waitgroup()
 	// open and analyze all the files in bins/fuzzed
 	if !os.is_dir(fuzz_path) {
 		r2r.git_clone('radareorg/radare2-testbins', 'bins')
@@ -553,22 +596,25 @@ fn (r2r mut R2R) run_fuz_tests() {
 	files := os.ls(fuzz_path) or {
 		panic(err)
 	}
+	mut c := r2r.jobs
 	mut n := 0
 	t := files.len
 	for file in files {
-		ff := filepath.join(fuzz_path,file)
-		res := r2r.run_fuz_test(ff)
-		mark := if res { term.green('OK') } else { term.red('XX') }
-		if res {
-			r2r.success++
-		} else {
-			r2r.failed++
-		}
+		ff := filepath.join(fuzz_path, file)
 		pc := n * 100 / t
-		if !r2r.show_quiet || !res {
-			println('[${mark}] ${pc}% ${ff}')
+		handle_control_c()
+		go r2r.run_fuz_test(ff, pc)
+		c--
+		if c == 0 {
+			handle_control_c()
+			// eprintln('Waiting ${r2r.wg.active} / ${r2r.jobs}')
+			r2r.wg.wait()
+			c = r2r.jobs
 		}
 		n++
+	}
+	if r2r.wg.active > 0 {
+		r2r.wg.wait()
 	}
 }
 
@@ -693,7 +739,7 @@ fn (r2r mut R2R) run_asm_tests() {
 		if at.mode.contains('a') {
 			r2r.wg.add(1)
 			if isnil(r2r.r2) {
-				go r2r.run_asm_test(at,false)
+				go r2r.run_asm_test(at, false)
 			}
 			else {
 				r2r.run_asm_test(at, false)
@@ -709,7 +755,7 @@ fn (r2r mut R2R) run_asm_tests() {
 		if at.mode.contains('d') {
 			r2r.wg.add(1)
 			if isnil(r2r.r2) {
-				go r2r.run_asm_test(at,true)
+				go r2r.run_asm_test(at, true)
 			}
 			else {
 				r2r.run_asm_test(at, true)
@@ -786,17 +832,19 @@ fn (r2r mut R2R) run_cmd_tests() {
 		if r2r.filtered_file(t.source) {
 			continue
 		}
-		r2r.wg.add(1)
+		handle_control_c()
 		go r2r.run_cmd_test(t)
 		if r2r.jobs > 0 {
 			c--
-			if c < 1 {
+			if c < 1 && r2r.wg.active > 0 {
 				r2r.wg.wait()
 				c = r2r.jobs
 			}
 		}
 	}
-	r2r.wg.wait()
+	if r2r.wg.active > 0 {
+		r2r.wg.wait()
+	}
 }
 
 fn (r2r R2R) show_report() {

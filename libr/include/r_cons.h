@@ -808,14 +808,19 @@ R_API void r_cons_set_click(int x, int y);
 R_API bool r_cons_get_click(int *x, int *y);
 
 typedef void (*RConsBreak)(void *);
-R_API void r_cons_break_end(void);
 R_API bool r_cons_is_breaked(void);
 R_API bool r_cons_is_interactive(void);
 R_API bool r_cons_default_context_is_interactive(void);
-R_API void r_cons_break_timeout(int timeout);
-R_API void r_cons_breakword(const char *s);
 R_API void *r_cons_sleep_begin(void);
 R_API void r_cons_sleep_end(void *user);
+
+/* ^C */
+R_API void r_cons_break_push(RConsBreak cb, void *user);
+R_API void r_cons_break_pop(void);
+R_API void r_cons_break_clear(void);
+R_API void r_cons_breakword(const char *s);
+R_API void r_cons_break_end(void);
+R_API void r_cons_break_timeout(int timeout);
 
 /* pipe */
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);
@@ -841,9 +846,6 @@ R_API bool r_cons_context_is_main(void);
 R_API void r_cons_context_break(RConsContext *context);
 R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void *user, bool sig);
 R_API void r_cons_context_break_pop(RConsContext *context, bool sig);
-R_API void r_cons_break_push(RConsBreak cb, void *user);
-R_API void r_cons_break_pop(void);
-R_API void r_cons_break_clear(void);
 
 /* control */
 R_API char *r_cons_editor(const char *file, const char *str);
