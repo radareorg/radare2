@@ -3421,10 +3421,10 @@ static void core_cmd_dbi (RCore *core, const char *input, ut64 idx) {
 #endif
 
 #define DB_ARG(x) r_str_word_get0(str, x)
-static void add_breakpoint(RCore *core, char *input, bool hwbp, bool watch) {
+static void add_breakpoint(RCore *core, const char *input, bool hwbp, bool watch) {
 	RBreakpointItem *bpi;
 	ut64 addr;
-	int rw = 0, i = 0;
+	int i = 0;
 
 	char *str = strdup (r_str_trim_ro (input + 1));
 	int sl = r_str_word_set0 (str);
@@ -3433,6 +3433,7 @@ static void add_breakpoint(RCore *core, char *input, bool hwbp, bool watch) {
 		if (*DB_ARG (i) == '-') {
 			r_bp_del (core->dbg->bp, r_num_math (core->num, DB_ARG (i) + 1));
 		} else {
+			int rw = 0;
 			if (watch) {
 				if (sl % 2 == 0) {
 					if (!strcmp (DB_ARG (i + 1), "r")) {
@@ -3485,7 +3486,6 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	const char *p;
 	bool hex_format;
 	bool watch = false;
-	int rw = 0;
 	RList *list;
 	ut64 addr, idx;
 	p = strchr (input, ' ');
@@ -3884,7 +3884,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		add_breakpoint (core, input + 1, true, watch);
 		break;
 	case ' ': // "db"
-		add_breakpoint (core, input++, hwbp, watch);
+		add_breakpoint (core, input + 1, hwbp, watch);
 		break;
 	case 'i':
 		core_cmd_dbi (core, input, idx);
