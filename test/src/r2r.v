@@ -523,6 +523,9 @@ fn (r2r mut R2R) run_cmd_test(test R2RCmdTest) {
 		else if test.expect_err != '' && errstr.trim_space() != test.expect_err {
 			mark = r2r.test_failed(test, test.expect_err, errstr)
 		}
+		else {
+			r2r.success++
+		}
 	}
 	time_end := time.ticks()
 	times := time_end - time_start
