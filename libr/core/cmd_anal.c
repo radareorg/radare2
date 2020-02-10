@@ -5233,25 +5233,23 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (mode); ops++, ptr += len) {
 		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		esilstr = R_STRBUF_SAFEGET (&aop.esil);
-		if (!*esilstr) {
-			eprintf ("Empty ESIL at 0x%08"PFMT64x"\n", addr + ptr);
-			break;
-		}
-		if (len < 1) {
-			eprintf ("Invalid 0x%08"PFMT64x" instruction %02x %02x\n",
-				addr + ptr, buf[ptr], buf[ptr + 1]);
-			break;
-		}
-		if (r_config_get_i (core->config, "cfg.r2wars")) {
-			if (aop.prefix  & R_ANAL_OP_PREFIX_REP) {
-				char * tmp = strstr (esilstr, ",ecx,?{,5,GOTO,}");
-				if (tmp) {
-					tmp[0] = 0;
+		if (*esilstr) {
+			if (len < 1) {
+				eprintf ("Invalid 0x%08"PFMT64x" instruction %02x %02x\n",
+					addr + ptr, buf[ptr], buf[ptr + 1]);
+				break;
+			}
+			if (r_config_get_i (core->config, "cfg.r2wars")) {
+				if (aop.prefix  & R_ANAL_OP_PREFIX_REP) {
+					char * tmp = strstr (esilstr, ",ecx,?{,5,GOTO,}");
+					if (tmp) {
+						tmp[0] = 0;
+					}
 				}
 			}
+			r_anal_esil_parse (esil, esilstr);
+			r_anal_esil_stack_free (esil);
 		}
-		r_anal_esil_parse (esil, esilstr);
-		r_anal_esil_stack_free (esil);
 		r_anal_op_fini (&aop);
 	}
 	esil->nowrite = false;
