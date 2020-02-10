@@ -244,6 +244,7 @@ static const char *help_msg_aea[] = {
 	"Examples:", "aea", " show regs and memory accesses used in a range",
 	"aea", "  [ops]", "Show regs/memory accesses used in N instructions ",
 	"aea*", " [ops]", "Create mem.* flags for memory accesses",
+	"aeab", "", "Show regs used in current basic block",
 	"aeaf", "", "Show regs used in current function",
 	"aear", " [ops]", "Show regs read in N instructions",
 	"aeaw", " [ops]", "Show regs written in N instructions",
@@ -5989,6 +5990,20 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			cmd_aea (core, 1<<4, core->offset, r_num_math (core->num, input+2));
 		} else if (input[1] == '*') {
 			cmd_aea (core, 1<<5, core->offset, r_num_math (core->num, input+2));
+		} else if (input[1] == 'b') {
+			ut64 addr = r_num_math (core->num, input + 2);
+			RAnalBlock *b = r_anal_get_block_at (core->anal, addr);
+			if (b) {
+				switch (input[2]) {
+				case 'j': // "aeabj"
+					cmd_aea (core, 1<<4, b->addr, b->addr + b->size);
+					break;
+				default:
+					cmd_aea (core, 1<<4, b->addr, b->addr + b->size);
+					break;
+				}
+				break;
+			}
 		} else if (input[1] == 'f') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
                         // "aeafj"
