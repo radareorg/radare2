@@ -2121,8 +2121,11 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 
 	bool html = r_config_get_i (core->config, "scr.html");
 	r_config_set_i (core->config, "scr.html", 0);
-	body = r_core_cmd_strf (core,
-			"%s %d @ 0x%08"PFMT64x, cmd, size, addr);
+	if (r_config_get_i (core->config, "graph.aeab")) {
+		body = r_core_cmd_strf (core, "%s 0x%08"PFMT64x, "aeab", addr);
+	} else {
+		body = r_core_cmd_strf (core, "%s %d @ 0x%08"PFMT64x, cmd, size, addr);
+	}
 	r_config_set_i (core->config, "scr.html", html);
 
 	// restore original options
