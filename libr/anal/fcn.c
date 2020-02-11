@@ -1140,7 +1140,7 @@ repeat:
 				}
 			} else {
 analopfinish:
-				gotoBeach (R_ANAL_RET_END);
+				gotoBeach (0);
 			}
 			break;
 		/* fallthru */
