@@ -1,13 +1,12 @@
 NAME=aea 5
 FILE=-
 ARGS=-a x86 -b64
-EXPECT=<<EOF
- I: rsp eax edx
+EXPECT=' I: rsp eax edx
  A: rsp rbp rax eax rdx cf edx zf pf sf of
  R: rsp eax edx
  W: rbp rax rdx cf edx zf pf sf eax of
- N: rsp
-EOF
+ V: 0 65535 1
+ N: rsp'
 CMDS=<<EOF
 wx 4889e5b8ffff000089c2c1ea1f01d0;aea 5
 EOF
@@ -16,8 +15,7 @@ RUN
 NAME=aeaj 5
 FILE=-
 ARGS=-a x86 -b64
-EXPECT=<<EOF
-{
+EXPECT='{
   "A": [
     "rsp",
     "rbp",
@@ -53,11 +51,15 @@ EXPECT=<<EOF
     "eax",
     "of"
   ],
+  "V": [
+    "0",
+    "65535",
+    "1"
+  ],
   "N": [
     "rsp"
   ]
-}
-EOF
+}'
 CMDS=<<EOF
 wx 4889e5b8ffff000089c2c1ea1f01d0;aeaj 5~{}
 EOF
@@ -66,13 +68,12 @@ RUN
 NAME=aeA 15
 FILE=-
 ARGS=-a x86 -b64
-EXPECT=<<EOF
- I: rsp eax edx
+EXPECT=' I: rsp eax edx
  A: rsp rbp rax eax rdx cf edx zf pf sf of
  R: rsp eax edx
  W: rbp rax rdx cf edx zf pf sf eax of
- N: rsp
-EOF
+ V: 0 65535 1
+ N: rsp'
 CMDS=<<EOF
 wx 4889e5b8ffff000089c2c1ea1f01d0;aeA 15
 EOF
