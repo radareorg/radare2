@@ -137,7 +137,7 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
-	if (kind == 'r') {
+	if (kind == R_ANAL_VAR_KIND_REG) {
 		reg = r_reg_index_get (a->reg, R_ABS (delta));
 		if (!reg) {
 			eprintf ("Register wasn't found at the given delta\n");

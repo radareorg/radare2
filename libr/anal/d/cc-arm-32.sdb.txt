@@ -12,3 +12,13 @@ cc.arm16.arg2=r2
 cc.arm16.arg3=r3
 cc.arm16.argn=stack
 cc.arm16.ret=r0
+
+swift=cc
+cc.swift.arg0=r0
+cc.swift.arg1=r1
+cc.swift.arg2=r2
+cc.swift.arg3=r3
+cc.swift.argn=stack
+cc.swift.self=r10
+cc.swift.self=r8
+cc.swift.ret=r0
