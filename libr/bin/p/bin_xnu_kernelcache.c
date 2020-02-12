@@ -530,6 +530,7 @@ static RList *carve_kexts(RKernelCacheObj *obj) {
 		ut64 text_end = text_start + kext->text_range.size;
 
 		if (text_start == text_end) {
+			r_kext_free (kext);
 			continue;
 		}
 
