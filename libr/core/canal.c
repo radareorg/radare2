@@ -3169,7 +3169,8 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
 	int count = 0;
-	int reg_set[R_ANAL_CC_MAXARG] = {0};
+	// self, error, arg
+	int reg_set[R_ANAL_CC_MAXARG + 2] = {0};
 
 	r_return_if_fail (core && core->anal && fcn);
 	if (core->anal->opt.bb_max_size < 1) {

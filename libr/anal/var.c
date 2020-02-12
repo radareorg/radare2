@@ -834,20 +834,63 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				free (type);
 				(*count)++;
 			} else {
-				if (is_reg_in_src (regname, anal, op)) {
-					reg_set[i] = 2;
-				}
-				if (STR_EQUAL (opdreg, regname)) {
+				if (is_reg_in_src (regname, anal, op) || STR_EQUAL (opdreg, regname)) {
 					reg_set[i] = 2;
 				}
 				continue;
 			}
-			if (is_reg_in_src (regname, anal, op)) {
+			if (is_reg_in_src (regname, anal, op) || STR_EQUAL (regname, opdreg)) {
 				reg_set[i] = 1;
 			}
-			if (STR_EQUAL (regname, opdreg)) {
-				reg_set[i] = 1;
+		}
+	}
+
+	const char *selfreg = r_anal_cc_self (anal, fcn->cc);
+	if (selfreg) {
+		bool is_used_like_an_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal);
+		if (reg_set[i] != 2 && is_used_like_an_arg) {
+			int delta = 0;
+			char *vname = strdup ("self");
+			RRegItem *ri = r_reg_get (anal->reg, selfreg, -1);
+			if (ri) {
+				delta = ri->index;
 			}
+			r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, 0,
+					anal->bits / 8, 1, vname);
+			if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
+				r_anal_var_link (anal, op->addr, op->var);
+			}
+			r_anal_var_access (anal, fcn->addr, R_ANAL_VAR_KIND_REG, 1, delta, 0, 0, op->addr);
+			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
+			free (vname);
+			(*count)++;
+		} else {
+			if (is_reg_in_src (selfreg, anal, op) || STR_EQUAL (opdreg, selfreg)) {
+				reg_set[i] = 2;
+			}
+		}
+		i++;
+	}
+
+	const char *errorreg = r_anal_cc_error (anal, fcn->cc);
+	if (errorreg) {
+		if (reg_set[i] == 0 && STR_EQUAL (opdreg, errorreg)) {
+			int delta = 0;
+			char *vname = strdup ("error");
+			RRegItem *ri = r_reg_get (anal->reg, errorreg, -1);
+			if (ri) {
+				delta = ri->index;
+			}
+			r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, 0,
+					anal->bits / 8, 1, vname);
+			if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
+				r_anal_var_link (anal, op->addr, op->var);
+			}
+			r_anal_var_access (anal, fcn->addr, R_ANAL_VAR_KIND_REG, 1, delta, 0, 0, op->addr);
+			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
+			free (vname);
+			(*count)++;
+			reg_set[i] = 2;
 		}
 	}
 }
