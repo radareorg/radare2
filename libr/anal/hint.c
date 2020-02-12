@@ -433,7 +433,7 @@ R_API void r_anal_addr_hints_foreach(RAnal *anal, RAnalAddrHintRecordsCb cb, voi
 R_API void r_anal_arch_hints_foreach(RAnal *anal, RAnalArchHintCb cb, void *user) {
 	RBIter iter;
 	RAnalRangedHintRecordBase *record;
-	r_rbtree_foreach (anal->bb_tree, iter, record, RAnalRangedHintRecordBase, rb) {
+	r_rbtree_foreach (anal->arch_hints, iter, record, RAnalRangedHintRecordBase, rb) {
 		bool cont = cb (record->addr, ((RAnalArchHintRecord *)record)->arch, user);
 		if (!cont) {
 			break;
@@ -444,7 +444,7 @@ R_API void r_anal_arch_hints_foreach(RAnal *anal, RAnalArchHintCb cb, void *user
 R_API void r_anal_bits_hints_foreach(RAnal *anal, RAnalBitsHintCb cb, void *user) {
 	RBIter iter;
 	RAnalRangedHintRecordBase *record;
-	r_rbtree_foreach (anal->bb_tree, iter, record, RAnalRangedHintRecordBase, rb) {
+	r_rbtree_foreach (anal->bits_hints, iter, record, RAnalRangedHintRecordBase, rb) {
 		bool cont = cb (record->addr, ((RAnalBitsHintRecord *)record)->bits, user);
 		if (!cont) {
 			break;
