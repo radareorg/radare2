@@ -1013,7 +1013,6 @@ typedef struct {
 } HintNode;
 
 static void print_hint_h_format(HintNode *node) {
-	r_cons_printf (" 0x%08"PFMT64x" =>", node->addr);
 	switch (node->type) {
 	case HINT_NODE_ADDR: {
 		const RAnalAddrHintRecord *record;
@@ -1082,7 +1081,6 @@ static void print_hint_h_format(HintNode *node) {
 		r_cons_printf (" bits=%d", node->bits);
 		break;
 	}
-	r_cons_newline ();
 }
 
 // if mode == 'j', pj must be an existing PJ!
@@ -1161,8 +1159,6 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 #undef HINTCMD_ADDR
 		break;
 	case 'j':
-		pj_o (pj);
-		pj_kn (pj, "addr", node->addr);
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
 			const RAnalAddrHintRecord *record;
@@ -1231,7 +1227,6 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 			pj_ki (pj, "bits", node->bits);
 			break;
 		}
-		pj_end (pj);
 		break;
 	default:
 		print_hint_h_format (node);
@@ -1296,11 +1291,37 @@ static void print_hint_tree(RBTree tree, int mode) {
 		pj = pj_new ();
 		pj_a (pj);
 	}
+#define END_ADDR \
+		if (pj) { \
+			pj_end (pj); \
+		} else if (mode != '*') { \
+			r_cons_newline (); \
+		}
 	RBIter it;
 	HintNode *node;
+	ut64 last_addr = 0;
+	bool in_addr = false;
 	r_rbtree_foreach (tree, it, node, HintNode, rb) {
+		if (!in_addr || last_addr != node->addr) {
+			if (in_addr) {
+				END_ADDR
+			}
+			in_addr = true;
+			last_addr = node->addr;
+			if (pj) {
+				pj_o (pj);
+				pj_kn (pj, "addr", node->addr);
+			} else if (mode != '*') {
+				r_cons_printf (" 0x%08"PFMT64x" =>", node->addr);
+			}
+		}
 		hint_node_print (node, mode, pj);
 	}
+	if (in_addr) {
+		END_ADDR
+	}
+#undef BEGIN_ADDR
+#undef END_ADDR
 	if (pj) {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
@@ -1310,27 +1331,27 @@ static void print_hint_tree(RBTree tree, int mode) {
 R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 	RBTree tree = NULL;
 	// Collect all hints in the tree to sort them
-	r_anal_addr_hints_foreach (a, print_addr_hint_cb, &tree);
 	r_anal_arch_hints_foreach (a, print_arch_hint_cb, &tree);
 	r_anal_bits_hints_foreach (a, print_bits_hint_cb, &tree);
+	r_anal_addr_hints_foreach (a, print_addr_hint_cb, &tree);
 	print_hint_tree (tree, mode);
 	r_rbtree_free (tree, hint_node_free, NULL);
 }
 
 R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 	RBTree tree = NULL;
-	const RVector *addr_hints = r_anal_addr_hints_at (a, addr);
-	if (addr_hints) {
-		print_addr_hint_cb (addr, addr_hints, &tree);
-	}
 	ut64 hint_addr = UT64_MAX;
 	const char *arch = r_anal_hint_arch_at(a, addr, &hint_addr);
 	if (hint_addr != UT64_MAX) {
-		print_arch_hint_cb (hint_addr, arch, NULL);
+		print_arch_hint_cb (hint_addr, arch, &tree);
 	}
 	int bits = r_anal_hint_bits_at (a, addr, &hint_addr);
 	if (hint_addr != UT64_MAX) {
-		print_bits_hint_cb (hint_addr, bits, NULL);
+		print_bits_hint_cb (hint_addr, bits, &tree);
+	}
+	const RVector *addr_hints = r_anal_addr_hints_at (a, addr);
+	if (addr_hints) {
+		print_addr_hint_cb (addr, addr_hints, &tree);
 	}
 	print_hint_tree (tree, mode);
 	r_rbtree_free (tree, hint_node_free, NULL);
