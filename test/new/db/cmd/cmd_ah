@@ -45,6 +45,11 @@ all:
 --
 at 0x1337:
  0x00001337 => arch='ppc' bits=16 jump=0x00804804 esil='3,eax,+=' fail=0x00012345 stackframe=0x10 high=true immbase=10 opcode='foo a0,33' ptr=0xc0ff33 ret=0x0000002a size=4 syntax='jz' type='call'
+--
+at 0xdeadbeef
+ 0x00001337 => arch='ppc' bits=16
+--
+at 0x42
 EOF
 CMDS=<<EOF
 s 0x1337
@@ -69,6 +74,12 @@ ah
 ?e --
 ?e at 0x1337:
 ah. @ 0x1337
+?e --
+?e at 0xdeadbeef
+ah. @ 0xdeadbeef
+?e --
+?e at 0x42
+ah. @ 0x42
 EOF
 RUN
 
