@@ -514,7 +514,6 @@ fn handle_control_c() {
 }
 
 fn (r2r mut R2R) run_cmd_test(test R2RCmdTest) {
-	r2r.wg.add(1)
 	time_start := time.ticks()
 	tmp_dir := mktmpdir('')
 	tmp_script := filepath.join(tmp_dir,'script.r2')
@@ -562,7 +561,6 @@ fn (r2r mut R2R) run_cmd_test(test R2RCmdTest) {
 }
 
 fn (r2r mut R2R) run_fuz_test(ff string, pc int) bool {
-	r2r.wg.add(1)
 	handle_control_c()
 	cmd := 'rarun2 timeout=${default_timeout} system="${r2r.r2_path} -qq -A -n ${ff}"'
 	res := os.system(cmd) == 0
@@ -603,19 +601,17 @@ fn (r2r mut R2R) run_fuz_tests() {
 		ff := filepath.join(fuzz_path, file)
 		pc := n * 100 / t
 		handle_control_c()
+		r2r.wg.add(1)
 		go r2r.run_fuz_test(ff, pc)
 		c--
 		if c == 0 {
 			handle_control_c()
-			// eprintln('Waiting ${r2r.wg.active} / ${r2r.jobs}')
 			r2r.wg.wait()
 			c = r2r.jobs
 		}
 		n++
 	}
-	if r2r.wg.active > 0 {
-		r2r.wg.wait()
-	}
+	r2r.wg.wait()
 }
 
 fn (r2r mut R2R) load_asm_test(testfile string) {
@@ -833,18 +829,17 @@ fn (r2r mut R2R) run_cmd_tests() {
 			continue
 		}
 		handle_control_c()
+		r2r.wg.add(1)
 		go r2r.run_cmd_test(t)
 		if r2r.jobs > 0 {
 			c--
-			if c < 1 && r2r.wg.active > 0 {
+			if c < 1 {
 				r2r.wg.wait()
 				c = r2r.jobs
 			}
 		}
 	}
-	if r2r.wg.active > 0 {
-		r2r.wg.wait()
-	}
+	r2r.wg.wait()
 }
 
 fn (r2r R2R) show_report() {
