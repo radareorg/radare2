@@ -4,7 +4,8 @@ EXPECT='before:
  0x00000000 => immbase=10
  0x00000010 => immbase=8
 after:
- 0x00000000 => immbase=10'
+ 0x00000000 => immbase=10
+'
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16
@@ -22,7 +23,8 @@ EXPECT='before:
  0x00000000 => immbase=10
  0x00000010 => immbase=8
 after:
- 0x00000000 => immbase=10'
+ 0x00000000 => immbase=10
+'
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16

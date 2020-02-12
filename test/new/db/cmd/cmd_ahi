@@ -254,7 +254,8 @@ RUN
 
 NAME=ah.
 FILE=malloc://16
-EXPECT=' 0x00000008 => immbase=10'
+EXPECT=' 0x00000008 => immbase=10
+'
 CMDS=<<EOF
 ahi 10 @ 0x8
 s 0x8
