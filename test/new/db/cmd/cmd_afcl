@@ -3,6 +3,7 @@ FILE=--
 EXPECT=<<EOF
 amd64
 ms
+swift
 EOF
 CMDS=<<EOF
 e asm.bits = 32
@@ -68,6 +69,7 @@ NAME=afcl: arm-64
 FILE=--
 EXPECT=<<EOF
 arm64
+swift
 EOF
 CMDS=<<EOF
 e asm.bits = 32
