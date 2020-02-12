@@ -315,8 +315,8 @@ typedef struct r_core_t {
 	bool break_loop;
 	RList *undos;
 	bool binat;
-	bool fixedbits;
-	bool fixedarch;
+	bool fixedbits; // will be true when using @b:
+	bool fixedarch; // will be true when using @a:
 	bool fixedblock;
 	char *table_query;
 	int sync_index; // used for http.sync and T=

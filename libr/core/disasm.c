@@ -1151,29 +1151,15 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 }
 
-//removed hints bits from since r_anal_build_range_on_hints along with
-//r_core_seek_archbits will be used instead. The ranges are built from hints
 R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
-	static char *hint_arch = NULL;
 	static char *hint_syntax = NULL;
 	r_anal_hint_free (hint);
 	hint = r_anal_hint_get (core->anal, at);
-	if (hint_arch) {
-		r_config_set (core->config, "asm.arch", hint_arch);
-		hint_arch = NULL;
-	}
 	if (hint_syntax) {
 		r_config_set (core->config, "asm.syntax", hint_syntax);
 		hint_syntax = NULL;
 	}
 	if (hint) {
-		/* arch */
-		if (hint->arch && !core->fixedarch) {
-			if (!hint_arch) {
-				hint_arch = strdup (r_config_get (core->config, "asm.arch"));
-			}
-			r_config_set (core->config, "asm.arch", hint->arch);
-		}
 		/* syntax */
 		if (hint->syntax) {
 			if (!hint_syntax) {
