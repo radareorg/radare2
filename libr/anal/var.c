@@ -900,9 +900,9 @@ R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 
 	const char *BP = anal->reg->name[R_REG_NAME_BP];
 	const char *SP = anal->reg->name[R_REG_NAME_SP];
-	extract_arg (anal, fcn, op, BP, "+", 'b');
-	extract_arg (anal, fcn, op, BP, "-", 'b');
-	extract_arg (anal, fcn, op, SP, "+", 's');
+	extract_arg (anal, fcn, op, BP, "+", R_ANAL_VAR_KIND_BPV);
+	extract_arg (anal, fcn, op, BP, "-", R_ANAL_VAR_KIND_BPV);
+	extract_arg (anal, fcn, op, SP, "+", R_ANAL_VAR_KIND_SPV);
 }
 
 static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dynamicVars) {
@@ -1184,9 +1184,9 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 }
 
 R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn) {
-	cache->bvars = r_anal_var_list (anal, fcn, 'b');
-	cache->rvars = r_anal_var_list (anal, fcn, 'r');
-	cache->svars = r_anal_var_list (anal, fcn, 's');
+	cache->bvars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
+	cache->rvars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
+	cache->svars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_SPV);
 	r_list_sort (cache->bvars, (RListComparator)var_comparator);
 	r_list_sort (cache->rvars, (RListComparator)regvar_comparator);
 	r_list_sort (cache->svars, (RListComparator)var_comparator);
@@ -1281,6 +1281,11 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 	RListIter *iter;
 
 	r_list_foreach (cache->rvars, iter, var) {
+		// assume self, error are always the last
+		if (!strcmp (var->name, "self") || !strcmp (var->name, "error")) {
+			r_strbuf_slice (buf, 0, r_strbuf_length (buf) - 2);
+			break;
+		}
 		tmp_len = strlen (var->type);
 		r_strbuf_appendf (buf, "%s%s%s%s", var->type,
 			tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
