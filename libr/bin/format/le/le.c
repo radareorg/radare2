@@ -434,7 +434,7 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 		LE_fixup_record_header header;
 		int ret = r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
 		if (ret != sizeof (header)) {
-			eprintf ("Oobread\n");
+			eprintf ("Warning: oobread in LE header parsing relocs\n");
 			break;
 		}
 		offset += sizeof (header);
@@ -581,8 +581,8 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 			offset += sizeof (ut16);
 			repeat--;
 		}
-		cur_page++;
 		while (offset >= end) {
+			cur_page++;
 			if (cur_page >= h->mpages) {
 				break;
 			}
@@ -595,7 +595,6 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 				cur_section = (RBinSection *)r_list_get_n (sections, cur_page);
 				cur_page_offset = cur_section ? cur_section->vaddr : 0;
 			}
-			cur_page++;
 		}
 		if (!rel_appended) {
 			free (rel);
