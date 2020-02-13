@@ -202,3 +202,85 @@ EXPECT=<<EOF
             0x10000105c      4157           push r15
 EOF
 RUN
+
+NAME=arch hints for ranges
+FILE=-
+EXPECT=%-- all
+ 0x00000042 => arch='arm'
+ 0x00000084 => arch=RESET
+-- all json
+[{"addr":66,"arch":"arm"},{"addr":132,"arch":null}]
+-- all cmd
+aha arm @ 0x42
+aha 0 @ 0x84
+-- before hints
+-- at first
+ 0x00000042 => arch='arm'
+-- between hints
+ 0x00000042 => arch='arm'
+-- at second
+ 0x00000084 => arch=RESET
+-- after second
+ 0x00000084 => arch=RESET%
+CMDS=<<EOF
+aha arm @ 0x42
+aha 0 @ 0x84
+?e -- all
+ah
+?e -- all json
+ahj
+?e -- all cmd
+ah*
+?e -- before hints
+ah. @ 0
+?e -- at first
+ah. @ 0x42
+?e -- between hints
+ah. @ 0x60
+?e -- at second
+ah. @ 0x84
+?e -- after second
+ah. @ 0x100
+EOF
+RUN
+
+NAME=bits hints for ranges
+FILE=-
+EXPECT='-- all
+ 0x00000042 => bits=16
+ 0x00000084 => bits=RESET
+-- all json
+[{"addr":66,"bits":16},{"addr":132,"bits":0}]
+-- all cmd
+ahb 16 @ 0x42
+ahb 0 @ 0x84
+-- before hints
+-- at first
+ 0x00000042 => bits=16
+-- between hints
+ 0x00000042 => bits=16
+-- at second
+ 0x00000084 => bits=RESET
+-- after second
+ 0x00000084 => bits=RESET'
+CMDS=<<EOF
+ahb 16 @ 0x42
+ahb 0 @ 0x84
+?e -- all
+ah
+?e -- all json
+ahj
+?e -- all cmd
+ah*
+?e -- before hints
+ah. @ 0
+?e -- at first
+ah. @ 0x42
+?e -- between hints
+ah. @ 0x60
+?e -- at second
+ah. @ 0x84
+?e -- after second
+ah. @ 0x100
+EOF
+RUN

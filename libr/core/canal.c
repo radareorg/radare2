@@ -1075,10 +1075,18 @@ static void print_hint_h_format(HintNode *node) {
 		break;
 	}
 	case HINT_NODE_ARCH:
-		r_cons_printf (" arch='%s'", node->arch);
+		if (node->arch) {
+			r_cons_printf (" arch='%s'", node->arch);
+		} else {
+			r_cons_print (" arch=RESET");
+		}
 		break;
 	case HINT_NODE_BITS:
-		r_cons_printf (" bits=%d", node->bits);
+		if (node->bits) {
+			r_cons_printf (" bits=%d", node->bits);
+		} else {
+			r_cons_print (" bits=RESET");
+		}
 		break;
 	}
 }
@@ -1150,7 +1158,7 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 			break;
 		}
 		case HINT_NODE_ARCH:
-			HINTCMD_ADDR (node, "aha %s", node->arch);
+			HINTCMD_ADDR (node, "aha %s", node->arch ? node->arch : "0");
 			break;
 		case HINT_NODE_BITS:
 			HINTCMD_ADDR (node, "ahb %d", node->bits);
@@ -1221,7 +1229,11 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 			break;
 		}
 		case HINT_NODE_ARCH:
-			pj_ks (pj, "arch", node->arch);
+			if (node->arch) {
+				pj_ks (pj, "arch", node->arch);
+			} else {
+				pj_knull (pj, "arch");
+			}
 			break;
 		case HINT_NODE_BITS:
 			pj_ki (pj, "bits", node->bits);
