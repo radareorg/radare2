@@ -563,8 +563,10 @@ static const char *help_msg_ah[] = {
 	"ah-", "", "remove all hints",
 	"ah-", " offset [size]", "remove hints at given offset",
 	"ah*", " offset", "list hints in radare commands format",
-	"aha", " ppc 51", "set arch for a range of N bytes",
-	"ahb", " 16 @ $$", "force 16bit for current instruction",
+	"aha", " ppc @ 0x42", "force arch ppc for all addrs >= 0x42 or until the next hint",
+	"aha", " 0 @ 0x84", "disable the effect of arch hints for all addrs >= 0x84 or until the next hint",
+	"ahb", " 16 @ 0x42", "force 16bit for all addrs >= 0x42 or until the next hint",
+	"ahb", " 0 @ 0x84", "disable the effect of bits hints for all addrs >= 0x84 or until the next hint",
 	"ahc", " 0x804804", "override call/jump address",
 	"ahd", " foo a0,33", "replace opcode string",
 	"ahe", " 3,eax,+=", "set vm analysis string",
@@ -7358,13 +7360,10 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		break;
 	case 'a': // "aha" set arch
 		if (input[1]) {
-			int i;
 			char *ptr = strdup (input + 2);
-			i = r_str_word_set0 (ptr);
-			if (i == 2) {
-				r_num_math (core->num, r_str_word_get0 (ptr, 1));
-			}
-			r_anal_hint_set_arch (core->anal, core->offset, r_str_word_get0 (ptr, 0));
+			r_str_word_set0 (ptr);
+			const char *arch = r_str_word_get0 (ptr, 0);
+			r_anal_hint_set_arch (core->anal, core->offset, !arch || strcmp (arch, "0") == 0 ? NULL : arch);
 			free (ptr);
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_arch (core->anal, core->offset);

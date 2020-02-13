@@ -68,7 +68,7 @@ R_API void r_vector_free(RVector *vec);
 // the returned vector will have the same capacity as vec.
 R_API RVector *r_vector_clone(RVector *vec);
 
-static inline bool r_vector_empty(RVector *vec) {
+static inline bool r_vector_empty(const RVector *vec) {
 	return vec->len == 0;
 }
 
