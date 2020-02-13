@@ -271,14 +271,12 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	}
 	bb->jump = bbi->jump;
 	bb->fail = bbi->fail;
-	bb->conditional = bbi->conditional;
 	bb->parent_stackptr = bbi->stackptr;
 
 	// resize the first block
 	r_anal_block_set_size (bbi, addr - bbi->addr);
 	bbi->jump = addr;
 	bbi->fail = UT64_MAX;
-	bbi->conditional = false;
 
 	// insert the second block into the tree
 	r_rbtree_aug_insert (&anal->bb_tree, &bb->addr, &bb->_rb, __bb_addr_cmp, NULL, __max_end);
