@@ -226,9 +226,6 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 	mut slurp_data := ''
 	test.source = testfile
 	for line in lines {
-		if line.len == 0 {
-			continue
-		}
 		if slurp_token.len > 0 {
 			if line == slurp_token {
 				*slurp_target = slurp_data
@@ -238,6 +235,9 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 			else {
 				slurp_data += '${line}\n'
 			}
+			continue
+		}
+		if line.len == 0 {
 			continue
 		}
 		kv := line.split_nth('=', 2)
