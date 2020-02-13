@@ -1535,7 +1535,7 @@ repeat:
 			/* prepare highlight */
 			char *cmd = strdup (r_config_get (core->config, "scr.highlight"));
 			char *ats = r_str_newf ("%"PFMT64x, curat);
-			if (ats) {
+			if (ats && !*cmd) {
 				(void) r_config_set (core->config, "scr.highlight", ats);
 			}
 			/* print disasm */
@@ -1568,6 +1568,7 @@ repeat:
 		" JK  - step 10 rows\n"
 		" pP  - rotate between various print modes\n"
 		" :   - run r2 command\n"
+		" /   - highlight given word\n"
 		" ?   - show this help message\n"
 		" <>  - '<' for xrefs and '>' for refs\n"
 		" TAB - toggle between address and function references\n"
@@ -1594,6 +1595,9 @@ repeat:
 		if (printMode < 0) {
 			printMode = lastPrintMode;
 		}
+		goto repeat;
+	} else if (ch == '/') {
+		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
 		goto repeat;
 	} else if (ch == 'x' || ch == '<') {
 		xref = true;
