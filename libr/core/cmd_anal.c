@@ -380,6 +380,7 @@ static const char *help_msg_afi[] = {
 	"afij", "", "function info in json format",
 	"afil", "", "verbose function info",
 	"afip", "", "show whether the function is pure or not",
+	"afis", "", "show function stats (opcode, meta)",
 	NULL
 };
 
@@ -562,8 +563,10 @@ static const char *help_msg_ah[] = {
 	"ah-", "", "remove all hints",
 	"ah-", " offset [size]", "remove hints at given offset",
 	"ah*", " offset", "list hints in radare commands format",
-	"aha", " ppc 51", "set arch for a range of N bytes",
-	"ahb", " 16 @ $$", "force 16bit for current instruction",
+	"aha", " ppc @ 0x42", "force arch ppc for all addrs >= 0x42 or until the next hint",
+	"aha", " 0 @ 0x84", "disable the effect of arch hints for all addrs >= 0x84 or until the next hint",
+	"ahb", " 16 @ 0x42", "force 16bit for all addrs >= 0x42 or until the next hint",
+	"ahb", " 0 @ 0x84", "disable the effect of bits hints for all addrs >= 0x84 or until the next hint",
 	"ahc", " 0x804804", "override call/jump address",
 	"ahd", " foo a0,33", "replace opcode string",
 	"ahe", " 3,eax,+=", "set vm analysis string",
@@ -2724,11 +2727,6 @@ static void __updateStats(RCore *core, Sdb *db, ut64 addr, int statsMode) {
 
 
 static Sdb *__core_cmd_anal_fcn_stats (RCore *core, const char *input) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	if (!fcn) {
-		eprintf ("Cannot find any function at 0x%08"PFMT64x"\n", core->offset);
-		return NULL;
-	}
 	bool silentMode = false;
 	int statsMode = 0;
 	if (*input == '*') {
@@ -2751,6 +2749,11 @@ static Sdb *__core_cmd_anal_fcn_stats (RCore *core, const char *input) {
 		break;
 	}
 
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+	if (!fcn) {
+		eprintf ("Cannot find any function at 0x%08"PFMT64x"\n", core->offset);
+		return NULL;
+	}
 	Sdb *db = sdb_new0 ();
 	RAnalBlock *bb;
 	RListIter *iter;
@@ -7357,13 +7360,10 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		break;
 	case 'a': // "aha" set arch
 		if (input[1]) {
-			int i;
 			char *ptr = strdup (input + 2);
-			i = r_str_word_set0 (ptr);
-			if (i == 2) {
-				r_num_math (core->num, r_str_word_get0 (ptr, 1));
-			}
-			r_anal_hint_set_arch (core->anal, core->offset, r_str_word_get0 (ptr, 0));
+			r_str_word_set0 (ptr);
+			const char *arch = r_str_word_get0 (ptr, 0);
+			r_anal_hint_set_arch (core->anal, core->offset, !arch || strcmp (arch, "0") == 0 ? NULL : arch);
 			free (ptr);
 		} else if (input[1] == '-') {
 			r_anal_hint_unset_arch (core->anal, core->offset);

@@ -1,12 +1,11 @@
 NAME=ah- offset
 FILE=-
-EXPECT=<<EOF
-before:
- 0x00000000 - 0x00000000 => immbase=10
- 0x00000010 - 0x00000010 => immbase=8
+EXPECT='before:
+ 0x00000000 => immbase=10
+ 0x00000010 => immbase=8
 after:
- 0x00000000 - 0x00000000 => immbase=10
-EOF
+ 0x00000000 => immbase=10
+'
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16
@@ -20,13 +19,12 @@ RUN
 
 NAME=ah-offset
 FILE=-
-EXPECT=<<EOF
-before:
- 0x00000000 - 0x00000000 => immbase=10
- 0x00000010 - 0x00000010 => immbase=8
+EXPECT='before:
+ 0x00000000 => immbase=10
+ 0x00000010 => immbase=8
 after:
- 0x00000000 - 0x00000000 => immbase=10
-EOF
+ 0x00000000 => immbase=10
+'
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16
@@ -42,11 +40,16 @@ NAME=ah
 FILE=-
 EXPECT=<<EOF
 all:
- 0x00000815 - 0x00000815 => immbase=17185
- 0x00001337 - 0x0000133b => arch='ppc' bits=16 type='call' size=4 opcode='foo a0,33' syntax='jz' immbase=10 esil='3,eax,+=' ptr=0xc0ff33 jump=0x00804804 fail=0x00012345 ret=0x0000002a high=true stackframe=0x10
+ 0x00000815 => immbase=17185
+ 0x00001337 => arch='ppc' bits=16 jump=0x00804804 esil='3,eax,+=' fail=0x00012345 stackframe=0x10 high=true immbase=10 opcode='foo a0,33' ptr=0xc0ff33 ret=0x0000002a size=4 syntax='jz' type='call'
 --
 at 0x1337:
- 0x00001337 - 0x0000133b => arch='ppc' bits=16 type='call' size=4 opcode='foo a0,33' syntax='jz' immbase=10 esil='3,eax,+=' ptr=0xc0ff33 jump=0x00804804 fail=0x00012345 ret=0x0000002a high=true stackframe=0x10
+ 0x00001337 => arch='ppc' bits=16 jump=0x00804804 esil='3,eax,+=' fail=0x00012345 stackframe=0x10 high=true immbase=10 opcode='foo a0,33' ptr=0xc0ff33 ret=0x0000002a size=4 syntax='jz' type='call'
+--
+at 0xdeadbeef
+ 0x00001337 => arch='ppc' bits=16
+--
+at 0x42
 EOF
 CMDS=<<EOF
 s 0x1337
@@ -71,6 +74,12 @@ ah
 ?e --
 ?e at 0x1337:
 ah. @ 0x1337
+?e --
+?e at 0xdeadbeef
+ah. @ 0xdeadbeef
+?e --
+?e at 0x42
+ah. @ 0x42
 EOF
 RUN
 
@@ -81,34 +90,34 @@ all:
 ahi 17185 @ 0x815
 aha ppc @ 0x1337
 ahb 16 @ 0x1337
-aho call @ 0x1337
-ahs 4 @ 0x1337
-ahd foo a0,33 @ 0x1337
-ahS jz @ 0x1337
-ahi 10 @ 0x1337
-ahe 3,eax,+= @ 0x1337
-ahp 0xc0ff33 @ 0x1337
 ahc 0x804804 @ 0x1337
+ahe 3,eax,+= @ 0x1337
 ahf 0x12345 @ 0x1337
-ahr 0x2a @ 0x1337
-ahh @ 0x1337
 ahF 0x10 @ 0x1337
+ahh @ 0x1337
+ahi 10 @ 0x1337
+ahd foo a0,33 @ 0x1337
+ahp 0xc0ff33 @ 0x1337
+ahr 0x2a @ 0x1337
+ahs 0x4 @ 0x1337
+ahS jz @ 0x1337
+aho call @ 0x1337
 --
 at 0x1337:
 aha ppc @ 0x1337
 ahb 16 @ 0x1337
-aho call @ 0x1337
-ahs 4 @ 0x1337
-ahd foo a0,33 @ 0x1337
-ahS jz @ 0x1337
-ahi 10 @ 0x1337
-ahe 3,eax,+= @ 0x1337
-ahp 0xc0ff33 @ 0x1337
 ahc 0x804804 @ 0x1337
+ahe 3,eax,+= @ 0x1337
 ahf 0x12345 @ 0x1337
-ahr 0x2a @ 0x1337
-ahh @ 0x1337
 ahF 0x10 @ 0x1337
+ahh @ 0x1337
+ahi 10 @ 0x1337
+ahd foo a0,33 @ 0x1337
+ahp 0xc0ff33 @ 0x1337
+ahr 0x2a @ 0x1337
+ahs 0x4 @ 0x1337
+ahS jz @ 0x1337
+aho call @ 0x1337
 EOF
 CMDS=<<EOF
 s 0x1337
@@ -140,10 +149,10 @@ NAME=ahj
 FILE=-
 EXPECT=<<EOF
 all:
-[{"from":2069,"to":2069,"immbase":17185},{"from":4919,"to":4923,"arch":"ppc","bits":16,"type":"call","size":4,"opcode":"foo a0,33","syntax":"jz","immbase":10,"esil":"3,eax,+=","ptr":12648243,"jump":8407044,"fail":74565,"ret":42,"high":true,"stackframe":16}]
+[{"addr":2069,"immbase":17185},{"addr":4919,"arch":"ppc","bits":16,"jump":8407044,"esil":"3,eax,+=","fail":74565,"stackframe":16,"high":true,"immbase":10,"opcode":"foo a0,33","ptr":12648243,"ret":42,"size":4,"syntax":"jz","type":"call"}]
 --
 at 0x1337:
-[{"from":4919,"to":4923,"arch":"ppc","bits":16,"type":"call","size":4,"opcode":"foo a0,33","syntax":"jz","immbase":10,"esil":"3,eax,+=","ptr":12648243,"jump":8407044,"fail":74565,"ret":42,"high":true,"stackframe":16}]
+[{"addr":4919,"arch":"ppc","bits":16,"jump":8407044,"esil":"3,eax,+=","fail":74565,"stackframe":16,"high":true,"immbase":10,"opcode":"foo a0,33","ptr":12648243,"ret":42,"size":4,"syntax":"jz","type":"call"}]
 EOF
 CMDS=<<EOF
 s 0x1337
@@ -191,5 +200,87 @@ EXPECT=<<EOF
             0x100001058      55             hello world
             0x100001059      4889e5         mov rbp, rsp
             0x10000105c      4157           push r15
+EOF
+RUN
+
+NAME=arch hints for ranges
+FILE=-
+EXPECT=%-- all
+ 0x00000042 => arch='arm'
+ 0x00000084 => arch=RESET
+-- all json
+[{"addr":66,"arch":"arm"},{"addr":132,"arch":null}]
+-- all cmd
+aha arm @ 0x42
+aha 0 @ 0x84
+-- before hints
+-- at first
+ 0x00000042 => arch='arm'
+-- between hints
+ 0x00000042 => arch='arm'
+-- at second
+ 0x00000084 => arch=RESET
+-- after second
+ 0x00000084 => arch=RESET%
+CMDS=<<EOF
+aha arm @ 0x42
+aha 0 @ 0x84
+?e -- all
+ah
+?e -- all json
+ahj
+?e -- all cmd
+ah*
+?e -- before hints
+ah. @ 0
+?e -- at first
+ah. @ 0x42
+?e -- between hints
+ah. @ 0x60
+?e -- at second
+ah. @ 0x84
+?e -- after second
+ah. @ 0x100
+EOF
+RUN
+
+NAME=bits hints for ranges
+FILE=-
+EXPECT='-- all
+ 0x00000042 => bits=16
+ 0x00000084 => bits=RESET
+-- all json
+[{"addr":66,"bits":16},{"addr":132,"bits":0}]
+-- all cmd
+ahb 16 @ 0x42
+ahb 0 @ 0x84
+-- before hints
+-- at first
+ 0x00000042 => bits=16
+-- between hints
+ 0x00000042 => bits=16
+-- at second
+ 0x00000084 => bits=RESET
+-- after second
+ 0x00000084 => bits=RESET'
+CMDS=<<EOF
+ahb 16 @ 0x42
+ahb 0 @ 0x84
+?e -- all
+ah
+?e -- all json
+ahj
+?e -- all cmd
+ah*
+?e -- before hints
+ah. @ 0
+?e -- at first
+ah. @ 0x42
+?e -- between hints
+ah. @ 0x60
+?e -- at second
+ah. @ 0x84
+?e -- after second
+ah. @ 0x100
 EOF
 RUN
