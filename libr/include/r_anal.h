@@ -523,6 +523,7 @@ enum {
 };
 
 enum {
+	R_ANAL_RET_NOP = 0,
 	R_ANAL_RET_ERROR = -1,
 	R_ANAL_RET_DUP = -2,
 	R_ANAL_RET_NEW = -3,
