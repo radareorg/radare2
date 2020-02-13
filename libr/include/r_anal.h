@@ -909,10 +909,6 @@ typedef struct r_anal_bb_t {
 	// size of the op_pos array
 	int op_pos_size;
 	ut8 *op_bytes;
-	/* these are used also in pdr: */
-	RAnalBlock *prev;
-	RAnalBlock *failbb;
-	RAnalBlock *jumpbb;
 	RList /*struct r_anal_bb_t*/ *cases;
 	ut8 *parent_reg_arena;
 	int stackptr;
@@ -1489,8 +1485,6 @@ R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_i(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
 R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr);
-R_API RAnalBlock *r_anal_bb_get_failbb(RAnalFunction *fcn, RAnalBlock *bb);
-R_API RAnalBlock *r_anal_bb_get_jumpbb(RAnalFunction *fcn, RAnalBlock *bb);
 
 /* op.c */
 R_API const char *r_anal_stackop_tostring(int s);
