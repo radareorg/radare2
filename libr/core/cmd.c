@@ -5024,7 +5024,10 @@ DEFINE_HANDLE_TS_FCN(grep_command) {
 	char *specifier_str = ts_node_sub_string (specifier, state->input);
 	bool res = handle_ts_command (state, command);
 	R_LOG_DEBUG ("grep_command specifier: '%s'\n", specifier_str);
-	char *specifier_str_processed = r_cons_grep_strip (specifier_str, "`");
+	RStrBuf *sb = r_strbuf_new (specifier_str);
+	r_strbuf_prepend (sb, "~");
+	char *specifier_str_processed = r_cons_grep_strip (r_strbuf_get (sb), "`");
+	r_strbuf_free (sb);
 	R_LOG_DEBUG ("grep_command processed specifier: '%s'\n", specifier_str_processed);
 	r_cons_grep_process (specifier_str_processed);
 	free (specifier_str);
