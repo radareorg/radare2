@@ -43,44 +43,6 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	return ret;
 }
 
-R_API RAnalBlock *r_anal_bb_get_jumpbb(RAnalFunction *fcn, RAnalBlock *bb) {
-	if (bb->jump == UT64_MAX) {
-		return NULL;
-	}
-	if (bb->jumpbb) {
-		return bb->jumpbb;
-	}
-	RListIter *iter;
-	RAnalBlock *b;
-	r_list_foreach (fcn->bbs, iter, b) {
-		if (b->addr == bb->jump) {
-			bb->jumpbb = b;
-			b->prev = bb;
-			return b;
-		}
-	}
-	return NULL;
-}
-
-R_API RAnalBlock *r_anal_bb_get_failbb(RAnalFunction *fcn, RAnalBlock *bb) {
-	RListIter *iter;
-	RAnalBlock *b;
-	if (bb->fail == UT64_MAX) {
-		return NULL;
-	}
-	if (bb->failbb) {
-		return bb->failbb;
-	}
-	r_list_foreach (fcn->bbs, iter, b) {
-		if (b->addr == bb->fail) {
-			bb->failbb = b;
-			b->prev = bb;
-			return b;
-		}
-	}
-	return NULL;
-}
-
 /* return the offset of the i-th instruction in the basicblock bb.
  * If the index of the instruction is not valid, it returns UT16_MAX */
 R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i) {
