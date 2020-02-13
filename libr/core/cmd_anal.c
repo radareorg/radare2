@@ -2191,7 +2191,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 				pj_ki (pj, "inputs", inputs);
 				pj_ki (pj, "outputs", outputs);
 				pj_ki (pj, "ninstr", b->ninstr);
-				pj_ks (pj, "traced", r_str_bool (b->traced));
+				pj_kb (pj, "traced", b->traced);
 				pj_end (pj);
 				}
 				break;

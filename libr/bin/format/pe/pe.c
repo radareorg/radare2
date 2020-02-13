@@ -2454,7 +2454,7 @@ static char* _resource_lang_str(int id) {
 }
 
 static char* _resource_type_str(int type) {
-	char * typeName;
+	const char * typeName;
 	switch (type) {
 	case 1:
 		typeName = "CURSOR";
@@ -2524,8 +2524,8 @@ static char* _resource_type_str(int type) {
 	return strdup (typeName);
 }
 
-static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, HtUU *dirs, char *resource_name) {
-	ut8 *resourceEntryName = NULL;
+static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, HtUU *dirs, const char *resource_name) {
+	char *resourceEntryName = NULL;
 	int index = 0;
 	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
 	ut64 rsrc_base = bin->resource_directory_offset;
@@ -2549,12 +2549,12 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 		}
 		if (entry.u1.s.NameIsString) {
 			int i;
-			ut16 buf, resourceEntryNameLength;
+			ut16 buf;
 			if (r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset, (ut8*)&buf, sizeof (ut16)) != sizeof (ut16)) {
 				break;
 			}
-			resourceEntryNameLength = r_read_le16 (&buf);
-			resourceEntryName = calloc (resourceEntryNameLength + 1, sizeof (ut8));
+			ut16 resourceEntryNameLength = r_read_le16 (&buf);
+			resourceEntryName = calloc (resourceEntryNameLength + 1, 1);
 			if (resourceEntryName) {
 				for (i = 0; i < resourceEntryNameLength; i++) { /* Convert Unicode to ASCII */
 					ut8 byte;
@@ -2575,18 +2575,11 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
 				eprintf ("Warning: parsing resource directory\n");
 			}
-			if (resource_name) {
-				/* We're about to recursively call this function with a new resource entry name
-				   and we haven't used resource_name, so free it. Only happens in weird PEs. */
-				R_FREE (resource_name);
-			}
-			_parse_resource_directory (bin, &identEntry,
-				entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs, (char *)resourceEntryName);
-			// do not dblfree, ownership is transferred free (resourceEntryName);
-			continue;
-		} else {
+			_parse_resource_directory (bin, &identEntry, entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs, resourceEntryName);
 			R_FREE (resourceEntryName);
+			continue;
 		}
+		R_FREE (resourceEntryName);
 
 		Pe_image_resource_data_entry *data = R_NEW0 (Pe_image_resource_data_entry);
 		if (!data) {
@@ -2660,8 +2653,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 		if (resource_name) {
 			rs->name = strdup (resource_name);
 		} else {
-			char numberbuf[SDB_NUM_BUFSZ];
-			rs->name = strdup (sdb_itoa (id, numberbuf, 10));
+			rs->name = r_str_newf ("%d", id);
 		}
 		r_list_append (bin->resources, rs);
 	}
@@ -2737,7 +2729,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 			if (len < 1 || len != sizeof (identEntry)) {
 				eprintf ("Warning: parsing resource directory\n");
 			}
-			_parse_resource_directory (bin, &identEntry, typeEntry.u2.s.OffsetToDirectory, typeEntry.u1.Id, 0, dirs, NULL);
+			(void)_parse_resource_directory (bin, &identEntry, typeEntry.u2.s.OffsetToDirectory, typeEntry.u1.Id, 0, dirs, NULL);
 		}
 	}
 	ht_uu_free (dirs);

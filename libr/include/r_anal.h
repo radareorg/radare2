@@ -897,8 +897,7 @@ typedef struct r_anal_bb_t {
 	ut64 fail;
 	int type;
 	int ninstr;
-	bool conditional;
-	int traced;
+	bool traced;
 	ut32 colorize;
 	char *label;
 	ut8 *fingerprint;
@@ -910,7 +909,6 @@ typedef struct r_anal_bb_t {
 	// size of the op_pos array
 	int op_pos_size;
 	ut8 *op_bytes;
-	ut8 op_sz;
 	/* these are used also in pdr: */
 	RAnalBlock *prev;
 	RAnalBlock *failbb;
