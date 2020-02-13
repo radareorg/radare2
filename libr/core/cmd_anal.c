@@ -380,6 +380,7 @@ static const char *help_msg_afi[] = {
 	"afij", "", "function info in json format",
 	"afil", "", "verbose function info",
 	"afip", "", "show whether the function is pure or not",
+	"afis", "", "show function stats (opcode, meta)",
 	NULL
 };
 
@@ -2724,11 +2725,6 @@ static void __updateStats(RCore *core, Sdb *db, ut64 addr, int statsMode) {
 
 
 static Sdb *__core_cmd_anal_fcn_stats (RCore *core, const char *input) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	if (!fcn) {
-		eprintf ("Cannot find any function at 0x%08"PFMT64x"\n", core->offset);
-		return NULL;
-	}
 	bool silentMode = false;
 	int statsMode = 0;
 	if (*input == '*') {
@@ -2751,6 +2747,11 @@ static Sdb *__core_cmd_anal_fcn_stats (RCore *core, const char *input) {
 		break;
 	}
 
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+	if (!fcn) {
+		eprintf ("Cannot find any function at 0x%08"PFMT64x"\n", core->offset);
+		return NULL;
+	}
 	Sdb *db = sdb_new0 ();
 	RAnalBlock *bb;
 	RListIter *iter;
