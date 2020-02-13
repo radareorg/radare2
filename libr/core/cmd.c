@@ -4474,6 +4474,12 @@ DEFINE_IS_TS_FCN(arg)
 DEFINE_IS_TS_FCN(arg_identifier)
 DEFINE_IS_TS_FCN(quoted_arg)
 
+// NOTE: this should be in sync with SPECIAL_CHARACTERS in
+//       radare2-shell-parser grammar, except for ", ' and
+//       whitespaces, because we let cmd_substitution_arg create
+//       new arguments
+static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`()<";
+static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"";
 
 static struct tsr2cmd_edit *create_cmd_edit(struct tsr2cmd_state *state, TSNode arg, char *new_text) {
 	struct tsr2cmd_edit *e = R_NEW0 (struct tsr2cmd_edit);
@@ -4495,24 +4501,12 @@ static void replace_whitespaces(char *s, char ch) {
 	}
 }
 
-static bool is_arg_special_char(char ch) {
-	// NOTE: this should be in sync with SPECIAL_CHARACTERS in the
-	//       radare2-shell-parser grammar, except for the whitespaces
-	return ch == '@' || ch == ';' || ch == '"' || ch == '\'' || ch == '~' ||
-		ch == '$' || ch == '#' || ch == '|' || ch == '`' || ch == '(' ||
-		ch == ')' || ch == '<' || ch == '>';
-}
-
-static bool is_arg_special_char_with_spaces(char ch) {
-	return is_arg_special_char (ch) || isspace (ch);
-}
-
-static char *escape_special_chars(char *s) {
+static char *escape_special_chars(char *s, const char *special_chars) {
 	size_t s_len = strlen (s);
 	char *d = R_NEWS (char, s_len * 2 + 1);
 	int i, j = 0;
 	for (i = 0; i < s_len; ++i) {
-		if (is_arg_special_char (s[i])) {
+		if (strchr (special_chars, s[i])) {
 			d[j++] = '\\';
 		}
 		d[j++] = s[i];
@@ -4522,18 +4516,17 @@ static char *escape_special_chars(char *s) {
 	return d;
 }
 
-static char *arg_unescape(char *s) {
+static char *unescape_special_chars(char *s, const char *special_chars) {
 	char *dst = R_NEWS (char, strlen (s) + 1);
 	int i, j = 0;
 
 	for (i = 0; s[i]; i++) {
-		if (s[i] != '\\') {
+		if (s[i] != '\\' || !strchr (special_chars, s[i + 1])) {
 			dst[j++] = s[i];
 			continue;
 		}
-		if (is_arg_special_char_with_spaces (s[i++])) {
-			dst[j++] = s[i];
-		}
+		dst[j++] = s[i + 1];
+		i++;
 	}
 	dst[j++] = '\0';
 	return dst;
@@ -4586,8 +4579,13 @@ static void do_handle_substitution_arg(struct tsr2cmd_state *state, TSNode arg, 
 	// replace newlines and similar with spaces
 	replace_whitespaces (out, ' ');
 	// escape special chars to prevent creation of new tokens when parsing again
-	// FIXME: no need to escape special chars if inside a quoted_arg
-	out = escape_special_chars (out);
+	const char *special_chars;
+	if (is_ts_quoted_arg (ts_node_parent (arg))) {
+		special_chars = SPECIAL_CHARS_DOUBLE_QUOTED;
+	} else {
+		special_chars = SPECIAL_CHARS_REGULAR;
+	}
+	out = escape_special_chars (out, special_chars);
 	struct tsr2cmd_edit *e = create_cmd_edit (state, arg, out);
 	r_list_append (edits, e);
 }
@@ -4620,17 +4618,25 @@ static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, R
 	}
 }
 
-static char *unescape_arg(struct tsr2cmd_state *state, TSNode arg) {
+static char *unescape_arg(struct tsr2cmd_state *state, TSNode arg, const char *special_chars) {
 	char *arg_str = ts_node_sub_string (arg, state->input);
-	char *unescaped_arg = arg_unescape (arg_str);
+	char *unescaped_arg = unescape_special_chars (arg_str, special_chars);
 	R_LOG_DEBUG ("original arg = '%s', unescaped arg = '%s'\n", arg_str, unescaped_arg);
 	free (arg_str);
 	return unescaped_arg;
 }
 
 static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) {
-	if (is_ts_arg_identifier (arg)) {
-		return unescape_arg (state, arg);
+	if (is_ts_arg (arg)) {
+		return do_handle_ts_unescape_arg (state, ts_node_named_child (arg, 0));
+	} else if (is_ts_arg_identifier (arg)) {
+		return unescape_arg (state, arg, SPECIAL_CHARS_REGULAR);
+	} else if (is_ts_quoted_arg (arg)) {
+		char *c = unescape_arg (state, arg, SPECIAL_CHARS_DOUBLE_QUOTED);
+		c[strlen (c) - 1] = '\0';
+		char *res = strdup (c + 1);
+		free (c);
+		return res;
 	} else {
 		return ts_node_sub_string (arg, state->input);
 	}
