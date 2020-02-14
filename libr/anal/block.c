@@ -53,7 +53,6 @@ static RAnalBlock *block_new(RAnal *a, ut64 addr, ut64 size) {
 	block->ref = 1;
 	block->jump = UT64_MAX;
 	block->fail = UT64_MAX;
-	block->type = R_ANAL_BB_TYPE_NULL;
 	block->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
 	block->op_pos_size = DFLT_NINSTR;
 	block->stackptr = 0;
@@ -73,7 +72,6 @@ static void block_free(RAnalBlock *block) {
 	free (block->op_bytes);
 	r_anal_switch_op_free (block->switch_op);
 	r_list_free (block->fcns);
-	free (block->label);
 	free (block->op_pos);
 	free (block->parent_reg_arena);
 	free (block);
