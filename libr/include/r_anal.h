@@ -892,7 +892,6 @@ typedef struct r_anal_bb_t {
 	// size of the op_pos array
 	int op_pos_size;
 	ut8 *op_bytes;
-	RList /*struct r_anal_bb_t*/ *cases;
 	ut8 *parent_reg_arena;
 	int stackptr;
 	int parent_stackptr;

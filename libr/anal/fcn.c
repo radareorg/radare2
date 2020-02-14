@@ -1529,9 +1529,6 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 				E++;
 			}
 		}
-		if (bb->cases) { // dead code ?
-			E += r_list_length (bb->cases);
-		}
 		if (bb->switch_op && bb->switch_op->cases) {
 			E += r_list_length (bb->switch_op->cases);
 		}
