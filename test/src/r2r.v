@@ -173,6 +173,7 @@ mut:
 	expect_err string
 	// mutable
 	broken     bool
+	one_stream bool
 	failed     bool
 	fixed      bool
 }
@@ -292,6 +293,14 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 				}
 				else {
 					eprintln('Warning: Missing value for BROKEN in ${test.source}')
+				}
+			}
+			'ONE_STREAM' {
+				if v.len > 0 {
+					test.one_stream = v != '0'
+				}
+				else {
+					eprintln('Warning: Missing value for ONE_STREAM in ${test.source}')
 				}
 			}
 			'ARGS' {
@@ -513,25 +522,32 @@ fn handle_control_c() {
 	}
 }
 
+fn read_file(path string) string {
+	contents := os.read_file(path) or {
+		panic(err)
+	}
+	return contents
+}
+
 fn (r2r mut R2R) run_cmd_test(test R2RCmdTest) {
 	time_start := time.ticks()
 	tmp_dir := mktmpdir('')
 	tmp_script := filepath.join(tmp_dir,'script.r2')
 	tmp_stderr := filepath.join(tmp_dir,'stderr.txt')
 	tmp_output := filepath.join(tmp_dir,'output.txt')
+	one_stream_redir := if test.one_stream { '2>&1' } else { '2> ${tmp_stderr}' }
+	one_stream_flag := if test.one_stream { ' -e scr.onestream=1' } else { '' }
 	os.write_file(tmp_script, test.cmds)
 	// TODO: handle timeout
-	r2 := '${r2r.r2_path} -e scr.utf8=0 -e scr.interactive=0 -e scr.color=0 -NQ'
+	r2 := '${r2r.r2_path}${one_stream_flag} -e scr.utf8=0 -e scr.interactive=0 -e scr.color=0 -NQ'
 	cwd := os.getwd()
 	os.chdir('../new') // fix runnig directory
-	os.system('${r2} -i ${tmp_script} ${test.args} ${test.file} 2> ${tmp_stderr} > ${tmp_output}')
+	os.system('${r2} -i ${tmp_script} ${test.args} ${test.file} > ${tmp_output} ${one_stream_redir}')
 	os.chdir(cwd)
 	res := os.read_file(tmp_output) or {
 		panic(err)
 	}
-	errstr := os.read_file(tmp_stderr) or {
-		panic(err)
-	}
+	errstr := if test.one_stream { '' } else { read_file(tmp_stderr) }
 	os.rm(tmp_script)
 	os.rm(tmp_output)
 	os.rm(tmp_stderr)
