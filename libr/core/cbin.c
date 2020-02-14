@@ -1391,8 +1391,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			module[module_len - 4] = '\0';
 		}
 
-		char *import = strdup (reloc->import->name + strlen ("Ordinal_"));
-
+		const char *import = reloc->import->name + strlen ("Ordinal_");
 		if (import) {
 			char *filename = NULL;
 			int ordinal = atoi (import);
