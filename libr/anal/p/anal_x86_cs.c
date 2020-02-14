@@ -63,7 +63,9 @@ struct Getarg {
 	int bits;
 };
 
-static void hidden_op(csh handle, cs_insn *insn, cs_x86 *x, int mode) {
+static csh handle = 0;
+
+static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	unsigned int id = insn->id;
 	int regsz = 4;
 	switch (mode) {
@@ -105,13 +107,13 @@ static void hidden_op(csh handle, cs_insn *insn, cs_x86 *x, int mode) {
 	}
 }
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn, int mode) {
+static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 	int i;
 	r_strbuf_init (buf);
 	r_strbuf_append (buf, "{");
 	cs_x86 *x = &insn->detail->x86;
 	if (x->op_count == 0) {
-		hidden_op (handle, insn, x, mode);
+		hidden_op (insn, x, mode);
 	}
 	r_strbuf_appendf (buf, "\"operands\":[", x->op_count);
 	for (i = 0; i < x->op_count; i++) {
@@ -333,8 +335,6 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel, ut
 	}
 	return NULL;
 }
-
-static csh handle = 0;
 
 static int cond_x862r2(int id) {
 	switch (id) {
@@ -3092,7 +3092,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			anop_esil (a, op, addr, buf, len, &handle, insn);
 		}
 		if (mask & R_ANAL_OP_MASK_OPEX) {
-			opex (&op->opex, handle, insn, mode);
+			opex (&op->opex, insn, mode);
 		}
 		if (mask & R_ANAL_OP_MASK_VAL) {
 			op_fillval (a, op, &handle, insn);
