@@ -3147,6 +3147,54 @@ aoj~{}
 EOF
 RUN
 
+NAME=aoj pushf
+FILE=-
+EXPECT=<<EOF
+[
+  {
+    "opcode": "pushf",
+    "disasm": "pushf",
+    "pseudo": "pushf ",
+    "description": "push flags register onto the stack",
+    "mnemonic": "pushf",
+    "mask": "ffff",
+    "esil": "4,esp,-=,eflags,esp,=[4]",
+    "sign": false,
+    "prefix": 0,
+    "id": 591,
+    "opex": {
+      "operands": [
+        {
+          "size": 4,
+          "rw": 1,
+          "type": "reg",
+          "value": "eflags"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "669c",
+    "size": 2,
+    "type": "upush",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 2,
+    "failcycles": 0,
+    "delay": 0,
+    "stack": "inc",
+    "stackptr": 4,
+    "family": "cpu"
+  }
+]
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 669c
+aoj~{}
+EOF
+RUN
+
 NAME=reflines offset
 FILE=malloc://1023
 CMDS=<<EOF

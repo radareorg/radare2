@@ -63,11 +63,58 @@ struct Getarg {
 	int bits;
 };
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static csh handle = 0;
+
+static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
+	unsigned int id = insn->id;
+	int regsz = 4;
+	switch (mode) {
+	case CS_MODE_64:
+		regsz = 8;
+		break;
+	case CS_MODE_16:
+		regsz = 2;
+		break;
+	default:
+		regsz = 4; //32 bit
+		break;
+	}
+
+	switch (id) {
+	case X86_INS_PUSHF:
+	case X86_INS_POPF:
+	case X86_INS_PUSHFD:
+	case X86_INS_POPFD:
+	case X86_INS_PUSHFQ:
+	case X86_INS_POPFQ:
+		x->op_count = 1;
+		cs_x86_op *op = &x->operands[0];
+		op->type = X86_OP_REG;
+		op->reg = X86_REG_EFLAGS;
+		op->size = regsz;
+		if (id == X86_INS_PUSHF || id == X86_INS_PUSHFD || id == X86_INS_PUSHFQ) {
+			op->access = 1;
+		} else {
+			op->access = 2;
+		}
+		break;
+	case X86_INS_PUSHAW:
+	case X86_INS_PUSHAL:
+	case X86_INS_POPAW:
+	case X86_INS_POPAL:
+	default:
+		break;
+	}
+}
+
+static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 	int i;
 	r_strbuf_init (buf);
 	r_strbuf_append (buf, "{");
 	cs_x86 *x = &insn->detail->x86;
+	if (x->op_count == 0) {
+		hidden_op (insn, x, mode);
+	}
 	r_strbuf_appendf (buf, "\"operands\":[", x->op_count);
 	for (i = 0; i < x->op_count; i++) {
 		cs_x86_op *op = &x->operands[i];
@@ -288,8 +335,6 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel, ut
 	}
 	return NULL;
 }
-
-static csh handle = 0;
 
 static int cond_x862r2(int id) {
 	switch (id) {
@@ -3047,7 +3092,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			anop_esil (a, op, addr, buf, len, &handle, insn);
 		}
 		if (mask & R_ANAL_OP_MASK_OPEX) {
-			opex (&op->opex, handle, insn);
+			opex (&op->opex, insn, mode);
 		}
 		if (mask & R_ANAL_OP_MASK_VAL) {
 			op_fillval (a, op, &handle, insn);
