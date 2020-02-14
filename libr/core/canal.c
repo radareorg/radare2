@@ -1337,6 +1337,7 @@ static void print_hint_tree(RBTree tree, int mode) {
 	if (pj) {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 }
 

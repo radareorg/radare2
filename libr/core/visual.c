@@ -412,6 +412,7 @@ static void rotateAsmBits(RCore *core) {
 		bits = nb;
 		retries--;
 	}
+	r_anal_hint_free (hint);
 }
 
 static const char *rotateAsmemu(RCore *core) {

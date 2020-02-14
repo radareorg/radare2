@@ -3444,12 +3444,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		case 'r': {	// "afcr"
 			int i;
-			char *cmd, *regname;
 			RStrBuf *json_buf = r_strbuf_new ("{");
 			bool json = input[3] == 'j'? true: false;
 
-			cmd = r_str_newf ("cc.%s.ret", fcn->cc);
-			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			char *cmd = r_str_newf ("cc.%s.ret", fcn->cc);
+			const char *regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {
 					r_strbuf_appendf (json_buf, "\"ret\":\"%s\"", regname);
@@ -7535,6 +7534,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_str_word_set0 (ptr);
 			ut64 addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			r_core_anal_hint_print (core->anal, addr, input[0]);
+			free (ptr);
 		} else {
 			r_core_anal_hint_list (core->anal, input[0]);
 		}
