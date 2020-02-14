@@ -2155,8 +2155,8 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 	char *body = get_body (core, b->addr, b->size, opts);
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr) {
-			RAnalBlock *jumpbb = r_anal_bb_get_jumpbb (fcn, b);
-			if (jumpbb) {
+			RAnalBlock *jumpbb = r_anal_get_block_at (b->anal, b->jump);
+			if (jumpbb && r_list_contains (jumpbb->fcns, fcn)) {
 				if (emu && core->anal->last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
 					jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 				}
@@ -2168,8 +2168,8 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 	}
 	if (b->fail != UT64_MAX) {
 		if (b->fail > b->addr) {
-			RAnalBlock *failbb = r_anal_bb_get_failbb (fcn, b);
-			if (failbb) {
+			RAnalBlock *failbb = r_anal_get_block_at (b->anal, b->fail);
+			if (failbb && r_list_contains (failbb->fcns, fcn)) {
 				if (emu && core->anal->last_disasm_reg != NULL && !failbb->parent_reg_arena) {
 					failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 				}

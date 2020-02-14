@@ -3444,58 +3444,68 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		case 'r': {	// "afcr"
 			int i;
-			char *out, *cmd, *regname, *tmp;
-			char *subvec_str = r_str_new ("");
-			char *json_str = r_str_new ("");
-			// if json_str initialize to NULL, it's possible for afcrj to output a (NULL)
-			// subvec_str and json_str should be valid until exiting this code block
+			char *cmd, *regname;
+			RStrBuf *json_buf = r_strbuf_new ("{");
 			bool json = input[3] == 'j'? true: false;
-			for (i = -1; i <= 10; i++) {
-				if (i == -1) {
-					cmd = r_str_newf ("cc.%s.ret", fcn->cc);
+
+			cmd = r_str_newf ("cc.%s.ret", fcn->cc);
+			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			if (regname) {
+				if (json) {
+					r_strbuf_appendf (json_buf, "\"ret\":\"%s\"", regname);
 				} else {
-					cmd = r_str_newf ("cc.%s.arg%d", fcn->cc, i);
+					r_cons_printf ("%s: %s\n", cmd, regname);
 				}
-				regname = r_str_new (cmd);
-				out = sdb_querys (core->anal->sdb_cc, NULL, 0, cmd);
-				free (cmd);
-				if (out) {
-					out[strlen (out) - 1] = 0;
+			}
+			free (cmd);
+
+			bool isFirst = true;
+			for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+				cmd = r_str_newf ("cc.%s.arg%d", fcn->cc, i);
+				regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+				if (regname) {
 					if (json) {
-						tmp = subvec_str;
-						subvec_str = r_str_newf ("%s,\"%s\"", subvec_str, out);
-						free (tmp);
+						if (isFirst) {
+							r_strbuf_appendf (json_buf, ",\"args\":[\"%s\"", regname);
+							isFirst = false;
+						} else {
+							r_strbuf_appendf (json_buf, ",\"%s\"", regname);
+						}
 					} else {
-						r_cons_printf ("%s: %s\n", regname, out);
+						r_cons_printf ("%s: %s\n", cmd, regname);
 					}
-					free (out);
 				}
-				free (regname);
-				if (!subvec_str[0]) {
-					continue;
-				}
-				switch (i) {
-				case -1: {
-					tmp = json_str;
-					json_str = r_str_newf ("%s,\"ret\":%s", json_str, subvec_str + 1);
-					free (tmp);
-				} break;
-				case 10: {
-					tmp = json_str;
-					json_str = r_str_newf ("%s,\"args\":[%s]", json_str, subvec_str + 1);
-					free (tmp);
-				} break;
-				default:
-					continue;
-				}
-				free (subvec_str);
-				subvec_str = r_str_new ("");
+				free (cmd);
 			}
-			if (json && json_str[0]) {
-				r_cons_printf ("{%s}\n", json_str + 1);
+			if (!isFirst) {
+				r_strbuf_append (json_buf, "]");
 			}
-			free (subvec_str);
-			free (json_str);
+
+			cmd = r_str_newf ("cc.%s.self", fcn->cc);
+			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			if (regname) {
+				if (json) {
+					r_strbuf_appendf (json_buf, ",\"self\":\"%s\"", regname);
+				} else {
+					r_cons_printf ("%s: %s\n", cmd, regname);
+				}
+			}
+			free (cmd);
+			cmd = r_str_newf ("cc.%s.error", fcn->cc);
+			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			if (regname) {
+				if (json) {
+					r_strbuf_appendf (json_buf, ",\"error\":\"%s\"", regname);
+				} else {
+					r_cons_printf ("%s: %s\n", cmd, regname);
+				}
+			}
+			free (cmd);
+
+			r_strbuf_append (json_buf, "}");
+			if (json) {
+				r_cons_printf ("%s\n", r_strbuf_drain (json_buf));
+			}
 		} break;
 		case 'R': { // "afcR"
 			/* very slow, but im tired of waiting for having this, so this is the quickest implementation */

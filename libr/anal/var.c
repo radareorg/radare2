@@ -137,7 +137,7 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
-	if (kind == 'r') {
+	if (kind == R_ANAL_VAR_KIND_REG) {
 		reg = r_reg_index_get (a->reg, R_ABS (delta));
 		if (!reg) {
 			eprintf ("Register wasn't found at the given delta\n");
@@ -834,20 +834,63 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				free (type);
 				(*count)++;
 			} else {
-				if (is_reg_in_src (regname, anal, op)) {
-					reg_set[i] = 2;
-				}
-				if (STR_EQUAL (opdreg, regname)) {
+				if (is_reg_in_src (regname, anal, op) || STR_EQUAL (opdreg, regname)) {
 					reg_set[i] = 2;
 				}
 				continue;
 			}
-			if (is_reg_in_src (regname, anal, op)) {
+			if (is_reg_in_src (regname, anal, op) || STR_EQUAL (regname, opdreg)) {
 				reg_set[i] = 1;
 			}
-			if (STR_EQUAL (regname, opdreg)) {
-				reg_set[i] = 1;
+		}
+	}
+
+	const char *selfreg = r_anal_cc_self (anal, fcn->cc);
+	if (selfreg) {
+		bool is_used_like_an_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal);
+		if (reg_set[i] != 2 && is_used_like_an_arg) {
+			int delta = 0;
+			char *vname = strdup ("self");
+			RRegItem *ri = r_reg_get (anal->reg, selfreg, -1);
+			if (ri) {
+				delta = ri->index;
 			}
+			r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, 0,
+					anal->bits / 8, 1, vname);
+			if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
+				r_anal_var_link (anal, op->addr, op->var);
+			}
+			r_anal_var_access (anal, fcn->addr, R_ANAL_VAR_KIND_REG, 1, delta, 0, 0, op->addr);
+			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
+			free (vname);
+			(*count)++;
+		} else {
+			if (is_reg_in_src (selfreg, anal, op) || STR_EQUAL (opdreg, selfreg)) {
+				reg_set[i] = 2;
+			}
+		}
+		i++;
+	}
+
+	const char *errorreg = r_anal_cc_error (anal, fcn->cc);
+	if (errorreg) {
+		if (reg_set[i] == 0 && STR_EQUAL (opdreg, errorreg)) {
+			int delta = 0;
+			char *vname = strdup ("error");
+			RRegItem *ri = r_reg_get (anal->reg, errorreg, -1);
+			if (ri) {
+				delta = ri->index;
+			}
+			r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, 0,
+					anal->bits / 8, 1, vname);
+			if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
+				r_anal_var_link (anal, op->addr, op->var);
+			}
+			r_anal_var_access (anal, fcn->addr, R_ANAL_VAR_KIND_REG, 1, delta, 0, 0, op->addr);
+			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
+			free (vname);
+			(*count)++;
+			reg_set[i] = 2;
 		}
 	}
 }
@@ -857,9 +900,9 @@ R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 
 	const char *BP = anal->reg->name[R_REG_NAME_BP];
 	const char *SP = anal->reg->name[R_REG_NAME_SP];
-	extract_arg (anal, fcn, op, BP, "+", 'b');
-	extract_arg (anal, fcn, op, BP, "-", 'b');
-	extract_arg (anal, fcn, op, SP, "+", 's');
+	extract_arg (anal, fcn, op, BP, "+", R_ANAL_VAR_KIND_BPV);
+	extract_arg (anal, fcn, op, BP, "-", R_ANAL_VAR_KIND_BPV);
+	extract_arg (anal, fcn, op, SP, "+", R_ANAL_VAR_KIND_SPV);
 }
 
 static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dynamicVars) {
@@ -1141,9 +1184,9 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 }
 
 R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn) {
-	cache->bvars = r_anal_var_list (anal, fcn, 'b');
-	cache->rvars = r_anal_var_list (anal, fcn, 'r');
-	cache->svars = r_anal_var_list (anal, fcn, 's');
+	cache->bvars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
+	cache->rvars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
+	cache->svars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_SPV);
 	r_list_sort (cache->bvars, (RListComparator)var_comparator);
 	r_list_sort (cache->rvars, (RListComparator)regvar_comparator);
 	r_list_sort (cache->svars, (RListComparator)var_comparator);
@@ -1238,6 +1281,11 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 	RListIter *iter;
 
 	r_list_foreach (cache->rvars, iter, var) {
+		// assume self, error are always the last
+		if (!strcmp (var->name, "self") || !strcmp (var->name, "error")) {
+			r_strbuf_slice (buf, 0, r_strbuf_length (buf) - 2);
+			break;
+		}
 		tmp_len = strlen (var->type);
 		r_strbuf_appendf (buf, "%s%s%s%s", var->type,
 			tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",

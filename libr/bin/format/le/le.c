@@ -88,7 +88,7 @@ static RBinSymbol *__get_symbol(r_bin_le_obj_t *bin, ut64 *offset) {
 
 RList *__get_entries(r_bin_le_obj_t *bin) {
 	ut64 offset = (ut64)bin->header->enttab + bin->headerOff;
-	RList *l = r_list_new ();
+	RList *l = r_list_newf (free);
 	if (!l) {
 		return NULL;
 	}
@@ -145,7 +145,9 @@ RList *__get_entries(r_bin_le_obj_t *bin) {
 				offset += sizeof (e.forwarder);
 				break;
 			}
-			r_list_append (l, (void *)entry);
+			if (entry != UT64_MAX) {
+				r_list_append (l, r_str_newf ("0x%"PFMT64x, entry));
+			}
 		}
 	}
 	return l;
@@ -158,7 +160,8 @@ static void __get_symbols_at(r_bin_le_obj_t *bin, RList *syml, RList *entl, ut64
 			break;
 		}
 		if (sym->ordinal) {
-			sym->vaddr = (ut64)r_list_get_n (entl, sym->ordinal - 1);
+			const char *n = r_list_get_n (entl, sym->ordinal - 1);
+			sym->vaddr = r_num_get (NULL, n);
 			sym->bind = R_BIN_BIND_GLOBAL_STR;
 			sym->type = R_BIN_TYPE_FUNC_STR;
 			r_list_append (syml, sym);
@@ -429,7 +432,11 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 			break;
 		}
 		LE_fixup_record_header header;
-		r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
+		int ret = r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
+		if (ret != sizeof (header)) {
+			eprintf ("Warning: oobread in LE header parsing relocs\n");
+			break;
+		}
 		offset += sizeof (header);
 		switch (header.source & F_SOURCE_TYPE_MASK) {
 		case BYTEFIXUP:
@@ -579,13 +586,15 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 			if (cur_page >= h->mpages) {
 				break;
 			}
-			offset = fix_rec_tbl_off + r_buf_read_ble32_at (bin->buf, (ut64)h->fpagetab + bin->headerOff + cur_page * sizeof (ut32), h->worder);
-			end = fix_rec_tbl_off + r_buf_read_ble32_at (bin->buf, (ut64)h->fpagetab + bin->headerOff + (cur_page + 1) * sizeof (ut32), h->worder);
-			if (offset >= end) {
-				continue;
+			ut64 at = h->fpagetab + bin->headerOff;
+			ut32 w0 = r_buf_read_ble32_at (bin->buf, at + cur_page * sizeof (ut32), h->worder);
+			ut32 w1 = r_buf_read_ble32_at (bin->buf, at + (cur_page + 1) * sizeof (ut32), h->worder);
+			offset = fix_rec_tbl_off + w0;
+			end = fix_rec_tbl_off + w1;
+			if (offset < end) {
+				cur_section = (RBinSection *)r_list_get_n (sections, cur_page);
+				cur_page_offset = cur_section ? cur_section->vaddr : 0;
 			}
-			cur_section = (RBinSection *)r_list_get_n (sections, cur_page);
-			cur_page_offset = cur_section ? cur_section->vaddr : 0;
 		}
 		if (!rel_appended) {
 			free (rel);
