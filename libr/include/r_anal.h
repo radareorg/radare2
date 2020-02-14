@@ -879,8 +879,8 @@ typedef struct r_anal_bb_t {
 	ut64 size;
 	ut64 jump;
 	ut64 fail;
-	int ninstr;
 	bool traced;
+	bool folded;
 	ut32 colorize;
 	ut8 *fingerprint;
 	RAnalDiff *diff;
@@ -889,17 +889,18 @@ typedef struct r_anal_bb_t {
 	// offsets of instructions in this block
 	ut16 *op_pos;
 	// size of the op_pos array
-	int op_pos_size;
 	ut8 *op_bytes;
 	ut8 *parent_reg_arena;
+	int op_pos_size;
+	int ninstr;
 	int stackptr;
 	int parent_stackptr;
-	bool folded;
 	ut64 cmpval;
 	const char *cmpreg;
+
 	RList *fcns;
-	int ref;
 	RAnal *anal;
+	int ref;
 #undef RAnalBlock
 } RAnalBlock;
 
