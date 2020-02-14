@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <r_hash.h>
 #include <r_types.h>
 #include <r_util.h>
 #include "pe.h"
@@ -836,6 +837,66 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 	// add filesize
 	computed_cs += bin->size;
 	return computed_cs;
+}
+
+static char* PE_(bin_pe_get_claimed_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
+	if (!bin->spcinfo) {
+		return NULL;
+	}
+	RASN1Binary *digest = bin->spcinfo->messageDigest.digest;
+	return r_hex_bin2strdup (digest->binary, digest->length);
+}
+
+static char* PE_(bin_pe_get_actual_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
+	if (!bin->spcinfo) {
+		return NULL;
+	}
+
+	const char *hashtype = bin->spcinfo->messageDigest.digestAlgorithm.algorithm->string;
+	ut64 algobit = r_hash_name_to_bits (hashtype);
+	if (!(algobit & (R_HASH_MD5 | R_HASH_SHA1))) {
+		eprintf ("Authenticode only supports md5, sha1.\n");
+		return NULL;
+	}
+
+	ut32 checksum_paddr = bin->nt_header_offset + 4 + sizeof (PE_(image_file_header)) + 0x40;
+	ut32 security_entry_offset =  bin->nt_header_offset + sizeof (PE_(image_nt_headers)) - 96;
+	PE_(image_data_directory) *data_dir_security = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY];
+	PE_DWord security_dir_offset = data_dir_security->VirtualAddress;
+	ut32 security_dir_size = data_dir_security->Size;
+
+	RBuffer *buf = r_buf_new ();
+	r_buf_append_buf_slice (buf, bin->b, 0, checksum_paddr);
+	r_buf_append_buf_slice (buf, bin->b,
+		checksum_paddr + 4,
+		security_entry_offset - checksum_paddr - 4);
+	r_buf_append_buf_slice (buf, bin->b,
+		security_entry_offset + 8,
+		security_dir_offset - security_entry_offset - 8);
+	r_buf_append_buf_slice (buf, bin->b,
+		security_dir_offset + security_dir_size,
+		r_buf_size (bin->b) - security_dir_offset - security_dir_size);
+
+	ut64 len;
+	const ut8 *data = r_buf_data (buf, &len);
+	char *hashstr = NULL;
+	RHash *ctx = r_hash_new (true, algobit);
+	r_hash_do_begin (ctx, algobit);
+	int digest_size = r_hash_calculate (ctx, algobit, data, len);
+	r_hash_do_end (ctx, algobit);
+	hashstr = r_hex_bin2strdup (ctx->digest, digest_size);
+
+	r_buf_free (buf);
+	r_hash_free (ctx);
+	return hashstr;
+}
+
+const char* PE_(bin_pe_get_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
+	return bin->authentihash;
+}
+
+int PE_(bin_pe_is_authhash_valid)(struct PE_(r_bin_pe_obj_t)* bin) {
+	return bin->is_authhash_valid;
 }
 
 static void computeOverlayOffset(ut64 offset, ut64 size, ut64 file_size, ut64* largest_offset, ut64* largest_size) {
@@ -2736,37 +2797,84 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	_store_resource_sdb (bin);
 }
 
-static void bin_pe_get_certificate(struct PE_ (r_bin_pe_obj_t) * bin) {
-	ut64 size, vaddr;
-	ut8 *data = NULL;
-	int len;
+static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) * bin) {
 	if (!bin || !bin->nt_headers) {
-		return;
+		return false;
 	}
-	bin->cms = NULL;
-	size = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].Size;
-	vaddr = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress;
-	if (size < 8) {
-		return;
+	if (bin->nt_headers->optional_header.NumberOfRvaAndSizes < 5) {
+		return false;
 	}
-	data = calloc (1, size);
-	if (!data) {
-		return;
+	PE_(image_data_directory) *data_dir_security = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY];
+	PE_DWord paddr = data_dir_security->VirtualAddress;
+	ut32 size = data_dir_security->Size;
+	if (size < 8 || paddr > bin->size || paddr + size > bin->size) {
+		bprintf ("Invalid certificate table");
+		return false;
 	}
-	if (vaddr > bin->size || vaddr + size > bin->size) {
-		bprintf ("vaddr greater than the file\n");
-		free (data);
-		return;
+
+	Pe_image_security_directory *security_directory = R_NEW0 (Pe_image_security_directory);
+	if (!security_directory) {
+		return false;
 	}
-	//skipping useless header..
-	len = r_buf_read_at (bin->b, vaddr + 8, data, size - 8);
-	if (len < 1) {
-		R_FREE (data);
-		return;
+	bin->security_directory = security_directory;
+
+	PE_DWord offset = paddr;
+	while (offset < paddr + size) {
+		Pe_certificate **tmp = (Pe_certificate **)realloc (security_directory->certificates, (security_directory->length + 1) * sizeof(Pe_certificate *));
+		if (!tmp) {
+			return false;
+		}
+		Pe_certificate *cert = R_NEW0 (Pe_certificate);
+		if (!cert) {
+			return false;
+		}
+		cert->dwLength = r_buf_read_le32_at (bin->b, offset);
+		cert->dwLength += (8 - (cert->dwLength & 7)) & 7; // align32
+		if (offset + cert->dwLength > paddr + size) {
+			bprintf ("Invalid certificate entry");
+			R_FREE (cert);
+			return false;
+		}
+		cert->wRevision = r_buf_read_le16_at (bin->b, offset + 4);
+		cert->wCertificateType = r_buf_read_le16_at (bin->b, offset + 6);
+		if (!(cert->bCertificate = malloc (cert->dwLength - 6))) {
+			R_FREE (cert);
+			return false;
+		}
+		r_buf_read_at (bin->b, offset + 8, cert->bCertificate, cert->dwLength - 6);
+
+		if (!bin->cms && cert->wCertificateType == PE_WIN_CERT_TYPE_PKCS_SIGNED_DATA) {
+			bin->cms = r_pkcs7_parse_cms (cert->bCertificate, cert->dwLength - 6);
+			bin->spcinfo = r_pkcs7_parse_spcinfo (bin->cms);
+		}
+
+		security_directory->certificates = tmp;
+		security_directory->certificates[security_directory->length] = cert;
+		security_directory->length++;
+		offset += cert->dwLength;
 	}
-	bin->cms = r_pkcs7_parse_cms (data, size);
+
+	if (bin->cms && bin->spcinfo) {
+		char *actual_authentihash = PE_(bin_pe_get_actual_authentihash) (bin);
+		char *claimed_authentihash = PE_(bin_pe_get_claimed_authentihash) (bin);
+		bin->authentihash = actual_authentihash;
+		bin->is_authhash_valid = !strcmp (actual_authentihash, claimed_authentihash);
+		free (claimed_authentihash);
+	}
 	bin->is_signed = bin->cms != NULL;
-	R_FREE (data);
+	return true;
+}
+
+static void free_security_directory(Pe_image_security_directory *security_directory) {
+	if (!security_directory) {
+		return;
+	}
+	ut64 numCert = 0;
+	for (; numCert < security_directory->length; numCert++) {
+		R_FREE (security_directory->certificates[numCert]);
+	}
+	free (security_directory->certificates);
+	free (security_directory);
 }
 
 static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
@@ -2776,10 +2884,13 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->export_directory = NULL;
 	bin->import_directory = NULL;
 	bin->resource_directory = NULL;
+	bin->security_directory = NULL;
 	bin->delay_import_directory = NULL;
 	bin->optional_header = NULL;
 	bin->data_directory = NULL;
 	bin->big_endian = 0;
+	bin->cms = NULL;
+	bin->spcinfo = NULL;
 	if (!bin_pe_init_hdr (bin)) {
 		eprintf ("Warning: File is not PE\n");
 		return false;
@@ -2792,7 +2903,7 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin_pe_init_imports (bin);
 	bin_pe_init_exports (bin);
 	bin_pe_init_resource (bin);
-	bin_pe_get_certificate(bin);
+	bin_pe_init_security (bin);
 
 	bin->big_endian = PE_(r_bin_pe_is_big_endian) (bin);
 
@@ -3831,12 +3942,15 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->export_directory);
 	free (bin->import_directory);
 	free (bin->resource_directory);
+	free_security_directory (bin->security_directory);
 	free (bin->delay_import_directory);
 	free (bin->tls_directory);
 	free (bin->sections);
+	free (bin->authentihash);
 	r_list_free (bin->rich_entries);
 	r_list_free (bin->resources);
 	r_pkcs7_free_cms (bin->cms);
+	r_pkcs7_free_spcinfo (bin->spcinfo);
 	r_buf_free (bin->b);
 	bin->b = NULL;
 	free (bin);
