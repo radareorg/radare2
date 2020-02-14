@@ -53,7 +53,6 @@ static RAnalBlock *block_new(RAnal *a, ut64 addr, ut64 size) {
 	block->ref = 1;
 	block->jump = UT64_MAX;
 	block->fail = UT64_MAX;
-	block->type = R_ANAL_BB_TYPE_NULL;
 	block->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
 	block->op_pos_size = DFLT_NINSTR;
 	block->stackptr = 0;

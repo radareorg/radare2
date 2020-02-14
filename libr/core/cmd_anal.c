@@ -2337,7 +2337,6 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 	ut64 size = 0LL;
 	ut64 jump = UT64_MAX;
 	ut64 fail = UT64_MAX;
-	int type = R_ANAL_BB_TYPE_NULL;
 	RAnalFunction *fcn = NULL;
 	RAnalDiff *diff = NULL;
 
@@ -2370,7 +2369,7 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 	}
 	fcn = r_anal_get_function_at (core->anal, fcnaddr);
 	if (fcn) {
-		if (!r_anal_fcn_add_bb (core->anal, fcn, addr, size, jump, fail, type, diff))
+		if (!r_anal_fcn_add_bb (core->anal, fcn, addr, size, jump, fail, diff))
 		//if (!r_anal_fcn_add_bb_raw (core->anal, fcn, addr, size, jump, fail, type, diff))
 		{
 			eprintf ("afb+: Cannot add basic block at 0x%08"PFMT64x"\n", addr);

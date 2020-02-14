@@ -1432,7 +1432,7 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *a, const char *name) {
 }
 
 /* rename RAnalFunctionBB.add() */
-R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, R_BORROW RAnalDiff *diff) {
+R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff) {
 	D eprintf ("Add bb\n");
 	if (size == 0) { // empty basic blocks allowed?
 		eprintf ("Warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
@@ -1474,7 +1474,6 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 	block->jump = jump;
 	block->fail = fail;
 	block->fail = fail;
-	block->type = type;
 	if (diff) {
 		if (!block->diff) {
 			block->diff = r_anal_diff_new ();

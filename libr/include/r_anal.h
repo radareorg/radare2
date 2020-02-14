@@ -505,22 +505,6 @@ typedef enum {
 } _RAnalData;
 
 typedef enum {
-	R_ANAL_BB_TYPE_NULL = 0,
-	R_ANAL_BB_TYPE_SWITCH = 0x10,   /* TODO: switch */
-
-	R_ANAL_BB_TYPE_RET  = 0x0020,   /* return bb */
-	R_ANAL_BB_TYPE_JMP  = 0x0040,   /* jmp bb */
-	R_ANAL_BB_TYPE_COND = 0x0100,   /* conditional bb */
-	R_ANAL_BB_TYPE_CJMP = R_ANAL_BB_TYPE_COND | R_ANAL_BB_TYPE_JMP,
-	R_ANAL_BB_TYPE_CALL = 0x0200,
-	R_ANAL_BB_TYPE_CMP  = 0x0400,
-	R_ANAL_BB_TYPE_LD   = 0x0800,
-	R_ANAL_BB_TYPE_ST   = 0x1000,
-	R_ANAL_BB_TYPE_BINOP= 0x2000,
-	R_ANAL_BB_TYPE_TAIL = 0x8000,
-} _RAnalBlockType;
-
-typedef enum {
 	R_ANAL_STACK_NULL = 0,
 	R_ANAL_STACK_NOP,
 	R_ANAL_STACK_INC,
@@ -895,7 +879,6 @@ typedef struct r_anal_bb_t {
 	ut64 size;
 	ut64 jump;
 	ut64 fail;
-	int type;
 	int ninstr;
 	bool traced;
 	ut32 colorize;
@@ -1566,7 +1549,7 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr);
 R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
 		ut64 addr, ut64 size,
-		ut64 jump, ut64 fail, int type, R_BORROW RAnalDiff *diff);
+		ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff);
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 R_API void r_anal_fcn_invalidate_read_ahead_cache(void);
 R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn);
@@ -1727,7 +1710,6 @@ R_API RList* /*<RAnalRefline>*/ r_anal_reflines_get(RAnal *anal,
 R_API int r_anal_reflines_middle(RAnal *anal, RList *list, ut64 addr, int len);
 R_API RAnalRefStr *r_anal_reflines_str(void *core, ut64 addr, int opts);
 R_API void r_anal_reflines_str_free(RAnalRefStr *refstr);
-R_API RList *r_anal_reflines_fcn_get(struct r_anal_t *anal, RAnalFunction *fcn, int nlines, int linesout, int linescall);
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ* pj);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
