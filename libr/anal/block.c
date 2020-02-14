@@ -72,7 +72,6 @@ static void block_free(RAnalBlock *block) {
 	free (block->op_bytes);
 	r_anal_switch_op_free (block->switch_op);
 	r_list_free (block->fcns);
-	free (block->label);
 	free (block->op_pos);
 	free (block->parent_reg_arena);
 	free (block);

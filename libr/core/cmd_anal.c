@@ -2077,7 +2077,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		}
 		ls_foreach (fcn->bbs, iter, b) {
 			RInterval inter = (RInterval) {b->addr, b->size};
-			RListInfo *info = r_listinfo_new (b->label, inter, inter, -1, NULL);
+			RListInfo *info = r_listinfo_new (NULL, inter, inter, -1, NULL);
 			if (!info) {
 				break;
 			}

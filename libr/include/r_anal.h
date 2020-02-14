@@ -882,7 +882,6 @@ typedef struct r_anal_bb_t {
 	int ninstr;
 	bool traced;
 	ut32 colorize;
-	char *label;
 	ut8 *fingerprint;
 	RAnalDiff *diff;
 	RAnalCond *cond;
