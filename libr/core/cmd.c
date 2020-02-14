@@ -4633,15 +4633,13 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) 
 		return do_handle_ts_unescape_arg (state, ts_node_named_child (arg, 0));
 	} else if (is_ts_arg_identifier (arg)) {
 		return unescape_arg (state, arg, SPECIAL_CHARS_REGULAR);
-	} else if (is_ts_single_quoted_arg (arg)) {
-		char *c = unescape_arg (state, arg, SPECIAL_CHARS_SINGLE_QUOTED);
-		c[strlen (c) - 1] = '\0';
-		char *res = strdup (c + 1);
-		free (c);
-		return res;
-	} else if (is_ts_double_quoted_arg (arg)) {
-		char *c = unescape_arg (state, arg, SPECIAL_CHARS_DOUBLE_QUOTED);
-		c[strlen (c) - 1] = '\0';
+	} else if (is_ts_single_quoted_arg (arg) || is_ts_double_quoted_arg (arg)) {
+		const char *special = is_ts_single_quoted_arg (arg)? SPECIAL_CHARS_SINGLE_QUOTED: SPECIAL_CHARS_DOUBLE_QUOTED;
+		char *c = unescape_arg (state, arg, special);
+		size_t c_len = strlen (c);
+		r_return_val_if_fail (c_len > 1, NULL);
+		// remove the wrapping quotes
+		c[c_len - 1] = '\0';
 		char *res = strdup (c + 1);
 		free (c);
 		return res;
@@ -5020,17 +5018,17 @@ DEFINE_HANDLE_TS_FCN(last_command) {
 
 DEFINE_HANDLE_TS_FCN(grep_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
-	TSNode specifier = ts_node_child_by_field_name (node, "specifier", strlen ("specifier"));
-	char *specifier_str = ts_node_sub_string (specifier, state->input);
+	TSNode arg = ts_node_child_by_field_name (node, "specifier", strlen ("specifier"));
+	char *arg_str = ts_node_sub_string (arg, state->input);
 	bool res = handle_ts_command (state, command);
-	R_LOG_DEBUG ("grep_command specifier: '%s'\n", specifier_str);
-	RStrBuf *sb = r_strbuf_new (specifier_str);
+	R_LOG_DEBUG ("grep_command specifier: '%s'\n", arg_str);
+	RStrBuf *sb = r_strbuf_new (arg_str);
 	r_strbuf_prepend (sb, "~");
-	char *specifier_str_processed = r_cons_grep_strip (r_strbuf_get (sb), "`");
+	char *specifier_str = r_cons_grep_strip (r_strbuf_get (sb), "`");
 	r_strbuf_free (sb);
-	R_LOG_DEBUG ("grep_command processed specifier: '%s'\n", specifier_str_processed);
-	r_cons_grep_process (specifier_str_processed);
-	free (specifier_str);
+	R_LOG_DEBUG ("grep_command processed specifier: '%s'\n", specifier_str);
+	r_cons_grep_process (specifier_str);
+	free (arg_str);
 	return res;
 }
 
