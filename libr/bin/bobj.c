@@ -246,6 +246,25 @@ static RBNode *list2rbtree(RList *relocs) {
 	return res;
 }
 
+static void r_bin_object_rebuild_classes_ht(RBinObject *o) {
+	ht_pp_free (o->classes_ht);
+	ht_pp_free (o->methods_ht);
+	o->classes_ht = ht_pp_new0 ();
+	o->methods_ht = ht_pp_new0 ();
+
+	RListIter *it, *it2;
+	RBinClass *klass;
+	RBinSymbol *method;
+	r_list_foreach (o->classes, it, klass) {
+		ht_pp_insert (o->classes_ht, klass->name, klass);
+
+		r_list_foreach (klass->methods, it2, method) {
+			const char *name = sdb_fmt ("%s::%s", klass->name, method->name);
+			ht_pp_insert (o->methods_ht, name, method);
+		}
+	}
+}
+
 R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 	r_return_val_if_fail (bf && o && o->plugin, false);
 
@@ -355,6 +374,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 				// XXX we should probably merge them instead
 				r_list_free (o->classes);
 				o->classes = classes;
+				r_bin_object_rebuild_classes_ht (o);
 			}
 			isSwift = r_bin_lang_swift (bf);
 			if (isSwift) {
