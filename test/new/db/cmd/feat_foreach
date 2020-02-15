@@ -49,7 +49,6 @@ RUN
 
 NAME=@@= `prz` fix
 FILE=-
-ONE_STREAM=1
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -61,5 +60,7 @@ EXPECT=<<EOF
             0x00000002      3220           xor ah, byte [rax]
             0x00000003      2033           and byte [rbx], dh
             0x00000004      3320           xor esp, dword [rax]
+EOF
+EXPECT_ERR=<<EOF
 EOF
 RUN
