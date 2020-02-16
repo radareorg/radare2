@@ -1302,7 +1302,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		r_dyldcache_free (cache);
 		return false;
 	}
-	cache->bins = create_cache_bins (bf, cache->buf, cache->hdr, cache->maps, cache->accel, cache->locsym);
+	cache->bins = create_cache_bins (bf, cache->buf, cache->hdr, cache->maps, cache->accel);
 	if (!cache->bins) {
 		r_dyldcache_free (cache);
 		return false;
