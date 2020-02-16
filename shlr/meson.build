@@ -367,7 +367,6 @@ java_inc = [platform_inc, include_directories('java')]
 
 libr2java = static_library('r2java', java_files,
   include_directories: java_inc,
-  c_args: ['-DR_JAVA_SRC=1'],
   implicit_include_directories: false
 )
 

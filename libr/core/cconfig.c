@@ -2303,12 +2303,6 @@ static bool cb_teefile(void *user, void *data) {
 	return true;
 }
 
-static bool cb_onestream(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->onestream = node->i_value;
-	return true;
-}
-
 static bool cb_trace(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3576,7 +3570,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "Convert string before display");
 	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
 	SETBPREF ("scr.confirmquit", "false", "Confirm on quit");
-	SETCB ("scr.onestream", "false", &cb_onestream, "Force stderr output into stdout (works only if -DONE_STREAM_HACK=1)");
 
 	/* str */
 	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
