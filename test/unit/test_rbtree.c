@@ -139,7 +139,6 @@ bool test_r_rbtree_bound_iterate() {
 
 bool test_r_rbtree_bound() {
 	struct Node key = { 0 };
-	RBIter it;
 	RBNode *tree = NULL;
 	struct Node *x;
 	int i;
@@ -164,6 +163,7 @@ bool test_r_rbtree_bound() {
 	key.key = 0x25;
 	x = container_of (r_rbtree_upper_bound (tree, &key, cmp, NULL), struct Node, rb);
 	mu_assert_eq (x->key, 0x24, "upper bound less");
+	r_rbtree_free (tree, freefn, NULL);
 
 	mu_end;
 }
