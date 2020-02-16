@@ -528,7 +528,6 @@ typedef struct r_cons_t {
 	bool click_set;
 	int click_x;
 	int click_y;
-	bool onestream;
 	bool show_vals;		// show which section in Vv
 	// TODO: move into instance? + avoid unnecessary copies
 } RCons;
@@ -1200,13 +1199,6 @@ typedef struct r_panels_root_t {
 
 #ifdef __cplusplus
 }
-#endif
-
-#if ONE_STREAM_HACK && !R_UTIL_SRC && !R_SEARCH_SRC && !R_FLAG_SRC && !R_BIN_SRC \
-	&& !R_JAVA_SRC && !R_ASM_SRC && !R_EGG_SRC
-R_API int r_cons_onestream_printf(const char *format, ...);
-#undef eprintf
-#define eprintf(...) r_cons_onestream_printf(__VA_ARGS__)
 #endif
 
 #endif
