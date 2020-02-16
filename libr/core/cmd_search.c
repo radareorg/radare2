@@ -12,7 +12,7 @@ static int cmd_search(void *data, const char *input);
 #define USE_EMULATION 0
 
 static const char *help_msg_slash_m[] = {
-	"/m", "", "search for known magic patters",
+	"/m", "", "search for known magic patterns",
 	"/m", " [file]", "same as above but using the given magic file",
 	"/me", " ", "like ?e similar to IRC's /me",
 	"/mm", " ", "search for known filesystems and mount them automatically",
