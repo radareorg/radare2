@@ -161,10 +161,9 @@ static int replace (int argc, char *argv[], char *newstr) {
 		}
 	}
 	return false;
-#undef MAXPSEUDOOPS
 }
 
-static int parse (RParse *p, const char *data, char *str) {
+static int parse(RParse *p, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
 	int i;
 	size_t len = strlen (data);
@@ -179,7 +178,7 @@ static int parse (RParse *p, const char *data, char *str) {
 	}
 	*w0 = *w1 = *w2 = *w3 = '\0';
 	if (*buf) {
-		end = strchr (buf, '\0');
+		end = buf + strlen (buf);
 		ptr = strchr (buf, ' ');
 		if (!ptr) {
 			ptr = strchr (buf, '\t');
@@ -269,8 +268,8 @@ static int parse (RParse *p, const char *data, char *str) {
 		r_snprintf (p->retleave_asm, sz, "return %s", w2);
 		replace (nw, wa, str);
 	} else if ((strstr (w0, "leave") && p->retleave_asm) || (strstr (w0, "pop") && strstr (w1, "bp"))) {
-		r_str_ncpy (wa[0], " \0", 2);
-		r_str_ncpy (wa[1], " \0", 2);
+		r_str_ncpy (wa[0], " ", 2);
+		r_str_ncpy (wa[1], " ", 2);
 		replace (nw, wa, str);
 	} else if (strstr (w0, "ret") && p->retleave_asm) {
 		r_str_ncpy (str, p->retleave_asm, sz);
@@ -284,28 +283,6 @@ static int parse (RParse *p, const char *data, char *str) {
 	free (buf);
 	return true;
 }
-
-#if 0
-static inline int ishexch (char c) {
-	if (c>=0 && c<=9) return 1;
-	if (c>='a' && c<='f') return 1;
-	if (c>='A' && c<='F') return 1;
-	return 0;
-}
-
-static inline int issegoff (const char *w) {
-	if (!ishexch (w[0])) return 0;
-	if (!ishexch (w[1])) return 0;
-	if (!ishexch (w[2])) return 0;
-	if (!ishexch (w[3])) return 0;
-	// :
-	if (!ishexch (w[5])) return 0;
-	if (!ishexch (w[6])) return 0;
-	if (!ishexch (w[7])) return 0;
-	if (!ishexch (w[8])) return 0;
-	return 1;
-}
-#endif
 
 static void parse_localvar (RParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, char *ireg, bool att) {
 	RStrBuf *sb = r_strbuf_new ("");
@@ -478,7 +455,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			break;
 		} else {
 			r_str_case (oldstr, false);
-			ptr = strstr(tstr, oldstr);
+			ptr = strstr (tstr, oldstr);
 			if (ptr && (!att || *(ptr - 1) == ' ')) {
 				tstr = r_str_replace (tstr, oldstr, newstr, 1);
 				break;
