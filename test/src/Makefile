@@ -1,6 +1,6 @@
 -include ../../config-user.mk
 
-VCOMMIT=26cfaa150eae176e64df21566bf86e3d98ec5b17
+VCOMMIT=bc977f8d4a86c8e7f4b7a0403a724d0ff6b48bf5
 BINDIR=$(shell r2 -H R2_PREFIX)/bin
 CWD=$(shell pwd)
 V=v/v
