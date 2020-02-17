@@ -1,6 +1,5 @@
 NAME=Only EXPECT_ERR<<EOF
-# Unbreak this and r2r.v goes XX
-BROKEN=1
+BROKEN=1 # Unbreak this and r2r.v goes XX
 FILE=-
 CMDS=<<EOF
 pf?cat_sat_on_keyboard
@@ -13,8 +12,7 @@ EOF
 RUN
 
 NAME=EXPECT<<EOF empty and EXPECT_ERR<<EOF non-empty
-# Unbreak this and r2r.v goes XX
-BROKEN=1
+BROKEN=1 # Unbreak this and r2r.v goes XX
 FILE=-
 CMDS=<<EOF
 pf?cat_sat_on_keyboard
@@ -26,4 +24,11 @@ EXPECT_ERR=<<EOF
 Struct cat_sat_on_keyboard is not defined
 Struct CAT_SAT_ON_KEYBOARD is not defined
 EOF
+RUN
+
+NAME=BROKEN=0 with comment
+BROKEN=0 # Use BROKEN=0 to unbreak this. Don't remove this line!
+FILE=-
+CMDS=?e Test for BROKEN=0
+EXPECT=Test for BROKEN=0
 RUN

@@ -297,7 +297,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 			}
 			'BROKEN' {
 				if v.len > 0 {
-					test.broken = v != '0'
+					test.broken = v[0] != `0`
 				}
 				else {
 					eprintln('Warning: Missing value for BROKEN in ${test.source}')
