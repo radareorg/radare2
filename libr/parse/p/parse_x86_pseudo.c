@@ -8,109 +8,122 @@
 #include <r_util.h>
 #include <r_anal.h>
 #include <r_parse.h>
+
+#define MAXPSEUDOOPS 10
+// ?t pd 50000 >/dev/null # 3.2/3.8  #  2.9/3.5
+#define CACHE_VARS 1
+// if enabled, i cant see any speedup benefit
+#define USE_HT 0
+
+struct x86op {
+	char *op;
+	char *str;
+	int args[MAXPSEUDOOPS];  // XXX can't use flex arrays, all unused will be 0
+};
+
+struct x86op ops[] = {
+	// sort by frequency to optimize search
+	{ "jmp",  "goto #", {1}},
+	{ "mov",  "# = #", {1, 2}},
+	{ "pop",  "pop #", {1}},
+	{ "push", "push #", {1}},
+	{ "test", "var = # & #", {1, 2}},
+	{ "call", "# ()", {1}},
+	{ "lea",  "# = #", {1, 2}},
+	{ "nop",  "", {0}},
+	{ "sub",  "# -= #", {1, 2}},
+	{ "xor",  "# ^= #", {1, 2}},
+	{ "ret",  "return", {0}},
+
+	// ---
+	{ "adc",  "# += #", {1, 2}},
+	{ "add",  "# += #", {1, 2}},
+	{ "and",  "# &= #", {1, 2}},
+	{ "cmove", "if (!var) # = #", {1, 2}},
+	{ "cmovl","if (var < 0) # = #", {1, 2}},
+	{ "cmp", "var = # - #", {1, 2}},
+	{ "cmpsq", "var = # - #", {1, 2}},
+	{ "cmpsb", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI++; DI++; CX--; if (!var) break; }", {0}},
+	{ "cmpsw", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI+=4; DI+=4; CX--; if (!var) break; }", {0}},
+	{ "dec",  "#--", {1}},
+	{ "div",  "# /= #", {1, 2}},
+	{ "fabs",  "abs(#)", {1}},
+	{ "fadd",  "# = # + #", {1, 1, 2}},
+	{ "fcomp",  "var = # - #", {1, 2}},
+	{ "fcos",  "# = cos(#)", {1, 1}},
+	{ "fdiv",  "# = # / #", {1, 1, 2}},
+	{ "fiadd",  "# = # / #", {1, 1, 2}},
+	{ "ficom",  "var = # - #", {1, 2}},
+	{ "fidiv",  "# = # / #", {1, 1, 2}},
+	{ "fidiv",  "# = # * #", {1, 1, 2}},
+	{ "fisub",  "# = # - #", {1, 1, 2}},
+	{ "fnul",  "# = # * #", {1, 1, 2}},
+	{ "fnop",  " ", {0}},
+	{ "frndint",  "# = (int) #", {1, 1}},
+	{ "fsin",  "# = sin(#)", {1, 1}},
+	{ "fsqrt",  "# = sqrt(#)", {1, 1}},
+	{ "fsub",  "# = # - #", {1, 1, 2}},
+	{ "fxch",  "#,# = #,#", {1, 2, 2, 1}},
+	{ "idiv",  "# /= #", {1, 2}},
+	{ "imul",  "# = # * #", {1, 2, 3}},
+	{ "in",   "# = io[#]", {1, 2}},
+	{ "inc",  "#++", {1}},
+	{ "ja", "if (((unsigned) var) > 0) goto #", {1}},
+	{ "jb", "if (((unsigned) var) < 0) goto #", {1}},
+	{ "jbe", "if (((unsigned) var) <= 0) goto #", {1}},
+	{ "je", "if (!var) goto #", {1}},
+	{ "jg", "if (var > 0) goto #", {1}},
+	{ "jge", "if (var >= 0) goto #", {1}},
+	{ "jle", "if (var <= 0) goto #", {1}},
+
+	{ "jne", "if (var) goto #", {1}},
+	{ "movq",  "# = #", {1, 2}},
+	{ "movaps",  "# = #", {1, 2}},
+	{ "movups",  "# = #", {1, 2}},
+	{ "movsd",  "# = #", {1, 2}},
+	{ "movsx","# = #", {1, 2}},
+	{ "movsxd","# = #", {1, 2}},
+	{ "movzx", "# = #", {1, 2}},
+	{ "movntdq", "# = #", {1, 2}},
+	{ "movnti", "# = #", {1, 2}},
+	{ "movntpd", "# = #", {1, 2}},
+	{ "pcmpeqb", "# == #", {1, 2}},
+
+	{ "movdqu", "# = #", {1, 2}},
+	{ "movdqa", "# = #", {1, 2}},
+	{ "pextrb", "# = (byte) # [#]", {1, 2, 3}},
+	{ "palignr", "# = # align #", {1, 2, 3}},
+	{ "pxor", "# ^= #", {1, 2}},
+	{ "xorps", "# ^= #", {1, 2}},
+	{ "mul",  "# = # * #", {1, 2, 3}},
+	{ "mulss",  "# = # * #", {1, 2, 3}},
+	{ "neg",  "# ~= #", {1, 1}},
+	{ "not",  "# = !#", {1, 1}},
+	{ "or",   "# |= #", {1, 2}},
+	{ "out",  "io[#] = #", {1, 2}},
+	{ "sal",  "# <<= #", {1, 2}},
+	{ "sar",  "# >>= #", {1, 2}},
+	{ "sete",  "# = e", {1}},
+	{ "setne",  "# = ne", {1}},
+	{ "shl",  "# <<<= #", {1, 2}},
+	{ "shld",  "# <<<= #", {1, 2}},
+	{ "sbb",  "# = # - #", {1, 1, 2}},
+	{ "shr",  "# >>>= #", {1, 2}},
+	{ "shlr",  "# >>>= #", {1, 2}},
+	//{ "strd",  "# = # - #", {1, 2, 3}},
+	{ "swap", "var = #; # = #; # = var", {1, 1, 2, 2}},
+	{ "xchg",  "#,# = #,#", {1, 2, 2, 1}},
+	{ "xadd",  "#,# = #,#+#", {1, 2, 2, 1, 2}},
+	{ NULL }
+};
+
 // 16 bit examples
 //    0x0001f3a4      9a67620eca       call word 0xca0e:0x6267
 //    0x0001f41c      eabe76de12       jmp word 0x12de:0x76be [2]
 //    0x0001f56a      ea7ed73cd3       jmp word 0xd33c:0xd77e [6]
-static int replace (int argc, char *argv[], char *newstr) {
-#define MAXPSEUDOOPS 10
+static int replace(int argc, char *argv[], char *newstr) {
 	int i, j, k, d;
 	char ch;
-	struct {
-		char *op;
-		char *str;
-		int args[MAXPSEUDOOPS];  // XXX can't use flex arrays, all unused will be 0
-	} ops[] = {
-		{ "adc",  "# += #", {1, 2}},
-		{ "add",  "# += #", {1, 2}},
-		{ "and",  "# &= #", {1, 2}},
-		{ "call", "# ()", {1}},
-		{ "cmove", "if (!var) # = #", {1, 2}},
-		{ "cmovl","if (var < 0) # = #", {1, 2}},
-		{ "cmp", "var = # - #", {1, 2}},
-		{ "cmpsq", "var = # - #", {1, 2}},
-		{ "cmpsb", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI++; DI++; CX--; if (!var) break; }", {0}},
-		{ "cmpsw", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI+=4; DI+=4; CX--; if (!var) break; }", {0}},
-		{ "dec",  "#--", {1}},
-		{ "div",  "# /= #", {1, 2}},
-		{ "fabs",  "abs(#)", {1}},
-		{ "fadd",  "# = # + #", {1, 1, 2}},
-		{ "fcomp",  "var = # - #", {1, 2}},
-		{ "fcos",  "# = cos(#)", {1, 1}},
-		{ "fdiv",  "# = # / #", {1, 1, 2}},
-		{ "fiadd",  "# = # / #", {1, 1, 2}},
-		{ "ficom",  "var = # - #", {1, 2}},
-		{ "fidiv",  "# = # / #", {1, 1, 2}},
-		{ "fidiv",  "# = # * #", {1, 1, 2}},
-		{ "fisub",  "# = # - #", {1, 1, 2}},
-		{ "fnul",  "# = # * #", {1, 1, 2}},
-		{ "fnop",  " ", {0}},
-		{ "frndint",  "# = (int) #", {1, 1}},
-		{ "fsin",  "# = sin(#)", {1, 1}},
-		{ "fsqrt",  "# = sqrt(#)", {1, 1}},
-		{ "fsub",  "# = # - #", {1, 1, 2}},
-		{ "fxch",  "#,# = #,#", {1, 2, 2, 1}},
-		{ "idiv",  "# /= #", {1, 2}},
-		{ "imul",  "# = # * #", {1, 2, 3}},
-		{ "in",   "# = io[#]", {1, 2}},
-		{ "inc",  "#++", {1}},
-		{ "ja", "if (((unsigned) var) > 0) goto #", {1}},
-		{ "jb", "if (((unsigned) var) < 0) goto #", {1}},
-		{ "jbe", "if (((unsigned) var) <= 0) goto #", {1}},
-		{ "je", "if (!var) goto #", {1}},
-		{ "jg", "if (var > 0) goto #", {1}},
-		{ "jge", "if (var >= 0) goto #", {1}},
-		{ "jle", "if (var <= 0) goto #", {1}},
-		{ "jmp",  "goto #", {1}},
-		{ "jne", "if (var) goto #", {1}},
-		{ "lea",  "# = #", {1, 2}},
-		{ "mov",  "# = #", {1, 2}},
-		{ "movq",  "# = #", {1, 2}},
-		{ "movaps",  "# = #", {1, 2}},
-		{ "movups",  "# = #", {1, 2}},
-		{ "movsd",  "# = #", {1, 2}},
-		{ "movsx","# = #", {1, 2}},
-		{ "movsxd","# = #", {1, 2}},
-		{ "movzx", "# = #", {1, 2}},
-		{ "movntdq", "# = #", {1, 2}},
-		{ "movnti", "# = #", {1, 2}},
-		{ "movntpd", "# = #", {1, 2}},
-		{ "pcmpeqb", "# == #", {1, 2}},
-
-		{ "movdqu", "# = #", {1, 2}},
-		{ "movdqa", "# = #", {1, 2}},
-		{ "pextrb", "# = (byte) # [#]", {1, 2, 3}},
-		{ "palignr", "# = # align #", {1, 2, 3}},
-		{ "pxor", "# ^= #", {1, 2}},
-		{ "xorps", "# ^= #", {1, 2}},
-		{ "mul",  "# = # * #", {1, 2, 3}},
-		{ "mulss",  "# = # * #", {1, 2, 3}},
-		{ "neg",  "# ~= #", {1, 1}},
-		{ "nop",  "", {0}},
-		{ "not",  "# = !#", {1, 1}},
-		{ "or",   "# |= #", {1, 2}},
-		{ "out",  "io[#] = #", {1, 2}},
-		{ "pop",  "pop #", {1}},
-		{ "push", "push #", {1}},
-		{ "ret",  "return", {0}},
-		{ "sal",  "# <<= #", {1, 2}},
-		{ "sar",  "# >>= #", {1, 2}},
-		{ "sete",  "# = e", {1}},
-		{ "setne",  "# = ne", {1}},
-		{ "shl",  "# <<<= #", {1, 2}},
-		{ "shld",  "# <<<= #", {1, 2}},
-		{ "sbb",  "# = # - #", {1, 1, 2}},
-		{ "shr",  "# >>>= #", {1, 2}},
-		{ "shlr",  "# >>>= #", {1, 2}},
-		//{ "strd",  "# = # - #", {1, 2, 3}},
-		{ "sub",  "# -= #", {1, 2}},
-		{ "swap", "var = #; # = #; # = var", {1, 1, 2, 2}},
-		{ "test", "var = # & #", {1, 2}},
-		{ "xchg",  "#,# = #,#", {1, 2, 2, 1}},
-		{ "xadd",  "#,# = #,#+#", {1, 2, 2, 1, 2}},
-		{ "xor",  "# ^= #", {1, 2}},
-		{ NULL }
-	};
 
 	if (argc > 2 && !strcmp (argv[0], "xor")) {
 		if (!strcmp (argv[1], argv[2])) {
@@ -118,20 +131,36 @@ static int replace (int argc, char *argv[], char *newstr) {
 			argv[2] = "0";
 		}
 	}
+#if USE_HT
+	static HtPP *ht = NULL;
+	if (!ht) {
+		ht = ht_pp_new0 ();
+		for (i = 0; ops[i].op != NULL; i++) {
+			const char *k = ops[i].op;
+			ht_pp_insert (ht, k, &ops[i]);
+		}
+	}
+	bool found = false;
+	struct x86op *op = ht_pp_find (ht, argv[0], &found);
+	if (found && op) {
+		if (1) {
+#else
 	for (i = 0; ops[i].op != NULL; i++) {
+	struct x86op *op = &ops[i];
 		if (!strcmp (ops[i].op, argv[0])) {
+#endif
 			if (newstr != NULL) {
 				d = 0;
 				j = 0;
-				ch = ops[i].str[j];
+				ch = op->str[j];
 				for (j = 0, k = 0; ch != '\0'; j++, k++) {
-					ch = ops[i].str[j];
+					ch = op->str[j];
 					if (ch == '#') {
 						if (d >= MAXPSEUDOOPS) {
 							// XXX Shouldn't ever happen...
 							continue;
 						}
-						int idx = ops[i].args[d];
+						int idx = op->args[d];
 						d++;
 						if (idx <= 0) {
 							// XXX Shouldn't ever happen...
@@ -358,12 +387,58 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 	r_strbuf_free (sb);
 }
 
-static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	RList *bpargs, *spargs;
+static const RList *__args(RParse *p, RAnalFunction *f, int type) {
+#if CACHE_VARS
+	static RAnalFunction *old_f = NULL;
+	static RList *__cache_spargs_list = NULL;
+	static RList *__cache_bpargs_list = NULL;
+	if (type == -1 && !p && !f) {
+		// free to issue mamleak
+		r_list_free (__cache_bpargs_list);
+		r_list_free (__cache_spargs_list);
+		old_f = NULL;
+		return NULL;
+	}
+	r_return_val_if_fail (p, NULL);
+	if (!f || !f->anal) {
+		return NULL;
+	}
+	if (f == old_f) {
+		if (type == 'b') {
+			return __cache_bpargs_list;
+		}
+		return __cache_spargs_list;
+	}
+	RList *l = p->varlist (f->anal, f, 'b');
+	r_list_free (__cache_bpargs_list);
+	__cache_bpargs_list = l;
+	l = p->varlist (f->anal, f, 's');
+	r_list_free (__cache_spargs_list);
+	__cache_spargs_list = l;
+	old_f = f;
+	return (type == 'b')? __cache_bpargs_list: __cache_spargs_list;
+#else
+	r_return_val_if_fail (p, NULL);
+	if (!f || !f->anal) {
+		return NULL;
+	}
+	return p->varlist (f->anal, f, type);
+#endif
+}
+
+static int __fini(RParse *p, void *user) {
+	__args (p, NULL, -1);
+	return 0;
+}
+
+static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RAnal *anal = p->analb.anal;
 	RAnalVar *bparg, *sparg;
 	RListIter *bpargiter, *spiter;
 	char oldstr[64], newstr[64];
+	if (!p) {
+		return false;
+	}
 	char *tstr = strdup (data);
 	if (!tstr) {
 		return false;
@@ -421,21 +496,26 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		}
 	}
 
-	if (!p->varlist) {
+	if (!f || !p->varlist) {
 		free (tstr);
 		return false;
 	}
-	bpargs = p->varlist (anal, f, 'b');
-	spargs = p->varlist (anal, f, 's');
+
+	// 0.5s of 3s
+	const RList *bpargs = __args (p, f, 'b');
+	const RList *spargs = __args (p, f, 's');
+
 	/* Iterate over stack pointer arguments/variables */
-	bool ucase = *tstr >= 'A' && *tstr <= 'Z';
+	bool ucase = isupper (*tstr);
 	if (ucase && tstr[1]) {
 		ucase = tstr[1] >= 'A' && tstr[1] <= 'Z';
 	}
 	char *ireg = NULL;
 	if (p->get_op_ireg) {
-		ireg = p->get_op_ireg(p->user, addr);
+		// 0.2s of 3.4s
+		ireg = p->get_op_ireg (p->user, addr);
 	}
+	// 0.1s of 3.4s
 	r_list_foreach (spargs, spiter, sparg) {
 		// assuming delta always positive?
 		if (p->get_ptr_at) {
@@ -512,8 +592,8 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	}
 	free (tstr);
 	free (ireg);
-	r_list_free (spargs);
-	r_list_free (bpargs);
+	//r_list_free (spargs);
+	//r_list_free (bpargs);
 	return ret;
 }
 
@@ -522,6 +602,7 @@ RParsePlugin r_parse_plugin_x86_pseudo = {
 	.desc = "X86 pseudo syntax",
 	.parse = &parse,
 	.varsub = &varsub,
+	.fini = &__fini
 };
 
 #ifndef R2_PLUGIN_INCORE
