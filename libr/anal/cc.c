@@ -115,16 +115,16 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 
 R_API const char *r_anal_cc_self(RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
-	char *query = sdb_fmt ("cc.%s.self", convention);
-	char *ret = sdb_const_get (DB, query, 0);
-	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
+	const char *query = sdb_fmt ("cc.%s.self", convention);
+	const char *self = sdb_const_get (DB, query, 0);
+	return self? r_str_constpool_get (&anal->constpool, self): NULL;
 }
 
 R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
-	char *query = sdb_fmt ("cc.%s.error", convention);
-	char *ret = sdb_const_get (DB, query, 0);
-	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
+	const char *query = sdb_fmt ("cc.%s.error", convention);
+	const char *error = sdb_const_get (DB, query, 0);
+	return error? r_str_constpool_get (&anal->constpool, error): NULL;
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
