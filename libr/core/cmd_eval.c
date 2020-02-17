@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2019 - pancake */
+/* radare2 - LGPL - Copyright 2009-2020 - pancake */
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -443,7 +443,7 @@ static int cmd_eval(void *data, const char *input) {
 			char *color_code = NULL;
 			char *word = NULL;
 			int argc = 0;
-			char** argv = r_str_argv (input + 4, &argc);
+			char** argv = r_str_argv (r_str_trim_ro (input + 3), &argc);
 			switch (input[2]) {
 			case '?': {
 				const char *helpmsg[] = {
