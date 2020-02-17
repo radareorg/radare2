@@ -32,3 +32,51 @@ wx ea34002001
 EOF
 EXPECT=0x1234
 RUN
+
+NAME=aoj pushf
+FILE=-
+EXPECT=<<EOF
+[
+  {
+    "opcode": "pushf",
+    "disasm": "pushf",
+    "pseudo": "pushf ",
+    "description": "push flags register onto the stack",
+    "mnemonic": "pushf",
+    "mask": "ff",
+    "esil": "2,sp,-=,eflags,sp,=[2]",
+    "sign": false,
+    "prefix": 0,
+    "id": 591,
+    "opex": {
+      "operands": [
+        {
+          "size": 2,
+          "rw": 1,
+          "type": "reg",
+          "value": "flags"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "9c",
+    "size": 1,
+    "type": "upush",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 2,
+    "failcycles": 0,
+    "delay": 0,
+    "stack": "inc",
+    "stackptr": 2,
+    "family": "cpu"
+  }
+]
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+wx 9c
+aoj~{}
+EOF
+RUN

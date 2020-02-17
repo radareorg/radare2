@@ -4472,14 +4472,16 @@ DEFINE_IS_TS_FCN(cmd_substitution_arg)
 DEFINE_IS_TS_FCN(args)
 DEFINE_IS_TS_FCN(arg)
 DEFINE_IS_TS_FCN(arg_identifier)
-DEFINE_IS_TS_FCN(quoted_arg)
+DEFINE_IS_TS_FCN(double_quoted_arg)
+DEFINE_IS_TS_FCN(single_quoted_arg)
 
 // NOTE: this should be in sync with SPECIAL_CHARACTERS in
 //       radare2-shell-parser grammar, except for ", ' and
 //       whitespaces, because we let cmd_substitution_arg create
 //       new arguments
-static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`()<";
+static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
 static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"";
+static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
 
 static struct tsr2cmd_edit *create_cmd_edit(struct tsr2cmd_state *state, TSNode arg, char *new_text) {
 	struct tsr2cmd_edit *e = R_NEW0 (struct tsr2cmd_edit);
@@ -4580,7 +4582,7 @@ static void do_handle_substitution_arg(struct tsr2cmd_state *state, TSNode arg, 
 	replace_whitespaces (out, ' ');
 	// escape special chars to prevent creation of new tokens when parsing again
 	const char *special_chars;
-	if (is_ts_quoted_arg (ts_node_parent (arg))) {
+	if (is_ts_double_quoted_arg (ts_node_parent (arg))) {
 		special_chars = SPECIAL_CHARS_DOUBLE_QUOTED;
 	} else {
 		special_chars = SPECIAL_CHARS_REGULAR;
@@ -4595,7 +4597,7 @@ static void handle_substitution_arg(struct tsr2cmd_state *state, TSNode arg, RLi
 	r_return_if_fail (!ts_node_is_null (arg));
 	if (is_ts_cmd_substitution_arg (arg)) {
 		do_handle_substitution_arg (state, arg, edits);
-	} else if (is_ts_quoted_arg (arg)) {
+	} else if (is_ts_double_quoted_arg (arg)) {
 		uint32_t n_children = ts_node_named_child_count (arg);
 		uint32_t i;
 		for (i = 0; i < n_children; ++i) {
@@ -4631,9 +4633,13 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) 
 		return do_handle_ts_unescape_arg (state, ts_node_named_child (arg, 0));
 	} else if (is_ts_arg_identifier (arg)) {
 		return unescape_arg (state, arg, SPECIAL_CHARS_REGULAR);
-	} else if (is_ts_quoted_arg (arg)) {
-		char *c = unescape_arg (state, arg, SPECIAL_CHARS_DOUBLE_QUOTED);
-		c[strlen (c) - 1] = '\0';
+	} else if (is_ts_single_quoted_arg (arg) || is_ts_double_quoted_arg (arg)) {
+		const char *special = is_ts_single_quoted_arg (arg)? SPECIAL_CHARS_SINGLE_QUOTED: SPECIAL_CHARS_DOUBLE_QUOTED;
+		char *c = unescape_arg (state, arg, special);
+		size_t c_len = strlen (c);
+		r_return_val_if_fail (c_len > 1, NULL);
+		// remove the wrapping quotes
+		c[c_len - 1] = '\0';
 		char *res = strdup (c + 1);
 		free (c);
 		return res;
@@ -4887,17 +4893,38 @@ DEFINE_HANDLE_TS_FCN(redirect_command) {
 	TSNode arg = ts_node_child_by_field_name (node, "arg", strlen ("arg"));
 	char *arg_str = ts_node_sub_string (arg, state->input);
 
-	int pipefd = r_cons_pipe_open (arg_str, fdn, is_append);
-	if (pipefd != -1) {
-		if (!pipecolor) {
-			r_config_set_i (state->core->config, "scr.color", COLOR_MODE_DISABLED);
-		}
+	if (arg_str[0] == '$') {
+		// redirect output of command to an alias variable
 		TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
-		res = handle_ts_command (state, command);
-		r_cons_flush ();
-		r_cons_pipe_close (pipefd);
+		char *command_str = ts_node_sub_string (command, state->input);
+
+		char *output = r_core_cmd_str (state->core, command_str);
+		char *old_alias_value = r_cmd_alias_get (state->core->rcmd, arg_str, 1);
+		char *new_alias_value;
+		const char *start_char = "$";
+		if (is_append && old_alias_value) {
+			start_char = "";
+		} else {
+			old_alias_value = "";
+		}
+		new_alias_value = r_str_newf ("%s%s%s", start_char, old_alias_value, output);
+		r_cmd_alias_set (state->core->rcmd, arg_str, new_alias_value, 1);
+		free (new_alias_value);
+		free (command_str);
+		res = true;
 	} else {
-		R_LOG_WARN ("Could not open pipe to %d", fdn);
+		int pipefd = r_cons_pipe_open (arg_str, fdn, is_append);
+		if (pipefd != -1) {
+			if (!pipecolor) {
+				r_config_set_i (state->core->config, "scr.color", COLOR_MODE_DISABLED);
+			}
+			TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+			res = handle_ts_command (state, command);
+			r_cons_flush ();
+			r_cons_pipe_close (pipefd);
+		} else {
+			R_LOG_WARN ("Could not open pipe to %d", fdn);
+		}
 	}
 	free (arg_str);
 	r_cons_set_last_interactive ();
@@ -4991,11 +5018,17 @@ DEFINE_HANDLE_TS_FCN(last_command) {
 
 DEFINE_HANDLE_TS_FCN(grep_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
-	TSNode specifier = ts_node_child_by_field_name (node, "specifier", strlen ("specifier"));
-	char *specifier_str = ts_node_sub_string (specifier, state->input);
+	TSNode arg = ts_node_child_by_field_name (node, "specifier", strlen ("specifier"));
+	char *arg_str = ts_node_sub_string (arg, state->input);
 	bool res = handle_ts_command (state, command);
-	// FIXME: this does not work for nested grep commands
+	R_LOG_DEBUG ("grep_command specifier: '%s'\n", arg_str);
+	RStrBuf *sb = r_strbuf_new (arg_str);
+	r_strbuf_prepend (sb, "~");
+	char *specifier_str = r_cons_grep_strip (r_strbuf_get (sb), "`");
+	r_strbuf_free (sb);
+	R_LOG_DEBUG ("grep_command processed specifier: '%s'\n", specifier_str);
 	r_cons_grep_process (specifier_str);
+	free (arg_str);
 	return res;
 }
 

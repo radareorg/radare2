@@ -1,0 +1,29 @@
+NAME=Only EXPECT_ERR<<EOF
+# Unbreak this and r2r.v goes XX
+BROKEN=1
+FILE=-
+CMDS=<<EOF
+pf?cat_sat_on_keyboard
+pf?CAT_SAT_ON_KEYBOARD
+EOF
+EXPECT_ERR=<<EOF
+Struct cat_sat_on_keyboard is not defined
+Struct CAT_SAT_ON_KEYBOARD is not defined
+EOF
+RUN
+
+NAME=EXPECT<<EOF empty and EXPECT_ERR<<EOF non-empty
+# Unbreak this and r2r.v goes XX
+BROKEN=1
+FILE=-
+CMDS=<<EOF
+pf?cat_sat_on_keyboard
+pf?CAT_SAT_ON_KEYBOARD
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+Struct cat_sat_on_keyboard is not defined
+Struct CAT_SAT_ON_KEYBOARD is not defined
+EOF
+RUN

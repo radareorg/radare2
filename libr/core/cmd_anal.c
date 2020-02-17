@@ -2077,7 +2077,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		}
 		ls_foreach (fcn->bbs, iter, b) {
 			RInterval inter = (RInterval) {b->addr, b->size};
-			RListInfo *info = r_listinfo_new (b->label, inter, inter, -1, NULL);
+			RListInfo *info = r_listinfo_new (NULL, inter, inter, -1, NULL);
 			if (!info) {
 				break;
 			}
@@ -2337,7 +2337,6 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 	ut64 size = 0LL;
 	ut64 jump = UT64_MAX;
 	ut64 fail = UT64_MAX;
-	int type = R_ANAL_BB_TYPE_NULL;
 	RAnalFunction *fcn = NULL;
 	RAnalDiff *diff = NULL;
 
@@ -2370,7 +2369,7 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 	}
 	fcn = r_anal_get_function_at (core->anal, fcnaddr);
 	if (fcn) {
-		if (!r_anal_fcn_add_bb (core->anal, fcn, addr, size, jump, fail, type, diff))
+		if (!r_anal_fcn_add_bb (core->anal, fcn, addr, size, jump, fail, diff))
 		//if (!r_anal_fcn_add_bb_raw (core->anal, fcn, addr, size, jump, fail, type, diff))
 		{
 			eprintf ("afb+: Cannot add basic block at 0x%08"PFMT64x"\n", addr);
@@ -3444,12 +3443,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		case 'r': {	// "afcr"
 			int i;
-			char *cmd, *regname;
 			RStrBuf *json_buf = r_strbuf_new ("{");
 			bool json = input[3] == 'j'? true: false;
 
-			cmd = r_str_newf ("cc.%s.ret", fcn->cc);
-			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			char *cmd = r_str_newf ("cc.%s.ret", fcn->cc);
+			const char *regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {
 					r_strbuf_appendf (json_buf, "\"ret\":\"%s\"", regname);
@@ -7535,6 +7533,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_str_word_set0 (ptr);
 			ut64 addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			r_core_anal_hint_print (core->anal, addr, input[0]);
+			free (ptr);
 		} else {
 			r_core_anal_hint_list (core->anal, input[0]);
 		}

@@ -1037,8 +1037,7 @@ pd 1 @ 0x00400463
 EOF
 RUN
 
-NAME=bin.str.enc alias and error handling
-ONE_STREAM=1
+NAME=bin.str.enc alias
 FILE=../bins/elf/strenc
 CMDS=<<EOF
 e asm.filter=false
@@ -1053,11 +1052,9 @@ e str.escbslash=true
 pd 1 @ 0x004016c0
 .(test_str.enc utf32-le)
 pd 1 @ 0x004016ed
-.(test_str.enc cat_sat_on_keyboard)
 ?e
 .(test_str.enc UTF32BE)
 .(test_str.enc UTF16-LE)
-.(test_str.enc CAT_SAT_ON_KEYBOARD)
 EOF
 EXPECT=<<EOF
 guess
@@ -1066,13 +1063,30 @@ utf16le
             0x004016c0      mov edi, 0x40230c                          ; u"\u2520\u2542\u2500\u2500\u2542\u2528 is a fence with embedded zeros\n"
 utf32le
             0x004016ed      mov edi, 0x40258c                          ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\x1b[36m \xa2\u20ac\U00010348 \x1b[0m\n"
-Unknown encoding: cat_sat_on_keyboard
-utf32le
 
 utf32be
 utf16le
+EOF
+RUN
+
+NAME=bin.str.enc error handling
+# Unbreak this and r2r.v goes XX
+BROKEN=1
+FILE=-
+CMDS=<<EOF
+(test_str.enc enc, e bin.str.enc=$0, e bin.str.enc)
+.(test_str.enc UTF-32LE)
+.(test_str.enc cat_sat_on_keyboard)
+.(test_str.enc CAT_SAT_ON_KEYBOARD)
+EOF
+EXPECT=<<EOF
+utf32le
+utf32le
+utf32le
+EOF
+EXPECT_ERR=<<EOF
+Unknown encoding: cat_sat_on_keyboard
 Unknown encoding: CAT_SAT_ON_KEYBOARD
-utf16le
 EOF
 RUN
 

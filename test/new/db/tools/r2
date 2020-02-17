@@ -89,13 +89,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ONE_STREAM sets scr.onestream
-FILE=-
-ONE_STREAM=1
-CMDS=e scr.onestream
-EXPECT=true
-RUN
-
 NAME=no-nl-at-eof script
 FILE=-
 CMDS=!radare2 -i scripts/no-nl-at-eof.r2 -NQ -

@@ -2037,6 +2037,54 @@ ao~^ptr[1]
 EOF
 RUN
 
+NAME=aoj pushf
+FILE=-
+EXPECT=<<EOF
+[
+  {
+    "opcode": "pushf",
+    "disasm": "pushf",
+    "pseudo": "pushf ",
+    "description": "push flags register onto the stack",
+    "mnemonic": "pushf",
+    "mask": "ffff",
+    "esil": "8,rsp,-=,eflags,rsp,=[8]",
+    "sign": false,
+    "prefix": 0,
+    "id": 591,
+    "opex": {
+      "operands": [
+        {
+          "size": 8,
+          "rw": 1,
+          "type": "reg",
+          "value": "rflags"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "669c",
+    "size": 2,
+    "type": "upush",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 2,
+    "failcycles": 0,
+    "delay": 0,
+    "stack": "inc",
+    "stackptr": 8,
+    "family": "cpu"
+  }
+]
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 669c
+aoj~{}
+EOF
+RUN
+
 NAME=strings xref issue
 FILE=../bins/elf/redpill
 EXPECT=<<EOF

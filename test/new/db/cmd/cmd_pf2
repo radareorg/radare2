@@ -455,18 +455,21 @@ RUN
 
 NAME=pf?
 FILE=-
-ONE_STREAM=1
 CMDS=<<EOF
 pfo elf32
 pf?elf_header
 pf? elf_header
-pf?pe_header
 EOF
 EXPECT=<<EOF
 ?[2]E[2]E[4]Exxxxwwwwww (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 ?[2]E[2]E[4]Exxxxwwwwww (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
-Struct pe_header is not defined
 EOF
+RUN
+
+NAME=pf? struct not defined
+FILE=-
+CMDS=pf?cat_sat_on_keyboard
+EXPECT_ERR=Struct cat_sat_on_keyboard is not defined
 RUN
 
 NAME=-nn filename with @

@@ -62,6 +62,15 @@ typedef struct {
 	ut32 entries_size;
 } RDyldRebaseInfo1;
 
+typedef struct {
+	char *strings;
+	ut64 strings_size;
+	struct MACH0_(nlist) *nlists;
+	ut64 nlists_count;
+	cache_locsym_entry_t *entries;
+	ut64 entries_count;
+} RDyldLocSym;
+
 typedef struct _r_dyldcache {
 	ut8 magic[8];
 	RList *bins;
@@ -71,6 +80,7 @@ typedef struct _r_dyldcache {
 	cache_hdr_t *hdr;
 	cache_map_t *maps;
 	cache_accel_t *accel;
+	RDyldLocSym *locsym;
 } RDyldCache;
 
 typedef struct _r_bin_image {
@@ -79,6 +89,8 @@ typedef struct _r_bin_image {
 } RDyldBinImage;
 
 static RList * pending_bin_files = NULL;
+
+static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left);
 
 static void free_bin(RDyldBinImage *bin) {
 	if (!bin) {
@@ -138,6 +150,151 @@ static void rebase_info_free(RDyldRebaseInfo *rebase_info) {
 	}
 }
 
+static RDyldLocSym *r_dyld_locsym_new(RBuffer *cache_buf, cache_hdr_t *hdr) {
+	if (!cache_buf || !hdr || !hdr->localSymbolsSize || !hdr->localSymbolsOffset) {
+		return NULL;
+	}
+
+	cache_locsym_info_t *info = NULL;
+	char *strings = NULL;
+	cache_locsym_entry_t *entries = NULL;
+	struct MACH0_(nlist) *nlists = NULL;
+
+	ut64 info_size = sizeof (cache_locsym_info_t);
+	info = R_NEW0 (cache_locsym_info_t);
+	if (!info) {
+		goto beach;
+	}
+	if (r_buf_fread_at (cache_buf, hdr->localSymbolsOffset, (ut8*) info, "6i", 1) != info_size) {
+		goto beach;
+	}
+
+	ut64 nlists_size = sizeof (struct MACH0_(nlist)) * info->nlistCount;
+	nlists = R_NEWS0 (struct MACH0_(nlist), info->nlistCount);
+	if (!nlists) {
+		goto beach;
+	}
+	if (r_buf_fread_at (cache_buf, hdr->localSymbolsOffset + info->nlistOffset, (ut8*) nlists, "iccsl",
+			info->nlistCount) != nlists_size) {
+		goto beach;
+	}
+
+	strings = malloc (info->stringsSize);
+	if (!strings) {
+		goto beach;
+	}
+	if (r_buf_read_at (cache_buf, hdr->localSymbolsOffset + info->stringsOffset, (ut8*) strings,
+			info->stringsSize) != info->stringsSize) {
+		goto beach;
+	}
+
+	ut64 entries_size = sizeof (cache_locsym_entry_t) * info->entriesCount;
+	entries = R_NEWS0 (cache_locsym_entry_t, info->entriesCount);
+	if (!entries) {
+		goto beach;
+	}
+	if (r_buf_fread_at (cache_buf, hdr->localSymbolsOffset + info->entriesOffset, (ut8*) entries, "3i",
+			info->entriesCount) != entries_size) {
+		goto beach;
+	}
+
+	RDyldLocSym * locsym = R_NEW0 (RDyldLocSym);
+	if (!locsym) {
+		goto beach;
+	}
+
+	locsym->nlists = nlists;
+	locsym->nlists_count = info->nlistCount;
+	locsym->strings = strings;
+	locsym->strings_size = info->stringsSize;
+	locsym->entries = entries;
+	locsym->entries_count = info->entriesCount;
+
+	free (info);
+
+	return locsym;
+
+beach:
+	free (info);
+	free (strings);
+	free (entries);
+	free (nlists);
+
+	eprintf ("dyldcache: malformed local symbols metadata\n");
+	return NULL;
+}
+
+static void r_dyld_locsym_free(RDyldLocSym *locsym) {
+	if (!locsym) {
+		return;
+	}
+	R_FREE (locsym->strings);
+	R_FREE (locsym->entries);
+	R_FREE (locsym->nlists);
+	free (locsym);
+}
+
+static void r_dyld_locsym_entries_by_offset(RDyldCache *cache, RList *symbols, HtPP *hash, ut64 bin_header_offset) {
+	RDyldLocSym *locsym = cache->locsym;
+	if (!locsym->entries) {
+		return;
+	}
+
+	ut64 i;
+	for (i = 0; i != locsym->entries_count; i++) {
+		cache_locsym_entry_t *entry = &locsym->entries[i];
+		if (entry->dylibOffset != bin_header_offset) {
+			continue;
+		}
+
+		if (entry->nlistStartIndex >= locsym->nlists_count ||
+				entry->nlistStartIndex + entry->nlistCount >= locsym->nlists_count) {
+			eprintf ("dyldcache: malformed local symbol entry\n");
+			break;
+		}
+
+		ut32 j;
+		for (j = 0; j != entry->nlistCount; j++) {
+			struct MACH0_(nlist) *nlist = &locsym->nlists[j + entry->nlistStartIndex];
+			bool found;
+			const char *key = sdb_fmt ("%"PFMT64x, nlist->n_value);
+			ht_pp_find (hash, key, &found);
+			if (found) {
+				continue;
+			}
+			ht_pp_insert (hash, key, "1");
+			if (nlist->n_strx >= locsym->strings_size) {
+				continue;
+			}
+			char *symstr = &locsym->strings[nlist->n_strx];
+			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			if (!sym) {
+				return;
+			}
+			sym->type = "LOCAL";
+			sym->vaddr = nlist->n_value;
+			sym->paddr = va2pa (nlist->n_value, cache->hdr, cache->maps, cache->buf, cache->rebase_info->slide, NULL, NULL);
+
+			int len = locsym->strings_size - nlist->n_strx;
+			ut32 k;
+			for (k = 0; k < len; k++) {
+				if (((ut8) symstr[k] & 0xff) == 0xff || !symstr[k]) {
+					len = k;
+					break;
+				}
+			}
+			if (len > 0) {
+				sym->name = r_str_ndup (symstr, len);
+			} else {
+				sym->name = r_str_newf ("unk_local%d", k);
+			}
+
+			r_list_append (symbols, sym);
+		}
+		break;
+	}
+}
+
 static void r_dyldcache_free(RDyldCache *cache) {
 	if (!cache) {
 		return;
@@ -152,6 +309,7 @@ static void r_dyldcache_free(RDyldCache *cache) {
 	R_FREE (cache->hdr);
 	R_FREE (cache->maps);
 	R_FREE (cache->accel);
+	r_dyld_locsym_free (cache->locsym);
 	R_FREE (cache);
 }
 
@@ -1139,6 +1297,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		r_dyldcache_free (cache);
 		return false;
 	}
+	cache->locsym = r_dyld_locsym_new (cache->buf, cache->hdr);
+	if (!cache->locsym) {
+		r_dyldcache_free (cache);
+		return false;
+	}
 	cache->bins = create_cache_bins (bf, cache->buf, cache->hdr, cache->maps, cache->accel);
 	if (!cache->bins) {
 		r_dyldcache_free (cache);
@@ -1219,7 +1382,7 @@ static ut64 baddr(RBinFile *bf) {
 	return 0x180000000;
 }
 
-void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
+void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin, HtPP *hash) {
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);
 	if (!mach0) {
 		return;
@@ -1244,31 +1407,15 @@ void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		}
 		sym->name = strdup (symbols[i].name);
 		sym->vaddr = symbols[i].addr;
-		if (sym->name[0] == '_') {
-			char *dn = r_bin_demangle (bf, sym->name, sym->name, sym->vaddr, false);
-			if (dn) {
-				sym->dname = dn;
-				char *p = strchr (dn, '.');
-				if (p) {
-					if (IS_UPPER (sym->name[0])) {
-						sym->classname = strdup (sym->name);
-						sym->classname[p - sym->name] = 0;
-					} else if (IS_UPPER (p[1])) {
-						sym->classname = strdup (p + 1);
-						p = strchr (sym->classname, '.');
-						if (p) {
-							*p = 0;
-						}
-					}
-				}
-			}
-		}
 		sym->forwarder = "NONE";
 		sym->bind = (symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
 		sym->type = R_BIN_TYPE_FUNC_STR;
 		sym->paddr = symbols[i].offset + bf->o->boffset;
 		sym->size = symbols[i].size;
 		sym->ordinal = i;
+
+		const char *key = sdb_fmt ("%"PFMT64x, sym->vaddr);
+		ht_pp_insert (hash, key, "1");
 		r_list_append (ret, sym);
 	}
 	MACH0_(mach0_free) (mach0);
@@ -1392,7 +1539,14 @@ static RList *symbols(RBinFile *bf) {
 	RListIter *iter;
 	RDyldBinImage *bin;
 	r_list_foreach (cache->bins, iter, bin) {
-		symbols_from_bin (ret, bf, bin);
+		HtPP *hash = ht_pp_new0 ();
+		if (!hash) {
+			r_list_free (ret);
+			return NULL;
+		}
+		symbols_from_bin (ret, bf, bin, hash);
+		r_dyld_locsym_entries_by_offset (cache, ret, hash, bin->header_at);
+		ht_pp_free (hash);
 	}
 
 	if (cache->rebase_info->slide > 0) {
@@ -1546,7 +1700,8 @@ static void header(RBinFile *bf) {
 	bin->cb_printf ("codeSignatureSize: 0x%"PFMT64x"\n", cache->hdr->codeSignatureSize);
 	bin->cb_printf ("slideInfoOffset: 0x%"PFMT64x"\n", cache->hdr->slideInfoOffset);
 	bin->cb_printf ("slideInfoSize: 0x%"PFMT64x"\n", cache->hdr->slideInfoSize);
-	bin->cb_printf ("localSymbolsOffset: 0x%"PFMT64x"\n", cache->hdr->localSymbolsSize);
+	bin->cb_printf ("localSymbolsOffset: 0x%"PFMT64x"\n", cache->hdr->localSymbolsOffset);
+	bin->cb_printf ("localSymbolsSize: 0x%"PFMT64x"\n", cache->hdr->localSymbolsSize);
 	char uuidstr[128];
 	r_hex_bin2str ((ut8*)cache->hdr->uuid, 16, uuidstr);
 	bin->cb_printf ("uuid: %s\n", uuidstr);

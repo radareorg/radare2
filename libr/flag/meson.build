@@ -6,7 +6,7 @@ r_flag_sources = [
 
 r_flag = library('r_flag', r_flag_sources,
   include_directories: [platform_inc],
-  c_args: library_cflags + ['-DR_FLAG_SRC=1'],
+  c_args: library_cflags,
   dependencies: [
     r_util_dep
   ],
