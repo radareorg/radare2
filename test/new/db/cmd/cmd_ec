@@ -278,3 +278,13 @@ ec comment rgb:001296 . italic
 ec fname rgb:8d0004 . bold italic
 EOF
 RUN
+
+NAME=ecHi
+FILE=-
+CMDS=<<EOF
+ecHi xxxx
+EOF
+EXPECT_ERR=<<EOF
+Unknown color xxxx
+EOF
+RUN
