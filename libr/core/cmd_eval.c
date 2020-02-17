@@ -465,6 +465,11 @@ static int cmd_eval(void *data, const char *input) {
 					char *dup = r_str_newf ("bgonly %s", argv[0]);
 					color_code = r_cons_pal_parse (dup, NULL);
 					R_FREE (dup);
+					if (!color_code) {
+						eprintf ("Unknown color %s\n", argv[0]);
+						r_str_argv_free (argv);
+						return true;
+					}
 				}
 				break;
 			case 'w': // "ecHw"
@@ -477,14 +482,13 @@ static int cmd_eval(void *data, const char *input) {
 				if (argc > 1) {
 					char *dup = r_str_newf ("bgonly %s", argv[1]);
 					color_code = r_cons_pal_parse (dup, NULL);
+					R_FREE (dup);
 					if (!color_code) {
 						eprintf ("Unknown color %s\n", argv[1]);
 						r_str_argv_free (argv);
-						free (dup);
 						free (word);
 						return true;
 					}
-					R_FREE (dup);
 				}
 				break;
 			default:
