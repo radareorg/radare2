@@ -3,6 +3,8 @@
 # SANITIZE="address signed-integer-overflow"  # Faster build
 SANITIZE=${SANITIZE:="address undefined signed-integer-overflow"}
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 printf "\033[32m"
 echo "========================================================================="
 printf "\033[33m"
@@ -48,4 +50,4 @@ if [ "$1" = "-u" ]; then
 	shift
 	SCRIPT=user.sh
 fi
-exec sys/${SCRIPT} $*
+exec ${DIR}/${SCRIPT} $*
