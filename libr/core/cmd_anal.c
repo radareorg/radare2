@@ -3312,6 +3312,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						}
 					}
 					fcnname = strdup (fcnname_aux + last_space);
+
+					// Replace dots in function name with underscores
+					for (i = last_space; i < strlen (fcnname) + last_space; i++) {
+						fcnstr[i] = (fcnstr[i] == '.') ? '_' : fcnstr[i];
+					}
 					if (fcnname) {
 						// TODO: move this into r_anal_str_to_fcn()
 						if (strcmp (fcn->name, fcnname)) {
