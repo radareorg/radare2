@@ -730,7 +730,7 @@ beach:
 static bool is_reg_in_src (const char *regname, RAnal *anal, RAnalOp *op);
 
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal) {
-	#define STR_EQUAL(s1, s2) s1 && s2 && !strcmp (s1, s2)
+	#define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp (s1, s2))
 	RAnalValue *dst = op->dst;
 	RAnalValue *src = op->src[0];
 	switch (op->type) {
