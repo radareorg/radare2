@@ -569,7 +569,7 @@ R_API const char *r_meta_type_to_string(int type) {
 	case R_META_TYPE_HIDE: return "Ch";
 	case R_META_TYPE_COMMENT: return "CCu";
 	case R_META_TYPE_RUN: return "Cr"; // not in C? help
-	case R_META_TYPE_HIGHLIGHT: return "CH"; // not in C?
+	case R_META_TYPE_HIGHLIGHT: return "ecHi"; // not in C?
 	case R_META_TYPE_VARTYPE: return "Ct";
 	}
 	return "# unknown meta # ";
@@ -763,6 +763,16 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, PJ *pj, bool show_f
 						r_meta_type_to_string (d->type), pstr, d->from);
 				} else {
 					a->cb_printf ("0x%08"PFMT64x" %s\n", d->from, pstr);
+				}
+				break;
+			case 'H':
+				{
+					ut8 r, g, b, A;
+					const char *esc = strchr (d->str, '\x1b');
+					r_cons_rgb_parse (esc, &r, &g, &b, &A);
+					a->cb_printf ("%s rgb:%02x%02x%02x @ 0x%08"PFMT64x"\n",
+						r_meta_type_to_string (d->type), r, g, b, d->from);
+					// TODO: d->size
 				}
 				break;
 			default:
