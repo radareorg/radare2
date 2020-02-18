@@ -31,7 +31,9 @@ for a in ${PKGDIR}/usr/lib/libr*.so.* ; do
 done
 
 echo "[debian] building radare2 package..."
+./configure
 make -C sys/debian/radare2 ARCH=${ARCH}
 
 echo "[debian] building radare2-dev package..."
+./configure
 make -C sys/debian/radare2-dev ARCH=${ARCH}
