@@ -2106,13 +2106,13 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		pj_a (pj);
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
-	} else if (!at && exponly) {
+	} else if (at == UT64_MAX && exponly) {
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs exports\n");
 		} else if (IS_MODE_NORMAL (mode)) {
 			r_cons_printf (printHere ? "" : "[Exports]\n");
 		}
-	} else if (!at && !exponly) {
+	} else if (at == UT64_MAX && !exponly) {
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs symbols\n");
 		} else if (IS_MODE_NORMAL (mode)) {
@@ -2136,7 +2136,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 		ut64 addr = compute_addr (r->bin, symbol->paddr, symbol->vaddr, va);
 		ut32 len = symbol->size ? symbol->size : 32;
-		if (at && (!symbol->size || !is_in_range (at, addr, symbol->size))) {
+		if (at != UT64_MAX && (!symbol->size || !is_in_range (at, addr, symbol->size))) {
 			continue;
 		}
 		if ((printHere && !is_in_range (r->offset, symbol->paddr, len))
@@ -2554,9 +2554,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	}
 	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_printf ("[");
-	} else if (IS_MODE_RAD (mode) && !at) {
+	} else if (IS_MODE_RAD (mode) && at == UT64_MAX) {
 		r_cons_printf ("fs %ss\n", type);
-	} else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
+	} else if (IS_MODE_NORMAL (mode) && at == UT64_MAX && !printHere) {
 		r_cons_printf ("[%s]\n", print_segments ? "Segments" : "Sections");
 	} else if (IS_MODE_NORMAL (mode) && printHere) {
 		r_cons_printf ("Current section\n");
@@ -2601,7 +2601,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 
 		r_name_filter (section->name, strlen (section->name) + 1);
-		if (at && (!section->size || !is_in_range (at, addr, section->size))) {
+		if (at != UT64_MAX && (!section->size || !is_in_range (at, addr, section->size))) {
 			continue;
 		}
 
@@ -2720,8 +2720,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				}
 				ut32 datalen = section->size;
 				r_io_pread_at (r->io, section->paddr, data, datalen);
-				hashstr = build_hash_string (mode, chksum,
-							data, datalen);
+				hashstr = build_hash_string (mode, chksum, data, datalen);
 				free (data);
 			}
 			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s%s%s\n",
@@ -2810,7 +2809,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	}
 	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_println ("]");
-	} else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
+	} else if (IS_MODE_NORMAL (mode) && at == UT64_MAX && !printHere) {
 		// r_cons_printf ("\n%i sections\n", i);
 	}
 
@@ -3842,7 +3841,7 @@ static int bin_header(RCore *r, int mode) {
 R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	int ret = true;
 	const char *name = NULL;
-	ut64 at = 0, loadaddr = r_bin_get_laddr (core->bin);
+	ut64 at = UT64_MAX, loadaddr = r_bin_get_laddr (core->bin);
 	if (filter && filter->offset) {
 		at = filter->offset;
 	}
