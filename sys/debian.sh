@@ -33,7 +33,9 @@ done
 echo "[debian] building radare2 package..."
 ./configure
 make -C sys/debian/radare2 ARCH=${ARCH}
+cp -f sys/debian/radare2/*.deb .
 
 echo "[debian] building radare2-dev package..."
 ./configure
 make -C sys/debian/radare2-dev ARCH=${ARCH}
+cp -f sys/debian/radare2-dev/*.deb .
