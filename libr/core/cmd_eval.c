@@ -452,6 +452,7 @@ static int cmd_eval(void *data, const char *input) {
 					"ecHi","[color]","highlight current instruction with 'color' background",
 					"ecHw","[word] [color]","highlight 'word ' in current instruction with 'color' background",
 					"ecH","","list all the highlight rules",
+					"ecH.","","show highlight rule in current offset",
 					"ecH-","*","remove all the highlight hints",
 					"ecH-","","remove all highlights on current instruction",
 					NULL
@@ -466,6 +467,10 @@ static int cmd_eval(void *data, const char *input) {
 				} else {
 					r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
 				}
+				r_str_argv_free (argv);
+				return false;
+			case '.':
+				r_meta_list_at (core->anal, R_META_TYPE_HIGHLIGHT, 0, core->offset);
 				r_str_argv_free (argv);
 				return false;
 			case '\0':
