@@ -694,8 +694,12 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			at = r_num_math (NULL, r_optarg);
 			set_action (R_BIN_REQ_SRCLINE);
 			break;
-		case 'i': set_action (R_BIN_REQ_IMPORTS); break;
-		case 's': set_action (R_BIN_REQ_SYMBOLS); break;
+		case 'i':
+			set_action (R_BIN_REQ_IMPORTS);
+			break;
+		case 's':
+			set_action (R_BIN_REQ_SYMBOLS);
+			break;
 		case 'S':
 			if (is_active (R_BIN_REQ_SECTIONS)) {
 				action &= ~R_BIN_REQ_SECTIONS;
@@ -802,6 +806,9 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			break;
 		case '@':
 			at = r_num_math (NULL, r_optarg);
+			if (at == 0LL && *r_optarg != '0') {
+				at = UT64_MAX;
+			}
 			break;
 		case 'n':
 			name = r_optarg;
