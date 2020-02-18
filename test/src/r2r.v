@@ -551,7 +551,7 @@ fn (r2r mut R2R) run_cmd_test(test R2RCmdTest) {
 		mark = r2r.test_failed(test, test_expect, res)
 	}
 	else {
-		if test.expect_err != '' && errstr.trim_space() != test.expect_err {
+		if test.expect_err != '' && errstr.trim_space() != test.expect_err.trim_space() {
 			mark = r2r.test_failed(test, test.expect_err, errstr)
 		}
 		else if test.broken {
