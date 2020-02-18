@@ -2,7 +2,8 @@
 #include "minunit.h"
 
 bool test_r_cons() {
-	ut8 r, g, b, a;
+	// NOTE: not initializing a value here results in UB
+	ut8 r = 0, g = 0, b = 0, a = 0;
 
 	const char *foo = "___"; // should crash in asan mode
 	r_cons_rgb_parse (foo, &r, &g, &b, &a);
