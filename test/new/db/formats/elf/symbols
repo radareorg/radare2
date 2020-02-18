@@ -202,3 +202,11 @@ CMDS=<<EOF
 pd 5 @ 0x464
 EOF
 RUN
+
+NAME=symname just before end of dynstr section of size 1
+FILE=../bins/elf/switch-hello-world.elf
+EXPECT='1732'
+CMDS=<<EOF
+isq~?
+EOF
+RUN
