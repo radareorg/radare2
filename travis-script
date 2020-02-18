@@ -75,10 +75,16 @@ else
         export CFLAGS="${CFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
         export LDFLAGS="${LDFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
     fi
-    ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
-    make -s -j2 > /dev/null || exit 1
-    make install > /dev/null || exit 1
     export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
+    if [ "${DEBPKG}" == "1" ] ; then
+      sys/debian.sh
+      # TODO: upload debian package somewhere
+      exit 0
+    else
+      ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
+      make -s -j2 > /dev/null || exit 1
+      make install > /dev/null || exit 1
+    fi
 fi
 
 if [ "${R2_TESTS_DISABLE}" != "1" ] ; then
