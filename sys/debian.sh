@@ -1,6 +1,8 @@
 #!/bin/sh
 # run this from a debian system, docker is fine :)
 
+uname -a
+
 if [ -z "${ARCH}" ]; then
   ARCH=`uname -m`
 fi
@@ -13,6 +15,9 @@ echo "[debian] preparing radare2 package..."
 PKGDIR=sys/debian/radare2/root
 DEVDIR=sys/debian/radare2-dev/root
 rm -rf "${PKGDIR}" "${DEVDIR}"
+
+./configure --prefix=/usr
+make -j4
 make install DESTDIR="${PWD}/${PKGDIR}"
 mkdir -p "${DEVDIR}/usr/include"
 mv "${PKGDIR}/usr/include/"* "${DEVDIR}/usr/include"
@@ -31,11 +36,9 @@ for a in ${PKGDIR}/usr/lib/libr*.so.* ; do
 done
 
 echo "[debian] building radare2 package..."
-./configure
 make -C sys/debian/radare2 ARCH=${ARCH}
 cp -f sys/debian/radare2/*.deb .
 
 echo "[debian] building radare2-dev package..."
-./configure
 make -C sys/debian/radare2-dev ARCH=${ARCH}
 cp -f sys/debian/radare2-dev/*.deb .
