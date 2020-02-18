@@ -52,7 +52,7 @@ pub fn main() {
 	show_help := fp.bool_('help', `h`, false, 'Show this help screen')
 	r2r.jobs = fp.int_('jobs', `j`, default_jobs, 'Spawn N jobs in parallel to run tests ($default_jobs).' +
 	                                              ' Set to 0 for 1 job per test.')
-	r2r.timeout = fp.int_('timeout', `t`, default_timeout, 'How much time to wait to consider a fail ($default_timeout}')
+	r2r.timeout = fp.int_('timeout', `t`, default_timeout, 'How much time to wait to consider a fail ($default_timeout)')
 	show_version := fp.bool_('version', `v`, false, 'Show version information')
 	r2r.r2r_home = r2r_home()
 	r2r.show_quiet = fp.bool_('quiet', `q`, false, 'Silent output of OK tests')
@@ -109,6 +109,8 @@ pub fn main() {
 		r2r.run_tests()
 		r2r.show_report()
 	}
+	rc := r2r.return_code()
+	exit(rc)
 }
 
 fn (r2r mut R2R) run_tests() {
@@ -160,6 +162,13 @@ mut:
 	interactive bool
 	r2r_home    string
 	filter_by_files []string
+}
+
+fn (r2r R2R)return_code() int {
+	if r2r.failed == 0 {
+		return 0
+	}
+	return 1
 }
 
 struct R2RCmdTest {
@@ -288,7 +297,7 @@ fn (r2r mut R2R) load_cmd_test(testfile string) {
 			}
 			'BROKEN' {
 				if v.len > 0 {
-					test.broken = v != '0'
+					test.broken = v[0] != `0`
 				}
 				else {
 					eprintln('Warning: Missing value for BROKEN in ${test.source}')

@@ -355,6 +355,9 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 }
 
 R_API void r_anal_block_unref(RAnalBlock *bb) {
+	if (!bb) {
+		return;
+	}
 	assert (bb->ref > 0);
 	bb->ref--;
 	assert (bb->ref >= r_list_length (bb->fcns)); // all of the block's functions must hold a reference to it

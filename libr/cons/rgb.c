@@ -116,9 +116,12 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	}
 	if (*p == 0x1b) {
 		p++;
+		if (*p != '[') {
+			p--;
+		}
 	}
-	if (*p != '[') {
-		p--;
+	if (!p[0]) {
+		return 0;
 	}
 	switch (p[1]) {
 	case '1': bold = 255; p += 2; break;
