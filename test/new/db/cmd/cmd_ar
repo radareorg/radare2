@@ -1,0 +1,32 @@
+NAME=ar change register
+FILE=-
+EXPECT=<<EOF
+0x000000ff
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+ar eax=0xff
+ar eax
+EOF
+RUN
+
+NAME=value of old register
+FILE=-
+BROKEN=1
+EXPECT=<<EOF
+mov ebx, 0x10
+mov ebx, 0x50
+ebx = 0x00000010
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx bb10000000
+wx bb50000000 @ 0x5
+pi 2
+aeim
+2aes
+aro~ebx
+EOF
+RUN
