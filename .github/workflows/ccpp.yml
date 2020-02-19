@@ -15,9 +15,9 @@ jobs:
       matrix:
         node_version: ['12']
         os: [ubuntu-latest, macos-latest]
-    
+
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Install pkg-config with Homebrew
       if: matrix.os == 'macos-latest'
       run: brew install pkg-config
