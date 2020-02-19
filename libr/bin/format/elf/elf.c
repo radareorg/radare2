@@ -3528,9 +3528,9 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					}
 				}
 				ret[ret_ctr].size = tsize;
-				if (sym[k].st_name + 2 > strtab_section->sh_size) {
+				if (sym[k].st_name + 1 > strtab_section->sh_size) {
 					bprintf ("index out of strtab range\n");
-					goto beach;
+					continue;
 				}
 				{
 					int rest = ELF_STRING_LENGTH - 1;

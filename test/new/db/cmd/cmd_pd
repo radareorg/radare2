@@ -1070,7 +1070,6 @@ EOF
 RUN
 
 NAME=bin.str.enc error handling
-BROKEN=1 # Unbreak this and r2r.v goes XX
 FILE=-
 CMDS=<<EOF
 (test_str.enc enc, e bin.str.enc=$0, e bin.str.enc)

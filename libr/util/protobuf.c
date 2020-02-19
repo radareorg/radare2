@@ -114,7 +114,7 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 				const ut8* pe = ps + var64;
 				if (ps > buffer && pe <= end) {
 					if (is_string (ps, pe)) {
-						r_strbuf_appendf (sb, ": \"%.*s\"\n", var64, (const char*) ps);
+						r_strbuf_appendf (sb, ": \"%.*s\"\n", (int)var64, (const char*) ps);
 					} else {
 						r_strbuf_appendf (sb, " {\n");
 						decode_buffer (sb, ps, pe, padcnt + 1, debug);
