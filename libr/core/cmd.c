@@ -4474,6 +4474,7 @@ DEFINE_IS_TS_FCN(arg)
 DEFINE_IS_TS_FCN(arg_identifier)
 DEFINE_IS_TS_FCN(double_quoted_arg)
 DEFINE_IS_TS_FCN(single_quoted_arg)
+DEFINE_IS_TS_FCN(concatenation)
 
 // NOTE: this should be in sync with SPECIAL_CHARACTERS in
 //       radare2-shell-parser grammar, except for ", ' and
@@ -4592,34 +4593,19 @@ static void do_handle_substitution_arg(struct tsr2cmd_state *state, TSNode arg, 
 	r_list_append (edits, e);
 }
 
-static void handle_substitution_arg(struct tsr2cmd_state *state, TSNode arg, RList *edits) {
-	if (!is_ts_arg (arg)) {
-		return;
-	}
-	arg = ts_node_named_child (arg, 0);
-	r_return_if_fail (!ts_node_is_null (arg));
-	if (is_ts_cmd_substitution_arg (arg)) {
-		do_handle_substitution_arg (state, arg, edits);
-	} else if (is_ts_double_quoted_arg (arg)) {
-		uint32_t n_children = ts_node_named_child_count (arg);
-		uint32_t i;
-		for (i = 0; i < n_children; ++i) {
-			TSNode sub_arg = ts_node_named_child (arg, i);
-			do_handle_substitution_arg (state, sub_arg, edits);
-		}
-	}
-}
-
 static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, RList *edits) {
-	if (is_ts_args (args)) {
+	if (is_ts_args (args) || is_ts_concatenation (args) || is_ts_double_quoted_arg (args)) {
 		uint32_t n_children = ts_node_named_child_count (args);
 		uint32_t i;
 		for (i = 0; i < n_children; ++i) {
 			TSNode arg = ts_node_named_child (args, i);
-			handle_substitution_arg (state, arg, edits);
+			handle_substitution_args (state, arg, edits);
 		}
+	} else if (is_ts_cmd_substitution_arg (args)) {
+		do_handle_substitution_arg (state, args, edits);
 	} else if (is_ts_arg (args)) {
-		handle_substitution_arg (state, args, edits);
+		TSNode arg = ts_node_named_child (args, 0);
+		handle_substitution_args (state, arg, edits);
 	}
 }
 
@@ -4639,6 +4625,15 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) 
 	} else if (is_ts_single_quoted_arg (arg) || is_ts_double_quoted_arg (arg)) {
 		const char *special = is_ts_single_quoted_arg (arg)? SPECIAL_CHARS_SINGLE_QUOTED: SPECIAL_CHARS_DOUBLE_QUOTED;
 		return unescape_arg (state, arg, special);
+	} else if (is_ts_concatenation (arg)) {
+		uint32_t i, n_children = ts_node_named_child_count (arg);
+		RStrBuf *sb = r_strbuf_new (NULL);
+		for (i = 0; i < n_children; ++i) {
+			TSNode sub_arg = ts_node_named_child (arg, i);
+			char *s = do_handle_ts_unescape_arg (state, sub_arg);
+			r_strbuf_append (sb, s);
+		}
+		return r_strbuf_drain (sb);
 	} else {
 		return ts_node_sub_string (arg, state->input);
 	}
@@ -4658,10 +4653,9 @@ static char *create_argv_str(struct parsed_args *a) {
 
 static struct parsed_args *handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) {
 	struct parsed_args *a = R_NEW0 (struct parsed_args);
-	char *s = do_handle_ts_unescape_arg (state, arg);
 	a->argc = 1;
 	a->argv = R_NEWS (char *, a->argc);
-	a->argv[0] = s;
+	a->argv[0] = do_handle_ts_unescape_arg (state, arg);
 	a->argv_str = create_argv_str (a);
 	return a;
 }
