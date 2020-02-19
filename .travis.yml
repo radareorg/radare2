@@ -130,6 +130,11 @@ before_install:
       rm -rf .nvm && git clone -q https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 10.16.3
     fi
 
+after_success:
+  - ls -lh *.deb # Assuming you have some files in out/ that you would like to upload
+  - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+  - bash upload.sh *.deb
+
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
   - |
