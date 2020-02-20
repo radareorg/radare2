@@ -1196,6 +1196,11 @@ R_API int r_main_radare2(int argc, char **argv) {
 				}
 			}
 		}
+		if (o && compute_hashes) {
+			// TODO: recall with limit=0 ?
+			ut64 limit = r_config_get_i (r->config, "bin.hashlimit");
+			r_bin_file_set_hashes (r->bin, r_bin_file_compute_hashes (r->bin, limit));
+		}
 		if (s_seek) {
 			seek = r_num_math (r->num, s_seek);
 			if (seek != UT64_MAX) {
@@ -1217,19 +1222,6 @@ R_API int r_main_radare2(int argc, char **argv) {
 			iod = r->io ? r_io_desc_get (r->io, fh->fd) : NULL;
 			if (has_project) {
 				r_config_set (r->config, "bin.strings", "false");
-			}
-			if (compute_hashes && iod) {
-				// TODO: recall with limit=0 ?
-				ut64 limit = r_config_get_i (r->config, "bin.hashlimit");
-				RList *file_hashes = r_bin_file_hash (r->bin, limit);
-				if (file_hashes) {
-					if (r->bin->cur->o->info->file_hashes) {
-						r_list_join (r->bin->cur->o->info->file_hashes, file_hashes);
-						free (file_hashes);
-					} else {
-						r->bin->cur->o->info->file_hashes = file_hashes;
-					}
-				}
 			}
 			npath = r_config_get (r->config, "file.path");
 			if (!quiet && path && *path && npath && strcmp (path, npath)) {
