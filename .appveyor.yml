@@ -100,6 +100,21 @@ artifacts:
   # Inno Setup files
   - path: radare2_installer-%builder%.exe
 
-# Disable deployment
-deploy: off
+# Upload builds to the CI release at GitHub
+deploy:
+  tag: continuous
+  release: continuous
+  description: 'Radare2 Windows release'
+  provider: GitHub
+  auth_token:
+    secure: aIhLJhegEu8fMuyfhVxiEyF5+28ozTtmDmQ3UBddNou3nQlXyIWJ5dZSPnf6HqsS # encrypted token from GitHub
+  artifact: /"%ARTIFACT_ZIP%"
+  draft: true
+  prerelease: true
+  force_update: true
+  on:
+    branch: master                 # release from master branch only
+    APPVEYOR_REPO_TAG: true        # deploy on tag push only
+  
+
 
