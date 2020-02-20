@@ -7,7 +7,7 @@ jobs:
   latest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Download Coverity Build Tool
         run: |
           wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=radare2" -O cov-analysis-linux64.tar.gz
@@ -20,7 +20,7 @@ jobs:
         run: |
           chmod go-w $HOME
           sudo chmod -R go-w /usr/share
-          
+
       - name: Configure
         run: ./configure
 
@@ -29,6 +29,7 @@ jobs:
           export PATH=`pwd`/cov-analysis-linux64/bin:$PATH
           cov-build --dir cov-int make
 
+      # TODO: Make it GitHub Action instead
       - name: Submit the result to Coverity Scan
         run: |
           tar czvf radare2.tgz cov-int
