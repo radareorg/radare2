@@ -295,7 +295,7 @@ if get_option('use_treesitter')
     endif
 
     # NOTE: when you update SHELLPARSER_TIP or SHELLPARSER_BRA, also update them in shlr/Makefile
-    SHELLPARSER_TIP = '4bc342424550e02879722716a65a4c0d46344845'
+    SHELLPARSER_TIP = 'd6a6258b0d89e5c9778a4b56fb7fb280a4b38aeb'
     SHELLPARSER_BRA = 'master'
     shell_parser_user = 'ret2libc'
 

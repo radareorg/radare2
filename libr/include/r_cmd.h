@@ -76,6 +76,9 @@ typedef struct r_cmd_t {
 	RList *lcmds;
 	RList *plist;
 	RCmdAlias aliases;
+#if USE_TREESITTER
+	HtUP *ts_symbols_ht;
+#endif
 } RCmd;
 
 // TODO WIP

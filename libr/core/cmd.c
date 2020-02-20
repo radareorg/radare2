@@ -4416,6 +4416,7 @@ struct tsr2cmd_state {
 	char *input;
 	TSTree *tree;
 	bool log;
+	bool is_last_cmd;
 };
 
 struct tsr2cmd_edit {
@@ -4433,6 +4434,13 @@ struct parsed_args {
 	char **argv;
 };
 
+typedef bool (*ts_handler)(struct tsr2cmd_state *state, TSNode node);
+
+struct ts_data_symbol_map {
+	const char *name;
+	void *data;
+};
+
 #define TS_START_END(node, start, end) do {		\
 		start = ts_node_start_byte (node);	\
 		end = ts_node_end_byte (node);		\
@@ -4444,9 +4452,10 @@ static char *ts_node_sub_string(TSNode node, const char *cstr) {
 	return r_str_newf ("%.*s", end - start, cstr + start);
 }
 
-// TODO: use integer type instead of string-based one
-#define DEFINE_IS_TS_FCN(name) static inline bool is_ts_##name(TSNode node) { \
-		return strcmp (ts_node_type (node), #name) == 0;	\
+#define DEFINE_IS_TS_FCN(name)                                      \
+	TSSymbol ts_##name##_symbol;                                \
+	static inline bool is_ts_##name(TSNode node) {              \
+		return ts_node_symbol (node) == ts_##name##_symbol; \
 	}
 
 #define DEFINE_HANDLE_TS_FCN(name) \
@@ -5020,6 +5029,7 @@ DEFINE_HANDLE_TS_FCN(last_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 	char *command_str = ts_node_sub_string (command, state->input);
 	bool res = false;
+	state->is_last_cmd = true;
 	if (!strcmp (command_str, ".")) {
 		res = lastcmd_repeat (state->core, 0);
 	} else if (!strcmp (command_str, "...")) {
@@ -5105,40 +5115,21 @@ DEFINE_HANDLE_TS_FCN(scr_tts_command) {
 
 static bool handle_ts_command(struct tsr2cmd_state *state, TSNode node) {
 	bool ret = false;
-	bool is_last_command = false;
+	RCmd *cmd = state->core->rcmd;
 
 	if (state->log) {
 		r_line_hist_add (state->input);
 	}
-	if (is_ts_legacy_quoted_command (node)) {
-		ret = handle_ts_legacy_quoted_command (state, node);
-	} else if (is_ts_redirect_command (node)) {
-		ret = handle_ts_redirect_command (state, node);
-	} else if (is_ts_arged_command (node)) {
-		ret = handle_ts_arged_command (state, node);
-	} else if (is_ts_tmp_seek_command (node)) {
-		ret = handle_ts_tmp_seek_command (state, node);
-	} else if (is_ts_last_command (node)) {
-		is_last_command = true;
-		ret = handle_ts_last_command (state, node);
-	} else if (is_ts_help_command (node)) {
-		ret = handle_ts_help_command (state, node);
-	} else if (is_ts_grep_command (node)) {
-		ret = handle_ts_grep_command (state, node);
-	} else if (is_ts_html_disable_command (node)) {
-		ret = handle_ts_html_disable_command (state, node);
-	} else if (is_ts_html_enable_command (node)) {
-		ret = handle_ts_html_enable_command (state, node);
-	} else if (is_ts_pipe_command (node)) {
-		ret = handle_ts_pipe_command (state, node);
-	} else if (is_ts_scr_tts_command (node)) {
-		ret = handle_ts_scr_tts_command (state, node);
-	} else if (is_ts_repeat_command (node)) {
-		ret = handle_ts_repeat_command (state, node);
+
+	TSSymbol node_symbol = ts_node_symbol (node);
+	ts_handler handler = ht_up_find (cmd->ts_symbols_ht, node_symbol, NULL);
+
+	if (handler) {
+		ret = handler (state, node);
 	} else {
 		R_LOG_WARN ("No handler for this kind of command `%s`\n", ts_node_type (node));
 	}
-	if (state->log && !is_last_command) {
+	if (state->log && !state->is_last_cmd) {
 		free (state->core->lastcmd);
 		state->core->lastcmd = ts_node_sub_string (node, state->input);
 	}
@@ -5174,11 +5165,49 @@ DEFINE_HANDLE_TS_FCN(commands) {
 	return res;
 }
 
+#define HANDLER_RULE_OP(name) { #name, handle_ts_##name },
+#define RULE_OP(name)
+
+struct ts_data_symbol_map map[] = {
+	#include "r2-shell-parser-cmds.inc"
+	{ NULL, NULL },
+};
+
+#define RULE_OP(name) { #name, &ts_##name##_symbol },
+#define HANDLER_RULE_OP(name) RULE_OP(name)
+
+struct ts_data_symbol_map map_symbols[] = {
+	#include "r2-shell-parser-cmds.inc"
+	{ NULL, NULL },
+};
+
+static void ts_symbols_init(RCmd *cmd, TSLanguage *lang) {
+	if (cmd->ts_symbols_ht) {
+		return;
+	}
+	cmd->ts_symbols_ht = ht_up_new0 ();
+	struct ts_data_symbol_map *entry = map;
+	while (entry->name) {
+		TSSymbol symbol = ts_language_symbol_for_name (lang, entry->name, strlen (entry->name), true);
+		ht_up_insert (cmd->ts_symbols_ht, symbol, entry->data);
+		entry++;
+	}
+
+	entry = map_symbols;
+	while (entry->name) {
+		TSSymbol *sym_ptr = entry->data;
+		*sym_ptr = ts_language_symbol_for_name (lang, entry->name, strlen (entry->name), true);
+		entry++;
+	}
+}
+
 static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log) {
 	char *input = strdup (cstr);
 	TSLanguage *language = tree_sitter_r2cmd ();
 	TSParser *parser = ts_parser_new ();
 	ts_parser_set_language (parser, language);
+
+	ts_symbols_init (core->rcmd, language);
 
 	TSTree *tree = ts_parser_parse_string (parser, NULL, input, strlen (input));
 	TSNode root = ts_tree_root_node (tree);
@@ -5190,6 +5219,7 @@ static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log) {
 	state.input = input;
 	state.tree = tree;
 	state.log = log;
+	state.is_last_cmd = false;
 	if (is_ts_commands (root) && !ts_node_has_error (root)) {
 		res = handle_ts_commands (&state, root);
 	} else {
