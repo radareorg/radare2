@@ -3303,3 +3303,20 @@ af
 pdf
 EOF
 RUN
+
+NAME=x86_64 show registers in table
+FILE=-
+EXPECT=<<EOF
+    rax 0x00000000           rbx 0x00000000           rcx 0x00000000
+    rdx 0x00000000           rsi 0x00000000           rdi 0x00000000
+     r8 0x00000000            r9 0x00000000           r10 0x00000000
+    r11 0x00000000           r12 0x00000000           r13 0x00000000
+    r14 0x00000000           r15 0x00000000           rip 0x00000000
+    rbp 0x00000000        rflags 0x00000000           rsp 0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+ar=
+EOF
+RUN
