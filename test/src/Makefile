@@ -19,7 +19,7 @@ $(V): v
 	cd v && git pull
 	cd v && git reset --hard $(VCOMMIT)
 	$(MAKE) -C v
-	$(V) install radare.r2
+	$(V) install radare.r2 || git clone --depth=1 https://github.com/radare/v-r2 ~/.vmodules/radare/r2
 
 fmt:
 	$(V) fmt -w r2r.v
