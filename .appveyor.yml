@@ -108,7 +108,7 @@ deploy:
   provider: GitHub
   auth_token:
     secure: aIhLJhegEu8fMuyfhVxiEyF5+28ozTtmDmQ3UBddNou3nQlXyIWJ5dZSPnf6HqsS # encrypted token from GitHub
-  artifact: /"%ARTIFACT_ZIP%"
+  artifact: /.*\.zip/ # All generated ZIP packages for MSVC and clang-cl builds
   draft: true
   prerelease: true
   force_update: true
