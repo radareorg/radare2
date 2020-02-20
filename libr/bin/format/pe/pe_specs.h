@@ -443,6 +443,26 @@ typedef struct {
 } Pe32_image_tls_directory, Pe64_image_tls_directory;
 
 typedef struct {
+	ut32 dwLength;
+	ut16 wRevision;
+	ut16 wCertificateType;
+	ut8 *bCertificate;
+} Pe_certificate;
+
+typedef struct {
+	ut32 length;
+	Pe_certificate **certificates;
+} Pe_image_security_directory;
+
+#define PE_WIN_CERT_REVISION_1_0	0x0100
+#define PE_WIN_CERT_REVISION_2_0	0x0200
+
+#define PE_WIN_CERT_TYPE_X509			0x0001
+#define PE_WIN_CERT_TYPE_PKCS_SIGNED_DATA	0x0002
+#define PE_WIN_CERT_TYPE_RESERVED_1		0x0003
+#define PE_WIN_CERT_TYPE_TS_STACK_SIGNED	0x0004
+
+typedef struct {
 	ut32 Signature;
 	Pe32_image_file_header file_header;
 	Pe32_image_optional_header optional_header;
