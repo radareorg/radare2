@@ -4474,6 +4474,7 @@ DEFINE_IS_TS_FCN(arg)
 DEFINE_IS_TS_FCN(arg_identifier)
 DEFINE_IS_TS_FCN(double_quoted_arg)
 DEFINE_IS_TS_FCN(single_quoted_arg)
+DEFINE_IS_TS_FCN(concatenation)
 
 // NOTE: this should be in sync with SPECIAL_CHARACTERS in
 //       radare2-shell-parser grammar, except for ", ' and
@@ -4592,31 +4593,19 @@ static void do_handle_substitution_arg(struct tsr2cmd_state *state, TSNode arg, 
 	r_list_append (edits, e);
 }
 
-static void handle_substitution_arg(struct tsr2cmd_state *state, TSNode arg, RList *edits) {
-	arg = ts_node_named_child (arg, 0);
-	r_return_if_fail (!ts_node_is_null (arg));
-	if (is_ts_cmd_substitution_arg (arg)) {
-		do_handle_substitution_arg (state, arg, edits);
-	} else if (is_ts_double_quoted_arg (arg)) {
-		uint32_t n_children = ts_node_named_child_count (arg);
-		uint32_t i;
-		for (i = 0; i < n_children; ++i) {
-			TSNode sub_arg = ts_node_named_child (arg, i);
-			do_handle_substitution_arg (state, sub_arg, edits);
-		}
-	}
-}
-
 static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, RList *edits) {
-	if (is_ts_args (args)) {
+	if (is_ts_args (args) || is_ts_concatenation (args) || is_ts_double_quoted_arg (args)) {
 		uint32_t n_children = ts_node_named_child_count (args);
 		uint32_t i;
 		for (i = 0; i < n_children; ++i) {
 			TSNode arg = ts_node_named_child (args, i);
-			handle_substitution_arg (state, arg, edits);
+			handle_substitution_args (state, arg, edits);
 		}
+	} else if (is_ts_cmd_substitution_arg (args)) {
+		do_handle_substitution_arg (state, args, edits);
 	} else if (is_ts_arg (args)) {
-		handle_substitution_arg (state, args, edits);
+		TSNode arg = ts_node_named_child (args, 0);
+		handle_substitution_args (state, arg, edits);
 	}
 }
 
@@ -4635,14 +4624,16 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) 
 		return unescape_arg (state, arg, SPECIAL_CHARS_REGULAR);
 	} else if (is_ts_single_quoted_arg (arg) || is_ts_double_quoted_arg (arg)) {
 		const char *special = is_ts_single_quoted_arg (arg)? SPECIAL_CHARS_SINGLE_QUOTED: SPECIAL_CHARS_DOUBLE_QUOTED;
-		char *c = unescape_arg (state, arg, special);
-		size_t c_len = strlen (c);
-		r_return_val_if_fail (c_len > 1, NULL);
-		// remove the wrapping quotes
-		c[c_len - 1] = '\0';
-		char *res = strdup (c + 1);
-		free (c);
-		return res;
+		return unescape_arg (state, arg, special);
+	} else if (is_ts_concatenation (arg)) {
+		uint32_t i, n_children = ts_node_named_child_count (arg);
+		RStrBuf *sb = r_strbuf_new (NULL);
+		for (i = 0; i < n_children; ++i) {
+			TSNode sub_arg = ts_node_named_child (arg, i);
+			char *s = do_handle_ts_unescape_arg (state, sub_arg);
+			r_strbuf_append (sb, s);
+		}
+		return r_strbuf_drain (sb);
 	} else {
 		return ts_node_sub_string (arg, state->input);
 	}
@@ -4662,10 +4653,9 @@ static char *create_argv_str(struct parsed_args *a) {
 
 static struct parsed_args *handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) {
 	struct parsed_args *a = R_NEW0 (struct parsed_args);
-	char *s = do_handle_ts_unescape_arg (state, arg);
 	a->argc = 1;
 	a->argv = R_NEWS (char *, a->argc);
-	a->argv[0] = s;
+	a->argv[0] = do_handle_ts_unescape_arg (state, arg);
 	a->argv_str = create_argv_str (a);
 	return a;
 }
@@ -4697,6 +4687,7 @@ static TSTree *apply_edits(struct tsr2cmd_state *state, RList *edits, TSNode old
 	TSPoint *min_start_point = NULL, *max_old_end_point = NULL;
 	uint32_t diff_length = 0, new_length = 0;
 
+	R_LOG_DEBUG ("old input = '%s'\n", state->input);
 	r_list_foreach (edits, it, edit) {
 		diff_length += strlen (edit->new_text) - strlen (edit->old_text);
 		new_length += strlen (edit->new_text);
@@ -4850,6 +4841,30 @@ err:
 
 DEFINE_HANDLE_TS_FCN(legacy_quoted_command) {
 	return run_cmd_depth (state->core, node_string) != -1;
+}
+
+DEFINE_HANDLE_TS_FCN(repeat_command) {
+	TSNode number = ts_node_child_by_field_name (node, "arg", strlen ("arg"));
+	char *number_str = ts_node_sub_string (number, state->input);
+	int rep = atoi (number_str);
+	free (number_str);
+
+	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+	if (rep > 1 && r_sandbox_enable (0)) {
+		eprintf ("Command repeat sugar disabled in sandbox mode (%s)\n", node_string);
+		return false;
+	}
+	if (rep > INTERACTIVE_MAX_REP && r_cons_is_interactive ()) {
+		if (!r_cons_yesno ('n', "Are you sure to repeat this %" PFMT64d " times? (y/N)", rep)) {
+			return false;
+		}
+	}
+
+	bool res = true;
+	for (int i = 0; i < rep; ++i) {
+		res &= handle_ts_command (state, command);
+	}
+	return res;
 }
 
 DEFINE_HANDLE_TS_FCN(redirect_command) {
@@ -5118,6 +5133,8 @@ static bool handle_ts_command(struct tsr2cmd_state *state, TSNode node) {
 		ret = handle_ts_pipe_command (state, node);
 	} else if (is_ts_scr_tts_command (node)) {
 		ret = handle_ts_scr_tts_command (state, node);
+	} else if (is_ts_repeat_command (node)) {
+		ret = handle_ts_repeat_command (state, node);
 	} else {
 		R_LOG_WARN ("No handler for this kind of command `%s`\n", ts_node_type (node));
 	}
