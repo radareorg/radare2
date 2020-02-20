@@ -131,9 +131,8 @@ before_install:
     fi
 
 after_success:
-  - ls -lh *.deb # Assuming you have some files in out/ that you would like to upload
   - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
-  - bash upload.sh *.deb
+  - bash upload.sh *.deb *.pkg
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
