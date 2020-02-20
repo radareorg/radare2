@@ -839,7 +839,7 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return computed_cs;
 }
 
-static char* PE_(bin_pe_get_claimed_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
+static const char* PE_(bin_pe_get_claimed_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin->spcinfo) {
 		return NULL;
 	}
@@ -847,7 +847,7 @@ static char* PE_(bin_pe_get_claimed_authentihash)(struct PE_(r_bin_pe_obj_t)* bi
 	return r_hex_bin2strdup (digest->binary, digest->length);
 }
 
-static char* PE_(bin_pe_get_actual_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
+const char* PE_(bin_pe_compute_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin->spcinfo) {
 		return NULL;
 	}
@@ -2855,11 +2855,11 @@ static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) * bin) {
 	}
 
 	if (bin->cms && bin->spcinfo) {
-		char *actual_authentihash = PE_(bin_pe_get_actual_authentihash) (bin);
-		char *claimed_authentihash = PE_(bin_pe_get_claimed_authentihash) (bin);
-		bin->authentihash = actual_authentihash;
+		const char *actual_authentihash = PE_(bin_pe_compute_authentihash) (bin);
+		const char *claimed_authentihash = PE_(bin_pe_get_claimed_authentihash) (bin);
 		bin->is_authhash_valid = !strcmp (actual_authentihash, claimed_authentihash);
-		free (claimed_authentihash);
+		free ((void *)actual_authentihash);
+		free ((void *)claimed_authentihash);
 	}
 	bin->is_signed = bin->cms != NULL;
 	return true;

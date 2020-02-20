@@ -429,7 +429,8 @@ RBinPlugin r_bin_plugin_pe = {
 	.minstrlen = 4,
 	.create = &create,
 	.get_vaddr = &get_vaddr,
-	.write = &r_bin_write_pe
+	.write = &r_bin_write_pe,
+	.hashes = &compute_hashes
 };
 
 #ifndef R2_PLUGIN_INCORE

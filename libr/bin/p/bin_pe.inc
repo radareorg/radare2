@@ -476,15 +476,6 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
 	ret->file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
-	const char *authentihash = PE_(bin_pe_get_authentihash) (bf->o->bin_obj);
-	if (authentihash) {
-		RBinFileHash *authhash = R_NEW0 (RBinFileHash);
-		if (authhash) {
-			authhash->type = strdup ("authentihash");
-			authhash->hex = strdup (authentihash);
-			r_list_push (ret->file_hashes, authhash);
-		}
-	}
 	Sdb *db = sdb_ns (bf->sdb, "pe", true);
 	sdb_bool_set (db, "canary", has_canary (bf), 0);
 	sdb_bool_set (db, "highva", haschr (bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
@@ -501,7 +492,6 @@ static RBinInfo* info(RBinFile *bf) {
 	sdb_num_set (db, "bits", ret->bits, 0);
 	sdb_set (db, "claimed_checksum", ret->claimed_checksum, 0);
 	sdb_set (db, "actual_checksum", ret->actual_checksum, 0);
-	sdb_set (db, "authentihash", PE_(bin_pe_get_authentihash) (bf->o->bin_obj), 0);
 	sdb_bool_set (db, "is_authhash_valid", PE_(bin_pe_is_authhash_valid) (bf->o->bin_obj), 0);
 
 	ret->has_va = true;
@@ -533,4 +523,19 @@ static RBinInfo* info(RBinFile *bf) {
 
 static ut64 get_vaddr (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return baddr + vaddr;
+}
+
+static RList *compute_hashes(RBinFile *bf) {
+	RList *file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
+	const char *authentihash = PE_(bin_pe_compute_authentihash) (bf->o->bin_obj);
+	if (authentihash) {
+		RBinFileHash *authhash = R_NEW0 (RBinFileHash);
+		if (authhash) {
+			authhash->type = strdup ("authentihash");
+			authhash->hex = authentihash;
+			r_list_push (file_hashes, authhash);
+		}
+	}
+
+	return file_hashes;
 }

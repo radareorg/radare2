@@ -856,24 +856,17 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 	return false;
 }
 
-R_API RList *r_bin_file_hash(RBin *bin, ut64 limit) {
-	r_return_val_if_fail (bin, NULL);
-
-	char hash[128];
-	RHash *ctx;
+R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
+	r_return_val_if_fail (bin && bin->cur && bin->cur->o, NULL);
 	ut64 buf_len = 0, r = 0;
 	RBinFile *bf = bin->cur;
-	if (!bf) {
-		return NULL;
-	}
 	RBinObject *o = bf->o;
-	if (!o || !o->info) {
-		return NULL;
-	}
+
 	RIODesc *iod = r_io_desc_get (bin->iob.io, bf->fd);
 	if (!iod) {
 		return NULL;
 	}
+
 	buf_len = r_io_desc_size (iod);
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
@@ -887,7 +880,8 @@ R_API RList *r_bin_file_hash(RBin *bin, ut64 limit) {
 		return NULL;
 	}
 
-	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1 | R_HASH_SHA256);
+	char hash[128];
+	RHash *ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1 | R_HASH_SHA256);
 	while (r + blocksize < buf_len) {
 		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
 		int b = r_io_desc_read (iod, buf, blocksize);
@@ -936,11 +930,29 @@ R_API RList *r_bin_file_hash(RBin *bin, ut64 limit) {
 		sha256h->hex = strdup (hash);
 		r_list_push (file_hashes, sha256h);
 	}
+
+	if (o->plugin && o->plugin->hashes) {
+		RList *plugin_hashes = o->plugin->hashes (bf);
+		r_list_join (file_hashes, plugin_hashes);
+		free (plugin_hashes);
+	}
 	// TODO: add here more rows
 
 	free (buf);
 	r_hash_free (ctx);
 	return file_hashes;
+}
+
+// Set new hashes to current RBinInfo, caller should free the returned RList
+R_API RList *r_bin_file_set_hashes(RBin *bin, RList/*<RBinFileHash*/ *new_hashes) {
+	r_return_val_if_fail (bin && bin->cur && bin->cur->o && bin->cur->o->info, NULL);
+	RBinFile *bf = bin->cur;
+	RBinInfo *info = bf->o->info;
+
+	RList *prev_hashes = info->file_hashes;
+	info->file_hashes = new_hashes;
+
+	return prev_hashes;
 }
 
 R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view) {
