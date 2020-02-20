@@ -409,6 +409,7 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 				if (end) {
 					*end = '\0';
 				} else {
+					free (field);
 					continue;
 				}
 				r_list_foreach (list2, iter2, str2) {
@@ -421,6 +422,7 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 						r_list_append (list, out);
 					}
 				}
+				free (field);
 			}
 			data = r_list_to_str (list, '\n');
 			r_list_free (list);
