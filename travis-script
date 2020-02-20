@@ -81,6 +81,9 @@ else
       # TODO: upload debian package somewhere
       exit 0
     else
+      if [ "`uname`" = Darwin ]; then
+        sys/osx-pkg.sh
+      fi
       ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
       make -s -j2 > /dev/null || exit 1
       make install > /dev/null || exit 1
