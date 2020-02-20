@@ -39,13 +39,12 @@ static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
 	// return string array of all the offsets where there are stuff
 	for (; base <= base2; base++) {
 		const char *key = sdb_fmt ("range.0x%"PFMT64x, base);
-		char *r = sdb_get (DB, key, 0);
+		const char *r = sdb_const_get (DB, key, 0);
 		if (r) {
 			if (res) {
 				res = r_str_append (res, ",");
 			}
 			res = r_str_append (res, r);
-			free (r);
 		}
 	}
 	return res;

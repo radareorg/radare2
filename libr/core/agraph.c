@@ -239,7 +239,7 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int ed
 }
 
 static void append_shortcut (const RAGraph *g, char *title, char *nodetitle, int left) {
-	char *shortcut = sdb_get (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", nodetitle), 0);
+	const char *shortcut = sdb_const_get (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", nodetitle), 0);
 	if (shortcut) {
 		if (g->can->color) {
 			// XXX: do not hardcode color here
@@ -247,7 +247,6 @@ static void append_shortcut (const RAGraph *g, char *title, char *nodetitle, int
 		} else {
 			strncat (title, sdb_fmt ("[o%s]", shortcut), left);
 		}
-		free (shortcut);
 	}
 }
 

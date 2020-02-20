@@ -76,7 +76,7 @@ R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
 	const char *xss = sdb_const_get (anal->sdb_fcns, var_local, 0);
 	ut64 addr = r_num_math (NULL, xss);
 	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".lvar", addr);
-	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
 
 	if (!var_def) {
 		free (inst_key);
@@ -89,13 +89,12 @@ R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
 		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	}
 	free (inst_key);
-	free (var_def);
 	return res;
 }
 
 static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".vars", op->addr);
-	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
 	struct VarUsedType vut;
 	RAnalVar *res = NULL;
 	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
@@ -103,7 +102,6 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	}
 	free (inst_key);
-	free (var_def);
 	return res;
 }
 

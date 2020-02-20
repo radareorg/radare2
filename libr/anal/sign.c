@@ -79,7 +79,8 @@ R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, NULL);
 
 	RList *ret = r_list_newf ((RListFree) free);
-	char *args_expr = r_str_newf ("func.%s.args", fcn->name), *arg = NULL;
+	const char *arg = NULL;
+	char *args_expr = r_str_newf ("func.%s.args", fcn->name);
 	const char *ret_type = sdb_const_get (a->sdb_types, r_str_newf ("func.%s.ret", fcn->name), 0);
 	const char *fcntypes = sdb_const_get (a->sdb_types, args_expr, 0);
 	int argc = 0;
@@ -92,12 +93,11 @@ R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
 		argc = atoi (fcntypes);
 		r_list_append (ret, r_str_newf ("func.%s.args=%d", fcn->name, argc));
 		for (i = 0; i < argc; i++) {
-			arg = sdb_get (a->sdb_types, r_str_newf ("func.%s.arg.%d", fcn->name, i), 0);
+			arg = sdb_const_get (a->sdb_types, r_str_newf ("func.%s.arg.%d", fcn->name, i), 0);
 			r_list_append (ret, r_str_newf ("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
 		}
 	}
 
-	free (arg);
 	free (args_expr);
 	return ret;
 }

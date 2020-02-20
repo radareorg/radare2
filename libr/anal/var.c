@@ -173,7 +173,7 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	return true;
 }
 
-R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, 
+R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size,
 		bool isarg, const char *name) {
 	RRegItem *reg = NULL;
 	if (!a) {
@@ -324,7 +324,7 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *a, ut64 addr, const char *name) {
 		return NULL;
 	}
 	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, 1, name);
-	char *name_value = sdb_get (DB, name_key, 0);
+	const char *name_value = sdb_const_get (DB, name_key, 0);
 	if (!name_value) {
 		// eprintf ("Can't find key for %s\n", name_key);
 		return NULL;
@@ -333,10 +333,8 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *a, ut64 addr, const char *name) {
 	if (comma && *comma) {
 		int delta = r_num_math (NULL, comma + 1);
 		RAnalVar *res = r_anal_var_get (a, addr, *name_value, 1, delta);
-		free (name_value);
 		return res;
 	}
-	free (name_value);
 	return NULL;
 }
 
@@ -355,7 +353,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	}
 	const char *varkey = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d",
 			fcn->addr, kind, scope, sign, delta);
-	char *vardef = sdb_get (DB, varkey, 0);
+	const char *vardef = sdb_const_get (DB, varkey, 0);
 	if (!vardef) {
 		return NULL;
 	}
@@ -364,7 +362,6 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	}
 	sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
 	sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
-	free (vardef);
 
 	RAnalVar *av = R_NEW0 (RAnalVar);
 	if (!av) {
@@ -456,8 +453,7 @@ R_API int r_anal_var_rename(RAnal *a, ut64 addr, int scope, char kind, const cha
 			int delta = r_num_math (NULL, comma + 1);
 			sdb_unset (DB, key, 0);
 			SETKEY ("var.0x%"PFMT64x ".%d.%s", addr, scope, new_name);
-			sdb_set (DB, key, name_val, 0);
-			free (name_val);
+			sdb_set_owned (DB, key, name_val, 0);
 			if (delta < 0) {
 				delta = -delta;
 				sign = "_";
@@ -611,7 +607,7 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 	int v_delta = 0;
 	while (1) {
 		char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, varname);
-		char *name_value = sdb_get (a->sdb_fcns, name_key, 0);
+		const char *name_value = sdb_const_get (a->sdb_fcns, name_key, 0);
 		if (!name_value) {
 			break;
 		}
@@ -620,11 +616,9 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 			v_delta = r_num_math (NULL, comma + 1);
 		}
 		if (v_delta == delta) {
-			free (name_value);
 			return varname;
 		}
 		free (varname);
-		free (name_value);
 		varname = r_str_newf ("%s_%xh_%d", pfx, R_ABS (delta), i);
 		i++;
 	}
@@ -683,7 +677,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		if (*addr == ',') {
 			addr++;
 		}
-		if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP 
+		if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP
 			&& op->type != R_ANAL_OP_TYPE_RET && r_str_isnumber (addr)) {
 			ptr = (st64)r_num_get (NULL, addr);
 			if (ptr && op->src[0] && ptr == op->src[0]->imm) {
