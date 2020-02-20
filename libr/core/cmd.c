@@ -2651,22 +2651,16 @@ static void tmpenvs_free(void *item) {
 }
 
 static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
-	if (!tmparch) {
-		eprintf ("tmparch should be set\n");
-	} else {
-		*tmparch = strdup (r_config_get (core->config, "asm.arch"));
-	}
+	r_return_val_if_fail (tmparch, false);
+	*tmparch = strdup (r_config_get (core->config, "asm.arch"));
 	r_config_set (core->config, "asm.arch", arch);
 	core->fixedarch = true;
 	return true;
 }
 
 static bool set_tmp_bits(RCore *core, int bits, char **tmpbits) {
-	if (!tmpbits) {
-		eprintf ("tmpbits should be set\n");
-	} else {
-		*tmpbits = strdup (r_config_get (core->config, "asm.bits"));
-	}
+	r_return_val_if_fail (tmpbits, false);
+	*tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 	r_config_set_i (core->config, "asm.bits", bits);
 	core->fixedbits = true;
 	return true;
@@ -3306,19 +3300,6 @@ repeat_arroba:
 							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 						}
 					}
-#if 0
-					buf = malloc (sz);
-					if (buf) {
-						free (core->block);
-						core->block = buf;
-						core->blocksize = sz;
-						memcpy (core->block, f, sz);
-						usemyblock = true;
-					} else {
-						eprintf ("cannot alloc %d", sz);
-					}
-					free (f);
-#endif
 				} else {
 					eprintf ("cannot open '%s'\n", ptr + 3);
 				}
@@ -4791,6 +4772,17 @@ out:
 	return res;
 }
 
+static char *ts_node_handle_arg(struct tsr2cmd_state *state, TSNode arg) {
+	struct parsed_args *a = handle_args (state, arg);
+	if (a == NULL) {
+		R_LOG_ERROR( "Cannot parse arg\n");
+		return NULL;
+	}
+	char *str = strdup(a->argv_str);
+	parsed_args_free (a);
+	return str;
+}
+
 static char *create_exec_string(char *cmd_str, struct parsed_args *pr_args, bool command_arg_space) {
 	RStrBuf *sb = r_strbuf_new (cmd_str);
 	if (pr_args) {
@@ -4983,25 +4975,20 @@ DEFINE_HANDLE_TS_FCN(tmp_seek_command) {
 	// TODO: handle offsets like "+30", "-13", etc.
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode offset = ts_node_named_child (node, 1);
-	struct parsed_args *a = handle_args (state, offset);
-	if (a == NULL) {
-		R_LOG_ERROR ("Cannot parse temporary seek command\n");
-		return false;
-	}
-	char *offset_string = a->argv_str;
+	char *offset_string = ts_node_handle_arg (state, offset);
 	ut64 orig_offset = state->core->offset;
 	R_LOG_DEBUG ("tmp_seek_command, changing offset to %s\n", offset_string);
 	r_core_seek (state->core, r_num_math (state->core->num, offset_string), 1);
 	bool res = handle_ts_command (state, command);
 	r_core_seek (state->core, orig_offset, 1);
-	parsed_args_free (a);
+	free (offset_string);
 	return res;
 }
 
 DEFINE_HANDLE_TS_FCN(tmp_blksz_command) {
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode blksz = ts_node_named_child (node, 1);
-	char *blksz_string = ts_node_sub_string (blksz, state->input);
+	char *blksz_string = ts_node_handle_arg (state, blksz);
 	ut64 orig_blksz = state->core->blocksize;
 	R_LOG_DEBUG ("tmp_blksz_command, changing blksz to %s\n", blksz_string);
 	r_core_block_size (state->core, r_num_math (state->core->num, blksz_string));
@@ -5012,16 +4999,315 @@ DEFINE_HANDLE_TS_FCN(tmp_blksz_command) {
 }
 
 DEFINE_HANDLE_TS_FCN(tmp_fromto_command) {
+	RCore *core = state->core;
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode from = ts_node_named_child (node, 1);
 	TSNode to = ts_node_named_child (node, 2);
-	char *from_str = ts_node_sub_string (from, state->input);
-	char *to_str = ts_node_sub_string (to, state->input);
+	char *from_str = ts_node_handle_arg (state, from);
+	char *to_str = ts_node_handle_arg (state, to);
 	R_LOG_DEBUG ("tmp_fromto_command, changing fromto to (%s, %s)\n", from_str, to_str);
-	// TODO: save configs
+
+	const char *fromvars[] = { "anal.from", "diff.from", "graph.from",
+		"io.buffer.from", "lines.from", "search.from", "zoom.from", NULL };
+	const char *tovars[] = { "anal.to", "diff.to", "graph.to",
+		"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
+	ut64 from_val = r_num_math (core->num, from_str);
+	ut64 to_val = r_num_math (core->num, to_str);
+
+	RConfigHold *hc = r_config_hold_new (core->config);
+	int i;
+	for (i = 0; fromvars[i]; i++) {
+		r_config_hold_i (hc, fromvars[i], NULL);
+		r_config_set_i (core->config, fromvars[i], from_val);
+	}
+	for (i = 0; tovars[i]; i++) {
+		r_config_hold_i (hc, tovars[i], NULL);
+		r_config_set_i (core->config, tovars[i], to_val);
+	}
+
 	bool res = handle_ts_command (state, command);
+
+	r_config_hold_restore (hc);
+
+	r_config_hold_free (hc);
 	free (from_str);
 	free (to_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_arch_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, arg);
+	char *tmparch, *tmpbits;
+	bool is_arch_set = false, is_bits_set = false;
+	bool oldfixedarch = core->fixedarch, oldfixedbits = core->fixedbits;
+
+	// change arch and bits
+	char *q = strchr (arg_str, ':');
+	if (q) {
+		*q++ = '\0';
+		int bits = r_num_math (core->num, q);
+		is_bits_set = set_tmp_bits (core, bits, &tmpbits);
+	}
+	is_arch_set = set_tmp_arch (core, arg_str, &tmparch);
+
+	// execute command with changed settings
+	bool res = handle_ts_command (state, command);
+
+	// restore original settings
+	if (is_arch_set) {
+		core->fixedarch = oldfixedarch;
+		r_config_set (core->config, "asm.arch", tmparch);
+		R_FREE (tmparch);
+	}
+	if (is_bits_set) {
+		r_config_set (core->config, "asm.bits", tmpbits);
+		core->fixedbits = oldfixedbits;
+	}
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_bits_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, arg);
+	bool oldfixedbits = core->fixedbits;
+	char *tmpbits;
+
+	int bits = r_num_math (core->num, arg_str);
+	set_tmp_bits (core, bits, &tmpbits);
+
+	bool res = handle_ts_command (state, command);
+
+	r_config_set (core->config, "asm.bits", tmpbits);
+	core->fixedbits = oldfixedbits;
+
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_nthi_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, arg);
+
+	ut64 orig_offset = state->core->offset;
+	int index = r_num_math (core->num, arg_str);
+	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
+	if (bb) {
+		// handle negative indices
+		if (index < 0) {
+			index = bb->ninstr + index;
+		}
+
+		if (index >= 0 && index < bb->ninstr) {
+			ut16 inst_off = r_anal_bb_offset_inst (bb, index);
+			r_core_seek (core, bb->addr + inst_off, 1);
+		} else {
+			eprintf ("The current basic block has just %d instructions\n", bb->ninstr);
+		}
+	} else {
+		eprintf ("Can't find a basic block for 0x%08" PFMT64x "\n", core->offset);
+	}
+
+	bool res = handle_ts_command (state, command);
+
+	r_core_seek (core, orig_offset, 1);
+
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_eval_command) {
+	// TODO: support cmd_substitution in tmp_eval_args
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode args = ts_node_named_child (node, 1);
+
+	RConfigHold *hc = r_config_hold_new (core->config);
+	uint32_t i, n_args = ts_node_named_child_count (args);
+	for (i = 0; i < n_args; ++i) {
+		TSNode arg = ts_node_named_child (args, i);
+		char *arg_str = ts_node_sub_string (arg, state->input);
+		char *eq = strchr (arg_str, '=');
+		if (eq) {
+			*eq = 0;
+			r_config_hold_s (hc, arg_str, NULL);
+			r_config_set (core->config, arg_str, eq + 1);
+		} else {
+			eprintf ("Missing '=' in e: expression (%s)\n", arg_str);
+		}
+		free (arg_str);
+	}
+
+	bool res = handle_ts_command (state, command);
+
+	r_config_hold_restore (hc);
+	r_config_hold_free (hc);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_fs_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, arg);
+	r_flag_space_push (core->flags, arg_str);
+	bool res = handle_ts_command (state, command);
+	r_flag_space_pop (core->flags);
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_reli_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, arg);
+	ut64 orig_offset = state->core->offset;
+	ut64 addr = r_num_math (core->num, arg_str);
+	if (addr) {
+		r_core_cmdf (core, "so %d", addr);
+	}
+	bool res = handle_ts_command (state, command);
+	r_core_seek (state->core, orig_offset, 1);
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_kuery_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, arg);
+	ut64 orig_offset = state->core->offset;
+	char *out = sdb_querys (core->sdb, NULL, 0, arg_str);
+	if (out) {
+		r_core_seek (core, r_num_math (core->num, out), 1);
+		free (out);
+	}
+	bool res = handle_ts_command (state, command);
+	r_core_seek (state->core, orig_offset, 1);
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_fd_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, arg);
+	int tmpfd = core->io->desc ? core->io->desc->fd : -1;
+	r_io_use_fd (core->io, atoi (arg_str));
+	bool res = handle_ts_command (state, command);
+	r_io_use_fd (core->io, tmpfd);
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_reg_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, arg);
+	ut64 orig_offset = state->core->offset;
+	// TODO: add support for operations (e.g. @r:PC+10)
+	ut64 regval = r_debug_reg_get (core->dbg, arg_str);
+	r_core_seek (core, regval, 1);
+	bool res = handle_ts_command (state, command);
+	r_core_seek (core, orig_offset, 1);
+	free (arg_str);
+	return res;
+}
+
+static bool handle_tmp_desc(struct tsr2cmd_state *state, TSNode command, const ut8 *buf, int sz) {
+	RCore *core = state->core;
+	int pamode = !core->io->va;
+	bool res = false, o_fixedblock = core->fixedblock;
+	RBuffer *b = r_buf_new_with_bytes (buf, sz);
+	RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+	if (!d) {
+		eprintf ("Cannot open io buffer\n");
+		goto out_buf;
+	}
+	if (pamode) {
+		r_config_set_i (core->config, "io.va", 1);
+	}
+	r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+	r_core_block_size (core, r_buf_size (b));
+	core->fixedblock = true;
+	r_core_block_read (core);
+
+	res = handle_ts_command (state, command);
+
+	core->fixedblock = o_fixedblock;
+	if (pamode) {
+		r_config_set_i (core->config, "io.va", 0);
+	}
+	r_io_desc_close (d);
+
+out_buf:
+	r_buf_free (b);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_file_command) {
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, arg);
+	int sz;
+	bool res = false;
+
+	char *f = r_file_slurp (arg_str, &sz);
+	if (!f) {
+		eprintf ("Cannot open '%s'\n", arg_str);
+		goto out;
+	}
+
+	res = handle_tmp_desc (state, command, (ut8 *)f, sz);
+
+	free (f);
+out:
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_string_command) {
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, arg);
+	int sz;
+	bool res = false;
+
+	sz = strlen (arg_str);
+	const ut8 *buf = (const ut8 *)arg_str;
+
+	res = handle_tmp_desc (state, command, buf, sz);
+
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(tmp_hex_command) {
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, arg);
+	int sz;
+	bool res = false;
+
+	size_t len = strlen (arg_str);
+	ut8 *buf = R_NEWS (ut8, len + 1);
+	sz = r_hex_str2bin (arg_str, buf);
+
+	res = handle_tmp_desc (state, command, buf, sz);
+
+	free (buf);
+	free (arg_str);
 	return res;
 }
 
