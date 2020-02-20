@@ -3968,7 +3968,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 			pcbits = reg->size;
 		}
 		if (pcbits) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, mode, use_color); // XXX detect which one is current usage
 		}
 	}
 	r_debug_reg_list (core->dbg, type, bits, mode2, use_color);
@@ -4286,7 +4286,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 					}
 				}
 			}
-			__anal_reg_list (core, type, size, 2);
+			__anal_reg_list (core, type, size, str[0]);
 			if (!r_list_empty (core->dbg->q_regs)) {
 				r_list_free (core->dbg->q_regs);
 			}
