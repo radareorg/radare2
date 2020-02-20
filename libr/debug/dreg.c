@@ -105,14 +105,14 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (dbg->bits & R_SYS_BITS_64) {
 		//fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
-		fmt2 = "%s%4s%s %s%s";
+		fmt2 = "%s%7s%s %s%s";
 		kwhites = "         ";
 		colwidth = dbg->regcols? 20: 25;
 		cols = 3;
 	} else {
 		//fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
-		fmt2 = "%s%4s%s %s%s";
+		fmt2 = "%s%7s%s %s%s";
 		kwhites = "    ";
 		colwidth = 20;
 		cols = 4;
@@ -226,8 +226,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			case '.':
 				dbg->cb_printf ("dr %s=%s\n", item->name, strvalue);
 				break;
-			case 'd':
-			case 2:
+			case '=':
 				{
 					int len, highlight = use_color && pr && pr->cur_enabled && itmidx == pr->cur;
 					char *str, whites[32], content[300];
@@ -241,26 +240,16 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					if (delta && use_color) {
 						dbg->cb_printf ("%s", use_color);
 					}
-					if (item->flags) {
-						str = r_reg_get_bvalue (dbg->reg, item);
-						len = 12 - strlen (str);
-						memset (whites, ' ', sizeof (whites));
-						whites[len] = 0;
-						dbg->cb_printf (" %s%s%s %s%s", a, item->name, b,
-							str, ((n+1)%cols)? whites: "\n");
-						free (str);
-					} else {
-						snprintf (content, sizeof (content),
-							fmt2, "", item->name, "", strvalue, "");
-						len = colwidth - strlen (content);
-						if (len < 0) {
-							len = 0;
-						}
-						memset (whites, ' ', sizeof (whites));
-						whites[len] = 0;
-						dbg->cb_printf (fmt2, a, item->name, b, strvalue,
-							((n+1)%cols)? whites: "\n");
+					snprintf (content, sizeof (content),
+						fmt2, "", item->name, "", strvalue, "");
+					len = colwidth - strlen (content);
+					if (len < 0) {
+						len = 0;
 					}
+					memset (whites, ' ', sizeof (whites));
+					whites[len] = 0;
+					dbg->cb_printf (fmt2, a, item->name, b, strvalue,
+							((n+1)%cols)? whites: "\n");
 					if (highlight) {
 						dbg->cb_printf (Color_INVERT_RESET);
 					}
@@ -269,6 +258,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					}
 				}
 				break;
+			case 'd':
 			case 3:
 				if (delta) {
 					char woot[512];
