@@ -3,6 +3,7 @@
 #include <r_config.h>
 
 static void r_config_hold_char_free(RConfigHoldChar *hc) {
+	free (hc->key);
 	free (hc->value);
 	free (hc);
 }
@@ -23,10 +24,14 @@ R_API bool r_config_hold_s(RConfigHold *h, ...) {
 		}
 	}
 	while ((key = va_arg (ap, char *))) {
+		const char *val = r_config_get (h->cfg, key);
+		if (!val) {
+			continue;
+		}
 		RConfigHoldChar *hc = R_NEW0 (RConfigHoldChar);
 		if (hc) {
-			hc->key = key;
-			hc->value = strdup (r_config_get (h->cfg, key));
+			hc->key = strdup (key);
+			hc->value = strdup (val);
 			r_list_append (h->list_char, hc);
 		}
 	}
@@ -52,7 +57,7 @@ R_API bool r_config_hold_i(RConfigHold *h, ...) {
 		if (!hc) {
 			continue;
 		}
-		hc->key = key;
+		hc->key = strdup (key);
 		hc->value = r_config_get_i (h->cfg, key);
 		r_list_append (h->list_num, hc);
 	}
