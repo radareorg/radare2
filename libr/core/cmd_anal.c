@@ -4358,7 +4358,6 @@ void cmd_anal_reg(RCore *core, const char *str) {
 }
 
 static ut64 initializeEsil(RCore *core) {
-	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	int romem = r_config_get_i (core->config, "esil.romem");
 	int stats = r_config_get_i (core->config, "esil.stats");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
@@ -4406,7 +4405,6 @@ static ut64 initializeEsil(RCore *core) {
 	} else {
 		addr = core->offset;
 	}
-	r_reg_setv (core->anal->reg, name, addr);
 	// set memory read only
 	return addr;
 }
@@ -4419,6 +4417,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	RAnalOp op = {0};
 	RAnalEsil *esil = core->anal->esil;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	ut64 addr = r_reg_getv (core->anal->reg, name);
 	bool breakoninvalid = r_config_get_i (core->config, "esil.breakoninvalid");
 	int esiltimeout = r_config_get_i (core->config, "esil.timeout");
 	ut64 startTime;
@@ -4428,7 +4427,6 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	if (esiltimeout > 0) {
 		startTime = r_sys_now ();
 	}
-	ut64 addr = r_reg_getv (core->anal->reg, name);
 	r_cons_break_push (NULL, NULL);
 repeat:
 	if (r_cons_is_breaked ()) {
