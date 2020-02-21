@@ -82,7 +82,9 @@ else
       exit 0
     else
       if [ "`uname`" = Darwin ]; then
+        cp sys/osx-pkg/*.pkg /tmp
         sys/osx-pkg.sh
+        git clean -xdf
       fi
       ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
       make -s -j2 > /dev/null || exit 1
