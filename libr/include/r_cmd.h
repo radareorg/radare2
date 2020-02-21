@@ -77,6 +77,7 @@ typedef struct r_cmd_t {
 	RList *plist;
 	RCmdAlias aliases;
 #if USE_TREESITTER
+	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
 #endif
 } RCmd;

@@ -5181,10 +5181,12 @@ struct ts_data_symbol_map map_symbols[] = {
 	{ NULL, NULL },
 };
 
-static void ts_symbols_init(RCmd *cmd, TSLanguage *lang) {
-	if (cmd->ts_symbols_ht) {
+static void ts_symbols_init(RCmd *cmd) {
+	if (cmd->language) {
 		return;
 	}
+	TSLanguage *lang = tree_sitter_r2cmd ();
+	cmd->language = lang;
 	cmd->ts_symbols_ht = ht_up_new0 ();
 	struct ts_data_symbol_map *entry = map;
 	while (entry->name) {
@@ -5203,11 +5205,11 @@ static void ts_symbols_init(RCmd *cmd, TSLanguage *lang) {
 
 static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log) {
 	char *input = strdup (cstr);
-	TSLanguage *language = tree_sitter_r2cmd ();
-	TSParser *parser = ts_parser_new ();
-	ts_parser_set_language (parser, language);
 
-	ts_symbols_init (core->rcmd, language);
+	ts_symbols_init (core->rcmd);
+
+	TSParser *parser = ts_parser_new ();
+	ts_parser_set_language (parser, (TSLanguage *)core->rcmd->language);
 
 	TSTree *tree = ts_parser_parse_string (parser, NULL, input, strlen (input));
 	TSNode root = ts_tree_root_node (tree);
