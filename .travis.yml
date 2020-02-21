@@ -132,7 +132,7 @@ before_install:
 
 after_success:
   - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
-  - bash upload.sh *.deb *.pkg
+  - bash upload.sh *.deb /tmp/*.pkg
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
