@@ -349,7 +349,7 @@ static void cmd_fz(RCore *core, const char *input) {
 		}
 		break;
 	case ' ':
-		r_flag_zone_add (core->flags, r_str_trim_ro (input + 1), core->offset);
+		r_flag_zone_add (core->flags, r_str_trim_head_ro (input + 1), core->offset);
 		break;
 	case '-':
 		if (input[1] == '*') {
@@ -412,7 +412,7 @@ static bool flag_to_flag_foreach(RFlagItem *fi, void *user) {
 
 static int flag_to_flag(RCore *core, const char *glob) {
 	r_return_val_if_fail (glob, 0);
-	glob = r_str_trim_ro (glob);
+	glob = r_str_trim_head_ro (glob);
 	struct flag_to_flag_t u = { .next = UT64_MAX, .offset = core->offset };
 	r_flag_foreach_glob (core->flags, glob, flag_to_flag_foreach, &u);
 	if (u.next != UT64_MAX && u.next > core->offset) {
@@ -541,7 +541,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 	char *arg1 = strchr (arg, ' ');
 	if (arg1) {
 		*arg1 = 0;
-		const char *a1 = r_str_trim_ro (arg1 + 1);
+		const char *a1 = r_str_trim_head_ro (arg1 + 1);
 		r_flag_tags_set (core->flags, arg, a1);
 	} else {
 		RListIter *iter;
@@ -582,7 +582,7 @@ static bool rename_flag_ordinal(RFlagItem *fi, void *user) {
 }
 
 static void flag_ordinals(RCore *core, const char *str) {
-	const char *glob = r_str_trim_ro (str);
+	const char *glob = r_str_trim_head_ro (str);
 	char *pfx = strdup (glob);
 	char *p = strchr (pfx, '*');
 	if (p) {
@@ -746,8 +746,8 @@ rep:
 			if (!ptr)
 				ptr = strchr (str, ' ');
 			if (ptr) *ptr++ = 0;
-			name = (char *)r_str_trim_ro (str);
-			ptr = (char *)r_str_trim_ro (ptr);
+			name = (char *)r_str_trim_head_ro (str);
+			ptr = (char *)r_str_trim_head_ro (ptr);
 			fi = r_flag_get (core->flags, name);
 			if (!fi)
 				fi = r_flag_set (core->flags, name,
@@ -852,7 +852,7 @@ rep:
 		break;
 	case '+': // "f+'
 	case ' ': {
-		const char *cstr = r_str_trim_ro (str);
+		const char *cstr = r_str_trim_head_ro (str);
 		char* eq = strchr (cstr, '=');
 		char* b64 = strstr (cstr, "base64:");
 		char* s = strchr (cstr, ' ');
@@ -933,7 +933,7 @@ rep:
 		if (input[1] == '-') {
 			r_flag_unset_all (core->flags);
 		} else if (input[1]) {
-			const char *flagname = r_str_trim_ro (input + 1);
+			const char *flagname = r_str_trim_head_ro (input + 1);
 			while (*flagname==' ') {
 				flagname++;
 			}
@@ -956,7 +956,7 @@ rep:
 		}
 		break;
 	case '.':
-		input = r_str_trim_ro (input + 1) - 1;
+		input = r_str_trim_head_ro (input + 1) - 1;
 		if (input[1]) {
 			if (input[1] == '*') {
 				if (input[2] == '*') {
@@ -1156,13 +1156,13 @@ rep:
 	case 'g': // "fg"
 		switch (input[1]) {
 		case '*':
-			__flag_graph (core, r_str_trim_ro (input + 2), '*');
+			__flag_graph (core, r_str_trim_head_ro (input + 2), '*');
 			break;
 		case ' ':
-			__flag_graph (core, r_str_trim_ro (input + 2), ' ');
+			__flag_graph (core, r_str_trim_head_ro (input + 2), ' ');
 			break;
 		case 0:
-			__flag_graph (core, r_str_trim_ro (input + 1), 0);
+			__flag_graph (core, r_str_trim_head_ro (input + 1), 0);
 			break;
 		default:
 			eprintf ("Usage: fg[*] ([prefix])\n");
@@ -1342,9 +1342,9 @@ rep:
 		break;
 	case 'i': // "fi"
 		if (input[1] == ' ' || (input[1] && input[2] == ' ')) {
-			char *arg = strdup (r_str_trim_ro (input + 2));
+			char *arg = strdup (r_str_trim_head_ro (input + 2));
 			if (*arg) {
-				arg = strdup (r_str_trim_ro (input + 2));
+				arg = strdup (r_str_trim_head_ro (input + 2));
 				char *sp = strchr (arg, ' ');
 				if (!sp) {
 					char *newarg = r_str_newf ("%c0x%"PFMT64x" %s+0x%"PFMT64x,

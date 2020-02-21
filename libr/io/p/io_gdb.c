@@ -231,7 +231,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "pktsz")) {
-		const char *ptr = r_str_trim_ro (cmd + 5);
+		const char *ptr = r_str_trim_head_ro (cmd + 5);
 		if (!isdigit ((ut8)*ptr)) {
 			io->cb_printf ("packet size: %u bytes\n",
 				       desc->stub_features.pkt_sz);
@@ -251,7 +251,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			res = gdbr_detach (desc) >= 0;
 		} else {
 			int pid = 0;
-			cmd = r_str_trim_ro (cmd + 6);
+			cmd = r_str_trim_head_ro (cmd + 6);
 			if (!*cmd || !(pid = strtoul (cmd, NULL, 10))) {
 				res = gdbr_detach (desc) >= 0;
 			} else {

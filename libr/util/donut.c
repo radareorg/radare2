@@ -88,7 +88,7 @@ R_API char *r_str_donut(int osize) {
 		B += 0.01;
 	}
 	char *r = strdup (o);
-	r = r_str_trim_tail (r);
+	r_str_trim_tail (r);
 	return r;
 }
 

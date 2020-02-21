@@ -446,7 +446,7 @@ static int cmd_eval(void *data, const char *input) {
 			char *word = NULL;
 			int argc = 0;
 			int delta = (input[2])? 3: 2;
-			char** argv = r_str_argv (r_str_trim_ro (input + delta), &argc);
+			char** argv = r_str_argv (r_str_trim_head_ro (input + delta), &argc);
 			switch (input[2]) {
 			case '?': {
 				const char *helpmsg[] = {
@@ -595,7 +595,7 @@ static int cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case '!': // "e!"
-		input = r_str_trim_ro (input + 1);
+		input = r_str_trim_head_ro (input + 1);
 		if (!r_config_toggle (core->config, input)) {
 			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
 		}

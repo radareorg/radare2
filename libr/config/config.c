@@ -3,9 +3,7 @@
 #include "r_config.h"
 
 R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
-	if (IS_NULLSTR (name)) {
-		return NULL;
-	}
+	r_return_val_if_fail (name && *name && value, NULL);
 	RConfigNode *node = R_NEW0 (RConfigNode);
 	if (!node) {
 		return NULL;
@@ -19,6 +17,7 @@ R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 }
 
 R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
+	r_return_val_if_fail (n, NULL);
 	RConfigNode *cn = R_NEW0 (RConfigNode);
 	if (!cn) {
 		return NULL;
@@ -34,6 +33,7 @@ R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
 }
 
 R_API void r_config_node_free(void *n) {
+	r_return_if_fail (n);
 	RConfigNode *node = (RConfigNode *)n;
 	if (!node) {
 		return;
@@ -46,6 +46,7 @@ R_API void r_config_node_free(void *n) {
 }
 
 static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
+	r_return_if_fail (cfg && node);
 	const char *val = node->value;
 	if (!val) {
 		val = "0";
@@ -67,6 +68,7 @@ static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
 }
 
 static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, const char *sfx, bool verbose, bool json) {
+	r_return_if_fail (cfg && node && pfx && sfx);
 	char *option;
 	bool isFirst;
 	RListIter *iter;
@@ -135,6 +137,7 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, 
 }
 
 R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
+	r_return_if_fail (cfg);
 	RConfigNode *node;
 	RListIter *iter;
 	const char *sfx = "";
@@ -145,7 +148,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	bool isFirst = false;
 
 	if (!IS_NULLSTR (str)) {
-		str = r_str_trim_ro (str);
+		str = r_str_trim_head_ro (str);
 		len = strlen (str);
 		if (len > 0 && str[0] == 'j') {
 			str++;
@@ -271,6 +274,7 @@ R_API RConfigNode* r_config_node_get(RConfig *cfg, const char *name) {
 }
 
 R_API bool r_config_set_getter(RConfig *cfg, const char *key, RConfigCallback cb) {
+	r_return_val_if_fail (cfg && key, false);
 	RConfigNode *node = r_config_node_get (cfg, key);
 	if (node) {
 		node->getter = cb;
@@ -286,11 +290,6 @@ R_API bool r_config_set_setter(RConfig *cfg, const char *key, RConfigCallback cb
 		return true;
 	}
 	return false;
-}
-
-
-static bool is_bool(const char *s) {
-	return !r_str_casecmp ("true", s) || !r_str_casecmp ("false", s);
 }
 
 R_API const char* r_config_get(RConfig *cfg, const char *name) {
@@ -400,7 +399,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 			node->value = strdup ("");
 		}
 		if (r_config_node_is_bool (node)) {
-			bool b = r_str_is_true (value);
+			bool b = *value && r_str_is_true (value);
 			node->i_value = b? 1: 0;
 			char *value = strdup (r_str_bool (b));
 			if (value) {
@@ -435,7 +434,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 		if (!cfg->lock) {
 			node = r_config_node_new (name, value);
 			if (node) {
-				if (value && is_bool (value)) {
+				if (value && *value && r_str_is_bool (value)) {
 					node->flags |= CN_BOOL;
 					node->i_value = r_str_is_true (value)? 1: 0;
 				}

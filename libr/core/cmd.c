@@ -436,7 +436,7 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 	RCore *core = (RCore *)data;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
-		arg = r_str_trim_ro (arg + 1);
+		arg = r_str_trim_head_ro (arg + 1);
 	}
 	switch (*input) {
 	case '?': // "uniq?"
@@ -467,11 +467,11 @@ static int cmd_head (void *data, const char *_input) { // "head"
 	char *arg = strchr (input, ' ');
 	char *tmp, *count;
 	if (arg) {
-		arg = (char *)r_str_trim_ro (arg + 1); 	// contains "count filename"
+		arg = (char *)r_str_trim_head_ro (arg + 1); 	// contains "count filename"
 		count = strchr (arg, ' ');
 		if (count) {
 			*count = 0;	// split the count and file name
-			tmp = (char *)r_str_trim_ro (count + 1);
+			tmp = (char *)r_str_trim_head_ro (count + 1);
 			lines = atoi (arg);
 			arg = tmp;
 		}
@@ -807,7 +807,7 @@ static int cmd_rap(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_equalh);
 		} else {
-			const char *arg = r_str_trim_ro (input + 1);
+			const char *arg = r_str_trim_head_ro (input + 1);
 			r_core_rtr_http (core, getArg (input[1], 'H'), 'H', arg);
 		}
 		break;
@@ -889,7 +889,7 @@ static int cmd_yank(void *data, const char *input) {
 	case 't': // "wt"
 		if (input[1] == 'f') { // "wtf"
 			ut64 tmpsz;
-			const char *file = r_str_trim_ro (input + 2);
+			const char *file = r_str_trim_head_ro (input + 2);
 			const ut8 *tmp = r_buf_data (core->yank_buf, &tmpsz);
 			if (!r_file_dump (file, tmp, tmpsz, false)) {
 				eprintf ("Cannot dump to '%s'\n", file);
@@ -1146,7 +1146,7 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 	RCore *core = (RCore *)data;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
-		arg = r_str_trim_ro (arg + 1);
+		arg = r_str_trim_head_ro (arg + 1);
 	}
 	switch (*input) {
 	case '?': // "l?"
@@ -1184,7 +1184,7 @@ static int cmd_join(void *data, const char *input) { // "join"
 	if (!arg1) {
 		goto beach;
 	}
-	arg1 = r_str_trim_ro (arg1);
+	arg1 = r_str_trim_head_ro (arg1);
 	if (!arg1) {
 		goto beach;
 	}
@@ -1197,7 +1197,7 @@ static int cmd_join(void *data, const char *input) { // "join"
 	if (!arg2) {
 		goto beach;
 	}
-	arg2 = r_str_trim_ro (arg2);
+	arg2 = r_str_trim_head_ro (arg2);
 	switch (*input) {
 	case '?': // "join?"
 		goto beach;
@@ -1272,7 +1272,7 @@ static int cmd_interpret(void *data, const char *input) {
 			// same as \n with e cmd.repeat=true
 			lastcmd_repeat (core, 1);
 		} else if (input[1]) {
-			char *str = r_core_cmd_str_pipe (core, r_str_trim_ro (input));
+			char *str = r_core_cmd_str_pipe (core, r_str_trim_head_ro (input));
 			if (str) {
 				r_core_cmd (core, str, 0);
 				free (str);
@@ -1283,7 +1283,7 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '*': // ".*"
 		{
-			const char *a = r_str_trim_ro (input + 1);
+			const char *a = r_str_trim_head_ro (input + 1);
 			char *s = strdup (a);
 			char *sp = strchr (s, ' ');
 			if (sp) {
@@ -1304,7 +1304,7 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case ' ': // ". "
 		{
-			const char *script_file = r_str_trim_ro (input + 1);
+			const char *script_file = r_str_trim_head_ro (input + 1);
 			if (*script_file == '$') {
 				r_core_cmd0 (core, script_file);
 			} else {
@@ -1738,7 +1738,7 @@ static int cmd_resize(void *data, const char *input) {
 		return true;
 	case 'm': // "rm"
 		if (input[1] == ' ') {
-			const char *file = r_str_trim_ro (input + 2);
+			const char *file = r_str_trim_head_ro (input + 2);
 			if (*file == '$') {
 				r_cmd_alias_del (core->rcmd, file);
 			} else {
@@ -1950,7 +1950,7 @@ static int cmd_pointer(void *data, const char *input) {
 	RCore *core = (RCore*) data;
 	int ret = true;
 	char *str, *eq;
-	input = r_str_trim_ro (input);
+	input = r_str_trim_head_ro (input);
 	while (*input == ' ') {
 		input++;
 	}
@@ -2044,7 +2044,7 @@ static int autocomplete_type(const char* strflag) {
 
 static void cmd_autocomplete(RCore *core, const char *input) {
 	RCoreAutocomplete* b = core->autocomplete;
-	input = r_str_trim_ro (input);
+	input = r_str_trim_head_ro (input);
 	char arg[256];
 	if (!*input) {
 		print_dict (core->autocomplete, 0);
@@ -2073,7 +2073,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		return;
 	}
 	while (b) {
-		const char* end = r_str_trim_wp (input);
+		const char* end = r_str_trim_head_ro (input);
 		if (!end) {
 			break;
 		}
@@ -2088,7 +2088,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		memcpy (arg, input, end - input);
 		arg[end - input] = 0;
 		RCoreAutocomplete* a = r_core_autocomplete_find (b, arg, true);
-		input = r_str_trim_ro (end);
+		input = r_str_trim_head_ro (end);
 		if (input && *input && !a) {
 			if (b->type == R_CORE_AUTOCMPLT_DFLT && !(b = r_core_autocomplete_add (b, arg, R_CORE_AUTOCMPLT_DFLT, false))) {
 				eprintf ("ENOMEM\n");
@@ -2389,8 +2389,8 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		ret = 0;
 	}
 #if __UNIX__
-	radare_cmd = (char*)r_str_trim_head (radare_cmd);
-	shell_cmd = (char*)r_str_trim_head (shell_cmd);
+	r_str_trim_head (radare_cmd);
+	r_str_trim_head (shell_cmd);
 
 	r_sys_signal (SIGPIPE, SIG_IGN);
 	stdout_fd = dup (1);
@@ -2511,7 +2511,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (core->max_cmd_depth - core->cons->context->cmd_depth == 1) {
 		core->prompt_offset = core->offset;
 	}
-	cmd = r_str_trim_head_tail (icmd);
+	r_str_trim_head_tail (icmd);
+	cmd = icmd;
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!*cmd) {
 		if (core->cmdrepeat > 0) {
@@ -2691,7 +2692,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 		r_list_free (tmpenvs);
 		return 0;
 	}
-	cmd = r_str_trim_head_tail (cmd);
+	r_str_trim_head_tail (cmd);
 
 	char *$0 = strstr (cmd, "$(");
 	if ($0) {
@@ -2773,7 +2774,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					while (*str == '>') {
 						str++;
 					}
-					str = (char *)r_str_trim_ro (str);
+					str = (char *)r_str_trim_head_ro (str);
 					r_cons_flush ();
 					const bool append = p[2] == '>';
 					pipefd = r_cons_pipe_open (str, 1, append);
@@ -2993,7 +2994,8 @@ escape_pipe:
 		int use_editor = false;
 		int ocolor = r_config_get_i (core->config, "scr.color");
 		*ptr = '\0';
-		str = r_str_trim_head_tail (ptr + 1 + (ptr[1] == '>'));
+		str = ptr + 1 + (ptr[1] == '>');
+		r_str_trim_head_tail (str);
 		if (!*str) {
 			eprintf ("No output?\n");
 			goto next2;
@@ -3225,7 +3227,7 @@ repeat_arroba:
 			ptr--;
 		}
 
-		ptr = r_str_trim_tail (ptr);
+		r_str_trim_tail (ptr);
 
 		if (ptr[1] == '?') {
 			r_core_cmd_help (core, help_msg_at);
@@ -3416,7 +3418,7 @@ repeat_arroba:
 				{
 					len = strlen (ptr + 2);
 					r_core_block_size (core, len);
-					const ut8 *buf = (const ut8*)r_str_trim_ro (ptr + 2);
+					const ut8 *buf = (const ut8*)r_str_trim_head_ro (ptr + 2);
 
 					if (len > 0) {
 						RBuffer *b = r_buf_new_with_bytes (buf, len);
@@ -3456,7 +3458,7 @@ break;
 			goto next_arroba;
 		}
 ignore:
-		ptr = r_str_trim_head (ptr + 1) - 1;
+		ptr = (char *)r_str_trim_head_ro (ptr + 1) - 1;
 		cmd = r_str_trim_nc (cmd);
 		if (ptr2) {
 			if (strlen (ptr + 1) == 13 && strlen (ptr2 + 1) == 6 &&
@@ -3475,7 +3477,8 @@ ignore:
 			}
 		}
 
-		offstr = r_str_trim_head (ptr + 1);
+		r_str_trim_head (ptr + 1);
+		offstr = ptr + 1;
 
 		addr = r_num_math (core->num, offstr);
 		addr_is_set = true;
@@ -3561,7 +3564,8 @@ next_arroba:
 				if (addr_is_set) {
 					core->offset = addr;
 				}
-				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
+				r_str_trim_head (cmd);
+				ret = r_cmd_call (core->rcmd, cmd);
 			} else {
 				if (addr_is_set) {
 					if (ptr[1]) {
@@ -3569,7 +3573,8 @@ next_arroba:
 						r_core_block_read (core);
 					}
 				}
-				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
+				r_str_trim_head (cmd);
+				ret = r_cmd_call (core->rcmd, cmd);
 
 			}
 			if (tmpseek) {
@@ -3621,7 +3626,12 @@ next_arroba:
 		goto beach;
 	}
 fuji:
-	rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
+	if (cmd) {
+		r_str_trim_head (cmd);
+		rc = r_cmd_call (core->rcmd, cmd);
+	} else {
+		rc = false;
+	}
 beach:
 	r_cons_grep_process (grep);
 	if (scr_html != -1) {
@@ -4566,7 +4576,8 @@ static void do_handle_substitution_arg(struct tsr2cmd_state *state, TSNode arg, 
 	free (inn_str);
 
 	// replace the output of the sub command with the current argument
-	char *out = strdup (r_str_trim_head_tail (o_out));
+	r_str_trim_head_tail (o_out);
+	char *out = strdup (o_out);
 	R_LOG_DEBUG ("output of inner command: '%s'\n", out);
 	free (o_out);
 

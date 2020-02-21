@@ -3264,9 +3264,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		}
 	case 't': // "aflt" "afltj"
 		if (rad[1] == 'j') {
-			fcn_list_table (core, r_str_trim_ro (rad+ 2), 'j');
+			fcn_list_table (core, r_str_trim_head_ro (rad+ 2), 'j');
 		} else {
-			fcn_list_table (core, r_str_trim_ro (rad + 1), rad[1]);
+			fcn_list_table (core, r_str_trim_head_ro (rad + 1), rad[1]);
 		}
 		break;
 	case 'l': // "afll" "afllj"
@@ -4750,7 +4750,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	}
 
 	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%20" PFMT64u "%s", esil_cpy.old, &esilstr[strlen (spname) + 4]);
-	tmp_esil_str = r_str_trim_head_tail (tmp_esil_str);
+	r_str_trim_head_tail (tmp_esil_str);
 	idx += op.size;
 	r_anal_esil_set_pc (&esil_cpy, cur);
 	r_anal_esil_parse (&esil_cpy, tmp_esil_str);
@@ -4808,7 +4808,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 #define CHECKREF(x) ((refptr && (x) == refptr) || !refptr)
 	if (target) {
-		const char *expr = r_str_trim_ro (target);
+		const char *expr = r_str_trim_head_ro (target);
 		if (*expr) {
 			refptr = ntarget = r_num_math (core->num, expr);
 			if (!refptr) {
@@ -5485,7 +5485,7 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	r_config_set (core->config, "anal.in", "block");
 	// aaFa = use a2f instead of af+
 	bool simple = (glob && *glob == 'a')? false: true;
-	glob = r_str_trim_ro (glob);
+	glob = r_str_trim_head_ro (glob);
 	char *addr;
 	r_flag_foreach_glob (core->flags, glob, __cb, addrs);
 	// should be sorted already

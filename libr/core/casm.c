@@ -115,7 +115,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		if (!tok) {
 			break;
 		}
-		tokens[tokcount] = r_str_trim_head_tail (tok);
+		r_str_trim_head_tail (tok);
+		tokens[tokcount] = tok;
 	}
 	tokens[tokcount] = NULL;
 	r_cons_break_push (NULL, NULL);

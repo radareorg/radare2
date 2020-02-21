@@ -843,7 +843,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	ut64 pc;
 	int ret;
 
-	instr = r_str_trim_ro (instr);
+	instr = r_str_trim_head_ro (instr);
 	if (!core || !instr|| !core->dbg) {
 		eprintf ("Wrong state\n");
 		return false;
@@ -897,7 +897,7 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 
 	RList *optypes_list = NULL;
 	RListIter *iter;
-	char *optype, *optypes = strdup (r_str_trim_head ((char *) _optypes));
+	char *optype, *optypes = strdup (r_str_trim_head_ro ((char *) _optypes));
 
 	if (!core || !core->dbg) {
 		eprintf ("Wrong state\n");
@@ -974,7 +974,7 @@ static int step_until_flag(RCore *core, const char *instr) {
 	RFlagItem *f;
 	ut64 pc;
 
-	instr = r_str_trim_ro (instr);
+	instr = r_str_trim_head_ro (instr);
 	if (!core || !instr || !core->dbg) {
 		eprintf ("Wrong state\n");
 		return false;
@@ -1098,7 +1098,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		/* XXX: but we want fine-grained access to process resources */
 		pid = atoi (input + 2);
 		if (pid > 0) {
-			ptr = r_str_trim_ro (input + 2);
+			ptr = r_str_trim_head_ro (input + 2);
 			ptr = strchr (ptr, ' ');
 			sig = ptr? atoi (ptr + 1): 0;
 			eprintf ("Sending signal '%d' to pid '%d'\n", sig, pid);
@@ -1701,7 +1701,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				if (input[1]=='*') {
 					mode = "-r ";
 				}
-				ptr = strdup (r_str_trim_ro (input + 2));
+				ptr = strdup (r_str_trim_head_ro (input + 2));
 				if (!ptr || !*ptr) {
 					r_core_cmd (core, "dmm", 0);
 					free (ptr);
@@ -1815,10 +1815,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			int i;
 
 			if (input[1]=='*') {
-				ptr = strdup (r_str_trim_head ((char*)input + 2));
+				ptr = strdup (r_str_trim_head_ro ((char*)input + 2));
 				mode = "-r ";
 			} else {
-				ptr = strdup (r_str_trim_head ((char*)input + 1));
+				ptr = strdup (r_str_trim_head_ro ((char*)input + 1));
 			}
 			i = r_str_word_set0 (ptr);
 
@@ -2464,7 +2464,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case '?': // "dr?"
 		if (str[1]) {
 			RListIter *iter;
-			char *all = (char *)r_str_trim_ro (str + 1);
+			char *all = (char *)r_str_trim_head_ro (str + 1);
 			if (!strcmp (all, "?")) { // "dr??"
 				all = r_core_cmd_str (core, "drp~=[0]");
 				all = r_str_replace (all, "\n", " ", 1);
@@ -2579,7 +2579,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				free (rf);
 			}
 		} else if (strchr (str, '=')) {
-			char *a = strdup (r_str_trim_ro (str + 1));
+			char *a = strdup (r_str_trim_head_ro (str + 1));
 			char *eq = strchr (a, '=');
 			if (eq) {
 				*eq++ = 0;
@@ -2602,7 +2602,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			free (a);
 		} else {
 			RRegItem *r;
-			const char *name = r_str_trim_ro (str + 1);
+			const char *name = r_str_trim_head_ro (str + 1);
 			if (*name && name[1]) {
 				r = r_reg_cond_get (core->dbg->reg, name);
 				if (r) {
@@ -3426,7 +3426,7 @@ static void add_breakpoint(RCore *core, const char *input, bool hwbp, bool watch
 	ut64 addr;
 	int i = 0;
 
-	char *str = strdup (r_str_trim_ro (input + 1));
+	char *str = strdup (r_str_trim_head_ro (input + 1));
 	int sl = r_str_word_set0 (str);
 	// For dbw every second argument is 'rw', so we need to skip it.
 	for (; i < sl; i += 1 + (watch ? 1 : 0)) {
@@ -3731,7 +3731,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			r_bp_del_all (core->dbg->bp);
 		} else {
 			#define DB_ARG(x) r_str_word_get0(str, x)
-			char *str = strdup (r_str_trim_ro (input +2));
+			char *str = strdup (r_str_trim_head_ro (input +2));
 			int i = 0;
 			int sl = r_str_word_set0 (str);
 			for ( ; i < sl; i++) {
@@ -4070,16 +4070,16 @@ static void debug_trace_calls(RCore *core, const char *input) {
 		return;
 	}
 	if (*input == ' ') {
-		input = r_str_trim_ro (input);
+		input = r_str_trim_head_ro (input);
 		ut64 first_n = r_num_math (core->num, input);
 		input = strchr (input, ' ');
 		if (input) {
-			input = r_str_trim_ro (input);
+			input = r_str_trim_head_ro (input);
 			from = first_n;
 			to = r_num_math (core->num, input);
 			input = strchr (input, ' ');
 			if (input) {
-				input = r_str_trim_ro (input);
+				input = r_str_trim_head_ro (input);
 				final_addr = r_num_math (core->num, input);
 			}
 		} else {
@@ -5269,7 +5269,7 @@ static int cmd_debug(void *data, const char *input) {
 				} else {
 					char *arg = strchr (input, ' ');
 					if (arg) {
-						arg = strdup (r_str_trim_ro (arg + 1));
+						arg = strdup (r_str_trim_head_ro (arg + 1));
 						char *arg2 = strchr (arg, ' ');
 						if (arg2) {
 							*arg2++ = 0;

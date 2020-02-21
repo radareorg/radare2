@@ -1400,7 +1400,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		char *wlist = r_str_widget_list (core, rops, rows, cur, print_rop);
 		r_cons_printf ("%s", wlist);
 		free (wlist);
-		char *curline = r_str_dup (NULL, r_str_trim_ro (r_str_widget_list (
+		char *curline = r_str_dup (NULL, r_str_trim_head_ro (r_str_widget_list (
 			core, rops, rows, cur, print_rop)));
 		if (curline) {
 			char *sp = strchr (curline, ' ');
@@ -3561,10 +3561,12 @@ static void handleHints(RCore *core) {
 		switch (ch[0]) {
 		case 'b':
 			{
-			int bits = atoi (r_str_trim_head_tail (ch + 1));
-			if (bits == 8 || bits == 16 || bits == 32 || bits == 64) {
-				r_anal_hint_set_bits (core->anal, core->offset, bits);
-			}
+				char *arg = ch + 1;
+				r_str_trim_head_tail (arg);
+				int bits = atoi (arg);
+				if (bits == 8 || bits == 16 || bits == 32 || bits == 64) {
+					r_anal_hint_set_bits (core->anal, core->offset, bits);
+				}
 			}
 			break;
 		default:
