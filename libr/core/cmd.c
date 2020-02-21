@@ -5403,13 +5403,10 @@ static bool handle_ts_command(struct tsr2cmd_state *state, TSNode node) {
 	bool ret = false;
 	RCmd *cmd = state->core->rcmd;
 
-	if (state->log) {
-		r_line_hist_add (state->input);
-	}
-
 	TSSymbol node_symbol = ts_node_symbol (node);
 	ts_handler handler = ht_up_find (cmd->ts_symbols_ht, node_symbol, NULL);
 
+	state->is_last_cmd = false;
 	if (handler) {
 		ret = handler (state, node);
 	} else {
@@ -5507,10 +5504,16 @@ static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log) {
 	state.input = input;
 	state.tree = tree;
 	state.log = log;
-	state.is_last_cmd = false;
+
+	if (state.log) {
+		r_line_hist_add (state.input);
+	}
+
 	if (is_ts_commands (root) && !ts_node_has_error (root)) {
 		res = handle_ts_commands (&state, root);
 	} else {
+		// TODO: print a more meaningful error message and use the ERROR
+		// tokens to indicate where, probably, the error is.
 		eprintf ("Error while parsing command: `%s`\n", input);
 	}
 
