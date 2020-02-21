@@ -4397,6 +4397,7 @@ struct tsr2cmd_state {
 	char *input;
 	TSTree *tree;
 	bool log;
+	bool split_lines;
 	bool is_last_cmd;
 };
 
@@ -4452,7 +4453,7 @@ static char *ts_node_sub_string(TSNode node, const char *cstr) {
 	static bool handle_ts_##name##_internal(struct tsr2cmd_state *state, TSNode node, char *node_string)
 
 static bool handle_ts_command(struct tsr2cmd_state *state, TSNode node);
-static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log);
+static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lines, bool log);
 
 DEFINE_IS_TS_FCN(fdn_redirect_operator)
 DEFINE_IS_TS_FCN(fdn_append_operator)
@@ -5437,13 +5438,27 @@ DEFINE_HANDLE_TS_FCN(commands) {
 		}
 		return lastcmd_repeat (state->core, true);
 	}
+	if (state->split_lines) {
+		r_cons_break_push (NULL, NULL);
+	}
 	for (i = 0; i < child_count; ++i) {
+		if (state->split_lines && r_cons_is_breaked ()) {
+			r_cons_break_pop ();
+			return false;
+		}
 		TSNode command = ts_node_named_child (node, i);
 		res &= handle_ts_command (state, command);
 		if (!res) {
 			eprintf ("Error while parsing command: %s\n", state->input);
 			return false;
 		}
+		if (state->split_lines) {
+			r_cons_flush ();
+			r_core_task_yield (&state->core->tasks);
+		}
+	}
+	if (state->split_lines) {
+		r_cons_break_pop ();
 	}
 	return res;
 }
@@ -5486,7 +5501,7 @@ static void ts_symbols_init(RCmd *cmd) {
 	}
 }
 
-static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log) {
+static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lines, bool log) {
 	char *input = strdup (cstr);
 
 	ts_symbols_init (core->rcmd);
@@ -5504,6 +5519,7 @@ static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool log) {
 	state.input = input;
 	state.tree = tree;
 	state.log = log;
+	state.split_lines = split_lines;
 
 	if (state.log) {
 		r_line_hist_add (state.input);
@@ -5558,7 +5574,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
 #if USE_TREESITTER
-		return core_cmd_tsr2cmd (core, cstr, log)? 0: 1;
+		return core_cmd_tsr2cmd (core, cstr, false, log)? 0: 1;
 #else
 		R_LOG_WARN ("No compilation support for radare2-shell-parser\n");
 #endif
