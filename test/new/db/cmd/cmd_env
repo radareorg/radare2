@@ -43,3 +43,14 @@ true
 false
 EOF
 RUN
+
+NAME=env with spaces
+FILE=-
+CMDS=<<EOF
+env AAA   =    BBB
+env AAA
+EOF
+EXPECT=<<EOF
+BBB
+EOF
+RUN
