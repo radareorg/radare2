@@ -5631,6 +5631,11 @@ beach:
 }
 
 R_API int r_core_cmd_lines(RCore *core, const char *lines) {
+	// FIXME: when cfg.newshell=true, just use core_cmd_tsr2cmd, which is
+	// able to work on a full script and does not need to split lines. For
+	// now, we avoid it because some commands still don't work with the new
+	// parser and if a script contains even a single invalid line, it is not
+	// parsed at all.
 	int r, ret = true;
 	char *nl, *data, *odata;
 
