@@ -256,11 +256,13 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *o) {
 	RBinClass *klass;
 	RBinSymbol *method;
 	r_list_foreach (o->classes, it, klass) {
-		ht_pp_insert (o->classes_ht, klass->name, klass);
+		if (klass->name) {
+			ht_pp_insert (o->classes_ht, klass->name, klass);
 
-		r_list_foreach (klass->methods, it2, method) {
-			const char *name = sdb_fmt ("%s::%s", klass->name, method->name);
-			ht_pp_insert (o->methods_ht, name, method);
+			r_list_foreach (klass->methods, it2, method) {
+				const char *name = sdb_fmt ("%s::%s", klass->name, method->name);
+				ht_pp_insert (o->methods_ht, name, method);
+			}
 		}
 	}
 }
