@@ -29,12 +29,12 @@ endif
 # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/meson.build
 TS_URL=https://github.com/tree-sitter/tree-sitter.git
 TS_BRA=master
-TS_TIP=aef62b4bc6b9654e54bd59bee1cb8cea16e3aa96
+TS_TIP=f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3
 
 # NOTE: when you update SHELLPARSER_TIP or SHELLPARSER_BRA, also update them in shlr/meson.build
 SHELLPARSER_URL=https://github.com/ret2libc/radare2-shell-parser.git
 SHELLPARSER_BRA=master
-SHELLPARSER_TIP=d6a6258b0d89e5c9778a4b56fb7fb280a4b38aeb
+SHELLPARSER_TIP=9341f3602dc12f47765d1b2b645e01e08b4a4894
 
 ifeq ($(CS_RELEASE),1)
 CS_VER=4.0.1
