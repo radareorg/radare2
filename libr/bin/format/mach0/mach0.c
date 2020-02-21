@@ -42,11 +42,12 @@ static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	do {
 		if (p == end) {
 			eprintf ("malformed uleb128\n");
-			break;
+			return UT64_MAX;
 		}
 		slice = *p & 0x7f;
 		if (bit > 63) {
 			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x"\n", bit, result);
+			return UT64_MAX;
 		} else {
 			result |= (slice << bit);
 			bit += 7;
@@ -2308,14 +2309,27 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		RTrieState * state = r_list_get_top (states);
 		ur.p = state->node;
 		ut64 len = ULEB();
+		if (len == UT64_MAX) {
+			break;
+		}
 		if (len) {
 			ut64 flags = ULEB();
+		if (flags == UT64_MAX) {
+			break;
+		}
 			ut64 offset = ULEB();
+		if (offset == UT64_MAX) {
+			break;
+		}
 			ut64 resolver = 0;
 			bool isReexport = flags & EXPORT_SYMBOL_FLAGS_REEXPORT;
 			bool hasResolver = flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER;
 			if (hasResolver) {
-				resolver = ULEB() + bin->header_at;
+				ut64 res = ULEB();
+				if (res == UT64_MAX) {
+					break;
+				}
+				resolver = res + bin->header_at;
 			} else if (isReexport) {
 				ur.p += strlen ((char*) ur.p) + 1;
 				// TODO: handle this
@@ -2355,6 +2369,9 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			}
 		}
 		ut64 child_count = ULEB();
+		if (child_count == UT64_MAX) {
+			goto beach;
+		}
 		if (state->i == child_count) {
 			r_list_pop (states);
 			continue;
@@ -2375,7 +2392,11 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			R_FREE (next);
 			goto beach;
 		}
-		next->node = ULEB() + trie;
+		ut64 tr = ULEB();
+		if (tr == UT64_MAX) {
+			goto beach;
+		}
+		next->node = tr + trie;
 		if (next->node >= end) {
 			eprintf ("malformed export trie\n");
 			R_FREE (next);

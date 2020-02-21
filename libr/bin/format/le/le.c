@@ -102,7 +102,7 @@ RList *__get_entries(r_bin_le_obj_t *bin) {
 		if ((header.type & ~ENTRY_PARAMETER_TYPING_PRESENT) == UNUSED_ENTRY) {
 			offset += sizeof (header.type) + sizeof (header.count);
 			while (header.count) {
-				r_list_append (l, (ut64 *)-1);
+				r_list_append (l, strdup ("")); // (ut64 *)-1);
 				header.count--;
 			}
 			continue;
@@ -161,10 +161,12 @@ static void __get_symbols_at(r_bin_le_obj_t *bin, RList *syml, RList *entl, ut64
 		}
 		if (sym->ordinal) {
 			const char *n = r_list_get_n (entl, sym->ordinal - 1);
-			sym->vaddr = r_num_get (NULL, n);
-			sym->bind = R_BIN_BIND_GLOBAL_STR;
-			sym->type = R_BIN_TYPE_FUNC_STR;
-			r_list_append (syml, sym);
+			if (n) {
+				sym->vaddr = r_num_get (NULL, n);
+				sym->bind = R_BIN_BIND_GLOBAL_STR;
+				sym->type = R_BIN_TYPE_FUNC_STR;
+				r_list_append (syml, sym);
+			}
 		} else {
 			r_bin_symbol_free (sym);
 		}
@@ -321,6 +323,9 @@ RList *r_bin_le_get_sections(r_bin_le_obj_t *bin) {
 			return l;
 		}
 		LE_object_entry *entry = &bin->objtbl[i];
+		if  (!entry) {
+			return l;
+		}
 		sec->name = r_str_newf ("obj.%d", i + 1);
 		sec->vsize = entry->virtual_size;
 		sec->vaddr = entry->reloc_base_addr;

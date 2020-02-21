@@ -633,3 +633,81 @@ R_API PJ *r_pkcs7_cms_json (RCMS *container) {
 	}
 	return pj;
 }
+
+static bool r_pkcs7_parse_spcdata(SpcAttributeTypeAndOptionalValue *data, RASN1Object *object) {
+	if (!data || !object || object->list.length < 1 ||
+		!object->list.objects[0]) {
+		return false;
+	}
+	data->type = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
+	RASN1Object *obj1 = object->list.objects[1];
+	if (object->list.length > 1) {
+		if (obj1) {
+			data->data = r_asn1_create_binary (obj1->sector, obj1->length);
+		}
+	}
+	return true;
+}
+
+static bool r_pkcs7_parse_spcmessagedigest(SpcDigestInfo *messageDigest, RASN1Object *object) {
+	if (!messageDigest || !object || object->list.length < 2 ||
+		!object->list.objects[0] || !object->list.objects[1]) {
+		return false;
+	}
+	r_x509_parse_algorithmidentifier (&messageDigest->digestAlgorithm, object->list.objects[0]);
+	RASN1Object *obj1 = object->list.objects[1];
+	messageDigest->digest = r_asn1_create_binary (obj1->sector, obj1->length);
+	return true;
+}
+
+R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
+	RASN1Object *object;
+	RASN1Binary *content;
+	SpcIndirectDataContent *spcinfo;
+	if (!cms) {
+		return NULL;
+	}
+
+	spcinfo = R_NEW0 (SpcIndirectDataContent);
+	if (!spcinfo) {
+		return NULL;
+	}
+
+	content = cms->signedData.contentInfo.content;
+	object = r_asn1_create_object (content->binary, content->length, content->binary);
+	if (!object || object->list.length < 2 || !object->list.objects ||
+		!object->list.objects[0] || !object->list.objects[1]) {
+		r_asn1_free_object (object);
+		free (spcinfo);
+		return NULL;
+	}
+	if (object->list.objects[0]) {
+		r_pkcs7_parse_spcdata (&spcinfo->data, object->list.objects[0]);
+	}
+	if (object->list.objects[1]) {
+		r_pkcs7_parse_spcmessagedigest (&spcinfo->messageDigest, object->list.objects[1]);
+	}
+	r_asn1_free_object (object);
+	return spcinfo;
+}
+
+static void r_pkcs7_free_spcdata(SpcAttributeTypeAndOptionalValue *data) {
+	if (data) {
+		r_asn1_free_string (data->type);
+		r_asn1_free_binary (data->data);
+	}
+}
+
+static void r_pkcs7_free_spcmessagedigest(SpcDigestInfo *messageDigest) {
+	if (messageDigest) {
+		r_asn1_free_binary (messageDigest->digest);
+		r_x509_free_algorithmidentifier (&messageDigest->digestAlgorithm);
+	}
+}
+
+R_API void r_pkcs7_free_spcinfo(SpcIndirectDataContent *spcinfo) {
+	if (spcinfo) {
+		r_pkcs7_free_spcdata (&spcinfo->data);
+		r_pkcs7_free_spcmessagedigest (&spcinfo->messageDigest);
+	}
+}

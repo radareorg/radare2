@@ -856,54 +856,37 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 	return false;
 }
 
-R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBinFileHash>*/ **old_file_hashes) {
-	r_return_val_if_fail (bin, false);
+R_API RList *r_bin_file_hash(RBin *bin, ut64 limit) {
+	r_return_val_if_fail (bin, NULL);
 
 	char hash[128];
 	RHash *ctx;
 	ut64 buf_len = 0, r = 0;
 	RBinFile *bf = bin->cur;
 	if (!bf) {
-		return false;
+		return NULL;
 	}
 	RBinObject *o = bf->o;
 	if (!o || !o->info) {
-		return false;
+		return NULL;
 	}
 	RIODesc *iod = r_io_desc_get (bin->iob.io, bf->fd);
 	if (!iod) {
-		return false;
-	}
-	if (!file && iod) {
-		file = iod->name;
+		return NULL;
 	}
 	buf_len = r_io_desc_size (iod);
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
-		if (old_file_hashes) {
-			//	if (bin->verbose) {
-			eprintf ("Warning: r_bin_file_hash: file exceeds bin.hashlimit\n");
-			//	}
-		}
-		return false;
+		eprintf ("Warning: r_bin_file_hash: file exceeds bin.hashlimit\n");
+		return NULL;
 	}
 	const size_t blocksize = 64000;
 	ut8 *buf = malloc (blocksize);
 	if (!buf) {
 		eprintf ("Cannot allocate computation buffer\n");
-		return false;
+		return NULL;
 	}
-	if (old_file_hashes) {
-		*old_file_hashes = NULL;
-	}
-	if (!r_list_empty (o->info->file_hashes)) {
-		if (old_file_hashes && o->info->file_hashes) {
-			*old_file_hashes = o->info->file_hashes;
-		} else {
-			r_list_free (o->info->file_hashes);
-		}
-		o->info->file_hashes = NULL;
-	}
+
 	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1 | R_HASH_SHA256);
 	while (r + blocksize < buf_len) {
 		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
@@ -928,12 +911,12 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 	r_hash_do_end (ctx, R_HASH_MD5);
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, hash);
 
-	o->info->file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
+	RList *file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
 	RBinFileHash *md5h = R_NEW0 (RBinFileHash);
 	if (md5h) {
 		md5h->type = strdup ("md5");
 		md5h->hex = strdup (hash);
-		r_list_push (o->info->file_hashes, md5h);
+		r_list_push (file_hashes, md5h);
 	}
 	r_hash_do_end (ctx, R_HASH_SHA1);
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, hash);
@@ -942,7 +925,7 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 	if (sha1h) {
 		sha1h->type = strdup ("sha1");
 		sha1h->hex = strdup (hash);
-		r_list_push (o->info->file_hashes, sha1h);
+		r_list_push (file_hashes, sha1h);
 	}
 	r_hash_do_end (ctx, R_HASH_SHA256);
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA256, hash);
@@ -951,13 +934,13 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 	if (sha256h) {
 		sha256h->type = strdup ("sha256");
 		sha256h->hex = strdup (hash);
-		r_list_push (o->info->file_hashes, sha256h);
+		r_list_push (file_hashes, sha256h);
 	}
 	// TODO: add here more rows
 
 	free (buf);
 	r_hash_free (ctx);
-	return true;
+	return file_hashes;
 }
 
 R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view) {
