@@ -533,8 +533,8 @@ R_API void r_io_map_del_name(RIOMap* map) {
 	}
 }
 
-//TODO: Kill it with fire
-R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size, ut64 load_align) {
+// TODO: very similar to r_io_map_next_address, decide which one to use
+R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_align) {
 	RIOMap* map;
 	SdbListIter* iter;
 	ut64 next_addr = addr,
@@ -544,18 +544,17 @@ R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int perm, ut64 delta,
 		next_addr = R_MAX (next_addr, to + (load_align - (to % load_align)) % load_align);
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
 		// adding the check for the map's fd to see if this removes contention for
-		// memory mapping with multiple files.
-
-		if (map->fd == fd && ((map->itv.addr <= next_addr && next_addr < to) ||
-						r_itv_contain (map->itv, end_addr))) {
+		// memory mapping with multiple files. infinite loop ahead?
+		if ((map->itv.addr <= next_addr && next_addr < to) || r_itv_contain (map->itv, end_addr)) {
 			next_addr = to + (load_align - (to % load_align)) % load_align;
-			return r_io_map_add_next_available (io, fd, perm, delta, next_addr, size, load_align);
+			return r_io_map_next_available (io, next_addr, size, load_align);
 		}
 		break;
 	}
-	return r_io_map_new (io, fd, perm, delta, next_addr, size);
+	return next_addr;
 }
 
+// TODO: very similar to r_io_map_next_available. decide which one to use
 R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
 	RIOMap* map;
 	SdbListIter* iter;
