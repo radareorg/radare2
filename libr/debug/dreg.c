@@ -229,7 +229,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			case '=':
 				{
 					int len, highlight = use_color && pr && pr->cur_enabled && itmidx == pr->cur;
-					char *str, whites[32], content[300];
+					char whites[32], content[300];
 					const char *a = "", *b = "";
 					if (highlight) {
 						a = Color_INVERT;
