@@ -88,7 +88,7 @@ test_script:
   - cd ../..
 
 after_test:
-  - git clone https://github.com/radare/radare2-win-installer
+  - git clone --depth 1 https://github.com/radare/radare2-win-installer
   - set PATH=%PATH%;%INNO_SETUP%
   - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=%R2_VERSION%
   - move radare2-win-installer\Output\radare2.exe radare2_installer-%builder%.exe
