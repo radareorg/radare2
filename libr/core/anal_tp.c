@@ -146,6 +146,7 @@ static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 	RAnal *anal = core->anal;
 	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL);
 	if (!op || r_strbuf_is_empty (&op->esil)) {
+		r_anal_op_free (op);
 		return;
 	}
 	char *op_esil = strdup (r_strbuf_get (&op->esil));
