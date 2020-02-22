@@ -305,6 +305,24 @@ fd. 0x5
 EOF
 RUN
 
+NAME=fd with realname
+FILE=malloc://1024
+EXPECT='pingas
+pingas + 4853
+Snooping as usual I see...
+Snooping as usual I see... + 4853'
+CMDS=<<EOF
+f pingas @ 0x42
+fN pingas Snooping as usual I see...
+e asm.flags.real=0
+fd @ 0x42
+fd @ 0x1337
+e asm.flags.real=1
+fd @ 0x42
+fd @ 0x1337
+EOF
+RUN
+
 NAME=fC
 FILE=malloc://1024
 EXPECT=<<EOF

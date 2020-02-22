@@ -1479,21 +1479,24 @@ rep:
 			}
 			f = r_flag_get_at (core->flags, addr, !strict_offset);
 			if (f) {
+				const char *fname = core->flags->realnames && f->realname ? f->realname : f->name;
 				if (f->offset != addr) {
 					// if input contains 'j' print json
 					if (strchr (input, 'j')) {
+						// don't want realname in json
 						r_cons_printf ("{\"name\":\"%s\",\"offset\":%d}\n",
 									   f->name, (int)(addr - f->offset));
 					} else {
-						r_cons_printf ("%s + %d\n", f->name,
+						r_cons_printf ("%s + %d\n", fname,
 									   (int)(addr - f->offset));
 					}
 				} else {
 					if (strchr (input, 'j')) {
+						// don't want realname in json
 						r_cons_printf ("{\"name\":\"%s\"}\n",
 										f->name);
 					} else {
-						r_cons_println (f->name);
+						r_cons_println (fname);
 					}
 				}
 			}
