@@ -25,7 +25,7 @@ fmt:
 	$(V) fmt -w r2r.v
 
 v:
-	git clone --depth 1 https://github.com/vlang/v
+	git clone https://github.com/vlang/v
 	cd v && git reset --hard $(VCOMMIT)
 
 install: uninstall
