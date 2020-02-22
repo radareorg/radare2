@@ -424,6 +424,7 @@ typedef void (*RConsBreakCallback)(void *core);
 typedef void *(*RConsSleepBeginCallback)(void *core);
 typedef void (*RConsSleepEndCallback)(void *core, void *user);
 typedef void (*RConsQueueTaskOneshot)(void *core, void *task, void *user);
+typedef void (*RConsFunctionKey)(void *core, int fkey);
 
 typedef enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MODE_16M } RConsColorMode;
 
@@ -487,6 +488,7 @@ typedef struct r_cons_t {
 	RConsSleepEndCallback cb_sleep_end;
 	RConsClickCallback cb_click;
 	RConsQueueTaskOneshot cb_task_oneshot;
+	RConsFunctionKey cb_fkey;
 
 	void *user; // Used by <RCore*>
 #if __UNIX__
@@ -1045,6 +1047,8 @@ struct r_line_t {
 	RLineHistoryUpCb cb_history_up;
 	RLineHistoryDownCb cb_history_down;
 	RLineEditorCb cb_editor;
+	// RLineFunctionKeyCb cb_fkey;
+	RConsFunctionKey cb_fkey;
 	/* state , TODO: use more bool */
 	int echo;
 	int has_echo;
