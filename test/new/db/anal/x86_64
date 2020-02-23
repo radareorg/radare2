@@ -2998,7 +2998,6 @@ EXPECT=<<EOF
 push rbp
 mov rbp, rsp
 EOF
-ARGS=
 CMDS=<<EOF
 f-sym.func.*
 aap

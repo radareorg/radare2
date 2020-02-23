@@ -1,6 +1,5 @@
 NAME=1: io.baddr
 FILE=../bins/elf/analysis/pie
-ARGS=
 EXPECT=<<EOF
 0x450
 EOF

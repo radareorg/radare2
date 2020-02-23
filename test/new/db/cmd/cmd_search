@@ -6,7 +6,6 @@ EXPECT=<<EOF
 (nofunc) 0x6968100b [DATA] mov eax, dword [0x69682004]
 (nofunc) 0x69681010 [DATA] mov eax, 0x69682004
 EOF
-ARGS=
 CMDS=<<EOF
 /r 0x69682004
 EOF
@@ -21,7 +20,6 @@ EXPECT=<<EOF
 0x10000482e
 0x100004838
 EOF
-ARGS=
 CMDS=<<EOF
 /aI
 EOF
@@ -33,7 +31,6 @@ EXPECT=<<EOF
 0x1000013e5   # 7: sub rsp, 0x648
 0x1000013e6   # 6: sub esp, 0x648
 EOF
-ARGS=
 CMDS=<<EOF
 /ai 0x648
 EOF
@@ -80,7 +77,6 @@ EXPECT=<<EOF
 0x000138b4 clone
 0x00013904 brk
 EOF
-ARGS=
 CMDS=<<EOF
 /as
 EOF
