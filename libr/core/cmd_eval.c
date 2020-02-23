@@ -463,11 +463,12 @@ static int cmd_eval(void *data, const char *input) {
 				}
 				r_str_argv_free (argv);
 				return false;
-			case '-':
+			case '-': // ecH-
 				if (input[3] == '*') {
 					r_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
 				} else {
-					r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
+					r_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, 1);
+					// r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
 				}
 				r_str_argv_free (argv);
 				return false;
