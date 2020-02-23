@@ -845,6 +845,7 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 		sdb_querys (core->sdb, NULL, 0, query);
 		free (query);
 	}
+	r_anal_fcn_vars_cache_fini (&cache);
 }
 
 static bool cmd_anal_aaft(RCore *core) {
@@ -2814,7 +2815,7 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	Sdb *d = sdb_new0 ();
 	ut64 oseek = core->offset;
 	bool isJson = strchr (input, 'j') != NULL;
-	
+
 	char *inp = r_str_newf ("*%s", input);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_core_seek (core, fcn->addr, true);
