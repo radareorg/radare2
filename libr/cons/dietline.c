@@ -37,7 +37,7 @@ static inline bool is_word_break_char(char ch, bool mode) {
 	int len =
 		sizeof (word_break_characters) /
 		sizeof (word_break_characters[0]);
-	for (i = 0; i < len; ++i) {
+	for (i = 0; i < len; i++) {
 		if (ch == word_break_characters[i]) {
 			return true;
 		}
@@ -1703,7 +1703,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							break;
 						}
 						r_cons_readchar ();
-						ch = r_cons_readchar ();
+						int fkey = ch - '0';
 #endif
 						switch (ch) {
 						case 0x41:
@@ -1737,6 +1737,17 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							if (I.buffer.data[i] != ' ') {
 								I.buffer.index = I.buffer.length;
 							}
+							break;
+						default:
+#if __WINDOWS__
+							// ...
+#else
+							{
+								if (I.cb_fkey) {
+									I.cb_fkey (I.user, fkey);
+								}
+							}
+#endif
 							break;
 						}
 						r_cons_set_raw (1);

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2019 - pancake */
+/* radare2 - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
 #include <r_socket.h>
@@ -2646,6 +2646,7 @@ R_API bool r_core_init(RCore *core) {
 			core->cons->line->user = core;
 			core->cons->line->cb_editor = \
 				(RLineEditorCb)&r_core_editor;
+			core->cons->line->cb_fkey = core->cons->cb_fkey;
 		}
 #if __EMSCRIPTEN__
 		core->cons->user_fgets = NULL;
@@ -2787,8 +2788,20 @@ R_API bool r_core_init(RCore *core) {
 	return 0;
 }
 
+R_API void __cons_cb_fkey(RCore *core, int fkey) {
+	char buf[32];
+	snprintf (buf, sizeof (buf), "key.f%d", fkey);
+	const char *v = r_config_get (core->config, buf);
+	if (v && *v) {
+		r_cons_printf ("%s\n", v);
+		r_core_cmd0 (core, v);
+		r_cons_flush ();
+	}
+}
+
 R_API void r_core_bind_cons(RCore *core) {
 	core->cons->num = core->num;
+	core->cons->cb_fkey = (RConsFunctionKey)__cons_cb_fkey;
 	core->cons->cb_editor = (RConsEditorCallback)r_core_editor;
 	core->cons->cb_break = (RConsBreakCallback)r_core_break;
 	core->cons->cb_sleep_begin = (RConsSleepBeginCallback)r_core_sleep_begin;
