@@ -33,7 +33,6 @@ R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
 }
 
 R_API void r_config_node_free(void *n) {
-	r_return_if_fail (n);
 	RConfigNode *node = (RConfigNode *)n;
 	if (!node) {
 		return;
