@@ -35,3 +35,14 @@ rts
 nop
 EOF
 RUN
+
+NAME=SuperH af
+FILE=--
+CMDS=<<EOF
+wx 01e005400a25862f962fa62fb62fc62f
+af@0
+af fuck@0x6
+EOF
+EXPECT=<<EOF
+EOF
+RUN
