@@ -298,6 +298,49 @@ bool test_r_list_sort4(void) {
 	mu_end;
 }
 
+bool test_r_list_append_prepend(void) {
+
+	char *test[] = {
+		"HEAD 00",
+		"HEAD",
+		"foo",
+		"bar",
+		"cow",
+		"LAST"
+	};
+
+	RList *list = r_list_new ();
+	RListIter *iter;
+
+	r_list_append (list, test[2]);
+	r_list_append (list, test[3]);
+	r_list_append (list, test[4]);
+	r_list_prepend (list, test[1]);
+	r_list_prepend (list, test[0]);
+	r_list_append (list, test[5]);
+
+	char buf[BUF_LENGTH];
+	int i;
+	//Check that the next sequence is correct
+	iter = list->head;
+	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
+		snprintf (buf, BUF_LENGTH, "%d-th value in list from head", i);
+		mu_assert_streq ((char *)iter->data, test[i], buf);
+		iter = iter->n;
+	}
+
+	//Check that the previous sequence is correct
+	iter = list->tail;
+	for (i = (R_ARRAY_SIZE (test)) - 1; i > 0; --i) {
+		snprintf (buf, BUF_LENGTH, "%d-th value in list from tail", i);
+		mu_assert_streq ((char *)iter->data, test[i], buf);
+		iter = iter->p;
+	}
+
+	r_list_free (list);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_r_list_size);
 	mu_run_test(test_r_list_values);
@@ -310,6 +353,7 @@ int all_tests() {
 	mu_run_test(test_r_list_sort4);
 	mu_run_test(test_r_list_sort5);
 	mu_run_test(test_r_list_length);
+	mu_run_test(test_r_list_append_prepend);
 	return tests_passed != tests_run;
 }
 
