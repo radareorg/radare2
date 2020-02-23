@@ -1,10 +1,10 @@
  <!-- Filling this template is mandatory -->
 
 **Your checklist for this pull request**
-- [ ] I've read the [guidelines for contributing](../DEVELOPERS.md) to this repository
-- [ ] I made sure to follow the project's [coding style](../DEVELOPERS.md#code-style)
+- [ ] I've read the [guidelines for contributing](https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md) to this repository
+- [ ] I made sure to follow the project's [coding style](https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md#code-style)
 - [ ] I've added tests that prove my fix is effective or that my feature works (if possible)
-- [ ] I've updated the documentation and the [radare2 book](../../radare2book) with the relevant information (if needed)
+- [ ] I've updated the documentation and the [radare2 book](https://github.com/radareorg/radare2book) with the relevant information (if needed)
 
 **Detailed description**
 
