@@ -94,7 +94,7 @@ static char *getFunctionName(RCore *core, ut64 addr) {
 		char *at = sdb_fmt ("0x%08"PFMT64x, addr);
 		char *res = sdb_get (kv, at, 0);
 		if (res) {
-			return strdup (res);
+			return res;
 		}
 	}
 	RFlagItem *fi = r_flag_get_at (core->flags, addr, false);
@@ -160,7 +160,7 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 		}
 		return (char*) str;
 	}
-	
+
 	ut64 *cstr = (ut64*)str;
 	ut64 lowptr = cstr[0];
 	if (lowptr >> 32) { // must be pa mode only
@@ -172,7 +172,7 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 		if (ptr >> 32) { // must be pa mode only
 			ptr &= UT32_MAX;
 		}
-		if (ptr) {	
+		if (ptr) {
 			r_io_read_at (core->io, ptr, rstr, sizeof (rstr));
 			rstr[127] = 0;
 			ret = is_string (rstr, 128, &len);
@@ -2749,7 +2749,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 		refs = r_core_anal_fcn_get_calls (core, fcn);
 		// Uniquify the list by ref->addr
 		refs = r_list_uniq (refs, (RListComparator)RAnalRef_cmp);
-	
+
 		// don't enter for functions with 0 refs
 		if (!r_list_empty (refs)) {
 			if (pj) { // begin json output of function
@@ -5488,7 +5488,7 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	glob = r_str_trim_ro (glob);
 	char *addr;
 	r_flag_foreach_glob (core->flags, glob, __cb, addrs);
-	// should be sorted already 
+	// should be sorted already
 	r_list_sort (addrs, (RListComparator)__addrs_cmp);
 	r_list_foreach (addrs, iter, addr) {
 		if (!iter->n || r_cons_is_breaked ()) {
