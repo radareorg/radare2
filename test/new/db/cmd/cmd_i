@@ -3474,7 +3474,6 @@ RUN
 
 NAME=izzj 2 (no rbin - file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
-ARGS=
 CMDS=<<EOF
 e bin.str.purge=all,!0x4002fa,!0x15b
 izzj

@@ -27,7 +27,6 @@ RUN
 
 NAME='create pe x86-32'
 FILE=-
-ARGS=
 CMDS=<<EOF
 rm ./tiny32.pe__
 !rabin2 -C pe:cc -a x86 -b 32 ./tiny32.pe__
