@@ -535,6 +535,9 @@ R_API void r_io_map_del_name(RIOMap* map) {
 
 // TODO: very similar to r_io_map_next_address, decide which one to use
 R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_align) {
+	if (load_align == 0) {
+		load_align = 1;
+	}
 	RIOMap* map;
 	SdbListIter* iter;
 	ut64 next_addr = addr,

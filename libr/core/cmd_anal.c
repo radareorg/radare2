@@ -4874,8 +4874,12 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 			(void)r_io_fd_close (core->io, fd);
 		}
 	}
-	addr = r_config_get_i (core->config, "esil.stack.addr");
 	size = r_config_get_i (core->config, "esil.stack.size");
+	addr = r_config_get_i (core->config, "esil.stack.addr");
+	if (addr == UT64_MAX) {
+		const ut64 align = 0x10000000;
+		addr = r_io_map_next_available (core->io, core->offset, size, align);
+	}
 	patt = r_config_get (core->config, "esil.stack.pattern");
 
 	p = strncpy (nomalloc, input, 255);
