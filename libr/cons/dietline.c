@@ -1739,11 +1739,15 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							}
 							break;
 						default:
+#if __WINDOWS__
+							// ...
+#else
 							{
 								if (I.cb_fkey) {
 									I.cb_fkey (I.user, fkey);
 								}
 							}
+#endif
 							break;
 						}
 						r_cons_set_raw (1);
