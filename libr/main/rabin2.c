@@ -471,6 +471,48 @@ static int rabin_show_srcline(RBin *bin, ut64 at) {
 	return false;
 }
 
+/* Map Sections to Segments https://github.com/radareorg/radare2/issues/14647 */
+static int rabin_map_sections_to_segments(RBin *bin){
+	RListIter *iter;
+	RBinSection *section = NULL, *segment = NULL;
+	RList *sections = r_list_new();
+	RList *segments = r_list_new();
+	RList *tmp = r_bin_get_sections (bin);
+	printf ("Section to Segment mapping:\n");
+	printf ("Segment\tSections...\n");	
+
+	r_list_foreach(tmp, iter, section) {
+		if (section->is_segment) {
+			r_list_append (segments, section);
+		} else {
+			r_list_append (sections, section);
+		}
+	}
+
+	segment = r_list_pop_head (segments);
+	RInterval segment_itv = (RInterval){segment->vaddr, segment->size};
+	printf ("%s\t", segment->name);
+
+	r_list_foreach (sections, iter, section) {
+		
+		if (r_itv_contain (segment_itv, section->vaddr)) {
+			printf ("%s ", section->name);
+		} else {
+			segment = r_list_pop_head (segments);
+			segment_itv = (RInterval){segment->vaddr, segment->size};
+			printf ("\n");
+			printf ("%s\t", segment->name);
+		}
+	}
+	printf ("\n");
+	/* print out left-over segments that contains no sections */
+	while (r_list_length(segments) > 0) {
+		segment = r_list_pop_head (segments);
+		printf ("%s\t\n", segment->name);
+	}
+	printf ("\n");
+	return true;
+}
 /* bin callback */
 static int __lib_bin_cb(RLibPlugin *pl, void *user, void *data) {
 	struct r_bin_plugin_t *hand = (struct r_bin_plugin_t *)data;
@@ -559,6 +601,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 	RCoreBinFilter filter;
 	int xtr_idx = 0; // load all files if extraction is necessary.
 	int rawstr = 0;
+	int sss = 0;
 	int fd = -1;
 	RCore core = {0};
 	RLib *l = NULL;
@@ -704,8 +747,10 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			if (is_active (R_BIN_REQ_SECTIONS)) {
 				action &= ~R_BIN_REQ_SECTIONS;
 				action |= R_BIN_REQ_SEGMENTS;
+				sss += 1;
 			} else {
 				set_action (R_BIN_REQ_SECTIONS);
+				sss += 1;
 			}
 			break;
 		case 'z':
@@ -1163,6 +1208,9 @@ R_API int r_main_rabin2(int argc, char **argv) {
 				"Cannot extract bins from '%s'. No supported "
 				"plugins found!\n", bin->file);
 		}
+	}
+	if (sss == 3) {
+		rabin_map_sections_to_segments (bin);
 	}
 	if (op && action & R_BIN_REQ_OPERATION) {
 		rabin_do_operation (bin, op, rad, output, file);
