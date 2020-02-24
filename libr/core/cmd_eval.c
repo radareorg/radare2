@@ -356,8 +356,8 @@ static int cmd_eval(void *data, const char *input) {
 			v = strchr (k, '=');
 			if (v) {
 				*v++ = 0;
-				r_str_trim_head_tail (k);
-				r_str_trim_head_tail (v);
+				r_str_trim (k);
+				r_str_trim (v);
 				r_sys_setenv (k, v);
 			}
 			free (k);

@@ -42,9 +42,9 @@ int main(int argc, char *argv[]) {
 	char tail[] = "a ";
 	char head_tail[] = " a ";
 
-	check ("a", r_str_trim_head(head), "trim head \" a\"");
-	check ("a", r_str_trim_tail(tail), "trim tail \"a \"");
-	check ("a", r_str_trim_head_tail(head_tail), "trim head tail \" a \"");
+	check ("a", r_str_trim_head (head), "trim head \" a\"");
+	check ("a", r_str_trim_tail (tail), "trim tail \"a \"");
+	check ("a", r_str_trim (head_tail), "trim head tail \" a \"");
 
 	char *crop =
 		"This is the first line\n"

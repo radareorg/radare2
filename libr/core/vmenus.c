@@ -3562,7 +3562,7 @@ static void handleHints(RCore *core) {
 		case 'b':
 			{
 				char *arg = ch + 1;
-				r_str_trim_head_tail (arg);
+				r_str_trim (arg);
 				int bits = atoi (arg);
 				if (bits == 8 || bits == 16 || bits == 32 || bits == 64) {
 					r_anal_hint_set_bits (core->anal, core->offset, bits);

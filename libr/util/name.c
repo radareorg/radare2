@@ -43,7 +43,7 @@ R_API int r_name_filter(char *name, int maxlen) {
 	if (maxlen < 0) {
 		maxlen = strlen (name);
 	}
-	r_str_trim_head_tail (name);
+	r_str_trim (name);
 	char *oname = name;
 	for (i = 0; *name; name++, i++) {
 		if (maxlen && i > maxlen) {

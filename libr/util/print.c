@@ -1990,7 +1990,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	if (is_jmp) {
 		return strdup (p);
 	}
-	r_str_trim_head_tail (p);
+	r_str_trim (p);
 	if (opcode_sz > COLORIZE_BUFSIZE) {
 		/* return same string in case of error */
 		return strdup (p);

@@ -1012,7 +1012,7 @@ rep:
 			r_flag_foreach_glob (core->flags, glob, find_flag_after_foreach, core->flags);
 		} else if (input[1] == ' ') { // "fl ..."
 			char *p, *arg = strdup (input + 2);
-			r_str_trim_head_tail (arg);
+			r_str_trim (arg);
 			p = strchr (arg, ' ');
 			if (p) {
 				*p++ = 0;

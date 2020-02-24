@@ -80,34 +80,6 @@ R_API char *r_str_trim_dup(const char *str) {
 	return a;
 }
 
-R_API void r_str_trim(char *str) {
-	r_return_if_fail (str);
-#if 1
-	r_str_trim_head (str);
-	r_str_trim_head_tail (str);
-#else
-	char *nonwhite = str;
-	while (*nonwhite && IS_WHITECHAR (*nonwhite)) {
-		nonwhite++;
-	}
-	int len = strlen (str);
-	if (str != nonwhite) {
-		int delta = (size_t)(nonwhite - str);
-		len -= delta;
-		memmove (str, nonwhite, len + 1);
-	}
-	if (len > 0) {
-		char *ptr;
-		for (ptr = str + len - 1; ptr != str; ptr--) {
-			if (!IS_WHITECHAR (*ptr)) {
-				break;
-			}
-			*ptr = '\0';
-		}
-	}
-#endif
-}
-
 // Returns a pointer to the first non-whitespace character of str.
 // TODO: Find a better name: to r_str_trim_head_ro(), r_str_skip_head or so
 R_API const char *r_str_trim_head_ro(const char *str) {
@@ -143,7 +115,7 @@ R_API void r_str_trim_tail(char *str) {
 
 // Removes spaces from the head of the string, and zeros out whitespaces from
 // the tail of the string. The string is changed in place.
-R_API void r_str_trim_head_tail(char *str) {
+R_API void r_str_trim(char *str) {
 	r_str_trim_head (str);
 	r_str_trim_tail (str);
 }

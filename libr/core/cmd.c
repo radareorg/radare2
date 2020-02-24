@@ -2511,7 +2511,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (core->max_cmd_depth - core->cons->context->cmd_depth == 1) {
 		core->prompt_offset = core->offset;
 	}
-	r_str_trim_head_tail (icmd);
+	r_str_trim (icmd);
 	cmd = icmd;
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!*cmd) {
@@ -2692,7 +2692,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 		r_list_free (tmpenvs);
 		return 0;
 	}
-	r_str_trim_head_tail (cmd);
+	r_str_trim (cmd);
 
 	char *$0 = strstr (cmd, "$(");
 	if ($0) {
@@ -2995,7 +2995,7 @@ escape_pipe:
 		int ocolor = r_config_get_i (core->config, "scr.color");
 		*ptr = '\0';
 		str = ptr + 1 + (ptr[1] == '>');
-		r_str_trim_head_tail (str);
+		r_str_trim (str);
 		if (!*str) {
 			eprintf ("No output?\n");
 			goto next2;
@@ -4576,7 +4576,7 @@ static void do_handle_substitution_arg(struct tsr2cmd_state *state, TSNode arg, 
 	free (inn_str);
 
 	// replace the output of the sub command with the current argument
-	r_str_trim_head_tail (o_out);
+	r_str_trim (o_out);
 	char *out = strdup (o_out);
 	R_LOG_DEBUG ("output of inner command: '%s'\n", out);
 	free (o_out);
