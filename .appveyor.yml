@@ -102,7 +102,7 @@ artifacts:
 
 # Upload builds to the CI release at GitHub
 deploy:
-  tag: continuous-Windows
+  tag: Continuous-Windows
   release: continuous-Windows
   description: 'Radare2 Windows release'
   provider: GitHub
