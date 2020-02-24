@@ -2857,8 +2857,14 @@ static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) * bin) {
 	if (bin->cms && bin->spcinfo) {
 		const char *actual_authentihash = PE_(bin_pe_compute_authentihash) (bin);
 		const char *claimed_authentihash = PE_(bin_pe_get_claimed_authentihash) (bin);
-		bin->is_authhash_valid = !strcmp (actual_authentihash, claimed_authentihash);
-		free ((void *)actual_authentihash);
+		if (actual_authentihash && claimed_authentihash) {
+			bin->is_authhash_valid = !strcmp (actual_authentihash, claimed_authentihash);
+		} else {
+			bin->is_authhash_valid = NULL;
+		}
+		if (actual_authentihash) {
+			free ((void *)actual_authentihash);
+		}
 		free ((void *)claimed_authentihash);
 	}
 	bin->is_signed = bin->cms != NULL;
