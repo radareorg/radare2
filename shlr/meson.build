@@ -247,7 +247,7 @@ if get_option('use_treesitter')
     endif
 
     # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/Makefile
-    TS_TIP = 'de8877db35ecaf7f8dd8d751b07ad9d634fb6a91'
+    TS_TIP = 'f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3'
     TS_BRA = 'master'
 
     message('Cloning tree-sitter ' + TS_BRA + ' branch, commit ' + TS_TIP + ', into ' + tree_sitter_path)
@@ -295,7 +295,7 @@ if get_option('use_treesitter')
     endif
 
     # NOTE: when you update SHELLPARSER_TIP or SHELLPARSER_BRA, also update them in shlr/Makefile
-    SHELLPARSER_TIP = '4bc342424550e02879722716a65a4c0d46344845'
+    SHELLPARSER_TIP = '34034bdc8ee34592c507ea6943c66234e48762de'
     SHELLPARSER_BRA = 'master'
     shell_parser_user = 'ret2libc'
 

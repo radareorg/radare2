@@ -12,6 +12,7 @@ static int value = 0;
 #define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
 R_LIB_VERSION (r_cmd);
 
+
 R_API void r_cmd_alias_init(RCmd *cmd) {
 	cmd->aliases.count = 0;
 	cmd->aliases.keys = NULL;
@@ -40,6 +41,9 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 	if (!cmd) {
 		return NULL;
 	}
+#if USE_TREESITTER
+	ht_up_free (cmd->ts_symbols_ht);
+#endif
 	r_cmd_alias_free (cmd);
 	r_cmd_macro_fini (&cmd->macro);
 	// dinitialize plugin commands
