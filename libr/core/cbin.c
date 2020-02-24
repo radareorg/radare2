@@ -2351,37 +2351,50 @@ next:
 
 static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 datalen) {
 	char *chkstr = NULL, *aux, *ret = NULL;
-	const char *ptr = chksum;
-	char tmp[128];
-	int i;
-	do {
-		for (i = 0; *ptr && *ptr != ',' && i < sizeof (tmp) -1; i++) {
-			tmp[i] = *ptr++;
-		}
-		tmp[i] = '\0';
-		r_str_trim_head_tail (tmp);
-		chkstr = r_hash_to_string (NULL, tmp, data, datalen);
+	RList *hashlist = r_str_split_duplist (chksum, ",");
+	RListIter *iter;
+	char *hashname;
+	r_list_foreach (hashlist, iter, hashname) {
+		chkstr = r_hash_to_string (NULL, hashname, data, datalen);
 		if (!chkstr) {
-			if (*ptr && *ptr == ',') {
-				ptr++;
-			}
 			continue;
 		}
-		if (IS_MODE_SIMPLE (mode)) {
-			aux = r_str_newf ("%s ", chkstr);
+		if (IS_MODE_SIMPLE (mode) || IS_MODE_NORMAL (mode)) {
+			aux = r_str_newf (iter->n? "%s " : "%s", chkstr);
 		} else if (IS_MODE_JSON (mode)) {
-			aux = r_str_newf ("\"%s\":\"%s\",", tmp, chkstr);
+			aux = r_str_newf ("\"%s\":\"%s\",", hashname, chkstr);
 		} else {
-			aux = r_str_newf ("%s=%s ", tmp, chkstr);
+			aux = r_str_newf ("%s=%s ", hashname, chkstr);
 		}
 		ret = r_str_append (ret, aux);
 		free (chkstr);
 		free (aux);
-		if (*ptr && *ptr == ',') {
-			ptr++;
-		}
-	} while (*ptr);
+	}
+	r_list_free (hashlist);
+	return ret;
+}
 
+static char *filter_hash_string(const char *chksum) {
+	if (!chksum) {
+		return NULL;
+	}
+
+	char *aux, *ret = NULL;
+	bool isFirst = true;
+	RList *hashlist = r_str_split_duplist (chksum, ",");
+	RListIter *iter;
+	char *hashname;
+	r_list_foreach (hashlist, iter, hashname) {
+		if (r_hash_name_to_bits (hashname)) {
+			aux = r_str_newf (isFirst? "%s" : ", %s", hashname);
+			ret = r_str_append (ret, aux);
+			free (aux);
+			if (isFirst) {
+				isFirst = false;
+			}
+		}
+	}
+	r_list_free (hashlist);
 	return ret;
 }
 
@@ -2519,7 +2532,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 
 	if (chksum && *chksum == '.') {
 		printHere = true;
+		chksum++;
 	}
+	char *hashtypes = filter_hash_string (chksum);
 	if (IS_MODE_EQUAL (mode)) {
 		int cols = r_cons_get_size (NULL);
 		RList *list = r_list_newf ((RListFree) r_listinfo_free);
@@ -2565,8 +2580,13 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		r_flag_space_set (r->flags, print_segments? R_FLAGS_FS_SEGMENTS: R_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_table_set_columnsf (table, "dXxXxss",
-			"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+		if (hashtypes) {
+			r_table_set_columnsf (table, "dXxXxsss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
+		} else {
+			r_table_set_columnsf (table, "dXxXxss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+		}
 		// r_table_align (table, 0, R_TABLE_ALIGN_CENTER);
 		r_table_align (table, 2, R_TABLE_ALIGN_RIGHT);
 		r_table_align (table, 4, R_TABLE_ALIGN_RIGHT);
@@ -2713,14 +2733,14 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
-			if (chksum) {
+			if (hashtypes) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
 					goto out;
 				}
 				ut32 datalen = section->size;
 				r_io_pread_at (r->io, section->paddr, data, datalen);
-				hashstr = build_hash_string (mode, chksum, data, datalen);
+				hashstr = build_hash_string (mode, hashtypes, data, datalen);
 				free (data);
 			}
 			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s%s%s\n",
@@ -2732,15 +2752,15 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		} else if (IS_MODE_JSON (mode)) {
 			char *hashstr = NULL;
-			if (chksum && section->size > 0) {
+			if (hashtypes && section->size > 0) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
 					goto out;
 				}
 				ut32 datalen = section->size;
 				r_io_pread_at (r->io, section->paddr, data, datalen);
-				hashstr = build_hash_string (mode, chksum,
-							data, datalen);
+				hashstr = build_hash_string (mode, hashtypes,
+					data, datalen);
 				free (data);
 			}
 			r_cons_printf ("%s{\"name\":\"%s\","
@@ -2761,7 +2781,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		} else {
 			char *hashstr = NULL, str[128];
-			if (chksum) {
+			if (hashtypes) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
 					goto out;
@@ -2771,7 +2791,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				if (datalen > 0) {
 					r_io_pread_at (r->io, section->paddr, data, datalen);
 				}
-				hashstr = build_hash_string (mode, chksum, data, datalen);
+				hashstr = build_hash_string (mode, hashtypes, data, datalen);
 				free (data);
 			}
 			if (section->arch || section->bits) {
@@ -2785,10 +2805,17 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				: section->name;
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = r_str_sysbits (bits);
-			r_table_add_rowf (table, "dXxXxss", i,
-				(ut64)section->paddr, (ut64)section->size,
-				(ut64)addr, (ut64)section->vsize,
-				perms, name);
+			if (hashtypes) {
+				r_table_add_rowf (table, "dXxXxsss", i,
+					(ut64)section->paddr, (ut64)section->size,
+					(ut64)addr, (ut64)section->vsize,
+					perms, hashstr, name);
+			} else {
+				r_table_add_rowf (table, "dXxXxss", i,
+					(ut64)section->paddr, (ut64)section->size,
+					(ut64)addr, (ut64)section->vsize,
+					perms, name);
+			}
 			free (hashstr);
 		}
 		i++;
@@ -2823,6 +2850,7 @@ out:
 		r_cons_printf ("\n%s\n", s);
 		free (s);
 	}
+	free (hashtypes);
 	r_table_free (table);
 	ht_pp_free (dup_chk_ht);
 	return ret;

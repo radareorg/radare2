@@ -701,7 +701,6 @@ static int cmd_info(void *data, const char *input) {
 					name = "segments";
 					input++;
 					action = R_CORE_BIN_ACC_SEGMENTS;
-					param_shift = 1;
 				}
 				// case for iS=
 				if (input[1] == '=') {
