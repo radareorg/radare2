@@ -139,7 +139,7 @@ script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
   - |
     if [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ]; then
-      $SHELL ./travis-extract-var.sh > ${TRAVIS_BUILD_DIR}/docker-env.sh ; cat ${TRAVIS_BUILD_DIR}/docker-env.sh
+      $SHELL ./travis-extract-var.sh | tee ${TRAVIS_BUILD_DIR}/docker-env.sh
     fi
   - |
     if [ "${FUZZIT}" == "1" ] ; then
