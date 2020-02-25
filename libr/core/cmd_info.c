@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <string.h>
 #include "r_bin.h"
@@ -680,7 +680,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'O': // "iO"
 			switch (input[1]) {
 			case ' ':
-			        r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_ro (input + 1), desc->name);
+			        r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_head_ro (input + 1), desc->name);
 			        break;
 			default:
 			        r_sys_cmdf ("rabin2 -O help");
@@ -930,7 +930,7 @@ static int cmd_info(void *data, const char *input) {
 				bool old_tmpseek = core->tmpseek;
 				input++;
 				if (input[1] == ' ') {
-					const char *argstr = r_str_trim_ro (input + 2);
+					const char *argstr = r_str_trim_head_ro (input + 2);
 					ut64 arg = r_num_get (NULL, argstr);
 					input++;
 					if (arg != 0 || *argstr == '0') {

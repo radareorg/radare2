@@ -557,7 +557,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 
 R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 	Sdb *TDB = anal->sdb_types;
-	expr = r_str_trim_ro (expr);
+	expr = r_str_trim_head_ro (expr);
 	const char *fcnname = NULL;
 	if (!strncmp (expr, "0x", 2)) {
 		ut64 n = r_num_math (NULL, expr);

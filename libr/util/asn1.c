@@ -201,13 +201,13 @@ static void r_asn1_print_padded(RStrBuf *sb, RASN1Object *object, int depth, con
 		break;
 	case TAG_INTEGER:
 	case TAG_REAL:
-		if (*r_str_trim_ro (v)) {
+		if (*r_str_trim_head_ro (v)) {
 			r_strbuf_appendf (sb, "%s%s\n%s%s\n", pad, k, pad, v);
 		}
 		break;
 	case TAG_BITSTRING:
 	default:
-		if (*r_str_trim_ro (v)) {
+		if (*r_str_trim_head_ro (v)) {
 			r_strbuf_appendf (sb, "%s%s\n", pad, v);
 		}
 		break;

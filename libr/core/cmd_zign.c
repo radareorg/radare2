@@ -504,7 +504,7 @@ out_case_manual:
 			int n = 0;
 			bool retval = true;
 
-			args = r_str_new (r_str_trim_ro (input + 1));
+			args = r_str_new (r_str_trim_head_ro (input + 1));
 			n = r_str_word_set0 (args);
 
 			if (n > 2) {
@@ -815,7 +815,9 @@ static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, 
 		char *fcnstr_copy = strdup (fcnstr);
 		fcn = r_anal_get_fcn_in (core->anal, it->addr, 0);
 		if (fcn) {
-			const char *fcn_name = strrchr (r_str_trim_tail (strtok (fcnstr_copy, "(")), ' ');
+			char *arg = strtok (fcnstr_copy, "(");
+			r_str_trim_tail (arg);
+			const char *fcn_name = strrchr (arg, ' ');
 			// __setFunctionName() ; cmd_anal.c:2535 ; Expand into R_API function
 			free (fcn->name);
 			fcn->name = strdup (fcn_name + 1);

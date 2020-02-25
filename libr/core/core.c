@@ -1261,7 +1261,7 @@ static void autocompleteFilename(RLineCompletion *completion, RLineBuffer *buf, 
 	if (!input) {
 		goto out;
 	}
-	const char *tinput = r_str_trim_ro (input);
+	const char *tinput = r_str_trim_head_ro (input);
 
 	autocomplete_process_path (completion, buf->data, tinput);
 
@@ -1422,7 +1422,7 @@ static void autocomplete_sdb (RCore *core, RLineCompletion *completion, const ch
 	char *cur_pos = NULL, *cur_cmd = NULL, *next_cmd = NULL;
 	char *temp_cmd = NULL, *temp_pos = NULL, *key = NULL;
 	if (pipe) {
-		str = r_str_trim_ro (pipe + 1);
+		str = r_str_trim_head_ro (pipe + 1);
 	}
 	lpath = r_str_new (str);
 	p1 = strchr (lpath, '/');
@@ -1555,7 +1555,7 @@ static void autocomplete_file(RLineCompletion *completion, const char *str) {
 	char *pipe = strchr (str, '>');
 
 	if (pipe) {
-		str = r_str_trim_ro (pipe + 1);
+		str = r_str_trim_head_ro (pipe + 1);
 	}
 	if (str && !*str) {
 		autocomplete_process_path (completion, str, "./");
@@ -1570,7 +1570,7 @@ static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const
 	char *pipe = strchr (str, '>');
 	char *path = (core->rfs && *(core->rfs->cwd)) ? *(core->rfs->cwd): "/";
 	if (pipe) {
-		str = r_str_trim_ro (pipe + 1);
+		str = r_str_trim_head_ro (pipe + 1);
 	}
 	if (str && !*str) {
 		autocomplete_ms_path (completion, core, str, path);
@@ -1654,7 +1654,7 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 	char arg[256];
 	arg[0] = 0;
 	while (*p) {
-		const char* e = r_str_trim_wp (p);
+		const char* e = r_str_trim_head_ro (p);
 		if (!e || (e - p) >= 256 || e == p) {
 			return false;
 		}
@@ -1664,7 +1664,7 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 		if (child && child->length < buf->length && p[child->length] == ' ') {
 			// if is spaced then i can provide the
 			// next subtree as suggestion..
-			p = r_str_trim_ro (p + child->length);
+			p = r_str_trim_head_ro (p + child->length);
 			if (child->type == R_CORE_AUTOCMPLT_OPTN) {
 				continue;
 			}
@@ -1758,7 +1758,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		autocompleteFilename (completion, buf, NULL, 1);
 	} else if (ptr && strchr (ptr + 1, ' ') && buf->data + buf->index >= ptr) {
 		int sdelta, n;
-		ptr = (char *)r_str_trim_ro (ptr + 1);
+		ptr = (char *)r_str_trim_head_ro (ptr + 1);
 		n = strlen (ptr);//(buf->data+sdelta);
 		sdelta = (int)(size_t)(ptr - buf->data);
 		r_flag_foreach_prefix (core->flags, buf->data + sdelta, n, add_argv, completion);

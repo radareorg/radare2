@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2019 - pancake, sghctoma, xarkes */
+/* radare - LGPL - Copyright 2013-2020 - pancake, sghctoma, xarkes */
 
 #include <r_cons.h>
 
@@ -544,7 +544,7 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 				keys[i].name, rcolor->r, rcolor->g, rcolor->b, hasnext);
 			break;
 		case 'c': {
-			const char *prefix = r_str_trim_ro (arg);
+			const char *prefix = r_str_trim_head_ro (arg);
 			if (!prefix) {
 				prefix = "";
 			}

@@ -1195,7 +1195,8 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'W': // "afvW"
 	case '*': // "afv*"
 		if (fcn) {
-			char *name = r_str_trim_head (strchr (ostr, ' '));
+			const char *name = strchr (ostr, ' ');
+			name = r_str_trim_head_ro (name);
 			list_vars (core, fcn, str[0], name);
 			return true;
 		} else {
@@ -1217,7 +1218,7 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'n':
 		if (str[1]) { // "afvn"
 			RAnalOp *op = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_BASIC);
-			char *new_name = r_str_trim_head (strchr (ostr, ' '));
+			const char *new_name = r_str_trim_head_ro (strchr (ostr, ' '));
 			if (!new_name) {
 				r_anal_op_free (op);
 				free (ostr);
@@ -2044,7 +2045,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	} else {
 		addr = core->offset;
 	}
-	input = r_str_trim_ro (input);
+	input = r_str_trim_head_ro (input);
 	if (one) {
 		bbaddr = addr;
 	}
@@ -2275,7 +2276,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 
 static bool anal_bb_edge (RCore *core, const char *input) {
 	// "afbe" switch-bb-addr case-bb-addr
-	char *arg = strdup (r_str_trim_ro (input));
+	char *arg = strdup (r_str_trim_head_ro (input));
 	char *sp = strchr (arg, ' ');
 	if (sp) {
 		*sp++ = 0;
@@ -3300,13 +3301,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		default: { // "afs"
 			ut64 addr = core->offset;
 			RAnalFunction *f;
-			const char *arg = r_str_trim_ro (input + 2);
+			const char *arg = r_str_trim_head_ro (input + 2);
 			if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
 				if (arg && *arg) {
 					// parse function signature here
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 					char *fcnstr = r_str_newf ("%s;", arg), *fcnstr_copy = strdup (fcnstr);
-					char *fcnname_aux = r_str_trim_tail (strtok (fcnstr_copy, "("));
+					char *fcnname_aux = strtok (fcnstr_copy, "(");
+					r_str_trim_tail (fcnname_aux);
 					char *fcnname = NULL;
 					int i, last_space = 0;
 					for (i = 0; i < strlen (fcnname_aux); i++) {
@@ -3377,7 +3379,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		} else if (input[2] == '?') {
 			r_core_cmd_help (core, help_msg_afC);
 		} else {
-			afCc (core, r_str_trim_ro (input + 2));
+			afCc (core, r_str_trim_head_ro (input + 2));
 		}
 		break;
 	case 'c':{ // "afc"
@@ -3648,7 +3650,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case ' ': // "afn "
 			{
 			ut64 off = core->offset;
-			char *p, *name = strdup (r_str_trim_ro (input + 3));
+			char *p, *name = strdup (r_str_trim_head_ro (input + 3));
 			if ((p = strchr (name, ' '))) {
 				*p++ = 0;
 				off = r_num_math (core->num, p);
@@ -3796,7 +3798,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 		// first undefine
 		if (input[0] && input[1] == ' ') {
-			name = strdup (r_str_trim_ro (input + 2));
+			name = strdup (r_str_trim_head_ro (input + 2));
 			uaddr = strchr (name, ' ');
 			if (uaddr) {
 				*uaddr++ = 0;
@@ -4157,7 +4159,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		// TODO: set flag values with drc zf=1
 		{
 			RRegItem *r;
-			const char *name = r_str_trim_ro (str + 1);
+			const char *name = r_str_trim_head_ro (str + 1);
 			if (*name && name[1]) {
 				r = r_reg_cond_get (core->dbg->reg, name);
 				if (r) {
@@ -5555,7 +5557,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case 'c': // "aepc"
 			if (input[2] == ' ' || input[2] == '=') {
 				// seek to this address
-				r_core_cmdf (core, "ar PC=%s", r_str_trim_ro (input + 3));
+				r_core_cmdf (core, "ar PC=%s", r_str_trim_head_ro (input + 3));
 				r_core_cmd0 (core, ".ar*");
 			} else {
 				eprintf ("Missing argument\n");
@@ -5646,7 +5648,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				until_addr = r_num_math (core->num, input + 2);
 				break;
 			case 'o': // "aesuo"
-				step_until_optype (core, r_str_trim_ro (input + 3));
+				step_until_optype (core, r_str_trim_head_ro (input + 3));
 				break;
 			default:
 				r_core_cmd0 (core, "ae?~aesu");
@@ -5723,7 +5725,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		if (input[1] == '?') { // "aec?"
 			r_core_cmd_help (core, help_msg_aeC);
 		} else {
-			__core_anal_appcall (core, r_str_trim_ro (input + 1));
+			__core_anal_appcall (core, r_str_trim_head_ro (input + 1));
 		}
 		break;
 	case 'c': // "aec"
@@ -5910,7 +5912,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'f': // "aef"
 		if (input[1] == 'a') { // "aefa"
-			r_anal_aefa (core, r_str_trim_ro (input + 2));
+			r_anal_aefa (core, r_str_trim_head_ro (input + 2));
 		} else { // This should be aefb -> because its emulating all the bbs
 		RListIter *iter;
 		RAnalBlock *bb;
@@ -6084,7 +6086,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		char *hex;
 		int ret, bufsz;
 
-		input = r_str_trim_ro (input + 1);
+		input = r_str_trim_head_ro (input + 1);
 		hex = strdup (input);
 		if (!hex) {
 			break;
@@ -6702,7 +6704,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		break;
 	case ' ':
 		{
-		const char *sn = r_str_trim_ro (input + 1);
+		const char *sn = r_str_trim_head_ro (input + 1);
 		st64 num = r_syscall_get_num (core->anal->syscall, sn);
 		if (num < 1) {
 			num = (int)r_num_get (core->num, sn);
@@ -6934,7 +6936,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		RListIter *iter;
 		RAnalRef *ref;
 		char *cp_inp = strdup (input + 1);
-		char *ptr = r_str_trim_head (cp_inp);
+		char *ptr = cp_inp;
+		r_str_trim_head (ptr);
 		if (!strcmp (ptr, "*")) { // "ax-*"
 			r_anal_xrefs_init (core->anal);
 		} else {
@@ -7004,7 +7007,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		RList *list;
 		RAnalRef *ref;
 		RListIter *iter;
-		char *ptr = strdup (r_str_trim_head ((char *)input + 1));
+		char *ptr = strdup (r_str_trim_head_ro (input + 1));
 		int n = r_str_word_set0 (ptr);
 		ut64 at = core->offset;
 		ut64 addr = UT64_MAX;
@@ -7335,7 +7338,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 's': // "axs"
 	case ' ': // "ax "
 		{
-		char *ptr = strdup (r_str_trim_head ((char *)input + 1));
+		char *ptr = strdup (r_str_trim_head_ro ((char *)input + 1));
 		int n = r_str_word_set0 (ptr);
 		ut64 at = core->offset;
 		ut64 addr = UT64_MAX;
@@ -7391,7 +7394,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		break;
 	case 'o': // "aho"
 		if (input[1] == ' ') {
-			const char *arg = r_str_trim_ro (input + 1);
+			const char *arg = r_str_trim_head_ro (input + 1);
 			int type = r_anal_optype_from_string (arg);
 			r_anal_hint_set_type (core->anal, core->offset, type);
 		} else {
@@ -7539,7 +7542,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 'j': // "ahj"
 	case '\0': // "ah"
 		if (input[0] && input[1] == ' ') {
-			char *ptr = strdup (r_str_trim_ro (input + 2));
+			char *ptr = strdup (r_str_trim_head_ro (input + 2));
 			r_str_word_set0 (ptr);
 			ut64 addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			r_core_anal_hint_print (core->anal, addr, input[0]);
@@ -7562,7 +7565,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			if (input[1] == '*') {
 				r_anal_hint_clear (core->anal);
 			} else {
-				char *ptr = strdup (r_str_trim_ro (input + 1));
+				char *ptr = strdup (r_str_trim_head_ro (input + 1));
 				ut64 addr;
 				int size = 1;
 				int i = r_str_word_set0 (ptr);
@@ -7602,7 +7605,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		case ' ': {
 			// r_anal_hint_set_opcode (core->anal, core->offset, input + 2);
 			const char *off = NULL;
-			char *type = strdup (r_str_trim_ro (input + 2));
+			char *type = strdup (r_str_trim_head_ro (input + 2));
 			char *idx = strchr (type, ' ');
 			if (idx) {
 				*idx++ = 0;
@@ -7988,7 +7991,7 @@ R_API void r_core_agraph_print (RCore *core, int use_utf, const char *input) {
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
-			const char *filename = r_str_trim_ro (input + 1);
+			const char *filename = r_str_trim_head_ro (input + 1);
 			char *cmd = graph_cmd (core, "aggd", filename);
 			if (cmd && *cmd) {
 				if (input[1] == ' ') {
@@ -8382,7 +8385,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	}
 
 	from = to = 0;
-	char *ptr = r_str_trim_head (strdup (input));
+	char *ptr = r_str_trim_dup (input);
 	int n = r_str_word_set0 (ptr);
 	if (!n) {
 		// get boundaries of current memory map, section or io map
@@ -9319,7 +9322,7 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 	case ' ': // "acm"
 	case '-': // "acm-"
 	case 'n': { // "acmn"
-		const char *str = r_str_trim_ro (input + 1);
+		const char *str = r_str_trim_head_ro (input + 1);
 		if (!*str) {
 			eprintf ("No class name given.\n");
 			break;
@@ -9404,7 +9407,7 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 	switch (c) {
 	case ' ': // "acb"
 	case '-': { // "acb-"
-		const char *str = r_str_trim_ro (input + 1);
+		const char *str = r_str_trim_head_ro (input + 1);
 		if (!*str) {
 			eprintf ("No class name given.\n");
 			return;
@@ -9471,7 +9474,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 	switch (c) {
 	case ' ': // "acv"
 	case '-': { // "acv-"
-		const char *str = r_str_trim_ro (input + 1);
+		const char *str = r_str_trim_head_ro (input + 1);
 		if (!*str) {
 			eprintf ("No class name given.\n");
 			return;
@@ -9540,7 +9543,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case ' ': // "ac"
 	case '-': // "ac-"
 	case 'n': { // "acn"
-		const char *str = r_str_trim_ro (input + 1);
+		const char *str = r_str_trim_head_ro (input + 1);
 		if (!*str) {
 			break;
 		}

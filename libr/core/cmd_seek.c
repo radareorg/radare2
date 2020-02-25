@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include "r_types.h"
 #include "r_config.h"
@@ -223,7 +223,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 	RCore *core = (RCore *)data;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
-		arg = r_str_trim_ro (arg + 1);
+		arg = r_str_trim_head_ro (arg + 1);
 	}
 	switch (*input) {
 	case '?': // "sort?"

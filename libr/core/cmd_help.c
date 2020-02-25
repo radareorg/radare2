@@ -511,7 +511,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'B': // "?B"
-		k = r_str_trim_ro (input + 1);
+		k = r_str_trim_head_ro (input + 1);
 		tmp = r_core_get_boundaries_prot (core, -1, k, "search");
 		if (!tmp) {
 			return false;
@@ -928,7 +928,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'E': // "?E" clippy echo
-		r_core_clippy (core, r_str_trim_ro (input + 1));
+		r_core_clippy (core, r_str_trim_head_ro (input + 1));
 		break;
 	case 'e': // "?e" echo
 		switch (input[1]) {
@@ -939,7 +939,7 @@ static int cmd_help(void *data, const char *input) {
 			break;
 		}
 		case 'b': { // "?eb"
-			char *arg = strdup (r_str_trim_ro (input + 2));
+			char *arg = strdup (r_str_trim_head_ro (input + 2));
 			int n = r_str_split (arg, ' ');
 			ut64 *portions = calloc (n, sizeof (ut64));
 			for (i = 0; i < n; i++) {
@@ -969,7 +969,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			break;
 		case 'n': { // "?en" echo -n
-			const char *msg = r_str_trim_ro (input + 2);
+			const char *msg = r_str_trim_head_ro (input + 2);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
@@ -1028,7 +1028,7 @@ static int cmd_help(void *data, const char *input) {
 			  }
 			break;
 		case ' ': {
-			const char *msg = r_str_trim_ro (input+1);
+			const char *msg = r_str_trim_head_ro (input+1);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
