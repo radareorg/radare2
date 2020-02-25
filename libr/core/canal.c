@@ -2838,8 +2838,8 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 		}
 
 	}
-	pj_ki (pj, "minbound", r_anal_function_min_addr (fcn));
-	pj_ki (pj, "maxbound", r_anal_function_max_addr (fcn));
+	pj_kn (pj, "minbound", r_anal_function_min_addr (fcn));
+	pj_kn (pj, "maxbound", r_anal_function_max_addr (fcn));
 
 	int outdegree = 0;
 	refs = r_anal_fcn_get_refs (core->anal, fcn);
