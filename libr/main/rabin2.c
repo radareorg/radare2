@@ -472,7 +472,7 @@ static int rabin_show_srcline(RBin *bin, ut64 at) {
 }
 
 /* Map Sections to Segments https://github.com/radareorg/radare2/issues/14647 */
-static int rabin_map_sections_to_segments(RBin *bin){
+static int __rabin_map_sections_to_segments(RBin *bin) {
 	RListIter *iter;
 	RBinSection *section = NULL, *segment = NULL;
 	RList *sections = r_list_new();
@@ -506,7 +506,7 @@ static int rabin_map_sections_to_segments(RBin *bin){
 	}
 	printf ("\n");
 	/* print out left-over segments that contains no sections */
-	while (r_list_length(segments) > 0) {
+	while (!r_list_empty (segments)) {
 		segment = r_list_pop_head (segments);
 		printf ("%s\t\n", segment->name);
 	}
@@ -1210,7 +1210,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		}
 	}
 	if (sss == 3) {
-		rabin_map_sections_to_segments (bin);
+		__rabin_map_sections_to_segments (bin);
 	}
 	if (op && action & R_BIN_REQ_OPERATION) {
 		rabin_do_operation (bin, op, rad, output, file);
