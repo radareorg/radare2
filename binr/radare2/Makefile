@@ -40,7 +40,13 @@ ios:
 	$(MAKE)
 	$(MAKE) ios-sign
 
-ios-sign iossign sign:
+ifeq ($(shell uname),Darwin)
+sign: macos-sign
+else
+sign: ios-sign
+endif
+
+ios-sign iossign:
 	xcrun --sdk iphoneos codesign \
 		-s- --entitlements radare2_ios.xml radare2
 	# -f -s "$$IOS_CERTID" --entitlements radare2_ios.xml radare2
