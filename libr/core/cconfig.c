@@ -3261,6 +3261,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dir.home", p, &cb_dirhome, "Path for the home directory");
 	free (p);
 	p = r_sys_getenv (R_SYS_TMP);
+	if (!p) {
+		p = strdup ("");
+	}
 	SETCB ("dir.tmp", p, &cb_dirtmp, "Path of the tmp directory");
 	free (p);
 #if __ANDROID__
