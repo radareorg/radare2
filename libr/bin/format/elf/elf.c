@@ -3233,26 +3233,25 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 	HtUP *phd_ordinal_map = ht_up_new0 ();
 	if (phdr_symbols) {
 		RBinElfSymbol *d = ret;
+		while (!d->last) {
+			ht_up_insert (phd_offset_map, d->offset, d);
+			ht_up_insert (phd_ordinal_map, d->ordinal, d);
+			d++;
+		}
 		p = phdr_symbols;
 		while (!p->last) {
-			ht_up_insert (phd_offset_map, p->offset, p);
-			ht_up_insert (phd_ordinal_map, p->ordinal, p);
-			p++;
-		}
-		while (!d->last) {
 			/* find match in phdr */
-			p = ht_up_find (phd_offset_map, d->offset, NULL);
-			if (!p) {
-				p = ht_up_find (phd_ordinal_map, d->ordinal, NULL);
+			d = ht_up_find (phd_offset_map, p->offset, NULL);
+			if (!d) {
+				d = ht_up_find (phd_ordinal_map, p->ordinal, NULL);
 			}
-			if (p) {
+			if (d) {
 				p->in_shdr = true;
 				if (*p->name && *d->name && r_str_startswith (d->name, "$")) {
 					strcpy (d->name, p->name);
 				}
 			}
-
-			d++;
+			p++;
 		}
 		p = phdr_symbols;
 		while (!p->last) {
