@@ -4,7 +4,7 @@
 #include "r_cons.h"
 
 // cant do that without globals because RList doesnt have void *user :(
-static bool Ginc = false;
+static bool Gdec = false;
 static int Gnth = 0;
 static RListComparator Gcmp = NULL;
 
@@ -552,20 +552,22 @@ static int cmp(const void *_a, const void *_b) {
 	const char *wa = r_list_get_n (a->items, Gnth);
 	const char *wb = r_list_get_n (b->items, Gnth);
 	int res = Gcmp (wa, wb);
-	if (Ginc) {
+	if (Gdec) {
 		res = -res;
 	}
 	return res;
 }
 
-R_API void r_table_sort(RTable *t, int nth, bool inc) {
+R_API void r_table_sort(RTable *t, int nth, bool dec) {
 	RTableColumn *col = r_list_get_n (t->cols, nth);
 	if (col) {
-		Ginc = inc;
+		Gdec = dec;
 		Gnth = nth;
-		Gcmp = col->type->cmp;
-		r_list_sort (t->rows, cmp);
-		Gnth = Ginc = 0;
+		if (col->type && col->type->cmp) {
+			Gcmp = col->type->cmp;
+			r_list_sort (t->rows, cmp);
+		}
+		Gnth = Gdec = 0;
 		Gcmp = NULL;
 	}
 }
@@ -576,20 +578,20 @@ static int cmplen(const void *_a, const void *_b) {
 	const char *wa = r_list_get_n (a->items, Gnth);
 	const char *wb = r_list_get_n (b->items, Gnth);
 	int res = strlen (wa) - strlen (wb);
-	if (Ginc) {
+	if (Gdec) {
 		res = -res;
 	}
 	return res;
 }
 
-R_API void r_table_sortlen(RTable *t, int nth, bool inc) {
+R_API void r_table_sortlen(RTable *t, int nth, bool dec) {
 	RTableColumn *col = r_list_get_n (t->cols, nth);
 	if (col) {
-		Ginc = inc;
+		Gdec = dec;
 		Gnth = nth;
 		Gcmp = cmplen;
 		r_list_sort (t->rows, Gcmp);
-		Gnth = Ginc = 0;
+		Gnth = Gdec = 0;
 		Gcmp = NULL;
 	}
 }
