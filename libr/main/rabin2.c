@@ -471,15 +471,18 @@ static int rabin_show_srcline(RBin *bin, ut64 at) {
 	return false;
 }
 
+
 /* Map Sections to Segments https://github.com/radareorg/radare2/issues/14647 */
 static int __rabin_map_sections_to_segments(RBin *bin) {
-	RListIter *iter;
+	RListIter *iter, *iter2;
 	RBinSection *section = NULL, *segment = NULL;
 	RList *sections = r_list_new();
 	RList *segments = r_list_new();
 	RList *tmp = r_bin_get_sections (bin);
+
 	printf ("Section to Segment mapping:\n");
-	printf ("Segment\tSections...\n");	
+	printf ("%-20sSections", "Segment");
+	printf("\n");	
 
 	r_list_foreach(tmp, iter, section) {
 		if (section->is_segment) {
@@ -489,26 +492,16 @@ static int __rabin_map_sections_to_segments(RBin *bin) {
 		}
 	}
 
-	segment = r_list_pop_head (segments);
-	RInterval segment_itv = (RInterval){segment->vaddr, segment->size};
-	printf ("%s\t", segment->name);
-
-	r_list_foreach (sections, iter, section) {
-		
-		if (r_itv_contain (segment_itv, section->vaddr)) {
-			printf ("%s ", section->name);
-		} else {
-			segment = r_list_pop_head (segments);
-			segment_itv = (RInterval){segment->vaddr, segment->size};
-			printf ("\n");
-			printf ("%s\t", segment->name);
+	r_list_foreach (segments, iter, segment) {
+		printf("%-20s", segment->name);
+		RInterval segment_itv = (RInterval){segment->vaddr, segment->size};
+		r_list_foreach (sections, iter2, section) {
+			RInterval section_itv = (RInterval){section->vaddr, section->size};
+			if (r_itv_begin (section_itv) >= r_itv_begin (segment_itv) && r_itv_end (section_itv) <= r_itv_end (segment_itv)) {
+				printf ("%s ", section->name);
+			}
 		}
-	}
-	printf ("\n");
-	/* print out left-over segments that contains no sections */
-	while (!r_list_empty (segments)) {
-		segment = r_list_pop_head (segments);
-		printf ("%s\t\n", segment->name);
+		printf ("\n");
 	}
 	printf ("\n");
 	return true;
@@ -747,11 +740,10 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			if (is_active (R_BIN_REQ_SECTIONS)) {
 				action &= ~R_BIN_REQ_SECTIONS;
 				action |= R_BIN_REQ_SEGMENTS;
-				sss += 1;
 			} else {
 				set_action (R_BIN_REQ_SECTIONS);
-				sss += 1;
 			}
+			sss++;
 			break;
 		case 'z':
 			if (is_active (R_BIN_REQ_STRINGS)) {
