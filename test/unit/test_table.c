@@ -1,5 +1,6 @@
 #include <r_util.h>
 #include "minunit.h"
+#define BUF_LENGTH 100
 
 //TODO test r_str_chop_path
 
@@ -56,6 +57,51 @@ bool test_r_table_column_type(void) {
 		"b     98\n"
 		"c     99\n", "not sorted by second column due to undefined type");
 	free (s);
+	r_table_free (t);
+	mu_end;
+}
+
+bool test_r_table_tostring(void) {
+	RTable *t = __table_test_data1 ();
+	char buf[BUF_LENGTH];
+
+	for (int i = 0; i < 4; ++i) {
+		char *s = r_table_tostring (t);
+		snprintf (buf, BUF_LENGTH, "%d-th call to r_table_tostring", i);
+		mu_assert_streq (s,
+			"ascii code\n"
+			"----------\n"
+			"a     97\n"
+			"b     98\n"
+			"c     99\n", buf);
+		free (s);
+	}
+	r_table_free (t);
+	mu_end;
+}
+
+bool test_r_table_sort1(void) {
+	RTable *t = __table_test_data1 ();
+
+	r_table_sort (t, 1, true);
+	char *strd = r_table_tostring (t);
+	mu_assert_streq (strd,
+		"ascii code\n"
+		"----------\n"
+		"c     99\n"
+		"b     98\n"
+		"a     97\n", "sort decreasing second column using number type");
+	free (strd);
+
+	r_table_sort (t, 1, false);
+	char *stri = r_table_tostring (t);
+	mu_assert_streq (stri,
+		"ascii code\n"
+		"----------\n"
+		"a     97\n"
+		"b     98\n"
+		"c     99\n", "sort increasing second column using number type");
+	free (stri);
 	r_table_free (t);
 	mu_end;
 }
@@ -124,10 +170,11 @@ bool test_r_table_columns() {
 #undef CREATE_TABLE
 }
 
-
 bool all_tests() {
 	mu_run_test(test_r_table);
 	mu_run_test(test_r_table_column_type);
+	mu_run_test(test_r_table_tostring);
+	mu_run_test(test_r_table_sort1);
 	mu_run_test(test_r_table_columns);
 	return tests_passed != tests_run;
 }
