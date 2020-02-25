@@ -30,6 +30,36 @@ bool test_r_table(void) {
 	mu_end;
 }
 
+RTable *__table_test_data1() {
+	RTable *t = r_table_new ();
+
+	r_table_add_column (t, r_table_type ("string"), "ascii", 0);
+	r_table_add_column (t, r_table_type ("number"), "code", 0);
+
+	r_table_add_row (t, "a", "97", NULL);
+	r_table_add_row (t, "b", "98", NULL);
+	r_table_add_row (t, "c", "99", NULL);
+
+	return t;
+}
+
+bool test_r_table_column_type(void) {
+	RTable *t = __table_test_data1 ();
+	RTableColumn *c = r_list_get_n (t->cols, 1);
+	c->type = r_table_type ("NUMBER");
+	r_table_sort (t, 1, true);
+	char *s = r_table_tostring (t);
+	mu_assert_streq (s,
+		"ascii code\n"
+		"----------\n"
+		"a     97\n"
+		"b     98\n"
+		"c     99\n", "not sorted by second column due to undefined type");
+	free (s);
+	r_table_free (t);
+	mu_end;
+}
+
 bool test_r_table_columns() {
 	RTable *t = NULL;
 #define CREATE_TABLE \
@@ -97,6 +127,7 @@ bool test_r_table_columns() {
 
 bool all_tests() {
 	mu_run_test(test_r_table);
+	mu_run_test(test_r_table_column_type);
 	mu_run_test(test_r_table_columns);
 	return tests_passed != tests_run;
 }
