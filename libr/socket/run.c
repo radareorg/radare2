@@ -185,8 +185,7 @@ static char *getstr(const char *src) {
 		int msg_len = strlen (msg);
 		if (msg_len > 0) {
 			msg [msg_len - 1] = 0;
-			char *ret = r_sys_cmd_str (msg, NULL, NULL);
-			r_str_trim_tail (ret);
+			char *ret = r_str_trim_tail (r_sys_cmd_str (msg, NULL, NULL));
 			free (msg);
 			return ret;
 		}
@@ -194,15 +193,10 @@ static char *getstr(const char *src) {
 		return strdup ("");
 		}
 	case '!':
-		{
-		char *a = r_sys_cmd_str (src + 1, NULL, NULL);
-		r_str_trim_tail (a);
-		return a;
-		}
+		return r_str_trim_tail (r_sys_cmd_str (src + 1, NULL, NULL));
 	case ':':
 		if (src[1] == '!') {
-			ret = r_sys_cmd_str (src + 1, NULL, NULL);
-			r_str_trim_tail (ret); // why no head :?
+			ret = r_str_trim_tail (r_sys_cmd_str (src + 1, NULL, NULL));
 		} else {
 			ret = strdup (src);
 		}

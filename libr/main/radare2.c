@@ -666,7 +666,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 				}
 				free (msg);
 			} else {
-				eprintf ("Cannot read dbg.profile '%s'\n", dbg_profile);
+				eprintf ("Cannot read dbg.profile\n");
 				pfile = NULL; //strdup ("");
 			}
 		} else {
