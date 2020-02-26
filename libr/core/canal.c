@@ -97,9 +97,21 @@ static char *getFunctionName(RCore *core, ut64 addr) {
 			return res;
 		}
 	}
-	RFlagItem *fi = r_flag_get_at (core->flags, addr, false);
-	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
-		return strdup (fi->name);
+	RListIter *iter;
+	RFlagItem *flag;
+	const RList* flags = r_flag_get_list (core->flags, addr);
+	const char *name = NULL;
+	r_list_foreach (flags, iter, flag) {
+		name = flag->name;
+		if (r_str_startswith (name, "sym.")) {
+			break;
+		}
+	}
+	if (name) {
+		if (r_config_get_i (core->config, "asm.flags.real")) {
+			name += 4;
+		}
+		return strdup (name);
 	}
 	return NULL;
 }
