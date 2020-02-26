@@ -2500,8 +2500,11 @@ static int bin_map_sections_to_segments(RBin *bin) {
 	RList *tmp = r_bin_get_sections (bin);
 
 	printf ("Section to Segment mapping:\n");
-	printf ("%-20sSections", "Segment");
-	printf("\n");	
+	RTable *table = r_table_new();
+	RTableColumnType *typeString = r_table_type ("string");
+
+	r_table_add_column (table, typeString, "Segment", 0);
+	r_table_add_column (table, typeString, "Section", 0);
 
 	r_list_foreach(tmp, iter, section) {
 		if (section->is_segment) {
@@ -2510,18 +2513,20 @@ static int bin_map_sections_to_segments(RBin *bin) {
 			r_list_append (sections, section);
 		}
 	}
-
+	char *tmp2 = NULL;
 	r_list_foreach (segments, iter, segment) {
-		printf("%-20s", segment->name);
 		RInterval segment_itv = (RInterval){segment->vaddr, segment->size};
+		tmp2 = r_str_new ("");
 		r_list_foreach (sections, iter2, section) {
 			RInterval section_itv = (RInterval){section->vaddr, section->size};
 			if (r_itv_begin (section_itv) >= r_itv_begin (segment_itv) && r_itv_end (section_itv) <= r_itv_end (segment_itv)) {
-				printf ("%s ", section->name);
+				tmp2 = r_str_appendf (tmp2, "%s ", section->name);
 			}
 		}
-		printf ("\n");
+		r_table_add_row(table, segment->name, tmp2, 0);
 	}
+
+	printf("%s", r_table_tostring(table));
 	printf ("\n");
 	return true;
 }
