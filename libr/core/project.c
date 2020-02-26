@@ -590,6 +590,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 
 	if (opts & R_CORE_PRJ_FCNS) {
 		r_str_write (fd, "# functions\n");
+		r_str_write (fd, "fs functions\n");
 		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 	}
@@ -663,6 +664,8 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	}
 
 	if (opts & R_CORE_PRJ_FCNS) {
+		r_str_write (fd, "# functions\n");
+		r_str_write (fd, "fs functions\n");
 		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 	}
