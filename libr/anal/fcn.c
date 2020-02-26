@@ -1140,7 +1140,11 @@ repeat:
 				}
 			} else {
 analopfinish:
-				gotoBeach (R_ANAL_RET_NOP);
+				if (op.type == R_ANAL_OP_TYPE_CJMP) {
+					gotoBeach (R_ANAL_RET_NOP);
+				} else {
+					gotoBeach (R_ANAL_RET_END);
+				}
 			}
 			break;
 		/* fallthru */
