@@ -27,7 +27,7 @@ static const char *help_msg_f[] = {
 	"fb"," [addr] [flag*]","move flags matching 'flag' to relative addr",
 	"fc","[?][name] [color]","set color for given flag",
 	"fC"," [name] [cmt]","set comment for given flag",
-	"fd"," addr","return flag+delta",
+	"fd","[?] addr","return flag+delta",
 	"fe-","","resets the enumerator counter",
 	"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
 	"ff"," ([glob])","distance in bytes to reach the next flag (see sn/sp)",
