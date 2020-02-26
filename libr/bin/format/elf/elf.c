@@ -3392,6 +3392,28 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 	return ptr;
 }
 
+static int hashRBinElfSymbol(void * obj) {
+	const RBinElfSymbol *symbol = (const RBinElfSymbol *)obj;
+	int hash = sdb_hash(symbol->name);
+	hash ^= sdb_hash(symbol->type);
+	hash ^= (symbol->offset >> 32);
+	hash ^= (symbol->offset & 0xffffffff);
+
+	return hash;
+}
+
+static int cmp_RBinElfSymbol(const RBinElfSymbol *a, const RBinElfSymbol *b) {
+	int result = 0;
+	if (a->offset != b->offset) {
+		return 1;
+	}
+	result = strcmp(a->name, b->name);
+	if (result != 0) {
+		return result;
+	}
+	return strcmp(a->type, b->type);
+}
+
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
 	ut32 shdr_size;
@@ -3405,7 +3427,16 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	Elf_(Sym) *sym = NULL;
 	ut8 s[sizeof (Elf_(Sym))] = { 0 };
 	char *strtab = NULL;
-	HtPP *symbols_by_name = NULL;
+	HtPP *symbol_map = NULL;
+	HtPPOptions symbol_map_options = {
+		.cmp = (HtPPListComparator)cmp_RBinElfSymbol,
+		.hashfn = hashRBinElfSymbol,
+		.dupkey = NULL,
+		.calcsizeK = NULL,
+		.calcsizeV = NULL,
+		.freefn = NULL,
+		.elem_size = sizeof (HtPPKv),
+	};
 
 	if (!bin || !bin->shdr || !bin->ehdr.e_shnum || bin->ehdr.e_shnum == 0xffff) {
 		return Elf_(get_phdr_symbols) (bin, type);
@@ -3518,10 +3549,10 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			memset (ret + ret_size, 0, nsym * sizeof (RBinElfSymbol));
 			prev_ret_size = ret_size;
 			ret_size += nsym;
-			symbols_by_name = ht_pp_new0 ();
+			symbol_map = ht_pp_new_opt (&symbol_map_options);
 			for (k = 0; k < prev_ret_size; k++) {
 				if (ret[k].name[0]) {
-					ht_pp_insert (symbols_by_name, ret[k].name, ret + k);
+					ht_pp_insert (symbol_map, ret + k, ret + k);
 				}
 			}
 			for (k = 1; k < nsym; k++) {
@@ -3567,19 +3598,15 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					} else if (st_name <= 0 || st_name >= maxsize) {
 						ret[ret_ctr].name[0] = 0;
 					} else {
-						bool found = false;
-						RBinElfSymbol *previous = ht_pp_find (symbols_by_name, &strtab[st_name], NULL);
-						if (previous && previous->offset == ret[ret_ctr].offset &&
-							strcmp (previous->type, type2str (NULL, NULL, &sym[k])) == 0) {
-							found = true;
-						}
+						RBinElfSymbol *previous = NULL;
 
-						if (found) {
+						r_str_ncpy(ret[ret_ctr].name, &strtab[st_name], ELF_STRING_LENGTH);
+						ret[ret_ctr].type = type2str (bin, &ret[ret_ctr], &sym[k]);
+
+						if (ht_pp_find (symbol_map, &ret[ret_ctr], NULL)) {
 							memset (ret + ret_ctr, 0, sizeof (RBinElfSymbol));
 							continue;
 						}
-						const size_t len = __strnlen (strtab + st_name, rest);
-						memcpy (ret[ret_ctr].name, &strtab[st_name], len);
 					}
 				}
 				ret[ret_ctr].ordinal = k;
@@ -3596,8 +3623,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			}
 			R_FREE (strtab);
 			R_FREE (sym);
-			ht_pp_free (symbols_by_name);
-			symbols_by_name = NULL;
+			ht_pp_free (symbol_map);
+			symbol_map = NULL;
 			if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
 				break;
 			}
@@ -3654,7 +3681,7 @@ beach:
 	free (ret);
 	free (sym);
 	free (strtab);
-	ht_pp_free (symbols_by_name);
+	ht_pp_free (symbol_map);
 	return NULL;
 }
 
