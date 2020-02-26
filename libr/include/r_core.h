@@ -717,6 +717,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
 #define R_CORE_BIN_ACC_SOURCE 0x800000
 #define R_CORE_BIN_ACC_HASHES 0x10000000
 #define R_CORE_BIN_ACC_TRYCATCH 0x20000000
+#define R_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000
 #define R_CORE_BIN_ACC_ALL	0x504FFF
 
 #define R_CORE_PRJ_FLAGS	0x0001

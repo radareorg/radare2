@@ -2491,6 +2491,41 @@ struct io_bin_section_info_t {
 	int fd;
 };
 
+/* Map Sections to Segments https://github.com/radareorg/radare2/issues/14647 */
+static int rabin_map_sections_to_segments(RBin *bin) {
+	RListIter *iter, *iter2;
+	RBinSection *section = NULL, *segment = NULL;
+	RList *sections = r_list_new();
+	RList *segments = r_list_new();
+	RList *tmp = r_bin_get_sections (bin);
+
+	printf ("Section to Segment mapping:\n");
+	printf ("%-20sSections", "Segment");
+	printf("\n");	
+
+	r_list_foreach(tmp, iter, section) {
+		if (section->is_segment) {
+			r_list_append (segments, section);
+		} else {
+			r_list_append (sections, section);
+		}
+	}
+
+	r_list_foreach (segments, iter, segment) {
+		printf("%-20s", segment->name);
+		RInterval segment_itv = (RInterval){segment->vaddr, segment->size};
+		r_list_foreach (sections, iter2, section) {
+			RInterval section_itv = (RInterval){section->vaddr, section->size};
+			if (r_itv_begin (section_itv) >= r_itv_begin (segment_itv) && r_itv_end (section_itv) <= r_itv_end (segment_itv)) {
+				printf ("%s ", section->name);
+			}
+		}
+		printf ("\n");
+	}
+	printf ("\n");
+	return true;
+}
+
 static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RBinSection *section;
@@ -3887,6 +3922,9 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	}
 	if ((action & R_CORE_BIN_ACC_SEGMENTS)) {
 		ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, true);
+	}
+	if ((action & R_CORE_BIN_ACC_SECTIONS_MAPPING)) {
+		ret &= rabin_map_sections_to_segments(core->bin);
 	}
 	if (r_config_get_i (core->config, "bin.relocs")) {
 		if ((action & R_CORE_BIN_ACC_RELOCS)) {
