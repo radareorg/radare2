@@ -1,9 +1,51 @@
-NAME=NRO: Open/iI
+NAME=nro detection
 FILE=../bins/nro/appstore.nro
 EXPECT=<<EOF
 1
 EOF
 CMDS=<<EOF
 iI~?switch
+EOF
+RUN
+
+
+NAME=nro sections
+ARGS=-e io.cache=true
+FILE=../bins/nro/appstore.nro
+EXPECT=<<EOF
+[Sections]
+
+nth paddr           size vaddr          vsize perm name
+-------------------------------------------------------
+0   0x00000000      0x80 0x00000000      0x80 -r-- header
+1   0x0021d000       0x0 0x0021d000       0x0 -r-- sig0
+2   0x00000000  0x1b4000 0x00000000  0x1b4000 -r-x text
+3   0x001b4000   0x5a000 0x001b4000   0x5a000 -r-- ro
+4   0x0020e000    0xf000 0x0020e000    0xf000 -rw- data
+
+EOF
+CMDS=<<EOF
+iS
+EOF
+RUN
+
+NAME=nro entry
+ARGS=-e io.cache=true
+FILE=../bins/nro/appstore.nro
+EXPECT='[Entrypoints]
+vaddr=0x00000080 paddr=0x00000080 haddr=-1 type=program
+
+1 entrypoints'
+CMDS=<<EOF
+ie
+EOF
+RUN
+
+NAME=nro data
+ARGS=-e io.cache=true
+FILE=../bins/nro/appstore.nro
+EXPECT='fb031eaa01000094dc2302d1f90300aafa0301aae0100090c11100d00000199121e02191210000cb211c009121f07d92'
+CMDS=<<EOF
+p8 0x30 @ 0x80
 EOF
 RUN
