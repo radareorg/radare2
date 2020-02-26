@@ -73,7 +73,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				if (feof (stdin)) {
 					break;
 				}
-				buf[strlen (buf) - 1] = '\0';
+				buf[sizeof (buf) - 1] = '\0';
 				ptr = buf;
 			}
 			if (!ptr) {
@@ -94,7 +94,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (feof (stdin)) {
 				break;
 			}
-			buf[strlen (buf) - 1] = '\0';
+			buf[sizeof (buf) - 1] = '\0';
 		}
 		char *wave = strchr (buf, '~');
 		if (wave) {

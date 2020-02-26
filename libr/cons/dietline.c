@@ -1270,7 +1270,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (!fgets (I.buffer.data, R_LINE_BUFSIZE - 1, stdin)) {
 			return NULL;
 		}
-		I.buffer.data[strlen (I.buffer.data)] = '\0';
+		I.buffer.data[R_LINE_BUFSIZE - 1] = '\0';
 		return (*I.buffer.data)? I.buffer.data: r_line_nullstr;
 	}
 
