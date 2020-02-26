@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - pancake */
+/* radare - LGPL - Copyright 2019-2020 - pancake */
 
 #include <r_util/r_table.h>
 #include "r_cons.h"
@@ -767,7 +767,7 @@ static bool __table_special(RTable *t, const char *columnName) {
 
 R_API bool r_table_query(RTable *t, const char *q) {
 	r_return_val_if_fail (t, false);
-	q = r_str_trim_ro (q);
+	q = r_str_trim_head_ro (q);
 	// TODO support parenthesis and (or)||
 	// split by "&&" (or comma) -> run .filter on each
 	// addr/gt/200,addr/lt/400,addr/sort/dec,offset/sort/inc

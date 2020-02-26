@@ -151,15 +151,15 @@ R_API char *r_syscmd_ls(const char *input) {
 			eprintf ("Usage: ls ([-e,-l,-j,-q]) ([path]) # long, json, quiet\n");
 		} else if ((!strncmp (input, "-e", 2))) {
 			printfmt = 'e';
-			path = r_str_trim_ro (path + 1);
+			path = r_str_trim_head_ro (path + 1);
 		} else if ((!strncmp (input, "-q", 2))) {
 			printfmt = 'q';
-			path = r_str_trim_ro (path + 1);
+			path = r_str_trim_head_ro (path + 1);
 		} else if ((!strncmp (input, "-l", 2)) || (!strncmp (input, "-j", 2))) {
 			// mode = 'l';
 			if (input[2]) {
 				printfmt = (input[2] == 'j') ? FMT_JSON : FMT_RAW;
-				path = r_str_trim_ro (input + 2);
+				path = r_str_trim_head_ro (input + 2);
 				if (!*path) {
 					path = ".";
 				}
@@ -464,7 +464,7 @@ R_API char *r_syscmd_cat(const char *file) {
 }
 
 R_API char *r_syscmd_mkdir(const char *dir) {
-	const char *suffix = r_str_trim_ro (strchr (dir, ' '));
+	const char *suffix = r_str_trim_head_ro (strchr (dir, ' '));
 	if (!suffix || !strncmp (suffix, "-p", 3)) {
 		return r_str_dup (NULL, "Usage: mkdir [-p] [directory]\n");
 	}

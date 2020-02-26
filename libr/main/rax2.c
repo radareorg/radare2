@@ -9,6 +9,9 @@
 static int rax(RNum *num, char *str, int len, int last, ut64 *flags);
 
 static int use_stdin(RNum *num, ut64 *flags) {
+	if (!flags) {
+		return 0;
+	}
 	char *buf = calloc (1, STDIN_BUFFER_SIZE + 1);
 	int l;
 	if (!buf) {
