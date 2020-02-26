@@ -2492,7 +2492,7 @@ struct io_bin_section_info_t {
 };
 
 /* Map Sections to Segments https://github.com/radareorg/radare2/issues/14647 */
-static int rabin_map_sections_to_segments(RBin *bin) {
+static int bin_map_sections_to_segments(RBin *bin) {
 	RListIter *iter, *iter2;
 	RBinSection *section = NULL, *segment = NULL;
 	RList *sections = r_list_new();
@@ -3924,7 +3924,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, true);
 	}
 	if ((action & R_CORE_BIN_ACC_SECTIONS_MAPPING)) {
-		ret &= rabin_map_sections_to_segments(core->bin);
+		ret &= bin_map_sections_to_segments(core->bin);
 	}
 	if (r_config_get_i (core->config, "bin.relocs")) {
 		if ((action & R_CORE_BIN_ACC_RELOCS)) {

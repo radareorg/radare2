@@ -57,6 +57,7 @@ static int rabin_show_help(int v) {
 		" -s              symbols\n"
 		" -S              sections\n"
 		" -SS             segments\n"
+		" -SSS            sections mapping to segments\n"
 		" -t              display file hashes\n"
 		" -T              display file signature\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
@@ -471,41 +472,6 @@ static int rabin_show_srcline(RBin *bin, ut64 at) {
 	return false;
 }
 
-
-// /* Map Sections to Segments https://github.com/radareorg/radare2/issues/14647 */
-// static int __rabin_map_sections_to_segments(RBin *bin) {
-// 	RListIter *iter, *iter2;
-// 	RBinSection *section = NULL, *segment = NULL;
-// 	RList *sections = r_list_new();
-// 	RList *segments = r_list_new();
-// 	RList *tmp = r_bin_get_sections (bin);
-
-// 	printf ("Section to Segment mapping:\n");
-// 	printf ("%-20sSections", "Segment");
-// 	printf("\n");	
-
-// 	r_list_foreach(tmp, iter, section) {
-// 		if (section->is_segment) {
-// 			r_list_append (segments, section);
-// 		} else {
-// 			r_list_append (sections, section);
-// 		}
-// 	}
-
-// 	r_list_foreach (segments, iter, segment) {
-// 		printf("%-20s", segment->name);
-// 		RInterval segment_itv = (RInterval){segment->vaddr, segment->size};
-// 		r_list_foreach (sections, iter2, section) {
-// 			RInterval section_itv = (RInterval){section->vaddr, section->size};
-// 			if (r_itv_begin (section_itv) >= r_itv_begin (segment_itv) && r_itv_end (section_itv) <= r_itv_end (segment_itv)) {
-// 				printf ("%s ", section->name);
-// 			}
-// 		}
-// 		printf ("\n");
-// 	}
-// 	printf ("\n");
-// 	return true;
-// }
 /* bin callback */
 static int __lib_bin_cb(RLibPlugin *pl, void *user, void *data) {
 	struct r_bin_plugin_t *hand = (struct r_bin_plugin_t *)data;
@@ -685,6 +651,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			set_action (R_BIN_REQ_SYMBOLS);
 			set_action (R_BIN_REQ_SECTIONS);
 			set_action (R_BIN_REQ_SEGMENTS);
+			set_action (R_BIN_REQ_SECTIONS_MAPPING);
 			set_action (R_BIN_REQ_STRINGS);
 			set_action (R_BIN_REQ_SIZE);
 			set_action (R_BIN_REQ_INFO);
