@@ -1140,7 +1140,7 @@ repeat:
 				}
 			} else {
 analopfinish:
-				if (op.type == R_ANAL_OP_TYPE_CJMP) {
+				if (op.type == R_ANAL_OP_TYPE_RJMP) {
 					gotoBeach (R_ANAL_RET_NOP);
 				} else {
 					gotoBeach (R_ANAL_RET_END);
