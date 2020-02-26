@@ -116,28 +116,47 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	}
 	if (*p == 0x1b) {
 		p++;
-		if (*p != '[') {
-			p--;
+		if (!*p) {
+			return 0;
 		}
 	}
-	if (!p[0]) {
-		return 0;
+	if (*p == '[') {
+		p++;
+		if (!*p) {
+			return 0;
+		}
 	}
-	switch (p[1]) {
-	case '1': bold = 255; p += 2; break;
+	// here, p should be just after the '['
+	switch (*p) {
+	case '1':
+		bold = 255;
+		if (!p[1] || !p[2]) {
+			return 0;
+		}
+		p += 2;
+		break;
 	case '3': isbg = 0; break;
 	case '4': isbg = 1; break;
 	}
 #define SETRGB(x,y,z) if (r) *r = (x); if (g) *g = (y); if (b) *b = (z)
 	if (bold != 255 && strchr (p, ';')) {
-		if (p[4] == '5')  { // \x1b[%d;5;%dm is 256 colors
+		if (!p[0] || !p[1] || !p[2]) {
+			return 0;
+		}
+		if (p[3] == '5')  { // \x1b[%d;5;%dm is 256 colors
 			int x, y, z;
-			int n = atoi (p + 6);
+			if (!p[3] || !p[4]) {
+				return 0;
+			}
+			int n = atoi (p + 5);
 			__unrgb (n, &x, &y, &z);
 			SETRGB (x, y, z);
 		} else { // 16M colors (truecolor)
 			/* complex rgb */
-			p += 6;
+			if (!p[3] || !p[4]) {
+				return 0;
+			}
+			p += 5;
 			if (r) {
 				*r = atoi (p);
 			}
@@ -162,7 +181,10 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 		if (a) {
 			*a = isbg;
 		}
-		switch (p[2]) {
+		if (!*p) {
+			return 0;
+		}
+		switch (p[1]) {
 		case '0': SETRGB (0, 0, 0); break;
 		case '1': SETRGB (bold, 0, 0); break;
 		case '2': SETRGB (0, bold, 0); break;
