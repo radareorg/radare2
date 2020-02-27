@@ -104,12 +104,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rabin2 -z pe
-FILE=../bins/pe/a.exe
-CMDS=!rabin2 -z ${R2_FILE}|wc -l|awk "{print \$1}"
-EXPECT=<<EOF
-7
+NAME=rabin2 -SSS
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+!rabin2 -SSS ${R2_FILE}|wc -l|awk "{print \$1}"
 EOF
+EXPECT='13'
 RUN
 
 NAME=rabin2 -zz pe
@@ -417,8 +417,7 @@ RUN
 NAME=rabin2 -g
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -g ${R2_FILE}
-EXPECT=<<EOF
-[Sections]
+EXPECT="[Sections]
 
 nth paddr        size vaddr       vsize perm name
 -------------------------------------------------
@@ -625,7 +624,19 @@ Version need section '.gnu.version_r' contains 1 entries:
  Addr: 0x08048250  Offset: 0x00000250  Link to section: 6 (.dynstr)
   0x00000000: Version: 1  File: libc.so.6  Cnt: 1
   0x00000010:   Name: GLIBC_2.0  Flags: none Version: 2
-EOF
+Section to Segment mapping:
+Segment      Section
+--------------------
+PHDR         
+INTERP       .interp 
+LOAD0        .interp .note.ABI_tag .note.gnu.build_id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame 
+LOAD1        .init_array .fini_array .jcr .dynamic .got .got.plt .data .bss 
+DYNAMIC      .dynamic 
+NOTE         .note.ABI_tag .note.gnu.build_id 
+GNU_EH_FRAME .eh_frame_hdr 
+GNU_STACK    
+ehdr         
+"
 RUN
 
 NAME=rabin2 -x pemixed.exe
