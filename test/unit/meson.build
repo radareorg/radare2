@@ -9,6 +9,7 @@ if get_option('build_tests')
     'bin',
     'bitmap',
     'buf',
+    'cons',
     'contrbtree',
     'debruijn',
     'diff',
