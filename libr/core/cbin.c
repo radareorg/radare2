@@ -2516,7 +2516,7 @@ static int bin_map_sections_to_segments (RBin *bin, int mode) {
 		tmp2 = r_str_new ("");
 		r_list_foreach (sections, iter2, section) {
 			RInterval section_itv = (RInterval){section->vaddr, section->size};
-			if (r_itv_begin (section_itv) >= r_itv_begin (segment_itv) && r_itv_end (section_itv) <= r_itv_end (segment_itv) && strlen (section->name) > 0) {
+			if (r_itv_begin (section_itv) >= r_itv_begin (segment_itv) && r_itv_end (section_itv) <= r_itv_end (segment_itv) && section->name[0]) {
 				tmp2 = r_str_appendf (tmp2, "%s ", section->name);
 			}
 		}
