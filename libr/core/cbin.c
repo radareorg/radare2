@@ -2492,7 +2492,7 @@ struct io_bin_section_info_t {
 };
 
 /* Map Sections to Segments https://github.com/radareorg/radare2/issues/14647 */
-static int bin_map_sections_to_segments(RBin *bin) {
+static int bin_map_sections_to_segments (RBin *bin) {
 	RListIter *iter, *iter2;
 	RBinSection *section = NULL, *segment = NULL;
 	RList *sections = r_list_new ();
