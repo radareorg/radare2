@@ -29,7 +29,6 @@ R_API RTableColumnType *r_table_type (const char *name) {
 	return NULL;
 }
 
-// TODO: unused for now, maybe good to call after filter :?
 static void __table_adjust(RTable *t) {
 	RListIter *iter, *iter2;
 	RTableColumn *col;
@@ -379,8 +378,7 @@ R_API char *r_table_tostring(RTable *t) {
 	int maxlen = 0;
 	if (t->showHeader) {
 		r_list_foreach (t->cols, iter, col) {
-			bool nopad = !iter->n;
-			int ll = __strbuf_append_col_aligned (sb, col, col->name, nopad);
+			int ll = __strbuf_append_col_aligned (sb, col, col->name, false);
 			maxlen = R_MAX (maxlen, ll);
 		}
 		int len = r_str_len_utf8_ansi (r_strbuf_get (sb));
@@ -394,10 +392,9 @@ R_API char *r_table_tostring(RTable *t) {
 		char *item;
 		int c = 0;
 		r_list_foreach (row->items, iter2, item) {
-			bool nopad = !iter2->n;
 			RTableColumn *col = r_list_get_n (t->cols, c);
 			if (col) {
-				(void)__strbuf_append_col_aligned (sb, col, item, nopad);
+				(void)__strbuf_append_col_aligned (sb, col, item, false);
 			}
 			c++;
 		}
@@ -414,8 +411,7 @@ R_API char *r_table_tostring(RTable *t) {
 			}
 		}
 		r_list_foreach (t->cols, iter, col) {
-			bool nopad = !iter->n;
-			(void)__strbuf_append_col_aligned (sb, col, sdb_itoa (col->total, tmp, 10), nopad);
+			(void)__strbuf_append_col_aligned (sb, col, sdb_itoa (col->total, tmp, 10), false);
 		}
 	}
 	return r_strbuf_drain (sb);

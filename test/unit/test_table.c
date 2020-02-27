@@ -80,6 +80,24 @@ bool test_r_table_tostring(void) {
 	mu_end;
 }
 
+bool test_r_table_tostring2(void) {
+	RTable *t = __table_test_data1 ();
+	char buf[BUF_LENGTH];
+
+	r_table_add_rowf (t, "sd", "aaaaa", "9797979797");
+	char *s = r_table_tostring (t);
+	mu_assert_streq (s,
+		"ascii code\n"
+		"----------\n"
+		"a     97\n"
+		"b     98\n"
+		"c     99\n", "adjust column width");
+	free (s);
+
+	r_table_free (t);
+	mu_end;
+}
+
 bool test_r_table_sort1(void) {
 	RTable *t = __table_test_data1 ();
 
@@ -174,6 +192,7 @@ bool all_tests() {
 	mu_run_test(test_r_table);
 	mu_run_test(test_r_table_column_type);
 	mu_run_test(test_r_table_tostring);
+	mu_run_test(test_r_table_tostring2);
 	mu_run_test(test_r_table_sort1);
 	mu_run_test(test_r_table_columns);
 	return tests_passed != tests_run;
