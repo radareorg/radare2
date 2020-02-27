@@ -2492,13 +2492,13 @@ struct io_bin_section_info_t {
 };
 
 /* Map Sections to Segments https://github.com/radareorg/radare2/issues/14647 */
-static int bin_map_sections_to_segments (RBin *bin) {
+static int bin_map_sections_to_segments (RBin *bin, int mode) {
 	RListIter *iter, *iter2;
 	RBinSection *section = NULL, *segment = NULL;
 	RList *sections = r_list_new ();
 	RList *segments = r_list_new ();
 	RList *tmp = r_bin_get_sections (bin);
-
+	char *json_output = r_str_new ("");
 	r_cons_printf ("Section to Segment mapping:\n");
 	RTable *table = r_table_new ();
 	RTableColumnType *typeString = r_table_type ("string");
@@ -2522,10 +2522,18 @@ static int bin_map_sections_to_segments (RBin *bin) {
 			}
 		}
 		r_table_add_row (table, segment->name, tmp2, 0);
+		/*output to json*/
+		json_output = r_str_appendf (json_output, "\"%s\": \"%s\",", segment->name, tmp2);
 	}
+	// remove last ,
+	json_output [strlen (json_output) - 1] = 0;
+	json_output = r_str_newf ("{%s}", json_output);
 
-	r_cons_printf ("%s", r_table_tostring (table));
-	r_cons_newline ();
+	if (IS_MODE_JSON (mode)){
+		r_cons_printf ("%s\n", json_output);
+	} else if (IS_MODE_NORMAL (mode)){
+		r_cons_printf ("%s\n", r_table_tostring (table));
+	}
 	return true;
 }
 
@@ -3927,7 +3935,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, true);
 	}
 	if ((action & R_CORE_BIN_ACC_SECTIONS_MAPPING)) {
-		ret &= bin_map_sections_to_segments(core->bin);
+		ret &= bin_map_sections_to_segments(core->bin, mode);
 	}
 	if (r_config_get_i (core->config, "bin.relocs")) {
 		if ((action & R_CORE_BIN_ACC_RELOCS)) {
