@@ -33,11 +33,11 @@ static void queue_case(RAnal *anal, ut64 switch_addr, int offset_sz, ut64 case_a
 // analyze a jmptablle inside a function // maybe rename to r_anal_fcn_jmptbl() ?
 R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr) {
 	const int depth = 50;
-	return try_walkthrough_jmptbl (anal, fcn, depth, jmpaddr, table, table, tablesize, tablesize, default_addr, 0);
+	return try_walkthrough_jmptbl (anal, fcn, depth, jmpaddr, table, table, tablesize, tablesize, default_addr, false);
 }
 
-R_API int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, int jmptbl_size, ut64 default_case, int ret0) {
-	int ret = ret0;
+R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, int jmptbl_size, ut64 default_case, bool ret0) {
+	bool ret = ret0;
 	// jmptbl_size can not always be determined
 	if (jmptbl_size == 0) {
 		jmptbl_size = JMPTBL_MAXSZ;
@@ -46,18 +46,18 @@ R_API int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut6
 		if (anal->verbose) {
 			eprintf ("Warning: Invalid JumpTable location 0x%08"PFMT64x"\n", jmptbl_loc);
 		}
-		return 0;
+		return false;
 	}
 	if (jmptbl_size < 1 || jmptbl_size > ST32_MAX) {
 		if (anal->verbose) {
 			eprintf ("Warning: Invalid JumpTable size at 0x%08"PFMT64x"\n", ip);
 		}
-		return 0;
+		return false;
 	}
 	ut64 jmpptr, offs;
 	ut8 *jmptbl = calloc (jmptbl_size, sz);
 	if (!jmptbl) {
-		return 0;
+		return false;
 	}
 	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
