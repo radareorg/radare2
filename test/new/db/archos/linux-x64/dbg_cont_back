@@ -1,4 +1,4 @@
-NAME='debug continue back from callee'
+NAME=debug continue back from callee
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-d
 CMDS=<<EOF
@@ -16,7 +16,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='debug continue back from caller'
+NAME=debug continue back from caller
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-d
 CMDS=<<EOF
@@ -34,7 +34,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.manycontback'
+NAME=dbg.manycontback
 FILE=../bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d
 CMDS=<<EOF

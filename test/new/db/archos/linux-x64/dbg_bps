@@ -1,4 +1,4 @@
-NAME='dbg.dc+ds.swstep'
+NAME=dbg.dc+ds.swstep
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
@@ -21,7 +21,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dc+ds.swstep2'
+NAME=dbg.dc+ds.swstep2
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
@@ -42,7 +42,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dc+ds.hwstep'
+NAME=dbg.dc+ds.hwstep
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
@@ -65,7 +65,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dc+ds.hwstep2'
+NAME=dbg.dc+ds.hwstep2
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
@@ -86,7 +86,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dcC+ds.swstep1'
+NAME=dbg.dcC+ds.swstep1
 FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
 ARGS=-d
 CMDS=<<EOF
@@ -108,7 +108,7 @@ Loop 1
 EOF
 RUN
 
-NAME='dbg.dcC+ds.swstep2'
+NAME=dbg.dcC+ds.swstep2
 FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
 ARGS=-d
 CMDS=<<EOF
@@ -129,7 +129,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dcC+ds.swstep3'
+NAME=dbg.dcC+ds.swstep3
 FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
 ARGS=-d
 CMDS=<<EOF
@@ -152,7 +152,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dbd+dbe'
+NAME=dbg.dbd+dbe
 FILE=../bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
@@ -178,7 +178,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dc+db'
+NAME=dbg.dc+db
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
@@ -197,7 +197,7 @@ Hello world!
 EOF
 RUN
 
-NAME='valid db'
+NAME=valid db
 FILE=../bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
@@ -210,7 +210,7 @@ valid
 EOF
 RUN
 
-NAME='invalid db'
+NAME=invalid db
 FILE=../bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
@@ -223,7 +223,7 @@ invalid
 EOF
 RUN
 
-NAME='dbg.bp_remove_index'
+NAME=dbg.bp_remove_index
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
@@ -253,7 +253,7 @@ Hello world!
 EOF
 RUN
 
-NAME='dbH'
+NAME=dbH
 FILE=../bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF

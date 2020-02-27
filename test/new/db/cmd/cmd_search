@@ -872,7 +872,7 @@ EOF
 RUN
 
 
-NAME='search escaped string'
+NAME=search escaped string
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 / \x90\x66~[0]

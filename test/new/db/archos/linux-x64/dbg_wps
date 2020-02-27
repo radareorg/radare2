@@ -1,4 +1,4 @@
-NAME='rwatchpoint test'
+NAME=rwatchpoint test
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1

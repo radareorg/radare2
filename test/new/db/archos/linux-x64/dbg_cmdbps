@@ -1,4 +1,4 @@
-NAME='dbg.cmdbps'
+NAME=dbg.cmdbps
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF

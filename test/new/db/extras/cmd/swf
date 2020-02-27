@@ -1,4 +1,4 @@
-NAME='SWF: open'
+NAME=SWF: open
 BROKEN=1
 FILE=../../bins/swf/CurveBall.swf
 CMDS=<<EOF

@@ -1,4 +1,4 @@
-NAME='dbg.trace.loop.swstep'
+NAME=dbg.trace.loop.swstep
 FILE=../bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF

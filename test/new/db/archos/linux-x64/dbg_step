@@ -1,4 +1,4 @@
-NAME='dbg.step'
+NAME=dbg.step
 FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
@@ -17,7 +17,7 @@ nop
 EOF
 RUN
 
-NAME='dbg.symbols'
+NAME=dbg.symbols
 FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
@@ -29,7 +29,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dso over a breakpoint'
+NAME=dso over a breakpoint
 FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
@@ -46,7 +46,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='ds on jmp reg'
+NAME=ds on jmp reg
 FILE=../bins/elf/analysis/x86-jmpeax
 ARGS=-b 32 -a x86 -d
 CMDS=<<EOF
@@ -59,7 +59,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='ds on calls and jumps'
+NAME=ds on calls and jumps
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
@@ -95,7 +95,7 @@ Hello world
 EOF
 RUN
 
-NAME='dso on call 1'
+NAME=dso on call 1
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
@@ -112,7 +112,7 @@ Hello world
 EOF
 RUN
 
-NAME='dso on call 2'
+NAME=dso on call 2
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
@@ -129,7 +129,7 @@ Hello world
 EOF
 RUN
 
-NAME='dso on call 3'
+NAME=dso on call 3
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
@@ -146,7 +146,7 @@ Hello world
 EOF
 RUN
 
-NAME='dso on call 4'
+NAME=dso on call 4
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
@@ -163,7 +163,7 @@ Hello world
 EOF
 RUN
 
-NAME='dbg.dsu'
+NAME=dbg.dsu
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
@@ -176,7 +176,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dsui'
+NAME=dbg.dsui
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
@@ -189,7 +189,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dsei'
+NAME=dbg.dsei
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 BROKEN=1
@@ -205,7 +205,7 @@ Hello world
 EOF
 RUN
 
-NAME='dbg.dss'
+NAME=dbg.dss
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
@@ -218,7 +218,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dcu can reach main'
+NAME=dbg.dcu can reach main
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF

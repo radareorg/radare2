@@ -1,4 +1,4 @@
-NAME='dbg.dcu+step'
+NAME=dbg.dcu+step
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
@@ -15,7 +15,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dcu+step'
+NAME=dbg.dcu+step
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
