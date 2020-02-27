@@ -2499,7 +2499,7 @@ static int bin_map_sections_to_segments (RBin *bin) {
 	RList *segments = r_list_new ();
 	RList *tmp = r_bin_get_sections (bin);
 
-	printf ("Section to Segment mapping:\n");
+	r_cons_printf ("Section to Segment mapping:\n");
 	RTable *table = r_table_new ();
 	RTableColumnType *typeString = r_table_type ("string");
 
