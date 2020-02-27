@@ -51,11 +51,11 @@ bool test_r_table_column_type(void) {
 	r_table_sort (t, 1, true);
 	char *s = r_table_tostring (t);
 	mu_assert_streq (s,
-		"ascii code\n"
-		"----------\n"
-		"a     97\n"
-		"b     98\n"
-		"c     99\n", "not sorted by second column due to undefined type");
+		"ascii code \n"
+		"-----------\n"
+		"a     97   \n"
+		"b     98   \n"
+		"c     99   \n", "not sorted by second column due to undefined type");
 	free (s);
 	r_table_free (t);
 	mu_end;
@@ -69,11 +69,11 @@ bool test_r_table_tostring(void) {
 		char *s = r_table_tostring (t);
 		snprintf (buf, BUF_LENGTH, "%d-th call to r_table_tostring", i);
 		mu_assert_streq (s,
-			"ascii code\n"
-			"----------\n"
-			"a     97\n"
-			"b     98\n"
-			"c     99\n", buf);
+			"ascii code \n"
+			"-----------\n"
+			"a     97   \n"
+			"b     98   \n"
+			"c     99   \n", buf);
 		free (s);
 	}
 	r_table_free (t);
@@ -84,15 +84,28 @@ bool test_r_table_tostring2(void) {
 	RTable *t = __table_test_data1 ();
 	char buf[BUF_LENGTH];
 
-	r_table_add_rowf (t, "sd", "aaaaa", "9797979797");
-	char *s = r_table_tostring (t);
-	mu_assert_streq (s,
-		"ascii code\n"
-		"----------\n"
-		"a     97\n"
-		"b     98\n"
-		"c     99\n", "adjust column width");
-	free (s);
+	r_table_add_rowf (t, "ss", "aaaaa", "9797979797");
+	char *s1 = r_table_tostring (t);
+	mu_assert_streq (s1,
+		"ascii code       \n"
+		"-----------------\n"
+		"a     97         \n"
+		"b     98         \n"
+		"c     99         \n"
+		"aaaaa 9797979797 \n", "adjust last column width");
+	free (s1);
+
+	r_table_add_rowf (t, "ss", "bbbbbbbb", "9898989898");
+	char *s2 = r_table_tostring (t);
+	mu_assert_streq (s2,
+		"ascii    code       \n"
+		"--------------------\n"
+		"a        97         \n"
+		"b        98         \n"
+		"c        99         \n"
+		"aaaaa    9797979797 \n"
+		"bbbbbbbb 9898989898 \n", "adjust first column width");
+	free (s2);
 
 	r_table_free (t);
 	mu_end;
@@ -104,21 +117,21 @@ bool test_r_table_sort1(void) {
 	r_table_sort (t, 1, true);
 	char *strd = r_table_tostring (t);
 	mu_assert_streq (strd,
-		"ascii code\n"
-		"----------\n"
-		"c     99\n"
-		"b     98\n"
-		"a     97\n", "sort decreasing second column using number type");
+		"ascii code \n"
+		"-----------\n"
+		"c     99   \n"
+		"b     98   \n"
+		"a     97   \n", "sort decreasing second column using number type");
 	free (strd);
 
 	r_table_sort (t, 1, false);
 	char *stri = r_table_tostring (t);
 	mu_assert_streq (stri,
-		"ascii code\n"
-		"----------\n"
-		"a     97\n"
-		"b     98\n"
-		"c     99\n", "sort increasing second column using number type");
+		"ascii code \n"
+		"-----------\n"
+		"a     97   \n"
+		"b     98   \n"
+		"c     99   \n", "sort increasing second column using number type");
 	free (stri);
 	r_table_free (t);
 	mu_end;
