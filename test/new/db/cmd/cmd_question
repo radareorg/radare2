@@ -7,7 +7,5 @@ wx 90
 e scr.color=true
 ?e `pi 1`
 EOF
-EXPECT=<<EOF
-nop
-EOF
+EXPECT='nop[49m'
 RUN
