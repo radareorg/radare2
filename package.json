@@ -25,7 +25,4 @@
   "bugs": {
     "url": "https://github.com/radareorg/radare2/issues"
   },
-  "dependencies": {
-    "r2r": "0.0.0-beta.0"
-  }
 }
