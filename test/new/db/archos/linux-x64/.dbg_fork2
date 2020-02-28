@@ -1,4 +1,4 @@
-NAME='dbg.fork.child.bp.swstep'
+NAME=dbg.fork.child.bp.swstep
 FILE=../bins/elf/analysis/x64-fork-test
 ARGS=-d
 CMDS=<<EOF
@@ -25,7 +25,7 @@ main exiting!
 EOF
 RUN
 
-NAME='dbg.fork.child.bp.hwstep'
+NAME=dbg.fork.child.bp.hwstep
 FILE=../bins/elf/analysis/x64-fork-test
 ARGS=-d
 CMDS=<<EOF

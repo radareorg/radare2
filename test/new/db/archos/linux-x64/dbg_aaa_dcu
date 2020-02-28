@@ -1,4 +1,4 @@
-NAME='dbg.aaa'
+NAME=dbg.aaa
 FILE=../bins/elf/true
 ARGS=-dA
 CMDS=<<EOF

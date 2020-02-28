@@ -1,4 +1,4 @@
-NAME='dbg.fds.count'
+NAME=dbg.fds.count
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
@@ -10,7 +10,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.fds.close'
+NAME=dbg.fds.close
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 BROKEN=1
@@ -26,7 +26,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.fds.count'
+NAME=dbg.fds.count
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF

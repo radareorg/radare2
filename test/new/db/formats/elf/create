@@ -1,4 +1,4 @@
-NAME='create elf x86-64'
+NAME=create elf x86-64
 FILE=-
 CMDS=<<EOF
 rm ./tiny64.elf__

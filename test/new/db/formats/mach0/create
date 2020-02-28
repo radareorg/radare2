@@ -1,6 +1,6 @@
 
 # undefined behaviour somehow
-NAME='create mach0 x86-64'
+NAME=create mach0 x86-64
 BROKEN=1 # Sometimes fails with Clang on Linux and Windows
 FILE=-
 CMDS=<<EOF
@@ -14,7 +14,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='create mach0 x86-64 auto-mach064'
+NAME=create mach0 x86-64 auto-mach064
 FILE=-
 CMDS=<<EOF
 rm ./tiny64.mach0__2
@@ -27,7 +27,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='create mach0 x86-32'
+NAME=create mach0 x86-32
 FILE=-
 CMDS=<<EOF
 rm ./tiny32.mach0__

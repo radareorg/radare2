@@ -1,4 +1,4 @@
-NAME='drm xmm registers'
+NAME=drm xmm registers
 FILE=../bins/elf/sse2-add
 ARGS=-d
 CMDS=<<EOF
@@ -38,7 +38,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='drm xmm registers - shorthand commands'
+NAME=drm xmm registers - shorthand commands
 FILE=../bins/elf/sse2-add
 ARGS=-d
 CMDS=<<EOF
@@ -57,7 +57,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='drm xmm registers - explicit packing all regs'
+NAME=drm xmm registers - explicit packing all regs
 FILE=../bins/elf/allxmm
 ARGS=-d
 CMDS=<<EOF
@@ -152,7 +152,7 @@ xmm15 = 0xcd 0xcc 0x80 0x41 0x9a 0x99 0x81 0x41 0x66 0x66 0x82 0x41 0x33 0x33 0x
 EOF
 RUN
 
-NAME='drm set xmm registers'
+NAME=drm set xmm registers
 FILE=../bins/elf/allxmm
 ARGS=-d
 CMDS=<<EOF
@@ -196,7 +196,7 @@ EOF
 RUN
 
 
-NAME='drm xmm registers - double and float print'
+NAME=drm xmm registers - double and float print
 FILE=../bins/elf/allxmm
 ARGS=-d
 CMDS=<<EOF
@@ -241,7 +241,7 @@ EOF
 RUN
 
 
-NAME='drm ymm registers'
+NAME=drm ymm registers
 FILE=../bins/elf/ymm
 ARGS=-d
 CMDS=<<EOF

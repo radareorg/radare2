@@ -78,7 +78,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='?e'
+NAME=?e
 FILE=malloc://1024
 CMDS=<<EOF
 ?e fuck
@@ -91,7 +91,7 @@ EOF
 RUN
 
 
-NAME='?v'
+NAME=?v
 FILE=--
 CMDS=<<EOF
 ?v 1024

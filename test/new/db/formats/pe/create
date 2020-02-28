@@ -1,4 +1,4 @@
-NAME='create pe x86-64'
+NAME=create pe x86-64
 FILE=-
 BROKEN=1
 CMDS=<<EOF
@@ -12,7 +12,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='create pe x86-64 auto-pe64'
+NAME=create pe x86-64 auto-pe64
 FILE=-
 CMDS=<<EOF
 rm ./tiny64.pe__2
@@ -25,7 +25,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='create pe x86-32'
+NAME=create pe x86-32
 FILE=-
 CMDS=<<EOF
 rm ./tiny32.pe__

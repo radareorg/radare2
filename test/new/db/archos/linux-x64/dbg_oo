@@ -1,4 +1,4 @@
-NAME='dbg.oo 10'
+NAME=dbg.oo 10
 FILE=/bin/ls
 ARGS=-d
 BROKEN=1
@@ -12,7 +12,7 @@ dbg:///bin/ls
 EOF
 RUN
 
-NAME='dbg.ood 10'
+NAME=dbg.ood 10
 FILE=/bin/ls
 ARGS=-d
 BROKEN=1
@@ -26,7 +26,7 @@ dbg:///bin/ls
 EOF
 RUN
 
-NAME='oo ; dc'
+NAME=oo ; dc
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF

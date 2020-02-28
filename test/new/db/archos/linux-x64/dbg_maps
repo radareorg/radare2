@@ -1,4 +1,4 @@
-NAME='dbg.maps.count/'
+NAME=dbg.maps.count/
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
@@ -10,7 +10,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.maps.count'
+NAME=dbg.maps.count
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
@@ -22,7 +22,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.maps.count.after.map'
+NAME=dbg.maps.count.after.map
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
@@ -40,7 +40,7 @@ Hello world!
 EOF
 RUN
 
-NAME='dbg.modules.count'
+NAME=dbg.modules.count
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
@@ -51,7 +51,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.curmod.count'
+NAME=dbg.curmod.count
 BROKEN=1
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
@@ -63,7 +63,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='db.maps.symbols.after.map.complete'
+NAME=db.maps.symbols.after.map.complete
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1
@@ -83,7 +83,7 @@ Hello world!
 EOF
 RUN
 
-NAME='dbg.maps.sections.after.map.only_filtered'
+NAME=dbg.maps.sections.after.map.only_filtered
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1
@@ -108,7 +108,7 @@ EOF
 RUN
 
 
-NAME='dbg.maps.sections.after.map.complete'
+NAME=dbg.maps.sections.after.map.complete
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1
@@ -140,7 +140,7 @@ Hello world!
 EOF
 RUN
 
-NAME='db.maps.sections.are.singletons'
+NAME=db.maps.sections.are.singletons
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1
@@ -168,7 +168,7 @@ Hello world!
 EOF
 RUN
 
-NAME='db.maps.current.section.after.dmS'
+NAME=db.maps.current.section.after.dmS
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1
