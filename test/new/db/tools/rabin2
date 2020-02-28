@@ -112,6 +112,14 @@ EOF
 EXPECT='13'
 RUN
 
+NAME=rabin2 -z pe
+FILE=../bins/pe/a.exe
+CMDS=!rabin2 -z ${R2_FILE}|wc -l|awk "{print \$1}"
+EXPECT=<<EOF
+7
+EOF
+RUN
+
 NAME=rabin2 -zz pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zz ${R2_FILE} | grep "Password:"
