@@ -425,7 +425,8 @@ RUN
 NAME=rabin2 -g
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -g ${R2_FILE}
-EXPECT="[Sections]
+EXPECT=<<EOF
+[Sections]
 
 nth paddr        size vaddr       vsize perm name
 -------------------------------------------------
