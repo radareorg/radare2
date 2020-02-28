@@ -1989,7 +1989,7 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 		}
 		r_list_append (list, r->name);
 	}
-	
+
 	RList *sorted = r_list_newf (free);
 	ht_up_foreach (db, regcb, sorted);
 	ut64 *addr;
@@ -2015,7 +2015,7 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 			if (rrstr && *rrstr && strchr (rrstr, 'R')) {
 				r_cons_printf ("    ;%s"Color_RESET, rrstr);
 			}
-			r_cons_newline ();	
+			r_cons_newline ();
 		}
 	}
 	r_list_free (sorted);
@@ -2036,7 +2036,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	RTable *t = r_core_table (core);
 	if (use_colors) {
 #undef ConsP
-#define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
+#define ConsP(x) (core->cons && core->cons->context->pal.x) ? core->cons->context->pal.x
 		color = ConsP(creg): Color_BWHITE;
 	}
 
@@ -2071,11 +2071,8 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			}
 		}
 
-		RStrBuf *sbname = r_strbuf_new (NULL);
-		r_strbuf_appendf (sbname, "%s%s%s", color, r->name, colorend);
-
-		RStrBuf *sbvalue = r_strbuf_new (NULL);
-		r_strbuf_appendf (sbvalue, "%s%X%s", color, value, colorend);
+		char *namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
+		char *valuestr = r_str_newf ("%s%X%s", color, value, colorend);
 
 		char *rrstr = "";
 		char *refs = r_core_anal_hasrefs (core, value, true);
@@ -2083,14 +2080,16 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			rrstr = refs;
 		}
 
-		r_table_add_rowf (t, "ssss", role, r_strbuf_drain (sbname),
-			r_strbuf_drain (sbvalue), rrstr);
+		r_table_add_rowf (t, "ssss", role, namestr, valuestr, rrstr);
+		free (namestr);
+		free (valuestr);
+		free (rrstr);
 	}
 
 	if (mode == 'j') {
-		r_cons_printf ("%s", r_table_tojson (t));
+		r_cons_print (r_table_tojson (t));
 	} else {
-		r_cons_printf ("%s", r_table_tostring (t));
+		r_cons_print (r_table_tostring (t));
 	}
 	r_table_free (t);
 
