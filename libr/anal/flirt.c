@@ -1030,8 +1030,7 @@ static bool read_node_bytes(RFlirtNode *node, RBuffer *b) {
 		return false;
 	}
 	for (i = 0; i < node->length; i++, current_mask_bit >>= 1) {
-		node->variant_bool_array[i] =
-			(node->variant_mask & current_mask_bit)? true: false;
+		node->variant_bool_array[i] = (bool)(node->variant_mask & current_mask_bit);
 		if (node->variant_mask & current_mask_bit) {
 			node->pattern_bytes[i] = 0x00;
 		} else {

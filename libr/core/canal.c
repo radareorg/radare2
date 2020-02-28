@@ -5496,7 +5496,7 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	char *anal_in = strdup (r_config_get (core->config, "anal.in"));
 	r_config_set (core->config, "anal.in", "block");
 	// aaFa = use a2f instead of af+
-	bool simple = (glob && *glob == 'a')? false: true;
+	bool simple = (!glob || *glob != 'a');
 	glob = r_str_trim_ro (glob);
 	char *addr;
 	r_flag_foreach_glob (core->flags, glob, __cb, addrs);

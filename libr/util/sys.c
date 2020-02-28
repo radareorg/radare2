@@ -236,7 +236,7 @@ R_API int r_sys_truncate(const char *file, int sz) {
 	if (r_sandbox_enable (0)) {
 		return false;
 	}
-	return truncate (file, sz)? false: true;
+	return truncate (file, sz) == 0;
 #endif
 }
 

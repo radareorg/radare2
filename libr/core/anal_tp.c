@@ -58,7 +58,7 @@ static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 		return;
 	}
 	bool is_default = (r_str_startswith (v->name, VARPREFIX)
-			|| r_str_startswith (v->name, ARGPREFIX))? true: false;
+			|| r_str_startswith (v->name, ARGPREFIX));
 	if (*name == '*') {
 		name++;
 	}
@@ -82,7 +82,7 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 	if (!*trim) {
 		return;
 	}
-	bool is_ptr = (vname && *vname == '*')? true: false;
+	bool is_ptr = (vname && *vname == '*');
 	if (!strncmp (trim, "int", 3) || (!is_ptr && !strcmp (trim, "void"))) {
 		// default or void type
 		return;
@@ -96,7 +96,7 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 		expand = "unsigned long long";
 	}
 	const char *tmp = strstr (expand, "int");
-	bool is_default = tmp? true: false;
+	bool is_default = tmp != NULL;
 	if (!is_default && strncmp (var->type, "void", 4)) {
 		// return since type is already propagated
 		// except for "void *", since "void *" => "char *" is possible
@@ -381,7 +381,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 			}
 			const char *query = sdb_fmt ("%d.mem.read", j);
 			if (op->type == R_ANAL_OP_TYPE_MOV && sdb_const_get (trace, query, 0)) {
-				memref = (!memref && var && (var->kind != R_ANAL_VAR_KIND_REG))? false: true;
+				memref = ! (!memref && var && (var->kind != R_ANAL_VAR_KIND_REG));
 			}
 			// Match type from function param to instr
 			if (type_pos_hit (anal, trace, in_stack, j, size, place)) {
@@ -675,7 +675,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				if (prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
 					char reg[REGNAME_SIZE] = {0};
 					get_src_regname (core, addr, reg, sizeof (reg));
-					bool match = strstr (prev_dest, reg)? true: false;
+					bool match = strstr (prev_dest, reg) != NULL;
 					if (str_flag && match) {
 						var_retype (anal, var, NULL, "const char *", addr, false, false);
 					}
@@ -709,7 +709,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					var_add_range (anal, var, cond, aop.val);
 				}
 			}
-			prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ)? true: false;
+			prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ);
 			str_flag = false;
 			prop = false;
 			prev_dest = NULL;

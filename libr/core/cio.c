@@ -436,7 +436,7 @@ R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
 			r_core_block_read (core);
 		}
 	}
-	return (ret==-1)? false: true;
+	return ret != -1;
 }
 
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {

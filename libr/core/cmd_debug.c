@@ -1387,7 +1387,7 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 	r_debug_map_sync (core->dbg); // update process memory maps
 	ut64 addr = core->offset;
 	int do_dump = false;
-	int ret = r_list_empty(core->dbg->maps)? false: true;
+	int ret = !r_list_empty (core->dbg->maps);
 	r_list_foreach (core->dbg->maps, iter, map) {
 		do_dump = false;
 		if (perm == -1) {

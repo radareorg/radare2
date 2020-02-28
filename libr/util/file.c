@@ -131,7 +131,7 @@ R_API bool r_file_is_regular(const char *str) {
 	if (!str || !*str || file_stat (str, &buf) == -1) {
 		return false;
 	}
-	return ((S_IFREG & buf.st_mode) == S_IFREG)? true: false;
+	return ((S_IFREG & buf.st_mode) == S_IFREG);
 }
 
 R_API bool r_file_is_directory(const char *str) {
@@ -147,7 +147,7 @@ R_API bool r_file_is_directory(const char *str) {
 		return false;
 	}
 #endif
-	return (S_IFDIR == (S_IFDIR & buf.st_mode))? true: false;
+	return S_IFDIR == (S_IFDIR & buf.st_mode);
 }
 
 R_API bool r_file_fexists(const char *fmt, ...) {
@@ -178,7 +178,7 @@ R_API bool r_file_exists(const char *str) {
 	if (file_stat (str, &buf) == -1) {
 		return false;
 	}
-	return S_IFREG == (S_IFREG & buf.st_mode)? true: false;
+	return S_IFREG == (S_IFREG & buf.st_mode);
 }
 
 R_API long r_file_proc_size(FILE *fd) {

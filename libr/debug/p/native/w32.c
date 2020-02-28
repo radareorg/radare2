@@ -904,7 +904,7 @@ static int w32_reg_write(RDebug *dbg, int type, const ut8* buf, int size) {
 			size = sizeof (CONTEXT);
 		}
 		memcpy (&ctx, buf, size);
-		ret = SetThreadContext (thread, &ctx)? true: false;
+		ret = (bool)SetThreadContext (thread, &ctx);
 	//}
 	CloseHandle (thread);
 	return ret;
