@@ -1198,9 +1198,10 @@ R_API void r_cons_strcat(const char *str) {
 R_API void r_cons_newline() {
 	if (!I.null) {
 		if (I.context->color_mode) {
-			r_cons_strcat (Color_RESET_BG);
+			r_cons_strcat (Color_RESET_BG "\n");
+		} else {
+			r_cons_strcat ("\n");
 		}
-		r_cons_strcat ("\n");
 	}
 // This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
 //  and break json output appending extra chars.
