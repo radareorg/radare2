@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2019-2020 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
 
@@ -38,7 +38,6 @@ R_API void r_anal_block_ref(RAnalBlock *bb) {
 	assert (bb->ref > 0); // 0-refd must already be freed.
 	bb->ref++;
 }
-
 
 #define DFLT_NINSTR 3
 
@@ -84,10 +83,7 @@ void __block_free_rb(RBNode *node, void *user) {
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
 	RBNode *node = r_rbtree_find (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
-	if (!node) {
-		return NULL;
-	}
-	return unwrap (node);
+	return node? unwrap (node): NULL;
 }
 
 // This is a special case of what r_interval_node_all_in() does
@@ -283,7 +279,7 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (bbi->fcns, iter, fcn) {
-			r_anal_function_add_block (fcn, bb);
+		r_anal_function_add_block (fcn, bb);
 	}
 
 	// recalculate offset of instructions in both bb and bbi

@@ -130,7 +130,6 @@ R_API RAnal *r_anal_new(void) {
 	return anal;
 }
 
-
 R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);

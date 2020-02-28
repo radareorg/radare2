@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
 #if 0
 * Use RList
 * Support callback for null command (why?)
@@ -259,6 +259,7 @@ static const char *help_msg_r[] = {
 	"r", " size", "expand or truncate file to given size",
 	"r-", "num", "remove num bytes, move following data down",
 	"r+", "num", "insert num bytes, move following data up",
+	"rb", "oldbase @ newbase", "rebase all flags, bin.info, breakpoints and analysis",
 	"rm" ," [file]", "remove file",
 	"rh" ,"", "show size in human format",
 	"r2" ," [file]", "launch r2 (same for rax2, rasm2, ...)",
@@ -1715,6 +1716,26 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 	return true;
 }
 
+static int cmd_rebase(RCore *core, const char *input) {
+	ut64 addr = r_num_math (core->num, input);
+	if (!addr) {
+		r_cons_printf ("Usage: rb oldbase @ newbase\n");
+		return 0;
+	}
+	// old base = addr
+	// new base = core->offset
+	r_debug_bp_rebase (core->dbg, addr, core->offset);
+	r_bin_set_baddr (core->bin, core->offset);
+	r_flag_move (core->flags, addr, core->offset);
+	r_core_cmd0 (core, ".is*");
+	r_core_cmd0 (core, ".iM*");
+	r_core_cmd0 (core, ".ii*");
+	r_core_cmd0 (core, ".iz*");
+	// TODO: r_anal_move :??
+	// TODO: differentiate analysis by map ranges (associated with files or memory maps)
+	return 0;
+}
+
 static int cmd_resize(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 newsize = 0;
@@ -1732,8 +1753,11 @@ static int cmd_resize(void *data, const char *input) {
 			__runMain (core->r_main_radare2, input - 1);
 		}
 		return true;
+	case 'b': // "rb" rebase
+		return cmd_rebase (core, input + 1);
 	case '2': // "r2" // XXX should be handled already in cmd_r2cmd()
 		// TODO: use argv[0] instead of 'radare2'
+		// TODO: { char **argv = { "r2", NULL }; r_main_radare2 (1, argv); }
 		r_sys_cmdf ("radare%s", input);
 		return true;
 	case 'm': // "rm"
