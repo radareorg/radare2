@@ -330,6 +330,24 @@ R_API void r_core_cmd_help(const RCore *core, const char *help[]) {
 	r_cons_cmd_help (help, core->print->flags & R_PRINT_FLAGS_COLOR);
 }
 
+struct duplicate_flag_t {
+	RList *ret;
+	const char *word;
+};
+
+static bool duplicate_flag(RFlagItem *flag, void *u) {
+	struct duplicate_flag_t *user = (struct duplicate_flag_t *)u;
+	/* filter per flag spaces */
+	if (r_str_glob (flag->name, user->word)) {
+		RFlagItem *cloned_item = r_flag_item_clone (flag);
+		if (!cloned_item) {
+			return false;
+		}
+		r_list_append (user->ret, cloned_item);
+	}
+	return true;
+}
+
 static void recursive_help_go(RCore *core, int detail, RCmdDescriptor *desc) {
 	int i;
 	if (desc->help_msg) {
@@ -4040,24 +4058,6 @@ static void foreachOffset(RCore *core, const char *_cmd, const char *each) {
 	free (cmd);
 }
 
-struct duplicate_flag_t {
-	RList *ret;
-	const char *word;
-};
-
-static bool duplicate_flag(RFlagItem *flag, void *u) {
-	struct duplicate_flag_t *user = (struct duplicate_flag_t *)u;
-	/* filter per flag spaces */
-	if (r_str_glob (flag->name, user->word)) {
-		RFlagItem *cloned_item = r_flag_item_clone (flag);
-		if (!cloned_item) {
-			return false;
-		}
-		r_list_append (user->ret, cloned_item);
-	}
-	return true;
-}
-
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	int i, j;
 	char ch;
@@ -5335,6 +5335,376 @@ DEFINE_HANDLE_TS_FCN(tmp_hex_command) {
 	return res;
 }
 
+DEFINE_HANDLE_TS_FCN(iter_flags_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg(state, node, arg, 1);
+	const RSpace *flagspace = r_flag_space_cur (core->flags);
+	RFlagItem *flag;
+	RListIter *iter;
+	bool ret = true;
+	RList *match_flag_items = r_list_newf ((RListFree)r_flag_item_free);
+	if (!match_flag_items) {
+		return true;
+	}
+
+	/* duplicate flags that match word, to be sure the command is going to
+	   be executed on flags values at the moment the command is called
+	   (without side effects) */
+	struct duplicate_flag_t u = {
+		.ret = match_flag_items,
+		.word = arg_str,
+	};
+	r_flag_foreach_space (core->flags, flagspace, duplicate_flag, &u);
+
+	/* for all flags that match */
+	r_list_foreach (match_flag_items, iter, flag) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+
+		char *buf = NULL;
+		const char *tmp = NULL;
+		r_core_seek (core, flag->offset, 1);
+		r_cons_push ();
+		ret &= handle_ts_command(state, command);
+		tmp = r_cons_get_buffer ();
+		buf = tmp? strdup (tmp): NULL;
+		r_cons_pop ();
+		r_cons_strcat (buf);
+		free (buf);
+		r_core_task_yield (&core->tasks);
+	}
+
+	r_list_free (match_flag_items);
+	free (arg_str);
+	return ret;
+}
+
+enum dbt_commands_mode {
+	DBT_COMMANDS_MODE_ADDR,
+	DBT_COMMANDS_MODE_BP,
+	DBT_COMMANDS_MODE_SP,
+};
+
+static bool iter_dbt_commands(struct tsr2cmd_state *state, TSNode node, enum dbt_commands_mode mode) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	RList *list = r_debug_frames (core->dbg, UT64_MAX);
+	ut64 orig_offset = core->offset;
+	RDebugFrame *frame;
+	RListIter *iter;
+	bool res = true;
+
+	r_list_foreach (list, iter, frame) {
+		switch (mode) {
+		case DBT_COMMANDS_MODE_ADDR:
+			r_core_seek (core, frame->addr, 1);
+			break;
+		case DBT_COMMANDS_MODE_SP:
+			r_core_seek (core, frame->sp, 1);
+			break;
+		case DBT_COMMANDS_MODE_BP:
+			r_core_seek (core, frame->bp, 1);
+			break;
+		default:
+			r_warn_if_reached ();
+			return false;
+		}
+		res &= handle_ts_command (state, command);
+		r_cons_newline ();
+	}
+	r_core_seek (core, orig_offset, 1);
+	r_list_free (list);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(iter_dbta_command) {
+	return iter_dbt_commands (state, node, DBT_COMMANDS_MODE_ADDR);
+}
+
+DEFINE_HANDLE_TS_FCN(iter_dbtb_command) {
+	return iter_dbt_commands (state, node, DBT_COMMANDS_MODE_BP);
+}
+
+DEFINE_HANDLE_TS_FCN(iter_dbts_command) {
+	return iter_dbt_commands (state, node, DBT_COMMANDS_MODE_SP);
+}
+
+DEFINE_HANDLE_TS_FCN(iter_file_lines_command) {
+	// TODO: old implementation has some unknown check on '('
+	RCore *core = state->core;
+	bool res = true;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg(state, node, arg, 1);
+	ut64 orig_offset = core->offset;
+	FILE *fd = r_sandbox_fopen (arg_str, "r");
+	if (!fd) {
+		res = false;
+		goto arg_out;
+	}
+
+	core->rcmd->macro.counter = 0;
+	while (!feof (fd)) {
+		char buf[1024];
+		buf[0] = '\0';
+		if (!fgets (buf, sizeof (buf), fd)) {
+			break;
+		}
+		ut64 addr = r_num_math (core->num, buf);
+		r_core_seek (core, addr, 1);
+		res &= handle_ts_command (state, command);
+		core->rcmd->macro.counter++;
+	}
+	r_core_seek (core, orig_offset, 1);
+	fclose (fd);
+
+arg_out:
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(iter_offsets_command) {
+	RCore *core = state->core;
+	bool res = true;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode args = ts_node_named_child (node, 1);
+	ut64 orig_offset = core->offset;
+
+	TSNode new_command;
+	bool ok = substitute_args (state, node, args, &new_command);
+	if (!ok) {
+		R_LOG_ERROR ("Error while substituting arguments\n");
+		return false;
+	}
+	args = ts_node_named_child (new_command, 1);
+	struct parsed_args *a = parse_args (state, args);
+	if (a == NULL) {
+		R_LOG_ERROR ("Cannot parse args\n");
+		return false;
+	}
+	substitute_args_fini (state);
+
+	int i;
+	for (i = 0; i < a->argc; ++i) {
+		ut64 addr = r_num_math (core->num, a->argv[i]);
+		R_LOG_DEBUG ("iter_offsets_command: seek to %" PFMT64x "\n", addr);
+		r_core_seek (core, addr, 1);
+		res &= handle_ts_command (state, command);
+		r_cons_flush ();
+	}
+
+	r_core_seek (core, orig_offset, 1);
+	parsed_args_free (a);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(iter_sdbquery_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, node, arg, 1);
+	ut64 orig_offset = core->offset;
+
+	char *out = sdb_querys (core->sdb, NULL, 0, arg_str);
+	if (!out) {
+		return false;
+	}
+	char *str, *each = out;
+	ut64 addr;
+	bool res = true;
+	do {
+		while (*each == ' ') {
+			each++;
+		}
+		if (!*each) {
+			break;
+		}
+		str = strchr (each, ' ');
+		if (str) {
+			*str = '\0';
+			addr = r_num_math (core->num, each);
+			*str = ' ';
+		} else {
+			addr = r_num_math (core->num, each);
+		}
+		each = str + 1;
+		r_core_seek (core, addr, 1);
+		res &= handle_ts_command (state, command);
+		r_cons_flush ();
+	} while (str != NULL);
+	r_core_seek (core, orig_offset, 1);
+	free (out);
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(iter_threads_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	int pid = core->dbg->pid;
+	if (!core->dbg->h || !core->dbg->h->pids) {
+		return false;
+	}
+
+	bool res = true;
+	RList *list = core->dbg->h->pids (core->dbg, R_MAX (0, pid));
+	RListIter *iter;
+	RDebugPid *p;
+	r_list_foreach (list, iter, p) {
+		r_cons_printf ("# PID %d\n", p->pid);
+		r_debug_select (core->dbg, p->pid, p->pid);
+		res &= handle_ts_command (state, command);
+		r_cons_newline ();
+	}
+	r_list_free (list);
+	r_debug_select (core->dbg, pid, pid);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(iter_bbs_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	RListIter *iter;
+	RAnalBlock *bb;
+	int bs = core->blocksize;
+	ut64 orig_offset = core->offset;
+	bool res = true;
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
+	if (!fcn) {
+		eprintf ("No function at current address\n");
+		return false;
+	}
+	r_list_sort (fcn->bbs, bb_cmp);
+	r_list_foreach (fcn->bbs, iter, bb) {
+		r_core_block_size (core, bb->size);
+		r_core_seek (core, bb->addr, 1);
+		res &= handle_ts_command (state, command);
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+	}
+	r_core_block_size (core, bs);
+	r_core_seek (core, orig_offset, 1);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(iter_instrs_command) {
+	TSNode command = ts_node_named_child (node, 0);
+	RCore *core = state->core;
+	RListIter *iter;
+	RAnalBlock *bb;
+	int i;
+	bool res = true;
+	ut64 orig_offset = core->offset;
+	int bs = core->blocksize;
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
+	if (!fcn) {
+		eprintf ("No function at current address\n");
+		return false;
+	}
+	r_list_sort (fcn->bbs, bb_cmp);
+	r_list_foreach (fcn->bbs, iter, bb) {
+		for (i = 0; i < bb->ninstr; i++) {
+			ut64 addr = bb->addr + r_anal_bb_offset_inst (bb, i);
+			int sz = r_anal_bb_size_i (bb, i);
+			r_core_block_size (core, sz);
+			r_core_seek (core, addr, 1);
+			res &= handle_ts_command (state, command);
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+		}
+	}
+
+	r_core_block_size (core, bs);
+	r_core_seek (core, orig_offset, 1);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(iter_functions_command) {
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = NULL;
+	RCore *core = state->core;
+	bool res = true;
+	ut64 orig_offset = core->offset;
+	int bs = core->blocksize;
+	RAnalFunction *fcn;
+	RListIter *iter;
+
+	if (!ts_node_is_null (arg)) {
+		arg_str = ts_node_handle_arg (state, node, arg, 1);
+	}
+
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		if (arg_str && !strstr (fcn->name, arg_str)) {
+			continue;
+		}
+		char *buf;
+		r_core_block_size (core, r_anal_function_linear_size (fcn));
+		r_core_seek (core, fcn->addr, 1);
+		r_cons_push ();
+		res &= handle_ts_command (state, command);
+		buf = (char *)r_cons_get_buffer ();
+		if (buf) {
+			buf = strdup (buf);
+		}
+		r_cons_pop ();
+		r_cons_strcat (buf);
+		free (buf);
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+	}
+
+	r_core_block_size (core, bs);
+	r_core_seek (core, orig_offset, 1);
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(iter_step_command) {
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode from_n = ts_node_named_child (node, 1);
+	TSNode to_n = ts_node_named_child (node, 2);
+	TSNode step_n = ts_node_named_child (node, 3);
+	RCore *core = state->core;
+	bool res = true;
+	ut64 orig_offset = core->offset;
+	int bs = core->blocksize;
+
+	char *from_str = ts_node_handle_arg (state, node, from_n, 1);
+	char *to_str = ts_node_handle_arg (state, node, to_n, 2);
+	char *step_str = ts_node_handle_arg (state, node, step_n, 3);
+	ut64 from = r_num_math (core->num, from_str);
+	ut64 to = r_num_math (core->num, to_str);
+	ut64 step = r_num_math (core->num, step_str);
+	free (from_str);
+	free (to_str);
+	free (step_str);
+
+	ut64 cur;
+	for (cur = from; cur < to; cur += step) {
+		r_core_seek (core, cur, 1);
+		r_core_block_size (core, step);
+		res &= handle_ts_command (state, command);
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+	}
+
+	r_core_block_size (core, bs);
+	r_core_seek (core, orig_offset, 1);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(iter_interpret_command) {
+	return false;
+}
+
 DEFINE_HANDLE_TS_FCN(last_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 	char *command_str = ts_node_sub_string (command, state->input);
@@ -5472,7 +5842,9 @@ DEFINE_HANDLE_TS_FCN(commands) {
 		TSNode command = ts_node_named_child (node, i);
 		res &= handle_ts_command (state, command);
 		if (!res) {
-			eprintf ("Error while parsing command: %s\n", state->input);
+			char *command_str = ts_node_sub_string (command, state->input);
+			eprintf ("Error while executing command: %s\n", command_str);
+			free (command_str);
 			return false;
 		}
 		if (state->split_lines) {
