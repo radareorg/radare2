@@ -645,7 +645,7 @@ NOTE         .note.ABI_tag .note.gnu.build_id
 GNU_EH_FRAME .eh_frame_hdr 
 GNU_STACK    
 ehdr         
-"
+<<EOF
 RUN
 
 NAME=rabin2 -x pemixed.exe
