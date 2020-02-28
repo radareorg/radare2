@@ -58,7 +58,11 @@ static int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 		(void)vsnprintf (buf, len + 1, fmt, ap2);
 		va_end (ap2);
 	} else {
-		cbuf[len] = 0;
+		int nullbyte = len;
+		if (nullbyte > 0 && nullbyte == sizeof (cbuf)) {
+			nullbyte--;
+		}
+		cbuf[nullbyte] = 0;
 		buf = strdup (cbuf);
 	}
 	if (!buf) {
