@@ -35,14 +35,14 @@ static void __table_adjust(RTable *t) {
 	RTableColumn *col;
 	RTableRow  *row;
 	r_list_foreach (t->cols, iter, col) {
-		int itemLength = r_str_len_utf8 (col->name) + 1;
+		int itemLength = r_str_len_utf8_ansi (col->name) + 1;
 		col->width = itemLength;
 	}
 	r_list_foreach (t->rows, iter, row) {
 		const char *item;
 		int ncol = 0;
 		r_list_foreach (row->items, iter2, item) {
-			int itemLength = r_str_len_utf8 (item) + 1;
+			int itemLength = r_str_len_utf8_ansi (item) + 1;
 			RTableColumn *c = r_list_get_n (t->cols, ncol);
 			if (c) {
 				c->width = R_MAX (c->width, itemLength);
@@ -100,7 +100,7 @@ R_API void r_table_add_column(RTable *t, RTableColumnType *type, const char *nam
 		c->name = strdup (name);
 		c->maxWidth = maxWidth;
 		c->type = type;
-		int itemLength = r_str_len_utf8 (name) + 1;
+		int itemLength = r_str_len_utf8_ansi (name) + 1;
 		c->width = itemLength;
 		r_list_append (t->cols, c);
 		c->total = -1;
@@ -114,7 +114,7 @@ R_API RTableRow *r_table_row_new(RList *items) {
 }
 
 static bool __addRow(RTable *t, RList *items, const char *arg, int col) {
-	int itemLength = r_str_len_utf8 (arg) + 1;
+	int itemLength = r_str_len_utf8_ansi (arg) + 1;
 	RTableColumn *c = r_list_get_n (t->cols, col);
 	if (c) {
 		c->width = R_MAX (c->width, itemLength);
@@ -341,18 +341,30 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 	if (nopad) {
 		r_strbuf_appendf (sb, "%s", str);
 	} else {
+		char *pad = "";
+		int padlen = 0;
+		int len1 = r_str_len_utf8 (str);
+		int len2 = r_str_len_utf8_ansi (str);
+		if (len1 > len2) {
+			if (len2 < col->width) {
+				padlen = col->width - len2;
+			}
+		}
 		switch (col->align) {
 		case R_TABLE_ALIGN_LEFT:
-			r_strbuf_appendf (sb, "%-*s", col->width, str);
+			pad = r_str_repeat (" ", padlen);
+			r_strbuf_appendf (sb, "%-*s%s", col->width, str, pad);
+			free (pad);
 			break;
 		case R_TABLE_ALIGN_RIGHT:
-			r_strbuf_appendf (sb, "%*s ", col->width, str);
+			pad = r_str_repeat (" ", padlen);
+			r_strbuf_appendf (sb, "%s%*s ", pad, col->width, str);
+			free (pad);
 			break;
 		case R_TABLE_ALIGN_CENTER:
 			{
-				int len = r_str_len_utf8 (str);
-				int pad = (col->width - len) / 2;
-				int left = col->width - (pad * 2 + len);
+				int pad = (col->width - len2) / 2;
+				int left = col->width - (pad * 2 + len2);
 				r_strbuf_appendf (sb, "%-*s", pad, " ");
 				r_strbuf_appendf (sb, "%-*s ", pad + left, str);
 				break;
