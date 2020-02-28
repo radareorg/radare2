@@ -755,7 +755,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 			(void*)(size_t)buf, sizeof (R_DEBUG_REG_T));
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
-		return (ret != 0) ? false: true;
+		return ret == 0;
 #else
 		return bsd_reg_write (dbg, type, buf, size);
 #endif

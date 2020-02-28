@@ -230,8 +230,8 @@ R_API int r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 	return true;
 }
 
-R_API int r_core_bin_refresh_strings(RCore *r) {
-	return r_bin_reset_strings (r->bin)? true: false;
+R_API bool r_core_bin_refresh_strings(RCore *r) {
+	return r_bin_reset_strings (r->bin);
 }
 
 static void _print_strings(RCore *r, RList *list, int mode, int va) {

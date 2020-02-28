@@ -3449,7 +3449,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'r': {	// "afcr"
 			int i;
 			RStrBuf *json_buf = r_strbuf_new ("{");
-			bool json = input[3] == 'j'? true: false;
+			bool json = input[3] == 'j';
 
 			char *cmd = r_str_newf ("cc.%s.ret", fcn->cc);
 			const char *regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);

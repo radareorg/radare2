@@ -682,8 +682,8 @@ static int find_edge(const RGraphEdge *a, const RGraphEdge *b) {
 	return a->from == b->to && a->to == b->from? 0: 1;
 }
 
-static int is_reversed(const RAGraph *g, const RGraphEdge *e) {
-	return r_list_find (g->back_edges, e, (RListComparator) find_edge)? true: false;
+static bool is_reversed(const RAGraph *g, const RGraphEdge *e) {
+	return (bool)r_list_find (g->back_edges, e, (RListComparator) find_edge);
 }
 
 /* add dummy nodes when there are edges that span multiple layers */

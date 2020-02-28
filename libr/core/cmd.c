@@ -1020,7 +1020,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 			sdb_query_lines (core->anal->sdb_types, out);
 			free (out);
 		}
-		ret = out? true: false;
+		ret = out != NULL;
 	} else {
 		p = r_lang_get_by_extension (core->lang, file);
 		if (p) {
@@ -3215,7 +3215,7 @@ escape_backtick:
 		ptr = NULL;
 	}
 
-	cmd_tmpseek = core->tmpseek = ptr ? true: false;
+	cmd_tmpseek = core->tmpseek = ptr != NULL;
 	int rc = 0;
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr + 1, '!');
