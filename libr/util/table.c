@@ -358,7 +358,7 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 			break;
 		case R_TABLE_ALIGN_RIGHT:
 			pad = r_str_repeat (" ", padlen);
-			r_strbuf_appendf (sb, "%s%*s ", pad, col->width - 1, str);
+			r_strbuf_appendf (sb, "%s%*s ", pad, col->width, str);
 			free (pad);
 			break;
 		case R_TABLE_ALIGN_CENTER:
