@@ -2023,111 +2023,79 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 }
 
 R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
-	char *use_color, *color = "";
+	char *color = "";
+	char *colorend = "";
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	int delta = 0;
 	ut64 diff, value;
 	int bits = core->assembler->bits;
+	//XXX: support other RRegisterType
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	RListIter *iter;
 	RRegItem *r;
-	PJ *pj;
+	RTable *t = r_core_table (core);
 	if (use_colors) {
 #undef ConsP
 #define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
-		use_color = ConsP(creg): Color_BWHITE;
-	} else {
-		use_color = NULL;
+		color = ConsP(creg): Color_BWHITE;
 	}
-//	r_debug_map_sync (core->dbg);
+
 	if (mode == 'j') {
 		r_config_set_i (core->config, "scr.color", false);
-		pj = pj_new ();
-		pj_a (pj);
 	}
+
+	r_table_set_columnsf (t, "ssss", "role", "reg", "value", "ref");
 	r_list_foreach (list, iter, r) {
-		char *tmp = NULL;
 		if (r->size != bits) {
 			continue;
 		}
+
 		value = r_reg_get_value (core->dbg->reg, r);
-		char *rrstr = r_core_anal_hasrefs (core, value, true);
 		delta = 0;
 		int regSize = r->size;
+		//XXX: support larger regSize
 		if (regSize < 80) {
 			r_reg_arena_swap (core->dbg->reg, false);
 			diff = r_reg_get_value (core->dbg->reg, r);
 			r_reg_arena_swap (core->dbg->reg, false);
 			delta = value-diff;
 		}
-		color = (delta && use_color)? use_color: "";
-		switch (mode) {
-		case 'j':
-				pj_o (pj);
-				pj_ks (pj, "reg", r->name);
-				if (r->flags) {
-					tmp = r_reg_get_bvalue (reg, r);
-					pj_ks (pj, "value", tmp);
-				} else {
-					pj_ks (pj, "value", sdb_fmt ("0x%"PFMT64x, value));
-				}
-			break;
-		default:
-			{
-				const char *arg = "";
-				int i;
-				for (i = 0; i < R_REG_NAME_LAST; i++) {
-					const char *t = r_reg_get_name (reg, i);
-					if (t && !strcmp (t, r->name)) {
-						arg = r_reg_get_role (i);
-					}
-				}
-				r_cons_printf ("%3s", arg);
-			}
-			if (bits == 64) {
-				if (r->flags) {
-					tmp = r_reg_get_bvalue (reg, r);
-					r_cons_printf ("%s%6s %-18s%s", color, r->name, tmp, Color_RESET);
-				} else {
-					r_cons_printf ("%s%6s 0x%-16"PFMT64x"%s", color, r->name, value, Color_RESET);
-				}
-			} else {
-				if (r->flags) {
-					tmp = r_reg_get_bvalue (reg, r);
-					r_cons_printf ("%s%6s %-10s%s", color, r->name, tmp, Color_RESET);
-				} else {
-					r_cons_printf ("%s%6s 0x%-8"PFMT64x"%s", color, r->name, value, Color_RESET);
-				}
-			}
-			break;
-		}
-		if (r->flags) {
-			free (tmp);
-		}
-		if (rrstr) {
-			if (mode == 'j') {
-				pj_ks (pj, "ref", rrstr);
-				pj_end (pj);
-			} else {
-				r_cons_printf (" %s\n", rrstr);
-			}
-			free (rrstr);
-		} else {
-			if (mode == 'j') {
-				pj_ks (pj, "ref", "");
-				pj_end (pj);
-			} else {
-				r_cons_printf ("\n");
+		color = (delta && use_colors)? color: "";
+		colorend = (delta && use_colors)? Color_RESET: "";
+
+		const char *role = "";
+		for (int i = 0; i < R_REG_NAME_LAST; i++) {
+			const char *t = r_reg_get_name (reg, i);
+			if (t && !strcmp (t, r->name)) {
+				role = r_reg_get_role (i);
 			}
 		}
+
+		RStrBuf *sbname = r_strbuf_new (NULL);
+		r_strbuf_appendf (sbname, "%s%s%s", color, r->name, colorend);
+
+		RStrBuf *sbvalue = r_strbuf_new (NULL);
+		r_strbuf_appendf (sbvalue, "%s%X%s", color, value, colorend);
+
+		char *rrstr = "";
+		char *refs = r_core_anal_hasrefs (core, value, true);
+		if (refs) {
+			rrstr = refs;
+		}
+
+		r_table_add_rowf (t, "ssss", role, r_strbuf_drain (sbname),
+			r_strbuf_drain (sbvalue), rrstr);
 	}
+
 	if (mode == 'j') {
-		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
-		if (use_colors) {
-			r_config_set_i (core->config, "scr.color", use_colors);
-		}
+		r_cons_printf ("%s", r_table_tojson (t));
+	} else {
+		r_cons_printf ("%s", r_table_tostring (t));
+	}
+	r_table_free (t);
+
+	if (use_colors) {
+		r_config_set_i (core->config, "scr.color", use_colors);
 	}
 }
 
