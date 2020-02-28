@@ -390,6 +390,9 @@ fn (r2r R2R) wants(s string) bool {
 }
 
 fn (r2r R2R) wants_any_cmd_tests() bool {
+	if r2r.filter_by_files.len > 0 {
+		return true
+	}
 	if r2r.wants('arch') {
 		return true
 	}
@@ -870,7 +873,7 @@ fn (r2r mut R2R) load_cmd_tests(testpath string) {
 		if file.starts_with('.') {
 			continue
 		}
-		f := filepath.join(testpath,file)
+		f := filepath.join(testpath, file)
 		if os.is_dir(f) {
 			r2r.load_cmd_tests(f)
 		}
@@ -936,7 +939,7 @@ fn (r2r mut R2R) load_tests() {
 				r2r.load_cmd_tests('$p/linux-x64/')
 			} $else {
 				$if macos {
-			    p := '${r2r.db_path}/archos'
+					p := '${r2r.db_path}/archos'
 					r2r.load_cmd_tests('$p/darwin-x64/')
 				} $else {
 					eprintln('Warning: archos tests not supported for current platform')

@@ -49,7 +49,7 @@ o bins/mach0/fatmach0-3true
 EOF
 RUN
 
-NAME=o-3
+NAME=o-[0]
 FILE=malloc://1024
 EXPECT=<<EOF
 EOF
