@@ -47,10 +47,8 @@ RUN
 
 NAME=ahi with colors
 FILE=-
-EXPECT=<<EOF
-            [32m[7m0x00000000[0m      [33m48[37m81[37mec[33m48[37m06[32m00[37m.[0m  [33msub[36m rsp[0m,[36m[36m [33m0x648[0m[0m[0m
-            [32m[7m0x00000000[0m      [33m48[37m81[37mec[33m48[37m06[32m00[37m.[0m  [33msub[36m rsp[0m,[36m[36m [33m1608[0m[0m[0m
-EOF
+EXPECT='            [32m[7m0x00000000[0m      [33m48[37m81[37mec[33m48[37m06[32m00[37m.[0m  [33msub[36m rsp[0m,[36m[36m [33m0x648[0m[0m[0m[49m
+            [32m[7m0x00000000[0m      [33m48[37m81[37mec[33m48[37m06[32m00[37m.[0m  [33msub[36m rsp[0m,[36m[36m [33m1608[0m[0m[0m[49m'
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -318,10 +316,8 @@ RUN
 
 NAME=ahi s - pd with colors
 FILE=-
-EXPECT=<<EOF
-            0x00000000      mov dword [esp + 0x68], 'm0[\x1b'
-            [32m[7m0x00000000[0m      [37mmov dword [0m[[36mesp [0m+[36m[36m [33m0x68[0m][36m[0m,[36m[36m [33m'm0[\x1b'[0m[0m
-EOF
+EXPECT="            0x00000000      mov dword [esp + 0x68], 'm0[\x1b'
+            [32m[7m0x00000000[0m      [37mmov dword [0m[[36mesp [0m+[36m[36m [33m0x68[0m][36m[0m,[36m[36m [33m'm0[\x1b'[0m[0m[49m"
 CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false

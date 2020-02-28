@@ -116,8 +116,7 @@ ec
 eco bright
 ec
 EOF
-EXPECT=<<EOF
- [31m##[0m  comment
+EXPECT=' [31m##[0m  comment
  [37m##[0m  usrcmt
  [33m##[0m  args
  [31m##[0m  fname
@@ -186,7 +185,7 @@ EXPECT=<<EOF
  [30m##[0m  gui.border
  [41m##[0m  wordhl
  [44m##[0m  linehl
-
+[49m
  [91m##[0m  comment
  [97m##[0m  usrcmt
  [93m##[0m  args
@@ -255,8 +254,7 @@ EXPECT=<<EOF
  [97m##[0m  gui.alt_background
  [30m##[0m  gui.border
  [101m##[0m  wordhl
- [44m##[0m  linehl
-EOF
+ [44m##[0m  linehl'
 RUN
 
 NAME=ec* and attributes
