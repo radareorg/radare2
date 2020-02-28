@@ -767,7 +767,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, PJ *pj, bool show_f
 				break;
 			case 'H':
 				{
-					ut8 r, g, b, A;
+					ut8 r = 0, g = 0, b = 0, A = 0;
 					const char *esc = strchr (d->str, '\x1b');
 					r_cons_rgb_parse (esc, &r, &g, &b, &A);
 					a->cb_printf ("%s rgb:%02x%02x%02x @ 0x%08"PFMT64x"\n",

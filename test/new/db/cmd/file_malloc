@@ -1,4 +1,4 @@
-NAME='malloc://1'
+NAME=malloc://1
 FILE=malloc://1
 CMDS=<<EOF
 b 0x40

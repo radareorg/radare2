@@ -593,7 +593,8 @@ fn (r2r R2R) git_clone(ghpath, localpath string) {
 }
 
 fn (r2r mut R2R) run_fuz_tests() {
-	fuzz_path := '../bins/fuzzed'
+	home := r2r_home()
+	fuzz_path := '${home}/bins/fuzzed'
 	r2r.wg = sync.new_waitgroup()
 	// open and analyze all the files in bins/fuzzed
 	if !os.is_dir(fuzz_path) {

@@ -97,9 +97,21 @@ static char *getFunctionName(RCore *core, ut64 addr) {
 			return res;
 		}
 	}
-	RFlagItem *fi = r_flag_get_at (core->flags, addr, false);
-	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
-		return strdup (fi->name);
+	RListIter *iter;
+	RFlagItem *flag;
+	const RList* flags = r_flag_get_list (core->flags, addr);
+	const char *name = NULL;
+	r_list_foreach (flags, iter, flag) {
+		name = flag->name;
+		if (r_str_startswith (name, "sym.")) {
+			break;
+		}
+	}
+	if (name) {
+		if (r_config_get_i (core->config, "asm.flags.real")) {
+			name += 4;
+		}
+		return strdup (name);
 	}
 	return NULL;
 }
@@ -2838,8 +2850,8 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 		}
 
 	}
-	pj_ki (pj, "minbound", r_anal_function_min_addr (fcn));
-	pj_ki (pj, "maxbound", r_anal_function_max_addr (fcn));
+	pj_kn (pj, "minbound", r_anal_function_min_addr (fcn));
+	pj_kn (pj, "maxbound", r_anal_function_max_addr (fcn));
 
 	int outdegree = 0;
 	refs = r_anal_fcn_get_refs (core->anal, fcn);

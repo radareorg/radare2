@@ -1,4 +1,4 @@
-NAME='dbg.px0'
+NAME=dbg.px0
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF

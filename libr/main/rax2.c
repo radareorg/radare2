@@ -225,7 +225,6 @@ static int rax(RNum *num, char *str, int len, int last, ut64 *_flags) {
 		if (last) {
 			return !use_stdin (num, _flags);
 		}
-		eprintf ("DONE DONE DONE\n");
 		return true;
 	}
 	*_flags = flags;

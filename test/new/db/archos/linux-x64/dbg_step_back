@@ -1,4 +1,4 @@
-NAME='dbg.stepback'
+NAME=dbg.stepback
 FILE=../bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d
 CMDS=<<EOF
@@ -16,7 +16,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='debug stepback from callee'
+NAME=debug stepback from callee
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-d
 BROKEN=1
@@ -35,7 +35,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='debug stepback from caller'
+NAME=debug stepback from caller
 FILE=../bins/elf/analysis/calls_x64
 ARGS=-d
 BROKEN=1

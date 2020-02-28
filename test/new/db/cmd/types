@@ -1482,6 +1482,23 @@ char type (int32_t a, char **b);
 EOF
 RUN
 
+NAME=afs fcnname with dots
+FILE=../bins/elf/hello_world
+CMDS=<<EOF
+af
+afs
+"afs foo.bar();"
+afs
+"afs char foo.bar(int a, ...);"
+afs
+EOF
+EXPECT=<<EOF
+entry0 (int64_t arg3);
+foo.bar (int64_t arg3);
+foo.bar (int64_t arg3);
+EOF
+RUN
+
 NAME=td crash
 FILE=-
 CMDS=<<EOF

@@ -1,4 +1,4 @@
-NAME='use of dmh, then any command which use grep and index'
+NAME=use of dmh, then any command which use grep and index
 FILE=../bins/elf/simple_malloc_x86_64
 ARGS=-d
 CMDS=<<EOF

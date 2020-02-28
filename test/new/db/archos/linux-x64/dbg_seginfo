@@ -1,4 +1,4 @@
-NAME='Can set db on main'
+NAME=Can set db on main
 FILE=../bins/elf/analysis/hello-objc-linux
 ARGS=-d
 CMDS=<<EOF
@@ -9,7 +9,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='Code seg is sane'
+NAME=Code seg is sane
 FILE=../bins/elf/analysis/hello-objc-linux
 BROKEN=1
 ARGS=-d

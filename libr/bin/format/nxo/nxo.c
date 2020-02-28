@@ -10,17 +10,6 @@
 #include <r_bin.h>
 #include "nxo.h"
 
-ut32 readLE32(RBuffer *buf, int off) {
-	//int left = 0;
-	ut32 num = 0;
-	(void)r_buf_read_at (buf, off, (ut8 *)&num, 4);
-	return num;
-}
-
-ut64 readLE64(RBuffer *buf, int off) {
-	return r_buf_size (buf) >= off + 8? r_buf_read_le64_at (buf, off): 0;
-}
-
 static char *readString(RBuffer *buf, int off) {
 	char symbol[128]; // assume 128 as max symbol name length
 	int left = r_buf_read_at (buf, off, (ut8*)symbol, sizeof (symbol));
@@ -52,11 +41,11 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 	RBinSymbol *sym;
 	RBinImport *imp;
 	for (i = 8; i < 99999; i++) {
-		ut64 addr = readLE64 (buf, symtab + i);
-		ut64 size = readLE64 (buf, symtab + i + 8);
+		ut64 addr = r_buf_read_le64_at (buf, symtab + i);
+		ut64 size = r_buf_read_le64_at (buf, symtab + i + 8);
 		i += 16; // NULL, NULL
-		ut64 name = readLE32 (buf, symtab + i);
-		//ut64 type = readLE32 (buf, symtab + i + 4);
+		ut64 name = r_buf_read_le32_at (buf, symtab + i);
+		//ut64 type = r_buf_read_le32_at (buf, symtab + i + 4);
 		char *symName = readString (buf, strtab + name);
 		if (!symName) {
 			break;
@@ -72,7 +61,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 
 		if (addr == 0) {
 			import ++;
-			ut64 pltSym = readLE64 (buf, relplt + (import * 24));
+			ut64 pltSym = r_buf_read_le64_at (buf, relplt + (import * 24));
 			imp = R_NEW0 (RBinImport);
 			if (!imp) {
 				R_FREE (sym);
@@ -123,18 +112,18 @@ out_walk_symbol:
 }
 
 void parseMod(RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr) {
-	ut32 ptr = readLE32 (buf, mod0);
+	ut32 ptr = r_buf_read_le32_at (buf, mod0);
 	eprintf ("magic %x at 0x%x\n", ptr, mod0);
 	if (ptr == 0x30444f4d) { // MOD0
 		eprintf ("is mode0\n");
 		MODHeader mh = {
-			.magic = readLE32 (buf, mod0),
-			.dynamic = readLE32 (buf, mod0 + 4),
-			.bss_start = readLE32 (buf, mod0 + 8),
-			.bss_end = readLE32 (buf, mod0 + 12),
-			.unwind_start = readLE32 (buf, mod0 + 16),
-			.unwind_end = readLE32 (buf, mod0 + 20),
-			.mod_object = readLE32 (buf, mod0 + 24),
+			.magic = r_buf_read_le32_at (buf, mod0),
+			.dynamic = r_buf_read_le32_at (buf, mod0 + 4),
+			.bss_start = r_buf_read_le32_at (buf, mod0 + 8),
+			.bss_end = r_buf_read_le32_at (buf, mod0 + 12),
+			.unwind_start = r_buf_read_le32_at (buf, mod0 + 16),
+			.unwind_end = r_buf_read_le32_at (buf, mod0 + 20),
+			.mod_object = r_buf_read_le32_at (buf, mod0 + 24),
 		};
 		mh.mod_object += mod0;
 		eprintf ("magic 0x%x\n", mh.magic);
@@ -143,7 +132,7 @@ void parseMod(RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr) {
 		eprintf ("unwind 0x%x 0x%x\n", mh.unwind_start, mh.unwind_end);
 		eprintf ("-------------\n");
 		eprintf ("mod 0x%x\n", mh.mod_object);
-#define MO_(x) readLE64(buf, mh.mod_object + r_offsetof(MODObject, x))
+#define MO_(x) r_buf_read_le64_at(buf, mh.mod_object + r_offsetof(MODObject, x))
 		MODObject mo = {
 			.next = MO_(next),
 			.prev = MO_(prev),
