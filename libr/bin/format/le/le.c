@@ -324,6 +324,7 @@ RList *r_bin_le_get_sections(r_bin_le_obj_t *bin) {
 		}
 		LE_object_entry *entry = &bin->objtbl[i];
 		if  (!entry) {
+			free (sec);
 			return l;
 		}
 		sec->name = r_str_newf ("obj.%d", i + 1);
