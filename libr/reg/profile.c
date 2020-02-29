@@ -31,6 +31,7 @@ static ut64 parse_size(char *s, char **end) {
 	return strtoul (s, end, 0) << 3;
 }
 
+//TODO: implement R_API bool r_reg_set_def_string()
 static const char *parse_def(RReg *reg, char **tok, const int n) {
 	char *end;
 	int type, type2;
