@@ -2705,11 +2705,14 @@ static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
 	return true;
 }
 
-static bool set_tmp_bits(RCore *core, int bits, char **tmpbits) {
+static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *cmd_ignbithints) {
 	r_return_val_if_fail (tmpbits, false);
 	*tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 	r_config_set_i (core->config, "asm.bits", bits);
 	core->fixedbits = true;
+	// XXX: why?
+	*cmd_ignbithints = r_config_get_i (core->config, "anal.ignbithints");
+	r_config_set_i (core->config, "anal.ignbithints", 1);
 	return true;
 }
 
@@ -3374,9 +3377,7 @@ repeat_arroba:
 				}
 				break;
 			case 'b': // "@b:" // bits
-				is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &tmpbits);
-				cmd_ignbithints = r_config_get_i (core->config, "anal.ignbithints");
-				r_config_set_i (core->config, "anal.ignbithints", 1);
+				is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &tmpbits, &cmd_ignbithints);
 				break;
 			case 'i': // "@i:"
 				{
@@ -3453,7 +3454,7 @@ repeat_arroba:
 					if (q) {
 						*q++ = 0;
 						int bits = r_num_math (core->num, q);
-						is_bits_set = set_tmp_bits (core, bits, &tmpbits);
+						is_bits_set = set_tmp_bits (core, bits, &tmpbits, &cmd_ignbithints);
 					}
 					is_arch_set = set_tmp_arch (core, ptr + 2, &tmpasm);
 				} else {
@@ -5105,13 +5106,14 @@ DEFINE_HANDLE_TS_FCN(tmp_arch_command) {
 	char *tmparch, *tmpbits;
 	bool is_arch_set = false, is_bits_set = false;
 	bool oldfixedarch = core->fixedarch, oldfixedbits = core->fixedbits;
+	int cmd_ignbithints = -1;
 
 	// change arch and bits
 	char *q = strchr (arg_str, ':');
 	if (q) {
 		*q++ = '\0';
 		int bits = r_num_math (core->num, q);
-		is_bits_set = set_tmp_bits (core, bits, &tmpbits);
+		is_bits_set = set_tmp_bits (core, bits, &tmpbits, &cmd_ignbithints);
 	}
 	is_arch_set = set_tmp_arch (core, arg_str, &tmparch);
 
@@ -5129,6 +5131,9 @@ DEFINE_HANDLE_TS_FCN(tmp_arch_command) {
 		core->fixedbits = oldfixedbits;
 		free (tmpbits);
 	}
+	if (cmd_ignbithints != -1) {
+		r_config_set_i (core->config, "anal.ignbithints", cmd_ignbithints);
+	}
 	free (arg_str);
 	return res;
 }
@@ -5140,14 +5145,16 @@ DEFINE_HANDLE_TS_FCN(tmp_bits_command) {
 	char *arg_str = ts_node_handle_arg (state, node, arg, 1);
 	bool oldfixedbits = core->fixedbits;
 	char *tmpbits;
+	int cmd_ignbithints;
 
 	int bits = r_num_math (core->num, arg_str);
-	set_tmp_bits (core, bits, &tmpbits);
+	set_tmp_bits (core, bits, &tmpbits, &cmd_ignbithints);
 
 	bool res = handle_ts_command (state, command);
 
 	r_config_set (core->config, "asm.bits", tmpbits);
 	core->fixedbits = oldfixedbits;
+	r_config_set_i (core->config, "anal.ignbithints", cmd_ignbithints);
 
 	free (tmpbits);
 	free (arg_str);
