@@ -9,6 +9,7 @@ static void r_config_hold_char_free(RConfigHoldChar *hc) {
 }
 
 static void r_config_hold_num_free(RConfigHoldNum *hc) {
+	free (hc->key);
 	free (hc);
 }
 
