@@ -4613,11 +4613,13 @@ static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_
 	int ocolor = r_config_get_i (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
 	core->cmd_in_backticks = true;
+	int value = core->num->value;
 
 	// execute the sub command
 	char *o_out = r_core_cmd_str (core, inn_str);
 
 	// restore color and cmd_in_backticks
+	core->num->value = value;
 	core->cmd_in_backticks = false;
 	r_config_set_i (core->config, "scr.color", ocolor);
 	free (inn_str);
