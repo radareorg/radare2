@@ -367,11 +367,10 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	*buf = '\0';
 	if (color) {
 		const char *p = cons->context->pal.input;
-		int p_len = p? strlen (p): 0;
-		if (p_len > 0) {
-			fwrite (p, p_len, 1, stdout);
+		if (R_STR_ISNOTEMPTY (p)) {
+			fwrite (p, strlen (p), 1, stdout);
+			fflush (stdout);
 		}
-		fflush (stdout);
 	}
 	if (!fgets (buf, len, cons->fdin)) {
 		if (color) {

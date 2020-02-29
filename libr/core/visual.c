@@ -2548,7 +2548,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_line_set_prompt ("cmd.vprompt> ");
 			I->line->contents = strdup (cmd);
 			buf = r_line_readline ();
-//		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) <0) buf[0]='\0';
 			I->line->contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
@@ -2569,7 +2568,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				core->print->cur = 0;
 				(void)r_config_set (core->config, "cmd.cprompt", "p=e $r-2");
 			} else {
-				//		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) <0) buf[0]='\0';
 				R_FREE (I->line->contents);
 				(void)r_config_set (core->config, "cmd.cprompt", buf? buf: "");
 			}
