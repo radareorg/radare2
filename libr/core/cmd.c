@@ -4719,6 +4719,7 @@ static struct parsed_args *handle_ts_unescape_arg(struct tsr2cmd_state *state, T
 }
 
 static struct parsed_args *parse_args(struct tsr2cmd_state *state, TSNode args) {
+	r_return_val_if_fail (!ts_node_is_null (args), NULL);
 	if (is_ts_args (args)) {
 		uint32_t n_children = ts_node_named_child_count (args);
 		uint32_t i;
@@ -5415,6 +5416,7 @@ DEFINE_HANDLE_TS_FCN(iter_flags_command) {
 
 		char *buf = NULL;
 		const char *tmp = NULL;
+		R_LOG_DEBUG ("iter_flags_command: seek to %" PFMT64x "\n", flag->offset);
 		r_core_seek (core, flag->offset, 1);
 		r_cons_push ();
 		ret &= handle_ts_command(state, command);
@@ -6013,7 +6015,7 @@ static void ts_symbols_init(RCmd *cmd) {
 }
 
 static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lines, bool log) {
-	char *input = strdup (cstr);
+	char *input = strdup (r_str_trim_ro (cstr));
 
 	ts_symbols_init (core->rcmd);
 
