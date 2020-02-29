@@ -67,13 +67,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (shell->readline) {
 				ptr = shell->readline ();
 			} else {
-				if (!fgets (buf, sizeof (buf) - 1, stdin)) {
+				if (!fgets (buf, sizeof (buf), stdin)) {
 					break;
 				}
 				if (feof (stdin)) {
 					break;
 				}
-				buf[strlen (buf) - 1] = '\0';
+				r_str_trim_tail (buf);
 				ptr = buf;
 			}
 			if (!ptr) {
@@ -88,13 +88,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			}
 		} else {
 			printf ("%s", prompt);
-			if (!fgets (buf, sizeof (buf) - 1, stdin)) {
+			if (!fgets (buf, sizeof (buf), stdin)) {
 				break;
 			}
 			if (feof (stdin)) {
 				break;
 			}
-			buf[strlen (buf) - 1] = '\0';
+			r_str_trim_tail (buf);
 		}
 		char *wave = strchr (buf, '~');
 		if (wave) {

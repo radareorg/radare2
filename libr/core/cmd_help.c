@@ -610,7 +610,7 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "octal", sdb_fmt ("0%"PFMT64o, n));
 					pj_ks (pj, "unit", unit);
 					pj_ks (pj, "segment", sdb_fmt ("%04x:%04x", s, a));
-					
+
 				} else {
 					if (n >> 32) {
 						r_cons_printf ("int64   %"PFMT64d"\n", (st64)n);
@@ -623,7 +623,7 @@ static int cmd_help(void *data, const char *input) {
 					r_cons_printf ("octal   0%"PFMT64o"\n", n);
 					r_cons_printf ("unit    %s\n", unit);
 					r_cons_printf ("segment %04x:%04x\n", s, a);
-					
+
 					if (asnum) {
 						r_cons_printf ("string  \"%s\"\n", asnum);
 						free (asnum);
@@ -1142,7 +1142,7 @@ static int cmd_help(void *data, const char *input) {
 				// TODO: r_cons_input()
 				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
 				r_line_set_prompt (foo);
-				r_cons_fgets (foo, sizeof (foo)-1, 0, NULL);
+				r_cons_fgets (foo, sizeof (foo), 0, NULL);
 				foo[sizeof (foo) - 1] = 0;
 				r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
 				core->num->value = r_num_math (core->num, foo);

@@ -543,7 +543,7 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 			return false;
 		}
 		for (;;) {
-			if (!fgets (buf, sizeof (buf) - 1, fd)) {
+			if (!fgets (buf, sizeof (buf), fd)) {
 				break;
 			}
 			if (feof (fd)) {

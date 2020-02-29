@@ -181,7 +181,7 @@ static void __toggleSort (RCoreVisualViewGraph *status) {
 static void __reset_status(RCoreVisualViewGraph *status) {
 	status->addr = status->core->offset;
 	status->fcn = r_anal_get_function_at (status->core->anal, status->addr);
-	
+
 	status->mainCol = __fcns (status->core);
 	__sort (status, status->mainCol);
 	__seek_cursor (status);
@@ -384,7 +384,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 				r_cons_set_raw (0);
 				cmd[0]='\0';
 				r_line_set_prompt (":> ");
-				if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+				if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
 				r_config_set (core->config, "scr.highlight", cmd);
@@ -403,7 +403,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			r_cons_set_raw (0);
 			cmd[0]='\0';
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
 			r_core_cmd0 (core, cmd);

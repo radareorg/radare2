@@ -360,7 +360,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		if (!strcmp (file, "-")) {
 			char buf[1024];
 			for (;;) {
-				if (!fgets (buf, sizeof (buf) - 1, stdin)) {
+				if (!fgets (buf, sizeof (buf), stdin)) {
 					break;
 				}
 				if (feof (stdin)) {

@@ -1328,7 +1328,7 @@ R_API void r_core_visual_offset(RCore *core) {
 		&r_line_hist_offset_down);
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
-	if (r_cons_fgets (buf + 2, sizeof (buf) - 3, 0, NULL) > 0) {
+	if (r_cons_fgets (buf + 2, sizeof (buf) - 2, 0, NULL) > 0) {
 		if (!strcmp (buf + 2, "g") || !strcmp (buf + 2, "G")) {
 			__core_visual_gogo (core, buf[2]);
 		} else {
@@ -1356,7 +1356,7 @@ static void addComment(RCore *core, ut64 addr) {
 	r_cons_set_raw (false);
 	r_line_set_prompt (":> ");
 	r_cons_enable_mouse (false);
-	if (r_cons_fgets (buf, sizeof (buf) - 2, 0, NULL) < 0) {
+	if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
 		buf[0] = '\0';
 	}
 	r_core_cmdf (core, "\"CC %s\"@0x%08"PFMT64x, buf, addr);
@@ -2516,7 +2516,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			strcpy (buf, "\"wa ");
 			r_line_set_prompt (":> ");
 			r_cons_enable_mouse (false);
-			if (r_cons_fgets (buf + 4, sizeof (buf) - 5, 0, NULL) < 0) {
+			if (r_cons_fgets (buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
 				buf[0] = '\0';
 			}
 			strcat (buf, "\"");
@@ -2548,7 +2548,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_line_set_prompt ("cmd.vprompt> ");
 			I->line->contents = strdup (cmd);
 			buf = r_line_readline ();
-//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
 			I->line->contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
@@ -2569,7 +2568,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				core->print->cur = 0;
 				(void)r_config_set (core->config, "cmd.cprompt", "p=e $r-2");
 			} else {
-				//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
 				R_FREE (I->line->contents);
 				(void)r_config_set (core->config, "cmd.cprompt", buf? buf: "");
 			}
@@ -2729,7 +2727,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						RCoreVisualTab *tab = visual_newtab (core);
 						if (tab) {
 							tab->name[0] = ':';
-							r_cons_fgets (tab->name + 1, sizeof (tab->name) - 2, 0, NULL);
+							r_cons_fgets (tab->name + 1, sizeof (tab->name) - 1, 0, NULL);
 						}
 					}
 					break;
@@ -2792,7 +2790,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (ch == 'I') {
 				strcpy (buf, "wow ");
 				r_line_set_prompt ("insert hexpair block: ");
-				if (r_cons_fgets (buf + 4, sizeof (buf) - 5, 0, NULL) < 0) {
+				if (r_cons_fgets (buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 				char *p = strdup (buf);
@@ -2809,7 +2807,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->col == 2) {
 				strcpy (buf, "\"w ");
 				r_line_set_prompt ("insert string: ");
-				if (r_cons_fgets (buf + 3, sizeof (buf) - 4, 0, NULL) < 0) {
+				if (r_cons_fgets (buf + 3, sizeof (buf) - 3, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 				strcat (buf, "\"");
@@ -3470,7 +3468,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_line_set_prompt ("comment: ");
 			strcpy (buf, "\"CC ");
 			i = strlen (buf);
-			if (r_cons_fgets (buf + i, sizeof (buf) - i - 1, 0, NULL) > 0) {
+			if (r_cons_fgets (buf + i, sizeof (buf) - i, 0, NULL) > 0) {
 				ut64 addr, orig;
 				addr = orig = core->offset;
 				if (core->print->cur_enabled) {

@@ -192,7 +192,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 						}
 						sc++;
 						p = 0;
-					}	
+					}
 				} while (ch != 'M' && ch != 'm');
 				int nvel = atoi (vel);
 				switch (nvel) {
@@ -367,11 +367,10 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	*buf = '\0';
 	if (color) {
 		const char *p = cons->context->pal.input;
-		int len = p? strlen (p): 0;
-		if (len > 0) {
-			fwrite (p, len, 1, stdout);
+		if (R_STR_ISNOTEMPTY (p)) {
+			fwrite (p, strlen (p), 1, stdout);
+			fflush (stdout);
 		}
-		fflush (stdout);
 	}
 	if (!fgets (buf, len, cons->fdin)) {
 		if (color) {
@@ -386,7 +385,7 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 		}
 		RETURN (-2);
 	}
-	buf[strlen (buf)-1] = '\0';
+	r_str_trim_tail (buf);
 	if (color) {
 		printf (Color_RESET);
 	}
@@ -442,7 +441,7 @@ static int __cons_readchar_w32(ut32 usec) {
 					if (irInBuf.Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
 						click_n_drag = true;
 					}
-					continue;			
+					continue;
 				}
 				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_WHEELED) {
 					if (irInBuf.Event.MouseEvent.dwButtonState & 0xFF000000) {

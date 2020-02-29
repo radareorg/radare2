@@ -129,7 +129,7 @@ static void rtr_textlog_chat (RCore *core, TextLog T) {
 		ret = rtrcmd (T, "Tl");
 		lastmsg = atoi (ret)-1;
 		free (ret);
-		if (r_cons_fgets (buf, sizeof (buf) - 1, 0, NULL) < 0) {
+		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
 			goto beach;
 		}
 		if (!*buf) {
@@ -708,7 +708,7 @@ R_API void r_core_rtr_list(RCore *core) {
 		case RTR_PROTOCOL_RAP: proto = "r2p"; break;
 		case RTR_PROTOCOL_UNIX: proto = "unix"; break;
 		}
-		r_cons_printf ("%d fd:%i %s://%s:%i/%s\n", 
+		r_cons_printf ("%d fd:%i %s://%s:%i/%s\n",
 			i, rtr_host[i].fd->fd, proto, rtr_host[i].host,
 			rtr_host[i].port, rtr_host[i].file);
 	}
@@ -762,7 +762,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		port = NULL;
 	}
 	file = strchr (ptr, '/');
-	if (file) {	
+	if (file) {
 		*file = 0;
 		file = (char *)r_str_trim_ro (file + 1);
 	} else {

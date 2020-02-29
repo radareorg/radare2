@@ -472,7 +472,7 @@ R_API int r_line_hist_load(const char *file) {
 		return false;
 	}
 	while (fgets (buf, sizeof (buf), fd) != NULL) {
-		buf[strlen (buf) - 1] = 0;
+		r_str_trim_tail (buf);
 		r_line_hist_add (buf);
 	}
 	fclose (fd);
@@ -1267,10 +1267,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		I.buffer.index = I.buffer.length = strlen (I.contents);
 	}
 	if (I.disable) {
-		if (!fgets (I.buffer.data, R_LINE_BUFSIZE - 1, stdin)) {
+		if (!fgets (I.buffer.data, R_LINE_BUFSIZE, stdin)) {
 			return NULL;
 		}
-		I.buffer.data[strlen (I.buffer.data)] = '\0';
 		return (*I.buffer.data)? I.buffer.data: r_line_nullstr;
 	}
 
