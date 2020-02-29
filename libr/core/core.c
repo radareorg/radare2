@@ -1997,9 +1997,9 @@ R_API int r_core_fgets(char *buf, int len) {
 	if (!ptr) {
 		return -1;
 	}
-	strncpy (buf, ptr, len);
+	strncpy (buf, ptr, len - 1);
 	buf[len - 1] = 0;
-	return strlen (buf) + 1;
+	return strlen (buf);
 }
 
 static const char *r_core_print_offname(void *p, ut64 addr) {

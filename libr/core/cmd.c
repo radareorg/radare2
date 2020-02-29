@@ -1404,7 +1404,6 @@ static int cmd_kuery(void *data, const char *input) {
 	char buf[1024], *out;
 	RCore *core = (RCore*)data;
 	const char *sp, *p = "[sdb]> ";
-	const int buflen = sizeof (buf) - 1;
 	Sdb *s = core->sdb;
 
 	char *cur_pos, *cur_cmd, *next_cmd = NULL;
@@ -1504,7 +1503,7 @@ static int cmd_kuery(void *data, const char *input) {
 		r_line_set_hist_callback (line, &r_line_hist_sdb_up, &r_line_hist_sdb_down);
 		for (;;) {
 			r_line_set_prompt (p);
-			if (r_cons_fgets (buf, buflen, 0, NULL) < 1) {
+			if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 1) {
 				break;
 			}
 			if (!*buf) {

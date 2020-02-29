@@ -43,7 +43,7 @@ static char *prompt(const char *str, const char *txt) {
 	}
 	*cmd = '\0';
 	r_line_set_prompt (str);
-	if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0) {
+	if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 		*cmd = '\0';
 	}
 	//line[strlen(line)-1]='\0';
@@ -252,7 +252,7 @@ R_API bool r_core_visual_esil(RCore *core) {
 			r_cons_set_raw (0);
 			*cmd = 0;
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
 			r_core_cmd_task_sync (core, cmd, 1);
@@ -493,7 +493,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			r_cons_set_raw (0);
 			cmd[0]='\0';
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0) {
+			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
 			r_core_cmd (core, cmd, 1);
@@ -796,7 +796,7 @@ R_API int r_core_visual_types(RCore *core) {
 			r_cons_set_raw (0);
 			cmd[0] = '\0';
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0) {
+			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 				cmd[0]='\0';
 			}
 			r_core_cmd (core, cmd, 1);
@@ -928,7 +928,7 @@ static bool r_core_visual_config_hud(RCore *core) {
 		cmd[0] = '\0';
 		eprintf ("set new value for %s (old=%s)\n", res, oldvalue);
 		r_line_set_prompt (":> ");
-		if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0) {
+		if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 			cmd[0] = '\0';
 		}
 		r_config_set (core->config, res, cmd);
@@ -1200,13 +1200,13 @@ R_API int r_core_visual_classes(RCore *core) {
 			break;
 		case 'J': index += 10; break;
 		case 'j': index++; break;
-		case 'k': 
+		case 'k':
 			if (--index < 0) {
 				index = 0;
 			}
 			break;
-		case 'K': 
-			index -= 10; 
+		case 'K':
+			index -= 10;
 			if (index < 0) {
 				index = 0;
 			}
@@ -1295,7 +1295,7 @@ R_API int r_core_visual_classes(RCore *core) {
 			r_cons_set_raw (0);
 			cmd[0] = '\0';
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 				cmd[0]='\0';
 			}
 			//line[strlen(line)-1]='\0';
@@ -1478,7 +1478,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				char cmd[1024];
 				cmd[0] = '\0';
 				r_line_set_prompt (":> ");
-				if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0) {
+				if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
 				if (!*cmd || *cmd == 'q') {
@@ -1772,7 +1772,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				r_cons_show_cursor (true);
 				r_line_set_prompt ("add flagspace: ");
 				strcpy (cmd, "fs ");
-				if (r_cons_fgets (cmd+3, sizeof (cmd)-4, 0, NULL) > 0) {
+				if (r_cons_fgets (cmd + 3, sizeof (cmd) - 3, 0, NULL) > 0) {
 					r_core_cmd (core, cmd, 0);
 					r_cons_set_raw (1);
 					r_cons_show_cursor (false);
@@ -1782,7 +1782,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				r_cons_show_cursor (true);
 				r_line_set_prompt ("add flag: ");
 				strcpy (cmd, "f ");
-				if (r_cons_fgets (cmd+2, sizeof (cmd)-3, 0, NULL) > 0) {
+				if (r_cons_fgets (cmd + 2, sizeof (cmd) - 2, 0, NULL) > 0) {
 					r_core_cmd (core, cmd, 0);
 					r_cons_set_raw (1);
 					r_cons_show_cursor (false);
@@ -1828,7 +1828,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				len = strlen (cmd);
 				eprintf ("Rename flag '%s' as:\n", fs2);
 				r_line_set_prompt (":> ");
-				if (r_cons_fgets (cmd + len, sizeof (cmd) - len - 1, 0, NULL) < 0) {
+				if (r_cons_fgets (cmd + len, sizeof (cmd) - len, 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
 				r_core_cmd (core, cmd, 0);
@@ -1901,7 +1901,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			r_cons_set_raw (0);
 			*cmd = 0;
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) <0) {
+			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) <0) {
 				*cmd = 0;
 			}
 			cmd[sizeof (cmd) - 1] = 0;
@@ -2099,7 +2099,7 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 			r_cons_flush ();
 			r_cons_set_raw (0);
 			r_line_set_prompt (":> ");
-			r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
+			r_cons_fgets (buf, sizeof (buf), 0, 0);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			r_config_set (core->config, name, buf);
@@ -2551,7 +2551,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 							r_cons_show_cursor (true);
 							r_cons_set_raw (0);
 							r_line_set_prompt ("Dump path (ej: /tmp/file): ");
-							r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
+							r_cons_fgets (buf, sizeof (buf), 0, 0);
 							r_cons_set_raw (1);
 							r_cons_show_cursor (false);
 							r_file_dump (buf, file->data, file->size, 0);
@@ -2590,7 +2590,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 				r_cons_show_cursor (true);
 				r_cons_set_raw (0);
 				r_line_set_prompt (":> ");
-				r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
+				r_cons_fgets (buf, sizeof (buf), 0, 0);
 				r_cons_set_raw (1);
 				r_cons_show_cursor (false);
 				r_core_cmd (core, buf, 1);
@@ -3557,7 +3557,7 @@ static void handleHints(RCore *core) {
 	}
 	r_cons_flush ();
 	r_line_set_prompt ("anal hint: ");
-	if (r_cons_fgets (ch, sizeof (ch) - 1, 0, NULL) > 0) {
+	if (r_cons_fgets (ch, sizeof (ch), 0, NULL) > 0) {
 		switch (ch[0]) {
 		case 'b':
 			{
@@ -3661,7 +3661,7 @@ onemoretime:
 			r_cons_flush ();
 			r_line_set_prompt ("format: ");
 			strcpy (cmd, "Cf 0 ");
-			if (r_cons_fgets (cmd + 5, sizeof (cmd) - 6, 0, NULL) > 0) {
+			if (r_cons_fgets (cmd + 5, sizeof (cmd) - 5, 0, NULL) > 0) {
 				r_core_cmdf (core, "%s @ 0x%08"PFMT64x, cmd, off);
 				r_cons_set_raw (1);
 				r_cons_show_cursor (false);
@@ -3829,7 +3829,7 @@ onemoretime:
 				r_cons_show_cursor (true);
 				r_cons_flush ();
 				r_line_set_prompt ("color: ");
-				if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) > 0) {
+				if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) > 0) {
 					r_flag_item_set_color (item, cmd);
 					r_cons_set_raw (1);
 					r_cons_show_cursor (false);
@@ -3849,7 +3849,7 @@ onemoretime:
 				r_cons_show_cursor (true);
 				r_cons_flush ();
 				r_line_set_prompt ("new size: ");
-				if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) > 0) {
+				if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) > 0) {
 					item->size = r_num_math (core->num, cmd);
 					r_cons_set_raw (1);
 					r_cons_show_cursor (false);
@@ -4226,7 +4226,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		case 'c':
 			r_line_set_prompt ("Preview command> ");
 			r_cons_show_cursor (true);
-			r_cons_fgets (preview_cmd, sizeof preview_cmd, 0, NULL);
+			r_cons_fgets (preview_cmd, sizeof (preview_cmd), 0, NULL);
 			r_cons_show_cursor (false);
 		}
 		if (opt != oopt) {

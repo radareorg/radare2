@@ -106,13 +106,12 @@ static char *stdin_gets(bool liberate) {
 		}
 	}
 	memset (stdin_buf, 0, STDIN_BUF_SIZE);
-	if (!fgets (stdin_buf, STDIN_BUF_SIZE - 1, stdin)) {
+	if (!fgets (stdin_buf, STDIN_BUF_SIZE, stdin)) {
 		return NULL;
 	}
 	if (feof (stdin)) {
 		return NULL;
 	}
-	stdin_buf[strlen (stdin_buf) - 1] = 0;
 	return strdup (stdin_buf);
 }
 
@@ -789,7 +788,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		case 'o': output = r_optarg; break;
 		case 'p': va = false; break;
 		case 'r': rad = true; break;
-		case 'v': 
+		case 'v':
 			  r_core_fini (&core);
 			  return r_main_version_print ("rabin2");
 		case 'L':

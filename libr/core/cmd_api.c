@@ -124,7 +124,7 @@ R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) 
 			return 1;
 		}
 	}
-	
+
 	i = cmd->aliases.count++;
 	char **K = (char **)realloc (cmd->aliases.keys,
 				     sizeof (char *) * cmd->aliases.count);
@@ -417,9 +417,9 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 				mac->cb_printf(".. ");
 				fflush(stdout);
 			}
-			fgets(buf, 1023, r_cons_stdin_fd);
+			fgets(buf, sizeof (buf), r_cons_stdin_fd);
 #endif
-			fgets (buf, sizeof (buf)-1, stdin);
+			fgets (buf, sizeof (buf), stdin);
 			if (*buf=='\n' && nl)
 				break;
 			nl = (*buf == '\n')?1:0;
