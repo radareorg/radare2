@@ -5015,6 +5015,18 @@ DEFINE_HANDLE_TS_FCN(help_command) {
 		r_core_cmd_help (state->core, help_msg_at_at_at);
 	} else if (!strcmp (node_string, "|?")) {
 		r_core_cmd_help (state->core, help_msg_vertical_bar);
+	} else if (!strcmp (node_string + strlen (node_string) - 2, "?*")) {
+		size_t node_len = strlen (node_string);
+		int detail = 0;
+		if (node_len > 3 && node_string[node_len - 3] == '?') {
+			detail++;
+			if (node_len > 4 && node_string[node_len - 4] == '?') {
+				detail++;
+			}
+		}
+		node_string[node_len - 2 - detail] = '\0';
+		recursive_help (state->core, detail, node_string);
+		return true;
 	} else {
 		return r_cmd_call (state->core->rcmd, node_string) != -1;
 	}
@@ -5880,6 +5892,12 @@ DEFINE_HANDLE_TS_FCN(scr_tts_command) {
 		r_config_set_i (state->core->config, "scr.color", scr_color);
 	}
 	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(number_command) {
+	ut64 addr = r_num_math (state->core->num, node_string);
+	r_core_seek (state->core, addr, 1);
+	return true;
 }
 
 static bool handle_ts_command(struct tsr2cmd_state *state, TSNode node) {

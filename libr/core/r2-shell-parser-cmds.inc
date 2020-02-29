@@ -1,5 +1,6 @@
 // mark with HANDLER_RULE_OP every rule that is a _command
 // mark with RULE_OP every rule that you use with DEFINE_IS_TS_FCN or with its TSSymbol (e.g. ts_##name##_symbol)
+HANDLER_RULE_OP (number_command)
 HANDLER_RULE_OP (commands)
 HANDLER_RULE_OP (arged_command)
 HANDLER_RULE_OP (legacy_quoted_command)
