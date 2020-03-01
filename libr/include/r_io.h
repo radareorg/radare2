@@ -154,11 +154,11 @@ typedef struct {
 #define RMT_REPLY  0x80
 
 typedef struct r_io_plugin_t {
-	char *name;
-	char *desc;
-	char *version;
-	char *author;
-	char *license;
+	const char *name;
+	const char *desc;
+	const char *version;
+	const char *author;
+	const char *license;
 	void *widget;
 	const char *uris;
 	int (*listener)(RIODesc *io);
