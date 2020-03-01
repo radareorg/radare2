@@ -109,7 +109,9 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 !rabin2 -SSS ${R2_FILE}|wc -l|awk "{print \$1}"
 EOF
-EXPECT='13'
+EXPECT=<<EOF
+13
+EOF
 RUN
 
 NAME=rabin2 -z pe
