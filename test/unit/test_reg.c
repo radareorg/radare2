@@ -138,11 +138,41 @@ bool test_r_reg_get_value_flag(void) {
 	mu_end;
 }
 
+bool test_r_reg_get(void) {
+	RReg *reg;
+	RRegItem *r;
+
+	reg = r_reg_new ();
+	mu_assert_notnull (reg, "r_reg_new () failed");
+
+	bool success = r_reg_set_profile_string (reg,
+			"gpr	eax		.32	24	0\n\
+	 		fpu		sf0		.32	304	0\n\
+			xmm		xmm0	.64	160	4");
+	mu_assert_eq (success, true, "define eax, sf0 and xmm0 register");
+
+	r = r_reg_get (reg, "sf0", R_REG_TYPE_FPU);
+	mu_assert_streq (r->name, "sf0", "found sf0 as R_REG_TYPE_FPU");
+	mu_assert_eq (r->type, R_REG_TYPE_FPU, "sf0 type is R_REG_TYPE_FPU");
+
+	r = r_reg_get (reg, "xmm0", R_REG_TYPE_XMM);
+	mu_assert_streq (r->name, "xmm0", "found xmm0 as R_REG_TYPE_XMM");
+	mu_assert_eq (r->type, R_REG_TYPE_XMM, "xmm0 type is R_REG_TYPE_XMM");
+
+	r = r_reg_get (reg, "xmm0", -1);
+	mu_assert_streq (r->name, "xmm0", "found xmm0");
+	mu_assert_eq (r->type, R_REG_TYPE_XMM, "xmm0 type is R_REG_TYPE_XMM");
+
+	r_reg_free (reg);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_r_reg_set_name);
 	mu_run_test (test_r_reg_set_profile_string);
 	mu_run_test (test_r_reg_get_value_gpr);
 	mu_run_test (test_r_reg_get_value_flag);
+	mu_run_test (test_r_reg_get);
 	return tests_passed != tests_run;
 }
 
