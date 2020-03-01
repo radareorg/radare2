@@ -852,8 +852,7 @@ RUN
 
 NAME=rabin2 -O ?
 FILE=../bins/elf/libc.so.0
-CMDS=%!rabin2 -O "?" | grep -c Usage
-%
+CMDS=!rabin2 -O "?" | grep -c Usage
 EXPECT=<<EOF
 1
 EOF

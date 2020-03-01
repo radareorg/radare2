@@ -6,5 +6,7 @@ afvb-42
 afvb- ulumulu
 ?e not segfaulted
 EOF
-EXPECT='not segfaulted'
+EXPECT=<<EOF
+not segfaulted
+EOF
 RUN

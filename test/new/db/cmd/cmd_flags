@@ -307,10 +307,12 @@ RUN
 
 NAME=fd with realname
 FILE=malloc://1024
-EXPECT='pingas
+EXPECT=<<EOF
+pingas
 pingas + 4853
 Snooping as usual I see...
-Snooping as usual I see... + 4853'
+Snooping as usual I see... + 4853
+EOF
 CMDS=<<EOF
 f pingas @ 0x42
 fN pingas Snooping as usual I see...
