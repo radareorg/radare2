@@ -17,7 +17,7 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 
 	ut64 ret = 0LL;
 	int off = BITS2BYTES (item->offset);
-	RRegSet *regset = &reg->regset[item->arena];
+	RRegSet *regset = &reg->regset[item->type];
 	if (!regset->arena) {
 		return 0LL;
 	}
@@ -72,7 +72,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		return 0LL;
 	}
 	int off = BITS2BYTES (item->offset);
-	RRegSet *regset = &reg->regset[item->arena];
+	RRegSet *regset = &reg->regset[item->type];
 	if (!regset->arena) {
 		return 0LL;
 	}
@@ -146,7 +146,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (item->offset < 0) {
 		return true;
 	}
-	RRegArena *arena = reg->regset[item->arena].arena;
+	RRegArena *arena = reg->regset[item->type].arena;
 	if (!arena) {
 		return false;
 	}
@@ -203,9 +203,8 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	}
 	const bool fits_in_arena = (arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size)) >= 0;
 	if (src && fits_in_arena) {
-		r_mem_copybits (reg->regset[item->arena].arena->bytes +
-				BITS2BYTES (item->offset),
-				src, item->size);
+		r_mem_copybits (reg->regset[item->type].arena->bytes +
+			BITS2BYTES (item->offset), src, item->size);
 		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, value);
@@ -266,7 +265,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 		eprintf ("Packed index is beyond the register size\n");
 		return 0LL;
 	}
-	RRegSet *regset = &reg->regset[item->arena];
+	RRegSet *regset = &reg->regset[item->type];
 	if (!regset->arena) {
 		return 0LL;
 	}
@@ -294,8 +293,8 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	}
 	int off = BITS2BYTES (item->offset);
 	off += (packidx * packbytes);
-	if (reg->regset[item->arena].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
-		ut8 *dst = reg->regset[item->arena].arena->bytes + off;
+	if (reg->regset[item->type].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
+		ut8 *dst = reg->regset[item->type].arena->bytes + off;
 		memcpy (dst, (ut8*)&val, packbytes);
 		return true;
 	}
