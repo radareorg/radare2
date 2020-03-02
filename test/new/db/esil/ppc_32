@@ -27,3 +27,18 @@ e cfg.bigendian=true
 .(pi 9421fff8)
 EOF
 RUN
+
+NAME=long ESIL ppc-32
+FILE=-
+EXPECT=<<EOF
+bdnz 0xfffffffffffffff0
+0x00000000 1,ctr,-=,$z,!,?{,0xfffffffffffffff0,pc,=,}
+EOF
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+"(pi bytes,wx $0,pi 1,pie 1)"
+.(pi 4200fff0)
+EOF
+RUN
