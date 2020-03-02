@@ -77,6 +77,10 @@ static void __var_retype(RAnal *anal, RAnalVar *var, const char *vname, const ch
 	r_return_if_fail (anal && var && type);
 	// XXX types should be passed without spaces to trim
 	type = r_str_trim_head_ro (type);
+	// default type if none is provided
+	if (!*type) {
+		type = "int";
+	}
 	bool is_ptr = (vname && *vname == '*');
 	// removing this return makes 64bit vars become 32bit
 	if (!strncmp (type, "int", 3) || (!is_ptr && !strcmp (type, "void"))) {
