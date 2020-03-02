@@ -5673,7 +5673,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		case 's': // "aess"
 			if (input[2] == 'u') { // "aessu"
-				if (input[2] == 'e') {
+				if (input[3] == 'e') {
 					until_expr = input + 3;
 				} else {
 					until_addr = r_num_math (core->num, input + 2);
@@ -5686,7 +5686,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		case 'o': // "aeso"
 			if (input[2] == 'u') { // "aesou"
-				if (input[2] == 'e') {
+				if (input[3] == 'e') {
 					until_expr = input + 3;
 				} else {
 					until_addr = r_num_math (core->num, input + 2);
@@ -7391,7 +7391,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		r_core_anal_hint_print (core->anal, core->offset, 0);
 		break;
 	case 'a': // "aha" set arch
-		if (input[1]) {
+		if (input[1] == ' ') {
 			char *ptr = strdup (input + 2);
 			r_str_word_set0 (ptr);
 			const char *arch = r_str_word_get0 (ptr, 0);
@@ -7413,7 +7413,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "ahb" set bits
-		if (input[1]) {
+		if (input[1] == ' ') {
 			char *ptr = strdup (input + 2);
 			int bits;
 			int i = r_str_word_set0 (ptr);
@@ -8947,7 +8947,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		}
 		break;
 	case 'p': // "aap"
-		if (*input == '?') {
+		if (input[1] == '?') {
 			// TODO: accept parameters for ranges
 			eprintf ("Usage: /aap   ; find in memory for function preludes");
 		} else {
