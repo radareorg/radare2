@@ -658,41 +658,41 @@ static int node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 	* and the analyzed functions in anal
 	* Returns false on error. */
 
-	RListIter *it_func, *node_child_it;
-	ut8 *func_buf = NULL;
-	RAnalFunction *func;
-	RFlirtNode *child;
-	int ret = true;
-
 	if (r_list_length (anal->fcns) == 0) {
-		anal->cb_printf ("There is no analyzed functions. Have you run 'aa'?\n");
+		anal->cb_printf ("There are no analyzed functions. Have you run 'aa'?\n");
 		return true;
 	}
 
-	anal->flb.set_fs (anal->flb.f, "flirt");
+	anal->flb.push_fs (anal->flb.f, "flirt");
+	RListIter *it_func;
+	RAnalFunction *func;
 	r_list_foreach (anal->fcns, it_func, func) {
 		if (func->type != R_ANAL_FCN_TYPE_FCN && func->type != R_ANAL_FCN_TYPE_LOC) { // scan only for unknown functions
 			continue;
 		}
 
-		int func_size = r_anal_function_linear_size (func);
-		func_buf = malloc (func_size);
-		if (!anal->iob.read_at (anal->iob.io, func->addr, func_buf, func_size)) {
-			eprintf ("Couldn't read function\n");
-			ret = false;
-			goto exit;
+		ut64 func_size = r_anal_function_linear_size (func);
+		ut8 *func_buf = malloc (func_size);
+		if (!func_buf) {
+			continue;
 		}
+		if (!anal->iob.read_at (anal->iob.io, func->addr, func_buf, (int)func_size)) {
+			eprintf ("Couldn't read function %s at 0x%"PFMT64x"\n", func->name, func->addr);
+			free (func_buf);
+			continue;
+		}
+		RListIter *node_child_it;
+		RFlirtNode *child;
 		r_list_foreach (root_node->child_list, node_child_it, child) {
 			if (node_match_buffer (anal, child, func_buf, func->addr, func_size, 0)) {
 				break;
 			}
 		}
-		R_FREE (func_buf);
+		free (func_buf);
 	}
+	anal->flb.pop_fs (anal->flb.f);
 
-exit:
-	free (func_buf);
-	return ret;
+	return true;
 }
 
 static ut8 read_module_tail_bytes(RFlirtModule *module, RBuffer *b) {
@@ -1330,7 +1330,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 				goto exit;
 			}
 
-			if (version >= 9) {
+			if (version >= 10) {
 				if (!(v10 = R_NEW0 (idasig_v10_t))) {
 					goto exit;
 				}
