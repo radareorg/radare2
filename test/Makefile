@@ -50,6 +50,9 @@ olly-extras: bins
 dwarf: bins
 	${RUNTEST} db/extras/asm/dwarf
 
+yara: bins
+	${RUNTEST} db/extras/cmd/yara
+
 clean:
 	rm -rf tmp
 

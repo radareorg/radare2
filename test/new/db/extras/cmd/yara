@@ -1,0 +1,20 @@
+NAME=yara: scanS
+FILE=../bins/elf/vim
+CMDS=<<EOF
+yara scanS
+EOF
+EXPECT=<<EOF
+BLOWFISH_Constants
+0x002960c0: $c1 : a6 0b 31 d1 
+0x002960c4: $c3 : ac b5 df 98 
+0x002960c8: $c5 : db 72 fd 2f 
+0x002960cc: $c7 : b7 df 1a d0 
+0x002964c0: $c9 : e9 70 7a 4b 
+0x002968c8: $c11 : 1c 26 4c f6 
+SHA256_Constants
+0x001936c4: $c1 : 98 2f 8a 42 
+0x0019372b: $c3 : 91 44 37 71 
+0x0019379d: $c5 : cf fb c0 b5 
+0x001937e5: $c7 : a5 db b5 e9 
+EOF
+RUN
