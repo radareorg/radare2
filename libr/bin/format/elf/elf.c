@@ -3392,13 +3392,12 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 	return ptr;
 }
 
-static int hashRBinElfSymbol(void * obj) {
+static ut32 hashRBinElfSymbol(const void * obj) {
 	const RBinElfSymbol *symbol = (const RBinElfSymbol *)obj;
-	int hash = sdb_hash(symbol->name);
-	hash ^= sdb_hash(symbol->type);
+	int hash = sdb_hash (symbol->name);
+	hash ^= sdb_hash (symbol->type);
 	hash ^= (symbol->offset >> 32);
 	hash ^= (symbol->offset & 0xffffffff);
-
 	return hash;
 }
 
@@ -3589,7 +3588,6 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					continue;
 				}
 				{
-					int rest = ELF_STRING_LENGTH - 1;
 					int st_name = sym[k].st_name;
 					int maxsize = R_MIN (r_buf_size (bin->b), strtab_section->sh_size);
 					if (is_section_local_sym (bin, &sym[k])) {
@@ -3598,8 +3596,6 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					} else if (st_name <= 0 || st_name >= maxsize) {
 						ret[ret_ctr].name[0] = 0;
 					} else {
-						RBinElfSymbol *previous = NULL;
-
 						r_str_ncpy(ret[ret_ctr].name, &strtab[st_name], ELF_STRING_LENGTH);
 						ret[ret_ctr].type = type2str (bin, &ret[ret_ctr], &sym[k]);
 
