@@ -3331,17 +3331,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					free (fcnstr_copy);
 					free (fcnstr);
 				} else {
-					// not working
 					char *str = r_anal_fcn_to_string (core->anal, f);
 					if (str) {
 						r_cons_println (str);
 						free (str);
-					}
-					// working, but wtf
-					char *sig = r_anal_fcn_format_sig (core->anal, f, f->name, NULL, NULL, NULL);
-					if (sig) {
-						r_cons_println (sig);
-						free (sig);
 					}
 				}
 			} else {

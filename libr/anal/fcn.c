@@ -1544,8 +1544,50 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 	return result;
 }
 
-R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fs) {
-	return NULL;
+R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fcn) {
+	char *ret = NULL, *arg_i = NULL, *args = strdup ("");
+	// RList *args_list = r_list_newf ((RListFree) free);
+	unsigned int argc = 0, i, j;
+	const char *ret_type = sdb_const_get (a->sdb_types,
+	  r_str_newf ("func.%s.ret", fcn->name), 0);
+	const char *argc_str = sdb_const_get (a->sdb_types,
+	  r_str_newf ("func.%s.args", fcn->name), 0);
+
+	if (argc_str) {
+		argc = atoi (argc_str);
+	}
+
+	for (i = 0; i < argc; i++) {
+		arg_i = sdb_get (a->sdb_types,
+		  r_str_newf ("func.%s.arg.%d", fcn->name, i), 0);
+		// parse commas
+		for (j = 0; j < strlen (arg_i); j++) {
+			if (arg_i[j] == ',') {
+				if (arg_i[j - 1] == '*') {
+					// remove whitespace
+					memmove (&arg_i[j], &arg_i[j + 1],
+					  strlen (arg_i) - j);
+				} else {
+					arg_i[j] = ' ';
+				}
+			}
+		}
+		if (i + 1 == argc) {
+			args = r_str_newf ("%s%s", args, arg_i);
+		} else {
+			args = r_str_newf ("%s%s, ", args, arg_i);
+		}
+		free (arg_i);
+	}
+
+	if (ret_type) {
+		ret = r_str_newf ("%s %s (%s);", ret_type, fcn->name, args);
+	} else {
+		ret = r_str_newf ("%s (%s);", fcn->name, args);
+	}
+
+	free (args);
+	return ret;
 }
 
 /* set function signature from string */
