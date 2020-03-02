@@ -828,9 +828,9 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	RAnalVar *var;
 	int arg_count = 0;
 
-	RList *all_vars = cache.bvars;
+	RList *all_vars = cache.rvars;
+	r_list_join (all_vars, cache.bvars);
 	r_list_join (all_vars, cache.svars);
-	r_list_join (all_vars, cache.rvars);
 
 	r_list_foreach (all_vars, iter, var) {
 		if (var->isarg) {
@@ -879,7 +879,6 @@ static bool cmd_anal_aaft(RCore *core) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		__add_vars_sdb (core, fcn);
 	}
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
@@ -3808,6 +3807,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (core->anal->opt.vars) {
 				r_core_recover_vars (core, fcn, true);
 			}
+			__add_vars_sdb (core, fcn);
 		} else {
 			if (core->anal->verbose) {
 				eprintf ("Warning: Unable to analyze function at 0x%08"PFMT64x"\n", addr);
