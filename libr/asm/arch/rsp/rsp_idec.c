@@ -370,8 +370,8 @@ static rsp_operand rsp_operand_decode(ut64 pc, ut32 iw, const rsp_operand_decode
 	rsp_operand opnd;
 
 	opnd.type = odec->type;
-	opnd.u = ((iw >> odec->u_shift) & odec->u_mask) << odec->u_lshift;
-	opnd.s = rsp_sign_extend ((iw >> odec->s_shift) & odec->s_mask, odec->s_smask) << odec->s_lshift;
+	opnd.u = (ut64)((iw >> odec->u_shift) & odec->u_mask) << odec->u_lshift;
+	opnd.s = (st64)(rsp_sign_extend ((iw >> odec->s_shift) & odec->s_mask, odec->s_smask)) << odec->s_lshift;
 
 	/* handle targets/offsets IMEM addresses */
 	switch (opnd.type) {

@@ -582,13 +582,13 @@ parse_mips_dis_option (const char *option, unsigned int len)
   const struct mips_abi_choice *chosen_abi;
   const struct mips_arch_choice *chosen_arch;
 
-  /* Try to match options that are simple flags 
+  /* Try to match options that are simple flags
   if (CONST_STRNEQ (option, "no-aliases"))
     {
       no_aliases = 1;
       return;
     } */
-  
+
   /* Look for the = that delimits the end of the option name.  */
   for (i = 0; i < len; i++) {
 	  if (option[i] == '=') {
@@ -771,7 +771,7 @@ print_insn_args (const char *d,
 	      lsb = (l >> OP_SH_SHAMT) & OP_MASK_SHAMT;
 	      (*info->fprintf_func) (info->stream, "0x%x", lsb);
 	      break;
-	
+
 	    case 'B':
 	      msb = (l >> OP_SH_INSMSB) & OP_MASK_INSMSB;
 	      (*info->fprintf_func) (info->stream, "0x%x", msb - lsb + 1);
@@ -781,22 +781,22 @@ print_insn_args (const char *d,
 	      (*info->fprintf_func) (info->stream, "0x%lx",
 				     (l >> OP_SH_UDI1) & OP_MASK_UDI1);
 	      break;
-	      
+
 	    case '2':
 	      (*info->fprintf_func) (info->stream, "0x%lx",
 				     (l >> OP_SH_UDI2) & OP_MASK_UDI2);
 	      break;
-	      
+
 	    case '3':
 	      (*info->fprintf_func) (info->stream, "0x%lx",
 				     (l >> OP_SH_UDI3) & OP_MASK_UDI3);
 	      break;
-      
+
 	    case '4':
 	      (*info->fprintf_func) (info->stream, "0x%lx",
 				     (l >> OP_SH_UDI4) & OP_MASK_UDI4);
 	      break;
-	      
+
 	    case 'C':
 	    case 'H':
 	      msbd = (l >> OP_SH_EXTMSBD) & OP_MASK_EXTMSBD;
@@ -830,7 +830,7 @@ print_insn_args (const char *d,
 	      lsb = ((l >> OP_SH_SHAMT) & OP_MASK_SHAMT) + 32;
 	      (*info->fprintf_func) (info->stream, "0x%x", lsb);
 	      break;
-	
+
 	    case 'F':
 	      msb = ((l >> OP_SH_INSMSB) & OP_MASK_INSMSB) + 32;
 	      (*info->fprintf_func) (info->stream, "0x%x", msb - lsb + 1);
@@ -1032,7 +1032,7 @@ print_insn_args (const char *d,
 	  if (delta & 0x8000) {
 		  delta |= ~0xffff;
 	  }
-	  info->target = (delta << 2) + pc + INSNLEN;
+	  info->target = ((bfd_vma)delta << 2) + pc + INSNLEN;
 	  (*info->print_address_func) (info->target, info);
 	  break;
 
@@ -1297,7 +1297,7 @@ print_insn_mips (bfd_vma memaddr,
     {
       for (; op < &mips_opcodes[NUMOPCODES]; op++)
 	{
-	  if (op->pinfo != INSN_MACRO 
+	  if (op->pinfo != INSN_MACRO
 	      && !(no_aliases && (op->pinfo2 & INSN2_ALIAS))
 	      && (word & op->mask) == op->match)
 	    {
@@ -1804,7 +1804,7 @@ print_mips16_insn_arg (char type,
 	      framesz = 128;
       }
 
-      (*info->fprintf_func) (info->stream, "%s%d", 
+      (*info->fprintf_func) (info->stream, "%s%d",
                              need_comma ? ", " : "",
                              framesz);
 

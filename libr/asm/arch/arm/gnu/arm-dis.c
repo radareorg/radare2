@@ -5416,7 +5416,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 						  return;
 					  }
 					  reg = given >> bitstart;
-					  reg &= (2 << (bitend - bitstart)) - 1;
+					  reg &= ((bfd_vma)2 << (bitend - bitstart)) - 1;
 
 					  switch (*c) {
 					  case 'r':
@@ -5451,7 +5451,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 						  break;
 
 					  case 'B':
-						  reg = ((reg ^ (1 << bitend)) - (1 << bitend));
+						  reg = ((reg ^ ((bfd_vma)1 << bitend)) - ((bfd_vma)1 << bitend));
 						  info->print_address_func (reg * 2 + pc + 4, info);
 						  //value_in_comment = 0;
 						  break;
@@ -6448,7 +6448,7 @@ select_arm_features (unsigned long mach,
 		     arm_feature_set * features)
 {
 #undef ARM_SET_FEATURES2
- //ARM_FEATURE (0, 0, FPU_ARCH_VFP_V4D16) ;	
+ //ARM_FEATURE (0, 0, FPU_ARCH_VFP_V4D16) ;
 #define ARM_SET_FEATURES2(FSET) \
   {							\
     const arm_feature_set fset = FSET;			\

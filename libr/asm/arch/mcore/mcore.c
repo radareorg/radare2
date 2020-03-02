@@ -97,7 +97,7 @@ mcore_ops_t mcore_instructions[MCORE_INSTRS] = {
 	{ "wait"    , MCORE_CPU_DFLT, 0b0000000000000101, R_ANAL_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
 	{ "doze"    , MCORE_CPU_DFLT, 0b0000000000000110, R_ANAL_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
 	{ "idly4"   , MCORE_CPU_DFLT, 0b0000000000000111, R_ANAL_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
-	// 0b00000000000010ii, trap #ii 
+	// 0b00000000000010ii, trap #ii
 	{ "trap"    , MCORE_CPU_DFLT, 0b0000000000001011, R_ANAL_OP_TYPE_NULL , 1, {{ 0b11, 0, TYPE_IMM },{0},{0},{0},{0}} },
 	// 0b0000000000001100, mvtc 510E
 	{ "mvtc"    , MCORE_CPU_510E, 0b0000000000001100, R_ANAL_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
@@ -260,7 +260,7 @@ mcore_ops_t mcore_instructions[MCORE_INSTRS] = {
 	{ "bclri"   , MCORE_CPU_DFLT, 0b0011000111111111, R_ANAL_OP_TYPE_NULL , 2, {{ 0b1111, 0, TYPE_REG },{ 0b111110000, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b001100100000rrrr, cpwir cp
 	{ "cpwir"   , MCORE_CPU_DFLT, 0b0011001000001111, R_ANAL_OP_TYPE_NULL , 1, {{ 0b1111, 0, TYPE_REG },{0},{0},{0},{0}} },
-	// 0b001100100001rrrr, divs 
+	// 0b001100100001rrrr, divs
 	{ "divs"    , MCORE_CPU_DFLT, 0b0011001000011111, R_ANAL_OP_TYPE_NULL , 1, {{ 0b1111, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001100100010rrrr, cprsr cp
 	{ "cprsr"   , MCORE_CPU_DFLT, 0b0011001000101111, R_ANAL_OP_TYPE_NULL , 1, {{ 0b1111, 0, TYPE_REG },{0},{0},{0},{0}} },
@@ -420,7 +420,7 @@ mcore_t* mcore_next(mcore_handle* handle) {
 		op = find_instruction (handle->pos);
 	}
 	handle->pos += MCORE_INSTR_ALIGN;
-	
+
 	return op;
 }
 
@@ -442,7 +442,7 @@ void print_loop(char* str, int size, ut64 addr, mcore_t* instr) {
 				instr->args[i + 1].value, instr->args[i].value);
 			i++;
 		} else if (instr->args[i].type == TYPE_JMPI) {
-			ut64 jump = addr + ((instr->args[i].value << 2) & 0xfffffffc);
+			ut64 jump = addr + (((ut64)instr->args[i].value << 2) & 0xfffffffc);
 			add += snprintf (str + add, bufsize - add, " [0x%" PFMT64x"],", jump);
 		} else if (instr->args[i].type == TYPE_JMP) {
 			ut64 jump = addr + instr->args[i].value + 1;

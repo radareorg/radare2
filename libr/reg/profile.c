@@ -24,11 +24,11 @@ static ut64 parse_size(char *s, char **end) {
 	char *has_dot = strchr (s, '.');
 	if (has_dot) {
 		*has_dot++ = 0;
-		ut64 a = strtoul (s, end, 0) << 3;
+		ut64 a = (ut64)(strtoul (s, end, 0)) << 3;
 		ut64 b = strtoul (has_dot, end, 0);
 		return a + b;
 	}
-	return strtoul (s, end, 0) << 3;
+	return (ut64)(strtoul (s, end, 0)) << 3;
 }
 
 //TODO: implement R_API bool r_reg_set_def_string()

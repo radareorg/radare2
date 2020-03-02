@@ -325,8 +325,8 @@ int windbg_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent) {
 		return 0;
 	}
 
-	start = entry.start_vpn << 12;
-	end = ((entry.end_vpn + 1) << 12) - 1;
+	start = (ut64)entry.start_vpn << 12;
+	end = (((ut64)entry.end_vpn + 1) << 12) - 1;
 	prot = (entry.flags >> 24) & 0x1F;
 
 	eprintf ("Start 0x%016"PFMT64x " End 0x%016"PFMT64x " Prot 0x%08"PFMT64x "\n",
@@ -501,7 +501,7 @@ RList *windbg_list_modules(WindCtx *ctx) {
 			break;
 		}
 
-		ptr -= (4 << ctx->is_x64) * 2;
+		ptr -= (4ULL << ctx->is_x64) * 2;
 
 		WindModule *mod = R_NEW0 (WindModule);
 		if (!mod) {

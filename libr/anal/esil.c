@@ -1213,8 +1213,8 @@ static bool esil_asreq(RAnalEsil *esil) {
 						if (esil->verbose) {
 							eprintf ("Invalid asreq shift of %d at 0x%08"PFMT64x"\n", shift, esil->address);
 						}
-					} else if (op_num & (1LL << shift)) {
-						left_bits = (1 << param_num) - 1;
+					} else if (op_num & (1ULL << shift)) {
+						left_bits = (1ULL << param_num) - 1;
 						left_bits <<= regsize - param_num;
 					}
 					op_num = left_bits | (op_num >> param_num);
@@ -1266,8 +1266,8 @@ static bool esil_asr(RAnalEsil *esil) {
 				ut64 mask = (regsize - 1);
 				param_num &= mask;
 				ut64 left_bits = 0;
-				if (op_num & (1UL << (regsize - 1))) {
-					left_bits = (1UL << param_num) - 1;
+				if (op_num & (1ULL << (regsize - 1))) {
+					left_bits = (1ULL << param_num) - 1;
 					left_bits <<= regsize - param_num;
 				}
 				op_num = left_bits | (op_num >> param_num);
