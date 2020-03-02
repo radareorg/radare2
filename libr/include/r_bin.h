@@ -873,6 +873,7 @@ extern RBinPlugin r_bin_plugin_nso;
 extern RBinPlugin r_bin_plugin_sfc;
 extern RBinPlugin r_bin_plugin_z64;
 extern RBinPlugin r_bin_plugin_prg;
+extern RBinPlugin r_bin_plugin_dmp64;
 
 #ifdef __cplusplus
 }
