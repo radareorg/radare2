@@ -1,3 +1,15 @@
+NAME=got switch cases
+FILE=../bins/elf/game_of_thrones
+EXPECT=<<EOF
+0x00401125 switch table (7 cases) at 0x4013e4
+EOF
+CMDS=<<EOF
+s main
+aa > /dev/null
+pdsf~case
+EOF
+RUN
+
 NAME=anal.ijmp missing branch bug
 FILE=-
 CMDS=<<EOF
