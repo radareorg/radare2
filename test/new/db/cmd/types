@@ -1493,9 +1493,9 @@ afs
 afs
 EOF
 EXPECT=<<EOF
-entry0 (int64_t arg3);
-foo.bar (int64_t arg3);
-foo.bar (int64_t arg3);
+entry0 ();
+int32_t foo.bar ();
+char foo.bar (int32_t a);
 EOF
 RUN
 
