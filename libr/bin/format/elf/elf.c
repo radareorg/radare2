@@ -3392,7 +3392,7 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 	return ptr;
 }
 
-static unsigned int hashRBinElfSymbol(const void * obj) {
+static ut32 hashRBinElfSymbol(const void * obj) {
 	const RBinElfSymbol *symbol = (const RBinElfSymbol *)obj;
 	int hash = sdb_hash (symbol->name);
 	hash ^= sdb_hash (symbol->type);
