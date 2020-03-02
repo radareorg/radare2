@@ -2555,7 +2555,7 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
 	if (fcn) {
 		RFlagItem *flag = r_flag_get (core->flags, fcn->name);
-		if (flag->space && strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS) == 0) {
+		if (flag && flag->space && strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS) == 0) {
 			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
 			r_flag_rename (core->flags, flag, name);
 		} else {
