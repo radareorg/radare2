@@ -41,7 +41,7 @@ struct user_regs_struct_x86_32 {
 #if __i386__ || __x86_64__
 #define R_DEBUG_REG_T struct user_regs_struct
 #elif __s390x__ || __s390__
-#define R_DEBUG_REG_T struct user_regs_struct
+#define R_DEBUG_REG_T struct _user_regs_struct
 #elif __arm64__ || __aarch64__
 #include <asm/ptrace.h>
 #ifndef NT_PRSTATUS
