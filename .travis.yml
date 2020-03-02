@@ -3,7 +3,6 @@
 language: generic
 dist: trusty
 conditions: v1
-sudo: required
 
 branches:
   only:
@@ -15,7 +14,7 @@ services:
   - docker
 
 os: osx
-matrix:
+jobs:
   fast_finish: true
   include:
     - os: linux
