@@ -1216,7 +1216,7 @@ aeip
 13aes
 *ebp+0x8 = 0x09
 aesu 0x460
-ps @ ebp - 0x24
+ps @ ebp-0x24
 EOF
 RUN
 
