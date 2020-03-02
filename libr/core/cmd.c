@@ -6015,7 +6015,7 @@ static void ts_symbols_init(RCmd *cmd) {
 }
 
 static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lines, bool log) {
-	char *input = strdup (r_str_trim_ro (cstr));
+	char *input = strdup (r_str_trim_head_ro (cstr));
 
 	ts_symbols_init (core->rcmd);
 
