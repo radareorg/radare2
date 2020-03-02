@@ -29,7 +29,7 @@ static int rabin_show_help(int v) {
 		" -E              globally exportable symbols\n"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
-		" -g              same as -SMZIHVResizcld -SS -ee (show all info)\n"
+		" -g              same as -SMZIHVResizcld -SS -SSS -ee (show all info)\n"
 		" -G [addr]       load address . offset to header\n"
 		" -h              this help message\n"
 		" -H              header fields\n"
@@ -57,6 +57,7 @@ static int rabin_show_help(int v) {
 		" -s              symbols\n"
 		" -S              sections\n"
 		" -SS             segments\n"
+		" -SSS            sections mapping to segments\n"
 		" -t              display file hashes\n"
 		" -T              display file signature\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
@@ -649,6 +650,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			set_action (R_BIN_REQ_SYMBOLS);
 			set_action (R_BIN_REQ_SECTIONS);
 			set_action (R_BIN_REQ_SEGMENTS);
+			set_action (R_BIN_REQ_SECTIONS_MAPPING);
 			set_action (R_BIN_REQ_STRINGS);
 			set_action (R_BIN_REQ_SIZE);
 			set_action (R_BIN_REQ_INFO);
@@ -700,7 +702,10 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			set_action (R_BIN_REQ_SYMBOLS);
 			break;
 		case 'S':
-			if (is_active (R_BIN_REQ_SECTIONS)) {
+			if (is_active (R_BIN_REQ_SEGMENTS)) {
+				action &= ~R_BIN_REQ_SEGMENTS;
+				action |= R_BIN_REQ_SECTIONS_MAPPING;
+			} else if (is_active (R_BIN_REQ_SECTIONS)) {
 				action &= ~R_BIN_REQ_SECTIONS;
 				action |= R_BIN_REQ_SEGMENTS;
 			} else {
@@ -1150,6 +1155,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 	run_action ("versioninfo", R_BIN_REQ_VERSIONINFO, R_CORE_BIN_ACC_VERSIONINFO);
 	run_action ("sections", R_BIN_REQ_SIGNATURE, R_CORE_BIN_ACC_SIGNATURE);
 	run_action ("hashes", R_BIN_REQ_HASHES, R_CORE_BIN_ACC_HASHES);
+	run_action ("sections mapping", R_BIN_REQ_SECTIONS_MAPPING, R_CORE_BIN_ACC_SECTIONS_MAPPING);
 	if (action & R_BIN_REQ_SRCLINE) {
 		rabin_show_srcline (bin, at);
 	}
