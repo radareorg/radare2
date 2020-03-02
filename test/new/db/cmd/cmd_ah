@@ -1,11 +1,12 @@
 NAME=ah- offset
 FILE=-
-EXPECT='before:
+EXPECT=<<EOF
+before:
  0x00000000 => immbase=10
  0x00000010 => immbase=8
 after:
  0x00000000 => immbase=10
-'
+EOF
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16
@@ -19,12 +20,13 @@ RUN
 
 NAME=ah-offset
 FILE=-
-EXPECT='before:
+EXPECT=<<EOF
+before:
  0x00000000 => immbase=10
  0x00000010 => immbase=8
 after:
  0x00000000 => immbase=10
-'
+EOF
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16
@@ -205,7 +207,8 @@ RUN
 
 NAME=arch hints for ranges
 FILE=-
-EXPECT=%-- all
+EXPECT=<<EOF
+-- all
  0x00000042 => arch='arm'
  0x00000084 => arch=RESET
 -- all json
@@ -221,7 +224,8 @@ aha 0 @ 0x84
 -- at second
  0x00000084 => arch=RESET
 -- after second
- 0x00000084 => arch=RESET%
+ 0x00000084 => arch=RESET
+EOF
 CMDS=<<EOF
 aha arm @ 0x42
 aha 0 @ 0x84
@@ -246,7 +250,8 @@ RUN
 
 NAME=bits hints for ranges
 FILE=-
-EXPECT='-- all
+EXPECT=<<EOF
+-- all
  0x00000042 => bits=16
  0x00000084 => bits=RESET
 -- all json
@@ -262,7 +267,8 @@ ahb 0 @ 0x84
 -- at second
  0x00000084 => bits=RESET
 -- after second
- 0x00000084 => bits=RESET'
+ 0x00000084 => bits=RESET
+EOF
 CMDS=<<EOF
 ahb 16 @ 0x42
 ahb 0 @ 0x84

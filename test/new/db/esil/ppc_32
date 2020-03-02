@@ -1,7 +1,9 @@
 NAME=load with update ppc-32
 FILE=-
-EXPECT='lwzu r1, -8(r1)
-0x00000000 -8,r1,+,[4],r1,=,-8,r1,+='
+EXPECT=<<EOF
+lwzu r1, -8(r1)
+0x00000000 -8,r1,+,[4],r1,=,-8,r1,+=
+EOF
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -13,8 +15,10 @@ RUN
 
 NAME=store with update ppc-32
 FILE=-
-EXPECT='stwu r1, -8(r1)
-0x00000000 r1,-8,r1,+,=[4],-8,r1,+='
+EXPECT=<<EOF
+stwu r1, -8(r1)
+0x00000000 r1,-8,r1,+,=[4],-8,r1,+=
+EOF
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32

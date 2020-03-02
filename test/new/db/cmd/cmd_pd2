@@ -563,7 +563,8 @@ wx 483b1592770100483b354bd80100 @ 0x000041e7  # cmp rdx, [rip + 0x17792]; cmp rs
 wx 483b3df6470100 @ 0x00004225  # cmp rdi, [rip + 0x147f6]
 .(insn_tests)
 EOF
-EXPECT=%        ,=< 0x000041e0      je 0x421a
+EXPECT=<<EOF
+        ,=< 0x000041e0      je 0x421a
         |   0x000041e2      mov ecx, 4
         |   0x000041e7      lea rdx, [0x0001b980]
         |   0x000041ee      lea rsi, [0x00021a40]
@@ -687,7 +688,8 @@ EXPECT=%        ,=< 0x000041e0      je 0x421a
 [49m
             [32m0x000041ee[0m      [36mcmp[36m rsi[0m,[36m qword [0m[[36mrip [0m+[36m[36m [33m0x1d84b[0m][36m[0m[0m[31m             ; [[31m0x21a40[31m:8]=0x18d31 str.literal[0m[49m
             [32m0x00004225[0m      [36mcmp[36m rdi[0m,[36m qword [0m[[36mrip [0m+[36m[36m [33m0x147f6[0m][36m[0m[0m[31m             ; str.COLUMNS[49m
-            [31m                                                           ; [[31m0x18a22[31m:8]=0x534e4d554c4f43[31m ; "COLUMNS"[0m[49m%
+            [31m                                                           ; [[31m0x18a22[31m:8]=0x534e4d554c4f43[31m ; "COLUMNS"[0m[49m
+EOF
 RUN
 
 NAME=lea section flag bracket fix
@@ -699,8 +701,10 @@ pd 1
 e scr.color=1
 pd 1
 EOF
-EXPECT='            0x00005e6e      488d3d339b01.  lea rdi, section..fini_array ; 0x1f9a8
-            [32m0x00005e6e[0m      [33m48[37m8d[33m3d[33m33[37m9b[37m01[37m.[0m  [37mlea[36m rdi[0m,[36m[36m [0m[36msection..fini_array[0m[36m[0m[0m[31m ; 0x1f9a8[0m[49m'
+EXPECT=<<EOF
+            0x00005e6e      488d3d339b01.  lea rdi, section..fini_array ; 0x1f9a8
+            [32m0x00005e6e[0m      [33m48[37m8d[33m3d[33m33[37m9b[37m01[37m.[0m  [37mlea[36m rdi[0m,[36m[36m [0m[36msection..fini_array[0m[36m[0m[0m[31m ; 0x1f9a8[0m[49m
+EOF
 RUN
 
 NAME=pi no-color rip-relative addr fix

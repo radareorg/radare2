@@ -2229,7 +2229,9 @@ RUN
 
 NAME=refs on PIC binary disassembly (color)
 FILE=../bins/elf/analysis/xrefpic
-EXPECT='[36m|[0m           [32m0x08048432[0m      [37mlea[36m eax[0m,[36m [0m[33mstr.Hello_PIC[0m[36m[0m[0m[49m'
+EXPECT=<<EOF
+[36m|[0m           [32m0x08048432[0m      [37mlea[36m eax[0m,[36m [0m[33mstr.Hello_PIC[0m[36m[0m[0m[49m
+EOF
 CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false

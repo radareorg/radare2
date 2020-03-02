@@ -205,7 +205,9 @@ RUN
 
 NAME=symname just before end of dynstr section of size 1
 FILE=../bins/elf/switch-hello-world.elf
-EXPECT='1732'
+EXPECT=<<EOF
+1732
+EOF
 CMDS=<<EOF
 isq~?
 EOF

@@ -31,10 +31,12 @@ RUN
 NAME=nso entry
 ARGS=-e io.cache=true
 FILE=../bins/nso/application.nso
-EXPECT='[Entrypoints]
+EXPECT=<<EOF
+[Entrypoints]
 vaddr=0x08000000 paddr=0x00000100 haddr=-1 type=program
 
-1 entrypoints'
+1 entrypoints
+EOF
 CMDS=<<EOF
 ie
 EOF
@@ -43,7 +45,9 @@ RUN
 NAME=nso data
 ARGS=-e io.cache=true
 FILE=../bins/nso/application.nso
-EXPECT='e7031eaa01000094c62302d1e50300aae40301aabf0000f1841841ba400000544a240014fb0307aaf90305aafa0304aa'
+EXPECT=<<EOF
+e7031eaa01000094c62302d1e50300aae40301aabf0000f1841841ba400000544a240014fb0307aaf90305aafa0304aa
+EOF
 CMDS=<<EOF
 p8 0x30 @ 0x08000080
 EOF
