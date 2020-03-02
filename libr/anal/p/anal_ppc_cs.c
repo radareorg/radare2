@@ -1229,7 +1229,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		if (mask & R_ANAL_OP_MASK_VAL) {
 			op_fillval (op, handle, insn);
 		}
-		r_strbuf_fini (&op->esil);
+		if (!(mask & R_ANAL_OP_MASK_ESIL)) {
+			r_strbuf_fini (&op->esil);
+		}
 		cs_free (insn, n);
 		//cs_close (&handle);
 	}
