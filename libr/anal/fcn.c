@@ -1544,14 +1544,15 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 	return result;
 }
 
-R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fcn) {
+R_API char *r_anal_function_get_name(RAnalFunction *function) {
+	RAnal *a = function->anal;
 	char *ret = NULL, *arg_i = NULL, *args = strdup ("");
 	// RList *args_list = r_list_newf ((RListFree) free);
 	unsigned int argc = 0, i, j;
 	const char *ret_type = sdb_const_get (a->sdb_types,
-	  r_str_newf ("func.%s.ret", fcn->name), 0);
+	  r_str_newf ("func.%s.ret", function->name), 0);
 	const char *argc_str = sdb_const_get (a->sdb_types,
-	  r_str_newf ("func.%s.args", fcn->name), 0);
+	  r_str_newf ("func.%s.args", function->name), 0);
 
 	if (argc_str) {
 		argc = atoi (argc_str);
@@ -1559,7 +1560,7 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fcn) {
 
 	for (i = 0; i < argc; i++) {
 		arg_i = sdb_get (a->sdb_types,
-		  r_str_newf ("func.%s.arg.%d", fcn->name, i), 0);
+		  r_str_newf ("func.%s.arg.%d", function->name, i), 0);
 		// parse commas
 		for (j = 0; j < strlen (arg_i); j++) {
 			if (arg_i[j] == ',') {
@@ -1581,13 +1582,19 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fcn) {
 	}
 
 	if (ret_type) {
-		ret = r_str_newf ("%s %s (%s);", ret_type, fcn->name, args);
+		ret = r_str_newf ("%s %s (%s);", ret_type, function->name, args);
 	} else {
-		ret = r_str_newf ("%s (%s);", fcn->name, args);
+		ret = r_str_newf ("%s (%s);", function->name, args);
 	}
 
 	free (args);
 	return ret;
+}
+
+// TODO: replace instances of this function call with:
+// r_anal_function_get_name(RAnalFunction *function);
+R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fcn) {
+	return NULL;
 }
 
 /* set function signature from string */

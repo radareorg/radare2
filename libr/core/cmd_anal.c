@@ -3331,7 +3331,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					free (fcnstr_copy);
 					free (fcnstr);
 				} else {
-					char *str = r_anal_fcn_to_string (core->anal, f);
+					char *str = r_anal_function_get_name (f);
 					if (str) {
 						r_cons_println (str);
 						free (str);
