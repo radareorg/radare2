@@ -1384,7 +1384,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					r_core_cmd_help (core, help_detail_pf);
 				}
 			} else {
-				const char *struct_name = r_str_trim_ro (_input);
+				const char *struct_name = r_str_trim_head_ro (_input);
 				const char *val = sdb_get (core->print->formats, struct_name, NULL);
 				if (val) {
 					r_cons_printf ("%s\n", val);
@@ -1403,7 +1403,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				" " R_JOIN_3_PATHS ("%s", R2_SDB_FORMAT, "") "\n",
 				r_sys_prefix (NULL));
 		} else if (_input[2] == ' ') {
-			const char *fname = r_str_trim_ro (_input + 3);
+			const char *fname = r_str_trim_head_ro (_input + 3);
 			char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_SDB_FORMAT, "%s"), fname);
 			char *home = r_str_home (tmp);
 			free (tmp);
@@ -1577,7 +1577,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		}
 	} else {
 		/* This make sure the structure will be printed entirely */
-		const char *fmt = r_str_trim_ro (input + 1);
+		const char *fmt = r_str_trim_head_ro (input + 1);
 		int struct_sz = r_print_format_struct_size (core->print, fmt, mode, 0);
 		int size = R_MAX (core->blocksize, struct_sz);
 		ut8 *buf = calloc (1, size);
@@ -2872,7 +2872,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 		algolist (0);
 		return true;
 	}
-	input = r_str_trim_ro (input);
+	input = r_str_trim_head_ro (input);
 	ptr = strchr (input, ' ');
 	sscanf (input, "%31s", algo);
 	if (ptr && ptr[1]) { // && r_num_is_valid_input (core->num, ptr + 1)) {
@@ -2945,7 +2945,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	}
 	const char *arg = strchr (input, ' ');
 	if (arg) {
-		arg = r_str_trim_ro (arg + 1);
+		arg = r_str_trim_head_ro (arg + 1);
 	} else {
 		arg = input;
 	}
@@ -4831,7 +4831,7 @@ static void print_json_string(RCore *core, const char* block, int len, const cha
 		section_name = "unknown";
 	} else {
 		// cleaning useless spaces in section name in json data.
-		section_name = r_str_trim_ro (section_name);
+		section_name = r_str_trim_head_ro (section_name);
 		char* p;
 		for (p = (char*) section_name; *p && *p != ' '; p++) {}
 		*p = '\0';
@@ -5111,7 +5111,7 @@ static int cmd_print(void *data, const char *input) {
 	{
 		const char *arg = NULL;
 		if (input[1] != '\0') {
-			arg = r_str_trim_ro (input + 2);
+			arg = r_str_trim_head_ro (input + 2);
 		}
 		if (input[1] == 'e') { // "pae"
 			if (input[2] == '?') {
@@ -5323,7 +5323,7 @@ static int cmd_print(void *data, const char *input) {
 			disasm_until_ret (core, core->offset, input[2], input + 2);
 			break;
 		case 'x': // "pix"
-			__cmd_pad (core, r_str_trim_ro (input + 2));
+			__cmd_pad (core, r_str_trim_head_ro (input + 2));
 			break;
 		case 'a': // "pia" is like "pda", but with "pi" output
 			if (l != 0) {
@@ -5522,7 +5522,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		if (input[1] == 'x') { // pdx
-			__cmd_pad (core, r_str_trim_ro (input + 2));
+			__cmd_pad (core, r_str_trim_head_ro (input + 2));
 			return 0;
 		}
 
@@ -5536,7 +5536,7 @@ static int cmd_print(void *data, const char *input) {
 			sp = input + 1;
 		}
 		if (sp) {
-			int n = (int) r_num_math (core->num, r_str_trim_ro (sp));
+			int n = (int) r_num_math (core->num, r_str_trim_head_ro (sp));
 			if (!n) {
 				goto beach;
 			}
@@ -5569,14 +5569,14 @@ static int cmd_print(void *data, const char *input) {
 			processed_cmd = true;
 			break;
 		case 't': // "pdt"
-			r_core_disasm_table (core, l, r_str_trim_ro (input + 2));
+			r_core_disasm_table (core, l, r_str_trim_head_ro (input + 2));
 			pd_result = 0;
 			processed_cmd = true;
 			break;
 		case 'k': // "pdk" -print class
 		{
 			int len = 0;
-			ut64 at = findClassBounds (core, r_str_trim_ro (input + 2), &len);
+			ut64 at = findClassBounds (core, r_str_trim_head_ro (input + 2), &len);
 			return r_core_cmdf (core, "pD %d @ %"PFMT64u, len, at);
 		}
 		case 'i': // "pdi" // "pDi"
@@ -6659,7 +6659,7 @@ l = use_blocksize;
 							char *rstr = core->print->hasrefs (core->print->user, val, true);
 							if (rstr && *rstr) {
 								char *ns = r_str_escape (rstr);
-								pj_ks (pj, "ref", r_str_trim_ro (ns));
+								pj_ks (pj, "ref", r_str_trim_head_ro (ns));
 								pj_end (pj);
 								free (ns);
 								withref = 1;
@@ -6907,7 +6907,7 @@ l = use_blocksize;
 						sp = input + 1;
 					}
 					if (sp) {
-						int n = (int) r_num_math (core->num, r_str_trim_ro (sp));
+						int n = (int) r_num_math (core->num, r_str_trim_head_ro (sp));
 						if (!n) {
 							goto beach;
 						}

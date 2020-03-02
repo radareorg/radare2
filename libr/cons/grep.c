@@ -426,8 +426,8 @@ R_API void r_cons_grep_process(char * grep) {
 static int cmp(const void *a, const void *b) {
 	char *da = NULL;
 	char *db = NULL;
-	const char *ca = r_str_trim_ro (a);
-	const char *cb = r_str_trim_ro (b);
+	const char *ca = r_str_trim_head_ro (a);
+	const char *cb = r_str_trim_head_ro (b);
 	if (!a || !b) {
 		return (int) (size_t) ((char*) a - (char*) b);
 	}

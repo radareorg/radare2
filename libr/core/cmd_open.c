@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include "r_list.h"
 #include "r_config.h"
@@ -192,7 +192,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case '.': // "ob."
 		{
-			const char *arg = r_str_trim_ro (input + 2);
+			const char *arg = r_str_trim_head_ro (input + 2);
 			ut64 at = core->offset;
 			if (*arg) {
 				at = r_num_math (core->num, arg);
@@ -343,7 +343,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_bin_file_delete_all (core->bin);
 		} else {
 			ut32 id;
-			value = r_str_trim_ro (input + 2);
+			value = r_str_trim_head_ro (input + 2);
 			if (!value) {
 				eprintf ("Invalid argument\n");
 				break;
@@ -458,7 +458,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 static void cmd_omfg(RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
-	input = r_str_trim_ro (input);
+	input = r_str_trim_head_ro (input);
 	if (input) {
 		int perm = *input
 		? (*input == '+' || *input == '-')
@@ -488,7 +488,7 @@ static void cmd_omfg(RCore *core, const char *input) {
 static void cmd_omf(RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
-	char *arg = strdup (r_str_trim_ro (input));
+	char *arg = strdup (r_str_trim_head_ro (input));
 	if (!arg) {
 		return;
 	}
@@ -695,7 +695,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 					r_cons_printf ("%s\n", map->name);
 					break;
 				default:
-					r_io_map_set_name (map, r_str_trim_ro (input + 3));
+					r_io_map_set_name (map, r_str_trim_head_ro (input + 3));
 					break;
 				}
 			}
@@ -1326,7 +1326,7 @@ static int cmd_open(void *data, const char *input) {
 #if 1
 	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
 	case 'f': // "of"
-		ptr = r_str_trim_ro (input + 2);
+		ptr = r_str_trim_head_ro (input + 2);
 		argv = r_str_argv (ptr, &argc);
 		if (argc == 0) {
 			eprintf ("Usage: of [filename] (rwx)\n");
@@ -1346,7 +1346,7 @@ static int cmd_open(void *data, const char *input) {
 				input++;
 			}
 			addr = 0; // honor bin.baddr ?
-			const char *argv0 = r_str_trim_ro (input + 2);
+			const char *argv0 = r_str_trim_head_ro (input + 2);
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
 				if (!silence) {

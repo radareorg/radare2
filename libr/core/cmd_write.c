@@ -359,7 +359,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 			const char *algo = NULL;
 			const char *key = NULL;
 			const char *iv = NULL;
-			char *space, *args = strdup (r_str_trim_ro (input+2));
+			char *space, *args = strdup (r_str_trim_head_ro (input+2));
 			space = strchr (args, ' ');
 			if (space) {
 				*space++ = 0;
@@ -1303,7 +1303,7 @@ static int cmd_write(void *data, const char *input) {
 						r_core_cmd_help (core, help_msg_wt);
 						return 0;
 					}
-					const char *prefix = r_str_trim_ro (str + 2);
+					const char *prefix = r_str_trim_head_ro (str + 2);
 					if (!*prefix) {
 						prefix = "dump";
 					}
@@ -1315,7 +1315,7 @@ static int cmd_write(void *data, const char *input) {
 							r_core_cmd_help (core, help_msg_wt);
 							return 0;
 						}
-						filename = r_str_trim_ro (str);
+						filename = r_str_trim_head_ro (str);
 					} else {
 						filename = "";
 					}
@@ -1494,7 +1494,7 @@ static int cmd_write(void *data, const char *input) {
 		case ' ':
 		case 'i':
 		case '*': {
-			const char *file = r_str_trim_ro (input + 2);
+			const char *file = r_str_trim_head_ro (input + 2);
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, file);

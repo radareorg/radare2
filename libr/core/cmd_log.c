@@ -324,10 +324,10 @@ static int cmd_plugins(void *data, const char *input) {
 		// return r_core_cmd0 (core, "Lc");
 		break;
 	case '-':
-		r_lib_close (core->lib, r_str_trim_ro (input + 1));
+		r_lib_close (core->lib, r_str_trim_head_ro (input + 1));
 		break;
 	case ' ':
-		r_lib_open (core->lib, r_str_trim_ro (input + 1));
+		r_lib_open (core->lib, r_str_trim_head_ro (input + 1));
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_L);
@@ -346,7 +346,7 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'D': // "LD"
 		if (input[1] == ' ') {
-			r_core_cmdf (core, "e cmd.pdc=%s", r_str_trim_ro (input + 2));
+			r_core_cmdf (core, "e cmd.pdc=%s", r_str_trim_head_ro (input + 2));
 		} else {
 			r_core_cmd0 (core, "e cmd.pdc=?");
 		}

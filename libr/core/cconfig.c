@@ -2439,7 +2439,7 @@ static bool cb_binmaxstrbuf(void *user, void *data) {
 		}
 		core->bin->maxstrbuf = v;
 		if (v>old_v) {
-			r_core_bin_refresh_strings (core);
+			r_bin_reset_strings (core->bin);
 		}
 		return true;
 	}
@@ -2455,8 +2455,7 @@ static bool cb_binmaxstr(void *user, void *data) {
 			v = 4; // HACK
 		}
 		core->bin->maxstrlen = v;
-	// TODO: Do not refresh if nothing changed (minstrlen ?)
-		r_core_bin_refresh_strings (core);
+		r_bin_reset_strings (core->bin);
 		return true;
 	}
 	return true;
@@ -2471,8 +2470,7 @@ static bool cb_binminstr(void *user, void *data) {
 			v = 4; // HACK
 		}
 		core->bin->minstrlen = v;
-	// TODO: Do not refresh if nothing changed (minstrlen ?)
-		r_core_bin_refresh_strings (core);
+		r_bin_reset_strings (core->bin);
 		return true;
 	}
 	return true;
@@ -3148,7 +3146,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("bin.str.enc", "guess", &cb_binstrenc);
 	SETDESC (n, "Default string encoding of binary");
 	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
-	SETCB ("bin.prefix", NULL, &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
+	SETCB ("bin.prefix", "", &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB ("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETCB ("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
 	SETCB ("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
@@ -3258,10 +3256,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("dir.types", "/usr/include", "Default path to look for cparse type files");
 	SETPREF ("dir.libs", "", "Specify path to find libraries to load when bin.libs=true");
 	p = r_sys_getenv (R_SYS_HOME);
-	SETCB ("dir.home", p, &cb_dirhome, "Path for the home directory");
+	SETCB ("dir.home", p? p: "/", &cb_dirhome, "Path for the home directory");
 	free (p);
 	p = r_sys_getenv (R_SYS_TMP);
-	SETCB ("dir.tmp", p, &cb_dirtmp, "Path of the tmp directory");
+	SETCB ("dir.tmp", p? p: "", &cb_dirtmp, "Path of the tmp directory");
 	free (p);
 #if __ANDROID__
 	SETPREF ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", "Default path for projects");
@@ -3315,7 +3313,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("dbg.trace.inrange", "false", "While tracing, avoid following calls outside specified range");
 	SETBPREF ("dbg.trace.libs", "true", "Trace library code too");
 	SETBPREF ("dbg.exitkills", "true", "Kill process on exit");
-	SETPREF ("dbg.exe.path", NULL, "Path to binary being debugged");
+	SETPREF ("dbg.exe.path", "", "Path to binary being debugged");
 	SETCB ("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");
 	SETICB ("dbg.gdb.page_size", 4096, &cb_dbg_gdb_page_size, "Page size on gdb target (useful for QEMU)");
 	SETICB ("dbg.gdb.retries", 10, &cb_dbg_gdb_retries, "Number of retries before gdb packet read times out");

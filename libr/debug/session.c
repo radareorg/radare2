@@ -123,7 +123,7 @@ R_API bool r_debug_session_comment(RDebug *dbg, int idx, const char *msg) {
 			if (session->comment) {
 				free (session->comment);
 			}
-			session->comment = strdup (r_str_trim_ro (msg));
+			session->comment = strdup (r_str_trim_head_ro (msg));
 			break;
 		}
 		count++;

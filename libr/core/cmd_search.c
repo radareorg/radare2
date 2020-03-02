@@ -2017,7 +2017,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
-	input = r_str_trim_ro (input);
+	input = r_str_trim_head_ro (input);
 	r_cons_break_push (NULL, NULL);
 	RIOMap* map;
 	RListIter *iter;
@@ -3220,7 +3220,7 @@ reread:
 		} else if (input[1] == '1') { // "a1"
 			__core_cmd_search_asm_byteswap (core, (int)r_num_math (core->num, input + 2));
 		} else if (input[1] == 'I') { // "/aI" - infinite
-			__core_cmd_search_asm_infinite (core, r_str_trim_ro (input + 1));
+			__core_cmd_search_asm_infinite (core, r_str_trim_head_ro (input + 1));
 		} else if (input[1] == ' ') {
 			if (input[param_offset - 1]) {
 				char *kwd = r_core_asm_search (core, input + param_offset);
@@ -3255,7 +3255,7 @@ reread:
 			{
 				ret = false;
 				char *space = strchr (input, ' ');
-				const char *arg = space? r_str_trim_ro (space + 1): NULL;
+				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || input[2] == '?') {
 					eprintf ("Usage: /cc[aAdlpb] [hashname] [hexpairhashvalue]\n");
 					eprintf (" /cca - lowercase alphabet chars only\n");
@@ -3495,7 +3495,7 @@ reread:
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		char *v_str = (char *)r_str_trim_ro (input + param_offset);
+		char *v_str = (char *)r_str_trim_head_ro (input + param_offset);
 		RList *nums = r_num_str_split_list (v_str);
 		int len = r_list_length (nums);
 		int bsize = 0;
