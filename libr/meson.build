@@ -132,6 +132,7 @@ bin_plugins = [
   'cgc',
   'coff',
   'dex',
+  'dmp64',
   'dol',
   'dyldcache',
   'elf',
