@@ -1654,7 +1654,7 @@ ahb 16 @ 0x5c20
 0000:5c20     31ed           xor bp, bp
 aha arm @ 0x5c20
 ahb 16 @ 0x5c20
-0x00005c20      31ed           xor bp, bp
+0x00005c20      31ed           xor ebp, ebp
 aha arm @ 0x5c20
 ahb 16 @ 0x5c20
 EOF
