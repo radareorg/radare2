@@ -647,6 +647,8 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, PJ *pj, bool show_f
 			} else {
 				pj_k (pj, "name");
 				if (d->type == 's' && (base64_str = r_base64_encode_dyn (d->str, -1))) {
+					pj_s (pj, base64_str);
+				} else {
 					pj_s (pj, str);
 				}
 			}
