@@ -371,7 +371,6 @@ EOF
 RUN
 
 NAME=rasm2 bswap x64 #8095
-BROKEN=1 # Only with node-r2r
 FILE=-
 CMDS="!rasm2 -a x86 -b 64 \"bswap rax;bswap rbx;bswap rcx;bswap rdx\""
 EXPECT=480fc8480fcb480fc9480fca
@@ -381,15 +380,6 @@ NAME=rasm2 bswap x64 #8095 (with single quotes)
 BROKEN=1 # Only on Windows
 FILE=-
 CMDS=!rasm2 -a x86 -b 64 'bswap rax;bswap rbx;bswap rcx;bswap rdx'
-EXPECT=480fc8480fcb480fc9480fca
-RUN
-
-# Temporary; should be removed when node-r2r is no longer used
-NAME=rasm2 bswap x64 #8095 (with <<EOF)
-FILE=-
-CMDS=<<EOF
-"!rasm2 -a x86 -b 64 \"bswap rax;bswap rbx;bswap rcx;bswap rdx\""
-EOF
 EXPECT=480fc8480fcb480fc9480fca
 RUN
 
