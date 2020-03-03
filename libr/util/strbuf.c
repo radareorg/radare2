@@ -308,5 +308,7 @@ R_API void r_strbuf_free(RStrBuf *sb) {
 R_API void r_strbuf_fini(RStrBuf *sb) {
 	if (sb) {
 		R_FREE (sb->ptr);
+		sb->len = 0;
+		sb->buf[0] = '\0';
 	}
 }
