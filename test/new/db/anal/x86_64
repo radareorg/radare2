@@ -1047,8 +1047,8 @@ EXPECT=<<EOF
 |     |||   0x00003cda      mov byte [rip + 0x1d33f], 1                ; [0x21020:1]=0
 |    ,====< 0x00003ce1      jmp 0x3cf9
 |    ||||   ; CODE XREF from main @ 0x3cb2
-|    ||`--> 0x00003ce3      mov esi, 5                                 ; int64_t arg2
-|    || |   0x00003ce8      xor edi, edi                               ; int64_t arg1
+|    ||`--> 0x00003ce3      mov esi, 5
+|    || |   0x00003ce8      xor edi, edi
 |    || |   0x00003cea      mov dword [rip + 0x1d60c], 0               ; [0x21300:4]=0
 |    || |   0x00003cf4      call fcn.00012740
 |    || |   ; CODE XREFS from main @ 0x3ce1, 0x4602, 0x4c38
@@ -1089,8 +1089,8 @@ EXPECT=<<EOF
 |  | | |    0x00003cda      mov byte [rip + 0x1d33f], 1                ; [0x21020:1]=0
 | ========< 0x00003ce1      jmp 0x3cf9
 |  | | |    ; CODE XREF from main @ 0x3cb2
-|  | `----> 0x00003ce3      mov esi, 5                                 ; int64_t arg2
-|  |   |    0x00003ce8      xor edi, edi                               ; int64_t arg1
+|  | `----> 0x00003ce3      mov esi, 5
+|  |   |    0x00003ce8      xor edi, edi
 |  |   |    0x00003cea      mov dword [rip + 0x1d60c], 0               ; [0x21300:4]=0
 |  |   |    0x00003cf4      call fcn.00012740
 |  |   |    ; CODE XREFS from main @ 0x3ce1, 0x4602, 0x4c38
@@ -1132,8 +1132,8 @@ EXPECT=<<EOF
 |  | | |    0x00003cda      mov byte [rip + 0x1d33f], 1                ; [0x21020:1]=0
 | ========< 0x00003ce1      jmp 0x3cf9
 |  | | |    ; CODE XREF from main @ 0x3cb2
-|  | `----> 0x00003ce3      mov esi, 5                                 ; int64_t arg2
-|  |   |    0x00003ce8      xor edi, edi                               ; int64_t arg1
+|  | `----> 0x00003ce3      mov esi, 5
+|  |   |    0x00003ce8      xor edi, edi
 |  |   |    0x00003cea      mov dword [rip + 0x1d60c], 0               ; [0x21300:4]=0
 |  |   |    0x00003cf4      call fcn.00012740
 |  |   |    ; CODE XREFS from main @ 0x3ce1, 0x4602, 0x4c38
