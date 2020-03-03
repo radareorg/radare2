@@ -626,14 +626,32 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, PJ *pj, bool show_f
 			pj_kn (pj, "offset", d->from);
 			pj_ks (pj, "type", r_meta_type_to_string (d->type));
 
-			pj_k (pj, "name");
-			if (d->type == 's' && (base64_str = r_base64_encode_dyn (d->str, -1))) {
-				pj_s (pj, base64_str);
-				free (base64_str);
+			if (d->type == 'H') {
+				pj_k (pj, "color");
+				ut8 r = 0, g = 0, b = 0, A = 0;
+				const char *esc = strchr (d->str, '\x1b');
+				if (esc) {
+					r_cons_rgb_parse (esc, &r, &g, &b, &A);
+					char *rgb_str = r_cons_rgb_tostring (r, g, b);
+					base64_str = r_base64_encode_dyn (rgb_str, -1);
+					if (d->type == 's' && base64_str) {
+						pj_s (pj, base64_str);
+						free (base64_str);
+					} else {
+						pj_s (pj, rgb_str);
+					}
+					free (rgb_str);
+				} else {
+					pj_s (pj, str);
+				}
 			} else {
-				pj_s (pj, str);
+				pj_k (pj, "name");
+				if (d->type == 's' && (base64_str = r_base64_encode_dyn (d->str, -1))) {
+					pj_s (pj, base64_str);
+				} else {
+					pj_s (pj, str);
+				}
 			}
-
 			if (d->type == 'd') {
 				pj_kn (pj, "size", d->size);
 			} else if (d->type == 's') {
