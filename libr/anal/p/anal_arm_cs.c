@@ -1801,8 +1801,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						r_strbuf_appendf (&op->esil, ",%d,%s,%c,%s,=",
 								  disp, MEMBASE(2), sign, MEMBASE(2));
 					}
-				} else { 
-					if (ISSHIFTED(2)) { 
+				} else {
+					if (ISSHIFTED(2)) {
 						// it seems strd does not support SHIFT which is good, but have a check nonetheless
 					} else {
 						r_strbuf_appendf (&op->esil, "%s,%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,%s,+,0xffffffff,&,=[4]",
@@ -1821,7 +1821,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					       REG(0), MEMBASE(2), str_ldr_bytes, REG(1), MEMBASE(2), str_ldr_bytes, IMM(3), MEMBASE(2));
 			}
 			if (ISREG(3)) { // e.g. 'strd r2, r3, [r4], r5'
-				if (ISSHIFTED(3)) { 
+				if (ISSHIFTED(3)) {
 					// same as above
 				} else {
 					r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,4,%s,+,0xffffffff,&,=[%d],%s,%s,+=",
@@ -3615,7 +3615,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	}
 
 	anal->bits = obits;
-	free (op);
+	r_anal_op_free (op);
 
 	return ret;
 }
@@ -3634,7 +3634,7 @@ static RList *anal_preludes(RAnal *anal) {
 	case 64:
 		KW ("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
 		KW ("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
-		KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0); 
+		KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0);
 		break;
 	default:
 		r_list_free (l);
