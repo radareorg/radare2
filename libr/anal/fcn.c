@@ -1544,7 +1544,7 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 	return result;
 }
 
-R_API char *r_anal_function_get_name(RAnalFunction *function) {
+R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 	RAnal *a = function->anal;
 	char *ret = NULL, *arg_i = NULL, *sdb_arg_i = NULL, *args = strdup (""),
 		*sdb_ret = r_str_newf ("func.%s.ret", function->name),
@@ -1590,7 +1590,7 @@ R_API char *r_anal_function_get_name(RAnalFunction *function) {
 }
 
 // TODO: replace instances of this function call with:
-// r_anal_function_get_name(RAnalFunction *function);
+// r_anal_function_get_signature(RAnalFunction *function);
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fcn) {
 	return NULL;
 }
