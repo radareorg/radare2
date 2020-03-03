@@ -4014,9 +4014,10 @@ char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
 		free (buf);
 		return NULL;
 	}
+	buf[sz] = 0;
 	const size_t buflen = strlen (buf);
 	char *nullbyte = buf + buflen;
-	if (nullbyte[1] && buflen < sz) {
+	if (nullbyte[0] && nullbyte[1] && buflen < sz) {
 		nullbyte[0] = ' ';
 	}
 	buf[sz] = 0;
