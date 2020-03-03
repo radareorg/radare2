@@ -120,6 +120,16 @@ R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr) {
 	return false;
 }
 
+// returns the size of the i-th instruction in a basic block
+R_API ut64 r_anal_bb_size_i(RAnalBlock *bb, int i) {
+	if (i < 0 || i >= bb->ninstr) {
+		return UT64_MAX;
+	}
+	ut16 idx_cur = r_anal_bb_offset_inst (bb, i);
+	ut16 idx_next = r_anal_bb_offset_inst (bb, i + 1);
+	return idx_next != UT16_MAX? idx_next - idx_cur: bb->size - idx_cur;
+}
+
 /* returns the address of the basic block that contains addr or UT64_MAX if
  * there is no such basic block */
 R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr) {

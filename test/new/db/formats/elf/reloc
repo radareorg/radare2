@@ -31,7 +31,7 @@ RUN
 NAME=ELF: .plt/.plt.sec sections
 FILE=../bins/elf/ls-cet
 CMDS=<<EOF
-pdi 10 @ main + 0x28
+pdi 10 @ main+0x28
 EOF
 EXPECT=<<EOF
 0x00004e98                 31c0  xor eax, eax

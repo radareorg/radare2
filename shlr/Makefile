@@ -34,7 +34,7 @@ TS_TIP=f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3
 # NOTE: when you update SHELLPARSER_TIP or SHELLPARSER_BRA, also update them in shlr/meson.build
 SHELLPARSER_URL=https://github.com/ret2libc/radare2-shell-parser.git
 SHELLPARSER_BRA=master
-SHELLPARSER_TIP=34034bdc8ee34592c507ea6943c66234e48762de
+SHELLPARSER_TIP=d83db3c86214f6c3d3187dddb990e0b847888c9b
 
 ifeq ($(CS_RELEASE),1)
 CS_VER=4.0.1

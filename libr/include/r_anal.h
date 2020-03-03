@@ -1468,6 +1468,7 @@ R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_i(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
 R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr);
+R_API ut64 r_anal_bb_size_i(RAnalBlock *bb, int i);
 
 /* op.c */
 R_API const char *r_anal_stackop_tostring(int s);

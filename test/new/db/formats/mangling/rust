@@ -34,7 +34,7 @@ EXPECT=<<EOF
 <Test + 'static as foo::Bar<Test>>::bar
 EOF
 CMDS=<<EOF
-!rabin2 -D rust _ZN71_\$LT\$Test\$u20\$\$u2b\$\$u20\$\$u27\$static\$u20\$as\$u20\$foo..Bar\$LT\$Test\$GT\$\$GT\$3barE
+!rabin2 -D rust "_ZN71_\$LT\$Test\$u20\$\$u2b\$\$u20\$\$u27\$static\$u20\$as\$u20\$foo..Bar\$LT\$Test\$GT\$\$GT\$3barE"
 EOF
 RUN
 
