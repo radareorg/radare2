@@ -955,7 +955,8 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 						int i;
 						int arg_max = fcn->cc ? r_anal_cc_max_arg (a, fcn->cc) : 0;
 						for (i = 0; i < arg_max; i++) {
-							if (!strcmp (reg->name, r_anal_cc_arg (a, fcn->cc, i))) {
+							const char *reg_arg = r_anal_cc_arg (a, cc, i);
+							if (reg_arg && !strcmp (reg->name, reg_arg)) {
 								if (delta != reg->index) {
 									delta = reg->index;
 								}
