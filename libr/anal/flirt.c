@@ -582,13 +582,18 @@ static int module_match_buffer(RAnal *anal, const RFlirtModule *module,
 				RListIter *iter_tmp;
 				RAnalFunction *fcn;
 				r_list_foreach_safe (anal->fcns, iter, iter_tmp, fcn) {
-					if (fcn->addr >= next_module_function->addr + next_module_function_size &&
-					fcn->addr < next_module_function->addr + flirt_fcn_size) {
-						r_list_join (next_module_function->bbs, fcn->bbs);
+					if (fcn != next_module_function &&
+							fcn->addr >= next_module_function->addr + next_module_function_size &&
+							fcn->addr < next_module_function->addr + flirt_fcn_size) {
+						RListIter *iter_bb;
+						RAnalBlock *block;
+						r_list_foreach (fcn->bbs, iter_bb, block) {
+							r_anal_function_add_block (next_module_function, block);
+						}
 						r_list_join (next_module_function->locs, fcn->locs);
 						// r_list_join (next_module_function->vars, r_anal_var_all_list (anal, fcn);
 						next_module_function->ninstr += fcn->ninstr;
-						r_anal_fcn_del ((RAnal *) anal, fcn->addr);
+						r_anal_function_delete (fcn);
 					}
 				}
 				r_anal_fcn_resize (anal, next_module_function, flirt_fcn_size);
@@ -619,6 +624,9 @@ static int module_match_buffer(RAnal *anal, const RFlirtModule *module,
 /* Returns false otherwise. */
 static int node_pattern_match(const RFlirtNode *node, ut8 *b, int buf_size) {
 	int i;
+	if (buf_size < node->length) {
+		return false;
+	}
 	for (i = 0; i < node->length; i++) {
 		if (!node->variant_bool_array[i]) {
 			if (i < node->length && node->pattern_bytes[i] != b[i]) {
