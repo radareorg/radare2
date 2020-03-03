@@ -61,7 +61,8 @@ RUN
 
 NAME=to typedefs
 FILE=-
-EXPECT='dangerous=struct
+EXPECT=<<EOF
+dangerous=struct
 days=typedef
 easy_prey=typedef
 humans=typedef
@@ -73,7 +74,8 @@ tokyo=typedef
 typedef.days=struct dangerous
 typedef.easy_prey=uint32_t
 typedef.humans=uint32_t
-typedef.tokyo=struct dangerous'
+typedef.tokyo=struct dangerous
+EOF
 CMDS=<<EOF
 to ../bins/headers/t1.h
 tk~easy,humans,days,tokyo,dangerous
