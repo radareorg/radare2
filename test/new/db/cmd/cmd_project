@@ -243,7 +243,7 @@ EOF
 RUN
 
 NAME=Save project for a binary and checking opened files
-FILE='../bins/elf/analysis/main'
+FILE=../bins/elf/analysis/main
 BROKEN=1
 CMDS=<<EOF
 e dir.projects = .tmp/
@@ -258,8 +258,8 @@ RUN
 
 
 NAME=Save project for a binary without saving its info
-FILE='../bins/elf/analysis/main'
-ARGS='-n'
+FILE=../bins/elf/analysis/main
+ARGS=-n
 CMDS=<<EOF
 e dir.projects = .tmp/
 Ps blah > /dev/null
@@ -271,8 +271,7 @@ EOF
 RUN
 
 NAME=Save project for a binary after analysis
-FILE='../bins/elf/analysis/main'
-ARGS=''
+FILE=../bins/elf/analysis/main
 CMDS=<<EOF
 e dir.projects = .tmp/
 aaa
@@ -282,13 +281,14 @@ Ps blah
 y
 EOF
 EXPECT=<<EOF
+blah
 EOF
 RUN
 
 NAME=Save project for a binary without saving its info at a specific map offset
-FILE='../bins/elf/analysis/main'
+FILE=../bins/elf/analysis/main
 BROKEN=1
-ARGS='-n -m 0x1337'
+ARGS=-n -m 0x1337
 CMDS=<<EOF
 e dir.projects = .tmp/
 Ps blah > /dev/null
@@ -303,8 +303,8 @@ EOF
 RUN
 
 NAME=Delete a saved project (with Pd)
-FILE='../bins/elf/analysis/main'
-ARGS='-n'
+FILE=../bins/elf/analysis/main
+ARGS=-n
 CMDS=<<EOF
 e dir.projects = .tmp/
 Ps blah > /dev/null
@@ -317,8 +317,8 @@ EOF
 RUN
 
 NAME=Delete a saved project (with P-)
-FILE='../bins/elf/analysis/main'
-ARGS='-n'
+FILE=../bins/elf/analysis/main
+ARGS=-n
 CMDS=<<EOF
 e dir.projects = .tmp/
 Ps blah > /dev/null
@@ -330,8 +330,8 @@ EOF
 RUN
 
 NAME=Delete a saved project and used directory (with Pd)
-FILE='../bins/elf/analysis/main'
-ARGS='-n'
+FILE=../bins/elf/analysis/main
+ARGS=-n
 CMDS=<<EOF
 e dir.projects = .tmp/
 Ps blah > /dev/null
@@ -345,8 +345,9 @@ RUN
 
 
 NAME=Delete a saved project and used directory (with P-)
-FILE='../bins/elf/analysis/main'
-ARGS='-n'
+FILE=../bins/elf/analysis/main
+BROKEN=1
+ARGS=-n
 CMDS=<<EOF
 e dir.projects = .tmp/
 Ps blah > /dev/null
@@ -355,13 +356,14 @@ Pl~blah
 ls -l `e dir.projects`~blah
 EOF
 EXPECT=<<EOF
+-drwxr-xr-x  1  501:20    96          .tmp/blah/
 EOF
 RUN
 
 NAME=Save project for a file with asm.bits=32 and check the value after loading again
-FILE='../bins/src/hello.c'
+FILE=../bins/src/hello.c
 BROKEN=1
-ARGS=''
+ARGS=
 CMDS=<<EOF
 e dir.projects = .tmp/
 e asm.bits=16
@@ -391,7 +393,7 @@ RUN
 
 NAME=Checking e prj.name after saving again
 BROKEN=1
-FILE='../bins/elf/analysis/main'
+FILE=../bins/elf/analysis/main
 CMDS=<<EOF
 e dir.projects = .tmp/
 Ps blah > /dev/null

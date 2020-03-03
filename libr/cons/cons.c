@@ -1197,8 +1197,8 @@ R_API void r_cons_strcat(const char *str) {
 
 R_API void r_cons_newline() {
 	if (!I.null) {
-		if (I.context->color_mode) {
-			r_cons_strcat (Color_RESET_BG "\n");
+		if (I.context->color_mode > 0) {
+			r_cons_strcat (R_CONS_CLEAR_FROM_CURSOR_TO_END"\n");
 		} else {
 			r_cons_strcat ("\n");
 		}

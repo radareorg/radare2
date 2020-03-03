@@ -614,10 +614,9 @@ EOF
 RUN
 
 NAME=raw aac (using a PIC bin)
-BROKEN=1
 FILE=../bins/elf/libmagic.so
 EXPECT=<<EOF
-202
+199
 EOF
 CMDS=<<EOF
 aac
@@ -626,11 +625,10 @@ EOF
 RUN
 
 NAME=raw aac with maps (using a PIC bin)
-BROKEN=1
 FILE=../bins/elf/libmagic.so
 ARGS=-n -m 0x80000 -a arm -b 16 -e cfg.bigendian=false
 EXPECT=<<EOF
-96
+94
 EOF
 CMDS=<<EOF
 aac
@@ -2242,7 +2240,7 @@ RUN
 NAME=refs on PIC binary disassembly (color)
 FILE=../bins/elf/analysis/xrefpic
 EXPECT=<<EOF
-[36m|[0m           [32m0x08048432[0m      [37mlea[36m eax[0m,[36m [0m[33mstr.Hello_PIC[0m[36m[0m[0m[49m
+[36m|[0m           [32m0x08048432[0m      [37mlea[36m eax[0m,[36m [0m[33mstr.Hello_PIC[0m[36m[0m[0m[0J
 EOF
 CMDS=<<EOF
 e asm.bytes=false
