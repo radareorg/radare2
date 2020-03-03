@@ -3,6 +3,23 @@
 
 //TODO test r_str_chop_path
 
+bool test_r_str_format(void) {
+	r_strf_frame (32);
+	const char *a = r_strf ("%s.%d", "hello", 42);
+	mu_assert_streq (a, "hello.42", "error in r_strf hello.42");
+
+	const char *b = r_strf ("%s.%d", "world", 24);
+	mu_assert_streq (b, "world.24", "error in r_strf world.24");
+
+	const char *c = r_strf ("%s.%d", "finds", 23);
+	mu_assert_streq (c, "finds.23", "error in r_strf finds.23");
+
+	mu_assert_streq (a, "hello.42", "error in r_strf hello.42");
+	mu_assert_streq (b, "world.24", "error in r_strf world.24");
+
+	mu_end;
+}
+
 bool test_r_str_replace_char_once(void) {
 	char* str = strdup ("hello world");
 	(void) r_str_replace_char_once (str, 'l', 'x');
@@ -397,6 +414,7 @@ bool all_tests() {
 	mu_run_test(test_r_str_sanitize_sdb_key);
 	mu_run_test(test_r_str_unescape);
 	mu_run_test(test_r_str_constpool);
+	mu_run_test(test_r_str_format);
 	return tests_passed != tests_run;
 }
 

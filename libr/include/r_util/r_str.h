@@ -3,6 +3,7 @@
 
 #include <wchar.h>
 #include "r_str_util.h"
+#include "r_assert.h"
 #include "r_list.h"
 
 #ifdef __cplusplus
@@ -23,11 +24,37 @@ typedef int (*RStrRangeCallback) (void *, int);
 
 static inline void r_str_rmch(char *s, char ch) {
 	for (;*s; s++) {
-		if (*s==ch) {
+		if (*s == ch) {
 			memmove (s, s + 1, strlen (s));
 		}
 	}
 }
+
+//  -- strf
+typedef struct r_strf_t {
+	size_t idx, size;
+	char buf[0];
+} r_strf__;
+
+R_NULLABLE static inline char *r_strf_(r_strf__ *s, const char *fmt, ...) {
+	if (s->idx >= s->size) {
+		s->idx = 0;
+	}
+	r_return_val_if_fail (s && fmt, NULL);
+	va_list ap;
+	va_start (ap, fmt);
+	char *p = s->buf + s->idx;
+	size_t left = s->size - s->idx - 1;
+	int res = vsnprintf (p, left, fmt, ap);
+	r_return_val_if_fail (res != left, NULL);
+	s->idx += res + 1;
+	va_end (ap);
+	return p;
+}
+
+#define r_strf_frame(x) struct r_strf_t { size_t idx, size; char buf[x]; } r_strf_var = {0, x, 0}
+#define r_strf(x,...) r_strf_((r_strf__*)&r_strf_var, x, __VA_ARGS__)
+//  -- strf
 
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_ISNOTEMPTY(x) ((x) && *(x))
