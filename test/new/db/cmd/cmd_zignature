@@ -752,7 +752,8 @@ RUN
 
 NAME=zfs on static glibc
 FILE=../bins/elf/static-glibc-2.27
-EXPECT='0x004004d1 86 flirt.__malloc_assert.constprop.13
+EXPECT=<<EOF
+0x004004d1 86 flirt.__malloc_assert.constprop.13
 0x00400527 35 flirt.__gconv_release_step.part.1
 0x00400b70 613 flirt.get_common_indeces.constprop.1
 0x00400de0 1657 flirt.__libc_start_main
@@ -982,7 +983,8 @@ EXPECT='0x004004d1 86 flirt.__malloc_assert.constprop.13
 0x0048fa10 478 flirt.__dl_iterate_phdr
 0x0048fbf0 73 flirt._nl_finddomain_subfreeres
 0x0048fc40 247 flirt._nl_unload_domain
-0x00490bb0 218 flirt.free_slotinfo'
+0x00490bb0 218 flirt.free_slotinfo
+EOF
 CMDS=<<EOF
 aac
 zfs ../bins/other/sigs/libc6_2.27-3ubuntu1_amd64.sig~silence
