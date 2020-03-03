@@ -58,3 +58,26 @@ tk struct.S1.y
 tk struct.S1.z
 EOF
 RUN
+
+NAME=to typedefs
+FILE=-
+EXPECT=<<EOF
+dangerous=struct
+days=typedef
+easy_prey=typedef
+humans=typedef
+struct.dangerous=neo
+struct.dangerous.!size=64
+struct.dangerous.neo=uint64_t,0,0
+struct.dangerous.neo.meta=13
+tokyo=typedef
+typedef.days=struct dangerous
+typedef.easy_prey=uint32_t
+typedef.humans=uint32_t
+typedef.tokyo=struct dangerous
+EOF
+CMDS=<<EOF
+to ../bins/headers/t1.h
+tk~easy,humans,days,tokyo,dangerous
+EOF
+RUN
