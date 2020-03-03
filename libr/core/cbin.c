@@ -2519,10 +2519,9 @@ static int bin_map_sections_to_segments (RBin *bin, int mode) {
 		r_list_append (list, section);
 	}
 
-	char *tmp2 = NULL;
 	r_list_foreach (segments, iter, segment) {
 		RInterval segment_itv = (RInterval){segment->vaddr, segment->size};
-		tmp2 = r_str_new ("");
+		char *tmp2 = r_str_new ("");
 		r_list_foreach (sections, iter2, section) {
 			RInterval section_itv = (RInterval){section->vaddr, section->size};
 			if (r_itv_begin (section_itv) >= r_itv_begin (segment_itv) && r_itv_end (section_itv) <= r_itv_end (segment_itv) && section->name[0]) {
@@ -2532,17 +2531,25 @@ static int bin_map_sections_to_segments (RBin *bin, int mode) {
 		r_table_add_row (table, segment->name, tmp2, 0);
 		/*output to json*/
 		json_output = r_str_appendf (json_output, "\"%s\": \"%s\",", segment->name, tmp2);
+		free (tmp2);
 	}
 	// remove last ,
 	json_output [strlen (json_output) - 1] = 0;
-	json_output = r_str_newf ("[{%s}]", json_output);
+	char *jo = r_str_newf ("[{%s}]", json_output);
+	free (json_output);
+	json_output = jo;
 
 	if (IS_MODE_JSON (mode)){
 		r_cons_printf ("%s", json_output);
 	} else if (IS_MODE_NORMAL (mode)){
 		r_cons_printf ("Section to Segment mapping:\n");
-		r_cons_printf ("%s\n", r_table_tostring (table));
+		char *s = r_table_tostring (table);
+		r_cons_printf ("%s\n", s);
+		free (s);
 	}
+	free (json_output);
+	r_list_free (segments);
+	r_table_free (table);
 	return true;
 }
 

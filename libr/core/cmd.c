@@ -2534,13 +2534,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (core->max_cmd_depth - core->cons->context->cmd_depth == 1) {
 		core->prompt_offset = core->offset;
 	}
-#if 0
-        r_str_trim (icmd);
-        cmd = icmd;
-#else
 	cmd = (char *)r_str_trim_head_ro (icmd);
 	r_str_trim_tail (cmd);
-#endif
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!*cmd) {
 		if (core->cmdrepeat > 0) {
