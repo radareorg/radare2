@@ -281,6 +281,7 @@ Ps blah
 y
 EOF
 EXPECT=<<EOF
+blah
 EOF
 RUN
 
@@ -345,6 +346,7 @@ RUN
 
 NAME=Delete a saved project and used directory (with P-)
 FILE=../bins/elf/analysis/main
+BROKEN=1
 ARGS=-n
 CMDS=<<EOF
 e dir.projects = .tmp/
@@ -354,6 +356,7 @@ Pl~blah
 ls -l `e dir.projects`~blah
 EOF
 EXPECT=<<EOF
+-drwxr-xr-x  1  501:20    96          .tmp/blah/
 EOF
 RUN
 
