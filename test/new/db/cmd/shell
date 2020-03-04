@@ -6,21 +6,3 @@ CMDS=<<EOF
 
 EOF
 RUN
-
-NAME=stdin quit
-FILE=-
-EXPECT=<<EOF
-EOF
-CMDS=<<EOF
-
-EOF
-RUN
-
-NAME=stdin quit
-FILE=-
-EXPECT=<<EOF
-EOF
-CMDS=<<EOF
-
-EOF
-RUN
