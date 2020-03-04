@@ -427,6 +427,8 @@ repeat:
 			if (WIFEXITED (status)) {
 				eprintf ("child exited with status %d\n", WEXITSTATUS (status));
 				if (pid == dbg->main_pid) {
+					r_list_free (dbg->threads);
+					dbg->threads = NULL;
 					reason = R_DEBUG_REASON_DEAD;
 				} else {
 					reason = R_DEBUG_REASON_EXIT_TID;

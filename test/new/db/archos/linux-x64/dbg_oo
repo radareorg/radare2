@@ -26,6 +26,21 @@ dbg:///bin/ls
 EOF
 RUN
 
+NAME= ood after open in debug mode
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS=<<EOF
+ood > $_
+dc
+ood > $_
+dc
+EOF
+EXPECT=<<EOF
+Hello world!
+Hello world!
+EOF
+RUN
+
 NAME=oo ; dc
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
