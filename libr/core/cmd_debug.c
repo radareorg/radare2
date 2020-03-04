@@ -2064,7 +2064,8 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		colorend = (delta && use_colors)? Color_RESET: "";
 
 		const char *role = "";
-		for (int i = 0; i < R_REG_NAME_LAST; i++) {
+		int i;
+		for (i = 0; i < R_REG_NAME_LAST; i++) {
 			const char *t = r_reg_get_name (reg, i);
 			if (t && !strcmp (t, r->name)) {
 				role = r_reg_get_role (i);
