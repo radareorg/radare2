@@ -424,6 +424,13 @@ static void r_anal_class_set_flag(RAnal *anal, const char *name, ut64 addr) {
 	anal->flg_class_set (anal->flb.f, name, addr, 0);
 }
 
+static void r_anal_class_vtable_set_flag(RAnal *anal, const char *name, ut64 addr, ut32 size) {
+	if (!name || !anal->flg_class_set) {
+		return;
+	}
+	anal->flg_class_set (anal->flb.f, name, addr, size);
+}
+
 static void r_anal_class_unset_flag(RAnal *anal, const char *name) {
 	if (!name || !anal->flb.unset_name || !anal->flg_class_get) {
 		return;
@@ -811,9 +818,14 @@ R_API RAnalClassErr r_anal_class_vtable_get(RAnal *anal, const char *class_name,
 		free (content);
 		return R_ANAL_CLASS_ERR_OTHER;
 	}
-	sdb_anext (cur, NULL);
+	sdb_anext (cur, &next);
 
 	vtable->offset = r_num_math (NULL, cur);
+
+	cur = next;
+	sdb_anext (cur, NULL);
+
+	vtable->size = r_num_math (NULL, cur);
 
 	free (content);
 
@@ -860,7 +872,7 @@ R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const c
 }
 
 R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name, RAnalVTable *vtable) {
-	char *content = sdb_fmt ("0x%"PFMT64x SDB_SS "%"PFMT64u, vtable->addr, vtable->offset);
+	char *content = sdb_fmt ("0x%"PFMT64x SDB_SS "%"PFMT64u SDB_SS "%"PFMT64u, vtable->addr, vtable->offset, vtable->size);
 	if (vtable->id) {
 		return r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
 	}
@@ -873,7 +885,7 @@ R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name,
 		return err;
 	}
 
-	r_anal_class_set_flag (anal, flagname_vtable (class_name, vtable->id), vtable->addr);
+	r_anal_class_vtable_set_flag (anal, flagname_vtable (class_name, vtable->id), vtable->addr, vtable->size);
 
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
@@ -1155,7 +1167,7 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
 	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
 	RAnalVTable *vtable;
 	r_vector_foreach (vtables, vtable) {
-		r_cons_printf ("  %4s vtable 0x%"PFMT64x" @ +0x%"PFMT64x"\n", vtable->id, vtable->addr, vtable->offset);
+		r_cons_printf ("  %4s vtable 0x%"PFMT64x" @ +0x%"PFMT64x" size:+0x%"PFMT64x"\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
 	}
 	r_vector_free (vtables);
 }
