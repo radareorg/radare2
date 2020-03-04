@@ -222,18 +222,17 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, int dept
 
 	if (offs > 0) {
 		// eprintf("\n\nSwitch statement at 0x%llx:\n", ip);
-		r_strbuf_appendf (anal->cmdtail,
-			"CCu switch table (%d cases) at 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
-			offs / sz, jmptbl_loc, ip);
-		r_strbuf_appendf (anal->cmdtail,
-			"f switch.0x%08"PFMT64x" 1 @ 0x%08"PFMT64x"\n",
-			ip, ip);
-		if (default_case != 0 && default_case != UT64_MAX && default_case != UT32_MAX) {
-			r_strbuf_appendf (anal->cmdtail,
-				"f case.default.0x%"PFMT64x " 1 @ 0x%08"PFMT64x "\n",
-				default_case, default_case);
+		char tmp[0x30];
+		snprintf (tmp, sizeof (tmp), "switch table (%"PFMT64u" cases) at 0x%"PFMT64x, offs / sz, jmptbl_loc);
+		r_meta_set_string (anal, R_META_TYPE_COMMENT, ip, tmp);
+		if (anal->flb.set) {
+			snprintf (tmp, sizeof (tmp), "switch.0x%08"PFMT64x, ip);
+			anal->flb.set (anal->flb.f, tmp, ip, 1);
+			if (default_case != 0 && default_case != UT64_MAX && default_case != UT32_MAX) {
+				snprintf (tmp, sizeof (tmp), "case.default.0x%"PFMT64x, default_case);
+				anal->flb.set (anal->flb.f, tmp, default_case, 1);
+			}
 		}
-
 	}
 	return ret;
 }
