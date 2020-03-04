@@ -9537,7 +9537,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		}
 
 		if (arg3_str) {
-			vtable.size = r_num_get (core->num, end + 1);
+			vtable.size = r_num_get (core->num, arg3_str + 1);
 		}
 
 		err = r_anal_class_vtable_set (core->anal, cstr, &vtable);
