@@ -324,36 +324,6 @@ static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb,
 	return 0;
 }
 
-R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr, ut8 *buf, ut64 len, int reftype) {
-	RAnalOp op = { 0 };
-	int oplen, idx = 0;
-	while (idx < len) {
-		if ((len - idx) < 5) {
-			break;
-		}
-		r_anal_op_fini (&op);
-		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + idx, len - idx, R_ANAL_OP_MASK_BASIC)) < 1) {
-			return 0;
-		}
-		switch (op.type) {
-		case R_ANAL_OP_TYPE_TRAP:
-		case R_ANAL_OP_TYPE_RET:
-		case R_ANAL_OP_TYPE_JMP:
-			// eprintf ("CASE AT 0x%llx size %d\n", addr, idx + oplen);
-			r_strbuf_appendf (anal->cmdtail, "afb+ 0x%"PFMT64x " 0x%"PFMT64x " %d\n",
-				fcn->addr, addr, idx + oplen);
-			r_strbuf_appendf (anal->cmdtail, "afbe 0x%"PFMT64x " 0x%"PFMT64x "\n",
-				addr_bbsw, addr);
-			return idx + oplen;
-		default:
-			// do nothing here
-			break;
-		}
-		idx += oplen;
-	}
-	return idx;
-}
-
 static bool purity_checked(HtUP *ht, RAnalFunction *fcn) {
 	bool checked;
 	ht_up_find (ht, fcn->addr, &checked);
