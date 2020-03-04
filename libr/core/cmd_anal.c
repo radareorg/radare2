@@ -9522,20 +9522,21 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		if (end) {
 			*end = '\0';
 		}
-
+		
 		RAnalVTable vtable;
 		vtable.id = NULL;
 		vtable.addr = r_num_get (core->num, arg1_str);
 		vtable.offset = 0;
 		vtable.size = 0;
 
+		char *arg3_str = NULL;
 		if (end) {
 			vtable.offset = r_num_get (core->num, end + 1);
+			// end + 1 won't work on extra whitespace between arguments, TODO
+			arg3_str = strchr (end+1, ' ');
 		}
 
-		// end + 1 won't work on extra whitespace between arguments, TODO
-		end = strchr (end+1, ' ');
-		if (end) {
+		if (arg3_str) {
 			vtable.size = r_num_get (core->num, end + 1);
 		}
 
