@@ -9511,10 +9511,6 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		}
 
 		char *arg1_str = end;
-		end = strchr (arg1_str, ' ');
-		if (end) {
-			*end = '\0';
-		}
 
 		if (c == '-') {
 			err = r_anal_class_vtable_delete (core->anal, cstr, arg1_str);
@@ -9522,13 +9518,25 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 			break;
 		}
 
+		end = strchr (arg1_str, ' ');
+		if (end) {
+			*end = '\0';
+		}
+
 		RAnalVTable vtable;
 		vtable.id = NULL;
 		vtable.addr = r_num_get (core->num, arg1_str);
 		vtable.offset = 0;
+		vtable.size = 0;
 
 		if (end) {
 			vtable.offset = r_num_get (core->num, end + 1);
+		}
+
+		// end + 1 won't work on extra whitespace between arguments, TODO
+		end = strchr (end+1, ' ');
+		if (end) {
+			vtable.size = r_num_get (core->num, end + 1);
 		}
 
 		err = r_anal_class_vtable_set (core->anal, cstr, &vtable);
