@@ -111,7 +111,7 @@ static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 	int ll = 0;
 	int raw_ll = 0;
 	int lines, cols = r_cons_get_size (&lines);
-	if (I->is_wine==-1) {
+	if (I->is_wine == -1) {
 		I->is_wine = r_file_is_directory ("/proc")? 1: 0;
 	}
 	if (len < 0) {

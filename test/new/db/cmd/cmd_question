@@ -8,6 +8,6 @@ e scr.color=true
 ?e `pi 1`
 EOF
 EXPECT=<<EOF
-nop[0J
+nop
 EOF
 RUN

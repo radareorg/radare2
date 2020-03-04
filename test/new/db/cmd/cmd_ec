@@ -186,7 +186,7 @@ EXPECT=<<EOF
  [30m##[0m  gui.border
  [41m##[0m  wordhl
  [44m##[0m  linehl
-[0J
+
  [91m##[0m  comment
  [97m##[0m  usrcmt
  [93m##[0m  args

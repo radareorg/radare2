@@ -1197,20 +1197,21 @@ R_API void r_cons_strcat(const char *str) {
 
 R_API void r_cons_newline() {
 	if (!I.null) {
-		if (I.context->color_mode > 0) {
-			r_cons_strcat (R_CONS_CLEAR_FROM_CURSOR_TO_END"\n");
-		} else {
-			r_cons_strcat ("\n");
-		}
+		r_cons_strcat ("\n");
 	}
-// This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
-//  and break json output appending extra chars.
-// this code now is managed into output.c:118 at function r_cons_w32_print
-// now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
-//#if __WINDOWS__
-	//r_cons_reset_colors();
-//#endif
-	//if (I.is_html) r_cons_strcat ("<br />\n");
+#if 0
+This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
+and break json output appending extra chars.
+this code now is managed into output.c:118 at function r_cons_w32_print
+now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
+
+#if __WINDOWS__
+	r_cons_reset_colors();
+#else
+	r_cons_strcat (Color_RESET_ALL"\n");
+#endif
+	if (I.is_html) r_cons_strcat ("<br />\n");
+#endif
 }
 
 /* return the aproximated x,y of cursor before flushing */
