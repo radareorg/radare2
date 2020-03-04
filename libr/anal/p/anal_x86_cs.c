@@ -92,11 +92,13 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 		op->type = X86_OP_REG;
 		op->reg = X86_REG_EFLAGS;
 		op->size = regsz;
+#if CS_API_MAJOR >=4
 		if (id == X86_INS_PUSHF || id == X86_INS_PUSHFD || id == X86_INS_PUSHFQ) {
 			op->access = 1;
 		} else {
 			op->access = 2;
 		}
+#endif
 		break;
 	case X86_INS_PUSHAW:
 	case X86_INS_PUSHAL:
