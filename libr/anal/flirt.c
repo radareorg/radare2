@@ -590,10 +590,6 @@ static int module_match_buffer(RAnal *anal, const RFlirtModule *module,
 						r_list_foreach (fcn->bbs, iter_bb, block) {
 							r_anal_function_add_block (next_module_function, block);
 						}
-						if (fcn->locs && next_module_function->locs) {
-							r_list_join (next_module_function->locs, fcn->locs);
-						}
-						// r_list_join (next_module_function->vars, r_anal_var_all_list (anal, fcn);
 						next_module_function->ninstr += fcn->ninstr;
 						r_anal_function_delete (fcn);
 					}
