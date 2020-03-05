@@ -42,7 +42,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	r_instr = rsp_instruction_decode (addr, iw);
 
 	/* parse operands */
-	for (i = 0; i < r_instr.noperands; ++i) {
+	for (i = 0; i < r_instr.noperands; i++) {
 		parsed_operands[i].value = r_anal_value_new ();
 		parsed_operands[i].esil[0] = '\0';
 

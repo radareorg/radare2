@@ -4553,7 +4553,7 @@ static char *escape_special_chars(char *s, const char *special_chars) {
 	size_t s_len = strlen (s);
 	char *d = R_NEWS (char, s_len * 2 + 1);
 	int i, j = 0;
-	for (i = 0; i < s_len; ++i) {
+	for (i = 0; i < s_len; i++) {
 		if (strchr (special_chars, s[i])) {
 			d[j++] = '\\';
 		}
@@ -4592,7 +4592,7 @@ static void parsed_args_free(struct parsed_args *a) {
 	}
 
 	int i;
-	for (i = 0; i < a->argc; ++i) {
+	for (i = 0; i < a->argc; i++) {
 		free (a->argv[i]);
 	}
 	free (a->argv);
@@ -4650,7 +4650,7 @@ static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, R
 	if (is_ts_args (args) || is_ts_concatenation (args) || is_ts_double_quoted_arg (args)) {
 		uint32_t n_children = ts_node_named_child_count (args);
 		uint32_t i;
-		for (i = 0; i < n_children; ++i) {
+		for (i = 0; i < n_children; i++) {
 			TSNode arg = ts_node_named_child (args, i);
 			handle_substitution_args (state, arg, edits);
 		}
@@ -4681,7 +4681,7 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) 
 	} else if (is_ts_concatenation (arg)) {
 		uint32_t i, n_children = ts_node_named_child_count (arg);
 		RStrBuf *sb = r_strbuf_new (NULL);
-		for (i = 0; i < n_children; ++i) {
+		for (i = 0; i < n_children; i++) {
 			TSNode sub_arg = ts_node_named_child (arg, i);
 			char *s = do_handle_ts_unescape_arg (state, sub_arg);
 			r_strbuf_append (sb, s);
@@ -4695,7 +4695,7 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) 
 static char *create_argv_str(struct parsed_args *a) {
 	RStrBuf *sb = r_strbuf_new (NULL);
 	int i;
-	for (i = 0; i < a->argc; ++i) {
+	for (i = 0; i < a->argc; i++) {
 		if (i > 0) {
 			r_strbuf_append (sb, " ");
 		}
@@ -4721,7 +4721,7 @@ static struct parsed_args *parse_args(struct tsr2cmd_state *state, TSNode args) 
 		struct parsed_args *a = R_NEW0 (struct parsed_args);
 		a->argc = n_children;
 		a->argv = R_NEWS (char *, a->argc);
-		for (i = 0; i < n_children; ++i) {
+		for (i = 0; i < n_children; i++) {
 			TSNode arg = ts_node_named_child (args, i);
 			a->argv[i] = do_handle_ts_unescape_arg (state, arg);
 		}
@@ -4869,7 +4869,7 @@ DEFINE_HANDLE_TS_FCN(arged_command) {
 		substitute_args_fini (state);
 
 		int i;
-		for (i = 0; i < pr_args->argc; ++i) {
+		for (i = 0; i < pr_args->argc; i++) {
 			R_LOG_DEBUG ("parsed_arg %d: '%s'\n", i, pr_args->argv[i]);
 		}
 	}
@@ -4908,7 +4908,7 @@ DEFINE_HANDLE_TS_FCN(repeat_command) {
 	}
 
 	bool res = true;
-	for (int i = 0; i < rep; ++i) {
+	for (int i = 0; i < rep; i++) {
 		res &= handle_ts_command (state, command);
 	}
 	return res;
@@ -5200,7 +5200,7 @@ DEFINE_HANDLE_TS_FCN(tmp_eval_command) {
 
 	RConfigHold *hc = r_config_hold_new (core->config);
 	uint32_t i, n_args = ts_node_named_child_count (args);
-	for (i = 0; i < n_args; ++i) {
+	for (i = 0; i < n_args; i++) {
 		TSNode arg = ts_node_named_child (args, i);
 		char *arg_str = ts_node_sub_string (arg, state->input);
 		char *eq = strchr (arg_str, '=');
@@ -5547,7 +5547,7 @@ DEFINE_HANDLE_TS_FCN(iter_offsets_command) {
 	substitute_args_fini (state);
 
 	int i;
-	for (i = 0; i < a->argc; ++i) {
+	for (i = 0; i < a->argc; i++) {
 		ut64 addr = r_num_math (core->num, a->argv[i]);
 		R_LOG_DEBUG ("iter_offsets_command: seek to %" PFMT64x "\n", addr);
 		r_core_seek (core, addr, 1);
@@ -5799,7 +5799,7 @@ DEFINE_HANDLE_TS_FCN(iter_interpret_command) {
 	int i;
 	ut64 orig_offset = core->offset;
 	bool res = true;
-	for (i = 0; i < a->argc; ++i) {
+	for (i = 0; i < a->argc; i++) {
 		ut64 addr = r_num_math (core->num, a->argv[i]);
 		R_LOG_DEBUG ("iter_interpret_command: seek to %" PFMT64x "\n", addr);
 		r_core_seek (core, addr, 1);
@@ -5958,7 +5958,7 @@ DEFINE_HANDLE_TS_FCN(commands) {
 	if (state->split_lines) {
 		r_cons_break_push (NULL, NULL);
 	}
-	for (i = 0; i < child_count; ++i) {
+	for (i = 0; i < child_count; i++) {
 		if (state->split_lines && r_cons_is_breaked ()) {
 			r_cons_break_pop ();
 			return false;

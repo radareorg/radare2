@@ -138,7 +138,7 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
 	if (core->is_asmqjmps_letter) {
 		int i, pos = 0;
 		int len = strlen (str);
-		for (i = 0; i < len - 1; ++i) {
+		for (i = 0; i < len - 1; i++) {
 			if (!isupper ((ut8)str[i])) {
 				return UT64_MAX;
 			}
@@ -3641,7 +3641,7 @@ R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
 		return;
 	}
 	int i;
-	for (i = 0; i < obj->n_subcmds; ++i) {
+	for (i = 0; i < obj->n_subcmds; i++) {
 		r_core_autocomplete_free (obj->subcmds[i]);
 		obj->subcmds[i] = NULL;
 	}
@@ -3656,7 +3656,7 @@ R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, con
 	}
 	int len = strlen (cmd);
 	int i;
-	for (i = 0; i < parent->n_subcmds; ++i) {
+	for (i = 0; i < parent->n_subcmds; i++) {
 		if (exact && len == parent->subcmds[i]->length && !strncmp (cmd, parent->subcmds[i]->cmd, len)) {
 			return parent->subcmds[i];
 		} else if (!exact && !strncmp (cmd, parent->subcmds[i]->cmd, len)) {
@@ -3678,7 +3678,7 @@ R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd
 		}
 		// if (!strncmp (parent->subcmds[i]->cmd, cmd, parent->subcmds[i]->length)) {
 		if (r_str_glob (ac->cmd, cmd)) {
-			for (j = i + 1; j < parent->n_subcmds; ++j) {
+			for (j = i + 1; j < parent->n_subcmds; j++) {
 				parent->subcmds[j - 1] = parent->subcmds[j];
 				parent->subcmds[j] = NULL;
 			}

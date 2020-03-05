@@ -343,7 +343,7 @@ static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		int i;
 
-		for (i = 0; i < bb->ninstr; ++i) {
+		for (i = 0; i < bb->ninstr; i++) {
 			ut64 at = bb->addr + r_anal_bb_offset_inst (bb, i);
 			listxrefs (ht, at, list);
 		}

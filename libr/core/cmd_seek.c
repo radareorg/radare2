@@ -551,7 +551,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			PJ *pj = pj_new ();
 			pj_a (pj);
-			for (i = 0; i < lsz; ++i) {
+			for (i = 0; i < lsz; i++) {
 				ut64 *addr = r_list_get_n (addrs, i);
 				const char *name = r_list_get_n (names, i);
 				pj_o (pj);

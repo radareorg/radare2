@@ -397,7 +397,7 @@ rsp_instruction rsp_instruction_decode(ut64 pc, ut32 iw) {
 	r_instr.mnemonic = priv->mnemonic;
 	r_instr.opcode = priv->opcode;
 	r_instr.noperands = priv->noperands;
-	for (opnd = 0; opnd < r_instr.noperands; ++opnd) {
+	for (opnd = 0; opnd < r_instr.noperands; opnd++) {
 		r_instr.operands[opnd] = rsp_operand_decode (pc, iw, &priv->odecs[opnd]);
 	}
 

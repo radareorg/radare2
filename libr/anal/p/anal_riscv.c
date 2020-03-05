@@ -519,7 +519,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		//else if (strcmp (name, "unimp") != 0 && name[0] != 'f' && name[1] != 'm') {
 		//	int i;
 		//	eprintf("[esil] missing risc v esil: %s", name);
-		//	for (i = 0; i < args.num; ++i) {
+		//	for (i = 0; i < args.num; i++) {
 		//		eprintf(" %s", ARG(i));
 		//	}
 		//	eprintf("\n");

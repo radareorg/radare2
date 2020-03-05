@@ -455,7 +455,7 @@ static int **get_crossing_matrix(const RGraph *g,
 				if (gj == gk) {
 					continue;
 				}
-				for (s = 0; s < j; ++s) {
+				for (s = 0; s < j; s++) {
 					const RGraphNode *gs = layers[i - 1].nodes[s];
 					const RList *neigh_s = r_graph_get_neighbours (g, gs);
 					RGraphNode *gt;
@@ -491,7 +491,7 @@ static int **get_crossing_matrix(const RGraph *g,
 		if (r_cons_is_breaked ()) {
 			goto err_row;
 		}
-		for (j = 0; j < layers[i].n_nodes; ++j) {
+		for (j = 0; j < layers[i].n_nodes; j++) {
 			const RGraphNode *gj = layers[i].nodes[j];
 			const RList *neigh = r_graph_get_neighbours (g, gj);
 			const RANode *ak, *aj = get_anode (gj);
@@ -503,7 +503,7 @@ static int **get_crossing_matrix(const RGraph *g,
 			}
 			graph_foreach_anode (neigh, itk, gk, ak) {
 				int s;
-				for (s = 0; s < layers[i].n_nodes; ++s) {
+				for (s = 0; s < layers[i].n_nodes; s++) {
 					const RGraphNode *gs = layers[i].nodes[s];
 					const RList *neigh_s;
 					RGraphNode *gt;
@@ -549,7 +549,7 @@ static int layer_sweep(const RGraph *g, const struct layer_t layers[],
 		return -1; // ERROR HAPPENS
 	}
 
-	for (j = 0; j < len - 1; ++j) {
+	for (j = 0; j < len - 1; j++) {
 		int auidx, avidx;
 
 		u = layers[i].nodes[j];
@@ -570,12 +570,12 @@ static int layer_sweep(const RGraph *g, const struct layer_t layers[],
 	/* update position in the layer of each node. During the swap of some
 	 * elements we didn't swap also the pos_in_layer because the cross_matrix
 	 * is indexed by it, so do it now! */
-	for (j = 0; j < layers[i].n_nodes; ++j) {
+	for (j = 0; j < layers[i].n_nodes; j++) {
 		RANode *n = get_anode (layers[i].nodes[j]);
 		n->pos_in_layer = j;
 	}
 
-	for (j = 0; j < n_rows; ++j) {
+	for (j = 0; j < n_rows; j++) {
 		free (cross_matrix[j]);
 	}
 	free (cross_matrix);
@@ -711,7 +711,7 @@ static void create_dummy_nodes(RAGraph *g) {
 		int i, nth = e->nth;
 
 		r_agraph_del_edge (g, from, to);
-		for (i = 1; i < diff_layer; ++i) {
+		for (i = 1; i < diff_layer; i++) {
 			RANode *dummy = r_agraph_add_node (g, NULL, NULL);
 			if (!dummy) {
 				return;
@@ -756,7 +756,7 @@ static void create_layers(RAGraph *g) {
 		g->layers[n->layer].n_nodes++;
 	}
 
-	for (i = 0; i < g->n_layers; ++i) {
+	for (i = 0; i < g->n_layers; i++) {
 		if (sizeof (RGraphNode *) * g->layers[i].n_nodes < g->layers[i].n_nodes) {
 			continue;
 		}
@@ -780,7 +780,7 @@ static void minimize_crossings(const RAGraph *g) {
 		cross_changed = false;
 		max_changes--;
 
-		for (i = 0; i < g->n_layers; ++i) {
+		for (i = 0; i < g->n_layers; i++) {
 			int rc = layer_sweep (g->graph, g->layers, g->n_layers, i, true);
 			if (rc == -1) {
 				return;
@@ -834,7 +834,7 @@ static int dist_nodes(const RAGraph *g, const RGraphNode *a, const RGraphNode *b
 		int i;
 
 		res = aa == ab && !aa->is_reversed? HORIZONTAL_NODE_SPACING: 0;
-		for (i = aa->pos_in_layer; i < ab->pos_in_layer; ++i) {
+		for (i = aa->pos_in_layer; i < ab->pos_in_layer; i++) {
 			const RGraphNode *cur = g->layers[aa->layer].nodes[i];
 			const RGraphNode *next = g->layers[aa->layer].nodes[i + 1];
 			const RANode *anext = get_anode (next);
@@ -911,8 +911,8 @@ static Sdb *compute_vertical_nodes(const RAGraph *g) {
 	Sdb *res = sdb_new0 ();
 	int i, j;
 
-	for (i = 0; i < g->n_layers; ++i) {
-		for (j = 0; j < g->layers[i].n_nodes; ++j) {
+	for (i = 0; i < g->n_layers; i++) {
+		for (j = 0; j < g->layers[i].n_nodes; j++) {
 			RGraphNode *gn = g->layers[i].nodes[j];
 			const RList *Ln = hash_get_rlist (res, gn);
 			const RANode *an = get_anode (gn);
@@ -958,7 +958,7 @@ static RList **compute_classes(const RAGraph *g, Sdb *v_nodes, int is_left, int 
 		n->klass = -1;
 	}
 
-	for (i = 0; i < g->n_layers; ++i) {
+	for (i = 0; i < g->n_layers; i++) {
 		c = i;
 
 		for (j = is_left? 0: g->layers[i].n_nodes - 1;
@@ -1145,7 +1145,7 @@ static Sdb *compute_pos(const RAGraph *g, int is_left, Sdb *v_nodes) {
 
 	Sdb *res = sdb_new0 ();
 	Sdb *placed = sdb_new0 ();
-	for (i = 0; i < n_classes; ++i) {
+	for (i = 0; i < n_classes; i++) {
 		const RGraphNode *gn;
 		const RListIter *it;
 
@@ -1159,7 +1159,7 @@ static Sdb *compute_pos(const RAGraph *g, int is_left, Sdb *v_nodes) {
 	}
 
 	sdb_free (placed);
-	for (i = 0; i < n_classes; ++i) {
+	for (i = 0; i < n_classes; i++) {
 		if (classes[i]) {
 			r_list_free (classes[i]);
 		}
@@ -1215,7 +1215,7 @@ static RGraphNode *get_right_dummy(const RAGraph *g, const RGraphNode *n) {
 	}
 	int k, layer = an->layer;
 
-	for (k = an->pos_in_layer + 1; k < g->layers[layer].n_nodes; ++k) {
+	for (k = an->pos_in_layer + 1; k < g->layers[layer].n_nodes; k++) {
 		RGraphNode *gk = g->layers[layer].nodes[k];
 		const RANode *ak = get_anode (gk);
 		if (!ak) {
@@ -1237,7 +1237,7 @@ static void adjust_directions(const RAGraph *g, int i, int from_up, Sdb *D, Sdb 
 	if (i + d < 0 || i + d >= g->n_layers) {
 		return;
 	}
-	for (j = 0; j < g->layers[i + d].n_nodes; ++j) {
+	for (j = 0; j < g->layers[i + d].n_nodes; j++) {
 		const RGraphNode *wp, *vp = g->layers[i + d].nodes[j];
 		const RANode *wpa, *vpa = get_anode (vp);
 
@@ -1257,7 +1257,7 @@ static void adjust_directions(const RAGraph *g, int i, int from_up, Sdb *D, Sdb 
 			int p = hash_get_int (P, wm);
 			int k;
 
-			for (k = wma->pos_in_layer + 1; k < wpa->pos_in_layer; ++k) {
+			for (k = wma->pos_in_layer + 1; k < wpa->pos_in_layer; k++) {
 				const RGraphNode *w = g->layers[wma->layer].nodes[k];
 				const RANode *aw = get_anode (w);
 				if (aw && aw->is_dummy) {
@@ -1266,7 +1266,7 @@ static void adjust_directions(const RAGraph *g, int i, int from_up, Sdb *D, Sdb 
 			}
 			if (p) {
 				hash_set (D, vm, from_up);
-				for (k = vma->pos_in_layer + 1; k < vpa->pos_in_layer; ++k) {
+				for (k = vma->pos_in_layer + 1; k < vpa->pos_in_layer; k++) {
 					const RGraphNode *v = g->layers[vma->layer].nodes[k];
 					const RANode *av = get_anode (v);
 					if (av && av->is_dummy) {
@@ -1460,7 +1460,7 @@ static void combine_sequences(const RAGraph *g, int l, const RGraphNode *bm, con
 		}
 	}
 
-	for (i = t + 1; i < r; ++i) {
+	for (i = t + 1; i < r; i++) {
 		const RGraphNode *gv = g->layers[l].nodes[i];
 		RANode *av = get_anode (gv);
 		if (av && atp) {
@@ -1530,7 +1530,7 @@ static void original_traverse_l(const RAGraph *g, Sdb *D, Sdb *P, int from_up) {
 				va = bma->pos_in_layer + 1;
 				vr = g->layers[bma->layer].n_nodes;
 				place_sequence (g, i, bm, NULL, from_up, va, vr);
-				for (k = va; k < vr - 1; ++k) {
+				for (k = va; k < vr - 1; k++) {
 					set_dist_nodes (g, i, k, k + 1);
 				}
 
@@ -1943,7 +1943,7 @@ static void set_layout(RAGraph *g) {
 	for (i = 0; i < g->n_layers; i++) {
 		int rh = 0;
 		int rw = 0;
-		for (j = 0; j < g->layers[i].n_nodes; ++j) {
+		for (j = 0; j < g->layers[i].n_nodes; j++) {
 			const RANode *n = get_anode (g->layers[i].nodes[j]);
 			if (n->h > rh) {
 				rh = n->h;
@@ -1957,7 +1957,7 @@ static void set_layout(RAGraph *g) {
 	}
 
 	for (i = 0; i < g->n_layers; i++) {
-		for (j = 0; j < g->layers[i].n_nodes; ++j) {
+		for (j = 0; j < g->layers[i].n_nodes; j++) {
 			RANode *a = (RANode *) g->layers[i].nodes[j]->data;
 			if (a->is_dummy) {
 				if (g->layout == 0) {
@@ -1994,8 +1994,8 @@ static void set_layout(RAGraph *g) {
 	default:
 	case 0: // vertical layout
 		/* horizontal finalize x coordinate */
-		for (i = 0; i < g->n_layers; ++i) {
-			for (j = 0; j < g->layers[i].n_nodes; ++j) {
+		for (i = 0; i < g->n_layers; i++) {
+			for (j = 0; j < g->layers[i].n_nodes; j++) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
 				if (n) {
 					n->x -= n->w / 2;
@@ -2009,7 +2009,7 @@ static void set_layout(RAGraph *g) {
 		set_layer_gap (g);
 
 		/* vertical align */
-		for (i = 0; i < g->n_layers; ++i) {
+		for (i = 0; i < g->n_layers; i++) {
 			int tmp_y = 0;
 			tmp_y = g->layers[0].gap; //TODO: XXX: set properly
 			for (k = 1; k <= i; k++) {
@@ -2018,7 +2018,7 @@ static void set_layout(RAGraph *g) {
 			if (g->is_tiny) {
 				tmp_y = i;
 			}
-			for (j = 0; j < g->layers[i].n_nodes; ++j) {
+			for (j = 0; j < g->layers[i].n_nodes; j++) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
 				if (n) {
 					n->y = tmp_y;
@@ -2062,7 +2062,7 @@ static void set_layout(RAGraph *g) {
 	//remove_dummy_nodes (g);
 
 	/* free all temporary structures used during layout */
-	for (i = 0; i < g->n_layers; ++i) {
+	for (i = 0; i < g->n_layers; i++) {
 		free (g->layers[i].nodes);
 	}
 	free (g->layers);

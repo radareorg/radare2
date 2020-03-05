@@ -32,7 +32,7 @@ static void find_and_change (char* in, int len) {
 	RFindCTX ctx = {0};
 	end = in + len;
 //	type = TYPE_NONE;
-	for (ctx.linebegin = in; in < end; ++in) {
+	for (ctx.linebegin = in; in < end; in++) {
 		if (*in == '\n' || !*in) {
 			if (ctx.type == TYPE_SYM && ctx.linecount < 1) {
 				ctx.linecount++;

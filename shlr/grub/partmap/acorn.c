@@ -68,7 +68,7 @@ acorn_partition_map_find (grub_disk_t disk, struct linux_part *m,
   if ((boot.flags & NONADFS_PARTITION_TYPE_MASK) != NONADFS_PARTITION_TYPE_LINUX)
     goto fail;
 
-  for (i = 0; i != 0x1ff; ++i)
+  for (i = 0; i != 0x1ff; i++)
     checksum = (checksum & 0xff) + (checksum >> 8) + boot.misc[i];
 
   if ((grub_uint8_t) checksum != boot.checksum)
@@ -109,7 +109,7 @@ acorn_partition_map_iterate (grub_disk_t disk,
 
   part.partmap = &grub_acorn_partition_map;
 
-  for (i = 0; i != LINUX_MAP_ENTRIES; ++i)
+  for (i = 0; i != LINUX_MAP_ENTRIES; i++)
     {
       if (map[i].magic != LINUX_NATIVE_MAGIC
 	  && map[i].magic != LINUX_SWAP_MAGIC)

@@ -1757,7 +1757,7 @@ void __handleComment(RCore *core) {
 		if (buf[3] == ' ') {
 			int j, len = strlen (buf);
 			char *duped = strdup (buf);
-			for (i = 4, j = 4; i < len; ++i,++j) {
+			for (i = 4, j = 4; i < len; i++, j++) {
 				char c = duped[i];
 				if (c == '"' && i != (len - 1)) {
 					buf[j++] = '\\';
