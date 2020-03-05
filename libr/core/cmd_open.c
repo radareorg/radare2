@@ -816,8 +816,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		SdbListIter *iter;
 		RIOMap *map;
 		ls_foreach_prev (core->io->maps, iter, map) {
-			char temp[4];
-			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, sdb_itoa (map->fd, temp, 10));
+			char temp[32];
+			snprintf (temp, sizeof (temp), "%d", map->fd);
+			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);
 			if (!info) {
 				break;
 			}

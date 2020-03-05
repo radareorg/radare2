@@ -914,23 +914,27 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 			for (j = 0; j < width; j++) {
 				ut64 pos = min + j * mul;
 				ut64 npos = min + (j + 1) * mul;
-				if (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos) {
-					r_strbuf_append (buf, block);
-				} else {
-					r_strbuf_append (buf, h_line);
-				}
+				const char *arg = (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos)
+					? block: h_line;
+				r_strbuf_append (buf, arg);
 			}
+			char *b = r_strbuf_drain (buf);
 			if (va) {
-				r_table_add_rowf (table, "sssssss", sdb_fmt ("%d%c", i, r_itv_contain (info->vitv, seek) ? '*' : ' '),
-				    sdb_fmt ("%s0x%"PFMT64x"%s", "", info->vitv.addr, ""), r_strbuf_drain (buf),
-				    sdb_fmt ("%s0x%"PFMT64x"%s", "", r_itv_end (info->vitv), ""),
-				    (info->perm != -1)? r_str_rwx_i (info->perm) : "",(info->extra)?info->extra : "", (info->name)?info->name :"");
+				r_table_add_rowf (table, "sssssss",
+					sdb_fmt ("%d%c", i, r_itv_contain (info->vitv, seek) ? '*' : ' '),
+					sdb_fmt ("0x%"PFMT64x, info->vitv.addr),
+					b,
+					sdb_fmt ("0x%"PFMT64x, r_itv_end (info->vitv)),
+					(info->perm != -1)? r_str_rwx_i (info->perm) : "",
+					(info->extra)?info->extra : "",
+					(info->name)?info->name :"");
 			} else {
 				r_table_add_rowf (table, "sssssss", sdb_fmt ("%d%c", i, r_itv_contain (info->pitv, seek) ? '*' : ' '),
-				    sdb_fmt ("%s0x%"PFMT64x"%s", "", info->pitv.addr, ""), r_strbuf_drain (buf),
-				    sdb_fmt ("%s0x%"PFMT64x"%s", "", r_itv_end (info->pitv), ""),
-				    (info->perm != -1)? r_str_rwx_i (info->perm) : "",(info->extra)?info->extra : "", (info->name)?info->name :"");
+					sdb_fmt ("0x%"PFMT64x, info->pitv.addr), b,
+					sdb_fmt ("0x%"PFMT64x, r_itv_end (info->pitv)),
+					(info->perm != -1)? r_str_rwx_i (info->perm) : "",(info->extra)?info->extra : "", (info->name)?info->name :"");
 			}
+			free (b);
 			i++;
 		}
 		RStrBuf *buf = r_strbuf_new ("");
@@ -943,11 +947,11 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 				r_strbuf_append (buf,((j * mul) + min >= seek &&
 						     (j * mul) + min <= seek + len) ? "^" : h_line);
 			}
-			r_table_add_rowf (table, "sssssss", "=>", sdb_fmt ("0x%08"PFMT64x"", seek),
-			    r_strbuf_drain (buf),  sdb_fmt ("0x%08"PFMT64x"", seek + len), "", "", "");
+			r_table_add_rowf (table, "sssssss", "=>", sdb_fmt ("0x%08"PFMT64x, seek),
+					r_strbuf_drain (buf),  sdb_fmt ("0x%08"PFMT64x, seek + len), "", "", "");
 		} else {
-            r_strbuf_free (buf);
-        }
+			r_strbuf_free (buf);
+		}
 	}
 }
 

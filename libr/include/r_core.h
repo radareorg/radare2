@@ -472,7 +472,7 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 R_API void r_core_anal_esil_graph(RCore *core, const char *expr);
 
 R_API void r_core_list_io(RCore *core);
-R_API RListInfo *r_listinfo_new (char *name, RInterval pitv, RInterval vitv, int perm, char *extra);
+R_API RListInfo *r_listinfo_new (const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra);
 R_API void r_listinfo_free (RListInfo *info);
 /* visual marks */
 R_API void r_core_visual_mark_seek(RCore *core, ut8 ch);

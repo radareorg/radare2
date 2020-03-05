@@ -1,3 +1,18 @@
+NAME=om=
+FILE=../bins/mach0/mac-ls2
+BROKEN=1
+CMDS=<<EOF
+om=
+EOF
+EXPECT=<<EOF
+
+0*  0x100000000 ################-------------- 0x100005000 r-x   3     fmap.TEXT
+1   0x100005000 ---------------####----------- 0x100006000 r--   3     fmap.DATA
+2   0x100006000 ------------------############ 0x10000a000 r--   3     fmap.LINKEDIT
+=>  0x1000011e8 ------------------------------ 0x1000012e8             
+EOF
+RUN
+
 NAME=obb baddrs
 FILE=../bins/mach0/mac-ls2
 ARGS=-B0x50000

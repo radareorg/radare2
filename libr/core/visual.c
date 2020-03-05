@@ -4354,16 +4354,15 @@ dodo:
 	return 0;
 }
 
-R_API RListInfo *r_listinfo_new(char *name, RInterval pitv, RInterval vitv, int perm, char *extra) {
+R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra) {
 	RListInfo *info = R_NEW (RListInfo);
-	if (!info) {
-		return NULL;
+	if (info) {
+		info->name = strdup (name);
+		info->pitv = pitv;
+		info->vitv = vitv;
+		info->perm = perm;
+		info->extra = strdup (extra);
 	}
-	info->name = name;
-	info->pitv = pitv;
-	info->vitv = vitv;
-	info->perm = perm;
-	info->extra = extra;
 	return info;
 }
 
@@ -4371,5 +4370,7 @@ R_API void r_listinfo_free (RListInfo *info) {
 	if (!info) {
 		return;
 	}
+	free (info->name);
+	free (info->extra);
 	R_FREE (info);
 }
