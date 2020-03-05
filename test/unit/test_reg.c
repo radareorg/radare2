@@ -46,14 +46,14 @@ bool test_r_reg_get_value_gpr(void) {
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
 	r_reg_set_profile_string (reg,
-			"gpr eax .32 0 0\n\
-			gpr	ax	.16	0	0\n\
-			gpr	ah	.8	1	0\n\
-			gpr	al	.8	0	0\n\
-			gpr	ebx	.32	40	0\n\
-			gpr	bx	.16	40	0\n\
-			gpr	bh	.8	41	0\n\
-			gpr	bl	.8	40	0");
+		"gpr eax .32 0 0\n\
+		gpr	ax	.16	0	0\n\
+		gpr	ah	.8	1	0\n\
+		gpr	al	.8	0	0\n\
+		gpr	ebx	.32	40	0\n\
+		gpr	bx	.16	40	0\n\
+		gpr	bh	.8	41	0\n\
+		gpr	bl	.8	40	0");
 
 	mu_assert_eq (r_reg_setv (reg, "eax", 0x01234567),
 		true, "set eax register value to 0x01234567");
@@ -98,17 +98,17 @@ bool test_r_reg_get_value_flag(void) {
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
 	r_reg_set_profile_string (reg,
-			"gpr	eflags	.32	0		0	c1p.a.zstido.n.rv\n\
-			gpr		flags	.16	0		0\n\
-			gpr		cf		.1	.0	0	carry\n\
-			gpr		pf		.1	.2	0	parity\n\
-			gpr		af		.1	.4	0	adjust\n\
-			gpr		zf		.1	.6	0	zero\n\
-			gpr		sf		.1	.7	0	sign\n\
-			gpr		tf		.1	.8	0	trap\n\
-			gpr		if		.1	.9	0	interrupt\n\
-			gpr		df		.1	.10	0	direction\n\
-			gpr		of		.1	.11	0	overflow");
+		"gpr	eflags	.32	0		0	c1p.a.zstido.n.rv\n\
+		gpr		flags	.16	0		0\n\
+		gpr		cf		.1	.0	0	carry\n\
+		gpr		pf		.1	.2	0	parity\n\
+		gpr		af		.1	.4	0	adjust\n\
+		gpr		zf		.1	.6	0	zero\n\
+		gpr		sf		.1	.7	0	sign\n\
+		gpr		tf		.1	.8	0	trap\n\
+		gpr		if		.1	.9	0	interrupt\n\
+		gpr		df		.1	.10	0	direction\n\
+		gpr		of		.1	.11	0	overflow");
 
 	r = r_reg_get (reg, "eflags", R_REG_TYPE_FLG);
 	r_reg_set_value (reg, r, 0x00000346);
@@ -138,11 +138,84 @@ bool test_r_reg_get_value_flag(void) {
 	mu_end;
 }
 
+bool test_r_reg_get(void) {
+	RReg *reg;
+	RRegItem *r;
+
+	reg = r_reg_new ();
+	mu_assert_notnull (reg, "r_reg_new () failed");
+
+	bool success = r_reg_set_profile_string (reg,
+		"gpr	eax		.32	24	0\n\
+		fpu		sf0		.32	304	0\n\
+		xmm		xmm0	.64	160	4");
+	mu_assert_eq (success, true, "define eax, sf0 and xmm0 register");
+
+	r = r_reg_get (reg, "sf0", R_REG_TYPE_FPU);
+	mu_assert_streq (r->name, "sf0", "found sf0 as R_REG_TYPE_FPU");
+	mu_assert_eq (r->type, R_REG_TYPE_FPU, "sf0 type is R_REG_TYPE_FPU");
+
+	r = r_reg_get (reg, "xmm0", R_REG_TYPE_XMM);
+	mu_assert_streq (r->name, "xmm0", "found xmm0 as R_REG_TYPE_XMM");
+	mu_assert_eq (r->type, R_REG_TYPE_XMM, "xmm0 type is R_REG_TYPE_XMM");
+
+	r = r_reg_get (reg, "xmm0", -1);
+	mu_assert_streq (r->name, "xmm0", "found xmm0");
+	mu_assert_eq (r->type, R_REG_TYPE_XMM, "xmm0 type is R_REG_TYPE_XMM");
+
+	r_reg_free (reg);
+	mu_end;
+}
+
+bool test_r_reg_get_pack(void) {
+	RReg *reg;
+	RRegItem *r;
+	ut64 value;
+
+	reg = r_reg_new ();
+	mu_assert_notnull (reg, "r_reg_new () failed");
+
+	r_reg_set_profile_string (reg,
+		"xmm    xmm0	.128	0	16\n\
+		xmm    xmm0h	.64		0	8\n\
+		xmm    xmm0l	.64		8	8\n\
+		xmm    xmm1	.128	16	16\n\
+		xmm    xmm1h	.64		16	8\n\
+		xmm    xmm1l	.64		24	8");
+
+	r = r_reg_get (reg, "xmm0", R_REG_TYPE_XMM);
+	r_reg_set_pack (reg, r, 0, 64, 0x0011223344556677);
+	value = r_reg_get_pack (reg, r, 0, 64);
+	mu_assert_eq (value, 0x0011223344556677,
+		"get xmm0 value at index 0 and bitsize 64");
+
+	value = r_reg_get_pack (reg, r, 0, 32);
+	mu_assert_eq (value, 0x44556677,
+		"get xmm0 value at index 1 and bitsize 32");
+
+	r_reg_set_pack (reg, r, 2, 32, 0xdeadbeef);
+	value = r_reg_get_pack (reg, r, 2, 32);
+	mu_assert_eq (value, 0xdeadbeef,
+		"get xmm0 value at index 2 and bitsize 32");
+
+	r = r_reg_get (reg, "xmm1", R_REG_TYPE_XMM);
+	r_reg_set_pack (reg, r, 1, 64, 0x8899aabbccddeeff);
+	r = r_reg_get (reg, "xmm1l", R_REG_TYPE_XMM);
+	value = r_reg_get_pack (reg, r, 0, 32);
+	mu_assert_eq (value, 0xccddeeff,
+		"get xmm1l value at index 0 and bitsize 32");
+
+	r_reg_free (reg);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_r_reg_set_name);
 	mu_run_test (test_r_reg_set_profile_string);
 	mu_run_test (test_r_reg_get_value_gpr);
 	mu_run_test (test_r_reg_get_value_flag);
+	mu_run_test (test_r_reg_get);
+	mu_run_test (test_r_reg_get_pack);
 	return tests_passed != tests_run;
 }
 
