@@ -417,14 +417,7 @@ static char *flagname_attr(const char *attr_type, const char *class_name, const 
 	return r;
 }
 
-static void r_anal_class_set_flag(RAnal *anal, const char *name, ut64 addr) {
-	if (!name || !anal->flg_class_set) {
-		return;
-	}
-	anal->flg_class_set (anal->flb.f, name, addr, 0);
-}
-
-static void r_anal_class_vtable_set_flag(RAnal *anal, const char *name, ut64 addr, ut32 size) {
+static void r_anal_class_set_flag(RAnal *anal, const char *name, ut64 addr, ut32 size) {
 	if (!name || !anal->flg_class_set) {
 		return;
 	}
@@ -566,7 +559,7 @@ R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name,
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
 		return err;
 	}
-	r_anal_class_set_flag (anal, flagname_method (class_name, meth->name), meth->addr);
+	r_anal_class_set_flag (anal, flagname_method (class_name, meth->name), meth->addr, 0);
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
@@ -885,7 +878,7 @@ R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name,
 		return err;
 	}
 
-	r_anal_class_vtable_set_flag (anal, flagname_vtable (class_name, vtable->id), vtable->addr, vtable->size);
+	r_anal_class_set_flag (anal, flagname_vtable (class_name, vtable->id), vtable->addr, vtable->size);
 
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
