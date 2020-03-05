@@ -421,20 +421,9 @@ static void cmd_write_op (RCore *core, const char *input) {
 						}
 						r_cons_newline ();
 					} else {
-						while (true) {
-							int res = r_core_write_at (core, addr, ptr, len);
-							if (res != 0) {
-								cmd_write_fail (core);
-							}
-							if (res < 1 || len == res) {
-								break;
-							}
-							if (res < len) {
-								ptr += res;
-								len -= res;
-								addr += res;
-							}
-						} 
+						if (!r_core_write_at (core, addr, ptr, len)) {
+							cmd_write_fail (core);
+						}
 					}
 					free (buf);
 				} else {
