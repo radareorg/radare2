@@ -64,14 +64,14 @@ return strdup(
 "gpr@gpr	df	.1	.1546	0	direction\n"
 "gpr@gpr	of	.1	.1547	0	overflow\n"
 /* +512 bytes for maximum supoprted extension extended registers */
-"xmm@gpr	xmm0	.128	364	0\n"
-"xmm@gpr	xmm1	.128	380	0\n"
-"xmm@gpr	xmm2	.128	396	0\n"
-"xmm@gpr	xmm3	.128	412	0\n"
-"xmm@gpr	xmm4	.128	428	0\n"
-"xmm@gpr	xmm5	.128	444	0\n"
-"xmm@gpr	xmm6	.128	460	0\n"
-"xmm@gpr	xmm7	.128	476	0\n"
+"xmm	xmm0	.128	364	0\n"
+"xmm	xmm1	.128	380	0\n"
+"xmm	xmm2	.128	396	0\n"
+"xmm	xmm3	.128	412	0\n"
+"xmm	xmm4	.128	428	0\n"
+"xmm	xmm5	.128	444	0\n"
+"xmm	xmm6	.128	460	0\n"
+"xmm	xmm7	.128	476	0\n"
 /* this last register is needed to fit the arena into WINDOWS CONTEXT */
 //"xmm@gpr	endext	.32	712	0\n"
 /* end extended registers */

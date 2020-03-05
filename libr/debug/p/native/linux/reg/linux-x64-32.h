@@ -109,29 +109,29 @@ return strdup (
 "fpu	st6	.64	128	0\n"
 "fpu	st7	.64	144	0\n"
 
-"fpu	xmm0h	.64	160	0\n"
-"fpu	xmm0l	.64	168	0\n"
+"xmm	xmm0h	.64	160	0\n"
+"xmm	xmm0l	.64	168	0\n"
 
-"fpu	xmm1h	.64	176	0\n"
-"fpu	xmm1l	.64	184	0\n"
+"xmm	xmm1h	.64	176	0\n"
+"xmm	xmm1l	.64	184	0\n"
 
-"fpu	xmm2h	.64	192	0\n"
-"fpu	xmm2l	.64	200	0\n"
+"xmm	xmm2h	.64	192	0\n"
+"xmm	xmm2l	.64	200	0\n"
 
-"fpu	xmm3h	.64	208	0\n"
-"fpu	xmm3l	.64	216	0\n"
+"xmm	xmm3h	.64	208	0\n"
+"xmm	xmm3l	.64	216	0\n"
 
-"fpu	xmm4h	.64	224	0\n"
-"fpu	xmm4l	.64	232	0\n"
+"xmm	xmm4h	.64	224	0\n"
+"xmm	xmm4l	.64	232	0\n"
 
-"fpu	xmm5h	.64	240	0\n"
-"fpu	xmm5l	.64	248	0\n"
+"xmm	xmm5h	.64	240	0\n"
+"xmm	xmm5l	.64	248	0\n"
 
-"fpu	xmm6h	.64	256	0\n"
-"fpu	xmm6l	.64	264	0\n"
+"xmm	xmm6h	.64	256	0\n"
+"xmm	xmm6l	.64	264	0\n"
 
-"fpu	xmm7h	.64	272	0\n"
-"fpu	xmm7l	.64	280	0\n"
+"xmm	xmm7h	.64	272	0\n"
+"xmm	xmm7l	.64	280	0\n"
 "fpu	x64-32	.64	288	0\n"
 
 );
