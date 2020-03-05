@@ -35,7 +35,7 @@ static bool r_pkcs7_parse_certificaterevocationlists(RPKCS7CertificateRevocation
 			return false;
 		}
 		crls->length = object->list.length;
-		for (i = 0; i < crls->length; ++i) {
+		for (i = 0; i < crls->length; i++) {
 			crls->elements[i] = r_x509_parse_crl (object->list.objects[i]);
 		}
 	}
@@ -45,7 +45,7 @@ static bool r_pkcs7_parse_certificaterevocationlists(RPKCS7CertificateRevocation
 static void r_pkcs7_free_certificaterevocationlists(RPKCS7CertificateRevocationLists *crls) {
 	ut32 i;
 	if (crls) {
-		for (i = 0; i < crls->length; ++i) {
+		for (i = 0; i < crls->length; i++) {
 			r_x509_free_crl (crls->elements[i]);
 			crls->elements[i] = NULL;
 		}
@@ -65,7 +65,7 @@ static bool r_pkcs7_parse_extendedcertificatesandcertificates(RPKCS7ExtendedCert
 			return false;
 		}
 		ecac->length = object->list.length;
-		for (i = 0; i < ecac->length; ++i) {
+		for (i = 0; i < ecac->length; i++) {
 			ecac->elements[i] = r_x509_parse_certificate (object->list.objects[i]);
 			object->list.objects[i] = NULL;
 		}
@@ -76,7 +76,7 @@ static bool r_pkcs7_parse_extendedcertificatesandcertificates(RPKCS7ExtendedCert
 static void r_pkcs7_free_extendedcertificatesandcertificates(RPKCS7ExtendedCertificatesAndCertificates *ecac) {
 	ut32 i;
 	if (ecac) {
-		for (i = 0; i < ecac->length; ++i) {
+		for (i = 0; i < ecac->length; i++) {
 			r_x509_free_certificate (ecac->elements[i]);
 			ecac->elements[i] = NULL;
 		}
@@ -96,7 +96,7 @@ static bool r_pkcs7_parse_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdentif
 			return false;
 		}
 		dai->length = object->list.length;
-		for (i = 0; i < dai->length; ++i) {
+		for (i = 0; i < dai->length; i++) {
 			// r_x509_parse_algorithmidentifier returns bool,
 			// so i have to allocate before calling the function
 			dai->elements[i] = (RX509AlgorithmIdentifier *)malloc (sizeof (RX509AlgorithmIdentifier));
@@ -115,7 +115,7 @@ static bool r_pkcs7_parse_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdentif
 static void r_pkcs7_free_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdentifiers *dai) {
 	ut32 i;
 	if (dai) {
-		for (i = 0; i < dai->length; ++i) {
+		for (i = 0; i < dai->length; i++) {
 			if (dai->elements[i]) {
 				r_x509_free_algorithmidentifier (dai->elements[i]);
 				// r_x509_free_algorithmidentifier doesn't free the pointer
@@ -209,7 +209,7 @@ static void r_pkcs7_free_attribute(RPKCS7Attribute *attribute) {
 static void r_pkcs7_free_attributes(RPKCS7Attributes *attributes) {
 	ut32 i;
 	if (attributes) {
-		for (i = 0; i < attributes->length; ++i) {
+		for (i = 0; i < attributes->length; i++) {
 			r_pkcs7_free_attribute (attributes->elements[i]);
 		}
 		R_FREE (attributes->elements);
@@ -240,7 +240,7 @@ static bool r_pkcs7_parse_signerinfos(RPKCS7SignerInfos *ss, RASN1Object *object
 			return false;
 		}
 		ss->length = object->list.length;
-		for (i = 0; i < ss->length; ++i) {
+		for (i = 0; i < ss->length; i++) {
 			// r_pkcs7_parse_signerinfo returns bool,
 			// so i have to allocate before calling the function
 			ss->elements[i] = R_NEW0 (RPKCS7SignerInfo);
@@ -374,7 +374,7 @@ static bool r_pkcs7_parse_attributes(RPKCS7Attributes *attributes, RASN1Object *
 			attributes->length = 0;
 			return false;
 		}
-		for (i = 0; i < object->list.length; ++i) {
+		for (i = 0; i < object->list.length; i++) {
 			attributes->elements[i] = r_pkcs7_parse_attribute (object->list.objects[i]);
 		}
 	}
@@ -405,7 +405,7 @@ static void r_pkcs7_signerinfos_dump(RX509CertificateRevocationList *crl, const 
 	r_strbuf_appendf (sb, "%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
 				pad2, last ? last->string : "Missing",
 				pad2, next ? next->string : "Missing", pad2);
-	for (i = 0; i < crl->length; ++i) {
+	for (i = 0; i < crl->length; i++) {
 		r_x509_crlentry_dump (crl->revokedCertificates[i], pad3, sb);
 	}
 	free (pad3);
@@ -441,7 +441,7 @@ static void r_x509_signedinfo_dump(RPKCS7SignerInfo *si, const char *pad, RStrBu
 	r_strbuf_appendf (sb, "%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
 		pad2, pad3, s ? s->string : "Missing", pad2);
 
-	for (i = 0; i < si->authenticatedAttributes.length; ++i) {
+	for (i = 0; i < si->authenticatedAttributes.length; i++) {
 		RPKCS7Attribute *attr = si->authenticatedAttributes.elements[i];
 		if (!attr) {
 			continue;
@@ -458,7 +458,7 @@ static void r_x509_signedinfo_dump(RPKCS7SignerInfo *si, const char *pad, RStrBu
 	//	r_asn1_free_string (s);
 	r_strbuf_appendf (sb, "%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
 	r_strbuf_appendf (sb, "%sUnauthenticated Attributes:\n", pad2);
-	for (i = 0; i < si->unauthenticatedAttributes.length; ++i) {
+	for (i = 0; i < si->unauthenticatedAttributes.length; i++) {
 		RPKCS7Attribute *attr = si->unauthenticatedAttributes.elements[i];
 		if (!attr) {
 			continue;
@@ -480,7 +480,7 @@ R_API char *r_pkcs7_cms_to_string(RCMS *container) {
 	r_strbuf_appendf (sb, "signedData\n  Version: v%u\n  Digest Algorithms:\n", sd->version);
 
 	if (container->signedData.digestAlgorithms.elements) {
-		for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
+		for (i = 0; i < container->signedData.digestAlgorithms.length; i++) {
 			if (container->signedData.digestAlgorithms.elements[i]) {
 				RASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
 				r_strbuf_appendf (sb, "    %s\n", s ? s->string : "Missing");
@@ -490,11 +490,11 @@ R_API char *r_pkcs7_cms_to_string(RCMS *container) {
 
 	r_strbuf_appendf (sb, "  Certificates: %u\n", container->signedData.certificates.length);
 
-	for (i = 0; i < container->signedData.certificates.length; ++i) {
+	for (i = 0; i < container->signedData.certificates.length; i++) {
 		r_x509_certificate_dump (container->signedData.certificates.elements[i], "    ", sb);
 	}
 
-	for (i = 0; i < container->signedData.crls.length; ++i) {
+	for (i = 0; i < container->signedData.crls.length; i++) {
 		char *res = r_x509_crl_to_string (container->signedData.crls.elements[i], "    ");
 		if (res) {
 			r_strbuf_append (sb, res);
@@ -504,7 +504,7 @@ R_API char *r_pkcs7_cms_to_string(RCMS *container) {
 
 	r_strbuf_appendf (sb, "  SignerInfos:\n");
 	if (container->signedData.signerinfos.elements) {
-		for (i = 0; i < container->signedData.signerinfos.length; ++i) {
+		for (i = 0; i < container->signedData.signerinfos.length; i++) {
 			r_x509_signedinfo_dump (container->signedData.signerinfos.elements[i], "    ", sb);
 		}
 	}
@@ -534,7 +534,7 @@ R_API void r_x509_signedinfo_json(PJ *pj, RPKCS7SignerInfo *si) {
 		}
 		pj_k (pj, "AuthenticatedAttributes");
 		pj_a (pj);
-		for (i = 0; i < si->authenticatedAttributes.length; ++i) {
+		for (i = 0; i < si->authenticatedAttributes.length; i++) {
 			RPKCS7Attribute *attr = si->authenticatedAttributes.elements[i];
 			if (!attr) {
 				continue;
@@ -564,7 +564,7 @@ R_API void r_x509_signedinfo_json(PJ *pj, RPKCS7SignerInfo *si) {
 
 		pj_k (pj, "UnauthenticatedAttributes");
 		pj_a (pj);
-		for (i = 0; i < si->unauthenticatedAttributes.length; ++i) {
+		for (i = 0; i < si->unauthenticatedAttributes.length; i++) {
 			RPKCS7Attribute *attr = si->unauthenticatedAttributes.elements[i];
 			if (!attr) {
 				continue;
@@ -596,7 +596,7 @@ R_API PJ *r_pkcs7_cms_json (RCMS *container) {
 		if (container->signedData.digestAlgorithms.elements) {
 			pj_k (pj, "DigestAlgorithms");
 			pj_a (pj);
-			for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
+			for (i = 0; i < container->signedData.digestAlgorithms.length; i++) {
 				if (container->signedData.digestAlgorithms.elements[i]) {
 					RASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
 					if (s) {
@@ -609,14 +609,14 @@ R_API PJ *r_pkcs7_cms_json (RCMS *container) {
 
 		pj_k (pj, "Certificates");
 		pj_a (pj);
-		for (i = 0; i < container->signedData.certificates.length; ++i) {
+		for (i = 0; i < container->signedData.certificates.length; i++) {
 			r_x509_certificate_json (pj, container->signedData.certificates.elements[i]);
 		}
 		pj_end (pj);
 
 		pj_k (pj, "CRL");
 		pj_a (pj);
-		for (i = 0; i < container->signedData.crls.length; ++i) {
+		for (i = 0; i < container->signedData.crls.length; i++) {
 			r_x509_crl_json (pj, container->signedData.crls.elements[i]);
 		}
 		pj_end (pj);
@@ -624,7 +624,7 @@ R_API PJ *r_pkcs7_cms_json (RCMS *container) {
 		pj_k (pj, "SignerInfos");
 		pj_a (pj);
 		if (container->signedData.signerinfos.elements) {
-			for (i = 0; i < container->signedData.signerinfos.length; ++i) {
+			for (i = 0; i < container->signedData.signerinfos.length; i++) {
 				r_x509_signedinfo_json (pj, container->signedData.signerinfos.elements[i]);
 			}
 		}

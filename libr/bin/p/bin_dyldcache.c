@@ -319,7 +319,7 @@ static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *c
 
 	addr -= slide;
 
-	for (i = 0; i < hdr->mappingCount; ++i) {
+	for (i = 0; i < hdr->mappingCount; i++) {
 		if (addr >= maps[i].address && addr < maps[i].address + maps[i].size) {
 			res = maps[i].fileOffset + addr - maps[i].address;
 			if (offset) {
@@ -499,7 +499,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 	ut64 start_of_data = 0;
 
 	int i;
-	for (i = 0; i < cache->hdr->mappingCount; ++i) {
+	for (i = 0; i < cache->hdr->mappingCount; i++) {
 		int perm = prot2perm (cache->maps[i].initProt);
 		if (!(perm & R_PERM_X)) {
 			start_of_data = cache->maps[i].fileOffset;// + bf->o->boffset;
@@ -1500,7 +1500,7 @@ static RList *sections(RBinFile *bf) {
 
 	RBinSection *ptr = NULL;
 	int i;
-	for (i = 0; i < cache->hdr->mappingCount; ++i) {
+	for (i = 0; i < cache->hdr->mappingCount; i++) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return NULL;
 		}

@@ -27,7 +27,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	r_instr = rsp_instruction_decode (a->pc, iw);
 
 	r_strbuf_append (&op->buf_asm, r_instr.mnemonic);
-	for (i = 0; i < r_instr.noperands; ++i) {
+	for (i = 0; i < r_instr.noperands; i++) {
 		r_strbuf_append (&op->buf_asm, (i == 0) ? " " : ", ");
 
 		switch (r_instr.operands[i].type) {

@@ -1657,7 +1657,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		}
 		if (ret < 1 && fmt != 'd') {
 			eprintf ("Oops at 0x%08" PFMT64x " (", core->offset + idx);
-			for (i = idx, j = 0; i < core->blocksize && j < 3; ++i, ++j) {
+			for (i = idx, j = 0; i < core->blocksize && j < 3; i++, j++) {
 				eprintf ("%02x ", buf[i]);
 			}
 			eprintf ("...)\n");

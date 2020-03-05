@@ -1915,7 +1915,7 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 						/* copy 0x1b and [ */
 						*r++ = *str++;
 						*r++ = *str++;
-						for (ptr = str; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ++ptr) {
+						for (ptr = str; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ptr++) {
 							*r++ = *ptr;
 						}
 						*r++ = *ptr++;
@@ -3083,7 +3083,7 @@ R_API char *r_str_repeat(const char *ch, int sz) {
 		return strdup ("");
 	}
 	RStrBuf *buf = r_strbuf_new (ch);
-	for (i = 1; i < sz; ++i) {
+	for (i = 1; i < sz; i++) {
 		r_strbuf_append (buf, ch);
 	}
 	return r_strbuf_drain (buf);

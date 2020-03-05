@@ -301,7 +301,7 @@ static ut64 gdiff_start = 0;
 
 void print_bytes(const void *p, size_t len, bool big_endian) {
 	size_t i;
-	for (i = 0; i < len; ++i) {
+	for (i = 0; i < len; i++) {
 		ut8 ch = ((ut8*) p)[big_endian ? (len - i - 1) : i];
 		write (1, &ch, 1);
 	}

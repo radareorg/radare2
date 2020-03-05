@@ -859,7 +859,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	sdb_num_set (sdb, "link", shdr->sh_link, 0);
 	sdb_set (sdb, "link_section_name", link_section_name, 0);
 
-	for (cnt = 0, i = 0; cnt < shdr->sh_info && i < shdr->sh_size; ++cnt) {
+	for (cnt = 0, i = 0; cnt < shdr->sh_info && i < shdr->sh_size; cnt++) {
 		Sdb *sdb_verdef = sdb_new0 ();
 		char *vstart = ((char*)defs) + i;
 		size_t vstart_off = i;
@@ -909,7 +909,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		sdb_set (sdb_verdef, "vda_name", &bin->dynstr[aux.vda_name], 0);
 		sdb_set (sdb_verdef, "flags", get_ver_flags (verdef->vd_flags), 0);
 
-		for (j = 1; j < verdef->vd_cnt; ++j) {
+		for (j = 1; j < verdef->vd_cnt; j++) {
 			int k;
 			Sdb *sdb_parent = sdb_new0 ();
 			if (shdr->sh_size - vstart_off < aux.vda_next) {
@@ -1019,7 +1019,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	}
 	//XXX we should use DT_VERNEEDNUM instead of sh_info
 	//TODO https://sourceware.org/ml/binutils/2014-11/msg00353.html
-	for (i = 0, cnt = 0; cnt < shdr->sh_info; ++cnt) {
+	for (i = 0, cnt = 0; cnt < shdr->sh_info; cnt++) {
 		int j, isum;
 		ut8 *vstart = need + i;
 		Elf_(Verneed) vvn = { 0 };
@@ -1056,7 +1056,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 		}
 		vstart += vnaux;
 		ut32 vn_cnt = entry->vn_cnt;
-		for (j = 0, isum = i + entry->vn_aux; j < vn_cnt && vstart + sizeof (Elf_(Vernaux)) <= end; ++j) {
+		for (j = 0, isum = i + entry->vn_aux; j < vn_cnt && vstart + sizeof (Elf_(Vernaux)) <= end; j++) {
 			int k;
 			Elf_(Vernaux) *aux = NULL;
 			Elf_(Vernaux) vaux = {0};
@@ -1176,7 +1176,7 @@ static bool init_dynstr(ELFOBJ *bin) {
 	if (!bin->shstrtab) {
 		return false;
 	}
-	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
+	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		if (bin->shdr[i].sh_name > bin->shstrtab_size) {
 			return false;
 		}
@@ -3792,7 +3792,7 @@ ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 		}
 		return paddr;
 	}
-	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
+	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		Elf_(Phdr) *p = &bin->phdr[i];
 		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
 			if (!p->p_vaddr && !p->p_offset) {
@@ -3816,7 +3816,7 @@ ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 		}
 		return vaddr;
 	}
-	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
+	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		Elf_(Phdr) *p = &bin->phdr[i];
 		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
 			if (!p->p_offset && !p->p_vaddr) {
@@ -3840,7 +3840,7 @@ ut64 Elf_(r_bin_elf_p2v_new) (ELFOBJ *bin, ut64 paddr) {
 		}
 		return UT64_MAX;
 	}
-	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
+	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		Elf_(Phdr) *p = &bin->phdr[i];
 		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
 			return p->p_vaddr + paddr - p->p_offset;
@@ -3862,7 +3862,7 @@ ut64 Elf_(r_bin_elf_v2p_new) (ELFOBJ *bin, ut64 vaddr) {
 		}
 		return UT64_MAX;
 	}
-	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
+	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		Elf_(Phdr) *p = &bin->phdr[i];
 		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
 			return p->p_offset + vaddr - p->p_vaddr;

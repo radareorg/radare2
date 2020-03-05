@@ -1629,7 +1629,7 @@ static String* Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWor
 		goto out_error;
 	}
 
-	for (i = 0; *curAddr < begAddr + string->wLength; ++i, *curAddr += sizeof (ut16)) {
+	for (i = 0; *curAddr < begAddr + string->wLength; i++, *curAddr += sizeof (ut16)) {
 		ut16 utf16_char;
 		ut16 *tmpKey;
 		if (*curAddr > bin->size || *curAddr + sizeof (ut16) > bin->size) {

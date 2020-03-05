@@ -391,7 +391,7 @@ static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
 			}
 		} else {
 			len = strlen (line);
-			for (i = 0; i < len; ++i) {
+			for (i = 0; i < len; i++) {
 				r_cons_printf ("%s", get_utf8_char (line[i], ds));
 			}
 		}
@@ -3716,10 +3716,10 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 		if (ds->showpayloads) {
 			int mod = ds->asmop.payload % ds->core->assembler->dataalign;
 			int x;
-			for (x = 0; x < ds->asmop.payload; ++x) {
+			for (x = 0; x < ds->asmop.payload; x++) {
 				r_cons_printf ("\n        0x%02x", buf[ds->oplen + x]);
 			}
-			for (x = 0; x < mod; ++x) {
+			for (x = 0; x < mod; x++) {
 				r_cons_printf ("\n        0x%02x ; alignment", buf[ds->oplen + ds->asmop.payload + x]);
 			}
 		}

@@ -216,7 +216,7 @@ while_end:
 		last = ptr3[1];
 		ptr3[1] = '\0';
 		ptr2++;
-		for (; ptr2 <= ptr3; ++ptr2) {
+		for (; ptr2 <= ptr3; ptr2++) {
 			if (fail) {
 				ZERO_FILL (grep->tokens);
 				grep->tokens_used = 0;

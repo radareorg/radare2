@@ -603,7 +603,7 @@ d_dump (struct demangle_component *dc, int indent)
       return;
     }
 
-  for (i = 0; i < indent; ++i)
+  for (i = 0; i < indent; i++)
     putchar (' ');
 
   switch (dc->type)

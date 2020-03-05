@@ -218,10 +218,10 @@ static void readlabel(const char **p, int store) {
 	const char *c, *d, *pos, *dummy;
 	int i, j;
 	struct label *buf, *previous;
-	for (d = *p; *d && *d != ';'; ++d) {
+	for (d = *p; *d && *d != ';'; d++) {
 		;
 	}
-	for (c = *p; !strchr (" \r\n\t", *c) && c < d; ++c) {
+	for (c = *p; !strchr (" \r\n\t", *c) && c < d; c++) {
 		;
 	}
 	pos = strchr (*p, ':');
@@ -818,7 +818,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 	obuflen = 0;
 	obuf = _obuf;
 	/* continue assembling until the last input file is done */
-	// for (file = 0; file < infilecount; ++file)
+	// for (file = 0; file < infilecount; file++)
 	do {
 		int cmd, cont = 1;
 		// XXX: must free
