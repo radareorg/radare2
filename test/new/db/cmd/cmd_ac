@@ -184,7 +184,7 @@ attr.Flatline.base.0=PeripheryAlbum,0
 attr.Flatline.method=PrayerPosition
 attr.Flatline.method.PrayerPosition=4919,66
 attr.Flatline.vtable=0
-attr.Flatline.vtable.0=0x1337,0
+attr.Flatline.vtable.0=0x1337,0,0
 attr.PeripheryAlbum.base=0
 attr.PeripheryAlbum.base.0=Album,0
 attrtypes.Flatline=base,method,vtable
@@ -204,7 +204,7 @@ attr.Flatline.base.0=PeripheryAlbum,0
 attr.Flatline.method=PrayerPosition
 attr.Flatline.method.PrayerPosition=4919,66
 attr.Flatline.vtable=0
-attr.Flatline.vtable.0=0x1337,0
+attr.Flatline.vtable.0=0x1337,0,0
 attrtypes.Flatline=base,method,vtable
 0x00001337 0 method.Flatline.PrayerPosition
 0x00001337 0 vtable.Flatline.0
@@ -221,7 +221,7 @@ attr.Flatline.base.0=PeripheryAlbum,0
 attr.Flatline.method=PrayerPosition
 attr.Flatline.method.PrayerPosition=4919,66
 attr.Flatline.vtable=0
-attr.Flatline.vtable.0=0x1337,0
+attr.Flatline.vtable.0=0x1337,0,0
 attrtypes.Flatline=base,method,vtable
 0x00001337 0 method.Flatline.PrayerPosition
 0x00001337 0 vtable.Flatline.0
@@ -327,8 +327,8 @@ Deadwing
 Deadwing=c
 -
 attr.Deadwing.vtable=0,1
-attr.Deadwing.vtable.0=0x1337,0
-attr.Deadwing.vtable.1=0xdeadbeef,66
+attr.Deadwing.vtable.0=0x1337,0,0
+attr.Deadwing.vtable.1=0xdeadbeef,66,0
 attrtypes.Deadwing=vtable
 0x00001337 0 vtable.Deadwing.0
 0xdeadbeef 0 vtable.Deadwing.1
@@ -342,6 +342,7 @@ CMDS=<<EOF
 ac Deadwing
 acv Deadwing 0x1337
 acv Deadwing 0xdeadbeef 0x42
+acv Deadwing 0xefefef 0x42 0x20
 acll
 k anal/classes/*
 ?e -
@@ -356,17 +357,22 @@ EXPECT=<<EOF
 Deadwing
   (vtable at 0x1337)
   (vtable at 0xdeadbeef in class at +0x42)
+  (vtable at 0xefefef in class at +0x42)
 Deadwing=c
 -
-attr.Deadwing.vtable=0,1
-attr.Deadwing.vtable.0=0x1337,0
-attr.Deadwing.vtable.1=0xdeadbeef,66
+attr.Deadwing.vtable=0,1,2
+attr.Deadwing.vtable.0=0x1337,0,0
+attr.Deadwing.vtable.1=0xdeadbeef,66,0
+attr.Deadwing.vtable.2=0xefefef,66,32
 attrtypes.Deadwing=vtable
 0x00001337 0 vtable.Deadwing.0
+0x00efefef 32 vtable.Deadwing.2
 0xdeadbeef 0 vtable.Deadwing.1
 --
 Deadwing
   (vtable at 0xdeadbeef in class at +0x42)
+  (vtable at 0xefefef in class at +0x42)
+0x00efefef 32 vtable.Deadwing.2
 0xdeadbeef 0 vtable.Deadwing.1
 EOF
 RUN
@@ -411,7 +417,7 @@ attr.PorcupineTreeAlbum.base.0=Album,0
 attr.PorcupineTreeAlbum.method=Listen
 attr.PorcupineTreeAlbum.method.Listen=3735928559,-1
 attr.PorcupineTreeAlbum.vtable=0
-attr.PorcupineTreeAlbum.vtable.0=0x1337,66
+attr.PorcupineTreeAlbum.vtable.0=0x1337,66,0
 attrtypes.Deadwing=base
 attrtypes.PorcupineTreeAlbum=base,vtable,method
 0x00001337 0 vtable.PorcupineTreeAlbum.0
@@ -433,7 +439,7 @@ attr.Masterpiece.base.0=Album,0
 attr.Masterpiece.method=Listen
 attr.Masterpiece.method.Listen=3735928559,-1
 attr.Masterpiece.vtable=0
-attr.Masterpiece.vtable.0=0x1337,66
+attr.Masterpiece.vtable.0=0x1337,66,0
 attrtypes.Deadwing=base
 attrtypes.Masterpiece=base,vtable,method
 0x00001337 0 vtable.Masterpiece.0
