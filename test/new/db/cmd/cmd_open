@@ -1,5 +1,6 @@
 NAME=om=
 FILE=../bins/mach0/mac-ls2
+BROKEN=1
 CMDS=<<EOF
 om=
 EOF
