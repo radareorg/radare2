@@ -5812,6 +5812,19 @@ DEFINE_HANDLE_TS_FCN(iter_interpret_command) {
 	return res;
 }
 
+DEFINE_HANDLE_TS_FCN(iter_hit_command) {
+	RCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode search_cmd = ts_node_named_child (node, 1);
+	char *command_str = ts_node_sub_string (command, state->input);
+	char *cmdhit = strdup (r_config_get (core->config, "cmd.hit"));
+	r_config_set (core->config, "cmd.hit", command_str);
+	bool res = handle_ts_command (state, search_cmd);
+	r_config_set (core->config, "cmd.hit", cmdhit);
+	free (command_str);
+	return res;
+}
+
 DEFINE_HANDLE_TS_FCN(last_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 	char *command_str = ts_node_sub_string (command, state->input);
