@@ -253,7 +253,10 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
-	packbits = R_MIN (64, R_MAX (0, packbits));
+	if (packbits > 64) {
+		packbits = 64;
+		eprintf ("Does not support pack bits > 64\n");
+	}
 
 	ut64 ret = 0LL;
 	const int packbytes = packbits / 8;
@@ -262,7 +265,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 		eprintf ("Invalid bit size for packet register\n");
 		return 0LL;
 	}
-	if (packidx * packbits > item->size) {
+	if ((packidx + 1) * packbits > item->size) {
 		eprintf ("Packed index is beyond the register size\n");
 		return 0LL;
 	}
@@ -285,10 +288,13 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
-	packbits = R_MIN (64, R_MAX (0, packbits));
+	if (packbits > 64) {
+		packbits = 64;
+		eprintf ("Does not support pack bits > 64\n");
+	}
 
 	int packbytes = packbits / 8;
-	if (packidx * packbits > item->size) {
+	if ((packidx + 1) * packbits > item->size) {
 		eprintf ("Packed index is beyond the register size\n");
 		return false;
 	}
