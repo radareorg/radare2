@@ -676,7 +676,7 @@ typedef struct r_anal_t {
 	bool (*log)(struct r_anal_t *anal, const char *msg);
 	bool (*read_at)(struct r_anal_t *anal, ut64 addr, ut8 *buf, int len);
 	bool verbose;
-	RStrBuf *cmdtail;
+	R_DEPRECATE RStrBuf *cmdtail;
 	int seggrn;
 	RFlagGetAtAddr flag_get;
 	REvent *ev;
