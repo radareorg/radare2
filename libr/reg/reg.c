@@ -296,6 +296,7 @@ R_API ut64 r_reg_getv(RReg *reg, const char *name) {
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	int i, e;
 	r_return_val_if_fail (reg && name, NULL);
+	//TODO: define flag register as R_REG_TYPE_FLG
 	if (type == R_REG_TYPE_FLG) {
 		type = R_REG_TYPE_GPR;
 	}
