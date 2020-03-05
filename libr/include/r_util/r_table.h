@@ -18,13 +18,12 @@ typedef struct {
 	int total;
 } RTableColumn;
 
-
 typedef struct {
-    char *name;
-    RInterval pitv;
-    RInterval vitv;
-    int perm;
-    char *extra;
+	char *name;
+	RInterval pitv;
+	RInterval vitv;
+	int perm;
+	char *extra;
 } RListInfo;
 
 enum {
