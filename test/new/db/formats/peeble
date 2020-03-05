@@ -3,7 +3,5 @@ FILE=../bins/pebble/pebble-app.bin
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-iI~?pebble
-EOF
+CMDS=iI~?pebble
 RUN

@@ -48,9 +48,7 @@ f LS.
 f README.MD
 f SERVICES.
 EOF
-CMDS=<<EOF
-md /root
-EOF
+CMDS=md /root
 RUN
 
 NAME=md iso3
@@ -62,9 +60,7 @@ d bin
 d etc
 f README.md
 EOF
-CMDS=<<EOF
-md /root
-EOF
+CMDS=md /root
 RUN
 
 NAME=mp gpt
@@ -74,9 +70,7 @@ EXPECT=<<EOF
 1 00 0x0020100000 0x1b24700000
 2 00 0x1b24700000 0x1d1eb00000
 EOF
-CMDS=<<EOF
-mp gpt
-EOF
+CMDS=mp gpt
 RUN
 
 NAME=m iso9660 auto
@@ -84,9 +78,7 @@ FILE=../bins/fs/iso.img
 EXPECT=<<EOF
 iso9660	0x0	/root
 EOF
-CMDS=<<EOF
-m
-EOF
+CMDS=m
 RUN
 
 NAME=m ext2 auto
@@ -94,9 +86,7 @@ FILE=../bins/fs/ext2.img
 EXPECT=<<EOF
 ext2	0x0	/root
 EOF
-CMDS=<<EOF
-m
-EOF
+CMDS=m
 RUN
 
 NAME=m hfs auto
@@ -104,9 +94,7 @@ FILE=../bins/fs/hfs.img
 EXPECT=<<EOF
 hfs	0x0	/root
 EOF
-CMDS=<<EOF
-m
-EOF
+CMDS=m
 RUN
 
 NAME=m fat auto
@@ -114,9 +102,7 @@ FILE=../bins/fs/fat.img
 EXPECT=<<EOF
 fat	0x0	/root
 EOF
-CMDS=<<EOF
-m
-EOF
+CMDS=m
 RUN
 
 NAME=md ext2 auto

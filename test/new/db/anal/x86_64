@@ -1320,9 +1320,7 @@ NAME=No function
 FILE=malloc://0x50
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-aftm
-EOF
+CMDS=aftm
 RUN
 
 NAME=Basic type Matching

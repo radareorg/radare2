@@ -3,9 +3,7 @@ FILE=../bins/vsf/c64-rambo2-norom.vsf
 ARGS=-A
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=VSF: Rambo II- detection
@@ -13,9 +11,7 @@ FILE=../bins/vsf/c64-rambo2-norom.vsf
 EXPECT=<<EOF
 os       C64
 EOF
-CMDS=<<EOF
-iI~os
-EOF
+CMDS=iI~os
 RUN
 
 NAME=VSF: Rambo II- ROMs
@@ -23,7 +19,5 @@ FILE=../bins/vsf/c64-rambo2-norom.vsf
 EXPECT=<<EOF
  1 fd: 3 +0x00000084 0x00000000 - 0x0000ffff r-x fmap.RAM
 EOF
-CMDS=<<EOF
-om
-EOF
+CMDS=om
 RUN

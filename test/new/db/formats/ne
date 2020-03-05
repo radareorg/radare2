@@ -10,9 +10,7 @@ nth paddr       vaddr      bind   type size lib name
 2    0x00002b5a 0x00002b5a GLOBAL NONE 0        DIAL_ABOUT
 0    0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=NE Segments
@@ -26,9 +24,7 @@ nth paddr         size vaddr        vsize perm name
 1   0x00007600  0x3ec4 0x00007600  0x3ec4 -rwx MOVEABLE.30208
 
 EOF
-CMDS=<<EOF
-iSS
-EOF
+CMDS=iSS
 RUN
 
 NAME=NE Module imports
@@ -43,9 +39,7 @@ nth vaddr      bind type lib name
 4   0x00000000 NONE NONE     WIN87EM
 
 EOF
-CMDS=<<EOF
-ii
-EOF
+CMDS=ii
 RUN
 
 NAME=NE Relocs
@@ -53,9 +47,7 @@ FILE=../bins/ne/anim8.exe
 EXPECT=<<EOF
 718
 EOF
-CMDS=<<EOF
-ir~0x?
-EOF
+CMDS=ir~0x?
 RUN
 
 NAME=NE Relocs and resolve function ordinal names

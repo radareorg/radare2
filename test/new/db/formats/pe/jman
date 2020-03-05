@@ -2,9 +2,7 @@ NAME=MZ: jman.exe - open
 FILE=../bins/pe/jman.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=MZ: jman.exe - entrypoint
@@ -12,7 +10,5 @@ FILE=../bins/pe/jman.exe
 EXPECT=<<EOF
 mov ax, 0x2df3
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN

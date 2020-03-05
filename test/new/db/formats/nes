@@ -3,9 +3,7 @@ FILE=../bins/nes/Pong.nes
 ARGS=-A
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=NES: Pong - detection
@@ -13,7 +11,5 @@ FILE=../bins/nes/Pong.nes
 EXPECT=<<EOF
 os       nes
 EOF
-CMDS=<<EOF
-iI~os
-EOF
+CMDS=iI~os
 RUN

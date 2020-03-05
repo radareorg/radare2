@@ -254,9 +254,7 @@ EXPECT=<<EOF
 |           0x0804843e      ff75f0         push dword [var_10h]
 |           0x08048441      ff75f4         push dword [var_ch]
 EOF
-CMDS=<<EOF
-aa ; s sym.fastcaslled ; afc fastcall ; afva ; ?e ; pdf~arg,var
-EOF
+CMDS=aa ; s sym.fastcaslled ; afc fastcall ; afva ; ?e ; pdf~arg,var
 RUN
 
 NAME=adf analysis on an obfuscated executable
@@ -468,9 +466,7 @@ FILE=-
 EXPECT=<<EOF
 0
 EOF
-CMDS=<<EOF
-af+ $$ foo; af- $$;afl~?
-EOF
+CMDS=af+ $$ foo; af- $$;afl~?
 RUN
 
 NAME=anal.recont=true
@@ -2803,16 +2799,12 @@ _IO_2_1_stdout_
 _IO_2_1_stdin_
 0x00024480
 EOF
-CMDS=<<EOF
-ir~0x[3]
-EOF
+CMDS=ir~0x[3]
 RUN
 
 NAME=get function in, node before entry
 FILE=../bins/elf/fcn_in_test.elf
-CMDS=<<EOF
-e asm.lines=false;e asm.comments=false;af @ main; pdr @ 0x1180
-EOF
+CMDS=e asm.lines=false;e asm.comments=false;af @ main; pdr @ 0x1180
 EXPECT=<<EOF
 ;-- start2:
 0x00001180      31c0           xor eax, eax

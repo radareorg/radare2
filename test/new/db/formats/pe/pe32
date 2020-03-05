@@ -3,16 +3,12 @@ FILE=../bins/pe/pe.exe
 EXPECT=<<EOF
 0x401000
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=./pe32
 FILE=../bins/pe/vista-glass.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN

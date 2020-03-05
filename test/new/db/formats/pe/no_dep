@@ -2,9 +2,7 @@ NAME=PE: corkami dep.exe - open
 FILE=../bins/pe/dep.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=1: PE: corkami dep.exe - dep not enabled
@@ -14,9 +12,7 @@ EXPECT=<<EOF
 false
 
 EOF
-CMDS=<<EOF
-!rabin2 -k pe/nx ../bins/pe/no_dep.exe
-EOF
+CMDS=!rabin2 -k pe/nx ../bins/pe/no_dep.exe
 RUN
 
 NAME=2: PE: corkami dep.exe - dep not enabled
@@ -24,7 +20,5 @@ FILE=../bins/pe/no_dep.exe
 EXPECT=<<EOF
 false
 EOF
-CMDS=<<EOF
-k bin/cur/pe/nx
-EOF
+CMDS=k bin/cur/pe/nx
 RUN

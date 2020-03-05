@@ -2,9 +2,7 @@ NAME=PE: corkami nosectionXP.exe - open
 FILE=../bins/pe/nosectionXP.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: nosectionXP - section
@@ -12,9 +10,7 @@ FILE=../bins/pe/nosectionXP.exe
 EXPECT=<<EOF
  1 fd: 3 +0x00000138 0x00400138 - 0x00400236 r-x fmap.blob
 EOF
-CMDS=<<EOF
-om
-EOF
+CMDS=om
 RUN
 
 NAME=PE: nosectionXP - entrypoint 2
@@ -26,7 +22,5 @@ add esp, 4
 nop
 push 0
 EOF
-CMDS=<<EOF
-pi 5
-EOF
+CMDS=pi 5
 RUN

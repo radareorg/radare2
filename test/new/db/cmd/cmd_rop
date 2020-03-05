@@ -12,9 +12,7 @@ RUN
 
 NAME=rop search without maxhits
 FILE=../bins/elf/varsub
-CMDS=<<EOF
-/Rq pop r15~?
-EOF
+CMDS=/Rq pop r15~?
 EXPECT=4
 RUN
 
@@ -215,9 +213,7 @@ EXPECT=<<EOF
   0x08048426         e805ffffff  call 0x8048330
 
 EOF
-CMDS=<<EOF
-"/R push esi;push ebx"
-EOF
+CMDS="/R push esi;push ebx"
 RUN
 
 NAME=search rop with regex sequence.

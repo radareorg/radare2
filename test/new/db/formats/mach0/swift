@@ -6,9 +6,7 @@ EXPECT=<<EOF
 0x1000017a0 0 main.FooClass.foo.method__Swift.Int
 0x100001860 0 main.FooClass.bar.method__String
 EOF
-CMDS=<<EOF
-isq~&FooClass,method
-EOF
+CMDS=isq~&FooClass,method
 RUN
 
 NAME=mach0 swift-x86-64 aav

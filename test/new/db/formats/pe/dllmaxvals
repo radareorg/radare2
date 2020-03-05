@@ -2,7 +2,5 @@ NAME=PE: corkami dllmaxvals.dll - open
 FILE=../bins/pe/dllmaxvals.dll
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN

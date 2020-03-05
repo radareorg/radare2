@@ -3,9 +3,7 @@ FILE=../bins/le/cdogs.exe
 ARGS=-A
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=MZ: corkami cdogs.exe - entrypoint
@@ -14,9 +12,7 @@ FILE=../bins/le/cdogs.exe
 EXPECT=<<EOF
 0x3bc
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=MZ: corkami cdogs.exe - pi 1
@@ -25,9 +21,7 @@ FILE=../bins/le/cdogs.exe
 EXPECT=<<EOF
 jmp 0x465
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN
 
 NAME=MZ: cdogs.exe segments
@@ -44,7 +38,5 @@ f section.seg_001 1026 0x00002990
 f section_end.seg_001 1 0x00002d92
 CC section 1 va=0x00002990 pa=0x00002990 sz=1026 vsz=1026 rwx=-rwx seg_001 @ 0x00002990
 EOF
-CMDS=<<EOF
-iS*
-EOF
+CMDS=iS*
 RUN

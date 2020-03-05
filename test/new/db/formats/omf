@@ -3,9 +3,7 @@ FILE=../bins/omf/hello_world
 EXPECT=<<EOF
 bits     16
 EOF
-CMDS=<<EOF
-iI~bits
-EOF
+CMDS=iI~bits
 RUN
 
 NAME=entry point 16 bits omf
@@ -13,9 +11,7 @@ FILE=../bins/omf/hello_world
 EXPECT=<<EOF
 vaddr=0x00001000 paddr=0x00000073 haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=symbols 16 bits omf
@@ -27,9 +23,7 @@ nth paddr       vaddr      bind type size lib name
 --------------------------------------------------
 1    0x00000073 0x00001000 NONE NONE 0        _start
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=sections 16 bits omf
@@ -43,9 +37,7 @@ nth paddr       size vaddr       vsize perm name
 1   0x00000095   0xe 0x00001013    0xe -rwx data_1
 
 EOF
-CMDS=<<EOF
-iS
-EOF
+CMDS=iS
 RUN
 
 NAME=sections 16 bits omf - content
@@ -56,9 +48,7 @@ EXPECT=<<EOF
 - offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0000:1013  4865 6c6c 6f2c 2077 6f72 6c64 210a ffff  Hello, world!...
 EOF
-CMDS=<<EOF
-px 16 @ section.text_1; px 16 @ section.data_1
-EOF
+CMDS=px 16 @ section.text_1; px 16 @ section.data_1
 RUN
 
 NAME=virtual address 16 bits omf
@@ -66,9 +56,7 @@ FILE=../bins/omf/hello_world
 EXPECT=<<EOF
 ba0e00
 EOF
-CMDS=<<EOF
-pid 1~mov[1]
-EOF
+CMDS=pid 1~mov[1]
 RUN
 
 NAME=load 32 bits omf
@@ -76,9 +64,7 @@ FILE=../bins/omf/hello_world32
 EXPECT=<<EOF
 bits     32
 EOF
-CMDS=<<EOF
-iI~bits
-EOF
+CMDS=iI~bits
 RUN
 
 NAME=entry point 32 bits omf
@@ -86,9 +72,7 @@ FILE=../bins/omf/hello_world32
 EXPECT=<<EOF
 vaddr=0x00001000 paddr=0x00000074 haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=symbols 32 bits omf
@@ -100,9 +84,7 @@ nth paddr       vaddr      bind type size lib name
 --------------------------------------------------
 1    0x00000074 0x00001000 NONE NONE 0        _start
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=sections 32 bits omf
@@ -116,9 +98,7 @@ nth paddr       size vaddr       vsize perm name
 1   0x000000a3   0xe 0x0000101d    0xe -rwx .data_1
 
 EOF
-CMDS=<<EOF
-iS
-EOF
+CMDS=iS
 RUN
 
 NAME=virtual address 32 bits omf
@@ -126,9 +106,7 @@ FILE=../bins/omf/hello_world32
 EXPECT=<<EOF
 ba0e000000
 EOF
-CMDS=<<EOF
-pid 1~mov[1]
-EOF
+CMDS=pid 1~mov[1]
 RUN
 
 NAME=multiple symbols omf
@@ -141,9 +119,7 @@ nth paddr       vaddr      bind type size lib name
 1    0x00000084 0x00001000 NONE NONE 0        _start
 2    0x00000097 0x00001013 NONE NONE 0        second_symbol
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=null checksum omf
@@ -155,43 +131,33 @@ nth paddr       vaddr      bind type size lib name
 --------------------------------------------------
 1    0x00000073 0x00001000 NONE NONE 0        _start
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=invalide index segment omf
 FILE=../bins/omf/invalid_idx
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=invalide string size pubdef record omf
 FILE=../bins/omf/invalid_str_pubdef
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=invalide string size lnames record omf
 FILE=../bins/omf/invalid_str_lname
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=invalide record size omf
 FILE=../bins/omf/invalid_size
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN

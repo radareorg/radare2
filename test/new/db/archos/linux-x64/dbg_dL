@@ -1,8 +1,6 @@
 NAME=dbg.dL
 FILE=/bin/ls
-CMDS=<<EOF
-dL
-EOF
+CMDS=dL
 EXPECT=<<EOF
 0  ---  bf       LGPL3
 1  ---  bochs    LGPL3

@@ -79,9 +79,7 @@ FILE=../bins/mach0/ls-osx-x86_64
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-aa ; afll~?entry0
-EOF
+CMDS=aa ; afll~?entry0
 RUN
 
 NAME=missing bb fix

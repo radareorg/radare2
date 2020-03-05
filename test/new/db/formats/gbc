@@ -3,7 +3,5 @@ FILE=../bins/gbc/a.gb
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-iI~?Gameboy
-EOF
+CMDS=iI~?Gameboy
 RUN

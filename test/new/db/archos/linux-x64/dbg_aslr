@@ -1,9 +1,7 @@
 NAME=dbg.aslr
 FILE=../bins/elf/analysis/pie
 ARGS=-d
-CMDS=<<EOF
-pi 3 @ entry0
-EOF
+CMDS=pi 3 @ entry0
 EXPECT=<<EOF
 xor ebp, ebp
 pop esi

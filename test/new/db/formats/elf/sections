@@ -57,9 +57,7 @@ nth paddr        size vaddr       vsize perm name
 8   0x00000000   0x40 0x00400000   0x40 -rw- ehdr
 
 EOF
-CMDS=<<EOF
-iS;iSS
-EOF
+CMDS=iS;iSS
 RUN
 
 NAME=section text start (not mapped)
@@ -67,9 +65,7 @@ FILE=../bins/elf/analysis/main_wrong_sect
 EXPECT=<<EOF
 0x410570
 EOF
-CMDS=<<EOF
-?v section..text
-EOF
+CMDS=?v section..text
 RUN
 
 NAME=only phdrs mapped
@@ -77,7 +73,5 @@ FILE=../bins/elf/analysis/main_wrong_sect
 EXPECT=<<EOF
 ffffffffffffffffffff
 EOF
-CMDS=<<EOF
-p8 10 @ section..text
-EOF
+CMDS=p8 10 @ section..text
 RUN

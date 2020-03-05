@@ -2,9 +2,7 @@ NAME=PE: FSG 2.0- open
 FILE=../bins/pe/base_FSG.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: FSG 2.0- pi 1

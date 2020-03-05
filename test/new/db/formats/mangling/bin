@@ -25,9 +25,7 @@ EXPECT=<<EOF
 0x00001e18 0 imp.__cxa_atexit
 0x00001e1e 0 imp.exit
 EOF
-CMDS=<<EOF
-!rabin2 -qsD cxx all ../bins/mach0/hellocxx-osx-i386
-EOF
+CMDS=!rabin2 -qsD cxx all ../bins/mach0/hellocxx-osx-i386
 RUN
 
 NAME=binsym without demangling
@@ -58,9 +56,7 @@ EXPECT=<<EOF
 0x00001e18 0 imp.__cxa_atexit
 0x00001e1e 0 imp.exit
 EOF
-CMDS=<<EOF
-isq
-EOF
+CMDS=isq
 RUN
 
 NAME=bin.demangle=true and symbol
@@ -69,9 +65,7 @@ ARGS=-e bin.demangle=true
 EXPECT=<<EOF
 call sym.imp.puts
 EOF
-CMDS=<<EOF
-pi 1 @ 0x08048230
-EOF
+CMDS=pi 1 @ 0x08048230
 RUN
 
 NAME=MSVC import symbol demangling
@@ -87,9 +81,7 @@ FILE=../bins/elf/libstdc++.so.6
 EXPECT=<<EOF
             0x00091004      488b159d880f.  mov rdx, qword [reloc.vtable_for_std::bad_alloc] ; [0x1898a8:8]=0
 EOF
-CMDS=<<EOF
-pd 1 @0x00091004
-EOF
+CMDS=pd 1 @0x00091004
 RUN
 
 NAME=C++ demangle exported GLIBCXX symbols
@@ -100,9 +92,7 @@ EXPECT=<<EOF
 5087  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
 5345  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
 EOF
-CMDS=<<EOF
-iE~0x0008ce50
-EOF
+CMDS=iE~0x0008ce50
 RUN
 
 NAME=demangle in irj

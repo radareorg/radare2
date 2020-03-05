@@ -31,9 +31,7 @@ const uint8_t buffer[_BUFFER_SIZE] = {
   0xb8, 0x00, 0x00, 0x00, 0x00, 0x5d
 };
 EOF
-CMDS=<<EOF
-pc
-EOF
+CMDS=pc
 RUN
 
 NAME=pc* hello-linux-x86_64
@@ -57,9 +55,7 @@ wx e97bffffffe976ffffff6690554889e5;s+16
 wx bfc4054000e8d6feffffb8000000005d;s+16
 s-256
 EOF
-CMDS=<<EOF
-pc*
-EOF
+CMDS=pc*
 RUN
 
 NAME=pch hello-linux-x86_64
@@ -85,9 +81,7 @@ const uint16_t buffer[_BUFFER_SIZE] = {
   0xc4bf, 0x4005, 0xe800, 0xfed6, 0xffff, 0x00b8, 0x0000, 0x5d00
 };
 EOF
-CMDS=<<EOF
-pch
-EOF
+CMDS=pch
 RUN
 
 NAME=pcw hello-linux-x86_64
@@ -110,9 +104,7 @@ const uint32_t buffer[_BUFFER_SIZE] = {
   0x4005c4bfU, 0xfed6e800U, 0x00b8ffffU, 0x5d000000U
 };
 EOF
-CMDS=<<EOF
-pcw
-EOF
+CMDS=pcw
 RUN
 
 NAME=pcd hello-linux-x86_64
@@ -133,9 +125,7 @@ const uint64_t buffer[_BUFFER_SIZE] = {
   0xfed6e8004005c4bfULL, 0x5d00000000b8ffffULL
 };
 EOF
-CMDS=<<EOF
-pcd
-EOF
+CMDS=pcd
 RUN
 
 NAME=pca hello-linux-x86_64
@@ -176,9 +166,7 @@ shellcode:
 .byte 0xff, 0xff, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x5d
 .equ shellcode_len, 256
 EOF
-CMDS=<<EOF
-pca
-EOF
+CMDS=pca
 RUN
 
 NAME=pcs hello-linux-x86_64
@@ -186,9 +174,7 @@ FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 "\x31\xed\x49\x89\xd1\x5e\x48\x89\xe2\x48\x83\xe4\xf0\x50\x54\x49\xc7\xc0\xb0\x05\x40\x00\x48\xc7\xc1\x20\x05\x40\x00\x48\xc7\xc7\xfc\x04\x40\x00\xe8\xb7\xff\xff\xff\xf4\x66\x90\x0f\x1f\x40\x00\xb8\x17\x09\x60\x00\x55\x48\x2d\x10\x09\x60\x00\x48\x83\xf8\x0e\x48\x89\xe5\x77\x02\x5d\xc3\xb8\x00\x00\x00\x00\x48\x85\xc0\x74\xf4\x5d\xbf\x10\x09\x60\x00\xff\xe0\x0f\x1f\x80\x00\x00\x00\x00\xb8\x10\x09\x60\x00\x55\x48\x2d\x10\x09\x60\x00\x48\xc1\xf8\x03\x48\x89\xe5\x48\x89\xc2\x48\xc1\xea\x3f\x48\x01\xd0\x48\x89\xc6\x48\xd1\xfe\x75\x02\x5d\xc3\xba\x00\x00\x00\x00\x48\x85\xd2\x74\xf4\x5d\xbf\x10\x09\x60\x00\xff\xe2\x0f\x1f\x80\x00\x00\x00\x00\x80\x3d\x59\x04\x20\x00\x00\x75\x11\x55\x48\x89\xe5\xe8\x7e\xff\xff\xff\x5d\xc6\x05\x46\x04\x20\x00\x01\xf3\xc3\x0f\x1f\x40\x00\x48\x83\x3d\x18\x02\x20\x00\x00\x74\x1b\xb8\x00\x00\x00\x00\x48\x85\xc0\x74\x11\x55\xbf\xf0\x06\x60\x00\x48\x89\xe5\xff\xd0\x5d\xe9\x7b\xff\xff\xff\xe9\x76\xff\xff\xff\x66\x90\x55\x48\x89\xe5\xbf\xc4\x05\x40\x00\xe8\xd6\xfe\xff\xff\xb8\x00\x00\x00\x00\x5d"
 EOF
-CMDS=<<EOF
-pcs
-EOF
+CMDS=pcs
 RUN
 
 NAME=pcS hello-linux-x86_64
@@ -211,9 +197,7 @@ printf "\205\300\164\021\125\277\360\006\140\000\110\211\345\377\320\135" >> bin
 printf "\351\173\377\377\377\351\166\377\377\377\146\220\125\110\211\345" >> bin
 printf "\277\304\005\100\000\350\326\376\377\377\270\000\000\000\000\135" >> bin
 EOF
-CMDS=<<EOF
-pcS
-EOF
+CMDS=pcS
 RUN
 
 NAME=pcJ hello-linux-x86_64
@@ -221,9 +205,7 @@ FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 var buffer = new Buffer("Me1JidFeSIniSIPk8FBUScfAsAVAAEjHwSAFQABIx8f8BEAA6Lf////0ZpAPH0AAuBcJYABVSC0QCWAASIP4DkiJ5XcCXcO4AAAAAEiFwHT0Xb8QCWAA/+APH4AAAAAAuBAJYABVSC0QCWAASMH4A0iJ5UiJwkjB6j9IAdBIicZI0f51Al3DugAAAABIhdJ09F2/EAlgAP/iDx+AAAAAAIA9WQQgAAB1EVVIieXofv///13GBUYEIAAB88MPH0AASIM9GAIgAAB0G7gAAAAASIXAdBFVv/AGYABIieX/0F3pe////+l2////ZpBVSInlv8QFQADo1v7//7gAAAAAXQ==", 'base64');
 EOF
-CMDS=<<EOF
-pcJ
-EOF
+CMDS=pcJ
 RUN
 
 NAME=pcj hello-linux-x86_64
@@ -231,9 +213,7 @@ FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 [49,237,73,137,209,94,72,137,226,72,131,228,240,80,84,73,199,192,176,5,64,0,72,199,193,32,5,64,0,72,199,199,252,4,64,0,232,183,255,255,255,244,102,144,15,31,64,0,184,23,9,96,0,85,72,45,16,9,96,0,72,131,248,14,72,137,229,119,2,93,195,184,0,0,0,0,72,133,192,116,244,93,191,16,9,96,0,255,224,15,31,128,0,0,0,0,184,16,9,96,0,85,72,45,16,9,96,0,72,193,248,3,72,137,229,72,137,194,72,193,234,63,72,1,208,72,137,198,72,209,254,117,2,93,195,186,0,0,0,0,72,133,210,116,244,93,191,16,9,96,0,255,226,15,31,128,0,0,0,0,128,61,89,4,32,0,0,117,17,85,72,137,229,232,126,255,255,255,93,198,5,70,4,32,0,1,243,195,15,31,64,0,72,131,61,24,2,32,0,0,116,27,184,0,0,0,0,72,133,192,116,17,85,191,240,6,96,0,72,137,229,255,208,93,233,123,255,255,255,233,118,255,255,255,102,144,85,72,137,229,191,196,5,64,0,232,214,254,255,255,184,0,0,0,0,93]
 EOF
-CMDS=<<EOF
-pcj
-EOF
+CMDS=pcj
 RUN
 
 NAME=pcp hello-linux-x86_64
@@ -266,9 +246,7 @@ buf = struct.pack ("256B", *[
 0x05,0x40,0x00,0xe8,0xd6,0xfe,0xff,0xff,0xb8,0x00,0x00,
 0x00,0x00,0x5d])
 EOF
-CMDS=<<EOF
-pcp
-EOF
+CMDS=pcp
 RUN
 
 NAME=pc -10
@@ -279,7 +257,5 @@ const uint8_t buffer[_BUFFER_SIZE] = {
   0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90
 };
 EOF
-CMDS=<<EOF
-wx 90909090909090909090 ; s 10 ; pc - 10
-EOF
+CMDS=wx 90909090909090909090 ; s 10 ; pc - 10
 RUN

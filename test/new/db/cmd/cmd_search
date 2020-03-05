@@ -6,9 +6,7 @@ EXPECT=<<EOF
 (nofunc) 0x6968100b [DATA] mov eax, dword [0x69682004]
 (nofunc) 0x69681010 [DATA] mov eax, 0x69682004
 EOF
-CMDS=<<EOF
-/r 0x69682004
-EOF
+CMDS=/r 0x69682004
 RUN
 
 NAME=/aI infinite loop instructions
@@ -20,9 +18,7 @@ EXPECT=<<EOF
 0x10000482e
 0x100004838
 EOF
-CMDS=<<EOF
-/aI
-EOF
+CMDS=/aI
 RUN
 
 NAME=/ai finding immediates
@@ -31,9 +27,7 @@ EXPECT=<<EOF
 0x1000013e5   # 7: sub rsp, 0x648
 0x1000013e6   # 6: sub esp, 0x648
 EOF
-CMDS=<<EOF
-/ai 0x648
-EOF
+CMDS=/ai 0x648
 RUN
 
 NAME=/as begin of file
@@ -43,9 +37,7 @@ EXPECT=<<EOF
 0x00000000 hit0_0 .MZ.
 EOF
 ARGS=-n
-CMDS=<<EOF
-s/ MZ
-EOF
+CMDS=s/ MZ
 RUN
 
 NAME=/as in arm32
@@ -77,9 +69,7 @@ EXPECT=<<EOF
 0x000138b4 clone
 0x00013904 brk
 EOF
-CMDS=<<EOF
-/as
-EOF
+CMDS=/as
 RUN
 
 NAME=/j escaped
@@ -87,9 +77,7 @@ FILE=../bins/mach0/escaped
 EXPECT=<<EOF
 [{"offset":8019,"type":"string","data":"]c:\\hello\\worldM"}]
 EOF
-CMDS=<<EOF
-/j hello
-EOF
+CMDS=/j hello
 RUN
 
 NAME=/ search from/to (seek 0)
@@ -234,9 +222,7 @@ EXPECT=<<EOF
 0x08048060 hit0_2 54
 0x08048369 hit0_3 54
 EOF
-CMDS=<<EOF
-/a push esp
-EOF
+CMDS=/a push esp
 RUN
 
 NAME=/ac mov ebx
@@ -538,9 +524,7 @@ FILE=../bins/elf/analysis/x86-simple
 EXPECT=<<EOF
 [{"offset":134512640,"depth":1,"info":"ELF 32-bit LSB executable, Intel 80386, version 1"}]
 EOF
-CMDS=<<EOF
-/mj
-EOF
+CMDS=/mj
 RUN
 
 NAME=/as search syscall
@@ -632,9 +616,7 @@ FILE=../bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x08049f2c hit0_0 f8820408
 EOF
-CMDS=<<EOF
-/x f8820408
-EOF
+CMDS=/x f8820408
 RUN
 
 NAME=/x wrong entries
@@ -643,9 +625,7 @@ EXPECT=<<EOF
 0x0805ae90 hit0_0 653b2530000000724b53b834e7150883ec
 0x0805b030 hit0_1 653b2530000000724b53b834e7150883ec
 EOF
-CMDS=<<EOF
-/x 653b2530000000724b53b834e7150883ec188
-EOF
+CMDS=/x 653b2530000000724b53b834e7150883ec188
 RUN
 
 NAME=search range hex
@@ -874,9 +854,7 @@ RUN
 
 NAME=search escaped string
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EOF
-/ \x90\x66~[0]
-EOF
+CMDS=/ \x90\x66~[0]
 EXPECT=<<EOF
 0x08048323
 0x08048325
@@ -943,9 +921,7 @@ EXPECT=<<EOF
 0x000005a9 hit0_2 50617373776f7264
 EOF
 ARGS=-n
-CMDS=<<EOF
-/x 5061 73 73  776F  72 64 # Password
-EOF
+CMDS=/x 5061 73 73  776F  72 64 # Password
 RUN
 
 NAME=wx and /x with bin mask, both ignoring spaces

@@ -3,9 +3,7 @@ FILE=../bins/java/TryWithResources.class
 EXPECT=<<EOF
 nop
 EOF
-CMDS=<<EOF
-?e nop
-EOF
+CMDS=?e nop
 RUN
 
 NAME=detect kotlin in java classes
@@ -13,18 +11,14 @@ FILE=../bins/java/HiKt.class
 EXPECT=<<EOF
 kotlin
 EOF
-CMDS=<<EOF
-i~lang[1]
-EOF
+CMDS=i~lang[1]
 RUN
 
 NAME=java disasm crash
 FILE=../bins/java/ExCaseTableSwitch.class
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-pd 10 >/dev/null
-EOF
+CMDS=pd 10 >/dev/null
 RUN
 
 NAME=java switch crash
@@ -46,9 +40,7 @@ EXPECT=<<EOF
 0x000001e8 method 2      res
 0x00000211 method 3      main
 EOF
-CMDS=<<EOF
-ic
-EOF
+CMDS=ic
 RUN
 
 NAME=java classes summary
@@ -62,16 +54,12 @@ Summary for ../bins/java/DemoTest.class:
   Attributes size: 0xa count: 1:
   Interfaces size: 0x2 count: 0:
 EOF
-CMDS=<<EOF
-java summary
-EOF
+CMDS=java summary
 RUN
 
 NAME=java old format support
 FILE=../bins/java/invisible.class
-CMDS=<<EOF
-pi 3
-EOF
+CMDS=pi 3
 EXPECT=<<EOF
 getstatic java/lang/System/out Ljava/io/PrintStream;
 ldc "See if you can decompile/disassemble me!"

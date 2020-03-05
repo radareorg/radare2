@@ -3,9 +3,7 @@ FILE=../bins/pe/base.exe
 EXPECT=<<EOF
 vaddr=0x00401280 paddr=0x00000680 haddr=0x000000a8 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=pe overlay
@@ -14,9 +12,7 @@ ARGS=-nn
 EXPECT=<<EOF
 0x00032600 10233 pe_overlay
 EOF
-CMDS=<<EOF
-f~pe_overlay
-EOF
+CMDS=f~pe_overlay
 RUN
 
 NAME=pe no overlay
@@ -24,9 +20,7 @@ FILE=../bins/pe/normal.exe
 EXPECT=<<EOF
 overlay  false
 EOF
-CMDS=<<EOF
-iI~overlay
-EOF
+CMDS=iI~overlay
 RUN
 
 NAME=pe relocs [r2]
@@ -71,9 +65,7 @@ vaddr      paddr      type   name
 
 20 relocations
 EOF
-CMDS=<<EOF
-ir
-EOF
+CMDS=ir
 RUN
 
 NAME=pe relocs [rabin2 b.exe]
@@ -107,9 +99,7 @@ vaddr      paddr      type   name
 
 20 relocations
 EOF
-CMDS=<<EOF
-ir
-EOF
+CMDS=ir
 RUN
 
 NAME=pe string
@@ -141,9 +131,7 @@ crypt32.dll
 
 9 libraries
 EOF
-CMDS=<<EOF
-il
-EOF
+CMDS=il
 RUN
 
 NAME=pe32 imported functions (ii)
@@ -280,9 +268,7 @@ nth vaddr      bind type lib          name
 6   0x004123b4 NONE FUNC advapi32.dll CryptAcquireContextA
 
 EOF
-CMDS=<<EOF
-ii
-EOF
+CMDS=ii
 RUN
 
 NAME=pe32 imported relocations (ir)
@@ -422,9 +408,7 @@ vaddr      paddr      type   name
 
 126 relocations
 EOF
-CMDS=<<EOF
-ir
-EOF
+CMDS=ir
 RUN
 
 NAME=pe32 imported libs (il)
@@ -435,9 +419,7 @@ comctl32.dll
 
 1 library
 EOF
-CMDS=<<EOF
-il
-EOF
+CMDS=il
 RUN
 
 NAME=pe32 header
@@ -445,7 +427,5 @@ FILE=../bins/pe/single_import.exe
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-ih~?Signature : 0x4550
-EOF
+CMDS=ih~?Signature : 0x4550
 RUN

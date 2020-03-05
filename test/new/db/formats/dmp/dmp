@@ -3,9 +3,7 @@ FILE=../bins/dmp/bmp.dmp
 EXPECT=<<EOF
 format   dmp64
 EOF
-CMDS=<<EOF
-i~format
-EOF
+CMDS=i~format
 RUN
 
 NAME=: DMP64 Info
@@ -37,9 +35,7 @@ static   true
 stripped false
 va       true
 EOF
-CMDS=<<EOF
-iI
-EOF
+CMDS=iI
 RUN
 
 NAME=: DMP header & bmp header
@@ -69,9 +65,7 @@ BITMAP_DUMP:
   BitmapSize : 0x00040000
   Pages : 0x0000544b
 EOF
-CMDS=<<EOF
-iH
-EOF
+CMDS=iH
 RUN
 
 NAME=: DMP BMP Page sections
@@ -79,9 +73,7 @@ FILE=../bins/dmp/bmp.dmp
 EXPECT=<<EOF
 21582
 EOF
-CMDS=<<EOF
-iS~?
-EOF
+CMDS=iS~?
 RUN
 
 NAME=: Resolve vaddr
@@ -93,7 +85,5 @@ EXPECT=<<EOF
 0x00001020  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x00001030  0000 0000 0000 0000 0000 0000 0000 0000  ................
 EOF
-CMDS=<<EOF
-px 64 @ 0x1000
-EOF
+CMDS=px 64 @ 0x1000
 RUN

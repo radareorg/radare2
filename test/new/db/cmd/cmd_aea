@@ -9,9 +9,7 @@ EXPECT=<<EOF
  V: 0 65535 1
  N: rsp
 EOF
-CMDS=<<EOF
-wx 4889e5b8ffff000089c2c1ea1f01d0;aea 5
-EOF
+CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aea 5
 RUN
 
 NAME=aeaj 5
@@ -64,9 +62,7 @@ EXPECT=<<EOF
   ]
 }
 EOF
-CMDS=<<EOF
-wx 4889e5b8ffff000089c2c1ea1f01d0;aeaj 5~{}
-EOF
+CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aeaj 5~{}
 RUN
 
 NAME=aeA 15
@@ -80,9 +76,7 @@ EXPECT=<<EOF
  V: 0 65535 1
  N: rsp
 EOF
-CMDS=<<EOF
-wx 4889e5b8ffff000089c2c1ea1f01d0;aeA 15
-EOF
+CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aeA 15
 RUN
 
 NAME=aes delay slot

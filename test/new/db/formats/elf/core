@@ -3,9 +3,7 @@ FILE=../bins/elf/analysis/core.1159
 EXPECT=<<EOF
 21
 EOF
-CMDS=<<EOF
-iSS~?
-EOF
+CMDS=iSS~?
 RUN
 
 NAME=ELF: core sections with reg name
@@ -14,16 +12,12 @@ BROKEN=1
 EXPECT=<<EOF
 6
 EOF
-CMDS=<<EOF
-iS~?reg;iS
-EOF
+CMDS=iS~?reg;iS
 RUN
 
 NAME=core registers
 FILE=../bins/elf/analysis/core.1159
-CMDS=<<EOF
-dr
-EOF
+CMDS=dr
 EXPECT=<<EOF
 rax = 0x00000000
 rbx = 0x00000000

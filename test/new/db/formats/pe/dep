@@ -2,9 +2,7 @@ NAME=PE: corkami dep.exe - open
 FILE=../bins/pe/dep.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami dep.exe - dep enabled
@@ -14,9 +12,7 @@ EXPECT=<<EOF
 true
 
 EOF
-CMDS=<<EOF
-!rabin2 -k pe/nx ../bins/pe/dep.exe
-EOF
+CMDS=!rabin2 -k pe/nx ../bins/pe/dep.exe
 RUN
 
 NAME=PE: corkami dep.exe - entrypoint
@@ -24,9 +20,7 @@ FILE=../bins/pe/dep.exe
 EXPECT=<<EOF
 0x401000
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=PE: corkami dep.exe - pi 1

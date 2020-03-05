@@ -2,9 +2,7 @@ NAME=PE: seh_x64.exe - open
 FILE=../bins/pe/seh_x64.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: seh_x64.exe - Get trycatchs
@@ -29,7 +27,5 @@ f try.5.1400015d0.from=0x1400015d7
 f try.5.1400015d0.to=0x140001661
 f try.5.1400015d0.catch=0x140001661
 EOF
-CMDS=<<EOF
-iw
-EOF
+CMDS=iw
 RUN

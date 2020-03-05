@@ -1,8 +1,6 @@
 NAME="pcap info"
 FILE=../../bins/pcap/sample0.pcap
-CMDS=<<EOF
-i
-EOF
+CMDS=i
 EXPECT=<<EOF
 fd       6
 file     ../../../bins/pcap/sample0.pcap
@@ -19,9 +17,7 @@ RUN
 
 NAME="pcap file header"
 FILE=../../bins/pcap/sample0.pcap
-CMDS=<<EOF
-pd 1
-EOF
+CMDS=pd 1
 EXPECT=<<EOF
             ;-- tcpdump capture file - version 2.4 (Ethernet, capture length 262144):
             0x00000000      d4             invalid

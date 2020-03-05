@@ -1,17 +1,13 @@
 NAME=?e ~
 FILE=malloc://1024
-CMDS=<<EOF
-?e jeje~jojo
-EOF
+CMDS=?e jeje~jojo
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=?e \~
 FILE=malloc://1024
-CMDS=<<EOF
-?e jeje\~jojo
-EOF
+CMDS=?e jeje\~jojo
 EXPECT=<<EOF
 jeje~jojo
 EOF
@@ -65,9 +61,7 @@ RUN
 
 NAME=grep begin
 FILE=malloc://1024
-CMDS=<<EOF
-i~^size
-EOF
+CMDS=i~^size
 EXPECT=<<EOF
 size     0x400
 EOF
@@ -75,9 +69,7 @@ RUN
 
 NAME=grep end
 FILE=malloc://1024
-CMDS=<<EOF
-i~0x400$
-EOF
+CMDS=i~0x400$
 EXPECT=<<EOF
 size     0x400
 EOF
@@ -86,9 +78,7 @@ RUN
 
 NAME=i;$s
 FILE=malloc://1024
-CMDS=<<EOF
-?v `i~size[1]`-$s;?! ?e works
-EOF
+CMDS=?v `i~size[1]`-$s;?! ?e works
 EXPECT=<<EOF
 0x0
 works
@@ -97,9 +87,7 @@ RUN
 
 NAME=?e~[0]
 FILE=malloc://1024
-CMDS=<<EOF
-?e 0x3~[0];?e 0x999~[0]
-EOF
+CMDS=?e 0x3~[0];?e 0x999~[0]
 EXPECT=<<EOF
 0x3
 0x999
@@ -120,9 +108,7 @@ RUN
 
 NAME=px~:1[3,5,0-1]
 FILE=malloc://1024
-CMDS=<<EOF
-wx 102030405060708090;px~:1[3,5,0-1]
-EOF
+CMDS=wx 102030405060708090;px~:1[3,5,0-1]
 EXPECT=<<EOF
 0x00000000 1020 5060 9000
 EOF
@@ -130,9 +116,7 @@ RUN
 
 NAME=px~[3,5,0-1]:1
 FILE=malloc://1024
-CMDS=<<EOF
-wx 102030405060708090;px~[3,5,0-1]:1
-EOF
+CMDS=wx 102030405060708090;px~[3,5,0-1]:1
 EXPECT=<<EOF
 0x00000000 1020 5060 9000
 EOF
@@ -140,9 +124,7 @@ RUN
 
 NAME=px~[3,5,0-1]:0..3
 FILE=malloc://1024
-CMDS=<<EOF
-wx 102030405060708090;px~[3,5,0-1]:0..3
-EOF
+CMDS=wx 102030405060708090;px~[3,5,0-1]:0..3
 EXPECT=<<EOF
 - offset 0 2
 0x00000000 1020 5060 9000
@@ -152,9 +134,7 @@ RUN
 
 NAME=px~[3,5,0-1]:-16
 FILE=malloc://1024
-CMDS=<<EOF
-wx 102030405060708090;px~[3,5,0-1]:-16
-EOF
+CMDS=wx 102030405060708090;px~[3,5,0-1]:-16
 EXPECT=<<EOF
 0x00000000 1020 5060 9000
 EOF
@@ -283,9 +263,7 @@ RUN
 
 NAME=escaped grep
 FILE=../bins/elf/crackme
-CMDS=<<EOF
-pd 40~0x004005fe
-EOF
+CMDS=pd 40~0x004005fe
 EXPECT=<<EOF
         `-> 0x004005fe      4883c408       add rsp, 8
 EOF

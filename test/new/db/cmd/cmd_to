@@ -3,9 +3,7 @@ FILE=-
 EXPECT=<<EOF
 pf ddd x y z
 EOF
-CMDS=<<EOF
-to ../bins/headers/s1.h;t S1
-EOF
+CMDS=to ../bins/headers/s1.h;t S1
 RUN
 
 NAME=to
@@ -13,9 +11,7 @@ FILE=-
 EXPECT=<<EOF
 pf ddd x test z
 EOF
-CMDS=<<EOF
-to ../bins/headers/s2.h; t S1
-EOF
+CMDS=to ../bins/headers/s2.h; t S1
 RUN
 
 NAME=to
@@ -23,9 +19,7 @@ FILE=-
 EXPECT=<<EOF
 pf ddd x test z
 EOF
-CMDS=<<EOF
-to ../bins/headers/s1.h; to ../bins/headers/s2.h; t S1
-EOF
+CMDS=to ../bins/headers/s1.h; to ../bins/headers/s2.h; t S1
 RUN
 
 NAME=to perturbated
@@ -33,9 +27,7 @@ FILE=-
 EXPECT=<<EOF
 pf ddd x test z
 EOF
-CMDS=<<EOF
-to ../bins/headers/s1.h; to ../bins/headers/s4.h; t S1
-EOF
+CMDS=to ../bins/headers/s1.h; to ../bins/headers/s4.h; t S1
 RUN
 
 NAME=to arrays

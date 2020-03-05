@@ -1,8 +1,6 @@
 NAME=uname
 FILE=-
-CMDS=<<EOF
-!uname
-EOF
+CMDS=!uname
 EXPECT=<<EOF
 Linux
 EOF

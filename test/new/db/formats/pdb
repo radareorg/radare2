@@ -1,8 +1,6 @@
 NAME=PDB downloader check
 FILE=../bins/pdb/user32.dll
-CMDS=<<EOF
-!!rabin2 -PP ${R2_FILE} ~PDB
-EOF
+CMDS=!!rabin2 -PP ${R2_FILE} ~PDB
 EXPECT=<<EOF
 PDB "user32.pdb" download success
 EOF
@@ -10,9 +8,7 @@ RUN
 
 NAME=find structure R2_TEST_STRUCT
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_STRUCT
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_STRUCT
 EXPECT=<<EOF
 R2_TEST_STRUCT
 EOF
@@ -20,9 +16,7 @@ RUN
 
 NAME=find union R2_TEST_UNION
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_UNION
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_UNION
 EXPECT=<<EOF
 R2_TEST_UNION
 EOF
@@ -30,9 +24,7 @@ RUN
 
 NAME=find enum R2_TEST_ENUM
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_ENUM
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_ENUM
 EXPECT=<<EOF
 R2_TEST_ENUM
 EOF
@@ -40,9 +32,7 @@ RUN
 
 NAME=member1 offset of structure R2_TEST_STRUCT
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep r2_struct_var_1 | grep -ao 0x0
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_1 | grep -ao 0x0
 EXPECT=<<EOF
 0x0
 EOF
@@ -51,9 +41,7 @@ RUN
 NAME=member2 offset of structure R2_TEST_STRUCT
 
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -ao 0x4
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -ao 0x4
 EXPECT=<<EOF
 0x4
 EOF
@@ -61,9 +49,7 @@ RUN
 
 NAME=member1 name of structure R2_TEST_STRUCT
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep -ao r2_struct_var_1
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao r2_struct_var_1
 EXPECT=<<EOF
 r2_struct_var_1
 EOF
@@ -71,9 +57,7 @@ RUN
 
 NAME=member2 name of structure R2_TEST_STRUCT
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep -ao r2_struct_var_2
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao r2_struct_var_2
 EXPECT=<<EOF
 r2_struct_var_2
 EOF
@@ -81,9 +65,7 @@ RUN
 
 NAME=member1 type of structure R2_TEST_STRUCT
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep r2_struct_var_1 | grep -ao long
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_1 | grep -ao long
 EXPECT=<<EOF
 long
 EOF
@@ -91,9 +73,7 @@ RUN
 
 NAME=member2 type of structure R2_TEST_STRUCT
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -ao short
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -ao short
 EXPECT=<<EOF
 short
 EOF
@@ -101,9 +81,7 @@ RUN
 
 NAME=check size of structure R2_TEST_STRUCT
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao 0x8
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao 0x8
 EXPECT=<<EOF
 0x8
 EOF
@@ -111,9 +89,7 @@ RUN
 
 NAME=member1 offset of union R2_TEST_UNION
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep r2_union_var_1 | grep -ao 0x0
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_union_var_1 | grep -ao 0x0
 EXPECT=<<EOF
 0x0
 EOF
@@ -121,9 +97,7 @@ RUN
 
 NAME=member2 offset of union R2_TEST_UNION
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep r2_union_var_2 | grep -ao 0x0
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_union_var_2 | grep -ao 0x0
 EXPECT=<<EOF
 0x0
 EOF
@@ -131,9 +105,7 @@ RUN
 
 NAME=member1 name of union R2_TEST_UNION
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep -ao r2_union_var_1
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao r2_union_var_1
 EXPECT=<<EOF
 r2_union_var_1
 EOF
@@ -141,9 +113,7 @@ RUN
 
 NAME=member2 name of union R2_TEST_UNION
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep -ao r2_union_var_2
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao r2_union_var_2
 EXPECT=<<EOF
 r2_union_var_2
 EOF
@@ -151,9 +121,7 @@ RUN
 
 NAME=member1 type of union R2_TEST_UNION
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep r2_union_var_1 | grep -ao long
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_union_var_1 | grep -ao long
 EXPECT=<<EOF
 long
 EOF
@@ -161,9 +129,7 @@ RUN
 
 NAME=member2 type of union R2_TEST_UNION
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep r2_union_var_2 | grep -ao double
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep r2_union_var_2 | grep -ao double
 EXPECT=<<EOF
 double
 EOF
@@ -171,9 +137,7 @@ RUN
 
 NAME=check size of union R2_TEST_UNION
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep R2_TEST_UNION | grep -ao 0x8
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep R2_TEST_UNION | grep -ao 0x8
 EXPECT=<<EOF
 0x8
 EOF
@@ -181,9 +145,7 @@ RUN
 
 NAME=member1 value of enum R2_TEST_ENUM
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep eENUM1_R2 | grep -ao 0x10
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep eENUM1_R2 | grep -ao 0x10
 EXPECT=<<EOF
 0x10
 EOF
@@ -191,9 +153,7 @@ RUN
 
 NAME=member2 value of enum R2_TEST_ENUM
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep eENUM2_R2 | grep -ao 0x20
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep eENUM2_R2 | grep -ao 0x20
 EXPECT=<<EOF
 0x20
 EOF
@@ -201,9 +161,7 @@ RUN
 
 NAME=member3 vlue of enum R2_TEST_ENUM
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep eENUM_R2_MAX | grep -ao 0x21
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep eENUM_R2_MAX | grep -ao 0x21
 EXPECT=<<EOF
 0x21
 EOF
@@ -211,9 +169,7 @@ RUN
 
 NAME=member1 name of enum R2_TEST_ENUM
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep -ao eENUM1_R2
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao eENUM1_R2
 EXPECT=<<EOF
 eENUM1_R2
 eENUM1_R2
@@ -222,9 +178,7 @@ RUN
 
 NAME=member2 name of enum R2_TEST_ENUM
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep -ao eENUM2_R2
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao eENUM2_R2
 EXPECT=<<EOF
 eENUM2_R2
 eENUM2_R2
@@ -233,9 +187,7 @@ RUN
 
 NAME=member3 name of enum R2_TEST_ENUM
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep -ao eENUM_R2_MAX
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep -ao eENUM_R2_MAX
 EXPECT=<<EOF
 eENUM_R2_MAX
 eENUM_R2_MAX
@@ -244,9 +196,7 @@ RUN
 
 NAME=check size of union R2_TEST_ENUM
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -P ${R2_FILE} | grep R2_TEST_ENUM | grep -ao 0x0
-EOF
+CMDS=!rabin2 -P ${R2_FILE} | grep R2_TEST_ENUM | grep -ao 0x0
 EXPECT=<<EOF
 0x0
 EOF
@@ -254,9 +204,7 @@ RUN
 
 NAME=enumerate export test
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -Pr ${R2_FILE} | grep -ao R2_TEST_ENUM
-EOF
+CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao R2_TEST_ENUM
 EXPECT=<<EOF
 R2_TEST_ENUM
 EOF
@@ -264,9 +212,7 @@ RUN
 
 NAME=enumerate value1 export test
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -Pr ${R2_FILE} | grep -ao eENUM1_R2=0x10
-EOF
+CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao eENUM1_R2=0x10
 EXPECT=<<EOF
 eENUM1_R2=0x10
 EOF
@@ -274,9 +220,7 @@ RUN
 
 NAME=enumerate value2 export test
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -Pr ${R2_FILE} | grep -ao eENUM2_R2=0x20
-EOF
+CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao eENUM2_R2=0x20
 EXPECT=<<EOF
 eENUM2_R2=0x20
 EOF
@@ -284,9 +228,7 @@ RUN
 
 NAME=enumerate value3 export test
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -Pr ${R2_FILE} | grep -ao eENUM_R2_MAX=0x21
-EOF
+CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao eENUM_R2_MAX=0x21
 EXPECT=<<EOF
 eENUM_R2_MAX=0x21
 EOF
@@ -294,9 +236,7 @@ RUN
 
 NAME=redirection test
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -Pr ${R2_FILE} | grep -ao _unnamed_tag_ | head -n1
-EOF
+CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao _unnamed_tag_ | head -n1
 EXPECT=<<EOF
 _unnamed_tag_
 EOF
@@ -304,9 +244,7 @@ RUN
 
 NAME=struct export test
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -Pr ${R2_FILE} | grep -ao R2_TEST_STRUCT
-EOF
+CMDS=!rabin2 -Pr ${R2_FILE} | grep -ao R2_TEST_STRUCT
 EXPECT=<<EOF
 R2_TEST_STRUCT
 EOF
@@ -314,9 +252,7 @@ RUN
 
 NAME=struct export command
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao pf
-EOF
+CMDS=!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao pf
 EXPECT=<<EOF
 pf
 EOF
@@ -324,9 +260,7 @@ RUN
 
 NAME=struct export types
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao iw
-EOF
+CMDS=!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao iw
 EXPECT=<<EOF
 iw
 EOF
@@ -334,9 +268,7 @@ RUN
 
 NAME=struct export name1
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_1
-EOF
+CMDS=!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_1
 EXPECT=<<EOF
 r2_struct_var_1
 EOF
@@ -344,9 +276,7 @@ RUN
 
 NAME=struct export name2
 FILE=../bins/pdb/Project1.pdb
-CMDS=<<EOF
-!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_2
-EOF
+CMDS=!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_2
 EXPECT=<<EOF
 r2_struct_var_2
 EOF
@@ -354,9 +284,7 @@ RUN
 
 NAME=GUID CHECK
 FILE=../bins/pdb/user32.dll
-CMDS=<<EOF
-!rabin2 -I ${R2_FILE} | grep -ao 15F778B3671D4EFDBDCDE79905308B792
-EOF
+CMDS=!rabin2 -I ${R2_FILE} | grep -ao 15F778B3671D4EFDBDCDE79905308B792
 EXPECT=<<EOF
 15F778B3671D4EFDBDCDE79905308B792
 EOF

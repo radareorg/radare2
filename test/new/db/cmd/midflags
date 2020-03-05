@@ -3,9 +3,7 @@ FILE=-
 EXPECT=<<EOF
 0
 EOF
-CMDS=<<EOF
-f~?
-EOF
+CMDS=f~?
 RUN
 
 NAME=pi asm.midflags=2

@@ -3,9 +3,7 @@ FILE=../bins/elf/analysis/pie
 EXPECT=<<EOF
 0x450
 EOF
-CMDS=<<EOF
-?v entry0
-EOF
+CMDS=?v entry0
 RUN
 
 NAME=2: io.baddr
@@ -14,9 +12,7 @@ ARGS=-B 0xf00000
 EXPECT=<<EOF
 0xf00450
 EOF
-CMDS=<<EOF
-?v entry0
-EOF
+CMDS=?v entry0
 RUN
 
 NAME=3: io.baddr
@@ -25,9 +21,7 @@ EXPECT=<<EOF
 "f entry0 1 0x00f00450"
 "f entry0_haddr 1 0x00000018"
 EOF
-CMDS=<<EOF
-!rabin2 -B 0xf00000 -re ${R2_FILE} | grep 0x
-EOF
+CMDS=!rabin2 -B 0xf00000 -re ${R2_FILE} | grep 0x
 RUN
 
 NAME=io.baddr entry0 data
@@ -50,9 +44,7 @@ ARGS=-B 0x100000
 EXPECT=<<EOF
 31ed5e89e183e4f05054
 EOF
-CMDS=<<EOF
-p8 10 @ 0x00100450
-EOF
+CMDS=p8 10 @ 0x00100450
 RUN
 
 NAME=io.baddr -x86_32 entry0 data
@@ -91,9 +83,7 @@ FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 0x400000
 EOF
-CMDS=<<EOF
-?v `e bin.baddr`
-EOF
+CMDS=?v `e bin.baddr`
 RUN
 
 NAME=e bin.baddr changed
@@ -102,9 +92,7 @@ ARGS=-B 0xf00000
 EXPECT=<<EOF
 0xf00000
 EOF
-CMDS=<<EOF
-?v `e bin.baddr`
-EOF
+CMDS=?v `e bin.baddr`
 RUN
 
 NAME=bin.baddr and anal

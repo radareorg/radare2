@@ -10,9 +10,7 @@ EXPECT=<<EOF
 ==..==..########
 ##..##==--==##--
 EOF
-CMDS=<<EOF
-p2 16
-EOF
+CMDS=p2 16
 RUN
 
 NAME=p= 0xff 0x00
@@ -65,9 +63,7 @@ range (max-min):  127  0x7f
 size (of block):  10  0xa
 EOF
 ARGS=-n
-CMDS=<<EOF
-p=d 10 @ 0
-EOF
+CMDS=p=d 10 @ 0
 RUN
 
 NAME=p=e 5
@@ -79,9 +75,7 @@ EXPECT=<<EOF
 0x00053c43 003 00c3 |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 0x0006fb04 004 0051 |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 EOF
-CMDS=<<EOF
-p=e 5@0
-EOF
+CMDS=p=e 5@0
 RUN
 
 NAME=p=e 5 0x100
@@ -126,9 +120,7 @@ EXPECT=<<EOF
 0x0006fb04 004 0076 |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 EOF
 ARGS=-n
-CMDS=<<EOF
-p=p 5@0
-EOF
+CMDS=p=p 5@0
 RUN
 
 NAME=p=p 5 0x100
@@ -168,9 +160,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 90909090909090909090
 EOF
-CMDS=<<EOF
-wx 90909090909090909090 ; p8 10
-EOF
+CMDS=wx 90909090909090909090 ; p8 10
 RUN
 
 NAME=p8 -10
@@ -178,9 +168,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 90909090909090909090
 EOF
-CMDS=<<EOF
-wx 90909090909090909090 ; s 10 ; p8 -10
-EOF
+CMDS=wx 90909090909090909090 ; s 10 ; p8 -10
 RUN
 
 NAME=pi 3
@@ -568,9 +556,7 @@ FILE=../bins/src/hello.c
 EXPECT=<<EOF
 0x00000000 1 C source code
 EOF
-CMDS=<<EOF
-pm
-EOF
+CMDS=pm
 RUN
 
 NAME=pm elf/main
@@ -579,9 +565,7 @@ EXPECT=<<EOF
 0x00000000 1 ELF 64-bit LSB executable, x86-64, version 1
 EOF
 ARGS=-n
-CMDS=<<EOF
-pm
-EOF
+CMDS=pm
 RUN
 
 NAME=pm mach0/fatmach0-3true
@@ -590,9 +574,7 @@ EXPECT=<<EOF
 0x00000000 1 Fat-Mach-O
 EOF
 ARGS=-n
-CMDS=<<EOF
-pm
-EOF
+CMDS=pm
 RUN
 
 NAME=pm java/Hello.class
@@ -601,9 +583,7 @@ EXPECT=<<EOF
 0x00000000 1 Java CLASS
 EOF
 ARGS=-n
-CMDS=<<EOF
-pm
-EOF
+CMDS=pm
 RUN
 
 NAME=pm pe/a.exe
@@ -612,9 +592,7 @@ EXPECT=<<EOF
 0x00000000 1 PE  for MS Windows (console) Intel 80386 32-bit
 EOF
 ARGS=-n
-CMDS=<<EOF
-pm
-EOF
+CMDS=pm
 RUN
 
 NAME=print raw lines
@@ -693,9 +671,7 @@ NAME=p- with "r2 --"
 FILE=--
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-p-
-EOF
+CMDS=p-
 RUN
 
 NAME=p- with malloc://512
@@ -703,9 +679,7 @@ FILE=malloc://512
 EXPECT=<<EOF
 0x00000000 [^_____________________________________________] 0x00000200
 EOF
-CMDS=<<EOF
-p-
-EOF
+CMDS=p-
 RUN
 
 NAME=psW 32 widestring
@@ -713,9 +687,7 @@ FILE=../bins/elf/crackme0x00b
 EXPECT=<<EOF
 w0wgreat
 EOF
-CMDS=<<EOF
-psW @ obj.pass.1964
-EOF
+CMDS=psW @ obj.pass.1964
 RUN
 
 NAME=psW 32 widestring leading zeros
@@ -723,9 +695,7 @@ FILE=../bins/elf/crackme0x00b
 EXPECT=<<EOF
 w0wgreat
 EOF
-CMDS=<<EOF
-psW @ 0x0804a03e
-EOF
+CMDS=psW @ 0x0804a03e
 RUN
 
 NAME=ps leading zeros
@@ -734,9 +704,7 @@ FILE=../bins/elf/crackme0x00b
 EXPECT=<<EOF
 w
 EOF
-CMDS=<<EOF
-ps @ 0x0804a03e
-EOF
+CMDS=ps @ 0x0804a03e
 RUN
 
 NAME=io.unalloc, io.unalloc.ch and prc

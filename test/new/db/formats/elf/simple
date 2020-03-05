@@ -3,9 +3,7 @@ FILE=../bins/elf/analysis/longsym
 EXPECT=<<EOF
 194
 EOF
-CMDS=<<EOF
-?lq `isq~pata`;?vi
-EOF
+CMDS=?lq `isq~pata`;?vi
 RUN
 
 NAME=ELF: simple.elf - code
@@ -30,9 +28,7 @@ EXPECT=<<EOF
         :   0x0000035a      0028           cmp r0, 0
         `=< 0x0000035c      fad1           bne 0x354
 EOF
-CMDS=<<EOF
-e asm.flags.middle=0;pd 3 @ 0x356
-EOF
+CMDS=e asm.flags.middle=0;pd 3 @ 0x356
 RUN
 
 NAME=ELF: asm.flags.middle=1 + local symbols
@@ -42,9 +38,7 @@ EXPECT=<<EOF
         :   0x0000035a      0028           cmp r0, 0
         `=< 0x0000035c      fad1           bne 0x354
 EOF
-CMDS=<<EOF
-e asm.flags.middle=1;pd 3 @ 0x356
-EOF
+CMDS=e asm.flags.middle=1;pd 3 @ 0x356
 RUN
 
 NAME=ELF: asm.flags.middle + local symbols
@@ -54,9 +48,7 @@ EXPECT=<<EOF
         :   0x0000035a      0028           cmp r0, 0
         `=< 0x0000035c      fad1           bne 0x354
 EOF
-CMDS=<<EOF
-pd 3 @ 0x356
-EOF
+CMDS=pd 3 @ 0x356
 RUN
 
 NAME=ELF: asm.flags.middle2 + local symbols
@@ -76,9 +68,7 @@ NAME=ELF: local symbols
 FILE=../bins/elf/analysis/example.elf
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-is*~d_41
-EOF
+CMDS=is*~d_41
 RUN
 
 NAME=ELF: phdr override

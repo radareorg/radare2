@@ -3,9 +3,7 @@ FILE=../bins/elf/analysis/main
 EXPECT=<<EOF
 0x400506
 EOF
-CMDS=<<EOF
-?v main
-EOF
+CMDS=?v main
 RUN
 
 NAME=ELF: main rebased 0
@@ -14,9 +12,7 @@ ARGS=-B 0x200000
 EXPECT=<<EOF
 0x203bd0
 EOF
-CMDS=<<EOF
-?v main
-EOF
+CMDS=?v main
 RUN
 
 NAME=ELF: main rebased 1
@@ -25,9 +21,7 @@ ARGS=-B 0x100000
 EXPECT=<<EOF
 0x103bd0
 EOF
-CMDS=<<EOF
-?v main
-EOF
+CMDS=?v main
 RUN
 
 NAME=ELF: main rebased 2
@@ -36,18 +30,14 @@ ARGS=-B 0x200000
 EXPECT=<<EOF
 0x200506
 EOF
-CMDS=<<EOF
-?v main
-EOF
+CMDS=?v main
 RUN
 
 NAME=ELF: main rebased 3
 FILE=-
 ARGS=-B 0x200000
 EXPECT=2098438
-CMDS=<<EOF
-!rabin2 -qMB 0x200000 ../bins/elf/analysis/main
-EOF
+CMDS=!rabin2 -qMB 0x200000 ../bins/elf/analysis/main
 RUN
 
 NAME=ELF: sym.main
@@ -55,9 +45,7 @@ FILE=../bins/elf/analysis/main
 EXPECT=<<EOF
 0x400506
 EOF
-CMDS=<<EOF
-?v sym.main
-EOF
+CMDS=?v sym.main
 RUN
 
 NAME=ELF: pie main
@@ -65,9 +53,7 @@ FILE=../bins/elf/analysis/pie-main
 EXPECT=<<EOF
 0x3bd0
 EOF
-CMDS=<<EOF
-?v main
-EOF
+CMDS=?v main
 RUN
 
 NAME=MIPS: main
@@ -75,9 +61,7 @@ FILE=../bins/elf/analysis/mips-main
 EXPECT=<<EOF
 0x4006f0
 EOF
-CMDS=<<EOF
-?v main
-EOF
+CMDS=?v main
 RUN
 
 NAME=main non common LD script
@@ -85,9 +69,7 @@ FILE=../bins/elf/analysis/custom_ldscript
 EXPECT=<<EOF
 0x1c00844
 EOF
-CMDS=<<EOF
-?v main
-EOF
+CMDS=?v main
 RUN
 
 NAME=main wrong sections
@@ -95,16 +77,12 @@ FILE=../bins/elf/analysis/main_wrong_sect
 EXPECT=<<EOF
 0x400506
 EOF
-CMDS=<<EOF
-?v main
-EOF
+CMDS=?v main
 RUN
 
 NAME=main detection linux64 endbr64
 FILE=../bins/elf/analysis/linux_x64_endbr64
-CMDS=<<EOF
-?v main
-EOF
+CMDS=?v main
 EXPECT=<<EOF
 0x4070
 EOF

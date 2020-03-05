@@ -19,9 +19,7 @@ FILE=../bins/elf/analysis/bugurtos-avr.elf
 EXPECT=<<EOF
 0x308
 EOF
-CMDS=<<EOF
-?v sym.main
-EOF
+CMDS=?v sym.main
 RUN
 
 NAME=avr use va
@@ -43,7 +41,5 @@ push r14
 push r15
 push r16
 EOF
-CMDS=<<EOF
-pi 3 @ sym.main
-EOF
+CMDS=pi 3 @ sym.main
 RUN

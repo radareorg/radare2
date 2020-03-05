@@ -760,9 +760,7 @@ RUN
 NAME=arm s110 syscalls /ad svc
 FILE=../bins/elf/BLE_Beacon2.NRF51822_OTA.bin
 ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
-CMDS=<<EOF
-/ad svc
-EOF
+CMDS=/ad svc
 EXPECT=<<EOF
 0x000168d0   # 2: svc 0x51
 0x000168f2   # 2: svc 0x61
@@ -796,9 +794,7 @@ NAME=arm s110 syscalls /as
 BROKEN=1
 FILE=../bins/elf/BLE_Beacon2.NRF51822_OTA.bin
 ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
-CMDS=<<EOF
-/as
-EOF
+CMDS=/as
 EXPECT=<<EOF
 0x000168d0 sd_evt_get
 0x000168f2 sd_ble_evt_get
@@ -850,9 +846,7 @@ RUN
 NAME=arm s110 syscalls asl ascii
 FILE=-
 ARGS=-aarm -b16 -easm.os=s110
-CMDS=<<EOF
-asl sd_evt_get
-EOF
+CMDS=asl sd_evt_get
 EXPECT=<<EOF
 81
 EOF
@@ -861,9 +855,7 @@ RUN
 NAME=arm s110 syscalls asl num
 FILE=-
 ARGS=-aarm -b16 -easm.os=s110
-CMDS=<<EOF
-asl 0x51
-EOF
+CMDS=asl 0x51
 EXPECT=<<EOF
 sd_evt_get
 EOF
@@ -872,9 +864,7 @@ RUN
 NAME=arm s110 syscalls asc num
 FILE=-
 ARGS=-aarm -b16 -easm.os=s110
-CMDS=<<EOF
-asc 0x51
-EOF
+CMDS=asc 0x51
 EXPECT=<<EOF
 #define SYS_sd_evt_get 81
 EOF
@@ -883,9 +873,7 @@ RUN
 NAME=arm s110 syscalls asca num
 FILE=-
 ARGS=-aarm -b16 -easm.os=s110
-CMDS=<<EOF
-asca 0x51
-EOF
+CMDS=asca 0x51
 EXPECT=<<EOF
 .equ SYS_sd_evt_get 81
 EOF

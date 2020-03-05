@@ -5,9 +5,7 @@ EXPECT=<<EOF
 cmp.csum 0x00005ee2
 hdr.csum 0x00005ee2
 EOF
-CMDS=<<EOF
-i~csum
-EOF
+CMDS=i~csum
 RUN
 
 NAME=PE: checksum 2
@@ -17,9 +15,7 @@ EXPECT=<<EOF
 cmp.csum 0x000079a3
 hdr.csum 0x000079a3
 EOF
-CMDS=<<EOF
-i~csum
-EOF
+CMDS=i~csum
 RUN
 
 NAME=PE: checksum 3
@@ -29,7 +25,5 @@ EXPECT=<<EOF
 cmp.csum 0x0003881f
 hdr.csum 0x0003881f
 EOF
-CMDS=<<EOF
-i~csum
-EOF
+CMDS=i~csum
 RUN

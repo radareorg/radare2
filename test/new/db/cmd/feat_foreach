@@ -5,9 +5,7 @@ EXPECT=<<EOF
 0x14
 0x1e
 EOF
-CMDS=<<EOF
-?v $$ @@= 10 20 30
-EOF
+CMDS=?v $$ @@= 10 20 30
 RUN
 
 NAME=@@c:/c fs:
@@ -42,9 +40,7 @@ EXPECT=<<EOF
 0x14
 0x1e
 EOF
-CMDS=<<EOF
-?v $$ @@= 10   20   30
-EOF
+CMDS=?v $$ @@= 10   20   30
 RUN
 
 NAME=@@= `prz` fix

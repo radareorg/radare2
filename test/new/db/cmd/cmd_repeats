@@ -36,9 +36,7 @@ EXPECT=<<EOF
 00
 hi
 EOF
-CMDS=<<EOF
-3p8 1;?e hi
-EOF
+CMDS=3p8 1;?e hi
 RUN
 
 NAME=2p8 1;?e hi
@@ -48,9 +46,7 @@ EXPECT=<<EOF
 00
 hi
 EOF
-CMDS=<<EOF
-2p8 1;?e hi
-EOF
+CMDS=2p8 1;?e hi
 RUN
 
 NAME=3p8 1 && 2p8 4

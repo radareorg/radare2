@@ -1,8 +1,6 @@
 NAME=foreach iterator
 FILE=../bins/elf/ls
-CMDS=<<EOF
-aa ; fd @@@F
-EOF
+CMDS=aa ; fd @@@F
 EXPECT=<<EOF
 entry0
 sym._obstack_begin

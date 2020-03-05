@@ -35,36 +35,28 @@ NAME=oi-
 FILE=malloc://1024
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-oi-
-EOF
+CMDS=oi-
 RUN
 
 NAME=oi-2
 FILE=--
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-o bins/mach0/fatmach0-3true
-EOF
+CMDS=o bins/mach0/fatmach0-3true
 RUN
 
 NAME=o-[0]
 FILE=malloc://1024
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-o-`o~[0]`;o
-EOF
+CMDS=o-`o~[0]`;o
 RUN
 
 NAME=oj-
 FILE=malloc://1024
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-o-`oj~{[0].fd}`;o
-EOF
+CMDS=o-`oj~{[0].fd}`;o
 RUN
 
 NAME=o -
@@ -106,9 +98,7 @@ NAME=omn - crash
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-omn
-EOF
+CMDS=omn
 RUN
 
 NAME=oob 10

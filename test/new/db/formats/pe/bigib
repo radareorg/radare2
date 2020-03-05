@@ -2,9 +2,7 @@ NAME=PE: corkami bigib.exe - open
 FILE=../bins/pe/bigib.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami bigib.exe - entrypoint
@@ -12,9 +10,7 @@ FILE=../bins/pe/bigib.exe
 EXPECT=<<EOF
 0x7efd1000
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=PE: corkami bigib.exe - pi 1
@@ -22,7 +18,5 @@ FILE=../bins/pe/bigib.exe
 EXPECT=<<EOF
 push 0x7efd1018
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN

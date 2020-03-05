@@ -3,9 +3,7 @@ FILE=../bins/pe/hello_world_stripped.exe
 EXPECT=<<EOF
 stripped true
 EOF
-CMDS=<<EOF
-i~^strip
-EOF
+CMDS=i~^strip
 RUN
 
 NAME=PE: non strip check
@@ -13,7 +11,5 @@ FILE=../bins/pe/hello_world_not_stripped.exe
 EXPECT=<<EOF
 stripped false
 EOF
-CMDS=<<EOF
-i~^strip
-EOF
+CMDS=i~^strip
 RUN

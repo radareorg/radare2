@@ -124,9 +124,7 @@ FILE=../bins/mach0/arm32-ofp.lzh
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-pd 2~?push
-EOF
+CMDS=pd 2~?push
 RUN
 
 NAME=thumb: arm32
@@ -134,7 +132,5 @@ FILE=../bins/mach0/arm16-ofp.lzh
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-pd 2~?push
-EOF
+CMDS=pd 2~?push
 RUN

@@ -8,9 +8,7 @@ nop
 nop
 nop
 EOF
-CMDS=<<EOF
-pad 9090909090
-EOF
+CMDS=pad 9090909090
 RUN
 
 NAME=pad smaller instruction
@@ -20,9 +18,7 @@ EXPECT=<<EOF
 push edx
 out dx, al
 EOF
-CMDS=<<EOF
-pad 52ee
-EOF
+CMDS=pad 52ee
 RUN
 
 NAME=pad large instruction
@@ -47,7 +43,5 @@ push ebx
 mov ecx, esp
 int 0x80
 EOF
-CMDS=<<EOF
-pad 31c09952682f636174682f62696e89e3526873737764682f2f7061682f65746389e1b00b52515389e1cd80
-EOF
+CMDS=pad 31c09952682f636174682f62696e89e3526873737764682f2f7061682f65746389e1b00b52515389e1cd80
 RUN

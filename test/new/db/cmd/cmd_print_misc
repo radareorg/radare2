@@ -3,7 +3,5 @@ FILE=-
 EXPECT=<<EOF
 [{"value":0,"string":""}]
 EOF
-CMDS=<<EOF
-pvj ~{
-EOF
+CMDS=pvj ~{
 RUN

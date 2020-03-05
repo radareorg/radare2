@@ -196,9 +196,7 @@ NAME=Cf should be silent
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-Cf 32 2xx
-EOF
+CMDS=Cf 32 2xx
 RUN
 
 NAME=format memory metadata

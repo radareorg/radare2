@@ -3,7 +3,5 @@ FILE=../bins/pe/version_cust.exe
 ARGS=-A
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN

@@ -4,9 +4,7 @@ ARGS=-a x86 -b 32
 EXPECT=<<EOF
 ebp,ebp,^=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=
 EOF
-CMDS=<<EOF
-pade 31ed
-EOF
+CMDS=pade 31ed
 RUN
 
 NAME=pade 40
@@ -15,9 +13,7 @@ ARGS=-a x86 -b 32
 EXPECT=<<EOF
 eax,++=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,$p,pf,:=
 EOF
-CMDS=<<EOF
-pade 40
-EOF
+CMDS=pade 40
 RUN
 
 NAME=pade 48
@@ -26,7 +22,5 @@ ARGS=-a x86 -b 32
 EXPECT=<<EOF
 eax,--=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,$p,pf,:=
 EOF
-CMDS=<<EOF
-pade 48
-EOF
+CMDS=pade 48
 RUN

@@ -101,9 +101,7 @@ b
 a
 b
 EOF
-CMDS=<<EOF
-2(foo,?e a,?e b)()
-EOF
+CMDS=2(foo,?e a,?e b)()
 RUN
 
 NAME=?v $$ @@ foo*

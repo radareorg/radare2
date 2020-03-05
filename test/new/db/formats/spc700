@@ -3,7 +3,5 @@ FILE=../bins/spc700/bin.spc
 EXPECT=<<EOF
 SPC700
 EOF
-CMDS=<<EOF
-iI~machine[1]
-EOF
+CMDS=iI~machine[1]
 RUN

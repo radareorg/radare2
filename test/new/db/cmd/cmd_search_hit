@@ -147,9 +147,7 @@ FILE=../bins/other/aes.dump
 EXPECT=<<EOF
 0x0000001e hit0_0 00000000000000000000000000000000000000000000000000000000000000
 EOF
-CMDS=<<EOF
-/ca
-EOF
+CMDS=/ca
 RUN
 
 NAME=cmd.hit for /cr
@@ -157,9 +155,7 @@ FILE=../bins/other/rsa-private-4096.key
 EXPECT=<<EOF
 0x0000000d hit0_0 308209280201000282020100c079f24b042787e4896db411fa7647e3bb62c8
 EOF
-CMDS=<<EOF
-/cr
-EOF
+CMDS=/cr
 RUN
 
 NAME=cmd.hit for /cr on edd448
@@ -167,9 +163,7 @@ FILE=../bins/other/ed448-private.key
 EXPECT=<<EOF
 0x000000f5 hit0_0 3047020100300506032b6571043b0439176449168ec8fc66d9e67d375d1ea3
 EOF
-CMDS=<<EOF
-/cr
-EOF
+CMDS=/cr
 RUN
 
 NAME=cmd.hit for /cd
@@ -177,9 +171,7 @@ FILE=../bins/other/certificate.ber
 EXPECT=<<EOF
 0x0000002f hit0_0 308203493082
 EOF
-CMDS=<<EOF
-/cd
-EOF
+CMDS=/cd
 RUN
 
 NAME=cmd.hit for /a

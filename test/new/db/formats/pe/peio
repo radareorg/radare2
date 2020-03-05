@@ -16,9 +16,7 @@ FILE=../bins/pe/base.exe
 EXPECT=<<EOF
 0x401000
 EOF
-CMDS=<<EOF
-?v section..text
-EOF
+CMDS=?v section..text
 RUN
 
 NAME=pe symbol addr

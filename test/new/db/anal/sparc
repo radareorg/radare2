@@ -1,8 +1,6 @@
 NAME=disass_Linux_sparc
 FILE=../bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-pi 10 @ entry0
-EOF
+CMDS=pi 10 @ entry0
 EXPECT=<<EOF
 mov g0, fp
 sub sp, 0x18, sp
@@ -19,9 +17,7 @@ RUN
 
 NAME=disass_Solaris_sparc
 FILE=../bins/elf/elf-solaris-sparc-ls
-CMDS=<<EOF
-pi 10 @ entry0
-EOF
+CMDS=pi 10 @ entry0
 EXPECT=<<EOF
 mov 0, fp
 ld [sp+0x40], l0

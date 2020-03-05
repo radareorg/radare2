@@ -20,9 +20,7 @@ FILE=-
 EXPECT=<<EOF
 Usage: mkdir [-p] [directory]
 EOF
-CMDS=<<EOF
-mkdir -p
-EOF
+CMDS=mkdir -p
 RUN
 
 NAME=mkdir -p

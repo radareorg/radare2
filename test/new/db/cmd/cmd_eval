@@ -16,9 +16,7 @@ RUN
 
 NAME=e-dot
 FILE=-
-CMDS=<<EOF
-e zoom.
-EOF
+CMDS=e zoom.
 EXPECT=<<EOF
 zoom.byte = h
 zoom.from = 0
@@ -41,9 +39,7 @@ netbsd
 windows
 s110
 EOF
-CMDS=<<EOF
-e asm.os=?
-EOF
+CMDS=e asm.os=?
 RUN
 
 NAME=e asm.cpu

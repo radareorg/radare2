@@ -141,9 +141,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 0x400
 EOF
-CMDS=<<EOF
-?v $s
-EOF
+CMDS=?v $s
 RUN
 
 NAME=$j (malloc)
@@ -361,9 +359,7 @@ FILE=../bins/elf/analysis/x86-simple
 EXPECT=<<EOF
 0xfc
 EOF
-CMDS=<<EOF
-?v $s
-EOF
+CMDS=?v $s
 RUN
 
 NAME=?p and ?P

@@ -3,9 +3,7 @@ FILE=../bins/other/pvm2-indiecito.sid
 EXPECT=<<EOF
 0x000011fe hit0_0 01010102
 EOF
-CMDS=<<EOF
-/x 01010102
-EOF
+CMDS=/x 01010102
 RUN
 
 NAME=sidbug2

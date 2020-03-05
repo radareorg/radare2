@@ -3,9 +3,7 @@ FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 ffffffff
 EOF
-CMDS=<<EOF
-p8 4 @ 0x999999999
-EOF
+CMDS=p8 4 @ 0x999999999
 RUN
 
 NAME=io ff based on seek

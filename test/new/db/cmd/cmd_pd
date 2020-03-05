@@ -28,9 +28,7 @@ FILE=../bins/elf/mipsloop
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-pd 1@main~main?
-EOF
+CMDS=pd 1@main~main?
 RUN
 
 NAME=pd v8 and cortex
@@ -92,27 +90,21 @@ NAME=pd 0
 FILE=malloc://128
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-pd 0
-EOF
+CMDS=pd 0
 RUN
 
 NAME=pd 1-1
 FILE=malloc://128
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-pd 1-1
-EOF
+CMDS=pd 1-1
 RUN
 
 NAME=pd foo-33
 FILE=malloc://128
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-f foo=33;pd foo-33
-EOF
+CMDS=f foo=33;pd foo-33
 RUN
 
 NAME=pd 1
@@ -479,9 +471,7 @@ EXPECT=<<EOF
 [{"offset":686,"esil":"","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc \"World\"","disasm":"ldc \"World\"","bytes":"120b","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":2138640}]
 
 EOF
-CMDS=<<EOF
-pdj 1 @ 0x000002ae
-EOF
+CMDS=pdj 1 @ 0x000002ae
 RUN
 
 NAME=pdfline
@@ -688,9 +678,7 @@ FILE=../bins/pe/a.exe
 EXPECT=<<EOF
             0x00401322      c70424043040.  mov dword [esp], 0x403004   ; [0x403004:4]=0xa7025 ; "%p\n"
 EOF
-CMDS=<<EOF
-pd 1 @ 0x00401322
-EOF
+CMDS=pd 1 @ 0x00401322
 RUN
 
 NAME=r_str_escape io + no 'u' prefix for single-char strings
@@ -710,9 +698,7 @@ FILE=../bins/pe/cmd_adf_sample0.exe
 EXPECT=<<EOF
             0x0040116a      6828304000     push 0x403028               ; '(0@' ; "End\r\n"
 EOF
-CMDS=<<EOF
-pd 1 @ 0x0040116a
-EOF
+CMDS=pd 1 @ 0x0040116a
 RUN
 
 NAME=no rep flag in cmt with gen str flag (lea)
@@ -868,9 +854,7 @@ FILE=../bins/pe/testapp-msvc64.exe
 EXPECT=<<EOF
             0x140001040      488d05415001.  lea rax, [0x140016088]     ; u"r2 \u1308\u23f4\u23f4"
 EOF
-CMDS=<<EOF
-pd 1 @ 0x140001040
-EOF
+CMDS=pd 1 @ 0x140001040
 RUN
 
 NAME=asm.asciidot
@@ -1343,9 +1327,7 @@ FILE=../bins/java/Hello.class
 EXPECT=<<EOF
 [{"offset":686,"text":"            0x000002ae      120b           ldc \"World\""}]
 EOF
-CMDS=<<EOF
-pdJ 1 @ 0x000002ae
-EOF
+CMDS=pdJ 1 @ 0x000002ae
 RUN
 
 NAME=pdJ asm.cmt.right=0 + html
@@ -1439,9 +1421,7 @@ FILE=../bins/elf/crackme
 EXPECT=<<EOF
 [{"offset":4196399,"text":"            ;-- str.Password_Correct:"},{"offset":4196399,"text":"            0x0040082f     .string \"Password Correct!\" ; len=18"}]
 EOF
-CMDS=<<EOF
-pdJ 1 @ 0x0040082f
-EOF
+CMDS=pdJ 1 @ 0x0040082f
 RUN
 
 NAME=pd0~{} - crash
@@ -1776,9 +1756,7 @@ RUN
 NAME=@b and @addr should coexist
 FILE=../bins/firmware/armthumb.bin
 ARGS=-aarm -b32
-CMDS=<<EOF
-pd 1 @b:32 @0xc
-EOF
+CMDS=pd 1 @b:32 @0xc
 EXPECT=<<EOF
             0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
 EOF
