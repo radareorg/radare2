@@ -18,9 +18,7 @@ NAME=!| grep
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-!echo fuck|grep bob
-EOF
+CMDS=!echo fuck|grep bob
 RUN
 
 NAME=!| sed
@@ -28,9 +26,7 @@ FILE=-
 EXPECT=<<EOF
 yeah
 EOF
-CMDS=<<EOF
-!echo fuck|sed -e s,fuck,yeah,
-EOF
+CMDS=!echo fuck|sed -e s,fuck,yeah,
 RUN
 
 NAME=?e|
@@ -38,9 +34,7 @@ FILE=-
 EXPECT=<<EOF
 yeah
 EOF
-CMDS=<<EOF
-?e fuck|sed -e s,fuck,yeah,
-EOF
+CMDS=?e fuck|sed -e s,fuck,yeah,
 RUN
 
 NAME=p8 `?e 3`
@@ -48,9 +42,7 @@ FILE=-
 EXPECT=<<EOF
 000000
 EOF
-CMDS=<<EOF
-p8 `?e 3`
-EOF
+CMDS=p8 `?e 3`
 RUN
 
 NAME=p8 `!echo 3`
@@ -58,9 +50,7 @@ FILE=-
 EXPECT=<<EOF
 000000
 EOF
-CMDS=<<EOF
-p8 `!echo 3`
-EOF
+CMDS=p8 `!echo 3`
 RUN
 
 NAME=!echo "test"

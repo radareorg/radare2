@@ -7,7 +7,5 @@ tbnz x0, 0x20, 0x100004008
 tbnz x0, 0x20, 0xffff800c
 EOF
 ARGS=-a arm -b64 -m 0x100000000
-CMDS=<<EOF
-pi 4
-EOF
+CMDS=pi 4
 RUN

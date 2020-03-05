@@ -281,9 +281,7 @@ RUN
 
 NAME=ecHi
 FILE=-
-CMDS=<<EOF
-ecHi xxxx
-EOF
+CMDS=ecHi xxxx
 EXPECT_ERR=<<EOF
 Unknown color xxxx
 EOF

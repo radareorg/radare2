@@ -30,16 +30,12 @@ EXPECT=<<EOF
  foo : 0x00000000 = 1
 EOF
 ARGS=-a x86 -b 32
-CMDS=<<EOF
-pf i foo @x:0x01
-EOF
+CMDS=pf i foo @x:0x01
 RUN
 
 NAME=pf [3]ub
 FILE=-
-CMDS=<<EOF
-pf [3]ub
-EOF
+CMDS=pf [3]ub
 EXPECT=<<EOF
 0x00000000 = [ 0, 0, 0 ]
 0x00000003 = 0x00
@@ -50,18 +46,14 @@ NAME=Cf main
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-Cf main;C*
-EOF
+CMDS=Cf main;C*
 RUN
 
 NAME=Cf 1 main
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-Cf 1 main;C*
-EOF
+CMDS=Cf 1 main;C*
 RUN
 
 NAME=seteq
@@ -802,9 +794,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 pf._NT_TIB ? (_NT_TIB)Self
 EOF
-CMDS=<<EOF
-pf._NT_TIB ? (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
-EOF
+CMDS=pf._NT_TIB ? (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
 RUN
 
 NAME=Infinite Recursion segfault 2
@@ -812,9 +802,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self
 EOF
-CMDS=<<EOF
-pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
-EOF
+CMDS=pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
 RUN
 
 NAME=One byte enum endianness
@@ -856,9 +844,7 @@ RUN
 
 NAME=pf
 FILE=../bins/elf/crackme0x05
-CMDS=<<EOF
-pf 2F
-EOF
+CMDS=pf 2F
 EXPECT=<<EOF
 0x080483d0 [0] {
   0x080483d0 = -6.522912219822113e+235

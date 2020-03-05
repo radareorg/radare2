@@ -2,9 +2,7 @@ NAME=PE: corkami dll-dynld.exe - open
 FILE=../bins/pe/dll-dynld.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami dll-dynld.exe - entrypoint
@@ -12,9 +10,7 @@ FILE=../bins/pe/dll-dynld.exe
 EXPECT=<<EOF
 0x401000
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=PE: corkami dll-dynld.exe - pi 1

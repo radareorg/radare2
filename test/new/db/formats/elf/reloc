@@ -14,25 +14,19 @@ vaddr      paddr      type   name
 
 5 relocations
 EOF
-CMDS=<<EOF
-ir
-EOF
+CMDS=ir
 RUN
 
 NAME=ELF: Spurious relocations
 FILE=../bins/elf/analysis/spurious-relocs
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-ir~vaddr=0x0000003a
-EOF
+CMDS=ir~vaddr=0x0000003a
 RUN
 
 NAME=ELF: .plt/.plt.sec sections
 FILE=../bins/elf/ls-cet
-CMDS=<<EOF
-pdi 10 @ main+0x28
-EOF
+CMDS=pdi 10 @ main+0x28
 EXPECT=<<EOF
 0x00004e98                 31c0  xor eax, eax
 0x00004e9a           e8a1e60000  call 0x13540

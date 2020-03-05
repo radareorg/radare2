@@ -43,9 +43,7 @@ RUN
 NAME=dbg.modules.count
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
-CMDS=<<EOF
-dmm~?
-EOF
+CMDS=dmm~?
 EXPECT=<<EOF
 2
 EOF
@@ -55,9 +53,7 @@ NAME=dbg.curmod.count
 BROKEN=1
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
-CMDS=<<EOF
-dmm.~?
-EOF
+CMDS=dmm.~?
 EXPECT=<<EOF
 1
 EOF

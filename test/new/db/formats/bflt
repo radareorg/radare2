@@ -101,7 +101,5 @@ vaddr      paddr      type   name
 
 92 relocations
 EOF
-CMDS=<<EOF
-ir
-EOF
+CMDS=ir
 RUN

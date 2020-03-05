@@ -3,9 +3,7 @@ FILE=../bins/mz/unzip.exe
 ARGS=-A
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=MZ: unzip.exe - entrypoint
@@ -13,9 +11,7 @@ FILE=../bins/mz/unzip.exe
 EXPECT=<<EOF
 0x156a0
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=MZ: unzip.exe - pi 1
@@ -23,9 +19,7 @@ FILE=../bins/mz/unzip.exe
 EXPECT=<<EOF
 mov bp, ax
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN
 
 NAME=MZ: unzip.exe segments
@@ -34,7 +28,5 @@ EXPECT=<<EOF
 fs sections
 "f section.seg_000 1 0x00000000"
 EOF
-CMDS=<<EOF
-iS*
-EOF
+CMDS=iS*
 RUN

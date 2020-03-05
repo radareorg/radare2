@@ -9,7 +9,5 @@ nth paddr      vaddr      len size section type    string
 2   0x000005ef 0x080485ef 6   7    .rodata ascii   Wrong!
 0   0x00001040 0x0804a040 8   36   .data   utf32le w0wgreat
 EOF
-CMDS=<<EOF
-iz
-EOF
+CMDS=iz
 RUN

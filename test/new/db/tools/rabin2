@@ -106,9 +106,7 @@ RUN
 
 NAME=rabin2 -SSS
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EOF
-!rabin2 -SSS ${R2_FILE}|wc -l|awk "{print \$1}"
-EOF
+CMDS=!rabin2 -SSS ${R2_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 13
 EOF

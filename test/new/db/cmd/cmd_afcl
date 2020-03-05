@@ -21,9 +21,7 @@ amd64
 ms
 EOF
 ARGS=-a x86 -b 64
-CMDS=<<EOF
-afcl
-EOF
+CMDS=afcl
 RUN
 
 NAME=afcl: x86-32
@@ -59,9 +57,7 @@ borland
 watcom
 EOF
 ARGS=-a x86 -b 32
-CMDS=<<EOF
-afcl
-EOF
+CMDS=afcl
 RUN
 
 
@@ -86,9 +82,7 @@ EXPECT=<<EOF
 arm64
 EOF
 ARGS=-a arm -b 64
-CMDS=<<EOF
-afcl
-EOF
+CMDS=afcl
 RUN
 
 NAME=afcl: arm-32
@@ -112,9 +106,7 @@ EXPECT=<<EOF
 arm32
 EOF
 ARGS=-a arm -b 32
-CMDS=<<EOF
-afcl
-EOF
+CMDS=afcl
 RUN
 
 NAME=afcl: arm-16
@@ -138,9 +130,7 @@ EXPECT=<<EOF
 arm32
 EOF
 ARGS=-a arm -b 16
-CMDS=<<EOF
-afcl
-EOF
+CMDS=afcl
 RUN
 
 NAME=afcl: mips-32
@@ -162,7 +152,5 @@ FILE=/../bins/elf/libc.so.0
 EXPECT=<<EOF
 EOF
 ARGS=-a mips -b 64
-CMDS=<<EOF
-afcl
-EOF
+CMDS=afcl
 RUN

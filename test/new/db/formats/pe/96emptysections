@@ -3,9 +3,7 @@ FILE=../bins/pe/96emptysections.exe
 ARGS=-A
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami 96emptysections.exe - entrypoint
@@ -13,9 +11,7 @@ FILE=../bins/pe/96emptysections.exe
 EXPECT=<<EOF
 0x402000
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=PE: corkami 96emptysections.exe - entrypoint pif
@@ -140,7 +136,5 @@ nth paddr        size vaddr        vsize perm name
 95  0x00000000    0x0 0x00000000  0x1000 ---- sect_95
 
 EOF
-CMDS=<<EOF
-!rabin2 -pS ../bins/pe/96emptysections.exe
-EOF
+CMDS=!rabin2 -pS ../bins/pe/96emptysections.exe
 RUN

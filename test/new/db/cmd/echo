@@ -3,7 +3,5 @@ FILE=-
 EXPECT=<<EOF
 hello world
 EOF
-CMDS=<<EOF
-?e hello world
-EOF
+CMDS=?e hello world
 RUN

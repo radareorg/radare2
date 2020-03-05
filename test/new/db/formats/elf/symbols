@@ -1,8 +1,6 @@
 NAME=entrypoint on object
 FILE=../bins/elf/pngrutil_o
-CMDS=<<EOF
-ie
-EOF
+CMDS=ie
 EXPECT=<<EOF
 [Entrypoints]
 
@@ -67,9 +65,7 @@ nth paddr       vaddr      bind   type   size lib name
 3    0x00000430 0x00400430 WEAK   NOTYPE 16       imp.__gmon_start__
 4    0x00000440 0x00400440 GLOBAL FUNC   16       imp.atoi
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=symbols with no sections header information
@@ -83,9 +79,7 @@ nth paddr       vaddr      bind   type   size lib name
 2    0x000003f0 0x004003f0 GLOBAL FUNC   16       imp.__libc_start_main
 3    0x00000400 0x00400400 WEAK   NOTYPE 16       imp.__gmon_start__
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=symbols with no sections header information 2
@@ -104,9 +98,7 @@ nth paddr       vaddr      bind   type   size lib name
 6    0x000003c0 0x080483c0 GLOBAL FUNC   16       imp.ptrace
 7    0x000003d0 0x080483d0 GLOBAL FUNC   16       imp.calloc
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=symbols with no sections header information 3
@@ -183,9 +175,7 @@ nth paddr       vaddr      bind   type   size lib name
 53   0x00000000 0x00000000 GLOBAL OBJ    16       imp.__page_size
 59   0x00000000 0x00000000 GLOBAL FUNC   16       imp.__aeabi_atexit
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=special ARM symbols with dot
@@ -198,9 +188,7 @@ EXPECT=<<EOF
             0x0000046a      69ec1623       stcl p3, c2, [sb], -0x58
             0x0000046e      0548           ldr r0, [0x00000484]        ; [0x484:4]=28 ; 1156
 EOF
-CMDS=<<EOF
-pd 5 @ 0x464
-EOF
+CMDS=pd 5 @ 0x464
 RUN
 
 NAME=symname just before end of dynstr section of size 1
@@ -208,7 +196,5 @@ FILE=../bins/elf/switch-hello-world.elf
 EXPECT=<<EOF
 1732
 EOF
-CMDS=<<EOF
-isq~?
-EOF
+CMDS=isq~?
 RUN

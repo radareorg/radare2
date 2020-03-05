@@ -494,9 +494,7 @@ RUN
 
 NAME=rax2 -o
 FILE=-
-CMDS=<<EOF
-!rax2 -o 162 62
-EOF
+CMDS=!rax2 -o 162 62
 EXPECT=r2
 RUN
 

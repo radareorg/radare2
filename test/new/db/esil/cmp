@@ -3,9 +3,7 @@ FILE=-
 EXPECT=<<EOF
 0x0
 EOF
-CMDS=<<EOF
-"ae 1,2,<"
-EOF
+CMDS="ae 1,2,<"
 RUN
 
 NAME=cmp 2,1,<
@@ -13,9 +11,7 @@ FILE=-
 EXPECT=<<EOF
 0x1
 EOF
-CMDS=<<EOF
-"ae 2,1,<"
-EOF
+CMDS="ae 2,1,<"
 RUN
 
 NAME=cmp 1,2,>
@@ -23,9 +19,7 @@ FILE=-
 EXPECT=<<EOF
 0x1
 EOF
-CMDS=<<EOF
-"ae 1,2,>"
-EOF
+CMDS="ae 1,2,>"
 RUN
 
 NAME=cmp 2,1,>
@@ -33,9 +27,7 @@ FILE=-
 EXPECT=<<EOF
 0x0
 EOF
-CMDS=<<EOF
-"ae 2,1,>"
-EOF
+CMDS="ae 2,1,>"
 RUN
 
 NAME=cmp 1,2,<=
@@ -43,9 +35,7 @@ FILE=-
 EXPECT=<<EOF
 0x0
 EOF
-CMDS=<<EOF
-"ae 1,2,<="
-EOF
+CMDS="ae 1,2,<="
 RUN
 
 NAME=cmp 2,1,<=
@@ -53,9 +43,7 @@ FILE=-
 EXPECT=<<EOF
 0x1
 EOF
-CMDS=<<EOF
-"ae 2,1,<="
-EOF
+CMDS="ae 2,1,<="
 RUN
 
 NAME=cmp 1,2,>=
@@ -63,9 +51,7 @@ FILE=-
 EXPECT=<<EOF
 0x1
 EOF
-CMDS=<<EOF
-"ae 1,2,>="
-EOF
+CMDS="ae 1,2,>="
 RUN
 
 NAME=cmp 2,1,>=
@@ -73,9 +59,7 @@ FILE=-
 EXPECT=<<EOF
 0x0
 EOF
-CMDS=<<EOF
-"ae 2,1,>="
-EOF
+CMDS="ae 2,1,>="
 RUN
 
 NAME=cmp 1,1,<=
@@ -83,9 +67,7 @@ FILE=-
 EXPECT=<<EOF
 0x1
 EOF
-CMDS=<<EOF
-"ae 1,1,<="
-EOF
+CMDS="ae 1,1,<="
 RUN
 
 NAME=cmp 1,1,>=
@@ -93,9 +75,7 @@ FILE=-
 EXPECT=<<EOF
 0x1
 EOF
-CMDS=<<EOF
-"ae 1,1,>="
-EOF
+CMDS="ae 1,1,>="
 RUN
 
 NAME=cmp 1,1,==
@@ -103,9 +83,7 @@ FILE=-
 EXPECT=<<EOF
 0x1
 EOF
-CMDS=<<EOF
-"ae 1,1,==,$z,NUM"
-EOF
+CMDS="ae 1,1,==,$z,NUM"
 RUN
 
 NAME=cmp 1,2,==
@@ -113,9 +91,7 @@ FILE=-
 EXPECT=<<EOF
 0x0
 EOF
-CMDS=<<EOF
-"ae 1,2,==,$z,NUM"
-EOF
+CMDS="ae 1,2,==,$z,NUM"
 RUN
 
 NAME=cmp -1,1,>
@@ -123,9 +99,7 @@ FILE=-
 EXPECT=<<EOF
 0x1
 EOF
-CMDS=<<EOF
-"ae -1,1,>"
-EOF
+CMDS="ae -1,1,>"
 RUN
 
 NAME=cmp -1,1,<
@@ -133,9 +107,7 @@ FILE=-
 EXPECT=<<EOF
 0x0
 EOF
-CMDS=<<EOF
-"ae -1,1,<"
-EOF
+CMDS="ae -1,1,<"
 RUN
 
 NAME=cmp -1,1,>=
@@ -143,9 +115,7 @@ FILE=-
 EXPECT=<<EOF
 0x1
 EOF
-CMDS=<<EOF
-"ae -1,1,>="
-EOF
+CMDS="ae -1,1,>="
 RUN
 
 NAME=cmp -1,1,<=
@@ -153,9 +123,7 @@ FILE=-
 EXPECT=<<EOF
 0x0
 EOF
-CMDS=<<EOF
-"ae -1,1,<="
-EOF
+CMDS="ae -1,1,<="
 RUN
 
 NAME=cmp -1,-2,>=
@@ -163,9 +131,7 @@ FILE=-
 EXPECT=<<EOF
 0x0
 EOF
-CMDS=<<EOF
-"ae -1,-2,>="
-EOF
+CMDS="ae -1,-2,>="
 RUN
 
 NAME=cmp -1,-2,<=
@@ -173,7 +139,5 @@ FILE=-
 EXPECT=<<EOF
 0x1
 EOF
-CMDS=<<EOF
-"ae -1,-2,<="
-EOF
+CMDS="ae -1,-2,<="
 RUN

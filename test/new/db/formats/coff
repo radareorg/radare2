@@ -108,9 +108,7 @@ vaddr      paddr      type    name
 
 4 relocations
 EOF
-CMDS=<<EOF
-om;is;ir
-EOF
+CMDS=om;is;ir
 RUN
 
 NAME=tiny coff2

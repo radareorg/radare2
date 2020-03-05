@@ -2,9 +2,7 @@ NAME=PE: corkami dllcfgdup.dll - open
 FILE=../bins/pe/dllcfgdup.dll
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami dllcfgdup.dll - entrypoint
@@ -12,9 +10,7 @@ FILE=../bins/pe/dllcfgdup.dll
 EXPECT=<<EOF
 0x10001000
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=PE: corkami dllcfgdup.dll - pi 1

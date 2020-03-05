@@ -64,9 +64,7 @@ EXPECT=<<EOF
 foo
 bar
 EOF
-CMDS=<<EOF
-"?e foo";"?e bar"
-EOF
+CMDS="?e foo";"?e bar"
 RUN
 
 NAME=at3 "?vi $$"@3;"?e bar"
@@ -75,9 +73,7 @@ EXPECT=<<EOF
 3
 bar
 EOF
-CMDS=<<EOF
-"?vi $$"@3;?e bar
-EOF
+CMDS="?vi $$"@3;?e bar
 RUN
 
 NAME=at3 "?vi $$"@3;"?e bar"
@@ -86,9 +82,7 @@ EXPECT=<<EOF
 3
 bar
 EOF
-CMDS=<<EOF
-"?vi $$"@3;"?e bar"
-EOF
+CMDS="?vi $$"@3;"?e bar"
 RUN
 
 NAME="?v 1>>>2 ror"
@@ -96,9 +90,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 0x4000000000000000
 EOF
-CMDS=<<EOF
-"?v 1>>>2"
-EOF
+CMDS="?v 1>>>2"
 RUN
 
 NAME="?v 0xdeadbeef<<<40 rol"
@@ -106,9 +98,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 0xadbeef00000000de
 EOF
-CMDS=<<EOF
-"?v 0xdeadbeef<<<40"
-EOF
+CMDS="?v 0xdeadbeef<<<40"
 RUN
 
 NAME=?e foo;?e bar
@@ -117,9 +107,7 @@ EXPECT=<<EOF
 foo
 bar
 EOF
-CMDS=<<EOF
-?e foo;?e bar
-EOF
+CMDS=?e foo;?e bar
 RUN
 
 NAME=;?e bar
@@ -127,9 +115,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 bar
 EOF
-CMDS=<<EOF
-;?e bar
-EOF
+CMDS=;?e bar
 RUN
 
 NAME='>' in cmd: agn "sh->fu"

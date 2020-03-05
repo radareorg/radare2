@@ -1,8 +1,6 @@
 NAME=tcc
 FILE=../bins/elf/ls
-CMDS=<<EOF
-tcc
-EOF
+CMDS=tcc
 EXPECT=<<EOF
 amd64
 ms

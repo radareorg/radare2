@@ -45,7 +45,5 @@ EXPECT=<<EOF
   }
 ]
 EOF
-CMDS=<<EOF
-iij~{}   
-EOF
+CMDS=iij~{}   
 RUN

@@ -82,7 +82,5 @@ EXPECT=<<EOF
 0x00406128 0 msvcrt.dll imp.signal
 0x0040612c 0 msvcrt.dll imp.vfprintf
 EOF
-CMDS=<<EOF
-isq
-EOF
+CMDS=isq
 RUN

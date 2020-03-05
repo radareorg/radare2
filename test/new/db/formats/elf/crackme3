@@ -3,7 +3,5 @@ FILE=../bins/elf/ioli/crackme0x03
 EXPECT=<<EOF
 0x08048498 128 sym.main
 EOF
-CMDS=<<EOF
-aa ; fs symbols ; f~sym.main
-EOF
+CMDS=aa ; fs symbols ; f~sym.main
 RUN

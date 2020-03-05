@@ -4,9 +4,7 @@ ARGS=-A
 EXPECT=<<EOF
 size: 92
 EOF
-CMDS=<<EOF
-afi 0x804867d~size
-EOF
+CMDS=afi 0x804867d~size
 RUN
 
 NAME=ELF: IOLI - crackme7 - with aa
@@ -14,7 +12,5 @@ FILE=../bins/elf/ioli/crackme0x07
 EXPECT=<<EOF
 size: 99
 EOF
-CMDS=<<EOF
-aa;afi 0x804867d~size
-EOF
+CMDS=aa;afi 0x804867d~size
 RUN

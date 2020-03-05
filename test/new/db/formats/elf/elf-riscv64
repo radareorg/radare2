@@ -392,9 +392,7 @@ nth paddr       vaddr      bind   type   size lib name
 381  0x00008080 0x00017080 GLOBAL FUNC   272      __multadd
 382  0x0000805c 0x0001705c GLOBAL FUNC   36       _Bfree
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=ELF: riscv64: file format
@@ -437,9 +435,7 @@ stripped false
 subsys   linux
 va       true
 EOF
-CMDS=<<EOF
-if
-EOF
+CMDS=if
 RUN
 
 NAME=ELF: riscv64: main analysis
@@ -484,9 +480,7 @@ EXPECT=<<EOF
 |           0x000101d4      ef00002a       jal ra, sym.puts
 \           0x000101d8      6ff09ff9       j 0x10170
 EOF
-CMDS=<<EOF
-e asm.calls=false;s sym.main;af;pdf
-EOF
+CMDS=e asm.calls=false;s sym.main;af;pdf
 RUN
 
 NAME=ELF: riscv64: full analysis
@@ -535,7 +529,5 @@ EXPECT=<<EOF
 |           0x000101d4      ef00002a       jal ra, sym.puts
 \           0x000101d8      6ff09ff9       j 0x10170
 EOF
-CMDS=<<EOF
-e asm.calls=false;s sym.main;pdf
-EOF
+CMDS=e asm.calls=false;s sym.main;pdf
 RUN

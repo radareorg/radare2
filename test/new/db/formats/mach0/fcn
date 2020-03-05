@@ -4,9 +4,7 @@ ARGS=-A
 EXPECT=<<EOF
 0x00000760    7 379          sym._r_bp_new
 EOF
-CMDS=<<EOF
-afl~00760
-EOF
+CMDS=afl~00760
 RUN
 
 NAME=anal single fcn

@@ -3,7 +3,5 @@ FILE=../bins/elf/analysis/dynimports
 EXPECT=<<EOF
 8
 EOF
-CMDS=<<EOF
-ii~?
-EOF
+CMDS=ii~?
 RUN

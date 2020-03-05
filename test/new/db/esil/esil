@@ -45,9 +45,7 @@ FILE=-
 EXPECT=<<EOF
 0x2
 EOF
-CMDS=<<EOF
-ae 1,3,-
-EOF
+CMDS=ae 1,3,-
 RUN
 
 NAME=subeq
@@ -92,9 +90,7 @@ FILE=-
 EXPECT=<<EOF
 0xfffffffffffffffe
 EOF
-CMDS=<<EOF
-ae 3,1,-
-EOF
+CMDS=ae 3,1,-
 RUN
 
 NAME=neg
@@ -114,9 +110,7 @@ FILE=-
 EXPECT=<<EOF
 0x80
 EOF
-CMDS=<<EOF
-ae 3,?{,0x80,}
-EOF
+CMDS=ae 3,?{,0x80,}
 RUN
 
 NAME=memory write (MIPS little endian)

@@ -40,9 +40,7 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 loc.imp.__gmon_start
 EOF
-CMDS=<<EOF
-aa;afl~0x080482e0[3]
-EOF
+CMDS=aa;afl~0x080482e0[3]
 RUN
 
 NAME=x86 - init_array detection2
@@ -50,9 +48,7 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 18  0x0000059c    0x4 0x0804959c    0x4 -rw- .init_array
 EOF
-CMDS=<<EOF
-iS~init_array
-EOF
+CMDS=iS~init_array
 RUN
 
 NAME=metadata
@@ -95,9 +91,7 @@ EXPECT=<<EOF
 0x080496a8 data Cd 4
 0x080484b0 ascii[13] "Hello world!"
 EOF
-CMDS=<<EOF
-C
-EOF
+CMDS=C
 RUN
 
 NAME=base64 metadata commands
@@ -140,9 +134,7 @@ Cd 4 @ 0x080496a4
 Cd 4 @ 0x080496a8
 Cs 13 @ 0x080484b0 # Hello world!
 EOF
-CMDS=<<EOF
-C*
-EOF
+CMDS=C*
 RUN
 
 NAME=flags spaces
@@ -157,9 +149,7 @@ EXPECT=<<EOF
    34 * symbols
    26 * symbols.sections
 EOF
-CMDS=<<EOF
-fs
-EOF
+CMDS=fs
 RUN
 
 NAME=flags spaces after analysis
@@ -195,9 +185,7 @@ EXPECT=<<EOF
    34 * symbols
    26 * symbols.sections
 EOF
-CMDS=<<EOF
-s entry0+4; af;fs *;fs
-EOF
+CMDS=s entry0+4; af;fs *;fs
 RUN
 
 NAME=pb 4
@@ -205,9 +193,7 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 0011
 EOF
-CMDS=<<EOF
-pb 4
-EOF
+CMDS=pb 4
 RUN
 
 NAME=pxW 10
@@ -216,9 +202,7 @@ EXPECT=<<EOF
 0x08048300 0x895eed31
 0x08048304 0xf0e483e1
 EOF
-CMDS=<<EOF
-pxW 10
-EOF
+CMDS=pxW 10
 RUN
 
 NAME=p-
@@ -241,9 +225,7 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 %31%ed%5e%89%e1%83%e4%f0%50%54
 EOF
-CMDS=<<EOF
-pu 10
-EOF
+CMDS=pu 10
 RUN
 
 NAME=pdn 10
@@ -279,9 +261,7 @@ push ecx
 push esi
 push main
 EOF
-CMDS=<<EOF
-pi 12
-EOF
+CMDS=pi 12
 RUN
 
 NAME=pc C
@@ -317,9 +297,7 @@ const uint8_t buffer[_BUFFER_SIZE] = {
   0xff, 0xff, 0xff, 0x66, 0x90, 0x90
 };
 EOF
-CMDS=<<EOF
-pc
-EOF
+CMDS=pc
 RUN
 
 NAME=flags (total)
@@ -327,9 +305,7 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 106
 EOF
-CMDS=<<EOF
-f~?
-EOF
+CMDS=f~?
 RUN
 
 NAME=flags
@@ -442,9 +418,7 @@ EXPECT=<<EOF
 0x080496b4 0 obj.__TMC_END
 0x080496b8 0 loc._end
 EOF
-CMDS=<<EOF
-f
-EOF
+CMDS=f
 RUN
 
 NAME=x86 - pdj 4

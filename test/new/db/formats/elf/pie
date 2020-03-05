@@ -3,9 +3,7 @@ FILE=../bins/elf/analysis/pie
 EXPECT=<<EOF
 vaddr=0x00000450 paddr=0x00000450 haddr=0x00000018 hvaddr=0x00000018 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=ELF: entrypoint with baddr
@@ -38,9 +36,7 @@ FILE=../bins/elf/analysis/pie
 EXPECT=<<EOF
 0x5c5
 EOF
-CMDS=<<EOF
-?v sym.main
-EOF
+CMDS=?v sym.main
 RUN
 
 NAME=ELF: simple.elf - code
@@ -91,9 +87,7 @@ int3
 pop ebp
 ret
 EOF
-CMDS=<<EOF
-e asm.bits=32;pi 5 @ sym.main
-EOF
+CMDS=e asm.bits=32;pi 5 @ sym.main
 RUN
 
 NAME=ELF: Candypop, main detection
@@ -102,9 +96,7 @@ ARGS=-A
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-? main~?0x1235
-EOF
+CMDS=? main~?0x1235
 RUN
 
 NAME=ELF: pd around a reloc with asm.flags.middle
@@ -112,7 +104,5 @@ FILE=../bins/elf/analysis/hello-linux-i386-pie
 EXPECT=<<EOF
 0
 EOF
-CMDS=<<EOF
-e asm.flags.middle=2;pd 3 @0x000004a6 ~?invalid
-EOF
+CMDS=e asm.flags.middle=2;pd 3 @0x000004a6 ~?invalid
 RUN

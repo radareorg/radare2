@@ -3,9 +3,7 @@ FILE=../bins/qnx/test.x
 EXPECT=<<EOF
 bintype  QNX
 EOF
-CMDS=<<EOF
-iI~bintype
-EOF
+CMDS=iI~bintype
 RUN
 
 NAME=entry point of qnx
@@ -13,9 +11,7 @@ FILE=../bins/qnx/test.x
 EXPECT=<<EOF
 vaddr=0x0000021c paddr=0x0000021c haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 
@@ -30,9 +26,7 @@ nth paddr        size vaddr       vsize perm name
 1   0x00000152  0x6c3 0x00000152  0x6c3 ---- LMF_LOAD
 
 EOF
-CMDS=<<EOF
-iS
-EOF
+CMDS=iS
 RUN
 
 NAME=sections 16 bits content
@@ -41,9 +35,7 @@ EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000152  0000 0000 0000 cd00 9090 9090 0000 0000  ................
 EOF
-CMDS=<<EOF
-px 16 @ 0x00000152
-EOF
+CMDS=px 16 @ 0x00000152
 RUN
 
 NAME=get signature info
@@ -51,9 +43,7 @@ FILE=../bins/qnx/test.x
 EXPECT=<<EOF
 2692336605
 EOF
-CMDS=<<EOF
-iC
-EOF
+CMDS=iC
 RUN
 
 NAME=get header info
@@ -75,7 +65,5 @@ heap_nbytes : 0x1000H
 image_base : 0xa000H
 spare3[2] : 0x0H
 EOF
-CMDS=<<EOF
-iH
-EOF
+CMDS=iH
 RUN

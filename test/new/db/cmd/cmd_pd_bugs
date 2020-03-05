@@ -21,9 +21,7 @@ EXPECT=<<EOF
 invalid
 EOF
 ARGS=-a arm -b 16
-CMDS=<<EOF
-wx 80f30988; pi 1
-EOF
+CMDS=wx 80f30988; pi 1
 RUN
 
 NAME=pd arm cortex 1
@@ -32,9 +30,7 @@ EXPECT=<<EOF
 msr psp, r0
 EOF
 ARGS=-a arm -b 16 -e asm.cpu=cortex
-CMDS=<<EOF
-wx 80f30988;pi 1
-EOF
+CMDS=wx 80f30988;pi 1
 RUN
 
 NAME=pd arm cortex 2
@@ -43,9 +39,7 @@ EXPECT=<<EOF
 msr psp, r0
 EOF
 ARGS=-a arm -b 16
-CMDS=<<EOF
-e asm.cpu=cortex;wx 80f30988;pi 1
-EOF
+CMDS=e asm.cpu=cortex;wx 80f30988;pi 1
 RUN
 
 NAME=pd call sym bug

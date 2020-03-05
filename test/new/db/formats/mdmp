@@ -3,9 +3,7 @@ FILE=../bins/mdmp/calc.dmp
 EXPECT=<<EOF
 format   mdmp
 EOF
-CMDS=<<EOF
-i~format
-EOF
+CMDS=i~format
 RUN
 
 NAME=: info
@@ -41,9 +39,7 @@ streams  13
 stripped false
 va       true
 EOF
-CMDS=<<EOF
-iI
-EOF
+CMDS=iI
 RUN
 
 NAME=: sections
@@ -51,9 +47,7 @@ FILE=../bins/mdmp/calc.dmp
 EXPECT=<<EOF
 9   0x00000000   0xe3000 0xfffe0000      0xe3000 ---- C:_Windows_System32_calc.exe
 EOF
-CMDS=<<EOF
-iS~calc
-EOF
+CMDS=iS~calc
 RUN
 
 NAME=: entrypoints nomem .dmp
@@ -63,9 +57,7 @@ EXPECT=<<EOF
 
 0 entrypoints
 EOF
-CMDS=<<EOF
-ie
-EOF
+CMDS=ie
 RUN
 
 NAME=: resolve vaddr to paddr
@@ -77,9 +69,7 @@ EXPECT=<<EOF
 0x00400020  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x00400030  0000 0000 0000 0000 0000 0000 8000 0000  ................
 EOF
-CMDS=<<EOF
-px 64 @ 0x00400000
-EOF
+CMDS=px 64 @ 0x00400000
 RUN
 
 NAME=: test format definitions
@@ -108,9 +98,7 @@ pf.mdmp_token_info ddq TokenSize TokenId TokenHandle
 pf.mdmp_token_info_list dddd TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize
 pf.mdmp_vs_fixedfileinfo ddddddddddddd dwSignature dwStrucVersion dwFileVersionMs dwFileVersionLs dwProductVersionMs dwProductVersionLs dwFileFlagsMask dwFileFlags dwFileOs dwFileType dwFileSubtype dwFileDateMs dwFileDateLs
 EOF
-CMDS=<<EOF
-pf.
-EOF
+CMDS=pf.
 RUN
 
 NAME=: 32bit - libraries count
@@ -119,9 +107,7 @@ EXPECT=<<EOF
 [Linked libraries]
 57 libraries
 EOF
-CMDS=<<EOF
-il~libraries
-EOF
+CMDS=il~libraries
 RUN
 
 NAME=: 32bit - libraries resolving
@@ -129,9 +115,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 [0x00400000] - kernel32.dll
 EOF
-CMDS=<<EOF
-il~kernel32.dll
-EOF
+CMDS=il~kernel32.dll
 RUN
 
 NAME=: 32bit - entrypoints count
@@ -151,9 +135,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 vaddr=0x004014e0 paddr=0x000990b2 haddr=0x00097c7a type=program
 EOF
-CMDS=<<EOF
-ie~0x004014e0
-EOF
+CMDS=ie~0x004014e0
 RUN
 
 NAME=: 32bit - symbols count
@@ -161,9 +143,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 7469
 EOF
-CMDS=<<EOF
-is~?
-EOF
+CMDS=is~?
 RUN
 
 NAME=: 32bit - symbols resolving 1
@@ -171,9 +151,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 1     0x0009dcda 0x00406108 NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
 EOF
-CMDS=<<EOF
-is~DeleteCriticalSection:0
-EOF
+CMDS=is~DeleteCriticalSection:0
 RUN
 
 NAME=: 32bit - symbols resolving 2
@@ -181,9 +159,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 358   0x001c2176 0x76fb05a4 NONE   FUNC 0    ntdll.dll                                     imp.RtlDeleteCriticalSection
 EOF
-CMDS=<<EOF
-is~RtlDeleteCriticalSection:0
-EOF
+CMDS=is~RtlDeleteCriticalSection:0
 RUN
 
 NAME=: 32bit - imports count
@@ -191,9 +167,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 2031
 EOF
-CMDS=<<EOF
-ii~?
-EOF
+CMDS=ii~?
 RUN
 
 NAME=: 32bit - imports resolving
@@ -201,9 +175,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 17  0x00406148 NONE FUNC KERNEL32.dll                                  TerminateProcess
 EOF
-CMDS=<<EOF
-ii~TerminateProcess~KERNEL32.dll
-EOF
+CMDS=ii~TerminateProcess~KERNEL32.dll
 RUN
 
 NAME=: 32bit - exports count
@@ -211,9 +183,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 5441
 EOF
-CMDS=<<EOF
-iE~?
-EOF
+CMDS=iE~?
 RUN
 
 NAME=: 32bit - exports resolving
@@ -221,9 +191,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 1992  0x0041f1f2 0x77802620 GLOBAL FUNC 0    ntdll.dll      Ordinal_1
 EOF
-CMDS=<<EOF
-iE~Ordinal_1
-EOF
+CMDS=iE~Ordinal_1
 RUN
 
 NAME=: 32bit - relocs count
@@ -231,9 +199,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 2028 relocations
 EOF
-CMDS=<<EOF
-ir~relocations
-EOF
+CMDS=ir~relocations
 RUN
 
 NAME=: 32bit - relocs resolving
@@ -241,9 +207,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 0x00406160 0x0009dd32 SET_32 msvcrt.dll___dllonexit
 EOF
-CMDS=<<EOF
-ir~__dllonexit
-EOF
+CMDS=ir~__dllonexit
 RUN
 
 NAME=: 32bit - relocs following
@@ -263,9 +227,7 @@ EXPECT=<<EOF
             0x773e744d      5d             pop rbp
             0x773e744e      c3             ret
 EOF
-CMDS=<<EOF
-pd 12 @[0x004061cc]
-EOF
+CMDS=pd 12 @[0x004061cc]
 RUN
 
 NAME=: 32bit - strings count
@@ -273,9 +235,7 @@ FILE=../bins/mdmp/hello.dmp
 EXPECT=<<EOF
 10281
 EOF
-CMDS=<<EOF
-iz~?
-EOF
+CMDS=iz~?
 RUN
 
 NAME=: 64bit - libraries count
@@ -284,9 +244,7 @@ EXPECT=<<EOF
 [Linked libraries]
 49 libraries
 EOF
-CMDS=<<EOF
-il~libraries
-EOF
+CMDS=il~libraries
 RUN
 
 NAME=: 64bit - libraries resolving
@@ -294,9 +252,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 [0x00400000] - kernel32.dll
 EOF
-CMDS=<<EOF
-il~kernel32.dll
-EOF
+CMDS=il~kernel32.dll
 RUN
 
 NAME=: 64bit - entrypoints count
@@ -304,9 +260,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 5 entrypoints
 EOF
-CMDS=<<EOF
-ie~entrypoints
-EOF
+CMDS=ie~entrypoints
 RUN
 
 NAME=: 64bit - entrypoints resolving
@@ -314,9 +268,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 vaddr=0x00401500 paddr=0x0009418f haddr=0x00092d37 type=program
 EOF
-CMDS=<<EOF
-ie~0x00401500
-EOF
+CMDS=ie~0x00401500
 RUN
 
 NAME=: 64bit - symbols count
@@ -324,9 +276,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 6827
 EOF
-CMDS=<<EOF
-is~?
-EOF
+CMDS=is~?
 RUN
 
 NAME=: 64bit - symbols resolving 1
@@ -334,9 +284,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 1     0x0009ae8b 0x004081fc    NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
 EOF
-CMDS=<<EOF
-is~imp.DeleteCriticalSection~KERNEL32.dll
-EOF
+CMDS=is~imp.DeleteCriticalSection~KERNEL32.dll
 RUN
 
 NAME=: 64bit - symbols resolving 2
@@ -344,9 +292,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 8     0x001eb87f 0x77728bf0    GLOBAL FUNC 0    ntdll.dll                                     A_SHAFinal
 EOF
-CMDS=<<EOF
-is~A_SHAFinal
-EOF
+CMDS=is~A_SHAFinal
 RUN
 
 NAME=: 64bit - imports count
@@ -354,9 +300,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 1512
 EOF
-CMDS=<<EOF
-ii~?
-EOF
+CMDS=ii~?
 RUN
 
 NAME=: 64bit - imports resolving
@@ -364,9 +308,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 4   0x00408214    NONE FUNC KERNEL32.dll                                  GetCurrentProcessId
 EOF
-CMDS=<<EOF
-ii~KERNEL32.dll~GetCurrentProcessId
-EOF
+CMDS=ii~KERNEL32.dll~GetCurrentProcessId
 RUN
 
 NAME=: 64bit - exports count
@@ -374,9 +316,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 5318
 EOF
-CMDS=<<EOF
-iE~?
-EOF
+CMDS=iE~?
 RUN
 
 NAME=: 64bit - exports resolving
@@ -384,9 +324,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 38    0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll      CsrVerifyRegion
 EOF
-CMDS=<<EOF
-iE~CsrVerifyRegion
-EOF
+CMDS=iE~CsrVerifyRegion
 RUN
 
 NAME=: 64bit - relocs count
@@ -394,9 +332,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 1509 relocations
 EOF
-CMDS=<<EOF
-ir~relocations
-EOF
+CMDS=ir~relocations
 RUN
 
 NAME=: 64bit - relocs resolving
@@ -404,9 +340,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 0x004081fc    0x0009ae8b SET_64 KERNEL32.dll_DeleteCriticalSection
 EOF
-CMDS=<<EOF
-ir~KERNEL32.dll_DeleteCriticalSection
-EOF
+CMDS=ir~KERNEL32.dll_DeleteCriticalSection
 RUN
 
 NAME=: 64bit - relocs following
@@ -423,9 +357,7 @@ EXPECT=<<EOF
             0x7fefdb0a1c2      4883c438       add rsp, 0x38
             0x7fefdb0a1c6      c3             ret
 EOF
-CMDS=<<EOF
-pd 9 @[0x004083ac]
-EOF
+CMDS=pd 9 @[0x004083ac]
 RUN
 
 NAME=: 64bit - strings count
@@ -433,9 +365,7 @@ FILE=../bins/mdmp/hello64.dmp
 EXPECT=<<EOF
 22898
 EOF
-CMDS=<<EOF
-iz~?
-EOF
+CMDS=iz~?
 RUN
 
 NAME=: reload file

@@ -3,9 +3,7 @@ FILE=../bins/pe/appendeddata.exe
 ARGS=-A
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami appendeddata.exe - entrypoint
@@ -13,9 +11,7 @@ FILE=../bins/pe/appendeddata.exe
 EXPECT=<<EOF
 0x401000
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=PE: corkami appendeddata.exe - pi 1
@@ -23,7 +19,5 @@ FILE=../bins/pe/appendeddata.exe
 EXPECT=<<EOF
 push 0x401018
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN

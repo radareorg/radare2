@@ -2,9 +2,7 @@ NAME=PE: corkami d_nonnull-ld.exe - open
 FILE=../bins/pe/d_nonnull-ld.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami d_nonnull-ld - entrypoint
@@ -12,9 +10,7 @@ FILE=../bins/pe/d_nonnull-ld.exe
 EXPECT=<<EOF
 0x401000
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=PE: corkami d_nonnull-ld - pi 1

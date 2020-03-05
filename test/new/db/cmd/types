@@ -115,9 +115,7 @@ RUN
 
 NAME=t
 FILE=-
-CMDS=<<EOF
-t~char,double,float,int,long,short,size,uid,void # basic universal types
-EOF
+CMDS=t~char,double,float,int,long,short,size,uid,void # basic universal types
 EXPECT=<<EOF
 char
 char *
@@ -473,9 +471,7 @@ RUN
 
 NAME=tk - crash
 FILE=-
-CMDS=<<EOF
-tk -!!!! d'B%CCCC!9!!!!_
-EOF
+CMDS=tk -!!!! d'B%CCCC!9!!!!_
 EXPECT=<<EOF
 0x0
 EOF

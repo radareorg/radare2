@@ -181,9 +181,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 Usage: pf [0|cnt][format-string]
 EOF
-CMDS=<<EOF
-pf 16 16
-EOF
+CMDS=pf 16 16
 RUN
 
 NAME=pf refuse space between size and format-string
@@ -191,9 +189,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 Usage: pf [0|cnt][format-string]
 EOF
-CMDS=<<EOF
-pf 16 16
-EOF
+CMDS=pf 16 16
 RUN
 
 NAME=pf field name
@@ -206,9 +202,7 @@ EXPECT=<<EOF
    x2 : 0x00000004 = 0x00000000
 }
 EOF
-CMDS=<<EOF
-pf 2x x2
-EOF
+CMDS=pf 2x x2
 RUN
 
 NAME=pf rop64

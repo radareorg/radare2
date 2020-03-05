@@ -1,9 +1,7 @@
 NAME=ELF: mips.elf
 FILE=../bins/elf/analysis/mips.elf
 ARGS=-A
-CMDS=<<EOF
-?v entry0
-EOF
+CMDS=?v entry0
 EXPECT=<<EOF
 0x400ab0
 EOF

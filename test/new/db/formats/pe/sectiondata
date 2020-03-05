@@ -2,9 +2,7 @@ NAME=PE: corkami cm01.exe - open
 FILE=../bins/pe/cm01.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami cm01.exe - sections
@@ -23,9 +21,7 @@ nth paddr         size vaddr        vsize perm name
 5   0x00001a00  0x1400 0x00406000  0x2000 sr-- .rsrc
 
 EOF
-CMDS=<<EOF
-!rabin2 -S ../bins/pe/cm01.exe
-EOF
+CMDS=!rabin2 -S ../bins/pe/cm01.exe
 RUN
 
 NAME=PE: corkami cm01.exe - section seek 1

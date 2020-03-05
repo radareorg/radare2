@@ -3,9 +3,7 @@ FILE=../bins/nro/appstore.nro
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-iI~?switch
-EOF
+CMDS=iI~?switch
 RUN
 
 
@@ -24,9 +22,7 @@ nth paddr           size vaddr          vsize perm name
 4   0x0020e000    0xf000 0x0020e000    0xf000 -rw- data
 
 EOF
-CMDS=<<EOF
-iS
-EOF
+CMDS=iS
 RUN
 
 NAME=nro entry
@@ -38,9 +34,7 @@ vaddr=0x00000080 paddr=0x00000080 haddr=-1 type=program
 
 1 entrypoints
 EOF
-CMDS=<<EOF
-ie
-EOF
+CMDS=ie
 RUN
 
 NAME=nro data
@@ -49,7 +43,5 @@ FILE=../bins/nro/appstore.nro
 EXPECT=<<EOF
 fb031eaa01000094dc2302d1f90300aafa0301aae0100090c11100d00000199121e02191210000cb211c009121f07d92
 EOF
-CMDS=<<EOF
-p8 0x30 @ 0x80
-EOF
+CMDS=p8 0x30 @ 0x80
 RUN

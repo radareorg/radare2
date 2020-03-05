@@ -41,18 +41,14 @@ NAME=no flags
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-f
-EOF
+CMDS=f
 RUN
 
 NAME=no flags*
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-f*
-EOF
+CMDS=f*
 RUN
 
 NAME=1: fs *
@@ -559,9 +555,7 @@ EXPECT=<<EOF
 0x0049ad40 168 obj._IO_helper_jumps
 0x0049b680 168 obj._IO_helper_jumps_1
 EOF
-CMDS=<<EOF
-f~obj._IO_helper_jumps
-EOF
+CMDS=f~obj._IO_helper_jumps
 RUN
 
 NAME=flag renaming and reusing the old name for something new

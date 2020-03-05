@@ -3,7 +3,5 @@ FILE=-
 BROKEN=1
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-p8 3`~`
-EOF
+CMDS=p8 3`~`
 RUN

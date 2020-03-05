@@ -7,7 +7,5 @@ EXPECT=<<EOF
 0x00008308             04208fe2  add r2, pc, 4
 0x0000830c             04308fe2  add r3, pc, 4
 EOF
-CMDS=<<EOF
-pid 4@entry0
-EOF
+CMDS=pid 4@entry0
 RUN

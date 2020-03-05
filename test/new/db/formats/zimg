@@ -3,7 +3,5 @@ FILE=../bins/zimg/arm32
 EXPECT=<<EOF
 arch     arm
 EOF
-CMDS=<<EOF
-iI~arch
-EOF
+CMDS=iI~arch
 RUN

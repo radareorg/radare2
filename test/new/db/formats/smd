@@ -33,9 +33,7 @@ static   true
 stripped false
 va       true
 EOF
-CMDS=<<EOF
-i~!fd
-EOF
+CMDS=i~!fd
 RUN
 
 NAME=sega megadrive rom symbols
@@ -110,9 +108,7 @@ EXPECT=<<EOF
 0x00001294 0 Reserv3E
 0x00001294 0 Reserv3F
 EOF
-CMDS=<<EOF
-isq
-EOF
+CMDS=isq
 RUN
 
 NAME=sega megadrive rom entrypoint
@@ -120,9 +116,7 @@ FILE=../bins/smd/LiquidSpaceDodgerV3.bin
 EXPECT=<<EOF
 vaddr=0x00000200 paddr=0x00000200 haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~vadd
-EOF
+CMDS=ie~vadd
 RUN
 
 NAME=sega megadrive rom maps and printing
@@ -130,9 +124,7 @@ FILE=../bins/smd/LiquidSpaceDodgerV3.bin
 EXPECT=<<EOF
 0x00010100  0x00537413                                   .St.
 EOF
-CMDS=<<EOF
-pxw 4 @ 0x10100
-EOF
+CMDS=pxw 4 @ 0x10100
 RUN
 
 NAME=smd strings

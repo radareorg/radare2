@@ -1,8 +1,6 @@
 NAME=yara: scanS
 FILE=../bins/elf/vim
-CMDS=<<EOF
-yara scanS
-EOF
+CMDS=yara scanS
 EXPECT=<<EOF
 BLOWFISH_Constants
 0x002960c0: $c1 : a6 0b 31 d1 

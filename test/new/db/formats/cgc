@@ -3,9 +3,7 @@ FILE=../bins/cgc/CADET_00001
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-i~?format   cgc
-EOF
+CMDS=i~?format   cgc
 RUN
 
 NAME=CGC: Create

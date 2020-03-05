@@ -2,9 +2,7 @@ NAME=WASM: Wasm - open
 FILE=../bins/wasm/basic.wasm
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=WASM: Wasm - detection
@@ -12,9 +10,7 @@ FILE=../bins/wasm/basic.wasm
 EXPECT=<<EOF
 os       WebAssembly
 EOF
-CMDS=<<EOF
-iI~os
-EOF
+CMDS=iI~os
 RUN
 
 NAME=WASM: Wasm - entrypoint
@@ -22,9 +18,7 @@ FILE=../bins/wasm/start.wasm
 EXPECT=<<EOF
 vaddr=0x0000002d paddr=0x0000002d haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~vaddr
-EOF
+CMDS=ie~vaddr
 RUN
 
 NAME=WASM: Wasm - sections
@@ -40,7 +34,5 @@ nth paddr        size vaddr       vsize perm name
 3   0x0000022d  0x1f6 0x0000022d  0x1f6 ---- code
 
 EOF
-CMDS=<<EOF
-iS
-EOF
+CMDS=iS
 RUN

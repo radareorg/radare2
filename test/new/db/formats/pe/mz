@@ -2,9 +2,7 @@ NAME=PE: corkami mz.exe - open
 FILE=../bins/pe/mz.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami mz.exe - dis
@@ -16,9 +14,7 @@ EXPECT=<<EOF
 0x0040100b               83c404  add esp, 4
 0x0040100e                   90  nop
 EOF
-CMDS=<<EOF
-pid 4
-EOF
+CMDS=pid 4
 RUN
 
 NAME=PE: corkami mz.exe - dis asm.flags.real

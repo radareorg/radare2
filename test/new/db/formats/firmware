@@ -2,9 +2,7 @@ NAME=loading a BIOS file [64k]
 FILE=../bins/firmware/bios_64k.bin
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=entrypoint decoding [64k]
@@ -12,9 +10,7 @@ FILE=../bins/firmware/bios_64k.bin
 EXPECT=<<EOF
 vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=corrupted section data
@@ -22,9 +18,7 @@ FILE=../bins/firmware/bios_64k.bin
 EXPECT=<<EOF
 ljmp 0xf000:0xffaa
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN
 
 NAME=ljmp follow
@@ -53,9 +47,7 @@ NAME=loading a BIOS file [128k]
 FILE=../bins/firmware/bios_128k.bin
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=entrypoint decoding [128k]
@@ -63,9 +55,7 @@ FILE=../bins/firmware/bios_128k.bin
 EXPECT=<<EOF
 vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=corrupted section data
@@ -73,18 +63,14 @@ FILE=../bins/firmware/bios_128k.bin
 EXPECT=<<EOF
 ljmp 0xf000:0xffaa
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN
 
 NAME=loading a BIOS file [256k]
 FILE=../bins/firmware/bios_256k.bin
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=entrypoint decoding [256k]
@@ -92,9 +78,7 @@ FILE=../bins/firmware/bios_256k.bin
 EXPECT=<<EOF
 vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=corrupted section data
@@ -102,18 +86,14 @@ FILE=../bins/firmware/bios_256k.bin
 EXPECT=<<EOF
 ljmp 0xf000:0xffaa
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN
 
 NAME=loading a BIOS file [512k]
 FILE=../bins/firmware/bios_512k.bin
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=entrypoint decoding [512k]
@@ -121,9 +101,7 @@ FILE=../bins/firmware/bios_512k.bin
 EXPECT=<<EOF
 vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=corrupted section data
@@ -131,18 +109,14 @@ FILE=../bins/firmware/bios_512k.bin
 EXPECT=<<EOF
 ljmp 0xf000:0xffaa
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN
 
 NAME=loading a BIOS file [1M]
 FILE=../bins/firmware/bios_1M.bin
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=entrypoint decoding [1M]
@@ -150,9 +124,7 @@ FILE=../bins/firmware/bios_1M.bin
 EXPECT=<<EOF
 vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=corrupted section data
@@ -160,18 +132,14 @@ FILE=../bins/firmware/bios_1M.bin
 EXPECT=<<EOF
 ljmp 0xf000:0xffaa
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN
 
 NAME=loading a BIOS file [2M]
 FILE=../bins/firmware/bios_2M.bin
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=entrypoint decoding [2M]
@@ -179,9 +147,7 @@ FILE=../bins/firmware/bios_2M.bin
 EXPECT=<<EOF
 vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=corrupted section data
@@ -189,18 +155,14 @@ FILE=../bins/firmware/bios_2M.bin
 EXPECT=<<EOF
 ljmp 0xf000:0xffaa
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN
 
 NAME=loading a BIOS file [4M]
 FILE=../bins/firmware/bios_4M.bin
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=entrypoint decoding [4M]
@@ -208,9 +170,7 @@ FILE=../bins/firmware/bios_4M.bin
 EXPECT=<<EOF
 vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=corrupted section data
@@ -218,18 +178,14 @@ FILE=../bins/firmware/bios_4M.bin
 EXPECT=<<EOF
 ljmp 0xf000:0xffaa
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN
 
 NAME=loading a BIOS file [8M]
 FILE=../bins/firmware/bios_8M.bin
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=entrypoint decoding [8M]
@@ -237,9 +193,7 @@ FILE=../bins/firmware/bios_8M.bin
 EXPECT=<<EOF
 vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=corrupted section data
@@ -247,7 +201,5 @@ FILE=../bins/firmware/bios_8M.bin
 EXPECT=<<EOF
 ljmp 0xf000:0xffaa
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN

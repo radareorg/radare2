@@ -1,8 +1,6 @@
 NAME=cmd_c
 FILE=../bins/elf/ls
-CMDS=<<EOF
-c 1234567890
-EOF
+CMDS=c 1234567890
 EXPECT=<<EOF
 0x00005ae0 (byte=01)   f3 ' '  ->  31 '1'
 0x00005ae1 (byte=02)   0f ' '  ->  32 '2'
@@ -19,9 +17,7 @@ RUN
 
 NAME=cmd_c*
 FILE=../bins/elf/ls
-CMDS=<<EOF
-c* 1234567890
-EOF
+CMDS=c* 1234567890
 EXPECT=<<EOF
 wx 31 @ 0x00005ae0
 wx 32 @ 0x00005ae1
@@ -39,9 +35,7 @@ RUN
 
 NAME=cmd_c1
 FILE=../bins/elf/ls
-CMDS=<<EOF
-c1 0x00005ae1
-EOF
+CMDS=c1 0x00005ae1
 EXPECT=<<EOF
 - offset -  7 6 5 4 3 2 1 0
 0x00005ae0  1 1 1 1 0 0 1 1 
@@ -51,9 +45,7 @@ RUN
 
 NAME=cmd_c2
 FILE=../bins/elf/ls
-CMDS=<<EOF
-c2 0xf3f3
-EOF
+CMDS=c2 0xf3f3
 EXPECT=<<EOF
 0x00005ae1 (byte=02)   0f ' '  ->  f3 ' '
 EOF
@@ -61,9 +53,7 @@ RUN
 
 NAME=cmd_c4
 FILE=../bins/elf/ls
-CMDS=<<EOF
-c4 0xfa1e0ff2
-EOF
+CMDS=c4 0xfa1e0ff2
 EXPECT=<<EOF
 0x00005ae0 (byte=01)   f3 ' '  ->  f2 ' '
 EOF
@@ -71,9 +61,7 @@ RUN
 
 NAME=cmd_c8
 FILE=../bins/elf/ls
-CMDS=<<EOF
-c8 0x8989898989898989
-EOF
+CMDS=c8 0x8989898989898989
 EXPECT=<<EOF
 0x00005ae0 (byte=01)   f3 ' '  ->  89 ' '
 0x00005ae1 (byte=02)   0f ' '  ->  89 ' '

@@ -3,9 +3,7 @@ FILE=malloc://512
 EXPECT=<<EOF
 512
 EOF
-CMDS=<<EOF
-r
-EOF
+CMDS=r
 RUN
 
 NAME=wx 90 r pd 1

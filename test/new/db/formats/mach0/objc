@@ -6,9 +6,7 @@ EXPECT=<<EOF
 0x100000df0 method 1      name
 0x100000e20 method 2      setName:
 EOF
-CMDS=<<EOF
-ic
-EOF
+CMDS=ic
 RUN
 
 NAME=objc generics-objc
@@ -17,9 +15,7 @@ EXPECT=<<EOF
 0x100001120 [0x100000e70 - 0x100000e70]      0 class 0 MyCustomClass :: NSObject
 0x100000e70 method 0      doSomethingWithGeneric:
 EOF
-CMDS=<<EOF
-ic
-EOF
+CMDS=ic
 RUN
 
 NAME=objc method flags (ic ViewController)
@@ -31,9 +27,7 @@ class ViewController
 0x1000067bc method ViewController c    thisIsAClassMethod
 0x100006820 method ViewController c    andAnotherOne
 EOF
-CMDS=<<EOF
-ic ViewController
-EOF
+CMDS=ic ViewController
 RUN
 
 NAME=objc method flags (icj)
@@ -41,9 +35,7 @@ FILE=../bins/mach0/TestMethods
 EXPECT=<<EOF
 class
 EOF
-CMDS=<<EOF
-icj~{[0].methods[2].flags[0]}
-EOF
+CMDS=icj~{[0].methods[2].flags[0]}
 RUN
 
 NAME=objc method flags (ic*)
@@ -51,16 +43,12 @@ FILE=../bins/mach0/TestMethods
 EXPECT=<<EOF
 "f method.class.ViewController.thisIsAClassMethod = 0x1000067bc"
 EOF
-CMDS=<<EOF
-ic*~thisIsAClassMethod
-EOF
+CMDS=ic*~thisIsAClassMethod
 RUN
 
 NAME=objc categories (mangled)
 FILE=../bins/mach0/Alamofire-stripped
-CMDS=<<EOF
-ic Alamofire.SessionDelegate(Alamofire)~?
-EOF
+CMDS=ic Alamofire.SessionDelegate(Alamofire)~?
 EXPECT=<<EOF
 4
 EOF
