@@ -75,7 +75,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	int newpid = odesc? odesc->fd: -1;
 
 	if (isdebug) {
-		r_debug_kill (core->dbg, core->dbg->pid, core->dbg->tid, 9); // KILL
+		r_debug_kill (core->dbg, core->dbg->pid, core->dbg->tid, 9); // SIGKILL
+		r_debug_continue (core->dbg);
 		perm = 7;
 	} else {
 		if (!perm) {
