@@ -924,7 +924,7 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 			if (va) {
 				r_table_add_rowf (table, "sssssss",
 					sdb_fmt ("%d%c", i, r_itv_contain (info->vitv, seek) ? '*' : ' '),
-					sdb_fmt ("0x%"PFMT64x, "", info->vitv.addr),
+					sdb_fmt ("0x%"PFMT64x, info->vitv.addr),
 					b,
 					sdb_fmt ("0x%"PFMT64x, r_itv_end (info->vitv)),
 					(info->perm != -1)? r_str_rwx_i (info->perm) : "",

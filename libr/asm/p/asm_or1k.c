@@ -37,7 +37,7 @@ static int insn_to_str(RAsm *a, char **line, insn_t *descr, insn_extra_t *extra,
 	o.i = get_operand_value(insn, type_descr, INSN_OPER_I);
 	o.l = get_operand_value(insn, type_descr, INSN_OPER_L);
 
-	name = (extra) ? extra->name: descr->name;
+	name = extra? extra->name: descr->name;
 
 	if (!name || !type_descr->format) {
 		/* this should not happen, give up */
@@ -149,13 +149,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			line = "invalid";
 		}
 		r_strbuf_set (&op->buf_asm, line);
-	}
-	else {
+	} else {
 		/* otherwise basic descriptor is enough */
 		insn_to_str(a, &line, insn_descr, NULL, insn);
 		r_strbuf_set (&op->buf_asm, line);
 	}
-
 	return op->size;
 }
 
@@ -166,7 +164,6 @@ RAsmPlugin r_asm_plugin_or1k = {
 	.arch = "or1k",
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_BIG,
-	.fini = NULL,
 	.disassemble = &disassemble,
 };
 
