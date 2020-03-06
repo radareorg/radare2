@@ -1168,6 +1168,7 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
 R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *class_name, ut64 offset){
 	if(class_name == NULL) // works only on specified class right now
 		return;
+
 	char *class_name_sanitized = r_str_sanitize_sdb_key (class_name);
 	if (!class_name_sanitized) {
 		return;
@@ -1192,4 +1193,5 @@ R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *cl
 		if(vtableContext.read_addr(anal, vtable->addr+offset, &funcAddress))
 			r_cons_printf("Function address: 0x%08"PFMT64x"\n", funcAddress);
 	}
+	r_vector_free (vtables);
 }
