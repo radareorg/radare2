@@ -855,7 +855,7 @@ const char* PE_(bin_pe_compute_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
 	const char *hashtype = bin->spcinfo->messageDigest.digestAlgorithm.algorithm->string;
 	ut64 algobit = r_hash_name_to_bits (hashtype);
 	if (!(algobit & (R_HASH_MD5 | R_HASH_SHA1))) {
-		eprintf ("Authenticode only supports md5, sha1.\n");
+		eprintf ("Authenticode only supports md5, sha1. This PE uses %s\n", hashtype);
 		return NULL;
 	}
 
