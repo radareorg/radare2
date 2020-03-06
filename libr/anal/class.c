@@ -1164,3 +1164,7 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
 	}
 	r_vector_free (vtables);
 }
+
+R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *class_name, ut64 offset){
+	
+}
