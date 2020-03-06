@@ -4677,7 +4677,9 @@ static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_
 	int value = core->num->value;
 
 	// execute the sub command
-	char *o_out = r_core_cmd_str (core, inn_str);
+	char *o_out = inn_str[0] == '!'?
+		r_core_cmd_str_pipe (core, inn_str + 1):
+		r_core_cmd_str (core, inn_str);
 
 	// restore color and cmd_in_backticks
 	core->num->value = value;
