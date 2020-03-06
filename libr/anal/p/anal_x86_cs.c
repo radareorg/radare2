@@ -703,6 +703,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_MOVLPS:
 	case X86_INS_MOVBE:
 	case X86_INS_MOVSX:
+		{
+			break;
+		}
 	case X86_INS_MOVSXD:
 	case X86_INS_MOVD:
 	case X86_INS_MOVQ:
@@ -925,7 +928,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					src, dst, bitsize - 1);
 			} else {
 				esilprintf (op, 
-					"%s,%s,==,$z,zf,:=,%d,$b,cf,:=,$p,pf,:=,%d,$s,sf,:=,%d,$o,of,:=",
+					"%s,%s,==,$z,zf,:=,%d,$b,cf,:=,$p,pf,:=,%d,$s,sf,:=,%d,$so,of,:=",
 					src, dst, bitsize, bitsize - 1, bitsize - 1);
 			}
 		}
@@ -1384,7 +1387,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		{
 			ut32 bitsize;
 			src = getarg (&gop, 0, 1, "++", SRC_AR, &bitsize);
-			esilprintf (op, "%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=", src, bitsize - 1, bitsize - 1);
+			esilprintf (op, "%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,3,$c,af,:=", src, bitsize - 1, bitsize - 1);
 		}
 		break;
 	case X86_INS_DEC:
@@ -1393,7 +1396,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		{
 			ut32 bitsize;
 			src = getarg (&gop, 0, 1, "--", SRC_AR, &bitsize);
-			esilprintf (op, "%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=", src, bitsize - 1, bitsize - 1);
+			esilprintf (op, "%s,%d,$so,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,3,$b,af,:=", src, bitsize - 1, bitsize - 1);
 		}
 		break;
 	case X86_INS_PSUBB:
@@ -1418,7 +1421,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			// Set OF, SF, ZF, AF, PF, and CF flags.
 			// We use $b rather than $c here as the carry flag really
 			// represents a "borrow"
-			esilprintf (op, "%s,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,%d,$b,cf,:=",
+			esilprintf (op, "%s,%s,%d,$so,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,%d,$b,cf,:=,3,$b,af,:=",
 				src, dst, bitsize - 1, bitsize - 1, bitsize);
 		}
 		break;
@@ -1742,7 +1745,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			ut32 bitsize;
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 1, "+", DST_AR, &bitsize);
-			esilprintf (op, "%s,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,%d,$c,cf,:=,$p,pf,:=",
+			esilprintf (op, "%s,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,%d,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
 				src, dst, bitsize - 1, bitsize - 1, bitsize - 1);
 		}
 		break;
@@ -1757,7 +1760,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			// to the operation of adding dst += src rather than the one
 			// that adds carry (as esil only keeps track of the last
 			// addition to set the flags).
-			esilprintf (op, "cf,%s,+,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,%d,$c,cf,:=,$p,pf,:=",
+			esilprintf (op, "cf,%s,+,%s,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,%d,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
 					src, dst, bitsize - 1, bitsize - 1, bitsize - 1);
 		}
 		break;
