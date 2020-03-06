@@ -1581,7 +1581,7 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 	}
 	ret = (ret_type)
 		? r_str_newf ("%s %s (%s);", ret_type, function->name, args)
-		: r_str_newf ("%s (%s);", function->name, args);;
+		: r_str_newf ("%s (%s);", function->name, args);
 
 	free (sdb_args);
 	free (sdb_ret);

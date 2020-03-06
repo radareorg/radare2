@@ -879,6 +879,7 @@ static bool cmd_anal_aaft(RCore *core) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+		__add_vars_sdb (core, fcn);
 	}
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
