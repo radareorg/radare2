@@ -1164,7 +1164,42 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
 	}
 	r_vector_free (vtables);
 }
+#define VTABLE_READ_ADDR_FUNC(fname, read_fname, sz) \
+	static bool fname(RAnal *anal, ut64 addr, ut64 *buf) { \
+		ut8 tmp[sz]; \
+		if(!anal->iob.read_at(anal->iob.io, addr, tmp, sz)) { \
+			return false; \
+		} \
+		*buf = read_fname(tmp); \
+		return true; \
+	}
+
 
 R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *class_name, ut64 offset){
-	
+	if(class_name == NULL) // works only on specified class right now
+		return;
+	char *class_name_sanitized = r_str_sanitize_sdb_key (class_name);
+	if (!class_name_sanitized) {
+		return;
+	}
+	if (!r_anal_class_exists_raw (anal, class_name_sanitized)) {
+		free (class_name_sanitized);
+		return;
+	}
+	free (class_name_sanitized);
+
+	RVTableContext vtableContext;
+	r_anal_vtable_begin(anal, &vtableContext);
+	ut64 funcAddress;
+
+	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	RAnalVTable *vtable;
+
+	r_vector_foreach (vtables, vtable) {
+		if(vtable->size < offset) // TODO somehow check if func ptr size + offset is <= size
+			continue;
+
+		if(vtableContext.read_addr(anal, vtable->addr+offset, &funcAddress))
+			r_cons_printf("Function address: 0x%08"PFMT64x"\n", funcAddress);
+	}
 }

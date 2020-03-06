@@ -9517,8 +9517,6 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 			end = r_str_trim_head_wp(classNameArg); // in case of extra unwanted stuff at the cmd end
 			*end = '\0';
 		}
-
-//		r_cons_printf("input: arg1: %lu arg2: %s\n", offsetArg, classNameArg);
 		r_anal_class_list_vtable_offset_functions(core->anal, classNameArg, offsetArg);
 
 		free(cstr);
