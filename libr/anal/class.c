@@ -1164,16 +1164,6 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
 	}
 	r_vector_free (vtables);
 }
-#define VTABLE_READ_ADDR_FUNC(fname, read_fname, sz) \
-	static bool fname(RAnal *anal, ut64 addr, ut64 *buf) { \
-		ut8 tmp[sz]; \
-		if(!anal->iob.read_at(anal->iob.io, addr, tmp, sz)) { \
-			return false; \
-		} \
-		*buf = read_fname(tmp); \
-		return true; \
-	}
-
 
 R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *class_name, ut64 offset){
 	if(class_name == NULL) // works only on specified class right now
