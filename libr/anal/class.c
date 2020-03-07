@@ -1189,17 +1189,6 @@ static void list_all_functions_at_vtable_offset(RAnal *anal, const char *class_n
 	r_vector_free (vtables);
 }
 
-static void r_anal_class_list_all_vtable_offset_functions(RAnal *anal, ut64 offset) {
-	SdbList *classes = r_anal_class_get_all (anal, true);
-	SdbListIter *iter;
-	SdbKv *kv;
-	ls_foreach (classes, iter, kv) {
-		char *class_name = sdbkv_key(kv);
-		list_all_functions_at_vtable_offset(anal, class_name, offset);
-	}
-	ls_free (classes);
-}
-
 R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *class_name, ut64 offset){
 	if(!class_name) {
 		SdbList *classes = r_anal_class_get_all (anal, true);
