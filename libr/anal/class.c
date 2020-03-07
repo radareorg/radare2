@@ -1210,7 +1210,6 @@ R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *cl
 			list_all_functions_at_vtable_offset(anal, class_name, offset);
 		}
 		ls_free (classes);
-		return;
 	} else {
 		char *class_name_sanitized = r_str_sanitize_sdb_key (class_name);
 		if (!class_name_sanitized) {

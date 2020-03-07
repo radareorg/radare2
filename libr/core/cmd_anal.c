@@ -9507,17 +9507,17 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 			*end = '\0';
 			end++;
 		}
-		ut64 offsetArg = r_num_get(core->num, cstr);
-		char *classNameArg = NULL;
+		ut64 offset_arg = r_num_get(core->num, cstr);
+		char *class_arg = NULL;
 		if(end){
-			classNameArg = r_str_trim_head_ro(end);
+			class_arg = r_str_trim_head_ro(end);
 		}
 
-		if(classNameArg){
-			end = r_str_trim_head_wp(classNameArg); // in case of extra unwanted stuff at the cmd end
+		if(class_arg){
+			end = r_str_trim_head_wp(class_arg); // in case of extra unwanted stuff at the cmd end
 			*end = '\0';
 		}
-		r_anal_class_list_vtable_offset_functions(core->anal, classNameArg, offsetArg);
+		r_anal_class_list_vtable_offset_functions(core->anal, class_arg, offset_arg);
 
 		free(cstr);
 		break;
