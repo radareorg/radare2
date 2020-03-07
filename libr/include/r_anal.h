@@ -1379,6 +1379,10 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user);
 // same as r_anal_block_recurse, but returns the blocks as a list
 R_API RList *r_anal_block_recurse_list(RAnalBlock *block);
 
+// Add a case to the block's switch_op.
+// If block->switch_op is NULL, it will be created with the given switch_addr.
+R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut64 case_addr);
+
 // ---------------------------------------
 
 /* function.c */
@@ -1698,13 +1702,13 @@ R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 R_API const char *r_anal_cond_tostring(int cc);
 
 /* jmptbl */
-R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr);
+R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr);
 
 // TODO: should be renamed
 R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case);
-R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, int jmptbl_size, ut64 default_case, bool ret0);
+R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, int jmptbl_size, ut64 default_case, bool ret0);
 R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case);
-R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0);
+R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0);
 
 /* reflines.c */
 R_API RList* /*<RAnalRefline>*/ r_anal_reflines_get(RAnal *anal,
@@ -1779,6 +1783,7 @@ R_API void r_meta_item_free(void *_item);
 R_API RAnalMetaItem *r_meta_item_new(int type);
 R_API bool r_meta_deserialize_val(RAnal *a, RAnalMetaItem *it, int type, ut64 from, const char *v);
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, PJ *pj, bool show_full);
+R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz);
 
 /* hints */
 
