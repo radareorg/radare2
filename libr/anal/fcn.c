@@ -1514,7 +1514,54 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 	return result;
 }
 
-R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fs) {
+R_API char *r_anal_function_get_signature(RAnalFunction *function) {
+	RAnal *a = function->anal;
+	char *ret = NULL, *arg_i = NULL, *sdb_arg_i = NULL, *args = strdup (""),
+		*sdb_ret = r_str_newf ("func.%s.ret", function->name),
+		*sdb_args = r_str_newf ("func.%s.args", function->name);
+	// RList *args_list = r_list_newf ((RListFree) free);
+	unsigned int argc = 0, i, j;
+	const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
+	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
+
+	if (argc_str) {
+		argc = atoi (argc_str);
+	}
+
+	for (i = 0; i < argc; i++) {
+		sdb_arg_i = r_str_newf ("func.%s.arg.%d", function->name, i);
+		arg_i = sdb_get (a->sdb_types, sdb_arg_i, 0);
+		// parse commas
+		for (j = 0; j < strlen (arg_i); j++) {
+			if (arg_i[j] == ',') {
+				if (arg_i[j - 1] == '*') {
+					// remove whitespace
+					memmove (arg_i + j, arg_i + j + 1, strlen (arg_i) - j);
+				} else {
+					arg_i[j] = ' ';
+				}
+			}
+		}
+		args = (i + 1 == argc)
+			? r_str_newf ("%s%s", args, arg_i)
+			: r_str_newf ("%s%s, ", args, arg_i);
+
+		free (arg_i);
+		free (sdb_arg_i);
+	}
+	ret = (ret_type)
+		? r_str_newf ("%s %s (%s);", ret_type, function->name, args)
+		: r_str_newf ("%s (%s);", function->name, args);
+
+	free (sdb_args);
+	free (sdb_ret);
+	free (args);
+	return ret;
+}
+
+// TODO: replace instances of this function call with:
+// r_anal_function_get_signature(RAnalFunction *function);
+R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fcn) {
 	return NULL;
 }
 

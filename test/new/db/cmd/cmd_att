@@ -39,7 +39,7 @@ FILE=../bins/mach0/mac-ls
 EXPECT=<<EOF
   ;-- entry0:
   ;-- func.100001058:
-/ 2259: int main (int argc, char **argv, char **envp);
+/ 2259: int main (int argc, char **argv);
 | 0x100001058      pushq %rbp
 | 0x100001059      movq %rsp, %rbp
 | 0x10000105c      pushq %r15
