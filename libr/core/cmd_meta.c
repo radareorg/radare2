@@ -629,7 +629,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '?':
 		switch (input[0]) {
-		case 'f':
+		case 'f': // "Cf?"
 			r_cons_println(
 				"Usage: Cf[-] [sz] [fmt..] [@addr]\n\n"
 				"'sz' indicates the byte size taken up by struct.\n"
@@ -639,7 +639,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				"to show the fields you know about (perhaps using 'skip' fields), and 'sz'\n"
 				"to match the total struct size in mem.\n");
 			break;
-		case 's':
+		case 's': // "Cs?"
 			r_core_cmd_help (core, help_msg_Cs);
 			break;
 		default:
@@ -647,9 +647,9 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case '-':
+	case '-': // "Cf-", "Cd-", ...
 		switch (input[2]) {
-		case '*':
+		case '*': // "Cf-*", "Cd-*", ...
 			core->num->value = r_meta_del (core->anal,
 					input[0], 0, UT64_MAX);
 			break;
@@ -677,13 +677,13 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case '*':
+	case '*': // "Cf*", "Cd*", ...
 		r_meta_list (core->anal, input[0], 1);
 		break;
-	case 'j':
+	case 'j': // "Cfj", "Cdj", ...
 		r_meta_list (core->anal, input[0], 'j');
 		break;
-	case '!':
+	case '!': // "Cf!", "Cd!", ...
 		{
 			char *out, *comment = r_meta_get_string (
 					core->anal, R_META_TYPE_COMMENT, addr);
@@ -698,7 +698,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			free (comment);
 		}
 		break;
-	case '.':
+	case '.': // "Cf.", "Cd.", ...
 		if (input[2] == '.') { // "Cs.."
 			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
 			if (mi) {
@@ -755,7 +755,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		}
 		free (mi.str);
 		break;
-	case ' ':
+	case ' ': // "Cf", "Cd", ...
 	case '\0':
 	case 'g':
 	case 'a':
@@ -824,7 +824,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						eprintf ("Usage: Cf [size] [pf-format-string]\n");
 						break;
 					}
-				} else if (type == 's') { //Cs
+				} else if (type == 's') { // "Cs"
 					char tmp[256] = R_EMPTY;
 					int i, j, name_len = 0;
 					if (input[1] == 'a' || input[1] == '8') {

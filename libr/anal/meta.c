@@ -1030,3 +1030,11 @@ R_API int r_meta_space_count_for(RAnal *a, const RSpace *space) {
 	r_meta_list_cb (a, R_META_TYPE_ANY, 0, meta_count_cb, &mu, UT64_MAX);
 	return mu.count;
 }
+
+R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz) {
+	char val[0x10];
+	if (snprintf (val, sizeof (val), "%"PFMT64u, wordsz) < 1) {
+		return;
+	}
+	r_meta_add (a, R_META_TYPE_DATA, addr, addr + wordsz, val);
+}
