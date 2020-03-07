@@ -1165,26 +1165,26 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
 	r_vector_free (vtables);
 }
 
-static void list_all_functions_at_vtable_offset(RAnal *anal, const char *class_name, ut64 offset){
-
+static void list_all_functions_at_vtable_offset(RAnal *anal, const char *class_name, ut64 offset) {
 	RVTableContext vtableContext;
-	r_anal_vtable_begin(anal, &vtableContext);
+	r_anal_vtable_begin (anal, &vtableContext);
 	ut8 function_ptr_size = vtableContext.word_size; 
 
 	ut64 func_address;
 	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
 	RAnalVTable *vtable;
 
-	if(!vtables) // no vtables
+	if(!vtables) {
 		return;
+	}
 
 	r_vector_foreach (vtables, vtable) {
-		if(vtable->size < offset + function_ptr_size) {
+		if (vtable->size < offset + function_ptr_size) {
 			continue;
 		}
 
 		if(vtableContext.read_addr(anal, vtable->addr+offset, &func_address))
-			r_cons_printf("Function address: 0x%08"PFMT64x", in %s vtable %4s \n", func_address, class_name, vtable->id);
+			r_cons_printf("Function address: 0x%08"PFMT64x", in %s vtable %4s\n", func_address, class_name, vtable->id);
 	}
 	r_vector_free (vtables);
 }
@@ -1195,8 +1195,8 @@ R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *cl
 		SdbListIter *iter;
 		SdbKv *kv;
 		ls_foreach (classes, iter, kv) {
-			char *class_name = sdbkv_key(kv);
-			list_all_functions_at_vtable_offset(anal, class_name, offset);
+			const char *name = sdbkv_key (kv);
+			list_all_functions_at_vtable_offset (anal, name, offset);
 		}
 		ls_free (classes);
 	} else {
@@ -1210,6 +1210,6 @@ R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *cl
 		}
 		free (class_name_sanitized);
 
-		list_all_functions_at_vtable_offset(anal, class_name, offset);
+		list_all_functions_at_vtable_offset (anal, class_name, offset);
 	}
 }

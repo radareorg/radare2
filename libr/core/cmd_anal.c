@@ -9493,33 +9493,33 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 	char c = input[0];
 	switch (c) {
 	case 'f': {// "acvf" [offset] ([class_name])
-		const char *str = r_str_trim_head_ro(input + 1);
+		const char *str = r_str_trim_head_ro (input + 1);
 		if (!*str) {
 			eprintf ("No offset given\n");
 			return;
 		}
-		char *cstr = strdup(str);
+		char *cstr = strdup (str);
 		if (!cstr) {
 			break;
 		}
-		char *end = strchr(cstr, ' ');
+		char *end = strchr (cstr, ' ');
 		if (end) {
 			*end = '\0';
 			end++;
 		}
-		ut64 offset_arg = r_num_get(core->num, cstr);
+		ut64 offset_arg = r_num_get (core->num, cstr);
 		char *class_arg = NULL;
-		if(end){
-			class_arg = r_str_trim_head_ro(end);
+		if(end) {
+			class_arg = r_str_trim_head_ro (end);
 		}
 
-		if(class_arg){
-			end = r_str_trim_head_wp(class_arg); // in case of extra unwanted stuff at the cmd end
+		if(class_arg) {
+			end = r_str_trim_head_wp (class_arg); // in case of extra unwanted stuff at the cmd end
 			*end = '\0';
 		}
-		r_anal_class_list_vtable_offset_functions(core->anal, class_arg, offset_arg);
+		r_anal_class_list_vtable_offset_functions (core->anal, class_arg, offset_arg);
 
-		free(cstr);
+		free (cstr);
 		break;
 	}
 	case ' ': // "acv"
