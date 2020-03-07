@@ -9509,11 +9509,11 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		}
 		ut64 offset_arg = r_num_get (core->num, cstr);
 		char *class_arg = NULL;
-		if(end) {
+		if (end) {
 			class_arg = r_str_trim_head_ro (end);
 		}
 
-		if(class_arg) {
+		if (class_arg) {
 			end = r_str_trim_head_wp (class_arg); // in case of extra unwanted stuff at the cmd end
 			*end = '\0';
 		}
