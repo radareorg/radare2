@@ -4406,19 +4406,6 @@ out_finish:
 	return false;
 }
 
-R_API void run_pending_anal(RCore *core) {
-	if (core && core->ev) {
-		// allow incall events in the run_pending step
-		core->ev->incall = false;
-	}
-	if (core && core->anal && core->anal->cmdtail) {
-		char *res = r_strbuf_drain (core->anal->cmdtail);
-		core->anal->cmdtail = r_strbuf_new (NULL);
-		r_core_cmd_lines (core, res);
-		free (res);
-	}
-}
-
 static int run_cmd_depth(RCore *core, char *cmd);
 
 #if USE_TREESITTER
@@ -5979,8 +5966,6 @@ DEFINE_HANDLE_TS_FCN(commands) {
 	if (state->split_lines) {
 		r_cons_break_pop ();
 	}
-	/* run pending analysis commands */
-	run_pending_anal (state->core);
 	return res;
 }
 
@@ -6067,7 +6052,6 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 
 	if (core->cons->context->cmd_depth < 1) {
 		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
-		run_pending_anal (core);
 		return false;
 	}
 	core->cons->context->cmd_depth--;
@@ -6086,8 +6070,6 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 		}
 		rcmd = ptr + 1;
 	}
-	/* run pending analysis commands */
-	run_pending_anal (core);
 	core->cons->context->cmd_depth++;
 	return ret;
 }
@@ -6160,10 +6142,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 
 	ret = run_cmd_depth (core, cmd);
 	free (cmd);
-	return ret;
 beach:
-	/* run pending analysis commands */
-	run_pending_anal (core);
 	return ret;
 }
 
