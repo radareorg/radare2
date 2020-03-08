@@ -283,3 +283,66 @@ o-3
 o~?
 EOF
 RUN
+
+NAME=oc
+FILE=../bins/elf/true32
+EXPECT=<<EOF
+fd       3
+file     ../bins/elf/true32
+size     0x560c
+humansz  21.5K
+mode     r-x
+format   elf
+iorw     false
+blksz    0x0
+block    0x100
+type     EXEC (Executable file)
+arch     x86
+baddr    0x8048000
+binsz    20668
+bintype  elf
+bits     32
+canary   true
+class    ELF32
+crypto   false
+endian   little
+havecode true
+intrp    /lib/ld-linux.so.2
+laddr    0x0
+lang     c
+linenum  false
+lsyms    false
+machine  Intel 80386
+maxopsz  16
+minopsz  1
+nx       true
+os       linux
+pcalign  0
+pic      false
+relocs   false
+relro    partial
+rpath    NONE
+sanitiz  false
+static   false
+stripped true
+subsys   linux
+va       true
+--
+fd       3
+file     malloc://512
+size     0x200
+humansz  512
+mode     rwx
+format   any
+iorw     true
+blksz    0x0
+block    0x100
+
+EOF
+CMDS=<<EOF
+i
+oc -
+?e --
+i
+EOF
+RUN
