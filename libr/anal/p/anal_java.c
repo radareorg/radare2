@@ -55,7 +55,6 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 
 		ut32 default_loc = (ut32) (UINT (data, pos)), cur_case = 0;
 		op->switch_op = r_anal_switch_op_new (addr, min_val, default_loc);
-		RAnalCaseOp *caseop = NULL;
 		pos += 12;
 		if (max_val > min_val && ((max_val - min_val)<(UT16_MAX/4))) {
 			//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
@@ -66,12 +65,7 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 					break;
 				}
 				int offset = (int)(ut32)(R_BIN_JAVA_UINT (data, pos));
-				caseop = r_anal_switch_op_add_case (op->switch_op,
-					addr + pos, cur_case + min_val, addr + offset);
-				if (caseop) {
-					caseop->bb_ref_to = addr+offset;
-					caseop->bb_ref_from = addr; // TODO figure this one out
-				}
+				r_anal_switch_op_add_case (op->switch_op, addr + pos, cur_case + min_val, addr + offset);
 			}
 		} else {
 			eprintf ("Invalid switch boundaries at 0x%"PFMT64x"\n", addr);

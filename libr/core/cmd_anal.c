@@ -2189,9 +2189,6 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 							pj_kn (pj, "addr", case_op->addr);
 							pj_kn (pj, "jump", case_op->jump);
 							pj_kn (pj, "value", case_op->value);
-							pj_kn (pj, "cond", case_op->cond);
-							pj_kn (pj, "bb_ref_to", case_op->bb_ref_to);
-							pj_kn (pj, "bb_ref_from", case_op->bb_ref_from);
 							pj_end (pj);
 						}
 					}

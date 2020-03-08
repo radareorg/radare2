@@ -533,10 +533,6 @@ typedef struct r_anal_case_obj_t {
 	ut64 addr;
 	ut64 jump;
 	ut64 value;
-	ut32 cond; // TODO: treat like a regular condition
-	ut64 bb_ref_to;
-	ut64 bb_ref_from;
-	RAnalBlock *jumpbb;
 } RAnalCaseOp;
 
 typedef struct r_anal_switch_obj_t {
@@ -886,12 +882,10 @@ typedef struct r_anal_bb_t {
 	RAnalDiff *diff;
 	RAnalCond *cond;
 	RAnalSwitchOp *switch_op;
-	// offsets of instructions in this block
-	ut16 *op_pos;
-	// size of the op_pos array
+	ut16 *op_pos; // offsets of instructions in this block, count is ninstr - 1 (first is always 0)
 	ut8 *op_bytes;
 	ut8 *parent_reg_arena;
-	int op_pos_size;
+	int op_pos_size; // size of the op_pos array
 	int ninstr;
 	int stackptr;
 	int parent_stackptr;
