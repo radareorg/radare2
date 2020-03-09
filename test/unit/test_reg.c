@@ -147,7 +147,7 @@ bool test_r_reg_get(void) {
 
 	bool success = r_reg_set_profile_string (reg,
 			"gpr	eax		.32	24	0\n\
-	 		fpu		sf0		.32	304	0\n\
+			fpu		sf0		.32	304	0\n\
 			xmm		xmm0	.64	160	4");
 	mu_assert_eq (success, true, "define eax, sf0 and xmm0 register");
 
