@@ -9507,7 +9507,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 			*end = '\0';
 			end++;
 		}
-		ut64 offset_arg = r_num_get (core->num, cstr);
+		ut64 offset_arg = r_num_get (core->num, cstr); // Should I allow negative offset?
 		char *class_arg = NULL;
 		if (end) {
 			class_arg = r_str_trim_head_ro (end);
