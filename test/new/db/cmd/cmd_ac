@@ -508,10 +508,10 @@ B
   (vtable at 0x400d08)
 C
   (vtable at 0x400ce8)
-Function address: 0x00400ac8, in A vtable    0
-Function address: 0x00400b82, in B vtable    0
-Function address: 0x00400ac8, in A vtable    0
-Function address: 0x00400ac8, in B vtable    0
-Function address: 0x00400ac8, in C vtable    0
+Function address: 0x00400ac8, in A vtable 0
+Function address: 0x00400b82, in B vtable 0
+Function address: 0x00400ac8, in A vtable 0
+Function address: 0x00400ac8, in B vtable 0
+Function address: 0x00400ac8, in C vtable 0
 EOF
 RUN
