@@ -2626,6 +2626,7 @@ R_API bool r_core_init(RCore *core) {
 	core->vmode = false;
 	core->printidx = 0;
 	core->lastcmd = NULL;
+	core->cmdlog = NULL;
 	core->stkcmd = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = true;

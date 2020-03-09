@@ -54,7 +54,7 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		const int max_val = (ut32)(UINT (data, pos + 8));
 
 		ut32 default_loc = (ut32) (UINT (data, pos)), cur_case = 0;
-		op->switch_op = r_anal_switch_op_new (addr, min_val, default_loc);
+		op->switch_op = r_anal_switch_op_new (addr, min_val, max_val, default_loc);
 		pos += 12;
 		if (max_val > min_val && ((max_val - min_val)<(UT16_MAX/4))) {
 			//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);

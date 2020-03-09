@@ -455,3 +455,10 @@ R_API RList *r_anal_block_recurse_list(RAnalBlock *block) {
 	r_anal_block_recurse (block, recurse_list_cb, ret);
 	return ret;
 }
+
+R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut64 case_addr) {
+	if (!block->switch_op) {
+		block->switch_op = r_anal_switch_op_new (switch_addr, 0, 0, 0);
+	}
+	r_anal_switch_op_add_case (block->switch_op, case_addr, 0, case_addr);
+}

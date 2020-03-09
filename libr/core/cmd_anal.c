@@ -2285,29 +2285,20 @@ static bool anal_bb_edge (RCore *core, const char *input) {
 	// "afbe" switch-bb-addr case-bb-addr
 	char *arg = strdup (r_str_trim_head_ro (input));
 	char *sp = strchr (arg, ' ');
+	bool ret = false;
 	if (sp) {
 		*sp++ = 0;
-		ut64 sw_at = r_num_math (core->num, arg);
-		ut64 cs_at = r_num_math (core->num, sp);
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, sw_at, 0);
-		if (fcn) {
-			RAnalBlock *bb;
-			RListIter *iter;
-			r_list_foreach (fcn->bbs, iter, bb) {
-				if (sw_at >= bb->addr && sw_at < (bb->addr + bb->size)) {
-					if (!bb->switch_op) {
-						bb->switch_op = r_anal_switch_op_new (
-							sw_at, 0, 0);
-					}
-					r_anal_switch_op_add_case (bb->switch_op, cs_at, 0, cs_at);
-				}
-			}
-			free (arg);
-			return true;
+		ut64 switch_addr = r_num_math (core->num, arg);
+		ut64 case_addr = r_num_math (core->num, sp);
+		RList *blocks = r_anal_get_blocks_in (core->anal, switch_addr);
+		if (blocks && !r_list_empty (blocks)) {
+			r_anal_block_add_switch_case (r_list_first (blocks), switch_addr, case_addr);
+			ret = true;
 		}
+		r_list_free (blocks);
 	}
 	free (arg);
-	return false;
+	return ret;
 }
 
 static bool anal_fcn_del_bb(RCore *core, const char *input) {
@@ -2939,17 +2930,18 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'j': // "afj"
 		{
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			if (fcn) {
+			RList *blocks = r_anal_get_blocks_in (core->anal, core->offset);
+			RAnalBlock *block = r_list_first (blocks);
+			if (block && !r_list_empty (block->fcns)) {
 				char *args = strdup (input + 2);
 				RList *argv = r_str_split_list (args, " ", 0);
 				ut64 table = r_num_math (core->num, r_list_get_n (argv, 0));
 				ut64 elements = r_num_math (core->num, r_list_get_n (argv, 1));
-				r_anal_jmptbl (core->anal, fcn, core->offset, table, elements, UT64_MAX);
-				run_pending_anal (core);
+				r_anal_jmptbl (core->anal, r_list_first (block->fcns), block, core->offset, table, elements, UT64_MAX);
 			} else {
 				eprintf ("No function defined here\n");
 			}
+			r_list_free (blocks);
 		}
 		break;
 	case 'a': // "afa"
@@ -8974,7 +8966,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_task_yield (&core->tasks);
 			// Run pending analysis immediately after analysis
 			// Usefull when running commands with ";" or via r2 -c,-i
-			run_pending_anal (core);
 			dh_orig = core->dbg->h
 				? strdup (core->dbg->h->name)
 				: strdup ("esil");
@@ -9039,7 +9030,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				run_pending_anal (core);
 				oldstr = r_print_rowlog (core->print, "Check for objc references");
 				r_print_rowlog_done (core->print, oldstr);
 				cmd_anal_objc (core, input + 1, true);
@@ -9858,7 +9848,6 @@ static int cmd_anal(void *data, const char *input) {
 	case 'f': // "af"
 		{
 		int res = cmd_anal_fcn (core, input);
-		run_pending_anal (core);
 		if (!res) {
 			return false;
 		}
