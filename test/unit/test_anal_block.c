@@ -508,7 +508,11 @@ bool test_r_anal_block_successors() {
 	blocks[1]->fail = 0x50;
 	blocks[2]->jump = 0x10;
 
-	RAnalSwitchOp *sop = r_anal_switch_op_new (0x55, 0, 10);
+	RAnalSwitchOp *sop = r_anal_switch_op_new (0x55, 0x13, 0x15, 0x42);
+	mu_assert_eq (sop->addr, 0x55, "addr");
+	mu_assert_eq (sop->min_val, 0x13, "addr");
+	mu_assert_eq (sop->max_val, 0x15, "addr");
+	mu_assert_eq (sop->def_val, 0x42, "addr");
 	r_anal_switch_op_add_case (sop, 0x55, 1, 0x100);
 	r_anal_switch_op_add_case (sop, 0x55, 2, 0x110);
 	r_anal_switch_op_add_case (sop, 0x55, 3, 0x120);
