@@ -247,8 +247,8 @@ FILE=../bins/elf/analysis/main
 BROKEN=1
 CMDS=<<EOF
 e dir.projects = .tmp/
-Ps blah > /dev/null
-Po blah > /dev/null
+Ps ulumulu > /dev/null
+Po ulumulu > /dev/null
 o*~?
 EOF
 EXPECT=<<EOF
@@ -262,8 +262,8 @@ FILE=../bins/elf/analysis/main
 ARGS=-n
 CMDS=<<EOF
 e dir.projects = .tmp/
-Ps blah > /dev/null
-Po blah > /dev/null
+Ps blub > /dev/null
+Po blub > /dev/null
 i~format
 EOF
 EXPECT=<<EOF
@@ -275,24 +275,23 @@ FILE=../bins/elf/analysis/main
 CMDS=<<EOF
 e dir.projects = .tmp/
 aaa
-Ps blah
+Ps beer
   # Following command hangs:
-  # Po blah
+  # Po beer
 y
 EOF
 EXPECT=<<EOF
-blah
+beer
 EOF
 RUN
 
 NAME=Save project for a binary without saving its info at a specific map offset
 FILE=../bins/elf/analysis/main
-BROKEN=1
 ARGS=-n -m 0x1337
 CMDS=<<EOF
 e dir.projects = .tmp/
-Ps blah > /dev/null
-Po blah > /dev/null
+Ps hand > /dev/null
+Po hand > /dev/null
 om*~?
 om*~[2]
 EOF
@@ -307,9 +306,9 @@ FILE=../bins/elf/analysis/main
 ARGS=-n
 CMDS=<<EOF
 e dir.projects = .tmp/
-Ps blah > /dev/null
-Pd blah > /dev/null
-Pl~blah
+Ps cannot > /dev/null
+Pd cannot > /dev/null
+Pl~cannot
 
 EOF
 EXPECT=<<EOF
@@ -321,9 +320,9 @@ FILE=../bins/elf/analysis/main
 ARGS=-n
 CMDS=<<EOF
 e dir.projects = .tmp/
-Ps blah > /dev/null
-P- blah > /dev/null
-Pl~blah
+Ps erase > /dev/null
+P- erase > /dev/null
+Pl~erase
 EOF
 EXPECT=<<EOF
 EOF
@@ -334,10 +333,10 @@ FILE=../bins/elf/analysis/main
 ARGS=-n
 CMDS=<<EOF
 e dir.projects = .tmp/
-Ps blah > /dev/null
-Pd blah > /dev/null
+Ps anesthetize > /dev/null
+Pd anesthetize > /dev/null
 Pl~blah
-ls -l `e dir.projects`~blah
+ls -l `e dir.projects`~anesthetize
 EOF
 EXPECT=<<EOF
 EOF
@@ -350,25 +349,24 @@ BROKEN=1
 ARGS=-n
 CMDS=<<EOF
 e dir.projects = .tmp/
-Ps blah > /dev/null
-P- blah > /dev/null
-Pl~blah
-ls -l `e dir.projects`~blah
+Ps lightbulb > /dev/null
+P- lightbulb > /dev/null
+Pl~lightbulb
+ls -l `e dir.projects`~lightbulb
 EOF
 EXPECT=<<EOF
--drwxr-xr-x  1  501:20    96          .tmp/blah/
+-drwxr-xr-x  1  501:20    96          .tmp/lightbulb/
 EOF
 RUN
 
 NAME=Save project for a file with asm.bits=32 and check the value after loading again
 FILE=../bins/src/hello.c
-BROKEN=1
 ARGS=
 CMDS=<<EOF
 e dir.projects = .tmp/
 e asm.bits=16
-Ps blah > /dev/null
-Po blah > /dev/null
+Ps sun > /dev/null
+Po sun > /dev/null
 e asm.bits
 EOF
 EXPECT=<<EOF
@@ -392,18 +390,17 @@ EOF
 RUN
 
 NAME=Checking e prj.name after saving again
-BROKEN=1
 FILE=../bins/elf/analysis/main
 CMDS=<<EOF
 e dir.projects = .tmp/
-Ps blah > /dev/null
-Po blah > /dev/null
-Ps blah > /dev/null
-Po blah > /dev/null
+Ps stupid > /dev/null
+Po stupid > /dev/null
+Ps stupid > /dev/null
+Po stupid > /dev/null
 e prj.name
 EOF
 EXPECT=<<EOF
-blah
+stupid
 EOF
 RUN
 
@@ -416,8 +413,8 @@ e asm.bits=32
 e dir.projects = .tmp/
 wx 5031c0e801000000c3b801000000c3
 af
-Ps blah > /dev/null
-Po blah > /dev/null
+Ps dream > /dev/null
+Po dream > /dev/null
 axq
 EOF
 EXPECT=<<EOF
