@@ -500,7 +500,6 @@ acvf 0x8 B
 acvf 0x16 C dasdass
 acvf 0x0
 acvf -50
-acvf    
 acvf 0x0 000ASDASdjpsadoaspdjasdaspodasDDD
 acv A 0x00400d28 0x0
 EOF
@@ -516,6 +515,5 @@ Function address: 0x00400b82, in B vtable 0
 Function address: 0x00400ac8, in A vtable 0
 Function address: 0x00400ac8, in B vtable 0
 Function address: 0x00400ac8, in C vtable 0
-No offset given
 EOF
 RUN
