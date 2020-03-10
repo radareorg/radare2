@@ -852,13 +852,15 @@ const char* PE_(bin_pe_compute_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
 		return NULL;
 	}
 
-	const char *hashtype = bin->spcinfo->messageDigest.digestAlgorithm.algorithm->string;
+	char *hashtype = strdup (bin->spcinfo->messageDigest.digestAlgorithm.algorithm->string);
+	r_str_replace_char (hashtype, '-', 0);
 	ut64 algobit = r_hash_name_to_bits (hashtype);
-	if (!(algobit & (R_HASH_MD5 | R_HASH_SHA1))) {
-		eprintf ("Authenticode only supports md5, sha1. This PE uses %s\n", hashtype);
+	if (!(algobit & (R_HASH_MD5 | R_HASH_SHA1 | R_HASH_SHA256))) {
+		eprintf ("Authenticode only supports md5, sha1, sha256. This PE uses %s\n", hashtype);
+		free (hashtype);
 		return NULL;
 	}
-
+	free (hashtype);
 	ut32 checksum_paddr = bin->nt_header_offset + 4 + sizeof (PE_(image_file_header)) + 0x40;
 	ut32 security_entry_offset =  bin->nt_header_offset + sizeof (PE_(image_nt_headers)) - 96;
 	PE_(image_data_directory) *data_dir_security = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY];
@@ -881,13 +883,14 @@ const char* PE_(bin_pe_compute_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
 	const ut8 *data = r_buf_data (buf, &len);
 	char *hashstr = NULL;
 	RHash *ctx = r_hash_new (true, algobit);
-	r_hash_do_begin (ctx, algobit);
-	int digest_size = r_hash_calculate (ctx, algobit, data, len);
-	r_hash_do_end (ctx, algobit);
-	hashstr = r_hex_bin2strdup (ctx->digest, digest_size);
-
-	r_buf_free (buf);
-	r_hash_free (ctx);
+	if (ctx) {
+		r_hash_do_begin (ctx, algobit);
+		int digest_size = r_hash_calculate (ctx, algobit, data, len);
+		r_hash_do_end (ctx, algobit);
+		hashstr = r_hex_bin2strdup (ctx->digest, digest_size);
+		r_buf_free (buf);
+		r_hash_free (ctx);
+	}
 	return hashstr;
 }
 
