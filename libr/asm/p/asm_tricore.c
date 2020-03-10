@@ -16,28 +16,33 @@ static unsigned long Offset = 0;
 static RStrBuf *buf_global = NULL;
 static ut8 bytes[128];
 enum {
-  TRICORE_GENERIC = 0x00000000,
-  TRICORE_RIDER_A = 0x00000001,
-  TRICORE_RIDER_B = 0x00000002,
-  TRICORE_RIDER_D = TRICORE_RIDER_B,
-  TRICORE_V2      = 0x00000004,
-  TRICORE_PCP     = 0x00000010,
-  TRICORE_PCP2    = 0x00000020
+	TRICORE_GENERIC = 0x00000000,
+	TRICORE_RIDER_A = 0x00000001,
+	TRICORE_RIDER_B = 0x00000002,
+	TRICORE_RIDER_D = TRICORE_RIDER_B,
+	TRICORE_V2      = 0x00000004,
+	TRICORE_PCP     = 0x00000010,
+	TRICORE_PCP2    = 0x00000020
 };
 
 static int cpu_to_mach(char *cpu_type) {
 	if (cpu_type && *cpu_type) {
 		if (!strcmp (cpu_type, "generic")) {
 			return TRICORE_GENERIC;
-		} else if (!strcmp (cpu_type, "rider-a")) {
+		}
+		if (!strcmp (cpu_type, "rider-a")) {
 			return TRICORE_RIDER_A;
-		} else if ((!strcmp (cpu_type, "rider-b")) || (!strcmp (cpu_type, "rider-d"))) {
+		}
+		if ((!strcmp (cpu_type, "rider-b")) || (!strcmp (cpu_type, "rider-d"))) {
 			return TRICORE_RIDER_B;
-		} else if (!strcmp (cpu_type, "v2")) {
+		}
+		if (!strcmp (cpu_type, "v2")) {
 			return TRICORE_V2;
-		} else if (!strcmp (cpu_type, "pcp")) {
+		}
+		if (!strcmp (cpu_type, "pcp")) {
 			return TRICORE_PCP;
-		} else if (!strcmp (cpu_type, "pcp2")) {
+		}
+		if (!strcmp (cpu_type, "pcp2")) {
 			return TRICORE_PCP2;
 		}
 	}
