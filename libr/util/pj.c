@@ -144,9 +144,22 @@ R_API PJ *pj_ki(PJ *j, const char *k, int i) {
 	return j;
 }
 
+R_API PJ *pj_ko(PJ *j, const char *k) {
+	r_return_val_if_fail (j && k, j);
+	pj_k (j, k);
+	pj_o (j);
+	return j;
+}
+
+R_API PJ *pj_ka(PJ *j, const char *k) {
+	r_return_val_if_fail (j && k, j);
+	pj_k (j, k);
+	pj_a (j);
+	return j;
+}
+
 R_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
 	r_return_val_if_fail (j && k && v, j);
-	//if (*k && *v) 
 	pj_k (j, k);
 	pj_s (j, v);
 	return j;

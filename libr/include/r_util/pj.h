@@ -32,6 +32,8 @@ R_API PJ *pj_knull(PJ *j, const char *k);
 R_API PJ *pj_kn(PJ *j, const char *k, ut64 n);
 R_API PJ *pj_kN(PJ *j, const char *k, st64 n);
 R_API PJ *pj_ks(PJ *j, const char *k, const char *v);
+R_API PJ *pj_ka(PJ *j, const char *k);
+R_API PJ *pj_ko(PJ *j, const char *k);
 R_API PJ *pj_ki(PJ *j, const char *k, int d);
 R_API PJ *pj_kd(PJ *j, const char *k, double d);
 R_API PJ *pj_kf(PJ *j, const char *k, float d);
