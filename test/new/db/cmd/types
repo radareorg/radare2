@@ -1472,7 +1472,7 @@ afs
 afs
 EOF
 EXPECT=<<EOF
-fcn.004e2420 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
+void fcn.004e2420 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
 int32_t no_type (int32_t a, char **b);
 char type (int32_t a, char **b);
 EOF
@@ -1489,7 +1489,7 @@ afs
 afs
 EOF
 EXPECT=<<EOF
-entry0 (int64_t arg3);
+void entry0 (int64_t arg3);
 int32_t foo.bar ();
 char foo.bar (int32_t a);
 EOF

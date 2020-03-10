@@ -58,8 +58,8 @@ static const char *help_msg_tf[] = {
 	"tf", " <name>", "Show function signature",
 	"tfc", " <name>", "Show function signature in C syntax",
 	"tfcj", " <name>", "Same as above but in JSON",
-	"tfj", "", "List all function definitions in json",
-	"tfj", " <name>", "Show function signature in json",
+	"tfj", "", "List all function definitions in JSON",
+	"tfj", " <name>", "Show function signature in JSON",
 	NULL
 };
 
@@ -567,6 +567,9 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 	const char *name = r_str_trim_head_ro (input);
 	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
 	const char *ret = sdb_const_get (TDB, sdb_fmt ("func.%s.ret", name), 0);
+	if (!ret) {
+		ret = "void";
+	}
 	if (!ret || !name) {
 		// missing function name specified
 		return;
@@ -596,7 +599,8 @@ static void printFunctionType(RCore *core, const char *input) {
 	const char *name = r_str_trim_head_ro (input);
 	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
 	pj_ks (pj, "name", name);
-	pj_ks (pj, "ret", sdb_const_get (TDB, sdb_fmt ("func.%s.ret", name), 0));
+	const char *ret_type = sdb_const_get (TDB, sdb_fmt ("func.%s.ret", name), 0);
+	pj_ks (pj, "ret", ret_type? ret_type: "void");
 	pj_k (pj, "args");
 	pj_a (pj);
 	for (i = 0; i < args; i++) {
@@ -1608,16 +1612,16 @@ static int cmd_type(void *data, const char *input) {
 	// tv - get/set type value linked to a given address
 	case 'f': // "tf"
 		switch (input[1]) {
-		case 0:
+		case 0: // "tf"
 			print_keys (TDB, core, stdiffunc, printkey_cb, false);
 			break;
 		case 'c': // "tfc"
 			printFunctionTypeC (core, input + 2);
 			break;
-		case 'j':
+		case 'j': // "tfj"
 			if (input[2] == ' ') {
 				printFunctionType (core, input + 2);
-				r_cons_printf ("\n");
+				r_cons_newline ();
 			} else {
 				print_keys (TDB, core, stdiffunc, printfunc_json_cb, true);
 			}

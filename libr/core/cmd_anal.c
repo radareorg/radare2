@@ -440,6 +440,8 @@ static const char *help_msg_afn[] = {
 static const char *help_msg_afs[] = {
 	"Usage:", "afs[r]", " Analyze function signatures",
 	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
+	"afs*", " ([signame])", "get function signature in flags",
+	"afsj", " ([signame])", "get function signature in JSON",
 	"afsr", " [function_name] [new_type]", "change type for given function",
 	NULL
 };
@@ -2543,6 +2545,7 @@ static char * getFunctionName (RCore *core, ut64 off, const char *name, bool pre
 /* TODO: move into r_anal_fcn_rename(); */
 static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool prefix) {
 	r_return_val_if_fail (core && _name, false);
+	_name = r_str_trim_head_ro (_name);
 	char *name = getFunctionName (core, addr, _name, prefix);
 	// RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
@@ -2902,6 +2905,19 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	r_table_free (t);
 	r_core_seek (core, oseek, true);
 	r_list_free (dbs);
+}
+
+static void cmd_afsj(RCore *core, const char *arg) {
+	ut64 a = r_num_math (core->num, arg);
+	const ut64 addr = a? a: core->offset;
+	RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, -1);
+	if (f) {
+		char *s = r_anal_function_get_json (f);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	} else {
+		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", addr);
+	}
 }
 
 static int cmd_anal_fcn(RCore *core, const char *input) {
@@ -3302,31 +3318,29 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			break;
 		}
-		case '?': // "afs?"
-			r_core_cmd_help (core, help_msg_afs);
+		case '*': // "afs*"
+			eprintf ("TODO\n");
 			break;
-		default: { // "afs"
+		case 'j': // "afsj"
+			cmd_afsj (core, input + 2);
+			break;
+		case 0:
+		case ' ': { // "afs"
 			ut64 addr = core->offset;
 			RAnalFunction *f;
 			const char *arg = r_str_trim_head_ro (input + 2);
 			if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
 				if (arg && *arg) {
 					// parse function signature here
-					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 					char *fcnstr = r_str_newf ("%s;", arg), *fcnstr_copy = strdup (fcnstr);
 					char *fcnname_aux = strtok (fcnstr_copy, "(");
 					r_str_trim_tail (fcnname_aux);
 					char *fcnname = NULL;
-					int i, last_space = 0;
-					for (i = 0; i < strlen (fcnname_aux); i++) {
-						if (fcnname_aux[i] == ' ') {
-							last_space = i + 1;
-						}
-					}
-					fcnname = strdup (fcnname_aux + last_space);
+					const char *ls = r_str_lchr (fcnname_aux, ' ');
+					fcnname = strdup (ls? ls: fcnname_aux);
 					if (fcnname) {
 						// TODO: move this into r_anal_str_to_fcn()
-						if (strcmp (fcn->name, fcnname)) {
+						if (strcmp (f->name, fcnname)) {
 							(void)__setFunctionName (core, addr, fcnname, false);
 							f = r_anal_get_fcn_in (core->anal, addr, -1);
 						}
@@ -3336,7 +3350,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					free (fcnstr_copy);
 					free (fcnstr);
 				} else {
-					char *str = r_anal_function_get_signature (f);
+					char *str = r_anal_function_get_signature (core->anal, f->name);
 					if (str) {
 						r_cons_println (str);
 						free (str);
@@ -3347,6 +3361,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			break;
 		}
+		default:
+		// case '?': // "afs?"
+			r_core_cmd_help (core, help_msg_afs);
+			break;
 		}
 		break;
 	case 'm': // "afm" - merge two functions
@@ -4233,8 +4251,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		cmd_reg_profile (core, 'a', str);
 		break;
 	case 't': // "art"
-		for (i = 0; (name = r_reg_get_type (i)); i++)
+		for (i = 0; (name = r_reg_get_type (i)); i++) {
 			r_cons_println (name);
+		}
 		break;
 	case 'n': // "arn"
 		if (*(str + 1) == '\0') {
@@ -5436,6 +5455,10 @@ static void cmd_aespc(RCore *core, ut64 addr, int off) {
 			r_io_read_at (core->io, addr, buf, bsize);
 		}
 		ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+		if (ret < 1) {
+			eprintf ("Failed analysis at 0x%08"PFMT64x"\n", addr);
+			break;
+		}
 		instr_size += ret;
 		int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
 		if (inc < 0) {

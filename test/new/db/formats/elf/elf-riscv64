@@ -442,6 +442,7 @@ NAME=ELF: riscv64: main analysis
 FILE=../bins/elf/analysis/guess-number-riscv64
 EXPECT=<<EOF
 / (fcn) main 140
+// int main (int64_t arg_18h, int64_t arg_0h);
 |           ; arg int64_t arg_18h @ s0+0x18
 |           ; arg int64_t arg_0h @ sp+0x20
 |           0x00010150      130101fe       addi sp, sp, -32
@@ -489,6 +490,7 @@ ARGS=-A
 EXPECT=<<EOF
             ; CALL XREF from entry0 @ 0x10040
 / (fcn) main 140
+// int main (int64_t arg_18h, int64_t arg_0h);
 |           ; arg int64_t arg_18h @ s0+0x18
 |           ; arg int64_t arg_0h @ sp+0x20
 |           0x00010150      130101fe       addi sp, sp, -32

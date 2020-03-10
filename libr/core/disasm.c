@@ -1773,12 +1773,18 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 	ds_newline (ds);
 }
 
+static bool empty_signature(const char *s) {
+	if (s && !strncmp (s, "void ", 5) && strstr (s, "()")) {
+		return true;
+	}
+	return false;
+}
+
 static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
 	RCore *core = ds->core;
 	char *fcn_name;
 	bool fcn_name_alloc = false; // whether fcn_name needs to be freed by this function
-	char *sign;
 
 	if (!ds->show_functions) {
 		return;
@@ -1804,7 +1810,10 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 
 	ds_begin_line (ds);
-	sign = r_anal_fcn_to_string (core->anal, f);
+	char *sign = r_anal_function_get_signature (core->anal, f->name);
+	if (empty_signature (sign)) {
+		R_FREE (sign);
+	}
 	if (f->type == R_ANAL_FCN_TYPE_LOC) {
 		r_cons_printf ("%s%s ", COLOR (ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-
