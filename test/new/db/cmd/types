@@ -1495,6 +1495,18 @@ char foo.bar (int32_t a);
 EOF
 RUN
 
+NAME=afs sym.imp.*
+FILE=../bins/elf/hello_world
+CMDS=<<EOF
+s sym.imp.strlen
+af
+afs
+EOF
+EXPECT=<<EOF
+size_t strlen (const char *s);
+EOF
+RUN
+
 NAME=td crash
 FILE=-
 CMDS=<<EOF
