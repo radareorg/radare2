@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 pancake */
+/* radare - LGPL - Copyright 2019-2020 pancake */
 
 #include "r_lib.h"
 #include "r_core.h"
@@ -7,31 +7,37 @@
 static int lang_v_file(RLang *lang, const char *file);
 
 static const char *r2v = \
-	"module r2\n"
+	"module main\n"
 	"\n"
 	"#flag `pkg-config --cflags --libs r_core`\n"
 	"\n"
 	"#include <r_core.h>\n"
 	"\n"
 	"struct R2 {}\n"
+	"fn C.r_core_cmd_str (core &R2, s string) byteptr\n"
+	"fn C.r_core_free (core &R2)\n"
+	"fn C.r_core_new () &R2\n"
 	"\n"
 	"pub fn (core &R2)cmd(s string) string {\n"
-	"        o := C.r_core_cmd_str (core, s.str)\n"
-	"        strs := string(byteptr(o))\n"
-	"        free(o)\n"
-	"        return strs\n"
+	"  unsafe {\n"
+	"    o := C.r_core_cmd_str (core, s.str)\n"
+	"    strs := string(byteptr(o))\n"
+	"    free(o)\n"
+	"    return strs\n"
+	"  }\n"
 	"}\n"
 	"\n"
 	"pub fn (core &R2)str() string {\n"
 	"        return i64(core).str()\n"
 	"}\n"
 	"\n"
+	"pub fn main() {}\n"
 	"pub fn (core &R2)free() {\n"
-	"        C.r_core_free (core)\n"
+	"        unsafe {C.r_core_free (core)}\n"
 	"}\n"
 	"\n"
 	"pub fn new() &R2 {\n"
-	"        return &R2(C.r_core_new ())\n"
+	"        return C.r_core_new ()\n"
 	"}\n";
 static const char *vsk = \
 	"fn entry(core &R2) {\n";
@@ -55,7 +61,6 @@ static int __run(RLang *lang, const char *code, int len) {
 	eprintf ("Cannot open .tmp.v\n");
 	return false;
 }
-
 
 static int lang_v_file(RLang *lang, const char *file) {
 	if (!r_str_endswith (file, ".v")) {
@@ -84,7 +89,7 @@ static int lang_v_file(RLang *lang, const char *file) {
 	}
 	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
 	char *shl = r_str_newf ("%s/lib%s."R_LIB_EXT, libpath, libname);
-	char *buf = r_str_newf ("v -cflags '-shared -fPIC' -o %s %s", shl, file);
+	char *buf = r_str_newf ("v -cflags '-shared -fPIC' -o %s build %s", shl, file);
 	free (name);
 	if (r_sandbox_system (buf, 1) != 0) {
 		free (shl);
@@ -95,7 +100,7 @@ static int lang_v_file(RLang *lang, const char *file) {
 	free (shl);
 	if (lib) {
 		void (*fcn)(RCore *, int argc, const char **argv);
-		fcn = r_lib_dl_sym (lib, "r2__entry");
+		fcn = r_lib_dl_sym (lib, "main__entry");
 		if (fcn) {
 			fcn (lang->user, ac, av);
 			ac = 0;
