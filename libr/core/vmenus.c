@@ -3623,6 +3623,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		," h    define anal hint"
 		," m    manpage for current call"
 		," n    rename flag used at cursor"
+		," N    edit function signature (afs!)"
 		," o    opcode string"
 		," r    rename function"
 		," R    find references /r"
@@ -3655,6 +3656,9 @@ repeat:
 onemoretime:
 	wordsize = 4;
 	switch (ch) {
+	case 'N':
+		r_core_cmd0 (core, "afs!");
+		break;
 	case 'F':
 		{
 			char cmd[128];
