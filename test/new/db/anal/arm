@@ -677,6 +677,7 @@ NAME=ELF ARM: function args
 FILE=../bins/elf/analysis/armcall
 EXPECT=<<EOF
 / (fcn) main 44
+// int main (int argc, char **argv);
 |           ; var int32_t var_ch @ fp-0xc
 |           ; var int32_t var_8h @ fp-0x8
 |           ; arg int argc @ r0

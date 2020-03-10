@@ -1670,6 +1670,7 @@ NAME=anal vars crash 2
 FILE=-
 EXPECT=<<EOF
 / (fcn) fcn.00000000 62
+// void fcn.00000000 (int64_t arg1);
 |           ; var int64_t my_local @ rbp-0x18
 |           ; arg int64_t arg1 @ rdi
 |           0x00000000      0000           add byte [rax], al
