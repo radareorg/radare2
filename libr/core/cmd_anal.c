@@ -5910,6 +5910,10 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			}
 		}
 		break;
+	case 'b': // "aeb"
+		// ab~ninstr[1]
+		r_core_cmdf (core, "aesp `ab~addr[1]` `ab~ninstr[1]`");
+		break;
 	case 'f': // "aef"
 		if (input[1] == 'a') { // "aefa"
 			r_anal_aefa (core, r_str_trim_head_ro (input + 2));
