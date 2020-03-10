@@ -1804,7 +1804,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 
 	ds_begin_line (ds);
-	sign = r_anal_fcn_to_string (core->anal, f);
+	sign = r_anal_function_get_signature (core->anal, f->name);
 	if (f->type == R_ANAL_FCN_TYPE_LOC) {
 		r_cons_printf ("%s%s ", COLOR (ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-

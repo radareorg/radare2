@@ -1514,26 +1514,74 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 	return result;
 }
 
-R_API char *r_anal_function_get_signature(RAnalFunction *function) {
+// tfj and afsj call this function
+R_API char *r_anal_function_get_json(RAnalFunction *function) {
+	PJ *pj = pj_new ();
 	RAnal *a = function->anal;
-	char *ret = NULL, *arg_i = NULL, *sdb_arg_i = NULL, *args = strdup (""),
-		*sdb_ret = r_str_newf ("func.%s.ret", function->name),
-		*sdb_args = r_str_newf ("func.%s.args", function->name);
+	char *args = strdup ("");
+	char *sdb_ret = r_str_newf ("func.%s.ret", function->name);
+	char *sdb_args = r_str_newf ("func.%s.args", function->name);
 	// RList *args_list = r_list_newf ((RListFree) free);
-	unsigned int argc = 0, i, j;
+	unsigned int i;
 	const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
 	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
 
-	if (argc_str) {
-		argc = atoi (argc_str);
+	int argc = argc_str? atoi (argc_str): 0;
+
+	pj_o (pj);
+	pj_ks (pj, "name", function->name);
+	const bool no_return = r_anal_noreturn_at_addr (a, function->addr);
+	pj_kb (pj, "noreturn", no_return);
+	pj_ks (pj, "ret", ret_type?ret_type: "void");
+	if (function->cc) {
+		pj_ks (pj, "cc", function->cc);
 	}
+	pj_k (pj, "args");
+	pj_a (pj);
+	for (i = 0; i < argc; i++) {
+		pj_o (pj);
+		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", function->name, i);
+		char *arg_i = sdb_get (a->sdb_types, sdb_arg_i, 0);
+		char *comma = strchr (arg_i, ',');
+		if (comma) {
+			*comma = 0;
+			pj_ks (pj, "name", comma + 1);
+			pj_ks (pj, "type", arg_i);
+			const char *cc_arg = r_reg_get_name (a->reg, r_reg_get_name_idx (sdb_fmt ("A%d", i)));
+			if (cc_arg) {
+				pj_ks (pj, "cc", cc_arg);
+			}
+		}
+		free (arg_i);
+		free (sdb_arg_i);
+		pj_end (pj);
+	}
+	pj_end (pj);
+	free (sdb_args);
+	free (sdb_ret);
+	free (args);
+	pj_end (pj);
+	return pj_drain (pj);
+}
+
+R_API char *r_anal_function_get_signature(RAnal *a, const char *name) {
+	char *ret = NULL, *args = strdup ("");
+	char *sdb_ret = r_str_newf ("func.%s.ret", name);
+	char *sdb_args = r_str_newf ("func.%s.args", name);
+	// RList *args_list = r_list_newf ((RListFree) free);
+	unsigned int i, j;
+	const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
+	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
+
+	int argc = argc_str? atoi (argc_str): 0;
 
 	for (i = 0; i < argc; i++) {
-		sdb_arg_i = r_str_newf ("func.%s.arg.%d", function->name, i);
-		arg_i = sdb_get (a->sdb_types, sdb_arg_i, 0);
+		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", name, i);
+		char *arg_i = sdb_get (a->sdb_types, sdb_arg_i, 0);
 		// parse commas
-		for (j = 0; j < strlen (arg_i); j++) {
-			if (arg_i[j] == ',') {
+		int arg_i_len = strlen (arg_i);
+		for (j = 0; j < arg_i_len; j++) {
+			if (j > 0 && arg_i[j] == ',') {
 				if (arg_i[j - 1] == '*') {
 					// remove whitespace
 					memmove (arg_i + j, arg_i + j + 1, strlen (arg_i) - j);
@@ -1542,27 +1590,21 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 				}
 			}
 		}
-		args = (i + 1 == argc)
+		char *new_args = (i + 1 == argc)
 			? r_str_newf ("%s%s", args, arg_i)
 			: r_str_newf ("%s%s, ", args, arg_i);
+		free (args);
+		args = new_args;
 
 		free (arg_i);
 		free (sdb_arg_i);
 	}
-	ret = (ret_type)
-		? r_str_newf ("%s %s (%s);", ret_type, function->name, args)
-		: r_str_newf ("%s (%s);", function->name, args);
+	ret = r_str_newf ("%s %s (%s);", ret_type? ret_type: "void", name, args);
 
 	free (sdb_args);
 	free (sdb_ret);
 	free (args);
 	return ret;
-}
-
-// TODO: replace instances of this function call with:
-// r_anal_function_get_signature(RAnalFunction *function);
-R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fcn) {
-	return NULL;
 }
 
 /* set function signature from string */
