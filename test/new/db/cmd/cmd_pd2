@@ -549,8 +549,8 @@ FILE=../bins/elf/ls
 CMDS=<<EOF
 e asm.bytes=false
 e asm.filter=true
-(pd_tests, e asm.relsub=true, pd 15, ?e, e asm.relsub=false, pd 1 @ 0x000041ee, pd 1 @ 0x00004225)
-(insn_tests, e scr.color=0, .(pd_tests), ?e, e scr.color=1, .(pd_tests))
+(pd_tests; e asm.relsub=true; pd 15; ?e; e asm.relsub=false; pd 1 @ 0x000041ee; pd 1 @ 0x00004225)
+(insn_tests; e scr.color=0; .(pd_tests); ?e; e scr.color=1; .(pd_tests))
 s 0x000041e0
 .(insn_tests)
 ?e
@@ -753,8 +753,8 @@ e asm.bytes=false
 e asm.offset=false
 e asm.cmt.off=false
 aar
-(pdenc enc, e bin.str.enc=$0, pd 1)
-(pdstr bits, s `axt obj.utf$0be~[1]`, .(pdenc guess), .(pdenc utf$0le), .(pdenc utf$0be))
+(pdenc enc; e bin.str.enc=$0; pd 1)
+(pdstr bits; s `axt obj.utf$0be~[1]`; .(pdenc guess); .(pdenc utf$0le); .(pdenc utf$0be))
 .(pdstr 16)
 ?e
 .(pdstr 32)
@@ -778,7 +778,7 @@ e asm.offset=0
 e asm.cmt.off=0
 e bin.str.enc=guess
 aar
-(pdstr flag, s `axt obj.$0~[1]`, pd 1)
+(pdstr flag; s `axt obj.$0~[1]`; pd 1)
 .(pdstr utf8_bom)
 .(pdstr utf16le_bom)
 .(pdstr utf16be_bom)

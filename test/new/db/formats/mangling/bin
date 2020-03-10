@@ -117,7 +117,7 @@ FILE=../bins/elf/abcde-qt32
 CMDS=<<EOF
 e asm.demangle=true
 e asm.bytes=false
-(pd_calls, pd 1 @ 0x0804921a, pd 1 @ 0x08049249, pd 1 @ 0x08049278)
+(pd_calls; pd 1 @ 0x0804921a; pd 1 @ 0x08049249; pd 1 @ 0x08049278)
 e asm.cmt.right=true
 .(pd_calls)
 ?e

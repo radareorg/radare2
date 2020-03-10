@@ -62,11 +62,11 @@ s 0x123
 ?v $$ @ 0x300
 ?v $$$ @ 0x300
 ?e
-(test, ?v $$$)
+(test; ?v $$$)
 .(test)
 .(test) @ 0x300
 s
-(test2, .(test) @ 0x400)
+(test2; .(test) @ 0x400)
 .(test2)
 s
 .(test2) @ 0x300
@@ -91,9 +91,9 @@ RUN
 NAME=nested $$
 FILE=-
 CMDS=<<EOF
-(nested_seek, ?v $$)
+(nested_seek; ?v $$)
 .(nested_seek) @ 0x500
-(nested_seek2, ?v $$, .(nested_seek) @ 0x600, ?v $$)
+(nested_seek2; ?v $$; .(nested_seek) @ 0x600; ?v $$)
 .(nested_seek2) @ 0x700
 EOF
 EXPECT=<<EOF

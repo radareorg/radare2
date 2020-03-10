@@ -1029,7 +1029,7 @@ e asm.noisy=false
 e asm.bytes=false
 e asm.cmt.off=false
 e str.escbslash=true
-(test_str.enc enc, e bin.str.enc=$0, e bin.str.enc)
+(test_str.enc enc; e bin.str.enc=$0; e bin.str.enc)
 .(test_str.enc guess)
 .(test_str.enc utf-8)
 .(test_str.enc utf-16le)
@@ -1056,7 +1056,7 @@ RUN
 NAME=bin.str.enc error handling
 FILE=-
 CMDS=<<EOF
-(test_str.enc enc, e bin.str.enc=$0, e bin.str.enc)
+(test_str.enc enc; e bin.str.enc=$0; e bin.str.enc)
 .(test_str.enc UTF-32LE)
 .(test_str.enc cat_sat_on_keyboard)
 .(test_str.enc CAT_SAT_ON_KEYBOARD)

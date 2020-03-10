@@ -2518,6 +2518,30 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 	return res;
 }
 
+static bool is_macro_command(const char *ptr) {
+	ptr = r_str_trim_head_ro (ptr);
+	while (IS_DIGIT (*ptr)) {
+		ptr++;
+	}
+	return *ptr == '(';
+}
+
+static char *find_ch_after_macro(char *ptr, char ch) {
+	int depth = 0;
+	while (*ptr) {
+		if (depth == 0 && *ptr == ch) {
+			return ptr;
+		}
+		if (*ptr == '(') {
+			depth++;
+		} else if (*ptr == ')') {
+			depth--;
+		}
+		ptr++;
+	}
+	return NULL;
+}
+
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	ut64 rep = strtoull (cmd, NULL, 10);
 	int ret = 0, orep;
@@ -2571,7 +2595,12 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	if (*cmd != '"') {
 		if (!strchr (cmd, '\'')) { // allow | awk '{foo;bar}' // ignore ; if there's a single quote
-			if ((colon = strchr (cmd, ';'))) {
+			if (is_macro_command (cmd)) {
+				colon = find_ch_after_macro (cmd, ';');
+			} else {
+				colon = strchr (cmd, ';');
+			}
+			if (colon) {
 				*colon = 0;
 			}
 		}
@@ -2893,7 +2922,11 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	// TODO: must honor " and ` boundaries
 	//ptr = strrchr (cmd, ';');
 	if (*cmd != '#') {
-		ptr = (char *)r_str_lastbut (cmd, ';', quotestr);
+		if (is_macro_command (cmd)) {
+			ptr = find_ch_after_macro (cmd, ';');
+		} else {
+			ptr = (char *)r_str_lastbut (cmd, ';', quotestr);
+		}
 		if (colon && ptr) {
 			int ret ;
 			*ptr = '\0';

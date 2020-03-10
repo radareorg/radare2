@@ -3632,7 +3632,7 @@ izz~0x00412420
 e bin.str.purge=true
 izz~0x00412420  # Should print nothing
 ?e --3--
-(test_iz,iz~0x004131d8,iz~0x00413228,iz~0x00413233,iz~0x0041323a)
+(test_iz;iz~0x004131d8;iz~0x00413228;iz~0x00413233;iz~0x0041323a)
 e bin.str.purge=false
 .(test_iz)
 ?e --4--

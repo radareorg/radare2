@@ -336,7 +336,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		return 0;
 	}
 
-	pbody = strchr (name, ',');
+	pbody = strchr (name, ';');
 	if (!pbody) {
 		eprintf ("Invalid macro body\n");
 		free (name);
@@ -394,52 +394,15 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		macro->nargs = r_str_word_set0 (ptr+1);
 	}
 
-#if 0
-	if (pbody) {
-#endif
-		for (lidx=0; pbody[lidx]; lidx++) {
-			if (pbody[lidx] == ',') {
-				pbody[lidx]='\n';
-			} else if (pbody[lidx] == ')' && pbody[lidx - 1] == '\n') {
-				pbody[lidx] = '\0';
-			}
-		}
-		strncpy (macro->code, pbody, macro->codelen);
-		macro->code[macro->codelen-1] = 0;
-		//strcat (macro->code, ",");
-#if 0
-	} else {
-		int lbufp, codelen = 0, nl = 0;
-		eprintf ("Reading macro from stdin:\n");
-		for (;codelen<R_CMD_MAXLEN;) { // XXX input from mac->fd
-#if 0
-			if (stdin == r_cons_stdin_fd) {
-				mac->cb_printf(".. ");
-				fflush(stdout);
-			}
-			fgets(buf, sizeof (buf), r_cons_stdin_fd);
-#endif
-			fgets (buf, sizeof (buf), stdin);
-			if (*buf=='\n' && nl)
-				break;
-			nl = (*buf == '\n')?1:0;
-			if (*buf==')')
-				break;
-			for (bufp=buf;*bufp==' '||*bufp=='\t';bufp++);
-			lidx = strlen (buf)-2;
-			lbufp = strlen (bufp);
-			if (buf[lidx]==')' && buf[lidx-1]!='(') {
-				buf[lidx]='\0';
-				memcpy (macro->code+codelen, bufp, lbufp+1);
-				break;
-			}
-			if (*buf != '\n') {
-				memcpy (macro->code+codelen, bufp, lbufp+1);
-				codelen += lbufp;
-			}
+	for (lidx = 0; pbody[lidx]; lidx++) {
+		if (pbody[lidx] == ';') {
+			pbody[lidx] = '\n';
+		} else if (pbody[lidx] == ')' && pbody[lidx - 1] == '\n') {
+			pbody[lidx] = '\0';
 		}
 	}
-#endif
+	strncpy (macro->code, pbody, macro->codelen);
+	macro->code[macro->codelen-1] = 0;
 	if (macro_update == 0) {
 		r_list_append (mac->macros, macro);
 	}
@@ -477,10 +440,10 @@ R_API void r_cmd_macro_list(RCmdMacro *mac) {
 	int j, idx = 0;
 	RListIter *iter;
 	r_list_foreach (mac->macros, iter, m) {
-		mac->cb_printf ("%d (%s %s, ", idx, m->name, m->args);
+		mac->cb_printf ("%d (%s %s; ", idx, m->name, m->args);
 		for (j=0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
-				mac->cb_printf (", ");
+				mac->cb_printf ("; ");
 			} else {
 				mac->cb_printf ("%c", m->code[j]);
 			}
@@ -499,7 +462,7 @@ R_API void r_cmd_macro_meta(RCmdMacro *mac) {
 		mac->cb_printf ("(%s %s, ", m->name, m->args);
 		for (j=0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
-				mac->cb_printf (", ");
+				mac->cb_printf ("; ");
 			} else {
 				mac->cb_printf ("%c", m->code[j]);
 			}
@@ -685,7 +648,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 		free (str);
 		return 0;
 	}
-	ptr = strchr (str, ',');
+	ptr = strchr (str, ';');
 	if (ptr) {
 		*ptr = 0;
 	}

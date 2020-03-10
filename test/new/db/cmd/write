@@ -279,7 +279,7 @@ idx=2 addr=0x00000006 size=3 000000 -> 909090 (written)
 EOF
 CMDS=<<EOF
 e io.cache=true
-(wxseek ,  wx 909090,  s+ 3)
+(wxseek ;  wx 909090;  s+ 3)
 3.(wxseek)
 wci
 wc

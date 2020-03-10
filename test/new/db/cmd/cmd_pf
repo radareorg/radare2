@@ -859,7 +859,7 @@ NAME=pf z, scr.strconv and str.escbslash
 FILE=-
 CMDS=<<EOF
 wz \x7fabc\\123\n
-(print strconv escbslash, e scr.strconv=$0, e str.escbslash=$1, pf z)
+(print strconv escbslash; e scr.strconv=$0; e str.escbslash=$1; pf z)
 .(print asciiesc false)
 .(print asciiesc true)
 .(print asciidot false)

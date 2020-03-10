@@ -397,7 +397,7 @@ pf? elf_header
 pfs.elf_header
 ?e
 wz `pf? elf_header`
-(pfelf num, pf.elf_header {$0}`psz`, pf? elf_header, pfs.elf_header)
+(pfelf num; pf.elf_header {$0}`psz`; pf? elf_header; pfs.elf_header)
 .(pfelf 1)
 ?e
 .(pfelf 2)

@@ -213,7 +213,7 @@ RUN
 NAME=so -N, pd -N
 FILE=../bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
-"(test_so_pd addr, ?e, ?e --- From $0 ---, ?e, ?e -- 1 --, s $0, pd -1, so -1, s, pd 1, ?e, ?e -- 2 --, s $0, pd -2, so -2, s, pd 2)"
+"(test_so_pd addr; ?e; ?e --- From $0 ---; ?e; ?e -- 1 --; s $0; pd -1; so -1; s; pd 1; ?e; ?e -- 2 --; s $0; pd -2; so -2; s; pd 2)"
 .(test_so_pd 0x0)  # Special case
 .(test_so_pd 0x401000)
 s 0x560e67
