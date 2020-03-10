@@ -111,7 +111,8 @@ static const char *help_msg_ac[] = {
 	"ac", " [class name]", "add class",
 	"ac-", " [class name]", "delete class",
 	"acn", " [class name] [new class name]", "rename class",
-	"acv", " [class name] [addr] ([offset])", "add vtable address to class",
+	"acv", " [class name] [addr] ([offset]) ([size])", "add vtable address to class",
+	"acvf", " [offset] ([class name])", "lookup function address on vtable offset",
 	"acv-", " [class name] [vtable id]", "delete vtable by id (from acv [class name])",
 	"acb", " [class name]", "list bases of class",
 	"acb", " [class name] [base class name] ([offset])", "add base class",
@@ -9474,6 +9475,36 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
 	char c = input[0];
 	switch (c) {
+	case 'f': {// "acvf" [offset] ([class_name])
+		const char *str = r_str_trim_head_ro (input + 1);
+		if (!*str) {
+			eprintf ("No offset given\n");
+			return;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		if (end) {
+			*end = '\0';
+			end++;
+		}
+		ut64 offset_arg = r_num_get (core->num, cstr); // Should I allow negative offset?
+		char *class_arg = NULL;
+		if (end) {
+			class_arg = r_str_trim_head_ro (end);
+		}
+
+		if (class_arg) {
+			end = r_str_trim_head_wp (class_arg); // in case of extra unwanted stuff at the cmd end
+			*end = '\0';
+		}
+		r_anal_class_list_vtable_offset_functions (core->anal, class_arg, offset_arg);
+
+		free (cstr);
+		break;
+	}
 	case ' ': // "acv"
 	case '-': { // "acv-"
 		const char *str = r_str_trim_head_ro (input + 1);

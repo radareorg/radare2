@@ -484,3 +484,36 @@ EXPECT=<<EOF
 [{"name":"PorcupineTreeAlbum","bases":[],"vtables":[{"id":"0","addr":4919,"offset":66}],"methods":[{"name":"Listen","addr":3735928559}]},{"name":"Deadwing","bases":[{"id":"0","name":"PorcupineTreeAlbum","offset":8}],"vtables":[],"methods":[]}]
 EOF
 RUN
+
+NAME=acvf
+FILE=../bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+ac A
+ac B
+ac C
+acv A 0x00400d28 0x0 0x10
+acv B 0x00400d08 0x0 0x10
+acv C 0x00400ce8 0x0 0x10
+acll
+acvf 0x0 A
+acvf 0x8 B
+acvf 0x16 C dasdass
+acvf 0x0
+acvf -50
+acvf 0x0 000ASDASdjpsadoaspdjasdaspodasDDD
+acv A 0x00400d28 0x0
+EOF
+EXPECT=<<EOF
+A
+  (vtable at 0x400d28)
+B
+  (vtable at 0x400d08)
+C
+  (vtable at 0x400ce8)
+Function address: 0x00400ac8, in A vtable 0
+Function address: 0x00400b82, in B vtable 0
+Function address: 0x00400ac8, in A vtable 0
+Function address: 0x00400ac8, in B vtable 0
+Function address: 0x00400ac8, in C vtable 0
+EOF
+RUN
