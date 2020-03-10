@@ -308,7 +308,7 @@ NAME=pf/pfj z with size
 FILE=-
 CMDS=<<EOF
 wz ABCDE
-(pf2 format, pf $0, pfj $0)
+(pf2 format; pf $0; pfj $0)
 .(pf2 z)
 ?e
 .(pf2 [3]z)

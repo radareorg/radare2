@@ -8,7 +8,7 @@ CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
 e cfg.bigendian=true
-"(pi bytes,wx $0,pi 1,pie 1)"
+(pi bytes;wx $0;pi 1;pie 1)
 .(pi 8421fff8)
 EOF
 RUN
@@ -23,7 +23,7 @@ CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
 e cfg.bigendian=true
-"(pi bytes,wx $0,pi 1,pie 1)"
+(pi bytes;wx $0;pi 1;pie 1)
 .(pi 9421fff8)
 EOF
 RUN
@@ -38,7 +38,7 @@ CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
 e cfg.bigendian=true
-"(pi bytes,wx $0,pi 1,pie 1)"
+(pi bytes;wx $0;pi 1;pie 1)
 .(pi 4200fff0)
 EOF
 RUN

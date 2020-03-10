@@ -45,7 +45,7 @@ FILE=../bins/elf/analysis/tiny.elf
 CMDS=<<EOF
 . ../bins/other/palette.r2
 e io.unalloc=true
-(dump, xc 0x00010060-0x0000ffd0 @ 0x0000ffd0-6)
+(dump; xc 0x00010060-0x0000ffd0 @ 0x0000ffd0-6)
 e scr.color=3
 e hex.comments=true
 .(dump)
