@@ -92,7 +92,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 	}
 	new_buf = malloc (count);
 	if (!new_buf) {
-		return -1;
+		return false;
 	}
 	memcpy (new_buf, _io_malloc_buf (fd), R_MIN (count, mallocsz));
 	if (count > mallocsz) {
