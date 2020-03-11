@@ -2811,7 +2811,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_YMM, false);
 				r_debug_reg_list (core->dbg, R_REG_TYPE_YMM, 256, 0, 0);
 			} else { // drm
-				r_debug_reg_sync (core->dbg, -R_REG_TYPE_XMM, false);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, false);
 				r_debug_reg_list (core->dbg, R_REG_TYPE_XMM, 128, 0, 0);
 			}
 		}
@@ -2857,6 +2857,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 			free (name);
 		} else {
+			//TODO: Do not use this hack to print fpu register
 			r_debug_reg_sync (core->dbg, -R_REG_TYPE_FPU, false);
 		}
 		break;
