@@ -1,5 +1,5 @@
 NAME=no preincrement/predecrement in 3rd part of for statement
-# Bad: for (;; i++, j--)
+# Bad: for (;; ++i, --j)
 # Good: for (;; i++, j--)
 FILE=-
 # TODO: multiline
