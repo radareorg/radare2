@@ -42,6 +42,7 @@ w32dbg_wrap_instance *w32dbg_wrap_new(void) {
 	if (inst) {
 		inst->params = calloc (1, sizeof (w32dbg_wrap_params));
 		if (!inst->params) {
+			free(inst);
 			return NULL;
 		}
 		inst->request_sem = CreateSemaphore (NULL, 0, 1, NULL);
