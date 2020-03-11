@@ -666,7 +666,7 @@ static bool esil_sof(RAnalEsil *esil) {
 	free (p_bit);
 
 	const ut64 m[2] = {genmask (bit & 0x3f), genmask ((bit + 0x3f) & 0x3f)};
-	const ut64 c_0 = (esil->old-esil->cur) & m[0] == (1<<bit); // extra check
+	const ut64 c_0 = ((esil->old-esil->cur) & m[0]) == (1<<bit); // extra check
 	const ut64 result = c_0 ^ ((esil->cur & m[0]) < (esil->old & m[0])) ^ ((esil->cur & m[1]) < (esil->old & m[1]));
 	ut64 res = r_anal_esil_pushnum (esil, result);
 	return res;

@@ -703,9 +703,6 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_MOVLPS:
 	case X86_INS_MOVBE:
 	case X86_INS_MOVSX:
-		{
-			break;
-		}
 	case X86_INS_MOVSXD:
 	case X86_INS_MOVD:
 	case X86_INS_MOVQ:
