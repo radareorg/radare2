@@ -43,7 +43,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		return false;
 	}
 	ut32 *const tmp = calloc (4, size/4);
-	if (!ibuf) {
+	if (!tmp) {
 		free (obuf);
 		free (ibuf);
 		return false;
