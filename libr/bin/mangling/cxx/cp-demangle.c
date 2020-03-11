@@ -3894,7 +3894,7 @@ d_substitution (struct d_info *di, int prefix)
 
       pend = (&standard_subs[0]
 	      + sizeof standard_subs / sizeof standard_subs[0]);
-      for (p = &standard_subs[0]; p < pend; ++p)
+      for (p = &standard_subs[0]; p < pend; p++)
 	{
 	  if (c == p->code)
 	    {
@@ -5651,7 +5651,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 
 	len = d_pack_length (a);
 	dc = d_left (dc);
-	for (i = 0; i < len; ++i)
+	for (i = 0; i < len; i++)
 	  {
 	    dpi->pack_index = i;
 	    d_print_comp (dpi, options, dc);
@@ -5753,7 +5753,7 @@ d_print_java_identifier (struct d_print_info *dpi, const char *name, int len)
   const char *end;
 
   end = name + len;
-  for (p = name; p < end; ++p)
+  for (p = name; p < end; p++)
     {
       if (end - p > 3
 	  && p[0] == '_'
@@ -5764,7 +5764,7 @@ d_print_java_identifier (struct d_print_info *dpi, const char *name, int len)
 	  const char *q;
 
 	  c = 0;
-	  for (q = p + 3; q < end; ++q)
+	  for (q = p + 3; q < end; q++)
 	    {
 	      int dig;
 
@@ -6744,7 +6744,7 @@ main (int argc, char *argv[])
     /* Demangle command line arguments.  */
     {
       /* Loop over command line arguments.  */
-      for (i = optind; i < argc; ++i)
+      for (i = optind; i < argc; i++)
 	{
 	  char *s;
 #ifdef IN_GLIBCPP_V3

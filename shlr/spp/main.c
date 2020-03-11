@@ -10,7 +10,7 @@ extern struct Arg *args;
 static void spp_help(char *argv0) {
 	int i;
 	char supported[128] = "";
-	for( i = 0; procs[i]; ++i ) {
+	for( i = 0; procs[i]; i++ ) {
 		if (i) strcat (supported, ",");
 		strcat (supported, procs[i]->name);
 	}

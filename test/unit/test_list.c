@@ -8,12 +8,12 @@ bool test_r_list_size(void) {
 	RList* list = r_list_new ();
 	intptr_t test = 0x101010;
 	// Add 100 items.
-	for (i = 0; i < 100; ++i) {
+	for (i = 0; i < 100; i++) {
 		r_list_append (list, (void*)test);
 		mu_assert_eq (r_list_length (list), i + 1, "r_list_length failed on append");
 	}
 	// Delete 50 of them.
-	for (i = 0; i < 50; ++i) {
+	for (i = 0; i < 50; i++) {
 		(void)r_list_pop (list);
 		mu_assert_eq(99 - i, r_list_length (list), "r_list_length failed on pop");
 	}

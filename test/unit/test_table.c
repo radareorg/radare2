@@ -65,7 +65,7 @@ bool test_r_table_tostring(void) {
 	RTable *t = __table_test_data1 ();
 	char buf[BUF_LENGTH];
 
-	for (int i = 0; i < 4; ++i) {
+	for (int i = 0; i < 4; i++) {
 		char *s = r_table_tostring (t);
 		snprintf (buf, BUF_LENGTH, "%d-th call to r_table_tostring", i);
 		mu_assert_streq (s,

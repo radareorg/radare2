@@ -795,7 +795,7 @@ static void minimize_crossings(const RAGraph *g) {
 		cross_changed = false;
 		max_changes--;
 
-		for (i = g->n_layers - 1; i >= 0; --i) {
+		for (i = g->n_layers - 1; i >= 0; i--) {
 			int rc = layer_sweep (g->graph, g->layers, g->n_layers, i, false);
 			if (rc == -1) {
 				return;
@@ -1452,7 +1452,7 @@ static void combine_sequences(const RAGraph *g, int l, const RGraphNode *bm, con
 	r_list_free (Rm);
 	r_list_free (Rp);
 
-	for (i = t - 2; i >= a; --i) {
+	for (i = t - 2; i >= a; i--) {
 		const RGraphNode *gv = g->layers[l].nodes[i];
 		RANode *av = get_anode (gv);
 		if (av && at) {

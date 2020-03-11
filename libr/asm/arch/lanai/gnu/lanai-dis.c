@@ -175,7 +175,7 @@ print_insn_lanai (memaddr, info)
 	    register CONST char *s;
 	    unsigned int imm;
 
-	    for (s = opcode->args; *s != '\0'; ++s)
+	    for (s = opcode->args; *s != '\0'; s++)
 	      {
 
 		(*info->fprintf_func) (stream, " ");
@@ -429,7 +429,7 @@ compare_opcodes (a, b)
 
   /* Because the bits that are variable in one opcode are constant in
      another, it is important to order the opcodes in the right order.  */
-  for (i = 0; i < 32; ++i)
+  for (i = 0; i < 32; i++)
     {
       unsigned long int x = 1 << i;
       int x0 = (match0 & x) != 0;
@@ -440,7 +440,7 @@ compare_opcodes (a, b)
       }
     }
 
-  for (i = 0; i < 32; ++i)
+  for (i = 0; i < 32; i++)
     {
       unsigned long int x = 1 << i;
       int x0 = (lose0 & x) != 0;

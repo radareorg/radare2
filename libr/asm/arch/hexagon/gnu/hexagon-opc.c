@@ -1488,7 +1488,7 @@ hexagon_opcode_init_tables
   icode_map = calloc (1 << hexagon_icode_hash_bits, sizeof (*icode_map));
 
   /* Scan the table backwards so macros appear at the front.  */
-  for (i = hexagon_opcodes_count; i > 0; --i)
+  for (i = hexagon_opcodes_count; i > 0; i--)
     {
       hexagon_hash opcode;
       hexagon_insn insn;

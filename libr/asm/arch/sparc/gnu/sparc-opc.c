@@ -95,7 +95,7 @@ sparc_opcode_lookup_arch (const char *name)
 {
   const struct sparc_opcode_arch *p;
 
-  for (p = &sparc_opcode_archs[0]; p->name; ++p) {
+  for (p = &sparc_opcode_archs[0]; p->name; p++) {
 	  if (strcmp (name, p->name) == 0) {
 		  return (enum sparc_opcode_arch_val) (p - &sparc_opcode_archs[0]);
 	  }
@@ -1845,7 +1845,7 @@ lookup_name (const arg *table, const char *name)
 {
   const arg *p;
 
-  for (p = table; p->name; ++p) {
+  for (p = table; p->name; p++) {
 	  if (strcmp (name, p->name) == 0) {
 		  return p->value;
 	  }
@@ -1861,7 +1861,7 @@ lookup_value (const arg *table, int value)
 {
   const arg *p;
 
-  for (p = table; p->name; ++p) {
+  for (p = table; p->name; p++) {
 	  if (value == p->value) {
 		  return p->name;
 	  }

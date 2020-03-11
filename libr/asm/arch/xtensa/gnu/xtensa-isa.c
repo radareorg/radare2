@@ -175,7 +175,7 @@ xtensa_insnbuf_to_chars (xtensa_isa isa,
 
   fence_post = start + (byte_count * increment);
 
-  for (i = start; i != fence_post; i += increment, ++cp)
+  for (i = start; i != fence_post; i += increment, cp++)
     {
       int word_inx = byte_to_word_index (i);
       int bit_inx = byte_to_bit_index (i);
@@ -228,7 +228,7 @@ xtensa_insnbuf_from_chars (xtensa_isa isa,
   fence_post = start + (num_chars * increment);
   memset (insn, 0, xtensa_insnbuf_size (isa) * sizeof (xtensa_insnbuf_word));
 
-  for (i = start; i != fence_post; i += increment, ++cp)
+  for (i = start; i != fence_post; i += increment, cp++)
     {
       int word_inx = byte_to_word_index (i);
       int bit_inx = byte_to_bit_index (i);

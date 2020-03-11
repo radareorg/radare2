@@ -37,7 +37,7 @@ bool test_r_num_units() {
 	};
 	size_t nitems = sizeof (test_cases) / sizeof (test_cases[0]);
 	size_t i;
-	for (i = 0; i < nitems; ++i) {
+	for (i = 0; i < nitems; i++) {
 		r_num_units (humansz, sizeof (humansz), test_cases[i].num);
 		mu_assert_streq (humansz, test_cases[i].expected_res, test_cases[i].message);
 	}

@@ -59,7 +59,7 @@ nios2_init_opcode_hash (void)
   unsigned int i;
   register const struct nios2_opcode *op;
 
-  for (i = 0; i <= OP_MASK_OP; ++i) {
+  for (i = 0; i <= OP_MASK_OP; i++) {
 	  nios2_hash[0] = NULL;
   }
   for (i = 0; i <= OP_MASK_OP; i++) {
@@ -94,7 +94,7 @@ nios2_init_opcode_hash (void)
   }
   nios2_hash_init = 1;
 #ifdef DEBUG_HASHTABLE
-  for (i = 0; i <= OP_MASK_OP; ++i)
+  for (i = 0; i <= OP_MASK_OP; i++)
     {
       nios2_opcode_hash *tmp_hash = nios2_hash[i];
       printf ("index: 0x%02X	ops: ", i);
@@ -106,7 +106,7 @@ nios2_init_opcode_hash (void)
       printf ("\n");
     }
 
-  for (i = 0; i <= OP_MASK_OP; ++i)
+  for (i = 0; i <= OP_MASK_OP; i++)
     {
       nios2_opcode_hash *tmp_hash = nios2_ps_hash[i];
       printf ("index: 0x%02X	ops: ", i);

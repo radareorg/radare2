@@ -366,7 +366,7 @@ function doGreedyFAS(g, buckets, zeroIdx) {
     while ((entry = sinks.dequeue()))   { removeNode(g, buckets, zeroIdx, entry); }
     while ((entry = sources.dequeue())) { removeNode(g, buckets, zeroIdx, entry); }
     if (g.nodeCount()) {
-      for (var i = buckets.length - 2; i > 0; --i) {
+      for (var i = buckets.length - 2; i > 0; i--) {
         entry = buckets[i].dequeue();
         if (entry) {
           results = results.concat(removeNode(g, buckets, zeroIdx, entry, true));
@@ -1038,7 +1038,7 @@ function normalizeEdge(g, e) {
   g.removeEdge(e);
 
   var dummy, attrs, i;
-  for (i = 0, ++vRank; vRank < wRank; ++i, ++vRank) {
+  for (i = 0, ++vRank; vRank < wRank; i++, vRank++) {
     edgeLabel.points = [];
     attrs = {
       width: 0, height: 0,
@@ -1269,7 +1269,7 @@ module.exports = crossCount;
  */
 function crossCount(g, layering) {
   var cc = 0;
-  for (var i = 1; i < layering.length; ++i) {
+  for (var i = 1; i < layering.length; i++) {
     cc += twoLayerCrossCount(g, layering[i-1], layering[i]);
   }
   return cc;
@@ -1356,7 +1356,7 @@ function order(g) {
   var bestCC = Number.POSITIVE_INFINITY,
       best;
 
-  for (var i = 0, lastBest = 0; lastBest < 4; ++i, ++lastBest) {
+  for (var i = 0, lastBest = 0; lastBest < 4; i++, lastBest++) {
     sweepLayerGraphs(i % 2 ? downLayerGraphs : upLayerGraphs, i % 4 >= 2);
 
     layering = util.buildLayerMatrix(g);
