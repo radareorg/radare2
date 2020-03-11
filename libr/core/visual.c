@@ -1617,9 +1617,6 @@ repeat:
 	} else if (ch == 'G') {
 		skip = 9999;
 		goto repeat;
-	} else if (ch == '/') {
-		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
-		goto repeat;
 	} else if (ch == ';') {
 		addComment (core, cur_ref_addr);
 		goto repeat;
