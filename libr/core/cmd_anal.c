@@ -8864,6 +8864,21 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			n = *(++p)? r_num_math (core->num, p): 1;
 		}
 		addr = r_num_math (core->num, input + 1);
+
+#if 1
+		RAnalBlock *block = r_anal_get_block_at (core->anal, core->offset);
+		if (!block) {
+			break;
+		}
+		RList *path = r_anal_block_shortest_path (block, addr);
+		if (path) {
+			RListIter *it;
+			r_list_foreach (path, it, block) {
+				r_cons_printf ("0x%08" PFMT64x "\n", block->addr);
+			}
+			r_list_free (path);
+		}
+#else
 		RList *paths = r_core_anal_graph_to (core, addr, n);
 		if (paths) {
 			RAnalBlock *bb;
@@ -8881,6 +8896,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			r_list_purge (paths);
 			free (paths);
 		}
+#endif
 		}
 		break;
 	case '\0':
