@@ -1,3 +1,15 @@
+NAME=no preincrement/predecrement in 3rd part of for statement
+# Bad: for (;; ++i, --j)
+# Good: for (;; i++, j--)
+FILE=-
+# TODO: multiline
+CMDS="!git grep \"for[[:space:]]*([^;)]*;[^;)]*;\([^,)(]*,\)*[[:space:]]*\(++\|--\)[[:space:]]*[[:alpha:]_][[:alnum:]_]*[[:space:]]*[,)]\" -- ../.. :!db/tools/r2 :!../../shlr/** :!../../libr/asm/arch/** :!../../**/mangling/cxx/cp-demangle.c"
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
 NAME=r2 -
 FILE=-
 CMDS=e file.path

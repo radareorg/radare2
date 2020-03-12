@@ -25,7 +25,7 @@ void check_int(int exp, int act, const char *desc) {
 
 void check_array(int *exp, int *act, int len, const char *desc) {
 	int i, err_found = 0;
-	for (i = 0; i < len; ++i) {
+	for (i = 0; i < len; i++) {
 		if (exp[i] != act[i]) {
 			printf("\x1b[31m[-][%s]\x1b[39;49m test failed element %d (actual = %d\x1b[39;49m, expected = %d\x1b[39;49m)\n", desc, i, act[i], exp[i]);
 			err_found = 1;

@@ -39,7 +39,7 @@ bool test_insert(void) {
 	RSkipList *list = r_skiplist_new (NULL, (RListComparator)cmp_int);
 	RSkipListNode *n;
 	// Add 100 items.
-	for (i = 0; i < 100; ++i) {
+	for (i = 0; i < 100; i++) {
 		r_skiplist_insert (list, (void *)(intptr_t)i);
 	}
 
@@ -73,7 +73,7 @@ bool test_insert_existing(void) {
 	RSkipList *list = r_skiplist_new (NULL, (RListComparator)cmp_int);
 	int i;
 	// Add 100 items.
-	for (i = 0; i < 100; ++i) {
+	for (i = 0; i < 100; i++) {
 		r_skiplist_insert (list, (void *)(intptr_t)i);
 	}
 

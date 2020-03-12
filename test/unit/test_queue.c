@@ -5,7 +5,7 @@ bool test_r_queue_add_remove(void) {
 	int i, j;
 	// Create queue with max size 5.
 	RQueue* queue = r_queue_new (5);
-	for (i = 0; i < 5; ++i) {
+	for (i = 0; i < 5; i++) {
 		mu_assert ("enqueue to available slot",
 				r_queue_enqueue (queue, (void*)(intptr_t)((i + 1) * 10)));
 	}
@@ -13,7 +13,7 @@ bool test_r_queue_add_remove(void) {
 	mu_assert ("enqueue but it's full! Increase Capacity!",
 				r_queue_enqueue (queue, (void*)(intptr_t)60));
 	mu_assert_eq (queue->capacity, 10, "new capacity should be double old");
-	for (i = 0; i < 6; ++i) {
+	for (i = 0; i < 6; i++) {
 		j = (int)(intptr_t)r_queue_dequeue (queue);
 		mu_assert_eq (j, (i + 1) * 10, "front item from queue");
 	}
