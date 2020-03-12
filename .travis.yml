@@ -1,4 +1,7 @@
-# travis.yml for testing radare2. Initially written in 2014-2016, by jn__.  Updated 2018 by damo22
+# travis.yml for testing radare2.
+# Initially written in 2014-2016
+# by jn__. Updated 2018 by damo22
+# xvilka, pancake, ret2libc in 2020
 
 language: generic
 dist: trusty
