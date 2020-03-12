@@ -5843,7 +5843,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_esil_free (esil);
 			core->anal->esil = NULL;
 			break;
-		case 0:				//lolololol
+		case 0: //lolololol
 			r_anal_esil_free (esil);
 			// reinitialize
 			{
@@ -9516,11 +9516,11 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		ut64 offset_arg = r_num_get (core->num, cstr); // Should I allow negative offset?
 		char *class_arg = NULL;
 		if (end) {
-			class_arg = r_str_trim_head_ro (end);
+			class_arg = (char *)r_str_trim_head_ro (end);
 		}
 
 		if (class_arg) {
-			end = r_str_trim_head_wp (class_arg); // in case of extra unwanted stuff at the cmd end
+			end = (char *)r_str_trim_head_wp (class_arg); // in case of extra unwanted stuff at the cmd end
 			*end = '\0';
 		}
 		r_anal_class_list_vtable_offset_functions (core->anal, class_arg, offset_arg);

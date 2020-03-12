@@ -2972,7 +2972,7 @@ static bool __stepOut(RAnalEsil *esil, const char *cmd) {
 	return false;
 }
 
-R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
+R_API bool r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	int wordi = 0;
 	int dorunword;
 	char word[64];
