@@ -5875,7 +5875,7 @@ DEFINE_HANDLE_TS_FCN(grep_command) {
 	r_strbuf_prepend (sb, "~");
 	char *specifier_str = r_cons_grep_strip (r_strbuf_get (sb), "`");
 	r_strbuf_free (sb);
-	specified_str = unescape_special_chars (specifier_str, SPECIAL_CHARS_REGULAR);
+	specifier_str = unescape_special_chars (specifier_str, SPECIAL_CHARS_REGULAR);
 	R_LOG_DEBUG ("grep_command processed specifier: '%s'\n", specifier_str);
 	r_cons_grep_process (specifier_str);
 	free (arg_str);
