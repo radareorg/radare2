@@ -83,7 +83,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 }
 
 R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
-	int i, delta, from, to, cols, n = 0;
+	int delta, from, to, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RPrint *pr = NULL;
 	int colwidth = 20;
@@ -130,10 +130,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 
 	int itmidx = -1;
 	dbg->creg = NULL;
-	for (i = from; i < to; i++) {
-		head = r_reg_get_list (dbg->reg, i);
+		head = r_reg_get_list (dbg->reg, type);
 		if (!head) {
-			continue;
+			return false;
 		}
 		r_list_foreach (head, iter, item) {
 			ut64 value;
@@ -278,7 +277,6 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			}
 			n++;
 		}
-	}
 beach:
 	if (rad == 'j') {
 		dbg->cb_printf ("}\n");
