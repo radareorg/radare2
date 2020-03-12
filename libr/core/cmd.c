@@ -27,9 +27,18 @@
 #include <sys/utsname.h>
 #endif
 
+// NOTE: this should be in sync with SPECIAL_CHARACTERS in
+//       radare2-shell-parser grammar, except for ", ' and
+//       whitespaces, because we let cmd_substitution_arg create
+//       new arguments
+static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
+
 #if USE_TREESITTER
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_r2cmd ();
+
+static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"";
+static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
 #endif
 
 R_API void r_save_panels_layout(RCore *core, const char *_name);
@@ -2275,6 +2284,22 @@ static int cmd_system(void *data, const char *input) {
 	return ret;
 }
 
+static char *unescape_special_chars(char *s, const char *special_chars) {
+	char *dst = R_NEWS (char, strlen (s) + 1);
+	int i, j = 0;
+
+	for (i = 0; s[i]; i++) {
+		if (s[i] != '\\' || !strchr (special_chars, s[i + 1])) {
+			dst[j++] = s[i];
+			continue;
+		}
+		dst[j++] = s[i + 1];
+		i++;
+	}
+	dst[j++] = '\0';
+	return dst;
+}
+
 #if __WINDOWS__
 #include <tchar.h>
 #define __CLOSE_DUPPED_PIPES() \
@@ -3706,6 +3731,9 @@ fuji:
 		rc = false;
 	}
 beach:
+	if (grep) {
+		grep = unescape_special_chars (grep, SPECIAL_CHARS_REGULAR);
+	}
 	r_cons_grep_process (grep);
 	if (scr_html != -1) {
 		r_cons_flush ();
@@ -4531,14 +4559,6 @@ DEFINE_IS_TS_FCN(double_quoted_arg)
 DEFINE_IS_TS_FCN(single_quoted_arg)
 DEFINE_IS_TS_FCN(concatenation)
 
-// NOTE: this should be in sync with SPECIAL_CHARACTERS in
-//       radare2-shell-parser grammar, except for ", ' and
-//       whitespaces, because we let cmd_substitution_arg create
-//       new arguments
-static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
-static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"";
-static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
-
 static struct tsr2cmd_edit *create_cmd_edit(struct tsr2cmd_state *state, TSNode arg, char *new_text) {
 	struct tsr2cmd_edit *e = R_NEW0 (struct tsr2cmd_edit);
 	ut32 command_start = ts_node_start_byte (state->substitute_cmd);
@@ -4582,22 +4602,6 @@ static char *escape_special_chars(char *s, const char *special_chars) {
 	d[j++] = '\0';
 	free (s);
 	return d;
-}
-
-static char *unescape_special_chars(char *s, const char *special_chars) {
-	char *dst = R_NEWS (char, strlen (s) + 1);
-	int i, j = 0;
-
-	for (i = 0; s[i]; i++) {
-		if (s[i] != '\\' || !strchr (special_chars, s[i + 1])) {
-			dst[j++] = s[i];
-			continue;
-		}
-		dst[j++] = s[i + 1];
-		i++;
-	}
-	dst[j++] = '\0';
-	return dst;
 }
 
 void free_tsr2cmd_edit(struct tsr2cmd_edit *edit) {
@@ -5871,6 +5875,7 @@ DEFINE_HANDLE_TS_FCN(grep_command) {
 	r_strbuf_prepend (sb, "~");
 	char *specifier_str = r_cons_grep_strip (r_strbuf_get (sb), "`");
 	r_strbuf_free (sb);
+	specified_str = unescape_special_chars (specifier_str, SPECIAL_CHARS_REGULAR);
 	R_LOG_DEBUG ("grep_command processed specifier: '%s'\n", specifier_str);
 	r_cons_grep_process (specifier_str);
 	free (arg_str);

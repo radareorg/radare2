@@ -75,7 +75,7 @@ RUN
 
 NAME=radiff2 -AC (mach0 fat files)
 FILE=-
-CMDS=!!radiff2 -AC ../bins/other/radiff2/hellocxx-osx-fat-intel_1 ../bins/other/radiff2/hellocxx-osx-fat-intel_2~?(1.000000)
+CMDS=!!radiff2 -AC ../bins/other/radiff2/hellocxx-osx-fat-intel_1 ../bins/other/radiff2/hellocxx-osx-fat-intel_2~?\(1.000000\)
 EXPECT=<<EOF
 17
 EOF
