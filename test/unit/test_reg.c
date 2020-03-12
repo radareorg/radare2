@@ -167,6 +167,31 @@ bool test_r_reg_get(void) {
 	mu_end;
 }
 
+bool test_r_reg_get_list(void) {
+	RReg *reg;
+	RList *l;
+	int mask;
+
+	reg = r_reg_new ();
+	mu_assert_notnull (reg, "r_reg_new () failed");
+
+	bool success = r_reg_set_profile_string (reg,
+		"gpr		eax		.32	24	0\n\
+		fpu			sf0		.32	304	0\n\
+		xmm@fpu		xmm0	.64	160	4");
+	mu_assert_eq (success, true, "define eax, sf0 and xmm0 register");
+
+	mask = ((int)1 << R_REG_TYPE_XMM);
+	mu_assert_eq ((reg->regset[R_REG_TYPE_FPU].maskregstype & mask), mask,
+		"xmm0 stored as R_REG_TYPE_FPU");
+
+	l = r_reg_get_list (reg, R_REG_TYPE_XMM);
+	mu_assert_eq (r_list_length (l), 2, "sf0 and xmm0 stored as R_REG_TYPE_FPU");
+
+	r_reg_free (reg);
+	mu_end;
+}
+
 bool test_r_reg_get_pack(void) {
 	RReg *reg;
 	RRegItem *r;
@@ -215,6 +240,7 @@ int all_tests() {
 	mu_run_test (test_r_reg_get_value_gpr);
 	mu_run_test (test_r_reg_get_value_flag);
 	mu_run_test (test_r_reg_get);
+	mu_run_test (test_r_reg_get_list);
 	mu_run_test (test_r_reg_get_pack);
 	return tests_passed != tests_run;
 }
