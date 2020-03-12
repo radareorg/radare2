@@ -460,3 +460,29 @@ R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut6
 	}
 	r_anal_switch_op_add_case (block->switch_op, case_addr, 0, case_addr);
 }
+
+
+typedef struct r_anal_block_paths_context_t {
+	RAnal *anal;
+	RPVector/*<RAnalBlock>*/ to_visit;
+	HtUP *visited;
+} RAnalBlockPathsContext;
+
+R_API RVector *r_anal_block_paths(RAnalBlock *block, ut64 dst, size_t n) {
+	RAnalBlockPathsContext ctx;
+	ctx.anal = block->anal;
+	r_pvector_init (&ctx.to_visit, NULL);
+	ctx.visited = ht_up_new0 ();
+	if (!ctx.visited) {
+		goto beach;
+	}
+
+	ht_up_insert (ctx.visited, block->addr, NULL);
+	r_pvector_push (&ctx.to_visit, block);
+
+beach:
+	ht_up_free (ctx.visited);
+	r_pvector_clear (&ctx.to_visit);
+	return NULL; // TODO
+}
+
