@@ -126,10 +126,9 @@ static bool block_list_cb(RAnalBlock *block, void *user) {
 
 R_API RList *r_anal_get_blocks_in(RAnal *anal, ut64 addr) {
 	RList *list = r_list_newf ((RListFree)r_anal_block_unref);
-	if (!list) {
-		return NULL;
+	if (list) {
+		r_anal_blocks_foreach_in (anal, addr, block_list_cb, list);
 	}
-	r_anal_blocks_foreach_in (anal, addr, block_list_cb, list);
 	return list;
 }
 
@@ -449,10 +448,9 @@ static bool recurse_list_cb(RAnalBlock *block, void *user) {
 
 R_API RList *r_anal_block_recurse_list(RAnalBlock *block) {
 	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
-	if (!ret) {
-		return NULL;
+	if (ret) {
+		r_anal_block_recurse (block, recurse_list_cb, ret);
 	}
-	r_anal_block_recurse (block, recurse_list_cb, ret);
 	return ret;
 }
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2019 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2020 - pancake, condret */
 
 #include <r_anal.h>
 #include <r_types.h>
@@ -124,7 +124,7 @@ R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb cod
 	return true;
 }
 
-R_API int r_anal_esil_fire_trap(RAnalEsil *esil, int trap_type, int trap_code) {
+static bool r_anal_esil_fire_trap(RAnalEsil *esil, int trap_type, int trap_code) {
 	r_return_val_if_fail (esil, false);
 	if (esil->cmd) {
 		if (esil->cmd (esil, esil->cmd_trap, trap_type, trap_code)) {
@@ -456,7 +456,7 @@ R_API int r_anal_esil_get_parm_type(RAnalEsil *esil, const char *str) {
 	if (!strncmp (str, "0x", 2)) {
 		return R_ANAL_ESIL_PARM_NUM;
 	}
-	if (!((IS_DIGIT(str[0])) || str[0] == '-')) {
+	if (!((IS_DIGIT (str[0])) || str[0] == '-')) {
 		goto not_a_number;
 	}
 	for (i = 1; i < len; i++) {
@@ -2802,7 +2802,7 @@ static bool esil_set_delay_slot(RAnalEsil *esil) {
 	return ret;
 }
 
-static int iscommand(RAnalEsil *esil, const char *word, RAnalEsilOp **op) {
+static bool iscommand(RAnalEsil *esil, const char *word, RAnalEsilOp **op) {
 	char t[128];
 	char *h = sdb_itoa (sdb_hash (word), t, 16);
 	if (sdb_num_exists (esil->ops, h)) {
@@ -2812,17 +2812,17 @@ static int iscommand(RAnalEsil *esil, const char *word, RAnalEsilOp **op) {
 	return false;
 }
 
-static int runword(RAnalEsil *esil, const char *word) {
+static bool runword(RAnalEsil *esil, const char *word) {
 	RAnalEsilOp *op = NULL;
 	if (!word) {
-		return 0;
+		return false;
 	}
 	esil->parse_goto_count--;
 	if (esil->parse_goto_count < 1) {
 		ERR ("ESIL infinite loop detected\n");
 		esil->trap = 1;       // INTERNAL ERROR
 		esil->parse_stop = 1; // INTERNAL ERROR
-		return 0;
+		return false;
 	}
 
 	// Don't push anything onto stack when processing if statements
@@ -2841,12 +2841,10 @@ static int runword(RAnalEsil *esil, const char *word) {
 		if (!strcmp (word, "}")) {
 			r_anal_esil_pushnum (esil, esil->Reil->addr + esil->Reil->cmd_count + 1);
 			r_anal_esil_parse (esil, esil->Reil->if_buf);
-			return 1;
-		}
-		if (iscommand (esil, word, &op)) {
+		} else if (iscommand (esil, word, &op)) {
 			esil->Reil->cmd_count++;
 		}
-		return 1;
+		return true;
 	}
 
 	//eprintf ("WORD (%d) (%s)\n", esil->skip, word);
@@ -2856,15 +2854,16 @@ static int runword(RAnalEsil *esil, const char *word) {
 		} else if (esil->skip == 0) {	//this isn't perfect, but should work for valid esil
 			esil->skip = 1;
 		}
-		return 1;
-	} else if (!strcmp (word, "}")) {
+		return true;
+	}
+	if (!strcmp (word, "}")) {
 		if (esil->skip) {
 			esil->skip--;
 		}
-		return 1;
+		return true;
 	}
 	if (esil->skip && strcmp(word, "?{")) {
-		return 1;
+		return true;
 	}
 
 	if (iscommand (esil, word, &op)) {
@@ -2891,7 +2890,7 @@ static int runword(RAnalEsil *esil, const char *word) {
 	}
 	if (!*word || *word == ',') {
 		// skip empty words
-		return 1;
+		return true;
 	}
 
 	// push value
@@ -2900,7 +2899,7 @@ static int runword(RAnalEsil *esil, const char *word) {
 		esil->trap = 1;
 		esil->trap_code = 1;
 	}
-	return 1;
+	return true;
 }
 
 static const char *gotoWord(const char *str, int n) {
@@ -3068,18 +3067,18 @@ repeat:
 	return 1;
 }
 
-R_API int r_anal_esil_runword(RAnalEsil *esil, const char *word) {
+R_API bool r_anal_esil_runword(RAnalEsil *esil, const char *word) {
 	const char *str = NULL;
-	runword (esil, word);
+	(void)runword (esil, word);
 	if (*word) {
 		if (!runword (esil, word)) {
-			return 0;
+			return false;
 		}
 		int ew = evalWord (esil, word, &str);
 		eprintf ("ew %d\n", ew);
 		eprintf ("--> %s\n", r_str_get (str));
 	}
-	return 1;
+	return true;
 }
 
 //frees all elements from the stack, not the stack itself
@@ -3275,7 +3274,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 }
 
 /* register callbacks using this anal module. */
-R_API int r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats, int nonull) {
+R_API bool r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats, int nonull) {
 	if (!esil) {
 		return false;
 	}

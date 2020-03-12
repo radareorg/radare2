@@ -8881,8 +8881,10 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			r_list_purge (paths);
 			free (paths);
 		}
-	}
+		}
+		break;
 	case '\0':
+		eprintf ("Usage abt?\n");
 		break;
 	}
 }
