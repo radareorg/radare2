@@ -1478,9 +1478,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			unix_word_rubout ();
 			break;
 		case 24:// ^X
-			strncpy (I.buffer.data, I.buffer.data + I.buffer.index, I.buffer.length);
-			I.buffer.length -= I.buffer.index;
-			I.buffer.index = 0;
+			if (I.buffer.index > 0) {
+				strncpy (I.buffer.data, I.buffer.data + I.buffer.index, I.buffer.length);
+				I.buffer.length -= I.buffer.index;
+				I.buffer.index = 0;
+			}
 			break;
 		case 25:// ^Y - paste
 			paste ();
