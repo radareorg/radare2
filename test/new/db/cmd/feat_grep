@@ -285,3 +285,25 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=escaped chars
+CMDS=<<EOF
+?e Hello\x40World~Hello\@
+?e Hello\x24World~Hello\@
+?e Hello\n\x23World~\#
+EOF
+EXPECT=<<EOF
+Hello@World
+#World
+EOF
+RUN
+
+NAME=escaped chars 2
+BROKEN=1
+CMDS=<<EOF
+?e Hello\n\x3bWorld~\;
+EOF
+EXPECT=<<EOF
+;World
+EOF
+RUN
