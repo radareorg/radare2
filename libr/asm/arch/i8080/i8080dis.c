@@ -125,7 +125,7 @@ static int i8080_disasm(unsigned char const* const code, char* text, int text_sz
   int const p = code[1] | (code[2] << 8);
 
   struct opcode_t const *op;
-  for (op = &opcodes[0]; op->size; op++) {
+  for (op = &opcodes[0]; op->size; ++op) {
     int const grp = cmd &
       ~((op->arg1.mask << op->arg1.shift) | 
        (op->arg2.mask << op->arg2.shift));

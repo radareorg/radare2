@@ -1511,7 +1511,7 @@ include_syntax:
 		*s1->include_stack_ptr = file;
 
 		n = s1->nb_include_paths + s1->nb_sysinclude_paths;
-		for (i = -2; i < n; i++) {
+		for (i = -2; i < n; ++i) {
 			char buf1[sizeof file->filename];
 			CachedInclude *e;
 			BufferedFile **f;
@@ -1547,7 +1547,7 @@ include_syntax:
 			pstrcat (buf1, sizeof(buf1), buf);
 
 			if (tok == TOK_INCLUDE_NEXT) {
-				for (f = s1->include_stack_ptr; f >= s1->include_stack; f--) {
+				for (f = s1->include_stack_ptr; f >= s1->include_stack; --f) {
 					if (0 == PATHCMP ((*f)->filename, buf1)) {
 #ifdef INC_DEBUG
 						printf ("%s: #include_next skipping %s\n", file->filename, buf1);

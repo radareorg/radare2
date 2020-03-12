@@ -656,7 +656,7 @@ static inline bfd_boolean
 empty_qualifier_sequence_p (const aarch64_opnd_qualifier_t *qualifiers)
 {
   int i;
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++)
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
     if (qualifiers[i] != AARCH64_OPND_QLF_NIL)
       return FALSE;
   return TRUE;

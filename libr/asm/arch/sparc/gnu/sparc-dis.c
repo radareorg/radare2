@@ -437,7 +437,7 @@ build_hash_table (const sparc_opcode **opcode_table,
   if (!hash_buf) {
     return;
   }
-  for (i = num_opcodes - 1; i >= 0; i--)
+  for (i = num_opcodes - 1; i >= 0; --i)
     {
       int hash = HASH_INSN (opcode_table[i]->match);
       sparc_opcode_hash *h = &hash_buf[i];

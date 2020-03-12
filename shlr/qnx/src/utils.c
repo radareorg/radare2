@@ -155,7 +155,7 @@ extract_signed_integer (const ut8 *addr, int len, int be) {
 		p = endaddr - 1;
 		/* Do the sign extension once at the start.  */
 		retval = ((LONGEST)*p ^ 0x80) - 0x80;
-		for (--p; p >= startaddr; p--)
+		for (--p; p >= startaddr; --p)
 			retval = (retval << 8) | *p;
 	}
 	return retval;
@@ -177,10 +177,10 @@ extract_unsigned_integer (const ut8 *addr, int len, int be) {
  the least significant.  */
 	retval = 0;
 	if (be) {
-		for (p = startaddr; p < endaddr; p++)
+		for (p = startaddr; p < endaddr; ++p)
 			retval = (retval << 8) | *p;
 	} else {
-		for (p = endaddr - 1; p >= startaddr; p--)
+		for (p = endaddr - 1; p >= startaddr; --p)
 			retval = (retval << 8) | *p;
 	}
 	return retval;

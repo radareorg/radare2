@@ -5037,7 +5037,7 @@ if (t < 0) return -1;
 var n = this.positionToPageInfo(t), r = n.no == this.p0 ? this.p0RowBounds : this.p1RowBounds;
 if (!r) return this.count;
 var i = n.pos, s = this.placeholderNode ? enyo.dom.getBounds(this.placeholderNode).height : 0, o = 0;
-for (var u = n.startRow; u <= n.endRow; u++) {
+for (var u = n.startRow; u <= n.endRow; ++u) {
 if (u === this.placeholderRowIndex) {
 o += s;
 if (o >= i) return -1;

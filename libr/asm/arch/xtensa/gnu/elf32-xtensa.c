@@ -1628,7 +1628,7 @@ elf_xtensa_allocate_local_got_size (struct bfd_link_info *info)
       symtab_hdr = &elf_tdata (i)->symtab_hdr;
       cnt = symtab_hdr->sh_info;
 
-      for (j = 0; j < cnt; j++)
+      for (j = 0; j < cnt; ++j)
 	{
 	  /* If we saw any use of an IE model for this symbol, we can
 	     then optimize away GOT entries for any TLSDESC_FN relocs.  */
@@ -4484,7 +4484,7 @@ can_narrow_instruction (xtensa_insnbuf slotbuf,
 		return 0;
 	    }
 
-	  for (i = 0; i < o_operand_count; i++)
+	  for (i = 0; i < o_operand_count; ++i)
 	    {
 	      if (xtensa_operand_get_field (isa, opcode, i, fmt, 0,
 					    slotbuf, &value)
@@ -6013,7 +6013,7 @@ map_removed_literal (removed_literal_list *removed_list)
   removed_literal_map_entry *map = NULL;
   removed_literal *r = removed_list->head;
 
-  for (i = 0; r; i++, r = r->next)
+  for (i = 0; r; ++i, r = r->next)
     {
       if (i == n_map)
 	{
@@ -8278,7 +8278,7 @@ compute_ebb_actions (ebb_constraint *ebb_table)
     }
 
   removed_bytes = 0;
-  for (i = 0; i < ebb_table->action_count; i++)
+  for (i = 0; i < ebb_table->action_count; ++i)
     {
       proposed_action *action = &ebb_table->actions[i];
       if (action->do_action)
@@ -8511,7 +8511,7 @@ check_section_ebb_pcrels_fit (bfd *abfd,
 	  bfd_vma min_offset, max_offset;
 	  min_offset = max_offset = constraint->actions[0].offset;
 
-	  for (i = 1; i < constraint->action_count; i++)
+	  for (i = 1; i < constraint->action_count; ++i)
 	    {
 	      proposed_action *action = &constraint->actions[i];
 	      bfd_vma offset = action->offset;
@@ -8587,7 +8587,7 @@ check_section_ebb_pcrels_fit (bfd *abfd,
       self_removed_bytes = 0;
       target_removed_bytes = 0;
 
-      for (j = 0; j < constraint->action_count; j++)
+      for (j = 0; j < constraint->action_count; ++j)
 	{
 	  proposed_action *action = &constraint->actions[j];
 	  bfd_vma offset = action->offset;
@@ -8932,7 +8932,7 @@ is_removable_literal (const source_reloc *rel,
   if (entry && (entry->flags & XTENSA_PROP_NO_TRANSFORM))
     return FALSE;
 
-  for (++i; i < src_count; i++)
+  for (++i; i < src_count; ++i)
     {
       curr_rel = &src_relocs[i];
       /* If all others have the same target offset....  */
@@ -10287,7 +10287,7 @@ move_literal (bfd *abfd,
 	 space for the relocations and we have room for more, then use
 	 it.  Otherwise, allocate new space and move the literals.  */
       insert_at = sec->reloc_count;
-      for (i = 0; i < sec->reloc_count; i++)
+      for (i = 0; i < sec->reloc_count; ++i)
 	{
 	  if (this_rela.r_offset < (*internal_relocs_p)[i].r_offset)
 	    {

@@ -375,7 +375,7 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 
   insn = bfd_getb32 (buffer);
 
-  for (i = 0; i < NUMOPCODES; i++)
+  for (i = 0; i < NUMOPCODES; ++i)
     {
       const struct pa_opcode *opcode = &pa_opcodes[i];
 
@@ -391,7 +391,7 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 	  if (!strchr ("cfCY?-+nHNZFIuv{", opcode->args[0])) {
 		  (*info->fprintf_func) (info->stream, " ");
 	  }
-	  for (s = opcode->args; *s != '\0'; s++)
+	  for (s = opcode->args; *s != '\0'; ++s)
 	    {
 	      switch (*s)
 		{

@@ -811,7 +811,7 @@ dump_qualifier_sequence (const aarch64_opnd_qualifier_t *qualifier)
 {
   int i;
   printf ("####  ");
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++, qualifier++)
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++, ++qualifier)
     printf ("%s,", aarch64_get_qualifier_name (*qualifier));
   printf ("\n");
 }
@@ -889,7 +889,7 @@ aarch64_find_best_match (const aarch64_inst *inst,
     stop_at = num_opnds - 1;
 
   /* For each pattern.  */
-  for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; i++, qualifiers_list++)
+  for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; ++i, ++qualifiers_list)
     {
       int j;
       qualifiers = *qualifiers_list;
@@ -913,7 +913,7 @@ aarch64_find_best_match (const aarch64_inst *inst,
 	  break;
 	}
 
-      for (j = 0; j < num_opnds && j <= stop_at; j++, qualifiers++)
+      for (j = 0; j < num_opnds && j <= stop_at; ++j, ++qualifiers)
 	{
 	  if (inst->operands[j].qualifier == AARCH64_OPND_QLF_NIL)
 	    {
@@ -959,9 +959,9 @@ aarch64_find_best_match (const aarch64_inst *inst,
 	dump_qualifier_sequence (qualifiers);
 #endif
 
-      for (j = 0; j <= stop_at; j++, qualifiers++)
+      for (j = 0; j <= stop_at; ++j, ++qualifiers)
 	ret[j] = *qualifiers;
-      for (; j < AARCH64_MAX_OPND_NUM; j++)
+      for (; j < AARCH64_MAX_OPND_NUM; ++j)
 	ret[j] = AARCH64_OPND_QLF_NIL;
 
       DEBUG_TRACE ("SUCCESS");
@@ -997,14 +997,14 @@ match_operands_qualifier (aarch64_inst *inst, bfd_boolean update_p)
     {
       /* Require an exact qualifier match, even for NIL qualifiers.  */
       nops = aarch64_num_of_operands (inst->opcode);
-      for (i = 0; i < nops; i++)
+      for (i = 0; i < nops; ++i)
 	if (inst->operands[i].qualifier != qualifiers[i])
 	  return FALSE;
     }
 
   /* Update the qualifiers.  */
   if (update_p == TRUE)
-    for (i = 0; i < AARCH64_MAX_OPND_NUM; i++)
+    for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
       {
 	if (inst->opcode->operands[i] == AARCH64_OPND_NIL)
 	  break;
@@ -2676,7 +2676,7 @@ aarch64_match_operands_constraint (aarch64_inst *inst,
     }
 
   /* Match operands' constraint.  */
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++)
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
     {
       enum aarch64_opnd type = inst->opcode->operands[i];
       if (type == AARCH64_OPND_NIL)
@@ -2717,7 +2717,7 @@ aarch64_replace_opcode (aarch64_inst *inst, const aarch64_opcode *opcode)
   inst->opcode = opcode;
 
   /* Update the operand types.  */
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++)
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
     {
       inst->operands[i].type = opcode->operands[i];
       if (opcode->operands[i] == AARCH64_OPND_NIL)
@@ -2733,7 +2733,7 @@ int
 aarch64_operand_index (const enum aarch64_opnd *operands, enum aarch64_opnd operand)
 {
   int i;
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++)
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
     if (operands[i] == operand)
       return i;
     else if (operands[i] == AARCH64_OPND_NIL)
@@ -3419,7 +3419,7 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_COND1:
       snprintf (buf, size, "%s", opnd->cond->names[0]);
       num_conds = ARRAY_SIZE (opnd->cond->names);
-      for (i = 1; i < num_conds && opnd->cond->names[i]; i++)
+      for (i = 1; i < num_conds && opnd->cond->names[i]; ++i)
 	{
 	  size_t len = strlen (buf);
 	  if (i == 1)
@@ -3555,7 +3555,7 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
       break;
 
     case AARCH64_OPND_SYSREG:
-      for (i = 0; aarch64_sys_regs[i].name; i++)
+      for (i = 0; aarch64_sys_regs[i].name; ++i)
 	{
 	  bfd_boolean exact_match
 	    = (aarch64_sys_regs[i].flags & opnd->sysreg.flags)
@@ -3599,7 +3599,7 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
       break;
 
     case AARCH64_OPND_PSTATEFIELD:
-      for (i = 0; aarch64_pstatefields[i].name; i++)
+      for (i = 0; aarch64_pstatefields[i].name; ++i)
 	if (aarch64_pstatefields[i].value == opnd->pstatefield)
 	  break;
       assert (aarch64_pstatefields[i].name);

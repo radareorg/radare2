@@ -205,7 +205,7 @@ decode_abs ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_ABS_OFF18:
 		  dec_insn.cexp[i] = extract_off18 ();
@@ -223,7 +223,7 @@ decode_absb ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_ABSB_OFF18:
 		  dec_insn.cexp[i] = extract_off18 ();
@@ -246,7 +246,7 @@ decode_b ()
   int i;
   unsigned long o1, o2;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_B_DISP24:
 		  o1 = (dec_insn.opcode & 0xffff0000) >> 16;
@@ -262,7 +262,7 @@ decode_bit ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_BIT_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -293,7 +293,7 @@ decode_bo ()
   int i;
   unsigned long o1, o2;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_BO_OFF10:
 		  o1 = (dec_insn.opcode & 0x003f0000) >> 16;
@@ -318,7 +318,7 @@ decode_bol ()
   int i;
   unsigned long o1, o2, o3;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_BOL_OFF16:
 		  o1 = (dec_insn.opcode & 0x003f0000) >> 16;
@@ -343,7 +343,7 @@ decode_brc ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_BRC_DISP15:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
@@ -365,7 +365,7 @@ decode_brn ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_BRN_DISP15:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
@@ -388,7 +388,7 @@ decode_brr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_BRR_DISP15:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
@@ -410,7 +410,7 @@ decode_rc ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RC_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -431,7 +431,7 @@ decode_rcpw ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RCPW_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -461,7 +461,7 @@ decode_rcr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RCR_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -487,7 +487,7 @@ decode_rcrr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RCRR_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -513,7 +513,7 @@ decode_rcrw ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RCRW_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -543,7 +543,7 @@ decode_rlc ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RLC_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -565,7 +565,7 @@ decode_rr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RR_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -591,7 +591,7 @@ decode_rr1 ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RR1_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -617,7 +617,7 @@ decode_rr2 ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RR2_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -639,7 +639,7 @@ decode_rrpw ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RRPW_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -669,7 +669,7 @@ decode_rrr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RRR_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -699,7 +699,7 @@ decode_rrr1 ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RRR1_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -729,7 +729,7 @@ decode_rrr2 ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RRR2_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -755,7 +755,7 @@ decode_rrrr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RRRR_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -781,7 +781,7 @@ decode_rrrw ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_RRRW_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
@@ -811,7 +811,7 @@ decode_sys ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SYS_S1_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
@@ -825,7 +825,7 @@ decode_sb ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SB_DISP8:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0xff00) >> 8;
@@ -839,7 +839,7 @@ decode_sbc ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SBC_CONST4:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
@@ -860,7 +860,7 @@ decode_sbr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SBR_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
@@ -881,7 +881,7 @@ decode_sbrn ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SBRN_N:
 		  if (dec_insn.code->args[i] == '5') {
@@ -904,7 +904,7 @@ decode_sc ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SC_CONST8:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0xff00) >> 8;
@@ -918,7 +918,7 @@ decode_slr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SLR_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
@@ -936,7 +936,7 @@ decode_slro ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SLRO_OFF4:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
@@ -954,7 +954,7 @@ decode_sr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SR_S1_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
@@ -968,7 +968,7 @@ decode_src ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SRC_CONST4:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
@@ -986,7 +986,7 @@ decode_sro ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SRO_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
@@ -1004,7 +1004,7 @@ decode_srr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SRR_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
@@ -1022,7 +1022,7 @@ decode_srrs ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SRRS_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
@@ -1044,7 +1044,7 @@ decode_ssr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SSR_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
@@ -1062,7 +1062,7 @@ decode_ssro ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; i++) {
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
 	  switch (dec_insn.code->fields[i]) {
 	  case FMT_SSRO_OFF4:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
@@ -1095,7 +1095,7 @@ init_hash_tables ()
   memset ((char *) sfrs, 0, sizeof (sfrs));
   memset ((char *) sfrlink, 0, NUMSFRS * sizeof (struct sfrlist));
 
-  for (i = 0, pop = tricore_opcodes; i < NUMOPCS; i++, pop++)
+  for (i = 0, pop = tricore_opcodes; i < NUMOPCS; ++i, ++pop)
     {
 	  if (!MATCHES_ISA (pop->isa)) {
 		  continue;
@@ -1109,7 +1109,7 @@ init_hash_tables ()
 	  insnlink[i].code = pop;
     }
 
-  for (i = 0, ppop = pcp_opcodes; i < NUMPCPOPCS; i++, ppop++)
+  for (i = 0, ppop = pcp_opcodes; i < NUMPCPOPCS; ++i, ++ppop)
     {
       idx = (ppop->opcode >> 11) & 0x1f;
       if (pcpinsns[idx]) {
@@ -1119,7 +1119,7 @@ init_hash_tables ()
       pcplink[i].code = ppop;
     }
 
-  for (i = 0, psfr = tricore_sfrs; i < NUMSFRS; i++, psfr++)
+  for (i = 0, psfr = tricore_sfrs; i < NUMSFRS; ++i, ++psfr)
     {
 	  if (!MATCHES_ISA (psfr->isa)) {
 		  continue;
@@ -1269,7 +1269,7 @@ print_decoded_insn (memaddr, info)
 	  needs_creg = 1;
   }
 
-  for (i = 0; i < insn->nr_operands; i++)
+  for (i = 0; i < insn->nr_operands; ++i)
     {
       need_comma = (i < (insn->nr_operands - 1));
       switch (insn->args[i])
@@ -1647,7 +1647,7 @@ decode_pcp_insn (memaddr, buffer, info)
   switch (pop->fmt_group)
     {
     case 0:
-      for (idx = 0; idx < pop->nr_operands; idx++)
+      for (idx = 0; idx < pop->nr_operands; ++idx)
         {
 	  switch (pop->args[idx])
 	    {
@@ -1798,7 +1798,7 @@ decode_pcp_insn (memaddr, buffer, info)
       break;
 
     case 7:
-      for (idx = 0; idx < pop->nr_operands; idx++)
+      for (idx = 0; idx < pop->nr_operands; ++idx)
         {
 	  switch (pop->args[idx])
 	    {
