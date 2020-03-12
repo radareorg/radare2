@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2020 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
 #include <string.h>
 #include "r_anal.h"
@@ -26,8 +26,9 @@ static const char *help_msg_t[] = {
 	"to", " <path>", "Load types from C header file",
 	"toe", "[type.name]", "Open cfg.editor to edit types",
 	"tos", " <path>", "Load types from parsed Sdb database",
-	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it",
-	"tpx", " <type> <hexpairs>", "Show value for type with specified byte sequence",
+	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
+	"tpv", " <type> @ [value]", "Show offset formatted for given type",
+	"tpx", " <type> <hexpairs>", "Show value for type with specified byte sequence (XXX: type can contain spaces)",
 	"ts", "[?]", "Print loaded struct types",
 	"tu", "[?]", "Print loaded union types",
 	"tx", "[f?]", "Type xrefs",
@@ -1556,7 +1557,16 @@ static int cmd_type(void *data, const char *input) {
 	case 'p':  // "tp"
 		if (input[1] == '?') { // "tp?"
 			r_core_cmd0 (core, "t?~tp\n");
-		} else { // "tp"
+		} else if (input[1] == 'v') { // "tpv"
+			const char *type_name = r_str_trim_head_ro (input + 2);
+			char *fmt = r_type_format (TDB, type_name);
+			if (fmt && *fmt) {
+				ut64 val = core->offset;
+				r_core_cmdf (core, "pf %s @v:0x%08" PFMT64x "\n", fmt, val);
+			} else {
+				eprintf ("Usage: tpv [type] @ [value]\n");
+			}
+		} else if (input[1] == ' ' || input[1] == 'x' || !input[1]) {
 			char *tmp = strdup (input);
 			char *ptr = strchr (tmp, ' ');
 			if (!ptr) {
@@ -1574,7 +1584,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 				if (input[1] == 'x' && arg) { // "tpx"
 					r_core_cmdf (core, "pf %s @x:%s", fmt, arg);
-					eprintf ("pf %s @x:%s", fmt, arg);
+					// eprintf ("pf %s @x:%s", fmt, arg);
 				} else {
 					ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
 					if (!addr && arg) {
@@ -1591,6 +1601,8 @@ static int cmd_type(void *data, const char *input) {
 				break;
 			}
 			free (tmp);
+		} else { // "tp"
+			eprintf ("Usage: tp?\n");
 		}
 		break;
 	case '-': // "t-"
