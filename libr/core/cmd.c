@@ -3453,6 +3453,38 @@ repeat_arroba:
 					}
 				}
 				break;
+			case 'v': // "@v:" // value (honors asm.bits and cfg.bigendian)
+				if (ptr[1] == ':') {
+					ut8 buf[8] = {0};
+					ut64 v = r_num_math (core->num, ptr + 2);
+					int be = r_config_get_i (core->config, "cfg.bigendian");
+					int bi = r_config_get_i (core->config, "asm.bits");
+					if (bi == 64) {
+						r_write_ble64 (buf, v, be);
+						len = 8;
+					} else {
+						r_write_ble32 (buf, v, be);
+						len = 4;
+					}
+					r_core_block_size (core, R_ABS (len));
+					RBuffer *b = r_buf_new_with_bytes (buf, len);
+					RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+					if (d) {
+						if (tmpdesc) {
+							r_io_desc_close (tmpdesc);
+						}
+						tmpdesc = d;
+						if (pamode) {
+							r_config_set_i (core->config, "io.va", 1);
+						}
+						r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+						r_core_block_size (core, len);
+						r_core_block_read (core);
+					}
+				} else {
+					eprintf ("Invalid @v: syntax\n");
+				}
+				break;
 			case 'x': // "@x:" // hexpairs
 				if (ptr[1] == ':') {
 					buf = malloc (strlen (ptr + 2) + 1);
