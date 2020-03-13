@@ -8812,77 +8812,44 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_abt);
 		break;
 	case 'j': {
+		ut64 addr = r_num_math (core->num, input + 1);
+		RAnalBlock *block = r_anal_get_block_at (core->anal, core->offset);
+		if (!block) {
+			break;
+		}
+		RList *path = r_anal_block_shortest_path (block, addr);
 		PJ *pj = pj_new ();
-		if (!pj) {
-			return;
-		}
-		ut64 addr = core->offset;
-		char *p;
-		int n = 1;
-		input++;
-		if (*input) {
-			char *tmp = strdup (input);
-			p = strchr (tmp + 1, ' ');
-			if (p) {
-				*p++ = '\0';
-				n = *p? r_num_math (core->num, p): 1;
-			}
-			addr = r_num_math (core->num, tmp + 1);
-			free (tmp);
-		}
-		RList *paths = r_core_anal_graph_to (core, addr, n);
-		if (paths) {
-			RAnalBlock *bb;
-			RList *path;
-			RListIter *pathi;
-			RListIter *bbi;
+		if (pj) {
 			pj_a (pj);
-			r_list_foreach (paths, pathi, path) {
-				pj_a (pj);
-				r_list_foreach (path, bbi, bb) {
-					pj_n (pj, bb->addr);
+			if (path) {
+				RListIter *it;
+				r_list_foreach (path, it, block) {
+					pj_n (pj, block->addr);
 				}
-				pj_end (pj);
-				r_list_purge (path);
-				free (path);
 			}
 			pj_end (pj);
 			r_cons_println (pj_string (pj));
-			r_list_purge (paths);
-			free (paths);
+			pj_free (pj);
 		}
-		pj_free (pj);
+		r_list_free (path);
+		break;
 	}
-	break;
 	case ' ': {
-		ut64 addr;
-		char *p;
-		int n = 1;
-		p = strchr (input + 1, ' ');
-		if (p) {
-			*p = '\0';
-			n = *(++p)? r_num_math (core->num, p): 1;
+		ut64 addr = r_num_math (core->num, input + 1);
+		RAnalBlock *block = r_anal_get_block_at (core->anal, core->offset);
+		if (!block) {
+			break;
 		}
-		addr = r_num_math (core->num, input + 1);
-		RList *paths = r_core_anal_graph_to (core, addr, n);
-		if (paths) {
-			RAnalBlock *bb;
-			RList *path;
-			RListIter *pathi;
-			RListIter *bbi;
-			r_list_foreach (paths, pathi, path) {
-				r_list_foreach (path, bbi, bb) {
-					r_cons_printf ("0x%08" PFMT64x "\n", bb->addr);
-				}
-				r_cons_newline ();
-				r_list_purge (path);
-				free (path);
+		RList *path = r_anal_block_shortest_path (block, addr);
+		if (path) {
+			RListIter *it;
+			r_list_foreach (path, it, block) {
+				r_cons_printf ("0x%08" PFMT64x "\n", block->addr);
 			}
-			r_list_purge (paths);
-			free (paths);
-		}
+			r_list_free (path);
 		}
 		break;
+	}
 	case '\0':
 		eprintf ("Usage abt?\n");
 		break;
