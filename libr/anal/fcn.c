@@ -1566,13 +1566,13 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 
 R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 	RAnal *a = function->anal;
-	char *realname = NULL, *import_substring = NULL;
+	const char *realname = NULL, *import_substring = NULL;
 
 	RFlagItem *flag = a->flag_get (a->flb.f, function->addr);
 	// Can't access R_FLAGS_FS_IMPORTS, since it is defined in r_core.h
 	if (flag && flag->space && !strcmp (flag->space->name, "imports")) {
 		// Get substring after last dot
-		import_substring = strrchr (function->name, '.');
+		import_substring = r_str_rchr (function->name, NULL, '.');
 		if (import_substring) {
 			realname = import_substring + 1;
 		}
