@@ -524,9 +524,13 @@ R_API R_NULLABLE RList/*<RAnalBlock *>*/ *r_anal_block_shortest_path(RAnalBlock 
 	// reconstruct the path
 	bool found = false;
 	RAnalBlock *prev = ht_up_find (ctx.visited, dst, &found);
-	if (found) {
-		ret = r_list_new ();
+	RAnalBlock *dst_block = r_anal_get_block_at (block->anal, dst);
+	if (found && dst_block) {
+		ret = r_list_newf ((RListFree)r_anal_block_unref);
+		r_anal_block_ref (dst_block);
+		r_list_prepend (ret, dst_block);
 		while (prev) {
+			r_anal_block_ref (prev);
 			r_list_prepend (ret, prev);
 			prev = ht_up_find (ctx.visited, prev->addr, NULL);
 		}
