@@ -130,7 +130,7 @@ CMDS=<<EOF
 f foo.one = 1
 f foo.bar = 2
 f foo.cow = 3
-(;?v $$)() @@ foo*
+(_;?v $$)() @@ foo*
 EOF
 RUN
 

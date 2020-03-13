@@ -78,7 +78,7 @@ false
 false
 EOF
 CMDS=<<EOF
-e  scr.highlight= scr.highlight.grep  =scr.rainbow =true 
+"e  scr.highlight= scr.highlight.grep  =scr.rainbow =true "
 e scr.highlight
 e scr.highlight.grep
 e scr.rainbow

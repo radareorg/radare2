@@ -3,14 +3,10 @@ FILE=-
 EXPECT=<<EOF
 16
 18
-16
-18
 EOF
 CMDS=<<EOF
 @@?~?
 @@@?~?
-?@@?~?
-?@@@?~?
 EOF
 RUN
 

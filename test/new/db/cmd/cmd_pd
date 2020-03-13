@@ -1838,7 +1838,7 @@ e asm.arch=x86
 e asm.bits=32
 e asm.bytes=false
 s 0x1000
-wz path"C:\\Program\n
+"wz path\"C:\\Program\n"
 f ansi_str
 s 0x2000
 "wa mov eax, 0x1000"
@@ -1849,7 +1849,7 @@ e str.escbslash=false
 pd 1
 pdJ 1
 s 0x3000
-ww path"C:\\Program\r
+"ww path\"C:\\Program\r"
 f wide_str
 s 0x4000
 "wa mov ebx, 0x3000"

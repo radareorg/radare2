@@ -4624,6 +4624,12 @@ static struct tsr2cmd_edit *create_cmd_edit(struct tsr2cmd_state *state, TSNode 
 
 static void replace_whitespaces(char *s, char ch) {
 	while (*s) {
+		if (*s == '#') {
+			while (*s && *s != '\r' && *s != '\n') {
+				*s = ch;
+				s++;
+			}
+		}
 		if (isspace (*s)) {
 			*s = ch;
 		}
@@ -5082,6 +5088,8 @@ DEFINE_HANDLE_TS_FCN(help_command) {
 		r_core_cmd_help (state->core, help_msg_at_at_at);
 	} else if (!strcmp (node_string, "|?")) {
 		r_core_cmd_help (state->core, help_msg_vertical_bar);
+	} else if (!strcmp (node_string, "~?")) {
+		r_cons_grep_help ();
 	} else if (!strcmp (node_string + strlen (node_string) - 2, "?*")) {
 		size_t node_len = strlen (node_string);
 		int detail = 0;
@@ -5980,6 +5988,12 @@ DEFINE_HANDLE_TS_FCN(scr_tts_command) {
 		r_config_set_i (state->core->config, "scr.color", scr_color);
 	}
 	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(task_command) {
+	// TODO: this should be handled differently, if the argument is a command.
+	//       For now we just treat everything as an arged_command
+	return handle_ts_arged_command (state, node);
 }
 
 DEFINE_HANDLE_TS_FCN(number_command) {
