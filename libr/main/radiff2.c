@@ -144,12 +144,11 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				}
 				if (!quiet) {
 					char *p = r_str_escape ((const char*)op->a_buf);
-					printf (" \"%s\"\n", p);
+					printf (" \"%s\"", p);
 					free (p);
 					printf (Color_RESET);
-				} else {
-					printf ("\n");
 				}
+				printf ("\n");
 			}
 		}
 		if (op->b_len > 0) {
@@ -164,12 +163,11 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				}
 				if (!quiet) {
 					char *p = r_str_escape((const char*)op->b_buf);
-					printf (" \"%s\"\n", p);
+					printf (" \"%s\"", p);
 					free (p);
 					printf (Color_RESET);
-				} else {
-					printf ("\n");
 				}
+				printf ("\n");
 			}
 		}
 		break;
