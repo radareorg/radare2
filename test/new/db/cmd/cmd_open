@@ -64,14 +64,14 @@ NAME=o-[0]
 FILE=malloc://1024
 EXPECT=<<EOF
 EOF
-CMDS=o-`o~[0]`;o
+CMDS=o- `o~[0]`;o
 RUN
 
 NAME=oj-
 FILE=malloc://1024
 EXPECT=<<EOF
 EOF
-CMDS=o-`oj~{[0].fd}`;o
+CMDS=o- `oj~{[0].fd}`;o
 RUN
 
 NAME=o -

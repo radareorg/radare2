@@ -3,6 +3,7 @@
 HANDLER_RULE_OP (number_command)
 HANDLER_RULE_OP (commands)
 HANDLER_RULE_OP (arged_command)
+HANDLER_RULE_OP (task_command)
 HANDLER_RULE_OP (legacy_quoted_command)
 HANDLER_RULE_OP (repeat_command)
 HANDLER_RULE_OP (redirect_command)
