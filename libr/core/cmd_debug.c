@@ -2768,7 +2768,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						} else {
 							ut64 val = r_num_math (core->num, eq);
 							r_reg_set_pack (core->dbg->reg, item, index, size, val);
-							r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, true);
+							r_debug_reg_sync (core->dbg, reg_type, true);
 						}
 					} else {
 						r_debug_reg_sync (core->dbg, reg_type, false);
@@ -2790,12 +2790,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				RRegItem *item;
 				RList *head;
 				r_debug_reg_sync (core->dbg, reg_type, false);
-				if (reg_type == R_REG_TYPE_XMM) {
-					head = r_reg_get_list (core->dbg->reg,
-						R_REG_TYPE_FPU); // TODO: r_reg_get_list does not follow indirection
-				} else {
-					head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_YMM);
-				}
+				head = r_reg_get_list (core->dbg->reg, reg_type);
 				if (head) {
 					r_list_foreach (head, iter, item) {
 						if (item->type != reg_type) {
