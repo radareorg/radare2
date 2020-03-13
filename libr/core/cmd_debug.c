@@ -345,26 +345,14 @@ static const char *help_msg_dr[] = {
 	"drm", "[?]", "Show multimedia packed registers",
 	//	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", // Do not advertise - broken
 	"dro", "", "Show previous (old) values of registers",
-	"drp", "", "Display current register profile",
-	"drp", "[?] <file>", "Load register metadata file",
-	"drpc", "", "Show register profile comments",
-	"drpi", "", "Display current internal representation of the register profile",
-	"drps", "", "Fake register profile size",
-	"drpj", "", "Show the current register profile (JSON)",
+	"drp", "[?] ", "Display current register profile",
 	"drr", "", "Show registers references (telescoping)",
 	"drrj", "", "Show registers references (telescoping) in JSON format",
 	// TODO: 'drs' to swap register arenas and display old register valuez
 	"drs", "[?]", "Stack register states",
-	"drt", " 16", "Show 16 bit registers",
-	"drt", " 32", "Show 32 bit registers",
-	"drt", " 80", "Show 80 bit registers (long double)",
-	"drt", " all", "Show all registers",
-	"drt", " flg", "Show flag registers",
 	"drt", "[?]", "Show all register types",
 	"drw"," <hexnum>", "Set contents of the register arena",
-	"drx", "[?]", "Show all debug registers",
-	"drx", " idx addr len perm", "Modify hardware breakpoint",
-	"drx-", "number", "Clear hardware breakpoint",
+	"drx", "[?]", "Show debug registers",
 	".dr", "*", "Include common register values in flags",
 	".dr", "-", "Unflag all registers",
 	NULL
@@ -375,6 +363,7 @@ static const char *help_msg_drp[] = {
 	"drp", "", "Show the current register profile",
 	"drp", " [regprofile-file]", "Set the current register profile",
 	"drp", " [gdb] [regprofile-file]", "Parse gdb register profile and dump an r2 profile string",
+	"drpc", "", "Show register profile comments",
 	"drpi", "", "Show internal representation of the register profile",
 	"drp.", "", "Show the current fake size",
 	"drpj", "", "Show the current register profile (JSON)",
@@ -392,11 +381,15 @@ static const char *help_msg_drs[] = {
 
 static const char *help_msg_drt[] = {
 	"Usage:", "drt", " [type] [size]    # debug register types",
-	"drt", "[*j]", "List all available register types",
-	"drt", "[*j] [size]", "Show all regs in the profile of size",
-	"drt", "[*j] [type]", "Show all regs in the profile of this type",
-	"drt", "[*j] [type] [size]", "Same as above for type and size",
-	"drt", "[*j] [type] [size]", "Same as above for type and size",
+	"drt", "", "List all available register types",
+	"drt", " [size]", "Show all regs in the profile of size",
+	"drt", " 16", "Show 16 bit registers",
+	"drt", " [type]", "Show all regs in the profile of this type",
+	"drt", " all", "Show all registers",
+	"drt", " fpu", "Show fpu registers",
+	"drt", " [type] [size]", "Same as above for type and size",
+	"drt", " [type] [size]", "Same as above for type and size",
+	"drt*", "", "List flags in r commands",
 	NULL
 };
 
