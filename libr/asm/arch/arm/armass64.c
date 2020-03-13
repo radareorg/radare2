@@ -481,7 +481,7 @@ static ut32 branch(ArmOp *op, ut64 addr, int k) {
 		}
 	} else {
 		n = op->operands[0].reg;
-		if (n < 0 || n > 31) {
+		if (n >= 31) {
 			return -1;
 		}
 		n = n << 5;
