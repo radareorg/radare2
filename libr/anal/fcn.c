@@ -1564,13 +1564,25 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	return pj_drain (pj);
 }
 
-R_API char *r_anal_function_get_signature(RAnal *a, const char *name) {
-	const char *fcnname = (r_str_startswith (name, "sym.imp."))
-		? name + 8
-		: name;
+R_API char *r_anal_function_get_signature(RAnalFunction *function) {
+	RAnal *a = function->anal;
+	const char *realname = NULL, *import_substring = NULL;
+
+	RFlagItem *flag = a->flag_get (a->flb.f, function->addr);
+	// Can't access R_FLAGS_FS_IMPORTS, since it is defined in r_core.h
+	if (flag && flag->space && !strcmp (flag->space->name, "imports")) {
+		// Get substring after last dot
+		import_substring = r_str_rchr (function->name, NULL, '.');
+		if (import_substring) {
+			realname = import_substring + 1;
+		}
+	} else {
+		realname = function->name;
+	}
+
 	char *ret = NULL, *args = strdup ("");
-	char *sdb_ret = r_str_newf ("func.%s.ret", fcnname);
-	char *sdb_args = r_str_newf ("func.%s.args", fcnname);
+	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
+	char *sdb_args = r_str_newf ("func.%s.args", realname);
 	// RList *args_list = r_list_newf ((RListFree) free);
 	unsigned int i, j;
 	const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
@@ -1579,7 +1591,7 @@ R_API char *r_anal_function_get_signature(RAnal *a, const char *name) {
 	int argc = argc_str? atoi (argc_str): 0;
 
 	for (i = 0; i < argc; i++) {
-		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", fcnname, i);
+		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
 		char *arg_i = sdb_get (a->sdb_types, sdb_arg_i, 0);
 		// parse commas
 		int arg_i_len = strlen (arg_i);
@@ -1602,7 +1614,7 @@ R_API char *r_anal_function_get_signature(RAnal *a, const char *name) {
 		free (arg_i);
 		free (sdb_arg_i);
 	}
-	ret = r_str_newf ("%s %s (%s);", ret_type? ret_type: "void", fcnname, args);
+	ret = r_str_newf ("%s %s (%s);", ret_type? ret_type: "void", realname, args);
 
 	free (sdb_args);
 	free (sdb_ret);
