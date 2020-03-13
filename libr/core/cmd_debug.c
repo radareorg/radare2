@@ -362,9 +362,7 @@ static const char *help_msg_dr[] = {
 	"drt", " flg", "Show flag registers",
 	"drt", "[?]", "Show all register types",
 	"drw"," <hexnum>", "Set contents of the register arena",
-	"drx", "[?]", "Show all debug registers",
-	"drx", " idx addr len perm", "Modify hardware breakpoint",
-	"drx-", "number", "Clear hardware breakpoint",
+	"drx", "[?]", "Show debug registers",
 	".dr", "*", "Include common register values in flags",
 	".dr", "-", "Unflag all registers",
 	NULL
