@@ -328,10 +328,24 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 }
 
 R_API RList *r_reg_get_list(RReg *reg, int type) {
+	RList *regs;
+	int i, mask;
+
 	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
 		return NULL;
 	}
-	return reg->regset[type].regs;
+
+	regs = reg->regset[type].regs;
+	if (r_list_length (regs) == 0) {
+		mask = ((int)1 << type);
+		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+			if (reg->regset[i].maskregstype & mask) {
+				regs = reg->regset[i].regs;
+			}
+		}
+	}
+
+	return regs;
 }
 
 // TODO regsize is in bits, delta in bytes, maybe we should standarize this..

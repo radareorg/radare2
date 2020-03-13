@@ -3921,11 +3921,10 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			r_list_free (list);
 		}
 		break;
-	case 'r':
-		// registers
+	case 'r': // @@@r
 		{
 			ut64 offorig = core->offset;
-			for (i = 0; i < 128; i++) {
+			for (i = 0; i < R_REG_TYPE_LAST; i++) {
 				RRegItem *item;
 				ut64 value;
 				head = r_reg_get_list (dbg->reg, i);
@@ -3934,6 +3933,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				}
 				r_list_foreach (head, iter, item) {
 					if (item->size != core->anal->bits) {
+						continue;
+					}
+					if (item->type != i) {
 						continue;
 					}
 					value = r_reg_get_value (dbg->reg, item);
@@ -3946,7 +3948,6 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		}
 		break;
 	case 'i': // @@@i
-		// imports
 		{
 			RBinImport *imp;
 			ut64 offorig = core->offset;
