@@ -1810,7 +1810,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 
 	ds_begin_line (ds);
-	char *sign = r_anal_function_get_signature (core->anal, f->name);
+	char *sign = r_anal_function_get_signature (f);
 	if (empty_signature (sign)) {
 		R_FREE (sign);
 	}

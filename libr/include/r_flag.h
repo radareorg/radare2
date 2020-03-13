@@ -68,7 +68,7 @@ typedef struct r_flag_t {
 
 typedef bool (*RFlagExistAt)(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
-typedef RFlagItem *(*RFlagGetAtAddr) (RFlag *f, ut64);
+typedef RFlagItem* (*RFlagGetAtAddr) (RFlag *f, ut64);
 typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr, bool closest);
 typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size);
 typedef bool (*RFlagUnset)(RFlag *f, RFlagItem *item);
