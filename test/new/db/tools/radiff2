@@ -50,8 +50,8 @@ NAME=radiff2 unified string comparison
 FILE=-
 CMDS=!!radiff2 -quz ../bins/elf/elf_one_symbol_shdr ../bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
--0x00000000:48656c6c "Hello world!\n"
-+0x00000000:41414141
+-0x00000000:48 65 6c 6c 
++0x00000000:41 41 41 41 
 EOF
 RUN
 
