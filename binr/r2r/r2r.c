@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2020 - thestr4ng3r */
 
-#include <r_util.h>
+#include "r2r.h"
 
 static int help(bool verbose) {
 	printf ("Usage: r2r [test]\n");
@@ -21,9 +21,29 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	if (optind == argc) {
+		eprintf ("No file specified. TODO: automatically detect tests\n");
+		return help (true);
+	}
+
 	int i;
 	for (i = optind; i < argc; i++) {
 		printf ("%s\n", argv[i]);
+		RPVector *tests = r2r_load_cmd_test_file (argv[i]);
+		if (!tests) {
+			eprintf ("FAILED!!!!\n");
+			continue;
+		}
+		void **it;
+		r_pvector_foreach (tests, it) {
+			R2RCmdTest *test = *it;
+			if (!test->name.value) {
+				eprintf ("horse with no name\n");
+			}
+			printf ("NAME=%s\n", test->name.value);
+			printf ("CMDS=%s\n", test->cmds.value);
+		}
+		r_pvector_free (tests);
 	}
 	return 0;
 }
