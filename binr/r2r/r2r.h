@@ -38,6 +38,15 @@ typedef struct r2r_cmd_test_t {
 	macro_str ("EXPECT_ERR", expect_err) \
 	macro_bool ("BROKEN", broken)
 
+typedef struct r2r_run_config_t {
+	const char *r2_cmd;
+} R2RRunConfig;
+
+typedef struct r2r_test_result_t {
+	char *out;
+	char *err;
+} R2RTestResult;
+
 R_API R2RCmdTest *r2r_cmd_test_new();
 R_API void r2r_cmd_test_free(R2RCmdTest *test);
 

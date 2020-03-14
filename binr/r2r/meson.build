@@ -1,4 +1,4 @@
-executable('r2r', ['r2r.c', 'load.c'],
+executable('r2r', ['r2r.c', 'load.c', 'run.c'],
   include_directories: [platform_inc],
   dependencies: [
     r_util_dep
