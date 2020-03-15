@@ -42,6 +42,12 @@ static char *read_string_val(FILE *f, const char *val, ut64 *linenum) {
 			eprintf ("Error: Missing opening end token after <<\n");
 			return NULL;
 		}
+		if (strcmp (endtoken, "EOF") != 0) {
+			// In case there will be strings containing "EOF" inside of them, this requirement
+			// can be weakened to only apply for strings which do not contain "EOF".
+			eprintf ("Error: End token must be \"EOF\", got \"%s\" instead.", endtoken);
+			return NULL;
+		}
 		RStrBuf *buf = r_strbuf_new ("");
 		char *line = NULL;
 		size_t linesz = 0;
@@ -146,7 +152,7 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 #undef DO_KEY_STR
 #undef DO_KEY_BOOL
 
-		eprintf (LINEFMT "Unknown key \"%s\".\n", file, linenum, line); \
+		eprintf (LINEFMT "Unknown key \"%s\".\n", file, linenum, line);
 	}
 beach:
 	free (line);
