@@ -405,7 +405,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		case 'D': // "wopD"
 			{
 				char *sp = strchr (input, ' ');
-				len = (int)(sp)?  r_num_math (core->num, sp + 1): core->blocksize;
+				len = sp?  r_num_math (core->num, sp + 1): core->blocksize;
 			}
 			if (len > 0) {
 				/* XXX This seems to fail at generating long patterns (wopD 512K) */

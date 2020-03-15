@@ -83,7 +83,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 }
 
 R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
-	int delta, from, to, cols, n = 0;
+	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RPrint *pr = NULL;
 	int colwidth = 20;
@@ -125,8 +125,6 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	}
 	// with the new field "arena" into reg items why need
 	// to get all arenas.
-	from = 0;
-	to = R_REG_TYPE_LAST;
 
 	int itmidx = -1;
 	dbg->creg = NULL;

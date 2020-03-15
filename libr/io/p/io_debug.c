@@ -219,6 +219,7 @@ static void trace_me (void) {
 }
 #endif
 
+#if __APPLE__ && !__POWERPC__
 static void handle_posix_error(int err) {
 	switch (err) {
 	case 0:
@@ -236,6 +237,7 @@ static void handle_posix_error(int err) {
 		break;
 	}
 }
+#endif
 
 static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	char *expr = NULL;

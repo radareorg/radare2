@@ -2,6 +2,7 @@
 #define R2_VECTOR_H
 
 #include <r_types.h>
+#include <r_util/r_assert.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -69,6 +70,7 @@ R_API void r_vector_free(RVector *vec);
 R_API RVector *r_vector_clone(RVector *vec);
 
 static inline bool r_vector_empty(const RVector *vec) {
+	r_return_val_if_fail (vec, false);
 	return vec->len == 0;
 }
 
@@ -122,11 +124,11 @@ R_API void *r_vector_shrink(RVector *vec);
  * }
  */
 #define r_vector_foreach(vec, it) \
-	if ((vec) && (vec)->a) \
+	if (!r_vector_empty (vec)) \
 		for (it = (void *)(vec)->a; (char *)it != (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
 
 #define r_vector_enumerate(vec, it, i) \
-	if ((vec) && (vec)->a) \
+	if (!r_vector_empty (vec)) \
 		for (it = (void *)(vec)->a, i = 0; i < (vec)->len; it = (void *)((char *)it + (vec)->elem_size), i++)
 
 
