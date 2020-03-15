@@ -39,9 +39,9 @@ static char *readline(char *buf, size_t *linesz) {
 // 3    EOF
 // 4    ...
 //
-// if f is at the beginning of line 1,
-// read_string_val(f, "<<EOF\0")
-// will return "Hello\nWorld\n" with f being at the beginning of line 4 afterwards.
+// if nextline is at the beginning of line 1,
+// read_string_val(&nextline, "<<EOF\0")
+// will return "Hello\nWorld\n" with nextline being at the beginning of line 4 afterwards.
 static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 	if (val[0] == '\'') {
 		eprintf ("Error: Invalid string syntax, use <<EOF instead of '...'\n");

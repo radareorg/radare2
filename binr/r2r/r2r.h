@@ -52,4 +52,9 @@ R_API void r2r_cmd_test_free(R2RCmdTest *test);
 
 R_API RPVector *r2r_load_cmd_test_file(const char *file);
 
+R_API bool r2r_subprocess_init();
+R_API void r2r_subprocess_fini();
+
+R_API R2RTestResult *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test);
+
 #endif //RADARE2_R2R_H

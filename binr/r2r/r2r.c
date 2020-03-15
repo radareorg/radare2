@@ -26,6 +26,12 @@ int main(int argc, char **argv) {
 		return help (true);
 	}
 
+	if (!r2r_subprocess_init ()) {
+		eprintf ("Subprocess init failed\n");
+		return 1;
+	}
+	atexit (r2r_subprocess_fini);
+
 	int i;
 	for (i = optind; i < argc; i++) {
 		printf ("%s\n", argv[i]);
@@ -45,5 +51,9 @@ int main(int argc, char **argv) {
 		}
 		r_pvector_free (tests);
 	}
+
+	R2RRunConfig config = { "radare2" };
+	r2r_run_cmd_test (&config, NULL);
+
 	return 0;
 }
