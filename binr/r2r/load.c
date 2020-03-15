@@ -18,6 +18,18 @@ R_API void r2r_cmd_test_free(R2RCmdTest *test) {
 	free (test);
 }
 
+static char *readline(char *buf, size_t *linesz) {
+	char *end = strchr (buf, '\n');
+	if (end) {
+		*end = '\0';
+		*linesz = end - buf;
+		return end + 1;
+	} else {
+		*linesz = strlen (buf);
+		return NULL;
+	}
+}
+
 // read the (possibly multiline) string value of some key in the file
 // e.g. for
 //
@@ -30,7 +42,7 @@ R_API void r2r_cmd_test_free(R2RCmdTest *test) {
 // if f is at the beginning of line 1,
 // read_string_val(f, "<<EOF\0")
 // will return "Hello\nWorld\n" with f being at the beginning of line 4 afterwards.
-static char *read_string_val(FILE *f, const char *val, ut64 *linenum) {
+static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 	if (val[0] == '\'') {
 		eprintf ("Error: Invalid string syntax, use <<EOF instead of '...'\n");
 		return NULL;
@@ -49,10 +61,10 @@ static char *read_string_val(FILE *f, const char *val, ut64 *linenum) {
 			return NULL;
 		}
 		RStrBuf *buf = r_strbuf_new ("");
-		char *line = NULL;
+		char *line = *nextline;
 		size_t linesz = 0;
-		ssize_t len;
-		while ((len = getline (&line, &linesz, f)) >= 0) {
+		do {
+			*nextline = readline (line, &linesz);
 			(*linenum)++;
 			char *end = strstr (line, endtoken);
 			if (end) {
@@ -60,23 +72,21 @@ static char *read_string_val(FILE *f, const char *val, ut64 *linenum) {
 			}
 			r_strbuf_append (buf, line);
 			if (end) {
-				break;
+				return r_strbuf_drain (buf);
+			} else {
+				r_strbuf_append (buf, "\n");
 			}
-		}
-		free (line);
-		if (len < 0) {
-			eprintf ("Error: Missing closing end token %s\n", endtoken);
-			r_strbuf_free (buf);
-			return NULL;
-		}
-		return r_strbuf_drain (buf);
+		} while ((line = *nextline));
+		eprintf ("Error: Missing closing end token %s\n", endtoken);
+		r_strbuf_free (buf);
+		return NULL;
 	}
 	return strdup (val);
 }
 
 R_API RPVector *r2r_load_cmd_test_file(const char *file) {
-	FILE *f = r_sandbox_fopen (file, "r");
-	if (!f) {
+	char *contents = r_file_slurp (file, NULL);
+	if (!contents) {
 		eprintf ("Failed to open file \"%s\"\n", file);
 		return NULL;
 	}
@@ -92,19 +102,14 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 	}
 
 	ut64 linenum = 0;
-	char *line = NULL;
-	size_t linesz = 0;
-	ssize_t len;
-	while ((len = getline (&line, &linesz, f)) >= 0) {
+	char *line = contents;
+	size_t linesz;
+	char *nextline;
+	do {
+		nextline = readline (line, &linesz);
 		linenum++;
-		if (!len) {
+		if (!linesz) {
 			continue;
-		}
-		if (line[len - 1] == '\n') {
-			if (len == 1) {
-				continue;
-			}
-			line[len - 1] = '\0';
 		}
 		char *val = strchr (line, '=');
 		if (val) {
@@ -129,7 +134,7 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
 			} \
 			test->field.line_begin = linenum; \
-			test->field.value = read_string_val (f, val, &linenum); \
+			test->field.value = read_string_val (&nextline, val, &linenum); \
 			test->field.line_end = linenum; \
 			if (!test->field.value) { \
 				eprintf (LINEFMT "Error: Failed to read value for key \"%s\"\n", file, linenum, key); \
@@ -153,11 +158,10 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 #undef DO_KEY_BOOL
 
 		eprintf (LINEFMT "Unknown key \"%s\".\n", file, linenum, line);
-	}
+	} while ((line = nextline));
 beach:
-	free (line);
+	free (contents);
 
-	fclose (f);
 	if (test && (test->name.value || test->cmds.value || test->expect.value)) {
 		eprintf ("Warning: found test tokens at the end of \"%s\" without RUN.\n", file);
 	}
