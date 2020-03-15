@@ -527,7 +527,7 @@ static void cmd_write_value (RCore *core, const char *input) {
 
 static bool cmd_wff(RCore *core, const char *input) {
 	ut8 *buf;
-	int size;
+	size_t size;
 	// XXX: file names cannot contain spaces
 	const char *arg = input + ((input[1] == ' ') ? 2 : 1);
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
@@ -553,8 +553,8 @@ static bool cmd_wff(RCore *core, const char *input) {
 	}
 	if ((buf = (ut8*) r_file_slurp (a, &size))) {
 		int u_offset = 0;
-		int u_size = r_num_math (core->num, p);
-		if (u_size < 1) u_size = size;
+		ut64 u_size = r_num_math (core->num, p);
+		if (u_size < 1) u_size = (ut64)size;
 		if (p) {
 			*p++ = 0;
 			u_offset = r_num_math (core->num, p);
@@ -565,7 +565,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 			}
 		}
 		r_io_use_fd (core->io, core->file->fd);
-		if (!r_io_write_at (core->io, core->offset, buf + u_offset, u_size)) {
+		if (!r_io_write_at (core->io, core->offset, buf + u_offset, (int)u_size)) {
 			eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
 		}
 		WSEEK (core, size);

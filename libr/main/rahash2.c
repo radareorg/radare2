@@ -42,7 +42,9 @@ static void do_hash_seed(const char *seed) {
 		return;
 	}
 	if (seed[0] == '@') {
-		s.buf = (ut8 *)r_file_slurp (seed + 1, &s.len);
+		size_t len;
+		s.buf = (ut8 *)r_file_slurp (seed + 1, &len);
+		s.len = (size_t)len;
 		return;
 	}
 	s.buf = (ut8 *) malloc (strlen (seed) + 128);
@@ -374,10 +376,15 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, char *filena
 		RCrypto *cry = r_crypto_new ();
 		if (r_crypto_use (cry, algo)) {
 			if (r_crypto_set_key (cry, s.buf, s.len, 0, direction)) {
-				int file_size;
-				ut8 *buf = strcmp (filename, "-")
-				           ? (ut8 *) r_file_slurp (filename, &file_size)
-					   : (ut8 *) r_stdin_slurp (&file_size);
+				size_t file_size;
+				ut8 *buf;
+				if (strcmp (filename, "-") == 0) {
+					int sz;
+					buf = (ut8 *)r_stdin_slurp (&sz);
+					file_size = (size_t)sz;
+				} else {
+					buf = (ut8 *)r_file_slurp (filename, &file_size);
+				}
 				if (!buf) {
 					eprintf ("rahash2: Cannot open '%s'\n", filename);
 					return -1;

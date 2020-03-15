@@ -742,7 +742,7 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 
 	if (file) {
 		char *content;
-		int length = 0;
+		size_t length = 0;
 		if (!strcmp (file, "-")) {
 			int sz = 0;
 			ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
@@ -770,7 +770,7 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 		} else {
 			content = r_file_slurp (file, &length);
 			if (content) {
-				if (length < 0) {
+				if (length > ST32_MAX) {
 					eprintf ("rasm2: File %s is too big\n", file);
 					ret = 1;
 				} else {

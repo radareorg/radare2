@@ -1277,7 +1277,7 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 				snap = r_debug_snap_get (core->dbg, core->offset);
 			}
 			if (snap) {
-				int fsz = 0;
+				size_t fsz = 0;
 				char *data = r_file_slurp (file, &fsz);
 				if (data) {
 					if (fsz >= snap->size) {
@@ -1659,7 +1659,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
-				int sz;
+				size_t sz;
 				char *buf = r_file_slurp (input + 2, &sz);
 				//TODO: use mmap here. we need a portable implementation
 				if (!buf) {
@@ -1668,10 +1668,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				}
 				r_io_write_at (core->io, map->addr, (const ut8*)buf, sz);
 				if (sz != map->size)
-					eprintf	("File size differs from region size (%d vs %"PFMT64d")\n",
-							sz, map->size);
-				eprintf ("Loaded %d byte(s) into the map region at 0x%08"PFMT64x"\n",
-						sz, map->addr);
+					eprintf	("File size differs from region size (%"PFMT64u" vs %"PFMT64d")\n",
+								(ut64)sz, map->size);
+				eprintf ("Loaded %"PFMT64u" byte(s) into the map region at 0x%08"PFMT64x"\n",
+						 (ut64)sz, map->addr);
 				free (buf);
 				return true;
 			}
