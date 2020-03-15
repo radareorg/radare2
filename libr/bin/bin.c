@@ -1207,7 +1207,7 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		r_list_foreach (files, iter, f) {
 			size_t f_len = 0;
 			ut8 *f_buf = (ut8 *)r_file_slurp (f, &f_len);
-			if (f_buf && f_len >= 0) {
+			if (f_buf) {
 				eprintf ("ADD %s %"PFMT64u"\n", f, (ut64)f_len);
 			} else {
 				eprintf ("Cannot open %s\n", f);
