@@ -84,7 +84,7 @@ struct grub_xfs_dir2_entry
   grub_uint8_t len;
 });
 
-typedef grub_uint32_t grub_xfs_extent[4];
+typedef grub_unaligned_uint32_t grub_xfs_extent[4];
 
 R_PACKED (
 struct grub_xfs_btree_node
@@ -102,7 +102,7 @@ struct grub_xfs_btree_root
 {
   grub_uint16_t level;
   grub_uint16_t numrecs;
-  grub_uint64_t keys[1];
+  grub_unaligned_uint64_t keys[1];
 });
 
 R_PACKED (
@@ -248,7 +248,7 @@ grub_xfs_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
 
   if (node->inode.format == XFS_INODE_FORMAT_BTREE)
     {
-      grub_uint64_t *keys;
+      grub_unaligned_uint64_t *keys;
 
       leaf = grub_malloc (node->data->sblock.bsize);
       if (leaf == 0)
@@ -555,11 +555,11 @@ grub_xfs_iterate_dir (grub_fshelp_node_t dir,
 			  - (int) sizeof (struct grub_xfs_dir2_entry)))
 	      {
 		struct grub_xfs_dir2_entry *direntry;
-		grub_uint16_t *freetag;
+		grub_unaligned_uint16_t *freetag;
 		char *filename;
 
 		direntry = (struct grub_xfs_dir2_entry *) &dirblock[pos];
-		freetag = (grub_uint16_t *) direntry;
+		freetag = (grub_unaligned_uint16_t *) direntry;
 
 		if (*freetag == 0XFFFF)
 		  {

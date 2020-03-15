@@ -33,7 +33,11 @@ struct grub_hfs_extent
 };
 
 /* HFS stores extents in groups of 3.  */
-typedef struct grub_hfs_extent grub_hfs_datarecord_t[3];
+typedef struct grub_hfs_extent grub_hfs_datarecord_t[3]
+#ifdef __GNUC__
+  __attribute__((aligned(1)))
+#endif
+;
 
 /* The HFS superblock (The official name is `Master Directory
    Block').  */
