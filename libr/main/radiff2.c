@@ -693,7 +693,7 @@ static void handle_sha256(const ut8 *block, int len) {
 	r_hash_free (ctx);
 }
 
-static ut8 *slurp(RCore **c, const char *file, int *sz) {
+static ut8 *slurp(RCore **c, const char *file, size_t *sz) {
 	RIODesc *d;
 	RIO *io;
 	if (c && file && strstr (file, "://")) {
@@ -917,7 +917,8 @@ R_API int r_main_radiff2(int argc, char **argv) {
 	RCore *c = NULL, *c2 = NULL;
 	RDiff *d;
 	ut8 *bufa = NULL, *bufb = NULL;
-	int o, sza, szb, /*diffmode = 0,*/ delta = 0;
+	int o, /*diffmode = 0,*/ delta = 0;
+	ut64 sza, szb;
 	int mode = MODE_DIFF;
 	int gmode = GRAPH_DEFAULT_MODE;
 	int diffops = 0;
@@ -1099,11 +1100,11 @@ R_API int r_main_radiff2(int argc, char **argv) {
 
 			ut64 addra = r_num_math (c->num, addr);
 			bufa = (ut8 *) r_core_cmd_strf (c, "af;pdc @ 0x%08"PFMT64x, addra);
-			sza = strlen ((const char *) bufa);
+			sza = (ut64)strlen ((const char *) bufa);
 
 			ut64 addrb = r_num_math (c2->num, addr);
 			bufb = (ut8 *) r_core_cmd_strf (c2, "af;pdc @ 0x%08"PFMT64x, addrb);
-			szb = strlen ((const char *) bufb);
+			szb = (ut64)strlen ((const char *) bufb);
 			mode = MODE_DIFF;
 		} else if (mode == MODE_GRAPH) {
 			int depth = r_config_get_i (c->config, "anal.depth");
@@ -1140,11 +1141,17 @@ R_API int r_main_radiff2(int argc, char **argv) {
 				r_core_diff_show (c, c2);
 			}
 		} else if (mode == MODE_DIFF_IMPORTS) {
-			bufa = get_imports (c, &sza);
-			bufb = get_imports (c2, &szb);
+			int sz;
+			bufa = get_imports (c, &sz);
+			sza = sz;
+			bufb = get_imports (c2, &sz);
+			szb = sz;
 		} else if (mode == MODE_DIFF_STRS) {
-			bufa = get_strings (c, &sza);
-			bufb = get_strings (c2, &szb);
+			int sz;
+			bufa = get_strings (c, &sz);
+			sza = sz;
+			bufb = get_strings (c2, &sz);
+			szb = sz;
 		}
 		if (mode == MODE_CODE || mode == MODE_GRAPH) {
 			r_cons_flush ();
@@ -1156,22 +1163,26 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			return 0;
 		}
 		break;
-	default:
-		bufa = slurp (&c, file, &sza);
+	default: {
+		size_t fsz;
+		bufa = slurp (&c, file, &fsz);
+		sza = fsz;
 		if (!bufa) {
 			eprintf ("radiff2: Cannot open %s\n", r_str_get (file));
 			return 1;
 		}
-		bufb = slurp (&c, file2, &szb);
+		bufb = slurp (&c, file2, &fsz);
+		szb = fsz;
 		if (!bufb) {
 			eprintf ("radiff2: Cannot open: %s\n", r_str_get (file2));
 			free (bufa);
 			return 1;
 		}
 		if (sza != szb) {
-			eprintf ("File size differs %d vs %d\n", sza, szb);
+			eprintf ("File size differs %"PFMT64u" vs %"PFMT64u"\n", (ut64)sza, (ut64)szb);
 		}
 		break;
+	}
 	}
 
 	// initialize RCons
@@ -1182,13 +1193,13 @@ R_API int r_main_radiff2(int argc, char **argv) {
 		if (!c && !r_list_empty (evals)) {
 			c = opencore (NULL);
 		}
-		dump_cols_hexii (bufa, sza, bufb, szb, (r_cons_get_size (NULL) > 112)? 16: 8);
+		dump_cols_hexii (bufa, (int)sza, bufb, (int)szb, (r_cons_get_size (NULL) > 112)? 16: 8);
 		break;
 	case MODE_COLS:
 		if (!c && !r_list_empty (evals)) {
 			c = opencore (NULL);
 		}
-		dump_cols (bufa, sza, bufb, szb, (r_cons_get_size (NULL) > 112)? 16: 8);
+		dump_cols (bufa, (int)sza, bufb, (int)szb, (r_cons_get_size (NULL) > 112)? 16: 8);
 		break;
 	case MODE_DIFF:
 	case MODE_DIFF_STRS:
@@ -1196,10 +1207,10 @@ R_API int r_main_radiff2(int argc, char **argv) {
 		d = r_diff_new ();
 		r_diff_set_delta (d, delta);
 		if (diffmode == 'j') {
-			printf ("{\"files\":[{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file, sza);
-			handle_sha256 (bufa, sza);
-			printf ("\"},\n{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file2, szb);
-			handle_sha256 (bufb, szb);
+			printf ("{\"files\":[{\"filename\":\"%s\", \"size\":%"PFMT64u", \"sha256\":\"", file, sza);
+			handle_sha256 (bufa, (int)sza);
+			printf ("\"},\n{\"filename\":\"%s\", \"size\":%"PFMT64u", \"sha256\":\"", file2, szb);
+			handle_sha256 (bufb, (int)szb);
 			printf ("\"}],\n");
 			printf ("\"changes\":[");
 		}
@@ -1208,16 +1219,16 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			write (1, "\x04", 1);
 		}
 		if (diffmode == 'U') {
-			char * res = r_diff_buffers_unified (d, bufa, sza, bufb, szb);
+			char * res = r_diff_buffers_unified (d, bufa, (int)sza, bufb, (int)szb);
 			printf ("%s", res);
 			free (res);
 		} else if (diffmode == 'B') {
 			r_diff_set_callback (d, &bcb, 0);
-			r_diff_buffers (d, bufa, sza, bufb, szb);
+			r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
 			write (1, "\x00", 1);
 		} else {
 			r_diff_set_callback (d, &cb, 0); // (void *)(size_t)diffmode);
-			r_diff_buffers (d, bufa, sza, bufb, szb);
+			r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
 		}
 		if (diffmode == 'j') {
 			printf ("]\n");
@@ -1238,7 +1249,7 @@ R_API int r_main_radiff2(int argc, char **argv) {
 				} else {
 					d->type = 0;
 				}
-				r_diff_buffers_distance (d, bufa, sza, bufb, szb, &count, &sim);
+				r_diff_buffers_distance (d, bufa, (ut32)sza, bufb, (ut32)szb, &count, &sim);
 				r_diff_free (d);
 			}
 		}

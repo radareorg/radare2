@@ -3741,7 +3741,7 @@ reread:
 			char **args = r_str_argv (input + param_offset, &n_args);
 			ut8 *buf = NULL;
 			ut64 offset = 0;
-			int size;
+			size_t size;
 			buf = (ut8 *)r_file_slurp (args[0], &size);
 			if (!buf) {
 				eprintf ("Cannot open '%s'\n", args[0]);

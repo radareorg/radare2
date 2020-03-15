@@ -3393,7 +3393,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				// TODO autocomplete filenames
 				prompt_read ("load from file: ", buf, sizeof (buf));
 				if (buf[0]) {
-					int sz;
+					size_t sz;
 					char *data = r_file_slurp (buf, &sz);
 					if (data) {
 						int cur;
@@ -3404,7 +3404,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						}
 						ut64 from = core->offset + cur;
 						ut64 size = R_ABS (core->print->cur - core->print->ocur) + 1;
-						ut64 s = R_MIN (size, sz);
+						ut64 s = R_MIN (size, (ut64)sz);
 						r_io_write_at (core->io, from, (const ut8*)data, s);
 					}
 				}

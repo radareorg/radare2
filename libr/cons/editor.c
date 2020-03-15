@@ -83,7 +83,9 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 	if (file) {
 		path = strdup (file);
 		bytes = 0;
-		lines = r_file_slurp (file, &bytes);
+		size_t sz = 0;
+		lines = r_file_slurp (file, &sz);
+		bytes = (int)sz;
 		if (!lines) {
 			eprintf ("Failed to load '%s'.\n", file);
 			R_FREE (path);

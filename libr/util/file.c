@@ -342,7 +342,7 @@ R_API char *r_stdin_slurp (int *sz) {
 #endif
 }
 
-R_API char *r_file_slurp(const char *str, int *usz) {
+R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 	size_t rsz;
 	char *ret;
 	FILE *fd;
@@ -390,26 +390,26 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	fclose (fd);
 	ret[sz] = '\0';
 	if (usz) {
-		*usz = (int)sz;
+		*usz = sz;
 	}
 	return ret;
 }
 
 R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail) {
-	int sz;
 	ut8 *in, *out;
 	if (outlen) {
 		*outlen = 0;
 	}
+	size_t sz;
 	in = (ut8*)r_file_slurp (str, &sz);
 	if (!in) {
 		return NULL;
 	}
-	out = r_inflate (in, sz, NULL, outlen);
+	out = r_inflate (in, (int)sz, NULL, outlen);
 	if (!out && origonfail) {
 		// if uncompression fails, return orig buffer ?
 		if (outlen) {
-			*outlen = sz;
+			*outlen = (int)sz;
 		}
 		in[sz] = 0;
 		return in;
@@ -494,9 +494,9 @@ R_API char *r_file_slurp_random_line(const char *file) {
 R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 	/* Reservoir Sampling */
 	char *ptr = NULL, *str;
-	int sz, i, lines, selection = -1;
+	size_t i, lines, selection = -1;
 	int start = *line;
-	if ((str = r_file_slurp (file, &sz))) {
+	if ((str = r_file_slurp (file, NULL))) {
 		r_num_irand ();
 		for (i = 0; str[i]; i++) {
 			if (str[i] == '\n') {
@@ -535,7 +535,7 @@ R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 
 R_API char *r_file_slurp_line(const char *file, int line, int context) {
 	int i, lines = 0;
-	int sz;
+	size_t sz;
 	char *ptr = NULL, *str = r_file_slurp (file, &sz);
 	// TODO: Implement context
 	if (str) {
@@ -569,7 +569,7 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 
 R_API char *r_file_slurp_lines_from_bottom(const char *file, int line) {
 	int i, lines = 0;
-	int sz;
+	size_t sz;
 	char *ptr = NULL, *str = r_file_slurp (file, &sz);
 	// TODO: Implement context
 	if (str) {
@@ -596,7 +596,7 @@ R_API char *r_file_slurp_lines_from_bottom(const char *file, int line) {
 
 R_API char *r_file_slurp_lines(const char *file, int line, int count) {
 	int i, lines = 0;
-	int sz;
+	size_t sz;
 	char *ptr = NULL, *str = r_file_slurp (file, &sz);
 	// TODO: Implement context
 	if (str) {

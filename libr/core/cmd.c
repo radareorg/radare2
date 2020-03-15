@@ -3309,7 +3309,8 @@ escape_backtick:
 		char *tmpasm = NULL;
 		bool flgspc_changed = false;
 		int tmpfd = -1;
-		int sz, len;
+		size_t sz;
+		int len;
 		ut8 *buf;
 
 		*ptr++ = '\0';
@@ -3391,7 +3392,7 @@ repeat_arroba:
 				f = r_file_slurp (ptr + 2, &sz);
 				if (f) {
 					{
-						RBuffer *b = r_buf_new_with_bytes ((const ut8*)f, sz);
+						RBuffer *b = r_buf_new_with_bytes ((const ut8*)f, (ut64)sz);
 						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
 						if (d) {
 							if (tmpdesc) {
@@ -5386,7 +5387,7 @@ DEFINE_HANDLE_TS_FCN(tmp_file_command) {
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode arg = ts_node_named_child (node, 1);
 	char *arg_str = ts_node_handle_arg (state, node, arg, 1);
-	int sz;
+	size_t sz;
 	bool res = false;
 
 	char *f = r_file_slurp (arg_str, &sz);
@@ -5395,7 +5396,7 @@ DEFINE_HANDLE_TS_FCN(tmp_file_command) {
 		goto out;
 	}
 
-	res = handle_tmp_desc (state, command, (ut8 *)f, sz);
+	res = handle_tmp_desc (state, command, (ut8 *)f, (int)sz);
 
 	free (f);
 out:

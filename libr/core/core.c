@@ -3475,7 +3475,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 	const bool interactive = r_cons_is_interactive ();
 	const char *editor = r_config_get (core->config, "cfg.editor");
 	char *name = NULL, *ret = NULL;
-	int len, fd;
+	int fd;
 
 	if (!interactive || !editor || !*editor) {
 		return NULL;
@@ -3515,6 +3515,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 			r_sys_cmdf ("%s '%s'", editor, name);
 		}
 	}
+	size_t len = 0;
 	ret = name? r_file_slurp (name, &len): 0;
 	if (ret) {
 		if (len && ret[len - 1] == '\n') {

@@ -179,12 +179,12 @@ static int cmd_project(void *data, const char *input) {
 				break;
 			case 'j': // "Pnj"
 				if (!input[2]) {
-					int len = 0;
+					size_t len = 0;
 					/* get base64 string */
 					char *str = r_core_project_notes_file (core, fileproject);
 					if (str) {
 						char *data = r_file_slurp (str, &len);
-						char *res = r_base64_encode_dyn (data, len);
+						char *res = r_base64_encode_dyn (data, (int)len);
 						if (res) {
 							r_cons_println (res);
 							free (res);

@@ -742,7 +742,7 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 
 	if (file) {
 		char *content;
-		int length = 0;
+		size_t length = 0;
 		if (!strcmp (file, "-")) {
 			int sz = 0;
 			ut8 *buf = (ut8 *)r_stdin_slurp (&sz);

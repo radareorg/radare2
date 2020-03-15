@@ -256,7 +256,6 @@ static int cmpstr (const void *_a, const void *_b) {
 }
 
 R_API char *r_syscmd_sort(const char *file) {
-	int sz;
 	const char *p = NULL;
 	RList *list = NULL;
 	if (file) {
@@ -269,7 +268,7 @@ R_API char *r_syscmd_sort(const char *file) {
 	if (p && *p) {
 		char *filename = strdup (p);
 		r_str_trim (filename);
-		char *data = r_file_slurp (filename, &sz);
+		char *data = r_file_slurp (filename, NULL);
 		if (!data) {
 			eprintf ("No such file or directory\n");
 		} else {
@@ -335,7 +334,6 @@ R_API char *r_syscmd_tail(const char *file, int count) {
 }
 
 R_API char *r_syscmd_uniq(const char *file) {
-	int sz;
 	const char *p = NULL;
 	RList *list = NULL;
 	if (file) {
@@ -348,7 +346,7 @@ R_API char *r_syscmd_uniq(const char *file) {
 	if (p && *p) {
 		char *filename = strdup (p);
 		r_str_trim (filename);
-		char *data = r_file_slurp (filename, &sz);
+		char *data = r_file_slurp (filename, NULL);
 		if (!data) {
 			eprintf ("No such file or directory\n");
 		} else {
@@ -367,7 +365,6 @@ R_API char *r_syscmd_uniq(const char *file) {
 }
 
 R_API char *r_syscmd_join(const char *file1, const char *file2) {
-	int sz1, sz2;
 	const char *p1 = NULL, *p2 = NULL;
 	RList *list1, *list2, *list = r_list_newf (NULL);
 	if (!list) {
@@ -392,8 +389,8 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 		char *filename2 = strdup (p2);
 		r_str_trim (filename1);
 		r_str_trim (filename2);
-		char *data1 = r_file_slurp (filename1, &sz1);
-		char *data2 = r_file_slurp (filename2, &sz2);
+		char *data1 = r_file_slurp (filename1, NULL);
+		char *data2 = r_file_slurp (filename2, NULL);
 		char *data = NULL;
 		RListIter *iter1, *iter2;
 		if (!data1 && !data2) {
@@ -439,7 +436,6 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 }
 
 R_API char *r_syscmd_cat(const char *file) {
-	int sz;
 	const char *p = NULL;
 	if (file) {
 		if ((p = strchr (file, ' '))) {
@@ -451,7 +447,7 @@ R_API char *r_syscmd_cat(const char *file) {
 	if (p && *p) {
 		char *filename = strdup (p);
 		r_str_trim (filename);
-		char *data = r_file_slurp (filename, &sz);
+		char *data = r_file_slurp (filename, NULL);
 		if (!data) {
 			eprintf ("No such file or directory\n");
 		}

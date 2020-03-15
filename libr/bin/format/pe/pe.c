@@ -3967,13 +3967,15 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file, bool verbose) {
-	ut8* buf;
 	struct PE_(r_bin_pe_obj_t)* bin = R_NEW0 (struct PE_(r_bin_pe_obj_t));
 	if (!bin) {
 		return NULL;
 	}
 	bin->file = file;
-	if (!(buf = (ut8*) r_file_slurp (file, &bin->size))) {
+	size_t binsz;
+	ut8 *buf = (ut8*)r_file_slurp (file, &binsz);
+	bin->size = binsz;
+	if (!buf) {
 		return PE_(r_bin_pe_free)(bin);
 	}
 	bin->b = r_buf_new ();

@@ -211,16 +211,17 @@ R_API int r_lang_run_string(RLang *lang, const char *code) {
 }
 
 R_API int r_lang_run_file(RLang *lang, const char *file) {
-	int len, ret = false;
+	int ret = false;
 	if (lang->cur) {
 		if (!lang->cur->run_file) {
 			if (lang->cur->run) {
+				size_t len;
 				char *code = r_file_slurp (file, &len);
 				if (!code) {
 					eprintf ("Could not open '%s'.\n", file);
 					return 0;
 				}
-				ret = lang->cur->run (lang, code, len);
+				ret = lang->cur->run (lang, code, (int)len);
 				free (code);
 			}
 		} else {
