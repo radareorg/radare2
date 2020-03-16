@@ -7,7 +7,6 @@ import (
 	term
 	json
 	flag
-	filepath
 	radare.r2
 )
 
@@ -30,12 +29,12 @@ const (
 )
 
 fn autodetect_dbpath() string {
-	return filepath.join(r2r_home(),default_dbpath)
+	return os.join_path(r2r_home(),default_dbpath)
 }
 
 fn r2r_home() string {
-	home := filepath.basedir(os.realpath(os.executable()))
-	return filepath.join(home,'..')
+	home := os.base_dir(os.realpath(os.executable()))
+	return os.join_path(home,'..')
 }
 
 fn control_c() {
@@ -46,7 +45,7 @@ fn control_c() {
 pub fn main() {
 	mut r2r := R2R{}
 	mut fp := flag.new_flag_parser(os.args)
-	fp.application(filepath.filename(os.executable()))
+	fp.application(os.filename(os.executable()))
 	// fp.version(r2r_version)
 	show_norun := fp.bool_('norun', `n`, false, 'Dont run the tests')
 	show_help := fp.bool_('help', `h`, false, 'Show this help screen')
@@ -90,8 +89,8 @@ pub fn main() {
 
 	if r2r.interactive {
 		eprintln('Warning: interactive mode not yet implemented in V. Use the node testsuite for this')
-		p := filepath.join(r2r.r2r_home,'new')
-		if !os.is_dir(filepath.join(p,'node_modules')) {
+		p := os.join_path(r2r.r2r_home,'new')
+		if !os.is_dir(os.join_path(p,'node_modules')) {
 			exit(1)
 		}
 		a := r2r.targets.join(' ')
@@ -137,7 +136,7 @@ fn C.mkdtemp(template charptr) byteptr
 
 fn mktmpdir(template string) string {
 	tp := if template == '' { 'temp.XXXXXX' } else { template }
-	dir := filepath.join(os.tmpdir(),tp)
+	dir := os.join_path(os.temp_dir(),tp)
 	res := C.mkdtemp(dir.str)
 	return tos_clone(res)
 }
@@ -489,7 +488,7 @@ fn (r2r mut R2R) run_asm_test(test R2RAsmTest, dismode bool) {
 	rasm2_flags := args.join(' ')
 	time_start := time.ticks()
 	tmp_dir := mktmpdir('')
-	tmp_output := filepath.join(tmp_dir,'output.txt')
+	tmp_output := os.join_path(tmp_dir,'output.txt')
 	os.system('rasm2 ${rasm2_flags} > ${tmp_output}')
 	res := os.read_file(tmp_output) or {
 		panic(err)
@@ -528,9 +527,9 @@ fn handle_control_c() {
 fn (r2r mut R2R) run_cmd_test(test R2RCmdTest) {
 	time_start := time.ticks()
 	tmp_dir := mktmpdir('')
-	tmp_script := filepath.join(tmp_dir,'script.r2')
-	tmp_stderr := filepath.join(tmp_dir,'stderr.txt')
-	tmp_output := filepath.join(tmp_dir,'output.txt')
+	tmp_script := os.join_path(tmp_dir,'script.r2')
+	tmp_stderr := os.join_path(tmp_dir,'stderr.txt')
+	tmp_output := os.join_path(tmp_dir,'output.txt')
 	os.write_file(tmp_script, test.cmds)
 	// TODO: handle timeout
 	r2 := '${r2r.r2_path} -e scr.utf8=0 -e scr.interactive=0 -e scr.color=0 -NQ'
@@ -611,7 +610,7 @@ fn (r2r mut R2R) run_fuz_tests() {
 	mut n := 0
 	t := files.len
 	for file in files {
-		ff := filepath.join(fuzz_path, file)
+		ff := os.join_path(fuzz_path, file)
 		pc := n * 100 / t
 		handle_control_c()
 		r2r.wg.add(1)
@@ -688,7 +687,7 @@ fn (r2r mut R2R) load_asm_tests(testpath string) {
 		if file.starts_with('.') {
 			continue
 		}
-		f := filepath.join(testpath,file)
+		f := os.join_path(testpath,file)
 		if os.is_dir(f) {
 			r2r.load_asm_tests(f)
 		}
@@ -714,7 +713,7 @@ fn (r2r mut R2R) run_unit_tests() bool {
 		return false
 	}
 	for file in files {
-		fpath := filepath.join(unit_path, file)
+		fpath := os.join_path(unit_path, file)
 		if is_executable(fpath, file) {
 			// TODO: filter OK
 			cmd := if r2r.show_quiet { '(${fpath} ;echo \$? > .a) | grep -v OK || [ "\$(shell cat .a)" = 0 ]' } else { '$fpath' }
@@ -787,7 +786,7 @@ fn (r2r mut R2R) run_jsn_tests() {
 		panic(err)
 	}
 	for file in files {
-		f := filepath.join(json_path,file)
+		f := os.join_path(json_path,file)
 		lines := os.read_lines(f) or {
 			panic(err)
 		}
@@ -873,7 +872,7 @@ fn (r2r mut R2R) load_cmd_tests(testpath string) {
 		if file.starts_with('.') {
 			continue
 		}
-		f := filepath.join(testpath, file)
+		f := os.join_path(testpath, file)
 		if os.is_dir(f) {
 			r2r.load_cmd_tests(f)
 		}
