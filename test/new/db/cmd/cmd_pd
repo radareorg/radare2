@@ -1811,7 +1811,7 @@ pd 1
 e scr.color=3
 ec linehl none
 pd 1
-ec linehl #002f00
+ec linehl rgb:002f00
 pd 1
 ec wordhl rgb:800
 ecHw eax

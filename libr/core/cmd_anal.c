@@ -5474,7 +5474,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int off) {
 			r_reg_setv (core->dbg->reg, "PC", aop.addr + aop.size);
 			const char *e = R_STRBUF_SAFEGET (&aop.esil);
 			if (e && *e) {
-				 eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
+				 // eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
 				(void)r_anal_esil_parse (esil, e);
 			}
 		}
@@ -5689,7 +5689,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					*n2++ = 0;
 				}
 				ut64 off = r_num_math (core->num, n);
-				ut64 nth = n2?r_num_math (core->num, n2):1;
+				ut64 nth = n2? r_num_math (core->num, n2): 1;
 				cmd_aespc (core, core->offset, off, (int)nth);
 			} else {
 				eprintf ("Usage: aesB [until-addr] [nth-opcodes] @ [from-addr]\n");
