@@ -193,6 +193,7 @@ static const char *help_msg_question_v[] = {
 	"$Cn", "", "get nth call of function",
 	"$Dn", "", "get nth data reference in function",
 	"$D", "", "current debug map base address ?v $D @ rsp",
+	"$DB", "", "same as dbg.baddr, progam base address",
 	"$DD", "", "current debug map size",
 	"$e", "", "1 if end of block, else 0",
 	"$j", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",

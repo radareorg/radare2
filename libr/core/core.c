@@ -755,7 +755,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			return 0LL;
 		case 'D': // $D
-			if (IS_DIGIT (str[2])) {
+			if (str[2] == 'B') { // $DD
+				return r_debug_get_baddr (core->dbg, NULL);
+			} else if (IS_DIGIT (str[2])) {
 				return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_DATA);
 			} else {
 				RDebugMap *map;
