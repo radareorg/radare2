@@ -9235,12 +9235,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 }
 
 static bool anal_fcn_data (RCore *core, const char *input) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	ut32 fcn_size = r_anal_function_size_from_entry (fcn);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ANY);
 	if (fcn) {
 		int i;
 		bool gap = false;
 		ut64 gap_addr = UT64_MAX;
+		ut32 fcn_size = r_anal_function_size_from_entry (fcn);
 		char *bitmap = calloc (1, fcn_size);
 		if (bitmap) {
 			RAnalBlock *b;
