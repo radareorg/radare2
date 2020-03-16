@@ -257,6 +257,14 @@ EOF
 CMDS=aa ; s sym.fastcaslled ; afc fastcall ; afva ; ?e ; pdf~arg,var
 RUN
 
+NAME=adf bug #16215
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+adf
+EOF
+
 NAME=adf analysis on an obfuscated executable
 FILE=../bins/pe/cmd_adf_sample0.exe
 BROKEN=1
