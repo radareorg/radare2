@@ -839,15 +839,6 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 
 			/* New function: Add initial xref */
 			if (from != UT64_MAX) {
-				if (fcn->type == R_ANAL_FCN_TYPE_LOC) {
-					RAnalFunction *f = r_anal_get_fcn_in (core->anal, from, -1);
-					if (f) {
-						if (!f->fcn_locs) {
-							f->fcn_locs = r_list_new ();
-						}
-						r_list_add_sorted (f->fcn_locs, fcn, &cmpfcn);
-					}
-				}
 				r_anal_xrefs_set (core->anal, from, fcn->addr, reftype);
 			}
 			// XXX: this is wrong. See CID 1134565
