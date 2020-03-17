@@ -1498,10 +1498,17 @@ static int cmd_type(void *data, const char *input) {
 			char *tmp = sdb_get (TDB, type, 0);
 			if (tmp && *tmp) {
 				r_type_set_link (TDB, type, addr);
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-				if (fcn) {
-					r_core_link_stroff (core, fcn);
+				RList *fcns = r_anal_get_functions_in (core->anal, addr);
+				if (r_list_length (fcns) > 1) {
+					eprintf ("Multiple functions found in here.\n");
+				} else {
+					RListIter *iter;
+					RAnalFunction *fcn;
+					r_list_foreach (fcns, iter, fcn) {
+						r_core_link_stroff (core, fcn);
+					}
 				}
+				r_list_free (fcns);
 				free (tmp);
 			} else {
 				eprintf ("unknown type %s\n", type);
