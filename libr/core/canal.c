@@ -15,7 +15,7 @@ enum {
 	R2_ARCH_ARM32,
 	R2_ARCH_ARM64,
 	R2_ARCH_MIPS
-} R2Arch;
+};
 
 static void loganal(ut64 from, ut64 to, int depth) {
 	r_cons_clear_line (1);
