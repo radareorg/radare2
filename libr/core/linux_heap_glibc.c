@@ -45,6 +45,18 @@ static bool GH(is_tcache)(RCore *core) {
 	return (v > 2.25);
 }
 
+static GHT GH(tcache_chunk_size)(RCore *core, GHT brk_start) {
+	GHT sz = 0;
+
+	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
+	if (!cnk) {
+		return sz;
+	}
+	r_io_read_at (core->io, brk_start, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+	sz = (cnk->size >> 3) << 3; //clear chunk flag
+	return sz;
+}
+
 static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, MallocState *main_arena) {
 	int i = 0;
 	main_arena->mutex = cmain_arena->mutex;
@@ -663,7 +675,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 	bin = m_arena + offset + SZ * bin_num;
 	r_io_read_at (core->io, bin, (ut8 *)&next, SZ);
 
-	GH(get_brks)(core, &brk_start, &brk_end);
+	GH(get_brks) (core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
 		eprintf ("No Heap section\n");
 		free (cnk);
@@ -890,14 +902,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
 		if (tcache) {
-			GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
-			if (!cnk) {
-				return;
-			}
-			(void)r_io_read_at (core->io, brk_start, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-			int tc_chunk_size = (cnk->size >> 3) << 3;
-			tcache_initial_brk = ((brk_start >> 12) << 12) + tc_chunk_size;
-			initial_brk = tcache_initial_brk;
+			GHT fc_offset = GH(tcache_chunk_size) (core, brk_start);
+			initial_brk = ((brk_start >> 12) << 12) + fc_offset;
 		} else {
 			initial_brk = (brk_start >> 12) << 12;
 		}
