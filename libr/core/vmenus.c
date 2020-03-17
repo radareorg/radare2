@@ -346,11 +346,8 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			}
 			r_cons_printf ("     0x%02x", *byte);
 		}
+#if 0
 		r_cons_printf ("\nbit: ");
-		if (use_color) {
-			r_cons_print (core->cons->context->pal.b0x7f);
-			colorBits = true;
-		}
 		for (i = 0; i < 8; i++) {
 			ut8 *byte = buf + i;
 			if (i == 4) {
@@ -367,6 +364,35 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			r_cons_print (" ");
 		}
 		r_cons_newline ();
+#else
+		int set;
+		const char *ws = r_config_get_i (core->config, "scr.utf8")? "·": " ";
+		for (set = 1; set >= 0 ; set--) {
+			r_cons_printf ("\nbit: ");
+			for (i = 0; i < 8; i++) {
+				ut8 *byte = buf + i;
+				if (i == 4) {
+					r_cons_printf ("| ");
+				}
+				if (colorBits && i >= asmop.size) {
+					r_cons_print (Color_RESET);
+					colorBits = false;
+				}
+				for (j = 0; j < 8; j++) {
+					bool bit = R_BIT_CHK (byte, 7 - j);
+					if (set && bit) {
+						r_cons_printf ("1");
+					} else if (!set && !bit) {
+						r_cons_printf ("0");
+					} else {
+						r_cons_printf (ws);
+					}
+				}
+				r_cons_print (" ");
+			}
+		}
+		r_cons_printf ("\n");
+#endif
 		char str_pos[128];
 		memset (str_pos, '-', nbits + 9);
 		int pos = x;
