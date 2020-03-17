@@ -15,9 +15,7 @@ enum {
 	R2_ARCH_ARM32,
 	R2_ARCH_ARM64,
 	R2_ARCH_MIPS
-} R2Arch;
-
-static int cmpfcn(const void *_a, const void *_b);
+};
 
 static void loganal(ut64 from, ut64 to, int depth) {
 	r_cons_clear_line (1);
@@ -2540,11 +2538,6 @@ R_API ut64 r_core_anal_fcn_list_size(RCore *core) {
 	}
 	r_cons_printf ("%"PFMT64u"\n", total);
 	return total;
-}
-
-static int cmpfcn(const void *_a, const void *_b) {
-	const RAnalFunction *_fcn1 = _a, *_fcn2 = _b;
-	return (_fcn1->addr - _fcn2->addr);
 }
 
 /* Fill out metadata struct of functions */
