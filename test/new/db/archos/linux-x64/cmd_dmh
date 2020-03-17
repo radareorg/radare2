@@ -13,3 +13,19 @@ EXPECT=<<EOF
 p=3
 EOF
 RUN
+
+NAME=dmh allocated
+FILE=../bins/elf/simple_malloc_x86_64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+dmh~?allocated
+7dso
+dmh~?allocated
+EOF
+EXPECT=<<EOF
+1
+2
+p=3
+EOF
+RUN

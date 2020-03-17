@@ -380,7 +380,7 @@ void GH(print_heap_chunk)(RCore *core) {
 	free (cnk);
 }
 
-static bool GH(is_arena) (RCore *core, GHT m_arena, GHT m_state) {
+static bool GH(is_arena)(RCore *core, GHT m_arena, GHT m_state) {
 	if (m_arena == m_state) {
 		return true;
 	}
@@ -857,8 +857,14 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
 		if (tcache) {
-			tcache_initial_brk = ((brk_start >> 12) << 12) + TC_HDR_SZ;
-			initial_brk = tcache_initial_brk + offset;
+			GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
+			if (!cnk) {
+				return;
+			}
+			(void)r_io_read_at (core->io, brk_start, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+			int tc_chunk_size = (cnk->size >> 3) << 3;
+			tcache_initial_brk = ((brk_start >> 12) << 12) + tc_chunk_size;
+			initial_brk = tcache_initial_brk;
 		} else {
 			initial_brk = (brk_start >> 12) << 12;
 		}
