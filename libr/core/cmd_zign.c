@@ -1216,7 +1216,6 @@ static int cmdSearch(void *data, const char *input) {
 		eprintf ("usage: z/[*]\n");
 		return false;
 	}
-
 	return true;
 }
 
@@ -1233,38 +1232,39 @@ static int cmdInfo(void *data, const char *input) {
 
 static int cmd_zign(void *data, const char *input) {
 	RCore *core = (RCore *) data;
+	const char *arg = input + 1;
 
 	switch (*input) {
 	case '\0':
 	case '*':
 	case 'q':
 	case 'j': // "zj"
-		r_sign_list (core->anal, input[0]);
+		r_sign_list (core->anal, *input);
 		break;
 	case 'k': // "zk"
 		r_core_cmd0 (core, "k anal/zigns/*");
 		break;
 	case '-': // "z-"
-		r_sign_delete (core->anal, input + 1);
+		r_sign_delete (core->anal, arg);
 		break;
 	case '.': // "z."
-		return cmdCheck (data, input + 1);
+		return cmdCheck (data, arg);
 	case 'o': // "zo"
-		return cmdOpen (data, input + 1);
+		return cmdOpen (data, arg);
 	case 'g': // "zg"
 		return cmdAdd (data, "F");
 	case 'a': // "za"
-		return cmdAdd (data, input + 1);
+		return cmdAdd (data, arg);
 	case 'f': // "zf"
-		return cmdFlirt (data, input + 1);
+		return cmdFlirt (data, arg);
 	case '/': // "z/"
-		return cmdSearch (data, input + 1);
+		return cmdSearch (data, arg);
 	case 'c': // "zc"
-		return cmdCompare (data, input + 1);
+		return cmdCompare (data, arg);
 	case 's': // "zs"
-		return cmdSpace (data, input + 1);
+		return cmdSpace (data, arg);
 	case 'i': // "zi"
-		return cmdInfo (data, input + 1);
+		return cmdInfo (data, arg);
 	case '?': // "z?"
 		r_core_cmd_help (core, help_msg_z);
 		break;
