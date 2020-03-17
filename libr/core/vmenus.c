@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
 #include <r_util.h>
@@ -280,6 +280,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 	RAsmOp asmop;
 	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
+	bool bitsInLine = false;
 
 	if (core->blocksize < sizeof (ut64)) {
 		return false;
@@ -346,25 +347,50 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			}
 			r_cons_printf ("     0x%02x", *byte);
 		}
-		r_cons_printf ("\nbit: ");
-		if (use_color) {
-			r_cons_print (core->cons->context->pal.b0x7f);
-			colorBits = true;
-		}
-		for (i = 0; i < 8; i++) {
-			ut8 *byte = buf + i;
-			if (i == 4) {
-				r_cons_printf ("| ");
+		if (bitsInLine) {
+			r_cons_printf ("\nbit: ");
+			for (i = 0; i < 8; i++) {
+				ut8 *byte = buf + i;
+				if (i == 4) {
+					r_cons_printf ("| ");
+				}
+				if (colorBits && i >= asmop.size) {
+					r_cons_print (Color_RESET);
+					colorBits = false;
+				}
+				for (j = 0; j < 8; j++) {
+					bool bit = R_BIT_CHK (byte, 7 - j);
+					r_cons_printf ("%d", bit? 1: 0);
+				}
+				r_cons_print (" ");
 			}
-			if (colorBits && i >= asmop.size) {
-				r_cons_print (Color_RESET);
-				colorBits = false;
+		} else {
+			int set;
+			const char *ws = r_config_get_i (core->config, "scr.utf8")? "·": " ";
+			for (set = 1; set >= 0 ; set--) {
+				r_cons_printf ("\nbit: ");
+				for (i = 0; i < 8; i++) {
+					ut8 *byte = buf + i;
+					if (i == 4) {
+						r_cons_printf ("| ");
+					}
+					if (colorBits && i >= asmop.size) {
+						r_cons_print (Color_RESET);
+						colorBits = false;
+					}
+					for (j = 0; j < 8; j++) {
+						bool bit = R_BIT_CHK (byte, 7 - j);
+						if (set && bit) {
+							r_cons_printf ("1");
+						} else if (!set && !bit) {
+							r_cons_printf ("0");
+						} else {
+							r_cons_printf (ws);
+						}
+					}
+					r_cons_print (" ");
+				}
 			}
-			for (j = 0; j < 8; j++) {
-				bool bit = R_BIT_CHK (byte, 7 - j);
-				r_cons_printf ("%d", bit? 1: 0);
-			}
-			r_cons_print (" ");
 		}
 		r_cons_newline ();
 		char str_pos[128];
@@ -471,12 +497,16 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		case 'l':
 			x = R_MIN (x + 1, nbits - 1);
 			break;
+		case 'b':
+			bitsInLine = !bitsInLine;
+			break;
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf (
 			"Vd1?: Visual Bit Editor Help:\n\n"
 			" q     - quit the bit editor\n"
 			" R     - randomize color palette\n"
+			" b     - toggle bitsInLine\n"
 			" j/k   - toggle bit value (same as space key)\n"
 			" h/l   - select next/previous bit\n"
 			" +/-   - increment or decrement byte value\n"
