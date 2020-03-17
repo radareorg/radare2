@@ -934,9 +934,9 @@ error:
 			}
 		}
 	}
-	if (core->anal->cur && core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86")) {
+	if (fcn && core->anal->cur && core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86")) {
 		r_anal_function_check_bp_use (fcn);
-		if (fcn && !fcn->bp_frame) {
+		if (!fcn->bp_frame) {
 			r_anal_var_delete_all (core->anal, fcn->addr, 'b');
 		}
 	}

@@ -1812,6 +1812,7 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 }
 
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
+	r_return_if_fail (fcn);
 	return __anal_fcn_check_bp_use (fcn->anal, fcn);
 }
 
