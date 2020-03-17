@@ -625,7 +625,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	struct r_bin_pe_export_t* new_exports = NULL;
 	const size_t export_t_sz = sizeof (struct r_bin_pe_export_t);
 	int bufsz, i, shsz;
-	SymbolRecord* sr;
+	SymbolRecord sr;
 	ut64 text_off = 0LL;
 	ut64 text_rva = 0LL;
 	int textn = 0;
@@ -677,19 +677,23 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	symctr = 0;
 	if (r_buf_read_at (bin->b, sym_tbl_off, (ut8*) buf, bufsz) > 0) {
 		for (i = 0; i < shsz; i += srsz) {
-			sr = (SymbolRecord*) (buf + i);
-			//bprintf ("SECNUM %d\n", sr->secnum);
-			if (sr->secnum == textn) {
-				if (sr->symtype == 32) {
+			// sr = (SymbolRecord*) (buf + i);
+			if (i + sizeof (sr) >= bufsz) {
+				break;
+			}
+			memcpy (&sr, buf + i, sizeof (sr));
+			//bprintf ("SECNUM %d\n", sr.secnum);
+			if (sr.secnum == textn) {
+				if (sr.symtype == 32) {
 					char shortname[9];
-					memcpy (shortname, &sr->shortname, 8);
+					memcpy (shortname, &sr.shortname, 8);
 					shortname[8] = 0;
 					if (*shortname) {
 						strncpy ((char*) exp[symctr].name, shortname, PE_NAME_LENGTH - 1);
 					} else {
 						char* longname, name[128];
-						ut32* idx = (ut32*) (buf + i + 4);
-						if (r_buf_read_at (bin->b, sym_tbl_off + *idx + shsz, (ut8*) name, 128)) { // == 128) {
+						ut32 idx = r_read_le32 (buf + i + 4);
+						if (r_buf_read_at (bin->b, sym_tbl_off + idx + shsz, (ut8*) name, 128)) { // == 128) {
 							longname = name;
 							name[sizeof(name) - 1] = 0;
 							strncpy ((char*) exp[symctr].name, longname, PE_NAME_LENGTH - 1);
@@ -699,8 +703,8 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 					}
 					exp[symctr].name[PE_NAME_LENGTH] = '\0';
 					exp[symctr].libname[0] = '\0';
-					exp[symctr].vaddr = bin_pe_rva_to_va (bin, text_rva + sr->value);
-					exp[symctr].paddr = text_off + sr->value;
+					exp[symctr].vaddr = bin_pe_rva_to_va (bin, text_rva + sr.value);
+					exp[symctr].paddr = text_off + sr.value;
 					exp[symctr].ordinal = symctr;
 					exp[symctr].forwarder[0] = 0;
 					exp[symctr].last = 0;
