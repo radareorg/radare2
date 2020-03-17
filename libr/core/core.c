@@ -394,9 +394,9 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 	}
 #if FCN_OLD
 	if (t == 'r') {
-		list = r_anal_fcn_get_refs (core->anal, fcn);
+		list = r_anal_function_get_refs (fcn);
 	} else {
-		list = r_anal_fcn_get_xrefs (core->anal, fcn);
+		list = r_anal_function_get_xrefs (fcn);
 	}
 	r_list_foreach (list, iter, r) {
 		if (r->type == type) {
@@ -814,7 +814,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	default:
 		if (*str >= 'A') {
 			// NOTE: functions override flags
-			RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, str);
+			RAnalFunction *fcn = r_anal_get_function_byname (core->anal, str);
 			if (fcn) {
 				if (ok) {
 					*ok = true;

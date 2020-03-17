@@ -1406,7 +1406,7 @@ repeat:
 				//XXX xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
 				// this function is buggy so we must get the xrefs of the addr
 			} else { // functon refs
-				xrefs = r_anal_fcn_get_refs (core->anal, fun);
+				xrefs = r_anal_function_get_refs (fun);
 			}
 		} else {
 			xrefs = NULL;

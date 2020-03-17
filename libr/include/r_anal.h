@@ -1450,7 +1450,7 @@ R_API void r_anal_set_cpu(RAnal *anal, const char *cpu);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
-R_API const char *r_anal_fcn_type_tostring(int type);
+R_API const char *r_anal_fcntype_tostring(int type);
 R_API int r_anal_fcn_bb (RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
 
@@ -1535,14 +1535,15 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr);
 R_API void r_anal_pin_list(RAnal *a);
 
 /* fcn.c */
-R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn);
-R_API int r_anal_fcn_count_edges(const RAnalFunction *fcn, int *ebbs);
-R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
-R_API RList *r_anal_get_fcn_in_list(RAnal *anal, ut64 addr, int type);
-R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type); // use r_anal_get_function_at/r_anal_get_functions_in
-R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);
-R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name);
-R_API void r_anal_fcn_rename(RAnalFunction *f, const char *newName);
+R_API ut32 r_anal_function_cost(RAnalFunction *fcn);
+R_API int r_anal_function_count_edges(const RAnalFunction *fcn, R_NULLABLE int *ebbs);
+
+// Use r_anal_get_functions_in¿() instead
+R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type);
+R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);
+
+R_API RAnalFunction *r_anal_get_function_byname(RAnal *anal, const char *name);
+
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr);
@@ -1551,15 +1552,9 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
 		ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff);
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 R_API void r_anal_fcn_invalidate_read_ahead_cache(void);
-R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn);
 
+R_API void r_anal_function_check_bp_use(RAnalFunction *fcn);
 
-/* locals */
-#if 0
-R_API int r_anal_fcn_local_add(RAnal *anal, RAnalFunction *fcn, int index, const char *name, const char *type);
-R_API int r_anal_fcn_local_del_name(RAnal *anal, RAnalFunction *fcn, const char *name);
-R_API int r_anal_fcn_local_del_index(RAnal *anal, RAnalFunction *fcn, ut32 index);
-#endif
 
 #define R_ANAL_FCN_VARKIND_LOCAL 'v'
 #define R_ANAL_FCN_VARKIND_ARG 'a'
@@ -1578,8 +1573,8 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
 /* vars // globals. not here  */
 R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type);
 
-R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn);
-R_API int r_anal_fcn_loops(RAnalFunction *fcn);
+R_API int r_anal_function_complexity(RAnalFunction *fcn);
+R_API int r_anal_function_loops(RAnalFunction *fcn);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);
 R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn);
@@ -1591,8 +1586,8 @@ R_API int r_anal_fcn_count (RAnal *a, ut64 from, ut64 to);
 R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API RAnalBlock *r_anal_fcn_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
-R_API int r_anal_fcn_resize (RAnal *anal, RAnalFunction *fcn, int newsize);
-R_API bool r_anal_fcn_get_purity(RAnal *anal, RAnalFunction *fcn);
+R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize);
+R_API bool r_anal_function_purity(RAnalFunction *fcn);
 
 typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
 R_API RList *r_anal_ref_list_new(void);
@@ -1603,15 +1598,15 @@ R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to);
 R_API RList *r_anal_refs_get(RAnal *anal, ut64 to);
 R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 from);
 R_API void r_anal_xrefs_list(RAnal *anal, int rad);
-R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn);
-R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn);
+R_API RList *r_anal_function_get_refs(RAnalFunction *fcn);
+R_API RList *r_anal_function_get_xrefs(RAnalFunction *fcn);
 R_API int r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr);
 R_API int r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
 R_API int r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
 R_API int r_anal_xref_del(RAnal *anal, ut64 at, ut64 addr);
 
-R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal);
-R_API RList* r_anal_get_fcns (RAnal *anal);
+R_API RList* r_anal_fcn_get_vars(RAnalFunction *anal);
+R_API RList* r_anal_get_fcns(RAnal *anal);
 
 /* type.c */
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name);
@@ -1646,7 +1641,6 @@ R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 fro
 R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, ut64 addr, const char* name);
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
-
 
 typedef struct r_anal_fcn_vars_cache {
 	RList *bvars;
@@ -1689,10 +1683,10 @@ R_API void r_anal_value_free(RAnalValue *value);
 
 R_API RAnalCond *r_anal_cond_new(void);
 R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op);
-R_API void r_anal_cond_fini (RAnalCond *c);
-R_API void r_anal_cond_free (RAnalCond *c);
+R_API void r_anal_cond_fini(RAnalCond *c);
+R_API void r_anal_cond_free(RAnalCond *c);
 R_API char *r_anal_cond_to_string(RAnalCond *cond);
-R_API int r_anal_cond_eval (RAnal *anal, RAnalCond *cond);
+R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 R_API const char *r_anal_cond_tostring(int cc);
 

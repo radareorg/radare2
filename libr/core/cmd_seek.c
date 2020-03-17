@@ -733,7 +733,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			break;
 		case ' ': // "sf "
-			fcn = r_anal_fcn_find_name (core->anal, input + 2);
+			fcn = r_anal_get_function_byname (core->anal, input + 2);
 			if (fcn) {
 				r_core_seek (core, fcn->addr, 1);
 			}

@@ -3909,7 +3909,7 @@ onemoretime:
 			if (r_anal_op (core->anal, &op, off, core->block+delta,
 					core->blocksize-delta, R_ANAL_OP_MASK_BASIC)) {
 				size = off - fcn->addr + op.size;
-				r_anal_fcn_resize (core->anal, fcn, size);
+				r_anal_function_resize (fcn, size);
 			}
 		}
 		}
@@ -4045,7 +4045,7 @@ onemoretime:
 		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
-				r_anal_fcn_resize (core->anal, fcn, core->offset - fcn->addr);
+				r_anal_function_resize (fcn, core->offset - fcn->addr);
 			}
 			r_cons_break_push (NULL, NULL);
 			r_core_cmdf (core, "af @ 0x%08" PFMT64x, off); // required for thumb autodetection

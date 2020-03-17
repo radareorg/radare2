@@ -36,7 +36,7 @@ typedef struct fcn_tree_iter_t {
 	RBNode *path[R_RBTREE_MAX_HEIGHT];
 } FcnTreeIter;
 
-R_API const char *r_anal_fcn_type_tostring(int type) {
+R_API const char *r_anal_fcntype_tostring(int type) {
 	switch (type) {
 	case R_ANAL_FCN_TYPE_NULL: return "null";
 	case R_ANAL_FCN_TYPE_FCN: return "fcn";
@@ -96,54 +96,8 @@ static int cmpaddr(const void *_a, const void *_b) {
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
-#if 0
-static void _fcn_tree_print_dot_node(RBNode *n) {
-	int i;
-	RAnalFunction *fcn = FCN_CONTAINER (n);
-
-	ut64 max_addr = fcn->addr + (fcn->_size == 0 ? 0 : fcn->_size - 1);
-	for (i = 0; i < 2; i++) {
-		if (n->child[i]) {
-			RAnalFunction *fcn1 = FCN_CONTAINER (n->child[i]);
-			if (fcn1->rb_max_addr > max_addr) {
-				max_addr = fcn1->rb_max_addr;
-			}
-		}
-	}
-
-	bool valid = max_addr == fcn->rb_max_addr;
-
-	r_cons_printf ("  \"%p\" [label=\"%p\\naddr: 0x%08"PFMT64x"\\nmax_addr: 0x%08"PFMT64x"\"%s];\n",
-				   n, fcn, fcn->addr, fcn->rb_max_addr, valid ? "" : ", color=\"red\", fillcolor=\"white\"");
-
-	for (i=0; i<2; i++) {
-		if (n->child[i]) {
-			_fcn_tree_print_dot_node (n->child[i]);
-			bool valid = true;
-			if (n->child[i]) {
-				RAnalFunction *childfcn = FCN_CONTAINER (n->child[i]);
-				if ((i == 0 && childfcn->addr >= fcn->addr) || (i == 1 && childfcn->addr <= fcn->addr)) {
-					valid = false;
-				}
-			}
-			r_cons_printf ("  \"%p\" -> \"%p\" [label=\"%d\"%s];\n", n, n->child[i], i, valid ? "" : ", style=\"bold\", color=\"red\"");
-		} else {
-			r_cons_printf ("  \"null_%p_%d\" [shape=point];\n", n, i);
-			r_cons_printf ("  \"%p\" -> \"null_%p_%d\" [label=\"%d\"];\n", n, n, i, i);
-		}
-	}
-}
-
-static void _fcn_tree_print_dot(RBNode *n) {
-	r_cons_print ("digraph fcn_tree {\n");
-	if (n) {
-		_fcn_tree_print_dot_node (n);
-	}
-	r_cons_print ("}\n");
-}
-#endif
-
-R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
+R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
+	RAnal *anal = fcn->anal;
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
 
@@ -337,20 +291,20 @@ static bool purity_checked(HtUP *ht, RAnalFunction *fcn) {
  * Probably worth changing it in the future, so that it marks fcn 'impure' only when it
  * (or any function called by fcn) MODIFIES external data.
  */
-static void check_purity(HtUP *ht, RAnal *anal, RAnalFunction *fcn) {
+static void check_purity(HtUP *ht, RAnalFunction *fcn) {
 	RListIter *iter;
-	RList *refs = r_anal_fcn_get_refs (anal, fcn);
+	RList *refs = r_anal_function_get_refs (fcn);
 	RAnalRef *ref;
 	ht_up_insert (ht, fcn->addr, NULL);
 	fcn->is_pure = true;
 	r_list_foreach (refs, iter, ref) {
 		if (ref->type == R_ANAL_REF_TYPE_CALL || ref->type == R_ANAL_REF_TYPE_CODE) {
-			RAnalFunction *called_fcn = r_anal_get_fcn_in (anal, ref->addr, 0);
+			RAnalFunction *called_fcn = r_anal_get_fcn_in (fcn->anal, ref->addr, 0);
 			if (!called_fcn) {
 				continue;
 			}
 			if (!purity_checked (ht, called_fcn)) {
-				check_purity (ht, anal, called_fcn);
+				check_purity (ht, called_fcn);
 			}
 			if (!called_fcn->is_pure) {
 				fcn->is_pure = false;
@@ -1222,7 +1176,7 @@ R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 l
 
 R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	RAnalRef *ref;
-	RList *refs = r_anal_fcn_get_refs (anal, fcn);
+	RList *refs = r_anal_function_get_refs (fcn);
 	RListIter *iter;
 	const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86"); // HACK
 
@@ -1237,7 +1191,7 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	RAnalRef *ref;
-	RList *refs = r_anal_fcn_get_refs (anal, fcn);
+	RList *refs = r_anal_function_get_refs (fcn);
 	RListIter *iter;
 
 	r_list_foreach (refs, iter, ref) {
@@ -1315,7 +1269,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 		}
 #if JAYRO_04
 		// fcn is not yet in anal => pass NULL
-		r_anal_fcn_resize (anal, fcn, endaddr - fcn->addr);
+		r_anal_function_resize (fcn, endaddr - fcn->addr);
 #endif
 		r_anal_trim_jmprefs (anal, fcn);
 	}
@@ -1394,7 +1348,7 @@ R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) 
 	return ret;
 }
 
-R_API RAnalFunction *r_anal_fcn_find_name(RAnal *a, const char *name) {
+R_API RAnalFunction *r_anal_get_function_byname(RAnal *a, const char *name) {
 	bool found = false;
 	RAnalFunction *f = ht_pp_find (a->ht_name_fun, name, &found);
 	if (f && found) {
@@ -1462,7 +1416,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size,
 	return true;
 }
 
-R_API int r_anal_fcn_loops(RAnalFunction *fcn) {
+R_API int r_anal_function_loops(RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	ut32 loops = 0;
@@ -1477,13 +1431,14 @@ R_API int r_anal_fcn_loops(RAnalFunction *fcn) {
 	return loops;
 }
 
-R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
+R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 /*
         CC = E - N + 2P
         E = the number of edges of the graph.
         N = the number of nodes of the graph.
         P = the number of connected components (exit nodes).
  */
+	RAnal *anal = fcn->anal;
 	int E = 0, N = 0, P = 0;
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -1699,13 +1654,14 @@ R_API RAnalBlock *r_anal_fcn_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr
 }
 
 // compute the cyclomatic cost
-R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
+R_API ut32 r_anal_function_cost(RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	ut32 totalCycles = 0;
 	if (!fcn) {
 		return 0;
 	}
+	RAnal *anal = fcn->anal;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RAnalOp op;
 		ut64 at, end = bb->addr + bb->size;
@@ -1731,7 +1687,8 @@ R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
 	return totalCycles;
 }
 
-R_API int r_anal_fcn_count_edges(const RAnalFunction *fcn, int *ebbs) {
+R_API int r_anal_function_count_edges(const RAnalFunction *fcn, R_NULLABLE int *ebbs) {
+	r_return_val_if_fail (fcn, 0);
 	RListIter *iter;
 	RAnalBlock *bb;
 	int edges = 0;
@@ -1753,11 +1710,11 @@ R_API int r_anal_fcn_count_edges(const RAnalFunction *fcn, int *ebbs) {
 	return edges;
 }
 
-R_API bool r_anal_fcn_get_purity(RAnal *anal, RAnalFunction *fcn) {
+R_API bool r_anal_function_purity(RAnalFunction *fcn) {
 	if (fcn->has_changed) {
 		HtUP *ht = ht_up_new (NULL, NULL, NULL);
 		if (ht) {
-			check_purity (ht, anal, fcn);
+			check_purity (ht, fcn);
 			ht_up_free (ht);
 		}
 	}
@@ -1777,11 +1734,12 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 	}
 	return is_bp_dst;
 }
+
 /*
  * This function checks whether any operation in a given function may change bp (excluding "mov bp, sp"
  * and "pop bp" at the end).
  */
-R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
+static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	char str_to_find[40] = "\"type\":\"reg\",\"value\":\"";
@@ -1853,7 +1811,7 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 	}
 }
 
-R_API const char *r_anal_label_at(RAnal *a, ut64 addr) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
-	return fcn? r_anal_fcn_label_at (a, fcn, addr): NULL;
+R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
+	r_return_if_fail (fcn);
+	return __anal_fcn_check_bp_use (fcn->anal, fcn);
 }

@@ -96,7 +96,7 @@ static RList *__refs(RCore *core, ut64 addr) {
 	if (!fcn) {
 		return r;
 	}
-	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+	RList *refs = r_anal_function_get_refs (fcn);
 	r_list_foreach (refs, iter, ref) {
 		if (ref->type != 'C') {
 			continue;

@@ -2542,7 +2542,7 @@ static char * getFunctionName (RCore *core, ut64 off, const char *name, bool pre
 	return strdup (name); // r_str_newf ("%s%s%s", fcnpfx, *fcnpfx? ".": "", name);
 }
 
-/* TODO: move into r_anal_fcn_rename(); */
+/* TODO: move into r_anal_function_rename (); */
 static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool prefix) {
 	r_return_val_if_fail (core && _name, false);
 	_name = r_str_trim_head_ro (_name);
@@ -2580,12 +2580,12 @@ static void afCc(RCore *core, const char *input) {
 		addr = core->offset;
 	}
 	if (addr == 0LL) {
-		fcn = r_anal_fcn_find_name (core->anal, input + 3);
+		fcn = r_anal_get_function_byname (core->anal, input + 3);
 	} else {
 		fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	}
 	if (fcn) {
-		ut32 totalCycles = r_anal_fcn_cost (core->anal, fcn);
+		ut32 totalCycles = r_anal_function_cost (fcn);
 		// FIXME: This defeats the purpose of the function, but afC is used in project files.
 		// cf. canal.c
 		r_cons_printf ("%d\n", totalCycles);
@@ -2603,7 +2603,7 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 
 	RAnalFunction *fcn;
 	if (fcn_name) {
-		fcn = r_anal_fcn_find_name (core->anal, fcn_name);
+		fcn = r_anal_get_function_byname (core->anal, fcn_name);
 	} else {
 		fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (fcn) {
@@ -3033,13 +3033,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (fcn) {
-				r_anal_fcn_resize (core->anal, fcn, addr_end - addr);
+				r_anal_function_resize (fcn, addr_end - addr);
 			}
 			r_core_anal_fcn (core, addr, UT64_MAX,
 					R_ANAL_REF_TYPE_NULL, depth);
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (fcn) {
-				r_anal_fcn_resize (core->anal, fcn, addr_end - addr);
+				r_anal_function_resize (fcn, addr_end - addr);
 			}
 			r_config_set_i (core->config, "anal.from", a);
 			r_config_set_i (core->config, "anal.to", b);
@@ -3144,7 +3144,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				RAnalFunction *fcn;
 				ut64 addr = r_num_math (core->num, input + 3);
 				if (addr == 0LL) {
-					fcn = r_anal_fcn_find_name (core->anal, input + 3);
+					fcn = r_anal_get_function_byname (core->anal, input + 3);
 				} else {
 					fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				}
@@ -3223,7 +3223,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
-					r_cons_printf ("is-pure: %s\n", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
+					r_cons_printf ("is-pure: %s\n", r_str_bool (r_anal_function_purity (fcn)));
 				}
 			}
 			break;
@@ -3383,14 +3383,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		if (input[2] == 'c') {
 			RAnalFunction *fcn;
 			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
-				r_cons_printf ("%i\n", r_anal_fcn_cc (core->anal, fcn));
+				r_cons_printf ("%i\n", r_anal_function_complexity (fcn));
 			} else {
 				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
 			}
 		} else if (input[2] == 'l') {
 			RAnalFunction *fcn;
 			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
-				r_cons_printf ("%d\n", r_anal_fcn_loops (fcn));
+				r_cons_printf ("%d\n", r_anal_function_loops (fcn));
 			} else {
 				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
 			}
@@ -3758,7 +3758,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				if (fcn) {
 					RAnalRef *ref;
 					RListIter *iter;
-					RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+					RList *refs = r_anal_function_get_refs (fcn);
 					r_list_foreach (refs, iter, ref) {
 						if (input[2] == 'j') {
 							pj_o (pj);
@@ -3845,7 +3845,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (fcn) {
 				RAnalRef *ref;
 				RListIter *iter;
-				RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+				RList *refs = r_anal_function_get_refs (fcn);
 				r_list_foreach (refs, iter, ref) {
 					if (ref->addr == UT64_MAX) {
 						//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
@@ -3865,7 +3865,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					if (f) {
 						RListIter *iter;
 						RAnalRef *ref;
-						RList *refs1 = r_anal_fcn_get_refs (core->anal, f);
+						RList *refs1 = r_anal_function_get_refs (f);
 						r_list_foreach (refs1, iter, ref) {
 							if (!r_io_is_valid_offset (core->io, ref->addr, !core->anal->opt.noncode)) {
 								continue;
@@ -3881,7 +3881,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						f = r_anal_get_fcn_in (core->anal, fcn->addr, 0);
 						if (f) {
 							/* cut function */
-							r_anal_fcn_resize (core->anal, f, addr - fcn->addr);
+							r_anal_function_resize (f, addr - fcn->addr);
 							r_core_anal_fcn (core, ref->addr, fcn->addr,
 									R_ANAL_REF_TYPE_CALL, depth);
 							f = r_anal_get_function_at (core->anal, fcn->addr);
@@ -7108,7 +7108,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		if (name && (tmp = strchr (name, ' '))) {
 			char *varname = tmp + 1;
 			*tmp = '\0';
-			RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, name);
+			RAnalFunction *fcn = r_anal_get_function_byname (core->anal, name);
 			if (fcn) {
 				RAnalVar *var = r_anal_var_get_byname (core->anal, fcn->addr, varname);
 				if (var) {
@@ -7267,7 +7267,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				pj_a (pj);
 			}
 			if (fcn) {
-				RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+				RList *refs = r_anal_function_get_refs (fcn);
 				r_list_foreach (refs, iter, refi) {
 					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
 					const char *name = f ? f->name: "";
@@ -7308,7 +7308,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			if (input[1] == '.') { // "axf."
 				list = list_ = r_anal_xrefs_get_from (core->anal, addr);
 				if (!list) {
-					list = r_anal_fcn_get_refs (core->anal, fcn);
+					list = r_anal_function_get_refs (fcn);
 				}
 			} else {
 				list = r_anal_refs_get (core->anal, addr);
@@ -8567,7 +8567,7 @@ static int compute_calls(RCore *core) {
 	RList *xrefs;
 	int cov = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
+		xrefs = r_anal_function_get_xrefs (fcn);
 		if (xrefs) {
 			cov += r_list_length (xrefs);
 			r_list_free (xrefs);

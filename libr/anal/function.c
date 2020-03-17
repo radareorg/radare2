@@ -277,9 +277,8 @@ R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn) {
 }
 
 R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn) {
-	RListIter *iter, *fiter;
+	RListIter *iter;
 	RAnalBlock *bb;
-	RAnalFunction *f;
 	ut64 sz = 0;
 	if (!sz) {
 		r_list_foreach (fcn->bbs, iter, bb) {

@@ -2440,7 +2440,7 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	fcn_anode->x = 10;
 	fcn_anode->y = 3;
 
-	refs = r_anal_fcn_get_refs (core->anal, fcn);
+	refs = r_anal_function_get_refs (fcn);
 	r_list_foreach (refs, iter, ref) {
 		title = get_title (ref->addr);
 		if (r_agraph_get_node (g, title) != NULL) {

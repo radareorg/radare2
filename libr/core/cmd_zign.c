@@ -121,11 +121,11 @@ static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 
 static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 	RSignGraph graph = {
-		.cc = r_anal_fcn_cc (core->anal, fcn),
+		.cc = r_anal_function_complexity (fcn),
 		.nbbs = r_list_length (fcn->bbs)
 	};
 	// XXX ebbs doesnt gets initialized if calling this from inside the struct
-	graph.edges = r_anal_fcn_count_edges (fcn, &graph.ebbs);
+	graph.edges = r_anal_function_count_edges (fcn, &graph.ebbs);
 	graph.bbsum = r_anal_function_realsize (fcn);
 	return r_sign_add_graph (core->anal, name, graph);
 }
