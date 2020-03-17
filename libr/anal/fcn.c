@@ -1815,10 +1815,3 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 	r_return_if_fail (fcn);
 	return __anal_fcn_check_bp_use (fcn->anal, fcn);
 }
-
-#if 0
-R_API const char *r_anal_label_at(RAnal *a, ut64 addr) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
-	return fcn? r_anal_fcn_label_at (a, fcn, addr): NULL;
-}
-#endif
