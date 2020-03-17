@@ -1217,6 +1217,7 @@ struct ctxListCB {
 	RAnal *anal;
 	int idx;
 	int format;
+	PJ *pj;
 };
 
 struct ctxGetListCB {
@@ -1394,7 +1395,9 @@ static void listTypes(RAnal *a, RSignItem *it, int format) {
 			}
 		}
 		if (format == 'j') {
-			a->cb_printf ("\"%s\"", type);
+			char *t = r_str_escape_utf8_for_json (type, -1);
+			a->cb_printf ("\"%s\"", t);
+			free (t);
 		} else {
 			a->cb_printf ("%s", type);
 		}
@@ -1545,6 +1548,8 @@ static int listCB(void *user, const char *k, const char *v) {
 			a->cb_printf (",");
 		}
 		a->cb_printf ("{");
+
+		// pj_o (ctx->pj);
 	}
 
 	// Zignspace and name (except for radare format)
@@ -1630,6 +1635,12 @@ static int listCB(void *user, const char *k, const char *v) {
 	// End item
 	if (ctx->format == 'j') {
 		a->cb_printf ("}");
+#if 0
+		pj_end (ctx->pj);
+		char *s = pj_drain (ctx->pj);
+		a->cb_printf ("%s\n", s);
+		free (s);
+#endif
 	}
 
 	ctx->idx++;
@@ -1645,16 +1656,23 @@ out:
 
 R_API void r_sign_list(RAnal *a, int format) {
 	r_return_if_fail (a);
-	struct ctxListCB ctx = { a, 0, format };
+	PJ *pj = NULL;
 
 	if (format == 'j') {
+		pj = pj_new ();
+		pj_a (pj);
 		a->cb_printf ("[");
 	}
-
+	struct ctxListCB ctx = { a, 0, format, pj };
 	sdb_foreach (a->sdb_zigns, listCB, &ctx);
 
 	if (format == 'j') {
 		a->cb_printf ("]\n");
+#if 0
+		pj_end (pj);
+		a->cb_printf ("%s\n", pj_string (pj));
+#endif
+		pj_free (pj);
 	}
 }
 

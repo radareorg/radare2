@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_anal.h>
@@ -855,7 +855,8 @@ static int searchHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user)
 static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
 	// TODO(nibble): use one counter per metric zign instead of ctx->count
-	addFlag (ctx->core, it, fcn->addr, r_anal_function_realsize (fcn), ctx->count, ctx->prefix, ctx->rad);
+	ut64 sz = r_anal_function_realsize (fcn);
+	addFlag (ctx->core, it, fcn->addr, sz, ctx->count, ctx->prefix, ctx->rad);
 	ctx->count++;
 	return 1;
 }
@@ -1237,13 +1238,13 @@ static int cmd_zign(void *data, const char *input) {
 	case '\0':
 	case '*':
 	case 'q':
-	case 'j':
+	case 'j': // "zj"
 		r_sign_list (core->anal, input[0]);
 		break;
-	case 'k':
+	case 'k': // "zk"
 		r_core_cmd0 (core, "k anal/zigns/*");
 		break;
-	case '-':
+	case '-': // "z-"
 		r_sign_delete (core->anal, input + 1);
 		break;
 	case '.': // "z."
