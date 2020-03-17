@@ -493,8 +493,8 @@ static int cmd_info(void *data, const char *input) {
 	}
 	if (question < space && question > input) {
 		question--;
-		char *prefix = strdup(input);
-		char *tmp = strchr(prefix, '?');
+		char *prefix = strdup (input);
+		char *tmp = strchr (prefix, '?');
 		*tmp = 0;
 		r_core_cmdf (core, "i?~& i%s", prefix);
 		free(prefix);
