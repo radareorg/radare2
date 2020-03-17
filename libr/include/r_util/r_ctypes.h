@@ -15,6 +15,7 @@ enum RTypeKind {
 	R_TYPE_ENUM = 1,
 	R_TYPE_STRUCT = 2,
 	R_TYPE_UNION = 3,
+	R_TYPE_TYPEDEF = 4
 };
 
 R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val);

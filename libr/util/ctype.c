@@ -41,6 +41,9 @@ R_API int r_type_kind(Sdb *TDB, const char *name) {
 	if (!strcmp (type, "type")) {
 		return R_TYPE_BASIC;
 	}
+	if (!strcmp (type, "typedef")) {
+		return R_TYPE_TYPEDEF;
+	}
 	return -1;
 }
 
