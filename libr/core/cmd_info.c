@@ -24,8 +24,11 @@ static const char *help_msg_i[] = {
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
 	"iC", "[j]", "Show signature info (entitlements, ...)",
-	"id", "[?]", "Debug information (source lines)",
-	"idp", "", "Load pdb file information",
+	"id", "", "Show DWARF source lines information",
+	"idp", " [file.pdb]", "Load pdb file information",
+	"idpi", " [file.pdb]", "Show pdb file information",
+	"idpi*", "", "Show symbols from pdb as flags (prefix with dot to import)",
+	"idpd", "", "Download pdb file on remote server",
 	"iD", " lang sym", "demangle symbolname for given language",
 	"ie", "", "Entrypoint",
 	"iee", "", "Show Entry and Exit (preinit, init and fini)",
@@ -490,7 +493,11 @@ static int cmd_info(void *data, const char *input) {
 	}
 	if (question < space && question > input) {
 		question--;
-		r_core_cmdf (core, "i?~& i%c", *question);
+		char *prefix = strdup (input);
+		char *tmp = strchr (prefix, '?');
+		*tmp = 0;
+		r_core_cmdf (core, "i?~& i%s", prefix);
+		free(prefix);
 		goto done;
 	}
 	R_FREE (core->table_query);
