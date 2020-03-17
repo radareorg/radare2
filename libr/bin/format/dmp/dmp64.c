@@ -67,62 +67,6 @@ static int r_bin_dmp64_init_header(struct r_bin_dmp64_obj_t *obj) {
 	return true;
 }
 
-static int findPage(const dmp_page_desc *a, const dmp_page_desc *b) {
-	return a && b &&
-		a->start >= b->start &&
-		a->start < (b->start + PAGE_SIZE) ? 0 : 1;
-}
-
-static ut64 read_pte(struct r_bin_dmp64_obj_t *obj, ut64 vaddr) {
-	ut64 res = 0;
-	dmp_page_desc *target = R_NEW0 (dmp_page_desc);
-	target->start = vaddr;
-	RListIter *target_iter = r_list_find (obj->pages, target, (RListComparator)findPage);
-	if (target_iter) {
-		dmp_page_desc *page = r_list_iter_get_data (target_iter);
-		res = r_buf_read_le64_at (obj->b, page->file_offset + vaddr - page->start);
-	} else {
-		eprintf ("Warning: Page not present in the dump file.\n");
-	}
-	free (target);
-	return res;
-}
-
-static ut64 vtop(struct r_bin_dmp64_obj_t *obj, ut64 vaddr) {
-	ut64 pml4e_addr = (obj->dtb & 0xffffffffff000) |
-				((vaddr & 0xff8000000000) >> 36);
-	ut64 pml4e_value = read_pte (obj, pml4e_addr);
-	if (!(pml4e_value & 1)) {
-		eprintf ("Warning: Invalid PML4E\n");
-		return 0;
-	}
-	ut64 pdpte_addr = ((pml4e_value & 0xffffffffff000) |
-				((vaddr & 0x7FC0000000) >> 27));
-	ut64 pdpte_value = read_pte (obj, pdpte_addr);
-	if (!(pdpte_value & 1)) {
-		eprintf ("Warning: Invalid PDPTE\n");
-		return 0;
-	}
-	ut64 pde_addr = ((pdpte_value & 0xffffffffff000) |
-				((vaddr & 0x3fe00000) >> 18));
-	ut64 pde_value = read_pte (obj, pde_addr);
-	if (!(pde_value & 1)) {
-		eprintf ("Warning: Invalid PDE\n");
-		return 0;
-	}
-	ut64 pte_addr = (pde_value & 0xffffffffff000) |
-				((vaddr & 0x1ff000) >> 9);
-	ut64 pte_value = read_pte (obj, pte_addr);
-	if (!(pte_value & 1)) {
-		eprintf ("Warning: Invalid PTE\n");
-		return 0;
-	}
-	ut64 paddr = (pte_value & 0xffffffffff000) |
-				(vaddr & 0xfff);
-
-	return paddr;
-}
-
 static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 	int i;
 	if (!obj->bmp_header) {

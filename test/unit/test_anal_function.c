@@ -52,7 +52,7 @@ bool test_r_anal_function_relocate() {
 	assert_invariants (anal);
 	RAnalFunction *fb = r_anal_create_function (anal, "do_something_else", 0xdeadbeef, 0, NULL);
 	assert_invariants (anal);
-	RAnalFunction *fc = r_anal_create_function (anal, "do_something_different", 0xc0ffee, 0, NULL);
+	r_anal_create_function (anal, "do_something_different", 0xc0ffee, 0, NULL);
 	assert_invariants (anal);
 
 	bool success = r_anal_function_relocate (fa, fb->addr);

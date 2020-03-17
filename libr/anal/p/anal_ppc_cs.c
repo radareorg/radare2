@@ -67,27 +67,6 @@ static const char* cmask32(const char *mb_c, const char *me_c) {
 	return cmask;
 }
 
-static const char *getreg(struct Getarg *gop, int n) {
-	cs_insn *insn = gop->insn;
-	csh handle = gop->handle;
-
-	if (n < 0 || n >= 8) {
-		return NULL;
-	}
-	cs_ppc_op op = INSOP (n);
-	switch (op.type) {
-	case PPC_OP_REG:
-		return cs_reg_name (handle, op.reg);
-	case PPC_OP_MEM:
-		return cs_reg_name (handle, op.mem.base);
-	case PPC_OP_INVALID:
-	case PPC_OP_IMM:
-	case PPC_OP_CRX: // Condition Register field
-		return NULL;
-	}
-	return NULL;
-}
-
 static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 	cs_insn *insn = gop->insn;
 	csh handle = gop->handle;
@@ -223,7 +202,6 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 #define PPCSPR(n) getspr(&gop, n)
 #define ARG(n) getarg2(&gop, n, "")
 #define ARG2(n,m) getarg2(&gop, n, m)
-#define REG2(n) getreg(&gop, n)
 
 static int set_reg_profile(RAnal *anal) {
 	const char *p = NULL;

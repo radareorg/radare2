@@ -299,7 +299,6 @@ bool test_r_buf_format(void) {
 }
 
 bool test_r_buf_with_buf(void) {
-	char filename[] = "r2-XXXXXX";
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 	RBuffer *buf = r_buf_new_with_bytes ((ut8 *)content, length);
@@ -318,7 +317,6 @@ bool test_r_buf_with_buf(void) {
 }
 
 bool test_r_buf_slice(void) {
-	char filename[] = "r2-XXXXXX";
 	const char *content = "AAAAAAAAAASomething To\nSay Here..BBBBBBBBBB";
 	const int length = strlen (content);
 	RBuffer *buf = r_buf_new_with_bytes ((ut8 *)content, length);

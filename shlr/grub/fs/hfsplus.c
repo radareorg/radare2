@@ -122,7 +122,7 @@ struct grub_hfsplus_catkey
   grub_uint16_t keylen;
   grub_uint32_t parent;
   grub_uint16_t namelen;
-  grub_uint16_t name[30];
+  grub_unaligned_uint16_t name[30];
 });
 
 /* The on disk layout of an extent overflow file key.  */
