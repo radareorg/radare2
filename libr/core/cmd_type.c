@@ -1479,7 +1479,7 @@ static int cmd_type(void *data, const char *input) {
 		case ' ': {
 			char *type = strdup (input + 2);
 			char *ptr = strchr (type, '=');
-			ut64 addr;
+			ut64 addr = core->offset;
 
 			if (ptr) {
 				*ptr++ = 0;
@@ -1487,21 +1487,25 @@ static int cmd_type(void *data, const char *input) {
 				if (ptr && *ptr) {
 					addr = r_num_math (core->num, ptr);
 				} else {
-					eprintf ("address is unvalid\n");
+					eprintf ("tl: Address is unvalid\n");
 					free (type);
 					break;
 				}
-			} else {
-				addr = core->offset;
 			}
 			r_str_trim (type);
 			char *tmp = sdb_get (TDB, type, 0);
 			if (tmp && *tmp) {
 				r_type_set_link (TDB, type, addr);
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-				if (fcn) {
+				RList *fcns = r_anal_get_functions_in (core->anal, core->offset);
+				if (r_list_length (fcns) > 1) {
+					eprintf ("Multiple functions found in here.\n");
+				} else if (r_list_length (fcns) == 1) {
+					RAnalFunction *fcn = r_list_first (fcns);
 					r_core_link_stroff (core, fcn);
+				} else {
+					eprintf ("Cannot find any function here\n");
 				}
+				r_list_free (fcns);
 				free (tmp);
 			} else {
 				eprintf ("unknown type %s\n", type);
