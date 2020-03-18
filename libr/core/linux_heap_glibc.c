@@ -792,8 +792,9 @@ static void GH(print_tcache_instance)(RCore *core, GHT m_arena, MallocState *mai
 	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
-	tcache_start = ((brk_start >> 12) << 12) + TC_HDR_SZ;
-	initial_brk = tcache_start + offset;
+	tcache_start = ((brk_start >> 12) << 12) + GH(HDR_SZ);
+	GHT fc_offset = GH(tcache_chunk_size) (core, brk_start);
+	initial_brk = brk_start + fc_offset;
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
 		eprintf ("No heap section\n");
 		return;
