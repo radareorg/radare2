@@ -457,10 +457,10 @@ static ut32 bytelsop(ArmOp *op, int k) {
 
 static ut32 branch(ArmOp *op, ut64 addr, int k) {
 	ut32 data = UT32_MAX;
-	int n = 0;
+	ut64 n = 0;
 	if (op->operands[0].type & ARM_CONSTANT) {
 		n = op->operands[0].immediate;
-		if (!(n & 0x3 || n > 0x7ffffff)) {
+		if (!(n & 0x3)) {
 			if (n >= addr) {
 				n -= addr;
 			} else {
@@ -469,8 +469,8 @@ static ut32 branch(ArmOp *op, ut64 addr, int k) {
 				k |= 3;
 			}
 			n = n >> 2;
-			int t = n >> 24;
-			int h = n >> 16;
+			int t = (n & 0xff000000) >> 24;
+			int h = (n & 0xff0000) >> 16;
 			int m = (n & 0xff00) >> 8;
 			n &= 0xff;
 			data = k;
@@ -481,7 +481,7 @@ static ut32 branch(ArmOp *op, ut64 addr, int k) {
 		}
 	} else {
 		n = op->operands[0].reg;
-		if (n < 0 || n > 31) {
+		if (n >= 31) {
 			return -1;
 		}
 		n = n << 5;

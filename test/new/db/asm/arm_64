@@ -7,21 +7,25 @@ a "b 0x7efd4" f5fb0114
 a "b 0x7fffff8" feffff15
 a "b 0x8" 02000014
 a "b 0xff4" fd030014
+a "b 0x100005fcc" f9010014 0x1000057e8
+a "b 0x100005004" 07feff17 0x1000057e8
 a "b.eq -0x100024" e0fe7f54
 a "b.eq -0x24" e0feff54
-a "b.eq 0x1000378d4" a0c61b54
+a "b.eq 0x1000378d4" a0c61b54 0x100000000
 a "b.eq 0x324" 20190054
 a "b.hs -0x100024" e2fe7f54
 a "b.hs -0x24" e2feff54
-a "b.hs 0x1000378d4" a2c61b54
+a "b.hs 0x1000378d4" a2c61b54 0x100000000
 a "b.hs 0x324" 22190054
 a "bl 0x8" 02000094
 a "bl 0xfd4" f5030094
-a "blr x12" 80013fd6
 a "blr x7" e0003fd6
+a "blr x12" 80013fd6
+a "blr x30" c0033fd6
 a "br x0" 00001fd6
 a "br x4" 80001fd6
 a "br x9" 20011fd6
+a "br x30" c0031fd6
 a "dmb ish" bf3b03d5
 a "dmb ishld" bf3903d5
 a "dmb ishst" bf3a03d5
