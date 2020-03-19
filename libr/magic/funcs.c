@@ -101,10 +101,8 @@ out:
  */
 int file_printf(RMagic *ms, const char *fmt, ...) {
 	va_list ap;
-	int ret;
-
 	va_start (ap, fmt);
-	ret = file_vprintf (ms, fmt, ap);
+	int ret = file_vprintf (ms, fmt, ap);
 	va_end (ap);
 	return ret;
 }

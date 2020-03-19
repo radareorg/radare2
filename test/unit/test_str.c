@@ -20,6 +20,17 @@ bool test_r_str_format(void) {
 	mu_end;
 }
 
+bool test_r_str_format_limits(void) {
+        r_strf_frame (9);
+        const char *a = r_strf ("%s.%d", "hello", 42);
+        mu_assert_streq (a, "hello.42", "error in r_strf hello.42");
+
+        const char *b = r_strf ("%s.%d", "world", 24);
+        mu_assert_streq (b, "world.24", "error in r_strf world.24");
+
+        mu_end;
+}
+
 bool test_r_str_replace_char_once(void) {
 	char* str = strdup ("hello world");
 	(void) r_str_replace_char_once (str, 'l', 'x');
@@ -415,6 +426,7 @@ bool all_tests() {
 	mu_run_test(test_r_str_unescape);
 	mu_run_test(test_r_str_constpool);
 	mu_run_test(test_r_str_format);
+	mu_run_test(test_r_str_format_limits);
 	return tests_passed != tests_run;
 }
 

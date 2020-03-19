@@ -41,13 +41,24 @@ R_NULLABLE static inline char *r_strf_(r_strf__ *s, const char *fmt, ...) {
 	if (s->idx >= s->size) {
 		s->idx = 0;
 	}
-	va_list ap;
+	va_list ap, ap2;
 	va_start (ap, fmt);
+	va_copy (ap2, ap);
+
 	char *p = s->buf + s->idx;
 	size_t left = s->size - s->idx - 1;
 	int res = vsnprintf (p, left, fmt, ap);
-	r_return_val_if_fail (res != left, NULL);
-	s->idx += res + 1;
+	if (res < left) {
+		s->idx += res + 1;
+	} else {
+		if (res < s->size) {
+			s->idx = 0;
+			p = s->buf;
+			s->idx += vsnprintf (p, s->size, fmt, ap2) + 1;
+		} else {
+			r_return_val_if_reached (NULL);
+		}
+	}
 	va_end (ap);
 	return p;
 }
