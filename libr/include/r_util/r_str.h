@@ -37,10 +37,10 @@ typedef struct r_strf_t {
 } r_strf__;
 
 R_NULLABLE static inline char *r_strf_(r_strf__ *s, const char *fmt, ...) {
+	r_return_val_if_fail (s && fmt, NULL);
 	if (s->idx >= s->size) {
 		s->idx = 0;
 	}
-	r_return_val_if_fail (s && fmt, NULL);
 	va_list ap;
 	va_start (ap, fmt);
 	char *p = s->buf + s->idx;
