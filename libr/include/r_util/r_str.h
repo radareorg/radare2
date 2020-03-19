@@ -19,6 +19,54 @@ typedef enum {
 	R_STRING_ENC_GUESS = 'g',
 } RStrEnc;
 
+// r_strf API can be used for short strings that are needed for a short period
+// of time. They are allocated on the stack as needed, by making sure the total
+// size of allocated strings does not become too big. If that is possible (e.g.
+// the input is not bounded and/or comes from the user) you should use the
+// malloc as usual.
+//
+// Use r_strf when you just need one string at a time. NOTE: Every time you use
+// r_strf, the previously created string can be replaced with the new one, so
+// make sure to use it only when you are done with the previous string
+//
+// Use r_strf_multi when you need to use multiple strings at a time (e.g.
+// multiple strings passed to the same function). NOTE: each string allocated
+// with r_strf_cont allocates other space on the stack, so be aware and use it
+// only for known short strings and not when inside loops as you risk of
+// allocating too much stuff.
+struct r_strf_t {
+	char *buf;
+	char *old_buf;
+	size_t sz;
+	size_t old_sz;
+	size_t total_sz;
+	int tmp;
+};
+
+#define R_STRF_MAX 2 * 1024
+#define R_STRF_FRAME r_strf_frame__
+#define r_strf_frame() struct r_strf_t R_STRF_FRAME = { 0 }
+#define r_strf(fmt, ...) ( \
+	R_STRF_FRAME.tmp = snprintf (R_STRF_FRAME.buf, R_STRF_FRAME.sz, fmt, __VA_ARGS__), \
+	R_STRF_FRAME.tmp < 0 ? r_assert_log (R_LOGLVL_FATAL, "r_strf error while using snprintf") : NULL, \
+	R_STRF_FRAME.sz = R_STRF_FRAME.tmp >= R_STRF_FRAME.sz ? R_STRF_FRAME.tmp + 1 : R_STRF_FRAME.sz, \
+	SZT_ADD_OVFCHK (R_STRF_FRAME.total_sz, R_STRF_FRAME.sz) || (R_STRF_FRAME.total_sz + R_STRF_FRAME.sz >= R_STRF_MAX) ? r_assert_log (R_LOGLVL_FATAL, "r_strf used for long strings") : NULL, \
+	R_STRF_FRAME.buf = R_STRF_FRAME.sz != R_STRF_FRAME.old_sz ? (R_STRF_FRAME.total_sz += R_STRF_FRAME.sz, alloca (R_STRF_FRAME.sz)) : R_STRF_FRAME.buf, \
+	R_STRF_FRAME.tmp = R_STRF_FRAME.sz != R_STRF_FRAME.old_sz ? snprintf (R_STRF_FRAME.buf, R_STRF_FRAME.sz, fmt, __VA_ARGS__) : R_STRF_FRAME.tmp, \
+	R_STRF_FRAME.tmp < 0 ? r_assert_log (R_LOGLVL_FATAL, "r_strf error while using snprintf") : NULL, \
+	R_STRF_FRAME.old_sz = R_STRF_FRAME.sz, \
+	R_STRF_FRAME.buf)
+
+#define r_strf_multi(fmt, ...) ( \
+	R_STRF_FRAME.buf = NULL, \
+	R_STRF_FRAME.sz = 0, \
+	R_STRF_FRAME.old_sz = 0, \
+	R_STRF_FRAME.old_buf = r_strf (fmt, __VA_ARGS__), \
+	R_STRF_FRAME.buf = NULL, \
+	R_STRF_FRAME.sz = 0, \
+	R_STRF_FRAME.old_sz = 0, \
+	R_STRF_FRAME.old_buf)
+
 typedef int (*RStrRangeCallback) (void *, int);
 
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))

@@ -174,6 +174,7 @@ R_API void public() {}     ## public apis starting with constructor/destructor
 
 ```
 
+* Use `r_strf` and `r_strf_multi` when you need to construct strings with a size that is short and known at programming time. These functions allocate strings on the stack, so do not abuse them.
 
 * Why return int vs enum
 

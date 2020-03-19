@@ -3,6 +3,77 @@
 
 //TODO test r_str_chop_path
 
+bool test_r_str_format_single(void) {
+	r_strf_frame();
+	mu_assert_streq (r_strf ("%s.%d", "hello", 43), "hello.43", "hello.43 ok");
+	const char *tmp = R_STRF_FRAME.buf;
+	mu_assert_streq (r_strf ("%s.%d", "this", 32), "this.32", "this.32 ok");
+	mu_assert_ptreq (tmp, R_STRF_FRAME.buf, "the buffer should still be the same");
+	mu_assert_streq (r_strf ("%s.%d", "is", 11), "is.11", "is.11 ok");
+	mu_assert_ptreq (tmp, R_STRF_FRAME.buf, "the buffer should still be the same");
+	char *m = malloc (500);
+	memset (m, 'A', 499);
+	m[499] = '\0';
+	char *expected_out = malloc (1000);
+	snprintf (expected_out, 1000, "%s.%d", m, 22);
+	mu_assert_streq (r_strf ("%s.%d", m, 22), expected_out, "long string ok");
+	mu_assert_streq (r_strf ("%s.%d", "world", 33), "world.33", "world.33 ok");
+	free (expected_out);
+	free (m);
+	mu_end;
+}
+
+bool test_r_str_format_multi(void) {
+	r_strf_frame ();
+	char *s1 = r_strf_multi ("%s.%d", "hello", 43);
+	char *s2 = r_strf_multi ("%s.%d", "world", 55);
+	mu_assert_streq (s1, "hello.43", "hello.43 multi ok");
+	mu_assert_streq (s2, "world.55", "world.55 multi ok");
+
+	char *m = malloc (500);
+	memset (m, 'A', 499);
+	m[499] = '\0';
+	char *expected_out = malloc (1000);
+	snprintf (expected_out, 1000, "%s.%d", m, 22);
+	mu_assert_streq (r_strf_multi ("%s.%d", m, 22), expected_out, "long string ok");
+	mu_assert_streq (s1, "hello.43", "hello.43 multi ok");
+	mu_assert_streq (s2, "world.55", "world.55 multi ok");
+	free (expected_out);
+	free (m);
+	mu_end;
+}
+
+bool test_r_str_format_mix(void) {
+	r_strf_frame ();
+	char *s1 = r_strf ("%s.%d", "hello", 43);
+	mu_assert_streq (s1, "hello.43", "hello.43 ok");
+	char *s1_2 = r_strf ("%s.%d", "hello_you", 11);
+	mu_assert_streq (s1_2, "hello_you.11", "hello_you.11 ok");
+	mu_assert_strneq (s1, "hello.43", "hello.43 should have been rewritten");
+
+	char *s2 = r_strf_multi ("%s.%d", "world", 55);
+	mu_assert_streq (s2, "world.55", "world.55 multi ok");
+	mu_assert_streq (s1_2, "hello_you.11", "hello_you.11 should still be there");
+
+	char *m = malloc (500);
+	memset (m, 'A', 499);
+	m[499] = '\0';
+	char *expected_out = malloc (1000);
+	snprintf (expected_out, 1000, "%s.%d", m, 22);
+	char *s3 = r_strf_multi ("%s.%d", m, 22);
+	mu_assert_streq (s3, expected_out, "long string ok");
+	mu_assert_streq (s2, "world.55", "world.55 should still be there because _cont was used");
+
+	char *s4 = r_strf ("%s.%d", "magic", 11);
+	mu_assert_streq (s4, "magic.11", "magic.11 ok");
+	mu_assert_streq (s3, expected_out, "long string should still be there");
+	mu_assert_streq (s2, "world.55", "world.55 should still be there as well");
+
+	free (expected_out);
+	free (m);
+	mu_end;
+}
+
 bool test_r_str_replace_char_once(void) {
 	char* str = strdup ("hello world");
 	(void) r_str_replace_char_once (str, 'l', 'x');
@@ -397,6 +468,9 @@ bool all_tests() {
 	mu_run_test(test_r_str_sanitize_sdb_key);
 	mu_run_test(test_r_str_unescape);
 	mu_run_test(test_r_str_constpool);
+	mu_run_test(test_r_str_format_single);
+	mu_run_test(test_r_str_format_multi);
+	mu_run_test(test_r_str_format_mix);
 	return tests_passed != tests_run;
 }
 
