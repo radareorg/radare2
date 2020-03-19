@@ -77,49 +77,12 @@ R_API int r_str_replace_ch(char *s, char a, char b, bool global) {
 	return ret;
 }
 
-// DEPRECATED
 R_API int r_str_replace_char_once(char *s, int a, int b) {
-	int ret = 0;
-	char *o = s;
-	if (a == b) {
-		return 0;
-	}
-	for (; *o; s++, o++) {
-		if (*o == a) {
-			if (b) {
-				*s = b;
-				return ++ret;
-			}
-			o++;
-		}
-		*s = *o;
-	}
-	*s = 0;
-	return ret;
+	return r_str_replace_ch (s, a, b, false);
 }
 
-// DEPRECATED
 R_API int r_str_replace_char(char *s, int a, int b) {
-	int ret = 0;
-	char *o = s;
-	if (!s || a == b) {
-		return 0;
-	}
-	for (; *o; s++, o++) {
-		if (*o == a) {
-			ret++;
-			if (b) {
-				*s = b;
-			} else {
-				/* remove char */
-				s--;
-			}
-		} else {
-			*s = *o;
-		}
-	}
-	*s = 0;
-	return ret;
+	return r_str_replace_ch (s, a, b, true);
 }
 
 R_API void r_str_reverse(char *str) {

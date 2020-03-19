@@ -107,7 +107,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (op && buf_asm) {
 		char *p = r_str_replace (strdup (buf_asm), "$", "0x", true);
 		if (p) {
-			r_str_rmch (p, '#');
+			r_str_replace_char (p, '#', 0);
 			r_asm_op_set_asm (op, p);
 			free (p);
 		}
