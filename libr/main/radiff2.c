@@ -140,14 +140,15 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				printf ("-0x%08"PFMT64x":", op->a_off);
 				int len = op->a_len; // R_MIN (op->a_len, strlen (op->a_buf));
 				for (i = 0; i < len; i++) {
-					printf ("%02x", op->a_buf[i]);
+					printf ("%02x ", op->a_buf[i]);
 				}
-				char *p = r_str_escape ((const char*)op->a_buf);
-				printf (" \"%s\"\n", p);
-				free (p);
 				if (!quiet) {
+					char *p = r_str_escape ((const char*)op->a_buf);
+					printf (" \"%s\"", p);
+					free (p);
 					printf (Color_RESET);
 				}
+				printf ("\n");
 			}
 		}
 		if (op->b_len > 0) {
@@ -158,16 +159,15 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				}
 				printf ("+0x%08"PFMT64x":", op->b_off);
 				for (i = 0; i < op->b_len; i++) {
-					printf ("%02x", op->b_buf[i]);
+					printf ("%02x ", op->b_buf[i]);
 				}
 				if (!quiet) {
 					char *p = r_str_escape((const char*)op->b_buf);
-					printf (" \"%s\"\n", p);
+					printf (" \"%s\"", p);
 					free (p);
 					printf (Color_RESET);
-				} else {
-					printf ("\n");
 				}
+				printf ("\n");
 			}
 		}
 		break;
