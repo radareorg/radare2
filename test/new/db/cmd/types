@@ -96,6 +96,7 @@ s sym.Java_com_app_ndh_NDHActivity_print
 to ../bins/headers/jni.h
 tl JNINativeInterface = 0x464c457f
 pdf~JNINativeInterface
+pdr~JNI?
 EOF
 EXPECT=<<EOF
 | ; var struct JNINativeInterface @ sp+0x12c
@@ -110,6 +111,7 @@ EXPECT=<<EOF
 | 0x0000112e      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
 | 0x00001144      4b9a           ldr r2, [sp + JNINativeInterface]
 | 0x00001148      9a42           cmp r2, r3                            ; JNINativeInterface.reserved0
+12
 EOF
 RUN
 

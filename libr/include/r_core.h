@@ -464,6 +464,7 @@ R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int i);
 R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
 
 R_API void r_core_anal_type_init(RCore *core);
+R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn);
 R_API void r_core_anal_inflags (RCore *core, const char *glob);
 R_API int cmd_anal_objc (RCore *core, const char *input, bool auto_anal);
 R_API void r_core_anal_cc_init(RCore *core);
@@ -565,11 +566,7 @@ R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 R_API RList *r_core_get_func_args(RCore *core, const char *func_name);
 R_API void r_core_print_func_args(RCore *core);
 R_API char *resolve_fcn_name(RAnal *anal, const char * func_name);
-
 R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to);
-
-/* cmd_type.c */
-R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn);
 
 /* anal.c */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask);
