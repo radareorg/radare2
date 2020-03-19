@@ -21,6 +21,35 @@
 #define GHT_MAX UT64_MAX
 #endif
 
+static bool GH(is_tcache)(RCore *core) {
+	char *fp = NULL;
+	double v = 0;
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		RDebugMap *map;
+		RListIter *iter;
+		r_debug_map_sync (core->dbg);
+		r_list_foreach (core->dbg->maps, iter, map) {
+			fp = strstr (map->name, "libc-");
+			if (fp) {
+				break;
+			}
+		}
+	} else {
+		RIOMap *map;
+		SdbListIter *iter;
+		ls_foreach (core->io->maps, iter, map) {
+			fp = strstr (map->name, "libc-");
+			if (fp) {
+				break;
+			}
+		}
+	}
+	if (fp) {
+		v = r_num_get_float (NULL, fp + 5);
+	}
+	return (v > 2.25);
+}
+
 static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, MallocState *main_arena) {
 	int i = 0;
 	main_arena->mutex = cmain_arena->mutex;
@@ -1283,6 +1312,8 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 	if (!main_arena) {
 		return false;
 	}
+
+	r_config_set_i (core->config, "dbg.glibc.tcache", GH(is_tcache) (core));
 
 	int format = 'c';
 	bool get_state = false;
