@@ -2017,7 +2017,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
-	input = r_str_trim_head_ro (input);
+	input = r_str_trim_ro (input);
 	r_cons_break_push (NULL, NULL);
 	RIOMap* map;
 	RListIter *iter;
@@ -2318,11 +2318,6 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 		core->search->maxhits = 1;
 	}
 	if (core->search->n_kws > 0 || param->crypto_search) {
-		RSearchKeyword aeskw;
-		if (param->crypto_search) {
-			memset (&aeskw, 0, sizeof (aeskw));
-			aeskw.keyword_length = 31;
-		}
 		/* set callback */
 		/* TODO: handle last block of data */
 		/* TODO: handle ^C */
@@ -2391,17 +2386,14 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 				}
 				if (param->crypto_search) {
 					// TODO support backward search
-					int delta = 0;
+					int t = 0;
 					if (param->aes_search) {
-						delta = r_search_aes_update (core->search, at, buf, len);
+						t = r_search_aes_update (core->search, at, buf, len);
 					} else if (param->privkey_search) {
-						delta = r_search_privkey_update (core->search, at, buf, len);
+						t = r_search_privkey_update (core->search, at, buf, len);
 					}
-					if (delta != -1) {
-						int t = r_search_hit_new (core->search, &aeskw, at + delta);
-						if (!t || t > 1) {
-							break;
-						}
+					if (!t || t > 1) {
+						break;
 					}
 				} else {
 					(void)r_search_update (core->search, at, buf, len);
@@ -3220,7 +3212,7 @@ reread:
 		} else if (input[1] == '1') { // "a1"
 			__core_cmd_search_asm_byteswap (core, (int)r_num_math (core->num, input + 2));
 		} else if (input[1] == 'I') { // "/aI" - infinite
-			__core_cmd_search_asm_infinite (core, r_str_trim_head_ro (input + 1));
+			__core_cmd_search_asm_infinite (core, r_str_trim_ro (input + 1));
 		} else if (input[1] == ' ') {
 			if (input[param_offset - 1]) {
 				char *kwd = r_core_asm_search (core, input + param_offset);
@@ -3255,7 +3247,7 @@ reread:
 			{
 				ret = false;
 				char *space = strchr (input, ' ');
-				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
+				const char *arg = space? r_str_trim_ro (space + 1): NULL;
 				if (!arg || input[2] == '?') {
 					eprintf ("Usage: /cc[aAdlpb] [hashname] [hexpairhashvalue]\n");
 					eprintf (" /cca - lowercase alphabet chars only\n");
@@ -3304,7 +3296,7 @@ reread:
 				goto beach;
 			}
 			break;
-		case 'd': // "Cd"
+		case 'd': // "cd"
 			{
 				param.crypto_search = false;
 				RSearchKeyword *kw;
@@ -3319,12 +3311,24 @@ reread:
 				}
 			}
 			break;
-		case 'a':
-			param.aes_search = true;
-			break;
-		case 'r':
-			param.privkey_search = true;
-			break;
+		case 'a': // "ca"
+			{
+				RSearchKeyword *kw;
+				kw = r_search_keyword_new_hexmask ("00", NULL);
+				r_search_kw_add (search, kw);
+				r_search_begin (core->search);
+				param.aes_search = true;
+				break;
+			}
+		case 'r': // "cr"
+			{
+				RSearchKeyword *kw;
+				kw = r_search_keyword_new_hexmask ("00", NULL);
+				r_search_kw_add (search, kw);
+				r_search_begin (core->search);
+				param.privkey_search = true;
+				break;
+			}
 		default: {
 			dosearch = false;
 			param.crypto_search = false;
@@ -3495,7 +3499,7 @@ reread:
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		char *v_str = (char *)r_str_trim_head_ro (input + param_offset);
+		char *v_str = (char *)r_str_trim_ro (input + param_offset);
 		RList *nums = r_num_str_split_list (v_str);
 		int len = r_list_length (nums);
 		int bsize = 0;
@@ -3741,7 +3745,7 @@ reread:
 			char **args = r_str_argv (input + param_offset, &n_args);
 			ut8 *buf = NULL;
 			ut64 offset = 0;
-			size_t size;
+			int size;
 			buf = (ut8 *)r_file_slurp (args[0], &size);
 			if (!buf) {
 				eprintf ("Cannot open '%s'\n", args[0]);
