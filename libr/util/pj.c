@@ -194,9 +194,27 @@ R_API PJ *pj_s(PJ *j, const char *k) {
 		pj_raw (j, ek);
 		free (ek);
 	} else {
-		eprintf ("damn\n");
+		eprintf ("cannot escape string\n");
 	}
 	pj_raw (j, "\"");
+	return j;
+}
+
+R_API PJ *pj_r(PJ *j, const unsigned char *v, size_t v_len) {
+	r_return_val_if_fail (j && v, j);
+	size_t i;
+	pj_a (j);
+	for (i = 0; i < v_len; i++) {
+		pj_i (j, v[i]);
+	}
+	pj_end (j);
+	return j;
+}
+
+R_API PJ *pj_kr(PJ *j, const char *k, const unsigned char *v, size_t v_len) {
+	r_return_val_if_fail (j && k && v, j);
+	pj_k (j, k);
+	pj_r (j, v, v_len);
 	return j;
 }
 
