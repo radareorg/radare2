@@ -416,11 +416,39 @@ RUN
 
 NAME=test_sf
 FILE=-
-CMDS64=ZSBhc20uYXJjaD14ODY7ZSBhc20uYml0cz02NDtzIDA7YWVpO2FlciByaXA9MDt3YSB0ZXN0IGVheCwgZWF4O2FlciBlYXg9LTE7YWVzO2FlciBhbGx+c2YK
-EXPECT64=c2YgPSAweDAwMDAwMDAxCg==
+CMDS=<<EOF
+e asm.arch=x86;e asm.bits=64;s 0;aei;aer rip=0;wa test eax, eax;aer eax=-1;aes
+aer 1~sf
+EOF
+EXPECT=<<EOF
+sf = 0x00000001
+EOF
 RUN
+
 NAME=neg
 FILE=-
-CMDS64=Cnd4IGY2ZGJmNmRmNjZmN2RiZjdkYjQ4ZjdkYgplIGFzbS5hcmNoID0geDg2CmUgYXNtLmJpdHMgPSA2NAphZWkKYWVyIHJieD0weDMwMDAyMDEwMAphZXMgMTsgYWVyIHJieDsgYWVyIGNmCmFlcyAxOyBhZXIgcmJ4OyBhZXIgY2YKYWVzIDE7IGFlciByYng7IGFlciBjZgphZXMgMTsgYWVyIHJieDsgYWVyIGNmCmFlcyAxOyBhZXIgcmJ4OyBhZXIgY2YK
-EXPECT64=MHgzMDAwMjAxMDAKMHgwMDAwMDAwMAoweDMwMDAyZmYwMAoweDAwMDAwMDAxCjB4MzAwMDIwMTAwCjB4MDAwMDAwMDEKMHgzZmZmZGZmMDAKMHgwMDAwMDAwMQoweGZmZmZmZmZjMDAwMjAxMDAKMHgwMDAwMDAwMQo=
+CMDS=<<EOF
+wx f6dbf6df66f7dbf7db48f7db
+e asm.arch = x86
+e asm.bits = 64
+aei
+aer rbx=0x300020100
+aes 1; aer rbx; aer cf
+aes 1; aer rbx; aer cf
+aes 1; aer rbx; aer cf
+aes 1; aer rbx; aer cf
+aes 1; aer rbx; aer cf
+EOF
+EXPECT=<<EOF
+0x300020100
+0x00000000
+0x30002ff00
+0x00000001
+0x300020100
+0x00000001
+0x3fffdff00
+0x00000001
+0xfffffffc00020100
+0x00000001
+EOF
 RUN
