@@ -2318,11 +2318,6 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 		core->search->maxhits = 1;
 	}
 	if (core->search->n_kws > 0 || param->crypto_search) {
-		RSearchKeyword aeskw;
-		if (param->crypto_search) {
-			memset (&aeskw, 0, sizeof (aeskw));
-			aeskw.keyword_length = 31;
-		}
 		/* set callback */
 		/* TODO: handle last block of data */
 		/* TODO: handle ^C */
@@ -2391,17 +2386,14 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 				}
 				if (param->crypto_search) {
 					// TODO support backward search
-					int delta = 0;
+					int t = 0;
 					if (param->aes_search) {
-						delta = r_search_aes_update (core->search, at, buf, len);
+						t = r_search_aes_update (core->search, at, buf, len);
 					} else if (param->privkey_search) {
-						delta = r_search_privkey_update (core->search, at, buf, len);
+						t = r_search_privkey_update (core->search, at, buf, len);
 					}
-					if (delta != -1) {
-						int t = r_search_hit_new (core->search, &aeskw, at + delta);
-						if (!t || t > 1) {
-							break;
-						}
+					if (!t || t > 1) {
+						break;
 					}
 				} else {
 					(void)r_search_update (core->search, at, buf, len);
@@ -3304,7 +3296,7 @@ reread:
 				goto beach;
 			}
 			break;
-		case 'd': // "Cd"
+		case 'd': // "cd"
 			{
 				param.crypto_search = false;
 				RSearchKeyword *kw;
@@ -3319,12 +3311,24 @@ reread:
 				}
 			}
 			break;
-		case 'a':
-			param.aes_search = true;
-			break;
-		case 'r':
-			param.privkey_search = true;
-			break;
+		case 'a': // "ca"
+			{
+				RSearchKeyword *kw;
+				kw = r_search_keyword_new_hexmask ("00", NULL);
+				r_search_kw_add (search, kw);
+				r_search_begin (core->search);
+				param.aes_search = true;
+				break;
+			}
+		case 'r': // "cr"
+			{
+				RSearchKeyword *kw;
+				kw = r_search_keyword_new_hexmask ("00", NULL);
+				r_search_kw_add (search, kw);
+				r_search_begin (core->search);
+				param.privkey_search = true;
+				break;
+			}
 		default: {
 			dosearch = false;
 			param.crypto_search = false;
@@ -3741,7 +3745,7 @@ reread:
 			char **args = r_str_argv (input + param_offset, &n_args);
 			ut8 *buf = NULL;
 			ut64 offset = 0;
-			size_t size;
+			int size;
 			buf = (ut8 *)r_file_slurp (args[0], &size);
 			if (!buf) {
 				eprintf ("Cannot open '%s'\n", args[0]);

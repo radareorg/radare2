@@ -53,22 +53,30 @@ static bool aes128_key_test(const unsigned char *buf) {
 
 R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i, last = len - 20;
-	if (last > 0) {
-		for (i = 0; i < last; i++) {
-			if (aes128_key_test (buf + i)) {
-				return i;
-			}
-			if (len - i - 28 > 0) {
-				if (aes192_key_test (buf + i)) {
-					return i;
+	RListIter *iter;
+	RSearchKeyword *kw;
+
+	r_list_foreach (s->kws, iter, kw) {
+		if (last > 0) {
+			for (i = 0; i < last; i++) {
+				if (aes128_key_test (buf + i)) {
+					kw->keyword_length = 16;
+					return r_search_hit_new (s, kw, from + i);
 				}
-			}
-			if (len - i - 36 > 0) {
-				if (aes256_key_test (buf + i)) {
-					return i;
+				if (len - i - 28 > 0) {
+					if (aes192_key_test (buf + i)) {
+						kw->keyword_length = 24;
+						return r_search_hit_new (s, kw, from + i);
+					}
+				}
+				if (len - i - 36 > 0) {
+					if (aes256_key_test (buf + i)) {
+						kw->keyword_length = 32;
+						return r_search_hit_new (s, kw, from + i);
+					}
 				}
 			}
 		}
 	}
-	return -1;
+	return 0;
 }
