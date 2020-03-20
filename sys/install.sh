@@ -92,13 +92,15 @@ if [ "${USE_SU}" = 1 ]; then
 fi
 
 if [ "${M32}" = 1 ]; then
-	./sys/build-m32.sh ${ARGS} && ${SUDO} ${MAKE} ${INSTALL_TARGET}
+	./sys/build-m32.sh ${ARGS} || exit 1
 elif [ "${HARDEN}" = 1 ]; then
 	# shellcheck disable=SC2048
 	# shellcheck disable=SC2086
-	./sys/build-harden.sh ${ARGS} && ${SUDO} ${MAKE} ${INSTALL_TARGET}
+	./sys/build-harden.sh ${ARGS} || exit 1
 else
 	# shellcheck disable=SC2048
 	# shellcheck disable=SC2086
-	./sys/build.sh ${ARGS} && ${SUDO} ${MAKE} ${INSTALL_TARGET}
+	./sys/build.sh ${ARGS} || exit 1
 fi
+
+${SUDO} ${MAKE} ${INSTALL_TARGET} || exit 1

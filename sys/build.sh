@@ -52,27 +52,21 @@ if [ -z "${MAKE}" ]; then
 fi
 
 [ -z "${MAKE_JOBS}" ] && MAKE_JOBS=12
-
 [ -z "${CERTID}" ] && CERTID=org.radare.radare2
 
 # find root
 A=$(dirname "$PWD/$0")
 cd "$A" && cd .. || exit 1
 
+DEFAULT_PREFIX=/usr/local
 if [ "`uname`" = Darwin ]; then
-	DEFAULT_PREFIX=/usr/local
 	# purge previous installations on other common paths
 	if [ -f /usr/bin/r2 ]; then
 		type sudo || NOSUDO=1
 		[ "$(id -u)" = 0 ] || SUDO=sudo
 		[ -n "${NOSUDO}" ] && SUDO=
-		# purge first
-		echo "Purging r2 installation..."
-		./configure --prefix=/usr > /dev/null
-		${SUDO} ${MAKE} uninstall > /dev/null
 	fi
 else
-	DEFAULT_PREFIX=/usr
 	[ -n "${PREFIX}" -a "${PREFIX}" != /usr ] && \
 		CFGARG="${CFGARG} --with-rpath"
 fi
@@ -82,7 +76,7 @@ fi
 for a in $* ; do
 	case "$a" in
 	-h|--help)
-		echo "Usage: sys/build.sh [/usr]"
+		echo "Usage: sys/build.sh [/usr/local]"
 		exit 0
 		;;
 	'')
@@ -115,33 +109,27 @@ if [ ! -x /usr/bin/gcc -a -x /usr/bin/cc ]; then
 	export HOST_CC=cc
 fi
 
-#echo
-#echo "export USE_R2_CAPSTONE=$USE_R2_CAPSTONE"
-#echo
-## Set USE_R2_CAPSTONE env var to ignore syscapstone check
-#if [ -z "${USE_R2_CAPSTONE}" ]; then
-#	pkg-config --atleast-version=4.0 capstone 2>/dev/null
-#	if [ $? = 0 ]; then
-#		echo '#include <capstone/capstone.h>' > .a.c
-#		echo 'int main() {return 0;}' >> .a.c
-#		gcc `pkg-config --cflags --libs capstone` -o .a.out .a.c
-#		if [ $? = 0 ]; then
-#			CFGARG="${CFGARG} --with-syscapstone"
-#		else
-#			echo
-#			echo "** WARNING ** capstone pkg-config is wrongly installed."
-#			echo
-#		fi
-#		rm -f .a.c .a.out
-#	fi
-#fi
+# purge first
+if [ "${PREFIX}" != "/usr" ]; then
+	A=`readlink /usr/bin/radare2 2>/dev/null`
+	B="${PWD}/binr/radare2/radare2"
+	if [ -n "$A" -a ! -f "$A" ]; then
+		A="$B"
+	fi
+	if [ "$A" = "$B" ]; then
+		echo "Purging r2 installation from /usr..."
+		./configure --prefix=/usr > /dev/null
+		echo ${SUDO} ${MAKE} uninstall
+		SD=""
+		type sudo && SD=sudo
+		${SD} ${MAKE} uninstall
+	fi
+fi
 
 # build
 ${MAKE} mrproper > /dev/null 2>&1
 [ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed ${LDFLAGS}"
-if [ -z "${KEEP_PLUGINS_CFG}" ]; then
-	rm -f plugins.cfg
-fi
+[ -z "${KEEP_PLUGINS_CFG}" ] && rm -f plugins.cfg
 unset DEPS
 pwd
 
