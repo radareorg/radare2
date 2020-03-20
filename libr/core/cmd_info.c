@@ -495,9 +495,11 @@ static int cmd_info(void *data, const char *input) {
 		question--;
 		char *prefix = strdup (input);
 		char *tmp = strchr (prefix, '?');
-		*tmp = 0;
+		if (tmp) {
+			*tmp = 0;
+		}
 		r_core_cmdf (core, "i?~& i%s", prefix);
-		free(prefix);
+		free (prefix);
 		goto done;
 	}
 	R_FREE (core->table_query);

@@ -4203,11 +4203,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '=':
 		{         // TODO: edit
 			showcursor (core, true);
-			const char *buf = NULL;
 			const char *cmd = r_config_get (core->config, "cmd.gprompt");
 			r_line_set_prompt ("cmd.gprompt> ");
 			core->cons->line->contents = strdup (cmd);
-			buf = r_line_readline ();
+			const char *buf = r_line_readline ();
 			core->cons->line->contents = NULL;
 			r_config_set (core->config, "cmd.gprompt", buf);
 			showcursor (core, false);
