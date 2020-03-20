@@ -1,11 +1,10 @@
-/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, dso */
+/* radare - LGPL - Copyright 2009-2020 - nibble, pancake, dso */
 
 #include "r_core.h"
 
 #define HASRETRY 1
 #define HAVE_LOCALS 1
 #define DEFAULT_NARGS 4
-// #define FLAG_PREFIX "; "
 #define FLAG_PREFIX ";-- "
 
 #define COLOR(ds, field) ((ds)->show_color ? (ds)->field : "")
@@ -2237,6 +2236,7 @@ static void ds_show_flags(RDisasmState *ds) {
 	bool outline = !ds->flags_inline;
 	const char *comma = "";
 	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
+	bool docolon = true;
 	int nth = 0;
 	r_list_foreach (uniqlist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
@@ -2325,6 +2325,8 @@ static void ds_show_flags(RDisasmState *ds) {
 				case_prev = case_current;
 				ds_align_comment (ds);
 				r_cons_printf ("%s; from %s", ds->show_color ? ds->pal_comment : "", addr);
+				outline = false;
+				docolon = false;
 			} else {
 				const char *lang = r_config_get (core->config, "bin.lang");
 				char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->offset, keep_lib);
@@ -2365,7 +2367,7 @@ static void ds_show_flags(RDisasmState *ds) {
 		nth++;
 	}
 	if (!outline && *comma) {
-		if (nth > 0) {
+		if (nth > 0 && docolon) {
 			r_cons_printf (":");
 		}
 		ds_newline (ds);
