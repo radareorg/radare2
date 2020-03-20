@@ -77,6 +77,8 @@ else
     fi
     export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
     if [ "${DEBPKG}" == "1" ] ; then
+      sys/static.sh
+      git clean -xdf
       sys/debian.sh
       # TODO: upload debian package somewhere
       exit 0
