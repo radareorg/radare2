@@ -607,7 +607,9 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	}
 	gdbr_init (g, true);
 	g->server_debug = debug_msg;
-	gdbr_set_architecture (g, r_config_get (core->config, "asm.arch"), r_config_get_i (core->config, "asm.bits"));
+	int arch = r_sys_arch_id (r_config_get (core->config, "asm.arch"));
+	int bits = r_config_get_i (core->config, "asm.bits");
+	gdbr_set_architecture (g, arch, bits);
 	core->gdbserver_up = 1;
 	eprintf ("gdbserver started on port: %s, file: %s\n", port, file);
 

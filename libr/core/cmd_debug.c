@@ -2140,6 +2140,7 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 			break;
 		}
 		r_reg_set_profile (core->dbg->reg, str+2);
+		r_debug_plugin_set_reg_profile (core->dbg, str+2);
 		break;
 	case '.': { // "drp."
 		RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
