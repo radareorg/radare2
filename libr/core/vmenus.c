@@ -1309,7 +1309,7 @@ R_API int r_core_visual_classes(RCore *core) {
 			" j/k   - down/up keys\n"
 			" h/b   - go back\n"
 			" g/G   - go first/last item\n"
-			" i     - specify index"
+			" i     - specify index\n"
 			" /     - grep mode\n"
 			" C     - toggle colors\n"
 			" f     - show class fields\n"
