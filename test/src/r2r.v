@@ -33,7 +33,7 @@ fn autodetect_dbpath() string {
 }
 
 fn r2r_home() string {
-	home := os.base_dir(os.realpath(os.executable()))
+	home := os.base_dir(os.real_path(os.executable()))
 	return os.join_path(home,'..')
 }
 
@@ -45,19 +45,19 @@ fn control_c() {
 pub fn main() {
 	mut r2r := R2R{}
 	mut fp := flag.new_flag_parser(os.args)
-	fp.application(os.filename(os.executable()))
+	fp.application(os.file_name(os.executable()))
 	// fp.version(r2r_version)
-	show_norun := fp.bool_('norun', `n`, false, 'Dont run the tests')
-	show_help := fp.bool_('help', `h`, false, 'Show this help screen')
-	r2r.jobs = fp.int_('jobs', `j`, default_jobs, 'Spawn N jobs in parallel to run tests ($default_jobs).' +
+	show_norun := fp.bool('norun', `n`, false, 'Dont run the tests')
+	show_help := fp.bool('help', `h`, false, 'Show this help screen')
+	r2r.jobs = fp.int('jobs', `j`, default_jobs, 'Spawn N jobs in parallel to run tests ($default_jobs).' +
 	                                              ' Set to 0 for 1 job per test.')
-	r2r.timeout = fp.int_('timeout', `t`, default_timeout, 'How much time to wait to consider a fail ($default_timeout)')
-	show_version := fp.bool_('version', `v`, false, 'Show version information')
+	r2r.timeout = fp.int('timeout', `t`, default_timeout, 'How much time to wait to consider a fail ($default_timeout)')
+	show_version := fp.bool('version', `v`, false, 'Show version information')
 	r2r.r2r_home = r2r_home()
-	r2r.show_quiet = fp.bool_('quiet', `q`, false, 'Silent output of OK tests')
-	r2r.interactive = fp.bool_('interactive', `i`, false, 'Prompt to manually fix failing tests (TODO)')
-	r2r.db_path = fp.string_('dbpath', `d`, autodetect_dbpath(), 'Set database path db/')
-	r2r.r2_path = fp.string_('r2', `r`, default_radare2, 'Set path/name to radare2 executable')
+	r2r.show_quiet = fp.bool('quiet', `q`, false, 'Silent output of OK tests')
+	r2r.interactive = fp.bool('interactive', `i`, false, 'Prompt to manually fix failing tests (TODO)')
+	r2r.db_path = fp.string('dbpath', `d`, autodetect_dbpath(), 'Set database path db/')
+	r2r.r2_path = fp.string('r2', `r`, default_radare2, 'Set path/name to radare2 executable')
 	if show_help {
 		println(fp.usage())
 		println('ARGS:')
