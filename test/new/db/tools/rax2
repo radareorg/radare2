@@ -12,6 +12,7 @@ CMDS=!rax2 =16 0x3+0x3
 EXPECT=<<EOF
 0x6
 EOF
+RUN
 
 NAME=rax2 -E | rax2 -D
 FILE=-

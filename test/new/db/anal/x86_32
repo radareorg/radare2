@@ -264,6 +264,7 @@ EOF
 CMDS=<<EOF
 adf
 EOF
+RUN
 
 NAME=adf analysis on an obfuscated executable
 FILE=../bins/pe/cmd_adf_sample0.exe
