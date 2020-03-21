@@ -46,8 +46,11 @@ static char *readline(char *buf, size_t *linesz) {
 // will return "Hello\nWorld\n" with nextline being at the beginning of line 4 afterwards.
 static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 	if (val[0] == '\'') {
-		eprintf ("Error: Invalid string syntax, use <<EOF instead of '...'\n");
-		return NULL;
+		size_t len = strlen (val);
+		if (len > 1 && val[len - 1] == '\'') {
+			eprintf ("Error: Invalid string syntax, use <<EOF instead of '...'\n");
+			return NULL;
+		}
 	}
 	if (val[0] == '<' && val[1] == '<') {
 		// <<EOF syntax
@@ -126,6 +129,16 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		if (val) {
 			*val = '\0';
 			val++;
+			// Strip comment
+			char *cmt = strchr (val, '#');
+			if (cmt) {
+				*cmt = '\0';
+				cmt--;
+				while (cmt > val && *cmt == ' ') {
+					*cmt = '\0';
+					cmt--;
+				}
+			}
 		}
 
 		// RUN is the only cmd without value
@@ -158,9 +171,14 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 			if (test->field.value) { \
 				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
 			} \
+			test->field.set = true; \
 			if (strcmp (val, "1") != 0) { \
-				eprintf (LINEFMT "Error: Invalid value for boolean key \"%s\", only \"1\" allowed.\n", file, linenum, key); \
-			} \
+				test->field.value = true; \
+			} else if (strcmp (val, "0") != 0) { \
+                test->field.value = false; \
+			} else { \
+				eprintf (LINEFMT "Error: Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed.\n", file, linenum, val, key); \
+            } \
 			continue; \
 		}
 

@@ -14,6 +14,7 @@ typedef struct r2r_cmd_test_string_record {
 typedef struct r2r_cmd_test_bool_record {
 	bool value;
 	ut64 line; // bools are always oneliners (e.g. BROKEN=1)
+	bool set;
 } R2RCmdTestBoolRecord;
 
 typedef struct r2r_cmd_test_t {
