@@ -1,6 +1,6 @@
 -include ../../config-user.mk
 
-VCOMMIT=b4561fa8149ecc876427759a52693a0d5a46ab1d
+VCOMMIT=efbf114a2fb8ce923df8d6f292d65c0ac6651ef9
 BINDIR=$(shell r2 -H R2_PREFIX)/bin
 CWD=$(shell pwd)
 V=v/v
@@ -19,7 +19,15 @@ $(V): v
 	cd v && git pull
 	cd v && git reset --hard $(VCOMMIT)
 	$(MAKE) -C v
-	$(V) install radare.r2 || git clone --depth=1 https://github.com/radare/v-r2 ~/.vmodules/radare/r2
+	$(MAKE) ~/.vmodules/radare/r2
+
+~/.vmodules/radare/r2:
+	$(V) install radare.r2 || \
+	git clone --depth=1 https://github.com/radare/v-r2 ~/.vmodules/radare/r2
+
+clean:
+	rm -rf ~/.vmodules/radare/r2
+	rm -rf v
 
 fmt:
 	$(V) fmt -w r2r.v
