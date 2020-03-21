@@ -2,6 +2,8 @@
 
 #include "r2r.h"
 
+#include <assert.h>
+
 #define LINEFMT "%s, line %"PFMT64u": "
 
 R_API R2RCmdTest *r2r_cmd_test_new() {
@@ -167,4 +169,111 @@ beach:
 	}
 	r2r_cmd_test_free (test);
 	return ret;
+}
+
+static void r2r_test_free(R2RTest *test) {
+	if (!test) {
+		return;
+	}
+	switch (test->type) {
+	case R2R_TEST_TYPE_CMD:
+		r2r_cmd_test_free (test->cmd_test);
+		break;
+	default:
+		assert (false); // TODO: other types
+	}
+}
+
+R_API R2RTestDatabase *r2r_test_database_new() {
+	R2RTestDatabase *db = R_NEW (R2RTestDatabase);
+	if (!db) {
+		return NULL;
+	}
+	r_pvector_init (&db->tests, (RPVectorFree)r2r_test_free);
+	r_str_constpool_init (&db->strpool);
+	return db;
+}
+
+R_API void r2r_test_database_free(R2RTestDatabase *db) {
+	if (!db) {
+		return;
+	}
+	r_pvector_clear (&db->tests);
+	r_str_constpool_fini (&db->strpool);
+	free (db);
+}
+
+static R2RTestType test_type_for_path(const char *path) {
+	return R2R_TEST_TYPE_CMD;
+}
+
+static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
+	if (depth <= 0) {
+		eprintf ("Directories for loading tests too deep: %s\n", path);
+		return false;
+	}
+	if (r_file_is_directory (path)) {
+		RList *dir = r_sys_dir (path);
+		if (!dir) {
+			return false;
+		}
+		RListIter *it;
+		const char *subname;
+		RStrBuf subpath;
+		r_strbuf_init (&subpath);
+		bool ret = true;
+		r_list_foreach (dir, it, subname) {
+			if (*subname == '.') {
+				continue;
+			}
+			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
+			if (!database_load (db, r_strbuf_get (&subpath), depth - 1)) {
+				ret = false;
+				break;
+			}
+		}
+		r_strbuf_fini (&subpath);
+		r_list_free (dir);
+		return ret;
+	}
+
+	if (!r_file_exists (path)) {
+		eprintf ("Path \"%s\" does not exist\n", path);
+		return false;
+	}
+
+	// Not a directory but exists, load a file
+	const char *pooled_path = r_str_constpool_get (&db->strpool, path);
+	R2RTestType test_type = test_type_for_path (path);
+	switch (test_type) {
+	case R2R_TEST_TYPE_CMD: {
+		RPVector *cmd_tests = r2r_load_cmd_test_file (path);
+		if (!cmd_tests) {
+			return false;
+		}
+		cmd_tests->v.free = NULL;
+		cmd_tests->v.free_user = NULL;
+		void **it;
+		r_pvector_foreach (cmd_tests, it) {
+			R2RTest *test = R_NEW (R2RTest);
+			if (!test) {
+				continue;
+			}
+			test->type = R2R_TEST_TYPE_CMD;
+			test->path = pooled_path;
+			test->cmd_test = *it;
+			r_pvector_push (&db->tests, test);
+		}
+		r_pvector_free (cmd_tests);
+		break;
+	}
+	default:
+		assert (false); // TODO: other types
+	}
+
+	return true;
+}
+
+R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path) {
+	return database_load (db, path, 4);
 }

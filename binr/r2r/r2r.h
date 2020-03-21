@@ -38,6 +38,26 @@ typedef struct r2r_cmd_test_t {
 	macro_str ("EXPECT_ERR", expect_err) \
 	macro_bool ("BROKEN", broken)
 
+typedef enum r2r_test_type_t {
+	R2R_TEST_TYPE_CMD,
+	R2R_TEST_TYPE_ASM,
+	R2R_TEST_TYPE_JSON
+} R2RTestType;
+
+typedef struct r2r_test_t {
+	const char *path;
+	R2RTestType type;
+	union {
+		R2RCmdTest *cmd_test;
+		// TODO: other types...
+	};
+} R2RTest;
+
+typedef struct r2r_test_database_t {
+	RPVector tests;
+	RStrConstPool strpool;
+} R2RTestDatabase;
+
 typedef struct r2r_run_config_t {
 	const char *r2_cmd;
 } R2RRunConfig;
@@ -57,8 +77,11 @@ typedef enum r2r_test_result_t {
 
 R_API R2RCmdTest *r2r_cmd_test_new();
 R_API void r2r_cmd_test_free(R2RCmdTest *test);
-
 R_API RPVector *r2r_load_cmd_test_file(const char *file);
+
+R_API R2RTestDatabase *r2r_test_database_new();
+R_API void r2r_test_database_free(R2RTestDatabase *db);
+R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path);
 
 R_API bool r2r_subprocess_init();
 R_API void r2r_subprocess_fini();
