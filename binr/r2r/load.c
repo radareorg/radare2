@@ -99,7 +99,7 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		return NULL;
 	}
 
-	RPVector *ret = r_pvector_new ((RPVectorFree)r2r_cmd_test_free);
+	RPVector *ret = r_pvector_new (NULL);
 	if (!ret) {
 		return NULL;
 	}
@@ -180,6 +180,181 @@ beach:
 	return ret;
 }
 
+R_API R2RAsmTest *r2r_asm_test_new() {
+	return R_NEW0 (R2RAsmTest);
+}
+
+R_API void r2r_asm_test_free(R2RAsmTest *test) {
+	if (!test) {
+		return;
+	}
+	free (test->disasm);
+	free (test->bytes);
+	free (test);
+}
+
+static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
+	RList *file_tokens = r_str_split_duplist (path, R_SYS_DIR);
+	if (!file_tokens || r_list_empty (file_tokens)) {
+		r_list_free (file_tokens);
+		return false;
+	}
+
+	// Possibilities:
+	// arm
+	// arm_32
+	// arm_cortex_32
+
+	char *arch = r_list_last (file_tokens);
+	if (!*arch) {
+		r_list_free (file_tokens);
+		return false;
+	}
+	*arch_out = r_str_constpool_get (strpool, arch);
+	char *second = strchr (arch, '_');
+	if (second) {
+		*second = '\0';
+		second++;
+		char *third = strchr (second, '_');
+		if (third) {
+			*third = '\0';
+			third++;
+			*cpuout = r_str_constpool_get (strpool, second);
+			*bitsout = atoi (third);
+		} else {
+			*cpuout = NULL;
+			*bitsout = atoi (second);
+		}
+	} else {
+		*cpuout = NULL;
+		*bitsout = 0;
+	}
+	r_list_free (file_tokens);
+	return true;
+}
+
+R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file) {
+	const char *arch;
+	const char *cpu;
+	int bits;
+	if (!parse_asm_path (file, strpool, &arch, &cpu, &bits)) {
+		eprintf ("Failed to parse arch/cpu/bits from path %s\n", file);
+		return NULL;
+	}
+
+	char *contents = r_file_slurp (file, NULL);
+	if (!contents) {
+		eprintf ("Failed to open file \"%s\"\n", file);
+		return NULL;
+	}
+
+	RPVector *ret = r_pvector_new (NULL);
+	if (!ret) {
+		return NULL;
+	}
+
+	ut64 linenum = 0;
+	char *line = contents;
+	size_t linesz;
+	char *nextline;
+	do {
+		nextline = readline (line, &linesz);
+		linenum++;
+		if (!linesz) {
+			continue;
+		}
+		if (*line == '#') {
+			continue;
+		}
+
+		int mode = 0;
+		while (*line && *line != ' ') {
+			switch (*line) {
+			case 'a':
+				mode |= R2R_ASM_TEST_MODE_ASSEMBLE;
+				break;
+			case 'd':
+				mode |= R2R_ASM_TEST_MODE_DISASSEMBLE;
+				break;
+			case 'E':
+				mode |= R2R_ASM_TEST_MODE_BIG_ENDIAN;
+				break;
+			case 'B':
+				mode |= R2R_ASM_TEST_MODE_BROKEN;
+				break;
+			default:
+				eprintf (LINEFMT "Warning: Invalid mode char '%c'\n", file, linenum, *line);
+				break;
+			}
+			line++;
+		}
+		if (!(mode & R2R_ASM_TEST_MODE_ASSEMBLE) && !(mode & R2R_ASM_TEST_MODE_DISASSEMBLE)) {
+			eprintf (LINEFMT "Warning: Mode specifies neither assemble nor disassemble.\n", file, linenum);
+			continue;
+		}
+
+		char *disasm = strchr (line, '"');
+		if (!disasm) {
+			eprintf (LINEFMT "Error: Expected \" to begin disassembly.\n", file, linenum);
+			continue;
+		}
+		disasm++;
+		char *hex = strchr (disasm, '"');
+		if (!hex) {
+			eprintf (LINEFMT "Error: Expected \" to end disassembly.\n", file, linenum);
+			continue;
+		}
+		*hex = '\0';
+		hex++;
+
+		while (*hex && *hex == ' ') {
+			hex++;
+		}
+
+		char *offset = strchr (hex, ' ');
+		if (offset) {
+			*offset = '\0';
+		}
+
+		size_t hexlen = strlen (hex);
+		if (!hexlen) {
+			eprintf (LINEFMT "Error: Expected hex chars.\n", file, linenum);
+			continue;
+		}
+		ut8 *bytes = malloc (hexlen);
+		if (!bytes) {
+			break;
+		}
+		int bytesz = r_hex_str2bin (hex, bytes);
+		if (bytesz == 0) {
+			eprintf (LINEFMT "Error: Expected hex chars.\n", file, linenum);
+			continue;
+		}
+		if (bytesz < 0) {
+			eprintf (LINEFMT "Error: Odd number of hex chars: %s\n", file, linenum, hex);
+			continue;
+		}
+
+		R2RAsmTest *test = r2r_asm_test_new ();
+		if (!test) {
+			break;
+		}
+		test->line = linenum;
+		test->bits = bits;
+		test->arch = arch;
+		test->cpu = cpu;
+		test->mode = mode;
+		test->offset = offset ? (ut64)strtoull (offset, NULL, 0) : 0;
+		test->disasm = strdup (disasm);
+		test->bytes = bytes;
+		test->bytes_size = (size_t)bytesz;
+		r_pvector_push (ret, test);
+	} while ((line = nextline));
+
+	free (contents);
+	return ret;
+}
+
 static void r2r_test_free(R2RTest *test) {
 	if (!test) {
 		return;
@@ -213,7 +388,30 @@ R_API void r2r_test_database_free(R2RTestDatabase *db) {
 }
 
 static R2RTestType test_type_for_path(const char *path) {
-	return R2R_TEST_TYPE_CMD;
+	R2RTestType ret = R2R_TEST_TYPE_CMD;
+	char *pathdup = strdup (path);
+	RList *tokens = r_str_split_list (pathdup, R_SYS_DIR, 0);
+	if (!tokens) {
+		return ret;
+	}
+	if (!r_list_empty (tokens)) {
+		r_list_pop (tokens);
+	}
+	RListIter *it;
+	char *token;
+	r_list_foreach (tokens, it, token) {
+		if (strcmp (token, "asm") == 0) {
+			ret = R2R_TEST_TYPE_ASM;
+			break;
+		}
+		if (strcmp (token, "json") == 0) {
+			ret = R2R_TEST_TYPE_JSON;
+			break;
+		}
+	}
+	r_list_free (tokens);
+	free (pathdup);
+	return ret;
 }
 
 static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
@@ -260,8 +458,6 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		if (!cmd_tests) {
 			return false;
 		}
-		cmd_tests->v.free = NULL;
-		cmd_tests->v.free_user = NULL;
 		void **it;
 		r_pvector_foreach (cmd_tests, it) {
 			R2RTest *test = R_NEW (R2RTest);
@@ -276,8 +472,30 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		r_pvector_free (cmd_tests);
 		break;
 	}
+	case R2R_TEST_TYPE_ASM: {
+		RPVector *asm_tests = r2r_load_asm_test_file (&db->strpool, path);
+		if (!asm_tests) {
+			return false;
+		}
+		void **it;
+		r_pvector_foreach (asm_tests, it) {
+			R2RTest *test = R_NEW (R2RTest);
+			if (!test) {
+				continue;
+			}
+			test->type = R2R_TEST_TYPE_ASM;
+			test->path = pooled_path;
+			test->asm_test = *it;
+			r_pvector_push (&db->tests, test);
+		}
+		r_pvector_free (asm_tests);
+		break;
+	}
+	case R2R_TEST_TYPE_JSON:
+		eprintf ("TODO: Load R2R_TEST_TYPE_JSON\n");
+		break;
 	default:
-		assert (false); // TODO: other types
+		break;
 	}
 
 	return true;

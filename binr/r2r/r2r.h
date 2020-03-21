@@ -38,6 +38,25 @@ typedef struct r2r_cmd_test_t {
 	macro_str ("EXPECT_ERR", expect_err) \
 	macro_bool ("BROKEN", broken)
 
+typedef enum r2r_asm_test_mode_t {
+	R2R_ASM_TEST_MODE_ASSEMBLE = 1,
+	R2R_ASM_TEST_MODE_DISASSEMBLE = (1 << 1),
+	R2R_ASM_TEST_MODE_BIG_ENDIAN = (1 << 2),
+	R2R_ASM_TEST_MODE_BROKEN = (1 << 3)
+} R2RAsmTestMode;
+
+typedef struct r2r_asm_test_t {
+	ut64 line;
+	const char *arch;
+	const char *cpu;
+	int bits;
+	int mode;
+	ut64 offset;
+	char *disasm;
+	ut8 *bytes;
+	size_t bytes_size;
+} R2RAsmTest;
+
 typedef enum r2r_test_type_t {
 	R2R_TEST_TYPE_CMD,
 	R2R_TEST_TYPE_ASM,
@@ -49,6 +68,7 @@ typedef struct r2r_test_t {
 	R2RTestType type;
 	union {
 		R2RCmdTest *cmd_test;
+		R2RAsmTest *asm_test;
 		// TODO: other types...
 	};
 } R2RTest;
@@ -78,6 +98,10 @@ typedef enum r2r_test_result_t {
 R_API R2RCmdTest *r2r_cmd_test_new();
 R_API void r2r_cmd_test_free(R2RCmdTest *test);
 R_API RPVector *r2r_load_cmd_test_file(const char *file);
+
+R_API R2RAsmTest *r2r_asm_test_new();
+R_API void r2r_asm_test_free(R2RAsmTest *test);
+R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file);
 
 R_API R2RTestDatabase *r2r_test_database_new();
 R_API void r2r_test_database_free(R2RTestDatabase *db);
