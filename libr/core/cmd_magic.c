@@ -46,8 +46,8 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		}
 	}
 	if (((addr&7)==0) && ((addr&(7<<8))==0))
-		if (!json) {
-			eprintf ("0x%08"PFMT64x"\r", addr);
+		if (!json) { // update search display
+			eprintf ("0x%08" PFMT64x " [%d matches found]\r", addr, *hits);
 		}
 	if (file) {
 		if (*file == ' ') file++;
