@@ -32,6 +32,8 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
+	R2RRunConfig config = { "radare2" };
+
 	int i;
 	for (i = optind; i < argc; i++) {
 		printf ("%s\n", argv[i]);
@@ -46,14 +48,29 @@ int main(int argc, char **argv) {
 			if (!test->name.value) {
 				eprintf ("horse with no name\n");
 			}
-			printf ("NAME=%s\n", test->name.value);
-			printf ("CMDS=%s\n", test->cmds.value);
+			R2RTestOutput *out = r2r_run_cmd_test (&config, test);
+			R2RTestResult result = r2r_test_output_check (out, test);
+			printf ("%s: ", test->name.value ? test->name.value : "<unnamed>");
+			switch (result) {
+			case R2R_TEST_RESULT_OK:
+				printf ("OK\n");
+				break;
+			case R2R_TEST_RESULT_FAILED:
+				printf ("XX\n");
+				printf("%s\n", out->out);
+				printf("%s\n", out->err);
+				break;
+			case R2R_TEST_RESULT_BROKEN:
+				printf ("BR\n");
+				break;
+			case R2R_TEST_RESULT_FIXED:
+				printf ("FX\n");
+				break;
+			}
+			r2r_test_output_free (out);
 		}
 		r_pvector_free (tests);
 	}
-
-	R2RRunConfig config = { "radare2" };
-	r2r_run_cmd_test (&config, NULL);
 
 	return 0;
 }

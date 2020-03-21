@@ -218,7 +218,6 @@ R_API void r2r_subprocess_wait(R2RSubprocess *proc) {
 		r = select (nfds, &rfds, NULL, NULL, NULL);
 		if (r < 0) {
 			if (errno == EINTR) {
-				printf ("cont\n");
 				continue;
 			}
 			break;
@@ -269,13 +268,55 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	free (proc);
 }
 
-R_API R2RTestResult *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test) {
-	const char *args[] = { "-h" };
-	R2RSubprocess *proc = r2r_subprocess_start (config->r2_cmd, args, 1);
+R_API R2RTestOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test) {
+	const char *args[] = {
+			"-e", "scr.color=0",
+			"-Qc",
+			test->cmds.value,
+			test->file.value
+	};
+	R2RSubprocess *proc = r2r_subprocess_start (config->r2_cmd, args, 5);
 	r2r_subprocess_wait (proc);
-	printf ("subproc exited with %d\n", proc->ret);
-	printf ("stdout: %s\n", r_strbuf_get (&proc->out));
-	printf ("stderr: %s\n", r_strbuf_get (&proc->err));
+	R2RTestOutput *out = R_NEW (R2RTestOutput);
+	if (out) {
+		out->out = r_strbuf_drain_nofree (&proc->out);
+		out->err = r_strbuf_drain_nofree (&proc->err);
+		out->ret = proc->ret;
+	}
 	r2r_subprocess_free (proc);
-	return NULL;
+	return out;
+}
+
+R_API void r2r_test_output_free(R2RTestOutput *out) {
+	if (!out) {
+		return;
+	}
+	free (out->out);
+	free (out->err);
+	free (out);
+}
+
+static bool test_check_success(R2RTestOutput *out, R2RCmdTest *test) {
+	if (out->ret != 0 || !out->out || !out->err) {
+		return false;
+	}
+	const char *expect_out = test->expect.value ? test->expect.value : "";
+	if (strcmp (out->out, expect_out) != 0) {
+		return false;
+	}
+	if (test->expect_err.value) {
+		// TODO: Do we want to check stderr always?
+		if (strcmp (out->out, test->expect_err.value) != 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+R_API R2RTestResult r2r_test_output_check(R2RTestOutput *out, R2RCmdTest *test) {
+	bool success = test_check_success (out, test);
+	if (!success) {
+		return test->broken.value ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
+	}
+	return test->broken.value ? R2R_TEST_RESULT_FIXED : R2R_TEST_RESULT_OK;
 }

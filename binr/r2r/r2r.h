@@ -42,9 +42,17 @@ typedef struct r2r_run_config_t {
 	const char *r2_cmd;
 } R2RRunConfig;
 
-typedef struct r2r_test_result_t {
-	char *out;
-	char *err;
+typedef struct r2r_test_output_t {
+	char *out; // stdout
+	char *err; // stderr
+	int ret; // exit code of the process
+} R2RTestOutput;
+
+typedef enum r2r_test_result_t {
+	R2R_TEST_RESULT_OK,
+	R2R_TEST_RESULT_FAILED,
+	R2R_TEST_RESULT_BROKEN,
+	R2R_TEST_RESULT_FIXED
 } R2RTestResult;
 
 R_API R2RCmdTest *r2r_cmd_test_new();
@@ -55,6 +63,8 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file);
 R_API bool r2r_subprocess_init();
 R_API void r2r_subprocess_fini();
 
-R_API R2RTestResult *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test);
+R_API R2RTestOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test);
+R_API void r2r_test_output_free(R2RTestOutput *out);
+R_API R2RTestResult r2r_test_output_check(R2RTestOutput *out, R2RCmdTest *test);
 
 #endif //RADARE2_R2R_H
