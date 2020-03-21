@@ -69,6 +69,12 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 			*nextline = readline (line, &linesz);
 			(*linenum)++;
 			char *end = strstr (line, endtoken);
+			if (end != line) {
+				// Require the EOF to be at the beginning of the line.
+				// This means makes it impossible to write multiline tests without a trailing newline.
+				// This requirement could be lifted later if necessary.
+				end = NULL;
+			}
 			if (end) {
 				*end = '\0';
 			}
@@ -111,6 +117,9 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		nextline = readline (line, &linesz);
 		linenum++;
 		if (!linesz) {
+			continue;
+		}
+		if (*line == '#') {
 			continue;
 		}
 		char *val = strchr (line, '=');
