@@ -52,6 +52,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
+#if 0
 	void **it;
 	r_pvector_foreach (&db->tests, it) {
 		R2RTest *test = *it;
@@ -84,6 +85,7 @@ int main(int argc, char **argv) {
 		}
 		r2r_test_output_free (out);
 	}
+#endif
 
 	r2r_test_database_free (db);
 	return 0;

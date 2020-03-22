@@ -58,6 +58,12 @@ typedef struct r2r_asm_test_t {
 	size_t bytes_size;
 } R2RAsmTest;
 
+typedef struct r2r_json_test_t {
+	ut64 line;
+	char *cmd;
+	bool broken;
+} R2RJsonTest;
+
 typedef enum r2r_test_type_t {
 	R2R_TEST_TYPE_CMD,
 	R2R_TEST_TYPE_ASM,
@@ -70,7 +76,7 @@ typedef struct r2r_test_t {
 	union {
 		R2RCmdTest *cmd_test;
 		R2RAsmTest *asm_test;
-		// TODO: other types...
+		R2RJsonTest *json_test;
 	};
 } R2RTest;
 
@@ -103,6 +109,10 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file);
 R_API R2RAsmTest *r2r_asm_test_new();
 R_API void r2r_asm_test_free(R2RAsmTest *test);
 R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file);
+
+R_API R2RJsonTest *r2r_json_test_new();
+R_API void r2r_json_test_free(R2RJsonTest *test);
+R_API RPVector *r2r_load_json_test_file(const char *file);
 
 R_API R2RTestDatabase *r2r_test_database_new();
 R_API void r2r_test_database_free(R2RTestDatabase *db);

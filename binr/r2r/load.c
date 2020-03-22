@@ -373,6 +373,73 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 	return ret;
 }
 
+R_API R2RJsonTest *r2r_json_test_new() {
+	return R_NEW0 (R2RJsonTest);
+}
+
+R_API void r2r_json_test_free(R2RJsonTest *test) {
+	if (!test) {
+		return;
+	}
+	free (test->cmd);
+	free (test);
+}
+
+R_API RPVector *r2r_load_json_test_file(const char *file) {
+	char *contents = r_file_slurp (file, NULL);
+	if (!contents) {
+		eprintf ("Failed to open file \"%s\"\n", file);
+		return NULL;
+	}
+
+	RPVector *ret = r_pvector_new (NULL);
+	if (!ret) {
+		return NULL;
+	}
+
+	ut64 linenum = 0;
+	char *line = contents;
+	size_t linesz;
+	char *nextline;
+	do {
+		nextline = readline (line, &linesz);
+		linenum++;
+		if (!linesz) {
+			continue;
+		}
+		if (*line == '#') {
+			continue;
+		}
+
+		char *broken_token = strstr (line, "BROKEN");
+		if (broken_token) {
+			*broken_token = '\0';
+		}
+
+		r_str_trim (line);
+		if (!*line) {
+			// empty line
+			continue;
+		}
+
+		R2RJsonTest *test = r2r_json_test_new ();
+		if (!test) {
+			break;
+		}
+		test->line = linenum;
+		test->cmd = strdup (line);
+		if (!test->cmd) {
+			r2r_json_test_free (test);
+			break;
+		}
+		test->broken = broken_token ? true : false;
+		r_pvector_push (ret, test);
+	} while ((line = nextline));
+
+	free (contents);
+	return ret;
+}
+
 static void r2r_test_free(R2RTest *test) {
 	if (!test) {
 		return;
@@ -381,9 +448,14 @@ static void r2r_test_free(R2RTest *test) {
 	case R2R_TEST_TYPE_CMD:
 		r2r_cmd_test_free (test->cmd_test);
 		break;
-	default:
-		assert (false); // TODO: other types
+	case R2R_TEST_TYPE_ASM:
+		r2r_asm_test_free (test->asm_test);
+		break;
+	case R2R_TEST_TYPE_JSON:
+		r2r_json_test_free (test->json_test);
+		break;
 	}
+	free (test);
 }
 
 R_API R2RTestDatabase *r2r_test_database_new() {
@@ -509,11 +581,25 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		r_pvector_free (asm_tests);
 		break;
 	}
-	case R2R_TEST_TYPE_JSON:
-		eprintf ("TODO: Load R2R_TEST_TYPE_JSON\n");
+	case R2R_TEST_TYPE_JSON: {
+		RPVector *json_tests = r2r_load_json_test_file (path);
+		if (!json_tests) {
+			return false;
+		}
+		void **it;
+		r_pvector_foreach (json_tests, it) {
+			R2RTest *test = R_NEW (R2RTest);
+			if (!test) {
+				continue;
+			}
+			test->type = R2R_TEST_TYPE_JSON;
+			test->path = pooled_path;
+			test->asm_test = *it;
+			r_pvector_push (&db->tests, test);
+		}
+		r_pvector_free (json_tests);
 		break;
-	default:
-		break;
+	}
 	}
 
 	return true;
