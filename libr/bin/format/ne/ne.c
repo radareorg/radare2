@@ -473,6 +473,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
 				RBinImport *imp = R_NEW0 (RBinImport);
 				if (!imp) {
+					free (reloc);
 					break;
 				}
 				char *name;
