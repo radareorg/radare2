@@ -9,13 +9,13 @@ static ut64 scn_resize(RBinFile *bf, const char *name, ut64 size) {
 }
 
 static bool scn_perms(RBinFile *bf, const char *name, int perms) {
-	return Elf_(r_bin_elf_section_perms) (bf->o->bin_obj, name, perms);
+	return Elf_(r_bin_elf_section_perms) (bf, name, perms);
 }
 
 static int rpath_del(RBinFile *bf) {
-	return Elf_(r_bin_elf_del_rpath) (bf->o->bin_obj);
+	return Elf_(r_bin_elf_del_rpath) (bf);
 }
 
 static bool chentry(RBinFile *bf, ut64 addr) {
-	return Elf_(r_bin_elf_entry_write) (bf->o->bin_obj, addr);
+	return Elf_(r_bin_elf_entry_write) (bf, addr);
 }
