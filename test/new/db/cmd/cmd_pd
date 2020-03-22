@@ -1601,7 +1601,7 @@ EXPECT=<<EOF
 |     `---> 0x0040296a      bf01000000     mov edi, 1
 |      ||   0x0040296f      e80cf9ffff     call sym.imp.isatty
 EOF
-
+RUN
 
 NAME=pd @a overwrites anal hints
 FILE=../bins/elf/analysis/ls-linux64

@@ -540,7 +540,7 @@ d "xrstors [ecx]" 0fc719
 dB "adx" d4
 dB "amx" d5
 d "cwde" 98
-dB "cmpxchg16b [eax]" 67480f0c7
+dB "cmpxchg16b [eax]" 67480f0c70
 dB "cmpxchg8b dword [eax]" 0fc7c0
 dB "extrq xmm0, 0, 0" 660f78000000
 dB "extrq xmm0, xmm0" 660f7900
@@ -624,7 +624,7 @@ d "phminposuw xmm0, xmm0" 660f3841c0
 d "movbe dword [eax], eax" 0f38f100
 d "movbe eax, dword [eax]" 0f38f000
 d "mulsd xmm7, xmm7" 66f3f20f59ff
-dB "mulss xmm7, xmm7" 66f2f0f59ff
+dB "mulss xmm7, xmm7" 66f2f0f59ff0
 d "mulpd xmm7, xmm7" 660f59ff
 dB "mulsd xmm7, xmm7" f2660f59ff
 d "mulps xmm7, xmm7" 0f59ff
@@ -1043,7 +1043,7 @@ aB "btc dword [eax], eax" 0fbb00
 aB "bt dword [eax], eax" 0fa300
 aB "bt ecx, esp" 0fa3e1
 aB "bt edx, 59" 0fbae23b
-aB "bt ebp, -20" 0fbae5e
+aB "bt ebp, -20" 0fbae5e0
 aB "btr dword [eax], eax" 0fb300
 aB "bts dword [eax], eax" 0fab00
 a "call 0x8049100" e8fb900408
@@ -1145,7 +1145,7 @@ aB "cmpunordpd xmm0, xmmword [eax]" 660fc20003
 aB "cmpunordps xmm0, xmmword [eax]" 0fc20003
 aB "cmpunordsd xmm0, qword [eax]" f20fc20003
 aB "cmpunordss xmm0, dword [eax]" f30fc20003
-aB "cmpxchg16b [eax]" 67480f0c7
+aB "cmpxchg16b [eax]" 67480f0c70
 aB "cmpxchg8b dword [eax]" 0fc7c0
 aB "cmpxchg byte [eax], al" 0fb000
 aB "cmpxchg dword [eax], eax" 0fb100
@@ -1605,7 +1605,7 @@ aB "mulsd xmm0, qword [eax]" f20f5900
 aB "mulsd xmm7, xmm7" 66f3f20f59ff
 aB "mulsd xmm7, xmm7" f2660f59ff
 aB "mulss xmm0, dword [eax]" f30f5900
-aB "mulss xmm7, xmm7" 66f2f0f59ff
+aB "mulss xmm7, xmm7" 66f2f0f59ff0
 a "mwait" 0f01c9
 aB "neg byte [eax]" f618
 a "nop" 90

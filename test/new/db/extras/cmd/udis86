@@ -109,7 +109,7 @@ EOF
 RUN
 
 NAME="axf string ref udis86"
-BROKEN=
+BROKEN=1
 FILE=../../bins/elf/ioli/crackme0x03
 CMDS=<<EOF
 e asm.arch = x86.udis

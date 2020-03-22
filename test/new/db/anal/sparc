@@ -62,6 +62,7 @@ EXPECT=<<EOF
 165
 0x0002bca0 0x0002bccc 00:0000 44 j 0x0002c534 f 0x0002bccc
 EOF
+RUN
 
 NAME=afb sparc
 FILE=../bins/elf/elf-Linux-SparcV8-bash

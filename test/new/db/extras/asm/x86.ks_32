@@ -147,7 +147,7 @@ a "cmpunordpd xmm0, xmmword [eax]" 660fc20003
 a "cmpunordps xmm0, xmmword [eax]" 0fc20003 
 a "cmpunordsd xmm0, qword [eax]" f20fc20003 
 a "cmpunordss xmm0, dword [eax]" f30fc20003 
-aB "cmpxchg16b [eax]" 67480f0c7 
+aB "cmpxchg16b [eax]" 67480f0c70
 aB "cmpxchg8b dword [eax]" 0fc7c0 
 a "cmpxchg byte [eax], al" 0fb000 
 a "cmpxchg dword [eax], eax" 0fb100 
@@ -205,7 +205,7 @@ a "extrq xmm0, 0x0, 0x0" 660f78c00000
 aB "extrq xmm0, xmm0" 660f7900 
 a "femms" 0f0e 
 a "fsincos" d9fb
-aB "fxrstor [eax]" 0fae0
+aB "fxrstor [eax]" 0fae00
 a "fxsave [eax]" 0fae00
 a "getsec" 0f37 
 a "haddpd xmm0, xmmword [eax]" 660f7c00 
@@ -538,7 +538,7 @@ a "mulsd xmm0, qword [eax]" f20f5900
 aB "mulsd xmm7, xmm7" 66f3f20f59ff 
 aB "mulsd xmm7, xmm7" f2660f59ff 
 a "mulss xmm0, dword [eax]" f30f5900 
-aB "mulss xmm7, xmm7" 66f2f0f59ff 
+aB "mulss xmm7, xmm7" 66f2f0f59ff0
 a "mwait" 0f01c9 
 a "neg byte [eax]" f618 
 a "nop" 90
