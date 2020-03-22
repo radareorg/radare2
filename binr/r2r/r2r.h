@@ -63,6 +63,7 @@ typedef struct r2r_json_test_t {
 	ut64 line;
 	char *cmd;
 	bool broken;
+	bool load_plugins;
 } R2RJsonTest;
 
 typedef enum r2r_test_type_t {
@@ -110,6 +111,15 @@ typedef enum r2r_test_result_t {
 	R2R_TEST_RESULT_FIXED
 } R2RTestResult;
 
+typedef struct r2r_test_result_info_t {
+	R2RTest *test;
+	R2RTestResult result;
+	union {
+		R2RProcessOutput *proc_out; // for test->type == R2R_TEST_TYPE_CMD or R2R_TEST_TYPE_JSON
+		R2RAsmTestOutput *asm_out;  // for test->type == R2R_TEST_TYPE_ASM
+	};
+} R2RTestResultInfo;
+
 R_API R2RCmdTest *r2r_cmd_test_new();
 R_API void r2r_cmd_test_free(R2RCmdTest *test);
 R_API RPVector *r2r_load_cmd_test_file(const char *file);
@@ -132,6 +142,8 @@ R_API void r2r_subprocess_fini();
 R_API void r2r_process_output_free(R2RProcessOutput *out);
 R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test);
 R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test);
+R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test);
+R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test);
 
 R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test);
 R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test);
@@ -139,6 +151,7 @@ R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out);
 
 R_API char *r2r_test_name(R2RTest *test);
 R_API bool r2r_test_broken(R2RTest *test);
-R_API R2RTestResult r2r_run_test(R2RRunConfig *config, R2RTest *test);
+R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test);
+R_API void r2r_test_result_info_free(R2RTestResultInfo *result);
 
 #endif //RADARE2_R2R_H

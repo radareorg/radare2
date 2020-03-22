@@ -479,7 +479,7 @@ R_API void r2r_test_database_free(R2RTestDatabase *db) {
 	free (db);
 }
 
-static R2RTestType test_type_for_path(const char *path) {
+static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 	R2RTestType ret = R2R_TEST_TYPE_CMD;
 	char *pathdup = strdup (path);
 	RList *tokens = r_str_split_list (pathdup, R_SYS_DIR, 0);
@@ -491,14 +491,18 @@ static R2RTestType test_type_for_path(const char *path) {
 	}
 	RListIter *it;
 	char *token;
+	*load_plugins = false;
 	r_list_foreach (tokens, it, token) {
 		if (strcmp (token, "asm") == 0) {
 			ret = R2R_TEST_TYPE_ASM;
-			break;
+			continue;
 		}
 		if (strcmp (token, "json") == 0) {
 			ret = R2R_TEST_TYPE_JSON;
-			break;
+			continue;
+		}
+		if (strcmp (token, "extras") == 0) {
+			*load_plugins = true;
 		}
 	}
 	r_list_free (tokens);
@@ -543,7 +547,8 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 
 	// Not a directory but exists, load a file
 	const char *pooled_path = r_str_constpool_get (&db->strpool, path);
-	R2RTestType test_type = test_type_for_path (path);
+	bool load_plugins = false;
+	R2RTestType test_type = test_type_for_path (path, &load_plugins);
 	switch (test_type) {
 	case R2R_TEST_TYPE_CMD: {
 		RPVector *cmd_tests = r2r_load_cmd_test_file (path);
@@ -559,6 +564,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			test->type = R2R_TEST_TYPE_CMD;
 			test->path = pooled_path;
 			test->cmd_test = *it;
+			test->cmd_test->load_plugins = load_plugins;
 			r_pvector_push (&db->tests, test);
 		}
 		r_pvector_free (cmd_tests);
@@ -596,7 +602,8 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			test->type = R2R_TEST_TYPE_JSON;
 			test->path = pooled_path;
-			test->asm_test = *it;
+			test->json_test = *it;
+			test->json_test->load_plugins = load_plugins;
 			r_pvector_push (&db->tests, test);
 		}
 		r_pvector_free (json_tests);

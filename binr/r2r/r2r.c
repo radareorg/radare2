@@ -55,10 +55,10 @@ int main(int argc, char **argv) {
 	void **it;
 	r_pvector_foreach (&db->tests, it) {
 		R2RTest *test = *it;
-		R2RTestResult result = r2r_run_test (&config, test);
+		R2RTestResultInfo *result = r2r_run_test (&config, test);
 		char *name = r2r_test_name (test);
 		printf ("%s: ", name ? name : "");
-		switch (result) {
+		switch (result->result) {
 		case R2R_TEST_RESULT_OK:
 			printf ("OK\n");
 			break;
@@ -72,6 +72,7 @@ int main(int argc, char **argv) {
 			printf ("FX\n");
 			break;
 		}
+		r2r_test_result_info_free (result);
 		free (name);
 	}
 

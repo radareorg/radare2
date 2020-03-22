@@ -287,15 +287,15 @@ R_API void r2r_process_output_free(R2RProcessOutput *out) {
 	free (out);
 }
 
-R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test) {
+static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, const char *file, bool load_plugins) {
 	const char *args[] = {
 		"-e", "scr.utf8=0",
 		"-e", "scr.color=0",
 		"-e", "scr.interactive=0",
 		"-N",
 		"-Qc",
-		test->cmds.value,
-		test->file.value
+		cmds,
+		file
 	};
 	const char *envvars[] = {
 		"R2_NOPLUGINS"
@@ -303,7 +303,7 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test)
 	const char *envvals[] = {
 		"1"
 	};
-	size_t env_size = test->load_plugins ? 0 : 1;
+	size_t env_size = load_plugins ? 0 : 1;
 	R2RSubprocess *proc = r2r_subprocess_start (config->r2_cmd, args, 10, envvars, envvals, env_size);
 	r2r_subprocess_wait (proc);
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
@@ -314,6 +314,10 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test)
 	}
 	r2r_subprocess_free (proc);
 	return out;
+}
+
+R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test) {
+	return run_r2_test (config, test->cmds.value, test->file.value, test->load_plugins);
 }
 
 R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
@@ -328,6 +332,18 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 	if (strcmp (out->err, expect_err) != 0) {
 		return false;
 	}
+	return true;
+}
+
+R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test) {
+	return run_r2_test (config, test->cmd, "--", test->load_plugins); // TODO: file?
+}
+
+R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
+	if (out->ret != 0 || !out->out || !out->err) {
+		return false;
+	}
+	// TODO: check json
 	return true;
 }
 
@@ -475,30 +491,59 @@ R_API bool r2r_test_broken(R2RTest *test) {
 	return false;
 }
 
-R_API R2RTestResult r2r_run_test(R2RRunConfig *config, R2RTest *test) {
+R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
+	R2RTestResultInfo *ret = R_NEW0 (R2RTestResultInfo);
+	if (!ret) {
+		return NULL;
+	}
+	ret->test = test;
 	bool success = false;
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD: {
 		R2RCmdTest *cmd_test = test->cmd_test;
 		R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test);
 		success = r2r_check_cmd_test (out, cmd_test);
-		r2r_process_output_free (out);
+		ret->proc_out = out;
 		break;
 	}
 	case R2R_TEST_TYPE_ASM: {
 		R2RAsmTest *asm_test = test->asm_test;
 		R2RAsmTestOutput *out = r2r_run_asm_test (config, asm_test);
 		success = r2r_check_asm_test (out, asm_test);
-		r2r_asm_test_output_free (out);
+		ret->asm_out = out;
 		break;
 	}
-	case R2R_TEST_TYPE_JSON:
-		eprintf ("TODO: run json test\n");
+	case R2R_TEST_TYPE_JSON: {
+		R2RJsonTest *json_test = test->json_test;
+		R2RProcessOutput *out = r2r_run_json_test (config, json_test);
+		success = r2r_check_json_test (out, json_test);
+		ret->proc_out = out;
 		break;
+	}
 	}
 	bool broken = r2r_test_broken (test);
 	if (!success) {
-		return broken ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
+		ret->result = broken ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
+	} else {
+		ret->result = broken ? R2R_TEST_RESULT_FIXED : R2R_TEST_RESULT_OK;
 	}
-	return broken ? R2R_TEST_RESULT_FIXED : R2R_TEST_RESULT_OK;
+	return ret;
+}
+
+R_API void r2r_test_result_info_free(R2RTestResultInfo *result) {
+	if (!result) {
+		return;
+	}
+	if (result->test) {
+		switch (result->test->type) {
+		case R2R_TEST_TYPE_CMD:
+		case R2R_TEST_TYPE_JSON:
+			r2r_process_output_free (result->proc_out);
+			break;
+		case R2R_TEST_TYPE_ASM:
+			r2r_asm_test_output_free (result->asm_out);
+			break;
+		}
+	}
+	free (result);
 }
