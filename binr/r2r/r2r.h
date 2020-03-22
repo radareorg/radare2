@@ -87,13 +87,20 @@ typedef struct r2r_test_database_t {
 
 typedef struct r2r_run_config_t {
 	const char *r2_cmd;
+	const char *rasm2_cmd;
 } R2RRunConfig;
 
-typedef struct r2r_test_output_t {
+typedef struct r2r_process_output_t {
 	char *out; // stdout
 	char *err; // stderr
 	int ret; // exit code of the process
-} R2RTestOutput;
+} R2RProcessOutput;
+
+typedef struct r2r_asm_test_output_t {
+	char *disasm;
+	ut8 *bytes;
+	size_t bytes_size;
+} R2RAsmTestOutput;
 
 typedef enum r2r_test_result_t {
 	R2R_TEST_RESULT_OK,
@@ -121,8 +128,16 @@ R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path);
 R_API bool r2r_subprocess_init();
 R_API void r2r_subprocess_fini();
 
-R_API R2RTestOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test);
-R_API void r2r_test_output_free(R2RTestOutput *out);
-R_API R2RTestResult r2r_test_output_check(R2RTestOutput *out, R2RCmdTest *test);
+R_API void r2r_process_output_free(R2RProcessOutput *out);
+R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test);
+R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test);
+
+R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test);
+R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test);
+R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out);
+
+R_API char *r2r_test_name(R2RTest *test);
+R_API bool r2r_test_broken(R2RTest *test);
+R_API R2RTestResult r2r_run_test(R2RRunConfig *config, R2RTest *test);
 
 #endif //RADARE2_R2R_H

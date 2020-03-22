@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
-	R2RRunConfig config = { "radare2" };
+	R2RRunConfig config = { "radare2", "rasm2" };
 	R2RTestDatabase *db = r2r_test_database_new ();
 	if (!db) {
 		return 1;
@@ -52,29 +52,18 @@ int main(int argc, char **argv) {
 		}
 	}
 
-#if 0
 	void **it;
 	r_pvector_foreach (&db->tests, it) {
 		R2RTest *test = *it;
-		if (test->type != R2R_TEST_TYPE_CMD) {
-			eprintf ("TODO: other types\n");
-			continue;
-		}
-		R2RCmdTest *cmd_test = test->cmd_test;
-		if (!cmd_test->name.value) {
-			eprintf ("horse with no name\n");
-		}
-		R2RTestOutput *out = r2r_run_cmd_test (&config, cmd_test);
-		R2RTestResult result = r2r_test_output_check (out, cmd_test);
-		printf ("%s: ", cmd_test->name.value ? cmd_test->name.value : "<unnamed>");
+		R2RTestResult result = r2r_run_test (&config, test);
+		char *name = r2r_test_name (test);
+		printf ("%s: ", name ? name : "");
 		switch (result) {
 		case R2R_TEST_RESULT_OK:
 			printf ("OK\n");
 			break;
 		case R2R_TEST_RESULT_FAILED:
 			printf ("XX\n");
-			printf("%s\n", out->out);
-			printf("%s\n", out->err);
 			break;
 		case R2R_TEST_RESULT_BROKEN:
 			printf ("BR\n");
@@ -83,9 +72,8 @@ int main(int argc, char **argv) {
 			printf ("FX\n");
 			break;
 		}
-		r2r_test_output_free (out);
+		free (name);
 	}
-#endif
 
 	r2r_test_database_free (db);
 	return 0;

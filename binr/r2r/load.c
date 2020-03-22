@@ -228,7 +228,6 @@ static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char 
 		r_list_free (file_tokens);
 		return false;
 	}
-	*arch_out = r_str_constpool_get (strpool, arch);
 	char *second = strchr (arch, '_');
 	if (second) {
 		*second = '\0';
@@ -247,6 +246,7 @@ static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char 
 		*cpuout = NULL;
 		*bitsout = 0;
 	}
+	*arch_out = r_str_constpool_get (strpool, arch);
 	r_list_free (file_tokens);
 	return true;
 }
@@ -324,6 +324,7 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 		}
 		*hex = '\0';
 		hex++;
+		r_str_trim (disasm);
 
 		while (*hex && *hex == ' ') {
 			hex++;
@@ -332,6 +333,7 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 		char *offset = strchr (hex, ' ');
 		if (offset) {
 			*offset = '\0';
+			offset++;
 		}
 
 		size_t hexlen = strlen (hex);

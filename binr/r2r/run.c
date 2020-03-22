@@ -268,7 +268,16 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	free (proc);
 }
 
-R_API R2RTestOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test) {
+R_API void r2r_process_output_free(R2RProcessOutput *out) {
+	if (!out) {
+		return;
+	}
+	free (out->out);
+	free (out->err);
+	free (out);
+}
+
+R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test) {
 	const char *args[] = {
 			"-e", "scr.color=0",
 			"-Qc",
@@ -277,7 +286,7 @@ R_API R2RTestOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test) {
 	};
 	R2RSubprocess *proc = r2r_subprocess_start (config->r2_cmd, args, 5);
 	r2r_subprocess_wait (proc);
-	R2RTestOutput *out = R_NEW (R2RTestOutput);
+	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
 	if (out) {
 		out->out = r_strbuf_drain_nofree (&proc->out);
 		out->err = r_strbuf_drain_nofree (&proc->err);
@@ -287,16 +296,7 @@ R_API R2RTestOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test) {
 	return out;
 }
 
-R_API void r2r_test_output_free(R2RTestOutput *out) {
-	if (!out) {
-		return;
-	}
-	free (out->out);
-	free (out->err);
-	free (out);
-}
-
-static bool test_check_success(R2RTestOutput *out, R2RCmdTest *test) {
+R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 	if (out->ret != 0 || !out->out || !out->err) {
 		return false;
 	}
@@ -313,10 +313,174 @@ static bool test_check_success(R2RTestOutput *out, R2RCmdTest *test) {
 	return true;
 }
 
-R_API R2RTestResult r2r_test_output_check(R2RTestOutput *out, R2RCmdTest *test) {
-	bool success = test_check_success (out, test);
-	if (!success) {
-		return test->broken.value ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
+R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test) {
+	R2RAsmTestOutput *out = R_NEW0 (R2RAsmTestOutput);
+	if (!out) {
+		return NULL;
 	}
-	return test->broken.value ? R2R_TEST_RESULT_FIXED : R2R_TEST_RESULT_OK;
+
+	RPVector args;
+	r_pvector_init (&args, NULL);
+
+	if (test->arch) {
+		r_pvector_push (&args, "-a");
+		r_pvector_push (&args, (void *)test->arch);
+	}
+
+	if (test->cpu) {
+		r_pvector_push (&args, "-c");
+		r_pvector_push (&args, (void *)test->cpu);
+	}
+
+	char bits[0x20];
+	if (test->bits) {
+		snprintf (bits, sizeof (bits), "%d", test->bits);
+		r_pvector_push (&args, "-b");
+		r_pvector_push (&args, bits);
+	}
+
+	if (test->mode & R2R_ASM_TEST_MODE_BIG_ENDIAN) {
+		r_pvector_push (&args, "-e");
+	}
+
+	char offset[0x20];
+	if (test->offset) {
+		r_snprintf (offset, sizeof (offset), "0x%"PFMT64x, test->offset);
+		r_pvector_push (&args, "-o");
+		r_pvector_push (&args, offset);
+	}
+
+	RStrBuf cmd_buf;
+	r_strbuf_init (&cmd_buf);
+	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
+		r_pvector_push (&args, test->disasm);
+		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args));
+		r2r_subprocess_wait (proc);
+		if (proc->ret != 0) {
+			goto rip;
+		}
+		char *hex = r_strbuf_get (&proc->out);
+		size_t hexlen = strlen (hex);
+		if (!hexlen) {
+			goto rip;
+		}
+		ut8 *bytes = malloc (hexlen);
+		int byteslen = r_hex_str2bin (hex, bytes);
+		if (byteslen <= 0) {
+			free (bytes);
+			goto rip;
+		}
+		out->bytes = bytes;
+		out->bytes_size = (size_t)byteslen;
+rip:
+		r_pvector_pop (&args);
+		r2r_subprocess_free (proc);
+	}
+	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
+		char *hex = r_hex_bin2strdup (test->bytes, test->bytes_size);
+		if (!hex) {
+			goto beach;
+		}
+		r_pvector_push (&args, "-d");
+		r_pvector_push (&args, hex);
+		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args));
+		r2r_subprocess_wait (proc);
+		if (proc->ret == 0) {
+			char *disasm = r_strbuf_drain_nofree (&proc->out);
+			r_str_trim (disasm);
+			out->disasm = disasm;
+		}
+		r_pvector_pop (&args);
+		r_pvector_pop (&args);
+		r2r_subprocess_free (proc);
+	}
+
+beach:
+	r_pvector_clear (&args);
+	r_strbuf_fini (&cmd_buf);
+	return out;
+}
+
+R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test) {
+	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
+		if (!out->bytes || !test->bytes || out->bytes_size != test->bytes_size) {
+			return false;
+		}
+		if (memcmp (out->bytes, test->bytes, test->bytes_size) != 0) {
+			return false;
+		}
+	}
+	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
+		if (!out->disasm || !test->disasm) {
+			return false;
+		}
+		if (strcmp (out->disasm, test->disasm) != 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out) {
+	if (!out) {
+		return;
+	}
+	free (out->disasm);
+	free (out->bytes);
+	free (out);
+}
+
+R_API char *r2r_test_name(R2RTest *test) {
+	switch (test->type) {
+	case R2R_TEST_TYPE_CMD:
+		if (test->cmd_test->name.value) {
+			return strdup (test->cmd_test->name.value);
+		}
+		return strdup ("<unnamed>");
+	case R2R_TEST_TYPE_ASM:
+		return r_str_newf ("<asm> %s", test->asm_test->disasm ? test->asm_test->disasm : "");
+	case R2R_TEST_TYPE_JSON:
+		return r_str_newf ("<json> %s", test->json_test->cmd ? test->json_test->cmd: "");
+	}
+	return NULL;
+}
+
+R_API bool r2r_test_broken(R2RTest *test) {
+	switch (test->type) {
+	case R2R_TEST_TYPE_CMD:
+		return test->cmd_test->broken.value;
+	case R2R_TEST_TYPE_ASM:
+		return test->asm_test->mode & R2R_ASM_TEST_MODE_BROKEN ? true : false;
+	case R2R_TEST_TYPE_JSON:
+		return test->json_test->broken;
+	}
+	return false;
+}
+
+R_API R2RTestResult r2r_run_test(R2RRunConfig *config, R2RTest *test) {
+	bool success = false;
+	switch (test->type) {
+	case R2R_TEST_TYPE_CMD: {
+		R2RCmdTest *cmd_test = test->cmd_test;
+		R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test);
+		success = r2r_check_cmd_test (out, cmd_test);
+		r2r_process_output_free (out);
+		break;
+	}
+	case R2R_TEST_TYPE_ASM: {
+		R2RAsmTest *asm_test = test->asm_test;
+		R2RAsmTestOutput *out = r2r_run_asm_test (config, asm_test);
+		success = r2r_check_asm_test (out, asm_test);
+		r2r_asm_test_output_free (out);
+		break;
+	}
+	case R2R_TEST_TYPE_JSON:
+		eprintf ("TODO: run json test\n");
+		break;
+	}
+	bool broken = r2r_test_broken (test);
+	if (!success) {
+		return broken ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
+	}
+	return broken ? R2R_TEST_RESULT_FIXED : R2R_TEST_RESULT_OK;
 }
