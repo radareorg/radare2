@@ -1013,9 +1013,9 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 
 static int cmd_an(RCore *core, bool use_json, const char *name)
 {
+	int ret = 0;
 	ut64 off = core->offset;
 	RAnalOp op;
-	char *q = NULL;
 	PJ *pj = NULL;
 	ut64 tgt_addr = UT64_MAX;
 
@@ -1027,15 +1027,17 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 	r_anal_op (core->anal, &op, off,
 			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
 
-	tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
+	tgt_addr = op.jump != UT64_MAX? op.jump: op.ptr;
 	if (op.var) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 		if (fcn) {
 			RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn->addr, op.var->name);
 			if (bar) {
 				if (name) {
-					r_anal_var_rename (core->anal, fcn->addr, bar->scope,
-									bar->kind, bar->name, name, true);
+					ret = r_anal_var_rename (core->anal, fcn->addr, bar->scope,
+						      bar->kind, bar->name, name, true)
+						? 0
+						: -1;
 				} else if (!use_json) {
 					r_cons_println (bar->name);
 				} else {
@@ -1056,7 +1058,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 		RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);
 		if (fcn) {
 			if (name) {
-				q = r_str_newf ("afn %s 0x%"PFMT64x, name, tgt_addr);
+				ret = r_anal_function_rename (fcn, name)? 0: -1;
 			} else if (!use_json) {
 				r_cons_println (fcn->name);
 			} else {
@@ -1068,7 +1070,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			}
 		} else if (f) {
 			if (name) {
-				q = r_str_newf ("fr %s %s", f->name, name);
+				ret = r_flag_rename (core->flags, f, name)? 0: -1;
 			} else if (!use_json) {
 				r_cons_println (f->name);
 			} else {
@@ -1088,7 +1090,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			}
 		} else {
 			if (name) {
-				q = r_str_newf ("f %s @ 0x%"PFMT64x, name, tgt_addr);
+				ret = r_flag_set (core->flags, name, tgt_addr, 1)? 0: -1;
 			} else if (!use_json) {
 				r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
 			} else {
@@ -1110,12 +1112,8 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 		pj_free (pj);
 	}
 
-	if (q) {
-		r_core_cmd0 (core, q);
-		free (q);
-	}
 	r_anal_op_fini (&op);
-	return 0;
+	return ret;
 }
 
 // EBP BASED
