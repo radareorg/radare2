@@ -26,6 +26,7 @@ typedef struct r2r_cmd_test_t {
 	R2RCmdTestStringRecord expect;
 	R2RCmdTestStringRecord expect_err;
 	R2RCmdTestBoolRecord broken;
+	bool load_plugins;
 } R2RCmdTest;
 
 #define R2R_CMD_TEST_FOREACH_RECORD_NOP(name, field)

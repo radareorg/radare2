@@ -78,7 +78,9 @@ R_API void r2r_subprocess_fini() {
 	r_th_lock_free (subprocs_mutex);
 }
 
-R_API R2RSubprocess *r2r_subprocess_start(const char *file, const char *args[], size_t args_size) {
+R_API R2RSubprocess *r2r_subprocess_start(
+		const char *file, const char *args[], size_t args_size,
+		const char *envvars[], const char *envvals[], size_t env_size) {
 	char **argv = calloc (args_size + 2, sizeof (char *));
 	if (!argv) {
 		return NULL;
@@ -148,6 +150,10 @@ R_API R2RSubprocess *r2r_subprocess_start(const char *file, const char *args[], 
 		close (stderr_pipe[1]);
 		close (stderr_pipe[0]);
 
+		size_t i;
+		for (i = 0; i < env_size; i++) {
+			setenv (envvars[i], envvals[i], 1);
+		}
 		execvp (file, argv);
 		perror ("exec");
 		goto error;
@@ -259,6 +265,10 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	if (!proc) {
 		return;
 	}
+	sigset_t old_sigset;
+	subprocs_lock (&old_sigset);
+	r_pvector_remove_data (&subprocs, proc);
+	subprocs_unlock (&old_sigset);
 	r_strbuf_fini (&proc->out);
 	r_strbuf_fini (&proc->err);;
 	close (proc->killpipe[0]);;
@@ -279,12 +289,22 @@ R_API void r2r_process_output_free(R2RProcessOutput *out) {
 
 R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test) {
 	const char *args[] = {
-			"-e", "scr.color=0",
-			"-Qc",
-			test->cmds.value,
-			test->file.value
+		"-e", "scr.utf8=0",
+		"-e", "scr.color=0",
+		"-e", "scr.interactive=0",
+		"-N",
+		"-Qc",
+		test->cmds.value,
+		test->file.value
 	};
-	R2RSubprocess *proc = r2r_subprocess_start (config->r2_cmd, args, 5);
+	const char *envvars[] = {
+		"R2_NOPLUGINS"
+	};
+	const char *envvals[] = {
+		"1"
+	};
+	size_t env_size = test->load_plugins ? 0 : 1;
+	R2RSubprocess *proc = r2r_subprocess_start (config->r2_cmd, args, 10, envvars, envvals, env_size);
 	r2r_subprocess_wait (proc);
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
 	if (out) {
@@ -304,11 +324,9 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 	if (strcmp (out->out, expect_out) != 0) {
 		return false;
 	}
-	if (test->expect_err.value) {
-		// TODO: Do we want to check stderr always?
-		if (strcmp (out->out, test->expect_err.value) != 0) {
-			return false;
-		}
+	const char *expect_err = test->expect_err.value ? test->expect_err.value : "";
+	if (strcmp (out->err, expect_err) != 0) {
+		return false;
 	}
 	return true;
 }
@@ -354,7 +372,7 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 	r_strbuf_init (&cmd_buf);
 	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
 		r_pvector_push (&args, test->disasm);
-		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args));
+		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args), NULL, NULL, 0);
 		r2r_subprocess_wait (proc);
 		if (proc->ret != 0) {
 			goto rip;
@@ -383,7 +401,7 @@ rip:
 		}
 		r_pvector_push (&args, "-d");
 		r_pvector_push (&args, hex);
-		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args));
+		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args), NULL, NULL, 0);
 		r2r_subprocess_wait (proc);
 		if (proc->ret == 0) {
 			char *disasm = r_strbuf_drain_nofree (&proc->out);
