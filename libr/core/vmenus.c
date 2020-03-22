@@ -939,12 +939,11 @@ static bool r_core_visual_config_hud(RCore *core) {
 	if (!list) {
 		return false;
 	}
-	char *res;
 	list->free = free;
 	r_list_foreach (core->config->nodes, iter, bt) {
 		r_list_append (list, r_str_newf ("%s %s", bt->name, bt->value));
 	}
-	res = r_cons_hud (list, NULL);
+	char *res = r_cons_hud (list, NULL);
 	if (res) {
 		const char *oldvalue = NULL;
 		char cmd[512];
@@ -954,15 +953,15 @@ static bool r_core_visual_config_hud(RCore *core) {
 		}
 		oldvalue = r_config_get (core->config, res);
 		r_cons_show_cursor (true);
-		r_cons_set_raw (0);
+		r_cons_set_raw (false);
 		cmd[0] = '\0';
-		eprintf ("set new value for %s (old=%s)\n", res, oldvalue);
+		eprintf ("Set new value for %s (old=%s)\n", res, oldvalue);
 		r_line_set_prompt (":> ");
 		if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 			cmd[0] = '\0';
 		}
 		r_config_set (core->config, res, cmd);
-		r_cons_set_raw (1);
+		r_cons_set_raw (true);
 		r_cons_show_cursor (false);
 	}
 	r_list_free (list);
@@ -981,6 +980,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 	RBinField *f, *fur = NULL;
 	int i = 0;
 	int skip = *idx - 10;
+	bool found = false;
 
 	switch (mode) {
 	case 'c':
@@ -1017,14 +1017,15 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			if (i++ == *idx) {
 				cur = c;
 			}
+			found = true;
 		}
 		if (!cur) {
 			*idx = i - 1;
-			if (r_list_empty (list)) {
+			if (!found) {
 				return NULL;
 			}
-			r_cons_clear00 ();
-			return show_class (core, mode, idx, _c, grep, list);
+			//  r_cons_clear00 ();
+			return NULL; // show_class (core, mode, idx, _c, "", list);
 		}
 		return cur;
 	case 'f':
