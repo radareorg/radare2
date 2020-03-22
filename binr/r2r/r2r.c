@@ -120,6 +120,8 @@ int main(int argc, char **argv) {
 
 	r_th_lock_leave (state.lock);
 
+	printf ("\n");
+
 	void **it;
 	r_pvector_foreach (&workers, it) {
 		RThread *th = *it;
@@ -223,7 +225,7 @@ static void print_result_diff(R2RTestResultInfo *result) {
 static void print_state(R2RState *state, ut64 prev_completed) {
 	printf ("\r\x1b[2K");
 
-	// Detaile test result (with diff if necessary)
+	// Detailed test result (with diff if necessary)
 	ut64 completed = (ut64)r_pvector_len (&state->results);
 	ut64 i;
 	for (i = prev_completed; i < completed; i++) {

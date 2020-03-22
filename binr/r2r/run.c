@@ -287,16 +287,22 @@ R_API void r2r_process_output_free(R2RProcessOutput *out) {
 	free (out);
 }
 
-static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, const char *file, bool load_plugins) {
-	const char *args[] = {
-		"-e", "scr.utf8=0",
-		"-e", "scr.color=0",
-		"-e", "scr.interactive=0",
-		"-N",
-		"-Qc",
-		cmds,
-		file
-	};
+static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, const char *file, RList *extra_args, bool load_plugins) {
+	RPVector args;
+	r_pvector_init (&args, NULL);
+	r_pvector_push (&args, "-escr.utf8=0");
+	r_pvector_push (&args, "-escr.color=0");
+	r_pvector_push (&args, "-escr.interactive=0");
+	r_pvector_push (&args, "-N");
+	r_pvector_push (&args, "-Qc");
+	r_pvector_push (&args, (void *)cmds);
+	r_pvector_push (&args, (void *)file);
+	RListIter *it;
+	void *extra_arg;
+	r_list_foreach (extra_args, it, extra_arg) {
+		r_pvector_push (&args, extra_arg);
+	}
+
 	const char *envvars[] = {
 		"R2_NOPLUGINS"
 	};
@@ -304,7 +310,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, con
 		"1"
 	};
 	size_t env_size = load_plugins ? 0 : 1;
-	R2RSubprocess *proc = r2r_subprocess_start (config->r2_cmd, args, 10, envvars, envvals, env_size);
+	R2RSubprocess *proc = r2r_subprocess_start (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size);
 	r2r_subprocess_wait (proc);
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
 	if (out) {
@@ -317,7 +323,10 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, con
 }
 
 R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test) {
-	return run_r2_test (config, test->cmds.value, test->file.value, test->load_plugins);
+	RList *extra_args = test->args.value ? r_str_split_duplist (test->args.value, " ") : NULL;
+	R2RProcessOutput *out = run_r2_test (config, test->cmds.value, test->file.value, extra_args, test->load_plugins);
+	r_list_free (extra_args);
+	return out;
 }
 
 R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
@@ -336,7 +345,7 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 }
 
 R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test) {
-	return run_r2_test (config, test->cmd, "--", test->load_plugins); // TODO: file?
+	return run_r2_test (config, test->cmd, "--", NULL, test->load_plugins); // TODO: file?
 }
 
 R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
