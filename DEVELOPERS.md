@@ -474,7 +474,7 @@ to contribute.
 ## HOW TO RELEASE
 
  - Set `RELEASE=1` in global.mk and r2-bindings/config.mk.acr.
- - Use `bsdtar` from libarchive package. GNU tar fis broken.
+ - Use `bsdtar` from libarchive package. GNU tar is broken.
 
   RADARE2
   ---
