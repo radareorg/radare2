@@ -43,7 +43,7 @@ You can also use [r2lrn](https://github.com/0ki/r2lrn) or r2golf for a hands-on 
 ## Operating Systems
 
 Windows (since XP), GNU/Linux, OS X, [Net|Free|Open]BSD,
-Android, iOS, OSX, QNX, Solaris, Haiku, FirefoxOS.
+Android, iOS, OSX, QNX, Solaris, Haiku, Firefox OS.
 
 ## Architectures
 
@@ -69,7 +69,7 @@ Native bindings are supported but the recommended way to interact with r2
 from other languages is by using [r2pipe](https://github.com/radareorg/radare2-r2pipe)
 
 Python, Ruby, JavaScript, Lua, Perl, PHP, Go, Rust, Swift, C#, Java,
-Shell, OCaml, Haskell, Scheme (Guile), CommonLisp, Clojure, Erlang, D,
+Shell, OCaml, Haskell, Scheme (Guile), Common Lisp, Clojure, Erlang, D,
 Vala/Genie, Prolog, Nim, Newlisp...
 
 # Install / Update
