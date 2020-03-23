@@ -3374,19 +3374,18 @@ static bool check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunc
 	}
 	if (core) {
 		ut64 off = r_anal_get_bbaddr (core->anal, core->offset);
-		if (off == UT64_MAX) {
-			return false;
-		}
-		char *title = get_title (off);
-		RANode *cur_anode = get_anode (g->curnode);
-		if (fcn && ((is_interactive && !cur_anode) || (cur_anode && strcmp (cur_anode->title, title)))) {
-			g->update_seek_on = r_agraph_get_node (g, title);
-			if (g->update_seek_on) {
-				r_agraph_set_curnode (g, g->update_seek_on);
-				g->force_update_seek = true;
+		if (off != UT64_MAX) {
+			char *title = get_title (off);
+			RANode *cur_anode = get_anode (g->curnode);
+			if (fcn && ((is_interactive && !cur_anode) || (cur_anode && strcmp (cur_anode->title, title)))) {
+				g->update_seek_on = r_agraph_get_node (g, title);
+				if (g->update_seek_on) {
+					r_agraph_set_curnode (g, g->update_seek_on);
+					g->force_update_seek = true;
+				}
 			}
+			free (title);
 		}
-		free (title);
 		g->can->color = r_config_get_i (core->config, "scr.color");
 		g->hints = r_config_get_i (core->config, "graph.hints");
 	}
@@ -4199,6 +4198,13 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			agraph_set_zoom (g, ZOOM_DEFAULT);
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			// update scroll (with minor shift)
+			break;
+			// Those hardcoded keys are useful only for aegi, should add subcommand of ag to set key actions
+		case '1':
+			r_core_cmd0 (core, "so;.aeg*");
+			break;
+		case '2':
+			r_core_cmd0 (core, "so-1;.aeg*");
 			break;
 		case '=':
 		{         // TODO: edit

@@ -5951,17 +5951,21 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					r_anal_esil_interrupt_free (esil, interrupt);
 				}
 				break;
-
-				// TODO: display help?
 			}
 		}
 		break;
 	case 'g': // "aeg"
-		if (input[1] == 'v') {
-			r_core_cmd0 (core, ".aeg;agg");
+		if (input[1] == 'i' || input[1] == 'v') {
+			char *oprompt = strdup (r_config_get (core->config, "cmd.gprompt"));
+			r_config_set (core->config, "cmd.gprompt", "pi 1");
+			r_core_cmd0 (core, ".aeg*;aggv");
+			r_config_set (core->config, "cmd.gprompt", oprompt);
+			free (oprompt);
+		} else if (!input[1]) {
+			r_core_cmd0 (core, ".aeg*;agg");
 		} else if (input[1] == ' ') {
 			r_core_anal_esil_graph (core, input + 2);
-		} else { // "*"
+		} else if (input[1] == '*') {
 			RAnalOp *aop = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_ESIL);
 			if (aop) {
 				const char *esilstr = r_strbuf_get (&aop->esil);
@@ -5969,6 +5973,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					r_core_anal_esil_graph (core, esilstr);
 				}
 			}
+		} else {
+			r_cons_printf ("Usage: aeg[iv*]\n");
+			r_cons_printf (" aeg  analyze current instruction as an esil graph\n");
+			r_cons_printf (" aeg* analyze current instruction as an esil graph\n");
+			r_cons_printf (" aegv and launch the visual interactive mode (.aeg*;aggv == aegv)\n");
 		}
 		break;
 	case 'b': // "aeb"
@@ -9200,7 +9209,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		cmd_anal_objc (core, input + 1, false);
 		break;
 	case 'e': // "aae"
-		if (input[1]) {
+		if (input[1] == 'f') { // "aaef
+			r_core_cmd0 (core, "aef@@@F");
+		} else if (input[1] == ' ') {
 			const char *len = (char *)input + 1;
 			char *addr = strchr (input + 2, ' ');
 			if (addr) {
