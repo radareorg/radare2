@@ -5575,6 +5575,66 @@ static void __core_anal_appcall(RCore *core, const char *input) {
 //	r_reg_arena_pop (core->dbg->reg);
 }
 
+static void __anal_esil_function(RCore *core, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	if (!core->anal->esil) {
+		r_core_cmd0 (core, "aeim");
+		// core->anal->esil = r_anal_esil_new (stacksize, 0, addrsize);
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
+			addr, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+	if (fcn) {
+		// emulate every instruction in the function recursively across all the basic blocks
+		r_list_foreach (fcn->bbs, iter, bb) {
+			ut64 pc = bb->addr;
+			ut64 end = bb->addr + bb->size;
+			RAnalOp op;
+			int ret, bbs = end - pc;
+			if (bbs < 1 || bbs > 0xfffff || pc >= end) {
+				eprintf ("Invalid block size\n");
+				continue;
+			}
+			// eprintf ("[*] Emulating 0x%08"PFMT64x" basic block 0x%08" PFMT64x " - 0x%08" PFMT64x "\r[", fcn->addr, pc, end);
+			ut8 *buf = calloc (1, bbs + 1);
+			if (!buf) {
+				break;
+			}
+			r_io_read_at (core->io, pc, buf, bbs);
+			int left;
+			bool opskip;
+			while (pc < end) {
+				left = R_MIN (end - pc, 32);
+				// r_asm_set_pc (core->assembler, pc);
+				ret = r_anal_op (core->anal, &op, pc, buf + pc - bb->addr, left, R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL); // read overflow
+				opskip = false;
+				switch (op.type) {
+				case R_ANAL_OP_TYPE_CALL:
+				case R_ANAL_OP_TYPE_RET:
+					opskip = true;
+					break;
+				}
+				if (ret) {
+					if (opskip) {
+						r_reg_set_value_by_role (core->anal->reg, R_REG_NAME_PC, pc);
+						r_anal_esil_parse (core->anal->esil, R_STRBUF_SAFEGET (&op.esil));
+						r_anal_esil_dumpstack (core->anal->esil);
+						r_anal_esil_stack_free (core->anal->esil);
+					}
+					pc += op.size;
+				} else {
+					pc += 4; // XXX
+				}
+				r_anal_op_fini (&op);
+			}
+			free (buf);
+		}
+	} else {
+		eprintf ("Cannot find function at 0x%08" PFMT64x "\n", addr);
+	}
+	r_anal_esil_free (core->anal->esil);
+}
+
 static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
@@ -5988,50 +6048,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		if (input[1] == 'a') { // "aefa"
 			r_anal_aefa (core, r_str_trim_head_ro (input + 2));
 		} else { // This should be aefb -> because its emulating all the bbs
-		RListIter *iter;
-		RAnalBlock *bb;
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
-							core->offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-		if (fcn) {
-			// emulate every instruction in the function recursively across all the basic blocks
-			r_list_foreach (fcn->bbs, iter, bb) {
-				ut64 pc = bb->addr;
-				ut64 end = bb->addr + bb->size;
-				RAnalOp op;
-				int ret, bbs = end - pc;
-				if (bbs < 1 || bbs > 0xfffff) {
-					eprintf ("Invalid block size\n");
-				}
-		//		eprintf ("[*] Emulating 0x%08"PFMT64x" basic block 0x%08" PFMT64x " - 0x%08" PFMT64x "\r[", fcn->addr, pc, end);
-				ut8 *buf = calloc (1, bbs + 1);
-				if (!buf) {
-					break;
-				}
-				r_io_read_at (core->io, pc, buf, bbs);
-				int left;
-				while (pc < end) {
-					left = R_MIN (end - pc, 32);
-					r_asm_set_pc (core->assembler, pc);
-					ret = r_anal_op (core->anal, &op, pc, buf + pc - bb->addr, left, R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL); // read overflow
-					if (op.type == R_ANAL_OP_TYPE_RET) {
-						break;
-					}
-					if (ret) {
-						r_reg_set_value_by_role (core->anal->reg, R_REG_NAME_PC, pc);
-						r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
-						r_anal_esil_dumpstack (esil);
-						r_anal_esil_stack_free (esil);
-						pc += op.size;
-					} else {
-						pc += 4; // XXX
-					}
-				}
-				free (buf);
-			}
-		} else {
-			eprintf ("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
-		}
-	} break;
+			// anal ESIL to REIL.
+			__anal_esil_function (core, core->offset);
+		} break;
 	case 't': // "aet"
 		switch (input[1]) {
 		case 'r': // "aetr"
