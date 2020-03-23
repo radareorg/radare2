@@ -1,7 +1,6 @@
 r_core_sources = [
   'anal_tp.c',
   'anal_objc.c',
-  'esil_data_flow.c',
   'casm.c',
   'blaze.c',
   'citem.c',

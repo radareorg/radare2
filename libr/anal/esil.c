@@ -1411,10 +1411,8 @@ R_API const char *r_anal_esil_trapstr(int type) {
 }
 
 R_API bool r_anal_esil_dumpstack(RAnalEsil *esil) {
+	r_return_val_if_fail (esil, false);
 	int i;
-	if (!esil) {
-		return false;
-	}
 	if (esil->trap) {
 		eprintf ("ESIL TRAP type %d code 0x%08x %s\n",
 			esil->trap, esil->trap_code,
