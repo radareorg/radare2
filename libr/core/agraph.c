@@ -3343,7 +3343,7 @@ static void agraph_update_title(RCore *core, RAGraph *g, RAnalFunction *fcn) {
 
 /* look for any change in the state of the graph
  * and update what's necessary */
-static int check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunction *fcn) {
+static bool check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunction *fcn) {
 	int oldpos[2] = {
 		0, 0
 	};
@@ -3413,7 +3413,7 @@ static int check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunct
 
 static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFunction *fcn) {
 	int h, w = r_cons_get_size (&h);
-	int ret = check_changes (g, is_interactive, core, fcn);
+	bool ret = check_changes (g, is_interactive, core, fcn);
 	if (!ret) {
 		return false;
 	}
@@ -3647,7 +3647,7 @@ static void agraph_sdb_init(const RAGraph *g) {
 R_API Sdb *r_agraph_get_sdb(RAGraph *g) {
 	g->need_update_dim = true;
 	g->need_set_layout = true;
-	check_changes (g, false, NULL, NULL);
+	(void)check_changes (g, false, NULL, NULL);
 	//remove_dummy_nodes (g);
 	return g->db;
 }
@@ -4139,7 +4139,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	grd->g = g;
 	grd->fs = is_interactive == 1;
 	grd->core = core;
-	grd->follow_offset = _fcn ? false : true;
+	grd->follow_offset = _fcn == NULL;
 	grd->fcn = fcn != NULL? &fcn: NULL;
 	ret = agraph_refresh (grd);
 	if (!ret || is_interactive != 1) {
