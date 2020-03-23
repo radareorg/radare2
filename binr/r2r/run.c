@@ -2,10 +2,32 @@
 
 #include "r2r.h"
 
+#if __WINDOWS__
+struct r2r_subprocess_t {
+	int ret;
+	RStrBuf out;
+	RStrBuf err;
+};
+
+R_API bool r2r_subprocess_init() { return true; }
+R_API void r2r_subprocess_fini() {}
+
+R_API R2RSubprocess *r2r_subprocess_start(
+		const char *file, const char *args[], size_t args_size,
+		const char *envvars[], const char *envvals[], size_t env_size) {
+	(void)file, (void)args, (void)args_size, (void)envvars, (void)envvals, (void)env_size;
+	eprintf ("TODO: implement r2r_subprocess API for windows\n");
+	exit (1);
+}
+
+R_API void r2r_subprocess_wait(R2RSubprocess *proc) {}
+R_API void r2r_subprocess_free(R2RSubprocess *proc) {}
+#else
+
 #include <errno.h>
 #include <sys/wait.h>
 
-typedef struct {
+struct r2r_subprocess_t {
 	pid_t pid;
 	int stdout_fd;
 	int stderr_fd;
@@ -13,7 +35,7 @@ typedef struct {
 	int ret;
 	RStrBuf out;
 	RStrBuf err;
-} R2RSubprocess;
+};
 
 static RPVector subprocs;
 static RThreadLock *subprocs_mutex;
@@ -277,6 +299,7 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	close (proc->stderr_fd);
 	free (proc);
 }
+#endif
 
 R_API void r2r_process_output_free(R2RProcessOutput *out) {
 	if (!out) {
