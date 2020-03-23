@@ -71,10 +71,10 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	if (optind < argc) {
+	if (r_optind < argc) {
 		// Manually specified path(s)
 		int i;
-		for (i = optind; i < argc; i++) {
+		for (i = r_optind; i < argc; i++) {
 			if (!r2r_test_database_load (state.db, argv[i])) {
 				eprintf ("Failed to load tests from \"%s\"\n", argv[i]);
 				r2r_test_database_free (state.db);
