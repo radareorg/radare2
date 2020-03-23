@@ -35,4 +35,5 @@ option('use_webui', type: 'boolean', value: false, description: 'install differe
 option('shell_parser_in_builddir', type: 'boolean', value: true, description: 'When true, radare2-shell-parser is downloaded in the build directory')
 option('tree_sitter_in_builddir', type: 'boolean', value: true, description: 'When true, tree-sitter is downloaded in the build directory')
 
-option('build_tests', type: 'boolean', value: false, description: 'Build unit tests in test/unit')
+option('enable_tests', type: 'boolean', value: false, description: 'Build unit tests in test/unit')
+option('enable_r2r', type: 'boolean', value: true, description: 'Build r2r executable for regression testing')
