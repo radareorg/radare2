@@ -1,3 +1,22 @@
+NAME=ao 10~bytes
+FILE=../bins/pe/15004.file
+CMDS=<<EOF
+ao 10~bytes
+EOF
+EXPECT=<<EOF
+bytes: e8d8170000
+bytes: 8d642444
+bytes: 0f85a6300000
+bytes: 60
+bytes: e84f0d0000
+bytes: f6d0
+bytes: 8d81c6140e8f
+bytes: 50
+bytes: 891c24
+bytes: 9c
+EOF
+RUN
+
 NAME=hang-on-aa/-aac fix (#15004)
 FILE=../bins/pe/15004.file
 CMDS=<<EOF

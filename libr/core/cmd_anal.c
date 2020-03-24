@@ -1634,9 +1634,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
-		// TODO: use more anal hints
-		hint = r_anal_hint_get (core->anal, addr);
 		r_asm_set_pc (core->assembler, addr);
+		hint = r_anal_hint_get (core->anal, addr);
 		ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx,
 			R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_OPEX | R_ANAL_OP_MASK_HINT);
 		(void)r_asm_disassemble (core->assembler, &asmop, buf + idx, len - idx);
@@ -1665,7 +1664,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			free (mnem);
 			break;
 		}
-		size = (hint && hint->size)? hint->size: op.size;
+		size = op.size;
 		if (fmt == 'd') {
 			char *opname = strdup (r_asm_op_get_asm (&asmop));
 			if (opname) {
@@ -1778,7 +1777,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			pj_kn (pj, "addr", core->offset + idx);
 			{
-				char *bytes = r_hex_bin2strdup (buf + idx, ret);
+				char *bytes = r_hex_bin2strdup (buf + idx, size);
 				pj_ks (pj, "bytes", bytes);
 				free (bytes);
 			}
@@ -1919,8 +1918,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			int minsz = R_MIN (len, size);
 			minsz = R_MAX (minsz, 0);
 			for (j = 0; j < minsz; j++) {
-				ut8 ch = ((j + idx - 1) > minsz)? 0xff: buf[j + idx];
-				r_cons_printf ("%02x", ch);
+				r_cons_printf ("%02x", buf[idx + j]);
 			}
 			r_cons_newline ();
 			if (op.val != UT64_MAX) {
