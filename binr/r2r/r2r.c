@@ -100,6 +100,7 @@ int main(int argc, char **argv) {
 	for (i = 0; i < workers_count; i++) {
 		RThread *th = r_th_new (worker_th, &state, 0);
 		if (!th) {
+			eprintf ("Failed to start thread.\n");
 			exit (-1);
 		}
 		r_pvector_push (&workers, th);
@@ -109,7 +110,7 @@ int main(int argc, char **argv) {
 	while (true) {
 		ut64 completed = (ut64)r_pvector_len (&state.results);
 		if (completed != prev_completed) {
-			print_state(&state, prev_completed);
+			print_state (&state, prev_completed);
 			prev_completed = completed;
 			if (completed == r_pvector_len (&state.db->tests)) {
 				break;
@@ -223,7 +224,7 @@ static void print_result_diff(R2RTestResultInfo *result) {
 }
 
 static void print_state(R2RState *state, ut64 prev_completed) {
-	printf ("\r\x1b[2K");
+	printf (R_CONS_CLEAR_LINE);
 
 	// Detailed test result (with diff if necessary)
 	ut64 completed = (ut64)r_pvector_len (&state->results);
