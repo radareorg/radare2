@@ -4858,7 +4858,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	}
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
-	showcursor(core, true);
 	if (update_seek) {
 		return -1;
 	}
