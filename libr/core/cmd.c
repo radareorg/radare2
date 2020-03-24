@@ -3616,7 +3616,7 @@ ignore:
 		r_str_trim_head (ptr + 1);
 		offstr = ptr + 1;
 
-		addr = r_num_math (core->num, offstr);
+		addr = (*offstr == '{')? core->offset: r_num_math (core->num, offstr);
 		addr_is_set = true;
 
 		if (isalpha ((ut8)ptr[1]) && !addr) {
@@ -3660,26 +3660,31 @@ next_arroba:
 			}
 		} else {
 			bool tmpseek = false;
-			const char *fromvars[] = { "anal.from", "diff.from", "graph.from",
-				"io.buffer.from", "lines.from", "search.from", "zoom.from", NULL };
-			const char *tovars[] = { "anal.to", "diff.to", "graph.to",
-				"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
+			const char *fromvars[] = { "anal.from", "diff.from", "graph.from", "search.from", "zoom.from", NULL };
+			const char *tovars[] = { "anal.to", "diff.to", "graph.to", "search.to", "zoom.to", NULL };
 			ut64 curfrom[R_ARRAY_SIZE (fromvars) - 1], curto[R_ARRAY_SIZE (tovars) - 1];
 
-			// "@(A B)"
-			if (ptr[1] == '(') {
-				char *range = ptr + 3;
+			// "@{A B}"
+			if (ptr[1] == '{') {
+				char *range = ptr + 2;
 				char *p = strchr (range, ' ');
 				if (!p) {
-					eprintf ("Usage: / ABCD @..0x1000 0x3000\n");
+					eprintf ("Usage: / ABCD @{0x1000 0x3000}\n");
+					eprintf ("Run command and define the following vars:\n");
+					eprintf (" (anal|diff|graph|search|zoom).{from,to}\n");
 					free (tmpeval);
 					free (tmpasm);
 					free (tmpbits);
 					goto fail;
 				}
+				char *arg = p + 1;
+				int arg_len = strlen (arg);
+				if (arg_len > 0) {
+					arg[arg_len - 1] = 0;
+				}
 				*p = '\x00';
 				ut64 from = r_num_math (core->num, range);
-				ut64 to = r_num_math (core->num, p + 1);
+				ut64 to = r_num_math (core->num, arg);
 				// save current ranges
 				for (i = 0; fromvars[i]; i++) {
 					curfrom[i] = r_config_get_i (core->config, fromvars[i]);
