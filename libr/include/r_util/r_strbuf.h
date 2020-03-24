@@ -27,6 +27,7 @@ R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...);
 R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap);
 R_API char *r_strbuf_get(RStrBuf *sb);
 R_API char *r_strbuf_drain(RStrBuf *sb);
+R_API char *r_strbuf_drain_nofree(RStrBuf *sb);
 R_API int r_strbuf_length(RStrBuf *sb);
 R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);

@@ -8,6 +8,10 @@ BTOP=$(shell pwd)
 
 BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarun2 ragg2 r2agent
 
+ifeq ($(WANT_R2R),1)
+    BINS+=r2r
+endif
+
 LIBR2=$(call libname-version,libr2.$(EXT_SO),${LIBVERSION})
 
 all: preload
