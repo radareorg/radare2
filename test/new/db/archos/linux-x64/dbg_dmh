@@ -31,7 +31,7 @@ EOF
 RUN
 
 NAME=dmh/dmha with memory dump
-FILE=../bins/heap/linux_glibc_x64.bin
+FILE=../bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF
 #re-map arena and [heap]
@@ -52,7 +52,7 @@ EOF
 RUN
 
 NAME=dmht with memory dump
-FILE=../bins/heap/linux_glibc_x64.bin
+FILE=../bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF
 #re-map arena and [heap]
