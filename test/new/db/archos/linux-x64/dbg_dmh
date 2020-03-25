@@ -50,3 +50,22 @@ EXPECT=<<EOF
 2
 EOF
 RUN
+
+NAME=dmht with memory dump
+FILE=../bins/heap/linux_glibc_x64.bin
+ARGS=-n
+CMDS=<<EOF
+#re-map arena and [heap]
+om 3 0x7ffff7f8a000 0x898 0x0 rw- arena
+om 3 0x555555559000 0x3200 0x898 rw- [heap]
+
+e dbg.glibc.tcache=0
+dmht~?items[5]
+e dbg.glibc.tcache=1
+dmht~?items[5]
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+RUN
