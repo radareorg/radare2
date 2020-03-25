@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2020 - earada, pancake */
 
 #include <r_core.h>
 #include <r_config.h>
@@ -3307,18 +3307,22 @@ static int bin_size(RCore *r, int mode) {
 }
 
 static int bin_libs(RCore *r, int mode) {
-	RList *libs;
 	RListIter *iter;
 	char* lib;
 	int i = 0;
+	PJ *pj = NULL;
 
-	if (!(libs = r_bin_get_libs (r->bin))) {
-		return false;
-	}
+	RList *libs = r_bin_get_libs (r->bin);
 	if (IS_MODE_JSON (mode)) {
-		r_cons_print ("[");
-	} else if (IS_MODE_NORMAL (mode)) {
-		r_cons_println ("[Linked libraries]");
+		pj = pj_new ();
+		pj_a (pj);
+	} else {
+		if (!libs) {
+			return false;
+		}
+		if (IS_MODE_NORMAL (mode)) {
+			r_cons_println ("[Linked libraries]");
+		}
 	}
 	r_list_foreach (libs, iter, lib) {
 		if (IS_MODE_SET (mode)) {
@@ -3327,7 +3331,7 @@ static int bin_libs(RCore *r, int mode) {
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("\"CCa entry0 %s\"\n", lib);
 		} else if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("%s\"%s\"", iter->p ? "," : "", lib);
+			pj_s (pj, lib);
 		} else {
 			// simple and normal print mode
 			r_cons_println (lib);
@@ -3335,13 +3339,13 @@ static int bin_libs(RCore *r, int mode) {
 		i++;
 	}
 	if (IS_MODE_JSON (mode)) {
-		r_cons_print ("]");
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_printf ("%s", s);
+		free (s);
 	} else if (IS_MODE_NORMAL (mode)) {
-		if (i == 1) {
-			r_cons_printf ("\n%i library\n", i);
-		} else {
-			r_cons_printf ("\n%i libraries\n", i);
-		}
+		const char *libstr = (i > 1)? "libraries": "library";
+		r_cons_printf ("\n%i %s\n", i, libstr);
 	}
 	return true;
 }
