@@ -118,15 +118,16 @@ gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
 		}
 	} while (*p++);
 
-	gdb_reg_t *gdb_regs = malloc (r_list_length (gdb_regs_list) * sizeof (gdb_reg_t));
+	gdb_reg_t *gdb_regs = malloc (r_list_length (gdb_regs_list) + 1 * sizeof (gdb_reg_t));
 	if (!gdb_regs) {
 		return NULL;
 	}
 	i = 0;
 	r_list_foreach (gdb_regs_list, iter, reg) {
-		memcpy (reg, gdb_regs + (i * sizeof (gdb_reg_t)), sizeof (gdb_reg_t));
+		memcpy (reg, gdb_regs + i, sizeof (gdb_reg_t));
 		i++;
 	}
+	memset (gdb_regs + i, 0, sizeof (gdb_reg_t));
 
 	r_list_free (gdb_regs_list);
 	return gdb_regs;
