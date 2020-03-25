@@ -7250,7 +7250,7 @@ repeat:
 	goto repeat;
 exit:
     if (!originVmode) {
-        r_core_visual_showcursor(core, true);
+        r_core_visual_showcursor (core, true);
     }
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
