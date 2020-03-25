@@ -757,6 +757,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		} else {
 			*ptr++ = '\0';
 			port = ptr;
+			r_str_trim (port);
 		}
 	} else {
 		port = NULL;
@@ -775,7 +776,6 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		}
 	}
 
-	r_str_trim (port);
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
 		return;
