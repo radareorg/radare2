@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2018 - n4x0r, soez, pancake */
+/* radare2 - LGPL - Copyright 2016-2020 - n4x0r, soez, pancake */
 
 #ifndef INCLUDE_HEAP_GLIBC_C
 #define INCLUDE_HEAP_GLIBC_C
@@ -35,9 +35,9 @@ static bool GH(is_tcache)(RCore *core) {
 			}
 		}
 	} else {
-		v = r_config_get_i (core->config, "dbg.glibc.tcache");
-		eprintf ("dbg.glibc.tcache = %i\n", (int)v);
-		return (int)v;
+		int tcv = r_config_get_i (core->config, "dbg.glibc.tcache");
+		eprintf ("dbg.glibc.tcache = %i\n", tcv);
+		return tcv != 0;
 	}
 	if (fp) {
 		v = r_num_get_float (NULL, fp + 5);
