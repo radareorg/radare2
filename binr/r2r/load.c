@@ -529,6 +529,10 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			if (*subname == '.') {
 				continue;
 			}
+			if (strcmp (subname, "extras") == 0) {
+				// Only load "extras" dirs if explicitly specified
+				continue;
+			}
 			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
 			if (!database_load (db, r_strbuf_get (&subpath), depth - 1)) {
 				ret = false;
