@@ -104,7 +104,9 @@ RUN
 NAME=no-nl-at-eof script
 FILE=-
 CMDS=!radare2 -i scripts/no-nl-at-eof.r2 -NQ -
-EXPECT=1
+EXPECT=<<EOF
+1
+EOF
 EXPECT_ERR=<<EOF
 EOF
 RUN
@@ -117,5 +119,7 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=Script 'script/missing.r2' not found.
+EXPECT_ERR=<<EOF
+Script 'script/missing.r2' not found.
+EOF
 RUN

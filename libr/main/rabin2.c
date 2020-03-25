@@ -1173,7 +1173,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		rabin_do_operation (bin, op, rad, output, file);
 	}
 	if (isradjson) {
-		r_cons_print ("}");
+		r_cons_print ("}\n");
 	}
 	r_cons_flush ();
 	r_core_file_free (fh);
