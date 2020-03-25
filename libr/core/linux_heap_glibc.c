@@ -36,7 +36,7 @@ static bool GH(is_tcache)(RCore *core) {
 		}
 	} else {
 		v = r_config_get_i (core->config, "dbg.glibc.tcache");
-		eprintf ("dbg.glibc.tcache = %d\n", v);
+		eprintf ("dbg.glibc.tcache = %i\n", (int)v);
 		return (int)v;
 	}
 	if (fp) {
