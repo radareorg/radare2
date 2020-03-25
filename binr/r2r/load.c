@@ -92,6 +92,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 		r_strbuf_free (buf);
 		return NULL;
 	}
+
 	return strdup (val);
 }
 
@@ -172,9 +173,9 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
 			} \
 			test->field.set = true; \
-			if (strcmp (val, "1") != 0) { \
+			if (strcmp (val, "1") == 0) { \
 				test->field.value = true; \
-			} else if (strcmp (val, "0") != 0) { \
+			} else if (strcmp (val, "0") == 0) { \
                 test->field.value = false; \
 			} else { \
 				eprintf (LINEFMT "Error: Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed.\n", file, linenum, val, key); \
