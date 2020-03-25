@@ -183,7 +183,6 @@ static void print_diff(const char *actual, const char *expected) {
 #if DO_DIFF
 	RDiff *d = r_diff_new ();
 	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)actual, (int)strlen (actual));
-	printf ("%s\n", uni);
 	r_diff_free (d);
 
 	RList *lines = r_str_split_duplist(uni, "\n");
@@ -208,6 +207,7 @@ static void print_diff(const char *actual, const char *expected) {
 	}
 	r_list_free (lines);
 	free (uni);
+	printf ("\n");
 #else
 	RList *lines = r_str_split_duplist (expected, "\n");
 	RListIter *it;
