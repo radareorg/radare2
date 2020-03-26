@@ -1327,6 +1327,14 @@ static void listOffset(RAnal *a, RSignItem *it, int format) {
 	}
 }
 
+static void print_list_closure(RAnal *a, int format) {
+	if (format == 'j') {
+		a->cb_printf ("],");
+	} else {
+		a->cb_printf ("\n");
+	}
+}
+
 static void listVars(RAnal *a, RSignItem *it, int format) {
 	RListIter *iter = NULL;
 	char *var = NULL;
@@ -1361,18 +1369,10 @@ static void listVars(RAnal *a, RSignItem *it, int format) {
 		i++;
 	}
 
-	if (format == 'j') {
-		a->cb_printf ("],");
-	} else {
-		a->cb_printf ("\n");
-	}
+	print_list_closure (a, format);
 }
 
-static void listTypes(RAnal *a, RSignItem *it, int format) {
-	RListIter *iter = NULL;
-	char *type = NULL;
-	int i = 0;
-
+static void print_list_type_header(RAnal *a, RSignItem *it, int format) {
 	if (format == '*') {
 		a->cb_printf ("za %s t ", it->name);
 	} else if (format == 'q') {
@@ -1383,6 +1383,47 @@ static void listTypes(RAnal *a, RSignItem *it, int format) {
 	} else {
 		a->cb_printf ("  types: ");
 	}
+}
+
+static void print_function_args_json(RAnal *a, char *arg_type) {
+	char *arg_name = strchr (arg_type, ',');
+
+	if (arg_name == NULL) {
+		return;
+	}
+
+	*arg_name = '\0';
+	++arg_name;
+
+	size_t len_arg_name = strlen (arg_name);
+	arg_name[len_arg_name - 2] = '\0';
+
+	a->cb_printf ("{\"name\":\"%s\",\"type\":\"%s\"}", arg_name, arg_type + 2);
+}
+
+static void print_type_json(RAnal *a, char *type, size_t pos) {
+	char *str_type = strchr (type, '=');
+
+	if (str_type == NULL) {
+		return;
+	}
+
+	*str_type = '\0';
+	++str_type;
+
+	if (pos == 0) { // ret value
+		a->cb_printf ("{\"name\":\"%s\",\"type\":\"%s\"}", type, str_type);
+	} else if (pos == 1) { // nb args
+		a->cb_printf ("{\"%s\":%s}", type, str_type);
+	} else {
+		print_function_args_json (a, str_type);
+	}
+}
+
+static void print_list_type_body(RAnal *a, RSignItem *it, int format) {
+	int i = 0;
+	char *type = NULL;
+	RListIter *iter = NULL;
 
 	r_list_foreach (it->types, iter, type) {
 		if (i > 0) {
@@ -1390,13 +1431,16 @@ static void listTypes(RAnal *a, RSignItem *it, int format) {
 				a->cb_printf (" ");
 			} else if (format == 'j') {
 				a->cb_printf (",");
+				if (i == 2) {
+					a->cb_printf ("{\"func.%s.args\":[", it->name);
+				}
 			} else {
 				a->cb_printf (", ");
 			}
 		}
 		if (format == 'j') {
 			char *t = r_str_escape_utf8_for_json (type, -1);
-			a->cb_printf ("\"%s\"", t);
+			print_type_json(a, t, i);
 			free (t);
 		} else {
 			a->cb_printf ("%s", type);
@@ -1404,11 +1448,14 @@ static void listTypes(RAnal *a, RSignItem *it, int format) {
 		i++;
 	}
 
-	if (format == 'j') {
-		a->cb_printf ("],");
-	} else {
-		a->cb_printf ("\n");
-	}
+	if (i >= 2)
+		a->cb_printf ("]}", it->name);
+}
+
+static void listTypes(RAnal *a, RSignItem *it, int format) {
+	print_list_type_header (a, it, format);
+	print_list_type_body (a, it, format);
+	print_list_closure (a, format);
 }
 
 static void listXRefs(RAnal *a, RSignItem *it, int format) {
@@ -1447,11 +1494,7 @@ static void listXRefs(RAnal *a, RSignItem *it, int format) {
 		i++;
 	}
 
-	if (format == 'j') {
-		a->cb_printf ("],");
-	} else {
-		a->cb_printf ("\n");
-	}
+	print_list_closure(a, format);
 }
 
 static void listRefs(RAnal *a, RSignItem *it, int format) {
@@ -1490,11 +1533,7 @@ static void listRefs(RAnal *a, RSignItem *it, int format) {
 		i++;
 	}
 
-	if (format == 'j') {
-		a->cb_printf ("],");
-	} else {
-		a->cb_printf ("\n");
-	}
+	print_list_closure(a, format);
 }
 
 static void listHash(RAnal *a, RSignItem *it, int format) {
