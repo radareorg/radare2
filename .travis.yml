@@ -23,6 +23,7 @@ jobs:
     - os: linux
       name: Debian
       dist: xenial
+      if: branch = master
       env: COMPILER_NAME=gcc DEBPKG=1 CC=gcc CFLAGS="-O2 -DR2_ASSERT_STDOUT=1"
     # Linux with GCC
     - os: linux
