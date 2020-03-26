@@ -185,24 +185,24 @@ static void print_diff(const char *actual, const char *expected) {
 	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)actual, (int)strlen (actual));
 	r_diff_free (d);
 
-	RList *lines = r_str_split_duplist(uni, "\n");
+	RList *lines = r_str_split_duplist (uni, "\n");
 	RListIter *it;
 	char *line;
 	r_list_foreach (lines, it, line) {
 		char c = *line;
 		switch (c) {
-			case '+':
-				printf (Color_GREEN);
-				break;
-			case '-':
-				printf (Color_RED);
-				break;
-			default:
-				break;
+		case '+':
+			printf ("%s", Color_GREEN);
+			break;
+		case '-':
+			printf ("%s", Color_RED);
+			break;
+		default:
+			break;
 		}
 		printf ("%s\n", line);
 		if (c == '+' || c == '-') {
-			printf (Color_RESET);
+			printf ("%s", Color_RESET);
 		}
 	}
 	r_list_free (lines);

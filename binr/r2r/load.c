@@ -173,9 +173,9 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
 			} \
 			test->field.set = true; \
-			if (strcmp (val, "1") == 0) { \
+			if (!strcmp (val, "1")) { \
 				test->field.value = true; \
-			} else if (strcmp (val, "0") == 0) { \
+			} else if (!strcmp (val, "0")) { \
                 test->field.value = false; \
 			} else { \
 				eprintf (LINEFMT "Error: Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed.\n", file, linenum, val, key); \
@@ -494,15 +494,15 @@ static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 	char *token;
 	*load_plugins = false;
 	r_list_foreach (tokens, it, token) {
-		if (strcmp (token, "asm") == 0) {
+		if (!strcmp (token, "asm")) {
 			ret = R2R_TEST_TYPE_ASM;
 			continue;
 		}
-		if (strcmp (token, "json") == 0) {
+		if (!strcmp (token, "json")) {
 			ret = R2R_TEST_TYPE_JSON;
 			continue;
 		}
-		if (strcmp (token, "extras") == 0) {
+		if (!strcmp (token, "extras")) {
 			*load_plugins = true;
 		}
 	}
