@@ -56,7 +56,7 @@ EXPECT=<<EOF
 {"string":"...\"..\u00ef\u00bf\u00bd\u00ef\u00bf\u00bd\u00ef","offset":0,"section":"unknown","length":13,"type":"utf"}
 EOF
 CMDS=<<EOF
-wz ..."..����...
+"wz ...\"..����..."
 psj 13
 EOF
 RUN

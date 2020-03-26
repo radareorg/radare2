@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2018 - n4x0r, soez, pancake */
+/* radare2 - LGPL - Copyright 2016-2020 - n4x0r, soez, pancake */
 
 #ifndef INCLUDE_HEAP_GLIBC_C
 #define INCLUDE_HEAP_GLIBC_C
@@ -35,19 +35,26 @@ static bool GH(is_tcache)(RCore *core) {
 			}
 		}
 	} else {
-		RIOMap *map;
-		SdbListIter *iter;
-		ls_foreach (core->io->maps, iter, map) {
-			fp = strstr (map->name, "libc-");
-			if (fp) {
-				break;
-			}
-		}
+		int tcv = r_config_get_i (core->config, "dbg.glibc.tcache");
+		eprintf ("dbg.glibc.tcache = %i\n", tcv);
+		return tcv != 0;
 	}
 	if (fp) {
 		v = r_num_get_float (NULL, fp + 5);
 	}
 	return (v > 2.25);
+}
+
+static GHT GH(tcache_chunk_size)(RCore *core, GHT brk_start) {
+	GHT sz = 0;
+
+	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
+	if (!cnk) {
+		return sz;
+	}
+	r_io_read_at (core->io, brk_start, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+	sz = (cnk->size >> 3) << 3; //clear chunk flag
+	return sz;
 }
 
 static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, MallocState *main_arena) {
@@ -77,7 +84,7 @@ static void GH(update_arena_without_tc)(GH(RHeap_MallocState) *cmain_arena, Mall
 	int i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
-	for (i = 0; i < BINMAPSIZE; i++ ) {
+	for (i = 0; i < BINMAPSIZE; i++) {
 		main_arena->binmap[i] = cmain_arena->binmap[i];
 	}
 	main_arena->attached_threads = 1;
@@ -121,20 +128,24 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
-			if (strstr (map->name, "[heap]")) {
-				*brk_start = map->addr;
-				*brk_end = map->addr_end;
-				break;
+			if (map->name) {
+				if (strstr (map->name, "[heap]")) {
+					*brk_start = map->addr;
+					*brk_end = map->addr_end;
+					break;
+				}
 			}
 		}
 	} else {
 		RIOMap *map;
 		SdbListIter *iter;
 		ls_foreach (core->io->maps, iter, map) {
-			if (strstr (map->name, "[heap]")) {
-				*brk_start = map->itv.addr;
-				*brk_end = map->itv.addr + map->itv.size;
-				break;
+			if (map->name) {
+				if (strstr (map->name, "[heap]")) {
+					*brk_start = map->itv.addr;
+					*brk_end = map->itv.addr + map->itv.size;
+					break;
+				}
 			}
 		}
 	}
@@ -324,7 +335,11 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	}
 
 	if (libc_addr_sta == GHT_MAX || libc_addr_end == GHT_MAX) {
-		eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
+		} else {
+			eprintf ("Warning: Can't find arena mapped in memory (see om)\n");
+		}
 		return false;
 	}
 
@@ -351,6 +366,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		}
 		addr_srch += sizeof (GHT);
 	}
+	eprintf ("Warning: Can't find main_arena in mapped memory\n");
 	free (ta);
 	return false;
 }
@@ -659,7 +675,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 	bin = m_arena + offset + SZ * bin_num;
 	r_io_read_at (core->io, bin, (ut8 *)&next, SZ);
 
-	GH(get_brks)(core, &brk_start, &brk_end);
+	GH(get_brks) (core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
 		eprintf ("No Heap section\n");
 		free (cnk);
@@ -776,8 +792,9 @@ static void GH(print_tcache_instance)(RCore *core, GHT m_arena, MallocState *mai
 	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
-	tcache_start = ((brk_start >> 12) << 12) + TC_HDR_SZ;
-	initial_brk = tcache_start + offset;
+	tcache_start = ((brk_start >> 12) << 12) + GH(HDR_SZ);
+	GHT fc_offset = GH(tcache_chunk_size) (core, brk_start);
+	initial_brk = brk_start + fc_offset;
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
 		eprintf ("No heap section\n");
 		return;
@@ -886,14 +903,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	if (m_arena == m_state) {
 		GH(get_brks) (core, &brk_start, &brk_end);
 		if (tcache) {
-			GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
-			if (!cnk) {
-				return;
-			}
-			(void)r_io_read_at (core->io, brk_start, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-			int tc_chunk_size = (cnk->size >> 3) << 3;
-			tcache_initial_brk = ((brk_start >> 12) << 12) + tc_chunk_size;
-			initial_brk = tcache_initial_brk;
+			GHT fc_offset = GH(tcache_chunk_size) (core, brk_start);
+			initial_brk = ((brk_start >> 12) << 12) + fc_offset;
 		} else {
 			initial_brk = (brk_start >> 12) << 12;
 		}

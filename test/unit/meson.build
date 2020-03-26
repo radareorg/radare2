@@ -1,5 +1,5 @@
 
-if get_option('build_tests')
+if get_option('enable_tests')
   tests = [
     'addr_interval',
     'anal_block',

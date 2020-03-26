@@ -300,6 +300,15 @@ R_API char *r_strbuf_drain(RStrBuf *sb) {
 	return ret;
 }
 
+R_API char *r_strbuf_drain_nofree(RStrBuf *sb) {
+	r_return_val_if_fail (sb, NULL);
+	char *ret = sb->ptr ? sb->ptr : strdup (sb->buf);
+	sb->ptr = NULL;
+	sb->len = 0;
+	sb->buf[0] = '\0';
+	return ret;
+}
+
 R_API void r_strbuf_free(RStrBuf *sb) {
 	r_strbuf_fini (sb);
 	free (sb);

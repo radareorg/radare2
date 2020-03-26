@@ -695,7 +695,7 @@ e search.to = 0x103
 EOF
 RUN
 
-NAME=search range hex @(A..B)
+NAME=search range hex @{A..B}
 FILE=malloc://1024
 EXPECT=<<EOF
 0x00000100 hit0_0 41424344
@@ -703,18 +703,18 @@ EOF
 CMDS=<<EOF
 w ABCD @ 0x100
 b 0x100
-/x 41424344 @(0x50 0x150)
+/x 41424344 @{0x50 0x150}
 EOF
 RUN
 
-NAME=search range hex @(A..B)
+NAME=search range hex @{A..B}
 FILE=malloc://1024
 EXPECT=<<EOF
 EOF
 CMDS=<<EOF
 w ABCD @ 0x100
 b 0x100
-/x 41424344 @(0x50 0x90)
+/x 41424344 @{0x50 0x90}
 EOF
 RUN
 

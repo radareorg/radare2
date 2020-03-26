@@ -13,6 +13,18 @@ static void r_config_hold_num_free(RConfigHoldNum *hc) {
 	free (hc);
 }
 
+static int key_cmp_hold_s(const void *a, const void *b) {
+	const char *a_s = (const char *)a;
+	const RConfigHoldChar *b_s = (const RConfigHoldChar *)b;
+	return strcmp (a_s, b_s->key);
+}
+
+static int key_cmp_hold_i(const void *a, const void *b) {
+	const char *a_s = (const char *)a;
+	const RConfigHoldNum *b_s = (const RConfigHoldNum *)b;
+	return strcmp (a_s, b_s->key);
+}
+
 R_API bool r_config_hold_s(RConfigHold *h, ...) {
 	va_list ap;
 	char *key;
@@ -25,6 +37,9 @@ R_API bool r_config_hold_s(RConfigHold *h, ...) {
 		}
 	}
 	while ((key = va_arg (ap, char *))) {
+		if (r_list_find (h->list_char, key, key_cmp_hold_s)) {
+			continue;
+		}
 		const char *val = r_config_get (h->cfg, key);
 		if (!val) {
 			continue;
@@ -54,6 +69,9 @@ R_API bool r_config_hold_i(RConfigHold *h, ...) {
 	}
 	va_start (ap, h);
 	while ((key = va_arg (ap, char *))) {
+		if (r_list_find (h->list_num, key, key_cmp_hold_i)) {
+			continue;
+		}
 		RConfigHoldNum *hc = R_NEW0 (RConfigHoldNum);
 		if (!hc) {
 			continue;

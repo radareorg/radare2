@@ -3616,7 +3616,7 @@ ignore:
 		r_str_trim_head (ptr + 1);
 		offstr = ptr + 1;
 
-		addr = r_num_math (core->num, offstr);
+		addr = (*offstr == '{')? core->offset: r_num_math (core->num, offstr);
 		addr_is_set = true;
 
 		if (isalpha ((ut8)ptr[1]) && !addr) {
@@ -3660,26 +3660,31 @@ next_arroba:
 			}
 		} else {
 			bool tmpseek = false;
-			const char *fromvars[] = { "anal.from", "diff.from", "graph.from",
-				"io.buffer.from", "lines.from", "search.from", "zoom.from", NULL };
-			const char *tovars[] = { "anal.to", "diff.to", "graph.to",
-				"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
+			const char *fromvars[] = { "anal.from", "diff.from", "graph.from", "search.from", "zoom.from", NULL };
+			const char *tovars[] = { "anal.to", "diff.to", "graph.to", "search.to", "zoom.to", NULL };
 			ut64 curfrom[R_ARRAY_SIZE (fromvars) - 1], curto[R_ARRAY_SIZE (tovars) - 1];
 
-			// "@(A B)"
-			if (ptr[1] == '(') {
-				char *range = ptr + 3;
+			// "@{A B}"
+			if (ptr[1] == '{') {
+				char *range = ptr + 2;
 				char *p = strchr (range, ' ');
 				if (!p) {
-					eprintf ("Usage: / ABCD @..0x1000 0x3000\n");
+					eprintf ("Usage: / ABCD @{0x1000 0x3000}\n");
+					eprintf ("Run command and define the following vars:\n");
+					eprintf (" (anal|diff|graph|search|zoom).{from,to}\n");
 					free (tmpeval);
 					free (tmpasm);
 					free (tmpbits);
 					goto fail;
 				}
+				char *arg = p + 1;
+				int arg_len = strlen (arg);
+				if (arg_len > 0) {
+					arg[arg_len - 1] = 0;
+				}
 				*p = '\x00';
 				ut64 from = r_num_math (core->num, range);
-				ut64 to = r_num_math (core->num, p + 1);
+				ut64 to = r_num_math (core->num, arg);
 				// save current ranges
 				for (i = 0; fromvars[i]; i++) {
 					curfrom[i] = r_config_get_i (core->config, fromvars[i]);
@@ -4619,6 +4624,12 @@ static struct tsr2cmd_edit *create_cmd_edit(struct tsr2cmd_state *state, TSNode 
 
 static void replace_whitespaces(char *s, char ch) {
 	while (*s) {
+		if (*s == '#') {
+			while (*s && *s != '\r' && *s != '\n') {
+				*s = ch;
+				s++;
+			}
+		}
 		if (isspace (*s)) {
 			*s = ch;
 		}
@@ -4672,7 +4683,9 @@ static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_
 	int value = core->num->value;
 
 	// execute the sub command
-	char *o_out = r_core_cmd_str (core, inn_str);
+	char *o_out = inn_str[0] == '!'?
+		r_core_cmd_str_pipe (core, inn_str + 1):
+		r_core_cmd_str (core, inn_str);
 
 	// restore color and cmd_in_backticks
 	core->num->value = value;
@@ -5075,6 +5088,8 @@ DEFINE_HANDLE_TS_FCN(help_command) {
 		r_core_cmd_help (state->core, help_msg_at_at_at);
 	} else if (!strcmp (node_string, "|?")) {
 		r_core_cmd_help (state->core, help_msg_vertical_bar);
+	} else if (!strcmp (node_string, "~?")) {
+		r_cons_grep_help ();
 	} else if (!strcmp (node_string + strlen (node_string) - 2, "?*")) {
 		size_t node_len = strlen (node_string);
 		int detail = 0;
@@ -5973,6 +5988,12 @@ DEFINE_HANDLE_TS_FCN(scr_tts_command) {
 		r_config_set_i (state->core->config, "scr.color", scr_color);
 	}
 	return res;
+}
+
+DEFINE_HANDLE_TS_FCN(task_command) {
+	// TODO: this should be handled differently, if the argument is a command.
+	//       For now we just treat everything as an arged_command
+	return handle_ts_arged_command (state, node);
 }
 
 DEFINE_HANDLE_TS_FCN(number_command) {

@@ -822,7 +822,7 @@ NAME=arm jump table
 FILE=../bins/elf/analysis/callback.elf
 CMDS=<<EOF
 af @ sym.input_handler2
-CC. @ 0x000105b8~?(7
+CC. @ 0x000105b8~?\(7
 EOF
 EXPECT=<<EOF
 1
@@ -833,7 +833,7 @@ NAME=arm jump table
 FILE=../bins/elf/analysis/mobile_bank.45115ff5f655d94fc26cb5244928b3fc
 CMDS=<<EOF
 af @ 0x11284
-CC. @ 0x000112b0~?(8
+CC. @ 0x000112b0~?\(8
 EOF
 EXPECT=<<EOF
 1

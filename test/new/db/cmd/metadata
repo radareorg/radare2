@@ -125,7 +125,6 @@ EXPECT=<<EOF
 EOF
 CMDS=<<EOF
 w hello\x00world
-e asm.linesup=0
 Cs 6
 Cs 6@6
 pd 2
@@ -140,7 +139,6 @@ EXPECT=<<EOF
 EOF
 CMDS=<<EOF
 w hello\x00world
-e asm.linesup=0
 Cs 6
 Cs 6@6
 pd 2

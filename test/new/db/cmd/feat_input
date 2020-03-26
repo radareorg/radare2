@@ -31,7 +31,7 @@ EXPECT=<<EOF
 foo#bar
 EOF
 CMDS=<<EOF
-w foo#bar
+"w foo#bar"
 psz
 EOF
 RUN

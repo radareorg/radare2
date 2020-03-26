@@ -1428,7 +1428,7 @@ EOF
 CMDS=<<EOF
 aaa
 s 0x00401255
-pd 1~?ExitProcess(UINT
+pd 1~?ExitProcess\(UINT
 EOF
 RUN
 
@@ -1452,7 +1452,7 @@ EOF
 CMDS=<<EOF
 aaa
 s 0x08048469
-pd 1~?strcmp(const
+pd 1~?strcmp\(const
 EOF
 RUN
 

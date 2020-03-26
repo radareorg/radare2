@@ -67,7 +67,7 @@ RUN
 
 NAME=radiff2 -AC (elf files)
 FILE=-
-CMDS=!!radiff2 -AC ../bins/other/radiff2/true ../bins/other/radiff2/false~?(1.000000)
+CMDS=!!radiff2 -AC ../bins/other/radiff2/true ../bins/other/radiff2/false~?\(1.000000\)
 EXPECT=<<EOF
 54
 EOF

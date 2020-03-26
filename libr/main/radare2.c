@@ -257,7 +257,7 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 	/* -c */
 	r_list_foreach (cmds, iter, cmdn) {
 		//r_core_cmd0 (r, cmdn);
-		r_core_cmd (r, cmdn, false);
+		r_core_cmd_lines (r, cmdn);
 		r_cons_flush ();
 	}
 beach:

@@ -6680,6 +6680,7 @@ void __panels_process(RCore *core, RPanels *panels) {
 
 	bool o_interactive = r_cons_is_interactive ();
 	r_cons_set_interactive (true);
+	r_core_visual_showcursor (core, false);
 
 	r_cons_enable_mouse (false);
 repeat:
@@ -7248,6 +7249,9 @@ repeat:
 	}
 	goto repeat;
 exit:
+	if (!originVmode) {
+		r_core_visual_showcursor (core, true);
+	}
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
 	core->print->cur = originCursor;
