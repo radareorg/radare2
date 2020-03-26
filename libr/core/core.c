@@ -2843,6 +2843,7 @@ R_API void r_core_fini(RCore *c) {
 	//r_core_file_free (c->file);
 	//c->file = NULL;
 	free (c->table_query);
+	c->table_query = NULL;
 	r_list_free (c->files);
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
