@@ -1413,10 +1413,25 @@ static void print_type_json(RAnal *a, char *type, size_t pos) {
 
 	if (pos == 0) { // ret value
 		a->cb_printf ("{\"name\":\"%s\",\"type\":\"%s\"}", type, str_type);
-	} else if (pos == 1) { // nb args
-		a->cb_printf ("{\"%s\":%s}", type, str_type);
-	} else {
+	} else if (pos >= 2) {
 		print_function_args_json (a, str_type);
+	}
+}
+
+static void print_list_separator(RAnal *a, RSignItem *it, int format, int pos) {
+	if (pos > 0) {
+		if (format == '*') {
+			a->cb_printf (" ");
+		} else if (format == 'j') {
+			if (pos == 1)
+				return;
+			a->cb_printf (",");
+			if (pos == 2) {
+				a->cb_printf ("{\"func.%s.args\":[", it->name);
+			}
+		} else {
+			a->cb_printf (", ");
+		}
 	}
 }
 
@@ -1426,18 +1441,8 @@ static void print_list_type_body(RAnal *a, RSignItem *it, int format) {
 	RListIter *iter = NULL;
 
 	r_list_foreach (it->types, iter, type) {
-		if (i > 0) {
-			if (format == '*') {
-				a->cb_printf (" ");
-			} else if (format == 'j') {
-				a->cb_printf (",");
-				if (i == 2) {
-					a->cb_printf ("{\"func.%s.args\":[", it->name);
-				}
-			} else {
-				a->cb_printf (", ");
-			}
-		}
+		print_list_separator (a, it, format, i);
+
 		if (format == 'j') {
 			char *t = r_str_escape_utf8_for_json (type, -1);
 			print_type_json(a, t, i);
