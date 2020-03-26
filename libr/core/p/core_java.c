@@ -1465,7 +1465,7 @@ static int r_cmd_java_call(void *user, const char *input) {
 	if (input[4] != ' ') {
 		return r_cmd_java_handle_help (core, input);
 	}
-	for (; i < END_CMDS; i++) {
+	for (; i < END_CMDS - 1; i++) {
 		//IFDBG r_cons_printf ("Checking cmd: %s %d %s\n", JAVA_CMDS[i].name, JAVA_CMDS[i].name_len, p);
 		IFDBG r_cons_printf ("Checking cmd: %s %d\n", JAVA_CMDS[i].name,
 			strncmp (input+5, JAVA_CMDS[i].name, JAVA_CMDS[i].name_len));
