@@ -2026,6 +2026,20 @@ static int casecmp(const void* _a, const void * _b) {
 	return a->addr != b->addr;
 }
 
+static ut64 __opaddr(RAnalBlock *b, ut64 addr) {
+	int i;
+	if (addr >= b->addr && addr < (b->addr + b->size)) {
+		for (i = 0; i < b->ninstr; i++) {
+			ut64 aa = b->addr + r_anal_bb_offset_inst (b, i);
+			ut64 ab = b->addr + r_anal_bb_offset_inst (b, i + 1);
+			if (addr >= aa && addr < ab) {
+				return aa;
+			}
+		}
+	}
+	return UT64_MAX;
+}
+
 static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	RDebugTracepoint *tp = NULL;
 	RListIter *iter;
@@ -2194,6 +2208,10 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 					pj_end (pj);
 					pj_end (pj);
 				}
+				{
+					ut64 opaddr = __opaddr (b, addr);
+					pj_kn (pj, "opaddr", opaddr);
+				}
 				pj_kn (pj, "addr", b->addr);
 				pj_ki (pj, "size", b->size);
 				pj_ki (pj, "inputs", inputs);
@@ -2233,6 +2251,10 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 				}
 				if (b->fail != UT64_MAX) {
 					r_cons_printf ("fail: 0x%08"PFMT64x"\n", b->fail);
+				}
+				{
+					ut64 opaddr = __opaddr (b, addr);
+					r_cons_printf ("opaddr: 0x%08"PFMT64x"\n", opaddr);
 				}
 				r_cons_printf ("addr: 0x%08"PFMT64x"\nsize: %d\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: %s\n",
 					b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced));
@@ -9909,10 +9931,10 @@ static int cmd_anal(void *data, const char *input) {
 			cmd_anal_abt (core, input+2);
 		} else if (input[1] == 'j') { // "abj"
 			anal_fcn_list_bb (core, input + 1, false);
-		} else if (input[1] == ' ' || !input[1]) {
+		} else if (input[1] == ' ' || !input[1] || input[1] == '.') {
 			// find block
 			ut64 addr = core->offset;
-			if (input[1]) {
+			if (input[1] && input[1] != '.') {
 				addr = r_num_math (core->num, input + 1);
 			}
 			r_core_cmdf (core, "afbi @ 0x%"PFMT64x, addr);
