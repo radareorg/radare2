@@ -179,19 +179,49 @@ static RThreadFunctionRet worker_th(RThread *th) {
 }
 
 static void print_diff(const char *actual, const char *expected) {
-	// TODO: do an actual diff
+#define DO_DIFF !__WINDOWS__
+#if DO_DIFF
+	RDiff *d = r_diff_new ();
+	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)actual, (int)strlen (actual));
+	r_diff_free (d);
+
+	RList *lines = r_str_split_duplist (uni, "\n");
+	RListIter *it;
+	char *line;
+	r_list_foreach (lines, it, line) {
+		char c = *line;
+		switch (c) {
+		case '+':
+			printf ("%s", Color_GREEN);
+			break;
+		case '-':
+			printf ("%s", Color_RED);
+			break;
+		default:
+			break;
+		}
+		printf ("%s\n", line);
+		if (c == '+' || c == '-') {
+			printf ("%s", Color_RESET);
+		}
+	}
+	r_list_free (lines);
+	free (uni);
+	printf ("\n");
+#else
 	RList *lines = r_str_split_duplist (expected, "\n");
 	RListIter *it;
 	char *line;
 	r_list_foreach (lines, it, line) {
-		printf (Color_RED"-"Color_RESET" %s\n", line);
+		printf (Color_RED"- %s"Color_RESET"\n", line);
 	}
 	r_list_free (lines);
 	lines = r_str_split_duplist (actual, "\n");
 	r_list_foreach (lines, it, line) {
-		printf (Color_GREEN"+"Color_RESET" %s\n", line);
+		printf (Color_GREEN"+ %s"Color_RESET"\n", line);
 	}
 	r_list_free (lines);
+#endif
 }
 
 static void print_result_diff(R2RTestResultInfo *result) {
@@ -231,7 +261,7 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 	ut64 i;
 	for (i = prev_completed; i < completed; i++) {
 		R2RTestResultInfo *result = r_pvector_at (&state->results, (size_t)i);
-		if (!state->verbose && (result->result == R2R_TEST_RESULT_OK || result->result == R2R_TEST_RESULT_FIXED)) {
+		if (!state->verbose && (result->result == R2R_TEST_RESULT_OK || result->result == R2R_TEST_RESULT_FIXED || result->result == R2R_TEST_RESULT_BROKEN)) {
 			continue;
 		}
 		char *name = r2r_test_name (result->test);

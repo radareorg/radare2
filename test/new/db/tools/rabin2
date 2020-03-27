@@ -52,7 +52,9 @@ FILE=../bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -k ${R2_FILE}
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=Missing file.
+EXPECT_ERR=<<EOF
+Missing file.
+EOF
 RUN
 
 NAME=rabin2 -K md5 -S file

@@ -130,7 +130,9 @@ FILE=-
 CMDS=!rahash2 -a md5 -x "61646d696e" -s "admin"
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=Hashstring already defined
+EXPECT_ERR=<<EOF
+Hashstring already defined
+EOF
 RUN
 
 NAME=rahash2 -a luhn -s "5105105105105100"
@@ -405,7 +407,9 @@ CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc4
 EXPECT=<<EOF
 0x00000000-0x00000004 md5: 21232f297a57a5a743894a0e4a801fc3
 EOF
-EXPECT_ERR=rahash2: Computed hash doesn't match the expected one.
+EXPECT_ERR=<<EOF
+rahash2: Computed hash doesn't match the expected one.
+EOF
 RUN
 
 NAME=rahash2 -c with correct expected hash and quiet
@@ -422,7 +426,9 @@ FILE=-
 CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=rahash2: Invalid -c hex hash
+EXPECT_ERR=<<EOF
+rahash2: Invalid -c hex hash
+EOF
 RUN
 
 NAME=rahash2 -c with incorrect md5 hash length
@@ -430,7 +436,9 @@ FILE=-
 CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=rahash2: Given -c hash has 15 byte(s) but the selected algorithm returns 16 byte(s).
+EXPECT_ERR=<<EOF
+rahash2: Given -c hash has 15 byte(s) but the selected algorithm returns 16 byte(s).
+EOF
 RUN
 
 NAME=rahash2 -c with incorrect sha1 hash length
@@ -438,7 +446,9 @@ FILE=-
 CMDS=!rahash2 -a sha1 -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=rahash2: Given -c hash has 15 byte(s) but the selected algorithm returns 20 byte(s).
+EXPECT_ERR=<<EOF
+rahash2: Given -c hash has 15 byte(s) but the selected algorithm returns 20 byte(s).
+EOF
 RUN
 
 NAME=rahash2 -c with 2 hash algorithms
@@ -446,7 +456,9 @@ FILE=-
 CMDS=!rahash2 -a md5,sha1 -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=rahash2: Option -c incompatible with multiple algorithms in -a.
+EXPECT_ERR=<<EOF
+rahash2: Option -c incompatible with multiple algorithms in -a.
+EOF
 RUN
 
 NAME=rahash2 -c with all hash algorithms
@@ -454,7 +466,9 @@ FILE=-
 CMDS=!rahash2 -a all -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=rahash2: Option -c incompatible with multiple algorithms in -a.
+EXPECT_ERR=<<EOF
+rahash2: Option -c incompatible with multiple algorithms in -a.
+EOF
 RUN
 
 NAME=rahash2 -c with custom block size and per-block hash
@@ -462,7 +476,9 @@ FILE=-
 CMDS=!rahash2 -b 1 -B -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=rahash2: Option -c incompatible with -b and -B options.
+EXPECT_ERR=<<EOF
+rahash2: Option -c incompatible with -b and -B options.
+EOF
 RUN
 
 NAME=rahash2 -c with base64 encoding
@@ -470,7 +486,9 @@ FILE=-
 CMDS=!rahash2 -E base64 -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.
+EXPECT_ERR=<<EOF
+rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.
+EOF
 RUN
 
 NAME=rahash2 -c with base64 decoding
@@ -478,7 +496,9 @@ FILE=-
 CMDS=!rahash2 -D base64 -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 EOF
-EXPECT_ERR=rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.
+EXPECT_ERR=<<EOF
+rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.
+EOF
 RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST

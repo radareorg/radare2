@@ -92,6 +92,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 		r_strbuf_free (buf);
 		return NULL;
 	}
+
 	return strdup (val);
 }
 
@@ -172,9 +173,9 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
 			} \
 			test->field.set = true; \
-			if (strcmp (val, "1") != 0) { \
+			if (!strcmp (val, "1")) { \
 				test->field.value = true; \
-			} else if (strcmp (val, "0") != 0) { \
+			} else if (!strcmp (val, "0")) { \
                 test->field.value = false; \
 			} else { \
 				eprintf (LINEFMT "Error: Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed.\n", file, linenum, val, key); \
@@ -493,15 +494,15 @@ static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 	char *token;
 	*load_plugins = false;
 	r_list_foreach (tokens, it, token) {
-		if (strcmp (token, "asm") == 0) {
+		if (!strcmp (token, "asm")) {
 			ret = R2R_TEST_TYPE_ASM;
 			continue;
 		}
-		if (strcmp (token, "json") == 0) {
+		if (!strcmp (token, "json")) {
 			ret = R2R_TEST_TYPE_JSON;
 			continue;
 		}
-		if (strcmp (token, "extras") == 0) {
+		if (!strcmp (token, "extras")) {
 			*load_plugins = true;
 		}
 	}
@@ -527,6 +528,10 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		bool ret = true;
 		r_list_foreach (dir, it, subname) {
 			if (*subname == '.') {
+				continue;
+			}
+			if (strcmp (subname, "extras") == 0) {
+				// Only load "extras" dirs if explicitly specified
 				continue;
 			}
 			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
