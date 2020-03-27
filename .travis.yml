@@ -20,10 +20,6 @@ os: osx
 jobs:
   fast_finish: true
   include:
-    - os: linux
-      name: Debian
-      dist: xenial
-      env: COMPILER_NAME=gcc DEBPKG=1 CC=gcc CFLAGS="-O2 -DR2_ASSERT_STDOUT=1"
     # Linux with GCC
     - os: linux
       name: Linux-GCC
@@ -62,6 +58,12 @@ jobs:
     - os: linux
       name: newShell
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_NEWSHELL=true CFLAGS="-DR2_ASSERT_STDOUT=1" R2_CFG_NEWSHELL=1
+    # Building *.deb package
+    - if: branch = master
+      os: linux
+      name: Debian
+      dist: xenial
+      env: COMPILER_NAME=gcc DEBPKG=1 CC=gcc CFLAGS="-O2 -DR2_ASSERT_STDOUT=1"
     # Run Fuzzing Sanity Test on every push
     # XXX its broken it complains about invalid key
     #- os: linux
@@ -94,6 +96,7 @@ jobs:
     - if: head_branch =~ ^release-* OR head_branch =~ ^prerelease-* OR branch =~ ^release-* OR branch =~ ^prerelease-*
       os: linux
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_TESTS_DISABLE=1
+  
   allow_failures:
     # Linux with GCC on PowerPC
     - os: linux
