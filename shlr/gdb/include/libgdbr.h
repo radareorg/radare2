@@ -212,7 +212,21 @@ int gdbr_init(libgdbr_t *g, bool is_server);
  * \param architecture defines the architecure used (registersize, and such)
  * \returns a failure code
  */
-int gdbr_set_architecture(libgdbr_t *g, const char *arch, int bits);
+int gdbr_set_architecture(libgdbr_t *g, int arch, int bits);
+
+/*!
+ * \brief Function get gdb registers profile based on arch and bits
+ * \param architecture and bit size.
+ * \returns a failure code
+ */
+const char *gdbr_get_reg_profile(int arch, int bits);
+
+/*!
+ * \brief Function set the gdbr internal registers profile
+ * \param registers profile string which shares the same format as RReg API
+ * \returns a failure code
+ */
+int gdbr_set_reg_profile(libgdbr_t *g, const char *str);
 
 /*!
  * \brief frees all buffers and cleans the libgdbr instance stuff

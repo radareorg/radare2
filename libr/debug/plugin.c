@@ -93,3 +93,16 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
 	r_list_append (dbg->plugins, dp);
 	return true;
 }
+
+R_API bool r_debug_plugin_set_reg_profile(RDebug *dbg, const char *profile) {
+	char *str = r_file_slurp (profile, NULL);
+	if (!str) {
+		eprintf ("r_debug_plugin_set_reg_profile: Cannot find '%s'\n", profile);
+		return false;
+	}
+	if (dbg && dbg->h && dbg->h->set_reg_profile) {
+		return dbg->h->set_reg_profile (str);
+	}
+	free (str);
+	return false;
+}
