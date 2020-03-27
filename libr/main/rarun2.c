@@ -1,4 +1,4 @@
-/* radare2 - Copyleft 2011-2019 - pancake */
+/* radare2 - Copyleft 2011-2020 - pancake */
 
 #include <r_util.h>
 #include <r_main.h>
@@ -12,8 +12,8 @@ static void fwd(int sig) {
 static void rarun2_tty() {
 	/* TODO: Implement in native code */
 	r_sys_cmd ("tty");
-	close(1);
-	dup2(2, 1);
+	close (1);
+	dup2 (2, 1);
 	r_sys_signal (SIGINT, fwd);
 	for (;;) {
 		sleep (1);

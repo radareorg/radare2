@@ -328,6 +328,7 @@ R_API int r_main_rafind2(int argc, char **argv) {
 	int c;
 
 	keywords = r_list_new ();
+	r_getopt_init ();
 	while ((c = r_getopt (argc, argv, "a:ie:b:jmM:s:S:x:Xzf:t:E:rqnhvZ")) != -1) {
 		switch (c) {
 		case 'a':

@@ -642,6 +642,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 #define is_active(x) (action & (x))
 #define set_action(x) { actions++; action |= (x); }
 #define unset_action(x) action &= ~x
+	r_getopt_init ();
 	while ((c = r_getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ")) != -1) {
 		switch (c) {
 		case 'g':

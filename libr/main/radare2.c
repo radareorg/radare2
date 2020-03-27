@@ -427,6 +427,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 
 	set_color_default (r);
 
+	r_getopt_init ();
 	while ((c = r_getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuX"
 #if USE_THREADS
 "t"

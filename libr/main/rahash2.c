@@ -441,6 +441,7 @@ int r_main_rahash2(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
+	r_getopt_init ();
 	while ((c = r_getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;

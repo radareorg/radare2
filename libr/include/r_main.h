@@ -1,9 +1,10 @@
-/* radare - LGPL - Copyright 2008-2019 - pancake */
+/* radare - LGPL - Copyright 2008-2020 - pancake */
 
 #ifndef R2_MAIN_H
 #define R2_MAIN_H
 
 #include <r_types.h>
+#include <r_getopt.h>
 
 R_LIB_VERSION_HEADER(r_main);
 

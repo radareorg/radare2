@@ -926,6 +926,7 @@ R_API int r_main_radiff2(int argc, char **argv) {
 	double sim = 0.0;
 	evals = r_list_newf (NULL);
 
+	r_getopt_init ();
 	while ((o = r_getopt (argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxXt:zqZ")) != -1) {
 		switch (o) {
 		case 'a':

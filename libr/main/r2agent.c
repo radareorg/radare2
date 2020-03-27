@@ -43,6 +43,7 @@ R_API int r_main_r2agent(int argc, char **argv) {
 	char *pfile = NULL;
 	memset (&so, 0, sizeof (so));
 
+	r_getopt_init ();
 	while ((c = r_getopt (argc, argv, "adhup:t:sv")) != -1) {
 		switch (c) {
 		case 'a':
