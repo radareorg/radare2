@@ -445,7 +445,7 @@ dB "vfmadd132pd xmm0, xmm0, xmm0" c4e2f998c0
 dB "vfmadd213pd xmm0, xmm0, xmm0" c4e2f9a8c0
 dB "vfmadd231pd xmm0, xmm0, xmm0" c4e2f9b8c0
 d "o16 mulsd xmm7, xmm7" 66f3f20f59ff
-dB "mulss xmm7, xmm7" 66f2f0f59ff
+dB "mulss xmm7, xmm7" 66f2f0f59ff0
 d "mulpd xmm7, xmm7" 660f59ff
 d "o16 mulsd xmm7, xmm7" f2660f59ff
 d "mulps xmm7, xmm7" 0f59ff

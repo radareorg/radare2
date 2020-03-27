@@ -3,9 +3,7 @@ FILE=../bins/pe/CoST.exe
 ARGS=-A
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami CoST.exe - entrypoint VA
@@ -16,9 +14,7 @@ vaddr=0x7efd0000 paddr=0x00000000 haddr=0x0000506c type=program
 
 1 entrypoints
 EOF
-CMDS=<<EOF
-ie
-EOF
+CMDS=ie
 RUN
 
 NAME=PE: corkami CoST.exe - tls VA
@@ -29,9 +25,7 @@ vaddr=0x7efd0148 paddr=0x00000148 hpaddr=0x000001cc type=tls
 
 1 entrypoints
 EOF
-CMDS=<<EOF
-iee
-EOF
+CMDS=iee
 RUN
 
 NAME=PE: corkami CoST.exe - sections list
@@ -39,9 +33,7 @@ FILE=../bins/pe/CoST.exe
 EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x7efd0000 - 0x7efd5169 r-x fmap.blob
 EOF
-CMDS=<<EOF
-om
-EOF
+CMDS=om
 RUN
 
 NAME=PE: corkami CoST.exe - pi 1

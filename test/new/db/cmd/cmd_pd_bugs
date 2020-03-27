@@ -21,9 +21,7 @@ EXPECT=<<EOF
 invalid
 EOF
 ARGS=-a arm -b 16
-CMDS=<<EOF
-wx 80f30988; pi 1
-EOF
+CMDS=wx 80f30988; pi 1
 RUN
 
 NAME=pd arm cortex 1
@@ -32,9 +30,7 @@ EXPECT=<<EOF
 msr psp, r0
 EOF
 ARGS=-a arm -b 16 -e asm.cpu=cortex
-CMDS=<<EOF
-wx 80f30988;pi 1
-EOF
+CMDS=wx 80f30988;pi 1
 RUN
 
 NAME=pd arm cortex 2
@@ -43,9 +39,7 @@ EXPECT=<<EOF
 msr psp, r0
 EOF
 ARGS=-a arm -b 16
-CMDS=<<EOF
-e asm.cpu=cortex;wx 80f30988;pi 1
-EOF
+CMDS=e asm.cpu=cortex;wx 80f30988;pi 1
 RUN
 
 NAME=pd call sym bug
@@ -183,6 +177,8 @@ RUN
 NAME=indent asm.lines.fcn=0, asm.lines.bb=1 for issue 9316
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 af+ 0 test
 e asm.lines.fcn=0
 e asm.lines.bb=1
@@ -198,6 +194,8 @@ RUN
 NAME=indent asm.lines.fcn=1, asm.lines.bb=0 for issue 9316
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 af+ 0 test
 e asm.lines.fcn=1
 e asm.lines.bb=0
@@ -205,7 +203,7 @@ pd 2
 EOF
 EXPECT=<<EOF
 / 0: test ();
-| 0x00000000      0000           add byte [rax], al
+  0x00000000      0000           add byte [rax], al
   0x00000002      0000           add byte [rax], al
 EOF
 RUN

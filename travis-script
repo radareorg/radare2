@@ -26,6 +26,9 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     if [ "${R2_SYS_OPENSSL}" != "" ] ; then
         OPTS="${OPTS} -D use_sys_openssl=${R2_SYS_OPENSSL}"
     fi
+    if [ "${R2_NEWSHELL}" != "" ] ; then
+        OPTS="${OPTS} -D use_treesitter=${R2_NEWSHELL}"
+    fi
     if [ "${COVERAGE}" == "1" ] ; then
         OPTS="${OPTS} -Db_coverage=true"
     fi
@@ -72,10 +75,23 @@ else
         export CFLAGS="${CFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
         export LDFLAGS="${LDFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
     fi
-    ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
-    make -s -j2 > /dev/null || exit 1
-    make install > /dev/null || exit 1
     export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
+    if [ "${DEBPKG}" == "1" ] ; then
+      sys/static.sh
+      git clean -xdf
+      sys/debian.sh
+      # TODO: upload debian package somewhere
+      exit 0
+    else
+      if [ "`uname`" = Darwin ]; then
+        cp sys/osx-pkg/*.pkg /tmp
+        sys/osx-pkg.sh
+        git clean -xdf
+      fi
+      ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
+      make -s -j2 > /dev/null || exit 1
+      make install > /dev/null || exit 1
+    fi
 fi
 
 if [ "${R2_TESTS_DISABLE}" != "1" ] ; then

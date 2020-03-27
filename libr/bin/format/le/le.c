@@ -88,7 +88,7 @@ static RBinSymbol *__get_symbol(r_bin_le_obj_t *bin, ut64 *offset) {
 
 RList *__get_entries(r_bin_le_obj_t *bin) {
 	ut64 offset = (ut64)bin->header->enttab + bin->headerOff;
-	RList *l = r_list_new ();
+	RList *l = r_list_newf (free);
 	if (!l) {
 		return NULL;
 	}
@@ -102,7 +102,7 @@ RList *__get_entries(r_bin_le_obj_t *bin) {
 		if ((header.type & ~ENTRY_PARAMETER_TYPING_PRESENT) == UNUSED_ENTRY) {
 			offset += sizeof (header.type) + sizeof (header.count);
 			while (header.count) {
-				r_list_append (l, (ut64 *)-1);
+				r_list_append (l, strdup ("")); // (ut64 *)-1);
 				header.count--;
 			}
 			continue;
@@ -115,21 +115,27 @@ RList *__get_entries(r_bin_le_obj_t *bin) {
 			r_buf_read_at (bin->buf, offset, (ut8 *)&e, sizeof (e));
 			switch (header.type & ~ENTRY_PARAMETER_TYPING_PRESENT) {
 			case ENTRY16:
-				entry = (ut64)e.entry_16.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				if ((header.objnum - 1) < bin->header->objcnt) {
+					entry = (ut64)e.entry_16.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				}
 				offset += sizeof (e.entry_16);
 				if (typeinfo) {
 					offset += (ut64)(e.entry_16.flags & ENTRY_PARAM_COUNT_MASK) * 2;
 				}
 				break;
 			case CALLGATE:
-				entry = (ut64)e.callgate.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				if ((header.objnum - 1) < bin->header->objcnt) {
+					entry = (ut64)e.callgate.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				}
 				offset += sizeof (e.callgate);
 				if (typeinfo) {
 					offset += (ut64)(e.callgate.flags & ENTRY_PARAM_COUNT_MASK) * 2;
 				}
 				break;
 			case ENTRY32:
-				entry = (ut64)e.entry_32.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				if ((header.objnum - 1) < bin->header->objcnt) {
+					entry = (ut64)e.entry_32.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
+				}
 				offset += sizeof (e.entry_32);
 				if (typeinfo) {
 					offset += (ut64)(e.entry_32.flags & ENTRY_PARAM_COUNT_MASK) * 2;
@@ -139,7 +145,9 @@ RList *__get_entries(r_bin_le_obj_t *bin) {
 				offset += sizeof (e.forwarder);
 				break;
 			}
-			r_list_append (l, (void *)entry);
+			if (entry != UT64_MAX) {
+				r_list_append (l, r_str_newf ("0x%"PFMT64x, entry));
+			}
 		}
 	}
 	return l;
@@ -152,10 +160,13 @@ static void __get_symbols_at(r_bin_le_obj_t *bin, RList *syml, RList *entl, ut64
 			break;
 		}
 		if (sym->ordinal) {
-			sym->vaddr = (ut64)r_list_get_n (entl, sym->ordinal - 1);
-			sym->bind = R_BIN_BIND_GLOBAL_STR;
-			sym->type = R_BIN_TYPE_FUNC_STR;
-			r_list_append (syml, sym);
+			const char *n = r_list_get_n (entl, sym->ordinal - 1);
+			if (n) {
+				sym->vaddr = r_num_get (NULL, n);
+				sym->bind = R_BIN_BIND_GLOBAL_STR;
+				sym->type = R_BIN_TYPE_FUNC_STR;
+				r_list_append (syml, sym);
+			}
 		} else {
 			r_bin_symbol_free (sym);
 		}
@@ -208,7 +219,9 @@ RList *r_bin_le_get_entrypoints(r_bin_le_obj_t *bin) {
 	}
 	RBinAddr *entry = R_NEW0 (RBinAddr);
 	if (entry) {
-		entry->vaddr = (ut64)bin->objtbl[bin->header->startobj - 1].reloc_base_addr + bin->header->eip;
+		if ((bin->header->startobj - 1) < bin->header->objcnt){
+			entry->vaddr = (ut64)bin->objtbl[bin->header->startobj - 1].reloc_base_addr + bin->header->eip;
+		}
 	}
 	r_list_append (l, entry);
 
@@ -310,6 +323,10 @@ RList *r_bin_le_get_sections(r_bin_le_obj_t *bin) {
 			return l;
 		}
 		LE_object_entry *entry = &bin->objtbl[i];
+		if  (!entry) {
+			free (sec);
+			return l;
+		}
 		sec->name = r_str_newf ("obj.%d", i + 1);
 		sec->vsize = entry->virtual_size;
 		sec->vaddr = entry->reloc_base_addr;
@@ -416,11 +433,16 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 	ut64 cur_page_offset = cur_section ? cur_section->vaddr : 0;
 	while (cur_page < h->mpages) {
 		RBinReloc *rel = R_NEW0 (RBinReloc);
+		bool rel_appended = false; // whether rel has been appended to l and must not be freed
 		if (!rel) {
 			break;
 		}
 		LE_fixup_record_header header;
-		r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
+		int ret = r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
+		if (ret != sizeof (header)) {
+			eprintf ("Warning: oobread in LE header parsing relocs\n");
+			break;
+		}
 		offset += sizeof (header);
 		switch (header.source & F_SOURCE_TYPE_MASK) {
 		case BYTEFIXUP:
@@ -458,14 +480,16 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 		}
 		switch (header.target & F_TARGET_TYPE_MASK) {
 		case INTERNAL:
+			if ((ordinal - 1) < bin->header->objcnt) {
 			rel->addend = bin->objtbl[ordinal - 1].reloc_base_addr;
-			if ((header.source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
-				if (header.target & F_TARGET_OFF32) {
-					rel->addend += r_buf_read_ble32_at (bin->buf, offset, h->worder);
-					offset += sizeof (ut32);
-				} else {
-					rel->addend += r_buf_read_ble16_at (bin->buf, offset, h->worder);
-					offset += sizeof (ut16);
+				if ((header.source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
+					if (header.target & F_TARGET_OFF32) {
+						rel->addend += r_buf_read_ble32_at (bin->buf, offset, h->worder);
+						offset += sizeof (ut32);
+					} else {
+						rel->addend += r_buf_read_ble16_at (bin->buf, offset, h->worder);
+						offset += sizeof (ut16);
+					}
 				}
 			}
 			break;
@@ -537,6 +561,7 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 			rel->vaddr = cur_page_offset + source;
 			rel->paddr = cur_section ? cur_section->paddr + source : 0;
 			r_list_append (l, rel);
+			rel_appended = true;
 		}
 
 		if (header.target & F_TARGET_CHAIN) {
@@ -567,15 +592,19 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 			if (cur_page >= h->mpages) {
 				break;
 			}
-			offset = fix_rec_tbl_off + r_buf_read_ble32_at (bin->buf, (ut64)h->fpagetab + bin->headerOff + cur_page * sizeof (ut32), h->worder);
-			end = fix_rec_tbl_off + r_buf_read_ble32_at (bin->buf, (ut64)h->fpagetab + bin->headerOff + (cur_page + 1) * sizeof (ut32), h->worder);
-			if (offset >= end) {
-				continue;
+			ut64 at = h->fpagetab + bin->headerOff;
+			ut32 w0 = r_buf_read_ble32_at (bin->buf, at + cur_page * sizeof (ut32), h->worder);
+			ut32 w1 = r_buf_read_ble32_at (bin->buf, at + (cur_page + 1) * sizeof (ut32), h->worder);
+			offset = fix_rec_tbl_off + w0;
+			end = fix_rec_tbl_off + w1;
+			if (offset < end) {
+				cur_section = (RBinSection *)r_list_get_n (sections, cur_page);
+				cur_page_offset = cur_section ? cur_section->vaddr : 0;
 			}
-			cur_section = (RBinSection *)r_list_get_n (sections, cur_page);
-			cur_page_offset = cur_section ? cur_section->vaddr : 0;
 		}
-		free (rel);
+		if (!rel_appended) {
+			free (rel);
+		}
 	}
 	r_list_free (entries);
 	r_list_free (sections);
@@ -601,9 +630,11 @@ static bool __init_header(r_bin_le_obj_t *bin, RBuffer *buf) {
 }
 
 void r_bin_le_free(r_bin_le_obj_t *bin) {
+	r_return_if_fail (bin);
 	free (bin->header);
 	free (bin->objtbl);
 	free (bin->filename);
+	free (bin);
 }
 
 r_bin_le_obj_t *r_bin_le_new_buf(RBuffer *buf) {
@@ -622,6 +653,10 @@ r_bin_le_obj_t *r_bin_le_new_buf(RBuffer *buf) {
 	bin->os = __get_os_type (bin);
 	bin->arch = __get_arch (bin);
 	bin->objtbl = calloc (h->objcnt, sizeof (LE_object_entry));
+	if (!bin->objtbl) {
+		r_bin_le_free (bin);
+		return NULL;
+	}
 	ut64 offset = (ut64)bin->headerOff + h->restab;
 	bin->filename = __read_nonnull_str_at (buf, &offset);
 	r_buf_read_at (buf, (ut64)h->objtab + bin->headerOff, (ut8 *)bin->objtbl, h->objcnt * sizeof (LE_object_entry));

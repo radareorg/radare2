@@ -3,9 +3,7 @@ FILE=../bins/pe/winver.exe
 ARGS=-A
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami winver.exe - entrypoint
@@ -13,9 +11,7 @@ FILE=../bins/pe/winver.exe
 EXPECT=<<EOF
 0x401000
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=PE: corkami winver.exe - linked libraries
@@ -27,7 +23,5 @@ msvcrt.dll
 
 2 libraries
 EOF
-CMDS=<<EOF
-il
-EOF
+CMDS=il
 RUN

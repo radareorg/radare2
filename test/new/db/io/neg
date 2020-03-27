@@ -3,9 +3,7 @@ FILE=-
 EXPECT=<<EOF
 ffff0000
 EOF
-CMDS=<<EOF
-p8 4 @ 0-2
-EOF
+CMDS=p8 4 @ 0-2
 RUN
 
 NAME=io/neg 2

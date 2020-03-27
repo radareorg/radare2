@@ -447,7 +447,7 @@ RUN
 
 NAME=cmp neq unchanged zf
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
@@ -458,13 +458,15 @@ aer sp=0x00108000
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x80000000
+EOF
 RUN
 
 NAME=cmp neq changed zf
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
@@ -476,13 +478,15 @@ aer cpsr=0xffffffff
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x80000000
+EOF
 RUN
 
 NAME=cmp eq unchanged zf
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
@@ -495,13 +499,15 @@ aer cpsr=0x40000000
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x60000000
+EOF
 RUN
 
 NAME=cmp eq changed zf
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
 e asm.bits=32
@@ -513,8 +519,10 @@ aer cpsr=0xffffffff
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x80000000
+EOF
 RUN
 
 NAME=ldr r0, [r1, 7]
@@ -2319,54 +2327,62 @@ RUN
 
 NAME=pc points to next instruction
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
 wx 0f00a0e1 # mov r0, pc
 aes
 aer r0
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000004
+EOF
 RUN
 
 NAME=lr correct after bl
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
 wx 000000eb # bl 8
 aes
 aer lr
 aer pc
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000004
 0x00000008
+EOF
 RUN
 
 NAME=r0 correct after stmia post-increment
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
 wx 0600a0e8 # stm r0!, {r1, r2}
 aes
 aer r0
 aer pc
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000008
 0x00000004
+EOF
 RUN
 
 NAME=r0 correct after stmia no increment
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
 wx 060080e8 # stm r0, {r1, r2}
 aes
 aer r0
 aer pc
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000000
 0x00000004
+EOF
 RUN

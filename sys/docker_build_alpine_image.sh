@@ -115,9 +115,11 @@ done
 # Check for valid params
 [ -z "$help" ] || usage 0
 [ $# -eq 0 ] || usage 1
-if [ "$(id -u)" -ne 0 ] && id -Gn | grep -qvw "docker"; then
-	echo "[!] You are not part of the docker group"
-	exit 2
+if [ "`uname`" = Linux ]; then
+	if [ "$(id -u)" -ne 0 ] && id -Gn | grep -qvw "docker"; then
+		echo "[!] You are not part of the docker group"
+		exit 2
+	fi
 fi
 
 trap "cleanup 126" INT

@@ -75,9 +75,7 @@ BROKEN=1
 EXPECT=<<EOF
 vaddr=0x004005e8 paddr=0x000005e8 ordinal=000 sz=24 len=11 section=.rodata type=wide string=Hello World
 EOF
-CMDS=<<EOF
-iz~Hello
-EOF
+CMDS=iz~Hello
 RUN
 
 NAME=iz
@@ -86,7 +84,5 @@ BROKEN=1
 EXPECT=<<EOF
 vaddr=0x004005e8 paddr=0x000005e8 ordinal=000 sz=56 len=13 section=.rodata type=wide32 string=Hello World
 EOF
-CMDS=<<EOF
-iz~Hello
-EOF
+CMDS=iz~Hello
 RUN

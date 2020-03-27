@@ -30,36 +30,30 @@ EXPECT=<<EOF
  foo : 0x00000000 = 1
 EOF
 ARGS=-a x86 -b 32
-CMDS=<<EOF
-pf i foo @x:0x01
-EOF
+CMDS=pf i foo @x:0x01
 RUN
 
 NAME=pf [3]ub
 FILE=-
-CMDS=<<EXPECT
-pf [3]ub
-EXPECT=<<RUN
+CMDS=pf [3]ub
+EXPECT=<<EOF
 0x00000000 = [ 0, 0, 0 ]
 0x00000003 = 0x00
+EOF
 RUN
 
 NAME=Cf main
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-Cf main;C*
-EOF
+CMDS=Cf main;C*
 RUN
 
 NAME=Cf 1 main
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-Cf 1 main;C*
-EOF
+CMDS=Cf 1 main;C*
 RUN
 
 NAME=seteq
@@ -800,9 +794,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 pf._NT_TIB ? (_NT_TIB)Self
 EOF
-CMDS=<<EOF
-pf._NT_TIB ? (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
-EOF
+CMDS=pf._NT_TIB ? (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
 RUN
 
 NAME=Infinite Recursion segfault 2
@@ -810,9 +802,7 @@ FILE=malloc://1024
 EXPECT=<<EOF
 pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self
 EOF
-CMDS=<<EOF
-pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
-EOF
+CMDS=pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
 RUN
 
 NAME=One byte enum endianness
@@ -854,9 +844,7 @@ RUN
 
 NAME=pf
 FILE=../bins/elf/crackme0x05
-CMDS=<<EOF
-pf 2F
-EOF
+CMDS=pf 2F
 EXPECT=<<EOF
 0x080483d0 [0] {
   0x080483d0 = -6.522912219822113e+235
@@ -869,23 +857,25 @@ RUN
 
 NAME=pf z, scr.strconv and str.escbslash
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 wz \x7fabc\\123\n
-(print strconv escbslash, e scr.strconv=$0, e str.escbslash=$1, pf z)
+(print strconv escbslash; e scr.strconv=$0; e str.escbslash=$1; pf z)
 .(print asciiesc false)
 .(print asciiesc true)
 .(print asciidot false)
 .(print asciidot true)
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000000 = "\x7fabc\123\n"
 0x00000000 = "\x7fabc\\123\n"
 0x00000000 = ".abc\123\n"
 0x00000000 = ".abc\\123\n"
+EOF
 RUN
 
 NAME=pfj and triply-nested struct
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 wv2 0x1234
 wv4 0x56789abc @ 0x2
 wv8 0xdef0123456789abc @ 0x6
@@ -895,7 +885,8 @@ pf.first ?q (second)s f1
 pf.first
 ?e
 pfj.first~{}
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
   s : 
                 struct<second>
      t : 
@@ -938,11 +929,12 @@ EXPECT=<<RUN
     "value": -2382384186880648516
   }
 ]
+EOF
 RUN
 
 NAME=pfj and Matryoshka dolls
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 wx 7f
 wv8 0xdef0123456789abc @ 0x1
 pf.fourth b fo1
@@ -957,7 +949,8 @@ pf.full ? (second)s
 pf.full
 ?e
 pfj.full~{}
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
   s : 
                 struct<second>
    t : 
@@ -1040,4 +1033,5 @@ EXPECT=<<RUN
     ]
   }
 ]
+EOF
 RUN

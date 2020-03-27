@@ -91,7 +91,7 @@ static int update_self_regions(RIO *io, int pid) {
 
 	while (!feof (fd)) {
 		line[0]='\0';
-		if (!fgets (line, sizeof (line)-1, fd)) {
+		if (!fgets (line, sizeof (line), fd)) {
 			break;
 		}
 		if (line[0] == '\0') {

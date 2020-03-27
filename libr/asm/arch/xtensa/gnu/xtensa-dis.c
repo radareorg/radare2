@@ -183,7 +183,7 @@ print_insn_xtensa (bfd_vma memaddr, struct disassemble_info *info)
      an 80-column screen.)  The value of bytes_per_line here is not exactly
      right, because objdump adds an extra space for each chunk so that the
      amount of whitespace depends on the chunk size.  Oh well, it's good
-     enough....  Note that we set the minimum size to 4 to accomodate
+     enough....  Note that we set the minimum size to 4 to accommodate
      literal pools.  */
   info->bytes_per_line = MAX (maxsize, 4);
 

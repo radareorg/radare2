@@ -65,7 +65,7 @@ You can verify that the binary is properly signed and verified by using the code
 
 	$ codesign -dv binr/radare2/radare2
 
-Additionally, you can run the following command to add the non-priviledge user (username) to the Developer Tools group in macOS, avoiding the related Xcode prompts:
+Additionally, you can run the following command to add the non-privileged user (username) to the Developer Tools group in macOS, avoiding the related Xcode prompts:
 
 	$ sudo dscl . append /Groups/_developer GroupMembership <username>
 

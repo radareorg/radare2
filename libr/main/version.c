@@ -1,4 +1,4 @@
-/* copyright 2015-2019 radare2 by pancake */
+/* copyright 2015-2020 radare2 by pancake */
 
 #include <r_userconf.h>
 #include <r_util.h>

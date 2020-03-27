@@ -2,7 +2,5 @@ NAME=PE: corkami dllnoexp.dll - open
 FILE=../bins/pe/dllnoexp.dll
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN

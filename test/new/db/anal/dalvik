@@ -7,9 +7,7 @@ EXPECT=<<EOF
 0x000002f4    1 20           method.public.constructor.LWorld.LWorld.method._init___V
 0x00000318    1 68           method.public.LWorld.LWorld.method.foo_I_V
 EOF
-CMDS=<<EOF
-e io.va=0; aa; afl
-EOF
+CMDS=e io.va=0; aa; afl
 RUN
 
 NAME=Dalvik HelloWorld string xref
@@ -17,9 +15,7 @@ FILE=../bins/dex/HelloWorld.dex
 EXPECT=<<EOF
 entry0 0x260 [DATA] const-string v1, str.Findus
 EOF
-CMDS=<<EOF
-aa; axt @ str.Findus
-EOF
+CMDS=aa; axt @ str.Findus
 RUN
 
 NAME=Dalvik HelloWorld func xref
@@ -27,7 +23,5 @@ FILE=../bins/dex/HelloWorld.dex
 EXPECT=<<EOF
 entry0 0x26e [CALL] invoke-direct {v0}, LHello.<init>()V ; 0x0
 EOF
-CMDS=<<EOF
-e io.va=0; aa; axt @ sym.LHello.method._init___V
-EOF
+CMDS=e io.va=0; aa; axt @ sym.LHello.method._init___V
 RUN

@@ -27,7 +27,7 @@ typedef struct {
 } NROHeader;
 
 static ut64 baddr(RBinFile *bf) {
-	return bf? readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF): 0;
+	return bf? r_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF): 0;
 }
 
 static bool check_buffer(RBuffer *b) {
@@ -46,7 +46,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 		bin->methods_list = r_list_newf ((RListFree)free);
 		bin->imports_list = r_list_newf ((RListFree)free);
 		bin->classes_list = r_list_newf ((RListFree)free);
-		ut32 mod0 = readLE32 (b, NRO_OFFSET_MODMEMOFF);
+		ut32 mod0 = r_buf_read_le32_at (b, NRO_OFFSET_MODMEMOFF);
 		parseMod (b, bin, mod0, ba);
 		*bin_obj = bin;
 	}
@@ -112,12 +112,12 @@ static RList *sections(RBinFile *bf) {
 
 	int bufsz = r_buf_size (bf->buf);
 
-	ut32 mod0 = readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF);
+	ut32 mod0 = r_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF);
 	if (mod0 && mod0 + 8 < bufsz) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		ut32 mod0sz = readLE32 (bf->buf, mod0 + 4);
+		ut32 mod0sz = r_buf_read_le32_at (bf->buf, mod0 + 4);
 		ptr->name = strdup ("mod0");
 		ptr->size = mod0sz;
 		ptr->vsize = mod0sz;
@@ -130,12 +130,12 @@ static RList *sections(RBinFile *bf) {
 		eprintf ("Invalid MOD0 address\n");
 	}
 
-	ut32 sig0 = readLE32 (bf->buf, 0x18);
+	ut32 sig0 = r_buf_read_le32_at (bf->buf, 0x18);
 	if (sig0 && sig0 + 8 < bufsz) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		ut32 sig0sz = readLE32 (bf->buf, sig0 + 4);
+		ut32 sig0sz = r_buf_read_le32_at (bf->buf, sig0 + 4);
 		ptr->name = strdup ("sig0");
 		ptr->size = sig0sz;
 		ptr->vsize = sig0sz;
@@ -153,9 +153,9 @@ static RList *sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
-	ptr->vsize = readLE32 (b, NRO_OFF (text_size));
+	ptr->vsize = r_buf_read_le32_at (b, NRO_OFF (text_size));
 	ptr->size = ptr->vsize;
-	ptr->paddr = readLE32 (b, NRO_OFF (text_memoffset));
+	ptr->paddr = r_buf_read_le32_at (b, NRO_OFF (text_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
@@ -166,9 +166,9 @@ static RList *sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("ro");
-	ptr->vsize = readLE32 (b, NRO_OFF (ro_size));
+	ptr->vsize = r_buf_read_le32_at (b, NRO_OFF (ro_size));
 	ptr->size = ptr->vsize;
-	ptr->paddr = readLE32 (b, NRO_OFF (ro_memoffset));
+	ptr->paddr = r_buf_read_le32_at (b, NRO_OFF (ro_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = R_PERM_R; // r-x
 	ptr->add = true;
@@ -179,15 +179,15 @@ static RList *sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("data");
-	ptr->vsize = readLE32 (b, NRO_OFF (data_size));
+	ptr->vsize = r_buf_read_le32_at (b, NRO_OFF (data_size));
 	ptr->size = ptr->vsize;
-	ptr->paddr = readLE32 (b, NRO_OFF (data_memoffset));
+	ptr->paddr = r_buf_read_le32_at (b, NRO_OFF (data_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = R_PERM_RW;
 	ptr->add = true;
 	eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
-			readLE32 (bf->buf, NRO_OFF (bss_size)));
+			r_buf_read_le32_at (bf->buf, NRO_OFF (bss_size)));
 	r_list_append (ret, ptr);
 	return ret;
 }

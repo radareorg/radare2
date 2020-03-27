@@ -86,7 +86,7 @@ static ut8 gprobe_checksum_i2c (const ut8 *p, unsigned int size, ut8 initial) {
 	ut8 res = initial;
 	unsigned int k;
 
-	for (k = 0; k < size; ++k) {
+	for (k = 0; k < size; k++) {
 		res ^= p[k];
 	}
 
@@ -648,7 +648,7 @@ static ut8 gprobe_checksum (const ut8 *p, unsigned int size) {
 	ut8 res = 0;
 	unsigned int k;
 
-	for (k = 0; k < size; ++k) {
+	for (k = 0; k < size; k++) {
 		res += p[k];
 	}
 

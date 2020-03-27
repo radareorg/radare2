@@ -339,11 +339,10 @@ static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {
 	if (!list) {
 		return NULL;
 	}
-
 	r_list_foreach (fcn->bbs, iter, bb) {
 		int i;
 
-		for (i = 0; i < bb->ninstr; ++i) {
+		for (i = 0; i < bb->ninstr; i++) {
 			ut64 at = bb->addr + r_anal_bb_offset_inst (bb, i);
 			listxrefs (ht, at, list);
 		}
@@ -352,13 +351,14 @@ static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {
 	return list;
 }
 
-R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
-	r_return_val_if_fail (anal && fcn, NULL);
-	return fcn_get_refs (fcn, anal->dict_refs);
+R_API RList *r_anal_function_get_refs(RAnalFunction *fcn) {
+	r_return_val_if_fail (fcn, NULL);
+	return fcn_get_refs (fcn, fcn->anal->dict_refs);
 }
 
-R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
-	return fcn_get_refs (fcn, anal->dict_xrefs);
+R_API RList *r_anal_function_get_xrefs(RAnalFunction *fcn) {
+	r_return_val_if_fail (fcn, NULL);
+	return fcn_get_refs (fcn, fcn->anal->dict_xrefs);
 }
 
 R_API const char *r_anal_ref_type_tostring(RAnalRefType t) {

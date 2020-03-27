@@ -413,13 +413,26 @@ static void rcc_element(REgg *egg, char *str) {
 				eprintf ("global-buffer-overflow in syscalls\n");
 				break;
 			}
+			{
+			bool found = false;
+			int idx = egg->lang.nsyscalls;
+			for (i = 0; i < egg->lang.nsyscalls; i++) {
+				if (!strcmp (egg->lang.dstvar, egg->lang.syscalls[i].name)) {
+					idx = i;
+					found = true;
+					break;
+				}
+			}
 			// XXX the mem for name and arg are not freed - MEMLEAK
-			R_FREE (egg->lang.syscalls[egg->lang.nsyscalls].name);
-			R_FREE (egg->lang.syscalls[egg->lang.nsyscalls].arg);
-			egg->lang.syscalls[egg->lang.nsyscalls].name = strdup (egg->lang.dstvar);
-			egg->lang.syscalls[egg->lang.nsyscalls].arg = strdup (str);
-			egg->lang.nsyscalls++;
+			R_FREE (egg->lang.syscalls[idx].name);
+			R_FREE (egg->lang.syscalls[idx].arg);
+			egg->lang.syscalls[idx].name = strdup (egg->lang.dstvar);
+			egg->lang.syscalls[idx].arg = strdup (str);
+			if (!found) {
+				egg->lang.nsyscalls++;
+			}
 			R_FREE (egg->lang.dstvar);
+			}
 			break;
 		case GOTO:
 			egg->lang.elem[egg->lang.elem_n] = 0;

@@ -16,7 +16,7 @@ R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32) {
 	int i, j = -1;
 	RListIter *iter;
 	RRegItem *item;
-	for (i = 0; i < R_REG_TYPE_LAST; ++i) {
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_list_foreach (reg->regset[i].regs, iter, item) {
 			if (item->size == 32 && !r_str_casecmp (rreg32, item->name)) {
 				j = item->offset;
@@ -25,7 +25,7 @@ R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32) {
 		}
 	}
 	if (j != -1) {
-		for (i = 0; i < R_REG_TYPE_LAST; ++i) {
+		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			r_list_foreach (reg->regset[i].regs, iter, item) {
 				if (item->offset == j && item->size == 64) {
 					return item->name;
@@ -43,7 +43,7 @@ R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64) {
 	int i, j = -1;
 	RListIter *iter;
 	RRegItem *item;
-	for (i = 0; i < R_REG_TYPE_LAST; ++i) {
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_list_foreach (reg->regset[i].regs, iter, item) {
 			if (item->size == 64 && !r_str_casecmp (rreg64, item->name)) {
 				j = item->offset;
@@ -52,7 +52,7 @@ R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64) {
 		}
 	}
 	if (j != -1) {
-		for (i = 0; i < R_REG_TYPE_LAST; ++i) {
+		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			r_list_foreach (reg->regset[i].regs, iter, item) {
 				if (item->offset == j && item->size == 32) {
 					return item->name;
@@ -286,16 +286,21 @@ R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item) {
 }
 
 R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val) {
-	return r_reg_set_value (reg, r_reg_get (reg, name, -1), val);
+	r_return_val_if_fail (reg && name, UT64_MAX);
+	RRegItem *ri = r_reg_get (reg, name, -1);
+	return ri? r_reg_set_value (reg, ri, val): UT64_MAX;
 }
 
 R_API ut64 r_reg_getv(RReg *reg, const char *name) {
-	return r_reg_get_value (reg, r_reg_get (reg, name, -1));
+	r_return_val_if_fail (reg && name, UT64_MAX);
+	RRegItem *ri = r_reg_get (reg, name, -1);
+	return ri? r_reg_get_value (reg, ri): UT64_MAX;
 }
 
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	int i, e;
 	r_return_val_if_fail (reg && name, NULL);
+	//TODO: define flag register as R_REG_TYPE_FLG
 	if (type == R_REG_TYPE_FLG) {
 		type = R_REG_TYPE_GPR;
 	}
@@ -327,10 +332,24 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 }
 
 R_API RList *r_reg_get_list(RReg *reg, int type) {
+	RList *regs;
+	int i, mask;
+
 	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
 		return NULL;
 	}
-	return reg->regset[type].regs;
+
+	regs = reg->regset[type].regs;
+	if (r_list_length (regs) == 0) {
+		mask = ((int)1 << type);
+		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+			if (reg->regset[i].maskregstype & mask) {
+				regs = reg->regset[i].regs;
+			}
+		}
+	}
+
+	return regs;
 }
 
 // TODO regsize is in bits, delta in bytes, maybe we should standarize this..

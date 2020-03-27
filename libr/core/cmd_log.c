@@ -57,10 +57,13 @@ static void screenlock(RCore *core) {
 	}
 	char *again = r_cons_password (Color_INVERT "Type it again:"Color_INVERT_RESET);
 	if (!again || !*again) {
+		free (pass);
 		return;
 	}
 	if (strcmp (pass, again)) {
 		eprintf ("Password mismatch!\n");
+		free (pass);
+		free (again);
 		return;
 	}
 	bool running = true;
@@ -107,7 +110,7 @@ static int textlog_chat(RCore *core) {
 	for (;;) {
 		r_core_log_list (core, lastmsg, 0, 0);
 		lastmsg = core->log->last;
-		if (r_cons_fgets (buf, sizeof (buf) - 1, 0, NULL) < 0) {
+		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
 			return 1;
 		}
 		if (!*buf) {
@@ -321,10 +324,10 @@ static int cmd_plugins(void *data, const char *input) {
 		// return r_core_cmd0 (core, "Lc");
 		break;
 	case '-':
-		r_lib_close (core->lib, r_str_trim_ro (input + 1));
+		r_lib_close (core->lib, r_str_trim_head_ro (input + 1));
 		break;
 	case ' ':
-		r_lib_open (core->lib, r_str_trim_ro (input + 1));
+		r_lib_open (core->lib, r_str_trim_head_ro (input + 1));
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_L);
@@ -343,7 +346,7 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'D': // "LD"
 		if (input[1] == ' ') {
-			r_core_cmdf (core, "e cmd.pdc=%s", r_str_trim_ro (input + 2));
+			r_core_cmdf (core, "e cmd.pdc=%s", r_str_trim_head_ro (input + 2));
 		} else {
 			r_core_cmd0 (core, "e cmd.pdc=?");
 		}

@@ -61,6 +61,8 @@ static int check_fields(const ut8 *start) {
 // elliptic curves and as defined in 7 of RFC 8410 for SafeCurves
 R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i, k, max, index;
+	RListIter *iter;
+	RSearchKeyword *kw;
 	const ut8 rsa_versionmarker[] = { 0x02, 0x01, 0x00, 0x02 };
 	const ut8 ecc_versionmarker[] = { 0x02, 0x01, 0x01, 0x04 };
 	const ut8 safecurves_versionmarker[] = { 0x02, 0x01, 0x00, 0x30 };
@@ -68,35 +70,37 @@ R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len
 	if (len < sizeof (rsa_versionmarker)) {
 		return -1;
 	}
+	r_list_foreach (s->kws, iter, kw) {
+		for (i = 2; i < len - sizeof (rsa_versionmarker); i++) {
+			if (memcmp (&buf[i], rsa_versionmarker, sizeof (rsa_versionmarker)) && 
+			memcmp (&buf[i], ecc_versionmarker, sizeof (ecc_versionmarker)) &&
+			memcmp (&buf[i], safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
+				continue;
+			}
 
-	for (i = 2; i < len - sizeof (rsa_versionmarker); i++) {
-		if (memcmp (&buf[i], rsa_versionmarker, sizeof (rsa_versionmarker)) && 
-		memcmp (&buf[i], ecc_versionmarker, sizeof (ecc_versionmarker)) &&
-		memcmp (&buf[i], safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
-			continue;
-		}
+			index = -1;
+			// Going backward maximum up to 5 characters.
+			if (i < 5) {
+				max = i;
+			} else {
+				max = 5;
+			}
+			for (k = i - 2; k >= i - max; k--) {
+				if (buf[k] == 0x30) { // The sequence identifier is 0x30
+					index = k;
+					break;
+				}
+			}
 
-		index = -1;
-		// Going backward maximum up to 5 characters.
-		if (i < 5) {
-			max = i;
-		} else {
-			max = 5;
-		}
-		for (k = i - 2; k >= i - max; k--) {
-			if (buf[k] == 0x30) { // The sequence identifier is 0x30
-				index = k;
-				break;
+			if (index == -1) {
+				continue;
+			}
+
+			if (check_fields (buf + index)) {
+				parse_next_field(buf + index, &kw->keyword_length);
+				return r_search_hit_new (s, kw, from + index);
 			}
 		}
-
-		if (index == -1) {
-			continue;
-		}
-
-		if (check_fields (buf + index)) {
-			return index;
-		}
 	}
-	return -1;
+	return 0;
 }

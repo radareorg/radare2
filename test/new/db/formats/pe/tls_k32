@@ -3,7 +3,5 @@ FILE=../bins/pe/tls_k32.exe
 ARGS=-A
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN

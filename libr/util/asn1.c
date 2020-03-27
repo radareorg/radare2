@@ -59,7 +59,7 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length, const ut8
 		if (length8 && length8 < length - 2) {
 			ut8 i8;
 			// can overflow.
-			for (i8 = 0; i8 < length8; ++i8) {
+			for (i8 = 0; i8 < length8; i8++) {
 				byte = buffer[2 + i8];
 				length64 <<= 8;
 				length64 |= byte;
@@ -134,7 +134,7 @@ R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length, const u
 				return NULL;
 			}
 			ut32 i;
-			for (i = 0; next >= buffer && next < end && i < count; ++i) {
+			for (i = 0; next >= buffer && next < end && i < count; i++) {
 				RASN1Object *inner = r_asn1_create_object (next, end - next, start_pointer);
 				if (!inner || next == inner->sector) {
 					r_asn1_free_object (inner);
@@ -179,7 +179,7 @@ R_API void r_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size, ut32 
 		snprintf (p, end - p, "%s", pad);
 		p += strlen(pad);
 	}
-	for (i = 0; i < object->length && p < end; ++i) {
+	for (i = 0; i < object->length && p < end; i++) {
 		snprintf (p, end - p, "%02x", object->sector[i]);
 		p += 2;
 	}
@@ -201,13 +201,13 @@ static void r_asn1_print_padded(RStrBuf *sb, RASN1Object *object, int depth, con
 		break;
 	case TAG_INTEGER:
 	case TAG_REAL:
-		if (*r_str_trim_ro (v)) {
+		if (*r_str_trim_head_ro (v)) {
 			r_strbuf_appendf (sb, "%s%s\n%s%s\n", pad, k, pad, v);
 		}
 		break;
 	case TAG_BITSTRING:
 	default:
-		if (*r_str_trim_ro (v)) {
+		if (*r_str_trim_head_ro (v)) {
 			r_strbuf_appendf (sb, "%s%s\n", pad, v);
 		}
 		break;
@@ -424,7 +424,7 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 			depth, object->form ? "cons" : "prim", name, string);
 		r_asn1_free_string (asn1str);
 		if (object->list.objects) {
-			for (i = 0; i < object->list.length; ++i) {
+			for (i = 0; i < object->list.length; i++) {
 				r_asn1_to_string (object->list.objects[i], depth + 1, sb);
 			}
 		}
@@ -432,7 +432,7 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 		r_asn1_print_padded (sb, object, depth, name, string);
 		r_asn1_free_string (asn1str);
 		if (object->list.objects) {
-			for (i = 0; i < object->list.length; ++i) {
+			for (i = 0; i < object->list.length; i++) {
 				RASN1Object *obj = object->list.objects[i];
 				r_asn1_to_string (obj, depth + 1, sb);
 			}
@@ -449,7 +449,7 @@ R_API void r_asn1_free_object (RASN1Object *object) {
 	// This shall not be freed. it's a pointer into the buffer.
 	object->sector = NULL;
 	if (object->list.objects) {
-		for (i = 0; i < object->list.length; ++i) {
+		for (i = 0; i < object->list.length; i++) {
 			r_asn1_free_object (object->list.objects[i]);
 		}
 		R_FREE (object->list.objects);

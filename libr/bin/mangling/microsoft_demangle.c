@@ -1607,6 +1607,7 @@ static EDemanglerErr parse_microsoft_rtti_mangled_name(char *sym, char **demangl
 	int len = get_namespace_and_name (sym + 2, &type_code_str, NULL);
 	if (!len) {
 		err = eDemanglerErrUncorrectMangledSymbol;
+		free (type_code_str.type_str);
 		goto parse_microsoft_rtti_mangled_name_err;
 	}
 

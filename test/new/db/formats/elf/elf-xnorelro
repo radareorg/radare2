@@ -3,9 +3,7 @@ FILE=../bins/elf/analysis/elf-xnorelro
 EXPECT=<<EOF
 elf.relro=no
 EOF
-CMDS=<<EOF
-ik info/*~relro
-EOF
+CMDS=ik info/*~relro
 RUN
 
 NAME=PE: corkami elf-nx - nx disabled
@@ -13,7 +11,5 @@ FILE=../bins/elf/analysis/elf-xnorelro
 EXPECT=<<EOF
 nx       false
 EOF
-CMDS=<<EOF
-iI~^nx
-EOF
+CMDS=iI~^nx
 RUN

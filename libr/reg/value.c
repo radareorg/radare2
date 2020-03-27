@@ -68,6 +68,7 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 }
 
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
+	r_return_val_if_fail (reg && item, 0);
 	if (!reg || !item || item->offset == -1) {
 		return 0LL;
 	}
@@ -79,7 +80,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	switch (item->size) {
 	case 1: {
 		int offset = item->offset / 8;
-		if (offset + item->size >= regset->arena->size) {
+		if (offset >= regset->arena->size) {
 			break;
 		}
 		return (regset->arena->bytes[offset] &
@@ -122,6 +123,9 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	case 80: // long double
 	case 96: // long floating value
 		// FIXME: It is a precision loss, please implement me properly!
+		return (ut64)r_reg_get_longdouble (reg, item);
+	case 128:
+		// XXX 128 bit
 		return (ut64)r_reg_get_longdouble (reg, item);
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
@@ -197,6 +201,9 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 			buf[0] = (buf[0] & mask) | 0;
 		}
 		return true;
+	case 128:
+		// XXX 128 bit
+		return false; // (ut64)r_reg_get_longdouble (reg, item);
 	default:
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
 		return false;
@@ -253,7 +260,10 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
-	packbits = R_MIN (64, R_MAX (0, packbits));
+	if (packbits > 64) {
+		packbits = 64;
+		eprintf ("Does not support pack bits > 64\n");
+	}
 
 	ut64 ret = 0LL;
 	const int packbytes = packbits / 8;
@@ -262,7 +272,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 		eprintf ("Invalid bit size for packet register\n");
 		return 0LL;
 	}
-	if (packidx * packbits > item->size) {
+	if ((packidx + 1) * packbits > item->size) {
 		eprintf ("Packed index is beyond the register size\n");
 		return 0LL;
 	}
@@ -285,10 +295,13 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
-	packbits = R_MIN (64, R_MAX (0, packbits));
+	if (packbits > 64) {
+		packbits = 64;
+		eprintf ("Does not support pack bits > 64\n");
+	}
 
 	int packbytes = packbits / 8;
-	if (packidx * packbits > item->size) {
+	if ((packidx + 1) * packbits > item->size) {
 		eprintf ("Packed index is beyond the register size\n");
 		return false;
 	}

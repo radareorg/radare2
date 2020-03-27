@@ -59,7 +59,7 @@ ut32 get_ins_part(ut32 pos, ut32 len) {
 		return ret;
 	} 
 
-	for (; len > 0; --len) {
+	for (; len > 0; len--) {
 		ret <<= 8;
 		if (pos >= ins_buff_len) {
 			has_failed = 1;

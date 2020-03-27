@@ -9,18 +9,14 @@ EXPECT=<<EOF
 five
 five
 EOF
-CMDS=<<EOF
-sort ../bins/other/test_file
-EOF
+CMDS=sort ../bins/other/test_file
 RUN
 
 NAME=Missing Sort Params
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-sort 
-EOF
+CMDS=sort 
 RUN
 
 NAME=Uniq command
@@ -33,18 +29,14 @@ five
 9 great
 0 one
 EOF
-CMDS=<<EOF
-uniq ../bins/other/test_file
-EOF
+CMDS=uniq ../bins/other/test_file
 RUN
 
 NAME=Missing Uniq Params
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-uniq 
-EOF
+CMDS=uniq 
 RUN
 
 NAME=Join command
@@ -55,16 +47,12 @@ EXPECT=<<EOF
 4 radare awesome
 9 great dodoco
 EOF
-CMDS=<<EOF
-join ../bins/other/test_file ../bins/other/test_file2
-EOF
+CMDS=join ../bins/other/test_file ../bins/other/test_file2
 RUN
 
 NAME=Missing join Params
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-join ../bins/other/test_file
-EOF
+CMDS=join ../bins/other/test_file
 RUN

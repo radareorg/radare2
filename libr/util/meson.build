@@ -84,7 +84,7 @@ r_util_sources = [
   'regex/regerror.c'
 ]
 
-r_util_deps = [ldl, mth, pth, utl, sdb_dep, zlib_dep]
+r_util_deps = [ldl, mth, pth, utl, sdb_dep, zlib_dep, platform_deps]
 if host_machine.system().startswith('freebsd')
   # backtrace_symbols_fd requires -lexecinfo
   r_util_deps += [cc.find_library('execinfo')]
@@ -92,7 +92,7 @@ endif
 
 r_util = library('r_util', r_util_sources,
   include_directories: platform_inc,
-  c_args: library_cflags + ['-DR_UTIL_SRC=1'],
+  c_args: library_cflags,
   dependencies: r_util_deps,
   install: true,
   implicit_include_directories: false,

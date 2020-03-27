@@ -2,9 +2,7 @@ NAME=ELF: no version info
 FILE=../bins/elf/analysis/x64-simple
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-iV
-EOF
+CMDS=iV
 RUN
 
 NAME=ELF: versioninfo 1
@@ -25,9 +23,7 @@ Version need section '.gnu.version_r' contains 1 entries:
   0x00000010:   Name: GLIBC_2.4  Flags: none Version: 3
   0x00000020:   Name: GLIBC_2.2.5  Flags: none Version: 2
 EOF
-CMDS=<<EOF
-iV
-EOF
+CMDS=iV
 RUN
 
 NAME=ELF: versioninfo 2
@@ -45,7 +41,5 @@ Version need section '.gnu.version_r' contains 1 entries:
   0x00000000: Version: 1  File: libc.so.6  Cnt: 1
   0x00000010:   Name: GLIBC_2.2.5  Flags: none Version: 2
 EOF
-CMDS=<<EOF
-iV
-EOF
+CMDS=iV
 RUN

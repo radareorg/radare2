@@ -220,7 +220,7 @@ R_API RBuffer *r_buf_new_file(const char *file, int perm, int mode) {
 
 // TODO: rename to new_from_file ?
 R_API RBuffer *r_buf_new_slurp(const char *file) {
-	int len;
+	size_t len;
 	char *tmp = r_file_slurp (file, &len);
 	if (!tmp) {
 		return NULL;
@@ -228,7 +228,7 @@ R_API RBuffer *r_buf_new_slurp(const char *file) {
 
 	struct buf_bytes_user u = { 0 };
 	u.data_steal = (ut8 *)tmp;
-	u.length = len;
+	u.length = (ut64)len;
 	u.steal = true;
 	return new_buffer (R_BUFFER_BYTES, &u);
 }
@@ -451,13 +451,13 @@ R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
 static st64 buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 	st64 res = 0;
 	int i;
-	for (i = 0; i < n; ++i) {
+	for (i = 0; i < n; i++) {
 		int j;
 		int m = 1;
 		int tsize = 2;
 		bool bigendian = true;
 
-		for (j = 0; fmt[j]; ++j) {
+		for (j = 0; fmt[j]; j++) {
 			switch (fmt[j]) {
 			case '0':
 			case '1':

@@ -43,9 +43,7 @@ vaddr      name
 0x00000000 .symtab
 
 EOF
-CMDS=<<EOF
-iS size/sort,vaddr/cols/name
-EOF
+CMDS=iS size/sort,vaddr/cols/name
 RUN
 
 NAME=ib
@@ -102,9 +100,7 @@ EXPECT=<<EOF
 
 7 fields
 EOF
-CMDS=<<EOF
-ihq
-EOF
+CMDS=ihq
 RUN
 
 NAME=ih* (file x86)
@@ -140,9 +136,7 @@ CCu MHgwMDAwMDdjYw== @ 0x20
 Cf 4 x @ 0x20
 pf.ShOff x
 EOF
-CMDS=<<EOF
-ih*
-EOF
+CMDS=ih*
 RUN
 
 NAME=iZ
@@ -150,9 +144,7 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 4899
 EOF
-CMDS=<<EOF
-iZ
-EOF
+CMDS=iZ
 RUN
 
 NAME=iZ*
@@ -160,9 +152,7 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 f bin_size @ 4899
 EOF
-CMDS=<<EOF
-iZ*
-EOF
+CMDS=iZ*
 RUN
 
 NAME=i (all) (malloc)
@@ -198,13 +188,13 @@ static   true
 stripped false
 va       false
 [Imports]
-nth vaddr bind type name
-------------------------
+nth vaddr bind type lib name
+----------------------------
 
 [Exports]
 
-nth paddr vaddr bind type size name
------------------------------------
+nth paddr vaddr bind type size lib name
+---------------------------------------
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
@@ -213,8 +203,8 @@ fs imports
 fs symbols
 fs exports
 [Imports]
-nth vaddr bind type name
-------------------------
+nth vaddr bind type lib name
+----------------------------
 
 fs imports
 [Entrypoints]
@@ -223,8 +213,8 @@ fs imports
 fs symbols
 [Symbols]
 
-nth paddr vaddr bind type size name
------------------------------------
+nth paddr vaddr bind type size lib name
+---------------------------------------
 fs symbols
 [Sections]
 
@@ -344,9 +334,7 @@ stripped false
 subsys   linux
 va       true
 EOF
-CMDS=<<EOF
-i~!file
-EOF
+CMDS=i~!file
 RUN
 
 NAME=iA (file x86)
@@ -355,9 +343,7 @@ EXPECT=<<EOF
 0   0x00000000 4899 x86_32 
 
 EOF
-CMDS=<<EOF
-iA
-EOF
+CMDS=iA
 RUN
 
 NAME=ib java class file
@@ -399,8 +385,8 @@ stripped false
 subsys   any
 va       false
   ;-- entry1:
-  ;-- method.TestVariableSwitchUp.TestMultipleVariable:
-/ (fcn) sym.TestVariableSwitchUp.TestMultipleVariable 37
+  ;-- sym.TestVariableSwitchUp.TestMultipleVariable:
+/ (fcn) method.TestVariableSwitchUp.TestMultipleVariable 37
 | 0x000002fd      1064           bipush 100
 | 0x000002ff      b8000f         invokestatic java/lang/Integer/valueOf(I)Ljava/lang/Integer;
 | 0x00000302      4b             astore_0
@@ -466,9 +452,7 @@ FILE=../bins/elf/libmagic.so
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-ic?~?Usage
-EOF
+CMDS=ic?~?Usage
 RUN
 
 NAME=icl
@@ -495,14 +479,13 @@ EXPECT=<<EOF
 0x76760 0x76744
 0x76844 0x76828
 EOF
-CMDS=<<EOF
-icl
-EOF
+CMDS=icl
 RUN
 
 NAME=icj
 FILE=../bins/elf/libmagic.so
-EXPECT='[
+EXPECT=<<EOF
+[
   {
     "classname": "_JNIEnv",
     "addr": 0,
@@ -983,10 +966,9 @@ EXPECT='[
       
     ]
   }
-]'
-CMDS=<<EOF
-icj~{}
+]
 EOF
+CMDS=icj~{}
 RUN
 
 NAME=ic*
@@ -1084,9 +1066,7 @@ fs classes
 "f method.std::bad_typeid.~bad_typeid() = 0x12c2c"
 "f method.std::bad_typeid.what()_const = 0x12c1c"
 EOF
-CMDS=<<EOF
-ic*
-EOF
+CMDS=ic*
 RUN
 
 NAME=icc
@@ -1173,9 +1153,7 @@ EXPECT=<<EOF
 }
 @end
 EOF
-CMDS=<<EOF
-icc
-EOF
+CMDS=icc
 RUN
 
 NAME=iq
@@ -1189,9 +1167,7 @@ minopsz 2
 maxopsz 4
 pcalign 2
 EOF
-CMDS=<<EOF
-iq
-EOF
+CMDS=iq
 RUN
 
 NAME=iaq
@@ -1444,9 +1420,7 @@ pthread_mutex_unlock
 0x00012c54 28 std::bad_typeid::~bad_typeid()
 0x00014b58 15 typeinfo name for std::bad_typeid
 EOF
-CMDS=<<EOF
-iaq
-EOF
+CMDS=iaq
 RUN
 
 NAME=iD
@@ -1454,9 +1428,7 @@ FILE=../bins/elf/libmagic.so
 EXPECT=<<EOF
 Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
 EOF
-CMDS=<<EOF
-iD swift _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
-EOF
+CMDS=iD swift _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
 RUN
 
 NAME=ie (file x86)
@@ -1467,34 +1439,29 @@ vaddr=0x08048300 paddr=0x00000300 haddr=0x00000018 hvaddr=0x08048018 type=progra
 
 1 entrypoints
 EOF
-CMDS=<<EOF
-ie
-EOF
+CMDS=ie
 RUN
 
 NAME=iej (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-EXPECT='[{"vaddr":134513408,"paddr":768,"baddr":134512640,"laddr":0,"hvaddr":134512664,"haddr":24,"type":"program"}]
-'
-CMDS=<<EOF
-iej
+EXPECT=<<EOF
+[{"vaddr":134513408,"paddr":768,"baddr":134512640,"laddr":0,"hvaddr":134512664,"haddr":24,"type":"program"}]
 EOF
+CMDS=iej
 RUN
 
 NAME=ii (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind   type   name
----------------------------------
-1   0x080482d0 GLOBAL FUNC   puts
-2   0x080482e0 WEAK   NOTYPE __gmon_start__
-3   0x080482f0 GLOBAL FUNC   __libc_start_main
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x080482d0 GLOBAL FUNC       puts
+2   0x080482e0 WEAK   NOTYPE     __gmon_start__
+3   0x080482f0 GLOBAL FUNC       __libc_start_main
 
 EOF
-CMDS=<<EOF
-ii
-EOF
+CMDS=ii
 RUN
 
 NAME=iI (file x86)
@@ -1532,15 +1499,14 @@ stripped false
 subsys   linux
 va       true
 EOF
-CMDS=<<EOF
-iI
-EOF
+CMDS=iI
 RUN
 
 NAME=iIj
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=iIj~{}
-EXPECT='{
+EXPECT=<<EOF
+{
   "arch": "x86",
   "baddr": 134512640,
   "binsz": 4899,
@@ -1578,21 +1544,24 @@ EXPECT='{
   "checksums": {
     
   }
-}'
+}
+EOF
 RUN
 
 NAME=iI-rust
 FILE=../bins/elf/analysis/rust_full
 CMDS=iI~lang
-EXPECT='lang     rust
-'
+EXPECT=<<EOF
+lang     rust
+EOF
 RUN
 
 NAME=iI-msvc
 FILE=../bins/pe/libzmq-v100-mt-4_0_4.dll
 CMDS=iI~lang
-EXPECT='lang     msvc
-'
+EXPECT=<<EOF
+lang     msvc
+EOF
 RUN
 
 NAME=im
@@ -1600,9 +1569,7 @@ FILE=../bins/nes/Pong.nes
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-im~?SRAM
-EOF
+CMDS=im~?SRAM
 RUN
 
 NAME=imj
@@ -1610,9 +1577,7 @@ FILE=../bins/nes/Pong.nes
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-imj~?SRAM
-EOF
+CMDS=imj~?SRAM
 RUN
 
 NAME=imq
@@ -2650,9 +2615,7 @@ EXPECT=<<EOF
 0x00004000
 0x00006000
 EOF
-CMDS=<<EOF
-imq
-EOF
+CMDS=imq
 RUN
 
 NAME=iS (file x86)
@@ -2694,15 +2657,12 @@ nth paddr        size vaddr       vsize perm name
 29  0x000010cc  0x257 0x00000000  0x257 ---- .strtab
 
 EOF
-CMDS=<<EOF
-iS
-EOF
+CMDS=iS
 RUN
 
 NAME=iSS (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
-iSS
+CMDS=iSS
 EXPECT=<<EOF
 [Segments]
 
@@ -2723,8 +2683,7 @@ RUN
 
 NAME=iSj
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
-iSj
+CMDS=iSj
 EXPECT=<<EOF
 [{"name":"","size":0,"vsize":0,"perm":"----","paddr":0,"vaddr":0},{"name":".interp","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":".note.ABI_tag","size":32,"vsize":32,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":".note.gnu.build_id","size":36,"vsize":36,"perm":"-r--","paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","paddr":1716,"vaddr":0},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","paddr":1733,"vaddr":0},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","paddr":3196,"vaddr":0},{"name":".strtab","size":599,"vsize":599,"perm":"----","paddr":4300,"vaddr":0}]
 EOF
@@ -2732,8 +2691,7 @@ RUN
 
 NAME=iSSj
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
-iSSj
+CMDS=iSSj
 EXPECT=<<EOF
 [{"name":"PHDR","size":256,"vsize":256,"perm":"-r-x","paddr":52,"vaddr":134512692},{"name":"INTERP","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":"LOAD0","size":1436,"vsize":1436,"perm":"-r-x","paddr":0,"vaddr":134512640},{"name":"LOAD1","size":280,"vsize":284,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":"DYNAMIC","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":"NOTE","size":68,"vsize":68,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":"GNU_EH_FRAME","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":"GNU_STACK","size":0,"vsize":0,"perm":"-rw-","paddr":0,"vaddr":0},{"name":"ehdr","size":52,"vsize":52,"perm":"-rw-","paddr":0,"vaddr":134512640}]
 EOF
@@ -2794,9 +2752,10 @@ RUN
 
 NAME=section comment
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes = false
 pd 1 @ 0x080495a8
+EOF
 EXPECT=<<EOF
             ;-- section..dynamic:
             ;-- segment.DYNAMIC:
@@ -2808,8 +2767,7 @@ RUN
 
 NAME=bss section comment
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
-pd 3 @ section..bss
+CMDS=pd 3 @ section..bss
 EXPECT=<<EOF
             ;-- section..bss:
             ;-- .bss:
@@ -2832,9 +2790,7 @@ libc.so.6
 
 1 library
 EOF
-CMDS=<<EOF
-il
-EOF
+CMDS=il
 RUN
 
 NAME=il* (file x86)
@@ -2842,9 +2798,7 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 "CCa entry0 libc.so.6"
 EOF
-CMDS=<<EOF
-il*
-EOF
+CMDS=il*
 RUN
 
 NAME=ir (file x86)
@@ -2854,17 +2808,15 @@ EXPECT=<<EOF
 
 vaddr      paddr      type   name
 ---------------------------------
-0x08049690 0x00000690 SET_32  __gmon_start__
-0x080496a0 0x000006a0 SET_32  puts
-0x080496a4 0x000006a4 SET_32  __gmon_start__
-0x080496a8 0x000006a8 SET_32  __libc_start_main
+0x08049690 0x00000690 SET_32 __gmon_start__
+0x080496a0 0x000006a0 SET_32 puts
+0x080496a4 0x000006a4 SET_32 __gmon_start__
+0x080496a8 0x000006a8 SET_32 __libc_start_main
 
 
 4 relocations
 EOF
-CMDS=<<EOF
-ir
-EOF
+CMDS=ir
 RUN
 
 NAME=ir* (file x86)
@@ -2880,9 +2832,7 @@ Cd 4 @ 0x080496a4
 "f reloc.__libc_start_main 4 0x080496a8"
 Cd 4 @ 0x080496a8
 EOF
-CMDS=<<EOF
-ir*
-EOF
+CMDS=ir*
 RUN
 
 NAME=irq (file x86)
@@ -2893,9 +2843,7 @@ EXPECT=<<EOF
 0x080496a4  __gmon_start__
 0x080496a8  __libc_start_main
 EOF
-CMDS=<<EOF
-irq
-EOF
+CMDS=irq
 RUN
 
 NAME=is (file x86)
@@ -2903,77 +2851,75 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind   type   size name
---------------------------------------------------
-4    0x000004ac 0x080484ac GLOBAL OBJ    4    _IO_stdin_used
-1    0x00000134 0x08048134 LOCAL  SECT   0    .interp
-2    0x00000148 0x08048148 LOCAL  SECT   0    .note.ABI-tag
-3    0x00000168 0x08048168 LOCAL  SECT   0    .note.gnu.build-id
-4    0x0000018c 0x0804818c LOCAL  SECT   0    .gnu.hash
-5    0x000001ac 0x080481ac LOCAL  SECT   0    .dynsym
-6    0x000001fc 0x080481fc LOCAL  SECT   0    .dynstr
-7    0x00000246 0x08048246 LOCAL  SECT   0    .gnu.version
-8    0x00000250 0x08048250 LOCAL  SECT   0    .gnu.version_r
-9    0x00000270 0x08048270 LOCAL  SECT   0    .rel.dyn
-10   0x00000278 0x08048278 LOCAL  SECT   0    .rel.plt
-11   0x00000290 0x08048290 LOCAL  SECT   0    .init
-12   0x000002c0 0x080482c0 LOCAL  SECT   0    .plt
-13   0x00000300 0x08048300 LOCAL  SECT   0    .text
-14   0x00000494 0x08048494 LOCAL  SECT   0    .fini
-15   0x000004a8 0x080484a8 LOCAL  SECT   0    .rodata
-16   0x000004c0 0x080484c0 LOCAL  SECT   0    .eh_frame_hdr
-17   0x000004ec 0x080484ec LOCAL  SECT   0    .eh_frame
-18   0x0000059c 0x0804959c LOCAL  SECT   0    .init_array
-19   0x000005a0 0x080495a0 LOCAL  SECT   0    .fini_array
-20   0x000005a4 0x080495a4 LOCAL  SECT   0    .jcr
-21   0x000005a8 0x080495a8 LOCAL  SECT   0    .dynamic
-22   0x00000690 0x08049690 LOCAL  SECT   0    .got
-23   0x00000694 0x08049694 LOCAL  SECT   0    .got.plt
-24   0x000006ac 0x080496ac LOCAL  SECT   0    .data
-25   ---------- 0x080496b4 LOCAL  SECT   0    .bss
-26   ---------- 0x00000000 LOCAL  SECT   0    .comment
-27   ---------- 0x00000000 LOCAL  FILE   0    init.c
-28   ---------- 0x00000000 LOCAL  FILE   0    
-29   ---------- 0x00000000 LOCAL  FILE   0    crtstuff.c
-30   0x000005a4 0x080495a4 LOCAL  OBJ    0    __JCR_LIST__
-31   0x00000340 0x08048340 LOCAL  FUNC   0    deregister_tm_clones
-32   0x00000370 0x08048370 LOCAL  FUNC   0    register_tm_clones
-33   0x000003b0 0x080483b0 LOCAL  FUNC   0    __do_global_dtors_aux
-34   ---------- 0x080496b4 LOCAL  OBJ    1    completed.5979
-35   0x000005a0 0x080495a0 LOCAL  OBJ    0    __do_global_dtors_aux_fini_array_entry
-36   0x000003d0 0x080483d0 LOCAL  FUNC   0    frame_dummy
-37   0x0000059c 0x0804959c LOCAL  OBJ    0    __frame_dummy_init_array_entry
-38   ---------- 0x00000000 LOCAL  FILE   0    hello.c
-39   ---------- 0x00000000 LOCAL  FILE   0    crtstuff.c
-40   0x00000598 0x08048598 LOCAL  OBJ    0    __FRAME_END__
-41   0x000005a4 0x080495a4 LOCAL  OBJ    0    __JCR_END__
-42   ---------- 0x00000000 LOCAL  FILE   0    
-43   0x000005a0 0x080495a0 LOCAL  NOTYPE 0    __init_array_end
-44   0x000005a8 0x080495a8 LOCAL  OBJ    0    _DYNAMIC
-45   0x0000059c 0x0804959c LOCAL  NOTYPE 0    __init_array_start
-46   0x00000694 0x08049694 LOCAL  OBJ    0    _GLOBAL_OFFSET_TABLE_
-47   0x00000490 0x08048490 GLOBAL FUNC   2    __libc_csu_fini
-49   0x00000330 0x08048330 GLOBAL FUNC   4    __x86.get_pc_thunk.bx
-50   0x000006ac 0x080496ac WEAK   NOTYPE 0    data_start
-51   ---------- 0x080496b4 GLOBAL NOTYPE 0    _edata
-52   0x00000494 0x08048494 GLOBAL FUNC   0    _fini
-53   0x000006ac 0x080496ac GLOBAL NOTYPE 0    __data_start
-56   0x000006b0 0x080496b0 GLOBAL OBJ    0    __dso_handle
-59   0x00000420 0x08048420 GLOBAL FUNC   97   __libc_csu_init
-60   ---------- 0x080496b8 GLOBAL NOTYPE 0    _end
-61   0x00000300 0x08048300 GLOBAL FUNC   0    _start
-62   0x000004a8 0x080484a8 GLOBAL OBJ    4    _fp_hw
-63   ---------- 0x080496b4 GLOBAL NOTYPE 0    __bss_start
-64   0x00000400 0x08048400 GLOBAL FUNC   28   main
-66   ---------- 0x080496b4 GLOBAL OBJ    0    __TMC_END__
-68   0x00000290 0x08048290 GLOBAL FUNC   0    _init
-1    0x000002d0 0x080482d0 GLOBAL FUNC   16   imp.puts
-2    0x000002e0 0x080482e0 WEAK   NOTYPE 16   imp.__gmon_start__
-3    0x000002f0 0x080482f0 GLOBAL FUNC   16   imp.__libc_start_main
+nth paddr       vaddr      bind   type   size lib name
+------------------------------------------------------
+4    0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
+1    0x00000134 0x08048134 LOCAL  SECT   0        .interp
+2    0x00000148 0x08048148 LOCAL  SECT   0        .note.ABI-tag
+3    0x00000168 0x08048168 LOCAL  SECT   0        .note.gnu.build-id
+4    0x0000018c 0x0804818c LOCAL  SECT   0        .gnu.hash
+5    0x000001ac 0x080481ac LOCAL  SECT   0        .dynsym
+6    0x000001fc 0x080481fc LOCAL  SECT   0        .dynstr
+7    0x00000246 0x08048246 LOCAL  SECT   0        .gnu.version
+8    0x00000250 0x08048250 LOCAL  SECT   0        .gnu.version_r
+9    0x00000270 0x08048270 LOCAL  SECT   0        .rel.dyn
+10   0x00000278 0x08048278 LOCAL  SECT   0        .rel.plt
+11   0x00000290 0x08048290 LOCAL  SECT   0        .init
+12   0x000002c0 0x080482c0 LOCAL  SECT   0        .plt
+13   0x00000300 0x08048300 LOCAL  SECT   0        .text
+14   0x00000494 0x08048494 LOCAL  SECT   0        .fini
+15   0x000004a8 0x080484a8 LOCAL  SECT   0        .rodata
+16   0x000004c0 0x080484c0 LOCAL  SECT   0        .eh_frame_hdr
+17   0x000004ec 0x080484ec LOCAL  SECT   0        .eh_frame
+18   0x0000059c 0x0804959c LOCAL  SECT   0        .init_array
+19   0x000005a0 0x080495a0 LOCAL  SECT   0        .fini_array
+20   0x000005a4 0x080495a4 LOCAL  SECT   0        .jcr
+21   0x000005a8 0x080495a8 LOCAL  SECT   0        .dynamic
+22   0x00000690 0x08049690 LOCAL  SECT   0        .got
+23   0x00000694 0x08049694 LOCAL  SECT   0        .got.plt
+24   0x000006ac 0x080496ac LOCAL  SECT   0        .data
+25   ---------- 0x080496b4 LOCAL  SECT   0        .bss
+26   ---------- 0x00000000 LOCAL  SECT   0        .comment
+27   ---------- 0x00000000 LOCAL  FILE   0        init.c
+28   ---------- 0x00000000 LOCAL  FILE   0        
+29   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+30   0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_LIST__
+31   0x00000340 0x08048340 LOCAL  FUNC   0        deregister_tm_clones
+32   0x00000370 0x08048370 LOCAL  FUNC   0        register_tm_clones
+33   0x000003b0 0x080483b0 LOCAL  FUNC   0        __do_global_dtors_aux
+34   ---------- 0x080496b4 LOCAL  OBJ    1        completed.5979
+35   0x000005a0 0x080495a0 LOCAL  OBJ    0        __do_global_dtors_aux_fini_array_entry
+36   0x000003d0 0x080483d0 LOCAL  FUNC   0        frame_dummy
+37   0x0000059c 0x0804959c LOCAL  OBJ    0        __frame_dummy_init_array_entry
+38   ---------- 0x00000000 LOCAL  FILE   0        hello.c
+39   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+40   0x00000598 0x08048598 LOCAL  OBJ    0        __FRAME_END__
+41   0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_END__
+42   ---------- 0x00000000 LOCAL  FILE   0        
+43   0x000005a0 0x080495a0 LOCAL  NOTYPE 0        __init_array_end
+44   0x000005a8 0x080495a8 LOCAL  OBJ    0        _DYNAMIC
+45   0x0000059c 0x0804959c LOCAL  NOTYPE 0        __init_array_start
+46   0x00000694 0x08049694 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
+47   0x00000490 0x08048490 GLOBAL FUNC   2        __libc_csu_fini
+49   0x00000330 0x08048330 GLOBAL FUNC   4        __x86.get_pc_thunk.bx
+50   0x000006ac 0x080496ac WEAK   NOTYPE 0        data_start
+51   ---------- 0x080496b4 GLOBAL NOTYPE 0        _edata
+52   0x00000494 0x08048494 GLOBAL FUNC   0        _fini
+53   0x000006ac 0x080496ac GLOBAL NOTYPE 0        __data_start
+56   0x000006b0 0x080496b0 GLOBAL OBJ    0        __dso_handle
+59   0x00000420 0x08048420 GLOBAL FUNC   97       __libc_csu_init
+60   ---------- 0x080496b8 GLOBAL NOTYPE 0        _end
+61   0x00000300 0x08048300 GLOBAL FUNC   0        _start
+62   0x000004a8 0x080484a8 GLOBAL OBJ    4        _fp_hw
+63   ---------- 0x080496b4 GLOBAL NOTYPE 0        __bss_start
+64   0x00000400 0x08048400 GLOBAL FUNC   28       main
+66   ---------- 0x080496b4 GLOBAL OBJ    0        __TMC_END__
+68   0x00000290 0x08048290 GLOBAL FUNC   0        _init
+1    0x000002d0 0x080482d0 GLOBAL FUNC   16       imp.puts
+2    0x000002e0 0x080482e0 WEAK   NOTYPE 16       imp.__gmon_start__
+3    0x000002f0 0x080482f0 GLOBAL FUNC   16       imp.__libc_start_main
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=iz (file x86)
@@ -2984,9 +2930,7 @@ nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 EOF
-CMDS=<<EOF
-iz
-EOF
+CMDS=iz
 RUN
 
 NAME=i (file x86_64)
@@ -3033,9 +2977,7 @@ stripped false
 subsys   linux
 va       true
 EOF
-CMDS=<<EOF
-i~!hello-linux
-EOF
+CMDS=i~!hello-linux
 RUN
 
 NAME=iA (file x86_64)
@@ -3044,9 +2986,7 @@ EXPECT=<<EOF
 0   0x00000000 6710 x86_64 
 
 EOF
-CMDS=<<EOF
-iA
-EOF
+CMDS=iA
 RUN
 
 NAME=ie (file x86_64)
@@ -3057,9 +2997,7 @@ vaddr=0x00400410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00400018 type=progra
 
 1 entrypoints
 EOF
-CMDS=<<EOF
-ie
-EOF
+CMDS=ie
 RUN
 
 NAME=iH (file x86_64)
@@ -3073,25 +3011,21 @@ EXPECT=<<EOF
 0x00000020  PhOff       0x00000040
 0x00000028  ShOff       0x00000a30
 EOF
-CMDS=<<EOF
-iH
-EOF
+CMDS=iH
 RUN
 
 NAME=ii (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind   type   name
----------------------------------
-1   0x004003e0 GLOBAL FUNC   puts
-2   0x004003f0 GLOBAL FUNC   __libc_start_main
-3   0x00400400 WEAK   NOTYPE __gmon_start__
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x004003e0 GLOBAL FUNC       puts
+2   0x004003f0 GLOBAL FUNC       __libc_start_main
+3   0x00400400 WEAK   NOTYPE     __gmon_start__
 
 EOF
-CMDS=<<EOF
-ii
-EOF
+CMDS=ii
 RUN
 
 NAME=iI (file x86_64)
@@ -3129,9 +3063,7 @@ stripped false
 subsys   linux
 va       true
 EOF
-CMDS=<<EOF
-iI
-EOF
+CMDS=iI
 RUN
 
 NAME=iS (file x86_64)
@@ -3173,15 +3105,12 @@ nth paddr        size vaddr       vsize perm name
 29  0x000017f8  0x23e 0x00000000  0x23e ---- .strtab
 
 EOF
-CMDS=<<EOF
-iS
-EOF
+CMDS=iS
 RUN
 
 NAME=iSS (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EXPECT
-iSS
+CMDS=iSS
 EXPECT=<<EOF
 [Segments]
 
@@ -3208,9 +3137,7 @@ libc.so.6
 
 1 library
 EOF
-CMDS=<<EOF
-il
-EOF
+CMDS=il
 RUN
 
 NAME=ir (file x86_64)
@@ -3220,17 +3147,15 @@ EXPECT=<<EOF
 
 vaddr      paddr      type   name
 ---------------------------------
-0x006008c8 0x000008c8 SET_64  __gmon_start__
-0x006008e8 0x000008e8 SET_64  puts
-0x006008f0 0x000008f0 SET_64  __libc_start_main
-0x006008f8 0x000008f8 SET_64  __gmon_start__
+0x006008c8 0x000008c8 SET_64 __gmon_start__
+0x006008e8 0x000008e8 SET_64 puts
+0x006008f0 0x000008f0 SET_64 __libc_start_main
+0x006008f8 0x000008f8 SET_64 __gmon_start__
 
 
 4 relocations
 EOF
-CMDS=<<EOF
-ir
-EOF
+CMDS=ir
 RUN
 
 NAME=ir (file x86_64, ifunc)
@@ -3240,23 +3165,21 @@ EXPECT=<<EOF
 
 vaddr      paddr      type   name
 ---------------------------------
-0x006b17d0 0x000b17d0 SET_64  0x00416530 (ifunc)
-0x006b17d8 0x000b17d8 SET_64  0x004193a0 (ifunc)
-0x006b17e0 0x000b17e0 SET_64  0x004199b0 (ifunc)
-0x006b17e8 0x000b17e8 SET_64  0x00418a50 (ifunc)
-0x006b17f0 0x000b17f0 SET_64  0x00418de0 (ifunc)
-0x006b17f8 0x000b17f8 SET_64  0x00419ad0 (ifunc)
-0x006b1800 0x000b1800 SET_64  0x004193f0 (ifunc)
-0x006b1808 0x000b1808 SET_64  0x00414300 (ifunc)
-0x006b1810 0x000b1810 SET_64  0x00479800 (ifunc)
-0x006b1818 0x000b1818 SET_64  0x004140b0 (ifunc)
+0x006b17d0 0x000b17d0 SET_64 ifunc_416530 0x00416530 (ifunc)
+0x006b17d8 0x000b17d8 SET_64 ifunc_4193a0 0x004193a0 (ifunc)
+0x006b17e0 0x000b17e0 SET_64 ifunc_4199b0 0x004199b0 (ifunc)
+0x006b17e8 0x000b17e8 SET_64 ifunc_418a50 0x00418a50 (ifunc)
+0x006b17f0 0x000b17f0 SET_64 ifunc_418de0 0x00418de0 (ifunc)
+0x006b17f8 0x000b17f8 SET_64 ifunc_419ad0 0x00419ad0 (ifunc)
+0x006b1800 0x000b1800 SET_64 ifunc_4193f0 0x004193f0 (ifunc)
+0x006b1808 0x000b1808 SET_64 ifunc_414300 0x00414300 (ifunc)
+0x006b1810 0x000b1810 SET_64 ifunc_479800 0x00479800 (ifunc)
+0x006b1818 0x000b1818 SET_64 ifunc_4140b0 0x004140b0 (ifunc)
 
 
 10 relocations
 EOF
-CMDS=<<EOF
-ir
-EOF
+CMDS=ir
 RUN
 
 NAME=is (file x86_64)
@@ -3264,75 +3187,73 @@ FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind   type   size name
---------------------------------------------------
-1    0x00000200 0x00400200 LOCAL  SECT   0    .interp
-2    0x0000021c 0x0040021c LOCAL  SECT   0    .note.ABI-tag
-3    0x0000023c 0x0040023c LOCAL  SECT   0    .note.gnu.build-id
-4    0x00000260 0x00400260 LOCAL  SECT   0    .gnu.hash
-5    0x00000280 0x00400280 LOCAL  SECT   0    .dynsym
-6    0x000002e0 0x004002e0 LOCAL  SECT   0    .dynstr
-7    0x0000031e 0x0040031e LOCAL  SECT   0    .gnu.version
-8    0x00000328 0x00400328 LOCAL  SECT   0    .gnu.version_r
-9    0x00000348 0x00400348 LOCAL  SECT   0    .rela.dyn
-10   0x00000360 0x00400360 LOCAL  SECT   0    .rela.plt
-11   0x000003a8 0x004003a8 LOCAL  SECT   0    .init
-12   0x000003d0 0x004003d0 LOCAL  SECT   0    .plt
-13   0x00000410 0x00400410 LOCAL  SECT   0    .text
-14   0x000005b4 0x004005b4 LOCAL  SECT   0    .fini
-15   0x000005c0 0x004005c0 LOCAL  SECT   0    .rodata
-16   0x000005d0 0x004005d0 LOCAL  SECT   0    .eh_frame_hdr
-17   0x00000608 0x00400608 LOCAL  SECT   0    .eh_frame
-18   0x000006e0 0x006006e0 LOCAL  SECT   0    .init_array
-19   0x000006e8 0x006006e8 LOCAL  SECT   0    .fini_array
-20   0x000006f0 0x006006f0 LOCAL  SECT   0    .jcr
-21   0x000006f8 0x006006f8 LOCAL  SECT   0    .dynamic
-22   0x000008c8 0x006008c8 LOCAL  SECT   0    .got
-23   0x000008d0 0x006008d0 LOCAL  SECT   0    .got.plt
-24   0x00000900 0x00600900 LOCAL  SECT   0    .data
-25   ---------- 0x00600910 LOCAL  SECT   0    .bss
-26   ---------- 0x00000000 LOCAL  SECT   0    .comment
-27   ---------- 0x00000000 LOCAL  FILE   0    init.c
-28   ---------- 0x00000000 LOCAL  FILE   0    
-29   ---------- 0x00000000 LOCAL  FILE   0    crtstuff.c
-30   0x000006f0 0x006006f0 LOCAL  OBJ    0    __JCR_LIST__
-31   0x00000440 0x00400440 LOCAL  FUNC   0    deregister_tm_clones
-32   0x00000470 0x00400470 LOCAL  FUNC   0    register_tm_clones
-33   0x000004b0 0x004004b0 LOCAL  FUNC   0    __do_global_dtors_aux
-34   ---------- 0x00600910 LOCAL  OBJ    1    completed.6724
-35   0x000006e8 0x006006e8 LOCAL  OBJ    0    __do_global_dtors_aux_fini_array_entry
-36   0x000004d0 0x004004d0 LOCAL  FUNC   0    frame_dummy
-37   0x000006e0 0x006006e0 LOCAL  OBJ    0    __frame_dummy_init_array_entry
-38   ---------- 0x00000000 LOCAL  FILE   0    hello.c
-39   ---------- 0x00000000 LOCAL  FILE   0    crtstuff.c
-40   0x000006d8 0x004006d8 LOCAL  OBJ    0    __FRAME_END__
-41   0x000006f0 0x006006f0 LOCAL  OBJ    0    __JCR_END__
-42   ---------- 0x00000000 LOCAL  FILE   0    
-43   0x000006e8 0x006006e8 LOCAL  NOTYPE 0    __init_array_end
-44   0x000006f8 0x006006f8 LOCAL  OBJ    0    _DYNAMIC
-45   0x000006e0 0x006006e0 LOCAL  NOTYPE 0    __init_array_start
-46   0x000008d0 0x006008d0 LOCAL  OBJ    0    _GLOBAL_OFFSET_TABLE_
-47   0x000005b0 0x004005b0 GLOBAL FUNC   2    __libc_csu_fini
-49   0x00000900 0x00600900 WEAK   NOTYPE 0    data_start
-51   ---------- 0x00600910 GLOBAL NOTYPE 0    _edata
-52   0x000005b4 0x004005b4 GLOBAL FUNC   0    _fini
-54   0x00000900 0x00600900 GLOBAL NOTYPE 0    __data_start
-56   0x00000908 0x00600908 GLOBAL OBJ    0    __dso_handle
-57   0x000005c0 0x004005c0 GLOBAL OBJ    4    _IO_stdin_used
-58   0x00000520 0x00400520 GLOBAL FUNC   137  __libc_csu_init
-59   ---------- 0x00600918 GLOBAL NOTYPE 0    _end
-60   0x00000410 0x00400410 GLOBAL FUNC   0    _start
-61   ---------- 0x00600910 GLOBAL NOTYPE 0    __bss_start
-62   0x000004fc 0x004004fc GLOBAL FUNC   21   main
-64   ---------- 0x00600910 GLOBAL OBJ    0    __TMC_END__
-66   0x000003a8 0x004003a8 GLOBAL FUNC   0    _init
-1    0x000003e0 0x004003e0 GLOBAL FUNC   16   imp.puts
-2    0x000003f0 0x004003f0 GLOBAL FUNC   16   imp.__libc_start_main
-3    0x00000400 0x00400400 WEAK   NOTYPE 16   imp.__gmon_start__
+nth paddr       vaddr      bind   type   size lib name
+------------------------------------------------------
+1    0x00000200 0x00400200 LOCAL  SECT   0        .interp
+2    0x0000021c 0x0040021c LOCAL  SECT   0        .note.ABI-tag
+3    0x0000023c 0x0040023c LOCAL  SECT   0        .note.gnu.build-id
+4    0x00000260 0x00400260 LOCAL  SECT   0        .gnu.hash
+5    0x00000280 0x00400280 LOCAL  SECT   0        .dynsym
+6    0x000002e0 0x004002e0 LOCAL  SECT   0        .dynstr
+7    0x0000031e 0x0040031e LOCAL  SECT   0        .gnu.version
+8    0x00000328 0x00400328 LOCAL  SECT   0        .gnu.version_r
+9    0x00000348 0x00400348 LOCAL  SECT   0        .rela.dyn
+10   0x00000360 0x00400360 LOCAL  SECT   0        .rela.plt
+11   0x000003a8 0x004003a8 LOCAL  SECT   0        .init
+12   0x000003d0 0x004003d0 LOCAL  SECT   0        .plt
+13   0x00000410 0x00400410 LOCAL  SECT   0        .text
+14   0x000005b4 0x004005b4 LOCAL  SECT   0        .fini
+15   0x000005c0 0x004005c0 LOCAL  SECT   0        .rodata
+16   0x000005d0 0x004005d0 LOCAL  SECT   0        .eh_frame_hdr
+17   0x00000608 0x00400608 LOCAL  SECT   0        .eh_frame
+18   0x000006e0 0x006006e0 LOCAL  SECT   0        .init_array
+19   0x000006e8 0x006006e8 LOCAL  SECT   0        .fini_array
+20   0x000006f0 0x006006f0 LOCAL  SECT   0        .jcr
+21   0x000006f8 0x006006f8 LOCAL  SECT   0        .dynamic
+22   0x000008c8 0x006008c8 LOCAL  SECT   0        .got
+23   0x000008d0 0x006008d0 LOCAL  SECT   0        .got.plt
+24   0x00000900 0x00600900 LOCAL  SECT   0        .data
+25   ---------- 0x00600910 LOCAL  SECT   0        .bss
+26   ---------- 0x00000000 LOCAL  SECT   0        .comment
+27   ---------- 0x00000000 LOCAL  FILE   0        init.c
+28   ---------- 0x00000000 LOCAL  FILE   0        
+29   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+30   0x000006f0 0x006006f0 LOCAL  OBJ    0        __JCR_LIST__
+31   0x00000440 0x00400440 LOCAL  FUNC   0        deregister_tm_clones
+32   0x00000470 0x00400470 LOCAL  FUNC   0        register_tm_clones
+33   0x000004b0 0x004004b0 LOCAL  FUNC   0        __do_global_dtors_aux
+34   ---------- 0x00600910 LOCAL  OBJ    1        completed.6724
+35   0x000006e8 0x006006e8 LOCAL  OBJ    0        __do_global_dtors_aux_fini_array_entry
+36   0x000004d0 0x004004d0 LOCAL  FUNC   0        frame_dummy
+37   0x000006e0 0x006006e0 LOCAL  OBJ    0        __frame_dummy_init_array_entry
+38   ---------- 0x00000000 LOCAL  FILE   0        hello.c
+39   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+40   0x000006d8 0x004006d8 LOCAL  OBJ    0        __FRAME_END__
+41   0x000006f0 0x006006f0 LOCAL  OBJ    0        __JCR_END__
+42   ---------- 0x00000000 LOCAL  FILE   0        
+43   0x000006e8 0x006006e8 LOCAL  NOTYPE 0        __init_array_end
+44   0x000006f8 0x006006f8 LOCAL  OBJ    0        _DYNAMIC
+45   0x000006e0 0x006006e0 LOCAL  NOTYPE 0        __init_array_start
+46   0x000008d0 0x006008d0 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
+47   0x000005b0 0x004005b0 GLOBAL FUNC   2        __libc_csu_fini
+49   0x00000900 0x00600900 WEAK   NOTYPE 0        data_start
+51   ---------- 0x00600910 GLOBAL NOTYPE 0        _edata
+52   0x000005b4 0x004005b4 GLOBAL FUNC   0        _fini
+54   0x00000900 0x00600900 GLOBAL NOTYPE 0        __data_start
+56   0x00000908 0x00600908 GLOBAL OBJ    0        __dso_handle
+57   0x000005c0 0x004005c0 GLOBAL OBJ    4        _IO_stdin_used
+58   0x00000520 0x00400520 GLOBAL FUNC   137      __libc_csu_init
+59   ---------- 0x00600918 GLOBAL NOTYPE 0        _end
+60   0x00000410 0x00400410 GLOBAL FUNC   0        _start
+61   ---------- 0x00600910 GLOBAL NOTYPE 0        __bss_start
+62   0x000004fc 0x004004fc GLOBAL FUNC   21       main
+64   ---------- 0x00600910 GLOBAL OBJ    0        __TMC_END__
+66   0x000003a8 0x004003a8 GLOBAL FUNC   0        _init
+1    0x000003e0 0x004003e0 GLOBAL FUNC   16       imp.puts
+2    0x000003f0 0x004003f0 GLOBAL FUNC   16       imp.__libc_start_main
+3    0x00000400 0x00400400 WEAK   NOTYPE 16       imp.__gmon_start__
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=iz (file x86_64)
@@ -3343,9 +3264,7 @@ nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000005c4 0x004005c4 11  12   .rodata ascii Hello World
 EOF
-CMDS=<<EOF
-iz
-EOF
+CMDS=iz
 RUN
 
 NAME=izq (file x86_64)
@@ -3353,9 +3272,7 @@ FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 0x4005c4 12 11 Hello World
 EOF
-CMDS=<<EOF
-izq
-EOF
+CMDS=izq
 RUN
 
 NAME=izqq (file x86_64)
@@ -3363,9 +3280,7 @@ FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 Hello World
 EOF
-CMDS=<<EOF
-izqq
-EOF
+CMDS=izqq
 RUN
 
 NAME=izzq (file x86_64)
@@ -3374,9 +3289,7 @@ EXPECT=<<EOF
 0x4002fa 5 4 puts
 0x15b 18 17 puts@@GLIBC_2.2.5
 EOF
-CMDS=<<EOF
-izzq~puts
-EOF
+CMDS=izzq~puts
 RUN
 
 NAME=izzqq (file x86_64)
@@ -3385,9 +3298,7 @@ EXPECT=<<EOF
 puts
 puts@@GLIBC_2.2.5
 EOF
-CMDS=<<EOF
-izzqq~puts
-EOF
+CMDS=izzqq~puts
 RUN
 
 NAME=izzqq malloc://512
@@ -3409,9 +3320,7 @@ FILE=../bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 82
 EOF
-CMDS=<<EOF
-izzz~?
-EOF
+CMDS=izzz~?
 RUN
 
 NAME=izzzq (file x86_64)
@@ -3420,9 +3329,7 @@ EXPECT=<<EOF
 0x004002fa puts
 0x0000015b puts@@GLIBC_2.2.5
 EOF
-CMDS=<<EOF
-izzzq~puts
-EOF
+CMDS=izzzq~puts
 RUN
 
 NAME=izzz* (file x86_64)
@@ -3441,27 +3348,33 @@ NAME=izz (no rbin - file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 ARGS=-n
 CMDS=izz~puts
-EXPECT='4   0x000002fa 0x000002fa 4   5            ascii   puts
+EXPECT=<<EOF
+4   0x000002fa 0x000002fa 4   5            ascii   puts
 65  0x00001953 0x00001953 17  18           ascii   puts@@GLIBC_2.2.5
-'
+EOF
 RUN
 
 NAME=izzj (no rbin - file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 ARGS=-n
-CMDS='e bin.str.purge=all,!0x2fa,!0x1953
+CMDS=<<EOF
+e bin.str.purge=all,!0x2fa,!0x1953
 izzj
-'
-EXPECT='[{"vaddr":762,"paddr":762,"ordinal":4,"size":5,"length":4,"section":"","type":"ascii","string":"puts"},{"vaddr":6483,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":"","type":"ascii","string":"puts@@GLIBC_2.2.5"}]'
+EOF
+EXPECT=<<EOF
+[{"vaddr":762,"paddr":762,"ordinal":4,"size":5,"length":4,"section":"","type":"ascii","string":"puts"},{"vaddr":6483,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":"","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
+EOF
 RUN
 
 NAME=izzj 2 (no rbin - file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
-ARGS=
-CMDS='e bin.str.purge=all,!0x4002fa,!0x15b
+CMDS=<<EOF
+e bin.str.purge=all,!0x4002fa,!0x15b
 izzj
-'
-EXPECT='[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]'
+EOF
+EXPECT=<<EOF
+[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
+EOF
 RUN
 
 NAME=izzzj
@@ -3470,7 +3383,9 @@ CMDS=<<EOF
 w abcd\00012345\0efghi\0
 izzzj
 EOF
-EXPECT='[{"vaddr":0,"paddr":0,"ordinal":0,"size":5,"length":4,"section":"","type":"ascii","string":"abcd"},{"vaddr":5,"paddr":5,"ordinal":1,"size":6,"length":5,"section":"","type":"ascii","string":"12345"},{"vaddr":11,"paddr":11,"ordinal":2,"size":6,"length":5,"section":"","type":"ascii","string":"efghi"}]'
+EXPECT=<<EOF
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":5,"length":4,"section":"","type":"ascii","string":"abcd"},{"vaddr":5,"paddr":5,"ordinal":1,"size":6,"length":5,"section":"","type":"ascii","string":"12345"},{"vaddr":11,"paddr":11,"ordinal":2,"size":6,"length":5,"section":"","type":"ascii","string":"efghi"}]
+EOF
 RUN
 
 NAME=i (no rbin - file x86_64)
@@ -3485,9 +3400,7 @@ blksz    0x0
 block    0x100
 EOF
 ARGS=-n
-CMDS=<<EOF
-i~!file
-EOF
+CMDS=i~!file
 RUN
 
 NAME=iM command
@@ -3496,9 +3409,7 @@ EXPECT=<<EOF
 [Main]
 vaddr=0x0000142e paddr=0x0000142e
 EOF
-CMDS=<<EOF
-iM
-EOF
+CMDS=iM
 RUN
 
 NAME=iM* command
@@ -3507,9 +3418,7 @@ EXPECT=<<EOF
 fs symbols
 f main @ 0x0000142e
 EOF
-CMDS=<<EOF
-iM*
-EOF
+CMDS=iM*
 RUN
 
 NAME=iz utf16le
@@ -3602,9 +3511,7 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 no
 EOF
-CMDS=<<EOF
-ik info/elf.relro
-EOF
+CMDS=ik info/elf.relro
 RUN
 
 NAME=ibk use after free
@@ -3612,9 +3519,7 @@ FILE=../bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-ibk info/*~?elf.relro
-EOF
+CMDS=ibk info/*~?elf.relro
 RUN
 
 NAME=i on freebsd elf
@@ -3622,9 +3527,7 @@ FILE=../bins/elf/analysis/hello-freebsd-x86_64
 EXPECT=<<EOF
 os       freebsd
 EOF
-CMDS=<<EOF
-i~os
-EOF
+CMDS=i~os
 RUN
 
 NAME=i on openbsd elf
@@ -3632,9 +3535,7 @@ FILE=../bins/elf/analysis/hello-openbsd-x86_64
 EXPECT=<<EOF
 os       openbsd
 EOF
-CMDS=<<EOF
-i~os
-EOF
+CMDS=i~os
 RUN
 
 NAME=i on netbsd elf
@@ -3642,9 +3543,7 @@ FILE=../bins/elf/analysis/hello-netbsd-x86_64
 EXPECT=<<EOF
 os       netbsd
 EOF
-CMDS=<<EOF
-i~os
-EOF
+CMDS=i~os
 RUN
 
 NAME=i on hp-ux elf (os)
@@ -3652,9 +3551,7 @@ FILE=../bins/elf/analysis/hello-hpux-ia64
 EXPECT=<<EOF
 os       hpux
 EOF
-CMDS=<<EOF
-i~os
-EOF
+CMDS=i~os
 RUN
 
 NAME=i on hp-ux elf (arch)
@@ -3662,14 +3559,14 @@ FILE=../bins/elf/analysis/hello-hpux-ia64
 EXPECT=<<EOF
 arch     ia64
 EOF
-CMDS=<<EOF
-i~arch
-EOF
+CMDS=i~arch
 RUN
 
 NAME=izj unicode blocks
 FILE=../bins/elf/strenc
-EXPECT='[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":8,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]'
+EXPECT=<<EOF
+[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":8,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
+EOF
 CMDS=<<EOF
 e bin.str.purge=all,!4202996,!4203007,!4203208
 izj
@@ -3678,7 +3575,9 @@ RUN
 
 NAME=izzj unicode blocks
 FILE=../bins/elf/strenc-guess-utf32le
-EXPECT='[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]'
+EXPECT=<<EOF
+[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
+EOF
 CMDS=<<EOF
 e bin.str.purge=all,!4195920
 izzj
@@ -3733,7 +3632,7 @@ izz~0x00412420
 e bin.str.purge=true
 izz~0x00412420  # Should print nothing
 ?e --3--
-(test_iz,iz~0x004131d8,iz~0x00413228,iz~0x00413233,iz~0x0041323a)
+(test_iz;iz~0x004131d8;iz~0x00413228;iz~0x00413233;iz~0x0041323a)
 e bin.str.purge=false
 .(test_iz)
 ?e --4--
@@ -3774,33 +3673,37 @@ RUN
 
 NAME=iz-
 FILE=-
-CMDS='iz- @ 0x412420
+CMDS=<<EOF
+iz- @ 0x412420
 e bin.str.purge
 iz- @ 0x4028a0
 e bin.str.purge
 iz- 0x414fbf
 e bin.str.purge
-'
-EXPECT='0x412420
+EOF
+EXPECT=<<EOF
+0x412420
 0x412420,0x4028a0
 0x412420,0x4028a0,0x414fbf
-'
+EOF
 RUN
 
 NAME=regression for #9370
 FILE=../bins/elf/analysis/hello-arm32
 ARGS=-m 0x10000
-CMDS='izz~Hello'
-EXPECT='6   0x00000200 0x00010200 11  12   .rodata         ascii   Hello World
-'
+CMDS=izz~Hello
+EXPECT=<<EOF
+6   0x00000200 0x00010200 11  12   .rodata         ascii   Hello World
+EOF
 RUN
 
 NAME=iee preinit
 FILE=../bins/elf/before-after-main
-CMDS=<<EXPECT
+CMDS=<<EOF
 iee~type=preinit
 e asm.bytes=false
 pd 1 @ 0x0804849f
+EOF
 EXPECT=<<EOF
 vaddr=0x08048486 paddr=0x00000486 hvaddr=0x08049ed4 hpaddr=0x00000ed4 type=preinit
 vaddr=0x0804849f paddr=0x0000049f hvaddr=0x08049ed8 hpaddr=0x00000ed8 type=preinit
@@ -3812,8 +3715,7 @@ RUN
 
 NAME=iee* preinit
 FILE=../bins/elf/before-after-main
-CMDS=<<EXPECT
-iee*
+CMDS=iee*
 EXPECT=<<EOF
 fs symbols
 "f entry.preinit0 1 0x08048486"
@@ -3857,94 +3759,91 @@ RUN
 
 NAME=iS entropy and iSS entropy
 FILE=../bins/elf/crackme0x05
-CMDS=<<EXPECT
-iS entropy; iSS entropy
+CMDS=iS entropy; iSS entropy
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
-0   0x00000000    0x0 0x00000000    0x0 ---- 
-1   0x00000154   0x13 0x08048154   0x13 -r-- .interp
-2   0x00000168   0x20 0x08048168   0x20 -r-- .note.ABI_tag
-3   0x00000188   0x38 0x08048188   0x38 -r-- .hash
-4   0x000001c0   0x20 0x080481c0   0x20 -r-- .gnu.hash
-5   0x000001e0   0x90 0x080481e0   0x90 -r-- .dynsym
-6   0x00000270   0x5f 0x08048270   0x5f -r-- .dynstr
-7   0x000002d0   0x12 0x080482d0   0x12 -r-- .gnu.version
-8   0x000002e4   0x20 0x080482e4   0x20 -r-- .gnu.version_r
-9   0x00000304    0x8 0x08048304    0x8 -r-- .rel.dyn
-10  0x0000030c   0x30 0x0804830c   0x30 -r-- .rel.plt
-11  0x0000033c   0x17 0x0804833c   0x17 -r-x .init
-12  0x00000354   0x70 0x08048354   0x70 -r-x .plt
-13  0x000003d0  0x274 0x080483d0  0x274 -r-x .text
-14  0x00000644   0x1a 0x08048644   0x1a -r-x .fini
-15  0x00000660   0x55 0x08048660   0x55 -r-- .rodata
-16  0x000006b8    0x4 0x080486b8    0x4 -r-- .eh_frame
-17  0x00000f0c    0x8 0x08049f0c    0x8 -rw- .ctors
-18  0x00000f14    0x8 0x08049f14    0x8 -rw- .dtors
-19  0x00000f1c    0x4 0x08049f1c    0x4 -rw- .jcr
-20  0x00000f20   0xd0 0x08049f20   0xd0 -rw- .dynamic
-21  0x00000ff0    0x4 0x08049ff0    0x4 -rw- .got
-22  0x00000ff4   0x24 0x08049ff4   0x24 -rw- .got.plt
-23  0x00001018    0xc 0x0804a018    0xc -rw- .data
-24  0x00001024    0x0 0x0804a024    0x4 -rw- .bss
-25  0x00001024  0x1b9 0x00000000  0x1b9 ---- .comment
-26  0x000011dd   0xdb 0x00000000   0xdb ---- .shstrtab
-27  0x00001740  0x460 0x00000000  0x460 ---- .symtab
-28  0x00001ba0  0x248 0x00000000  0x248 ---- .strtab
+nth paddr        size vaddr       vsize perm entropy    name
+------------------------------------------------------------
+0   0x00000000    0x0 0x00000000    0x0 ---- 0.00000000 
+1   0x00000154   0x13 0x08048154   0x13 -r-- 3.68188080 .interp
+2   0x00000168   0x20 0x08048168   0x20 -r-- 1.74868984 .note.ABI_tag
+3   0x00000188   0x38 0x08048188   0x38 -r-- 1.23442903 .hash
+4   0x000001c0   0x20 0x080481c0   0x20 -r-- 1.99254169 .gnu.hash
+5   0x000001e0   0x90 0x080481e0   0x90 -r-- 1.56755604 .dynsym
+6   0x00000270   0x5f 0x08048270   0x5f -r-- 4.38707564 .dynstr
+7   0x000002d0   0x12 0x080482d0   0x12 -r-- 1.19417373 .gnu.version
+8   0x000002e4   0x20 0x080482e4   0x20 -r-- 1.66055053 .gnu.version_r
+9   0x00000304    0x8 0x08048304    0x8 -r-- 2.75000000 .rel.dyn
+10  0x0000030c   0x30 0x0804830c   0x30 -r-- 2.94082791 .rel.plt
+11  0x0000033c   0x17 0x0804833c   0x17 -r-x 3.46241535 .init
+12  0x00000354   0x70 0x08048354   0x70 -r-x 3.51876869 .plt
+13  0x000003d0  0x274 0x080483d0  0x274 -r-x 5.76534324 .text
+14  0x00000644   0x1a 0x08048644   0x1a -r-x 3.79621760 .fini
+15  0x00000660   0x55 0x08048660   0x55 -r-- 4.59175306 .rodata
+16  0x000006b8    0x4 0x080486b8    0x4 -r-- 0.00000000 .eh_frame
+17  0x00000f0c    0x8 0x08049f0c    0x8 -rw- 1.00000000 .ctors
+18  0x00000f14    0x8 0x08049f14    0x8 -rw- 1.00000000 .dtors
+19  0x00000f1c    0x4 0x08049f1c    0x4 -rw- 0.00000000 .jcr
+20  0x00000f20   0xd0 0x08049f20   0xd0 -rw- 2.82161069 .dynamic
+21  0x00000ff0    0x4 0x08049ff0    0x4 -rw- 0.00000000 .got
+22  0x00000ff4   0x24 0x08049ff4   0x24 -rw- 2.98068211 .got.plt
+23  0x00001018    0xc 0x0804a018    0xc -rw- 1.58496250 .data
+24  0x00001024    0x0 0x0804a024    0x4 -rw- 0.00000000 .bss
+25  0x00001024  0x1b9 0x00000000  0x1b9 ---- 4.50015849 .comment
+26  0x000011dd   0xdb 0x00000000   0xdb ---- 4.21638420 .shstrtab
+27  0x00001740  0x460 0x00000000  0x460 ---- 3.06854806 .symtab
+28  0x00001ba0  0x248 0x00000000  0x248 ---- 4.85613827 .strtab
 
 [Segments]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
-0   0x00000034  0x120 0x08048034  0x120 -r-x PHDR
-1   0x00000154   0x13 0x08048154   0x13 -r-- INTERP
-2   0x00000000  0x6bc 0x08048000  0x6bc -r-x LOAD0
-3   0x00000f0c  0x118 0x08049f0c  0x11c -rw- LOAD1
-4   0x00000f20   0xd0 0x08049f20   0xd0 -rw- DYNAMIC
-5   0x00000168   0x20 0x08048168   0x20 -r-- NOTE
-6   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK
-7   0x00000f0c   0xf4 0x08049f0c   0xf4 -r-- GNU_RELRO
-8   0x00000000    0x0 0x00000000    0x0 ---- NONE
-9   0x00000000   0x34 0x08048000   0x34 -rw- ehdr
+nth paddr        size vaddr       vsize perm entropy    name
+------------------------------------------------------------
+0   0x00000034  0x120 0x08048034  0x120 -r-x 2.77947373 PHDR
+1   0x00000154   0x13 0x08048154   0x13 -r-- 3.68188080 INTERP
+2   0x00000000  0x6bc 0x08048000  0x6bc -r-x 5.13144413 LOAD0
+3   0x00000f0c  0x118 0x08049f0c  0x11c -rw- 2.96573278 LOAD1
+4   0x00000f20   0xd0 0x08049f20   0xd0 -rw- 2.82161069 DYNAMIC
+5   0x00000168   0x20 0x08048168   0x20 -r-- 1.74868984 NOTE
+6   0x00000000    0x0 0x00000000    0x0 -rw- 0.00000000 GNU_STACK
+7   0x00000f0c   0xf4 0x08049f0c   0xf4 -r-- 2.71815661 GNU_RELRO
+8   0x00000000    0x0 0x00000000    0x0 ---- 0.00000000 NONE
+9   0x00000000   0x34 0x08048000   0x34 -rw- 2.79887339 ehdr
 
 EOF
 RUN
 
 NAME=is sht null
 FILE=../bins/elf/sht_null_symbols
-CMDS=<<EOF
-is; ir; f
-EOF
+CMDS=is; ir; f
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind   type   size name
---------------------------------------------------
-8    0x00000590 0x00000590 GLOBAL FUNC   60   main
-9    0x0000064c 0x0000064c GLOBAL OBJ    4    _IO_stdin_used
-1    0x00000000 0x00000000 WEAK   NOTYPE 16   imp._ITM_deregisterTMCloneTable
-2    0x00000000 0x00000000 WEAK   FUNC   16   imp.__cxa_finalize
-3    0x000003f0 0x000003f0 GLOBAL FUNC   16   imp.puts
-4    0x00000000 0x00000000 WEAK   NOTYPE 16   imp.__gmon_start__
-5    0x00000400 0x00000400 GLOBAL FUNC   16   imp.__libc_start_main
-6    0x00000000 0x00000000 WEAK   NOTYPE 16   imp._Jv_RegisterClasses
-7    0x00000000 0x00000000 WEAK   NOTYPE 16   imp._ITM_registerTMCloneTable
+nth paddr       vaddr      bind   type   size lib name
+------------------------------------------------------
+8    0x00000590 0x00000590 GLOBAL FUNC   60       main
+9    0x0000064c 0x0000064c GLOBAL OBJ    4        _IO_stdin_used
+1    0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_deregisterTMCloneTable
+2    0x00000000 0x00000000 WEAK   FUNC   16       imp.__cxa_finalize
+3    0x000003f0 0x000003f0 GLOBAL FUNC   16       imp.puts
+4    0x00000000 0x00000000 WEAK   NOTYPE 16       imp.__gmon_start__
+5    0x00000400 0x00000400 GLOBAL FUNC   16       imp.__libc_start_main
+6    0x00000000 0x00000000 WEAK   NOTYPE 16       imp._Jv_RegisterClasses
+7    0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_registerTMCloneTable
 [Relocations]
 
 vaddr      paddr      type   name
 ---------------------------------
 0x00001eec 0x00000eec SET_32 
 0x00001ef0 0x00000ef0 SET_32 
-0x00001fe8 0x00000fe8 SET_32  _ITM_deregisterTMCloneTable
-0x00001fec 0x00000fec SET_32  __cxa_finalize
-0x00001ff0 0x00000ff0 SET_32  __gmon_start__
+0x00001fe8 0x00000fe8 SET_32 _ITM_deregisterTMCloneTable
+0x00001fec 0x00000fec SET_32 __cxa_finalize
+0x00001ff0 0x00000ff0 SET_32 __gmon_start__
 0x00001ff4 0x00000ff4 SET_32 
-0x00001ff8 0x00000ff8 SET_32  _Jv_RegisterClasses
-0x00001ffc 0x00000ffc SET_32  _ITM_registerTMCloneTable
-0x0000200c 0x0000100c SET_32  puts
-0x00002010 0x00001010 SET_32  __libc_start_main
+0x00001ff8 0x00000ff8 SET_32 _Jv_RegisterClasses
+0x00001ffc 0x00000ffc SET_32 _ITM_registerTMCloneTable
+0x0000200c 0x0000100c SET_32 puts
+0x00002010 0x00001010 SET_32 __libc_start_main
 0x00002018 0x00001018 SET_32 
 
 
@@ -4033,12 +3932,13 @@ RUN
 
 NAME=iee elf Cd (32-bit)
 FILE=../bins/elf/before-after-main
-CMDS=<<EXPECT
+CMDS=<<EOF
 pD $SS @ section..preinit_array
 ?e
 pD $SS @ section..init_array
 ?e
 pD $SS @ section..fini_array
+EOF
 EXPECT=<<EOF
             ;-- section..preinit_array:
             ;-- segment.LOAD1:
@@ -4077,14 +3977,15 @@ RUN
 
 NAME=iee elf Cd (64-bit)
 FILE=../bins/elf/analysis/ls-linux64
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.interactive=true
 s section..preinit_array
 ?e
 pD $SS @ section..init_array
 ?e
 pD $SS @ section..fini_array
-EXPECT=<<EXPECT_ERR
+EOF
+EXPECT=<<EOF
 
             ;-- section..init_array:
             ;-- segment.LOAD1:
@@ -4093,6 +3994,7 @@ EXPECT=<<EXPECT_ERR
 
             ;-- section..fini_array:
             0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [19] -rw- section size 8 named .fini_array
+EOF
 EXPECT_ERR=<<EOF
 Cannot seek to unknown address 'section..preinit_array'
 EOF
@@ -4119,7 +4021,8 @@ RUN
 
 NAME=iSj
 FILE=../bins/pe/hello-mingw32
-EXPECT='[
+EXPECT=<<EOF
+[
   {
     "name": ".text",
     "size": 2560,
@@ -4161,10 +4064,8 @@ EXPECT='[
     "vaddr": 4214784
   }
 ]
-'
-CMDS=<<EOF
-iSj~{}
 EOF
+CMDS=iSj~{}
 RUN
 
 NAME=ii dupped imports
@@ -4172,10 +4073,10 @@ FILE=../bins/elf/varsub
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind   type   name
----------------------------------
-1   0x00000000 GLOBAL FUNC   __libc_start_main
-2   0x00000000 WEAK   NOTYPE __gmon_start__
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x00000000 GLOBAL FUNC       __libc_start_main
+2   0x00000000 WEAK   NOTYPE     __gmon_start__
 
 EOF
 RUN
@@ -4191,9 +4092,7 @@ RUN
 
 NAME=ik-macho
 FILE=../bins/mach0/fatmach0-3true
-CMDS=<<EOF
-ik info/mach0.entry.vaddr~?0x100000ef8
-EOF
+CMDS=ik info/mach0.entry.vaddr~?0x100000ef8
 EXPECT=<<EOF
 1
 EOF
@@ -4201,9 +4100,7 @@ RUN
 
 NAME=ikv
 FILE=../bins/mach0/fatmach0-3true
-CMDS=<<EOF
-ikv info/mach0.entry.vaddr
-EOF
+CMDS=ikv info/mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
 EOF
@@ -4211,9 +4108,7 @@ RUN
 
 NAME=ik.
 FILE=../bins/mach0/fatmach0-3true
-CMDS=<<EOF
-ik. info/mach0.entry.vaddr
-EOF
+CMDS=ik. info/mach0.entry.vaddr
 EXPECT=<<EOF
 0x100000ef8
 EOF
@@ -4276,13 +4171,15 @@ RUN
 NAME=iR*
 FILE=../bins/pe/standard.exe
 CMDS=iR*
-EXPECT='fs resources
+EXPECT=<<EOF
+fs resources
 f resource.0 5672 0x00401180
 f resource.1 76 0x00402a10
 f resource.2 20 0x004027b0
 f resource.3 452 0x004027d0
 f resource.4 74 0x004029a0
-fs *'
+fs *
+EOF
 RUN
 
 NAME=izzz*
@@ -4297,15 +4194,19 @@ NAME=it
 FILE=-
 ARGS=-w
 CMDS=it ; wx 0x90 ; it
-EXPECT=<<EXPECT_ERR
+EXPECT=<<EOF
 md5 bf619eac0cdf3f68d496ea9344137e8b
 sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
+sha256 076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560
+EOF
 EXPECT_ERR=<<EOF
 File has been modified.
 - md5 bf619eac0cdf3f68d496ea9344137e8b
 + md5 afd010a5a5456c232dee59d59bd75cf6
 - sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
 + sha1 3bfd02bb4fac6499c89278254f04a081887c38ea
+- sha256 076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560
++ sha256 91543b8000dc6bade2bcae4d44c16f3a33e07e6f96a910dcd702c5179a937c20
 EOF
 RUN
 
@@ -4315,12 +4216,13 @@ FILE=../bins/mach0/fatmach0-3true
 ARGS=-w
 BROKEN=1
 CMDS=it ; wx 0x90 ; it
-EXPECT_ERR='File has been modified.
+EXPECT_ERR=<<EOF
+File has been modified.
 - md5 84144530144b53a704c84d9c65ab5f92
 + md5 9a99cca7bf3e27ee1c8964141cfad053
 - sha1 9016e215a321184c42c28ab03847554851932713
 + sha1 17c5b6331a420fc3b48defe782090295294fee2e
-'
+EOF
 EXPECT=<<EOF
 md5 84144530144b53a704c84d9c65ab5f92
 sha1 9016e215a321184c42c28ab03847554851932713
@@ -4330,14 +4232,16 @@ RUN
 NAME=isq. (malloc)
 FILE=malloc://512
 CMDS=isq.
-EXPECT=''
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=isq. (file x86)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 CMDS=isq.
-EXPECT='0x00400410 0 .text
-'
+EXPECT=<<EOF
+0x00400410 0 .text
+EOF
 RUN
 
 NAME=ic?~ (match all)
@@ -4363,7 +4267,8 @@ RUN
 NAME=ic?~ (match none)
 FILE=malloc://512
 CMDS=ic?~Guess
-EXPECT=''
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=ascii substring detection (#14499)
@@ -4407,7 +4312,8 @@ RUN
 NAME=icqq (file x86)
 FILE=../bins/elf/ls
 CMDS=icqq
-EXPECT=''
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=iqqc (file Java)
@@ -4423,7 +4329,8 @@ NAME=iqqc (file x86)
 BROKEN=1
 FILE=../bins/elf/ls
 CMDS=iqqc
-EXPECT=''
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=iqcq (file Java)
@@ -4439,5 +4346,6 @@ NAME=iqcq (file x86)
 BROKEN=1
 FILE=../bins/elf/ls
 CMDS=iqcq
-EXPECT=''
+EXPECT=<<EOF
+EOF
 RUN

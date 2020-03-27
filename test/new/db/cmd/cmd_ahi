@@ -255,7 +255,7 @@ RUN
 NAME=ah.
 FILE=malloc://16
 EXPECT=<<EOF
- 0x00000008 - 0x00000008 => immbase=10
+ 0x00000008 => immbase=10
 EOF
 CMDS=<<EOF
 ahi 10 @ 0x8
@@ -310,6 +310,7 @@ mov eax, 'VMXh'
 EOF
 CMDS=<<EOF
 wx b868584d56
+e asm.arch=x86
 e asm.bits=64
 ahi s
 pi 1
@@ -339,6 +340,8 @@ RUN
 NAME=ahi nword
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e asm.bytes=false
 wx c7458843c6ff00
 pid 1

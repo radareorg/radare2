@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <string.h>
 #include "r_bin.h"
@@ -24,8 +24,11 @@ static const char *help_msg_i[] = {
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
 	"iC", "[j]", "Show signature info (entitlements, ...)",
-	"id", "[?]", "Debug information (source lines)",
-	"idp", "", "Load pdb file information",
+	"id", "", "Show DWARF source lines information",
+	"idp", " [file.pdb]", "Load pdb file information",
+	"idpi", " [file.pdb]", "Show pdb file information",
+	"idpi*", "", "Show symbols from pdb as flags (prefix with dot to import)",
+	"idpd", "", "Download pdb file on remote server",
 	"iD", " lang sym", "demangle symbolname for given language",
 	"ie", "", "Entrypoint",
 	"iee", "", "Show Entry and Exit (preinit, init and fini)",
@@ -490,7 +493,13 @@ static int cmd_info(void *data, const char *input) {
 	}
 	if (question < space && question > input) {
 		question--;
-		r_core_cmdf (core, "i?~& i%c", *question);
+		char *prefix = strdup (input);
+		char *tmp = strchr (prefix, '?');
+		if (tmp) {
+			*tmp = 0;
+		}
+		r_core_cmdf (core, "i?~& i%s", prefix);
+		free (prefix);
 		goto done;
 	}
 	R_FREE (core->table_query);
@@ -603,66 +612,41 @@ static int cmd_info(void *data, const char *input) {
 		case 't': // "it"
 			{
 				ut64 limit = r_config_get_i (core->config, "bin.hashlimit");
-				const char *fileName;
 				RBinInfo *info = r_bin_get_info (core->bin);
-				if (info) {
-					fileName = info->file;
-				} else {
-					int fd = r_io_fd_get_current (core->io);
-					RIODesc *desc = r_io_desc_get (core->io, fd);
-					fileName = desc? desc->name: NULL;
-				}
-				const bool is_json = input[1] == 'j'; // "itj"
-				RList *old_file_hashes = NULL;
-				if (!r_bin_file_hash (core->bin, limit, fileName, &old_file_hashes)) {
-					eprintf ("r_bin_file_hash: Cannot get file hashes");
-					r_list_free (old_file_hashes);
+				if (!info) {
+					eprintf ("r_bin_get_info: Cannot get bin info\n");
 					return 0;
 				}
 
-				if (old_file_hashes && r_list_empty (old_file_hashes)) {
-					// clean the old hashes list to reduce comparison operations in case it is allocated but empty
-					r_list_free (old_file_hashes);
-					old_file_hashes = NULL;
-				}
-				if (!info) {
-					info = r_bin_get_info (core->bin);
-				}
-				if (!info) {
-					eprintf ("r_bin_get_info: Cannot get bin info");
-					r_list_free (old_file_hashes);
-					return 0;
-				}
-
+				RList *new_hashes = r_bin_file_compute_hashes (core->bin, limit);
+				RList *old_hashes = r_bin_file_set_hashes (core->bin, new_hashes);
 				bool equal = true;
-				// check are hashes changed
-				if (!r_list_empty (old_file_hashes) && !r_list_empty (info->file_hashes)) {
-					if (!is_equal_file_hashes (old_file_hashes, info->file_hashes, &equal)) {
-						eprintf ("is_equal_file_hashes: Cannot compare file hashes");
-						r_list_free (old_file_hashes);
+				if (!r_list_empty (new_hashes) && !r_list_empty (old_hashes)) {
+					if (!is_equal_file_hashes (new_hashes, old_hashes, &equal)) {
+						eprintf ("is_equal_file_hashes: Cannot compare file hashes\n");
+						r_list_free (old_hashes);
 						return 0;
 					}
 				}
-
 				RBinFileHash *fh_old, *fh_new;
 				RListIter *hiter_old, *hiter_new;
-
+				const bool is_json = input[1] == 'j'; // "itj"
 				if (is_json) { // "itj"
 					PJ *pj = pj_new ();
 					if (!pj) {
 						eprintf ("JSON mode failed\n");
-						r_list_free (old_file_hashes);
+						r_list_free (old_hashes);
 						return 0;
 					}
 					pj_o (pj);
-					r_list_foreach (info->file_hashes, hiter_new, fh_new) {
-						pj_ks (pj, fh_new->type ? fh_new->type : "", fh_new->hex ? fh_new->hex : "");
+					r_list_foreach (new_hashes, hiter_new, fh_new) {
+						pj_ks (pj, fh_new->type, fh_new->hex);
 					}
 					if (!equal) {
-						// print old hashes prefixed with `o` character like `omd5` and `osha1`
-						r_list_foreach (old_file_hashes, hiter_old, fh_old) {
-							char *key = r_str_newf ("o%s", fh_old->type ? fh_old->type : "");
-							pj_ks (pj, key, fh_old->hex ? fh_old->hex : "");
+						// print old hashes prefixed with `o` character like `omd5` and `isha1`
+						r_list_foreach (old_hashes, hiter_old, fh_old) {
+							char *key = r_str_newf ("o%s", fh_old->type);
+							pj_ks (pj, key, fh_old->hex);
 							free (key);
 						}
 					}
@@ -672,35 +656,31 @@ static int cmd_info(void *data, const char *input) {
 				} else { // "it"
 					if (!equal) {
 						eprintf ("File has been modified.\n");
-						hiter_new = r_list_iterator (info->file_hashes);
-						hiter_old = r_list_iterator (old_file_hashes);
-						while (r_list_iter_next(hiter_new) && r_list_iter_next (hiter_old)) {
-							fh_new = (RBinFileHash*)r_list_iter_get (hiter_new);
-							fh_old = (RBinFileHash*)r_list_iter_get (hiter_old);
+						hiter_new = r_list_iterator (new_hashes);
+						hiter_old = r_list_iterator (old_hashes);
+						while (r_list_iter_next (hiter_new) && r_list_iter_next (hiter_old)) {
+							fh_new = (RBinFileHash *)r_list_iter_get (hiter_new);
+							fh_old = (RBinFileHash *)r_list_iter_get (hiter_old);
 							if (strcmp (fh_new->type, fh_old->type)) {
 								eprintf ("Wrong file hashes structure");
-								break;
 							}
 							if (!strcmp (fh_new->hex, fh_old->hex)) {
-								eprintf ("= %s %s\n", fh_new->type, fh_new->hex);  // output one line because hash remains same `= hashtype hashval`
+								eprintf ("= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
 							} else {
 								// output diff-like two lines, one with old hash val `- hashtype hashval` and one with new `+ hashtype hashval`
-								eprintf ("- %s %s\n"
-									"+ %s %s\n",
+								eprintf ("- %s %s\n+ %s %s\n",
 									fh_old->type, fh_old->hex,
 									fh_new->type, fh_new->hex);
 							}
 						}
 					} else { // hashes are equal
-						r_list_foreach (info->file_hashes, hiter_new, fh_new) {
-							r_cons_printf ("%s %s\n", fh_new->type ? fh_new->type : "", fh_new->hex ? fh_new->hex : "");
+						r_list_foreach (new_hashes, hiter_new, fh_new) {
+							r_cons_printf ("%s %s\n", fh_new->type, fh_new->hex);
 						}
 					}
+					newline = false;
 				}
-
-				if (!r_list_empty (old_file_hashes)) {
-					r_list_free (old_file_hashes);
-				}
+				r_list_free (old_hashes);
 			}
 			break;
 		case 'Z': // "iZ"
@@ -709,7 +689,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'O': // "iO"
 			switch (input[1]) {
 			case ' ':
-			        r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_ro (input + 1), desc->name);
+			        r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_head_ro (input + 1), desc->name);
 			        break;
 			default:
 			        r_sys_cmdf ("rabin2 -O help");
@@ -730,7 +710,6 @@ static int cmd_info(void *data, const char *input) {
 					name = "segments";
 					input++;
 					action = R_CORE_BIN_ACC_SEGMENTS;
-					param_shift = 1;
 				}
 				// case for iS=
 				if (input[1] == '=') {
@@ -960,7 +939,7 @@ static int cmd_info(void *data, const char *input) {
 				bool old_tmpseek = core->tmpseek;
 				input++;
 				if (input[1] == ' ') {
-					const char *argstr = r_str_trim_ro (input + 2);
+					const char *argstr = r_str_trim_head_ro (input + 2);
 					ut64 arg = r_num_get (NULL, argstr);
 					input++;
 					if (arg != 0 || *argstr == '0') {

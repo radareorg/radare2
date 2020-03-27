@@ -1,4 +1,4 @@
-NAME='dbg.dc+ds.swstep'
+NAME=dbg.dc+ds.swstep
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
@@ -21,7 +21,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dc+ds.swstep2'
+NAME=dbg.dc+ds.swstep2
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
@@ -42,7 +42,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dc+ds.hwstep'
+NAME=dbg.dc+ds.hwstep
 FILE=../bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
@@ -65,10 +65,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dc+ds.hwstep2'
+NAME=dbg.dc+ds.hwstep2
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=false
 db sym.main
@@ -78,6 +78,7 @@ ds
 dr PC
 p8 1@sym.main
 dk 9
+EOF
 EXPECT=<<EOF
 0x08048400
 0x08048401
@@ -85,14 +86,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dcC+ds.swstep1'
+NAME=dbg.dcC+ds.swstep1
 FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
 ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 f times=5
-(times_stop,?e Loop `?vi times`,f times=`?vi times-1`,?= times)
+(times_stop;?e Loop `?vi times`;f times=`?vi times-1`;?= times)
 db 0x4000ce
 dbC 0x4000ce .(times_stop)
 dc
@@ -107,14 +108,14 @@ Loop 1
 EOF
 RUN
 
-NAME='dbg.dcC+ds.swstep2'
+NAME=dbg.dcC+ds.swstep2
 FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
 ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 e cmd.hitinfo=0
-(break_rax,f reg_rax=`dr rax`,f test=`?vi reg_rax-0x31c0`,?= test)
+(break_rax;f reg_rax=`dr rax`;f test=`?vi reg_rax-0x31c0`;?= test)
 db 0x4000ce
 dbC 0x4000ce .(break_rax)
 dc
@@ -128,14 +129,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dcC+ds.swstep3'
+NAME=dbg.dcC+ds.swstep3
 FILE=../bins/elf/analysis/tiny-crackme-vm-x86_64
 ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 e cmd.hitinfo=0
-(trace_rax,dr rax,f reg_rax=`dr rax`,f test=`?vi reg_rax-0x0440`,?= test)
+(trace_rax;dr rax;f reg_rax=`dr rax`;f test=`?vi reg_rax-0x0440`;?= test)
 db 0x4000ce
 dbC 0x4000ce .(trace_rax)
 dc
@@ -151,7 +152,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dbd+dbe'
+NAME=dbg.dbd+dbe
 FILE=../bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
@@ -177,7 +178,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME='dbg.dc+db'
+NAME=dbg.dc+db
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
@@ -196,29 +197,33 @@ Hello world!
 EOF
 RUN
 
-NAME='valid db'
-FILE=../bins/elf/analysis/x86-helloworld-gcc
+NAME=valid db
+FILE=../bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
+e scr.color=0
+db main
+db~1[8]
+EOF
+EXPECT=<<EOF
+valid
+EOF
+RUN
+
+NAME=invalid db
+FILE=../bins/elf/analysis/x64-loop
+ARGS=-d
+CMDS=<<EOF
+e scr.color=0
 db 0x0
-db~1[12];
-EXPECT=<<RUN
-"invalid"
+db~1[8]
+EOF
+EXPECT=<<EOF
+invalid
 EOF
 RUN
 
-NAME='invalid db'
-FILE=../bins/elf/analysis/x86-helloworld-gcc
-ARGS=-d
-CMDS=<<EOF
-db entry0
-db~1[12]
-EXPECT=<<RUN
-"valid"
-EOF
-RUN
-
-NAME='dbg.bp_remove_index'
+NAME=dbg.bp_remove_index
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
@@ -245,5 +250,18 @@ EXPECT=<<EOF
 ----------
 0 E:1
 Hello world!
+EOF
+RUN
+
+NAME=dbH
+FILE=../bins/elf/analysis/x64-loop
+ARGS=-d
+CMDS=<<EOF
+e scr.color=0
+dbH main
+db~1[5]
+EOF
+EXPECT=<<EOF
+hw
 EOF
 RUN

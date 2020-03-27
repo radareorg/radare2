@@ -12,7 +12,9 @@ R_LIB_VERSION_HEADER(r_config);
 
 #define CN_BOOL  0x000001
 #define CN_INT   0x000002
-#define CN_OFFT  0x000004
+// NOTE: removed because this is redundant and it does not add any value
+//       compared to CN_INT. Use that instead for consistency
+// #define CN_OFFT  0x000004
 #define CN_STR   0x000008
 #define CN_RO    0x000010
 #define CN_RW    0x000020
@@ -98,6 +100,19 @@ R_API bool r_config_set_getter (RConfig *cfg, const char *key, RConfigCallback c
 
 R_API void r_config_serialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db);
 R_API bool r_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_NULLABLE char **err);
+
+static inline bool r_config_node_is_bool(RConfigNode *node) {
+	return node->flags & CN_BOOL;
+}
+static inline bool r_config_node_is_int(RConfigNode *node) {
+	return node->flags & CN_INT;
+}
+static inline bool r_config_node_is_ro(RConfigNode *node) {
+	return node->flags & CN_RO;
+}
+static inline bool r_config_node_is_str(RConfigNode *node) {
+	return node->flags & CN_STR;
+}
 #endif
 
 #ifdef __cplusplus

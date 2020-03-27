@@ -1,10 +1,11 @@
-NAME='uname'
+NAME=uname
 FILE=-
-ARGS=
 BROKEN=
-CMDS=<<EXPECT
+CMDS=<<EOF
 !uname
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 Darwin
+EOF
 RUN
 

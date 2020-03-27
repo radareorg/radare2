@@ -30,9 +30,7 @@ EXPECT=<<EOF
 0x00000053
 0x00000067
 EOF
-CMDS=<<EOF
-/ get~[0]
-EOF
+CMDS=/ get~[0]
 RUN
 
 NAME=/ search.in=file

@@ -101,6 +101,19 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	core->times->loadlibs_init_time = r_sys_now () - prev;
 }
 
+static bool __isScriptFilename(const char *name) {
+	const char *ext = r_str_lchr (name, '.');
+	if (ext) {
+		ext++;
+		if (!strcmp (ext, "py")
+		||  !strcmp (ext, "js")
+		||  !strcmp (ext, "lua")) {
+			return true;
+		}
+	}
+	return false;
+}
+
 R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	ut64 prev = r_sys_now ();
 	__loadSystemPlugins (core, where, path);
@@ -115,7 +128,7 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	RListIter *iter;
 	char *file;
 	r_list_foreach (files, iter, file) {
-		bool isScript = r_str_endswith (file, ".py") || r_str_endswith (file, ".js") || r_str_endswith (file, ".lua");
+		bool isScript = __isScriptFilename (file);
 		if (isScript) {
 			r_core_cmdf (core, ". %s/%s", homeplugindir, file);
 		}

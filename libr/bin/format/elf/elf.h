@@ -38,6 +38,7 @@ typedef struct r_bin_elf_symbol_t {
 	const char *bind;
 	const char *type;
 	char name[ELF_STRING_LENGTH];
+	char libname[ELF_STRING_LENGTH];
 	int last;
 	bool in_shdr;
 	bool is_sht_null;

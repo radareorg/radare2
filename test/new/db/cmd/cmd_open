@@ -1,3 +1,18 @@
+NAME=om=
+FILE=../bins/mach0/mac-ls2
+BROKEN=1
+CMDS=<<EOF
+om=
+EOF
+EXPECT=<<EOF
+
+0*  0x100000000 ################-------------- 0x100005000 r-x   3     fmap.TEXT
+1   0x100005000 ---------------####----------- 0x100006000 r--   3     fmap.DATA
+2   0x100006000 ------------------############ 0x10000a000 r--   3     fmap.LINKEDIT
+=>  0x1000011e8 ------------------------------ 0x1000012e8             
+EOF
+RUN
+
 NAME=obb baddrs
 FILE=../bins/mach0/mac-ls2
 ARGS=-B0x50000
@@ -35,36 +50,28 @@ NAME=oi-
 FILE=malloc://1024
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-oi-
-EOF
+CMDS=oi-
 RUN
 
 NAME=oi-2
 FILE=--
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-o bins/mach0/fatmach0-3true
-EOF
+CMDS=o bins/mach0/fatmach0-3true
 RUN
 
-NAME=o-3
+NAME=o-[0]
 FILE=malloc://1024
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-o-`o~[0]`;o
-EOF
+CMDS=o- `o~[0]`;o
 RUN
 
 NAME=oj-
 FILE=malloc://1024
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-o-`oj~{[0].fd}`;o
-EOF
+CMDS=o- `oj~{[0].fd}`;o
 RUN
 
 NAME=o -
@@ -106,9 +113,7 @@ NAME=omn - crash
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-omn
-EOF
+CMDS=omn
 RUN
 
 NAME=oob 10
@@ -135,7 +140,7 @@ RUN
 
 NAME=oob consider baddr
 FILE=../bins/mach0/mac-ls
-CMDS=<<EXPECT
+CMDS=<<EOF
 e bin.baddr = 0xf00000
 k old_v=`ieq`
 oob
@@ -143,39 +148,45 @@ iI~baddr[1]
 ie~vaddr[1]
 p8 10 @ entry0
 p8 10 @ `k old_v`
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0xf00000
 0x00f01058
 554889e5415741564155
 ffffffffffffffffffff
+EOF
 RUN
 
 NAME=oob consider laddr 32bit
 FILE=../bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 32
-CMDS=<<EXPECT
+CMDS=<<EOF
 e bin.laddr = 0x5000
 e bin.baddr = -1
 oob
 iI~laddr[1]
 iI~baddr[1]
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x0
 0x1000
+EOF
 RUN
 
 NAME=oob consider laddr 64bit
 FILE=../bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 64
-CMDS=<<EXPECT
+CMDS=<<EOF
 e bin.laddr = 0x5000
 e bin.baddr = -1
 oob
 iI~laddr[1]
 iI~baddr[1]
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x0
 0x100000000
+EOF
 RUN
 
 NAME=oob from malloc
@@ -195,7 +206,7 @@ RUN
 
 NAME=ob select files
 FILE=malloc://1024
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.null=true
 o malloc://512
 e scr.null=false
@@ -206,11 +217,13 @@ obo 4
 i~file[1]
 obo 3
 i~file[1]
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 malloc://512
 malloc://1024
 malloc://512
 malloc://1024
+EOF
 RUN
 
 NAME=ob select files binobj
@@ -268,5 +281,68 @@ CMDS=<<EOF
 o -
 o-3
 o~?
+EOF
+RUN
+
+NAME=oc
+FILE=../bins/elf/true32
+EXPECT=<<EOF
+fd       3
+file     ../bins/elf/true32
+size     0x560c
+humansz  21.5K
+mode     r-x
+format   elf
+iorw     false
+blksz    0x0
+block    0x100
+type     EXEC (Executable file)
+arch     x86
+baddr    0x8048000
+binsz    20668
+bintype  elf
+bits     32
+canary   true
+class    ELF32
+crypto   false
+endian   little
+havecode true
+intrp    /lib/ld-linux.so.2
+laddr    0x0
+lang     c
+linenum  false
+lsyms    false
+machine  Intel 80386
+maxopsz  16
+minopsz  1
+nx       true
+os       linux
+pcalign  0
+pic      false
+relocs   false
+relro    partial
+rpath    NONE
+sanitiz  false
+static   false
+stripped true
+subsys   linux
+va       true
+--
+fd       3
+file     malloc://512
+size     0x200
+humansz  512
+mode     rwx
+format   any
+iorw     true
+blksz    0x0
+block    0x100
+
+EOF
+CMDS=<<EOF
+i
+oc -
+?e --
+i
 EOF
 RUN

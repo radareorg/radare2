@@ -3,9 +3,7 @@ FILE=-
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-ae 1,1,-,!,?{,1,}{,2,}
-EOF
+CMDS=ae 1,1,-,!,?{,1,}{,2,}
 RUN
 
 NAME=cond
@@ -13,9 +11,7 @@ FILE=-
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-ae 1,1,==,$z,?{,1,}{,2,}
-EOF
+CMDS=ae 1,1,==,$z,?{,1,}{,2,}
 RUN
 
 NAME=cond tail
@@ -24,9 +20,7 @@ EXPECT=<<EOF
 3
 1
 EOF
-CMDS=<<EOF
-ae 1,1,==,$z,?{,1,}{,2,},3
-EOF
+CMDS=ae 1,1,==,$z,?{,1,}{,2,},3
 RUN
 
 NAME=cond neg
@@ -34,9 +28,7 @@ FILE=-
 EXPECT=<<EOF
 2
 EOF
-CMDS=<<EOF
-ae 1,1,==,$z,!,?{,1,}{,2,}
-EOF
+CMDS=ae 1,1,==,$z,!,?{,1,}{,2,}
 RUN
 
 NAME=cond neg tail
@@ -45,7 +37,5 @@ EXPECT=<<EOF
 3
 2
 EOF
-CMDS=<<EOF
-ae 1,1,==,$z,!,?{,1,}{,2,},3
-EOF
+CMDS=ae 1,1,==,$z,!,?{,1,}{,2,},3
 RUN

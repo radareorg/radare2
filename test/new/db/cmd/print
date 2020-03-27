@@ -174,9 +174,7 @@ struct {
     uint64_t cow; // -450213120875525823
 }
 EOF
-CMDS=<<EOF
-pfc zdq foo bar cow
-EOF
+CMDS=pfc zdq foo bar cow
 RUN
 
 NAME=mac ls pfc.fmt

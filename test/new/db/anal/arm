@@ -677,6 +677,7 @@ NAME=ELF ARM: function args
 FILE=../bins/elf/analysis/armcall
 EXPECT=<<EOF
 / (fcn) main 44
+// int main (int argc, char **argv);
 |           ; var int32_t var_ch @ fp-0xc
 |           ; var int32_t var_8h @ fp-0x8
 |           ; arg int argc @ r0
@@ -811,9 +812,7 @@ RUN
 NAME=arm thumb basic block detection with ITTE
 BROKEN=1
 FILE=../../bins/elf/analysis/bug-it-bb
-CMDS=<<EOF
-aaa ; s 0x00010074 ; afb
-EOF
+CMDS=aaa ; s 0x00010074 ; afb
 EXPECT=<<EOF
 0x00010074 0x0001007a 00:0000 6 j 0x0001007a f 0x0001007e 0x0001007a 0x0001007e 00:0000 4 j 0x00010080 0x0001007e 0x00010080 00:0000 2 j 0x00010080 0x00010080 0x00010082 00:0000 2
 EOF
@@ -821,44 +820,52 @@ RUN
 
 NAME=arm jump table
 FILE=../bins/elf/analysis/callback.elf
-CMDS=<<EXPECT
+CMDS=<<EOF
 af @ sym.input_handler2
-CC. @ 0x000105b8~?(7
-EXPECT=<<RUN
+CC. @ 0x000105b8~?\(7
+EOF
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME=arm jump table
 FILE=../bins/elf/analysis/mobile_bank.45115ff5f655d94fc26cb5244928b3fc
-CMDS=<<EXPECT
+CMDS=<<EOF
 af @ 0x11284
-CC. @ 0x000112b0~?(8
-EXPECT=<<RUN
+CC. @ 0x000112b0~?\(8
+EOF
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME=arm main analyzed with aaa
 FILE=../bins/elf/analysis/ch23.bin
-CMDS=<<EXPECT
+CMDS=<<EOF
 aaa
 afl~?0x00008470
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME=arm main in disassembly
 FILE=../bins/elf/analysis/ch23.bin
 BROKEN=1
-CMDS=<<EXPECT
+CMDS=<<EOF
 aaa
 pd 1 @ 0x000083d8~[5]
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 main
+EOF
 RUN
 
 NAME=tbh jump table
 FILE=malloc://2048
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wxs 01380793d3b24ff00109024600bf00bf00bf00bf59b2a1f120005a28139200f28d81404d02eb8004082601270122dfe810f09700850185015c0085015b008501850185018501a2
@@ -878,18 +885,21 @@ wxs d90d9828440d90139d109c
 s 0
 af
 pds 1@0x2e~:1
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x0000002e switch table (91 cases) at 0x32
+EOF
 RUN
 
 NAME=ao 16 after ao 32
 FILE=../bins/arm/elf/hello_world
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bits=16
 ao@0x568
 ?e --
 ao@0x50e
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 address: 0x568
 opcode: push {r3, lr}
 disasm: push {r3, lr}
@@ -924,6 +934,7 @@ type: add
 cycles: 1
 esil: 0,sp,+,0xffffffff,&,r7,=
 family: cpu
+EOF
 RUN
 
 NAME=arm aae with bit switch
@@ -945,5 +956,100 @@ aei
 e asm.bits=32
 aae 20 @ main
 pd 9 @ main
+EOF
+RUN
+
+NAME=arm show registers in table
+FILE=-
+EXPECT=<<EOF
+     sb 0x00000000            sl 0x00000000            fp 0x00000000
+     ip 0x00000000            sp 0x00000000            lr 0x00000000
+     pc 0x00000000            r0 0x00000000            r1 0x00000000
+     r2 0x00000000            r3 0x00000000            r4 0x00000000
+     r5 0x00000000            r6 0x00000000            r7 0x00000000
+     r8 0x00000000            r9 0x00000000           r10 0x00000000
+    r11 0x00000000           r12 0x00000000           r13 0x00000000
+    r14 0x00000000           r15 0x00000000          cpsr 0x00000000
+  blank 0x00000000       
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar=
+EOF
+RUN
+
+NAME=arm jmptbl flags and comments
+FILE=../bins/elf/arm1.bin
+EXPECT=<<EOF
+0x00064c7c 1 switch.0x00064c7c
+0x00064c80 1 case.default.0x64c7c
+0x00064c84 1 case.0x64c7c.0
+0x00064c88 1 case.0x64c7c.1
+0x00064c8c 1 case.0x64c7c.2
+0x00064c90 1 case.0x64c7c.3
+0x00064c94 1 case.0x64c7c.4
+0x00064c98 1 case.0x64c7c.5
+0x00064c9c 1 case.0x64c7c.6
+0x00064ca0 1 case.0x64c7c.7
+0x00064ca4 1 case.0x64c7c.8
+0x00064ca8 1 case.0x64c7c.9
+0x00064cac 1 case.0x64c7c.10
+0x00064cb0 1 case.0x64c7c.11
+0x00064cb4 1 case.0x64c7c.12
+0x00064df0 1 switch.0x00064df0
+0x00064df4 1 case.default.0x64df0
+0x00064df8 1 case.0x64df0.0
+0x00064dfc 1 case.0x64df0.1
+0x00064e00 1 case.0x64df0.2
+0x00064e04 1 case.0x64df0.3
+0x00064e08 1 case.0x64df0.4
+0x00064e0c 1 case.0x64df0.5
+0x00064e10 1 case.0x64df0.6
+0x00064e14 1 case.0x64df0.7
+0x00064e18 1 case.0x64df0.8
+0x00064e1c 1 case.0x64df0.9
+0x00064e20 1 case.0x64df0.10
+0x00064e24 1 case.0x64df0.11
+0x00064e28 1 case.0x64df0.12
+0x00064f94 1 switch.0x00064f94
+0x00064f98 1 case.default.0x64f94
+0x00064f9c 1 case.0x64f94.0
+0x00064fa0 1 case.0x64f94.1
+0x00064fa4 1 case.0x64f94.2
+0x00064fa8 1 case.0x64f94.3
+0x00064fac 1 case.0x64f94.4
+0x00064fb0 1 case.0x64f94.5
+0x00064fb4 1 case.0x64f94.6
+0x00064fb8 1 case.0x64f94.7
+0x00064fbc 1 case.0x64f94.8
+0x00064fc0 1 case.0x64f94.9
+0x00064fc4 1 case.0x64f94.10
+0x00064fc8 1 case.0x64f94.11
+0x00064fcc 1 case.0x64f94.12
+0x0006506c 1 switch.0x0006506c
+0x00065070 1 case.default.0x6506c
+0x00065074 1 case.0x6506c.0
+0x00065078 1 case.0x6506c.1
+0x0006507c 1 case.0x6506c.2
+0x00065080 1 case.0x6506c.3
+0x00065084 1 case.0x6506c.4
+0x00065088 1 case.0x6506c.5
+0x0006508c 1 case.0x6506c.6
+0x00065090 1 case.0x6506c.7
+0x00065094 1 case.0x6506c.8
+0x00065098 1 case.0x6506c.9
+0x0006509c 1 case.0x6506c.10
+0x000650a0 1 case.0x6506c.11
+0x000650a4 1 case.0x6506c.12
+0x00064c7c CCu "switch table (13 cases) at 0x64c84"
+0x00064df0 CCu "switch table (13 cases) at 0x64df8"
+0x00064f94 CCu "switch table (13 cases) at 0x64f9c"
+0x0006506c CCu "switch table (13 cases) at 0x65074"
+EOF
+CMDS=<<EOF
+af@sym.__gcc_personality_v0
+f~switch.,case.
+CC~switch
 EOF
 RUN

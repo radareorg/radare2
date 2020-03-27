@@ -58,9 +58,79 @@ bool test_r_flag_by_spaces(void) {
 	mu_end;
 }
 
+bool test_r_flag_get_at() {
+	RFlag *flag = r_flag_new ();
+
+	r_flag_space_set (flag, "sp1");
+	RFlagItem *foo = r_flag_set (flag, "foo", 1024, 0);
+
+	RFlagItem *fi;
+	fi = r_flag_get_at (flag, 1024, false);
+	mu_assert_ptreq (fi, foo, "flag at exact");
+	fi = r_flag_get_at (flag, 1023, false);
+	mu_assert_null (fi, "no flag at -1");
+	fi = r_flag_get_at (flag, 1025, false);
+	mu_assert_null (fi, "no flag at +1");
+
+	fi = r_flag_get_at (flag, 1024, true);
+	mu_assert_ptreq (fi, foo, "flag at exact");
+	fi = r_flag_get_at (flag, 1023, true);
+	mu_assert_null (fi, "no flag at -1");
+	fi = r_flag_get_at (flag, 1025, true);
+	mu_assert_ptreq (fi, foo, "flag at +1");
+	fi = r_flag_get_at (flag, 1234, true);
+	mu_assert_ptreq (fi, foo, "flag at +more");
+
+	r_flag_space_set (flag, "sp2");
+
+	fi = r_flag_get_at (flag, 1024, false);
+	mu_assert_null (fi, "space mask");
+	fi = r_flag_get_at (flag, 1023, false);
+	mu_assert_null (fi, "space mask");
+	fi = r_flag_get_at (flag, 1025, false);
+	mu_assert_null (fi, "space mask");
+
+	fi = r_flag_get_at (flag, 1024, true);
+	mu_assert_null (fi, "space mask");
+	fi = r_flag_get_at (flag, 1023, true);
+	mu_assert_null (fi, "space mask");
+	fi = r_flag_get_at (flag, 1025, true);
+	mu_assert_null (fi, "space mask");
+	fi = r_flag_get_at (flag, 1234, true);
+	mu_assert_null (fi, "space mask");
+
+	RFlagItem *oof = r_flag_set (flag, "oof", 1234, 0);
+
+	fi = r_flag_get_at (flag, 1234, false);
+	mu_assert_ptreq (fi, oof, "other space");
+
+	r_flag_space_set (flag, "sp1");
+
+	fi = r_flag_get_at (flag, 1024, false);
+	mu_assert_ptreq (fi, foo, "non-interference of spaces");
+	fi = r_flag_get_at (flag, 1023, false);
+	mu_assert_null (fi, "non-interference of spaces");
+	fi = r_flag_get_at (flag, 1025, false);
+	mu_assert_null (fi, "non-interference of spaces");
+
+	fi = r_flag_get_at (flag, 1024, true);
+	mu_assert_ptreq (fi, foo, "non-interference of spaces");
+	fi = r_flag_get_at (flag, 1023, true);
+	mu_assert_null (fi, "non-interference of spaces");
+	fi = r_flag_get_at (flag, 1025, true);
+	mu_assert_ptreq (fi, foo, "non-interference of spaces");
+	fi = r_flag_get_at (flag, 1234, true);
+	mu_assert_ptreq (fi, foo, "non-interference of spaces");
+	fi = r_flag_get_at (flag, 2048, true);
+	mu_assert_ptreq (fi, foo, "non-interference of spaces");
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_r_flag_get_set);
 	mu_run_test (test_r_flag_by_spaces);
+	mu_run_test (test_r_flag_get_at);
 	return tests_passed != tests_run;
 }
 

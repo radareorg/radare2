@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <stddef.h>
 #include <math.h> // required for signbit
@@ -193,6 +193,7 @@ static const char *help_msg_question_v[] = {
 	"$Cn", "", "get nth call of function",
 	"$Dn", "", "get nth data reference in function",
 	"$D", "", "current debug map base address ?v $D @ rsp",
+	"$DB", "", "same as dbg.baddr, progam base address",
 	"$DD", "", "current debug map size",
 	"$e", "", "1 if end of block, else 0",
 	"$j", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",
@@ -224,6 +225,10 @@ static const char *help_msg_question_v[] = {
 static const char *help_msg_question_V[] = {
 	"Usage: ?V[jq]","","",
 	"?V", "", "show version information",
+	"?V0", "", "show major version",
+	"?V1", "", "show minor version",
+	"?V2", "", "show patch version",
+	"?Vn", "", "show numeric version (2)",
 	"?Vc", "", "show numeric version",
 	"?Vj", "", "same as above but in JSON",
 	"?Vq", "", "quiet mode, just show the version number",
@@ -507,7 +512,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'B': // "?B"
-		k = r_str_trim_ro (input + 1);
+		k = r_str_trim_head_ro (input + 1);
 		tmp = r_core_get_boundaries_prot (core, -1, k, "search");
 		if (!tmp) {
 			return false;
@@ -606,7 +611,7 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "octal", sdb_fmt ("0%"PFMT64o, n));
 					pj_ks (pj, "unit", unit);
 					pj_ks (pj, "segment", sdb_fmt ("%04x:%04x", s, a));
-					
+
 				} else {
 					if (n >> 32) {
 						r_cons_printf ("int64   %"PFMT64d"\n", (st64)n);
@@ -619,7 +624,7 @@ static int cmd_help(void *data, const char *input) {
 					r_cons_printf ("octal   0%"PFMT64o"\n", n);
 					r_cons_printf ("unit    %s\n", unit);
 					r_cons_printf ("segment %04x:%04x\n", s, a);
-					
+
 					if (asnum) {
 						r_cons_printf ("string  \"%s\"\n", asnum);
 						free (asnum);
@@ -841,16 +846,39 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%d\n", vernum (R2_VERSION));
 			break;
 		case 'j': // "?Vj"
-			r_cons_printf ("{\"archos\":\"%s-%s\"", R_SYS_OS, R_SYS_ARCH);
-			r_cons_printf (",\"arch\":\"%s\"", R_SYS_ARCH);
-			r_cons_printf (",\"os\":\"%s\"", R_SYS_OS);
-			r_cons_printf (",\"commit\":%d", R2_VERSION_COMMIT);
-			r_cons_printf (",\"tap\":\"%s\"", R2_GITTAP);
-			r_cons_printf (",\"nversion\":%d", vernum (R2_VERSION));
-			r_cons_printf (",\"version\":\"%s\"}\n", R2_VERSION);
+			{
+				PJ *pj = pj_new ();
+				pj_o (pj);
+				pj_ks (pj, "arch", R_SYS_ARCH);
+				pj_ks (pj, "os", R_SYS_OS);
+				pj_ki (pj, "bits", R_SYS_BITS);
+				pj_ki (pj, "commit", R2_VERSION_COMMIT);
+				pj_ks (pj, "tap", R2_GITTAP);
+				pj_ki (pj, "major", R2_VERSION_MAJOR);
+				pj_ki (pj, "minor", R2_VERSION_MINOR);
+				pj_ki (pj, "patch", R2_VERSION_PATCH);
+				pj_ki (pj, "number", R2_VERSION_NUMBER);
+				pj_ki (pj, "nversion", vernum (R2_VERSION));
+				pj_ks (pj, "version", R2_VERSION);
+				pj_end (pj);
+				r_cons_printf ("%s\n", pj_string (pj));
+				pj_free (pj);
+			}
+			break;
+		case 'n': // "?Vn"
+			r_cons_printf ("%d\n", R2_VERSION_NUMBER);
 			break;
 		case 'q': // "?Vq"
 			r_cons_println (R2_VERSION);
+			break;
+		case '0':
+			r_cons_printf ("%d\n", R2_VERSION_MAJOR);
+			break;
+		case '1':
+			r_cons_printf ("%d\n", R2_VERSION_MINOR);
+			break;
+		case '2':
+			r_cons_printf ("%d\n", R2_VERSION_PATCH);
 			break;
 		}
 		break;
@@ -901,7 +929,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'E': // "?E" clippy echo
-		r_core_clippy (core, r_str_trim_ro (input + 1));
+		r_core_clippy (core, r_str_trim_head_ro (input + 1));
 		break;
 	case 'e': // "?e" echo
 		switch (input[1]) {
@@ -912,7 +940,7 @@ static int cmd_help(void *data, const char *input) {
 			break;
 		}
 		case 'b': { // "?eb"
-			char *arg = strdup (r_str_trim_ro (input + 2));
+			char *arg = strdup (r_str_trim_head_ro (input + 2));
 			int n = r_str_split (arg, ' ');
 			ut64 *portions = calloc (n, sizeof (ut64));
 			for (i = 0; i < n; i++) {
@@ -942,7 +970,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			break;
 		case 'n': { // "?en" echo -n
-			const char *msg = r_str_trim_ro (input + 2);
+			const char *msg = r_str_trim_head_ro (input + 2);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
@@ -1001,7 +1029,7 @@ static int cmd_help(void *data, const char *input) {
 			  }
 			break;
 		case ' ': {
-			const char *msg = r_str_trim_ro (input+1);
+			const char *msg = r_str_trim_head_ro (input+1);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
@@ -1115,7 +1143,7 @@ static int cmd_help(void *data, const char *input) {
 				// TODO: r_cons_input()
 				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
 				r_line_set_prompt (foo);
-				r_cons_fgets (foo, sizeof (foo)-1, 0, NULL);
+				r_cons_fgets (foo, sizeof (foo), 0, NULL);
 				foo[sizeof (foo) - 1] = 0;
 				r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
 				core->num->value = r_num_math (core->num, foo);

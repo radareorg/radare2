@@ -1200,6 +1200,21 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 		}
+	case ARM64_INS_BIC:
+        if (OPCOUNT64 () == 2) {
+            if (REGSIZE64(0) == 4) {
+                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=",REG64 (1),REG64 (0));
+            } else {
+                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&=",REG64 (1),REG64 (0));
+            }
+        } else {
+            if (REGSIZE64(0) == 4) {
+                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=",REG64 (2),REG64 (1),REG64 (0));
+            } else {
+                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&,%s,=",REG64 (2),REG64 (1),REG64 (0));
+            }
+        }
+        break;
 	case ARM64_INS_CBZ:
 		r_strbuf_setf (&op->esil, "%s,!,?{,%"PFMT64d",pc,=,}",
 			REG64(0), IMM64(1));
@@ -1576,7 +1591,7 @@ PUSH { r4, r5, r6, r7, lr }
 
 20,sp,-=,lr,r7,r6,r5,r4,5,sp,=[*]
 #endif
-		r_strbuf_setf (&op->esil, "%d,sp,-=,",
+		r_strbuf_appendf (&op->esil, "%d,sp,-=,",
 			4 * insn->detail->arm.op_count);
 		for (i=insn->detail->arm.op_count; i>0; i--) {
 			r_strbuf_appendf (&op->esil, "%s,", REG (i-1));
@@ -1608,7 +1623,6 @@ PUSH { r4, r5, r6, r7, lr }
 POP { r4,r5, r6}
 r6,r5,r4,3,sp,[*],12,sp,+=
 #endif
-		r_strbuf_setf (&op->esil, "");
 		for (i=insn->detail->arm.op_count; i>0; i--) {
 			r_strbuf_appendf (&op->esil, "%s,", REG (i-1));
 		}
@@ -1681,7 +1695,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				int disp = MEMDISP(1);
 				char sign = disp>=0?'+':'-';
 				disp = disp>=0?disp:-disp;
-				r_strbuf_appendf (&op->esil, "%s,0x%"PFMT64x",%s,%c,0xffffffff,&,=[%d]",
+				r_strbuf_appendf (&op->esil, "%s,0x%x,%s,%c,0xffffffff,&,=[%d]",
 						  REG(0), disp, MEMBASE(1), sign, str_ldr_bytes);
 				if (insn->detail->arm.writeback) {
 					r_strbuf_appendf (&op->esil, ",%d,%s,%c,%s,=",
@@ -1787,8 +1801,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						r_strbuf_appendf (&op->esil, ",%d,%s,%c,%s,=",
 								  disp, MEMBASE(2), sign, MEMBASE(2));
 					}
-				} else { 
-					if (ISSHIFTED(2)) { 
+				} else {
+					if (ISSHIFTED(2)) {
 						// it seems strd does not support SHIFT which is good, but have a check nonetheless
 					} else {
 						r_strbuf_appendf (&op->esil, "%s,%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,%s,+,0xffffffff,&,=[4]",
@@ -1807,7 +1821,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					       REG(0), MEMBASE(2), str_ldr_bytes, REG(1), MEMBASE(2), str_ldr_bytes, IMM(3), MEMBASE(2));
 			}
 			if (ISREG(3)) { // e.g. 'strd r2, r3, [r4], r5'
-				if (ISSHIFTED(3)) { 
+				if (ISSHIFTED(3)) {
 					// same as above
 				} else {
 					r_strbuf_appendf (&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,4,%s,+,0xffffffff,&,=[%d],%s,%s,+=",
@@ -3601,7 +3615,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	}
 
 	anal->bits = obits;
-	free (op);
+	r_anal_op_free (op);
 
 	return ret;
 }
@@ -3620,7 +3634,7 @@ static RList *anal_preludes(RAnal *anal) {
 	case 64:
 		KW ("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
 		KW ("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
-		KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0); 
+		KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0);
 		break;
 	default:
 		r_list_free (l);

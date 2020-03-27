@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2019 - pancake, Jody Frankowski */
+/* radare2 - LGPL - Copyright 2008-2020 - pancake, Jody Frankowski */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -152,6 +152,9 @@ static inline void __cons_write_ll(const char *buf, int len) {
 static inline void __cons_write(const char *obuf, int olen) {
 	const unsigned int bucket = 64 * 1024;
 	unsigned int i;
+	if (olen < 0) {
+		olen = strlen (obuf);
+	}
 	for (i = 0; (i + bucket) < olen; i += bucket) {
 		__cons_write_ll (obuf + i, bucket);
 	}
@@ -367,7 +370,8 @@ R_API int r_cons_get_cur_line() {
 #if __UNIX__
 		char buf[8];
 		struct termios save,raw;
-		fflush(stdout);			// flush the Arrow keys escape keys which was messing up the output
+		// flush the Arrow keys escape keys which was messing up the output
+		fflush (stdout);
 		(void) tcgetattr (0, &save);
 		cfmakeraw (&raw);
 		(void) tcsetattr (0, TCSANOW, &raw);
@@ -386,15 +390,8 @@ R_API int r_cons_get_cur_line() {
 }
 
 R_API void r_cons_break_timeout(int timeout) {
-	if (!timeout && I.timeout) {
-		I.timeout = 0;
-	} else {
-		if (timeout) {
-			I.timeout = r_sys_now () + ((ut64) timeout << 20);
-		} else {
-			I.timeout = 0;
-		}
-	}
+	I.timeout = (timeout && !I.timeout) 
+		? r_sys_now () + ((ut64) timeout << 20) : 0;
 }
 
 R_API void r_cons_break_end() {
@@ -404,9 +401,9 @@ R_API void r_cons_break_end() {
 	r_sys_signal (SIGINT, SIG_IGN);
 #endif
 	if (!r_stack_is_empty (I.context->break_stack)) {
-		//free all the stack
+		// free all the stack
 		r_stack_free (I.context->break_stack);
-		//create another one
+		// create another one
 		I.context->break_stack = r_stack_newf (6, break_stack_free);
 		I.context->event_interrupt_data = NULL;
 		I.context->event_interrupt = NULL;
@@ -421,10 +418,9 @@ R_API void *r_cons_sleep_begin(void) {
 }
 
 R_API void r_cons_sleep_end(void *user) {
-	if (!I.cb_sleep_end) {
-		return;
+	if (I.cb_sleep_end) {
+		I.cb_sleep_end (I.user, user);
 	}
-	I.cb_sleep_end (I.user, user);
 }
 
 #if __WINDOWS__
@@ -464,7 +460,7 @@ R_API bool r_cons_get_click(int *x, int *y) {
 		*y = I.click_y;
 	}
 	bool set = I.click_set;
-	I.click_set = false;;
+	I.click_set = false;
 	return set;
 }
 
@@ -562,7 +558,6 @@ R_API RCons *r_cons_new() {
 #endif
 	I.pager = NULL; /* no pager by default */
 	I.mouse = 0;
-	I.onestream = false;
 	I.show_vals = false;
 	r_cons_reset ();
 	r_cons_rgb_init ();
@@ -688,7 +683,7 @@ R_API void r_cons_clear00() {
 }
 
 R_API void r_cons_reset_colors() {
-	r_cons_strcat (Color_RESET);
+	r_cons_strcat (Color_RESET_BG Color_RESET);
 }
 
 R_API void r_cons_clear() {
@@ -934,7 +929,7 @@ R_API void r_cons_flush(void) {
 			r_cons_break_push (NULL, NULL);
 			while (nl && !r_cons_is_breaked ()) {
 				__cons_write (ptr, nl - ptr + 1);
-				if (!(i % pagesize)) {
+				if (I.linesleep && !(i % pagesize)) {
 					r_sys_usleep (I.linesleep * 1000);
 				}
 				ptr = nl + 1;
@@ -1034,7 +1029,7 @@ R_API void r_cons_visual_write(char *buffer) {
 	}
 	memset (&white, ' ', sizeof (white));
 	while ((nl = strchr (ptr, '\n'))) {
-		int len = ((int)(size_t)(nl-ptr))+1;
+		int len = ((int)(size_t)(nl - ptr)) + 1;
 		int lines_needed = 0;
 
 		*nl = 0;
@@ -1056,6 +1051,7 @@ R_API void r_cons_visual_write(char *buffer) {
 			if (lines > 0) {
 				__cons_write (pptr, plen);
 				if (len != olen) {
+					__cons_write (R_CONS_CLEAR_FROM_CURSOR_TO_END, -1);
 					__cons_write (Color_RESET, strlen (Color_RESET));
 				}
 			}
@@ -1139,24 +1135,6 @@ R_API int r_cons_printf(const char *format, ...) {
 	return 0;
 }
 
-#if ONE_STREAM_HACK
-R_API int r_cons_onestream_printf(const char *format, ...) {
-	va_list ap;
-	if (!format || !*format) {
-		return -1;
-	}
-	va_start (ap, format);
-	if (I.onestream) {
-		r_cons_printf_list (format, ap);
-	} else {
-		vfprintf (stderr, format, ap);
-	}
-	va_end (ap);
-
-	return 0;
-}
-#endif
-
 R_API int r_cons_get_column() {
 	char *line = strrchr (I.context->buffer, '\n');
 	if (!line) {
@@ -1221,14 +1199,19 @@ R_API void r_cons_newline() {
 	if (!I.null) {
 		r_cons_strcat ("\n");
 	}
-// This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
-//  and break json output appending extra chars.
-// this code now is managed into output.c:118 at function r_cons_w32_print
-// now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
-//#if __WINDOWS__
-	//r_cons_reset_colors();
-//#endif
-	//if (I.is_html) r_cons_strcat ("<br />\n");
+#if 0
+This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
+and break json output appending extra chars.
+this code now is managed into output.c:118 at function r_cons_w32_print
+now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
+
+#if __WINDOWS__
+	r_cons_reset_colors();
+#else
+	r_cons_strcat (Color_RESET_ALL"\n");
+#endif
+	if (I.is_html) r_cons_strcat ("<br />\n");
+#endif
 }
 
 /* return the aproximated x,y of cursor before flushing */
@@ -1733,24 +1716,24 @@ R_API void r_cons_bind(RConsBind *bind) {
 	bind->get_size = r_cons_get_size;
 	bind->get_cursor = r_cons_get_cursor;
 	bind->cb_printf = r_cons_printf;
+	bind->cb_flush = r_cons_flush;
+	bind->cb_grep = r_cons_grep;
 	bind->is_breaked = r_cons_is_breaked;
 }
 
 R_API const char* r_cons_get_rune(const ut8 ch) {
-	if (ch >= RUNECODE_MIN && ch < RUNECODE_MAX) {
-		switch (ch) {
-		case RUNECODE_LINE_HORIZ: return RUNE_LINE_HORIZ;
-		case RUNECODE_LINE_VERT:  return RUNE_LINE_VERT;
-		case RUNECODE_LINE_CROSS: return RUNE_LINE_CROSS;
-		case RUNECODE_CORNER_TL:  return RUNE_CORNER_TL;
-		case RUNECODE_CORNER_TR:  return RUNE_CORNER_TR;
-		case RUNECODE_CORNER_BR:  return RUNE_CORNER_BR;
-		case RUNECODE_CORNER_BL:  return RUNE_CORNER_BL;
-		case RUNECODE_CURVE_CORNER_TL:  return RUNE_CURVE_CORNER_TL;
-		case RUNECODE_CURVE_CORNER_TR:  return RUNE_CURVE_CORNER_TR;
-		case RUNECODE_CURVE_CORNER_BR:  return RUNE_CURVE_CORNER_BR;
-		case RUNECODE_CURVE_CORNER_BL:  return RUNE_CURVE_CORNER_BL;
-		}
+	switch (ch) {
+	case RUNECODE_LINE_HORIZ: return RUNE_LINE_HORIZ;
+	case RUNECODE_LINE_VERT:  return RUNE_LINE_VERT;
+	case RUNECODE_LINE_CROSS: return RUNE_LINE_CROSS;
+	case RUNECODE_CORNER_TL:  return RUNE_CORNER_TL;
+	case RUNECODE_CORNER_TR:  return RUNE_CORNER_TR;
+	case RUNECODE_CORNER_BR:  return RUNE_CORNER_BR;
+	case RUNECODE_CORNER_BL:  return RUNE_CORNER_BL;
+	case RUNECODE_CURVE_CORNER_TL:  return RUNE_CURVE_CORNER_TL;
+	case RUNECODE_CURVE_CORNER_TR:  return RUNE_CURVE_CORNER_TR;
+	case RUNECODE_CURVE_CORNER_BR:  return RUNE_CURVE_CORNER_BR;
+	case RUNECODE_CURVE_CORNER_BL:  return RUNE_CURVE_CORNER_BL;
 	}
 	return NULL;
 }

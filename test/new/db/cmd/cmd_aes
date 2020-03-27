@@ -22,3 +22,17 @@ wx b8010000000f34b801000000cd80ebfe
 10aes
 EOF
 RUN
+
+NAME=aes without initialize
+FILE=-
+EXPECT=<<EOF
+ebx = 0x00000010
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx bb10000000 # mov ebx, 10
+aes
+ar~ebx
+EOF
+RUN

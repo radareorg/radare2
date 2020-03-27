@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2020 - nibble, pancake */
 
 #if 0
     TODO
@@ -23,13 +23,12 @@ Keys:
 
 #include <r_anal.h>
 #include <r_core.h>
-#include <r_util.h>
 
 #define META_RANGE_BASE(x) ((x)>>5)
 #undef DB
 #define DB a->sdb_meta
 
-static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
+static char *meta_inrange_get(RAnal *a, ut64 addr, int size) {
 	if (size <= 0) {
 		return NULL;
 	}
@@ -39,19 +38,18 @@ static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
 	// return string array of all the offsets where there are stuff
 	for (; base <= base2; base++) {
 		const char *key = sdb_fmt ("range.0x%"PFMT64x, base);
-		char *r = sdb_get (DB, key, 0);
+		const char *r = sdb_const_get (DB, key, 0);
 		if (r) {
 			if (res) {
 				res = r_str_append (res, ",");
 			}
 			res = r_str_append (res, r);
-			free (r);
 		}
 	}
 	return res;
 }
 
-static bool meta_inrange_add (RAnal *a, ut64 addr, int size) {
+static bool meta_inrange_add(RAnal *a, ut64 addr, int size) {
 	if (size <= 0) {
 		return false;
 	}
@@ -68,7 +66,7 @@ static bool meta_inrange_add (RAnal *a, ut64 addr, int size) {
 	return set;
 }
 
-static bool meta_inrange_del (RAnal *a, ut64 addr, int size) {
+static bool meta_inrange_del(RAnal *a, ut64 addr, int size) {
 	if (size <= 0) {
 		return false;
 	}
@@ -105,9 +103,9 @@ static int meta_type_add(RAnal *a, char type, ut64 addr) {
 }
 
 // TODO: Add APIs to resize meta? nope, just del and add
-R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
-	char key[100], val[2048], *e_str;
-	int ret;
+R_API bool r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
+	char key[100], val[2048];
+	bool ret;
 	ut64 size;
 	const char *space = r_spaces_current_name (&a->meta_spaces);
 	meta_type_add (a, type, addr);
@@ -126,10 +124,11 @@ R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 		a->log (a, msg);
 		free (msg);
 	}
-	e_str = sdb_encode ((const void*)s, -1);
-	snprintf (val, sizeof (val)-1, "%d,%s,%s", (int)size, space, e_str);
+
+	char *z = sdb_encode ((const void*)s, -1);
+	snprintf (val, sizeof (val) - 1, "%d,%s,%s", (int)size, space, z);
 	sdb_set (DB, key, val, 0);
-	free ((void*)e_str);
+	free (z);
 
 	/* send event */
 	REventMeta rems = {
@@ -142,9 +141,10 @@ R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 	return ret;
 }
 
-R_API int r_meta_set_var_comment(RAnal *a, int type, ut64 idx, ut64 addr, const char *s) {
+// XXX very similar to set_string
+R_API bool r_meta_set_var_comment(RAnal *a, int type, ut64 idx, ut64 addr, const char *s) {
 	char key[100], val[2048], *e_str;
-	int ret;
+	bool ret;
 	ut64 size;
 	const char *space = r_spaces_current_name (&a->meta_spaces);
 	meta_type_add (a, type, addr);
@@ -226,7 +226,7 @@ static bool mustDeleteMetaEntry(RAnal *a, ut64 addr) {
 }
 
 // delete all the metas of a specific type, addr is ignored,
-static void r_meta_del_cb (RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
+static void r_meta_del_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
 	SdbList *ls = sdb_foreach_list (DB, true);
 	SdbListIter *lsi;
 	SdbKv *kv;
@@ -263,7 +263,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 		r_meta_del (a, R_META_TYPE_COMMENT, addr, size);
 		r_meta_del (a, R_META_TYPE_VARTYPE, addr, size);
 	}
-	if (type == R_META_TYPE_COMMENT || type == R_META_TYPE_VARTYPE) {
+	if (type == R_META_TYPE_COMMENT || type == R_META_TYPE_VARTYPE  || type == R_META_TYPE_HIGHLIGHT) {
 		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, addr);
 	} else {
 		snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, addr);
@@ -569,7 +569,7 @@ R_API const char *r_meta_type_to_string(int type) {
 	case R_META_TYPE_HIDE: return "Ch";
 	case R_META_TYPE_COMMENT: return "CCu";
 	case R_META_TYPE_RUN: return "Cr"; // not in C? help
-	case R_META_TYPE_HIGHLIGHT: return "CH"; // not in C?
+	case R_META_TYPE_HIGHLIGHT: return "ecHi"; // not in C?
 	case R_META_TYPE_VARTYPE: return "Ct";
 	}
 	return "# unknown meta # ";
@@ -626,14 +626,32 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, PJ *pj, bool show_f
 			pj_kn (pj, "offset", d->from);
 			pj_ks (pj, "type", r_meta_type_to_string (d->type));
 
-			pj_k (pj, "name");
-			if (d->type == 's' && (base64_str = r_base64_encode_dyn (d->str, -1))) {
-				pj_s (pj, base64_str);
-				free (base64_str);
+			if (d->type == 'H') {
+				pj_k (pj, "color");
+				ut8 r = 0, g = 0, b = 0, A = 0;
+				const char *esc = strchr (d->str, '\x1b');
+				if (esc) {
+					r_cons_rgb_parse (esc, &r, &g, &b, &A);
+					char *rgb_str = r_cons_rgb_tostring (r, g, b);
+					base64_str = r_base64_encode_dyn (rgb_str, -1);
+					if (d->type == 's' && base64_str) {
+						pj_s (pj, base64_str);
+						free (base64_str);
+					} else {
+						pj_s (pj, rgb_str);
+					}
+					free (rgb_str);
+				} else {
+					pj_s (pj, str);
+				}
 			} else {
-				pj_s (pj, str);
+				pj_k (pj, "name");
+				if (d->type == 's' && (base64_str = r_base64_encode_dyn (d->str, -1))) {
+					pj_s (pj, base64_str);
+				} else {
+					pj_s (pj, str);
+				}
 			}
-
 			if (d->type == 'd') {
 				pj_kn (pj, "size", d->size);
 			} else if (d->type == 's') {
@@ -765,6 +783,16 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, PJ *pj, bool show_f
 					a->cb_printf ("0x%08"PFMT64x" %s\n", d->from, pstr);
 				}
 				break;
+			case 'H':
+				{
+					ut8 r = 0, g = 0, b = 0, A = 0;
+					const char *esc = strchr (d->str, '\x1b');
+					r_cons_rgb_parse (esc, &r, &g, &b, &A);
+					a->cb_printf ("%s rgb:%02x%02x%02x @ 0x%08"PFMT64x"\n",
+						r_meta_type_to_string (d->type), r, g, b, d->from);
+					// TODO: d->size
+				}
+				break;
 			default:
 				if (rad) {
 					a->cb_printf ("%s %d 0x%08"PFMT64x" # %s\n",
@@ -792,7 +820,7 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	if (!meta_deserialize (ui->anal, &it, k, v)) {
 		return 1;
 	}
-	if (ui->fcn && !r_anal_fcn_in (ui->fcn, it.from)) {
+	if (ui->fcn && !r_anal_function_contains (ui->fcn, it.from)) {
 		goto beach;
 	}
 	if (!it.str) {
@@ -963,7 +991,7 @@ static int get_meta_size(void *user, const char *k, const char *v) {
 	if (!meta_deserialize (ui->anal, &it, k, v)) {
 		return -1;
 	}
-	if (ui->fcn && !r_anal_fcn_in (ui->fcn, it.from)) {
+	if (ui->fcn && !r_anal_function_contains (ui->fcn, it.from)) {
 		goto beach;
 	}
 	if (!it.str) {
@@ -1001,4 +1029,12 @@ R_API int r_meta_space_count_for(RAnal *a, const RSpace *space) {
 	myMetaUser mu = { .ctx = space };
 	r_meta_list_cb (a, R_META_TYPE_ANY, 0, meta_count_cb, &mu, UT64_MAX);
 	return mu.count;
+}
+
+R_API void r_meta_set_data_at(RAnal *a, ut64 addr, ut64 wordsz) {
+	char val[0x10];
+	if (snprintf (val, sizeof (val), "%"PFMT64u, wordsz) < 1) {
+		return;
+	}
+	r_meta_add (a, R_META_TYPE_DATA, addr, addr + wordsz, val);
 }

@@ -1,3 +1,35 @@
+NAME=got switch cases
+FILE=../bins/elf/game_of_thrones
+EXPECT=<<EOF
+0x00401125 switch table (7 cases) at 0x4013e4
+EOF
+CMDS=<<EOF
+s main
+aa > /dev/null
+pdsf~case
+EOF
+RUN
+
+NAME=anal.ijmp missing branch bug
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 564155415453504989ff8b1f8b7f0889de83e61fe851010000418b7f1089dec1ee1083e61fe84001000085db0f8915010000458b77184585f60f84080100004983c71c31db4c8d250a0100004c8d2d07dacd29418b470889c1c1e91880f9040f87d700000049630c8c4c01e1ffe1418b3fc1e8100fb6f0e8ee0000004983c70ce9b700000084c00f84ab000000418b570c4885d2756de99d00000041837f0c000f84920000004d8b2f418b7d00c1e8100fb6f0e8b2000000418b470c83f802722141bc01000000410fb6770a438b7ca500e894000000418b470c49ffc44139c472e585c04c8d256b0000004c8d2d68d9cd297444410fb64f0885c9743b89c248c1e202498b37418b7d00e86d0e0000eb27a8027514418b7d00418b770c498b17e8fefc0000418b4708418b7f0cc1e8100fb6f0e8320000004983c710ffc34439f30f850cffffff4883c4085b415c415d415e415f5dc3
+af
+afb
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000032 00:0000 50 j 0x00000147 f 0x00000032
+0x00000032 0x0000003f 00:0000 13 j 0x00000147 f 0x0000003f
+0x0000003f 0x00000053 00:0000 20 j 0x00000053
+0x00000053 0x00000065 00:0000 18 j 0x0000013c f 0x00000065
+0x00000065 0x0000006e 00:0000 9
+0x0000013c 0x00000147 00:0000 11 j 0x00000053 f 0x00000147
+0x00000147 0x00000156 00:0000 15
+EOF
+RUN
+
 NAME=x86_64 getenv this maybe & jmp noret fix
 FILE=../bins/elf/ls.odd
 CMDS=<<EOF
@@ -10,8 +42,8 @@ s main+98
 pd 3
 EOF
 EXPECT=<<EOF
-0x000048f4 0x00004901 01:2E2F 13 j 0x000045b1 f 0x00004901
-0x00004901 0x0000491a 01:2E30 25 j 0x000045ba f 0x0000491a
+0x000048f4 0x00004901 01:2A37 13 j 0x000045b1 f 0x00004901
+0x00004901 0x0000491a 01:2A38 25 j 0x000045ba f 0x0000491a
 
 |           0x000039c2      mov dword [0x0021f558], 2                  ; [0x21f558:4]=1
 |           0x000039cc      call fcn.00015960
@@ -60,29 +92,29 @@ EXPECT=<<EOF
 "f sym._checkinput 288 0x100000da0"
 "af+ 0x100000da0 sym._checkinput f n"
 afb+ 0x100000da0 0x100000da0 22 0x100000db6 0xffffffffffffffff
-afb+ 0x100000da0 0x100000db6 26 0x100000e99 0x100000dd0
-afb+ 0x100000da0 0x100000dd0 20 0xffffffffffffffff 0xffffffffffffffff
-afb+ 0x100000da0 0x100000de4 16 0x100000dfb 0x100000df4
-afb+ 0x100000da0 0x100000df4 7 0x100000dfb 0xffffffffffffffff
-afb+ 0x100000da0 0x100000dfb 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e00 16 0x100000e1c 0x100000e10
-afb+ 0x100000da0 0x100000e10 12 0x100000e25 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e1c 9 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e25 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e2a 16 0x100000e46 0x100000e3a
-afb+ 0x100000da0 0x100000e3a 12 0x100000e4f 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e46 9 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e4f 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e54 16 0x100000e82 0x100000e64
-afb+ 0x100000da0 0x100000e64 16 0x100000e82 0x100000e74
-afb+ 0x100000da0 0x100000e74 14 0x100000e8b 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e82 9 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e8b 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e90 9 0x100000eba 0xffffffffffffffff
 afb+ 0x100000da0 0x100000e99 5 0x100000e9e 0xffffffffffffffff
 afb+ 0x100000da0 0x100000e9e 24 0x100000db6 0x100000eb6
+afb+ 0x100000da0 0x100000db6 26 0x100000e99 0x100000dd0
 afb+ 0x100000da0 0x100000eb6 4 0x100000eba 0xffffffffffffffff
+afb+ 0x100000da0 0x100000dd0 20 0xffffffffffffffff 0xffffffffffffffff
+afb+ 0x100000da0 0x100000de4 16 0x100000dfb 0x100000df4
+afb+ 0x100000da0 0x100000dfb 5 0x100000e99 0xffffffffffffffff
+afb+ 0x100000da0 0x100000df4 7 0x100000dfb 0xffffffffffffffff
+afb+ 0x100000da0 0x100000e00 16 0x100000e1c 0x100000e10
+afb+ 0x100000da0 0x100000e1c 9 0x100000eba 0xffffffffffffffff
 afb+ 0x100000da0 0x100000eba 6 0xffffffffffffffff 0xffffffffffffffff
+afb+ 0x100000da0 0x100000e10 12 0x100000e25 0xffffffffffffffff
+afb+ 0x100000da0 0x100000e25 5 0x100000e99 0xffffffffffffffff
+afb+ 0x100000da0 0x100000e2a 16 0x100000e46 0x100000e3a
+afb+ 0x100000da0 0x100000e46 9 0x100000eba 0xffffffffffffffff
+afb+ 0x100000da0 0x100000e3a 12 0x100000e4f 0xffffffffffffffff
+afb+ 0x100000da0 0x100000e4f 5 0x100000e99 0xffffffffffffffff
+afb+ 0x100000da0 0x100000e54 16 0x100000e82 0x100000e64
+afb+ 0x100000da0 0x100000e82 9 0x100000eba 0xffffffffffffffff
+afb+ 0x100000da0 0x100000e64 16 0x100000e82 0x100000e74
+afb+ 0x100000da0 0x100000e74 14 0x100000e8b 0xffffffffffffffff
+afb+ 0x100000da0 0x100000e8b 5 0x100000e99 0xffffffffffffffff
+afb+ 0x100000da0 0x100000e90 9 0x100000eba 0xffffffffffffffff
 afB 64 @ 0x100000da0
 afc amd64 @ 0x100000da0
 afvb -40 var_28h int64_t @ 0x100000da0
@@ -117,11 +149,12 @@ RUN
 
 NAME=x86_64 main() jmptbl in bins/elf/ls.odd
 FILE=../bins/elf/ls.odd
-CMDS=<<EXPECT
+CMDS=<<EOF
 e anal.jmp.tbl=true
 s main
 aF
 afb
+EOF
 EXPECT=<<EOF
 0x00003960 0x00003a1f 00:0000 191 j 0x000047a7 f 0x00003a1f
 0x00003a1f 0x00003a24 00:0000 5 j 0x00003a32 f 0x00003a24
@@ -425,12 +458,13 @@ RUN
 
 NAME=x86_64 main() jmptbl in bins/elf/analysis/ls-alxchk
 FILE=../bins/elf/analysis/ls-alxchk
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.bytes=false
 e anal.jmp.tbl=true
 s main
 aF
 pd 3 @ 0x3ec1
+EOF
 EXPECT=<<EOF
 |           0x00003ec1      add rax, rbx
 |           ;-- switch
@@ -443,10 +477,11 @@ RUN
 
 NAME=aac pe trampoline fcn name 64bit
 FILE=../bins/pe/testx64.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 e anal.autoname=false
 aac
 pd 1 @ 0x140001970
+EOF
 EXPECT=<<EOF
 |           0x140001970      e8d1040000     call sub.KERNEL32.dll_IsProcessorFeaturePresent ; BOOL IsProcessorFeaturePresent(DWORD ProcessorFeature)
 EOF
@@ -558,7 +593,7 @@ RUN
 NAME=aac on mips be
 FILE=../bins/elf/analysis/mipsbe-busybox
 EXPECT=<<EOF
-1268
+1279
 EOF
 CMDS=<<EOF
 aac
@@ -579,10 +614,9 @@ EOF
 RUN
 
 NAME=raw aac (using a PIC bin)
-BROKEN=1
 FILE=../bins/elf/libmagic.so
 EXPECT=<<EOF
-202
+199
 EOF
 CMDS=<<EOF
 aac
@@ -591,11 +625,10 @@ EOF
 RUN
 
 NAME=raw aac with maps (using a PIC bin)
-BROKEN=1
 FILE=../bins/elf/libmagic.so
 ARGS=-n -m 0x80000 -a arm -b 16 -e cfg.bigendian=false
 EXPECT=<<EOF
-96
+94
 EOF
 CMDS=<<EOF
 aac
@@ -645,7 +678,8 @@ RUN
 
 NAME=sym is not fcn
 FILE=../bins/mach0/mach0-i386
-EXPECT=''
+EXPECT=<<EOF
+EOF
 CMDS=<<EOF
 aa > /dev/null
 afl~sym.__mh_execute_header[0]
@@ -748,7 +782,8 @@ RUN
 
 NAME=iS. and iSj. implementation
 FILE=../bins/elf/lab1B
-EXPECT='Current section
+EXPECT=<<EOF
+Current section
 
 nth paddr       size vaddr       vsize perm name
 ------------------------------------------------
@@ -759,7 +794,8 @@ Current section
 nth paddr  size vaddr  vsize perm name
 --------------------------------------
 
-{"name":".plt","size":240,"vsize":240,"perm":"-r-x","paddr":1888,"vaddr":134514528}'
+{"name":".plt","size":240,"vsize":240,"perm":"-r-x","paddr":1888,"vaddr":134514528}
+EOF
 CMDS=<<EOF
 s 0x188
 iS.
@@ -772,11 +808,13 @@ RUN
 
 NAME=iE and iE. implementation
 FILE=../bins/elf/lab1B
-EXPECT='
-nth paddr       vaddr      bind   type size name
-------------------------------------------------
-22   0x000009b7 0x080489b7 GLOBAL FUNC 189  decrypt
-{"name":"prog_timeout","demname":"","flagname":"sym.prog_timeout","ordinal":35,"bind":"GLOBAL","size":17,"type":"FUNC","vaddr":134515110,"paddr":2470}'
+EXPECT=<<EOF
+
+nth paddr       vaddr      bind   type size lib name
+----------------------------------------------------
+22   0x000009b7 0x080489b7 GLOBAL FUNC 189      decrypt
+{"name":"prog_timeout","flagname":"sym.prog_timeout","realname":"prog_timeout","ordinal":35,"bind":"GLOBAL","size":17,"type":"FUNC","vaddr":134515110,"paddr":2470,"is_imported":false}
+EOF
 CMDS=<<EOF
 s 0x080489b9
 iE.
@@ -911,6 +949,8 @@ EXPECT=<<EOF
 0x00000021
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 000000
 ahe 33,rax,=
 aes
@@ -930,6 +970,8 @@ temp_proj
             0x00000000      57             push rdi
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 pd 1
 Cf 1 x
 pd 1
@@ -1278,9 +1320,7 @@ NAME=No function
 FILE=malloc://0x50
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-aftm
-EOF
+CMDS=aftm
 RUN
 
 NAME=Basic type Matching
@@ -1388,7 +1428,7 @@ EOF
 CMDS=<<EOF
 aaa
 s 0x00401255
-pd 1~?ExitProcess(UINT
+pd 1~?ExitProcess\(UINT
 EOF
 RUN
 
@@ -1412,7 +1452,7 @@ EOF
 CMDS=<<EOF
 aaa
 s 0x08048469
-pd 1~?strcmp(const
+pd 1~?strcmp\(const
 EOF
 RUN
 
@@ -1630,6 +1670,7 @@ NAME=anal vars crash 2
 FILE=-
 EXPECT=<<EOF
 / (fcn) fcn.00000000 62
+// void fcn.00000000 (int64_t arg1);
 |           ; var int64_t my_local @ rbp-0x18
 |           ; arg int64_t arg1 @ rdi
 |           0x00000000      0000           add byte [rax], al
@@ -1812,6 +1853,8 @@ EXPECT=<<EOF
 |           ; arg int var_8h @ rbp+0x8    ; comment
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 af
 afvb 8 var_8h int
 Cvb 0x8 comment
@@ -2020,6 +2063,54 @@ e asm.bits=64
 e asm.arch=x86
 wx c7052a44000050000000
 ao~^ptr[1]
+EOF
+RUN
+
+NAME=aoj pushf
+FILE=-
+EXPECT=<<EOF
+[
+  {
+    "opcode": "pushf",
+    "disasm": "pushf",
+    "pseudo": "pushf ",
+    "description": "push flags register onto the stack",
+    "mnemonic": "pushf",
+    "mask": "ffff",
+    "esil": "8,rsp,-=,eflags,rsp,=[8]",
+    "sign": false,
+    "prefix": 0,
+    "id": 591,
+    "opex": {
+      "operands": [
+        {
+          "size": 8,
+          "rw": 1,
+          "type": "reg",
+          "value": "rflags"
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "669c",
+    "size": 2,
+    "type": "upush",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 2,
+    "failcycles": 0,
+    "delay": 0,
+    "stack": "inc",
+    "stackptr": 8,
+    "family": "cpu"
+  }
+]
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 669c
+aoj~{}
 EOF
 RUN
 
@@ -2253,9 +2344,10 @@ RUN
 
 NAME=xrefs and overlapping basic blocks
 FILE=../bins/elf/analysis/ls-linux-x86_64-zlul
-CMDS=<<EXPECT
+CMDS=<<EOF
 aaa
 axt main
+EOF
 EXPECT=<<EOF
 entry0 0x40488d [DATA] mov rdi, main
 EOF
@@ -2263,27 +2355,31 @@ RUN
 
 NAME=unique function names
 FILE=../bins/elf/bash
-CMDS=<<EXPECT
+CMDS=<<EOF
 aaa
 f~strlen~390
-EXPECT=''
+EOF
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=no function split without overlapping blocks
 FILE=../bins/elf/libc.so.6
-CMDS=<<EXPECT
+CMDS=<<EOF
 aac
 s 0x2254d
 agf~invalid
 echo end
+EOF
 EXPECT=end
 RUN
 
 NAME=noreturn of reloc-functions
 FILE=../bins/elf/ls
-CMDS=<<EXPECT
+CMDS=<<EOF
 aaa
 afbr 0x80b0
+EOF
 EXPECT=<<EOF
 0x000081cb
 0x00008237
@@ -2292,7 +2388,9 @@ RUN
 
 NAME=r_anal_fcn_split_bb FITFCNSZ fix (#12008)
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e anal.jmp.mid=false
 e io.cache=true
 wx b8210000c1ebfdbb2c000000000
@@ -2306,6 +2404,7 @@ pdf
 ?e
 e asm.bb.middle=false
 pdf
+EOF
 EXPECT=<<EOF
 #
 offset: 0x00000000
@@ -2325,6 +2424,7 @@ end-bbs: 0
 call-refs:
 data-refs:
 code-xrefs:
+noreturn: false
 in-degree: 0
 out-degree: 0
 data-xrefs:
@@ -2348,12 +2448,14 @@ RUN
 
 NAME=overlapping basic blocks and anal.jmp.mid
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e anal.nopskip=false
 e asm.bb.middle=true
 e anal.jmp.mid=true
 e io.cache=true
-"(show_fcn bin, wx $0, af-*, af, afi, ?e, afb, ?e, pdr, ?e, agf, ?e, e asm.bb.middle=true, pdf, ?e, e asm.bb.middle=false, pdf)"
+"(show_fcn bin; wx $0; af-*; af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; e asm.bb.middle=true; pdf; ?e; e asm.bb.middle=false; pdf)"
 .(show_fcn b8210000c1ebfdbb2c000000cc)
 ?e
 .(show_fcn b8210000c1ebfdbb2c000000ebf6)
@@ -2361,6 +2463,7 @@ e io.cache=true
 .(show_fcn b8210000c1ebfdbb2c000000ebf7)
 ?e
 .(show_fcn 0f1f440000b8210000c1ebfdbb2c000000ebf0)
+EOF
 EXPECT=<<EOF
 #
 offset: 0x00000000
@@ -2380,6 +2483,7 @@ end-bbs: 1
 call-refs: 0x00000004 J
 data-refs: 0x0000002c
 code-xrefs: 0x00000005 J
+noreturn: false
 in-degree: 1
 out-degree: 0
 data-xrefs:
@@ -2454,6 +2558,7 @@ end-bbs: 0
 call-refs: 0x00000004 J 0x00000004 J
 data-refs: 0x0000002c
 code-xrefs: 0x00000005 J 0x0000000c J
+noreturn: false
 in-degree: 2
 out-degree: 0
 data-xrefs:
@@ -2536,6 +2641,7 @@ end-bbs: 0
 call-refs: 0x00000004 J 0x00000005 J
 data-refs: 0x0000002c
 code-xrefs: 0x00000005 J 0x0000000c J
+noreturn: false
 in-degree: 2
 out-degree: 0
 data-xrefs:
@@ -2553,62 +2659,60 @@ diff: type: new
 | ; CODE XREF from fcn.00000000 @ 0x5
 | 0x00000004      c1ebfd         shr ebx, 0xfd
 | 0x00000007      bb2c000000     mov ebx, 0x2c                         ; ','
-  0x0000000c      ebf7           jmp 5                                 ; fcn.00000000+0x5
+\ 0x0000000c      ebf7           jmp 5
 | ----------- true: 0x00000005
-| ; CODE XREF from fcn.00000000 @ +0xc
+| ; CODE XREF from fcn.00000000 @ 0xc
 | 0x00000005      ebfd           jmp 4
 | ----------- true: 0x00000004
 
 [0x00000000]>  # fcn.00000000 ();
-        .------------------------.
-        |  0x0                   |
-        | 17: fcn.00000000 ();   |
-        | ; '!'                  |
-        | mov eax, 0xc1000021    |
-        `------------------------'
-            v
-            |
-       .----'
+       .------------------------.
+       |  0x0                   |
+       | 17: fcn.00000000 ();   |
+       | ; '!'                  |
+       | mov eax, 0xc1000021    |
+       `------------------------'
+           v
+           |
+       .---'
 .--------.
 |      | |
-|.--------------------------------------.
-||  0x5                                 |
-|| ; CODE XREF from fcn.00000000 @ +0xc |
-|| jmp 4                                |
-|`--------------------------------------'
+|.-------------------------------------.
+||  0x5                                |
+|| ; CODE XREF from fcn.00000000 @ 0xc |
+|| jmp 4                               |
+|`-------------------------------------'
 |    v
 |    |
-|    '.
-|     |
-| .-------------------------------------.
-| |  0x4                                |
-| | ; CODE XREF from fcn.00000000 @ 0x5 |
-| | shr ebx, 0xfd                       |
-| | ; ','                               |
-| | mov ebx, 0x2c                       |
-| | ; fcn.00000000+0x5                  |
-| | jmp 5                               |
-| `-------------------------------------'
-|     v
-|     |
-`-----'
+|    |
+|.-------------------------------------.
+||  0x4                                |
+|| ; CODE XREF from fcn.00000000 @ 0x5 |
+|| shr ebx, 0xfd                       |
+|| ; ','                               |
+|| mov ebx, 0x2c                       |
+|| jmp 5                               |
+|`-------------------------------------'
+|    v
+|    |
+`----'
 
 / 17: fcn.00000000 ();
 |           0x00000000  ~   b8210000c1     mov eax, 0xc1000021         ; '!'
 |           ; CODE XREF from fcn.00000000 @ 0x5
 |       .-> 0x00000004  ~   c1ebfd         shr ebx, 0xfd
-|       |   ; CODE XREF from fcn.00000000 @ +0xc
+|       |   ; CODE XREF from fcn.00000000 @ 0xc
 |      .`=< 0x00000005      ebfd           jmp 4
 |      :    0x00000007      bb2c000000     mov ebx, 0x2c               ; ','
-       `==< 0x0000000c      ebf7           jmp 5                       ; fcn.00000000+0x5
+\      `==< 0x0000000c      ebf7           jmp 5
 ..
 
 / 17: fcn.00000000 ();
 |           0x00000000      b8210000c1     mov eax, 0xc1000021         ; '!'
-|       |   ; CODE XREF from fcn.00000000 @ +0xc
+|       |   ; CODE XREF from fcn.00000000 @ 0xc
 |      .`=< 0x00000005      ebfd           jmp 4
 |      :    0x00000007      bb2c000000     mov ebx, 0x2c               ; ','
-       `==< 0x0000000c      ebf7           jmp 5                       ; fcn.00000000+0x5
+\      `==< 0x0000000c      ebf7           jmp 5
 ..
 
 #
@@ -2629,6 +2733,7 @@ end-bbs: 0
 call-refs: 0x00000009 J 0x00000003 J
 data-refs: 0x0000002c
 code-xrefs: 0x00000011 J 0x0000000a J
+noreturn: false
 in-degree: 2
 out-degree: 0
 data-xrefs:
@@ -2721,7 +2826,9 @@ RUN
 
 NAME=so -N and overlapping basic blocks
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 e anal.jmp.mid=true
 e io.cache=true
 e anal.nopskip=false
@@ -2733,6 +2840,7 @@ s
 s 0x4
 so -2
 s
+EOF
 EXPECT=<<EOF
 0x3
 0x0
@@ -2924,7 +3032,6 @@ EXPECT=<<EOF
 push rbp
 mov rbp, rsp
 EOF
-ARGS=
 CMDS=<<EOF
 f-sym.func.*
 aap
@@ -2944,7 +3051,7 @@ f~switch
 EOF
 RUN
 
-NAME=gcc_5.5.0_64 switch/case flags
+NAME=gcc_5.5.0_64 switch/case flags, meta, hints, etc.
 FILE=../bins/jmptbl/test_gcc_5.5.0_64.out
 EXPECT=<<EOF
 0x0000059d 1 switch.0x0000059d
@@ -2963,11 +3070,66 @@ EXPECT=<<EOF
 0x00000622 1 case.0x59d.8
 0x00000622 1 case.0x59d.10
 0x00000622 1 case.default.0x59d
+0x00000844 data Cd 4
+0x00000848 data Cd 4
+0x0000084c data Cd 4
+0x00000850 data Cd 4
+0x00000854 data Cd 4
+0x00000858 data Cd 4
+0x0000085c data Cd 4
+0x00000860 data Cd 4
+0x00000864 data Cd 4
+0x00000868 data Cd 4
+0x0000086c data Cd 4
+0x00000870 data Cd 4
+0x00000874 data Cd 4
+0x00000878 data Cd 4
+ 0x00000844 => immbase=10
+ 0x00000848 => immbase=10
+ 0x0000084c => immbase=10
+ 0x00000850 => immbase=10
+ 0x00000854 => immbase=10
+ 0x00000858 => immbase=10
+ 0x0000085c => immbase=10
+ 0x00000860 => immbase=10
+ 0x00000864 => immbase=10
+ 0x00000868 => immbase=10
+ 0x0000086c => immbase=10
+ 0x00000870 => immbase=10
+ 0x00000874 => immbase=10
+ 0x00000878 => immbase=10
+c 0x59f case.0x59d.13
+c 0x5b2 case.0x59d.1
+c 0x5c0 case.0x59d.2
+c 0x5ce case.0x59d.5
+c 0x5dc case.0x59d.6
+c 0x5ea case.0x59d.7
+c 0x5f8 case.0x59d.9
+c 0x606 case.0x59d.11
+c 0x614 case.0x59d.12
+c 0x622 case.0x59d.0
+0x00000580 0x0000058d 01:0090 13 j 0x00000622 f 0x0000058d
+0x0000058d 0x0000059f 01:0092 18 s 0x00000622 s 0x000005b2 s 0x000005c0 s 0x000005ce s 0x000005dc s 0x000005ea s 0x000005f8 s 0x00000606 s 0x00000614 s 0x0000059f
+0x0000059f 0x000005ab 01:0096 12 j 0x000005ab
+0x000005ab 0x000005b2 01:0097 7
+0x000005b2 0x000005c0 01:0099 14 j 0x000005ab
+0x000005c0 0x000005ce 01:009A 14 j 0x000005ab
+0x000005ce 0x000005dc 01:009B 14 j 0x000005ab
+0x000005dc 0x000005ea 01:009C 14 j 0x000005ab
+0x000005ea 0x000005f8 01:009D 14 j 0x000005ab
+0x000005f8 0x00000606 01:009E 14 j 0x000005ab
+0x00000606 0x00000614 01:009F 14 j 0x000005ab
+0x00000614 0x00000622 01:00A0 14 j 0x000005ab
+0x00000622 0x00000633 01:00A1 17 j 0x000005ab
 EOF
 CMDS=<<EOF
 aaa
 f~switch
 f~case.
+C~Cd 4
+ah
+axf 0x59d
+afb 0x59d
 EOF
 RUN
 
@@ -3227,5 +3389,22 @@ s 0x140001080
 afc=ms
 af
 pdf
+EOF
+RUN
+
+NAME=x86_64 show registers in table
+FILE=-
+EXPECT=<<EOF
+    rax 0x00000000           rbx 0x00000000           rcx 0x00000000
+    rdx 0x00000000           rsi 0x00000000           rdi 0x00000000
+     r8 0x00000000            r9 0x00000000           r10 0x00000000
+    r11 0x00000000           r12 0x00000000           r13 0x00000000
+    r14 0x00000000           r15 0x00000000           rip 0x00000000
+    rbp 0x00000000        rflags 0x00000000           rsp 0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+ar=
 EOF
 RUN

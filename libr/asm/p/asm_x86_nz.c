@@ -624,6 +624,28 @@ static int opxor(RAsm *a, ut8 * data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x30);
 }
 
+static int opneg(RAsm *a, ut8 * data, const Opcode *op) {
+    is_valid_registers (op);
+    int l = 0;
+
+    if (op->operands[0].type & OT_GPREG) {
+        if (op->operands[0].type & OT_WORD) {
+            data[l++] = 0x66;
+        } else if (op->operands[0].type & OT_QWORD)  {
+            data[l++] = 0x48;
+        }
+
+        if (op->operands[0].type & OT_BYTE) {
+            data[l++] = 0xf6;
+        } else {
+            data[l++] = 0xf7;
+        }
+        data[l++] = 0xd8 | op->operands[0].reg;
+        return l;
+    }
+    return -1;
+}
+
 static int opnot(RAsm *a, ut8 * data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
@@ -2364,6 +2386,10 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 				data[l++] = 0x41;
 			}
 			ut8 base = 0x50;
+			if (op->operands[0].reg == X86R_RIP) {
+				eprintf ("Invalid register\n");
+				return -1;
+			}
 			data[l++] = base + op->operands[0].reg;
 		}
 	} else if (op->operands[0].type & OT_MEMORY) {
@@ -4315,6 +4341,7 @@ LookupTable oplookup[] = {
 	{"movsx", 0, &opmovx, 0},
 	{"mul", 0, &opmul, 0},
 	{"mwait", 0, NULL, 0x0f01c9, 3},
+	{"neg", 0, &opneg, 0},
 	{"nop", 0, NULL, 0x90, 1},
 	{"not", 0, &opnot, 0},
 	{"or", 0, &opor, 0},

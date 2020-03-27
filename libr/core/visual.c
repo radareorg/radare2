@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_core.h>
 #include <r_cons.h>
@@ -290,7 +290,7 @@ static const char *help_msg_visual[] = {
 	"??", "show this help",
 	"$", "set the program counter to the current offset + cursor",
 	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
-	"^", "seek to the begining of the function",
+	"^", "seek to the beginning of the function",
 	"!", "enter into the visual panels mode",
 	"TAB", "switch to the next print mode (or element in cursor mode)",
 	"_", "enter the flag/comment/functions/.. hud (same as VF_)",
@@ -412,6 +412,7 @@ static void rotateAsmBits(RCore *core) {
 		bits = nb;
 		retries--;
 	}
+	r_anal_hint_free (hint);
 }
 
 static const char *rotateAsmemu(RCore *core) {
@@ -599,6 +600,7 @@ repeat:
 	switch (r_cons_readchar ()) {
 	case 'q':
 		r_strbuf_free (p);
+		r_strbuf_free (q);
 		return ret;
 	case '!':
 		r_core_visual_panels_root (core, core->panels_root);
@@ -1246,7 +1248,7 @@ R_API bool r_core_prevop_addr(RCore *core, ut64 start_addr, int numinstrs, ut64 
 	if (bb) {
 		if (r_anal_bb_opaddr_at (bb, start_addr) != UT64_MAX) {
 			// Do some anal looping.
-			for (i = 0; i < numinstrs; ++i) {
+			for (i = 0; i < numinstrs; i++) {
 				*prev_addr = prevop_addr (core, start_addr);
 				start_addr = *prev_addr;
 			}
@@ -1262,7 +1264,7 @@ R_API bool r_core_prevop_addr(RCore *core, ut64 start_addr, int numinstrs, ut64 
 //  no anal info is available.
 R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs) {
 	int i;
-	for (i = 0; i < numinstrs; ++i) {
+	for (i = 0; i < numinstrs; i++) {
 		start_addr = prevop_addr (core, start_addr);
 	}
 	return start_addr;
@@ -1326,7 +1328,7 @@ R_API void r_core_visual_offset(RCore *core) {
 		&r_line_hist_offset_down);
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
-	if (r_cons_fgets (buf + 2, sizeof (buf) - 3, 0, NULL) > 0) {
+	if (r_cons_fgets (buf + 2, sizeof (buf) - 2, 0, NULL) > 0) {
 		if (!strcmp (buf + 2, "g") || !strcmp (buf + 2, "G")) {
 			__core_visual_gogo (core, buf[2]);
 		} else {
@@ -1354,7 +1356,7 @@ static void addComment(RCore *core, ut64 addr) {
 	r_cons_set_raw (false);
 	r_line_set_prompt (":> ");
 	r_cons_enable_mouse (false);
-	if (r_cons_fgets (buf, sizeof (buf) - 2, 0, NULL) < 0) {
+	if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
 		buf[0] = '\0';
 	}
 	r_core_cmdf (core, "\"CC %s\"@0x%08"PFMT64x, buf, addr);
@@ -1404,7 +1406,7 @@ repeat:
 				//XXX xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
 				// this function is buggy so we must get the xrefs of the addr
 			} else { // functon refs
-				xrefs = r_anal_fcn_get_refs (core->anal, fun);
+				xrefs = r_anal_function_get_refs (fun);
 			}
 		} else {
 			xrefs = NULL;
@@ -1534,7 +1536,7 @@ repeat:
 			/* prepare highlight */
 			char *cmd = strdup (r_config_get (core->config, "scr.highlight"));
 			char *ats = r_str_newf ("%"PFMT64x, curat);
-			if (ats) {
+			if (ats && !*cmd) {
 				(void) r_config_set (core->config, "scr.highlight", ats);
 			}
 			/* print disasm */
@@ -1567,6 +1569,7 @@ repeat:
 		" JK  - step 10 rows\n"
 		" pP  - rotate between various print modes\n"
 		" :   - run r2 command\n"
+		" /   - highlight given word\n"
 		" ?   - show this help message\n"
 		" <>  - '<' for xrefs and '>' for refs\n"
 		" TAB - toggle between address and function references\n"
@@ -1594,6 +1597,9 @@ repeat:
 			printMode = lastPrintMode;
 		}
 		goto repeat;
+	} else if (ch == '/') {
+		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
+		goto repeat;
 	} else if (ch == 'x' || ch == '<') {
 		xref = true;
 		xrefsMode = !xrefsMode;
@@ -1610,9 +1616,6 @@ repeat:
 		goto repeat;
 	} else if (ch == 'G') {
 		skip = 9999;
-		goto repeat;
-	} else if (ch == '/') {
-		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
 		goto repeat;
 	} else if (ch == ';') {
 		addComment (core, cur_ref_addr);
@@ -2510,7 +2513,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			strcpy (buf, "\"wa ");
 			r_line_set_prompt (":> ");
 			r_cons_enable_mouse (false);
-			if (r_cons_fgets (buf + 4, sizeof (buf) - 5, 0, NULL) < 0) {
+			if (r_cons_fgets (buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
 				buf[0] = '\0';
 			}
 			strcat (buf, "\"");
@@ -2542,7 +2545,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_line_set_prompt ("cmd.vprompt> ");
 			I->line->contents = strdup (cmd);
 			buf = r_line_readline ();
-//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
 			I->line->contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
@@ -2563,7 +2565,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				core->print->cur = 0;
 				(void)r_config_set (core->config, "cmd.cprompt", "p=e $r-2");
 			} else {
-				//		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
 				R_FREE (I->line->contents);
 				(void)r_config_set (core->config, "cmd.cprompt", buf? buf: "");
 			}
@@ -2723,7 +2724,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						RCoreVisualTab *tab = visual_newtab (core);
 						if (tab) {
 							tab->name[0] = ':';
-							r_cons_fgets (tab->name + 1, sizeof (tab->name) - 2, 0, NULL);
+							r_cons_fgets (tab->name + 1, sizeof (tab->name) - 1, 0, NULL);
 						}
 					}
 					break;
@@ -2786,7 +2787,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (ch == 'I') {
 				strcpy (buf, "wow ");
 				r_line_set_prompt ("insert hexpair block: ");
-				if (r_cons_fgets (buf + 4, sizeof (buf) - 5, 0, NULL) < 0) {
+				if (r_cons_fgets (buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 				char *p = strdup (buf);
@@ -2803,7 +2804,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->print->col == 2) {
 				strcpy (buf, "\"w ");
 				r_line_set_prompt ("insert string: ");
-				if (r_cons_fgets (buf + 3, sizeof (buf) - 4, 0, NULL) < 0) {
+				if (r_cons_fgets (buf + 3, sizeof (buf) - 3, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 				strcat (buf, "\"");
@@ -3389,7 +3390,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				// TODO autocomplete filenames
 				prompt_read ("load from file: ", buf, sizeof (buf));
 				if (buf[0]) {
-					int sz;
+					size_t sz;
 					char *data = r_file_slurp (buf, &sz);
 					if (data) {
 						int cur;
@@ -3400,7 +3401,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						}
 						ut64 from = core->offset + cur;
 						ut64 size = R_ABS (core->print->cur - core->print->ocur) + 1;
-						ut64 s = R_MIN (size, sz);
+						ut64 s = R_MIN (size, (ut64)sz);
 						r_io_write_at (core->io, from, (const ut8*)data, s);
 					}
 				}
@@ -3464,7 +3465,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_line_set_prompt ("comment: ");
 			strcpy (buf, "\"CC ");
 			i = strlen (buf);
-			if (r_cons_fgets (buf + i, sizeof (buf) - i - 1, 0, NULL) > 0) {
+			if (r_cons_fgets (buf + i, sizeof (buf) - i, 0, NULL) > 0) {
 				ut64 addr, orig;
 				addr = orig = core->offset;
 				if (core->print->cur_enabled) {
@@ -3492,7 +3493,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					// have to escape any quotes.
 					int j, len = strlen (buf);
 					char *duped = strdup (buf);
-					for (i = 4, j = 4; i < len; ++i,++j) {
+					for (i = 4, j = 4; i < len; i++, j++) {
 						char c = duped[i];
 						if (c == '"' && i != (len - 1)) {
 							buf[j] = '\\';
@@ -4150,7 +4151,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 	f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	op->size = 1;
 	if (f && f->folded) {
-		*cols = core->offset - f->addr + r_anal_fcn_size (f);
+		*cols = core->offset - r_anal_function_max_addr (f);
 	} else {
 		r_asm_set_pc (core->assembler, core->offset);
 		*cols = r_asm_disassemble (core->assembler,
@@ -4350,16 +4351,15 @@ dodo:
 	return 0;
 }
 
-R_API RListInfo *r_listinfo_new(char *name, RInterval pitv, RInterval vitv, int perm, char *extra) {
+R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra) {
 	RListInfo *info = R_NEW (RListInfo);
-	if (!info) {
-		return NULL;
+	if (info) {
+		info->name = strdup (name);
+		info->pitv = pitv;
+		info->vitv = vitv;
+		info->perm = perm;
+		info->extra = strdup (extra);
 	}
-	info->name = name;
-	info->pitv = pitv;
-	info->vitv = vitv;
-	info->perm = perm;
-	info->extra = extra;
 	return info;
 }
 
@@ -4367,5 +4367,7 @@ R_API void r_listinfo_free (RListInfo *info) {
 	if (!info) {
 		return;
 	}
+	free (info->name);
+	free (info->extra);
 	R_FREE (info);
 }

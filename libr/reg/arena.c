@@ -311,7 +311,7 @@ R_API int r_reg_arena_set_bytes(RReg *reg, const char *str) {
 	r_hex_str2bin (str, bin_str);
 
 	int i, n = 0; //n - cumulative sum of arena's sizes
-	for (i = 0; i < R_REG_TYPE_LAST; ++i) {
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		int sz = reg->regset[i].arena->size;
 		int bl = bin_str_len - n; //bytes left
 		int bln = bl - n;

@@ -167,6 +167,7 @@ R_API void r_bin_import_free(void *_imp) {
 	RBinImport *imp = (RBinImport *)_imp;
 	if (imp) {
 		R_FREE (imp->name);
+		R_FREE (imp->libname);
 		R_FREE (imp->classname);
 		R_FREE (imp->descriptor);
 		free (imp);
@@ -194,6 +195,7 @@ R_API void r_bin_symbol_free(void *_sym) {
 	RBinSymbol *sym = (RBinSymbol *)_sym;
 	if (sym) {
 		free (sym->name);
+		free (sym->libname);
 		free (sym->classname);
 		free (sym);
 	}
@@ -247,7 +249,6 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 
 R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinOptions *opt) {
 	r_return_val_if_fail (bin && opt, false);
-	r_return_val_if_fail ((st64)opt->sz >= 0, false);
 
 	RListIter *it;
 	RBinXtrPlugin *xtr;
@@ -256,9 +257,6 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinOptions *opt) {
 	bin->file = opt->filename;
 	if (opt->loadaddr == UT64_MAX) {
 		opt->loadaddr = 0;
-	}
-	if (!opt->sz) {
-		opt->sz = r_buf_size (buf);
 	}
 
 	RBinFile *bf = NULL;
@@ -1005,15 +1003,18 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	//are we with xtr format?
 	if (binfile && binfile->curxtr) {
 		list_xtr_archs (bin, mode);
+		r_table_free (table);
 		return;
 	}
 	Sdb *binfile_sdb = binfile? binfile->sdb: NULL;
 	if (!binfile_sdb) {
 	//	eprintf ("Cannot find SDB!\n");
+		r_table_free (table);
 		return;
 	}
 	if (!binfile) {
 	//	eprintf ("Binary format not currently loaded!\n");
+		r_table_free (table);
 		return;
 	}
 	sdb_unset (binfile_sdb, ARCHS_KEY, 0);
@@ -1026,6 +1027,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	RBinFile *nbinfile = r_bin_file_find_by_name_n (bin, name, i);
 	if (!nbinfile) {
 		pj_free (pj);
+		r_table_free (table);
 		return;
 	}
 	i = -1;
@@ -1203,10 +1205,10 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		int off = 12;
 		int item = 0;
 		r_list_foreach (files, iter, f) {
-			int f_len = 0;
+			size_t f_len = 0;
 			ut8 *f_buf = (ut8 *)r_file_slurp (f, &f_len);
-			if (f_buf && f_len >= 0) {
-				eprintf ("ADD %s %d\n", f, f_len);
+			if (f_buf) {
+				eprintf ("ADD %s %"PFMT64u"\n", f, (ut64)f_len);
 			} else {
 				eprintf ("Cannot open %s\n", f);
 				free (f_buf);

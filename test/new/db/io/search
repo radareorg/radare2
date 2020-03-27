@@ -3,7 +3,5 @@ FILE=../bins/pe/hex_search.exe
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-/x 48~?0x004014f0
-EOF
+CMDS=/x 48~?0x004014f0
 RUN

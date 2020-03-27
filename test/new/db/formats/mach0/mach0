@@ -60,9 +60,7 @@ pf.mach0_dylib_command @ 0x0000147c
 0x00001490  compat      1.0.0
 0x00001494  load_dylib  /usr/lib/libSystem.B.dylib
 EOF
-CMDS=<<EOF
-iH
-EOF
+CMDS=iH
 RUN
 
 NAME=mach0 headers big-endian
@@ -133,9 +131,7 @@ pf.mach0_unixthread_command @ 0x000015b4
 0x000015b4  cmd      10 0x5 LC_UNIXTHREAD
 0x000015b8  cmdsize     176
 EOF
-CMDS=<<EOF
-iH
-EOF
+CMDS=iH
 RUN
 
 NAME=mach0 headers2
@@ -221,9 +217,7 @@ pf.mach0_data_in_code_command @ 0x00004478
 0x00004488  cmd      16 0x2b LC_DYLIB_CODE_SIGN_DRS
 0x0000448c  cmdsize     16
 EOF
-CMDS=<<EOF
-iH
-EOF
+CMDS=iH
 RUN
 
 NAME=mach0 entrypoint
@@ -231,9 +225,7 @@ FILE=../bins/mach0/hello-osx-i386
 EXPECT=<<EOF
 vaddr=0x00001f14 paddr=0x00000f14 haddr=0x00000464 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=mach0 entry0 data
@@ -241,9 +233,7 @@ FILE=../bins/mach0/hello-osx-i386
 EXPECT=<<EOF
 6a0089e583e4f083ec10
 EOF
-CMDS=<<EOF
-p8 10 @ entry0
-EOF
+CMDS=p8 10 @ entry0
 RUN
 
 NAME=mach0 entrypoint i386 LC_MAIN
@@ -251,9 +241,7 @@ FILE=../bins/mach0/mach0-i386
 EXPECT=<<EOF
 vaddr=0x00001f80 paddr=0x00000f80 haddr=0x00000240 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=mach0 entrypoint x86_64 LC_MAIN
@@ -261,9 +249,7 @@ FILE=../bins/mach0/mach0_2-x86_64
 EXPECT=<<EOF
 vaddr=0x100000f70 paddr=0x00000f70 haddr=0x000002e0 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=osx mach0 entrypoint
@@ -271,9 +257,7 @@ FILE=../bins/mach0/ls-osx-x86_64
 EXPECT=<<EOF
 vaddr=0x1000013d8 paddr=0x000013d8 haddr=0x00000648 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=osx mach0 ik
@@ -284,9 +268,7 @@ info/mach0_cmd_8.format=mach0_uuid_command
 info/uuid.0=ff4d6c2e1dc0369d98d0d3040a8049e8
 info/mach0_cmd_8.cmd=uuid
 EOF
-CMDS=<<EOF
-ik ***~uuid
-EOF
+CMDS=ik ***~uuid
 RUN
 
 NAME=mach0 exports trie

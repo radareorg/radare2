@@ -158,9 +158,9 @@ R_API RASN1String *r_asn1_stringify_bits (const ut8 *buffer, ut32 length) {
 	if (!str) {
 		return NULL;
 	}
-	for (i = 1, j = 0; i < length && j < size; ++i) {
+	for (i = 1, j = 0; i < length && j < size; i++) {
 		c = buffer[i];
-		for (k = 0; k < 8 && j < size; ++k, j++) {
+		for (k = 0; k < 8 && j < size; k++, j++) {
 			str[size - j - 1] = c & 0x80 ? '1' : '0';
 			c <<= 1;
 		}
@@ -194,7 +194,7 @@ R_API RASN1String *r_asn1_stringify_integer (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	memset (str, 0, size);
-	for (i = 0, j = 0; i < length && j < size; ++i, j += 3) {
+	for (i = 0, j = 0; i < length && j < size; i++, j += 3) {
 		c = buffer[i];
 		str[j + 0] = _hex[c >> 4];
 		str[j + 1] = _hex[c & 15];
@@ -224,7 +224,7 @@ R_API RASN1String* r_asn1_stringify_bytes (const ut8 *buffer, ut32 length) {
 	}
 	memset (str, 0x20, size);
 
-	for (i = 0, j = 0, k = 48; i < length && j < size && k < size; ++i, j += 3, k++) {
+	for (i = 0, j = 0, k = 48; i < length && j < size && k < size; i++, j += 3, k++) {
 		c = buffer[i];
 		str[j + 0] = _hex[c >> 4];
 		str[j + 1] = _hex[c & 15];

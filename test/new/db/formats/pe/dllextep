@@ -2,9 +2,7 @@ NAME=PE: corkami dllextep.dll - open
 FILE=../bins/pe/dllextep.dll
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami dllextep.dll - entrypoint
@@ -12,9 +10,7 @@ FILE=../bins/pe/dllextep.dll
 EXPECT=<<EOF
 0x1001000
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=PE: corkami dllextep.dll - pi 1

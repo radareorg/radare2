@@ -41,9 +41,7 @@ EXPECT=<<EOF
   }
 ]
 EOF
-CMDS=<<EOF
-/j ConsoleApplication1.pdb~{}
-EOF
+CMDS=/j ConsoleApplication1.pdb~{}
 RUN
 
 NAME=empty irj should print empty array
@@ -51,7 +49,5 @@ FILE=-
 EXPECT=<<EOF
 []
 EOF
-CMDS=<<EOF
-irj
-EOF
+CMDS=irj
 RUN

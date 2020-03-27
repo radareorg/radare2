@@ -35,7 +35,5 @@ EXPECT=<<EOF
    ** EAT AT JOE"S **: best hamburger in town
   FileVersion: duplicates are authorized
 EOF
-CMDS=<<EOF
-iV
-EOF
+CMDS=iV
 RUN

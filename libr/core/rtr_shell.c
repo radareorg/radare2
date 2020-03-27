@@ -81,7 +81,7 @@ TODO:
 						r_line_set_prompt (":> ");
 					}
 					showcursor (core, true);
-					r_cons_fgets (buf+3, sizeof (buf) - 4, 0, NULL);
+					r_cons_fgets (buf + 3, sizeof (buf) - 3, 0, NULL);
 					memcpy (buf, "wx ", 3);
 					if (buf[3]) {
 						char *res = rtrcmd (T, buf);

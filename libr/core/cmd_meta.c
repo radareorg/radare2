@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2019 - pancake */
+/* radare2 - LGPL - Copyright 2009-2020 - pancake */
 
 #include "r_anal.h"
 #include "r_bin.h"
@@ -266,7 +266,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		offset = core->offset;
 	}
 	if (*p == ' ') {
-		p = r_str_trim_ro (p + 1);
+		p = r_str_trim_head_ro (p + 1);
 		char *arg = strchr (p, ' ');
 		if (!arg) {
 			offset = r_num_math (core->num, p);
@@ -290,7 +290,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		return 0;
 	}
 
-	p = r_str_trim_ro (p);
+	p = r_str_trim_head_ro (p);
 	char *myp = strdup (p);
 	char *sp = strchr (myp, ' ');
 	if (sp) {
@@ -444,7 +444,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '+':
 	case ' ':
 		{
-		const char* newcomment = r_str_trim_ro (input + 2);
+		const char* newcomment = r_str_trim_head_ro (input + 2);
 		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
@@ -576,7 +576,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		break;
 	case ' ': // "Ct <vartype comment> @ addr"
 		{
-		const char* newcomment = r_str_trim_ro (input + 2);
+		const char* newcomment = r_str_trim_head_ro (input + 2);
 		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
@@ -629,7 +629,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '?':
 		switch (input[0]) {
-		case 'f':
+		case 'f': // "Cf?"
 			r_cons_println(
 				"Usage: Cf[-] [sz] [fmt..] [@addr]\n\n"
 				"'sz' indicates the byte size taken up by struct.\n"
@@ -639,7 +639,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				"to show the fields you know about (perhaps using 'skip' fields), and 'sz'\n"
 				"to match the total struct size in mem.\n");
 			break;
-		case 's':
+		case 's': // "Cs?"
 			r_core_cmd_help (core, help_msg_Cs);
 			break;
 		default:
@@ -647,9 +647,9 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case '-':
+	case '-': // "Cf-", "Cd-", ...
 		switch (input[2]) {
-		case '*':
+		case '*': // "Cf-*", "Cd-*", ...
 			core->num->value = r_meta_del (core->anal,
 					input[0], 0, UT64_MAX);
 			break;
@@ -677,13 +677,13 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case '*':
+	case '*': // "Cf*", "Cd*", ...
 		r_meta_list (core->anal, input[0], 1);
 		break;
-	case 'j':
+	case 'j': // "Cfj", "Cdj", ...
 		r_meta_list (core->anal, input[0], 'j');
 		break;
-	case '!':
+	case '!': // "Cf!", "Cd!", ...
 		{
 			char *out, *comment = r_meta_get_string (
 					core->anal, R_META_TYPE_COMMENT, addr);
@@ -698,7 +698,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			free (comment);
 		}
 		break;
-	case '.':
+	case '.': // "Cf.", "Cd.", ...
 		if (input[2] == '.') { // "Cs.."
 			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
 			if (mi) {
@@ -755,7 +755,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		}
 		free (mi.str);
 		break;
-	case ' ':
+	case ' ': // "Cf", "Cd", ...
 	case '\0':
 	case 'g':
 	case 'a':
@@ -785,7 +785,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		}
 		while (repcnt < repeat) {
 			int off = (!input[1] || input[1] == ' ') ? 1 : 2;
-			t = strdup (r_str_trim_ro (input + off));
+			t = strdup (r_str_trim_head_ro (input + off));
 			p = NULL;
 			n = 0;
 			strncpy (name, t, sizeof (name) - 1);
@@ -794,7 +794,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				if (type == 'f') { // "Cf"
 					p = strchr (t, ' ');
 					if (p) {
-						p = (char *)r_str_trim_ro (p);
+						p = (char *)r_str_trim_head_ro (p);
 						if (*p == '.') {
 							const char *realformat = r_print_format_byname (core->print, p + 1);
 							if (realformat) {
@@ -824,7 +824,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						eprintf ("Usage: Cf [size] [pf-format-string]\n");
 						break;
 					}
-				} else if (type == 's') { //Cs
+				} else if (type == 's') { // "Cs"
 					char tmp[256] = R_EMPTY;
 					int i, j, name_len = 0;
 					if (input[1] == 'a' || input[1] == '8') {
@@ -868,7 +868,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					p = strchr (t, ' ');
 					if (p) {
 						*p++ = '\0';
-						p = (char *)r_str_trim_ro (p);
+						p = (char *)r_str_trim_head_ro (p);
 						strncpy (name, p, sizeof (name)-1);
 					} else {
 						if (type != 's') {

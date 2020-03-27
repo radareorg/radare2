@@ -21,14 +21,6 @@ typedef enum {
 
 typedef int (*RStrRangeCallback) (void *, int);
 
-static inline void r_str_rmch(char *s, char ch) {
-	for (;*s; s++) {
-		if (*s==ch) {
-			memmove (s, s + 1, strlen (s));
-		}
-	}
-}
-
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
@@ -112,11 +104,10 @@ R_API char *r_str_word_get_first(const char *string);
 R_API void r_str_trim(char *str);
 R_API char *r_str_trim_dup(const char *str);
 R_API char *r_str_trim_lines(char *str);
-R_API char *r_str_trim_head(char *str);
-R_API const char *r_str_trim_ro(const char *str);
-R_API const char *r_str_trim_wp(const char *str);
-R_API char *r_str_trim_tail(char *str);
-R_API char *r_str_trim_head_tail(char *str);
+R_API void r_str_trim_head(char *str);
+R_API const char *r_str_trim_head_ro(const char *str);
+R_API const char *r_str_trim_head_wp(const char *str);
+R_API void r_str_trim_tail(char *str);
 R_API ut32 r_str_hash(const char *str);
 R_API ut64 r_str_hash64(const char *str);
 R_API char *r_str_trim_nc(char *str);

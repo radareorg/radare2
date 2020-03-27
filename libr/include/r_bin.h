@@ -66,6 +66,7 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_HASHES    0x40000000
 #define R_BIN_REQ_SIGNATURE 0x80000000
 #define R_BIN_REQ_TRYCATCH 0x100000000
+#define R_BIN_REQ_SECTIONS_MAPPING 0x200000000
 
 /* RBinSymbol->method_flags : */
 #define R_BIN_METH_CLASS 0x0000000000000001L
@@ -441,6 +442,7 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinMem>*/* (*mem)(RBinFile *bf);
 	RList/*<RBinReloc>*/* (*patch_relocs)(RBin *bin);
 	RList/*<RBinMap>*/* (*maps)(RBinFile *bf);
+	RList/*<RBinFileHash>*/* (*hashes)(RBinFile *bf);
 	void (*header)(RBinFile *bf);
 	char* (*signature)(RBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
@@ -508,12 +510,14 @@ typedef struct r_bin_symbol_t {
 	/* heap-allocated */
 	char *name;
 	char *dname;
+	char *libname;
 	char *classname;
 	/* const-unique-strings */
 	const char *forwarder;
 	const char *bind;
 	const char *type;
   	const char *rtype;
+	bool is_imported;
 	/* only used by java */
 	const char *visibility_str;
 	// ----------------
@@ -531,6 +535,7 @@ typedef struct r_bin_symbol_t {
 
 typedef struct r_bin_import_t {
 	char *name;
+	char *libname;
 	const char *bind;
 	const char *type;
 	char *classname;
@@ -759,7 +764,8 @@ R_API bool r_bin_file_set_cur_by_id(RBin *bin, ut32 bin_id);
 R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name);
 R_API ut64 r_bin_file_delete_all(RBin *bin);
 R_API bool r_bin_file_delete(RBin *bin, ut32 bin_id);
-R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBinFileHash>*/ **old_file_hashes);
+R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit);
+R_API RList *r_bin_file_set_hashes(RBin *bin, RList *new_hashes);
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile);
 R_API void r_bin_file_hash_free(RBinFileHash *fhash);
 
@@ -867,6 +873,7 @@ extern RBinPlugin r_bin_plugin_nso;
 extern RBinPlugin r_bin_plugin_sfc;
 extern RBinPlugin r_bin_plugin_z64;
 extern RBinPlugin r_bin_plugin_prg;
+extern RBinPlugin r_bin_plugin_dmp64;
 
 #ifdef __cplusplus
 }

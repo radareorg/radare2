@@ -9,29 +9,29 @@ s @ 0x42
 EOF
 RUN
 
-NAME=@ e:
+NAME=@e:
 FILE=-
 EXPECT=<<EOF
 1
 EOF
 CMDS=<<EOF
 e scr.color=false
-e scr.color @ e:scr.color=true
+e scr.color @e:scr.color=true
 EOF
 RUN
 
-NAME=@ a:
+NAME=@a:
 FILE=-
 EXPECT=<<EOF
 arm
 EOF
 CMDS=<<EOF
 e asm.arch=x86
-e asm.arch @ a:arm
+e asm.arch @a:arm
 EOF
 RUN
 
-NAME=@ e: @ addr
+NAME=@e: @ addr
 FILE=-
 EXPECT=<<EOF
 1
@@ -40,12 +40,12 @@ EOF
 CMDS=<<EOF
 e scr.color=false
 s 0
-e scr.color @ e:scr.color=true @ 0x1337
-s @ e:scr.color=true @ 0x1337
+e scr.color @e:scr.color=true @ 0x1337
+s @e:scr.color=true @ 0x1337
 EOF
 RUN
 
-NAME=@ addr @ e
+NAME=@ addr @e
 FILE=-
 EXPECT=<<EOF
 0
@@ -54,14 +54,14 @@ EXPECT=<<EOF
 0x1337
 EOF
 CMDS=<<EOF
-e scr.color @ 0x42 @ e:scr.color=false 
-e scr.color @ 0x1337 @ e:scr.color=true
-s @ 0x42 @ e:scr.color=false 
-s @ 0x1337 @ e:scr.color=true 
+e scr.color @ 0x42 @e:scr.color=false 
+e scr.color @ 0x1337 @e:scr.color=true
+s @ 0x42 @e:scr.color=false 
+s @ 0x1337 @e:scr.color=true 
 EOF
 RUN
 
-NAME=@ a: @ addr @ e:
+NAME=@a: @ addr @e:
 FILE=-
 EXPECT=<<EOF
 x86
@@ -72,12 +72,12 @@ arm
 1
 EOF
 CMDS=<<EOF
-e asm.arch @ a:x86 @ 0x42 @ e:scr.color=false
-e asm.arch @ a:arm @ 0x1337 @ e:scr.color=true
-s @ a:x86 @ 0x42 @ e:scr.color=false
-s @ @ a:arm @ 0x1337 @ e:scr.color=true
-e scr.color @ a:x86 @ 0x42 @ e:scr.color=false
-e scr.color @ @ a:arm @ 0x1337 @ e:scr.color=true
+e asm.arch @a:x86 @ 0x42 @e:scr.color=false
+e asm.arch @a:arm @ 0x1337 @e:scr.color=true
+s @a:x86 @ 0x42 @e:scr.color=false
+s @a:arm @ 0x1337 @e:scr.color=true
+e scr.color @a:x86 @ 0x42 @e:scr.color=false
+e scr.color @a:arm @ 0x1337 @e:scr.color=true
 EOF
 RUN
 
@@ -89,7 +89,7 @@ false
 EOF
 CMDS=<<EOF
 e asm.pseudo=false
-e asm.pseudo @ e:asm.pseudo=true,asm.pseudo=true
+e asm.pseudo @e:asm.pseudo=true,asm.pseudo=true
 e asm.pseudo
 EOF
 RUN
@@ -102,7 +102,7 @@ false
 EOF
 CMDS=<<EOF
 e asm.pseudo=false
-e asm.pseudo @ e:asm.pseudo=true @ e:asm.pseudo=true
+e asm.pseudo @e:asm.pseudo=true @e:asm.pseudo=true
 e asm.pseudo
 EOF
 RUN

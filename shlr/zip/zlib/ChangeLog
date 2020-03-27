@@ -194,7 +194,7 @@ Changes in 1.2.5.2 (17 Dec 2011)
 - Add a transparent write mode to gzopen() when 'T' is in the mode
 - Update python link in zlib man page
 - Get inffixed.h and MAKEFIXED result to match
-- Add a ./config --solo option to make zlib subset with no libary use
+- Add a ./config --solo option to make zlib subset with no library use
 - Add undocumented inflateResetKeep() function for CAB file decoding
 - Add --cover option to ./configure for gcc coverage testing
 - Add #define ZLIB_CONST option to use const in the z_stream interface

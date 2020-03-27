@@ -42,7 +42,7 @@ static int strbuf_num_cmp1(void *incoming, void *in, void *user) {
 }
 
 bool test_r_rbtree_cont_delete() {
-	RContRBTree *tree = r_rbtree_cont_newf(r_strbuf_free);
+	RContRBTree *tree = r_rbtree_cont_newf ((RContRBFree)r_strbuf_free);
 	r_rbtree_cont_insert(tree, r_strbuf_new("13"), strbuf_num_cmp0, NULL);
 	r_rbtree_cont_insert(tree, r_strbuf_new("0x9090"), strbuf_num_cmp0, NULL);
 	r_rbtree_cont_insert(tree, r_strbuf_new("42"), strbuf_num_cmp0, NULL);

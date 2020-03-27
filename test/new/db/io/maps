@@ -143,14 +143,15 @@ RUN
 
 NAME=io.unalloc off-by-one fix
 FILE=../bins/elf/analysis/tiny1
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.comments=false
 e io.unalloc=true
 e io.unalloc.ch=
 pd 6
 ?e
 px 16
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
             ;-- entry0:
             0x08048054      b32a           mov bl, 0x2a
             0x08048056      31c0           xor eax, eax
@@ -161,11 +162,12 @@ EXPECT=<<RUN
 
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x08048054  b32a 31c0 40cd 80                        .*1.@..         
+EOF
 RUN
 
 NAME=om* order
 FILE=../bins/elf/before-after-main
-CMDS=<<EXPECT
+CMDS=<<EOF
 om
 om* > $initial_map
 om-*
@@ -174,7 +176,8 @@ om
 ?e ----
 $initial_map |.
 om               # Output must be the same as initial om
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
  3 fd: 3 +0x00000000 0x08048000 - 0x08048a67 r-x fmap.LOAD0
  2 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
  1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1
@@ -183,4 +186,5 @@ EXPECT=<<RUN
  3 fd: 3 +0x00000000 0x08048000 - 0x08048a67 r-x fmap.LOAD0
  2 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
  1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1
+EOF
 RUN

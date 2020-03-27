@@ -391,6 +391,7 @@ typedef struct r_debug_plugin_t {
 	int (*reg_read)(RDebug *dbg, int type, ut8 *buf, int size);
 	int (*reg_write)(RDebug *dbg, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
 	char* (*reg_profile)(RDebug *dbg);
+	int (*set_reg_profile)(const char *str);
 	/* memory */
 	RList *(*map_get)(RDebug *dbg);
 	RList *(*modules_get)(RDebug *dbg);
@@ -491,6 +492,7 @@ R_API void r_debug_plugin_init(RDebug *dbg);
 R_API int r_debug_plugin_set(RDebug *dbg, const char *str);
 R_API int r_debug_plugin_list(RDebug *dbg, int mode);
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo);
+R_API bool r_debug_plugin_set_reg_profile(RDebug *dbg, const char *str);
 
 /* memory */
 R_API RList *r_debug_modules_list(RDebug*);
@@ -522,7 +524,7 @@ R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name);
 R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *value);
 
 R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore);
-R_API int r_debug_map_sync(RDebug *dbg);
+R_API bool r_debug_map_sync(RDebug *dbg);
 
 R_API int r_debug_stop(RDebug *dbg);
 

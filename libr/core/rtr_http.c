@@ -102,8 +102,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			return 1;
 		}
 
-		int sz;
-		pfile = r_file_slurp (httpauthfile, &sz);
+		pfile = r_file_slurp (httpauthfile, NULL);
 
 		if (pfile) {
 			so.authtokens = r_str_split_list (pfile, "\n", 0);
@@ -266,10 +265,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 					} else {
 						char *path = r_file_root (uproot, rs->path + 4);
 						if (r_file_exists (path)) {
-							int sz = 0;
+							size_t sz = 0;
 							char *f = r_file_slurp (path, &sz);
 							if (f) {
-								r_socket_http_response (rs, 200, f, sz, headers);
+								r_socket_http_response (rs, 200, f, (int)sz, headers);
 								free (f);
 							} else {
 								r_socket_http_response (rs, 403, "Permission denied", 0, headers);
@@ -417,7 +416,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 					}
 				}
 				if (r_file_exists (path)) {
-					int sz = 0;
+					size_t sz = 0;
 					char *f = r_file_slurp (path, &sz);
 					if (f) {
 						const char *ct = NULL;
@@ -431,7 +430,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 							ct = "Content-Type: text/html\n";
 						}
 						char *hdr = r_str_newf ("%s%s", ct, headers);
-						r_socket_http_response (rs, 200, f, sz, hdr);
+						r_socket_http_response (rs, 200, f, (int)sz, hdr);
 						free (hdr);
 						free (f);
 					} else {
@@ -570,7 +569,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 			eprintf ("TODO: Use different eval environ for scr. for the web\n");
 			eprintf ("TODO: Visual mode should be enabled on local\n");
 		} else {
-			const char *tpath = r_str_trim_ro (path + 1);
+			const char *tpath = r_str_trim_head_ro (path + 1);
 			//HttpThread ht = { core, launch, strdup (tpath) };
 			HttpThread *ht = calloc (sizeof (HttpThread), 1);
 			ht->core = core;

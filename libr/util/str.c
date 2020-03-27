@@ -77,49 +77,12 @@ R_API int r_str_replace_ch(char *s, char a, char b, bool global) {
 	return ret;
 }
 
-// DEPRECATED
 R_API int r_str_replace_char_once(char *s, int a, int b) {
-	int ret = 0;
-	char *o = s;
-	if (a == b) {
-		return 0;
-	}
-	for (; *o; s++, o++) {
-		if (*o == a) {
-			if (b) {
-				*s = b;
-				return ++ret;
-			}
-			o++;
-		}
-		*s = *o;
-	}
-	*s = 0;
-	return ret;
+	return r_str_replace_ch (s, a, b, false);
 }
 
-// DEPRECATED
 R_API int r_str_replace_char(char *s, int a, int b) {
-	int ret = 0;
-	char *o = s;
-	if (!s || a == b) {
-		return 0;
-	}
-	for (; *o; s++, o++) {
-		if (*o == a) {
-			ret++;
-			if (b) {
-				*s = b;
-			} else {
-				/* remove char */
-				s--;
-			}
-		} else {
-			*s = *o;
-		}
-	}
-	*s = 0;
-	return ret;
+	return r_str_replace_ch (s, a, b, true);
 }
 
 R_API void r_str_reverse(char *str) {
@@ -1915,7 +1878,7 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 						/* copy 0x1b and [ */
 						*r++ = *str++;
 						*r++ = *str++;
-						for (ptr = str; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ++ptr) {
+						for (ptr = str; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ptr++) {
 							*r++ = *ptr;
 						}
 						*r++ = *ptr++;
@@ -3083,7 +3046,7 @@ R_API char *r_str_repeat(const char *ch, int sz) {
 		return strdup ("");
 	}
 	RStrBuf *buf = r_strbuf_new (ch);
-	for (i = 1; i < sz; ++i) {
+	for (i = 1; i < sz; i++) {
 		r_strbuf_append (buf, ch);
 	}
 	return r_strbuf_drain (buf);
@@ -3554,7 +3517,8 @@ R_API bool r_str_is_false(const char *s) {
 	return !r_str_casecmp ("no", s)
 		|| !r_str_casecmp ("off", s)
 		|| !r_str_casecmp ("false", s)
-		|| !r_str_casecmp ("0", s);
+		|| !r_str_casecmp ("0", s)
+		|| !*s;
 }
 
 R_API bool r_str_is_bool(const char *val) {

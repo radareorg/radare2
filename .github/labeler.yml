@@ -130,6 +130,10 @@ infrastructure:
   - .travis.yml
   - .lgtm.yml
   - .builds/**/*
+  - .github/workflows/*
+
+r2r:
+  - test/**/*
 
 java:
   - shlr/java/**/*

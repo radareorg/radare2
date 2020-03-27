@@ -50,8 +50,11 @@ RUN
 NAME=rabin -k file
 FILE=../bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -k ${R2_FILE}
-EXPECT=''
-EXPECT_ERR=Missing file.
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+Missing file.
+EOF
 RUN
 
 NAME=rabin2 -K md5 -S file
@@ -60,13 +63,13 @@ CMDS=!rabin2 -K md5 -S ${R2_FILE}
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr        vsize perm name
---------------------------------------------------
-0   0x00000400  0xa00 0x00401000  0x1000 -r-x .text
-1   0x00000e00  0x200 0x00402000  0x1000 -rw- .data
-2   0x00001000  0x200 0x00403000  0x1000 -r-- .rdata
-3   0x00000000    0x0 0x00404000  0x1000 -rw- .bss
-4   0x00001200  0x400 0x00405000  0x1000 -rw- .idata
+nth paddr        size vaddr        vsize perm md5                              name
+-----------------------------------------------------------------------------------
+0   0x00000400  0xa00 0x00401000  0x1000 -r-x 3d6a5b8dc5e41b09659638ad5735e5b5 .text
+1   0x00000e00  0x200 0x00402000  0x1000 -rw- b3c542ba67f2d1a949fa1a25ce22f7e3 .data
+2   0x00001000  0x200 0x00403000  0x1000 -r-- c9a877a4e945b087b8323830442c88d6 .rdata
+3   0x00000000    0x0 0x00404000  0x1000 -rw- d41d8cd98f00b204e9800998ecf8427e .bss
+4   0x00001200  0x400 0x00405000  0x1000 -rw- 963212dc58a74f32e0f6ffce84dcf7ea .idata
 
 EOF
 RUN
@@ -82,231 +85,269 @@ RUN
 NAME=rabin2 -s file elf
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -s ${R2_FILE}|wc -l|awk "{print \$1}"
-EXPECT=<<RUN
+EXPECT=<<EOF
 69
+EOF
 RUN
 
 NAME=rabin2 -S, -SS, -rS and -rSS file elf
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-CMDS=<<EXPECT
+CMDS=<<EOF
 !rabin2 -S ${R2_FILE}|wc -l|awk "{print \$1}"
 !rabin2 -SS ${R2_FILE}|wc -l|awk "{print \$1}"
 !env RABIN2_PREFIX=prixfixe rabin2 -S ${R2_FILE} |grep prixfixe. |wc -l |awk "{print \$1}"
 !env RABIN2_PREFIX=prixfixe rabin2 -SS ${R2_FILE} |grep prixfixe. |wc -l |awk "{print \$1}"
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 35
 14
 30
 9
+EOF
+RUN
+
+NAME=rabin2 -SSS
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=!rabin2 -SSS ${R2_FILE}|wc -l|awk "{print \$1}"
+EXPECT=<<EOF
+13
+EOF
 RUN
 
 NAME=rabin2 -z pe
 FILE=../bins/pe/a.exe
 CMDS=!rabin2 -z ${R2_FILE}|wc -l|awk "{print \$1}"
-EXPECT=<<RUN
+EXPECT=<<EOF
 7
+EOF
 RUN
 
 NAME=rabin2 -zz pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zz ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 86  0x00002619 0x00404019 10  11   .rdata  ascii   Password: 
+EOF
 RUN
 
 NAME=rabin2 -zzz pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zzz ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 086 0x00002619 0x00404019  10  11 (.rdata) ascii Password: 
+EOF
 RUN
 
 NAME=rabin2 -zzq pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zzq ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x404019 11 10 Password: 
+EOF
 RUN
 
 NAME=rabin2 -zzzq pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zzzq ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 0x00404019 Password: 
+EOF
 RUN
 
 NAME=rabin2 -zzqq pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zzqq ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 Password: 
+EOF
 RUN
 
 NAME=rabin2 -zzzqq pe
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zzzqq ${R2_FILE} | grep "Password:"
-EXPECT=<<RUN
+EXPECT=<<EOF
 Password: 
+EOF
 RUN
 
 NAME=rabin2 -z elf
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -z ${R2_FILE}|wc -l|awk "{print \$1}"
-EXPECT=<<RUN
+EXPECT=<<EOF
 4
+EOF
 RUN
 
 NAME=rabin2 -G 0x1000 -rs fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x1000 -rs ${R2_FILE}|grep "f " | wc -l|awk "{print \$1}"
-EXPECT=<<RUN
+EXPECT=<<EOF
 3
+EOF
 RUN
 
 NAME=rabin2 -G 0x1300 -rs fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x1300 -rs ${R2_FILE}|wc -l|awk "{print \$1}"
-EXPECT=<<RUN
+EXPECT=<<EOF
 1
+EOF
 RUN
 
 NAME=rabin2 -G 0x1000 -e fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x1000 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x100000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=rabin2 -e fatmach0
 BROKEN=1
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x100000ef8 paddr=0x00001ef8 baddr=0x100000000 laddr=0x00001000 haddr=0x00000570 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=rabin2 -G 0x5000 -e fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x5000 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00001f44 paddr=0x00005f44 haddr=0x00000420 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=rabin2 -a x86 -b 32 -e fatmach0
 BROKEN=1
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -a x86 -b 32 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00001f44 paddr=0x00005f44 baddr=0x00001000 laddr=0x00005000 haddr=0x00000420 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=rabin2 -B 0x2000000 -G 0x1000 -e fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -B 0x2000000 -G 0x1000 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x02000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=TODO: test on pie fatmach0
 BROKEN=1
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -B 0x2000000 -G 0x1000 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 ???
+EOF
 RUN
 
 NAME=rabin2 -B 0x2000000 -e arm64
 FILE=../bins/mach0/hello-ios-arm64
 CMDS=!rabin2 -B 0x2000000 -e ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x02007f34 paddr=0x00007f34 haddr=0x00000468 type=program
 
 1 entrypoints
+EOF
 RUN
 
 NAME=rabin2 -a x86 -b 32 -i fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -a x86 -b 32 -i ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type name
------------------------------
-0   0x00001f94 NONE FUNC exit
-1   0x00000000 NONE FUNC dyld_stub_binder
+nth vaddr      bind type lib name
+---------------------------------
+0   0x00001f94 NONE FUNC     exit
+1   0x00000000 NONE FUNC     dyld_stub_binder
 
+EOF
 RUN
 
 NAME=rabin2 -G 0x5000 -i fatmach0
 FILE=../bins/mach0/fatmach0-3true
 CMDS=!rabin2 -G 0x5000 -i ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type name
------------------------------
-0   0x00001f94 NONE FUNC exit
-1   0x00000000 NONE FUNC dyld_stub_binder
+nth vaddr      bind type lib name
+---------------------------------
+0   0x00001f94 NONE FUNC     exit
+1   0x00000000 NONE FUNC     dyld_stub_binder
 
+EOF
 RUN
 
 NAME=rabin2 -qqz
 FILE=../bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -qqz ${R2_FILE}
-EXPECT=<<RUN
+EXPECT=<<EOF
 Hello World
+EOF
 RUN
 
 NAME=rabin2 -qqzz
 FILE=../bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EXPECT
+CMDS=<<EOF
 !!rabin2 -qqzz ${R2_FILE}~do_global_dtors_aux_fini_array_entry
 !!rabin2 -qqzz ${R2_FILE}~?
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
 82
+EOF
 RUN
 
 NAME=rabin2 -qqzzz
 FILE=../bins/elf/analysis/hello-linux-x86_64
-CMDS=<<EXPECT
+CMDS=<<EOF
 !!rabin2 -qqzzz ${R2_FILE}~do_global_dtors_aux_fini_array_entry
 !!rabin2 -qqzzz ${R2_FILE}~?
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
 82
+EOF
 RUN
 
 NAME=rabin2 -qOr
 FILE=../bins/elf/analysis/ls-linux-x86_64-zlul
-CMDS=<<EXPECT
+CMDS=<<EOF
 !rabin2 -qOr/.data/-1 ${FILE}
 !rabin2 -qOr/.data/-1 ${FILE}
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=rabin2 -qOp/.data/rwx on PE32
 FILE=../bins/pe/test.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 mkdir .tmp
 rm .tmp/rabin2testpe1.exe
 !rabin2 -qOp/.data/rwx -o.tmp/rabin2testpe1.exe ${R2_FILE}
 !rabin2 -S .tmp/rabin2testpe1.exe
 rm .tmp/rabin2testpe1.exe
+EOF
 EXPECT=<<EOF
 wx e0000040 @ 0x244
 [Sections]
@@ -345,7 +386,8 @@ RUN
 NAME=rabin2 -ee -j
 FILE=../bins/elf/analysis/x86-helloworld-gcc
 CMDS=!!rabin2 -ee -j ${R2_FILE}~{}
-EXPECT='{
+EXPECT=<<EOF
+{
   "initfini": [
     {
       "vaddr": 134513616,
@@ -366,7 +408,8 @@ EXPECT='{
       "type": "fini"
     }
   ]
-}'
+}
+EOF
 RUN
 
 NAME=-ee baddr 0
@@ -446,81 +489,81 @@ vaddr=0x080483b0 paddr=0x000003b0 hvaddr=0x080495a0 hpaddr=0x000005a0 type=fini
 [Main]
 vaddr=0x08048400 paddr=0x00000400
 [Imports]
-nth vaddr      bind   type   name
----------------------------------
-1   0x080482d0 GLOBAL FUNC   puts
-2   0x080482e0 WEAK   NOTYPE __gmon_start__
-3   0x080482f0 GLOBAL FUNC   __libc_start_main
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x080482d0 GLOBAL FUNC       puts
+2   0x080482e0 WEAK   NOTYPE     __gmon_start__
+3   0x080482f0 GLOBAL FUNC       __libc_start_main
 
 [Symbols]
 
-nth paddr       vaddr      bind   type   size name
---------------------------------------------------
-4    0x000004ac 0x080484ac GLOBAL OBJ    4    _IO_stdin_used
-1    0x00000134 0x08048134 LOCAL  SECT   0    .interp
-2    0x00000148 0x08048148 LOCAL  SECT   0    .note.ABI-tag
-3    0x00000168 0x08048168 LOCAL  SECT   0    .note.gnu.build-id
-4    0x0000018c 0x0804818c LOCAL  SECT   0    .gnu.hash
-5    0x000001ac 0x080481ac LOCAL  SECT   0    .dynsym
-6    0x000001fc 0x080481fc LOCAL  SECT   0    .dynstr
-7    0x00000246 0x08048246 LOCAL  SECT   0    .gnu.version
-8    0x00000250 0x08048250 LOCAL  SECT   0    .gnu.version_r
-9    0x00000270 0x08048270 LOCAL  SECT   0    .rel.dyn
-10   0x00000278 0x08048278 LOCAL  SECT   0    .rel.plt
-11   0x00000290 0x08048290 LOCAL  SECT   0    .init
-12   0x000002c0 0x080482c0 LOCAL  SECT   0    .plt
-13   0x00000300 0x08048300 LOCAL  SECT   0    .text
-14   0x00000494 0x08048494 LOCAL  SECT   0    .fini
-15   0x000004a8 0x080484a8 LOCAL  SECT   0    .rodata
-16   0x000004c0 0x080484c0 LOCAL  SECT   0    .eh_frame_hdr
-17   0x000004ec 0x080484ec LOCAL  SECT   0    .eh_frame
-18   0x0000059c 0x0804959c LOCAL  SECT   0    .init_array
-19   0x000005a0 0x080495a0 LOCAL  SECT   0    .fini_array
-20   0x000005a4 0x080495a4 LOCAL  SECT   0    .jcr
-21   0x000005a8 0x080495a8 LOCAL  SECT   0    .dynamic
-22   0x00000690 0x08049690 LOCAL  SECT   0    .got
-23   0x00000694 0x08049694 LOCAL  SECT   0    .got.plt
-24   0x000006ac 0x080496ac LOCAL  SECT   0    .data
-25   ---------- 0x080496b4 LOCAL  SECT   0    .bss
-26   ---------- 0x00000000 LOCAL  SECT   0    .comment
-27   ---------- 0x00000000 LOCAL  FILE   0    init.c
-28   ---------- 0x00000000 LOCAL  FILE   0    
-29   ---------- 0x00000000 LOCAL  FILE   0    crtstuff.c
-30   0x000005a4 0x080495a4 LOCAL  OBJ    0    __JCR_LIST__
-31   0x00000340 0x08048340 LOCAL  FUNC   0    deregister_tm_clones
-32   0x00000370 0x08048370 LOCAL  FUNC   0    register_tm_clones
-33   0x000003b0 0x080483b0 LOCAL  FUNC   0    __do_global_dtors_aux
-34   ---------- 0x080496b4 LOCAL  OBJ    1    completed.5979
-35   0x000005a0 0x080495a0 LOCAL  OBJ    0    __do_global_dtors_aux_fini_array_entry
-36   0x000003d0 0x080483d0 LOCAL  FUNC   0    frame_dummy
-37   0x0000059c 0x0804959c LOCAL  OBJ    0    __frame_dummy_init_array_entry
-38   ---------- 0x00000000 LOCAL  FILE   0    hello.c
-39   ---------- 0x00000000 LOCAL  FILE   0    crtstuff.c
-40   0x00000598 0x08048598 LOCAL  OBJ    0    __FRAME_END__
-41   0x000005a4 0x080495a4 LOCAL  OBJ    0    __JCR_END__
-42   ---------- 0x00000000 LOCAL  FILE   0    
-43   0x000005a0 0x080495a0 LOCAL  NOTYPE 0    __init_array_end
-44   0x000005a8 0x080495a8 LOCAL  OBJ    0    _DYNAMIC
-45   0x0000059c 0x0804959c LOCAL  NOTYPE 0    __init_array_start
-46   0x00000694 0x08049694 LOCAL  OBJ    0    _GLOBAL_OFFSET_TABLE_
-47   0x00000490 0x08048490 GLOBAL FUNC   2    __libc_csu_fini
-49   0x00000330 0x08048330 GLOBAL FUNC   4    __x86.get_pc_thunk.bx
-50   0x000006ac 0x080496ac WEAK   NOTYPE 0    data_start
-51   ---------- 0x080496b4 GLOBAL NOTYPE 0    _edata
-52   0x00000494 0x08048494 GLOBAL FUNC   0    _fini
-53   0x000006ac 0x080496ac GLOBAL NOTYPE 0    __data_start
-56   0x000006b0 0x080496b0 GLOBAL OBJ    0    __dso_handle
-59   0x00000420 0x08048420 GLOBAL FUNC   97   __libc_csu_init
-60   ---------- 0x080496b8 GLOBAL NOTYPE 0    _end
-61   0x00000300 0x08048300 GLOBAL FUNC   0    _start
-62   0x000004a8 0x080484a8 GLOBAL OBJ    4    _fp_hw
-63   ---------- 0x080496b4 GLOBAL NOTYPE 0    __bss_start
-64   0x00000400 0x08048400 GLOBAL FUNC   28   main
-66   ---------- 0x080496b4 GLOBAL OBJ    0    __TMC_END__
-68   0x00000290 0x08048290 GLOBAL FUNC   0    _init
-1    0x000002d0 0x080482d0 GLOBAL FUNC   16   imp.puts
-2    0x000002e0 0x080482e0 WEAK   NOTYPE 16   imp.__gmon_start__
-3    0x000002f0 0x080482f0 GLOBAL FUNC   16   imp.__libc_start_main
+nth paddr       vaddr      bind   type   size lib name
+------------------------------------------------------
+4    0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
+1    0x00000134 0x08048134 LOCAL  SECT   0        .interp
+2    0x00000148 0x08048148 LOCAL  SECT   0        .note.ABI-tag
+3    0x00000168 0x08048168 LOCAL  SECT   0        .note.gnu.build-id
+4    0x0000018c 0x0804818c LOCAL  SECT   0        .gnu.hash
+5    0x000001ac 0x080481ac LOCAL  SECT   0        .dynsym
+6    0x000001fc 0x080481fc LOCAL  SECT   0        .dynstr
+7    0x00000246 0x08048246 LOCAL  SECT   0        .gnu.version
+8    0x00000250 0x08048250 LOCAL  SECT   0        .gnu.version_r
+9    0x00000270 0x08048270 LOCAL  SECT   0        .rel.dyn
+10   0x00000278 0x08048278 LOCAL  SECT   0        .rel.plt
+11   0x00000290 0x08048290 LOCAL  SECT   0        .init
+12   0x000002c0 0x080482c0 LOCAL  SECT   0        .plt
+13   0x00000300 0x08048300 LOCAL  SECT   0        .text
+14   0x00000494 0x08048494 LOCAL  SECT   0        .fini
+15   0x000004a8 0x080484a8 LOCAL  SECT   0        .rodata
+16   0x000004c0 0x080484c0 LOCAL  SECT   0        .eh_frame_hdr
+17   0x000004ec 0x080484ec LOCAL  SECT   0        .eh_frame
+18   0x0000059c 0x0804959c LOCAL  SECT   0        .init_array
+19   0x000005a0 0x080495a0 LOCAL  SECT   0        .fini_array
+20   0x000005a4 0x080495a4 LOCAL  SECT   0        .jcr
+21   0x000005a8 0x080495a8 LOCAL  SECT   0        .dynamic
+22   0x00000690 0x08049690 LOCAL  SECT   0        .got
+23   0x00000694 0x08049694 LOCAL  SECT   0        .got.plt
+24   0x000006ac 0x080496ac LOCAL  SECT   0        .data
+25   ---------- 0x080496b4 LOCAL  SECT   0        .bss
+26   ---------- 0x00000000 LOCAL  SECT   0        .comment
+27   ---------- 0x00000000 LOCAL  FILE   0        init.c
+28   ---------- 0x00000000 LOCAL  FILE   0        
+29   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+30   0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_LIST__
+31   0x00000340 0x08048340 LOCAL  FUNC   0        deregister_tm_clones
+32   0x00000370 0x08048370 LOCAL  FUNC   0        register_tm_clones
+33   0x000003b0 0x080483b0 LOCAL  FUNC   0        __do_global_dtors_aux
+34   ---------- 0x080496b4 LOCAL  OBJ    1        completed.5979
+35   0x000005a0 0x080495a0 LOCAL  OBJ    0        __do_global_dtors_aux_fini_array_entry
+36   0x000003d0 0x080483d0 LOCAL  FUNC   0        frame_dummy
+37   0x0000059c 0x0804959c LOCAL  OBJ    0        __frame_dummy_init_array_entry
+38   ---------- 0x00000000 LOCAL  FILE   0        hello.c
+39   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+40   0x00000598 0x08048598 LOCAL  OBJ    0        __FRAME_END__
+41   0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_END__
+42   ---------- 0x00000000 LOCAL  FILE   0        
+43   0x000005a0 0x080495a0 LOCAL  NOTYPE 0        __init_array_end
+44   0x000005a8 0x080495a8 LOCAL  OBJ    0        _DYNAMIC
+45   0x0000059c 0x0804959c LOCAL  NOTYPE 0        __init_array_start
+46   0x00000694 0x08049694 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
+47   0x00000490 0x08048490 GLOBAL FUNC   2        __libc_csu_fini
+49   0x00000330 0x08048330 GLOBAL FUNC   4        __x86.get_pc_thunk.bx
+50   0x000006ac 0x080496ac WEAK   NOTYPE 0        data_start
+51   ---------- 0x080496b4 GLOBAL NOTYPE 0        _edata
+52   0x00000494 0x08048494 GLOBAL FUNC   0        _fini
+53   0x000006ac 0x080496ac GLOBAL NOTYPE 0        __data_start
+56   0x000006b0 0x080496b0 GLOBAL OBJ    0        __dso_handle
+59   0x00000420 0x08048420 GLOBAL FUNC   97       __libc_csu_init
+60   ---------- 0x080496b8 GLOBAL NOTYPE 0        _end
+61   0x00000300 0x08048300 GLOBAL FUNC   0        _start
+62   0x000004a8 0x080484a8 GLOBAL OBJ    4        _fp_hw
+63   ---------- 0x080496b4 GLOBAL NOTYPE 0        __bss_start
+64   0x00000400 0x08048400 GLOBAL FUNC   28       main
+66   ---------- 0x080496b4 GLOBAL OBJ    0        __TMC_END__
+68   0x00000290 0x08048290 GLOBAL FUNC   0        _init
+1    0x000002d0 0x080482d0 GLOBAL FUNC   16       imp.puts
+2    0x000002e0 0x080482e0 WEAK   NOTYPE 16       imp.__gmon_start__
+3    0x000002f0 0x080482f0 GLOBAL FUNC   16       imp.__libc_start_main
 [Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
@@ -571,10 +614,10 @@ libc.so.6
 
 vaddr      paddr      type   name
 ---------------------------------
-0x08049690 0x00000690 SET_32  __gmon_start__
-0x080496a0 0x000006a0 SET_32  puts
-0x080496a4 0x000006a4 SET_32  __gmon_start__
-0x080496a8 0x000006a8 SET_32  __libc_start_main
+0x08049690 0x00000690 SET_32 __gmon_start__
+0x080496a0 0x000006a0 SET_32 puts
+0x080496a4 0x000006a4 SET_32 __gmon_start__
+0x080496a8 0x000006a8 SET_32 __libc_start_main
 
 
 4 relocations
@@ -592,15 +635,29 @@ Version need section '.gnu.version_r' contains 1 entries:
  Addr: 0x08048250  Offset: 0x00000250  Link to section: 6 (.dynstr)
   0x00000000: Version: 1  File: libc.so.6  Cnt: 1
   0x00000010:   Name: GLIBC_2.0  Flags: none Version: 2
+Section to Segment mapping:
+Segment      Section
+--------------------
+PHDR         
+INTERP       .interp 
+LOAD0        .interp .note.ABI_tag .note.gnu.build_id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame 
+LOAD1        .init_array .fini_array .jcr .dynamic .got .got.plt .data .bss 
+DYNAMIC      .dynamic 
+NOTE         .note.ABI_tag .note.gnu.build_id 
+GNU_EH_FRAME .eh_frame_hdr 
+GNU_STACK    
+ehdr         
+
 EOF
 RUN
 
 NAME=rabin2 -x pemixed.exe
 BROKEN=1
 FILE=../bins/pe/pemixed.exe
-CMDS=<<EXPECT
+CMDS=<<EOF
 !rabin2 -x ../bins/pe/pemixed.exe
 !rm -r pemixed.exe.fat
+EOF
 EXPECT=<<EOF
 pemixed.exe.fat/pemixed.exe.unknown_0.0 created (248)
 pemixed.exe.fat/pemixed.exe.unknown_0.1 created (35328)
@@ -657,7 +714,7 @@ bintype  elf
 bits     64
 canary   false
 class    ELF64
-compiler GCC: (Debian 8.2.0-5) 8.2.0/clang version 6.0.1-6 (tags/RELEASE_601/final)
+compiler GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
 crypto   false
 endian   little
 havecode true
@@ -723,9 +780,9 @@ NAME=rabin2 -s right symbols
 FILE=../bins/elf/libc.so.0
 CMDS=!rabin2 -s ${R2_FILE} | grep 0002edb0
 EXPECT=<<EOF
-149   0x0002edb0 0x0002edb0 GLOBAL FUNC   356  getc_unlocked
-402   0x0002edb0 0x0002edb0 GLOBAL FUNC   356  __fgetc_unlocked
-980   0x0002edb0 0x0002edb0 GLOBAL FUNC   356  fgetc_unlocked
+149   0x0002edb0 0x0002edb0 GLOBAL FUNC   356      getc_unlocked
+402   0x0002edb0 0x0002edb0 GLOBAL FUNC   356      __fgetc_unlocked
+980   0x0002edb0 0x0002edb0 GLOBAL FUNC   356      fgetc_unlocked
 EOF
 RUN
 
@@ -818,8 +875,7 @@ RUN
 
 NAME=rabin2 -O ?
 FILE=../bins/elf/libc.so.0
-CMDS=%!rabin2 -O "?" | grep -c Usage
-%
+CMDS=!rabin2 -O "?" | grep -c Usage
 EXPECT=<<EOF
 1
 EOF
@@ -883,9 +939,13 @@ RUN
 
 NAME=rabin2 -E
 FILE=../bins/pe/dll.dll
-CMDS=!rabin2 -E ${R2_FILE} | grep -c dll_export
+CMDS=!rabin2 -E ${R2_FILE}
 EXPECT=<<EOF
-1
+[Exports]
+
+nth paddr       vaddr      bind   type size lib     name
+--------------------------------------------------------
+0    0x00000224 0x01001024 GLOBAL FUNC 0    dll.dll export
 EOF
 RUN
 

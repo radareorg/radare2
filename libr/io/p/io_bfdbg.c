@@ -157,7 +157,6 @@ static inline int getmalfd (RIOBfdbg *mal) {
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	char *out;
-	int rlen;
 	if (__plugin_open (io, pathname, 0)) {
 		RIOBind iob;
 		RIOBfdbg *mal = R_NEW0 (RIOBfdbg);
@@ -171,13 +170,14 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			free (mal);
 			return NULL;
 		}
+		size_t rlen;
 		out = r_file_slurp (pathname+8, &rlen);
 		if (!out || rlen < 1) {
 			free (mal);
 			free (out);
 			return NULL;
 		}
-		mal->size = rlen;
+		mal->size = (ut32)rlen;
 		mal->buf = malloc (mal->size+1);
 		if (mal->buf != NULL) {
 			memcpy (mal->buf, out, rlen);
@@ -185,7 +185,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return r_io_desc_new (io, &r_io_plugin_bfdbg,
 				pathname, rw, mode, mal);
 		}
-		eprintf ("Cannot allocate (%s) %d byte(s)\n",
+		eprintf ("Cannot allocate (%s) %"PFMT32u" byte(s)\n",
 			pathname+9, mal->size);
 		free (mal);
 		free (out);

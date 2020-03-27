@@ -58,7 +58,7 @@ static void cmd_mount_ls (RCore *core, const char *input) {
 	RListIter *iter;
 	RFSFile *file;
 	RFSRoot *root;
-	input = r_str_trim_ro (input + isJSON);
+	input = r_str_trim_head_ro (input + isJSON);
 	RList *list = r_fs_dir (core->fs, input);
 	PJ *pj = NULL;
 	if (isJSON) {
@@ -130,18 +130,18 @@ static int cmd_mount(void *data, const char *_input) {
 
 	switch (*input) {
 	case ' ':
-		input = (char *)r_str_trim_ro (input + 1);
+		input = (char *)r_str_trim_head_ro (input + 1);
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr = 0;
-			ptr = (char *)r_str_trim_ro (ptr + 1);
+			ptr = (char *)r_str_trim_head_ro (ptr + 1);
 			ptr2 = strchr (ptr, ' ');
 			if (ptr2) {
 				*ptr2 = 0;
 				off = r_num_math (core->num, ptr2+1);
 			}
-			input = (char *)r_str_trim_ro (input);
-			ptr = (char*)r_str_trim_ro (ptr);
+			input = (char *)r_str_trim_head_ro (input);
+			ptr = (char*)r_str_trim_head_ro (ptr);
 
 			const char *mountp = input;
 			const char *fstype = ptr;

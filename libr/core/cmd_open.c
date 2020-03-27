@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include "r_list.h"
 #include "r_config.h"
@@ -192,7 +192,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case '.': // "ob."
 		{
-			const char *arg = r_str_trim_ro (input + 2);
+			const char *arg = r_str_trim_head_ro (input + 2);
 			ut64 at = core->offset;
 			if (*arg) {
 				at = r_num_math (core->num, arg);
@@ -343,7 +343,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_bin_file_delete_all (core->bin);
 		} else {
 			ut32 id;
-			value = r_str_trim_ro (input + 2);
+			value = r_str_trim_head_ro (input + 2);
 			if (!value) {
 				eprintf ("Invalid argument\n");
 				break;
@@ -458,7 +458,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 static void cmd_omfg(RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
-	input = r_str_trim_ro (input);
+	input = r_str_trim_head_ro (input);
 	if (input) {
 		int perm = *input
 		? (*input == '+' || *input == '-')
@@ -488,7 +488,7 @@ static void cmd_omfg(RCore *core, const char *input) {
 static void cmd_omf(RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
-	char *arg = strdup (r_str_trim_ro (input));
+	char *arg = strdup (r_str_trim_head_ro (input));
 	if (!arg) {
 		return;
 	}
@@ -695,7 +695,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 					r_cons_printf ("%s\n", map->name);
 					break;
 				default:
-					r_io_map_set_name (map, r_str_trim_ro (input + 3));
+					r_io_map_set_name (map, r_str_trim_head_ro (input + 3));
 					break;
 				}
 			}
@@ -816,8 +816,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		SdbListIter *iter;
 		RIOMap *map;
 		ls_foreach_prev (core->io->maps, iter, map) {
-			char temp[4];
-			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, sdb_itoa (map->fd, temp, 10));
+			char temp[32];
+			snprintf (temp, sizeof (temp), "%d", map->fd);
+			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);
 			if (!info) {
 				break;
 			}
@@ -826,9 +827,11 @@ static void cmd_open_map(RCore *core, const char *input) {
 		RTable *table = r_core_table (core);
 		r_table_visual_list (table, list, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
-		r_cons_printf ("\n%s\n", r_table_tostring (table));
+		char *tablestr = r_table_tostring (table);
+		r_cons_printf ("\n%s\n", tablestr);
 		r_table_free (table);
 		r_list_free (list);
+		free (tablestr);
 		} break;
 	default:
 	case '?':
@@ -888,11 +891,17 @@ R_API void r_core_file_reopen_in_malloc(RCore *core) {
 }
 
 static RList *__save_old_sections(RCore *core) {
-	// Do I really need this?
 	RList *sections = r_bin_get_sections (core->bin);
 	RListIter *it;
 	RBinSection *sec;
 	RList *old_sections = r_list_new ();
+
+	// Return an empty list
+	if (!sections) {
+		eprintf ("WARNING: No sections found, functions and flags won't be rebased");
+		return old_sections;
+	}
+
 	old_sections->free = sections->free;
 	r_list_foreach (sections, it, sec) {
 		RBinSection *old_sec = R_NEW0 (RBinSection);
@@ -968,19 +977,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 				continue;
 			}
 			r_anal_var_rebase (core->anal, fcn, diff);
-			r_anal_fcn_tree_delete (core->anal, fcn);
-			fcn->addr += diff;
-			if (fcn->meta.max) {
-				fcn->meta.max += diff;
-			}
-			if (fcn->meta.min) {
-				fcn->meta.min += diff;
-			}
-			int j;
-			for (j = 0; j < fcn->bbr.pairs * 2; j++) {
-				fcn->bbr.ranges[j] += diff;
-			}
-			r_anal_fcn_tree_insert (core->anal, fcn);
+			r_anal_function_relocate (fcn, fcn->addr + diff);
 			RAnalBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;
 			r_list_foreach (fcn->bbs, ititit, bb) {
@@ -988,7 +985,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 					// Todo: Find better way to check if bb was already rebased
 					continue;
 				}
-				bb->addr += diff;
+				r_anal_block_relocate (bb, bb->addr + diff, bb->size);
 				if (bb->jump != UT64_MAX) {
 					bb->jump += diff;
 				}
@@ -1330,7 +1327,7 @@ static int cmd_open(void *data, const char *input) {
 #if 1
 	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
 	case 'f': // "of"
-		ptr = r_str_trim_ro (input + 2);
+		ptr = r_str_trim_head_ro (input + 2);
 		argv = r_str_argv (ptr, &argc);
 		if (argc == 0) {
 			eprintf ("Usage: of [filename] (rwx)\n");
@@ -1350,7 +1347,7 @@ static int cmd_open(void *data, const char *input) {
 				input++;
 			}
 			addr = 0; // honor bin.baddr ?
-			const char *argv0 = r_str_trim_ro (input + 2);
+			const char *argv0 = r_str_trim_head_ro (input + 2);
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
 				if (!silence) {
@@ -1783,6 +1780,7 @@ static int cmd_open(void *data, const char *input) {
 				}
 			}
 			if ((fdx == -1) || (fd == -1) || (fdx == fd)) {
+				free (inp);
 				break;
 			}
 			r_io_desc_exchange (core->io, fd, fdx);

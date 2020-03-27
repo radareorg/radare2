@@ -48,40 +48,88 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	return 0;
 }
 
-int gdbr_set_architecture(libgdbr_t *g, const char *arch, int bits) {
+int gdbr_set_architecture(libgdbr_t *g, int arch, int bits) {
 	if (!g) {
 		return -1;
 	}
 	if (g->target.valid && g->registers) {
 		return 0;
 	}
-	if (!strcmp (arch, "mips")) {
-		g->registers = gdb_regs_mips;
-	} else if (!strcmp (arch, "lm32")) {
-		g->registers = gdb_regs_lm32;
-	} else if (!strcmp (arch, "avr")) {
-		g->registers = gdb_regs_avr;
-	} else if (!strcmp (arch, "v850")) {
-		g->registers = gdb_regs_v850;
-	} else if (!strcmp (arch, "x86")) {
+
+	const char *regprofile = gdbr_get_reg_profile (arch, bits);
+	if (!regprofile) {
+		eprintf ("cannot find gdb reg_profile\n");
+		return -1;
+	}
+	if (!gdbr_set_reg_profile (g, regprofile)) {
+		return -1;
+	}
+	g->target.arch = arch;
+	g->target.bits = bits;
+	g->target.valid = true;
+
+	return 0;
+}
+
+const char *gdbr_get_reg_profile(int arch, int bits) {
+	switch (arch) {
+	case R_SYS_ARCH_X86:
 		if (bits == 32) {
-			g->registers = gdb_regs_x86_32;
+#include "reg/x86_32.h"
 		} else if (bits == 64) {
-			g->registers = gdb_regs_x86_64;
+#include "reg/x86_64.h"
 		} else {
 			eprintf ("%s: unsupported x86 bits: %d\n", __func__, bits);
-			return -1;
+			return NULL;
 		}
-	} else if (!strcmp (arch, "arm")) {
+		break;
+	case R_SYS_ARCH_ARM:
 		if (bits == 32) {
-			g->registers = gdb_regs_arm32;
+#include "reg/arm32.h"
 		} else if (bits == 64) {
-			g->registers = gdb_regs_aarch64;
+#include "reg/arm64.h"
 		} else {
 			eprintf ("%s: unsupported arm bits: %d\n", __func__, bits);
-			return -1;
+			return NULL;
 		}
+		break;
+	case R_SYS_ARCH_SH:
+#include "reg/sh.h"
+		break;
+	case R_SYS_ARCH_LM32:
+#include "reg/lm32.h"
+		break;
+	case R_SYS_ARCH_MIPS:
+#include "reg/mips.h"
+		break;
+	case R_SYS_ARCH_AVR:
+#include "reg/avr.h"
+		break;
+	case R_SYS_ARCH_V850:
+#include "reg/v850.h"
+		break;
 	}
+	return NULL;
+}
+
+int gdbr_set_reg_profile(libgdbr_t *g, const char *str) {
+	if (!g) {
+		return -1;
+	}
+	gdb_reg_t *registers = arch_parse_reg_profile (str);
+	if (!registers) {
+		eprintf ("cannot parse reg profile\n");
+		return -1;
+	}
+	if (g->target.regprofile) {
+		free (g->target.regprofile);
+	}
+	g->target.regprofile = strdup (str);
+	if (g->registers) {
+		free (g->registers);
+	}
+	g->registers = arch_parse_reg_profile (str);
+
 	return 0;
 }
 

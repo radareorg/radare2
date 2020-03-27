@@ -40,6 +40,21 @@ struct user_regs_struct_x86_32 {
 #include <sys/user.h>
 #if __i386__ || __x86_64__
 #define R_DEBUG_REG_T struct user_regs_struct
+#elif __s390x__ || __s390__
+#define R_DEBUG_REG_T struct _user_regs_struct
+#if 0
+// https://sourceware.org/git/?p=glibc.git;a=blob;f=sysdeps/unix/sysv/linux/s390/sys/user.h;hb=HEAD#l50
+  50 struct _user_regs_struct
+  51 {
+  52   struct _user_psw_struct psw;          /* Program status word.  */
+  53   unsigned long gprs[16];               /* General purpose registers.  */
+  54   unsigned int  acrs[16];               /* Access registers.  */
+  55   unsigned long orig_gpr2;              /* Original gpr2.  */
+  56   struct _user_fpregs_struct fp_regs;   /* Floating point registers.  */
+  57   struct _user_per_struct per_info;     /* Hardware tracing registers.  */
+  58   unsigned long ieee_instruction_pointer;       /* Always 0.  */
+  59 };
+#endif
 #elif __arm64__ || __aarch64__
 #include <asm/ptrace.h>
 #ifndef NT_PRSTATUS
@@ -104,7 +119,8 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid);
 int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 int linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size);
 RList *linux_desc_list(int pid);
-int linux_handle_signals(RDebug *dbg);
+bool linux_stop_threads(RDebug *dbg, int except);
+int linux_handle_signals(RDebug *dbg, int tid);
 int linux_dbg_wait(RDebug *dbg, int pid);
 char *linux_reg_profile(RDebug *dbg);
 int match_pid(const void *pid_o, const void *th_o);

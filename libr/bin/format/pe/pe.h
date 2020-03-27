@@ -33,6 +33,7 @@ struct r_bin_pe_section_t {
 
 struct r_bin_pe_import_t {
 	ut8 name[PE_NAME_LENGTH + 1];
+	ut8 libname[PE_NAME_LENGTH + 1];
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 hint;
@@ -42,6 +43,7 @@ struct r_bin_pe_import_t {
 
 struct r_bin_pe_export_t {
 	ut8 name[PE_NAME_LENGTH + 1];
+	ut8 libname[PE_NAME_LENGTH + 1];
 	ut8 forwarder[PE_NAME_LENGTH + 1];
 	ut64 vaddr;
 	ut64 paddr;
@@ -94,6 +96,7 @@ struct PE_(r_bin_pe_obj_t) {
 	PE_(image_tls_directory) * tls_directory;
 	Pe_image_resource_directory* resource_directory;
 	PE_(image_delay_import_directory) * delay_import_directory;
+	Pe_image_security_directory * security_directory;
 
 	// these pointers pertain to the .net relevant sections
 	PE_(image_clr_header) * clr_hdr;
@@ -125,6 +128,9 @@ struct PE_(r_bin_pe_obj_t) {
 	RBuffer* b;
 	Sdb *kv;
 	RCMS* cms;
+	SpcIndirectDataContent *spcinfo;
+	char *authentihash;
+	bool is_authhash_valid;
 	bool is_signed;
 };
 
@@ -156,6 +162,8 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(RBuffer* buf, bool verbose);
 int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t)* bin, struct SDebugInfo* res);
 int PE_(bin_pe_get_claimed_checksum)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin);
+const char* PE_(bin_pe_compute_authentihash)(struct PE_(r_bin_pe_obj_t)* bin);
+int PE_(bin_pe_is_authhash_valid)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size);
 void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_section_t** sects);
 struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin);

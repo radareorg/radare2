@@ -68,9 +68,7 @@ FILE=../bins/firmware/arduino_avr.bin
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-pd 1 @ 0x00000170~?IO
-EOF
+CMDS=pd 1 @ 0x00000170~?IO
 RUN
 
 NAME=avr br - forward branch
@@ -374,9 +372,7 @@ EXPECT=<<EOF
 0x00000276   # 2: ldi r22, 0x6d
 EOF
 ARGS=-a avr
-CMDS=<<EOF
-/ad ldi~0x6d
-EOF
+CMDS=/ad ldi~0x6d
 RUN
 
 NAME=search asm commands with filter
@@ -386,9 +382,7 @@ EXPECT=<<EOF
 0x000019a4   # 2: ldi r18, 0x18
 EOF
 ARGS=-a avr
-CMDS=<<EOF
-/ad ldi ~ 0x18
-EOF
+CMDS=/ad ldi ~ 0x18
 RUN
 
 NAME=search asm commands with filter and align = 2
@@ -595,7 +589,5 @@ EXPECT=<<EOF
 0x0000002e 0x00000032 00:0000 4 j 0x00000032
 0x00000032 0x00000040 00:0000 14
 EOF
-CMDS=<<EOF
-af@sym.main;afb@sym.main
-EOF
+CMDS=af@sym.main;afb@sym.main
 RUN

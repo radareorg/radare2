@@ -4,7 +4,5 @@ ARGS=-A
 EXPECT=<<EOF
 nx       true
 EOF
-CMDS=<<EOF
-iI~^nx
-EOF
+CMDS=iI~^nx
 RUN

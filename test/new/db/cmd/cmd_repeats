@@ -1,3 +1,29 @@
+NAME=repeat-help
+FILE=-
+EXPECT=<<EOF
+16
+18
+EOF
+CMDS=<<EOF
+@@?~?
+@@@?~?
+EOF
+RUN
+
+NAME=repeat registers
+FILE=-
+EXPECT=<<EOF
+xmm0h: 
+xmm0l: 
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+?e @@@r~xmm0
+EOF
+RUN
+
+
 NAME=3p8
 FILE=-
 EXPECT=<<EOF
@@ -20,9 +46,7 @@ EXPECT=<<EOF
 00
 hi
 EOF
-CMDS=<<EOF
-3p8 1;?e hi
-EOF
+CMDS=3p8 1;?e hi
 RUN
 
 NAME=2p8 1;?e hi
@@ -32,9 +56,7 @@ EXPECT=<<EOF
 00
 hi
 EOF
-CMDS=<<EOF
-2p8 1;?e hi
-EOF
+CMDS=2p8 1;?e hi
 RUN
 
 NAME=3p8 1 && 2p8 4

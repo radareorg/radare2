@@ -37,9 +37,7 @@ EXPECT=<<EOF
 </plist>
 
 EOF
-CMDS=<<EOF
-iC
-EOF
+CMDS=iC
 RUN
 
 NAME=entitlements with rabin2
@@ -81,7 +79,5 @@ EXPECT=<<EOF
 </plist>
 
 EOF
-CMDS=<<EOF
-!rabin2 -OC `i~file:0[1]`
-EOF
+CMDS=!rabin2 -OC `i~file:0[1]`
 RUN

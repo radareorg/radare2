@@ -2,9 +2,7 @@ NAME=ELF: bomb - open
 FILE=../bins/elf/bomb
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=ELF: bomb - entrypoint
@@ -12,9 +10,7 @@ FILE=../bins/elf/bomb
 EXPECT=<<EOF
 0x400c90
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=ELF: bomb - pi 1

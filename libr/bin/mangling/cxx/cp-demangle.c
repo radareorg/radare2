@@ -82,7 +82,7 @@
 
    IN_GLIBCPP_V3
       If defined, this file defines only __cxa_demangle() and
-      __gcclibcxx_demangle_callback(), and no other publically visible
+      __gcclibcxx_demangle_callback(), and no other publicly visible
       functions or variables.
 
    STANDALONE_DEMANGLER
@@ -603,7 +603,7 @@ d_dump (struct demangle_component *dc, int indent)
       return;
     }
 
-  for (i = 0; i < indent; ++i)
+  for (i = 0; i < indent; i++)
     putchar (' ');
 
   switch (dc->type)

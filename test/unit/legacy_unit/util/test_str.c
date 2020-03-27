@@ -25,7 +25,7 @@ void check_int(int exp, int act, const char *desc) {
 
 void check_array(int *exp, int *act, int len, const char *desc) {
 	int i, err_found = 0;
-	for (i = 0; i < len; ++i) {
+	for (i = 0; i < len; i++) {
 		if (exp[i] != act[i]) {
 			printf("\x1b[31m[-][%s]\x1b[39;49m test failed element %d (actual = %d\x1b[39;49m, expected = %d\x1b[39;49m)\n", desc, i, act[i], exp[i]);
 			err_found = 1;
@@ -42,9 +42,9 @@ int main(int argc, char *argv[]) {
 	char tail[] = "a ";
 	char head_tail[] = " a ";
 
-	check ("a", r_str_trim_head(head), "trim head \" a\"");
-	check ("a", r_str_trim_tail(tail), "trim tail \"a \"");
-	check ("a", r_str_trim_head_tail(head_tail), "trim head tail \" a \"");
+	check ("a", r_str_trim_head (head), "trim head \" a\"");
+	check ("a", r_str_trim_tail (tail), "trim tail \"a \"");
+	check ("a", r_str_trim (head_tail), "trim head tail \" a \"");
 
 	char *crop =
 		"This is the first line\n"

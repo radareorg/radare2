@@ -46,6 +46,8 @@ R_API void r_line_clipboard_push (const char *str) {
 R_API void r_line_set_prompt(const char *prompt) {
 	free (I.prompt);
 	I.prompt = strdup (prompt);
+	RCons *cons = r_cons_singleton ();
+	I.cb_fkey = cons->cb_fkey;
 }
 
 // handle const or dynamic prompts?

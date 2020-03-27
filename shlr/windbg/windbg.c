@@ -477,7 +477,7 @@ RList *windbg_list_modules(WindCtx *ctx) {
 
 	// LIST_ENTRY InMemoryOrderModuleList
 	ut64 mlistoff = ctx->is_x64 ? 0x20 : 0x14;
-	
+
 	base = ptr + mlistoff;
 
 	windbg_read_at_uva (ctx, (uint8_t *) &ptr, base, 4 << ctx->is_x64);
@@ -1003,7 +1003,7 @@ int windbg_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 		return 0;
 	}
 
-	memcpy (buf, rr->data, R_MIN (size, pkt->length - sizeof (rr)));
+	memcpy (buf, rr->data, R_MIN (size, pkt->length - sizeof (*rr)));
 
 	free (pkt);
 

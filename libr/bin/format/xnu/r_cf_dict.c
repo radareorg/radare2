@@ -238,6 +238,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 						r_cf_value_dict_add (next_state->dict, key_value);
 					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
 						eprintf ("Missing value for key %s\n", next_state->key);
+						r_cf_value_free ((RCFValue *)value);
 						goto beach;
 					}
 				} else if (next_state->phase == R_CF_STATE_IN_ARRAY) {
@@ -245,6 +246,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 						r_cf_value_array_add (next_state->array, value);
 					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
 						eprintf ("Missing value for array\n");
+						r_cf_value_free ((RCFValue *)value);
 						goto beach;
 					}
 				}

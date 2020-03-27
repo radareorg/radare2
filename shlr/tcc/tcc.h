@@ -814,6 +814,11 @@ static inline int isnum(int c)
     return c >= '0' && c <= '9';
 }
 
+static inline int isdot(int c)
+{
+	return c == '.';
+}
+
 static inline int isoct(int c)
 {
     return c >= '0' && c <= '7';

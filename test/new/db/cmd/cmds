@@ -6,6 +6,8 @@ nop
 add byte [rax], al
 EOF
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 "wa nop;nop";pi 3
 EOF
 RUN
@@ -19,7 +21,9 @@ nop
 add byte [eax], al
 EOF
 CMDS=<<EOF
-e asm.arch=x86 ; e asm.bits=32 ;p8 1;"wa nop;nop";pi 3
+e asm.arch=x86
+e asm.bits=32
+p8 1;"wa nop;nop";pi 3
 EOF
 RUN
 
@@ -29,7 +33,9 @@ EXPECT=<<EOF
 @@llo;world
 EOF
 CMDS=<<EOF
-e asm.arch=x86 ; e asm.bits=32 ;"w hello;world";"wa inc eax;inc eax";psz
+e asm.arch=x86
+e asm.bits=32
+"w hello;world";"wa inc eax;inc eax";psz
 EOF
 RUN
 

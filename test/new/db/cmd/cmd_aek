@@ -26,7 +26,5 @@ EXPECT=<<EOF
 1
 0
 EOF
-CMDS=<<EOF
-aek-
-EOF
+CMDS=aek-
 RUN

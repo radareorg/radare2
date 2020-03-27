@@ -92,7 +92,7 @@ RUN
 
 NAME=invalid nums
 FILE=-
-CMDS=<<EXPECT
+CMDS=<<EOF
 e scr.interactive=true
 s beach; s
 s batch; s
@@ -135,7 +135,8 @@ s 1.5G; s
 s 2a1g; s
 s bg; s
 s g; s
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0xbeac
 0xbeac
 0xbeac
@@ -177,4 +178,5 @@ EXPECT=<<RUN
 0x60000000
 0x60000000
 0x60000000
+EOF
 RUN

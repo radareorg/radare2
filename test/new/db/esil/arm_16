@@ -1,6 +1,6 @@
 NAME=adr emulation
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e io.cache=true
 e asm.bits=16
 e asm.arch=arm
@@ -12,14 +12,16 @@ aeim
 aeip
 aes
 ps @ r1
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 radare_emulation
+EOF
 RUN
 
 
 NAME=addw emulation
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e io.cache=true
 e asm.bits=16
 e asm.arch=arm
@@ -31,13 +33,15 @@ aeim
 aeip
 aes
 ps @ r1
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 addw_emulation
+EOF
 RUN
 
 NAME=cmp neq unchanged zf
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
@@ -48,13 +52,15 @@ aer sp=0x00108000
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x80000000
+EOF
 RUN
 
 NAME=cmp neq changed zf
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
@@ -66,13 +72,15 @@ aer cpsr=0xffffffff
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x80000000
+EOF
 RUN
 
 NAME=cmp eq unchanged zf
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
@@ -85,13 +93,15 @@ aer cpsr=0x40000000
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x60000000
+EOF
 RUN
 
 NAME=cmp eq changed zf
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
 e asm.bits=16
@@ -104,8 +114,10 @@ aer cpsr=0x00000000
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x60000000
+EOF
 RUN
 
 NAME=ldr.w r0, [r0, r1, lsl 2]
@@ -654,28 +666,32 @@ RUN
 
 NAME=pc points to next instruction
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wx 7846 # mov r0, pc
 aes
 aer r0
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000002
+EOF
 RUN
 
 NAME=lr correct after bl
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wx 00f002f8 # bl 8
 aes
 aer lr
 aer pc
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000004
 0x00000008
+EOF
 RUN
 
 NAME=x86-16 dos syscall
@@ -744,9 +760,7 @@ RUN
 NAME=arm s110 syscalls /ad svc
 FILE=../bins/elf/BLE_Beacon2.NRF51822_OTA.bin
 ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
-CMDS=<<EOF
-/ad svc
-EOF
+CMDS=/ad svc
 EXPECT=<<EOF
 0x000168d0   # 2: svc 0x51
 0x000168f2   # 2: svc 0x61
@@ -780,9 +794,7 @@ NAME=arm s110 syscalls /as
 BROKEN=1
 FILE=../bins/elf/BLE_Beacon2.NRF51822_OTA.bin
 ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
-CMDS=<<EOF
-/as
-EOF
+CMDS=/as
 EXPECT=<<EOF
 0x000168d0 sd_evt_get
 0x000168f2 sd_ble_evt_get
@@ -834,9 +846,7 @@ RUN
 NAME=arm s110 syscalls asl ascii
 FILE=-
 ARGS=-aarm -b16 -easm.os=s110
-CMDS=<<EOF
-asl sd_evt_get
-EOF
+CMDS=asl sd_evt_get
 EXPECT=<<EOF
 81
 EOF
@@ -845,9 +855,7 @@ RUN
 NAME=arm s110 syscalls asl num
 FILE=-
 ARGS=-aarm -b16 -easm.os=s110
-CMDS=<<EOF
-asl 0x51
-EOF
+CMDS=asl 0x51
 EXPECT=<<EOF
 sd_evt_get
 EOF
@@ -856,9 +864,7 @@ RUN
 NAME=arm s110 syscalls asc num
 FILE=-
 ARGS=-aarm -b16 -easm.os=s110
-CMDS=<<EOF
-asc 0x51
-EOF
+CMDS=asc 0x51
 EXPECT=<<EOF
 #define SYS_sd_evt_get 81
 EOF
@@ -867,9 +873,7 @@ RUN
 NAME=arm s110 syscalls asca num
 FILE=-
 ARGS=-aarm -b16 -easm.os=s110
-CMDS=<<EOF
-asca 0x51
-EOF
+CMDS=asca 0x51
 EXPECT=<<EOF
 .equ SYS_sd_evt_get 81
 EOF
@@ -877,7 +881,7 @@ RUN
 
 NAME=Pre-indexed addressing mode
 FILE=malloc://0x200
-CMDS=<<EXPECT
+CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wx 10f8013f # ldrb r3, [r0, 1]!
@@ -885,8 +889,10 @@ aes
 aer pc
 aer r0
 aer r3
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x00000004
 0x00000001
 0x000000f8
+EOF
 RUN

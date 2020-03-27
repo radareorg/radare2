@@ -76,6 +76,10 @@ typedef struct r_cmd_t {
 	RList *lcmds;
 	RList *plist;
 	RCmdAlias aliases;
+#if USE_TREESITTER
+	void *language; // used to store TSLanguage *
+	HtUP *ts_symbols_ht;
+#endif
 } RCmd;
 
 // TODO WIP
@@ -87,6 +91,7 @@ typedef struct r_cmd_descriptor_t {
 	struct r_cmd_descriptor_t *sub[127];
 } RCmdDescriptor;
 
+// TODO: move into r_core.h
 typedef struct r_core_plugin_t {
 	const char *name;
 	const char *desc;

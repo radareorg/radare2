@@ -2,9 +2,7 @@ NAME=PE: corkami base.exe - open
 FILE=../bins/pe/base.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=Relocs
@@ -27,9 +25,7 @@ FILE=../bins/pe/base.exe
 EXPECT=<<EOF
 0x401280
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=PE: corkami base.exe - pi 1
@@ -37,7 +33,5 @@ FILE=../bins/pe/base.exe
 EXPECT=<<EOF
 push ebp
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN

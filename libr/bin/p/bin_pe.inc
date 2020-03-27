@@ -207,6 +207,7 @@ static RList* symbols(RBinFile *bf) {
 				break;
 			}
 			ptr->name = strdup ((char *)symbols[i].name);
+			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbols[i].forwarder);
 			//strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 			ptr->bind = R_BIN_BIND_GLOBAL_STR;
@@ -227,7 +228,9 @@ static RList* symbols(RBinFile *bf) {
 				break;
 			}
 			//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-			ptr->name = r_str_newf ("imp.%s", imports[i].name);
+			ptr->name = strdup ((const char *)imports[i].name);
+			ptr->libname = strdup ((const char *)imports[i].libname);
+			ptr->is_imported = true;
 			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
 			ptr->bind = "NONE";
 			ptr->type = R_BIN_TYPE_FUNC_STR;
@@ -287,6 +290,7 @@ static RList* imports(RBinFile *bf) {
 		}
 		filter_import (imports[i].name);
 		ptr->name = strdup ((char*)imports[i].name);
+		ptr->libname = strdup ((char*)imports[i].libname);
 		ptr->bind = "NONE";
 		ptr->type = "FUNC";
 		ptr->ordinal = imports[i].ordinal;
@@ -471,6 +475,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->actual_checksum  = strdup (sdb_fmt ("0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
+	ret->file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
 	Sdb *db = sdb_ns (bf->sdb, "pe", true);
 	sdb_bool_set (db, "canary", has_canary (bf), 0);
 	sdb_bool_set (db, "highva", haschr (bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
@@ -487,6 +492,7 @@ static RBinInfo* info(RBinFile *bf) {
 	sdb_num_set (db, "bits", ret->bits, 0);
 	sdb_set (db, "claimed_checksum", ret->claimed_checksum, 0);
 	sdb_set (db, "actual_checksum", ret->actual_checksum, 0);
+	sdb_bool_set (db, "is_authhash_valid", PE_(bin_pe_is_authhash_valid) (bf->o->bin_obj), 0);
 
 	ret->has_va = true;
 
@@ -517,4 +523,19 @@ static RBinInfo* info(RBinFile *bf) {
 
 static ut64 get_vaddr (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return baddr + vaddr;
+}
+
+static RList *compute_hashes(RBinFile *bf) {
+	RList *file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
+	const char *authentihash = PE_(bin_pe_compute_authentihash) (bf->o->bin_obj);
+	if (authentihash) {
+		RBinFileHash *authhash = R_NEW0 (RBinFileHash);
+		if (authhash) {
+			authhash->type = strdup ("authentihash");
+			authhash->hex = authentihash;
+			r_list_push (file_hashes, authhash);
+		}
+	}
+
+	return file_hashes;
 }

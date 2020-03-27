@@ -37,7 +37,7 @@ static inline bool is_word_break_char(char ch, bool mode) {
 	int len =
 		sizeof (word_break_characters) /
 		sizeof (word_break_characters[0]);
-	for (i = 0; i < len; ++i) {
+	for (i = 0; i < len; i++) {
 		if (ch == word_break_characters[i]) {
 			return true;
 		}
@@ -472,7 +472,7 @@ R_API int r_line_hist_load(const char *file) {
 		return false;
 	}
 	while (fgets (buf, sizeof (buf), fd) != NULL) {
-		buf[strlen (buf) - 1] = 0;
+		r_str_trim_tail (buf);
 		r_line_hist_add (buf);
 	}
 	fclose (fd);
@@ -786,7 +786,6 @@ R_API void r_line_autocomplete() {
 	}
 
 	if (I.prompt_type != R_LINE_PROMPT_DEFAULT || cons->show_autocomplete_widget) {
-
 		selection_widget_update ();
 		if (I.sel_widget) {
 			I.sel_widget->complete_common = false;
@@ -1267,10 +1266,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		I.buffer.index = I.buffer.length = strlen (I.contents);
 	}
 	if (I.disable) {
-		if (!fgets (I.buffer.data, R_LINE_BUFSIZE - 1, stdin)) {
+		if (!fgets (I.buffer.data, R_LINE_BUFSIZE, stdin)) {
 			return NULL;
 		}
-		I.buffer.data[strlen (I.buffer.data)] = '\0';
 		return (*I.buffer.data)? I.buffer.data: r_line_nullstr;
 	}
 
@@ -1480,9 +1478,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			unix_word_rubout ();
 			break;
 		case 24:// ^X
-			strncpy (I.buffer.data, I.buffer.data + I.buffer.index, I.buffer.length);
-			I.buffer.length -= I.buffer.index;
-			I.buffer.index = 0;
+			if (I.buffer.index > 0) {
+				strncpy (I.buffer.data, I.buffer.data + I.buffer.index, I.buffer.length);
+				I.buffer.length -= I.buffer.index;
+				I.buffer.index = 0;
+			}
 			break;
 		case 25:// ^Y - paste
 			paste ();
@@ -1703,7 +1703,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							break;
 						}
 						r_cons_readchar ();
-						ch = r_cons_readchar ();
+						int fkey = ch - '0';
 #endif
 						switch (ch) {
 						case 0x41:
@@ -1737,6 +1737,17 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							if (I.buffer.data[i] != ' ') {
 								I.buffer.index = I.buffer.length;
 							}
+							break;
+						default:
+#if __WINDOWS__
+							// ...
+#else
+							{
+								if (I.cb_fkey) {
+									I.cb_fkey (I.user, fkey);
+								}
+							}
+#endif
 							break;
 						}
 						r_cons_set_raw (1);
@@ -1774,7 +1785,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			__delete_prev_char ();
 			break;
-		case 9:	// tab
+		case 9:	// TAB tab
 			if (I.buffer.length > 0 && I.buffer.data[I.buffer.length - 1] == '@') {
 				strcpy (I.buffer.data + I.buffer.length, " ");
 				I.buffer.length++;

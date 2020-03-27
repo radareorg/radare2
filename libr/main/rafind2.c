@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,11 +12,12 @@
 #include <r_lib.h>
 #include <r_io.h>
 
+// XXX kill those globals
 static int showstr = 0;
 static int rad = 0;
 static int align = 0;
 static ut64 from = 0LL, to = -1;
-static char *mask = NULL;
+static const char *mask = NULL;
 static int nonstop = 0;
 static bool identify = false;
 static bool quiet = false;
@@ -117,7 +118,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return 1;
 }
 
-static int show_help(char *argv0, int line) {
+static int show_help(const char *argv0, int line) {
 	printf ("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
@@ -324,14 +325,16 @@ static int rafind_open_dir(const char *dir) {
 	return 0;
 }
 
-R_API int r_main_rafind2(int argc, char **argv) {
+R_API int r_main_rafind2(int argc, const char **argv) {
 	int c;
 
-	keywords = r_list_new ();
-	while ((c = r_getopt (argc, argv, "a:ie:b:jmM:s:S:x:Xzf:t:E:rqnhvZ")) != -1) {
+	keywords = r_list_newf (NULL);
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "a:ie:b:jmM:s:S:x:Xzf:t:E:rqnhvZ");
+	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
-			align = r_num_math (NULL, r_optarg);
+			align = r_num_math (NULL, opt.arg);
 			break;
 		case 'r':
 			rad = 1;
@@ -351,42 +354,42 @@ R_API int r_main_rafind2(int argc, char **argv) {
 		case 'e':
 			mode = R_SEARCH_REGEXP;
 			hexstr = 0;
-			r_list_append (keywords, r_optarg);
+			r_list_append (keywords, (void*)opt.arg);
 			break;
 		case 'E':
 			mode = R_SEARCH_ESIL;
-			r_list_append (keywords, r_optarg);
+			r_list_append (keywords, (void*)opt.arg);
 			break;
 		case 's':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 0;
 			widestr = 0;
-			r_list_append (keywords, r_optarg);
+			r_list_append (keywords, (void*)opt.arg);
 			break;
 		case 'S':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 0;
 			widestr = 1;
-			r_list_append (keywords, r_optarg);
+			r_list_append (keywords, (void*)opt.arg);
 			break;
 		case 'b':
-			bsize = r_num_math (NULL, r_optarg);
+			bsize = r_num_math (NULL, opt.arg);
 			break;
 		case 'x':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 1;
 			widestr = 0;
-			r_list_append (keywords, r_optarg);
+			r_list_append (keywords, (void*)opt.arg);
 			break;
 		case 'M':
 			// XXX should be from hexbin
-			mask = r_optarg;
+			mask = opt.arg;
 			break;
 		case 'f':
-			from = r_num_math (NULL, r_optarg);
+			from = r_num_math (NULL, opt.arg);
 			break;
 		case 't':
-			to = r_num_math (NULL, r_optarg);
+			to = r_num_math (NULL, opt.arg);
 			break;
 		case 'X':
 			pr = r_print_new ();
@@ -408,18 +411,18 @@ R_API int r_main_rafind2(int argc, char **argv) {
 			return show_help (argv[0], 1);
 		}
 	}
-	if (r_optind == argc) {
+	if (opt.ind == argc) {
 		return show_help (argv[0], 1);
 	}
 	/* Enable quiet mode if searching just a single file */
-	if (r_optind + 1 == argc && !r_file_is_directory (argv[r_optind])) {
+	if (opt.ind + 1 == argc && !r_file_is_directory (argv[opt.ind])) {
 		quiet = true;
 	}
 	if (json) {
 		printf ("[");
 	}
-	for (; r_optind < argc; r_optind++) {
-		rafind_open (argv[r_optind]);
+	for (; opt.ind < argc; opt.ind++) {
+		rafind_open (argv[opt.ind]);
 	}
 	if (json) {
 		printf ("]\n");

@@ -23,16 +23,15 @@ static char* is_type(char *type) {
  * \param name the datatype whose size if to be stored
  */
 static void save_type_size(Sdb *sdb_types, char *name) {
-	char *type = NULL;
+	const char *type = NULL;
 	r_return_if_fail (sdb_types && name);
-	if (!sdb_exists (sdb_types, name) || !(type = sdb_get (sdb_types, name, 0))) {
+	if (!sdb_exists (sdb_types, name) || !(type = sdb_const_get (sdb_types, name, 0))) {
 		return;
 	}
 	char *type_name_size = r_str_newf ("%s.%s.%s", type, name, "!size");
 	r_return_if_fail (type_name_size);
 	int size = r_type_get_bitsize (sdb_types, name);
 	sdb_set (sdb_types, type_name_size, sdb_fmt ("%d", size), 0);
-	free (type);
 	free (type_name_size);
 }
 

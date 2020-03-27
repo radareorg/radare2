@@ -41,18 +41,14 @@ NAME=no flags
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-f
-EOF
+CMDS=f
 RUN
 
 NAME=no flags*
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-f*
-EOF
+CMDS=f*
 RUN
 
 NAME=1: fs *
@@ -246,8 +242,9 @@ RUN
 
 NAME=fj
 FILE=malloc://1024
-EXPECT='[{"name":"bloh","size":3,"offset":2},{"name":"blah","size":10,"offset":11}]
-'
+EXPECT=<<EOF
+[{"name":"bloh","size":3,"offset":2},{"name":"blah","size":10,"offset":11}]
+EOF
 CMDS=<<EOF
 f blah 0x0000000a @ 0x0000000b
 f bloh 0x00000003 @ 0x00000002
@@ -301,6 +298,26 @@ f flag1 @ 0x5
 f flag2 @ 0x5
 f flag3 @ 0x5
 fd. 0x5
+EOF
+RUN
+
+NAME=fd with realname
+FILE=malloc://1024
+EXPECT=<<EOF
+pingas
+pingas + 4853
+Snooping as usual I see...
+Snooping as usual I see... + 4853
+EOF
+CMDS=<<EOF
+f pingas @ 0x42
+fN pingas Snooping as usual I see...
+e asm.flags.real=0
+fd @ 0x42
+fd @ 0x1337
+e asm.flags.real=1
+fd @ 0x42
+fd @ 0x1337
 EOF
 RUN
 
@@ -439,8 +456,9 @@ RUN
 
 NAME=flags (JSON)
 FILE=-
-EXPECT='[{"name":"cat","size":1,"offset":0},{"name":"rimmer","size":12,"offset":0},{"name":"skutter","size":1,"offset":12},{"name":"lister","size":32,"offset":666},{"name":"kryten","size":32,"offset":666}]
-'
+EXPECT=<<EOF
+[{"name":"cat","size":1,"offset":0},{"name":"rimmer","size":12,"offset":0},{"name":"skutter","size":1,"offset":12},{"name":"lister","size":32,"offset":666},{"name":"kryten","size":32,"offset":666}]
+EOF
 CMDS=<<EOF
 # Add flags.
 f cat
@@ -537,9 +555,7 @@ EXPECT=<<EOF
 0x0049ad40 168 obj._IO_helper_jumps
 0x0049b680 168 obj._IO_helper_jumps_1
 EOF
-CMDS=<<EOF
-f~obj._IO_helper_jumps
-EOF
+CMDS=f~obj._IO_helper_jumps
 RUN
 
 NAME=flag renaming and reusing the old name for something new

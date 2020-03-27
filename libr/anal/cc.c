@@ -79,12 +79,21 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	if (argn) {
 		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", argn);
 	}
+	const char *self = r_anal_cc_self (anal, name);
+	if (self) {
+		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", self);
+	}
+	const char *error = r_anal_cc_error (anal, name);
+	if (error) {
+		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", error);
+	}
+
 	r_strbuf_appendf (sb, ");");
 	return r_strbuf_drain (sb);
 }
 
 
-R_API bool r_anal_cc_exist (RAnal *anal, const char *convention) {
+R_API bool r_anal_cc_exist(RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, false);
 	const char *x = sdb_const_get (DB, convention, 0);
 	return x && *x && !strcmp (x, "cc");
@@ -102,6 +111,20 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 		ret = sdb_const_get (DB, query, 0);
 	}
 	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
+}
+
+R_API const char *r_anal_cc_self(RAnal *anal, const char *convention) {
+	r_return_val_if_fail (anal && convention, NULL);
+	const char *query = sdb_fmt ("cc.%s.self", convention);
+	const char *self = sdb_const_get (DB, query, 0);
+	return self? r_str_constpool_get (&anal->constpool, self): NULL;
+}
+
+R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
+	r_return_val_if_fail (anal && convention, NULL);
+	const char *query = sdb_fmt ("cc.%s.error", convention);
+	const char *error = sdb_const_get (DB, query, 0);
+	return error? r_str_constpool_get (&anal->constpool, error): NULL;
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {

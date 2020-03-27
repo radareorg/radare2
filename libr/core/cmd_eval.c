@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2019 - pancake */
+/* radare2 - LGPL - Copyright 2009-2020 - pancake */
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -356,6 +356,8 @@ static int cmd_eval(void *data, const char *input) {
 			v = strchr (k, '=');
 			if (v) {
 				*v++ = 0;
+				r_str_trim (k);
+				r_str_trim (v);
 				r_sys_setenv (k, v);
 			}
 			free (k);
@@ -443,33 +445,65 @@ static int cmd_eval(void *data, const char *input) {
 			char *color_code = NULL;
 			char *word = NULL;
 			int argc = 0;
-			char** argv = r_str_argv (input + 4, &argc);
+			int delta = (input[2])? 3: 2;
+			char** argv = r_str_argv (r_str_trim_head_ro (input + delta), &argc);
 			switch (input[2]) {
 			case '?': {
 				const char *helpmsg[] = {
 					"Usage ecH[iw-?]","","",
 					"ecHi","[color]","highlight current instruction with 'color' background",
 					"ecHw","[word] [color]","highlight 'word ' in current instruction with 'color' background",
+					"ecH","","list all the highlight rules",
+					"ecH.","","show highlight rule in current offset",
+					"ecH-","*","remove all the highlight hints",
 					"ecH-","","remove all highlights on current instruction",
 					NULL
 				};
 				r_core_cmd_help (core, helpmsg);
 				}
-				break;
-			case '-':
-				r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
+				r_str_argv_free (argv);
+				return false;
+			case '-': // ecH-
+				if (input[3] == '*') {
+					r_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
+				} else {
+					r_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, 1);
+					// r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
+				}
+				r_str_argv_free (argv);
+				return false;
+			case '.':
+				r_meta_list_at (core->anal, R_META_TYPE_HIGHLIGHT, 0, core->offset);
+				r_str_argv_free (argv);
 				return false;
 			case '\0':
+				r_meta_list (core->anal, R_META_TYPE_HIGHLIGHT, 0);
+				r_str_argv_free (argv);
+				return false;
+			case 'j':
+				r_meta_list (core->anal, R_META_TYPE_HIGHLIGHT, 'j');
+				r_str_argv_free (argv);
+				return false;
+			case '*':
+				r_meta_list (core->anal, R_META_TYPE_HIGHLIGHT, '*');
+				r_str_argv_free (argv);
+				return false;
+			case ' ':
 			case 'i': // "ecHi"
 				if (argc) {
 					char *dup = r_str_newf ("bgonly %s", argv[0]);
 					color_code = r_cons_pal_parse (dup, NULL);
 					R_FREE (dup);
+					if (!color_code) {
+						eprintf ("Unknown color %s\n", argv[0]);
+						r_str_argv_free (argv);
+						return true;
+					}
 				}
 				break;
 			case 'w': // "ecHw"
 				if (!argc) {
-					eprintf ("Usage: echw word [color]\n");
+					eprintf ("Usage: ecHw word [color]\n");
 					r_str_argv_free (argv);
 					return true;
 				}
@@ -477,14 +511,13 @@ static int cmd_eval(void *data, const char *input) {
 				if (argc > 1) {
 					char *dup = r_str_newf ("bgonly %s", argv[1]);
 					color_code = r_cons_pal_parse (dup, NULL);
+					R_FREE (dup);
 					if (!color_code) {
 						eprintf ("Unknown color %s\n", argv[1]);
 						r_str_argv_free (argv);
-						free (dup);
 						free (word);
 						return true;
 					}
-					R_FREE (dup);
 				}
 				break;
 			default:
@@ -492,6 +525,7 @@ static int cmd_eval(void *data, const char *input) {
 				r_str_argv_free (argv);
 				return true;
 			}
+			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
 			char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
 			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_singleton ()->context->pal.wordhl);
 			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
@@ -499,27 +533,27 @@ static int cmd_eval(void *data, const char *input) {
 			R_FREE (word);
 			R_FREE (dup);
 			break;
-		}
+			  }
 		default: {
-			char *p = strdup (input + 2);
-			char *q = strchr (p, '=');
-			if (!q) {
-				q = strchr (p, ' ');
-			}
-			if (q) {
-				// Set color
-				*q++ = 0;
-				if (r_cons_pal_set (p, q)) {
-					r_cons_pal_update_event ();
-				}
-			} else {
-				char color[32];
-				RColor rcolor = r_cons_pal_get (p);
-				r_cons_rgb_str (color, sizeof (color), &rcolor);
-				eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
-			}
-			free (p);
-		}
+				 char *p = strdup (input + 2);
+				 char *q = strchr (p, '=');
+				 if (!q) {
+					 q = strchr (p, ' ');
+				 }
+				 if (q) {
+					 // Set color
+					 *q++ = 0;
+					 if (r_cons_pal_set (p, q)) {
+						 r_cons_pal_update_event ();
+					 }
+				 } else {
+					 char color[32];
+					 RColor rcolor = r_cons_pal_get (p);
+					 r_cons_rgb_str (color, sizeof (color), &rcolor);
+					 eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
+				 }
+				 free (p);
+			 }
 		}
 		break;
 	case 'd': // "ed"
@@ -565,7 +599,7 @@ static int cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case '!': // "e!"
-		input = r_str_trim_ro (input + 1);
+		input = r_str_trim_head_ro (input + 1);
 		if (!r_config_toggle (core->config, input)) {
 			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
 		}

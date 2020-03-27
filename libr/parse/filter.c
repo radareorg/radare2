@@ -189,7 +189,15 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				if (*ptr2 != 0x1b) {
 					ptr2++;
 				}
-				snprintf (str, len, "%s%s%s", data, fcn->name,
+				const char *name = fcn->name;
+				// TODO: implement realname with flags, because functions dont hold this yet
+				if (f->realnames) {
+					flag = p->flag_get (f, off);
+					if (flag && flag->realname) {
+						name = flag->realname;
+					}
+				}
+				snprintf (str, len, "%s%s%s", data, name,
 					(ptr != ptr2)? ptr2: "");
 				return true;
 			}

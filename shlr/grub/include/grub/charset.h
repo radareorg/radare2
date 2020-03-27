@@ -49,7 +49,7 @@ grub_utf8_to_utf16 (grub_uint16_t *dest, grub_size_t destsize,
 
 /* Convert UTF-16 to UTF-8.  */
 static inline grub_uint8_t *
-grub_utf16_to_utf8 (grub_uint8_t *dest, grub_uint16_t *src,
+grub_utf16_to_utf8 (grub_uint8_t *dest, grub_unaligned_uint16_t *src,
 		    grub_size_t size)
 {
   grub_uint32_t code_high = 0;

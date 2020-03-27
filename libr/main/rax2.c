@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake */
+/* radare - LGPL - Copyright 2007-2020 - pancake */
 
 #include <r_main.h>
 #include <r_util.h>
@@ -6,16 +6,48 @@
 
 // don't use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
+static int rax(RNum *num, char *str, int len, int last, ut64 *flags, int *fm);
 
-static RNum *num;
-static int help();
-static ut64 flags = 0;
-static int use_stdin();
-static int force_mode = 0;
-static int rax(char *str, int len, int last);
-static const char *nl = "";
+static int use_stdin(RNum *num, ut64 *flags, int *fm) {
+	if (!flags) {
+		return 0;
+	}
+	char *buf = calloc (1, STDIN_BUFFER_SIZE + 1);
+	int l;
+	if (!buf) {
+		return 0;
+	}
+	if (!(*flags & (1<<14))) {
+		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
+			// make sure we don't read beyond boundaries
+			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
+			if (n < 1) {
+				break;
+			}
+			l += n;
+			if (buf[l - 1] == 0) {
+				l--;
+				continue;
+			}
+			buf[n] = 0;
+			// if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
+			buf[STDIN_BUFFER_SIZE] = '\0';
+			if (!rax (num, buf, l, 0, flags, fm)) {
+				break;
+			}
+			l = -1;
+		}
+	} else {
+		l = 1;
+	}
+	if (l > 0) {
+		rax (num, buf, l, 0, flags, fm);
+	}
+	free (buf);
+	return 0;
+}
 
-static int format_output(char mode, const char *s) {
+static int format_output(RNum *num, char mode, const char *s, int force_mode, ut64 flags) {
 	ut64 n = r_num_math (num, s);
 	char strbits[65];
 	if (force_mode) {
@@ -121,7 +153,9 @@ static int help() {
 	return true;
 }
 
-static int rax(char *str, int len, int last) {
+static int rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
+	ut64 flags = *_flags;
+	const char *nl = "";
 	ut8 *buf;
 	char *p, out_mode = (flags & 128)? 'I': '0';
 	int i;
@@ -132,6 +166,7 @@ static int rax(char *str, int len, int last) {
 		goto dotherax;
 	}
 	if (*str == '=') {
+		int force_mode = 0;
 		switch (atoi (str + 1)) {
 		case 2: force_mode = 'B'; break;
 		case 3: force_mode = 'T'; break;
@@ -140,6 +175,7 @@ static int rax(char *str, int len, int last) {
 		case 16: force_mode = '0'; break;
 		case 0: force_mode = str[1]; break;
 		}
+		*fm = force_mode;
 		return true;
 	}
 	if (*str == '-') {
@@ -147,7 +183,7 @@ static int rax(char *str, int len, int last) {
 			switch (str[1]) {
 			case 'l': nl = "\n"; break;
 			case 'a': print_ascii_table (); return 0;
-			case 's': flags ^= 1; break;
+			case 's': flags ^= 1 << 0; break;
 			case 'e': flags ^= 1 << 1; break;
 			case 'S': flags ^= 1 << 2; break;
 			case 'b': flags ^= 1 << 3; break;
@@ -170,7 +206,9 @@ static int rax(char *str, int len, int last) {
 			case 'i': flags ^= 1 << 21; break;
 			case 'o': flags ^= 1 << 22; break;
 			case 'v': return r_main_version_print ("rax2");
-			case '\0': return !use_stdin ();
+			case '\0':
+				*_flags = flags;
+				return !use_stdin (num, _flags, fm);
 			default:
 				/* not as complete as for positive numbers */
 				out_mode = (flags ^ 32)? '0': 'I';
@@ -180,18 +218,20 @@ static int rax(char *str, int len, int last) {
 					} else if (r_str_endswith (str, "f")) {
 						out_mode = 'l';
 					}
-					return format_output (out_mode, str);
+					return format_output (num, out_mode, str, *fm, flags);
 				}
 				printf ("Usage: rax2 [options] [expr ...]\n");
 				return help ();
 			}
 			str++;
 		}
+		*_flags = flags;
 		if (last) {
-			return !use_stdin ();
+			return !use_stdin (num, _flags, fm);
 		}
 		return true;
 	}
+	*_flags = flags;
 	if (!flags && r_str_nlen (str, 2) == 1) {
 		if (*str == 'q') {
 			return false;
@@ -357,9 +397,9 @@ dotherax:
 	} else if (flags & (1 << 11)) { // -t
 		RList *split = r_str_split_list (str, "GMT", 0);
 		char *ts = r_list_head (split)->data;
-		char *gmt = NULL;
+		const char *gmt = NULL;
 		if (r_list_length (split) >= 2 && strlen (r_list_head (split)->n->data) > 2) {
-			gmt = (char *) r_list_head (split)->n->data + 2;
+			gmt = (const char*) r_list_head (split)->n->data + 2;
 		}
 		ut32 n = r_num_math (num, ts);
 		RPrint *p = r_print_new ();
@@ -556,60 +596,26 @@ dotherax:
 	}
 	while ((p = strchr (str, ' '))) {
 		*p = 0;
-		format_output (out_mode, str);
+		format_output (num, out_mode, str, *fm, flags);
 		str = p + 1;
 	}
 	if (*str) {
-		format_output (out_mode, str);
+		format_output (num, out_mode, str, *fm, flags);
 	}
 	return true;
 }
 
-static int use_stdin() {
-	char *buf = calloc (1, STDIN_BUFFER_SIZE + 1);
-	int l; // , sflag = (flags & 5);
-	if (!buf) {
-		return 0;
-	}
-	if (!(flags & (1<<14))) {
-		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
-			// make sure we don't read beyond boundaries
-			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
-			if (n < 1) {
-				break;
-			}
-			l += n;
-			if (buf[l - 1] == 0) {
-				l--;
-				continue;
-			}
-			buf[n] = 0;
-			// if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
-			buf[STDIN_BUFFER_SIZE] = '\0';
-			if (!rax (buf, l, 0)) {
-				break;
-			}
-			l = -1;
-		}
-	} else {
-		l = 1;
-	}
-	if (l > 0) {
-		rax (buf, l, 0);
-	}
-	free (buf);
-	return 0;
-}
-
-R_API int r_main_rax2(int argc, char **argv) {
-	int i;
-	num = r_num_new (NULL, NULL, NULL);
+R_API int r_main_rax2(int argc, const char **argv) {
+	int i, fm = 0;
+	RNum *num = r_num_new (NULL, NULL, NULL);
 	if (argc == 1) {
-		use_stdin ();
+		use_stdin (num, 0, &fm);
 	} else {
+		ut64 flags = 0;
 		for (i = 1; i < argc; i++) {
-			r_str_unescape (argv[i]);
-			rax (argv[i], 0, i == argc - 1);
+			char *argv_i = strdup (argv[i]);
+			r_str_unescape (argv_i);
+			rax (num, argv_i, 0, i == argc - 1, &flags, &fm);
 		}
 	}
 	r_num_free (num);

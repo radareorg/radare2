@@ -2,7 +2,5 @@ NAME=PE: corkami nothing.dll - open
 FILE=../bins/pe/nothing.dll
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN

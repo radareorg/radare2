@@ -6,9 +6,7 @@ vaddr=0x000002e4 paddr=0x000002e4 haddr=0x00000018 hvaddr=0x00000018 type=progra
 
 1 entrypoints
 EOF
-CMDS=<<EOF
-ie
-EOF
+CMDS=ie
 RUN
 
 NAME=2: thumb entry0
@@ -20,9 +18,7 @@ vaddr=0x00000344 paddr=0x00000344 hvaddr=0x00001ed8 hpaddr=0x00000ed8 type=init
 
 2 entrypoints
 EOF
-CMDS=<<EOF
-iee
-EOF
+CMDS=iee
 RUN
 
 NAME=3: thumb entry0
@@ -30,9 +26,7 @@ FILE=../bins/elf/analysis/thumb
 EXPECT=<<EOF
 0x82f0
 EOF
-CMDS=<<EOF
-?v entry0
-EOF
+CMDS=?v entry0
 RUN
 
 NAME=thumb main
@@ -40,9 +34,7 @@ FILE=../bins/elf/analysis/thumb
 EXPECT=<<EOF
 0x8424
 EOF
-CMDS=<<EOF
-?v sym.main
-EOF
+CMDS=?v sym.main
 RUN
 
 NAME=thumb main alignment
@@ -63,9 +55,7 @@ EXPECT=<<EOF
 107 0x00000424 0x00008424 GLOBAL   FUNC   16 main
 001 0x000002bc 0x000082bc GLOBAL   FUNC   16 imp.__libc_start_main
 EOF
-CMDS=<<EOF
-is~main
-EOF
+CMDS=is~main
 RUN
 
 NAME=thumb disasm
@@ -73,9 +63,7 @@ FILE=../bins/elf/analysis/thumb
 EXPECT=<<EOF
 push {r7, lr}
 EOF
-CMDS=<<EOF
-pi 1@ sym.main
-EOF
+CMDS=pi 1@ sym.main
 RUN
 
 NAME=thumb disasm 2
@@ -89,9 +77,7 @@ adds r0, r3, 0
 mov sp, r7
 pop {r7, pc}
 EOF
-CMDS=<<EOF
-pi 7@ sym.main
-EOF
+CMDS=pi 7@ sym.main
 RUN
 
 NAME=mix arm and thumb
@@ -112,9 +98,7 @@ ldr r8, [0x00008494]
 bl sym._init
 ldr r3, [0x00008498]
 EOF
-CMDS=<<EOF
-pi 14@ sym.main
-EOF
+CMDS=pi 14@ sym.main
 RUN
 
 NAME=arm disasm entry0
@@ -122,9 +106,7 @@ FILE=../bins/elf/analysis/thumb
 EXPECT=<<EOF
 push {r7, lr}
 EOF
-CMDS=<<EOF
-pi 1@ sym.main
-EOF
+CMDS=pi 1@ sym.main
 RUN
 
 NAME=thumb anal expand
@@ -153,9 +135,7 @@ mov r0, r3
 bl sym.imp.__cxa_finalize
 pop {fp, pc}
 EOF
-CMDS=<<EOF
-pi 7@entry0
-EOF
+CMDS=pi 7@entry0
 RUN
 
 NAME=thumb at sym.JNI_OnLoad
@@ -168,7 +148,5 @@ ldr r0, [0x000010e0]
 ldr r1, [0x000010e4]
 add r0, pc
 EOF
-CMDS=<<EOF
-pi 6@sym.JNI_OnLoad
-EOF
+CMDS=pi 6@sym.JNI_OnLoad
 RUN

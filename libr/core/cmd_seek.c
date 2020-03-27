@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include "r_types.h"
 #include "r_config.h"
@@ -223,7 +223,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 	RCore *core = (RCore *)data;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
-		arg = r_str_trim_ro (arg + 1);
+		arg = r_str_trim_head_ro (arg + 1);
 	}
 	switch (*input) {
 	case '?': // "sort?"
@@ -551,7 +551,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			PJ *pj = pj_new ();
 			pj_a (pj);
-			for (i = 0; i < lsz; ++i) {
+			for (i = 0; i < lsz; i++) {
 				ut64 *addr = r_list_get_n (addrs, i);
 				const char *name = r_list_get_n (names, i);
 				pj_o (pj);
@@ -729,11 +729,11 @@ static int cmd_seek(void *data, const char *input) {
 		case '\0': // "sf"
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
-				r_core_seek (core, fcn->addr + r_anal_fcn_size (fcn), 1);
+				r_core_seek (core, r_anal_function_max_addr (fcn), 1);
 			}
 			break;
 		case ' ': // "sf "
-			fcn = r_anal_fcn_find_name (core->anal, input + 2);
+			fcn = r_anal_get_function_byname (core->anal, input + 2);
 			if (fcn) {
 				r_core_seek (core, fcn->addr, 1);
 			}

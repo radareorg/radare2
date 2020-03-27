@@ -3,9 +3,7 @@ FILE=../bins/pe/tls_noEP.exe
 ARGS=-A
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=1: PE: tls_noEP - entrypoint
@@ -20,9 +18,7 @@ vaddr=0x00401000 paddr=0x00000200 haddr=0x00000068 type=program
 
 1 entrypoints
 EOF
-CMDS=<<EOF
-ieee
-EOF
+CMDS=ieee
 RUN
 
 NAME=2: PE: tls_noEP - entrypoint
@@ -34,7 +30,5 @@ add esp, 4
 nop
 mov dword [0x401184], 0x401070
 EOF
-CMDS=<<EOF
-pi 5
-EOF
+CMDS=pi 5
 RUN

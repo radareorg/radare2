@@ -45,18 +45,14 @@ FILE=-
 EXPECT=<<EOF
 win
 EOF
-CMDS=<<EOF
-?= 33;?? ?e win
-EOF
+CMDS=?= 33;?? ?e win
 RUN
 
 NAME=oneline condition 33?!
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-?= 33;?! ?e win
-EOF
+CMDS=?= 33;?! ?e win
 RUN
 
 NAME=oneline condition 0?!
@@ -64,16 +60,12 @@ FILE=-
 EXPECT=<<EOF
 win
 EOF
-CMDS=<<EOF
-?= 0;?! ?e win
-EOF
+CMDS=?= 0;?! ?e win
 RUN
 
 NAME=oneline condition 0??
 FILE=-
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-?= 0;?? ?e win
-EOF
+CMDS=?= 0;?? ?e win
 RUN

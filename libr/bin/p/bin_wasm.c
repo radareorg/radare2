@@ -8,6 +8,7 @@
 #include <r_bin.h>
 
 #include "wasm/wasm.h"
+#include "../format/wasm/wasm.h"
 
 static bool check_buffer (RBuffer *rbuf) {
 	ut8 buf[4] = { 0 };
@@ -151,7 +152,9 @@ static RList *symbols (RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			goto bad_alloc;
 		}
-		ptr->name = r_str_newf ("imp.%s.%s", imp->module_str, imp->field_str);
+		ptr->name = strdup (imp->field_str);
+		ptr->libname = strdup (imp->module_str);
+		ptr->is_imported = true;
 		ptr->forwarder = "NONE";
 		ptr->bind = "NONE";
 		switch (imp->kind) {

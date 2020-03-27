@@ -42,11 +42,12 @@ static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	do {
 		if (p == end) {
 			eprintf ("malformed uleb128\n");
-			break;
+			return UT64_MAX;
 		}
 		slice = *p & 0x7f;
 		if (bit > 63) {
 			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x"\n", bit, result);
+			return UT64_MAX;
 		} else {
 			result |= (slice << bit);
 			bit += 7;
@@ -1940,8 +1941,10 @@ struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) 
 		bin->header_at = options->header_at;
 	}
 	bin->file = file;
-	ut8 *buf;
-	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) {
+	size_t binsz;
+	ut8 *buf = (ut8 *)r_file_slurp (file, &binsz);
+	bin->size = binsz;
+	if (!buf) {
 		return MACH0_(mach0_free)(bin);
 	}
 	bin->b = r_buf_new ();
@@ -2172,6 +2175,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 	symbol->offset = 0LL;
 	symbol->addr = 0LL;
 	symbol->name[0] = '\0';
+	symbol->is_imported = true;
 
 	if (!bin || !bin->sects) {
 		return false;
@@ -2222,7 +2226,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 				if (*symstr == '_') {
 					symstr++;
 				}
-				snprintf (symbol->name, R_BIN_MACH0_STRING_LENGTH, "imp.%s", symstr);
+				snprintf (symbol->name, R_BIN_MACH0_STRING_LENGTH, "%s", symstr);
 				return true;
 			}
 		}
@@ -2307,14 +2311,27 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		RTrieState * state = r_list_get_top (states);
 		ur.p = state->node;
 		ut64 len = ULEB();
+		if (len == UT64_MAX) {
+			break;
+		}
 		if (len) {
 			ut64 flags = ULEB();
+		if (flags == UT64_MAX) {
+			break;
+		}
 			ut64 offset = ULEB();
+		if (offset == UT64_MAX) {
+			break;
+		}
 			ut64 resolver = 0;
 			bool isReexport = flags & EXPORT_SYMBOL_FLAGS_REEXPORT;
 			bool hasResolver = flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER;
 			if (hasResolver) {
-				resolver = ULEB() + bin->header_at;
+				ut64 res = ULEB();
+				if (res == UT64_MAX) {
+					break;
+				}
+				resolver = res + bin->header_at;
 			} else if (isReexport) {
 				ur.p += strlen ((char*) ur.p) + 1;
 				// TODO: handle this
@@ -2354,6 +2371,9 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			}
 		}
 		ut64 child_count = ULEB();
+		if (child_count == UT64_MAX) {
+			goto beach;
+		}
 		if (state->i == child_count) {
 			r_list_pop (states);
 			continue;
@@ -2374,7 +2394,11 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			R_FREE (next);
 			goto beach;
 		}
-		next->node = ULEB() + trie;
+		ut64 tr = ULEB();
+		if (tr == UT64_MAX) {
+			goto beach;
+		}
+		next->node = tr + trie;
 		if (next->node >= end) {
 			eprintf ("malformed export trie\n");
 			R_FREE (next);
@@ -2545,6 +2569,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			if (!sym->name) {
 				sym->name = r_str_newf ("unk%d", i);
 			}
+			sym->is_imported = symbol.is_imported;
 			r_list_append (list, sym);
 		}
 	}
@@ -2561,6 +2586,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			/* is symbol */
 			sym->vaddr = st->n_value;
 			sym->paddr = addr_to_offset (bin, symbols[j].addr);
+			sym->is_imported = symbols[j].is_imported;
 			if (st->n_type & N_EXT) {
 				sym->type = "EXT";
 			} else {
@@ -2640,9 +2666,11 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 		symbols_size = (symbols_count + 1) * 2 * sizeof (struct symbol_t);
 
 		if (symbols_size < 1) {
+			ht_pp_free (hash);
 			return NULL;
 		}
 		if (!(symbols = calloc (1, symbols_size))) {
+			ht_pp_free (hash);
 			return NULL;
 		}
 		bin->main_addr = 0;
@@ -2679,6 +2707,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
 				symbols[j].addr = bin->symtab[i].n_value;
 				symbols[j].size = 0; /* TODO: Is it anywhere? */
+				symbols[j].is_imported = false;
 				if (bin->symtab[i].n_type & N_EXT) {
 					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
 				} else {
@@ -2773,9 +2802,11 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 	} else {
 		symbols_size = (symbols_count + 1) * sizeof (struct symbol_t);
 		if (symbols_size < 1) {
+			ht_pp_free (hash);
 			return NULL;
 		}
 		if (!(symbols = calloc (1, symbols_size))) {
+			ht_pp_free (hash);
 			return NULL;
 		}
 	}
@@ -3263,7 +3294,7 @@ ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *bin) {
 	if (bin->hdr.filetype != MH_EXECUTE && bin->hdr.filetype != MH_DYLINKER) {
 		return 0;
 	}
-	for (i = 0; i < bin->nsegs; ++i) {
+	for (i = 0; i < bin->nsegs; i++) {
 		if (bin->segs[i].fileoff == 0 && bin->segs[i].filesize != 0) {
 			return bin->segs[i].vmaddr;
 		}

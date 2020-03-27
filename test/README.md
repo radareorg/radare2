@@ -26,7 +26,7 @@ Usage
  * To run *all* tests, use `make -k all`.
  * To execute only the unit tests use `make -k unit_tests`.
  * To execute only the regressions tests use `make -k js-tests`.
- * To execute and autofix a specific set of tests use `node node_modules/node-r2r/bin/r2r.js -i db/XXXX/YYYY` within new directory, this will provide a dialog in which you can ask the program to replace the expected output with the current output of radare2.
+ * To execute and autofix a specific set of tests use `node node_modules/node-r2r/bin/r2r.js -i db/XXXX/YYYY` within the `test/new` directory, this will provide a dialog in which you can ask the program to replace the expected output with the current output of radare2.
 
 Failure Levels
 --------------

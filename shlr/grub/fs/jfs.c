@@ -147,7 +147,7 @@ struct grub_jfs_leaf_dirent
 
   /* The size of the name.  */
   grub_uint8_t len;
-  grub_uint16_t namepart[11];
+  grub_unaligned_uint16_t namepart[11];
   grub_uint32_t index;
 });
 
@@ -159,7 +159,7 @@ struct grub_jfs_leaf_next_dirent
 {
   grub_uint8_t next;
   grub_uint8_t len;
-  grub_uint16_t namepart[15];
+  grub_unaligned_uint16_t namepart[15];
 });
 
 R_PACKED (

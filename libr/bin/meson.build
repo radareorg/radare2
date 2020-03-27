@@ -21,6 +21,7 @@ r_bin_sources = [
   'p/bin_dbginfo_elf.c',
   'p/bin_dbginfo_elf64.c',
   'p/bin_dex.c',
+  'p/bin_dmp64.c',
   'p/bin_dol.c',
   'p/bin_dyldcache.c',
   'p/bin_elf.c',
@@ -77,6 +78,7 @@ r_bin_sources = [
   'format/bflt/bflt.c',
   'format/coff/coff.c',
   'format/dex/dex.c',
+  'format/dmp/dmp64.c',
   'format/elf/elf.c',
   'format/elf/elf64.c',
   'format/elf/elf64_write.c',
@@ -133,7 +135,7 @@ r_bin_inc = [platform_inc, include_directories('mangling', 'format')]
 
 r_bin = library('r_bin', r_bin_sources,
   include_directories: r_bin_inc,
-  c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags + ['-DR_BIN_SRC=1'],
+  c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags,
   dependencies: [
     r_util_dep,
     r_io_dep,

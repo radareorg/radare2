@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -11,6 +11,7 @@ static const char *help_msg_f[] = {
 	"f."," [*[*]]","list local per-function flags (*) as r2 commands",
 	"f.","blah=$$+12","set local function label named 'blah'",
 	"f."," fname","list all local labels for the given function",
+	"f,","","table output for flags",
 	"f*","","list flags in r commands",
 	"f"," name 12 @ 33","set flag 'name' with length 12 at offset 33",
 	"f"," name = 33","alias for 'f name @ 33' or 'f name 1 33'",
@@ -26,7 +27,7 @@ static const char *help_msg_f[] = {
 	"fb"," [addr] [flag*]","move flags matching 'flag' to relative addr",
 	"fc","[?][name] [color]","set color for given flag",
 	"fC"," [name] [cmt]","set comment for given flag",
-	"fd"," addr","return flag+delta",
+	"fd","[?] addr","return flag+delta",
 	"fe-","","resets the enumerator counter",
 	"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
 	"ff"," ([glob])","distance in bytes to reach the next flag (see sn/sp)",
@@ -348,7 +349,7 @@ static void cmd_fz(RCore *core, const char *input) {
 		}
 		break;
 	case ' ':
-		r_flag_zone_add (core->flags, r_str_trim_ro (input + 1), core->offset);
+		r_flag_zone_add (core->flags, r_str_trim_head_ro (input + 1), core->offset);
 		break;
 	case '-':
 		if (input[1] == '*') {
@@ -411,13 +412,54 @@ static bool flag_to_flag_foreach(RFlagItem *fi, void *user) {
 
 static int flag_to_flag(RCore *core, const char *glob) {
 	r_return_val_if_fail (glob, 0);
-	glob = r_str_trim_ro (glob);
+	glob = r_str_trim_head_ro (glob);
 	struct flag_to_flag_t u = { .next = UT64_MAX, .offset = core->offset };
 	r_flag_foreach_glob (core->flags, glob, flag_to_flag_foreach, &u);
 	if (u.next != UT64_MAX && u.next > core->offset) {
 		return u.next - core->offset;
 	}
 	return 0;
+}
+
+typedef struct {
+	RTable *t;
+} FlagTableData;
+
+static bool __tableItemCallback(RFlagItem *flag, void *user) {
+	FlagTableData *ftd = user;
+	if (!R_STR_ISEMPTY (flag->name)) {
+		RTable *t = ftd->t;
+		const char *spaceName = (flag->space && flag->space->name)? flag->space->name: "";
+		const char *addr = sdb_fmt ("0x%08"PFMT64x, flag->offset);
+		r_table_add_row (t, addr, sdb_fmt ("%d", flag->size), spaceName, flag->name, NULL);
+	}
+	return true;
+}
+
+static void cmd_flag_table(RCore *core, const char *input) {
+	const char fmt = *input++;
+	const char *q = input;
+	FlagTableData ftd = {0};
+	RTable *t = r_core_table (core);
+	ftd.t = t;
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeNumber = r_table_type ("number");
+	r_table_add_column (t, typeNumber, "addr", 0);
+	r_table_add_column (t, typeNumber, "size", 0);
+	r_table_add_column (t, typeString, "space", 0);
+	r_table_add_column (t, typeString, "name", 0);
+
+	RSpace *curSpace = r_flag_space_cur (core->flags);
+	r_flag_foreach_space (core->flags, curSpace, __tableItemCallback, &ftd);
+	if (r_table_query (t, q)) {
+		char *s = (fmt == 'j')
+			? r_table_tojson (t)
+			: r_table_tofancystring (t);
+		// char *s = r_table_tostring (t);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
+	r_table_free (t);
 }
 
 static void cmd_flag_tags(RCore *core, const char *input) {
@@ -470,6 +512,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 			r_cons_printf ("ft %s %s\n", tag, flags);
 		}
 		r_list_free (list);
+		free (inp);
 		return;
 	}
 	if (mode == 'j') { // "ftj"
@@ -486,9 +529,11 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 				pj_s (pj, flg);
 			}
 			pj_end (pj);
+			r_list_free (flags);
 		}
 		pj_end (pj);
 		r_list_free (list);
+		free (inp);
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 		return;
@@ -496,7 +541,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 	char *arg1 = strchr (arg, ' ');
 	if (arg1) {
 		*arg1 = 0;
-		const char *a1 = r_str_trim_ro (arg1 + 1);
+		const char *a1 = r_str_trim_head_ro (arg1 + 1);
 		r_flag_tags_set (core->flags, arg, a1);
 	} else {
 		RListIter *iter;
@@ -537,7 +582,7 @@ static bool rename_flag_ordinal(RFlagItem *fi, void *user) {
 }
 
 static void flag_ordinals(RCore *core, const char *str) {
-	const char *glob = r_str_trim_ro (str);
+	const char *glob = r_str_trim_head_ro (str);
 	char *pfx = strdup (glob);
 	char *p = strchr (pfx, '*');
 	if (p) {
@@ -701,8 +746,8 @@ rep:
 			if (!ptr)
 				ptr = strchr (str, ' ');
 			if (ptr) *ptr++ = 0;
-			name = (char *)r_str_trim_ro (str);
-			ptr = (char *)r_str_trim_ro (ptr);
+			name = (char *)r_str_trim_head_ro (str);
+			ptr = (char *)r_str_trim_head_ro (ptr);
 			fi = r_flag_get (core->flags, name);
 			if (!fi)
 				fi = r_flag_set (core->flags, name,
@@ -807,7 +852,7 @@ rep:
 		break;
 	case '+': // "f+'
 	case ' ': {
-		const char *cstr = r_str_trim_ro (str);
+		const char *cstr = r_str_trim_head_ro (str);
 		char* eq = strchr (cstr, '=');
 		char* b64 = strstr (cstr, "base64:");
 		char* s = strchr (cstr, ' ');
@@ -888,7 +933,7 @@ rep:
 		if (input[1] == '-') {
 			r_flag_unset_all (core->flags);
 		} else if (input[1]) {
-			const char *flagname = r_str_trim_ro (input + 1);
+			const char *flagname = r_str_trim_head_ro (input + 1);
 			while (*flagname==' ') {
 				flagname++;
 			}
@@ -911,7 +956,7 @@ rep:
 		}
 		break;
 	case '.':
-		input = r_str_trim_ro (input + 1) - 1;
+		input = r_str_trim_head_ro (input + 1) - 1;
 		if (input[1]) {
 			if (input[1] == '*') {
 				if (input[2] == '*') {
@@ -967,7 +1012,7 @@ rep:
 			r_flag_foreach_glob (core->flags, glob, find_flag_after_foreach, core->flags);
 		} else if (input[1] == ' ') { // "fl ..."
 			char *p, *arg = strdup (input + 2);
-			r_str_trim_head_tail (arg);
+			r_str_trim (arg);
 			p = strchr (arg, ' ');
 			if (p) {
 				*p++ = 0;
@@ -1027,6 +1072,9 @@ rep:
 		} else {
 			eprintf ("Missing arguments\n");
 		}
+		break;
+	case ',': // "f,"
+		cmd_flag_table (core, input);
 		break;
 	case 't': // "ft"
 		cmd_flag_tags (core, input);
@@ -1108,13 +1156,13 @@ rep:
 	case 'g': // "fg"
 		switch (input[1]) {
 		case '*':
-			__flag_graph (core, r_str_trim_ro (input + 2), '*');
+			__flag_graph (core, r_str_trim_head_ro (input + 2), '*');
 			break;
 		case ' ':
-			__flag_graph (core, r_str_trim_ro (input + 2), ' ');
+			__flag_graph (core, r_str_trim_head_ro (input + 2), ' ');
 			break;
 		case 0:
-			__flag_graph (core, r_str_trim_ro (input + 1), 0);
+			__flag_graph (core, r_str_trim_head_ro (input + 1), 0);
 			break;
 		default:
 			eprintf ("Usage: fg[*] ([prefix])\n");
@@ -1294,9 +1342,9 @@ rep:
 		break;
 	case 'i': // "fi"
 		if (input[1] == ' ' || (input[1] && input[2] == ' ')) {
-			char *arg = strdup (r_str_trim_ro (input + 2));
+			char *arg = strdup (r_str_trim_head_ro (input + 2));
 			if (*arg) {
-				arg = strdup (r_str_trim_ro (input + 2));
+				arg = strdup (r_str_trim_head_ro (input + 2));
 				char *sp = strchr (arg, ' ');
 				if (!sp) {
 					char *newarg = r_str_newf ("%c0x%"PFMT64x" %s+0x%"PFMT64x,
@@ -1361,12 +1409,25 @@ rep:
 				if (isJson) {
 					pj_a (pj);
 				}
+
+				// Sometime an address has multiple flags assigned to, show them all
 				r_list_foreach (flaglist, iter, flag) {
 					if (flag) {
 						if (isJson) {
-							pj_s (pj, flag->name);
+							pj_o (pj);
+							pj_ks (pj, "name", flag->name);
+							if (flag->realname) {
+								pj_ks (pj, "realname", flag->realname);
+							}
+							pj_end (pj);
+							
 						} else {
-							r_cons_println (flag->name);
+							// Print realname if exists and asm.flags.real is enabled
+							if (core->flags->realnames && flag->realname) {
+								r_cons_println (flag->realname);
+							} else {
+								r_cons_println (flag->name);
+							}	
 						}
 					}
 				}
@@ -1434,18 +1495,48 @@ rep:
 				if (f->offset != addr) {
 					// if input contains 'j' print json
 					if (strchr (input, 'j')) {
-						r_cons_printf ("{\"name\":\"%s\",\"offset\":%d}\n",
-									   f->name, (int)(addr - f->offset));
+						PJ *pj = pj_new (); 
+						pj_o (pj);
+						pj_kn (pj, "offset", f->offset);
+						pj_ks (pj, "name", f->name);
+						// Print flag's real name if defined
+						if (f->realname) {
+							pj_ks (pj, "realname", f->realname);
+						}
+						pj_end (pj);
+						r_cons_println (pj_string (pj));
+						if (pj) {
+							pj_free (pj);
+						}
 					} else {
-						r_cons_printf ("%s + %d\n", f->name,
+						// Print realname if exists and asm.flags.real is enabled
+						if (core->flags->realnames && f->realname) {
+							r_cons_printf ("%s + %d\n", f->realname,
 									   (int)(addr - f->offset));
+						} else {
+							r_cons_printf ("%s + %d\n", f->name,
+									   (int)(addr - f->offset));
+						}
 					}
 				} else {
 					if (strchr (input, 'j')) {
-						r_cons_printf ("{\"name\":\"%s\"}\n",
-										f->name);
+						PJ *pj = pj_new ();
+						pj_o (pj);
+						pj_ks (pj, "name", f->name);
+						// Print flag's real name if defined
+						if (f->realname) {
+							pj_ks (pj, "realname", f->realname);
+						}
+						pj_end (pj);
+						r_cons_println (pj_string (pj));
+						pj_free (pj);
 					} else {
-						r_cons_println (f->name);
+						// Print realname if exists and asm.flags.real is enabled
+						if (core->flags->realnames && f->realname) {
+							r_cons_println (f->realname);
+						} else {
+							r_cons_println (f->name);
+						}
 					}
 				}
 			}

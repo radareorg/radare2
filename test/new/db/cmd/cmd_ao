@@ -1,0 +1,11 @@
+NAME=a8
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+a8 c745f400000000~type
+EOF
+EXPECT=<<EOF
+type: mov
+EOF
+RUN

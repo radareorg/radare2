@@ -4,9 +4,7 @@ ARGS=-n
 EXPECT=<<EOF
 pic      false
 EOF
-CMDS=<<EOF
-!rabin2 -I ../bins/pe/dll.dll | grep "pic      false" 
-EOF
+CMDS=!rabin2 -I ../bins/pe/dll.dll | grep "pic      false" 
 RUN
 
 NAME=PE: corkami aslr.dll - DYNAMIC_BASE/ASLR enabled
@@ -15,9 +13,7 @@ ARGS=-n
 EXPECT=<<EOF
 pic      true
 EOF
-CMDS=<<EOF
-!rabin2 -I ../bins/pe/aslr.dll | grep pic | grep true
-EOF
+CMDS=!rabin2 -I ../bins/pe/aslr.dll | grep pic | grep true
 RUN
 
 NAME=PE: corkami aslr.dll - entrypoint
@@ -25,9 +21,7 @@ FILE=../bins/pe/aslr.dll
 EXPECT=<<EOF
 0x1001000
 EOF
-CMDS=<<EOF
-s
-EOF
+CMDS=s
 RUN
 
 NAME=PE: corkami aslr.dll - pi 1
@@ -35,7 +29,5 @@ FILE=../bins/pe/aslr.dll
 EXPECT=<<EOF
 mov eax, 1
 EOF
-CMDS=<<EOF
-pi 1
-EOF
+CMDS=pi 1
 RUN

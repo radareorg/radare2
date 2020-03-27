@@ -37,9 +37,9 @@ static int insn_to_str(RAsm *a, char **line, insn_t *descr, insn_extra_t *extra,
 	o.i = get_operand_value(insn, type_descr, INSN_OPER_I);
 	o.l = get_operand_value(insn, type_descr, INSN_OPER_L);
 
-	name = (extra == NULL) ? descr->name : extra->name;
+	name = extra? extra->name: descr->name;
 
-	if (name == NULL || type_descr->format == NULL) {
+	if (!name || !type_descr->format) {
 		/* this should not happen, give up */
 		*line = sdb_fmt("invalid");
 		return 4;
@@ -142,21 +142,18 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* if name is null, but extra is present, it means 6 most significant bits
 	 * are not enough to decode instruction */
-	if ((insn_descr->name == NULL) && (insn_descr->extra != NULL)) {
+	if (!insn_descr->name && insn_descr->extra) {
 		if ((extra_descr = find_extra_descriptor(insn_descr->extra, insn)) != NULL) {
-			insn_to_str(a, &line, insn_descr, extra_descr, insn);
-		}
-		else {
-			line = sdb_fmt("invalid");
+			insn_to_str (a, &line, insn_descr, extra_descr, insn);
+		} else {
+			line = "invalid";
 		}
 		r_strbuf_set (&op->buf_asm, line);
-	}
-	else {
+	} else {
 		/* otherwise basic descriptor is enough */
 		insn_to_str(a, &line, insn_descr, NULL, insn);
 		r_strbuf_set (&op->buf_asm, line);
 	}
-
 	return op->size;
 }
 
@@ -167,7 +164,6 @@ RAsmPlugin r_asm_plugin_or1k = {
 	.arch = "or1k",
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_BIG,
-	.fini = NULL,
 	.disassemble = &disassemble,
 };
 

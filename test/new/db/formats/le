@@ -3,9 +3,7 @@ FILE=../bins/le/cdogs.exe
 EXPECT=<<EOF
 LE
 EOF
-CMDS=<<EOF
-ih~Signature[1]
-EOF
+CMDS=ih~Signature[1]
 RUN
 
 NAME=cdogs.exe entrypoint
@@ -13,9 +11,7 @@ FILE=../bins/le/cdogs.exe
 EXPECT=<<EOF
 0x00026058
 EOF
-CMDS=<<EOF
-ie~:1[1]
-EOF
+CMDS=ie~:1[1]
 RUN
 
 NAME=cdogs.exe sections
@@ -88,9 +84,7 @@ nth paddr         size vaddr        vsize perm name
 60  0x00049200   0xd8c 0x0004f000  0x1000 -rw- obj.2.page.15
 
 EOF
-CMDS=<<EOF
-iS
-EOF
+CMDS=iS
 RUN
 
 NAME=cdogs.exe relocations
@@ -237,9 +231,7 @@ FILE=../bins/le/GCC.EXE
 EXPECT=<<EOF
 LX
 EOF
-CMDS=<<EOF
-ih~Signature[1]
-EOF
+CMDS=ih~Signature[1]
 RUN
 
 NAME=GCC.EXE entrypoint
@@ -247,9 +239,7 @@ FILE=../bins/le/GCC.EXE
 EXPECT=<<EOF
 0x00010000
 EOF
-CMDS=<<EOF
-ie~:1[1]
-EOF
+CMDS=ie~:1[1]
 RUN
 
 NAME=GCC.EXE sections
@@ -279,9 +269,7 @@ nth paddr         size vaddr           vsize perm name
 17  0x00000000     0x0 0x02030000   0x800000 -rw- obj.4
 
 EOF
-CMDS=<<EOF
-iS
-EOF
+CMDS=iS
 RUN
 
 NAME=GCC.EXE relocations
@@ -291,24 +279,22 @@ EXPECT=<<EOF
 
 vaddr      paddr      type   name
 ---------------------------------
-0x00010006 0x00001006 SET_32  emx.1
-0x0001000d 0x0000100d SET_32  emx.2
-0x0001d210 0x0000e210 SET_32  doscalls.273
-0x0001d234 0x0000e234 SET_32  doscalls.253
-0x0001d266 0x0000e266 SET_32  doscalls.283
-0x0001d282 0x0000e282 SET_32  doscalls.229
-0x0001d2f2 0x0000e2f2 SET_32  doscalls.257
-0x0001d389 0x0000e389 SET_32  doscalls.282
-0x0001d39f 0x0000e39f SET_32  doscalls.257
-0x0001d3d9 0x0000e3d9 SET_32  doscalls.281
-0x0001d3f4 0x0000e3f4 SET_32  doscalls.257
+0x00010006 0x00001006 SET_32 emx.1
+0x0001000d 0x0000100d SET_32 emx.2
+0x0001d210 0x0000e210 SET_32 doscalls.273
+0x0001d234 0x0000e234 SET_32 doscalls.253
+0x0001d266 0x0000e266 SET_32 doscalls.283
+0x0001d282 0x0000e282 SET_32 doscalls.229
+0x0001d2f2 0x0000e2f2 SET_32 doscalls.257
+0x0001d389 0x0000e389 SET_32 doscalls.282
+0x0001d39f 0x0000e39f SET_32 doscalls.257
+0x0001d3d9 0x0000e3d9 SET_32 doscalls.281
+0x0001d3f4 0x0000e3f4 SET_32 doscalls.257
 
 
 11 relocations
 EOF
-CMDS=<<EOF
-ir
-EOF
+CMDS=ir
 RUN
 
 NAME=GCC.EXE linked libs
@@ -320,9 +306,7 @@ doscalls
 
 2 libraries
 EOF
-CMDS=<<EOF
-il
-EOF
+CMDS=il
 RUN
 
 NAME=Open LX GNUGREP.DLL
@@ -330,9 +314,7 @@ FILE=../bins/le/GNUGREP.DLL
 EXPECT=<<EOF
 LX
 EOF
-CMDS=<<EOF
-ih~Signature[1]
-EOF
+CMDS=ih~Signature[1]
 RUN
 
 NAME=GNUGREP.DLL entrypoint
@@ -340,9 +322,7 @@ FILE=../bins/le/GNUGREP.DLL
 EXPECT=<<EOF
 0x00010000
 EOF
-CMDS=<<EOF
-ie~:1[1]
-EOF
+CMDS=ie~:1[1]
 RUN
 
 NAME=GNUGREP.DLL symbol
@@ -350,13 +330,11 @@ FILE=../bins/le/GNUGREP.DLL
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind   type size name
-------------------------------------------------
-1    0x00000000 0x00010ddc GLOBAL FUNC 0    grepmain
+nth paddr       vaddr      bind   type size lib name
+----------------------------------------------------
+1    0x00000000 0x00010ddc GLOBAL FUNC 0        grepmain
 EOF
-CMDS=<<EOF
-is
-EOF
+CMDS=is
 RUN
 
 NAME=GNUGREP.DLL sections
@@ -379,9 +357,7 @@ nth paddr         size vaddr        vsize perm name
 10  0x00001400   0x200 0x00040000  0x1000 -rw- obj.4.page.0
 
 EOF
-CMDS=<<EOF
-iS
-EOF
+CMDS=iS
 RUN
 
 NAME=GNUGREP.DLL linked libs
@@ -394,9 +370,7 @@ emx
 
 3 libraries
 EOF
-CMDS=<<EOF
-il
-EOF
+CMDS=il
 RUN
 
 NAME=GNUGREP.DLL relocations

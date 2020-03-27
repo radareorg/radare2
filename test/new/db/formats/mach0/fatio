@@ -5,9 +5,7 @@ EXPECT=<<EOF
 0x1f44
 6a0089e583e4f083
 EOF
-CMDS=<<EOF
-?v entry0;p8 8 @ entry0
-EOF
+CMDS=?v entry0;p8 8 @ entry0
 RUN
 
 NAME=fatmach0 IO test 64bit
@@ -17,9 +15,7 @@ EXPECT=<<EOF
 0x100000ef8
 6a004889e54883e4
 EOF
-CMDS=<<EOF
-?v entry0;p8 8 @ entry0
-EOF
+CMDS=?v entry0;p8 8 @ entry0
 RUN
 
 NAME=fatmach0 PPC entry0
@@ -28,9 +24,7 @@ ARGS=-a ppc -b32
 EXPECT=<<EOF
 0x1f64
 EOF
-CMDS=<<EOF
-?v entry0
-EOF
+CMDS=?v entry0
 RUN
 
 NAME=fatmach0 io symbol test
@@ -39,9 +33,7 @@ ARGS=-a x86 -b64
 EXPECT=<<EOF
 jmp qword [reloc.exit]
 EOF
-CMDS=<<EOF
-pi 1 @ sym.imp.exit
-EOF
+CMDS=pi 1 @ sym.imp.exit
 RUN
 
 NAME=fatmach0 SDB uuid 64bit
@@ -50,9 +42,7 @@ ARGS=-a x86 -b64
 EXPECT=<<EOF
 34045671455b7d71054acff65f0ddac1
 EOF
-CMDS=<<EOF
-k bin/cur/info/uuid.0
-EOF
+CMDS=k bin/cur/info/uuid.0
 RUN
 
 NAME=fatmach0 SDB uuid 32bit
@@ -61,7 +51,5 @@ ARGS=-a x86 -b32
 EXPECT=<<EOF
 5478cf56325ebbbc6ad071df5885e983
 EOF
-CMDS=<<EOF
-k bin/cur/info/uuid.0
-EOF
+CMDS=k bin/cur/info/uuid.0
 RUN

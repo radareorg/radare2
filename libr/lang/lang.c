@@ -199,7 +199,7 @@ R_API bool r_lang_set_argv(RLang *lang, int argc, char **argv) {
 	return false;
 }
 
-R_API int r_lang_run(RLang *lang, const char *code, int len) { 
+R_API int r_lang_run(RLang *lang, const char *code, int len) {
 	if (lang->cur && lang->cur->run) {
 		return lang->cur->run (lang, code, len);
 	}
@@ -211,16 +211,17 @@ R_API int r_lang_run_string(RLang *lang, const char *code) {
 }
 
 R_API int r_lang_run_file(RLang *lang, const char *file) {
-	int len, ret = false;
+	int ret = false;
 	if (lang->cur) {
 		if (!lang->cur->run_file) {
 			if (lang->cur->run) {
+				size_t len;
 				char *code = r_file_slurp (file, &len);
 				if (!code) {
 					eprintf ("Could not open '%s'.\n", file);
 					return 0;
 				}
-				ret = lang->cur->run (lang, code, len);
+				ret = lang->cur->run (lang, code, (int)len);
 				free (code);
 			}
 		} else {
@@ -250,7 +251,7 @@ R_API int r_lang_prompt(RLang *lang) {
 	RLineHistory histnull = {0};
 	RLineCompletion oc = line->completion;
 	RLineCompletion ocnull = {0};
-	char *prompt = strdup (line->prompt);  
+	char *prompt = strdup (line->prompt);
 	line->completion = ocnull;
 	line->history = histnull;
 
@@ -261,9 +262,9 @@ R_API int r_lang_prompt(RLang *lang) {
 #if 0
 		printf ("%s> ", lang->cur->name);
 		fflush (stdout);
-		fgets (buf, sizeof (buf)-1, stdin);
+		fgets (buf, sizeof (buf), stdin);
 		if (feof (stdin)) break;
-		if (*buf) buf[strlen (buf)-1]='\0';
+		r_str_trim_tail (buf);
 #endif
 		p = r_line_readline ();
 		if (!p) {

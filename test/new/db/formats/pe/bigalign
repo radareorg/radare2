@@ -2,9 +2,7 @@ NAME=PE: corkami bigalign.exe - open
 FILE=../bins/pe/bigalign.exe
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=PE: corkami bigalign.exe - entrypoint

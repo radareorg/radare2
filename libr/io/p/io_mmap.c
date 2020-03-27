@@ -184,7 +184,7 @@ static int __close(RIODesc *fd) {
 
 static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
 	return r_io_mmap_truncate ((RIOMMapFileObj*)fd->data, size);
 }

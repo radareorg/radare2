@@ -76,7 +76,7 @@ R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
 	const char *xss = sdb_const_get (anal->sdb_fcns, var_local, 0);
 	ut64 addr = r_num_math (NULL, xss);
 	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".lvar", addr);
-	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
 
 	if (!var_def) {
 		free (inst_key);
@@ -89,13 +89,12 @@ R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
 		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	}
 	free (inst_key);
-	free (var_def);
 	return res;
 }
 
 static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".vars", op->addr);
-	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
 	struct VarUsedType vut;
 	RAnalVar *res = NULL;
 	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
@@ -103,7 +102,6 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	}
 	free (inst_key);
-	free (var_def);
 	return res;
 }
 
@@ -339,23 +337,8 @@ R_API int r_anal_optype_from_string(const char *type) {
 }
 
 R_API const char *r_anal_optype_to_string(int t) {
-	switch (t) {
-	case R_ANAL_OP_TYPE_RPUSH:
-		return "rpush";
-	default:
-		/* nothing */
-		break;
-	}
-	// t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
-#if 0
-	int i;
-	// this is slower than a switch table :(
-	for  (i = 0; optypes[i].name;i++) {
-		if (optypes[i].type == t) {
-			return optypes[i].name;
-		}
-	}
-#endif
+	bool once = true;
+repeat:
 	// TODO: delete
 	switch (t) {
 	case R_ANAL_OP_TYPE_IO    : return "io";
@@ -387,6 +370,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_OR    : return "or";
 	case R_ANAL_OP_TYPE_POP   : return "pop";
 	case R_ANAL_OP_TYPE_PUSH  : return "push";
+	case R_ANAL_OP_TYPE_RPUSH : return "rpush";
 	case R_ANAL_OP_TYPE_REP   : return "rep";
 	case R_ANAL_OP_TYPE_RET   : return "ret";
 	case R_ANAL_OP_TYPE_ROL   : return "rol";
@@ -418,6 +402,11 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_CASE  : return "case";
 	case R_ANAL_OP_TYPE_CPL   : return "cpl";
 	case R_ANAL_OP_TYPE_CRYPTO: return "crypto";
+	}
+	if (once) {
+		once = false;
+		t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
+		goto repeat;
 	}
 	return "undefined";
 }

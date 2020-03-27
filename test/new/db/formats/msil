@@ -3,9 +3,7 @@ FILE=../bins/cil/hello.exe
 EXPECT=<<EOF
 cil
 EOF
-CMDS=<<EOF
-i~^lang[1]
-EOF
+CMDS=i~^lang[1]
 RUN
 
 NAME=MSIL: AStyleWhore.exe - detect
@@ -13,7 +11,5 @@ FILE=../bins/cil/AStyleWhore.exe
 EXPECT=<<EOF
 cil
 EOF
-CMDS=<<EOF
-i~^lang[1]
-EOF
+CMDS=i~^lang[1]
 RUN

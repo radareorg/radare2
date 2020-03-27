@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake, oddcoder, sivaramaaa */
+/* radare - LGPL - Copyright 2013-2020 - pancake, oddcoder, sivaramaaa */
 
 #include <r_util.h>
 
@@ -13,7 +13,7 @@ R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 			snprintf (var, sizeof (var), "%s.%s.%s", p, kind, field);
 			int off = sdb_array_get_num (TDB, var, 1, NULL);
 			//int siz = sdb_array_get_num (DB, var, 2, NULL);
-			eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x, val, at+off);
+			eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x, val, at + off);
 			return true;
 		}
 		eprintf ("Invalid kind of type\n");
@@ -40,6 +40,9 @@ R_API int r_type_kind(Sdb *TDB, const char *name) {
 	}
 	if (!strcmp (type, "type")) {
 		return R_TYPE_BASIC;
+	}
+	if (!strcmp (type, "typedef")) {
+		return R_TYPE_TYPEDEF;
 	}
 	return -1;
 }
@@ -76,15 +79,12 @@ R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
 }
 
 R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val) {
-	const char *q;
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
-	if (member) {
-		q = sdb_fmt ("enum.%s.%s", name, member);
-	} else {
-		q = sdb_fmt ("enum.%s.0x%"PFMT64x, name, val);
-	}
+	const char *q = member
+		? sdb_fmt ("enum.%s.%s", name, member)
+		: sdb_fmt ("enum.%s.0x%"PFMT64x, name, val);
 	return sdb_get (TDB, q, 0);
 }
 
@@ -103,17 +103,17 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 			continue;
 		}
 		q = sdb_fmt ("enum.%s.0x%x", name, (1<<i));
-				res = sdb_const_get (TDB, q, 0);
-				if (isFirst) {
+		res = sdb_const_get (TDB, q, 0);
+		if (isFirst) {
 			isFirst = false;
-				} else {
+		} else {
 			ret = r_str_append (ret, " | ");
-				}
-				if (res) {
+		}
+		if (res) {
 			ret = r_str_append (ret, res);
-				} else {
+		} else {
 			ret = r_str_appendf (ret, "0x%x", (1<<i));
-				}
+		}
 	}
 	return ret;
 }
@@ -258,6 +258,7 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 	return res;
 }
 
+// XXX this function is slow!
 R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	RList *offtypes = r_list_new ();
 	SdbList *ls = sdb_foreach_list (TDB, true);
@@ -276,31 +277,60 @@ R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	return offtypes;
 }
 
-R_API char *r_type_link_at (Sdb *TDB, ut64 addr) {
-	char* res = NULL;
+// XXX 12 is the maxstructsizedelta
+#define TYPE_RANGE_BASE(x) ((x)>>16)
 
+static RList *types_range_list(Sdb *db, ut64 addr) {
+	RList *list = NULL;
+	ut64 base = TYPE_RANGE_BASE (addr);
+	char *s = r_str_newf ("range.%"PFMT64x, base);
+	if (s) {
+		char *r = sdb_get (db, s, 0);
+		if (r) {
+			list = r_str_split_list (r, " ", -1);
+		}
+		free (s);
+	}
+	return list;
+}
+
+static void types_range_del(Sdb *db, ut64 addr) {
+	ut64 base = TYPE_RANGE_BASE (addr);
+	const char *k = sdb_fmt ("range.%"PFMT64x, base);
+	char valstr[SDB_NUM_BUFSZ];
+	const char *v = sdb_itoa (addr, valstr, SDB_NUM_BASE);
+	sdb_array_remove (db, k, v, 0);
+}
+
+static void types_range_add(Sdb *db, ut64 addr) {
+	ut64 base = TYPE_RANGE_BASE (addr);
+	const char *k = sdb_fmt ("range.%"PFMT64x, base);
+	(void)sdb_array_add_num (db, k, addr, 0);
+}
+
+R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	char* query = sdb_fmt ("link.%08"PFMT64x, addr);
-	res = sdb_get (TDB, query, 0);
+	const char *query = sdb_fmt ("link.%08"PFMT64x, addr);
+	char *res = sdb_get (TDB, query, 0);
 	if (!res) { // resolve struct memb if possible for given addr
-		SdbKv *kv;
-		SdbListIter *sdb_iter;
-		SdbList *sdb_list = sdb_foreach_list (TDB, true);
-		ls_foreach (sdb_list, sdb_iter, kv) {
-			if (strncmp (sdbkv_key (kv), "link.", strlen ("link."))) {
-				continue;
-			}
-			const char *linkptr = sdb_fmt ("0x%s", sdbkv_key (kv) + strlen ("link."));
-			ut64 baseaddr = r_num_math (NULL, linkptr);
-			int delta = (addr > baseaddr)? addr - baseaddr: -1;
-			res = r_type_get_struct_memb (TDB, sdbkv_value (kv), delta);
-			if (res) {
-				break;
+		RList *list = types_range_list (TDB, addr);
+		RListIter *iter;
+		const char *s;
+		r_list_foreach (list, iter, s) {
+			ut64 laddr = r_num_get (NULL, s);
+			if (addr > laddr) {
+				int delta = addr - laddr;
+				const char *lk = sdb_fmt ("link.%08"PFMT64x, laddr);
+				char *k = sdb_get (TDB, lk, 0);
+				res = r_type_get_struct_memb (TDB, k, delta);
+				if (res) {
+					break;
+				}
+				free (k);
 			}
 		}
-		ls_free (sdb_list);
 	}
 	return res;
 }
@@ -309,10 +339,10 @@ R_API int r_type_set_link(Sdb *TDB, const char *type, ut64 addr) {
 	if (sdb_const_get (TDB, type, 0)) {
 		char *laddr = r_str_newf ("link.%08"PFMT64x, addr);
 		sdb_set (TDB, laddr, type, 0);
+		types_range_add (TDB, addr);
 		free (laddr);
 		return true;
 	}
-	// eprintf ("Cannot find type\n");
 	return false;
 }
 
@@ -323,23 +353,23 @@ R_API int r_type_link_offset(Sdb *TDB, const char *type, ut64 addr) {
 		free (laddr);
 		return true;
 	}
-	// eprintf ("Cannot find type\n");
 	return false;
 }
 
 R_API int r_type_unlink(Sdb *TDB, ut64 addr) {
 	char *laddr = sdb_fmt ("link.%08"PFMT64x, addr);
 	sdb_unset (TDB, laddr, 0);
+	types_range_del (TDB, addr);
 	return true;
 }
 
 static void filter_type(char *t) {
-		for (;*t; t++) {
-				if (*t == ' ') {
-						*t = '_';
-				}
-				// memmove (t, t+1, strlen (t));
+	for (;*t; t++) {
+		if (*t == ' ') {
+			*t = '_';
 		}
+		// memmove (t, t+1, strlen (t));
+	}
 }
 
 R_API char *r_type_format(Sdb *TDB, const char *t) {

@@ -137,7 +137,7 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
-	if (kind == 'r') {
+	if (kind == R_ANAL_VAR_KIND_REG) {
 		reg = r_reg_index_get (a->reg, R_ABS (delta));
 		if (!reg) {
 			eprintf ("Register wasn't found at the given delta\n");
@@ -173,7 +173,7 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	return true;
 }
 
-R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, 
+R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size,
 		bool isarg, const char *name) {
 	RRegItem *reg = NULL;
 	if (!a) {
@@ -190,6 +190,7 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 		return false;
 	}
 	if ((size == -1) && (delta == -1)) {
+		// TODO: use hashtable here
 		RList *list = r_anal_var_list (a, fcn, kind);
 		RListIter *iter;
 		RAnalVar *var;
@@ -324,7 +325,7 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *a, ut64 addr, const char *name) {
 		return NULL;
 	}
 	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, 1, name);
-	char *name_value = sdb_get (DB, name_key, 0);
+	const char *name_value = sdb_const_get (DB, name_key, 0);
 	if (!name_value) {
 		// eprintf ("Can't find key for %s\n", name_key);
 		return NULL;
@@ -333,10 +334,8 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *a, ut64 addr, const char *name) {
 	if (comma && *comma) {
 		int delta = r_num_math (NULL, comma + 1);
 		RAnalVar *res = r_anal_var_get (a, addr, *name_value, 1, delta);
-		free (name_value);
 		return res;
 	}
-	free (name_value);
 	return NULL;
 }
 
@@ -355,7 +354,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	}
 	const char *varkey = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d",
 			fcn->addr, kind, scope, sign, delta);
-	char *vardef = sdb_get (DB, varkey, 0);
+	const char *vardef = sdb_const_get (DB, varkey, 0);
 	if (!vardef) {
 		return NULL;
 	}
@@ -364,7 +363,6 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	}
 	sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
 	sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
-	free (vardef);
 
 	RAnalVar *av = R_NEW0 (RAnalVar);
 	if (!av) {
@@ -456,8 +454,7 @@ R_API int r_anal_var_rename(RAnal *a, ut64 addr, int scope, char kind, const cha
 			int delta = r_num_math (NULL, comma + 1);
 			sdb_unset (DB, key, 0);
 			SETKEY ("var.0x%"PFMT64x ".%d.%s", addr, scope, new_name);
-			sdb_set (DB, key, name_val, 0);
-			free (name_val);
+			sdb_set_owned (DB, key, name_val, 0);
 			if (delta < 0) {
 				delta = -delta;
 				sign = "_";
@@ -611,7 +608,7 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 	int v_delta = 0;
 	while (1) {
 		char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, varname);
-		char *name_value = sdb_get (a->sdb_fcns, name_key, 0);
+		const char *name_value = sdb_const_get (a->sdb_fcns, name_key, 0);
 		if (!name_value) {
 			break;
 		}
@@ -620,11 +617,9 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 			v_delta = r_num_math (NULL, comma + 1);
 		}
 		if (v_delta == delta) {
-			free (name_value);
 			return varname;
 		}
 		free (varname);
-		free (name_value);
 		varname = r_str_newf ("%s_%xh_%d", pfx, R_ABS (delta), i);
 		i++;
 	}
@@ -683,7 +678,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		if (*addr == ',') {
 			addr++;
 		}
-		if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP 
+		if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP
 			&& op->type != R_ANAL_OP_TYPE_RET && r_str_isnumber (addr)) {
 			ptr = (st64)r_num_get (NULL, addr);
 			if (ptr && op->src[0] && ptr == op->src[0]->imm) {
@@ -730,7 +725,7 @@ beach:
 static bool is_reg_in_src (const char *regname, RAnal *anal, RAnalOp *op);
 
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal) {
-	#define STR_EQUAL(s1, s2) s1 && s2 && !strcmp (s1, s2)
+	#define STR_EQUAL(s1, s2) (s1 && s2 && !strcmp (s1, s2))
 	RAnalValue *dst = op->dst;
 	RAnalValue *src = op->src[0];
 	switch (op->type) {
@@ -820,7 +815,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 					vname = r_type_func_args_name (TDB, fname, i);
 				}
 				if (!vname) {
-					name = r_str_newf ("%s%d", "arg", i + 1);
+					name = r_str_newf ("arg%d", i + 1);
 					vname = name;
 				}
 				r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, type,
@@ -834,20 +829,63 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				free (type);
 				(*count)++;
 			} else {
-				if (is_reg_in_src (regname, anal, op)) {
-					reg_set[i] = 2;
-				}
-				if (STR_EQUAL (opdreg, regname)) {
+				if (is_reg_in_src (regname, anal, op) || STR_EQUAL (opdreg, regname)) {
 					reg_set[i] = 2;
 				}
 				continue;
 			}
-			if (is_reg_in_src (regname, anal, op)) {
+			if (is_reg_in_src (regname, anal, op) || STR_EQUAL (regname, opdreg)) {
 				reg_set[i] = 1;
 			}
-			if (STR_EQUAL (regname, opdreg)) {
-				reg_set[i] = 1;
+		}
+	}
+
+	const char *selfreg = r_anal_cc_self (anal, fcn->cc);
+	if (selfreg) {
+		bool is_used_like_an_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal);
+		if (reg_set[i] != 2 && is_used_like_an_arg) {
+			int delta = 0;
+			char *vname = strdup ("self");
+			RRegItem *ri = r_reg_get (anal->reg, selfreg, -1);
+			if (ri) {
+				delta = ri->index;
 			}
+			r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, 0,
+					anal->bits / 8, 1, vname);
+			if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
+				r_anal_var_link (anal, op->addr, op->var);
+			}
+			r_anal_var_access (anal, fcn->addr, R_ANAL_VAR_KIND_REG, 1, delta, 0, 0, op->addr);
+			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
+			free (vname);
+			(*count)++;
+		} else {
+			if (is_reg_in_src (selfreg, anal, op) || STR_EQUAL (opdreg, selfreg)) {
+				reg_set[i] = 2;
+			}
+		}
+		i++;
+	}
+
+	const char *errorreg = r_anal_cc_error (anal, fcn->cc);
+	if (errorreg) {
+		if (reg_set[i] == 0 && STR_EQUAL (opdreg, errorreg)) {
+			int delta = 0;
+			char *vname = strdup ("error");
+			RRegItem *ri = r_reg_get (anal->reg, errorreg, -1);
+			if (ri) {
+				delta = ri->index;
+			}
+			r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, 0,
+					anal->bits / 8, 1, vname);
+			if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
+				r_anal_var_link (anal, op->addr, op->var);
+			}
+			r_anal_var_access (anal, fcn->addr, R_ANAL_VAR_KIND_REG, 1, delta, 0, 0, op->addr);
+			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
+			free (vname);
+			(*count)++;
+			reg_set[i] = 2;
 		}
 	}
 }
@@ -857,9 +895,9 @@ R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 
 	const char *BP = anal->reg->name[R_REG_NAME_BP];
 	const char *SP = anal->reg->name[R_REG_NAME_SP];
-	extract_arg (anal, fcn, op, BP, "+", 'b');
-	extract_arg (anal, fcn, op, BP, "-", 'b');
-	extract_arg (anal, fcn, op, SP, "+", 's');
+	extract_arg (anal, fcn, op, BP, "+", R_ANAL_VAR_KIND_BPV);
+	extract_arg (anal, fcn, op, BP, "-", R_ANAL_VAR_KIND_BPV);
+	extract_arg (anal, fcn, op, SP, "+", R_ANAL_VAR_KIND_SPV);
 }
 
 static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dynamicVars) {
@@ -917,7 +955,8 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 						int i;
 						int arg_max = fcn->cc ? r_anal_cc_max_arg (a, fcn->cc) : 0;
 						for (i = 0; i < arg_max; i++) {
-							if (!strcmp (reg->name, r_anal_cc_arg (a, fcn->cc, i))) {
+							const char *reg_arg = r_anal_cc_arg (a, fcn->cc, i);
+							if (reg_arg && !strcmp (reg->name, reg_arg)) {
 								if (delta != reg->index) {
 									delta = reg->index;
 								}
@@ -1141,9 +1180,9 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 }
 
 R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn) {
-	cache->bvars = r_anal_var_list (anal, fcn, 'b');
-	cache->rvars = r_anal_var_list (anal, fcn, 'r');
-	cache->svars = r_anal_var_list (anal, fcn, 's');
+	cache->bvars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
+	cache->rvars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
+	cache->svars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_SPV);
 	r_list_sort (cache->bvars, (RListComparator)var_comparator);
 	r_list_sort (cache->rvars, (RListComparator)regvar_comparator);
 	r_list_sort (cache->svars, (RListComparator)var_comparator);
@@ -1238,6 +1277,11 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 	RListIter *iter;
 
 	r_list_foreach (cache->rvars, iter, var) {
+		// assume self, error are always the last
+		if (!strcmp (var->name, "self") || !strcmp (var->name, "error")) {
+			r_strbuf_slice (buf, 0, r_strbuf_length (buf) - 2);
+			break;
+		}
 		tmp_len = strlen (var->type);
 		r_strbuf_appendf (buf, "%s%s%s%s", var->type,
 			tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",

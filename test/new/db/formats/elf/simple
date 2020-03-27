@@ -3,9 +3,7 @@ FILE=../bins/elf/analysis/longsym
 EXPECT=<<EOF
 194
 EOF
-CMDS=<<EOF
-?lq `isq~pata`;?vi
-EOF
+CMDS=?lq `isq~pata`;?vi
 RUN
 
 NAME=ELF: simple.elf - code
@@ -30,9 +28,7 @@ EXPECT=<<EOF
         :   0x0000035a      0028           cmp r0, 0
         `=< 0x0000035c      fad1           bne 0x354
 EOF
-CMDS=<<EOF
-e asm.flags.middle=0;pd 3 @ 0x356
-EOF
+CMDS=e asm.flags.middle=0;pd 3 @ 0x356
 RUN
 
 NAME=ELF: asm.flags.middle=1 + local symbols
@@ -42,9 +38,7 @@ EXPECT=<<EOF
         :   0x0000035a      0028           cmp r0, 0
         `=< 0x0000035c      fad1           bne 0x354
 EOF
-CMDS=<<EOF
-e asm.flags.middle=1;pd 3 @ 0x356
-EOF
+CMDS=e asm.flags.middle=1;pd 3 @ 0x356
 RUN
 
 NAME=ELF: asm.flags.middle + local symbols
@@ -54,9 +48,7 @@ EXPECT=<<EOF
         :   0x0000035a      0028           cmp r0, 0
         `=< 0x0000035c      fad1           bne 0x354
 EOF
-CMDS=<<EOF
-pd 3 @ 0x356
-EOF
+CMDS=pd 3 @ 0x356
 RUN
 
 NAME=ELF: asm.flags.middle2 + local symbols
@@ -74,51 +66,54 @@ RUN
 
 NAME=ELF: local symbols
 FILE=../bins/elf/analysis/example.elf
-EXPECT=''
-CMDS=<<EOF
-is*~d_41
+EXPECT=<<EOF
 EOF
+CMDS=is*~d_41
 RUN
 
 NAME=ELF: phdr override
 FILE=../bins/elf/analysis/phdr-override
-EXPECT=<<CMDS
+EXPECT=<<EOF
 printf
 __libc_start_main
 __gmon_start__
+EOF
 CMDS=iiq
 RUN
 
 NAME=ELF: phdr override 2
 FILE=../bins/elf/busybox-phdr-shdr
-EXPECT=<<CMDS
-7   0x00000000 GLOBAL OBJ  __environ
-43  0x00000000 GLOBAL OBJ  __ctype_tolower
-145 0x00000000 GLOBAL OBJ  __stdout
-189 0x00000000 GLOBAL OBJ  stderr
-409 0x00000000 GLOBAL OBJ  stdin
-410 0x00000000 GLOBAL OBJ  __stdin
-417 0x00000000 GLOBAL OBJ  optind
-468 0x00000000 GLOBAL OBJ  environ
-588 0x00000000 GLOBAL OBJ  optarg
-667 0x00000000 GLOBAL OBJ  __ctype_b
-706 0x00000000 GLOBAL OBJ  allCountryList
-718 0x00000000 GLOBAL OBJ  stdout
+EXPECT=<<EOF
+7   0x00000000 GLOBAL OBJ      __environ
+43  0x00000000 GLOBAL OBJ      __ctype_tolower
+145 0x00000000 GLOBAL OBJ      __stdout
+189 0x00000000 GLOBAL OBJ      stderr
+409 0x00000000 GLOBAL OBJ      stdin
+410 0x00000000 GLOBAL OBJ      __stdin
+417 0x00000000 GLOBAL OBJ      optind
+468 0x00000000 GLOBAL OBJ      environ
+588 0x00000000 GLOBAL OBJ      optarg
+667 0x00000000 GLOBAL OBJ      __ctype_b
+706 0x00000000 GLOBAL OBJ      allCountryList
+718 0x00000000 GLOBAL OBJ      stdout
+EOF
 CMDS=ii~OBJ
 RUN
 
 NAME=ELF: no symbol overwrite
 FILE=../bins/elf/libc.so.6
-CMDS=<<EXPECT
+CMDS=<<EOF
 is~getpid
 f~getpid
-EXPECT=<<RUN
-581   0x000c9420 0x000c9420 WEAK   FUNC   12    getpid
-965   0x000c9420 0x000c9420 GLOBAL FUNC   12    __getpid
-3577  0x000c9420 0x000c9420 LOCAL  FUNC   12    __GI___getpid
-3807  0x000c9420 0x000c9420 LOCAL  FUNC   12    __GI_getpid
+EOF
+EXPECT=<<EOF
+581   0x000c9420 0x000c9420 WEAK   FUNC   12        getpid
+965   0x000c9420 0x000c9420 GLOBAL FUNC   12        __getpid
+3577  0x000c9420 0x000c9420 LOCAL  FUNC   12        __GI___getpid
+3807  0x000c9420 0x000c9420 LOCAL  FUNC   12        __GI_getpid
 0x000c9420 12 sym.getpid
 0x000c9420 12 sym.__getpid
 0x000c9420 12 sym.__GI___getpid
 0x000c9420 12 sym.__GI_getpid
+EOF
 RUN

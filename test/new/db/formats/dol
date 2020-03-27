@@ -2,9 +2,7 @@ NAME=DOL: sqrxz4 - open
 FILE=../bins/dol/sqrxz4-gc.dol
 EXPECT=<<EOF
 EOF
-CMDS=<<EOF
-q!
-EOF
+CMDS=q!
 RUN
 
 NAME=DOL: sqrxz4 - iI
@@ -12,7 +10,5 @@ FILE=../bins/dol/sqrxz4-gc.dol
 EXPECT=<<EOF
 1
 EOF
-CMDS=<<EOF
-iI~?wii
-EOF
+CMDS=iI~?wii
 RUN

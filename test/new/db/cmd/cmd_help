@@ -1,6 +1,6 @@
 FILE=malloc://1024
 NAME=?vi-1
-CMDS=<<EXPECT
+CMDS=<<EOF
 ?vi 0xffffffff
 ?vi8 0xffffffff
 ?vi4 0xffffffff
@@ -9,7 +9,8 @@ CMDS=<<EXPECT
 ?vi4 0xffffffff
 ?vi2 0xffff
 ?vi1 0xff
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 4294967295
 4294967295
 -1
@@ -18,11 +19,12 @@ EXPECT=<<RUN
 -1
 -1
 -1
+EOF
 RUN
 
 FILE=malloc://1024
 NAME=?vi-8
-CMDS=<<EXPECT
+CMDS=<<EOF
 ?vi 0xfffffff8
 ?vi4 0xfffffff8
 ?vi2 0xfffffff8
@@ -30,7 +32,8 @@ CMDS=<<EXPECT
 ?vi4 0xfffffff8
 ?vi2 0xfff8
 ?vi1 0xf8
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 4294967288
 -8
 -8
@@ -38,10 +41,11 @@ EXPECT=<<RUN
 -8
 -8
 -8
+EOF
 RUN
 
 FILE=malloc://1024
-CMDS=<<EXPECT
+CMDS=<<EOF
 ?v
 ?=
 ??
@@ -57,7 +61,8 @@ CMDS=<<EXPECT
 ?!
 ?+
 ?-
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0
 0x0
 0
@@ -70,67 +75,71 @@ EXPECT=<<RUN
 0x0
 0x0
 0x0
+EOF
 RUN
 
-NAME='?e'
+NAME=?e
 FILE=malloc://1024
-CMDS=<<EXPECT
+CMDS=<<EOF
 ?e fuck
 ?e yeah
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 fuck
 yeah
+EOF
 RUN
 
 
-NAME='?v'
+NAME=?v
 FILE=--
-CMDS=<<EXPECT
+CMDS=<<EOF
 ?v 1024
 ?v 0x42
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 0x400
 0x42
+EOF
 RUN
 
 
 NAME="?v 'A'"
 FILE=--
-CMDS=<<EXPECT
-?v 'A'
-EXPECT=<<RUN
+CMDS=?v 'A'
+EXPECT=<<EOF
 0x41
+EOF
 RUN
 
 NAME="?v 'A'+3"
 FILE=--
-CMDS=<<EXPECT
-?v 'A'+3
-EXPECT=<<RUN
+CMDS=?v 'A'+3
+EXPECT=<<EOF
 0x44
+EOF
 RUN
 
 NAME="?v 3+'A'-3"
 FILE=--
-CMDS=<<EXPECT
-?v 3+'A'-3
-EXPECT=<<RUN
+CMDS=?v 3+'A'-3
+EXPECT=<<EOF
 0x41
+EOF
 RUN
 
 NAME="?v 33^'A'"
 FILE=--
-CMDS=<<EXPECT
-?v 32^'A'
-EXPECT=<<RUN
+CMDS=?v 32^'A'
+EXPECT=<<EOF
 0x61
+EOF
 RUN
 
 NAME="? 1;?v"
 FILE=--
-CMDS=<<EXPECT
-? 1;?v
-EXPECT=<<RUN
+CMDS=? 1;?v
+EXPECT=<<EOF
 int32   1
 uint32  1
 hex     0x1
@@ -144,13 +153,13 @@ double: 0.000000
 binary  0b00000001
 trits   0t1
 1
+EOF
 RUN
 
 NAME="? 0;?v"
 FILE=--
-CMDS=<<EXPECT
-? 0;?v
-EXPECT=<<RUN
+CMDS=? 0;?v
+EXPECT=<<EOF
 int32   0
 uint32  0
 hex     0x0
@@ -164,13 +173,13 @@ double: 0.000000
 binary  0b00000000
 trits   0t0
 0
+EOF
 RUN
 
 NAME="? -1"
 FILE=--
-CMDS=<<EXPECT
-? -1
-EXPECT=<<RUN
+CMDS=? -1
+EXPECT=<<EOF
 int64   -1
 uint64  18446744073709551615
 hex     0xffffffffffffffff
@@ -183,13 +192,13 @@ float:  nanf
 double: nan
 binary  0b1111111111111111111111111111111111111111111111111111111111111111
 trits   0t11112220022122120101211020120210210211220
+EOF
 RUN
 
 NAME="? 2*1.5"
 FILE=--
-CMDS=<<EXPECT
-? 2*1.5
-EXPECT=<<RUN
+CMDS=? 2*1.5
+EXPECT=<<EOF
 int32   2
 uint32  2
 hex     0x2
@@ -202,14 +211,17 @@ float:  0.000000f
 double: 0.000000
 binary  0b00000010
 trits   0t2
+EOF
 RUN
 
 NAME="?*"
 FILE=--
-CMDS=<<EXPECT
+CMDS=<<EOF
 ?*~?display zignspace
 ?*~?List all loaded types as json
-EXPECT=<<RUN
+EOF
+EXPECT=<<EOF
 1
 1
+EOF
 RUN

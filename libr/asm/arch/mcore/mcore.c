@@ -394,7 +394,7 @@ static mcore_t *find_instruction(const ut8* buffer) {
 	op->type = op_ptr->type;
 	op->name = op_ptr->name;
 	op->n_args = op_ptr->n_args;
-	for (i = 0; i < op_ptr->n_args; ++i) {
+	for (i = 0; i < op_ptr->n_args; i++) {
 		op->args[i].value = (data & op_ptr->args[i].mask) >> op_ptr->args[i].shift;
 		op->args[i].type = op_ptr->args[i].type;
 	}
@@ -432,7 +432,7 @@ void print_loop(char* str, int size, ut64 addr, mcore_t* instr) {
 	ut32 i;
 	int bufsize = size;
 	int add = snprintf (str, bufsize, "%s", instr->name);
-	for (i = 0; add > 0 && i < instr->n_args && add < bufsize; ++i) {
+	for (i = 0; add > 0 && i < instr->n_args && add < bufsize; i++) {
 		if (instr->args[i].type == TYPE_REG) {
 			add += snprintf (str + add, bufsize - add, " r%u,", instr->args[i].value);
 		} else if (instr->args[i].type == TYPE_IMM) {

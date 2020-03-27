@@ -46,8 +46,8 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		}
 	}
 	if (((addr&7)==0) && ((addr&(7<<8))==0))
-		if (!json) {
-			eprintf ("0x%08"PFMT64x"\r", addr);
+		if (!json) { // update search display
+			eprintf ("0x%08" PFMT64x " [%d matches found]\r", addr, *hits);
 		}
 	if (file) {
 		if (*file == ' ') file++;
@@ -190,11 +190,14 @@ seek_exit:
 	return ret;
 }
 
-static void r_core_magic(RCore *core, const char *file, int v) {
+static void r_core_magic(RCore *core, const char *file, int v, int json) {
 	ut64 addr = core->offset;
 	int hits = 0;
 	magicdepth = r_config_get_i (core->config, "magic.depth"); // TODO: do not use global var here
-	r_core_magic_at (core, file, addr, magicdepth, v, false, &hits);
+	r_core_magic_at (core, file, addr, magicdepth, v, json, &hits);
+	if (json) {
+		r_cons_newline ();
+	}
 	if (addr != core->offset) {
 		r_core_seek (core, addr, true);
 	}

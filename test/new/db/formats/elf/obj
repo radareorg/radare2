@@ -4,9 +4,7 @@ BROKEN=1
 EXPECT=<<EOF
 vaddr=0x00000000 paddr=0x00000040 baddr=0x00000000 laddr=0x00000000 haddr=0x00000018 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=obj entry
@@ -15,9 +13,7 @@ BROKEN=1
 EXPECT=<<EOF
 vaddr=0x00200000 paddr=0x00000040 baddr=0x00200000 laddr=0x00000000 haddr=0x00000018 type=program
 EOF
-CMDS=<<EOF
-ie~addr
-EOF
+CMDS=ie~addr
 RUN
 
 NAME=obj main address
@@ -26,9 +22,7 @@ BROKEN=1
 EXPECT=<<EOF
 0x10
 EOF
-CMDS=<<EOF
-?v sym.main
-EOF
+CMDS=?v sym.main
 RUN
 
 NAME=obj main address
@@ -37,9 +31,7 @@ BROKEN=1
 EXPECT=<<EOF
 0x200010
 EOF
-CMDS=<<EOF
-?v sym.main
-EOF
+CMDS=?v sym.main
 RUN
 
 NAME=obj main
@@ -50,9 +42,7 @@ push rbp
 mov rbp, rsp
 call 0x19
 EOF
-CMDS=<<EOF
-pi 3@ sym.main
-EOF
+CMDS=pi 3@ sym.main
 RUN
 
 NAME=obj main baddr
@@ -63,7 +53,5 @@ push rbp
 mov rbp, rsp
 call 0x200019
 EOF
-CMDS=<<EOF
-pi 3@sym.main
-EOF
+CMDS=pi 3@sym.main
 RUN
