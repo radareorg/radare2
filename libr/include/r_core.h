@@ -333,13 +333,13 @@ typedef struct r_core_t {
 
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
-	int (*r_main_rafind2)(int argc, char **argv);
-	int (*r_main_radiff2)(int argc, char **argv);
-	int (*r_main_rabin2)(int argc, char **argv);
-	int (*r_main_rarun2)(int argc, char **argv);
-	int (*r_main_ragg2)(int argc, char **argv);
-	int (*r_main_rasm2)(int argc, char **argv);
-	int (*r_main_rax2)(int argc, char **argv);
+	int (*r_main_rafind2)(int argc, const char **argv);
+	int (*r_main_radiff2)(int argc, const char **argv);
+	int (*r_main_rabin2)(int argc, const char **argv);
+	int (*r_main_rarun2)(int argc, const char **argv);
+	int (*r_main_ragg2)(int argc, const char **argv);
+	int (*r_main_rasm2)(int argc, const char **argv);
+	int (*r_main_rax2)(int argc, const char **argv);
 } RCore;
 
 // maybe move into RAnal

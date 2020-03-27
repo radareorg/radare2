@@ -21,8 +21,7 @@ static void rarun2_tty() {
 }
 #endif
 
-R_API int r_main_rarun2(int argc, char **argv) {
-	char *file;
+R_API int r_main_rarun2(int argc, const char **argv) {
 	RRunProfile *p;
 	int i, ret;
 	if (argc == 1 || !strcmp (argv[1], "-h")) {
@@ -33,7 +32,7 @@ R_API int r_main_rarun2(int argc, char **argv) {
 	if (!strcmp (argv[1], "-v")) {
 		return r_main_version_print ("rarun2");
 	}
-	file = argv[1];
+	const char *file = argv[1];
 	if (!strcmp (file, "-t")) {
 #if __UNIX__
 		rarun2_tty ();
