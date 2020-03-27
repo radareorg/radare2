@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -2815,6 +2815,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 	pj_kn (pj, "size", r_anal_function_linear_size (fcn));
 	pj_ks (pj, "is-pure", r_str_bool (r_anal_function_purity (fcn)));
 	pj_kn (pj, "realsz", r_anal_function_realsize (fcn));
+	pj_kb (pj, "noreturn", fcn->is_noreturn);
 	pj_ki (pj, "stackframe", fcn->maxstack);
 	if (fcn->cc) {
 		pj_ks (pj, "calltype", fcn->cc); // calling conventions
@@ -3089,6 +3090,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 					refi->type == R_ANAL_REF_TYPE_CALL?'C':'J');
 		}
 	}
+	r_cons_printf ("\nnoreturn: %s", r_str_bool (fcn->is_noreturn)); // is_noreturn));
 	r_cons_printf ("\nin-degree: %d", indegree);
 	r_cons_printf ("\nout-degree: %d", outdegree);
 	r_cons_printf ("\ndata-xrefs:");
@@ -5537,35 +5539,33 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	free (anal_in);
 }
 
-static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
+static bool analyze_noreturn_function(RCore *core, RAnalFunction *f) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (f->bbs, iter, bb) {
-		ut64 opaddr;
-
-		opaddr = r_anal_bb_opaddr_i (bb, bb->ninstr - 1);
+		ut64 opaddr = r_anal_bb_opaddr_i (bb, bb->ninstr - 1);
 		if (opaddr == UT64_MAX) {
 			return false;
 		}
 
 		// get last opcode
-		RAnalOp *op = r_core_op_anal (core, opaddr);
+		RAnalOp *op = r_core_op_anal (core, opaddr, R_ANAL_OP_MASK_HINT);
 		if (!op) {
 			eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", opaddr);
 			return false;
 		}
 
 		switch (op->type & R_ANAL_OP_TYPE_MASK) {
-			case R_ANAL_OP_TYPE_ILL:
-			case R_ANAL_OP_TYPE_RET:
+		case R_ANAL_OP_TYPE_ILL:
+		case R_ANAL_OP_TYPE_RET:
+			r_anal_op_free (op);
+			return false;
+		case R_ANAL_OP_TYPE_JMP:
+			if (!r_anal_function_contains (f, op->jump)) {
 				r_anal_op_free (op);
 				return false;
-			case R_ANAL_OP_TYPE_JMP:
-				if (!r_anal_function_contains (f, op->jump)) {
-					r_anal_op_free (op);
-					return false;
-				}
-				break;
+			}
+			break;
 		}
 		r_anal_op_free (op);
 	}
@@ -5606,7 +5606,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 		RList *xrefs = r_anal_xrefs_get (core->anal, noret_addr);
 		RAnalRef *xref;
 		r_list_foreach (xrefs, iter, xref) {
-			RAnalOp *xrefop = r_core_op_anal (core, xref->addr);
+			RAnalOp *xrefop = r_core_op_anal (core, xref->addr, R_ANAL_OP_MASK_ALL);
 			if (!xrefop) {
 				eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", xref->addr);
 				continue;
@@ -5643,7 +5643,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 
 			bool found = false;
 			found = ht_uu_find (done, f->addr, &found);
-			if (f->addr && !found && is_noreturn_function (core, f)) {
+			if (f->addr && !found && analyze_noreturn_function (core, f)) {
 				f->is_noreturn = true;
 				r_anal_noreturn_add (core->anal, NULL, f->addr);
 				ut64 *n = malloc (sizeof (ut64));

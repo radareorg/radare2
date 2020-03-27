@@ -558,7 +558,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd);
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each);
 R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each);
 R_API char *r_core_op_str(RCore *core, ut64 addr);
-R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr);
+R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr, RAnalOpMask mask);
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
