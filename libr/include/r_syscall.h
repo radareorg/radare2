@@ -15,10 +15,6 @@ R_LIB_VERSION_HEADER (r_syscall);
 
 #define R_SYSCALL_ARGS 7
 
-typedef struct r_syscall_regs_t {
-	const char *arg[R_SYSCALL_ARGS];
-} RSyscallRegs;
-
 typedef struct r_syscall_item_t {
 	char *name;
 	int swi;
@@ -40,7 +36,6 @@ typedef struct r_syscall_t {
 	int bits;
 	char *cpu;
 	// database
-	RSyscallRegs *regs;
 	RSyscallItem *sysptr;
 	RSyscallPort *sysport;
 	Sdb *db;
