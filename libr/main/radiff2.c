@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_diff.h>
 #include <r_core.h>
@@ -37,8 +37,8 @@ enum {
 };
 
 static bool zignatures = false;
-static char *file = NULL;
-static char *file2 = NULL;
+static const char *file = NULL;
+static const char *file2 = NULL;
 static ut32 count = 0;
 static int showcount = 0;
 static int useva = true;
@@ -911,7 +911,7 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
         }
 }
 
-R_API int r_main_radiff2(int argc, char **argv) {
+R_API int r_main_radiff2(int argc, const char **argv) {
 	const char *columnSort = NULL;
 	const char *addr = NULL;
 	RCore *c = NULL, *c2 = NULL;
@@ -926,22 +926,24 @@ R_API int r_main_radiff2(int argc, char **argv) {
 	double sim = 0.0;
 	evals = r_list_newf (NULL);
 
-	while ((o = r_getopt (argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxXt:zqZ")) != -1) {
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxXt:zqZ");
+	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'a':
-			arch = r_optarg;
+			arch = opt.arg;
 			break;
 		case 'A':
 			anal_all++;
 			break;
 		case 'b':
-			bits = atoi (r_optarg);
+			bits = atoi (opt.arg);
 			break;
 		case 'B':
 			diffmode = 'B';
 			break;
 		case 'e':
-			r_list_append (evals, r_optarg);
+			r_list_append (evals, (void*)opt.arg);
 			break;
 		case 'p':
 			useva = false;
@@ -951,10 +953,10 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			break;
 		case 'g':
 			mode = MODE_GRAPH;
-			addr = r_optarg;
+			addr = opt.arg;
 			break;
 		case 'm':{
-		        char *tmp = r_optarg;
+		        const char *tmp = opt.arg;
 		        switch(tmp[0]) {
 	                case 'i': gmode = GRAPH_INTERACTIVE_MODE; break;
 	                case 'k': gmode = GRAPH_SDB_MODE; break;
@@ -969,7 +971,7 @@ R_API int r_main_radiff2(int argc, char **argv) {
 		        }
 		}       break;
 		case 'G':
-			runcmd = r_optarg;
+			runcmd = opt.arg;
 			break;
 		case 'c':
 			showcount = 1;
@@ -987,8 +989,8 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			diffops = 1;
 			break;
 		case 't':
-			threshold = atoi (r_optarg);
-			printf ("%s\n", r_optarg);
+			threshold = atoi (opt.arg);
+			printf ("%s\n", opt.arg);
 			break;
 		case 'd':
 			delta = 1;
@@ -1014,7 +1016,7 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			}
 			break;
 		case 'S':
-			columnSort = r_optarg;
+			columnSort = opt.arg;
 			break;
 		case 'x':
 			mode = MODE_COLS;
@@ -1050,11 +1052,11 @@ R_API int r_main_radiff2(int argc, char **argv) {
 		}
 	}
 
-	if (argc < 3 || r_optind + 2 > argc) {
+	if (argc < 3 || opt.ind + 2 > argc) {
 		return show_help (0);
 	}
-	file = (r_optind < argc)? argv[r_optind]: NULL;
-	file2 = (r_optind + 1 < argc)? argv[r_optind + 1]: NULL;
+	file = (opt.ind < argc)? argv[opt.ind]: NULL;
+	file2 = (opt.ind + 1 < argc)? argv[opt.ind + 1]: NULL;
 
 	switch (mode) {
 	case MODE_GRAPH:

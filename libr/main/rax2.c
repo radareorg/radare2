@@ -605,7 +605,7 @@ dotherax:
 	return true;
 }
 
-R_API int r_main_rax2(int argc, char **argv) {
+R_API int r_main_rax2(int argc, const char **argv) {
 	int i, fm = 0;
 	RNum *num = r_num_new (NULL, NULL, NULL);
 	if (argc == 1) {
@@ -613,8 +613,9 @@ R_API int r_main_rax2(int argc, char **argv) {
 	} else {
 		ut64 flags = 0;
 		for (i = 1; i < argc; i++) {
-			r_str_unescape (argv[i]);
-			rax (num, argv[i], 0, i == argc - 1, &flags, &fm);
+			char *argv_i = strdup (argv[i]);
+			r_str_unescape (argv_i);
+			rax (num, argv_i, 0, i == argc - 1, &flags, &fm);
 		}
 	}
 	r_num_free (num);

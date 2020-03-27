@@ -439,7 +439,7 @@ R_API int r_run_parsefile(RRunProfile *p, const char *b) {
 	return 0;
 }
 
-R_API bool r_run_parseline(RRunProfile *p, char *b) {
+R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 	int must_free = false;
 	char *e = strchr (b, '=');
 	if (!e || *b == '#') {

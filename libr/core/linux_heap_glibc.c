@@ -789,7 +789,6 @@ static void GH(print_tcache_instance)(RCore *core, GHT m_arena, MallocState *mai
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, tcache_fd = GHT_MAX, initial_brk = GHT_MAX ;
 	GH(get_brks) (core, &brk_start, &brk_end);
 	GHT tcache_tmp = GHT_MAX, tcache_start = GHT_MAX;
-	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
 	tcache_start = ((brk_start >> 12) << 12) + GH(HDR_SZ);

@@ -537,11 +537,11 @@ static void __listPlugins(RBin *bin, const char* plugin_name, int rad) {
 	}
 }
 
-R_API int r_main_rabin2(int argc, char **argv) {
-	char *name = NULL;
-	char *file = NULL;
+R_API int r_main_rabin2(int argc, const char **argv) {
 	RBin *bin = NULL;
-	char *output = NULL;
+	const char *name = NULL;
+	const char *file = NULL;
+	const char *output = NULL;
 	int rad = 0;
 	ut64 laddr = UT64_MAX;
 	ut64 baddr = UT64_MAX;
@@ -551,7 +551,8 @@ R_API int r_main_rabin2(int argc, char **argv) {
 	char* create = NULL;
 	bool va = true;
 	ut64 action = R_BIN_REQ_UNK;
-	char *tmp, *ptr, *arch = NULL, *arch_name = NULL;
+	char *tmp, *ptr, *arch_name = NULL;
+	const char *arch = NULL;
 	const char *forcebin = NULL;
 	const char *chksum = NULL;
 	const char *op = NULL;
@@ -642,7 +643,9 @@ R_API int r_main_rabin2(int argc, char **argv) {
 #define is_active(x) (action & (x))
 #define set_action(x) { actions++; action |= (x); }
 #define unset_action(x) action &= ~x
-	while ((c = r_getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ")) != -1) {
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ");
+	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (R_BIN_REQ_CLASSES);
@@ -673,14 +676,14 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			break;
 		case 'j': rad = R_MODE_JSON; break;
 		case 'A': set_action (R_BIN_REQ_LISTARCHS); break;
-		case 'a': arch = r_optarg; break;
+		case 'a': arch = opt.arg; break;
 		case 'C':
 			set_action (R_BIN_REQ_CREATE);
-			create = strdup (r_optarg);
+			create = strdup (opt.arg);
 			break;
 		case 'u': bin->filter = 0; break;
-		case 'k': query = r_optarg; break;
-		case 'K': chksum = r_optarg; break;
+		case 'k': query = opt.arg; break;
+		case 'K': chksum = opt.arg; break;
 		case 'c':
 			if (is_active (R_BIN_REQ_CLASSES)) {
 				rad = R_MODE_CLASSDUMP;
@@ -688,11 +691,11 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			  	set_action (R_BIN_REQ_CLASSES);
 			}
 			break;
-		case 'f': arch_name = strdup (r_optarg); break;
-		case 'F': forcebin = r_optarg; break;
-		case 'b': bits = r_num_math (NULL, r_optarg); break;
+		case 'f': arch_name = strdup (opt.arg); break;
+		case 'F': forcebin = opt.arg; break;
+		case 'b': bits = r_num_math (NULL, opt.arg); break;
 		case 'm':
-			at = r_num_math (NULL, r_optarg);
+			at = r_num_math (NULL, opt.arg);
 			set_action (R_BIN_REQ_SRCLINE);
 			break;
 		case 'i':
@@ -739,13 +742,13 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			}
 			break;
 		case 'D':
-			if (argv[r_optind] && argv[r_optind+1] && \
-				(!argv[r_optind+1][0] || !strcmp (argv[r_optind+1], "all"))) {
-				r_config_set (core.config, "bin.lang", argv[r_optind]);
+			if (argv[opt.ind] && argv[opt.ind+1] && \
+				(!argv[opt.ind+1][0] || !strcmp (argv[opt.ind+1], "all"))) {
+				r_config_set (core.config, "bin.lang", argv[opt.ind]);
 				r_config_set (core.config, "bin.demangle", "true");
-				r_optind += 2;
+				opt.ind += 2;
 			} else {
-				do_demangle = argv[r_optind];
+				do_demangle = argv[opt.ind];
 			}
 			break;
 		case 'e':
@@ -765,7 +768,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		case 'x': set_action (R_BIN_REQ_EXTRACT); break;
 		case 'X': set_action (R_BIN_REQ_PACKAGE); break;
 		case 'O':
-			op = r_optarg;
+			op = opt.arg;
 			set_action (R_BIN_REQ_OPERATION);
 			if (*op == 'c') {
 				r_sys_setenv ("RABIN2_CODESIGN_VERBOSE", "1");
@@ -784,13 +787,13 @@ R_API int r_main_rabin2(int argc, char **argv) {
 				r_core_fini (&core);
 				return 0;
 			}
-			if (r_optind == argc) {
+			if (opt.ind == argc) {
 				eprintf ("Missing filename\n");
 				r_core_fini (&core);
 				return 1;
 			}
 			break;
-		case 'o': output = r_optarg; break;
+		case 'o': output = opt.arg; break;
 		case 'p': va = false; break;
 		case 'r': rad = true; break;
 		case 'v':
@@ -800,26 +803,26 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			set_action (R_BIN_REQ_LISTPLUGINS);
 			break;
 		case 'G':
-			laddr = r_num_math (NULL, r_optarg);
+			laddr = r_num_math (NULL, opt.arg);
 			if (laddr == UT64_MAX) {
 				va = false;
 			}
 			break;
 		case 'B':
-			baddr = r_num_math (NULL, r_optarg);
+			baddr = r_num_math (NULL, opt.arg);
 			break;
 		case '@':
-			at = r_num_math (NULL, r_optarg);
-			if (at == 0LL && *r_optarg != '0') {
+			at = r_num_math (NULL, opt.arg);
+			if (at == 0LL && *opt.arg != '0') {
 				at = UT64_MAX;
 			}
 			break;
 		case 'n':
-			name = r_optarg;
+			name = opt.arg;
 			break;
 		case 'N':
-			tmp = strchr (r_optarg, ':');
-			r_config_set (core.config, "bin.minstr", r_optarg);
+			tmp = strchr (opt.arg, ':');
+			r_config_set (core.config, "bin.minstr", opt.arg);
 			if (tmp) {
 				r_config_set (core.config, "bin.maxstr", tmp + 1);
 			}
@@ -835,8 +838,8 @@ R_API int r_main_rabin2(int argc, char **argv) {
 
 	if (is_active (R_BIN_REQ_LISTPLUGINS)) {
 		const char* plugin_name = NULL;
-		if (r_optind < argc) {
-			plugin_name = argv[r_optind];
+		if (opt.ind < argc) {
+			plugin_name = argv[opt.ind];
 		}
 		__listPlugins (bin, plugin_name, rad);
 		r_core_fini (&core);
@@ -846,12 +849,12 @@ R_API int r_main_rabin2(int argc, char **argv) {
 	if (do_demangle) {
 		char *res = NULL;
 		int type;
-		if ((argc - r_optind) < 2) {
+		if ((argc - opt.ind) < 2) {
 			r_core_fini (&core);
 			return rabin_show_help (0);
 		}
 		type = r_bin_demangle_type (do_demangle);
-		file = argv[r_optind + 1];
+		file = argv[opt.ind + 1];
 		if (!strcmp (file, "-")) {
 			for (;;) {
 				file = stdin_gets (false);
@@ -889,7 +892,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		r_core_fini (&core);
 		return 1;
 	}
-	file = argv[r_optind];
+	file = argv[opt.ind];
 	if (!query) {
 		if (action & R_BIN_REQ_HELP || action == R_BIN_REQ_UNK || !file) {
 			r_core_fini (&core);
@@ -989,20 +992,20 @@ R_API int r_main_rabin2(int argc, char **argv) {
 	}
 	if (action & R_BIN_REQ_PACKAGE) {
 		RList *files = r_list_newf (NULL);
-		const char *format = argv[r_optind];
-		const char *file = argv[r_optind + 1];
+		const char *format = argv[opt.ind];
+		const char *file = argv[opt.ind + 1];
 		int i, rc = 0;
 
-		if (r_optind + 3 > argc) {
+		if (opt.ind + 3 > argc) {
 			eprintf ("Usage: rabin2 -X [fat|zip] foo.zip a b c\n");
 			r_core_fini (&core);
 			return 1;
 		}
 		eprintf ("FMT %s\n", format);
 		eprintf ("PKG %s\n", file);
-		for (i = r_optind + 2; i < argc; i++) {
+		for (i = opt.ind + 2; i < argc; i++) {
 			eprintf ("ADD %s\n", argv[i]);
-			r_list_append (files, argv[i]);
+			r_list_append (files, (void*)argv[i]);
 		}
 		RBuffer *buf = r_bin_package (core.bin, format, file, files);
 		/* TODO: return bool or something to catch errors\n") */
@@ -1039,11 +1042,11 @@ R_API int r_main_rabin2(int argc, char **argv) {
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
 
-	RBinOptions opt;
-	r_bin_options_init (&opt, fd, baddr, laddr, rawstr);
-	opt.xtr_idx = xtr_idx;
+	RBinOptions bo;
+	r_bin_options_init (&bo, fd, baddr, laddr, rawstr);
+	bo.xtr_idx = xtr_idx;
 
-	if (!r_bin_open (bin, file, &opt)) {
+	if (!r_bin_open (bin, file, &bo)) {
 		//if this return false means that we did not return a valid bin object
 		//but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
