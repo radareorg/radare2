@@ -1915,10 +1915,6 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
  * If the function has been already analyzed, it adds a
  * reference to that fcn */
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
-	RAnalFunction * f = r_anal_get_function_at (core->anal, at);
-	if (f) {
-		return 0;
-	}
 	if (from == UT64_MAX && r_anal_get_fcn_in (core->anal, at, 0)) {
 		if (core->anal->verbose) {
 			eprintf ("Message: Invalid address for function 0x%08"PFMT64x"\n", at);
