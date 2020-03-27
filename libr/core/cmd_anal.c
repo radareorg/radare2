@@ -3821,10 +3821,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			// depth = 1; // or 1?
 			// disable hasnext
 		}
-		fcn = r_anal_get_function_at (core->anal, core->offset);
-		if (fcn) {
-			break;
-		}
 		//r_core_anal_undefine (core, core->offset);
 		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
@@ -3904,7 +3900,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			free (name);
 		}
-		r_core_anal_propagate_noreturn (core);
+		r_core_anal_propagate_noreturn (core, addr);
 #if 0
 		// XXX THIS IS VERY SLOW
 		if (core->anal->opt.vars) {
@@ -8982,7 +8978,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'n': // "aan"
 		switch (input[1]) {
 		case 'r': // "aanr" // all noreturn propagation
-			r_core_anal_propagate_noreturn (core);
+			r_core_anal_propagate_noreturn (core, UT64_MAX);
 			break;
 		case 'g': // "aang"
 			r_core_anal_autoname_all_golang_fcns (core);
@@ -9161,7 +9157,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_task_yield (&core->tasks);
 
 				oldstr = r_print_rowlog (core->print, "Propagate noreturn information");
-				r_core_anal_propagate_noreturn (core);
+				r_core_anal_propagate_noreturn (core, UT64_MAX);
 				r_print_rowlog_done (core->print, oldstr);
 				r_core_task_yield (&core->tasks);
 
