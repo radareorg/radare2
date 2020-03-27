@@ -34,7 +34,8 @@ int main(int argc, char **argv) {
 	int workers_count = 4; // TODO: read from arg
 	bool verbose = false;
 	int c;
-	while ((c = r_getopt (argc, argv, "hv")) != -1) {
+	RGetopt opt = r_getopt_begin (argc, (const char **)argv, "hv");
+	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'h':
 			return help (true);
@@ -71,10 +72,10 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	if (r_optind < argc) {
+	if (opt.ind < argc) {
 		// Manually specified path(s)
 		int i;
-		for (i = r_optind; i < argc; i++) {
+		for (i = opt.ind; i < argc; i++) {
 			if (!r2r_test_database_load (state.db, argv[i])) {
 				eprintf ("Failed to load tests from \"%s\"\n", argv[i]);
 				r2r_test_database_free (state.db);
