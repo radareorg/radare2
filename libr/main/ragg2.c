@@ -142,7 +142,8 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-	RGetopt opt = r_getopt_begin (argc, argv, "n:N:he:a:b:f:o:sxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:");
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "n:N:he:a:b:f:o:sxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':

@@ -441,7 +441,8 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	RGetopt opt = r_getopt_begin (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:");
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;

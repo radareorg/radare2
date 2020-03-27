@@ -11,14 +11,16 @@
 #define	BADARG	(int)':'
 #define	EMSG	""
 
-R_API RGetopt r_getopt_begin(int argc, const char **argv, const char *ostr) {
-	RGetopt opt = {{0}};
-	opt.err = 1;
-	opt.ind = 1;
-	opt.argc = argc;
-	opt.argv = argv;
-	opt.ostr = ostr;
-	return opt;
+R_API void r_getopt_init(RGetopt *opt, int argc, const char **argv, const char *ostr) {
+	memset (opt, 0, sizeof (RGetopt));
+	opt->err = 1;
+	opt->ind = 1;
+	opt->opt = 0;
+	opt->reset = 0;
+	opt->arg = NULL;
+	opt->argc = argc;
+	opt->argv = argv;
+	opt->ostr = ostr;
 }
 
 R_API int r_getopt_next(RGetopt *opt) {

@@ -565,7 +565,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		free (r2bits);
 	}
 
-	RGetopt opt = r_getopt_begin (argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vwx");
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vwx");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':

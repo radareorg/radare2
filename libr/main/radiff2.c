@@ -926,7 +926,8 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	double sim = 0.0;
 	evals = r_list_newf (NULL);
 
-	RGetopt opt = r_getopt_begin (argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxXt:zqZ");
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxXt:zqZ");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'a':

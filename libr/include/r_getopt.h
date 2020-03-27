@@ -15,7 +15,7 @@ typedef struct r_getopt_t {
 	const char *ostr;
 } RGetopt;
 
-R_API RGetopt r_getopt_begin(int argc, const char **argv, const char *ostr);
+R_API void r_getopt_init(RGetopt *go, int argc, const char **argv, const char *ostr);
 R_API int r_getopt_next(RGetopt *opt);
 
 #endif

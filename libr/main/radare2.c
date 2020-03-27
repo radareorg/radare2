@@ -428,7 +428,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	set_color_default (r);
 
-	RGetopt opt = r_getopt_begin (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case '=':

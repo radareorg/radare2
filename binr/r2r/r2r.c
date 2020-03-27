@@ -31,10 +31,10 @@ static int help(bool verbose) {
 }
 
 int main(int argc, char **argv) {
-	int workers_count = 4; // TODO: read from arg
+	int c, workers_count = 4; // TODO: read from arg
 	bool verbose = false;
-	int c;
-	RGetopt opt = r_getopt_begin (argc, (const char **)argv, "hv");
+	RGetopt opt;
+	r_getopt_init (&opt, argc, (const char **)argv, "hv");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'h':
