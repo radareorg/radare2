@@ -5572,7 +5572,7 @@ static bool is_noreturn_function(RCore *core, RAnalFunction *f) {
 	return true;
 }
 
-R_API void r_core_anal_propagate_noreturn(RCore *core) {
+R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 	RList *todo = r_list_newf (free);
 	if (!todo) {
 		return;
@@ -5615,19 +5615,30 @@ R_API void r_core_anal_propagate_noreturn(RCore *core) {
 			if (xref->type != R_ANAL_REF_TYPE_CALL) {
 				continue;
 			}
-			f = r_anal_get_fcn_in (core->anal, xref->addr, 0);
-			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
-				continue;
-			}
-			ut64 addr = f->addr;
+			if (addr != UT64_MAX) {
+				f = r_anal_get_fcn_in (core->anal, xref->addr, 0);
+				if (f) {
+					if (f->addr != addr) {
+						continue;
+					}
+				} else {
+					continue;
+				}
+			} else {
+				f = r_anal_get_fcn_in (core->anal, xref->addr, 0);
+				if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
+					continue;
+				}
+				ut64 addr = f->addr;
 
-			r_anal_fcn_del_locs (core->anal, addr);
-			// big depth results on infinite loops :( but this is a different issue
-			r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 3);
+				r_anal_fcn_del_locs (core->anal, addr);
+				// big depth results on infinite loops :( but this is a different issue
+				r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 3);
 
-			f = r_anal_get_function_at (core->anal, addr);
-			if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
-				continue;
+				f = r_anal_get_function_at (core->anal, addr);
+				if (!f || (f->type != R_ANAL_FCN_TYPE_FCN && f->type != R_ANAL_FCN_TYPE_SYM)) {
+					continue;
+				}
 			}
 
 			bool found = false;
