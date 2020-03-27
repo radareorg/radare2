@@ -111,6 +111,7 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	if (anal->flg_fcn_set) {
 		anal->flg_fcn_set (anal->flb.f, fcn->name, fcn->addr, r_anal_function_size_from_entry (fcn));
 	}
+	fcn->is_noreturn = r_anal_noreturn_at_addr (anal, fcn->addr);
 	r_list_append (anal->fcns, fcn);
 	ht_pp_insert (anal->ht_name_fun, fcn->name, fcn);
 	ht_up_insert (anal->ht_addr_fun, fcn->addr, fcn);

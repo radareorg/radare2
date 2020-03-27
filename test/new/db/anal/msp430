@@ -43,6 +43,7 @@ end-bbs: 0
 call-refs: 0x00004558 C 0x0000447a C 0x00004484 C 0x00004558 C 0x0000446a J 0x00004558 C 0x0000449c C 0x00004470 J
 data-refs:
 code-xrefs: 0x0000445c J 0x00004474 J
+noreturn: false
 in-degree: 2
 out-degree: 6
 data-xrefs:

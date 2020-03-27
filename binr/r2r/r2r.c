@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
-	R2RState state = { 0 };
+	R2RState state = {{0}};
 	state.run_config.r2_cmd = "radare2";
 	state.run_config.rasm2_cmd = "rasm2";
 	state.verbose = verbose;
