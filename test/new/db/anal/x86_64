@@ -2424,6 +2424,7 @@ end-bbs: 0
 call-refs:
 data-refs:
 code-xrefs:
+noreturn: false
 in-degree: 0
 out-degree: 0
 data-xrefs:
@@ -2482,6 +2483,7 @@ end-bbs: 1
 call-refs: 0x00000004 J
 data-refs: 0x0000002c
 code-xrefs: 0x00000005 J
+noreturn: false
 in-degree: 1
 out-degree: 0
 data-xrefs:
@@ -2556,6 +2558,7 @@ end-bbs: 0
 call-refs: 0x00000004 J 0x00000004 J
 data-refs: 0x0000002c
 code-xrefs: 0x00000005 J 0x0000000c J
+noreturn: false
 in-degree: 2
 out-degree: 0
 data-xrefs:
@@ -2638,6 +2641,7 @@ end-bbs: 0
 call-refs: 0x00000004 J 0x00000005 J
 data-refs: 0x0000002c
 code-xrefs: 0x00000005 J 0x0000000c J
+noreturn: false
 in-degree: 2
 out-degree: 0
 data-xrefs:
@@ -2729,6 +2733,7 @@ end-bbs: 0
 call-refs: 0x00000009 J 0x00000003 J
 data-refs: 0x0000002c
 code-xrefs: 0x00000011 J 0x0000000a J
+noreturn: false
 in-degree: 2
 out-degree: 0
 data-xrefs:
