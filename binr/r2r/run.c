@@ -416,7 +416,9 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RLi
 		"1"
 	};
 	size_t env_size = load_plugins ? 0 : 1;
-	return runner (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size);
+	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size);
+	r_pvector_clear (&args);
+	return out;
 }
 
 R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner) {
