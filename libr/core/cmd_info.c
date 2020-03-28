@@ -651,7 +651,7 @@ static int cmd_info(void *data, const char *input) {
 						}
 					}
 					pj_end (pj);
-					r_cons_printf ("%s", pj_string (pj));
+					r_cons_printf ("%s\n", pj_string (pj));
 					pj_free (pj);
 				} else { // "it"
 					if (!equal) {

@@ -261,7 +261,11 @@ EOF
 RUN
 
 NAME=ob 0 fix
-FILE=- - -
+FILE=<<EOF
+-
+-
+-
+EOF
 CMDS=<<EOF
 ob~[0-1]
 ?e

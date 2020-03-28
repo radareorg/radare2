@@ -13,7 +13,9 @@ RUN
 NAME=rop search without maxhits
 FILE=../bins/elf/varsub
 CMDS=/Rq pop r15~?
-EXPECT=4
+EXPECT=<<EOF
+4
+EOF
 RUN
 
 NAME=rop search without maxhits
@@ -22,7 +24,9 @@ CMDS=<<EOF
 e search.maxhits=2
 /Rq pop r15~?
 EOF
-EXPECT=2
+EXPECT=<<EOF
+2
+EOF
 RUN
 
 NAME=search all rop gadgets

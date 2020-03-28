@@ -4,7 +4,9 @@ CMDS=<<EOF
 aaa 2> /dev/null
 agCj~{0}
 EOF
-EXPECT={"name":"entry0", "size":46,"imports":["reloc.__libc_start_main"]}
+EXPECT=<<EOF
+{"name":"entry0", "size":46,"imports":["reloc.__libc_start_main"]}
+EOF
 RUN
 
 NAME=agCd entry0 imports libc_start_main
@@ -37,5 +39,7 @@ aaa 2> /dev/null
 agC~unk.
 echo end
 EOF
-EXPECT=end
+EXPECT=<<EOF
+end
+EOF
 RUN

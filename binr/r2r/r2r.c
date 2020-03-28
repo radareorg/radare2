@@ -31,7 +31,7 @@ static int help(bool verbose) {
 }
 
 int main(int argc, char **argv) {
-	int c, workers_count = 4; // TODO: read from arg
+	int c, workers_count = 8; // TODO: read from arg
 	bool verbose = false;
 	RGetopt opt;
 	r_getopt_init (&opt, argc, (const char **)argv, "hv");

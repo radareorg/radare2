@@ -417,7 +417,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	R_FREE (b64.string);
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
-		r_cons_printf ("%s", pj_string (pj));
+		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 		pj = NULL;
 	} else if (IS_MODE_SET (mode)) {
@@ -502,7 +502,7 @@ static bool bin_strings(RCore *r, int mode, int va) {
 	if (plugin->info && plugin->name) {
 		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
 			if (IS_MODE_JSON (mode)) {
-				r_cons_print ("[]");
+				r_cons_print ("[]\n");
 				return true;
 			}
 			return false;
@@ -621,7 +621,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 	RBinFile *bf = r_bin_cur (r->bin);
 	if (!bf) {
 		if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("{}");
+			r_cons_printf ("{}\n");
 		}
 		return false;
 	}
@@ -631,7 +631,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 
 	if (!bf || !info || !obj) {
 		if (mode & R_MODE_JSON) {
-			r_cons_printf ("{}");
+			r_cons_printf ("{}\n");
 			return true;
 		}
 		return false;
@@ -863,7 +863,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 			}
 		}
 		if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("}");
+			r_cons_printf ("}\n");
 		}
 	}
 	const char *dir_prefix = r_config_get (r->config, "dir.prefix");
@@ -2085,7 +2085,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (!info) {
 		if (IS_MODE_JSON (mode)) {
-			r_cons_printf (printHere? "{}": "[]");
+			r_cons_printf (printHere? "{}": "[]\n");
 		}
 		r_table_free (table);
 		return 0;
@@ -2336,7 +2336,7 @@ next:
 			pj_end (pj);
 		}
 		const char *js = pj_string (pj);
-		r_cons_printf ("%s", (js && *js)? js: "{}");
+		r_cons_printf ("%s\n", (js && *js)? js: "{}");
 	}
 	pj_free (pj);
 
@@ -3127,7 +3127,7 @@ static int bin_classes(RCore *r, int mode) {
 	RList *cs = r_bin_get_classes (r->bin);
 	if (!cs) {
 		if (IS_MODE_JSON (mode)) {
-			r_cons_print ("[]");
+			r_cons_print ("[]\n");
 			return true;
 		}
 		return false;
@@ -3286,7 +3286,7 @@ static int bin_classes(RCore *r, int mode) {
 		free (name);
 	}
 	if (IS_MODE_JSON (mode)) {
-		r_cons_print ("]");
+		r_cons_print ("]\n");
 	}
 
 	return true;
@@ -3778,7 +3778,7 @@ static void bin_pe_resources(RCore *r, int mode) {
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	} else if (IS_MODE_RAD (mode)) {
-		r_cons_printf ("fs *");
+		r_cons_println ("fs *");
 	}
 }
 
@@ -3825,7 +3825,7 @@ static int bin_signature(RCore *r, int mode) {
 	if (plg && plg->signature) {
 		const char *signature = plg->signature (cur, IS_MODE_JSON (mode));
 		if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("{\"signature\":%s}", signature);
+			r_cons_printf ("{\"signature\":%s}\n", signature);
 		} else {
 			r_cons_println (signature);
 		}

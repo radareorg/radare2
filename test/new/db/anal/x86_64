@@ -2371,7 +2371,9 @@ s 0x2254d
 agf~invalid
 echo end
 EOF
-EXPECT=end
+EXPECT=<<EOF
+end
+EOF
 RUN
 
 NAME=noreturn of reloc-functions
