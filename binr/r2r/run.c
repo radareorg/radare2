@@ -193,10 +193,10 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	return proc;
 error:
 	free (argv);
-	if (proc->killpipe[0] == -1) {
+	if (proc && proc->killpipe[0] == -1) {
 		close (proc->killpipe[0]);
 	}
-	if (proc->killpipe[1] == -1) {
+	if (proc && proc->killpipe[1] == -1) {
 		close (proc->killpipe[1]);
 	}
 	free (proc);

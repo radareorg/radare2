@@ -105,10 +105,12 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 
 	RPVector *ret = r_pvector_new (NULL);
 	if (!ret) {
+		free (contents);
 		return NULL;
 	}
 	R2RCmdTest *test = r2r_cmd_test_new ();
 	if (!test) {
+		free (contents);
 		r_pvector_free (ret);
 		return NULL;
 	}
@@ -157,6 +159,10 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 			if (test->field.value) { \
 				free (test->field.value); \
 				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
+			} \
+			if (!val) { \
+				eprintf (LINEFMT "Error: No value for key \"%s\"\n", file, linenum, key); \
+				continue; \
 			} \
 			test->field.line_begin = linenum; \
 			test->field.value = read_string_val (&nextline, val, &linenum); \
@@ -358,6 +364,7 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 
 		R2RAsmTest *test = r2r_asm_test_new ();
 		if (!test) {
+			free (bytes);
 			break;
 		}
 		test->line = linenum;
@@ -397,6 +404,7 @@ R_API RPVector *r2r_load_json_test_file(const char *file) {
 
 	RPVector *ret = r_pvector_new (NULL);
 	if (!ret) {
+		free (contents);
 		return NULL;
 	}
 
