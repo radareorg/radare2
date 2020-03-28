@@ -19,6 +19,12 @@ typedef enum {
 	R_STRING_ENC_GUESS = 'g',
 } RStrEnc;
 
+#define r_strf(buf, ...) ( \
+	snprintf (buf, sizeof (buf), __VA_ARGS__) < 0 \
+		? r_assert_log (R_LOGLVL_FATAL, "r_strf error while using snprintf"), NULL \
+		: buf \
+)
+
 typedef int (*RStrRangeCallback) (void *, int);
 
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))

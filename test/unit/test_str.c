@@ -371,6 +371,18 @@ bool test_r_str_constpool(void) {
 	mu_end;
 }
 
+bool test_r_strf(void) {
+	char bufa[0x100];
+	char bufb[0x100];
+	char *resa = r_strf (bufa, "Hello");
+	char *resb = r_strf (bufb, "World %d", 42);
+	mu_assert_ptreq (resa, bufa, "r_strf ptr");
+	mu_assert_streq (resa, "Hello", "r_strf string");
+	mu_assert_ptreq (resb, bufb, "r_strf ptr");
+	mu_assert_streq (resb, "World 42", "r_strf string");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_r_str_newf);
 	mu_run_test(test_r_str_replace_char_once);
@@ -397,6 +409,7 @@ bool all_tests() {
 	mu_run_test(test_r_str_sanitize_sdb_key);
 	mu_run_test(test_r_str_unescape);
 	mu_run_test(test_r_str_constpool);
+	mu_run_test(test_r_strf);
 	return tests_passed != tests_run;
 }
 
