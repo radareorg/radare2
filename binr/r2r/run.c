@@ -348,12 +348,12 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, con
 	r_pvector_push (&args, "-N");
 	r_pvector_push (&args, "-Qc");
 	r_pvector_push (&args, (void *)cmds);
-	r_pvector_push (&args, (void *)file);
 	RListIter *it;
 	void *extra_arg;
 	r_list_foreach (extra_args, it, extra_arg) {
 		r_pvector_push (&args, extra_arg);
 	}
+	r_pvector_push (&args, (void *)file);
 
 	const char *envvars[] = {
 		"R2_NOPLUGINS"
