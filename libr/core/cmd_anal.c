@@ -9621,7 +9621,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		if (end) {
 			*end = '\0';
 		}
-		
+
 		RAnalVTable vtable;
 		vtable.id = NULL;
 		vtable.addr = r_num_get (core->num, arg1_str);
