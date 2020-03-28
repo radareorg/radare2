@@ -4202,6 +4202,9 @@ static void ds_print_relocs(RDisasmState *ds) {
 	if (rel) {
 		int cstrlen = 0;
 		char *ll = r_cons_lastline (&cstrlen);
+		if (!ll) {
+			return;
+		}
 		int ansilen = r_str_ansi_len (ll);
 		int utf8len = r_utf8_strlen ((const ut8*)ll);
 		int cells = utf8len - (cstrlen - ansilen);
