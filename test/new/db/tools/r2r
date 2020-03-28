@@ -33,18 +33,9 @@ Test for BROKEN=0
 EOF
 RUN
 
-NAME=bin with space in filename (double quotes)
-FILE="../bins/elf/_Exit (42)"
-CMDS=i~^file
-EXPECT=<<EOF
-file     ../bins/elf/_Exit (42)
-EOF
-EXPECT_ERR=<<EOF
-EOF
-RUN
-
 NAME=bin with space in filename (single quotes)
-FILE='../bins/elf/_Exit (42)'
+BROKEN=1 # TODO: Enable when r2r.js and r2r.v are dead
+FILE=../bins/elf/_Exit (42)
 CMDS=i~^file
 EXPECT=<<EOF
 file     ../bins/elf/_Exit (42)
@@ -53,26 +44,23 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
-NAME=bin with space in filename (mismatched quotes)
-FILE="../bins/elf/_Exit (42)'
-CMDS=i~^file
-EXPECT=<<EOF
-EOF
-EXPECT_ERR=<<EOF
-[r] Cannot open '"../bins/elf/_Exit (42)''
-EOF
-RUN
-
-NAME=bin with space in filename (multiple files)
-FILE=- "-" "../bins/elf/_Exit (42)" "-" -
-CMDS=ob
-EXPECT=<<EOF
-0 3 x86-64 ba:0x00000000 sz:512 malloc://512
-1 4 x86-64 ba:0x00000000 sz:512 malloc://512
-2 5 x86-32 ba:0x08048000 sz:13073 ../bins/elf/_Exit (42)
-3 6 x86-64 ba:0x00000000 sz:512 malloc://512
-4 7 x86-64 ba:0x00000000 sz:512 malloc://512
-EOF
-EXPECT_ERR=<<EOF
-EOF
-RUN
+# TODO: Enable when r2r.js and r2r.v are dead
+#NAME=bin with space in filename (multiple files)
+#FILE=<<EOF
+#-
+#-
+#../bins/elf/_Exit (42)
+#-
+#-
+#EOF
+#CMDS=ob
+#EXPECT=<<EOF
+#0 3 x86-64 ba:0x00000000 sz:512 malloc://512
+#1 4 x86-64 ba:0x00000000 sz:512 malloc://512
+#2 5 x86-32 ba:0x08048000 sz:13073 ../bins/elf/_Exit (42)
+#3 6 x86-64 ba:0x00000000 sz:512 malloc://512
+#4 7 x86-64 ba:0x00000000 sz:512 malloc://512
+#EOF
+#EXPECT_ERR=<<EOF
+#EOF
+#RUN
