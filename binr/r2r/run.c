@@ -411,6 +411,14 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 			r_list_delete (files, it);
 		}
 	}
+	if (r_list_empty (files)) {
+		if (!files) {
+			files = r_list_new ();
+		} else {
+			files->free = NULL;
+		}
+		r_list_push (files, "-");
+	}
 	R2RProcessOutput *out = run_r2_test (config, test->cmds.value, files, extra_args, test->load_plugins, runner);
 	r_list_free (extra_args);
 	r_list_free (files);
