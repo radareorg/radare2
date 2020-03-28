@@ -234,7 +234,7 @@ static R2RProcessOutput *print_runner(const char *file, const char *args[], size
 	printf ("%s", file);
 	for (i = 0; i < args_size; i++) {
 		const char *str = args[i];
-		if (strchr (str, '\n') || strchr (str, ' ') || strchr (str, '\'') || strchr (str, '"')) {
+		if (strpbrk (str, "\n \'\"")) {
 			printf (" '%s'", str); // TODO: escape
 		} else {
 			printf (" %s", str);
@@ -249,12 +249,12 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	case R2R_TEST_TYPE_CMD: {
 		r2r_run_cmd_test (config, result->test->cmd_test, print_runner);
 		const char *expect = result->test->cmd_test->expect.value;
-		if (expect && strcmp (result->proc_out->out, expect) != 0) {
+		if (expect && strcmp (result->proc_out->out, expect)) {
 			printf ("-- stdout\n");
 			print_diff (result->proc_out->out, expect);
 		}
 		expect = result->test->cmd_test->expect_err.value;
-		if (expect && strcmp (result->proc_out->err, expect) != 0) {
+		if (expect && strcmp (result->proc_out->err, expect)) {
 			printf ("-- stderr\n");
 			print_diff (result->proc_out->err, expect);
 		}

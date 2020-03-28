@@ -21,6 +21,18 @@ R_API R2RSubprocess *r2r_subprocess_start(
 }
 
 R_API void r2r_subprocess_wait(R2RSubprocess *proc) {}
+
+R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
+	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
+	if (!out) {
+		return NULL;
+	}
+	out->out = r_strbuf_drain_nofree (&proc->out);
+	out->err = r_strbuf_drain_nofree (&proc->err);
+	out->ret = proc->ret;
+	return out;
+}
+
 R_API void r2r_subprocess_free(R2RSubprocess *proc) {}
 #else
 
@@ -313,6 +325,18 @@ R_API void r2r_subprocess_wait(R2RSubprocess *proc) {
 	}
 }
 
+R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
+	r_th_lock_enter (subprocs_mutex);
+	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
+	if (out) {
+		out->out = r_strbuf_drain_nofree (&proc->out);
+		out->err = r_strbuf_drain_nofree (&proc->err);
+		out->ret = proc->ret;
+	}
+	r_th_lock_leave (subprocs_mutex);
+	return out;
+}
+
 R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	if (!proc) {
 		return;
@@ -343,14 +367,7 @@ static R2RProcessOutput *subprocess_runner(const char *file, const char *args[],
 		const char *envvars[], const char *envvals[], size_t env_size) {
 	R2RSubprocess *proc = r2r_subprocess_start (file, args, args_size, envvars, envvals, env_size);
 	r2r_subprocess_wait (proc);
-	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
-	if (out) {
-		r_th_lock_enter (subprocs_mutex);
-		out->out = r_strbuf_drain_nofree (&proc->out);
-		out->err = r_strbuf_drain_nofree (&proc->err);
-		out->ret = proc->ret;
-		r_th_lock_leave (subprocs_mutex);
-	}
+	R2RProcessOutput *out = r2r_subprocess_drain (proc);
 	r2r_subprocess_free (proc);
 	return out;
 }
