@@ -276,7 +276,7 @@ EXPECT=<<EOF
 
 fd       4
 fd       5
-fd       5
+fd       3
 EOF
 RUN
 
