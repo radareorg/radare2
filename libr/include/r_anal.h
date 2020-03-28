@@ -5,7 +5,6 @@
 
 /* use old refs and function storage */
 // still required by core in lot of places
-#define FCN_OLD 1
 #define USE_VARSUBS 0
 
 #include <r_types.h>
