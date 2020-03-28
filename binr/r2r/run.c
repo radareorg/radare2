@@ -41,6 +41,7 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {}
 
 struct r2r_subprocess_t {
 	pid_t pid;
+	int stdin_fd;
 	int stdout_fd;
 	int stderr_fd;
 	int killpipe[2];
@@ -174,6 +175,13 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		goto error;
 	}
 
+	int stdin_pipe[2] = { -1, -1 };
+	if (pipe (stdin_pipe) == -1) {
+		perror ("pipe");
+		goto error;
+	}
+	proc->stdin_fd = stdin_pipe[1];
+
 	int stdout_pipe[2] = { -1, -1 };
 	if (pipe (stdout_pipe) == -1) {
 		perror ("pipe");
@@ -207,6 +215,9 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		return NULL;
 	} else if (proc->pid == 0) {
 		// child
+		while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {}
+		close (stdin_pipe[0]);
+		close (stdin_pipe[1]);
 		while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
 		close (stdout_pipe[1]);
 		close (stdout_pipe[0]);
@@ -225,6 +236,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	free (argv);
 
 	// parent
+	close (stdin_pipe[0]);
 	close (stdout_pipe[1]);
 	close (stderr_pipe[1]);
 
@@ -253,6 +265,12 @@ error:
 	}
 	if (stdout_pipe[1] == -1) {
 		close (stdout_pipe[1]);
+	}
+	if (stdin_pipe[0] == -1) {
+		close (stdin_pipe[0]);
+	}
+	if (stdin_pipe[1] == -1) {
+		close (stdin_pipe[1]);
 	}
 	return NULL;
 }
@@ -345,9 +363,10 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	r_pvector_remove_data (&subprocs, proc);
 	r_th_lock_leave (subprocs_mutex);
 	r_strbuf_fini (&proc->out);
-	r_strbuf_fini (&proc->err);;
-	close (proc->killpipe[0]);;
+	r_strbuf_fini (&proc->err);
+	close (proc->killpipe[0]);
 	close (proc->killpipe[1]);
+	close (proc->stdin_fd);
 	close (proc->stdout_fd);
 	close (proc->stderr_fd);
 	free (proc);
