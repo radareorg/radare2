@@ -39,48 +39,59 @@ struct r2r_subprocess_t {
 
 static RPVector subprocs;
 static RThreadLock *subprocs_mutex;
-
-static void subprocs_lock(sigset_t *old_sigset) {
-	sigset_t block_sigset;
-	sigemptyset (&block_sigset);
-	sigaddset (&block_sigset, SIGWINCH);
-	r_signal_sigmask (SIG_BLOCK, &block_sigset, old_sigset);
-	r_th_lock_enter (subprocs_mutex);
-}
-
-static void subprocs_unlock(sigset_t *old_sigset) {
-	r_th_lock_leave (subprocs_mutex);
-	r_signal_sigmask (SIG_SETMASK, old_sigset, NULL);
-}
+static int sigchld_pipe[2];
+static RThread *sigchld_thread;
 
 static void handle_sigchld() {
+	ut8 b = 1;
+	write (sigchld_pipe[1], &b, 1);
+}
+
+static RThreadFunctionRet sigchld_th(RThread *th) {
 	while (true) {
-		int wstat;
-		pid_t pid = waitpid (-1, &wstat, WNOHANG);
-		if (pid <= 0)
-			return;
-
-		void **it;
-		R2RSubprocess *proc = NULL;
-		r_pvector_foreach (&subprocs, it) {
-			R2RSubprocess *p = *it;
-			if (p->pid == pid) {
-				proc = p;
-				break;
+		ut8 b;
+		ssize_t rd = read (sigchld_pipe[0], &b, 1);
+		if (rd <= 0) {
+			if (rd < 0) {
+				if (errno == EINTR) {
+					continue;
+				}
+				perror ("read");
 			}
+			break;
 		}
-		if (!proc) {
-			continue;
-		}
+		while (true) {
+			int wstat;
+			pid_t pid = waitpid (-1, &wstat, WNOHANG);
+			if (pid <= 0)
+				break;
 
-		if (WIFEXITED (wstat)) {
-			proc->ret = WEXITSTATUS (wstat);
-		} else {
-			proc->ret = -1;
+			r_th_lock_enter (subprocs_mutex);
+			void **it;
+			R2RSubprocess *proc = NULL;
+			r_pvector_foreach (&subprocs, it) {
+				R2RSubprocess *p = *it;
+				if (p->pid == pid) {
+					proc = p;
+					break;
+				}
+			}
+			if (!proc) {
+				r_th_lock_leave (subprocs_mutex);
+				continue;
+			}
+
+			if (WIFEXITED (wstat)) {
+				proc->ret = WEXITSTATUS (wstat);
+			} else {
+				proc->ret = -1;
+			}
+			ut8 r = 0;
+			write (proc->killpipe[1], &r, 1);
+			r_th_lock_leave (subprocs_mutex);
 		}
-		ut8 r = 0;
-		write (proc->killpipe[1], &r, 1);
 	}
+	return R_TH_STOP;
 }
 
 R_API bool r2r_subprocess_init() {
@@ -89,13 +100,33 @@ R_API bool r2r_subprocess_init() {
 	if (!subprocs_mutex) {
 		return false;
 	}
+	if (pipe (sigchld_pipe) == -1) {
+		perror ("pipe");
+		r_th_lock_free (subprocs_mutex);
+		return false;
+	}
+	sigchld_thread = r_th_new (sigchld_th, NULL, 0);
+	if (!sigchld_thread) {
+		close (sigchld_pipe [0]);
+		close (sigchld_pipe [1]);
+		r_th_lock_free (subprocs_mutex);
+		return false;
+	}
 	if (r_sys_signal (SIGCHLD, handle_sigchld) < 0) {
+		close (sigchld_pipe [0]);
+		close (sigchld_pipe [1]);
+		r_th_lock_free (subprocs_mutex);
 		return false;
 	}
 	return true;
 }
 
 R_API void r2r_subprocess_fini() {
+	r_sys_signal (SIGCHLD, SIG_IGN);
+	close (sigchld_pipe [0]);
+	close (sigchld_pipe [1]);
+	r_th_wait (sigchld_thread);
+	r_th_free (sigchld_thread);
 	r_pvector_clear (&subprocs);
 	r_th_lock_free (subprocs_mutex);
 }
@@ -153,12 +184,11 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	}
 	proc->stderr_fd = stderr_pipe[0];
 
-	sigset_t old_sigset;
-	subprocs_lock (&old_sigset);
+	r_th_lock_enter (subprocs_mutex);
 	proc->pid = r_sys_fork ();
 	if (proc->pid == -1) {
 		// fail
-		subprocs_unlock (&old_sigset);
+		r_th_lock_leave (subprocs_mutex);
 		perror ("fork");
 		free (proc);
 		free (argv);
@@ -188,7 +218,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 
 	r_pvector_push (&subprocs, proc);
 
-	subprocs_unlock (&old_sigset);
+	r_th_lock_leave (subprocs_mutex);
 
 	return proc;
 error:
@@ -287,10 +317,9 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	if (!proc) {
 		return;
 	}
-	sigset_t old_sigset;
-	subprocs_lock (&old_sigset);
+	r_th_lock_enter (subprocs_mutex);
 	r_pvector_remove_data (&subprocs, proc);
-	subprocs_unlock (&old_sigset);
+	r_th_lock_leave (subprocs_mutex);
 	r_strbuf_fini (&proc->out);
 	r_strbuf_fini (&proc->err);;
 	close (proc->killpipe[0]);;
@@ -337,9 +366,11 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, con
 	r2r_subprocess_wait (proc);
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
 	if (out) {
+		r_th_lock_enter (subprocs_mutex);
 		out->out = r_strbuf_drain_nofree (&proc->out);
 		out->err = r_strbuf_drain_nofree (&proc->err);
 		out->ret = proc->ret;
+		r_th_lock_leave (subprocs_mutex);
 	}
 	r2r_subprocess_free (proc);
 	return out;
