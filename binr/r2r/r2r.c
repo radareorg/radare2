@@ -249,20 +249,17 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	case R2R_TEST_TYPE_CMD: {
 		r2r_run_cmd_test (config, result->test->cmd_test, print_runner);
 		const char *expect = result->test->cmd_test->expect.value;
-		if (!expect) {
-			expect = "";
-		}
-		if (strcmp (result->proc_out->out, expect) != 0) {
+		if (expect && strcmp (result->proc_out->out, expect) != 0) {
 			printf ("-- stdout\n");
 			print_diff (result->proc_out->out, expect);
 		}
 		expect = result->test->cmd_test->expect_err.value;
-		if (!expect) {
-			break;
-		}
-		if (strcmp (result->proc_out->err, expect) != 0) {
+		if (expect && strcmp (result->proc_out->err, expect) != 0) {
 			printf ("-- stderr\n");
 			print_diff (result->proc_out->err, expect);
+		}
+		if (result->proc_out->ret != 0) {
+			printf ("-- exit status: "Color_RED"%d"Color_RESET"\n", result->proc_out->ret);
 		}
 		break;
 	}
