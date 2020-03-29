@@ -10,9 +10,9 @@ e io.cache=true
 # INVALID FILENAME .(show_fname B\x1b¢\302\200\200€𝄞\363\240\201\201\\.bin)
 EOF
 EXPECT=<<EOF
-file     A�€𝄞󠁁\.bin
+file     A\x1b¢€𝄞󠁁\.bin
 {"core":{"type":"","file":"A\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":4,"size":256,"humansz":"256","iorw":true,"mode":"r-x","obsz":0,"block":256,"format":"any"}}
-file     B�€𝄞󠁁\.bin
+file     B\x1b¢€𝄞󠁁\.bin
 {"core":{"type":"","file":"B\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":5,"size":256,"humansz":"256","iorw":true,"mode":"r-x","obsz":0,"block":256,"format":"any"}}
 EOF
 RUN
