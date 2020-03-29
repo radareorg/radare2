@@ -25,4 +25,3 @@ tfc rax ms (rcx, rdx, r8, r9, stack);
 tfc rax swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4, r13, r12);
 EOF
 RUN
-
