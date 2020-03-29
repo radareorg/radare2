@@ -254,9 +254,12 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 			print_diff (result->proc_out->out, expect);
 		}
 		expect = result->test->cmd_test->expect_err.value;
-		if (expect && strcmp (result->proc_out->err, expect)) {
+		const char *err = result->proc_out->err;
+		if (expect && strcmp (err, expect)) {
 			printf ("-- stderr\n");
-			print_diff (result->proc_out->err, expect);
+			print_diff (err, expect);
+		} else if (*err) {
+			printf ("-- stderr\n%s\n", err);
 		}
 		if (result->proc_out->ret != 0) {
 			printf ("-- exit status: "Color_RED"%d"Color_RESET"\n", result->proc_out->ret);
