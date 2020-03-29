@@ -280,7 +280,7 @@ beach:
 		dbg->cb_printf ("}\n");
 	} else if (rad == 'J') {
 		// do nothing
-	} else if (n > 0 && rad == 2 && ((n%cols))) {
+	} else if (n > 0 && (rad == 2 || rad == '=') && ((n%cols))) {
 		dbg->cb_printf ("\n");
 	}
 	return n;

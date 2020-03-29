@@ -23,18 +23,23 @@ static RThreadFunctionRet worker_th(RThread *th);
 static void print_state(R2RState *state, ut64 prev_completed);
 
 static int help(bool verbose) {
-	printf ("Usage: r2r [test]\n");
+	printf ("Usage: r2r [-vh] [-j threads] [test path]\n");
 	if (verbose) {
-		printf (" TODO: verbose help\n");
+		printf (
+		" -h           print this help\n"
+		" -v           verbose\n"
+		" -j [threads] how many threads to use for running tests concurrently (default is 4)\n");
 	}
 	return 1;
 }
 
 int main(int argc, char **argv) {
-	int c, workers_count = 4; // TODO: read from arg
+	int workers_count = 4;
 	bool verbose = false;
+
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hv");
+	r_getopt_init (&opt, argc, (const char **)argv, "hvj:");
+	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'h':
@@ -42,6 +47,14 @@ int main(int argc, char **argv) {
 		case 'v':
 			verbose = true;
 			break;
+		case 'j': {
+			workers_count = atoi (opt.arg);
+			if (workers_count <= 0) {
+				eprintf ("Invalid thread count\n");
+				return help (false);
+			}
+			break;
+		}
 		default:
 			return help (false);
 		}
@@ -254,9 +267,12 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 			print_diff (result->proc_out->out, expect);
 		}
 		expect = result->test->cmd_test->expect_err.value;
-		if (expect && strcmp (result->proc_out->err, expect)) {
+		const char *err = result->proc_out->err;
+		if (expect && strcmp (err, expect)) {
 			printf ("-- stderr\n");
-			print_diff (result->proc_out->err, expect);
+			print_diff (err, expect);
+		} else if (*err) {
+			printf ("-- stderr\n%s\n", err);
 		}
 		if (result->proc_out->ret != 0) {
 			printf ("-- exit status: "Color_RED"%d"Color_RESET"\n", result->proc_out->ret);

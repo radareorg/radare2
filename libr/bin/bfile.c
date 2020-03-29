@@ -355,7 +355,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		pj_end (pj);
 		RIO *io = bin->iob.io;
 		if (io) {
-			io->cb_printf ("%s", pj_string (pj));
+			io->cb_printf ("%s\n", pj_string (pj));
 		}
 		pj_free (pj);
 	}

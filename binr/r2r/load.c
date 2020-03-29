@@ -132,16 +132,6 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		if (val) {
 			*val = '\0';
 			val++;
-			// Strip comment
-			char *cmt = strchr (val, '#');
-			if (cmt) {
-				*cmt = '\0';
-				cmt--;
-				while (cmt > val && *cmt == ' ') {
-					*cmt = '\0';
-					cmt--;
-				}
-			}
 		}
 
 		// RUN is the only cmd without value
@@ -180,6 +170,16 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
 			} \
 			test->field.set = true; \
+			/* Strip comment */ \
+			char *cmt = strchr (val, '#'); \
+			if (cmt) { \
+				*cmt = '\0'; \
+				cmt--; \
+				while (cmt > val && *cmt == ' ') { \
+					*cmt = '\0'; \
+					cmt--; \
+				} \
+			} \
 			if (!strcmp (val, "1")) { \
 				test->field.value = true; \
 			} else if (!strcmp (val, "0")) { \

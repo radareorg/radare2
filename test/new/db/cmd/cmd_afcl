@@ -148,8 +148,10 @@ EOF
 RUN
 
 NAME=afcl: mips-32-override
-FILE=/../bins/elf/libc.so.0
+FILE=../bins/elf/libc.so.0
 EXPECT=<<EOF
+n32
+o32
 EOF
 ARGS=-a mips -b 64
 CMDS=afcl
