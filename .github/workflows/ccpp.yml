@@ -21,6 +21,11 @@ jobs:
     - name: Install pkg-config with Homebrew
       if: matrix.os == 'macos-latest'
       run: brew install pkg-config
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v2
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
     - name: Configure with ACR
       run: ./configure --prefix=${HOME}
     - name: Build
@@ -28,10 +33,10 @@ jobs:
     - name: Install and run tests
       run: |
         # Install the radare2
-        export PATH=${HOME}/install/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/install/lib:${HOME}/install/lib64:${LD_LIBRARY_PATH}
+        export PATH=${HOME}/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
         make install
-        # Running the new C suite
-        # r2r -L
+        # Running the test suite
+        cd test && make
 
