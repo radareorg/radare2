@@ -225,24 +225,41 @@ static void print_diff(const char *actual, const char *expected) {
 #endif
 }
 
-static void print_result_diff(R2RTestResultInfo *result) {
+static R2RProcessOutput *print_runner(const char *file, const char *args[], size_t args_size,
+		const char *envvars[], const char *envvals[], size_t env_size) {
+	size_t i;
+	for (i = 0; i < env_size; i++) {
+		printf ("%s=%s ", envvars[i], envvals[i]);
+	}
+	printf ("%s", file);
+	for (i = 0; i < args_size; i++) {
+		const char *str = args[i];
+		if (strpbrk (str, "\n \'\"")) {
+			printf (" '%s'", str); // TODO: escape
+		} else {
+			printf (" %s", str);
+		}
+	}
+	printf ("\n");
+	return NULL;
+}
+
+static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	switch (result->test->type) {
 	case R2R_TEST_TYPE_CMD: {
+		r2r_run_cmd_test (config, result->test->cmd_test, print_runner);
 		const char *expect = result->test->cmd_test->expect.value;
-		if (!expect) {
-			expect = "";
-		}
-		if (strcmp (result->proc_out->out, expect) != 0) {
+		if (expect && strcmp (result->proc_out->out, expect)) {
 			printf ("-- stdout\n");
 			print_diff (result->proc_out->out, expect);
 		}
 		expect = result->test->cmd_test->expect_err.value;
-		if (!expect) {
-			break;
-		}
-		if (strcmp (result->proc_out->err, expect) != 0) {
+		if (expect && strcmp (result->proc_out->err, expect)) {
 			printf ("-- stderr\n");
 			print_diff (result->proc_out->err, expect);
+		}
+		if (result->proc_out->ret != 0) {
+			printf ("-- exit status: "Color_RED"%d"Color_RESET"\n", result->proc_out->ret);
 		}
 		break;
 	}
@@ -285,7 +302,7 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 		}
 		printf (" %s "Color_YELLOW"%s"Color_RESET"\n", result->test->path, name);
 		if (result->result == R2R_TEST_RESULT_FAILED || (state->verbose && result->result == R2R_TEST_RESULT_BROKEN)) {
-			print_result_diff (result);
+			print_result_diff (&state->run_config, result);
 		}
 		free (name);
 	}
