@@ -39,6 +39,7 @@ static void *_r_th_launcher(void *_th) {
 		th->running = false;
 		r_th_lock_enter (th->lock);
 	} while (ret);
+	r_th_lock_leave (th->lock);
 #if HAVE_PTHREAD
 	pthread_exit (&ret);
 #endif
