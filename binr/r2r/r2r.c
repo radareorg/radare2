@@ -4,7 +4,10 @@
 
 #include <r_cons.h>
 
-#define WORKERS_DEFAULT 8
+#define WORKERS_DEFAULT        8
+#define RADARE2_CMD_DEFAULT    "radare2"
+#define RASM2_CMD_DEFAULT      "rasm2"
+#define JSON_TEST_FILE_DEFAULT "../bins/elf/crackme0x00b"
 
 #define STRV(x) #x
 #define STR(x) STRV(x)
@@ -35,6 +38,9 @@ static int help(bool verbose) {
 		" -h           print this help\n"
 		" -v           verbose\n"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
+		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
+		" -m [rasm2]   path to rasm2 executable (default is "RASM2_CMD_DEFAULT")\n"
+		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
 		"\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
 	}
@@ -44,14 +50,20 @@ static int help(bool verbose) {
 int main(int argc, char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
+	char *radare2_cmd = NULL;
+	char *rasm2_cmd = NULL;
+	char *json_test_file = NULL;
+
+	int ret = 0;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hvj:");
+	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:");
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'h':
-			return help (true);
+			ret = help (true);
+			goto beach;
 		case 'v':
 			verbose = true;
 			break;
@@ -59,12 +71,26 @@ int main(int argc, char **argv) {
 			workers_count = atoi (opt.arg);
 			if (workers_count <= 0) {
 				eprintf ("Invalid thread count\n");
-				return help (false);
+				ret = help (false);
+				goto beach;
 			}
+			break;
+		case 'r':
+			free (radare2_cmd);
+			radare2_cmd = strdup (opt.arg);
+			break;
+		case 'm':
+			free (rasm2_cmd);
+			rasm2_cmd = strdup (opt.arg);
+			break;
+		case 'f':
+			free (json_test_file);
+			json_test_file = strdup (opt.arg);
 			break;
 		}
 		default:
-			return help (false);
+			ret = help (false);
+			goto beach;
 		}
 	}
 
@@ -75,8 +101,9 @@ int main(int argc, char **argv) {
 	atexit (r2r_subprocess_fini);
 
 	R2RState state = {{0}};
-	state.run_config.r2_cmd = "radare2";
-	state.run_config.rasm2_cmd = "rasm2";
+	state.run_config.r2_cmd = radare2_cmd ? radare2_cmd : RADARE2_CMD_DEFAULT;
+	state.run_config.rasm2_cmd = rasm2_cmd ? rasm2_cmd : RASM2_CMD_DEFAULT;
+	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.verbose = verbose;
 	state.db = r2r_test_database_new ();
 	if (!state.db) {
@@ -113,6 +140,20 @@ int main(int argc, char **argv) {
 	}
 
 	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_len (&state.db->tests));
+
+	bool jq_available = r2r_check_jq_available ();
+	if (!jq_available) {
+		eprintf ("Skipping json tests because jq is not available.\n");
+		size_t i;
+		for (i = 0; i < r_pvector_len (&state.db->tests);) {
+			R2RTest *test = r_pvector_at (&state.db->tests, i);
+			if (test->type == R2R_TEST_TYPE_JSON) {
+				r_pvector_remove_at (&state.db->tests, i);
+				continue;
+			}
+			i++;
+		}
+	}
 
 	r_th_lock_enter (state.lock);
 
@@ -153,7 +194,6 @@ int main(int argc, char **argv) {
 	}
 	r_pvector_clear (&workers);
 
-	int ret = 0;
 	if (state.xx_count) {
 		ret = 1;
 	}
@@ -163,6 +203,10 @@ int main(int argc, char **argv) {
 	r2r_test_database_free (state.db);
 	r_th_lock_free (state.lock);
 	r_th_cond_free (state.cond);
+beach:
+	free (radare2_cmd);
+	free (rasm2_cmd);
+	free (json_test_file);
 	return ret;
 }
 
