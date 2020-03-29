@@ -5,6 +5,26 @@
 
 #include <r_util.h>
 
+#if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
+#define R2R_OS "freebsd"
+#elif defined(__linux__)
+#define R2R_OS "linux"
+#elif defined(__APPLE__)
+#define R2R_OS "darwin"
+#else
+#define R2R_OS "unknown"
+#endif
+
+#if __i386__
+#define R2R_ARCH "x86"
+#elif __x86_64__
+#define R2R_ARCH "x64"
+#else
+#define R2R_ARCH "unknown"
+#endif
+
+#define R2R_ARCH_OS R2R_OS"-"R2R_ARCH
+
 typedef struct r2r_cmd_test_string_record {
 	char *value;
 	ut64 line_begin; // inclusive
@@ -90,6 +110,7 @@ typedef struct r2r_test_database_t {
 typedef struct r2r_run_config_t {
 	const char *r2_cmd;
 	const char *rasm2_cmd;
+	const char *json_test_file;
 } R2RRunConfig;
 
 typedef struct r2r_process_output_t {
@@ -152,6 +173,7 @@ typedef R2RProcessOutput *(*R2RCmdRunner)(const char *file, const char *args[], 
 R_API void r2r_process_output_free(R2RProcessOutput *out);
 R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner);
 R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test);
+R_API bool r2r_check_jq_available();
 R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner);
 R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test);
 

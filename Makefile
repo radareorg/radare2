@@ -8,7 +8,7 @@ L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
 R2R=test
-R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent)
+R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent r2r)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
 else

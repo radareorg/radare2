@@ -2871,6 +2871,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		i++;
 		last_processed = iter;
 		if (printHere) {
+			if (IS_MODE_JSON (mode)) {
+				r_cons_print ("\n");
+			}
 			break;
 		}
 	}

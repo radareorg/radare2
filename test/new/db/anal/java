@@ -34,7 +34,7 @@ EOF
 RUN
 
 NAME=java huge switch case crash
-FILE=../../bins/java/sjybq.class
+FILE=../bins/java/sjybq.class
 CMDS=e asm.arch=java e scr.null=true pd 200
 EXPECT=<<EOF
 EOF

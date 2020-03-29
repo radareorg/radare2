@@ -343,6 +343,12 @@ R_API void r2r_subprocess_wait(R2RSubprocess *proc) {
 	}
 }
 
+R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
+	write (proc->stdin_fd, buf, buf_size);
+	close (proc->stdin_fd);
+	proc->stdin_fd = -1;
+}
+
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 	r_th_lock_enter (subprocs_mutex);
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
@@ -366,7 +372,9 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	r_strbuf_fini (&proc->err);
 	close (proc->killpipe[0]);
 	close (proc->killpipe[1]);
-	close (proc->stdin_fd);
+	if (proc->stdin_fd != -1) {
+		close (proc->stdin_fd);
+	}
 	close (proc->stdout_fd);
 	close (proc->stderr_fd);
 	free (proc);
@@ -461,10 +469,19 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 	return true;
 }
 
+#define JQ_CMD "jq"
+
+R_API bool r2r_check_jq_available() {
+	const char *args[] = { "--version" };
+	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
+	r2r_subprocess_wait (proc);
+	return proc->ret == 0;
+}
+
 R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner) {
 	RList *files = r_list_new ();
-	r_list_push (files, "--");
-	R2RProcessOutput *ret = run_r2_test (config, test->cmd, files, NULL, test->load_plugins, runner); // TODO: file?
+	r_list_push (files, (void *)config->json_test_file);
+	R2RProcessOutput *ret = run_r2_test (config, test->cmd, files, NULL, test->load_plugins, runner);
 	r_list_free (files);
 	return ret;
 }
@@ -473,8 +490,12 @@ R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
 	if (out->ret != 0 || !out->out || !out->err) {
 		return false;
 	}
-	// TODO: check json
-	return true;
+	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, NULL, 0, NULL, NULL, 0);
+	r2r_subprocess_stdin_write (proc, (const ut8 *)out->out, strlen (out->out));
+	r2r_subprocess_wait (proc);
+	bool ret = proc->ret == 0;
+	r2r_subprocess_free (proc);
+	return ret;
 }
 
 R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test) {
