@@ -45,6 +45,9 @@ endif
 ifneq ($(LIBS8),)
 	$(MAKE) $(LIBS8)
 endif
+ifneq ($(LIBS9),)
+	$(MAKE) $(LIBS9)
+endif
 ifeq ($(WITH_LIBR),1)
 	$(MAKE) libr.${EXT_AR}
 	$(MAKE) libr.${EXT_SO}

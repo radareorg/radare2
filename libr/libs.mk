@@ -10,8 +10,9 @@ LIBS5=anal egg
 LIBS6=debug
 LIBS7=core
 LIBS8=main
+LIBS9=enco
 
-LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7) $(LIBS8)
+LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7) $(LIBS8) $(LIBS9)
 endif
 
 .PHONY: $(LIBS)

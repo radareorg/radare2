@@ -12,6 +12,76 @@
 
 static const char hex[16] = "0123456789ABCDEF";
 
+typedef struct { unsigned char ch; unsigned char hx } chart;
+
+chart gameboy_encoding_chart[60] = {
+				    { '\0', 0x50 },//terminating byte
+
+
+				    { ' ', 0x7f },
+				    { 'A', 0x80 },
+				    { 'B', 0x81 },
+				    { 'C', 0x82 },
+				    { 'D', 0x83 },
+				    { 'E', 0x84 },
+				    { 'F', 0x85 },
+				    { 'G', 0x86 },
+				    { 'H', 0x87 },
+				    { 'I', 0x88 },
+				    { 'J', 0x89 },
+				    { 'K', 0x8a },
+				    { 'L', 0x8b },
+				    { 'M', 0x8c },
+				    { 'N', 0x8d },
+				    { 'O', 0x8e },
+				    { 'P', 0x8f },
+				    { 'Q', 0x90 },
+				    { 'R', 0x91 },
+				    { 'S', 0x92 },
+				    { 'T', 0x93 },
+				    { 'U', 0x94 },
+				    { 'V', 0x95 },
+				    { 'W', 0x96 },
+				    { 'X', 0x97 },
+				    { 'Y', 0x98 },
+				    { 'Z', 0x99 },
+
+
+				    { '(', 0x9a },
+				    { ')', 0x9b },
+				    { ':', 0x9c },
+				    { ';', 0x9d },
+				    { '[', 0x9e },
+				    { ']', 0x9f },
+				    { 'a', 0xa0 },
+				    { 'b', 0xa1 },
+				    { 'c', 0xa2 },
+				    { 'd', 0xa3 },
+				    { 'e', 0xa4 },
+				    { 'f', 0xa5 },
+				    { 'g', 0xa6 },
+				    { 'h', 0xa7 },
+				    { 'i', 0xa8 },
+				    { 'j', 0xa9 },
+				    { 'k', 0xaa },
+				    { 'l', 0xab },
+				    { 'm', 0xac },
+				    { 'n', 0xad },
+				    { 'o', 0xae },
+				    { 'p', 0xaf },
+				    { 'q', 0xb0 },
+				    { 'r', 0xb1 },
+				    { 's', 0xb2 },
+				    { 't', 0xb3 },
+				    { 'u', 0xb4 },
+				    { 'v', 0xb5 },
+				    { 'w', 0xb6 },
+				    { 'x', 0xb7 },
+				    { 'y', 0xb8 },
+				    { 'z', 0xb9 }
+		   };
+
+
 static int nullprinter(const char *a, ...) {
 	return 0;
 }
@@ -672,6 +742,74 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 		}
 		r_print_cursor (p, i, 1, 1);
 		ut8 b = buf[i];
+		if (b == '\n') {
+			col = 0;
+		}
+		col++;
+		if (urlencode) {
+			// TODO: some ascii can be bypassed here
+			p->cb_printf ("%%%02x", b);
+		} else {
+			if (b == '\\') {
+				p->cb_printf ("\\\\");
+			} else if ((b == '\n' && !esc_nl) || IS_PRINTABLE (b)) {
+				p->cb_printf ("%c", b);
+			} else {
+				p->cb_printf ("\\x%02x", b);
+			}
+		}
+		r_print_cursor (p, i, 1, 0);
+		if (wrap && col + 1 >= p->width) {
+			p->cb_printf ("\n");
+			col = 0;
+		}
+		if (wide) {
+			i++;
+		}
+	}
+	p->cb_printf ("\n");
+	return i;
+}
+
+R_API int r_print_gameboy_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
+	int i;
+	char c;
+	bool wide = (options & R_PRINT_STRING_WIDE);
+	bool wide32 = (options & R_PRINT_STRING_WIDE32);
+	bool zeroend = (options & R_PRINT_STRING_ZEROEND);
+	bool wrap = (options & R_PRINT_STRING_WRAP);
+	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
+	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
+	p->interrupt = 0;
+	int col = 0;
+	i = 0;
+	for (; !p->interrupt && i < len; i++) {
+		if (wide32) {
+			int j = i;
+			while (buf[j] == '\0' && j < (i + 3)) {
+				j++;
+			}
+			i = j;
+		}
+		if (zeroend && buf[i] == '\0') {
+			break;
+		}
+		r_print_cursor (p, i, 1, 1);
+
+		ut8 b = buf[i];
+
+                for (int gbi = 0; gbi < 60; gbi ++)
+                {
+                    if (b == gameboy_encoding_chart[gbi].hx)
+			{
+                                c = gameboy_encoding_chart[gbi].ch;
+				atoi(c);
+			}
+                }
+
+		b = c;//lol
+                
+
 		if (b == '\n') {
 			col = 0;
 		}

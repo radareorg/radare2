@@ -5852,6 +5852,93 @@ l = use_blocksize;
 				}
 			}
 			break;
+		case 't': // "pst"
+			if (l > 0) {
+				SdbListIter *iter;
+				SdbKv *kv;
+				SdbList *sdbls = sdb_foreach_list (core->anal->sdb_meta, true);
+				ut8 out[len];
+				ut8 c;
+				int i = 0;
+
+				for (int j = 0; j < len; j ++) {
+					ls_foreach (sdbls, iter, kv) {
+						char hex_str[2];
+						memcpy(hex_str, sdbkv_key (kv)+2, sizeof(char)*2);
+						int hex = (int)strtol(hex_str, NULL, 16);
+
+						if (core->block[j] == hex) {
+							c = (ut8) sdbkv_value (kv)[0];
+							out[i] = c;
+							i++;
+						} else {
+						}
+					out[i] = '\0';
+					}
+				}
+				r_print_string (core->print, core->offset, out, len, R_PRINT_STRING_ZEROEND);
+			}
+			break;
+		case 'e': // "pse"
+			if (input[2] == ' ') {//work in progress
+				const char *fname = r_str_trim_head_ro (input + 3);
+				char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_ENCO, "%s"), fname);
+				char *home = r_str_home (tmp);
+				free (tmp);
+				tmp = r_str_newf (R_JOIN_2_PATHS (R2_SDB_ENCO, "%s"), r_str_newf (R_JOIN_2_PATHS ("d", "%s"), fname));
+				char *path = r_str_r2_prefix (tmp);
+				if (r_str_endswith (input, ".h")) {
+					char *error_msg = NULL;
+					const char *dir = r_config_get (core->config, "dir.types");
+					char *out = r_parse_c_file (core->anal, path, dir, &error_msg);
+					if (out) {
+						r_anal_save_parsed_type (core->anal, out);
+						r_core_cmd0 (core, ".ts*");
+						free (out);
+					} else {
+						eprintf ("Parse error: %s\n", error_msg);
+					}
+				} else {
+					if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
+						if (!r_core_cmd_file (core, input + 3)) {
+							eprintf ("pse: cannot open format file at '%s'\n", path);
+						}
+					}
+				}
+				free (home);
+				free (path);
+				free (tmp);
+			} else {//not ok
+				RList *files;
+				RListIter *iter;
+				const char *fn;
+				char *home = r_str_home (R2_HOME_ENCO R_SYS_DIR);
+                                
+				if (home) {
+					files = r_sys_dir (home);
+					r_list_foreach (files, iter, fn) {
+						if (*fn && *fn != '.') {
+							r_cons_println (fn);
+						}
+					}
+					r_list_free (files);
+					free (home);
+				}
+				char *path = r_str_r2_prefix (R2_SDB_ENCO);//ok
+				path = r_str_newf (R_JOIN_2_PATHS ("%s", "d"), path);
+				if (path) {
+					files = r_sys_dir (path);
+					r_list_foreach (files, iter, fn) {
+						if (*fn && *fn != '.') {
+							r_cons_println (fn);
+						}
+					}
+					r_list_free (files);
+					free (path);
+				}
+			}
+			//free (input);
+			break;
 		default:
 			if (l > 0) {
 				r_print_string (core->print, core->offset, core->block,
@@ -6683,6 +6770,7 @@ l = use_blocksize;
 		cmd_print_gadget (core, input + 1);
 		break;
 	case 'f': // "pf"
+                //r_core_cmd_help (core, msg);
 		cmd_print_format (core, input, block, len);
 		break;
 	case 'F': // "pF"
