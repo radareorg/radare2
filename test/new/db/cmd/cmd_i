@@ -4210,22 +4210,33 @@ File has been modified.
 EOF
 RUN
 
-# XXX modifying files is a very bad idea
 NAME=it2
-FILE=../bins/mach0/fatmach0-3true
-ARGS=-w
-BROKEN=1
-CMDS=it ; wx 0x90 ; it
+FILE=--
+CMDS=<<EOF
+mkdir .tmp
+cp ../bins/mach0/fatmach0-3true .tmp/it2-modfile
+o .tmp/it2-modfile
+oo+
+it
+wx 0x90
+it
+o--
+rm .tmp/it2-modfile
+EOF
 EXPECT_ERR=<<EOF
 File has been modified.
 - md5 84144530144b53a704c84d9c65ab5f92
 + md5 9a99cca7bf3e27ee1c8964141cfad053
 - sha1 9016e215a321184c42c28ab03847554851932713
 + sha1 17c5b6331a420fc3b48defe782090295294fee2e
+- sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012
++ sha256 53cb8b3aec20da6a313ac996ca8f518bca9fa4768ff771d35513be09a387f025
+All core files, io, anal and flags info purged.
 EOF
 EXPECT=<<EOF
 md5 84144530144b53a704c84d9c65ab5f92
 sha1 9016e215a321184c42c28ab03847554851932713
+sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012
 EOF
 RUN
 
