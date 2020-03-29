@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2018 - inisider */
+/* radare - LGPL - Copyright 2015-2020 - inisider, pancake */
 
 #include "../../i/private.h"
 #include "mach0_classes.h"
