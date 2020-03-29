@@ -577,6 +577,7 @@ typedef struct r_bin_field_t {
 	ut64 vaddr;
 	ut64 paddr;
 	int size;
+	int offset;
 	ut32 visibility;
 	char *name;
 	char *type;
