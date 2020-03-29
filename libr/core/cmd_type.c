@@ -1077,6 +1077,9 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		}
+		case '*':
+			r_core_cmd0 (core, "ts*");
+			break;
 		case 0:
 			r_core_cmd0 (core, "tfc;tuc;tsc;ttc;tec");
 			break;
@@ -1640,7 +1643,9 @@ static int cmd_type(void *data, const char *input) {
 			print_keys (TDB, core, stdiffunc, printkey_cb, false);
 			break;
 		case 'c': // "tfc"
-			printFunctionTypeC (core, input + 2);
+			if (input[2] == ' ') {
+				printFunctionTypeC (core, input + 3);
+			}
 			break;
 		case 'j': // "tfj"
 			if (input[2] == ' ') {
