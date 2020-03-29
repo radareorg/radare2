@@ -4,6 +4,12 @@
 
 #include <r_cons.h>
 
+#define WORKERS_DEFAULT 8
+
+#define STRV(x) #x
+#define STR(x) STRV(x)
+#define WORKERS_DEFAULT_STR STR(WORKERS_DEFAULT)
+
 typedef struct r2r_state_t {
 	R2RRunConfig run_config;
 	bool verbose;
@@ -28,13 +34,13 @@ static int help(bool verbose) {
 		printf (
 		" -h           print this help\n"
 		" -v           verbose\n"
-		" -j [threads] how many threads to use for running tests concurrently (default is 4)\n");
+		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n");
 	}
 	return 1;
 }
 
 int main(int argc, char **argv) {
-	int workers_count = 4;
+	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
 
 	RGetopt opt;
