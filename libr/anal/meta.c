@@ -112,7 +112,7 @@ R_API bool r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 
 	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, addr);
 	size = sdb_array_get_num (DB, key, 0, 0);
-	if (!size) {
+	if (!size && s) {
 		size = strlen (s);
 		meta_inrange_add (a, addr, size);
 		ret = true;
