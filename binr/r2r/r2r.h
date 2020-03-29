@@ -5,6 +5,26 @@
 
 #include <r_util.h>
 
+#if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
+#define R2R_OS "freebsd"
+#elif defined(__linux__)
+#define R2R_OS "linux"
+#elif defined(__APPLE__)
+#define R2R_OS "darwin"
+#else
+#define R2R_OS "unknown"
+#endif
+
+#if __i386__
+#define R2R_ARCH "x86"
+#elif __x86_64__
+#define R2R_ARCH "x64"
+#else
+#define R2R_ARCH "unknown"
+#endif
+
+#define R2R_ARCH_OS R2R_OS"-"R2R_ARCH
+
 typedef struct r2r_cmd_test_string_record {
 	char *value;
 	ut64 line_begin; // inclusive

@@ -34,7 +34,9 @@ static int help(bool verbose) {
 		printf (
 		" -h           print this help\n"
 		" -v           verbose\n"
-		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n");
+		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
+		"\n"
+		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
 	}
 	return 1;
 }
