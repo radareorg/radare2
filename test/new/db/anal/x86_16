@@ -19,7 +19,9 @@ e asm.bits=16
 wx 9a34002001
 ?v $j
 EOF
-EXPECT=0x1234
+EXPECT=<<EOF
+0x1234
+EOF
 RUN
 
 NAME=ljmp offset (#12284)
@@ -30,7 +32,9 @@ e asm.bits=16
 wx ea34002001
 ?v $j
 EOF
-EXPECT=0x1234
+EXPECT=<<EOF
+0x1234
+EOF1
 RUN
 
 NAME=aoj pushf
