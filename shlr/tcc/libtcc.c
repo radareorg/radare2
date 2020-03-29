@@ -554,9 +554,9 @@ LIBTCCAPI TCCState *tcc_new(const char *arch, int bits, const char *os)
 	tcc_define_symbol (s, "ut32", "uint32_t");
 	tcc_define_symbol (s, "ut64", "uint64_t");
 	if (bits == 64) {
-		tcc_define_symbol (s, "ut64", "size_t");
+		tcc_define_symbol (s, "size_t", "uint64_t");
 	} else {
-		tcc_define_symbol (s, "ut32", "size_t");
+		tcc_define_symbol (s, "size_t", "uint32_t");
 	}
 
 	tcc_define_symbol (s, "st8", "int8_t");

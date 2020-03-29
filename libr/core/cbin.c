@@ -3135,7 +3135,7 @@ static void classdump_c(RCore *r, RBinClass *c) {
 			free (n);
 		}
 	}
-	r_cons_printf ("} %s;\n\n", c->name);
+	r_cons_printf ("} %s;\n", c->name);
 }
 
 static void classdump_objc(RCore *r, RBinClass *c) {
@@ -3260,12 +3260,14 @@ static int bin_classes(RCore *r, int mode) {
 				r_name_filter (method, -1);
 				r_flag_set (r->flags, method, sym->vaddr, 1);
 			}
+#if 0
 			r_list_foreach (c->fields, iter2, f) {
 				char *fn = r_str_newf ("field.%s.%s", classname, f->name);
 				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
 				r_flag_set (r->flags, fn, at, 1);
 				free (fn);
 			}
+#endif
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_printf ("%s\n", c->name);
 		} else if (IS_MODE_SIMPLE (mode)) {
@@ -3330,12 +3332,18 @@ static int bin_classes(RCore *r, int mode) {
 
 			// C struct
 			r_cons_printf ("\"td struct %s {", c->name);
-			r_list_foreach (c->fields, iter2, f) {
-				char *n = objc_name_toc (f->name);
-				char *t = objc_type_toc (f->type);
-				r_cons_printf (" %s %s;", t, n);
-				free (t);
-				free (n);
+			if (r_list_empty (c->fields)) {
+				// XXX workaround because we cant register empty structs yet
+				// XXX https://github.com/radareorg/radare2/issues/16342
+				r_cons_printf (" char empty[0];");
+			} else {
+				r_list_foreach (c->fields, iter2, f) {
+					char *n = objc_name_toc (f->name);
+					char *t = objc_type_toc (f->type);
+					r_cons_printf (" %s %s;", t, n);
+					free (t);
+					free (n);
+				}
 			}
 			r_cons_printf ("};\"\n");
 		} else if (IS_MODE_JSON (mode)) {
