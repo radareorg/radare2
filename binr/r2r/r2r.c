@@ -140,8 +140,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_len (&state.db->tests));
-
 	bool jq_available = r2r_check_jq_available ();
 	if (!jq_available) {
 		eprintf ("Skipping json tests because jq is not available.\n");
@@ -149,12 +147,15 @@ int main(int argc, char **argv) {
 		for (i = 0; i < r_pvector_len (&state.db->tests);) {
 			R2RTest *test = r_pvector_at (&state.db->tests, i);
 			if (test->type == R2R_TEST_TYPE_JSON) {
+				r2r_test_free (test);
 				r_pvector_remove_at (&state.db->tests, i);
 				continue;
 			}
 			i++;
 		}
 	}
+
+	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_len (&state.db->tests));
 
 	r_th_lock_enter (state.lock);
 

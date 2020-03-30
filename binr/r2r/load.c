@@ -462,7 +462,7 @@ R_API RPVector *r2r_load_json_test_file(const char *file) {
 	return ret;
 }
 
-static void r2r_test_free(R2RTest *test) {
+R_API void r2r_test_free(R2RTest *test) {
 	if (!test) {
 		return;
 	}
