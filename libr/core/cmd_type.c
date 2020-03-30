@@ -1062,7 +1062,7 @@ static int cmd_type(void *data, const char *input) {
 			const char *type = r_str_trim_head_ro (input + 1);
 			const char *name = type ? strchr (type, '.') : NULL;
 			if (name && type) {
-                name++; // skip the '.'
+				name++; // skip the '.'
 				if (r_str_startswith (type, "struct")) {
 					r_core_cmdf (core, "tsc %s", name);
 				} else if (r_str_startswith (type, "union")) {
