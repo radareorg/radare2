@@ -405,15 +405,15 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RLi
 	r_pvector_push (&args, "-escr.color=0");
 	r_pvector_push (&args, "-escr.interactive=0");
 	r_pvector_push (&args, "-N");
-	r_pvector_push (&args, "-Qc");
-	r_pvector_push (&args, (void *)cmds);
 	RListIter *it;
-	void *extra_arg;
+	void *extra_arg, *file_arg;
 	r_list_foreach (extra_args, it, extra_arg) {
 		r_pvector_push (&args, extra_arg);
 	}
-	r_list_foreach (files, it, extra_arg) {
-		r_pvector_push (&args, extra_arg);
+	r_pvector_push (&args, "-Qc");
+	r_pvector_push (&args, (void *)cmds);
+	r_list_foreach (files, it, file_arg) {
+		r_pvector_push (&args, file_arg);
 	}
 
 	const char *envvars[] = {
