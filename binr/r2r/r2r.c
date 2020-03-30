@@ -20,6 +20,8 @@ typedef struct r2r_state_t {
 
 	RThreadCond *cond; // signaled from workers to main thread to update status
 	RThreadLock *lock; // protects everything below
+	HtPP *path_left; // char * (path to test file) => ut64 * (count of remaining tests)
+	RPVector completed_paths;
 	ut64 ok_count;
 	ut64 xx_count;
 	ut64 br_count;
@@ -30,6 +32,7 @@ typedef struct r2r_state_t {
 
 static RThreadFunctionRet worker_th(RThread *th);
 static void print_state(R2RState *state, ut64 prev_completed);
+static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
 
 static int help(bool verbose) {
 	printf ("Usage: r2r [-vh] [-j threads] [test path]\n");
@@ -37,6 +40,7 @@ static int help(bool verbose) {
 		printf (
 		" -h           print this help\n"
 		" -v           verbose\n"
+		" -L           log mode (better printing for CI, logfiles, etc.)"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
 		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
 		" -m [rasm2]   path to rasm2 executable (default is "RASM2_CMD_DEFAULT")\n"
@@ -47,9 +51,14 @@ static int help(bool verbose) {
 	return 1;
 }
 
+static void path_left_free_kv(HtPPKv *kv) {
+	free (kv->value);
+}
+
 int main(int argc, char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
+	bool log_mode = false;
 	char *radare2_cmd = NULL;
 	char *rasm2_cmd = NULL;
 	char *json_test_file = NULL;
@@ -57,7 +66,7 @@ int main(int argc, char **argv) {
 	int ret = 0;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:");
+	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:L");
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
@@ -66,6 +75,9 @@ int main(int argc, char **argv) {
 			goto beach;
 		case 'v':
 			verbose = true;
+			break;
+		case 'L':
+			log_mode = true;
 			break;
 		case 'j': {
 			workers_count = atoi (opt.arg);
@@ -112,6 +124,7 @@ int main(int argc, char **argv) {
 	}
 	r_pvector_init (&state.queue, NULL);
 	r_pvector_init (&state.results, (RPVectorFree)r2r_test_result_info_free);
+	r_pvector_init (&state.completed_paths, NULL);
 	state.lock = r_th_lock_new (false);
 	if (!state.lock) {
 		return -1;
@@ -156,6 +169,25 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	if (log_mode) {
+		// Log mode prints the state after every completed file.
+		// The count of tests left per file is stored in a ht.
+		state.path_left = ht_pp_new (NULL, path_left_free_kv, NULL);
+		if (state.path_left) {
+			void **it;
+			r_pvector_foreach (&state.queue, it) {
+				R2RTest *test = *it;
+				ut64 *count = ht_pp_find (state.path_left, test->path, NULL);
+				if (!count) {
+					count = malloc (sizeof (ut64));
+					*count = 0;
+					ht_pp_insert (state.path_left, test->path, count);
+				}
+				(*count)++;
+			}
+		}
+	}
+
 	r_th_lock_enter (state.lock);
 
 	RPVector workers;
@@ -171,14 +203,18 @@ int main(int argc, char **argv) {
 	}
 
 	ut64 prev_completed = UT64_MAX;
+	ut64 prev_paths_completed = 0;
 	while (true) {
 		ut64 completed = (ut64)r_pvector_len (&state.results);
-		if (completed != prev_completed) {
+		if (log_mode) {
+			print_log (&state, prev_completed, prev_paths_completed);
+		} else if (completed != prev_completed) {
 			print_state (&state, prev_completed);
-			prev_completed = completed;
-			if (completed == r_pvector_len (&state.db->tests)) {
-				break;
-			}
+		}
+		prev_completed = completed;
+		prev_paths_completed = (ut64)r_pvector_len (&state.completed_paths);
+		if (completed == r_pvector_len (&state.db->tests)) {
+			break;
 		}
 		r_th_cond_wait (state.cond, state.lock);
 	}
@@ -201,6 +237,7 @@ int main(int argc, char **argv) {
 
 	r_pvector_clear (&state.queue);
 	r_pvector_clear (&state.results);
+	r_pvector_clear (&state.completed_paths);
 	r2r_test_database_free (state.db);
 	r_th_lock_free (state.lock);
 	r_th_cond_free (state.cond);
@@ -246,6 +283,15 @@ static RThreadFunctionRet worker_th(RThread *th) {
 		case R2R_TEST_RESULT_FIXED:
 			state->fx_count++;
 			break;
+		}
+		if (state->path_left) {
+			ut64 *count = ht_pp_find (state->path_left, test->path, NULL);
+			if (count) {
+				(*count)--;
+				if (!*count) {
+					r_pvector_push (&state->completed_paths, (void *)test->path);
+				}
+			}
 		}
 		r_th_cond_signal (state->cond);
 	}
@@ -348,9 +394,7 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	}
 }
 
-static void print_state(R2RState *state, ut64 prev_completed) {
-	printf (R_CONS_CLEAR_LINE);
-
+static void print_new_results(R2RState *state, ut64 prev_completed) {
 	// Detailed test result (with diff if necessary)
 	ut64 completed = (ut64)r_pvector_len (&state->results);
 	ut64 i;
@@ -384,14 +428,35 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 		free (name);
 	}
 
+}
+
+static void print_state_counts(R2RState *state) {
+	printf ("%8"PFMT64u" OK  %8"PFMT64u" BR %8"PFMT64u" XX %8"PFMT64u" FX",
+			state->ok_count, state->br_count, state->xx_count, state->fx_count);
+}
+
+static void print_state(R2RState *state, ut64 prev_completed) {
+	printf (R_CONS_CLEAR_LINE);
+
+	print_new_results (state, prev_completed);
+
 	// [x/x] OK  42 BR  0 ...
-	int w = printf ("[%"PFMT64u"/%"PFMT64u"]", completed, (ut64)r_pvector_len (&state->db->tests));
+	int w = printf ("[%"PFMT64u"/%"PFMT64u"]", (ut64)r_pvector_len (&state->results), (ut64)r_pvector_len (&state->db->tests));
 	while (w >= 0 && w < 20) {
 		printf (" ");
 		w++;
 	}
 	printf (" ");
-	printf ("%8"PFMT64u" OK  %8"PFMT64u" BR %8"PFMT64u" XX %8"PFMT64u" FX",
-			state->ok_count, state->br_count, state->xx_count, state->fx_count);
+	print_state_counts (state);
 	fflush (stdout);
+}
+
+static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed) {
+	print_new_results (state, prev_completed);
+	ut64 paths_completed = r_pvector_len (&state->completed_paths);
+	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
+		printf ("[**] %50s ", (const char *)r_pvector_at (&state->completed_paths, prev_paths_completed));
+		print_state_counts (state);
+		printf ("\n");
+	}
 }
