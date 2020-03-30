@@ -392,7 +392,6 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 	if (!fcn) {
 		return UT64_MAX;
 	}
-#if FCN_OLD
 	if (t == 'r') {
 		list = r_anal_function_get_refs (fcn);
 	} else {
@@ -409,9 +408,7 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 		}
 	}
 	r_list_free (list);
-#else
-#warning implement getref() using sdb
-#endif
+
 	return UT64_MAX;
 }
 
