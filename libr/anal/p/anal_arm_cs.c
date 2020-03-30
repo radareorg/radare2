@@ -1086,8 +1086,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,-,DUP,tmp,=,[%d],%s,=,",
 							-(int)MEMDISP64(1), MEMBASE64(1), size, REG64(0));
 				} else {
-					r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",+,DUP,tmp,=,[%d],%s,=,",
-							MEMBASE64(1), MEMDISP64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,+,DUP,tmp,=,[%d],%s,=,",
+							MEMDISP64(1), MEMBASE64(1), size, REG64(0));
 				}
 			}
 			op->refptr = 4;
