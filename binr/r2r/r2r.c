@@ -48,25 +48,58 @@ static int help(bool verbose) {
 	return 1;
 }
 
-static void r2r_chdir() {
+static bool r2r_chdir(const char *argv0) {
 #if __UNIX__
+	if (r_file_is_directory ("db")) {
+		return true;
+	}
 	char src_path[PATH_MAX];
-	char *r2r_path = r_file_path ("r2r");
+	char *r2r_path = r_file_path (argv0);
+	bool found = false;
 	if (readlink (r2r_path, src_path, sizeof (src_path)) != -1) {
-		char *p = strstr (src_path, "/binr/r2r/r2r");
+		char *p = strstr (src_path, R_SYS_DIR "binr"R_SYS_DIR"r2r"R_SYS_DIR"r2r");
 		if (p) {
 			*p = 0;
-			strcat (src_path, "/test/new");
+			strcat (src_path, R_SYS_DIR"test"R_SYS_DIR"new");
 			if (r_file_is_directory (src_path)) {
 				(void)chdir (src_path);
 				eprintf ("Running from %s\n", src_path);
+				found = true;
 			}
 		}
 	}
 	free (r2r_path);
+	return found;
 #else
 #	warning r2r_chdir not yet supported on Windows
+	return false;
 #endif
+}
+
+static bool r2r_chdir_fromtest(const char *test_path) {
+	char *abs_test_path = r_file_abspath (test_path);
+	if (!r_file_is_directory (abs_test_path)) {
+		char *last_slash = (char *)r_str_lchr (abs_test_path, R_SYS_DIR[0]);
+		if (last_slash) {
+			*last_slash = 0;
+		}
+	}
+	(void)chdir (abs_test_path);
+	bool found = false;
+	while (true) {
+		char *cwd = r_sys_getdir ();
+		if (!strcmp (cwd, R_SYS_DIR)) {
+			free (cwd);
+			break;
+		}
+		free (cwd);
+		if (r_file_is_directory ("db")) {
+			found = true;
+			break;
+		}
+		chdir ("..");
+	}
+	return found;
 }
 
 int main(int argc, char **argv) {
@@ -122,7 +155,13 @@ int main(int argc, char **argv) {
 	if (r2r_dir) {
 		chdir (r2r_dir);
 	} else {
-		r2r_chdir ();
+		bool dir_found = (opt.ind < argc)
+			? r2r_chdir_fromtest (argv[opt.ind])
+			: r2r_chdir (argv[0]);
+		if (!dir_found) {
+			eprintf ("Cannot find db/ directory related to the given test.\n");
+			return -1;
+		}
 	}
 
 	if (!r2r_subprocess_init ()) {
