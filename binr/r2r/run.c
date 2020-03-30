@@ -156,7 +156,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		memcpy (argv + 1, args, sizeof (char *) * args_size);
 	}
 	// done by calloc: argv[args_size + 1] = NULL;
-
 	R2RSubprocess *proc = R_NEW0 (R2RSubprocess);
 	if (!proc) {
 		goto error;
@@ -170,7 +169,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		perror ("pipe");
 		goto error;
 	}
-	if (fcntl(proc->killpipe[1], F_SETFL, O_NONBLOCK) < 0) {
+	if (fcntl (proc->killpipe[1], F_SETFL, O_NONBLOCK) < 0) {
 		perror ("fcntl");
 		goto error;
 	}
