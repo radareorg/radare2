@@ -41,10 +41,28 @@ static int help(bool verbose) {
 		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
 		" -m [rasm2]   path to rasm2 executable (default is "RASM2_CMD_DEFAULT")\n"
 		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
+		" -C [dir]     chdir before running r2r (default follows executable symlink + test/new\n"
 		"\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
 	}
 	return 1;
+}
+
+static void r2r_chdir() {
+	char src_path[PATH_MAX];
+	char *r2r_path = r_file_path ("r2r");
+	if (readlink (r2r_path, src_path, sizeof (src_path)) != -1) {
+		char *p = strstr (src_path, "/binr/r2r/r2r");
+		if (p) {
+			*p = 0;
+			strcat (src_path, "/test/new");
+			if (r_file_is_directory (src_path)) {
+				(void)chdir (src_path);
+				eprintf ("Running from %s\n", src_path);
+			}
+		}
+	}
+	free (r2r_path);
 }
 
 int main(int argc, char **argv) {
@@ -53,11 +71,11 @@ int main(int argc, char **argv) {
 	char *radare2_cmd = NULL;
 	char *rasm2_cmd = NULL;
 	char *json_test_file = NULL;
-
+	const char *r2r_dir = NULL;
 	int ret = 0;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:");
+	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:C:");
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
@@ -79,6 +97,9 @@ int main(int argc, char **argv) {
 			free (radare2_cmd);
 			radare2_cmd = strdup (opt.arg);
 			break;
+		case 'C':
+			r2r_dir = opt.arg;
+			break;
 		case 'm':
 			free (rasm2_cmd);
 			rasm2_cmd = strdup (opt.arg);
@@ -92,6 +113,12 @@ int main(int argc, char **argv) {
 			ret = help (false);
 			goto beach;
 		}
+	}
+
+	if (r2r_dir) {
+		chdir (r2r_dir);
+	} else {
+		r2r_chdir ();
 	}
 
 	if (!r2r_subprocess_init ()) {
