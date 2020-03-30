@@ -75,15 +75,6 @@ static bool r2r_chdir(const char *argv0) {
 #endif
 }
 
-// TODO: move into libr/util/file.c
-static bool r_file_is_root(const char *cwd) {
-#if __WINDOWS__
-	return r_str_endswith (cwd, ":" R_SYS_DIR);
-#else
-	return !strcmp (cwd, R_SYS_DIR);
-#endif
-}
-
 static bool r2r_chdir_fromtest(const char *test_path) {
 	char *abs_test_path = r_file_abspath (test_path);
 	if (!r_file_is_directory (abs_test_path)) {
@@ -95,9 +86,10 @@ static bool r2r_chdir_fromtest(const char *test_path) {
 	(void)chdir (abs_test_path);
 	bool found = false;
 	char *cwd = NULL;
+	char *old_cwd = NULL;
 	while (true) {
 		cwd = r_sys_getdir ();
-		if (r_file_is_root (cwd)) {
+		if (old_cwd && !strcmp (old_cwd, cwd)) {
 			break;
 		}
 		if (r_file_is_directory ("db")) {
@@ -105,9 +97,14 @@ static bool r2r_chdir_fromtest(const char *test_path) {
 			eprintf ("Running from %s\n", cwd);
 			break;
 		}
-		R_FREE (cwd);
-		chdir ("..");
+		free (old_cwd);
+		old_cwd = cwd;
+		cwd = NULL;
+		if (chdir ("..") == -1) {
+			break;
+		}
 	}
+	free (old_cwd);
 	free (cwd);
 	return found;
 }
