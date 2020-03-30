@@ -49,6 +49,7 @@ static int help(bool verbose) {
 }
 
 static void r2r_chdir() {
+#if __UNIX__
 	char src_path[PATH_MAX];
 	char *r2r_path = r_file_path ("r2r");
 	if (readlink (r2r_path, src_path, sizeof (src_path)) != -1) {
@@ -63,6 +64,9 @@ static void r2r_chdir() {
 		}
 	}
 	free (r2r_path);
+#else
+#	warning r2r_chdir not yet supported on Windows
+#endif
 }
 
 int main(int argc, char **argv) {
