@@ -71,7 +71,6 @@ static bool r2r_chdir(const char *argv0) {
 	free (r2r_path);
 	return found;
 #else
-#	warning r2r_chdir not yet supported on Windows
 	return false;
 #endif
 }
