@@ -100,6 +100,7 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
+	ut64 time_start = r_sys_now ();
 	R2RState state = {{0}};
 	state.run_config.r2_cmd = radare2_cmd ? radare2_cmd : RADARE2_CMD_DEFAULT;
 	state.run_config.rasm2_cmd = rasm2_cmd ? rasm2_cmd : RASM2_CMD_DEFAULT;
@@ -203,6 +204,14 @@ int main(int argc, char **argv) {
 	r2r_test_database_free (state.db);
 	r_th_lock_free (state.lock);
 	r_th_cond_free (state.cond);
+	ut64 seconds = (r_sys_now () - time_start) / 1000000;
+	printf ("Finished in");
+	if (seconds > 60) {
+		ut64 minutes = seconds / 60;
+		printf (" %"PFMT64d" minutes and", seconds / 60);
+		seconds -= (minutes * 60);
+	}
+	printf (" %"PFMT64d" seconds.\n", seconds % 60);
 beach:
 	free (radare2_cmd);
 	free (rasm2_cmd);
@@ -382,7 +391,7 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 		w++;
 	}
 	printf (" ");
-	printf ("OK %8"PFMT64u" BR %8"PFMT64u" XX %8"PFMT64u" FX %8"PFMT64u,
+	printf ("%8"PFMT64u" OK  %8"PFMT64u" BR %8"PFMT64u" XX %8"PFMT64u" FX",
 			state->ok_count, state->br_count, state->xx_count, state->fx_count);
 	fflush (stdout);
 }
