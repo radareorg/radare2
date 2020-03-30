@@ -111,6 +111,7 @@ typedef struct r2r_run_config_t {
 	const char *r2_cmd;
 	const char *rasm2_cmd;
 	const char *json_test_file;
+	ut64 timeout_ms;
 } R2RRunConfig;
 
 typedef struct r2r_process_output_t {
@@ -164,17 +165,17 @@ R_API void r2r_subprocess_fini(void);
 R_API R2RSubprocess *r2r_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size);
-R_API void r2r_subprocess_wait(R2RSubprocess *proc);
+R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms);
 R_API void r2r_subprocess_free(R2RSubprocess *proc);
 
 typedef R2RProcessOutput *(*R2RCmdRunner)(const char *file, const char *args[], size_t args_size,
-		const char *envvars[], const char *envvals[], size_t env_size);
+		const char *envvars[], const char *envvals[], size_t env_size, void *user);
 
 R_API void r2r_process_output_free(R2RProcessOutput *out);
-R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner);
+R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner, void *user);
 R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test);
 R_API bool r2r_check_jq_available(void);
-R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner);
+R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner, void *user);
 R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test);
 
 R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test);
