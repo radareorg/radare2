@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_cons.h>
 #include <r_list.h>
+#include <r_parse.h>
 
 #define ACCESS_CMP(x, y) ((x) - ((RAnalVarAccess *)y)->offset)
 
