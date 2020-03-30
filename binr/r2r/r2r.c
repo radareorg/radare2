@@ -222,7 +222,6 @@ int main(int argc, char **argv) {
 	}
 
 	R_FREE (cwd);
-	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_len (&state.db->tests));
 
 	bool jq_available = r2r_check_jq_available ();
 	if (!jq_available) {
