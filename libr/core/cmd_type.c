@@ -15,7 +15,7 @@ static const char *help_msg_t[] = {
 	"t-", " <name>", "Delete types by its name",
 	"t-*", "", "Remove all types",
 	"tail", " [filename]", "Output the last part of files",
-	"tc", "[type.name]", "List all/given types in C output format",
+	"tc", " [type.name]", "List all/given types in C output format",
 	"te", "[?]", "List all loaded enums",
 	"td", "[?] <string>", "Load types from string",
 	"tf", "", "List all loaded functions signatures",
@@ -24,7 +24,7 @@ static const char *help_msg_t[] = {
 	"tn", "[?] [-][addr]", "manage noreturn function attributes and marks",
 	"to", " -", "Open cfg.editor to load types",
 	"to", " <path>", "Load types from C header file",
-	"toe", "[type.name]", "Open cfg.editor to edit types",
+	"toe", " [type.name]", "Open cfg.editor to edit types",
 	"tos", " <path>", "Load types from parsed Sdb database",
 	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
 	"tpv", " <type> @ [value]", "Show offset formatted for given type",
@@ -74,7 +74,7 @@ static const char *help_msg_to[] = {
 
 static const char *help_msg_tc[] = {
 	"Usage: tc[...]", " [cctype]", "",
-	"tc", "[type.name]", "List all/given loaded types in C output format with newlines",
+	"tc", " [type.name]", "List all/given loaded types in C output format with newlines",
 	"tcd", "", "List all loaded types in C output format without newlines",
 	"tcc", "?", "Manage calling conventions types",
 	"tc?", "", "show this help",
@@ -1060,8 +1060,9 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case ' ': {
 			const char *type = r_str_trim_head_ro (input + 1);
-			const char *name = type ? strchr (type, '.') + 1: NULL;
+			const char *name = type ? strchr (type, '.') : NULL;
 			if (name && type) {
+				name++; // skip the '.'
 				if (r_str_startswith (type, "struct")) {
 					r_core_cmdf (core, "tsc %s", name);
 				} else if (r_str_startswith (type, "union")) {
