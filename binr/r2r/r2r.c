@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2020 - thestr4ng3r */
 
 #include "r2r.h"
-
 #include <r_cons.h>
 
 #define WORKERS_DEFAULT        8
@@ -83,7 +82,9 @@ static bool r2r_chdir_fromtest(const char *test_path) {
 			*last_slash = 0;
 		}
 	}
-	(void)chdir (abs_test_path);
+	if (chdir (abs_test_path) == -1) {
+		return false;
+	}
 	bool found = false;
 	char *cwd = NULL;
 	char *old_cwd = NULL;
@@ -129,7 +130,7 @@ int main(int argc, char **argv) {
 		case 'v':
 			verbose = true;
 			break;
-		case 'j': {
+		case 'j':
 			workers_count = atoi (opt.arg);
 			if (workers_count <= 0) {
 				eprintf ("Invalid thread count\n");
@@ -152,13 +153,13 @@ int main(int argc, char **argv) {
 			free (json_test_file);
 			json_test_file = strdup (opt.arg);
 			break;
-		}
 		default:
 			ret = help (false);
 			goto beach;
 		}
 	}
 
+	char *cwd = r_sys_getdir ();
 	if (r2r_dir) {
 		chdir (r2r_dir);
 	} else {
@@ -202,11 +203,14 @@ int main(int argc, char **argv) {
 		// Manually specified path(s)
 		int i;
 		for (i = opt.ind; i < argc; i++) {
-			if (!r2r_test_database_load (state.db, argv[i])) {
-				eprintf ("Failed to load tests from \"%s\"\n", argv[i]);
+			char *tf = (argv[i][0] == '/')? strdup (argv[i]): r_str_newf ("%s"R_SYS_DIR"%s", cwd, argv[i]);
+			if (!r2r_test_database_load (state.db, tf)) {
+				eprintf ("Failed to load tests from \"%s\"\n", tf);
 				r2r_test_database_free (state.db);
+				free (tf);
 				return -1;
 			}
+			free (tf);
 		}
 	} else {
 		// Default db path
@@ -216,7 +220,7 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	}
-
+	R_FREE (cwd);
 	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_len (&state.db->tests));
 
 	bool jq_available = r2r_check_jq_available ();
