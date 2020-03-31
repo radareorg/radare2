@@ -471,10 +471,21 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 #define JQ_CMD "jq"
 
 R_API bool r2r_check_jq_available() {
-	const char *args[] = { "--version" };
-	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
+	const char *invalid_json = "this is not json lol";
+	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, NULL, 0, NULL, NULL, 0);
+	r2r_subprocess_stdin_write (proc, (const ut8 *)invalid_json, strlen (invalid_json));
 	r2r_subprocess_wait (proc);
-	return proc->ret == 0;
+	bool invalid_detected = proc->ret != 0;
+	r2r_subprocess_free (proc);
+
+	const char *valid_json = "{\"this is\":\"valid json\",\"lol\":true}";
+	proc = r2r_subprocess_start (JQ_CMD, NULL, 0, NULL, NULL, 0);
+	r2r_subprocess_stdin_write (proc, (const ut8 *)valid_json, strlen (valid_json));
+	r2r_subprocess_wait (proc);
+	bool valid_detected = proc->ret == 0;
+	r2r_subprocess_free (proc);
+
+	return invalid_detected && valid_detected;
 }
 
 R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner) {
