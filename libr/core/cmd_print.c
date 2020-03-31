@@ -6278,7 +6278,7 @@ l = use_blocksize;
 			break;
 		case 'W': // "pxW"
 			if (l) {
-				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "asm.offset"));
+				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
 				len = len - (len % 4);
 				for (i = 0; i < len; i += 4) {
 					const char *a, *b;
@@ -6442,7 +6442,7 @@ l = use_blocksize;
 		case 'Q': // "pxQ"
 			// TODO. show if flag name, or inside function
 			if (l) {
-				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "asm.offset"));
+				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
 				len = len - (len % 8);
 				for (i = 0; i < len; i += 8) {
 					const char *a, *b;
