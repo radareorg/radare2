@@ -420,7 +420,7 @@ static int haschr(const RBinFile* bf, ut16 dllCharacteristic) {
 	if (!bf) {
 		return false;
 	}
-	buf = r_buf_data (bf->buf, &sz);
+	buf = r_buf_data_cached (bf->buf, &sz);
 	if (!buf) {
 		return false;
 	}
