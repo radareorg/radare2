@@ -1,7 +1,12 @@
-NAME=multiple files opened
-FILE=- - -
-CMDS=o~?
-EXPECT=<<EOF
-3
-EOF
-RUN
+# TODO: re-enable when r2r.js and v are dead
+#NAME=multiple files opened
+#FILE=<<EOF
+#-
+#-
+#-
+#EOF
+#CMDS=o~?
+#EXPECT=<<EOF
+#3
+#EOF
+#RUN

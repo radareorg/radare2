@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -320,12 +320,12 @@ static void algolist() {
 }
 
 #define setHashString(x, y) {\
-		if (hashstr) {\
-			eprintf ("Hashstring already defined\n");\
-			return 1;\
-		}\
-		hashstr_hex = y;\
-		hashstr = x;\
+	if (hashstr) {\
+		eprintf ("Hashstring already defined\n");\
+		return 1;\
+	}\
+	hashstr_hex = y;\
+	hashstr = (char*)x;\
 }
 
 static bool is_power_of_two(const ut64 x) {
@@ -370,7 +370,7 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 	return 1;
 }
 
-static int encrypt_or_decrypt_file(const char *algo, int direction, char *filename, const ut8 *iv, int ivlen, int mode) {
+static int encrypt_or_decrypt_file(const char *algo, int direction, const char *filename, const ut8 *iv, int ivlen, int mode) {
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo); // TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
@@ -420,7 +420,7 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, char *filena
 	return 1;
 }
 
-int r_main_rahash2(int argc, char **argv) {
+R_API int r_main_rahash2(int argc, const char **argv) {
 	ut64 i;
 	int ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
 	const char *algo = "sha256"; /* default hashing algorithm */
@@ -430,7 +430,7 @@ int r_main_rahash2(int argc, char **argv) {
 	char *hashstr = NULL;
 	ut8 *iv = NULL;
 	int ivlen = -1;
-	char *ivseed = NULL;
+	const char *ivseed = NULL;
 	const char *compareStr = NULL;
 	const char *ptype = NULL;
 	ut8 *compareBin = NULL;
@@ -441,37 +441,39 @@ int r_main_rahash2(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = r_getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:");
+	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;
 		case 'i':
-			iterations = atoi (r_optarg);
+			iterations = atoi (opt.arg);
 			if (iterations < 0) {
 				eprintf ("error: -i argument must be positive\n");
 				return 1;
 			}
 			break;
 		case 'j': rad = 'j'; break;
-		case 'S': seed = r_optarg; break;
-		case 'I': ivseed = r_optarg; break;
+		case 'S': seed = opt.arg; break;
+		case 'I': ivseed = opt.arg; break;
 		case 'n': numblocks = 1; break;
-		case 'D': decrypt = r_optarg; break;
-		case 'E': encrypt = r_optarg; break;
+		case 'D': decrypt = opt.arg; break;
+		case 'E': encrypt = opt.arg; break;
 		case 'L': algolist (); return 0;
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
-		case 'p': ptype = r_optarg; break;
-		case 'a': algo = r_optarg; break;
+		case 'p': ptype = opt.arg; break;
+		case 'a': algo = opt.arg; break;
 		case 'B': incremental = false; break;
-		case 'b': bsize = (int) r_num_math (NULL, r_optarg); break;
-		case 'f': from = r_num_math (NULL, r_optarg); break;
-		case 't': to = 1 + r_num_math (NULL, r_optarg); break;
+		case 'b': bsize = (int) r_num_math (NULL, opt.arg); break;
+		case 'f': from = r_num_math (NULL, opt.arg); break;
+		case 't': to = 1 + r_num_math (NULL, opt.arg); break;
 		case 'v': return r_main_version_print ("rahash2");
 		case 'h': return do_help (0);
-		case 's': setHashString (r_optarg, 0); break;
-		case 'x': setHashString (r_optarg, 1); break;
-		case 'c': compareStr = r_optarg; break;
+		case 's': setHashString (opt.arg, 0); break;
+		case 'x': setHashString (opt.arg, 1); break;
+		case 'c': compareStr = opt.arg; break;
 		default: return do_help (0);
 		}
 	}
@@ -532,7 +534,7 @@ int r_main_rahash2(int argc, char **argv) {
 		// TODO: support p=%s (horizontal bars)
 		// TODO: list supported statistical metrics
 		// TODO: support -f and -t
-		for (i = r_optind; i < argc; i++) {
+		for (i = opt.ind; i < argc; i++) {
 			printf ("%s:\n", argv[i]);
 			r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", ptype, argv[i]);
 		}
@@ -655,7 +657,7 @@ int r_main_rahash2(int argc, char **argv) {
 			return ret;
 		}
 	}
-	if (r_optind >= argc) {
+	if (opt.ind >= argc) {
 		free (iv);
 		return do_help (1);
 	}
@@ -668,7 +670,7 @@ int r_main_rahash2(int argc, char **argv) {
 	}
 
 	io = r_io_new ();
-	for (ret = 0, i = r_optind; i < argc; i++) {
+	for (ret = 0, i = opt.ind; i < argc; i++) {
 		if (encrypt) {// for encrytion when files are provided
 			int rt = encrypt_or_decrypt_file (encrypt, 0, argv[i], iv, ivlen, 0);
 			if (rt == -1) {

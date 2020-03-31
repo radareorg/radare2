@@ -333,13 +333,13 @@ typedef struct r_core_t {
 
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
-	int (*r_main_rafind2)(int argc, char **argv);
-	int (*r_main_radiff2)(int argc, char **argv);
-	int (*r_main_rabin2)(int argc, char **argv);
-	int (*r_main_rarun2)(int argc, char **argv);
-	int (*r_main_ragg2)(int argc, char **argv);
-	int (*r_main_rasm2)(int argc, char **argv);
-	int (*r_main_rax2)(int argc, char **argv);
+	int (*r_main_rafind2)(int argc, const char **argv);
+	int (*r_main_radiff2)(int argc, const char **argv);
+	int (*r_main_rabin2)(int argc, const char **argv);
+	int (*r_main_rarun2)(int argc, const char **argv);
+	int (*r_main_ragg2)(int argc, const char **argv);
+	int (*r_main_rasm2)(int argc, const char **argv);
+	int (*r_main_rax2)(int argc, const char **argv);
 } RCore;
 
 // maybe move into RAnal
@@ -558,7 +558,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd);
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each);
 R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each);
 R_API char *r_core_op_str(RCore *core, ut64 addr);
-R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr);
+R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr, RAnalOpMask mask);
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
@@ -918,7 +918,7 @@ R_API void r_core_autocomplete_free(RCoreAutocomplete *obj);
 R_API void r_core_autocomplete_reload (RCore *core);
 R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd, bool exact);
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd);
-R_API void r_core_anal_propagate_noreturn(RCore *core);
+R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr);
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;

@@ -1351,7 +1351,7 @@ R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bs
 	return r_str_escape_ (buf, false, colors, !colors, show_asciidot, esc_bslash);
 }
 
-static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot, bool esc_bslash) {
+static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot, bool esc_bslash, bool keep_printable) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -1414,11 +1414,15 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 		if (show_asciidot && !IS_PRINTABLE(ch)) {
 			*q++ = '.';
 		} else if (ch_bytes > 1) {
-			*q++ = '\\';
-			*q++ = ch_bytes == 4 ? 'U' : 'u';
-			for (i = ch_bytes == 4 ? 6 : 2; i >= 0; i -= 2) {
-				*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
-				*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
+			if (keep_printable) {
+				q += r_utf8_encode ((ut8 *)q, ch);
+			} else {
+				*q++ = '\\';
+				*q++ = ch_bytes == 4 ? 'U' : 'u';
+				for (i = ch_bytes == 4 ? 6 : 2; i >= 0; i -= 2) {
+					*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
+					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
+				}
 			}
 		} else {
 			int offset = enc == R_STRING_ENC_UTF16BE ? 1 : enc == R_STRING_ENC_UTF32BE ? 3 : 0;
@@ -1442,23 +1446,27 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 }
 
 R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot, bool esc_bslash) {
-	return r_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot, esc_bslash);
+	return r_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot, esc_bslash, false);
+}
+
+R_API char *r_str_escape_utf8_keep_printable(const char *buf, bool show_asciidot, bool esc_bslash) {
+	return r_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot, esc_bslash, true);
 }
 
 R_API char *r_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16LE, show_asciidot, esc_bslash);
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16LE, show_asciidot, esc_bslash, false);
 }
 
 R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot, esc_bslash);
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot, esc_bslash, false);
 }
 
 R_API char *r_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16BE, show_asciidot, esc_bslash);
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16BE, show_asciidot, esc_bslash, false);
 }
 
 R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash);
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
 // JSON has special escaping requirements
@@ -3113,28 +3121,22 @@ R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 	return lst;
 }
 
-R_API RList *r_str_split_duplist(const char *_str, const char *c)  {
+R_API RList *r_str_split_duplist(const char *_str, const char *c) {
 	r_return_val_if_fail (_str && c, NULL);
 	RList *lst = r_list_newf (free);
 	char *str = strdup (_str);
-
-	char *aux;
-	bool first_loop = true;
-
-	for (;;) {
-		if (first_loop) {
-			aux = strtok (str, c);
-			first_loop = false;
-		} else {
-			aux = strtok (NULL, c);
-		}
-		if (!aux) {
-			break;
+	char *aux = str;
+	size_t clen = strlen (c);
+	while (aux) {
+		char *next = strstr (aux, c);
+		if (next) {
+			*next = '\0';
+			next += clen;
 		}
 		r_str_trim (aux);
 		r_list_append (lst, strdup (aux));
+		aux = next;
 	}
-
 	free (str);
 	return lst;
 }

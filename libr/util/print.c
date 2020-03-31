@@ -741,6 +741,7 @@ R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int ste
 	const char *color_other = c? (Pal (rp, other): Color_WHITE): "";
 	const char *color_reset = c? Color_RESET: "";
 	int i, j;
+	bool show_offset = rp->show_offset;
 
 	if (rp->flags & R_PRINT_FLAGS_HEADER) {
 		p ("         ");
@@ -755,7 +756,9 @@ R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int ste
 		if (isAllZeros (buf + i, inc)) {
 			continue;
 		}
-		p ("%8X:", addr + i);
+		if (show_offset) {
+			p ("%8X:", addr + i);
+		}
 		for (j = 0; j < inc; j++) {
 			ut8 ch = buf[i + j];
 			if (ch == 0x00) {

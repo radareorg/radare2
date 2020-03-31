@@ -758,7 +758,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		// FIXME: how to read memory?
 		// op->jump = data[1] | data[2] << 8;
-		r_strbuf_setf (&op->esil, "0x%04x,[2],pc,=", data[1] | data[2] << 8);
+		r_strbuf_setf (&op->esil, "0x%04x,[2],pc,=", len > 2? data[1] | data[2] << 8: 0);
 		break;
 	// RTS
 	case 0x60: // rts

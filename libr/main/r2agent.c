@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2019 - pancake */
+/* radare2 - LGPL - Copyright 2013-2020 - pancake */
 
 #include "index.h"
 #include <r_main.h>
@@ -30,7 +30,7 @@ static int showversion() {
 	return r_main_version_print ("r2agent");
 }
 
-R_API int r_main_r2agent(int argc, char **argv) {
+R_API int r_main_r2agent(int argc, const char **argv) {
 	RSocket *s;
 	RSocketHTTPOptions so;
 	RSocketHTTPRequest *rs;
@@ -43,7 +43,9 @@ R_API int r_main_r2agent(int argc, char **argv) {
 	char *pfile = NULL;
 	memset (&so, 0, sizeof (so));
 
-	while ((c = r_getopt (argc, argv, "adhup:t:sv")) != -1) {
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "adhup:t:sv");
+	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
 			listenlocal = false;
@@ -62,16 +64,16 @@ R_API int r_main_r2agent(int argc, char **argv) {
 			so.httpauth = true;
 			break;
 		case 't':
-			httpauthfile = r_optarg;
+			httpauthfile = opt.arg;
 			break;
 		case 'p':
-			port = r_optarg;
+			port = opt.arg;
 			break;
 		default:
 			return usage (0);
 		}
 	}
-	if (r_optind != argc) {
+	if (opt.ind != argc) {
 		return usage (0);
 	}
 

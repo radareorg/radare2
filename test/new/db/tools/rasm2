@@ -373,7 +373,9 @@ RUN
 NAME=rasm2 bswap x64 #8095
 FILE=-
 CMDS="!rasm2 -a x86 -b 64 \"bswap rax;bswap rbx;bswap rcx;bswap rdx\""
-EXPECT=480fc8480fcb480fc9480fca
+EXPECT=<<EOF
+480fc8480fcb480fc9480fca
+EOF
 RUN
 
 NAME=rasm2 bswap x64 #8095 (with single quotes)

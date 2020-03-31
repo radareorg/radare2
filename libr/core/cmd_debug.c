@@ -812,21 +812,10 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 }
 
 static bool is_repeatable_inst(RCore *core, ut64 addr) {
-	bool ret = false;
-
-	if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
-		return false;
-	}
-
-	RAnalOp *op = r_core_op_anal (core, addr);
-	if (!op) {
-		eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
-		return false;
-	}
-
-	ret = (op->prefix & R_ANAL_OP_PREFIX_REP) || (op->prefix & R_ANAL_OP_PREFIX_REPNE);
-
-    r_anal_op_free (op);
+	// we have read the bytes already
+	RAnalOp *op = r_core_op_anal (core, addr, R_ANAL_OP_MASK_ALL);
+	bool ret = op && ((op->prefix & R_ANAL_OP_PREFIX_REP) || (op->prefix & R_ANAL_OP_PREFIX_REPNE));
+	r_anal_op_free (op);
 	return ret;
 }
 
@@ -835,6 +824,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	ut8 buf[32];
 	ut64 pc;
 	int ret;
+	bool is_x86 = r_str_startswith (r_config_get (core->config, "asm.arch"), "x86");
 
 	instr = r_str_trim_head_ro (instr);
 	if (!core || !instr|| !core->dbg) {
@@ -850,7 +840,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 			break;
 		}
 		pc = r_debug_reg_get (core->dbg, "PC");
-		if (is_repeatable_inst (core, pc)) {
+		if (is_x86 && is_repeatable_inst (core, pc)) {
 			r_debug_step_over (core->dbg, 1);
 		} else {
 			r_debug_step (core->dbg, 1);
@@ -2139,7 +2129,8 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 			r_reg_parse_gdb_profile (ptr + 4);
 			break;
 		}
-		r_reg_set_profile (core->dbg->reg, str+2);
+		r_reg_set_profile (core->dbg->reg, str + 2);
+		r_debug_plugin_set_reg_profile (core->dbg, str + 2);
 		break;
 	case '.': { // "drp."
 		RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
@@ -4896,7 +4887,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (ptr) {
 					count = r_num_math (core->num, ptr + 1);
 				}
-				RAnalOp *op = r_core_op_anal (core, addr);
+				RAnalOp *op = r_core_op_anal (core, addr, R_ANAL_OP_MASK_HINT);
 				if (op) {
 					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
 					if (!tp) {

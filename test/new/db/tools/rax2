@@ -23,9 +23,7 @@ RUN
 NAME=rax2 -E | rax2 -D 2
 FILE=-
 CMDS=!rax2 -E hello |rax2 -D |rax2 -E | rax2 -D  |rax2 -E|rax2 -D |rax2 -E | rax2 -Dl
-EXPECT=<<EOF
-hello
-EOF
+EXPECT=hello
 RUN
 
 NAME=rax2 -E | rax2 -D 3

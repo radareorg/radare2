@@ -1,116 +1,118 @@
 NAME=ar comma
 FILE=-
 ARGS=-a x86 -b 64
-EXPECT=<<EOF
-0x00000021
-0x0000002c
-EOF
 CMDS=<<EOF
 ar rax=33
 ar rbx=44
 ar rax,rbx
 EOF
+EXPECT=<<EOF
+0x00000021
+0x0000002c
+EOF
 RUN
 
 NAME=add
 FILE=-
-EXPECT=<<EOF
-0x6
-0x0
-EOF
 CMDS=<<EOF
 ae 3,3,+
 ae 3,3,-
+EOF
+EXPECT=<<EOF
+0x6
+0x0
 EOF
 RUN
 
 NAME=inc/dec
 FILE=-
-EXPECT=<<EOF
-0x0
-0x4
-0x2
-0xffffffffffffffff
-EOF
 CMDS=<<EOF
 ae 0xffffffffffffffff,++
 ae 3,++
 ae 3,--
 ae 0,--
 EOF
+EXPECT=<<EOF
+0x0
+0x4
+0x2
+0xffffffffffffffff
+EOF
 RUN
 
 NAME=sub
 FILE=-
+CMDS=ae 1,3,-
 EXPECT=<<EOF
 0x2
 EOF
-CMDS=ae 1,3,-
 RUN
 
 NAME=subeq
 FILE=-
-EXPECT=<<EOF
-0x2
-EOF
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch=x86
 aei
 ae 3,eax,=,1,eax,-=,eax,0,+
 EOF
+EXPECT=<<EOF
+0x2
+EOF
 RUN
 
 NAME=shift-left
 FILE=-
-EXPECT=<<EOF
-0x8
-0x6
-EOF
 CMDS=<<EOF
 "ae 3,1,<<"
 "ae 1,3,<<"
+EOF
+EXPECT=<<EOF
+0x8
+0x6
 EOF
 RUN
 
 NAME=shift-right
 FILE=-
-EXPECT=<<EOF
-0x4
-0x0
-EOF
 CMDS=<<EOF
 "ae 1,8,>>"
 "ae 8,1,>>"
+EOF
+EXPECT=<<EOF
+0x4
+0x0
 EOF
 RUN
 
 NAME=sub
 FILE=-
+CMDS=<<EOF
+ae 3,1,-
+EOF
 EXPECT=<<EOF
 0xfffffffffffffffe
 EOF
-CMDS=ae 3,1,-
 RUN
 
 NAME=neg
 FILE=-
-EXPECT=<<EOF
-0x0
-0x1
-EOF
 CMDS=<<EOF
 ae 3,3,+,!
 ae 3,3,-,!
+EOF
+EXPECT=<<EOF
+0x0
+0x1
 EOF
 RUN
 
 NAME=condition
 FILE=-
+CMDS=ae 3,?{,0x80,}
 EXPECT=<<EOF
 0x80
 EOF
-CMDS=ae 3,?{,0x80,}
 RUN
 
 NAME=memory write (MIPS little endian)
@@ -291,16 +293,8 @@ RUN
 
 NAME=rep stosq
 FILE=../bins/elf/analysis/x64-rep-stosq
-ARGS=-e io.cache=1
-EXPECT=<<EOF
-0x00000001
-0x006000d0
-0x004000c0
-0x00000000
-0x006000d8
-0x004000c3
-EOF
 CMDS=<<EOF
+e io.cache=1
 aei
 aeip
 3aes
@@ -311,5 +305,13 @@ aes
 ar rcx
 ar rdi
 ar rip
+EOF
+EXPECT=<<EOF
+0x00000001
+0x006000d0
+0x004000c0
+0x00000000
+0x006000d8
+0x004000c3
 EOF
 RUN

@@ -463,7 +463,9 @@ RUN
 NAME=pf? struct not defined
 FILE=-
 CMDS=pf?cat_sat_on_keyboard
-EXPECT_ERR=Struct cat_sat_on_keyboard is not defined
+EXPECT_ERR=<<EOF
+Struct cat_sat_on_keyboard is not defined
+EOF
 RUN
 
 NAME=-nn filename with @

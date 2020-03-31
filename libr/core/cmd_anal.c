@@ -2026,6 +2026,20 @@ static int casecmp(const void* _a, const void * _b) {
 	return a->addr != b->addr;
 }
 
+static ut64 __opaddr(RAnalBlock *b, ut64 addr) {
+	int i;
+	if (addr >= b->addr && addr < (b->addr + b->size)) {
+		for (i = 0; i < b->ninstr; i++) {
+			ut64 aa = b->addr + r_anal_bb_offset_inst (b, i);
+			ut64 ab = b->addr + r_anal_bb_offset_inst (b, i + 1);
+			if (addr >= aa && addr < ab) {
+				return aa;
+			}
+		}
+	}
+	return UT64_MAX;
+}
+
 static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	RDebugTracepoint *tp = NULL;
 	RListIter *iter;
@@ -2194,6 +2208,10 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 					pj_end (pj);
 					pj_end (pj);
 				}
+				{
+					ut64 opaddr = __opaddr (b, addr);
+					pj_kn (pj, "opaddr", opaddr);
+				}
 				pj_kn (pj, "addr", b->addr);
 				pj_ki (pj, "size", b->size);
 				pj_ki (pj, "inputs", inputs);
@@ -2233,6 +2251,10 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 				}
 				if (b->fail != UT64_MAX) {
 					r_cons_printf ("fail: 0x%08"PFMT64x"\n", b->fail);
+				}
+				{
+					ut64 opaddr = __opaddr (b, addr);
+					r_cons_printf ("opaddr: 0x%08"PFMT64x"\n", opaddr);
 				}
 				r_cons_printf ("addr: 0x%08"PFMT64x"\nsize: %d\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: %s\n",
 					b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced));
@@ -3617,7 +3639,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				ptr = strchr (ptr + 1, ' ');
 				if (ptr) {
 					color = r_num_math (core->num, ptr + 1);
-					RAnalOp *op = r_core_op_anal (core, addr);
+					RAnalOp *op = r_core_op_anal (core, addr, R_ANAL_OP_MASK_ALL);
 					if (op) {
 						r_anal_colorize_bb (core->anal, addr, color);
 						r_anal_op_free (op);
@@ -3900,7 +3922,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			free (name);
 		}
-		r_core_anal_propagate_noreturn (core);
+		r_core_anal_propagate_noreturn (core, addr);
 #if 0
 		// XXX THIS IS VERY SLOW
 		if (core->anal->opt.vars) {
@@ -8978,7 +9000,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'n': // "aan"
 		switch (input[1]) {
 		case 'r': // "aanr" // all noreturn propagation
-			r_core_anal_propagate_noreturn (core);
+			r_core_anal_propagate_noreturn (core, UT64_MAX);
 			break;
 		case 'g': // "aang"
 			r_core_anal_autoname_all_golang_fcns (core);
@@ -9157,7 +9179,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_task_yield (&core->tasks);
 
 				oldstr = r_print_rowlog (core->print, "Propagate noreturn information");
-				r_core_anal_propagate_noreturn (core);
+				r_core_anal_propagate_noreturn (core, UT64_MAX);
 				r_print_rowlog_done (core->print, oldstr);
 				r_core_task_yield (&core->tasks);
 
@@ -9599,7 +9621,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		if (end) {
 			*end = '\0';
 		}
-		
+
 		RAnalVTable vtable;
 		vtable.id = NULL;
 		vtable.addr = r_num_get (core->num, arg1_str);
@@ -9909,10 +9931,10 @@ static int cmd_anal(void *data, const char *input) {
 			cmd_anal_abt (core, input+2);
 		} else if (input[1] == 'j') { // "abj"
 			anal_fcn_list_bb (core, input + 1, false);
-		} else if (input[1] == ' ' || !input[1]) {
+		} else if (input[1] == ' ' || !input[1] || input[1] == '.') {
 			// find block
 			ut64 addr = core->offset;
-			if (input[1]) {
+			if (input[1] && input[1] != '.') {
 				addr = r_num_math (core->num, input + 1);
 			}
 			r_core_cmdf (core, "afbi @ 0x%"PFMT64x, addr);

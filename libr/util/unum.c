@@ -687,10 +687,12 @@ R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only) {
 	return NULL;
 }
 
-// SHITTY API
-R_API int r_is_valid_input_num_value(RNum *num, const char *input_value){
-	ut64 value = input_value ? r_num_math (num, input_value) : 0;
-	return !(value == 0 && input_value && *input_value == '0');
+R_API bool r_is_valid_input_num_value(RNum *num, const char *input_value) {
+	if (!input_value) {
+		return false;
+	}
+	ut64 value = r_num_math (num, input_value);
+	return !(value == 0 && *input_value != '0');
 }
 
 // SHITTY API

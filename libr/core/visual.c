@@ -1381,7 +1381,6 @@ static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr) {
 	ut64 cur_ref_addr = UT64_MAX;
 	int ret = 0;
-#if FCN_OLD
 	char ch;
 	int count = 0;
 	RList *xrefs = NULL;
@@ -1643,9 +1642,7 @@ repeat:
 		goto repeat;
 	}
 	r_list_free (xrefs);
-#else
-	eprintf ("TODO: sdbize xrefs here\n");
-#endif
+
 	return ret;
 }
 

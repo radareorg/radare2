@@ -289,7 +289,11 @@ static void r_core_file_info(RCore *core, int mode) {
 			pair ("fd", sdb_fmt ("%d", desc->fd));
 		}
 		if (fn || (desc && desc->uri)) {
-			pair ("file", fn? fn: desc->uri);
+			char *escaped = r_str_escape_utf8_keep_printable (fn? fn: desc->uri, false, false);
+			if (escaped) {
+				pair ("file", escaped);
+				free (escaped);
+			}
 		}
 		if (desc) {
 			ut64 fsz = r_io_desc_size (desc);
@@ -651,7 +655,7 @@ static int cmd_info(void *data, const char *input) {
 						}
 					}
 					pj_end (pj);
-					r_cons_printf ("%s", pj_string (pj));
+					r_cons_printf ("%s\n", pj_string (pj));
 					pj_free (pj);
 				} else { // "it"
 					if (!equal) {
@@ -1041,7 +1045,7 @@ static int cmd_info(void *data, const char *input) {
 				if (!obj) {
 					break;
 				}
-				if (input[2] && input[2] != 'j' && !strstr (input, "qq")) {
+				if (input[2] && input[2] != '*' && input[2] != 'j' && !strstr (input, "qq")) {
 					bool radare2 = strstr (input, "**") != NULL;
 					int idx = -1;
 					const char * cls_name = NULL;
@@ -1130,7 +1134,7 @@ static int cmd_info(void *data, const char *input) {
 								r_cons_printf ("%s\n", cls->name);
 							}
 						}
-					} else if (input[1] == 'l' && obj) { // "icl"
+					} else if (input[1] == 'l') { // "icl"
 						r_list_foreach (obj->classes, iter, cls) {
 							r_list_foreach (cls->methods, iter2, sym) {
 								const char *comma = iter2->p? " ": "";
@@ -1140,8 +1144,11 @@ static int cmd_info(void *data, const char *input) {
 								r_cons_newline ();
 							}
 						}
-					} else if (input[1] == 'c' && obj) { // "icc"
+					} else if (input[1] == 'c') { // "icc"
 						mode = R_MODE_CLASSDUMP;
+						if (input[2] == '*') {
+							mode |= R_MODE_RADARE;
+						}
 						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 						input = " ";
 					} else { // "icq"

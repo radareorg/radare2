@@ -20,7 +20,9 @@ CMDS=!ragg2 -a x86 -b 64 -p A10 -d 50:0xcb
 EXPECT=<<EOF
 41414141414141414141
 EOF
-EXPECT_ERR=Cannot patch outside
+EXPECT_ERR=<<EOF
+Cannot patch outside
+EOF
 RUN
 
 NAME=ragg2 -a x86 -b 64 -p A20 -w 10:cb

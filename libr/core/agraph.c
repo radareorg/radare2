@@ -2414,7 +2414,6 @@ cleanup:
 /* build the RGraph inside the RAGraph g, starting from the Call Graph
  * information */
 static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
-#if FCN_OLD
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	RANode *node, *fcn_anode;
 	RListIter *iter;
@@ -2471,9 +2470,7 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		r_agraph_add_edge (g, fcn_anode, node);
 	}
 	r_list_free (refs);
-#else
-	eprintf ("Must be sdbized\n");
-#endif
+
 	return true;
 }
 

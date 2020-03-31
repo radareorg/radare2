@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2019 - pancake */
+/* radare - LGPL - Copyright 2012-2020 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -37,11 +37,10 @@ R_API RMain *r_main_new (const char *name) {
 }
 
 R_API void r_main_free(RMain *m) {
-	free (m->name);
 	free (m);
 }
 
-R_API int r_main_run(RMain *m, int argc, char **argv) {
+R_API int r_main_run(RMain *m, int argc, const char **argv) {
 	r_return_val_if_fail (m && m->main, -1);
 	return m->main (argc, argv);
 }
