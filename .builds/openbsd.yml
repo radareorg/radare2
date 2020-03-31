@@ -21,5 +21,4 @@ tasks:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
         gmake install
         # Running the new V suite
-        cd test && gmake src/r2r
-
+	r2r -L
