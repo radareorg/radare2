@@ -1390,6 +1390,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '+': // "o+"
 		perms |= R_PERM_W;
+		/* fallthrough */
 	case ' ': // "o" "o "
 		ptr = input + 1;
 		argv = r_str_argv (ptr, &argc);
@@ -1422,6 +1423,15 @@ static int cmd_open(void *data, const char *input) {
 					addr = UT64_MAX;
 				}
 				r_core_bin_load (core, argv0, addr);
+				if (*input == '+') { // "o+"
+					SdbListIter *iter;
+					RIOMap *map;
+					ls_foreach_prev (core->io->maps, iter, map) {
+						if (map->fd == fd) {
+							map->perm |= R_PERM_WX;
+						}
+					}
+				}
 			} else {
 				eprintf ("cannot open file %s\n", argv0);
 			}
