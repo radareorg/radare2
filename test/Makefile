@@ -1,8 +1,6 @@
 R2R=$(shell cd new ; npm bin)/r2r
 RUNTEST=cd new && npm install ; $(R2R)
 
-include ../config-user.mk
-
 all: js-tests unit_tests
 
 bins:
