@@ -6079,7 +6079,7 @@ l = use_blocksize;
 		break;
 	case 'x': // "px"
 	{
-		int show_offset = r_config_get_i (core->config, "asm.offset");
+		int show_offset = r_config_get_i (core->config, "hex.offset");
 		if (show_offset) {
 			core->print->flags |= R_PRINT_FLAGS_OFFSET;
 		} else {
