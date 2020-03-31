@@ -38,7 +38,8 @@ static int help(bool verbose) {
 	if (verbose) {
 		printf (
 		" -h           print this help\n"
-		" -v           verbose\n"
+		" -v           show version\n"
+		" -V           verbose\n"
 		" -L           log mode (better printing for CI, logfiles, etc.)"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
 		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
@@ -121,6 +122,7 @@ static bool r2r_chdir_fromtest(const char *test_path) {
 int main(int argc, char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
+	bool nothing = false;
 	bool log_mode = false;
 	char *radare2_cmd = NULL;
 	char *rasm2_cmd = NULL;
@@ -129,7 +131,7 @@ int main(int argc, char **argv) {
 	int ret = 0;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:C:L");
+	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:C:LnV");
 
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -138,6 +140,9 @@ int main(int argc, char **argv) {
 			ret = help (true);
 			goto beach;
 		case 'v':
+			printf (""R2_VERSION"\n");
+			return 0;
+		case 'V':
 			verbose = true;
 			break;
 		case 'L':
@@ -157,6 +162,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'C':
 			r2r_dir = opt.arg;
+			break;
+		case 'n':
+			nothing = true;
 			break;
 		case 'm':
 			free (rasm2_cmd);
@@ -236,6 +244,11 @@ int main(int argc, char **argv) {
 	}
 
 	R_FREE (cwd);
+	uint32_t loaded_tests = r_pvector_len (&state.db->tests);
+	printf ("Loaded %u tests.\n", loaded_tests);
+	if (nothing) {
+		return 0;
+	}
 
 	bool jq_available = r2r_check_jq_available ();
 	if (!jq_available) {
