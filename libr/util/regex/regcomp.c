@@ -81,6 +81,7 @@ static char p_b_coll_elem(struct parse *, int);
 static char othercase(int);
 static void bothcases(struct parse *, int);
 static void ordinary(struct parse *, int);
+static void special(struct parse *, int);
 static void nonnewline(struct parse *);
 static void repeat(struct parse *, sopno, int, int);
 static int seterr(struct parse *, int);
@@ -463,7 +464,11 @@ static void p_ere_exp(struct parse *p) {
 	case '\\':
 		REQUIRE(MORE(), R_REGEX_EESCAPE);
 		c = GETNEXT();
-		ordinary(p, c);
+		if (!isalpha(c)) {
+			ordinary(p, c);
+		} else {
+			special(p, c);
+		}
 		break;
 	case '{':		/* okay as ordinary except if digit follows */
 		REQUIRE(!MORE() || !isdigit((ut8)PEEK()), R_REGEX_BADRPT);
@@ -1046,6 +1051,58 @@ ordinary(struct parse *p, int ch)
 		if (cap[ch] == 0) {
 			cap[ch] = p->g->ncategories++;
 		}
+	}
+}
+
+static void
+special(struct parse *p, int ch) {
+	char *oldnext = p->next;
+	char *oldend = p->end;
+	char bracket[16] = {0};
+	char digits[3] = {0};
+	char c;
+	int num = 0;
+	switch (ch) {
+	case 'x':
+		digits[0] = GETNEXT ();
+		digits[1] = GETNEXT ();
+		c = (char)strtol (digits, NULL, 16);
+		ordinary (p, c);
+		return;
+	case 'n':
+		ordinary (p, '\n');
+		return;
+	case 't':
+		ordinary (p, '\t');
+		return;
+	case 'r':
+		ordinary (p, '\r');
+		return;
+	case 's':
+		num = 5;
+		memcpy (bracket, "\t\r\n ]", num);
+		break;
+	case 'd':
+		num = 4;
+		memcpy (bracket, "0-9]", num);
+		break;
+	case 'w':
+		num = 4;
+		memcpy (bracket, "a-z]", num);
+		break;
+	default:
+		SETERROR (R_REGEX_INVARG);
+		return;
+	}
+
+	p->next = bracket;
+	p->end = bracket + num;
+
+	p_bracket (p);
+
+	if (p->next == bracket + num) {
+		p->next = oldnext;
+		p->end = oldend;
 	}
 }
 

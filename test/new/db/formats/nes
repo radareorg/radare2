@@ -1,0 +1,15 @@
+NAME=NES: Pong - open
+FILE=../bins/nes/Pong.nes
+ARGS=-A
+EXPECT=<<EOF
+EOF
+CMDS=q!
+RUN
+
+NAME=NES: Pong - detection
+FILE=../bins/nes/Pong.nes
+EXPECT=<<EOF
+os       nes
+EOF
+CMDS=iI~os
+RUN

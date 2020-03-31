@@ -1,0 +1,288 @@
+NAME=ec* fgbg
+FILE=-
+CMDS=<<EOF
+eco sepia
+ec*
+EOF
+EXPECT=<<EOF
+ec comment rgb:f0d090
+ec usrcmt rgb:f0f0f0
+ec args rgb:b0b070
+ec fname rgb:b0b070
+ec floc rgb:00ffff
+ec fline rgb:c0a060
+ec flag rgb:f0f0d0
+ec label rgb:708080
+ec help rgb:a0b070
+ec flow rgb:c0a060
+ec flow2 rgb:f0e0c0
+ec prompt rgb:906000
+ec offset rgb:906000
+ec input rgb:c0a060
+ec invalid rgb:c06040
+ec other rgb:b0a060
+ec b0x00 rgb:403010
+ec b0x7f rgb:f0d090
+ec b0xff rgb:906000
+ec math rgb:d0b070
+ec bin rgb:f0e0c0
+ec btext rgb:f0e0c0
+ec push rgb:d0b070
+ec pop rgb:b0b070
+ec crypto rgb:0000ff
+ec jmp rgb:f0e0c0
+ec cjmp rgb:f0e0c0
+ec call rgb:ffffff
+ec nop rgb:708080
+ec ret rgb:a0b070
+ec trap rgb:403010
+ec ucall rgb:ffffff
+ec ujmp rgb:f0e0c0
+ec swi rgb:b0b070
+ec cmp rgb:c0a060
+ec reg rgb:c0a060
+ec creg rgb:906000
+ec num rgb:906000
+ec mov rgb:d0b070
+ec func_var rgb:f0d090
+ec func_var_type rgb:805000
+ec func_var_addr rgb:906000
+ec widget_bg rgb:d0b070 rgb:000000
+ec widget_sel rgb:000000 rgb:f0e0c0
+ec ai.read rgb:c0b070
+ec ai.write rgb:c0a060
+ec ai.exec rgb:d0b070
+ec ai.seq rgb:906000
+ec ai.ascii rgb:f0e0c0
+ec graph.box rgb:403010
+ec graph.box2 rgb:c0a060
+ec graph.box3 rgb:c0a060
+ec graph.box4 rgb:c0a060
+ec graph.true rgb:f0d090
+ec graph.false rgb:403010
+ec graph.trufae rgb:f0d090
+ec graph.current rgb:0000ff
+ec graph.traced rgb:0000ff
+ec graph.diff.unknown rgb:881798
+ec graph.diff.new rgb:c50f1f
+ec graph.diff.match rgb:767676
+ec graph.diff.unmatch rgb:c19c00
+ec gui.cflow rgb:ffff00
+ec gui.dataoffset rgb:ffff00
+ec gui.background rgb:000000
+ec gui.alt_background rgb:ffffff
+ec gui.border rgb:000000
+ec wordhl rgb:ff0000
+ec linehl rgb:201000
+EOF
+RUN
+
+NAME=ansicon ecs
+FILE=-
+CMDS=<<EOF
+e scr.color=1
+e scr.ansicon=true
+ecs
+EOF
+EXPECT=<<EOF
+[30m[40m__[0m black
+[31m[41m__[0m red
+[37m[47m__[0m white
+[32m[42m__[0m green
+[35m[45m__[0m magenta
+[33m[43m__[0m yellow
+[36m[46m__[0m cyan
+[34m[44m__[0m blue
+[90m[100m__[0m gray
+[90m[100m__[0m bblack
+[91m[101m__[0m bred
+[97m[107m__[0m bwhite
+[92m[102m__[0m bgreen
+[95m[105m__[0m bmagenta
+[93m[103m__[0m byellow
+[96m[106m__[0m bcyan
+[94m[104m__[0m bblue
+[0m[0m__[0m none
+EOF
+RUN
+
+NAME=ecd and eco bright
+FILE=-
+CMDS=<<EOF
+e scr.color=1
+ecd
+ec
+?e
+eco bright
+ec
+EOF
+EXPECT=<<EOF
+ [31m##[0m  comment
+ [37m##[0m  usrcmt
+ [33m##[0m  args
+ [31m##[0m  fname
+ [36m##[0m  floc
+ [36m##[0m  fline
+ [36m##[0m  flag
+ [36m##[0m  label
+ [32m##[0m  help
+ [36m##[0m  flow
+ [34m##[0m  flow2
+ [33m##[0m  prompt
+ [32m##[0m  offset
+ [37m##[0m  input
+ [1;91m##[0m  invalid
+ [37m##[0m  other
+ [32m##[0m  b0x00
+ [36m##[0m  b0x7f
+ [31m##[0m  b0xff
+ [33m##[0m  math
+ [36m##[0m  bin
+ [33m##[0m  btext
+ [35m##[0m  push
+ [1;95m##[0m  pop
+ [44m##[0m  crypto
+ [32m##[0m  jmp
+ [32m##[0m  cjmp
+ [1;92m##[0m  call
+ [34m##[0m  nop
+ [31m##[0m  ret
+ [1;91m##[0m  trap
+ [32m##[0m  ucall
+ [32m##[0m  ujmp
+ [35m##[0m  swi
+ [36m##[0m  cmp
+ [36m##[0m  reg
+ [36m##[0m  creg
+ [33m##[0m  num
+ [37m##[0m  mov
+ [37m##[0m  func_var
+ [34m##[0m  func_var_type
+ [36m##[0m  func_var_addr
+ [40m##[0m  widget_bg
+ [41m##[0m  widget_sel
+ [32m##[0m  ai.read
+ [34m##[0m  ai.write
+ [31m##[0m  ai.exec
+ [35m##[0m  ai.seq
+ [33m##[0m  ai.ascii
+ [0m##[0m  graph.box
+ [34m##[0m  graph.box2
+ [35m##[0m  graph.box3
+ [90m##[0m  graph.box4
+ [32m##[0m  graph.true
+ [31m##[0m  graph.false
+ [34m##[0m  graph.trufae
+ [34m##[0m  graph.current
+ [33m##[0m  graph.traced
+ [35m##[0m  graph.diff.unknown
+ [31m##[0m  graph.diff.new
+ [90m##[0m  graph.diff.match
+ [33m##[0m  graph.diff.unmatch
+ [33m##[0m  gui.cflow
+ [33m##[0m  gui.dataoffset
+ [30m##[0m  gui.background
+ [37m##[0m  gui.alt_background
+ [30m##[0m  gui.border
+ [41m##[0m  wordhl
+ [44m##[0m  linehl
+
+ [91m##[0m  comment
+ [97m##[0m  usrcmt
+ [93m##[0m  args
+ [91m##[0m  fname
+ [96m##[0m  floc
+ [96m##[0m  fline
+ [96m##[0m  flag
+ [96m##[0m  label
+ [92m##[0m  help
+ [96m##[0m  flow
+ [94m##[0m  flow2
+ [93m##[0m  prompt
+ [92m##[0m  offset
+ [97m##[0m  input
+ [1;91m##[0m  invalid
+ [97m##[0m  other
+ [92m##[0m  b0x00
+ [96m##[0m  b0x7f
+ [91m##[0m  b0xff
+ [93m##[0m  math
+ [96m##[0m  bin
+ [93m##[0m  btext
+ [95m##[0m  push
+ [1;95m##[0m  pop
+ [103m##[0m  crypto
+ [92m##[0m  jmp
+ [92m##[0m  cjmp
+ [1;92m##[0m  call
+ [94m##[0m  nop
+ [91m##[0m  ret
+ [1;91m##[0m  trap
+ [92m##[0m  ucall
+ [92m##[0m  ujmp
+ [95m##[0m  swi
+ [96m##[0m  cmp
+ [96m##[0m  reg
+ [96m##[0m  creg
+ [93m##[0m  num
+ [97m##[0m  mov
+ [97m##[0m  func_var
+ [93m##[0m  func_var_type
+ [96m##[0m  func_var_addr
+ [40m##[0m  widget_bg
+ [101m##[0m  widget_sel
+ [92m##[0m  ai.read
+ [94m##[0m  ai.write
+ [91m##[0m  ai.exec
+ [95m##[0m  ai.seq
+ [93m##[0m  ai.ascii
+ [94m##[0m  graph.box
+ [92m##[0m  graph.box2
+ [95m##[0m  graph.box3
+ [90m##[0m  graph.box4
+ [92m##[0m  graph.true
+ [91m##[0m  graph.false
+ [94m##[0m  graph.trufae
+ [94m##[0m  graph.current
+ [93m##[0m  graph.traced
+ [35m##[0m  graph.diff.unknown
+ [31m##[0m  graph.diff.new
+ [90m##[0m  graph.diff.match
+ [33m##[0m  graph.diff.unmatch
+ [93m##[0m  gui.cflow
+ [93m##[0m  gui.dataoffset
+ [30m##[0m  gui.background
+ [97m##[0m  gui.alt_background
+ [30m##[0m  gui.border
+ [101m##[0m  wordhl
+ [44m##[0m  linehl
+EOF
+RUN
+
+NAME=ec* and attributes
+FILE=-
+CMDS=<<EOF
+eco bright
+ec*~pop
+eco white2
+ec*~bin
+ec*~cjmp
+ec*~comment
+ec*~fname
+EOF
+EXPECT=<<EOF
+ec pop rgb:ff00ff . bold
+ec bin rgb:4f1900 . bold
+ec cjmp rgb:376b4c . bold underline
+ec comment rgb:001296 . italic
+ec fname rgb:8d0004 . bold italic
+EOF
+RUN
+
+NAME=ecHi
+FILE=-
+CMDS=ecHi xxxx
+EXPECT_ERR=<<EOF
+Unknown color xxxx
+EOF
+RUN

@@ -131,7 +131,7 @@ R_API bool r_file_is_regular(const char *str) {
 	if (!str || !*str || file_stat (str, &buf) == -1) {
 		return false;
 	}
-	return ((S_IFREG & buf.st_mode) == S_IFREG)? true: false;
+	return ((S_IFREG & buf.st_mode) == S_IFREG);
 }
 
 R_API bool r_file_is_directory(const char *str) {
@@ -147,7 +147,7 @@ R_API bool r_file_is_directory(const char *str) {
 		return false;
 	}
 #endif
-	return (S_IFDIR == (S_IFDIR & buf.st_mode))? true: false;
+	return S_IFDIR == (S_IFDIR & buf.st_mode);
 }
 
 R_API bool r_file_fexists(const char *fmt, ...) {
@@ -178,7 +178,7 @@ R_API bool r_file_exists(const char *str) {
 	if (file_stat (str, &buf) == -1) {
 		return false;
 	}
-	return S_IFREG == (S_IFREG & buf.st_mode)? true: false;
+	return S_IFREG == (S_IFREG & buf.st_mode);
 }
 
 R_API long r_file_proc_size(FILE *fd) {
@@ -301,16 +301,15 @@ R_API char *r_stdin_slurp (int *sz) {
 #define BS 1024
 #if __UNIX__ || __WINDOWS__
 	int i, ret, newfd;
-	char *buf;
 	if ((newfd = dup (0)) < 0) {
 		return NULL;
 	}
-	buf = malloc (BS);
+	char *buf = malloc (BS);
 	if (!buf) {
 		close (newfd);
 		return NULL;
 	}
-	for (i = ret = 0; ; i += ret) {
+	for (i = ret = 0; i >= 0; i += ret) {
 		char *new = realloc (buf, i + BS);
 		if (!new) {
 			eprintf ("Cannot realloc to %d\n", i+BS);
@@ -322,9 +321,14 @@ R_API char *r_stdin_slurp (int *sz) {
 			break;
 		}
 	}
-	buf[i] = 0;
-	dup2 (newfd, 0);
-	close (newfd);
+	if (i < 1) {
+		i = 0;
+		R_FREE (buf);
+	} else {
+		buf[i] = 0;
+		dup2 (newfd, 0);
+		close (newfd);
+	}
 	if (sz) {
 		*sz = i;
 	}
@@ -338,11 +342,14 @@ R_API char *r_stdin_slurp (int *sz) {
 #endif
 }
 
-R_API char *r_file_slurp(const char *str, int *usz) {
+R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 	size_t rsz;
 	char *ret;
 	FILE *fd;
 	long sz;
+	if (usz) {
+		*usz = 0;
+	}
 	if (!r_file_exists (str)) {
 		return NULL;
 	}
@@ -383,26 +390,26 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	fclose (fd);
 	ret[sz] = '\0';
 	if (usz) {
-		*usz = (int)sz;
+		*usz = sz;
 	}
 	return ret;
 }
 
 R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail) {
-	int sz;
 	ut8 *in, *out;
 	if (outlen) {
 		*outlen = 0;
 	}
+	size_t sz;
 	in = (ut8*)r_file_slurp (str, &sz);
 	if (!in) {
 		return NULL;
 	}
-	out = r_inflate (in, sz, NULL, outlen);
+	out = r_inflate (in, (int)sz, NULL, outlen);
 	if (!out && origonfail) {
 		// if uncompression fails, return orig buffer ?
 		if (outlen) {
-			*outlen = sz;
+			*outlen = (int)sz;
 		}
 		in[sz] = 0;
 		return in;
@@ -415,7 +422,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	ut8 *ret;
 	long sz;
 	int c, bytes = 0;
-	FILE *fd = r_sandbox_fopen (str, "r");
+	FILE *fd = r_sandbox_fopen (str, "rb");
 	if (!fd) {
 		return NULL;
 	}
@@ -487,9 +494,9 @@ R_API char *r_file_slurp_random_line(const char *file) {
 R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 	/* Reservoir Sampling */
 	char *ptr = NULL, *str;
-	int sz, i, lines, selection = -1;
+	size_t i, lines, selection = -1;
 	int start = *line;
-	if ((str = r_file_slurp (file, &sz))) {
+	if ((str = r_file_slurp (file, NULL))) {
 		r_num_irand ();
 		for (i = 0; str[i]; i++) {
 			if (str[i] == '\n') {
@@ -528,7 +535,7 @@ R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 
 R_API char *r_file_slurp_line(const char *file, int line, int context) {
 	int i, lines = 0;
-	int sz;
+	size_t sz;
 	char *ptr = NULL, *str = r_file_slurp (file, &sz);
 	// TODO: Implement context
 	if (str) {
@@ -552,6 +559,71 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 			if (ptr[i] == '\n') {
 				ptr[i] = '\0';
 				break;
+			}
+		}
+		ptr = strdup (ptr);
+		free (str);
+	}
+	return ptr;
+}
+
+R_API char *r_file_slurp_lines_from_bottom(const char *file, int line) {
+	int i, lines = 0;
+	size_t sz;
+	char *ptr = NULL, *str = r_file_slurp (file, &sz);
+	// TODO: Implement context
+	if (str) {
+		for (i = 0; str[i]; i++) {
+			if (str[i] == '\n') {
+				lines++;
+			}
+		}
+		if (line > lines) {
+			return strdup (str);	// number of lines requested in more than present, return all
+		}
+		i--;
+		for (; str[i] && line; i--) {
+			if (str[i] == '\n') {
+				line--;
+			}
+		}
+		ptr = str+i;
+		ptr = strdup (ptr);
+		free (str);
+	}
+	return ptr;
+}
+
+R_API char *r_file_slurp_lines(const char *file, int line, int count) {
+	int i, lines = 0;
+	size_t sz;
+	char *ptr = NULL, *str = r_file_slurp (file, &sz);
+	// TODO: Implement context
+	if (str) {
+		for (i = 0; str[i]; i++) {
+			if (str[i] == '\n') {
+				lines++;
+			}
+		}
+		if (line > lines) {
+			free (str);
+			return NULL;
+		}
+		lines = line - 1;
+		for (i = 0; str[i]&&lines; i++) {
+			if (str[i] == '\n') {
+				lines--;
+			}
+		}
+		ptr = str+i;
+		for (i = 0; ptr[i]; i++) {
+			if (ptr[i] == '\n') {
+				if (count) {
+					count--;
+				} else {
+					ptr[i] = '\0';
+					break;
+				}
 			}
 		}
 		ptr = strdup (ptr);

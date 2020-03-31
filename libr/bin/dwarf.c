@@ -1662,12 +1662,11 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 			free (buf);
 			return NULL;
 		}
-		list = r_list_new (); // always return empty list wtf
+		list = r_list_newf (r_bin_dwarf_row_free); // always return empty list wtf
 		if (!list) {
 			free (buf);
 			return NULL;
 		}
-		list->free = r_bin_dwarf_row_free;
 		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);
 		// k bin/cur/addrinfo/*
 		SdbListIter *iter;

@@ -13,13 +13,14 @@ static ut27 r_read_me27(const ut8 *buf, int boff) {
 }
 
 R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
-	RRegSet *regset;
-	int off;
-	ut64 ret = 0LL;
 	r_return_val_if_fail (reg && item, 0);
 
-	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->arena];
+	ut64 ret = 0LL;
+	int off = BITS2BYTES (item->offset);
+	RRegSet *regset = &reg->regset[item->arena];
+	if (!regset->arena) {
+		return 0LL;
+	}
 	switch (item->size) {
 	case 80: // word + qword
 		if (regset->arena->bytes && (off + 10 <= regset->arena->size)) {
@@ -48,8 +49,17 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 		}
 		ret = val->v128.Low;
 		break;
-	//case 256:// qword + qword + qword + qword
-	//	break;
+	case 256:// qword + qword + qword + qword
+		if (regset->arena->bytes && (off + 32 <= regset->arena->size)) {
+			val->v256.Low.Low = *((ut64 *)(regset->arena->bytes + off));
+			val->v256.Low.High = *((ut64 *)(regset->arena->bytes + off + 8));
+			val->v256.High.Low = *((ut64 *)(regset->arena->bytes + off + 16));
+			val->v256.High.High = *((ut64 *)(regset->arena->bytes + off + 24));
+		} else {
+			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		}
+		ret = val->v256.Low.Low;
+		break;
 	default:
 		eprintf ("r_reg_get_value_big: Bit size %d not supported\n", item->size);
 		break;
@@ -58,15 +68,19 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 }
 
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
+	r_return_val_if_fail (reg && item, 0);
 	if (!reg || !item || item->offset == -1) {
 		return 0LL;
 	}
 	int off = BITS2BYTES (item->offset);
 	RRegSet *regset = &reg->regset[item->arena];
+	if (!regset->arena) {
+		return 0LL;
+	}
 	switch (item->size) {
 	case 1: {
 		int offset = item->offset / 8;
-		if (offset + item->size >= regset->arena->size) {
+		if (offset >= regset->arena->size) {
 			break;
 		}
 		return (regset->arena->bytes[offset] &
@@ -110,6 +124,9 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	case 96: // long floating value
 		// FIXME: It is a precision loss, please implement me properly!
 		return (ut64)r_reg_get_longdouble (reg, item);
+	case 128:
+		// XXX 128 bit
+		return (ut64)r_reg_get_longdouble (reg, item);
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
 		break;
@@ -123,7 +140,6 @@ R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegisterId role) {
 }
 
 R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
-	int fits_in_arena;
 	ut8 bytes[12];
 	ut8 *src = bytes;
 	r_return_val_if_fail (reg && item, false);
@@ -131,7 +147,13 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (r_reg_is_readonly (reg, item)) {
 		return true;
 	}
-
+	if (item->offset < 0) {
+		return true;
+	}
+	RRegArena *arena = reg->regset[item->arena].arena;
+	if (!arena) {
+		return false;
+	}
 	switch (item->size) {
 	case 80:
 	case 96: // long floating value
@@ -163,13 +185,12 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		break;
 	case 1:
 		if (value) {
-			ut8 *buf = reg->regset[item->arena].arena->bytes + (item->offset / 8);
+			ut8 *buf = arena->bytes + (item->offset / 8);
 			int bit = (item->offset % 8);
 			ut8 mask = (1 << bit);
 			buf[0] = (buf[0] & (0xff ^ mask)) | mask;
 		} else {
 			int idx = item->offset / 8;
-			RRegArena *arena = reg->regset[item->arena].arena;
 			if (idx + item->size > arena->size) {
 				eprintf ("RRegSetOverflow %d vs %d\n", idx + item->size, arena->size);
 				return false;
@@ -180,15 +201,18 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 			buf[0] = (buf[0] & mask) | 0;
 		}
 		return true;
+	case 128:
+		// XXX 128 bit
+		return false; // (ut64)r_reg_get_longdouble (reg, item);
 	default:
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
 		return false;
 	}
-	fits_in_arena = (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size)) >= 0;
+	const bool fits_in_arena = (arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size)) >= 0;
 	if (src && fits_in_arena) {
 		r_mem_copybits (reg->regset[item->arena].arena->bytes +
 				BITS2BYTES (item->offset),
-			src, item->size);
+				src, item->size);
 		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, value);
@@ -229,23 +253,34 @@ R_API R_HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 /* packed registers */
 // packbits can be 8, 16, 32 or 64
 // result value is always casted into ut64
-// TODO: use item->packed_size
+// TODO: support packbits=128 for xmm registers
 R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) {
-	ut64 ret = 0LL;
-	if (!reg || !item) {
-		return 0LL;
-	}
+	r_return_val_if_fail (reg && item, 0LL);
+
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
+	if (packbits > 64) {
+		packbits = 64;
+		eprintf ("Does not support pack bits > 64\n");
+	}
+
+	ut64 ret = 0LL;
 	const int packbytes = packbits / 8;
 	const int packmod = packbits % 8;
 	if (packmod) {
 		eprintf ("Invalid bit size for packet register\n");
 		return 0LL;
 	}
-	int off = BITS2BYTES (item->offset);
+	if ((packidx + 1) * packbits > item->size) {
+		eprintf ("Packed index is beyond the register size\n");
+		return 0LL;
+	}
 	RRegSet *regset = &reg->regset[item->arena];
+	if (!regset->arena) {
+		return 0LL;
+	}
+	int off = BITS2BYTES (item->offset);
 	off += (packidx * packbytes);
 	if (regset->arena->size - off - 1 >= 0) {
 		memcpy (&ret, regset->arena->bytes + off, packbytes);
@@ -253,30 +288,28 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 	return ret;
 }
 
+// TODO: support packbits=128 for xmm registers
 R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
-	int packbytes, packmod;
+	r_return_val_if_fail (reg && reg->regset->arena && item, false);
 
-	if (!reg || !item) {
-		eprintf ("r_reg_set_value: item is NULL\n");
-		return false;
-	}
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
-	packbytes = packbits / 8;
-	packmod = packbits % 8;
-	if (packidx * packbits > item->size) {
+	if (packbits > 64) {
+		packbits = 64;
+		eprintf ("Does not support pack bits > 64\n");
+	}
+
+	int packbytes = packbits / 8;
+	if ((packidx + 1) * packbits > item->size) {
 		eprintf ("Packed index is beyond the register size\n");
 		return false;
 	}
-	if (packmod) {
-		eprintf ("Invalid bit size for packet register\n");
-		return false;
-	}
-	int off = item->offset;
+	int off = BITS2BYTES (item->offset);
+	off += (packidx * packbytes);
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
-		ut8 *dst = reg->regset[item->arena].arena->bytes + BITS2BYTES (off);
-		r_mem_copybits (dst, (ut8 *)&val, packbytes);
+		ut8 *dst = reg->regset[item->arena].arena->bytes + off;
+		memcpy (dst, (ut8*)&val, packbytes);
 		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, val);

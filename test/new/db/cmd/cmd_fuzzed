@@ -1,0 +1,49 @@
+NAME=AFL - crash #2
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+e scr.null =true
+ibbbbbbbk
+EOF
+RUN
+
+NAME=AFL - crash #3
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+e scr.null =true
+.dd dd)ddd dddr{G
+EOF
+RUN
+
+NAME=AFL - crash #4
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+e scr.null =true
+*455%R*:**************
+EOF
+RUN
+
+NAME=AFL - crash #5
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+e scr.null =true
+(((((((,(*;(((($(($(((((*<((()(((d
+EOF
+RUN
+
+NAME=AFL - crash #7
+FILE=/bin/ls
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+e scr.null =true
+22.22.22ddd d do@
+EOF
+RUN

@@ -1,0 +1,31 @@
+NAME=dbg.step
+FILE=/bin/ls
+ARGS=-d
+BROKEN=1
+CMDS=<<EOF
+.dr*
+s rip
+f a=rip
+wx 90
+pi 1 # hack this shouldnt be here
+ds
+.dr*
+?v rip-a
+EOF
+EXPECT=<<EOF
+nop
+0x1
+EOF
+RUN
+
+NAME=dbg.symbols
+FILE=/bin/ls
+ARGS=-d
+BROKEN=1
+CMDS=<<EOF
+is~?
+?!?e zerosyms
+EOF
+EXPECT=<<EOF
+EOF
+RUN

@@ -141,8 +141,7 @@ static int r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 		}
 		zip_stat_init (&sb);
 		if (zFile && zfo->b && !zip_stat_index (zipArch, zfo->entry, 0, &sb)) {
-			ut8 *buf = malloc (sb.size);
-			memset (buf, 0, sb.size);
+			ut8 *buf = calloc (1, sb.size);
 			if (buf) {
 				zip_fread (zFile, buf, sb.size);
 				r_buf_set_bytes (zfo->b, buf, sb.size);
@@ -425,6 +424,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 				zip_filename = strdup (pikaboo + 1);
 			}
 		} else {
+			free (zip_filename);
 			zip_filename = strdup (pikaboo + 1);
 		}
 	}

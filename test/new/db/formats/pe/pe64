@@ -1,0 +1,16 @@
+NAME=pe64 msvc main
+FILE=../bins/pe/testapp-msvc64.exe
+EXPECT=<<EOF
+vaddr=0x140001000 paddr=0x00000400
+EOF
+CMDS=iM~addr
+RUN
+
+NAME=pe64 header
+FILE=../bins/pe/tls64.exe
+EXPECT=<<EOF
+1
+EOF
+CMDS=ih~?Signature : 0x4550
+RUN
+

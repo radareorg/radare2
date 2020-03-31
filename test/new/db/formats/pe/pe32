@@ -1,0 +1,14 @@
+NAME=./pe32
+FILE=../bins/pe/pe.exe
+EXPECT=<<EOF
+0x401000
+EOF
+CMDS=s
+RUN
+
+NAME=./pe32
+FILE=../bins/pe/vista-glass.exe
+EXPECT=<<EOF
+EOF
+CMDS=q!
+RUN

@@ -57,8 +57,8 @@ static int lang_cpipe_init(void *user) {
 }
 
 static int lang_cpipe_run(RLang *lang, const char *code, int len) {
-	FILE *fd = fopen (".tmp.c", "w");
-	if (fd) {
+	FILE *fd = r_sandbox_fopen (".tmp.c", "w");
+	if (!fd) {
 		eprintf ("Cannot open .tmp.c\n");
 		return false;
 	}

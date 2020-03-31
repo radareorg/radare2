@@ -1,0 +1,6 @@
+NAME=PE: corkami driver.sys - open
+FILE=../bins/pe/driver.sys
+EXPECT=<<EOF
+EOF
+CMDS=q!
+RUN

@@ -88,8 +88,9 @@ static bool vtable_section_can_contain_vtables(RVTableContext *context, RBinSect
 		return false;
 	}
 	return !strcmp (section->name, ".rodata") ||
-		   !strcmp (section->name, ".rdata") ||
-		   !strcmp (section->name, ".data.rel.ro");
+		!strcmp (section->name, ".rdata") ||
+		!strcmp (section->name, ".data.rel.ro") ||
+		r_str_endswith (section->name, "__const");
 }
 
 

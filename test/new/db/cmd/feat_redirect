@@ -1,0 +1,26 @@
+NAME="pb>x;!wc -c x"
+FILE=malloc://1024
+CMDS=<<EOF
+p8 10 > dump
+!wc -c dump|awk "{print \$1}"
+p8 12800 > dump
+!wc -c dump|awk "{print \$1}"
+!rm -f dump
+EOF
+EXPECT=<<EOF
+21
+25601
+EOF
+RUN
+
+NAME="p8|sed -e s,0,x,g>x;cat x;rm x"
+FILE=malloc://512
+CMDS=<<EOF
+wv 0x100
+p8 8| sed -e s,1,x,g>x;cat x;rm x
+EOF
+EXPECT=<<EOF
+000x000000000000
+EOF
+RUN
+

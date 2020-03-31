@@ -10,6 +10,7 @@ typedef unsigned int ssize_t;
 #include "arch.h"
 #include "r_types_base.h"
 #include "r_socket.h"
+#include "r_th.h"
 
 #define MSG_OK 0
 #define MSG_NOT_SUPPORTED -1
@@ -98,6 +99,7 @@ typedef struct libgdbr_stub_features_t {
 	struct {
 		bool c, C, s, S, t, r;
 	} vcont;
+	bool P;
 } libgdbr_stub_features_t;
 
 /*!
@@ -186,12 +188,17 @@ typedef struct libgdbr_t {
 	bool get_baddr;
 	libgdbr_stop_reason_t stop_reason;
 
+	RThreadLock *gdbr_lock;
+	int gdbr_lock_depth; // current depth inside the recursive lock
+
 	// parsed from target
 	struct {
 		char *regprofile;
 		int arch, bits;
 		bool valid;
 	} target;
+
+	bool isbreaked;
 } libgdbr_t;
 
 /*!
@@ -205,7 +212,21 @@ int gdbr_init(libgdbr_t *g, bool is_server);
  * \param architecture defines the architecure used (registersize, and such)
  * \returns a failure code
  */
-int gdbr_set_architecture(libgdbr_t *g, const char *arch, int bits);
+int gdbr_set_architecture(libgdbr_t *g, int arch, int bits);
+
+/*!
+ * \brief Function get gdb registers profile based on arch and bits
+ * \param architecture and bit size.
+ * \returns a failure code
+ */
+const char *gdbr_get_reg_profile(int arch, int bits);
+
+/*!
+ * \brief Function set the gdbr internal registers profile
+ * \param registers profile string which shares the same format as RReg API
+ * \returns a failure code
+ */
+int gdbr_set_reg_profile(libgdbr_t *g, const char *str);
 
 /*!
  * \brief frees all buffers and cleans the libgdbr instance stuff

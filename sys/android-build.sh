@@ -60,7 +60,7 @@ x64-static|static-x64)
 	STATIC_BUILD=1
 	;;
 arm64-static|static-arm64)
-	NDK_ARCH=arm64
+	NDK_ARCH=aarch64
 	STATIC_BUILD=1
 	;;
 arm-static|static-arm)
@@ -128,7 +128,7 @@ if [ "${BUILD}" = 1 ]; then
 			--with-ostype=android \
 			--without-libuv \
 			--prefix=${PREFIX} ${CFGFLAGS}
-
+		cp -f plugins.android.cfg plugins.cfg
 		./configure --with-compiler=android --without-libuv \
 			--with-ostype=android \
 			--prefix=${PREFIX} ${CFGFLAGS} || exit 1

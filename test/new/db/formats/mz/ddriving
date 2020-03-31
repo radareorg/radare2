@@ -1,0 +1,22 @@
+NAME=MZ: corkami ddriving.exe - open
+FILE=../bins/mz/ddriving.exe
+EXPECT=<<EOF
+EOF
+CMDS=q
+RUN
+
+NAME=MZ: corkami ddriving.exe - entrypoint
+FILE=../bins/mz/ddriving.exe
+EXPECT=<<EOF
+0x54
+EOF
+CMDS=s
+RUN
+
+NAME=MZ: corkami ddriving.exe - pi 1
+FILE=../bins/mz/ddriving.exe
+EXPECT=<<EOF
+push cs
+EOF
+CMDS=pi 1
+RUN

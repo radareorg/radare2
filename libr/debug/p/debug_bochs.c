@@ -312,7 +312,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 	ripStop = 0;
 	if ((x = strstr (desc->data, "Next at"))) {
 		if ((ini = strstr (x, "[0x"))) {
-			if ((fin = strstr (ini,"]"))) {
+			if ((fin = strchr (ini, ']'))) {
 				int len = fin - ini - 1;
 				strncpy (strIP, ini+1, len);
 				strIP[len] = 0;

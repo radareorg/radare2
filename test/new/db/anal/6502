@@ -1,0 +1,12 @@
+NAME=6502 af bug introduced in 36e42b3
+FILE=malloc://1024
+EXPECT=<<EOF
+5
+EOF
+CMDS=<<EOF
+e asm.arch=6502
+wx c904c90460
+af
+afl~[2]
+EOF
+RUN

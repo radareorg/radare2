@@ -171,6 +171,23 @@ static RList* sections(RBinFile *bf) {
 			ptr->name = strdup ((char*)section[i].name);
 			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel") && !strstr (ptr->name, "pydata")) {
 				ptr->is_data = true;
+			} else if (!strcmp (ptr->name, "C")) {
+				ptr->is_data = true;
+			}
+			if (strstr (ptr->name, ".got")) {
+#if R_BIN_ELF64
+				int wordsize = 8;
+#else
+				int wordsize = 4;
+#endif
+				ptr->format = r_str_newf ("Cd %d[%"PFMT64d"]", wordsize, section[i].size / wordsize);
+			} else if (strstr (ptr->name, ".rela.")) {
+#if R_BIN_ELF64
+				int wordsize = 8;
+#else
+				int wordsize = 4;
+#endif
+				ptr->format = r_str_newf ("Cd %d[%"PFMT64d"]", wordsize, section[i].size / wordsize);
 			}
 			ptr->size = section[i].type != SHT_NOBITS ? section[i].size : 0;
 			ptr->vsize = section[i].size;
@@ -214,6 +231,7 @@ static RList* sections(RBinFile *bf) {
 				break;
 			case PT_LOAD:
 				ptr->name = r_str_newf ("LOAD%d", n++);
+				ptr->perm |= R_PERM_R;
 				found_load = 1;
 				ptr->add = true;
 				break;
@@ -322,7 +340,7 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 	return ptr;
 }
 
-static void process_constructors (RBinFile *bf, RList *ret, int bits) {
+static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 	RList *secs = sections (bf);
 	RListIter *iter;
 	RBinSection *sec;
@@ -486,10 +504,11 @@ static RList* symbols(RBinFile *bf) {
 		if (!symbol[i].size) {
 			continue;
 		}
-		ptr = Elf_(_r_bin_elf_convert_symbol) (bin, &symbol[i], "imp.%s");
+		ptr = Elf_(_r_bin_elf_convert_symbol) (bin, &symbol[i], "%s");
 		if (!ptr) {
 			break;
 		}
+		ptr->is_imported = true;
 		// special case where there is not entry in the plt for the import
 		if (ptr->vaddr == UT32_MAX) {
 			ptr->paddr = 0;
@@ -520,8 +539,8 @@ static RList* imports(RBinFile *bf) {
 			break;
 		}
 		ptr->name = strdup (import[i].name);
-		ptr->bind = r_str_const (import[i].bind);
-		ptr->type = r_str_const (import[i].type);
+		ptr->bind = import[i].bind;
+		ptr->type = import[i].type;
 		ptr->ordinal = import[i].ordinal;
 		setimpord (elf, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
@@ -530,38 +549,31 @@ static RList* imports(RBinFile *bf) {
 }
 
 static RList* libs(RBinFile *bf) {
-	struct r_bin_elf_lib_t *libs = NULL;
-	RList *ret = NULL;
-	char *ptr = NULL;
-	int i;
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
-	if (!(ret = r_list_newf (free))) {
-		return NULL;
+	struct r_bin_elf_lib_t *libs = Elf_(r_bin_elf_get_libs) (bf->o->bin_obj);
+	if (libs) {
+		int i;
+		for (i = 0; !libs[i].last; i++) {
+			char *ptr = strdup (libs[i].name);
+			r_list_append (ret, ptr);
+		}
+		free (libs);
 	}
-	if (!(libs = Elf_(r_bin_elf_get_libs) (bf->o->bin_obj))) {
-		return ret;
-	}
-	for (i = 0; !libs[i].last; i++) {
-		ptr = strdup (libs[i].name);
-		r_list_append (ret, ptr);
-	}
-	free (libs);
 	return ret;
 }
 
 static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *rel, ut64 GOT) {
-	RBinReloc *r = NULL;
-	ut64 B, P;
+	r_return_val_if_fail (bin && rel, NULL);
 
-	if (!bin || !rel) {
-		return NULL;
-	}
-	B = bin->baddr;
-	P = rel->rva; // rva has taken baddr into account
-	if (!(r = R_NEW0 (RBinReloc))) {
+	ut64 B = bin->baddr;
+	ut64 P = rel->rva; // rva has taken baddr into account
+	RBinReloc *r = R_NEW0 (RBinReloc);
+	if (!r) {
 		return r;
 	}
 	r->import = NULL;
@@ -1084,7 +1096,7 @@ static RList* fields(RBinFile *bf) {
 	}
 
 	#define ROW(nam, siz, val, fmt) \
-		r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt));
+		r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt, false));
 	if (r_buf_size (bf->buf) < sizeof (Elf_ (Ehdr))) {
 		return ret;
 	}

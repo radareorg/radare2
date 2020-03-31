@@ -27,10 +27,11 @@ R2PMCACHE_LOADED=0
 if [ -f ~/.r2pm.cache ]; then
 	. ~/.r2pm.cache
 	export LIBEXT="$LIBEXT"
+	LIBDIR="$LIBDIR"
 	export R2CONFIGHOME="$R2CONFIGHOME"
 	export R2DATAHOME="$R2DATAHOME"
 	PREFIX="$PREFIX"
-	if [ -z "${LIBEXT}" -o -z "${R2CONFIGHOME}" -o -z "${R2DATAHOME}" -o -z "${PREFIX}" ]; then
+	if [ -z "${LIBEXT}" -o -z "${LIBDIR}" -o -z "${R2CONFIGHOME}" -o -z "${R2DATAHOME}" -o -z "${PREFIX}" ]; then
 		echo "[r2pm] corrupted cache, please run r2pm cache"
 	else
 		R2PMCACHE_LOADED=1
@@ -38,12 +39,12 @@ if [ -f ~/.r2pm.cache ]; then
 fi
 if [ "${R2PMCACHE_LOADED}" != 1 ]; then
 	export LIBEXT="`r2 -H LIBEXT`"
+	LIBDIR="`r2 -H R2_LIBDIR`"
 	export R2CONFIGHOME="`r2 -H R2_RCONFIGHOME`"
 	export R2DATAHOME="`r2 -H R2_RDATAHOME`"
 	PREFIX="`r2 -H R2_PREFIX`"
 fi
 BINDIR="${PREFIX}/bin/"
-LIBDIR="${PREFIX}/lib/"
 WRKDIR="$PWD"
 
 # prefix
@@ -58,6 +59,9 @@ export R2PM_SYSBINDIR="${BINDIR}"
 [ -z "${R2PM_BINDIR}" ] && R2PM_BINDIR=${R2PM_HOMEBINDIR}
 export R2PM_BINDIR
 
+# libdir
+export R2PM_SYSLIBDIR="${LIBDIR}"
+
 # plugdir
 export R2PM_SYSPLUGIN_DIR=$(r2 -H R2_LIBR_PLUGINS)
 export R2PM_USRPLUGIN_DIR=$(r2 -H R2_USER_PLUGINS)
@@ -70,7 +74,7 @@ export R2PM_HOMEWWWROOT="${R2DATAHOME}/www/"
 export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
 
 # pkgconfig
-export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${R2PM_SYSPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${R2PM_SYSLIBDIR}/pkgconfig:${PKG_CONFIG_PATH}"
 export CFLAGS="-I${R2PM_HOMEPREFIX}/include"
 export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 
@@ -92,7 +96,7 @@ IS_SYSPKG=0
 [ -z "$R2PM_USRDIR" ] && R2PM_USRDIR="${R2DATAHOME}/r2pm"
 R2PM_ETCD="${R2CONFIGHOME}/radare2rc.d"
 
-# TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"
+# TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/last"
 if [ -z "${R2PM_GITDIR}" ]; then
 	R2PM_GITDIR="${R2PM_USRDIR}/git/"
 fi
@@ -125,6 +129,8 @@ purgeR2() {
 	cd "$P/bin" && rm -f ${BINS}
 	cd "$P/lib" && rm -f libr_*
 	cd "$P/lib" && rm -rf radare2
+	cd "$P/lib64" && rm -f libr_*
+	cd "$P/lib64" && rm -rf radare2
 	cd "$P/share" && rm -rf radare2
 	cd "$P/share/man" && rm -rf man1/r*2.1
 	cd "$P/share/doc" && rm -rf radare2
@@ -175,8 +181,8 @@ init|up|update)
 		git reset --hard @^^
 		git pull
 	else
-		echo git clone https://github.com/radare/radare2-pm
-		git clone --depth=3 --recursive https://github.com/radare/radare2-pm
+		echo git clone https://github.com/radareorg/radare2-pm
+		git clone --depth=3 --recursive https://github.com/radareorg/radare2-pm
 		cd radare2-pm
 		pwd
 	fi
@@ -212,6 +218,7 @@ fi
 mkdir -p "${R2PM_USRDIR}/pkg/"
 mkdir -p "${R2PM_GITDIR}"
 mkdir -p "${R2PM_PLUGDIR}"
+mkdir -p "${R2PM_BINDIR}"
 
 R2PM_SYSPKG() {
 	IS_SYSPKG="$1"
@@ -266,6 +273,8 @@ R2PM_TGZ() {
 	TARBALL="`basename $1`"
 	if [ -z "$2" ]; then
 		DIR="`echo ${TARBALL} | awk -F .t '{print $1}'`"
+	elif [ "${2%${2#?}}"x = '/x' ]; then
+		DIR="${2#?}"
 	else
 		DIR="$2"
 	fi
@@ -290,7 +299,7 @@ R2PM_TGZ() {
 		elif [ "`echo ${URL} | grep -e .txz -e tar`" ]; then
 			tar xvf "${TARBALL}"
 		elif [ "`echo ${URL} | grep -e .zip`" ]; then
-			if [ -n "$2" ]; then
+			if [ -n "$2" ] && [ "${2%${2#?}}"x != '/x' ]; then
 				unzip -d "${DIR}" -o "${TARBALL}"
 			else
 				unzip "${TARBALL}"
@@ -405,8 +414,9 @@ pkgFilePath() {
 }
 
 r2pm_doc() {
-	if [ -z "$1" ]; then
-		R2PM_Info
+	if [ -z "$2" ]; then
+		echo "Usage: r2pm -d [package]  # show docs on [package]"
+		exit 1
 	else
 		FILE="$(pkgFilePath "$1")"
 		if [ -f "${FILE}" ]; then
@@ -417,27 +427,24 @@ r2pm_doc() {
 }
 
 r2pm_install() {
-	if [ -z "$2" ]; then
-		R2PM_Info
+	FILE="$(pkgFilePath "$2")"
+	if [ -f "${FILE}" ]; then
+		NAME="$2"
+		ACTION=Install
+		export PATH="${R2PM_HOMEBINDIR}:${PATH}"
+		. "${FILE}"
+		R2PM_INSTALL
+		R2PM_REGISTER
 	else
-		FILE="$(pkgFilePath "$2")"
-		if [ -f "${FILE}" ]; then
-			NAME="$2"
-			ACTION=Install
-			export PATH="${R2PM_HOMEBINDIR}:${PATH}"
-			. "${FILE}"
-			R2PM_INSTALL
-			R2PM_REGISTER
-		else
-			echo "Cannot find $FILE"
-			exit 1
-		fi
+		echo "Cannot find $2"
+		exit 1
 	fi
 }
 
 r2pm_uninstall() {
 	if [ -z "$2" ]; then
-		R2PM_Info
+		echo "Usage: r2pm -u [package]  # uninstall [package]"
+		exit 1
 	else
 		FILE="`pkgFilePath $2`"
 		if [ -f "${FILE}" ]; then
@@ -460,8 +467,14 @@ r2pm_uninstall() {
 export PYTHON_PATH="${R2PM_PYPATH}:${PYTHON_PATH}"
 
 case "$1" in
+-I|info)
+	R2PM_Info
+	;;
 -i|install)
-	if [ "$2" = "all" ]; then
+	if [ -z "$2" ]; then
+		echo "Usage: r2pm -i [package]  # install [package]"
+		exit 1
+	elif [ "$2" = "all" ]; then
 		for a in `cd ${R2PM_DBDIR} && ls` ; do
 			r2pm_install "$a"
 			if [ "$?" != 0 ]; then
@@ -489,15 +502,15 @@ case "$1" in
 	if [ -n "$3" ]; then
 		TRAVIS_JOB="$3"
 	else
-		TRAVIS_JOB=`${CURL} -s https://api.travis-ci.org/repos?slug=radare%2Fradare2| jq .[0].last_build_id`
+		TRAVIS_JOB=`${CURL} -s https://api.travis-ci.com/repos?slug=radare%2Fradare2| jq .[0].last_build_id`
 		TRAVIS_JOB=$(($TRAVIS_JOB+1))
 	fi
 	echo $TRAVIS_JOB >&2
 	# storage
-	${CURL} -s https://s3.amazonaws.com/archive.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
+	${CURL} -s https://s3.amazonaws.com/archive.travis-ci.com/jobs/${TRAVIS_JOB}/log.txt |\
 		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
 # wip
-	${CURL} -s https://api.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
+	${CURL} -s https://api.travis-ci.com/jobs/${TRAVIS_JOB}/log.txt |\
 		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
 	;;
 -l|list)
@@ -516,7 +529,7 @@ case "$1" in
 -gi|global-install)
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
-	#R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/"
+	#R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/${R2VERSION}/"
 	R2PM_PLUGDIR="${R2PM_SYSPLUGIN_DIR}"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
@@ -529,7 +542,7 @@ case "$1" in
 -gu|global-uninstall)
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
-	#R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/"
+	#R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/${R2VERSION}/"
 	R2PM_PLUGDIR="${R2PM_SYSPLUGIN_DIR}"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
@@ -618,6 +631,7 @@ ls)
 	;;
 cache)
 	echo "export LIBEXT=\"${LIBEXT}\"" > "${R2PMCACHE}"
+	echo "export LIBDIR=\"${LIBDIR}\"" >> "${R2PMCACHE}"
 	echo "export R2CONFIGHOME=\"${R2CONFIGHOME}\"" >> "${R2PMCACHE}"
 	echo "export R2DATAHOME=\"${R2DATAHOME}\"" >> "${R2PMCACHE}"
 	echo "export PREFIX=\"${PREFIX}\"" >> "${R2PMCACHE}"
@@ -687,9 +701,9 @@ suicide)
 	cat <<HELP
 Usage: r2pm [init|update|cmd] [...]
 Commands:
- -i,info                     show information about a package
- -i,install <pkgname>        install package in your home (pkgname=all)
- -gi,global-install <pkg>    install package system-wide
+ -I,info                     information about repository and installed packages
+ -i,install <pkgname>        install or update package in your home (pkgname=all)
+ -gi,global-install <pkg>    install or update package system-wide
  -gu,global-uninstall <pkg>  uninstall pkg from systemdir
  -u,uninstall <pkgname>      r2pm -u baleful (-uu to force)
  -l,list                     list installed pkgs

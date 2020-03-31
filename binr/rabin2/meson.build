@@ -10,9 +10,9 @@ executable('rabin2', 'rabin2.c',
     r_crypto_dep,
     r_core_dep,
     r_magic_dep,
-    r_bin_dep,
-    sdb_dep
+    r_bin_dep
   ],
   install: true,
+  install_rpath: rpath,
   implicit_include_directories: false
 )

@@ -11,11 +11,16 @@ include ../../config-user.mk
 
 SHLR=../../shlr
 
-ifneq (${ANDROID},1)
+ifeq (${ANDROID},1)
+LDFLAGS+=-lm
+else
 ifneq (${OSTYPE},linux)
 LDFLAGS+=-lpthread
 LDFLAGS+=-ldl
 endif
+endif
+ifeq ($(USE_LTO),1)
+LDFLAGS+=-flto
 endif
 
 CFLAGS+=-I../../libr/include/
@@ -47,10 +52,17 @@ LDFLAGS+=-L../../libr/config -lr_config
 LDFLAGS+=${LINK}
 
 include ../../libr/config.mk
+include ../../libr/socket/deps.mk
+include ../../libr/magic/deps.mk
+include ../../libr/main/deps.mk
 include ../../shlr/zip/deps.mk
+include ../../shlr/gdb/deps.mk
+include ../../shlr/java/deps.mk
 include ../../shlr/bochs/deps.mk
+include ../../shlr/grub/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/ar/deps.mk
+include ../../shlr/capstone.mk
 
 all: symlinks
 

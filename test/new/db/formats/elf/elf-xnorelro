@@ -1,0 +1,15 @@
+NAME=PE: corkami elf-xnorelro - relro disabled
+FILE=../bins/elf/analysis/elf-xnorelro
+EXPECT=<<EOF
+elf.relro=no
+EOF
+CMDS=ik info/*~relro
+RUN
+
+NAME=PE: corkami elf-nx - nx disabled
+FILE=../bins/elf/analysis/elf-xnorelro
+EXPECT=<<EOF
+nx       false
+EOF
+CMDS=iI~^nx
+RUN

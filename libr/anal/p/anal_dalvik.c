@@ -47,7 +47,7 @@ static const char *getCondz(ut8 cond) {
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	int sz = dalvik_opcodes[data[0]].len;
 	if (!op || sz >= len) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (op && (mask & R_ANAL_OP_MASK_DISASM)) {
 			op->mnemonic = strdup ("invalid");
 		}
 		return -1;
@@ -432,7 +432,8 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case 0x2a: // goto/32
 		if (len > 5) {
-			op->jump = addr + (int)(data[2]|(data[3]<<8)|(data[4]<<16)|(data[5]<<24))*2;
+			st64 dst = (st64)(data[2]|(data[3]<<8)|(data[4]<<16)|(data[5]<<24));
+			op->jump = addr + (dst * 2);
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->eob = true;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
@@ -570,6 +571,10 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->type = R_ANAL_OP_TYPE_UCALL;
 			// TODO: handle /range instructions
 			// NOP esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", addr);
+		}
+		if (mask & R_ANAL_OP_MASK_ESIL) {
+			// TODO: handle /range instructions
+			esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", op->fail, op->jump);
 		}
 		break;
 	case 0x27: // throw
@@ -724,9 +729,28 @@ static int set_reg_profile(RAnal *anal) {
 	"gpr	v13	.32	52	0\n"
 	"gpr	v14	.32	56	0\n"
 	"gpr	v15	.32	60	0\n"
-	"gpr	ip	.32	64	0\n"
-	"gpr	sp	.32	68	0\n"
-	"gpr	bp	.32	72	0\n"
+	"gpr	v16	.32	40	0\n"
+	"gpr	v17	.32	44	0\n"
+	"gpr	v18	.32	48	0\n"
+	"gpr	v19	.32	52	0\n"
+	"gpr	v20	.32	56	0\n"
+	"gpr	v21	.32	60	0\n"
+	"gpr	v22	.32	64	0\n"
+	"gpr	v23	.32	68	0\n"
+	"gpr	v24	.32	72	0\n"
+	"gpr	v25	.32	76	0\n"
+	"gpr	v26	.32	80	0\n"
+	"gpr	v27	.32	84	0\n"
+	"gpr	v28	.32	88	0\n"
+	"gpr	v29	.32	92	0\n"
+	"gpr	v30	.32	96	0\n"
+	"gpr	v31	.32	100	0\n"
+	"gpr	v32	.32	104	0\n"
+	"gpr	v33	.32	108	0\n"
+	"gpr	v34	.32	112	0\n"
+	"gpr	ip	.32	116	0\n"
+	"gpr	sp	.32	120	0\n"
+	"gpr	bp	.32	124	0\n"
 	;
 	return r_reg_set_profile_string (anal->reg, p);
 }

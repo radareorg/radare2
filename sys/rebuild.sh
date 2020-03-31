@@ -78,6 +78,12 @@ RebuildGdb() {
 	Rebuild libr/debug
 }
 
+RebuildWindbg() {
+	Rebuild shlr/windbg
+	Rebuild libr/io
+	Rebuild libr/debug
+}
+
 RebuildZip() {
 	Rebuild shlr/zip
 	Rebuild libr/io
@@ -92,6 +98,7 @@ case "$1" in
 grub|fs)RebuildFs; ;;
 bin)    RebuildBin ; ;;
 gdb)    RebuildGdb ; ;;
+windbg) RebuildWindbg ; ;;
 sdb)    RebuildSdb ; ;;
 spp)    RebuildSpp ; ;;
 tcc)    RebuildTcc ; ;;

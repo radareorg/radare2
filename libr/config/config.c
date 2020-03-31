@@ -1,11 +1,9 @@
-/* radare - LGPL - Copyright 2006-2019 - pancake */
+/* radare - LGPL - Copyright 2006-2020 - pancake */
 
 #include "r_config.h"
 
 R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
-	if (IS_NULLSTR (name)) {
-		return NULL;
-	}
+	r_return_val_if_fail (name && *name && value, NULL);
 	RConfigNode *node = R_NEW0 (RConfigNode);
 	if (!node) {
 		return NULL;
@@ -19,6 +17,7 @@ R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 }
 
 R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
+	r_return_val_if_fail (n, NULL);
 	RConfigNode *cn = R_NEW0 (RConfigNode);
 	if (!cn) {
 		return NULL;
@@ -46,17 +45,18 @@ R_API void r_config_node_free(void *n) {
 }
 
 static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
+	r_return_if_fail (cfg && node);
 	const char *val = node->value;
 	if (!val) {
 		val = "0";
 	}
 	char *sval = r_str_escape (val);
-	if (node->flags & CN_BOOL || node->flags & CN_INT || node->flags & CN_OFFT) {
+	if (r_config_node_is_bool (node) || r_config_node_is_int (node)) {
 		if (!strncmp (val, "0x", 2)) {
 			ut64 n = r_num_get (NULL, val);
 			cfg->cb_printf ("%"PFMT64d, n);
-		} else if (r_str_isnumber (val) || r_str_is_bool (val)) {
-			cfg->cb_printf ("%s", val);
+		} else if (r_str_isnumber (val) || (*val /* HACK */ && r_str_is_bool (val))) {
+			cfg->cb_printf ("%s", val);  // TODO: always use true/false for bool json str
 		} else {
 			cfg->cb_printf ("\"%s\"", sval);
 		}
@@ -67,6 +67,7 @@ static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
 }
 
 static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, const char *sfx, bool verbose, bool json) {
+	r_return_if_fail (cfg && node && pfx && sfx);
 	char *option;
 	bool isFirst;
 	RListIter *iter;
@@ -84,7 +85,7 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, 
 				cfg->cb_printf ("\"desc\":\"%s\",", es);
 				free (es);
 			}
-			cfg->cb_printf ("\"ro\":%s", node->flags & CN_RO ? "true" : "false");
+			cfg->cb_printf ("\"ro\":%s", r_str_bool (r_config_node_is_ro (node)));
 			if (!r_list_empty (node->options)) {
 				isFirst = true;
 				cfg->cb_printf (",\"options\":[");
@@ -111,7 +112,7 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, 
 		if (verbose) {
 			cfg->cb_printf ("%s%s = %s%s %s; %s", pfx,
 				node->name, node->value, sfx, 
-				node->flags & CN_RO ? "(ro)" : "", 
+				r_config_node_is_ro (node) ? "(ro)" : "",
 				node->desc);
 			if (!r_list_empty (node->options)) {
 				isFirst = true;
@@ -135,6 +136,7 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, 
 }
 
 R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
+	r_return_if_fail (cfg);
 	RConfigNode *node;
 	RListIter *iter;
 	const char *sfx = "";
@@ -145,7 +147,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	bool isFirst = false;
 
 	if (!IS_NULLSTR (str)) {
-		str = r_str_trim_ro (str);
+		str = r_str_trim_head_ro (str);
 		len = strlen (str);
 		if (len > 0 && str[0] == 'j') {
 			str++;
@@ -266,11 +268,12 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 }
 
 R_API RConfigNode* r_config_node_get(RConfig *cfg, const char *name) {
-	r_return_val_if_fail (cfg && name && *name, NULL);
+	r_return_val_if_fail (cfg && name, NULL);
 	return ht_pp_find (cfg->ht, name, NULL);
 }
 
 R_API bool r_config_set_getter(RConfig *cfg, const char *key, RConfigCallback cb) {
+	r_return_val_if_fail (cfg && key, false);
 	RConfigNode *node = r_config_node_get (cfg, key);
 	if (node) {
 		node->getter = cb;
@@ -288,11 +291,6 @@ R_API bool r_config_set_setter(RConfig *cfg, const char *key, RConfigCallback cb
 	return false;
 }
 
-
-static bool is_bool(const char *s) {
-	return !r_str_casecmp ("true", s) || !r_str_casecmp ("false", s);
-}
-
 R_API const char* r_config_get(RConfig *cfg, const char *name) {
 	r_return_val_if_fail (cfg && name, NULL);
 	RConfigNode *node = r_config_node_get (cfg, name);
@@ -300,21 +298,19 @@ R_API const char* r_config_get(RConfig *cfg, const char *name) {
 		if (node->getter) {
 			node->getter (cfg->user, node);
 		}
-		cfg->last_notfound = 0;
-		if (node->flags & CN_BOOL) {
+		if (r_config_node_is_bool (node)) {
 			return r_str_bool (r_str_is_true (node->value));
 		}
 		return node->value;
 	} else {
 		eprintf ("r_config_get: variable '%s' not found\n", name);
 	}
-	cfg->last_notfound = 1;
 	return NULL;
 }
 
 R_API bool r_config_toggle(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
-	if (node && node->flags & CN_BOOL) {
+	if (node && r_config_node_is_bool (node)) {
 		(void)r_config_set_i (cfg, name, !node->i_value);
 		return true;
 	}
@@ -339,20 +335,19 @@ R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 }
 
 R_API const char* r_config_node_type(RConfigNode *node) {
-	if (node) {
-		int f = node->flags;
-		if (f & CN_BOOL) {
-			return "bool";
+	r_return_val_if_fail (node, "");
+
+	if (r_config_node_is_bool (node)) {
+		return "bool";
+	}
+	if (r_config_node_is_str (node)) {
+		return "str";
+	}
+	if (r_config_node_is_int (node)) {
+		if (!strncmp (node->value, "0x", 2)) {
+			return "addr";
 		}
-		if (f & CN_STR) {
-			return "str";
-		}
-		if (f & CN_OFFT || f & CN_INT) {
-			if (!strncmp (node->value, "0x", 2)) {
-				return "addr";
-			}
-			return "int";
-		}
+		return "int";
 	}
 	return "";
 }
@@ -377,6 +372,10 @@ R_API RConfigNode* r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue,
 	return node;
 }
 
+static bool __is_true_or_false(const char *s) {
+	return s && (!r_str_casecmp (s, "true") || !r_str_casecmp (s, "false"));
+}
+
 /* TODO: reduce number of strdups here */
 R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *value) {
 	RConfigNode *node = NULL;
@@ -388,7 +387,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 
 	node = r_config_node_get (cfg, name);
 	if (node) {
-		if (node->flags & CN_RO) {
+		if (r_config_node_is_ro (node)) {
 			eprintf ("(error: '%s' config key is read only)\n", name);
 			return node;
 		}
@@ -402,7 +401,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 			free (node->value);
 			node->value = strdup ("");
 		}
-		if (node->flags & CN_BOOL) {
+		if (r_config_node_is_bool (node)) {
 			bool b = r_str_is_true (value);
 			node->i_value = b? 1: 0;
 			char *value = strdup (r_str_bool (b));
@@ -419,10 +418,9 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 				if (node->value == value) {
 					goto beach;
 				}
-				char *tmp = node->value;
+				free (node->value);
 				node->value = strdup (value);
-				free (tmp);
-				if (IS_DIGIT (*value)) {
+				if (IS_DIGIT (*value) || (value[0] == '-' && IS_DIGIT (value[1]))) {
 					if (strchr (value, '/')) {
 						node->i_value = r_num_get (cfg->num, value);
 					} else {
@@ -439,13 +437,12 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 		if (!cfg->lock) {
 			node = r_config_node_new (name, value);
 			if (node) {
-				if (value && is_bool (value)) {
+				if (__is_true_or_false (value)) {
 					node->flags |= CN_BOOL;
 					node->i_value = r_str_is_true (value)? 1: 0;
 				}
 				ht_pp_insert (cfg->ht, node->name, node);
 				r_list_append (cfg->nodes, node);
-				cfg->n_nodes++;
 			} else {
 				eprintf ("r_config_set: unable to create a new RConfigNode\n");
 			}
@@ -492,14 +489,13 @@ R_API bool r_config_rm(RConfig *cfg, const char *name) {
 	if (node) {
 		ht_pp_delete (cfg->ht, node->name);
 		r_list_delete_data (cfg->nodes, node);
-		cfg->n_nodes--;
 		return true;
 	}
 	return false;
 }
 
 R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, R_NULLABLE RConfigNode *node) {
-	if (node && node->flags & CN_BOOL) {
+	if (node && r_config_node_is_bool (node)) {
 		r_str_ncpy (buf, r_str_bool ((int) i), buf_size);
 		return;
 	}
@@ -515,25 +511,17 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 	r_return_val_if_fail (cfg && name, NULL);
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
-		if (node->flags & CN_RO) {
+		if (r_config_node_is_ro (node)) {
 			node = NULL;
 			goto beach;
 		}
-		if (node->value) {
-			ov = strdup (node->value);
-			if (!ov) {
-				node = NULL;
-				goto beach;
-			}
-			free (node->value);
-		}
+		ov = node->value;
 		r_config_node_value_format_i (buf, sizeof (buf), i, NULL);
 		node->value = strdup (buf);
 		if (!node->value) {
 			node = NULL;
 			goto beach;
 		}
-		//node->flags = CN_RW | CN_INT;
 		node->i_value = i;
 	} else {
 		if (!cfg->lock) {
@@ -543,12 +531,11 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 				node = NULL;
 				goto beach;
 			}
-			node->flags = CN_RW | CN_OFFT;
+			node->flags = CN_RW | CN_INT;
 			node->i_value = i;
 			ht_pp_insert (cfg->ht, node->name, node);
 			if (cfg->nodes) {
 				r_list_append (cfg->nodes, node);
-				cfg->n_nodes++;
 			}
 		} else {
 			eprintf ("(locked: no new keys can be created (%s))\n", name);
@@ -561,7 +548,8 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 		if (!ret) {
 			node->i_value = oi;
 			free (node->value);
-			node->value = strdup (ov? ov: "");
+			node->value = ov? ov: strdup ("");
+			ov = NULL;
 		}
 	}
 beach:
@@ -589,7 +577,7 @@ static void __evalString(RConfig *cfg, char *name) {
 			if (v) {
 				cfg->cb_printf ("%s\n", v);
 			} else {
-				eprintf ("Invalid conifg key %s\n", name);
+				eprintf ("Invalid config key %s\n", name);
 			}
 		}
 	}
@@ -614,7 +602,7 @@ R_API bool r_config_eval(RConfig *cfg, const char *str, bool many) {
 	if (many) {
 		// space separated list of k=v k=v,..
 		// if you want to use spaces go for base64 or e.
-		RList *list = r_str_split_list (s, ",");
+		RList *list = r_str_split_list (s, ",", 0);
 		RListIter *iter;
 		char *name;
 		r_list_foreach (list, iter, name) {
@@ -624,6 +612,7 @@ R_API bool r_config_eval(RConfig *cfg, const char *str, bool many) {
 		return true;
 	}
 	__evalString (cfg, s);
+	free (s);
 	return true;
 }
 
@@ -658,7 +647,6 @@ R_API RConfig* r_config_new(void *user) {
 	}
 	cfg->user = user;
 	cfg->num = NULL;
-	cfg->n_nodes = 0;
 	cfg->lock = 0;
 	cfg->cb_printf = (void *) printf;
 	return cfg;
@@ -675,7 +663,6 @@ R_API RConfig* r_config_clone(RConfig *cfg) {
 		RConfigNode *nn = r_config_node_clone (node);
 		ht_pp_insert (c->ht, node->name, nn);
 		r_list_append (c->nodes, nn);
-		c->n_nodes++;
 	}
 	c->lock = cfg->lock;
 	c->cb_printf = cfg->cb_printf;
@@ -693,7 +680,7 @@ R_API void r_config_free(RConfig *cfg) {
 
 R_API void r_config_visual_hit_i(RConfig *cfg, const char *name, int delta) {
 	RConfigNode *node = r_config_node_get (cfg, name);
-	if (node && (node->flags & CN_INT || node->flags & CN_OFFT)) {
+	if (node && r_config_node_is_int (node)) {
 		(void)r_config_set_i (cfg, name, r_config_get_i (cfg, name) + delta);
 	}
 }
@@ -704,4 +691,27 @@ R_API void r_config_bump(RConfig *cfg, const char *key) {
 		r_config_set (cfg, key, orig);
 		free (orig);
 	}
+}
+
+R_API void r_config_serialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db) {
+	RListIter *iter;
+	RConfigNode *node;
+	r_list_foreach (config->nodes, iter, node) {
+		sdb_set (db, node->name, node->value, 0);
+	}
+}
+
+static int load_config_cb(void *user, const char *k, const char *v) {
+	RConfig *config = user;
+	RConfigNode *node = r_config_node_get (config, k);
+	if (!node) {
+		return 1;
+	}
+	r_config_set (config, k, v);
+	return 1;
+}
+
+R_API bool r_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_NULLABLE char **err) {
+	sdb_foreach (db, load_config_cb, config);
+	return true;
 }

@@ -59,6 +59,9 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 		}
 		// Now left endpoint <= addr < right endpoint
 		ut64 len1 = R_MIN (vaddr + len - addr, r_itv_end (part->itv) - addr);
+		if (len1 < 1) {
+			break;
+		}
 		// The map satisfies the permission requirement or p_cache is enabled
 		if (((part->map->perm & match_flg) == match_flg || io->p_cache)) {
 			st64 result = op (io, part->map->fd, part->map->delta + addr - part->map->itv.addr,
@@ -128,6 +131,7 @@ R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
 		const ut8 *tmp = r_buf_data (b, &bufSize);
 		r_io_desc_write (desc, tmp, bufSize);
 	}
+	free (uri);
 	return desc;
 }
 
@@ -211,14 +215,15 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	}
 	//does this really work, or do we have to handler debuggers ugly
 	uri = old->referer? old->referer: old->uri;
-#if __WINDOWS__ //TODO: workaround, see https://github.com/radare/radare2/issues/8840
-	if (!r_io_desc_close (old)) {
+#if __WINDOWS__ //TODO: workaround, see https://github.com/radareorg/radare2/issues/8840
+	if (old->plugin->close && old->plugin->close (old)) {
 		return false; // TODO: this is an unrecoverable scenario
 	}
 	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
 		return false;
 	}
 	r_io_desc_exchange (io, old->fd, new->fd);
+	r_io_desc_del (io, old->fd);
 	return true;
 #else
 	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {

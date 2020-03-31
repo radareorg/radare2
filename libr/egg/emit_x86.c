@@ -146,7 +146,7 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 			} else if (k < 0) {
 				r_egg_printf (egg, "  mov %s, ["R_SP"%d]\n", reg, k);
 			} else {
-				r_egg_printf (egg, "  mov %s, ["R_SP"]\n", reg, k);
+				r_egg_printf (egg, "  mov %s, ["R_SP"]\n", reg);
 			}
 		}
 	}
@@ -267,7 +267,7 @@ static void emit_arg (REgg *egg, int xs, int num, const char *str) {
 	case 0:
 #ifdef ARCH_X86_64
 		/*	push imm64 instruction not exist, it´s translated to:
-			mov rax, 0x0102030405060708	
+			mov rax, 0x0102030405060708
 			push rax
 		*/
 		if (attsyntax) {

@@ -39,6 +39,7 @@ typedef struct r_flags_at_offset_t {
 typedef struct r_flag_item_t {
 	char *name;     /* unique name, escaped to avoid issues with r2 shell */
 	char *realname; /* real name, without any escaping */
+	bool demangled; /* real name from demangling? */
 	ut64 offset;    /* offset flagged by this item */
 	ut64 size;      /* size of the flag item */
 	RSpace *space;  /* flag space this item belongs to */
@@ -54,7 +55,7 @@ typedef struct r_flag_t {
 	Sdb *tags;
 	RNum *num;
 	RSkipList *by_off; /* flags sorted by offset, value=RFlagsAtOffset */
-	HtPP *ht_name; /* hashmap key=item name, value=RList of items */
+	HtPP *ht_name; /* hashmap key=item name, value=RFlagItem * */
 	PrintfCallback cb_printf;
 #if R_FLAG_ZONE_USE_SDB
 	Sdb *zones;
@@ -67,7 +68,7 @@ typedef struct r_flag_t {
 
 typedef bool (*RFlagExistAt)(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
-typedef RFlagItem *(*RFlagGetAtAddr) (RFlag *f, ut64);
+typedef RFlagItem* (*RFlagGetAtAddr) (RFlag *f, ut64);
 typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr, bool closest);
 typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size);
 typedef bool (*RFlagUnset)(RFlag *f, RFlagItem *item);
@@ -119,6 +120,7 @@ R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free (RFlagItem *item);
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
 R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname);
+R_API const char *r_flag_item_set_color(RFlagItem *item, const char *color);
 R_API RFlagItem *r_flag_item_clone(RFlagItem *item);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);
@@ -131,6 +133,7 @@ R_API void r_flag_foreach_prefix(RFlag *f, const char *pfx, int pfx_len, RFlagIt
 R_API void r_flag_foreach_range(RFlag *f, ut64 from, ut64 to, RFlagItemCb cb, void *user);
 R_API void r_flag_foreach_glob(RFlag *f, const char *glob, RFlagItemCb cb, void *user);
 R_API void r_flag_foreach_space(RFlag *f, const RSpace *space, RFlagItemCb cb, void *user);
+R_API void r_flag_foreach_space_glob(RFlag *f, const char *glob, const RSpace *space, RFlagItemCb cb, void *user);
 
 /* spaces */
 static inline RSpace *r_flag_space_get(RFlag *f, const char *name) {

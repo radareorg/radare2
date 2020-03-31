@@ -1,4 +1,5 @@
 option('static_runtime', type: 'boolean', value: false)
+option('local', type: 'boolean', value: false, description: 'Adds support for local/side-by-side installation (sets rpath if needed)')
 
 # For Windows
 option('r2_libdir', type: 'string', value: '')
@@ -26,6 +27,13 @@ option('use_sys_lz4', type: 'boolean', value: false)
 option('use_sys_xxhash', type: 'boolean', value: false)
 option('use_sys_openssl', type: 'boolean', value: false)
 option('use_libuv', type: 'boolean', value: true)
+option('use_treesitter', type: 'boolean', value: false)
 option('debugger', type: 'boolean', value: true)
 
 option('use_webui', type: 'boolean', value: false, description: 'install different WebUIs for radare2')
+
+option('shell_parser_in_builddir', type: 'boolean', value: true, description: 'When true, radare2-shell-parser is downloaded in the build directory')
+option('tree_sitter_in_builddir', type: 'boolean', value: true, description: 'When true, tree-sitter is downloaded in the build directory')
+
+option('enable_tests', type: 'boolean', value: false, description: 'Build unit tests in test/unit')
+option('enable_r2r', type: 'boolean', value: true, description: 'Build r2r executable for regression testing')

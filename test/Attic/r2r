@@ -1,0 +1,249 @@
+#!/bin/sh
+#
+# r2r entrypoint for the regressions testsuite
+
+# TODO: bisect with -b
+
+R2RDIR="@R2RDIR@"
+
+if [ "${R2RDIR}" != "@""R2RDIR@" ]; then
+	cd "${R2RDIR}"
+else
+	DIR=`readlink $0`
+	[ -n "${DIR}" ] && cd `dirname $DIR`
+	while [ ! -x r2r ]; do
+		cd ..
+		if [ "`pwd`" = / ]; then
+			echo "Cannot find test/"
+			exit 1
+		fi
+	done
+fi
+
+KW="$1"
+KX="$2"
+
+control_c() {
+	echo "^C"
+	exit 1
+}
+
+trap control_c 2
+
+# Use R2R="node node_modules/.bin/r2r" to bypass npm
+if [ -z "${R2R}" ]; then
+	R2R="`cd new && npm bin`/r2r"
+	[ -x "${R2R}" ] || (cd new && npm i)
+fi
+
+usage() {
+	echo "Usage: r2r (-options) [keyword]"
+	echo "  -a [type] [test] [name] ([commands])  add test"
+	echo "  -c    clean temporary files (travis/tmp, ...)"
+	echo "  -s    search only. do not run any test"
+	echo "  -S    shell into the regressions repo"
+	echo "  -r    run tests from new/db"
+	echo "  -R    run tests from new/db in verbose mode"
+	echo "  -i    run tests from new/db interactively"
+	echo "  -u    update r2r repository"
+	echo "  -e    edit test"
+	echo "  -v    show version"
+	echo "  -t [type]   show travis status for type (pr, master, any)"
+	echo "  -S    enter shell (same as sh, shell or cd)"
+	echo "  --debase64"
+	echo "        debase64 tests"
+	echo "  --format"
+	echo "        format tests (i.e. add blank lines between tests)"
+	echo "  -df   --debase64 --format"
+}
+
+case "$KW" in
+-S|cd|shell|sh)
+	exec ${SHELL}
+	exit $?
+	;;
+-i)
+	shift
+	A=`echo $*|sed -e 's,new/,,'`
+	cd new || exit 1
+	exec node_modules/.bin/r2r -i $A || exit 1
+	;;
+-c)
+	rm -rf new/tmp
+	exit 0
+	;;
+-e)
+	TYPE="$2"
+	TEST="$3"
+	NAME="$4"
+	if [ -z "${TYPE}" ]; then
+		(cd new/db ; ls|cat)
+	elif [ -z "${TEST}" ]; then
+		(cd new/db/${TYPE} ; ls|cat)
+	else
+		if [ -z "${NAME}" ]; then
+			grep -re NAME= -e '^d ' -e '^ad ' -e '^a ' "new/db/${TYPE}" | cut -d : -f 2- | cut -d = -f 2-
+			#(cd new/db/${TYPE} ; grep|cat)
+		#	echo "Usage: -a [type] [test] [name] ([commands])"
+		else
+			(cd new && ${R2R} -e "${TYPE}" "${TEST}" "${NAME}" )
+		fi
+	fi
+	exit 0
+	;;
+-a)
+	TYPE="$2"
+	TEST="$3"
+	NAME="$4"
+	ARG0="$5" # hexpairs, commands
+	ARG1="$6" # file to open
+	ARG2="$7" # Broken or not
+	if [ -z "${TYPE}" ]; then
+		(cd new/db ; ls|cat)
+	elif [ -z "${TEST}" ]; then
+		(cd new/db/${TYPE} ; ls|cat)
+	else
+		if [ -z "${NAME}" ]; then
+			grep -re NAME= -e '^d ' -e '^ad ' -e '^a ' "new/db/${TYPE}" | cut -d : -f 2- | cut -d = -f 2-
+			#(cd new/db/${TYPE} ; grep|cat)
+		#	echo "Usage: -a [type] [test] [name] ([commands])"
+		else
+			case "${TYPE}" in
+			asm)
+				if [ -z "${ARG0}" ]; then
+					echo "Type expected hexpair string for ${NAME}"
+					read LINE
+				else
+					LINE="${ARG0}"
+				fi
+				echo "d \"${NAME}\" ${LINE}" new/db/asm/${TEST}
+				echo "d \"${NAME}\" ${LINE}" >> new/db/asm/${TEST}
+				;;
+			*)
+				if [ -z "${ARG0}" ]; then
+					echo "Type commands to run:"
+					CMDS=""
+					while : ; do
+						read LINE
+						[ -z "${LINE}" ] && break
+						CMDS="${CMDS}
+${LINE}"
+					done
+				else
+					CMDS=${ARG0}
+				fi
+
+				[ -z "${FILE}" ] && FILE=-
+				[ -z "${BROKEN}" ] && BROKEN=0
+
+				echo "NAME=${NAME}" > .tmp
+				echo "FILE=${FILE}" >> .tmp
+				if [ "${BROKEN}" = 1 ]; then
+					echo "BROKEN=1" >> .tmp
+				fi
+				CMDS64="`echo "${CMDS}" | rax2 -E`" >> .tmp
+				echo "CMDS64=${CMDS64}" >> .tmp
+				# ugly
+				echo "${CMDS}" > .tmp.test.r2
+				EXPECT=`r2 -qi .tmp.test.r2 ${FILE}`
+				rm -f .tmp.test.r2
+				EXPECT64="`echo "${EXPECT}" | rax2 -E`" >> .tmp
+				echo "Expect this (Y/n)? $EXPECT"
+				read YESNO
+				case "${YESNO}" in
+				''|y|Y|yes|Yes|true|True|YES)
+					echo "EXPECT64=${EXPECT64}" >> .tmp
+					echo RUN >> .tmp
+					cat .tmp
+					echo "Test added"
+					cat .tmp >> new/db/${TYPE}/${TEST}
+					;;
+				*)
+					echo "Nothing to do."
+					;;
+				esac
+				rm -f .tmp
+				pwd
+				;;
+			esac
+			echo Done
+			exit 0
+		fi
+	fi
+	exit 1
+	;;
+-r)
+	(shift ; cd new && ${R2R} -v $@)
+	;;
+-R)
+	(shift ; cd new && ${R2R} -i $@)
+	;;
+--debase64)
+	(shift ; cd new && ${R2R} --debase64 $@)
+	;;
+--format)
+	(shift ; cd new && ${R2R} --format $@)
+	;;
+-df)
+	(shift ; cd new && ${R2R} --debase64 --format $@)
+	;;
+-v)
+	echo "1.7.0"
+	exit 0
+	;;
+-u|update|up)
+	git pull
+	exit $?
+	;;
+-c|clean)
+	rm -rf new/travis/tmp
+	exit $?
+	;;
+-S)
+	${SHELL}
+	exit 0
+	;;
+-t)
+	if [ ! -d new/node_modules ]; then
+		( cd new && npm install )
+	fi
+	if [ ! -d new/travis/node_modules ]; then
+		( cd new/travis && npm install )
+	fi
+	case "$2" in
+	pr)
+		node new/travis/bin.js -p
+		;;
+	any)
+		node new/travis/bin.js
+		;;
+	master)
+		node new/travis/bin.js -m
+		;;
+	*)
+		echo "Usage: r2r -t [pr|any|master]"
+		;;
+	esac
+	exit 0
+	;;
+-h)
+	usage
+	exit 0
+	;;
+-s)
+	if [ -n "$KX" ]; then
+		find t* | grep "$KX"
+		exit 0
+	else
+		usage
+		exit 1
+	fi
+	;;
+esac
+
+export VERBOSE=1
+
+if [ -z "$KW" ]; then
+	usage
+	exit 1
+fi

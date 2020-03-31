@@ -1,0 +1,7 @@
+NAME=Menuet: Open/iI
+FILE=../bins/menuet/dosbox
+EXPECT=<<EOF
+1
+EOF
+CMDS=iI~?MenuetOS
+RUN

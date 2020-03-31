@@ -509,7 +509,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,r%d,+=,$o,?{,0x1,sr,|=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,r%d,+=,31,$o,sr,|=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_SUB (code)) {
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -524,7 +524,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, CLR_T ",r%d,r%d,-=,$o,sr,|,sr,:=", GET_SOURCE_REG(code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, CLR_T ",r%d,r%d,-=,31,$o,sr,|,sr,:=", GET_SOURCE_REG(code), GET_TARGET_REG (code));
 	} else if (IS_CMPEQ (code)) {
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->src[0] = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -641,7 +641,8 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 	}
 
 	if (IS_JSR (code)) {
-		op->type = R_ANAL_OP_TYPE_UCALL; //call to reg
+		// op->type = R_ANAL_OP_TYPE_UCALL; //call to reg
+		op->type = R_ANAL_OP_TYPE_RCALL; //call to reg
 		op->delay = 1;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "1,SETD,pc,2,+,pr,=,r%d,pc,=", GET_TARGET_REG (code));
@@ -749,7 +750,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 				S16_EXT("r%d,[2]")"," //@Rm sign extended
 				"*"
 				"macl,+=," //macl+(@Rm+@Rm)
-				"$o,?{," //if overflow
+				"31,$o,?{," //if overflow
 					"macl,0x80000000,&,?{,"
 						"0x7fffffff,macl,=,"
 					"}{,"
@@ -1042,7 +1043,8 @@ static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->src[0] = anal_pcrel_disp_mov (anal, op, code & 0xFF, LONG_SIZE);
 	//TODO: check it
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-	r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + (op->addr & 0xfffffffc) + 4, GET_TARGET_REG (code));
+	//r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + (op->addr & 0xfffffff3) + 4, GET_TARGET_REG (code));
+	r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + ((op->addr >> 2)<<2) + 4, GET_TARGET_REG (code));
 	return op->size;
 }
 
@@ -1112,8 +1114,14 @@ static int sh_set_reg_profile(RAnal* anal) {
 	//TODO Add system ( ssr, spc ) + fpu regs
 	const char *p =
 		"=PC	pc\n"
+		"=SN	r0\n"
 		"=SP	r15\n"
 		"=BP	r14\n"
+		"=A0	r4\n"
+		"=A1	r5\n"
+		"=A2	r6\n"
+		"=A3	r7\n"
+		"=R0	r0\n"
 		"gpr	r0	.32	0	0\n"
 		"gpr	r1	.32	4	0\n"
 		"gpr	r2	.32	8	0\n"
@@ -1141,6 +1149,11 @@ static int sh_set_reg_profile(RAnal* anal) {
 }
 
 static int archinfo(RAnal *anal, int q) {
+#if 0
+	if (q == R_ANAL_ARCHINFO_ALIGN) {
+		return 4;
+	}
+#endif
 	return 2; /* :) */
 }
 

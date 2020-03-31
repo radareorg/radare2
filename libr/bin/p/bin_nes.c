@@ -106,6 +106,20 @@ static RList* sections(RBinFile *bf) {
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
+	if (ROM_START_ADDRESS + ptr->size <= ROM_MIRROR_ADDRESS) {
+		// not a 256bit ROM, mapper 0 mirrors the complete ROM in this case
+		if (!(ptr = R_NEW0 (RBinSection))) {
+			return ret;
+		}
+		ptr->name = strdup ("ROM_MIRROR");
+		ptr->paddr = INES_HDR_SIZE;
+		ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
+		ptr->vaddr = ROM_MIRROR_ADDRESS;
+		ptr->vsize = ROM_MIRROR_SIZE;
+		ptr->perm = R_PERM_RX;
+		ptr->add = true;
+		r_list_append (ret, ptr);
+	}
 	return ret;
 }
 
@@ -128,7 +142,7 @@ static RList *mem(RBinFile *bf) {
 	if (!(n = R_NEW0 (RBinMem))) {
 		return ret;
 	}
-	m->mirrors = r_list_new();
+	m->mirrors = r_list_new ();
 	n->name = strdup ("RAM_MIRROR_2");
 	n->addr = RAM_MIRROR_2_ADDRESS;
 	n->size = RAM_MIRROR_2_SIZE;

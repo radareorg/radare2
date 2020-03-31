@@ -3,6 +3,8 @@ r_util_sources = [
   'ascii_table.c',
   'assert.c',
   'alloc.c',
+  'donut.c',
+  'table.c',
   'getopt.c',
   'base85.c',
   'base91.c',
@@ -46,12 +48,14 @@ r_util_sources = [
   'randomart.c',
   'range.c',
   'rbtree.c',
+  'intervaltree.c',
   'sandbox.c',
   'signal.c',
   'skiplist.c',
   'spaces.c',
   'stack.c',
   'str.c',
+  'str_constpool.c',
   'str_trim.c',
   'strbuf.c',
   'strpool.c',
@@ -74,12 +78,13 @@ r_util_sources = [
   'vector.c',
   'w32-sys.c',
   'zip.c',
+  'protobuf.c',
   'regex/regcomp.c',
   'regex/regexec.c',
   'regex/regerror.c'
 ]
 
-r_util_deps = [ldl, mth, pth, utl, sdb_dep, zlib_dep]
+r_util_deps = [ldl, mth, pth, utl, sdb_dep, zlib_dep, platform_deps]
 if host_machine.system().startswith('freebsd')
   # backtrace_symbols_fd requires -lexecinfo
   r_util_deps += [cc.find_library('execinfo')]

@@ -1,0 +1,198 @@
+NAME=rafind2 -X -s
+FILE=-
+CMDS=!rafind2 -X -s 250382 ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x58f
+[35m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+[0m[32m0x0000058f[0m  [35m32[0m[35m35[0m [35m30[0m[35m33[0m [35m38[0m[35m32[0m [32m00[0m[35m49[0m [35m6e[0m[35m76[0m [35m61[0m[35m6c[0m [35m69[0m[35m64[0m [35m20[0m[35m50[0m  [35m2[0m[35m5[0m[35m0[0m[35m3[0m[35m8[0m[35m2[0m[32m.[0m[35mI[0m[35mn[0m[35mv[0m[35ma[0m[35ml[0m[35mi[0m[35md[0m[35m [0m[35mP[0m
+[32m0x0000059f[0m  [35m61[0m[35m73[0m [35m73[0m[35m77[0m [35m6f[0m[35m72[0m [35m64[0m[35m21[0m [37m0a[0m[32m00[0m [35m50[0m[35m61[0m [35m73[0m[35m73[0m [35m77[0m[35m6f[0m  [35ma[0m[35ms[0m[35ms[0m[35mw[0m[35mo[0m[35mr[0m[35md[0m[35m![0m[37m.[0m[32m.[0m[35mP[0m[35ma[0m[35ms[0m[35ms[0m[35mw[0m[35mo[0m
+[32m0x000005af[0m  [35m72[0m[35m64[0m [35m20[0m[35m4f[0m [35m4b[0m[35m20[0m [35m3a[0m[35m29[0m [37m0a[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m  [35mr[0m[35md[0m[35m [0m[35mO[0m[35mK[0m[35m [0m[35m:[0m[35m)[0m[37m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+[32m0x000005bf[0m  [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m  [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+[32m0x000005cf[0m  [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m       [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+EOF
+RUN
+
+NAME=rafind2 -r -X -s
+FILE=-
+CMDS=!rafind2 -r -X -s 250382 ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+f hit0_0 0x0000058f ; ../bins/elf/ioli/crackme0x00
+EOF
+RUN
+
+NAME=rafind2 -f 0x00000000 -t 0x00000590 -r -X -s
+FILE=-
+CMDS=!rafind2 -f 0x00000000 -t 0x00001000 -r -X -s 250382 ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+f hit0_0 0x0000058f ; ../bins/elf/ioli/crackme0x00
+EOF
+RUN
+
+NAME=rafind2 -f 0x00010000 -t 0x00020000 -X -s
+FILE=-
+CMDS=!rafind2 -f 0x00010000 -t 0x00020000 -r -X -s 250382 ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=rafind2 -r -X -x
+FILE=-
+CMDS=!rafind2 -r -X -x 323530333832 ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+f hit0_0 0x0000058f ; ../bins/elf/ioli/crackme0x00
+EOF
+RUN
+
+NAME=rafind2 -r -X -x with nibbles masked
+FILE=-
+CMDS=!rafind2 -r -X -x caf.bab. ../bins/java/Hello.class
+EXPECT=<<EOF
+f hit0_0 0x00000000 ; ../bins/java/Hello.class
+EOF
+RUN
+
+NAME=rafind2 -r -X -x with bin mask
+FILE=-
+CMDS=!rafind2 -r -X -x caf3bab3 -M fff0fff0 ../bins/java/Hello.class
+EXPECT=<<EOF
+f hit0_0 0x00000000 ; ../bins/java/Hello.class
+EOF
+RUN
+
+NAME=rafind2 -h
+FILE=-
+CMDS=!rafind2 -h | grep -c Usage
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rafind2 -v
+FILE=-
+CMDS=!rafind2 -v | grep -c build
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rafind2 can't open
+FILE=-
+CMDS=!rafind2 -n  -f 0x00010000 -t 0x00020000 -r -X -s 250382 incorrect_file | grep incorrect_file
+EXPECT_ERR=<<EOF
+Cannot open file 'incorrect_file'
+EOF
+RUN
+
+NAME=rafind2 -a
+FILE=-
+CMDS=!rafind2 -a -X -s 250382 ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x58f
+EOF
+RUN
+
+NAME=rafind2 -i
+BROKEN=1
+FILE=-
+CMDS=!!rafind2 -i ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x00000000 1 ELF 32-bit LSB executable, Intel 80386, version 1
+EOF
+RUN
+
+NAME=rafind2 -m
+BROKEN=1
+FILE=-
+CMDS=!!rafind2 -m ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x00000000 1 ELF 32-bit LSB executable, Intel 80386, version 1
+EOF
+RUN
+
+NAME=rafind2 -e
+FILE=-
+BROKEN=1
+CMDS=!!rafind2 -e 2503?2 ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x58f
+[35m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+[0m[32m0x0000058f[0m  [35m32[0m[35m35[0m [35m30[0m[35m33[0m [35m38[0m[35m32[0m [32m00[0m[35m49[0m [35m6e[0m[35m76[0m [35m61[0m[35m6c[0m [35m69[0m[35m64[0m [35m20[0m[35m50[0m  [35m2[0m[35m5[0m[35m0[0m[35m3[0m[35m8[0m[35m2[0m[32m.[0m[35mI[0m[35mn[0m[35mv[0m[35ma[0m[35ml[0m[35mi[0m[35md[0m[35m [0m[35mP[0m
+[32m0x0000059f[0m  [35m61[0m[35m73[0m [35m73[0m[35m77[0m [35m6f[0m[35m72[0m [35m64[0m[35m21[0m [37m0a[0m[32m00[0m [35m50[0m[35m61[0m [35m73[0m[35m73[0m [35m77[0m[35m6f[0m  [35ma[0m[35ms[0m[35ms[0m[35mw[0m[35mo[0m[35mr[0m[35md[0m[35m![0m[37m.[0m[32m.[0m[35mP[0m[35ma[0m[35ms[0m[35ms[0m[35mw[0m[35mo[0m
+[32m0x000005af[0m  [35m72[0m[35m64[0m [35m20[0m[35m4f[0m [35m4b[0m[35m20[0m [35m3a[0m[35m29[0m [37m0a[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m  [35mr[0m[35md[0m[35m [0m[35mO[0m[35mK[0m[35m [0m[35m:[0m[35m)[0m[37m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+[32m0x000005bf[0m  [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m  [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+[32m0x000005cf[0m  [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m       [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+EOF
+RUN
+
+NAME=rafind2 -E 
+FILE=-
+BROKEN=1
+CMDS=!rafind2 -E "134513440,eip,4,esp,-=,esp,=[],eip,=" ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rafind2 -b 0xa
+FILE=-
+CMDS=!rafind2  -a -X -s  250382 -b 0xa ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x58f
+EOF
+RUN
+
+NAME=rafind2 -a -b 0x3
+FILE=-
+CMDS=!rafind2 -X -s 250382 -b 0x3 ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=rafind2 -q
+FILE=-
+CMDS=!rafind2 -q -s 250382 ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x58f
+EOF
+RUN
+
+NAME=rafind2 -z 250382
+FILE=-
+CMDS=!rafind2 -z -s 250382 ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x58f
+EOF
+RUN
+
+NAME=rafind2 -S ascii
+FILE=-
+CMDS=!rafind2 -S wide ../bins/pe/testapp-msvc64.exe
+EXPECT=<<EOF
+0x1481a
+0x14842
+EOF
+RUN
+
+NAME=rafind2 -S U+00ff < utf8 < U+10000
+FILE=-
+CMDS=!rafind2 -S واسع ../bins/pe/testapp-msvc64.exe
+EXPECT=<<EOF
+0x14864
+EOF
+RUN
+
+NAME=rafind2 -S utf8 >= U+10000
+FILE=-
+CMDS=!rafind2 -S 𐍈 ../bins/elf/strenc
+EXPECT=<<EOF
+0x22ac
+EOF
+RUN
+
+NAME=rafind2 -Z
+FILE=-
+CMDS=!rafind2 -Z -s 250382 ../bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x58f 250382
+EOF
+RUN

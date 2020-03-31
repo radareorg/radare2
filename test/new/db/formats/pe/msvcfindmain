@@ -1,0 +1,10 @@
+NAME=PE: msvcfindmain
+FILE=../bins/pe/msvcfindmain.exe
+EXPECT=<<EOF
+1
+EOF
+CMDS=<<EOF
+aa
+pd 1 @ main~?0x00401000
+EOF
+RUN

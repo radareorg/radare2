@@ -1,0 +1,2388 @@
+NAME=ands (opcode) triggers zf
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=0
+aer cpsr=0
+wx 022012e0
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=ands (opcode) triggers zf off
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=5
+aer cpsr=0x40000000
+wx 022012e0
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=ands triggers zf
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=0
+aer cpsr=0
+wa ands r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=ands triggers zf off
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=5
+aer cpsr=0x40000000
+wa ands r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=and (no s flag) does not trigger zf
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=0
+aer cpsr=0x00000000
+wa and r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=and (no s flag) does not trigger zf off
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=5
+aer cpsr=0x40000000
+wa and r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=orrs triggers zf
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=0
+aer cpsr=0
+wa orrs r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=orrs triggers zf off
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=5
+aer cpsr=0x40000000
+wa orrs r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=orrs (opcode) triggers zf
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=0
+aer cpsr=0
+wx 022092e1
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=orrs (opcode) triggers zf off
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=5
+aer cpsr=0x40000000
+wx 022092e1
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=orr (no s flag) does not trigger zf
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=0
+aer cpsr=0x00000000
+wa orr r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=orr (no s flag) does not trigger zf off
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=5
+aer cpsr=0x40000000
+wa orr r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=adds triggers zf
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=0
+aer cpsr=0
+wa adds r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=adds triggers zf off
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=2
+aer r1=5
+aer cpsr=0x40000000
+wa adds r1,r2 
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=add (no s flag) does not trigger zf
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=0
+aer cpsr=0
+wa add r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=add (no s flag) does not trigger zf off
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=2
+aer r1=5
+aer cpsr=0x40000000
+wa add r1, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=eors (opcode) triggers zf
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=1
+aer cpsr=0
+wx 022032e0
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=eors (opcode) triggers zf off
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=2
+aer r1=5
+aer cpsr=0x40000000
+wx 021031e0
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=eors triggers zf
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=1
+aer cpsr=0
+wa eors r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=eors triggers zf off
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=2
+aer r1=5
+aer cpsr=0x40000000
+wa eors r1,r2 
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=eor (no s flag) does not trigger zf
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=1
+aer cpsr=0
+wa eor r2, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=eor (no s flag) does not trigger zf off
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=2
+aer r1=5
+aer cpsr=0x40000000
+wa eor r1, r2
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=subs triggers zf
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=1
+aer cpsr=0
+wa subs r2, r2, 1
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=subs triggers zf off
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=2
+aer cpsr=0x40000000
+wa subs r2, r2, 1
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=sub (no s flag) does not trigger zf
+FILE=-
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=1
+aer cpsr=0
+wa sub r2, r2, 1
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=sub (no s flag) does not trigger zf off
+FILE=-
+EXPECT=<<EOF
+0x40000000
+EOF
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aer r2=2
+aer cpsr=0x40000000
+wa sub r2, r2, 1
+aes
+aer?cpsr
+EOF
+RUN
+
+NAME=cmp neq unchanged zf
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aei
+aeim
+aer sp=0x00108000
+.aer*
+wa cmp r1, 16
+aes
+?v cpsr & 0xf0000000
+EOF
+EXPECT=<<EOF
+0x80000000
+EOF
+RUN
+
+NAME=cmp neq changed zf
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aei
+aeim
+aer sp=0x00108000
+aer cpsr=0xffffffff
+.aer*
+wa cmp r1, 16
+aes
+?v cpsr & 0xf0000000
+EOF
+EXPECT=<<EOF
+0x80000000
+EOF
+RUN
+
+NAME=cmp eq unchanged zf
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aei
+aeim
+aer sp=0x00108000
+aer r1=0x10
+aer cpsr=0x40000000
+.aer*
+wa cmp r1, 16
+aes
+?v cpsr & 0xf0000000
+EOF
+EXPECT=<<EOF
+0x60000000
+EOF
+RUN
+
+NAME=cmp eq changed zf
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=32
+aei
+aeim
+aer sp=0x00108000
+aer cpsr=0xffffffff
+.aer*
+wa cmp r1, 16
+aes
+?v cpsr & 0xf0000000
+EOF
+EXPECT=<<EOF
+0x80000000
+EOF
+RUN
+
+NAME=ldr r0, [r1, 7]
+FILE=malloc://0x200
+EXPECT=<<EOF
+0xbbbbbbbb
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar > /dev/null
+ar r0=0
+ar r1=1
+wx 070091e5
+wx aaaaaaaabbbbbbbb44332211@4
+aes
+ar r0
+EOF
+RUN
+
+NAME=ldr r0, [r0, 7]
+FILE=malloc://0x200
+EXPECT=<<EOF
+0xbbbbbbaa
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar > /dev/null
+ar r0=0
+wx 070090e5
+wx aaaaaaaabbbbbbbb44332211@4
+aes
+ar r0
+EOF
+RUN
+
+NAME=ldr r0, [r0, r1]
+FILE=malloc://0x200
+EXPECT=<<EOF
+0xbbbbaaaa
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar > /dev/null
+ar r0=4
+ar r1=2
+wx 010090e7
+wx aaaaaaaabbbbbbbb44332211@4
+aes
+ar r0
+EOF
+RUN
+
+NAME=ldr r2, [r3, r1]
+FILE=malloc://0x200
+EXPECT=<<EOF
+0xffeeddcc
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r3=4
+ar r1=2
+wx 012093e7aabbccddeeff
+aes
+ar r2
+EOF
+RUN
+
+NAME=str r2, [r3, 4]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r2=0xdeadbeef
+ar r3=0
+wx 042083e5aabbccddeeff
+aes
+p8 4 @4
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r2, [r3, 5]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r2=0xdeadbeef
+ar r3=0
+wx 052083e5aabbccddeeff
+aes
+p8 4 @5
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r2, [r3, r1]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000004
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r2=0xdeadbeef
+ar r3=4
+ar r1=2
+wx 012083e7aabbccddeeff
+aes
+p8 4 @6
+ar r2
+ar r3
+ar r1
+EOF
+RUN
+
+NAME=str r2, [r3, r1]; ldr r2, [r3, r1]
+FILE=malloc://0x200
+EXPECT=<<EOF
+0xdeadbeef
+0x00000008
+0x00000004
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r2=0xdeadbeef
+ar r3=8
+ar r1=4
+wx 012083e7012093e7aabbccddeeff11223344
+aes
+aes
+ar r2
+ar r3
+ar r1
+EOF
+RUN
+
+NAME=str r1, [r2, r3, lsl 1]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000004
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=2
+wx 831082e7aabbccddeeff
+aes
+p8 4 @8
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r1, [r2, r3, lsr 1]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000004
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=2
+wx a31082e7aabbccddeeff
+aes
+p8 4 @5
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r1, [r2, r3, asr 1]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000004
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=2
+wx c31082e7aabbccddeeff
+aes
+p8 4 @5
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r1, [r2, r3, ror 23]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000004
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=1
+wx e31c82e7aabbccddeeff
+aes
+p8 4 @0x84
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r2, [r3], 5
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000005
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r2=0xdeadbeef
+ar r3=0
+wx 052083e4aabbccddeeff
+aes
+p8 4 @0
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r2, [r3], r1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000006
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r2=0xdeadbeef
+ar r3=4
+ar r1=2
+wx 012083e6aabbccddeeff
+aes
+p8 4 @4
+ar r2
+ar r3
+ar r1
+EOF
+RUN
+
+NAME=str r1, [r2], r3, lsl 1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000008
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=2
+wx 831082e6aabbccddeeff
+aes
+p8 4 @4
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r1, [r2], r3, lsr 1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000005
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=2
+wx a31082e6aabbccddeeff
+aes
+p8 4 @4
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r1, [r2], r3, asr 1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000005
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=2
+wx c31082e6aabbccddeeff
+aes
+p8 4 @4
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r1, [r2], r3, ror 23
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000084
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=1
+wx e31c82e6aabbccddeeff
+aes
+p8 4 @4
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r2, [r3, 5]!
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000005
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r2=0xdeadbeef
+ar r3=0
+wx 0520a3e5aabbccddeeff
+aes
+p8 4 @5
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r2, [r3, -5]!
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000005
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r2=0xdeadbeef
+ar r3=10
+wx 052023e5aabbccddeeff
+aes
+p8 4 @5
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r2, [r3, r1]!
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000006
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r2=0xdeadbeef
+ar r3=4
+ar r1=2
+wx 0120a3e7aabbccddeeff
+aes
+p8 4 @6
+ar r2
+ar r3
+ar r1
+EOF
+RUN
+
+NAME=str r2, [r3, r1]! (negative r1)
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000006
+0xfffffffe
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r2=0xdeadbeef
+ar r3=8
+ar r1=-2
+wx 0120a3e7aabbccddeeff
+aes
+p8 4 @6
+ar r2
+ar r3
+ar r1
+EOF
+RUN
+
+NAME=str r1, [r2, r3, lsl 1]!
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000008
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=2
+wx 8310a2e7aabbccddeeff
+aes
+p8 4 @8
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r1, [r2, r3, lsr 1]!
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000005
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=2
+wx a310a2e7aabbccddeeff
+aes
+p8 4 @5
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r1, [r2, r3, asr 1]!
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000005
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=2
+wx c310a2e7aabbccddeeff
+aes
+p8 4 @5
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=str r1, [r2, r3, ror 23]!
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000084
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xdeadbeef
+ar r2=4
+ar r3=1
+wx e31ca2e7aabbccddeeff
+aes
+p8 4 @0x84
+ar r1
+ar r2
+ar r3
+EOF
+RUN
+
+NAME=streq r5, [r6, 5]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508605aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=streq r5, [r6, 5] zf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508605aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strne r5, [r6, 5]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508615aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strne r5, [r6, 5] zf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508615aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strhs r5, [r6, 5]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508625aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strhs r5, [r6, 5] cf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508625aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strlo r5, [r6, 5]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508635aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strlo r5, [r6, 5] cf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508635aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strmi r5, [r6, 5]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508645aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strmi r5, [r6, 5] nf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508645aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strpl r5, [r6, 5]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508655aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strpl r5, [r6, 5] nf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508655aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strvs r5, [r6, 5]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508665aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strvs r5, [r6, 5] vf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508665aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strvc r5, [r6, 5]
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508675aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strvc r5, [r6, 5] vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508675aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strhi r5, [r6, 5] cf==0, zf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=0
+ar zf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508685aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strhi r5, [r6, 5] cf==0, zf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=0
+ar zf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508685aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strhi r5, [r6, 5] cf==1, zf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=1
+ar zf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508685aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strhi r5, [r6, 5] zf==0 cf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=1
+ar zf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508685aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strls r5, [r6, 5] zf==1 cf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=0
+ar zf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508695aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strls r5, [r6, 5] cf==0, zf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=0
+ar zf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508695aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strls r5, [r6, 5] cf==1, zf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=1
+ar zf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508695aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strls r5, [r6, 5] cf==1, zf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar cf=1
+ar zf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 05508695aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strge r5, [r6, 5] nf==1, vf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=1
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086a5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strge r5, [r6, 5] nf==0, vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=0
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086a5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strge r5, [r6, 5] nf==1 vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=1
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086a5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strge r5, [r6, 5] nf==0 vf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=0
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086a5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strlt r5, [r6, 5] nf==1 vf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=1
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086b5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strlt r5, [r6, 5] nf==0 vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=0
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086b5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strlt r5, [r6, 5] nf==0, vf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=0
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086b5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strlt r5, [r6, 5] nf==1, vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar nf=1
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086b5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strgt r5, [r6, 5] zf==1 nf==1, vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=1
+ar nf=1
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086c5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strgt r5, [r6, 5] zf==1 nf==0, vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=1
+ar nf=0
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086c5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strgt r5, [r6, 5] zf==1 nf==0, vf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=1
+ar nf=0
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086c5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strgt r5, [r6, 5] zf==0 nf==0, vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=0
+ar nf=0
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086c5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strgt r5, [r6, 5] zf==0 nf==1, vf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=0
+ar nf=1
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086c5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strgt r5, [r6, 5] zf==0 nf==0, vf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=0
+ar nf=0
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086c5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strgt r5, [r6, 5] zf==0 nf==1, vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=0
+ar nf=1
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086c5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strle r5, [r6, 5] zf==1 nf==1, vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=1
+ar nf=1
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086d5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strle r5, [r6, 5] zf==1 nf==0, vf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=1
+ar nf=0
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086d5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strle r5, [r6, 5] zf==0 nf==0, vf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=0
+ar nf=0
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086d5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strle r5, [r6, 5] zf==0 nf==0, vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=0
+ar nf=0
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086d5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strle r5, [r6, 5] zf==0 nf==0, vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=0
+ar nf=0
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086d5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strle r5, [r6, 5] zf==1 nf==1, vf==0
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=1
+ar nf=1
+ar vf=0
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086d5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=strle r5, [r6, 5] zf==1 nf==0, vf==1
+FILE=malloc://0x200
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar zf=1
+ar nf=0
+ar vf=1
+ar r5=0xdeadbeef
+ar r6=1
+wx 055086d5aabbccddeeff
+aes
+p8 4 @6
+ar r5
+ar r6
+EOF
+RUN
+
+NAME=add reg
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=1
+ar r2=2
+wv 0xe0810002
+aes
+ar r0
+EOF
+RUN
+
+NAME=add reg in place
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r0=1
+ar r1=2
+wv 0xe0800001
+aes
+ar r0
+EOF
+RUN
+
+NAME=add reg shifted
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=1
+ar r2=4
+wv 0xe08100a2
+aes
+ar r0
+EOF
+RUN
+
+NAME=add reg asr
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=2
+ar r2=-1
+wv 0xe08100c2
+aes
+ar r0
+EOF
+RUN
+
+NAME=add imm
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=1
+wv 0xe2810002
+aes
+ar r0
+EOF
+RUN
+
+NAME=add imm rotated
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=2
+wv 0xe2810104
+aes
+ar r0
+EOF
+RUN
+
+NAME=sub imm rotated
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000009
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xa
+wv 0xe2410104
+aes
+ar r0
+EOF
+RUN
+
+NAME=mul reg
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000014
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xa
+ar r2=0x2
+wv 0xe0000291
+aes
+ar r0
+EOF
+RUN
+
+NAME=and imm rotated
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xf
+wv 0xe2010104
+aes
+ar r0
+EOF
+RUN
+
+NAME=orr imm rotated
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0x2
+wv 0xe3810104
+aes
+ar r0
+EOF
+RUN
+
+NAME=eor imm rotated
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000000e
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xf
+wv 0xe2210104
+aes
+ar r0
+EOF
+RUN
+
+NAME=lsr reg
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xa
+ar r2=0x2
+wv 0xe1a00231
+aes
+ar r0
+EOF
+RUN
+
+NAME=lsl reg
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000028
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0xa
+ar r2=0x2
+wv 0xe1a00211
+aes
+ar r0
+EOF
+RUN
+
+NAME=add pc op1
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000000a
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wv 0xe28f0002
+aes
+ar r0
+EOF
+RUN
+
+NAME=add pc op2
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000000a
+EOF
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=0x2
+wv 0xe081000f
+aes
+ar r0
+EOF
+RUN
+
+NAME=pc points to next instruction
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 0f00a0e1 # mov r0, pc
+aes
+aer r0
+EOF
+EXPECT=<<EOF
+0x00000004
+EOF
+RUN
+
+NAME=lr correct after bl
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 000000eb # bl 8
+aes
+aer lr
+aer pc
+EOF
+EXPECT=<<EOF
+0x00000004
+0x00000008
+EOF
+RUN
+
+NAME=r0 correct after stmia post-increment
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 0600a0e8 # stm r0!, {r1, r2}
+aes
+aer r0
+aer pc
+EOF
+EXPECT=<<EOF
+0x00000008
+0x00000004
+EOF
+RUN
+
+NAME=r0 correct after stmia no increment
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 060080e8 # stm r0, {r1, r2}
+aes
+aer r0
+aer pc
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000004
+EOF
+RUN

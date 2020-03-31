@@ -132,8 +132,8 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 }
 
 static int cmp_strings_by_leading_number(void *data1, void *data2) {
-	const char* a = sdbkv_key ((char*)data1);
-	const char* b = sdbkv_key ((char*)data2);
+	const char* a = sdbkv_key ((const SdbKv *)data1);
+	const char* b = sdbkv_key ((const SdbKv *)data2);
 	int i = 0;
 	int j = 0;
 	int k = 0;
@@ -188,7 +188,7 @@ R_API void r_anal_esil_trace_list (RAnalEsil *esil) {
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *list = sdb_foreach_list (esil->db_trace, true);
-	ls_sort (list, (RListComparator) cmp_strings_by_leading_number);
+	ls_sort (list, (SdbListComparator) cmp_strings_by_leading_number);
 	ls_foreach (list, iter, kv) {
 		p ("%s=%s\n", sdbkv_key (kv), sdbkv_value (kv));
 	}

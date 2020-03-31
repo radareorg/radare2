@@ -1,0 +1,45 @@
+NAME=ar file sections
+BROKEN=1
+FILE=ar://../../bins/ar/libgdbr.a//responses.o
+CMDS=iS~:2
+EXPECT=<<EOF
+01 0x00000040  5246 0x08000040  5246 -r-x .text
+EOF
+RUN
+
+NAME=ar file symbols
+FILE=ar://../../bins/ar/libgdbr.a//xml.o
+BROKEN=1
+CMDS=is~xml
+EXPECT=<<EOF
+001 0x00000000 0x08000000  LOCAL   FILE    0 xml.c
+007 0x000009b3 0x080009b3  LOCAL   FUNC 5373 gdbr_parse_target_xml
+017 0x00000040 0x08000040 GLOBAL   FUNC  152 gdbr_read_target_xml
+EOF
+RUN
+
+NAME=ar file content
+BROKEN=1
+FILE=ar://../../bins/ar/libgdbr.a//xml.o
+CMDS=px 64
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x08000040  7f45 4c46 0201 0100 0000 0000 0000 0000  .ELF............
+0x08000050  0100 3e00 0100 0000 0000 0000 0000 0000  ..>.............
+0x08000060  0000 0000 0000 0000 f068 0000 0000 0000  .........h......
+0x08000070  0000 0000 4000 0000 0000 4000 1500 1400  ....@.....@.....
+EOF
+RUN
+
+NAME=ar file content
+BROKEN=1
+FILE=ar://../../bins/ar/libgdbr.a//core.o
+CMDS=px 64
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x08000040  7f45 4c46 0201 0100 0000 0000 0000 0000  .ELF............
+0x08000050  0100 3e00 0100 0000 0000 0000 0000 0000  ..>.............
+0x08000060  0000 0000 0000 0000 d085 0000 0000 0000  ................
+0x08000070  0000 0000 4000 0000 0000 4000 1500 1400  ....@.....@.....
+EOF
+RUN

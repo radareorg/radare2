@@ -170,7 +170,7 @@ R_API void r_core_print_func_args(RCore *core) {
 		if (pcv == UT64_MAX) {
 			pcv = op->ptr;
 		}
-		fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
+		fcn = r_anal_get_function_at (core->anal, pcv);
 		if (fcn) {
 			fcn_name = fcn->name;
 		} else {
@@ -232,7 +232,10 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	}
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	int nargs = r_type_func_args_count (TDB, key);
-	const char *cc = r_anal_cc_func (core->anal, key);
+	if (!r_anal_cc_func (core->anal, key)){
+		return NULL;
+	}
+	char *cc = strdup (r_anal_cc_func (core->anal, key));
 	const char *src = r_anal_cc_arg (core->anal, cc, 0); // src of first argument
 	if (!cc) {
 		// unsupported calling convention
@@ -264,11 +267,18 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 				}
 				spv += arg->size;
 			} else {
-				arg->src = r_reg_getv (core->anal->reg, arg->cc_source);
+				const char *cs = arg->cc_source;
+				if (!cs) {
+					cs = r_anal_cc_default (core->anal);
+				}
+				if (cs) {
+					arg->src = r_reg_getv (core->anal->reg, cs);
+				}
 			}
 			r_list_append (list, arg);
 		}
 	}
 	free (key);
+	free (cc);
 	return list;
 }

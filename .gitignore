@@ -26,6 +26,8 @@ langs.cfg
 *.ilk
 binr/r2agent/r2agent
 binr/r2agent/r2agent.exe
+binr/r2r/r2r
+binr/r2r/r2r.exe
 binr/rabin2/rabin2
 binr/rabin2/rabin2.exe
 binr/radare2/radare2
@@ -56,6 +58,8 @@ libr/include/r_userconf.h
 libr/include/r_version.h
 libr/include/r_version.h.tmp
 shlr/capstone/
+shlr/tree-sitter/
+shlr/radare2-shell-parser/
 shlr/java/out
 shlr/java/out.exe
 shlr/sdb/sdb

@@ -16,7 +16,7 @@ R_API void r_debug_plugin_init(RDebug *dbg) {
 }
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
-	if (str) {
+	if (dbg && str) {
 		RDebugPlugin *h;
 		RListIter *iter;
 		r_list_foreach (dbg->plugins, iter, h) {
@@ -92,4 +92,17 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
 	memcpy (dp, foo, sizeof (RDebugPlugin));
 	r_list_append (dbg->plugins, dp);
 	return true;
+}
+
+R_API bool r_debug_plugin_set_reg_profile(RDebug *dbg, const char *profile) {
+	char *str = r_file_slurp (profile, NULL);
+	if (!str) {
+		eprintf ("r_debug_plugin_set_reg_profile: Cannot find '%s'\n", profile);
+		return false;
+	}
+	if (dbg && dbg->h && dbg->h->set_reg_profile) {
+		return dbg->h->set_reg_profile (str);
+	}
+	free (str);
+	return false;
 }

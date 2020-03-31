@@ -16,50 +16,67 @@
 
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <elf.h>
+
+#ifdef __GLIBC__
+#define HAVE_YMM 1
+#else
+#define HAVE_YMM 0
+#endif
 
 char *linux_reg_profile (RDebug *dbg) {
 #if __arm__
-#include "reg/linux-arm.h"
+#	include "reg/linux-arm.h"
+#elif __riscv
+#	include "reg/linux-riscv64.h"
 #elif __arm64__ || __aarch64__
-#include "reg/linux-arm64.h"
+#	include "reg/linux-arm64.h"
 #elif __mips__
 	if ((dbg->bits & R_SYS_BITS_32) && (dbg->bp->endian == 1)) {
-#include "reg/linux-mips.h"
+#		include "reg/linux-mips.h"
 	} else {
-#include "reg/linux-mips64.h"
+#		include "reg/linux-mips64.h"
 	}
 #elif (__i386__ || __x86_64__)
 	if (dbg->bits & R_SYS_BITS_32) {
 #if __x86_64__
-#include "reg/linux-x64-32.h"
+#		include "reg/linux-x64-32.h"
 #else
-#include "reg/linux-x86.h"
+#		include "reg/linux-x86.h"
 #endif
 	} else {
-#include "reg/linux-x64.h"
+#		include "reg/linux-x64.h"
+#if HAVE_YMM
+#		include <bits/sigcontext.h>
+#endif
 	}
 #elif __powerpc__
 	if (dbg->bits & R_SYS_BITS_32) {
-#include "reg/linux-ppc.h"
+#		include "reg/linux-ppc.h"
 	} else {
-#include "reg/linux-ppc64.h"
+#		include "reg/linux-ppc64.h"
 	}
+#elif __s390x__
+#	include "reg/linux-s390x.h"
 #else
-#error "Unsupported Linux CPU"
+#	error "Unsupported Linux CPU"
+	return NULL;
 #endif
 }
 
 static void linux_detach_all (RDebug *dbg);
 static char *read_link (int pid, const char *file);
-static int linux_attach_single_pid (RDebug *dbg, int ptid);
+static bool linux_attach_single_pid (RDebug *dbg, int ptid);
 static void linux_attach_all (RDebug *dbg);
 static void linux_remove_thread (RDebug *dbg, int pid);
 static void linux_add_and_attach_new_thread (RDebug *dbg, int tid);
-static int linux_stop_process(int pid);
+static bool linux_stop_thread (int tid);
+static bool linux_kill_thread (int tid, int signo);
+static void linux_dbg_wait_break (RDebug *dbg);
 
-int linux_handle_signals (RDebug *dbg) {
-	siginfo_t siginfo = {0};
-	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, dbg->pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
+int linux_handle_signals (RDebug *dbg, int tid) {
+	siginfo_t siginfo = { 0 };
+	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0, (r_ptrace_data_t)(size_t)&siginfo);
 	if (ret == -1) {
 		/* ESRCH means the process already went away :-/ */
 		if (errno == ESRCH) {
@@ -107,6 +124,9 @@ int linux_handle_signals (RDebug *dbg) {
 				dbg->reason.type != R_DEBUG_REASON_EXIT_LIB) {
 				dbg->reason.bp_addr = (ut64)(size_t)siginfo.si_addr;
 				dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
+				// Switch to the thread that hit the breakpoint
+				r_debug_select (dbg, dbg->pid, tid);
+				dbg->tid = tid;
 			}
 		}
 			break;
@@ -118,6 +138,7 @@ int linux_handle_signals (RDebug *dbg) {
 			break;
 		case SIGCHLD:
 			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
+			break;
 		default:
 			break;
 		}
@@ -136,6 +157,39 @@ int linux_handle_signals (RDebug *dbg) {
 #undef PT_GETEVENTMSG
 #define PT_GETEVENTMSG
 #endif
+
+// Used to remove breakpoints before detaching from a fork, without it the child
+// will die upon hitting a breakpoint while not being traced
+static void linux_remove_fork_bps(RDebug *dbg) {
+	RListIter *iter;
+	RBreakpointItem *b;
+	int prev_pid = dbg->pid;
+	int prev_tid = dbg->tid;
+
+	// Set dbg tid to the new child temporarily
+	dbg->pid = dbg->forked_pid;
+	dbg->tid = dbg->forked_pid;
+	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
+
+	// Unset all hw breakpoints in the child process
+	r_debug_reg_sync (dbg, R_REG_TYPE_DRX, false);
+	r_list_foreach (dbg->bp->bps, iter, b) {
+		r_debug_drx_unset (dbg, r_bp_get_index_at (dbg->bp, b->addr));
+	}
+	r_debug_reg_sync (dbg, R_REG_TYPE_DRX, true);
+
+	// Unset software breakpoints in the child process
+	r_debug_bp_update (dbg);
+	r_bp_restore (dbg->bp, false);
+
+	// Return to the parent
+	dbg->pid = prev_pid;
+	dbg->tid = prev_tid;
+	r_debug_select (dbg, dbg->pid, dbg->pid);
+
+	// Restore sw breakpoints in the parent
+	r_bp_restore (dbg->bp, true);
+}
 
 #ifdef PT_GETEVENTMSG
 /*
@@ -168,30 +222,38 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 		/* NOTE: this case is handled by linux_handle_signals */
 		break;
 	case PTRACE_EVENT_CLONE:
+		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
+			r_sys_perror ("ptrace GETEVENTMSG");
+			return R_DEBUG_REASON_ERROR;
+		}
+		linux_add_and_attach_new_thread (dbg, (int)data);
 		if (dbg->trace_clone) {
-			if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
-				r_sys_perror ("ptrace GETEVENTMSG");
-				return R_DEBUG_REASON_ERROR;
-			}
-		//	eprintf ("PTRACE_EVENT_CLONE new_thread=%"PFMT64d"\n", (ut64)data);
-			linux_add_and_attach_new_thread (dbg, (int)data);
-			return R_DEBUG_REASON_NEW_TID;
+			r_debug_select (dbg, dbg->pid, (int)data);
 		}
-		break;
+		eprintf ("(%d) Created thread %d\n", dbg->pid, (int)data);
+		return R_DEBUG_REASON_NEW_TID;
+	case PTRACE_EVENT_VFORK:
 	case PTRACE_EVENT_FORK:
-		if (dbg->trace_forks) {
-			if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
-				r_sys_perror ("ptrace GETEVENTMSG");
-				return R_DEBUG_REASON_ERROR;
-			}
-
-		//	eprintf ("PTRACE_EVENT_FORK new_pid=%"PFMT64d"\n", (ut64)data);
-			dbg->forked_pid = data;
-			// TODO: more handling here?
-			/* we have a new process that we are already tracing */
-			return R_DEBUG_REASON_NEW_PID;
+		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
+			r_sys_perror ("ptrace GETEVENTMSG");
+			return R_DEBUG_REASON_ERROR;
 		}
-		break;
+
+		dbg->forked_pid = data;
+		if (!dbg->trace_forks) {
+			// The new child has a pending SIGSTOP.  We can't affect it until it
+			// hits the SIGSTOP, but we're already attached.  */
+			if (waitpid (dbg->forked_pid, &status, __WALL) == -1) {
+				perror ("waitpid");
+			}
+			// We need to do this even if the new process will be detached since the
+			// breakpoints are inherited from the parent
+			linux_remove_fork_bps (dbg);
+			if (r_debug_ptrace (dbg, PTRACE_DETACH, dbg->forked_pid, NULL, (r_ptrace_data_t)(size_t)NULL) == -1) {
+				perror ("PTRACE_DETACH");
+			}
+		}
+		return R_DEBUG_REASON_NEW_PID;
 	case PTRACE_EVENT_EXIT:
 		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
 			r_sys_perror ("ptrace GETEVENTMSG");
@@ -209,8 +271,9 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 
 int linux_step(RDebug *dbg) {
 	int ret = false;
+	int pid = dbg->tid;
 	ut64 addr = r_debug_reg_get (dbg, "PC");
-	ret = r_debug_ptrace (dbg, PTRACE_SINGLESTEP, dbg->pid, (void*)(size_t)addr, 0);
+	ret = r_debug_ptrace (dbg, PTRACE_SINGLESTEP, pid, (void*)(size_t)addr, 0);
 	//XXX(jjd): why?? //linux_handle_signals (dbg);
 	if (ret == -1) {
 		perror ("native-singlestep");
@@ -223,13 +286,11 @@ int linux_step(RDebug *dbg) {
 
 bool linux_set_options(RDebug *dbg, int pid) {
 	int traceflags = 0;
+	traceflags |= PTRACE_O_TRACEFORK;
+	traceflags |= PTRACE_O_TRACEVFORK;
+	traceflags |= PTRACE_O_TRACECLONE;
 	if (dbg->trace_forks) {
-		traceflags |= PTRACE_O_TRACEFORK;
-		traceflags |= PTRACE_O_TRACEVFORK;
 		traceflags |= PTRACE_O_TRACEVFORKDONE;
-	}
-	if (dbg->trace_clone) {
-		traceflags |= PTRACE_O_TRACECLONE;
 	}
 	if (dbg->trace_execs) {
 		traceflags |= PTRACE_O_TRACEEXEC;
@@ -240,12 +301,13 @@ bool linux_set_options(RDebug *dbg, int pid) {
 	/* SIGTRAP | 0x80 on signal handler .. not supported on all archs */
 	traceflags |= PTRACE_O_TRACESYSGOOD;
 	if (r_debug_ptrace (dbg, PTRACE_SETOPTIONS, pid, 0, (r_ptrace_data_t)(size_t)traceflags) == -1) {
+		perror ("ptrace (PT_SETOPTIONS)");
 		return false;
 	}
 	return true;
 }
 
-static void linux_detach_all (RDebug *dbg) {
+static void linux_detach_all(RDebug *dbg) {
 	RList *th_list = dbg->threads;
 	if (th_list) {
 		RDebugPid *th;
@@ -280,42 +342,78 @@ static void linux_remove_thread (RDebug *dbg, int pid) {
 	}
 }
 
-void linux_attach_new_process (RDebug *dbg) {
-	linux_detach_all (dbg);
+bool linux_select(RDebug *dbg, int pid, int tid) {
+	if (dbg->pid != -1 && dbg->pid != pid) {
+		return linux_attach_new_process (dbg, pid);
+	}
+	return linux_attach (dbg, tid);
+}
 
+bool linux_attach_new_process(RDebug *dbg, int pid) {
+	linux_detach_all (dbg);
 	if (dbg->threads) {
 		r_list_free (dbg->threads);
 		dbg->threads = NULL;
 	}
-	int stopped = linux_stop_process (dbg->forked_pid);
-	if (!stopped) {
-		eprintf ("Could not stop pid (%d)\n", dbg->forked_pid);
+
+	if (!linux_attach (dbg, pid)) {
+		return false;
 	}
-	linux_attach (dbg, dbg->forked_pid);
-	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
+
+	// Call select to syncrhonize the thread's data.
+	dbg->pid = pid;
+	dbg->tid = pid;
+	r_debug_select (dbg, pid, pid);
+
+	return true;
+}
+
+static void linux_dbg_wait_break(RDebug *dbg) {
+	// Stop the currently debugged thread
+	if (!linux_kill_thread (dbg->tid, SIGSTOP)) {
+		eprintf ("Could not stop pid (%d)\n", dbg->pid);
+		return;
+	}
 }
 
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
-	int pid = (dbg->continue_all_threads && dbg->n_threads) ? -1 : dbg->main_pid;
+	int pid = dbg->tid;
 	int status, flags = __WALL;
+	int ret = -1;
 
 	if (pid == -1) {
 		flags |= WNOHANG;
 	}
+
+	// Ignore keyboard interrupt while waiting to avoid signaling the child process twice on
+	// break(SIGSTOP is sent by wait_break) which forced the user to continue an extra time
+	// to handle SIGINT
+	r_sys_signal (SIGINT, SIG_IGN);
+	r_cons_break_push ((RConsBreak)linux_dbg_wait_break, dbg);
 repeat:
 	for (;;) {
+		if (r_cons_is_breaked ()) {
+			reason = R_DEBUG_REASON_USERSUSP;
+			break;
+		}
+
 		void *bed = r_cons_sleep_begin ();
-		int ret = waitpid (pid, &status, flags);
+		ret = waitpid (-1, &status, flags);
 		r_cons_sleep_end (bed);
+
 		if (ret < 0) {
 			perror ("waitpid");
 			break;
 		} else if (!ret) {
 			flags &= ~WNOHANG;
 		} else {
-			int pid = ret;
+			pid = ret;
 			reason = linux_ptrace_event (dbg, pid, status);
+
+			if (reason == R_DEBUG_REASON_NEW_PID) {
+				break;
+			}
 
 			if (reason == R_DEBUG_REASON_EXIT_TID) {
 				r_debug_ptrace (dbg, PTRACE_CONT, pid, NULL, 0);
@@ -329,6 +427,8 @@ repeat:
 			if (WIFEXITED (status)) {
 				eprintf ("child exited with status %d\n", WEXITSTATUS (status));
 				if (pid == dbg->main_pid) {
+					r_list_free (dbg->threads);
+					dbg->threads = NULL;
 					reason = R_DEBUG_REASON_DEAD;
 				} else {
 					reason = R_DEBUG_REASON_EXIT_TID;
@@ -340,10 +440,14 @@ repeat:
 			} else if (WIFSTOPPED (status)) {
 				if (WSTOPSIG (status) != SIGTRAP &&
 					WSTOPSIG (status) != SIGSTOP) {
+					if (WSTOPSIG (status) == SIGINT) {
+						reason = R_DEBUG_REASON_USERSUSP;
+						break;
+					}
 					eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
 					reason = R_DEBUG_REASON_DEAD;
 				}
-				if (!linux_handle_signals (dbg)) {
+				if (!linux_handle_signals (dbg, pid)) {
 					eprintf ("can't handle signals\n");
 					return R_DEBUG_REASON_ERROR;
 				}
@@ -371,6 +475,9 @@ repeat:
 			}
 		}
 	}
+	r_cons_break_pop ();
+	r_sys_signal (SIGINT, SIG_DFL);
+	dbg->reason.tid = pid;
 	return reason;
 }
 
@@ -390,41 +497,98 @@ static void linux_add_and_attach_new_thread(RDebug *dbg, int tid) {
 	} else {
 		tid_info = r_debug_pid_new ("new_path", tid, uid, 's', 0);
 	}
-	(void) linux_attach (dbg, tid);
+	(void) linux_attach_single_pid (dbg, tid);
 	r_list_append (dbg->threads, tid_info);
-	dbg->tid = tid;
 	dbg->n_threads++;
 }
 
-static int linux_stop_process(int pid) {
-	int status;
-	int ret = syscall (__NR_tkill, pid, SIGSTOP);
-	if (ret != -1) {
-		ret = waitpid (pid, &status, __WALL);
+static bool linux_kill_thread(int tid, int signo) {
+	int ret = syscall (__NR_tkill, tid, signo);
+
+	if (ret == -1) {
+		perror ("tkill");
+		return false;
 	}
-	return ret == pid;
+
+	return true;
 }
 
-static int linux_attach_single_pid(RDebug *dbg, int ptid) {
-	linux_set_options (dbg, ptid);
-	return r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL,
-		(r_ptrace_data_t)(size_t)NULL);
+static bool linux_stop_thread(int tid) {
+	int status;
+	int ret = -1;
+
+	if (linux_kill_thread (tid, SIGSTOP)) {
+		if ((ret = waitpid (tid, &status, WUNTRACED)) == -1) {
+			perror("waitpid");
+		}
+	}
+
+	return ret == tid;
 }
 
-static RList *get_pid_thread_list (RDebug *dbg, int main_pid) {
+bool linux_stop_threads(RDebug *dbg, int except) {
+	// Stop all currently debugged threads
+	RList *list = dbg->threads;
+	bool ret = true;
+	if (list) {
+		RDebugPid *th;
+		RListIter *it;
+		r_list_foreach (list, it, th) {
+			if (th->pid && th->pid != except) {
+				if (!linux_stop_thread (th->pid)) {
+					eprintf ("Could not stop pid (%d)\n", th->pid);
+					ret = false;
+				}
+			}
+		}
+	}
+	return ret;
+}
+
+static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
+	siginfo_t sig = { 0 };
+
+	if (ptid < 0) {
+		return false;
+	}
+
+	// Safely check if the PID has already been attached to avoid printing errors.
+	// Attaching to a process that has already been started with PTRACE_TRACEME.
+	// sets errno to "Operation not permitted" which may be misleading.
+	// GETSIGINFO can be called multiple times and would fail without attachment.
+	if (r_debug_ptrace (dbg, PTRACE_GETSIGINFO, ptid, NULL,
+		(r_ptrace_data_t)&sig) == -1) {
+		if (r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL,
+			(r_ptrace_data_t)NULL) == -1) {
+			perror ("ptrace (PT_ATTACH)");
+			return false;
+		}
+
+		// Make sure SIGSTOP is delivered and wait for it since we can't affect the pid
+		// until it hits SIGSTOP.
+		if (!linux_stop_thread (ptid)) {
+			eprintf ("Could not stop pid (%d)\n", ptid);
+		}
+	}
+
+	if (!linux_set_options (dbg, ptid)) {
+		eprintf("failed set_options on %d\n", ptid);
+		return false;
+	}
+	return true;
+}
+
+static RList *get_pid_thread_list(RDebug *dbg, int main_pid) {
 	RList *list = r_list_new ();
 	if (list) {
-		list = linux_thread_list (main_pid, list);
+		list = linux_thread_list (dbg, main_pid, list);
 		dbg->main_pid = main_pid;
 	}
 	return list;
 }
 
-static void linux_attach_all (RDebug *dbg) {
-	int ret = linux_attach_single_pid (dbg, dbg->main_pid);
-	if (ret != -1) {
-		perror ("ptrace (PT_ATTACH)");
-	}
+static void linux_attach_all(RDebug *dbg) {
+	linux_attach_single_pid (dbg, dbg->main_pid);
 
 	RList *list = dbg->threads;
 	if (list) {
@@ -432,10 +596,8 @@ static void linux_attach_all (RDebug *dbg) {
 		RListIter *it;
 		r_list_foreach (list, it, th) {
 			if (th->pid && th->pid != dbg->main_pid) {
-				ret = linux_attach_single_pid (dbg, th->pid);
-				if (ret == -1) {
+				if (!linux_attach_single_pid (dbg, th->pid)) {
 					eprintf ("PID %d\n", th->pid);
-					perror ("ptrace (PT_ATTACH)");
 				}
 			}
 		}
@@ -453,10 +615,7 @@ int linux_attach(RDebug *dbg, int pid) {
 		if (dbg->threads && !r_list_find (dbg->threads, &pid, &match_pid)) {
 			goto out;
 		}
-		int ret = linux_attach_single_pid (dbg, pid);
-		if (ret == -1) {
-			perror ("ptrace (PT_ATTACH)");
-		}
+		linux_attach_single_pid (dbg, pid);
 	}
 out:
 	return pid;
@@ -490,7 +649,7 @@ RDebugInfo *linux_info(RDebug *dbg, const char *arg) {
 		th_list = r_list_new ();
 		list_alloc = true;
 		if (th_list) {
-			th_list = linux_thread_list (dbg->pid, th_list);
+			th_list = linux_thread_list (dbg, dbg->pid, th_list);
 		}
 	}
 	RDebugPid *th;
@@ -548,6 +707,10 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 			break;
 		}
 	}
+	ptr = strstr (info, "PPid:");
+	if (ptr) {
+		pid_info->ppid = atoi (ptr + 5);
+	}
 	ptr = strstr (info, "Uid:");
 	if (ptr) {
 		pid_info->uid = atoi (ptr + 5);
@@ -556,6 +719,7 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	if (ptr) {
 		pid_info->gid = atoi (ptr + 5);
 	}
+
 	pid_info->pid = tid;
 	pid_info->path = path ? strdup (path) : NULL;
 	pid_info->runnable = true;
@@ -563,9 +727,49 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	return pid_info;
 }
 
-RList *linux_thread_list(int pid, RList *list) {
-	int i, thid = 0;
-	char *ptr, buf[1024];
+RList *linux_pid_list(int pid, RList *list) {
+	list->free = (RListFree)&r_debug_pid_free;
+	DIR *dh = NULL;
+	struct dirent *de = NULL;
+	char path[PATH_MAX], info[PATH_MAX];
+	int i = -1;
+	RDebugPid *pid_info = NULL;
+	dh = opendir ("/proc");
+	if (!dh) {
+		r_sys_perror ("opendir /proc");
+		r_list_free (list);
+		return NULL;
+	}
+	while ((de = readdir (dh))) {
+		path[0] = 0;
+		info[0] = 0;
+		// For each existing pid file
+		if ((i = atoi (de->d_name)) <= 0) {
+			continue;
+		}
+
+		procfs_pid_slurp (i, "cmdline", path, sizeof (path));
+		if (!procfs_pid_slurp (i, "status", info, sizeof (info))) {
+			// Get information about pid (status, pc, etc.)
+			pid_info = fill_pid_info (info, path, i);
+		} else {
+			pid_info = r_debug_pid_new (path, i, 0, R_DBG_PROC_STOP, 0);
+		}
+		// Unless pid 0 is requested, only add the requested pid and it's child processes
+		if (0 == pid || i == pid || pid_info->ppid == pid) {
+			r_list_append (list, pid_info);
+		}
+	}
+	closedir (dh);
+	return list;
+}
+
+RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
+	int i = 0, thid = 0;
+	char *ptr, buf[PATH_MAX];
+	RDebugPid *pid_info = NULL;
+	ut64 pc = 0;
+	int prev_tid = dbg->tid;
 
 	if (!pid) {
 		r_list_free (list);
@@ -578,12 +782,14 @@ RList *linux_thread_list(int pid, RList *list) {
 	if (r_file_is_directory (buf)) {
 		struct dirent *de;
 		DIR *dh = opendir (buf);
+		// Update the process' memory maps to set correct paths
+		dbg->corebind.syncDebugMaps (dbg->corebind.core);
 		while ((de = readdir (dh))) {
 			if (!strcmp (de->d_name, ".") || !strcmp (de->d_name, "..")) {
 				continue;
 			}
 			int tid = atoi (de->d_name);
-			char info[1024];
+			char info[PATH_MAX];
 			int uid = 0;
 			if (!procfs_pid_slurp (tid, "status", info, sizeof (info))) {
 				ptr = strstr (info, "Uid:");
@@ -594,30 +800,37 @@ RList *linux_thread_list(int pid, RList *list) {
 				if (ptr) {
 					int tgid = atoi (ptr + 5);
 					if (tgid != pid) {
-						// If we want to attach to just one thread, don't attach to the parent
+						/* Ignore threads that aren't in the pid's thread group */
 						continue;
 					}
-                                }
+				}
 			}
 
-			if (procfs_pid_slurp (tid, "comm", buf, sizeof (buf)) == -1) {
-				/* fall back to auto-id */
-				snprintf (buf, sizeof (buf), "thread_%d %s", thid++, pid == tid ? "(current)" : NULL);
-				buf[sizeof (buf) - 1] = 0;
+			// Switch to the currently inspected thread to get it's program counter
+			if (dbg->tid != tid) {
+				linux_attach_single_pid (dbg, tid);
+				dbg->tid = tid;
 			}
 
-			RDebugPid *pid_info;
+			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+			pc = r_debug_reg_get (dbg, "PC");
+
 			if (!procfs_pid_slurp (tid, "status", info, sizeof (info))) {
 				// Get information about pid (status, pc, etc.)
-				pid_info = fill_pid_info (info, buf, tid);
+				pid_info = fill_pid_info (info, NULL, tid);
+				pid_info->pc = pc;
 			} else {
-				pid_info = r_debug_pid_new (buf, tid, uid, 's', 0);
+				pid_info = r_debug_pid_new (NULL, tid, uid, 's', pc);
 			}
 			r_list_append (list, pid_info);
 		}
 		closedir (dh);
+		// Return to the original thread
+		linux_attach_single_pid (dbg, prev_tid);
+		dbg->tid = prev_tid;
+		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 	} else {
-		/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
+		/* Some linux configurations might hide threads from /proc, use this workaround instead */
 #undef MAXPID
 #define MAXPID 99999
 		/* otherwise, brute force the pids */
@@ -652,29 +865,28 @@ RList *linux_thread_list(int pid, RList *list) {
 }
 
 #define PRINT_FPU(fpregs) \
-	eprintf ("cwd = 0x%04x  ; control   ", (fpregs).cwd);\
-	eprintf ("swd = 0x%04x  ; status\n", (fpregs).swd);\
-	eprintf ("ftw = 0x%04x              ", (fpregs).ftw);\
-	eprintf ("fop = 0x%04x\n", (fpregs).fop);\
-	eprintf ("rip = 0x%016"PFMT64x"  ", (ut64)(fpregs).rip);\
-	eprintf ("rdp = 0x%016"PFMT64x"\n", (ut64)(fpregs).rdp);\
-	eprintf ("mxcsr = 0x%08x        ", (fpregs).mxcsr);\
-	eprintf ("mxcr_mask = 0x%08x\n", (fpregs).mxcr_mask)\
+	r_cons_printf ("cwd = 0x%04x  ; control   ", (fpregs).cwd);\
+	r_cons_printf ("swd = 0x%04x  ; status\n", (fpregs).swd);\
+	r_cons_printf ("ftw = 0x%04x              ", (fpregs).ftw);\
+	r_cons_printf ("fop = 0x%04x\n", (fpregs).fop);\
+	r_cons_printf ("rip = 0x%016"PFMT64x"  ", (ut64)(fpregs).rip);\
+	r_cons_printf ("rdp = 0x%016"PFMT64x"\n", (ut64)(fpregs).rdp);\
+	r_cons_printf ("mxcsr = 0x%08x        ", (fpregs).mxcsr);\
+	r_cons_printf ("mxcr_mask = 0x%08x\n", (fpregs).mxcr_mask)\
 
 #define PRINT_FPU_NOXMM(fpregs) \
-	eprintf ("cwd = 0x%04lx  ; control   ", (fpregs).cwd);\
-	eprintf ("swd = 0x%04lx  ; status\n", (fpregs).swd);\
-	eprintf ("twd = 0x%04lx              ", (fpregs).twd);\
-	eprintf ("fip = 0x%04lx          \n", (fpregs).fip);\
-	eprintf ("fcs = 0x%04lx              ", (fpregs).fcs);\
-	eprintf ("foo = 0x%04lx          \n", (fpregs).foo);\
-	eprintf ("fos = 0x%04lx              ", (fpregs).fos)
+	r_cons_printf ("cwd = 0x%04lx  ; control   ", (fpregs).cwd);\
+	r_cons_printf ("swd = 0x%04lx  ; status\n", (fpregs).swd);\
+	r_cons_printf ("twd = 0x%04lx              ", (fpregs).twd);\
+	r_cons_printf ("fip = 0x%04lx          \n", (fpregs).fip);\
+	r_cons_printf ("fcs = 0x%04lx              ", (fpregs).fcs);\
+	r_cons_printf ("foo = 0x%04lx          \n", (fpregs).foo);\
+	r_cons_printf ("fos = 0x%04lx              ", (fpregs).fos)
 
-void print_fpu (void *f, int r){
-#if __x86_64__ || __i386__
-	int i;
-	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct*)f;
+static void print_fpu(void *f){
 #if __x86_64__
+	int i,j;
+	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
 #if __ANDROID__
 	PRINT_FPU (fpregs);
 	for (i = 0;i < 8; i++) {
@@ -683,78 +895,79 @@ void print_fpu (void *f, int r){
 		float *f = (float *)&fpregs.st_space;
 		c = c + (i * 4);
 		f = f + (i * 4);
-		eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | \
-			%0.3f (%08x) \n", i,
+		r_cons_printf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x) | "\
+			"%0.3f (%08x) \n", i,
 			(double)*((double*)&fpregs.st_space[i*4]), *b, (float) f[0],
 			c[0], (float) f[1], c[1]);
 	}
 #else
-	eprintf ("---- x86-64 ----\n");
+	r_cons_printf ("---- x86-64 ----\n");
 	PRINT_FPU (fpregs);
-	eprintf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
+	r_cons_printf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
 	for (i = 0; i < 16; i++) {
-		ut32 *a = (ut32*)&fpregs.xmm_space;
+		ut32 *a = (ut32 *)&fpregs.xmm_space;
 		a = a + (i * 4);
-		eprintf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
-			(int)a[2], (int)a[3] );
+		r_cons_printf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
+					   (int)a[2], (int)a[3] );
 		if (i < 8) {
-			ut64 *b = (ut64*)&fpregs.st_space[i * 4];
-			ut32 *c = (ut32*)&fpregs.st_space;
-			float *f = (float *)&fpregs.st_space;
-			double *d = (double *)&fpregs.st_space[i*4];
-			c = c + (i * 4);
-			f = f + (i * 4);
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  |\
-				%0.3f (%08x) \n", i, *d, *b,
-				(float)f[0], c[0], (float)f[1], c[1]);
+			ut64 *st_u64 = (ut64*)&fpregs.st_space[i * 4];
+			ut8 *st_u8 = (ut8 *)&fpregs.st_space[i * 4];
+			long double *st_ld = (long double *)&fpregs.st_space[i * 4];
+			r_cons_printf ("mm%d = 0x%016" PFMT64x " | st%d = ", i, *st_u64, i);
+			// print as hex TBYTE - always little endian
+			for (j = 9; j >= 0; j--) {
+				r_cons_printf ("%02x", st_u8[j]);
+			}
+			// Using %Lf and %Le even though we do not show the extra precision to avoid another cast
+			// %f with (double)*st_ld would also work
+			r_cons_printf (" %Le %Lf\n", *st_ld, *st_ld);
 		} else {
-			eprintf ("\n");
+			r_cons_printf ("\n");
 		}
 	}
 #endif // __ANDROID__
 #elif __i386__
-	if (!r) {
-#if !__ANDROID__
-		struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct*)f;
-		eprintf ("---- x86-32 ----\n");
-		eprintf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
-		eprintf ("swd = 0x%04x  ; status\n", fpxregs.swd);
-		eprintf ("twd = 0x%04x ", fpxregs.twd);
-		eprintf ("fop = 0x%04x\n", fpxregs.fop);
-		eprintf ("fip = 0x%08x\n", (ut32)fpxregs.fip);
-		eprintf ("fcs = 0x%08x\n", (ut32)fpxregs.fcs);
-		eprintf ("foo = 0x%08x\n", (ut32)fpxregs.foo);
-		eprintf ("fos = 0x%08x\n", (ut32)fpxregs.fos);
-		eprintf ("mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
-		for(i = 0; i < 8; i++) {
-			ut32 *a = (ut32*)(&fpxregs.xmm_space);
-			ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
-			ut32 *c = (ut32*)&fpxregs.st_space;
-			float *f = (float *)&fpxregs.st_space;
-			a = a + (i * 4);
-			c = c + (i * 4);
-			f = f + (i * 4);
-			eprintf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
-				(int)a[1], (int)a[2], (int)a[3] );
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) |\
-				%0.3f (0x%08x)\n", i,
-				(double)*((double*)(&fpxregs.st_space[i*4])), b[0],
-				f[0], c[0], f[1], c[1]);
-		}
-#endif // !__ANDROID__
-	} else {
-		eprintf ("---- x86-32-noxmm ----\n");
-		PRINT_FPU_NOXMM (fpregs);
-		for(i = 0; i < 8; i++) {
-			ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
-			double *d = (double*)b;
-			ut32 *c = (ut32*)&fpregs.st_space;
-			float *f = (float *)&fpregs.st_space;
-			c = c + (i * 4);
-			f = f + (i * 4);
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | \
-				%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
-		}
+	int i,j;
+#if __ANDROID__
+	struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct*)f;
+	r_cons_printf ("---- x86-32 ----\n");
+	r_cons_printf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
+	r_cons_printf ("swd = 0x%04x  ; status\n", fpxregs.swd);
+	r_cons_printf ("twd = 0x%04x ", fpxregs.twd);
+	r_cons_printf ("fop = 0x%04x\n", fpxregs.fop);
+	r_cons_printf ("fip = 0x%08x\n", (ut32)fpxregs.fip);
+	r_cons_printf ("fcs = 0x%08x\n", (ut32)fpxregs.fcs);
+	r_cons_printf ("foo = 0x%08x\n", (ut32)fpxregs.foo);
+	r_cons_printf ("fos = 0x%08x\n", (ut32)fpxregs.fos);
+	r_cons_printf ("mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
+	for(i = 0; i < 8; i++) {
+		ut32 *a = (ut32*)(&fpxregs.xmm_space);
+		ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
+		ut32 *c = (ut32*)&fpxregs.st_space;
+		float *f = (float *)&fpxregs.st_space;
+		a = a + (i * 4);
+		c = c + (i * 4);
+		f = f + (i * 4);
+		r_cons_printf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
+			(int)a[1], (int)a[2], (int)a[3] );
+		r_cons_printf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
+			"%0.3f (0x%08x)\n", i,
+			(double)*((double*)(&fpxregs.st_space[i*4])), b[0],
+			f[0], c[0], f[1], c[1]);
+	}
+#else
+	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
+	r_cons_printf ("---- x86-32-noxmm ----\n");
+	PRINT_FPU_NOXMM (fpregs);
+	for(i = 0; i < 8; i++) {
+		ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
+		double *d = (double*)b;
+		ut32 *c = (ut32*)&fpregs.st_space;
+		float *f = (float *)&fpregs.st_space;
+		c = c + (i * 4);
+		f = f + (i * 4);
+		r_cons_printf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
+			"%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
 	}
 #endif
 #else
@@ -762,9 +975,9 @@ void print_fpu (void *f, int r){
 #endif
 }
 
-int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
+int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	bool showfpu = false;
-	int pid = dbg->pid;
+	int pid = dbg->tid;
 	int ret;
 	if (type < -1) {
 		showfpu = true;
@@ -813,7 +1026,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 #if __x86_64__
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
 			if (showfpu) {
-				print_fpu ((void *)&fpregs, 0);
+				print_fpu ((void *)&fpregs);
 			}
 			if (ret1 != 0) {
 				return false;
@@ -828,13 +1041,13 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			struct user_fpxregs_struct fpxregs;
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
 			if (ret1 == 0) {
-				if (showfpu) print_fpu ((void *)&fpxregs, ret1);
+				if (showfpu) print_fpu ((void *)&fpxregs);
 				if (sizeof(fpxregs) < size) size = sizeof(fpxregs);
 				memcpy (buf, &fpxregs, size);
 				return sizeof(fpxregs);
 			} else {
 				ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-				if (showfpu) print_fpu ((void *)&fpregs, ret1);
+				if (showfpu) print_fpu ((void *)&fpregs);
 				if (ret1 != 0) return false;
 				if (sizeof(fpregs) < size) size = sizeof(fpregs);
 				memcpy (buf, &fpregs, size);
@@ -842,7 +1055,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 #else
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-			if (showfpu) print_fpu ((void *)&fpregs, 1);
+			if (showfpu) print_fpu ((void *)&fpregs);
 			if (ret1 != 0) return false;
 			if (sizeof (fpregs) < size) size = sizeof(fpregs);
 			memcpy (buf, &fpregs, size);
@@ -862,7 +1075,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			R_DEBUG_REG_T regs;
 			memset (&regs, 0, sizeof (regs));
 			memset (buf, 0, size);
-#if __arm64__ || __aarch64__
+#if __arm64__ || __aarch64__ || __s390x__
 			struct iovec io = {
 				.iov_base = &regs,
 				.iov_len = sizeof (regs)
@@ -875,7 +1088,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 #elif __BSD__ && (__POWERPC__ || __sparc__)
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
 #else
-			/* linux -{arm/x86/x86_64} */
+			/* linux -{arm/mips/riscv/x86/x86_64} */
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, NULL, &regs);
 #endif
 			/*
@@ -891,11 +1104,41 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			return sizeof (regs);
 		}
 		break;
+	case R_REG_TYPE_YMM:
+		{
+#if HAVE_YMM && __x86_64__
+		ut32 ymm_space[128];	// full ymm registers
+		struct _xstate xstate;
+		struct iovec iov;
+		iov.iov_base = &xstate;
+		iov.iov_len = sizeof(struct _xstate);
+		ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)NT_X86_XSTATE, &iov);
+		if (ret != 0) {
+			return false;
+		}
+		// stitch together xstate.fpstate._xmm and xstate.ymmh assuming LE
+		int ri,rj;
+		for (ri = 0; ri < 16; ri++)	{
+			for (rj=0; rj < 4; rj++)	{
+				ymm_space[ri*8+rj] = xstate.fpstate._xmm[ri].element[rj];
+			}
+			for (rj=0; rj < 4; rj++)	{
+				ymm_space[ri*8+(rj+4)] = xstate.ymmh.ymmh_space[ri*4+rj];
+			}
+		}
+		memcpy (buf, &ymm_space, sizeof (ymm_space));
+		return sizeof (ymm_space);
+#endif
+		return false;
+		}
+		break;
 	}
-	return true;
+	return false;
 }
 
 int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
+	int pid = dbg->tid;
+
 	if (type == R_REG_TYPE_DRX) {
 #if !__ANDROID__ && (__i386__ || __x86_64__)
 		int i;
@@ -904,7 +1147,7 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 			if (i == 4 || i == 5) {
 				continue;
 			}
-			if (r_debug_ptrace (dbg, PTRACE_POKEUSER, dbg->pid,
+			if (r_debug_ptrace (dbg, PTRACE_POKEUSER, pid,
 					(void *)r_offsetof (struct user, u_debugreg[i]), (r_ptrace_data_t)val[i])) {
 				eprintf ("ptrace error for dr %d\n", i);
 				r_sys_perror ("ptrace POKEUSER");
@@ -916,16 +1159,16 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 #endif
 	}
 	if (type == R_REG_TYPE_GPR) {
-#if __arm64__ || __aarch64__
+#if __arm64__ || __aarch64__ || __s390x__
 		struct iovec io = {
 			.iov_base = (void*)buf,
 			.iov_len = sizeof (R_DEBUG_REG_T)
 		};
-		int ret = r_debug_ptrace (dbg, PTRACE_SETREGSET, dbg->pid, (void*)(size_t)NT_PRSTATUS, (r_ptrace_data_t)(size_t)&io);
+		int ret = r_debug_ptrace (dbg, PTRACE_SETREGSET, pid, (void*)(size_t)NT_PRSTATUS, (r_ptrace_data_t)(size_t)&io);
 #elif __POWERPC__ || __sparc__
-		int ret = r_debug_ptrace (dbg, PTRACE_SETREGS, dbg->pid, buf, NULL);
+		int ret = r_debug_ptrace (dbg, PTRACE_SETREGS, pid, buf, NULL);
 #else
-		int ret = r_debug_ptrace (dbg, PTRACE_SETREGS, dbg->pid, 0, (void*)buf);
+		int ret = r_debug_ptrace (dbg, PTRACE_SETREGS, pid, 0, (void*)buf);
 #endif
 #if DEAD_CODE
 		if (size > sizeof (R_DEBUG_REG_T)) {
@@ -933,6 +1176,12 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 		}
 #endif
 		return (ret != 0) ? false : true;
+	}
+	if (type == R_REG_TYPE_FPU) {
+#if __i386__ || __x86_64__
+		int ret = r_debug_ptrace (dbg, PTRACE_SETFPREGS, pid, 0, (void*)buf);
+		return (ret != 0) ? false : true;
+#endif
 	}
 	return false;
 }

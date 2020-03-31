@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2019 - pancake */
+/* radare2 - LGPL - Copyright 2013-2020 - pancake */
 
 #include "index.h"
 #include <r_main.h>
@@ -30,7 +30,7 @@ static int showversion() {
 	return r_main_version_print ("r2agent");
 }
 
-R_API int r_main_r2agent(int argc, char **argv) {
+R_API int r_main_r2agent(int argc, const char **argv) {
 	RSocket *s;
 	RSocketHTTPOptions so;
 	RSocketHTTPRequest *rs;
@@ -43,7 +43,9 @@ R_API int r_main_r2agent(int argc, char **argv) {
 	char *pfile = NULL;
 	memset (&so, 0, sizeof (so));
 
-	while ((c = r_getopt (argc, argv, "adhup:t:sv")) != -1) {
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "adhup:t:sv");
+	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
 			listenlocal = false;
@@ -62,16 +64,16 @@ R_API int r_main_r2agent(int argc, char **argv) {
 			so.httpauth = true;
 			break;
 		case 't':
-			httpauthfile = r_optarg;
+			httpauthfile = opt.arg;
 			break;
 		case 'p':
-			port = r_optarg;
+			port = opt.arg;
 			break;
 		default:
 			return usage (0);
 		}
 	}
-	if (r_optind != argc) {
+	if (opt.ind != argc) {
 		return usage (0);
 	}
 
@@ -84,10 +86,10 @@ R_API int r_main_r2agent(int argc, char **argv) {
 			return usage (0);
 		}
 
-		int sz;
+		size_t sz;
 		pfile = r_file_slurp (httpauthfile, &sz);
 		if (pfile) {
-			so.authtokens = r_str_split_list (pfile, "\n");
+			so.authtokens = r_str_split_list (pfile, "\n", 0);
 		} else {
 			eprintf ("Empty list of HTTP users\\n");
 			return usage (0);
@@ -151,14 +153,15 @@ R_API int r_main_r2agent(int argc, char **argv) {
 				int session_port = 3000 + r_num_rand (1024);
 				char *filename = rs->path + 11;
 				char *escaped_filename = r_str_escape (filename);
-				int escaped_len = strlen (escaped_filename);
+				size_t escaped_len = strlen (escaped_filename);
+				size_t cmd_len = escaped_len + 40;
 				char *cmd;
 
-				if (!(cmd = malloc (escaped_len + 40))) {
+				if (!(cmd = malloc (cmd_len))) {
 					perror ("malloc");
 					return 1;
 				}
-				sprintf (cmd, "r2 -q %s-e http.port=%d -c=h \"%s\"",
+				snprintf (cmd, cmd_len, "r2 -q %s-e http.port=%d -c=h \"%s\"",
 					listenlocal? "": "-e http.bind=public ",
 					session_port, escaped_filename);
 

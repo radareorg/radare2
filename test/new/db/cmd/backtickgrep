@@ -1,0 +1,8 @@
+NAME=t/backtickgrep
+FILE=-
+EXPECT=<<EOF
+0x0
+works
+EOF
+CMDS=?v `i~size[1]`-$s;?! ?e works
+RUN

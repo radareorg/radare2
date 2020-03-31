@@ -1,0 +1,37 @@
+NAME=comment spaces
+BROKEN=1
+FILE=--
+EXPECT=<<EOF
+0x00000001 CCu "bar"
+0x00000002 CCu "cow"
+0    1 . one
+1    2 * two
+EOF
+CMDS=<<EOF
+CS one
+CC foo
+CS two
+CC bar @ 1
+CC cow @ 2
+CC
+CS
+EOF
+RUN
+
+NAME=select all meta spaces
+FILE=--
+EXPECT=<<EOF
+0x00000000 CCu "foo"
+0x00000001 CCu "bar"
+0x00000002 CCu "cow"
+EOF
+CMDS=<<EOF
+CS one
+CC foo
+CS two
+CC bar @ 1
+CC cow @ 2
+CS *
+CC
+EOF
+RUN

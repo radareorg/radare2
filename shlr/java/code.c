@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <r_anal_ex.h>
+#include "ops.h"
 #include "code.h"
 #include "class.h"
 
@@ -69,10 +69,10 @@ static int enter_switch_op (ut64 addr, const ut8* bytes, int len) {
 }
 
 static bool isRelative (ut32 type) {
-	if (type & R_ANAL_EX_CODEOP_CJMP) {
+	if (type & R_ANAL_JAVA_CODEOP_CJMP) {
 		return true;
 	}
-	if (type & R_ANAL_EX_CODEOP_JMP) {
+	if (type & R_ANAL_JAVA_CODEOP_JMP) {
 		return true;
 	}
 	return false;

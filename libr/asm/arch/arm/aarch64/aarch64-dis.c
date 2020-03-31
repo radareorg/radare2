@@ -169,7 +169,7 @@ extract_all_fields (const aarch64_operand *self, aarch64_insn code)
   enum aarch64_field_kind kind;
 
   value = 0;
-  for (i = 0; i < ARRAY_SIZE (self->fields) && self->fields[i] != FLD_NIL; ++i)
+  for (i = 0; i < ARRAY_SIZE (self->fields) && self->fields[i] != FLD_NIL; i++)
     {
       kind = self->fields[i];
       value <<= fields[kind].width;
@@ -1225,7 +1225,7 @@ aarch64_ext_pstatefield (const aarch64_operand *self ATTRIBUTE_UNUSED,
   int i;
   /* op1:op2 */
   info->pstatefield = extract_fields (code, 0, 2, FLD_op1, FLD_op2);
-  for (i = 0; aarch64_pstatefields[i].name != NULL; ++i)
+  for (i = 0; aarch64_pstatefields[i].name; i++)
     if (aarch64_pstatefields[i].value == (aarch64_insn)info->pstatefield)
       return TRUE;
   /* Reserved value in <pstatefield>.  */
@@ -1257,7 +1257,7 @@ aarch64_ext_sysins_op (const aarch64_operand *self ATTRIBUTE_UNUSED,
     default: assert (0); return FALSE;
     }
 
-  for (i = 0; sysins_ops[i].name != NULL; ++i)
+  for (i = 0; sysins_ops[i].name; i++)
     if (sysins_ops[i].value == value)
       {
 	info->sysins_op = sysins_ops + i;
@@ -1874,7 +1874,7 @@ get_qualifier_from_partial_encoding (aarch64_insn value,
 {
   int i;
   DEBUG_TRACE ("enter with value: %d, mask: %d", (int)value, (int)mask);
-  for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; ++i)
+  for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; i++)
     {
       aarch64_insn standard_value;
       if (candidates[i] == AARCH64_OPND_QLF_NIL)
@@ -1896,7 +1896,7 @@ get_operand_possible_qualifiers (int idx,
 				 enum aarch64_opnd_qualifier *qualifiers)
 {
   int i;
-  for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; ++i)
+  for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; i++)
     if ((qualifiers[i] = list[i][idx]) == AARCH64_OPND_QLF_NIL)
       break;
 }
@@ -1952,7 +1952,7 @@ decode_sizeq (aarch64_inst *inst)
     {
       int i;
       for (i = 0; candidates[i] != AARCH64_OPND_QLF_NIL
-	   && i < AARCH64_MAX_QLF_SEQ_NUM; ++i)
+	   && i < AARCH64_MAX_QLF_SEQ_NUM; i++)
 	DEBUG_TRACE ("qualifier %d: %s", i,
 		     aarch64_get_qualifier_name(candidates[i]));
       DEBUG_TRACE ("%d, %d", (int)value, (int)mask);
@@ -2816,7 +2816,7 @@ aarch64_decode_variant_using_iclass (aarch64_inst *inst)
       return TRUE;
     }
 
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++)
     inst->operands[i].qualifier = inst->opcode->qualifiers_list[variant][i];
   return TRUE;
 }
@@ -2853,7 +2853,7 @@ aarch64_opcode_decode (const aarch64_opcode *opcode, const aarch64_insn code,
   inst->value = code;
 
   /* Assign operand codes and indexes.  */
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++)
     {
       if (opcode->operands[i] == AARCH64_OPND_NIL)
 	break;
@@ -2877,7 +2877,7 @@ aarch64_opcode_decode (const aarch64_opcode *opcode, const aarch64_insn code,
     }
 
   /* Call operand decoders.  */
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; i++)
     {
       const aarch64_operand *opnd;
       enum aarch64_opnd type;
@@ -2997,7 +2997,7 @@ print_operands (bfd_vma pc, const aarch64_opcode *opcode,
 {
   int i, pcrel_p, num_printed;
   char *notes = NULL;
-  for (i = 0, num_printed = 0; i < AARCH64_MAX_OPND_NUM; ++i)
+  for (i = 0, num_printed = 0; i < AARCH64_MAX_OPND_NUM; i++)
     {
       char str[128];
       /* We regard the opcode operand info more, however we also look into
@@ -3078,7 +3078,7 @@ return;
 
       remove_dot_suffix (name, inst);
       num_conds = ARRAY_SIZE (inst->cond->names);
-      for (i = 1; i < num_conds && inst->cond->names[i]; ++i)
+      for (i = 1; i < num_conds && inst->cond->names[i]; i++)
 	(*info->fprintf_func) (info->stream, "%s %s.%s",
 			       i == 1 ? "  //" : ",",
 			       name, inst->cond->names[i]);

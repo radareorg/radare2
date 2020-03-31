@@ -276,3 +276,18 @@ Use rabin2 to discover the real TRUTH
 **** COMMODORE 64 RADARE V2 ****  64K RAM SYSTEM  38911 DISASM BYTES FREE  READY.
 Most likely your core dump fell into a blackhole, can't see it.
 Long time no C
+radare2 is power, France is pancake.
+Come to C me!
+Unable to locate package gdb
+You C it, you fix it!
+How good is your C?
+I C dead bugs everywhere!
+You will soon have an out of memory experience.
+This binary no good. Try another.
+BSOD!
+Mind the trap.
+For a full documentation see `r2 -qc iz /lib/libr_core.so`
+99 bugs, take one down pass it around. 100 bugs...
+I like my binary stripped.
+Now 8-bit clean with better ＡＳＣＩＩ!
+Please insert disc 2 and press any key to continue...

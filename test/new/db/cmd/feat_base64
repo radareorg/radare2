@@ -1,0 +1,23 @@
+NAME=base64 encode
+FILE=-
+EXPECT=<<EOF
+aGVsbG8gd29ybGQ=
+EOF
+CMDS=<<EOF
+b 11
+w hello world
+p6e
+EOF
+RUN
+
+NAME=base64 decode
+FILE=-
+EXPECT=<<EOF
+hello world
+EOF
+CMDS=<<EOF
+b 16
+w aGVsbG8gd29ybGQ=
+p6d
+EOF
+RUN

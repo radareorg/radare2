@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2018 - pancake */
+/* radare2 - LGPL - Copyright 2015-2019 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -55,6 +55,9 @@ static int m680xmode(const char *str) {
 	}
 	return CS_MODE_M680X_6800;
 }
+
+#define IMM(x) insn->detail->m680x.operands[x].imm
+#define REL(x) insn->detail->m680x.operands[x].rel
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int n, ret, opsize = -1;
@@ -144,15 +147,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_BCS: ///< or BLO
 	case M680X_INS_BEOR:
 		break;
-	case M680X_INS_BEQ:
-	case M680X_INS_BGE:
-	case M680X_INS_BGND:
-	case M680X_INS_BGT:
-	case M680X_INS_BHCC:
-	case M680X_INS_BHCS:
-	case M680X_INS_BHI:
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		break;
 	case M680X_INS_BIAND:
 	case M680X_INS_BIEOR:
 	case M680X_INS_BIH:
@@ -164,6 +158,18 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_BITD:
 	case M680X_INS_BITMD:
 		break;
+	case M680X_INS_BRA:
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = addr + op->size + REL(0).offset;
+		op->fail = UT64_MAX;
+		break;
+	case M680X_INS_BEQ:
+	case M680X_INS_BGE:
+	case M680X_INS_BGND:
+	case M680X_INS_BGT:
+	case M680X_INS_BHCC:
+	case M680X_INS_BHCS:
+	case M680X_INS_BHI:
 	case M680X_INS_BLE:
 	case M680X_INS_BLS:
 	case M680X_INS_BLT:
@@ -175,13 +181,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_BPL:
 	case M680X_INS_BRCLR:
 	case M680X_INS_BRSET:
-	case M680X_INS_BRA:
 	case M680X_INS_BRN:
 	case M680X_INS_BSET:
 	case M680X_INS_BSR:
 	case M680X_INS_BVC:
 	case M680X_INS_BVS:
 		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addr + op->size + REL(0).offset;
+		op->fail = addr + op->size;
 		break;
 	case M680X_INS_CALL:
 	case M680X_INS_CBA: ///< M6800/1/2/3

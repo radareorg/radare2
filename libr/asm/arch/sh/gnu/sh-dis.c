@@ -153,7 +153,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 	}
 
     ok:
-      fprintf_fn (stream,"%s ", op->name);
+      fprintf_fn (stream,"%s", op->name);
       for (n = 0; n < 3 && op->arg[n] != A_END; n++)
 	{
 	      if (n && op->arg[1] != A_END) {
@@ -161,141 +161,142 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 	      }
 	      switch (op->arg[n]) {
 	      case A_IMM:
-		      fprintf_fn (stream, "0x%02X", (unsigned char)(imm));
+		      fprintf_fn (stream, " 0x%02X", (unsigned char)(imm));
 		      break;
 	      case A_R0:
-		      fprintf_fn (stream, "r0");
+		      fprintf_fn (stream, " r0");
 		      break;
 	      case A_REG_N:
-		      fprintf_fn (stream, "r%d", rn);
+		      fprintf_fn (stream, " r%d", rn);
 		      break;
 	      case A_INC_N:
-		      fprintf_fn (stream, "@r%d+", rn);
+		      fprintf_fn (stream, " @r%d+", rn);
 		      break;
 	      case A_DEC_N:
-		      fprintf_fn (stream, "@-r%d", rn);
+		      fprintf_fn (stream, " @-r%d", rn);
 		      break;
 	      case A_IND_N:
-		      fprintf_fn (stream, "@r%d", rn);
+		      fprintf_fn (stream, " @r%d", rn);
 		      break;
 	      case A_DISP_REG_N:
-		      fprintf_fn (stream, "@(0x%X,r%d)", imm, rn);
+		      fprintf_fn (stream, " @(0x%x,r%d)", imm, rn);
 		      break;
 	      case A_REG_M:
-		      fprintf_fn (stream, "r%d", rm);
+		      fprintf_fn (stream, " r%d", rm);
 		      break;
 	      case A_INC_M:
-		      fprintf_fn (stream, "@r%d+", rm);
+		      fprintf_fn (stream, " @r%d+", rm);
 		      break;
 	      case A_DEC_M:
-		      fprintf_fn (stream, "@-r%d", rm);
+		      fprintf_fn (stream, " @-r%d", rm);
 		      break;
 	      case A_IND_M:
-		      fprintf_fn (stream, "@r%d", rm);
+		      fprintf_fn (stream, " @r%d", rm);
 		      break;
 	      case A_DISP_REG_M:
-		      fprintf_fn (stream, "@(0x%X,r%d)", imm, rm);
+		      fprintf_fn (stream, " @(0x%x,r%d)", imm, rm);
 		      break;
 	      case A_REG_B:
-		      fprintf_fn (stream, "r%d_bank", rb);
+		      fprintf_fn (stream, " r%d_bank", rb);
 		      break;
 	      case A_DISP_PC:
 		      disp_pc = 1;
 		      disp_pc_addr = imm + 4 + (memaddr & relmask);
-		      fprintf_fn (stream, "@(0x%X,PC)", imm);
+		      fprintf_fn (stream, " @(0x%x,pc)", imm);
 		      break;
 	      case A_IND_R0_REG_N:
-		      fprintf_fn (stream, "@(r0,r%d)", rn);
+		      fprintf_fn (stream, " @(r0,r%d)", rn);
 		      break;
 	      case A_IND_R0_REG_M:
-		      fprintf_fn (stream, "@(r0,r%d)", rm);
+		      fprintf_fn (stream, " @(r0,r%d)", rm);
 		      break;
 	      case A_DISP_GBR:
-		      fprintf_fn (stream, "@(0x%X,gbr)", imm);
+		      fprintf_fn (stream, " @(0x%x,gbr)", imm);
 		      break;
 	      case A_R0_GBR:
-		      fprintf_fn (stream, "@(r0,gbr)");
+		      fprintf_fn (stream, " @(r0,gbr)");
 		      break;
 	      case A_BDISP12:
 	      case A_BDISP8:
+		      fprintf_fn (stream, " ");
 		      (*info->print_address_func) (imm + memaddr, info);
 		      break;
 	      case A_SR:
-		      fprintf_fn (stream, "sr");
+		      fprintf_fn (stream, " sr");
 		      break;
 	      case A_GBR:
-		      fprintf_fn (stream, "gbr");
+		      fprintf_fn (stream, " gbr");
 		      break;
 	      case A_VBR:
-		      fprintf_fn (stream, "vbr");
+		      fprintf_fn (stream, " vbr");
 		      break;
 	      case A_SSR:
-		      fprintf_fn (stream, "ssr");
+		      fprintf_fn (stream, " ssr");
 		      break;
 	      case A_SPC:
-		      fprintf_fn (stream, "spc");
+		      fprintf_fn (stream, " spc");
 		      break;
 	      case A_MACH:
-		      fprintf_fn (stream, "mach");
+		      fprintf_fn (stream, " mach");
 		      break;
 	      case A_MACL:
-		      fprintf_fn (stream, "macl");
+		      fprintf_fn (stream, " macl");
 		      break;
 	      case A_PR:
-		      fprintf_fn (stream, "pr");
+		      fprintf_fn (stream, " pr");
 		      break;
 	      case A_SGR:
-		      fprintf_fn (stream, "sgr");
+		      fprintf_fn (stream, " sgr");
 		      break;
 	      case A_DBR:
-		      fprintf_fn (stream, "dbr");
+		      fprintf_fn (stream, " dbr");
 		      break;
 	      case FD_REG_N:
 		      if (0) {
 			      goto d_reg_n;
 		      }
 	      case F_REG_N:
-		      fprintf_fn (stream, "fr%d", rn);
+		      fprintf_fn (stream, " fr%d", rn);
 		      break;
 	      case F_REG_M:
-		      fprintf_fn (stream, "fr%d", rm);
+		      fprintf_fn (stream, " fr%d", rm);
 		      break;
 	      case DX_REG_N:
 		      if (rn & 1) {
-			      fprintf_fn (stream, "xd%d", rn & ~1);
+			      fprintf_fn (stream, " xd%d", rn & ~1);
 			      break;
 		      }
 	      d_reg_n:
 	      case D_REG_N:
-		      fprintf_fn (stream, "dr%d", rn);
+		      fprintf_fn (stream, " dr%d", rn);
 		      break;
 	      case DX_REG_M:
 		      if (rm & 1) {
-			      fprintf_fn (stream, "xd%d", rm & ~1);
+			      fprintf_fn (stream, " xd%d", rm & ~1);
 			      break;
 		      }
 	      case D_REG_M:
-		      fprintf_fn (stream, "dr%d", rm);
+		      fprintf_fn (stream, " dr%d", rm);
 		      break;
 	      case FPSCR_M:
 	      case FPSCR_N:
-		      fprintf_fn (stream, "fpscr");
+		      fprintf_fn (stream, " fpscr");
 		      break;
 	      case FPUL_M:
 	      case FPUL_N:
-		      fprintf_fn (stream, "fpul");
+		      fprintf_fn (stream, " fpul");
 		      break;
 	      case F_FR0:
-		      fprintf_fn (stream, "fr0");
+		      fprintf_fn (stream, " fr0");
 		      break;
 	      case V_REG_N:
-		      fprintf_fn (stream, "fv%d", rn * 4);
+		      fprintf_fn (stream, " fv%d", rn * 4);
 		      break;
 	      case V_REG_M:
-		      fprintf_fn (stream, "fv%d", rm * 4);
+		      fprintf_fn (stream, " fv%d", rm * 4);
 		      break;
 	      case XMTRX_M4:
-		      fprintf_fn (stream, "xmtrx");
+		      fprintf_fn (stream, " xmtrx");
 		      break;
 	      default:
 		      fprintf (stderr, "sh-dis: abort");
@@ -361,7 +362,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
       ;
 
     }	//for
-  fprintf_fn (stream, ".word 0x%X%X%X%X", nibs[0], nibs[1], nibs[2], nibs[3]);
+  fprintf_fn (stream, ".word 0x%02x%02x%02x%02x", nibs[0], nibs[1], nibs[2], nibs[3]);
   return 2;
 }
 

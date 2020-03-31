@@ -1,0 +1,16 @@
+NAME=dbg.dL
+FILE=/bin/ls
+CMDS=dL
+EXPECT=<<EOF
+0  ---  bf       LGPL3
+1  ---  bochs    LGPL3
+2  ---  esil     LGPL3
+3  ---  gdb      LGPL3
+4  ---  io       MIT
+5  dbg  native   LGPL3
+6  ---  null     MIT
+7  ---  qnx      LGPL3
+8  ---  rap      LGPL3
+9  ---  windbg   LGPL3
+EOF
+RUN

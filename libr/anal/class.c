@@ -50,7 +50,6 @@ static const char *attr_type_id(RAnalClassAttrType attr_type) {
 	}
 }
 
-
 R_API void r_anal_class_create(RAnal *anal, const char *name) {
 	char *name_sanitized = r_str_sanitize_sdb_key (name);
 	if (!name_sanitized) {
@@ -418,11 +417,11 @@ static char *flagname_attr(const char *attr_type, const char *class_name, const 
 	return r;
 }
 
-static void r_anal_class_set_flag(RAnal *anal, const char *name, ut64 addr) {
+static void r_anal_class_set_flag(RAnal *anal, const char *name, ut64 addr, ut32 size) {
 	if (!name || !anal->flg_class_set) {
 		return;
 	}
-	anal->flg_class_set (anal->flb.f, name, addr, 0);
+	anal->flg_class_set (anal->flb.f, name, addr, size);
 }
 
 static void r_anal_class_unset_flag(RAnal *anal, const char *name) {
@@ -560,7 +559,7 @@ R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name,
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
 		return err;
 	}
-	r_anal_class_set_flag (anal, flagname_method (class_name, meth->name), meth->addr);
+	r_anal_class_set_flag (anal, flagname_method (class_name, meth->name), meth->addr, 0);
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
@@ -812,9 +811,14 @@ R_API RAnalClassErr r_anal_class_vtable_get(RAnal *anal, const char *class_name,
 		free (content);
 		return R_ANAL_CLASS_ERR_OTHER;
 	}
-	sdb_anext (cur, NULL);
+	sdb_anext (cur, &next);
 
 	vtable->offset = r_num_math (NULL, cur);
+
+	cur = next;
+	sdb_anext (cur, NULL);
+
+	vtable->size = r_num_math (NULL, cur);
 
 	free (content);
 
@@ -861,7 +865,7 @@ R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const c
 }
 
 R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name, RAnalVTable *vtable) {
-	char *content = sdb_fmt ("0x%"PFMT64x SDB_SS "%"PFMT64u, vtable->addr, vtable->offset);
+	char *content = sdb_fmt ("0x%"PFMT64x SDB_SS "%"PFMT64u SDB_SS "%"PFMT64u, vtable->addr, vtable->offset, vtable->size);
 	if (vtable->id) {
 		return r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
 	}
@@ -874,7 +878,7 @@ R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name,
 		return err;
 	}
 
-	r_anal_class_set_flag (anal, flagname_vtable (class_name, vtable->id), vtable->addr);
+	r_anal_class_set_flag (anal, flagname_vtable (class_name, vtable->id), vtable->addr, vtable->size);
 
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
@@ -1154,9 +1158,60 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
 	free (class_name_sanitized);
 
 	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	if (vtables) {
+		RAnalVTable *vtable;
+		r_vector_foreach (vtables, vtable) {
+			r_cons_printf ("  %4s vtable 0x%"PFMT64x" @ +0x%"PFMT64x" size:+0x%"PFMT64x"\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
+		}
+		r_vector_free (vtables);
+	}
+}
+
+static void list_all_functions_at_vtable_offset(RAnal *anal, const char *class_name, ut64 offset) {
+	RVTableContext vtableContext;
+	r_anal_vtable_begin (anal, &vtableContext);
+	ut8 function_ptr_size = vtableContext.word_size; 
+
+	ut64 func_address;
+	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
 	RAnalVTable *vtable;
+
+	if (!vtables) {
+		return;
+	}
+
 	r_vector_foreach (vtables, vtable) {
-		r_cons_printf ("  %4s vtable 0x%"PFMT64x" @ +0x%"PFMT64x"\n", vtable->id, vtable->addr, vtable->offset);
+		if (vtable->size < offset + function_ptr_size) {
+			continue;
+		}
+
+		if (vtableContext.read_addr(anal, vtable->addr+offset, &func_address))
+			r_cons_printf ("Function address: 0x%08"PFMT64x", in %s vtable %s\n", func_address, class_name, vtable->id);
 	}
 	r_vector_free (vtables);
+}
+
+R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *class_name, ut64 offset) {
+	if (class_name) {
+		char *class_name_sanitized = r_str_sanitize_sdb_key (class_name);
+		if (!class_name_sanitized) {
+			return;
+		}
+		if (!r_anal_class_exists_raw (anal, class_name_sanitized)) {
+			free (class_name_sanitized);
+			return;
+		}
+		free (class_name_sanitized);
+
+		list_all_functions_at_vtable_offset (anal, class_name, offset);
+	} else {
+		SdbList *classes = r_anal_class_get_all (anal, true);
+		SdbListIter *iter;
+		SdbKv *kv;
+		ls_foreach (classes, iter, kv) {
+			const char *name = sdbkv_key (kv);
+			list_all_functions_at_vtable_offset (anal, name, offset);
+		}
+		ls_free (classes);
+	}
 }

@@ -17,15 +17,15 @@ typedef enum {
 } RPanelType;
 
 typedef enum {
-	PANEL_EDGE_NONE,
-	PANEL_EDGE_RIGHT,
-	PANEL_EDGE_BOTTOM
+	PANEL_EDGE_NONE = 0,
+	PANEL_EDGE_BOTTOM,
+	PANEL_EDGE_RIGHT
 } RPanelEdge;
 
-
+typedef void (*RPanelMenuUpdateCallback)(void *user, const char *parent);
 typedef void (*RPanelDirectionCallback)(void *user, int direction);
 typedef void (*RPanelRotateCallback)(void *user, bool rev);
-typedef char *(*RPanelPrintCallback)(void *user, void *p);
+typedef void (*RPanelPrintCallback)(void *user, void *p);
 
 typedef struct r_panel_pos_t {
 	int x;
@@ -59,7 +59,7 @@ typedef struct r_panel_view_t {
 	int sy;
 	int curpos;
 	bool refresh;
-	int edgeflag;
+	int edge;
 } RPanelView;
 
 typedef struct r_panel_t {

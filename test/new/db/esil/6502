@@ -1,0 +1,2379 @@
+NAME=op: brk
+FILE=malloc://0x10000
+EXPECT=<<EOF
+0x0000c000
+0x00000005
+%02%00%15
+EOF
+CMDS=<<EOF
+e asm.arch=6502;e asm.bits=8; aei
+ae 0xc000,0xfffe,=[2]
+ar C=1
+wx 00ea
+aes; ar pc; ar flags; pu 3 @0x1fd
+EOF
+RUN
+
+NAME=op: lda #$42
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502;e asm.bits=8; aei
+wx a942
+aes
+ar a
+EOF
+RUN
+
+NAME=op: lda $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x10,=[1]
+wx a510
+aes
+ar a
+EOF
+RUN
+
+NAME=op: lda $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502;e asm.bits=8; aei
+ae 0x42,0x20,=[1]
+ar x=0x10
+wx b510
+aes
+ar a
+EOF
+RUN
+
+NAME=op: lda $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x100,=[1]
+wx ad0001
+aes
+ar a
+EOF
+RUN
+
+NAME=op: lda $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x108,=[1]
+ar x=0x08
+wx bd0001
+aes
+ar a
+EOF
+RUN
+
+NAME=op: lda $0100,y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x108,=[1]
+ar y=0x08
+wx b90001
+aes
+ar a
+EOF
+RUN
+
+NAME=op: lda ($10,x)
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x108,=[1]
+ae 0x108,0x18,=[2]
+ar x=0x08
+wx a110
+aes
+ar a
+EOF
+RUN
+
+NAME=op: lda ($10),y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x108,=[1]
+ae 0x100,0x10,=[2]
+ar y=0x08
+wx b110
+aes
+ar a
+EOF
+RUN
+
+NAME=op: ldx #$42
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+wx a242
+aes
+ar x
+EOF
+RUN
+
+NAME=op: ldx $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x10,=[1]
+wx a610
+aes
+ar x
+EOF
+RUN
+
+NAME=op: ldx $10,y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x20,=[1]
+ar y=0x10
+wx b610
+aes
+ar x
+EOF
+RUN
+
+NAME=op: ldx $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x100,=[1]
+wx ae0001
+aes
+ar x
+EOF
+RUN
+
+NAME=op: ldx $0100,y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x108,=[1]
+ar y=0x08
+wx be0001
+aes
+ar x
+EOF
+RUN
+
+NAME=op: ldy #$42
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+wx a042
+aes
+ar y
+EOF
+RUN
+
+NAME=op: ldy $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x10,=[1]
+wx a410
+aes
+ar y
+EOF
+RUN
+
+NAME=op: ldy $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x20,=[1]
+ar x=0x10
+wx b410
+aes
+ar y
+EOF
+RUN
+
+NAME=op: ldy $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x100,=[1]
+wx ac0001
+aes
+ar y
+EOF
+RUN
+
+NAME=op: ldy $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x108,=[1]
+ar x=0x08
+wx bc0001
+aes
+ar y
+EOF
+RUN
+
+NAME=op: sta $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x42
+wx 8510
+aes
+pu 1 @0x10
+EOF
+RUN
+
+NAME=op: sta $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x42
+ar x=0x08
+wx 9510
+aes
+pu 1 @0x18
+EOF
+RUN
+
+NAME=op: sta $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x42
+wx 8d0001
+aes
+pu 1 @0x0100
+EOF
+RUN
+
+NAME=op: sta $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x42
+ar x=0x08
+wx 9d0001
+aes
+pu 1 @0x0108
+EOF
+RUN
+
+NAME=op: sta $0100,y
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x42
+ar y=0x08
+wx 990001
+aes
+pu 1 @0x0108
+EOF
+RUN
+
+NAME=op: sta ($10,x)
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x108,0x18,=[2]
+ar a=0x42
+ar x=0x08
+wx 8110
+aes
+pu 1 @0x0108
+EOF
+RUN
+
+NAME=op: sta ($10),y
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x100,0x10,=[2]
+ar a=0x42
+ar y=0x08
+wx 9110
+aes
+pu 1 @0x0108
+EOF
+RUN
+
+NAME=op: stx $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar x=0x42
+wx 8610
+aes
+pu 1 @0x10
+EOF
+RUN
+
+NAME=op: stx $10,y
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar x=0x42
+ar y=0x08
+wx 9610
+aes
+pu 1 @0x18
+EOF
+RUN
+
+NAME=op: stx $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar x=0x42
+wx 8e0001
+aes
+pu 1 @0x0100
+EOF
+RUN
+
+NAME=op: sty $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar y=0x42
+wx 8410
+aes
+pu 1 @0x10
+EOF
+RUN
+
+NAME=op: sty $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar y=0x42
+ar x=0x08
+wx 9410
+aes
+pu 1 @0x18
+EOF
+RUN
+
+NAME=op: sty $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+%42
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar y=0x42
+wx 8c0001
+aes
+pu 1 @0x0100
+EOF
+RUN
+
+NAME=op: inc $80
+FILE=malloc://0x200
+EXPECT=<<EOF
+%80
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x7f,0x80,=[1]
+wx e680
+aes; pu 1 @0x80; ar flags
+EOF
+RUN
+
+NAME=op: inc $80,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%80
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x7f,0x88,=[1]
+ar x=8
+wx f680
+aes; pu 1 @0x88; ar flags
+EOF
+RUN
+
+NAME=op: inc $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+%00
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xff,0x0100,=[1]
+wx ee0001
+aes; pu 1 @0x0100; ar flags
+EOF
+RUN
+
+NAME=op: inc $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%ff
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xfe,0x0108,=[1]
+ar x=8
+wx fe0001
+aes; pu 1 @0x0108; ar flags
+EOF
+RUN
+
+NAME=op: dec $80
+FILE=malloc://0x200
+EXPECT=<<EOF
+%7e
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x7f,0x80,=[1]
+wx c680
+aes; pu 1 @0x80; ar flags
+EOF
+RUN
+
+NAME=op: dec $80,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%ff
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x00,0x88,=[1]
+ar x=8
+wx d680
+aes; pu 1 @0x88; ar flags
+EOF
+RUN
+
+NAME=op: dec $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+%7f
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x80,0x0100,=[1]
+wx ce0001
+aes; pu 1 @0x0100; ar flags
+EOF
+RUN
+
+NAME=op: dec $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%00
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x01,0x0108,=[1]
+ar x=8
+wx de0001
+aes; pu 1 @0x0108; ar flags
+EOF
+RUN
+
+NAME=op: inx
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar x=0x41
+wx e8
+aes
+ar x
+EOF
+RUN
+
+NAME=op: dex
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar x=0x43
+wx ca
+aes
+ar x
+EOF
+RUN
+
+NAME=op: iny
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar y=0x41
+wx c8
+aes
+ar y
+EOF
+RUN
+
+NAME=op: dey
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar y=0x43
+wx 88
+aes
+ar y
+EOF
+RUN
+
+NAME=op: asl a
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000040
+0x00000000
+0x00000080
+0x00000080
+0x00000000
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x20
+wx 0a0a0a
+aes; ar a; ar flags
+aes; ar a; ar flags
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: asl $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+%40
+0x00000000
+%80
+0x00000080
+%00
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x20,0x10,=[1]
+wx 061006100610
+aes; pu 1 @0x10; ar flags
+aes; pu 1 @0x10; ar flags
+aes; pu 1 @0x10; ar flags
+EOF
+RUN
+
+NAME=op: asl $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%40
+0x00000000
+%80
+0x00000080
+%00
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x20,0x18,=[1]
+ar x=0x08
+wx 161016101610
+aes; pu 1 @0x18; ar flags
+aes; pu 1 @0x18; ar flags
+aes; pu 1 @0x18; ar flags
+EOF
+RUN
+
+NAME=op: asl $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+%40
+0x00000000
+%80
+0x00000080
+%00
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x20,0x0100,=[1]
+wx 0e00010e00010e0001
+aes; pu 1 @0x0100; ar flags
+aes; pu 1 @0x0100; ar flags
+aes; pu 1 @0x0100; ar flags
+EOF
+RUN
+
+NAME=op: asl $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%40
+0x00000000
+%80
+0x00000080
+%00
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x20,0x0108,=[1]
+ar x=0x08
+wx 1e00011e00011e0001
+aes; pu 1 @0x0108; ar flags
+aes; pu 1 @0x0108; ar flags
+aes; pu 1 @0x0108; ar flags
+EOF
+RUN
+
+NAME=op: lsr a
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0x00000001
+0x00000000
+0x00000000
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x04
+wx 4a4a4a
+aes; ar a; ar flags
+aes; ar a; ar flags
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: lsr $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+%02
+0x00000000
+%01
+0x00000000
+%00
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x04,0x10,=[1]
+wx 461046104610
+aes; pu 1 @0x10; ar flags
+aes; pu 1 @0x10; ar flags
+aes; pu 1 @0x10; ar flags
+EOF
+RUN
+
+NAME=op: lsr $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%02
+0x00000000
+%01
+0x00000000
+%00
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x04,0x18,=[1]
+ar x=0x08
+wx 561056105610
+aes; pu 1 @0x18; ar flags
+aes; pu 1 @0x18; ar flags
+aes; pu 1 @0x18; ar flags
+EOF
+RUN
+
+NAME=op: lsr $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+%02
+0x00000000
+%01
+0x00000000
+%00
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x04,0x0100,=[1]
+wx 4e00014e00014e0001
+aes; pu 1 @0x0100; ar flags
+aes; pu 1 @0x0100; ar flags
+aes; pu 1 @0x0100; ar flags
+EOF
+RUN
+
+NAME=op: lsr $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%02
+0x00000000
+%01
+0x00000000
+%00
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x04,0x0108,=[1]
+ar x=0x08
+wx 5e00015e00015e0001
+aes; pu 1 @0x0108; ar flags
+aes; pu 1 @0x0108; ar flags
+aes; pu 1 @0x0108; ar flags
+EOF
+RUN
+
+NAME=op: rol a
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+0x00000081
+0x00000001
+0x00000001
+0x00000003
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0xc0
+wx 2a2a2a
+aes; ar a; ar flags
+aes; ar a; ar flags
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: rol $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+%80
+0x00000081
+%01
+0x00000001
+%03
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xc0,0x10,=[1]
+wx 261026102610
+aes; pu 1 @0x10; ar flags
+aes; pu 1 @0x10; ar flags
+aes; pu 1 @0x10; ar flags
+EOF
+RUN
+
+NAME=op: rol $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%01
+0x00000000
+%02
+0x00000000
+%04
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x00,0x18,=[1]
+ar x=0x08
+ar C=1
+wx 361036103610
+aes; pu 1 @0x18; ar flags
+aes; pu 1 @0x18; ar flags
+aes; pu 1 @0x18; ar flags
+EOF
+RUN
+
+NAME=op: rol $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+%01
+0x00000001
+%03
+0x00000000
+%06
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x80,0x0100,=[1]
+ar C=1
+wx 2e00012e00012e0001
+aes; pu 1 @0x0100; ar flags
+aes; pu 1 @0x0100; ar flags
+aes; pu 1 @0x0100; ar flags
+EOF
+RUN
+
+NAME=op: rol $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%02
+0x00000001
+%05
+0x00000000
+%0a
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x81,0x0108,=[1]
+ar x=0x08
+wx 3e00013e00013e0001
+aes; pu 1 @0x0108; ar flags
+aes; pu 1 @0x0108; ar flags
+aes; pu 1 @0x0108; ar flags
+EOF
+RUN
+
+NAME=op: ror a
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000060
+0x00000000
+0x00000030
+0x00000000
+0x00000018
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0xc0
+wx 6a6a6a
+aes; ar a; ar flags
+aes; ar a; ar flags
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: ror $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+%b0
+0x00000080
+%58
+0x00000000
+%2c
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x60,0x10,=[1]
+ar C=1
+wx 661066106610
+aes; pu 1 @0x10; ar flags
+aes; pu 1 @0x10; ar flags
+aes; pu 1 @0x10; ar flags
+EOF
+RUN
+
+NAME=op: ror $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%e0
+0x00000080
+%70
+0x00000000
+%38
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xc0,0x18,=[1]
+ar x=0x08
+ar C=1
+wx 761076107610
+aes; pu 1 @0x18; ar flags
+aes; pu 1 @0x18; ar flags
+aes; pu 1 @0x18; ar flags
+EOF
+RUN
+
+NAME=op: ror $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+%7f
+0x00000001
+%bf
+0x00000081
+%df
+0x00000081
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xff,0x0100,=[1]
+ar C=0
+wx 6e00016e00016e0001
+aes; pu 1 @0x0100; ar flags
+aes; pu 1 @0x0100; ar flags
+aes; pu 1 @0x0100; ar flags
+EOF
+RUN
+
+NAME=op: ror $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+%ff
+0x00000081
+%ff
+0x00000081
+%ff
+0x00000081
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xff,0x0108,=[1]
+ar C=1
+ar x=0x08
+wx 7e00017e00017e0001
+aes; pu 1 @0x0108; ar flags
+aes; pu 1 @0x0108; ar flags
+aes; pu 1 @0x0108; ar flags
+EOF
+RUN
+
+NAME=op: cmp #$42
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502;e asm.bits=8; aei
+ar a=0x42
+wx c942
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cmp $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x43,0x10,=[1]
+ar a=0x42
+wx c510
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cmp $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000081
+EOF
+CMDS=<<EOF
+e asm.arch=6502;e asm.bits=8; aei
+ae 0x0,0x20,=[1]
+ar x=0x10
+ar a=0xff
+wx d510
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cmp $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x01,0x100,=[1]
+ar a=00
+wx cd0001
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cmp $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x00,0x108,=[1]
+ar x=0x08
+ar a=00
+wx dd0001
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cmp $0100,y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xff,0x108,=[1]
+ar y=0x08
+ar a=0xff
+wx d90001
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cmp ($10,x)
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xff,0x108,=[1]
+ae 0x108,0x18,=[2]
+ar x=0x08
+ar a=0xfe
+wx c110
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cmp ($10),y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x01,0x108,=[1]
+ae 0x100,0x10,=[2]
+ar y=0x08
+ar a=0x2
+wx d110
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cpx #$42
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502;e asm.bits=8; aei
+ar x=0x42
+wx e042
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cpx $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x43,0x10,=[1]
+ar x=0x42
+wx e410
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cpx $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x01,0x100,=[1]
+ar x=0x80
+wx ec0001
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cpy #$42
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502;e asm.bits=8; aei
+ar y=0x82
+wx c082
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cpy $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000081
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x01,0x10,=[1]
+ar y=0x81
+wx c410
+aes; ar flags
+EOF
+RUN
+
+NAME=op: cpy $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x02,0x100,=[1]
+ar y=0x01
+wx cc0001
+aes; ar flags
+EOF
+RUN
+
+NAME=op: adc #$80
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar C=1
+ar a=0x00
+wx 69ff
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: adc $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000083
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x02,0x10,=[1]
+ar a=0x80
+ar C=1
+wx 6510
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: adc $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x12,0x18,=[1]
+ar x=8
+ar a=0xf0
+wx 7510
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: adc $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x80,0x0100,=[1]
+ar a=0x80
+wx 6d0001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: adc $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x00,0x0108,=[1]
+ar x=8
+ar C=1
+ar a=0x00
+wx 7d0001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: adc $0100,y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x00,0x0108,=[1]
+ar y=8
+ar a=0x00
+wx 790001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: adc ($10,x)
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x70,0x108,=[1]
+ae 0x108,0x18,=[2]
+ar x=0x08
+ar a=0x10
+wx 6110
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: adc ($10),y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x00,0x108,=[1]
+ae 0x100,0x10,=[2]
+ar y=0x08
+ar a=0x80
+wx 7110
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: sbc #$80
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000030
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x40
+ar C=1
+wx e910
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: sbc $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000040
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x40,0x10,=[1]
+ar a=0x80
+ar C=1
+wx e510
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: sbc $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x80,0x18,=[1]
+ar x=8
+ar a=0x00
+ar C=1
+wx f510
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: sbc $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000040
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x00,0x0100,=[1]
+ar a=0x40
+ar C=1
+wx ed0001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: sbc $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000003f
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x00,0x0108,=[1]
+ar x=8
+ar C=0
+ar a=0x40
+wx fd0001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: sbc $0100,y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000ff
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x01,0x0108,=[1]
+ar y=8
+ar a=0x00
+ar C=1
+wx f90001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: sbc ($10,x)
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000ff
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x10,0x108,=[1]
+ae 0x108,0x18,=[2]
+ar x=0x08
+ar a=0x10
+ar C=0
+wx e110
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: sbc ($10),y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xff,0x108,=[1]
+ae 0x100,0x10,=[2]
+ar y=0x08
+ar a=0x00
+ar C=0
+wx f110
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: ora #$82
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x02
+wx 0980
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: ora $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x02,0x10,=[1]
+ar a=0x80
+wx 0510
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: ora $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x02,0x18,=[1]
+ar x=8
+ar a=0x80
+wx 1510
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: ora $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x02,0x0100,=[1]
+ar a=0x80
+wx 0d0001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: ora $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x02,0x0108,=[1]
+ar x=8
+ar a=0x80
+wx 1d0001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: ora $0100,y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x02,0x0108,=[1]
+ar y=8
+ar a=0x80
+wx 190001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: ora ($10,x)
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x02,0x108,=[1]
+ae 0x108,0x18,=[2]
+ar x=0x08
+ar a=0x80
+wx 0110
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: ora ($10),y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x02,0x108,=[1]
+ae 0x100,0x10,=[2]
+ar y=0x08
+ar a=0x80
+wx 1110
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: and #$82
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x02
+wx 2982
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: and $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x02,0x10,=[1]
+ar a=0x80
+wx 2510
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: and $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x82,0x18,=[1]
+ar x=8
+ar a=0x80
+wx 3510
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: and $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x02,0x0100,=[1]
+ar a=0x82
+wx 2d0001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: and $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x42,0x0108,=[1]
+ar x=8
+ar a=0x80
+wx 3d0001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: and $0100,y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000001f
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x1f,0x0108,=[1]
+ar y=8
+ar a=0xff
+wx 390001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: and ($10,x)
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x82,0x108,=[1]
+ae 0x108,0x18,=[2]
+ar x=0x08
+ar a=0x80
+wx 2110
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: and ($10),y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x82,0x108,=[1]
+ae 0x100,0x10,=[2]
+ar y=0x08
+ar a=0x80
+wx 3110
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: eor #$ff
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0xff
+wx 49ff
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: eor $10
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x00,0x10,=[1]
+ar a=0x00
+wx 4510
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: eor $10,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x7f,0x18,=[1]
+ar x=8
+ar a=0xff
+wx 5510
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: eor $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000007f
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xff,0x0100,=[1]
+ar a=0x80
+wx 4d0001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: eor $0100,x
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000f0
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xff,0x0108,=[1]
+ar x=8
+ar a=0x0f
+wx 5d0001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: eor $0100,y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000000f
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xff,0x0108,=[1]
+ar y=8
+ar a=0xf0
+wx 590001
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: eor ($10,x)
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x82,0x108,=[1]
+ae 0x108,0x18,=[2]
+ar x=0x08
+ar a=0x80
+wx 4110
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: eor ($10),y
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x82,0x108,=[1]
+ae 0x100,0x10,=[2]
+ar y=0x08
+ar a=0x80
+wx 5110
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: bne #$40
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar Z=0
+wx d040
+aes; ar pc
+EOF
+RUN
+
+NAME=op: beq #$40
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar Z=0
+wx f040
+aes; ar pc
+EOF
+RUN
+
+NAME=op: bcc #$40
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar C=1
+wx 9040
+aes; ar pc
+EOF
+RUN
+
+NAME=op: bcs #$40
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar C=1
+wx b040
+aes; ar pc
+EOF
+RUN
+
+NAME=op: bmi #$40
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar N=1
+wx 3040
+aes; ar pc
+EOF
+RUN
+
+NAME=op: bcs #$40
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar N=0
+wx 1040
+aes; ar pc
+EOF
+RUN
+
+NAME=op: bvc #$40
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar V=1
+wx 5040
+aes; ar pc
+EOF
+RUN
+
+NAME=op: bvs #$40
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar V=0
+wx 7040
+aes; ar pc
+EOF
+RUN
+
+NAME=op: jmp $abcd
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000abcd
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+wx 4ccdab
+aes; ar pc
+EOF
+RUN
+
+NAME=op: jmp ($0100)
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000abcd
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xabcd,0x100,=[2]
+wx 6c0001
+aes; ar pc
+EOF
+RUN
+
+NAME=op: jsr $abcd
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000abcd
+0x000000fd
+%82%01
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar pc=0x0180
+s 0x0180
+wx 20cdab
+aes; ar pc; ar sp; pu 2 @0x01fe
+EOF
+RUN
+
+NAME=op: rts
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000126
+0x000000ff
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x25,0x1fe,=[1]
+ae 0x01,0x1ff,=[1]
+ar sp=0xfd
+wx 60
+aes; ar pc; ar sp
+EOF
+RUN
+
+NAME=op: pha
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000fe
+%81
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x81
+wx 48
+aes; ar sp; pu 1 @0x1ff
+EOF
+RUN
+
+NAME=op: php
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000fe
+%82
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar flags=0x82
+wx 08
+aes; ar sp; pu 1 @0x1ff
+EOF
+RUN
+
+NAME=op: pla
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000ff
+0x000000ff
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0xff,0x1ff,=[1]
+ar sp=0xfe
+wx 68
+aes; ar sp; ar a; ar flags
+EOF
+RUN
+
+NAME=op: plp
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000ff
+0x00000003
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ae 0x03,0x1ff,=[1]
+ar sp=0xfe
+wx 28
+aes; ar sp; ar flags
+EOF
+RUN
+
+NAME=op: tax
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x42
+wx aa
+aes; ar x; ar flags
+EOF
+RUN
+
+NAME=op: tay
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x82
+wx a8
+aes; ar y; ar flags
+EOF
+RUN
+
+NAME=op: txa
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000042
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar x=0x42
+wx 8a
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: tya
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar y=0x82
+wx 98
+aes; ar a; ar flags
+EOF
+RUN
+
+NAME=op: tsx
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar sp=0x82
+wx ba
+aes; ar x; ar flags
+EOF
+RUN
+
+NAME=op: txs
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000082
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar x=0x82
+wx 9a
+aes; ar sp
+EOF
+RUN
+
+NAME=op: bit $80
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502;e asm.bits=8; aei
+ae 0x81,0x80,=[1]
+ar a=0x8f
+wx 2480
+aes; ar flags
+EOF
+RUN
+
+NAME=op: bit $80 - bis
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000c2
+EOF
+CMDS=<<EOF
+e asm.arch=6502;e asm.bits=8; aei
+ae 0xf0,0x80,=[1]
+ar a=0x0f
+wx 2480
+aes; ar flags
+EOF
+RUN
+
+NAME=op: bit $0100
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000040
+EOF
+CMDS=<<EOF
+e asm.arch=6502;e asm.bits=8; aei
+ae 0x40,0x0100,=[1]
+ar a=0xff
+wx 2c0001
+aes; ar flags
+EOF
+RUN
+
+NAME=op: bit $0100 - bis
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000c0
+EOF
+CMDS=<<EOF
+e asm.arch=6502;e asm.bits=8; aei
+ae 0xff,0x0100,=[1]
+ar a=0xff
+wx 2c0001
+aes; ar flags
+EOF
+RUN
+
+NAME=op: sei
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+wx 78
+aes; ar I
+EOF
+RUN
+
+NAME=op: cli
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar I=1
+wx 58
+aes; ar I
+EOF
+RUN
+
+NAME=op: sec
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+wx 38
+aes; ar C
+EOF
+RUN
+
+NAME=op: clc
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar C=1
+wx 18
+aes; ar C
+EOF
+RUN
+
+NAME=op: sed
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+wx f8
+aes; ar D
+EOF
+RUN
+
+NAME=op: cld
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar D=1
+wx d8
+aes; ar D
+EOF
+RUN
+
+NAME=op: clv
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar V=1
+wx b8
+aes; ar V
+EOF
+RUN
+
+NAME=flags
+FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000000
+0x00000080
+0x00000081
+0x00000081
+0x00000081
+0x00000003
+0x00000002
+0x00000002
+0x00000000
+0x00000000
+0x00000080
+0x00000080
+EOF
+CMDS=<<EOF
+e asm.arch=6502; e asm.bits=8; aei
+ar a=0x0f
+wx 0a0a0a0a0a0a0a0a0a0aa97fa97fa980a980
+aes; ar flags
+aes; ar flags
+aes; ar flags
+aes; ar flags
+aes; ar flags
+aes; ar flags
+aes; ar flags
+aes; ar flags
+aes; ar flags
+aes; ar flags
+aes; ar flags
+aes; ar flags
+aes; ar flags
+aes; ar flags
+EOF
+RUN

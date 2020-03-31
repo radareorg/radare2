@@ -303,6 +303,23 @@ typedef struct
 	uint32_t reExportsStartArrayIndex;
 } cache_imgxtr_t;
 
+typedef struct
+{
+	uint32_t nlistOffset;
+	uint32_t nlistCount;
+	uint32_t stringsOffset;
+	uint32_t stringsSize;
+	uint32_t entriesOffset;
+	uint32_t entriesCount;
+} cache_locsym_info_t;
+
+typedef struct
+{
+	uint32_t dylibOffset;
+	uint32_t nlistStartIndex;
+	uint32_t nlistCount;
+} cache_locsym_entry_t;
+
 #define DYLD_CACHE_SLIDE_PAGE_ATTRS 0xC000
 #define DYLD_CACHE_SLIDE_PAGE_ATTR_EXTRA 0x8000
 #define DYLD_CACHE_SLIDE_PAGE_ATTR_NO_REBASE 0x4000

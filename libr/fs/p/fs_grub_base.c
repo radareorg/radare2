@@ -1,7 +1,9 @@
-/* radare - LGPL - Copyright 2011-2016 - pancake */
+/* radare - LGPL - Copyright 2011-2020 - pancake */
 
 #include <r_fs.h>
 #include "grubfs.h"
+
+#if WITH_GPL
 
 static RFSFile* FSP(_open)(RFSRoot *root, const char *path, bool create) {
 	RFSFile *file = r_fs_file_new (root, path);
@@ -92,3 +94,9 @@ RFSPlugin FSS(r_fs_plugin) = {
 	.mount = FSP(_mount),
 	.umount = FSP(_umount),
 };
+#else
+RFSPlugin FSS(r_fs_plugin) = {
+	.name = FSNAME,
+	.desc = FSDESC,
+};
+#endif

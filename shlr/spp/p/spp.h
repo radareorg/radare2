@@ -5,11 +5,11 @@
 #endif
 
 static char *spp_var_get(char *var) {
-	return getenv(var);
+	return r_sys_getenv (var);
 }
 
 static int spp_var_set(const char *var, const char *val) {
-	return r_sys_setenv(var, val);
+	return r_sys_setenv (var, val);
 }
 
 #if HAVE_SYSTEM
@@ -87,7 +87,7 @@ static TAG_CALLBACK(spp_getrandom) {
 		return 0;
 	}
 	// XXX srsly? this is pretty bad random
-	srandom (getpid ()); // TODO: change this to be portable
+	srandom (r_sys_getpid()); // TODO: change this to be portable
 	max = atoi (buf);
 	if (max > 0) {
 		max = (int)(rand () % max);

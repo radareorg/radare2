@@ -163,7 +163,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 }
 
 R_API int r_egg_include(REgg *egg, const char *file, int format) {
-	int sz;
+	size_t sz;
 	const ut8 *foo = (const ut8 *)r_file_slurp (file, &sz);
 	if (!foo) {
 		return 0;
@@ -171,13 +171,13 @@ R_API int r_egg_include(REgg *egg, const char *file, int format) {
 	// XXX: format breaks compiler layers
 	switch (format) {
 	case 'r': // raw
-		r_egg_raw (egg, foo, sz);
+		r_egg_raw (egg, foo, (int)sz);
 		break;
 	case 'a': // assembly
-		r_buf_append_bytes (egg->buf, foo, sz);
+		r_buf_append_bytes (egg->buf, foo, (ut64)sz);
 		break;
 	default:
-		r_buf_append_bytes (egg->src, foo, sz);
+		r_buf_append_bytes (egg->src, foo, (ut64)sz);
 	}
 	free ((void *)foo);
 	return 1;
@@ -386,6 +386,12 @@ R_API int r_egg_run(REgg *egg) {
 	const ut8 *tmp = r_buf_data (egg->bin, &tmpsz);
 	bool res = r_sys_run (tmp, tmpsz);
 	return res;
+}
+
+R_API int r_egg_run_rop(REgg *egg) {
+	ut64 sz;
+	const ut8 *tmp = r_buf_data (egg->bin, &sz);
+	return r_sys_run_rop (tmp, sz);
 }
 
 #define R_EGG_FILL_TYPE_TRAP

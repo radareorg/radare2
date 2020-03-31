@@ -1,0 +1,15 @@
+NAME=write
+FILE=.newfile
+ARGS=-w
+EXPECT=<<EOF
+0x4
+6a656a65
+EOF
+CMDS=<<EOF
+e io.va=0
+w jeje
+i~size[1]
+p8 4
+rm ./.newfile
+EOF
+RUN

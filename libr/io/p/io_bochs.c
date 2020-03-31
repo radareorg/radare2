@@ -35,7 +35,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return riobochs;
 	}
 
-       	i = strstr (file + 8, "#");
+	i = strchr (file + 8, '#');
 	if (i) {
 		l = i - file - 8;
 		fileBochs = r_str_ndup (file + 8, l);

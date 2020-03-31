@@ -170,7 +170,7 @@ static void fillRegisterValues (RCore *core) {
 	RRegItem *reg_item;
 	int nr = 10;
 
-	regs = r_reg_get_list (core->dbg->reg, 0);
+	regs = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
 	if (!regs) {
 		return;
 	}
@@ -247,7 +247,7 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 		}
 		// init regs with known values
 		fillRegisterValues (core);
-		head = r_reg_get_list (core->dbg->reg, 0);
+		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
 		if (!head) {
 			ct = NULL;
 			goto continue_error;
@@ -268,7 +268,7 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 		if (!r_list_find (ops_list, "=", (RListComparator)strcmp)) {
 			goto continue_error;
 		}
-		head = r_reg_get_list (core->dbg->reg, 0);
+		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -327,7 +327,7 @@ static char* rop_classify_mov(RCore *core, RList *ropList) {
 	r_list_foreach (ropList, iter_r, esil_str) {
 		// init regs with known values
 		fillRegisterValues (core);
-		head = r_reg_get_list (core->dbg->reg, 0);
+		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -350,7 +350,7 @@ static char* rop_classify_mov(RCore *core, RList *ropList) {
 			goto continue_error;
 		}
 
-		head = r_reg_get_list (core->dbg->reg, 0);
+		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -426,7 +426,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 	r_list_foreach (ropList, iter_r, esil_str) {
 		// init regs with known values
 		fillRegisterValues (core);
-		head = r_reg_get_list (core->dbg->reg, 0);
+		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -558,7 +558,7 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 		}
 		// init regs with known values
 		fillRegisterValues (core);
-		head = r_reg_get_list (core->dbg->reg, 0);
+		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
 		if (!head) {
 			arithmetic = NULL;
 			continue;

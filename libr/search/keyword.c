@@ -205,9 +205,12 @@ R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *
 	}
 
 	/* Find the fist non backslash-escaped slash */
+	int specials = 0;
 	for (start = i; str[i]; i++) {
 		if (str[i] == '/' && str[i - 1] != '\\') {
 			break;
+		} else if (str[i - 1] == '\\' && isalpha (str[i])) {
+			specials++;
 		}
 	}
 
@@ -233,7 +236,7 @@ R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *
 
 	kw->bin_keyword[length]=0;
 	memcpy(kw->bin_keyword, str + start, length);
-	kw->keyword_length = length;
+	kw->keyword_length = length - specials;
 	kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
 	kw->data = (void *) data;
 

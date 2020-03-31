@@ -39,9 +39,7 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 // this is wrong, there is more than big and little endian
 R_API bool r_io_read_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	ut8 buf[8];
-	if (!val) {
-		return false;
-	}
+	r_return_val_if_fail (io && val, false);
 	size = R_DIM (size, 1, 8);
 	if (!r_io_read_at (io, addr, buf, size)) {
 		return false;
@@ -54,9 +52,7 @@ R_API bool r_io_read_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 
 R_API bool r_io_write_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	ut8 buf[8];
-	if (!val) {
-		return false;
-	}
+	r_return_val_if_fail (io && val, false);
 	size = R_DIM (size, 1, 8);
 	//size says the number of bytes to read transform to bits for r_read_ble
 	r_write_ble (buf, *val, endian, size * 8);

@@ -11,8 +11,8 @@ Doxyfile and generate HTML documentation into
 
 If you're contributing code or willing to update existing code, you can use the
 doxygen C-style comments to improve documentation and comments in code.
-See the [Doxygen Manual](https://www.stack.nl/~dimitri/doxygen/manual/index.html)
-for more info. Example usage can be found [here](https://www.stack.nl/~dimitri/doxygen/manual/docblocks.html)
+See the [Doxygen Manual](http://www.doxygen.nl/manual/index.html)
+for more info. Example usage can be found [here](http://www.doxygen.nl/manual/docblocks.html)
 ```c
 /**
  * \brief Find the min and max addresses in an RList of maps.
@@ -238,7 +238,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Do not use bashisms `[[`, `$'...'` etc.
 
-* Use our [shellcheck.sh](https://github.com/radare/radare2/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
+* Use our [shellcheck.sh](https://github.com/radareorg/radare2/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
 
 # Manage Endianness
 
@@ -384,7 +384,7 @@ linux-arm and others, but the procedure is like this:
 
 ## Source repository
 
-The source of radare2 can be found in the following github repository.
+The source of radare2 can be found in the following GitHub repository.
 ```sh
    git clone git://github.com/radare/radare2
 ```
@@ -440,9 +440,9 @@ in the code for various reasons.
 ## Regression testing
 
 The source of the radare2 regression test suite can be found in the
-following github repository.
+following GitHub repository.
 ```sh
-   git clone git://github.com/radare/radare2-regressions
+   git clone git://github.com/radareorg/radare2-regressions
 ```
 
 See the `README.md` file in that repository for further information.
@@ -456,8 +456,8 @@ If you notice any misfeature, issue, error, problem or you just
 don't know how to do something which is supposed to be covered
 by this framework.
 
-You should report it into the github issues page.
-   https://github.com/radare/radare2/issues
+You should report it into the GitHub issues page.
+   https://github.com/radareorg/radare2/issues
 
 Otherwise, if you are looking for some more feedback, I will
 encourage you to send an email to any of the emails enumerated
@@ -466,20 +466,10 @@ in the AUTHORS file.
 Anyway, if you want to get even more feedback and discuss this
 in a public place: join the #radare channel on irc.freenode.net.
 
-The issues page of Github contains a list of all the bugs that
+The issues page of GitHub contains a list of all the bugs that
 have been reported classified with labels by difficulty, type,
 milestone, etc. It is a good place to start if you are looking
 to contribute.
-
-## Contributing with patches
-
-All the development happens in the git repository. It is
-good that all patches can be applied against the `git HEAD`.
-
-I can get patches in unidiff format like this:
-```sh
-   git diff > p
-```
 
 ## HOW TO RELEASE
 

@@ -1,0 +1,287 @@
+NAME=t/undoredo
+FILE=malloc://1024
+EXPECT=<<EOF
+No seeks.
+0x0
+
+But try undo/redo.
+
+First seeks.
+f undo_0 @ 0x0
+0x10
+f undo_1 @ 0x0
+f undo_0 @ 0x10
+0x20
+f undo_2 @ 0x0
+f undo_1 @ 0x10
+f undo_0 @ 0x20
+0x30
+f undo_3 @ 0x0
+f undo_2 @ 0x10
+f undo_1 @ 0x20
+f undo_0 @ 0x30
+0x40
+
+Undo all seeks (and some more).
+f undo_2 @ 0x0
+f undo_1 @ 0x10
+f undo_0 @ 0x20
+# Current undo/redo position.
+f redo_0 @ 0x40
+0x30
+
+f undo_1 @ 0x0
+f undo_0 @ 0x10
+# Current undo/redo position.
+f redo_0 @ 0x30
+f redo_1 @ 0x40
+0x20
+
+f undo_0 @ 0x0
+# Current undo/redo position.
+f redo_0 @ 0x20
+f redo_1 @ 0x30
+f redo_2 @ 0x40
+0x10
+
+f redo_0 @ 0x10
+f redo_1 @ 0x20
+f redo_2 @ 0x30
+f redo_3 @ 0x40
+0x0
+
+f redo_0 @ 0x10
+f redo_1 @ 0x20
+f redo_2 @ 0x30
+f redo_3 @ 0x40
+0x0
+
+f redo_0 @ 0x10
+f redo_1 @ 0x20
+f redo_2 @ 0x30
+f redo_3 @ 0x40
+0x0
+
+Then redo them (and some more).
+f undo_0 @ 0x0
+# Current undo/redo position.
+f redo_0 @ 0x20
+f redo_1 @ 0x30
+f redo_2 @ 0x40
+0x10
+
+f undo_1 @ 0x0
+f undo_0 @ 0x10
+# Current undo/redo position.
+f redo_0 @ 0x30
+f redo_1 @ 0x40
+0x20
+
+f undo_2 @ 0x0
+f undo_1 @ 0x10
+f undo_0 @ 0x20
+# Current undo/redo position.
+f redo_0 @ 0x40
+0x30
+
+f undo_3 @ 0x0
+f undo_2 @ 0x10
+f undo_1 @ 0x20
+f undo_0 @ 0x30
+0x40
+
+f undo_3 @ 0x0
+f undo_2 @ 0x10
+f undo_1 @ 0x20
+f undo_0 @ 0x30
+0x40
+
+f undo_3 @ 0x0
+f undo_2 @ 0x10
+f undo_1 @ 0x20
+f undo_0 @ 0x30
+0x40
+
+Undo some seeks and then seek somewhere else.
+f undo_1 @ 0x0
+f undo_0 @ 0x10
+# Current undo/redo position.
+f redo_0 @ 0x30
+f redo_1 @ 0x40
+0x20
+
+f undo_2 @ 0x0
+f undo_1 @ 0x10
+f undo_0 @ 0x20
+0x50
+
+f undo_2 @ 0x0
+f undo_1 @ 0x10
+f undo_0 @ 0x20
+0x50
+
+Undo all seeks again and perform a single seek with undo/redo.
+f redo_0 @ 0x10
+f redo_1 @ 0x20
+f redo_2 @ 0x50
+0x0
+
+f undo_0 @ 0x0
+0x100
+
+f undo_0 @ 0x0
+0x100
+
+EOF
+CMDS=<<EOF
+?e No seeks.
+s* ; ?v $$
+?e
+
+?e But try undo/redo.
+s-
+s+
+s*
+s+
+s+
+s-
+s-
+s-
+s+
+s*
+?e
+
+?e First seeks.
+s 0x10 ; s* ; ?v $$
+s 0x20 ; s* ; ?v $$
+s 0x30 ; s* ; ?v $$
+s 0x40 ; s* ; ?v $$
+?e
+
+?e Undo all seeks (and some more).
+s- ; s* ; ?v $$ ; ?e
+s- ; s* ; ?v $$ ; ?e
+s- ; s* ; ?v $$ ; ?e
+s- ; s* ; ?v $$ ; ?e
+# Test if more undos break something.
+s- ; s* ; ?v $$ ; ?e
+s- ; s* ; ?v $$ ; ?e
+
+?e Then redo them (and some more).
+s+ ; s* ; ?v $$ ; ?e
+s+ ; s* ; ?v $$ ; ?e
+s+ ; s* ; ?v $$ ; ?e
+s+ ; s* ; ?v $$ ; ?e
+# Test if more undos break something.
+s+ ; s* ; ?v $$ ; ?e
+s+ ; s* ; ?v $$ ; ?e
+
+?e Undo some seeks and then seek somewhere else.
+s- ; s-
+s* ; ?v $$ ; ?e
+s 0x50
+s* ; ?v $$ ; ?e
+# Redo now does nothing.
+s+ ; s+ ; s+
+s* ; ?v $$ ; ?e
+
+?e Undo all seeks again and perform a single seek with undo/redo.
+s- ; s- ; s-
+s* ; ?v $$ ; ?e
+s 0x100
+s* ; ?v $$ ; ?e
+s- ; s+
+s* ; ?v $$ ; ?e
+EOF
+RUN
+
+NAME=basic json
+FILE=malloc://1024
+EXPECT=<<EOF
+[{"offset":0,"current":true}]
+[{"offset":0},{"offset":10,"current":true}]
+[{"offset":0},{"offset":10,"current":true},{"offset":20}]
+[{"offset":0,"current":true},{"offset":10},{"offset":20}]
+undo at the start of list
+[{"offset":0,"current":true},{"offset":10},{"offset":20}]
+redo to the end
+[{"offset":0},{"offset":10},{"offset":20,"current":true}]
+one more past the end
+[{"offset":0},{"offset":10},{"offset":20,"current":true}]
+EOF
+CMDS=<<EOF
+sj
+s+ 10
+sj
+s+ 10
+s-
+sj
+s-
+sj
+?e undo at the start of list
+s-
+sj
+?e redo to the end
+s+; s+
+sj
+?e one more past the end
+s+
+sj
+EOF
+RUN
+
+NAME=uninitialized bug
+FILE=malloc://1024
+EXPECT=<<EOF
+should produce two identical results
+[{"offset":0},{"offset":10},{"offset":11,"current":true}]
+[{"offset":0},{"offset":10},{"offset":11,"current":true}]
+0 0, or 22 23 but not 0 22
+[{"offset":0},{"offset":10},{"offset":11},{"offset":21},{"offset":22,"current":true}]
+[{"offset":0},{"offset":10},{"offset":11},{"offset":21},{"offset":23,"current":true}]
+EOF
+CMDS=<<EOF
+s+ 10
+?e should produce two identical results
+s+ 1
+sj
+s-
+s+ 1
+sj
+?e 0 0, or 22 23 but not 0 22
+s+ 10
+s+ 1
+sj
+s-
+s+ 2
+sj
+EOF
+RUN
+
+NAME=duplicate push
+FILE=malloc://1024
+EXPECT=<<EOF
+[{"offset":0},{"offset":1},{"offset":2,"current":true}]
+f undo_5 @ 0x3b
+f undo_4 @ 0x3c
+f undo_3 @ 0x3d
+f undo_2 @ 0x3e
+f undo_1 @ 0x0
+f undo_0 @ 0x1
+EOF
+CMDS=<<EOF
+s 0x0
+s 0x0
+s 0x1
+s 0x2
+# shouldn't contain multiple 0 at the start
+sj
+# regression test for deduplication not working on buffer edge
+60s+ 1
+s 0x0
+s 0x0
+s 0x01
+s 0x02
+s*~:-6..
+EOF
+RUN

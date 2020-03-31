@@ -11,6 +11,7 @@ static const char *help_msg_q[] = {
 	"q"," 1","quit with return value 1",
 	"q"," a-b","quit with return value a-b",
 	"q[y/n][y/n]","","quit, chose to kill process, chose to save project ",
+	"Q","", "same as q!!",
 	NULL
 };
 

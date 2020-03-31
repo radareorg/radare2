@@ -17,7 +17,7 @@ static bool isvalidflag(RFlagItem *flag) {
 			return true;
 		}
 		if (strchr (flag->name, '.')) {
-			return strncmp (flag->name, "section.", 8);
+			return true;
 		}
 	}
 	return false;
@@ -140,7 +140,6 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	ut64 off;
 	bool x86 = false;
 	bool arm = false;
-	bool computed = false;
 	if (p && p->cur && p->cur->name) {
 		if (strstr (p->cur->name, "x86")) {
 			x86 = true;
@@ -190,22 +189,36 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				if (*ptr2 != 0x1b) {
 					ptr2++;
 				}
-				snprintf (str, len, "%s%s%s", data, fcn->name,
+				const char *name = fcn->name;
+				// TODO: implement realname with flags, because functions dont hold this yet
+				if (f->realnames) {
+					flag = p->flag_get (f, off);
+					if (flag && flag->realname) {
+						name = flag->realname;
+					}
+				}
+				snprintf (str, len, "%s%s%s", data, name,
 					(ptr != ptr2)? ptr2: "");
 				return true;
 			}
 			if (f) {
 				RFlagItem *flag2;
+				bool lea = x86 && r_str_startswith (data, "lea")
+				         && (data[3] == ' ' || data[3] == 0x1b);
+				bool remove_brackets = false;
 				flag = p->flag_get (f, off);
-				computed = false;
 				if ((!flag || arm) && p->relsub_addr) {
-					computed = true;
+					remove_brackets = lea || (arm && p->relsub_addr);
 					flag2 = p->flag_get (f, p->relsub_addr);
 					if (!flag || arm) {
 						flag = flag2;
 					}
 				}
-				if (isvalidflag (flag)) {
+				if (flag && !strncmp (flag->name, "section.", 8)) {
+					flag = r_flag_get_i (f, off);
+				}
+				const char *label = p->label_get (p->analb.anal, fcn, off);
+				if (label || isvalidflag (flag)) {
 					if (p->notin_flagspace) {
 						if (p->flagspace == flag->space) {
 							continue;
@@ -220,7 +233,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 						ptr2++;
 					}
 					ptr_backup = ptr;
-					if (computed && ptr != ptr2 && *ptr) {
+					if (remove_brackets && ptr != ptr2 && *ptr) {
 						if (*ptr2 == ']') {
 							ptr2++;
 							for (ptr--; ptr > data && *ptr != '['; ptr--) {
@@ -232,7 +245,12 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 						}
 					}
 					*ptr = 0;
-					char *flagname = strdup (f->realnames? flag->realname : flag->name);
+					char *flagname;
+					if (label) {
+						flagname = r_str_newf (".%s", label);
+					} else {
+						flagname = strdup (f->realnames? flag->realname : flag->name);
+					}
 					int maxflagname = p->maxflagnamelen;
 					if (maxflagname > 0 && strlen (flagname) > maxflagname) {
 						char *doublelower = (char *)r_str_rstr (flagname, "__");
@@ -271,7 +289,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 							banned = true;
 						}
 					}
-					if (p->relsub_addr && !banned) {
+					if (p->relsub_addr && !banned && lea) {  // TODO: use remove_brackets
 						int flag_len = strlen (flag->name);
 						char *ptr_end = str + strlen (data) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;

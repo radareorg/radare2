@@ -81,7 +81,7 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 	} else if (MUSTSEE) {
 		if (!SEEVALUE && !ISQUIET) {
 			p->cb_printf ("0x%08"PFMT64x" = (qword)",
-				seeki + ((elem >= 0)? elem * 2: 0));
+				seeki + ((elem >= 0)? elem * 8: 0));
 		}
 		if (size == -1) {
 			if (addr64 == UT32_MAX || ((st64)addr64 < 0 && (st64)addr64 > -4096)) {
@@ -185,15 +185,14 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 			p->cb_printf ("%d", buf[i]);
 		} else {
 			p->cb_printf ("[ ");
+			const char *comma = "";
 			while (size--) {
 				if (elem == -1 || elem == 0) {
-					p->cb_printf (", %d", buf[i]);
+					p->cb_printf ("%s%d", comma, buf[i]);
+					comma = ",";
 					if (elem == 0) {
 						elem = -2;
 					}
-				}
-				if (size != 0 && elem == -1) {
-					p->cb_printf (", ");
 				}
 				if (elem > -1) {
 					elem--;
@@ -1344,11 +1343,7 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 		char *fieldname, ut64 addr, int mode, int size) {
 	char *bitfield = NULL;
-	switch (size) {
-	case 1: addr &= UT8_MAX; break;
-	case 2: addr &= UT16_MAX; break;
-	case 4: addr &= UT32_MAX; break;
-	}
+	addr &= (1ULL << (size * 8)) - 1;
 	if (MUSTSEE && !SEEVALUE) {
 		p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 	}
@@ -1357,13 +1352,13 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 		if (MUSTSEEJSON) {
 			p->cb_printf ("\"%s\"}", bitfield);
 		} else if (MUSTSEE) {
-			p->cb_printf (" %s (bitfield) = %s\n", fieldname, bitfield);
+			p->cb_printf ("%s (bitfield) = %s\n", fieldname, bitfield);
 		}
 	} else {
 		if (MUSTSEEJSON) {
 			p->cb_printf ("\"`tb %s 0x%x`\"}", fmtname, addr);
 		} else if (MUSTSEE) {
-			p->cb_printf (" %s (bitfield) = `tb %s 0x%x`\n",
+			p->cb_printf ("%s (bitfield) = `tb %s 0x%x`\n",
 				fieldname, fmtname, addr);
 		}
 	}
@@ -1373,11 +1368,7 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 static void r_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
 		char *fieldname, ut64 addr, int mode, int size) {
 	char *enumvalue = NULL;
-	switch (size) {
-	case 1: addr &= UT8_MAX; break;
-	case 2: addr &= UT16_MAX; break;
-	case 4: addr &= UT32_MAX; break;
-	}
+	addr &= (1ULL << (size * 8)) - 1;
 	if (MUSTSEE && !SEEVALUE) {
 		p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 	}
@@ -1525,8 +1516,12 @@ static void r_print_format_num(const RPrint *p, int endian, int mode, const char
 	}
 }
 
+R_API const char *r_print_format_byname(RPrint *p, const char *name) {
+	return sdb_const_get (p->formats, name, NULL);
+}
+
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
-int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
+R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) {
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
@@ -1536,7 +1531,11 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 	if (n >= 5) {  // This is the nesting level, is this not a bit arbitrary?!
 		return 0;
 	}
-	char *o = strdup (f);
+	const char *fmt2 = sdb_get (p->formats, f, NULL);
+	if (!fmt2) {
+		fmt2 = f;
+	}
+	char *o = strdup (fmt2);
 	if (!o) {
 		return -1;
 	}
@@ -1633,15 +1632,11 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 		case 'B':
 		case 'E':
 			if (tabsize_set) {
-				switch (tabsize) {
-				case 1: size += 1; break;
-				case 2: size += 2; break;
-				case 4: size += 4; break;
-				case 8: size += 8; break;
-				default:
+				if (tabsize < 1 || tabsize > 8) {
 					eprintf ("Unknown enum format size: %d\n", tabsize);
 					break;
 				}
+				size += tabsize;
 			} else {
 				size += 4; // Assuming by default enum as int
 			}
@@ -1694,7 +1689,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 				free (o);
 				return 0;
 			}
-			int newsize = r_print_format_struct_size (format, p, mode, n + 1);
+			int newsize = r_print_format_struct_size (p, format, mode, n + 1);
 			if (newsize < 1) {
 				eprintf ("Cannot find size for `%s'\n", format);
 				free (structname);
@@ -1753,7 +1748,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			} else if (fmt[i+1] == '8') {
 				size += tabsize * 8;
 			} else {
-				eprintf ("Invalid n format.\n");
+				eprintf ("Invalid n format in (%s)\n", fmt);
 				free (o);
 				free (args);
 				return -2;
@@ -1813,7 +1808,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 		p->cb_printf ("<%s>\n", name);
 	}
 	r_print_format (p, seek, b, len, fmt, mode, setval, field);
-	return r_print_format_struct_size (fmt, p, mode, 0);
+	return r_print_format_struct_size (p, fmt, mode, 0);
 }
 
 static char *get_args_offset(const char *arg) {
@@ -1892,6 +1887,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	const char *argend;
 	int viewflags = 0;
 	char *oarg = NULL;
+	char *internal_format = NULL;
 
 	/* Load format from name into fmt */
 	if (!formatname) {
@@ -1901,6 +1897,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (!fmt) {
 		fmt = formatname;
 	}
+	internal_format = strdup (fmt);
+	fmt = internal_format;
 	while (*fmt && IS_WHITECHAR (*fmt)) {
 		fmt++;
 	}
@@ -1910,11 +1908,13 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	nexti = nargs = i = j = 0;
 
 	if (len < 1) {
+		free (internal_format);
 		return 0;
 	}
 	// len+2 to save space for the null termination in wide strings
 	ut8 *buf = calloc (1, len + 2);
 	if (!buf) {
+		free (internal_format);
 		return 0;
 	}
 	memcpy (buf, b, len);
@@ -2056,7 +2056,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			} else {
 				size = -1;
 			}
-			int fs = r_print_format_struct_size (arg, p, 0, idx);
+			int fs = r_print_format_struct_size (p, arg, 0, idx);
 			if (fs == -2) {
 				i = -1;
 				goto beach;
@@ -2685,6 +2685,7 @@ beach:
 	if (slide == 0) {
 		oldslide = 0;
 	}
+	free (internal_format);
 	free (oarg);
 	free (buf);
 	free (field);

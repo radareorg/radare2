@@ -422,6 +422,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 	riom = R_NEW0 (RIOMach);
 	if (!riom) {
+		R_FREE (iodd);
 		return NULL;
 	}
 	riom->task = task;
@@ -444,15 +445,14 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case 0: // abs
+	case R_IO_SEEK_SET:
 		io->off = offset;
 		break;
-	case 1: // cur
-		io->off += (int)offset;
+	case R_IO_SEEK_CUR:
+		io->off += offset;
 		break;
-	case 2: // end
-		io->off = UT64_MAX;
-		break;
+	case R_IO_SEEK_END:
+		io->off = ST64_MAX;
 	}
 	return io->off;
 }
@@ -489,6 +489,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 	task_t task = pid_to_task (fd, iodd->tid);
 	/* XXX ugly hack for testing purposes */
+	if (!strcmp (cmd, "")) {
+		return NULL;
+	}
 	if (!strncmp (cmd, "perm", 4)) {
 		int perm = r_str_rwx (cmd + 4);
 		if (perm) {

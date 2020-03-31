@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_core.h"
 #include "config.h"
@@ -42,10 +42,51 @@ CB (bin, bin)
 CB (egg, egg)
 CB (fs, fs)
 
+static void __openPluginsAt(RCore *core, const char *arg) {
+	char *pdir = r_str_r2_prefix (arg);
+	if (pdir) {
+		r_lib_opendir (core->lib, pdir);
+		free (pdir);
+	}
+}
+
+static void __loadSystemPlugins(RCore *core, int where, const char *path) {
+#if R2_LOADLIBS
+	if (!where) {
+		where = -1;
+	}
+	if (path) {
+		r_lib_opendir (core->lib, path);
+	}
+	if (where & R_CORE_LOADLIBS_CONFIG) {
+		r_lib_opendir (core->lib, r_config_get (core->config, "dir.plugins"));
+	}
+	if (where & R_CORE_LOADLIBS_ENV) {
+		char *p = r_sys_getenv (R_LIB_ENV);
+		if (p && *p) {
+			r_lib_opendir (core->lib, p);
+		}
+		free (p);
+	}
+	if (where & R_CORE_LOADLIBS_HOME) {
+		char *hpd = r_str_home (R2_HOME_PLUGINS);
+		if (hpd) {
+			r_lib_opendir (core->lib, hpd);
+			free (hpd);
+		}
+	}
+	if (where & R_CORE_LOADLIBS_SYSTEM) {
+		__openPluginsAt (core, R2_PLUGINS);
+		__openPluginsAt (core, R2_EXTRAS);
+		__openPluginsAt (core, R2_BINDINGS);
+	}
+#endif
+}
+
 R_API void r_core_loadlibs_init(RCore *core) {
 	ut64 prev = r_sys_now ();
 #define DF(x, y, z) r_lib_add_handler (core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
-	core->lib = r_lib_new ("radare_plugin");
+	core->lib = r_lib_new (NULL, NULL);
 	DF (IO, "io plugins", io);
 	DF (CORE, "core plugins", core);
 	DF (DBG, "debugger plugins", debug);
@@ -60,58 +101,35 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	core->times->loadlibs_init_time = r_sys_now () - prev;
 }
 
+static bool __isScriptFilename(const char *name) {
+	const char *ext = r_str_lchr (name, '.');
+	if (ext) {
+		ext++;
+		if (!strcmp (ext, "py")
+		||  !strcmp (ext, "js")
+		||  !strcmp (ext, "lua")) {
+			return true;
+		}
+	}
+	return false;
+}
+
 R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	ut64 prev = r_sys_now ();
-#if R2_LOADLIBS
-	char *p = NULL;
+	__loadSystemPlugins (core, where, path);
 	/* TODO: all those default plugin paths should be defined in r_lib */
 	if (!r_config_get_i (core->config, "cfg.plugins")) {
 		core->times->loadlibs_time = 0;
 		return false;
 	}
-	if (!where) {
-		where = -1;
-	}
-	if (path) {
-		r_lib_opendir (core->lib, path);
-	}
-	if (where & R_CORE_LOADLIBS_CONFIG) {
-		r_lib_opendir (core->lib, r_config_get (core->config, "dir.plugins"));
-	}
-	if (where & R_CORE_LOADLIBS_ENV) {
-		p = r_sys_getenv (R_LIB_ENV);
-		if (p && *p) {
-			r_lib_opendir (core->lib, p);
-		}
-		free (p);
-	}
-	if (where & R_CORE_LOADLIBS_HOME) {
-		char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
-		// eprintf ("OPENDIR (%s)\n", homeplugindir);
-		r_lib_opendir (core->lib, homeplugindir);
-		free (homeplugindir);
-	}
-	if (where & R_CORE_LOADLIBS_SYSTEM) {
-		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
-		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
-		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
-		r_lib_opendir (core->lib, plugindir);
-		r_lib_opendir (core->lib, extrasdir);
-		r_lib_opendir (core->lib, bindingsdir);
-		free (plugindir);
-		free (extrasdir);
-		free (bindingsdir);
-	}
-#endif
 	// load script plugins
 	char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
         RList *files = r_sys_dir (homeplugindir);
 	RListIter *iter;
 	char *file;
 	r_list_foreach (files, iter, file) {
-		bool isScript = r_str_endswith (file, ".py") || r_str_endswith (file, ".js") || r_str_endswith (file, ".lua");
+		bool isScript = __isScriptFilename (file);
 		if (isScript) {
-			// eprintf ("-> %s\n", file);
 			r_core_cmdf (core, ". %s/%s", homeplugindir, file);
 		}
 	}

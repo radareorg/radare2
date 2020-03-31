@@ -1,9 +1,11 @@
-# travis.yml for testing radare2. Initially written in 2014-2016, by jn__.  Updated 2018 by damo22
+# travis.yml for testing radare2.
+# Initially written in 2014-2016
+# by jn__. Updated 2018 by damo22
+# xvilka, pancake, ret2libc in 2020
 
 language: generic
 dist: trusty
 conditions: v1
-sudo: required
 
 branches:
   only:
@@ -15,28 +17,61 @@ services:
   - docker
 
 os: osx
-matrix:
+jobs:
   fast_finish: true
   include:
     # Linux with GCC
     - os: linux
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc
+      name: Linux-GCC
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with clang
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang
+      name: Linux-CLANG
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with meson and coverage and asserts
     - os: linux
+      name: Linux-meson
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1 CFLAGS="-DR2_ASSERT_STDOUT=1"
     # OS X with clang
     - os: osx
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang
-    # Run Fuzzing Sanity Test on every push
+      name: macOS
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with GCC on PowerPC
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang R2_TESTS_DISABLE=1 FUZZIT=1 INSTALL_SYSTEM=static CXXFLAGS="-fsanitize=fuzzer"
+      name: PPC64
+      arch: ppc64le
+      dist: bionic
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with GCC on System Z
+    - os: linux
+      name: S390X
+      arch: s390x
+      dist: bionic
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with GCC on ARMv8 (64bit)
+    - os: linux
+      name: ARM64
+      arch: arm64
+      dist: bionic
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with new shell parser enabled
+    - os: linux
+      name: newShell
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_NEWSHELL=true CFLAGS="-DR2_ASSERT_STDOUT=1" R2_CFG_NEWSHELL=1
+    # Building *.deb package
+    - if: branch = master AND type != pull_request
+      os: linux
+      name: Debian
+      dist: xenial
+      env: COMPILER_NAME=gcc DEBPKG=1 CC=gcc CFLAGS="-O2 -DR2_ASSERT_STDOUT=1"
+    # Run Fuzzing Sanity Test on every push
+    # XXX its broken it complains about invalid key
+    #- os: linux
+    #  env: COMPILER_NAME=clang CXX=clang++ CC=clang R2_TESTS_DISABLE=1 FUZZIT=0 INSTALL_SYSTEM=static CXXFLAGS="-fsanitize=fuzzer"
     # ASAN as a best effort on every push
     - if: (not head_branch =~ ^release-* AND not head_branch =~ ^prerelease-* AND not branch =~ ^release-* AND not branch =~ ^prerelease-*) AND (head_branch =~ ^asan-* OR type = push)
       os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DR2_ASSERT_STDOUT=1"
     # release-only: meson build with system libraries
     - if: head_branch =~ ^release-* OR head_branch =~ ^prerelease-* OR branch =~ ^release-* OR branch =~ ^prerelease-*
       os: linux
@@ -61,9 +96,25 @@ matrix:
     - if: head_branch =~ ^release-* OR head_branch =~ ^prerelease-* OR branch =~ ^release-* OR branch =~ ^prerelease-*
       os: linux
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_TESTS_DISABLE=1
+  
   allow_failures:
+    # Linux with GCC on PowerPC
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+      arch: ppc64le
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with GCC on System Z
+    - os: linux
+      arch: s390x
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with GCC on ARMv8 (64bit)
+    - os: linux
+      arch: arm64
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+    - os: linux
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with new shell parser enabled
+    - os: linux
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_NEWSHELL=true CFLAGS="-DR2_ASSERT_STDOUT=1" R2_CFG_NEWSHELL=1
 
 cache:
   - ccache
@@ -78,35 +129,28 @@ before_install:
   - |
     if [ "${FUZZIT}" == "1" ]; then
       docker pull gcr.io/fuzzit-public/builders:llvm9.v1
-    elif [ "$TRAVIS_OS_NAME" != "osx" ]; then
+    elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ]; then
       docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis .
     else
-      rm -rf .nvm && git clone -q https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 8.11.3
+      rm -rf .nvm && git clone -q https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 10.16.3
     fi
+
+after_success:
+  - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+  - compgen -G "*.deb" > /dev/null && bash upload.sh *.deb
+  - compgen -G "/tmp/*.pkg" > /dev/null && bash upload.sh /tmp/*.pkg
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
-  - export DEFAULT_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d'/' -f1)
-  - export R2R_DEFAULT_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${DEFAULT_NAME}/g")
-  - export R2R_DEFAULT_BRANCH=master
-  - export USER_NAME=$([ -n "${PR_NAME}" ] && echo "${PR_NAME}" || echo "${DEFAULT_NAME}")
-  - export R2R_BRANCH=$([ -n "${TRAVIS_PULL_REQUEST_BRANCH}" ] && echo "${TRAVIS_PULL_REQUEST_BRANCH}" || echo "${R2R_DEFAULT_BRANCH}")
-  - if [ "${R2R_BRANCH}" = master ]; then USER_NAME=radare; fi
-  - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${USER_NAME}/g")
   - |
-    if [ "$TRAVIS_OS_NAME" != "osx" ]; then
-      $SHELL ./travis-extract-var.sh > ${TRAVIS_BUILD_DIR}/docker-env.sh ; cat ${TRAVIS_BUILD_DIR}/docker-env.sh
+    if [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ]; then
+      $SHELL ./travis-extract-var.sh | tee ${TRAVIS_BUILD_DIR}/docker-env.sh
     fi
   - |
     if [ "${FUZZIT}" == "1" ] ; then
       docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" gcr.io/fuzzit-public/builders:llvm9.v1 -c "cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
-    elif [ "$TRAVIS_OS_NAME" != "osx" ] ; then
+    elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ] ; then
       docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" radareorg/r2-travis:latest -c ". /src/.nvm/nvm.sh; cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
     else
       $SHELL travis-script
     fi
-
-notifications:
-  irc: "chat.freenode.net#radare"
-  on_success: never
-  on_failure: always

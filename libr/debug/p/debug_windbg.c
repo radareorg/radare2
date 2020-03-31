@@ -19,7 +19,6 @@
 #include <kd.h>
 
 static WindCtx *wctx = NULL;
-static bool dbreak = false;
 
 static int r_debug_windbg_step(RDebug *dbg) {
 	return true;
@@ -54,42 +53,36 @@ static int r_debug_windbg_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return windbg_continue(wctx);
 }
 
-#if 0
-static void wstatic_debug_break(void *u) {
-	dbreak = true;
-	windbg_break_read (wctx);
-}
-#endif
-
 static RDebugReasonType r_debug_windbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
-	kd_packet_t *pkt;
+	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
-	dbreak = false;
-
+	windbg_lock_enter (wctx);
 	for (;;) {
+		void *bed = r_cons_sleep_begin ();
 		int ret = windbg_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
-		if (dbreak) {
-			dbreak = false;
-			windbg_break (wctx);
-			free (pkt);
-			continue;
-		}
+		r_cons_sleep_end (bed);
 		if (ret != KD_E_OK || !pkt) {
 			reason = R_DEBUG_REASON_ERROR;
 			break;
 		}
 		stc = (kd_stc_64 *) pkt->data;
+		dbg->reason.addr = stc->pc;
+		dbg->reason.tid = stc->kthread;
+		dbg->reason.signum = stc->state;
+		windbg_set_cpu (wctx, stc->cpu);
 		if (stc->state == DbgKdExceptionStateChange) {
-			windbg_set_cpu (wctx, stc->cpu);
 			dbg->reason.type = R_DEBUG_REASON_INT;
-			dbg->reason.addr = stc->pc;
-			dbg->reason.tid = stc->kthread;
-			dbg->reason.signum = stc->state;
 			reason = R_DEBUG_REASON_INT;
 			break;
+		} else if (stc->state == DbgKdLoadSymbolsStateChange) {
+			dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
+			reason = R_DEBUG_REASON_NEW_LIB;
+			break;
 		}
+		R_FREE (pkt);
 	}
+	windbg_lock_leave (wctx);
 	free (pkt);
 	return reason;
 }
@@ -111,14 +104,14 @@ static int r_debug_windbg_attach(RDebug *dbg, int pid) {
 	// Handshake
 	if (!windbg_sync (wctx)) {
 		eprintf ("Could not connect to windbg\n");
-		windbg_ctx_free (wctx);
+		windbg_ctx_free ((WindCtx **)&desc->data);
 		return false;
 	}
 	if (!windbg_read_ver (wctx)) {
-		windbg_ctx_free (wctx);
+		windbg_ctx_free ((WindCtx **)&desc->data);
 		return false;
 	}
-
+	dbg->bits = windbg_get_bits (wctx);
 	// Make r_debug_is_dead happy
 	dbg->pid = 0;
 	return true;
@@ -136,6 +129,7 @@ static char *r_debug_windbg_reg_profile(RDebug *dbg) {
 	if (dbg->arch && strcmp (dbg->arch, "x86")) {
 		return NULL;
 	}
+	r_debug_windbg_attach (dbg, 0);
 	if (dbg->bits == R_SYS_BITS_32) {
 #include "native/reg/windows-x86.h"
 	} else if (dbg->bits == R_SYS_BITS_64) {
@@ -150,7 +144,13 @@ static int r_debug_windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool s
 		return false;
 	}
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
-	tag = (int *)&b->data;
+	if (!b->data) {
+		b->data = (char *)R_NEW0 (int);
+		if (!b->data) {
+			return 0;
+		}
+	}
+	tag = (int *)b->data;
 	return windbg_bkpt (wctx, b->addr, set, b->hw, tag);
 }
 
@@ -187,7 +187,7 @@ static RList *r_debug_windbg_pids(RDebug *dbg, int pid) {
 	return ret;
 }
 
-static int r_debug_windbg_select(int pid, int tid) {
+static int r_debug_windbg_select(RDebug *dbg, int pid, int tid) {
 	ut32 old = windbg_get_target (wctx);
 	int ret = windbg_set_target (wctx, pid);
 	if (!ret) {
@@ -232,6 +232,39 @@ static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
 	return ret;
 }
 
+static RList *r_debug_windbg_modules(RDebug *dbg) {
+	RListIter *it;
+	WindModule *m;
+
+	RList *ret = r_list_newf (free);
+	if (!ret) {
+		return NULL;
+	}
+
+	RList *modules = windbg_list_modules (wctx);
+	if (!modules) {
+		r_list_free (ret);
+		return NULL;
+	}
+
+	r_list_foreach (modules, it, m) {
+		RDebugMap *mod = R_NEW0 (RDebugMap);
+		if (!mod) {
+			r_list_free (modules);
+			r_list_free (ret);
+			return NULL;
+		}
+		mod->file = m->name;
+		mod->size = m->size;
+		mod->addr = m->addr;
+		mod->addr_end = m->addr + m->size;
+		r_list_append (ret, mod);
+	}
+
+	r_list_free (modules);
+	return ret;
+}
+
 RDebugPlugin r_debug_plugin_windbg = {
 	.name = "windbg",
 	.license = "LGPL3",
@@ -249,7 +282,8 @@ RDebugPlugin r_debug_plugin_windbg = {
 	.reg_read = &r_debug_windbg_reg_read,
 	.reg_write = &r_debug_windbg_reg_write,
 	.reg_profile = &r_debug_windbg_reg_profile,
-	.threads = &r_debug_windbg_threads
+	.threads = &r_debug_windbg_threads,
+	.modules_get = &r_debug_windbg_modules
 };
 
 #ifndef R2_PLUGIN_INCORE

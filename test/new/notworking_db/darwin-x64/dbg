@@ -1,0 +1,18 @@
+NAME=dbg cmdbps
+FILE=/bin/ls
+ARGS=-d
+BROKEN=1
+CMDS=<<EOF
+e scr.color=0
+db entry0
+e cmd.bp="?e cmd.bp ran"
+dbc `db~[0]` "?e bpcmd ran"
+dc
+dk 9
+EOF
+EXPECT=<<EOF
+cmd.bp ran
+bpcmd ran
+EOF
+RUN
+

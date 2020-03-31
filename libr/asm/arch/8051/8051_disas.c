@@ -1,11 +1,10 @@
-/* radare - LGPL - Copyright 2015-2017 - pancake, condret, riq, qnix, astuder */
+/* radare - LGPL - Copyright 2015-2019 - pancake, condret, riq, qnix, astuder */
 
 #include <r_asm.h>
 #include <r_lib.h>
 #include <string.h>
 
 #include "8051_ops.h"
-#include "8051_disas.h"
 
 static const char *_8051_regs[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", // 0x00
@@ -42,7 +41,7 @@ static const char *_8051_regs[] = {
 	0, 0, 0, 0, 0, 0, 0, 0  // 0xf8
 };
 
-char* _replace_register (char* disasm, ut8 arg, ut8 val) {
+static char* _replace_register(char* disasm, ut8 arg, ut8 val) {
 	char key[10];
 	char subst[10];
 	if (arg == A_DIRECT) {
@@ -62,7 +61,7 @@ char* _replace_register (char* disasm, ut8 arg, ut8 val) {
 	return disasm;
 }
 
-int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
+static char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 	int i = 0;
 	while (_8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask)) {
 		i++;
@@ -116,8 +115,8 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 					val1 = buf[1];
 				}
 			} else {
-				r_strbuf_set (&op->buf_asm, "truncated");
-				return -1;
+				*olen = -1;
+				return strdup ("truncated");
 			}
 			break;
 		case 3:
@@ -154,8 +153,8 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 					val1 = buf[1];
 				}
 			} else {
-				r_strbuf_set (&op->buf_asm, "truncated");
-				return -1;
+				*olen = -1;
+				return strdup ("truncated");
 			}
 			break;
 		default:
@@ -164,13 +163,13 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 		}
 
 		// substitute direct addresses with register name
+		*olen = oplen;
 		if (disasm) {
 			disasm = _replace_register (disasm, arg1, val1);
 			disasm = _replace_register (disasm, arg2, val2);
-			r_strbuf_set (&op->buf_asm, disasm);
-			free (disasm);
+			return disasm;
 		}
-		return oplen;
+		return NULL;
 	}
 
 	// invalid op-code

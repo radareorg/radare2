@@ -135,11 +135,13 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *command) {
+	if (!*command) {
+		return NULL;
+	}
 	int code, rlen;
-	char *out;
 	char *cmd = r_str_uri_encode (command);
 	char *url = r_str_newf ("%s/%s", rURL(fd), cmd);
-	out = r_socket_http_get (url, &code, &rlen);
+	char *out = r_socket_http_get (url, &code, &rlen);
 	if (out && rlen > 0) {
 		io->cb_printf ("%s", out);
 	}

@@ -10,5 +10,6 @@ executable('rafind2', 'rafind2.c',
     r_cons_dep
   ],
   install: true,
+  install_rpath: rpath,
   implicit_include_directories: false
 )

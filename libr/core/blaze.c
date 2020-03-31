@@ -30,6 +30,43 @@ typedef struct fcn {
 	ut64 ends;
 } fcn_t;
 
+static bool __is_data_block_cb(RAnalBlock *block, void *user) {
+	bool *block_exists = user;
+	*block_exists = true;
+	return false;
+}
+
+static int __isdata(RCore *core, ut64 addr) {
+	if (!r_io_is_valid_offset (core->io, addr, false)) {
+		// eprintf ("Warning: Invalid memory address at 0x%08"PFMT64x"\n", addr);
+		return 4;
+	}
+
+	bool block_exists = false;
+	// This will just set block_exists = true if there is any basic block at this addr
+	r_anal_blocks_foreach_in (core->anal, addr, __is_data_block_cb, &block_exists);
+	if (block_exists) {
+		return 1;
+	}
+
+	RList *list = r_meta_find_list_in (core->anal, addr, -1, 4);
+	RListIter *iter;
+	RAnalMetaItem *meta;
+	int result = 0;
+	r_list_foreach (list, iter, meta) {
+		switch (meta->type) {
+		case R_META_TYPE_DATA:
+		case R_META_TYPE_STRING:
+		case R_META_TYPE_FORMAT:
+			result = meta->size - (addr - meta->from);
+			goto exit;
+		}
+	}
+exit:
+	r_list_free (list);
+	return result;
+}
+
 static bool fcnAddBB (fcn_t *fcn, bb_t* block) {
 	if (!fcn) {
 		eprintf ("No function given to add a basic block\n");
@@ -86,7 +123,7 @@ static void initBB (bb_t *bb, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_typ
 	}
 }
 
-static bool addBB (RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
+static bool addBB(RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score) {
 	bb_t *bb = (bb_t*) R_NEW0 (bb_t);
 	if (!bb) {
 		eprintf ("Failed to calloc mem for new basic block!\n");
@@ -180,7 +217,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 		pfx = "fcn";
 	}
 
-	RAnalFunction *f = r_anal_fcn_new ();
+	RAnalFunction *f = r_anal_function_new (core->anal);
 	if (!f) {
 		eprintf ("Failed to create new function\n");
 		return;
@@ -189,17 +226,18 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	f->name = name? strdup (name): r_str_newf ("%s.%" PFMT64x, pfx, fcn->addr);
 	f->addr = fcn->addr;
 	f->bits = core->anal->bits;
-	f->cc = r_str_const (r_anal_cc_default (core->anal));
-	r_anal_fcn_set_size (NULL, f, fcn->size);
+	f->cc = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
 	f->type = R_ANAL_FCN_TYPE_FCN;
 
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {
-		r_anal_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, 0, NULL);
+		if (__isdata (core, cur->start)) {
+			continue;
+		}
+		r_anal_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
 	}
-	if (!r_anal_fcn_insert (core->anal, f)) {
+	if (!r_anal_add_function (core->anal, f)) {
 		// eprintf ("Failed to insert function\n");
-		r_anal_fcn_free (f);
-		//TODO free not added function
+		r_anal_function_free (f);
 		return;
 	}
 }
@@ -234,7 +272,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
 		eprintf ("Creating basic blocks\b");
 	}
-	while (cur < size) {
+	ut64 base = cur;
+	while (cur >= base && cur < size) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -242,7 +281,17 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		if (block_score < invalid_instruction_barrier) {
 			break;
 		}
-		op = r_core_anal_op (core, start + cur, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+		ut64 dst = start + cur;
+		if (dst < start) {
+			// fix underflow issue
+			break;
+		}
+		int dsize = __isdata (core, dst);
+		if (dsize > 0) {
+			cur += dsize;
+			continue;
+		}
+		op = r_core_anal_op (core, dst, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;

@@ -1,0 +1,22 @@
+NAME=r
+FILE=malloc://512
+EXPECT=<<EOF
+512
+EOF
+CMDS=r
+RUN
+
+NAME=wx 90 r pd 1
+FILE=malloc://512
+EXPECT=<<EOF
+512
+            0x00000000      90             nop
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 90
+r
+pd 1
+EOF
+RUN

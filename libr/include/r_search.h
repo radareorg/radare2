@@ -110,7 +110,7 @@ R_API int r_search_bmh(const RSearchKeyword *kw, const ut64 from, const ut8 *buf
 // TODO: is this an internal API?
 R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_rsa_update(RSearch *s, ut64 from, const ut8 *buf, int len);
+R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_magic_update(RSearch *_s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_strings_update(RSearch *s, ut64 from, const ut8 *buf, int len);

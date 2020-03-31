@@ -6,9 +6,18 @@ pkgconfig_mod = import('pkgconfig')
 
 # Get r2 version
 r2_version = 'unknown-error'
-r = run_command(py3_exe, 'sys/version.py')
+r2_version_major = 0
+r2_version_minor = 0
+r2_version_patch = 0
+r2_version_number = 0
+r = run_command(py3_exe, 'sys/version.py', '--full-version')
 if r.returncode() == 0
-  r2_version = r.stdout().strip()
+  vers = r.stdout().strip().split('\n')
+  r2_version = vers[0]
+  r2_version_major = vers[1]
+  r2_version_minor = vers[2]
+  r2_version_patch = vers[3]
+  r2_version_number = vers[4]
   if host_machine.system() == 'darwin'
     r2_version = r2_version.split('-')[0]
   endif
@@ -103,7 +112,7 @@ endif
 platform_deps = []
 platform_inc = ['.', 'libr/include']
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32')]
+  platform_deps = [cc.find_library('ws2_32'), cc.find_library('psapi')]
 endif
 platform_inc = include_directories(platform_inc)
 
@@ -113,8 +122,15 @@ if get_option('static_runtime')
   endif
 endif
 
+if cc.get_id() == 'clang-cl'
+  add_project_arguments('-D__STDC__=1', language: 'c')
+  add_project_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
+  add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
+  add_project_arguments('-D_CRT_NONSTDC_NO_DEPRECATE', language: 'c')
+endif
+
 if get_option('default_library') == 'shared'
-  if host_machine.system() != 'windows' or cc.get_id() != 'msvc'
+  if host_machine.system() != 'windows' or cc.get_id()!='msvc' and cc.get_id()!='clang-cl'
     add_project_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
@@ -299,8 +315,17 @@ userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
 userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', r2_prefix)
-userconf.set('LIBDIR', join_paths(r2_prefix, r2_libdir))
-userconf.set('INCLUDEDIR', join_paths(r2_prefix, r2_incdir))
+if host_machine.system() == 'windows'
+  userconf.set('LIBDIR', r2_libdir)
+  userconf.set('INCLUDEDIR', r2_incdir)
+  userconf.set('DATADIR_R2', r2_datdir)
+  userconf.set10('HAVE_JEMALLOC', false)
+else
+  userconf.set('LIBDIR', join_paths(r2_prefix, r2_libdir))
+  userconf.set('INCLUDEDIR', join_paths(r2_prefix, r2_incdir))
+  userconf.set('DATADIR_R2', r2_datdir_r2)
+  userconf.set10('HAVE_JEMALLOC', true)
+endif
 userconf.set('DATADIR', join_paths(r2_prefix, r2_datdir))
 userconf.set('WWWROOT', join_paths(r2_prefix, r2_wwwroot))
 userconf.set('SDB', r2_sdb)
@@ -318,13 +343,7 @@ userconf.set10('HAVE_FORK', true)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', true)
-if host_machine.system() == 'windows'
-  userconf.set('DATADIR_R2', r2_datdir)
-  userconf.set10('HAVE_JEMALLOC', false)
-else
-  userconf.set('DATADIR_R2', r2_datdir_r2)
-  userconf.set10('HAVE_JEMALLOC', true)
-endif
+userconf.set10('USE_TREESITTER', get_option('use_treesitter'))
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
@@ -332,7 +351,8 @@ foreach item : [
     ['arc4random_uniform', '#include <stdlib.h>'],
     ['explicit_bzero', '#include <string.h>'],
     ['explicit_memset', '#include <string.h>'],
-    ['clock_nanosleep', '#include <time.h>']
+    ['clock_nanosleep', '#include <time.h>'],
+    ['sigaction', '#include <signal.h>']
   ]
   func = item[0]
   ok = cc.has_function(func, prefix: item[1])
@@ -349,6 +369,10 @@ r_userconf_h = configure_file(
 versionconf = configuration_data()
 versionconf.set('MESON_VERSION', meson.version())
 versionconf.set('VERSIONCOMMIT', version_commit)
+versionconf.set('R2_VERSION_MAJOR', r2_version_major)
+versionconf.set('R2_VERSION_MINOR', r2_version_minor)
+versionconf.set('R2_VERSION_PATCH', r2_version_patch)
+versionconf.set('R2_VERSION_NUMBER', r2_version_number)
 versionconf.set('R2_VERSION', r2_version)
 versionconf.set('R2_GITTAP', gittap)
 versionconf.set('R2_GITTIP', gittip)
@@ -380,10 +404,11 @@ subdir('libr/util')
 subdir('libr/hash')
 subdir('libr/crypto')
 subdir('libr/socket')
+subdir('libr/cons')
+subdir('shlr/gdb')
 subdir('libr/io')
 subdir('libr/bp')
 subdir('libr/syscall')
-subdir('libr/cons')
 subdir('libr/search')
 subdir('libr/magic')
 subdir('libr/flag')
@@ -409,6 +434,7 @@ subdir('libr/flag/d')
 subdir('libr/main')
 
 if not meson.is_subproject()
+  rpath = get_option('local') and get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : ''
   subdir('binr/rahash2')
   subdir('binr/rarun2')
   subdir('binr/rasm2')
@@ -420,6 +446,7 @@ if not meson.is_subproject()
   subdir('binr/rafind2')
   subdir('binr/rax2')
   subdir('binr/r2pm')
+  subdir('binr/r2r')
 else
   libr2_dep = declare_dependency(
     dependencies: [
@@ -458,6 +485,8 @@ if get_option('use_webui')
     strip_directory: true
   )
 endif
+
+subdir('test/unit')
 
 install_data(
   'doc/fortunes.creepy',

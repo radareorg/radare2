@@ -1,0 +1,55 @@
+d "add sp, sp, 0x10" 107e8e43
+d "add.nz r13, r0, 1" 027ca04101000000
+d "and.f 0, r10, 1" 017ae567
+d "asl r1, r1" 00822040
+dB "asl r8, r8, 2" 027e0481
+dB "asr r9, r9, 0x19" 19fe2491
+d "b.d 0x000020a0" 20040020 0x207c
+d "bc 0x00001548" 85050020 0x1518
+d "bge 0x00001a18" 0a090020 0x19cc
+d "bgt 0x00001b40" 89040020 0x1b18
+d "bhi 0x00002238" 8d1e0020 0x2140
+d "bic r4, r4, r3" 00068270
+d "bl.d 0x000031cc" a0270228 0x208c
+d "ble 0x00001cd8" 0c0b0020 0x1c7c
+d "blhi.d 0x000041e8" ad130628 0x1148
+d "bls 0x00001ea0" 0eebff27 0x1f44
+d "blt.d 0x000020c0" ab020020 0x20a8
+d "bnz.d 0x0000211c" 22030020 0x2100
+d "bnz.jd 0x00001ff0" c2100020 0x1f68
+d "bz.d 0x00002008" a1010020 0x1ff8
+dB "cmp r11, r9" 0093e557
+d "extb r1, r1" 008e2018
+d "extw r10, 0xffffff00" 00915f19
+d "flag 1" 0180bf1f
+d "j.f [blink]" 00810f38
+d "jl [r9]" 00820438
+d "jl.d [r24]" 20020c38
+d "jlt.d [blink]" 2b800f38
+d "ld r0, [0x10ca288]" 00001f0888a20c01
+d "ld.a r4, [r1, 4]" 04908008
+d "ldb.a r4, [r1, 1]" 01948008
+d "ldw r1, [r14]" 00082708
+d "lp 0x0000156c" 00020030 0x1558
+d "lpnz 0x00001594" 02020030 0x1580
+dB "lr r10, [2]" 02a05f09
+dB "lsr r4, r2, 3" 037e8188
+d "lsr.f lp_count, r4" 0005821f
+d "mov r2, 0xa" 0afe5f60
+d "mov.f lp_count, r2" 00058167
+d "mov.z.f 0, r4" 0109e267
+dB "mulu64 0, r9. r4" 0088e4af
+d "nop " ffffff7f
+d "or.f 0, r0, 0" 007ae06f
+d "ror r2, 0xfffffffe" fe875f18
+d "ror.z r13, 0xfffffffe" 0106bf19feffffff
+d "sexb.c r0, r11" 058a0518
+dB "sr r10, [2]" 02941f12
+d "st 1, [0x1044230]" 017e1f102f420401
+d "st.a r4, [r3, 4]" 04880111
+d "stb.a r4, [r3, 1]" 01884111
+d "sub sp, sp, 0x34" 347e8e53
+d "sub.hi r0, r0, r0" 0d000050
+d "sub.nz r0, r0, r14" 021c0050
+d "swi " 02feff1f
+d "xor r10, blink, sp" 00b84f79

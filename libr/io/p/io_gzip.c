@@ -92,7 +92,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 	}
 	new_buf = malloc (count);
 	if (!new_buf) {
-		return -1;
+		return false;
 	}
 	memcpy (new_buf, _io_malloc_buf (fd), R_MIN (count, mallocsz));
 	if (count > mallocsz) {
@@ -163,10 +163,10 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (!mal) {
 			return NULL;
 		}
-		int len;
-		ut8 *data = (ut8*)r_file_slurp (pathname+7, &len);	//memleak here?
+		size_t len;
+		ut8 *data = (ut8 *)r_file_slurp (pathname+7, &len);	//memleak here?
 		int *size = (int*)&mal->size;
-		mal->buf = r_inflate (data, len, NULL, size);
+		mal->buf = r_inflate (data, (int)len, NULL, size);
 		if (mal->buf) {
 			return r_io_desc_new (io, &r_io_plugin_gzip, pathname, rw, mode, mal);
 		}

@@ -488,68 +488,44 @@ static void handle_crc64_iso (const ut8 * block, int len) {
 #endif /* #if R_HAVE_CRC64_EXTRA */
 
 static int cmd_hash_bang (RCore *core, const char *input) {
-	char *p;
-	const char *lang = input + 1;
 	if (r_sandbox_enable (0)) {
 		eprintf ("hashbang disabled in sandbox mode\n");
 		return false;
 	}
-	if (*lang=='/') {
-		const char *ptr = lang + 1;
-		while (*lang) {
-			if (*lang=='/') {
-				ptr = lang + 1;
-			}
-			lang++;
-		}
-		RLangPlugin *p = r_lang_get_by_extension (core->lang, ptr);
-		if (p && p->name) {
-			lang = p->name;
-		}
-	}
-	if (*lang == ' ') {
-		RLangPlugin *p = r_lang_get_by_extension (core->lang, input + 2);
-		if (p && p->name) {
-			lang = p->name;
-		}
-	} else if (input[1]=='?' || input[1]=='*' || input[1]=='\0') {
-		r_lang_list (core->lang);
-		return true;
-	}
-	if (lang && !*lang) {
-		// do nothing
-		return true;
-	}
-	p = strchr (input, ' ');
-	bool doEval = false;
-	if (p) {
-		*p++ = 0;
-		char *_e = strstr (p, "-e");
-		if (_e) {
-			doEval = true;
-			p = _e + 2;
-			r_str_trim (p);
-		}
-	}
-	// TODO: set argv here
-	if (r_lang_use (core->lang, lang)) {
-		r_lang_setup (core->lang);
+	int ac;
+	char **av = r_str_argv (input + 1, &ac);
+	if (ac > 0) {
+		RLangPlugin *p = r_lang_get_by_extension (core->lang, av[0]);
 		if (p) {
-			if (doEval) {
-				r_lang_run_string (core->lang, p);
+			// I see no point in using r_lang_use here, as we already haz a ptr to the pluging in our handz
+			// Maybe add r_lang_use_plugin in r_lang api?
+			core->lang->cur = p;
+			if (ac > 1) {
+				if (!strcmp (av[1], "-e")) {
+					char *run_str = strstr (input + 2, "-e") + 2;
+					r_lang_run_string (core->lang, run_str);
+				} else {
+					if (r_lang_set_argv (core->lang, ac - 1, &av[1])) {
+						r_lang_run_file (core->lang, av[1]);
+					} else {
+						char *run_str = strstr (input + 2, av[1]);
+						r_lang_run_file (core->lang, run_str);
+					}
+				}
 			} else {
-				r_lang_run_file (core->lang, p);
+				if (r_cons_is_interactive ()) {
+					r_lang_prompt (core->lang);
+				} else {
+					eprintf ("Error: scr.interactive required to run the rlang prompt\n");
+				}
 			}
-		} else {
-			if (r_cons_is_interactive ()) {
-				r_lang_prompt (core->lang);
-			} else {
-				eprintf ("Error: scr.interactive required to run the rlang prompt\n");
-			}
+		} else if (av[0][0]=='?' || av[0][0]=='*') {
+			r_lang_list (core->lang);
 		}
 	} else {
-		eprintf ("Invalid hashbang. Please install the corresponding rlang plugin.\nSee '#!' for help.\n");
+		r_lang_list (core->lang);
 	}
+	r_str_argv_free(av);
 	return true;
 }
 

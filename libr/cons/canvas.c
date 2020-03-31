@@ -27,40 +27,15 @@ static int __getAnsiPiece(const char *p, char *chr) {
 	return p - q;
 }
 
-static const char **__attributeAt(RConsCanvas *c, int loc) {
-	int i, j, delta;
-	if (!c->color || c->attrslen == 0) {
+static void attribute_free_kv(HtUPKv *kv) {
+	free (kv->value);
+}
+
+static const char *__attributeAt(RConsCanvas *c, int loc) {
+	if (!c->color) {
 		return NULL;
 	}
-	j = c->attrslen / 2;
-	delta = c->attrslen / 2;
-	for (i = 0; i < (c->attrslen); i++) {
-		delta /= 2;
-		if (delta == 0) {
-			delta = 1;
-		}
-		if (c->attrs[j].loc == loc) {
-			return &c->attrs[j].a;
-		}
-		if (c->attrs[j].loc < loc) {
-			j += delta;
-			if (j >= c->attrslen) {
-				break;
-			}
-			if (c->attrs[j].loc > loc && delta == 1) {
-				break;
-			}
-		} else if (c->attrs[j].loc > loc) {
-			j -= delta;
-			if (j <= 0) {
-				break;
-			}
-			if (c->attrs[j].loc < loc && delta == 1) {
-				break;
-			}
-		}
-	}
-	return NULL;
+	return ht_up_find (c->attrs, loc, NULL);
 }
 
 static void __stampAttribute(RConsCanvas *c, int loc, int length) {
@@ -68,37 +43,9 @@ static void __stampAttribute(RConsCanvas *c, int loc, int length) {
 		return;
 	}
 	int i;
-	const char **s;
-	s = __attributeAt (c, loc);
-
-	if (s) {
-#if 0
-		if (*s != 0 && strlen (*s) > 2 && *(*s + 2) == '0') {
-			if (strlen (c->attr) == 5 && *(c->attr + 2) != '0') {
-				char tmp[9];
-				memcpy (tmp, c->attr, 2);
-				strcpy (tmp + 2, "0;");
-				memcpy (tmp + 4, c->attr + 2, 3);
-				tmp[8] = 0;
-				c->attr = r_str_const (tmp);
-			}
-		}
-#endif
-		*s = c->attr;
-	} else {
-		for (i = c->attrslen; i > 0 && loc < c->attrs[i - 1].loc; i--) {
-			c->attrs[i] = c->attrs[i - 1];
-		}
-		c->attrs[i].loc = loc;
-		c->attrs[i].a = c->attr;
-		c->attrslen++;
-	}
-
+	ht_up_update (c->attrs, loc, (void *)c->attr);
 	for (i = 1; i < length; i++) {
-		s = __attributeAt (c, loc + i);
-		if (s) {
-			*s = 0;
-		}
+		ht_up_delete (c->attrs, loc + i);
 	}
 }
 
@@ -117,16 +64,13 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 		p++;
 	}
 
-	if (p != s) {
-		RStrBuf *tmp = r_strbuf_new (NULL);
-		if (!tmp) {
-			return NULL;
-		}
-		const int slen = p - s;
-		if (slen > 0) {
-			r_strbuf_append_n (tmp, s, slen);
-			c->attr = r_str_const (r_strbuf_drain (tmp));
-		}
+	const int slen = p - s;
+	if (slen > 0) {
+		RStrBuf tmp;
+		r_strbuf_init (&tmp);
+		r_strbuf_append_n (&tmp, s, slen);
+		c->attr = r_str_constpool_get (&c->constpool, r_strbuf_get (&tmp));
+		r_strbuf_fini (&tmp);
 	}
 	return p;
 }
@@ -202,19 +146,27 @@ static bool __expandLine(RConsCanvas *c, int real_len, int utf8_len) {
 }
 
 R_API void r_cons_canvas_free(RConsCanvas *c) {
-	if (c) {
-		if (c->b) {
-			int y;
-			for (y = 0; y < c->h; y++) {
-				free (c->b[y]);
-			}
-			free (c->b);
-		}
-		free (c->bsize);
-		free (c->blen);
-		free (c->attrs);
-		free (c);
+	if (!c) {
+		return;
 	}
+	if (c->b) {
+		int y;
+		for (y = 0; y < c->h; y++) {
+			free (c->b[y]);
+		}
+		free (c->b);
+	}
+	free (c->bsize);
+	free (c->blen);
+	ht_up_free (c->attrs);
+	r_str_constpool_fini (&c->constpool);
+	free (c);
+}
+
+static bool attribute_delete_cb(void *user, const ut64 key, const void *value) {
+	HtUP *ht = (HtUP *)user;
+	ht_up_delete (ht, key);
+	return true;
 }
 
 R_API void r_cons_canvas_clear(RConsCanvas *c) {
@@ -223,11 +175,8 @@ R_API void r_cons_canvas_clear(RConsCanvas *c) {
 	for (y = 0; y < c->h; y++) {
 		memset (c->b[y], '\n', c->bsize[y]);
 	}
-	/*//XXX tofix*/
-	if (c->attrs) {
-		c->attrslen = 0;
-		memset (c->attrs, 0, sizeof (*c->attrs) * (c->w + 1) * c->h);
-	}
+
+	ht_up_foreach (c->attrs, attribute_delete_cb, c->attrs);
 }
 
 R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
@@ -306,8 +255,10 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	c->w = w;
 	c->h = h;
 	c->x = c->y = 0;
-	c->attrslen = 0;
-	c->attrs = calloc (sizeof (*c->attrs), (c->w + 1) * c->h);
+	if (!r_str_constpool_init (&c->constpool)) {
+		goto beach;
+	}
+	c->attrs = ht_up_new ((HtUPDupValue)strdup, attribute_free_kv, NULL);
 	if (!c->attrs) {
 		goto beach;
 	}
@@ -315,6 +266,7 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	r_cons_canvas_clear (c);
 	return c;
 beach: {
+	r_str_constpool_fini (&c->constpool);
 	int j;
 	for (j = 0; j < i; j++) {
 		free (c->b[j]);
@@ -399,13 +351,12 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	r_return_val_if_fail (c, NULL);
 
 	int x, y, olen = 0, attr_x = 0;
-	const char **atr;
 	int is_first = true;
 
 	for (y = 0; y < c->h; y++) {
 		olen += c->blen[y] + 1;
 	}
-	char *o = calloc (1, olen * 2 * CONS_MAX_ATTR_SZ);
+	char *o = calloc (1, olen * 4 * CONS_MAX_ATTR_SZ);
 	if (!o) {
 		return NULL;
 	}
@@ -423,10 +374,10 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 		attr_x = 0;
 		for (x = 0; x < c->blen[y]; x++) {
 			if ((c->b[y][x] & 0xc0) != 0x80) {
-				atr = __attributeAt (c, y * c->w + attr_x);
-				if (atr && *atr) {
-					int len = strlen (*atr);
-					memcpy (o + olen, *atr, len);
+				const char *atr = __attributeAt (c, y * c->w + attr_x);
+				if (atr) {
+					int len = strlen (atr);
+					memcpy (o + olen, atr, len);
 					olen += len;
 				}
 				attr_x++;
@@ -474,10 +425,9 @@ R_API void r_cons_canvas_print(RConsCanvas *c) {
 }
 
 R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
-	if (!c || w < 0) {
+	if (!c || w < 0 || h <= 0) {
 		return false;
 	}
-	void *newattrs = NULL;
 	int *newblen = realloc (c->blen, sizeof *c->blen * h);
 	if (!newblen) {
 		r_cons_canvas_free (c);
@@ -511,7 +461,7 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 			for (j = 0; j <= i; j++) {
 				free (c->b[i]);
 			}
-			free (c->attrs);
+			ht_up_free (c->attrs);
 			free (c->blen);
 			free (c->bsize);
 			free (c->b);
@@ -520,18 +470,40 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 		}
 		c->b[i] = newline;
 	}
-	newattrs = realloc (c->attrs, sizeof (*c->attrs) * (w + 1) * h);
-	if (!newattrs) {
-		r_cons_canvas_free (c);
-		return false;
-	}
-	c->attrs = newattrs;
 	c->w = w;
 	c->h = h;
 	c->x = 0;
 	c->y = 0;
 	r_cons_canvas_clear (c);
 	return true;
+}
+
+#include <math.h>
+#define PI 3.1415
+R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
+	if (color) {
+		c->attr = color;
+	}
+	double xfactor = 1; //(double)w / (double)h;
+	double yfactor = (double)h / 24; // 0.8; // 24  10
+	double size = w;
+	float a = 0.0;
+	double s = size / 2;
+	while (a < (2 * PI)) {
+		double sa = r_num_sin (a);
+		double ca = r_num_cos (a);
+		double cx = s * ca + (size / 2);
+		double cy = s * sa + (size / 4);
+		int X = x + (xfactor * cx) - 2;
+		int Y = y + ((yfactor/2) * cy);
+		if (G (X, Y)) {
+			W ("=");
+		}
+		a += 0.1;
+	}
+	if (color) {
+		c->attr = Color_RESET;
+	}
 }
 
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color) {

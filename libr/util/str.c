@@ -77,49 +77,12 @@ R_API int r_str_replace_ch(char *s, char a, char b, bool global) {
 	return ret;
 }
 
-// DEPRECATED
 R_API int r_str_replace_char_once(char *s, int a, int b) {
-	int ret = 0;
-	char *o = s;
-	if (a == b) {
-		return 0;
-	}
-	for (; *o; s++, o++) {
-		if (*o == a) {
-			if (b) {
-				*s = b;
-				return ++ret;
-			}
-			o++;
-		}
-		*s = *o;
-	}
-	*s = 0;
-	return ret;
+	return r_str_replace_ch (s, a, b, false);
 }
 
-// DEPRECATED
 R_API int r_str_replace_char(char *s, int a, int b) {
-	int ret = 0;
-	char *o = s;
-	if (!s || a == b) {
-		return 0;
-	}
-	for (; *o; s++, o++) {
-		if (*o == a) {
-			ret++;
-			if (b) {
-				*s = b;
-			} else {
-				/* remove char */
-				s--;
-			}
-		} else {
-			*s = *o;
-		}
-	}
-	*s = 0;
-	return ret;
+	return r_str_replace_ch (s, a, b, true);
 }
 
 R_API void r_str_reverse(char *str) {
@@ -154,6 +117,19 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 	}
 	strout[j] = 0;
 	return j;
+}
+
+R_API const char *r_str_sysbits(const int v) {
+	switch (v) {
+	case R_SYS_BITS_8: return "8";
+	case R_SYS_BITS_16: return "16";
+	case R_SYS_BITS_32: return "32";
+	case R_SYS_BITS_64: return "64";
+	case R_SYS_BITS_16 | R_SYS_BITS_32: return "16,32";
+	case R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64: return "16,32,64";
+	case R_SYS_BITS_32 | R_SYS_BITS_64: return "32,64";
+	}
+	return "?";
 }
 
 // In-place trims a bitstring to groups of 8 bits.
@@ -274,7 +250,7 @@ R_API void r_str_case(char *str, bool up) {
 			*str = (*str=='x' && oc=='0') ? 'x': toupper ((int)(ut8)*str);
 		}
 	} else {
-		for (; *str; str++) { 
+		for (; *str; str++) {
 			*str = tolower ((int)(ut8)*str);
 		}
 	}
@@ -616,7 +592,33 @@ R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr) 
 	while (str[start] != chr && start < end) {
 		start++;
 	}
-	return str[start] == chr ? &str[start] : NULL;
+	return str[start] == chr ? str + start : NULL;
+}
+
+R_API const char *r_str_sep(const char *base, const char *sep) {
+	int i;
+	while (*base) {
+		for (i = 0; sep[i]; i++) {
+			if (*base == sep[i]) {
+				return base;
+			}
+		}
+		base++;
+	}
+	return NULL;
+}
+
+R_API const char *r_str_rsep(const char *base, const char *p, const char *sep) {
+	int i;
+	while (p >= base) {
+		for (i = 0; sep[i]; i++) {
+			if (*p == sep[i]) {
+				return p;
+			}
+		}
+		p--;
+	}
+	return NULL;
 }
 
 R_API const char *r_str_rstr(const char *base, const char *p) {
@@ -635,9 +637,7 @@ R_API const char *r_str_rstr(const char *base, const char *p) {
 }
 
 R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
-	if (!base) {
-		return NULL;
-	}
+	r_return_val_if_fail (base, NULL);
 	if (!p) {
 		p = base + strlen (base);
 	}
@@ -646,10 +646,10 @@ R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
 			break;
 		}
 	}
-	return (p < base) ? NULL : p;
+	return (p >= base) ? p: NULL;
 }
 
-R_API const char * r_str_nstr(const char *s, const char *find, int slen) {
+R_API const char *r_str_nstr(const char *s, const char *find, int slen) {
 	char c, sc;
 	size_t len;
 
@@ -658,16 +658,16 @@ R_API const char * r_str_nstr(const char *s, const char *find, int slen) {
 		do {
 			do {
 				if (slen-- < 1 || !(sc = *s++)) {
-					return (NULL);
+					return NULL;
 				}
 			} while (sc != c);
 			if (len > slen) {
-				return (NULL);
+				return NULL;
 			}
 		} while (strncmp (s, find, len) != 0);
 		s--;
 	}
-	return ((char *)s);
+	return (char *)s;
 }
 
 // Returns a new heap-allocated copy of str.
@@ -752,6 +752,27 @@ R_API bool r_str_ccmp(const char *dst, const char *src, int ch) {
 	return false;
 }
 
+// Returns true if item is in sep-separated list
+R_API bool r_str_cmp_list(const char *list, const char *item, char sep) {
+	if (!list || !item) {
+		return false;
+	}
+	int i = 0, j = 0;
+	for (; list[i] && list[i] != sep; i++, j++) {
+		if (item[j] != list[i]) {
+			while (list[i] && list[i] != sep) {
+				i++;
+			}
+			if (!list[i]) {
+				return false;
+			}
+			j = -1;
+			continue;
+		}
+	}
+	return true;
+}
+
 // like strncmp, but checking for null pointers
 R_API int r_str_cmp(const char *a, const char *b, int len) {
 	if ((a == b) || (!a && !b)) {
@@ -811,18 +832,6 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 R_API char *r_str_dup(char *ptr, const char *string) {
 	free (ptr);
 	return r_str_new (string);
-}
-
-R_API void r_str_writef(int fd, const char *fmt, ...) {
-	char *buf;
-	va_list ap;
-	va_start (ap, fmt);
-	if ((buf = malloc (4096)) != NULL) {
-		vsnprintf (buf, 4096, fmt, ap);
-		r_str_write (fd, buf);
-		free (buf);
-	}
-	va_end (ap);
 }
 
 R_API char *r_str_prepend(char *ptr, const char *string) {
@@ -909,12 +918,15 @@ R_API char *r_str_appendch(char *x, char y) {
 }
 
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
+	if (g == 'i') {
+		return r_str_replace_icase (str, key, val, g, true);
+	}
 	r_return_val_if_fail (str && key && val, NULL);
 
-	int off, i, klen, vlen, slen;
-	char *newstr, *scnd, *p = str;
-	klen = strlen (key);
-	vlen = strlen (val);
+	int off, i, slen;
+	char *newstr, *p = str;
+	int klen = strlen (key);
+	int vlen = strlen (val);
 	if (klen == 1 && vlen < 2) {
 		r_str_replace_char (str, *key, *val);
 		return str;
@@ -923,33 +935,31 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		return str;
 	}
 	slen = strlen (str);
-	for (i = 0; i < slen; ) {
-		p = (char *)r_mem_mem (
-			(const ut8*)str + i, slen - i,
-			(const ut8*)key, klen);
+	char *q = str;
+	for (;;) {
+		p = strstr (q, key);
 		if (!p) {
 			break;
 		}
 		off = (int)(size_t)(p - str);
-		scnd = strdup (p + klen);
-		if (!scnd) {
-			R_FREE (str);
-			break;
+		if (vlen != klen) {
+			int tlen = slen - (off + klen);
+			slen += vlen - klen;
+			if (vlen > klen) {
+				newstr = realloc (str, slen + 1);
+				if (!newstr) {
+					eprintf ("realloc fail\n");
+					R_FREE (str);
+					break;
+				}
+				str = newstr;
+			}
+			p = str + off;
+			memmove (p + vlen, p + klen, tlen + 1);
 		}
-		slen += vlen - klen;
-		newstr = realloc (str, slen + klen + 1);
-		if (!newstr) {
-			eprintf ("alloc fail\n");
-			R_FREE (str);
-			free (scnd);
-			break;
-		}
-		str = newstr;
-		p = str + off;
 		memcpy (p, val, vlen);
-		memcpy (p + vlen, scnd, strlen (scnd) + 1);
 		i = off + vlen;
-		free (scnd);
+		q = str + i;
 		if (!g) {
 			break;
 		}
@@ -961,7 +971,7 @@ R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int
 	r_return_val_if_fail (str && key && val, NULL);
 
 	int off, i, klen, vlen, slen;
-	char *newstr, *scnd, *p = str, *tmp_val = NULL;
+	char *newstr, *p = str;
 	klen = strlen (key);
 	vlen = strlen (val);
 
@@ -972,22 +982,26 @@ R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int
 			break;
 		}
 		off = (int)(size_t) (p - str);
-		scnd = strdup (p + klen);
-		tmp_val = strdup (val);
-		if (!tmp_val || !scnd) {
-			goto alloc_fail;
+		if (vlen != klen) {
+			int tlen = slen - (off + klen);
+			slen += vlen - klen;
+			if (vlen > klen) {
+				newstr = realloc (str, slen + 1);
+				if (!newstr) {
+					goto alloc_fail;
+				}
+				str = newstr;
+			}
+			p = str + off;
+			memmove (p + vlen, p + klen, tlen + 1);
 		}
-		slen += vlen - klen;
-		newstr = realloc (str, slen + klen + 1);
-		if (!newstr) {
-			goto alloc_fail;
-		}
-		str = newstr;
-		p = str + off;
 
 		if (keep_case) {
+			char *tmp_val = strdup (val);
 			char *str_case = r_str_ndup (p, klen);
-			if (!str_case) {
+			if (!tmp_val || !str_case) {
+				free (tmp_val);
+				free (str_case);
 				goto alloc_fail;
 			}
 			tmp_val = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
@@ -995,13 +1009,13 @@ R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int
 			if (!tmp_val) {
 				goto alloc_fail;
 			}
+			memcpy (p, tmp_val, vlen);
+			free (tmp_val);
+		} else {
+			memcpy (p, val, vlen);
 		}
 
-		memcpy (p, tmp_val, vlen);
-		memcpy (p + vlen, scnd, strlen (scnd) + 1);
 		i = off + vlen;
-		free (tmp_val);
-		free (scnd);
 		if (!g) {
 			break;
 		}
@@ -1011,8 +1025,6 @@ R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int
 alloc_fail:
 	eprintf ("alloc fail\n");
 	free (str);
-	free (scnd);
-	free (tmp_val);
 	return NULL;
 }
 
@@ -1104,19 +1116,36 @@ R_API int r_str_unescape(char *buf) {
 		if (buf[i] != '\\') {
 			continue;
 		}
-		if (buf[i+1] == 'e') {
+		int esc_seq_len = 2;
+		switch (buf[i + 1]) {
+		case 'e':
 			buf[i] = 0x1b;
-			memmove (buf + i + 1, buf + i + 2, strlen (buf + i + 2) + 1);
-		} else if (buf[i + 1] == '\\') {
+			break;
+		case '\\':
 			buf[i] = '\\';
-			memmove (buf + i + 1, buf + i + 2, strlen (buf + i + 2) + 1);
-		} else if (buf[i+1] == 'r') {
+			break;
+		case 'r':
 			buf[i] = 0x0d;
-			memmove (buf + i + 1, buf + i + 2, strlen (buf + i + 2) + 1);
-		} else if (buf[i+1] == 'n') {
+			break;
+		case 'n':
 			buf[i] = 0x0a;
-			memmove (buf + i + 1, buf + i + 2, strlen (buf + i + 2) + 1);
-		} else if (buf[i + 1] == 'x') {
+			break;
+		case 'a':
+			buf[i] = 0x07;
+			break;
+		case 'b':
+			buf[i] = 0x08;
+			break;
+		case 't':
+			buf[i] = 0x09;
+			break;
+		case 'v':
+			buf[i] = 0x0b;
+			break;
+		case 'f':
+			buf[i] = 0x0c;
+			break;
+		case 'x':
 			err = ch2 = ch = 0;
 			if (!buf[i + 2] || !buf[i + 3]) {
 				eprintf ("Unexpected end of string.\n");
@@ -1129,24 +1158,27 @@ R_API int r_str_unescape(char *buf) {
 				return 0; // -1?
 			}
 			buf[i] = (ch << 4) + ch2;
-			memmove (buf + i + 1, buf + i + 4, strlen (buf + i + 4) + 1);
-		} else if (IS_OCTAL (buf[i + 1])) {
-			int num_digits = 1;
-			buf[i] = buf[i + 1] - '0';
-			if (IS_OCTAL (buf[i + 2])) {
-				num_digits++;
-				buf[i] = (ut8)buf[i] * 8 + (buf[i + 2] - '0');
-				if (IS_OCTAL (buf[i + 3])) {
+			esc_seq_len = 4;
+			break;
+		default:
+			if (IS_OCTAL (buf[i + 1])) {
+				int num_digits = 1;
+				buf[i] = buf[i + 1] - '0';
+				if (IS_OCTAL (buf[i + 2])) {
 					num_digits++;
-					buf[i] = (ut8)buf[i] * 8 + (buf[i + 3] - '0');
+					buf[i] = (ut8)buf[i] * 8 + (buf[i + 2] - '0');
+					if (IS_OCTAL (buf[i + 3])) {
+						num_digits++;
+						buf[i] = (ut8)buf[i] * 8 + (buf[i + 3] - '0');
+					}
 				}
+				esc_seq_len = 1 + num_digits;
+			} else {
+				eprintf ("Error: Unknown escape sequence.\n");
+				return 0; // -1?
 			}
-			memmove (buf + i + 1, buf + i + 1 + num_digits,
-			         strlen (buf + i + 1 + num_digits) + 1);
-		} else {
-			eprintf ("'\\x' expected.\n");
-			return 0; // -1?
 		}
+		memmove (buf + i + 1, buf + i + esc_seq_len, strlen (buf + i + esc_seq_len) + 1);
 	}
 	return i;
 }
@@ -1319,7 +1351,7 @@ R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bs
 	return r_str_escape_ (buf, false, colors, !colors, show_asciidot, esc_bslash);
 }
 
-static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot, bool esc_bslash) {
+static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot, bool esc_bslash, bool keep_printable) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -1330,17 +1362,19 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 	}
 	switch (enc) {
 	case R_STRING_ENC_UTF16LE:
+	case R_STRING_ENC_UTF16BE:
 	case R_STRING_ENC_UTF32LE:
+	case R_STRING_ENC_UTF32BE:
 		if (buf_size < 0) {
 			return NULL;
 		}
-		if (enc == R_STRING_ENC_UTF16LE) {
+		if (enc == R_STRING_ENC_UTF16LE || enc == R_STRING_ENC_UTF16BE) {
 			end = (char *)r_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0", 2, 2);
 		} else {
 			end = (char *)r_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0\0\0", 4, 4);
 		}
 		if (!end) {
-			end = buf + buf_size - 1;
+			end = buf + buf_size - 1; /* TODO: handle overlong strings properly */
 		}
 		len = end - buf;
 		break;
@@ -1358,10 +1392,14 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 	while (p < end) {
 		switch (enc) {
 		case R_STRING_ENC_UTF16LE:
+		case R_STRING_ENC_UTF16BE:
 		case R_STRING_ENC_UTF32LE:
-			ch_bytes = (enc == R_STRING_ENC_UTF16LE ?
-				    r_utf16le_decode ((ut8 *)p, end - p, &ch) :
-				    r_utf32le_decode ((ut8 *)p, end - p, &ch));
+		case R_STRING_ENC_UTF32BE:
+			if (enc == R_STRING_ENC_UTF16LE || enc == R_STRING_ENC_UTF16BE) {
+				ch_bytes = r_utf16_decode ((ut8 *)p, end - p, &ch, enc == R_STRING_ENC_UTF16BE);
+			} else {
+				ch_bytes = r_utf32_decode ((ut8 *)p, end - p, &ch, enc == R_STRING_ENC_UTF32BE);
+			}
 			if (ch_bytes == 0) {
 				p++;
 				continue;
@@ -1376,20 +1414,27 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 		if (show_asciidot && !IS_PRINTABLE(ch)) {
 			*q++ = '.';
 		} else if (ch_bytes > 1) {
-			*q++ = '\\';
-			*q++ = ch_bytes == 4 ? 'U' : 'u';
-			for (i = ch_bytes == 4 ? 6 : 2; i >= 0; i -= 2) {
-				*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
-				*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
+			if (keep_printable) {
+				q += r_utf8_encode ((ut8 *)q, ch);
+			} else {
+				*q++ = '\\';
+				*q++ = ch_bytes == 4 ? 'U' : 'u';
+				for (i = ch_bytes == 4 ? 6 : 2; i >= 0; i -= 2) {
+					*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
+					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
+				}
 			}
 		} else {
-			r_str_byte_escape (p, &q, false, false, esc_bslash);
+			int offset = enc == R_STRING_ENC_UTF16BE ? 1 : enc == R_STRING_ENC_UTF32BE ? 3 : 0;
+			r_str_byte_escape (p + offset, &q, false, false, esc_bslash);
 		}
 		switch (enc) {
 		case R_STRING_ENC_UTF16LE:
+		case R_STRING_ENC_UTF16BE:
 			p += ch_bytes < 2 ? 2 : ch_bytes;
 			break;
 		case R_STRING_ENC_UTF32LE:
+		case R_STRING_ENC_UTF32BE:
 			p += 4;
 			break;
 		default:
@@ -1401,15 +1446,27 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 }
 
 R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot, bool esc_bslash) {
-	return r_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot, esc_bslash);
+	return r_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot, esc_bslash, false);
+}
+
+R_API char *r_str_escape_utf8_keep_printable(const char *buf, bool show_asciidot, bool esc_bslash) {
+	return r_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot, esc_bslash, true);
 }
 
 R_API char *r_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16LE, show_asciidot, esc_bslash);
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16LE, show_asciidot, esc_bslash, false);
 }
 
 R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot, esc_bslash);
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot, esc_bslash, false);
+}
+
+R_API char *r_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16BE, show_asciidot, esc_bslash, false);
+}
+
+R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
+	return r_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
 // JSON has special escaping requirements
@@ -1716,7 +1773,6 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
  */
 R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	int i, j, *cps;
-	char *tmp;
 
 	if (len == 0) {
 		return 0;
@@ -1724,7 +1780,7 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	if (len < 0) {
 		len = strlen (str);
 	}
-	tmp = malloc (len + 1);
+	char *tmp = malloc (len + 1);
 	if (!tmp) {
 		return -1;
 	}
@@ -1770,7 +1826,7 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 	const char *s, *s_start;
 	size_t r_len, str_len = 0, nr_of_lines = 0;
 	ut32 ch = 0, cw = 0;
-	if ((x2 - x) < 1 || (y2 - y) < 1 || !str) {
+	if (x2 <= x || y2 <= y || !str) {
 		return strdup ("");
 	}
 	s = s_start = str;
@@ -1830,7 +1886,7 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 						/* copy 0x1b and [ */
 						*r++ = *str++;
 						*r++ = *str++;
-						for (ptr = str; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ++ptr) {
+						for (ptr = str; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ptr++) {
 							*r++ = *ptr;
 						}
 						*r++ = *ptr++;
@@ -2061,6 +2117,52 @@ R_API int r_str_arg_unescape(char *arg) {
 	}
 	arg[dest_i] = '\0';
 	return dest_i;
+}
+
+R_API char *r_str_path_escape(const char *path) {
+	char *str;
+	int dest_i = 0, src_i = 0;
+
+	if (!path) {
+		return NULL;
+	}
+	// Worst case when every character need to be escaped
+	str = malloc ((2 * strlen (path) + 1) * sizeof (char));
+	if (!str) {
+		return NULL;
+	}
+
+	for (src_i = 0; path[src_i] != '\0'; src_i++) {
+		char c = path[src_i];
+		switch (c) {
+		case ' ':
+			str[dest_i++] = '\\';
+			str[dest_i++] = c;
+			break;
+		default:
+			str[dest_i++] = c;
+			break;
+		}
+	}
+
+	str[dest_i] = '\0';
+	return realloc (str, (strlen (str) + 1) * sizeof (char));
+}
+
+R_API int r_str_path_unescape(char *path) {
+	int i;
+
+	for (i = 0; path[i]; i++) {
+		if (path[i] != '\\') {
+			continue;
+		}
+		if (path[i + 1] == ' ') {
+			path[i] = ' ';
+			memmove (path + i + 1, path + i + 2, strlen (path + i + 2) + 1);
+		}
+	}
+
+	return i;
 }
 
 R_API char **r_str_argv(const char *cmdline, int *_argc) {
@@ -2943,55 +3045,19 @@ R_API const char *r_str_pad(const char ch, int sz) {
 	return pad;
 }
 
-static char **__consts = NULL;
-
-R_API const char *r_str_const_at(char ***consts, const char *ptr) {
-	if (!consts) {
-		consts = &__consts;
-	}
-	int ctr = 0;
-	if (!ptr) {
-		return NULL;
-	}
-	if (*consts) {
-		const char *p;
-		while ((p = (*consts)[ctr])) {
-			if (ptr == p || !strcmp (ptr, p)) {
-				return p;
-			}
-			ctr ++;
-		}
-		char **res = realloc (*consts, (ctr + 2) * sizeof (void*));
-		if (!res) {
-			return NULL;
-		}
-		*consts = res;
-	} else {
-		*consts = malloc (sizeof (void*) * 2);
-		if (!*consts) {
-			return NULL;
-		}
-	}
-	(*consts)[ctr] = strdup (ptr);
-	(*consts)[ctr + 1] = NULL;
-	return (*consts)[ctr];
-}
-
-R_API const char *r_str_const(const char *ptr) {
-	return r_str_const_at (&__consts, ptr);
-}
-
-R_API void r_str_const_free(char ***consts) {
+R_API char *r_str_repeat(const char *ch, int sz) {
 	int i;
-	if (!consts) {
-		consts = &__consts;
+	if (sz < 0) {
+		sz = 0;
 	}
-	if (*consts) {
-		for (i = 0; (*consts)[i]; i++) {
-			free ((*consts)[i]);
-		}
-		R_FREE (*consts);
+	if (sz == 0) {
+		return strdup ("");
 	}
+	RStrBuf *buf = r_strbuf_new (ch);
+	for (i = 1; i < sz; i++) {
+		r_strbuf_append (buf, ch);
+	}
+	return r_strbuf_drain (buf);
 }
 
 R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffix) {
@@ -3031,53 +3097,46 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 }
 
 // Splits the string <str> by string <c> and returns the result in a list.
-R_API RList *r_str_split_list(char *str, const char *c)  {
+R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 	r_return_val_if_fail (str && c, NULL);
-	RList *lst = r_list_new ();
-
-	char *aux;
-	bool first_loop = true;
-
-	for (;;) {
-		if (first_loop) {
-			aux = strtok (str, c);
-			first_loop = false;
-		} else {
-			aux = strtok (NULL, c);
+	RList *lst = r_list_newf (NULL);
+	char *aux = str;
+	int i = 0;
+	char  *e = aux;
+	for (;e;) {
+		e = strstr (aux, c);
+		if (n > 0) {
+			if (++i > n) {
+				r_list_append (lst, aux);
+				break;
+			}
 		}
-
-		if (!aux) {
-			break;
+		if (e) {
+			*e++ =  0;
 		}
 		r_str_trim (aux);
 		r_list_append (lst, aux);
+		aux = e;
 	}
-
 	return lst;
 }
 
-R_API RList *r_str_split_duplist(const char *_str, const char *c)  {
+R_API RList *r_str_split_duplist(const char *_str, const char *c) {
 	r_return_val_if_fail (_str && c, NULL);
 	RList *lst = r_list_newf (free);
 	char *str = strdup (_str);
-
-	char *aux;
-	bool first_loop = true;
-
-	for (;;) {
-		if (first_loop) {
-			aux = strtok (str, c);
-			first_loop = false;
-		} else {
-			aux = strtok (NULL, c);
-		}
-		if (!aux) {
-			break;
+	char *aux = str;
+	size_t clen = strlen (c);
+	while (aux) {
+		char *next = strstr (aux, c);
+		if (next) {
+			*next = '\0';
+			next += clen;
 		}
 		r_str_trim (aux);
 		r_list_append (lst, strdup (aux));
+		aux = next;
 	}
-
 	free (str);
 	return lst;
 }
@@ -3380,7 +3439,7 @@ R_API int r_snprintf(char *string, int len, const char *fmt, ...) {
 // Strips all the lines in str that contain key
 R_API void r_str_stripLine(char *str, const char *key) {
 	size_t i, j, klen, slen, off;
-	const char *ptr; 
+	const char *ptr;
 
 	if (!str || !key) {
 		return;
@@ -3398,7 +3457,7 @@ R_API void r_str_stripLine(char *str, const char *key) {
 			}
 			break;
 		}
-			
+
 		off = (size_t) (ptr - (str + i)) + 1;
 
 		ptr = (char*) r_mem_mem ((ut8*) str + i, off, (ut8*) key, klen);
@@ -3450,22 +3509,69 @@ R_API const char *r_str_bool(int b) {
 }
 
 R_API bool r_str_is_true(const char *s) {
-	return !r_str_casecmp ("yes", s) \
-		|| !r_str_casecmp ("on", s) \
-		|| !r_str_casecmp ("true", s) \
+	return !r_str_casecmp ("yes", s)
+		|| !r_str_casecmp ("on", s)
+		|| !r_str_casecmp ("true", s)
 		|| !r_str_casecmp ("1", s);
 }
 
-R_API bool r_str_is_bool(const char *val) {
-	if (!r_str_casecmp (val, "true") || !r_str_casecmp (val, "false")) {
-		return true;
-	}
-	if (!r_str_casecmp (val, "on") || !r_str_casecmp (val, "off")) {
-		return true;
-	}
-	if (!r_str_casecmp (val, "yes") || !r_str_casecmp (val, "no")) {
-		return true;
-	}
-	return false;
+R_API bool r_str_is_false(const char *s) {
+	return !r_str_casecmp ("no", s)
+		|| !r_str_casecmp ("off", s)
+		|| !r_str_casecmp ("false", s)
+		|| !r_str_casecmp ("0", s)
+		|| !*s;
 }
 
+R_API bool r_str_is_bool(const char *val) {
+	return r_str_is_true (val) || r_str_is_false (val);
+}
+
+R_API char *r_str_nextword(char *s, char ch) {
+	char *p = strchr (s, ch);
+	if (!p) {
+		return NULL;
+	}
+	*p++ = 0;
+	return p;
+}
+
+R_API char *r_str_scale(const char *s, int w, int h) {
+	// count lines and rows in (s) string
+	// compute how many lines we should remove or combine
+	// return a string containing
+	// for now this function is ascii only (no utf8 or ansi escapes)
+	RListIter *iter;
+	char *line;
+	char *str = strdup (s);
+	RList *lines = r_str_split_list (str, "\n", 0);
+	int i, j;
+	int rows = 0;
+	int maxcol = 0;
+
+	rows = r_list_length (lines);
+	r_list_foreach (lines, iter, line) {
+		maxcol = R_MAX (strlen (line), maxcol);
+	}
+
+	RList *out = r_list_newf (free);
+
+	int curline = -1;
+	char *linetext = (char*)r_str_pad (' ', w);
+	for (i = 0; i < h; i++) {
+		int zoomedline = i * ((float)rows / h);
+		const char *srcline = r_list_get_n (lines, zoomedline);
+		int cols = strlen (srcline);
+		for (j = 0; j < w; j++) {
+			int zoomedcol = j * ( (float)cols / w);
+			linetext[j] = srcline[zoomedcol];
+		}
+		if (curline != zoomedline) {
+			r_list_append (out, strdup (linetext));
+			curline = zoomedline;
+		}
+		memset (linetext, ' ', w);
+	}
+	free (str);
+	return r_str_list_join (out, "\n");
+}

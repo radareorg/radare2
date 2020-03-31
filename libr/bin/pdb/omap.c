@@ -27,7 +27,7 @@ void parse_omap_stream(void *stream, R_STREAM_FILE *stream_file) {
 
 	omap_stream = (SOmapStream *) stream;
 	omap_stream->froms = 0;
-	omap_stream->omap_entries = r_list_new();
+	omap_stream->omap_entries = r_list_new ();
 	ptmp = data;
 	while (read_bytes < data_size) {
 		omap_entry = (SOmapEntry *) malloc (sizeof(SOmapEntry));

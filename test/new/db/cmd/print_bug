@@ -1,0 +1,40 @@
+NAME=pi pdi with ahi2
+FILE=malloc://1024
+EXPECT=<<EOF
+movabs rcx, 'ld.lldtn'
+0x00000000 48b96e74646c6c2e646c  movabs rcx, 'ld.lldtn'
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 48b96e74646c6c2e646c
+ahi s
+pi 1
+pdi 1
+EOF
+RUN
+
+NAME=uafbug pi pdi
+FILE=malloc://1024
+EXPECT=<<EOF
+movabs rcx, 110.116.100.108
+movabs rcx, 'ld.lldtn'
+0x00000000 48b96e74646c6c2e646c  movabs rcx, 'ld.lldtn'
+0x00000000 48b96e74646c6c2e646c  movabs rcx, 'ld.lldtn'
+0x00000000 48b96e74646c6c2e646c  movabs rcx, 'ld.lldtn'
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 48b96e74646c6c2e646c
+ahi i
+pi 1
+ahi s
+pi 1
+pdi 1
+ia > /dev/null
+pdi 1
+ia > /dev/null
+pdi 1
+EOF
+RUN

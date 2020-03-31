@@ -1015,7 +1015,6 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
 static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	const ut8 *b = (ut8 *)data;
-	memset (op, '\0', sizeof (RAnalOp));
 
 	if (anal->bits == 16) {
 		return arcompact_op (anal, op, addr, data, len);

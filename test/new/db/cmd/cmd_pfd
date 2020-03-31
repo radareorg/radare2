@@ -1,0 +1,108 @@
+NAME=pfd.test [2]B (pe_characteristics)var0
+FILE=-
+BROKEN=1
+EXPECT=<<EOF
+digraph g { graph [ rank=same; rankdir=LR; ];
+root [ rank=1; shape=record
+label="test|{0x0|B|var0|<var0>pe_characteristics.IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE, pe_characteristics.IMAGE_DLLCHARACTERISTICS_NX_COMPAT, pe_characteristics.IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE}"];
+}
+EOF
+CMDS=<<EOF
+"td enum pe_characteristics {IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE=0x40, IMAGE_DLLCHARACTERISTICS_NX_COMPAT=0x100, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE=0x8000};"
+wx 0x00008140
+pfd.test B (pe_characteristics)var0
+pfd.test
+EOF
+RUN
+
+NAME=pfd.test E (elf_type)var0
+FILE=-
+EXPECT=<<EOF
+digraph g { graph [ rank=same; rankdir=LR; ];
+root [ rank=1; shape=record
+label="test|{0x0|E|var0|<var0>elf_type.ET_HIPROC}"];
+}
+EOF
+CMDS=<<EOF
+"td enum elf_type {ET_HIPROC=0xffff};"
+wx 0xffff
+pfd.test E (elf_type)var0
+pfd.test
+EOF
+RUN
+
+NAME=pfd.test i var0
+FILE=-
+EXPECT=<<EOF
+digraph g { graph [ rank=same; rankdir=LR; ];
+root [ rank=1; shape=record
+label="test|{0x0|i|var0|<var0>0x00000100}"];
+}
+EOF
+CMDS=<<EOF
+wv4 0x100
+pfd.test i var0
+pfd.test
+EOF
+RUN
+
+NAME=pfd.test w var0
+FILE=-
+EXPECT=<<EOF
+digraph g { graph [ rank=same; rankdir=LR; ];
+root [ rank=1; shape=record
+label="test|{0x0|w|var0|<var0>0x1234}"];
+}
+EOF
+CMDS=<<EOF
+wv2 0x1234
+pfd.test w var0
+pfd.test
+EOF
+RUN
+
+NAME=pfd.test x var0
+FILE=-
+EXPECT=<<EOF
+digraph g { graph [ rank=same; rankdir=LR; ];
+root [ rank=1; shape=record
+label="test|{0x0|x|var0|<var0>0x12345678}"];
+}
+EOF
+CMDS=<<EOF
+wv4 0x12345678
+pfd.test x var0
+pfd.test
+EOF
+RUN
+
+NAME=pfd.test z var0
+FILE=-
+EXPECT=<<EOF
+digraph g { graph [ rank=same; rankdir=LR; ];
+root [ rank=1; shape=record
+label="test|{0x0|z|var0|<var0>\"foobar\"}"];
+}
+EOF
+CMDS=<<EOF
+w foobar
+pfd.test z var0
+pfd.test
+EOF
+RUN
+
+NAME=pfd.test zz var0 var1
+FILE=-
+EXPECT=<<EOF
+digraph g { graph [ rank=same; rankdir=LR; ];
+root [ rank=1; shape=record
+label="test|{0x0|z|var0|<var0>\"string1\"}|{0x8|z|var1|<var1>\"string2\"}"];
+}
+EOF
+CMDS=<<EOF
+w string1
+w string2 @ 0x8
+pfd.test zz var0 var1
+pfd.test
+EOF
+RUN

@@ -1,6 +1,6 @@
 #if 0
         __ut64    __x[29];  /* General purpose registers x0-x28 */
-        __ut64    __fp;             /* Frame pointer x29 */
+        __ut64    __fp;             /* Frame pointer x29 */ //// 232
         __ut64    __lr;             /* Link register x30 */
         __ut64    __sp;             /* Stack pointer x31 */
         __ut64    __pc;             /* Program counter */
@@ -83,11 +83,11 @@ return strdup (
 "gpr	zr	.64	?	0\n" // w0
 // TODO complete w list ...
 // special registers
-"gpr	fp	.64	236	0\n" // FP
-"gpr	lr	.64	240	0\n" // LR
-"gpr	sp	.64	248	0\n" // SP
-"gpr	pc	.64	256	0\n" // PC
-"gpr	pstate	.64	272	0\n" // FLAGS
+"gpr	fp	.64	232	0\n" // FP
+"gpr	lr	.64	236	0\n" // LR
+"gpr	sp	.64	240	0\n" // SP
+"gpr	pc	.64	248	0\n" // PC
+"gpr	pstate	.64	256	0\n" // FLAGS
 // TODO flags
 "gpr	nf	.1	.2176	0	sign\n" // XXX wrong offset
 );

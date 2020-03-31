@@ -170,10 +170,10 @@ following files:
     libr/debug/p/native/linux/reg/linux-x86.h
     
     // platform-specific debugger code on Windows
-    libr/debug/p/native/w32.c                       // main code for win32 debugger plugin
+    libr/debug/p/native/w32.c                       // !! not used by anything else
     libr/debug/p/native/maps/windows.c              // platform-specific memory map handling
-    libr/debug/p/native/windows/windows_debug.c     // !! nothing in here
-    libr/debug/p/native/windows/windows_debug.h     // !! nothing in here
+    libr/debug/p/native/windows/windows_debug.c     // main code for win32 debugger plugin
+    libr/debug/p/native/windows/windows_debug.h     // including cute windows ascii art
     
     // platform-specific debugger code on XNU (OSX/iOS/etc)
     libr/debug/p/native/darwin.c                    // !! not used by anything else
@@ -192,6 +192,10 @@ following files:
     libr/debug/p/native/xnu/reg/darwin-ppc.h
     libr/debug/p/native/xnu/reg/darwin-arm64.h
     libr/debug/p/native/xnu/reg/darwin-x64.h
+
+    // platform-specific debugger code on BSD
+    libr/debug/p/native/bsd/bsd_debug.c         // main BSD debugging code
+    libr/debug/p/native/bsd/bsd_debug.h
 
 
 ### libr/debug/p/debug_qnx.c

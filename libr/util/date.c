@@ -103,8 +103,12 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	if (p && len >= sizeof (ut32)) {
 		t = r_read_ble32 (buf, p->big_endian);
 		if (p->datefmt[0]) {
-			t += p->datezone * (60*60); 
-			p->cb_printf ("%s\n", r_time_stamp_to_str (t));
+			t += p->datezone * (60*60);
+			char *datestr = r_time_stamp_to_str (t);
+			if (datestr) {
+				p->cb_printf ("%s\n", datestr);
+				free (datestr);
+			}
 			ret = sizeof (time_t);
 		}
 	}

@@ -1,0 +1,160 @@
+d "l.j 0xfaaaaaa8" 02aaaaaa
+d "l.j 0x6060604" 01818181
+d "l.jal 0xfaaaaaa8" 06aaaaaa
+d "l.jal 0x6060604" 05818181
+d "l.adrp r21, 0xaaaaa000" 0ab55555
+d "l.adrp r21, 0x3030000" 0aa81818
+d "l.bnf 0xfaaaaaa8" 0eaaaaaa
+d "l.bnf 0x6060604" 0d818181
+d "l.bf 0xfaaaaaa8" 12aaaaaa
+d "l.bf 0x6060604" 11818181
+d "l.nop 0xaaaa" 1500aaaa
+d "l.nop 0x5555" 15aa5555
+d "invalid" 14aa5555
+d "invalid" 16aa5555
+d "invalid" 17aa5555
+d "l.movhi r21, 0x5555" 1aa05555
+d "l.macrc r21" 1aa10000
+d "l.sys 0xaaaa" 2000aaaa
+d "invalid" 2100aaaa
+d "l.msync" 22000000
+d "l.psync" 22800000
+d "l.csync" 23000000
+d "l.rfe" 24000000
+d "lv.ext0a" 280000d0
+d "lv.ext0a" 280000e0
+d "lv.ext0a" 280000f0
+d "l.jr r21" 4400a800
+d "l.jalr r21" 4800a800
+d "l.maci r21, 0xaaaa" 4c15aaaa
+d "l.lf r21, r21, 0xaaaa" 6ab5aaaa
+d "l.lwa r21, r21, 0xaaaa" 6eb5aaaa
+d "l.cust1" 70000000
+d "l.cust2" 74000000
+d "l.cust3" 78000000
+d "l.cust4" 7c000000
+d "l.ld r21, r21, 0xaaaa" 82b5aaaa
+d "l.lwz r21, r21, 0xaaaa" 86b5aaaa
+d "l.lws r21, r21, 0xaaaa" 8ab5aaaa
+d "l.lbz r21, r21, 0xaaaa" 8eb5aaaa
+d "l.lbs r21, r21, 0xaaaa" 92b5aaaa
+d "l.lhz r21, r21, 0xaaaa" 96b5aaaa
+d "l.lhs r21, r21, 0xaaaa" 9ab5aaaa
+d "l.addi r21, r21, 0xaaaa" 9eb5aaaa
+d "l.addic r21, r21, 0xaaaa" a2b5aaaa
+d "l.andi r21, r21, 0xaaaa" a6b5aaaa
+d "l.ori r21, r21, 0xaaaa" aab5aaaa
+d "l.xori r21, r21, 0xaaaa" aeb5aaaa
+d "l.muli r21, r21, 0xaaaa" b2b5aaaa
+d "l.mfspr r21, r21, 0xaaaa" b6b5aaaa
+d "l.slli r21, r21, 0x2a" bab5002a
+d "l.srli r21, r21, 0x2a" bab5006a
+d "l.srai r21, r21, 0x2a" bab500aa
+d "l.rori r21, r21, 0x2a" bab500ea
+d "l.sfeqi r21, 0xaaaa" bc15aaaa
+d "l.sfnei r21, 0xaaaa" bc35aaaa
+d "l.sfgtui r21, 0xaaaa" bc55aaaa
+d "l.sfgeui r21, 0xaaaa" bc75aaaa
+d "l.sfltui r21, 0xaaaa" bc95aaaa
+d "l.sfleui r21, 0xaaaa" bcb5aaaa
+d "l.sfgtsi r21, 0xaaaa" bd55aaaa
+d "l.sfgesi r21, 0xaaaa" bd75aaaa
+d "l.sfltsi r21, 0xaaaa" bd95aaaa
+d "l.sflesi r21, 0xaaaa" bdb5aaaa
+d "l.mtspr r21, r21, 0xaaaa" c2b5aaaa
+d "l.mtspr r21, r21, 0x5555" c155ad55
+d "l.mac r21, r21" c415a801
+d "l.macu r21, r21" c415a803
+d "l.msb r21, r21" c415a802
+d "l.msbu r21, r21" c415a804
+d "lf.sfeq.s r21, r21" c815a808
+d "lf.sfne.s r21, r21" c815a809
+d "lf.sfgt.s r21, r21" c815a80a
+d "lf.sfge.s r21, r21" c815a80b
+d "lf.sflt.s r21, r21" c815a80c
+d "lf.sfle.s r21, r21" c815a80d
+d "lf.sfeq.d r21, r21" c815a818
+d "lf.sfne.d r21, r21" c815a819
+d "lf.sfgt.d r21, r21" c815a81a
+d "lf.sfge.d r21, r21" c815a81b
+d "lf.sflt.d r21, r21" c815a81c
+d "lf.sfle.d r21, r21" c815a81d
+d "lf.sfueq.s r21, r21" c815a828
+d "lf.sfune.s r21, r21" c815a829
+d "lf.sfugt.s r21, r21" c815a82a
+d "lf.sfuge.s r21, r21" c815a82b
+d "lf.sfult.s r21, r21" c815a82c
+d "lf.sfule.s r21, r21" c815a82d
+d "lf.sfun.s r21, r21" c815a82e
+d "lf.stod.d r21, r21" c815a834
+d "lf.dtos.d r21, r21" c815a835
+d "lf.sfueq.d r21, r21" c815a838
+d "lf.sfune.d r21, r21" c815a839
+d "lf.sfugt.d r21, r21" c815a83a
+d "lf.sfuge.d r21, r21" c815a83b
+d "lf.sfult.d r21, r21" c815a83c
+d "lf.sfule.d r21, r21" c815a83d
+d "lf.sfun.d r21, r21" c815a83e
+d "lf.cust1.s r21, r21" c815a8d0
+d "lf.cust1.d r21, r21" c815a8e0
+d "lf.itof.s r21, r21" cab50004
+d "lf.ftoi.s r21, r21" cab50005
+d "lf.itof.d r21, r21" cab50014
+d "lf.ftoi.d r21, r21" cab50015
+d "lf.add.s r21, r21, r21" cab5a800
+d "lf.sub.s r21, r21, r21" cab5a801
+d "lf.mul.s r21, r21, r21" cab5a802
+d "lf.div.s r21, r21, r21" cab5a803
+d "lf.madd.s r21, r21, r21" cab5a807
+d "lf.add.d r21, r21, r21" cab5a810
+d "lf.sub.d r21, r21, r21" cab5a811
+d "lf.mul.d r21, r21, r21" cab5a812
+d "lf.div.d r21, r21, r21" cab5a813
+d "lf.madd.d r21, r21, r21" cab5a817
+d "l.swa r21, r21, 0xaaaa" ceb5aaaa
+d "l.swa r21, r21, 0x5555" cd55ad55
+d "l.sw r21, r21, 0xaaaa" d6b5aaaa
+d "l.sw r21, r21, 0x5555" d555ad55
+d "l.sb r21, r21, 0xaaaa" dab5aaaa
+d "l.sb r21, r21, 0x5555" d955ad55
+d "l.sh r21, r21, 0xaaaa" deb5aaaa
+d "l.sh r21, r21, 0x5555" dd55ad55
+d "l.exths r21, r21" e2b5000c
+d "l.extws r21, r21" e2b5000d
+d "l.extbs r21, r21" e2b5004c
+d "l.extwz r21, r21" e2b5004d
+d "l.exthz r21, r21" e2b5008c
+d "l.extbz r21, r21" e2b500cc
+d "l.add r21, r21, r21" e2b5a800
+d "l.addc r21, r21, r21" e2b5a801
+d "l.sub r21, r21, r21" e2b5a802
+d "l.and r21, r21, r21" e2b5a803
+d "l.or r21, r21, r21" e2b5a804
+d "l.xor r21, r21, r21" e2b5a805
+d "l.cmov r21, r21, r21" e2b5a80e
+d "l.ff1 r21, r21" e2b5000f
+d "l.sll r21, r21, r21" e2b5a808
+d "l.srl r21, r21, r21" e2b5a848
+d "l.sra r21, r21, r21" e2b5a888
+d "l.ror r21, r21, r21" e2b5a8c8
+d "l.fl1 r21, r21" e2b5010f
+d "l.mul r21, r21, r21" e2b5ab06
+d "l.muld r21, r21" e015ab07
+d "l.div r21, r21, r21" e2b5ab09
+d "l.divu r21, r21, r21" e2b5ab0a
+d "l.mulu r21, r21, r21" e2b5ab0b
+d "l.muldu r21, r21" e015ab0c
+d "l.sfeq r21, r21" e415a800
+d "l.sfne r21, r21" e435a800
+d "l.sfgtu r21, r21" e455a800
+d "l.sfgeu r21, r21" e475a800
+d "l.sfltu r21, r21" e495a800
+d "l.sfleu r21, r21" e4b5a800
+d "l.sfgts r21, r21" e555a800
+d "l.sfges r21, r21" e575a800
+d "l.sflts r21, r21" e595a800
+d "l.sfles r21, r21" e5b5a800
+d "l.cust5" f2b5ad4a
+d "l.cust6" f4000000
+d "l.cust7" f8000000
+d "l.cust8" fc000000

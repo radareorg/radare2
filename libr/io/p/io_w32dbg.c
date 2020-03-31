@@ -11,29 +11,72 @@
 
 #include <windows.h>
 #include <tlhelp32.h>
+#include <w32dbg_wrap.h>
 
-typedef struct {
-	int pid;
-	int tid;
-	ut64 winbase;
-	PROCESS_INFORMATION pi;
-} RIOW32Dbg;
-#define RIOW32DBG_PID(x) (((RIOW32Dbg*)x->data)->pid)
+#define RIOW32DBG_PID(x) (((RIOW32Dbg*)x->data)->pi.dwProcessId)
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
 
-static int debug_os_read_at(RIOW32Dbg *dbg, void *buf, int len, ut64 addr) {
-	SIZE_T ret;
-	ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret);
-//	if (len != ret)
-//		eprintf ("Cannot read 0x%08llx\n", addr);
-	return len; // XXX: Handle read correctly and not break r2 shell
-	//return (int)ret; //(int)len; //ret;
+static ut64 __find_next_valid_addr(HANDLE h, ut64 from, ut64 to) {
+	// Align to next page and try to get to next valid addr
+	const int page_size = 0x1000;
+	from = ((from + page_size) / page_size) * page_size;
+	ut8 buf;
+	while (from < to && !ReadProcessMemory (h, (void *)from, &buf, 1, NULL)) {
+		from += page_size;
+	}
+	return from < to ? from : UT64_MAX;
+}
+
+static int debug_os_read_at(RIOW32Dbg *dbg, ut8 *buf, int len, ut64 addr) {
+	SIZE_T ret = 0;
+	const int page_size = 0x1000;
+	if (!ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret)
+		&& GetLastError () == ERROR_PARTIAL_COPY) {
+		int skipped = 0;
+		if (!ReadProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, 1, &ret)) {
+			// We are starting a read from invalid memory
+			ut64 valid_addr = __find_next_valid_addr (dbg->pi.hProcess, addr, addr + len);
+			if (valid_addr == UT64_MAX) {
+				return len;
+			}
+			skipped = valid_addr - addr;
+			memset (buf, '\xff', skipped);
+			addr = valid_addr;
+			buf += skipped;
+		}
+		// We are in a valid page now, try to read again
+		int read_len = len - skipped;
+		int totRead = skipped;
+		while (totRead < len) {
+			while (!ReadProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, read_len, &ret)) {
+				// Maybe read_len is too big, we are reaching invalid memory
+				read_len /= 2;
+				if (!read_len) {
+					// Reached the end of valid memory, find another to continue reading if possible
+					ut64 valid_addr = __find_next_valid_addr (dbg->pi.hProcess, addr, addr + len - totRead);
+					if (valid_addr == UT64_MAX) {
+						return len;
+					}
+					skipped = valid_addr - addr;
+					addr = valid_addr;
+					memset (buf, '\xff', skipped);
+					buf += skipped;
+					totRead += skipped;
+					read_len = len - totRead;
+				}
+			}
+			buf += ret;
+			addr += ret;
+			totRead += ret;
+			read_len = R_MIN (read_len, len - totRead);
+		}
+	}
+	return len;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
-	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
 	return debug_os_read_at (fd->data, buf, len, io->off);
 }
 
@@ -94,23 +137,36 @@ err_first_th:
 	return pid;
 }
 
-static int __open_proc (RIOW32Dbg *dbg, bool attach) {
+static int __open_proc(RIO *io, RIOW32Dbg *dbg, bool attach) {
 	DEBUG_EVENT de;
 	int ret = -1;
-	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
+	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pi.dwProcessId);
 
 	if (!h_proc) {
 		r_sys_perror ("__open_proc/OpenProcess");
 		goto att_exit;
 	}
+	if (!io->w32dbg_wrap) {
+		io->w32dbg_wrap = w32dbg_wrap_new ();
+	}
 	if (attach) {
 		/* Attach to the process */
-		if (!DebugActiveProcess(dbg->pid)) {
+		w32dbg_wrap_instance *inst = io->w32dbg_wrap;
+		inst->params->type = W32_ATTACH;
+		inst->params->pid = dbg->pi.dwProcessId;
+		w32dbg_wrap_wait_ret (inst);
+		if (!w32dbgw_ret (inst)) {
+			w32dbgw_err (inst);
 			r_sys_perror ("__open_proc/DebugActiveProcess");
 			goto att_exit;
 		}
 		/* catch create process event */
-		if (!WaitForDebugEvent (&de, 10000)) {
+		inst->params->type = W32_WAIT;
+		inst->params->wait.wait_time = 10000;
+		inst->params->wait.de = &de;
+		w32dbg_wrap_wait_ret (inst);
+		if (!w32dbgw_ret (inst)) {
+			w32dbgw_err (inst);
 			r_sys_perror ("__open_proc/WaitForDebugEvent");
 			goto att_exit;
 		}
@@ -120,9 +176,10 @@ static int __open_proc (RIOW32Dbg *dbg, bool attach) {
 		}
 		dbg->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
 	}
+	dbg->inst = io->w32dbg_wrap;
 	dbg->pi.hProcess = h_proc;
-	dbg->tid = __w32_first_thread (dbg->pid);
-	ret = dbg->pid;
+	dbg->pi.dwProcessId = dbg->pi.dwProcessId;
+	ret = dbg->pi.dwProcessId;
 att_exit:
 	if (ret == -1 && h_proc) {
 		CloseHandle (h_proc);
@@ -137,14 +194,16 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (!dbg) {
 			return NULL;
 		}
-		dbg->pid = atoi (file + 9);
-		if (__open_proc (dbg, !strncmp (file, "attach://", 9)) == -1) {
+		dbg->pi.dwProcessId = atoi (file + 9);
+		if (__open_proc (io, dbg, !strncmp (file, "attach://", 9)) == -1) {
 			free (dbg);
 			return NULL;
 		}
+		dbg->pi.dwThreadId = __w32_first_thread (dbg->pi.dwProcessId);
+		dbg->pi.hThread = OpenThread (THREAD_ALL_ACCESS, FALSE, dbg->pi.dwThreadId);
 		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
 				file, rw | R_PERM_X, mode, dbg);
-		ret->name = r_sys_pid_to_path (dbg->pid);
+		ret->name = r_sys_pid_to_path (dbg->pi.dwProcessId);
 		return ret;
 	}
 	return NULL;
@@ -166,48 +225,51 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __close(RIODesc *fd) {
-	// TODO: detach
-	return true;
+	RIOW32Dbg *iop = fd->data;
+	iop->inst->params->type = W32_DETTACH;
+	w32dbg_wrap_wait_ret (iop->inst);
+	return false;
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOW32Dbg *iop = fd->data;
 	//printf("w32dbg io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
-	if (!strncmp (cmd, "pid", 3)) {
+	if (!strcmp (cmd, "")) {
+		// do nothing
+	} else if (!strncmp (cmd, "pid", 3)) {
 		if (cmd[3] == ' ') {
 			int pid = atoi (cmd + 3);
-			if (pid > 0 && pid != iop->pid) {
-				iop->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, false, pid);
-				if (iop->pi.hProcess) {
-					iop->pid = iop->tid = pid;
+			if (pid > 0 && pid != iop->pi.dwThreadId && pid != iop->pi.dwProcessId) {
+				iop->pi.hThread = OpenThread (PROCESS_ALL_ACCESS, FALSE, pid);
+				if (iop->pi.hThread) {
+					iop->pi.dwThreadId = pid;
 				} else {
 					eprintf ("Cannot attach to %d\n", pid);
 				}
 			}
-			/* TODO: Implement child attach */
 		}
-		return r_str_newf ("%d", iop->pid);
+		return r_str_newf ("%d", iop->pi.dwProcessId);
 	} else {
 		eprintf ("Try: '=!pid'\n");
 	}
 	return NULL;
 }
 
-static int __getpid (RIODesc *fd) {
+static int __getpid(RIODesc *fd) {
 	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
 	if (!iow) {
 		return -1;
 	}
-	return iow->pid;
+	return iow->pi.dwProcessId;
 }
 
-static int __gettid (RIODesc *fd) {
+static int __gettid(RIODesc *fd) {
 	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
-	return iow? iow->tid: -1;
+	return iow? iow->pi.dwThreadId: -1;
 }
 
-static bool __getbase (RIODesc *fd, ut64 *base) {
+static bool __getbase(RIODesc *fd, ut64 *base) {
 	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
 	if (base && iow) {
 		*base = iow->winbase;

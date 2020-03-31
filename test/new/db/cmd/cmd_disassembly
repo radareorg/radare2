@@ -1,0 +1,185 @@
+NAME=pD@x:90
+FILE=-
+EXPECT=<<EOF
+            0x00000000      90             nop
+EOF
+CMDS=<<EOF
+e asm.arch = x86
+e asm.bits= 32
+pD@x:90
+EOF
+RUN
+
+NAME=pd@x:90
+FILE=-
+EXPECT=<<EOF
+            0x00000000      90             nop
+EOF
+CMDS=<<EOF
+e asm.arch = x86
+e asm.bits= 32
+pd@x:90
+EOF
+RUN
+
+NAME=pd@x:90909090
+FILE=-
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000001      90             nop
+            0x00000002      90             nop
+            0x00000003      90             nop
+EOF
+CMDS=<<EOF
+e asm.arch = x86
+e asm.bits= 32
+pd@x:90909090
+EOF
+RUN
+
+NAME=pd@x:909090
+FILE=-
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000001      90             nop
+            0x00000002      90             nop
+EOF
+CMDS=<<EOF
+e asm.arch = x86
+e asm.bits= 32
+pd@x:909090
+EOF
+RUN
+
+NAME=pd 4;?=
+FILE=-
+EXPECT=<<EOF
+            0x00000000      0000           add byte [eax], al
+            0x00000002      0000           add byte [eax], al
+            0x00000004      0000           add byte [eax], al
+            0x00000006      0000           add byte [eax], al
+0x8
+EOF
+CMDS=<<EOF
+wx 00000000000000000000
+e asm.arch=x86
+e asm.bits=32
+pd 4
+?=
+EOF
+RUN
+
+NAME=pd 4 > /dev/null; ?=
+FILE=-
+EXPECT=<<EOF
+0x8
+EOF
+CMDS=<<EOF
+wx 00000000000000000000
+e asm.arch=x86
+e asm.bits=32
+pd 4 > /dev/null
+?=
+EOF
+RUN
+
+NAME=wx e9010f;?v $l
+FILE=-
+EXPECT=<<EOF
+3
+jmp 0xf04
+3
+EOF
+CMDS=<<EOF
+wx e9010f
+e asm.arch=x86
+e asm.bits=16
+?vi $l
+pi 1
+ao 1~size[1]
+EOF
+RUN
+
+NAME=dis-16/32/64
+FILE=-
+EXPECT=<<EOF
+jmp 0x96
+call 0x3971
+call 0x3535
+EOF
+CMDS=<<EOF
+wx e99300 e869390000 e828350000
+e asm.arch=x86
+e asm.segoff=1
+e asm.bits=16
+pi 1
+s+3
+e asm.segoff=0
+e asm.bits=32
+pi 1
+s+5
+e asm.bits=64
+pi 1
+EOF
+RUN
+
+NAME=unaligned arm code
+FILE=-
+EXPECT=<<EOF
+unaligned
+EOF
+CMDS=<<EOF
+wx 00000000
+e asm.bits=16
+e asm.arch=arm
+pi 1 @ 1
+EOF
+RUN
+
+NAME=unaligned arm code
+FILE=-
+EXPECT=<<EOF
+unaligned
+EOF
+CMDS=<<EOF
+wx 00000000
+e asm.bits=32
+e asm.arch=arm
+pi 1 @ 2
+EOF
+RUN
+
+NAME=unaligned x86 issue
+FILE=-
+EXPECT=<<EOF
+movs r0, r0
+movs r0, r0
+add byte [bx + si], al
+EOF
+CMDS=<<EOF
+wx 00000000
+e asm.arch=arm
+e asm.bits=16
+pi 2
+e asm.arch=x86
+pi 1 @ 1
+EOF
+RUN
+
+NAME=reflines on last line
+FILE=-
+EXPECT=<<EOF
+3
+3
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e scr.utf8=0
+e asm.lines.bb=1
+e asm.comments=0
+wx 803d1ca0040833740ceb1c83c004a318a0088ffd2a118a00408b1085d275eb
+pd 12~?=
+pd 13~?=
+EOF
+RUN

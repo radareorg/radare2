@@ -117,20 +117,26 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			}
 			nlines--;
 		}
-		{
-			const RAnalMetaItem *mi = r_meta_find_any_except (anal, addr, R_META_TYPE_COMMENT, 0);
-			if (mi) {
-				ptr += mi->size;
-				addr += mi->size;
-				free (mi->str);
-				continue;
-			}
-		}
 		if (anal->maxreflines && count > anal->maxreflines) {
 			break;
 		}
-
 		addr += sz;
+		{
+			RAnalMetaItem *mi = r_meta_find_any_except (anal, addr, R_META_TYPE_COMMENT, 0);
+			if (mi) {
+				ptr += mi->size;
+				addr += mi->size;
+				r_meta_item_free (mi);
+				continue;
+			}
+		}
+		if (!anal->iob.is_valid_offset (anal->iob.io, addr, 1)) {
+			const int size = 4;
+			ptr += size;
+			addr += size;
+			continue;
+		}
+
 		// This can segfault if opcode length and buffer check fails
 		r_anal_op_fini (&op);
 		sz = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
@@ -225,99 +231,6 @@ list_err:
 	r_list_free (sten);
 	r_list_free (list);
 	return NULL;
-}
-
-R_API RList* r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines, int linesout, int linescall) {
-	RAnalBlock *bb;
-	RListIter *bb_iter;
-	RAnalRefline *item;
-	int index = 0;
-	ut32 len;
-
-	RList *list = r_list_new ();
-	if (!list) {
-		return NULL;
-	}
-
-	/* analyze code block */
-	r_list_foreach (fcn->bbs, bb_iter, bb) {
-		if (!bb || !bb->size) {
-			continue;
-		}
-		if (nlines != -1 && !--nlines) {
-			break;
-		}
-		len = bb->size;
-		/* store data */
-		ut64 control_type = bb->type;
-		control_type &= R_ANAL_BB_TYPE_SWITCH | R_ANAL_BB_TYPE_JMP | R_ANAL_BB_TYPE_COND | R_ANAL_BB_TYPE_CALL;
-
-		// handle call
-		if (!linescall) {
-			if ((control_type & R_ANAL_BB_TYPE_CALL) == R_ANAL_BB_TYPE_CALL) {
-				continue;
-			}
-		}
-		// Handles conditional + unconditional jump
-		if ((control_type & R_ANAL_BB_TYPE_CJMP) == R_ANAL_BB_TYPE_CJMP) {
-			// don't need to continue here is opc+len exceed function scope
-			if (linesout && bb->fail > 0LL && bb->fail != bb->addr + len) {
-				item = R_NEW0 (RAnalRefline);
-				if (!item) {
-					r_list_free (list);
-					return NULL;
-				}
-				item->from = bb->addr;
-				item->to = bb->fail;
-				item->index = index++;
-				item->type = 'c';
-				item->direction = (bb->jump > bb->addr)? 1: -1;
-				r_list_append (list, item);
-			}
-		}
-		if ((control_type & R_ANAL_BB_TYPE_JMP) == R_ANAL_BB_TYPE_JMP) {
-			if (!linesout || !bb->jump || bb->jump == bb->addr + len) {
-				continue;
-			}
-			item = R_NEW0 (RAnalRefline);
-			if (!item) {
-				r_list_free (list);
-				return NULL;
-			}
-			item->from = bb->addr;
-			item->to = bb->jump;
-			item->index = index++;
-			item->type = 'j';
-			item->direction = (bb->jump > bb->addr)? 1: -1;
-			r_list_append (list, item);
-			continue;
-		}
-
-		// XXX - Todo test handle switch op
-		if (control_type & R_ANAL_BB_TYPE_SWITCH) {
-			if (bb->switch_op) {
-				RAnalCaseOp *caseop;
-				RListIter *iter;
-				r_list_foreach (bb->switch_op->cases, iter, caseop) {
-					if (caseop) {
-						if (!linesout) {// && (op.jump > opc+len || op.jump < pc))
-							continue;
-						}
-						item = R_NEW0 (RAnalRefline);
-						if (!item){
-							r_list_free (list);
-							return NULL;
-						}
-						item->from = bb->switch_op->addr;
-						item->to = caseop->jump;
-						item->index = index++;
-						r_list_append (list, item);
-					}
-				}
-			}
-		}
-	}
-	return list;
 }
 
 R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 addr, int len) {
@@ -532,7 +445,13 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 
 	r_list_free (lvls);
 	RAnalRefStr *out = R_NEW0 (RAnalRefStr);
-	out->cols = col_str;
 	out->str = str;
+	out->cols = col_str;
 	return out;
+}
+
+R_API void r_anal_reflines_str_free(RAnalRefStr *refstr) {
+	free (refstr->str);
+	free (refstr->cols);
+	free (refstr);
 }

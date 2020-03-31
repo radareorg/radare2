@@ -6,7 +6,7 @@ R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name) {
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
 	if (context.abi == R_ANAL_CPP_ABI_MSVC) {
-		return r_anal_rtti_msvc_demangle_class_name (name);
+		return r_anal_rtti_msvc_demangle_class_name (&context, name);
 	}
 	// TODO: implement class name demangling for itanium
 	return NULL;

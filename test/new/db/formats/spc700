@@ -1,0 +1,7 @@
+NAME=SPC700: Open/iI
+FILE=../bins/spc700/bin.spc
+EXPECT=<<EOF
+SPC700
+EOF
+CMDS=iI~machine[1]
+RUN

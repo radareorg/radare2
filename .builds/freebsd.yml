@@ -1,0 +1,27 @@
+image: freebsd/latest
+packages:
+    - devel/meson
+    - devel/pkgconf
+    - devel/gmake
+    - devel/llvm
+    - ftp/wget
+environment:
+    CXX: clang++
+    CC: clang
+    HOST_CC: clang
+sources:
+    - https://github.com/radareorg/radare2
+tasks:
+    - build: |
+        cd radare2
+        ./configure --prefix=${HOME}
+        gmake
+    - install: |
+        cd radare2
+        export PATH=${HOME}/install/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/install/lib:${HOME}/install/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
+        gmake install
+        # Running the new V suite
+        cd test && gmake src/r2r
+

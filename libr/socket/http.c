@@ -6,7 +6,7 @@
 static int __socket_slurp (RSocket *s, ut8 *buf, int bufsz) {
 	int i;
 	int chsz = 1;
-	r_socket_block_time (s, 1, 1, 0);
+	// r_socket_block_time (s, 1, 1, 0);
 	if (r_socket_read_block (s, (ut8 *) buf, 1) != 1) {
 		return 0;
 	}
@@ -95,6 +95,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 				*rlen = strlen (res);
 			}
 		}
+		free (curl_env);
 		return res;
 	}
 	free (curl_env);

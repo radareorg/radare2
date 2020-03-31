@@ -44,9 +44,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "b.le", "jmp ifle #", { 1 } },
 		{ 0, "beq lr", "ifeq ret", { 0 } },
 		{ 0, "beq", "je #", { 1 } },
-		{ 0, "call", "#()", { 1 } },
-		{ 0, "bl", "#()", { 1 } },
-		{ 0, "blx", "#()", { 1 } },
+		{ 0, "call", "# ()", { 1 } },
+		{ 0, "bl", "# ()", { 1 } },
+		{ 0, "blx", "# ()", { 1 } },
 		{ 0, "bx lr", "ret", { 0 } },
 		{ 0, "bxeq", "je #", { 1 } },
 		{ 0, "cmf", "if (# == #)", { 1, 2 } },
@@ -376,6 +376,9 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		free (oldstr);
 	}
 	r_list_foreach (spargs, iter, var) {
+		if (p->get_ptr_at) {
+			var->delta = p->get_ptr_at (p->user, var, addr);
+		}
 		if (var->delta > -10 && var->delta < 10) {
 			oldstr = r_str_newf ("[sp, %d]", var->delta);
 		} else if (var->delta > 0) {

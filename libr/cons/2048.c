@@ -58,9 +58,9 @@ static void twok_move(int u, int v) {
 	int i, j, k;
 	int nKI = 0, nKJ = 0, nIK = 0, nJK = 0;
 	int moved = 0;
-	for (k = 0; k < 4; ++k) {
-		for (i = 0; i < 4; ++i) {
-			for (j = i + 1; j < 4 && !twok_buf[nKJ = u ? k : v ? j : 3 - j][nJK = !u ? k : v ? j : 3 - j]; ++j) {
+	for (k = 0; k < 4; k++) {
+		for (i = 0; i < 4; i++) {
+			for (j = i + 1; j < 4 && !twok_buf[nKJ = u ? k : v ? j : 3 - j][nJK = !u ? k : v ? j : 3 - j]; j++) {
 				;
 			}
 			if (j == 4) {

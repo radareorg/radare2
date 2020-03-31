@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2019 - pancake, sghctoma, xarkes */
+/* radare - LGPL - Copyright 2013-2020 - pancake, sghctoma, xarkes */
 
 #include <r_cons.h>
 
@@ -71,6 +71,11 @@ static struct {
 	{ "graph.trufae", r_offsetof (RConsPrintablePalette, graph_trufae), r_offsetof (RConsPalette, graph_trufae) },
 	{ "graph.current", r_offsetof (RConsPrintablePalette, graph_current), r_offsetof (RConsPalette, graph_current) },
 	{ "graph.traced", r_offsetof (RConsPrintablePalette, graph_traced), r_offsetof (RConsPalette, graph_traced) },
+
+        { "graph.diff.unknown", r_offsetof (RConsPrintablePalette, graph_diff_unknown), r_offsetof (RConsPalette, graph_diff_unknown) },
+        { "graph.diff.new", r_offsetof (RConsPrintablePalette, graph_diff_new), r_offsetof (RConsPalette, graph_diff_new) },
+        { "graph.diff.match", r_offsetof (RConsPrintablePalette, graph_diff_match), r_offsetof (RConsPalette, graph_diff_match) },
+        { "graph.diff.unmatch", r_offsetof (RConsPrintablePalette, graph_diff_unmatch), r_offsetof (RConsPalette, graph_diff_unmatch) },
 
 	{ "gui.cflow", r_offsetof (RConsPrintablePalette, gui_cflow), r_offsetof (RConsPalette, gui_cflow) },
 	{ "gui.dataoffset", r_offsetof (RConsPrintablePalette, gui_dataoffset), r_offsetof (RConsPalette, gui_dataoffset) },
@@ -147,7 +152,6 @@ static void __cons_pal_update_event(RConsContext *ctx) {
 
 R_API void r_cons_pal_init(RConsContext *ctx) {
 	memset (&ctx->cpal, 0, sizeof (ctx->cpal));
-	memset (&ctx->pal, 0, sizeof (ctx->pal));
 
 	ctx->cpal.b0x00              = (RColor) RColor_GREEN;
 	ctx->cpal.b0x7f              = (RColor) RColor_CYAN;
@@ -228,6 +232,11 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.graph_trufae       = (RColor) RColor_BLUE; // single jump
 	ctx->cpal.graph_traced       = (RColor) RColor_YELLOW;
 	ctx->cpal.graph_current      = (RColor) RColor_BLUE;
+	ctx->cpal.graph_diff_unknown = (RColor) RColor_MAGENTA;
+	ctx->cpal.graph_diff_new     =  (RColor) RColor_RED;
+	ctx->cpal.graph_diff_match   =  (RColor) RColor_GRAY;
+	ctx->cpal.graph_diff_unmatch =  (RColor) RColor_YELLOW;
+
 
 	r_cons_pal_free (ctx);
 	ctx->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
@@ -381,13 +390,13 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			if (!strncmp(p, "bold", 4)) {
 				rcolor.attr |= R_CONS_ATTR_BOLD;
 			} else if (!strncmp(p, "dim", 3)) {
-				rcolor.attr |= 1u << 2;
+				rcolor.attr |= R_CONS_ATTR_DIM;
 			} else if (!strncmp(p, "italic", 6)) {
-				rcolor.attr |= 1u << 3;
+				rcolor.attr |= R_CONS_ATTR_ITALIC;
 			} else if (!strncmp(p, "underline", 9)) {
-				rcolor.attr |= 1u << 4;
+				rcolor.attr |= R_CONS_ATTR_UNDERLINE;
 			} else if (!strncmp(p, "blink", 5)) {
-				rcolor.attr |= 1u << 5;
+				rcolor.attr |= R_CONS_ATTR_BLINK;
 			} else {
 				eprintf ("Failed to parse terminal attributes: %s\n", p);
 				break;
@@ -513,6 +522,11 @@ R_API void r_cons_pal_show() {
 	}
 }
 
+typedef struct {
+	int val;
+	const char *str;
+} RAttrStr;
+
 R_API void r_cons_pal_list(int rad, const char *arg) {
 	char *name, **color;
 	const char *hasnext;
@@ -530,7 +544,7 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 				keys[i].name, rcolor->r, rcolor->g, rcolor->b, hasnext);
 			break;
 		case 'c': {
-			const char *prefix = r_str_trim_ro (arg);
+			const char *prefix = r_str_trim_head_ro (arg);
 			if (!prefix) {
 				prefix = "";
 			}
@@ -563,6 +577,24 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 			if (rcolor->a == ALPHA_FGBG) {
 				r_cons_printf (" rgb:%02x%02x%02x",
 					rcolor->r2, rcolor->g2, rcolor->b2);
+			}
+			if (rcolor->attr) {
+				const RAttrStr attrs[] = {
+				    { R_CONS_ATTR_BOLD, "bold" },
+				    { R_CONS_ATTR_DIM, "dim" },
+				    { R_CONS_ATTR_ITALIC, "italic" },
+				    { R_CONS_ATTR_UNDERLINE, "underline" },
+				    { R_CONS_ATTR_BLINK, "blink" }
+				};
+				int j;
+				if (rcolor->a != ALPHA_FGBG) {
+					r_cons_strcat (" .");
+				}
+				for (j = 0; j < R_ARRAY_SIZE (attrs); j++) {
+					if (rcolor->attr & attrs[j].val) {
+						r_cons_printf (" %s", attrs[j].str);
+					}
+				}
 			}
 			r_cons_newline ();
 			break;

@@ -1,0 +1,7 @@
+NAME=t/echo
+FILE=-
+EXPECT=<<EOF
+hello world
+EOF
+CMDS=?e hello world
+RUN

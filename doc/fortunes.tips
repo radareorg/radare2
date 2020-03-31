@@ -26,7 +26,7 @@ Invert the block bytes using the 'I' key in visual mode
 Switch between print modes using the 'p' and 'P' keys in visual mode
 Add comments using the ';' key in visual mode or the 'CC' command from the radare2 shell
 Assemble opcodes with the 'a' and 'A' keys in visual mode, which are bindings to the 'wa' and 'wA' commands
-Find expanded AES keys in memory with '/Ca'
+Find expanded AES keys in memory with '/ca'
 Find wide-char strings with the '/w <string>' command
 Enable ascii-art jump lines in disassembly by setting 'e asm.lines=true'. asm.lines.out and asm.linestyle may interest you as well
 Control the signal handlers of the child process with the 'dk' command

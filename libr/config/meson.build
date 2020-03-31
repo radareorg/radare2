@@ -7,8 +7,7 @@ r_config_sources = [
 r_config = library('r_config', r_config_sources,
   include_directories: [platform_inc],
   dependencies: [
-    r_util_dep,
-    sdb_dep
+    r_util_dep
   ],
   install: true,
   implicit_include_directories: false,

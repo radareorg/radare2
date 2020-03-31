@@ -26,6 +26,10 @@ R_API void r_core_fortune_list(RCore *core) {
 		if (strstr (types, fortunes[i])) {
 			char *file = getFortuneFile(core, fortunes[i]);
 			char *str = r_file_slurp (file, NULL);
+			if (!str) {
+				free (file);
+				continue;
+			}
 			for (j = 0; str[j]; j++) {
 				if (str[j] == '\n') {
 					if (i < j) {
@@ -67,7 +71,7 @@ R_API void r_core_fortune_print_random(RCore *core) {
 	}
 	if (line) {
 		if (r_config_get_i (core->config, "cfg.fortunes.clippy")) {
-			r_core_clippy (line);
+			r_core_clippy (core, line);
 		} else {
 			r_cons_printf (" -- %s\n", line);
 		}

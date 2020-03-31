@@ -1,0 +1,516 @@
+NAME=p= 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=p= 0
+RUN
+
+NAME=p=b 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=p=b 0
+RUN
+
+NAME=p=d 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=p=d 0
+RUN
+
+NAME=p=e 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=p=e 0
+RUN
+
+NAME=p=p 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=p=p 0
+RUN
+
+NAME=p2 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=p2 0
+RUN
+
+NAME=p3 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=p3 0
+RUN
+
+NAME=p8 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=p8 0
+RUN
+
+NAME=pb 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pb 0
+RUN
+
+NAME=pB 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pB 0
+RUN
+
+NAME=px 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=px 0
+RUN
+
+NAME=px/ 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=px/ 0
+RUN
+
+NAME=pxa 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxa 0
+RUN
+
+NAME=pxA 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxA 0
+RUN
+
+NAME=pxb 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxb 0
+RUN
+
+NAME=pxd1 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxd1 0
+RUN
+
+NAME=pxd2 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxd2 0
+RUN
+
+NAME=pxd4 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxd4 0
+RUN
+
+NAME=pxe 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxe 0
+RUN
+
+NAME=pxh 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxh 0
+RUN
+
+NAME=pxH 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxH 0
+RUN
+
+NAME=pxl 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxl 0
+RUN
+
+NAME=pxo 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxo 0
+RUN
+
+NAME=pxq 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxq 0
+RUN
+
+NAME=pxQ 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxQ 0
+RUN
+
+NAME=pxr 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxr 0
+RUN
+
+NAME=pxs 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxs 0
+RUN
+
+NAME=pxw 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxw 0
+RUN
+
+NAME=pxW 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pxW 0
+RUN
+
+NAME=pc 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pc 0
+RUN
+
+NAME=pc* 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pc* 0
+RUN
+
+NAME=pcw 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pcw 0
+RUN
+
+NAME=pcd 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pcd 0
+RUN
+
+NAME=pca 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pca 0
+RUN
+
+NAME=pcs 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pcs 0
+RUN
+
+NAME=pcS 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pcS 0
+RUN
+
+NAME=pcJ 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pcJ 0
+RUN
+
+NAME=pcp 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pcp 0
+RUN
+
+NAME=pd 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pd 0
+RUN
+
+NAME=pD 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pD 0
+RUN
+
+NAME=pda 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pda 0
+RUN
+
+NAME=pdc 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+aa
+pdc 0
+EOF
+RUN
+
+NAME=pdc 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+aa
+pdc 0
+EOF
+RUN
+
+NAME=pdj 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pdj 0
+RUN
+
+NAME=pdr 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+aa
+pdr 0
+EOF
+RUN
+
+NAME=pdf 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+aa
+pdf 0
+EOF
+RUN
+
+NAME=pdi 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pdi 0
+RUN
+
+NAME=pdl 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pdl 0
+RUN
+
+NAME=pds 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pds 0
+RUN
+
+NAME=pdt 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pdt 0
+RUN
+
+NAME=pi 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pi 0
+RUN
+
+NAME=pid 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pid 0
+RUN
+
+NAME=pie 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pie 0
+RUN
+
+NAME=pI 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pI 0
+RUN
+
+NAME=pId 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pId 0
+RUN
+
+NAME=pr 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pr 0
+RUN
+
+NAME=prx 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=prx 0
+RUN
+
+NAME=prl 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=prl 0
+RUN
+
+NAME=prg 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=prg 0
+RUN
+
+NAME=pk 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pk 0
+RUN
+
+NAME=pK 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pK 0
+RUN
+
+NAME=ps 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+
+EOF
+CMDS=ps 0
+RUN
+
+NAME=psi 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=psi 0
+RUN
+
+NAME=psb 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=psb 0
+RUN
+
+NAME=psx 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=psx 0
+RUN
+
+NAME=psz 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=psz 0
+RUN
+
+NAME=psp 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=psp 0
+RUN
+
+NAME=psu 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=psu 0
+RUN
+
+NAME=psw 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=psw 0
+RUN
+
+NAME=pu 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pu 0
+RUN
+
+NAME=puw 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=puw 0
+RUN
+
+NAME=pz 0
+FILE=../bins/elf/analysis/hello-arm32
+EXPECT=<<EOF
+EOF
+CMDS=pz 0
+RUN

@@ -9,11 +9,13 @@ DEPS+=r_reg r_search r_syscall r_socket r_fs r_magic r_crypto
 OBJS=core.o cmd.o cfile.o cconfig.o visual.o cio.o yank.o libs.o agraph.o
 OBJS+=fortune.o hack.o vasm.o patch.o cbin.o corelog.o rtr.o cmd_api.o
 OBJS+=carg.o canal.o project.o gdiff.o casm.o disasm.o plugin.o
-OBJS+=vmenus.o vmenus_graph.o vmenus_zigns.o zdiff.o
+OBJS+=vmenus.o vmenus_graph.o vmenus_zigns.o zdiff.o citem.o
 OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o anal_objc.o blaze.o cundo.o
-OBJS+=esil_data_flow.o
 
 CFLAGS+=-I../../shlr/heap/include
+ifeq ($(USE_TREESITTER),1)
+CFLAGS+=-I../../shlr/tree-sitter/lib/include -I../../shlr/radare2-shell-parser/src/tree_parser
+endif
 CFLAGS+=-DR2_PLUGIN_INCORE -I../../shlr
 LDFLAGS+=${DL_LIBS}
 
@@ -41,6 +43,9 @@ OBJS+=$(STATIC_OBJS)
 #STATIC_OBJS=$(subst ..,p/..,$(subst core_,p/core_,$(STATIC_OBJ)))
 
 include $(TOP)/shlr/gdb/deps.mk
+ifeq ($(USE_TREESITTER),1)
+include $(TOP)/shlr/radare2-shell-parser-deps.mk
+endif
 include $(LTOP)/rules.mk
 
 # include plugins

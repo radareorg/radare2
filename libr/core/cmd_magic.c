@@ -1,6 +1,6 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
-#include "r_core.h"
+#include <r_core.h>
 
 /* ugly global vars */
 static int magicdepth = 99; //XXX: do not use global var here
@@ -46,8 +46,8 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		}
 	}
 	if (((addr&7)==0) && ((addr&(7<<8))==0))
-		if (!json) {
-			eprintf ("0x%08"PFMT64x"\r", addr);
+		if (!json) { // update search display
+			eprintf ("0x%08" PFMT64x " [%d matches found]\r", addr, *hits);
 		}
 	if (file) {
 		if (*file == ' ') file++;
@@ -67,7 +67,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		if (file) {
 			free (ofile);
 			ofile = strdup (file);
-			if (r_magic_load (ck, file) == -1) {
+			if (!r_magic_load (ck, file)) {
 				eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
 				ck = NULL;
 				ret = -1;
@@ -75,7 +75,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			}
 		} else {
 			const char *magicpath = r_config_get (core->config, "dir.magic");
-			if (r_magic_load (ck, magicpath) == -1) {
+			if (!r_magic_load (ck, magicpath)) {
 				ck = NULL;
 				eprintf ("failed r_magic_load (dir.magic) %s\n", r_magic_error (ck));
 				ret = -1;
@@ -173,10 +173,6 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	adelta ++;
 	delta ++;
 #if 0
-	if((core->blocksize-delta)>16)
-		goto repeat;
-#endif
-#if 0
 	r_magic_free (ck);
 	ck = NULL;
 #endif
@@ -194,11 +190,14 @@ seek_exit:
 	return ret;
 }
 
-static void r_core_magic(RCore *core, const char *file, int v) {
+static void r_core_magic(RCore *core, const char *file, int v, int json) {
 	ut64 addr = core->offset;
 	int hits = 0;
 	magicdepth = r_config_get_i (core->config, "magic.depth"); // TODO: do not use global var here
-	r_core_magic_at (core, file, addr, magicdepth, v, false, &hits);
+	r_core_magic_at (core, file, addr, magicdepth, v, json, &hits);
+	if (json) {
+		r_cons_newline ();
+	}
 	if (addr != core->offset) {
 		r_core_seek (core, addr, true);
 	}

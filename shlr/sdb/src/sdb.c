@@ -228,9 +228,8 @@ SDB_API bool sdb_free(Sdb* s) {
 }
 
 SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *cas) {
-	ut32 pos, len, keylen;
+	ut32 pos, len;
 	ut64 now = 0LL;
-	SdbKv *kv;
 	bool found;
 
 	if (cas) {
@@ -243,10 +242,10 @@ SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *
 		return NULL;
 	}
 	// TODO: optimize, iterate once
-	keylen = strlen (key);
+	size_t keylen = strlen (key);
 
 	/* search in memory */
-	kv = (SdbKv*) sdb_ht_find_kvp (s->ht, key, &found);
+	SdbKv *kv = (SdbKv*) sdb_ht_find_kvp (s->ht, key, &found);
 	if (found) {
 		if (!sdbkv_value (kv) || !*sdbkv_value (kv)) {
 			return NULL;
@@ -369,13 +368,12 @@ SDB_API int sdb_add(Sdb* s, const char *key, const char *val, ut32 cas) {
 SDB_API bool sdb_exists(Sdb* s, const char *key) {
 	ut32 pos;
 	char ch;
-	SdbKv *kv;
 	bool found;
 	int klen = strlen (key) + 1;
 	if (!s) {
 		return false;
 	}
-	kv = (SdbKv*)sdb_ht_find_kvp (s->ht, key, &found);
+	SdbKv *kv = (SdbKv*)sdb_ht_find_kvp (s->ht, key, &found);
 	if (found && kv) {
 		char *v = sdbkv_value (kv);
 		return v && *v;
@@ -947,7 +945,7 @@ SDB_API bool sdb_dump_dupnext(Sdb* s, char *key, char **value, int *_vlen) {
 	}
 	if (value) {
 		*value = 0;
-		if (vlen >= SDB_MIN_VALUE && vlen < SDB_MAX_VALUE) {
+		if (vlen < SDB_MAX_VALUE) {
 			*value = malloc (vlen + 10);
 			if (!*value) {
 				return false;
@@ -1116,6 +1114,21 @@ SDB_API void sdb_drain(Sdb *s, Sdb *f) {
 		sdb_fini (s, 1);
 		*s = *f;
 		free (f);
+	}
+}
+
+static int copy_foreach_cb(void *user, const char *k, const char *v) {
+	Sdb *dst = user;
+	sdb_set (dst, k, v, 0);
+	return true;
+}
+
+SDB_API void sdb_copy(Sdb *src, Sdb *dst) {
+	sdb_foreach (src, copy_foreach_cb, dst);
+	SdbListIter *it;
+	SdbNs *ns;
+	ls_foreach (src->ns, it, ns) {
+		sdb_copy (ns->sdb, sdb_ns (dst, ns->name, true));
 	}
 }
 

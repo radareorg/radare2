@@ -1,0 +1,14 @@
+NAME=RISC-V ESIL for arithmetic instructions
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000005
+EOF
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+wx 1305400093085000330e1503b3021e011388f2ffb306a840b3d3a602
+aei
+7aes
+ar t2
+EOF
+RUN

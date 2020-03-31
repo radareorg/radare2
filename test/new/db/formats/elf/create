@@ -1,0 +1,12 @@
+NAME=create elf x86-64
+FILE=-
+CMDS=<<EOF
+rm ./tiny64.elf__
+!rabin2 -C elf64:cc -a x86 -b 64 ./tiny64.elf__
+ls -l ./tiny64.elf__~[3]
+rm ./tiny64.elf__
+EOF
+EXPECT=<<EOF
+121
+EOF
+RUN

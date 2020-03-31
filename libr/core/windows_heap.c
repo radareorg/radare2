@@ -18,7 +18,7 @@
 *
 *	References:
 *	Windows NT(2000) Native API Reference (Book)
-*	Papers: 
+*	Papers:
 *	http://illmatics.com/Understanding_the_LFH.pdf
 *	http://illmatics.com/Windows%208%20Heap%20Internals.pdf
 *	https://www.blackhat.com/docs/us-16/materials/us-16-Yason-Windows-10-Segment-Heap-Internals-wp.pdf
@@ -51,7 +51,8 @@
 #define PDI_HEAP_BLOCKS     0x10
 #define PDI_HEAP_ENTRIES_EX 0x200
 
-#define RtlpHpHeapGlobalsOffset 0x44A0
+static size_t RtlpHpHeapGlobalsOffset = 0;
+static size_t RtlpLFHKeyOffset = 0;
 
 #define CHECK_INFO(heapInfo)\
 	if (!heapInfo) {\
@@ -72,6 +73,20 @@
 		hb->dwFlags = LF32_FREE;\
 	}\
 	hb->dwFlags |= ((flags) >> SHIFT) << SHIFT;
+
+static bool __is_windows_ten() {
+	int major = 0;
+	RSysInfo *info = r_sys_info ();
+	if (info && info->version) {
+		char *dot = strchr (info->version, '.');
+		if (dot) {
+			*dot = '\0';
+			major = atoi (info->version);
+		}
+	}
+	r_sys_info_free (info);
+	return major == 10;
+}
 
 static char *get_type(WPARAM flags) {
 	char *state = "";
@@ -119,6 +134,9 @@ static bool init_func() {
 	if (!RtlDestroyQueryDebugBuffer) {
 		RtlDestroyQueryDebugBuffer = (NTSTATUS (NTAPI *)(PDEBUG_BUFFER))GetProcAddress (ntdll, "RtlDestroyQueryDebugBuffer");
 	}
+	if (!w32_NtQueryInformationProcess) {
+		w32_NtQueryInformationProcess = (NTSTATUS (NTAPI *)(HANDLE,PROCESSINFOCLASS,PVOID,ULONG,PULONG))GetProcAddress (ntdll, "NtQueryInformationProcess");
+	}
 	return true;
 }
 
@@ -152,24 +170,24 @@ static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 		if (index > heapInfo->BlockCount) {
 			return false;
 		}
-		hb->dwAddress = (void *)block[index].address;
+		hb->dwAddress = block[index].address;
 		hb->dwSize = block->size;
 		if (block[index].extra & EXTRA_FLAG) {
 			PHeapBlockExtraInfo extra = (PHeapBlockExtraInfo)(block[index].extra & ~EXTRA_FLAG);
 			hb->dwSize -= extra->unusedBytes;
 			hb->extraInfo = extra;
-			(WPARAM)hb->dwAddress += extra->granularity;
+			hb->dwAddress = (WPARAM)hb->dwAddress + extra->granularity;
 		} else {
-			(WPARAM)hb->dwAddress += heapInfo->Granularity;
+			hb->dwAddress = (WPARAM)hb->dwAddress + heapInfo->Granularity;
 			hb->extraInfo = NULL;
 		}
 		index++;
 	} while (block[index].flags & 2);
 
-	hb->index = index;
-
 	WPARAM flags = block[hb->index].flags;
 	UPDATE_FLAGS (hb, flags);
+	
+	hb->index = index;
 	return true;
 }
 
@@ -191,7 +209,7 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 			}
 
 			// new address = curBlockAddress + Granularity;
-			hb->dwAddress = (void *)(block[index].address + heapInfo->Granularity);
+			hb->dwAddress = block[index].address + heapInfo->Granularity;
 
 			index++;
 			hb->dwSize = block->size;
@@ -203,10 +221,10 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 			PHeapBlockExtraInfo extra = (PHeapBlockExtraInfo)(block[index].extra & ~EXTRA_FLAG);
 			hb->extraInfo = extra;
 			hb->dwSize -= extra->unusedBytes;
-			hb->dwAddress = (void *)(block[index].address + extra->granularity);
+			hb->dwAddress = block[index].address + extra->granularity;
 		} else {
 			hb->extraInfo = NULL;
-			(WPARAM)hb->dwAddress += hb->dwSize;
+			hb->dwAddress = (WPARAM)hb->dwAddress + hb->dwSize;
 		}
 		hb->index++;
 	}
@@ -232,68 +250,174 @@ static void free_extra_info(PDEBUG_HEAP_INFORMATION heap) {
 	}
 }
 
-static WPARAM GetNtDllOffset(RDebug *dbg) {
-	r_return_val_if_fail (dbg, 0);
-	RList *map_list = r_w32_dbg_maps (dbg);
-	RListIter *iter;
+static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
+	RList *modules = r_w32_dbg_modules (dbg);
+	RListIter *it;
 	RDebugMap *map;
-	WPARAM ntdllOffset = 0;
-	// Get ntdll .data location
-	r_list_foreach (map_list, iter, map) {
-		if (strstr (map->name, "ntdll.dll | .data")) {
-			ntdllOffset = map->addr;
+	bool found = false;
+	const char ntdll[] = "ntdll.dll";
+	static ut64 lastNdtllAddr = 0;
+	r_list_foreach (modules, it, map) {
+		if (!strncmp(map->name, ntdll, sizeof (ntdll))) {
+			found = true;
 			break;
 		}
 	}
-	r_list_free (map_list);
-	return ntdllOffset;
-}
-
-static WPARAM GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment) {
-	r_return_val_if_fail (dbg, 0);
-	WPARAM lfhKey = 0;
-	WPARAM lfhKeyLocation;
-	WPARAM ntdllOffset = GetNtDllOffset (dbg);
-
-	if (ntdllOffset) {
-		if (segment) {
-			WPARAM RtlpHpHeapGlobals = ntdllOffset + RtlpHpHeapGlobalsOffset; // ntdll!RtlpHpHeapGlobals
-			lfhKeyLocation = RtlpHpHeapGlobals + sizeof (WPARAM);
-		} else {
-			lfhKeyLocation = ntdllOffset + 0x7508; // ntdll!RtlpLFHKey
+	if (!found) {
+		eprintf ("ntdll.dll not loaded.");
+		r_list_free (modules);
+		return false;
+	}
+	bool doopen = lastNdtllAddr != map->addr;
+	char *ntdllopen = dbg->corebind.cmdstrf (dbg->corebind.core, "ob~%s", ntdll);
+	if (*ntdllopen) {
+		char *saddr = strtok (ntdllopen, " ");
+		for (int i = 0; i < 3; i++) {
+			saddr = strtok (NULL, " ");
 		}
-		if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, &lfhKey, sizeof (WPARAM), NULL)) {
-			r_sys_perror ("ReadProcessMemory");
-			eprintf ("LFH key not found.\n");
+		if (doopen) {
+			// Close to reopen at the right address
+			int fd = atoi (ntdllopen);
+			dbg->corebind.cmdstrf (dbg->corebind.core, "o-%d", fd);
+			RtlpHpHeapGlobalsOffset = RtlpLFHKeyOffset = 0;
 		}
 	}
-	return lfhKey;
+
+	if (doopen) {
+		char *ntdllpath = r_lib_path ("ntdll");
+		eprintf ("Opening %s\n", ntdllpath);
+		dbg->corebind.cmdf (dbg->corebind.core, "o %s 0x%"PFMT64x"", ntdllpath, map->addr);
+		lastNdtllAddr = map->addr;
+		free (ntdllpath);
+	}
+	r_list_free (modules);
+
+	if (!RtlpHpHeapGlobalsOffset || !RtlpLFHKeyOffset) {
+		char *res = dbg->corebind.cmdstrf (dbg->corebind.core, "idpi~RtlpHpHeapGlobals");
+		if (!*res) {
+			// Try downloading the pdb
+			free (res);
+			dbg->corebind.cmd (dbg->corebind.core, "idpd");
+			res = dbg->corebind.cmdstrf (dbg->corebind.core, "idpi~RtlpHpHeapGlobals");
+		}
+		if (*res) {
+			RtlpHpHeapGlobalsOffset = r_num_math (NULL, res);
+		} else {
+			free (res);
+			return false;
+		}
+		free (res);
+		res = dbg->corebind.cmdstrf (dbg->corebind.core, "idpi~RtlpLFHKey");
+		if (*res) {
+			RtlpLFHKeyOffset = r_num_math (NULL, res);
+		}
+		free (res);
+	}
+
+	if (doopen) {
+		// Close ntdll.dll
+		char *res = dbg->corebind.cmdstrf (dbg->corebind.core, "o~%s", ntdll);
+		int fd = atoi (res);
+		free (res);
+		dbg->corebind.cmdf (dbg->corebind.core, "o-%d", fd);
+	}
+	return true;
+}
+
+static bool GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) {
+	r_return_val_if_fail (dbg, 0);
+	WPARAM lfhKeyLocation;
+
+	if (!GetHeapGlobalsOffset (dbg, h_proc)) {
+		*lfhKey = 0;
+		return false;
+	}
+
+	if (segment) {
+		lfhKeyLocation = RtlpHpHeapGlobalsOffset + sizeof (WPARAM);
+	} else {
+		lfhKeyLocation = RtlpLFHKeyOffset; // ntdll!RtlpLFHKey
+	}
+	if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, lfhKey, sizeof (WPARAM), NULL)) {
+		r_sys_perror ("ReadProcessMemory");
+		eprintf ("LFH key not found.\n");
+		*lfhKey = 0;
+		return false;
+	}
+	return true;
 }
 
 static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
 	r_return_val_if_fail (heap && entry, false);
 	if (dbg->bits == R_SYS_BITS_64) {
-		(WPARAM)entry += dbg->bits;
+		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
 	if (heap->EncodeFlagMask && (*(UINT32 *)entry & heap->EncodeFlagMask)) {
 		if (dbg->bits == R_SYS_BITS_64) {
-			(WPARAM)heap += dbg->bits;
+			heap = (PHEAP)((ut8 *)heap + dbg->bits);
 		}
 		*(WPARAM *)entry ^= *(WPARAM *)&heap->Encoding;
 	}
 	return !(((BYTE *)entry)[0] ^ ((BYTE *)entry)[1] ^ ((BYTE *)entry)[2] ^ ((BYTE *)entry)[3]);
 }
 
-static bool DecodeLFHEntry (RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr) {
+static bool DecodeLFHEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr) {
 	r_return_val_if_fail (heap && entry, false);
 	if (dbg->bits == R_SYS_BITS_64) {
-		(WPARAM)entry += dbg->bits;
+		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
 
 	if (heap->EncodeFlagMask) {
 		*(DWORD *)entry ^= PtrToInt (heap->BaseAddress) ^ (DWORD)(((DWORD)addr - PtrToInt (userBlocks)) << 0xC) ^ (DWORD)key ^ (addr >> 4);
 	}
 	return !(((BYTE *)entry)[0] ^ ((BYTE *)entry)[1] ^ ((BYTE *)entry)[2] ^ ((BYTE *)entry)[3]);
+}
+
+typedef struct _th_query_params {
+	RDebug *dbg;
+	DWORD mask;
+	PDEBUG_BUFFER db;
+	DWORD ret;
+	bool fin;
+	bool hanged;
+} th_query_params;
+
+static DWORD WINAPI __th_QueryDebugBuffer(void *param) {
+	th_query_params *params = (th_query_params *)param;
+	params->ret = RtlQueryProcessDebugInformation (params->dbg->pid, params->mask, params->db);
+	params->fin = true;
+	if (params->hanged) {
+		RtlDestroyQueryDebugBuffer (params->db);
+	}
+	free (params);
+	return 0;
+}
+
+static RList *GetListOfHeaps(RDebug *dbg, HANDLE ph) {
+	PROCESS_BASIC_INFORMATION pib;
+	if (w32_NtQueryInformationProcess (ph, ProcessBasicInformation, &pib, sizeof (pib), NULL)) {
+		r_sys_perror ("NtQueryInformationProcess");
+		return NULL;
+	}
+	PEB peb;
+	ReadProcessMemory (ph, pib.PebBaseAddress, &peb, sizeof (PEB), NULL);
+	RList *heaps = r_list_new ();
+	PVOID heapAddress;
+	PVOID *processHeaps;
+	ULONG numberOfHeaps;
+	if (dbg->bits == R_SYS_BITS_64) {
+		processHeaps = *((PVOID *)(((ut8 *)&peb) + 0xF0));
+		numberOfHeaps = *((ULONG *)(((ut8 *)& peb) + 0xE8));
+	} else {
+		processHeaps = *((PVOID *)(((ut8 *)&peb) + 0x90));
+		numberOfHeaps = *((ULONG *)(((ut8 *)& peb) + 0x88));
+	}
+	do {
+		ReadProcessMemory (ph, processHeaps, &heapAddress, sizeof (PVOID), NULL);
+		r_list_push (heaps, heapAddress);
+		processHeaps += 1;
+	} while (--numberOfHeaps);
+	return heaps;
 }
 
 /*
@@ -303,40 +427,87 @@ static bool DecodeLFHEntry (RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_US
 *		Notes:
 *			Some LFH allocations seem misaligned
 */
-static PDEBUG_BUFFER InitHeapInfo(DWORD pid, DWORD mask) {
+static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 	// Check:
 	//	RtlpQueryProcessDebugInformationFromWow64
 	//	RtlpQueryProcessDebugInformationRemote
-	// Make sure it is not segment heap to avoid lockups
-	if (mask & PDI_HEAP_BLOCKS) {
-		PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS);
-		if (db) {
-			HANDLE h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-			PHeapInformation heaps = db->HeapInformation;
-			for (int i = 0; i < heaps->count; i++) {
-				DEBUG_HEAP_INFORMATION heap = heaps->heaps[i];
-				if (is_segment_heap (h_proc, heap.Base)) {
-					RtlDestroyQueryDebugBuffer (db);
-					return NULL;
-				}
-			}
-			RtlDestroyQueryDebugBuffer (db);
-		} else {
-			return NULL;
-		}
-	}
-	int res;
 	PDEBUG_BUFFER db = RtlCreateQueryDebugBuffer (0, FALSE);
-	res = RtlQueryProcessDebugInformation (pid, mask, db);
-	if (res) {
+	if (!db) {
+		return NULL;
+	}
+	th_query_params *params = R_NEW0 (th_query_params);
+	if (!params) {
+		RtlDestroyQueryDebugBuffer (db);
+		return NULL;
+	}
+	*params =  (th_query_params) { dbg, mask, db, 0, false, false };
+	HANDLE th = CreateThread (NULL, 0, &__th_QueryDebugBuffer, params, 0, NULL);
+	if (th) {
+		WaitForSingleObject (th, 5000);
+	} else {
+		RtlDestroyQueryDebugBuffer (db);
+		return NULL;
+	}
+	if (!params->fin) {
 		// why after it fails the first time it blocks on the second? That's annoying
 		// It stops blocking if i pause radare in the debugger. is it a race?
 		// why it fails with 1000000 allocs? also with processes with segment heap enabled?
+		params->hanged = true;
+		eprintf ("RtlQueryProcessDebugInformation hanged\n");
+		db = NULL;
+	} else if (params->ret) {
 		RtlDestroyQueryDebugBuffer (db);
-		r_sys_perror ("InitHeapInfo");
-		return NULL;
+		db = NULL;
+		r_sys_perror ("RtlQueryProcessDebugInformation");
 	}
-	return db;
+	CloseHandle (th);
+	if (db) {
+		return db;
+	}
+
+	// TODO: Not do this
+	if (mask == PDI_HEAPS && __is_windows_ten ()) {
+		db = RtlCreateQueryDebugBuffer (0, FALSE);
+		if (!db) {
+			return NULL;
+		}
+		PHeapInformation heapInfo = R_NEW0 (HeapInformation);
+		if (!heapInfo) {
+			RtlDestroyQueryDebugBuffer (db);
+			return NULL;
+		}
+		HANDLE h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
+		if (!h_proc) {
+			R_LOG_ERROR ("OpenProcess failed\n");
+			free (heapInfo);
+			RtlDestroyQueryDebugBuffer (db);
+			return NULL;
+		}
+		RList *heaps = GetListOfHeaps (dbg, h_proc);
+		CloseHandle (h_proc);
+		heapInfo->count = heaps->length;
+		void *tmp = realloc (heapInfo, sizeof (DEBUG_HEAP_INFORMATION) * heapInfo->count + sizeof (heapInfo));
+		if (!tmp) {
+			free (heapInfo);
+			RtlDestroyQueryDebugBuffer (db);
+			return NULL;
+		}
+		heapInfo = tmp;
+		int i = 0;
+		RListIter *it;
+		void *heapBase;
+		r_list_foreach (heaps, it, heapBase) {
+			heapInfo->heaps[i].Base = heapBase;
+			heapInfo->heaps[i].Granularity = sizeof (HEAP_ENTRY);
+			heapInfo->heaps[i].Allocated = 0;
+			heapInfo->heaps[i].Committed = 0;
+			i++;
+		}
+		db->HeapInformation = heapInfo;
+		r_list_free (heaps);
+		return db;
+	}
+	return NULL;
 }
 
 #define GROW_BLOCKS()\
@@ -409,11 +580,8 @@ static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHe
 	if (segheapHeader.Signature != 0xddeeddee) {
 		return false;
 	}
-
-	WPARAM RtlpHpHeapGlobals = GetNtDllOffset (dbg) + RtlpHpHeapGlobalsOffset; // ntdll!RtlpHpHeapGlobals
-
 	WPARAM lfhKey;
-	WPARAM lfhKeyLocation = RtlpHpHeapGlobals + sizeof (WPARAM);
+	WPARAM lfhKeyLocation = RtlpHpHeapGlobalsOffset + sizeof (WPARAM);
 	if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, &lfhKey, sizeof (WPARAM), &bytesRead)) {
 		r_sys_perror ("ReadProcessMemory");
 		eprintf ("LFH key not found.\n");
@@ -477,7 +645,7 @@ static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHe
 	}
 
 	WPARAM RtlpHpHeapGlobal;
-	ReadProcessMemory (h_proc, (PVOID)RtlpHpHeapGlobals, &RtlpHpHeapGlobal, sizeof (WPARAM), &bytesRead);
+	ReadProcessMemory (h_proc, (PVOID)RtlpHpHeapGlobalsOffset, &RtlpHpHeapGlobal, sizeof (WPARAM), &bytesRead);
 	// Backend Blocks (And VS)
 	for (int i = 0; i < 2; i++) {
 		HEAP_SEG_CONTEXT ctx = segheapHeader.SegContexts[i];
@@ -553,7 +721,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 #endif
 	WPARAM bytesRead;
 	HANDLE h_proc = NULL;
-	PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS);
+	PDEBUG_BUFFER db = InitHeapInfo (dbg, PDI_HEAPS);
 	if (!db || !db->HeapInformation) {
 		R_LOG_ERROR ("InitHeapInfo Failed\n");
 		goto err;
@@ -564,11 +732,12 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 		goto err;
 	}
 
-	WPARAM lfhKey = GetLFHKey (dbg, h_proc, false);
-
-	if (!lfhKey) {
+	WPARAM lfhKey;
+	if (!GetLFHKey (dbg, h_proc, false, &lfhKey)) {
+		RtlDestroyQueryDebugBuffer (db);
+		CloseHandle (h_proc);
 		eprintf ("GetHeapBlocks: Failed to get LFH key.\n");
-		goto err;
+		return NULL;
 	}
 
 	PHeapInformation heapInfo = db->HeapInformation;
@@ -609,7 +778,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 			DecodeHeapEntry (dbg, &heapHeader, &vAlloc.BusyBlock);
 			GROW_BLOCKS ();
 			blocks[count].address = (WPARAM)entry;
-			blocks[count].flags = 1 | (vAlloc.BusyBlock.Flags | NT_BLOCK | LARGE_BLOCK) & ~2ULL;
+			blocks[count].flags = 1 | ((vAlloc.BusyBlock.Flags | NT_BLOCK | LARGE_BLOCK) & ~2ULL);
 			blocks[count].size = vAlloc.ReserveSize;
 			PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 			if (!extra) {
@@ -652,6 +821,10 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 						break;
 					}
 
+					if (!subsegment.UserBlocks || !subsegment.BlockSize) {
+						goto next_subsegment;
+					}
+
 					size_t sz = subsegment.BlockSize * sizeof (HEAP_ENTRY);
 					ReadProcessMemory (h_proc, subsegment.UserBlocks, &userdata, sizeof (HEAP_USERDATA_HEADER), &bytesRead);
 					userdata.EncodedOffsets.StrideAndOffset ^= PtrToInt (subsegment.UserBlocks) ^ PtrToInt (heapHeader.FrontEndHeap) ^ (WPARAM)lfhKey;
@@ -690,6 +863,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 						mask <<= 1;
 					}
 					free (bitmap);
+next_subsegment:
 					curSubsegment += sizeof (HEAP_SUBSEGMENT);
 					next++;
 				} while (next < blockZone.NextIndex || subsegment.BlockSize);
@@ -743,6 +917,11 @@ next:
 		} while ((WPARAM)oldSegment.SegmentListEntry.Flink != firstSegment);
 		heap->Blocks = blocks;
 		heap->BlockCount = count;
+
+		if (!heap->Committed && !heap->Allocated) {
+			heap->Committed = heapHeader.Counters.TotalMemoryCommitted;
+			heap->Allocated = heapHeader.Counters.LastPolledSize;
+		}
 	}
 	CloseHandle (h_proc);
 	return db;
@@ -782,9 +961,8 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 	WPARAM headerOff = offset - granularity;
 	SEGMENT_HEAP heap;
 	ReadProcessMemory (h_proc, heapBase, &heap, sizeof (SEGMENT_HEAP), NULL);
-	WPARAM RtlpHpHeapGlobalsOff = GetNtDllOffset (dbg) + RtlpHpHeapGlobalsOffset;
 	WPARAM RtlpHpHeapGlobal;
-	ReadProcessMemory (h_proc, (PVOID)RtlpHpHeapGlobalsOff, &RtlpHpHeapGlobal, sizeof (WPARAM), NULL);
+	ReadProcessMemory (h_proc, (PVOID)RtlpHpHeapGlobalsOffset, &RtlpHpHeapGlobal, sizeof (WPARAM), NULL);
 
 	WPARAM pgSegOff = headerOff & heap.SegContexts[0].SegmentMask;
 	WPARAM segSignature;
@@ -807,7 +985,7 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 				HEAP_VS_CHUNK_HEADER header;
 				ReadProcessMemory (h_proc, (PVOID)(headerOff - sizeof (HEAP_VS_CHUNK_HEADER)), &header, sizeof (HEAP_VS_CHUNK_HEADER), NULL);
 				header.Sizes.HeaderBits ^= RtlpHpHeapGlobal ^ headerOff;
-				hb->dwAddress = (PVOID)offset;
+				hb->dwAddress = offset;
 				hb->dwSize = header.Sizes.UnsafeSize * sizeof (HEAP_VS_CHUNK_HEADER);
 				hb->dwFlags = 1 | SEGMENT_HEAP_BLOCK | VS_BLOCK;
 				extra->granularity = granularity + sizeof (HEAP_VS_CHUNK_HEADER);
@@ -819,8 +997,10 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 		if (segment.DescArray[pageIndex].RangeFlags & PAGE_RANGE_FLAGS_LFH_SUBSEGMENT) {
 			HEAP_LFH_SUBSEGMENT subsegment;
 			ReadProcessMemory (h_proc, (PVOID)subsegmentOffset, &subsegment, sizeof (HEAP_LFH_SUBSEGMENT), NULL);
-			subsegment.BlockOffsets.EncodedData ^= (DWORD)GetLFHKey (dbg, h_proc, true) ^ ((DWORD)subsegmentOffset >> 0xC);
-			hb->dwAddress = (PVOID)offset;
+			WPARAM lfhKey;
+			GetLFHKey (dbg, h_proc, true, &lfhKey);
+			subsegment.BlockOffsets.EncodedData ^= (DWORD)lfhKey ^ ((DWORD)subsegmentOffset >> 0xC);
+			hb->dwAddress = offset;
 			hb->dwSize = subsegment.BlockOffsets.BlockSize;
 			hb->dwFlags = 1 | SEGMENT_HEAP_BLOCK | LFH_BLOCK;
 			extra->granularity = granularity;
@@ -847,11 +1027,11 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 			} else if ((offset & ~0xFFFFULL) < VirtualAddess) {
 				curr = (WPARAM)node.Left;
 			} else {
-				hb->dwAddress = (PVOID)VirtualAddess;
+				hb->dwAddress = VirtualAddess;
 				hb->dwSize = ((entry.AllocatedPages >> 12) << 12) - entry.UnusedBytes;
 				hb->dwFlags = SEGMENT_HEAP_BLOCK | LARGE_BLOCK | 1;
 				extra->unusedBytes = entry.UnusedBytes;
-				ReadProcessMemory (h_proc, hb->dwAddress, &extra->granularity, sizeof (USHORT), NULL);
+				ReadProcessMemory (h_proc, (PVOID)hb->dwAddress, &extra->granularity, sizeof (USHORT), NULL);
 				return hb;
 			}
 			if (curr) {
@@ -879,7 +1059,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 		r_sys_perror ("GetSingleBlock/OpenProcess");
 		goto err;
 	}
-	db = InitHeapInfo (dbg->pid, PDI_HEAPS);
+	db = InitHeapInfo (dbg, PDI_HEAPS);
 	if (!db) {
 		goto err;
 	}
@@ -888,7 +1068,8 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 		R_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
 		goto err;
 	}
-	WPARAM NtLFHKey = GetLFHKey (dbg, h_proc, false);
+	WPARAM NtLFHKey;
+	GetLFHKey (dbg, h_proc, false, &NtLFHKey);
 	PHeapInformation heapInfo = db->HeapInformation;
 	for (int i = 0; i < heapInfo->count; i++) {
 		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
@@ -913,7 +1094,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 			HEAP_ENTRY tmpEntry = entry;
 			if (DecodeHeapEntry (dbg, &h, &tmpEntry)) {
 				entry = tmpEntry;
-				hb->dwAddress = (PVOID)offset;
+				hb->dwAddress = offset;
 				UPDATE_FLAGS (hb, (DWORD)entry.Flags | NT_BLOCK);
 				if (entry.UnusedBytes == 0x4) {
 					HEAP_VIRTUAL_ALLOC_ENTRY largeEntry;
@@ -951,7 +1132,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 					if (!ReadProcessMemory (h_proc, (PVOID)UserBlocks.SubSegment, &subsegment, sizeof (HEAP_SUBSEGMENT), NULL)) {
 						continue;
 					}
-					hb->dwAddress = (PVOID)offset;
+					hb->dwAddress = offset;
 					hb->dwSize = (WPARAM)subsegment.BlockSize * heap.Granularity;
 					hb->dwFlags = 1 | LFH_BLOCK | NT_BLOCK;
 					break;
@@ -977,15 +1158,24 @@ err:
 	return NULL;
 }
 
+static RTable *__new_heapblock_tbl() {
+	RTable *tbl = r_table_new ();
+	r_table_add_column (tbl, r_table_type ("number"), "HeaderAddress", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "UserAddress", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Size", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Granularity", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Unused", -1);
+	r_table_add_column (tbl, r_table_type ("String"), "Type", -1);
+	return tbl;
+}
+
 static void w32_list_heaps(RCore *core, const char format) {
 	ULONG pid = core->dbg->pid;
-	PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS | PDI_HEAP_BLOCKS);
+	PDEBUG_BUFFER db = InitHeapInfo (core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	if (!db) {
-		os_info *info = r_sys_get_osinfo ();
-		if (info->major >= 10) {
+		if (__is_windows_ten ()) {
 			db = GetHeapBlocks (pid, core->dbg);
 		}
-		free (info);
 		if (!db) {
 			eprintf ("Couldn't get heap info.\n");
 			return;
@@ -994,6 +1184,11 @@ static void w32_list_heaps(RCore *core, const char format) {
 	PHeapInformation heapInfo = db->HeapInformation;
 	CHECK_INFO (heapInfo);
 	int i;
+	RTable *tbl = r_table_new ();
+	r_table_add_column (tbl, r_table_type ("number"), "Address", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Blocks", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Allocated", -1);
+	r_table_add_column (tbl, r_table_type ("number"), "Commited", -1);
 	PJ *pj = pj_new ();
 	pj_a (pj);
 	for (i = 0; i < heapInfo->count; i++) {
@@ -1001,17 +1196,14 @@ static void w32_list_heaps(RCore *core, const char format) {
 		switch (format) {
 		case 'j':
 			pj_o (pj);
-			pj_kN (pj, "address", (WPARAM)heap.Base);
-			pj_kN (pj, "count", (WPARAM)heap.BlockCount);
-			pj_kN (pj, "allocated", (WPARAM)heap.Allocated);
-			pj_kN (pj, "commited", (WPARAM)heap.Committed);
+			pj_kN (pj, "address", (ut64)heap.Base);
+			pj_kN (pj, "count", (ut64)heap.BlockCount);
+			pj_kN (pj, "allocated", (ut64)heap.Allocated);
+			pj_kN (pj, "committed", (ut64)heap.Committed);
 			pj_end (pj);
 			break;
 		default:
-			r_cons_printf ("Heap @ 0x%08"PFMT64x":\n", (WPARAM)heap.Base);
-			r_cons_printf ("\tBlocks: %"PFMT64u"\n", (WPARAM)heap.BlockCount);
-			r_cons_printf ("\tAllocated: %"PFMT64u"\n", (WPARAM)heap.Allocated);
-			r_cons_printf ("\tCommited: %"PFMT64u"\n", (WPARAM)heap.Committed);
+			r_table_add_rowf (tbl, "xnnn", (ut64)heap.Base, (ut64)heap.BlockCount, (ut64)heap.Allocated, (ut64)heap.Committed);
 			break;
 		}
 		if (!(db->InfoClassMask & PDI_HEAP_BLOCKS)) {
@@ -1022,29 +1214,31 @@ static void w32_list_heaps(RCore *core, const char format) {
 	if (format == 'j') {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
+	} else {
+		r_cons_println (r_table_tostring (tbl));
 	}
+	r_table_free (tbl);
 	pj_free (pj);
 	RtlDestroyQueryDebugBuffer (db);
 }
 
 static void w32_list_heaps_blocks(RCore *core, const char format) {
 	DWORD pid = core->dbg->pid;
-	os_info *info = r_sys_get_osinfo ();
 	PDEBUG_BUFFER db;
-	if (info->major >= 10) {
+	if (__is_windows_ten ()) {
 		db = GetHeapBlocks (pid, core->dbg);
 	} else {
-		db = InitHeapInfo (pid, PDI_HEAPS | PDI_HEAP_BLOCKS);
+		db = InitHeapInfo (core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	}
-	free (info);
 	if (!db) {
 		eprintf ("Couldn't get heap info.\n");
 		return;
 	}
 	PHeapInformation heapInfo = db->HeapInformation;
-	HeapBlock *block = malloc (sizeof (HeapBlock));
 	CHECK_INFO (heapInfo);
+	HeapBlock *block = malloc (sizeof (HeapBlock));
 	int i;
+	RTable *tbl = __new_heapblock_tbl ();
 	PJ *pj = pj_new ();
 	pj_a (pj);
 	for (i = 0; i < heapInfo->count; i++) {
@@ -1061,8 +1255,6 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 			pj_k (pj, "blocks");
 			pj_a (pj);
 			break;
-		default:
-			r_cons_printf ("Heap @ 0x%"PFMT64x":\n", heapInfo->heaps[i].Base);
 		}
 		char *type;
 		if (GetFirstHeapBlock (&heapInfo->heaps[i], block) & go) {
@@ -1071,28 +1263,28 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 				if (!type) {
 					type = "";
 				}
-				unsigned short granularity = block->extraInfo ? block->extraInfo->granularity : heapInfo->heaps[i].Granularity;
+				ut64 granularity = block->extraInfo ? block->extraInfo->granularity : heapInfo->heaps[i].Granularity;
+				ut64 address = (ut64)block->dwAddress - granularity;
+				ut64 unusedBytes = block->extraInfo ? block->extraInfo->unusedBytes : 0;
 				switch (format) {
 				case 'f':
 				{
-					ut64 addr = (ut64)block->dwAddress - granularity;
-					char *name = r_str_newf ("alloc.%"PFMT64x"", addr);
-					r_flag_set (core->flags, name, addr, block->dwSize);
+					char *name = r_str_newf ("alloc.%"PFMT64x"", address);
+					r_flag_set (core->flags, name, address, block->dwSize);
 					free (name);
 					break;
 				}
 				case 'j':
 					pj_o (pj);
-					pj_kN (pj, "address", (ut64)block->dwAddress - granularity);
-					pj_kN (pj, "data_address", (ut64)block->dwAddress);
+					pj_kN (pj, "header_address", address);
+					pj_kN (pj, "user_address", (ut64)block->dwAddress);
+					pj_kN (pj, "unused", unusedBytes);
 					pj_kN (pj, "size", block->dwSize);
 					pj_ks (pj, "type", type);
 					pj_end (pj);
 					break;
 				default:
-					r_cons_printf ("\tBlock @ 0x%"PFMT64x" %s:\n", (ut64)block->dwAddress - granularity, type);
-					r_cons_printf ("\t\tSize 0x%"PFMT64x"\n", (ut64)block->dwSize);
-					r_cons_printf ("\t\tData address @ 0x%"PFMT64x"\n", (ut64)block->dwAddress);
+					r_table_add_rowf (tbl, "xxnnns", address, (ut64)block->dwAddress, block->dwSize, granularity, unusedBytes, type);
 					break;
 				}
 			} while (GetNextHeapBlock (&heapInfo->heaps[i], block));
@@ -1110,7 +1302,10 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 	if (format == 'j') {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
+	} else if (format != 'f') {
+		r_cons_println (r_table_tostring (tbl));
 	}
+	r_table_free (tbl);
 	pj_free (pj);
 	RtlDestroyQueryDebugBuffer (db);
 }
@@ -1133,7 +1328,6 @@ static const char *help_msg_block[] = {
 static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 	char *space = strchr (input, ' ');
 	ut64 off = 0;
-	PHeapBlock hb = NULL;
 	if (space) {
 		off = r_num_math (core->num, space + 1);
 		PHeapBlock hb = GetSingleBlock (core->dbg, off);
@@ -1144,18 +1338,17 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 				type = "";
 			}
 			PJ *pj = pj_new ();
+			RTable *tbl = __new_heapblock_tbl ();
+			ut64 headerAddr = off - granularity;
 			switch (input[0]) {
 			case ' ':
-				r_cons_printf ("Block @ 0x%"PFMT64x" %s\n", off - granularity, type);
-				r_cons_printf ("\tSize: 0x%"PFMT64x"\n", hb->dwSize);
-				if (hb->extraInfo->unusedBytes) {
-					r_cons_printf ("\tUnused: 0x%"PFMT64x"\n", hb->extraInfo->unusedBytes);
-				}
-				r_cons_printf ("\tGranularity: 0x%"PFMT64x"\n", granularity);
+				r_table_add_rowf (tbl, "xxnnns", headerAddr, off, (ut64)hb->dwSize, granularity, (ut64)hb->extraInfo->unusedBytes, type);
+				r_cons_println (r_table_tostring (tbl));
 				break;
 			case 'j':
 				pj_o (pj);
-				pj_kN (pj, "address", off - granularity);
+				pj_kN (pj, "header_address", headerAddr);
+				pj_kN (pj, "user_address", off);
 				pj_ks (pj, "type", type);
 				pj_kN (pj, "size", hb->dwSize);
 				if (hb->extraInfo->unusedBytes) {
@@ -1166,6 +1359,7 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 			}
 			free (hb->extraInfo);
 			free (hb);
+			r_table_free (tbl);
 			pj_free (pj);
 		}
 		return;

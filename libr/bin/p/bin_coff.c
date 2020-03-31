@@ -41,7 +41,7 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	return NULL;
 }
 
-static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
+static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
 	RBinSymbol *ptr = *sym;
 	struct coff_symbol *s = NULL;
 	if (idx < 0 || idx > bin->hdr.f_nsyms) {
@@ -57,29 +57,33 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 	}
 	ptr->name = strdup (coffname);
 	free (coffname);
-	ptr->forwarder = r_str_const ("NONE");
+	ptr->forwarder = "NONE";
 
 	switch (s->n_sclass) {
 	case COFF_SYM_CLASS_FUNCTION:
-		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
+		ptr->type = R_BIN_TYPE_FUNC_STR;
 		break;
 	case COFF_SYM_CLASS_FILE:
-		ptr->type = r_str_const ("FILE");
+		ptr->type = "FILE";
 		break;
 	case COFF_SYM_CLASS_SECTION:
-		ptr->type = r_str_const (R_BIN_TYPE_SECTION_STR);
+		ptr->type = R_BIN_TYPE_SECTION_STR;
 		break;
 	case COFF_SYM_CLASS_EXTERNAL: // should be prefixed with sym.imp
-		ptr->type = r_str_const ("EXTERNAL");
+		if (bin->symbols[idx].n_scnum) {
+			ptr->type = R_BIN_TYPE_FUNC_STR;
+		} else {
+			ptr->type = "EXTERNAL";
+		}
 		break;
 	case COFF_SYM_CLASS_STATIC:
-		ptr->type = r_str_const ("STATIC");
+		ptr->type = "STATIC";
 		break;
 	default:
-		ptr->type = r_str_const (sdb_fmt ("%i", s->n_sclass));
+		ptr->type = r_str_constpool_get (&rbin->constpool, sdb_fmt ("%i", s->n_sclass));
 		break;
 	}
-	if (bin->symbols[idx].n_scnum < bin->hdr.f_nscns &&
+	if (bin->symbols[idx].n_scnum < bin->hdr.f_nscns + 1 &&
 	    bin->symbols[idx].n_scnum > 0) {
 		//first index is 0 that is why -1
 		ptr->paddr = bin->scn_hdrs[s->n_scnum - 1].s_scnptr + s->n_value;
@@ -106,8 +110,8 @@ static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 		return NULL;
 	}
 	ptr->name = strdup (coffname);
-	ptr->bind = r_str_const ("NONE");
-	ptr->type = r_str_const ("FUNC");
+	ptr->bind = "NONE";
+	ptr->type = "FUNC";
 	return ptr;
 }
 
@@ -177,7 +181,6 @@ static RList *symbols(RBinFile *bf) {
 	int i;
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
-	struct coff_symbol *s;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return ret;
@@ -185,14 +188,10 @@ static RList *symbols(RBinFile *bf) {
 	ret->free = free;
 	if (obj->symbols) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
-			s = &obj->symbols[i];
-			if (s->n_sclass == COFF_SYM_CLASS_EXTERNAL) {
-				continue;
-			}
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
-			if (_fill_bin_symbol (obj, i, &ptr)) {
+			if (_fill_bin_symbol (bf->rbin, obj, i, &ptr)) {
 				r_list_append (ret, ptr);
 			} else {
 				free (ptr);
@@ -265,7 +264,7 @@ static RList *relocs(RBinFile *bf) {
 				if (!symbol) {
 					continue;
 				}
-				if (!_fill_bin_symbol (bin, rel[j].r_symndx, &symbol)) {
+				if (!_fill_bin_symbol (bf->rbin, bin, rel[j].r_symndx, &symbol)) {
 					free (symbol);
 					continue;
 				}
@@ -331,6 +330,13 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->arch = strdup ("h8300");
 		ret->bits = 16;
 		break;
+	case COFF_FILE_MACHINE_AMD29KBE:
+	case COFF_FILE_MACHINE_AMD29KLE:
+		ret->cpu = strdup ("29000");
+		ret->machine = strdup ("amd29k");
+		ret->arch = strdup ("amd29k");
+		ret->bits = 32;
+		break;	
 	case COFF_FILE_TI_COFF:
 		switch (obj->target_id) {
 		case COFF_FILE_MACHINE_TMS320C54:

@@ -1,4 +1,5 @@
 sdb_files = [
+  'cc-arm-16',
   'cc-arm-32',
   'cc-arm-64',
   'cc-avr-8',
@@ -9,6 +10,7 @@ sdb_files = [
   'cc-powerpc-64',
   'cc-riscv-64',
   'cc-sparc-32',
+  'cc-x86-16',
   'cc-x86-32',
   'cc-x86-64',
   'cc-xtensa-32',

@@ -47,9 +47,13 @@ typedef struct _xnu_thread {
 	R_REG_T gpr; // type R_REG_T using unified API XXX bad naming
 	void *state;
 	ut32 state_size;
-#if __arm || __arm64 || __aarch64
+#if __arm64 || __aarch64 || __arm64__ || __aarch64__
 	union {
 		arm_debug_state32_t drx32;
+		arm_debug_state64_t drx64;
+	} debug;
+#elif __arm__ || __arm || __armv7__
+	union {
 		arm_debug_state_t drx;
 	} debug;
 #elif __x86_64__ || __i386__

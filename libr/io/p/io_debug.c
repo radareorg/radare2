@@ -4,6 +4,7 @@
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_util.h>
+#include <r_cons.h>
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
 #include <string.h>
 
@@ -44,29 +45,25 @@
 #include <mach-o/nlist.h>
 #endif
 
+#if __WINDOWS__
+#include <windows.h>
+#include <tlhelp32.h>
+#include <winbase.h>
+#include <psapi.h>
+#include <w32dbg_wrap.h>
+#endif
 
 /*
  * Creates a new process and returns the result:
  * -1 : error
  *  0 : ok
  */
-#if __WINDOWS__
-#include <windows.h>
-#include <tlhelp32.h>
-#include <winbase.h>
-#include <psapi.h>
 
+#if __WINDOWS__
 typedef struct {
 	HANDLE hnd;
 	ut64 winbase;
 } RIOW32;
-
-typedef struct {
-	int pid;
-	int tid;
-	ut64 winbase;
-	PROCESS_INFORMATION pi;
-} RIOW32Dbg;
 
 static ut64 winbase;	//HACK
 static int wintid;
@@ -99,67 +96,57 @@ err_enable:
 	return err;
 }
 
+struct __createprocess_params {
+	char *appname;
+	char *cmdline;
+	PROCESS_INFORMATION *pi;
+};
+
+static int __createprocess_wrap(void *params) {
+	STARTUPINFO si = { 0 };
+	// TODO: Add DEBUG_PROCESS to support child process debugging
+	struct __createprocess_params *p = params;
+	return CreateProcess (p->appname, p->cmdline, NULL, NULL, FALSE,
+		CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
+		NULL, NULL, &si, p->pi);
+}
+
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	PROCESS_INFORMATION pi;
-	STARTUPINFO si = { 0 } ;
+	STARTUPINFO si = { 0 };
+	si.cb = sizeof (si);
 	DEBUG_EVENT de;
 	int pid, tid;
 	if (!*cmd) {
 		return -1;
 	}
 	setup_tokens ();
+	if (!io->w32dbg_wrap) {
+		io->w32dbg_wrap = w32dbg_wrap_new ();
+	}
 	char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) :
 		strdup (cmd);
 	char **argv = r_str_argv (_cmd, NULL);
+	char *cmdline = NULL;
 	// We need to build a command line with quoted argument and escaped quotes
-	int cmd_len = 0;
 	int i = 0;
-
-	si.cb = sizeof (si);
 	while (argv[i]) {
-		char *current = argv[i];
-		int quote_count = 0;
-		while ((current = strchr (current, '"'))) {
-			quote_count ++;
-		}
-		cmd_len += strlen (argv[i]);
-		cmd_len += quote_count; // The quotes will add one backslash each
-		cmd_len += 2; // Add two enclosing quotes;
+		r_str_arg_unescape (argv[i]);
+		cmdline = r_str_appendf (cmdline, "\"%s\" ", argv[i]);
 		i++;
 	}
-	cmd_len += i-1; // Add argc-1 spaces
-
-	char *cmdline = malloc ((cmd_len + 1) * sizeof (char));
-	int cmd_i = 0; // Next character to write in cmdline
-	i = 0;
-	while (argv[i]) {
-		if (i != 0) {
-			cmdline[cmd_i++] = ' ';
-		}
-		cmdline[cmd_i++] = '"';
-
-		int arg_i = 0; // Index of current character in orginal argument
-		while (argv[i][arg_i]) {
-			char c = argv[i][arg_i];
-			if (c == '"') {
-				cmdline[cmd_i++] = '\\';
-			}
-			cmdline[cmd_i++] = c;
-			arg_i++;
-		}
-
-		cmdline[cmd_i++] = '"';
-		i++;
-	}
-	cmdline[cmd_i] = '\0';
 
 	LPTSTR appname_ = r_sys_conv_utf8_to_win (argv[0]);
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	free (cmdline);
-	// TODO: Add DEBUG_PROCESS to support child process debugging
-	if (!CreateProcess (appname_, cmdline_, NULL, NULL, FALSE,
-						 CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
-						 NULL, NULL, &si, &pi)) {
+	struct __createprocess_params p = {appname_, cmdline_, &pi};
+	w32dbg_wrap_instance *inst = io->w32dbg_wrap;
+	inst->params->type = W32_CALL_FUNC;
+	inst->params->func.func = __createprocess_wrap;
+	inst->params->func.user = &p;
+	w32dbg_wrap_wait_ret (inst);
+	if (!w32dbgw_ret (inst)) {
+		w32dbgw_err (inst);
 		r_sys_perror ("fork_and_ptraceme/CreateProcess");
 		free (appname_);
 		free (cmdline_);
@@ -174,7 +161,11 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	tid = pi.dwThreadId;
 
 	/* catch create process event */
-	if (!WaitForDebugEvent (&de, 10000)) goto err_fork;
+	inst->params->type = W32_WAIT;
+	inst->params->wait.wait_time = 10000;
+	inst->params->wait.de = &de;
+	w32dbg_wrap_wait_ret (inst);
+	if (!w32dbgw_ret (inst)) goto err_fork;
 
 	/* check if is a create process debug event */
 	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
@@ -190,6 +181,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 err_fork:
 	eprintf ("ERRFORK\n");
 	TerminateProcess (pi.hProcess, 1);
+	w32dbg_wrap_fini (io->w32dbg_wrap);
+	io->w32dbg_wrap = NULL;
 	CloseHandle (pi.hThread);
 	CloseHandle (pi.hProcess);
 	return -1;
@@ -206,11 +199,11 @@ static void inferior_abort_handler(int pid) {
 
 static void trace_me (void) {
 #if __APPLE__
-	signal (SIGTRAP, SIG_IGN); //NEED BY STEP
+	r_sys_signal (SIGTRAP, SIG_IGN); //NEED BY STEP
 #endif
 #if __APPLE__ || __BSD__
 	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
-	signal (SIGABRT, inferior_abort_handler);
+	r_sys_signal (SIGABRT, inferior_abort_handler);
 	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
 		r_sys_perror ("ptrace-traceme");
 	}
@@ -226,7 +219,8 @@ static void trace_me (void) {
 }
 #endif
 
-void handle_posix_error(int err) {
+#if __APPLE__ && !__POWERPC__
+static void handle_posix_error(int err) {
 	switch (err) {
 	case 0:
 		// eprintf ("Success\n");
@@ -243,6 +237,7 @@ void handle_posix_error(int err) {
 		break;
 	}
 }
+#endif
 
 static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	char *expr = NULL;
@@ -288,24 +283,16 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 
 #if __APPLE__ && !__POWERPC__
 
-static void handle_redirection(char *path, int flag, posix_spawn_file_actions_t *fileActions, int fd) {
-	int mode = S_IRUSR | S_IWUSR;
-	posix_spawn_file_actions_addopen (fileActions, fd, path, flag, mode);
-}
-
 static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t *fileActions) {
-	int flag = 0;
+	const int mode = S_IRUSR | S_IWUSR;
 	if (rp->_stdin) {
-		flag |= O_RDONLY;
-		handle_redirection (rp->_stdin, flag, fileActions, STDIN_FILENO);
+		posix_spawn_file_actions_addopen (fileActions, STDIN_FILENO, rp->_stdin, O_RDONLY, mode);
 	}
 	if (rp->_stdout) {
-		flag |= O_WRONLY;
-		handle_redirection (rp->_stdout, flag, fileActions, STDOUT_FILENO);
+		posix_spawn_file_actions_addopen (fileActions, STDOUT_FILENO, rp->_stdout, O_WRONLY, mode);
 	}
 	if (rp->_stderr) {
-		flag |= O_WRONLY;
-		handle_redirection (rp->_stderr, flag, fileActions, STDERR_FILENO);
+		posix_spawn_file_actions_addopen (fileActions, STDERR_FILENO, rp->_stderr, O_WRONLY, mode);
 	}
 }
 
@@ -469,14 +456,11 @@ static void fork_child_callback(void *user) {
 		free (_cmd);
 	}
 }
-#endif
 
-static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
-#if __APPLE__ && !__POWERPC__
-	return fork_and_ptraceme_for_mac (io, bits, cmd);
-#else
+static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 	int ret, status, child_pid;
 	bool runprofile = io->runprofile && *(io->runprofile);
+	void *bed = NULL;
 	fork_child_data child_data;
 	child_data.io = io;
 	child_data.bits = bits;
@@ -492,25 +476,40 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	default:
 		/* XXX: clean this dirty code */
 		do {
-			ret = wait (&status);
+			ret = waitpid (child_pid, &status, WNOHANG);
 			if (ret == -1) {
+				perror ("waitpid");
 				return -1;
 			}
-			if (ret != child_pid) {
-				eprintf ("Wait event received by "
-					"different pid %d\n", ret);
-			}
-		} while (ret != child_pid);
+			bed = r_cons_sleep_begin ();
+			usleep (100000);
+			r_cons_sleep_end (bed);
+		} while (ret != child_pid && !r_cons_is_breaked ());
 		if (WIFSTOPPED (status)) {
 			eprintf ("Process with PID %d started...\n", (int)child_pid);
-		}
-		if (WEXITSTATUS (status) == MAGIC_EXIT) {
+		} else if (WEXITSTATUS (status) == MAGIC_EXIT) {
 			child_pid = -1;
+		} else if (r_cons_is_breaked ()) {
+			kill (child_pid, SIGSTOP);
+		} else {
+			eprintf ("Killing child process %d due to an error\n", (int)child_pid);
+			kill (child_pid, SIGSTOP);
 		}
-		// XXX kill (pid, SIGSTOP);
 		break;
 	}
 	return child_pid;
+}
+#endif
+
+static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
+#if __APPLE__
+#  if __POWERPC__
+	return fork_and_ptraceme_for_unix (io, bits, cmd);
+#  else
+	return fork_and_ptraceme_for_mac (io, bits, cmd);
+#  endif
+#else
+	return fork_and_ptraceme_for_unix (io, bits, cmd);
 #endif
 }
 #endif
@@ -592,7 +591,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			if ((ret = _plugin->open (io, uri, rw, mode))) {
 				RIOW32Dbg *w32 = (RIOW32Dbg *)ret->data;
 				w32->winbase = winbase;
-				w32->tid = wintid;
+				w32->pi.dwThreadId = wintid;
+				*(RIOW32Dbg *)((RCore *)io->user)->dbg->user = *w32;
 			}
 #elif __APPLE__
 			sprintf (uri, "smach://%d", pid);		//s is for spawn
@@ -617,6 +617,12 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				return NULL;
 			}
 			ret = _plugin->open (io, uri, rw, mode);
+#if __WINDOWS__
+			if (ret) {
+				RIOW32Dbg *w32 = (RIOW32Dbg *)ret->data;
+				*(RIOW32Dbg *)((RCore *)io->user)->dbg->user = *w32;
+			}
+#endif
 		}
 		if (ret) {
 			ret->plugin = _plugin;

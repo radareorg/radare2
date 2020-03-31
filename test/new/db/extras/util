@@ -1,0 +1,58 @@
+NAME=Sort Params
+FILE=-
+EXPECT=<<EOF
+0 one
+1 one
+3 eleven
+4 radare
+9 great
+five
+five
+EOF
+CMDS=sort ../bins/other/test_file
+RUN
+
+NAME=Missing Sort Params
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=sort 
+RUN
+
+NAME=Uniq command
+FILE=-
+EXPECT=<<EOF
+1 one
+five
+3 eleven
+4 radare
+9 great
+0 one
+EOF
+CMDS=uniq ../bins/other/test_file
+RUN
+
+NAME=Missing Uniq Params
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=uniq 
+RUN
+
+NAME=Join command
+FILE=-
+EXPECT=<<EOF
+1 one great
+3 eleven radare
+4 radare awesome
+9 great dodoco
+EOF
+CMDS=join ../bins/other/test_file ../bins/other/test_file2
+RUN
+
+NAME=Missing join Params
+FILE=-
+EXPECT=<<EOF
+EOF
+CMDS=join ../bins/other/test_file
+RUN

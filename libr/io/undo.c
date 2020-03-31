@@ -83,9 +83,9 @@ R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor) {
 	if (!io->undo.s_enable) {
 		return;
 	}
-	// the first insert
-	if (io->undo.idx > 0) {
-		undo = &io->undo.seek[io->undo.idx - 1];
+	// don't push duplicate seek
+	if (io->undo.undos > 0) {
+		undo = &io->undo.seek[(io->undo.idx - 1 + R_IO_UNDOS) % R_IO_UNDOS];
 		if (undo->off == off && undo->cursor == cursor) {
 			return;
 		}
@@ -127,7 +127,7 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 
 	idx = io->undo.idx;
 	start = (idx - undos + R_IO_UNDOS) % R_IO_UNDOS;
-	end = (idx + redos + 1) % R_IO_UNDOS;
+	end = (idx + redos + 1 - 1) % R_IO_UNDOS; // +1 slot for current position, -1 due to inclusive end
 
 	j = 0;
 	switch (mode) {
@@ -138,22 +138,15 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 		list = r_list_newf (free);
 		break;
 	}
-	const char *comma = "";
-	for (i = start; i < end || j == 0; i = (i + 1) % R_IO_UNDOS) {
+	for (i = start;/* condition at the end of loop */; i = (i + 1) % R_IO_UNDOS) {
 		int idx = (j < undos)? undos - j - 1: j - undos - 1;
 		RIOUndos *undo = &io->undo.seek[i];
 		ut64 addr = undo->off;
-		ut64 notLast = (j + 1 < undos) && (i != end - 1);
+		bool notLast = (j + 1 < undos);
 		switch (mode) {
 		case '=':
 			if (j < undos) {
 				io->cb_printf ("0x%"PFMT64x"%s", addr, notLast? " > ": "");
-			}
-			break;
-		case 'j':
-			if (j < undos) {
-				io->cb_printf ("%"PFMT64d"%s", addr, notLast? ",": "");
-				comma = ",";
 			}
 			break;
 		case '*':
@@ -169,20 +162,26 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 			if (list) {
 				RIOUndos  *u = R_NEW0 (RIOUndos);
 				if (u) {
-					memcpy (u, undo, sizeof (RIOUndos));
+					if (!(j == undos && redos == 0)) {
+						// Current position gets pushed before seek, so there
+						// is no valid offset when we are at the end of list.
+						memcpy (u, undo, sizeof (RIOUndos));
+					} else {
+						u->off = io->off;
+					}
 					r_list_append (list, u);
 				}
 			}
 			break;
 		}
 		j++;
+		if (i == end) {
+			break;
+		}
 	}
 	switch (mode) {
 	case '=':
 		io->cb_printf ("\n");
-		break;
-	case 'j':
-		io->cb_printf ("%s%"PFMT64d"]\n", comma, io->off);
 		break;
 	}
 	return list;

@@ -1,0 +1,46 @@
+NAME=nso detection
+ARGS=-e io.cache=true
+FILE=../bins/nso/application.nso
+EXPECT=<<EOF
+1
+EOF
+CMDS=iI~?switch
+RUN
+
+NAME=nso sections
+ARGS=-e io.cache=true
+FILE=../bins/nso/application.nso
+EXPECT=<<EOF
+[Sections]
+
+nth paddr          size vaddr         vsize perm name
+-----------------------------------------------------
+0   0x00000000    0x100 0x00000000    0x100 -r-- header
+1   0x00000100  0x20e18 0x08000000  0x20e18 -r-x text
+2   0x0001718f   0xdb0c 0x08021000   0xdb0c -r-- ro
+3   0x0001f856   0x4218 0x0802f000   0x4218 -rw- data
+
+EOF
+CMDS=iS
+RUN
+
+NAME=nso entry
+ARGS=-e io.cache=true
+FILE=../bins/nso/application.nso
+EXPECT=<<EOF
+[Entrypoints]
+vaddr=0x08000000 paddr=0x00000100 haddr=-1 type=program
+
+1 entrypoints
+EOF
+CMDS=ie
+RUN
+
+NAME=nso data
+ARGS=-e io.cache=true
+FILE=../bins/nso/application.nso
+EXPECT=<<EOF
+e7031eaa01000094c62302d1e50300aae40301aabf0000f1841841ba400000544a240014fb0307aaf90305aafa0304aa
+EOF
+CMDS=p8 0x30 @ 0x08000080
+RUN

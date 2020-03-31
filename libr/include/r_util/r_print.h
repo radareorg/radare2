@@ -60,6 +60,7 @@ typedef struct r_print_t {
 	int datezone;
 	int (*write)(const unsigned char *buf, int len);
 	PrintfCallback cb_printf;
+	PrintfCallback cb_eprintf;
 	char *(*cb_color)(int idx, int last, bool bg);
 	bool scr_prompt;
 	int (*disasm)(void *p, ut64 addr);
@@ -69,6 +70,7 @@ typedef struct r_print_t {
 	int width;
 	int limit;
 	int bits;
+	bool histblock;
 	// true if the cursor is enabled, false otherwise
 	bool cur_enabled;
 	// offset of the selected byte from the first displayed one
@@ -157,6 +159,7 @@ R_API const char *r_print_byte_color(RPrint *p, int ch);
 R_API void r_print_c(RPrint *p, const ut8 *str, int len);
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
 R_API bool r_print_have_cursor(RPrint *p, int cur, int len);
+R_API bool r_print_cursor_pointer(RPrint *p, int cur, int len);
 R_API void r_print_cursor(RPrint *p, int cur, int len, int set);
 R_API void r_print_cursor_range(RPrint *p, int cur, int to, int set);
 R_API int r_print_get_cursor(RPrint *p);
@@ -176,8 +179,9 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 #define R_PRINT_DOT       (1 << 7)
 #define R_PRINT_QUIET     (1 << 8)
 #define R_PRINT_STRUCT    (1 << 9)
-R_API int r_print_format_struct_size(const char *format, RPrint *p, int mode, int n);
+R_API int r_print_format_struct_size(RPrint *p, const char *format, int mode, int n);
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
+R_API const char *r_print_format_byname(RPrint *p, const char *name);
 R_API int r_print_format_length(const char *fmt);
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
 R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
@@ -202,7 +206,7 @@ R_API char * r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr
 R_API void r_print_2bpp_row(RPrint *p, ut8 *buf);
 R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles);
 R_API char * r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
-R_API const char * r_print_color_op_type(RPrint *p, ut64 anal_type);
+R_API const char * r_print_color_op_type(RPrint *p, ut32 anal_type);
 R_API void r_print_set_interrupted(int i);
 R_API void r_print_init_rowoffsets(RPrint *p);
 R_API ut32 r_print_rowoff(RPrint *p, int i);
@@ -222,6 +226,7 @@ R_API void r_print_stereogram_print(RPrint *p, const char *buf);
 R_API void r_print_set_screenbounds(RPrint *p, ut64 addr);
 R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off);
 R_API char* r_print_json_indent(const char* s, bool color, const char *tab, const char **colors);
+R_API char* r_print_json_human(const char* s);
 R_API char* r_print_json_path(const char* s, int pos);
 
 #endif

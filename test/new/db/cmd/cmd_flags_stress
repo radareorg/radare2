@@ -1,0 +1,41 @@
+NAME=no flags
+FILE=-
+EXPECT=<<EOF
+0
+EOF
+CMDS=<<EOF
+f patata
+f-*
+f~?
+EOF
+RUN
+
+NAME=no flags
+FILE=../bins/elf/analysis/elf-relro
+EXPECT=<<EOF
+0
+EOF
+CMDS=<<EOF
+f patata
+fs *
+f-*
+f~?
+EOF
+RUN
+
+NAME=fr foo bar
+FILE=-
+EXPECT=<<EOF
+0x00000000 1 bar
+            ;-- bar:
+            0x00000000      0000           add byte [rax], al
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+f foo
+fr foo bar
+f
+pd 1
+EOF
+RUN

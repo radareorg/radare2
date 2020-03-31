@@ -22,7 +22,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 
 static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
 	ut8 h[2];
-	if (r_buf_read_at (b, 0, h, sizeof (h)) != sizeof (h)) {
+	if (r_buf_read_at (b, offset, h, sizeof (h)) != sizeof (h)) {
 		return false;
 	}
 	if (!memcmp (h, "PE", 2)) {

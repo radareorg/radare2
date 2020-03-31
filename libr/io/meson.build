@@ -39,12 +39,6 @@ r_io_sources = [
   'p/io_zip.c',
 ]
 
-if host_machine.system() == 'linux'
-  r_io_sources += [
-    'p/io_r2k_linux.c',
-  ]
-endif
-
 if host_machine.system() == 'windows'
   r_io_sources += [
     'p/io_r2k_windows.c',
@@ -57,7 +51,6 @@ endif
 r_io_deps = [
   r_util_dep,
   r_socket_dep,
-  sdb_dep,
   bochs_dep,
   gdb_dep,
   windbg_dep,
@@ -66,6 +59,18 @@ r_io_deps = [
   ar_dep,
   pth
 ]
+
+if host_machine.system() == 'windows'
+  r_io_deps += w32dbg_wrap_dep
+endif
+
+if host_machine.system() == 'linux'
+  r_io_sources += [
+    'p/io_r2k_linux.c',
+  ]
+  ## only for shm_open
+  # r_io_deps += meson.get_compiler('c').find_library('rt')
+endif
 
 if use_ptrace_wrap
   r_io_deps += ptrace_wrap_dep

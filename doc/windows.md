@@ -1,56 +1,34 @@
-HOW TO BUILD FOR WINDOWS
+How to Build for Windows
 ========================
-Actually, if you want to build r2 for windows, you can use native compiler with mingw32 or
-cygwin, but there's also the possibility to crosscompile from a Linux box:
 
+You can follow the [r2book](https://radare.gitbooks.io/radare2book/content/first_steps/windows_compilation.html) for a more complete guide.
+
+Native
+---------------
+
+You will need:
+
+* Python 3
+* Meson (pip3 install meson)
+* Visual Studio 2015 (or later)
+
+	
+First, call `vcvarsall.bat` with your architecture (x86, x64, arm) to setup the compilation environment.
+
+	cd radare2	
+	python3 sys\meson.py --release --backend vs2019 --shared --install="%cd%\radare2_dist" --webui
+
+You can change `--backend` to your VS version (`vs2015`, `vs2017`), `ninja` buildsystem is also supported.
+
+For XP support, append `--xp` to the command (not compatible with VS2019).
+
+You can then add `radare2_dist` to your PATH to make radare2 accessible from everywhere.
 
 Crosscompilation
 ----------------
 
-**ArchLinux**
+As building with mingw is no longer officially supported in radare2, crosscompilation isn't (easily) possible.
 
-	./configure --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
-	make
-	make w32dist
+You can check the official [Meson documentation](https://mesonbuild.com/Cross-compilation.html).
 
-	cd swig
-	export CC=i486-mingw32-gcc
-	export CXX=i486-mingw32-g++
-	unset CFLAGS
-	unset LDFLAGS
-	export LDFLAGS="-L${HOME}/.wine/drive_c/Python27/libs ${LDFLAGS}"
-	export CFLAGS="-Wl,--enable-auto-import -L../../radare2-w32-0.5 ${CFLAGS}"
-	./configure --with-ostype=windows --host=i486-unknown-windows --with-cc=i486-mingw32-gcc --with-cxx=i486-mingw32-g++
-
-  
-**Ubuntu**
- 
-	sudo apt-get install mingw32
-	./configure --with-compiler=i586-mingw32msvc-gcc  --with-ostype=windows --host=i586-unknown-windows
-	make
-	make w32dist
-
-**Windows x86-64**
- 
-***Setup toolchain***
-    
-	open http://mingw-w64.sourceforge.net/
-	wget http://switch.dl.sourceforge.net/project/mingw-w64/Toolchains%20targetting%20Win64/Automated%20Builds/mingw-w64-bin_i686-linux_20110627.tar.bz2
-	mkdir -p mingw64
-	tar xjvf mingw-w64*.bz2 -C mingw64
-	export PATH=$PWD/mingw64/bin:$PATH
-  
-Build radare2
--------------
-  
-	./configure --with-compiler=x86_64-w64-mingw32-gcc --with-ostype=windows --host=x86_64-unknown-windows
-
-
-Python bindings:
-----------------
-
-	wget http://www.python.org/ftp/python/2.7/python-2.7.msi
-	msiexec /i python-2.7.msi
-	cd r2-bindings
-	make w32
-	make w32dist
+Good luck.

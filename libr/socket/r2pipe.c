@@ -17,7 +17,7 @@ Usage Example:
 */
 
 #include <r_util.h>
-#include <r_cons.h>
+#include <r_lib.h>
 #include <r_socket.h>
 
 #define R2P_PID(x) (((R2Pipe*)(x)->data)->pid)
@@ -110,6 +110,14 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 	if (!r2pipe) {
 		return 0;
 	}
+	/*
+	if (r2pipe->coreb.core && !r2pipe->coreb.puts) {
+		void (*rfre)(void *c) = r_lib_dl_sym (libr, "r_core_free");
+		if (rfre) {
+			rfre (r2pipe->coreb.core);
+		}
+	}
+	*/
 #if __WINDOWS__
 	if (r2pipe->pipe) {
 		CloseHandle (r2pipe->pipe);
@@ -204,6 +212,24 @@ R_API R2Pipe *r2pipe_open_corebind(RCoreBind *coreb) {
 		memcpy (&r2pipe->coreb, coreb, sizeof (RCoreBind));
 	}
 	return r2pipe;
+}
+
+R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
+	void *libr = r_lib_dl_open (libr_path);
+	void* (*rnew)() = r_lib_dl_sym (libr, "r_core_new");
+	char* (*rcmd)(void *c, const char *cmd) = r_lib_dl_sym (libr, "r_core_cmd_str");
+
+	if (rnew && rcmd) {
+		R2Pipe *r2pipe = r2pipe_new ();
+		if (r2pipe) {
+			r2pipe->coreb.core = rnew ();
+			r2pipe->coreb.cmdstr = rcmd;
+			// r2pipe->coreb.free = rfre;
+		}
+		return r2pipe;
+	}
+	eprintf ("Cannot resolve r_core_cmd, r_core_cmd_str, r_core_free\n");
+	return NULL;
 }
 
 R_API R2Pipe *r2pipe_open(const char *cmd) {

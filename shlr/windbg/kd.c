@@ -5,6 +5,8 @@
 #include "transport.h"
 #include "kd.h"
 
+#define KD_DBG if (false)
+
 uint32_t kd_data_checksum(const uint8_t *buf, const uint64_t buf_len) {
 	uint32_t i, acc;
 
@@ -83,8 +85,32 @@ int kd_read_packet(void *fp, kd_packet_t **p) {
 	}
 
 	if (!kd_packet_is_valid (&pkt)) {
-		eprintf ("invalid leader %08x\n", pkt.leader);
-		return KD_E_MALFORMED;
+		KD_DBG eprintf ("invalid leader %08x, trying to recover\n", pkt.leader);
+		while (!kd_packet_is_valid (&pkt)) {
+			kd_send_ctrl_packet (fp, KD_PACKET_TYPE_RESEND, 0);
+			char sig[4];
+			// Read byte-by-byte searching for the start of a packet
+			int ret;
+			while ((ret = iob_read (fp, (uint8_t *)&sig, 1)) > 0) {
+				if (sig[0] == '0' || sig[0] == 'i') {
+					if (iob_read (fp, (uint8_t *)&sig + 1, 3) == 3) {
+						if (strncmp (sig, "000", 3) && strncmp (sig, "iii", 3)) {
+							continue;
+						}
+						memcpy (&pkt, sig, sizeof (sig));
+						if (iob_read (fp, (uint8_t *)&pkt + 4, sizeof (kd_packet_t) - 4) <= 0) {
+							return KD_E_IOERR;
+						}
+						break;
+					} else {
+						return KD_E_IOERR;
+					}
+				}
+			}
+			if (!ret) {
+				return KD_E_IOERR;
+			}
+		}
 	}
 
 	buf = malloc (sizeof (kd_packet_t) + pkt.length);
@@ -98,7 +124,7 @@ int kd_read_packet(void *fp, kd_packet_t **p) {
 	}
 
 	if (pkt.checksum != kd_data_checksum (buf + sizeof(kd_packet_t), pkt.length)) {
-		eprintf ("Checksum mismatch!\n");
+		KD_DBG eprintf ("Checksum mismatch!\n");
 		free (buf);
 		return KD_E_MALFORMED;
 	}
@@ -108,7 +134,7 @@ int kd_read_packet(void *fp, kd_packet_t **p) {
 		iob_read (fp, (uint8_t *) &trailer, 1);
 
 		if (trailer != 0xAA) {
-			printf ("Missing trailer 0xAA\n");
+			KD_DBG eprintf ("Missing trailer 0xAA\n");
 			free (buf);
 			return KD_E_MALFORMED;
 		}

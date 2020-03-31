@@ -41,7 +41,7 @@ R_LIB_VERSION_HEADER(r_asm);
 
 #define R_ASM_GET_NAME(x,y,z) \
 	(x && x->binb.bin && x->binb.get_name)? \
-		x->binb.get_name (x->binb.bin, y, z): NULL
+		x->binb.get_name (x->binb.bin, y, z, x->pseudo): NULL
 
 enum {
 	R_ASM_SYNTAX_NONE = 0,
@@ -116,6 +116,7 @@ typedef struct r_asm_t {
 	bool immdisp; // Display immediates with # symbol (for arm stuff).
 	HtPP *flags;
 	int seggrn;
+	bool pseudo;
 } RAsm;
 
 typedef bool (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
@@ -166,7 +167,6 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr);
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf);
 R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp);
-R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file);
 R_API char *r_asm_to_string(RAsm *a, ut64 addr, const ut8 *b, int l);
 /* to ease the use of the native bindings (not used in r2) */
 R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l);
@@ -202,6 +202,7 @@ R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
 extern RAsmPlugin r_asm_plugin_6502;
 extern RAsmPlugin r_asm_plugin_6502_cs;
 extern RAsmPlugin r_asm_plugin_8051;
+extern RAsmPlugin r_asm_plugin_amd29k;
 extern RAsmPlugin r_asm_plugin_arc;
 extern RAsmPlugin r_asm_plugin_arm_as;
 extern RAsmPlugin r_asm_plugin_arm_cs;
@@ -236,6 +237,7 @@ extern RAsmPlugin r_asm_plugin_mips_cs;
 extern RAsmPlugin r_asm_plugin_mips_gnu;
 extern RAsmPlugin r_asm_plugin_msp430;
 extern RAsmPlugin r_asm_plugin_nios2;
+extern RAsmPlugin r_asm_plugin_or1k;
 extern RAsmPlugin r_asm_plugin_pic;
 extern RAsmPlugin r_asm_plugin_ppc_cs;
 extern RAsmPlugin r_asm_plugin_ppc_gnu;

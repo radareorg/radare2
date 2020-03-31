@@ -3,7 +3,7 @@
 
 // defines like IS_DIGIT, etc'
 #include "r_util/r_str_util.h"
-#include "r_userconf.h"
+#include <r_userconf.h>
 #include <stddef.h>
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
@@ -24,11 +24,13 @@
 #define R_MODE_EQUAL 0x080
 
 #define R_IN /* do not use, implicit */
-#define R_OWN /* pointer ownership is transferred */
 #define R_OUT /* parameter is written, not read */
 #define R_INOUT /* parameter is read and written */
-#define R_NONNULL /* nonnull */
+#define R_OWN /* pointer ownership is transferred */
+#define R_BORROW /* pointer ownership is not transferred, it must not be freed by the receiver */
+#define R_NONNULL /* pointer can not be null */
 #define R_NULLABLE /* pointer can be null */
+#define R_DEPRECATE /* should not be used in new code and should/will be removed in the future */
 #define R_IFNULL(x) /* default value for the pointer when null */
 #ifdef __GNUC__
 #define R_UNUSED __attribute__((__unused__))
@@ -110,6 +112,10 @@
 #  define UNUSED_FUNCTION(x) UNUSED_ ## x
 #endif
 
+#ifdef __EMSCRIPTEN__
+# define __UNIX__ 1
+#endif
+
 #ifdef __HAIKU__
 # define __UNIX__ 1
 #endif
@@ -142,7 +148,9 @@
   #ifdef _MSC_VER
   /* Must be included before windows.h */
   #include <winsock2.h>
+  #ifndef WIN32_LEAN_AND_MEAN
   #define WIN32_LEAN_AND_MEAN
+  #endif
   #endif
   typedef int socklen_t;
   #undef USE_SOCKETS
@@ -191,7 +199,6 @@
   #define FUNC_ATTR_ALWAYS_INLINE
 #endif
 
-#include <r_userconf.h>
 #include <r_types_base.h>
 
 #undef _FILE_OFFSET_BITS
@@ -346,7 +353,6 @@ static inline void *r_new_copy(int size, void *data) {
 
 #ifndef HAVE_EPRINTF
 #define eprintf(...) fprintf(stderr,__VA_ARGS__)
-#define eprint(x) fprintf(stderr,"%s\n",x)
 #define HAVE_EPRINTF 1
 #endif
 

@@ -166,7 +166,14 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		return NULL;
 	}
 	b = r_bp_item_new (bp);
+	if (!b) {
+		return NULL;
+	}
 	b->addr = addr + bp->delta;
+	if (bp->baddr > addr) {
+		eprintf ("base addr should not be larger than the breakpoint address.\n");
+	}
+	b->delta = addr - bp->baddr;
 	b->size = size;
 	b->enabled = true;
 	b->perm = perm;
@@ -229,8 +236,12 @@ R_API RBreakpointItem* r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int per
 }
 
 R_API int r_bp_del_all(RBreakpoint *bp) {
+	int i;
 	if (!r_list_empty (bp->bps)) {
 		r_list_purge (bp->bps);
+		for (i = 0; i < bp->bps_idx_count; i++) {
+			bp->bps_idx[i] = NULL;
+		}
 		return true;
 	}
 	return false;
@@ -281,7 +292,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 		switch (rad) {
 		case 0:
 			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x \
-				" %d %c%c%c %s %s %s cmd=\"%s\" cond=\"%s\" " \
+				" %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" " \
 				"name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
 				((b->perm & R_BP_PROT_READ) | (b->perm & R_BP_PROT_ACCESS)) ? 'r' : '-',
@@ -290,6 +301,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->hw ? "hw": "sw",
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
+				r_bp_is_valid (bp, b) ? "valid" : "invalid",
 				r_str_get2 (b->data),
 				r_str_get2 (b->cond),
 				r_str_get2 (b->name),
@@ -312,7 +324,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,"
 				"\"prot\":\"%c%c%c\",\"hw\":%s,"
 				"\"trace\":%s,\"enabled\":%s,"
-				"\"data\":\"%s\","
+				"\"valid\":%s,\"data\":\"%s\","
 				"\"cond\":\"%s\"}",
 				iter->p ? "," : "",
 				b->addr, b->size,
@@ -322,6 +334,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->hw ? "true" : "false",
 				b->trace ? "true" : "false",
 				b->enabled ? "true" : "false",
+				r_bp_is_valid (bp, b) ? "true" : "false",
 				r_str_get2 (b->data),
 				r_str_get2 (b->cond));
 			break;
@@ -379,7 +392,7 @@ R_API int r_bp_get_index_at (RBreakpoint *bp, ut64 addr) {
 R_API int r_bp_del_index(RBreakpoint *bp, int idx) {
 	if (idx >= 0 && idx < bp->bps_idx_count) {
 		r_list_delete_data (bp->bps, bp->bps_idx[idx]);
-		R_FREE (bp->bps_idx[idx]);
+		bp->bps_idx[idx] = 0;
 		return true;
 	}
 	return false;
@@ -401,4 +414,13 @@ R_API int r_bp_size(RBreakpoint *bp) {
 		}
 	}
 	return bpsize;
+}
+
+// Check if the breakpoint is in a valid map
+R_API bool r_bp_is_valid(RBreakpoint *bp, RBreakpointItem *b) {
+	if (!bp->bpinmaps) {
+		return true;
+	}
+
+	return bp->corebind.isMapped (bp->corebind.core, b->addr, b->perm);
 }

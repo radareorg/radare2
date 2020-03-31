@@ -1,0 +1,14 @@
+NAME=PE: corkami d_tiny.dll - open
+FILE=../bins/pe/d_tiny.dll
+EXPECT=<<EOF
+EOF
+CMDS=q!
+RUN
+
+NAME=PE: corkami d_tiny.dll - entrypoint
+FILE=../bins/pe/d_tiny.dll
+EXPECT=<<EOF
+0x0
+EOF
+CMDS=s
+RUN

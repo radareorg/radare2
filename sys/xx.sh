@@ -7,4 +7,4 @@ if [ -z "$ID" ]; then
 	exit 1
 fi
 
-curl -L "https://api.travis-ci.org/jobs/${ID}/log.txt?deansi=true"
+curl -L "https://api.travis-ci.com/jobs/${ID}/log.txt?deansi=true"

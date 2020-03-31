@@ -60,8 +60,11 @@ static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
 	if (b->methods->get_whole_buf) {
 		return b->methods->get_whole_buf (b, sz);
 	}
-
 	ut64 bsz = r_buf_size (b);
+	// bsz = 4096; // FAKE MINIMUM SIZE TO READ THE BIN HEADER
+	if (bsz == UT64_MAX) {
+		return NULL;
+	}
 	free (b->whole_buf);
 	b->whole_buf = R_NEWS (ut8, bsz);
 	if (!b->whole_buf) {
@@ -167,7 +170,7 @@ R_API RBuffer *r_buf_new_with_string(const char *msg) {
 }
 
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
-	ut64 sz;
+	ut64 sz = 0;
 	const ut8 *tmp = r_buf_data (b, &sz);
 	return r_buf_new_with_bytes (tmp, sz);
 }
@@ -217,7 +220,7 @@ R_API RBuffer *r_buf_new_file(const char *file, int perm, int mode) {
 
 // TODO: rename to new_from_file ?
 R_API RBuffer *r_buf_new_slurp(const char *file) {
-	int len;
+	size_t len;
 	char *tmp = r_file_slurp (file, &len);
 	if (!tmp) {
 		return NULL;
@@ -225,7 +228,7 @@ R_API RBuffer *r_buf_new_slurp(const char *file) {
 
 	struct buf_bytes_user u = { 0 };
 	u.data_steal = (ut8 *)tmp;
-	u.length = len;
+	u.length = (ut64)len;
 	u.steal = true;
 	return new_buffer (R_BUFFER_BYTES, &u);
 }
@@ -235,7 +238,7 @@ R_API bool r_buf_dump(RBuffer *b, const char *file) {
 	if (!b || !file) {
 		return false;
 	}
-	ut64 tmpsz;
+	ut64 tmpsz = 0;
 	const ut8 *tmp = r_buf_data (b, &tmpsz);
 	return r_file_dump (file, tmp, tmpsz, 0);
 }
@@ -362,7 +365,7 @@ R_API bool r_buf_append_ut64(RBuffer *b, ut64 n) {
 
 R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	r_return_val_if_fail (b && a && !b->readonly, false);
-	ut64 sz;
+	ut64 sz = 0;
 	const ut8 *tmp = r_buf_data (a, &sz);
 	return r_buf_append_bytes (b, tmp, sz);
 }
@@ -448,13 +451,13 @@ R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
 static st64 buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 	st64 res = 0;
 	int i;
-	for (i = 0; i < n; ++i) {
+	for (i = 0; i < n; i++) {
 		int j;
 		int m = 1;
 		int tsize = 2;
 		bool bigendian = true;
 
-		for (j = 0; fmt[j]; ++j) {
+		for (j = 0; fmt[j]; j++) {
 			switch (fmt[j]) {
 			case '0':
 			case '1':

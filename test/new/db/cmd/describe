@@ -1,0 +1,28 @@
+NAME=asm.describe alignment with memory access
+FILE=-
+EXPECT=<<EOF
+            0x00000000      a100010000     mov eax, dword [0x100]      ; [0x100:4]=0 ; moves data from src to dst
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=32
+"wa mov eax, [0x100]"
+e asm.describe = true
+pd 1
+EOF
+RUN
+
+NAME=asm.describe alignment
+FILE=-
+EXPECT=<<EOF
+            0x00000000      90             nop                         ; no operation
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wa nop
+e asm.describe = true
+pd 1
+EOF
+RUN

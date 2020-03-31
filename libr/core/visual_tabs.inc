@@ -13,13 +13,13 @@ static char *__core_visual_tab_string(RCore *core, const char *kolor) {
 	if (hex_cols < 4) {
 		return strdup ("");
 	}
-	int i=0;
+	int i = 0;
 	char *str = NULL;
 	int tabs = r_list_length (core->visual.tabs);
 	if (scr_color > 0) {
 		// TODO: use theme
 		if (tabs > 0) {
-			str = r_str_appendf (str, "%s___", kolor);
+			str = r_str_appendf (str, "%s-+__", kolor);
 		}
 		for (i = 0; i < tabs;i++) {
 			RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, i);
@@ -72,7 +72,7 @@ static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 	current4format = tab->current4format;
 	current5format = tab->current5format;
 	r_core_visual_applyDisMode (core, disMode);
-	applyHexMode (core, hexMode);
+	r_core_visual_applyHexMode (core, hexMode);
 	r_config_set_i (core->config, "asm.offset", tab->asm_offset);
 	r_config_set_i (core->config, "asm.instr", tab->asm_instr);
 	r_config_set_i (core->config, "asm.bytes", tab->asm_bytes);

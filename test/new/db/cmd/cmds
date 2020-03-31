@@ -1,0 +1,156 @@
+NAME=quotes multicommands
+FILE=malloc://128
+EXPECT=<<EOF
+nop
+nop
+add byte [rax], al
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+"wa nop;nop";pi 3
+EOF
+RUN
+
+NAME=quotes multicommands 2
+FILE=malloc://128
+EXPECT=<<EOF
+00
+nop
+nop
+add byte [eax], al
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+p8 1;"wa nop;nop";pi 3
+EOF
+RUN
+
+NAME=quotes multicommands 2
+FILE=malloc://128
+EXPECT=<<EOF
+@@llo;world
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+"w hello;world";"wa inc eax;inc eax";psz
+EOF
+RUN
+
+NAME=p8 2@x:9090
+FILE=malloc://128
+EXPECT=<<EOF
+9090
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+p8 2 @x:9090
+EOF
+RUN
+
+NAME=pi 2@x:9090
+FILE=malloc://128
+EXPECT=<<EOF
+nop
+nop
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+pi 2 @x:9090
+EOF
+RUN
+
+NAME=pdi 2@x:9090@0x1000
+FILE=malloc://128
+EXPECT=<<EOF
+0x00001000                   90  nop
+0x00001001                   90  nop
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+pdi 2 @x:9090@0x1000
+EOF
+RUN
+
+NAME=pd 2@x:9090
+FILE=malloc://128
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000001      90             nop
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+pd 2 @x:9090
+EOF
+RUN
+
+NAME=pad 9090
+FILE=malloc://128
+EXPECT=<<EOF
+nop
+nop
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+pad 9090
+EOF
+RUN
+
+NAME=pie 90
+FILE=malloc://128
+EXPECT=<<EOF
+0x00000000 rdx,r9,=
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 4989d1
+pie 1
+EOF
+RUN
+
+NAME=pa nop,nop
+FILE=malloc://128
+EXPECT=<<EOF
+9090
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+"pa nop;nop"
+EOF
+RUN
+
+NAME=r2 asm with pa
+FILE=-
+BROKEN=1
+EXPECT=<<EOF
+b821000000
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+f TEST=33
+pa mov eax, TEST
+EOF
+RUN
+
+NAME=r2 asm with pa
+FILE=-
+EXPECT=<<EOF
+b821000000
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+f TEST=33
+pa mov eax, 33
+EOF
+RUN

@@ -1,0 +1,60 @@
+NAME=y cat
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000000 = "catty"
+0x00000010 = "catt"
+catt
+EOF
+CMDS=<<EOF
+w catty @0
+pf z @0x0
+yt 4 0x10
+pf z @0x10
+yp
+EOF
+RUN
+
+NAME=y, yx cat
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000000 = "catty"
+0x00000010 = "catt"
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  6361 7474                                catt
+EOF
+CMDS=<<EOF
+w catty @0
+pf z @0x0
+yt 4 0x10
+pf z @0x10
+yx
+EOF
+RUN
+
+NAME=yz
+FILE=malloc://128
+EXPECT=<<EOF
+HelloWorld
+Hello
+oWor
+orld
+or
+HelloW
+EOF
+CMDS=<<EOF
+w HelloWorld @0
+yz
+yp
+yz 5
+yp
+yz 4 @ 4
+yp
+yz @ 6
+yp
+yz 2 @ 6
+yp
+b 6
+yz
+yp
+EOF
+RUN

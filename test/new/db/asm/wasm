@@ -1,0 +1,20 @@
+d "trap" 00
+d "nop" 01
+d "block" 0240
+d "loop" 0340
+d "if" 0440
+d "else" 05
+d "end" 0b
+d "br 0" 0c00
+d "return" 0f
+d "call 3" 1003
+d "call_indirect 0 0" 110000
+d "drop" 1a
+d "select" 1b
+d "get_local 7" 2007
+d "call 1881" 10d90e
+d "get_local 0" 2000
+d "get_local 1" 2001
+d "get_local 2" 2002
+d "i64.const 32" 4220
+aB "i64.const 32" 4220

@@ -13,7 +13,7 @@ static void *iob_pipe_open(const char *path) {
 	HANDLE hPipe;
 	LPTSTR path_ = r_sys_conv_utf8_to_win (path);
 
-	hPipe = CreateFile (path_, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	hPipe = CreateFile (path_, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 	free (path_);
 	return hPipe != INVALID_HANDLE_VALUE? (void *)(HANDLE)hPipe : NULL;
 }
@@ -24,17 +24,33 @@ static int iob_pipe_close(void *p) {
 
 static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int timeout) {
 	DWORD c = 0;
-	if (!ReadFile (p, buf, count, &c, NULL)) {
+	OVERLAPPED ov = {0};
+	ov.hEvent = CreateEvent (NULL, FALSE, FALSE, NULL);
+	if (!ov.hEvent) {
+		return 0;
+	}
+	if (!ReadFile (p, buf, count, NULL, &ov) &&
+		GetLastError () != ERROR_IO_PENDING) {
+		r_sys_perror ("ReadFile");
 		return -1;
 	}
+	if (WaitForSingleObject (ov.hEvent, timeout) == WAIT_TIMEOUT) {
+		CancelIo (p);
+	}
+	GetOverlappedResult (p, &ov, &c, TRUE);
+	CloseHandle (ov.hEvent);
 	return c;
 }
 
 static int iob_pipe_write(void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
 	DWORD cbWrited = 0;
-	if (!WriteFile (p, buf, count, &cbWrited, NULL)) {
+	OVERLAPPED ov = {0};
+	if (!WriteFile (p, buf, count, NULL, &ov) &&
+		GetLastError () != ERROR_IO_PENDING) {
+		r_sys_perror ("WriteFile");
 		return -1;
 	}
+	GetOverlappedResult (p, &ov, &cbWrited, TRUE);
 	return cbWrited;
 }
 #else
@@ -63,10 +79,6 @@ static void *iob_pipe_open(const char *path) {
 		close (sock);
 		return 0;
 	}
-	//struct timeval tv;
-	//tv.tv_sec = 5;
-	//tv.tv_usec = 0;
-	//setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
 	return (void *) (size_t) sock;
 }
 
@@ -78,16 +90,25 @@ static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int 
 	int result;
 	fd_set readset;
 	int fd = (int) (size_t) p;
+	struct timeval tv;
+	tv.tv_sec = 0;
+	// Convert from ms
+	tv.tv_usec = timeout * 1000;
 	for (;;) {
 		FD_ZERO (&readset);
 		FD_SET (fd, &readset);
-		result = select (fd + 1, &readset, NULL, NULL, NULL);
+		result = select (fd + 1, &readset, NULL, NULL, &tv);
 		if (result < 1) {
-			if (errno == EINTR) continue;
+			if (errno == EINTR) {
+				continue;
+			}
+			if (result == 0) {
+				return 0;
+			}
 			return -1;
 		}
 		if (FD_ISSET (fd, &readset)) {
-			return  recv ((int) (size_t) p, buf, count, 0);
+			return recv ((int) (size_t) p, buf, count, 0);
 		}
 	}
 	return EINTR;

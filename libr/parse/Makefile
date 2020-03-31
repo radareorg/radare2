@@ -8,6 +8,9 @@ DEPS+=r_cons
 LINK+=$(STOP)/tcc/libr_tcc.a
 CFLAGS+=-I$(STOP)/tcc/
 
+LINK+=$(STOP)/mpc/libmpc.a
+CFLAGS+=-I$(STOP)/mpc/
+
 include $(SHLR)/zip/deps.mk
 
 foo:
@@ -18,7 +21,7 @@ foo:
 CFLAGS+=-DR2_PLUGIN_INCORE
 -include ${STATIC_PARSE_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
-OBJS=parse.o filter.o code.o ${STATIC_OBJS}
+OBJS=parse.o filter.o code.o ctype.o ${STATIC_OBJS}
 
 pre:
 

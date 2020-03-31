@@ -1,7 +1,6 @@
 ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
 CC?=gcc
-LINK=
 OBJCOPY=objcopy
 RANLIB=ranlib
 ONELIB=0

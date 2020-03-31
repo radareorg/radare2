@@ -115,7 +115,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		if (!tok) {
 			break;
 		}
-		tokens[tokcount] = r_str_trim_head_tail (tok);
+		r_str_trim (tok);
+		tokens[tokcount] = tok;
 	}
 	tokens[tokcount] = NULL;
 	r_cons_break_push (NULL, NULL);
@@ -137,12 +138,22 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			r_asm_set_pc (core->assembler, addr);
 			if (mode == 'i') {
 				RAnalOp analop = {0};
-				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, 0) < 1) {
+				ut64 len = R_MIN (15, core->blocksize - idx);
+				if (r_anal_op (core->anal, &analop, addr, buf + idx, len, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM) < 1) {
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
 				ut64 val = analop.val; // maybe chk for ptr or others?
-				if (val >= usrimm && val <= usrimm2) {
+				bool match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
+				if (!match) {
+					ut64 val = analop.disp;
+					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
+				}
+				if (!match) {
+					ut64 val = analop.ptr;
+					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
+				}
+				if (match) {
 					if (!(hit = r_core_asm_hit_new ())) {
 						r_list_purge (hits);
 						R_FREE (hits);
@@ -190,7 +201,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				matches = strcmp (opst, "invalid") && strcmp (opst, "unaligned");
 			}
 			if (matches && tokens[matchcount]) {
-				if (mode == 'c') { // check for case insensitivity
+				if (mode == 'a') { // check for case sensitive
 					matches = !r_str_ncasecmp (opst, tokens[matchcount], strlen (tokens[matchcount]));
 				} else if (!regexp) {
 					matches = strstr (opst, tokens[matchcount]) != NULL;
@@ -468,14 +479,13 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 
 R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	RAsmOp op;
-	// len = n * 32;
 	// if (n > core->blocksize) n = core->blocksize;
 	ut64 at;
 	ut32 idx = 0, hit_count;
 	int numinstr, asmlen, ii;
 	const int addrbytes = core->io->addrbytes;
 	RAsmCode *c;
-	RList *hits = r_core_asm_hit_list_new();
+	RList *hits = r_core_asm_hit_list_new ();
 	if (!hits) {
 		return NULL;
 	}
@@ -504,14 +514,14 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		c = r_asm_mdisassemble (core->assembler, buf+(len-idx), idx);
+		c = r_asm_mdisassemble (core->assembler, buf + len - idx, idx);
 		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte")) {
 			r_asm_code_free(c);
 			continue;
 		}
 		numinstr = 0;
 		asmlen = strlen (c->assembly);
-		for(ii = 0; ii < asmlen; ++ii) {
+		for (ii = 0; ii < asmlen; ii++) {
 			if (c->assembly[ii] == '\n') {
 				++numinstr;
 			}

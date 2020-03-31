@@ -44,6 +44,7 @@ typedef struct r_bp_item_t {
 	char *module_name; /*module where you get the base address*/
 	st64 module_delta; /*delta to apply to module */
 	ut64 addr;
+	ut64 delta;
 	int size; /* size of breakpoint area */
 	int recoil; /* recoil */
 	bool swstep; 	/* is this breakpoint from a swstep? */
@@ -70,6 +71,8 @@ typedef struct r_bp_t {
 	int stepcont;
 	int endian;
 	int bits;
+	bool bpinmaps; /* Only enable breakpoints inside a valid map */
+	RCoreBind corebind;
 	RIOBind iob; // compile time dependency
 	RBreakpointPlugin *cur;
 	RList *traces; // XXX
@@ -83,6 +86,7 @@ typedef struct r_bp_t {
 	RBreakpointItem **bps_idx;
 	int bps_idx_count;
 	st64 delta;
+	ut64 baddr;
 } RBreakpoint;
 
 // DEPRECATED: USE R_PERM
@@ -135,6 +139,8 @@ R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp);
 
 R_API RBreakpointItem *r_bp_get_at (RBreakpoint *bp, ut64 addr);
 R_API RBreakpointItem *r_bp_get_in (RBreakpoint *bp, ut64 addr, int perm);
+
+R_API bool r_bp_is_valid(RBreakpoint *bp, RBreakpointItem *b);
 
 R_API int r_bp_add_cond(RBreakpoint *bp, const char *cond);
 R_API int r_bp_del_cond(RBreakpoint *bp, int idx);

@@ -14,7 +14,7 @@ static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	ut32 data = 0;
 	memset (op, 0, sizeof (RAnalOp));
 	data = r_read_le32 (buf);
-	int size = hexagon_disasm_instruction (data, &hi);
+	int size = hexagon_disasm_instruction (data, &hi, (ut32) addr);
 	op->size = size;
 	if (size <= 0) {
 		return size;
@@ -33,6 +33,7 @@ static int set_reg_profile(RAnal *anal) {
 		"=SP	r29\n"
 		"=BP	r30\n"
 		"=LR	r31\n"
+		"=SN	r6\n"
 		"=ZF	z\n"
 		"=SF	s\n"
 		"=OF	ov\n"

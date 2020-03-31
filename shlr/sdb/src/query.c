@@ -307,13 +307,15 @@ next_quote:
 			SdbListIter *it;
 			SdbNs *ns;
 			ls_foreach (s->ns, it, ns) {
-				int len = strlen (ns->name);
-				if (len<(long)sizeof (root)) {
-					memcpy (root, ns->name, len+1);
+				int name_len = strlen (ns->name);
+				if (name_len < (long)sizeof (root)) {
+					memcpy (root, ns->name, name_len + 1);
 					walk_namespace (out, root,
-						sizeof (root)-len,
-						root+len, ns, encode);
-				} else eprintf ("TODO: Namespace too long\n");
+						sizeof (root) - name_len,
+						root + name_len, ns, encode);
+				} else {
+					eprintf ("TODO: Namespace too long\n");
+				}
 			}
 			goto fail;
 		} else

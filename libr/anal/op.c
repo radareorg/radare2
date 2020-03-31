@@ -35,6 +35,7 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->ptr = UT64_MAX;
 		op->refptr = 0;
 		op->val = UT64_MAX;
+		op->disp = UT64_MAX;
 	}
 }
 
@@ -75,7 +76,7 @@ R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
 	const char *xss = sdb_const_get (anal->sdb_fcns, var_local, 0);
 	ut64 addr = r_num_math (NULL, xss);
 	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".lvar", addr);
-	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
 
 	if (!var_def) {
 		free (inst_key);
@@ -88,13 +89,12 @@ R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
 		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	}
 	free (inst_key);
-	free (var_def);
 	return res;
 }
 
 static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".vars", op->addr);
-	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
 	struct VarUsedType vut;
 	RAnalVar *res = NULL;
 	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
@@ -102,7 +102,6 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	}
 	free (inst_key);
-	free (var_def);
 	return res;
 }
 
@@ -136,19 +135,19 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
-	if (anal->pcalign && addr % anal->pcalign) {
-		op->type = R_ANAL_OP_TYPE_ILL;
-		op->addr = addr;
-		// eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", anal->bits, addr);
-		op->size = 1;
-		return -1;
-	}
 	int ret = R_MIN (2, len);
 	if (len > 0 && anal->cur && anal->cur->op) {
 		//use core binding to set asm.bits correctly based on the addr
 		//this is because of the hassle of arm/thumb
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
+		}
+		if (anal->pcalign && addr % anal->pcalign) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+			op->addr = addr;
+			// eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", anal->bits, addr);
+			op->size = 1;
+			return -1;
 		}
 		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
@@ -175,6 +174,11 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->cycles = defaultCycles (op);
 		}
 	}
+	if (!op->mnemonic && (mask & R_ANAL_OP_MASK_DISASM)) {
+		if (anal->verbose) {
+			eprintf ("Warning: unhandled R_ANAL_OP_MASK_DISASM in r_anal_op\n");
+		}
+        }
 	if (mask & R_ANAL_OP_MASK_HINT) {
 		RAnalHint *hint = r_anal_hint_get (anal, addr);
 		if (hint) {
@@ -205,77 +209,8 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	nop->src[2] = r_anal_value_copy (op->src[2]);
 	nop->dst = r_anal_value_copy (op->dst);
 	r_strbuf_init (&nop->esil);
-	r_strbuf_set (&nop->esil, r_strbuf_get (&op->esil));
+	r_strbuf_copy (&nop->esil, &op->esil);
 	return nop;
-}
-
-// TODO: return RAnalException *
-R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
-	while (op) {
-		if (op->delay > 0) {
-			anal->queued = r_anal_op_copy (op);
-			return false;
-		}
-		switch (op->type) {
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_RJMP:
-		case R_ANAL_OP_TYPE_IJMP:
-		case R_ANAL_OP_TYPE_IRJMP:
-		case R_ANAL_OP_TYPE_CALL:
-			break;
-		case R_ANAL_OP_TYPE_ADD:
-			// dst = src[0] + src[1] + src[2]
-			r_anal_value_set_ut64 (anal, op->dst,
-				r_anal_value_to_ut64 (anal, op->src[0]) +
-				r_anal_value_to_ut64 (anal, op->src[1]) +
-				r_anal_value_to_ut64 (anal, op->src[2]));
-			break;
-		case R_ANAL_OP_TYPE_SUB:
-			// dst = src[0] + src[1] + src[2]
-			r_anal_value_set_ut64 (anal, op->dst,
-				r_anal_value_to_ut64 (anal, op->src[0]) -
-				r_anal_value_to_ut64 (anal, op->src[1]) -
-				r_anal_value_to_ut64 (anal, op->src[2]));
-			break;
-		case R_ANAL_OP_TYPE_DIV:
-			{
-			ut64 div = r_anal_value_to_ut64 (anal, op->src[1]);
-			if (div == 0) {
-				eprintf ("r_anal_op_execute: division by zero\n");
-				eprintf ("TODO: throw RAnalException\n");
-			} else {
-				r_anal_value_set_ut64 (anal, op->dst,
-					r_anal_value_to_ut64 (anal, op->src[0]) / div);
-			}
-			}
-			break;
-		case R_ANAL_OP_TYPE_MUL:
-			r_anal_value_set_ut64 (anal, op->dst,
-				r_anal_value_to_ut64 (anal, op->src[0])*
-				r_anal_value_to_ut64 (anal, op->src[1]));
-			break;
-		case R_ANAL_OP_TYPE_MOV:
-			// dst = src[0]
-			r_anal_value_set_ut64 (anal, op->dst,
-				r_anal_value_to_ut64 (anal, op->src[0]));
-			break;
-		case R_ANAL_OP_TYPE_NOP:
-			// do nothing
-			break;
-		}
-		op = op->next;
-	}
-
-	if (anal->queued) {
-		anal->queued->delay--;
-		if (anal->queued->delay == 0) {
-			r_anal_op_execute (anal, anal->queued);
-			r_anal_op_free (anal->queued);
-			anal->queued = NULL;
-		}
-	}
-	return true;
 }
 
 R_API bool r_anal_op_nonlinear(int t) {
@@ -371,13 +306,13 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_SWITCH, "switch" },
 	{ R_ANAL_OP_TYPE_TRAP  , "trap" },
 	{ R_ANAL_OP_TYPE_UCALL , "ucall" },
-	{ R_ANAL_OP_TYPE_RCALL , "ucall" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_RCALL , "rcall" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_ICALL , "ucall" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_IRCALL, "ucall" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_UCCALL, "uccall" },
 	{ R_ANAL_OP_TYPE_UCJMP , "ucjmp" },
 	{ R_ANAL_OP_TYPE_UJMP  , "ujmp" },
-	{ R_ANAL_OP_TYPE_RJMP  , "ujmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_RJMP  , "rjmp" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_IJMP  , "ujmp" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_IRJMP , "ujmp" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_UNK   , "unk" },
@@ -402,23 +337,8 @@ R_API int r_anal_optype_from_string(const char *type) {
 }
 
 R_API const char *r_anal_optype_to_string(int t) {
-	switch (t) {
-	case R_ANAL_OP_TYPE_RPUSH:
-		return "rpush";
-	default:
-		/* nothing */
-		break;
-	}
-	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
-#if 0
-	int i;
-	// this is slower than a switch table :(
-	for  (i = 0; optypes[i].name;i++) {
-		if (optypes[i].type == t) {
-			return optypes[i].name;
-		}
-	}
-#endif
+	bool once = true;
+repeat:
 	// TODO: delete
 	switch (t) {
 	case R_ANAL_OP_TYPE_IO    : return "io";
@@ -450,6 +370,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_OR    : return "or";
 	case R_ANAL_OP_TYPE_POP   : return "pop";
 	case R_ANAL_OP_TYPE_PUSH  : return "push";
+	case R_ANAL_OP_TYPE_RPUSH : return "rpush";
 	case R_ANAL_OP_TYPE_REP   : return "rep";
 	case R_ANAL_OP_TYPE_RET   : return "ret";
 	case R_ANAL_OP_TYPE_ROL   : return "rol";
@@ -465,13 +386,13 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_SWITCH: return "switch";
 	case R_ANAL_OP_TYPE_TRAP  : return "trap";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
-	case R_ANAL_OP_TYPE_RCALL : return "ucall"; // needs to be changed
+	case R_ANAL_OP_TYPE_RCALL : return "rcall"; // needs to be changed
 	case R_ANAL_OP_TYPE_ICALL : return "ucall"; // needs to be changed
 	case R_ANAL_OP_TYPE_IRCALL: return "ucall"; // needs to be changed
 	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
 	case R_ANAL_OP_TYPE_UCJMP : return "ucjmp";
 	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
-	case R_ANAL_OP_TYPE_RJMP  : return "ujmp"; // needs to be changed
+	case R_ANAL_OP_TYPE_RJMP  : return "rjmp"; // needs to be changed
 	case R_ANAL_OP_TYPE_IJMP  : return "ujmp"; // needs to be changed
 	case R_ANAL_OP_TYPE_IRJMP : return "ujmp"; // needs to be changed
 	case R_ANAL_OP_TYPE_UNK   : return "unk";
@@ -481,6 +402,11 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_CASE  : return "case";
 	case R_ANAL_OP_TYPE_CPL   : return "cpl";
 	case R_ANAL_OP_TYPE_CRYPTO: return "crypto";
+	}
+	if (once) {
+		once = false;
+		t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
+		goto repeat;
 	}
 	return "undefined";
 }
@@ -743,6 +669,10 @@ R_API int r_anal_op_family_from_string(const char *f) {
 R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
 	int changes = 0;
 	if (hint) {
+		if (hint->val != UT64_MAX) {
+			op->val = hint->val;
+			changes++;
+		}
 		if (hint->type > 0) {
 			op->type = hint->type;
 			changes++;

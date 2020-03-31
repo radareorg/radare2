@@ -2,6 +2,7 @@
 #define WINDOWS_HEAP_H
 
 #include <windows.h>
+#include <winternl.h>
 
 /* 
 	Defines most of heap related structures on Windows (some still missing)
@@ -326,10 +327,10 @@ typedef struct _HEAP_SUBALLOCATOR_CALLBACKS {
 } HEAP_SUBALLOCATOR_CALLBACKS, *PHEAP_SUBALLOCATOR_CALLBACKS;
 
 typedef struct _RTL_HP_VS_CONFIG {
-	struct Flags {
+	struct {
 		ULONG PageAlignLargeAllocs : 1;
 		ULONG FullDecommit : 1;
-	};
+	} Flags;
 } RTL_HP_VS_CONFIG, *PRTL_HP_VS_CONFIG;
 
 typedef struct _HEAP_VS_SUBSEGMENT {
@@ -932,7 +933,7 @@ typedef struct _HeapBlockExtraInfo { // think of extra stuff to put here
 } HeapBlockExtraInfo, *PHeapBlockExtraInfo;
 
 typedef struct _HeapBlock {
-	PVOID dwAddress;
+	ULONG_PTR dwAddress;
 	SIZE_T dwSize;
 	DWORD dwFlags;
 	SIZE_T index;
@@ -1000,5 +1001,13 @@ NTSTATUS (NTAPI *RtlQueryProcessDebugInformation)(
 
 NTSTATUS (NTAPI *RtlDestroyQueryDebugBuffer)(
 	IN PDEBUG_BUFFER DebugBuffer
+);
+
+__kernel_entry NTSTATUS (NTAPI *w32_NtQueryInformationProcess)(
+  IN HANDLE           ProcessHandle,
+  IN PROCESSINFOCLASS ProcessInformationClass,
+  OUT PVOID           ProcessInformation,
+  IN ULONG            ProcessInformationLength,
+  OUT PULONG          ReturnLength
 );
 #endif

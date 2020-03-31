@@ -11,7 +11,7 @@ static inline ut8 r_read_ble8(const void *src) {
 	if (!src) {
 		return UT8_MAX;
 	}
-	return *(ut8 *)src;
+	return *(const ut8 *)src;
 }
 
 static inline ut8 r_read_at_ble8(const void *src, size_t offset) {
@@ -57,7 +57,7 @@ static inline ut16 r_read_at_be16(const void *src, size_t offset) {
 
 static inline void r_write_be16(void *dest, ut16 val) {
 	r_write_be8 (dest, val >> 8);
-	r_write_at_be8 (dest, val, sizeof (ut8));
+	r_write_at_be8 (dest, (ut8)val, sizeof (ut8));
 }
 
 static inline void r_write_at_be16(void *dest, ut16 val, size_t offset) {
@@ -106,7 +106,7 @@ static inline ut64 r_read_at_be64(const void *src, size_t offset) {
 
 static inline void r_write_be64(void *dest, ut64 val) {
 	r_write_be32 (dest, val >> 32);
-	r_write_at_be32 (dest, val, sizeof (ut32));
+	r_write_at_be32 (dest, (ut32)val, sizeof (ut32));
 }
 
 static inline void r_write_at_be64(void *dest, ut64 val, size_t offset) {
@@ -152,7 +152,7 @@ static inline ut16 r_read_at_le16(const void *src, size_t offset) {
 }
 
 static inline void r_write_le16(void *dest, ut16 val) {
-	r_write_le8 (dest, val);
+	r_write_le8 (dest, (ut8)val);
 	r_write_at_le8 (dest, val >> 8, sizeof (ut8));
 }
 
@@ -207,7 +207,7 @@ static inline ut64 r_read_at_le64(const void *src, size_t offset) {
 }
 
 static inline void r_write_le64(void *dest, ut64 val) {
-	r_write_le32 (dest, val);
+	r_write_le32 (dest, (ut32)val);
 	r_write_at_le32 (dest, val >> 32, sizeof (ut32));
 }
 
@@ -252,7 +252,7 @@ static inline ut16 r_read_at_me16(const void *src, size_t offset) {
 
 static inline void r_write_me16(void *dest, ut16 val) {
 	r_write_me8 (dest, val >> 8);
-	r_write_at_me8 (dest, val, sizeof (ut8));
+	r_write_at_me8 (dest, (ut8)val, sizeof (ut8));
 }
 
 static inline void r_write_at_me16(void *dest, ut16 val, size_t offset) {
@@ -299,7 +299,7 @@ static inline ut64 r_read_at_me64(const void *src, size_t offset) {
 }
 
 static inline void r_write_me64(void *dest, ut64 val) {
-	r_write_me32 (dest, val);
+	r_write_me32 (dest, (ut32)val);
 	r_write_at_me32 (dest, val >> 32, sizeof (ut32));
 }
 
@@ -325,7 +325,7 @@ static inline ut64 r_read_ble64(const void *src, bool big_endian) {
 static inline ut64 r_read_ble(const void *src, bool big_endian, int size) {
 	switch (size) {
 	case 8:
-		return (ut64) ((ut8*)src)[0];
+		return (ut64) ((const ut8*)src)[0];
 	case 16:
 		return r_read_ble16 (src, big_endian);
 	case 32:

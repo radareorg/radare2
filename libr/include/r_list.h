@@ -41,7 +41,7 @@ typedef struct r_oflist_t {
 #endif
 
 #ifdef R_API
-//#define R_LIST_NEW(x,y) x=r_list_new();x->free=(RListFree)y
+// #define R_LIST_NEW(x,y) x = r_list_new (); x->free = (RListFree)y
 #define r_list_foreach(list, it, pos)\
 	if (list)\
 		for (it = list->head; it && (pos = it->data, 1); it = it->n)
@@ -107,7 +107,7 @@ R_API void *r_list_get_bottom(const RList *list);
 R_API void *r_list_pop(RList *list);
 R_API void *r_list_pop_head(RList *list);
 R_API void r_list_reverse(RList *list);
-R_API RList *r_list_clone(RList *list);
+R_API RList *r_list_clone(const RList *list);
 R_API char *r_list_to_str(RList *list, char ch);
 
 /* hashlike api */

@@ -78,7 +78,7 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   pip install r2pipe=="$R2_PIPE_PY_VERSION" && \
   npm install --unsafe-perm -g "r2pipe@$R2_PIPE_NPM_VERSION" && \
   cd /mnt && \
-  git clone -b "$R2_VERSION" -q --depth 1 https://github.com/radare/radare2.git && \
+  git clone -b "$R2_VERSION" -q --depth 1 https://github.com/radareorg/radare2.git && \
   cd radare2 && \
   ./sys/install.sh && \
   make install && \

@@ -1,0 +1,23 @@
+NAME=sandbox disable
+FILE=-
+EXPECT=<<EOF
+true
+EOF
+CMDS=<<EOF
+e cfg.sandbox=true
+e cfg.sandbox=false
+e cfg.sandbox
+EOF
+RUN
+
+NAME=sandbox open
+FILE=-
+EXPECT=<<EOF
+malloc://512
+EOF
+CMDS=<<EOF
+e cfg.sandbox=true
+o~[4]
+oc /bin/ls
+EOF
+RUN

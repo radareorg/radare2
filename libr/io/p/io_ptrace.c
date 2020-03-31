@@ -178,16 +178,40 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return false;
 }
 
+static inline bool is_pid_already_attached (RIO *io, int pid, void *data) {
+#if defined(__linux__)
+	siginfo_t *sig = (siginfo_t *)data;
+	return -1 != r_io_ptrace (io, PTRACE_GETSIGINFO, pid, NULL, sig);
+#elif defined(__FreeBSD__)
+	struct ptrace_lwpinfo *info = (struct ptrace_lwpinfo *)data;
+	int len = (int)sizeof (*info);
+	return -1 != r_io_ptrace (io, PT_LWPINFO, pid, info, len);
+#else
+	return false;
+#endif
+}
+
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *desc = NULL;
 	int ret = -1;
-	if (__plugin_open (io, file, 0)) {
-		int pid = atoi (file + 9);
-		// ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
+#if defined(__linux__)
+	siginfo_t sig = { 0 };
+#elif defined(__FreeBSD__)
+	struct ptrace_lwpinfo sig = { 0 };
+#else
+	int sig = 0;
+#endif
+
+	if (!__plugin_open (io, file, 0)) {
+		return NULL;
+	}
+
+	int pid = atoi (file + 9);
+
+	// Safely check if the PID has already been attached to avoid printing errors
+	// and attempt attaching on failure
+	if (!is_pid_already_attached(io, pid, &sig)) {
 		ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
-		if (file[0] == 'p') { //ptrace
-			ret = 0;
-		} else 
 		if (ret == -1) {
 #ifdef __ANDROID__
 			eprintf ("ptrace_attach: Operation not permitted\n");
@@ -203,36 +227,38 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				break;
 			}
 #endif
+			return NULL;
 		} else if (__waitpid (pid)) {
 			ret = pid;
 		} else {
 			eprintf ("Error in waitpid\n");
-		}
-		if (ret != -1) {
-			RIOPtrace *riop = R_NEW0 (RIOPtrace);
-			if (!riop) {
-				return NULL;
-			}
-			riop->pid = riop->tid = pid;
-			open_pidmem (riop);
-			desc = r_io_desc_new (io, &r_io_plugin_ptrace, file, rw | R_PERM_X, mode, riop);
-			desc->name = r_sys_pid_to_path (pid);
+			return NULL;
 		}
 	}
+
+	RIOPtrace *riop = R_NEW0 (RIOPtrace);
+	if (!riop) {
+		return NULL;
+	}
+
+	riop->pid = riop->tid = pid;
+	open_pidmem (riop);
+	desc = r_io_desc_new (io, &r_io_plugin_ptrace, file, rw | R_PERM_X, mode, riop);
+	desc->name = r_sys_pid_to_path (pid);
+
 	return desc;
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case 0: // abs
+	case R_IO_SEEK_SET:
 		io->off = offset;
 		break;
-	case 1: // cur
-		io->off += (int)offset;
+	case R_IO_SEEK_CUR:
+		io->off += offset;
 		break;
-	case 2: // end
-		io->off = UT64_MAX;
-		break;
+	case R_IO_SEEK_END:
+		io->off = ST64_MAX;
 	}
 	return io->off;
 }
@@ -258,6 +284,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOPtrace *iop = (RIOPtrace*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
+	if (!strcmp (cmd, "")) {
+		return NULL;
+	}
 	if (!strcmp (cmd, "help")) {
 		eprintf ("Usage: =!cmd args\n"
 			" =!ptrace   - use ptrace io\n"

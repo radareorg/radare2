@@ -81,7 +81,7 @@ is_delayed_branch (insn)
 {
   int i;
 
-  for (i = 0; i < NUMOPCODES; ++i)
+  for (i = 0; i < NUMOPCODES; i++)
     {
       CONST struct lanai_opcode *opcode = &lanai_opcodes[i];
       if ((opcode->match & insn) == opcode->match && (opcode->lose & insn) == 0) {
@@ -137,7 +137,7 @@ print_insn_lanai (memaddr, info)
   info->branch_delay_insns = 0;			/* Assume no delay */
   info->target = 0;				/* Assume no target known */
 
-  for (i = 0; i < NUMOPCODES; ++i)
+  for (i = 0; i < NUMOPCODES; i++)
     {
       CONST struct lanai_opcode *opcode = &lanai_opcodes[i];
       if ((opcode->match & insn) == opcode->match

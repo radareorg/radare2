@@ -1,0 +1,78 @@
+NAME=seekbug pi -x
+FILE=malloc://1024
+EXPECT=<<EOF
+0x200
+EOF
+CMDS=<<EOF
+e scr.null=true
+s 0x200
+pi -3
+e scr.null=false
+s
+EOF
+RUN
+
+NAME=seekbug pid -x
+FILE=malloc://1024
+EXPECT=<<EOF
+0x200
+EOF
+CMDS=<<EOF
+e scr.null=true
+s 0x200
+pid -3
+e scr.null=false
+s
+EOF
+RUN
+
+NAME=seekbug pd -x
+FILE=malloc://1024
+EXPECT=<<EOF
+0x200
+EOF
+CMDS=<<EOF
+e scr.null=true
+s 0x200
+pd -3
+e scr.null=false
+s
+EOF
+RUN
+
+NAME=seekbug px -x
+FILE=malloc://1024
+EXPECT=<<EOF
+0x200
+EOF
+CMDS=<<EOF
+e scr.null=true
+s 0x200
+px -3
+e scr.null=false
+s
+EOF
+RUN
+
+NAME=seekbug s ]
+FILE=malloc://1024
+EXPECT=<<EOF
+0x64
+0x64
+0x64
+0x64
+0x0
+EOF
+CMDS=<<EOF
+s 0x64
+s
+s unkval
+s
+s ]
+s
+s [
+s
+s [0x0]
+s
+EOF
+RUN

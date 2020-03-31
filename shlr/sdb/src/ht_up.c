@@ -1,5 +1,4 @@
 #include "ht_up.h"
-
 #include "ht_inc.c"
 
 static HtName_(Ht)* internal_ht_default_new(ut32 size, ut32 prime_idx, HT_(DupValue) valdup, HT_(KvFreeFunc) pair_free, HT_(CalcSizeV) calcsizeV) {

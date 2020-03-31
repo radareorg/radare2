@@ -59,7 +59,6 @@ typedef struct _utX{
 
 #include <stdbool.h>
 
-#define R_FAIL -1
 #define R_EMPTY { 0 }
 #define R_EMPTY2 {{ 0 }}
 

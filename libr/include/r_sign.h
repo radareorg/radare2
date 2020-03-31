@@ -30,6 +30,7 @@ typedef enum {
 	R_SIGN_REFS      = 'r', // references
 	R_SIGN_XREFS     = 'x', // xrefs
 	R_SIGN_VARS      = 'v', // variables
+	R_SIGN_TYPES     = 't', // types
 	R_SIGN_BBHASH    = 'h', // basic block hash
 } RSignType;
 
@@ -63,6 +64,7 @@ typedef struct r_sign_item_t {
 	RList *refs;
 	RList *xrefs;
 	RList *vars;
+	RList *types;
 	RSignHash *hash;
 } RSignItem;
 
@@ -96,6 +98,7 @@ R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment);
 R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs);
 R_API bool r_sign_add_xrefs(RAnal *a, const char *name, RList *xrefs);
 R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars);
+R_API bool r_sign_add_types(RAnal *a, const char *name, RList *vars);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
 R_API RList *r_sign_get_list(RAnal *a);
@@ -114,6 +117,8 @@ R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, int mincc, RSignGrap
 R_API bool r_sign_match_addr(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCallback cb, void *user);
 R_API bool r_sign_match_hash(RAnal *a, RAnalFunction *fcn, RSignHashMatchCallback cb, void *user);
 R_API bool r_sign_match_refs(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
+R_API bool r_sign_match_vars(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
+R_API bool r_sign_match_types(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
 
 R_API bool r_sign_load(RAnal *a, const char *file);
 R_API bool r_sign_load_gz(RAnal *a, const char *filename);
@@ -127,6 +132,7 @@ R_API void r_sign_item_free(RSignItem *item);
 R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn);
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn);
 R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn);
+R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn);
 
 R_API int r_sign_is_flirt(RBuffer *buf);
 R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file);

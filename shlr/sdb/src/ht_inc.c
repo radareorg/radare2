@@ -301,6 +301,10 @@ SDB_API HT_(Kv)* Ht_(find_kv)(HtName_(Ht)* ht, const KEY_TYPE key, bool* found) 
 	if (found) {
 		*found = false;
 	}
+	if (!ht) {
+		*found = false;
+		return NULL;
+	}
 
 	HT_(Bucket) *bt = &ht->table[bucketfn (ht, key)];
 	ut32 key_len = calcsize_key (ht, key);
@@ -349,7 +353,7 @@ SDB_API bool Ht_(delete)(HtName_(Ht)* ht, const KEY_TYPE key) {
 SDB_API void Ht_(foreach)(HtName_(Ht) *ht, HT_(ForeachCallback) cb, void *user) {
 	ut32 i;
 
-	for (i = 0; i < ht->size; ++i) {
+	for (i = 0; i < ht->size; i++) {
 		HT_(Bucket) *bt = &ht->table[i];
 		HT_(Kv) *kv;
 		ut32 j, count;

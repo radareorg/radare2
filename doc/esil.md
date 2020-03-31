@@ -1,8 +1,6 @@
 ESIL
 ====
 
-# source https://github.com/radare/radare2/wiki/ESIL
-
 ESIL stands for 'Evaluable Strings Intermediate Language'. It aims to describe a
 Forth-like representation for every opcode. Those representations can be
 evaluated in order to emulate code. Each element of an esil expression is

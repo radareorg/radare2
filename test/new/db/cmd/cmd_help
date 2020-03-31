@@ -1,0 +1,227 @@
+FILE=malloc://1024
+NAME=?vi-1
+CMDS=<<EOF
+?vi 0xffffffff
+?vi8 0xffffffff
+?vi4 0xffffffff
+?vi2 0xffffffff
+?vi1 0xffffffff
+?vi4 0xffffffff
+?vi2 0xffff
+?vi1 0xff
+EOF
+EXPECT=<<EOF
+4294967295
+4294967295
+-1
+-1
+-1
+-1
+-1
+-1
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=?vi-8
+CMDS=<<EOF
+?vi 0xfffffff8
+?vi4 0xfffffff8
+?vi2 0xfffffff8
+?vi1 0xfffffff8
+?vi4 0xfffffff8
+?vi2 0xfff8
+?vi1 0xf8
+EOF
+EXPECT=<<EOF
+4294967288
+-8
+-8
+-8
+-8
+-8
+-8
+EOF
+RUN
+
+FILE=malloc://1024
+CMDS=<<EOF
+?v
+?=
+??
+?e
+?b
+?f
+?p
+?s
+?x
+?X
+?l
+?t
+?!
+?+
+?-
+EOF
+EXPECT=<<EOF
+0
+0x0
+0
+
+0b
+0x00000000
+
+0
+0
+0x0
+0x0
+0x0
+EOF
+RUN
+
+NAME=?e
+FILE=malloc://1024
+CMDS=<<EOF
+?e fuck
+?e yeah
+EOF
+EXPECT=<<EOF
+fuck
+yeah
+EOF
+RUN
+
+
+NAME=?v
+FILE=--
+CMDS=<<EOF
+?v 1024
+?v 0x42
+EOF
+EXPECT=<<EOF
+0x400
+0x42
+EOF
+RUN
+
+
+NAME="?v 'A'"
+FILE=--
+CMDS=?v 'A'
+EXPECT=<<EOF
+0x41
+EOF
+RUN
+
+NAME="?v 'A'+3"
+FILE=--
+CMDS=?v 'A'+3
+EXPECT=<<EOF
+0x44
+EOF
+RUN
+
+NAME="?v 3+'A'-3"
+FILE=--
+CMDS=?v 3+'A'-3
+EXPECT=<<EOF
+0x41
+EOF
+RUN
+
+NAME="?v 33^'A'"
+FILE=--
+CMDS=?v 32^'A'
+EXPECT=<<EOF
+0x61
+EOF
+RUN
+
+NAME="? 1;?v"
+FILE=--
+CMDS=? 1;?v
+EXPECT=<<EOF
+int32   1
+uint32  1
+hex     0x1
+octal   01
+unit    1
+segment 0000:0001
+string  "\x01"
+fvalue: 1.0
+float:  0.000000f
+double: 0.000000
+binary  0b00000001
+trits   0t1
+1
+EOF
+RUN
+
+NAME="? 0;?v"
+FILE=--
+CMDS=? 0;?v
+EXPECT=<<EOF
+int32   0
+uint32  0
+hex     0x0
+octal   00
+unit    0
+segment 0000:0000
+string  "\0"
+fvalue: 0.0
+float:  0.000000f
+double: 0.000000
+binary  0b00000000
+trits   0t0
+0
+EOF
+RUN
+
+NAME="? -1"
+FILE=--
+CMDS=? -1
+EXPECT=<<EOF
+int64   -1
+uint64  18446744073709551615
+hex     0xffffffffffffffff
+octal   01777777777777777777777
+unit    16E
+segment fffff000:0fff
+string  "\xff\xff\xff\xff\xff\xff\xff\xff"
+fvalue: -1.0
+float:  nanf
+double: nan
+binary  0b1111111111111111111111111111111111111111111111111111111111111111
+trits   0t11112220022122120101211020120210210211220
+EOF
+RUN
+
+NAME="? 2*1.5"
+FILE=--
+CMDS=? 2*1.5
+EXPECT=<<EOF
+int32   2
+uint32  2
+hex     0x2
+octal   02
+unit    2
+segment 0000:0002
+string  "\x02"
+fvalue: 3.0
+float:  0.000000f
+double: 0.000000
+binary  0b00000010
+trits   0t2
+EOF
+RUN
+
+NAME="?*"
+FILE=--
+CMDS=<<EOF
+?*~?display zignspace
+?*~?List all loaded types as json
+EOF
+EXPECT=<<EOF
+1
+1
+EOF
+RUN

@@ -40,52 +40,47 @@
 #include <wchar.h>
 #endif
 
-/*
- * Like printf, only we append to a buffer.
- */
-int file_printf(RMagic *ms, const char *fmt, ...) {
-	va_list ap;
-	int ret;
-
-	va_start (ap, fmt);
-	ret = file_vprintf (ms, fmt, ap);
-	va_end (ap);
-	return ret;
-}
-
 // copypasta to fix an OPENBSDBUG
-int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
+static int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 	va_list ap2;
-	int len;
 	char cbuf[4096];
 	char *buf, *newstr;
-	int buflen;// = strlen (buf);
 
 	va_copy (ap2, ap);
-	len = vsnprintf (cbuf, sizeof (cbuf), fmt, ap2);
+	int len = vsnprintf (cbuf, sizeof (cbuf), fmt, ap2);
 	va_end (ap2);
 	if (len < 0) {
 		goto out;
 	}
-	cbuf[len] = 0;
-	buf = strdup (cbuf);
+	if (len > sizeof (cbuf)) {
+		buf = malloc (len + 1);
+		va_copy (ap2, ap);
+		(void)vsnprintf (buf, len + 1, fmt, ap2);
+		va_end (ap2);
+	} else {
+		int nullbyte = len;
+		if (nullbyte > 0 && nullbyte == sizeof (cbuf)) {
+			nullbyte--;
+		}
+		cbuf[nullbyte] = 0;
+		buf = strdup (cbuf);
+	}
 	if (!buf) {
 		return -1;
 	}
 
-	buflen = len;
-	if (ms->o.buf != NULL) {
+	int buflen = len;
+	if (ms->o.buf) {
 		int obuflen = strlen (ms->o.buf);
-		len = obuflen + buflen+1;
-		newstr = malloc (len+1);
+		len = obuflen + buflen + 1;
+		newstr = malloc (len);
 		if (!newstr) {
 			free (buf);
 			return -1;
 		}
-		memset (newstr, 0, len+1); // XXX: unnecessary?
-		newstr[len] = 0;
 		memcpy (newstr, ms->o.buf, obuflen);
-		memcpy (newstr+obuflen, buf, buflen);
+		memcpy (newstr + obuflen, buf, buflen);
+		newstr[len - 1] = 0;
 		free (buf);
 		free (ms->o.buf);
 		if (len < 0) {
@@ -99,6 +94,19 @@ int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 out:
 	file_error (ms, errno, "vasprintf failed");
 	return -1;
+}
+
+/*
+ * Like printf, only we append to a buffer.
+ */
+int file_printf(RMagic *ms, const char *fmt, ...) {
+	va_list ap;
+	int ret;
+
+	va_start (ap, fmt);
+	ret = file_vprintf (ms, fmt, ap);
+	va_end (ap);
+	return ret;
 }
 
 /*

@@ -1,0 +1,10 @@
+NAME=asm.os
+FILE=-
+BROKEN=1
+CMDS=<<EOF
+e asm.os
+EOF
+EXPECT=<<EOF
+darwin
+EOF
+RUN

@@ -655,7 +655,7 @@ R_API wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
 	return rutf16;
 }
 
-R_API char *r_utf8_to_acp_l(const ut8 *str, int len) {
+R_API char *r_utf8_to_acp_l(const char *str, int len) {
 	if (!str || !len || len < -1) {
 		return NULL;
 	}
@@ -684,7 +684,7 @@ R_API char *r_utf8_to_acp_l(const ut8 *str, int len) {
 	return acp;
 }
 
-R_API const char *r_acp_to_utf8_l(const ut8 *str, int len) {
+R_API char *r_acp_to_utf8_l(const char *str, int len) {
 	if (!str || !len || len < -1) {
 		return NULL;
 	}
@@ -697,7 +697,7 @@ R_API const char *r_acp_to_utf8_l(const ut8 *str, int len) {
 			if (len != -1) {
 				rutf16[wcsize - 1] = L'\0';
 			}
-			const char *ret = r_utf16_to_utf8_l (rutf16, wcsize);
+			char *ret = r_utf16_to_utf8_l (rutf16, wcsize);
 			free (rutf16);
 			return ret;
 		}
@@ -731,17 +731,26 @@ R_API int r_utf_block_idx(RRune ch) {
 }
 
 /* str must be UTF8-encoded */
-R_API int *r_utf_block_list(const ut8 *str, int len) {
+R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	if (!str) {
 		return NULL;
 	}
 	if (len < 0) {
 		len = strlen ((const char *)str);
 	}
-	static bool has_block[r_utf_blocks_count] = {0};
+	static int block_freq[r_utf_blocks_count] = {0};
 	int *list = R_NEWS (int, len + 1);
 	if (!list) {
 		return NULL;
+	}
+	int *freq_list_ptr = NULL;
+	if (freq_list) {
+		*freq_list = R_NEWS (int, len + 1);
+		if (!*freq_list) {
+			free (list);
+			return NULL;
+		}
+		freq_list_ptr = *freq_list;
 	}
 	int *list_ptr = list;
 	const ut8 *str_ptr = str;
@@ -756,16 +765,48 @@ R_API int *r_utf_block_list(const ut8 *str, int len) {
 		} else {
 			block_idx = r_utf_block_idx (ch);
 		}
-		if (!has_block[block_idx]) {
-			has_block[block_idx] = true;
+		if (!block_freq[block_idx]) {
 			*list_ptr = block_idx;
 			list_ptr++;
 		}
+		block_freq[block_idx]++;
 		str_ptr += ch_bytes;
 	}
 	*list_ptr = -1;
+	if (freq_list_ptr) {
+		for (list_ptr = list; *list_ptr != -1; list_ptr++) {
+			*freq_list_ptr = block_freq[*list_ptr];
+			freq_list_ptr++;
+		}
+		*freq_list_ptr = -1;
+	}
 	for (list_ptr = list; *list_ptr != -1; list_ptr++) {
-		has_block[*list_ptr] = false;
+		block_freq[*list_ptr] = 0;
 	}
 	return list;
+}
+
+R_API RStrEnc r_utf_bom_encoding(const ut8 *ptr, int ptrlen) {
+	if (ptrlen > 3) {
+		if (ptr[0] == 0xff && ptr[1] == 0xfe && !ptr[2] && !ptr[3]) {
+			return R_STRING_ENC_UTF32LE;
+		}
+		if (!ptr[0] && !ptr[1] && ptr[2] == 0xfe && ptr[3] == 0xff) {
+			return R_STRING_ENC_UTF32BE;
+		}
+	}
+	if (ptrlen > 2) {
+		if (ptr[0] == 0xef && ptr[1] == 0xbb && ptr[2] == 0xbf) {
+			return R_STRING_ENC_UTF8;
+		}
+	}
+	if (ptrlen > 1) {
+		if (ptr[0] == 0xff && ptr[1] == 0xfe) {
+			return R_STRING_ENC_UTF16LE;
+		}
+		if (ptr[0] == 0xfe && ptr[1] == 0xff) {
+			return R_STRING_ENC_UTF16BE;
+		}
+	}
+	return R_STRING_ENC_GUESS;
 }

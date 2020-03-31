@@ -370,6 +370,13 @@ typedef struct {
 	char* Name;
 } Pe32_image_metadata_stream, Pe64_image_metadata_stream;
 
+typedef struct {
+	ut16 productId;
+	ut16 minVersion;
+	ut32 timesUsed;
+	char *productName;
+} Pe_image_rich_entry;
+
 #define PE_IMAGE_SIZEOF_SHORT_NAME 8
 
 #define PE_IMAGE_SCN_MEM_SHARED    0x10000000
@@ -434,6 +441,26 @@ typedef struct {
 	ut32 SizeOfZeroFill;
 	ut32 Characteristics;
 } Pe32_image_tls_directory, Pe64_image_tls_directory;
+
+typedef struct {
+	ut32 dwLength;
+	ut16 wRevision;
+	ut16 wCertificateType;
+	ut8 *bCertificate;
+} Pe_certificate;
+
+typedef struct {
+	ut32 length;
+	Pe_certificate **certificates;
+} Pe_image_security_directory;
+
+#define PE_WIN_CERT_REVISION_1_0	0x0100
+#define PE_WIN_CERT_REVISION_2_0	0x0200
+
+#define PE_WIN_CERT_TYPE_X509			0x0001
+#define PE_WIN_CERT_TYPE_PKCS_SIGNED_DATA	0x0002
+#define PE_WIN_CERT_TYPE_RESERVED_1		0x0003
+#define PE_WIN_CERT_TYPE_TS_STACK_SIGNED	0x0004
 
 typedef struct {
 	ut32 Signature;
@@ -682,5 +709,71 @@ typedef struct {
 	VarFileInfo* varFileInfo;      //0 or 1 elements
 	StringFileInfo* stringFileInfo;   //0 or 1 elements
 } PE_VS_VERSIONINFO;
+
+// Specific for x64 SEH
+
+typedef enum {
+	UWOP_PUSH_NONVOL = 0, /* info == register number */
+	UWOP_ALLOC_LARGE,     /* no info, alloc size in next 2 slots */
+	UWOP_ALLOC_SMALL,     /* info == size of allocation / 8 - 1 */
+	UWOP_SET_FPREG,       /* no info, FP = RSP + UNWIND_INFO.FPRegOffset*16 */
+	UWOP_SAVE_NONVOL,     /* info == register number, offset in next slot */
+	UWOP_SAVE_NONVOL_FAR, /* info == register number, offset in next 2 slots */
+	UWOP_SAVE_XMM128 = 8, /* info == XMM reg number, offset in next slot */
+	UWOP_SAVE_XMM128_FAR, /* info == XMM reg number, offset in next 2 slots */
+	UWOP_PUSH_MACHFRAME   /* info == 0: no error-code, 1: error-code */
+} PE64_UNWIND_CODE_OPS;
+
+#define PE64_UNW_FLAG_NHANDLER 0
+#define PE64_UNW_FLAG_EHANDLER 1
+#define PE64_UNW_FLAG_UHANDLER 2
+#define PE64_UNW_FLAG_CHAININFO 4
+
+typedef struct {
+	ut32 BeginAddress; // Function start address
+	ut32 EndAddress; // Function end address
+	union {
+		ut32 UnwindInfoAddress;
+		ut32 UnwindData;
+	};
+} PE64_RUNTIME_FUNCTION;
+
+typedef union {
+	struct {
+		ut8 CodeOffset;
+		ut8 UnwindOp : 4;
+		ut8 OpInfo : 4;
+	};
+	ut16 FrameOffset;
+} PE64_UNWIND_CODE;
+
+typedef struct {
+	ut8 Version : 3;
+	ut8 Flags : 5;
+	ut8 SizeOfProlog;
+	ut8 CountOfCodes;
+	ut8 FrameRegister : 4;
+	ut8 FrameOffset : 4;
+	PE64_UNWIND_CODE UnwindCode[];
+	/*
+	union {
+		ut32 ExceptionHandler; // if (flags & UNW_FLAG_EHANDLER)
+		PE64_RUNTIME_FUNCTION FunctionEntry;    // else if (flags & UNW_FLAG_CHAININFO)
+	};
+	ut32 ExceptionData[]; // if (flags & UNW_FLAG_EHANDLER)
+	*/
+} PE64_UNWIND_INFO;
+
+typedef struct {
+	ut32 BeginAddress;
+	ut32 EndAddress;
+	ut32 HandlerAddress;
+	ut32 JumpTarget;
+} PE64_SCOPE_RECORD;
+
+typedef struct {
+	ut32 Count;
+	PE64_SCOPE_RECORD ScopeRecord[];
+} PE64_SCOPE_TABLE;
 
 #endif

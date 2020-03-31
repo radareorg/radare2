@@ -18,10 +18,10 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
     use_capstone5 = get_option('use_capstone5')
     if use_capstone5
-      CS_TIP = '3fc1d8ed86084f281583b074d86dc992cb9558c9'
+      CS_TIP = '0de88ed3fdc0ab1f1e2a6eada3cdd93e18057a0f'
       CS_BRA = 'next'
     else
-      CS_TIP = 'fbceb8427198412aec1807f67c2d95396ebed3cc'
+      CS_TIP = 'c80b6aaf973c822d82565f25e9b2e2c0102626fa'
       CS_BRA = 'v4'
     endif
 
@@ -68,6 +68,9 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/ARM/ARMInstPrinter.c',
     'arch/ARM/ARMMapping.c',
     'arch/ARM/ARMModule.c',
+    'arch/M680X/M680XDisassembler.c',
+    'arch/M680X/M680XInstPrinter.c',
+    'arch/M680X/M680XModule.c',
     'arch/M68K/M68KDisassembler.c',
     'arch/M68K/M68KInstPrinter.c',
     'arch/M68K/M68KModule.c',
@@ -129,6 +132,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       '-DCAPSTONE_HAS_ARM',
       '-DCAPSTONE_HAS_ARM64',
       '-DCAPSTONE_HAS_M68K',
+      '-DCAPSTONE_HAS_M680X',
       '-DCAPSTONE_HAS_MIPS',
       '-DCAPSTONE_HAS_POWERPC',
       '-DCAPSTONE_HAS_SPARC',
@@ -157,9 +161,11 @@ sdb_files = [
   'sdb/src/array.c',
   'sdb/src/base64.c',
   'sdb/src/buffer.c',
+  'sdb/src/set.c',
   'sdb/src/cdb.c',
   'sdb/src/cdb_make.c',
   'sdb/src/dict.c',
+  'sdb/src/diff.c',
   'sdb/src/disk.c',
   'sdb/src/fmt.c',
   'sdb/src/ht_uu.c',
@@ -183,11 +189,12 @@ sdb_inc = [platform_inc, include_directories('sdb/src')]
 
 libr2sdb = static_library('r2sdb', sdb_files,
   include_directories: sdb_inc,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : [],
 )
 
 sdb_dep = declare_dependency(
-  link_with: libr2sdb,
+  link_whole: libr2sdb,
   include_directories: sdb_inc
 )
 
@@ -211,10 +218,10 @@ outfile = sys.argv[1]
 infiles = sys.argv[2:]
 if os.name == 'nt':
     infiles = ','.join(infiles)
-    os.system(f'powershell -c "Get-Content {infiles} | {sdb_exe} {outfile} ="')
+    os.system('powershell -c "Get-Content {} | {} {} ="'.format(infiles, sdb_exe, outfile))
 else:
     infiles = ' '.join(infiles)
-    os.system(f'cat {infiles} | {sdb_exe} {outfile} =')
+    os.system('cat {} | {} {} ='.format(infiles, sdb_exe, outfile))
 '''.format(sdb_exe.full_path())
 
 sdb_gen_cmd = [
@@ -224,6 +231,109 @@ sdb_gen_cmd = [
   '@OUTPUT@',
   '@INPUT@'
 ]
+
+
+if get_option('use_treesitter')
+  # handle tree-sitter dependency
+  if get_option('tree_sitter_in_builddir')
+    tree_sitter_path = join_paths(meson.current_build_dir(), 'tree-sitter')
+  else
+    tree_sitter_path = join_paths(meson.current_source_dir(), 'tree-sitter')
+  endif
+  res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(tree_sitter_path))
+  if res.returncode() == 0
+    if not git_exe.found()
+      error('Cannot load tree-sitter library. Either provide tree-sitter in ./shlr/tree-sitter or install git, so it can be downloaded')
+    endif
+
+    # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/Makefile
+    TS_TIP = 'f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3'
+    TS_BRA = 'master'
+
+    message('Cloning tree-sitter ' + TS_BRA + ' branch, commit ' + TS_TIP + ', into ' + tree_sitter_path)
+    git_cmd = 'clone -b @0@ https://github.com/tree-sitter/tree-sitter.git @1@'.format(TS_BRA, tree_sitter_path)
+    clone_cmd = run_command(git_exe, git_cmd.split())
+    if clone_cmd.returncode() != 0
+      error('Cannot execute git clone command')
+    endif
+
+    reset_cmd_str = '-C @0@ reset --hard @1@'.format(tree_sitter_path, TS_TIP)
+    reset_cmd = run_command(git_exe, reset_cmd_str.split())
+    if reset_cmd.returncode() != 0
+      error('Cannot execute git reset command')
+    endif
+  endif
+
+  tree_sitter_files = [
+    join_paths(tree_sitter_path, 'lib/src/lib.c'),
+  ]
+
+  tree_sitter_inc = [platform_inc, include_directories('tree-sitter/lib/src'), include_directories('tree-sitter/lib/include')]
+
+  libtree_sitter = static_library('tree_sitter', tree_sitter_files,
+    include_directories: tree_sitter_inc,
+    implicit_include_directories: false,
+    c_args: ['-std=c99']
+  )
+
+  tree_sitter_dep = declare_dependency(
+    link_with: libtree_sitter,
+    include_directories: tree_sitter_inc
+  )
+
+
+  # handle radare2-shell-parser dependency
+  if get_option('shell_parser_in_builddir')
+    shell_parser_path = join_paths(meson.current_build_dir(), 'radare2-shell-parser')
+  else
+    shell_parser_path = join_paths(meson.current_source_dir(), 'radare2-shell-parser')
+  endif
+  res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(shell_parser_path))
+  if res.returncode() == 0
+    if not git_exe.found()
+      error('Cannot load radare2-shell-parser library. Either provide radare2-shell-parser in ./shlr/radare2-shell-parser or install git, so it can be downloaded')
+    endif
+
+    # NOTE: when you update SHELLPARSER_TIP or SHELLPARSER_BRA, also update them in shlr/Makefile
+    SHELLPARSER_TIP = '36130421da6a698cc65b7f4dd939a803310bbe24'
+    SHELLPARSER_BRA = 'master'
+    shell_parser_user = 'ret2libc'
+
+    message('Cloning radare2-shell-parser ' + SHELLPARSER_BRA + ' branch, commit ' + SHELLPARSER_TIP + ', into ' + shell_parser_path)
+    git_cmd = 'clone -b @0@ https://github.com/@1@/radare2-shell-parser.git @2@'.format(SHELLPARSER_BRA, shell_parser_user, shell_parser_path)
+    clone_cmd = run_command(git_exe, git_cmd.split())
+    if clone_cmd.returncode() != 0
+      error('Cannot execute git clone command')
+    endif
+
+    reset_cmd_str = '-C @0@ reset --hard @1@'.format(shell_parser_path, SHELLPARSER_TIP)
+    reset_cmd = run_command(git_exe, reset_cmd_str.split())
+    if reset_cmd.returncode() != 0
+      error('Cannot execute git reset command')
+    endif
+  endif
+
+  shell_parser_files = [
+    join_paths(shell_parser_path, 'src/parser.c'),
+    join_paths(shell_parser_path, 'src/scanner.c'),
+  ]
+
+  shell_parser_inc = [platform_inc, include_directories('radare2-shell-parser/src/tree_sitter')]
+
+  libshell_parser = static_library('shell_parser', shell_parser_files,
+    include_directories: shell_parser_inc + tree_sitter_inc,
+    implicit_include_directories: true
+  )
+
+  shell_parser_dep = declare_dependency(
+    link_with: libshell_parser,
+    include_directories: shell_parser_inc,
+    dependencies: tree_sitter_dep
+  )
+else
+  shell_parser_dep = []
+  tree_sitter_dep = []
+endif
 
 
 # handle bochs dependency
@@ -244,41 +354,6 @@ bochs_dep = declare_dependency(
 )
 
 
-# handle gdb dependency
-gdb_files = [
-  'gdb/src/arch.c',
-  'gdb/src/common.c',
-  'gdb/src/packet.c',
-  'gdb/src/utils.c',
-  'gdb/src/libgdbr.c',
-
-  'gdb/src/gdbclient/core.c',
-  'gdb/src/gdbclient/responses.c',
-  'gdb/src/gdbclient/xml.c',
-
-  'gdb/src/gdbserver/core.c',
-]
-
-gdb_inc = [
-  platform_inc,
-  include_directories(
-    './gdb/include',
-    './gdb/include/gdbclient',
-    './gdb/include/gdbserver'
-  )
-]
-
-libr2gdb = static_library('r2gdb', gdb_files,
-  include_directories: gdb_inc,
-  implicit_include_directories: false
-)
-
-gdb_dep = declare_dependency(
-  link_with: libr2gdb,
-  include_directories: gdb_inc
-)
-
-
 # handle java dependency
 java_files = [
   'java/class.c',
@@ -292,7 +367,6 @@ java_inc = [platform_inc, include_directories('java')]
 
 libr2java = static_library('r2java', java_files,
   include_directories: java_inc,
-  dependencies: [sdb_dep],
   implicit_include_directories: false
 )
 
@@ -643,3 +717,24 @@ ar_dep = declare_dependency(
 if use_ptrace_wrap
   subdir('ptrace-wrap')
 endif
+
+if host_machine.system() == 'windows'
+  subdir('w32dbg_wrap')
+endif
+
+# handle mpc dependency
+mpc_files = [
+  'mpc/mpc.c'
+]
+
+mpc_inc = [platform_inc, include_directories(['mpc'])]
+
+libmpc = static_library('r2mpc', mpc_files,
+  include_directories: mpc_inc,
+  implicit_include_directories: false
+)
+
+mpc_dep = declare_dependency(
+  link_with: libmpc,
+  include_directories: mpc_inc
+)

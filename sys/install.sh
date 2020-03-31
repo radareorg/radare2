@@ -5,8 +5,9 @@ gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
 # if owner of sys/install.sh != uid && uid == 0 { exec sudo -u id -A $SUDO_UID sys/install.sh $* }
-
+ARGS=""
 while : ; do
+	[ -z "$1" ] && break
 	case "$1" in
 	--help)
 		./configure --help
@@ -26,8 +27,11 @@ while : ; do
 		shift
 		continue
 		;;
+	*)
+		ARGS="${ARGS} $1"
+		;;
 	esac
-	break
+	shift
 done
 
 if [ "${UID}" = 0 ]; then
@@ -88,13 +92,15 @@ if [ "${USE_SU}" = 1 ]; then
 fi
 
 if [ "${M32}" = 1 ]; then
-	./sys/build-m32.sh $* && ${SUDO} ${MAKE} ${INSTALL_TARGET}
+	./sys/build-m32.sh ${ARGS} || exit 1
 elif [ "${HARDEN}" = 1 ]; then
 	# shellcheck disable=SC2048
 	# shellcheck disable=SC2086
-	./sys/build-harden.sh $* && ${SUDO} ${MAKE} ${INSTALL_TARGET}
+	./sys/build-harden.sh ${ARGS} || exit 1
 else
 	# shellcheck disable=SC2048
 	# shellcheck disable=SC2086
-	./sys/build.sh $* && ${SUDO} ${MAKE} ${INSTALL_TARGET}
+	./sys/build.sh ${ARGS} || exit 1
 fi
+
+${SUDO} ${MAKE} ${INSTALL_TARGET} || exit 1

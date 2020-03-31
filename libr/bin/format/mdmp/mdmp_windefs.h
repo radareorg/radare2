@@ -486,6 +486,17 @@ struct windows_exception_record32 {
 });
 
 R_PACKED (
+struct windows_exception_record64 {
+	ut32 exception_code;
+	ut32 exception_flags;
+	struct windows_exception_record64 *exception_record;
+	ut64 exception_address;
+	ut32 number_parameters;
+	ut32 __unusedAlignment;
+	ut64 exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
+});
+
+R_PACKED (
 struct exception_pointers_i386 {
 	struct windows_exception_record32 *exception_record;
 	void /*struct context*/ *context_record;

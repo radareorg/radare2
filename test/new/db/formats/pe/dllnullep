@@ -1,0 +1,14 @@
+NAME=PE: corkami dllnullep.dll - open
+FILE=../bins/pe/dllnullep.dll
+EXPECT=<<EOF
+EOF
+CMDS=q!
+RUN
+
+NAME=PE: corkami dllnullep.dll - entrypoint
+FILE=../bins/pe/dllnullep.dll
+EXPECT=<<EOF
+0x1000000
+EOF
+CMDS=s
+RUN

@@ -1,0 +1,42 @@
+NAME=PE: corkami normal64.exe - open
+FILE=../bins/pe/normal64.exe
+EXPECT=<<EOF
+EOF
+CMDS=q!
+RUN
+
+NAME=PE: corkami normal64.exe - bits 64
+FILE=../bins/pe/normal64.exe
+ARGS=-n
+EXPECT=<<EOF
+bits     64
+EOF
+CMDS=!rabin2 -I ../bins/pe/normal64.exe | grep bits
+RUN
+
+NAME=PE: corkami normal64.exe - machine AMD 64
+FILE=../bins/pe/normal64.exe
+ARGS=-n
+EXPECT=<<EOF
+machine  AMD 64
+EOF
+CMDS=!rabin2 -I ../bins/pe/normal64.exe | grep "machine  AMD 64" 
+RUN
+
+NAME=PE: corkami normal64.exe - class PE32+
+FILE=../bins/pe/normal64.exe
+ARGS=-n
+EXPECT=<<EOF
+class    PE32+
+EOF
+CMDS=!rabin2 -I ../bins/pe/normal64.exe | grep "class    PE32+" 
+RUN
+
+NAME=PE: corkami imports
+FILE=../bins/pe/normal64.exe
+EXPECT=<<EOF
+kernel32.dll ExitProcess
+msvcrt.dll printf
+EOF
+CMDS=iiq
+RUN

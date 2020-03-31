@@ -480,7 +480,7 @@ static RList* symbols(RBinFile *bf) {
 	int offset = _machines[m_idx].offset_mem;
 	RList *ret = NULL;
 	RBinSymbol *ptr;
-	if (!(ret = r_list_new())) {
+	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;

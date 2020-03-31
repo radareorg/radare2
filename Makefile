@@ -7,9 +7,8 @@ B=$(DESTDIR)$(BINDIR)
 L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
-R2R=radare2-regressions
-R2R_URL=$(shell doc/repo REGRESSIONS)
-R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent)
+R2R=test
+R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent r2r)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
 else
@@ -76,7 +75,11 @@ libr/include/r_version.h:
 	@echo $(Q)#ifndef R_VERSION_H$(Q) > $@.tmp
 	@echo $(Q)#define R_VERSION_H 1$(Q) >> $@.tmp
 	@echo $(Q)#define R2_VERSION_COMMIT $(R2VC)$(Q) >> $@.tmp
-	@echo $(Q)#define R2_VERSION $(ESC)"$(R2_VER)$(ESC)"$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION $(ESC)"$(R2_VERSION)$(ESC)"$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION_MAJOR $(R2_VERSION_MAJOR)$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION_MINOR $(R2_VERSION_MINOR)$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION_PATCH $(R2_VERSION_PATCH)$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION_NUMBER $(R2_VERSION_NUMBER)$(Q) >> $@.tmp
 	@echo $(Q)#define R2_GITTAP $(ESC)"$(GIT_TAP)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#define R2_GITTIP $(ESC)"$(GIT_TIP)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#define R2_BIRTH $(ESC)"$(GIT_NOW)$(BUILDSEC)$(ESC)"$(Q) >> $@.tmp
@@ -378,11 +381,6 @@ shot:
 		radare.org:/srv/http/radareorg/get/shot
 
 tests:
-	@if [ -d $(R2R) ]; then \
-		cd $(R2R) ; git clean -xdf ; git pull ; \
-	else \
-		git clone --depth 1 "${R2R_URL}" "$(R2R)"; \
-	fi
 	$(MAKE) -C $(R2R)
 
 macos-sign:

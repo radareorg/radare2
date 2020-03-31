@@ -1,5 +1,9 @@
 /* radare2 - BSD 3 Clause License - 2016 - crowell */
 
+#ifndef HT_TYPE
+#error HT_TYPE should be defined before including this header
+#endif
+
 #undef HtName_
 #undef Ht_
 #undef HT_
@@ -7,10 +11,6 @@
 #undef VALUE_TYPE
 #undef KEY_TO_HASH
 #undef HT_NULL_VALUE
-
-#ifndef HT_TYPE
-#error HT_TYPE should be defined before including this header
-#endif
 
 #if HT_TYPE == 1
 #define HtName_(name) name##PP
@@ -106,5 +106,3 @@ SDB_API void Ht_(foreach)(HtName_(Ht) *ht, HT_(ForeachCallback) cb, void *user);
 
 SDB_API HT_(Kv)* Ht_(find_kv)(HtName_(Ht)* ht, const KEY_TYPE key, bool* found);
 SDB_API bool Ht_(insert_kv)(HtName_(Ht) *ht, HT_(Kv) *kv, bool update);
-
-#undef HT_TYPE

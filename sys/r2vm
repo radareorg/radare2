@@ -1,0 +1,170 @@
+#!/bin/sh
+
+[ -z "${R2_MASTER}" ] && R2_MASTER="${PWD}/.."
+COPIES=~/prg/r2-v
+
+if ! test -d "${R2_MASTER}"; then
+	echo "Cannot find master copy of r2 at R2_MASTER=${R2_MASTER}"
+	exit 1
+fi
+
+
+if ! mkdir -p "${COPIES}"; then
+	echo "Cannot create COPIES=${COPIES}"
+	exit 1
+fi
+
+echo "Using R2_MASTER ${R2_MASTER}"
+echo "Using COPIES ${COPIES}"
+
+
+Fail() {
+	printf "%s" "$1\n"
+	exit 1
+}
+
+Head() {
+	cd ${R2_MASTER}   || Fail "cannot chdir to ${R2_MASTER}"
+	git rev-list HEAD |  head -n1
+}
+
+Next() {
+	cd ${R2_MASTER}   || Fail "cannot chdir to ${R2_MASTER}"
+	git rev-list HEAD | grep -C 1 $1 |head -n1
+}
+
+Prev() {
+	cd ${R2_MASTER}   || Fail "cannot chdir to ${R2_MASTER}"
+	git rev-list HEAD | grep -C 1 $1 |tail -n1
+}
+
+Cur() {
+	if test -f ${COPIES}/cur; then
+		cat ${COPIES}/cur
+	else
+		echo "Run init first"
+	fi
+}
+
+Note() {
+	if test -n "$1"; then
+		if test -n "$2"; then
+			echo "$2" > ${COPIES}/radare2-$1.note
+		else
+			cat ${COPIES}/radare2-$1.note
+		fi
+	else
+		echo "Missing argument"
+	fi
+}
+
+Clone() {
+	cd ${COPIES} || exit 1
+	if [ ! -d ${COPIES}/radare2-${1} ]; then
+		echo "$1  git clone"
+		git clone ${R2_MASTER} radare2-${1} > /dev/null 2>&1
+	fi
+	if [ ! -d ${COPIES}/radare2-${1} ]; then
+		echo "Cant clone"
+		exit 1
+	fi
+	cd radare2-${1}
+	if [ -d .git ]; then
+		git reset --hard $1 || exit 1
+		mv .git _git
+	fi
+	if [ ! -f binr/radare2/radare2 ]; then
+		echo "$1  make"
+		sys/install.sh > ${COPIES}/radare2-${1}.log 2>&1 || exit 1
+	fi
+	echo "$1  symstall"
+	sudo make symstall >> ${COPIES}/radare2-${1}.log
+	echo $1 > ${COPIES}/cur
+}
+
+case "$1" in
+init)
+	Clone `Head`
+	;;
+log)
+	cd ${R2_MASTER} || Fail "cannot chdir to ${R2_MASTER}"
+	cur=`Cur`
+	for a in `git rev-list HEAD` ; do
+		NOTE=`cat ${COPIES}/radare2-${a}.note 2>/dev/null`
+		if [ "$cur" = "$a" ]; then
+			echo "$a  [CUR] <<<< $NOTE"
+		elif [ -d "${COPIES}/radare2-${a}" ]; then
+			echo "$a  [x] $NOTE"
+		else
+			echo "$a  $NOTE"
+		fi
+	done
+	;;
+head)
+	Head
+	;;
+ls)
+	if [ -d "${COPIES}" ]; then
+		cd ${COPIES}
+		for a in radare2-* ; do
+			echo $a
+		done
+	else
+		echo "Run 'init' first"
+	fi
+	;;
+up)
+	$0 use `Prev $(Cur)`
+	;;
+cur)
+	Cur
+	;;
+down)
+	$0 use `Next $(Cur)`
+	;;
+rm)
+	if [ -n "$2" ]; then
+		if [ -d "${COPIES}/radare2-$2" ]; then
+			rm -rf "${COPIES}/radare2-$2"
+		else
+			echo "Invalid ref"
+		fi
+	else
+		echo "Usage rm [file]"
+	fi
+	;;
+good)
+	Note `Cur` good
+	;;
+bad)
+	Note `Cur` bad
+	;;
+reset)
+	rm ${COPIES}/*.note
+	;;
+note)
+	Note $2 $3
+	;;
+diff)
+	cd ${R2_MASTER} || Fail "cannot chdir to ${R2_MASTER}"
+	git diff `Cur`^..`Cur`
+	;;
+use)
+	Clone $2
+	;;
+''|-h|help|-?)
+	echo "Usage: r2-v [cmd] ([arg])      - Radare2 Version Manager"
+	echo "  init                 initialize r2-v repository"
+	echo "  cur                  show current commit"
+	echo "  head                 show last commit"
+	echo "  ls                   list all build"
+	echo "  log                  show log history with marks and notes"
+	echo "  use [commit]         build and install this commit"
+	echo "  up                   build and install previous commit"
+	echo "  down                 build and install next commit"
+	echo "  rm [commit]          remove build"
+	echo "  reset                reset/remove all notes"
+	echo "  good | bad           mark current commit as good or bad"
+	echo "  note [commit] [msg]  add note for given commit"
+	;;
+esac

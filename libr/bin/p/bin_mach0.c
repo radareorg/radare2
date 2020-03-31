@@ -7,6 +7,9 @@
 #include "../i/private.h"
 #include "mach0/mach0.h"
 #include "objc/mach0_classes.h"
+#include <sdb/ht_uu.h>
+
+// wip settings
 
 extern RBinWrite r_bin_write_mach0;
 
@@ -165,14 +168,22 @@ static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
 	}
 }
 
+#if FEATURE_SYMLIST
+static RList *symbols(RBinFile *bf) {
+	RBinObject *obj = bf? bf->o: NULL;
+	return (RList *)MACH0_(get_symbols_list) (obj->bin_obj);
+}
+#else
 static RList *symbols(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin;
 	int i;
-	const struct symbol_t *symbols = NULL;
+	const struct symbol_t *syms = NULL;
 	RBinSymbol *ptr = NULL;
 	RBinObject *obj = bf? bf->o: NULL;
 	RList *ret = r_list_newf (free);
+#if 0
 	const char *lang = "c"; // XXX deprecate this
+#endif
 	int wordsize = 0;
 	if (!ret) {
 		return NULL;
@@ -185,21 +196,22 @@ static RList *symbols(RBinFile *bf) {
 	wordsize = MACH0_(get_bits) (obj->bin_obj);
 
 	// OLD CODE
-	if (!(symbols = MACH0_(get_symbols) (obj->bin_obj))) {
+	if (!(syms = MACH0_(get_symbols) (obj->bin_obj))) {
 		return ret;
 	}
 	Sdb *symcache = sdb_new0 ();
 	bin = (struct MACH0_(obj_t) *) obj->bin_obj;
-	for (i = 0; !symbols[i].last; i++) {
-		if (!symbols[i].name[0] || symbols[i].addr < 100) {
+	for (i = 0; !syms[i].last; i++) {
+		if (!syms[i].name[0] || syms[i].addr < 100) {
 			continue;
 		}
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			break;
 		}
-		ptr->name = strdup ((char*)symbols[i].name);
-		if (ptr->name[0] == '_' && strncmp (ptr->name, "imp.", 4)) {
-			char *dn = r_bin_demangle (bf, ptr->name, ptr->name, ptr->vaddr);
+		ptr->name = strdup ((char*)syms[i].name);
+		ptr->is_imported = syms[i].is_imported;
+		if (ptr->name[0] == '_' && !ptr->is_imported) {
+			char *dn = r_bin_demangle (bf, ptr->name, ptr->name, ptr->vaddr, false);
 			if (dn) {
 				ptr->dname = dn;
 				char *p = strchr (dn, '.');
@@ -217,19 +229,19 @@ static RList *symbols(RBinFile *bf) {
 				}
 			}
 		}
-		ptr->forwarder = r_str_const ("NONE");
-		ptr->bind = r_str_const ((symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
-				R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR);
-		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
-		ptr->vaddr = symbols[i].addr;
-		ptr->paddr = symbols[i].offset + obj->boffset;
-		ptr->size = symbols[i].size;
+		ptr->forwarder = "NONE";
+		ptr->bind = (syms[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
+		ptr->type = R_BIN_TYPE_FUNC_STR;
+		ptr->vaddr = syms[i].addr;
+		ptr->paddr = syms[i].offset + obj->boffset;
+		ptr->size = syms[i].size;
 		if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 			_handle_arm_thumb (bin, &ptr);
 		}
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp (ptr->name, "radr://", 7)? 0: 1;
 		sdb_set (symcache, sdb_fmt ("sym0x%"PFMT64x, ptr->vaddr), "found", 0);
+#if 0
 		if (!strncmp (ptr->name, "__Z", 3)) {
 			lang = "c++";
 		}
@@ -238,6 +250,7 @@ static RList *symbols(RBinFile *bf) {
 		} else if (!strcmp (ptr->name, "_rust_oom")) {
 			lang = "rust";
 		}
+#endif
 		r_list_append (ret, ptr);
 	}
 	//functions from LC_FUNCTION_STARTS
@@ -266,7 +279,7 @@ static RList *symbols(RBinFile *bf) {
 				_handle_arm_thumb (bin, &ptr);
 			}
 			r_list_append (ret, ptr);
-			// if any func is not found in symbols then we can consider it is stripped
+			// if any func is not found in syms then we can consider it is stripped
 			if (!isStripped) {
 				snprintf (symstr + 5, sizeof (symstr) - 5 , "%" PFMT64x, ptr->vaddr);
 				if (!sdb_const_get (symcache, symstr, 0)) {
@@ -288,8 +301,9 @@ static RList *symbols(RBinFile *bf) {
 	sdb_free (symcache);
 	return ret;
 }
+#endif // FEATURE_SYMLIST
 
-static RBinImport *import_from_name(const char *orig_name, HtPP *imports_by_name) {
+static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imports_by_name) {
 	if (imports_by_name) {
 		bool found = false;
 		RBinImport *ptr = ht_pp_find (imports_by_name, orig_name, &found);
@@ -323,8 +337,8 @@ static RBinImport *import_from_name(const char *orig_name, HtPP *imports_by_name
 		name++;
 	}
 	ptr->name = strdup (name);
-	ptr->bind = r_str_const ("NONE");
-	ptr->type = r_str_const (type);
+	ptr->bind = "NONE";
+	ptr->type = r_str_constpool_get (&rbin->constpool, type);
 
 	if (imports_by_name) {
 		ht_pp_insert (imports_by_name, orig_name, ptr);
@@ -353,7 +367,7 @@ static RList *imports(RBinFile *bf) {
 	bin->has_sanitizers = false;
 	bin->has_blocks_ext = false;
 	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = import_from_name (imports[i].name, NULL))) {
+		if (!(ptr = import_from_name (bf->rbin, imports[i].name, NULL))) {
 			break;
 		}
 		name = ptr->name;
@@ -397,6 +411,9 @@ static RList *relocs(RBinFile *bf) {
 	RSkipListNode *it;
 	struct reloc_t *reloc;
 	r_skiplist_foreach (relocs, it, reloc) {
+		if (reloc->external) {
+			continue;
+		}
 		RBinReloc *ptr = NULL;
 		if (!(ptr = R_NEW0 (RBinReloc))) {
 			break;
@@ -407,7 +424,7 @@ static RList *relocs(RBinFile *bf) {
 			ptr->import = bin->imports_by_ord[reloc->ord];
 		} else if (reloc->name[0]) {
 			RBinImport *imp;
-			if (!(imp = import_from_name ((char*) reloc->name, bin->imports_by_name))) {
+			if (!(imp = import_from_name (bf->rbin, (char*) reloc->name, bin->imports_by_name))) {
 				break;
 			}
 			ptr->import = imp;
@@ -489,6 +506,175 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->has_pi = MACH0_(is_pie) (bf->o->bin_obj);
 	ret->has_nx = MACH0_(has_nx) (bf->o->bin_obj);
 	return ret;
+}
+
+static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t * reloc, ut64 symbol_at) {
+	ut64 pc = reloc->addr;
+	ut64 ins_len = 0;
+
+	switch (bin->hdr.cputype) {
+	case CPU_TYPE_X86_64: {
+		switch (reloc->type) {
+		case X86_64_RELOC_UNSIGNED:
+			break;
+		case X86_64_RELOC_BRANCH:
+			pc -= 1;
+			ins_len = 5;
+			break;
+		default:
+			eprintf ("Warning: unsupported reloc type for X86_64 (%d), please file a bug.\n", reloc->type);
+			return false;
+		}
+		break;
+	}
+	case CPU_TYPE_ARM64:
+	case CPU_TYPE_ARM64_32:
+		pc = reloc->addr & ~3;
+		ins_len = 4;
+		break;
+	case CPU_TYPE_ARM:
+		break;
+	default:
+		eprintf ("Warning: unsupported architecture for patching relocs, please file a bug. %s\n", MACH0_(get_cputype_from_hdr)(&bin->hdr));
+		return false;
+	}
+
+	ut64 val = symbol_at;
+	if (reloc->pc_relative) {
+		val = symbol_at - pc - ins_len;
+	}
+
+	ut8 buf[8];
+	r_write_ble (buf, val, false, reloc->size * 8);
+	iob->write_at (iob->io, reloc->addr, buf, reloc->size);
+
+	return true;
+}
+
+static RList* patch_relocs(RBin *b) {
+	RList *ret = NULL;
+	RIO *io = NULL;
+	RBinObject *obj = NULL;
+	struct MACH0_(obj_t) *bin = NULL;
+	RIOMap *g = NULL, *s = NULL;
+	HtUU *relocs_by_sym = NULL;
+	RIODesc *gotr2desc = NULL;
+
+	r_return_val_if_fail (b, NULL);
+
+	io = b->iob.io;
+	if (!io || !io->desc) {
+		return NULL;
+	}
+	obj = r_bin_cur_object (b);
+	if (!obj) {
+		return NULL;
+	}
+	bin = obj->bin_obj;
+
+	RSkipList * all_relocs = MACH0_(get_relocs)(bin);
+	if (!all_relocs) {
+		return NULL;
+	}
+	RList * ext_relocs = r_list_new ();
+	if (!ext_relocs) {
+		goto beach;
+	}
+	RSkipListNode *it;
+	struct reloc_t * reloc;
+	r_skiplist_foreach (all_relocs, it, reloc) {
+		if (!reloc->external) {
+			continue;
+		}
+		r_list_append (ext_relocs, reloc);
+	}
+	ut64 num_ext_relocs = r_list_length (ext_relocs);
+	if (!num_ext_relocs) {
+		goto beach;
+	}
+
+	if (!io->cached) {
+		eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
+		goto beach;
+	}
+
+	int cdsz = obj->info ? obj->info->bits / 8 : 8;
+
+	SdbListIter *iter;
+	ut64 offset = 0;
+	ls_foreach (io->maps, iter, s) {
+		if (s->itv.addr > offset) {
+			offset = s->itv.addr;
+			g = s;
+		}
+	}
+	if (!g) {
+		goto beach;
+	}
+	ut64 n_vaddr = g->itv.addr + g->itv.size;
+	ut64 size = num_ext_relocs * cdsz;
+	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
+	gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
+	free (muri);
+	if (!gotr2desc) {
+		goto beach;
+	}
+
+	RIOMap *gotr2map = b->iob.map_get (io, n_vaddr);
+	if (!gotr2map) {
+		goto beach;
+	}
+	gotr2map->name = strdup (".got.r2");
+
+	if (!(ret = r_list_newf ((RListFree)free))) {
+		goto beach;
+	}
+	if (!(relocs_by_sym = ht_uu_new0 ())) {
+		goto beach;
+	}
+	ut64 vaddr = n_vaddr;
+	RListIter *liter;
+	r_list_foreach (ext_relocs, liter, reloc) {
+		ut64 sym_addr = 0;
+		sym_addr = ht_uu_find (relocs_by_sym, reloc->ord, NULL);
+		if (!sym_addr) {
+			sym_addr = vaddr;
+			ht_uu_insert (relocs_by_sym, reloc->ord, vaddr);
+			vaddr += cdsz;
+		}
+		if (!_patch_reloc (bin, &b->iob, reloc, sym_addr)) {
+			continue;
+		}
+		RBinReloc *ptr = NULL;
+		if (!(ptr = R_NEW0 (RBinReloc))) {
+			goto beach;
+		}
+		ptr->type = reloc->type;
+		ptr->additive = 0;
+		RBinImport *imp;
+		if (!(imp = import_from_name (b, (char*) reloc->name, bin->imports_by_name))) {
+			R_FREE (ptr);
+			goto beach;
+		}
+		ptr->vaddr = sym_addr;
+		ptr->import = imp;
+		r_list_append (ret, ptr);
+	}
+	if (r_list_empty (ret)) {
+		goto beach;
+	}
+	ht_uu_free (relocs_by_sym);
+	r_list_free (ext_relocs);
+	r_skiplist_free (all_relocs);
+	return ret;
+
+beach:
+	r_list_free (ext_relocs);
+	r_skiplist_free (all_relocs);
+	r_io_desc_free (gotr2desc);
+	r_list_free (ret);
+	ht_uu_free (relocs_by_sym);
+	return NULL;
 }
 
 #if !R_BIN_MACH064
@@ -828,6 +1014,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.fields = MACH0_(mach_fields),
 	.libs = &libs,
 	.relocs = &relocs,
+	.patch_relocs = &patch_relocs,
 	.create = &create,
 	.classes = &MACH0_(parse_classes),
 	.write = &r_bin_write_mach0,

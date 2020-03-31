@@ -1,0 +1,37 @@
+NAME=pFb.test simple protobuf
+FILE=-
+EXPECT=<<EOF
+1 {
+    1: "Vincent"
+    2: 9 | 9
+    3: "Vincent@test.com"
+    4 {
+        1: "15011111111"
+        2: 2 | 2
+    }
+}
+EOF
+CMDS=<<EOF
+wx 0a 2e 0a 07 56 69 6e 63 65 6e 74 10 09 1a 10 56 69 6e 63 65 6e 74 40 74 65 73 74 2e 63 6f 6d 22 0f 0a 0b 31 35 30 31 31 31 31 31 31 31 31 10 02
+pFb
+EOF
+RUN
+
+NAME=pFb.test simple protobuf (verbose)
+FILE=-
+EXPECT=<<EOF
+1 [LEN_DELIM]   {
+    1 [LEN_DELIM]  : "Vincent"
+    2 [VARINT]     : 9 | 9
+    3 [LEN_DELIM]  : "Vincent@test.com"
+    4 [LEN_DELIM]   {
+        1 [LEN_DELIM]  : "15011111111"
+        2 [VARINT]     : 2 | 2
+    }
+}
+EOF
+CMDS=<<EOF
+wx 0a 2e 0a 07 56 69 6e 63 65 6e 74 10 09 1a 10 56 69 6e 63 65 6e 74 40 74 65 73 74 2e 63 6f 6d 22 0f 0a 0b 31 35 30 31 31 31 31 31 31 31 31 10 02
+pFbv
+EOF
+RUN

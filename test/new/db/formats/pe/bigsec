@@ -1,0 +1,22 @@
+NAME=PE: corkami bigsec.exe - open
+FILE=../bins/pe/bigsec.exe
+EXPECT=<<EOF
+EOF
+CMDS=q!
+RUN
+
+NAME=PE: corkami bigsec.exe - entrypoint
+FILE=../bins/pe/bigsec.exe
+EXPECT=<<EOF
+0x401000
+EOF
+CMDS=s
+RUN
+
+NAME=PE: corkami bigsec.exe - pi 1
+FILE=../bins/pe/bigsec.exe
+EXPECT=<<EOF
+mov edi, 0x103ff000
+EOF
+CMDS=pi 1
+RUN

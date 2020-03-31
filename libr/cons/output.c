@@ -19,21 +19,28 @@ static void __fill_tail(int cols, int lines) {
 	}
 }
 
-static void __clear_w32() {
+R_API void r_cons_w32_clear(void) {
 	static HANDLE hStdout = NULL;
 	static CONSOLE_SCREEN_BUFFER_INFO csbi;
-	const COORD startCoords = { 0, 0 };
+	COORD startCoords;
 	DWORD dummy;
 	if (I->is_wine == 1) {
 		write (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
 	}
 	if (!hStdout) {
 		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
-		GetConsoleScreenBufferInfo (hStdout, &csbi);
-		//GetConsoleWindowInfo (hStdout, &csbi);
 	}
+	GetConsoleScreenBufferInfo (hStdout, &csbi);
+	startCoords = (COORD) {
+		csbi.srWindow.Left,
+		csbi.srWindow.Top
+	};
+	DWORD nLength = csbi.dwSize.X * (csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
 	FillConsoleOutputCharacter (hStdout, ' ',
-		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
+		nLength, startCoords, &dummy);
+	FillConsoleOutputAttribute (hStdout,
+		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+		nLength, startCoords, &dummy);
 }
 
 R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
@@ -49,6 +56,10 @@ R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
 	if (!*hConsole) {
 		*hConsole = GetStdHandle (fd == 1 ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
 	}
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	GetConsoleScreenBufferInfo (*hConsole, &info);
+	coord.X += info.srWindow.Left;
+	coord.Y += info.srWindow.Top;
 	SetConsoleCursorPosition (*hConsole, coord);
 }
 
@@ -58,7 +69,7 @@ static int wrapline(const char *s, int len) {
 		l = r_str_len_utf8char (s+n, (len-n));
 		n += l;
 	}
-	return n - (n > len)? l: 1;
+	return n - ((n > len) ? l : 1);
 }
 
 // Dupe from canvas.c
@@ -88,18 +99,19 @@ static int bytes_utf8len(const char *s, int n) {
 	return ret;
 }
 
-R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
-	HANDLE hConsole = GetStdHandle (STD_OUTPUT_HANDLE);
+static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
+	HANDLE hConsole = GetStdHandle (hdl);
+	int fd = hdl == STD_OUTPUT_HANDLE ? 1 : 2;
 	int esc = 0;
 	int bg = 0, fg = 1|2|4|8;
-	const ut8 *ptr_end, *str = ptr;
+	const char *ptr_end, *str = ptr;
 	int ret = 0;
 	int inv = 0;
 	int linelen = 0;
 	int ll = 0;
 	int raw_ll = 0;
 	int lines, cols = r_cons_get_size (&lines);
-	if (I->is_wine==-1) {
+	if (I->is_wine == -1) {
 		I->is_wine = r_file_is_directory ("/proc")? 1: 0;
 	}
 	if (len < 0) {
@@ -112,7 +124,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 			raw_ll = (size_t)(ptr - str);
 			ll = utf8len_fixed (str, raw_ll);
 			lines--;
-			if (vmode && lines < 0) {
+			if (vmode && lines < 1) {
 				break;
 			}
 			if (raw_ll < 1) {
@@ -129,8 +141,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				}
 			}
 			if (ll > 0) {
-				raw_ll = bytes_utf8len (str, ll, strlen (str));
-				write (1, str, raw_ll);
+				raw_ll = bytes_utf8len (str, ll);
+				write (fd, str, raw_ll);
 				linelen += ll;
 			}
 			esc = 0;
@@ -140,10 +152,10 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				char white[1024];
 				if (wlen > 0 && wlen < sizeof (white)) {
 					memset (white, ' ', sizeof (white));
-					write (1, white, wlen-1);
+					write (fd, white, wlen-1);
 				}
 			}
-			write (1, "\n\r", 2);
+			write (fd, "\n\r", 2);
 			// reset colors for next line
 			SetConsoleTextAttribute (hConsole, 1 | 2 | 4 | 8);
 			linelen = 0;
@@ -161,11 +173,11 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 					//wlen = 5;
 					if (wlen > 0) {
 						memset (white, ' ', sizeof (white));
-						write (1, white, wlen);
+						write (fd, white, wlen);
 					}
 				}
-				write (1, "\n\r", 2);
-				//write (1, "\r\n", 2);
+				write (fd, "\n\r", 2);
+				//write (fd, "\r\n", 2);
 				//lines--;
 				linelen = 0;
 			}
@@ -180,8 +192,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				}
 			}
 			if (ll > 0) {
-				raw_ll = bytes_utf8len (str, ll, strlen (str));
-				write (1, str, raw_ll);
+				raw_ll = bytes_utf8len (str, ll);
+				write (fd, str, raw_ll);
 				linelen += ll;
 			}
 			esc = 1;
@@ -227,7 +239,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				}
 			}
 			if (state == -2) {
-				r_cons_w32_gotoxy (1, x, y);
+				r_cons_w32_gotoxy (fd, x, y);
 				ptr += i;
 				str = ptr; // + i-2;
 				continue;
@@ -240,14 +252,14 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 					// fill row here
 					__fill_tail (cols, lines);
 				}
-				r_cons_w32_gotoxy (1, 0, 0);
+				r_cons_w32_gotoxy (fd, 0, 0);
 				lines = 0;
 				esc = 0;
 				ptr += 3;
 				str = ptr + 1;
 				continue;
 			} else if (ptr[0]=='2'&&ptr[1]=='J') {
-				__clear_w32 ();
+				r_cons_w32_clear ();
 				esc = 0;
 				ptr = ptr + 1;
 				str = ptr + 1;
@@ -367,33 +379,34 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 		if (wlen > 0) {
 			char white[1024];
 			memset (white, ' ', sizeof (white));
-			write (1, white, wlen);
+			write (fd, white, wlen);
 		}
 		/* fill tail */
 		__fill_tail (cols, lines);
 	} else {
 		int ll = (size_t)(ptr - str);
 		if (ll > 0) {
-			write (1, str, ll);
+			write (fd, str, ll);
 			linelen += ll;
 		}
 	}
 	return ret;
 }
 
-R_API int r_cons_win_printf(bool vmode, const char *fmt, ...) {
-	va_list ap, ap2;
-	int ret = -1;
-	r_return_val_if_fail (fmt, -1);
+R_API int r_cons_w32_print(const char *ptr, int len, bool vmode) {
+	return r_cons_w32_hprint (STD_OUTPUT_HANDLE, ptr, len, vmode);
+}
 
-	va_start (ap, fmt);
+R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap) {
+	va_list ap2;
+	int ret = -1;
+	FILE *con = hdl == STD_OUTPUT_HANDLE ? stdout : stderr;
 	if (!strchr (fmt, '%')) {
-		va_end (ap);
 		size_t len = strlen (fmt);
 		if (I->ansicon) {
-			return fwrite (fmt, 1, len, stdout);
+			return fwrite (fmt, 1, len, con);
 		}
-		return r_cons_w32_print (fmt, len, vmode);
+		return r_cons_w32_hprint (hdl, fmt, len, vmode);
 	}
 	va_copy (ap2, ap);
 	int num_chars = vsnprintf (NULL, 0, fmt, ap2);
@@ -402,13 +415,34 @@ R_API int r_cons_win_printf(bool vmode, const char *fmt, ...) {
 	if (buf) {
 		(void)vsnprintf (buf, num_chars, fmt, ap);
 		if (I->ansicon) {
-			ret = fwrite (buf, 1, num_chars - 1, stdout);
+			ret = fwrite (buf, 1, num_chars - 1, con);
 		} else {
-			ret = r_cons_w32_print (buf, num_chars - 1, vmode);
+			ret = r_cons_w32_hprint (hdl, buf, num_chars - 1, vmode);
 		}
 		free (buf);
 	}
 	va_end (ap2);
+	return ret;
+}
+
+R_API int r_cons_win_printf(bool vmode, const char *fmt, ...) {
+	va_list ap;
+	int ret;
+	r_return_val_if_fail (fmt, -1);
+
+	va_start (ap, fmt);
+	ret = r_cons_win_vhprintf (STD_OUTPUT_HANDLE, vmode, fmt, ap);
+	va_end (ap);
+	return ret;
+}
+
+R_API int r_cons_win_eprintf(bool vmode, const char *fmt, ...) {
+	va_list ap;
+	int ret;
+	r_return_val_if_fail (fmt, -1);
+
+	va_start (ap, fmt);
+	ret = r_cons_win_vhprintf (STD_ERROR_HANDLE, vmode, fmt, ap);
 	va_end (ap);
 	return ret;
 }

@@ -1,0 +1,7 @@
+NAME=PE: #2331
+FILE=../bins/pe/2331
+ARGS=-A
+EXPECT=<<EOF
+EOF
+CMDS=q!
+RUN

@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2017 - pancake */
+/* sdb - MIT - Copyright 2011-2019 - pancake */
 
 #include <signal.h>
 #include <stdio.h>
@@ -24,7 +24,7 @@ static void terminate(int sig UNUSED) {
 		exit (1);
 	}
 	sdb_free (s);
-	exit (0);
+	exit (sig<2?sig:0);
 }
 
 #define BS 128
@@ -142,11 +142,9 @@ static char *stdin_slurp(int *sz) {
 	if (sz) {
 		*sz = len;
 	}
-	//eprintf ("LEN %d (%s)\n", len, buf);
 	if (len < 1) {
 		free (buf);
-		buf = NULL;
-		return NULL;
+		return buf = NULL;
 	}
 	buf[len] = 0;
 	return buf;
@@ -155,9 +153,8 @@ static char *stdin_slurp(int *sz) {
 #if USE_MMAN
 static void synchronize(int sig UNUSED) {
 	// TODO: must be in sdb_sync() or wat?
-	Sdb *n;
 	sdb_sync (s);
-	n = sdb_new (s->path, s->name, s->lock);
+	Sdb *n = sdb_new (s->path, s->name, s->lock);
 	if (n) {
 		sdb_config (n, options);
 		sdb_free (s);
@@ -165,23 +162,22 @@ static void synchronize(int sig UNUSED) {
 	}
 }
 #endif
-static int sdb_grep_dump(const char *db, int fmt, bool grep,
+
+static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
                          const char *expgrep) {
-	char *v;
-	char k[SDB_MAX_KEY] = {
-		0
-	};
+	char *v, k[SDB_MAX_KEY] = { 0 };
 	const char *comma = "";
-	Sdb *s = sdb_new (NULL, db, 0);
-	if (!s) {
+	// local db beacuse is readonly and we dont need to finalize in case of ^C
+	Sdb *db = sdb_new (NULL, dbname, 0);
+	if (!db) {
 		return 1;
 	}
-	sdb_config (s, options);
-	sdb_dump_begin (s);
+	sdb_config (db, options);
+	sdb_dump_begin (db);
 	if (fmt == MODE_JSON) {
 		printf ("{");
 	}
-	while (sdb_dump_dupnext (s, k, &v, NULL)) {
+	while (sdb_dump_dupnext (db, k, &v, NULL)) {
 		if (grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
 			free (v);
 			continue;
@@ -218,9 +214,10 @@ static int sdb_grep_dump(const char *db, int fmt, bool grep,
 		printf ("}\n");
 		break;
 	}
-	sdb_free (s);
+	sdb_free (db);
 	return 0;
 }
+
 static int sdb_grep(const char *db, int fmt, const char *grep) {
 	return sdb_grep_dump (db, fmt, true, grep);
 }
@@ -353,38 +350,36 @@ static int base64decode() {
 	return ret;
 }
 
-static int dbdiff(const char *a, const char *b) {
-	int n = 0;
-	char *v;
-	char k[SDB_MAX_KEY] = {
-		0
-	};
-	const char *v2;
+static void dbdiff_cb(const SdbDiff *diff, void *user) {
+	char sbuf[512];
+	int r = sdb_diff_format (sbuf, sizeof(sbuf), diff);
+	if (r < 0) {
+		return;
+	}
+	char *buf = sbuf;
+	char *hbuf = NULL;
+	if ((size_t)r >= sizeof (sbuf)) {
+		hbuf = malloc (r + 1);
+		if (!hbuf) {
+			return;
+		}
+		r = sdb_diff_format (hbuf, r + 1, diff);
+		if (r < 0) {
+			goto beach;
+		}
+	}
+	printf ("\x1b[%sm%s\x1b[0m\n", diff->add ? "32" : "31", buf);
+beach:
+	free (hbuf);
+}
+
+static bool dbdiff(const char *a, const char *b) {
 	Sdb *A = sdb_new (NULL, a, 0);
 	Sdb *B = sdb_new (NULL, b, 0);
-	sdb_dump_begin (A);
-	while (sdb_dump_dupnext (A, k, &v, NULL)) {
-		v2 = sdb_const_get (B, k, 0);
-		if (!v2) {
-			printf ("%s=\n", k);
-			n = 1;
-		}
-	}
-	sdb_dump_begin (B);
-	while (sdb_dump_dupnext (B, k, &v, NULL)) {
-		if (!v || !*v) {
-			continue;
-		}
-		v2 = sdb_const_get (A, k, 0);
-		if (!v2 || strcmp (v, v2)) {
-			printf ("%s=%s\n", k, v2);
-			n = 1;
-		}
-	}
+	bool equal = sdb_diff (A, B, dbdiff_cb, NULL);
 	sdb_free (A);
 	sdb_free (B);
-	free (v);
-	return n;
+	return equal;
 }
 
 int showcount(const char *db) {
@@ -401,7 +396,7 @@ int showcount(const char *db) {
 int main(int argc, const char **argv) {
 	char *line;
 	const char *arg, *grep = NULL;
-	int i, ret, fmt = MODE_DFLT;
+	int i, fmt = MODE_DFLT;
 	int db0 = 1, argi = 1;
 	bool interactive = false;
 
@@ -447,7 +442,7 @@ int main(int argc, const char **argv) {
 		case 'd': return base64decode ();
 		case 'D':
 			if (argc == 4) {
-				return dbdiff (argv[2], argv[3]);
+				return dbdiff (argv[2], argv[3]) ? 0 : 1;
 			}
 			return showusage (0);
 		case 'j':
@@ -484,7 +479,7 @@ int main(int argc, const char **argv) {
 	signal (SIGINT, terminate);
 	signal (SIGHUP, synchronize);
 #endif
-	ret = 0;
+	int ret = 0;
 	if (interactive || !strcmp (argv[db0 + 1], "-")) {
 		if ((s = sdb_new (NULL, argv[db0], 0))) {
 			sdb_config (s, options);
@@ -517,6 +512,6 @@ int main(int argc, const char **argv) {
 			}
 		}
 	}
-	terminate (0);
+	terminate (ret);
 	return ret;
 }

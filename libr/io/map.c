@@ -533,8 +533,11 @@ R_API void r_io_map_del_name(RIOMap* map) {
 	}
 }
 
-//TODO: Kill it with fire
-R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size, ut64 load_align) {
+// TODO: very similar to r_io_map_next_address, decide which one to use
+R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_align) {
+	if (load_align == 0) {
+		load_align = 1;
+	}
 	RIOMap* map;
 	SdbListIter* iter;
 	ut64 next_addr = addr,
@@ -544,18 +547,17 @@ R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int perm, ut64 delta,
 		next_addr = R_MAX (next_addr, to + (load_align - (to % load_align)) % load_align);
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
 		// adding the check for the map's fd to see if this removes contention for
-		// memory mapping with multiple files.
-
-		if (map->fd == fd && ((map->itv.addr <= next_addr && next_addr < to) ||
-						r_itv_contain (map->itv, end_addr))) {
+		// memory mapping with multiple files. infinite loop ahead?
+		if ((map->itv.addr <= next_addr && next_addr < to) || r_itv_contain (map->itv, end_addr)) {
 			next_addr = to + (load_align - (to % load_align)) % load_align;
-			return r_io_map_add_next_available (io, fd, perm, delta, next_addr, size, load_align);
+			return r_io_map_next_available (io, next_addr, size, load_align);
 		}
 		break;
 	}
-	return r_io_map_new (io, fd, perm, delta, next_addr, size);
+	return next_addr;
 }
 
+// TODO: very similar to r_io_map_next_available. decide which one to use
 R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
 	RIOMap* map;
 	SdbListIter* iter;
@@ -605,3 +607,12 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	return true;
 }
 
+// find a location that can hold enough bytes without overlapping
+// XXX this function is buggy and doesnt works as expected, but i need it for a PoC for now
+R_API ut64 r_io_map_location(RIO *io, ut64 size) {
+	ut64 base = (io->bits == 64)? 0x60000000000LL: 0x60000000;
+	while (r_io_map_get (io, base)) {
+		base += 0x200000;
+	}
+	return base;
+}

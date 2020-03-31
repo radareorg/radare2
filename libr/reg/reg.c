@@ -6,17 +6,17 @@
 R_LIB_VERSION (r_reg);
 
 static const char *types[R_REG_TYPE_LAST + 1] = {
-	"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
+	"gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", NULL
 };
 
 // Take the 32bits name of a register, and return the 64 bit name of it.
 // If there is no equivalent 64 bit register return NULL.
+// SLOW
 R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32) {
-	// OMG this is shit...
 	int i, j = -1;
 	RListIter *iter;
 	RRegItem *item;
-	for (i = 0; i < R_REG_TYPE_LAST; ++i) {
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_list_foreach (reg->regset[i].regs, iter, item) {
 			if (item->size == 32 && !r_str_casecmp (rreg32, item->name)) {
 				j = item->offset;
@@ -25,7 +25,7 @@ R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32) {
 		}
 	}
 	if (j != -1) {
-		for (i = 0; i < R_REG_TYPE_LAST; ++i) {
+		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			r_list_foreach (reg->regset[i].regs, iter, item) {
 				if (item->offset == j && item->size == 64) {
 					return item->name;
@@ -38,11 +38,12 @@ R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32) {
 
 // Take the 64 bits name of a register, and return the 32 bit name of it.
 // If there is no equivalent 32 bit register return NULL.
+// SLOW
 R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64) {
 	int i, j = -1;
 	RListIter *iter;
 	RRegItem *item;
-	for (i = 0; i < R_REG_TYPE_LAST; ++i) {
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_list_foreach (reg->regset[i].regs, iter, item) {
 			if (item->size == 64 && !r_str_casecmp (rreg64, item->name)) {
 				j = item->offset;
@@ -51,7 +52,7 @@ R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64) {
 		}
 	}
 	if (j != -1) {
-		for (i = 0; i < R_REG_TYPE_LAST; ++i) {
+		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			r_list_foreach (reg->regset[i].regs, iter, item) {
 				if (item->offset == j && item->size == 32) {
 					return item->name;
@@ -67,6 +68,7 @@ R_API const char *r_reg_get_type(int idx) {
 }
 
 R_API int r_reg_type_by_name(const char *str) {
+	r_return_val_if_fail (str, -1);
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST && types[i]; i++) {
 		if (!strcmp (types[i], str)) {
@@ -86,9 +88,7 @@ R_API void r_reg_item_free(RRegItem *item) {
 }
 
 R_API int r_reg_get_name_idx(const char *type) {
-	if (!type || !*type) {
-		return -1;
-	}
+	if (type)
 	switch (*type | (type[1] << 8)) {
 	/* flags */
 	case 'Z' + ('F' << 8): return R_REG_NAME_ZF;
@@ -122,7 +122,8 @@ R_API int r_reg_get_name_idx(const char *type) {
 	return -1;
 }
 
-R_API int r_reg_set_name(RReg *reg, int role, const char *name) {
+R_API bool r_reg_set_name(RReg *reg, int role, const char *name) {
+	r_return_val_if_fail (reg && name, false);
 	if (role >= 0 && role < R_REG_NAME_LAST) {
 		reg->name[role] = r_str_dup (reg->name[role], name);
 		return true;
@@ -154,6 +155,7 @@ R_API const char *r_reg_get_role(int role) {
 }
 
 R_API void r_reg_free_internal(RReg *reg, bool init) {
+	r_return_if_fail (reg);
 	ut32 i;
 
 	r_list_free (reg->roregs);
@@ -243,7 +245,7 @@ R_API void r_reg_free(RReg *reg) {
 	}
 }
 
-R_API RReg *r_reg_new() {
+R_API RReg *r_reg_new(void) {
 	RRegArena *arena;
 	RReg *reg = R_NEW0 (RReg);
 	int i;
@@ -284,16 +286,21 @@ R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item) {
 }
 
 R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val) {
-	return r_reg_set_value (reg, r_reg_get (reg, name, -1), val);
+	r_return_val_if_fail (reg && name, UT64_MAX);
+	RRegItem *ri = r_reg_get (reg, name, -1);
+	return ri? r_reg_set_value (reg, ri, val): UT64_MAX;
 }
 
 R_API ut64 r_reg_getv(RReg *reg, const char *name) {
-	return r_reg_get_value (reg, r_reg_get (reg, name, -1));
+	r_return_val_if_fail (reg && name, UT64_MAX);
+	RRegItem *ri = r_reg_get (reg, name, -1);
+	return ri? r_reg_get_value (reg, ri): UT64_MAX;
 }
 
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	int i, e;
 	r_return_val_if_fail (reg && name, NULL);
+	//TODO: define flag register as R_REG_TYPE_FLG
 	if (type == R_REG_TYPE_FLG) {
 		type = R_REG_TYPE_GPR;
 	}
@@ -325,14 +332,29 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 }
 
 R_API RList *r_reg_get_list(RReg *reg, int type) {
+	RList *regs;
+	int i, mask;
+
 	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
 		return NULL;
 	}
-	return reg->regset[type].regs;
+
+	regs = reg->regset[type].regs;
+	if (r_list_length (regs) == 0) {
+		mask = ((int)1 << type);
+		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+			if (reg->regset[i].maskregstype & mask) {
+				regs = reg->regset[i].regs;
+			}
+		}
+	}
+
+	return regs;
 }
 
 // TODO regsize is in bits, delta in bytes, maybe we should standarize this..
 R_API RRegItem *r_reg_get_at(RReg *reg, int type, int regsize, int delta) {
+	r_return_val_if_fail (reg, NULL);
 	RList *list = r_reg_get_list (reg, type);
 	RRegItem *ri;
 	RListIter *iter;
@@ -348,28 +370,29 @@ R_API RRegItem *r_reg_get_at(RReg *reg, int type, int regsize, int delta) {
 
 /* return the next register in the current regset that differs from */
 R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen, RRegItem *prev_ri, int regsize) {
-	const int bregsize = BITS2BYTES (regsize);
+	r_return_val_if_fail (reg && buf, NULL);
 	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
 		return NULL;
 	}
 	RRegArena *arena = reg->regset[type].arena;
-	int delta = prev_ri ? prev_ri->offset + prev_ri->size : 0;
-	for (;;) {
-		if ((delta + bregsize >= arena->size) || (delta + bregsize >= buflen)) {
-			break;
-		}
-		if (memcmp (arena->bytes + delta, buf + delta, bregsize)) {
-			RRegItem *ri = r_reg_get_at (reg, type, regsize, delta);
-			if (ri) {
+	int prev_offset = prev_ri ? (prev_ri->offset / 8) + (prev_ri->size / 8) : 0;
+	RList *list = reg->regset[type].regs;
+	RRegItem *ri;
+	RListIter *iter;
+	int offset;
+	r_list_foreach (list, iter, ri) {
+		offset = ri->offset / 8;
+		if (offset > prev_offset) {
+			if (memcmp (arena->bytes + offset, buf + offset, ri->size / 8)) {
 				return ri;
 			}
 		}
-		delta += bregsize;
 	}
 	return NULL;
 }
 
 R_API RRegSet *r_reg_regset_get(RReg *r, int type) {
+	r_return_val_if_fail (r, NULL);
 	if (type < 0 || type >= R_REG_TYPE_LAST) {
 		return NULL;
 	}

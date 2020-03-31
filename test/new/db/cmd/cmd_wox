@@ -1,0 +1,222 @@
+NAME=wox le 8-bit
+FILE=-
+EXPECT=<<EOF
+c3cec7c7c4dcc4d9c7cf00000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=false
+w helloworld
+wox 0xab@!10
+p8 14
+EOF
+RUN
+
+NAME=wox le 16-bit
+FILE=-
+EXPECT=<<EOF
+a5cea1c7a2dca2d9a1cf00000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=false
+w helloworld
+wox 0xabcd@!10
+p8 14
+EOF
+RUN
+
+NAME=wox le 24-bit
+FILE=-
+EXPECT=<<EOF
+helloworld\x00\x00\x00\x00
+EOF
+CMDS=<<EOF
+e cfg.bigendian=false
+w helloworld
+wox 0xabcdef@!10
+ps 14
+EOF
+RUN
+
+NAME=wox le 32-bit
+FILE=-
+EXPECT=<<EOF
+698aa1c76e98a2d96d8b00000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=false
+w helloworld
+wox 0xabcdef01@!10
+p8 14
+EOF
+RUN
+
+NAME=wox le 40-bit
+FILE=-
+EXPECT=<<EOF
+helloworld\x00\x00\x00\x00
+EOF
+CMDS=<<EOF
+e cfg.bigendian=false
+w helloworld
+wox 0xabcdef0102@!10
+ps 14
+EOF
+RUN
+
+NAME=wox le 48-bit
+FILE=-
+EXPECT=<<EOF
+helloworld\x00\x00\x00\x00
+EOF
+CMDS=<<EOF
+e cfg.bigendian=false
+w helloworld
+wox 0xabcdef010203@!10
+ps 14
+EOF
+RUN
+
+NAME=wox le 56-bit
+FILE=-
+EXPECT=<<EOF
+helloworld\x00\x00\x00\x00
+EOF
+CMDS=<<EOF
+e cfg.bigendian=false
+w helloworld
+wox 0xabcdef01020304@!10
+ps 14
+EOF
+RUN
+
+NAME=wox le 64-bit
+FILE=-
+EXPECT=<<EOF
+6d616f6e6e98a2d9696000000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=false
+w helloworld
+wox 0xabcdef0102030405@!10
+p8 14
+EOF
+RUN
+
+NAME=wox be 8-bit
+FILE=-
+EXPECT=<<EOF
+c3cec7c7c4dcc4d9c7cf00000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=true
+w helloworld
+wox 0xab@!10
+p8 14
+EOF
+RUN
+
+NAME=wox be 16-bit
+FILE=-
+EXPECT=<<EOF
+c3a8c7a1c4bac4bfc7a900000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=true
+w helloworld
+wox 0xabcd@!10
+p8 14
+EOF
+RUN
+
+NAME=wox be 24-bit
+FILE=-
+EXPECT=<<EOF
+c3a883c7a298c4bf83cf00000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=true
+w helloworld
+wox 0xabcdef@!10
+p8 14
+EOF
+RUN
+
+NAME=wox be 32-bit
+FILE=-
+EXPECT=<<EOF
+c3a8836dc4ba8073c7a900000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=true
+w helloworld
+wox 0xabcdef01@!10
+p8 14
+EOF
+RUN
+
+NAME=wox be 40-bit
+FILE=-
+EXPECT=<<EOF
+c3a8836d6ddca29d6d6600000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=true
+w helloworld
+wox 0xabcdef0102@!10
+p8 14
+EOF
+RUN
+
+NAME=wox be 48-bit
+FILE=-
+EXPECT=<<EOF
+c3a8836d6d74c4bf836500000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=true
+w helloworld
+wox 0xabcdef010203@!10
+p8 14
+EOF
+RUN
+
+NAME=wox be 56-bit
+FILE=-
+EXPECT=<<EOF
+c3a8836d6d746bd9a18b00000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=true
+w helloworld
+wox 0xabcdef01020304@!10
+p8 14
+EOF
+RUN
+
+NAME=wox be 64-bit
+FILE=-
+EXPECT=<<EOF
+c3a8836d6d746b77c7a900000000
+EOF
+CMDS=<<EOF
+e cfg.bigendian=true
+w helloworld
+wox 0xabcdef0102030405@!10
+p8 14
+EOF
+RUN
+
+NAME=wo2 on woe
+FILE=-
+EXPECT=<<EOF
+0x00000000  0100 0302 0504 0706 0908 0b0a 0d0c 0f0e  ................
+0x00000010  1110 1312 1514 1716 1918 1b1a 1d1c 1f1e  ................
+EOF
+CMDS=<<EOF
+b 32
+woe 1
+wo2
+e hex.header=false
+px
+EOF
+RUN

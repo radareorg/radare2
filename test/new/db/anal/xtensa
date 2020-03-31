@@ -1,0 +1,28 @@
+NAME=xtensa blt
+FILE=-
+EXPECT=<<EOF
+jump: 0x00000002
+EOF
+CMDS=<<EOF
+e asm.arch=xtensa
+e asm.bits=32
+wx 3a8868037813690568237915783362650232c31072650352c5108723e437640c68037813
+ao@0x1a~jump
+EOF
+RUN
+
+NAME=xtensa stackframe
+FILE=malloc://512
+EXPECT=<<EOF
+var int32_t var_ch @ a1+0x4
+var int32_t var_8h @ a1+0x8
+var int32_t var_4h @ a1+0xc
+EOF
+CMDS=<<EOF
+e asm.arch=xtensa
+e asm.bits=32
+wx 12c1f0d91140d382c9213d0d093101f5ebc00000cd028c820c034d0d0112e4c0000008312d0cd811c82112c1100df0
+af
+afvs
+EOF
+RUN

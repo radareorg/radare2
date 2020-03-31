@@ -21,17 +21,11 @@ try to keep the codebase consistent and clean.
 * Fork the repository on GitHub.
 * Create a topic branch from master. Please avoid working directly on the ```master``` branch.
 * Make commits of logical units.
-* Check for coding style issues with ```git diff master..mybranch | ./sys/clang-format-diff.py -p1``` and be sure to follow the CODINGSTYLE (more on this in [DEVELOPERS.md](https://github.com/radare/radare2/blob/master/DEVELOPERS.md)).
+* Check for coding style issues with ```git diff master..mybranch | ./sys/clang-format-diff.py -p1``` and be sure to follow the CODINGSTYLE (more on this in [DEVELOPERS.md](https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md)).
 * Submit the Pull Request(PR) on Github.
-* When relevant, write a test for
-  [radare2-regressions](https://github.com/radare/radare2-regressions) and
-  submit a PR also there. Use the same branch name in both repositories, so
-  Travis will be able to use your new tests together with new changes.
-  AppVeyor (for now) still uses radare/radare2-regressions repo with branch
-  master. NOTE: when merging PRs, *always* merge the radare2-regressions PR
-  first.
+* When relevant, write a test in [test/](test).
 
 # Additional resources
 
-* [README.md](https://github.com/radare/radare2/blob/master/README.md)
-* [DEVELOPERS.md](https://github.com/radare/radare2/blob/master/DEVELOPERS.md)
+* [README.md](https://github.com/radareorg/radare2/blob/master/README.md)
+* [DEVELOPERS.md](https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md)

@@ -257,12 +257,14 @@ void r_bin_dydlcache_get_libname(struct r_bin_dyldcache_lib_t *lib, char **libna
 
 struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file) {
 	struct r_bin_dyldcache_obj_t *bin;
-	ut8 *buf;
 	if (!(bin = R_NEW0 (struct r_bin_dyldcache_obj_t))) {
 		return NULL;
 	}
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) {
+	size_t binsz;
+	ut8 *buf = (ut8 *)r_file_slurp (file, &binsz);
+	bin->size = binsz;
+	if (!buf) {
 		return r_bin_dyldcache_free (bin);
 	}
 	bin->b = r_buf_new ();

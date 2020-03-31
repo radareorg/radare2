@@ -1,0 +1,50 @@
+NAME=p8 2 @x:9090
+FILE=malloc://1024
+EXPECT=<<EOF
+9090
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+p8 2 @x:9090
+EOF
+RUN
+
+NAME=p8 8 @x:9090
+FILE=malloc://1024
+EXPECT=<<EOF
+9090000000000000
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+p8 8 @x:9090
+EOF
+RUN
+
+NAME=pi 2 @x:9090
+FILE=malloc://1024
+EXPECT=<<EOF
+nop
+nop
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+pi 2 @x:9090
+EOF
+RUN
+
+NAME=pi 3 @x:9090
+FILE=malloc://1024
+EXPECT=<<EOF
+nop
+nop
+add byte [rax], al
+EOF
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+pi 3 @x:9090
+EOF
+RUN

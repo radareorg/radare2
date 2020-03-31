@@ -1,0 +1,41 @@
+.Dd Dec 29, 2019
+.Dt R2R 1
+.Sh NAME
+.Nm r2r
+.Nd radare regression testsuite
+.Sh SYNOPSIS
+.Nm r2r
+.Op Fl n
+.Op Fl h
+.Op Fl v
+.Op Fl q
+.Op Fl i
+.Op Fl d Ar dbpath
+.Op Fl r Ar r2path
+.Op Fl j Ar jobs
+.Op Fl t Ar timeout
+.Op [keyword]
+.Sh DESCRIPTION
+Run all the radare2-regressions tests matching a specific word in the name.
+.Pp
+TODO: this manpage is work-in-progress
+.Pp
+You need radare2 to be available in $PATH.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl n
+Do not run any test, just parse them
+.El
+.Sh USAGE
+.Pp
+Use the -n flag to dont run any test. Just load them.
+.Pp
+  $ r2r -n
+  [r2r] Loading tests...
+.Pp
+.Sh SEE ALSO
+.Pp
+.Xr radare2(1) ,
+.Sh AUTHORS
+.Pp
+Written by pancake <pancake@nopcode.org>.

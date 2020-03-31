@@ -14,7 +14,7 @@ R_API void r_bin_mem_free(void *data) {
 	free (mem);
 }
 
-static int reloc_cmp(const void *a, const RBNode *b) {
+static int reloc_cmp(const void *a, const RBNode *b, void *user) {
 	const RBinReloc *ar = (const RBinReloc *)a;
 	const RBinReloc *br = container_of (b, const RBinReloc, vrb);
 	if (ar->vaddr > br->vaddr) {
@@ -26,7 +26,7 @@ static int reloc_cmp(const void *a, const RBNode *b) {
 	return 0;
 }
 
-static void reloc_free(RBNode *rbn) {
+static void reloc_free(RBNode *rbn, void *user) {
 	free (container_of (rbn, RBinReloc, vrb));
 }
 
@@ -38,7 +38,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->fields);
 	r_list_free (o->imports);
 	r_list_free (o->libs);
-	r_rbtree_free (o->relocs, reloc_free);
+	r_rbtree_free (o->relocs, reloc_free, NULL);
 	r_list_free (o->sections);
 	r_list_free (o->strings);
 	ht_up_free (o->strings_db);
@@ -108,7 +108,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 			char *fn = swiftField (dn, cn);
 			if (fn) {
 				// eprintf ("FIELD %s  %s\n", cn, fn);
-				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL);
+				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL, false);
 				r_list_append (c->fields, f);
 				free (fn);
 			} else {
@@ -241,9 +241,30 @@ static RBNode *list2rbtree(RList *relocs) {
 	RBNode *res = NULL;
 
 	r_list_foreach (relocs, it, reloc) {
-		r_rbtree_insert (&res, reloc, &reloc->vrb, reloc_cmp);
+		r_rbtree_insert (&res, reloc, &reloc->vrb, reloc_cmp, NULL);
 	}
 	return res;
+}
+
+static void r_bin_object_rebuild_classes_ht(RBinObject *o) {
+	ht_pp_free (o->classes_ht);
+	ht_pp_free (o->methods_ht);
+	o->classes_ht = ht_pp_new0 ();
+	o->methods_ht = ht_pp_new0 ();
+
+	RListIter *it, *it2;
+	RBinClass *klass;
+	RBinSymbol *method;
+	r_list_foreach (o->classes, it, klass) {
+		if (klass->name) {
+			ht_pp_insert (o->classes_ht, klass->name, klass);
+
+			r_list_foreach (klass->methods, it2, method) {
+				const char *name = sdb_fmt ("%s::%s", klass->name, method->name);
+				ht_pp_insert (o->methods_ht, name, method);
+			}
+		}
+	}
 }
 
 R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
@@ -355,6 +376,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 				// XXX we should probably merge them instead
 				r_list_free (o->classes);
 				o->classes = classes;
+				r_bin_object_rebuild_classes_ht (o);
 			}
 			isSwift = r_bin_lang_swift (bf);
 			if (isSwift) {
@@ -420,7 +442,7 @@ R_IPI RBNode *r_bin_object_patch_relocs(RBin *bin, RBinObject *o) {
 		if (!tmp) {
 			return o->relocs;
 		}
-		r_rbtree_free (o->relocs, reloc_free);
+		r_rbtree_free (o->relocs, reloc_free, NULL);
 		REBASE_PADDR (o, tmp, RBinReloc);
 		o->relocs = list2rbtree (tmp);
 		first = false;
@@ -435,22 +457,16 @@ R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
 
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch, int bits, const char *name) {
 	r_return_val_if_fail (bf && arch && name, NULL);
-	if (!bf->o) {
-		return NULL;
-	}
-	RBinInfo *info = bf->o->info;
-	if (info && info->arch && info->file &&
-			(bits == info->bits) &&
-			!strcmp (info->arch, arch) &&
-			!strcmp (info->file, name)) {
-		return bf->o;
+	if (bf->o) {
+		RBinInfo *info = bf->o->info;
+		if (info && info->arch && info->file &&
+				(bits == info->bits) &&
+				!strcmp (info->arch, arch) &&
+				!strcmp (info->file, name)) {
+			return bf->o;
+		}
 	}
 	return NULL;
-}
-
-R_IPI ut64 r_bin_object_get_baddr(RBinObject *o) {
-	r_return_val_if_fail (o, UT64_MAX);
-	return o->baddr; //  + o->baddr_shift;
 }
 
 R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
@@ -471,7 +487,7 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
 }
 
 R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
-	r_return_if_fail (bo);
+	r_return_if_fail (bo && bo->strings);
 
 	RList *strings = bo->strings;
 	RBinString *ptr;

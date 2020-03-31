@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2019 - pancake */
+/* radare2 - LGPL - Copyright 2009-2020 - pancake */
 
 #include "r_anal.h"
 #include "r_bin.h"
@@ -12,45 +12,46 @@ static const char *help_msg_C[] = {
 	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
 	"C", "", "list meta info in human friendly form",
 	"C*", "", "list meta info in r2 commands",
-	"C.", "", "list meta info of current offset in human friendly form",
 	"C*.", "", "list meta info of current offset in r2 commands",
-	"C[Cthsdmf]", "", "list comments/types/hidden/strings/data/magic/formatted in human friendly form",
-	"C[Cthsdmf]*", "", "list comments/types/hidden/strings/data/magic/formatted in r2 commands",
 	"C-", " [len] [[@]addr]", "delete metadata at given address range",
-	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
-	"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
+	"C.", "", "list meta info of current offset in human friendly form",
+	"CC!", " [@addr]", "edit comment with $EDITOR",
 	"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
 	"CC.", "[addr]", "show comment in current address",
-	"CC!", " [@addr]", "edit comment with $EDITOR",
 	"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
 	"CCu", " [comment-text] [@addr]", "add unique comment",
-	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
-	"Ct.", "[@addr]", "show comment at current or specified address",
-	"Cv", "[bsr][?]", "add comments to args",
-	"Cs", "[?] [-] [size] [@addr]", "add string",
-	"Cz", "[@addr]", "add string (see Cs?)",
-	"Ch", "[-] [size] [@addr]", "hide data",
+	"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
+	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
+	"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
+	"C[Cthsdmf]", "", "list comments/types/hidden/strings/data/magic/formatted in human friendly form",
+	"C[Cthsdmf]*", "", "list comments/types/hidden/strings/data/magic/formatted in r2 commands",
 	"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
 	"Cd.", " [@addr]", "show size of data at current address",
 	"Cf", "[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]", "format memory (see pf?)",
-	"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
+	"Ch", "[-] [size] [@addr]", "hide data",
 	"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
+	"Cs", "[?] [-] [size] [@addr]", "add string",
+	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
+	"Ct.", "[@addr]", "show comment at current or specified address",
+	"Cv", "[bsr][?]", "add comments to args",
+	"Cz", "[@addr]", "add string (see Cs?)",
 	NULL
 };
 
 static const char *help_msg_CC[] = {
 	"Usage:", "CC[-+!*au] [base64:..|str] @ addr", "",
+	"CC!", "", "edit comment using cfg.editor (vim, ..)",
+	"CC", " [text]", "append comment at current address",
 	"CC", "", "list all comments in human friendly form",
 	"CC*", "", "list all comments in r2 commands",
-	"CC.", "", "show comment at current offset",
-	"CC,", " [file]", "show or set comment file",
-	"CC", " [text]", "append comment at current address",
-	"CCf", "", "list comments in function",
 	"CC+", " [text]", "append comment at current address",
-	"CC!", "", "edit comment using cfg.editor (vim, ..)",
+	"CC,", " [file]", "show or set comment file",
 	"CC-", " @ cmt_addr", "remove comment at given address",
-	"CCu", " good boy @ addr", "add good boy comment at given address",
+	"CC.", "", "show comment at current offset",
+	"CCf", "", "list comments in function",
+	"CCf-", "", "delete all comments in current function",
 	"CCu", " base64:AA== @ addr", "add comment in base64",
+	"CCu", " good boy @ addr", "add good boy comment at given address",
 	NULL
 };
 
@@ -81,17 +82,17 @@ static const char *help_msg_Cs[] = {
 	"Usage:", "Cs[ga-*.] [size] [@addr]", "",
 	"NOTE:", " size", "1 unit in bytes == width in bytes of smallest possible char in encoding,",
 	"", "", "  so ascii/latin1/utf8 = 1, utf16le = 2",
+	" Cz", " [size] [@addr]", "ditto",
+	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
 	"Cs", "", "list all strings in human friendly form",
 	"Cs*", "", "list all strings in r2 commands",
-	"Cs", " [size] @addr", "add string (guess latin1/utf16le)",
-	"Csg", " [size] [@addr]", "as above but addr not needed",
-	" Cz", " [size] [@addr]", "ditto",
-	"Csa", " [size] [@addr]", "add ascii/latin1 string",
-	"Cs8", " [size] [@addr]", "add utf8 string",
 	"Cs-", " [@addr]", "remove string",
 	"Cs.", "", "show string at current address",
-	"Cs.j", "", "show string at current address in JSON",
 	"Cs..", "", "show string + info about it at current address",
+	"Cs.j", "", "show string at current address in JSON",
+	"Cs8", " [size] [@addr]", "add utf8 string",
+	"Csa", " [size] [@addr]", "add ascii/latin1 string",
+	"Csg", " [size] [@addr]", "as above but addr not needed",
 	NULL
 };
 
@@ -121,13 +122,13 @@ static const char *help_msg_Cvr[] = {
 
 static const char *help_msg_Cvs[] = {
 	"Usage:", "Cvs", "[name] [comment]",
-	"Cvs?", "", "show this help",
+	"Cvs!", "[name]", "edit comment using cfg editor",
 	"Cvs", "", "list all stack based args/vars comments in human friendly format",
+	"Cvs", "[name] [comment]", "add/append comment for the variable",
+	"Cvs", "[name]", "Show comments for stack pointer var/arg with that name",
 	"Cvs*", "", "list all stack based args/vars comments in r2 format",
 	"Cvs-", "[name]", "delete comments for stack pointer var/arg with that name",
-	"Cvs", "[name]", "Show comments for stack pointer var/arg with that name",
-	"Cvs", "[name] [comment]", "add/append comment for the variable",
-	"Cvs!", "[name]", "edit comment using cfg editor",
+	"Cvs?", "", "show this help",
 	NULL
 };
 
@@ -177,6 +178,7 @@ static bool print_meta_offset(RCore *core, ut64 addr) {
 	return ret;
 }
 
+#if 0
 static int remove_meta_fileline(RCore *core, const char *file_line) {
 	return sdb_unset (core->bin->cur->sdb_addrinfo, file_line, 0);
 }
@@ -190,6 +192,7 @@ static int print_meta_fileline(RCore *core, const char *file_line) {
 	}
 	return 0;
 }
+#endif
 
 static ut64 filter_offset = UT64_MAX;
 static int filter_format = 0;
@@ -263,7 +266,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		offset = core->offset;
 	}
 	if (*p == ' ') {
-		p = r_str_trim_ro (p + 1);
+		p = r_str_trim_head_ro (p + 1);
 		char *arg = strchr (p, ' ');
 		if (!arg) {
 			offset = r_num_math (core->num, p);
@@ -287,7 +290,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		return 0;
 	}
 
-	p = r_str_trim_ro (p);
+	p = r_str_trim_head_ro (p);
 	char *myp = strdup (p);
 	char *sp = strchr (myp, ' ');
 	if (sp) {
@@ -388,6 +391,26 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case 'f': // "CCf"
 		switch (input[2]) {
+		case '-': // "CCf-"
+			{
+				ut64 arg = r_num_math (core->num, input + 2);
+				if (!arg) {
+					arg = core->offset;
+				}
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, arg, 0);
+				if (fcn) {
+					RAnalBlock *bb;
+					RListIter *iter;
+					r_list_foreach (fcn->bbs, iter, bb) {
+						int i;
+						for (i = 0; i < bb->size; i++) {
+							ut64 addr = bb->addr + i;
+							r_meta_del (core->anal, R_META_TYPE_COMMENT, addr, 1);
+						}
+					}
+				}
+			}
+			break;
 		case 'j': // "CCfj"
 			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'j', core->offset);
 			break;
@@ -421,7 +444,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '+':
 	case ' ':
 		{
-		const char* newcomment = r_str_trim_ro (input + 2);
+		const char* newcomment = r_str_trim_head_ro (input + 2);
 		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
@@ -443,13 +466,20 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		free (nc);
 		}
 		break;
-	case '*':
+	case '*': // "CC*"
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 1);
 		break;
 	case '-': // "CC-"
-		r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1);
+		if (input[2] == '*') { // "CC-*"
+			r_meta_del (core->anal, R_META_TYPE_COMMENT, UT64_MAX, UT64_MAX);
+		} else if (input[2]) { // "CC-$$+32"
+			ut64 arg = r_num_math (core->num, input + 2);
+			r_meta_del (core->anal, R_META_TYPE_COMMENT, arg, 1);
+		} else { // "CC-"
+			r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1);
+		}
 		break;
-	case 'u':
+	case 'u': // "CCu"
 		//
 		{
 		char *newcomment;
@@ -477,7 +507,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		}
 		}
 		break;
-	case 'a':
+	case 'a': // "CCa"
 		{
 		char *s, *p;
 		s = strchr (input, ' ');
@@ -532,7 +562,6 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		return true;
 		}
 	}
-
 	return true;
 }
 
@@ -547,7 +576,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		break;
 	case ' ': // "Ct <vartype comment> @ addr"
 		{
-		const char* newcomment = r_str_trim_ro (input + 2);
+		const char* newcomment = r_str_trim_head_ro (input + 2);
 		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
@@ -600,7 +629,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '?':
 		switch (input[0]) {
-		case 'f':
+		case 'f': // "Cf?"
 			r_cons_println(
 				"Usage: Cf[-] [sz] [fmt..] [@addr]\n\n"
 				"'sz' indicates the byte size taken up by struct.\n"
@@ -610,7 +639,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				"to show the fields you know about (perhaps using 'skip' fields), and 'sz'\n"
 				"to match the total struct size in mem.\n");
 			break;
-		case 's':
+		case 's': // "Cs?"
 			r_core_cmd_help (core, help_msg_Cs);
 			break;
 		default:
@@ -618,9 +647,9 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case '-':
+	case '-': // "Cf-", "Cd-", ...
 		switch (input[2]) {
-		case '*':
+		case '*': // "Cf-*", "Cd-*", ...
 			core->num->value = r_meta_del (core->anal,
 					input[0], 0, UT64_MAX);
 			break;
@@ -648,13 +677,13 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case '*':
+	case '*': // "Cf*", "Cd*", ...
 		r_meta_list (core->anal, input[0], 1);
 		break;
-	case 'j':
+	case 'j': // "Cfj", "Cdj", ...
 		r_meta_list (core->anal, input[0], 'j');
 		break;
-	case '!':
+	case '!': // "Cf!", "Cd!", ...
 		{
 			char *out, *comment = r_meta_get_string (
 					core->anal, R_META_TYPE_COMMENT, addr);
@@ -669,18 +698,20 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			free (comment);
 		}
 		break;
-	case '.':
+	case '.': // "Cf.", "Cd.", ...
 		if (input[2] == '.') { // "Cs.."
 			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
 			if (mi) {
-				r_meta_print (core->anal, mi, input[3], false);
+				r_meta_print (core->anal, mi, input[3], NULL, false);
+				r_meta_item_free (mi);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
 			RAnalMetaItem *mi = r_meta_find (core->anal, addr, type, R_META_WHERE_HERE);
 			if (mi) {
-				r_meta_print (core->anal, mi, input[2], false);
+				r_meta_print (core->anal, mi, input[2], NULL, false);
 				r_cons_newline ();
+				r_meta_item_free (mi);
 			}
 			break;
 		}
@@ -724,7 +755,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		}
 		free (mi.str);
 		break;
-	case ' ':
+	case ' ': // "Cf", "Cd", ...
 	case '\0':
 	case 'g':
 	case 'a':
@@ -754,7 +785,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		}
 		while (repcnt < repeat) {
 			int off = (!input[1] || input[1] == ' ') ? 1 : 2;
-			t = strdup (r_str_trim_ro (input + off));
+			t = strdup (r_str_trim_head_ro (input + off));
 			p = NULL;
 			n = 0;
 			strncpy (name, t, sizeof (name) - 1);
@@ -763,9 +794,18 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				if (type == 'f') { // "Cf"
 					p = strchr (t, ' ');
 					if (p) {
-						p = (char *)r_str_trim_ro (p);
+						p = (char *)r_str_trim_head_ro (p);
+						if (*p == '.') {
+							const char *realformat = r_print_format_byname (core->print, p + 1);
+							if (realformat) {
+								p = (char *)realformat;
+							} else {
+								eprintf ("Cannot resolve format '%s'\n", p + 1);
+								break;
+							}
+						}
 						if (n < 1) {
-							n = r_print_format_struct_size (p, core->print, 0, 0);
+							n = r_print_format_struct_size (core->print, p, 0, 0);
 							if (n < 1) {
 								eprintf ("Warning: Cannot resolve struct size for '%s'\n", p);
 								n = 32; //
@@ -784,7 +824,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						eprintf ("Usage: Cf [size] [pf-format-string]\n");
 						break;
 					}
-				} else if (type == 's') { //Cs
+				} else if (type == 's') { // "Cs"
 					char tmp[256] = R_EMPTY;
 					int i, j, name_len = 0;
 					if (input[1] == 'a' || input[1] == '8') {
@@ -828,7 +868,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					p = strchr (t, ' ');
 					if (p) {
 						*p++ = '\0';
-						p = (char *)r_str_trim_ro (p);
+						p = (char *)r_str_trim_head_ro (p);
 						strncpy (name, p, sizeof (name)-1);
 					} else {
 						if (type != 's') {
@@ -930,7 +970,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		break;
 	case ' ': { // "Cv "
 		// TODO check that idx exist
-		char *comment = strstr (name, " ");
+		char *comment = strchr (name, ' ');
 		if (comment) { // new comment given
 			if (*comment) {
 				*comment++ = 0;

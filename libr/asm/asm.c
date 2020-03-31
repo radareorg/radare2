@@ -155,14 +155,18 @@ static inline int r_asm_pseudo_fill(RAsmOp *op, char *input) {
 }
 
 static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
-	int bytes_read = 0;
+	size_t bytes_read = 0;
 	r_str_replace_char (input, ',', ' ');
 	// int len = r_str_word_count (input);
 	r_str_word_set0 (input);
 	//const char *filename = r_str_word_get0 (input, 0);
-	int skip = (int)r_num_math (NULL, r_str_word_get0 (input, 1));
-	int count = (int)r_num_math (NULL,r_str_word_get0 (input, 2));
+	size_t skip = (size_t)r_num_math (NULL, r_str_word_get0 (input, 1));
+	size_t count = (size_t)r_num_math (NULL,r_str_word_get0 (input, 2));
 	char *content = r_file_slurp (input, &bytes_read);
+	if (!content) {
+		eprintf ("Could not open '%s'.\n", input);
+		return -1;
+	}
 	if (skip > 0) {
 		skip = skip > bytes_read ? bytes_read : skip;
 	}
@@ -332,9 +336,9 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 					r_asm_set_cpu (a, NULL);
 					sdb_free (a->pair);
 					a->pair = sdb_new (NULL, file, 0);
-					free (r2prefix);
 					free (file);
 				}
+				free (r2prefix);
 			}
 			a->cur = h;
 			return true;
@@ -405,7 +409,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	return true;
 }
 
-static bool isInvalid (RAsmOp *op) {
+static bool __isInvalid (RAsmOp *op) {
 	const char *buf_asm = r_strbuf_get (&op->buf_asm);
 	return (buf_asm && *buf_asm && !strcmp (buf_asm, "invalid"));
 }
@@ -455,7 +459,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 
-	if (op->size < 1 || isInvalid (op)) {
+	if (op->size < 1 || __isInvalid (op)) {
 		if (a->invhex) {
 			if (a->bits == 16) {
 				ut16 b = r_read_le16 (buf);
@@ -662,22 +666,12 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr
 	return ret;
 }
 
-R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
-	char *f = r_file_slurp (file, NULL);
-	if (f) {
-		RAsmCode *ac = r_asm_massemble (a, f);
-		free (f);
-		return ac;
-	}
-	return NULL;
-}
-
-static void flag_free_kv(HtPPKv *kv) {
+static void __flag_free_kv(HtPPKv *kv) {
 	free (kv->key);
 	free (kv->value);
 }
 
-static void *dup_val(const void *v) {
+static void *__dup_val(const void *v) {
 	return (void *)strdup ((char *)v);
 }
 
@@ -690,7 +684,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 	ut64 off, pc;
 
 	char *buf_token = NULL;
-	int tokens_size = 32;
+	size_t tokens_size = 32;
 	char **tokens = calloc (sizeof (char*), tokens_size);
 	if (!tokens) {
 		return NULL;
@@ -700,7 +694,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 		return NULL;
 	}
 	ht_pp_free (a->flags);
-	if (!(a->flags = ht_pp_new (dup_val, flag_free_kv, NULL))) {
+	if (!(a->flags = ht_pp_new (__dup_val, __flag_free_kv, NULL))) {
 		free (tokens);
 		return NULL;
 	}
@@ -763,15 +757,22 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			((ptr = strchr (tokens[ctr], ';')) ||
 			(ptr = strchr (tokens[ctr], '\n')) ||
 			(ptr = strchr (tokens[ctr], '\r')));) {
-		ctr++;
-		if (ctr >= tokens_size) {
-			const int new_tokens_size = tokens_size * 2;
-			char **new_tokens = realloc (tokens, new_tokens_size);
-			if (new_tokens) {
-				tokens_size = new_tokens_size;
-				tokens = new_tokens;
+		if (ctr + 1 >= tokens_size) {
+			const size_t new_tokens_size = tokens_size * 2;
+			if (sizeof (char*) * new_tokens_size <= sizeof (char*) * tokens_size) {
+				// overflow
+				eprintf ("Too many tokens\n");
+				goto fail;
 			}
+			char **new_tokens = realloc (tokens, sizeof (char*) * new_tokens_size);
+			if (!new_tokens) {
+				eprintf ("Too many tokens\n");
+				goto fail;
+			}
+			tokens_size = new_tokens_size;
+			tokens = new_tokens;
 		}
+		ctr++;
 		*ptr = '\0';
 		tokens[ctr] = ptr + 1;
 	}
@@ -815,9 +816,29 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				}
 				continue;
 			}
-			ptr = strchr (ptr_start, '#'); /* Comments */
-			if (ptr && !R_BETWEEN ('0', ptr[1], '9') && ptr[1] != '-') {
-				*ptr = '\0';
+			/* Comments */ {
+				bool likely_comment = true;
+				char*cptr = strchr (ptr_start, ',');
+				ptr = strchr (ptr_start, '#');
+				// a comma is probably not followed by a comment
+				// 8051 often uses #symbol notation as 2nd arg
+				if (cptr && ptr && cptr < ptr) {
+					likely_comment = false;
+					for (cptr += 1; cptr < ptr ; cptr += 1) {
+						if ( ! isspace ( *cptr)) {
+							likely_comment = true;
+							break;
+						}
+					}
+				}
+				// # followed by number literal also
+				// isn't likely to be a comment
+				likely_comment = likely_comment && ptr
+					&& !R_BETWEEN ('0', ptr[1], '9')
+					&& ptr[1] != '-' ;
+				if (likely_comment) {
+					*ptr = '\0';
+				}
 			}
 			r_asm_set_pc (a, a->pc + ret);
 			off = a->pc;
@@ -956,18 +977,14 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 					ret = r_asm_pseudo_incbin (&op, ptr + 8);
 				} else {
 					eprintf ("Unknown directive (%s)\n", ptr);
-					free (tokens);
-					free(lbuf);
-					return r_asm_code_free (acode);
+					goto fail;
 				}
 				if (!ret) {
 					continue;
 				}
 				if (ret < 0) {
 					eprintf ("!!! Oops (%s)\n", ptr);
-					free (tokens);
-					free (lbuf);
-					return r_asm_code_free (acode);
+					goto fail;
 				}
 			} else { /* Instruction */
 				char *str = ptr_start;
@@ -992,16 +1009,12 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			if (stage == STAGES - 1) {
 				if (ret < 1) {
 					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
-					free (lbuf);
-					free (tokens);
-					return r_asm_code_free (acode);
+					goto fail;
 				}
 				acode->len = idx + ret;
 				char *newbuf = realloc (acode->bytes, (idx + ret) * 2);
 				if (!newbuf) {
-					free (lbuf);
-					free (tokens);
-					return r_asm_code_free (acode);
+					goto fail;
 				}
 				acode->bytes = (ut8*)newbuf;
 				memcpy (acode->bytes + idx, r_strbuf_get (&op.buf), r_strbuf_length (&op.buf));
@@ -1020,6 +1033,10 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 	free (lbuf);
 	free (tokens);
 	return acode;
+fail:
+	free (lbuf);
+	free (tokens);
+	return r_asm_code_free (acode);
 }
 
 R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val) {

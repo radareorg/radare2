@@ -76,6 +76,10 @@ typedef struct r_cmd_t {
 	RList *lcmds;
 	RList *plist;
 	RCmdAlias aliases;
+#if USE_TREESITTER
+	void *language; // used to store TSLanguage *
+	HtUP *ts_symbols_ht;
+#endif
 } RCmd;
 
 // TODO WIP
@@ -87,6 +91,7 @@ typedef struct r_cmd_descriptor_t {
 	struct r_cmd_descriptor_t *sub[127];
 } RCmdDescriptor;
 
+// TODO: move into r_core.h
 typedef struct r_core_plugin_t {
 	const char *name;
 	const char *desc;
@@ -116,7 +121,7 @@ R_API int r_cmd_call_long(RCmd *cmd, const char *input);
 R_API char **r_cmd_args(RCmd *cmd, int *argc);
 
 /* r_cmd_macro */
-R_API RCmdMacroItem *r_cmd_macro_item_new();
+R_API RCmdMacroItem *r_cmd_macro_item_new(void);
 R_API void r_cmd_macro_item_free(RCmdMacroItem *item);
 R_API void r_cmd_macro_init(RCmdMacro *mac);
 R_API int r_cmd_macro_add(RCmdMacro *mac, const char *name);

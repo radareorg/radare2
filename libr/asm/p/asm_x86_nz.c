@@ -624,6 +624,28 @@ static int opxor(RAsm *a, ut8 * data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x30);
 }
 
+static int opneg(RAsm *a, ut8 * data, const Opcode *op) {
+    is_valid_registers (op);
+    int l = 0;
+
+    if (op->operands[0].type & OT_GPREG) {
+        if (op->operands[0].type & OT_WORD) {
+            data[l++] = 0x66;
+        } else if (op->operands[0].type & OT_QWORD)  {
+            data[l++] = 0x48;
+        }
+
+        if (op->operands[0].type & OT_BYTE) {
+            data[l++] = 0xf6;
+        } else {
+            data[l++] = 0xf7;
+        }
+        data[l++] = 0xd8 | op->operands[0].reg;
+        return l;
+    }
+    return -1;
+}
+
 static int opnot(RAsm *a, ut8 * data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
@@ -1554,6 +1576,9 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 						data[l] = 0x60;
 					}
 					data[l++] |= op->operands[0].regs[0];
+					if (op->operands[0].regs[0] == X86R_ESP) {
+						data[l++] = 0x24;
+					}
 					data[l++] = offset;
 					if (op->operands[0].offset >= 0x80) {
 						data[l++] = offset >> 8;
@@ -2097,8 +2122,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 		offset = op->operands[1].offset * op->operands[1].offset_sign;
 		if (op->operands[0].reg == X86R_EAX && op->operands[1].regs[0] == X86R_UNDEFINED) {
-			if (a->bits == 64) {
+			if (op->operands[0].type & OT_QWORD) {
 				data[l++] = 0x48;
+			} else if (op->operands[0].type & OT_WORD && a->bits != 16) {
+				data[l++] = 0x66;
 			}
 			if (op->operands[0].type & OT_BYTE) {
 				data[l++] = 0xa0;
@@ -2107,13 +2134,15 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 			data[l++] = offset;
 			data[l++] = offset >> 8;
-			data[l++] = offset >> 16;
-			data[l++] = offset >> 24;
-			if (a->bits == 64) {
-				data[l++] = offset >> 32;
-				data[l++] = offset >> 40;
-				data[l++] = offset >> 48;
-				data[l++] = offset >> 54;
+			if (a->bits >= 32) {
+				data[l++] = offset >> 16;
+				data[l++] = offset >> 24;
+				if (a->bits == 64) {
+					data[l++] = offset >> 32;
+					data[l++] = offset >> 40;
+					data[l++] = offset >> 48;
+					data[l++] = offset >> 56;
+				}
 			}
 			return l;
 		}
@@ -2217,11 +2246,8 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				if (op->operands[1].regs[0] == X86R_RIP) {
 					data[l++] = 0x5;
 				} else {
-					if (op->operands[1].offset > 127) {
-						data[l++] = 0x80 | op->operands[0].reg << 3 | op->operands[1].regs[0];
-					} else {
-						data[l++] = 0x40 | op->operands[1].regs[0];
-					}
+					const ut8 pfx = (op->operands[1].offset > 127)? 0x80: 0x40;
+					data[l++] = pfx | op->operands[0].reg << 3 | op->operands[1].regs[0];
 				}
 				if (op->operands[1].offset > 127) {
 					mod = 0x1;
@@ -2360,6 +2386,10 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 				data[l++] = 0x41;
 			}
 			ut8 base = 0x50;
+			if (op->operands[0].reg == X86R_RIP) {
+				eprintf ("Invalid register\n");
+				return -1;
+			}
 			data[l++] = base + op->operands[0].reg;
 		}
 	} else if (op->operands[0].type & OT_MEMORY) {
@@ -2572,36 +2602,42 @@ static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 		return -1;
 	}
 	if (a->bits == 64) {
-		if (op->operands[0].type & OT_MEMORY ||
-			op->operands[1].type & OT_MEMORY) {
+		if (op->operands[0].type & OT_MEMORY &&
+			op->operands[0].reg_size & OT_DWORD) {
 			data[l++] = 0x67;
 		}
-		if (op->operands[0].type & OT_QWORD &&
-			op->operands[1].type & OT_QWORD) {
+		if (op->operands[0].type & OT_QWORD) {
 			if (op->operands[0].extended &&
-			    op->operands[1].extended) {
-					data[l++] = 0x4d;
-				} else {
-					data[l++] = 0x48;
-				}
+				op->operands[1].extended) {
+				data[l++] = 0x4d;
+			} else {
+				data[l++] = 0x48;
+			}
 		}
 	}
 
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (op->operands[0].type & OT_BYTE) {
 			data[l++] = 0xf6;
-			data[l++] = op->operands[0].regs[0];
-			data[l++] = op->operands[1].immediate;
-			return l;
+		} else {
+			if (op->operands[0].type & OT_WORD && a->bits != 16) {
+				data[l++] = 0x66;
+			}
+			data[l++] = 0xf7;
 		}
-		data[l++] = 0xf7;
 		if (op->operands[0].type & OT_MEMORY) {
-			data[l++] = 0x00 | op->operands[0].regs[0];
+			data[l++] = 0x00 | op->operands[0].reg;
 		} else {
 			data[l++] = 0xc0 | op->operands[0].reg;
 		}
 		data[l++] = op->operands[1].immediate >> 0;
+		if (op->operands[0].type & OT_BYTE) {
+			return l;
+		}
 		data[l++] = op->operands[1].immediate >> 8;
+		if (op->operands[0].type & OT_WORD) {
+			return l;
+		}
 		data[l++] = op->operands[1].immediate >> 16;
 		data[l++] = op->operands[1].immediate >> 24;
 		return l;
@@ -4282,7 +4318,7 @@ LookupTable oplookup[] = {
 	{"jpo", 0, &opjc, 0},
 	{"js", 0, &opjc, 0},
 	{"jz", 0, &opjc, 0},
-	{"lahf", 0, NULL, 0x9f},
+	{"lahf", 0, NULL, 0x9f, 1},
 	{"lea", 0, &oplea, 0},
 	{"leave", 0, NULL, 0xc9, 1},
 	{"les", 0, &oples, 0},
@@ -4305,6 +4341,7 @@ LookupTable oplookup[] = {
 	{"movsx", 0, &opmovx, 0},
 	{"mul", 0, &opmul, 0},
 	{"mwait", 0, NULL, 0x0f01c9, 3},
+	{"neg", 0, &opneg, 0},
 	{"nop", 0, NULL, 0x90, 1},
 	{"not", 0, &opnot, 0},
 	{"or", 0, &opor, 0},
@@ -4515,15 +4552,15 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 			}
 		}
 	}
-	if (length == 2 && (token[1] == 'l' || token[1] == 'h')) {
-		for (i = 0; regs8[i]; i++) {
-			if (!r_str_ncasecmp (regs8[i], token, length)) {
-				*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
-				return i;
+	if (length == 2) {
+		if (token[1] == 'l' || token[1] == 'h') {
+			for (i = 0; regs8[i]; i++) {
+				if (!r_str_ncasecmp (regs8[i], token, length)) {
+					*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
+					return i;
+				}
 			}
 		}
-	}
-	if (length == 2) {
 		for (i = 0; regs16[i]; i++) {
 			if (!r_str_ncasecmp (regs16[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_WORD;
@@ -4563,58 +4600,47 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 			}
 		}
 	}
-
 	// Extended registers
 	if (!r_str_ncasecmp ("st", token, 2)) {
 		*type = (OT_FPUREG & ~OT_REGALL);
-		*pos = 3;
+		*pos = 2;
 	}
 	if (!r_str_ncasecmp ("mm", token, 2)) {
 		*type = (OT_MMXREG & ~OT_REGALL);
-		*pos = 3;
+		*pos = 2;
 	}
 	if (!r_str_ncasecmp ("xmm", token, 3)) {
 		*type = (OT_XMMREG & ~OT_REGALL);
-		*pos = 4;
+		*pos = 3;
 	}
-
 	// Now read number, possibly with parentheses
 	if (*type & (OT_FPUREG | OT_MMXREG | OT_XMMREG) & ~OT_REGALL) {
 		Register reg = X86R_UNDEFINED;
-
 		// pass by '(',if there is one
-		if (getToken (str, pos, &nextpos) == TT_SPECIAL && str[*pos] == '(') {
+		if (getToken (token, pos, &nextpos) == TT_SPECIAL && token[*pos] == '(') {
 			*pos = nextpos;
 		}
-
 		// read number
 		// const int maxreg = (a->bits == 64) ? 15 : 7;
-		if (getToken (str, pos, &nextpos) != TT_NUMBER ||
-				(reg = getnum (a, str + *pos)) > 7) {
-			if ((int)reg > 15) {
-				eprintf ("Too large register index!\n");
-				return X86R_UNDEFINED;
-			} else {
-				reg -= 8;
-			}
+		if (getToken (token, pos, &nextpos) != TT_NUMBER) {
+			eprintf ("Expected register number '%s'\n", str + *pos);
+			return X86R_UNDEFINED;
 		}
-
+		reg = getnum (a, token + *pos);
+		// st and mm go up to 7, xmm up to 15
+		if ((reg > 15) || ((*type & (OT_FPUREG | OT_MMXREG ) & ~OT_REGALL) && reg > 7))   {
+			eprintf ("Too large register index!\n");
+			return X86R_UNDEFINED;
+		}
 		*pos = nextpos;
 
 		// pass by ')'
-		if (getToken (str, pos, &nextpos) == TT_SPECIAL && str[*pos] == ')') {
+		if (getToken (token, pos, &nextpos) == TT_SPECIAL && token[*pos] == ')') {
 			*pos = nextpos;
-		}
-		// Safety to prevent a shift bigger than 31. Reg
-		// should never be > 8 anyway
-		if (reg > 7) {
-			eprintf ("Too large register index!\n");
-			return X86R_UNDEFINED;
 		}
 		*type |= (OT_REG (reg) & ~OT_REGTYPE);
 		return reg;
 	}
-
 	return X86R_UNDEFINED;
 }
 

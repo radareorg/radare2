@@ -1,0 +1,11 @@
+default.cc=hexagon
+
+hexagon=cc
+cc.hexagon.arg0=r0
+cc.hexagon.arg1=r1
+cc.hexagon.arg2=r2
+cc.hexagon.arg3=r3
+cc.hexagon.arg4=r4
+cc.hexagon.arg5=r5
+cc.hexagon.argn=stack_rev
+cc.hexagon.ret=r0

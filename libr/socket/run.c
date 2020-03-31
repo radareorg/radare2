@@ -185,7 +185,8 @@ static char *getstr(const char *src) {
 		int msg_len = strlen (msg);
 		if (msg_len > 0) {
 			msg [msg_len - 1] = 0;
-			char *ret = r_str_trim_tail (r_sys_cmd_str (msg, NULL, NULL));
+			char *ret = r_sys_cmd_str (msg, NULL, NULL);
+			r_str_trim_tail (ret);
 			free (msg);
 			return ret;
 		}
@@ -193,10 +194,15 @@ static char *getstr(const char *src) {
 		return strdup ("");
 		}
 	case '!':
-		return r_str_trim_tail (r_sys_cmd_str (src + 1, NULL, NULL));
+		{
+		char *a = r_sys_cmd_str (src + 1, NULL, NULL);
+		r_str_trim_tail (a);
+		return a;
+		}
 	case ':':
 		if (src[1] == '!') {
-			ret = r_str_trim_tail (r_sys_cmd_str (src + 1, NULL, NULL));
+			ret = r_sys_cmd_str (src + 1, NULL, NULL);
+			r_str_trim_tail (ret); // why no head :?
 		} else {
 			ret = strdup (src);
 		}
@@ -433,7 +439,7 @@ R_API int r_run_parsefile(RRunProfile *p, const char *b) {
 	return 0;
 }
 
-R_API bool r_run_parseline(RRunProfile *p, char *b) {
+R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 	int must_free = false;
 	char *e = strchr (b, '=');
 	if (!e || *b == '#') {
@@ -534,7 +540,7 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 	} else if (!strcmp (b, "envfile")) {
 		char *p, buf[1024];
 		size_t len;
-		FILE *fd = fopen (e, "r");
+		FILE *fd = r_sandbox_fopen (e, "r");
 		if (!fd) {
 			eprintf ("Cannot open '%s'\n", e);
 			if (must_free == true) {
@@ -543,7 +549,7 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 			return false;
 		}
 		for (;;) {
-			if (!fgets (buf, sizeof (buf) - 1, fd)) {
+			if (!fgets (buf, sizeof (buf), fd)) {
 				break;
 			}
 			if (feof (fd)) {
@@ -552,11 +558,11 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 			p = strchr (buf, '=');
 			if (p) {
 				*p++ = 0;
-				len = strlen(p);
-				if (p[len - 1] == '\n') {
+				len = strlen (p);
+				if (len > 0 && p[len - 1] == '\n') {
 					p[len - 1] = 0;
 				}
-				if (p[len - 2] == '\r') {
+				if (len > 1 && p[len - 2] == '\r') {
 					p[len - 2] = 0;
 				}
 				r_sys_setenv (buf, p);
@@ -962,7 +968,11 @@ R_API int r_run_config_env(RRunProfile *p) {
 		if (p->_preload) {
 			eprintf ("WARNING: Only one library can be opened at a time\n");
 		}
-		p->_preload = R2_LIBDIR"/libr2."R_LIB_EXT;
+#ifdef __WINDOWS__
+		p->_preload = r_str_r2_prefix (R_JOIN_2_PATHS (R2_LIBDIR, "libr2."R_LIB_EXT));
+#else
+		p->_preload = strdup (R2_LIBDIR"/libr2."R_LIB_EXT);
+#endif
 	}
 	if (p->_libpath) {
 #if __WINDOWS__

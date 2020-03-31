@@ -1582,7 +1582,7 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 		case eLF_CHAR:
 		{
 			SVal_LF_CHAR lf_char;
-			READ2(*read_bytes, len, lf_char.value, leaf_data, st16);
+			READ1(*read_bytes, len, lf_char.value, leaf_data, st8);
 			parse_sctring (&lf_char.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof (SVal_LF_CHAR));
 			if (!val->name_or_val) {
@@ -1956,7 +1956,7 @@ static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist,  unsigned char *leaf_
 	int curr_read_bytes = 0;
 	unsigned char *p = leaf_data;
 
-	lf_fieldlist->substructs = r_list_new();
+	lf_fieldlist->substructs = r_list_new ();
 
 	while (*read_bytes <= len) {
 		READ2(*read_bytes, len, leaf_type, p, ut16);
@@ -2351,7 +2351,7 @@ int parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
 	int i;
 	SType *type = 0;
 	STpiStream *tpi_stream = (STpiStream *) parsed_pdb_stream;
-	tpi_stream->types = r_list_new();
+	tpi_stream->types = r_list_new ();
 	p_types_list = tpi_stream->types;
 
 	stream_file_read(stream, sizeof(STPIHeader), (char *)&tpi_stream->header);

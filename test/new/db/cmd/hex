@@ -1,0 +1,140 @@
+NAME=search count
+FILE=malloc://1024
+EXPECT=<<EOF
+3
+EOF
+CMDS=<<EOF
+wx 2f @ 0x100
+wx 2f @ 0x110
+wx 2f @ 0x120
+/x 2f > /dev/null
+?vi $?
+EOF
+RUN
+
+NAME=search count
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000100 hit0_0 01020304
+0x100
+EOF
+CMDS=<<EOF
+wx 01020304 @ 0x100
+/x 01020304
+?v hit0_0
+EOF
+RUN
+
+NAME=spaces
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000100 hit0_0 01020304
+0x100
+EOF
+CMDS=<<EOF
+wx 01020304 @ 0x100
+/x 01 02 03 04
+?v hit0_0
+EOF
+RUN
+
+NAME=binmask
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000100 hit0_0 01020304
+0x100
+EOF
+CMDS=<<EOF
+wx 01020304 @ 0x100
+/x 01020304:ffffffff
+?v hit0_0
+EOF
+RUN
+
+NAME=binmask spaces
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000100 hit0_0 01020304
+0x100
+EOF
+CMDS=<<EOF
+wx 01020304 @ 0x100
+/x 01 02 03 04
+?v hit0_0
+EOF
+RUN
+
+NAME=binmask seek search (mips)
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000008 hit0_0 d4a22527
+0x8
+EOF
+CMDS=<<EOF
+e asm.arch = mips
+e scr.color=false
+"wx 2080998f00000000d4a22527"
+e search.from=0
+e search.to=12
+s/x 00002027:0000f0ff
+?v $$
+q
+EOF
+RUN
+
+NAME=binmask seek search (mips)
+FILE=malloc://1024
+EXPECT=<<EOF
+0x0000000a hit0_0 2527
+0xa
+EOF
+CMDS=<<EOF
+e asm.arch = mips
+e scr.color=false
+"wx 2080998f00000000d4a22527"
+e search.from=0
+e search.to=12
+s/x 2027:f0ff
+?v $$
+q
+EOF
+RUN
+
+NAME=overlapped matches
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000100 hit0_0 4141
+0x00000101 hit0_1 4141
+0x00000102 hit0_2 4141
+EOF
+CMDS=<<EOF
+e search.overlap=true
+w AAAA @ 0x100
+/x 4141
+EOF
+RUN
+
+NAME=non-overlapped matches
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000100 hit0_0 4141
+0x00000102 hit0_1 4141
+EOF
+CMDS=<<EOF
+e search.overlap=false
+w AAAA @ 0x100
+/x 4141
+EOF
+RUN
+
+NAME=any-match with small block size
+FILE=malloc://1024
+EXPECT=<<EOF
+0x00000100 hit0_0 41424344
+EOF
+CMDS=<<EOF
+w ABCD @ 0x100
+b 2
+/x .1.2.3.4
+EOF
+RUN

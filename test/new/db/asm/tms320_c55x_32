@@ -1,0 +1,351 @@
+d "nop" 20
+d "|| nop" 21
+d "rptcc 0x0F, ac0 == 0" 00000f
+d "rptcc 0x1E, ac1 != 0" 00111e
+d "rptcc 0x2D, ac2 < 0" 00222d
+d "rptcc 0x3C, ac3 <= 0" 00333c
+d "rptcc 0x4B, t0 > 0" 00444b
+d "rptcc 0x5A, t1 >= 0" 00555a
+d "rptcc 0x69, t2 == 0" 000669
+d "rptcc 0x78, t3 != 0" 001778
+d "rptcc 0x87, ar0 < 0" 002887
+d "rptcc 0x96, ar1 <= 0" 003996
+d "rptcc 0xA5, ar2 > 0" 004aa5
+d "rptcc 0xB4, ar3 >= 0" 005bb4
+d "rptcc 0xC3, ar4 == 0" 000cc3
+d "rptcc 0xD2, ar5 != 0" 001dd2
+d "rptcc 0xE1, ar6 < 0" 002ee1
+d "rptcc 0xF0, ar7 <= 0" 003ff0
+d "rptcc 0x11, overflow(ac0)" 006011
+d "rptcc 0x22, !overflow(ac1)" 007122
+d "rptcc 0x33, !overflow(ac2)" 007233
+d "rptcc 0x44, overflow(ac3)" 006344
+d "rptcc 0x00, tc1" 006400
+d "rptcc 0x00, tc2" 006500
+d "rptcc 0x00, carry" 006600
+d "rptcc 0x00, tc1 & tc2" 006800
+d "rptcc 0x00, tc1 & !tc2" 006900
+d "rptcc 0x00, !tc1 & tc2" 006a00
+d "rptcc 0x00, !tc1 & !tc2" 006b00
+d "rptcc 0x00, !tc1" 007400
+d "rptcc 0x00, !tc2" 007500
+d "rptcc 0x00, !carry" 007600
+d "rptcc 0x00, tc1 | tc2" 007800
+d "rptcc 0x00, tc1 | !tc2" 007900
+d "rptcc 0x00, !tc1 | tc2" 007a00
+d "rptcc 0x00, !tc1 | !tc2" 007b00
+d "rptcc 0x00, tc1 ^ tc2" 007c00
+d "rptcc 0x00, tc1 ^ !tc2" 007d00
+d "rptcc 0x00, !tc1 ^ tc2" 007e00
+d "rptcc 0x00, !tc1 ^ !tc2" 007f00
+d "retcc ac0 == 0" 020000
+d "bcc 0x30, ac0 == 0" 040030
+d "bcc 0x21, ac0 == 0" 040021
+d "bcc 0x12, ac0 == 0" 040012
+d "bcc 0x03, ac0 == 0" 040003
+d "b 0x3012" 063012
+d "b 0x2301" 062301
+d "b 0x1230" 061230
+d "b 0x0123" 060123
+d "call 0xDEAD" 08dead
+d "rpt 0xDEAD" 0cdead
+d "rptb 0xDEAD" 0edead
+d "and ac0 << 0x00" 100000
+d "or ac1 << 0x11, ac0" 101111
+d "xor ac2 << 0x22, ac0" 102222
+d "add ac3 << 0x33, ac0" 103333
+d "sub ac0 << 0x04, ac1" 104444
+d "sfts ac1, 0x15" 105555
+d "sftsc ac2, 0x26, ac1" 106666
+d "sftl ac3, 0x37, ac1" 107777
+d "and ac0 << 0x08, ac2" 108088
+d "or ac1 << 0x19, ac2" 109199
+d "xor ac2 << 0x2A" 10a2aa
+d "add ac3 << 0x3B, ac2" 10b3bb
+d "sub ac0 << 0x0C, ac3" 10c4cc
+d "sfts ac1, 0x1D, ac3" 10d5dd
+d "sftsc ac2, 0x2E, ac3" 10e6ee
+d "sftl ac3, 0x3F" 10f7ff
+d "exp ac3, t0" 103800
+d "exp ac2, t1" 102810
+d "exp ac1, t2" 101820
+d "exp ac0, t3" 100830
+d "mant ac1, ac2 :: nexp ac1, t3" 109930
+d "bcnt ac0, ac3, tc1, t0" 100ac0
+d "bcnt ac1, ac2, tc1, t0" 101a80
+d "bcnt ac2, ac1, tc1, t1" 102a50
+d "bcnt ac3, ac0, tc1, t1" 103a10
+d "bcnt ac0, ac3, tc2, t2" 100ae1
+d "bcnt ac1, ac2, tc2, t2" 101aa1
+d "bcnt ac2, ac1, tc2, t3" 102a71
+d "bcnt ac3, ac0, tc2, t3" 103a31
+d "maxdiff ac0, ac1, ac2, ac3" 108c70
+d "dmaxdiff ac0, ac1, ac2, ac3, trn0" 108d70
+d "dmaxdiff ac0, ac1, ac2, ac3, trn1" 108d71
+d "mindiff ac3, ac2, ac1, ac0" 107e80
+d "dmindiff ac3, ac2, ac1, ac0, trn0" 107f80
+d "dmindiff ac3, ac2, ac1, ac0, trn1" 107f81
+d "cmp ac0 == ar2, tc1" 1200a0
+d "cmpand ac1 == ar3, tc1, tc2" 1211b1
+d "cmpand ac2 == ar4, !tc1, tc2" 1221c9
+d "cmpor ac3 == ar5, tc2, tc1" 1232d2
+d "cmpor t0 == ar6, !tc2, tc1" 1242ea
+d "cmpu t1 == ar7, tc2" 1250f5
+d "cmpandu t2 == ac0, tc2, tc1" 126106
+d "cmpandu t3 == ac1, !tc2, tc1" 12711e
+d "cmporu ar0 == ac2, tc1, tc2" 128225
+d "cmporu ar1 == ac3, !tc1, tc2" 12923d
+d "rol carry, ac0, carry, ac3" 120330
+d "rol tc2, ac1, carry, ac2" 121321
+d "ror tc2, ac2, carry, ac1" 12231a
+d "ror tc2, ac3, tc2, ac0" 12330b
+d "aadd ac0, ac0" 140000
+d "amov ac0, ac0" 140001
+d "asub ac0, ac0" 140002
+d "aadd 0x11, ac0" 141104
+d "amov 0x22, ac0" 142205
+d "asub 0x33, ac0" 143306
+d "aadd ac0, ac0" 140008
+d "amov ac0, ac0" 140009
+d "asub ac0, ac0" 14000a
+d "aadd 0x11, ac0" 14110c
+d "amov 0x22, ac0" 14220d
+d "asub 0x33, ac0" 14330e
+d "aadd xar0, xar5" 1481d0
+d "amov xar1, xar4" 1491c1
+d "asub xar2, xar3" 14a1b2
+d "aadd xar3, xar2" 14b1a8
+d "amov xar4, xar1" 14c199
+d "asub xar5, xar0" 14d18a
+d "mov 0x1A, dph" 1601a0
+d "mov 0x25, dph" 160250
+d "mov 0x4A, dph" 1604a0
+d "mov 0x0AF, pdp" 160af3
+d "mov 0x15F, pdp" 1615f3
+d "mov 0x06C, bk03" 1606c4
+d "mov 0x17D, bk47" 1617d5
+d "mov 0x28E, bkc" 1628e6
+d "mov 0x39F, csr" 1639f8
+d "mov 0x4A0, brc0" 164a09
+d "mov 0x5B1, brc1" 165b1a
+d "and 0x11, ac0, ac1" 181110
+d "or 0x22, ac2, ac3" 1a2232
+d "xor 0x33, t0, t1" 1c3354
+d "mpyk 0x11, ac0, ac1" 1e1110
+d "mpykr 0x22, ac1, ac2" 1e2261
+d "mack t1, 0x33, ac0, ac1" 1e3316
+d "mackr t2, 0x44, ac1, ac2" 1e446b
+d "mov ac0, t0" 2204
+d "and ac1, t1" 2815
+d "or ac2, t2" 2a26
+d "xor ac3, t3" 2c37
+d "add ac0" 2400
+d "sub ac0" 2600
+d "max ac0" 2e00
+d "min ac0" 3000
+d "abs ac0" 3200
+d "neg ac0" 3400
+d "not ac0" 3600
+d "add ac0, t3" 2407
+d "sub ac1, ar0" 2618
+d "max ac2, ar1" 2e29
+d "min ac3, ar2" 303a
+d "abs t0, ar3" 324b
+d "neg t1, ar4" 345c
+d "not t2, ar5" 366d
+d "psh ac1, ac2" 3812
+d "pop ac3, t0" 3a34
+d "mov 0xF, t0" 3cf4
+d "mov -0xF, t1" 3ef5
+d "add 0xF, t2" 40f6
+d "sub 0xF, t3" 42f7
+d "mov hi(ac0), ar0" 4408
+d "sfts ac0, #-1" 4440
+d "sfts ac0, #1" 4450
+d "mov sp, ar0" 4488
+d "mov ssp, ar1" 4499
+d "mov cdp, ar2" 44aa
+d "mov brc0, ar3" 44cb
+d "mov brc1, ar4" 44dc
+d "mov rptc, ar5" 44ed
+d "bclr 0x1, st0_55" 4610
+d "bset 0x2, st0_55" 4621
+d "bclr 0x3, st1_55" 4632
+d "bset 0x4, st1_55" 4643
+d "bclr 0x5, st2_55" 4654
+d "bset 0x6, st2_55" 4665
+d "bclr 0x7, st3_55" 4676
+d "bset 0x8, st3_55" 4687
+d "rpt csr" 4800
+d "rptadd csr, ac0" 4801
+d "rptadd csr, 0x0" 4802
+d "rptsub csr, 0x0" 4803
+d "ret" 4804
+d "|| ret" 4904
+d "reti" 4805
+d "b 0x7F" 4a7f
+d "rptblocal 0x7F" 4aff
+d "rpt 0xFF" 4cff
+d "aadd 0xFF, sp" 4eff
+d "sftl ac0, #1" 5000
+d "sftl ac0, #-1" 5001
+d "pop ac0" 5002
+d "pop dbl(ac0)" 5003
+d "psh ac0" 5006
+d "psh dbl(ac0)" 5007
+d "popboth ac0" 5004
+d "pshboth ac0" 5005
+d "mov ac0, hi(ac0)" 5200
+d "mov ac0, sp" 5208
+d "mov ac0, ssp" 5209
+d "mov ac0, cdp" 520a
+d "mov ac0, csr" 520c
+d "mov ac0, brc1" 520d
+d "mov ac0, brc0" 520e
+d "addrv ac1, ac2" 5491
+d "sqar ac1, ac2" 5493
+d "sqsr ac1, ac2" 5495
+d "mpyr ac1, ac2" 5497
+d "sqrr ac1, ac2" 5499
+d "round ac1, ac2" 549b
+d "satr ac1, ac2" 549d
+d "macr ac0, t0, ac0" 5601
+d "macr ac0, t0, ac1, ac1" 5641
+d "macr ac1, t0, ac0, ac1" 5843
+d "masr t0, ac0, ac1" 5643
+d "mpyr t0, ac0, ac1" 5841
+d "add ac0 << t0, ac0" 5a00
+d "sub ac0 << t0, ac0" 5a01
+d "sftcc ac0, tc1" 5a02
+d "sftcc ac0, tc2" 5a03
+d "sftl ac0, t0, ac1" 5c40
+d "sfts ac0, t0, ac1" 5c41
+d "sftsc ac0, t0, ac1" 5c42
+d "swap ac0, ac2" 5e00
+d "swap ac1, ac3" 5e01
+d "swap t0, t2" 5e04
+d "swap t1, t3" 5e05
+d "swap ar0, ar2" 5e08
+d "swap ar1, ar3" 5e09
+d "swap ar4, t0" 5e0c
+d "swap ar5, t1" 5e0d
+d "swap ar6, t2" 5e0e
+d "swap ar7, t3" 5e0f
+d "swapp ac0, ac2" 5e10
+d "swapp t0, t2" 5e14
+d "swapp ar0, ar2" 5e18
+d "swapp ar4, t0" 5e1c
+d "swapp ar6, t2" 5e1e
+d "swap4 ar4, t0" 5e2c
+d "swap ar0, ar1" 5e38
+d "b 0x123456" 6a123456
+d "call 0x123456" 6c123456
+d "bcc 0xF, ac0 == 0" 6780
+d "bcc 0x1234, ac0 == 0" 6d001234
+d "bcc 0x123456, ac0 == 0" 6800123456
+d "bcc 0x22, ac0 == 0x11" 6f001122
+d "callcc 0x123456, ac0 == 0" 6900123456
+d "callcc 0x1234, ac0 == 0" 6e001234
+d "add 0x1122 << 0x0, ac1, ac0" 70112240
+d "sub 0x1122 << 0x1, ac1, ac0" 71112241
+d "and 0x1122 << 0x2, ac1, ac0" 72112242
+d "or 0x1122 << 0x3, ac1, ac0" 73112243
+d "xor 0x1122 << 0x4, ac1, ac0" 74112244
+d "mov 0x1122 << 0x5, ac0" 75112245
+d "bfxtr 0x1122, ac0, ac0" 76112200
+d "bfxpa 0x1122, ac0, ac0" 76112204
+d "mov 0x1122, ac0" 76112208
+d "amov 0x1122, ac0" 77112200
+d "mov 0x1122, dp" 78112200
+d "mov 0x1122, ssp" 78112202
+d "mov 0x1122, cdp" 78112204
+d "mov 0x1122, bsa01" 78112206
+d "mov 0x1122, bsa23" 78112208
+d "mov 0x1122, bsa45" 7811220a
+d "mov 0x1122, bsa67" 7811220c
+d "mov 0x1122, bsac" 7811220e
+d "mov 0x1122, sp" 78112210
+d "mpyk 0x1122, ac1, ac0" 79112240
+d "mack t0, 0x1122, ac1, ac0" 79112242
+d "add 0x1122 << #16, ac1, ac0" 7a112240
+d "sub 0x1122 << #16, ac1, ac0" 7a112242
+d "and 0x1122 << #16, ac1, ac0" 7a112244
+d "or 0x1122 << #16, ac1, ac0" 7a112246
+d "xor 0x1122 << #16, ac1, ac0" 7a112248
+d "mov 0x1122 << #16, ac0" 7a11224a
+d "add 0x1122, ac0, t0" 7b112240
+d "sub 0x1122, ac0, t0" 7c112240
+d "and 0x1122, ac0, t0" 7d112240
+d "or 0x1122, ac0, t0" 7e112240
+d "xor 0x1122, ac0, t0" 7f112240
+d "idle" 7a00000c
+d "mov dbl(*ar0), dbl(*ar7(t0))" 8003f0
+d "mov dbl(*ar1+), dbl(*(ar6 - t1))" 802760
+d "mov dbl(*ar2-), dbl(*(ar5 - t0))" 804ad0
+d "mov dbl(*(ar3 + t0)), dbl(*(ar4 + t1))" 806e40
+d "mov dbl(*(ar4 + t1)), dbl(*(ar3 + t0))" 8091b0
+d "mov dbl(*(ar5 - t0)), dbl(*ar2-)" 80b520
+d "mov dbl(*(ar6 - t1)), dbl(*ar1+)" 80d890
+d "mov dbl(*ar7(t0)), dbl(*ar0)" 80fc00
+d "mov *ar0, *ar0" 800004
+d "mov ac0, *ar0, *ar0" 800008
+d "add *ar0, *ar0, ac0" 810000
+d "sub *ar0, *ar0, ac0" 810004
+d "mov *ar0, *ar0, ac0" 810008
+d "mpy *ar0, *cdp, ac0 :: mpy *ar0, *cdp, ac0" 82000000
+d "mpyr40 *ar0, *cdp+, ac0 :: mpyr40 *ar0, *cdp+, ac0" 82000103
+d "mpyr40 uns(*ar0), uns(*cdp-), ac0 :: mpyr40 *ar0, *cdp-, ac0" 82000283
+d "mpyr40 *ar0, *(cdp+t0), ac0 :: mpyr40 uns(*ar0), uns(*(cdp+t0)), ac0" 82000343
+d "mpyr40 uns(*ar0), uns(*cdp), ac0 :: mpyr40 uns(*ar0), uns(*cdp), ac0" 820000c3
+d "mac *ar0, *cdp, ac0 :: mpy *ar0, *cdp, ac0" 82000400
+d "mas *ar0, *cdp, ac0 :: mpy *ar0, *cdp, ac0" 82000800
+d "mac *ar0, *cdp, ac0 :: mac *ar0, *cdp, ac0" 83000000
+d "mas *ar0, *cdp, ac0 :: mac *ar0, *cdp, ac0" 83000400
+d "mac *ar0, *cdp, ac0 >> #16 :: mac *ar0, *cdp, ac0" 83000800
+d "mas *ar0, *cdp, ac0 :: mac *ar0, *cdp, ac0 >> #16" 84000000
+d "mpy *ar0, *cdp, ac0 :: mac *ar0, *cdp, ac0 >> #16" 84000800
+d "mac *ar0, *cdp, ac0 >> #16 :: mac *ar0, *cdp, ac0 >> #16" 84000c00
+d "mas *ar0, *cdp, ac0 :: mas *ar0, *cdp, ac0" 85000400
+d "amar *ar0 :: mpy *ar0, *cdp, ac0" 82000c00
+d "amar *ar0 :: mac *ar0, *cdp, ac0" 83000c00
+d "amar *ar0 :: mac *ar0, *cdp, ac0 >> #16" 84000400
+d "amar *ar0 :: mas *ar0, *cdp, ac0" 85000000
+d "amar *ar0, *ar0, *cdp" 85000800
+d "firsadd *ar0, *ar0, *cdp, ac0, ac0" 85000c00
+d "firssub *ar0, *ar0, *cdp, ac0, ac0" 85000c10
+d "mpym *ar0, *ar0, ac0" 86000000
+d "mpymr *ar0, *ar0, ac0" 86000001
+d "mpymr40 *ar0, *ar0, ac0" 86000011
+d "mpymr40 t3=*ar0, *ar0, ac0" 86000013
+d "mpymr40 t3=uns(*ar0), *ar0, ac0" 8600001b
+d "mpymr40 t3=*ar0, uns(*ar0), ac0" 86000017
+d "mpymr40 t3=uns(*ar0), uns(*ar0), ac0" 8600001f
+d "macmr40 *ar0, *ar0, ac0" 86000031
+d "macmr40 *ar0, *ar0, ac0, ac1" 86000131
+d "macmr40 *ar0, *ar0, ac0 >> #16" 86000051
+d "macmr40 *ar0, *ar0, ac0 >> #16, ac1" 86000151
+d "masmr40 t3=uns(*ar0), uns(*ar0), ac0, ac1" 8600017f
+d "masm *ar0, t0, ac0 :: mov *ar0 << #16, ac0" 86000080
+d "macm *ar0, t0, ac0 :: mov *ar0 << #16, ac0" 860000a0
+d "mpym *ar0, t0, ac0 :: mov hi(ac0 << t2), *ar0" 87000000
+d "macm *ar0, t0, ac0 :: mov hi(ac0 << t2), *ar0" 87000020
+d "masm *ar0, t0, ac0 :: mov hi(ac0 << t2), *ar0" 87000040
+d "lms *ar0, *ar0, ac0, ac0" 860000c0
+d "sqdst *ar0, *ar0, ac0, ac0" 860000e0
+d "abdst *ar0, *ar0, ac0, ac0" 860000f0
+d "lmsf *ar0, *ar0, ac0, ac0" 87000061
+d "add *ar0 << #16, ac0, ac0 :: mov hi(ac0 << t2), *ar0" 87000080
+d "sub *ar0 << #16, ac0, ac0 :: mov hi(ac0 << t2), *ar0" 870000a0
+d "mov *ar0 << #16, ac0 :: mov hi(ac0 << t2), *ar0" 870000c0
+d "mov ac0, ac0" 9000
+d "b ac0" 9100
+d "call ac0" 9200
+d "reset" 9400
+d "intr 0x1F" 957f
+d "trap 0x1F" 95ff
+d "xcc ac0 == 0" 9600
+d "xccpart ac0 == 0" 9680
+d "xcc ac0 == 0" 9e00
+d "xccpart ac0 == 0" 9e80
+d "xcc ac0 == 0" 9f00
+d "xccpart ac0 == 0" 9f80

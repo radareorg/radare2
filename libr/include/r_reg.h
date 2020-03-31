@@ -22,6 +22,7 @@ typedef enum {
 	R_REG_TYPE_FPU,
 	R_REG_TYPE_MMX,
 	R_REG_TYPE_XMM,
+	R_REG_TYPE_YMM,
 	R_REG_TYPE_FLG,
 	R_REG_TYPE_SEG,
 	R_REG_TYPE_LAST,
@@ -93,6 +94,7 @@ typedef struct r_reg_item_t {
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
 	bool is_float;
 	char *flags;
+	char *comment;
 	int index;
 	int arena; /* in which arena is this reg living */
 } RRegItem;
@@ -140,10 +142,10 @@ typedef struct r_reg_flags_t {
 R_API void r_reg_free(RReg *reg);
 R_API void r_reg_free_internal(RReg *reg, bool init);
 R_API RReg *r_reg_new(void);
-R_API int r_reg_set_name(RReg *reg, int role, const char *name);
-R_API int r_reg_set_profile_string(RReg *reg, const char *profile);
-R_API int r_reg_set_profile(RReg *reg, const char *profile);
-R_API int r_reg_parse_gdb_profile(const char *profile);
+R_API bool r_reg_set_name(RReg *reg, int role, const char *name);
+R_API bool r_reg_set_profile_string(RReg *reg, const char *profile);
+R_API bool r_reg_set_profile(RReg *reg, const char *profile);
+R_API bool r_reg_parse_gdb_profile(const char *profile);
 R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item);
 
 R_API RRegSet *r_reg_regset_get(RReg *r, int type);
