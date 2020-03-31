@@ -34,12 +34,13 @@ static void print_state(R2RState *state, ut64 prev_completed);
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
 
 static int help(bool verbose) {
-	printf ("Usage: r2r [-vh] [-j threads] [test path]\n");
+	printf ("Usage: r2r [-vh] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		printf (
 		" -h           print this help\n"
 		" -v           show version\n"
 		" -V           verbose\n"
+		" -n           do nothing (don't run any test, just load/parse them)\n"
 		" -L           log mode (better printing for CI, logfiles, etc.)"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
 		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
@@ -47,6 +48,7 @@ static int help(bool verbose) {
 		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
 		" -C [dir]     chdir before running r2r (default follows executable symlink + test/new\n"
 		"\n"
+		"Supported test types: @json @unit @fuzz @cmds\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
 	}
 	return 1;
@@ -81,6 +83,10 @@ static bool r2r_chdir(const char *argv0) {
 #else
 	return false;
 #endif
+}
+
+static void r2r_test_run_unit(void) {
+	system ("make -C ../unit all run");
 }
 
 static bool r2r_chdir_fromtest(const char *test_path) {
@@ -140,7 +146,7 @@ int main(int argc, char **argv) {
 			ret = help (true);
 			goto beach;
 		case 'v':
-			printf (""R2_VERSION"\n");
+			printf (R2_VERSION "\n");
 			return 0;
 		case 'V':
 			verbose = true;
@@ -184,12 +190,13 @@ int main(int argc, char **argv) {
 	if (r2r_dir) {
 		chdir (r2r_dir);
 	} else {
-		bool dir_found = (opt.ind < argc)
+		bool dir_found = (opt.ind < argc && argv[opt.ind][0] != '.')
 			? r2r_chdir_fromtest (argv[opt.ind])
 			: r2r_chdir (argv[0]);
 		if (!dir_found) {
 			eprintf ("Cannot find db/ directory related to the given test.\n");
 			return -1;
+
 		}
 	}
 
@@ -225,7 +232,28 @@ int main(int argc, char **argv) {
 		// Manually specified path(s)
 		int i;
 		for (i = opt.ind; i < argc; i++) {
-			char *tf = (argv[i][0] == '/')? strdup (argv[i]): r_str_newf ("%s"R_SYS_DIR"%s", cwd, argv[i]);
+			const char *arg = argv[i];
+			if (*arg == '@') {
+				arg++;
+				eprintf ("Category: %s\n", arg);
+				if (!strcmp (arg, "unit")) {
+					r2r_test_run_unit ();
+					continue;
+				} else if (!strcmp (arg, "fuzz")) {
+					eprintf (".fuzz: TODO\n");
+					continue;
+				} else if (!strcmp (arg, "json")) {
+					arg = "db/json";
+				} else if (!strcmp (arg, "dasm")) {
+					arg = "db/asm";
+				} else if (!strcmp (arg, "cmds")) {
+					arg = "db";
+				} else {
+					arg = r_str_newf ("db/%s", arg + 1);
+				}
+			}
+			char *tf = (*arg == '/')? strdup (arg)
+				: r_str_newf ("%s"R_SYS_DIR"%s", cwd, arg);
 			if (!r2r_test_database_load (state.db, tf)) {
 				eprintf ("Failed to load tests from \"%s\"\n", tf);
 				r2r_test_database_free (state.db);
@@ -247,7 +275,7 @@ int main(int argc, char **argv) {
 	uint32_t loaded_tests = r_pvector_len (&state.db->tests);
 	printf ("Loaded %u tests.\n", loaded_tests);
 	if (nothing) {
-		return 0;
+		goto coast;
 	}
 
 	bool jq_available = r2r_check_jq_available ();
@@ -333,6 +361,7 @@ int main(int argc, char **argv) {
 		ret = 1;
 	}
 
+coast:
 	r_pvector_clear (&state.queue);
 	r_pvector_clear (&state.results);
 	r_pvector_clear (&state.completed_paths);
