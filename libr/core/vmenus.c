@@ -1344,6 +1344,129 @@ R_API int r_core_visual_classes(RCore *core) {
 	return true;
 }
 
+static int show_anal_class(RCore *core, int *idx, SdbList *list) {
+	bool show_color = r_config_get_i (core->config, "scr.color");
+	SdbListIter *iter;
+	SdbKv *kv;
+	int i = 0;
+	int skip = *idx - 10;
+	bool found = false;
+
+	r_cons_printf ("[hjkl_/Cfm]> anal classes:\n\n");
+	ls_foreach (list, iter, kv) {
+		const char *class_name = sdbkv_key (kv);
+		r_cons_printf ("%s %02d %s\n", (i==*idx)?">>":"- ", i, class_name);
+		i++;		
+	}
+
+	return !i;
+}
+
+// TODO add other commands that Vbc has
+R_API int r_core_visual_anal_classes(RCore *core) {
+	int ch, index = 0;
+	char cmd[1024];
+	int mode = 'c';
+	SdbList *list = r_anal_class_get_all (core->anal, true);
+	void *ptr;
+	int oldcur = 0;
+
+	if (r_list_empty (list)) {
+		r_cons_message ("No Classes");
+		return false;
+	}
+	for (;;) {
+		int cols;
+		r_cons_clear00 ();
+
+		show_anal_class (core, &index, list);
+
+		/* update terminal size */
+		(void) r_cons_get_size (&cols);
+		r_cons_visual_flush ();
+		ch = r_cons_readchar ();
+		if (ch == -1 || ch == 4) {
+			return false;
+		}
+
+		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		switch (ch) {
+		case 'C':
+			r_config_toggle (core->config, "scr.color");
+			break;
+		case 'J': index += 10; break;
+		case 'j': index++; break; // boundary check TODO
+		case 'k':
+			if (--index < 0) {
+				index = 0;
+			}
+			break;
+		case 'K':
+			index -= 10;
+			if (index < 0) {
+				index = 0;
+			}
+			break;
+		case 'g':
+			index = 0;
+			break;
+		case 'G':
+			index = list->length - 1;
+			break;
+		case 'h':
+		case 127: // backspace
+		case 'b': // back
+		case 'Q':
+		case 'c':
+		case 'q':
+			if (mode == 'c') {
+				return true;
+			}
+			mode = 'c';
+			index = oldcur;
+			break;
+		// case 'l':
+		// case ' ':
+		// case '\r':
+		// case '\n':
+		// 	break;
+		case '?':
+			r_cons_clear00 ();
+			r_cons_printf (
+			"\nVF: Visual Classes help:\n\n"
+			" q     - quit menu\n"
+			" j/k   - down/up keys\n"
+			" h/b   - go back\n"
+			" g/G   - go first/last item\n"
+			" l/' ' - accept current selection\n"
+			" :     - enter command\n");
+			r_cons_flush ();
+			r_cons_any_key (NULL);
+			break;
+		case ':':
+			r_cons_show_cursor (true);
+			r_cons_set_raw (0);
+			cmd[0] = '\0';
+			r_line_set_prompt (":> ");
+			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
+				cmd[0]='\0';
+			}
+			//line[strlen(line)-1]='\0';
+			r_core_cmd (core, cmd, 1);
+			r_cons_set_raw (1);
+			r_cons_show_cursor (false);
+			if (cmd[0]) {
+				r_cons_any_key (NULL);
+			}
+			//cons_gotoxy(0,0);
+			r_cons_clear ();
+			break;
+		}
+	}
+	ls_free(list);
+	return true;
+}
+
 static int flag_name_sort(const void *a, const void *b) {
 	const RFlagItem *fa = (const RFlagItem *)a;
 	const RFlagItem *fb = (const RFlagItem *)b;

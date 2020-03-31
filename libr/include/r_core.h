@@ -441,6 +441,7 @@ R_API bool r_core_prevop_addr(RCore* core, ut64 start_addr, int numinstrs, ut64*
 R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs);
 R_API bool r_core_visual_hudstuff(RCore *core);
 R_API int r_core_visual_classes(RCore *core);
+R_API int r_core_visual_anal_classes(RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive);
