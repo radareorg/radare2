@@ -834,6 +834,7 @@ EOF
 RUN
 
 NAME=rabin2 -D swift
+BROKEN=1
 FILE=../bins/elf/libc.so.0
 CMDS=!rabin2 -D swift  _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
 EXPECT=<<EOF
