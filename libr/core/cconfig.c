@@ -3044,7 +3044,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("asm.tailsub", "false", &cb_asmtailsub, "Replace addresses with prefix .. syntax");
 	SETBPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETBPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
-	SETBPREF ("asm.offset", "true", "Show offsets at disassembly");
+	SETBPREF ("asm.offset", "true", "Show offsets in disassembly");
+	SETBPREF ("hex.offset", "true", "Show offsets in hex-dump");
 	SETBPREF ("scr.square", "true", "Use square pixels or not");
 	SETCB ("scr.prompt.vi", "false", &cb_scr_vi, "Use vi mode for input prompt");
 	SETCB ("scr.prompt.mode", "false", &cb_scr_prompt_mode,  "Set prompt color based on vi mode");

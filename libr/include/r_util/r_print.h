@@ -112,6 +112,7 @@ typedef struct r_print_t {
 	const char *strconv_mode;
 	RList *vars;
 	char io_unalloc_ch;
+	bool show_offset;
 
 	// when true it uses row_offsets
 	bool calc_row_offsets;
