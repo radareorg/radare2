@@ -23,8 +23,13 @@ R_API void r2r_cmd_test_free(R2RCmdTest *test) {
 static char *readline(char *buf, size_t *linesz) {
 	char *end = strchr (buf, '\n');
 	if (end) {
+		size_t len = end - buf;
 		*end = '\0';
-		*linesz = end - buf;
+		if (len > 0 && buf[len - 1] == '\r') {
+			buf[len - 1] = '\0';
+			len--;
+		}
+		*linesz = len;
 		return end + 1;
 	} else {
 		*linesz = strlen (buf);
