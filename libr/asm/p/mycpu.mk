@@ -1,9 +1,0 @@
-OBJ_MYCPU=asm_mycpu.o
-
-STATIC_OBJ+=${OBJ_MYCPU}
-TARGET_MYCPU=asm_mycpu.${EXT_SO}
-
-ALL_TARGETS+=${TARGET_MYCPU}
-
-${TARGET_MYCPU}: ${OBJ_MYCPU}
-	${CC} ${LDFLAGS} ${CFLAGS} -o asm_mycpu.${EXT_SO} ${OBJ_MYCPU}

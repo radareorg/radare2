@@ -1,0 +1,9 @@
+OBJ_MYCPU=asm_llvm.o
+
+STATIC_OBJ+=${OBJ_MYCPU}
+TARGET_MYCPU=asm_llvm.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_MYCPU}
+
+${TARGET_MYCPU}: ${OBJ_MYCPU}
+	${CC} ${LDFLAGS} ${CFLAGS} -o asm_llvm.${EXT_SO} ${OBJ_MYCPU}
