@@ -5,6 +5,7 @@ packages:
     - devel/gmake
     - devel/llvm
     - ftp/wget
+    - python
 environment:
     CXX: clang++
     CC: clang

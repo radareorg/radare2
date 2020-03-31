@@ -4,6 +4,7 @@ packages:
     - devel/pkgconf
     - devel/gmake
     - devel/llvm
+    - lang/python
 environment:
     CXX: clang++
     CC: clang
