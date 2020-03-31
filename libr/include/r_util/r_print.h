@@ -112,6 +112,7 @@ typedef struct r_print_t {
 	const char *strconv_mode;
 	RList *vars;
 	char io_unalloc_ch;
+	bool show_offset;
 
 	// when true it uses row_offsets
 	bool calc_row_offsets;
@@ -146,7 +147,7 @@ R_API void r_print_unset_flags(RPrint *p, int flags);
 R_API void r_print_addr(RPrint *p, ut64 addr);
 R_API void r_print_section(RPrint *p, ut64 at);
 R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height);
-R_API void r_print_hexii(RPrint *p, ut64 addr, const ut8 *buf, int len, int step, int show_offset);
+R_API void r_print_hexii(RPrint *p, ut64 addr, const ut8 *buf, int len, int step);
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, int zoomsz);
 R_API void r_print_hexdump_simple(const ut8 *buf, int len);
 R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize);

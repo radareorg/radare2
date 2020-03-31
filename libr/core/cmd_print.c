@@ -6079,7 +6079,7 @@ l = use_blocksize;
 		break;
 	case 'x': // "px"
 	{
-		int show_offset = r_config_get_i (core->config, "hex.offset");
+		bool show_offset = r_config_get_i (core->config, "hex.offset");
 		if (show_offset) {
 			core->print->flags |= R_PRINT_FLAGS_OFFSET;
 		} else {
@@ -6207,9 +6207,9 @@ l = use_blocksize;
 			break;
 		case 'i': // "pxi"
 			if (l != 0) {
-				int show_offset = r_config_get_i (core->config, "hex.offset");
+				core->print->show_offset = r_config_get_i (core->config, "hex.offset");
 				r_print_hexii (core->print, core->offset, core->block,
-					core->blocksize, r_config_get_i (core->config, "hex.cols"), show_offset);
+					core->blocksize, r_config_get_i (core->config, "hex.cols"));
 			}
 			break;
 		case 'o': // "pxo"
