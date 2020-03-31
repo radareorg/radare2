@@ -598,14 +598,63 @@ R_API void r_table_sortlen(RTable *t, int nth, bool dec) {
 	RTableColumn *col = r_list_get_n (t->cols, nth);
 	if (col) {
 		Gnth = nth;
-		Gcmp = cmplen;
 		t->rows->sorted = false; //force sorting
-		r_list_sort (t->rows, Gcmp);
+		r_list_sort (t->rows, cmplen);
 		if (dec) {
 			r_list_reverse (t->rows);
 		}
 		Gnth = 0;
-		Gcmp = NULL;
+	}
+}
+
+static int r_rows_cmp(RList *lhs, RList *rhs, RList *cols) {
+	RListIter *iter_lhs;
+	RListIter *iter_rhs;
+	RListIter *iter_col;
+
+	void *item_lhs;
+	void *item_rhs;
+	RTableColumn *item_col;
+	int tmp;
+
+	for (iter_lhs = lhs->head, iter_rhs = rhs->head, iter_col = cols->head;
+		iter_lhs && iter_rhs && iter_col &&
+		(item_lhs = iter_lhs->data, item_rhs = iter_rhs->data, item_col = iter_col->data, 1);
+		iter_lhs = iter_lhs->n, iter_rhs = iter_rhs->n, iter_col = iter_col->n) {
+		tmp = item_col->type->cmp (item_lhs, item_rhs);
+
+		if (tmp)
+			return tmp;
+	}
+
+	if (iter_lhs) {
+		return 1;
+	} else if (iter_rhs) {
+		return -1;
+	}
+
+	return 0;
+}
+
+R_API void r_table_uniq(RTable *t) {
+	RListIter *iter;
+	RListIter *tmp;
+	RTableRow *row;
+
+	RListIter *iter_inner;
+	RTableRow *uniq_row;
+
+	RList *rows = t->rows;
+
+	r_list_foreach_safe (rows, iter, tmp, row) {
+		for (iter_inner = rows->head;
+			iter_inner && iter_inner != iter && (uniq_row = iter_inner->data, 1);
+			iter_inner = iter_inner->n) {
+
+			if (!r_rows_cmp (row->items, uniq_row->items, t->cols)) {
+				r_list_delete (rows, iter);
+			}
+		}
 	}
 }
 
