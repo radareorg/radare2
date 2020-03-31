@@ -12,7 +12,7 @@
 .Op Fl j Ar threads
 .Op Fl r Ar r2-path
 .Op Fl m Ar rasm2-pth
-.Op Fl f Ar json-test-file
+.Op Fl f Ar bin-for-json-tests
 .Op Fl C Ar chdir
 .Op [test-(dir|file) ...]
 .Sh DESCRIPTION
@@ -39,8 +39,8 @@ Set path to radare2 executable
 Set path to rasm2executable
 .It Fl m Ar rasm2-path
 Set path to rasm2executable
-.It Fl f Ar json-test-file
-Run the given test file as json
+.It Fl f Ar bin-for-json-tests
+Load the given binary when running the JSON tests
 .It Fl C Ar directory
 Early chdir before running any test
 .El
