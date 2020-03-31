@@ -252,6 +252,8 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_len (&state.db->tests));
+
 	if (log_mode) {
 		// Log mode prints the state after every completed file.
 		// The count of tests left per file is stored in a ht.
@@ -270,7 +272,6 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_len (&state.db->tests));
 
 	r_th_lock_enter (state.lock);
 
