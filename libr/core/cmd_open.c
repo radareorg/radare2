@@ -1604,16 +1604,24 @@ static int cmd_open(void *data, const char *input) {
 			if (len < 1) {
 				len = core->blocksize;
 			}
-                        char *uri = r_str_newf ("malloc://%d", len);
+			char *uri = r_str_newf ("malloc://%d", len);
 			ut8 *data = calloc (len, 1);
 			r_io_read_at (core->io, core->offset, data, len);
-                        RIODesc *fd = r_io_open (core->io, uri, R_PERM_R | R_PERM_W, 0);
-                        if (fd) {
-                                r_io_desc_write (fd, data, len);
-                        }
+			if (file = r_core_file_open (core, uri, R_PERM_RWX, 0)) {
+				fd = file->fd;
+				core->num->value = fd;
+				r_core_bin_load (core, uri, 0);
+				RIODesc *desc = r_io_desc_get (core->io, fd);
+				if (desc) {
+					// TODO: why r_io_desc_write() fails?
+					r_io_desc_write_at (desc, 0, data, len);
+				}
+			} else {
+				eprintf ("Cannot %s\n", uri);
+			}
 			free (uri);
 			free (data);
-                }
+		}
 		break;
 	case 'm': // "om"
 		cmd_open_map (core, input);

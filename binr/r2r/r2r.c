@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2020 - thestr4ng3r */
 
 #include "r2r.h"
-
 #include <r_cons.h>
 
 #define WORKERS_DEFAULT        8
@@ -45,6 +44,7 @@ static int help(bool verbose) {
 		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
 		" -m [rasm2]   path to rasm2 executable (default is "RASM2_CMD_DEFAULT")\n"
 		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
+		" -C [dir]     chdir before running r2r (default follows executable symlink + test/new\n"
 		"\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
 	}
@@ -55,6 +55,69 @@ static void path_left_free_kv(HtPPKv *kv) {
 	free (kv->value);
 }
 
+static bool r2r_chdir(const char *argv0) {
+#if __UNIX__
+	if (r_file_is_directory ("db")) {
+		return true;
+	}
+	char src_path[PATH_MAX];
+	char *r2r_path = r_file_path (argv0);
+	bool found = false;
+	if (readlink (r2r_path, src_path, sizeof (src_path)) != -1) {
+		char *p = strstr (src_path, R_SYS_DIR "binr"R_SYS_DIR"r2r"R_SYS_DIR"r2r");
+		if (p) {
+			*p = 0;
+			strcat (src_path, R_SYS_DIR"test"R_SYS_DIR"new");
+			if (r_file_is_directory (src_path)) {
+				(void)chdir (src_path);
+				eprintf ("Running from %s\n", src_path);
+				found = true;
+			}
+		}
+	}
+	free (r2r_path);
+	return found;
+#else
+	return false;
+#endif
+}
+
+static bool r2r_chdir_fromtest(const char *test_path) {
+	char *abs_test_path = r_file_abspath (test_path);
+	if (!r_file_is_directory (abs_test_path)) {
+		char *last_slash = (char *)r_str_lchr (abs_test_path, R_SYS_DIR[0]);
+		if (last_slash) {
+			*last_slash = 0;
+		}
+	}
+	if (chdir (abs_test_path) == -1) {
+		return false;
+	}
+	bool found = false;
+	char *cwd = NULL;
+	char *old_cwd = NULL;
+	while (true) {
+		cwd = r_sys_getdir ();
+		if (old_cwd && !strcmp (old_cwd, cwd)) {
+			break;
+		}
+		if (r_file_is_directory ("db")) {
+			found = true;
+			eprintf ("Running from %s\n", cwd);
+			break;
+		}
+		free (old_cwd);
+		old_cwd = cwd;
+		cwd = NULL;
+		if (chdir ("..") == -1) {
+			break;
+		}
+	}
+	free (old_cwd);
+	free (cwd);
+	return found;
+}
+
 int main(int argc, char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
@@ -62,11 +125,12 @@ int main(int argc, char **argv) {
 	char *radare2_cmd = NULL;
 	char *rasm2_cmd = NULL;
 	char *json_test_file = NULL;
-
+	const char *r2r_dir = NULL;
 	int ret = 0;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:L");
+	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:C:L");
+
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
@@ -79,7 +143,7 @@ int main(int argc, char **argv) {
 		case 'L':
 			log_mode = true;
 			break;
-		case 'j': {
+		case 'j':
 			workers_count = atoi (opt.arg);
 			if (workers_count <= 0) {
 				eprintf ("Invalid thread count\n");
@@ -91,6 +155,9 @@ int main(int argc, char **argv) {
 			free (radare2_cmd);
 			radare2_cmd = strdup (opt.arg);
 			break;
+		case 'C':
+			r2r_dir = opt.arg;
+			break;
 		case 'm':
 			free (rasm2_cmd);
 			rasm2_cmd = strdup (opt.arg);
@@ -99,10 +166,22 @@ int main(int argc, char **argv) {
 			free (json_test_file);
 			json_test_file = strdup (opt.arg);
 			break;
-		}
 		default:
 			ret = help (false);
 			goto beach;
+		}
+	}
+
+	char *cwd = r_sys_getdir ();
+	if (r2r_dir) {
+		chdir (r2r_dir);
+	} else {
+		bool dir_found = (opt.ind < argc)
+			? r2r_chdir_fromtest (argv[opt.ind])
+			: r2r_chdir (argv[0]);
+		if (!dir_found) {
+			eprintf ("Cannot find db/ directory related to the given test.\n");
+			return -1;
 		}
 	}
 
@@ -138,11 +217,14 @@ int main(int argc, char **argv) {
 		// Manually specified path(s)
 		int i;
 		for (i = opt.ind; i < argc; i++) {
-			if (!r2r_test_database_load (state.db, argv[i])) {
-				eprintf ("Failed to load tests from \"%s\"\n", argv[i]);
+			char *tf = (argv[i][0] == '/')? strdup (argv[i]): r_str_newf ("%s"R_SYS_DIR"%s", cwd, argv[i]);
+			if (!r2r_test_database_load (state.db, tf)) {
+				eprintf ("Failed to load tests from \"%s\"\n", tf);
 				r2r_test_database_free (state.db);
+				free (tf);
 				return -1;
 			}
+			free (tf);
 		}
 	} else {
 		// Default db path
@@ -153,7 +235,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_len (&state.db->tests));
+	R_FREE (cwd);
 
 	bool jq_available = r2r_check_jq_available ();
 	if (!jq_available) {
@@ -162,6 +244,7 @@ int main(int argc, char **argv) {
 		for (i = 0; i < r_pvector_len (&state.db->tests);) {
 			R2RTest *test = r_pvector_at (&state.db->tests, i);
 			if (test->type == R2R_TEST_TYPE_JSON) {
+				r2r_test_free (test);
 				r_pvector_remove_at (&state.db->tests, i);
 				continue;
 			}
@@ -187,6 +270,7 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
+	r_pvector_insert_range (&state.queue, 0, state.db->tests.v.a, r_pvector_len (&state.db->tests));
 
 	r_th_lock_enter (state.lock);
 

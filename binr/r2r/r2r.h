@@ -181,6 +181,7 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test);
 R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out);
 
+R_API void r2r_test_free(R2RTest *test);
 R_API char *r2r_test_name(R2RTest *test);
 R_API bool r2r_test_broken(R2RTest *test);
 R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test);
