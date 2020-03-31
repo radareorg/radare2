@@ -733,7 +733,7 @@ static bool isAllZeros(const ut8 *buf, int len) {
 }
 
 #define Pal(x,y) (x->cons && x->cons->context->pal.y)? x->cons->context->pal.y
-R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
+R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int step, int show_offset) {
 	PrintfCallback p = (PrintfCallback) rp->cb_printf;
 	bool c = rp->flags & R_PRINT_FLAGS_COLOR;
 	const char *color_0xff = c? (Pal (rp, b0xff): Color_RED): "";
@@ -755,7 +755,9 @@ R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int ste
 		if (isAllZeros (buf + i, inc)) {
 			continue;
 		}
-		p ("%8X:", addr + i);
+		if (show_offset){
+			p ("%8X:", addr + i);
+		}
 		for (j = 0; j < inc; j++) {
 			ut8 ch = buf[i + j];
 			if (ch == 0x00) {

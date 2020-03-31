@@ -6207,8 +6207,9 @@ l = use_blocksize;
 			break;
 		case 'i': // "pxi"
 			if (l != 0) {
+				int show_offset = r_config_get_i (core->config, "hex.offset");
 				r_print_hexii (core->print, core->offset, core->block,
-					core->blocksize, r_config_get_i (core->config, "hex.cols"));
+					core->blocksize, r_config_get_i (core->config, "hex.cols"), show_offset);
 			}
 			break;
 		case 'o': // "pxo"
