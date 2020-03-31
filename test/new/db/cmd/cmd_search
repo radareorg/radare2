@@ -1,3 +1,13 @@
+NAME=/m lzma
+FILE=../bins/other/hello-world.lzma
+EXPECT=<<EOF
+0x00000000 1 LZMA BE compressed data dictionary size: 32768 bytes,
+EOF
+CMDS=<<EOF
+pm
+EOF
+RUN
+
 NAME=/r push [imm] refs
 FILE=../bins/pe/x.dll
 EXPECT=<<EOF
