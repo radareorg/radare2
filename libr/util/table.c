@@ -659,7 +659,7 @@ R_API void r_table_uniq(RTable *t) {
 
 			if (!r_rows_cmp (row->items, uniq_row->items, t->cols)) {
 				r_list_delete (rows, iter);
-                break;
+				break;
 			}
 		}
 	}
