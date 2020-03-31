@@ -106,15 +106,58 @@ bool test_r_table_sort1(void) {
 	mu_end;
 }
 
-bool test_r_table_columns() {
+bool test_r_table_uniq(void) {
+	RTable *t = __table_test_data1 ();
+
+	r_table_uniq (t);
+	char *strd = r_table_tostring (t);
+	mu_assert_streq (strd,
+		"ascii code\n"
+		"----------\n"
+		"a     97\n"
+		"b     98\n"
+		"c     99\n",
+		"uniq delete nothing");
+	free (strd);
+
+	r_table_add_row (t, "a", "97", NULL);
+	r_table_add_row (t, "a", "97", NULL);
+	r_table_add_row (t, "a", "97", NULL);
+	r_table_add_row (t, "b", "98", NULL);
+	r_table_add_row (t, "c", "99", NULL);
+	r_table_add_row (t, "b", "98", NULL);
+	r_table_add_row (t, "c", "99", NULL);
+	r_table_add_row (t, "d", "99", NULL);
+	r_table_add_row (t, "b", "98", NULL);
+	r_table_add_row (t, "d", "99", NULL);
+	r_table_add_row (t, "c", "99", NULL);
+	r_table_add_row (t, "c", "100", NULL);
+
+	r_table_uniq (t);
+	char *stri = r_table_tostring (t);
+	mu_assert_streq (stri,
+		"ascii code\n"
+		"----------\n"
+		"a     97\n"
+		"b     98\n"
+		"c     99\n"
+		"d     99\n"
+		"c     100\n",
+		"uniq delete some rows");
+	free (stri);
+	r_table_free (t);
+	mu_end;
+}
+
+bool test_r_table_columns () {
 	RTable *t = NULL;
-#define CREATE_TABLE \
-	r_table_free (t); \
-	t = r_table_new (); \
-	r_table_add_column (t, r_table_type ("number"), "name", 0); \
+#define CREATE_TABLE                                                   \
+	r_table_free (t);                                              \
+	t = r_table_new ();                                            \
+	r_table_add_column (t, r_table_type ("number"), "name", 0);    \
 	r_table_add_column (t, r_table_type ("number"), "address", 0); \
-	r_table_add_row (t, "hello", "100", NULL); \
-	r_table_add_row (t, "namings", "20000", NULL); \
+	r_table_add_row (t, "hello", "100", NULL);                     \
+	r_table_add_row (t, "namings", "20000", NULL);
 
 	CREATE_TABLE
 	char *s = r_table_tocsv (t);
@@ -175,7 +218,8 @@ bool all_tests() {
 	mu_run_test(test_r_table_column_type);
 	mu_run_test(test_r_table_tostring);
 	mu_run_test(test_r_table_sort1);
-	mu_run_test(test_r_table_columns);
+	mu_run_test(test_r_table_uniq);
+	mu_run_test (test_r_table_columns);
 	return tests_passed != tests_run;
 }
 

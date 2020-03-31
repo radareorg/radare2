@@ -611,16 +611,20 @@ static int r_rows_cmp(RList *lhs, RList *rhs, RList *cols) {
 	RListIter *iter_lhs;
 	RListIter *iter_rhs;
 	RListIter *iter_col;
+	RTableColumn *item_col;
 
 	void *item_lhs;
 	void *item_rhs;
-	RTableColumn *item_col;
 	int tmp;
 
 	for (iter_lhs = lhs->head, iter_rhs = rhs->head, iter_col = cols->head;
-		iter_lhs && iter_rhs && iter_col &&
-		(item_lhs = iter_lhs->data, item_rhs = iter_rhs->data, item_col = iter_col->data, 1);
+		iter_lhs && iter_rhs && iter_col;
 		iter_lhs = iter_lhs->n, iter_rhs = iter_rhs->n, iter_col = iter_col->n) {
+
+		item_lhs = iter_lhs->data;
+		item_rhs = iter_rhs->data;
+		item_col = iter_col->data;
+
 		tmp = item_col->type->cmp (item_lhs, item_rhs);
 
 		if (tmp)
@@ -648,11 +652,14 @@ R_API void r_table_uniq(RTable *t) {
 
 	r_list_foreach_safe (rows, iter, tmp, row) {
 		for (iter_inner = rows->head;
-			iter_inner && iter_inner != iter && (uniq_row = iter_inner->data, 1);
+			iter_inner && iter_inner != iter;
 			iter_inner = iter_inner->n) {
+
+			uniq_row = iter_inner->data;
 
 			if (!r_rows_cmp (row->items, uniq_row->items, t->cols)) {
 				r_list_delete (rows, iter);
+                break;
 			}
 		}
 	}
