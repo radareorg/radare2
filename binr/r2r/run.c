@@ -22,6 +22,11 @@ R_API R2RSubprocess *r2r_subprocess_start(
 
 R_API void r2r_subprocess_wait(R2RSubprocess *proc) {}
 
+R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
+	// TODO
+}
+
+
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
 	if (!out) {
