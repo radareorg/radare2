@@ -433,9 +433,14 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 	RList *files = r_str_split_duplist (test->file.value, "\n");
 	RListIter *it;
 	RListIter *tmpit;
-	char *filename;
-	r_list_foreach_safe (files, it, tmpit, filename) {
-		if (!*filename) {
+	char *token;
+	r_list_foreach_safe (extra_args, it, tmpit, token) {
+		if (!*token) {
+			r_list_delete (extra_args, it);
+		}
+	}
+	r_list_foreach_safe (files, it, tmpit, token) {
+		if (!*token) {
 			r_list_delete (files, it);
 		}
 	}
