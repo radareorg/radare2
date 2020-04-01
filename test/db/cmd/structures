@@ -68,3 +68,22 @@ mov dword [s1.c]
 lea rax [s1.x]
 EOF
 RUN
+
+NAME=afvt struct pointer propagation
+FILE=../bins/elf/struct64
+EXPECT=<<EOF
+mov rax, qword [my_test.a]
+mov dword [rax + my_test.b], 0x88
+mov rax, qword [my_test.a]
+mov byte [rax + my_test.c], 0x62
+EOF
+CMDS=<<EOF
+"td struct Test { char *a; int b; char c; };"
+s 0x1174
+af
+afvn my_test var_8h
+afvt my_test Test*
+aat
+pd 4~[3-8]
+EOF
+RUN
