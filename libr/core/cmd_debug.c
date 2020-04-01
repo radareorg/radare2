@@ -2056,9 +2056,9 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		}
 
 		char *namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
-		char *valuestr = r_str_newf ("%s%"PFMT64x"%s", color, value, colorend);
+		char *valuestr = r_str_newf ("%s%X%s", color, value, colorend);
 
-		char *rrstr = strdup ("");
+		char *rrstr = "";
 		char *refs = r_core_anal_hasrefs (core, value, true);
 		if (refs) {
 			rrstr = refs;
@@ -2070,9 +2070,11 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		free (rrstr);
 	}
 
-	char *s = (mode == 'j')? r_table_tojson(t): r_table_tostring(t);
-	r_cons_print (s);
-	free (s);
+	if (mode == 'j') {
+		r_cons_print (r_table_tojson (t));
+	} else {
+		r_cons_print (r_table_tostring (t));
+	}
 	r_table_free (t);
 
 	if (use_colors) {

@@ -1158,13 +1158,11 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
 	free (class_name_sanitized);
 
 	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
-	if (vtables) {
-		RAnalVTable *vtable;
-		r_vector_foreach (vtables, vtable) {
-			r_cons_printf ("  %4s vtable 0x%"PFMT64x" @ +0x%"PFMT64x" size:+0x%"PFMT64x"\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
-		}
-		r_vector_free (vtables);
+	RAnalVTable *vtable;
+	r_vector_foreach (vtables, vtable) {
+		r_cons_printf ("  %4s vtable 0x%"PFMT64x" @ +0x%"PFMT64x" size:+0x%"PFMT64x"\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
 	}
+	r_vector_free (vtables);
 }
 
 static void list_all_functions_at_vtable_offset(RAnal *anal, const char *class_name, ut64 offset) {

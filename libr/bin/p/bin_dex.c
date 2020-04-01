@@ -207,6 +207,10 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	if (!str) {
 		return NULL;
 	}
+	if (count == 0) {
+		*cp = '\0';
+		return cp;
+	}
 	for (i = 0; i < NUM_FLAGS; i++) {
 		if (flags & 0x01) {
 			const char *accessStr = kAccessStrings[forWhat][i];
@@ -647,7 +651,7 @@ static void dex_parse_debug_item(RBinFile *bf,
 			address += (adjusted_opcode / 15);
 			line += -4 + (adjusted_opcode % 15);
 			struct dex_debug_position_t *position =
-				R_NEW0 (struct dex_debug_position_t);
+				malloc (sizeof (struct dex_debug_position_t));
 			if (!position) {
 				keep = false;
 				break;
@@ -657,9 +661,6 @@ static void dex_parse_debug_item(RBinFile *bf,
 			position->line = line;
 			r_list_append (debug_positions, position);
 			}
-			break;
-		}
-		if (p4 + 1 >= p4_end) {
 			break;
 		}
 		opcode = *(p4++) & 0xff;

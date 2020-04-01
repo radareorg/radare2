@@ -475,8 +475,6 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 		free (hexgraph);
 		free (refs);
 		free (vars);
-		free (xrefs);
-		free (types);
 	}
 }
 

@@ -182,7 +182,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		str_start = needle;
 
 		/* Eat a whole C string */
-		for (i = 0; i < sizeof (tmp) - 4 && needle < to; i += rc) {
+		for (i = 0; i < sizeof (tmp) - 3 && needle < to; i += rc) {
 			RRune r = {0};
 
 			if (str_type == R_STRING_TYPE_WIDE32) {
@@ -216,7 +216,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 						r = 0;
 					}
 				}
-				rc = r_utf8_encode (tmp + i, r);
+				rc = r_utf8_encode (&tmp[i], r);
 				runes++;
 				/* Print the escape code */
 			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\033\\", (char)r)) {
@@ -655,13 +655,8 @@ R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
 	if (bin->minstrlen < 1) {
 		bin->minstrlen = plugin? plugin->minstrlen: bin->minstrlen;
 	}
-	if (obj) {
-		if (!obj->info) {
-			return false;
-		}
-		if (!obj->info->lang) {
-			obj->info->lang = r_bin_lang_tostring (obj->lang);
-		}
+	if (obj && !obj->info->lang) {
+		obj->info->lang = r_bin_lang_tostring (obj->lang);
 	}
 	return true;
 }

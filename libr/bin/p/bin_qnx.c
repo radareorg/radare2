@@ -135,8 +135,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return true;
 beach:
 	free (qo);
-	r_list_free (fixups);
-	r_list_free (sections);
 	return false;
 }
 

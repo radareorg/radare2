@@ -4202,9 +4202,6 @@ static void ds_print_relocs(RDisasmState *ds) {
 	if (rel) {
 		int cstrlen = 0;
 		char *ll = r_cons_lastline (&cstrlen);
-		if (!ll) {
-			return;
-		}
 		int ansilen = r_str_ansi_len (ll);
 		int utf8len = r_utf8_strlen ((const ut8*)ll);
 		int cells = utf8len - (cstrlen - ansilen);
@@ -5792,7 +5789,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			ds->opstr = strdup (ds->hint->opcode);
 		} else {
 			if (ds->decode && !ds->immtrim) {
-				R_FREE (ds->opstr);
+				free (ds->opstr);
 				if (!hasanal) {
 					r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i, R_ANAL_OP_MASK_ALL);
 					hasanal = true;
@@ -5800,7 +5797,6 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 				ds->opstr = (tmpopstr)? tmpopstr: strdup (r_asm_op_get_asm (&ds->asmop));
 			} else if (ds->immtrim) {
-				free (ds->opstr);
 				ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 				r_parse_immtrim (ds->opstr);
 			} else if (ds->use_esil) {
@@ -5831,7 +5827,6 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 					}
 				}
 				ds_build_op_str (ds, true);
-				free (ds->opstr);
 				ds->opstr = strdup (ds->str);
 				asm_str = colorize_asm_string (core, ds, true);
 				core->parser->flagspace = ofs;

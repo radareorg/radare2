@@ -302,8 +302,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else
 	if (!strncmp (cmd, "pid", 3)) {
 		if (iop) {
+			int pid = iop->pid;
 			if (cmd[3] == ' ') {
-				int pid = atoi (cmd + 4);
+				pid = atoi (cmd + 4);
 				if (pid > 0 && pid != iop->pid) {
 					(void)r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 					// TODO: do not set pid if attach fails?

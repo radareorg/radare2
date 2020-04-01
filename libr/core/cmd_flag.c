@@ -512,7 +512,6 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 			r_cons_printf ("ft %s %s\n", tag, flags);
 		}
 		r_list_free (list);
-		free (inp);
 		return;
 	}
 	if (mode == 'j') { // "ftj"
@@ -533,7 +532,6 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		}
 		pj_end (pj);
 		r_list_free (list);
-		free (inp);
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 		return;

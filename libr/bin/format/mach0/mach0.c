@@ -42,12 +42,11 @@ static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	do {
 		if (p == end) {
 			eprintf ("malformed uleb128\n");
-			return UT64_MAX;
+			break;
 		}
 		slice = *p & 0x7f;
 		if (bit > 63) {
 			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x"\n", bit, result);
-			return UT64_MAX;
 		} else {
 			result |= (slice << bit);
 			bit += 7;
@@ -1187,6 +1186,7 @@ wrong_read:
 static int parse_function_starts (struct MACH0_(obj_t) *bin, ut64 off) {
 	struct linkedit_data_command fc;
 	ut8 sfc[sizeof (struct linkedit_data_command)] = {0};
+	ut8 *buf;
 	int len;
 
 	if (off > bin->size || off + sizeof (struct linkedit_data_command) > bin->size) {
@@ -1204,33 +1204,28 @@ static int parse_function_starts (struct MACH0_(obj_t) *bin, ut64 off) {
 	fc.dataoff = r_read_ble32 (&sfc[8], bin->big_endian);
 	fc.datasize = r_read_ble32 (&sfc[12], bin->big_endian);
 
-	if ((int)fc.datasize > 0) {
-		ut8 *buf = calloc (1, fc.datasize + 1);
-		if (!buf) {
-			bprintf ("Failed to allocate buffer\n");
-			return false;
-		}
-		bin->func_size = fc.datasize;
-		if (fc.dataoff > bin->size || fc.dataoff + fc.datasize > bin->size) {
-			free (buf);
-			bprintf ("Likely overflow while parsing "
-				"LC_FUNCTION_STARTS command\n");
-			return false;
-		}
-		len = r_buf_read_at (bin->b, fc.dataoff, buf, fc.datasize);
-		if (len != fc.datasize) {
-			free (buf);
-			bprintf ("Failed to get data while parsing"
-				" LC_FUNCTION_STARTS\n");
-			return false;
-		}
-		buf[fc.datasize] = 0; // null-terminated buffer
-		bin->func_start = buf;
-		return true;
+	buf = calloc (1, fc.datasize + 1);
+	if (!buf) {
+		bprintf ("Failed to allocate buffer\n");
+		return false;
 	}
-	bin->func_start = NULL;
-	return false;
-
+	bin->func_size = fc.datasize;
+	if (fc.dataoff > bin->size || fc.dataoff + fc.datasize > bin->size) {
+		free (buf);
+		bprintf ("Likely overflow while parsing "
+			"LC_FUNCTION_STARTS command\n");
+		return false;
+	}
+	len = r_buf_read_at (bin->b, fc.dataoff, buf, fc.datasize);
+	if (len != fc.datasize) {
+		free (buf);
+		bprintf ("Failed to get data while parsing"
+			" LC_FUNCTION_STARTS\n");
+		return false;
+	}
+	buf[fc.datasize] = 0; // null-terminated buffer
+	bin->func_start = buf;
+	return true;
 }
 
 static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
@@ -2083,8 +2078,6 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 				s->format = r_str_newf ("Cd %d[%"PFMT64d"]", ws, s->vsize / ws);
 			}
 			r_list_append (list, s);
-			free (segment_name);
-			free (section_name);
 		}
 	}
 	return list;
@@ -2311,27 +2304,14 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		RTrieState * state = r_list_get_top (states);
 		ur.p = state->node;
 		ut64 len = ULEB();
-		if (len == UT64_MAX) {
-			break;
-		}
 		if (len) {
 			ut64 flags = ULEB();
-		if (flags == UT64_MAX) {
-			break;
-		}
 			ut64 offset = ULEB();
-		if (offset == UT64_MAX) {
-			break;
-		}
 			ut64 resolver = 0;
 			bool isReexport = flags & EXPORT_SYMBOL_FLAGS_REEXPORT;
 			bool hasResolver = flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER;
 			if (hasResolver) {
-				ut64 res = ULEB();
-				if (res == UT64_MAX) {
-					break;
-				}
-				resolver = res + bin->header_at;
+				resolver = ULEB() + bin->header_at;
 			} else if (isReexport) {
 				ur.p += strlen ((char*) ur.p) + 1;
 				// TODO: handle this
@@ -2371,9 +2351,6 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			}
 		}
 		ut64 child_count = ULEB();
-		if (child_count == UT64_MAX) {
-			goto beach;
-		}
 		if (state->i == child_count) {
 			r_list_pop (states);
 			continue;
@@ -2394,11 +2371,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			R_FREE (next);
 			goto beach;
 		}
-		ut64 tr = ULEB();
-		if (tr == UT64_MAX) {
-			goto beach;
-		}
-		next->node = tr + trie;
+		next->node = ULEB() + trie;
 		if (next->node >= end) {
 			eprintf ("malformed export trie\n");
 			R_FREE (next);

@@ -618,7 +618,7 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 					return 1;
 				}
 			}
-			r_core_anal_fcn (core, ref->addr, ref->at, ref->type, fcndepth - 1);
+			r_core_anal_fcn (core, ref->addr, ref->at, ref->type, fcndepth);
 		}
 	} else {
 		ut64 offs = 0;
@@ -652,7 +652,7 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 				ref1.addr = r_read_ble64 (bo, be);
 				break;
 			}
-			r_anal_try_get_fcn (core, &ref1, fcndepth, refdepth - 1);
+			r_anal_try_get_fcn (core, &ref1, fcndepth, refdepth);
 		}
 	}
 	return 1;
@@ -881,7 +881,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 			if (!next[i] || r_anal_get_fcn_in (core->anal, next[i], 0)) {
 				continue;
 			}
-			r_core_anal_fcn (core, next[i], from, 0, depth - 1);
+			r_core_anal_fcn (core, next[i], from, 0, depth);
 		}
 		free (next);
 	}
@@ -926,7 +926,7 @@ error:
 					if (!next[i]) {
 						continue;
 					}
-					r_core_anal_fcn (core, next[i], next[i], 0, depth - 1);
+					r_core_anal_fcn (core, next[i], next[i], 0, depth);
 				}
 				free (next);
 			}
@@ -1276,9 +1276,6 @@ bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ 
 
 bool print_arch_hint_cb(ut64 addr, R_NULLABLE const char *arch, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
-	if (!node) {
-		return false;
-	}
 	node->addr = addr;
 	node->type = HINT_NODE_ARCH;
 	node->arch = arch;
@@ -1338,7 +1335,6 @@ static void print_hint_tree(RBTree tree, int mode) {
 	if (pj) {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
 	}
 }
 
@@ -1404,14 +1400,14 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 			oline = line;
 		}
 	} else if (opts & R_CORE_ANAL_STAR) {
-                snprintf (cmd, sizeof (cmd), "pdb %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
+                sprintf (cmd, "pdb %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
                 str = r_core_cmd_str (core, cmd);
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
 		const bool scrColor = r_config_get (core->config, "scr.color");
 		const bool scrUtf8 = r_config_get (core->config, "scr.utf8");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		r_config_set (core->config, "scr.utf8", "false");
-		snprintf (cmd, sizeof (cmd), "pD %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
+		sprintf (cmd, "pD %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
 		r_config_set_i (core->config, "scr.color", scrColor);
 		r_config_set_i (core->config, "scr.utf8", scrUtf8);
@@ -2308,8 +2304,7 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	ut64 from = r_config_get_i (core->config, "graph.from");
 	ut64 to = r_config_get_i (core->config, "graph.to");
 
-	switch (fmt)
-	{
+	switch (fmt) {
 	case R_GRAPH_FORMAT_JSON:
 		r_cons_printf ("[");
 		break;
@@ -2808,7 +2803,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 	int ebbs = 0;
 	pj_o (pj);
 	pj_kn (pj, "offset", fcn->addr);
-	char *name = r_core_anal_fcn_name (core, fcn);
+	const char *name = r_core_anal_fcn_name (core, fcn);
 	if (name) {
 		pj_ks (pj, "name", name);
 	}
@@ -2816,17 +2811,17 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 	pj_ks (pj, "is-pure", r_str_bool (r_anal_function_purity (fcn)));
 	pj_kn (pj, "realsz", r_anal_function_realsize (fcn));
 	pj_kb (pj, "noreturn", fcn->is_noreturn);
-	pj_ki (pj, "stackframe", fcn->maxstack);
+	pj_kn (pj, "stackframe", fcn->maxstack);
 	if (fcn->cc) {
 		pj_ks (pj, "calltype", fcn->cc); // calling conventions
 	}
-	pj_ki (pj, "cost", r_anal_function_cost (fcn)); // execution cost
-	pj_ki (pj, "cc", r_anal_function_complexity (fcn)); // cyclic cost
-	pj_ki (pj, "bits", fcn->bits);
-	pj_ks (pj, "type", r_anal_fcntype_tostring (fcn->type));
-	pj_ki (pj, "nbbs", r_list_length (fcn->bbs));
-	pj_ki (pj, "edges", r_anal_function_count_edges (fcn, &ebbs));
-	pj_ki (pj, "ebbs", ebbs);
+	pj_kn (pj, "cost", r_anal_function_cost (fcn)); // execution cost
+	pj_kn (pj, "cc", r_anal_function_complexity (fcn)); // cyclic cost
+	pj_kn (pj, "bits", fcn->bits);
+	pj_kn (pj, "type", r_anal_fcntype_tostring (fcn->type));
+	pj_kn (pj, "nbbs", r_list_length (fcn->bbs));
+	pj_kn (pj, "edges", r_anal_function_count_edges (fcn, &ebbs));
+	pj_kn (pj, "ebbs", ebbs);
 	{
 		char *sig = r_core_cmd_strf (core, "afcf @ 0x%"PFMT64x, fcn->addr);
 		if (sig) {
@@ -2999,7 +2994,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf ("axd 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
 			break;
 		case R_ANAL_REF_TYPE_CODE:
-			r_cons_printf ("axc 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
+			r_cons_printf ("axc 0x%x 0x%"PFMT64x"\n", refi->addr, refi->at);
 			break;
 		case R_ANAL_REF_TYPE_STRING:
 			r_cons_printf ("axs 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
@@ -3042,7 +3037,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64u,
 			fcn->addr, name, r_anal_function_linear_size (fcn));
-	r_cons_printf ("\nis-pure: %s", r_str_bool (r_anal_function_purity (fcn)));
+	r_cons_printf ("\nis-pure: %d", r_str_bool (r_anal_function_purity (fcn)));
 	r_cons_printf ("\nrealsz: %d", r_anal_function_realsize (fcn));
 	r_cons_printf ("\nstackframe: %d", fcn->maxstack);
 	if (fcn->cc) {
@@ -3244,7 +3239,6 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_list_sort (fcns, cmpaddr);
 		RList *flist = r_list_newf ((RListFree) r_listinfo_free);
 		if (!flist) {
-			r_list_free (fcns);
 			return -1;
 		}
 		ls_foreach (fcns, iter, fcn) {

@@ -1137,21 +1137,20 @@ R_API bool r_debug_step_back(RDebug *dbg) {
 }
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
-	RDebugReasonType reason = R_DEBUG_REASON_NONE;
-	int ret = 0;
+	RDebugReasonType reason, ret = false;
 	RBreakpointItem *bp = NULL;
 
 	if (!dbg) {
-		return 0;
+		return false;
 	}
 repeat:
 	if (r_debug_is_dead (dbg)) {
-		return 0;
+		return false;
 	}
 	if (dbg->h && dbg->h->cont) {
 		/* handle the stage-2 of breakpoints */
 		if (!r_debug_recoil (dbg, R_DBG_RECOIL_CONTINUE)) {
-			return 0;
+			return false;
 		}
 		/* tell the inferior to go! */
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
@@ -1227,7 +1226,7 @@ repeat:
 		/* if continuing killed the inferior, we won't be able to get
 		 * the registers.. */
 		if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
-			return 0;
+			return false;
 		}
 
 		/* if we hit a tracing breakpoint, we need to continue in

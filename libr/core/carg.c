@@ -5,9 +5,6 @@
 #define MAXSTRLEN 50
 
 static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_name, const char *cc, int arg_num) {
-	if (!fcn_name || !arg || !anal) {
-		return;
-	}
 	Sdb *TDB = anal->sdb_types;
 	arg->name = r_type_func_args_name (TDB, fcn_name, arg_num);
 	arg->orig_c_type = r_type_func_args_type (TDB, fcn_name, arg_num);
@@ -147,12 +144,6 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 R_API void r_core_print_func_args(RCore *core) {
 	RListIter *iter;
 	bool color = r_config_get_i (core->config, "scr.color");
-	if (!core->anal) {
-		return;
-	}
-	if (!core->anal->reg) {
-		return;
-	}
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	ut64 cur_addr = r_reg_getv (core->anal->reg, pc);
 	RAnalOp *op = r_core_anal_op (core, cur_addr, R_ANAL_OP_MASK_BASIC);
@@ -212,18 +203,12 @@ R_API void r_core_print_func_args(RCore *core) {
 }
 
 static void r_anal_fcn_arg_free(RAnalFuncArg *arg) {
-	if (!arg) {
-		return;
-	}
 	free (arg->orig_c_type);
 	free (arg);
 }
 
 /* Returns a list of RAnalFuncArg */
 R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
-	if (!fcn_name || !core->anal) {
-		return NULL;
-	}
 	Sdb *TDB = core->anal->sdb_types;
 	RList *list = r_list_newf ((RListFree)r_anal_fcn_arg_free);
 	char *key = resolve_fcn_name (core->anal, fcn_name);

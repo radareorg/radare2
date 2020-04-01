@@ -233,7 +233,6 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 	}
 	if (!no_key_mode && keylen < 1) {
 		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
-		free (binkey);
 		return false;
 	}
 	RCrypto *cry = r_crypto_new ();
@@ -1552,10 +1551,8 @@ static int cmd_write(void *data, const char *input) {
 						}
 						if (*b) {
 							RAsmCode *ac = r_asm_massemble (core->assembler, b);
-							if (ac) {
-								r_io_write_at (core->io, addr, ac->bytes, ac->len);
-								r_asm_code_free (ac);
-							}
+							r_io_write_at (core->io, addr, ac->bytes, ac->len);
+							r_asm_code_free (ac);
 						}
 						b = a;
 						addr = nextaddr;

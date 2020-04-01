@@ -95,7 +95,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		return false;
 	}
 	
-	ut8 *buf = calloc (1, objc->_const->vsize);
+	ut8 *buf = calloc (1, objc->_const->vsize / 2);
 	if (!buf) {
 		return false;
 	}
@@ -219,7 +219,7 @@ static bool objc_find_refs(RCore *core) {
 		}
 
 	}
-	sdb_free (objc.db);
+	free (objc.db);
 	oldstr = r_print_rowlog (core->print, sdb_fmt ("A total of %d xref were found", total));
 	r_print_rowlog_done (core->print, oldstr);
 

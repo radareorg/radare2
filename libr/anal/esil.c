@@ -629,12 +629,7 @@ static bool esil_of(RAnalEsil *esil) {
 		return false;
 	}
 	ut64 bit;
-
-	if (!r_anal_esil_get_parm (esil, p_bit, &bit)) {
-		ERR ("esil_of: empty stack");
-		free (p_bit);
-		return false;
-	}
+	r_anal_esil_get_parm (esil, p_bit, &bit);
 	free (p_bit);
 
 	const ut64 m[2] = {genmask (bit & 0x3f), genmask ((bit + 0x3f) & 0x3f)};
@@ -1049,8 +1044,10 @@ static bool esil_if(RAnalEsil *esil) {
 		return true;
 	}
 	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &num)) {
-		// condition not matching, skipping until
+	if (src) {
+		// TODO: check return value
+		(void)r_anal_esil_get_parm (esil, src, &num);
+		// condition not matching, skipping until }
 		if (!num) {
 			esil->skip++;
 		}

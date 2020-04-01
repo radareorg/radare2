@@ -74,7 +74,6 @@ static void __var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) 
 }
 
 static void __var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char *type, ut64 addr, bool ref, bool pfx) {
-	r_return_if_fail (anal && var && type);
 	// XXX types should be passed without spaces to trim
 	type = r_str_trim_head_ro (type);
 	// default type if none is provided
@@ -164,7 +163,7 @@ static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 				op_esil = strdup (reg);
 			}
 		}
-		strncpy (regname, op_esil, size - 1);
+		strncpy (regname, op_esil, size + 1);
 	}
 	free (op_esil);
 	r_anal_op_free (op);
@@ -276,7 +275,7 @@ static RList *parse_format(RCore *core, char *fmt) {
 		while (IS_DIGIT (*ptr)) {
 			ptr++;
 		}
-		r_str_ncpy (arr, ptr, sizeof (arr) - 1);
+		r_str_ncpy (arr, ptr, sizeof (arr) + 1);
 		char *tmp = arr;
 		while (tmp && (IS_LOWER (*tmp) || IS_UPPER (*tmp))) {
 			tmp++;
@@ -349,7 +348,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 			//XXX: param arg_num must be fixed to support floating point register
 			place = r_anal_cc_arg (anal, cc, arg_num);
 		}
-		char regname[REGNAME_SIZE] = {0};
+		char regname[4] = {0};
 		ut64 xaddr = UT64_MAX;
 		bool memref = false;
 		bool cmt_set = false;
@@ -612,13 +611,13 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 								__var_rename (anal, mop->var, "canary", addr);
 							}
 						}
-						r_anal_op_free (mop);
+						free (mop);
 					}
 					free (fcn_name);
 				}
 			} else if (!resolved && ret_type && ret_reg) {
 				// Forward propgation of function return type
-				char src[REGNAME_SIZE] = {0};
+				char src[4] = {0};
 				const char *query = sdb_fmt ("%d.reg.write", cur_idx);
 				const char *cur_dest = sdb_const_get (trace, query, 0);
 				get_src_regname (core, aop.addr, src, sizeof (src));

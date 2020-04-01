@@ -92,7 +92,6 @@ static int lang_v_file(RLang *lang, const char *file) {
 	char *buf = r_str_newf ("v -cflags '-shared -fPIC' -o %s build %s", shl, file);
 	free (name);
 	if (r_sandbox_system (buf, 1) != 0) {
-		free (shl);
 		free (buf);
 		return false;
 	}

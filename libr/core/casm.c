@@ -48,6 +48,7 @@ R_API void r_core_asm_hit_free(void *_hit) {
 			free (hit->code);
 		}
 		free (hit);
+		free (hit);
 	}
 }
 
@@ -110,7 +111,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		return NULL;
 	}
 	tokens[0] = NULL;
-	for (tokcount = 0; tokcount < R_ARRAY_SIZE (tokens) - 1; tokcount++) {
+	for (tokcount = 0; tokcount < R_ARRAY_SIZE (tokens); tokcount++) {
 		tok = strtok (tokcount? NULL: ptr, ";");
 		if (!tok) {
 			break;
@@ -138,7 +139,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			r_asm_set_pc (core->assembler, addr);
 			if (mode == 'i') {
 				RAnalOp analop = {0};
-				ut64 len = R_MIN (15, core->blocksize - idx);
+				ut64 len = core->blocksize;
 				if (r_anal_op (core->anal, &analop, addr, buf + idx, len, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM) < 1) {
 					idx ++; // TODO: honor mininstrsz
 					continue;
@@ -486,9 +487,6 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	const int addrbytes = core->io->addrbytes;
 	RAsmCode *c;
 	RList *hits = r_core_asm_hit_list_new ();
-	if (!hits) {
-		return NULL;
-	}
 
 	len = R_MIN (len - len % addrbytes, addrbytes * addr);
 	if (len < 1) {
@@ -496,7 +494,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		return NULL;
 	}
 
-	ut8 *buf = (ut8 *)malloc (len);
+	ut8 *buf = (ut8 *)malloc (len / 2);
 	if (!buf) {
 		r_list_free (hits);
 		return NULL;

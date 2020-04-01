@@ -88,9 +88,6 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len) {
 	int maxsz, minsz;
 	struct r_reg_set_t *regset;
 	RRegArena *arena;
-	if (len < 1 || !buf) {
-		return false;
-	}
 	if (type < 0 || type >= R_REG_TYPE_LAST) {
 		return false;
 	}
@@ -332,8 +329,6 @@ R_API void r_reg_arena_shrink(RReg *reg) {
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_list_foreach (reg->regset[i].pool, iter, a) {
-			free (a->bytes);
-			/* ha ha ha */
 			a->bytes = calloc (1024, 1);
 			a->size = 1024;
 			/* looks like sizing down the arena breaks the regsync */

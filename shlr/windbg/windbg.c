@@ -265,6 +265,9 @@ int windbg_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 		if (pkt->type != type) {
 			WIND_DBG eprintf ("We were not waiting for this... %08x\n", pkt->type);
 		}
+		if (pkt->leader == KD_PACKET_DATA) {
+			kd_send_ctrl_packet (ctx->io_ptr, KD_PACKET_TYPE_ACKNOWLEDGE, 0);
+		}
 		if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_STATE_CHANGE64) {
 			// dump_stc (pkt);
 			WIND_DBG eprintf ("State64\n");
@@ -477,7 +480,7 @@ RList *windbg_list_modules(WindCtx *ctx) {
 
 	// LIST_ENTRY InMemoryOrderModuleList
 	ut64 mlistoff = ctx->is_x64 ? 0x20 : 0x14;
-
+	
 	base = ptr + mlistoff;
 
 	windbg_read_at_uva (ctx, (uint8_t *) &ptr, base, 4 << ctx->is_x64);
@@ -1003,7 +1006,7 @@ int windbg_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 		return 0;
 	}
 
-	memcpy (buf, rr->data, R_MIN (size, pkt->length - sizeof (*rr)));
+	memcpy (buf, rr->data, R_MIN (size, pkt->length - sizeof (rr)));
 
 	free (pkt);
 

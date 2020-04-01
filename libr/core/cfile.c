@@ -259,9 +259,7 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	// dump current config file so other r2 tools can use the same options
 	char *config_sdb_path = NULL;
 	int config_sdb_fd = r_file_mkstemp (NULL, &config_sdb_path);
-	if (config_sdb_fd >= 0) {
-		close (config_sdb_fd);
-	}
+	close (config_sdb_fd);
 
 	Sdb *config_sdb = sdb_new (NULL, config_sdb_path, 0);
 	r_config_serialize (core->config, config_sdb);
@@ -498,8 +496,7 @@ R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 		"/usr/lib",
 		"/lib",
 #endif
-		"." R_SYS_DIR,
-		NULL
+		"." R_SYS_DIR
 	};
 	const char * *libpath = (const char * *) &ldlibrarypath;
 
@@ -917,9 +914,8 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		if (cp && *cp) {
 			r_core_cmd (r, cp, 0);
 		}
-		char *absfile = r_file_abspath (file);
+		char *absfile = strdup(r_file_abspath (file));
 		r_config_set (r->config, "file.path", absfile);
-		free (absfile);
 	}
 	// check load addr to make sure its still valid
 	r_bin_bind (r->bin, &(fh->binb));
@@ -1042,7 +1038,7 @@ R_API RCoreFile *r_core_file_get_by_fd(RCore *core, int fd) {
 			return file;
 		}
 	}
-	return NULL;
+	return file;
 }
 
 R_API int r_core_file_list(RCore *core, int mode) {

@@ -219,8 +219,7 @@ static const char *help_msg_equalh[] = {
 	"=h*", "", "restart current webserver",
 	"=h&", " port", "start http server in background",
 	"=H", " port", "launch browser and listen for http",
-	"=H&", " port", "launch browser and listen for http in background",
-	NULL
+	"=H&", " port", "launch browser and listen for http in background"
 };
 
 static const char *help_msg_equalg[] = {
@@ -471,9 +470,6 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 		eprintf ("Usage: uniq # uniq to list unique strings in file\n");
 		break;
 	default: // "uniq"
-		if (!arg) {
-			arg = "";
-		}
 		if (r_fs_check (core->fs, arg)) {
 			r_core_cmdf (core, "md %s", arg);
 		} else {
@@ -995,9 +991,7 @@ static char *langFromHashbang(RCore *core, const char *file) {
 			if (nl) {
 				*nl = 0;
 			}
-			nl = strdup (firstLine + 2);
-			r_sandbox_close (fd);
-			return nl;
+			return strdup (firstLine + 2);
 		}
 		r_sandbox_close (fd);
 	}
@@ -1412,7 +1406,7 @@ R_API int r_line_hist_sdb_up(RLine *line) {
 		return false;
 	}
 	line->sdbshell_hist_iter = line->sdbshell_hist_iter->n;
-	strncpy (line->buffer.data, line->sdbshell_hist_iter->data, R_LINE_BUFSIZE - 1);
+	strcpy (line->buffer.data, line->sdbshell_hist_iter->data);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	return true;
 }
@@ -1422,7 +1416,7 @@ R_API int r_line_hist_sdb_down(RLine *line) {
 		return false;
 	}
 	line->sdbshell_hist_iter = line->sdbshell_hist_iter->p;
-	strncpy (line->buffer.data, line->sdbshell_hist_iter->data, R_LINE_BUFSIZE - 1);
+	strcpy (line->buffer.data, line->sdbshell_hist_iter->data);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	return true;
 }
@@ -2068,12 +2062,12 @@ static inline void print_dict(RCoreAutocomplete* a, int sub) {
 	}
 	int i, j;
 	const char* name = "unknown";
-	for (i = 0; i < a->n_subcmds; i++) {
+	for (i = 0; i < a->n_subcmds; ++i) {
 		RCoreAutocomplete* b = a->subcmds[i];
 		if (b->locked) {
 			continue;
 		}
-		for (j = 0; j < R_CORE_AUTOCMPLT_END; j++) {
+		for (j = 0; j < R_CORE_AUTOCMPLT_END; ++j) {
 			if (b->type == autocomplete_flags[j].type) {
 				name = autocomplete_flags[j].name;
 				break;
@@ -2086,7 +2080,7 @@ static inline void print_dict(RCoreAutocomplete* a, int sub) {
 
 static int autocomplete_type(const char* strflag) {
 	int i;
-	for (i = 0; i < R_CORE_AUTOCMPLT_END; i++) {
+	for (i = 0; i < R_CORE_AUTOCMPLT_END; ++i) {
 		if (autocomplete_flags[i].desc && !strncmp (strflag, autocomplete_flags[i].name, 5)) {
 			return autocomplete_flags[i].type;
 		}
@@ -2107,7 +2101,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_triple_exclamation);
 		int i;
 		r_cons_printf ("|Types:\n");
-		for (i = 0; i < R_CORE_AUTOCMPLT_END; i++) {
+		for (i = 0; i < R_CORE_AUTOCMPLT_END; ++i) {
 			if (autocomplete_flags[i].desc) {
 				r_cons_printf ("| %s     %s\n",
 					autocomplete_flags[i].name,
@@ -2597,15 +2591,17 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	 * nested call of this function */
 	ut64 orig_offset = core->offset;
 	icmd = strdup (cmd);
-	if (!icmd) {
-		goto beach;
-	}
 
 	if (core->max_cmd_depth - core->cons->context->cmd_depth == 1) {
 		core->prompt_offset = core->offset;
 	}
+#if 0
+        r_str_trim (icmd);
+        cmd = icmd;
+#else
 	cmd = (char *)r_str_trim_head_ro (icmd);
 	r_str_trim_tail (cmd);
+#endif
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!*cmd) {
 		if (core->cmdrepeat > 0) {

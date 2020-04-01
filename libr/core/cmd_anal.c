@@ -1295,7 +1295,7 @@ static int var_cmd(RCore *core, const char *str) {
 					free (a);
 					a = strdup ("\n");
 				}
-				r_cons_printf ("%s %s = %s", p->isarg ? "arg": "var", p->name, a);
+				r_cons_printf ("%s %s = %s%s", p->isarg ? "arg": "var", p->name, a);
 				free (a);
 			}
 			r_list_free (list);
@@ -1583,10 +1583,8 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 
 static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 	char *msg = cmd_syscall_dostr (core, n, addr);
-	if (msg) {
-		r_cons_println (msg);
-		free (msg);
-	}
+	r_cons_println (msg);
+	free (msg);
 }
 
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
@@ -1809,14 +1807,14 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.refptr != -1) {
 				pj_ki (pj, "refptr", op.refptr);
 			}
-			pj_ki (pj, "cycles", op.cycles);
+			pj_kn (pj, "cycles", op.cycles);
 			pj_ki (pj, "failcycles", op.failcycles);
 			pj_ki (pj, "delay", op.delay);
 			const char *p1 = r_anal_stackop_tostring (op.stackop);
 			if (strcmp (p1, "null")) {
 				pj_ks (pj, "stack", p1);
 			}
-			pj_kn (pj, "stackptr", op.stackptr);
+			pj_ki (pj, "stackptr", op.stackptr);
 			const char *arg = (op.type & R_ANAL_OP_TYPE_COND)
 				? r_anal_cond_tostring (op.cond): NULL;
 			if (arg) {
@@ -2180,7 +2178,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 				pj_o (pj);
 
 				if (b->jump != UT64_MAX) {
-					pj_kn (pj, "jump", b->jump);
+					pj_ki (pj, "jump", b->jump);
 				}
 				if (b->fail != UT64_MAX) {
 					pj_kn (pj, "fail", b->fail);
@@ -2214,7 +2212,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 				}
 				pj_kn (pj, "addr", b->addr);
 				pj_ki (pj, "size", b->size);
-				pj_ki (pj, "inputs", inputs);
+				pj_kn (pj, "inputs", inputs);
 				pj_ki (pj, "outputs", outputs);
 				pj_ki (pj, "ninstr", b->ninstr);
 				pj_kb (pj, "traced", b->traced);
@@ -2569,7 +2567,7 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
 	if (fcn) {
 		RFlagItem *flag = r_flag_get (core->flags, fcn->name);
-		if (flag && flag->space && strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS) == 0) {
+		if (flag->space && strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS) == 0) {
 			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
 			r_flag_rename (core->flags, flag, name);
 		} else {
@@ -3482,11 +3480,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		case 'r': {	// "afcr"
 			int i;
+			char *cmd, *regname;
 			RStrBuf *json_buf = r_strbuf_new ("{");
 			bool json = input[3] == 'j';
 
-			char *cmd = r_str_newf ("cc.%s.ret", fcn->cc);
-			const char *regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
+			cmd = r_str_newf ("cc.%s.ret", fcn->cc);
+			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {
 					r_strbuf_appendf (json_buf, "\"ret\":\"%s\"", regname);
@@ -7657,7 +7656,6 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_str_word_set0 (ptr);
 			ut64 addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			r_core_anal_hint_print (core->anal, addr, input[0]);
-			free (ptr);
 		} else {
 			r_core_anal_hint_list (core->anal, input[0]);
 		}
@@ -9758,7 +9756,6 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 	}
 	RAnalOp* op = r_core_anal_op (core, pcv, -1);
 	if (!op) {
-		r_strbuf_free (sb);
 		return;
 	}
 bool go_on = true;

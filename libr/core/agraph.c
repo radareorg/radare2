@@ -133,9 +133,6 @@ static int prev_mode(int mode) {
 }
 
 static RGraphNode *agraph_get_title(const RAGraph *g, RANode *n, bool in) {
-	if (!n) {
-		return NULL;
-	}
 	if (n->title && *n->title) {
 		return n->gnode;
 	}
@@ -251,7 +248,7 @@ static void append_shortcut (const RAGraph *g, char *title, char *nodetitle, int
 }
 
 static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool details) {
-	char title[TITLE_LEN];
+	char title[TITLE_LEN / 2];
 	int x, delta_x = 0;
 
 	if (!G (n->x + MINIGRAPH_NODE_CENTER_X, n->y) &&
@@ -428,9 +425,6 @@ static int **get_crossing_matrix(const RGraph *g,
 	int j, len = layers[i].n_nodes;
 
 	int **m = R_NEWS0 (int *, len);
-	if (!m) {
-		return NULL;
-	}
 	for (j = 0; j < len; j++) {
 		m[j] = R_NEWS0 (int, len);
 		if (!m[j]) {
@@ -578,7 +572,6 @@ static int layer_sweep(const RGraph *g, const struct layer_t layers[],
 	for (j = 0; j < n_rows; j++) {
 		free (cross_matrix[j]);
 	}
-	free (cross_matrix);
 	return changed;
 }
 
@@ -2986,9 +2979,7 @@ static void agraph_print_edges(RAGraph *g) {
 					r_cons_canvas_line (g->can, bx, by, bx, b->y + b->h, &style);
 				}
 				if (b->x != a->x || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
-					if (tm) {
-						tm->edgectr++;
-					}
+					tm->edgectr += 1;
 				}
 				break;
 			case 1:
@@ -4206,10 +4197,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '=':
 		{         // TODO: edit
 			showcursor (core, true);
+			const char *buf = NULL;
 			const char *cmd = r_config_get (core->config, "cmd.gprompt");
 			r_line_set_prompt ("cmd.gprompt> ");
 			core->cons->line->contents = strdup (cmd);
-			const char *buf = r_line_readline ();
+			buf = r_line_readline ();
 			core->cons->line->contents = NULL;
 			r_config_set (core->config, "cmd.gprompt", buf);
 			showcursor (core, false);

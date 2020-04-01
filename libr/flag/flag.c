@@ -13,9 +13,7 @@ R_LIB_VERSION(r_flag);
 
 static const char *str_callback(RNum *user, ut64 off, int *ok) {
 	RFlag *f = (RFlag*)user;
-	if (ok) {
-		*ok = 0;
-	}
+	*ok = 0;
 	if (f) {
 		const RList *list = r_flag_get_list (f, off);
 		RFlagItem *item = r_list_get_top (list);
@@ -318,7 +316,7 @@ static bool print_flag_json(RFlagItem *flag, void *user) {
 	if (flag->alias) {
 		pj_ks (u->pj, "alias", flag->alias);
 	} else {
-		pj_kn (u->pj, "offset", flag->offset);
+		pj_ki (u->pj, "offset", flag->offset);
 	}
 	if (flag->comment) {
 		pj_ks (u->pj, "comment", flag->comment);

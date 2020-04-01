@@ -67,9 +67,6 @@ void r_anal_hint_storage_fini(RAnal *a);
 R_API RAnal *r_anal_new(void) {
 	int i;
 	RAnal *anal = R_NEW0 (RAnal);
-	if (!anal) {
-		return NULL;
-	}
 	if (!r_str_constpool_init (&anal->constpool)) {
 		free (anal);
 		return NULL;
@@ -699,11 +696,11 @@ R_API bool r_anal_is_prelude(RAnal *anal, const ut8 *data, int len) {
 		r_list_foreach (l, iter, kw) {
 			int ks = kw->keyword_length;
 			if (len >= ks && !memcmp (data, kw->bin_keyword, ks)) {
-				r_list_free (l);
+				free (l);
 				return true;
 			}
 		}
-		r_list_free (l);
+		free (l);
 	}
 	return false;
 }

@@ -1017,7 +1017,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			}
 		}
 		r_core_fini (&core);
-		r_list_free (files);
 		return rc;
 	}
 

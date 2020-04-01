@@ -147,12 +147,10 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 
 	use_clang = false;
 	if (!strcmp (cEnv->TRIPLET, "darwin-arm-64")) {
-		free (cEnv->CC);
 		cEnv->CC = strdup ("xcrun --sdk iphoneos gcc -arch arm64 -miphoneos-version-min=0.0");
 		use_clang = true;
 		cEnv->TEXT = "0.__TEXT.__text";
 	} else if (!strcmp (cEnv->TRIPLET, "darwin-arm-32")) {
-		free (cEnv->CC);
 		cEnv->CC = strdup ("xcrun --sdk iphoneos gcc -arch armv7 -miphoneos-version-min=0.0");
 		use_clang = true;
 		cEnv->TEXT = "0.__TEXT.__text";
@@ -320,8 +318,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 
 	size_t i;
 	const char *extArray[] = {"bin", "tmp", "s", "o"};
-	for (i = 0; i < 4; i++) {
-		free (fileExt);
+	for (i = 0; i < 5; i++) {
 		if (!(fileExt = r_str_newf ("%s.%s", file, extArray[i]))) {
 			goto fail;
 		}

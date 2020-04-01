@@ -3684,7 +3684,6 @@ R_API void r_core_parse_radare2rc(RCore *r) {
 		}
 		r_core_cmd_file (r, homerc);
 	}
-	free (homerc);
 	homerc = r_str_home (R2_HOME_RC);
 	if (homerc && r_file_is_regular (homerc)) {
 		if (has_debug) {

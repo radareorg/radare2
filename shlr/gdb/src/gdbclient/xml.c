@@ -441,7 +441,6 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 		} else {
 			if (pid_info) {
 				free (pid_info);
-				pid_info = NULL;
 			}
 		}
 	}

@@ -631,10 +631,7 @@ static void selection_widget_erase() {
 		RCons *cons = r_cons_singleton ();
 		if (cons->event_resize && cons->event_data) {
 			cons->event_resize (cons->event_data);
-			RCore *core = (RCore *)(cons->user);
-			if (core) {
-				cons->cb_task_oneshot (&core->tasks, print_rline_task, core);
-			}
+			cons->cb_task_oneshot (cons->user, print_rline_task, NULL);
 		}
 		printf ("%s", R_CONS_CLEAR_FROM_CURSOR_TO_END);
 	}
@@ -1478,11 +1475,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			unix_word_rubout ();
 			break;
 		case 24:// ^X
-			if (I.buffer.index > 0) {
-				strncpy (I.buffer.data, I.buffer.data + I.buffer.index, I.buffer.length);
-				I.buffer.length -= I.buffer.index;
-				I.buffer.index = 0;
-			}
+			strncpy (I.buffer.data, I.buffer.data + I.buffer.index, I.buffer.length);
+			I.buffer.length -= I.buffer.index;
+			I.buffer.index = 0;
 			break;
 		case 25:// ^Y - paste
 			paste ();

@@ -1387,7 +1387,8 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			module[module_len - 4] = '\0';
 		}
 
-		const char *import = reloc->import->name + strlen ("Ordinal_");
+		char *import = strdup (reloc->import->name + strlen ("Ordinal_"));
+
 		if (import) {
 			char *filename = NULL;
 			int ordinal = atoi (import);
@@ -1702,7 +1703,7 @@ R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RList *symbols, const char 
 				sdb_num_get (mydb, sdb_fmt ("%x", sdb_hash (name)), NULL);
 		} else {
 			res = (RBinSymbol*)(void*)(size_t)
-				sdb_num_get (mydb, sdb_fmt ("0x%08"PFMT64x, addr), NULL);
+				sdb_num_get (mydb, sdb_fmt ("0x"PFMT64x, addr), NULL);
 		}
 	} else {
 		mydb = sdb_new0 ();
@@ -1715,7 +1716,7 @@ R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RList *symbols, const char 
 			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			/* 0x${vaddr}=${ptrToSymbol} */
-			if (!sdb_num_add (mydb, sdb_fmt ("0x%08"PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0)) {
+			if (!sdb_num_add (mydb, sdb_fmt ("0x"PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0)) {
 			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			if (name) {
@@ -1926,9 +1927,8 @@ static const char *getPrefixFor(RBinSymbol *sym) {
 				return sym->is_imported ? "obj.imp" : "obj";
 			}
 		}
-		return sym->is_imported ? "sym.imp" : "sym";
 	}
-	return "sym";
+	return sym->is_imported ? "sym.imp" : "sym";
 }
 
 #define MAXFLAG_LEN_DEFAULT 128
@@ -2187,7 +2187,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
-					strdup (fn? fn: "");
+					strdup (fn);
 				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 				if (fi) {
 					r_flag_item_set_realname (fi, n);
@@ -2519,9 +2519,10 @@ static int bin_map_sections_to_segments (RBin *bin, int mode) {
 		r_list_append (list, section);
 	}
 
+	char *tmp2 = NULL;
 	r_list_foreach (segments, iter, segment) {
 		RInterval segment_itv = (RInterval){segment->vaddr, segment->size};
-		char *tmp2 = r_str_new ("");
+		tmp2 = r_str_new ("");
 		r_list_foreach (sections, iter2, section) {
 			RInterval section_itv = (RInterval){section->vaddr, section->size};
 			if (r_itv_begin (section_itv) >= r_itv_begin (segment_itv) && r_itv_end (section_itv) <= r_itv_end (segment_itv) && section->name[0]) {
@@ -2531,25 +2532,17 @@ static int bin_map_sections_to_segments (RBin *bin, int mode) {
 		r_table_add_row (table, segment->name, tmp2, 0);
 		/*output to json*/
 		json_output = r_str_appendf (json_output, "\"%s\": \"%s\",", segment->name, tmp2);
-		free (tmp2);
 	}
 	// remove last ,
 	json_output [strlen (json_output) - 1] = 0;
-	char *jo = r_str_newf ("[{%s}]", json_output);
-	free (json_output);
-	json_output = jo;
+	json_output = r_str_newf ("[{%s}]", json_output);
 
 	if (IS_MODE_JSON (mode)){
 		r_cons_printf ("%s", json_output);
 	} else if (IS_MODE_NORMAL (mode)){
 		r_cons_printf ("Section to Segment mapping:\n");
-		char *s = r_table_tostring (table);
-		r_cons_printf ("%s\n", s);
-		free (s);
+		r_cons_printf ("%s\n", r_table_tostring (table));
 	}
-	free (json_output);
-	r_list_free (segments);
-	r_table_free (table);
 	return true;
 }
 

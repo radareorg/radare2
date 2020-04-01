@@ -759,7 +759,6 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		} else {
 			*ptr++ = '\0';
 			port = ptr;
-			r_str_trim (port);
 		}
 	} else {
 		port = NULL;
@@ -778,6 +777,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		}
 	}
 
+	r_str_trim (port);
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
 		return;
@@ -1051,11 +1051,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 			return;
 		}
 		r_socket_close (s);
-		if (!r_socket_connect (s, rh->host, sdb_fmt ("%d", rh->port), R_SOCKET_PROTO_TCP, 0)) {
-			eprintf ("Error: Cannot connect to '%s' (%d)\n", rh->host, rh->port);
-			r_socket_free (s);
-			return;
-		}
+		r_socket_connect (s, rh->host, sdb_fmt ("%d", rh->port), R_SOCKET_PROTO_TCP, 0);
 		r_socket_write (s, (ut8*)cmd, cmd_len);
 		r_socket_write (s, "\n", 2);
 		int maxlen = 4096; // r_read_le32 (blen);

@@ -560,7 +560,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 	lista[idx++] = b_start;
 	for (x = 0; x < 1024; x++) {
 		if (lista[x] != 0) {
-			cur =0;
+			cur = 0;
 			b_start = lista[x];
 			lista[x] = 0;
 			while (cur < size) {
@@ -818,7 +818,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 	}
 
 	sdb_free (sdb);
-	r_list_free (result);
+	free (result);
 	r_list_free (block_list);
 	return true;
 }

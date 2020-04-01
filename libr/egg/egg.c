@@ -28,9 +28,6 @@ void egg_patch_free (void *p) {
 R_API REgg *r_egg_new() {
 	int i;
 	REgg *egg = R_NEW0 (REgg);
-	if (!egg) {
-		return NULL;
-	}
 	egg->src = r_buf_new ();
 	if (!egg->src) {
 		goto beach;
@@ -95,9 +92,9 @@ R_API char *r_egg_to_string(REgg *egg) {
 
 R_API void r_egg_free(REgg *egg) {
 	if (egg) {
-		r_buf_free (egg->src);
-		r_buf_free (egg->buf);
-		r_buf_free (egg->bin);
+		free (egg->src);
+		free (egg->buf);
+		free (egg->bin);
 		r_list_free (egg->list);
 		r_asm_free (egg->rasm);
 		r_syscall_free (egg->syscall);

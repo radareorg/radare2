@@ -188,14 +188,12 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 
 	RKernelCacheObj *obj = R_NEW0 (RKernelCacheObj);
 	if (!obj) {
-		R_FREE (prelink_range);
 		goto beach;
 	}
 
 	RCFValueDict *prelink_info = r_cf_value_dict_parse (fbuf, prelink_range->range.offset,
 		prelink_range->range.size, R_CF_OPTION_SKIP_NSDATA);
 	if (!prelink_info) {
-		R_FREE (prelink_range);
 		R_FREE (obj);
 		goto beach;
 	}
@@ -203,7 +201,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	if (!pending_bin_files) {
 		pending_bin_files = r_list_new ();
 		if (!pending_bin_files) {
-			R_FREE (prelink_range);
 			R_FREE (obj);
 			R_FREE (prelink_info);
 			goto beach;
@@ -262,7 +259,6 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *ma
 
 	RPrelinkRange *prelink_range = R_NEW0 (RPrelinkRange);
 	if (!prelink_range) {
-		R_FREE (sections);
 		return NULL;
 	}
 

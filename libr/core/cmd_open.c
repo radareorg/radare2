@@ -891,17 +891,11 @@ R_API void r_core_file_reopen_in_malloc(RCore *core) {
 }
 
 static RList *__save_old_sections(RCore *core) {
+	// Do I really need this?
 	RList *sections = r_bin_get_sections (core->bin);
 	RListIter *it;
 	RBinSection *sec;
 	RList *old_sections = r_list_new ();
-
-	// Return an empty list
-	if (!sections) {
-		eprintf ("WARNING: No sections found, functions and flags won't be rebased");
-		return old_sections;
-	}
-
 	old_sections->free = sections->free;
 	r_list_foreach (sections, it, sec) {
 		RBinSection *old_sec = R_NEW0 (RBinSection);
@@ -1788,7 +1782,6 @@ static int cmd_open(void *data, const char *input) {
 				}
 			}
 			if ((fdx == -1) || (fd == -1) || (fdx == fd)) {
-				free (inp);
 				break;
 			}
 			r_io_desc_exchange (core->io, fd, fdx);

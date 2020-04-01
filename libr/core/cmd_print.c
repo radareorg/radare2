@@ -2937,7 +2937,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		input++;
 		break;
 	default:
-		if (*input && input[1] == 'j') {
+		if (input[1] == 'j') {
 			input++;
 		}
 		fixed_size = false;
@@ -3572,7 +3572,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 							break;
 						case 'z':
 							if ((IS_PRINTABLE (p[j]))) {
-								if ((j + 1) < blocksize && p[j + 1] == 0) {
+								if (j < blocksize && p[j + 1] == 0) {
 									k++;
 									j++;
 								}
@@ -3759,7 +3759,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 					break;
 				case 'z':
 					if ((IS_PRINTABLE (p[j]))) {
-						if ((j + 1) < blocksize && p[j + 1] == 0) {
+						if (p[j + 1] == 0) {
 							k++;
 							j++;
 						}

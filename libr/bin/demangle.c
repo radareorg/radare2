@@ -70,7 +70,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	RBin *bin = bf? bf->rbin: NULL;
 	RBinObject *o = bf? bf->o: NULL;
 	RListIter *iter;
-	const char *lib = NULL;
+	const char *lib;
 	if (!strncmp (str, "reloc.", 6)) {
 		str += 6;
 	}
