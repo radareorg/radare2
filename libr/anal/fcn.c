@@ -360,10 +360,14 @@ static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_b
 	r_anal_block_recurse (start_block, fcn_takeover_block_recursive_cb, fcn);
 }
 
-static bool is_retpoline(RAnal *anal, ut64 addr) {
+static const char *retpoline_reg(RAnal *anal, ut64 addr) {
 	RFlagItem *flag = anal->flag_get (anal->flb.f, addr);
 	if (flag) {
-		return strstr (flag->name, "thunk");
+		const char *token = "x86_indirect_thunk_";
+		const char *thunk = strstr (flag->name, token);
+		if (thunk) {
+			return thunk + strlen (token);
+		}
 	}
 #if 0
 // TODO: implement following code analysis check for stripped binaries:
@@ -380,14 +384,15 @@ static bool is_retpoline(RAnal *anal, ut64 addr) {
 0x00000a71  `---->     48890424  mov qword [rsp], rax
 0x00000a75                   c3  ret
 #endif
-	return false;
+	return NULL;
 }
 
 static void analyze_retpoline(RAnal *anal, RAnalOp *op) {
 	if (anal->opt.retpoline) {
-		if (is_retpoline (anal, op->jump)) {
+		const char *rr = retpoline_reg (anal, op->jump);
+		if (rr) {
 			op->type = R_ANAL_OP_TYPE_RJMP;
-			op->reg = "rax"; // 0; // raxcs_reg_name (*handle, INSOP (0).mem.base);
+			op->reg = rr;
 		}
 	}
 }
