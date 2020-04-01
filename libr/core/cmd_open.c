@@ -1424,12 +1424,17 @@ static int cmd_open(void *data, const char *input) {
 				}
 				r_core_bin_load (core, argv0, addr);
 				if (*input == '+') { // "o+"
-					SdbListIter *iter;
-					RIOMap *map;
-					ls_foreach_prev (core->io->maps, iter, map) {
-						if (map->fd == fd) {
-							map->perm |= R_PERM_WX;
+					RIODesc *desc = r_io_desc_get (core->io, fd);
+					if (desc && (desc->perm & R_PERM_W)) {
+						SdbListIter *iter;
+						RIOMap *map;
+						ls_foreach_prev (core->io->maps, iter, map) {
+							if (map->fd == fd) {
+								map->perm |= R_PERM_WX;
+							}
 						}
+					} else {
+						eprintf ("Error: %s is not writable\n", argv0);
 					}
 				}
 			} else {
