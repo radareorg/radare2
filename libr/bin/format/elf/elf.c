@@ -97,6 +97,21 @@ static inline int __strnlen(const char *str, int len) {
 	return l + 1;
 }
 
+static RBinAddr *binaddr_new(ut64 vaddr, ut64 paddr) {
+	RBinAddr *res = R_NEW0 (RBinAddr);
+	res->vaddr = vaddr;
+	res->paddr = paddr;
+	return res;
+}
+
+static RBinAddr *binaddr_new_v(ELFOBJ *bin, ut64 vaddr) {
+	return binaddr_new (vaddr, Elf_(r_bin_elf_v2p_new (bin, vaddr)));
+}
+
+static RBinAddr *binaddr_new_p(ELFOBJ *bin, ut64 paddr) {
+	return binaddr_new (Elf_ (r_bin_elf_p2v_new (bin, paddr)), paddr);
+}
+
 static bool is_bin_etrel(ELFOBJ *bin) {
 	return bin->ehdr.e_type == ET_REL;
 }
@@ -1827,69 +1842,93 @@ ut64 Elf_(r_bin_elf_get_boffset)(ELFOBJ *bin) {
 	return base == UT64_MAX? 0: base;
 }
 
-ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *bin) {
-	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
+RBinAddr *Elf_(r_bin_elf_get_init_addr)(ELFOBJ *bin) {
+	r_return_val_if_fail (bin, NULL);
+	RBinAddr *entry = Elf_(r_bin_elf_get_entry_addr) (bin);
 	ut8 buf[128];
-	if (!bin || entry == UT64_MAX) {
-		return UT64_MAX;
+	if (!entry) {
+		return NULL;
 	}
-	if (r_buf_read_at (bin->b, entry + 16, buf, sizeof (buf)) < 1) {
+	if (r_buf_read_at (bin->b, entry->paddr + 16, buf, sizeof (buf)) < 1) {
 		bprintf ("read (init_offset)\n");
-		return 0;
+		return NULL;
 	}
-	if (buf[0] == 0x68) { // push // x86 only
-		ut64 addr;
-		memmove (buf, buf + 1, 4);
-		addr = (ut64)r_read_le32 (buf);
-		return Elf_(r_bin_elf_v2p) (bin, addr);
+	if (buf[0] != 0x68) { // push // x86 only
+		return NULL;
 	}
-	return 0;
+	ut64 addr;
+	memmove (buf, buf + 1, 4);
+	addr = (ut64)r_read_le32 (buf);
+	free (entry);
+	return binaddr_new_v (bin, addr);
 }
 
-ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
-	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
+RBinAddr *Elf_(r_bin_elf_get_fini_addr)(ELFOBJ *bin) {
+	r_return_val_if_fail (bin, NULL);
+	RBinAddr *entry = Elf_(r_bin_elf_get_entry_addr) (bin);
 	ut8 buf[512];
-	if (!bin || entry == UT64_MAX) {
-		return UT64_MAX;
+	if (!entry) {
+		return NULL;
 	}
-	if (r_buf_read_at (bin->b, entry + 11, buf, sizeof (buf)) == -1) {
+	if (r_buf_read_at (bin->b, entry->paddr + 11, buf, sizeof (buf)) == -1) {
 		bprintf ("read (get_fini)\n");
-		return 0;
+		return NULL;
 	}
-	if (*buf == 0x68) { // push // x86/32 only
-		memmove (buf, buf + 1, 4);
-		ut64 addr = (ut64)r_read_le32 (buf);
-		return Elf_(r_bin_elf_v2p) (bin, addr);
+	if (*buf != 0x68) { // push // x86/32 only
+		return NULL;
 	}
-	return 0;
+	memmove (buf, buf + 1, 4);
+	ut64 addr = (ut64)r_read_le32 (buf);
+	free (entry);
+	return binaddr_new_v (bin, addr);
 }
 
-static bool isExecutable(ELFOBJ *bin) {
+static bool hasEntryPoint(ELFOBJ *bin) {
 	switch (bin->ehdr.e_type) {
 	case ET_EXEC: return true;
-	case ET_DYN:  return true;
+	case ET_DYN: return true;
+	default: return false;
 	}
-	return false;
 }
 
 ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, UT64_MAX);
-	ut64 entry = bin->ehdr.e_entry;
-	if (entry == UT64_MAX) {
-		if (!isExecutable (bin)) {
-			return UT64_MAX;
-		}
-		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
-		if (entry != UT64_MAX) {
-			return entry;
-		}
-		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
-		if (entry != UT64_MAX) {
-			return entry;
-		}
-		return Elf_(r_bin_elf_get_section_offset)(bin, ".init");
+	// not all object file type has an entry point,
+	// just skip those that don't have one
+	if (!hasEntryPoint (bin)) {
+		return UT64_MAX;
 	}
-	return Elf_(r_bin_elf_v2p) (bin, entry);
+	// try to find the address from the header
+	ut64 v_entry = bin->ehdr.e_entry;
+	if (v_entry != 0) {
+		return Elf_(r_bin_elf_v2p_new) (bin, v_entry);
+	}
+	// if it is not possible, consider the first byte of one of these
+	// sections as entry point
+	ut64 entry = Elf_(r_bin_elf_get_section_offset) (bin, ".init.text");
+	if (entry != UT64_MAX) {
+		return entry;
+	}
+	entry = Elf_(r_bin_elf_get_section_offset) (bin, ".text");
+	if (entry != UT64_MAX) {
+		return entry;
+	}
+	return Elf_(r_bin_elf_get_section_offset) (bin, ".init");
+}
+
+RBinAddr *Elf_(r_bin_elf_get_entry_addr)(ELFOBJ *bin) {
+	r_return_val_if_fail (bin, NULL);
+	// not all object file type has an entry point,
+	// just skip those that don't have one
+	if (!hasEntryPoint (bin)) {
+		return NULL;
+	}
+	RBinAddr *res = R_NEW0 (RBinAddr);
+	res->hpaddr = 0x18; // e_entry offset in ELF header
+	res->hvaddr = UT64_MAX;
+	res->vaddr = bin->ehdr.e_entry;
+	res->paddr = Elf_(r_bin_elf_v2p_new) (bin, res->vaddr);
+	return res;
 }
 
 static ut64 getmainsymbol(ELFOBJ *bin) {
@@ -1906,33 +1945,35 @@ static ut64 getmainsymbol(ELFOBJ *bin) {
 	return UT64_MAX;
 }
 
-ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
-	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
+RBinAddr *Elf_(r_bin_elf_get_main_addr)(ELFOBJ *bin) {
+	r_return_val_if_fail (bin, NULL);
+	RBinAddr *entry = Elf_(r_bin_elf_get_entry_addr) (bin);
+	RBinAddr *res = NULL;
 	ut8 buf[256];
-	if (!bin || entry == UT64_MAX) {
-		return UT64_MAX;
+	if (!entry) {
+		return NULL;
 	}
-	if (entry > bin->size || (entry + sizeof (buf)) > bin->size) {
-		return UT64_MAX;
+	if (entry->paddr > bin->size || (entry->paddr + sizeof (buf)) > bin->size) {
+		return NULL;
 	}
 	// unnecessary to read 512 bytes imho
-	if (r_buf_read_at (bin->b, entry, buf, sizeof (buf)) < 1) {
+	if (r_buf_read_at (bin->b, entry->paddr, buf, sizeof (buf)) < 1) {
 		bprintf ("read (main)\n");
-		return UT64_MAX;
+		return NULL;
 	}
 	// ARM64
 	if (buf[0x18+3] == 0x58 && buf[0x2f] == 0x00) {
-		ut32 entry_vaddr = Elf_(r_bin_elf_p2v) (bin, entry);
 		ut32 main_addr = r_read_le32 (&buf[0x30]);
-		if ((main_addr >> 16) == (entry_vaddr >> 16)) {
-			return Elf_(r_bin_elf_v2p) (bin, main_addr);
+		if ((main_addr >> 16) == (entry->vaddr >> 16)) {
+			res = binaddr_new_v (bin, main_addr);
+			goto out;
 		}
 	}
 
 	// TODO: Use arch to identify arch before memcmp's
 
 	// ARM Glibc
-	if (entry & 1) {
+	if (entry->vaddr & 1) {
 		int delta = 0;
 		/* thumb entry points */
 		if (!memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00\x0e\x02\xbc\x6a\x46", 11)) {
@@ -1943,17 +1984,18 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 			delta = 0x30;
 		}
 		if (delta) {
-			ut64 pa = Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[delta-1]) & ~1);
-			if (pa < r_buf_size (bin->b)) {
-				return pa;
-			}
+			ut64 va = r_read_le32 (&buf[delta - 1]) &~1;
+			res = binaddr_new_v (bin, va);
+			goto out;
 		}
 	} else {
 		/* non-thumb entry points */
 		if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
-			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x34]) & ~1);
+			res = binaddr_new_v (bin, r_read_le32 (&buf[0x34]) & ~1);
+			goto out;
 		} else if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
-			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x30]) & ~1);
+			res = binaddr_new_v (bin, r_read_le32 (&buf[0x30]) & ~1);
+			goto out;
 		}
 	}
 
@@ -1981,7 +2023,8 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 				if ((instr & 0xffff0000) == 0x8f840000) { // lw a0, offset(gp)
 					const short delta = instr & 0x0000ffff;
 					r_buf_read_at (bin->b, /* got_entry_offset = */ gp + delta, buf, 4);
-					return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0]));
+					res = binaddr_new_v (bin, r_read_le32 (&buf[0]));
+					goto out;
 				}
 			}
 		}
@@ -1992,17 +2035,19 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	if (buf[0] == 0xe8 && !memcmp (buf + 5, "\x50\xe8\x00\x00\x00\x00\xb8\x01\x00\x00\x00\x53", 12)) {
 		size_t SIZEOF_CALL = 5;
 		ut64 rel_addr = (ut64)((int)(buf[1] + (buf[2] << 8) + (buf[3] << 16) + (buf[4] << 24)));
-		ut64 addr = Elf_(r_bin_elf_p2v)(bin, entry + SIZEOF_CALL);
+		ut64 addr = Elf_(r_bin_elf_p2v)(bin, entry->paddr + SIZEOF_CALL);
 		addr += rel_addr;
-		return Elf_(r_bin_elf_v2p) (bin, addr);
+		res = binaddr_new_v (bin, addr);
+		goto out;
 	}
 	// X86-PIE
 	if (buf[0x00] == 0x48 && buf[0x1e] == 0x8d && buf[0x11] == 0xe8) {
 		ut32 *pmain = (ut32*)(buf + 0x30);
 		ut64 vmain = Elf_(r_bin_elf_p2v) (bin, (ut64)*pmain);
-		ut64 ventry = Elf_(r_bin_elf_p2v) (bin, entry);
+		ut64 ventry = Elf_(r_bin_elf_p2v) (bin, entry->paddr);
 		if (vmain >> 16 == ventry >> 16) {
-			return (ut64)vmain;
+			res = binaddr_new_v (bin, vmain);
+			goto out;
 		}
 	}
 	// X86-PIE
@@ -2010,10 +2055,10 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 		if (!memcmp (buf, "\x31\xed\x49\x89", 4)) {// linux
 			ut64 maddr, baddr;
 			ut8 n32s[sizeof (ut32)] = {0};
-			maddr = entry + 0x24 + r_read_le32 (buf + 0x20);
+			maddr = entry->paddr + 0x24 + r_read_le32 (buf + 0x20);
 			if (r_buf_read_at (bin->b, maddr, n32s, sizeof (ut32)) == -1) {
 				bprintf ("read (maddr) 2\n");
-				return 0;
+				return NULL;
 			}
 			maddr = (ut64)r_read_le32 (&n32s[0]);
 			baddr = (bin->ehdr.e_entry >> 16) << 16;
@@ -2021,22 +2066,26 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 				baddr = Elf_(r_bin_elf_get_baddr) (bin);
 			}
 			maddr += baddr;
-			return maddr;
+			res = binaddr_new_p (bin, maddr);
+			goto out;
 		}
 	}
 	// X86-NONPIE
 #if R_BIN_ELF64
 	if (!memcmp (buf, "\x49\x89\xd9", 3) && buf[156] == 0xe8) { // openbsd
-		return r_read_le32 (&buf[157]) + entry + 156 + 5;
+		res = binaddr_new_p (bin, r_read_le32 (&buf[157]) + entry->paddr + 156 + 5);
+		goto out;
 	}
 	if (!memcmp (buf+29, "\x48\xc7\xc7", 3)) { // linux
 		ut64 addr = (ut64)r_read_le32 (&buf[29 + 3]);
-		return Elf_(r_bin_elf_v2p) (bin, addr);
+		res = binaddr_new_v (bin, addr);
+		goto out;
 	}
 #else
 	if (buf[23] == '\x68') {
 		ut64 addr = (ut64)r_read_le32 (&buf[23 + 1]);
-		return Elf_(r_bin_elf_v2p) (bin, addr);
+		res = binaddr_new_v (bin, addr);
+		goto out;
 	}
 #endif
 	/* linux64 pie main -- probably buggy in some cases */
@@ -2048,21 +2097,25 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	if (buf[bo] == 0x48 && buf[bo + 1] == 0x8d) { // lea rdi, qword [rip-0x21c4]
 		ut8 *p = buf + bo + 3;
 		st32 maindelta = (st32)r_read_le32 (p);
-		ut64 vmain = (ut64)(entry + bo + maindelta) + 7;
-		ut64 ventry = Elf_(r_bin_elf_p2v) (bin, entry);
+		ut64 vmain = (ut64)(entry->paddr + bo + maindelta) + 7;
+		ut64 ventry = Elf_(r_bin_elf_p2v) (bin, entry->paddr);
 		if (vmain>>16 == ventry>>16) {
-			return (ut64)vmain;
+			res = binaddr_new_v (bin, vmain);
+			goto out;
 		}
 	}
 
 	/* find sym.main if possible */
-	{
-		ut64 m = getmainsymbol (bin);
-		if (m != UT64_MAX) {
-			return m;
-		}
+	ut64 m = getmainsymbol (bin);
+	if (m != UT64_MAX) {
+		res = binaddr_new_p (bin, m);
+		goto out;
 	}
-	return UT64_MAX;
+	return NULL;
+
+out:
+	free (entry);
+	return res;
 }
 
 bool Elf_(r_bin_elf_get_stripped)(ELFOBJ *bin) {
@@ -2443,10 +2496,12 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 				}
 			}
 		}
-		ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
-		if (entry & 1) {
+		RBinAddr *entry = Elf_(r_bin_elf_get_entry_addr) (bin);
+		if (entry && entry->vaddr & 1) {
+			free (entry);
 			return 16;
 		}
+		free (entry);
 	}
 	switch (bin->ehdr.e_ident[EI_CLASS]) {
 	case ELFCLASS32:   return 32;

@@ -117,30 +117,26 @@ static ut64 boffset(RBinFile *bf) {
 }
 
 static RBinAddr* binsym(RBinFile *bf, int sym) {
-	struct Elf_(r_bin_elf_obj_t)* obj = bf->o->bin_obj;
+	ELFOBJ *obj = bf->o->bin_obj;
 	RBinAddr *ret = NULL;
-	ut64 addr = 0LL;
 
 	switch (sym) {
 	case R_BIN_SYM_ENTRY:
-		addr = Elf_(r_bin_elf_get_entry_offset) (bf->o->bin_obj);
+		ret = Elf_(r_bin_elf_get_entry_addr) (obj);
 		break;
 	case R_BIN_SYM_MAIN:
-		addr = Elf_(r_bin_elf_get_main_offset) (bf->o->bin_obj);
+		ret = Elf_(r_bin_elf_get_main_addr) (obj);
 		break;
 	case R_BIN_SYM_INIT:
-		addr = Elf_(r_bin_elf_get_init_offset) (bf->o->bin_obj);
+		ret = Elf_(r_bin_elf_get_init_addr) (obj);
 		break;
 	case R_BIN_SYM_FINI:
-		addr = Elf_(r_bin_elf_get_fini_offset) (bf->o->bin_obj);
+		ret = Elf_(r_bin_elf_get_fini_addr) (obj);
 		break;
 	}
-	if (addr && addr != UT64_MAX && (ret = R_NEW0 (RBinAddr))) {
-		struct Elf_(r_bin_elf_obj_t) *bin = bf->o->bin_obj;
-		bool is_arm = bin->ehdr.e_machine == EM_ARM;
-		ret->paddr = addr;
-		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
-		if (is_arm && addr & 1) {
+	if (ret) {
+		bool is_arm = obj->ehdr.e_machine == EM_ARM;
+		if (is_arm && ret->vaddr & 1) {
 			ret->bits = 16;
 			ret->vaddr--;
 			ret->paddr--;
@@ -388,7 +384,6 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 static RList* entries(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
-	RBinAddr *ptr = NULL;
 	struct r_bin_elf_symbol_t *symbol;
 	int i;
 
@@ -397,15 +392,8 @@ static RList* entries(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ut64 pa = Elf_(r_bin_elf_get_entry_offset) (obj);
-	if (pa != UT64_MAX) {
-		if (!(ptr = R_NEW0 (RBinAddr))) {
-			return ret;
-		}
-		ptr->paddr = pa;
-		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
-		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
-		ptr->hvaddr = UT64_MAX;
+	RBinAddr *ptr = Elf_(r_bin_elf_get_entry_addr) (obj);
+	if (ptr != NULL) {
 		if (bf->o->sections) {
 			RListIter *iter;
 			RBinSection *section;
@@ -415,9 +403,6 @@ static RList* entries(RBinFile *bf) {
 					break;
 				}
 			}
-		}
-		if (ptr->hvaddr == UT64_MAX) {
-			Elf_(r_bin_elf_p2v_new) (obj, ptr->hpaddr);
 		}
 
 		if (obj->ehdr.e_machine == EM_ARM) {
