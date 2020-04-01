@@ -1,8 +1,0 @@
-NAME=SWF: open
-BROKEN=1
-FILE=../../bins/swf/CurveBall.swf
-CMDS=iI~arch
-EXPECT=<<EOF
-arch     swf
-EOF
-RUN

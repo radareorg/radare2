@@ -1,0 +1,8 @@
+NAME=Welcome
+CMDS=<<EOF
+?e to r2land
+EOF
+EXPECT=<<EOF
+to r2land
+EOF
+RUN

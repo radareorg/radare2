@@ -1,6 +1,0 @@
-NAME=PE: corkami tinydrivXP.sys - open
-FILE=../bins/pe/tinydrivXP.sys
-EXPECT=<<EOF
-EOF
-CMDS=q!
-RUN

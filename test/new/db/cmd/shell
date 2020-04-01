@@ -1,8 +1,0 @@
-NAME=stdin eof
-FILE=-
-EXPECT=<<EOF
-EOF
-CMDS=<<EOF
-
-EOF
-RUN
