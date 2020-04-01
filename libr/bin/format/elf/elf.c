@@ -1944,7 +1944,7 @@ static RBinAddr *get_main_addr_by_symbol(ELFOBJ *bin) {
 	ut64 m = getmainsymbol (bin);
 	RBinAddr *res = NULL;
 	if (m != UT64_MAX) {
-		res = binaddr_new_v (bin, m);
+		res = binaddr_new_p (bin, m);
 	}
 	return res;
 }
