@@ -132,7 +132,6 @@ ut64 Elf_(r_bin_elf_v2p)(struct Elf_(r_bin_elf_obj_t) *bin, ut64 vaddr);
 ut64 Elf_(r_bin_elf_p2v_new)(struct Elf_(r_bin_elf_obj_t) *bin, ut64 paddr);
 ut64 Elf_(r_bin_elf_v2p_new)(struct Elf_(r_bin_elf_obj_t) *bin, ut64 vaddr);
 ut64 Elf_(r_bin_elf_get_boffset)(struct Elf_(r_bin_elf_obj_t) *bin);
-ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinAddr *Elf_(r_bin_elf_get_entry_addr)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinAddr *Elf_(r_bin_elf_get_main_addr)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinAddr *Elf_(r_bin_elf_get_init_addr)(struct Elf_(r_bin_elf_obj_t) *bin);

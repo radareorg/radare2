@@ -1891,31 +1891,6 @@ static bool hasEntryPoint(ELFOBJ *bin) {
 	}
 }
 
-ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
-	r_return_val_if_fail (bin, UT64_MAX);
-	// not all object file type has an entry point,
-	// just skip those that don't have one
-	if (!hasEntryPoint (bin)) {
-		return UT64_MAX;
-	}
-	// try to find the address from the header
-	ut64 v_entry = bin->ehdr.e_entry;
-	if (v_entry != 0) {
-		return Elf_(r_bin_elf_v2p_new) (bin, v_entry);
-	}
-	// if it is not possible, consider the first byte of one of these
-	// sections as entry point
-	ut64 entry = Elf_(r_bin_elf_get_section_offset) (bin, ".init.text");
-	if (entry != UT64_MAX) {
-		return entry;
-	}
-	entry = Elf_(r_bin_elf_get_section_offset) (bin, ".text");
-	if (entry != UT64_MAX) {
-		return entry;
-	}
-	return Elf_(r_bin_elf_get_section_offset) (bin, ".init");
-}
-
 RBinAddr *Elf_(r_bin_elf_get_entry_addr)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, NULL);
 	// not all object file type has an entry point,
