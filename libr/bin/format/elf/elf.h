@@ -82,6 +82,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	Elf_(Phdr)* phdr;
 	Elf_(Shdr)* shdr;
 
+	Elf_(Phdr) *interp_phdr;
 	Elf_(Shdr) *strtab_section;
 	ut64 strtab_size;
 	char* strtab;
@@ -136,7 +137,8 @@ RBinAddr *Elf_(r_bin_elf_get_entry_addr)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinAddr *Elf_(r_bin_elf_get_main_addr)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinAddr *Elf_(r_bin_elf_get_init_addr)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinAddr *Elf_(r_bin_elf_get_fini_addr)(struct Elf_(r_bin_elf_obj_t)* bin);
-char *Elf_(r_bin_elf_intrp)(struct Elf_(r_bin_elf_obj_t) *bin);
+char *Elf_(r_bin_elf_intrp_str)(struct Elf_(r_bin_elf_obj_t) *bin);
+Elf_(Phdr) *Elf_(r_bin_elf_intrp)(struct Elf_(r_bin_elf_obj_t) *bin);
 char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin);
 bool Elf_(r_bin_elf_get_stripped)(struct Elf_(r_bin_elf_obj_t) *bin);
 bool Elf_(r_bin_elf_is_static)(struct Elf_(r_bin_elf_obj_t) *bin);

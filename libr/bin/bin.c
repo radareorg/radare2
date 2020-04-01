@@ -1256,7 +1256,7 @@ R_API RList * /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
 /* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
  * paddr otherwise */
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
-	r_return_val_if_fail (bin && paddr != UT64_MAX, UT64_MAX);
+	r_return_val_if_fail (bin, UT64_MAX);
 
 	if (!bin->cur) {
 		return paddr;

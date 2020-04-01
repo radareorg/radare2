@@ -1058,7 +1058,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->big_endian = Elf_(r_bin_elf_is_big_endian) (obj);
 	ret->has_va = Elf_(r_bin_elf_has_va) (obj);
 	ret->has_nx = Elf_(r_bin_elf_has_nx) (obj);
-	ret->intrp = Elf_(r_bin_elf_intrp) (obj);
+	ret->intrp = Elf_(r_bin_elf_intrp_str) (obj);
 	ret->compiler = Elf_(r_bin_elf_compiler) (obj);
 	ret->dbg_info = 0;
 	if (!Elf_(r_bin_elf_get_stripped) (obj)) {
