@@ -627,13 +627,16 @@ static int r_rows_cmp(RList *lhs, RList *rhs, RList *cols) {
 
 		tmp = item_col->type->cmp (item_lhs, item_rhs);
 
-		if (tmp)
+		if (tmp) {
 			return tmp;
+		}
 	}
 
 	if (iter_lhs) {
 		return 1;
-	} else if (iter_rhs) {
+	}
+
+	if (iter_rhs) {
 		return -1;
 	}
 
