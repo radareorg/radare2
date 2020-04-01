@@ -5,7 +5,7 @@ packages:
     - devel/gmake
     - devel/llvm
     - ftp/wget
-    - python
+    - lang/python
 environment:
     CXX: clang++
     CC: clang
@@ -33,5 +33,5 @@ tasks:
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
         ln -s ${HOME}/radare2-testbins test/bins
         # Running the test suite
-        cd test && gmake
+        cd test && gmake -k all
 

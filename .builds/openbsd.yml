@@ -34,5 +34,5 @@ tasks:
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
         ln -s ${HOME}/radare2-testbins test/bins
         # Running the test suite
-        cd test && gmake
+        cd test && gmake -k all
 
