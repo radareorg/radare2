@@ -1583,15 +1583,20 @@ static int cmd_type(void *data, const char *input) {
 			}
 		} else if (input[1] == ' ' || input[1] == 'x' || !input[1]) {
 			char *tmp = strdup (input);
-			char *ptr = strchr (tmp, ' ');
-			if (!ptr) {
+			char *type_begin = strchr (tmp, ' ');
+			if (!type_begin) {
 				break;
 			}
-			r_str_trim (ptr);
-			int nargs = r_str_word_set0 (ptr);
-			if (nargs > 0) {
-				const char *type = r_str_word_get0 (ptr, 0);
-				const char *arg = (nargs > 1)? r_str_word_get0 (ptr, 1): NULL;
+			r_str_trim (type_begin);
+			char *type_end = strrchr (type_begin, ' ');
+			int type_len = (int)(type_end - type_begin);
+			char *type = (char *)malloc (type_len * sizeof (char) + 1);
+			snprintf (type, type_len + 1, "%s", type_begin);
+			if (!type) {
+				break;
+			}
+			const char *arg = type_end;
+			if (arg) {
 				char *fmt = r_type_format (TDB, type);
 				if (!fmt) {
 					eprintf ("Cannot find '%s' type\n", type);
@@ -1612,9 +1617,9 @@ static int cmd_type(void *data, const char *input) {
 				}
 				free (fmt);
 			} else {
-				eprintf ("see t?\n");
-				break;
+				eprintf ("Usage: tp?");
 			}
+			free (type);
 			free (tmp);
 		} else { // "tp"
 			eprintf ("Usage: tp?\n");
