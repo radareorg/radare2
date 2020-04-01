@@ -5,12 +5,14 @@ packages:
     - devel/gmake
     - devel/llvm
     - ftp/wget
+    - lang/python
 environment:
     CXX: clang++
     CC: clang
     HOST_CC: clang
 sources:
     - https://github.com/radareorg/radare2
+    - https://github.com/radareorg/radare2-testbins
 tasks:
     - build: |
         cd radare2
@@ -18,9 +20,18 @@ tasks:
         gmake
     - install: |
         cd radare2
-        export PATH=${HOME}/install/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/install/lib:${HOME}/install/lib64:${LD_LIBRARY_PATH}
+        export PATH=${HOME}/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
         gmake install
-        # Running the new V suite
-        r2r -L
+    - test: |
+        cd radare2
+        export PATH=${HOME}/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
+        # Workaround until the feature request is solved
+        # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
+        ln -s ${HOME}/radare2-testbins test/bins
+        # Running the test suite
+        cd test && gmake -k all
+

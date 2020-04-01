@@ -816,6 +816,7 @@ err_r_file_mmap_write:
 		return -1;
 	}
 	memcpy (mmap_buf+rest, buf, len);
+	msync (mmap_buf+rest, len, MS_INVALIDATE);
 	munmap (mmap_buf, mmlen*2);
 	close (fd);
 	return len;
