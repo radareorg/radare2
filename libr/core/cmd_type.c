@@ -72,6 +72,14 @@ static const char *help_msg_to[] = {
 	NULL
 };
 
+static const char *help_msg_tp[] = {
+	"Usage: tp[...]", "", "",
+	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
+	"tpv", " <type> @ [value]", "Show offset formatted for given type",
+	"tpx", " <type> <hexpairs>", "Show value for type with specified byte sequence (XXX: type can contain spaces)",
+	NULL
+};
+
 static const char *help_msg_tc[] = {
 	"Usage: tc[...]", " [cctype]", "",
 	"tc", " [type.name]", "List all/given loaded types in C output format with newlines",
@@ -1571,7 +1579,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'p':  // "tp"
 		if (input[1] == '?') { // "tp?"
-			r_core_cmd0 (core, "t?~tp\n");
+			r_core_cmd_help (core, help_msg_tp);
 		} else if (input[1] == 'v') { // "tpv"
 			const char *type_name = r_str_trim_head_ro (input + 2);
 			char *fmt = r_type_format (TDB, type_name);
