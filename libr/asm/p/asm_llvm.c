@@ -29,7 +29,7 @@ static ut8 char6(ut8 **bp){
 static int getn1hex(ut8 n){//gets 00111111(n's of 1) in binary
     int res = 0;
     while(n){
-        res = res | 1 << n;
+        res = res | (1 << n);
         n -= 1;
     }
     return res;
@@ -45,7 +45,7 @@ static int vbr(ut8 **bp, ut8 n){
     while(cont){
         chunk = r_read_at_le32(*bp) & getn1hex(n-1);
         *b += n - 1;
-        res = res + chunk << lsl;
+        res = (res + chunk) << lsl;
         lsl += n - 1;
         cont = chunk & 1 << (n - 1);
     }
@@ -86,10 +86,60 @@ typedef struct _Entry{//not defined
     UnabbrevRecord EntryUnabbrevRecord;
     DefineAbbrev EntryDefineAbbrev;
     AbbrevRecord EntryAbbrevRecord;
+    Entry* NextEntry;
 }Entry;
 
 //getTopLevelEntries
-//not done!
+static Entry* getEntries(AbbrevIdWidth aw, BlockInfoMap* bim,
+    AbbrevMap am, ut8 buul, ut8 ** bp){
+    enum AbbrevId aid = getAbbrevId(aw);
+    if(!aid){
+        return NULL;
+    }else{
+        switch (aid)
+        {
+        case    END_BLOCK       :
+            if(endBlocksFail()){
+                break;//fail
+            }else{
+                align(bp,32);
+                return NULL;
+            }
+        case    ENTER_SUBBLOCK  :
+            Entry entry;
+            entry.EntryBlock = getBlock(&bim);
+            entry.NextEntry = getEntries(aw,bim,am,buul,bp);
+            return &entry;
+        case    DEFINE_ABBREV   :
+            Entry entry;
+            entry.EntryDefineAbbrev = getDefineAbbrev();
+            entry.NextEntry = getEntries(aw,bim,am,buul,bp); //got problem, bim didnt change
+            return &entry;
+        case    UNABBREV_RECORD :
+            Entry entry;
+            entry.EntryAbbrevRecord = getUnabbrevRecord(); 
+            entry.NextEntry = getEntries(aw,bim,am,buul,bp); //got problem, bim didnt change
+            return &entry;
+        case    ABBREV_RECORD   :
+            if(/*!lookupAbbrev(rid,am,of)*/){
+                break;//fail
+            }else{
+                Entry entry;
+                //entry.EntryAbbrevRecord = getAbbrevRecord(aw,rid,def);
+                entry.NextEntry = getEntries(aw,bim,am,buul,bp); //got problem, bim didnt change
+                return &entry;
+            }
+        default:
+            break;
+        }
+    }
+    switch
+}
+//not done:
+//BlockInfoMap, AbbrevMap, AbbrevId
+//getAbbrevId endBlocksFail 
+//static BcBlock getBlock(BlockInfoMap *bim)
+//getDefineAbbrev lookupAbbrev getAbbrevRecord
 
 //-- Unabbreviated Records ----------------------------------
 //not done!
@@ -110,6 +160,7 @@ enum AbbrevId{
     ENTER_SUBBLOCK = 1,
     DEFINE_ABBREV = 2,
     UNABBREV_RECORD = 3,
+    ABBREV_RECORD = 4;
 };
 
 //-- Abbreviation Definitions ------------------------------------
@@ -131,10 +182,11 @@ enum AbbrevOpType{
     OpBlob = 5,
 };
 
-typedef struct _AbbrevOp{
+typedef struct _AbbrevOp{ //link_node
     enum AbbrevOpType OpType;
     int OpValue;
     ut8* OpBlob;
+    AbbrevOp* NextOp;
 }AbbrevOp;
 
 //-- | Parse n abbreviation operands.
@@ -145,8 +197,8 @@ static AbbrevOp* getAbbrevOps(ut8 **bp, ut8 n){
     }else{
         AbbrevOp* op = getAbbrevOp(bp,n);
         AbbrevOp* rest = getAbbrevOps(ut8 **bp, ut8 n - 1);
-        AbbrevOp* all; //Not Done: merge op and rest in memory
-        return all;
+        op->NextOp = rest;
+        return op;
     }
 }
 
