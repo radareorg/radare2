@@ -1607,7 +1607,7 @@ static int cmd_open(void *data, const char *input) {
 			char *uri = r_str_newf ("malloc://%d", len);
 			ut8 *data = calloc (len, 1);
 			r_io_read_at (core->io, core->offset, data, len);
-			if (file = r_core_file_open (core, uri, R_PERM_RWX, 0)) {
+			if ((file = r_core_file_open (core, uri, R_PERM_RWX, 0))) {
 				fd = file->fd;
 				core->num->value = fd;
 				r_core_bin_load (core, uri, 0);

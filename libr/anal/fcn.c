@@ -360,6 +360,38 @@ static void fcn_takeover_block_recursive(RAnalFunction *fcn, RAnalBlock *start_b
 	r_anal_block_recurse (start_block, fcn_takeover_block_recursive_cb, fcn);
 }
 
+static bool is_retpoline(RAnal *anal, ut64 addr) {
+	RFlagItem *flag = anal->flag_get (anal->flb.f, addr);
+	if (flag) {
+		return strstr (flag->name, "thunk");
+	}
+#if 0
+// TODO: implement following code analysis check for stripped binaries:
+// 1) op(addr).type == CALL
+// 2) call_dest = op(addr).addr
+// 3) op(call_dest).type == STORE
+// 4) op(call_dest + op(call_dest).size).type == RET
+[0x00000a65]> pid 6
+0x00000a65  sym.__x86_indirect_thunk_rax:
+0x00000a65  .------- e807000000  call 0xa71
+0x00000a6a  |              f390  pause
+0x00000a6c  |            0faee8  lfence
+0x00000a6f  |              ebf9  jmp 0xa6a
+0x00000a71  `---->     48890424  mov qword [rsp], rax
+0x00000a75                   c3  ret
+#endif
+	return false;
+}
+
+static void analyze_retpoline(RAnal *anal, RAnalOp *op) {
+	if (anal->opt.retpoline) {
+		if (is_retpoline (anal, op->jump)) {
+			op->type = R_ANAL_OP_TYPE_RJMP;
+			op->reg = "rax"; // 0; // raxcs_reg_name (*handle, INSOP (0).mem.base);
+		}
+	}
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -677,6 +709,7 @@ repeat:
 			// swapped parameters wtf
 			r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
+		analyze_retpoline (anal, &op);
 		switch (op.type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_CMOV:
 		case R_ANAL_OP_TYPE_MOV:
