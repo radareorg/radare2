@@ -260,30 +260,29 @@ isq~?
 EOF
 RUN
 
-# TODO: re-enable when r2r.js and v are dead
-#NAME=ob 0 fix
-#FILE=<<EOF
-#-
-#-
-#-
-#EOF
-#CMDS=<<EOF
-#ob~[0-1]
-#?e
-#ob 1; i~^fd
-#ob 2; i~^fd
-#ob 0; i~^fd
-#EOF
-#EXPECT=<<EOF
-#0 3
-#1 4
-#2 5
-#
-#fd       4
-#fd       5
-#fd       3
-#EOF
-#RUN
+NAME=ob 0 fix
+FILE=<<EOF
+../bins/elf/_Exit (42)
+../bins/elf/libverifyPass.so
+../bins/elf/libc.so.6
+EOF
+CMDS=<<EOF
+ob~[0-1]
+?e
+ob 1; i~^fd
+ob 2; i~^fd
+ob 0; i~^fd
+EOF
+EXPECT=<<EOF
+0 3
+1 4
+2 6
+
+fd       4
+fd       6
+fd       3
+EOF
+RUN
 
 NAME=o:
 FILE=-

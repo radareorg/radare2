@@ -1,12 +1,13 @@
-# TODO: re-enable when r2r.js and v are dead
-#NAME=multiple files opened
-#FILE=<<EOF
-#-
-#-
-#-
-#EOF
-#CMDS=o~?
-#EXPECT=<<EOF
-#3
-#EOF
-#RUN
+NAME=multiple files opened
+FILE=<<EOF
+../bins/elf/ls
+../bins/elf/ls-cet
+../bins/elf/ls.odd
+EOF
+CMDS=o~ls
+EXPECT=<<EOF
+ 3 - r-x 0x000219a8 ../bins/elf/ls
+ 5 - r-x 0x00027868 ../bins/elf/ls-cet
+ 7 * r-x 0x0001fd70 ../bins/elf/ls.odd
+EOF
+RUN
