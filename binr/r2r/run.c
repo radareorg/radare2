@@ -2,6 +2,11 @@
 
 #include "r2r.h"
 
+#define NSEC_PER_SEC  1000000000
+#define NSEC_PER_MSEC 1000000
+#define USEC_PER_SEC  1000000
+#define NSEC_PER_USEC 1000
+
 #if __WINDOWS__
 struct r2r_subprocess_t {
 	int ret;
@@ -290,9 +295,9 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	struct timespec timeout_abs;
 	if (timeout_ms != UT64_MAX) {
 		clock_gettime(CLOCK_MONOTONIC, &timeout_abs);
-		timeout_abs.tv_nsec += timeout_ms * 1000000;
-		timeout_abs.tv_sec += timeout_abs.tv_nsec / 1000000000;
-		timeout_abs.tv_nsec = timeout_abs.tv_nsec % 1000000000;
+		timeout_abs.tv_nsec += timeout_ms * NSEC_PER_MSEC;
+		timeout_abs.tv_sec += timeout_abs.tv_nsec / NSEC_PER_SEC;
+		timeout_abs.tv_nsec = timeout_abs.tv_nsec % NSEC_PER_SEC;
 	}
 
 	int r = 0;
@@ -329,12 +334,13 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		{
 			struct timespec now;
 			clock_gettime(CLOCK_MONOTONIC, &now);
-			st64 usec_diff = ((st64)timeout_abs.tv_sec - now.tv_sec) * 1000000 + ((st64)timeout_abs.tv_nsec - now.tv_nsec) / 1000;
+			st64 usec_diff = ((st64)timeout_abs.tv_sec - now.tv_sec) * USEC_PER_SEC
+					+ ((st64)timeout_abs.tv_nsec - now.tv_nsec) / NSEC_PER_USEC;
 			if (usec_diff <= 0) {
 				break;
 			}
-			timeout_s.tv_sec = usec_diff / 1000000;
-			timeout_s.tv_usec = usec_diff % 1000000;
+			timeout_s.tv_sec = usec_diff / USEC_PER_SEC;
+			timeout_s.tv_usec = usec_diff % USEC_PER_SEC;
 			timeout = &timeout_s;
 		}
 		r = select (nfds, &rfds, NULL, NULL, timeout);
