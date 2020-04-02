@@ -5719,7 +5719,7 @@ void __load_config_menu(RCore *core) {
 	}
 }
 
-bool r_load_panels_layout(RCore *core, const char *_name) {
+R_API bool r_load_panels_layout(RCore *core, const char *_name) {
 	if (!core->panels) {
 		return false;
 	}
