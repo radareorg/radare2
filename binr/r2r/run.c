@@ -408,6 +408,7 @@ R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 		out->out = r_strbuf_drain_nofree (&proc->out);
 		out->err = r_strbuf_drain_nofree (&proc->err);
 		out->ret = proc->ret;
+		out->timeout = false;
 	}
 	r_th_lock_leave (subprocs_mutex);
 	return out;
@@ -451,8 +452,8 @@ static R2RProcessOutput *subprocess_runner(const char *file, const char *args[],
 		r2r_subprocess_kill (proc);
 	}
 	R2RProcessOutput *out = r2r_subprocess_drain (proc);
-	if (timeout) {
-		out->ret = -1;
+	if (out) {
+		out->timeout = timeout;
 	}
 	r2r_subprocess_free (proc);
 	return out;
@@ -519,7 +520,7 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 }
 
 R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
-	if (out->ret != 0 || !out->out || !out->err) {
+	if (out->ret != 0 || !out->out || !out->err || out->timeout) {
 		return false;
 	}
 	const char *expect_out = test->expect.value;
@@ -562,7 +563,7 @@ R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *tes
 }
 
 R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
-	if (out->ret != 0 || !out->out || !out->err) {
+	if (out->ret != 0 || !out->out || !out->err || out->timeout) {
 		return false;
 	}
 	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, NULL, 0, NULL, NULL, 0);
@@ -617,6 +618,7 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args), NULL, NULL, 0);
 		if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
 			r2r_subprocess_kill (proc);
+			out->as_timeout = true;
 			goto rip;
 		}
 		if (proc->ret != 0) {
@@ -649,6 +651,7 @@ rip:
 		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args), NULL, NULL, 0);
 		if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
 			r2r_subprocess_kill (proc);
+			out->disas_timeout = true;
 			goto ship;
 		}
 		if (proc->ret != 0) {
@@ -672,7 +675,7 @@ beach:
 
 R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test) {
 	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
-		if (!out->bytes || !test->bytes || out->bytes_size != test->bytes_size) {
+		if (!out->bytes || !test->bytes || out->bytes_size != test->bytes_size || out->as_timeout) {
 			return false;
 		}
 		if (memcmp (out->bytes, test->bytes, test->bytes_size) != 0) {
@@ -680,7 +683,7 @@ R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test) {
 		}
 	}
 	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
-		if (!out->disasm || !test->disasm) {
+		if (!out->disasm || !test->disasm || out->as_timeout) {
 			return false;
 		}
 		if (strcmp (out->disasm, test->disasm) != 0) {
@@ -739,6 +742,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 		R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, config);
 		success = r2r_check_cmd_test (out, cmd_test);
 		ret->proc_out = out;
+		ret->timeout = out->timeout;
 		break;
 	}
 	case R2R_TEST_TYPE_ASM: {
@@ -746,6 +750,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 		R2RAsmTestOutput *out = r2r_run_asm_test (config, asm_test);
 		success = r2r_check_asm_test (out, asm_test);
 		ret->asm_out = out;
+		ret->timeout = out->as_timeout || out->disas_timeout;
 		break;
 	}
 	case R2R_TEST_TYPE_JSON: {
@@ -753,6 +758,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 		R2RProcessOutput *out = r2r_run_json_test (config, json_test, subprocess_runner, config);
 		success = r2r_check_json_test (out, json_test);
 		ret->proc_out = out;
+		ret->timeout = out->timeout;
 		break;
 	}
 	}

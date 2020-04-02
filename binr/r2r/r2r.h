@@ -118,12 +118,15 @@ typedef struct r2r_process_output_t {
 	char *out; // stdout
 	char *err; // stderr
 	int ret; // exit code of the process
+	bool timeout;
 } R2RProcessOutput;
 
 typedef struct r2r_asm_test_output_t {
 	char *disasm;
 	ut8 *bytes;
 	size_t bytes_size;
+	bool as_timeout;
+	bool disas_timeout;
 } R2RAsmTestOutput;
 
 typedef enum r2r_test_result_t {
@@ -136,6 +139,7 @@ typedef enum r2r_test_result_t {
 typedef struct r2r_test_result_info_t {
 	R2RTest *test;
 	R2RTestResult result;
+	bool timeout;
 	union {
 		R2RProcessOutput *proc_out; // for test->type == R2R_TEST_TYPE_CMD or R2R_TEST_TYPE_JSON
 		R2RAsmTestOutput *asm_out;  // for test->type == R2R_TEST_TYPE_ASM

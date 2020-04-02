@@ -559,6 +559,9 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 			printf (Color_CYAN"[FX]"Color_RESET);
 			break;
 		}
+		if (result->timeout) {
+			printf (Color_CYAN" TIMEOUT"Color_RESET);
+		}
 		printf (" %s "Color_YELLOW"%s"Color_RESET"\n", result->test->path, name);
 		if (result->result == R2R_TEST_RESULT_FAILED || (state->verbose && result->result == R2R_TEST_RESULT_BROKEN)) {
 			print_result_diff (&state->run_config, result);
