@@ -104,7 +104,7 @@ jobs:
   allow_failures:
     # Emscripten
     - os: linux
-      name: EMCC
+      name: WASM
       env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
     - os: linux
