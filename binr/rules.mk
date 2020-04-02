@@ -64,7 +64,7 @@ ${BINS}: ${OBJS}
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
 ifeq ($(CC),emcc)
-	emcc $(BIN).c ../../shlr/libr_shlr.a ../../shlr/capstone/libcapstone.a ../../libr/libr.a -I ../../libr/include -o $(BIN).js
+	emcc $(BIN).c ../../shlr/libr_shlr.a ../../shlr/capstone/libcapstone.a ../../libr/libr.a ../../shlr/gdb/lib/libgdbr.a ../../shlr/zip/librz.a -I ../../libr/include -o $(BIN).js
 else
 	${CC} ${CFLAGS} $+ -L.. -o $@ ../../libr/libr.a $(LDFLAGS)
 endif
