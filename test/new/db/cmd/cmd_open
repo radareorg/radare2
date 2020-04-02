@@ -262,9 +262,9 @@ RUN
 
 NAME=ob 0 fix
 FILE=<<EOF
--
--
--
+../bins/elf/_Exit (42)
+../bins/elf/libverifyPass.so
+../bins/elf/libc.so.6
 EOF
 CMDS=<<EOF
 ob~[0-1]
@@ -276,10 +276,10 @@ EOF
 EXPECT=<<EOF
 0 3
 1 4
-2 5
+2 6
 
 fd       4
-fd       5
+fd       6
 fd       3
 EOF
 RUN
