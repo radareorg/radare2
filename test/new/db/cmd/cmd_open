@@ -323,6 +323,29 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=o+ writable maps fix
+FILE=--
+CMDS=<<EOF
+o+ ../bins/elf/ls
+om
+# Possible parallelism problem
+# ?e
+# pv1
+# $old=`pv1`
+# wx 0x90
+# pv1
+# wx `$old?`
+# pv1
+EOF
+EXPECT=<<EOF
+ 5 fd: 3 +0x00000000 0x00000000 - 0x0000347f rwx fmap.LOAD0
+ 4 fd: 3 +0x00004000 0x00004000 - 0x00016790 rwx fmap.LOAD1
+ 3 fd: 3 +0x00017000 0x00017000 - 0x0001f7bf rwx fmap.LOAD2
+ 2 fd: 3 +0x00020050 0x00021050 - 0x00022267 rwx fmap.LOAD3
+ 1 fd: 4 +0x00000000 0x00022268 - 0x00023557 rw- mmap.LOAD3
+EOF
+RUN
+
 NAME=o-*
 FILE=-
 EXPECT=<<EOF
