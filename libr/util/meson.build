@@ -44,7 +44,7 @@ r_util_sources = [
   'astr.c',
   'pkcs7.c',
   'x509.c',
-  'ctype.c',
+  'utype.c',
   'randomart.c',
   'range.c',
   'rbtree.c',

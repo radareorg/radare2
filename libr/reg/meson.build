@@ -1,10 +1,10 @@
 r_reg_sources = [
   'arena.c',
-  'cond.c',
+  'rcond.c',
   'double.c',
   'profile.c',
   'reg.c',
-  'value.c',
+  'rvalue.c',
 ]
 
 r_reg = library('r_reg', r_reg_sources,
