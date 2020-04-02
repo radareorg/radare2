@@ -6,12 +6,14 @@
 #define NSEC_PER_MSEC 1000000
 #define USEC_PER_SEC  1000000
 #define NSEC_PER_USEC 1000
+#define USEC_PER_MSEC 1000
 
 #if __WINDOWS__
 struct r2r_subprocess_t {
 	HANDLE stdin_write;
 	HANDLE stdout_read;
 	HANDLE stderr_read;
+	HANDLE proc;
 	int ret;
 	RStrBuf out;
 	RStrBuf err;
@@ -106,6 +108,9 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		goto error;
 	}
 
+	CloseHandle (proc_info.hThread);
+	proc->proc = proc_info.hProcess;
+
 beach:
 	if (stdin_read) {
 		CloseHandle (stdin_read);
@@ -136,12 +141,77 @@ error:
 	goto beach;
 }
 
-R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) { return true; }
+static ut64 now_us() {
+	LARGE_INTEGER f;
+	if (!QueryPerformanceFrequency(&f)) {
+		return 0;
+	}
+	LARGE_INTEGER v;
+	if (!QueryPerformanceCounter(&v)) {
+		return 0;
+	}
+	v.QuadPart *= 1000000;
+	v.QuadPart /= f.QuadPart;
+	return v.QuadPart;
+}
 
-R_API void r2r_subprocess_kill(R2RSubprocess *proc) { }
+R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
+	OVERLAPPED stdout_overlapped = { 0 };
+	stdout_overlapped.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
+	if (!stdout_overlapped.hEvent) {
+		return false;
+	}
+	OVERLAPPED stderr_overlapped = { 0 };
+	stderr_overlapped.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
+	if (!stderr_overlapped.hEvent) {
+		CloseHandle (stdout_overlapped.hEvent);
+		return false;
+	}
+
+	HANDLE handles[] = { stdout_overlapped.hEvent, stderr_overlapped.hEvent, proc->proc };
+	ut64 timeout_us_abs = UT64_MAX;
+	if (timeout_ms != UT64_MAX) {
+		timeout_us_abs = now_us () + timeout_ms * USEC_PER_MSEC;
+	}
+
+	ut8 stdout_buf[0x500];
+	ut8 stderr_buf[0x500];
+
+	ReadFile (proc->stdout_read, stdout_buf, sizeof (stdout_buf), NULL, &stdout_overlapped);
+	ReadFile (proc->stderr_read, stderr_buf, sizeof (stderr_buf), NULL, &stderr_overlapped);
+
+	// TODO: finish all this
+
+	while (true) {
+		DWORD timeout = INFINITE;
+		if (timeout_us_abs != UT64_MAX) {
+			ut64 now = now_us ();
+			if (now >= timeout_us_abs) {
+				return false;
+			}
+			timeout = (DWORD)((timeout_us_abs - now) / USEC_PER_MSEC);
+		}
+		DWORD signaled = WaitForMultipleObjects (3, handles, FALSE, timeout);
+		switch (signaled) {
+		case 0: // stdout
+			break;
+		case 1: // stderr
+			break;
+		case 2: // proc
+			break;
+		case 3: // timeout or error
+			return false;
+		}
+	}
+}
+
+R_API void r2r_subprocess_kill(R2RSubprocess *proc) {
+	TerminateProcess (proc->proc, 255);
+}
 
 R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
-	// TODO
+	DWORD read;
+	WriteFile (proc->stdin_write, buf, buf_size, &read, NULL);
 }
 
 
@@ -156,7 +226,16 @@ R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 	return out;
 }
 
-R_API void r2r_subprocess_free(R2RSubprocess *proc) {}
+R_API void r2r_subprocess_free(R2RSubprocess *proc) {
+	if (!proc) {
+		return;
+	}
+	CloseHandle (proc->stdin_write);
+	CloseHandle (proc->stdout_read);
+	CloseHandle (proc->stderr_read);
+	CloseHandle (proc->proc);
+	free (proc);
+}
 #else
 
 #include <errno.h>
