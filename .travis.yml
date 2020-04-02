@@ -98,6 +98,10 @@ jobs:
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_TESTS_DISABLE=1
   
   allow_failures:
+    # Emscripten
+    - os: linux
+      name: EMCC-WASM-JS
+      env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
     - os: linux
       arch: ppc64le
