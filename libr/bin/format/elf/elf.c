@@ -28,6 +28,18 @@
 
 #define bprintf if(bin->verbose) R_LOG_WARN
 
+#define MAIN_ARM_GLIBC_THUMB_1 "\xf0\x00\x0b\x4f\xf0\x00\x0e\x02\xbc\x6a\x46"
+#define MAIN_ARM_GLIBC_THUMB_2 "\xf0\x00\x0b\x4f\xf0\x00\x0e\x5d\xf8\x04\x1b"
+#define MAIN_ARM_GLIBC_1 "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3"
+#define MAIN_ARM_GLIBC_2 "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3"
+#define MAIN_MIPS "\x21\x00\xe0\x03\x01\x00\x11\x04"
+#define MAIN_X86_CGC "\x50\xe8\x00\x00\x00\x00\xb8\x01\x00\x00\x00\x53"
+#define MAIN_X86_PIE "\x31\xed\x49\x89"
+#define MAIN_ELF64_OPENBSD "\x49\x89\xd9"
+#define MAIN_ELF64_LINUX "\x48\xc7\xc7"
+
+#define memcmp_main(buf, pattern) memcmp (buf, pattern, sizeof (pattern) - 1)
+
 #define MAX_REL_RELA_SZ (sizeof (Elf_(Rel)) > sizeof (Elf_(Rela))? sizeof (Elf_(Rel)): sizeof (Elf_(Rela)))
 
 #define READ8(x, i) r_read_ble8((x) + (i)); (i) += 1
@@ -1949,6 +1961,64 @@ static RBinAddr *get_main_addr_by_symbol(ELFOBJ *bin) {
 	return res;
 }
 
+static bool is_arm_blx(ut8 *buf) {
+	return buf[0] == 0xff && buf[1] == 0xf7;
+}
+
+static RBinAddr *get_main_arm_thumb_1(ELFOBJ *bin, ut8 *buf, RBinAddr *entry) {
+	/* newer versions of gcc use push/pop, but the address is taken from memory */
+	/* mov.w fp, 0
+	  mov.w lr, 0
+	  pop {r1}
+	  mov r2, sp
+	  push {r2}
+	  push {r0}
+	  ldr.w sl, [0x00000434]
+	  adr r3, 0x20
+	  add sl, r3
+	  ldr.w ip, [0x00000438]
+	  ldr.w ip, [sl, ip]
+	  str ip, [sp, -0x4]!
+	  ldr r3, [0x0000043c]
+	  ldr.w r3, [sl, r3]
+	  ldr r0, [address_of_address_of_main]
+	  ldr.w r0, [sl, r0]
+	  blx sym.imp.__libc_start_main
+	  blx sym.imp.abort */
+	ut64 r3_val = buf[0x14 - 1] * 4;
+	ut64 sl_val_loc = buf[0x12 - 1] + entry->vaddr + 0x14 - 1;
+	ut64 sl_val_loc_paddr = Elf_(r_bin_elf_v2p_new) (bin, sl_val_loc);
+	if (sl_val_loc_paddr == UT64_MAX) {
+		return NULL;
+	}
+	ut32 sl_val = r_buf_read_le32_at (bin->b, sl_val_loc_paddr);
+	if (sl_val == UT32_MAX) {
+		return NULL;
+	}
+	sl_val = sl_val + r3_val;
+	ut64 r0_val_loc = buf[0x2a - 1] * 4 + entry->vaddr + 0x2c - 1;
+	ut64 r0_val_loc_paddr = Elf_(r_bin_elf_v2p_new) (bin, r0_val_loc);
+	if (r0_val_loc_paddr == UT64_MAX) {
+		return NULL;
+	}
+	ut32 r0_mem = r_buf_read_le32_at (bin->b, r0_val_loc_paddr);
+	if (r0_mem == UT32_MAX) {
+		return NULL;
+	}
+
+	ut64 mem_loc = r0_mem + sl_val;
+	ut64 main_loc_paddr = Elf_ (r_bin_elf_v2p_new) (bin, mem_loc);
+	if (main_loc_paddr == UT64_MAX) {
+		return NULL;
+	}
+
+	ut32 main_addr = r_buf_read_le32_at (bin->b, main_loc_paddr);
+	if (main_addr == UT32_MAX) {
+		return NULL;
+	}
+	return binaddr_new_v (bin, main_addr);
+}
+
 RBinAddr *Elf_(r_bin_elf_get_main_addr)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinAddr *entry = Elf_(r_bin_elf_get_entry_addr) (bin);
@@ -1990,14 +2060,12 @@ RBinAddr *Elf_(r_bin_elf_get_main_addr)(ELFOBJ *bin) {
 	if (entry->vaddr & 1) {
 		int delta = 0;
 		/* thumb entry points */
-		if (!memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00\x0e\x02\xbc\x6a\x46", 11)) {
+		if (!memcmp_main (buf, MAIN_ARM_GLIBC_THUMB_1) && is_arm_blx (buf + 0x1c - 1) && is_arm_blx (buf + 0x20 - 1)) {
 			/* newer versions of gcc use push/pop */
-			eprintf("new1\n");
 			delta = 0x28;
-		} else if (!memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00\x0e\x5d\xf8\x04\x1b", 11)) {
+		} else if (!memcmp_main (buf, MAIN_ARM_GLIBC_THUMB_2)) {
 			/* older versions of gcc (4.5.x) use ldr/str */
 			delta = 0x30;
-			eprintf ("new2\n");
 		}
 		if (delta) {
 			ut64 va = r_read_le32 (&buf[delta - 1]) &~1;
@@ -2006,14 +2074,21 @@ RBinAddr *Elf_(r_bin_elf_get_main_addr)(ELFOBJ *bin) {
 				goto out;
 			}
 		}
+
+		if (!memcmp_main (buf, MAIN_ARM_GLIBC_THUMB_1) && is_arm_blx (buf + 0x30 - 1) && is_arm_blx (buf + 0x34 - 1)) {
+			res = get_main_arm_thumb_1 (bin, buf, entry);
+			if (res) {
+				goto out;
+			}
+		}
 	} else {
 		/* non-thumb entry points */
-		if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
+		if (!memcmp_main (buf, MAIN_ARM_GLIBC_1)) {
 			res = binaddr_new_v (bin, r_read_le32 (&buf[0x34]) & ~1);
 			if (res) {
 				goto out;
 			}
-		} else if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
+		} else if (!memcmp_main (buf, MAIN_ARM_GLIBC_2)) {
 			res = binaddr_new_v (bin, r_read_le32 (&buf[0x30]) & ~1);
 			if (res) {
 				goto out;
@@ -2023,7 +2098,7 @@ RBinAddr *Elf_(r_bin_elf_get_main_addr)(ELFOBJ *bin) {
 
 	// MIPS
 	/* get .got, calculate offset of main symbol */
-	if (!memcmp (buf, "\x21\x00\xe0\x03\x01\x00\x11\x04", 8)) {
+	if (!memcmp_main (buf, MAIN_MIPS)) {
 
 		/*
 		    assuming the startup code looks like
@@ -2056,7 +2131,7 @@ RBinAddr *Elf_(r_bin_elf_get_main_addr)(ELFOBJ *bin) {
 		return 0;
 	}
 	// X86-CGC
-	if (buf[0] == 0xe8 && !memcmp (buf + 5, "\x50\xe8\x00\x00\x00\x00\xb8\x01\x00\x00\x00\x53", 12)) {
+	if (buf[0] == 0xe8 && !memcmp_main (buf + 5, MAIN_X86_CGC)) {
 		size_t SIZEOF_CALL = 5;
 		ut64 rel_addr = (ut64)((int)(buf[1] + (buf[2] << 8) + (buf[3] << 16) + (buf[4] << 24)));
 		ut64 addr = Elf_(r_bin_elf_p2v)(bin, entry->paddr + SIZEOF_CALL);
@@ -2080,7 +2155,7 @@ RBinAddr *Elf_(r_bin_elf_get_main_addr)(ELFOBJ *bin) {
 	}
 	// X86-PIE
 	if (buf[0x1d] == 0x48 && buf[0x1e] == 0x8b) {
-		if (!memcmp (buf, "\x31\xed\x49\x89", 4)) {// linux
+		if (!memcmp_main (buf, MAIN_X86_PIE)) {// linux
 			ut64 maddr, baddr;
 			ut8 n32s[sizeof (ut32)] = {0};
 			maddr = entry->paddr + 0x24 + r_read_le32 (buf + 0x20);
@@ -2102,13 +2177,13 @@ RBinAddr *Elf_(r_bin_elf_get_main_addr)(ELFOBJ *bin) {
 	}
 	// X86-NONPIE
 #if R_BIN_ELF64
-	if (!memcmp (buf, "\x49\x89\xd9", 3) && buf[156] == 0xe8) { // openbsd
+	if (!memcmp_main (buf, MAIN_ELF64_OPENBSD) && buf[156] == 0xe8) { // openbsd
 		res = binaddr_new_p (bin, r_read_le32 (&buf[157]) + entry->paddr + 156 + 5);
 		if (res) {
 			goto out;
 		}
 	}
-	if (!memcmp (buf+29, "\x48\xc7\xc7", 3)) { // linux
+	if (!memcmp_main (buf+29, MAIN_ELF64_LINUX)) { // linux
 		ut64 addr = (ut64)r_read_le32 (&buf[29 + 3]);
 		res = binaddr_new_v (bin, addr);
 		if (res) {
