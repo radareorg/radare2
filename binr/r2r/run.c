@@ -294,7 +294,7 @@ error:
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	struct timespec timeout_abs;
 	if (timeout_ms != UT64_MAX) {
-		clock_gettime(CLOCK_MONOTONIC, &timeout_abs);
+		clock_gettime (CLOCK_MONOTONIC, &timeout_abs);
 		timeout_abs.tv_nsec += timeout_ms * NSEC_PER_MSEC;
 		timeout_abs.tv_sec += timeout_abs.tv_nsec / NSEC_PER_SEC;
 		timeout_abs.tv_nsec = timeout_abs.tv_nsec % NSEC_PER_SEC;
