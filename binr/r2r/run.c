@@ -9,6 +9,10 @@
 
 #if __WINDOWS__
 struct r2r_subprocess_t {
+	HANDLE stdin_read;
+	HANDLE stdin_write;
+	HANDLE stdout_read;
+	HANDLE stdout_write;
 	int ret;
 	RStrBuf out;
 	RStrBuf err;
@@ -20,9 +24,51 @@ R_API void r2r_subprocess_fini(void) {}
 R_API R2RSubprocess *r2r_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size) {
-	(void)file, (void)args, (void)args_size, (void)envvars, (void)envvals, (void)env_size;
-	eprintf ("TODO: implement r2r_subprocess API for windows\n");
-	exit (1);
+	R2RSubprocess *proc = R_NEW0 (R2RSubprocess);
+	if (!proc) {
+		goto error;
+	}
+
+	SECURITY_ATTRIBUTES sattrs;
+	sattrs.nLength = sizeof (sattrs);
+	sattrs.bInheritHandle = TRUE;
+	sattrs.lpSecurityDescriptor = NULL;
+
+	if (!CreatePipe (&proc->stdout_read, &proc->stdout_write, &sattrs, 0)) {
+		proc->stdout_read = proc->stdout_write = NULL;
+		goto error;
+	}
+	if (!SetHandleInformation (proc->stdout_read, HANDLE_FLAG_INHERIT, 0)) {
+		goto error;
+	}
+	if (!CreatePipe (&proc->stdin_read, &proc->stdin_write, &sattrs, 0)) {
+		proc->stdin_read = proc->stdin_write = NULL;
+		goto error;
+	}
+	if (!SetHandleInformation (proc->stdin_read, HANDLE_FLAG_INHERIT, 0)) {
+		goto error;
+	}
+
+	// TODO: rest
+
+error:
+	if (proc) {
+		if (proc->stdin_read) {
+			CloseHandle (proc->stdin_read);
+		}
+		if (proc->stdin_write) {
+			CloseHandle (proc->stdin_write);
+		}
+		if (proc->stdout_read) {
+			CloseHandle (proc->stdout_read);
+		}
+		if (proc->stdout_write) {
+			CloseHandle (proc->stdout_write);
+		}
+		// TODO: close rest
+		free (proc);
+	}
+	return NULL;
 }
 
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) { return true; }
