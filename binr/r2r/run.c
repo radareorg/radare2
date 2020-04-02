@@ -330,10 +330,9 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 
 		struct timeval timeout_s;
 		struct timeval *timeout = NULL;
-		if(timeout_ms != UT64_MAX)
-		{
+		if (timeout_ms != UT64_MAX) {
 			struct timespec now;
-			clock_gettime(CLOCK_MONOTONIC, &now);
+			clock_gettime (CLOCK_MONOTONIC, &now);
 			st64 usec_diff = ((st64)timeout_abs.tv_sec - now.tv_sec) * USEC_PER_SEC
 					+ ((st64)timeout_abs.tv_nsec - now.tv_nsec) / NSEC_PER_USEC;
 			if (usec_diff <= 0) {
