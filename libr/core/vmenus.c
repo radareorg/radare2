@@ -1343,65 +1343,134 @@ R_API int r_core_visual_classes(RCore *core) {
 	}
 	return true;
 }
+/** PLACEHOLDER **/
+static void r_anal_class_print(RAnal *anal, const char *class_name, bool lng) {
+	r_cons_print (class_name);
 
-static int show_anal_class(RCore *core, int *idx, SdbList *list) {
+	RVector *bases = r_anal_class_base_get_all (anal, class_name);
+	if (bases) {
+		RAnalBaseClass *base;
+		bool first = true;
+		r_vector_foreach (bases, base) {
+			if (first) {
+				r_cons_print (": ");
+				first = false;
+			} else {
+				r_cons_print (", ");
+			}
+			r_cons_print (base->class_name);
+		}
+		r_vector_free (bases);
+	}
+
+	r_cons_print ("\n");
+
+
+	if (lng) {
+		RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+		if (vtables) {
+			RAnalVTable *vtable;
+			r_vector_foreach (vtables, vtable) {
+				r_cons_printf ("  (vtable at 0x%"PFMT64x, vtable->addr);
+				if (vtable->offset > 0) {
+					r_cons_printf (" in class at +0x%"PFMT64x")\n", vtable->offset);
+				} else {
+					r_cons_print (")\n");
+				}
+			}
+			r_vector_free (vtables);
+		}
+
+		RVector *methods = r_anal_class_method_get_all (anal, class_name);
+		if (methods) {
+			RAnalMethod *meth;
+			r_vector_foreach (methods, meth) {
+				r_cons_printf ("  %s @ 0x%"PFMT64x, meth->name, meth->addr);
+				if (meth->vtable_offset >= 0) {
+					r_cons_printf (" (vtable + 0x%"PFMT64x")\n", (ut64)meth->vtable_offset);
+				} else {
+					r_cons_print ("\n");
+				}
+			}
+			r_vector_free (methods);
+		}
+	}
+}
+
+
+static const char *show_anal_classes(RCore *core, char mode, int *idx, SdbList *list, const char *class_name) {
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	SdbListIter *iter;
 	SdbKv *kv;
 	int i = 0;
 	int skip = *idx - 10;
 	bool found = false;
-
+	const char * cur_class;
 	r_cons_printf ("[hjkl_/Cfm]> anal classes:\n\n");
 
+	if (mode == 'd' && class_name) {
+		r_anal_class_print (core->anal, class_name, true);
+		return class_name;
+	}
+
 	ls_foreach (list, iter, kv) {
+		if (*idx > 10) {
+			skip--;
+			if (skip > 0) {
+				i++;
+				continue;
+			}
+		}
 		const char *class_name = sdbkv_key (kv);
 
 		if (show_color) {
-			const char *ptr_clr = "";
+			const char *pointer = "- ";
 			const char *txt_clr = "";
 
 			if (i == *idx) {
-				ptr_clr = Color_GREEN;
+				pointer = Color_GREEN ">>";
 				txt_clr = Color_YELLOW; 
+				cur_class = class_name;
 			} 
-			r_cons_printf ("%s%s" Color_RESET " %02d" " %s%s\n" Color_RESET, ptr_clr, (i==*idx) ? ">>" : "- ", i, txt_clr, class_name);
+			r_cons_printf ("%s" Color_RESET " %02d" 
+			" %s%s\n" Color_RESET, pointer, i, txt_clr, class_name);
 		} else {
 			r_cons_printf ("%s %02d %s\n", (i==*idx) ? ">>" : "- ", i, class_name);
 		}
+
 		i++;		
 	}
 
-	return !i;
+	return cur_class;
 }
-
 // TODO add other commands that Vbc has
 // Should the classes be refreshed after command execution with :
 // in case new class information would be added?
 R_API int r_core_visual_anal_classes(RCore *core) {
 	int ch, index = 0;
 	char cmd[1024];
-	int mode = 'c';
 	SdbList *list = r_anal_class_get_all (core->anal, true);
 	void *ptr;
 	int oldcur = 0;
+	char mode = ' ';
+	const char *class_name = "";
 
 	if (r_list_empty (list)) {
 		r_cons_message ("No Classes");
-		return false;
+		goto cleanup;
 	}
 	for (;;) {
 		int cols;
 		r_cons_clear00 ();
 
-		show_anal_class (core, &index, list);
+		class_name = show_anal_classes (core, mode, &index, list, class_name);
 
 		/* update terminal size */
 		(void) r_cons_get_size (&cols);
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		if (ch == -1 || ch == 4) {
-			return false;
+			goto cleanup;
 		}
 
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
@@ -1412,12 +1481,12 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 		case 'J': index += 10; break;
 		case 'j': 
 			if (++index >= list->length) {
-				index = list->length-1;
+				index = 0;
 			}
 			break; 
 		case 'k':
 			if (--index < 0) {
-				index = 0;
+				index = list->length - 1;
 			}
 			break;
 		case 'K':
@@ -1438,17 +1507,18 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 		case 'Q':
 		case 'c':
 		case 'q':
-			if (mode == 'c') {
-				return true;
+			if (mode == ' ') {
+				goto cleanup;
 			}
-			mode = 'c';
+			mode = ' ';
 			index = oldcur;
 			break;
-		// case 'l':
-		// case ' ':
-		// case '\r':
-		// case '\n':
-		// 	break;
+		case 'l':
+		case ' ':
+		case '\r':
+		case '\n':
+			mode = 'd';
+			break;
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf (
@@ -1482,6 +1552,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 			break;
 		}
 	}
+cleanup:
 	ls_free(list);
 	return true;
 }
