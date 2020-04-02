@@ -42,23 +42,3 @@ EOF
 EXPECT_ERR=<<EOF
 EOF
 RUN
-
-NAME=bin with space in filename (multiple files)
-FILE=<<EOF
--
--
-../bins/elf/_Exit (42)
--
--
-EOF
-CMDS=ob
-EXPECT=<<EOF
-0 3 x86-64 ba:0x00000000 sz:512 malloc://512
-1 4 x86-64 ba:0x00000000 sz:512 malloc://512
-2 5 x86-32 ba:0x08048000 sz:13073 ../bins/elf/_Exit (42)
-3 6 x86-64 ba:0x00000000 sz:512 malloc://512
-4 7 x86-64 ba:0x00000000 sz:512 malloc://512
-EOF
-EXPECT_ERR=<<EOF
-EOF
-RUN
