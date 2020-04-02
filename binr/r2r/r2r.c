@@ -7,7 +7,7 @@
 #define RADARE2_CMD_DEFAULT    "radare2"
 #define RASM2_CMD_DEFAULT      "rasm2"
 #define JSON_TEST_FILE_DEFAULT "../bins/elf/crackme0x00b"
-#define TIMEOUT_DEFAULT        60
+#define TIMEOUT_DEFAULT        120
 
 #define STRV(x) #x
 #define STR(x) STRV(x)
