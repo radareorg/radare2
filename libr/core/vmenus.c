@@ -1353,9 +1353,22 @@ static int show_anal_class(RCore *core, int *idx, SdbList *list) {
 	bool found = false;
 
 	r_cons_printf ("[hjkl_/Cfm]> anal classes:\n\n");
+
 	ls_foreach (list, iter, kv) {
 		const char *class_name = sdbkv_key (kv);
-		r_cons_printf ("%s %02d %s\n", (i==*idx)?">>":"- ", i, class_name);
+
+		if (show_color) {
+			const char *ptr_clr = "";
+			const char *txt_clr = "";
+
+			if (i == *idx) {
+				ptr_clr = Color_GREEN;
+				txt_clr = Color_YELLOW; 
+			} 
+			r_cons_printf ("%s%s" Color_RESET " %02d" " %s%s\n" Color_RESET, ptr_clr, (i==*idx) ? ">>" : "- ", i, txt_clr, class_name);
+		} else {
+			r_cons_printf ("%s %02d %s\n", (i==*idx) ? ">>" : "- ", i, class_name);
+		}
 		i++;		
 	}
 
@@ -1363,6 +1376,8 @@ static int show_anal_class(RCore *core, int *idx, SdbList *list) {
 }
 
 // TODO add other commands that Vbc has
+// Should the classes be refreshed after command execution with :
+// in case new class information would be added?
 R_API int r_core_visual_anal_classes(RCore *core) {
 	int ch, index = 0;
 	char cmd[1024];
@@ -1395,7 +1410,11 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 			r_config_toggle (core->config, "scr.color");
 			break;
 		case 'J': index += 10; break;
-		case 'j': index++; break; // boundary check TODO
+		case 'j': 
+			if (++index >= list->length) {
+				index = list->length-1;
+			}
+			break; 
 		case 'k':
 			if (--index < 0) {
 				index = 0;
