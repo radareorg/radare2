@@ -9,10 +9,9 @@
 
 #if __WINDOWS__
 struct r2r_subprocess_t {
-	HANDLE stdin_read;
 	HANDLE stdin_write;
 	HANDLE stdout_read;
-	HANDLE stdout_write;
+	HANDLE stderr_read;
 	int ret;
 	RStrBuf out;
 	RStrBuf err;
@@ -24,7 +23,43 @@ R_API void r2r_subprocess_fini(void) {}
 R_API R2RSubprocess *r2r_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size) {
-	R2RSubprocess *proc = R_NEW0 (R2RSubprocess);
+	LPWSTR wappname = NULL;
+	LPWSTR wcmdline = NULL;
+	R2RSubprocess *proc = NULL;
+	HANDLE stdin_read = NULL;
+	HANDLE stdout_write = NULL;
+	HANDLE stderr_write = NULL;
+
+	char **argv = calloc (args_size + 1, sizeof (char *));
+	if (!argv) {
+		return NULL;
+	}
+	argv[0] = (char *)file;
+	if (args_size) {
+		memcpy (argv + 1, args, sizeof (char *) * args_size);
+	}
+	char *cmdline = r_str_format_msvc_argv (args_size + 1, argv);
+	free (argv);
+	if (!cmdline) {
+		return NULL;
+	}
+	size_t wcmdline_count = strlen (cmdline) * 1;
+	wcmdline = calloc (wcmdline_count, sizeof (wchar_t));
+	if (!MultiByteToWideChar (CP_UTF8, MB_PRECOMPOSED, cmdline, -1, wcmdline, wcmdline_count)) {
+		free (cmdline);
+		goto error;
+	}
+	free (cmdline);
+	size_t wappname_count = strlen (file) + 1;
+	wappname = calloc (wappname_count, sizeof (wchar_t));
+	if (!wappname) {
+		goto error;
+	}
+	if (!MultiByteToWideChar (CP_UTF8, MB_PRECOMPOSED, file, -1, wappname, wappname_count)) {
+		goto error;
+	}
+
+	proc = R_NEW0 (R2RSubprocess);
 	if (!proc) {
 		goto error;
 	}
@@ -34,41 +69,71 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	sattrs.bInheritHandle = TRUE;
 	sattrs.lpSecurityDescriptor = NULL;
 
-	if (!CreatePipe (&proc->stdout_read, &proc->stdout_write, &sattrs, 0)) {
-		proc->stdout_read = proc->stdout_write = NULL;
+	if (!CreatePipe (&proc->stdout_read, &stdout_write, &sattrs, 0)) {
+		proc->stdout_read = stdout_write = NULL;
 		goto error;
 	}
 	if (!SetHandleInformation (proc->stdout_read, HANDLE_FLAG_INHERIT, 0)) {
 		goto error;
 	}
-	if (!CreatePipe (&proc->stdin_read, &proc->stdin_write, &sattrs, 0)) {
-		proc->stdin_read = proc->stdin_write = NULL;
+	if (!CreatePipe (&proc->stderr_read, &stderr_write, &sattrs, 0)) {
+		proc->stdout_read = stderr_write = NULL;
 		goto error;
 	}
-	if (!SetHandleInformation (proc->stdin_read, HANDLE_FLAG_INHERIT, 0)) {
+	if (!SetHandleInformation (proc->stderr_read, HANDLE_FLAG_INHERIT, 0)) {
+		goto error;
+	}
+	if (!CreatePipe (&stdin_read, &proc->stdin_write, &sattrs, 0)) {
+		stdin_read = proc->stdin_write = NULL;
+		goto error;
+	}
+	if (!SetHandleInformation (proc->stdin_write, HANDLE_FLAG_INHERIT, 0)) {
 		goto error;
 	}
 
-	// TODO: rest
+	PROCESS_INFORMATION proc_info = { 0 };
+	STARTUPINFOW start_info = { 0 };
+	start_info.cb = sizeof (start_info);
+	start_info.hStdError = stderr_write;
+	start_info.hStdOutput = stdout_write;
+	start_info.hStdInput = stdin_read;
+	start_info.dwFlags |= STARTF_USESTDHANDLES;
 
+	if (!CreateProcessW(wappname, wcmdline,
+			NULL, NULL, TRUE, 0,
+			NULL, // TODO: env
+			NULL, &start_info, &proc_info)) {
+		goto error;
+	}
+
+beach:
+	if (stdin_read) {
+		CloseHandle (stdin_read);
+	}
+	if (stdout_write) {
+		CloseHandle (stdout_write);
+	}
+	if (stderr_write) {
+		CloseHandle (stderr_write);
+	}
+	free (wcmdline);
+	free (wappname);
+	return proc;
 error:
 	if (proc) {
-		if (proc->stdin_read) {
-			CloseHandle (proc->stdin_read);
-		}
 		if (proc->stdin_write) {
 			CloseHandle (proc->stdin_write);
 		}
 		if (proc->stdout_read) {
 			CloseHandle (proc->stdout_read);
 		}
-		if (proc->stdout_write) {
-			CloseHandle (proc->stdout_write);
+		if (proc->stderr_read) {
+			CloseHandle (proc->stderr_read);
 		}
-		// TODO: close rest
 		free (proc);
+		proc = NULL;
 	}
-	return NULL;
+	goto beach;
 }
 
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) { return true; }
