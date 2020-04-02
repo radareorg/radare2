@@ -18,7 +18,7 @@ r_util_sources = [
   'chmod.c',
   'constr.c',
   'debruijn.c',
-  'diff.c',
+  'udiff.c',
   'event.c',
   'file.c',
   'flist.c',
