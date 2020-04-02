@@ -1,5 +1,5 @@
-include ../global.mk
 include ../config-user.mk
+include ../global.mk
 # for EXT_EXE
 include ../libr/config.mk
 include ../mk/platform.mk
@@ -409,10 +409,19 @@ SHLRS+=zip/librz.a
 libr_shlr.${EXT_AR}:
 	rm -rf .libr
 	mkdir .libr
+ifeq ($(CC),emcc)
+	for LIB in ${SHLRS} ; do \
+		if [ -f "$${LIB}" ]; then emcc -emit-llvm -nostdlib -Wl,--whole-archive -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
+	done
+	${AR} crs $@ .libr/*.o
+	$(RANLIB) $@
+else
 	for LIB in ${SHLRS} ; do \
 		if [ -f "$${LIB}" ]; then ${PARTIALLD} -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
 	done
 	${AR} crs $@ .libr/*.o
+	$(RANLIB) $@
+endif
 
 .PHONY: spp
 

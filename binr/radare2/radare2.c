@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_main.h>
 #include <r_util.h>
 
-#if EMSCRIPTEN
+#if EMSCRIPTEN__TODO
 #include <emscripten.h>
 static RCore *core = NULL;
 
