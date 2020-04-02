@@ -972,6 +972,7 @@ static bool r_core_visual_config_hud(RCore *core) {
 // TODO: show only N elements of the list
 // TODO: wrap index when out of boundaries
 // TODO: Add support to show class fields too
+// Segfaults - stack overflow, because of recursion
 static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const char *grep, RList *list) {
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	RListIter *iter;
@@ -1079,8 +1080,8 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			if (r_list_empty (_c->fields)) {
 				return NULL;
 			}
-			r_cons_clear00 ();
-			return show_class (core, mode, idx, _c, grep, list);
+			// r_cons_clear00 ();
+			return NULL; // show_class (core, mode, idx, _c, grep, list);
 		}
 		return fur;
 		break;
@@ -1140,8 +1141,8 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			if (r_list_empty (_c->methods)) {
 				return NULL;
 			}
-			r_cons_clear00 ();
-			return show_class (core, mode, idx, _c, grep, list);
+			// r_cons_clear00 ();
+			return NULL; // show_class (core, mode, idx, _c, grep, list);
 		}
 		return mur;
 	}

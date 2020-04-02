@@ -231,7 +231,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Never ever use %lld or %llx. This is not portable. Always use the PFMT64x
   macros. Those are similar to the ones in GLIB.
-  
+
 ### Shell Scripts
 
 * Use `#!/bin/sh`
@@ -440,15 +440,16 @@ in the code for various reasons.
 ## Regression testing
 
 The source of the radare2 regression test suite can be found in the
-following GitHub repository.
+ `test/` directory, while binaries for this test are located in the
+ following GitHub repository.
 ```sh
-   git clone git://github.com/radareorg/radare2-regressions
+   git clone git://github.com/radareorg/radare2-testbins
 ```
 
 See the `README.md` file in that repository for further information.
 
 The existing test coverage can always do with improvement. So if you can
-contribute additions tests, that would be gratefully accepted.
+contribute additional tests, that would be gratefully accepted.
 
 ## Reporting bugs
 
@@ -479,7 +480,7 @@ to contribute.
   RADARE2
   ---
    - bump revision
-   - `./configure`  
+   - `./configure`
    - `make dist`
 
   R2-BINDINGS

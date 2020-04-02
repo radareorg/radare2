@@ -8,25 +8,24 @@ Originally based on work by and now in collaboration with pancake.
 Directory Hierarchy
 -------------------
 
- * src/:         SuperDuper new testsuite written in V.
- * new/:         New testsuite written in NodeJS.
+ * new/:         The tests sources
  * unit/:        Unit tests (written in C, using minunit).
- * bins/:        Sample binaries.
+ * fuzz/:        Fuzzing helper scripts
+ * bins/:        Sample binaries (fetched from the [external repository](https://github.com/radareorg/radare2-testbins))
 
 Requirements
 ------------
 
- * Radare2 installed (and in $PATH or set the R2 environment).
+ * Radare2 installed (and in `$PATH` or set the R2 environment).
  * Valgrind (optional).
- * nodeJS 8 or above
 
 Usage
 -----
 
  * To run *all* tests, use `make -k all`.
  * To execute only the unit tests use `make -k unit_tests`.
- * To execute only the regressions tests use `make -k js-tests`.
- * To execute and autofix a specific set of tests use `node node_modules/node-r2r/bin/r2r.js -i db/XXXX/YYYY` within the `test/new` directory, this will provide a dialog in which you can ask the program to replace the expected output with the current output of radare2.
+ * **DEPRECATED** To execute only the regressions tests use `make -k js-tests`.
+ * **DEPRECATED** To execute and autofix a specific set of tests use `node node_modules/node-r2r/bin/r2r.js -i db/XXXX/YYYY` within the `test/new` directory, this will provide a dialog in which you can ask the program to replace the expected output with the current output of radare2.
 
 Failure Levels
 --------------

@@ -6079,7 +6079,7 @@ l = use_blocksize;
 		break;
 	case 'x': // "px"
 	{
-		int show_offset = r_config_get_i (core->config, "asm.offset");
+		bool show_offset = r_config_get_i (core->config, "hex.offset");
 		if (show_offset) {
 			core->print->flags |= R_PRINT_FLAGS_OFFSET;
 		} else {
@@ -6207,6 +6207,7 @@ l = use_blocksize;
 			break;
 		case 'i': // "pxi"
 			if (l != 0) {
+				core->print->show_offset = r_config_get_i (core->config, "hex.offset");
 				r_print_hexii (core->print, core->offset, core->block,
 					core->blocksize, r_config_get_i (core->config, "hex.cols"));
 			}
@@ -6278,7 +6279,7 @@ l = use_blocksize;
 			break;
 		case 'W': // "pxW"
 			if (l) {
-				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "asm.offset"));
+				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
 				len = len - (len % 4);
 				for (i = 0; i < len; i += 4) {
 					const char *a, *b;
@@ -6442,7 +6443,7 @@ l = use_blocksize;
 		case 'Q': // "pxQ"
 			// TODO. show if flag name, or inside function
 			if (l) {
-				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "asm.offset"));
+				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
 				len = len - (len % 8);
 				for (i = 0; i < len; i += 8) {
 					const char *a, *b;

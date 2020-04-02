@@ -212,6 +212,12 @@ static bool cb_debug_hitinfo(void *user, void *data) {
 	return true;
 }
 
+static bool cb_anal_jmpretpoline(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.retpoline = node->i_value;
+	return true;
+}
 static bool cb_anal_jmptailcall(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2869,6 +2875,7 @@ R_API int r_core_config_init(RCore *core) {
 		"anal.fcn", "anal.bb",
 	NULL);
 	SETI ("anal.timeout", 0, "Stop analyzing after a couple of seconds");
+	SETCB ("anal.jmp.retpoline", "true", &cb_anal_jmpretpoline, "Analyze retpolines, may be slower if not needed");
 	SETICB ("anal.jmp.tailcall", 0, &cb_anal_jmptailcall, "Consume a branch as a call if delta is big");
 
 	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
@@ -3044,7 +3051,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("asm.tailsub", "false", &cb_asmtailsub, "Replace addresses with prefix .. syntax");
 	SETBPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETBPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
-	SETBPREF ("asm.offset", "true", "Show offsets at disassembly");
+	SETBPREF ("asm.offset", "true", "Show offsets in disassembly");
+	SETBPREF ("hex.offset", "true", "Show offsets in hex-dump");
 	SETBPREF ("scr.square", "true", "Use square pixels or not");
 	SETCB ("scr.prompt.vi", "false", &cb_scr_vi, "Use vi mode for input prompt");
 	SETCB ("scr.prompt.mode", "false", &cb_scr_prompt_mode,  "Set prompt color based on vi mode");

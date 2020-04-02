@@ -69,7 +69,7 @@ static void r2cmd(int in, int out, const char *cmd) {
         write (1, "\n", 1);
 }
 
-static int r_main_r2pipe(int argc, char **argv) {
+static int r_main_r2pipe(int argc, const char **argv) {
         int i, rc = 0;
         char *_in = r_sys_getenv ("R2PIPE_IN");
         char *_out = r_sys_getenv ("R2PIPE_OUT");
@@ -89,7 +89,7 @@ static int r_main_r2pipe(int argc, char **argv) {
         return rc;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, const char **argv) {
 	if (argc > 0 && strstr (argv[0], "r2p")) {
 		return r_main_r2pipe (argc, argv);
 	}

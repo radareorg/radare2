@@ -1,17 +1,7 @@
-DESTDIR?=/
-PREFIX?=/usr/local
-BINDIR=$(DESTDIR)/$(PREFIX)/bin
-CWD=$(shell pwd)
+R2R=$(shell cd new ; npm bin)/r2r
+RUNTEST=cd new && npm install ; $(R2R)
 
-TDIRS=$(shell ls -d t*| grep -v tmp) bins
-LIBDIR=$(DESTDIR)/$(PREFIX)/lib
-
--include config.mk
-
-all: js-tests unit_tests src/r2r
-
-src/r2r:
-	$(MAKE) -C src
+all: r2r-tests unit_tests
 
 bins:
 	git clone --depth 1 https://github.com/radareorg/radare2-testbins bins
@@ -19,11 +9,14 @@ bins:
 fuzz/targets:
 	git clone --depth 1 https://github.com/radareorg/radare2-fuzztargets fuzz/targets
 
-R2R=$(shell cd new ; npm bin)/r2r
-
-RUNTEST=cd new && npm install ; $(R2R)
+R2R_JS=$(shell cd new ; npm bin)/r2r
 
 js-tests: bins
+	cd new && npm install ; $(R2R_JS)
+
+RUNTEST=cd new && r2r -L
+
+r2r-tests: bins
 	${RUNTEST}
 
 keystone: bins
@@ -57,25 +50,13 @@ clean:
 	rm -rf tmp
 
 symstall:
-	mkdir -p $(BINDIR)
-	ln -fs $(CWD)/r2r $(BINDIR)/r2r
 
-install: src/r2r
-	$(MAKE) -C src install
-	#mkdir -p $(BINDIR)
-	#sed -e 's,@R2RDIR@,$(LIBDIR)/radare2-regressions,g' < $(CWD)/r2r > $(BINDIR)/r2r
-	#chmod +x $(BINDIR)/r2r
-	#mkdir -p $(LIBDIR)/radare2-regressions
-	#cp -rf $(TDIRS) $(LIBDIR)/radare2-regressions
-	#cp -rf *.sh $(LIBDIR)/radare2-regressions
+install:
 
 uninstall:
-	$(MAKE) -C src uninstall
-	rm -rf $(LIBDIR)/radare2-regressions
-	#rm -f $(BINDIR)/r2r
-	#rm -f $(BINDIR)/r2-v
 
-unit unit_tests: bins src/r2r
-	src/r2r unit
+unit unit_tests: bins
+	$(MAKE) -C unit
+	$(MAKE) -C unit run
 
 .PHONY: all clean unit install uninstall

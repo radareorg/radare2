@@ -95,7 +95,6 @@ else
 fi
 
 if [ "${R2_TESTS_DISABLE}" != "1" ] ; then
-    export NOOK=1
     export NOREPORT=1
     cd test
     VERBOSE=1 make -k all || exit 1

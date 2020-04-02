@@ -3410,3 +3410,31 @@ e asm.bits=64
 ar=
 EOF
 RUN
+
+NAME=x86_64 retpoline jmptbl
+FILE=../bins/elf/retpoline
+EXPECT=<<EOF
+3:
+2:
+1:
+0:
+4:
+EOF
+CMDS=<<EOF
+s 0x780
+af
+pdr~- case[2]
+EOF
+RUN
+
+NAME=x86_64 retpoline disabled jmptbl
+FILE=../bins/elf/retpoline
+EXPECT=<<EOF
+EOF
+CMDS=<<EOF
+e anal.jmp.retpoline = false
+s 0x780
+af
+pdr~- case[2]
+EOF
+RUN

@@ -9,8 +9,8 @@ struct r2r_subprocess_t {
 	RStrBuf err;
 };
 
-R_API bool r2r_subprocess_init() { return true; }
-R_API void r2r_subprocess_fini() {}
+R_API bool r2r_subprocess_init(void) { return true; }
+R_API void r2r_subprocess_fini(void) {}
 
 R_API R2RSubprocess *r2r_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
@@ -21,6 +21,11 @@ R_API R2RSubprocess *r2r_subprocess_start(
 }
 
 R_API void r2r_subprocess_wait(R2RSubprocess *proc) {}
+
+R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
+	// TODO
+}
+
 
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
@@ -55,7 +60,7 @@ static RThreadLock *subprocs_mutex;
 static int sigchld_pipe[2];
 static RThread *sigchld_thread;
 
-static void handle_sigchld() {
+static void handle_sigchld(int sig) {
 	ut8 b = 1;
 	write (sigchld_pipe[1], &b, 1);
 }
@@ -107,7 +112,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 	return R_TH_STOP;
 }
 
-R_API bool r2r_subprocess_init() {
+R_API bool r2r_subprocess_init(void) {
 	r_pvector_init(&subprocs, NULL);
 	subprocs_mutex = r_th_lock_new (false);
 	if (!subprocs_mutex) {
@@ -134,7 +139,7 @@ R_API bool r2r_subprocess_init() {
 	return true;
 }
 
-R_API void r2r_subprocess_fini() {
+R_API void r2r_subprocess_fini(void) {
 	r_sys_signal (SIGCHLD, SIG_IGN);
 	close (sigchld_pipe [0]);
 	close (sigchld_pipe [1]);
@@ -433,9 +438,14 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 	RList *files = r_str_split_duplist (test->file.value, "\n");
 	RListIter *it;
 	RListIter *tmpit;
-	char *filename;
-	r_list_foreach_safe (files, it, tmpit, filename) {
-		if (!*filename) {
+	char *token;
+	r_list_foreach_safe (extra_args, it, tmpit, token) {
+		if (!*token) {
+			r_list_delete (extra_args, it);
+		}
+	}
+	r_list_foreach_safe (files, it, tmpit, token) {
+		if (!*token) {
 			r_list_delete (files, it);
 		}
 	}
@@ -470,7 +480,7 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 
 #define JQ_CMD "jq"
 
-R_API bool r2r_check_jq_available() {
+R_API bool r2r_check_jq_available(void) {
 	const char *invalid_json = "this is not json lol";
 	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, NULL, 0, NULL, NULL, 0);
 	r2r_subprocess_stdin_write (proc, (const ut8 *)invalid_json, strlen (invalid_json));

@@ -6,7 +6,7 @@
 
 #define LINEFMT "%s, line %"PFMT64u": "
 
-R_API R2RCmdTest *r2r_cmd_test_new() {
+R_API R2RCmdTest *r2r_cmd_test_new(void) {
 	return R_NEW0 (R2RCmdTest);
 }
 
@@ -23,8 +23,13 @@ R_API void r2r_cmd_test_free(R2RCmdTest *test) {
 static char *readline(char *buf, size_t *linesz) {
 	char *end = strchr (buf, '\n');
 	if (end) {
+		size_t len = end - buf;
 		*end = '\0';
-		*linesz = end - buf;
+		if (len > 0 && buf[len - 1] == '\r') {
+			buf[len - 1] = '\0';
+			len--;
+		}
+		*linesz = len;
 		return end + 1;
 	} else {
 		*linesz = strlen (buf);
@@ -211,7 +216,7 @@ fail:
 	goto beach;
 }
 
-R_API R2RAsmTest *r2r_asm_test_new() {
+R_API R2RAsmTest *r2r_asm_test_new(void) {
 	return R_NEW0 (R2RAsmTest);
 }
 
@@ -394,7 +399,7 @@ fail:
 	goto beach;
 }
 
-R_API R2RJsonTest *r2r_json_test_new() {
+R_API R2RJsonTest *r2r_json_test_new(void) {
 	return R_NEW0 (R2RJsonTest);
 }
 
@@ -480,7 +485,7 @@ R_API void r2r_test_free(R2RTest *test) {
 	free (test);
 }
 
-R_API R2RTestDatabase *r2r_test_database_new() {
+R_API R2RTestDatabase *r2r_test_database_new(void) {
 	R2RTestDatabase *db = R_NEW (R2RTestDatabase);
 	if (!db) {
 		return NULL;
