@@ -595,6 +595,7 @@ rip:
 			r_str_trim (disasm);
 			out->disasm = disasm;
 		}
+		free (hex);
 		r_pvector_pop (&args);
 		r_pvector_pop (&args);
 		r2r_subprocess_free (proc);
