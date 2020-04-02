@@ -36,6 +36,10 @@ jobs:
     - os: osx
       name: macOS
       env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # emscripten
+    - os: linux
+      name: WASM
+      env: EMSCRIPTEN=1 sys/emscripten.sh
     # Linux with GCC on PowerPC
     - os: linux
       name: PPC64
@@ -100,7 +104,7 @@ jobs:
   allow_failures:
     # Emscripten
     - os: linux
-      name: EMCC-WASM-JS
+      name: EMCC
       env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
     - os: linux
