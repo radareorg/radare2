@@ -371,7 +371,7 @@ static void __panels_layout_refresh(RCore *core);
 static void __panels_layout(RPanels *panels);
 static void __layout_default(RPanels *panels);
 static void __layout_equal_hor(RPanels *panels);
-R_API void r_save_panels_layout(RCore *core);
+R_API void r_save_panels_layout(RCore *core, const char *_name);
 R_API bool r_load_panels_layout(RCore *core, const char *_name);
 static void __split_panel_vertical(RCore *core, RPanel *p, const char *name, const char *cmd);
 static void __split_panel_horizontal(RCore *core, RPanel *p, const char *name, const char *cmd);
@@ -3317,7 +3317,7 @@ int __close_file_cb(void *user) {
 
 int __save_layout_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_save_panels_layout (core);
+	r_save_panels_layout (core, NULL);
 	__set_mode (core, PANEL_MODE_DEFAULT);
 	__clear_panels_menu (core);
 	__get_cur_panel (core->panels)->view->refresh = true;
@@ -5650,15 +5650,18 @@ char *__get_panels_config_file_from_dir (const char *file) {
 	return ret;
 }
 
-void r_save_panels_layout(RCore *core) {
+R_API void r_save_panels_layout(RCore *core, const char *oname) {
 	int i;
 	if (!core->panels) {
 		return;
 	}
-	const char *name = __show_status_input (core, "Name for the layout: ");
+	const char *name = oname;
 	if (R_STR_ISEMPTY (name)) {
-		(void)__show_status (core, "Name can't be empty!");
-		return;
+		name = __show_status_input (core, "Name for the layout: ");
+		if (R_STR_ISEMPTY (name)) {
+			(void)__show_status (core, "Name can't be empty!");
+			return;
+		}
 	}
 	char *config_path = __create_panels_config_path (name);
 	RPanels *panels = core->panels;
