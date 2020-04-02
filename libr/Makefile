@@ -52,12 +52,16 @@ endif
 
 ifeq ($(WITH_LIBR),1)
 
+ifeq ($(CC),emcc)
+MLFLAGS=
+else
 ifeq ($(OSTYPE),darwin)
 MLFLAGS+=-install_name @rpath/libr2.dylib
 endif
 ifeq ($(OSTYPE),ios)
 MLFLAGS+=-install_name @rpath/libr2.dylib
 MLFLAGS+=-fembed-bitcode
+endif
 endif
 LDFLAGS+=${SSL_LDFLAGS}
 # XXX version-script only works with shlib as output
@@ -66,6 +70,7 @@ LDFLAGS+=${SSL_LDFLAGS}
 #endif
 # from env: ALFLAGS+=$(ALFLAGS)
 
+# ${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB}.a).o $${LIB}
 .libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
 	mkdir -p .libr
