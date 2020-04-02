@@ -42,7 +42,7 @@ static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
 #endif
 
 R_API void r_save_panels_layout(RCore *core, const char *_name);
-R_API void r_load_panels_layout(RCore *core, const char *_name);
+R_API bool r_load_panels_layout(RCore *core, const char *_name);
 
 #define DEFINE_CMD_DESCRIPTOR(core, cmd_) \
 	{ \
