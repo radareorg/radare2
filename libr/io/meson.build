@@ -5,7 +5,7 @@ r_io_sources = [
   'io.c',
   'ioutils.c',
   'map.c',
-  'io-plugin.c',
+  'io_plugin.c',
   'undo.c',
   'p_cache.c',
   'p/io_ar.c',
