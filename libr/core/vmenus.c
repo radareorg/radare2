@@ -1472,7 +1472,12 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
 			break;
-		case 'J': index += 10; break;
+		case 'J': 
+			index += 10;
+			if (index >= list->length) {
+				index = list->length -1;
+			}
+			break;
 		case 'j': 
 			if (++index >= list->length) {
 				index = 0;
