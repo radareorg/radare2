@@ -1343,7 +1343,7 @@ R_API int r_core_visual_classes(RCore *core) {
 	}
 	return true;
 }
-/** PLACEHOLDER **/
+
 static void anal_class_print(RAnal *anal, const char *class_name) {
 	RVector *bases = r_anal_class_base_get_all (anal, class_name);
 	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
