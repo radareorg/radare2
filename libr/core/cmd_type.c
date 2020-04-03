@@ -1591,18 +1591,25 @@ static int cmd_type(void *data, const char *input) {
 			}
 		} else if (input[1] == ' ' || input[1] == 'x' || !input[1]) {
 			char *tmp = strdup (input);
-			char *ptr = strchr (tmp, ' ');
-			if (!ptr) {
-				break;
-			}
-			r_str_trim (ptr);
-			int nargs = r_str_word_set0 (ptr);
-			if (nargs > 0) {
-				const char *type = r_str_word_get0 (ptr, 0);
-				const char *arg = (nargs > 1)? r_str_word_get0 (ptr, 1): NULL;
+			char *type_begin = strchr (tmp, ' ');
+			if (type_begin) {
+				r_str_trim (type_begin);
+				const char *type_end = r_str_rchr (type_begin, NULL, ' ');
+				int type_len = (type_end)
+					? (int)(type_end - type_begin)
+					: strlen (type_begin);
+				char *type = strdup (type_begin);
+				if (!type) {
+					free (tmp);
+					break;
+				}
+				snprintf (type, type_len + 1, "%s", type_begin);
+				const char *arg = (type_end) ? type_end + 1 : NULL;
 				char *fmt = r_type_format (TDB, type);
 				if (!fmt) {
 					eprintf ("Cannot find '%s' type\n", type);
+					free (tmp);
+					free (type);
 					break;
 				}
 				if (input[1] == 'x' && arg) { // "tpx"
@@ -1610,18 +1617,21 @@ static int cmd_type(void *data, const char *input) {
 					// eprintf ("pf %s @x:%s", fmt, arg);
 				} else {
 					ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
+					ut64 original_addr = addr;
 					if (!addr && arg) {
 						RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 						addr = r_anal_var_addr (core->anal, fcn, arg);
 					}
 					if (addr != UT64_MAX) {
-						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, addr);
+					} else if (original_addr == 0) {
+						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, original_addr);
 					}
 				}
 				free (fmt);
+				free (type);
 			} else {
-				eprintf ("see t?\n");
-				break;
+				eprintf ("Usage: tp?\n");
 			}
 			free (tmp);
 		} else { // "tp"
