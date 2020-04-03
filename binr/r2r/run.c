@@ -23,9 +23,6 @@ static volatile long pipe_id = 0;
 
 static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURITY_ATTRIBUTES attrs, DWORD sz, DWORD read_mode, DWORD write_mode) {
 	// see https://stackoverflow.com/a/419736
-	if ((read_mode | write_mode) & (~FILE_FLAG_OVERLAPPED)) {
-		return false;
-	}
 	if (!sz) {
 		sz = 4096;
 	}
@@ -170,6 +167,17 @@ static ut64 now_us() {
 	return v.QuadPart;
 }
 
+R_API void r_str_remove_char (char *str, char c) {
+	size_t shift = 0;
+	while (*str) {
+		if (*str == c) {
+			memmove (str, str + 1, strlen (str + 1) + 1);
+			continue;
+		}
+		str++;
+	}
+}
+
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	OVERLAPPED stdout_overlapped = { 0 };
 	stdout_overlapped.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
@@ -191,8 +199,8 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	ut8 stdout_buf[0x500];
 	ut8 stderr_buf[0x500];
 
-	ReadFile (proc->stdout_read, stdout_buf, sizeof (stdout_buf), NULL, &stdout_overlapped);
-	ReadFile (proc->stderr_read, stderr_buf, sizeof (stderr_buf), NULL, &stderr_overlapped);
+	ReadFile (proc->stdout_read, stdout_buf, sizeof (stdout_buf) - 1, NULL, &stdout_overlapped);
+	ReadFile (proc->stderr_read, stderr_buf, sizeof (stderr_buf) - 1, NULL, &stderr_overlapped);
 
 	bool stdout_eof = false;
 	bool stderr_eof = false;
@@ -227,13 +235,15 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		}
 		DWORD signaled = WaitForMultipleObjects (handles.len, handles.a, FALSE, timeout);
 		if (!stdout_eof && signaled == stdout_index) {
-			DWORD read;
-			BOOL res = GetOverlappedResult (proc->stdout_read, &stdout_overlapped, &read, TRUE);
+			DWORD r;
+			BOOL res = GetOverlappedResult (proc->stdout_read, &stdout_overlapped, &r, TRUE);
 			if (!res) {
 				stdout_eof = true;
 				continue;
 			}
-			r_strbuf_append_n (&proc->out, (const char *)stdout_buf, (int)read);
+			stdout_buf[r] = '\0';
+			r_str_remove_char (stdout_buf, '\r');
+			r_strbuf_append (&proc->out, (const char *)stdout_buf);
 			ResetEvent (stdout_overlapped.hEvent);
 			ReadFile (proc->stdout_read, stdout_buf, sizeof (stdout_buf), NULL, &stdout_overlapped);
 			continue;
@@ -245,7 +255,9 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 				stderr_eof = true;
 				continue;
 			}
-			r_strbuf_append_n (&proc->err, (const char *)stderr_buf, (int)read);
+			stderr_buf[read] = '\0';
+			r_str_remove_char (stderr_buf, '\r');
+			r_strbuf_append (&proc->err, (const char *)stderr_buf);
 			ResetEvent (stderr_overlapped.hEvent);
 			ReadFile (proc->stderr_read, stderr_buf, sizeof (stderr_buf), NULL, &stderr_overlapped);
 			continue;
