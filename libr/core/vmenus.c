@@ -1344,10 +1344,12 @@ R_API int r_core_visual_classes(RCore *core) {
 	return true;
 }
 /** PLACEHOLDER **/
-static void r_anal_class_print(RAnal *anal, const char *class_name, bool lng) {
-	r_cons_print (class_name);
-
+static void anal_class_print(RAnal *anal, const char *class_name) {
 	RVector *bases = r_anal_class_base_get_all (anal, class_name);
+	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	RVector *methods = r_anal_class_method_get_all (anal, class_name);
+
+	r_cons_print (class_name);
 	if (bases) {
 		RAnalBaseClass *base;
 		bool first = true;
@@ -1366,34 +1368,27 @@ static void r_anal_class_print(RAnal *anal, const char *class_name, bool lng) {
 	r_cons_print ("\n");
 
 
-	if (lng) {
-		RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
-		if (vtables) {
-			RAnalVTable *vtable;
-			r_vector_foreach (vtables, vtable) {
-				r_cons_printf ("  (vtable at 0x%"PFMT64x, vtable->addr);
-				if (vtable->offset > 0) {
-					r_cons_printf (" in class at +0x%"PFMT64x")\n", vtable->offset);
-				} else {
-					r_cons_print (")\n");
-				}
-			}
-			r_vector_free (vtables);
+	if (vtables) {
+		RAnalVTable *vtable;
+		r_vector_foreach (vtables, vtable) {
+			r_cons_printf ("  %2s vtable 0x%"PFMT64x" @ +0x%"PFMT64x" size:+0x%"PFMT64x"\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
 		}
+		r_vector_free (vtables);
+	}
 
-		RVector *methods = r_anal_class_method_get_all (anal, class_name);
-		if (methods) {
-			RAnalMethod *meth;
-			r_vector_foreach (methods, meth) {
-				r_cons_printf ("  %s @ 0x%"PFMT64x, meth->name, meth->addr);
-				if (meth->vtable_offset >= 0) {
-					r_cons_printf (" (vtable + 0x%"PFMT64x")\n", (ut64)meth->vtable_offset);
-				} else {
-					r_cons_print ("\n");
-				}
+	r_cons_print ("\n");
+
+	if (methods) {
+		RAnalMethod *meth;
+		r_vector_foreach (methods, meth) {
+			r_cons_printf ("  %s @ 0x%"PFMT64x, meth->name, meth->addr);
+			if (meth->vtable_offset >= 0) {
+				r_cons_printf (" (vtable + 0x%"PFMT64x")\n", (ut64)meth->vtable_offset);
+			} else {
+				r_cons_print ("\n");
 			}
-			r_vector_free (methods);
 		}
+		r_vector_free (methods);
 	}
 }
 
@@ -1404,12 +1399,11 @@ static const char *show_anal_classes(RCore *core, char mode, int *idx, SdbList *
 	SdbKv *kv;
 	int i = 0;
 	int skip = *idx - 10;
-	bool found = false;
 	const char * cur_class;
 	r_cons_printf ("[hjkl_/Cfm]> anal classes:\n\n");
 
 	if (mode == 'd' && class_name) {
-		r_anal_class_print (core->anal, class_name, true);
+		anal_class_print (core->anal, class_name);
 		return class_name;
 	}
 
@@ -1421,7 +1415,7 @@ static const char *show_anal_classes(RCore *core, char mode, int *idx, SdbList *
 				continue;
 			}
 		}
-		const char *class_name = sdbkv_key (kv);
+		class_name = sdbkv_key (kv);
 
 		if (show_color) {
 			const char *pointer = "- ";
@@ -1433,7 +1427,7 @@ static const char *show_anal_classes(RCore *core, char mode, int *idx, SdbList *
 				cur_class = class_name;
 			} 
 			r_cons_printf ("%s" Color_RESET " %02d" 
-			" %s%s\n" Color_RESET, pointer, i, txt_clr, class_name);
+				" %s%s\n" Color_RESET, pointer, i, txt_clr, class_name);
 		} else {
 			r_cons_printf ("%s %02d %s\n", (i==*idx) ? ">>" : "- ", i, class_name);
 		}
@@ -1446,11 +1440,11 @@ static const char *show_anal_classes(RCore *core, char mode, int *idx, SdbList *
 // TODO add other commands that Vbc has
 // Should the classes be refreshed after command execution with :
 // in case new class information would be added?
+// Add grep?
 R_API int r_core_visual_anal_classes(RCore *core) {
 	int ch, index = 0;
-	char cmd[1024];
+	char command[1024];
 	SdbList *list = r_anal_class_get_all (core->anal, true);
-	void *ptr;
 	int oldcur = 0;
 	char mode = ' ';
 	const char *class_name = "";
@@ -1535,16 +1529,16 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 		case ':':
 			r_cons_show_cursor (true);
 			r_cons_set_raw (0);
-			cmd[0] = '\0';
+			command[0] = '\0';
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
-				cmd[0]='\0';
+			if (r_cons_fgets (command, sizeof (command), 0, NULL) < 0) {
+				command[0]='\0';
 			}
 			//line[strlen(line)-1]='\0';
-			r_core_cmd (core, cmd, 1);
+			r_core_cmd (core, command, 1);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
-			if (cmd[0]) {
+			if (command[0]) {
 				r_cons_any_key (NULL);
 			}
 			//cons_gotoxy(0,0);
