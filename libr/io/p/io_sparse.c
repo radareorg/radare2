@@ -25,7 +25,11 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	}
 	b = RIOSPARSE_BUF(fd);
 	o = RIOSPARSE_OFF(fd);
-	return r_buf_write_at (b, o, buf, count);
+	int r = r_buf_write_at (b, o, buf, count);
+	if (r >= 0) {
+		r_buf_seek (b, r, R_BUF_CUR);
+	}
+	return r;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
@@ -36,7 +40,10 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 	b = RIOSPARSE_BUF(fd);
 	o = RIOSPARSE_OFF(fd);
-	(void)r_buf_read_at (b, o, buf, count);
+	int r = r_buf_read_at (b, o, buf, count);
+	if (r >= 0) {
+		r_buf_seek (b, count, R_BUF_CUR);
+	}
 	return count;
 }
 

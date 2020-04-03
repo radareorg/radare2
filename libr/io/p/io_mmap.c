@@ -98,7 +98,11 @@ static int r_io_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (r_buf_size (mmo->buf) < io->off) {
 		io->off = r_buf_size (mmo->buf);
 	}
-	return r_buf_read_at (mmo->buf, io->off, buf, count);
+	int r = r_buf_read_at (mmo->buf, io->off, buf, count);
+	if (r >= 0) {
+		r_buf_seek (mmo->buf, r, R_BUF_CUR);
+	}
+	return r;
 }
 
 static int r_io_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
