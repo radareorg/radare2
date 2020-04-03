@@ -153,7 +153,7 @@ static const char *help_msg_ts[] = {
 	"ts*", "", "Show pf.<name> format string for all loaded structs",
 	"ts*", " [type]", "Show pf.<name> format string for given struct",
 	"tsc", "<name>", "List all/given loaded structs in C output format with newlines",
-	"tsd", "", "List all loaded structs in C output format without newlines", 
+	"tsd", "", "List all loaded structs in C output format without newlines",
 	"tss", " [type]", "Display size of struct",
 	"ts?", "", "show this help",
 	NULL
@@ -1040,7 +1040,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'd':
 			print_struct_union_in_c_format (TDB, stdifunion, r_str_trim_head_ro (input + 2), false);
-			break;	
+			break;
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
 			break;
@@ -1394,9 +1394,9 @@ static int cmd_type(void *data, const char *input) {
 		RListIter *iter, *iter2;
 		  RAnalFunction *fcn;
 		switch (input[1]) {
-		case '.': // "tx." type xrefs 
-		case 'f': // "txf" type xrefs 
-			fcn  = r_anal_get_function_at (core->anal, core->offset);
+		case '.': // "tx." type xrefs
+		case 'f': // "txf" type xrefs
+			fcn = r_anal_get_function_at (core->anal, core->offset);
 			if (fcn) {
 				RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 				r_list_foreach (uniq , iter , type) {
