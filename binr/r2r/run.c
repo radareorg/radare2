@@ -168,7 +168,6 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		return false;
 	}
 
-	HANDLE handles[] = { stdout_overlapped.hEvent, stderr_overlapped.hEvent, proc->proc };
 	ut64 timeout_us_abs = UT64_MAX;
 	if (timeout_ms != UT64_MAX) {
 		timeout_us_abs = now_us () + timeout_ms * USEC_PER_MSEC;
@@ -180,9 +179,29 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	ReadFile (proc->stdout_read, stdout_buf, sizeof (stdout_buf), NULL, &stdout_overlapped);
 	ReadFile (proc->stderr_read, stderr_buf, sizeof (stderr_buf), NULL, &stderr_overlapped);
 
-	// TODO: finish all this
-
+	bool stdout_eof = false;
+	bool stderr_eof = false;
+	bool child_dead = false;
+	RVector handles;
+	r_vector_init (&handles, sizeof (HANDLE), NULL, NULL);
 	while (true) {
+		r_vector_clear (&handles);
+		size_t stdout_index = 0;
+		size_t stderr_index = 0;
+		size_t proc_index = 0;
+		if (!stdout_eof) {
+			stdout_index = handles.len;
+			r_vector_push (&handles, &stdout_overlapped.hEvent);
+		}
+		if (!stderr_eof) {
+			stderr_index = handles.len;
+			r_vector_push (&handles, &stderr_overlapped.hEvent);
+		}
+		if (!child_dead) {
+			proc_index = handles.len;
+			r_vector_push (&handles, &proc->proc);
+		}
+		
 		DWORD timeout = INFINITE;
 		if (timeout_us_abs != UT64_MAX) {
 			ut64 now = now_us ();
@@ -191,18 +210,39 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			}
 			timeout = (DWORD)((timeout_us_abs - now) / USEC_PER_MSEC);
 		}
-		DWORD signaled = WaitForMultipleObjects (3, handles, FALSE, timeout);
-		switch (signaled) {
-		case 0: // stdout
-			break;
-		case 1: // stderr
-			break;
-		case 2: // proc
-			break;
-		case 3: // timeout or error
-			return false;
+		DWORD signaled = WaitForMultipleObjects (handles.len, handles.a, FALSE, timeout);
+		if (!stdout_eof && signaled == stdout_index) {
+			DWORD read;
+			BOOL res = GetOverlappedResult (proc->stdout_read, &stdout_overlapped, &read, TRUE);
+			if (!res) {
+				stdout_eof = true;
+				continue;
+			}
+			r_strbuf_append_n (&proc->out, (const char *)stdout_buf, (int)read);
+			ReadFile (proc->stdout_read, stdout_buf, sizeof (stdout_buf), NULL, &stdout_overlapped);
+			continue;
 		}
+		if (!stderr_eof && signaled == stderr_index) {
+			DWORD read;
+			BOOL res = GetOverlappedResult (proc->stderr_read, &stderr_overlapped, &read, TRUE);
+			if (!res) {
+				stderr_eof = true;
+				continue;
+			}
+			r_strbuf_append_n (&proc->err, (const char *)stderr_buf, (int)read);
+			ReadFile (proc->stderr_read, stderr_buf, sizeof (stderr_buf), NULL, &stderr_overlapped);
+			continue;
+		}
+		if (!child_dead && signaled == proc_index) {
+			child_dead = true;
+			continue;
+		}
+		break;
 	}
+	r_vector_clear (&handles);
+	CloseHandle (stdout_overlapped.hEvent);
+	CloseHandle (stderr_overlapped.hEvent);
+	return stdout_eof && stderr_eof && child_dead;
 }
 
 R_API void r2r_subprocess_kill(R2RSubprocess *proc) {
