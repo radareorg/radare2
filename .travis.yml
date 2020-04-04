@@ -31,7 +31,7 @@ jobs:
     # Linux with meson and coverage and asserts
     - os: linux
       name: Linux-meson
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1 CFLAGS="-DR2_ASSERT_STDOUT=1"
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1 CFLAGS="-DR2_ASSERT_STDOUT=1" ASAN=1
     # OS X with clang
     - os: osx
       name: macOS
