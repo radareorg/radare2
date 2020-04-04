@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_reg.h>
+#include <r_util/r_str.h>
 
 /* non-endian safe - used for raw mapping with system registers */
 R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {
@@ -294,9 +295,7 @@ R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source) {
 }
 
 R_API int r_reg_arena_set_bytes(RReg *reg, const char *str) {
-	while (IS_WHITESPACE (*str)) {
-		str++;
-	}
+	str = r_str_trim_head_ro (str);
 	int len = r_hex_str_is_valid (str);
 	if (len == -1) {
 		eprintf ("Invalid input\n");
