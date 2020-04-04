@@ -1393,14 +1393,13 @@ static void anal_class_print(RAnal *anal, const char *class_name) {
 	}
 }
 
-
 static const char *show_anal_classes(RCore *core, char mode, int *idx, SdbList *list, const char *class_name) {
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	SdbListIter *iter;
 	SdbKv *kv;
 	int i = 0;
 	int skip = *idx - 10;
-	const char * cur_class;
+	const char * cur_class = NULL;
 	r_cons_printf ("[hjkl_/Cfm]> anal classes:\n\n");
 
 	if (mode == 'd' && class_name) {

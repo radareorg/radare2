@@ -857,7 +857,7 @@ static RBinInfo *info(RBinFile *bf) {
 	{
 		ut32 fc = r_buf_read_le32_at (bf->buf, 8);
 		ut64 tmpsz;
-		const ut8 *tmp = r_buf_data_cached (bf->buf, &tmpsz);
+		const ut8 *tmp = r_buf_data (bf->buf, &tmpsz);
 		ut32 cc = __adler32 (tmp + 12, tmpsz - 12);
 		if (fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
