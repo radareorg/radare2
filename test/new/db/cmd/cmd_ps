@@ -1,5 +1,6 @@
 NAME=ps+ libc++ 32bit
 FILE=../bins/elf/stdstring32-libc++.LOAD1
+ARGS=-n -m 0x08049ee8
 EXPECT=<<EOF
 a
 abcdefghij
@@ -7,7 +8,6 @@ abcdefghij
 abcdefghijk
 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 EOF
-ARGS=-n -m 0x08049ee8
 CMDS=<<EOF
 on ../bins/elf/stdstring32-libc++.heap 0x09eb8000 > /dev/null
 f obj.empty_str 12 0x0804a064
@@ -26,6 +26,7 @@ RUN
 
 NAME=ps+ libc++ 64bit
 FILE=../bins/elf/stdstring64-libc++.LOAD1
+ARGS=-n -m 0x00600dc8
 EXPECT=<<EOF
 a
 abcdefghijklmnopqrstuv
@@ -33,7 +34,6 @@ abcdefghijklmnopqrstuv
 abcdefghijklmnopqrstuvw
 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 EOF
-ARGS=-n -m 0x00600dc8
 CMDS=<<EOF
 on ../bins/elf/stdstring64-libc++.heap 0x0128b000 > /dev/null
 f obj.empty_str 24 0x006010b8

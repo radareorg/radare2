@@ -157,6 +157,7 @@ RUN
 
 NAME=i (all) (malloc)
 FILE=malloc://1025
+ARGS=-a x86
 EXPECT=<<EOF
 fd       3
 file     malloc://1025
@@ -223,7 +224,6 @@ nth paddr  size vaddr  vsize perm name
 
 fs sections
 EOF
-ARGS=-a x86
 CMDS=<<EOF
 i
 ia
@@ -243,6 +243,7 @@ RUN
 
 NAME=i (all) (malloc) iI*
 FILE=malloc://1024
+ARGS=-a x86
 EXPECT=<<EOF
 fd       3
 file     malloc://1024
@@ -282,7 +283,6 @@ e asm.bits=64
 e asm.dwarf=false
 e asm.pcalign=0
 EOF
-ARGS=-a x86
 CMDS=<<EOF
 i
 i*
@@ -3411,6 +3411,7 @@ RUN
 
 NAME=i (no rbin - file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=-n
 EXPECT=<<EOF
 fd       3
 size     0x1a36
@@ -3420,7 +3421,6 @@ iorw     false
 blksz    0x0
 block    0x100
 EOF
-ARGS=-n
 CMDS=i~!file
 RUN
 

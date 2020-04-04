@@ -1,6 +1,6 @@
 NAME=nso detection
-ARGS=-e io.cache=true
 FILE=../bins/nso/application.nso
+ARGS=-e io.cache=true
 EXPECT=<<EOF
 1
 EOF
@@ -8,8 +8,8 @@ CMDS=iI~?switch
 RUN
 
 NAME=nso sections
-ARGS=-e io.cache=true
 FILE=../bins/nso/application.nso
+ARGS=-e io.cache=true
 EXPECT=<<EOF
 [Sections]
 
@@ -25,8 +25,8 @@ CMDS=iS
 RUN
 
 NAME=nso entry
-ARGS=-e io.cache=true
 FILE=../bins/nso/application.nso
+ARGS=-e io.cache=true
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x08000000 paddr=0x00000100 haddr=-1 type=program
@@ -37,8 +37,8 @@ CMDS=ie
 RUN
 
 NAME=nso data
-ARGS=-e io.cache=true
 FILE=../bins/nso/application.nso
+ARGS=-e io.cache=true
 EXPECT=<<EOF
 e7031eaa01000094c62302d1e50300aae40301aabf0000f1841841ba400000544a240014fb0307aaf90305aafa0304aa
 EOF

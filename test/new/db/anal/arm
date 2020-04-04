@@ -146,13 +146,13 @@ RUN
 
 NAME=arm 16 BE 4 bytes instruction
 FILE=-
+ARGS=-a arm -b 16
 EXPECT=<<EOF
 f003e9da
 blx 0x33b8
 03f0dae9
 blx 0x33b8
 EOF
-ARGS=-a arm -b 16
 CMDS=<<EOF
 e cfg.bigendian=1
 wa blx 0x33b8

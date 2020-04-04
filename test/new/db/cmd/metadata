@@ -431,10 +431,10 @@ RUN
 
 NAME=Csj ascii/latin1
 FILE=../bins/pe/testapp-msvc64.exe
+ARGS=-z
 EXPECT=<<EOF
 [{"offset":5368799392,"type":"Cs","name":"bGF0aW4xIGdhdGU6IM67q84=","enc":"latin1","ascii":false},{"offset":5368799416,"type":"Cs","name":"ICAtLSBpbiBDb25FbXUsIHJ1biBgY2hjcCAyODU5MWAgdG8gc2VlIHRoZSBnYXRlLg==","enc":"latin1","ascii":true}]
 EOF
-ARGS=-z
 CMDS=<<EOF
 Csa @ 0x1400160a0
 Csg @ 0x1400160b8
@@ -482,12 +482,12 @@ RUN
 
 NAME=Csg, Csa and Csj
 FILE=../bins/pe/testapp-msvc64.exe
+ARGS=-e bin.str.purge=all,!0x140016018
 EXPECT=<<EOF
 [{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"iz","ascii":true}]
 [{"offset":5368799256,"type":"Cs","name":"CQ==","enc":"latin1","ascii":true}]
 [{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtoQ0K","enc":"latin1","ascii":false}]
 EOF
-ARGS=-e bin.str.purge=all,!0x140016018
 CMDS=<<EOF
 s 0x140016018
 Csj
@@ -529,11 +529,11 @@ RUN
 
 NAME=Cs8 and Csj
 FILE=../bins/elf/strenc
+ARGS=-e bin.str.purge=all,!0x004021ff
 EXPECT=<<EOF
 [{"offset":4203007,"type":"Cs","name":"dXRmOD4gXFx1MDBhMlxcdTIwYWNcXFUwMDAxMDM0OCBpbiB5ZWxsb3c6XGVbMzNtIMKi4oKs8JCNiCBcZVswbVxu","enc":"iz","ascii":false}]
 [{"offset":4203007,"type":"Cs","name":"dXRmOD4gXHUwMGEyXHUyMGFjXFUwMDAxMDM0OCBpbiB5ZWxsb3c6G1szM20gwqLigqzwkI2IIBtbMG0K","enc":"utf8","ascii":false}]
 EOF
-ARGS=-e bin.str.purge=all,!0x004021ff
 CMDS=<<EOF
 s 0x004021ff
 Csj

@@ -12,11 +12,11 @@ RUN
 
 NAME=hello-arm32
 FILE=../bins/elf/analysis/hello-arm32
+ARGS=-B 0x4000
 EXPECT=<<EOF
 0x4000
 0x90c
 EOF
-ARGS=-B 0x4000
 CMDS=<<EOF
 ?v $M
 ?v $s

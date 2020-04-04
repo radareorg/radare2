@@ -107,10 +107,10 @@ RUN
 
 NAME=md ext2 auto
 FILE=../bins/fs/ext2.img
+ARGS=-n
 EXPECT=<<EOF
 6
 EOF
-ARGS=-n
 CMDS=<<EOF
 m /root
 md /root~?
@@ -119,6 +119,7 @@ RUN
 
 NAME=md ext2
 FILE=../bins/fs/ext2.img
+ARGS=-n
 EXPECT=<<EOF
 d .
 d ..
@@ -127,7 +128,6 @@ d bin
 d etc
 f README.md
 EOF
-ARGS=-n
 CMDS=<<EOF
 m /root ext2
 md /root
@@ -136,11 +136,11 @@ RUN
 
 NAME=md ext2 cat file
 FILE=../bins/fs/ext2.img
+ARGS=-n
 EXPECT=<<EOF
 This is an EXT2 partition
 
 EOF
-ARGS=-n
 CMDS=<<EOF
 m /root ext2
 mc /root/README.md
@@ -149,12 +149,12 @@ RUN
 
 NAME=md vfat
 FILE=../bins/fs/fat.img
+ARGS=-n
 EXPECT=<<EOF
 d etc
 d bin
 f README.md
 EOF
-ARGS=-n
 CMDS=<<EOF
 m /root fat
 md /root
@@ -163,11 +163,11 @@ RUN
 
 NAME=md fat cat file
 FILE=../bins/fs/fat.img
+ARGS=-n
 EXPECT=<<EOF
 This is a FAT partition
 
 EOF
-ARGS=-n
 CMDS=<<EOF
 m /root fat
 mc /root/README.md
@@ -176,12 +176,12 @@ RUN
 
 NAME=md hfs
 FILE=../bins/fs/hfs.img
+ARGS=-n
 EXPECT=<<EOF
 d bin
 d etc
 f README.md
 EOF
-ARGS=-n
 CMDS=<<EOF
 m /root hfs
 md /root
@@ -190,11 +190,11 @@ RUN
 
 NAME=md hfs cat file
 FILE=../bins/fs/hfs.img
+ARGS=-n
 EXPECT=<<EOF
 This is an HFS partition
 
 EOF
-ARGS=-n
 CMDS=<<EOF
 m /root hfs
 mc /root/README.md
@@ -203,6 +203,7 @@ RUN
 
 NAME=mc hfs cat services
 FILE=../bins/fs/hfs.img
+ARGS=-n
 EXPECT=<<EOF
 # Network services, Internet style
 #
@@ -818,7 +819,6 @@ fido		60179/tcp			# fidonet EMSI over TCP
 # Local services
 
 EOF
-ARGS=-n
 CMDS=<<EOF
 m /root hfs
 mc /root/etc/services

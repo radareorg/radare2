@@ -33,6 +33,7 @@ RUN
 
 NAME=pd v8 and cortex
 FILE=malloc://128
+ARGS=-a arm -b 16
 EXPECT=<<EOF
 
 blx 0xfffff584
@@ -43,7 +44,6 @@ blx 0xfffff584
 blx 0xfffff584
 blx 0xfffff584
 EOF
-ARGS=-a arm -b 16
 CMDS=<<EOF
 ?e
 pad fff7c0ea@e:asm.cpu=v8
@@ -249,10 +249,10 @@ RUN
 
 NAME=pd bits hint
 FILE=-
+ARGS=-a snes
 EXPECT=<<EOF
             [32m[7m0x00000000[0m      [37ma9[33m7e[32m00[0m         [35mlda[36m #[33m0x007e[0m[0m[0m
 EOF
-ARGS=-a snes
 CMDS=<<EOF
 wx a97e00
 ahb 8
@@ -555,11 +555,11 @@ RUN
 
 NAME=pd asm.relsub
 FILE=malloc://1024
+ARGS=-m 0x400000
 EXPECT=<<EOF
   0x00400000      488d05020000.  lea rax, [rip + 2]
   0x00400000      488d05020000.  lea rax, [0x00400009]
 EOF
-ARGS=-m 0x400000
 CMDS=<<EOF
 e io.va=true
 e asm.relsub=false

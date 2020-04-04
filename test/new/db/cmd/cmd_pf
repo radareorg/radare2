@@ -26,10 +26,10 @@ RUN
 
 NAME=pf i foo @x:0x01
 FILE=-
+ARGS=-a x86 -b 32
 EXPECT=<<EOF
  foo : 0x00000000 = 1
 EOF
-ARGS=-a x86 -b 32
 CMDS=pf i foo @x:0x01
 RUN
 
@@ -572,10 +572,10 @@ RUN
 
 NAME=Print value only
 FILE=../bins/pe/ch22.exe
+ARGS=-nn
 EXPECT=<<EOF
 0x0000c000
 EOF
-ARGS=-nn
 CMDS=<<EOF
 e asm.bits=32
 s 0x80
@@ -657,6 +657,7 @@ RUN
 
 NAME=PE test
 FILE=../bins/pe/ch22.exe
+ARGS=-nn
 EXPECT=<<EOF
       signature : 0x00000080 = "PE"
      fileHeader : 
@@ -767,7 +768,6 @@ EXPECT=<<EOF
                                          size : 0x00000174 = 0x00000000
 ]
 EOF
-ARGS=-nn
 CMDS=<<EOF
 e asm.bits=32
 s 0x80

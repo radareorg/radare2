@@ -73,8 +73,8 @@ CMDS=px 64 @ 0x00400000
 RUN
 
 NAME=: test format definitions
-ARGS=-nn
 FILE=../bins/mdmp/hello.dmp
+ARGS=-nn
 EXPECT=<<EOF
 pf.mdmp_directory [4]E? (mdmp_stream_type)StreamType (mdmp_location_descriptor)Location
 pf.mdmp_exception [4]E[4]Eqqdd[15]q (mdmp_exception_code)ExceptionCode (mdmp_exception_flags)ExceptionFlags ExceptionRecord ExceptionAddress NumberParameters __UnusedAlignment ExceptionInformation

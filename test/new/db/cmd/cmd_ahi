@@ -266,13 +266,13 @@ RUN
 
 NAME=64bit ahi 10
 FILE=-
+ARGS=-m 0x100001000
 EXPECT=<<EOF
 true
             0x100001000      c7055f440000.  mov dword [rip + 0x445f], 0 ; [0x100005469:4]=-1
             0x100001000      c7055f440000.  mov dword [0x100005469], 0 ; [0x100005469:4]=-1
             0x100001000      c7055f440000.  mov dword [4294988905], 0  ; [0x100005469:4]=-1
 EOF
-ARGS=-m 0x100001000
 CMDS=<<EOF
 e io.va
 e asm.relsub=false

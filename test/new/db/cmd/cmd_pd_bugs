@@ -17,28 +17,28 @@ RUN
 
 NAME=pd arm cortex 0
 FILE=-
+ARGS=-a arm -b 16
 EXPECT=<<EOF
 invalid
 EOF
-ARGS=-a arm -b 16
 CMDS=wx 80f30988; pi 1
 RUN
 
 NAME=pd arm cortex 1
 FILE=-
+ARGS=-a arm -b 16 -e asm.cpu=cortex
 EXPECT=<<EOF
 msr psp, r0
 EOF
-ARGS=-a arm -b 16 -e asm.cpu=cortex
 CMDS=wx 80f30988;pi 1
 RUN
 
 NAME=pd arm cortex 2
 FILE=-
+ARGS=-a arm -b 16
 EXPECT=<<EOF
 msr psp, r0
 EOF
-ARGS=-a arm -b 16
 CMDS=e asm.cpu=cortex;wx 80f30988;pi 1
 RUN
 

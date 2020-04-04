@@ -1,10 +1,10 @@
 NAME=/ search.in=io.maps without -m
 FILE=../bins//wasm/inc.wast
+ARGS=-m 0x80000
 EXPECT=<<EOF
 0x00080053
 0x00080067
 EOF
-ARGS=-m 0x80000
 CMDS=<<EOF
 e search.in=io.maps
 e io.va=true
@@ -47,11 +47,11 @@ RUN
 
 NAME=/ search io.maps with map
 FILE=../bins//wasm/inc.wast
+ARGS=-m 0x80000
 EXPECT=<<EOF
 0x00080053
 0x00080067
 EOF
-ARGS=-m 0x80000
 CMDS=<<EOF
 e search.in=io.maps
 e io.va=true
@@ -61,13 +61,13 @@ RUN
 
 NAME=/ search io.maps 2
 FILE=../bins//wasm/inc.wast
+ARGS=-m 0x80000
 EXPECT=<<EOF
 0x00080053
 0x00080067
 0x00400053
 0x00400067
 EOF
-ARGS=-m 0x80000
 CMDS=<<EOF
 om 3 0x400000
 e io.va=true
