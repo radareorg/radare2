@@ -753,6 +753,8 @@ static char *convert_win_cmds(const char *cmds) {
 				if (c) { // must check c to prevent overflow
 					*p++ = '%';
 				}
+			} else {
+				*p++ = c;
 			}
 		} else {
 			*p++ = c;
