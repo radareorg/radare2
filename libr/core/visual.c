@@ -2131,6 +2131,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		" _  hud mode (V_)\n"
 		" 1  bit editor (vd1)\n"
 		" b  blocks\n"
+		" a  anal classes\n"
 		" c  classes\n"
 		" C  comments\n"
 		" d  debug traces\n"
@@ -2211,6 +2212,9 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 			break;
 		case 'c': // "vbc"
 			r_core_visual_classes (core);
+			break;
+		case 'a': // "vba"
+			r_core_visual_anal_classes (core);
 			break;
 		case 'C': // "vbC"
 			r_core_visual_comments (core);
