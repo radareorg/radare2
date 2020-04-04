@@ -18,11 +18,11 @@ static ut8 getbool(ut8 **bp){
 static ut8 char6(ut8 **bp){
     ut8 lo = r_read_at_le8(*bp);
     *bp += 6;
-    if(0  <= lo & lo <= 25) return (lo + 97);
-    if(26 <= lo & lo <= 51) return (lo + 39);
-    if(52 <= lo & lo <= 61) return (lo - 4);
-    if(lo == 62) return '.';
-    if(lo == 63) return '_';
+    if (0  <= lo & lo <= 25) return lo + 97;
+    if (26 <= lo & lo <= 51) return lo + 39;
+    if (52 <= lo & lo <= 61) return lo - 4;
+    if (lo == 62) return '.';
+    if (lo == 63) return '_';
     return 0; //"invalid"
 }
 
