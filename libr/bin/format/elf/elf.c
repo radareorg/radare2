@@ -2642,6 +2642,97 @@ char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 	return ret;
 }
 
+static void fix_rva_and_offset(ELFOBJ *bin, RBinElfReloc *r, ut64 offset_table) {
+	if (is_bin_etrel (bin)) {
+		r->rva = offset_table + r->offset;
+		r->rva = Elf_(r_bin_elf_p2v) (bin, r->rva);
+	} else {
+		r->rva = r->offset;
+		r->offset = Elf_(r_bin_elf_v2p) (bin, r->offset);
+	}
+}
+
+static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
+	size_t size_struct;
+
+	if (is_rela) {
+		size_struct = sizeof (Elf_(Rela));
+	} else {
+		size_struct = sizeof (Elf_(Rel));
+	}
+
+	// TODO 2nd check overflow?
+	if ((offset + size_struct) > bin->size || (offset + size_struct) < offset) {
+		return -1;
+	}
+
+	ut8 buf[sizeof (Elf_(Rela))] = { 0 };
+	int res = r_buf_read_at (bin->b, offset, buf, size_struct);
+	if (res != size_struct) {
+		return -1;
+	}
+
+	// TODO make a single read and work with the buffer
+	size_t i = 0;
+	Elf_(Rela) reloc_info;
+
+#if R_BIN_ELF64
+	reloc_info.r_offset = READ64 (buf, i);
+	reloc_info.r_info = READ64 (buf, i);
+#else
+	reloc_info.r_offset = READ32 (buf, i);
+	reloc_info.r_info = READ32 (buf, i);
+#endif
+
+	r->offset = reloc_info.r_offset;
+	r->type = ELF_R_TYPE (reloc_info.r_info);
+	r->sym = ELF_R_SYM (reloc_info.r_info);
+	r->is_rela = is_rela;
+	r->last = 0;
+
+	if (is_rela == DT_RELA) {
+#if R_BIN_ELF64
+		reloc_info.r_addend = READ64 (buf, i);
+#else
+		reloc_info.r_addend = READ32 (buf, i);
+#endif
+		r->addend = reloc_info.r_addend;
+	}
+
+	return 1;
+}
+
+static void populate_relocs_record(ELFOBJ *bin, RBinElfReloc *relocs,
+	struct dynamic_relocation_section *info) {
+	size_t i = 0;
+
+	for (size_t offset = 0; offset < info->rela_size; offset += info->relaent) {
+		read_reloc (bin, relocs + i, DT_RELA, info->addr_rela + offset);
+		fix_rva_and_offset (bin, relocs + i, info->addr_rela);
+		i++;
+	}
+
+	for (size_t offset = 0; offset < info->rel_size; offset += info->relent) {
+		read_reloc (bin, relocs + i, DT_REL, info->addr_rel + offset);
+		fix_rva_and_offset (bin, relocs + i, info->addr_rel);
+		i++;
+	}
+}
+
+static size_t get_num_relocs(struct dynamic_relocation_section *info) {
+	size_t res = 0;
+
+	if (info->relaent) {
+		res += info->rela_size / info->relaent;
+	}
+
+	if (info->relent) {
+		res += info->rel_size / info->relent;
+	}
+
+	return res;
+}
+
 static struct dynamic_relocation_section *get_dynamic_info(ELFOBJ *bin) {
 	struct dynamic_relocation_section *res = calloc (1, sizeof (struct dynamic_relocation_section));
 
@@ -2682,53 +2773,6 @@ static struct dynamic_relocation_section *get_dynamic_info(ELFOBJ *bin) {
 	return res;
 }
 
-static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
-	if (offset + sizeof (Elf_(Rela)) > bin->size || offset + sizeof (Elf_(Rela)) < offset) {
-		return -1;
-	}
-	ut8 buf[sizeof (Elf_(Rela))] = {0};
-	int res = r_buf_read_at (bin->b, offset, buf, sizeof (Elf_(Rela)));
-	if (res != sizeof (Elf_(Rela))) {
-		return -1;
-	}
-	// TODO make a single read and work with the buffer
-	size_t i = 0;
-	if (is_rela == DT_RELA) {
-		Elf_(Rela) rela;
-#if R_BIN_ELF64
-		rela.r_offset = READ64 (buf, i);
-		rela.r_info = READ64 (buf, i);
-		rela.r_addend = READ64 (buf, i);
-#else
-		rela.r_offset = READ32 (buf, i);
-		rela.r_info = READ32 (buf, i);
-		rela.r_addend = READ32 (buf, i);
-#endif
-		r->is_rela = is_rela;
-		r->offset = rela.r_offset;
-		r->type = ELF_R_TYPE (rela.r_info);
-		r->sym = ELF_R_SYM (rela.r_info);
-		r->last = 0;
-		r->addend = rela.r_addend;
-		return sizeof (Elf_(Rela));
-	} else {
-		Elf_(Rel) rel;
-#if R_BIN_ELF64
-		rel.r_offset = READ64 (buf, i);
-		rel.r_info = READ64 (buf, i);
-#else
-		rel.r_offset = READ32 (buf, i);
-		rel.r_info = READ32 (buf, i);
-#endif
-		r->is_rela = is_rela;
-		r->offset = rel.r_offset;
-		r->type = ELF_R_TYPE (rel.r_info);
-		r->sym = ELF_R_SYM (rel.r_info);
-		r->last = 0;
-		return sizeof (Elf_(Rel));
-	}
-}
-
 RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 	RBinElfReloc *ret = NULL;
 
@@ -2737,9 +2781,13 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 	}
 
 	struct dynamic_relocation_section *info = get_dynamic_info (bin);
+	size_t num_relocs = get_num_relocs (info);
+	ret = malloc ((num_relocs + 1) * sizeof (RBinElfReloc));
+	populate_relocs_record (bin, ret, info);
+	ret[num_relocs].last = 1;
 	free (info);
 
-	return NULL;
+	return ret;
 }
 
 RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
