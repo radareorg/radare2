@@ -1100,7 +1100,7 @@ static char *dex_class_super_name(RBinDexObj *bin, RBinDexClass *c) {
 static ut64 peek_uleb(RBuffer *b, bool *err, size_t *nn) {
 	ut64 n = UT64_MAX;
 	int len = r_buf_uleb128 (b, &n);
-	if (len < 0) {
+	if (len < 1) {
 		if (err) {
 			*err |= true;
 		}
@@ -1119,11 +1119,11 @@ static size_t parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *c
 	int total, tid;
 	DexField field;
 	const char* type_str;
-	size_t i, skip = 0;
+	size_t i, skip = 0, skipped = 0;
 
-	r_buf_seek (bf->buf, offset, R_BUF_SET);
 	for (i = 0; i < fields_count; i++) {
 		bool err = false;
+		r_buf_seek (bf->buf, offset + skip, R_BUF_SET);
 		ut64 fieldIndex = peek_uleb (bf->buf, &err, &skip);
 		ut64 accessFlags = peek_uleb (bf->buf, &err, &skip);
 		if (err) {
@@ -1208,23 +1208,27 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 		DM = 4096;
 	}
 	size_t skip = 0;
+	size_t skipped = 0;
 	ut64 bufsz = r_buf_size (bf->buf);
-	r_buf_seek (bf->buf, offset, R_BUF_SET);
+	ut64 encoded_method_addr;
+	bool err = false;
+	ut64 MI, MA, MC;
 	for (i = 0; i < DM; i++) {
-		ut64 encoded_method_addr = offset; //  + skip;
-		bool err = false;
+		err = false;
 		skip = 0;
+		encoded_method_addr = offset; //  + skip;
 		r_buf_seek (bf->buf, offset, R_BUF_SET);
-		ut64 MI = peek_uleb (bf->buf, &err, &skip);
+		MI = peek_uleb (bf->buf, &err, &skip);
 		MI += omi;
 		omi = MI;
-		ut64 MA = peek_uleb (bf->buf, &err, &skip);
-		ut64 MC = peek_uleb (bf->buf, &err, &skip);
+		MA = peek_uleb (bf->buf, &err, &skip);
+		MC = peek_uleb (bf->buf, &err, &skip);
 		if (err) {
 			eprintf ("Error\n");
 			break;
 		}
 		offset += skip;
+		skipped += skip;
 		// TODO: MOVE CHECKS OUTSIDE!
 		if (MI < dex->header.method_size) {
 			if (methods) {
@@ -1305,7 +1309,6 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 						R_FREE (signature);
 						break;
 					}
-					ut64 bufsz = r_buf_size (bf->buf);
 					if (bufsz < offset || bufsz < offset + 8) {
 						R_FREE (signature);
 						break;
@@ -1425,7 +1428,6 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 			sym->method_flags = get_method_flags (MA);
 			sym->ordinal = (*sym_count)++;
 			if (MC > 0) {
-				ut64 bufsz = r_buf_size (bf->buf);
 				if (bufsz < MC || bufsz < MC + 16) {
 					R_FREE (sym);
 					R_FREE (signature);
@@ -1494,7 +1496,7 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 		R_FREE (signature);
 		//R_FREE (method_name);
 	}
-	return skip;
+	return skipped;
 }
 
 static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *methods, int *sym_count) {
