@@ -46,7 +46,7 @@ R_API void r2r_subprocess_fini(void) {}
 R_API R2RSubprocess *r2r_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size) {
-	LPWSTR wcmdline = NULL;
+	LPTSTR wcmdline = NULL;
 	R2RSubprocess *proc = NULL;
 	HANDLE stdin_read = NULL;
 	HANDLE stdout_write = NULL;
@@ -65,13 +65,11 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	if (!cmdline) {
 		return NULL;
 	}
-	size_t wcmdline_count = strlen (cmdline) + 1;
-	wcmdline = calloc (wcmdline_count, sizeof (wchar_t));
-	if (!MultiByteToWideChar (CP_UTF8, MB_PRECOMPOSED, cmdline, -1, wcmdline, wcmdline_count)) {
-		free (cmdline);
+	wcmdline = r_sys_conv_utf8_to_win (cmdline);
+	free (cmdline);
+	if (!wcmdline) {
 		goto error;
 	}
-	free (cmdline);
 
 	proc = R_NEW0 (R2RSubprocess);
 	if (!proc) {
@@ -114,7 +112,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	start_info.hStdInput = stdin_read;
 	start_info.dwFlags |= STARTF_USESTDHANDLES;
 
-	if (!CreateProcessW (NULL, wcmdline,
+	if (!CreateProcess (NULL, wcmdline,
 			NULL, NULL, TRUE, 0,
 			NULL, // TODO: env
 			NULL, &start_info, &proc_info)) {
@@ -246,7 +244,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			r_str_remove_char (stdout_buf, '\r');
 			r_strbuf_append (&proc->out, (const char *)stdout_buf);
 			ResetEvent (stdout_overlapped.hEvent);
-			ReadFile (proc->stdout_read, stdout_buf, sizeof (stdout_buf), NULL, &stdout_overlapped);
+			ReadFile (proc->stdout_read, stdout_buf, sizeof (stdout_buf) - 1, NULL, &stdout_overlapped);
 			continue;
 		}
 		if (!stderr_eof && signaled == stderr_index) {
@@ -260,7 +258,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			r_str_remove_char (stderr_buf, '\r');
 			r_strbuf_append (&proc->err, (const char *)stderr_buf);
 			ResetEvent (stderr_overlapped.hEvent);
-			ReadFile (proc->stderr_read, stderr_buf, sizeof (stderr_buf), NULL, &stderr_overlapped);
+			ReadFile (proc->stderr_read, stderr_buf, sizeof (stderr_buf) - 1, NULL, &stderr_overlapped);
 			continue;
 		}
 		if (!child_dead && signaled == proc_index) {

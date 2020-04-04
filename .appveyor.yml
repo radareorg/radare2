@@ -111,9 +111,6 @@ for:
       - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=%R2_VERSION%
       - move radare2-win-installer\Output\radare2.exe radare2_installer-%builder%.exe
 
-on_finish:
-  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-
 # Artifacts
 artifacts:
   # Binaries
