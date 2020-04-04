@@ -1110,7 +1110,7 @@ static ut64 peek_uleb(RBuffer *b, bool *err, size_t *nn) {
 	return n;
 }
 
-static size_t parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls,
+static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls,
 		int *sym_count, ut64 fields_count, bool is_sfield) {
 	RBinDexObj *dex = bf->o->bin_obj;
 	RBin *bin = bf->rbin;
@@ -1119,7 +1119,7 @@ static size_t parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *c
 	int total, tid;
 	DexField field;
 	const char* type_str;
-	size_t i, skip = 0, skipped = 0;
+	size_t i, skip = 0;
 
 	for (i = 0; i < fields_count; i++) {
 		bool err = false;
@@ -1182,12 +1182,11 @@ static size_t parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *c
 		}
 		lastIndex = fieldIndex;
 	}
-	return skip;
 }
 
 // TODO: refactor this method
 // XXX it needs a lot of love!!!
-static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls,
+static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls,
 		int *sym_count, ut64 DM, int *methods, bool is_direct) {
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	RBinDexObj *dex = bf->o->bin_obj;
@@ -1207,7 +1206,6 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 		DM = 4096;
 	}
 	size_t skip = 0;
-	size_t skipped = 0;
 	ut64 bufsz = r_buf_size (bf->buf);
 	ut64 encoded_method_addr;
 	bool err = false;
@@ -1226,7 +1224,6 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 			eprintf ("Error\n");
 			break;
 		}
-		skipped += skip;
 		// TODO: MOVE CHECKS OUTSIDE!
 		if (MI < dex->header.method_size) {
 			if (methods) {
@@ -1495,7 +1492,6 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 		R_FREE (signature);
 		//R_FREE (method_name);
 	}
-	return skipped;
 }
 
 static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *methods, int *sym_count) {
