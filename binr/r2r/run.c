@@ -114,10 +114,11 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	start_info.hStdInput = stdin_read;
 	start_info.dwFlags |= STARTF_USESTDHANDLES;
 
-	if (!CreateProcessW(NULL, wcmdline,
+	if (!CreateProcessW (NULL, wcmdline,
 			NULL, NULL, TRUE, 0,
 			NULL, // TODO: env
 			NULL, &start_info, &proc_info)) {
+		eprintf ("CreateProcess failed: %#x\n", (int)GetLastError ());
 		goto error;
 	}
 
