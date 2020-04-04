@@ -105,7 +105,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	}
 
 	PROCESS_INFORMATION proc_info = { 0 };
-	STARTUPINFOW start_info = { 0 };
+	STARTUPINFO start_info = { 0 };
 	start_info.cb = sizeof (start_info);
 	start_info.hStdError = stderr_write;
 	start_info.hStdOutput = stdout_write;
@@ -723,6 +723,46 @@ static R2RProcessOutput *subprocess_runner(const char *file, const char *args[],
 	return out;
 }
 
+#if __WINDOWS__
+static char *convert_win_cmds(const char *cmds) {
+	char *r = malloc (strlen (cmds) + 1);
+	if (!r) {
+		return NULL;
+	}
+	char *p = r;
+	char c;
+	for (; c = *cmds, c; cmds++) {
+		if (c == '\\') {
+			// replace \$ by $
+			c = *++cmds;
+			if (c == '$') {
+				*p++ = '$';
+			} else {
+				*p++ = '\\';
+				*p++ = c;
+			}
+		} else if (c == '$') {
+			// replace ${VARNAME} by %VARNAME%
+			c = *++cmds;
+			if (c == '{') {
+				*p++ = '%';
+				cmds++;
+				for (; c = *cmds, c && c != '}'; *cmds++) {
+					*p++ = c;
+				}
+				if (c) { // must check c to prevent overflow
+					*p++ = '%';
+				}
+			}
+		} else {
+			*p++ = c;
+		}
+	}
+	*p = '\0';
+	return r;
+}
+#endif
+
 static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RList *files, RList *extra_args, bool load_plugins, R2RCmdRunner runner, void *user) {
 	RPVector args;
 	r_pvector_init (&args, NULL);
@@ -736,7 +776,12 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RLi
 		r_pvector_push (&args, extra_arg);
 	}
 	r_pvector_push (&args, "-Qc");
+#if __WINDOWS__
+	char *wcmds = convert_win_cmds (cmds);
+	r_pvector_push (&args, wcmds);
+#else
 	r_pvector_push (&args, (void *)cmds);
+#endif
 	r_list_foreach (files, it, file_arg) {
 		r_pvector_push (&args, file_arg);
 	}
@@ -750,6 +795,9 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RLi
 	size_t env_size = load_plugins ? 0 : 1;
 	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size, user);
 	r_pvector_clear (&args);
+#if __WINDOWS__
+	free (wcmds);
+#endif
 	return out;
 }
 
