@@ -41,8 +41,8 @@ EOF
 RUN
 
 NAME=load relative
-ARGS=-a xtensa -b 32
 FILE=malloc://0x200
+ARGS=-a xtensa -b 32
 EXPECT=<<EOF
 a2 = 0xaabbccdd
 a3 = 0xaabbccdd

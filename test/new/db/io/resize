@@ -1,6 +1,6 @@
 NAME=r xx
-ARGS=-w
 FILE=.resize.V1OzXt
+ARGS=-w
 EXPECT=<<EOF
 0
 0xa
@@ -20,8 +20,8 @@ EOF
 RUN
 
 NAME=r/wx nn
-ARGS=-w
 FILE=.resize.V11zXt
+ARGS=-w
 EXPECT=<<EOF
 0
 0x3

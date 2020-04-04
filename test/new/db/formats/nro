@@ -8,8 +8,8 @@ RUN
 
 
 NAME=nro sections
-ARGS=-e io.cache=true
 FILE=../bins/nro/appstore.nro
+ARGS=-e io.cache=true
 EXPECT=<<EOF
 [Sections]
 
@@ -26,8 +26,8 @@ CMDS=iS
 RUN
 
 NAME=nro entry
-ARGS=-e io.cache=true
 FILE=../bins/nro/appstore.nro
+ARGS=-e io.cache=true
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00000080 paddr=0x00000080 haddr=-1 type=program
@@ -38,8 +38,8 @@ CMDS=ie
 RUN
 
 NAME=nro data
-ARGS=-e io.cache=true
 FILE=../bins/nro/appstore.nro
+ARGS=-e io.cache=true
 EXPECT=<<EOF
 fb031eaa01000094dc2302d1f90300aafa0301aae0100090c11100d00000199121e02191210000cb211c009121f07d92
 EOF
