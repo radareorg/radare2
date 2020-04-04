@@ -2642,47 +2642,44 @@ char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 	return ret;
 }
 
-static bool sectionIsInvalid(ELFOBJ *bin, RBinElfSection *sect) {
-	return (sect->offset + sect->size > bin->size);
-}
+static struct dynamic_relocation_section *get_dynamic_info(ELFOBJ *bin) {
+	struct dynamic_relocation_section *res = calloc (1, sizeof (struct dynamic_relocation_section));
 
-static void parse_dynamic_section(ELFOBJ *bin, size_t i) {
-	size_t offset = bin->g_sections[i].offset;
-	size_t size_dyn_struct = sizeof (Elf_(Dyn));
-	ut8 buf[sizeof (Elf_(Dyn))] = { 0 };
+	for (size_t i = 0; i < bin->dyn_entries; ++i) {
+		Elf_(Dyn) *dyn_struct = bin->dyn_buf + i;
 
-	do {
-		int res = r_buf_read_at (bin->b, offset, buf, size_dyn_struct);
-
-		if (res != size_dyn_struct) {
-			return;
-		}
-
-		Elf_(Dyn) *dyn_struct = (Elf_(Dyn) *)buf;
-
-		if (dyn_struct->d_tag == DT_NULL) {
+		switch (dyn_struct->d_tag) {
+		case DT_HASH:
+			res->addr_symbol_hash_table = dyn_struct->d_un.d_ptr;
 			break;
-		}
-
-		offset += size_dyn_struct;
-	} while (1);
-}
-
-static void get_dynamic_info(ELFOBJ *bin) {
-	size_t i;
-
-	for (i = 0; !bin->g_sections[i].last; i++) {
-		eprintf("%s\n", bin->g_sections[i].name);
-		if (sectionIsInvalid (bin, &bin->g_sections[i])) {
-			continue;
-		}
-		if (!strncmp (bin->g_sections[i].name, ".dynamic", strlen (".dynamic"))) {
-			eprintf ("offset: %llx\n", bin->g_sections[i].offset);
-			eprintf ("rva: %llx\n", bin->g_sections[i].rva);
-			parse_dynamic_section (bin, i);
+		case DT_SYMTAB:
+			res->addr_symbol_table = dyn_struct->d_un.d_ptr;
+			break;
+		case DT_SYMENT:
+			res->syment = dyn_struct->d_un.d_val;
+			break;
+		case DT_RELA:
+			res->addr_rela = dyn_struct->d_un.d_ptr;
+			break;
+		case DT_RELASZ:
+			res->rela_size = dyn_struct->d_un.d_val;
+			break;
+		case DT_RELAENT:
+			res->relaent = dyn_struct->d_un.d_val;
+			break;
+		case DT_REL:
+			res->addr_rel = dyn_struct->d_un.d_ptr;
+			break;
+		case DT_RELSZ:
+			res->rel_size = dyn_struct->d_un.d_val;
+			break;
+		case DT_RELENT:
+			res->relent = dyn_struct->d_un.d_val;
 			break;
 		}
 	}
+
+	return res;
 }
 
 static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
@@ -2739,7 +2736,8 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	get_dynamic_info (bin);
+	struct dynamic_relocation_section *info = get_dynamic_info (bin);
+	free (info);
 
 	return NULL;
 }
