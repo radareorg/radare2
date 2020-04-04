@@ -15,12 +15,12 @@ RUN
 
 NAME=afcl: x86-64-override
 FILE=/../bins/elf/true32
+ARGS=-a x86 -b 64
 BROKEN=1
 EXPECT=<<EOF
 amd64
 ms
 EOF
-ARGS=-a x86 -b 64
 CMDS=afcl
 RUN
 
@@ -46,6 +46,7 @@ RUN
 
 NAME=afcl: x86-32-override
 FILE=/../bins/elf/bomb
+ARGS=-a x86 -b 32
 BROKEN=1
 EXPECT=<<EOF
 pascal
@@ -56,7 +57,6 @@ fastcall
 borland
 watcom
 EOF
-ARGS=-a x86 -b 32
 CMDS=afcl
 RUN
 
@@ -77,11 +77,11 @@ RUN
 
 NAME=afcl: arm-64-override
 FILE=/../bins/elf/libmagic.so
+ARGS=-a arm -b 64
 BROKEN=1
 EXPECT=<<EOF
 arm64
 EOF
-ARGS=-a arm -b 64
 CMDS=afcl
 RUN
 
@@ -101,11 +101,11 @@ RUN
 
 NAME=afcl: arm-32-override
 FILE=/../bins/elf/libc.so.6
+ARGS=-a arm -b 32
 BROKEN=1
 EXPECT=<<EOF
 arm32
 EOF
-ARGS=-a arm -b 32
 CMDS=afcl
 RUN
 
@@ -125,11 +125,11 @@ RUN
 
 NAME=afcl: arm-16-override
 FILE=/../bins/elf/libmagic.so
+ARGS=-a arm -b 16
 BROKEN=1
 EXPECT=<<EOF
 arm32
 EOF
-ARGS=-a arm -b 16
 CMDS=afcl
 RUN
 
@@ -149,10 +149,10 @@ RUN
 
 NAME=afcl: mips-32-override
 FILE=../bins/elf/libc.so.0
+ARGS=-a mips -b 64
 EXPECT=<<EOF
 n32
 o32
 EOF
-ARGS=-a mips -b 64
 CMDS=afcl
 RUN

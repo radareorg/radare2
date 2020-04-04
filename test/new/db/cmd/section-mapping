@@ -1,5 +1,6 @@
 NAME=map sections correctly
 FILE=../bins/dex/Hello.dex
+ARGS=-n -m 0xf0000000
 BROKEN=1
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -20,7 +21,6 @@ EXPECT=<<EOF
 0x000000e0  5374 7269 6e67 0003 7768 6f00 0401 0007  String..who.....
 0x000000f0  0e3c 2d00 0d01 0007 0ea5 0009 0007 0e01  .<-.............
 EOF
-ARGS=-n -m 0xf0000000
 CMDS=<<EOF
 e io.va=true
 e io.sectonly=true
@@ -31,6 +31,7 @@ RUN
 
 NAME=map sections correctly
 FILE=../bins/dex/Hello.dex
+ARGS=-n -m 0xf0000000
 BROKEN=1
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -51,7 +52,6 @@ EXPECT=<<EOF
 0x000000e0  5374 7269 6e67 0003 7768 6f00 0401 0007  String..who.....
 0x000000f0  0e3c 2d00 0d01 0007 0ea5 0009 0007 0e01  .<-.............
 EOF
-ARGS=-n -m 0xf0000000
 CMDS=<<EOF
 e io.va=true
 S 0xf000022f 0x0 0x100 0x100 test_section r

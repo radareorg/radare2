@@ -55,6 +55,7 @@ RUN
 
 NAME=p=d
 FILE=../bins/elf/arm1.bin
+ARGS=-n
 EXPECT=<<EOF
 min:              0  0x0
 max:              127  0x7f
@@ -62,7 +63,6 @@ unique (count):   6  0x6
 range (max-min):  127  0x7f
 size (of block):  10  0xa
 EOF
-ARGS=-n
 CMDS=p=d 10 @ 0
 RUN
 
@@ -80,6 +80,7 @@ RUN
 
 NAME=p=e 5 0x100
 FILE=../bins/elf/arm1.bin
+ARGS=-n
 EXPECT=<<EOF
 0x00000000 000 007f |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 0x00000033 001 006b |[100m#[0m[100m#[0m[100m#[0m
@@ -87,7 +88,6 @@ EXPECT=<<EOF
 0x00000099 003 006a |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 0x000000cc 004 005f |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 EOF
-ARGS=-n
 CMDS=<<EOF
 e zoom.in = block
 p=e 5 0x100
@@ -96,6 +96,7 @@ RUN
 
 NAME=p=e 5 0x100 1
 FILE=../bins/elf/arm1.bin
+ARGS=-n
 EXPECT=<<EOF
 0x00000000 000 006b |[100m#[0m[100m#[0m[100m#[0m
 0x00000033 001 007a |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
@@ -103,7 +104,6 @@ EXPECT=<<EOF
 0x00000099 003 005f |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 0x000000cc 004 0059 |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 EOF
-ARGS=-n
 CMDS=<<EOF
 e zoom.in = block
 p=e 5 0x100 1
@@ -112,6 +112,7 @@ RUN
 
 NAME=p=p 5
 FILE=../bins/elf/arm1.bin
+ARGS=-n
 EXPECT=<<EOF
 0x00000000 000 0032 |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 0x0001bec1 001 0031 |[100m#[0m
@@ -119,12 +120,12 @@ EXPECT=<<EOF
 0x00053c43 003 0040 |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 0x0006fb04 004 0076 |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 EOF
-ARGS=-n
 CMDS=p=p 5@0
 RUN
 
 NAME=p=p 5 0x100
 FILE=../bins/elf/arm1.bin
+ARGS=-n
 EXPECT=<<EOF
 0x00000000 000 0032 |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 0x00000033 001 0019 |[100m#[0m
@@ -132,7 +133,6 @@ EXPECT=<<EOF
 0x00000099 003 001e |[100m#[0m[100m#[0m
 0x000000cc 004 0028 |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 EOF
-ARGS=-n
 CMDS=<<EOF
 e zoom.in = block
 p=p 5 0x100
@@ -141,6 +141,7 @@ RUN
 
 NAME=p=p 5 0x100 1
 FILE=../bins/elf/arm1.bin
+ARGS=-n
 EXPECT=<<EOF
 0x00000000 000 0019 |[100m#[0m
 0x00000033 001 001e |[100m#[0m
@@ -148,7 +149,6 @@ EXPECT=<<EOF
 0x00000099 003 0028 |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 0x000000cc 004 001e |[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m[100m#[0m
 EOF
-ARGS=-n
 CMDS=<<EOF
 e zoom.in = block
 p=p 5 0x100 1
@@ -561,37 +561,37 @@ RUN
 
 NAME=pm elf/main
 FILE=../bins/elf/analysis/main
+ARGS=-n
 EXPECT=<<EOF
 0x00000000 1 ELF 64-bit LSB executable, x86-64, version 1
 EOF
-ARGS=-n
 CMDS=pm
 RUN
 
 NAME=pm mach0/fatmach0-3true
 FILE=../bins/mach0/fatmach0-3true
+ARGS=-n
 EXPECT=<<EOF
 0x00000000 1 Fat-Mach-O
 EOF
-ARGS=-n
 CMDS=pm
 RUN
 
 NAME=pm java/Hello.class
 FILE=../bins/java/Hello.class
+ARGS=-n
 EXPECT=<<EOF
 0x00000000 1 Java CLASS
 EOF
-ARGS=-n
 CMDS=pm
 RUN
 
 NAME=pm pe/a.exe
 FILE=../bins/pe/a.exe
+ARGS=-n
 EXPECT=<<EOF
 0x00000000 1 PE  for MS Windows (console) Intel 80386 32-bit
 EOF
-ARGS=-n
 CMDS=pm
 RUN
 

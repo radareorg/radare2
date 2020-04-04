@@ -42,11 +42,11 @@ RUN
 
 NAME=/as begin of file
 FILE=../bins/pe/a.exe
+ARGS=-n
 BROKEN=1
 EXPECT=<<EOF
 0x00000000 hit0_0 .MZ.
 EOF
-ARGS=-n
 CMDS=s/ MZ
 RUN
 
@@ -193,11 +193,11 @@ RUN
 
 NAME=/a search from/to (seek 0)
 FILE=../bins/elf/ioli/crackme0x00
+ARGS=-n
 EXPECT=<<EOF
 0x0000003c hit0_0 3480
 0x00000040 hit0_1 3480
 EOF
-ARGS=-n
 CMDS=<<EOF
 e io.va = false
 s 0
@@ -209,11 +209,11 @@ RUN
 
 NAME=/a search from/to (seek 0)
 FILE=../bins/elf/ioli/crackme0x00
+ARGS=-n
 EXPECT=<<EOF
 0x0000003c hit0_0 3480
 0x00000040 hit0_1 3480
 EOF
-ARGS=-n
 CMDS=<<EOF
 e io.va = false
 s 0
@@ -471,12 +471,12 @@ RUN
 
 NAME=/o search offset of instructions backward
 FILE=malloc://1024
+ARGS=-a x86 -b 32
 EXPECT=<<EOF
 0x00000002
 0x00000001
 0x00000000
 EOF
-ARGS=-a x86 -b 32
 CMDS=<<EOF
 wx 909089d89090
 s 4
@@ -911,12 +911,12 @@ RUN
 
 NAME=/x search hexpairs ignoring spaces
 FILE=../bins/elf/ioli/crackme0x00
+ARGS=-n
 EXPECT=<<EOF
 0x00000581 hit0_0 50617373776f7264
 0x0000059e hit0_1 50617373776f7264
 0x000005a9 hit0_2 50617373776f7264
 EOF
-ARGS=-n
 CMDS=<<EOF
 # Password
 /x 50 61 73 73 77 6F 72 64
@@ -925,12 +925,12 @@ RUN
 
 NAME=/x search hexpairs ignoring spaces
 FILE=../bins/elf/ioli/crackme0x00
+ARGS=-n
 EXPECT=<<EOF
 0x00000581 hit0_0 50617373776f7264
 0x0000059e hit0_1 50617373776f7264
 0x000005a9 hit0_2 50617373776f7264
 EOF
-ARGS=-n
 CMDS=/x 5061 73 73  776F  72 64 # Password
 RUN
 

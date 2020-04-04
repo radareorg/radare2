@@ -128,6 +128,7 @@ RUN
 
 NAME=avr rjmp - relative jump backward at 0x1000
 FILE=malloc://8192
+ARGS=-s 0x1000 -a avr
 EXPECT=<<EOF
 0x1000 2,pc,=
 0x1002 6,pc,=
@@ -138,7 +139,6 @@ rjmp 0x6
 rjmp 0x102
 rjmp 0x106
 EOF
-ARGS=-s 0x1000 -a avr
 CMDS=<<EOF
 e asm.cpu=ATmega1280
 wx 00c8 01c8 7ec8 7fc8 80c8 81c8
@@ -149,6 +149,7 @@ RUN
 
 NAME=avr rjmp - relative jump backward - at 0
 FILE=malloc://8192
+ARGS=-a avr
 EXPECT=<<EOF
 0x0 61442,pc,=
 0x2 61446,pc,=
@@ -159,7 +160,6 @@ rjmp 0xfffff006
 rjmp 0xfffff102
 rjmp 0xfffff106
 EOF
-ARGS=-a avr
 CMDS=<<EOF
 e asm.cpu=ATmega1280
 wx 00c8 01c8 7ec8 7fc8 80c8 81c8
@@ -368,29 +368,29 @@ RUN
 
 NAME=search asm commands with internal grep
 FILE=../bins/firmware/arduino_avr.bin
+ARGS=-a avr
 EXPECT=<<EOF
 0x00000276   # 2: ldi r22, 0x6d
 EOF
-ARGS=-a avr
 CMDS=/ad ldi~0x6d
 RUN
 
 NAME=search asm commands with filter
 FILE=../bins/firmware/arduino_avr.bin
+ARGS=-a avr
 EXPECT=<<EOF
 0x00001672   # 2: ldi r24, 0x18
 0x000019a4   # 2: ldi r18, 0x18
 EOF
-ARGS=-a avr
 CMDS=/ad ldi ~ 0x18
 RUN
 
 NAME=search asm commands with filter and align = 2
 FILE=../bins/firmware/arduino_avr.bin
+ARGS=-a avr
 EXPECT=<<EOF
 0x00000282   # 2: in r24, 0x12
 EOF
-ARGS=-a avr
 CMDS=<<EOF
 e search.align=2
 /ad in ~ 0x12
@@ -399,6 +399,7 @@ RUN
 
 NAME=Search rop gadgets for in command
 FILE=../bins/firmware/arduino_avr.bin
+ARGS=-a avr
 EXPECT=<<EOF
   0x00000280               7304  cpc r7, r3
   0x00000282               82b3  in r24, 0x12
@@ -427,7 +428,6 @@ EXPECT=<<EOF
   0x000005da               0895  ret
 
 EOF
-ARGS=-a avr
 CMDS=<<EOF
 e search.align=2
 /R in r24
@@ -436,6 +436,7 @@ RUN
 
 NAME=Search rop gadgets for IN command with align=2
 FILE=../bins/firmware/arduino_avr.bin
+ARGS=-a avr
 EXPECT=<<EOF
   0x00000280               7304  cpc r7, r3
   0x00000282               82b3  in r24, 0x12
@@ -464,7 +465,6 @@ EXPECT=<<EOF
   0x000005da               0895  ret
 
 EOF
-ARGS=-a avr
 CMDS=<<EOF
 e search.align=2
 /R in r24
@@ -473,6 +473,7 @@ RUN
 
 NAME=disasm code after search command IN
 FILE=../bins/firmware/arduino_avr.bin
+ARGS=-a avr
 EXPECT=<<EOF
 0x00000296   # 2: in r24, 0x18
         ,=< 0x00000000      0c94ac00       jmp entry0
@@ -481,7 +482,6 @@ EXPECT=<<EOF
      ,====< 0x0000000c      0c94db00       jmp 0x1b6
     ,=====< 0x00000010      0c94db00       jmp 0x1b6
 EOF
-ARGS=-a avr
 CMDS=<<EOF
 s 0
 /ad in ~ 0x18

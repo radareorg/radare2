@@ -37,8 +37,8 @@ RUN
 
 NAME=oo ; dc - i386
 FILE=../bins/mach0/hello-osx-i386
-BROKEN=1
 ARGS=-d
+BROKEN=1
 CMDS=<<EOF
 oo
 dc
