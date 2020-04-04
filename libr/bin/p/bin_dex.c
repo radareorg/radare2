@@ -1111,7 +1111,7 @@ static ut64 peek_uleb(RBuffer *b, bool *err, size_t *nn) {
 }
 
 static size_t parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls,
-		const ut64 offset, int *sym_count, ut64 fields_count, bool is_sfield) {
+		int *sym_count, ut64 fields_count, bool is_sfield) {
 	RBinDexObj *dex = bf->o->bin_obj;
 	RBin *bin = bf->rbin;
 	ut64 lastIndex = 0;
@@ -1123,7 +1123,6 @@ static size_t parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *c
 
 	for (i = 0; i < fields_count; i++) {
 		bool err = false;
-		r_buf_seek (bf->buf, offset + skip, R_BUF_SET);
 		ut64 fieldIndex = peek_uleb (bf->buf, &err, &skip);
 		ut64 accessFlags = peek_uleb (bf->buf, &err, &skip);
 		if (err) {
@@ -1188,7 +1187,7 @@ static size_t parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *c
 
 // TODO: refactor this method
 // XXX it needs a lot of love!!!
-static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls, ut64 offset,
+static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls,
 		int *sym_count, ut64 DM, int *methods, bool is_direct) {
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	RBinDexObj *dex = bf->o->bin_obj;
@@ -1216,8 +1215,8 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 	for (i = 0; i < DM; i++) {
 		err = false;
 		skip = 0;
-		encoded_method_addr = offset; //  + skip;
-		r_buf_seek (bf->buf, offset, R_BUF_SET);
+		// Needed because theres another rbufseek call inside this loop. must be fixed
+		encoded_method_addr = r_buf_tell (bf->buf);
 		MI = peek_uleb (bf->buf, &err, &skip);
 		MI += omi;
 		omi = MI;
@@ -1227,7 +1226,6 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 			eprintf ("Error\n");
 			break;
 		}
-		offset += skip;
 		skipped += skip;
 		// TODO: MOVE CHECKS OUTSIDE!
 		if (MI < dex->header.method_size) {
@@ -1303,6 +1301,7 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 				}
 				int j, m = 0;
 				//XXX bucle controlled by tainted variable it could produces huge loop
+				ut64 offorig = r_buf_tell (bf->buf);
 				for (j = 0; j < tries_size; j++) {
 					ut64 offset = MC + t + j * 8;
 					if (offset >= dex->size || offset < MC) {
@@ -1391,6 +1390,7 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 						}
 					}
 				}
+				r_buf_seek (bf->buf, offorig, R_BUF_SET);
 			} else {
 				if (dexdump) {
 					cb_printf (
@@ -1400,8 +1400,7 @@ static size_t parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *c
 			}
 		} else {
 			if (dexdump) {
-				cb_printf (
-					"      code          : (none)\n");
+				cb_printf ("      code          : (none)\n");
 			}
 		}
 		if (*flag_name) {
@@ -1597,20 +1596,18 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		}
 		c->class_data = dc;
 
-		ut64 offset = c->class_data_offset + skip;
-
 		if (dexdump) { rbin->cb_printf ("  Static fields     -\n"); }
-		offset += parse_dex_class_fields (bf, c, cls, offset, sym_count, dc->static_fields_size, true);
+		parse_dex_class_fields (bf, c, cls, sym_count, dc->static_fields_size, true);
 
 		if (dexdump) { rbin->cb_printf ("  Instance fields   -\n"); }
-		offset += parse_dex_class_fields (bf, c, cls, offset, sym_count, dc->instance_fields_size, false);
+		parse_dex_class_fields (bf, c, cls, sym_count, dc->instance_fields_size, false);
 
 		if (dexdump) { rbin->cb_printf ("  Direct methods    -\n"); }
-		offset += parse_dex_class_method (bf, c, cls, offset, sym_count,
+		parse_dex_class_method (bf, c, cls, sym_count,
 			c->class_data->direct_methods_size, methods, true);
 
 		if (dexdump) { rbin->cb_printf ("  Virtual methods   -\n"); }
-		offset += parse_dex_class_method (bf, c, cls, offset, sym_count,
+		parse_dex_class_method (bf, c, cls, sym_count,
 			c->class_data->virtual_methods_size, methods, false);
 	}
 
