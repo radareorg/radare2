@@ -3,11 +3,11 @@
 #include "r2r.h"
 #include <r_cons.h>
 
-#define WORKERS_DEFAULT        1
+#define WORKERS_DEFAULT        8
 #define RADARE2_CMD_DEFAULT    "radare2"
 #define RASM2_CMD_DEFAULT      "rasm2"
 #define JSON_TEST_FILE_DEFAULT "../bins/elf/crackme0x00b"
-#define TIMEOUT_DEFAULT        3
+#define TIMEOUT_DEFAULT        960
 
 #define STRV(x) #x
 #define STR(x) STRV(x)
