@@ -74,7 +74,6 @@ static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
 		return NULL;
 	}
 	r_buf_read_at (b, 0, b->whole_buf, bsz);
-	b->whole_bufsz = bsz;
 	if (sz) {
 		*sz = bsz;
 	}

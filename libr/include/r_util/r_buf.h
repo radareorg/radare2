@@ -42,7 +42,6 @@ struct r_buf_t {
 	const RBufferMethods *methods;
 	void *priv;
 	ut8 *whole_buf;
-	ut64 whole_bufsz;
 	bool readonly;
 	int Oxff_priv;
 	int refctr;
