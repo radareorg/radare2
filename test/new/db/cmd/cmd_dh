@@ -1,10 +1,6 @@
 NAME=dh esil
 FILE=-
 ARGS=-a x86 -b 32
-EXPECT=<<EOF
-0x00107ffc
-0x1234
-EOF
 CMDS=<<EOF
 aei
 aeim
@@ -16,5 +12,9 @@ ds 2
 .dr*
 dr?esp
 ?v [esp]
+EOF
+EXPECT=<<EOF
+0x00107ffc
+0x1234
 EOF
 RUN

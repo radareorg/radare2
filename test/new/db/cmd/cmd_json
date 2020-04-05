@@ -1,5 +1,11 @@
 NAME=test pDj missing newline issue
 FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 4883c768
+pDj 4~{}
+EOF
 EXPECT=<<EOF
 [
   {
@@ -22,16 +28,11 @@ EXPECT=<<EOF
   }
 ]
 EOF
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
-wx 4883c768
-pDj 4~{}
-EOF
 RUN
 
 NAME=/j with backslash
 FILE=../bins/pe/ConsoleApplication1.exe
+CMDS=/j ConsoleApplication1.pdb~{}
 EXPECT=<<EOF
 [
   {
@@ -41,13 +42,12 @@ EXPECT=<<EOF
   }
 ]
 EOF
-CMDS=/j ConsoleApplication1.pdb~{}
 RUN
 
 NAME=empty irj should print empty array
 FILE=-
+CMDS=irj
 EXPECT=<<EOF
 []
 EOF
-CMDS=irj
 RUN

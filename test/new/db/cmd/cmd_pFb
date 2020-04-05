@@ -1,5 +1,9 @@
 NAME=pFb.test simple protobuf
 FILE=-
+CMDS=<<EOF
+wx 0a 2e 0a 07 56 69 6e 63 65 6e 74 10 09 1a 10 56 69 6e 63 65 6e 74 40 74 65 73 74 2e 63 6f 6d 22 0f 0a 0b 31 35 30 31 31 31 31 31 31 31 31 10 02
+pFb
+EOF
 EXPECT=<<EOF
 1 {
     1: "Vincent"
@@ -11,14 +15,14 @@ EXPECT=<<EOF
     }
 }
 EOF
-CMDS=<<EOF
-wx 0a 2e 0a 07 56 69 6e 63 65 6e 74 10 09 1a 10 56 69 6e 63 65 6e 74 40 74 65 73 74 2e 63 6f 6d 22 0f 0a 0b 31 35 30 31 31 31 31 31 31 31 31 10 02
-pFb
-EOF
 RUN
 
 NAME=pFb.test simple protobuf (verbose)
 FILE=-
+CMDS=<<EOF
+wx 0a 2e 0a 07 56 69 6e 63 65 6e 74 10 09 1a 10 56 69 6e 63 65 6e 74 40 74 65 73 74 2e 63 6f 6d 22 0f 0a 0b 31 35 30 31 31 31 31 31 31 31 31 10 02
+pFbv
+EOF
 EXPECT=<<EOF
 1 [LEN_DELIM]   {
     1 [LEN_DELIM]  : "Vincent"
@@ -29,9 +33,5 @@ EXPECT=<<EOF
         2 [VARINT]     : 2 | 2
     }
 }
-EOF
-CMDS=<<EOF
-wx 0a 2e 0a 07 56 69 6e 63 65 6e 74 10 09 1a 10 56 69 6e 63 65 6e 74 40 74 65 73 74 2e 63 6f 6d 22 0f 0a 0b 31 35 30 31 31 31 31 31 31 31 31 10 02
-pFbv
 EOF
 RUN

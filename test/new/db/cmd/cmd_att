@@ -1,5 +1,12 @@
 NAME=att relsub
 FILE=../bins/mach0/mac-ls
+CMDS=<<EOF
+e asm.syntax=att
+e asm.lines.bb=0
+e asm.bytes=0
+e asm.comments=false
+pd 20
+EOF
 EXPECT=<<EOF
   ;-- main:
   ;-- entry0:
@@ -25,17 +32,19 @@ EXPECT=<<EOF
   0x100001098      movl $1, %r13d
   0x10000109e      movl $1, %edi
 EOF
+RUN
+
+NAME=att varsub
+FILE=../bins/mach0/mac-ls
 CMDS=<<EOF
+af
 e asm.syntax=att
+e asm.var=0
 e asm.lines.bb=0
 e asm.bytes=0
 e asm.comments=false
 pd 20
 EOF
-RUN
-
-NAME=att varsub
-FILE=../bins/mach0/mac-ls
 EXPECT=<<EOF
   ;-- entry0:
   ;-- func.100001058:
@@ -61,19 +70,19 @@ EXPECT=<<EOF
 | 0x100001098      movl $1, %r13d
 | 0x10000109e      movl $1, %edi
 EOF
+RUN
+
+NAME=att varsub 2
+FILE=../bins/elf/varsub
 CMDS=<<EOF
-af
+aa; s main
 e asm.syntax=att
 e asm.var=0
 e asm.lines.bb=0
 e asm.bytes=0
 e asm.comments=false
-pd 20
+pdf
 EOF
-RUN
-
-NAME=att varsub 2
-FILE=../bins/elf/varsub
 EXPECT=<<EOF
 / 42: int main (int argc, char **argv, char **envp);
 | 0x004004a6      pushq %rbp
@@ -89,6 +98,10 @@ EXPECT=<<EOF
 | 0x004004ce      leave
 \ 0x004004cf      retq
 EOF
+RUN
+
+NAME=att varsub 2 with asm.var.subonly disabled
+FILE=../bins/elf/varsub
 CMDS=<<EOF
 aa; s main
 e asm.syntax=att
@@ -96,12 +109,9 @@ e asm.var=0
 e asm.lines.bb=0
 e asm.bytes=0
 e asm.comments=false
+e asm.var.subonly=false
 pdf
 EOF
-RUN
-
-NAME=att varsub 2 with asm.var.subonly disabled
-FILE=../bins/elf/varsub
 EXPECT=<<EOF
 / 42: int main (int argc, char **argv, char **envp);
 | 0x004004a6      pushq %rbp
@@ -116,15 +126,5 @@ EXPECT=<<EOF
 | 0x004004ca      movq var_18h(%rbp), %rax
 | 0x004004ce      leave
 \ 0x004004cf      retq
-EOF
-CMDS=<<EOF
-aa; s main
-e asm.syntax=att
-e asm.var=0
-e asm.lines.bb=0
-e asm.bytes=0
-e asm.comments=false
-e asm.var.subonly=false
-pdf
 EOF
 RUN

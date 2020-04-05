@@ -2,6 +2,12 @@ NAME=map sections correctly
 FILE=../bins/dex/Hello.dex
 ARGS=-n -m 0xf0000000
 BROKEN=1
+CMDS=<<EOF
+e io.va=true
+e io.sectonly=true
+S 0xf000022f 0x0 0x100 0x100 test_section r
+x 0x100 @ 0x0
+EOF
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000000  3c69 6e69 743e 0006 4865 6c6c 6f20 000a  <init>..Hello ..
@@ -20,12 +26,6 @@ EXPECT=<<EOF
 0x000000d0  7072 696e 746c 6e00 0373 6179 0008 746f  println..say..to
 0x000000e0  5374 7269 6e67 0003 7768 6f00 0401 0007  String..who.....
 0x000000f0  0e3c 2d00 0d01 0007 0ea5 0009 0007 0e01  .<-.............
-EOF
-CMDS=<<EOF
-e io.va=true
-e io.sectonly=true
-S 0xf000022f 0x0 0x100 0x100 test_section r
-x 0x100 @ 0x0
 EOF
 RUN
 
@@ -33,6 +33,11 @@ NAME=map sections correctly
 FILE=../bins/dex/Hello.dex
 ARGS=-n -m 0xf0000000
 BROKEN=1
+CMDS=<<EOF
+e io.va=true
+S 0xf000022f 0x0 0x100 0x100 test_section r
+x 0x100 @ 0x0
+EOF
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000000  3c69 6e69 743e 0006 4865 6c6c 6f20 000a  <init>..Hello ..
@@ -51,10 +56,5 @@ EXPECT=<<EOF
 0x000000d0  7072 696e 746c 6e00 0373 6179 0008 746f  println..say..to
 0x000000e0  5374 7269 6e67 0003 7768 6f00 0401 0007  String..who.....
 0x000000f0  0e3c 2d00 0d01 0007 0ea5 0009 0007 0e01  .<-.............
-EOF
-CMDS=<<EOF
-e io.va=true
-S 0xf000022f 0x0 0x100 0x100 test_section r
-x 0x100 @ 0x0
 EOF
 RUN

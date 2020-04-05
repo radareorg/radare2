@@ -41,6 +41,7 @@ RUN
 
 NAME=md iso
 FILE=../bins/fs/iso.img
+CMDS=md /root
 EXPECT=<<EOF
 d .
 d ..
@@ -48,11 +49,11 @@ f LS.
 f README.MD
 f SERVICES.
 EOF
-CMDS=md /root
 RUN
 
 NAME=md iso3
 FILE=../bins/fs/iso3.img
+CMDS=md /root
 EXPECT=<<EOF
 d .
 d ..
@@ -60,66 +61,69 @@ d bin
 d etc
 f README.md
 EOF
-CMDS=md /root
 RUN
 
 NAME=mp gpt
 FILE=../bins/fs/gpt.img
+CMDS=mp gpt
 EXPECT=<<EOF
 0 00 0x0000100000 0x0020100000
 1 00 0x0020100000 0x1b24700000
 2 00 0x1b24700000 0x1d1eb00000
 EOF
-CMDS=mp gpt
 RUN
 
 NAME=m iso9660 auto
 FILE=../bins/fs/iso.img
+CMDS=m
 EXPECT=<<EOF
 iso9660	0x0	/root
 EOF
-CMDS=m
 RUN
 
 NAME=m ext2 auto
 FILE=../bins/fs/ext2.img
+CMDS=m
 EXPECT=<<EOF
 ext2	0x0	/root
 EOF
-CMDS=m
 RUN
 
 NAME=m hfs auto
 FILE=../bins/fs/hfs.img
+CMDS=m
 EXPECT=<<EOF
 hfs	0x0	/root
 EOF
-CMDS=m
 RUN
 
 NAME=m fat auto
 FILE=../bins/fs/fat.img
+CMDS=m
 EXPECT=<<EOF
 fat	0x0	/root
 EOF
-CMDS=m
 RUN
 
 NAME=md ext2 auto
 FILE=../bins/fs/ext2.img
 ARGS=-n
-EXPECT=<<EOF
-6
-EOF
 CMDS=<<EOF
 m /root
 md /root~?
+EOF
+EXPECT=<<EOF
+6
 EOF
 RUN
 
 NAME=md ext2
 FILE=../bins/fs/ext2.img
 ARGS=-n
+CMDS=<<EOF
+m /root ext2
+md /root
+EOF
 EXPECT=<<EOF
 d .
 d ..
@@ -128,82 +132,82 @@ d bin
 d etc
 f README.md
 EOF
-CMDS=<<EOF
-m /root ext2
-md /root
-EOF
 RUN
 
 NAME=md ext2 cat file
 FILE=../bins/fs/ext2.img
 ARGS=-n
-EXPECT=<<EOF
-This is an EXT2 partition
-
-EOF
 CMDS=<<EOF
 m /root ext2
 mc /root/README.md
+EOF
+EXPECT=<<EOF
+This is an EXT2 partition
+
 EOF
 RUN
 
 NAME=md vfat
 FILE=../bins/fs/fat.img
 ARGS=-n
+CMDS=<<EOF
+m /root fat
+md /root
+EOF
 EXPECT=<<EOF
 d etc
 d bin
 f README.md
-EOF
-CMDS=<<EOF
-m /root fat
-md /root
 EOF
 RUN
 
 NAME=md fat cat file
 FILE=../bins/fs/fat.img
 ARGS=-n
-EXPECT=<<EOF
-This is a FAT partition
-
-EOF
 CMDS=<<EOF
 m /root fat
 mc /root/README.md
+EOF
+EXPECT=<<EOF
+This is a FAT partition
+
 EOF
 RUN
 
 NAME=md hfs
 FILE=../bins/fs/hfs.img
 ARGS=-n
+CMDS=<<EOF
+m /root hfs
+md /root
+EOF
 EXPECT=<<EOF
 d bin
 d etc
 f README.md
-EOF
-CMDS=<<EOF
-m /root hfs
-md /root
 EOF
 RUN
 
 NAME=md hfs cat file
 FILE=../bins/fs/hfs.img
 ARGS=-n
-EXPECT=<<EOF
-This is an HFS partition
-
-EOF
 CMDS=<<EOF
 m /root hfs
 mc /root/README.md
+EOF
+EXPECT=<<EOF
+This is an HFS partition
+
 EOF
 RUN
 
 NAME=mc hfs cat services
 FILE=../bins/fs/hfs.img
 ARGS=-n
+CMDS=<<EOF
+m /root hfs
+mc /root/etc/services
+EOF
 EXPECT=<<EOF
 # Network services, Internet style
 #
@@ -818,9 +822,5 @@ fido		60179/tcp			# fidonet EMSI over TCP
 
 # Local services
 
-EOF
-CMDS=<<EOF
-m /root hfs
-mc /root/etc/services
 EOF
 RUN

@@ -1,50 +1,47 @@
 NAME=imul 1 arg
 FILE=-
-EXPECT=<<EOF
-imul r9
-0x00000000 64,r9,rax,*,>>,rdx,=,r9,rax,*=
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 (pi bytes;wx $0;pi 1;pie 1)
 .(pi 49f7e9)
 EOF
+EXPECT=<<EOF
+imul r9
+0x00000000 64,r9,rax,*,>>,rdx,=,r9,rax,*=
+EOF
 RUN
 
 NAME=imul 2 arg
 FILE=-
-EXPECT=<<EOF
-imul eax, ecx
-0x00000000 ecx,eax,*=
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 (pi bytes;wx $0;pi 1;pie 1)
 .(pi 0fafc1)
 EOF
+EXPECT=<<EOF
+imul eax, ecx
+0x00000000 ecx,eax,*=
+EOF
 RUN
 
 NAME=imul 3 arg
 FILE=-
-EXPECT=<<EOF
-imul rax, r11, 0x33666667
-0x00000000 862348903,r11,*,rax,=
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 (pi bytes;wx $0;pi 1;pie 1)
 .(pi 4969c367666633)
 EOF
+EXPECT=<<EOF
+imul rax, r11, 0x33666667
+0x00000000 862348903,r11,*,rax,=
+EOF
 RUN
 
 NAME=esil x86-64 pd deinit
 FILE=-
-EXPECT=<<EOF
-0x00000021
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -58,13 +55,13 @@ pd 2000
 e scr.null = false
 ar rax
 EOF
+EXPECT=<<EOF
+0x00000021
+EOF
 RUN
 
 NAME=esil x86-64 pd deinit
 FILE=-
-EXPECT=<<EOF
-0x00000021
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -78,13 +75,13 @@ pd 2000
 e scr.null = false
 ar rax
 EOF
+EXPECT=<<EOF
+0x00000021
+EOF
 RUN
 
 NAME=esil x86-64 pd deinit
 FILE=-
-EXPECT=<<EOF
-0x00000021
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -98,14 +95,13 @@ pi 2000
 e scr.null = false
 ar rax
 EOF
+EXPECT=<<EOF
+0x00000021
+EOF
 RUN
 
 NAME=esil x86-64 imul
 FILE=-
-EXPECT=<<EOF
-opcode: imul eax, ebx, 0x89
-esil: 137,ebx,*,eax,=
-EOF
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
@@ -113,13 +109,14 @@ e anal.arch = x86
 wx 69c389000000
 ao~opcode,esil
 EOF
+EXPECT=<<EOF
+opcode: imul eax, ebx, 0x89
+esil: 137,ebx,*,eax,=
+EOF
 RUN
 
 NAME=esil x86-64 imul emu
 FILE=-
-EXPECT=<<EOF
-0x0000000f
-EOF
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
@@ -130,16 +127,13 @@ wx 69c303000000 @ 14
 3aes
 ar rax
 EOF
+EXPECT=<<EOF
+0x0000000f
+EOF
 RUN
 
 NAME=esil x86-64 two steps
 FILE=-
-EXPECT=<<EOF
-mov rax, 4
-mov rbx, 5
-0x00000004
-0x00000005
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -150,16 +144,16 @@ pi 2
 ar rax
 ar rbx
 EOF
-RUN
-
-NAME=esil x86-64 aesu
-FILE=-
 EXPECT=<<EOF
 mov rax, 4
 mov rbx, 5
 0x00000004
 0x00000005
 EOF
+RUN
+
+NAME=esil x86-64 aesu
+FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -170,16 +164,16 @@ aesu 14
 ar rax
 ar rbx
 EOF
-RUN
-
-NAME=esil x86-64 aesu
-FILE=-
 EXPECT=<<EOF
 mov rax, 4
 mov rbx, 5
 0x00000004
 0x00000005
 EOF
+RUN
+
+NAME=esil x86-64 aesu
+FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -189,16 +183,17 @@ pi 2
 aesu 14
 ar rax
 ar rbx
+EOF
+EXPECT=<<EOF
+mov rax, 4
+mov rbx, 5
+0x00000004
+0x00000005
 EOF
 RUN
 
 NAME=esil x86-64
 FILE=-
-EXPECT=<<EOF
-
-opcode: lea rsi, [rdi + 0x68]
-esil: 0x68,rdi,+,rsi,=
-EOF
 CMDS=<<EOF
 ?e
 e asm.arch=x86
@@ -206,15 +201,15 @@ e asm.bits=64
 wx 488d7768
 ao~opcode,esil
 EOF
+EXPECT=<<EOF
+
+opcode: lea rsi, [rdi + 0x68]
+esil: 0x68,rdi,+,rsi,=
+EOF
 RUN
 
 NAME=esil x86-64
 FILE=-
-EXPECT=<<EOF
-
-opcode: lea rdi, [rbp - 0x440]
-esil: 0x440,rbp,-,rdi,=
-EOF
 CMDS=<<EOF
 ?e
 e asm.arch=x86
@@ -222,15 +217,15 @@ e asm.bits=64
 wx 488dbdc0fbffff
 ao~opcode,esil
 EOF
+EXPECT=<<EOF
+
+opcode: lea rdi, [rbp - 0x440]
+esil: 0x440,rbp,-,rdi,=
+EOF
 RUN
 
 NAME=esil x86-64
 FILE=-
-EXPECT=<<EOF
-
-opcode: mov dword [rip + 0x40dd], 1
-esil: 1,0x40dd,rip,+,=[4]
-EOF
 CMDS=<<EOF
 ?e
 e asm.arch=x86
@@ -238,13 +233,15 @@ e asm.bits=64
 wx c705dd40000001000000
 ao~opcode,esil
 EOF
+EXPECT=<<EOF
+
+opcode: mov dword [rip + 0x40dd], 1
+esil: 1,0x40dd,rip,+,=[4]
+EOF
 RUN
 
 NAME=eax/rax
 FILE=-
-EXPECT=<<EOF
-            0x00000000      b804000000     4,rax,=
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -252,15 +249,13 @@ wa mov eax, 4
 e asm.esil=true
 pd 1
 EOF
+EXPECT=<<EOF
+            0x00000000      b804000000     4,rax,=
+EOF
 RUN
 
 NAME=reg size bitmask
 FILE=-
-EXPECT=<<EOF
-0xffffffffffffffff
-0xffffffff
-0x0
-EOF
 CMDS=<<EOF
 e io.va=true
 e esil.debug=true
@@ -276,13 +271,15 @@ ae rdi,rsp,=[8]
 ?v [rsp+4]
 ?v [rsp+8]
 EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0xffffffff
+0x0
+EOF
 RUN
 
 NAME=mem read
 FILE=-
-EXPECT=<<EOF
-0xffffffffffffffff
-EOF
 CMDS=<<EOF
 e io.va=true
 e esil.debug=true
@@ -299,54 +296,54 @@ ae rsp,[8],rax,=
 .aer*
 ?v rax
 EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+EOF
 RUN
 
 NAME=movsxd rax, dword [rdx + rax*4]
 FILE=-
-EXPECT=<<EOF
-esil: rax,4,*,rdx,+,[4],rax,=
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 "wx 48630482"
 ao~esil
 EOF
+EXPECT=<<EOF
+esil: rax,4,*,rdx,+,[4],rax,=
+EOF
 RUN
 
 NAME=lea rax, [rdi + r13*8]
 FILE=-
-EXPECT=<<EOF
-opcode: lea rax, [rdi + r13*8]
-esil: r13,8,*,rdi,+,rax,=
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 "wx 4a8d04ef"
 ao~esil,opcode
 EOF
+EXPECT=<<EOF
+opcode: lea rax, [rdi + r13*8]
+esil: r13,8,*,rdi,+,rax,=
+EOF
 RUN
 
 NAME=lea rbx, [rax + rdx]
 FILE=-
-EXPECT=<<EOF
-opcode: lea rbx, [rax + rdx]
-esil: rdx,rax,+,rbx,=
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 "wx 488d1c10"
 ao~opcode,esil
 EOF
+EXPECT=<<EOF
+opcode: lea rbx, [rax + rdx]
+esil: rdx,rax,+,rbx,=
+EOF
 RUN
 
 NAME=ldrh instruction
 FILE=-
-EXPECT=<<EOF
-0x00004241
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -354,14 +351,14 @@ wx b030dfe10101010141424344
 aes
 dr?r3
 EOF
+EXPECT=<<EOF
+0x00004241
+EOF
 RUN
 
 
 NAME=x86-64 linux syscall
 FILE=../bins/elf/syscall_x86
-EXPECT=<<EOF
-  0x004000f1      syscall     ; 1 = write (1, "Hello, world!.", 14)
-EOF
 CMDS=<<EOF
 e asm.bytes=0
 e asm.lines.bb=0
@@ -369,13 +366,13 @@ e emu.str=1
 e asm.cmt.col=30
 pd 5~write
 EOF
+EXPECT=<<EOF
+  0x004000f1      syscall     ; 1 = write (1, "Hello, world!.", 14)
+EOF
 RUN
 
 NAME=x86-64 linux syscall emulation
 FILE=../bins/elf/syscall_x86
-EXPECT=<<EOF
-1 = write (1, "Hello, world!.", 14)
-EOF
 CMDS=<<EOF
 s entry0
 dr rip=$$
@@ -383,13 +380,13 @@ dr rip=$$
 s..f1
 as
 EOF
+EXPECT=<<EOF
+1 = write (1, "Hello, world!.", 14)
+EOF
 RUN
 
 NAME=x86-64 linux syscall emulation
 FILE=../bins/elf/syscall_x86
-EXPECT=<<EOF
-1 = write (1, "Hello, world!.", 14)
-EOF
 CMDS=<<EOF
 s entry0
 dr rip=$$
@@ -397,13 +394,13 @@ dr rip=$$
 s..f1
 as
 EOF
+EXPECT=<<EOF
+1 = write (1, "Hello, world!.", 14)
+EOF
 RUN
 
 NAME=cmd.esil.intr set
 FILE=-
-EXPECT=<<EOF
-SYSCALL 128 0
-EOF
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
@@ -411,6 +408,9 @@ e anal.arch = x86
 wx b8010000000f34b801000000cd80ebfe
 e cmd.esil.intr=?e SYSCALL
 10aes
+EOF
+EXPECT=<<EOF
+SYSCALL 128 0
 EOF
 RUN
 

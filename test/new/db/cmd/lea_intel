@@ -1,5 +1,12 @@
 NAME=lea_intel att relsub
 FILE=../bins/elf/ezpz
+CMDS=<<EOF
+e asm.lines.bb=0
+e asm.bytes=0
+e asm.comments=false
+s 0x00402c43
+pd 30
+EOF
 EXPECT=<<EOF
   0x00402c43      lea rax, [rbp - 0xa0]
   0x00402c4a      mov rdi, rax
@@ -31,12 +38,5 @@ EXPECT=<<EOF
   0x00402cc0      jmp 0x402cdd
   0x00402cc2      add dword [rbp - 0xb4], 1
   0x00402cc9      cmp dword [rbp - 0xb4], 0x14
-EOF
-CMDS=<<EOF
-e asm.lines.bb=0
-e asm.bytes=0
-e asm.comments=false
-s 0x00402c43
-pd 30
 EOF
 RUN

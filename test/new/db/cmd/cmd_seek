@@ -33,33 +33,29 @@ RUN
 
 NAME=seek far offset
 FILE=-
-EXPECT=<<EOF
-0x7fffff8000b54000
-0x8fffff8000b54000
-EOF
 CMDS=<<EOF
 s 0x7fffff8000b54000 ; ?v $$
 s 0x8fffff8000b54000 ; ?v $$
+EOF
+EXPECT=<<EOF
+0x7fffff8000b54000
+0x8fffff8000b54000
 EOF
 RUN
 
 NAME=seek math (symbol addition)
 FILE=../bins/elf/analysis/hello-linux-x86_64
-EXPECT=<<EOF
-0x400418
-EOF
 CMDS=<<EOF
 s sym._start + 8
 s
+EOF
+EXPECT=<<EOF
+0x400418
 EOF
 RUN
 
 NAME=seek opcodes
 FILE=-
-EXPECT=<<EOF
-0x4
-0x4
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -67,19 +63,14 @@ wx 4883c668
 s 0; so   ; ?v $$
 s 0; so 1 ; ?v $$
 EOF
+EXPECT=<<EOF
+0x4
+0x4
+EOF
 RUN
 
 NAME=seek line
 FILE=../bins/mach0/mac-ls
-EXPECT=<<EOF
-0x100001058
-9
-10
-8
-8
-8
-0x1000025a3
-EOF
 CMDS=<<EOF
 sl 1; ?v $$
 e lines.from=0x100002000
@@ -96,14 +87,19 @@ sl 0
 sl
 sl 1; ?v $$
 EOF
+EXPECT=<<EOF
+0x100001058
+9
+10
+8
+8
+8
+0x1000025a3
+EOF
 RUN
 
 NAME=seek local flag
 FILE=../bins/elf/analysis/main
-EXPECT=<<EOF
-0x40050a
-0x40050a
-EOF
 CMDS=<<EOF
 af@main
 f.foo@main+4
@@ -112,13 +108,14 @@ s
 s main+.foo
 s
 EOF
+EXPECT=<<EOF
+0x40050a
+0x40050a
+EOF
 RUN
 
 NAME=Redodups
 FILE=malloc://512
-EXPECT=<<EOF
-1
-EOF
 CMDS=<<EOF
 s $$
 s $$
@@ -126,17 +123,13 @@ s $$
 s $$
 s*~?
 EOF
+EXPECT=<<EOF
+1
+EOF
 RUN
 
 NAME=seek backwards
 FILE=malloc://0x4000
-EXPECT=<<EOF
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x00000020  3838 3838 3838 3838 3838 3838 3838 3838  8888888888888888
-0x00000030  3838 3838 3838 3838 3838 3838 3838 3838  8888888888888888
-0x00000040  dead beef dead beef dead beef dead beef  ................
-0x00000050  dead beef dead beef dead beef dead beef  ................
-EOF
 CMDS=<<EOF
 s 0
 b 64
@@ -146,22 +139,17 @@ wb deadbeef
 s-32
 px
 EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000020  3838 3838 3838 3838 3838 3838 3838 3838  8888888888888888
+0x00000030  3838 3838 3838 3838 3838 3838 3838 3838  8888888888888888
+0x00000040  dead beef dead beef dead beef dead beef  ................
+0x00000050  dead beef dead beef dead beef dead beef  ................
+EOF
 RUN
 
 NAME=seek silent
 FILE=-
-EXPECT=<<EOF
-0x100
-f undo_0 @ 0x0
-
-0x200
-f undo_1 @ 0x0
-f undo_0 @ 0x100
-
-0x300
-f undo_1 @ 0x0
-f undo_0 @ 0x100
-EOF
 CMDS=<<EOF
 s 0x100
 s
@@ -175,10 +163,6 @@ ss 0x300
 s
 s*
 EOF
-RUN
-
-NAME=seek silent to register
-FILE=-
 EXPECT=<<EOF
 0x100
 f undo_0 @ 0x0
@@ -191,6 +175,10 @@ f undo_0 @ 0x100
 f undo_1 @ 0x0
 f undo_0 @ 0x100
 EOF
+RUN
+
+NAME=seek silent to register
+FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -207,6 +195,18 @@ s*
 ssr ebx
 s
 s*
+EOF
+EXPECT=<<EOF
+0x100
+f undo_0 @ 0x0
+
+0x200
+f undo_1 @ 0x0
+f undo_0 @ 0x100
+
+0x300
+f undo_1 @ 0x0
+f undo_0 @ 0x100
 EOF
 RUN
 
