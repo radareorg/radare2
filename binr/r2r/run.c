@@ -134,7 +134,6 @@ error:
 R_API R2RSubprocess *r2r_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size) {
-	LPTSTR wcmdline = NULL;
 	R2RSubprocess *proc = NULL;
 	HANDLE stdin_read = NULL;
 	HANDLE stdout_write = NULL;
@@ -152,11 +151,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	free (argv);
 	if (!cmdline) {
 		return NULL;
-	}
-	wcmdline = r_sys_conv_utf8_to_win (cmdline);
-	free (cmdline);
-	if (!wcmdline) {
-		goto error;
 	}
 
 	proc = R_NEW0 (R2RSubprocess);
@@ -201,7 +195,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	start_info.dwFlags |= STARTF_USESTDHANDLES;
 
 	LPWSTR env = override_env (envvars, envvals, env_size);
-	if (!CreateProcess (NULL, wcmdline,
+	if (!CreateProcessA (NULL, cmdline,
 			NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env,
 			NULL, &start_info, &proc_info)) {
 		free (env);
@@ -223,7 +217,7 @@ beach:
 	if (stderr_write) {
 		CloseHandle (stderr_write);
 	}
-	free (wcmdline);
+	free (cmdline);
 	return proc;
 error:
 	if (proc) {
