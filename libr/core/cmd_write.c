@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include "r_crypto.h"
 #include "r_config.h"
@@ -80,12 +80,12 @@ static const char *help_msg_wc[] = {
 };
 
 static const char *help_msg_we[] = {
-	"Usage", "", "write extend",
-	"wen", " <num>", "insert num null bytes at current offset",
-	"weN", " <addr> <len>", "insert bytes at address",
+	"Usage", "", "write extend # resize the file",
+	"wen", " <num>", "extend the underlying file inserting NUM null bytes at current offset",
+	"weN", " <addr> <len>", "extend current file and insert bytes at address",
 	"wes", " <addr>  <dist> <block_size>", "shift a blocksize left or write in the editor",
-	"wex", " <hex_bytes>", "insert bytes at current offset",
-	"weX", " <addr> <hex_bytes>", "insert bytes at address",
+	"wex", " <hex_bytes>", "insert bytes at current offset by extending the file",
+	"weX", " <addr> <hex_bytes>", "insert bytes at address by extending the file",
 	NULL
 };
 
@@ -879,12 +879,16 @@ static int cmd_write(void *data, const char *input) {
 		switch (input[1]) {
 		case 'n': // "wen"
 			if (input[2] == ' ') {
-				len = *input ? r_num_math (core->num, input+3) : 0;
+				len = *input ? r_num_math (core->num, input+ 3) : 0;
 				if (len > 0) {
 					const ut64 cur_off = core->offset;
 					cmd_suc = r_core_extend_at (core, core->offset, len);
-					core->offset = cur_off;
-					r_core_block_read (core);
+					if (cmd_suc) {
+						core->offset = cur_off;
+						r_core_block_read (core);
+					} else {
+						eprintf ("r_io_extend failed\n");
+					}
 				}
 			}
 			break;
@@ -899,9 +903,13 @@ static int cmd_write(void *data, const char *input) {
 				if (len > 0){
 					ut64 cur_off = core->offset;
 					cmd_suc = r_core_extend_at (core, addr, len);
-					r_core_seek (core, cur_off, 1);
-					core->offset = addr;
-					r_core_block_read (core);
+					if (cmd_suc) {
+						r_core_seek (core, cur_off, 1);
+						core->offset = addr;
+						r_core_block_read (core);
+					} else {
+						eprintf ("r_io_extend failed\n");
+					}
 				}
 				cmd_suc = true;
 			}
@@ -970,6 +978,8 @@ static int cmd_write(void *data, const char *input) {
 						if (!r_core_write_at (core, addr, bytes, len)) {
 							cmd_write_fail (core);
 						}
+					} else {
+						eprintf ("r_io_extend failed\n");
 					}
 					core->offset = addr;
 					r_core_block_read (core);

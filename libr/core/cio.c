@@ -421,7 +421,7 @@ R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	return ret;
 }
 
-R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
+R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
 	int ret;
 	if (!core->io || !core->file || size < 1) {
 		return false;
