@@ -1,5 +1,10 @@
 NAME=aav find xrefs
 FILE=../bins/mach0/macho-bash
+CMDS=<<EOF
+e anal.loads=true
+aa;afna;aac;aar;aan;aav
+pd 17 @0x8058
+EOF
 EXPECT=<<EOF
 |           0x00008058      .dword 0x0000e403
             ; DATA XREF from sub.free_7418 @ 0x7d30
@@ -34,10 +39,5 @@ EXPECT=<<EOF
             0x00008094      .dword 0x0006bf66
             ; DATA XREF from sub.free_7418 @ 0x7fd6
             0x00008098      .dword 0x0006bf18 ; aav.0x0006bf18
-EOF
-CMDS=<<EOF
-e anal.loads=true
-aa;afna;aac;aar;aan;aav
-pd 17 @0x8058
 EOF
 RUN

@@ -1,5 +1,14 @@
 NAME=wes 0 10
 FILE=-
+CMDS=<<EOF
+w aaaaaaaaaa
+pf z @0x0
+px
+wes 0 10
+pf z @0x0
+pf z @0xa
+px
+EOF
 EXPECT=<<EOF
 0x00000000 = "aaaaaaaaaa"
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -39,19 +48,21 @@ EXPECT=<<EOF
 0x000000e0  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x000000f0  0000 0000 0000 0000 0000 0000 0000 0000  ................
 EOF
-CMDS=<<EOF
-w aaaaaaaaaa
-pf z @0x0
-px
-wes 0 10
-pf z @0x0
-pf z @0xa
-px
-EOF
 RUN
 
 NAME=wes 8 -4
 FILE=-
+CMDS=<<EOF
+w aaaaaaaaaa @ 8
+pf z @0x8
+px
+wes 8 -4
+pf z @0x4
+pf z @0xa
+px
+s 0
+px
+EOF
 EXPECT=<<EOF
 0x00000008 = "aaaaaaaaaa"
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -108,21 +119,21 @@ EXPECT=<<EOF
 0x000000e0  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x000000f0  0000 0000 0000 0000 0000 0000 0000 0000  ................
 EOF
-CMDS=<<EOF
-w aaaaaaaaaa @ 8
-pf z @0x8
-px
-wes 8 -4
-pf z @0x4
-pf z @0xa
-px
-s 0
-px
-EOF
 RUN
 
 NAME=wes 8 -8
 FILE=-
+CMDS=<<EOF
+w aaaaaaaaaa @ 8
+pf z @0x8
+px
+wes 8 -8
+pf z @0x8
+pf z @0x0
+px
+s 0
+px
+EOF
 EXPECT=<<EOF
 0x00000008 = "aaaaaaaaaa"
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -178,16 +189,5 @@ EXPECT=<<EOF
 0x000000d0  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x000000e0  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x000000f0  0000 0000 0000 0000 0000 0000 0000 0000  ................
-EOF
-CMDS=<<EOF
-w aaaaaaaaaa @ 8
-pf z @0x8
-px
-wes 8 -8
-pf z @0x8
-pf z @0x0
-px
-s 0
-px
 EOF
 RUN

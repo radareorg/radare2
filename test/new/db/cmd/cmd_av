@@ -1,5 +1,9 @@
 NAME=av list virtual table
 FILE=../bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+aaa
+av
+EOF
 EXPECT=<<EOF
 
 Vtable Found at 0x00400ce8
@@ -16,9 +20,5 @@ Vtable Found at 0x00400d28
 0x00400d28 : method.A.greet
 0x00400d30 : method.A.printValue
 
-EOF
-CMDS=<<EOF
-aaa
-av
 EOF
 RUN

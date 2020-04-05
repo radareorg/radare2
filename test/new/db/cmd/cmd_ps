@@ -1,13 +1,6 @@
 NAME=ps+ libc++ 32bit
 FILE=../bins/elf/stdstring32-libc++.LOAD1
 ARGS=-n -m 0x08049ee8
-EXPECT=<<EOF
-a
-abcdefghij
-
-abcdefghijk
-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
-EOF
 CMDS=<<EOF
 on ../bins/elf/stdstring32-libc++.heap 0x09eb8000 > /dev/null
 f obj.empty_str 12 0x0804a064
@@ -22,18 +15,18 @@ ps+ @ obj.empty_str
 ps+ @ obj.long_str1
 ps+ @ obj.long_str2
 EOF
+EXPECT=<<EOF
+a
+abcdefghij
+
+abcdefghijk
+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+EOF
 RUN
 
 NAME=ps+ libc++ 64bit
 FILE=../bins/elf/stdstring64-libc++.LOAD1
 ARGS=-n -m 0x00600dc8
-EXPECT=<<EOF
-a
-abcdefghijklmnopqrstuv
-
-abcdefghijklmnopqrstuvw
-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
-EOF
 CMDS=<<EOF
 on ../bins/elf/stdstring64-libc++.heap 0x0128b000 > /dev/null
 f obj.empty_str 24 0x006010b8
@@ -48,16 +41,23 @@ ps+ @ obj.empty_str
 ps+ @ obj.long_str1
 ps+ @ obj.long_str2
 EOF
+EXPECT=<<EOF
+a
+abcdefghijklmnopqrstuv
+
+abcdefghijklmnopqrstuvw
+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+EOF
 RUN
 
 NAME=psj ascii (#9064)
 FILE=-
-EXPECT=<<EOF
-{"string":"...\"..\u00ef\u00bf\u00bd\u00ef\u00bf\u00bd\u00ef","offset":0,"section":"unknown","length":13,"type":"utf"}
-EOF
 CMDS=<<EOF
 "wz ...\"..����..."
 psj 13
+EOF
+EXPECT=<<EOF
+{"string":"...\"..\u00ef\u00bf\u00bd\u00ef\u00bf\u00bd\u00ef","offset":0,"section":"unknown","length":13,"type":"utf"}
 EOF
 RUN
 

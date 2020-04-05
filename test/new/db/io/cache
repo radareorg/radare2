@@ -1,9 +1,5 @@
 NAME=io.cache: minimal usage
 FILE=malloc://1024
-EXPECT=<<EOF
-010203
-040506
-EOF
 CMDS=<<EOF
 e io.cache=1
 wx 010203
@@ -14,33 +10,27 @@ e io.cache=0
 wx 040506
 p8 3
 EOF
+EXPECT=<<EOF
+010203
+040506
+EOF
 RUN
 
 NAME=io.cache: Writing after end of file
 FILE=../bins/other/0x3
-EXPECT=<<EOF
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x00000000  6865 6c6c 6f                             hello
-EOF
 CMDS=<<EOF
 e io.cache=1
 w hello
 x 5
 EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  6865 6c6c 6f                             hello
+EOF
 RUN
 
 NAME=io.cache: Writing after end of file
 FILE=malloc://1024
-EXPECT=<<EOF
-
-000000000000000000000000000000
-6e6f2d636163686500000000000000
-63616368652d6d6f64650000000000
-6e6f2d636163686500000000000000
-6f7665727772697465000000000000
-6f7665727772697465000000000000
-6f7665727772697465000000000000
-EOF
 CMDS=<<EOF
 ?e
 b 0xf
@@ -67,22 +57,21 @@ wcr
 wci
 p8
 EOF
+EXPECT=<<EOF
+
+000000000000000000000000000000
+6e6f2d636163686500000000000000
+63616368652d6d6f64650000000000
+6e6f2d636163686500000000000000
+6f7665727772697465000000000000
+6f7665727772697465000000000000
+6f7665727772697465000000000000
+EOF
 RUN
 
 NAME=io.cache: empty file
 FILE=.empty.tmp
 BROKEN=1
-EXPECT=<<EOF
-
-ffffffffffffffffffffffffffffff
-6e6f2d6361636865ffffffffffffff
-63616368652d6d6f6465ffffffffff
-6e6f2d6361636865ffffffffffffff
-6f7665727772697465ffffffffffff
-6f7665727772697465ffffffffffff
-6f7665727772697465ffffffffffff
-overwrite
-EOF
 CMDS=<<EOF
 ?e
 b 15
@@ -108,10 +97,32 @@ p8
 cat .empty.tmp
 ?e
 EOF
+EXPECT=<<EOF
+
+ffffffffffffffffffffffffffffff
+6e6f2d6361636865ffffffffffffff
+63616368652d6d6f6465ffffffffff
+6e6f2d6361636865ffffffffffffff
+6f7665727772697465ffffffffffff
+6f7665727772697465ffffffffffff
+6f7665727772697465ffffffffffff
+overwrite
+EOF
 RUN
 
 NAME=io.cache: Reading behind cache written area
 FILE=malloc://32
+CMDS=<<EOF
+e io.cache = true
+px 32
+s +1
+px 31
+s -1
+wx 90
+px 32
+s +1
+px 31
+EOF
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000000  0000 0000 0000 0000 0000 0000 0000 0000  ................
@@ -125,17 +136,6 @@ EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000001  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x00000011  0000 0000 0000 0000 0000 0000 0000 00    ...............
-EOF
-CMDS=<<EOF
-e io.cache = true
-px 32
-s +1
-px 31
-s -1
-wx 90
-px 32
-s +1
-px 31
 EOF
 RUN
 

@@ -1,83 +1,83 @@
 NAME=ELF: main
 FILE=../bins/elf/analysis/main
+CMDS=?v main
 EXPECT=<<EOF
 0x400506
 EOF
-CMDS=?v main
 RUN
 
 NAME=ELF: main rebased 0
 FILE=../bins/elf/analysis/pie-main
 ARGS=-B 0x200000
+CMDS=?v main
 EXPECT=<<EOF
 0x203bd0
 EOF
-CMDS=?v main
 RUN
 
 NAME=ELF: main rebased 1
 FILE=../bins/elf/analysis/pie-main
 ARGS=-B 0x100000
+CMDS=?v main
 EXPECT=<<EOF
 0x103bd0
 EOF
-CMDS=?v main
 RUN
 
 NAME=ELF: main rebased 2
 FILE=../bins/elf/analysis/main
 ARGS=-B 0x200000
+CMDS=?v main
 EXPECT=<<EOF
 0x200506
 EOF
-CMDS=?v main
 RUN
 
 NAME=ELF: main rebased 3
 FILE=-
 ARGS=-B 0x200000
-EXPECT=2098438
 CMDS=!rabin2 -qMB 0x200000 ../bins/elf/analysis/main
+EXPECT=2098438
 RUN
 
 NAME=ELF: sym.main
 FILE=../bins/elf/analysis/main
+CMDS=?v sym.main
 EXPECT=<<EOF
 0x400506
 EOF
-CMDS=?v sym.main
 RUN
 
 NAME=ELF: pie main
 FILE=../bins/elf/analysis/pie-main
+CMDS=?v main
 EXPECT=<<EOF
 0x3bd0
 EOF
-CMDS=?v main
 RUN
 
 NAME=MIPS: main
 FILE=../bins/elf/analysis/mips-main
+CMDS=?v main
 EXPECT=<<EOF
 0x4006f0
 EOF
-CMDS=?v main
 RUN
 
 NAME=main non common LD script
 FILE=../bins/elf/analysis/custom_ldscript
+CMDS=?v main
 EXPECT=<<EOF
 0x1c00844
 EOF
-CMDS=?v main
 RUN
 
 NAME=main wrong sections
 FILE=../bins/elf/analysis/main_wrong_sect
+CMDS=?v main
 EXPECT=<<EOF
 0x400506
 EOF
-CMDS=?v main
 RUN
 
 NAME=main detection linux64 endbr64

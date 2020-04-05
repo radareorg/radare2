@@ -1,5 +1,9 @@
 NAME=ELF: arm relocs
 FILE=../bins/elf/analysis/arm-relocs
+CMDS=<<EOF
+ir*~reloc?
+ir*~!1
+EOF
 EXPECT=<<EOF
 11
 fs relocs
@@ -11,10 +15,6 @@ fs relocs
 "f reloc.r2 4 0x08000054"
 "f reloc.r3 4 0x08000058"
 "f reloc.r4 4 0x0800005c"
-EOF
-CMDS=<<EOF
-ir*~reloc?
-ir*~!1
 EOF
 RUN
 

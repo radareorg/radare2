@@ -1,5 +1,11 @@
 NAME=320c64 OPEX
 FILE=malloc://512280
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c64x
+wx 0041bd10
+aoj~{}
+EOF
 EXPECT=<<EOF
 [
   {
@@ -33,11 +39,5 @@ EXPECT=<<EOF
     "family": "cpu"
   }
 ]
-EOF
-CMDS=<<EOF
-e asm.arch=tms320
-e asm.cpu=c64x
-wx 0041bd10
-aoj~{}
 EOF
 RUN

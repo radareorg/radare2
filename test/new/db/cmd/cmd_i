@@ -1,5 +1,6 @@
 NAME=iS query
 FILE=../bins/elf/analysis/main
+CMDS=iS size/sort,vaddr/cols/name
 EXPECT=<<EOF
 [Sections]
 
@@ -43,15 +44,10 @@ vaddr      name
 0x00000000 .symtab
 
 EOF
-CMDS=iS size/sort,vaddr/cols/name
 RUN
 
 NAME=ib
 FILE=../bins/elf/analysis/main
-EXPECT=<<EOF
-xor ebp, ebp
-0x00000410
-EOF
 CMDS=<<EOF
 e bin.baddr=0
 e asm.calls=false
@@ -62,32 +58,37 @@ s entry0
 pi 1
 ?p
 EOF
+EXPECT=<<EOF
+xor ebp, ebp
+0x00000410
+EOF
 RUN
 
 NAME=ibib
 FILE=../bins/elf/analysis/main
-EXPECT=<<EOF
-works
-EOF
 CMDS=<<EOF
 ?e works
 ib;ib
+EOF
+EXPECT=<<EOF
+works
 EOF
 RUN
 
 NAME=ibib2
 FILE=../bins/elf/analysis/main
-EXPECT=<<EOF
-works
-EOF
 CMDS=<<EOF
 ib;ib
 ?e works
+EOF
+EXPECT=<<EOF
+works
 EOF
 RUN
 
 NAME=ih (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=ihq
 EXPECT=<<EOF
 [Header fields]
 0x00000000 0x00000000 ELF; 0x464c457f
@@ -100,11 +101,11 @@ EXPECT=<<EOF
 
 7 fields
 EOF
-CMDS=ihq
 RUN
 
 NAME=ih* (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=ih*
 EXPECT=<<EOF
 fs header
 "f header.ELF 1 0x00000000"
@@ -136,28 +137,42 @@ CCu MHgwMDAwMDdjYw== @ 0x20
 Cf 4 x @ 0x20
 pf.ShOff x
 EOF
-CMDS=ih*
 RUN
 
 NAME=iZ
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=iZ
 EXPECT=<<EOF
 4899
 EOF
-CMDS=iZ
 RUN
 
 NAME=iZ*
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=iZ*
 EXPECT=<<EOF
 f bin_size @ 4899
 EOF
-CMDS=iZ*
 RUN
 
 NAME=i (all) (malloc)
 FILE=malloc://1025
 ARGS=-a x86
+CMDS=<<EOF
+i
+ia
+ia*
+ii
+ii*
+ie
+ie*
+is
+is*
+iS
+iS*
+iz
+iz*
+EOF
 EXPECT=<<EOF
 fd       3
 file     malloc://1025
@@ -224,26 +239,17 @@ nth paddr  size vaddr  vsize perm name
 
 fs sections
 EOF
-CMDS=<<EOF
-i
-ia
-ia*
-ii
-ii*
-ie
-ie*
-is
-is*
-iS
-iS*
-iz
-iz*
-EOF
 RUN
 
 NAME=i (all) (malloc) iI*
 FILE=malloc://1024
 ARGS=-a x86
+CMDS=<<EOF
+i
+i*
+iI
+iI*
+EOF
 EXPECT=<<EOF
 fd       3
 file     malloc://1024
@@ -283,16 +289,11 @@ e asm.bits=64
 e asm.dwarf=false
 e asm.pcalign=0
 EOF
-CMDS=<<EOF
-i
-i*
-iI
-iI*
-EOF
 RUN
 
 NAME=i (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=i~!file
 EXPECT=<<EOF
 fd       3
 size     0x1323
@@ -334,20 +335,32 @@ stripped false
 subsys   linux
 va       true
 EOF
-CMDS=i~!file
 RUN
 
 NAME=iA (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=iA
 EXPECT=<<EOF
 0   0x00000000 4899 x86_32 
 
 EOF
-CMDS=iA
 RUN
 
 NAME=ib java class file
 FILE=malloc://1024
+CMDS=<<EOF
+e asm.calls=false
+e asm.comments=false
+e asm.cmtflgrefs=false
+e scr.color=false
+e asm.lines.bb=false
+e asm.xrefs=false
+wx cafebabe00000032003a070002010014546573745661726961626c6553776974636855700700040100106a6176612f6c616e672f4f626a6563740100063c696e69743e010003282956010004436f64650a000300090c0005000601000f4c696e654e756d6265725461626c650100124c6f63616c5661726961626c655461626c65010004746869730100164c546573745661726961626c6553776974636855703b010014546573744d756c7469706c655661726961626c650a001000120700110100116a6176612f6c616e672f496e74656765720c0013001401000776616c75654f660100162849294c6a6176612f6c616e672f496e74656765723b0800160100067472796f6e65090018001a0700190100106a6176612f6c616e672f53797374656d0c001b001c0100036f75740100154c6a6176612f696f2f5072696e7453747265616d3b07001e0100176a6176612f6c616e672f537472696e674275696c646572080020010011417474656d7074696e67207072696e74200a001d00220c00050023010015284c6a6176612f6c616e672f537472696e673b29560a001d00250c00260027010006617070656e6401002d284c6a6176612f6c616e672f537472696e673b294c6a6176612f6c616e672f537472696e674275696c6465723b0a001d00290c002a002b010008746f537472696e6701001428294c6a6176612f6c616e672f537472696e673b0a002d002f07002e0100136a6176612f696f2f5072696e7453747265616d0c003000230100057072696e74010001690100134c6a6176612f6c616e672f496e74656765723b01000170010001490100016b0100124c6a6176612f6c616e672f537472696e673b0100016a01000a536f7572636546696c65010019546573745661726961626c6553776974636855702e6a617661002100010003000000000002000100050006000100070000002f00010001000000052ab70008b100000002000a00000006000100000002000b0000000c000100000005000c000d00000008000e0006000100070000008100040004000000251064b8000f4b10643c12154d033eb20017bb001d59121fb700212cb60024b60028b6002cb100000002000a0000001a0006000000040006000500090006000c0007000e000800240009000b0000002a00040006001f0031003200000009001c003300340001000c0019003500360002000e001700370034000300010038000000020039
+ib
+if
+af
+pdf
+EOF
 EXPECT=<<EOF
 fd       3
 file     malloc://1024
@@ -407,24 +420,15 @@ va       false
 | 0x0000031e      b6002c         invokevirtual java/io/PrintStream/print(Ljava/lang/String;)V
 \ 0x00000321      b1             return
 EOF
-CMDS=<<EOF
-e asm.calls=false
-e asm.comments=false
-e asm.cmtflgrefs=false
-e scr.color=false
-e asm.lines.bb=false
-e asm.xrefs=false
-wx cafebabe00000032003a070002010014546573745661726961626c6553776974636855700700040100106a6176612f6c616e672f4f626a6563740100063c696e69743e010003282956010004436f64650a000300090c0005000601000f4c696e654e756d6265725461626c650100124c6f63616c5661726961626c655461626c65010004746869730100164c546573745661726961626c6553776974636855703b010014546573744d756c7469706c655661726961626c650a001000120700110100116a6176612f6c616e672f496e74656765720c0013001401000776616c75654f660100162849294c6a6176612f6c616e672f496e74656765723b0800160100067472796f6e65090018001a0700190100106a6176612f6c616e672f53797374656d0c001b001c0100036f75740100154c6a6176612f696f2f5072696e7453747265616d3b07001e0100176a6176612f6c616e672f537472696e674275696c646572080020010011417474656d7074696e67207072696e74200a001d00220c00050023010015284c6a6176612f6c616e672f537472696e673b29560a001d00250c00260027010006617070656e6401002d284c6a6176612f6c616e672f537472696e673b294c6a6176612f6c616e672f537472696e674275696c6465723b0a001d00290c002a002b010008746f537472696e6701001428294c6a6176612f6c616e672f537472696e673b0a002d002f07002e0100136a6176612f696f2f5072696e7453747265616d0c003000230100057072696e74010001690100134c6a6176612f6c616e672f496e74656765723b01000170010001490100016b0100124c6a6176612f6c616e672f537472696e673b0100016a01000a536f7572636546696c65010019546573745661726961626c6553776974636855702e6a617661002100010003000000000002000100050006000100070000002f00010001000000052ab70008b100000002000a00000006000100000002000b0000000c000100000005000c000d00000008000e0006000100070000008100040004000000251064b8000f4b10643c12154d033eb20017bb001d59121fb700212cb60024b60028b6002cb100000002000a0000001a0006000000040006000500090006000c0007000e000800240009000b0000002a00040006001f0031003200000009001c003300340001000c0019003500360002000e001700370034000300010038000000020039
-ib
-if
-af
-pdf
-EOF
 
 RUN
 
 NAME=ic cpp classes
 FILE=../bins/elf/libmagic.so
+CMDS=<<EOF
+ic~_JNIEnv
+ic~FindClass
+EOF
 EXPECT=<<EOF
 0x00000000 [0x00006060 - 0x0000697c]   2332 class 0 _JNIEnv
 0x000074f8 method 0      inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)
@@ -440,23 +444,20 @@ EXPECT=<<EOF
 0x0000720c method 10      injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
 0x00006060 method 0      FindClass(char const*)
 EOF
-CMDS=<<EOF
-ic~_JNIEnv
-ic~FindClass
-EOF
 RUN
 
 NAME=ic?
 BROKEN=1
 FILE=../bins/elf/libmagic.so
+CMDS=ic?~?Usage
 EXPECT=<<EOF
 1
 EOF
-CMDS=ic?~?Usage
 RUN
 
 NAME=icl
 FILE=../bins/elf/libmagic.so
+CMDS=icl
 EXPECT=<<EOF
 0x24672 0x24682 0x24692 0x24718 0x24728 0x24740 0x24768 0x24796 0x24810 0x26974 0x27004
 0x29944 0x27036 0x27180 0x27324 0x27380 0x27420 0x27568 0x27904 0x28252 0x28520 0x29196
@@ -479,11 +480,11 @@ EXPECT=<<EOF
 0x76760 0x76744
 0x76844 0x76828
 EOF
-CMDS=icl
 RUN
 
 NAME=icj
 FILE=../bins/elf/libmagic.so
+CMDS=icj~{}
 EXPECT=<<EOF
 [
   {
@@ -968,11 +969,11 @@ EXPECT=<<EOF
   }
 ]
 EOF
-CMDS=icj~{}
 RUN
 
 NAME=ic*
 FILE=../bins/elf/libmagic.so
+CMDS=ic*
 EXPECT=<<EOF
 fs classes
 "f class.JNIEnv = 0x6060"
@@ -1086,11 +1087,11 @@ fs classes
 "f method.std::bad_typeid.what()_const = 0x12c1c"
 "td struct std::bad_typeid { char empty[0];};"
 EOF
-CMDS=ic*
 RUN
 
 NAME=icc
 FILE=../bins/elf/libmagic.so
+CMDS=icc
 EXPECT=<<EOF
 @interface _JNIEnv
 {
@@ -1173,11 +1174,11 @@ EXPECT=<<EOF
 }
 @end
 EOF
-CMDS=icc
 RUN
 
 NAME=iq
 FILE=../bins/elf/libmagic.so
+CMDS=iq
 EXPECT=<<EOF
 arch arm
 bits 16
@@ -1187,11 +1188,11 @@ minopsz 2
 maxopsz 4
 pcalign 2
 EOF
-CMDS=iq
 RUN
 
 NAME=iaq
 FILE=../bins/elf/libmagic.so
+CMDS=iaq
 EXPECT=<<EOF
 arch arm
 bits 16
@@ -1440,39 +1441,39 @@ pthread_mutex_unlock
 0x00012c54 28 std::bad_typeid::~bad_typeid()
 0x00014b58 15 typeinfo name for std::bad_typeid
 EOF
-CMDS=iaq
 RUN
 
 NAME=iD
 FILE=../bins/elf/libmagic.so
 BROKEN=1
+CMDS=iD swift _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
 EXPECT=<<EOF
 Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
 EOF
-CMDS=iD swift _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
 RUN
 
 NAME=ie (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=ie
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x08048300 paddr=0x00000300 haddr=0x00000018 hvaddr=0x08048018 type=program
 
 1 entrypoints
 EOF
-CMDS=ie
 RUN
 
 NAME=iej (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=iej
 EXPECT=<<EOF
 [{"vaddr":134513408,"paddr":768,"baddr":134512640,"laddr":0,"hvaddr":134512664,"haddr":24,"type":"program"}]
 EOF
-CMDS=iej
 RUN
 
 NAME=ii (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=ii
 EXPECT=<<EOF
 [Imports]
 nth vaddr      bind   type   lib name
@@ -1482,11 +1483,11 @@ nth vaddr      bind   type   lib name
 3   0x080482f0 GLOBAL FUNC       __libc_start_main
 
 EOF
-CMDS=ii
 RUN
 
 NAME=iI (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=iI
 EXPECT=<<EOF
 arch     x86
 baddr    0x8048000
@@ -1520,7 +1521,6 @@ stripped false
 subsys   linux
 va       true
 EOF
-CMDS=iI
 RUN
 
 NAME=iIj
@@ -1587,22 +1587,23 @@ RUN
 
 NAME=im
 FILE=../bins/nes/Pong.nes
+CMDS=im~?SRAM
 EXPECT=<<EOF
 1
 EOF
-CMDS=im~?SRAM
 RUN
 
 NAME=imj
 FILE=../bins/nes/Pong.nes
+CMDS=imj~?SRAM
 EXPECT=<<EOF
 1
 EOF
-CMDS=imj~?SRAM
 RUN
 
 NAME=imq
 FILE=../bins/nes/Pong.nes
+CMDS=imq
 EXPECT=<<EOF
 [Memory]
 
@@ -2636,11 +2637,11 @@ EXPECT=<<EOF
 0x00004000
 0x00006000
 EOF
-CMDS=imq
 RUN
 
 NAME=iS (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
@@ -2678,7 +2679,6 @@ nth paddr        size vaddr       vsize perm name
 29  0x000010cc  0x257 0x00000000  0x257 ---- .strtab
 
 EOF
-CMDS=iS
 RUN
 
 NAME=iSS (file x86)
@@ -2805,25 +2805,26 @@ RUN
 
 NAME=il (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=il
 EXPECT=<<EOF
 [Linked libraries]
 libc.so.6
 
 1 library
 EOF
-CMDS=il
 RUN
 
 NAME=il* (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=il*
 EXPECT=<<EOF
 "CCa entry0 libc.so.6"
 EOF
-CMDS=il*
 RUN
 
 NAME=ir (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
@@ -2837,11 +2838,11 @@ vaddr      paddr      type   name
 
 4 relocations
 EOF
-CMDS=ir
 RUN
 
 NAME=ir* (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=ir*
 EXPECT=<<EOF
 fs relocs
 "f reloc.__gmon_start__ 4 0x08049690"
@@ -2853,22 +2854,22 @@ Cd 4 @ 0x080496a4
 "f reloc.__libc_start_main 4 0x080496a8"
 Cd 4 @ 0x080496a8
 EOF
-CMDS=ir*
 RUN
 
 NAME=irq (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=irq
 EXPECT=<<EOF
 0x08049690  __gmon_start__
 0x080496a0  puts
 0x080496a4  __gmon_start__
 0x080496a8  __libc_start_main
 EOF
-CMDS=irq
 RUN
 
 NAME=is (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
@@ -2940,22 +2941,22 @@ nth paddr       vaddr      bind   type   size lib name
 2    0x000002e0 0x080482e0 WEAK   NOTYPE 16       imp.__gmon_start__
 3    0x000002f0 0x080482f0 GLOBAL FUNC   16       imp.__libc_start_main
 EOF
-CMDS=is
 RUN
 
 NAME=iz (file x86)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=iz
 EXPECT=<<EOF
 [Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 EOF
-CMDS=iz
 RUN
 
 NAME=i (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=i~!hello-linux
 EXPECT=<<EOF
 fd       3
 size     0x1a36
@@ -2998,31 +2999,31 @@ stripped false
 subsys   linux
 va       true
 EOF
-CMDS=i~!hello-linux
 RUN
 
 NAME=iA (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=iA
 EXPECT=<<EOF
 0   0x00000000 6710 x86_64 
 
 EOF
-CMDS=iA
 RUN
 
 NAME=ie (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=ie
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00400410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00400018 type=program
 
 1 entrypoints
 EOF
-CMDS=ie
 RUN
 
 NAME=iH (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=iH
 EXPECT=<<EOF
 0x00000000  ELF64       0x464c457f
 0x00000010  Type        0x0002
@@ -3032,11 +3033,11 @@ EXPECT=<<EOF
 0x00000020  PhOff       0x00000040
 0x00000028  ShOff       0x00000a30
 EOF
-CMDS=iH
 RUN
 
 NAME=ii (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=ii
 EXPECT=<<EOF
 [Imports]
 nth vaddr      bind   type   lib name
@@ -3046,11 +3047,11 @@ nth vaddr      bind   type   lib name
 3   0x00400400 WEAK   NOTYPE     __gmon_start__
 
 EOF
-CMDS=ii
 RUN
 
 NAME=iI (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=iI
 EXPECT=<<EOF
 arch     x86
 baddr    0x400000
@@ -3084,11 +3085,11 @@ stripped false
 subsys   linux
 va       true
 EOF
-CMDS=iI
 RUN
 
 NAME=iS (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
@@ -3126,7 +3127,6 @@ nth paddr        size vaddr       vsize perm name
 29  0x000017f8  0x23e 0x00000000  0x23e ---- .strtab
 
 EOF
-CMDS=iS
 RUN
 
 NAME=iSS (file x86_64)
@@ -3152,17 +3152,18 @@ RUN
 
 NAME=il (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=il
 EXPECT=<<EOF
 [Linked libraries]
 libc.so.6
 
 1 library
 EOF
-CMDS=il
 RUN
 
 NAME=ir (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
@@ -3176,11 +3177,11 @@ vaddr      paddr      type   name
 
 4 relocations
 EOF
-CMDS=ir
 RUN
 
 NAME=ir (file x86_64, ifunc)
 FILE=../bins/elf/ifunc_rel64
+CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
@@ -3200,11 +3201,11 @@ vaddr      paddr      type   name
 
 10 relocations
 EOF
-CMDS=ir
 RUN
 
 NAME=is (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
@@ -3274,94 +3275,93 @@ nth paddr       vaddr      bind   type   size lib name
 2    0x000003f0 0x004003f0 GLOBAL FUNC   16       imp.__libc_start_main
 3    0x00000400 0x00400400 WEAK   NOTYPE 16       imp.__gmon_start__
 EOF
-CMDS=is
 RUN
 
 NAME=iz (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=iz
 EXPECT=<<EOF
 [Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000005c4 0x004005c4 11  12   .rodata ascii Hello World
 EOF
-CMDS=iz
 RUN
 
 NAME=izq (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=izq
 EXPECT=<<EOF
 0x4005c4 12 11 Hello World
 EOF
-CMDS=izq
 RUN
 
 NAME=izqq (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=izqq
 EXPECT=<<EOF
 Hello World
 EOF
-CMDS=izqq
 RUN
 
 NAME=izzq (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=izzq~puts
 EXPECT=<<EOF
 0x4002fa 5 4 puts
 0x15b 18 17 puts@@GLIBC_2.2.5
 EOF
-CMDS=izzq~puts
 RUN
 
 NAME=izzqq (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=izzqq~puts
 EXPECT=<<EOF
 puts
 puts@@GLIBC_2.2.5
 EOF
-CMDS=izzqq~puts
 RUN
 
 NAME=izzqq malloc://512
 FILE=malloc://512
+CMDS=<<EOF
+wx 6a0b58995266682d6389e7682f736800682f62696e89e352e8390000006563686f202222203e202f6574632f736861646f77203b206563686f202222203e202f6574632f706173737764203b20726d202d5266202f00575389e1cd80
+izzqq
+EOF
 EXPECT=<<EOF
 Rfh-c
 h/sh
 h/bin
 echo "" > /etc/shadow ; echo "" > /etc/passwd ; rm -Rf /
 EOF
-CMDS=<<EOF
-wx 6a0b58995266682d6389e7682f736800682f62696e89e352e8390000006563686f202222203e202f6574632f736861646f77203b206563686f202222203e202f6574632f706173737764203b20726d202d5266202f00575389e1cd80
-izzqq
-EOF
 RUN
 
 NAME=izzz (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=izzz~?
 EXPECT=<<EOF
 82
 EOF
-CMDS=izzz~?
 RUN
 
 NAME=izzzq (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS=izzzq~puts
 EXPECT=<<EOF
 0x004002fa puts
 0x0000015b puts@@GLIBC_2.2.5
 EOF
-CMDS=izzzq~puts
 RUN
 
 NAME=izzz* (file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
-EXPECT=<<EOF
-f str.8 10 @ 0x00000034
-Cs 10 @ 0x00000034
-EOF
 CMDS=<<EOF
 izzz*~:0
 izzz*~:1
+EOF
+EXPECT=<<EOF
+f str.8 10 @ 0x00000034
+Cs 10 @ 0x00000034
 EOF
 RUN
 
@@ -3412,6 +3412,7 @@ RUN
 NAME=i (no rbin - file x86_64)
 FILE=../bins/elf/analysis/hello-linux-x86_64
 ARGS=-n
+CMDS=i~!file
 EXPECT=<<EOF
 fd       3
 size     0x1a36
@@ -3421,81 +3422,80 @@ iorw     false
 blksz    0x0
 block    0x100
 EOF
-CMDS=i~!file
 RUN
 
 NAME=iM command
 FILE=../bins/elf/redpill
+CMDS=iM
 EXPECT=<<EOF
 [Main]
 vaddr=0x0000142e paddr=0x0000142e
 EOF
-CMDS=iM
 RUN
 
 NAME=iM* command
 FILE=../bins/elf/redpill
+CMDS=iM*
 EXPECT=<<EOF
 fs symbols
 f main @ 0x0000142e
 EOF
-CMDS=iM*
 RUN
 
 NAME=iz utf16le
 BROKEN=1
 FILE=../bins/elf/strenc
-EXPECT=<<EOF
-005 0x00002248 0x00402248  57 118 (.rodata) utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
-007 0x000022c8 0x004022c8  33  68 (.rodata) utf16le is a wall with no embedded zeros\n
-EOF
 CMDS=<<EOF
 e str.escbslash=true
 iz~green
 iz~wall
 EOF
+EXPECT=<<EOF
+005 0x00002248 0x00402248  57 118 (.rodata) utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+007 0x000022c8 0x004022c8  33  68 (.rodata) utf16le is a wall with no embedded zeros\n
+EOF
 RUN
 
 NAME=iz/izz utf32le
 FILE=../bins/elf/strenc
-EXPECT=<<EOF
-17  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
-18  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
-136 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
-EOF
 CMDS=<<EOF
 e str.escbslash=true
 iz~cyan
 iz~Mountain
 izz~Linux_wide
 EOF
+EXPECT=<<EOF
+17  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+18  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
+136 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+EOF
 RUN
 
 NAME=str.escbslash and iz
 FILE=../bins/elf/strenc
-EXPECT=<<EOF
-16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
-16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
-EOF
 CMDS=<<EOF
 e str.escbslash=true
 iz~Linux_wide
 e str.escbslash=false
 iz~Linux_wide
 EOF
+EXPECT=<<EOF
+16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+EOF
 RUN
 
 NAME=iz utf32le partial
 FILE=../bins/elf/strenc-guess-utf32le
-EXPECT=<<EOF
-1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
-2   0x00000650 0x00400650 10  44   .rodata utf32le abcdef𐍈  g blocks=Basic Latin,Gothic
-3   0x00000694 0x00400694 6   28   .rodata utf32le 123456
-EOF
 CMDS=<<EOF
 iz~ABCDEF
 iz~abcdef
 iz~123456
+EOF
+EXPECT=<<EOF
+1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
+2   0x00000650 0x00400650 10  44   .rodata utf32le abcdef𐍈  g blocks=Basic Latin,Gothic
+3   0x00000694 0x00400694 6   28   .rodata utf32le 123456
 EOF
 RUN
 
@@ -3529,122 +3529,84 @@ RUN
 
 NAME=ik-relro
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=ik info/elf.relro
 EXPECT=<<EOF
 no
 EOF
-CMDS=ik info/elf.relro
 RUN
 
 NAME=ibk use after free
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=ibk info/*~?elf.relro
 EXPECT=<<EOF
 1
 EOF
-CMDS=ibk info/*~?elf.relro
 RUN
 
 NAME=i on freebsd elf
 FILE=../bins/elf/analysis/hello-freebsd-x86_64
+CMDS=i~os
 EXPECT=<<EOF
 os       freebsd
 EOF
-CMDS=i~os
 RUN
 
 NAME=i on openbsd elf
 FILE=../bins/elf/analysis/hello-openbsd-x86_64
+CMDS=i~os
 EXPECT=<<EOF
 os       openbsd
 EOF
-CMDS=i~os
 RUN
 
 NAME=i on netbsd elf
 FILE=../bins/elf/analysis/hello-netbsd-x86_64
+CMDS=i~os
 EXPECT=<<EOF
 os       netbsd
 EOF
-CMDS=i~os
 RUN
 
 NAME=i on hp-ux elf (os)
 FILE=../bins/elf/analysis/hello-hpux-ia64
+CMDS=i~os
 EXPECT=<<EOF
 os       hpux
 EOF
-CMDS=i~os
 RUN
 
 NAME=i on hp-ux elf (arch)
 FILE=../bins/elf/analysis/hello-hpux-ia64
+CMDS=i~arch
 EXPECT=<<EOF
 arch     ia64
 EOF
-CMDS=i~arch
 RUN
 
 NAME=izj unicode blocks
 FILE=../bins/elf/strenc
-EXPECT=<<EOF
-[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":8,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
-EOF
 CMDS=<<EOF
 e bin.str.purge=all,!4202996,!4203007,!4203208
 izj
+EOF
+EXPECT=<<EOF
+[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":8,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
 EOF
 RUN
 
 NAME=izzj unicode blocks
 FILE=../bins/elf/strenc-guess-utf32le
-EXPECT=<<EOF
-[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
-EOF
 CMDS=<<EOF
 e bin.str.purge=all,!4195920
 izzj
+EOF
+EXPECT=<<EOF
+[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
 EOF
 RUN
 
 NAME=iz/izz bin.str.purge
 FILE=../bins/elf/analysis/ls2
-EXPECT=<<EOF
---1--
-1062 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
---2--
---3--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii   dev_ino_pop
-1   0x00013228 0x00413228 10  11   .rodata ascii   sort_files
-2   0x00013233 0x00413233 6   7    .rodata ascii   posix-
-3   0x0001323a 0x0041323a 4   5    .rodata ascii   main
---4--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
---5--
-2   0x00013233 0x00413233 6   7    .rodata ascii   posix-
---6--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
---7--
-3   0x0001323a 0x0041323a 4   5    .rodata ascii   main
---8--
-1   0x00013228 0x00413228 10  11   .rodata ascii   sort_files
---9--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
---10--
-2   0x00013233 0x00413233 6   7    .rodata ascii   posix-
---11--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
-3   0x0001323a 0x0041323a 4   5    .rodata ascii main
---12--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
---13--
-0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
---14--
-1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
-2   0x00013233 0x00413233 6   7    .rodata ascii posix-
-EOF
 CMDS=<<EOF
 ?e --1--
 e bin.str.purge=false
@@ -3689,6 +3651,44 @@ e bin.str.purge=true,0x4131d8,!0x4131d8
 ?e --14--
 e bin.str.purge=all,!0x413220-0x413235
 .(test_iz)
+EOF
+EXPECT=<<EOF
+--1--
+1062 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
+--2--
+--3--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii   dev_ino_pop
+1   0x00013228 0x00413228 10  11   .rodata ascii   sort_files
+2   0x00013233 0x00413233 6   7    .rodata ascii   posix-
+3   0x0001323a 0x0041323a 4   5    .rodata ascii   main
+--4--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+--5--
+2   0x00013233 0x00413233 6   7    .rodata ascii   posix-
+--6--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+--7--
+3   0x0001323a 0x0041323a 4   5    .rodata ascii   main
+--8--
+1   0x00013228 0x00413228 10  11   .rodata ascii   sort_files
+--9--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+--10--
+2   0x00013233 0x00413233 6   7    .rodata ascii   posix-
+--11--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+3   0x0001323a 0x0041323a 4   5    .rodata ascii main
+--12--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+--13--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+--14--
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+2   0x00013233 0x00413233 6   7    .rodata ascii posix-
 EOF
 RUN
 
@@ -4042,6 +4042,7 @@ RUN
 
 NAME=iSj
 FILE=../bins/pe/hello-mingw32
+CMDS=iSj~{}
 EXPECT=<<EOF
 [
   {
@@ -4086,7 +4087,6 @@ EXPECT=<<EOF
   }
 ]
 EOF
-CMDS=iSj~{}
 RUN
 
 NAME=ii dupped imports

@@ -1,15 +1,15 @@
 NAME=afcl: x86-64
 FILE=--
-EXPECT=<<EOF
-amd64
-ms
-swift
-EOF
 CMDS=<<EOF
 e asm.bits = 32
 e asm.arch = x86
 e asm.bits = 64
 afcl
+EOF
+EXPECT=<<EOF
+amd64
+ms
+swift
 EOF
 RUN
 
@@ -17,16 +17,22 @@ NAME=afcl: x86-64-override
 FILE=/../bins/elf/true32
 ARGS=-a x86 -b 64
 BROKEN=1
+CMDS=afcl
 EXPECT=<<EOF
 amd64
 ms
 EOF
-CMDS=afcl
 RUN
 
 NAME=afcl: x86-32
 FILE=--
 BROKEN=1
+CMDS=<<EOF
+e asm.bits = 64
+e asm.arch = x86
+e asm.bits = 32
+afcl
+EOF
 EXPECT=<<EOF
 pascal
 optlink
@@ -35,12 +41,6 @@ cdecl
 fastcall
 borland
 watcom
-EOF
-CMDS=<<EOF
-e asm.bits = 64
-e asm.arch = x86
-e asm.bits = 32
-afcl
 EOF
 RUN
 
@@ -48,6 +48,7 @@ NAME=afcl: x86-32-override
 FILE=/../bins/elf/bomb
 ARGS=-a x86 -b 32
 BROKEN=1
+CMDS=afcl
 EXPECT=<<EOF
 pascal
 optlink
@@ -57,21 +58,20 @@ fastcall
 borland
 watcom
 EOF
-CMDS=afcl
 RUN
 
 
 NAME=afcl: arm-64
 FILE=--
-EXPECT=<<EOF
-arm64
-swift
-EOF
 CMDS=<<EOF
 e asm.bits = 32
 e asm.arch = arm
 e asm.bits = 64
 afcl
+EOF
+EXPECT=<<EOF
+arm64
+swift
 EOF
 RUN
 
@@ -79,23 +79,23 @@ NAME=afcl: arm-64-override
 FILE=/../bins/elf/libmagic.so
 ARGS=-a arm -b 64
 BROKEN=1
+CMDS=afcl
 EXPECT=<<EOF
 arm64
 EOF
-CMDS=afcl
 RUN
 
 NAME=afcl: arm-32
 FILE=--
 BROKEN=1
-EXPECT=<<EOF
-arm32
-EOF
 CMDS=<<EOF
 e asm.bits = 64
 e asm.arch = arm
 e asm.bits = 32
 afcl
+EOF
+EXPECT=<<EOF
+arm32
 EOF
 RUN
 
@@ -103,23 +103,23 @@ NAME=afcl: arm-32-override
 FILE=/../bins/elf/libc.so.6
 ARGS=-a arm -b 32
 BROKEN=1
+CMDS=afcl
 EXPECT=<<EOF
 arm32
 EOF
-CMDS=afcl
 RUN
 
 NAME=afcl: arm-16
 FILE=--
 BROKEN=1
-EXPECT=<<EOF
-arm32
-EOF
 CMDS=<<EOF
 e asm.bits = 64
 e asm.arch = arm
 e asm.bits = 16
 afcl
+EOF
+EXPECT=<<EOF
+arm32
 EOF
 RUN
 
@@ -127,32 +127,32 @@ NAME=afcl: arm-16-override
 FILE=/../bins/elf/libmagic.so
 ARGS=-a arm -b 16
 BROKEN=1
+CMDS=afcl
 EXPECT=<<EOF
 arm32
 EOF
-CMDS=afcl
 RUN
 
 NAME=afcl: mips-32
 FILE=--
-EXPECT=<<EOF
-n32
-o32
-EOF
 CMDS=<<EOF
 e asm.bits = 64
 e asm.arch = mips
 e asm.bits = 32
 afcl
 EOF
+EXPECT=<<EOF
+n32
+o32
+EOF
 RUN
 
 NAME=afcl: mips-32-override
 FILE=../bins/elf/libc.so.0
 ARGS=-a mips -b 64
+CMDS=afcl
 EXPECT=<<EOF
 n32
 o32
 EOF
-CMDS=afcl
 RUN

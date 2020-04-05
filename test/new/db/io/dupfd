@@ -1,8 +1,5 @@
 NAME=dupfd bug
 FILE=-
-EXPECT=<<EOF
-11
-EOF
 CMDS=<<EOF
 e file.nowarn=true
 e file.loadmethod=append
@@ -11,13 +8,13 @@ e scr.null=true
 e scr.null=false
 o~?
 EOF
+EXPECT=<<EOF
+11
+EOF
 RUN
 
 NAME=dupfd hard
 FILE=-
-EXPECT=<<EOF
-1001
-EOF
 CMDS=<<EOF
 e file.loadmethod=append
 e file.nowarn=true
@@ -25,5 +22,8 @@ e scr.null=true
 1000o -
 e scr.null=false
 o~?
+EOF
+EXPECT=<<EOF
+1001
 EOF
 RUN
