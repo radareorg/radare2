@@ -514,9 +514,12 @@ R_API void r_cons_grepbuf() {
 				Color_RESET,
 				NULL
 			};
+			char *bb = strdup (buf);
+			r_str_ansi_filter (bb, NULL, NULL, -1);
 			char *out = (cons->context->grep.human)
-				? r_print_json_human (buf)
-				: r_print_json_indent (buf, I (context->color_mode), "  ", palette);
+				? r_print_json_human (bb)
+				: r_print_json_indent (bb, I (context->color_mode), "  ", palette);
+			free (bb);
 			if (!out) {
 				return;
 			}
