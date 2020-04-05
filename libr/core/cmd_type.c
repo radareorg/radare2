@@ -789,7 +789,7 @@ static void set_offset_hint(RCore *core, RAnalOp *op, const char *type, ut64 lad
 	}
 }
 
-R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to) {
+R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
 	int stack = 0, maxstack = 0;
 	ut64 at = from;
 
@@ -816,7 +816,7 @@ R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to) {
 	return maxstack;
 }
 
-static void set_retval (RCore *core, ut64 at) {
+static void set_retval(RCore *core, ut64 at) {
 	RAnal *anal = core->anal;
 	RAnalHint *hint = r_anal_hint_get (anal, at);
 	RAnalFunction *fcn = r_anal_get_fcn_in (anal, at, 0);
@@ -1645,8 +1645,7 @@ static int cmd_type(void *data, const char *input) {
 			sdb_reset (TDB);
 			r_parse_c_reset (core->parser);
 		} else {
-			const char *name = input + 1;
-			while (IS_WHITESPACE (*name)) name++;
+			const char *name = r_str_trim_head_ro (input + 1);
 			if (*name) {
 				r_anal_remove_parsed_type (core->anal, name);
 			} else {
@@ -1767,8 +1766,9 @@ static int cmd_type(void *data, const char *input) {
 		if (istypedef && !strncmp (istypedef, "typedef", 7)) {
 			const char *q = sdb_fmt ("typedef.%s", s);
 			const char *res = sdb_const_get (TDB, q, 0);
-			if (res)
+			if (res) {
 				r_cons_println (res);
+			}
 		} else {
 			eprintf ("This is not an typedef\n");
 		}

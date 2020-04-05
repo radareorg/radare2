@@ -95,6 +95,20 @@ bool test_r_str_rwx_i(void) {
 	mu_end;
 }
 
+bool test_r_str_trim(void) {
+	//  1
+	const char* one = r_str_trim_head_ro ("  hello  ");
+	mu_assert_streq (one, "hello  ", "one");
+	//  2
+	char* two = strdup ("  hello  ");
+	r_str_trim_head (two);
+	mu_assert_streq (two, "hello  ", "two");
+	r_str_trim (two);
+	//  2
+	mu_assert_streq (two, "hello", "three");
+	free (two);
+	mu_end;
+}
 //TODO find a way to test r_str_home.
 
 bool test_r_str_bool(void) {
@@ -425,6 +439,7 @@ bool all_tests() {
 	mu_run_test (test_r_str_rwx);
 	mu_run_test (test_r_str_rwx_i);
 	mu_run_test (test_r_str_bool);
+	mu_run_test (test_r_str_trim);
 	mu_run_test (test_r_str_case);
 	mu_run_test (test_r_str_split);
 	mu_run_test (test_r_str_tokenize);
