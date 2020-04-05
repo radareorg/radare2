@@ -287,13 +287,21 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 
 	ut8 stdout_buf[0x500];
 	ut8 stderr_buf[0x500];
-
-	ReadFile (proc->stdout_read, stdout_buf, sizeof (stdout_buf) - 1, NULL, &stdout_overlapped);
-	ReadFile (proc->stderr_read, stderr_buf, sizeof (stderr_buf) - 1, NULL, &stderr_overlapped);
-
 	bool stdout_eof = false;
 	bool stderr_eof = false;
 	bool child_dead = false;
+
+#define DO_READ(which) \
+	if (!ReadFile (proc->which##_read, which##_buf, sizeof (which##_buf) - 1, NULL, &(which##_overlapped))) { \
+		if (GetLastError() != ERROR_IO_PENDING) { \
+			/* EOF or some other error */ \
+			which##_eof = true; \
+		} \
+	}
+
+	DO_READ (stdout)
+	DO_READ (stderr)
+
 	RVector handles;
 	r_vector_init (&handles, sizeof (HANDLE), NULL, NULL);
 	while (true) {
@@ -334,7 +342,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			r_str_remove_char (stdout_buf, '\r');
 			r_strbuf_append (&proc->out, (const char *)stdout_buf);
 			ResetEvent (stdout_overlapped.hEvent);
-			ReadFile (proc->stdout_read, stdout_buf, sizeof (stdout_buf) - 1, NULL, &stdout_overlapped);
+			DO_READ (stdout)
 			continue;
 		}
 		if (!stderr_eof && signaled == stderr_index) {
@@ -348,7 +356,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			r_str_remove_char (stderr_buf, '\r');
 			r_strbuf_append (&proc->err, (const char *)stderr_buf);
 			ResetEvent (stderr_overlapped.hEvent);
-			ReadFile (proc->stderr_read, stderr_buf, sizeof (stderr_buf) - 1, NULL, &stderr_overlapped);
+			DO_READ (stderr);
 			continue;
 		}
 		if (!child_dead && signaled == proc_index) {
