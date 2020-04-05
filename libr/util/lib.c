@@ -314,7 +314,10 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 	if (stru->version) {
 		char *mm0 = major_minor (stru->version);
 		char *mm1 = major_minor (R2_VERSION);
-		if (strcmp (mm0 ,mm1)) {
+		bool mismatch = strcmp (mm0, mm1);
+		free (mm0);
+		free (mm1);
+		if (mismatch) {
 			eprintf ("Module version mismatch %s (%s) vs (%s)\n",
 				file, stru->version, R2_VERSION);
 			if (stru->pkgname) {
@@ -328,8 +331,6 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 			}
 			return -1;
 		}
-		free (mm0);
-		free (mm1);
 	}
 	RLibPlugin *p = R_NEW0 (RLibPlugin);
 	p->type = stru->type;
