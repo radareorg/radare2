@@ -762,7 +762,7 @@ static char *convert_win_cmds(const char *cmds) {
 		}
 	}
 	*p = '\0';
-	return r;
+	return r_str_replace (r, "/dev/null", "nul", true);
 }
 #endif
 
