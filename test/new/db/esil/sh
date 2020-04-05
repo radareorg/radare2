@@ -1,5 +1,8 @@
 NAME=add Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000f4
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -10,13 +13,14 @@ wx 0x312C
 aes
 dr? r1
 EOF
-EXPECT=<<EOF
-0x000000f4
-EOF
 RUN
 
 NAME=add #imm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000011e
+0x000000f0
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -32,14 +36,19 @@ wx 0x71FE
 aes
 dr? r1
 EOF
-EXPECT=<<EOF
-0x0000011e
-0x000000f0
-EOF
 RUN
 
 NAME=addc Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000f7
+0x00000004
+0x00000000
+0x0fff0000
+0x00000001
+0x00000000
+0x00000001
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -71,19 +80,18 @@ aes
 dr? r2
 dr? sr
 EOF
-EXPECT=<<EOF
-0x000000f7
-0x00000004
-0x00000000
-0x0fff0000
-0x00000001
-0x00000000
-0x00000001
-EOF
 RUN
 
 NAME=addv Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x000000f6
+0x00000000
+0x10090000
+0x00000001
+0xbf0e0000
+0x00000001
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -114,18 +122,13 @@ aes
 dr? r2
 dr? sr
 EOF
-EXPECT=<<EOF
-0x000000f6
-0x00000000
-0x10090000
-0x00000001
-0xbf0e0000
-0x00000001
-EOF
 RUN
 
 NAME=and Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x02104432
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -136,13 +139,13 @@ wx 0x2129
 aes
 dr? r1
 EOF
-EXPECT=<<EOF
-0x02104432
-EOF
 RUN
 
 NAME=and #imm,@(R0+GBR)
 FILE=malloc://0x200
+EXPECT=<<EOF
+12245678
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -156,13 +159,15 @@ aes
 s 0x24
 px0 4
 EOF
-EXPECT=<<EOF
-12245678
-EOF
 RUN
 
 NAME=BF
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000060
+0x0000000c
+0x00000012
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -184,15 +189,17 @@ aeip
 aes
 dr? pc
 EOF
-EXPECT=<<EOF
-0x00000060
-0x0000000c
-0x00000012
-EOF
 RUN
 
 NAME=BF/S
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000060
+0x00000002
+0x0000000c
+0x00000002
+0x00000012
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -218,17 +225,16 @@ aeip
 aes
 dr? pc
 EOF
+RUN
+
+NAME=BRA
+FILE=malloc://0x200
 EXPECT=<<EOF
 0x00000060
 0x00000002
 0x0000000c
 0x00000002
-0x00000012
 EOF
-RUN
-
-NAME=BRA
-FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -248,16 +254,14 @@ aes
 dr? pc
 dr? r1
 EOF
-EXPECT=<<EOF
-0x00000060
-0x00000002
-0x0000000c
-0x00000002
-EOF
 RUN
 
 NAME=BRAF
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000060
+0x00000002
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -271,14 +275,15 @@ aes
 dr? pc
 dr? r1
 EOF
-EXPECT=<<EOF
-0x00000060
-0x00000002
-EOF
 RUN
 
 NAME=BSR
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000060
+0x00000014
+0x00000002
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -292,15 +297,15 @@ dr? pc
 dr? pr
 dr? r1
 EOF
+RUN
+
+NAME=BSRF
+FILE=malloc://0x200
 EXPECT=<<EOF
 0x00000060
 0x00000014
 0x00000002
 EOF
-RUN
-
-NAME=BSRF
-FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -315,15 +320,15 @@ dr? pc
 dr? pr
 dr? r1
 EOF
-EXPECT=<<EOF
-0x00000060
-0x00000014
-0x00000002
-EOF
 RUN
 
 NAME=BT
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000060
+0x0000000c
+0x00000012
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -345,15 +350,17 @@ aeip
 aes
 dr? pc
 EOF
-EXPECT=<<EOF
-0x00000060
-0x0000000c
-0x00000012
-EOF
 RUN
 
 NAME=BT/S
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000060
+0x00000002
+0x0000000c
+0x00000002
+0x00000012
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -379,17 +386,14 @@ aeip
 aes
 dr? pc
 EOF
-EXPECT=<<EOF
-0x00000060
-0x00000002
-0x0000000c
-0x00000002
-0x00000012
-EOF
 RUN
 
 NAME=CLRMAC
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -401,14 +405,13 @@ aes
 dr? mach
 dr? macl
 EOF
-EXPECT=<<EOF
-0x00000000
-0x00000000
-EOF
 RUN
 
 NAME=CLRT
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000002
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -418,13 +421,14 @@ wx 0x0008
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00000002
-EOF
 RUN
 
 NAME=CMP/EQ Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -443,14 +447,15 @@ dr r2=0xb
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-EOF
 RUN
 
 NAME=CMP/GE Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000001
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -474,15 +479,15 @@ dr sr=0
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000001
-EOF
 RUN
 
 NAME=CMP/GT Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -506,15 +511,15 @@ dr r1=0x1
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000000
-EOF
 RUN
 
 NAME=CMP/HI Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -540,15 +545,15 @@ dr r1=0x1
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000000
-EOF
 RUN
 
 NAME=CMP/HS Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000001
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -574,15 +579,15 @@ dr r1=0x1
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000001
-EOF
 RUN
 
 NAME=CMP/PL Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -605,15 +610,15 @@ dr sr=0x1
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000000
-EOF
 RUN
 
 NAME=CMP/PZ Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000001
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -636,15 +641,15 @@ dr sr=0x1
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000001
-EOF
 RUN
 
 NAME=CMP/STR Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000001
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -670,15 +675,15 @@ dr r2=0x01235678
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000001
-EOF
 RUN
 
 NAME=CMP/EQ #imm,R0
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -703,15 +708,16 @@ dr r0=0xFFeFFFFE
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000000
-EOF
 RUN
 
 NAME=DIV0S Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000300
+0x00000101
+0x00000201
+0xfffffcfe
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -744,16 +750,13 @@ dr r2=0x5
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00000300
-0x00000101
-0x00000201
-0xfffffcfe
-EOF
 RUN
 
 NAME=DIV0U
 FILE=malloc://0x200
+EXPECT=<<EOF
+0xfffffcfe
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -763,13 +766,14 @@ dr sr=0xFFFFFFFF
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0xfffffcfe
-EOF
 RUN
 
 NAME=DIV1
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000001
+0x0001d2ee
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -782,14 +786,16 @@ aes
 dr? sr
 dr? r1
 EOF
-EXPECT=<<EOF
-0x00000001
-0x0001d2ee
-EOF
 RUN
 
 NAME=DMULS.W Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x086a1c97
+0x0b88d780
+0xffffffff
+0xfdc56780
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -808,16 +814,16 @@ aes
 dr? mach
 dr? macl
 EOF
-EXPECT=<<EOF
-0x086a1c97
-0x0b88d780
-0xffffffff
-0xfdc56780
-EOF
 RUN
 
 NAME=DMULU.L Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x086a1c97
+0x0b88d780
+0x0004320f
+0xfdc56780
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -836,16 +842,14 @@ aes
 dr? mach
 dr? macl
 EOF
-EXPECT=<<EOF
-0x086a1c97
-0x0b88d780
-0x0004320f
-0xfdc56780
-EOF
 RUN
 
 NAME=DT Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0xfffffffe
+0x00000001
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -862,14 +866,14 @@ dr r1=0x1
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0xfffffffe
-0x00000001
-EOF
 RUN
 
 NAME=EXT.S Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000078
+0xffffff88
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -886,14 +890,14 @@ dr r1=0x00000123
 aes
 dr? r1
 EOF
-EXPECT=<<EOF
-0x00000078
-0xffffff88
-EOF
 RUN
 
 NAME=EXT.W Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00005678
+0xffff8688
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -910,14 +914,13 @@ dr r1=0x00000123
 aes
 dr? r1
 EOF
-EXPECT=<<EOF
-0x00005678
-0xffff8688
-EOF
 RUN
 
 NAME=EXTU.B Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000078
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -928,13 +931,13 @@ dr r1=0x00000123
 aes
 dr? r1
 EOF
-EXPECT=<<EOF
-0x00000078
-EOF
 RUN
 
 NAME=EXTU.W Rm,Rn
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x0000ff78
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -945,13 +948,14 @@ dr r1=0x00000123
 aes
 dr? r1
 EOF
-EXPECT=<<EOF
-0x0000ff78
-EOF
 RUN
 
 NAME=JMP @Rm
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000123
+0x00000002
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -965,14 +969,15 @@ aes
 dr? pc
 dr? r2
 EOF
-EXPECT=<<EOF
-0x00000123
-0x00000002
-EOF
 RUN
 
 NAME=JSR @Rm
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00000123
+0x00000002
+0x00000014
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -988,15 +993,13 @@ dr? pc
 dr? r2
 dr? pr
 EOF
-EXPECT=<<EOF
-0x00000123
-0x00000002
-0x00000014
-EOF
 RUN
 
 NAME=LDC Rm,SR
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00010345
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -1007,13 +1010,13 @@ dr r1=0x12345
 aes
 dr? sr
 EOF
-EXPECT=<<EOF
-0x00010345
-EOF
 RUN
 
 NAME=LDC Rm,GBR
 FILE=malloc://0x200
+EXPECT=<<EOF
+0x00012345
+EOF
 CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
@@ -1023,8 +1026,5 @@ dr gbr=0x5
 dr r1=0x12345
 aes
 dr? gbr
-EOF
-EXPECT=<<EOF
-0x00012345
 EOF
 RUN

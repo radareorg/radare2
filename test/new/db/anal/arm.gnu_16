@@ -1,5 +1,8 @@
 NAME=strh
 FILE=malloc://512
+EXPECT=<<EOF
+type: store
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -7,13 +10,15 @@ s 0x40
 wx 3680
 ao~type
 EOF
-EXPECT=<<EOF
-type: store
-EOF
 RUN
 
 NAME=b.n
 FILE=malloc://512
+EXPECT=<<EOF
+type: jmp
+jump: 0x0000014c
+fail: 0x00000044
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -23,15 +28,13 @@ ao~type
 ao~jump
 ao~fail
 EOF
-EXPECT=<<EOF
-type: jmp
-jump: 0x0000014c
-fail: 0x00000044
-EOF
 RUN
 
 NAME=ldrb
 FILE=malloc://512
+EXPECT=<<EOF
+type: store
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -39,13 +42,13 @@ s 0x40
 wx f85c
 ao~type
 EOF
-EXPECT=<<EOF
-type: store
-EOF
 RUN
 
 NAME=ldrb 2
 FILE=malloc://512
+EXPECT=<<EOF
+type: load
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -53,13 +56,13 @@ s 0x40
 wx ae7c
 ao~type
 EOF
-EXPECT=<<EOF
-type: load
-EOF
 RUN
 
 NAME=ldr
 FILE=malloc://512
+EXPECT=<<EOF
+type: store
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -67,13 +70,15 @@ s 0x40
 wx b258
 ao~type
 EOF
-EXPECT=<<EOF
-type: store
-EOF
 RUN
 
 NAME=ble.w
 FILE=malloc://512
+EXPECT=<<EOF
+type: call
+jump: 0x003716c4
+fail: 0x00000044
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -83,15 +88,15 @@ ao~type
 ao~jump
 ao~fail
 EOF
-EXPECT=<<EOF
-type: call
-jump: 0x003716c4
-fail: 0x00000044
-EOF
 RUN
 
 NAME=undefine bcc
 FILE=malloc://512
+EXPECT=<<EOF
+type: call
+jump: 0xfffffffff87c5646
+fail: 0x00000044
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -101,15 +106,14 @@ ao~type
 ao~jump
 ao~fail
 EOF
-EXPECT=<<EOF
-type: call
-jump: 0xfffffffff87c5646
-fail: 0x00000044
-EOF
 RUN
 
 NAME=bx
 FILE=malloc://512
+EXPECT=<<EOF
+type: ujmp
+fail: 0x00000044
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -119,14 +123,15 @@ ao~type
 ao~jump
 ao~fail
 EOF
-EXPECT=<<EOF
-type: ujmp
-fail: 0x00000044
-EOF
 RUN
 
 NAME=undefined
 FILE=malloc://512
+EXPECT=<<EOF
+type: call
+jump: 0xfffffffff862b044
+fail: 0x00000044
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -136,15 +141,13 @@ ao~type
 ao~jump
 ao~fail
 EOF
-EXPECT=<<EOF
-type: call
-jump: 0xfffffffff862b044
-fail: 0x00000044
-EOF
 RUN
 
 NAME=cmp
 FILE=malloc://512
+EXPECT=<<EOF
+type: cmp
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -152,13 +155,13 @@ s 0x40
 wx f12a
 ao~type
 EOF
-EXPECT=<<EOF
-type: cmp
-EOF
 RUN
 
 NAME=bcs.n
 FILE=malloc://512
+EXPECT=<<EOF
+type: cjmp
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -166,13 +169,13 @@ s 0x40
 wx 3fd2
 ao~type
 EOF
-EXPECT=<<EOF
-type: cjmp
-EOF
 RUN
 
 NAME=ldrh
 FILE=malloc://512
+EXPECT=<<EOF
+type: load
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -180,13 +183,13 @@ s 0x40
 wx 3c5a
 ao~type
 EOF
-EXPECT=<<EOF
-type: load
-EOF
 RUN
 
 NAME=tst
 FILE=malloc://512
+EXPECT=<<EOF
+type: cmp
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -194,13 +197,13 @@ s 0x40
 wx 0d42
 ao~type
 EOF
-EXPECT=<<EOF
-type: cmp
-EOF
 RUN
 
 NAME=bkpt
 FILE=malloc://512
+EXPECT=<<EOF
+type: trap
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -208,13 +211,13 @@ s 0x40
 wx 6fbe
 ao~type
 EOF
-EXPECT=<<EOF
-type: trap
-EOF
 RUN
 
 NAME=cmp2
 FILE=malloc://512
+EXPECT=<<EOF
+type: cmp
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -222,14 +225,15 @@ s 0x40
 wx 3c45
 ao~type
 EOF
-EXPECT=<<EOF
-type: cmp
-EOF
 RUN
 
 
 NAME=undefine3
 FILE=malloc://512
+EXPECT=<<EOF
+type: ucall
+fail: 0x00000044
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -239,14 +243,13 @@ ao~type
 ao~fail
 ao~jump
 EOF
-EXPECT=<<EOF
-type: ucall
-fail: 0x00000044
-EOF
 RUN
 
 NAME=undefined4
 FILE=malloc://512
+EXPECT=<<EOF
+type: ucall
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -254,13 +257,13 @@ s 0x40
 wx fe47
 ao~type
 EOF
-EXPECT=<<EOF
-type: ucall
-EOF
 RUN
 
 NAME=lsls
 FILE=malloc://512
+EXPECT=<<EOF
+type: nop
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
@@ -268,21 +271,18 @@ s 0x40
 wx bf00
 ao~type
 EOF
-EXPECT=<<EOF
-type: nop
-EOF
 RUN
 
 NAME=swi/svc
 FILE=malloc://512
+EXPECT=<<EOF
+type: cjmp
+EOF
 CMDS=<<EOF
 e asm.arch=arm.gnu
 e asm.bits=16
 s 0x40
 wx 05df
 ao~type
-EOF
-EXPECT=<<EOF
-type: cjmp
 EOF
 RUN

@@ -1,5 +1,8 @@
 NAME=ESIL single stepback
 FILE=../bins/elf/analysis/calls_x64
+EXPECT=<<EOF
+0x00400412
+EOF
 CMDS=<<EOF
 e asm.emu=true
 e asm.bits=64
@@ -15,8 +18,5 @@ aeso
 aesb
 dr rip
 dk 9
-EOF
-EXPECT=<<EOF
-0x00400412
 EOF
 RUN
