@@ -2884,7 +2884,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			line = strdup (cmd);
 			line = r_str_replace (line, "\\\"", "\"", true);
 			if (p && *p && p[1] == '|') {
-				str = r_str_trim_head_ro (p + 2);
+				str = (char *)r_str_trim_head_ro (p + 2);
 				r_core_cmd_pipe (core, cmd, str);
 			} else {
 				r_cmd_call (core->rcmd, line);
