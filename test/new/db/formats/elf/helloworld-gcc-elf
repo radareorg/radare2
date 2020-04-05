@@ -32,6 +32,7 @@ push {r7, lr}
 add ip, pc, 0, 12
 push {r3, lr}
 add ip, pc, 0, 12
+str lr, [sp, -4]!
 EOF
 RUN
 
