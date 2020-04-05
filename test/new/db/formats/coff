@@ -15,52 +15,25 @@ nth vaddr      bind type lib name
 4   0x00000000 NONE FUNC     __TIFFfree
 5   0x00000000 NONE FUNC     _TIFFFindField
 6   0x00000000 NONE FUNC     _TIFFFieldWithTag
-7   0x00000000 NONE FUNC     _TIFFGetField
-8   0x00000000 NONE FUNC     _TIFFVGetField
-9   0x00000000 NONE FUNC     _TIFFReadDirectory
-10  0x00000000 NONE FUNC     _TIFFNumberOfDirectories
-11  0x00000000 NONE FUNC     _TIFFCurrentDirOffset
-12  0x00000000 NONE FUNC     _TIFFFreeDirectory
-13  0x00000000 NONE FUNC     _TIFFCreateDirectory
-14  0x00000000 NONE FUNC     _TIFFCreateCustomDirectory
-15  0x00000000 NONE FUNC     _TIFFCreateEXIFDirectory
-16  0x00000000 NONE FUNC     _TIFFLastDirectory
-17  0x00000000 NONE FUNC     _TIFFSetDirectory
-18  0x00000000 NONE FUNC     _TIFFSetSubDirectory
-19  0x00000000 NONE FUNC     _TIFFUnlinkDirectory
-20  0x00000000 NONE FUNC     _TIFFSetField
-21  0x00000000 NONE FUNC     _TIFFVSetField
-22  0x00000000 NONE FUNC     _TIFFUnsetField
-23  0x00000000 NONE FUNC     _TIFFErrorExt
-24  0x00000000 NONE FUNC     _TIFFWarningExt
-25  0x00000000 NONE FUNC     _TIFFSetTagExtender
-26  0x00000000 NONE FUNC     _TIFFSwabShort
-27  0x00000000 NONE FUNC     _TIFFSwabLong
-28  0x00000000 NONE FUNC     _TIFFSwabLong8
-29  0x00000000 NONE FUNC     __TIFFGetFields
-30  0x00000000 NONE FUNC     __TIFFGetExifFields
-31  0x00000000 NONE FUNC     __TIFFSetupFields
-32  0x00000000 NONE FUNC     __TIFFFillStriles
-33  0x00000000 NONE FUNC     __TIFFNoPostDecode
-34  0x00000000 NONE FUNC     sym.imp.BitData
-35  0x00000000 NONE FUNC     sym.imp.BitData
-36  0x00000000 NONE FUNC     sym.imp.BitData
-37  0x00000000 NONE FUNC     sym.imp.BitData
-38  0x00000000 NONE FUNC     _TIFFDefaultDirectory
-39  0x00000000 NONE FUNC     _TIFFSetCompressionScheme
-40  0x00000000 NONE FUNC     __TIFFDataSize
-41  0x00000000 NONE FUNC     __TIFFsetByteArray
-42  0x00000000 NONE FUNC     __TIFFsetString
-43  0x00000000 NONE FUNC     __TIFFsetShortArray
-44  0x00000000 NONE FUNC     __TIFFsetLongArray
-45  0x00000000 NONE FUNC     __TIFFsetFloatArray
-46  0x00000000 NONE FUNC     __TIFFsetDoubleArray
-47  0x00000000 NONE FUNC     __TIFFCheckMalloc
-48  0x00000000 NONE FUNC     __fltused
-49  0x00000000 NONE FUNC     __real@47efffffe0000000
-50  0x00000000 NONE FUNC     __real@7f7fffff
-51  0x00000000 NONE FUNC     __real@c7efffffe0000000
-52  0x00000000 NONE FUNC     __real@ff7fffff
+7   0x00000000 NONE FUNC     _TIFFReadDirectory
+8   0x00000000 NONE FUNC     _TIFFErrorExt
+9   0x00000000 NONE FUNC     _TIFFWarningExt
+10  0x00000000 NONE FUNC     _TIFFSwabShort
+11  0x00000000 NONE FUNC     _TIFFSwabLong
+12  0x00000000 NONE FUNC     _TIFFSwabLong8
+13  0x00000000 NONE FUNC     __TIFFGetFields
+14  0x00000000 NONE FUNC     __TIFFGetExifFields
+15  0x00000000 NONE FUNC     __TIFFSetupFields
+16  0x00000000 NONE FUNC     __TIFFFillStriles
+17  0x00000000 NONE FUNC     __TIFFNoPostDecode
+18  0x00000000 NONE FUNC     sym.imp.BitData
+19  0x00000000 NONE FUNC     sym.imp.BitData
+20  0x00000000 NONE FUNC     sym.imp.BitData
+21  0x00000000 NONE FUNC     sym.imp.BitData
+22  0x00000000 NONE FUNC     _TIFFSetCompressionScheme
+23  0x00000000 NONE FUNC     __TIFFDataSize
+24  0x00000000 NONE FUNC     __TIFFCheckMalloc
+25  0x00000000 NONE UNK      __fltused
 
 [Sections]
 
@@ -90,13 +63,13 @@ EXPECT=<<EOF
  1 fd: 3 +0x0000008b 0x0000008b - 0x000000a6 r-- fmap..data_1
 [Symbols]
 
-nth paddr       vaddr      bind type     size lib name
-------------------------------------------------------
-0    0x00000000 0x00000000 NONE EXTERNAL 4        MessageBoxA
-0    0x00000000 0x00000000 NONE EXTERNAL 4        ExitProcess
-0    0x00000064 0x00000064 NONE STATIC   4        .text
-0    0x00000064 0x00000064 NONE FUNC     4        main
-0    0x0000008b 0x0000008b NONE STATIC   4        .data
+nth paddr       vaddr      bind   type size lib name
+----------------------------------------------------
+0    0x00000000 0x00000000 NONE   UNK  4        imp.MessageBoxA
+0    0x00000000 0x00000000 NONE   UNK  4        imp.ExitProcess
+0    0x00000064 0x00000064 LOCAL  UNK  4        .text
+0    0x00000064 0x00000064 GLOBAL FUNC 4        main
+0    0x0000008b 0x0000008b LOCAL  UNK  4        .data
 [Relocations]
 
 vaddr      paddr      type    name
@@ -130,8 +103,8 @@ EXPECT=<<EOF
  3 fd: 3 +0x00000eec 0x00000eec - 0x00000fbf r-- fmap..debug_S_6
  2 fd: 3 +0x00000ff2 0x00000ff2 - 0x00000ff5 r-- fmap..rtc_IMZ_7
  1 fd: 3 +0x00001000 0x00001000 - 0x00001003 r-- fmap..rtc_TMZ_8
-0    0x00000d8f 0x00000d8f NONE STATIC   4        .text$mn
-0    0x00000ec2 0x00000ec2 NONE STATIC   4        .text$mn
+0    0x00000d8f 0x00000d8f LOCAL  UNK  4        .text$mn
+0    0x00000ec2 0x00000ec2 LOCAL  UNK  4        .text$mn
             ;-- section..text_mn_5:
             ;-- .text$mn:
             ;-- ??1FooBar@@QAE@XZ:
