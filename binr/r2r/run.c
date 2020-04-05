@@ -922,9 +922,9 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RLi
 		"1"
 	};
 #if __WINDOWS__
-	size_t env_size = load_plugins ? 0 : 1;
-#else
 	size_t env_size = load_plugins ? 1 : 2;
+#else
+	size_t env_size = load_plugins ? 0 : 1;
 #endif
 	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size, user);
 	r_pvector_clear (&args);
