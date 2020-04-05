@@ -3121,11 +3121,6 @@ static void classdump_c(RCore *r, RBinClass *c) {
 	r_cons_printf ("typedef struct class_%s {\n", c->name);
 	RListIter *iter2;
 	RBinField *f;
-	// XXX this is a hack because r2 doesnt supports empty structs yet
-	// XXX https://github.com/radareorg/radare2/issues/16342
-	if (r_list_empty (c->fields)) {
-		r_cons_printf ("void *padding;\n");
-	}
 	r_list_foreach (c->fields, iter2, f) {
 		if (f->type && f->name) {
 			char *n = objc_name_toc (f->name);
