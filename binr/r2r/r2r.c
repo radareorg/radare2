@@ -130,6 +130,14 @@ static bool r2r_chdir_fromtest(const char *test_path) {
 char *convert_win_cmds (const char *cmds);
 
 int main(int argc, char **argv) {
+	DWORD mode = -1;
+	GetConsoleMode (GetStdHandle (STD_OUTPUT_HANDLE), &mode);
+	eprintf ("GetConsoleMode stdout: %#x\n", mode);
+	mode = -1;
+	GetConsoleMode (GetStdHandle (STD_ERROR_HANDLE), &mode);
+	eprintf ("GetConsoleMode stderr: %#x\n", mode);
+	return 0;
+
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
 	bool nothing = false;
