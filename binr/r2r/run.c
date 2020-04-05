@@ -754,6 +754,7 @@ static char *convert_win_cmds(const char *cmds) {
 					*p++ = '%';
 				}
 			} else {
+				*p++ = '$';
 				*p++ = c;
 			}
 		} else {
