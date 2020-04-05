@@ -43,23 +43,6 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 R_API bool r2r_subprocess_init(void) { return true; }
 R_API void r2r_subprocess_fini(void) {}
 
-#define DEBUG_ENV 0
-
-#if DEBUG_ENV
-static void print_env (LPWCH env) {
-	while (true) {
-		wprintf (L"%s\n", env);
-		while (*env) {
-			env++;
-		}
-		env++;
-		if (!*env) {
-			break;
-		}
-	}
-}
-#endif
-
 // Create an env block that inherits the current vars but overrides the given ones
 static LPWCH override_env (const char *envvars[], const char *envvals[], size_t env_size) {
 	LPWCH ret = NULL;
@@ -71,11 +54,6 @@ static LPWCH override_env (const char *envvars[], const char *envvals[], size_t 
 	if (!wenvvars || !wenvvals || !parent_env) {
 		goto error;
 	}
-
-#if DEBUG_ENV
-	printf ("\n++++++++++++++++++ PREV:\n");
-	print_env (parent_env);
-#endif
 
 	for (i = 0; i < env_size; i++) {
 		wenvvars[i] = r_utf8_to_utf16 (envvars[i]);
@@ -106,9 +84,6 @@ static LPWCH override_env (const char *envvars[], const char *envvals[], size_t 
 			size_t overlen = lstrlenW (wenvvars[i]);
 			size_t curlen = cur - var_begin;
 			if (overlen == curlen && !memcmp (var_begin, wenvvars[i], overlen)) {
-#if DEBUG_ENV
-				wprintf (L"OVERRIDE %s = %s by %s\n", var_begin, cur + 1, wenvvals[i]);
-#endif
 				overridden = true;
 				break;
 			}
@@ -138,11 +113,6 @@ static LPWCH override_env (const char *envvars[], const char *envvals[], size_t 
 	c = '\0';
 	r_vector_push (&buf, &c);
 	ret = buf.a;
-
-#if DEBUG_ENV
-	printf ("++++++++++++++++++ AFTER:\n");
-	print_env (ret);
-#endif
 
 error:
 	if (parent_env) {
