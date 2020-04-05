@@ -821,45 +821,62 @@ static char *convert_win_cmds(const char *cmds) {
 	if (!r) {
 		return NULL;
 	}
-	if (*cmds == '!') {
-		// Adjust shell syntax for Windows,
-		// only for commands using !
-		char *p = r;
-		char c;
-		for (; c = *cmds, c; cmds++) {
-			if (c == '\\') {
-				// replace \$ by $
-				c = *++cmds;
-				if (c == '$') {
-					*p++ = '$';
-				} else {
-					*p++ = '\\';
-					*p++ = c;
-				}
-			} else if (c == '$') {
-				// replace ${VARNAME} by %VARNAME%
-				c = *++cmds;
-				if (c == '{') {
-					*p++ = '%';
-					cmds++;
-					for (; c = *cmds, c && c != '}'; *cmds++) {
+	char *p = r;
+	while (*cmds) {
+		if (*cmds == '!' || (*cmds == '\"' && cmds[1] == '!')) {
+			// Adjust shell syntax for Windows,
+			// only for lines starting with ! or "!
+			char c;
+			for (; c = *cmds, c; cmds++) {
+				if (c == '\\') {
+					// replace \$ by $
+					c = *++cmds;
+					if (c == '$') {
+						*p++ = '$';
+					} else {
+						*p++ = '\\';
 						*p++ = c;
 					}
-					if (c) { // must check c to prevent overflow
+				} else if (c == '$') {
+					// replace ${VARNAME} by %VARNAME%
+					c = *++cmds;
+					if (c == '{') {
 						*p++ = '%';
+						cmds++;
+						for (; c = *cmds, c && c != '}'; *cmds++) {
+							*p++ = c;
+						}
+						if (c) { // must check c to prevent overflow
+							*p++ = '%';
+						}
+					} else {
+						*p++ = '$';
+						*p++ = c;
 					}
 				} else {
-					*p++ = '$';
 					*p++ = c;
+					if (c == '\n') {
+						cmds++;
+						break;
+					}
 				}
-			} else {
-				*p++ = c;
 			}
+			continue;
 		}
-		*p = '\0';
-	} else {
-		memcpy (r, cmds, strlen (cmds) + 1);
+
+		// Nothing to do, just copy the line
+		char *lend = strchr (cmds, '\n');
+		size_t llen;
+		if (lend) {
+			llen = lend - cmds + 1;
+		} else {
+			llen = strlen (cmds);
+		}
+		memcpy (p, cmds, llen);
+		cmds += llen;
+		p += llen;
 	}
+	*p = '\0';
 	return r_str_replace (r, "/dev/null", "nul", true);
 }
 #endif
