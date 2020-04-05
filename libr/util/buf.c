@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - ret2libc, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -42,6 +42,7 @@ static st64 buf_read(RBuffer *b, ut8 *buf, size_t len) {
 
 static st64 buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 	r_return_val_if_fail (b && b->methods, -1);
+	R_FREE (b->whole_buf);
 	return b->methods->write? b->methods->write (b, buf, len): -1;
 }
 
@@ -190,7 +191,7 @@ R_API RBuffer *r_buf_new(void) {
 	return new_buffer (R_BUFFER_BYTES, &u);
 }
 
-R_API const ut8 *r_buf_data(RBuffer *b, ut64 *size) {
+R_DEPRECATE R_API const ut8 *r_buf_data(RBuffer *b, ut64 *size) {
 	r_return_val_if_fail (b, NULL);
 	b->whole_buf = get_whole_buf (b, size);
 	return b->whole_buf;
