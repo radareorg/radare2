@@ -42,9 +42,7 @@ static st64 buf_read(RBuffer *b, ut8 *buf, size_t len) {
 
 static st64 buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 	r_return_val_if_fail (b && b->methods, -1);
-	if (b->whole_buf) {
-		R_FREE (b->whole_buf);
-	}
+	R_FREE (b->whole_buf);
 	return b->methods->write? b->methods->write (b, buf, len): -1;
 }
 
