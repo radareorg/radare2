@@ -1,5 +1,9 @@
 NAME=ppc-aflm
 FILE=../bins/elf/analysis/elf-ppc-execstack
+CMDS=<<EOF
+aac
+aflm
+EOF
 EXPECT=<<EOF
 fcn.10001fd0:
     sym.imp.strlen
@@ -392,34 +396,24 @@ sym._init:
     fcn.100264c0
 
 EOF
-CMDS=<<EOF
-aac
-aflm
-EOF
 RUN
 
 NAME=ppc-elf
 FILE=../bins/elf/analysis/elf-ppc-execstack
+CMDS=<<EOF
+e asm.flags=false
+pid 4
+EOF
 EXPECT=<<EOF
 0x100014e0             7c290b78  mr r9, r1
 0x100014e4             54210036  rlwinm r1, r1, 0, 0, 0x1b
 0x100014e8             38000000  li r0, 0
 0x100014ec             9421fff0  stwu r1, -0x10(r1)
 EOF
-CMDS=<<EOF
-e asm.flags=false
-pid 4
-EOF
 RUN
 
 NAME=ppc-elf entry0 name issue
 FILE=../bins/elf/analysis/elf-ppc-execstack
-EXPECT=<<EOF
-
-0x100014e0   section..text:
-0x100014e0             7c290b78  mr r9, r1
-entry0
-EOF
 CMDS=<<EOF
 ?e
 e asm.flags=true
@@ -427,27 +421,27 @@ pid 1
 af
 afi~name[1]
 EOF
+EXPECT=<<EOF
+
+0x100014e0   section..text:
+0x100014e0             7c290b78  mr r9, r1
+entry0
+EOF
 RUN
 
 NAME=ppc-elf relocs
 FILE=../bins/elf/analysis/elf-ppc-execstack
-EXPECT=<<EOF
-b sym.imp.__libc_start_main
-EOF
 CMDS=<<EOF
 s 0x10001500
 pi 1
+EOF
+EXPECT=<<EOF
+b sym.imp.__libc_start_main
 EOF
 RUN
 
 NAME=ppc-update-suffix-esil
 FILE=../bins/elf/a6ppc.out
-EXPECT=<<EOF
-0x0000ffbf
-0x10010107
-0x0000ffc1
-0x1001010a
-EOF
 CMDS=<<EOF
 40ds
 dr?r3
@@ -455,5 +449,11 @@ dr?r4
 10ds
 dr?r3
 dr?r4
+EOF
+EXPECT=<<EOF
+0x0000ffbf
+0x10010107
+0x0000ffc1
+0x1001010a
 EOF
 RUN

@@ -1,5 +1,6 @@
 NAME=ELF: dynamic p_offset
 FILE=../bins/elf/analysis/dynamic-poffset
+CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
@@ -14,14 +15,13 @@ vaddr      paddr      type   name
 
 5 relocations
 EOF
-CMDS=ir
 RUN
 
 NAME=ELF: Spurious relocations
 FILE=../bins/elf/analysis/spurious-relocs
+CMDS=ir~vaddr=0x0000003a
 EXPECT=<<EOF
 EOF
-CMDS=ir~vaddr=0x0000003a
 RUN
 
 NAME=ELF: .plt/.plt.sec sections

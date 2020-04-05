@@ -1,7 +1,7 @@
 NAME=t/bug_backtick
 FILE=-
 BROKEN=1
+CMDS=p8 3`~`
 EXPECT=<<EOF
 EOF
-CMDS=p8 3`~`
 RUN

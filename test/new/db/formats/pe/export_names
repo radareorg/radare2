@@ -1,5 +1,6 @@
 NAME=PE: export function names
 FILE=../bins/pe/Lab05-01.dll
+CMDS=iE
 EXPECT=<<EOF
 [Exports]
 
@@ -15,11 +16,11 @@ nth paddr       vaddr      bind   type size lib      name
 7    0x0000de05 0x1000ea05 GLOBAL FUNC 0    xdll.dll UninstallSA
 8    0x0000e538 0x1000f138 GLOBAL FUNC 0    xdll.dll UninstallSB
 EOF
-CMDS=iE
 RUN
 
 NAME=PE: export function names RAD
 FILE=../bins/pe/Lab05-01.dll
+CMDS=iE*
 EXPECT=<<EOF
 fs exports
 "f sym.xdll.dll_InstallRT 0 0x1000d847"
@@ -32,11 +33,11 @@ fs exports
 "f sym.xdll.dll_UninstallSA 0 0x1000ea05"
 "f sym.xdll.dll_UninstallSB 0 0x1000f138"
 EOF
-CMDS=iE*
 RUN
 
 NAME=PE: export function names SIMPLE
 FILE=../bins/pe/Lab05-01.dll
+CMDS=iEq
 EXPECT=<<EOF
 0x1000d847 0 xdll.dll InstallRT
 0x1000dec1 0 xdll.dll InstallSA
@@ -48,5 +49,4 @@ EXPECT=<<EOF
 0x1000ea05 0 xdll.dll UninstallSA
 0x1000f138 0 xdll.dll UninstallSB
 EOF
-CMDS=iEq
 RUN

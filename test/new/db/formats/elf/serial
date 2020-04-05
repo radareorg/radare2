@@ -1,9 +1,5 @@
 NAME=serial relsub
 FILE=../bins/elf/analysis/serial
-EXPECT=<<EOF
-  0x00400b35      lea rax, [0x0040073d]
-  0x00400b35      lea rax, [fcn.0040073d]
-EOF
 CMDS=<<EOF
 s 0x00400b35
 e asm.leahints=false
@@ -14,5 +10,9 @@ e asm.comments=false
 pd 1
 af @ 0x0040073d
 pd 1
+EOF
+EXPECT=<<EOF
+  0x00400b35      lea rax, [0x0040073d]
+  0x00400b35      lea rax, [fcn.0040073d]
 EOF
 RUN

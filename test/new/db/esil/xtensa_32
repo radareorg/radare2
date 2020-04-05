@@ -1,5 +1,12 @@
 NAME=basic integer arith
 FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=xtensa
+e asm.bits=32
+wx 22a0060c7330828030729022c2012b3242a0080c354065c04065d0
+aecu 0x0000001b
+ar~a2,a3,a4,a5,a6,a7,a8
+EOF
 EXPECT=<<EOF
 a2 = 0x00000007
 a3 = 0x00000009
@@ -9,17 +16,17 @@ a6 = 0xfffffffe
 a7 = 0x00000013
 a8 = 0x0000000d
 EOF
-CMDS=<<EOF
-e asm.arch=xtensa
-e asm.bits=32
-wx 22a0060c7330828030729022c2012b3242a0080c354065c04065d0
-aecu 0x0000001b
-ar~a2,a3,a4,a5,a6,a7,a8
-EOF
 RUN
 
 NAME=load/store imm
 FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=xtensa
+e asm.bits=32
+wx 22a05032a0bb42afff52a0cc7cf6326200425202524208722200829202921202a20208
+aecu 0x00000023
+ar~a2,a3,a4,a5,a6,a7,a8,a9,a10
+EOF
 EXPECT=<<EOF
 a2 = 0x00000050
 a3 = 0x000000bb
@@ -31,24 +38,11 @@ a8 = 0xffffffff
 a9 = 0x0000ffff
 a10 = 0x000000cc
 EOF
-CMDS=<<EOF
-e asm.arch=xtensa
-e asm.bits=32
-wx 22a05032a0bb42afff52a0cc7cf6326200425202524208722200829202921202a20208
-aecu 0x00000023
-ar~a2,a3,a4,a5,a6,a7,a8,a9,a10
-EOF
 RUN
 
 NAME=load relative
 FILE=malloc://0x200
 ARGS=-a xtensa -b 32
-EXPECT=<<EOF
-a2 = 0xaabbccdd
-a3 = 0xaabbccdd
-a4 = 0xaabbccdd
-a5 = 0xaabbccdd
-EOF
 CMDS=<<EOF
 wx ddccbbaa @ 0
 s 0x14
@@ -58,19 +52,16 @@ aeip
 4aes
 ar~a2,a3,a4,a5
 EOF
+EXPECT=<<EOF
+a2 = 0xaabbccdd
+a3 = 0xaabbccdd
+a4 = 0xaabbccdd
+a5 = 0xaabbccdd
+EOF
 RUN
 
 NAME=call0 ABI
 FILE=malloc://0x200
-EXPECT=<<EOF
-pc = 0x00000010
-a0 = 0x00000003
-a2 = 0x00000020
-pc = 0x00000020
-a0 = 0x00000009
-pc = 0x00000030
-a0 = 0x00000026
-EOF
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
@@ -89,15 +80,19 @@ aes
 ar~pc
 ar~a0
 EOF
+EXPECT=<<EOF
+pc = 0x00000010
+a0 = 0x00000003
+a2 = 0x00000020
+pc = 0x00000020
+a0 = 0x00000009
+pc = 0x00000030
+a0 = 0x00000026
+EOF
 RUN
 
 NAME=branch compare imm
 FILE=malloc://0x200
-EXPECT=<<EOF
-pc = 0x0000000c
-pc = 0x00000006
-pc = 0x00000009
-EOF
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
@@ -110,13 +105,15 @@ ar~pc
 aes
 ar~pc
 EOF
+EXPECT=<<EOF
+pc = 0x0000000c
+pc = 0x00000006
+pc = 0x00000009
+EOF
 RUN
 
 NAME=branch compare single
 FILE=malloc://0x200
-EXPECT=<<EOF
-pc = 0x00000010
-EOF
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
@@ -125,13 +122,13 @@ aes
 aes
 ar~pc
 EOF
+EXPECT=<<EOF
+pc = 0x00000010
+EOF
 RUN
 
 NAME=branch compare
 FILE=malloc://0x200
-EXPECT=<<EOF
-pc = 0x00000010
-EOF
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
@@ -142,13 +139,13 @@ aes
 aes
 ar~pc
 EOF
+EXPECT=<<EOF
+pc = 0x00000010
+EOF
 RUN
 
 NAME=branch check mask
 FILE=malloc://0x200
-EXPECT=<<EOF
-pc = 0x00000020
-EOF
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
@@ -160,13 +157,13 @@ aes
 aes
 ar~pc
 EOF
+EXPECT=<<EOF
+pc = 0x00000020
+EOF
 RUN
 
 NAME=branch check bit imm
 FILE=malloc://0x200
-EXPECT=<<EOF
-pc = 0x00000020
-EOF
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
@@ -177,13 +174,13 @@ aes
 aes
 ar~pc
 EOF
+EXPECT=<<EOF
+pc = 0x00000020
+EOF
 RUN
 
 NAME=branch check bit
 FILE=malloc://0x200
-EXPECT=<<EOF
-pc = 0x00000020
-EOF
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
@@ -195,13 +192,13 @@ aes
 aes
 ar~pc
 EOF
+EXPECT=<<EOF
+pc = 0x00000020
+EOF
 RUN
 
 NAME=extract unsigned imm
 FILE=malloc://0x200
-EXPECT=<<EOF
-a3 = 0x0000bbcc
-EOF
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
@@ -212,5 +209,8 @@ aeip
 aes
 aes
 ar~a3
+EOF
+EXPECT=<<EOF
+a3 = 0x0000bbcc
 EOF
 RUN

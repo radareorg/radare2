@@ -1,20 +1,21 @@
 NAME=PE: corkami nosectionXP.exe - open
 FILE=../bins/pe/nosectionXP.exe
+CMDS=q!
 EXPECT=<<EOF
 EOF
-CMDS=q!
 RUN
 
 NAME=PE: nosectionXP - section
 FILE=../bins/pe/nosectionXP.exe
+CMDS=om
 EXPECT=<<EOF
  1 fd: 3 +0x00000138 0x00400138 - 0x00400236 r-x fmap.blob
 EOF
-CMDS=om
 RUN
 
 NAME=PE: nosectionXP - entrypoint 2
 FILE=../bins/pe/nosectionXP.exe
+CMDS=pi 5
 EXPECT=<<EOF
 push 0x400150
 call dword [sym.imp.msvcrt.dll_printf]
@@ -22,5 +23,4 @@ add esp, 4
 nop
 push 0
 EOF
-CMDS=pi 5
 RUN

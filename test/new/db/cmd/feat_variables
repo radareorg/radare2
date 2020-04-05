@@ -1,33 +1,30 @@
 NAME=hello-arm32
 FILE=../bins/elf/analysis/hello-arm32
-EXPECT=<<EOF
-0x10000
-0x90c
-EOF
 CMDS=<<EOF
 ?v $M
 ?v $s
+EOF
+EXPECT=<<EOF
+0x10000
+0x90c
 EOF
 RUN
 
 NAME=hello-arm32
 FILE=../bins/elf/analysis/hello-arm32
 ARGS=-B 0x4000
-EXPECT=<<EOF
-0x4000
-0x90c
-EOF
 CMDS=<<EOF
 ?v $M
 ?v $s
+EOF
+EXPECT=<<EOF
+0x4000
+0x90c
 EOF
 RUN
 
 NAME=$FB (fcn-begin)
 FILE=malloc://1024
-EXPECT=<<EOF
-0x2a
-EOF
 CMDS=<<EOF
 s 42
 af
@@ -35,21 +32,24 @@ s 44
 s $FB
 s
 EOF
+EXPECT=<<EOF
+0x2a
+EOF
 RUN
 
 NAME=$$ (malloc)
 FILE=malloc://1024
-EXPECT=<<EOF
-0x0
-0x2a
-0x0
-EOF
 CMDS=<<EOF
 ?v $$
 s 42
 ?v $$
 s-
 ?v $$
+EOF
+EXPECT=<<EOF
+0x0
+0x2a
+0x0
 EOF
 RUN
 
@@ -122,11 +122,6 @@ RUN
 
 NAME=$o (malloc)
 FILE=malloc://1024
-EXPECT=<<EOF
-0x0
-0x2a
-0x0
-EOF
 CMDS=<<EOF
 ?v $o
 s 42
@@ -134,24 +129,23 @@ s 42
 s-
 ?v $o
 EOF
+EXPECT=<<EOF
+0x0
+0x2a
+0x0
+EOF
 RUN
 
 NAME=$s (malloc)
 FILE=malloc://1024
+CMDS=?v $s
 EXPECT=<<EOF
 0x400
 EOF
-CMDS=?v $s
 RUN
 
 NAME=$j (malloc)
 FILE=malloc://1024
-EXPECT=<<EOF
-0x30
-0x1
-0xffffffffffffffff
-
-EOF
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch = x86
@@ -164,15 +158,16 @@ wa xor eax, eax
 ?v $j
 ?e
 EOF
+EXPECT=<<EOF
+0x30
+0x1
+0xffffffffffffffff
+
+EOF
 RUN
 
 NAME=$f (malloc)
 FILE=malloc://1024
-EXPECT=<<EOF
-0xffffffffffffffff
-0x6
-0xffffffffffffffff
-EOF
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch = x86
@@ -184,15 +179,15 @@ wx 0f84fbffffff
 wx 31c0
 ?v $f
 EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0x6
+0xffffffffffffffff
+EOF
 RUN
 
 NAME=$m (malloc)
 FILE=malloc://1024
-EXPECT=<<EOF
-0x500
-0xffffffffffffffff
-
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -202,15 +197,15 @@ wa mov eax, ebx
 ?v $m
 ?e
 EOF
+EXPECT=<<EOF
+0x500
+0xffffffffffffffff
+
+EOF
 RUN
 
 NAME=$l (malloc)
 FILE=malloc://1024
-EXPECT=<<EOF
-0x2
-0x5
-0x1
-EOF
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch = x86
@@ -222,16 +217,15 @@ wa mov esp, 0x1
 wx c3
 ?v $l
 EOF
+EXPECT=<<EOF
+0x2
+0x5
+0x1
+EOF
 RUN
 
 NAME=$e (malloc)
 FILE=-
-EXPECT=<<EOF
-0x0
-0x1
-0x1
-0x0
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -244,21 +238,33 @@ wa ret
 wa call 0x01
 ?v $e
 EOF
+EXPECT=<<EOF
+0x0
+0x1
+0x1
+0x0
+EOF
 RUN
 
 NAME=$e (malloc) 2
 FILE=malloc://1024
-EXPECT=<<EOF
-0x20
-EOF
 CMDS=<<EOF
 e asm.bits = 0x20
 ?v ${asm.bits}
+EOF
+EXPECT=<<EOF
+0x20
 EOF
 RUN
 
 NAME=$e (malloc) 3
 FILE=malloc://1024
+CMDS=<<EOF
+? 5+3
+?v $?
+? 0
+?v $?
+EOF
 EXPECT=<<EOF
 int32   8
 uint32  8
@@ -287,37 +293,26 @@ binary  0b00000000
 trits   0t0
 0x0
 EOF
-CMDS=<<EOF
-? 5+3
-?v $?
-? 0
-?v $?
-EOF
 RUN
 
 NAME=$$ (x86-simple)
 FILE=../bins/elf/analysis/x86-simple
-EXPECT=<<EOF
-0x8048060
-0x2a
-0x8048060
-EOF
 CMDS=<<EOF
 ?v $$
 s 42
 ?v $$
 s-
 ?v $$
+EOF
+EXPECT=<<EOF
+0x8048060
+0x2a
+0x8048060
 EOF
 RUN
 
 NAME=$o (x86-simple)
 FILE=../bins/elf/analysis/x86-simple
-EXPECT=<<EOF
-0x60
-0x2a
-0x60
-EOF
 CMDS=<<EOF
 ?v $o
 s 42
@@ -325,10 +320,23 @@ s 42
 s-
 ?v $o
 EOF
+EXPECT=<<EOF
+0x60
+0x2a
+0x60
+EOF
 RUN
 
 NAME=$b (x86-simple)
 FILE=../bins/elf/analysis/x86-simple
+CMDS=<<EOF
+e asm.bits=32
+e asm.arch = x86
+e anal.arch = x86
+b 123
+?v $b
+? $b
+EOF
 EXPECT=<<EOF
 0x7b
 int32   123
@@ -344,45 +352,37 @@ double: 0.000000
 binary  0b01111011
 trits   0t11120
 EOF
-CMDS=<<EOF
-e asm.bits=32
-e asm.arch = x86
-e anal.arch = x86
-b 123
-?v $b
-? $b
-EOF
 RUN
 
 NAME=$s (x86-simple)
 FILE=../bins/elf/analysis/x86-simple
+CMDS=?v $s
 EXPECT=<<EOF
 0xfc
 EOF
-CMDS=?v $s
 RUN
 
 NAME=?p and ?P
 FILE=../bins/elf/analysis/simple.elf
-EXPECT=<<EOF
-0x00000060
-0x08000060
-EOF
 CMDS=<<EOF
 ?p 0x08000060
 ?P 0x00000060
 EOF
+EXPECT=<<EOF
+0x00000060
+0x08000060
+EOF
 RUN
 
 NAME=?p and ?P
 FILE=../bins/elf/analysis/simple.elf
-EXPECT=<<EOF
-no map at 0xdeadbeef
-no map at 0xdeadbeef
-EOF
 CMDS=<<EOF
 ?p 0xdeadbeef
 ?P 0xdeadbeef
+EOF
+EXPECT=<<EOF
+no map at 0xdeadbeef
+no map at 0xdeadbeef
 EOF
 RUN
 

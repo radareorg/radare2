@@ -1,13 +1,5 @@
 NAME=zs unset
 FILE=-
-EXPECT=<<EOF
-(test1) foo1:
-(test1) bar1:
-foo2:
-bar2:
-(test3) foo3:
-(test3) bar3:
-EOF
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -27,18 +19,18 @@ z~bar2
 z~foo3
 z~bar3
 EOF
+EXPECT=<<EOF
+(test1) foo1:
+(test1) bar1:
+foo2:
+bar2:
+(test3) foo3:
+(test3) bar3:
+EOF
 RUN
 
 NAME=zsr newname
 FILE=-
-EXPECT=<<EOF
-(test1) foo1:
-(test1) bar1:
-(newtest2) foo2:
-(newtest2) bar2:
-(test3) foo3:
-(test3) bar3:
-EOF
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -59,18 +51,18 @@ z~bar2
 z~foo3
 z~bar3
 EOF
+EXPECT=<<EOF
+(test1) foo1:
+(test1) bar1:
+(newtest2) foo2:
+(newtest2) bar2:
+(test3) foo3:
+(test3) bar3:
+EOF
 RUN
 
 NAME=zsr newname (dupplicated name)
 FILE=-
-EXPECT=<<EOF
-(test1) foo1:
-(test1) bar1:
-(test2) foo2:
-(test2) bar2:
-(test3) foo3:
-(test3) bar3:
-EOF
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -91,10 +83,6 @@ z~bar2
 z~foo3
 z~bar3
 EOF
-RUN
-
-NAME=zsr newname (root zs)
-FILE=-
 EXPECT=<<EOF
 (test1) foo1:
 (test1) bar1:
@@ -103,6 +91,10 @@ EXPECT=<<EOF
 (test3) foo3:
 (test3) bar3:
 EOF
+RUN
+
+NAME=zsr newname (root zs)
+FILE=-
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -122,10 +114,37 @@ z~bar2
 z~foo3
 z~bar3
 EOF
+EXPECT=<<EOF
+(test1) foo1:
+(test1) bar1:
+(test2) foo2:
+(test2) bar2:
+(test3) foo3:
+(test3) bar3:
+EOF
 RUN
 
 NAME=z-
 FILE=-
+CMDS=<<EOF
+zs test
+za foo b aa
+zs test2
+za foo b aa
+za bar b bb
+zs *
+z-foo
+z
+zs test2
+z-foo
+z
+zs *
+z
+zs-test
+z
+z-foo
+z
+EOF
 EXPECT=<<EOF
 (test2) bar:
   bytes: bb
@@ -155,31 +174,10 @@ foo:
   bytes: bb
   mask: ff
 EOF
-CMDS=<<EOF
-zs test
-za foo b aa
-zs test2
-za foo b aa
-za bar b bb
-zs *
-z-foo
-z
-zs test2
-z-foo
-z
-zs *
-z
-zs-test
-z
-z-foo
-z
-EOF
 RUN
 
 NAME=z-*
 FILE=-
-EXPECT=<<EOF
-EOF
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -196,114 +194,108 @@ zs *
 z~foo2
 z~bar2
 EOF
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=za b and binmasks
 FILE=-
+CMDS=<<EOF
+za test b .abbc.dd..
+z
+EOF
 EXPECT=<<EOF
 test:
   bytes: 0abbc0dd00
   mask: 0ffff0ff00
 EOF
-CMDS=<<EOF
-za test b .abbc.dd..
-z
-EOF
 RUN
 
 NAME=za b zero mask
 FILE=-
-EXPECT=<<EOF
-EOF
 CMDS=<<EOF
 za test b ....
 z
+EOF
+EXPECT=<<EOF
 EOF
 RUN
 
 NAME=za g
 FILE=-
-EXPECT=<<EOF
-test:
-  graph: cc=1 nbbs=2 edges=3 ebbs=4 bbsum=0
-EOF
 CMDS=<<EOF
 za test g cc=1 nbbs=2 edges=3 ebbs=4
 z
+EOF
+EXPECT=<<EOF
+test:
+  graph: cc=1 nbbs=2 edges=3 ebbs=4 bbsum=0
 EOF
 RUN
 
 NAME=za o
 FILE=-
-EXPECT=<<EOF
-test:
-  addr: 0x08048123
-EOF
 CMDS=<<EOF
 za test o 0x8048123
 z
+EOF
+EXPECT=<<EOF
+test:
+  addr: 0x08048123
 EOF
 RUN
 
 NAME=za r
 FILE=-
-EXPECT=<<EOF
-test:
-  refs: sym1, sym3, sym2
-EOF
 CMDS=<<EOF
 za test r sym1 sym3 sym2
 z
+EOF
+EXPECT=<<EOF
+test:
+  refs: sym1, sym3, sym2
 EOF
 RUN
 
 NAME=za b + z/
 FILE=../bins/elf/analysis/go_stripped
-EXPECT=<<EOF
-0x805b030
-EOF
 CMDS=<<EOF
 za sym.fmt.Println b 653b2530000000724b53b834e7150883ec188b15401c22088d4c24048b5c242083ec08ff742434ff742434ff742434525051e829ffffff8b44242089038b4424248943048b44242889430889d883c4345bc204006a106a1ce85e350700c20400
 z/
 ?v sign.bytes.sym.fmt.Println_0
 EOF
+EXPECT=<<EOF
+0x805b030
+EOF
 RUN
 
 NAME=za a + z/
 FILE=../bins/elf/analysis/go_stripped
-EXPECT=<<EOF
-0x805b030
-EOF
 CMDS=<<EOF
 za sym.fmt.Println a 653b2530000000724b53b834e7150883ec188b15401c22088d4c24048b5c242083ec08ff742434ff742434ff742434525051e829ffffff8b44242089038b4424248943048b44242889430889d883c4345bc204006a106a1ce85e350700c20400
 z/
 ?v sign.bytes.sym.fmt.Println_1
 EOF
+EXPECT=<<EOF
+0x805b030
+EOF
 RUN
 
 NAME=za r + z/
 FILE=../bins/elf/analysis/zigs
-EXPECT=<<EOF
-0x40055b
-EOF
 CMDS=<<EOF
 aaa
 za main r sym.print
 z/
 ?v sign.refs.main_0
 EOF
+EXPECT=<<EOF
+0x40055b
+EOF
 RUN
 
 NAME=z/ with search.in
 FILE=../bins/elf/analysis/go_stripped
-EXPECT=<<EOF
-0
-0x15d898
-0x13030
-0
-0x0
-0x805b030
-EOF
 CMDS=<<EOF
 za date_string b 323030362d30312d30322031353a30343a30352e393939393939393939202d30373030204d535400
 za sym.fmt.Println b 653b2530000000724b53b834e7150883ec188b15401c22088d4c24048b5c242083ec08ff742434ff742434ff742434525051e829ffffff8b44242089038b4424248943048b44242889430889d883c4345bc204006a106a1ce85e350700c20400
@@ -322,14 +314,18 @@ z/
 ?v sign.bytes.elf_header_0
 ?v sign.bytes.sym.fmt.Println_0
 EOF
+EXPECT=<<EOF
+0
+0x15d898
+0x13030
+0
+0x0
+0x805b030
+EOF
 RUN
 
 NAME=z/ with search.align
 FILE=malloc://1024
-EXPECT=<<EOF
-0
-1
-EOF
 CMDS=<<EOF
 wx 00112233445566778899aabbccddeeff
 za foo b 1122
@@ -343,18 +339,14 @@ e search.align=1
 z/
 f~?
 EOF
+EXPECT=<<EOF
+0
+1
+EOF
 RUN
 
 NAME=z/ with search.{from,to}
 FILE=malloc://1024
-EXPECT=<<EOF
-0
-0x1
-0x0
-0
-0x0
-0xb
-EOF
 CMDS=<<EOF
 wx 00112233445566778899aabbccddeeff
 za a b 11223344
@@ -377,14 +369,18 @@ z/
 ?v sign.bytes.a_0
 ?v sign.bytes.b_0
 EOF
+EXPECT=<<EOF
+0
+0x1
+0x0
+0
+0x0
+0xb
+EOF
 RUN
 
 NAME=z/ with zign.minsz
 FILE=malloc://1024
-EXPECT=<<EOF
-1
-0
-EOF
 CMDS=<<EOF
 wx 00112233445566778899aabbccddeeff
 za foo b 11223344
@@ -397,13 +393,14 @@ e zign.minsz = 5
 z/
 f~?
 EOF
+EXPECT=<<EOF
+1
+0
+EOF
 RUN
 
 NAME=za b ; z/ ; aa ; axt
 FILE=../bins/elf/analysis/zigs_stripped
-EXPECT=<<EOF
-main 0x40056f [CALL] call sign.bytes.sym.print_0
-EOF
 CMDS=<<EOF
 za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
 z/
@@ -411,22 +408,13 @@ e anal.hasnext=0
 aa
 axt 0x400536
 EOF
+EXPECT=<<EOF
+main 0x40056f [CALL] call sign.bytes.sym.print_0
+EOF
 RUN
 
 NAME=zaf
 FILE=../bins/elf/analysis/zigs
-EXPECT=<<EOF
-zigs:main:
-  bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
-  mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
-  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
-  addr: 0x0040055b
-  realname: main
-  refs: sym.print
-  vars: b-4, b-16, r110, r114
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
-  bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
-EOF
 CMDS=<<EOF
 aaa
 e zign.mincc = 0
@@ -434,10 +422,6 @@ zs zigs
 zaf main
 z
 EOF
-RUN
-
-NAME=zaf at offset
-FILE=../bins/elf/analysis/zigs
 EXPECT=<<EOF
 zigs:main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
@@ -450,6 +434,10 @@ zigs:main:
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
+RUN
+
+NAME=zaf at offset
+FILE=../bins/elf/analysis/zigs
 CMDS=<<EOF
 aaa
 e zign.mincc = 0
@@ -457,10 +445,28 @@ zs zigs
 zaf @ main
 z
 EOF
+EXPECT=<<EOF
+zigs:main:
+  bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
+  mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
+  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
+  addr: 0x0040055b
+  realname: main
+  refs: sym.print
+  vars: b-4, b-16, r110, r114
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
+EOF
 RUN
 
 NAME=zaf (root zignspace)
 FILE=../bins/elf/analysis/zigs
+CMDS=<<EOF
+aaa
+e zign.mincc = 0
+zaf main
+z
+EOF
 EXPECT=<<EOF
 main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
@@ -472,28 +478,10 @@ main:
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
-CMDS=<<EOF
-aaa
-e zign.mincc = 0
-zaf main
-z
-EOF
 RUN
 
 NAME=zaf zigname
 FILE=../bins/elf/analysis/zigs
-EXPECT=<<EOF
-foobar:
-  bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
-  mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
-  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
-  addr: 0x0040055b
-  realname: main
-  refs: sym.print
-  vars: b-4, b-16, r110, r114
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
-  bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
-EOF
 CMDS=<<EOF
 aaa
 e zign.mincc = 0
@@ -501,10 +489,6 @@ zs zigs
 zaf main foobar
 z
 EOF
-RUN
-
-NAME=zaf zigname (root zignspace)
-FILE=../bins/elf/analysis/zigs
 EXPECT=<<EOF
 foobar:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
@@ -517,19 +501,32 @@ foobar:
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
+RUN
+
+NAME=zaf zigname (root zignspace)
+FILE=../bins/elf/analysis/zigs
 CMDS=<<EOF
 aaa
 e zign.mincc = 0
 zaf main foobar
 z
 EOF
+EXPECT=<<EOF
+foobar:
+  bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
+  mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
+  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
+  addr: 0x0040055b
+  realname: main
+  refs: sym.print
+  vars: b-4, b-16, r110, r114
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
+EOF
 RUN
 
 NAME=zs + zaf + z/
 FILE=../bins/elf/analysis/zigs
-EXPECT=<<EOF
-0x40055b
-EOF
 CMDS=<<EOF
 aaa
 zs zigs
@@ -537,39 +534,39 @@ zaf main
 z/
 ?v sign.bytes.zigs:main_0
 EOF
+EXPECT=<<EOF
+0x40055b
+EOF
 RUN
 
 NAME=zs + zaf zigname + z/
 FILE=../bins/elf/analysis/zigs
-EXPECT=<<EOF
-0x40055b
-EOF
 CMDS=<<EOF
 aaa
 zaf main foobar
 z/
 ?v sign.bytes.foobar_0
 EOF
+EXPECT=<<EOF
+0x40055b
+EOF
 RUN
 
 NAME=zc
 FILE=../bins/elf/analysis/zigs_stripped
-EXPECT=<<EOF
-0x400536
-EOF
 CMDS=<<EOF
 aa
 za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
 z. @@ fcn*
 ?v sign.bytes.sym.print_0
 EOF
+EXPECT=<<EOF
+0x400536
+EOF
 RUN
 
 NAME=zc graph zign
 FILE=../bins/elf/analysis/zigs_stripped
-EXPECT=<<EOF
-0x400536
-EOF
 CMDS=<<EOF
 aa
 za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
@@ -577,14 +574,13 @@ e zign.mincc = 0
 z. @@ fcn*
 ?v sign.graph.sym.print_0
 EOF
+EXPECT=<<EOF
+0x400536
+EOF
 RUN
 
 NAME=zc graph zign with zign.mincc
 FILE=../bins/elf/analysis/zigs_stripped
-EXPECT=<<EOF
-0x400536
-0x0
-EOF
 CMDS=<<EOF
 aa
 za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
@@ -596,13 +592,14 @@ e zign.mincc = 10
 z. @@ fcn*
 ?v sign.graph.sym.print_0
 EOF
+EXPECT=<<EOF
+0x400536
+0x0
+EOF
 RUN
 
 NAME=z/ graph zign
 FILE=../bins/elf/analysis/zigs_stripped
-EXPECT=<<EOF
-0x400536
-EOF
 CMDS=<<EOF
 aa
 za sym.print_metric g cc=1 nbbs=1 edges=0 ebbs=1
@@ -610,14 +607,13 @@ e zign.mincc = 0
 z/
 ?v sign.graph.sym.print_metric_4
 EOF
+EXPECT=<<EOF
+0x400536
+EOF
 RUN
 
 NAME=z/ bytes + graph zign
 FILE=../bins/elf/analysis/zigs_stripped
-EXPECT=<<EOF
-0x400536
-0x400536
-EOF
 CMDS=<<EOF
 aa
 za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
@@ -628,16 +624,43 @@ z/
 ?v sign.bytes.sym.print_0
 ?v sign.graph.sym.print_4
 EOF
+EXPECT=<<EOF
+0x400536
+0x400536
+EOF
 RUN
 
 NAME=z/ + zign.{bytes,graph}
 FILE=../bins/elf/analysis/zigs_stripped
+CMDS=<<EOF
+aa
+za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
+za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
+e zign.minsz = 0
+e zign.mincc = 0
+fs sign
+e zign.bytes = true
+e zign.graph = false
+z/
+f~sign.bytes.sym.print?
+f~sign.graph.sym.print?
+f-*
+e zign.bytes = false
+e zign.graph = true
+z/
+f~sign.bytes.sym.print?
+f~sign.graph.sym.print?
+EOF
 EXPECT=<<EOF
 1
 0
 0
 5
 EOF
+RUN
+
+NAME=zc + zign.{bytes,graph}
+FILE=../bins/elf/analysis/zigs_stripped
 CMDS=<<EOF
 aa
 za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
@@ -647,99 +670,81 @@ e zign.mincc = 0
 fs sign
 e zign.bytes = true
 e zign.graph = false
-z/
+z. @ 0x400536
 f~sign.bytes.sym.print?
 f~sign.graph.sym.print?
 f-*
 e zign.bytes = false
 e zign.graph = true
-z/
+z. @ 0x400536
 f~sign.bytes.sym.print?
 f~sign.graph.sym.print?
 EOF
-RUN
-
-NAME=zc + zign.{bytes,graph}
-FILE=../bins/elf/analysis/zigs_stripped
 EXPECT=<<EOF
 1
 0
 0
 1
-EOF
-CMDS=<<EOF
-aa
-za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
-za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
-e zign.minsz = 0
-e zign.mincc = 0
-fs sign
-e zign.bytes = true
-e zign.graph = false
-z. @ 0x400536
-f~sign.bytes.sym.print?
-f~sign.graph.sym.print?
-f-*
-e zign.bytes = false
-e zign.graph = true
-z. @ 0x400536
-f~sign.bytes.sym.print?
-f~sign.graph.sym.print?
 EOF
 RUN
 
 NAME=aa ; zfs libc-v7.sig
 FILE=../bins/elf/analysis/pid_stripped
+CMDS=aa ; zfs ../bins/other/sigs/libc-v7.sig
 EXPECT=<<EOF
 Found flirt.__libc_start_main
 EOF
-CMDS=aa ; zfs ../bins/other/sigs/libc-v7.sig
 RUN
 
 NAME=zfd libc-v7.sig
 FILE=../bins/elf/analysis/pid_stripped
+CMDS=zfd ../bins/other/sigs/libc-v7.sig
 EXPECT=<<EOF
 41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
  0. 16 D2A2 0298 0000:__libc_start_main
 EOF
-CMDS=zfd ../bins/other/sigs/libc-v7.sig
 RUN
 
 NAME=af ; af ; zfs libc-v7.sig
 FILE=../bins/elf/analysis/pid_stripped
+CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs ../bins/other/sigs/libc-v7.sig ; afl ~4e2420
 EXPECT=<<EOF
 0x004e2420   40 664          flirt.__libc_start_main
 EOF
-CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs ../bins/other/sigs/libc-v7.sig ; afl ~4e2420
 RUN
 
 NAME=aa ; zfs libc-v10.sig
 FILE=../bins/elf/analysis/pid_stripped
+CMDS=aa ; zfs ../bins/other/sigs/libc-v10.sig
 EXPECT=<<EOF
 Found flirt.__libc_start_main
 EOF
-CMDS=aa ; zfs ../bins/other/sigs/libc-v10.sig
 RUN
 
 NAME=zfd libc-v10.sig
 FILE=../bins/elf/analysis/pid_stripped
+CMDS=zfd ../bins/other/sigs/libc-v10.sig
 EXPECT=<<EOF
 41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
  0. 16 D2A2 0298 0000:__libc_start_main
 EOF
-CMDS=zfd ../bins/other/sigs/libc-v10.sig
 RUN
 
 NAME=af ; af ; zfs libc-v10.sig
 FILE=../bins/elf/analysis/pid_stripped
+CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs ../bins/other/sigs/libc-v10.sig ; afl ~4e2420
 EXPECT=<<EOF
 0x004e2420   40 664          flirt.__libc_start_main
 EOF
-CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs ../bins/other/sigs/libc-v10.sig ; afl ~4e2420
 RUN
 
 NAME=zfs on static glibc
 FILE=../bins/elf/static-glibc-2.27
+CMDS=<<EOF
+aac
+zfs ../bins/other/sigs/libc6_2.27-3ubuntu1_amd64.sig~silence
+f@F:flirt
+EOF
 EXPECT=<<EOF
 0x004004d1 86 flirt.__malloc_assert.constprop.13
 0x00400527 35 flirt.__gconv_release_step.part.1
@@ -972,10 +977,5 @@ EXPECT=<<EOF
 0x0048fbf0 73 flirt._nl_finddomain_subfreeres
 0x0048fc40 247 flirt._nl_unload_domain
 0x00490bb0 218 flirt.free_slotinfo
-EOF
-CMDS=<<EOF
-aac
-zfs ../bins/other/sigs/libc6_2.27-3ubuntu1_amd64.sig~silence
-f@F:flirt
 EOF
 RUN

@@ -1,6 +1,10 @@
 NAME=prg load
 FILE=../bins/prg/t01.prg
 ARGS=-F prg
+CMDS=<<EOF
+iI
+p8 0x30 @ 0x0801
+EOF
 EXPECT=<<EOF
 arch     6502
 baddr    0x801
@@ -24,9 +28,5 @@ static   true
 stripped false
 va       true
 0c08e2079e2032303632000000a941a2ff9dff03cad0faad2408a2ff9dffd7cad0fa6005ffffffffffffffffffffffff
-EOF
-CMDS=<<EOF
-iI
-p8 0x30 @ 0x0801
 EOF
 RUN

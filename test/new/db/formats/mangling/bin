@@ -1,5 +1,6 @@
 NAME=binsym demangling
 FILE=../bins/mach0/hellocxx-osx-i386
+CMDS=!rabin2 -qsD cxx all ../bins/mach0/hellocxx-osx-i386
 EXPECT=<<EOF
 0x00002054 0 _NXArgc
 0x00002058 0 _NXArgv
@@ -25,12 +26,12 @@ EXPECT=<<EOF
 0x00001e18 0 imp.__cxa_atexit
 0x00001e1e 0 imp.exit
 EOF
-CMDS=!rabin2 -qsD cxx all ../bins/mach0/hellocxx-osx-i386
 RUN
 
 NAME=binsym without demangling
 FILE=../bins/mach0/hellocxx-osx-i386
 ARGS=-M
+CMDS=isq
 EXPECT=<<EOF
 0x00002054 0 _NXArgc
 0x00002058 0 _NXArgv
@@ -56,16 +57,15 @@ EXPECT=<<EOF
 0x00001e18 0 imp.__cxa_atexit
 0x00001e1e 0 imp.exit
 EOF
-CMDS=isq
 RUN
 
 NAME=bin.demangle=true and symbol
 FILE=../bins/elf/analysis/hello-linux-i386nold
 ARGS=-e bin.demangle=true
+CMDS=pi 1 @ 0x08048230
 EXPECT=<<EOF
 call sym.imp.puts
 EOF
-CMDS=pi 1 @ 0x08048230
 RUN
 
 NAME=MSVC import symbol demangling
@@ -78,38 +78,38 @@ RUN
 
 NAME=C++ demangle relocs
 FILE=../bins/elf/libstdc++.so.6
+CMDS=pd 1 @0x00091004
 EXPECT=<<EOF
             0x00091004      488b159d880f.  mov rdx, qword [reloc.vtable_for_std::bad_alloc] ; [0x1898a8:8]=0
 EOF
-CMDS=pd 1 @0x00091004
 RUN
 
 NAME=C++ demangle exported GLIBCXX symbols
 FILE=../bins/elf/libstdc++.so.6
+CMDS=iE~0x0008ce50
 EXPECT=<<EOF
 3770  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
 3771  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
 5087  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
 5345  0x0008ce50 0x0008ce50 GLOBAL FUNC 609      std::istream::ignore(long)
 EOF
-CMDS=iE~0x0008ce50
 RUN
 
 NAME=demangle in irj
 FILE=../bins/elf/demangle-test-cpp
+CMDS=irj~{9}
 EXPECT=<<EOF
 {"name":"_ZSt20__throw_length_errorPKc","demname":"std::__throw_length_error(char const*)","type":"SET_64","vaddr":16424,"paddr":12328,"is_ifunc":false}
 EOF
-CMDS=irj~{9}
 RUN
 
 NAME=demangle obj in pd
 FILE=../bins/elf/ch25.bin
+CMDS=pd 1 @0x08048aac
 EXPECT=<<EOF
             0x08048aac      c7042460b004.  mov dword [esp], obj.std::cerr ; sym..bss
                                                                        ; [0x804b060:4]=0
 EOF
-CMDS=pd 1 @0x08048aac
 RUN
 
 NAME=c++ disasm call demangling

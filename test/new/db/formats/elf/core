@@ -1,18 +1,18 @@
 NAME=ELF: core segments
 FILE=../bins/elf/analysis/core.1159
+CMDS=iSS~?
 EXPECT=<<EOF
 21
 EOF
-CMDS=iSS~?
 RUN
 
 NAME=ELF: core sections with reg name
 FILE=../bins/elf/analysis/core.1159
 BROKEN=1
+CMDS=iS~?reg;iS
 EXPECT=<<EOF
 6
 EOF
-CMDS=iS~?reg;iS
 RUN
 
 NAME=core registers

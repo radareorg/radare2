@@ -1,8 +1,8 @@
 NAME=ELF: negative vnext crash
 FILE=../bins/elf/analysis/6921737e-08e3-11e6-998c-a8ddd566ab1c.jpg
+CMDS=q!
 EXPECT=<<EOF
 EOF
-CMDS=q!
 RUN
 
 NAME=pseudo-crash

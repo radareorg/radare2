@@ -13,6 +13,10 @@ RUN
 
 NAME=af switch test
 FILE=../bins/mach0/mac-ls2
+CMDS=<<EOF
+af
+axf@0x100001308
+EOF
 EXPECT=<<EOF
 c 0x1000012dc case.0x100001308.1
 c 0x10000130a case.0x100001308.0
@@ -55,31 +59,27 @@ c 0x100001636 case.0x100001308.52
 c 0x100001645 case.0x100001308.60
 c 0x100001665 case.0x100001308.68
 EOF
-CMDS=<<EOF
-af
-axf@0x100001308
-EOF
 RUN
 
 NAME=af import
 FILE=../bins/mach0/ls-osx-x86_64
 BROKEN=1
-EXPECT=<<EOF
-before:
-EOF
 CMDS=<<EOF
 s sym.imp.write
 af
 ?v $FS
 EOF
+EXPECT=<<EOF
+before:
+EOF
 RUN
 
 NAME=afll
 FILE=../bins/mach0/ls-osx-x86_64
+CMDS=aa ; afll~?entry0
 EXPECT=<<EOF
 1
 EOF
-CMDS=aa ; afll~?entry0
 RUN
 
 NAME=missing bb fix

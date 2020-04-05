@@ -1,71 +1,75 @@
 NAME=32: Elf header size
 FILE=malloc://1024
-EXPECT=<<EOF
-52
-EOF
 CMDS=<<EOF
 pfo elf32
 pfs.elf_header
+EOF
+EXPECT=<<EOF
+52
 EOF
 RUN
 
 NAME=64: Elf header size
 FILE=malloc://1024
-EXPECT=<<EOF
-64
-EOF
 CMDS=<<EOF
 pfo elf64
 pfs.elf_header
+EOF
+EXPECT=<<EOF
+64
 EOF
 RUN
 
 NAME=32: Elf program header size
 FILE=malloc://1024
-EXPECT=<<EOF
-32
-EOF
 CMDS=<<EOF
 pfo elf32
 pfs.elf_phdr
+EOF
+EXPECT=<<EOF
+32
 EOF
 RUN
 
 NAME=64: Elf program header size
 FILE=malloc://1024
-EXPECT=<<EOF
-56
-EOF
 CMDS=<<EOF
 pfo elf64
 pfs.elf_phdr
+EOF
+EXPECT=<<EOF
+56
 EOF
 RUN
 
 NAME=32: Elf section header size
 FILE=malloc://1024
-EXPECT=<<EOF
-40
-EOF
 CMDS=<<EOF
 pfo elf32
 pfs.elf_shdr
+EOF
+EXPECT=<<EOF
+40
 EOF
 RUN
 
 NAME=64: Elf section header size
 FILE=malloc://1024
-EXPECT=<<EOF
-64
-EOF
 CMDS=<<EOF
 pfo elf64
 pfs.elf_shdr
+EOF
+EXPECT=<<EOF
+64
 EOF
 RUN
 
 NAME=32: Multiple section headers
 FILE=malloc://1024
+CMDS=<<EOF
+pfo elf32
+pf [2]? (elf_shdr)sections
+EOF
 EXPECT=<<EOF
  sections : 
 [
@@ -94,14 +98,14 @@ EXPECT=<<EOF
              entsize : 0x0000004c = 0x00000000
 ]
 EOF
-CMDS=<<EOF
-pfo elf32
-pf [2]? (elf_shdr)sections
-EOF
 RUN
 
 NAME=64: Multiple section headers
 FILE=malloc://1024
+CMDS=<<EOF
+pfo elf64
+pf [2]? (elf_shdr)sections
+EOF
 EXPECT=<<EOF
  sections : 
 [
@@ -130,19 +134,15 @@ EXPECT=<<EOF
              entsize : 0x00000078 = (qword)0x0000000000000000
 ]
 EOF
-CMDS=<<EOF
-pfo elf64
-pf [2]? (elf_shdr)sections
-EOF
 RUN
 
 NAME=Issue 5640 pfj produce wrong json
 FILE=../bins/elf/analysis/main
 ARGS=-nn
+CMDS=pfj {1}? (elf_phdr) @ 0x0000000000000040
 EXPECT=<<EOF
 [{"name":"","type":"elf_phdr","offset":64,"value":[{"name":"type","type":"E","offset":64,"value":6,"label":"PT_PHDR","enum":"elf_p_type"},{"name":"flags","type":"E","offset":68,"value":5,"label":"PF_Read_Exec","enum":"elf_p_flags"},{"name":"offset","type":"q","offset":72,"value":64},{"name":"vaddr","type":"q","offset":80,"value":4194368},{"name":"paddr","type":"q","offset":88,"value":4194368},{"name":"filesz","type":"q","offset":96,"value":448},{"name":"memsz","type":"q","offset":104,"value":448},{"name":"align","type":"q","offset":112,"value":8}]}]
 EOF
-CMDS=pfj {1}? (elf_phdr) @ 0x0000000000000040
 RUN
 
 NAME=32: Elf header

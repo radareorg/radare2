@@ -1,10 +1,5 @@
 NAME=/e /test/i
 FILE=malloc://1024
-EXPECT=<<EOF
-
-0x00000000 hit0_0 "test"
-0x000001bc hit0_1 "Test"
-EOF
 CMDS=<<EOF
 w test
 w Test@444
@@ -13,12 +8,15 @@ e search.in=block
 b 777
 /e /test/i
 EOF
+EXPECT=<<EOF
+
+0x00000000 hit0_0 "test"
+0x000001bc hit0_1 "Test"
+EOF
 RUN
 
 NAME=/e m (invalid) #742
 FILE=malloc://1024
-EXPECT=<<EOF
-EOF
 CMDS=<<EOF
 w test
 w Test@444
@@ -27,15 +25,12 @@ w Test@444
 /e m
 /e m
 EOF
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME="/e /t\wst\d\d\d\s\w\w/i"
 FILE=malloc://1024
-EXPECT=<<EOF
-
-0x00000001 hit0_0 ""test123 ab""
-0x000001bd hit0_1 ""Test123 ab""
-EOF
 CMDS=<<EOF
 w "test123 ab"
 w "Test123 ab" @444
@@ -43,5 +38,10 @@ w "Test123 ab" @444
 e search.in=block
 b 777
 "/e /t\wst\d\d\d\s\w\w/i"
+EOF
+EXPECT=<<EOF
+
+0x00000001 hit0_0 ""test123 ab""
+0x000001bd hit0_1 ""Test123 ab""
 EOF
 RUN

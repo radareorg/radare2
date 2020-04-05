@@ -1,5 +1,6 @@
 NAME=PE: a2 - symbols
 FILE=../bins/pe/a2.exe
+CMDS=isq
 EXPECT=<<EOF
 0x00401000 0 ___mingw_CRTStartup
 0x00401110 0 __gnu_exception_handler@4
@@ -82,5 +83,4 @@ EXPECT=<<EOF
 0x00406128 0 msvcrt.dll imp.signal
 0x0040612c 0 msvcrt.dll imp.vfprintf
 EOF
-CMDS=isq
 RUN

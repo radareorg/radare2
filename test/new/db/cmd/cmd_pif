@@ -2,9 +2,6 @@ NAME=pif invalid instruction
 FILE=../bins/elf/mentalminer
 ARGS=-A -B 0x555555554000
 BROKEN=1
-EXPECT=<<EOF
-1367
-EOF
 CMDS=<<EOF
 e asm.functions = false
 e asm.flags = false
@@ -14,14 +11,14 @@ aaa
 s sym.parse__IO_FILE__
 pif~?
 EOF
+EXPECT=<<EOF
+1367
+EOF
 RUN
 
 NAME=pif invalid instruction
 FILE=../bins/elf/mentalminer
 ARGS=-A -B 0x555555554000
-EXPECT=<<EOF
-11
-EOF
 CMDS=<<EOF
 e asm.functions = false
 e asm.flags = false
@@ -29,5 +26,8 @@ e asm.comments = false
 e asm.calls = false
 aaa
 pif~?
+EOF
+EXPECT=<<EOF
+11
 EOF
 RUN
