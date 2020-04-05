@@ -1,13 +1,14 @@
 NAME=: DMP64 Check
 FILE=../bins/dmp/bmp.dmp
+CMDS=i~format
 EXPECT=<<EOF
 format   dmp64
 EOF
-CMDS=i~format
 RUN
 
 NAME=: DMP64 Info
 FILE=../bins/dmp/bmp.dmp
+CMDS=iI
 EXPECT=<<EOF
 arch     x86
 baddr    0xffffffffffffffff
@@ -35,11 +36,11 @@ static   true
 stripped false
 va       true
 EOF
-CMDS=iI
 RUN
 
 NAME=: DMP header & bmp header
 FILE=../bins/dmp/bmp.dmp
+CMDS=iH
 EXPECT=<<EOF
 DUMP_HEADER64:
   MajorVersion : 0x0000000f
@@ -65,19 +66,19 @@ BITMAP_DUMP:
   BitmapSize : 0x00040000
   Pages : 0x0000544b
 EOF
-CMDS=iH
 RUN
 
 NAME=: DMP BMP Page sections
 FILE=../bins/dmp/bmp.dmp
+CMDS=iS~?
 EXPECT=<<EOF
 21582
 EOF
-CMDS=iS~?
 RUN
 
 NAME=: Resolve vaddr
 FILE=../bins/dmp/bmp.dmp
+CMDS=px 64 @ 0x1000
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00001000  0000 0000 0000 0000 0000 f9ff 0000 0000  ................
@@ -85,5 +86,4 @@ EXPECT=<<EOF
 0x00001020  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x00001030  0000 0000 0000 0000 0000 0000 0000 0000  ................
 EOF
-CMDS=px 64 @ 0x1000
 RUN

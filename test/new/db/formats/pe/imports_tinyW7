@@ -1,12 +1,16 @@
 NAME=PE: corkami imports_tinyW7.exe - open
 FILE=../bins/pe/imports_tinyW7.exe
+CMDS=q!
 EXPECT=<<EOF
 EOF
-CMDS=q!
 RUN
 
 NAME=PE: resolve reloc name by ordinal from sdb
 FILE=../bins/pe/imports_tinyW7.exe
+CMDS=<<EOF
+ir
+ii
+EOF
 EXPECT=<<EOF
 [Relocations]
 
@@ -23,9 +27,5 @@ nth  vaddr      bind type lib      name
 284  0x00000000 NONE FUNC kernel32 FindAtomW
 1268 0x00401034 NONE FUNC msvcrt   Ordinal_1268
 
-EOF
-CMDS=<<EOF
-ir
-ii
 EOF
 RUN

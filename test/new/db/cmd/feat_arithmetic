@@ -1,72 +1,66 @@
 NAME=use after free - requires asan
 FILE=malloc://1024
-EXPECT=<<EOF
-EOF
 CMDS=<<EOF
 0
 ~[[0
+EOF
+EXPECT=<<EOF
 EOF
 RUN
 
 NAME=sum flags
 FILE=malloc://1024
-EXPECT=<<EOF
-0x2
-EOF
 CMDS=<<EOF
 f foo=2
 f bar=4
 ?v bar/foo
 EOF
+EXPECT=<<EOF
+0x2
+EOF
 RUN
 
 NAME=div $$
 FILE=malloc://1024
-EXPECT=<<EOF
-0x5
-0x5
-EOF
 CMDS=<<EOF
 ?v 10/2
 ?v $$/2@10
+EOF
+EXPECT=<<EOF
+0x5
+0x5
 EOF
 RUN
 
 NAME=div [0]
 FILE=malloc://1024
-EXPECT=<<EOF
-0x5
-0x5
-EOF
 CMDS=<<EOF
 wv 10
 ?v [0]/2
 ?v $$/2@[0]
 EOF
+EXPECT=<<EOF
+0x5
+0x5
+EOF
 RUN
 
 NAME=basic
 FILE=malloc://1024
-EXPECT=<<EOF
-0x40
-0x7
-0x8
-EOF
 CMDS=<<EOF
 ?v 0x10+0x30
 ?v 1+3*2
 ?v (1+3)*2
 EOF
+EXPECT=<<EOF
+0x40
+0x7
+0x8
+EOF
 RUN
 
 NAME=sum
 FILE=-
-EXPECT=<<EOF
-0x6
-0x6
-0x6
-0x6
-EOF
 CMDS=<<EOF
 f a@3
 ?v a+3
@@ -74,19 +68,25 @@ f a@3
 ?v a+ 3
 ?v 3 + 3
 EOF
+EXPECT=<<EOF
+0x6
+0x6
+0x6
+0x6
+EOF
 RUN
 
 NAME=binary
 FILE=-
-EXPECT=<<EOF
-
-111111110011111100000000000000001111110011111111b
-11111111001111111111110011111111b
-EOF
 CMDS=<<EOF
 ?e
 !rax2 Bxff3f0000fcff
 !rax2 Bxff3ffcff
+EOF
+EXPECT=<<EOF
+
+111111110011111100000000000000001111110011111111b
+11111111001111111111110011111111b
 EOF
 RUN
 

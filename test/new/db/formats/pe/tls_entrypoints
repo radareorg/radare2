@@ -1,6 +1,7 @@
 NAME=PE: tls 1
 FILE=../bins/pe/tls.exe
 ARGS=-A
+CMDS=ie;iee
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00401000 paddr=0x00000200 haddr=0x00000068 type=program
@@ -11,12 +12,12 @@ vaddr=0x00401020 paddr=0x00000220 hpaddr=0x00000384 type=tls
 
 1 entrypoints
 EOF
-CMDS=ie;iee
 RUN
 
 NAME=PE: tls 2
 FILE=../bins/pe/tls_hello.exe
 ARGS=-A
+CMDS=ie;iee
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x004014c8 paddr=0x000008c8 haddr=0x00000098 type=program
@@ -27,24 +28,24 @@ vaddr=0x00401618 paddr=0x00000a18 hpaddr=0x00007fb0 type=tls
 
 1 entrypoints
 EOF
-CMDS=ie;iee
 RUN
 
 NAME=1: PE: tls 3
 FILE=../bins/pe/tls_obfuscation.exe
 ARGS=-A
+CMDS=ie
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00401000 paddr=0x00000200 haddr=0x00000068 type=program
 
 1 entrypoints
 EOF
-CMDS=ie
 RUN
 
 NAME=2: PE: tls 3
 FILE=../bins/pe/tls_obfuscation.exe
 ARGS=-A
+CMDS=iee
 EXPECT=<<EOF
 [Constructors]
 vaddr=0x00401016 paddr=0x00000216 hpaddr=0x00000330 type=tls
@@ -55,5 +56,4 @@ vaddr=0x00401011 paddr=0x00000211 hpaddr=0x00000340 type=tls
 
 5 entrypoints
 EOF
-CMDS=iee
 RUN

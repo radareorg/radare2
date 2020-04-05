@@ -1,5 +1,6 @@
 NAME=sega megadrive rom info
 FILE=../bins/smd/LiquidSpaceDodgerV3.bin
+CMDS=i~!fd
 EXPECT=<<EOF
 file     ../bins/smd/LiquidSpaceDodgerV3.bin
 size     0x272f8
@@ -33,11 +34,11 @@ static   true
 stripped false
 va       true
 EOF
-CMDS=i~!fd
 RUN
 
 NAME=sega megadrive rom symbols
 FILE=../bins/smd/LiquidSpaceDodgerV3.bin
+CMDS=isq
 EXPECT=<<EOF
 0x00000000 0 rom_start
 0x000272f8 0 rom_end
@@ -108,23 +109,22 @@ EXPECT=<<EOF
 0x00001294 0 Reserv3E
 0x00001294 0 Reserv3F
 EOF
-CMDS=isq
 RUN
 
 NAME=sega megadrive rom entrypoint
 FILE=../bins/smd/LiquidSpaceDodgerV3.bin
+CMDS=ie~vadd
 EXPECT=<<EOF
 vaddr=0x00000200 paddr=0x00000200 haddr=-1 type=program
 EOF
-CMDS=ie~vadd
 RUN
 
 NAME=sega megadrive rom maps and printing
 FILE=../bins/smd/LiquidSpaceDodgerV3.bin
+CMDS=pxw 4 @ 0x10100
 EXPECT=<<EOF
 0x00010100  0x00537413                                   .St.
 EOF
-CMDS=pxw 4 @ 0x10100
 RUN
 
 NAME=smd strings

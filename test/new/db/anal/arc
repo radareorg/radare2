@@ -1,8 +1,5 @@
 NAME=arc: [B]
 FILE=malloc://512
-EXPECT=<<EOF
-jump: 0x00001f84
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=32
@@ -11,16 +8,13 @@ s 0x40
 wx 00e80320
 ao~jump
 EOF
+EXPECT=<<EOF
+jump: 0x00001f84
+EOF
 RUN
 
 NAME=arcompact: [Bcc]
 FILE=malloc://512
-EXPECT=<<EOF
-type: cjmp
-jump: 0x0000006a
-fail: 0x00000044
-cond: pl
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -28,16 +22,16 @@ s 0x40
 wx 2a000300
 ao~type,jump,fail,delay,cond
 EOF
-RUN
-
-NAME=arcompact: [Bcc.D]
-FILE=malloc://512
 EXPECT=<<EOF
 type: cjmp
 jump: 0x0000006a
 fail: 0x00000044
-delay: 1
+cond: pl
 EOF
+RUN
+
+NAME=arcompact: [Bcc.D]
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -45,15 +39,16 @@ s 0x40
 wx 2a002300
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: cjmp
+jump: 0x0000006a
+fail: 0x00000044
+delay: 1
+EOF
 RUN
 
 NAME=arcompact: [B]
 FILE=malloc://512
-EXPECT=<<EOF
-type: jmp
-jump: 0x00123496
-fail: 0x00000044
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -61,16 +56,15 @@ s 0x40
 wx 57048091
 ao~type,jump,fail,delay
 EOF
-RUN
-
-NAME=arcompact: [B.D]
-FILE=malloc://512
 EXPECT=<<EOF
 type: jmp
 jump: 0x00123496
 fail: 0x00000044
-delay: 1
 EOF
+RUN
+
+NAME=arcompact: [B.D]
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -78,15 +72,16 @@ s 0x40
 wx 5704a091
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: jmp
+jump: 0x00123496
+fail: 0x00000044
+delay: 1
+EOF
 RUN
 
 NAME=arcompact: [BRcc limm,reg]
 FILE=malloc://512
-EXPECT=<<EOF
-type: cjmp
-jump: 0x00000080
-fail: 0x00000048
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -94,16 +89,15 @@ s 0x40
 wx 410e4271 65872143
 ao~type,jump,fail,delay
 EOF
-RUN
-
-NAME=arcompact: [BRcc.D limm,reg]
-FILE=malloc://512
 EXPECT=<<EOF
 type: cjmp
 jump: 0x00000080
 fail: 0x00000048
-delay: 1
 EOF
+RUN
+
+NAME=arcompact: [BRcc.D limm,reg]
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -111,15 +105,17 @@ s 0x40
 wx 410e6271 65872143
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: cjmp
+jump: 0x00000080
+fail: 0x00000048
+delay: 1
+EOF
 RUN
 
 NAME=arcompact: [BRcc limm,reg] Cond Code and imm val
 FILE=malloc://512
 BROKEN=1
-EXPECT=<<EOF
-cond: lt
-val: 0x87654321
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -127,15 +123,14 @@ wx 410e4271 65872143 @ 0x0
 ao~cond
 ao~val
 EOF
+EXPECT=<<EOF
+cond: lt
+val: 0x87654321
+EOF
 RUN
 
 NAME=arcompact: [BRcc reg,imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: cjmp
-jump: 0x00000082
-fail: 0x00000044
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -143,16 +138,15 @@ s 0x40
 wx 430ed371
 ao~type,jump,fail,delay
 EOF
-RUN
-
-NAME=arcompact: [BRcc.D reg,imm]
-FILE=malloc://512
 EXPECT=<<EOF
 type: cjmp
 jump: 0x00000082
 fail: 0x00000044
-delay: 1
 EOF
+RUN
+
+NAME=arcompact: [BRcc.D reg,imm]
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -160,15 +154,17 @@ s 0x40
 wx 430ef371
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: cjmp
+jump: 0x00000082
+fail: 0x00000044
+delay: 1
+EOF
 RUN
 
 NAME=arcompact: [BRcc reg,imm] Cond Code and imm val
 FILE=malloc://512
 BROKEN=1
-EXPECT=<<EOF
-cond: ge
-val: 0x00000007
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -177,16 +173,14 @@ s 0x40
 ao~cond
 ao~val
 EOF
+EXPECT=<<EOF
+cond: ge
+val: 0x00000007
+EOF
 RUN
 
 NAME=arcompact: [BLcc imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: ccall
-jump: 0x00008040
-fail: 0x00000044
-cond: mi
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -194,16 +188,16 @@ s 0x40
 wx 00080404
 ao~type,jump,fail,delay,cond
 EOF
-RUN
-
-NAME=arcompact: [BLcc.D imm]
-FILE=malloc://512
 EXPECT=<<EOF
 type: ccall
 jump: 0x00008040
 fail: 0x00000044
-delay: 1
+cond: mi
 EOF
+RUN
+
+NAME=arcompact: [BLcc.D imm]
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -211,15 +205,16 @@ s 0x40
 wx 00082404
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: ccall
+jump: 0x00008040
+fail: 0x00000044
+delay: 1
+EOF
 RUN
 
 NAME=arcompact: [BL imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: call
-jump: 0x00002040
-fail: 0x00000044
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -229,15 +224,15 @@ ao~type
 ao~jump
 ao~fail
 EOF
+EXPECT=<<EOF
+type: call
+jump: 0x00002040
+fail: 0x00000044
+EOF
 RUN
 
 NAME=arcompact: [LDw reg,imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: load
-ptr: 0x00000048
-refptr: 2
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -246,15 +241,15 @@ s 0x40
 ao~type
 ao~ptr
 EOF
+EXPECT=<<EOF
+type: load
+ptr: 0x00000048
+refptr: 2
+EOF
 RUN
 
 NAME=arcompact: [LD limm,imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: load
-ptr: 0x12345680
-refptr: 4
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -263,15 +258,15 @@ s 0x40
 ao~type
 ao~ptr
 EOF
+EXPECT=<<EOF
+type: load
+ptr: 0x12345680
+refptr: 4
+EOF
 RUN
 
 NAME=arcompact: [ST reg,limm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: store
-ptr: 0xaa000055
-refptr: 4
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -280,14 +275,15 @@ s 0x40
 ao~type
 ao~ptr
 EOF
+EXPECT=<<EOF
+type: store
+ptr: 0xaa000055
+refptr: 4
+EOF
 RUN
 
 NAME=arcompact: [ST limm,reg+imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: store
-val: 0xaa000055
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -296,15 +292,14 @@ s 0x40
 ao~type
 ao~val
 EOF
+EXPECT=<<EOF
+type: store
+val: 0xaa000055
+EOF
 RUN
 
 NAME=arcompact: [ST reg,PCL+imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: store
-ptr: 0x00000032
-refptr: 4
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -313,13 +308,15 @@ s 0x40
 ao~type
 ao~ptr
 EOF
+EXPECT=<<EOF
+type: store
+ptr: 0x00000032
+refptr: 4
+EOF
 RUN
 
 NAME=arcompact: [J blink]
 FILE=malloc://512
-EXPECT=<<EOF
-type: ret
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -327,15 +324,13 @@ s 0x40
 wx 2020c007
 ao~type,delay
 EOF
+EXPECT=<<EOF
+type: ret
+EOF
 RUN
 
 NAME=arcompact: [J imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: jmp
-jump: 0x00000010
-fail: 0x00000044
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -343,16 +338,15 @@ s 0x40
 wx 60200004
 ao~type,jump,fail,delay
 EOF
-RUN
-
-NAME=arcompact: [J.D imm]
-FILE=malloc://512
 EXPECT=<<EOF
 type: jmp
 jump: 0x00000010
 fail: 0x00000044
-delay: 1
 EOF
+RUN
+
+NAME=arcompact: [J.D imm]
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -360,13 +354,16 @@ s 0x40
 wx 61200004
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: jmp
+jump: 0x00000010
+fail: 0x00000044
+delay: 1
+EOF
 RUN
 
 NAME=arcompact: [J reg]
 FILE=malloc://512
-EXPECT=<<EOF
-type: ujmp
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -374,15 +371,13 @@ s 0x40
 wx 20208000
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: ujmp
+EOF
 RUN
 
 NAME=arcompact: [J limm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: jmp
-jump: 0x12345678
-fail: 0x00000048
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -390,14 +385,15 @@ s 0x40
 wx 2020800f 34127856
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: jmp
+jump: 0x12345678
+fail: 0x00000048
+EOF
 RUN
 
 NAME=arcompact: [Jcc reg]
 FILE=malloc://512
-EXPECT=<<EOF
-type: ucjmp
-cond: vs
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -405,15 +401,14 @@ s 0x40
 wx e0208700
 ao~type,jump,fail,cond
 EOF
+EXPECT=<<EOF
+type: ucjmp
+cond: vs
+EOF
 RUN
 
 NAME=arcompact: [Jcc limm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: cjmp
-fail: 0x00000044
-cond: mi
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -421,14 +416,16 @@ s 0x40
 wx e020840f 34127856
 ao~type,fail,cond
 EOF
+EXPECT=<<EOF
+type: cjmp
+fail: 0x00000044
+cond: mi
+EOF
 RUN
 
 NAME=arcompact: [Jcc limm] limm val
 FILE=malloc://512
 BROKEN=1
-EXPECT=<<EOF
-jump: 0x12345678
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -436,14 +433,13 @@ s 0x40
 wx e020840f 34127856
 ao~jump
 EOF
+EXPECT=<<EOF
+jump: 0x12345678
+EOF
 RUN
 
 NAME=arcompact: [Jcc blink]
 FILE=malloc://512
-EXPECT=<<EOF
-type: cret
-cond: ne
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -451,15 +447,14 @@ s 0x40
 wx e020c207
 ao~type,cond
 EOF
+EXPECT=<<EOF
+type: cret
+cond: ne
+EOF
 RUN
 
 NAME=arcompact: [JL imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: call
-jump: 0x00000010
-fail: 0x00000044
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -467,16 +462,15 @@ s 0x40
 wx 62200004
 ao~type,jump,fail,delay
 EOF
-RUN
-
-NAME=arcompact: [JL.D imm]
-FILE=malloc://512
 EXPECT=<<EOF
 type: call
 jump: 0x00000010
 fail: 0x00000044
-delay: 1
 EOF
+RUN
+
+NAME=arcompact: [JL.D imm]
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -484,16 +478,16 @@ s 0x40
 wx 63200004
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: call
+jump: 0x00000010
+fail: 0x00000044
+delay: 1
+EOF
 RUN
 
 NAME=arcompact: [JLcc imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: ccall
-jump: 0x00000010
-fail: 0x00000044
-cond: vc
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -501,14 +495,16 @@ s 0x40
 wx e2202804
 ao~type,jump,fail,cond,delay
 EOF
+EXPECT=<<EOF
+type: ccall
+jump: 0x00000010
+fail: 0x00000044
+cond: vc
+EOF
 RUN
 
 NAME=arcompact: [MOV imm]
 FILE=malloc://512
-EXPECT=<<EOF
-val: 0x00000004
-type: mov
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -516,15 +512,14 @@ s 0x40
 wx 8a270001
 ao~val,type
 EOF
+EXPECT=<<EOF
+val: 0x00000004
+type: mov
+EOF
 RUN
 
 NAME=arcompact: [MOV.cc imm]
 FILE=malloc://512
-EXPECT=<<EOF
-val: 0x00000004
-type: cmov
-cond: gt
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -532,15 +527,15 @@ s 0x40
 wx ca272901
 ao~val,type,cond
 EOF
+EXPECT=<<EOF
+val: 0x00000004
+type: cmov
+cond: gt
+EOF
 RUN
 
 NAME=arcompact: [LP]
 FILE=malloc://512
-EXPECT=<<EOF
-type: cjmp
-jump: 0x00000060
-fail: 0x00000044
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -548,16 +543,15 @@ s 0x40
 wx a8200004
 ao~type,jump,fail
 EOF
-RUN
-
-NAME=arcompact: [LPcc]
-FILE=malloc://512
 EXPECT=<<EOF
 type: cjmp
 jump: 0x00000060
 fail: 0x00000044
-cond: ge
 EOF
+RUN
+
+NAME=arcompact: [LPcc]
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -565,13 +559,16 @@ s 0x40
 wx e8202a04
 ao~type,jump,fail,cond
 EOF
+EXPECT=<<EOF
+type: cjmp
+jump: 0x00000060
+fail: 0x00000044
+cond: ge
+EOF
 RUN
 
 NAME=arcompact: [SUB_S.NE reg]
 FILE=malloc://512
-EXPECT=<<EOF
-type: sub
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -579,14 +576,14 @@ s 0x40
 wx c079
 ao~type
 EOF
+EXPECT=<<EOF
+type: sub
+EOF
 RUN
 
 NAME=arcompact: [SUB_S.NE reg] Cond Code
 FILE=malloc://512
 BROKEN=1
-EXPECT=<<EOF
-cond: ne
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -594,13 +591,13 @@ s 0x40
 wx c079
 ao~cond
 EOF
+EXPECT=<<EOF
+cond: ne
+EOF
 RUN
 
 NAME=arcompact: [J_S reg]
 FILE=malloc://512
-EXPECT=<<EOF
-type: ujmp
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -608,14 +605,13 @@ s 0x40
 wx 0079
 ao~type,delay
 EOF
+EXPECT=<<EOF
+type: ujmp
+EOF
 RUN
 
 NAME=arcompact: [J_S.D reg]
 FILE=malloc://512
-EXPECT=<<EOF
-type: ujmp
-delay: 1
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -623,14 +619,14 @@ s 0x40
 wx 2079
 ao~type,delay
 EOF
+EXPECT=<<EOF
+type: ujmp
+delay: 1
+EOF
 RUN
 
 NAME=arcompact: [JEQ_S blink]
 FILE=malloc://512
-EXPECT=<<EOF
-type: cret
-cond: eq
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -638,14 +634,14 @@ s 0x40
 wx e07c
 ao~type,cond,delay
 EOF
+EXPECT=<<EOF
+type: cret
+cond: eq
+EOF
 RUN
 
 NAME=arcompact: [JNE_S blink]
 FILE=malloc://512
-EXPECT=<<EOF
-type: cret
-cond: ne
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -653,13 +649,14 @@ s 0x40
 wx e07d
 ao~type,cond,delay
 EOF
+EXPECT=<<EOF
+type: cret
+cond: ne
+EOF
 RUN
 
 NAME=arcompact: [J_S blink]
 FILE=malloc://512
-EXPECT=<<EOF
-type: ret
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -667,14 +664,13 @@ s 0x40
 wx e07e
 ao~type,delay
 EOF
+EXPECT=<<EOF
+type: ret
+EOF
 RUN
 
 NAME=arcompact: [J_S.D blink]
 FILE=malloc://512
-EXPECT=<<EOF
-type: ret
-delay: 1
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -682,13 +678,14 @@ s 0x40
 wx e07f
 ao~type,delay
 EOF
+EXPECT=<<EOF
+type: ret
+delay: 1
+EOF
 RUN
 
 NAME=arcompact: [JL_S reg]
 FILE=malloc://512
-EXPECT=<<EOF
-type: ucall
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -696,14 +693,13 @@ s 0x40
 wx 4079
 ao~type,delay
 EOF
+EXPECT=<<EOF
+type: ucall
+EOF
 RUN
 
 NAME=arcompact: [JL_S.D reg]
 FILE=malloc://512
-EXPECT=<<EOF
-type: ucall
-delay: 1
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -711,15 +707,14 @@ s 0x40
 wx 6079
 ao~type,delay
 EOF
+EXPECT=<<EOF
+type: ucall
+delay: 1
+EOF
 RUN
 
 NAME=arcompact: [BREQ_S reg,0,imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: cjmp
-jump: 0x00000048
-fail: 0x00000042
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -727,15 +722,15 @@ s 0x40
 wx 04ea
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: cjmp
+jump: 0x00000048
+fail: 0x00000042
+EOF
 RUN
 
 NAME=arcompact: [B_S imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: jmp
-jump: 0x0000004c
-fail: 0x00000042
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -743,16 +738,15 @@ s 0x40
 wx 06f0
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: jmp
+jump: 0x0000004c
+fail: 0x00000042
+EOF
 RUN
 
 NAME=arcompact: [BEQ_S imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: cjmp
-jump: 0x0000004c
-fail: 0x00000042
-cond: eq
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -760,16 +754,16 @@ s 0x40
 wx 06f2
 ao~type,jump,fail,cond,delay
 EOF
-RUN
-
-NAME=arcompact: [BNE_S imm]
-FILE=malloc://512
 EXPECT=<<EOF
 type: cjmp
 jump: 0x0000004c
 fail: 0x00000042
-cond: ne
+cond: eq
 EOF
+RUN
+
+NAME=arcompact: [BNE_S imm]
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -777,15 +771,16 @@ s 0x40
 wx 06f4
 ao~type,jump,fail,cond,delay
 EOF
-RUN
-
-NAME=arcompact: [Bcc_S imm]
-FILE=malloc://512
 EXPECT=<<EOF
 type: cjmp
 jump: 0x0000004c
 fail: 0x00000042
+cond: ne
 EOF
+RUN
+
+NAME=arcompact: [Bcc_S imm]
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -793,14 +788,16 @@ s 0x40
 wx 06f6
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: cjmp
+jump: 0x0000004c
+fail: 0x00000042
+EOF
 RUN
 
 NAME=arcompact: [Bcc_S imm] Cond Code
 FILE=malloc://512
 BROKEN=1
-EXPECT=<<EOF
-cond: gt
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -808,15 +805,13 @@ s 0x40
 wx 06f6
 ao~cond
 EOF
+EXPECT=<<EOF
+cond: gt
+EOF
 RUN
 
 NAME=arcompact: [BL_S imm]
 FILE=malloc://512
-EXPECT=<<EOF
-type: call
-jump: 0x00000080
-fail: 0x00000042
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -824,13 +819,15 @@ s 0x40
 wx 10f8
 ao~type,jump,fail,delay
 EOF
+EXPECT=<<EOF
+type: call
+jump: 0x00000080
+fail: 0x00000042
+EOF
 RUN
 
 NAME=arcompact: [BL]] - jump check
 FILE=malloc://512
-EXPECT=<<EOF
-jump: 0x00000104
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -838,13 +835,13 @@ wx a60fcfff @ 0x160
 s 0x160
 ao 1~jump
 EOF
+EXPECT=<<EOF
+jump: 0x00000104
+EOF
 RUN
 
 NAME=arcompact: [LPNZ] - jump check
 FILE=malloc://512
-EXPECT=<<EOF
-jump: 0x00000144
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -852,16 +849,13 @@ wx e820a201 @ 0x138
 s 0x138
 ao 1~jump
 EOF
+EXPECT=<<EOF
+jump: 0x00000144
+EOF
 RUN
 
 NAME=ARCompact ISA instruction length
 FILE=malloc://512
-EXPECT=<<EOF
-size: 8
-size: 6
-size: 4
-size: 2
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=16
@@ -871,13 +865,16 @@ wx 422bbc80 @ 8+6
 wx 00db @ 8+6+4
 ao 4~size
 EOF
+EXPECT=<<EOF
+size: 8
+size: 6
+size: 4
+size: 2
+EOF
 RUN
 
 NAME=arc4: [B.D] - jump check
 FILE=malloc://16384
-EXPECT=<<EOF
-jump: 0x000020a0
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=32
@@ -885,13 +882,13 @@ wx 20040020 @ 0x207c
 s 0x207c
 ao 1~jump
 EOF
+EXPECT=<<EOF
+jump: 0x000020a0
+EOF
 RUN
 
 NAME=arc4: [BNZ.D] - jump check
 FILE=malloc://16384
-EXPECT=<<EOF
-jump: 0x0000211c
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=32
@@ -899,13 +896,13 @@ wx 22030020 @ 0x2100
 s 0x2100
 ao 1~jump
 EOF
+EXPECT=<<EOF
+jump: 0x0000211c
+EOF
 RUN
 
 NAME=arc4: [BNZ.JD] - jump check
 FILE=malloc://16384
-EXPECT=<<EOF
-jump: 0x00001ff0
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=32
@@ -913,13 +910,13 @@ wx c2100020 @ 0x1f68
 s 0x1f68
 ao 1~jump
 EOF
+EXPECT=<<EOF
+jump: 0x00001ff0
+EOF
 RUN
 
 NAME=arc4: [BGT] - jump check
 FILE=malloc://16384
-EXPECT=<<EOF
-jump: 0x00001b40
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=32
@@ -927,13 +924,13 @@ wx 89040020 @ 0x1b18
 s 0x1b18
 ao 1~jump
 EOF
+EXPECT=<<EOF
+jump: 0x00001b40
+EOF
 RUN
 
 NAME=arc4: [BL.D] - jump check
 FILE=malloc://16384
-EXPECT=<<EOF
-jump: 0x000031cc
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=32
@@ -941,13 +938,13 @@ wx a0270228 @ 0x208c
 s 0x208c
 ao 1~jump
 EOF
+EXPECT=<<EOF
+jump: 0x000031cc
+EOF
 RUN
 
 NAME=arc4: [BLHI] - jump check
 FILE=malloc://16384
-EXPECT=<<EOF
-jump: 0x000041e8
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=32
@@ -955,13 +952,13 @@ wx ad130628 @ 0x1148
 s 0x1148
 ao 1~jump
 EOF
+EXPECT=<<EOF
+jump: 0x000041e8
+EOF
 RUN
 
 NAME=arc4: [LP] - jump check
 FILE=malloc://16384
-EXPECT=<<EOF
-jump: 0x0000156c
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=32
@@ -969,13 +966,13 @@ wx 00020030 @ 0x1558
 s 0x1558
 ao 1~jump
 EOF
+EXPECT=<<EOF
+jump: 0x0000156c
+EOF
 RUN
 
 NAME=arc4: [LPNZ] - jump check
 FILE=malloc://16384
-EXPECT=<<EOF
-jump: 0x00001594
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=32
@@ -983,20 +980,23 @@ wx 02020030 @ 0x1580
 s 0x1580
 ao 1~jump
 EOF
+EXPECT=<<EOF
+jump: 0x00001594
+EOF
 RUN
 
 NAME=ARC4 ISA instruction length
 FILE=malloc://64
 BROKEN=1
-EXPECT=<<EOF
-size: 8
-size: 4
-EOF
 CMDS=<<EOF
 e asm.arch=arc
 e asm.bits=32
 wx 017e1f102f420401 @ 0
 wx 0afe5f60 @ 8
 ao 2~size
+EOF
+EXPECT=<<EOF
+size: 8
+size: 4
 EOF
 RUN

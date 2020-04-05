@@ -1,14 +1,14 @@
 NAME=DOL: sqrxz4 - open
 FILE=../bins/psx/HITPSX.EXE
+CMDS=q!
 EXPECT=<<EOF
 EOF
-CMDS=q!
 RUN
 
 NAME=DOL: sqrxz4 - iI
 FILE=../bins/psx/HITPSX.EXE
+CMDS=iI~?psx
 EXPECT=<<EOF
 1
 EOF
-CMDS=iI~?psx
 RUN

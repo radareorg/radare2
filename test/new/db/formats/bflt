@@ -1,5 +1,6 @@
 NAME=bflt
 FILE=../bins/bflt/bin.bflt
+CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
@@ -101,5 +102,4 @@ vaddr      paddr      type   name
 
 92 relocations
 EOF
-CMDS=ir
 RUN
