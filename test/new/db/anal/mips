@@ -10,6 +10,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mozi aae functions
+FILE=../bins/elf/mips-mozi
+CMDS=<<EOF
+aae
+aflc
+EOF
+EXPECT=<<EOF
+428
+EOF
+RUN
+
 NAME=mips hello ref anal
 FILE=../bins/elf/analysis/mips.elf
 ARGS=-e bin.strings=false -e anal.strings=true
