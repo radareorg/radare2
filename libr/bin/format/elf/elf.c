@@ -48,9 +48,9 @@
 
 struct dynamic_relocation_section {
 	// symbol table
-	Elf_(Addr) addr_symbol_hash_table;
-	Elf_(Addr) addr_symbol_table;
-	Elf_(Xword) syment;
+	Elf_(Addr) addr_jmprel;
+	Elf_(Xword) jmprel_size;
+	Elf_(Xword) plt_mode;
 	// rel
 	Elf_(Addr) addr_rela;
 	Elf_(Xword) rela_size;
@@ -2717,6 +2717,13 @@ static void populate_relocs_record(ELFOBJ *bin, RBinElfReloc *relocs,
 		fix_rva_and_offset (bin, relocs + i, info->addr_rel);
 		i++;
 	}
+
+	size_t size = info->plt_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
+	for (size_t offset = 0; offset < info->jmprel_size; offset += size) {
+		read_reloc (bin, relocs + i, info->plt_mode, info->addr_jmprel + offset);
+		fix_rva_and_offset (bin, relocs + i, info->addr_jmprel);
+		i++;
+	}
 }
 
 static size_t get_num_relocs(struct dynamic_relocation_section *info) {
@@ -2730,6 +2737,11 @@ static size_t get_num_relocs(struct dynamic_relocation_section *info) {
 		res += info->rel_size / info->relent;
 	}
 
+	if (info->jmprel_size) {
+		size_t size = info->plt_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
+		res += info->jmprel_size / size;
+	}
+
 	return res;
 }
 
@@ -2740,14 +2752,14 @@ static struct dynamic_relocation_section *get_dynamic_info(ELFOBJ *bin) {
 		Elf_(Dyn) *dyn_struct = bin->dyn_buf + i;
 
 		switch (dyn_struct->d_tag) {
-		case DT_HASH:
-			res->addr_symbol_hash_table = dyn_struct->d_un.d_ptr;
+		case DT_JMPREL:
+			res->addr_jmprel = dyn_struct->d_un.d_ptr;
 			break;
-		case DT_SYMTAB:
-			res->addr_symbol_table = dyn_struct->d_un.d_ptr;
+		case DT_PLTRELSZ:
+			res->jmprel_size = dyn_struct->d_un.d_val;
 			break;
-		case DT_SYMENT:
-			res->syment = dyn_struct->d_un.d_val;
+		case DT_PLTREL:
+			res->plt_mode = dyn_struct->d_un.d_val;
 			break;
 		case DT_RELA:
 			res->addr_rela = dyn_struct->d_un.d_ptr;
