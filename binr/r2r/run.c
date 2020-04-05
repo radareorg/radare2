@@ -827,39 +827,45 @@ static char *convert_win_cmds(const char *cmds) {
 	if (!r) {
 		return NULL;
 	}
-	char *p = r;
-	char c;
-	for (; c = *cmds, c; cmds++) {
-		if (c == '\\') {
-			// replace \$ by $
-			c = *++cmds;
-			if (c == '$') {
-				*p++ = '$';
-			} else {
-				*p++ = '\\';
-				*p++ = c;
-			}
-		} else if (c == '$') {
-			// replace ${VARNAME} by %VARNAME%
-			c = *++cmds;
-			if (c == '{') {
-				*p++ = '%';
-				cmds++;
-				for (; c = *cmds, c && c != '}'; *cmds++) {
+	if (*cmds == '!') {
+		// Adjust shell syntax for Windows,
+		// only for commands using !
+		char *p = r;
+		char c;
+		for (; c = *cmds, c; cmds++) {
+			if (c == '\\') {
+				// replace \$ by $
+				c = *++cmds;
+				if (c == '$') {
+					*p++ = '$';
+				} else {
+					*p++ = '\\';
 					*p++ = c;
 				}
-				if (c) { // must check c to prevent overflow
+			} else if (c == '$') {
+				// replace ${VARNAME} by %VARNAME%
+				c = *++cmds;
+				if (c == '{') {
 					*p++ = '%';
+					cmds++;
+					for (; c = *cmds, c && c != '}'; *cmds++) {
+						*p++ = c;
+					}
+					if (c) { // must check c to prevent overflow
+						*p++ = '%';
+					}
+				} else {
+					*p++ = '$';
+					*p++ = c;
 				}
 			} else {
-				*p++ = '$';
 				*p++ = c;
 			}
-		} else {
-			*p++ = c;
 		}
+		*p = '\0';
+	} else {
+		memcpy (r, cmds, strlen (cmds) + 1);
 	}
-	*p = '\0';
 	return r_str_replace (r, "/dev/null", "nul", true);
 }
 #endif
