@@ -2794,7 +2794,7 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 
 	struct dynamic_relocation_section *info = get_dynamic_info (bin);
 	size_t num_relocs = get_num_relocs (info);
-	ret = malloc ((num_relocs + 1) * sizeof (RBinElfReloc));
+	ret = calloc (num_relocs + 1, sizeof (RBinElfReloc));
 	populate_relocs_record (bin, ret, info);
 	ret[num_relocs].last = 1;
 	free (info);
