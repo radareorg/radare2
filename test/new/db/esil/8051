@@ -1,61 +1,65 @@
 NAME=op: nop
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 00
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-EOF
 RUN
 
 NAME=op: ajmp addr11
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000501
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx a101
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000501
-0x00000000
-EOF
 RUN
 
 NAME=op: ljmp addr16
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00001234
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 021234
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00001234
-0x00000000
-EOF
 RUN
 
 NAME=op: sjmp offset
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000012
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 8010
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000012
-0x00000000
-EOF
 RUN
 
 NAME=op: jmp @a+dptr
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00001234
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 73
@@ -64,14 +68,16 @@ ar dptr=0x1230
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00001234
-0x00000000
-EOF
 RUN
 
 NAME=op: acall addr11
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000501
+0x00000000
+0x00000022
+ff0200
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx b101
@@ -81,16 +87,16 @@ aes
 ar pc; ar psw; ar sp
 p8 3 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000501
-0x00000000
-0x00000022
-ff0200
-EOF
 RUN
 
 NAME=op: lcall addr16
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00001234
+0x00000000
+0x00000022
+ff0300
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 121234
@@ -100,16 +106,15 @@ aes
 ar pc; ar psw; ar sp
 p8 3 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00001234
-0x00000000
-0x00000022
-ff0300
-EOF
 RUN
 
 NAME=op: ret
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000123
+0x00000000
+0x00000020
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 22
@@ -118,15 +123,15 @@ ar sp=0x22
 aes
 ar pc; ar psw; ar sp
 EOF
+RUN
+
+NAME=op: reti
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000123
 0x00000000
 0x00000020
 EOF
-RUN
-
-NAME=op: reti
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 32
@@ -135,15 +140,16 @@ ar sp=0x22
 aes
 ar pc; ar psw; ar sp
 EOF
-EXPECT=<<EOF
-0x00000123
-0x00000000
-0x00000020
-EOF
 RUN
 
 NAME=op: push direct
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0x00000022
+ffff40
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c030
@@ -154,16 +160,16 @@ aes
 ar pc; ar psw; ar sp
 p8 3 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-0x00000022
-ffff40
-EOF
 RUN
 
 NAME=op: pop direct
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0x00000020
+40
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d030
@@ -173,16 +179,16 @@ aes
 ar pc; ar psw; ar sp
 p8 1 @_idata+0x30
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-0x00000020
-40
-EOF
 RUN
 
 NAME=op: jbc bit, offset
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000036
+0x00000000
+00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 100330100430
@@ -193,16 +199,16 @@ aes
 ar pc; ar psw
 pB 1 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000036
-0x00000000
-00000000
-EOF
 RUN
 
 NAME=op: jb bit, offset
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000036
+0x00000000
+00010000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 200330200430
@@ -213,16 +219,16 @@ aes
 ar pc; ar psw
 pB 1 @_idata+0x20
 EOF
+RUN
+
+NAME=op: jnb bit, offset
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000003
 0x00000036
 0x00000000
 00010000
 EOF
-RUN
-
-NAME=op: jnb bit, offset
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 300430300330
@@ -233,16 +239,15 @@ aes
 ar pc; ar psw
 pB 1 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000036
-0x00000000
-00010000
-EOF
 RUN
 
 NAME=op: jc offset
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000036
+0x00000080
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c34030d34030
@@ -253,15 +258,15 @@ aes
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000036
-0x00000080
-EOF
 RUN
 
 NAME=op: jnc offset
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000036
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d35030c35030
@@ -272,15 +277,15 @@ aes
 aes
 ar pc; ar psw
 EOF
+RUN
+
+NAME=op: jz offset
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000003
 0x00000036
 0x00000000
 EOF
-RUN
-
-NAME=op: jz offset
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx f46030e46030
@@ -291,15 +296,15 @@ aes
 aes
 ar pc; ar psw
 EOF
+RUN
+
+NAME=op: jnz offset
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000003
 0x00000036
 0x00000000
 EOF
-RUN
-
-NAME=op: jnz offset
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx e47030f47030
@@ -310,15 +315,16 @@ aes
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000036
-0x00000000
-EOF
 RUN
 
 NAME=op: cjne a, imm, offset
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000000
+0x00000026
+0x00000080
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx b46220b49620
@@ -328,16 +334,16 @@ ar pc; ar psw
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000000
-0x00000026
-0x00000080
-EOF
 RUN
 
 NAME=op: cjne a, direct, offset
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000000
+0x00000036
+0x00000080
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx b52030b52130
@@ -348,16 +354,16 @@ ar pc; ar psw
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000000
-0x00000036
-0x00000080
-EOF
 RUN
 
 NAME=op: cjne @Ri, imm, offset
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000000
+0x00000036
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx b71130b71030
@@ -368,16 +374,16 @@ ar pc; ar psw
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000000
-0x00000036
-0x00000000
-EOF
 RUN
 
 NAME=op: cjne Rn, imm, offset
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000000
+0x00000026
+0x00000080
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx bf1120bf1220
@@ -387,16 +393,16 @@ ar pc; ar psw
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000000
-0x00000026
-0x00000080
-EOF
 RUN
 
 NAME=op: djnz direct, offset
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+00
+0x00000036
+ff
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d52030d52030
@@ -408,16 +414,16 @@ aes
 ar pc
 p8 1 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000003
-00
-0x00000036
-ff
-EOF
 RUN
 
 NAME=op: djnz Rn, offset
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0x00000034
+0x000000ff
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx df30df30
@@ -429,30 +435,29 @@ aes
 ar pc
 ar r7
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-0x00000034
-0x000000ff
-EOF
 RUN
 
 NAME=op: setb c
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000080
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d3
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000080
-EOF
 RUN
 
 NAME=op: setb bit
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000004
+0x00000000
+01010000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d204d206
@@ -462,15 +467,15 @@ ar pc; ar psw
 s _idata+0x20
 pB 1
 EOF
-EXPECT=<<EOF
-0x00000004
-0x00000000
-01010000
-EOF
 RUN
 
 NAME=op: clr a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx e4
@@ -479,15 +484,14 @@ ar P=1
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000000
-EOF
 RUN
 
 NAME=op: clr c
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c3
@@ -495,14 +499,15 @@ ar c=1
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-EOF
 RUN
 
 NAME=op: clr bit
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000004
+0x00000000
+10101111
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c204c206
@@ -513,15 +518,15 @@ ar pc; ar psw
 s _idata+0x20
 pB 1
 EOF
-EXPECT=<<EOF
-0x00000004
-0x00000000
-10101111
-EOF
 RUN
 
 NAME=op: cpl a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000007
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx f4
@@ -530,15 +535,14 @@ ar P=0
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000007
-EOF
 RUN
 
 NAME=op: cpl c
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx b3
@@ -546,14 +550,15 @@ ar c=1
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-EOF
 RUN
 
 NAME=op: cpl bit
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000004
+0x00000000
+10111000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx b203b206
@@ -564,15 +569,15 @@ ar pc; ar psw
 s _idata+0x20
 pB 1
 EOF
-EXPECT=<<EOF
-0x00000004
-0x00000000
-10111000
-EOF
 RUN
 
 NAME=op: dec a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 14
@@ -580,15 +585,15 @@ ar a=1
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000000
-EOF
 RUN
 
 NAME=op: dec direct
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+7f
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 1520
@@ -598,15 +603,15 @@ ar pc; ar psw
 s _idata+0x20
 p8 1
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-7f
-EOF
 RUN
 
 NAME=op: dec @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+7f
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 16
@@ -617,15 +622,15 @@ ar pc; ar psw
 s _idata+0x20
 p8 1
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-7f
-EOF
 RUN
 
 NAME=op: dec Rn
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x0000007f
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 1f
@@ -633,15 +638,15 @@ ar r7=0x80
 aes
 ar pc; ar psw; ar r7
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-0x0000007f
-EOF
 RUN
 
 NAME=op: inc a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 04
@@ -649,15 +654,15 @@ ar a=0xff
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000000
-EOF
 RUN
 
 NAME=op: inc direct
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+81
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 0520
@@ -667,15 +672,15 @@ ar pc; ar psw
 s _idata+0x20
 p8 1
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-81
-EOF
 RUN
 
 NAME=op: inc @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+81
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 06
@@ -686,15 +691,15 @@ ar pc; ar psw
 s _idata+0x20
 p8 1
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-81
-EOF
 RUN
 
 NAME=op: inc Rn
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000081
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 0f
@@ -702,15 +707,15 @@ ar r7=0x80
 aes
 ar pc; ar psw; ar r7
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000081
-EOF
 RUN
 
 NAME=op: inc dptr
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000100
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx a3
@@ -718,15 +723,15 @@ ar dptr=0xff
 aes
 ar pc; ar psw; ar dptr
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000100
-EOF
 RUN
 
 NAME=op: add a, imm (carry)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000080
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 2480
@@ -734,15 +739,15 @@ ar a=0x80
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000080
-0x00000000
-EOF
 RUN
 
 NAME=op: add a, imm (aux carry)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000041
+0x00000010
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 2408
@@ -750,15 +755,15 @@ ar a=0x08
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000041
-0x00000010
-EOF
 RUN
 
 NAME=op: add a, imm (overflow)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000005
+0x00000080
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 2440
@@ -766,15 +771,15 @@ ar a=0x40
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000005
-0x00000080
-EOF
 RUN
 
 NAME=op: add a, direct
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000001
+0x000000a1
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 2520
@@ -783,15 +788,15 @@ wx 2030 @_idata+0x20
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000001
-0x000000a1
-EOF
 RUN
 
 NAME=op: add a, @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x000000a1
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 27
@@ -801,15 +806,15 @@ wx 2030 @_idata+0x20
 aes
 ar pc; ar psw; ar a
 EOF
+RUN
+
+NAME=op: add a, Rn
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000001
 0x00000001
 0x000000a1
 EOF
-RUN
-
-NAME=op: add a, Rn
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 2f
@@ -818,15 +823,15 @@ ar r7=0x20
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000a1
-EOF
 RUN
 
 NAME=op: addc a, imm (carry)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000081
+0x00000001
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 3480
@@ -835,15 +840,15 @@ ar c=1
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000081
-0x00000001
-EOF
 RUN
 
 NAME=op: addc a, imm (aux carry)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000040
+0x00000011
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 3408
@@ -852,15 +857,15 @@ ar c=1
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000040
-0x00000011
-EOF
 RUN
 
 NAME=op: addc a, imm (overflow)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000004
+0x00000081
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 3440
@@ -869,15 +874,15 @@ ar c=1
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000004
-0x00000081
-EOF
 RUN
 
 NAME=op: addc a, direct
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000001
+0x000000a2
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 3520
@@ -887,15 +892,15 @@ wx 2030 @_idata+0x20
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000001
-0x000000a2
-EOF
 RUN
 
 NAME=op: addc a, @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x000000a2
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 37
@@ -906,15 +911,15 @@ wx 2030 @_idata+0x20
 aes
 ar pc; ar psw; ar a
 EOF
+RUN
+
+NAME=op: addc a, Rn
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000001
 0x00000001
 0x000000a2
 EOF
-RUN
-
-NAME=op: addc a, Rn
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 3f
@@ -924,15 +929,18 @@ ar c=1
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000a2
-EOF
 RUN
 
 NAME=op: subb a, imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000005
+0x000000c0
+0x000000cc
+0x00000009
+0x00000000
+0x00000014
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c37462949674279412
@@ -944,6 +952,10 @@ aes
 aes
 ar pc; ar psw; ar a
 EOF
+RUN
+
+NAME=op: subb a, direct
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000005
 0x000000c0
@@ -952,10 +964,6 @@ EXPECT=<<EOF
 0x00000000
 0x00000014
 EOF
-RUN
-
-NAME=op: subb a, direct
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c37462952074279521
@@ -968,18 +976,18 @@ aes
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000005
-0x000000c0
-0x000000cc
-0x00000009
-0x00000000
-0x00000014
-EOF
 RUN
 
 NAME=op: subb a, @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000006
+0x000000c0
+0x000000cc
+0x0000000a
+0x00000000
+0x00000014
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 7920c374629709742797
@@ -994,18 +1002,18 @@ aes
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000006
-0x000000c0
-0x000000cc
-0x0000000a
-0x00000000
-0x00000014
-EOF
 RUN
 
 NAME=op: subb a, Rn
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000006
+0x000000c0
+0x000000cc
+0x0000000b
+0x00000000
+0x00000014
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c374627f969f74277f129f
@@ -1019,18 +1027,15 @@ aes
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000006
-0x000000c0
-0x000000cc
-0x0000000b
-0x00000000
-0x00000014
-EOF
 RUN
 
 NAME=op: da a (BCD no carry: 23+23)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000005
+0x00000001
+0x00000046
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 74232423d4
@@ -1039,15 +1044,15 @@ aes
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000005
-0x00000001
-0x00000046
-EOF
 RUN
 
 NAME=op: da a (BCD with carry #1: 99+99)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000005
+0x000000c1
+0x00000098
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 74992499d4
@@ -1056,15 +1061,15 @@ aes
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000005
-0x000000c1
-0x00000098
-EOF
 RUN
 
 NAME=op: da a (BCD with carry #2: 99+66)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000005
+0x00000080
+0x00000065
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 74992466d4
@@ -1073,15 +1078,22 @@ aes
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000005
-0x00000080
-0x00000065
-EOF
 RUN
 
 NAME=op: div ab
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000023
+0x00000001
+0x00000002
+0x00000001
+0x00000023
+0x00000000
+0x00000003
+0x00000001
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 848484
@@ -1094,22 +1106,20 @@ ar pc; ar psw; ar a; ar b
 aes
 ar pc; ar ov;
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000023
-0x00000001
-0x00000002
-0x00000001
-0x00000023
-0x00000000
-0x00000003
-0x00000001
-EOF
 RUN
 
 NAME=op: mul ab
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x000000e0
+0x00000000
+0x00000002
+0x00000004
+0x000000a0
+0x00000002
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx a4a4
@@ -1121,20 +1131,15 @@ ar b=3
 aes
 ar pc; ar psw; ar a; ar b
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000e0
-0x00000000
-0x00000002
-0x00000004
-0x000000a0
-0x00000002
-EOF
 RUN
 
 NAME=op: orl direct, a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+b140
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 4220
@@ -1144,15 +1149,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-b140
-EOF
 RUN
 
 NAME=op: orl direct, imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000000
+b140
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 432081
@@ -1161,15 +1166,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000000
-b140
-EOF
 RUN
 
 NAME=op: orl a, imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000001
+0x000000b3
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 4483
@@ -1177,15 +1182,15 @@ ar a=0x30
 aes
 ar pc; ar psw; ar a
 EOF
+RUN
+
+NAME=op: orl a, direct
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000002
 0x00000001
 0x000000b3
 EOF
-RUN
-
-NAME=op: orl a, direct
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 4520
@@ -1194,15 +1199,15 @@ ar a=0x83
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000001
-0x000000b3
-EOF
 RUN
 
 NAME=op: orl a, @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x000000b3
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 47
@@ -1212,15 +1217,15 @@ ar a=0x83
 aes
 ar pc; ar psw; ar a
 EOF
+RUN
+
+NAME=op: orl a, Rn
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000001
 0x00000001
 0x000000b3
 EOF
-RUN
-
-NAME=op: orl a, Rn
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 4f
@@ -1229,15 +1234,14 @@ ar a=0x83
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000b3
-EOF
 RUN
 
 NAME=op: orl c, bit
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000080
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 7203
@@ -1245,14 +1249,14 @@ wx 08 @_idata+0x20
 aes
 ar pc; ar psw;
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000080
-EOF
 RUN
 
 NAME=op: orl c, /bit
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000080
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx a003
@@ -1260,14 +1264,15 @@ wx 80 @_idata+0x20
 aes
 ar pc; ar psw;
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000080
-EOF
 RUN
 
 NAME=op: anl direct, a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+1040
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 5220
@@ -1277,15 +1282,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-1040
-EOF
 RUN
 
 NAME=op: anl direct, imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000000
+1040
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 532010
@@ -1294,15 +1299,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000000
-1040
-EOF
 RUN
 
 NAME=op: anl a, imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000001
+0x00000010
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 5410
@@ -1310,15 +1315,15 @@ ar a=0x30
 aes
 ar pc; ar psw; ar a
 EOF
+RUN
+
+NAME=op: anl a, direct
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000002
 0x00000001
 0x00000010
 EOF
-RUN
-
-NAME=op: anl a, direct
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 5520
@@ -1327,15 +1332,15 @@ ar a=0x10
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000010
-EOF
 RUN
 
 NAME=op: anl a, @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000010
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 57
@@ -1345,15 +1350,15 @@ ar a=0x10
 aes
 ar pc; ar psw; ar a
 EOF
+RUN
+
+NAME=op: anl a, Rn
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000001
 0x00000001
 0x00000010
 EOF
-RUN
-
-NAME=op: anl a, Rn
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 5f
@@ -1362,15 +1367,14 @@ ar a=0x10
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000010
-EOF
 RUN
 
 NAME=op: anl c, bit
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000080
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d38203
@@ -1379,14 +1383,14 @@ aes
 aes
 ar pc; ar psw;
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000080
-EOF
 RUN
 
 NAME=op: anl c, /bit
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d3b003
@@ -1395,14 +1399,15 @@ aes
 aes
 ar pc; ar psw;
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000000
-EOF
 RUN
 
 NAME=op: xrl direct, a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0140
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 6220
@@ -1412,15 +1417,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-0140
-EOF
 RUN
 
 NAME=op: xrl direct, imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000000
+0140
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 632031
@@ -1429,15 +1434,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000000
-0140
-EOF
 RUN
 
 NAME=op: xrl a, imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000001
+0x00000001
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 6430
@@ -1445,15 +1450,15 @@ ar a=0x31
 aes
 ar pc; ar psw; ar a
 EOF
+RUN
+
+NAME=op: xrl a, direct
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000002
 0x00000001
 0x00000001
 EOF
-RUN
-
-NAME=op: xrl a, direct
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 6520
@@ -1462,15 +1467,15 @@ ar a=0x31
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000001
-EOF
 RUN
 
 NAME=op: xrl a, @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000001
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 67
@@ -1480,15 +1485,15 @@ ar a=0x31
 aes
 ar pc; ar psw; ar a
 EOF
+RUN
+
+NAME=op: xrl a, Rn
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000001
 0x00000001
 0x00000001
 EOF
-RUN
-
-NAME=op: xrl a, Rn
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 6f
@@ -1497,15 +1502,15 @@ ar a=0x31
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000001
-EOF
 RUN
 
 NAME=op: rr a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x000000c4
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 03
@@ -1513,15 +1518,15 @@ ar a=0x89
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000c4
-EOF
 RUN
 
 NAME=op: rrc a (carry set)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x0000008c
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 13
@@ -1530,15 +1535,15 @@ ar c=1
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x0000008c
-EOF
 RUN
 
 NAME=op: rrc a (carry clear)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000081
+0x0000004c
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 13
@@ -1546,15 +1551,15 @@ ar a=0x99
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000081
-0x0000004c
-EOF
 RUN
 
 NAME=op: rl a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000013
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 23
@@ -1562,15 +1567,15 @@ ar a=0x89
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000013
-EOF
 RUN
 
 NAME=op: rlc a (carry set)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000031
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 33
@@ -1579,15 +1584,15 @@ ar c=1
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000031
-EOF
 RUN
 
 NAME=op: rlc a (carry clear)
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000081
+0x00000032
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 33
@@ -1595,30 +1600,30 @@ ar a=0x99
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000081
-0x00000032
-EOF
 RUN
 
 NAME=op: mov a, imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000001
+0x00000020
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 7420
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000020
-EOF
 RUN
 
 NAME=op: mov direct, imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000000
+2140
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 752021
@@ -1627,15 +1632,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000000
-2140
-EOF
 RUN
 
 NAME=op: mov @Ri imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+3020
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 7720
@@ -1645,30 +1650,30 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-3020
-EOF
 RUN
 
 NAME=op: mov Rn, imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0x00000020
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 7f20
 aes
 ar pc; ar psw; ar r7
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-0x00000020
-EOF
 RUN
 
 NAME=op: mov direct, direct
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000000
+3030
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 852021
@@ -1677,15 +1682,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000000
-3030
-EOF
 RUN
 
 NAME=op: mov direct, @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+4040
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 8720
@@ -1695,15 +1700,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-4040
-EOF
 RUN
 
 NAME=op: mov direct, Rn
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+2140
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 8f20
@@ -1713,30 +1718,30 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-2140
-EOF
 RUN
 
 NAME=op: mov dptr, imm
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000003
+0x00000000
+0x00002010
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 902010
 aes
 ar pc; ar psw; ar dptr
 EOF
-EXPECT=<<EOF
-0x00000003
-0x00000000
-0x00002010
-EOF
 RUN
 
 NAME=op: mov bit, c
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000006
+0x00000000
+11101000
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d39203c39204
@@ -1746,15 +1751,14 @@ aes 4
 ar pc; ar psw
 pB 1 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000006
-0x00000000
-11101000
-EOF
 RUN
 
 NAME=op: mov c, bit
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000080
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx a203
@@ -1762,14 +1766,15 @@ wx 08 @_idata+0x20
 aes
 ar pc; ar psw
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000080
-EOF
 RUN
 
 NAME=op: mov @Ri direct
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+3030
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx a720
@@ -1779,15 +1784,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-3030
-EOF
 RUN
 
 NAME=op: mov Rn, direct
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0x00000030
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx af20
@@ -1796,15 +1801,15 @@ ar r7=0x21
 aes
 ar pc; ar psw; ar r7
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-0x00000030
-EOF
 RUN
 
 NAME=op: mov a, direct
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000001
+0x00000040
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx e521
@@ -1812,15 +1817,15 @@ wx 3040 @_idata+0x20
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000040
-EOF
 RUN
 
 NAME=op: mov a, @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000040
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx e7
@@ -1829,15 +1834,15 @@ ar r1=0x21
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000040
-EOF
 RUN
 
 NAME=op: mov a, Rn
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000020
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx ef
@@ -1845,15 +1850,15 @@ ar r7=0x20
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000020
-EOF
 RUN
 
 NAME=op: mov direct, a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000000
+2140
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx f520
@@ -1863,15 +1868,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000000
-2140
-EOF
 RUN
 
 NAME=op: mov @Ri, a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+3020
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx f7
@@ -1882,15 +1887,15 @@ aes
 ar pc; ar psw;
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-3020
-EOF
 RUN
 
 NAME=op: mov Rn, a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000020
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx ff
@@ -1898,15 +1903,15 @@ ar a=0x20
 aes
 ar pc; ar psw; ar r7
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000020
-EOF
 RUN
 
 NAME=op: movx a, @dptr
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000010
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx e0
@@ -1915,15 +1920,15 @@ ar dptr=0x100
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000010
-EOF
 RUN
 
 NAME=op: movx a, @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000040
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx e3
@@ -1932,15 +1937,15 @@ ar r1=0x21
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000040
-EOF
 RUN
 
 NAME=op: movx @dptr, a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000000
+20
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx f0
@@ -1951,15 +1956,15 @@ aes
 ar pc; ar psw;
 p8 1 @_xdata+0x100
 EOF
+RUN
+
+NAME=op: movx @Ri, a
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000001
 0x00000000
 20
 EOF
-RUN
-
-NAME=op: movx @Ri, a
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx f3
@@ -1970,15 +1975,15 @@ aes
 ar pc; ar psw;
 p8 1 @_xdata+0x010
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000000
-20
-EOF
 RUN
 
 NAME=op: movc a, @a+pc
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000010
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 83
@@ -1987,15 +1992,15 @@ ar a=0xf0
 aes
 ar pc; ar psw; ar a
 EOF
+RUN
+
+NAME=op: movc a, @a+dptr
+FILE=malloc://0x10000
 EXPECT=<<EOF
 0x00000001
 0x00000001
 0x00000010
 EOF
-RUN
-
-NAME=op: movc a, @a+dptr
-FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 93
@@ -2005,15 +2010,15 @@ ar dptr=0xff
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000010
-EOF
 RUN
 
 NAME=op: swap a
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000013
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c4
@@ -2021,15 +2026,16 @@ ar a=0x31
 aes
 ar pc; ar psw; ar a
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000013
-EOF
 RUN
 
 NAME=op: xch a, direct
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000002
+0x00000001
+0x00000040
+3020
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c521
@@ -2039,16 +2045,16 @@ aes
 ar pc; ar psw; ar a
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000040
-3020
-EOF
 RUN
 
 NAME=op: xch a, @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000040
+3020
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c7
@@ -2059,16 +2065,16 @@ aes
 ar pc; ar psw; ar a
 p8 2 @_idata+0x20
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000040
-3020
-EOF
 RUN
 
 NAME=op: xch a, Rn
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000040
+0x00000020
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx cf
@@ -2077,16 +2083,16 @@ ar a=0x20
 aes
 ar pc; ar psw; ar a; ar r7
 EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000040
-0x00000020
-EOF
 RUN
 
 NAME=op: xchd a, @Ri
 FILE=malloc://0x10000
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000054
+36
+EOF
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d7
@@ -2096,11 +2102,5 @@ ar a=0x56
 aes
 ar pc; ar psw; ar a
 p8 1 @_idata+0x20
-EOF
-EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000054
-36
 EOF
 RUN
