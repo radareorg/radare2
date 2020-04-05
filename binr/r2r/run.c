@@ -43,6 +43,124 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 R_API bool r2r_subprocess_init(void) { return true; }
 R_API void r2r_subprocess_fini(void) {}
 
+#define DEBUG_ENV 0
+
+#if DEBUG_ENV
+static void print_env (LPWCH env) {
+	while (true) {
+		wprintf (L"%s\n", env);
+		while (*env) {
+			env++;
+		}
+		env++;
+		if (!*env) {
+			break;
+		}
+	}
+}
+#endif
+
+// Create an env block that inherits the current vars but overrides the given ones
+static LPWCH override_env (const char *envvars[], const char *envvals[], size_t env_size) {
+	LPWCH ret = NULL;
+	LPWCH parent_env = NULL;
+	size_t i;
+	LPWSTR *wenvvars = calloc (env_size, sizeof (LPWSTR));
+	LPWSTR *wenvvals = calloc (env_size, sizeof (LPWSTR));
+	parent_env = GetEnvironmentStringsW ();
+	if (!wenvvars || !wenvvals || !parent_env) {
+		goto error;
+	}
+
+#if DEBUG_ENV
+	printf ("\n++++++++++++++++++ PREV:\n");
+	print_env (parent_env);
+#endif
+
+	for (i = 0; i < env_size; i++) {
+		wenvvars[i] = r_utf8_to_utf16 (envvars[i]);
+		wenvvals[i] = r_utf8_to_utf16 (envvals[i]);
+		if (!wenvvars[i] || !wenvvals[i]) {
+			goto error;
+		}
+	}
+
+	RVector buf;
+	r_vector_init (&buf, sizeof (wchar_t), NULL, NULL);
+	LPWCH cur = parent_env;
+	while (true) {
+		LPWCH var_begin = cur;
+		//wprintf (L"ENV: %s\n", cur);
+		while (*cur && *cur != L'=') {
+			cur++;
+		}
+		if (!*cur) {
+			cur++;
+			if (!*cur) {
+				break;
+			}
+			continue;
+		}
+		bool overridden = false;
+		for (i = 0; i < env_size; i++) {
+			size_t overlen = lstrlenW (wenvvars[i]);
+			size_t curlen = cur - var_begin;
+			if (overlen == curlen && !memcmp (var_begin, wenvvars[i], overlen)) {
+#if DEBUG_ENV
+				wprintf (L"OVERRIDE %s = %s by %s\n", var_begin, cur + 1, wenvvals[i]);
+#endif
+				overridden = true;
+				break;
+			}
+		}
+		while (*cur) {
+			cur++;
+		}
+		if (!overridden) {
+			r_vector_insert_range (&buf, buf.len, var_begin, cur - var_begin + 1);
+		}
+		cur++;
+		if (!*cur) {
+			// \0\0 marks the end
+			break;
+		}
+	}
+
+	wchar_t c;
+	for (i = 0; i < env_size; i++) {
+		r_vector_insert_range (&buf, buf.len, wenvvars[i], lstrlenW (wenvvars[i]));
+		c = L'=';
+		r_vector_push (&buf, &c);
+		r_vector_insert_range (&buf, buf.len, wenvvals[i], lstrlenW (wenvvals[i]));
+		c = L'\0';
+		r_vector_push (&buf, &c);
+	}
+	c = '\0';
+	r_vector_push (&buf, &c);
+	ret = buf.a;
+
+#if DEBUG_ENV
+	printf ("++++++++++++++++++ AFTER:\n");
+	print_env (ret);
+#endif
+
+error:
+	if (parent_env) {
+		FreeEnvironmentStringsW (parent_env);
+	}
+	for (i = 0; i < env_size; i++) {
+		if (wenvvars) {
+			free (wenvvars[i]);
+		}
+		if (wenvvals) {
+			free (wenvvals[i]);
+		}
+	}
+	free (wenvvars);
+	free (wenvvals);
+	return ret;
+}
+
 R_API R2RSubprocess *r2r_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size) {
@@ -112,13 +230,15 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	start_info.hStdInput = stdin_read;
 	start_info.dwFlags |= STARTF_USESTDHANDLES;
 
+	LPWSTR env = override_env (envvars, envvals, env_size);
 	if (!CreateProcess (NULL, wcmdline,
-			NULL, NULL, TRUE, 0,
-			NULL, // TODO: env
+			NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env,
 			NULL, &start_info, &proc_info)) {
+		free (env);
 		eprintf ("CreateProcess failed: %#x\n", (int)GetLastError ());
 		goto error;
 	}
+	free (env);
 
 	CloseHandle (proc_info.hThread);
 	proc->proc = proc_info.hProcess;
@@ -790,12 +910,22 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RLi
 	}
 
 	const char *envvars[] = {
+#if __WINDOWS__
+		"ANSICON",
+#endif
 		"R2_NOPLUGINS"
 	};
 	const char *envvals[] = {
+#if __WINDOWS__
+		"1",
+#endif
 		"1"
 	};
+#if __WINDOWS__
 	size_t env_size = load_plugins ? 0 : 1;
+#else
+	size_t env_size = load_plugins ? 1 : 2;
+#endif
 	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size, user);
 	r_pvector_clear (&args);
 #if __WINDOWS__
