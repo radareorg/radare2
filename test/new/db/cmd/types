@@ -1605,3 +1605,26 @@ EXPECT=<<EOF
 (foo)
 EOF
 RUN
+
+NAME=type xrefs
+FILE=../bins/elf/ls.odd
+CMDS=<<EOF
+aaaa
+txf main
+?e =
+txf fcn.00011b90
+?e =
+txt size_t *
+EOF
+EXPECT=<<EOF
+int
+char **
+int64_t
+=
+uint32_t
+int64_t
+char *
+=
+fcn.0000f770
+EOF
+RUN
