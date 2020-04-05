@@ -2,6 +2,7 @@
 #define R_UTIL_TABLE_H
 
 #include <r_util.h>
+typedef int (*RTableSelector)(void *a, void *b, int nth);
 
 typedef struct {
 	const char *name;
@@ -68,6 +69,7 @@ R_API char *r_table_tojson(RTable *t);
 R_API void r_table_filter(RTable *t, int nth, int op, const char *un);
 R_API void r_table_sort(RTable *t, int nth, bool inc);
 R_API void r_table_uniq(RTable *t);
+R_API void r_table_group(RTable *t, int nth, RTableSelector fcn);
 R_API bool r_table_query(RTable *t, const char *q);
 R_API void r_table_hide_header(RTable *t);
 R_API bool r_table_align(RTable *t, int nth, int align);

@@ -607,7 +607,7 @@ R_API void r_table_sortlen(RTable *t, int nth, bool dec) {
 	}
 }
 
-static int r_rows_cmp(RList *lhs, RList *rhs, RList *cols) {
+static int r_rows_cmp(RList *lhs, RList *rhs, RList *cols, int nth) {
 	RListIter *iter_lhs;
 	RListIter *iter_rhs;
 	RListIter *iter_col;
@@ -616,6 +616,7 @@ static int r_rows_cmp(RList *lhs, RList *rhs, RList *cols) {
 	void *item_lhs;
 	void *item_rhs;
 	int tmp;
+	int i = 0;
 
 	for (iter_lhs = lhs->head, iter_rhs = rhs->head, iter_col = cols->head;
 		iter_lhs && iter_rhs && iter_col;
@@ -625,11 +626,15 @@ static int r_rows_cmp(RList *lhs, RList *rhs, RList *cols) {
 		item_rhs = iter_rhs->data;
 		item_col = iter_col->data;
 
-		tmp = item_col->type->cmp (item_lhs, item_rhs);
+		if (nth == -1 || i == nth) {
+			tmp = item_col->type->cmp (item_lhs, item_rhs);
 
-		if (tmp) {
-			return tmp;
+			if (tmp) {
+				return tmp;
+			}
 		}
+
+		++i;
 	}
 
 	if (iter_lhs) {
@@ -644,6 +649,25 @@ static int r_rows_cmp(RList *lhs, RList *rhs, RList *cols) {
 }
 
 R_API void r_table_uniq(RTable *t) {
+	r_table_group (t, -1, NULL);
+}
+
+static void select_and_delete_the_row(RList *rows, RTableRow *uniq_row, RTableRow *row,
+	RListIter *iter_inner, RListIter *iter, RTableSelector fcn, int nth) {
+	int select_flag;
+	if (!fcn) {
+		r_list_delete (rows, iter);
+	} else {
+		select_flag = fcn (uniq_row->items, row->items, nth);
+		if (select_flag < 0) {
+			r_list_delete (rows, iter_inner);
+		} else {
+			r_list_delete (rows, iter);
+		}
+	}
+}
+
+R_API void r_table_group(RTable *t, int nth, RTableSelector fcn) {
 	RListIter *iter;
 	RListIter *tmp;
 	RTableRow *row;
@@ -660,8 +684,9 @@ R_API void r_table_uniq(RTable *t) {
 
 			uniq_row = iter_inner->data;
 
-			if (!r_rows_cmp (row->items, uniq_row->items, t->cols)) {
-				r_list_delete (rows, iter);
+			if (!r_rows_cmp (row->items, uniq_row->items, t->cols, nth)) {
+				select_and_delete_the_row (rows, uniq_row, row,
+					iter_inner, iter, fcn, nth);
 				break;
 			}
 		}
