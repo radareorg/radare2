@@ -49,6 +49,18 @@ environment:
       BUILD_DIR: build
       RUN_TESTS: true
 
+# Skip changes affecting only other CI services
+skip_commits:
+  files:
+    - .builds/*
+    - .github/*
+    - .travis.yml
+    - .lgtm.yml
+    - snapcraft.yaml
+    - '*.md'
+    - travis-*
+    - Vagrant*
+
 # Init
 init:
   # Build dependent custom commands
