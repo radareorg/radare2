@@ -4,9 +4,6 @@ version: git-{build}
 # Skip Github tags
 skip_tags: true
 
-# Clone depth
-clone_depth: 1
-
 # Branches to clone
 branches:
   only:
