@@ -2858,7 +2858,7 @@ static RBinElfReloc *populate_relocs_record(ELFOBJ *bin, struct dynamic_relocati
 static struct dynamic_relocation_section *get_dynamic_info(ELFOBJ *bin) {
 	struct dynamic_relocation_section *res = calloc (1, sizeof (struct dynamic_relocation_section));
 
-	for (size_t i = 0; i < bin->dyn_entries; ++i) {
+	for (size_t i = 0; i < bin->dyn_entries; i++) {
 		Elf_(Dyn) *dyn_struct = bin->dyn_buf + i;
 
 		switch (dyn_struct->d_tag) {
