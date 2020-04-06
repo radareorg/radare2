@@ -50,6 +50,7 @@ EOF
 RUN
 
 NAME=fatmach0 arm16 symbol alignment
+ARGS=-aarm -b32
 FILE=../bins/mach0/a.out
 CMDS=<<EOF
 s sym._call
