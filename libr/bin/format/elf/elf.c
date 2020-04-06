@@ -2736,7 +2736,7 @@ static size_t get_num_relocs_approx(ELFOBJ *bin, struct dynamic_relocation_secti
 
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
 	struct dynamic_relocation_section *info, RBinElfReloc *relocs, size_t pos) {
-	size_t size = get_size_rel_mode (info->plt_mode);
+	size_t size = get_size_rel_mode(info->plt_mode);
 
 	for (size_t offset = 0; offset < info->rela_size; offset += info->relaent) {
 		read_reloc (bin, relocs + pos, DT_RELA, info->addr_rela + offset - bin->baddr);
@@ -2778,19 +2778,19 @@ static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
 }
 
 static size_t get_next_not_analysed_offset(size_t section_offset, size_t offset,
-	struct dynamic_relocation_section *info) {
+	struct dynamic_relocation_section *info, size_t base_addr) {
 
 	size_t g_offset = section_offset + offset;
 	size_t diff;
 
-	if (info->addr_rela <= g_offset && g_offset < info->addr_rela + info->rela_size) {
-		diff = info->addr_rela + info->rela_size - g_offset;
+	if (info->addr_rela - base_addr <= g_offset && g_offset < info->addr_rela + info->rela_size - base_addr) {
+		diff = info->addr_rela + info->rela_size - g_offset - base_addr;
 		return diff;
-	} else if (info->addr_rel <= g_offset && g_offset < info->addr_rel + info->rel_size) {
-		diff = info->addr_rel + info->rel_size - g_offset;
+	} else if (info->addr_rel - base_addr <= g_offset && g_offset < info->addr_rel + info->rel_size - base_addr) {
+		diff = info->addr_rel + info->rel_size - g_offset - base_addr;
 		return diff;
-	} else if (info->addr_jmprel <= g_offset && g_offset < info->addr_jmprel + info->jmprel_size) {
-		diff = info->addr_jmprel + info->jmprel_size - g_offset;
+	} else if (info->addr_jmprel - base_addr <= g_offset && g_offset < info->addr_jmprel + info->jmprel_size - base_addr) {
+		diff = info->addr_jmprel + info->jmprel_size - g_offset - base_addr;
 		return diff;
 	}
 
@@ -2813,18 +2813,18 @@ static size_t populate_relocs_record_from_section(ELFOBJ *bin,
 			continue;
 		}
 
-		size = get_size_rel_mode (rel_mode);
+		size = get_size_rel_mode(rel_mode);
 
-		for (j = get_next_not_analysed_offset (bin->g_sections[i].offset, 0, info);
+		for (j = get_next_not_analysed_offset (bin->g_sections[i].offset, 0, info, bin->baddr);
 			j < bin->g_sections[i].size;
-			j = get_next_not_analysed_offset (bin->g_sections[i].offset, j + size, info)) {
+			j = get_next_not_analysed_offset (bin->g_sections[i].offset, j + size, info, bin->baddr)) {
 
 			res = read_reloc (bin, relocs + pos, rel_mode, bin->g_sections[i].offset + j);
 			if (res < 0) {
 				break;
 			}
 			if (is_bin_etrel (bin)) {
-				if (has_valid_section_header (bin, i)) {
+				if (has_valid_section_header(bin, i)) {
 					relocs[pos].rva = bin->shdr[bin->g_sections[i].info].sh_offset + relocs[pos].offset;
 					relocs[pos].rva = Elf_(r_bin_elf_p2v) (bin, relocs[pos].rva);
 				} else {
