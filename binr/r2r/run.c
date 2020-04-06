@@ -238,11 +238,11 @@ error:
 
 static ut64 now_us() {
 	LARGE_INTEGER f;
-	if (!QueryPerformanceFrequency(&f)) {
+	if (!QueryPerformanceFrequency (&f)) {
 		return 0;
 	}
 	LARGE_INTEGER v;
-	if (!QueryPerformanceCounter(&v)) {
+	if (!QueryPerformanceCounter (&v)) {
 		return 0;
 	}
 	v.QuadPart *= 1000000;
@@ -287,7 +287,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 
 #define DO_READ(which) \
 	if (!ReadFile (proc->which##_read, which##_buf, sizeof (which##_buf) - 1, NULL, &(which##_overlapped))) { \
-		if (GetLastError() != ERROR_IO_PENDING) { \
+		if (GetLastError () != ERROR_IO_PENDING) { \
 			/* EOF or some other error */ \
 			which##_eof = true; \
 		} \
@@ -977,7 +977,6 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 #define JQ_CMD "jq"
 
 R_API bool r2r_check_jq_available(void) {
-	return false;
 	const char *invalid_json = "this is not json lol";
 	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, NULL, 0, NULL, NULL, 0);
 	if (proc) {

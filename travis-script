@@ -108,7 +108,7 @@ fi
 if [ "${R2_TESTS_DISABLE}" != "1" ] ; then
     export NOREPORT=1
     cd test
-    VERBOSE=1 ASAN_OPTIONS=detect_leaks=0 make -k all || exit 1
+    VERBOSE=1 make -k all || exit 1
 
     if [ "${COVERAGE}" == "1" ] ; then
         cd ../build

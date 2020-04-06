@@ -127,7 +127,6 @@ static bool r2r_chdir_fromtest(const char *test_path) {
 	free (cwd);
 	return found;
 }
-char *convert_win_cmds (const char *cmds);
 
 int main(int argc, char **argv) {
 	int workers_count = WORKERS_DEFAULT;
