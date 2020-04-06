@@ -11,7 +11,6 @@ branches:
 
 # Environment variables
 environment:
-  nodejs_version: "Stable"
   NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip
   VSVARSALLPATH2017: 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat'
   VSVARSALLPATH2019: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat'
@@ -97,14 +96,10 @@ for:
       - echo %PATH%
       - where radare2
       - radare2 -v
-      - ps: Install-Product node $env:nodejs_version
-      - node --version
       - cd test
       - git clone -q --depth 1 https://github.com/radareorg/radare2-testbins bins
       - cd new
-      - npm install
-      - set NOOK=1
-      - node_modules/.bin/r2r
+      - r2r -L db
       - cd ../..
 
     after_test:

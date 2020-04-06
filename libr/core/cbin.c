@@ -407,7 +407,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				break;
 			}
 			char *bufstr = r_strbuf_drain (buf);
-			r_table_add_rowf (table, "nXXddsss", string->ordinal, paddr, vaddr,
+			r_table_add_rowf (table, "nXXddsss", (ut64)string->ordinal, paddr, vaddr,
 				(int)string->length, (int)string->size, section_name,
 				type_string, bufstr);
 			free (bufstr);
@@ -1868,10 +1868,11 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		} else {
 			const char *bind = import->bind? import->bind: "NONE";
 			const char *type = import->type? import->type: "NONE";
+			eprintf ("nth: %d, %s\n", import->ordinal, symname);
 			if (import->classname && import->classname[0]) {
-				r_table_add_rowf (table, "nXssss", import->ordinal, addr, bind, type, libname ? libname : "", sdb_fmt ("%s.%s", import->classname, symname));
+				r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, libname ? libname : "", sdb_fmt ("%s.%s", import->classname, symname));
 			} else {
-				r_table_add_rowf (table, "nXssss", import->ordinal, addr, bind, type, libname ? libname : "", symname);
+				r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, libname ? libname : "", symname);
 			}
 
 			if (import->descriptor && import->descriptor[0]) {

@@ -503,6 +503,10 @@ static R2RProcessOutput *print_runner(const char *file, const char *args[], size
 }
 
 static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
+	if (result->run_failed) {
+		printf (Color_RED "RUN FAILED (e.g. wrong radare2 path)" Color_RESET "\n");
+		return;
+	}
 	switch (result->test->type) {
 	case R2R_TEST_TYPE_CMD: {
 		r2r_run_cmd_test (config, result->test->cmd_test, print_runner, NULL);

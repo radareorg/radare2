@@ -39,7 +39,7 @@ EOF
 RUN
 
 NAME=AFL - crash #7
-FILE=/bin/ls
+FILE=-
 CMDS=<<EOF
 e scr.null =true
 22.22.22ddd d do@

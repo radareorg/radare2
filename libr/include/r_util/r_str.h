@@ -66,6 +66,7 @@ R_API int r_str_rwx(const char *str);
 R_API int r_str_replace_ch(char *s, char a, char b, bool g);
 R_API int r_str_replace_char(char *s, int a, int b);
 R_API int r_str_replace_char_once(char *s, int a, int b);
+R_API void r_str_remove_char(char *str, char c);
 R_API const char *r_str_rwx_i(int rwx);
 R_API int r_str_fmtargs(const char *fmt);
 R_API char *r_str_arg_escape(const char *arg);

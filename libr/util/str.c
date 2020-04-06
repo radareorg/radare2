@@ -85,6 +85,16 @@ R_API int r_str_replace_char(char *s, int a, int b) {
 	return r_str_replace_ch (s, a, b, true);
 }
 
+R_API void r_str_remove_char(char *str, char c) {
+	while (*str) {
+		if (*str == c) {
+			memmove (str, str + 1, strlen (str + 1) + 1);
+			continue;
+		}
+		str++;
+	}
+}
+
 R_API void r_str_reverse(char *str) {
 	int i, len = strlen (str);
 	int half = len / 2;
