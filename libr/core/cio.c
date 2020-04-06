@@ -243,9 +243,6 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	} else if (op == '2' || op == '4' || op == '8') { // "wo2" "wo4" "wo8"
 		int inc = op - '0';
 		ut8 tmp;
-		if (inc < 1 || inc > 8) {
-			goto beach;
-		}
 		for (i = 0; (i + inc) <= core->blocksize; i += inc) {
 			if (inc == 2) {
 				tmp = buf[i];
