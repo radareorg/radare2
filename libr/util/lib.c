@@ -297,10 +297,27 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	return res;
 }
 
+static char *major_minor(const char *s) {
+	char *a = strdup (s);
+	char *p = strchr (a, '.');
+	if (p) {
+		p = strchr (p + 1, '.');
+		if (p) {
+			*p = 0;
+		}
+	}
+	return a;
+}
+
 R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru) {
 	r_return_val_if_fail (lib && file && stru, -1);
 	if (stru->version) {
-		if (strcmp (stru->version, R2_VERSION)) {
+		char *mm0 = major_minor (stru->version);
+		char *mm1 = major_minor (R2_VERSION);
+		bool mismatch = strcmp (mm0, mm1);
+		free (mm0);
+		free (mm1);
+		if (mismatch) {
 			eprintf ("Module version mismatch %s (%s) vs (%s)\n",
 				file, stru->version, R2_VERSION);
 			if (stru->pkgname) {
