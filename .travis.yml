@@ -20,46 +20,60 @@ os: osx
 jobs:
   fast_finish: true
   include:
-    # Linux with GCC
-    - os: linux
+    # Linux with GCC - full tests
+    - if: type != pull_request AND branch = master
+      os: linux
       name: Linux-GCC
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
-    # Linux with clang
+    # Linux with meson and coverage and asserts - full tests
+    - if: type != pull_request AND branch = master
+      os: linux
+      name: Linux-meson
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1 CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with GCC - compile  only
+    - if: type == pull_request
+      os: linux
+      name: Linux-GCC-compile
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
+    # Linux with clang - full tests
     - os: linux
       name: Linux-CLANG
       env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1"
-    # Linux with meson and coverage and asserts
-    - os: linux
-      name: Linux-meson
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1 CFLAGS="-DR2_ASSERT_STDOUT=1"
+    # Linux with meson and coverage and asserts - compile only
+    - if: type == pull_request
+      os: linux
+      name: Linux-meson-compile
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson CFLAGS="-DR2_ASSERT_STDOUT=1"
     # OS X with clang
     - os: osx
       name: macOS
       env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1"
     # emscripten
-    - os: linux
+    - if: branch = master AND type != pull_request
+      os: linux
       name: WASM
       env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
     - os: linux
-      name: PPC64
+      name: PPC64-compile
       arch: ppc64le
       dist: bionic
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
     # Linux with GCC on System Z
     - os: linux
-      name: S390X
+      name: S390X-compile
       arch: s390x
       dist: bionic
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
     # Linux with GCC on ARMv8 (64bit)
     - os: linux
-      name: ARM64
+      name: ARM64-compile
       arch: arm64
       dist: bionic
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
     # Linux with new shell parser enabled
-    - os: linux
+    - if: (not head_branch =~ ^newshell-* AND not head_branch =~ ^newshell-* AND not branch =~ ^newshell-* AND not branch =~ ^newshell-*) AND (head_branch =~ ^newshell-* OR type = push)
+      os: linux
       name: newShell
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_NEWSHELL=true CFLAGS="-DR2_ASSERT_STDOUT=1" R2_CFG_NEWSHELL=1
     # Building *.deb package
@@ -103,25 +117,27 @@ jobs:
   
   allow_failures:
     # Emscripten
-    - os: linux
+    - if: branch = master AND type != pull_request
+      os: linux
       name: WASM
       env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
     - os: linux
       arch: ppc64le
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
     # Linux with GCC on System Z
     - os: linux
       arch: s390x
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
     # Linux with GCC on ARMv8 (64bit)
     - os: linux
       arch: arm64
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with new shell parser enabled
-    - os: linux
+    - if: (not head_branch =~ ^newshell-* AND not head_branch =~ ^newshell-* AND not branch =~ ^newshell-* AND not branch =~ ^newshell-*) AND (head_branch =~ ^newshell-* OR type = push)
+      os: linux
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_NEWSHELL=true CFLAGS="-DR2_ASSERT_STDOUT=1" R2_CFG_NEWSHELL=1
 
 cache:
