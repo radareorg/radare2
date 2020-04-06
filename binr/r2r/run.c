@@ -44,7 +44,7 @@ R_API bool r2r_subprocess_init(void) { return true; }
 R_API void r2r_subprocess_fini(void) {}
 
 // Create an env block that inherits the current vars but overrides the given ones
-static LPWCH override_env (const char *envvars[], const char *envvals[], size_t env_size) {
+static LPWCH override_env(const char *envvars[], const char *envvals[], size_t env_size) {
 	LPWCH ret = NULL;
 	LPWCH parent_env = NULL;
 	size_t i;
