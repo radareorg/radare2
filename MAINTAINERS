@@ -27,3 +27,4 @@ libr/syscall: sirmy15@gmail.com, pancake@nopcode.org
 libr/util: sirmy15@gmail.com, info@florianmaerkl.de
 shlr/ptrace-wrap: info@florianmaerkl.de
 shlr/radare2-shell-parser: sirmy15@gmail.com
+shlr/tcc: xvilka@gmail.com
