@@ -2676,7 +2676,7 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 
 	if (is_rela == DT_RELA) {
 		reloc_info.r_addend = READWORD (buf, i);
-	    r->addend = reloc_info.r_addend;
+		r->addend = reloc_info.r_addend;
 	}
 
 	r->is_rela = is_rela;
@@ -2707,30 +2707,38 @@ static size_t get_num_relocs(struct dynamic_relocation_section *info) {
 	return res;
 }
 
+static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
+	struct dynamic_relocation_section *info, RBinElfReloc *relocs, size_t pos) {
+	size_t size = info->plt_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
+
+	for (size_t offset = 0; offset < info->rela_size; offset += info->relaent) {
+		read_reloc (bin, relocs + pos, DT_RELA, info->addr_rela + offset);
+		fix_rva_and_offset (bin, relocs + pos, info->addr_rela);
+		pos++;
+	}
+
+	for (size_t offset = 0; offset < info->rel_size; offset += info->relent) {
+		read_reloc (bin, relocs + pos, DT_REL, info->addr_rel + offset);
+		fix_rva_and_offset (bin, relocs + pos, info->addr_rel);
+		pos++;
+	}
+
+	for (size_t offset = 0; offset < info->jmprel_size; offset += size) {
+		read_reloc (bin, relocs + pos, info->plt_mode, info->addr_jmprel + offset);
+		fix_rva_and_offset (bin, relocs + pos, info->addr_jmprel);
+		pos++;
+	}
+
+	return pos;
+}
+
 static RBinElfReloc *populate_relocs_record(ELFOBJ *bin, struct dynamic_relocation_section *info) {
 	size_t num_relocs = get_num_relocs (info);
 	bin->reloc_num = num_relocs;
 	RBinElfReloc *relocs = calloc (num_relocs + 1, sizeof (RBinElfReloc));
+
 	size_t i = 0;
-
-	for (size_t offset = 0; offset < info->rela_size; offset += info->relaent) {
-		read_reloc (bin, relocs + i, DT_RELA, info->addr_rela + offset);
-		fix_rva_and_offset (bin, relocs + i, info->addr_rela);
-		i++;
-	}
-
-	for (size_t offset = 0; offset < info->rel_size; offset += info->relent) {
-		read_reloc (bin, relocs + i, DT_REL, info->addr_rel + offset);
-		fix_rva_and_offset (bin, relocs + i, info->addr_rel);
-		i++;
-	}
-
-	size_t size = info->plt_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
-	for (size_t offset = 0; offset < info->jmprel_size; offset += size) {
-		read_reloc (bin, relocs + i, info->plt_mode, info->addr_jmprel + offset);
-		fix_rva_and_offset (bin, relocs + i, info->addr_jmprel);
-		i++;
-	}
+	i = populate_relocs_record_from_dynamic (bin, info, relocs, i);
 
 	relocs[num_relocs].last = 1;
 	return relocs;
