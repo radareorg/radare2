@@ -2671,28 +2671,19 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	size_t i = 0;
 	Elf_(Rela) reloc_info;
 
-#if R_BIN_ELF64
-	reloc_info.r_offset = READ64 (buf, i);
-	reloc_info.r_info = READ64 (buf, i);
-#else
-	reloc_info.r_offset = READ32 (buf, i);
-	reloc_info.r_info = READ32 (buf, i);
-#endif
-
-	r->offset = reloc_info.r_offset;
-	r->type = ELF_R_TYPE (reloc_info.r_info);
-	r->sym = ELF_R_SYM (reloc_info.r_info);
-	r->is_rela = is_rela;
-	r->last = 0;
+	reloc_info.r_offset = READWORD (buf, i);
+	reloc_info.r_info = READWORD (buf, i);
 
 	if (is_rela == DT_RELA) {
-#if R_BIN_ELF64
-		reloc_info.r_addend = READ64 (buf, i);
-#else
-		reloc_info.r_addend = READ32 (buf, i);
-#endif
-		r->addend = reloc_info.r_addend;
+		reloc_info.r_addend = READWORD (buf, i);
 	}
+
+	r->addend = reloc_info.r_addend;
+	r->is_rela = is_rela;
+	r->last = 0;
+	r->offset = reloc_info.r_offset;
+	r->sym = ELF_R_SYM (reloc_info.r_info);
+	r->type = ELF_R_TYPE (reloc_info.r_info);
 
 	return 1;
 }
