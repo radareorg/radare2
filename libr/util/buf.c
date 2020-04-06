@@ -425,7 +425,7 @@ R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
 
 R_API st64 r_buf_read(RBuffer *b, ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf, -1);
-	ut64 r = buf_read (b, buf, len);
+	st64 r = buf_read (b, buf, len);
 	if (r >= 0 && r < len) {
 		memset (buf + r, b->Oxff_priv, len - r);
 	}
