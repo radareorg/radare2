@@ -647,9 +647,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			RIOMap *m = r_io_map_get (core->io, from);
 			int rwx = m? m->perm: part->map->perm;
 #else
-		RIOMap *map;
-		SdbListIter *iter;
-		ls_foreach  (core->io->maps, iter, map) {
+		void **it;
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
 			ut64 from = r_itv_begin (map->itv);
 			ut64 to = r_itv_end (map->itv);
 			int rwx = map->perm;
@@ -679,9 +679,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
 		// bool only = (bool)(size_t)strstr (mode, ".only");
 
-		SdbListIter *iter;
-		RIOMap *map;
-		ls_foreach  (core->io->maps, iter, map) {
+		void **it;
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
 			ut64 from = r_itv_begin (map->itv);
 			//ut64 to = r_itv_end (map->itv);
 			int rwx = map->perm;
@@ -766,10 +766,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 				to = R_MAX (to, addr + size);
 			}
 			if (from == UT64_MAX) {
-				SdbListIter *iter;
-				RIOMap *map;
 				int mask = 1;
-				ls_foreach  (core->io->maps, iter, map) {
+				void **it;
+				r_pvector_foreach (&core->io->maps, it) {
+					RIOMap *map = *it;
 					ut64 from = r_itv_begin (map->itv);
 					ut64 size = r_itv_size (map->itv);
 					int rwx = map->perm;

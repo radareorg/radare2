@@ -8576,13 +8576,13 @@ static const char *oldstr = NULL;
 
 static int compute_coverage(RCore *core) {
 	RListIter *iter;
-	SdbListIter *iter2;
 	RAnalFunction *fcn;
-	RIOMap *map;
 	int cov = 0;
 	cov += r_meta_get_size(core->anal, R_META_TYPE_DATA);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		ls_foreach (core->io->maps, iter2, map) {
+		void **it;
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
 			if (map->perm & R_PERM_X) {
 				ut64 section_end = map->itv.addr + map->itv.size;
 				ut64 s = r_anal_function_realsize (fcn);
@@ -8597,9 +8597,9 @@ static int compute_coverage(RCore *core) {
 
 static int compute_code (RCore* core) {
 	int code = 0;
-	SdbListIter *iter;
-	RIOMap *map;
-	ls_foreach (core->io->maps, iter, map) {
+	void **it;
+	r_pvector_foreach (&core->io->maps, it) {
+		RIOMap *map = *it;
 		if (map->perm & R_PERM_X) {
 			code += map->itv.size;
 		}

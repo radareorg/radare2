@@ -393,9 +393,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 
 // TODO: discuss the output format
 static void map_list(RIO *io, int mode, RPrint *print, int fd) {
-	SdbListIter *iter;
-	RIOMap *map;
-	if (!io || !io->maps || !print || !print->cb_printf) {
+	if (!io || !print || !print->cb_printf) {
 		return;
 	}
 	if (mode == 'j') {
@@ -403,7 +401,10 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	}
 	bool first = true;
 	char *om_cmds = NULL;
-	ls_foreach_prev (io->maps, iter, map) {			//this must be prev (LIFO)
+
+	void **it;
+	r_pvector_foreach_prev (&io->maps, it) { //this must be prev (LIFO)
+		RIOMap *map = *it;
 		if (fd >= 0 && map->fd != fd) {
 			continue;
 		}
@@ -456,8 +457,6 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 }
 
 static void cmd_omfg(RCore *core, const char *input) {
-	SdbListIter *iter;
-	RIOMap *map;
 	input = r_str_trim_head_ro (input);
 	if (input) {
 		int perm = *input
@@ -465,19 +464,23 @@ static void cmd_omfg(RCore *core, const char *input) {
 			? r_str_rwx (input + 1)
 			: r_str_rwx (input)
 		: 7;
+		void **it;
 		switch (*input) {
 		case '+':
-			ls_foreach (core->io->maps, iter, map) {
+			r_pvector_foreach (&core->io->maps, it) {
+				RIOMap *map = *it;
 				map->perm |= perm;
 			}
 			break;
 		case '-':
-			ls_foreach (core->io->maps, iter, map) {
+			r_pvector_foreach (&core->io->maps, it) {
+				RIOMap *map = *it;
 				map->perm &= ~perm;
 			}
 			break;
 		default:
-			ls_foreach (core->io->maps, iter, map) {
+			r_pvector_foreach (&core->io->maps, it) {
+				RIOMap *map = *it;
 				map->perm = perm;
 			}
 			break;
@@ -486,8 +489,6 @@ static void cmd_omfg(RCore *core, const char *input) {
 }
 
 static void cmd_omf(RCore *core, const char *input) {
-	SdbListIter *iter;
-	RIOMap *map;
 	char *arg = strdup (r_str_trim_head_ro (input));
 	if (!arg) {
 		return;
@@ -498,7 +499,9 @@ static void cmd_omf(RCore *core, const char *input) {
 		*sp++ = 0;
 		int id = r_num_math (core->num, arg);
 		int perm = (*sp)? r_str_rwx (sp): R_PERM_RWX;
-		ls_foreach (core->io->maps, iter, map) {
+		void **it;
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
 			if (map->id == id) {
 				map->perm = perm;
 				break;
@@ -507,7 +510,9 @@ static void cmd_omf(RCore *core, const char *input) {
 	} else {
 		// change perms of current map
 		int perm = (arg && *arg)? r_str_rwx (arg): R_PERM_RWX;
-		ls_foreach (core->io->maps, iter, map) {
+		void **it;
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
 			if (r_itv_contain (map->itv, core->offset)) {
 				map->perm = perm;
 			}
@@ -521,9 +526,9 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 
 	r_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
 
-	SdbListIter *iter;
-	RIOMap *m;
-	ls_foreach_prev (core->io->maps, iter, m) {
+	void **it;
+	r_pvector_foreach (&core->io->maps, it) {
+		RIOMap *m = *it;
 		ut64 va = r_itv_begin (m->itv);
 		ut64 va_end = r_itv_end (m->itv);
 		ut64 pa = m->delta;
@@ -813,9 +818,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		if (!list) {
 			return;
 		}
-		SdbListIter *iter;
-		RIOMap *map;
-		ls_foreach_prev (core->io->maps, iter, map) {
+		void **it;
+		r_pvector_foreach_prev (&core->io->maps, it) {
+			RIOMap *map = *it;
 			char temp[32];
 			snprintf (temp, sizeof (temp), "%d", map->fd);
 			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);
@@ -1426,9 +1431,9 @@ static int cmd_open(void *data, const char *input) {
 				if (*input == '+') { // "o+"
 					RIODesc *desc = r_io_desc_get (core->io, fd);
 					if (desc && (desc->perm & R_PERM_W)) {
-						SdbListIter *iter;
-						RIOMap *map;
-						ls_foreach_prev (core->io->maps, iter, map) {
+						void **it;
+						r_pvector_foreach_prev (&core->io->maps, it) {
+							RIOMap *map = *it;
 							if (map->fd == fd) {
 								map->perm |= R_PERM_WX;
 							}
@@ -1715,9 +1720,9 @@ static int cmd_open(void *data, const char *input) {
 					perms |= core->io->desc->perm;
 				}
 				if (r_io_reopen (core->io, fd, perms, 644)) {
-					SdbListIter *iter;
-					RIOMap *map;
-					ls_foreach_prev (core->io->maps, iter, map) {
+					void **it;
+					r_pvector_foreach_prev (&core->io->maps, it) {
+						RIOMap *map = *it;
 						if (map->fd == fd) {
 							map->perm |= R_PERM_WX;
 						}

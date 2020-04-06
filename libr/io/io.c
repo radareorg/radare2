@@ -17,6 +17,9 @@ static int fd_write_at_wrap (RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOM
 
 typedef int (*cbOnIterMap)(RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user);
 
+#define CMP_SKYLINE(addr, part) ((addr) < r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? -1 : \
+			(addr) > r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? 1 : 0)
+
 // If prefix_mode is true, returns the number of bytes of operated prefix; returns < 0 on error.
 // If prefix_mode is false, operates in non-stop mode and returns true iff all IO operations on overlapped maps are complete.
 static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, cbOnIterMap op, bool prefix_mode) {
@@ -24,20 +27,17 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 	ut64 addr = vaddr;
 	size_t i;
 	bool ret = true, wrap = !prefix_mode && vaddr + len < vaddr;
-#define CMP(addr, part) ((addr) < r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? -1 : \
-			(addr) > r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? 1 : 0)
 	// Let i be the first skyline part whose right endpoint > addr
 	if (!len) {
 		i = r_pvector_len (skyline);
 	} else {
-		r_pvector_lower_bound (skyline, addr, i, CMP);
+		r_pvector_lower_bound (skyline, addr, i, CMP_SKYLINE);
 		if (i == r_pvector_len (skyline) && wrap) {
 			wrap = false;
 			i = 0;
 			addr = 0;
 		}
 	}
-#undef CMP
 	while (i < r_pvector_len (skyline)) {
 		const RIOMapSkyline *part = r_pvector_at (skyline, i);
 		// Right endpoint <= addr
@@ -147,7 +147,7 @@ R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int perm, int mode) {
 
 /* opens a file and maps it to 0x0 */
 R_API RIODesc* r_io_open(RIO* io, const char* uri, int perm, int mode) {
-	r_return_val_if_fail (io && io->maps, NULL);
+	r_return_val_if_fail (io, NULL);
 	RIODesc* desc = r_io_open_nomap (io, uri, perm, mode);
 	if (desc) {
 		r_io_map_new (io, desc->fd, desc->perm, 0LL, 0LL, r_io_desc_size (desc));
@@ -157,7 +157,7 @@ R_API RIODesc* r_io_open(RIO* io, const char* uri, int perm, int mode) {
 
 /* opens a file and maps it to an offset specified by the "at"-parameter */
 R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int perm, int mode, ut64 at) {
-	r_return_val_if_fail (io && io->maps && uri, NULL);
+	r_return_val_if_fail (io && uri, NULL);
 
 	RIODesc* desc = r_io_open_nomap (io, uri, perm, mode);
 	if (!desc) {
