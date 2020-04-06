@@ -250,17 +250,6 @@ static ut64 now_us() {
 	return v.QuadPart;
 }
 
-R_API void r_str_remove_char (char *str, char c) {
-	size_t shift = 0;
-	while (*str) {
-		if (*str == c) {
-			memmove (str, str + 1, strlen (str + 1) + 1);
-			continue;
-		}
-		str++;
-	}
-}
-
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	OVERLAPPED stdout_overlapped = { 0 };
 	stdout_overlapped.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
