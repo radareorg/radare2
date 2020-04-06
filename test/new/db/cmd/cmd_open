@@ -314,6 +314,8 @@ RUN
 NAME=o: ob fix
 FILE=--
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 o: 1024
 ob
 EOF

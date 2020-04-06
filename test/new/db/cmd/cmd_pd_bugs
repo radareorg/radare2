@@ -146,6 +146,7 @@ RUN
 
 NAME=size of function in elf x64 stub
 FILE=../bins/other/radiff2/hellocxx-osx-fat-intel_1
+ARGS=-ax86 -b64
 CMDS=<<EOF
 s 0x100000dae
 af
