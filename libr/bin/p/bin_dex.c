@@ -1619,7 +1619,6 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		}
 		free (source_file);
 	}
-	cls = NULL;
 beach:
 	r_bin_class_free (cls);
 }
