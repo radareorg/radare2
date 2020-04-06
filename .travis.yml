@@ -54,23 +54,26 @@ jobs:
       name: WASM
       env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
-    - os: linux
+    - if: head_branch =~ ^ppc64-* OR type != pull_request
+      os: linux
       name: PPC64-compile
       arch: ppc64le
       dist: bionic
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with GCC on System Z
-    - os: linux
+    - if: head_branch =~ ^s390x-* OR type != pull_request
+      os: linux
       name: S390X-compile
       arch: s390x
       dist: bionic
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with GCC on ARMv8 (64bit)
-    - os: linux
-      name: ARM64-compile
+    - if: head_branch =~ ^arm64-* OR type != pull_request
+      os: linux
+      name: ARM64
       arch: arm64
       dist: bionic
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with new shell parser enabled
     - if: (not head_branch =~ ^newshell-* AND not head_branch =~ ^newshell-* AND not branch =~ ^newshell-* AND not branch =~ ^newshell-*) AND (head_branch =~ ^newshell-* OR type = push)
       os: linux
@@ -121,15 +124,15 @@ jobs:
     # Linux with GCC on PowerPC
     - os: linux
       arch: ppc64le
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with GCC on System Z
     - os: linux
       arch: s390x
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with GCC on ARMv8 (64bit)
     - os: linux
       arch: arm64
-      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1" R2_TESTS_DISABLE=1
+      env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with new shell parser enabled
     - if: (not head_branch =~ ^newshell-* AND not head_branch =~ ^newshell-* AND not branch =~ ^newshell-* AND not branch =~ ^newshell-*) AND (head_branch =~ ^newshell-* OR type = push)
       os: linux
