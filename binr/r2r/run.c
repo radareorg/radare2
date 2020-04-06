@@ -590,7 +590,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		}
 		execvp (file, argv);
 		perror ("exec");
-		goto error;
+		r_sys_exit (-1, true);
 	}
 	free (argv);
 
