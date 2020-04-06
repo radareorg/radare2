@@ -2661,13 +2661,8 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 		size_struct = sizeof (Elf_(Rel));
 	}
 
-	// TODO 2nd check overflow?
-	if ((offset + size_struct) > bin->size || (offset + size_struct) < offset) {
-		return -1;
-	}
-
 	ut8 buf[sizeof (Elf_(Rela))] = { 0 };
-	int res = r_buf_read_at (bin->b, offset, buf, size_struct);
+	int res = r_buf_read_at (bin->b, offset - bin->baddr, buf, size_struct);
 	if (res != size_struct) {
 		return -1;
 	}
@@ -2702,8 +2697,29 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	return 1;
 }
 
-static void populate_relocs_record(ELFOBJ *bin, RBinElfReloc *relocs,
-	struct dynamic_relocation_section *info) {
+static size_t get_num_relocs(struct dynamic_relocation_section *info) {
+	size_t res = 0;
+
+	if (info->relaent) {
+		res += info->rela_size / info->relaent;
+	}
+
+	if (info->relent) {
+		res += info->rel_size / info->relent;
+	}
+
+	if (info->jmprel_size) {
+		size_t size = info->plt_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
+		res += info->jmprel_size / size;
+	}
+
+	return res;
+}
+
+static RBinElfReloc *populate_relocs_record(ELFOBJ *bin, struct dynamic_relocation_section *info) {
+	size_t num_relocs = get_num_relocs (info);
+	bin->reloc_num = num_relocs;
+	RBinElfReloc *relocs = calloc (num_relocs + 1, sizeof (RBinElfReloc));
 	size_t i = 0;
 
 	for (size_t offset = 0; offset < info->rela_size; offset += info->relaent) {
@@ -2724,25 +2740,9 @@ static void populate_relocs_record(ELFOBJ *bin, RBinElfReloc *relocs,
 		fix_rva_and_offset (bin, relocs + i, info->addr_jmprel);
 		i++;
 	}
-}
 
-static size_t get_num_relocs(struct dynamic_relocation_section *info) {
-	size_t res = 0;
-
-	if (info->relaent) {
-		res += info->rela_size / info->relaent;
-	}
-
-	if (info->relent) {
-		res += info->rel_size / info->relent;
-	}
-
-	if (info->jmprel_size) {
-		size_t size = info->plt_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
-		res += info->jmprel_size / size;
-	}
-
-	return res;
+	relocs[num_relocs].last = 1;
+	return relocs;
 }
 
 static struct dynamic_relocation_section *get_dynamic_info(ELFOBJ *bin) {
@@ -2786,17 +2786,13 @@ static struct dynamic_relocation_section *get_dynamic_info(ELFOBJ *bin) {
 }
 
 RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
-	RBinElfReloc *ret = NULL;
 
 	if (!bin || !bin->g_sections) {
 		return NULL;
 	}
 
 	struct dynamic_relocation_section *info = get_dynamic_info (bin);
-	size_t num_relocs = get_num_relocs (info);
-	ret = calloc (num_relocs + 1, sizeof (RBinElfReloc));
-	populate_relocs_record (bin, ret, info);
-	ret[num_relocs].last = 1;
+	RBinElfReloc *ret = populate_relocs_record (bin, info);
 	free (info);
 
 	return ret;
