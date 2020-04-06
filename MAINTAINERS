@@ -1,0 +1,29 @@
+libr/anal: info@florianmaerkl.de
+libr/anal/esil: pancake@nopcode.org, condret@runas-racer.com
+libr/anal/xrefs.c: sirmy15@gmail
+libr/arch/gb: condret@runas-racer.com
+libr/asm: pancake@nopcode.org
+libr/asm/p/x86_*: sirmy15@gmail.com
+libr/asm/p/arm_*: pancake@nopcode.org
+libr/bin: sirmy15@gmail.com, pancake@nopcode.org
+libr/bin/format/elf: sirmy15@gmail.com, kazarmy@gmail.com
+libr/bin/format/mach0: pancake@nopcode.org
+libr/bin/format/objc: pancake@nopcode.org
+libr/bin/format/pe: 
+libr/bin/format/wasm: wargio@libero.it
+libr/config: pancake@nopcode.org, sirmy15@gmail.com
+libr/cons: info@florianmaerkl.de, pancake@nopcode.org
+libr/debug: yossizap@gmail.com, pancake@nopcode.org
+libr/egg: pancake@nopcode.org
+libr/flag: sirmy15@gmail.com, pancake@nopcode.org
+libr/fs: pancake@nopcode.org
+libr/io: condret@runas-racer.com, pancake@nopcode.org, sirmy15@gmail.com
+libr/lang: info@florianmaerkl.de, pancake@nopcode.org, sirmy15@gmail.com
+libr/magic: pancake@nopcode.org
+libr/parse: sirmy15@gmail.com, pancake@nopcode.org
+libr/reg: xvilka@gmail.com, pancake@nopcode.org
+libr/socket: xvilka@gmail.com, yossizap@gmail.com
+libr/syscall: sirmy15@gmail.com, pancake@nopcode.org
+libr/util: sirmy15@gmail.com, info@florianmaerkl.de
+shlr/ptrace-wrap: info@florianmaerkl.de
+shlr/radare2-shell-parser: sirmy15@gmail.com
