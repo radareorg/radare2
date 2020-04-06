@@ -2676,9 +2676,9 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 
 	if (is_rela == DT_RELA) {
 		reloc_info.r_addend = READWORD (buf, i);
+	    r->addend = reloc_info.r_addend;
 	}
 
-	r->addend = reloc_info.r_addend;
 	r->is_rela = is_rela;
 	r->last = 0;
 	r->offset = reloc_info.r_offset;
