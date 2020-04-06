@@ -46,6 +46,8 @@
 #define BREAD32(x, i) r_buf_read_ble32_at(x, i, bin->endian); (i) += 4
 #define BREAD64(x, i) r_buf_read_ble64_at(x, i, bin->endian); (i) += 8
 
+#define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize)+(entrysize)-1)/(entrysize))
+
 struct dynamic_relocation_section {
 	// symbol table
 	Elf_(Addr) addr_jmprel;
@@ -1441,16 +1443,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSectio
 		base += (rel->k * 16);
 		return base;
 	}
-	// FIXME: this does not seem to work as
-	// expected. Commenting for now because it makes
-	// refactoring much easier and it seems weird
-	// anyway.
-	// if (bin->is_rela == DT_RELA) {
-	// 	len = r_buf_read_at (bin->b, rel_sec->offset, buf, sizeof (buf));
-	// 	if (len < 4) {
-	// 		goto out;
-	//	}
-	// }
+
 	ut64 base = r_read_le32 (buf);
 	base -= (nrel * 12) + 20;
 	base += (rel->k * 8);
@@ -2688,7 +2681,7 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	return 1;
 }
 
-static size_t get_num_relocs(struct dynamic_relocation_section *info) {
+static size_t get_num_relocs_dynamic(struct dynamic_relocation_section *info) {
 	size_t res = 0;
 
 	if (info->relaent) {
@@ -2705,6 +2698,37 @@ static size_t get_num_relocs(struct dynamic_relocation_section *info) {
 	}
 
 	return res;
+}
+
+static bool sectionIsInvalid(ELFOBJ *bin, RBinElfSection *sect) {
+	return (sect->offset + sect->size > bin->size);
+}
+
+static size_t get_num_relocs_sections(ELFOBJ *bin) {
+	size_t i, size, ret = 0;
+
+	if (!bin->g_sections) {
+		return 0;
+	}
+
+	for (i = 0; !bin->g_sections[i].last; i++) {
+		if (sectionIsInvalid (bin, &bin->g_sections[i])) {
+			continue;
+		}
+		if (!strncmp (bin->g_sections[i].name, ".rela.", strlen (".rela."))) {
+			size = sizeof (Elf_(Rela));
+			ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, size);
+		} else if (!strncmp (bin->g_sections[i].name, ".rel.", strlen (".rel."))) {
+			size = sizeof (Elf_(Rel));
+			ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, size);
+		}
+	}
+
+	return ret;
+}
+
+static size_t get_num_relocs_approx(ELFOBJ *bin, struct dynamic_relocation_section *info) {
+	return get_num_relocs_dynamic (info) + get_num_relocs_sections (bin);
 }
 
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
@@ -2732,15 +2756,21 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
 	return pos;
 }
 
+static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
+	struct dynamic_relocation_section *info, RBinElfReloc *relocs, size_t pos) {
+	return pos;
+}
+
 static RBinElfReloc *populate_relocs_record(ELFOBJ *bin, struct dynamic_relocation_section *info) {
-	size_t num_relocs = get_num_relocs (info);
+	size_t num_relocs = get_num_relocs_approx (bin, info);
 	bin->reloc_num = num_relocs;
 	RBinElfReloc *relocs = calloc (num_relocs + 1, sizeof (RBinElfReloc));
 
 	size_t i = 0;
 	i = populate_relocs_record_from_dynamic (bin, info, relocs, i);
+	i = populate_relocs_record_from_section (bin, info, relocs, i);
 
-	relocs[num_relocs].last = 1;
+	relocs[i].last = 1;
 	return relocs;
 }
 
