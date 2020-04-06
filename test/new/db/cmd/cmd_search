@@ -1,3 +1,14 @@
+NAME=pm olf
+FILE=../bins/elf/ioli/crackme0x00
+ARGS=-n
+CMDS=<<EOF
+pm ../bins/src/olf.magic
+EOF
+EXPECT=<<EOF
+0x00000000 1 OLF 32-bit
+EOF
+RUN
+
 NAME=/m lzma
 FILE=../bins/other/hello-world.lzma
 CMDS=<<EOF

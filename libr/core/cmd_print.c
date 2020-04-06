@@ -5872,14 +5872,12 @@ l = use_blocksize;
 				"| /m           # search for magic signatures\n"
 				);
 		} else if (input[1] == 'j') { // "pmj"
-			if (l > 0) {
-				r_core_magic (core, input + 2, true, true);
-			}
+			const char *filename = r_str_trim_head_ro (input + 2);
+			r_core_magic (core, filename, true, true);
 		} else {
 			// XXX: need cmd_magic header for r_core_magic
-			if (l > 0) {
-				r_core_magic (core, input + 1, true, false);
-			}
+			const char *filename = r_str_trim_head_ro (input + 1);
+			r_core_magic (core, filename, true, false);
 		}
 		break;
 	case 'u': // "pu"
