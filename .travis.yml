@@ -139,8 +139,6 @@ before_install:
       docker pull gcr.io/fuzzit-public/builders:llvm9.v1
     elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ]; then
       docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis .
-    else
-      rm -rf .nvm && git clone -q https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 10.16.3
     fi
 
 after_success:
@@ -158,7 +156,7 @@ script:
     if [ "${FUZZIT}" == "1" ] ; then
       docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" gcr.io/fuzzit-public/builders:llvm9.v1 -c "cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
     elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ] ; then
-      docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" radareorg/r2-travis:latest -c ". /src/.nvm/nvm.sh; cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
+      docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" radareorg/r2-travis:latest -c "cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
     else
       $SHELL travis-script
     fi
