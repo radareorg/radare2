@@ -662,7 +662,7 @@ static void interact(R2RState *state) {
 	void **it;
 	RPVector failed_results;
 	r_pvector_init (&failed_results, NULL);
-	r_pvector_foreach (&state->results, it) {
+	r_pvector_foreach_prev (&state->results, it) {
 		R2RTestResultInfo *result = *it;
 		if (result->result == R2R_TEST_RESULT_FAILED) {
 			r_pvector_push (&failed_results, result);
@@ -763,10 +763,11 @@ static char *replace_lines(char *src, ut64 from, ut64 to, char *news) {
 		end++;
 		line++;
 	}
+	end = strchr (end, '\n');
 
 	RStrBuf buf;
 	r_strbuf_init (&buf);
-	r_strbuf_append_n (&buf, begin, begin - src);
+	r_strbuf_append_n (&buf, src, begin - src);
 	r_strbuf_append (&buf, news);
 	if (end) {
 		r_strbuf_append (&buf, end);
@@ -776,10 +777,39 @@ static char *replace_lines(char *src, ut64 from, ut64 to, char *news) {
 
 // After editing a test, fix the line numbers previously saved for all the other tests
 static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_line, st64 delta) {
-	// TODO
+	void **it;
+	r_pvector_foreach (results, it) {
+		R2RTestResultInfo *result = *it;
+		if (result->test->type != R2R_TEST_TYPE_CMD) {
+			continue;
+		}
+		if (result->test->path != edited_file) { // this works because all the paths come from the string pool
+			continue;
+		}
+		R2RCmdTest *test = result->test->cmd_test;
+
+#define DO_KEY_STR(key, field) \
+		if (test->field.value) { \
+			if (test->field.line_begin >= start_line) { \
+				test->field.line_begin += delta; \
+			} \
+			if (test->field.line_end >= start_line) { \
+				test->field.line_end += delta; \
+			} \
+		}
+
+#define DO_KEY_BOOL(key, field) \
+		if (test->field.set && test->field.line >= start_line) { \
+			test->field.line += delta; \
+		}
+
+		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL)
+#undef DO_KEY_STR
+#undef DO_KEY_BOOL
+	}
 }
 
-static void replace_cmd_kv(const char *path, R2RCmdTest *test, ut64 line_begin, ut64 line_end, const char *key, const char *value, RPVector *fixup_results) {
+static void replace_cmd_kv(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RPVector *fixup_results) {
 	char *content = r_file_slurp (path, NULL);
 	if (!content) {
 		eprintf ("Failed to read file \"%s\"\n", path);
@@ -790,6 +820,7 @@ static void replace_cmd_kv(const char *path, R2RCmdTest *test, ut64 line_begin, 
 		free (content);
 		return;
 	}
+	ut64 kv_lines = r_str_char_count (kv, '\n');
 	char *newc = replace_lines (content, line_begin, line_end, kv);
 	free (kv);
 	free (content);
@@ -798,8 +829,8 @@ static void replace_cmd_kv(const char *path, R2RCmdTest *test, ut64 line_begin, 
 	}
 	if (r_file_dump (path, (const ut8 *)newc, -1, false)) {
 		ut64 lines_before = line_end - line_begin;
-		ut64 lines_after = r_str_char_count (newc, '\n') + 1;
-		fixup_tests (fixup_results, path, line_end, (st64)lines_after - lines_before);
+		st64 delta = (st64)kv_lines - lines_before;
+		fixup_tests (fixup_results, path, line_end, delta);
 	} else {
 		eprintf ("Failed to write file \"%s\"\n", path);
 	}
@@ -811,10 +842,10 @@ static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
 	R2RCmdTest *test = result->test->cmd_test;
 	R2RProcessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
-		replace_cmd_kv (result->test->path, test, test->expect.line_begin, test->expect.line_end, "EXPECT", out->out, fixup_results);
+		replace_cmd_kv (result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT", out->out, fixup_results);
 	}
 	if (test->expect_err.value && out->err) {
-		replace_cmd_kv (result->test->path, test, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", out->err, fixup_results);
+		replace_cmd_kv (result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", out->err, fixup_results);
 	}
 }
 
