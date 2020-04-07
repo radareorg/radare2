@@ -87,9 +87,7 @@ RUN
 
 NAME=sub
 FILE=-
-CMDS=<<EOF
-ae 3,1,-
-EOF
+CMDS=ae 3,1,-
 EXPECT=<<EOF
 0xfffffffffffffffe
 EOF

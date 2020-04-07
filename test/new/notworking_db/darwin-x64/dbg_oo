@@ -15,9 +15,7 @@ NAME=dc - i386
 BROKEN=1
 FILE=../bins/mach0/hello-osx-i386
 ARGS=-d
-CMDS=<<EOF
-dc
-EOF
+CMDS=dc
 EXPECT=<<EOF
 Hello world!
 EOF
@@ -27,9 +25,7 @@ NAME=dc - i386 forced
 BROKEN=1
 FILE=../bins/mach0/hello-osx-i386
 ARGS=-b 32 -d
-CMDS=<<EOF
-dc
-EOF
+CMDS=dc
 EXPECT=<<EOF
 Hello World
 EOF
