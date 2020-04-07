@@ -1,3 +1,44 @@
+NAME=wen 3
+FILE=malloc://100
+CMDS=<<EOF
+r
+wen 3
+r
+EOF
+EXPECT=<<EOF
+100
+103
+EOF
+RUN
+
+NAME=wen 3
+FILE=malloc://100
+CMDS=<<EOF
+e io.va=1
+r
+wen 3
+r
+EOF
+EXPECT=<<EOF
+100
+103
+EOF
+RUN
+
+NAME=wen 3 in readonly bin
+FILE=../bins/mach0/mac-ls2
+CMDS=<<EOF
+# cannot resize in va and non-write mode
+r
+wen 3
+r
+EOF
+EXPECT=<<EOF
+38704
+38704
+EOF
+RUN
+
 NAME=quoted comments bug
 FILE=malloc://1024
 CMDS=<<EOF

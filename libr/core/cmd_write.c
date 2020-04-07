@@ -885,11 +885,16 @@ static int cmd_write(void *data, const char *input) {
 					cmd_suc = r_core_extend_at (core, core->offset, len);
 					if (cmd_suc) {
 						core->offset = cur_off;
+eprintf ("works\n");
 						r_core_block_read (core);
 					} else {
 						eprintf ("r_io_extend failed\n");
+						cmd_suc = true;
 					}
 				}
+			} else {
+				eprintf ("Usage: wen [len]\n");
+				cmd_suc = true;
 			}
 			break;
 		case 'N': // "weN"
