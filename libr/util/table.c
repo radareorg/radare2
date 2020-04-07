@@ -652,21 +652,6 @@ R_API void r_table_uniq(RTable *t) {
 	r_table_group (t, -1, NULL);
 }
 
-static void select_and_delete_the_row(RList *rows, RTableRow *uniq_row, RTableRow *row,
-	RListIter *iter_inner, RListIter *iter, RTableSelector fcn, int nth) {
-	int select_flag;
-	if (!fcn) {
-		r_list_delete (rows, iter);
-	} else {
-		select_flag = fcn (uniq_row->items, row->items, nth);
-		if (select_flag < 0) {
-			r_list_delete (rows, iter_inner);
-		} else {
-			r_list_delete (rows, iter);
-		}
-	}
-}
-
 R_API void r_table_group(RTable *t, int nth, RTableSelector fcn) {
 	RListIter *iter;
 	RListIter *tmp;
@@ -684,9 +669,11 @@ R_API void r_table_group(RTable *t, int nth, RTableSelector fcn) {
 
 			uniq_row = iter_inner->data;
 
-			if (!r_rows_cmp (row->items, uniq_row->items, t->cols, nth)) {
-				select_and_delete_the_row (rows, uniq_row, row,
-					iter_inner, iter, fcn, nth);
+			if (!r_rows_cmp (uniq_row->items, row->items, t->cols, nth)) {
+				if (fcn) {
+					fcn (uniq_row->items, row->items, nth);
+				}
+				r_list_delete (rows, iter);
 				break;
 			}
 		}

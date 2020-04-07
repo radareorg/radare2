@@ -2,7 +2,6 @@
 #define R_UTIL_TABLE_H
 
 #include <r_util.h>
-typedef int (*RTableSelector)(void *a, void *b, int nth);
 
 typedef struct {
 	const char *name;
@@ -48,6 +47,8 @@ typedef struct {
 	bool adjustedCols;
 	void *cons;
 } RTable;
+
+typedef void (*RTableSelector)(RList *acc, RList *new_row, int nth);
 
 R_API void r_table_row_free(void *_row);
 R_API void r_table_column_free(void *_col);

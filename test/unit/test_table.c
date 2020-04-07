@@ -149,13 +149,9 @@ bool test_r_table_uniq(void) {
 	mu_end;
 }
 
-static int delete_first(void *a, void *b, int nth) {
-	return -1;
-}
-
-static int merge_second(void *a, void *b, int nth) {
-	RList *lhs = a;
-	RList *rhs = b;
+static void merge_second(RList *acc, RList *new_row, int nth) {
+	RList *lhs = acc;
+	RList *rhs = new_row;
 	RListIter *iter_lhs;
 	RListIter *iter_rhs;
 
@@ -174,24 +170,22 @@ static int merge_second(void *a, void *b, int nth) {
 
 		if (i != nth) {
 			if (!strcmp (item_lhs, "a")) {
-				free (iter_rhs->data);
-				iter_rhs->data = r_str_new ("a | e");
+				free (iter_lhs->data);
+				iter_lhs->data = r_str_new ("a | e");
 			} else if (!strcmp (item_lhs, "b")) {
-				free (iter_rhs->data);
-				iter_rhs->data = r_str_new ("b | f");
-			} else if (!strcmp (item_lhs, "d")) {
-				free (iter_rhs->data);
-				iter_rhs->data = r_str_new ("d | g");
+				free (iter_lhs->data);
+				iter_lhs->data = r_str_new ("b | f");
 			} else if (!strcmp (item_lhs, "c")) {
-				free (iter_rhs->data);
-				iter_rhs->data = r_str_new ("c | h");
+				free (iter_lhs->data);
+				iter_lhs->data = r_str_new ("c | h");
+			} else if (!strcmp (item_lhs, "d")) {
+				free (iter_lhs->data);
+				iter_lhs->data = r_str_new ("d | g");
 			}
 		}
 
 		++i;
 	}
-
-	return -1;
 }
 
 bool test_r_table_group (void) {
@@ -215,28 +209,28 @@ bool test_r_table_group (void) {
 	r_table_add_row (t, "c", "99", NULL);
 	r_table_add_row (t, "b", "98", NULL);
 	r_table_add_row (t, "c", "99", NULL);
-	r_table_add_row (t, "d", "99", NULL);
+	r_table_add_row (t, "d", "1", NULL);
 	r_table_add_row (t, "b", "98", NULL);
 	r_table_add_row (t, "d", "99", NULL);
 	r_table_add_row (t, "c", "99", NULL);
 	r_table_add_row (t, "c", "100", NULL);
 
-	r_table_group (t, 0, delete_first);
+	r_table_group (t, 0, NULL);
 	str = r_table_tostring (t);
 	mu_assert_streq (str,
 		"ascii code\n"
 		"----------\n"
 		"a     97\n"
 		"b     98\n"
-		"d     99\n"
-		"c     100\n",
+		"c     99\n"
+		"d     1\n",
 		"group delete some rows");
 	free (str);
 
 	r_table_add_row (t, "e", "97", NULL);
 	r_table_add_row (t, "f", "98", NULL);
 	r_table_add_row (t, "g", "99", NULL);
-	r_table_add_row (t, "h", "100", NULL);
+	r_table_add_row (t, "h", "1", NULL);
 
 	r_table_group (t, 1, merge_second);
 	str = r_table_tostring (t);
@@ -245,8 +239,8 @@ bool test_r_table_group (void) {
 		"----------\n"
 		"a | e 97\n"
 		"b | f 98\n"
-		"d | g 99\n"
-		"c | h 100\n",
+		"c | h 99\n"
+		"d | g 1\n",
 		"group delete some rows");
 	free (str);
 
