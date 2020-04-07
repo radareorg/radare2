@@ -3,7 +3,7 @@
 #include "r2r.h"
 #include <r_cons.h>
 
-#include "../../libr/main/version.c"
+extern int r_main_version_print(const char *program);
 
 #define WORKERS_DEFAULT        8
 #define RADARE2_CMD_DEFAULT    "radare2"
