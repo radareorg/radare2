@@ -763,12 +763,17 @@ static char *replace_lines(char *src, ut64 from, ut64 to, char *news) {
 		end++;
 		line++;
 	}
-	end = strchr (end, '\n');
+	if (end && to != from) {
+		end = strchr (end, '\n');
+	}
 
 	RStrBuf buf;
 	r_strbuf_init (&buf);
 	r_strbuf_append_n (&buf, src, begin - src);
 	r_strbuf_append (&buf, news);
+	if (to == from) {
+		r_strbuf_append (&buf, "\n");
+	}
 	if (end) {
 		r_strbuf_append (&buf, end);
 	}
@@ -787,6 +792,7 @@ static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_l
 			continue;
 		}
 		R2RCmdTest *test = result->test->cmd_test;
+		test->run_line += delta;
 
 #define DO_KEY_STR(key, field) \
 		if (test->field.value) { \
@@ -830,6 +836,9 @@ static void replace_cmd_kv(const char *path, ut64 line_begin, ut64 line_end, con
 	if (r_file_dump (path, (const ut8 *)newc, -1, false)) {
 		ut64 lines_before = line_end - line_begin;
 		st64 delta = (st64)kv_lines - lines_before;
+		if (line_end == line_begin) {
+			delta++;
+		}
 		fixup_tests (fixup_results, path, line_end, delta);
 	} else {
 		eprintf ("Failed to write file \"%s\"\n", path);
@@ -851,7 +860,16 @@ static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
 
 static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
 	assert (result->test->type == R2R_TEST_TYPE_CMD);
-	eprintf ("TODO: implement interact_break()\n");
+	R2RCmdTest *test = result->test->cmd_test;
+	ut64 line_begin;
+	ut64 line_end;
+	if (test->broken.set) {
+		line_begin = test->broken.set;
+		line_end = line_begin + 1;
+	} else {
+		line_begin = line_end = test->run_line;
+	}
+	replace_cmd_kv (result->test->path, line_begin, line_end, "BROKEN", "1", fixup_results);
 }
 
 static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results) {
