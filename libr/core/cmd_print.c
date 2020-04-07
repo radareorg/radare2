@@ -3727,7 +3727,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	case 'F': // 0xff bytes
 	case 'p': // printable chars
 	case 'z': // zero terminated strings
-	if (blocksize > 0) {
+	{
 		ut8 *p;
 		ut64 i, j, k;
 		ptr = calloc (1, nblocks);
@@ -3781,8 +3781,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		free (p);
 		print_bars = true;
-	} else {
-		eprintf ("Invalid blocksize\n");
 	}
 	break;
 	case 'b': // bytes
