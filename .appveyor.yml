@@ -71,6 +71,8 @@ install:
   # Download required packages
   - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson )
   - cmd: if defined NINJA_URL ( powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; wget %NINJA_URL% -OutFile ninja.zip" && unzip ninja.zip )
+  # Install `jq` for running regression tests
+  - cmd: choco install jq
 
 # Build scripts
 build_script:
