@@ -834,6 +834,9 @@ static void replace_cmd_kv(const char *path, ut64 line_begin, ut64 line_end, con
 		return;
 	}
 	if (r_file_dump (path, (const ut8 *)newc, -1, false)) {
+#if __UNIX__
+		sync ();
+#endif
 		ut64 lines_before = line_end - line_begin;
 		st64 delta = (st64)kv_lines - lines_before;
 		if (line_end == line_begin) {
@@ -874,5 +877,57 @@ static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
 
 static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results) {
 	assert (result->test->type == R2R_TEST_TYPE_CMD);
-	eprintf ("TODO: implement interact_commands()\n");
+	R2RCmdTest *test = result->test->cmd_test;
+	if (!test->cmds.value) {
+		return;
+	}
+	char *name;
+	int fd = r_file_mkstemp ("r2r-cmds", &name);
+	if (fd == -1) {
+		free (name);
+		eprintf ("Failed to open tmp file\n");
+		return;
+	}
+	write (fd, test->cmds.value, strlen (test->cmds.value));
+	close (fd);
+
+	char *editor = r_sys_getenv ("EDITOR");
+	if (!editor || !*editor) {
+		free (editor);
+		editor = strdup ("vim");
+		if (!editor) {
+			return;
+		}
+	}
+	r_sys_cmdf ("%s '%s'", editor, name);
+	free (editor);
+
+	char *newcmds = r_file_slurp (name, NULL);
+	if (!newcmds) {
+		eprintf ("Failed to read edited command file\n");
+		return;
+	}
+
+	char *trimmed = newcmds;
+	// strip all leading newlines
+	while (*trimmed == '\n') {
+		trimmed++;
+	}
+	size_t len = strlen (trimmed);
+	// strip all trailing newlines
+	while (len && trimmed[len - 1] == '\n') {
+		trimmed[len - 1] = '\0';
+		len--;
+	}
+
+	// if it's multiline we want exactly one trailing newline
+	if (strchr (trimmed, '\n')) {
+		char *tmp = newcmds;
+		newcmds = r_str_newf ("%s\n", trimmed);
+		free (tmp);
+		trimmed = newcmds;
+	}
+
+	replace_cmd_kv (result->test->path, test->cmds.line_begin, test->cmds.line_end, "CMDS", trimmed, fixup_results);
+	free (newcmds);
 }
