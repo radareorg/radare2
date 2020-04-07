@@ -828,35 +828,41 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			return NULL;
 		}
 
-		ut16 *depArray = R_NEWS0 (ut16, accel->depListCount);
-		if (!depArray) {
-			r_list_free (target_lib_names);
-			R_FREE (target_libs);
-			r_list_free (bins);
-			R_FREE (deps);
-			R_FREE (img);
-			return NULL;
-		}
+		ut16 *depArray = NULL;
+		cache_imgxtr_t *extras = NULL;
+		if (accel) {
+			depArray = R_NEWS0 (ut16, accel->depListCount);
+			if (!depArray) {
+				r_list_free (target_lib_names);
+				R_FREE (target_libs);
+				r_list_free (bins);
+				R_FREE (deps);
+				R_FREE (img);
+				return NULL;
+			}
 
-		if (r_buf_fread_at (cache_buf, accel->depListOffset, (ut8*) depArray, "s", accel->depListCount) != accel->depListCount * 2) {
-			r_list_free (target_lib_names);
-			R_FREE (target_libs);
-			r_list_free (bins);
-			R_FREE (deps);
-			R_FREE (depArray);
-			R_FREE (img);
-			return NULL;
-		}
+			if (r_buf_fread_at (cache_buf, accel->depListOffset, (ut8*) depArray, "s", accel->depListCount) != accel->depListCount * 2) {
+				r_list_free (target_lib_names);
+				R_FREE (target_libs);
+				r_list_free (bins);
+				R_FREE (deps);
+				R_FREE (depArray);
+				R_FREE (img);
+				return NULL;
+			}
 
-		cache_imgxtr_t *extras = read_cache_imgextra (cache_buf, hdr, accel);
-		if (!extras) {
-			r_list_free (target_lib_names);
-			R_FREE (target_libs);
-			r_list_free (bins);
-			R_FREE (deps);
-			R_FREE (depArray);
-			R_FREE (img);
-			return NULL;
+			extras = read_cache_imgextra (cache_buf, hdr, accel);
+			if (!extras) {
+				r_list_free (target_lib_names);
+				R_FREE (target_libs);
+				r_list_free (bins);
+				R_FREE (deps);
+				R_FREE (depArray);
+				R_FREE (img);
+				return NULL;
+			}
+		} else {
+			eprintf ("Missing accelerator info, deps of filter can't be auto resolved.\n");
 		}
 
 		for (i = 0; i < hdr->imagesCount; i++) {
@@ -869,16 +875,18 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			R_FREE (lib_name);
 			deps[i]++;
 
-			ut32 j;
-			for (j = extras[i].dependentsStartArrayIndex; depArray[j] != 0xffff; j++) {
-				bool upward = depArray[j] & 0x8000;
-				ut16 dep_index = depArray[j] & 0x7fff;
-				if (!upward) {
-					deps[dep_index]++;
+			if (extras && depArray) {
+				ut32 j;
+				for (j = extras[i].dependentsStartArrayIndex; depArray[j] != 0xffff; j++) {
+					bool upward = depArray[j] & 0x8000;
+					ut16 dep_index = depArray[j] & 0x7fff;
+					if (!upward) {
+						deps[dep_index]++;
 
-					char *dep_name = get_lib_name (cache_buf, &img[dep_index]);
-					eprintf ("-> %s\n", dep_name);
-					R_FREE (dep_name);
+						char *dep_name = get_lib_name (cache_buf, &img[dep_index]);
+						eprintf ("-> %s\n", dep_name);
+						R_FREE (dep_name);
+					}
 				}
 			}
 		}
@@ -1293,10 +1301,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		return false;
 	}
 	cache->accel = read_cache_accel (cache->buf, cache->hdr, cache->maps);
-	if (!cache->accel) {
-		r_dyldcache_free (cache);
-		return false;
-	}
 	cache->locsym = r_dyld_locsym_new (cache->buf, cache->hdr);
 	if (!cache->locsym) {
 		r_dyldcache_free (cache);
@@ -1713,24 +1717,26 @@ static void header(RBinFile *bf) {
 	bin->cb_printf ("imagesTextOffset: 0x%"PFMT64x"\n", cache->hdr->imagesTextOffset);
 	bin->cb_printf ("imagesTextCount: 0x%"PFMT64x"\n", cache->hdr->imagesTextCount);
 
-	bin->cb_printf ("\nacceleration info:\n");
-	bin->cb_printf ("version: 0x%"PFMT64x"\n", cache->accel->version);
-	bin->cb_printf ("imageExtrasCount: 0x%"PFMT64x"\n", cache->accel->imageExtrasCount);
-	bin->cb_printf ("imagesExtrasOffset: 0x%"PFMT64x"\n", cache->accel->imagesExtrasOffset);
-	bin->cb_printf ("bottomUpListOffset: 0x%"PFMT64x"\n", cache->accel->bottomUpListOffset);
-	bin->cb_printf ("dylibTrieOffset: 0x%"PFMT64x"\n", cache->accel->dylibTrieOffset);
-	bin->cb_printf ("dylibTrieSize: 0x%"PFMT64x"\n", cache->accel->dylibTrieSize);
-	bin->cb_printf ("initializersOffset: 0x%"PFMT64x"\n", cache->accel->initializersOffset);
-	bin->cb_printf ("initializersCount: 0x%"PFMT64x"\n", cache->accel->initializersCount);
-	bin->cb_printf ("dofSectionsOffset: 0x%"PFMT64x"\n", cache->accel->dofSectionsOffset);
-	bin->cb_printf ("dofSectionsCount: 0x%"PFMT64x"\n", cache->accel->dofSectionsCount);
-	bin->cb_printf ("reExportListOffset: 0x%"PFMT64x"\n", cache->accel->reExportListOffset);
-	bin->cb_printf ("reExportCount: 0x%"PFMT64x"\n", cache->accel->reExportCount);
-	bin->cb_printf ("depListOffset: 0x%"PFMT64x"\n", cache->accel->depListOffset);
-	bin->cb_printf ("depListCount: 0x%"PFMT64x"\n", cache->accel->depListCount);
-	bin->cb_printf ("rangeTableOffset: 0x%"PFMT64x"\n", cache->accel->rangeTableOffset);
-	bin->cb_printf ("rangeTableCount: 0x%"PFMT64x"\n", cache->accel->rangeTableCount);
-	bin->cb_printf ("dyldSectionAddr: 0x%"PFMT64x"\n", cache->accel->dyldSectionAddr + slide);
+	if (cache->accel) {
+		bin->cb_printf ("\nacceleration info:\n");
+		bin->cb_printf ("version: 0x%"PFMT64x"\n", cache->accel->version);
+		bin->cb_printf ("imageExtrasCount: 0x%"PFMT64x"\n", cache->accel->imageExtrasCount);
+		bin->cb_printf ("imagesExtrasOffset: 0x%"PFMT64x"\n", cache->accel->imagesExtrasOffset);
+		bin->cb_printf ("bottomUpListOffset: 0x%"PFMT64x"\n", cache->accel->bottomUpListOffset);
+		bin->cb_printf ("dylibTrieOffset: 0x%"PFMT64x"\n", cache->accel->dylibTrieOffset);
+		bin->cb_printf ("dylibTrieSize: 0x%"PFMT64x"\n", cache->accel->dylibTrieSize);
+		bin->cb_printf ("initializersOffset: 0x%"PFMT64x"\n", cache->accel->initializersOffset);
+		bin->cb_printf ("initializersCount: 0x%"PFMT64x"\n", cache->accel->initializersCount);
+		bin->cb_printf ("dofSectionsOffset: 0x%"PFMT64x"\n", cache->accel->dofSectionsOffset);
+		bin->cb_printf ("dofSectionsCount: 0x%"PFMT64x"\n", cache->accel->dofSectionsCount);
+		bin->cb_printf ("reExportListOffset: 0x%"PFMT64x"\n", cache->accel->reExportListOffset);
+		bin->cb_printf ("reExportCount: 0x%"PFMT64x"\n", cache->accel->reExportCount);
+		bin->cb_printf ("depListOffset: 0x%"PFMT64x"\n", cache->accel->depListOffset);
+		bin->cb_printf ("depListCount: 0x%"PFMT64x"\n", cache->accel->depListCount);
+		bin->cb_printf ("rangeTableOffset: 0x%"PFMT64x"\n", cache->accel->rangeTableOffset);
+		bin->cb_printf ("rangeTableCount: 0x%"PFMT64x"\n", cache->accel->rangeTableCount);
+		bin->cb_printf ("dyldSectionAddr: 0x%"PFMT64x"\n", cache->accel->dyldSectionAddr + slide);
+	}
 
 	ut8 version = cache->rebase_info->version;
 	bin->cb_printf ("\nslide info (v%d):\n", version);
