@@ -662,7 +662,7 @@ static void interact(R2RState *state) {
 	void **it;
 	RPVector failed_results;
 	r_pvector_init (&failed_results, NULL);
-	r_pvector_foreach_prev (&state->results, it) {
+	r_pvector_foreach (&state->results, it) {
 		R2RTestResultInfo *result = *it;
 		if (result->result == R2R_TEST_RESULT_FAILED) {
 			r_pvector_push (&failed_results, result);
