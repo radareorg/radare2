@@ -702,6 +702,10 @@ inval:
 		}
 		switch (buf[0]) {
 		case 'f':
+			if (result->run_failed || result->proc_out->ret != 0) {
+				printf ("This test has failed too hard to be fixed.\n");
+				goto inval;
+			}
 			interact_fix (result, &failed_results);
 			break;
 		case 'i':
@@ -723,9 +727,95 @@ beach:
 	r_pvector_clear (&failed_results);
 }
 
+static char *format_cmd_kv(const char *key, const char *val) {
+	RStrBuf buf;
+	r_strbuf_init (&buf);
+	r_strbuf_appendf (&buf, "%s=", key);
+	if (strchr (val, '\n')) {
+		r_strbuf_appendf (&buf, "<<EOF\n%sEOF", val);
+	} else {
+		r_strbuf_append (&buf, val);
+	}
+	return r_strbuf_drain_nofree (&buf);
+}
+
+static char *replace_lines(char *src, ut64 from, ut64 to, char *news) {
+	char *begin = src;
+	ut64 line = 1;
+	while (line < from) {
+		begin = strchr (begin, '\n');
+		if (!begin) {
+			break;
+		}
+		begin++;
+		line++;
+	}
+	if (!begin) {
+		return NULL;
+	}
+
+	char *end = begin;
+	while (line < to) {
+		end = strchr (end, '\n');
+		if (!end) {
+			break;
+		}
+		end++;
+		line++;
+	}
+
+	RStrBuf buf;
+	r_strbuf_init (&buf);
+	r_strbuf_append_n (&buf, begin, begin - src);
+	r_strbuf_append (&buf, news);
+	if (end) {
+		r_strbuf_append (&buf, end);
+	}
+	return r_strbuf_drain_nofree (&buf);
+}
+
+// After editing a test, fix the line numbers previously saved for all the other tests
+static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_line, st64 delta) {
+	// TODO
+}
+
+static void replace_cmd_kv(const char *path, R2RCmdTest *test, ut64 line_begin, ut64 line_end, const char *key, const char *value, RPVector *fixup_results) {
+	char *content = r_file_slurp (path, NULL);
+	if (!content) {
+		eprintf ("Failed to read file \"%s\"\n", path);
+		return;
+	}
+	char *kv = format_cmd_kv (key, value);
+	if (!kv) {
+		free (content);
+		return;
+	}
+	char *newc = replace_lines (content, line_begin, line_end, kv);
+	free (kv);
+	free (content);
+	if (!newc) {
+		return;
+	}
+	if (r_file_dump (path, (const ut8 *)newc, -1, false)) {
+		ut64 lines_before = line_end - line_begin;
+		ut64 lines_after = r_str_char_count (newc, '\n') + 1;
+		fixup_tests (fixup_results, path, line_end, (st64)lines_after - lines_before);
+	} else {
+		eprintf ("Failed to write file \"%s\"\n", path);
+	}
+	free (newc);
+}
+
 static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
 	assert (result->test->type == R2R_TEST_TYPE_CMD);
-	eprintf ("TODO: implement interact_fix()\n");
+	R2RCmdTest *test = result->test->cmd_test;
+	R2RProcessOutput *out = result->proc_out;
+	if (test->expect.value && out->out) {
+		replace_cmd_kv (result->test->path, test, test->expect.line_begin, test->expect.line_end, "EXPECT", out->out, fixup_results);
+	}
+	if (test->expect_err.value && out->err) {
+		replace_cmd_kv (result->test->path, test, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", out->err, fixup_results);
+	}
 }
 
 static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
