@@ -996,6 +996,12 @@ repeat:
 				if (f) {
 					f->is_noreturn = true;
 				}
+				{
+					// wait at the end of the function analnysis to chk if all the
+					// exit points are noreturn otherwise that wont be right
+					r_anal_noreturn_add (anal, fcn->name, fcn->addr);
+					fcn->is_noreturn = true;
+				}
 				gotoBeach (R_ANAL_RET_END);
 			}
 			break;
