@@ -19,7 +19,7 @@ typedef struct {
 	RBinSection *_data;
 } RCoreObjc;
 
-static const bool isInvalid (ut64 addr) {
+static bool isInvalid (ut64 addr) {
 	return (!addr || addr == UT64_MAX);
 }
 
