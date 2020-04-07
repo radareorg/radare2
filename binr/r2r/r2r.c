@@ -2,6 +2,7 @@
 
 #include "r2r.h"
 #include <r_cons.h>
+#include <assert.h>
 
 #define WORKERS_DEFAULT        8
 #define RADARE2_CMD_DEFAULT    "radare2"
@@ -34,6 +35,10 @@ typedef struct r2r_state_t {
 static RThreadFunctionRet worker_th(RThread *th);
 static void print_state(R2RState *state, ut64 prev_completed);
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
+static void interact(R2RState *state);
+static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results);
+static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results);
+static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results);
 
 static int help(bool verbose) {
 	printf ("Usage: r2r [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
@@ -43,6 +48,7 @@ static int help(bool verbose) {
 		" -v           show version\n"
 		" -q           quiet\n"
 		" -V           verbose\n"
+		" -i           interactive mode\n"
 		" -n           do nothing (don't run any test, just load/parse them)\n"
 		" -L           log mode (better printing for CI, logfiles, etc.)"
 		" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
@@ -136,6 +142,7 @@ int main(int argc, char **argv) {
 	bool nothing = false;
 	bool quiet = false;
 	bool log_mode = false;
+	bool interactive = false;
 	char *radare2_cmd = NULL;
 	char *rasm2_cmd = NULL;
 	char *json_test_file = NULL;
@@ -145,7 +152,7 @@ int main(int argc, char **argv) {
 	int ret = 0;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:");
+	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:i");
 
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -167,6 +174,9 @@ int main(int argc, char **argv) {
 			return 0;
 		case 'V':
 			verbose = true;
+			break;
+		case 'i':
+			interactive = true;
 			break;
 		case 'L':
 			log_mode = true;
@@ -398,6 +408,19 @@ int main(int argc, char **argv) {
 	}
 	r_pvector_clear (&workers);
 
+	ut64 seconds = (r_sys_now () - time_start) / 1000000;
+	printf ("Finished in");
+	if (seconds > 60) {
+		ut64 minutes = seconds / 60;
+		printf (" %"PFMT64d" minutes and", seconds / 60);
+		seconds -= (minutes * 60);
+	}
+	printf (" %"PFMT64d" seconds.\n", seconds % 60);
+
+	if (interactive) {
+		interact (&state);
+	}
+
 	if (state.xx_count) {
 		ret = 1;
 	}
@@ -409,14 +432,6 @@ coast:
 	r2r_test_database_free (state.db);
 	r_th_lock_free (state.lock);
 	r_th_cond_free (state.cond);
-	ut64 seconds = (r_sys_now () - time_start) / 1000000;
-	printf ("Finished in");
-	if (seconds > 60) {
-		ut64 minutes = seconds / 60;
-		printf (" %"PFMT64d" minutes and", seconds / 60);
-		seconds -= (minutes * 60);
-	}
-	printf (" %"PFMT64d" seconds.\n", seconds % 60);
 beach:
 	free (radare2_cmd);
 	free (rasm2_cmd);
@@ -641,4 +656,84 @@ static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_comp
 		print_state_counts (state);
 		printf ("\n");
 	}
+}
+
+static void interact(R2RState *state) {
+	void **it;
+	RPVector failed_results;
+	r_pvector_init (&failed_results, NULL);
+	r_pvector_foreach (&state->results, it) {
+		R2RTestResultInfo *result = *it;
+		if (result->result == R2R_TEST_RESULT_FAILED) {
+			r_pvector_push (&failed_results, result);
+		}
+	}
+	if (r_pvector_empty (&failed_results)) {
+		goto beach;
+	}
+
+	printf ("\n");
+	printf ("#####################\n");
+	printf (" %"PFMT64u" failed test(s) \xf0\x9f\x9a\xa8\n", (ut64)r_pvector_len (&failed_results));
+
+	r_pvector_foreach (&failed_results, it) {
+		R2RTestResultInfo *result = *it;
+		if (result->test->type != R2R_TEST_TYPE_CMD) {
+			// TODO: other types of tests
+			continue;
+		}
+
+		printf ("#####################\n\n");
+		print_result_diff (&state->run_config, result);
+inval:
+		printf ("Wat do?    "
+				"(f)ix \xe2\x9c\x85\xef\xb8\x8f\xef\xb8\x8f\xef\xb8\x8f    "
+				"(i)gnore \xf0\x9f\x99\x88    "
+				"(b)roken \xe2\x98\xa0\xef\xb8\x8f\xef\xb8\x8f\xef\xb8\x8f    "
+				"(c)ommands \xe2\x8c\xa8\xef\xb8\x8f    "
+				"(q)uit \xf0\x9f\x9a\xaa\n");
+		printf ("> ");
+		char buf[0x30];
+		if (!fgets (buf, sizeof (buf), stdin)) {
+			break;
+		}
+		if (strlen (buf) != 2) {
+			goto inval;
+		}
+		switch (buf[0]) {
+		case 'f':
+			interact_fix (result, &failed_results);
+			break;
+		case 'i':
+			break;
+		case 'b':
+			interact_break (result, &failed_results);
+			break;
+		case 'c':
+			interact_commands (result, &failed_results);
+			break;
+		case 'q':
+			goto beach;
+		default:
+			goto inval;
+		}
+	}
+
+beach:
+	r_pvector_clear (&failed_results);
+}
+
+static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
+	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	eprintf ("TODO: implement interact_fix()\n");
+}
+
+static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
+	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	eprintf ("TODO: implement interact_break()\n");
+}
+
+static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results) {
+	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	eprintf ("TODO: implement interact_commands()\n");
 }
