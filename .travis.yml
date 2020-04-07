@@ -20,50 +20,34 @@ os: osx
 jobs:
   fast_finish: true
   include:
-    # Linux with GCC
-    - os: linux
-      name: Linux-GCC
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
-    # Linux with clang
-    - os: linux
-      name: Linux-CLANG
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1"
-    # Linux with meson and coverage and asserts
-    - os: linux
-      name: Linux-meson
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1 CFLAGS="-DR2_ASSERT_STDOUT=1"
-    # OS X with clang
-    - os: osx
-      name: macOS
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1"
     # emscripten
-    - os: linux
+    - if: branch = master AND type = push
+      os: linux
       name: WASM
       env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
-    - os: linux
+    - if: branch = master AND type = push
+      os: linux
       name: PPC64
       arch: ppc64le
       dist: bionic
       env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with GCC on System Z
-    - os: linux
+    - if: branch = master AND type = push
+      os: linux
       name: S390X
       arch: s390x
       dist: bionic
       env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with GCC on ARMv8 (64bit)
-    - os: linux
+    - if: branch = master AND type = push
+      os: linux
       name: ARM64
       arch: arm64
       dist: bionic
       env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
-    # Linux with new shell parser enabled
-    - os: linux
-      name: newShell
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_NEWSHELL=true CFLAGS="-DR2_ASSERT_STDOUT=1" R2_CFG_NEWSHELL=1
     # Building *.deb package
-    - if: branch = master AND type != pull_request
+    - if: branch = master AND type = push
       os: linux
       name: Debian
       dist: xenial
@@ -72,6 +56,7 @@ jobs:
     # XXX its broken it complains about invalid key
     #- os: linux
     #  env: COMPILER_NAME=clang CXX=clang++ CC=clang R2_TESTS_DISABLE=1 FUZZIT=0 INSTALL_SYSTEM=static CXXFLAGS="-fsanitize=fuzzer"
+    # TODO: move this as new GitHub workflows
     # ASAN as a best effort on every push
     - if: (not head_branch =~ ^release-* AND not head_branch =~ ^prerelease-* AND not branch =~ ^release-* AND not branch =~ ^prerelease-*) AND (head_branch =~ ^asan-* OR type = push)
       os: linux
@@ -120,9 +105,6 @@ jobs:
       env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DR2_ASSERT_STDOUT=1"
-    # Linux with new shell parser enabled
-    - os: linux
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_NEWSHELL=true CFLAGS="-DR2_ASSERT_STDOUT=1" R2_CFG_NEWSHELL=1
 
 cache:
   - ccache
