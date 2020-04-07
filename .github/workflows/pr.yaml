@@ -2,25 +2,42 @@ name: Radare2 CI PR
 
 on:
   pull_request:
+    paths-ignore:
+    - 'man/*'
+    - '.travis*'
+    - 'travis*'
+    - 'appveyor.yml'
+    - '*.md'
+    - 'COPYING*'
     branches:
     - master
 
 jobs:
   build:
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        compiler: [gcc, clang]
-        build_system: [acr, meson]
-        exclude:
-          - os: macos-latest
-            build_system: meson
-          - os: macos-latest
+        name: [linux-acr-gcc, linux-acr-clang, linux-meson-gcc, macos-clang]
+        include:
+          - name: linux-acr-gcc
+            os: ubuntu-latest
+            build_system: acr
             compiler: gcc
-          - os: ubuntu-latest
-            build_system: meson
+            run_tests: true
+          - name: linux-acr-clang
+            os: ubuntu-latest
+            build_system: acr
             compiler: clang
+          - name: linux-meson-gcc
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+          - name: macos-clang
+            os: macos-latest
+            build_system: acr
+            compiler: clang
+            run_tests: true
 
     steps:
     - uses: actions/checkout@v2
@@ -51,7 +68,7 @@ jobs:
       env:
         CC: ${{ matrix.compiler }}
     - name: Install with make
-      if: matrix.build_system == 'acr' && matrix.os == 'macos-latest' 
+      if: matrix.build_system == 'acr'
       run: |
         # Install the radare2
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
@@ -67,7 +84,7 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
     - name: Run tests
-      if: matrix.os == 'macos-latest' || (matrix.os == 'ubuntu-latest' && matrix.build_system == 'meson')
+      if: matrix.run_tests
       run: |
         # Running the test suite
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
