@@ -10,20 +10,19 @@ for(i=0; i<len; i++) {
 }
 #endif
 
-R_API int r_print_pack7bit (const char *src, char *dest) {
-        int len, i, j = 0, shift = 0;
+R_API int r_print_pack7bit(const char *src, char *dest) {
+        int i, j = 0, shift = 0;
         ut8 ch1, ch2;
         char tmp[2];
 
         *dest = '\0';
-	len = strlen (src);
+	int len = strlen (src);
 
-        for (i=0; i<len; i++ ) {
+        for (i = 0; i < len; i++ ) {
                 ch1 = src[i] & 0x7F;
                 ch1 = ch1 >> shift;
-                ch2 = src[(i+1)] & 0x7F;
-                ch2 = ch2 << (7-shift);
-
+                ch2 = src[(i + 1)] & 0x7F;
+                ch2 = ch2 << (7 - shift);
                 ch1 = ch1 | ch2;
 
                 j = strlen(dest);
@@ -40,14 +39,14 @@ R_API int r_print_pack7bit (const char *src, char *dest) {
         return 0;
 }
 
-R_API int r_print_unpack7bit (const char *src, char *dest) {
+R_API int r_print_unpack7bit(const char *src, char *dest) {
         int i, j, shift = 0, len = strlen (src);
         ut8 ch1, ch2 = '\0';
         char buf[8];
 
         *dest = '\0';
 
-        for (i=0; i<len; i+=2) {
+        for (i = 0; i < len; i += 2) {
                 sprintf (buf, "%c%c", src[i], src[i+1]);
                 ch1 = strtol (buf, NULL, 16);
 

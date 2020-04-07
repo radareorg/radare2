@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2017-2020 - maskray, th3str4nger */
+
 #include "r_vector.h"
 
 // Optimize memory usage on glibc
