@@ -1887,6 +1887,15 @@ static void ds_show_functions(RDisasmState *ds) {
 			r_cons_printf ("%s  ", COLOR_RESET (ds));
 		}
 		r_cons_printf ("%d: ", r_anal_function_realsize (f));
+
+		// show function's realname in the signature if realnames are enabled 
+		if (core->flags->realnames) {
+			RFlagItem *flag = r_flag_get (core->flags, fcn_name);
+			if (flag && flag->realname) {
+				fcn_name = flag->realname;
+			}
+		}
+	    
 		char *sig = r_anal_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
 		if (sig) {
 			r_cons_print (sig);
