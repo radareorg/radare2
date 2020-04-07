@@ -42,7 +42,7 @@ R_API void r_spaces_free(RSpaces *sp) {
 	free (sp);
 }
 
-static void space_free(RSpace *s) {
+static inline void space_free(RSpace *s) {
 	if (s) {
 		free (s->name);
 		free (s);
@@ -122,7 +122,7 @@ R_API RSpace *r_spaces_set(RSpaces *sp, const char *name) {
 	return sp->current;
 }
 
-static bool spaces_unset_single(RSpaces *sp, const char *name) {
+static inline bool spaces_unset_single(RSpaces *sp, const char *name) {
 	RSpace *space = r_spaces_get (sp, name);
 	if (!space) {
 		return false;

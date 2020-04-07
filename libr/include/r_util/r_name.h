@@ -5,10 +5,10 @@
 extern "C" {
 #endif
 
-R_API int r_name_check(const char *name);
-R_API int r_name_filter(char *name, int len);
+R_API bool r_name_check(const char *name);
+R_API bool r_name_filter(char *name, int len);
 R_API char *r_name_filter2(const char *name);
-R_API int r_name_validate_char(const char ch);
+R_API bool r_name_validate_char(const char ch);
 
 #ifdef __cplusplus
 }

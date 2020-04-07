@@ -2,7 +2,7 @@
 
 #include <r_util.h>
 
-R_API int r_name_validate_char(const char ch) {
+R_API bool r_name_validate_char(const char ch) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (IS_DIGIT(ch))) {
 		return true;
 	}
@@ -15,7 +15,7 @@ R_API int r_name_validate_char(const char ch) {
 	return false;
 }
 
-R_API int r_name_check(const char *name) {
+R_API bool r_name_check(const char *name) {
 	/* Cannot start by number */
 	if (!name || !*name || IS_DIGIT (*name)) {
 		return false;
@@ -34,11 +34,10 @@ static inline bool is_special_char (char *name) {
 	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
 }
 
-R_API int r_name_filter(char *name, int maxlen) {
-	int i;
-	size_t len;
+R_API bool r_name_filter(char *name, int maxlen) {
+	size_t i, len;
 	if (!name) {
-		return 0;
+		return false;
 	}
 	if (maxlen < 0) {
 		maxlen = strlen (name);
@@ -87,7 +86,7 @@ R_API int r_name_filter(char *name, int maxlen) {
 }
 
 R_API char *r_name_filter2(const char *name) {
-	int i;
+	size_t i;
 	while (!IS_PRINTABLE (*name)) {
 		name++;
 	}

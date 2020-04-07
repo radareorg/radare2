@@ -60,7 +60,7 @@ R_API RGraphNode *r_graph_nth_neighbour(const RGraph *g, const RGraphNode *n, in
 R_API const RList *r_graph_innodes(const RGraph *g, const RGraphNode *n);
 R_API const RList *r_graph_all_neighbours(const RGraph *g, const RGraphNode *n);
 R_API const RList *r_graph_get_nodes(const RGraph *g);
-R_API int r_graph_adjacent(const RGraph *g, const RGraphNode *from, const RGraphNode *to);
+R_API bool r_graph_adjacent(const RGraph *g, const RGraphNode *from, const RGraphNode *to);
 R_API void r_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs_node_reverse(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis);
