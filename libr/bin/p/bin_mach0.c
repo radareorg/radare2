@@ -556,7 +556,7 @@ static RList* patch_relocs(RBin *b) {
 	RIO *io = NULL;
 	RBinObject *obj = NULL;
 	struct MACH0_(obj_t) *bin = NULL;
-	RIOMap *g = NULL, *s = NULL;
+	RIOMap *g = NULL;
 	HtUU *relocs_by_sym = NULL;
 	RIODesc *gotr2desc = NULL;
 
@@ -600,12 +600,13 @@ static RList* patch_relocs(RBin *b) {
 
 	int cdsz = obj->info ? obj->info->bits / 8 : 8;
 
-	SdbListIter *iter;
 	ut64 offset = 0;
-	ls_foreach (io->maps, iter, s) {
-		if (s->itv.addr > offset) {
-			offset = s->itv.addr;
-			g = s;
+	void **vit;
+	r_pvector_foreach (&io->maps, vit) {
+		RIOMap *map = *vit;
+		if (map->itv.addr > offset) {
+			offset = map->itv.addr;
+			g = map;
 		}
 	}
 	if (!g) {
