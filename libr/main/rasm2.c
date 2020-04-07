@@ -859,7 +859,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			}
 			// XXX this is a wrong usage of endianness
 			if (!strncmp (usrstr, "0x", 2)) {
-				memmove (usrstr, usrstr + 2, strlen (usrstr) + 1);
+				memmove (usrstr, usrstr + 2, strlen (usrstr + 2) + 1);
 			}
 			if (rad) {
 				as->oneliner = true;
