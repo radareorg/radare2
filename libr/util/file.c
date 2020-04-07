@@ -201,15 +201,14 @@ R_API int r_file_is_abspath(const char *file) {
 	return ((*file && file[1]==':') || *file == '/');
 }
 
-R_API char *r_file_abspath(const char *file) {
-	char *cwd, *ret = NULL;
+R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
+	char *ret = NULL;
 	if (!file || !strcmp (file, ".") || !strcmp (file, "./")) {
 		return r_sys_getdir ();
 	}
 	if (strstr (file, "://")) {
 		return strdup (file);
 	}
-	cwd = r_sys_getdir ();
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
 		ret = r_str_home (file + 2);
 	} else {
@@ -240,7 +239,6 @@ R_API char *r_file_abspath(const char *file) {
 		}
 #endif
 	}
-	free (cwd);
 	if (!ret) {
 		ret = strdup (file);
 	}
@@ -251,6 +249,13 @@ R_API char *r_file_abspath(const char *file) {
 		ret = abspath;
 	}
 #endif
+	return ret;
+}
+
+R_API char *r_file_abspath(const char *file) {
+	char *cwd = r_sys_getdir ();
+	char *ret = r_file_abspath_rel (cwd, file);
+	free (cwd);
 	return ret;
 }
 

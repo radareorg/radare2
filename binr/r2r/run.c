@@ -1138,6 +1138,18 @@ R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out) {
 	free (out);
 }
 
+R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *test, R2RCmdRunner runner, void *user) {
+	RList *files = r_list_new ();
+	r_list_push (files, test->file);
+	R2RProcessOutput *ret = run_r2_test (config, "aaa", files, NULL, false, runner, user);
+	r_list_free (files);
+	return ret;
+}
+
+R_API bool r2r_check_fuzz_test(R2RProcessOutput *out) {
+	return out && out->ret == 0 && out->out && out->err && !out->timeout;
+}
+
 R_API char *r2r_test_name(R2RTest *test) {
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD:
@@ -1149,6 +1161,8 @@ R_API char *r2r_test_name(R2RTest *test) {
 		return r_str_newf ("<asm> %s", test->asm_test->disasm ? test->asm_test->disasm : "");
 	case R2R_TEST_TYPE_JSON:
 		return r_str_newf ("<json> %s", test->json_test->cmd ? test->json_test->cmd: "");
+	case R2R_TEST_TYPE_FUZZ:
+		return r_str_newf ("<fuzz> %s", test->fuzz_test->file);
 	}
 	return NULL;
 }
@@ -1161,6 +1175,8 @@ R_API bool r2r_test_broken(R2RTest *test) {
 		return test->asm_test->mode & R2R_ASM_TEST_MODE_BROKEN ? true : false;
 	case R2R_TEST_TYPE_JSON:
 		return test->json_test->broken;
+	case R2R_TEST_TYPE_FUZZ:
+		return false;
 	}
 	return false;
 }
@@ -1200,6 +1216,14 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 		ret->run_failed = !out;
 		break;
 	}
+	case R2R_TEST_TYPE_FUZZ: {
+		R2RFuzzTest *fuzz_test = test->fuzz_test;
+		R2RProcessOutput *out = r2r_run_fuzz_test (config, fuzz_test, subprocess_runner, config);
+		success = r2r_check_fuzz_test (out);
+		ret->proc_out = out;
+		ret->timeout = out->timeout;
+		ret->run_failed = !out;
+	}
 	}
 	bool broken = r2r_test_broken (test);
 	if (!success) {
@@ -1218,6 +1242,7 @@ R_API void r2r_test_result_info_free(R2RTestResultInfo *result) {
 		switch (result->test->type) {
 		case R2R_TEST_TYPE_CMD:
 		case R2R_TEST_TYPE_JSON:
+		case R2R_TEST_TYPE_FUZZ:
 			r2r_process_output_free (result->proc_out);
 			break;
 		case R2R_TEST_TYPE_ASM:

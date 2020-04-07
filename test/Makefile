@@ -1,6 +1,3 @@
-R2R=$(shell cd new ; npm bin)/r2r
-RUNTEST=cd new && npm install ; $(R2R)
-
 all: r2r-tests unit_tests
 
 bins:
@@ -18,6 +15,9 @@ RUNTEST=cd new && r2r -L
 
 r2r-tests: bins
 	${RUNTEST}
+
+fuzz-tests: bins
+	r2r -LF bins/fuzzed @fuzz
 
 keystone: bins
 	${RUNTEST} db/extras/asm/x86.ks_
