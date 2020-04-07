@@ -339,9 +339,6 @@ R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
 	return NULL;
 }
 
-#define CMP_SKYLINE(addr, part) ((addr) < r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? -1 : \
-			(addr) > r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? 1 : 0)
-
 // gets first map where addr fits in
 R_API RIOMap *r_io_map_get(RIO* io, ut64 addr) {
 	r_return_val_if_fail (io, NULL);
