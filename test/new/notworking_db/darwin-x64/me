@@ -1,9 +1,7 @@
 NAME=asm.os
 FILE=-
 BROKEN=1
-CMDS=<<EOF
-e asm.os
-EOF
+CMDS=e asm.os
 EXPECT=<<EOF
 darwin
 EOF

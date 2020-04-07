@@ -2175,27 +2175,27 @@ RUN
 
 NAME=print fcn header without asm.flags.real
 FILE=../bins/elf/crackme0x05
-EXPECT=<<EOF
-66: sym.parell (char *s);
-EOF
 CMDS=<<EOF
 e asm.flags.real=false
 e asm.lines.fcn=false
 aaa
 pdf @ 0x08048484~:1
 EOF
+EXPECT=<<EOF
+66: sym.parell (char *s);
+EOF
 RUN
 
 
 NAME=print fcn header with asm.flags.real
 FILE=../bins/elf/crackme0x05
-EXPECT=<<EOF
-66: parell (char *s);
-EOF
 CMDS=<<EOF
 e asm.flags.real=true
 e asm.lines.fcn=false
 aaa
 pdf @ 0x08048484~:1
+EOF
+EXPECT=<<EOF
+66: parell (char *s);
 EOF
 RUN

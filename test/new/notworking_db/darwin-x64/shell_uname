@@ -1,9 +1,7 @@
 NAME=uname
 FILE=-
 BROKEN=
-CMDS=<<EOF
-!uname
-EOF
+CMDS=!uname
 EXPECT=<<EOF
 Darwin
 EOF

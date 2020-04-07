@@ -1,8 +1,6 @@
 NAME=ao 10~bytes
 FILE=../bins/pe/15004.file
-CMDS=<<EOF
-ao 10~bytes
-EOF
+CMDS=ao 10~bytes
 EXPECT=<<EOF
 bytes: e8d8170000
 bytes: 8d642444
@@ -278,9 +276,7 @@ RUN
 
 NAME=adf bug #16215
 FILE=-
-CMDS=<<EOF
-adf
-EOF
+CMDS=adf
 EXPECT=<<EOF
 EOF
 RUN

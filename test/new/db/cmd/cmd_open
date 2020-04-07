@@ -1,9 +1,7 @@
 NAME=om=
 FILE=../bins/mach0/mac-ls2
 BROKEN=1
-CMDS=<<EOF
-om=
-EOF
+CMDS=om=
 EXPECT=<<EOF
 
 0*  0x100000000 ################-------------- 0x100005000 r-x   3     fmap.TEXT
