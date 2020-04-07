@@ -44,6 +44,7 @@ static int help(bool verbose) {
 		" -V           verbose\n"
 		" -n           do nothing (don't run any test, just load/parse them)\n"
 		" -L           log mode (better printing for CI, logfiles, etc.)"
+		" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
 		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
 		" -m [rasm2]   path to rasm2 executable (default is "RASM2_CMD_DEFAULT")\n"
@@ -136,12 +137,13 @@ int main(int argc, char **argv) {
 	char *radare2_cmd = NULL;
 	char *rasm2_cmd = NULL;
 	char *json_test_file = NULL;
+	char *fuzz_dir = NULL;
 	const char *r2r_dir = NULL;
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
 	int ret = 0;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:C:LnVt:");
+	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:C:LnVt:F:");
 
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -157,6 +159,10 @@ int main(int argc, char **argv) {
 			break;
 		case 'L':
 			log_mode = true;
+			break;
+		case 'F':
+			free (fuzz_dir);
+			fuzz_dir = strdup (opt.arg);
 			break;
 		case 'j':
 			workers_count = atoi (opt.arg);
@@ -206,8 +212,13 @@ int main(int argc, char **argv) {
 		if (!dir_found) {
 			eprintf ("Cannot find db/ directory related to the given test.\n");
 			return -1;
-
 		}
+	}
+
+	if (fuzz_dir) {
+		char *tmp = fuzz_dir;
+		fuzz_dir = r_file_abspath_rel (cwd, fuzz_dir);
+		free (tmp);
 	}
 
 	if (!r2r_subprocess_init ()) {
@@ -251,7 +262,13 @@ int main(int argc, char **argv) {
 					r2r_test_run_unit ();
 					continue;
 				} else if (!strcmp (arg, "fuzz")) {
-					eprintf (".fuzz: TODO\n");
+					if (!fuzz_dir) {
+						eprintf ("No fuzz dir given. Use -F [dir]\n");
+						return -1;
+					}
+					if (!r2r_test_database_load_fuzz (state.db, fuzz_dir)) {
+						eprintf ("Failed to load fuzz tests from \"%s\"\n", fuzz_dir);
+					}
 					continue;
 				} else if (!strcmp (arg, "json")) {
 					arg = "db/json";
@@ -263,9 +280,8 @@ int main(int argc, char **argv) {
 					arg = r_str_newf ("db/%s", arg + 1);
 				}
 			}
-			char *tf = (*arg == '/')? strdup (arg)
-				: r_str_newf ("%s"R_SYS_DIR"%s", cwd, arg);
-			if (!r2r_test_database_load (state.db, tf)) {
+			char *tf = r_file_abspath_rel (cwd, arg);
+			if (!tf || !r2r_test_database_load (state.db, tf)) {
 				eprintf ("Failed to load tests from \"%s\"\n", tf);
 				r2r_test_database_free (state.db);
 				free (tf);
@@ -279,6 +295,9 @@ int main(int argc, char **argv) {
 			eprintf ("Failed to load tests from ./db\n");
 			r2r_test_database_free (state.db);
 			return -1;
+		}
+		if (fuzz_dir && !r2r_test_database_load_fuzz (state.db, fuzz_dir)) {
+			eprintf ("Failed to load fuzz tests from \"%s\"\n", fuzz_dir);
 		}
 	}
 
@@ -391,6 +410,7 @@ beach:
 	free (radare2_cmd);
 	free (rasm2_cmd);
 	free (json_test_file);
+	free (fuzz_dir);
 	return ret;
 }
 
@@ -532,6 +552,12 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 		// TODO
 		break;
 	case R2R_TEST_TYPE_JSON:
+		break;
+	case R2R_TEST_TYPE_FUZZ:
+		r2r_run_fuzz_test (config, result->test->fuzz_test, print_runner, NULL);
+		printf ("-- stdout\n%s\n", result->proc_out->out);
+		printf ("-- stderr\n%s\n", result->proc_out->err);
+		printf ("-- exit status: "Color_RED"%d"Color_RESET"\n", result->proc_out->ret);
 		break;
 	}
 }

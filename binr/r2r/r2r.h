@@ -86,10 +86,15 @@ typedef struct r2r_json_test_t {
 	bool load_plugins;
 } R2RJsonTest;
 
+typedef struct r2r_fuzz_test_t {
+	char *file;
+} R2RFuzzTest;
+
 typedef enum r2r_test_type_t {
 	R2R_TEST_TYPE_CMD,
 	R2R_TEST_TYPE_ASM,
-	R2R_TEST_TYPE_JSON
+	R2R_TEST_TYPE_JSON,
+	R2R_TEST_TYPE_FUZZ
 } R2RTestType;
 
 typedef struct r2r_test_t {
@@ -99,6 +104,7 @@ typedef struct r2r_test_t {
 		R2RCmdTest *cmd_test;
 		R2RAsmTest *asm_test;
 		R2RJsonTest *json_test;
+		R2RFuzzTest *fuzz_test;
 	};
 } R2RTest;
 
@@ -142,7 +148,7 @@ typedef struct r2r_test_result_info_t {
 	bool timeout;
 	bool run_failed; // something went seriously wrong (e.g. r2 not found)
 	union {
-		R2RProcessOutput *proc_out; // for test->type == R2R_TEST_TYPE_CMD or R2R_TEST_TYPE_JSON
+		R2RProcessOutput *proc_out; // for test->type == R2R_TEST_TYPE_CMD, R2R_TEST_TYPE_JSON or R2R_TEST_TYPE_FUZZ
 		R2RAsmTestOutput *asm_out;  // for test->type == R2R_TEST_TYPE_ASM
 	};
 } R2RTestResultInfo;
@@ -162,6 +168,7 @@ R_API RPVector *r2r_load_json_test_file(const char *file);
 R_API R2RTestDatabase *r2r_test_database_new(void);
 R_API void r2r_test_database_free(R2RTestDatabase *db);
 R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path);
+R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path);
 
 typedef struct r2r_subprocess_t R2RSubprocess;
 
@@ -182,10 +189,11 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test);
 R_API bool r2r_check_jq_available(void);
 R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner, void *user);
 R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test);
-
 R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test);
 R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test);
 R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out);
+R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *test, R2RCmdRunner runner, void *user);
+R_API bool r2r_check_fuzz_test(R2RProcessOutput *out);
 
 R_API void r2r_test_free(R2RTest *test);
 R_API char *r2r_test_name(R2RTest *test);
