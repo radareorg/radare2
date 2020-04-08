@@ -632,55 +632,58 @@ static bool cmd_wfx(RCore *core, const char *input) {
 
 static bool cmd_wfs(RCore *core, const char *input) {
 	char *str = strdup (input);
-	if (str[1] == ' ') {
-		eprintf ("Write from socket\n");
-		ut64 addr = 0;
-		char *host = str + 2;
-		char *port = strchr (host, ':');
-		if (port) {
-			ut64 sz = core->blocksize;
-			*port ++= 0;
-			char *space = strchr (port, ' ');
-			if (space) {
-				*space++ = 0;
-				sz = r_num_math (core->num, space);
-				addr = core->offset;
-			}
-			ut8 *buf = calloc (1, sz);
-			r_io_read_at (core->io, addr, buf, sz);
-			RSocket *s = r_socket_new (false);
-			if (r_socket_listen (s, port, NULL)) {
-				int done = 0;
-				RSocket *c = r_socket_accept (s);
-				if (c) {
-					eprintf ("Receiving data from client...\n");
-					while (done < sz) {
-						int rc = r_socket_read (c, buf + done, sz - done);
-						if (rc < 1) {
-							eprintf ("oops\n");
-							break;
-						}
-						done += rc;
-					}
-					r_socket_free (c);
-					if (r_io_write_at (core->io, core->offset, buf, done)) {
-						eprintf ("Written %d bytes\n", done);
-					} else {
-						eprintf ("Cannot write\n");
-					}
-				}
-			} else {
-				eprintf ("Cannot connect\n");
-			}
-			r_socket_free (s);
-			free (buf);
-		} else {
-			eprintf ("Usage wts host:port [sz]\n");
-		}
-	} else {
+	if (str[1] != ' ') {
 		eprintf ("Usage wfs host:port [sz]\n");
+		free (str);
+		return false;
 	}
+	ut64 addr = 0;
+	char *host = str + 2;
+	char *port = strchr (host, ':');
+	if (!port) {
+		eprintf ("Usage wfs host:port [sz]\n");
+		free (str);
+		return false;
+	}
+	ut64 sz = core->blocksize;
+	*port ++= 0;
+	char *space = strchr (port, ' ');
+	if (space) {
+		*space++ = 0;
+		sz = r_num_math (core->num, space);
+		addr = core->offset;
+	}
+	ut8 *buf = calloc (1, sz);
+	r_io_read_at (core->io, addr, buf, sz);
+	RSocket *s = r_socket_new (false);
+	if (!r_socket_listen (s, port, NULL)) {
+		eprintf ("Cannot listen on port %s\n", port);
+		r_socket_free (s);
+		return false;
+	}
+	int done = 0;
+	RSocket *c = r_socket_accept (s);
+	if (c) {
+		eprintf ("Receiving data from client...\n");
+		while (done < sz) {
+			int rc = r_socket_read (c, buf + done, sz - done);
+			if (rc < 1) {
+				eprintf ("oops\n");
+				break;
+			}
+			done += rc;
+		}
+		r_socket_free (c);
+		if (r_io_write_at (core->io, core->offset, buf, done)) {
+			eprintf ("Written %d bytes\n", done);
+		} else {
+			eprintf ("Cannot write\n");
+		}
+	}
+	r_socket_free (s);
+	free (buf);
 	free (str);
+	return true;
 }
 
 static bool cmd_wf(RCore *core, const char *input) {
