@@ -4,6 +4,17 @@ set -x
 export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
 export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib/$(uname -m)-linux-gnu:${TRAVIS_BUILD_DIR}/install/lib:${TRAVIS_BUILD_DIR}/install/lib64:${LD_LIBRARY_PATH}
 
+if [ "${EMSCRIPTEN}" = "1" ] ; then
+    git clone https://github.com/emscripten-core/emsdk.git || exit 1
+    cd emsdk || exit 1
+    ./emsdk install latest || exit 1
+    ./emsdk activate latest || exit 1
+    source ./emsdk_env.sh
+    cd ..
+    sys/emscripten.sh
+    exit $?
+fi
+
 if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     echo "Installing with meson + ninja"
 
@@ -95,7 +106,6 @@ else
 fi
 
 if [ "${R2_TESTS_DISABLE}" != "1" ] ; then
-    export NOOK=1
     export NOREPORT=1
     cd test
     VERBOSE=1 make -k all || exit 1

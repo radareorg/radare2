@@ -86,10 +86,15 @@ typedef struct r2r_json_test_t {
 	bool load_plugins;
 } R2RJsonTest;
 
+typedef struct r2r_fuzz_test_t {
+	char *file;
+} R2RFuzzTest;
+
 typedef enum r2r_test_type_t {
 	R2R_TEST_TYPE_CMD,
 	R2R_TEST_TYPE_ASM,
-	R2R_TEST_TYPE_JSON
+	R2R_TEST_TYPE_JSON,
+	R2R_TEST_TYPE_FUZZ
 } R2RTestType;
 
 typedef struct r2r_test_t {
@@ -99,6 +104,7 @@ typedef struct r2r_test_t {
 		R2RCmdTest *cmd_test;
 		R2RAsmTest *asm_test;
 		R2RJsonTest *json_test;
+		R2RFuzzTest *fuzz_test;
 	};
 } R2RTest;
 
@@ -111,18 +117,22 @@ typedef struct r2r_run_config_t {
 	const char *r2_cmd;
 	const char *rasm2_cmd;
 	const char *json_test_file;
+	ut64 timeout_ms;
 } R2RRunConfig;
 
 typedef struct r2r_process_output_t {
 	char *out; // stdout
 	char *err; // stderr
 	int ret; // exit code of the process
+	bool timeout;
 } R2RProcessOutput;
 
 typedef struct r2r_asm_test_output_t {
 	char *disasm;
 	ut8 *bytes;
 	size_t bytes_size;
+	bool as_timeout;
+	bool disas_timeout;
 } R2RAsmTestOutput;
 
 typedef enum r2r_test_result_t {
@@ -135,51 +145,55 @@ typedef enum r2r_test_result_t {
 typedef struct r2r_test_result_info_t {
 	R2RTest *test;
 	R2RTestResult result;
+	bool timeout;
+	bool run_failed; // something went seriously wrong (e.g. r2 not found)
 	union {
-		R2RProcessOutput *proc_out; // for test->type == R2R_TEST_TYPE_CMD or R2R_TEST_TYPE_JSON
+		R2RProcessOutput *proc_out; // for test->type == R2R_TEST_TYPE_CMD, R2R_TEST_TYPE_JSON or R2R_TEST_TYPE_FUZZ
 		R2RAsmTestOutput *asm_out;  // for test->type == R2R_TEST_TYPE_ASM
 	};
 } R2RTestResultInfo;
 
-R_API R2RCmdTest *r2r_cmd_test_new();
+R_API R2RCmdTest *r2r_cmd_test_new(void);
 R_API void r2r_cmd_test_free(R2RCmdTest *test);
 R_API RPVector *r2r_load_cmd_test_file(const char *file);
 
-R_API R2RAsmTest *r2r_asm_test_new();
+R_API R2RAsmTest *r2r_asm_test_new(void);
 R_API void r2r_asm_test_free(R2RAsmTest *test);
 R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file);
 
-R_API R2RJsonTest *r2r_json_test_new();
+R_API R2RJsonTest *r2r_json_test_new(void);
 R_API void r2r_json_test_free(R2RJsonTest *test);
 R_API RPVector *r2r_load_json_test_file(const char *file);
 
-R_API R2RTestDatabase *r2r_test_database_new();
+R_API R2RTestDatabase *r2r_test_database_new(void);
 R_API void r2r_test_database_free(R2RTestDatabase *db);
 R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path);
+R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path);
 
 typedef struct r2r_subprocess_t R2RSubprocess;
 
-R_API bool r2r_subprocess_init();
-R_API void r2r_subprocess_fini();
+R_API bool r2r_subprocess_init(void);
+R_API void r2r_subprocess_fini(void);
 R_API R2RSubprocess *r2r_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size);
-R_API void r2r_subprocess_wait(R2RSubprocess *proc);
+R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms);
 R_API void r2r_subprocess_free(R2RSubprocess *proc);
 
 typedef R2RProcessOutput *(*R2RCmdRunner)(const char *file, const char *args[], size_t args_size,
-		const char *envvars[], const char *envvals[], size_t env_size);
+		const char *envvars[], const char *envvals[], size_t env_size, void *user);
 
 R_API void r2r_process_output_free(R2RProcessOutput *out);
-R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner);
+R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner, void *user);
 R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test);
-R_API bool r2r_check_jq_available();
-R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner);
+R_API bool r2r_check_jq_available(void);
+R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner, void *user);
 R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test);
-
 R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test);
 R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test);
 R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out);
+R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *test, R2RCmdRunner runner, void *user);
+R_API bool r2r_check_fuzz_test(R2RProcessOutput *out);
 
 R_API void r2r_test_free(R2RTest *test);
 R_API char *r2r_test_name(R2RTest *test);

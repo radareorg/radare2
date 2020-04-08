@@ -1,5 +1,9 @@
 NAME=p-h out of bounds
 FILE=../bins/mach0/mach0-x86-64
+CMDS=<<EOF
+aaa
+p-h @0x100001010 @e:search.in=bin.section
+EOF
 EXPECT=<<EOF
 
 .-------------------------------------------------------.
@@ -11,9 +15,5 @@ EXPECT=<<EOF
 |              | 5      | 0      | 2     | 0     | 0    |
 `-------------------------------------------------------'
 
-EOF
-CMDS=<<EOF
-aaa
-p-h @0x100001010 @e:search.in=bin.section
 EOF
 RUN

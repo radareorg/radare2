@@ -407,7 +407,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				break;
 			}
 			char *bufstr = r_strbuf_drain (buf);
-			r_table_add_rowf (table, "nXXddsss", string->ordinal, paddr, vaddr,
+			r_table_add_rowf (table, "nXXddsss", (ut64)string->ordinal, paddr, vaddr,
 				(int)string->length, (int)string->size, section_name,
 				type_string, bufstr);
 			free (bufstr);
@@ -1868,10 +1868,11 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		} else {
 			const char *bind = import->bind? import->bind: "NONE";
 			const char *type = import->type? import->type: "NONE";
+			eprintf ("nth: %d, %s\n", import->ordinal, symname);
 			if (import->classname && import->classname[0]) {
-				r_table_add_rowf (table, "nXssss", import->ordinal, addr, bind, type, libname ? libname : "", sdb_fmt ("%s.%s", import->classname, symname));
+				r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, libname ? libname : "", sdb_fmt ("%s.%s", import->classname, symname));
 			} else {
-				r_table_add_rowf (table, "nXssss", import->ordinal, addr, bind, type, libname ? libname : "", symname);
+				r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, libname ? libname : "", symname);
 			}
 
 			if (import->descriptor && import->descriptor[0]) {
@@ -3121,11 +3122,6 @@ static void classdump_c(RCore *r, RBinClass *c) {
 	r_cons_printf ("typedef struct class_%s {\n", c->name);
 	RListIter *iter2;
 	RBinField *f;
-	// XXX this is a hack because r2 doesnt supports empty structs yet
-	// XXX https://github.com/radareorg/radare2/issues/16342
-	if (r_list_empty (c->fields)) {
-		r_cons_printf ("void *padding;\n");
-	}
 	r_list_foreach (c->fields, iter2, f) {
 		if (f->type && f->name) {
 			char *n = objc_name_toc (f->name);

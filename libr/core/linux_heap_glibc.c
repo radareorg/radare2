@@ -137,9 +137,9 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 			}
 		}
 	} else {
-		RIOMap *map;
-		SdbListIter *iter;
-		ls_foreach (core->io->maps, iter, map) {
+		void **it;
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
 			if (map->name) {
 				if (strstr (map->name, "[heap]")) {
 					*brk_start = map->itv.addr;
@@ -323,9 +323,9 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 			}
 		}
 	} else {
-		RIOMap *map;
-		SdbListIter *iter;
-		ls_foreach (core->io->maps, iter, map) {
+		void **it;
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
 			if (map->name && strstr (map->name, "arena")) {
 				libc_addr_sta = map->itv.addr;
 				libc_addr_end = map->itv.addr + map->itv.size;

@@ -1,30 +1,31 @@
 NAME=PE: corkami 96workingsections.exe - open and analyze
 FILE=../bins/pe/96workingsections.exe
 ARGS=-A
+CMDS=q!
 EXPECT=<<EOF
 EOF
-CMDS=q!
 RUN
 
 NAME=PE: corkami 96workingsections.exe - entrypoint
 FILE=../bins/pe/96workingsections.exe
+CMDS=s
 EXPECT=<<EOF
 0x461000
 EOF
-CMDS=s
 RUN
 
 NAME=PE: corkami 96workingsections.exe - pi 1
 FILE=../bins/pe/96workingsections.exe
+CMDS=pi 1
 EXPECT=<<EOF
 jmp 0x461001
 EOF
-CMDS=pi 1
 RUN
 
 NAME=PE: corkami 96workingsections.exe - section list
 FILE=../bins/pe/96workingsections.exe
 ARGS=-n
+CMDS=!rabin2 -S ../bins/pe/96workingsections.exe
 EXPECT=<<EOF
 [Sections]
 
@@ -128,12 +129,12 @@ nth paddr        size vaddr        vsize perm name
 95  0x0000d000  0x200 0x00461000  0x1000 -rwx sect_95
 
 EOF
-CMDS=!rabin2 -S ../bins/pe/96workingsections.exe
 RUN
 
 NAME=PE: corkami 96workingsections.exe - section list - unfiltered
 FILE=../bins/pe/96workingsections.exe
 ARGS=-n
+CMDS=!rabin2 -uS ../bins/pe/96workingsections.exe
 EXPECT=<<EOF
 [Sections]
 
@@ -237,5 +238,4 @@ nth paddr        size vaddr        vsize perm name
 95  0x0000d000  0x200 0x00461000  0x1000 -rwx sect_95
 
 EOF
-CMDS=!rabin2 -uS ../bins/pe/96workingsections.exe
 RUN

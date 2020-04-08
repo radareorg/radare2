@@ -1,3 +1,53 @@
+NAME=wen 3
+FILE=malloc://100
+CMDS=<<EOF
+r
+wen 3
+r
+EOF
+EXPECT=<<EOF
+100
+103
+EOF
+RUN
+
+NAME=wen 3 writable bin
+FILE=--
+CMDS=<<EOF
+mkdir .tmp
+cp ../bins/mach0/mac-ls2 .tmp/ls-wen
+o .tmp/ls-wen
+r
+wen 3
+r
+oo+
+r
+wen 3
+r
+rm .tmp/ls-wen
+EOF
+EXPECT=<<EOF
+38704
+38704
+38704
+38707
+EOF
+RUN
+
+NAME=wen 3 in readonly bin
+FILE=../bins/mach0/mac-ls2
+CMDS=<<EOF
+# cannot resize in va and non-write mode
+r
+wen 3
+r
+EOF
+EXPECT=<<EOF
+38704
+38704
+EOF
+RUN
+
 NAME=quoted comments bug
 FILE=malloc://1024
 CMDS=<<EOF
@@ -253,9 +303,6 @@ RUN
 NAME=wci should commit the changes to the file
 FILE=malloc://1024
 BROKEN=1
-EXPECT=<<EOF
-File size
-EOF
 CMDS=<<EOF
 !rm -rf .tmp
 mkdir .tmp
@@ -268,21 +315,24 @@ wci
 e.src.null=true
 !!radiff2 .tmp/.b.exe.orig .tmp/.b.exe.new
 EOF
+EXPECT=<<EOF
+File size
+EOF
 RUN
 
 NAME=wci should commit all the changes
 FILE=malloc://512
-EXPECT=<<EOF
-idx=0 addr=0x00000000 size=3 000000 -> 909090 (written)
-idx=1 addr=0x00000003 size=3 000000 -> 909090 (written)
-idx=2 addr=0x00000006 size=3 000000 -> 909090 (written)
-EOF
 CMDS=<<EOF
 e io.cache=true
 (wxseek ;  wx 909090;  s+ 3)
 3.(wxseek)
 wci
 wc
+EOF
+EXPECT=<<EOF
+idx=0 addr=0x00000000 size=3 000000 -> 909090 (written)
+idx=1 addr=0x00000003 size=3 000000 -> 909090 (written)
+idx=2 addr=0x00000006 size=3 000000 -> 909090 (written)
 EOF
 RUN
 
@@ -345,10 +395,6 @@ RUN
 
 NAME=wen should insert X null bytes even if io.cache=false
 FILE=--
-EXPECT=<<EOF
-216607
-216608
-EOF
 CMDS=<<EOF
 cp ../bins/pe/b.exe .b.exe
 o+ .b.exe
@@ -357,6 +403,10 @@ s 0x200
 wen 1
 r
 rm .b.exe
+EOF
+EXPECT=<<EOF
+216607
+216608
 EOF
 RUN
 

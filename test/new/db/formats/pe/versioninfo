@@ -1,5 +1,6 @@
 NAME=PE: versioninfo 1
 FILE=../bins/pe/version_std.exe
+CMDS=iV
 EXPECT=<<EOF
 === VS_VERSIONINFO ===
 
@@ -35,5 +36,4 @@ EXPECT=<<EOF
    ** EAT AT JOE"S **: best hamburger in town
   FileVersion: duplicates are authorized
 EOF
-CMDS=iV
 RUN

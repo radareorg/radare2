@@ -288,11 +288,11 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		}
 	} else {
 		int _perm = -1;
-		RIOMap *s;
-		SdbListIter *iter;
 		if (core->io) {
 			// sections
-			ls_foreach (core->io->maps, iter, s) {
+			void **it;
+			r_pvector_foreach (&core->io->maps, it) {
+				RIOMap *s = *it;
 				if (addr >= s->itv.addr && addr < (s->itv.addr + s->itv.size)) {
 					// sections overlap, so we want to get the one with lower perms
 					_perm = (_perm != -1) ? R_MIN (_perm, s->perm) : s->perm;
@@ -5154,6 +5154,8 @@ repeat:
 							? R_ANAL_REF_TYPE_CALL
 							: R_ANAL_REF_TYPE_CODE;
 						r_anal_xrefs_set (core->anal, cur, dst, ref);
+						r_core_anal_fcn (core, dst, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
+// analyze function here
 #if 0
 						if (op.type == R_ANAL_OP_TYPE_UCALL || op.type == R_ANAL_OP_TYPE_RCALL) {
 							eprintf ("0x%08"PFMT64x"  RCALL TO %llx\n", cur, dst);

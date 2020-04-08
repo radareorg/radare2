@@ -1,20 +1,28 @@
 NAME=mips hello ref anal
 FILE=../bins/elf/analysis/mips-hello
-EXPECT=<<EOF
-1
-EOF
 CMDS=<<EOF
 s sym.main
 aac
 afl~?
 EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=mozi aae functions
+FILE=../bins/elf/mips-mozi
+CMDS=<<EOF
+aae
+aflc
+EOF
+EXPECT=<<EOF
+428
+EOF
 RUN
 
 NAME=mips hello ref anal
 FILE=../bins/elf/analysis/mips.elf
-EXPECT=<<EOF
-            0x0041ed58      24a54268       addiu a1, a1, 0x4268        ; 0x474268 ; "IGNORE" ; str.IGNORE
-EOF
 ARGS=-e bin.strings=false -e anal.strings=true
 CMDS=<<EOF
 s entry0
@@ -22,14 +30,13 @@ aae
 s 0x0041ed50
 pd 5~IGNORE
 EOF
+EXPECT=<<EOF
+            0x0041ed58      24a54268       addiu a1, a1, 0x4268        ; 0x474268 ; "IGNORE" ; str.IGNORE
+EOF
 RUN
 
 NAME=mips hello ref anal subtract
 FILE=../bins/elf/analysis/busybox-mips
-EXPECT=<<EOF
-            0x00406228      fcc38424       addiu a0, a0, -0x3c04       ; 0x44c3fc ; "busybox" ; str.busybox
-(nofunc); str.busybox 0x406228 [DATA] addiu a0, a0, -0x3c04
-EOF
 ARGS=-e bin.strings=false -e anal.strings=true
 CMDS=<<EOF
 aae @entry0
@@ -37,27 +44,25 @@ pd 1 @0x00406228
 fs strings
 axt str.busybox
 EOF
+EXPECT=<<EOF
+            0x00406228      fcc38424       addiu a0, a0, -0x3c04       ; 0x44c3fc ; "busybox" ; str.busybox
+(nofunc); str.busybox 0x406228 [DATA] addiu a0, a0, -0x3c04
+EOF
 RUN
 
 NAME=gp-based ref
 FILE=../bins/elf/analysis/mips-hello
-EXPECT=<<EOF
-(nofunc); str.Hello_World 0x805c4 [DATA] addiu a0, v0, str.Hello_World
-EOF
 CMDS=<<EOF
 aae @entry0
 axt str.Hello_World
+EOF
+EXPECT=<<EOF
+(nofunc); str.Hello_World 0x805c4 [DATA] addiu a0, v0, str.Hello_World
 EOF
 RUN
 
 NAME=assembler
 FILE=-
-EXPECT=<<EOF
-4100193c
-3c190041
-lui t9, 0x41
-lui t9, 0x41
-EOF
 CMDS=<<EOF
 e asm.arch=mips.gnu
 e asm.bits=32
@@ -70,16 +75,16 @@ pad 4100193c
 e cfg.bigendian=1
 pad 3c190041
 EOF
+EXPECT=<<EOF
+4100193c
+3c190041
+lui t9, 0x41
+lui t9, 0x41
+EOF
 RUN
 
 NAME=with-spaces
 FILE=-
-EXPECT=<<EOF
-21006224
-21006224
-24620021
-24620021
-EOF
 CMDS=<<EOF
 e asm.arch=mips.gnu
 e asm.bits=32
@@ -90,28 +95,30 @@ e cfg.bigendian=1
 pa addiu v0, v1, 33
 pa addiu v0 v1 33
 EOF
+EXPECT=<<EOF
+21006224
+21006224
+24620021
+24620021
+EOF
 RUN
 
 NAME=mips hello pseudo move instruction
 FILE=../bins/elf/analysis/mips-hello
-EXPECT=<<EOF
-            0x000805b8      21f0a003       move fp, sp
-            0x000805b8      21f0a003       fp = sp
-EOF
 ARGS=-e bin.strings=false -e anal.strings=false
 CMDS=<<EOF
 pd 1 @main+0x18
 e asm.pseudo=true
 pd 1 @main+0x18
 EOF
+EXPECT=<<EOF
+            0x000805b8      21f0a003       move fp, sp
+            0x000805b8      21f0a003       fp = sp
+EOF
 RUN
 
 NAME=mips pseudo sw + 0
 FILE=malloc://32
-EXPECT=<<EOF
-            0x80100000      0000beaf       sw fp, (sp)
-            0x80100000      0000beaf       [sp + 0] = fp
-EOF
 ARGS=-a mips -m 0x80100000
 CMDS=<<EOF
 e io.va=true
@@ -120,13 +127,14 @@ pd 1
 e asm.pseudo=true
 pd 1
 EOF
+EXPECT=<<EOF
+            0x80100000      0000beaf       sw fp, (sp)
+            0x80100000      0000beaf       [sp + 0] = fp
+EOF
 RUN
 
 NAME=mips LE anal
 FILE=malloc://32
-EXPECT=<<EOF
-call
-EOF
 CMDS=<<EOF
 wx 01001104
 e asm.arch=mips
@@ -134,17 +142,13 @@ e asm.bits=32
 e asm.nbytes=4
 ao 1~type:[1]
 EOF
+EXPECT=<<EOF
+call
+EOF
 RUN
 
 NAME=mips LE back reference
 FILE=malloc://32
-EXPECT=<<EOF
-nop
-nop
-b 0x80100010
-nop
-nop
-EOF
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
@@ -156,21 +160,17 @@ af+ 0x80100000 fcn.test
 afb+ 0x80100000 0x80100000 20
 pif
 EOF
+EXPECT=<<EOF
+nop
+nop
+b 0x80100010
+nop
+nop
+EOF
 RUN
 
 NAME=mips LE correct relative jump reference if not mapped from command line.
 FILE=malloc://40
-EXPECT=<<EOF
-(fcn) fcn.00000000 32
-0x00000000      0800040c   jal 0x100020
-0x00000004      00000000   nop
-0x00000008      00000000   nop
-0x0000000c      00000000   nop
-0x00000010      00000000   nop
-0x00000014      00000000   nop
-0x00000018      40040408   j 0x101100
-0x0000001c      00000000   nop
-EOF
 CMDS=<<EOF
 e asm.calls=false
 e asm.bits=32
@@ -186,10 +186,36 @@ wx 0800040c000000000000000000000000000000000000000040040408000000000800e00300000
 aa 2> /dev/null
 pdf
 EOF
+EXPECT=<<EOF
+(fcn) fcn.00000000 32
+0x00000000      0800040c   jal 0x100020
+0x00000004      00000000   nop
+0x00000008      00000000   nop
+0x0000000c      00000000   nop
+0x00000010      00000000   nop
+0x00000014      00000000   nop
+0x00000018      40040408   j 0x101100
+0x0000001c      00000000   nop
+EOF
 RUN
 
 NAME=mips LE correct relative jump reference if mapped from command line.
 FILE=malloc://40
+ARGS=-m 0x80100000
+CMDS=<<EOF
+e io.va=true
+e asm.calls=false
+e asm.bits=32
+e asm.arch=mips
+e anal.jmp.eob=false
+e asm.lines.bb=0
+e asm.lines.fcn=false
+e asm.nbytes=4
+wx 0800040c000000000000000000000000000000000000000040040408000000000800e00300000000
+af 2> /dev/null
+pd 10
+afl
+EOF
 EXPECT=<<EOF
 (fcn) fcn.80100000 32
 0x80100000      0800040c   jal fcn.80100020
@@ -207,30 +233,10 @@ EXPECT=<<EOF
 0x80100000    1 32           fcn.80100000
 0x80100020    1 8            fcn.80100020
 EOF
-ARGS=-m 0x80100000
-CMDS=<<EOF
-e io.va=true
-e asm.calls=false
-e asm.bits=32
-e asm.arch=mips
-e anal.jmp.eob=false
-e asm.lines.bb=0
-e asm.lines.fcn=false
-e asm.nbytes=4
-wx 0800040c000000000000000000000000000000000000000040040408000000000800e00300000000
-af 2> /dev/null
-pd 10
-afl
-EOF
 RUN
 
 NAME=mips branch delay function sizing.
 FILE=malloc://20
-EXPECT=<<EOF
-(fcn) fcn.80100000 8
-0x80100000      0800e003   jr ra
-0x80100004      0a184400   movz v1, v0, a0
-EOF
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
@@ -245,15 +251,15 @@ wx 0800e0030a184400000000000000000000000
 af 2>/dev/null
 pdf
 EOF
+EXPECT=<<EOF
+(fcn) fcn.80100000 8
+0x80100000      0800e003   jr ra
+0x80100004      0a184400   movz v1, v0, a0
+EOF
 RUN
 
 NAME=mips branch delay function sizing.
 FILE=malloc://20
-EXPECT=<<EOF
-(fcn) fcn.00000000 8
-          0x00000000      0800e003   jr ra
-          0x00000004      0a184400   movz v1, v0, a0
-EOF
 CMDS=<<EOF
 e asm.calls=false
 e asm.bits=32
@@ -264,21 +270,15 @@ wx 0800e0030a184400000000000000000000000
 af 2> /dev/null
 pdf
 EOF
+EXPECT=<<EOF
+(fcn) fcn.00000000 8
+          0x00000000      0800e003   jr ra
+          0x00000004      0a184400   movz v1, v0, a0
+EOF
 RUN
 
 NAME=mips branch delay function sizing with conditional jump loop.
 FILE=malloc://40
-EXPECT=<<EOF
-(fcn) fcn.80100000 32
-0x80100000      e0ffbd27   addiu sp, sp, -0x20
-0x80100004      00000000   nop
-0x80100008      01000010   b 0x80100010
-0x8010000c      00000000   nop
-0x80100010      fdff0915   bne t0, t1, 0x80100008
-0x80100014      0a184400   movz v1, v0, a0
-0x80100018      0800e003   jr ra
-0x8010001c      2000bd27   addiu sp, sp, 0x20
-EOF
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
@@ -295,21 +295,21 @@ wx e0ffbd27000000000100001000000000fdff09150a1844000800e0032000bd270000000000000
 af 2> /dev/null
 pdf
 EOF
-RUN
-
-NAME=mips branch delay function sizing with conditional jump forward.
-FILE=malloc://40
 EXPECT=<<EOF
 (fcn) fcn.80100000 32
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
 0x80100008      01000010   b 0x80100010
 0x8010000c      00000000   nop
-0x80100010      00000000   nop
+0x80100010      fdff0915   bne t0, t1, 0x80100008
 0x80100014      0a184400   movz v1, v0, a0
 0x80100018      0800e003   jr ra
 0x8010001c      2000bd27   addiu sp, sp, 0x20
 EOF
+RUN
+
+NAME=mips branch delay function sizing with conditional jump forward.
+FILE=malloc://40
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
@@ -327,21 +327,21 @@ wx e0ffbd27000000000100001000000000000000000a1844000800e003 2000bd27000000000000
 af 2> /dev/null
 pdf
 EOF
-RUN
-
-NAME=mips branch delay function sizing with conditional jump back.
-FILE=malloc://40
 EXPECT=<<EOF
 (fcn) fcn.80100000 32
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
-0x80100008      00000000   nop
+0x80100008      01000010   b 0x80100010
 0x8010000c      00000000   nop
-0x80100010      fdff0915   bne t0, t1, 0x80100008
+0x80100010      00000000   nop
 0x80100014      0a184400   movz v1, v0, a0
 0x80100018      0800e003   jr ra
 0x8010001c      2000bd27   addiu sp, sp, 0x20
 EOF
+RUN
+
+NAME=mips branch delay function sizing with conditional jump back.
+FILE=malloc://40
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
@@ -358,24 +358,21 @@ wx e0ffbd27000000000000000000000000fdff09150a1844000800e0032000bd270000000000000
 af 2> /dev/null
 pdf
 EOF
-RUN
-
-NAME=mips branch delay function sizing with conditional jump back then forward.
-FILE=malloc://56
 EXPECT=<<EOF
-(fcn) fcn.80100000 44
+(fcn) fcn.80100000 32
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
 0x80100008      00000000   nop
 0x8010000c      00000000   nop
 0x80100010      fdff0915   bne t0, t1, 0x80100008
-0x80100014      00000000   nop
-0x80100018      01000010   b 0x80100020
-0x8010001c      00000000   nop
-0x80100020      0a184400   movz v1, v0, a0
-0x80100024      0800e003   jr ra
-0x80100028      2000bd27   addiu sp, sp, 0x20
+0x80100014      0a184400   movz v1, v0, a0
+0x80100018      0800e003   jr ra
+0x8010001c      2000bd27   addiu sp, sp, 0x20
 EOF
+RUN
+
+NAME=mips branch delay function sizing with conditional jump back then forward.
+FILE=malloc://56
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
@@ -392,10 +389,42 @@ wx e0ffbd27000000000000000000000000fdff09150000000001000010000000000a1844000800e
 af 2> /dev/null
 pdf
 EOF
+EXPECT=<<EOF
+(fcn) fcn.80100000 44
+0x80100000      e0ffbd27   addiu sp, sp, -0x20
+0x80100004      00000000   nop
+0x80100008      00000000   nop
+0x8010000c      00000000   nop
+0x80100010      fdff0915   bne t0, t1, 0x80100008
+0x80100014      00000000   nop
+0x80100018      01000010   b 0x80100020
+0x8010001c      00000000   nop
+0x80100020      0a184400   movz v1, v0, a0
+0x80100024      0800e003   jr ra
+0x80100028      2000bd27   addiu sp, sp, 0x20
+EOF
 RUN
 
 NAME=mips branch delay function detection #1.
 FILE=malloc://160
+ARGS=-m 0x8060b4f8
+CMDS=<<EOF
+e io.va=true
+e asm.calls=false
+e asm.bits=32
+e asm.arch=mips
+e asm.comments=0
+e anal.hasnext=1
+e anal.jmp.eob=0
+e anal.nopskip=1
+e asm.nbytes=4
+e asm.lines.bb=false
+e asm.lines.fcn=false
+s 0x8060b4f8
+wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e003211080000000829007004010000000000016020003160200f8ff451000000000482d180801008424211000000800e003000000000000a290050040100100a524000082a00000a290552d1808010084240800e003000080a000000000e0ffbd27542d180c000000000800e0032000bd270000000000000000
+aa 2> /dev/null
+pd 38
+EOF
 EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
@@ -443,12 +472,16 @@ EXPECT=<<EOF
 0x8060b588      2000bd27   addiu sp, sp, 0x20
 0x8060b58c      00000000   nop
 EOF
+RUN
+
+NAME=GNU mips branch delay function detection #1.
+FILE=malloc://160
 ARGS=-m 0x8060b4f8
+BROKEN=1
 CMDS=<<EOF
 e io.va=true
-e asm.calls=false
 e asm.bits=32
-e asm.arch=mips
+e asm.arch=mips.gnu
 e asm.comments=0
 e anal.hasnext=1
 e anal.jmp.eob=0
@@ -461,11 +494,6 @@ wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e00321108
 aa 2> /dev/null
 pd 38
 EOF
-RUN
-
-NAME=GNU mips branch delay function detection #1.
-FILE=malloc://160
-BROKEN=1
 EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
@@ -509,11 +537,17 @@ EXPECT=<<EOF
 0x8060b588      2000bd27   addiu sp, sp, 32
 0x8060b58c      00000000   nop
 EOF
+RUN
+
+NAME=capstone: mips branch delay function detection #1.
+FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
+e asm.calls=false
 e asm.bits=32
-e asm.arch=mips.gnu
+e asm.arch=mips
+e anal.noncode=1
 e asm.comments=0
 e anal.hasnext=1
 e anal.jmp.eob=0
@@ -526,10 +560,6 @@ wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e00321108
 aa 2> /dev/null
 pd 38
 EOF
-RUN
-
-NAME=capstone: mips branch delay function detection #1.
-FILE=malloc://160
 EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
@@ -577,6 +607,10 @@ EXPECT=<<EOF
 0x8060b588      2000bd27   addiu sp, sp, 0x20
 0x8060b58c      00000000   nop
 EOF
+RUN
+
+NAME=capstone: mips branch delay function detection #2.
+FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
@@ -590,16 +624,12 @@ e anal.jmp.eob=0
 e anal.nopskip=1
 e asm.nbytes=4
 e asm.lines.bb=false
-e asm.lines.fcn=false
+e asm.lines.fcn=true
 s 0x8060b4f8
 wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e003211080000000829007004010000000000016020003160200f8ff451000000000482d180801008424211000000800e003000000000000a290050040100100a524000082a00000a290552d1808010084240800e003000080a000000000e0ffbd27542d180c000000000800e0032000bd270000000000000000
 aa 2> /dev/null
 pd 38
 EOF
-RUN
-
-NAME=capstone: mips branch delay function detection #2.
-FILE=malloc://160
 EXPECT=<<EOF
   0x8060b4f8      00000000   nop
   0x8060b4fc      00000000   nop
@@ -647,29 +677,14 @@ EXPECT=<<EOF
 \ 0x8060b588      2000bd27   addiu sp, sp, 0x20
   0x8060b58c      00000000   nop
 EOF
-ARGS=-m 0x8060b4f8
-CMDS=<<EOF
-e io.va=true
-e asm.calls=false
-e asm.bits=32
-e asm.arch=mips
-e anal.noncode=1
-e asm.comments=0
-e anal.hasnext=1
-e anal.jmp.eob=0
-e anal.nopskip=1
-e asm.nbytes=4
-e asm.lines.bb=false
-e asm.lines.fcn=true
-s 0x8060b4f8
-wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e003211080000000829007004010000000000016020003160200f8ff451000000000482d180801008424211000000800e003000000000000a290050040100100a524000082a00000a290552d1808010084240800e003000080a000000000e0ffbd27542d180c000000000800e0032000bd270000000000000000
-aa 2> /dev/null
-pd 38
-EOF
 RUN
 
 NAME=mips big endian strings, calls, etc. analysis
 FILE=../bins/elf/analysis/mipsbe-ip
+CMDS=<<EOF
+s 0x00402088
+pd 10
+EOF
 EXPECT=<<EOF
             0x00402088      8f84814c       lw a0, -0x7eb4(gp)          ; [0x43522c:4]=0x402558 sym.main
             0x0040208c      8fa50000       lw a1, (sp)
@@ -681,9 +696,5 @@ EXPECT=<<EOF
             0x004020a4      8f888114       lw t0, -0x7eec(gp)          ; [0x4351f4:4]=0x41eca0 sym._fini
             0x004020a8      afa80010       sw t0, 0x10(sp)
             0x004020ac      afa20014       sw v0, 0x14(sp)
-EOF
-CMDS=<<EOF
-s 0x00402088
-pd 10
 EOF
 RUN

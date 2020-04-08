@@ -1,46 +1,46 @@
 NAME=@@= 10 20 30
 FILE=-
+CMDS=?v $$ @@= 10 20 30
 EXPECT=<<EOF
 0xa
 0x14
 0x1e
 EOF
-CMDS=?v $$ @@= 10 20 30
 RUN
 
 NAME=@@c:/c fs:
 FILE=../bins/mach0/mac-ls
-EXPECT=<<EOF
-0x100005078
-EOF
 CMDS=<<EOF
 e search.in = bin.sections
 ?v $$ @@c:/ad fs:[ra
+EOF
+EXPECT=<<EOF
+0x100005078
 EOF
 RUN
 
 NAME=@@c:/c/a fs:
 FILE=../bins/mach0/mac-ls
+CMDS=<<EOF
+e search.in = bin.sections
+?v $$ @@c:/ao fs:[ra
+EOF
 EXPECT=<<EOF
 0x100004cd7
 0x100004d95
 0x100004e1d
 0x100005078
 EOF
-CMDS=<<EOF
-e search.in = bin.sections
-?v $$ @@c:/ao fs:[ra
-EOF
 RUN
 
 NAME=@@= 10   20   30
 FILE=-
+CMDS=?v $$ @@= 10   20   30
 EXPECT=<<EOF
 0xa
 0x14
 0x1e
 EOF
-CMDS=?v $$ @@= 10   20   30
 RUN
 
 NAME=@@= `prz` fix

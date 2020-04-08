@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2019 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2020 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -3020,7 +3020,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			return NULL;
 		}
 		ut64 amount = bind_size + lazy_size + weak_size;
-		if (amount < 0) {
+		if (amount == 0 || amount > UT32_MAX) {
 			return NULL;
 		}
 		relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);

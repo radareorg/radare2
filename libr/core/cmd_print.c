@@ -3727,7 +3727,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	case 'F': // 0xff bytes
 	case 'p': // printable chars
 	case 'z': // zero terminated strings
-	if (blocksize > 0) {
+	{
 		ut8 *p;
 		ut64 i, j, k;
 		ptr = calloc (1, nblocks);
@@ -3781,8 +3781,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		free (p);
 		print_bars = true;
-	} else {
-		eprintf ("Invalid blocksize\n");
 	}
 	break;
 	case 'b': // bytes
@@ -5872,14 +5870,12 @@ l = use_blocksize;
 				"| /m           # search for magic signatures\n"
 				);
 		} else if (input[1] == 'j') { // "pmj"
-			if (l > 0) {
-				r_core_magic (core, input + 2, true, true);
-			}
+			const char *filename = r_str_trim_head_ro (input + 2);
+			r_core_magic (core, filename, true, true);
 		} else {
 			// XXX: need cmd_magic header for r_core_magic
-			if (l > 0) {
-				r_core_magic (core, input + 1, true, false);
-			}
+			const char *filename = r_str_trim_head_ro (input + 1);
+			r_core_magic (core, filename, true, false);
 		}
 		break;
 	case 'u': // "pu"
@@ -6079,7 +6075,7 @@ l = use_blocksize;
 		break;
 	case 'x': // "px"
 	{
-		int show_offset = r_config_get_i (core->config, "asm.offset");
+		bool show_offset = r_config_get_i (core->config, "hex.offset");
 		if (show_offset) {
 			core->print->flags |= R_PRINT_FLAGS_OFFSET;
 		} else {
@@ -6207,6 +6203,7 @@ l = use_blocksize;
 			break;
 		case 'i': // "pxi"
 			if (l != 0) {
+				core->print->show_offset = r_config_get_i (core->config, "hex.offset");
 				r_print_hexii (core->print, core->offset, core->block,
 					core->blocksize, r_config_get_i (core->config, "hex.cols"));
 			}
@@ -6278,7 +6275,7 @@ l = use_blocksize;
 			break;
 		case 'W': // "pxW"
 			if (l) {
-				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "asm.offset"));
+				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
 				len = len - (len % 4);
 				for (i = 0; i < len; i += 4) {
 					const char *a, *b;
@@ -6442,7 +6439,7 @@ l = use_blocksize;
 		case 'Q': // "pxQ"
 			// TODO. show if flag name, or inside function
 			if (l) {
-				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "asm.offset"));
+				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
 				len = len - (len % 8);
 				for (i = 0; i < len; i += 8) {
 					const char *a, *b;

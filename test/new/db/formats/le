@@ -1,21 +1,22 @@
 NAME=Open LE cdogs.exe
 FILE=../bins/le/cdogs.exe
+CMDS=ih~Signature[1]
 EXPECT=<<EOF
 LE
 EOF
-CMDS=ih~Signature[1]
 RUN
 
 NAME=cdogs.exe entrypoint
 FILE=../bins/le/cdogs.exe
+CMDS=ie~:1[1]
 EXPECT=<<EOF
 0x00026058
 EOF
-CMDS=ie~:1[1]
 RUN
 
 NAME=cdogs.exe sections
 FILE=../bins/le/cdogs.exe
+CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
@@ -84,78 +85,10 @@ nth paddr         size vaddr        vsize perm name
 60  0x00049200   0xd8c 0x0004f000  0x1000 -rw- obj.2.page.15
 
 EOF
-CMDS=iS
 RUN
 
 NAME=cdogs.exe relocations
 FILE=../bins/le/cdogs.exe
-EXPECT=<<EOF
-5241
-151
-160
-102
-133
-208
-172
-337
-212
-143
-325
-262
-174
-219
-305
-296
-330
-260
-322
-409
-186
-415
-502
-181
-307
-380
-113
-85
-240
-124
-198
-179
-186
-222
-159
-110
-318
-274
-24
-366
-356
-179
-103
-128
-158
-128
-9
-0
-0
-282
-533
-670
-17
-2
-0
-0
-95
-82
-45
-7
-0
-0
-381
-561
-590
-EOF
 CMDS=<<EOF
 ir > $relocs
 cat $relocs~?
@@ -224,26 +157,94 @@ cat $relocs~0x0004d~?
 cat $relocs~0x0004e~?
 cat $relocs~0x0004f~?
 EOF
+EXPECT=<<EOF
+5241
+151
+160
+102
+133
+208
+172
+337
+212
+143
+325
+262
+174
+219
+305
+296
+330
+260
+322
+409
+186
+415
+502
+181
+307
+380
+113
+85
+240
+124
+198
+179
+186
+222
+159
+110
+318
+274
+24
+366
+356
+179
+103
+128
+158
+128
+9
+0
+0
+282
+533
+670
+17
+2
+0
+0
+95
+82
+45
+7
+0
+0
+381
+561
+590
+EOF
 RUN
 
 NAME=Open LX GCC.EXE
 FILE=../bins/le/GCC.EXE
+CMDS=ih~Signature[1]
 EXPECT=<<EOF
 LX
 EOF
-CMDS=ih~Signature[1]
 RUN
 
 NAME=GCC.EXE entrypoint
 FILE=../bins/le/GCC.EXE
+CMDS=ie~:1[1]
 EXPECT=<<EOF
 0x00010000
 EOF
-CMDS=ie~:1[1]
 RUN
 
 NAME=GCC.EXE sections
 FILE=../bins/le/GCC.EXE
+CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
@@ -269,11 +270,11 @@ nth paddr         size vaddr           vsize perm name
 17  0x00000000     0x0 0x02030000   0x800000 -rw- obj.4
 
 EOF
-CMDS=iS
 RUN
 
 NAME=GCC.EXE relocations
 FILE=../bins/le/GCC.EXE
+CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
@@ -294,11 +295,11 @@ vaddr      paddr      type   name
 
 11 relocations
 EOF
-CMDS=ir
 RUN
 
 NAME=GCC.EXE linked libs
 FILE=../bins/le/GCC.EXE
+CMDS=il
 EXPECT=<<EOF
 [Linked libraries]
 emx
@@ -306,27 +307,27 @@ doscalls
 
 2 libraries
 EOF
-CMDS=il
 RUN
 
 NAME=Open LX GNUGREP.DLL
 FILE=../bins/le/GNUGREP.DLL
+CMDS=ih~Signature[1]
 EXPECT=<<EOF
 LX
 EOF
-CMDS=ih~Signature[1]
 RUN
 
 NAME=GNUGREP.DLL entrypoint
 FILE=../bins/le/GNUGREP.DLL
+CMDS=ie~:1[1]
 EXPECT=<<EOF
 0x00010000
 EOF
-CMDS=ie~:1[1]
 RUN
 
 NAME=GNUGREP.DLL symbol
 FILE=../bins/le/GNUGREP.DLL
+CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
@@ -334,11 +335,11 @@ nth paddr       vaddr      bind   type size lib name
 ----------------------------------------------------
 1    0x00000000 0x00010ddc GLOBAL FUNC 0        grepmain
 EOF
-CMDS=is
 RUN
 
 NAME=GNUGREP.DLL sections
 FILE=../bins/le/GNUGREP.DLL
+CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
@@ -357,11 +358,11 @@ nth paddr         size vaddr        vsize perm name
 10  0x00001400   0x200 0x00040000  0x1000 -rw- obj.4.page.0
 
 EOF
-CMDS=iS
 RUN
 
 NAME=GNUGREP.DLL linked libs
 FILE=../bins/le/GNUGREP.DLL
+CMDS=il
 EXPECT=<<EOF
 [Linked libraries]
 GNUREGEX
@@ -370,22 +371,21 @@ emx
 
 3 libraries
 EOF
-CMDS=il
 RUN
 
 NAME=GNUGREP.DLL relocations
 FILE=../bins/le/GNUGREP.DLL
-EXPECT=<<EOF
-1170
-8
-183
-1
-EOF
 CMDS=<<EOF
 ir > $relocs
 cat $relocs~?
 cat $relocs~GNUREGEX~?
 cat $relocs~EMXLIBC~?
 cat $relocs~emx~?
+EOF
+EXPECT=<<EOF
+1170
+8
+183
+1
 EOF
 RUN

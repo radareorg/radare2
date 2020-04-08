@@ -11,6 +11,7 @@ RUN
 
 NAME=ELF: riscv64: symbols
 FILE=../bins/elf/analysis/guess-number-riscv64
+CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
@@ -392,11 +393,11 @@ nth paddr       vaddr      bind   type   size lib name
 381  0x00008080 0x00017080 GLOBAL FUNC   272      __multadd
 382  0x0000805c 0x0001705c GLOBAL FUNC   36       _Bfree
 EOF
-CMDS=is
 RUN
 
 NAME=ELF: riscv64: file format
 FILE=../bins/elf/analysis/guess-number-riscv64
+CMDS=if
 EXPECT=<<EOF
 fd       3
 file     ../bins/elf/analysis/guess-number-riscv64
@@ -435,11 +436,11 @@ stripped false
 subsys   linux
 va       true
 EOF
-CMDS=if
 RUN
 
 NAME=ELF: riscv64: main analysis
 FILE=../bins/elf/analysis/guess-number-riscv64
+CMDS=e asm.calls=false;s sym.main;af;pdf
 EXPECT=<<EOF
 / (fcn) main 140
 // int main (int64_t arg_18h, int64_t arg_0h);
@@ -481,12 +482,12 @@ EXPECT=<<EOF
 |           0x000101d4      ef00002a       jal ra, sym.puts
 \           0x000101d8      6ff09ff9       j 0x10170
 EOF
-CMDS=e asm.calls=false;s sym.main;af;pdf
 RUN
 
 NAME=ELF: riscv64: full analysis
 FILE=../bins/elf/analysis/guess-number-riscv64
 ARGS=-A
+CMDS=e asm.calls=false;s sym.main;pdf
 EXPECT=<<EOF
             ; CALL XREF from entry0 @ 0x10040
 / (fcn) main 140
@@ -531,5 +532,4 @@ EXPECT=<<EOF
 |           0x000101d4      ef00002a       jal ra, sym.puts
 \           0x000101d8      6ff09ff9       j 0x10170
 EOF
-CMDS=e asm.calls=false;s sym.main;pdf
 RUN

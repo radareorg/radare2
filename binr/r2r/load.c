@@ -6,7 +6,7 @@
 
 #define LINEFMT "%s, line %"PFMT64u": "
 
-R_API R2RCmdTest *r2r_cmd_test_new() {
+R_API R2RCmdTest *r2r_cmd_test_new(void) {
 	return R_NEW0 (R2RCmdTest);
 }
 
@@ -23,8 +23,13 @@ R_API void r2r_cmd_test_free(R2RCmdTest *test) {
 static char *readline(char *buf, size_t *linesz) {
 	char *end = strchr (buf, '\n');
 	if (end) {
+		size_t len = end - buf;
 		*end = '\0';
-		*linesz = end - buf;
+		if (len > 0 && buf[len - 1] == '\r') {
+			buf[len - 1] = '\0';
+			len--;
+		}
+		*linesz = len;
 		return end + 1;
 	} else {
 		*linesz = strlen (buf);
@@ -211,7 +216,7 @@ fail:
 	goto beach;
 }
 
-R_API R2RAsmTest *r2r_asm_test_new() {
+R_API R2RAsmTest *r2r_asm_test_new(void) {
 	return R_NEW0 (R2RAsmTest);
 }
 
@@ -394,7 +399,7 @@ fail:
 	goto beach;
 }
 
-R_API R2RJsonTest *r2r_json_test_new() {
+R_API R2RJsonTest *r2r_json_test_new(void) {
 	return R_NEW0 (R2RJsonTest);
 }
 
@@ -462,6 +467,14 @@ R_API RPVector *r2r_load_json_test_file(const char *file) {
 	return ret;
 }
 
+R_API void r2r_fuzz_test_free(R2RFuzzTest *test) {
+	if (!test) {
+		return;
+	}
+	free (test->file);
+	free (test);
+}
+
 R_API void r2r_test_free(R2RTest *test) {
 	if (!test) {
 		return;
@@ -476,11 +489,14 @@ R_API void r2r_test_free(R2RTest *test) {
 	case R2R_TEST_TYPE_JSON:
 		r2r_json_test_free (test->json_test);
 		break;
+	case R2R_TEST_TYPE_FUZZ:
+		r2r_fuzz_test_free (test->fuzz_test);
+		break;
 	}
 	free (test);
 }
 
-R_API R2RTestDatabase *r2r_test_database_new() {
+R_API R2RTestDatabase *r2r_test_database_new(void) {
 	R2RTestDatabase *db = R_NEW (R2RTestDatabase);
 	if (!db) {
 		return NULL;
@@ -639,6 +655,9 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		r_pvector_free (json_tests);
 		break;
 	}
+	case R2R_TEST_TYPE_FUZZ:
+		// shouldn't come here, fuzz tests are loaded differently
+		break;
 	}
 
 	return true;
@@ -646,4 +665,62 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 
 R_API bool r2r_test_database_load(R2RTestDatabase *db, const char *path) {
 	return database_load (db, path, 4);
+}
+
+static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const char *file) {
+	R2RFuzzTest *fuzz_test = R_NEW (R2RFuzzTest);
+	if (!fuzz_test) {
+		return;
+	}
+	fuzz_test->file = strdup (file);
+	if (!fuzz_test->file) {
+		return;
+	}
+	R2RTest *test = R_NEW (R2RTest);
+	if (!test) {
+		free (fuzz_test->file);
+		free (fuzz_test);
+		return;
+	}
+	test->type = R2R_TEST_TYPE_FUZZ;
+	test->fuzz_test = fuzz_test;
+	test->path = r_str_constpool_get (&db->strpool, path);
+	r_pvector_push (&db->tests, test);
+}
+
+R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path) {
+	if (r_file_is_directory (path)) {
+		RList *dir = r_sys_dir (path);
+		if (!dir) {
+			return false;
+		}
+		RListIter *it;
+		const char *subname;
+		RStrBuf subpath;
+		r_strbuf_init (&subpath);
+		bool ret = true;
+		r_list_foreach (dir, it, subname) {
+			if (*subname == '.') {
+				continue;
+			}
+			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
+			if (r_file_is_directory (r_strbuf_get (&subpath))) {
+				// only load 1 level deep
+				continue;
+			}
+			database_load_fuzz_file (db, path, r_strbuf_get (&subpath));
+		}
+		r_strbuf_fini (&subpath);
+		r_list_free (dir);
+		return ret;
+	}
+
+	if (!r_file_exists (path)) {
+		eprintf ("Path \"%s\" does not exist\n", path);
+		return false;
+	}
+
+	// Just a single file
+	database_load_fuzz_file (db, path, path);
+	return true;
 }

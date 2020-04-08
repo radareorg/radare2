@@ -1,5 +1,30 @@
 NAME=t/manyundo
 FILE=malloc://1024
+CMDS=<<EOF
+s*
+# Force a wraparound in the undo/redo buffer.
+100s+ 1
+s* ; ?v $$ ; ?e
+sj~{62}
+sj~{63}
+
+# Make sure get back to the last available undo.
+100s-
+s* ; ?v $$ ; ?e
+
+# And redo must work of course.
+100s+
+s* ; ?v $$ ; ?e
+
+# Seeking inside the undo list must destroy the redo list.
+50s-
+s* ; ?v $$ ; ?e
+sj~{12}
+sj~{13}
+sj~{14}
+s 0x100
+s* ; ?v $$ ; ?e
+EOF
 EXPECT=<<EOF
 f undo_62 @ 0x25
 f undo_61 @ 0x26
@@ -283,30 +308,5 @@ f undo_1 @ 0x31
 f undo_0 @ 0x32
 0x100
 
-EOF
-CMDS=<<EOF
-s*
-# Force a wraparound in the undo/redo buffer.
-100s+ 1
-s* ; ?v $$ ; ?e
-sj~{62}
-sj~{63}
-
-# Make sure get back to the last available undo.
-100s-
-s* ; ?v $$ ; ?e
-
-# And redo must work of course.
-100s+
-s* ; ?v $$ ; ?e
-
-# Seeking inside the undo list must destroy the redo list.
-50s-
-s* ; ?v $$ ; ?e
-sj~{12}
-sj~{13}
-sj~{14}
-s 0x100
-s* ; ?v $$ ; ?e
 EOF
 RUN

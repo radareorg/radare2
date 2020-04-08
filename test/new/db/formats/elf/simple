@@ -1,13 +1,17 @@
 NAME=ELF: long symbol names
 FILE=../bins/elf/analysis/longsym
+CMDS=?lq `isq~pata`;?vi
 EXPECT=<<EOF
 194
 EOF
-CMDS=?lq `isq~pata`;?vi
 RUN
 
 NAME=ELF: simple.elf - code
 FILE=../bins/elf/analysis/simple.elf
+CMDS=<<EOF
+e asm.filter=false
+pid 4 @ entry0
+EOF
 EXPECT=<<EOF
 0x08000060   section..text:
 0x08000060           b990000008  mov ecx, 0x8000090
@@ -15,74 +19,71 @@ EXPECT=<<EOF
 0x0800006a           bb01000000  mov ebx, 1
 0x0800006f           b804000000  mov eax, 4
 EOF
-CMDS=<<EOF
-e asm.filter=false
-pid 4 @ entry0
-EOF
 RUN
 
 NAME=ELF: asm.flags.middle=0 + local symbols
 FILE=../bins/elf/analysis/example.elf
+CMDS=e asm.flags.middle=0;pd 3 @ 0x356
 EXPECT=<<EOF
         :   0x00000356      00f033f9       bl sym.app_uart_get
         :   0x0000035a      0028           cmp r0, 0
         `=< 0x0000035c      fad1           bne 0x354
 EOF
-CMDS=e asm.flags.middle=0;pd 3 @ 0x356
 RUN
 
 NAME=ELF: asm.flags.middle=1 + local symbols
 FILE=../bins/elf/analysis/example.elf
+CMDS=e asm.flags.middle=1;pd 3 @ 0x356
 EXPECT=<<EOF
         :   0x00000356      00f033f9       bl sym.app_uart_get
         :   0x0000035a      0028           cmp r0, 0
         `=< 0x0000035c      fad1           bne 0x354
 EOF
-CMDS=e asm.flags.middle=1;pd 3 @ 0x356
 RUN
 
 NAME=ELF: asm.flags.middle + local symbols
 FILE=../bins/elf/analysis/example.elf
+CMDS=pd 3 @ 0x356
 EXPECT=<<EOF
         :   0x00000356      00f033f9       bl sym.app_uart_get
         :   0x0000035a      0028           cmp r0, 0
         `=< 0x0000035c      fad1           bne 0x354
 EOF
-CMDS=pd 3 @ 0x356
 RUN
 
 NAME=ELF: asm.flags.middle2 + local symbols
 FILE=../bins/elf/analysis/example.elf
+CMDS=<<EOF
+e asm.flags.middle=0
+pd 3 @ 0x356
+EOF
 EXPECT=<<EOF
         :   0x00000356      00f033f9       bl sym.app_uart_get
         :   0x0000035a      0028           cmp r0, 0
         `=< 0x0000035c      fad1           bne 0x354
-EOF
-CMDS=<<EOF
-e asm.flags.middle=0
-pd 3 @ 0x356
 EOF
 RUN
 
 NAME=ELF: local symbols
 FILE=../bins/elf/analysis/example.elf
+CMDS=is*~d_41
 EXPECT=<<EOF
 EOF
-CMDS=is*~d_41
 RUN
 
 NAME=ELF: phdr override
 FILE=../bins/elf/analysis/phdr-override
+CMDS=iiq
 EXPECT=<<EOF
 printf
 __libc_start_main
 __gmon_start__
 EOF
-CMDS=iiq
 RUN
 
 NAME=ELF: phdr override 2
 FILE=../bins/elf/busybox-phdr-shdr
+CMDS=ii~OBJ
 EXPECT=<<EOF
 7   0x00000000 GLOBAL OBJ      __environ
 43  0x00000000 GLOBAL OBJ      __ctype_tolower
@@ -97,7 +98,6 @@ EXPECT=<<EOF
 706 0x00000000 GLOBAL OBJ      allCountryList
 718 0x00000000 GLOBAL OBJ      stdout
 EOF
-CMDS=ii~OBJ
 RUN
 
 NAME=ELF: no symbol overwrite

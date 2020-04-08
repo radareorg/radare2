@@ -78,7 +78,6 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 	s->update = NULL;
 	switch (mode) {
 	case R_SEARCH_KEYWORD: s->update = r_search_mybinparse_update; break;
-	case R_SEARCH_XREFS: s->update = r_search_xrefs_update; break;
 	case R_SEARCH_REGEXP: s->update = r_search_regexp_update; break;
 	case R_SEARCH_AES: s->update = r_search_aes_update; break;
 	case R_SEARCH_STRING: s->update = r_search_strings_update; break;

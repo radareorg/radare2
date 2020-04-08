@@ -1,42 +1,42 @@
 NAME=px 10
 FILE=malloc://1024
+CMDS=wx 90909090909090909090 ; px 10
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000000  9090 9090 9090 9090 9090                 ..........
 EOF
-CMDS=wx 90909090909090909090 ; px 10
 RUN
 
 NAME=px -10
 FILE=malloc://1024
+CMDS=wx 90909090909090909090 ; s 10 ; px -10
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000000  9090 9090 9090 9090 9090                 ..........
 EOF
-CMDS=wx 90909090909090909090 ; s 10 ; px -10
 RUN
 
 NAME=pxd 16
 FILE=malloc://1024
-EXPECT=<<EOF
-- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
-0x00000000         -57328         16432             0             0  . ..0@..........
-EOF
 CMDS=<<EOF
 wx 1020ffff30400000
 pxd 16
+EOF
+EXPECT=<<EOF
+- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
+0x00000000         -57328         16432             0             0  . ..0@..........
 EOF
 RUN
 
 NAME=pxd 8
 FILE=malloc://1024
-EXPECT=<<EOF
-- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
-0x00000000         -57328         16432                              . ..0@..
-EOF
 CMDS=<<EOF
 wx 1020ffff30400000
 pxd 8
+EOF
+EXPECT=<<EOF
+- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
+0x00000000         -57328         16432                              . ..0@..
 EOF
 RUN
 
@@ -110,6 +110,7 @@ RUN
 NAME=pxr
 BROKEN=1
 FILE=../bins/elf/crackme
+CMDS=pxr 0x30@0x00600ae0
 EXPECT=<<EOF
 0x00600ae0 0x000000000040055e   ^.@..... @reloc.printf 4195678 (.plt) R X 'push 0'
 0x00600ae8 0x000000000040056e   n.@..... @reloc.puts 4195694 (.plt) R X 'push 1'
@@ -118,5 +119,4 @@ EXPECT=<<EOF
 0x00600b00 0x000000000040059e   ..@..... @reloc.strcmp 4195742 (.plt) R X 'push 4'
 0x00600b08 0x00000000004005ae   ..@..... @reloc.fflush 4195758 (.plt) R X 'push 5'
 EOF
-CMDS=pxr 0x30@0x00600ae0
 RUN

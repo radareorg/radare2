@@ -1,9 +1,5 @@
 NAME=pdr recursive emu
 FILE=malloc://1024
-EXPECT=<<EOF
-0xc8
-0xf6
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -13,14 +9,14 @@ af
 e asm.emu=true
 pdr~add rax[6]
 EOF
+EXPECT=<<EOF
+0xc8
+0xf6
+EOF
 RUN
 
 NAME=pdr recursive emu with gp
 FILE=malloc://1024
-EXPECT=<<EOF
-0x17b8
-0x17c8
-EOF
 CMDS=<<EOF
 e asm.arch=mips
 e anal.gpfixed=false
@@ -31,19 +27,23 @@ e asm.emu=true
 e anal.gp=0xabc
 pdr~addu t0[7]
 EOF
+EXPECT=<<EOF
+0x17b8
+0x17c8
+EOF
 RUN
 
 NAME=pdR recursive until ret
 FILE=malloc://1024
-EXPECT=<<EOF
-0x00000000      8003           sjmp 0x0005
-0x00000005      22             ret
-EOF
 CMDS=<<EOF
 e asm.arch=8051
 e asm.lines=false
 wx 8003000000220000
 pdR
+EOF
+EXPECT=<<EOF
+0x00000000      8003           sjmp 0x0005
+0x00000005      22             ret
 EOF
 RUN
 

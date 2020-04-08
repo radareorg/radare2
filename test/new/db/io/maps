@@ -1,14 +1,5 @@
 NAME=omp twice bug
 FILE=malloc://1024
-EXPECT=<<EOF
-9090
-0000
- 2 fd: 4 +0x00000000 0x00000000 - 0x000003ff rw- 
- 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rw- 
- 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rw- 
- 2 fd: 4 +0x00000000 0x00000000 - 0x000003ff rw- 
-9090
-EOF
 CMDS=<<EOF
 omf 1 rw
 wx 9090
@@ -20,13 +11,19 @@ omp 1
 om
 p8 2
 EOF
+EXPECT=<<EOF
+9090
+0000
+ 2 fd: 4 +0x00000000 0x00000000 - 0x000003ff rw- 
+ 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rw- 
+ 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rw- 
+ 2 fd: 4 +0x00000000 0x00000000 - 0x000003ff rw- 
+9090
+EOF
 RUN
 
 NAME=io.maps alloc map
 FILE=malloc://1024
-EXPECT=<<EOF
-00000000
-EOF
 CMDS=<<EOF
 e io.va=true
 s 0
@@ -35,16 +32,13 @@ wox 0x10 @ 0
 on malloc://0x1000 0x80000 >/dev/null
 p8 4 @ 0x80000
 EOF
+EXPECT=<<EOF
+00000000
+EOF
 RUN
 
 NAME=io.maps: o 100
 FILE=malloc://1024
-EXPECT=<<EOF
-1010101010101010101010101010101010101010
-1010101010101010101000000000000000000000
-ffffffffffffffffffffffffffffffffffffffff
-2020202020202020202020202020202020202020
-EOF
 CMDS=<<EOF
 s 0
 b 100
@@ -59,13 +53,16 @@ p8 @ 90
 p8 @ 0x400
 p8 @ 0x80000
 EOF
+EXPECT=<<EOF
+1010101010101010101010101010101010101010
+1010101010101010101000000000000000000000
+ffffffffffffffffffffffffffffffffffffffff
+2020202020202020202020202020202020202020
+EOF
 RUN
 
 NAME=om 0x100;x@0xff
 FILE=-
-EXPECT=<<EOF
-00000000
-EOF
 CMDS=<<EOF
 e io.va=false
 e file.nowarn=true
@@ -74,27 +71,27 @@ om `o~[0]` 0x100
 w pop @ 1
 p8 4 @ 0x100
 EOF
+EXPECT=<<EOF
+00000000
+EOF
 RUN
 
 NAME=o - 0x9000;x@0x8f00
 FILE=-
-EXPECT=<<EOF
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x00008ff0  ffff ffff ffff ffff ffff ffff ffff ffff  ................
-0x00009000  0000 0000 0000 0000 0000 0000 0000 0000  ................
-EOF
 CMDS=<<EOF
 o malloc://128 0x9000 > /dev/null
 e io.va=true
 x 32 @ 0x8ff0
 EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00008ff0  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x00009000  0000 0000 0000 0000 0000 0000 0000 0000  ................
+EOF
 RUN
 
 NAME=omfg all rwx
 FILE=-
-EXPECT=<<EOF
-2
-EOF
 CMDS=<<EOF
 e scr.null=true
 o malloc://32 0x400
@@ -104,14 +101,13 @@ om~rwx
 omfg
 om~rwx~?
 EOF
+EXPECT=<<EOF
+2
+EOF
 RUN
 
 NAME=Opening a new map doesnt set io.a to false
 FILE=-
-EXPECT=<<EOF
-true
-true
-EOF
 CMDS=<<EOF
 e io.va
 e scr.null=true
@@ -119,16 +115,14 @@ o malloc://32 0x400
 e scr.null=false
 e io.va
 EOF
+EXPECT=<<EOF
+true
+true
+EOF
 RUN
 
 NAME=omf one mapping
 FILE=-
-EXPECT=<<EOF
-1
-1
-1
-1
-EOF
 CMDS=<<EOF
 omf 1 rwx
 om~rwx~?
@@ -138,6 +132,12 @@ omf 1 --x
 om~--x~?
 omf 1 -w-
 om~-w-~?
+EOF
+EXPECT=<<EOF
+1
+1
+1
+1
 EOF
 RUN
 

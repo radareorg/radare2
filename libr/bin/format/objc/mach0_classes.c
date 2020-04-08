@@ -182,7 +182,6 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	struct MACH0_(SIVar) i;
 	mach0_ut r;
 	ut32 offset, left, j;
-	char *name = NULL;
 
 	int len;
 	bool bigendian;
@@ -295,6 +294,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 			if (r > bf->size || r + left > bf->size) {
 				goto error;
 			}
+			char *name;
 			if (bin->has_crypto) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
@@ -311,9 +311,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 			}
 			// XXX the field name shouldnt contain the class name
 			field->name = r_str_newf ("%s::%s%s", klass->name, "(ivar)", name);
-			//field->name = name; // (ivar)
-			//name = NULL;
-			// R_FREE (name);
+			R_FREE (name);
 		}
 
 		r = va2pa (i.type, NULL, &left, bf);

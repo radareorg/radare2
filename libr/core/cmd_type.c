@@ -72,6 +72,14 @@ static const char *help_msg_to[] = {
 	NULL
 };
 
+static const char *help_msg_tp[] = {
+	"Usage: tp[...]", "", "",
+	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it (XXX: type can contain spaces)",
+	"tpv", " <type> @ [value]", "Show offset formatted for given type",
+	"tpx", " <type> <hexpairs>", "Show value for type with specified byte sequence (XXX: type can contain spaces)",
+	NULL
+};
+
 static const char *help_msg_tc[] = {
 	"Usage: tc[...]", " [cctype]", "",
 	"tc", " [type.name]", "List all/given loaded types in C output format with newlines",
@@ -145,7 +153,7 @@ static const char *help_msg_ts[] = {
 	"ts*", "", "Show pf.<name> format string for all loaded structs",
 	"ts*", " [type]", "Show pf.<name> format string for given struct",
 	"tsc", "<name>", "List all/given loaded structs in C output format with newlines",
-	"tsd", "", "List all loaded structs in C output format without newlines", 
+	"tsd", "", "List all loaded structs in C output format without newlines",
 	"tss", " [type]", "Display size of struct",
 	"ts?", "", "show this help",
 	NULL
@@ -781,7 +789,7 @@ static void set_offset_hint(RCore *core, RAnalOp *op, const char *type, ut64 lad
 	}
 }
 
-R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to) {
+R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
 	int stack = 0, maxstack = 0;
 	ut64 at = from;
 
@@ -808,7 +816,7 @@ R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to) {
 	return maxstack;
 }
 
-static void set_retval (RCore *core, ut64 at) {
+static void set_retval(RCore *core, ut64 at) {
 	RAnal *anal = core->anal;
 	RAnalHint *hint = r_anal_hint_get (anal, at);
 	RAnalFunction *fcn = r_anal_get_fcn_in (anal, at, 0);
@@ -1032,7 +1040,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'd':
 			print_struct_union_in_c_format (TDB, stdifunion, r_str_trim_head_ro (input + 2), false);
-			break;	
+			break;
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
 			break;
@@ -1384,11 +1392,16 @@ static int cmd_type(void *data, const char *input) {
 	case 'x': {
 		  char *type, *type2;
 		RListIter *iter, *iter2;
-		  RAnalFunction *fcn;
+		RAnalFunction *fcn;
 		switch (input[1]) {
-		case '.': // "tx." type xrefs 
-		case 'f': // "txf" type xrefs 
-			fcn  = r_anal_get_function_at (core->anal, core->offset);
+		case '.': // "tx." type xrefs
+		case 'f': // "txf" type xrefs
+			{
+			ut64 addr = core->offset;
+			if (input[2] == ' ') {
+				addr = r_num_math (core->num, input + 2);
+			}
+			fcn = r_anal_get_function_at (core->anal, addr);
 			if (fcn) {
 				RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
 				r_list_foreach (uniq , iter , type) {
@@ -1396,7 +1409,8 @@ static int cmd_type(void *data, const char *input) {
 				}
 				r_list_free (uniq);
 			} else {
-				eprintf ("cannot find function at 0x%08"PFMT64x"\n", core->offset);
+				eprintf ("cannot find function at 0x%08"PFMT64x"\n", addr);
+			}
 			}
 			break;
 		case 0: // "tx"
@@ -1445,6 +1459,7 @@ static int cmd_type(void *data, const char *input) {
 				r_list_free (uniqList);
 			}
 			break;
+		case 't':
 		case ' ': // "tx " -- show which function use given type
 			type = (char *)r_str_trim_head_ro (input + 2);
 			r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -1460,9 +1475,11 @@ static int cmd_type(void *data, const char *input) {
 		default:
 			eprintf ("Usage: tx[flg] [...]\n");
 			eprintf (" txf | tx.      list all types used in this function\n");
+			eprintf (" txf 0xaddr     list all types used in function at 0xaddr\n");
 			eprintf (" txl            list all types used by any function\n");
-			eprintf (" txg            render the type xrefs graph\n");
-			eprintf (" tx  int32_t    list functions names using this type\n");
+			eprintf (" txg            render the type xrefs graph (usage .txg;aggv)\n");
+			eprintf (" tx int32_t     list functions names using this type\n");
+			eprintf (" txt int32_t    same as 'tx type'\n");
 			eprintf (" tx             list functions and the types they use\n");
 			break;
 		}
@@ -1571,7 +1588,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'p':  // "tp"
 		if (input[1] == '?') { // "tp?"
-			r_core_cmd0 (core, "t?~tp\n");
+			r_core_cmd_help (core, help_msg_tp);
 		} else if (input[1] == 'v') { // "tpv"
 			const char *type_name = r_str_trim_head_ro (input + 2);
 			char *fmt = r_type_format (TDB, type_name);
@@ -1583,18 +1600,25 @@ static int cmd_type(void *data, const char *input) {
 			}
 		} else if (input[1] == ' ' || input[1] == 'x' || !input[1]) {
 			char *tmp = strdup (input);
-			char *ptr = strchr (tmp, ' ');
-			if (!ptr) {
-				break;
-			}
-			r_str_trim (ptr);
-			int nargs = r_str_word_set0 (ptr);
-			if (nargs > 0) {
-				const char *type = r_str_word_get0 (ptr, 0);
-				const char *arg = (nargs > 1)? r_str_word_get0 (ptr, 1): NULL;
+			char *type_begin = strchr (tmp, ' ');
+			if (type_begin) {
+				r_str_trim (type_begin);
+				const char *type_end = r_str_rchr (type_begin, NULL, ' ');
+				int type_len = (type_end)
+					? (int)(type_end - type_begin)
+					: strlen (type_begin);
+				char *type = strdup (type_begin);
+				if (!type) {
+					free (tmp);
+					break;
+				}
+				snprintf (type, type_len + 1, "%s", type_begin);
+				const char *arg = (type_end) ? type_end + 1 : NULL;
 				char *fmt = r_type_format (TDB, type);
 				if (!fmt) {
 					eprintf ("Cannot find '%s' type\n", type);
+					free (tmp);
+					free (type);
 					break;
 				}
 				if (input[1] == 'x' && arg) { // "tpx"
@@ -1602,18 +1626,21 @@ static int cmd_type(void *data, const char *input) {
 					// eprintf ("pf %s @x:%s", fmt, arg);
 				} else {
 					ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
+					ut64 original_addr = addr;
 					if (!addr && arg) {
 						RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 						addr = r_anal_var_addr (core->anal, fcn, arg);
 					}
 					if (addr != UT64_MAX) {
-						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, addr);
+					} else if (original_addr == 0) {
+						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, original_addr);
 					}
 				}
 				free (fmt);
+				free (type);
 			} else {
-				eprintf ("see t?\n");
-				break;
+				eprintf ("Usage: tp?\n");
 			}
 			free (tmp);
 		} else { // "tp"
@@ -1627,8 +1654,7 @@ static int cmd_type(void *data, const char *input) {
 			sdb_reset (TDB);
 			r_parse_c_reset (core->parser);
 		} else {
-			const char *name = input + 1;
-			while (IS_WHITESPACE (*name)) name++;
+			const char *name = r_str_trim_head_ro (input + 1);
 			if (*name) {
 				r_anal_remove_parsed_type (core->anal, name);
 			} else {
@@ -1749,8 +1775,9 @@ static int cmd_type(void *data, const char *input) {
 		if (istypedef && !strncmp (istypedef, "typedef", 7)) {
 			const char *q = sdb_fmt ("typedef.%s", s);
 			const char *res = sdb_const_get (TDB, q, 0);
-			if (res)
+			if (res) {
 				r_cons_println (res);
+			}
 		} else {
 			eprintf ("This is not an typedef\n");
 		}

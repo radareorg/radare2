@@ -398,7 +398,7 @@ static int init_shdr(ELFOBJ *bin) {
 }
 
 static bool is_shidx_valid(ELFOBJ *bin, Elf_(Half) value) {
-	return value >= 0 && value < bin->ehdr.e_shnum && !R_BETWEEN (SHN_LORESERVE, value, SHN_HIRESERVE);
+	return value < bin->ehdr.e_shnum && !R_BETWEEN (SHN_LORESERVE, value, SHN_HIRESERVE);
 }
 
 static int init_strtab(ELFOBJ *bin) {
@@ -3304,9 +3304,8 @@ static bool is_section_local_sym(ELFOBJ *bin, Elf_(Sym) *sym) {
 	if (!is_shidx_valid (bin, sym->st_shndx)) {
 		return false;
 	}
-
 	Elf_(Word) sh_name = bin->shdr[sym->st_shndx].sh_name;
-	return bin->shstrtab && sh_name >= 0 && sh_name < bin->shstrtab_size;
+	return bin->shstrtab && sh_name < bin->shstrtab_size;
 }
 
 static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {

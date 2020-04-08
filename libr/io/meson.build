@@ -1,11 +1,11 @@
 r_io_sources = [
-  'cache.c',
+  'io_cache.c',
   'desc.c',
   'fd.c',
   'io.c',
   'ioutils.c',
   'map.c',
-  'plugin.c',
+  'io_plugin.c',
   'undo.c',
   'p_cache.c',
   'p/io_ar.c',

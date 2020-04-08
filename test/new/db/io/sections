@@ -1,5 +1,10 @@
 NAME=section borders
 FILE=../bins/mach0/mac-ls
+CMDS=<<EOF
+b 128
+s 0x1000043f6
+x
+EOF
 EXPECT=<<EOF
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x1000043f6  415e 415f 5dc3 e86b 0000 0055 4889 e548  A^A_]..k...UH..H
@@ -10,10 +15,5 @@ EXPECT=<<EOF
 0x100004446  0000 ff25 0a0c 0000 ff25 0c0c 0000 ff25  ...%.....%.....%
 0x100004456  0e0c 0000 ff25 100c 0000 ff25 120c 0000  .....%.....%....
 0x100004466  ff25 140c 0000 ff25 160c 0000 ff25 180c  .%.....%.....%..
-EOF
-CMDS=<<EOF
-b 128
-s 0x1000043f6
-x
 EOF
 RUN

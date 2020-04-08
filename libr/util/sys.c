@@ -785,30 +785,7 @@ R_API int r_sys_cmd(const char *str) {
 	if (r_sandbox_enable (0)) {
 		return false;
 	}
-#if __FreeBSD__
-	/* freebsd system() is broken */
-	int st, pid, fds[2];
-	if (pipe (fds)) {
-		return -1;
-	}
-	pid = vfork ();
-	if (pid == -1) {
-		return -1;
-	}
-	if (!pid) {
-		dup2 (1, fds[1]);
-		// char *argv[] = { "/bin/sh", "-c", str, NULL};
-		// execv (argv[0], argv);
-		r_sandbox_system (str, 0);
-		_exit (127); /* error */
-	} else {
-		dup2 (1, fds[0]);
-		waitpid (pid, &st, 0);
-	}
-	return WEXITSTATUS (st);
-#else
 	return r_sandbox_system (str, 1);
-#endif
 }
 
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {

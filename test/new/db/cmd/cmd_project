@@ -345,8 +345,8 @@ RUN
 
 NAME=Delete a saved project and used directory (with P-)
 FILE=../bins/elf/analysis/main
-BROKEN=1
 ARGS=-n
+BROKEN=1
 CMDS=<<EOF
 e dir.projects = .tmp/
 Ps lightbulb > /dev/null

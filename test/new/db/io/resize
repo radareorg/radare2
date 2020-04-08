@@ -1,12 +1,6 @@
 NAME=r xx
-ARGS=-w
 FILE=.resize.V1OzXt
-EXPECT=<<EOF
-0
-0xa
-0x4
-0xa
-EOF
+ARGS=-w
 CMDS=<<EOF
 i~^size[1]
 r 10
@@ -17,17 +11,17 @@ r+6
 i~^size[1]
 !rm ${R2_FILE}
 EOF
+EXPECT=<<EOF
+0
+0xa
+0x4
+0xa
+EOF
 RUN
 
 NAME=r/wx nn
-ARGS=-w
 FILE=.resize.V11zXt
-EXPECT=<<EOF
-0
-0x3
-0xb
-hello world
-EOF
+ARGS=-w
 CMDS=<<EOF
 e io.va=0
 i~^size[1]
@@ -37,5 +31,11 @@ w hello world
 i~^size[1]
 psz
 !rm ${R2_FILE}
+EOF
+EXPECT=<<EOF
+0
+0x3
+0xb
+hello world
 EOF
 RUN

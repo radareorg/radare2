@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2011-2012 - pancake */
+/* radare - LGPL - Copyright 2017-2020 - pancake, crowell */
+
 #include <r_util.h>
 
 #define BITMAP_TEST 0
@@ -53,49 +54,3 @@ R_API int r_bitmap_test(RBitmap *b, size_t bit) {
 	}
 	return -1;
 }
-
-#if BITMAP_TEST
-#include <stdio.h>
-
-#define MAX_VALUE (2343 + 1)
-static const uint32_t test_values[] = { 1,2,3,4,8,34,543,2343 };
-#define test_values_len (sizeof(test_values)/sizeof(uint32_t))
-
-static void set_values(Bitmap *bitmap, const uint32_t *values, int len) {
-	int i;
-	for(i=0; i < len; i++) {
-		r_bitmap_set (bitmap, values[i]);
-	}
-}
-
-static void unset_values(Bitmap *bitmap, const uint32_t *values, int len) {
-	int i;
-	for(i=0; i < len; i++) {
-		r_bitmap_unset(bitmap, values[i]);
-	}
-}
-
-static void check_values(Bitmap *bitmap, const uint32_t *values, int len, bool is_set) {
-	int i;
-	for(i = 0; i < len; i++) {
-		if (r_bitmap_test(bitmap, values[i]) != is_set) {
-			eprintf ("Value not set\n");
-		}
-	}
-}
-
-int main(int argc, char *argv[]) {
-	Bitmap *bitmap = bitmap_new(MAX_VALUE);
-
-	set_values(bitmap, test_values, test_values_len);
-
-	check_values(bitmap, test_values, test_values_len, true);
-
-	unset_values(bitmap, test_values, test_values_len);
-
-	check_values(bitmap, test_values, test_values_len, false);
-	bitmap_free(bitmap);
-	return 0;
-}
-
-#endif

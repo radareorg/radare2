@@ -85,6 +85,16 @@ R_API int r_str_replace_char(char *s, int a, int b) {
 	return r_str_replace_ch (s, a, b, true);
 }
 
+R_API void r_str_remove_char(char *str, char c) {
+	while (*str) {
+		if (*str == c) {
+			memmove (str, str + 1, strlen (str + 1) + 1);
+			continue;
+		}
+		str++;
+	}
+}
+
 R_API void r_str_reverse(char *str) {
 	int i, len = strlen (str);
 	int half = len / 2;
@@ -1590,6 +1600,66 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	}
 	*q = '\0';
 	return new_buf;
+}
+
+// http://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
+// https://docs.microsoft.com/en-us/cpp/cpp/main-function-command-line-args?redirectedfrom=MSDN&view=vs-2019#parsing-c-command-line-arguments
+R_API char *r_str_format_msvc_argv(size_t argc, const char **argv) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+
+	size_t i;
+	for (i = 0; i < argc; i++) {
+		if (i > 0) {
+			r_strbuf_append (&sb, " ");
+		}
+		const char *arg = argv[i];
+		bool must_escape = strchr (arg, '\"') != NULL;
+		bool must_quote = strpbrk (arg, " \t") != NULL || !*arg;
+		if (!must_escape && must_quote && *arg && arg[strlen (arg) - 1] == '\\') {
+			// if the last char is a bs and we would quote it, we must also escape
+			must_escape = true;
+		}
+		if (must_quote) {
+			r_strbuf_append (&sb, "\"");
+		}
+		if (must_escape) {
+			size_t bs_count = 0; // bullshit counter
+			for (; *arg; arg++) {
+				switch (*arg) {
+				case '\"':
+					for (; bs_count; bs_count--) {
+						// backslashes must be escaped iff they precede a "
+						// so just duplicate the number of backslashes already printed
+						r_strbuf_append (&sb, "\\");
+					}
+					r_strbuf_append (&sb, "\\\"");
+					break;
+				case '\\':
+					bs_count++;
+					r_strbuf_append (&sb, "\\");
+					break;
+				default:
+					bs_count = 0;
+					r_strbuf_append_n (&sb, arg, 1);
+					break;
+				}
+			}
+			if (must_quote) {
+				// there will be a quote after this so we have to escape bs here as well
+				for (; bs_count; bs_count--) {
+					r_strbuf_append (&sb, "\\");
+				}
+			}
+		} else {
+			r_strbuf_append (&sb, arg);
+		}
+		if (must_quote) {
+			r_strbuf_append (&sb, "\"");
+		}
+	}
+
+	return r_strbuf_drain_nofree (&sb);
 }
 
 static int __str_ansi_length (char const *str) {
@@ -3574,4 +3644,33 @@ R_API char *r_str_scale(const char *s, int w, int h) {
 	}
 	free (str);
 	return r_str_list_join (out, "\n");
+}
+
+// version.c
+#include <r_userconf.h>
+#include <r_util.h>
+
+#ifndef R2_GITTAP
+#define R2_GITTAP ""
+#endif
+
+#ifndef R2_GITTIP
+#define R2_GITTIP ""
+#endif
+
+#ifndef R2_BIRTH
+#define R2_BIRTH "unknown"
+#endif
+
+R_API char *r_str_version(const char *program) {
+	char *s = r_str_newf ("%s "R2_VERSION" %d @ "
+			R_SYS_OS"-"
+			R_SYS_ARCH"-%d git.%s\n",
+			program, R2_VERSION_COMMIT,
+			(R_SYS_BITS & 8)? 64: 32,
+			*R2_GITTAP ? R2_GITTAP: "");
+	if (*R2_GITTIP) {
+		s = r_str_appendf (s, "commit: "R2_GITTIP" build: "R2_BIRTH"\n");
+	}
+	return s;
 }

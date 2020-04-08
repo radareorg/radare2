@@ -1,8 +1,5 @@
 NAME=cmp data
 FILE=-
-EXPECT=<<EOF
-thats fine
-EOF
 CMDS=<<EOF
 b 16
 wx 41
@@ -14,5 +11,8 @@ e scr.null=1
 cx 11 2>/dev/null
 e scr.null=0
 ?! ?e thats wrong
+EOF
+EXPECT=<<EOF
+thats fine
 EOF
 RUN

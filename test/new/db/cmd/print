@@ -1,9 +1,5 @@
 NAME=endian tests: pv4
 FILE=-
-EXPECT=<<EOF
-0x04030201
-0x01020304
-EOF
 CMDS=<<EOF
 e cfg.bigendian=false
 e asm.bits=32
@@ -11,15 +7,15 @@ wx 01020304
 pv4
 e cfg.bigendian=true
 pv4
+EOF
+EXPECT=<<EOF
+0x04030201
+0x01020304
 EOF
 RUN
 
 NAME=endian tests: pv2
 FILE=-
-EXPECT=<<EOF
-0x0201
-0x0102
-EOF
 CMDS=<<EOF
 e cfg.bigendian=false
 e asm.bits=32
@@ -28,14 +24,14 @@ pv2
 e cfg.bigendian=true
 pv2
 EOF
+EXPECT=<<EOF
+0x0201
+0x0102
+EOF
 RUN
 
 NAME=endian tests: pv8
 FILE=-
-EXPECT=<<EOF
-0x0807060504030201
-0x0102030405060708
-EOF
 CMDS=<<EOF
 e cfg.bigendian=false
 e asm.bits=32
@@ -44,14 +40,14 @@ pv8
 e cfg.bigendian=true
 pv8
 EOF
+EXPECT=<<EOF
+0x0807060504030201
+0x0102030405060708
+EOF
 RUN
 
 NAME=endian tests: ?v
 FILE=-
-EXPECT=<<EOF
-0x4030201
-0x1020304
-EOF
 CMDS=<<EOF
 e cfg.bigendian=false
 e asm.bits=32
@@ -59,6 +55,10 @@ wx 01020304
 ?v [$$]
 e cfg.bigendian=true
 ?v [$$]
+EOF
+EXPECT=<<EOF
+0x4030201
+0x1020304
 EOF
 RUN
 
@@ -74,6 +74,10 @@ RUN
 
 NAME=mac ls pdsf
 FILE=../bins/mach0/mac-ls
+CMDS=<<EOF
+af
+pdsf @ entry0
+EOF
 EXPECT=<<EOF
 ;-- entry0:
 ;-- func.100001058:
@@ -159,14 +163,11 @@ EXPECT=<<EOF
 0x10000191a call sym.func.100001a4c
 0x100001926 call sym.imp.exit
 EOF
-CMDS=<<EOF
-af
-pdsf @ entry0
-EOF
 RUN
 
 NAME=mac ls pfc
 FILE=../bins/mach0/mac-ls
+CMDS=pfc zdq foo bar cow
 EXPECT=<<EOF
 struct {
     char* foo; // "UH..AWAVAUATSH..H."
@@ -174,11 +175,14 @@ struct {
     uint64_t cow; // -450213120875525823
 }
 EOF
-CMDS=pfc zdq foo bar cow
 RUN
 
 NAME=mac ls pfc.fmt
 FILE=../bins/mach0/mac-ls
+CMDS=<<EOF
+pf.fmt bcFiuf foo bar baz cow one two
+pfc.fmt
+EOF
 EXPECT=<<EOF
 struct fmt {
     uint8_t foo; // 85
@@ -189,14 +193,15 @@ struct fmt {
     float two; // 131072.094
 }
 EOF
-CMDS=<<EOF
-pf.fmt bcFiuf foo bar baz cow one two
-pfc.fmt
-EOF
 RUN
 
 NAME=elf 64bit ls pfc.elf_header
 FILE=../bins/elf/ls
+CMDS=<<EOF
+s 0
+pfo elf64
+pfc elf_header
+EOF
 EXPECT=<<EOF
 struct elf_header {
     struct ident {
@@ -219,10 +224,5 @@ struct elf_header {
     uint16_t shnum; // 0x0019
     uint16_t shstrndx; // 0x0018
 }
-EOF
-CMDS=<<EOF
-s 0
-pfo elf64
-pfc elf_header
 EOF
 RUN
