@@ -3,8 +3,6 @@
 #include "r2r.h"
 #include <r_cons.h>
 
-extern int r_main_version_print(const char *program);
-
 #define WORKERS_DEFAULT        8
 #define RADARE2_CMD_DEFAULT    "radare2"
 #define RASM2_CMD_DEFAULT      "rasm2"
@@ -162,7 +160,9 @@ int main(int argc, char **argv) {
 			if (quiet) {
 				printf (R2_VERSION "\n");
 			} else {
-				r_main_version_print ("r2r");
+				char *s = r_str_version ("r2r");
+				printf ("%s\n", s);
+				free (s);
 			}
 			return 0;
 		case 'V':
