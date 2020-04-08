@@ -671,7 +671,7 @@ R_API void r_table_group(RTable *t, int nth, RTableSelector fcn) {
 
 			if (!r_rows_cmp (uniq_row->items, row->items, t->cols, nth)) {
 				if (fcn) {
-					fcn (uniq_row->items, row->items, nth);
+					fcn (uniq_row, row, nth);
 				}
 				r_list_delete (rows, iter);
 				break;
@@ -884,7 +884,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		if (col == -1) {
 			if (*columnName == '[') {
 				col = atoi (columnName + 1);
-			} else if (columnName == NULL && strcmp(operation, "uniq")) {
+			} else if (columnName == NULL && strcmp (operation, "uniq")) {
 				eprintf ("Invalid column name (%s) for (%s)\n", columnName, query);
 			}
 		}

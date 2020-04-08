@@ -149,9 +149,9 @@ bool test_r_table_uniq(void) {
 	mu_end;
 }
 
-static void merge_second(RList *acc, RList *new_row, int nth) {
-	RList *lhs = acc;
-	RList *rhs = new_row;
+static void simple_merge(RTableRow *acc, RTableRow *new_row, int nth) {
+	RList *lhs = acc->items;
+	RList *rhs = new_row->items;
 	RListIter *iter_lhs;
 	RListIter *iter_rhs;
 
@@ -232,7 +232,7 @@ bool test_r_table_group (void) {
 	r_table_add_row (t, "g", "99", NULL);
 	r_table_add_row (t, "h", "1", NULL);
 
-	r_table_group (t, 1, merge_second);
+	r_table_group (t, 1, simple_merge);
 	str = r_table_tostring (t);
 	mu_assert_streq (str,
 		"ascii code\n"

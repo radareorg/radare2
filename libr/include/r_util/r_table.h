@@ -48,7 +48,7 @@ typedef struct {
 	void *cons;
 } RTable;
 
-typedef void (*RTableSelector)(RList *acc, RList *new_row, int nth);
+typedef void (*RTableSelector)(RTableRow *acc, RTableRow *new_row, int nth);
 
 R_API void r_table_row_free(void *_row);
 R_API void r_table_column_free(void *_col);
