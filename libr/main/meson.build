@@ -9,8 +9,7 @@ r_main_sources = [
   'rahash2.c',
   'rarun2.c',
   'rasm2.c',
-  'rax2.c',
-  'version.c',
+  'rax2.c'
 ]
 
 r_main = library('r_main', r_main_sources,
