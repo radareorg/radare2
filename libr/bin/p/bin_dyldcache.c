@@ -810,53 +810,36 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 	int *deps = NULL;
 	char *target_libs = NULL;
 	target_libs = r_sys_getenv ("R_DYLDCACHE_FILTER");
+	RList *target_lib_names = NULL;
+	ut16 *depArray = NULL;
+	cache_imgxtr_t *extras = NULL;
 	if (target_libs) {
-		RList *target_lib_names = r_str_split_list (target_libs, ":", 0);
+		target_lib_names = r_str_split_list (target_libs, ":", 0);
 		if (!target_lib_names) {
-			R_FREE (target_libs);
-			r_list_free (bins);
-			R_FREE (img);
-			return NULL;
+			goto error;
 		}
 
 		deps = R_NEWS0 (int, hdr->imagesCount);
 		if (!deps) {
-			r_list_free (target_lib_names);
-			R_FREE (target_libs);
-			r_list_free (bins);
-			R_FREE (img);
-			return NULL;
+			goto error;
 		}
 
-		ut16 *depArray = R_NEWS0 (ut16, accel->depListCount);
-		if (!depArray) {
-			r_list_free (target_lib_names);
-			R_FREE (target_libs);
-			r_list_free (bins);
-			R_FREE (deps);
-			R_FREE (img);
-			return NULL;
-		}
+		if (accel) {
+			depArray = R_NEWS0 (ut16, accel->depListCount);
+			if (!depArray) {
+				goto error;
+			}
 
-		if (r_buf_fread_at (cache_buf, accel->depListOffset, (ut8*) depArray, "s", accel->depListCount) != accel->depListCount * 2) {
-			r_list_free (target_lib_names);
-			R_FREE (target_libs);
-			r_list_free (bins);
-			R_FREE (deps);
-			R_FREE (depArray);
-			R_FREE (img);
-			return NULL;
-		}
+			if (r_buf_fread_at (cache_buf, accel->depListOffset, (ut8*) depArray, "s", accel->depListCount) != accel->depListCount * 2) {
+				goto error;
+			}
 
-		cache_imgxtr_t *extras = read_cache_imgextra (cache_buf, hdr, accel);
-		if (!extras) {
-			r_list_free (target_lib_names);
-			R_FREE (target_libs);
-			r_list_free (bins);
-			R_FREE (deps);
-			R_FREE (depArray);
-			R_FREE (img);
-			return NULL;
+			extras = read_cache_imgextra (cache_buf, hdr, accel);
+			if (!extras) {
+				goto error;
+			}
+		} else {
+			eprintf ("Missing accelerator info, deps of filter can't be auto resolved.\n");
 		}
 
 		for (i = 0; i < hdr->imagesCount; i++) {
@@ -869,16 +852,18 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			R_FREE (lib_name);
 			deps[i]++;
 
-			ut32 j;
-			for (j = extras[i].dependentsStartArrayIndex; depArray[j] != 0xffff; j++) {
-				bool upward = depArray[j] & 0x8000;
-				ut16 dep_index = depArray[j] & 0x7fff;
-				if (!upward) {
-					deps[dep_index]++;
+			if (extras && depArray) {
+				ut32 j;
+				for (j = extras[i].dependentsStartArrayIndex; depArray[j] != 0xffff; j++) {
+					bool upward = depArray[j] & 0x8000;
+					ut16 dep_index = depArray[j] & 0x7fff;
+					if (!upward) {
+						deps[dep_index]++;
 
-					char *dep_name = get_lib_name (cache_buf, &img[dep_index]);
-					eprintf ("-> %s\n", dep_name);
-					R_FREE (dep_name);
+						char *dep_name = get_lib_name (cache_buf, &img[dep_index]);
+						eprintf ("-> %s\n", dep_name);
+						free (dep_name);
+					}
 				}
 			}
 		}
@@ -887,6 +872,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 		R_FREE (extras);
 		R_FREE (target_libs);
 		r_list_free (target_lib_names);
+		target_lib_names = NULL;
 	}
 
 	for (i = 0; i < hdr->imagesCount; i++) {
@@ -909,10 +895,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			char file[256];
 			RDyldBinImage *bin = R_NEW0 (RDyldBinImage);
 			if (!bin) {
-				r_list_free (bins);
-				R_FREE (deps);
-				R_FREE (img);
-				return NULL;
+				goto error;
 			}
 			bin->header_at = pa;
 			if (r_buf_read_at (cache_buf, img[i].pathFileOffset, (ut8*) &file, sizeof (file)) == sizeof (file)) {
@@ -945,6 +928,19 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 		}
 	}
 
+	goto beach;
+error:
+	if (bins) {
+		r_list_free (bins);
+	}
+	bins = NULL;
+beach:
+	R_FREE (depArray);
+	R_FREE (extras);
+	R_FREE (target_libs);
+	if (target_lib_names) {
+		r_list_free (target_lib_names);
+	}
 	R_FREE (deps);
 	R_FREE (img);
 	return bins;
@@ -1293,10 +1289,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		return false;
 	}
 	cache->accel = read_cache_accel (cache->buf, cache->hdr, cache->maps);
-	if (!cache->accel) {
-		r_dyldcache_free (cache);
-		return false;
-	}
 	cache->locsym = r_dyld_locsym_new (cache->buf, cache->hdr);
 	if (!cache->locsym) {
 		r_dyldcache_free (cache);
@@ -1688,66 +1680,69 @@ static void header(RBinFile *bf) {
 
 	RBin *bin = bf->rbin;
 	ut64 slide = cache->rebase_info->slide;
+	PrintfCallback p = bin->cb_printf;
 
-	bin->cb_printf ("dyld cache header:\n");
-	bin->cb_printf ("magic: %s\n", cache->hdr->magic);
-	bin->cb_printf ("mappingOffset: 0x%"PFMT64x"\n", cache->hdr->mappingOffset);
-	bin->cb_printf ("mappingCount: 0x%"PFMT64x"\n", cache->hdr->mappingCount);
-	bin->cb_printf ("imagesOffset: 0x%"PFMT64x"\n", cache->hdr->imagesOffset);
-	bin->cb_printf ("imagesCount: 0x%"PFMT64x"\n", cache->hdr->imagesCount);
-	bin->cb_printf ("dyldBaseAddress: 0x%"PFMT64x"\n", cache->hdr->dyldBaseAddress);
-	bin->cb_printf ("codeSignatureOffset: 0x%"PFMT64x"\n", cache->hdr->codeSignatureOffset);
-	bin->cb_printf ("codeSignatureSize: 0x%"PFMT64x"\n", cache->hdr->codeSignatureSize);
-	bin->cb_printf ("slideInfoOffset: 0x%"PFMT64x"\n", cache->hdr->slideInfoOffset);
-	bin->cb_printf ("slideInfoSize: 0x%"PFMT64x"\n", cache->hdr->slideInfoSize);
-	bin->cb_printf ("localSymbolsOffset: 0x%"PFMT64x"\n", cache->hdr->localSymbolsOffset);
-	bin->cb_printf ("localSymbolsSize: 0x%"PFMT64x"\n", cache->hdr->localSymbolsSize);
+	p ("dyld cache header:\n");
+	p ("magic: %s\n", cache->hdr->magic);
+	p ("mappingOffset: 0x%"PFMT64x"\n", cache->hdr->mappingOffset);
+	p ("mappingCount: 0x%"PFMT64x"\n", cache->hdr->mappingCount);
+	p ("imagesOffset: 0x%"PFMT64x"\n", cache->hdr->imagesOffset);
+	p ("imagesCount: 0x%"PFMT64x"\n", cache->hdr->imagesCount);
+	p ("dyldBaseAddress: 0x%"PFMT64x"\n", cache->hdr->dyldBaseAddress);
+	p ("codeSignatureOffset: 0x%"PFMT64x"\n", cache->hdr->codeSignatureOffset);
+	p ("codeSignatureSize: 0x%"PFMT64x"\n", cache->hdr->codeSignatureSize);
+	p ("slideInfoOffset: 0x%"PFMT64x"\n", cache->hdr->slideInfoOffset);
+	p ("slideInfoSize: 0x%"PFMT64x"\n", cache->hdr->slideInfoSize);
+	p ("localSymbolsOffset: 0x%"PFMT64x"\n", cache->hdr->localSymbolsOffset);
+	p ("localSymbolsSize: 0x%"PFMT64x"\n", cache->hdr->localSymbolsSize);
 	char uuidstr[128];
 	r_hex_bin2str ((ut8*)cache->hdr->uuid, 16, uuidstr);
-	bin->cb_printf ("uuid: %s\n", uuidstr);
-	bin->cb_printf ("cacheType: 0x%"PFMT64x"\n", cache->hdr->cacheType);
-	bin->cb_printf ("branchPoolsOffset: 0x%"PFMT64x"\n", cache->hdr->branchPoolsOffset);
-	bin->cb_printf ("branchPoolsCount: 0x%"PFMT64x"\n", cache->hdr->branchPoolsCount);
-	bin->cb_printf ("accelerateInfoAddr: 0x%"PFMT64x"\n", cache->hdr->accelerateInfoAddr + slide);
-	bin->cb_printf ("accelerateInfoSize: 0x%"PFMT64x"\n", cache->hdr->accelerateInfoSize);
-	bin->cb_printf ("imagesTextOffset: 0x%"PFMT64x"\n", cache->hdr->imagesTextOffset);
-	bin->cb_printf ("imagesTextCount: 0x%"PFMT64x"\n", cache->hdr->imagesTextCount);
+	p ("uuid: %s\n", uuidstr);
+	p ("cacheType: 0x%"PFMT64x"\n", cache->hdr->cacheType);
+	p ("branchPoolsOffset: 0x%"PFMT64x"\n", cache->hdr->branchPoolsOffset);
+	p ("branchPoolsCount: 0x%"PFMT64x"\n", cache->hdr->branchPoolsCount);
+	p ("accelerateInfoAddr: 0x%"PFMT64x"\n", cache->hdr->accelerateInfoAddr + slide);
+	p ("accelerateInfoSize: 0x%"PFMT64x"\n", cache->hdr->accelerateInfoSize);
+	p ("imagesTextOffset: 0x%"PFMT64x"\n", cache->hdr->imagesTextOffset);
+	p ("imagesTextCount: 0x%"PFMT64x"\n", cache->hdr->imagesTextCount);
 
-	bin->cb_printf ("\nacceleration info:\n");
-	bin->cb_printf ("version: 0x%"PFMT64x"\n", cache->accel->version);
-	bin->cb_printf ("imageExtrasCount: 0x%"PFMT64x"\n", cache->accel->imageExtrasCount);
-	bin->cb_printf ("imagesExtrasOffset: 0x%"PFMT64x"\n", cache->accel->imagesExtrasOffset);
-	bin->cb_printf ("bottomUpListOffset: 0x%"PFMT64x"\n", cache->accel->bottomUpListOffset);
-	bin->cb_printf ("dylibTrieOffset: 0x%"PFMT64x"\n", cache->accel->dylibTrieOffset);
-	bin->cb_printf ("dylibTrieSize: 0x%"PFMT64x"\n", cache->accel->dylibTrieSize);
-	bin->cb_printf ("initializersOffset: 0x%"PFMT64x"\n", cache->accel->initializersOffset);
-	bin->cb_printf ("initializersCount: 0x%"PFMT64x"\n", cache->accel->initializersCount);
-	bin->cb_printf ("dofSectionsOffset: 0x%"PFMT64x"\n", cache->accel->dofSectionsOffset);
-	bin->cb_printf ("dofSectionsCount: 0x%"PFMT64x"\n", cache->accel->dofSectionsCount);
-	bin->cb_printf ("reExportListOffset: 0x%"PFMT64x"\n", cache->accel->reExportListOffset);
-	bin->cb_printf ("reExportCount: 0x%"PFMT64x"\n", cache->accel->reExportCount);
-	bin->cb_printf ("depListOffset: 0x%"PFMT64x"\n", cache->accel->depListOffset);
-	bin->cb_printf ("depListCount: 0x%"PFMT64x"\n", cache->accel->depListCount);
-	bin->cb_printf ("rangeTableOffset: 0x%"PFMT64x"\n", cache->accel->rangeTableOffset);
-	bin->cb_printf ("rangeTableCount: 0x%"PFMT64x"\n", cache->accel->rangeTableCount);
-	bin->cb_printf ("dyldSectionAddr: 0x%"PFMT64x"\n", cache->accel->dyldSectionAddr + slide);
+	if (cache->accel) {
+		p ("\nacceleration info:\n");
+		p ("version: 0x%"PFMT64x"\n", cache->accel->version);
+		p ("imageExtrasCount: 0x%"PFMT64x"\n", cache->accel->imageExtrasCount);
+		p ("imagesExtrasOffset: 0x%"PFMT64x"\n", cache->accel->imagesExtrasOffset);
+		p ("bottomUpListOffset: 0x%"PFMT64x"\n", cache->accel->bottomUpListOffset);
+		p ("dylibTrieOffset: 0x%"PFMT64x"\n", cache->accel->dylibTrieOffset);
+		p ("dylibTrieSize: 0x%"PFMT64x"\n", cache->accel->dylibTrieSize);
+		p ("initializersOffset: 0x%"PFMT64x"\n", cache->accel->initializersOffset);
+		p ("initializersCount: 0x%"PFMT64x"\n", cache->accel->initializersCount);
+		p ("dofSectionsOffset: 0x%"PFMT64x"\n", cache->accel->dofSectionsOffset);
+		p ("dofSectionsCount: 0x%"PFMT64x"\n", cache->accel->dofSectionsCount);
+		p ("reExportListOffset: 0x%"PFMT64x"\n", cache->accel->reExportListOffset);
+		p ("reExportCount: 0x%"PFMT64x"\n", cache->accel->reExportCount);
+		p ("depListOffset: 0x%"PFMT64x"\n", cache->accel->depListOffset);
+		p ("depListCount: 0x%"PFMT64x"\n", cache->accel->depListCount);
+		p ("rangeTableOffset: 0x%"PFMT64x"\n", cache->accel->rangeTableOffset);
+		p ("rangeTableCount: 0x%"PFMT64x"\n", cache->accel->rangeTableCount);
+		p ("dyldSectionAddr: 0x%"PFMT64x"\n", cache->accel->dyldSectionAddr + slide);
+	}
 
 	ut8 version = cache->rebase_info->version;
-	bin->cb_printf ("\nslide info (v%d):\n", version);
-	bin->cb_printf ("slide: 0x%"PFMT64x"\n", slide);
+	p ("\nslide info (v%d):\n", version);
+	p ("slide: 0x%"PFMT64x"\n", slide);
 	if (version == 2) {
 		RDyldRebaseInfo2 *info2 = (RDyldRebaseInfo2*) cache->rebase_info;
-		bin->cb_printf ("page_starts_count: 0x%"PFMT64x"\n", info2->page_starts_count);
-		bin->cb_printf ("page_extras_count: 0x%"PFMT64x"\n", info2->page_extras_count);
-		bin->cb_printf ("delta_mask: 0x%"PFMT64x"\n", info2->delta_mask);
-		bin->cb_printf ("value_mask: 0x%"PFMT64x"\n", info2->value_mask);
-		bin->cb_printf ("delta_shift: 0x%"PFMT64x"\n", info2->delta_shift);
-		bin->cb_printf ("page_size: 0x%"PFMT64x"\n", info2->page_size);
+		p ("page_starts_count: 0x%"PFMT64x"\n", info2->page_starts_count);
+		p ("page_extras_count: 0x%"PFMT64x"\n", info2->page_extras_count);
+		p ("delta_mask: 0x%"PFMT64x"\n", info2->delta_mask);
+		p ("value_mask: 0x%"PFMT64x"\n", info2->value_mask);
+		p ("delta_shift: 0x%"PFMT64x"\n", info2->delta_shift);
+		p ("page_size: 0x%"PFMT64x"\n", info2->page_size);
 	} else if (version == 1) {
 		RDyldRebaseInfo1 *info1 = (RDyldRebaseInfo1*) cache->rebase_info;
-		bin->cb_printf ("toc_count: 0x%"PFMT64x"\n", info1->toc_count);
-		bin->cb_printf ("entries_size: 0x%"PFMT64x"\n", info1->entries_size);
-		bin->cb_printf ("page_size: 0x%"PFMT64x"\n", 4096);
+		p ("toc_count: 0x%"PFMT64x"\n", info1->toc_count);
+		p ("entries_size: 0x%"PFMT64x"\n", info1->entries_size);
+		p ("page_size: 0x%"PFMT64x"\n", 4096);
 	}
 }
 
