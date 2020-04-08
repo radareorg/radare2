@@ -2671,7 +2671,7 @@ static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, size_t rel_mode, ut64 offse
 	ut8 buf[sizeof (Elf_(Rela))] = { 0 };
 	int res = r_buf_read_at (bin->b, offset, buf, size_struct);
 	if (res != size_struct) {
-		return 0;
+		return false;
 	}
 
 	size_t i = 0;
@@ -2691,7 +2691,7 @@ static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, size_t rel_mode, ut64 offse
 	r->sym = ELF_R_SYM (reloc_info.r_info);
 	r->type = ELF_R_TYPE (reloc_info.r_info);
 
-	return 1;
+	return true;
 }
 
 static size_t get_num_relocs_dynamic(struct dynamic_relocation_section *info) {
@@ -2738,6 +2738,9 @@ static size_t get_num_relocs_sections(ELFOBJ *bin) {
 			continue;
 		}
 		rel_mode = get_section_mode (bin, i);
+		if (!is_reloc_section (rel_mode)) {
+			continue;
+		}
 		size = get_size_rel_mode (rel_mode);
 		ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, size);
 	}
