@@ -1,3 +1,53 @@
+NAME=wen 3
+FILE=malloc://100
+CMDS=<<EOF
+r
+wen 3
+r
+EOF
+EXPECT=<<EOF
+100
+103
+EOF
+RUN
+
+NAME=wen 3 writable bin
+FILE=--
+CMDS=<<EOF
+mkdir .tmp
+cp ../bins/mach0/mac-ls2 .tmp/ls-wen
+o .tmp/ls-wen
+r
+wen 3
+r
+oo+
+r
+wen 3
+r
+rm .tmp/ls-wen
+EOF
+EXPECT=<<EOF
+38704
+38704
+38704
+38707
+EOF
+RUN
+
+NAME=wen 3 in readonly bin
+FILE=../bins/mach0/mac-ls2
+CMDS=<<EOF
+# cannot resize in va and non-write mode
+r
+wen 3
+r
+EOF
+EXPECT=<<EOF
+38704
+38704
+EOF
+RUN
+
 NAME=quoted comments bug
 FILE=malloc://1024
 CMDS=<<EOF
