@@ -42,15 +42,14 @@ EOF
 RUN
 
 NAME=ELF: use reloc table in dyn entry
-FILE=../bins/elf/ls-linux-wrong-rela
-BROKEN=1
+FILE=../bins/elf/simple-hello-world-with-wrong-rela-section-name
 CMDS=<<EOF
 e asm.comments=false
 e asm.lines=false
 pd 15 @ entry0~call
 EOF
 EXPECT=<<EOF
-0x000068e8      ff15b2c60100   call qword [reloc.__libc_start_main]
+0x00001068      ff15722f0000   call qword [reloc.__libc_start_main]
 EOF
 RUN
 
