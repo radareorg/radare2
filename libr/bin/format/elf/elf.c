@@ -2653,19 +2653,17 @@ static void fix_rva_and_offset(ELFOBJ *bin, RBinElfReloc *r, ut64 offset_table) 
 	}
 }
 
-static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
-	size_t size_struct;
+static size_t get_size_rel_mode(size_t rel_mode) {
+	return rel_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
+}
 
-	if (is_rela) {
-		size_struct = sizeof (Elf_(Rela));
-	} else {
-		size_struct = sizeof (Elf_(Rel));
-	}
+static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, size_t rel_mode, ut64 offset) {
+	size_t size_struct = get_size_rel_mode (rel_mode);
 
 	ut8 buf[sizeof (Elf_(Rela))] = { 0 };
 	int res = r_buf_read_at (bin->b, offset, buf, size_struct);
 	if (res != size_struct) {
-		return -1;
+		return 0;
 	}
 
 	size_t i = 0;
@@ -2674,22 +2672,18 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	reloc_info.r_offset = READWORD (buf, i);
 	reloc_info.r_info = READWORD (buf, i);
 
-	if (is_rela == DT_RELA) {
+	if (rel_mode == DT_RELA) {
 		reloc_info.r_addend = READWORD (buf, i);
 		r->addend = reloc_info.r_addend;
 	}
 
-	r->is_rela = is_rela;
+	r->is_rela = rel_mode;
 	r->last = 0;
 	r->offset = reloc_info.r_offset;
 	r->sym = ELF_R_SYM (reloc_info.r_info);
 	r->type = ELF_R_TYPE (reloc_info.r_info);
 
 	return 1;
-}
-
-static size_t get_size_rel_mode(size_t rel_mode) {
-	return rel_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
 }
 
 static size_t get_num_relocs_dynamic(struct dynamic_relocation_section *info) {
@@ -2806,8 +2800,7 @@ static size_t get_next_not_analysed_offset(size_t section_offset, size_t offset,
 
 static size_t populate_relocs_record_from_section(ELFOBJ *bin,
 	struct dynamic_relocation_section *info, RBinElfReloc *relocs, size_t pos) {
-	int res, rel_mode, i, j;
-	size_t size;
+	size_t res, size, rel_mode, i, j;
 
 	if (!bin->g_sections) {
 		return pos;
@@ -2827,7 +2820,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *bin,
 			j = get_next_not_analysed_offset (bin->g_sections[i].offset, j + size, info, bin->baddr)) {
 
 			res = read_reloc (bin, relocs + pos, rel_mode, bin->g_sections[i].offset + j);
-			if (res < 0) {
+			if (!res) {
 				break;
 			}
 			if (is_bin_etrel (bin)) {
