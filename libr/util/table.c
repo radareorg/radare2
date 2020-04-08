@@ -856,6 +856,8 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		eprintf (" col0/gt/0x800        grep rows matching col0 > 0x800\n");
 		eprintf (" col0/lt/0x800        grep rows matching col0 < 0x800\n");
 		eprintf (" col0/eq/0x800        grep rows matching col0 == 0x800\n");
+		eprintf (" col0/uniq            get the first row of each that col0 is unique\n");
+		eprintf (" /uniq                same as | uniq (match all columns)\n");
 		eprintf (" name/str/warn        grep rows matching col(name).str(warn)\n");
 		eprintf (" name/strlen/3        grep rows matching strlen(col) == X\n");
 		eprintf (" name/minlen/3        grep rows matching strlen(col) > X\n");
@@ -882,7 +884,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		if (col == -1) {
 			if (*columnName == '[') {
 				col = atoi (columnName + 1);
-			} else {
+			} else if (columnName == NULL && strcmp(operation, "uniq")) {
 				eprintf ("Invalid column name (%s) for (%s)\n", columnName, query);
 			}
 		}
@@ -891,6 +893,8 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		}
 		if (!strcmp (operation, "sort")) {
 			r_table_sort (t, col, operand && !strcmp (operand, "dec"));
+		} else if (!strcmp (operation, "uniq")) {
+			r_table_group (t, col, NULL);
 		} else if (!strcmp (operation, "sortlen")) {
 			r_table_sortlen (t, col, operand && !strcmp (operand, "dec"));
 		} else if (!strcmp (operation, "join")) {
