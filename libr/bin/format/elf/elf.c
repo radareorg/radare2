@@ -2719,10 +2719,10 @@ static size_t get_num_relocs_sections(ELFOBJ *bin) {
 		if (sectionIsInvalid (bin, &bin->g_sections[i])) {
 			continue;
 		}
-		if (!strncmp (bin->g_sections[i].name, ".rela.", strlen (".rela."))) {
+		if (r_str_startswith (bin->g_sections[i].name, ".rela.")) {
 			size = sizeof (Elf_(Rela));
 			ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, size);
-		} else if (!strncmp (bin->g_sections[i].name, ".rel.", strlen (".rel."))) {
+		} else if (r_str_startswith (bin->g_sections[i].name, ".rel.")) {
 			size = sizeof (Elf_(Rel));
 			ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, size);
 		}
@@ -2761,9 +2761,9 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
 }
 
 static size_t get_section_mode(ELFOBJ *bin, size_t pos) {
-	if (!strncmp (bin->g_sections[pos].name, ".rela.", strlen (".rela."))) {
+	if (r_str_startswith (bin->g_sections[pos].name, ".rela.")) {
 		return DT_RELA;
-	} else if (!strncmp (bin->g_sections[pos].name, ".rel.", strlen (".rel."))) {
+	} else if (r_str_startswith (bin->g_sections[pos].name, ".rel.")) {
 		return DT_REL;
 	}
 
