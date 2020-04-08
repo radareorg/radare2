@@ -879,13 +879,12 @@ static int cmd_write(void *data, const char *input) {
 		switch (input[1]) {
 		case 'n': // "wen"
 			if (input[2] == ' ') {
-				len = *input ? r_num_math (core->num, input+ 3) : 0;
+				len = *input ? r_num_math (core->num, input + 3) : 0;
 				if (len > 0) {
 					const ut64 cur_off = core->offset;
 					cmd_suc = r_core_extend_at (core, core->offset, len);
 					if (cmd_suc) {
 						core->offset = cur_off;
-eprintf ("works\n");
 						r_core_block_read (core);
 					} else {
 						eprintf ("r_io_extend failed\n");

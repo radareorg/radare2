@@ -431,7 +431,7 @@ R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
 		if (map) {
 			addr = addr - map->itv.addr + map->delta;
 		}
-		r_config_set_i (core->config, "io.va", io_va);
+		r_config_set_i (core->config, "io.va", false);
 	}
 	int ret = r_io_extend_at (core->io, addr, size);
 	if (addr >= core->offset && addr <= core->offset+core->blocksize) {
