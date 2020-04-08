@@ -5,7 +5,7 @@
 #include <r_util/r_strbuf.h>
 
 typedef struct pj_t {
-	RStrBuf *sb;
+	RStrBuf sb;
 	bool is_first;
 	bool is_key;
 	char braces[R_PRINT_JSON_DEPTH_LIMIT];

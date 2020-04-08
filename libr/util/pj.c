@@ -6,7 +6,7 @@
 static void pj_raw(PJ *j, const char *msg) {
 	r_return_if_fail (j && msg);
 	if (*msg) {
-		r_strbuf_append (j->sb, msg);
+		r_strbuf_append (&j->sb, msg);
 	}
 }
 
@@ -24,7 +24,7 @@ static void pj_comma(PJ *j) {
 R_API PJ *pj_new() {
 	PJ *j = R_NEW0 (PJ);
 	if (j) {
-		j->sb = r_strbuf_new ("");
+		r_strbuf_init (&j->sb);
 		j->is_first = true;
 	}
 	return j;
@@ -32,21 +32,20 @@ R_API PJ *pj_new() {
 
 R_API void pj_free(PJ *pj) {
 	if (pj) {
-		r_strbuf_free (pj->sb);
+		r_strbuf_fini (&pj->sb);
 		free (pj);
 	}
 }
 
 R_API char *pj_drain(PJ *pj) {
 	r_return_val_if_fail (pj && pj->level == 0, NULL);
-	char *res = r_strbuf_drain (pj->sb);
-	pj->sb = NULL;
+	char *res = r_strbuf_drain_nofree (&pj->sb);
 	free (pj);
 	return res;
 }
 
 R_API const char *pj_string(PJ *j) {
-	return j? r_strbuf_get (j->sb): NULL;
+	return j? r_strbuf_get (&j->sb): NULL;
 }
 
 static PJ *pj_begin(PJ *j, char type) {
@@ -332,7 +331,7 @@ R_API char *pj_fmt(PrintfCallback p, const char *fmt, ...) {
 	}
 	char *ret = NULL;
 	if (p) {
-		p ("%s", r_strbuf_get (j->sb));
+		p ("%s", r_strbuf_get (&j->sb));
 		pj_free (j);
 	} else {
 		ret = pj_drain (j);
