@@ -44,3 +44,10 @@ R_API int r_main_run(RMain *m, int argc, const char **argv) {
 	r_return_val_if_fail (m && m->main, -1);
 	return m->main (argc, argv);
 }
+
+R_API int r_main_version_print(const char *progname) {
+	char *s = r_str_version (progname);
+	printf ("%s\n", s);
+	free (s);
+	return 0;
+}

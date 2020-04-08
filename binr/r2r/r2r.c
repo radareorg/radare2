@@ -36,11 +36,12 @@ static void print_state(R2RState *state, ut64 prev_completed);
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
 
 static int help(bool verbose) {
-	printf ("Usage: r2r [-vh] [-j threads] [test file/dir | @test-type]\n");
+	printf ("Usage: r2r [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		printf (
 		" -h           print this help\n"
 		" -v           show version\n"
+		" -q           quiet\n"
 		" -V           verbose\n"
 		" -n           do nothing (don't run any test, just load/parse them)\n"
 		" -L           log mode (better printing for CI, logfiles, etc.)"
@@ -133,6 +134,7 @@ int main(int argc, char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
 	bool nothing = false;
+	bool quiet = false;
 	bool log_mode = false;
 	char *radare2_cmd = NULL;
 	char *rasm2_cmd = NULL;
@@ -143,7 +145,7 @@ int main(int argc, char **argv) {
 	int ret = 0;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:C:LnVt:F:");
+	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:");
 
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -151,8 +153,17 @@ int main(int argc, char **argv) {
 		case 'h':
 			ret = help (true);
 			goto beach;
+		case 'q':
+			quiet = true;
+			break;
 		case 'v':
-			printf (R2_VERSION "\n");
+			if (quiet) {
+				printf (R2_VERSION "\n");
+			} else {
+				char *s = r_str_version ("r2r");
+				printf ("%s\n", s);
+				free (s);
+			}
 			return 0;
 		case 'V':
 			verbose = true;
