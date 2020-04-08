@@ -3819,11 +3819,9 @@ struct exec_command_t {
 	const char *cmd;
 };
 
-static bool exec_command_on_flag(RFlagItem *flg, void *u) {
-	struct exec_command_t *user = (struct exec_command_t *)u;
-	r_core_block_size (user->core, flg->size);
-	r_core_seek (user->core, flg->offset, 1);
-	r_core_cmd0 (user->core, user->cmd);
+static bool copy_into_flagitem_list(RFlagItem *flg, void *u) {
+	RFlagItem *fi = r_mem_dup (flg, sizeof (RFlagItem));
+	r_list_append (u, fi);
 	return true;
 }
 
@@ -4025,7 +4023,6 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	case 's': // XXX this command will crash when used with 'oc' (ocm'@@@s)
 		if (each[1] == 't') { // strings
 			list = r_bin_get_strings (core->bin);
-			RBinString *s;
 			if (list) {
 				ut64 offorig = core->offset;
 				ut64 obs = core->blocksize;
@@ -4076,10 +4073,15 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			char *glob = filter? r_str_trim_dup (filter): NULL;
 			ut64 off = core->offset;
 			ut64 obs = core->blocksize;
-			struct exec_command_t u = { .core = core, .cmd = cmd };
-			// XXX crash in r2 -c "ocm'@@@f:sym*" /bin/ls
-			// because core->flags is gone and crashes
-			r_flag_foreach_glob (core->flags, glob, exec_command_on_flag, &u);
+			RList *flags = r_list_newf (free);
+			r_flag_foreach_glob (core->flags, glob, copy_into_flagitem_list, flags);
+			RListIter *iter;
+			RFlagItem *f;
+			r_list_foreach (flags, iter, f) {
+				r_core_block_size (core, f->size);
+				r_core_seek (core, f->offset, 1);
+				r_core_cmd0 (core, cmd);
+			}
 			r_core_seek (core, off, 0);
 			r_core_block_size (core, obs);
 			free (glob);
