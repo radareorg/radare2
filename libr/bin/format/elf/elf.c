@@ -2726,6 +2726,10 @@ static size_t get_section_mode(ELFOBJ *bin, size_t pos) {
 	return 0;
 }
 
+static bool is_reloc_section(size_t rel_mode) {
+	return rel_mode == DT_REL || rel_mode == DT_RELA;
+}
+
 static size_t get_num_relocs_sections(ELFOBJ *bin) {
 	size_t i, rel_mode, size, ret = 0;
 
@@ -2775,10 +2779,6 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
 	}
 
 	return pos;
-}
-
-static bool is_reloc_section(size_t rel_mode) {
-	return rel_mode == DT_REL || rel_mode == DT_RELA;
 }
 
 static size_t get_next_not_analysed_offset(size_t section_offset, size_t offset,
