@@ -46,6 +46,7 @@ typedef struct r2r_cmd_test_t {
 	R2RCmdTestStringRecord expect;
 	R2RCmdTestStringRecord expect_err;
 	R2RCmdTestBoolRecord broken;
+	ut64 run_line;
 	bool load_plugins;
 } R2RCmdTest;
 

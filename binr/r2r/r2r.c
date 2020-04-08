@@ -2,6 +2,7 @@
 
 #include "r2r.h"
 #include <r_cons.h>
+#include <assert.h>
 
 #define WORKERS_DEFAULT        8
 #define RADARE2_CMD_DEFAULT    "radare2"
@@ -34,6 +35,10 @@ typedef struct r2r_state_t {
 static RThreadFunctionRet worker_th(RThread *th);
 static void print_state(R2RState *state, ut64 prev_completed);
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
+static void interact(R2RState *state);
+static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results);
+static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results);
+static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results);
 
 static int help(bool verbose) {
 	printf ("Usage: r2r [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
@@ -43,6 +48,7 @@ static int help(bool verbose) {
 		" -v           show version\n"
 		" -q           quiet\n"
 		" -V           verbose\n"
+		" -i           interactive mode\n"
 		" -n           do nothing (don't run any test, just load/parse them)\n"
 		" -L           log mode (better printing for CI, logfiles, etc.)"
 		" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
@@ -136,6 +142,7 @@ int main(int argc, char **argv) {
 	bool nothing = false;
 	bool quiet = false;
 	bool log_mode = false;
+	bool interactive = false;
 	char *radare2_cmd = NULL;
 	char *rasm2_cmd = NULL;
 	char *json_test_file = NULL;
@@ -145,7 +152,7 @@ int main(int argc, char **argv) {
 	int ret = 0;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:");
+	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:i");
 
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -167,6 +174,9 @@ int main(int argc, char **argv) {
 			return 0;
 		case 'V':
 			verbose = true;
+			break;
+		case 'i':
+			interactive = true;
 			break;
 		case 'L':
 			log_mode = true;
@@ -398,6 +408,19 @@ int main(int argc, char **argv) {
 	}
 	r_pvector_clear (&workers);
 
+	ut64 seconds = (r_sys_now () - time_start) / 1000000;
+	printf ("Finished in");
+	if (seconds > 60) {
+		ut64 minutes = seconds / 60;
+		printf (" %"PFMT64d" minutes and", seconds / 60);
+		seconds -= (minutes * 60);
+	}
+	printf (" %"PFMT64d" seconds.\n", seconds % 60);
+
+	if (interactive) {
+		interact (&state);
+	}
+
 	if (state.xx_count) {
 		ret = 1;
 	}
@@ -409,14 +432,6 @@ coast:
 	r2r_test_database_free (state.db);
 	r_th_lock_free (state.lock);
 	r_th_cond_free (state.cond);
-	ut64 seconds = (r_sys_now () - time_start) / 1000000;
-	printf ("Finished in");
-	if (seconds > 60) {
-		ut64 minutes = seconds / 60;
-		printf (" %"PFMT64d" minutes and", seconds / 60);
-		seconds -= (minutes * 60);
-	}
-	printf (" %"PFMT64d" seconds.\n", seconds % 60);
 beach:
 	free (radare2_cmd);
 	free (rasm2_cmd);
@@ -641,4 +656,275 @@ static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_comp
 		print_state_counts (state);
 		printf ("\n");
 	}
+}
+
+static void interact(R2RState *state) {
+	void **it;
+	RPVector failed_results;
+	r_pvector_init (&failed_results, NULL);
+	r_pvector_foreach (&state->results, it) {
+		R2RTestResultInfo *result = *it;
+		if (result->result == R2R_TEST_RESULT_FAILED) {
+			r_pvector_push (&failed_results, result);
+		}
+	}
+	if (r_pvector_empty (&failed_results)) {
+		goto beach;
+	}
+
+	printf ("\n");
+	printf ("#####################\n");
+	printf (" %"PFMT64u" failed test(s) \xf0\x9f\x9a\xa8\n", (ut64)r_pvector_len (&failed_results));
+
+	r_pvector_foreach (&failed_results, it) {
+		R2RTestResultInfo *result = *it;
+		if (result->test->type != R2R_TEST_TYPE_CMD) {
+			// TODO: other types of tests
+			continue;
+		}
+
+		printf ("#####################\n\n");
+		print_result_diff (&state->run_config, result);
+inval:
+		printf ("Wat do?    "
+				"(f)ix \xe2\x9c\x85\xef\xb8\x8f\xef\xb8\x8f\xef\xb8\x8f    "
+				"(i)gnore \xf0\x9f\x99\x88    "
+				"(b)roken \xe2\x98\xa0\xef\xb8\x8f\xef\xb8\x8f\xef\xb8\x8f    "
+				"(c)ommands \xe2\x8c\xa8\xef\xb8\x8f    "
+				"(q)uit \xf0\x9f\x9a\xaa\n");
+		printf ("> ");
+		char buf[0x30];
+		if (!fgets (buf, sizeof (buf), stdin)) {
+			break;
+		}
+		if (strlen (buf) != 2) {
+			goto inval;
+		}
+		switch (buf[0]) {
+		case 'f':
+			if (result->run_failed || result->proc_out->ret != 0) {
+				printf ("This test has failed too hard to be fixed.\n");
+				goto inval;
+			}
+			interact_fix (result, &failed_results);
+			break;
+		case 'i':
+			break;
+		case 'b':
+			interact_break (result, &failed_results);
+			break;
+		case 'c':
+			interact_commands (result, &failed_results);
+			break;
+		case 'q':
+			goto beach;
+		default:
+			goto inval;
+		}
+	}
+
+beach:
+	r_pvector_clear (&failed_results);
+}
+
+static char *format_cmd_kv(const char *key, const char *val) {
+	RStrBuf buf;
+	r_strbuf_init (&buf);
+	r_strbuf_appendf (&buf, "%s=", key);
+	if (strchr (val, '\n')) {
+		r_strbuf_appendf (&buf, "<<EOF\n%sEOF", val);
+	} else {
+		r_strbuf_append (&buf, val);
+	}
+	return r_strbuf_drain_nofree (&buf);
+}
+
+static char *replace_lines(char *src, ut64 from, ut64 to, char *news) {
+	char *begin = src;
+	ut64 line = 1;
+	while (line < from) {
+		begin = strchr (begin, '\n');
+		if (!begin) {
+			break;
+		}
+		begin++;
+		line++;
+	}
+	if (!begin) {
+		return NULL;
+	}
+
+	char *end = begin;
+	while (line < to) {
+		end = strchr (end, '\n');
+		if (!end) {
+			break;
+		}
+		end++;
+		line++;
+	}
+	if (end && to != from) {
+		end = strchr (end, '\n');
+	}
+
+	RStrBuf buf;
+	r_strbuf_init (&buf);
+	r_strbuf_append_n (&buf, src, begin - src);
+	r_strbuf_append (&buf, news);
+	if (to == from) {
+		r_strbuf_append (&buf, "\n");
+	}
+	if (end) {
+		r_strbuf_append (&buf, end);
+	}
+	return r_strbuf_drain_nofree (&buf);
+}
+
+// After editing a test, fix the line numbers previously saved for all the other tests
+static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_line, st64 delta) {
+	void **it;
+	r_pvector_foreach (results, it) {
+		R2RTestResultInfo *result = *it;
+		if (result->test->type != R2R_TEST_TYPE_CMD) {
+			continue;
+		}
+		if (result->test->path != edited_file) { // this works because all the paths come from the string pool
+			continue;
+		}
+		R2RCmdTest *test = result->test->cmd_test;
+		test->run_line += delta;
+
+#define DO_KEY_STR(key, field) \
+		if (test->field.value) { \
+			if (test->field.line_begin >= start_line) { \
+				test->field.line_begin += delta; \
+			} \
+			if (test->field.line_end >= start_line) { \
+				test->field.line_end += delta; \
+			} \
+		}
+
+#define DO_KEY_BOOL(key, field) \
+		if (test->field.set && test->field.line >= start_line) { \
+			test->field.line += delta; \
+		}
+
+		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL)
+#undef DO_KEY_STR
+#undef DO_KEY_BOOL
+	}
+}
+
+static void replace_cmd_kv(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RPVector *fixup_results) {
+	char *content = r_file_slurp (path, NULL);
+	if (!content) {
+		eprintf ("Failed to read file \"%s\"\n", path);
+		return;
+	}
+	char *kv = format_cmd_kv (key, value);
+	if (!kv) {
+		free (content);
+		return;
+	}
+	ut64 kv_lines = r_str_char_count (kv, '\n');
+	char *newc = replace_lines (content, line_begin, line_end, kv);
+	free (kv);
+	free (content);
+	if (!newc) {
+		return;
+	}
+	if (r_file_dump (path, (const ut8 *)newc, -1, false)) {
+#if __UNIX__
+		sync ();
+#endif
+		ut64 lines_before = line_end - line_begin;
+		st64 delta = (st64)kv_lines - lines_before;
+		if (line_end == line_begin) {
+			delta++;
+		}
+		fixup_tests (fixup_results, path, line_end, delta);
+	} else {
+		eprintf ("Failed to write file \"%s\"\n", path);
+	}
+	free (newc);
+}
+
+static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
+	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	R2RCmdTest *test = result->test->cmd_test;
+	R2RProcessOutput *out = result->proc_out;
+	if (test->expect.value && out->out) {
+		replace_cmd_kv (result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT", out->out, fixup_results);
+	}
+	if (test->expect_err.value && out->err) {
+		replace_cmd_kv (result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", out->err, fixup_results);
+	}
+}
+
+static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
+	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	R2RCmdTest *test = result->test->cmd_test;
+	ut64 line_begin;
+	ut64 line_end;
+	if (test->broken.set) {
+		line_begin = test->broken.set;
+		line_end = line_begin + 1;
+	} else {
+		line_begin = line_end = test->run_line;
+	}
+	replace_cmd_kv (result->test->path, line_begin, line_end, "BROKEN", "1", fixup_results);
+}
+
+static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results) {
+	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	R2RCmdTest *test = result->test->cmd_test;
+	if (!test->cmds.value) {
+		return;
+	}
+	char *name = NULL;
+	int fd = r_file_mkstemp ("r2r-cmds", &name);
+	if (fd == -1) {
+		free (name);
+		eprintf ("Failed to open tmp file\n");
+		return;
+	}
+	size_t cmds_sz = strlen (test->cmds.value);
+	if (write (fd, test->cmds.value, cmds_sz) != cmds_sz) {
+		eprintf ("Failed to write to tmp file\n");
+		free (name);
+		close (fd);
+		return;
+	}
+	close (fd);
+
+	char *editor = r_sys_getenv ("EDITOR");
+	if (!editor || !*editor) {
+		free (editor);
+		editor = strdup ("vim");
+		if (!editor) {
+			return;
+		}
+	}
+	r_sys_cmdf ("%s '%s'", editor, name);
+	free (editor);
+
+	char *newcmds = r_file_slurp (name, NULL);
+	if (!newcmds) {
+		eprintf ("Failed to read edited command file\n");
+		return;
+	}
+	r_str_trim (newcmds);
+
+	// if it's multiline we want exactly one trailing newline
+	if (strchr (newcmds, '\n')) {
+		char *tmp = newcmds;
+		newcmds = r_str_newf ("%s\n", newcmds);
+		free (tmp);
+		if (!newcmds) {
+			return;
+		}
+	}
+
+	replace_cmd_kv (result->test->path, test->cmds.line_begin, test->cmds.line_end, "CMDS", newcmds, fixup_results);
+	free (newcmds);
 }
