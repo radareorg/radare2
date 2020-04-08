@@ -233,7 +233,7 @@ def build(args):
             xp_compat(r2_builddir)
         if not args.project:
             project = os.path.join(r2_builddir, 'radare2.sln')
-            params = ['/m']
+            params = ['/m', '/clp:Summary;Verbosity=minimal']
             if args.backend == 'vs2017' and args.xp:
                 params.append('/p:XPDeprecationWarning=false')
             msbuild(project, *params)
