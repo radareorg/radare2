@@ -11,17 +11,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wen 3
-FILE=malloc://100
+NAME=wen 3 writable bin
+FILE=--
 CMDS=<<EOF
-e io.va=1
+mkdir .tmp
+cp ../bins/mach0/mac-ls2 .tmp/ls-wen
+o .tmp/ls-wen
 r
 wen 3
 r
+oo+
+r
+wen 3
+r
+rm .tmp/ls-wen
 EOF
 EXPECT=<<EOF
-100
-103
+38704
+38704
+38704
+38707
 EOF
 RUN
 
