@@ -21,33 +21,33 @@ jobs:
   fast_finish: true
   include:
     # emscripten
-    - if: branch = master AND type = push
+    - if: (branch = master AND type = push) OR head_branch =~ ^wasm-*
       os: linux
       name: WASM
       env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
-    - if: branch = master AND type = push
+    - if: (branch = master AND type = push) OR head_branch =~ ^ppc64-*
       os: linux
       name: PPC64
       arch: ppc64le
       dist: bionic
       env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with GCC on System Z
-    - if: branch = master AND type = push
+    - if: (branch = master AND type = push) OR head_branch =~ ^s390x-*
       os: linux
       name: S390X
       arch: s390x
       dist: bionic
       env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Linux with GCC on ARMv8 (64bit)
-    - if: branch = master AND type = push
+    - if: (branch = master AND type = push) OR head_branch =~ ^arm64-*
       os: linux
       name: ARM64
       arch: arm64
       dist: bionic
       env: NODOCKER=1 COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DR2_ASSERT_STDOUT=1"
     # Building *.deb package
-    - if: branch = master AND type = push
+    - if: (branch = master AND type = push) OR head_branch =~ ^debian-*
       os: linux
       name: Debian
       dist: xenial
