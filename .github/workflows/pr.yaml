@@ -2,13 +2,6 @@ name: Radare2 CI PR
 
 on:
   pull_request:
-    paths-ignore:
-    - 'man/*'
-    - '.travis*'
-    - 'travis*'
-    - 'appveyor.yml'
-    - '*.md'
-    - 'COPYING*'
     branches:
     - master
 
