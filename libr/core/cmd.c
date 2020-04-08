@@ -4020,7 +4020,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		}
 #endif
 		break;
-	case 's': // XXX this command will crash when used with 'oc' (ocm'@@@s)
+	case 's':
 		if (each[1] == 't') { // strings
 			list = r_bin_get_strings (core->bin);
 			if (list) {
