@@ -2635,13 +2635,21 @@ char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 	return ret;
 }
 
+static void fix_rva_and_offset_relocable_file(ELFOBJ *bin, RBinElfReloc *r, ut64 offset_table) {
+	r->rva = offset_table + r->offset;
+	r->rva = Elf_(r_bin_elf_p2v) (bin, r->rva);
+}
+
+static void fix_rva_and_offset_exec_file(ELFOBJ *bin, RBinElfReloc *r, ut64 offset_table) {
+	r->rva = r->offset;
+	r->offset = Elf_(r_bin_elf_v2p) (bin, r->offset);
+}
+
 static void fix_rva_and_offset(ELFOBJ *bin, RBinElfReloc *r, ut64 offset_table) {
 	if (is_bin_etrel (bin)) {
-		r->rva = offset_table + r->offset;
-		r->rva = Elf_(r_bin_elf_p2v) (bin, r->rva);
+		fix_rva_and_offset_relocable_file(bin, r, offset_table);
 	} else {
-		r->rva = r->offset;
-		r->offset = Elf_(r_bin_elf_v2p) (bin, r->offset);
+		fix_rva_and_offset_exec_file(bin, r, offset_table);
 	}
 }
 
@@ -2660,7 +2668,6 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 		return -1;
 	}
 
-	// TODO make a single read and work with the buffer
 	size_t i = 0;
 	Elf_(Rela) reloc_info;
 
@@ -2740,19 +2747,19 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
 
 	for (size_t offset = 0; offset < info->rela_size; offset += info->relaent) {
 		read_reloc (bin, relocs + pos, DT_RELA, info->addr_rela + offset - bin->baddr);
-		fix_rva_and_offset (bin, relocs + pos, info->addr_rela);
+		fix_rva_and_offset_exec_file (bin, relocs + pos, info->addr_rela);
 		pos++;
 	}
 
 	for (size_t offset = 0; offset < info->rel_size; offset += info->relent) {
 		read_reloc (bin, relocs + pos, DT_REL, info->addr_rel + offset - bin->baddr);
-		fix_rva_and_offset (bin, relocs + pos, info->addr_rel);
+		fix_rva_and_offset_exec_file (bin, relocs + pos, info->addr_rel);
 		pos++;
 	}
 
 	for (size_t offset = 0; offset < info->jmprel_size; offset += size) {
 		read_reloc (bin, relocs + pos, info->plt_mode, info->addr_jmprel + offset - bin->baddr);
-		fix_rva_and_offset (bin, relocs + pos, info->addr_jmprel);
+		fix_rva_and_offset_exec_file (bin, relocs + pos, info->addr_jmprel);
 		pos++;
 	}
 
@@ -2896,7 +2903,6 @@ static struct dynamic_relocation_section *get_dynamic_info(ELFOBJ *bin) {
 }
 
 RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
-
 	if (!bin || !bin->g_sections) {
 		return NULL;
 	}
