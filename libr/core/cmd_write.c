@@ -149,7 +149,7 @@ static const char *help_msg_wf[] = {
 	"Usage:", "wf[fs] [-|args ..]", " Write from (file, swap, offset)",
 	"wf", " 10 20", "write 20 bytes from offset 10 into current seek",
 	"wff", " file [len]", "write contents of file into current offset",
-	"wfs", " 10 20", "write from socket (tcp listen in port for N bytes)",
+	"wfs", " host:port [len]", "write from socket (tcp listen in port for N bytes)",
 	"wfx", " 10 20", "exchange 20 bytes betweet current offset and 10",
 	NULL
 };
@@ -654,11 +654,16 @@ static bool cmd_wfs(RCore *core, const char *input) {
 		addr = core->offset;
 	}
 	ut8 *buf = calloc (1, sz);
+	if (!buf) {
+		return false;
+	}
 	r_io_read_at (core->io, addr, buf, sz);
 	RSocket *s = r_socket_new (false);
 	if (!r_socket_listen (s, port, NULL)) {
 		eprintf ("Cannot listen on port %s\n", port);
 		r_socket_free (s);
+		free (str);
+		free (buf);
 		return false;
 	}
 	int done = 0;
