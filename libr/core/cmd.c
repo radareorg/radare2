@@ -3819,11 +3819,9 @@ struct exec_command_t {
 	const char *cmd;
 };
 
-static bool exec_command_on_flag(RFlagItem *flg, void *u) {
-	struct exec_command_t *user = (struct exec_command_t *)u;
-	r_core_block_size (user->core, flg->size);
-	r_core_seek (user->core, flg->offset, 1);
-	r_core_cmd0 (user->core, user->cmd);
+static bool copy_into_flagitem_list(RFlagItem *flg, void *u) {
+	RFlagItem *fi = r_mem_dup (flg, sizeof (RFlagItem));
+	r_list_append (u, fi);
 	return true;
 }
 
@@ -3859,7 +3857,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	int i;
 	const char *filter = NULL;
 
-	if (each[1] == ':') {
+	if (each[0] && each[1] == ':') {
 		filter = each + 2;
 	}
 
@@ -3933,10 +3931,11 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			for (i = 0; i < R_REG_TYPE_LAST; i++) {
 				RRegItem *item;
 				ut64 value;
-				head = r_reg_get_list (dbg->reg, i);
+				head = r_reg_get_list (core->dbg->reg, i);
 				if (!head) {
 					continue;
 				}
+				RList *list = r_list_newf (free);
 				r_list_foreach (head, iter, item) {
 					if (item->size != core->anal->bits) {
 						continue;
@@ -3944,11 +3943,16 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					if (item->type != i) {
 						continue;
 					}
-					value = r_reg_get_value (dbg->reg, item);
+					r_list_append (list, strdup (item->name));
+				}
+				const char *item_name;
+				r_list_foreach (list, iter, item_name) {
+					value = r_reg_getv (core->dbg->reg, item_name);
 					r_core_seek (core, value, 1);
-					r_cons_printf ("%s: ", item->name);
+					r_cons_printf ("%s: ", item_name);
 					r_core_cmd0 (core, cmd);
 				}
+				r_list_free (list);
 			}
 			r_core_seek (core, offorig, 1);
 		}
@@ -3958,16 +3962,25 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			RBinImport *imp;
 			ut64 offorig = core->offset;
 			list = r_bin_get_imports (core->bin);
+			RList *lost = r_list_newf (free);
 			r_list_foreach (list, iter, imp) {
 				char *impflag = r_str_newf ("sym.imp.%s", imp->name);
 				ut64 addr = r_num_math (core->num, impflag);
+				ut64 *n = R_NEW (ut64);
+				*n = addr;
+				r_list_append (lost, n);
 				free (impflag);
+			}
+			ut64 *naddr;
+			r_list_foreach (lost, iter, naddr) {
+				ut64 addr = *naddr;
 				if (addr && addr != UT64_MAX) {
 					r_core_seek (core, addr, 1);
 					r_core_cmd0 (core, cmd);
 				}
 			}
 			r_core_seek (core, offorig, 1);
+			r_list_free (lost);
 		}
 		break;
 	case 'S': // "@@@S"
@@ -4010,17 +4023,23 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	case 's':
 		if (each[1] == 't') { // strings
 			list = r_bin_get_strings (core->bin);
-			RBinString *s;
 			if (list) {
 				ut64 offorig = core->offset;
 				ut64 obs = core->blocksize;
+				RBinString *s;
+				RList *lost = r_list_newf (free);
 				r_list_foreach (list, iter, s) {
+					RBinString *bs = r_mem_dup (s, sizeof (RBinString));
+					r_list_append (lost, bs);
+				}
+				r_list_foreach (lost, iter, s) {
 					r_core_block_size (core, s->size);
 					r_core_seek (core, s->vaddr, 1);
 					r_core_cmd0 (core, cmd);
 				}
 				r_core_block_size (core, obs);
 				r_core_seek (core, offorig, 1);
+				r_list_free (lost);
 			}
 		} else {
 			// symbols
@@ -4029,7 +4048,12 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			ut64 obs = core->blocksize;
 			list = r_bin_get_symbols (core->bin);
 			r_cons_break_push (NULL, NULL);
+			RList *lost = r_list_newf (free);
 			r_list_foreach (list, iter, sym) {
+				RBinSymbol *bs = r_mem_dup (sym, sizeof (RBinSymbol));
+				r_list_append (lost, bs);
+			}
+			r_list_foreach (lost, iter, sym) {
 				if (r_cons_is_breaked ()) {
 					break;
 				}
@@ -4038,6 +4062,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				r_core_cmd0 (core, cmd);
 			}
 			r_cons_break_pop ();
+			r_list_free (lost);
 			r_core_block_size (core, obs);
 			r_core_seek (core, offorig, 1);
 		}
@@ -4048,8 +4073,15 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			char *glob = filter? r_str_trim_dup (filter): NULL;
 			ut64 off = core->offset;
 			ut64 obs = core->blocksize;
-			struct exec_command_t u = { .core = core, .cmd = cmd };
-			r_flag_foreach_glob (core->flags, glob, exec_command_on_flag, &u);
+			RList *flags = r_list_newf (free);
+			r_flag_foreach_glob (core->flags, glob, copy_into_flagitem_list, flags);
+			RListIter *iter;
+			RFlagItem *f;
+			r_list_foreach (flags, iter, f) {
+				r_core_block_size (core, f->size);
+				r_core_seek (core, f->offset, 1);
+				r_core_cmd0 (core, cmd);
+			}
 			r_core_seek (core, off, 0);
 			r_core_block_size (core, obs);
 			free (glob);

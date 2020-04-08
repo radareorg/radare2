@@ -263,12 +263,19 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 			free (arg);
 		} else {
-			RList *files = r_id_storage_list (core->io->files);
+			RList *ofiles = r_id_storage_list (core->io->files);
 			RIODesc *desc;
 			RListIter *iter;
-			r_list_foreach (files, iter, desc) {
+			RList *files = r_list_newf (NULL);
+			r_list_foreach (ofiles, iter, desc) {
+				r_list_append (files, (void*)(size_t)desc->fd);
+			}
+		
+			void *_fd;
+			r_list_foreach (files, iter, _fd) {
+				int fd = (size_t)_fd;
 				RBinOptions opt;
-				r_bin_options_init (&opt, desc->fd, core->offset, 0, core->bin->rawstr);
+				r_bin_options_init (&opt, fd, core->offset, 0, core->bin->rawstr);
 				r_bin_open_io (core->bin, &opt);
 				r_core_cmd0 (core, ".ies*");
 				break;
@@ -1772,7 +1779,9 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case 'c': // "oc"
-		if (input[1] && input[2]) {
+		if (input[1] == '?') {
+			eprintf ("Usage: oc [file]\n");
+		} else if (input[1] && input[2]) {
 			if (r_sandbox_enable (0)) {
 				eprintf ("This command is disabled in sandbox mode\n");
 				return 0;
