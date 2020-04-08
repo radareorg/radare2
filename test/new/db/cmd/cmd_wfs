@@ -1,9 +1,9 @@
-NAME=wfs
+NAME=wfx
 FILE=-
 CMDS=<<EOF
 w hello
 w world @ 0x20
-wfs 0x20 10
+wfx 0x20 10
 x 0x40
 EOF
 EXPECT=<<EOF

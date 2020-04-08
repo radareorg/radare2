@@ -149,7 +149,8 @@ static const char *help_msg_wf[] = {
 	"Usage:", "wf[fs] [-|args ..]", " Write from (file, swap, offset)",
 	"wf", " 10 20", "write 20 bytes from offset 10 into current seek",
 	"wff", " file [len]", "write contents of file into current offset",
-	"wfs", " 10 20", "swap 20 bytes betweet current offset and 10",
+	"wfs", " host:port [len]", "write from socket (tcp listen in port for N bytes)",
+	"wfx", " 10 20", "exchange 20 bytes betweet current offset and 10",
 	NULL
 };
 
@@ -598,7 +599,7 @@ static bool ioMemcpy (RCore *core, ut64 dst, ut64 src, int len) {
 	return ret;
 }
 
-static bool cmd_wfs(RCore *core, const char *input) {
+static bool cmd_wfx(RCore *core, const char *input) {
 	char * args = r_str_trim_dup (input + 1);
 	char *arg = strchr (args, ' ');
 	int len = core->blocksize;
@@ -620,12 +621,73 @@ static bool cmd_wfs(RCore *core, const char *input) {
 					eprintf ("Failed to write at 0x%08"PFMT64x"\n", src);
 				}
 			} else {
-				eprintf ("cmd_wfs: failed to read at 0x%08"PFMT64x"\n", dst);
+				eprintf ("cmd_wfx: failed to read at 0x%08"PFMT64x"\n", dst);
 			}
 			free (buf);
 		}
 	}
 	free (args);
+	return true;
+}
+
+static bool cmd_wfs(RCore *core, const char *input) {
+	char *str = strdup (input);
+	if (str[1] != ' ') {
+		eprintf ("Usage wfs host:port [sz]\n");
+		free (str);
+		return false;
+	}
+	ut64 addr = 0;
+	char *host = str + 2;
+	char *port = strchr (host, ':');
+	if (!port) {
+		eprintf ("Usage wfs host:port [sz]\n");
+		free (str);
+		return false;
+	}
+	ut64 sz = core->blocksize;
+	*port ++= 0;
+	char *space = strchr (port, ' ');
+	if (space) {
+		*space++ = 0;
+		sz = r_num_math (core->num, space);
+		addr = core->offset;
+	}
+	ut8 *buf = calloc (1, sz);
+	if (!buf) {
+		return false;
+	}
+	r_io_read_at (core->io, addr, buf, sz);
+	RSocket *s = r_socket_new (false);
+	if (!r_socket_listen (s, port, NULL)) {
+		eprintf ("Cannot listen on port %s\n", port);
+		r_socket_free (s);
+		free (str);
+		free (buf);
+		return false;
+	}
+	int done = 0;
+	RSocket *c = r_socket_accept (s);
+	if (c) {
+		eprintf ("Receiving data from client...\n");
+		while (done < sz) {
+			int rc = r_socket_read (c, buf + done, sz - done);
+			if (rc < 1) {
+				eprintf ("oops\n");
+				break;
+			}
+			done += rc;
+		}
+		r_socket_free (c);
+		if (r_io_write_at (core->io, core->offset, buf, done)) {
+			eprintf ("Written %d bytes\n", done);
+		} else {
+			eprintf ("Cannot write\n");
+		}
+	}
+	r_socket_free (s);
+	free (buf);
+	free (str);
 	return true;
 }
 
@@ -640,6 +702,9 @@ static bool cmd_wf(RCore *core, const char *input) {
 	}
 	if (input[1] == 's') { // "wfs"
 		return cmd_wfs (core, input + 1);
+	}
+	if (input[1] == 'x') { // "wfx"
+		return cmd_wfx (core, input + 1);
 	}
 	if (input[1] == 'f') { // "wff"
 		return cmd_wff (core, input + 1);
