@@ -45,13 +45,15 @@ typedef struct {
 	bool showJSON;
 	bool showSum;
 	bool adjustedCols;
-    	void *cons;
+	void *cons;
 } RTable;
+
+typedef void (*RTableSelector)(RTableRow *acc, RTableRow *new_row, int nth);
 
 R_API void r_table_row_free(void *_row);
 R_API void r_table_column_free(void *_col);
 R_API RTableColumn *r_table_column_clone(RTableColumn *col);
-R_API RTableColumnType *r_table_type (const char *name);
+R_API RTableColumnType *r_table_type(const char *name);
 R_API RTable *r_table_new(void);
 R_API void r_table_free(RTable *t);
 R_API int r_table_column_nth(RTable *t, const char *name);
@@ -67,8 +69,10 @@ R_API char *r_table_tocsv(RTable *t);
 R_API char *r_table_tojson(RTable *t);
 R_API void r_table_filter(RTable *t, int nth, int op, const char *un);
 R_API void r_table_sort(RTable *t, int nth, bool inc);
+R_API void r_table_uniq(RTable *t);
+R_API void r_table_group(RTable *t, int nth, RTableSelector fcn);
 R_API bool r_table_query(RTable *t, const char *q);
-R_API void r_table_hide_header (RTable *t);
+R_API void r_table_hide_header(RTable *t);
 R_API bool r_table_align(RTable *t, int nth, int align);
 R_API void r_table_visual_list(RTable *table, RList* list, ut64 seek, ut64 len, int width, bool va);
 R_API RTable *r_table_clone(RTable *t);

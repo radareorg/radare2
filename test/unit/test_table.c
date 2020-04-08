@@ -106,15 +106,157 @@ bool test_r_table_sort1(void) {
 	mu_end;
 }
 
-bool test_r_table_columns() {
+bool test_r_table_uniq(void) {
+	RTable *t = __table_test_data1 ();
+
+	r_table_uniq (t);
+	char *strd = r_table_tostring (t);
+	mu_assert_streq (strd,
+		"ascii code\n"
+		"----------\n"
+		"a     97\n"
+		"b     98\n"
+		"c     99\n",
+		"uniq delete nothing");
+	free (strd);
+
+	r_table_add_row (t, "a", "97", NULL);
+	r_table_add_row (t, "a", "97", NULL);
+	r_table_add_row (t, "a", "97", NULL);
+	r_table_add_row (t, "b", "98", NULL);
+	r_table_add_row (t, "c", "99", NULL);
+	r_table_add_row (t, "b", "98", NULL);
+	r_table_add_row (t, "c", "99", NULL);
+	r_table_add_row (t, "d", "99", NULL);
+	r_table_add_row (t, "b", "98", NULL);
+	r_table_add_row (t, "d", "99", NULL);
+	r_table_add_row (t, "c", "99", NULL);
+	r_table_add_row (t, "c", "100", NULL);
+
+	r_table_uniq (t);
+	char *stri = r_table_tostring (t);
+	mu_assert_streq (stri,
+		"ascii code\n"
+		"----------\n"
+		"a     97\n"
+		"b     98\n"
+		"c     99\n"
+		"d     99\n"
+		"c     100\n",
+		"uniq delete some rows");
+	free (stri);
+	r_table_free (t);
+	mu_end;
+}
+
+static void simple_merge(RTableRow *acc, RTableRow *new_row, int nth) {
+	RList *lhs = acc->items;
+	RList *rhs = new_row->items;
+	RListIter *iter_lhs;
+	RListIter *iter_rhs;
+
+	char *item_lhs;
+	char *item_rhs;
+	int tmp;
+
+	int i = 0;
+
+	for (iter_lhs = lhs->head, iter_rhs = rhs->head;
+		iter_lhs && iter_rhs;
+		iter_lhs = iter_lhs->n, iter_rhs = iter_rhs->n) {
+
+		item_lhs = iter_lhs->data;
+		item_rhs = iter_rhs->data;
+
+		if (i != nth) {
+			if (!strcmp (item_lhs, "a")) {
+				free (iter_lhs->data);
+				iter_lhs->data = r_str_new ("a | e");
+			} else if (!strcmp (item_lhs, "b")) {
+				free (iter_lhs->data);
+				iter_lhs->data = r_str_new ("b | f");
+			} else if (!strcmp (item_lhs, "c")) {
+				free (iter_lhs->data);
+				iter_lhs->data = r_str_new ("c | h");
+			} else if (!strcmp (item_lhs, "d")) {
+				free (iter_lhs->data);
+				iter_lhs->data = r_str_new ("d | g");
+			}
+		}
+
+		++i;
+	}
+}
+
+bool test_r_table_group (void) {
+	RTable *t = __table_test_data1 ();
+
+	r_table_group (t, -1, NULL);
+	char *str = r_table_tostring (t);
+	mu_assert_streq (str,
+		"ascii code\n"
+		"----------\n"
+		"a     97\n"
+		"b     98\n"
+		"c     99\n",
+		"group delete nothing");
+	free (str);
+
+	r_table_add_row (t, "a", "97", NULL);
+	r_table_add_row (t, "a", "97", NULL);
+	r_table_add_row (t, "a", "97", NULL);
+	r_table_add_row (t, "b", "98", NULL);
+	r_table_add_row (t, "c", "99", NULL);
+	r_table_add_row (t, "b", "98", NULL);
+	r_table_add_row (t, "c", "99", NULL);
+	r_table_add_row (t, "d", "1", NULL);
+	r_table_add_row (t, "b", "98", NULL);
+	r_table_add_row (t, "d", "99", NULL);
+	r_table_add_row (t, "c", "99", NULL);
+	r_table_add_row (t, "c", "100", NULL);
+
+	r_table_group (t, 0, NULL);
+	str = r_table_tostring (t);
+	mu_assert_streq (str,
+		"ascii code\n"
+		"----------\n"
+		"a     97\n"
+		"b     98\n"
+		"c     99\n"
+		"d     1\n",
+		"group delete some rows");
+	free (str);
+
+	r_table_add_row (t, "e", "97", NULL);
+	r_table_add_row (t, "f", "98", NULL);
+	r_table_add_row (t, "g", "99", NULL);
+	r_table_add_row (t, "h", "1", NULL);
+
+	r_table_group (t, 1, simple_merge);
+	str = r_table_tostring (t);
+	mu_assert_streq (str,
+		"ascii code\n"
+		"----------\n"
+		"a | e 97\n"
+		"b | f 98\n"
+		"c | h 99\n"
+		"d | g 1\n",
+		"group delete some rows");
+	free (str);
+
+	r_table_free (t);
+	mu_end;
+}
+
+bool test_r_table_columns () {
 	RTable *t = NULL;
-#define CREATE_TABLE \
-	r_table_free (t); \
-	t = r_table_new (); \
-	r_table_add_column (t, r_table_type ("number"), "name", 0); \
+#define CREATE_TABLE                                                   \
+	r_table_free (t);                                              \
+	t = r_table_new ();                                            \
+	r_table_add_column (t, r_table_type ("number"), "name", 0);    \
 	r_table_add_column (t, r_table_type ("number"), "address", 0); \
-	r_table_add_row (t, "hello", "100", NULL); \
-	r_table_add_row (t, "namings", "20000", NULL); \
+	r_table_add_row (t, "hello", "100", NULL);                     \
+	r_table_add_row (t, "namings", "20000", NULL);
 
 	CREATE_TABLE
 	char *s = r_table_tocsv (t);
@@ -175,7 +317,9 @@ bool all_tests() {
 	mu_run_test(test_r_table_column_type);
 	mu_run_test(test_r_table_tostring);
 	mu_run_test(test_r_table_sort1);
-	mu_run_test(test_r_table_columns);
+	mu_run_test(test_r_table_uniq);
+	mu_run_test(test_r_table_group);
+	mu_run_test (test_r_table_columns);
 	return tests_passed != tests_run;
 }
 
