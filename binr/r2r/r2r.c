@@ -881,14 +881,20 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 	if (!test->cmds.value) {
 		return;
 	}
-	char *name;
+	char *name = NULL;
 	int fd = r_file_mkstemp ("r2r-cmds", &name);
 	if (fd == -1) {
 		free (name);
 		eprintf ("Failed to open tmp file\n");
 		return;
 	}
-	write (fd, test->cmds.value, strlen (test->cmds.value));
+	size_t cmds_sz = strlen (test->cmds.value);
+	if (write (fd, test->cmds.value, cmds_sz) != cmds_sz) {
+		eprintf ("Failed to write to tmp file\n");
+		free (name);
+		close (fd);
+		return;
+	}
 	close (fd);
 
 	char *editor = r_sys_getenv ("EDITOR");
@@ -907,27 +913,18 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 		eprintf ("Failed to read edited command file\n");
 		return;
 	}
-
-	char *trimmed = newcmds;
-	// strip all leading newlines
-	while (*trimmed == '\n') {
-		trimmed++;
-	}
-	size_t len = strlen (trimmed);
-	// strip all trailing newlines
-	while (len && trimmed[len - 1] == '\n') {
-		trimmed[len - 1] = '\0';
-		len--;
-	}
+	r_str_trim (newcmds);
 
 	// if it's multiline we want exactly one trailing newline
-	if (strchr (trimmed, '\n')) {
+	if (strchr (newcmds, '\n')) {
 		char *tmp = newcmds;
-		newcmds = r_str_newf ("%s\n", trimmed);
+		newcmds = r_str_newf ("%s\n", newcmds);
 		free (tmp);
-		trimmed = newcmds;
+		if (!newcmds) {
+			return;
+		}
 	}
 
-	replace_cmd_kv (result->test->path, test->cmds.line_begin, test->cmds.line_end, "CMDS", trimmed, fixup_results);
+	replace_cmd_kv (result->test->path, test->cmds.line_begin, test->cmds.line_end, "CMDS", newcmds, fixup_results);
 	free (newcmds);
 }
