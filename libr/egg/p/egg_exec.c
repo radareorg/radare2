@@ -96,6 +96,26 @@ static RBuffer *build (REgg *egg) {
 				break;
 			case 64:
 				sc = x86_64_linux_binsh;
+				if (shell && *shell) {
+					int len = strlen (shell);
+					if (len > sizeof (st64) - 1) {
+						*shell = 0;
+						eprintf ("Unsupported CMD length\n");
+						break;
+					}
+					st64 b = 0;
+					memcpy (&b, shell, strlen (shell));
+					b = -b;
+					shell = realloc (shell, sizeof (st64) + 1);
+					if (!shell) {
+						break;
+					}
+					r_str_ncpy (shell, &b, sizeof (st64) + 1);
+					cd = 4;
+					r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
+					r_buf_write_at (buf, cd, (const ut8 *)shell, sizeof (st64));
+					sc = 0;
+				}
 				break;
 			default:
 				eprintf ("Unsupported arch %d bits\n", egg->bits);
