@@ -440,7 +440,6 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 		if (!k || !*k) {
 			continue;
 		}
-
 		pj_o (pj); // {
 		char *sizecmd = r_str_newf ("%s.%s.!size", sdbkv_value (kv), k);
 		if (!sizecmd) {
@@ -1129,10 +1128,10 @@ static int cmd_type(void *data, const char *input) {
 		case 0:
 			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
-		case 'c':
+		case 'c': // "tsc"
 			print_struct_union_in_c_format (TDB, stdifstruct, r_str_trim_head_ro (input + 2), true);
 			break;
-		case 'd':
+		case 'd': // "tsd"
 			print_struct_union_in_c_format (TDB, stdifstruct, r_str_trim_head_ro (input + 2), false);
 			break;
 		case 'j': // "tsj"
