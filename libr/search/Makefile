@@ -2,7 +2,7 @@ include ../config.mk
 
 NAME=r_search
 OBJS=search.o bytepat.o strings.o aes-find.o privkey-find.o
-OBJS+=regexp.o xrefs.o keyword.o
+OBJS+=regexp.o keyword.o
 # OBJ+=rsakey.o
 DEPS=r_util
 CFLAGS+=-g

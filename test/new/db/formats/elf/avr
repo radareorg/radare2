@@ -16,30 +16,30 @@ RUN
 
 NAME=avr main address
 FILE=../bins/elf/analysis/bugurtos-avr.elf
+CMDS=?v sym.main
 EXPECT=<<EOF
 0x308
 EOF
-CMDS=?v sym.main
 RUN
 
 NAME=avr use va
 FILE=../bins/elf/analysis/bugurtos-avr.elf
-EXPECT=<<EOF
-0c9446000c9430060c94
-ef92ff920f93df93cf93
-EOF
 CMDS=<<EOF
 p8 10 @ entry0
 p8 10 @ sym.main
+EOF
+EXPECT=<<EOF
+0c9446000c9430060c94
+ef92ff920f93df93cf93
 EOF
 RUN
 
 NAME=avr main code
 FILE=../bins/elf/analysis/bugurtos-avr.elf
+CMDS=pi 3 @ sym.main
 EXPECT=<<EOF
 push r14
 push r15
 push r16
 EOF
-CMDS=pi 3 @ sym.main
 RUN

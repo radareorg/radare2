@@ -1,5 +1,10 @@
 NAME=PE: corkami imports.exe - open
 FILE=../bins/pe/imports.exe
+CMDS=<<EOF
+ii
+is
+?v sym.imp.msvcrt.dll_printf
+EOF
 EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type lib          name
@@ -15,16 +20,12 @@ nth paddr       vaddr      bind type size lib          name
 1    0x000002c8 0x004010c8 NONE FUNC 0    msvcrt.dll   imp.printf
 0x4010c8
 EOF
-CMDS=<<EOF
-ii
-is
-?v sym.imp.msvcrt.dll_printf
-EOF
 RUN
 
 
 NAME=PE: corkami imports.exe - json output
 FILE=../bins/pe/imports.exe
+CMDS=iij~{}   
 EXPECT=<<EOF
 [
   {
@@ -45,5 +46,4 @@ EXPECT=<<EOF
   }
 ]
 EOF
-CMDS=iij~{}   
 RUN

@@ -104,6 +104,7 @@ RUN
 
 NAME=rasm2 #1167 3
 FILE=-
+BROKEN=1
 CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax" 
 EXPECT=<<EOF
 4885d8
@@ -112,6 +113,7 @@ RUN
 
 NAME=rasm2 #1167 4
 FILE=-
+BROKEN=1
 CMDS=!rasm2 -s intel -a x86.as -b 64 "test rax, rbx" 
 EXPECT=<<EOF
 4885d8

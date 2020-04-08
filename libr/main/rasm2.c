@@ -620,7 +620,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			len = r_num_math (NULL, opt.arg);
 			break;
 		case 'L':
-			rasm2_list (as, argv[opt.ind]);
+			rasm2_list (as, opt.argv[opt.ind]);
 			ret = 1;
 			goto beach;
 		case '@':
@@ -714,7 +714,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		r_anal_set_big_endian (as->anal, canbebig);
 	}
 	if (whatsop) {
-		const char *s = r_asm_describe (as->a, argv[opt.ind]);
+		const char *s = r_asm_describe (as->a, opt.argv[opt.ind]);
 		ret = 1;
 		if (s) {
 			printf ("%s\n", s);
@@ -803,8 +803,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 				ret = 1;
 			}
 		}
-	} else if (argv[opt.ind]) {
-		if (!strcmp (argv[opt.ind], "-")) {
+	} else if (opt.argv[opt.ind]) {
+		if (!strcmp (opt.argv[opt.ind], "-")) {
 			int length;
 			do {
 				char buf[1024]; // TODO: use(implement) r_stdin_line() or so
@@ -848,7 +848,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			goto beach;
 		}
 		if (dis) {
-			char *usrstr = strdup (argv[opt.ind]);
+			char *usrstr = strdup (opt.argv[opt.ind]);
 			len = strlen (usrstr);
 			if (skip && len > skip) {
 				skip *= 2;
@@ -859,7 +859,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			}
 			// XXX this is a wrong usage of endianness
 			if (!strncmp (usrstr, "0x", 2)) {
-				memmove (usrstr, usrstr + 2, strlen (usrstr) + 1);
+				memmove (usrstr, usrstr + 2, strlen (usrstr + 2) + 1);
 			}
 			if (rad) {
 				as->oneliner = true;
@@ -871,9 +871,9 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 					as->a->bits, ascii, bin, dis - 1);
 			free (usrstr);
 		} else if (analinfo) {
-			ret = show_analinfo (as, (const char *)argv[opt.ind], offset);
+			ret = show_analinfo (as, (const char *)opt.argv[opt.ind], offset);
 		} else {
-			ret = print_assembly_output (as, argv[opt.ind], offset, len, as->a->bits,
+			ret = print_assembly_output (as, opt.argv[opt.ind], offset, len, as->a->bits,
 							bin, use_spp, rad, hexwords, arch);
 		}
 		if (!ret) {

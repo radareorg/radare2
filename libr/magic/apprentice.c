@@ -2080,4 +2080,4 @@ static void bs1(struct r_magic *m) {
 }
 #endif
 
-#include "print.c"
+#include "mdump.c"

@@ -280,6 +280,8 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinOptions *opt) {
 		}
 	}
 	if (!bf) {
+		// Uncomment for this speedup: 20s vs 22s
+		// RBuffer *buf = r_buf_new_slurp (bin->file);
 		bf = r_bin_file_new_from_buffer (bin, bin->file, buf, bin->rawstr,
 			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname);
 		if (!bf) {

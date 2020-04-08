@@ -223,8 +223,6 @@ R_API bool r_io_desc_is_chardevice(RIODesc *desc) {
 
 R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	RIODesc* desc, * descx;
-	SdbListIter* iter;
-	RIOMap* map;
 	if (!(desc = r_io_desc_get (io, fd)) || !(descx = r_io_desc_get (io, fdx))) {
 		return false;
 	}
@@ -239,13 +237,13 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 		r_io_desc_cache_cleanup (desc);
 		r_io_desc_cache_cleanup (descx);
 	}
-	if (io->maps) {
-		ls_foreach (io->maps, iter, map) {
-			if (map->fd == fdx) {
-				map->perm &= (desc->perm | R_PERM_X);
-			} else if (map->fd == fd) {
-				map->perm &= (descx->perm | R_PERM_X);
-			}
+	void **it;
+	r_pvector_foreach (&io->maps, it) {
+		RIOMap *map = *it;
+		if (map->fd == fdx) {
+			map->perm &= (desc->perm | R_PERM_X);
+		} else if (map->fd == fd) {
+			map->perm &= (descx->perm | R_PERM_X);
 		}
 	}
 	return true;

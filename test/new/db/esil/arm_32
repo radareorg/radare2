@@ -1,8 +1,5 @@
 NAME=ands (opcode) triggers zf
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -12,14 +9,14 @@ aer cpsr=0
 wx 022012e0
 aes
 aer?cpsr
+EOF
+EXPECT=<<EOF
+0x40000000
 EOF
 RUN
 
 NAME=ands (opcode) triggers zf off
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -30,13 +27,13 @@ wx 022012e0
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=ands triggers zf
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -46,14 +43,14 @@ aer cpsr=0
 wa ands r2, r2
 aes
 aer?cpsr
+EOF
+EXPECT=<<EOF
+0x40000000
 EOF
 RUN
 
 NAME=ands triggers zf off
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -64,13 +61,13 @@ wa ands r2, r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=and (no s flag) does not trigger zf
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -80,14 +77,14 @@ aer cpsr=0x00000000
 wa and r2, r2
 aes
 aer?cpsr
+EOF
+EXPECT=<<EOF
+0x00000000
 EOF
 RUN
 
 NAME=and (no s flag) does not trigger zf off
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -98,13 +95,13 @@ wa and r2, r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x40000000
+EOF
 RUN
 
 NAME=orrs triggers zf
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -114,14 +111,14 @@ aer cpsr=0
 wa orrs r2, r2
 aes
 aer?cpsr
+EOF
+EXPECT=<<EOF
+0x40000000
 EOF
 RUN
 
 NAME=orrs triggers zf off
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -132,13 +129,13 @@ wa orrs r2, r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=orrs (opcode) triggers zf
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -149,13 +146,13 @@ wx 022092e1
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x40000000
+EOF
 RUN
 
 NAME=orrs (opcode) triggers zf off
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -166,13 +163,13 @@ wx 022092e1
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=orr (no s flag) does not trigger zf
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -183,13 +180,13 @@ wa orr r2, r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=orr (no s flag) does not trigger zf off
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -200,13 +197,13 @@ wa orr r2, r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x40000000
+EOF
 RUN
 
 NAME=adds triggers zf
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -217,13 +214,13 @@ wa adds r2, r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x40000000
+EOF
 RUN
 
 NAME=adds triggers zf off
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -235,13 +232,13 @@ wa adds r1,r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=add (no s flag) does not trigger zf
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -252,13 +249,13 @@ wa add r2, r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=add (no s flag) does not trigger zf off
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -270,13 +267,13 @@ wa add r1, r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x40000000
+EOF
 RUN
 
 NAME=eors (opcode) triggers zf
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -287,13 +284,13 @@ wx 022032e0
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x40000000
+EOF
 RUN
 
 NAME=eors (opcode) triggers zf off
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -305,13 +302,13 @@ wx 021031e0
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=eors triggers zf
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -322,13 +319,13 @@ wa eors r2, r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x40000000
+EOF
 RUN
 
 NAME=eors triggers zf off
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -340,13 +337,13 @@ wa eors r1,r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=eor (no s flag) does not trigger zf
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -357,13 +354,13 @@ wa eor r2, r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=eor (no s flag) does not trigger zf off
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -375,13 +372,13 @@ wa eor r1, r2
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x40000000
+EOF
 RUN
 
 NAME=subs triggers zf
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -391,14 +388,14 @@ aer cpsr=0
 wa subs r2, r2, 1
 aes
 aer?cpsr
+EOF
+EXPECT=<<EOF
+0x40000000
 EOF
 RUN
 
 NAME=subs triggers zf off
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -409,13 +406,13 @@ wa subs r2, r2, 1
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=sub (no s flag) does not trigger zf
 FILE=-
-EXPECT=<<EOF
-0x00000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -426,13 +423,13 @@ wa sub r2, r2, 1
 aes
 aer?cpsr
 EOF
+EXPECT=<<EOF
+0x00000000
+EOF
 RUN
 
 NAME=sub (no s flag) does not trigger zf off
 FILE=-
-EXPECT=<<EOF
-0x40000000
-EOF
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -442,6 +439,9 @@ aer cpsr=0x40000000
 wa sub r2, r2, 1
 aes
 aer?cpsr
+EOF
+EXPECT=<<EOF
+0x40000000
 EOF
 RUN
 
@@ -527,9 +527,6 @@ RUN
 
 NAME=ldr r0, [r1, 7]
 FILE=malloc://0x200
-EXPECT=<<EOF
-0xbbbbbbbb
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -541,13 +538,13 @@ wx aaaaaaaabbbbbbbb44332211@4
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0xbbbbbbbb
+EOF
 RUN
 
 NAME=ldr r0, [r0, 7]
 FILE=malloc://0x200
-EXPECT=<<EOF
-0xbbbbbbaa
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -558,13 +555,13 @@ wx aaaaaaaabbbbbbbb44332211@4
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0xbbbbbbaa
+EOF
 RUN
 
 NAME=ldr r0, [r0, r1]
 FILE=malloc://0x200
-EXPECT=<<EOF
-0xbbbbaaaa
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -576,13 +573,13 @@ wx aaaaaaaabbbbbbbb44332211@4
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0xbbbbaaaa
+EOF
 RUN
 
 NAME=ldr r2, [r3, r1]
 FILE=malloc://0x200
-EXPECT=<<EOF
-0xffeeddcc
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -592,15 +589,13 @@ wx 012093e7aabbccddeeff
 aes
 ar r2
 EOF
+EXPECT=<<EOF
+0xffeeddcc
+EOF
 RUN
 
 NAME=str r2, [r3, 4]
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000000
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -612,15 +607,15 @@ p8 4 @4
 ar r2
 ar r3
 EOF
-RUN
-
-NAME=str r2, [r3, 5]
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000000
 EOF
+RUN
+
+NAME=str r2, [r3, 5]
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -632,16 +627,15 @@ p8 4 @5
 ar r2
 ar r3
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000000
+EOF
 RUN
 
 NAME=str r2, [r3, r1]
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000004
-0x00000002
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -655,15 +649,16 @@ ar r2
 ar r3
 ar r1
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000004
+0x00000002
+EOF
 RUN
 
 NAME=str r2, [r3, r1]; ldr r2, [r3, r1]
 FILE=malloc://0x200
-EXPECT=<<EOF
-0xdeadbeef
-0x00000008
-0x00000004
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -677,16 +672,15 @@ ar r2
 ar r3
 ar r1
 EOF
+EXPECT=<<EOF
+0xdeadbeef
+0x00000008
+0x00000004
+EOF
 RUN
 
 NAME=str r1, [r2, r3, lsl 1]
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000004
-0x00000002
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -700,16 +694,16 @@ ar r1
 ar r2
 ar r3
 EOF
-RUN
-
-NAME=str r1, [r2, r3, lsr 1]
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000004
 0x00000002
 EOF
+RUN
+
+NAME=str r1, [r2, r3, lsr 1]
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -723,16 +717,16 @@ ar r1
 ar r2
 ar r3
 EOF
-RUN
-
-NAME=str r1, [r2, r3, asr 1]
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000004
 0x00000002
 EOF
+RUN
+
+NAME=str r1, [r2, r3, asr 1]
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -746,16 +740,16 @@ ar r1
 ar r2
 ar r3
 EOF
-RUN
-
-NAME=str r1, [r2, r3, ror 23]
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000004
-0x00000001
+0x00000002
 EOF
+RUN
+
+NAME=str r1, [r2, r3, ror 23]
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -769,15 +763,16 @@ ar r1
 ar r2
 ar r3
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000004
+0x00000001
+EOF
 RUN
 
 NAME=str r2, [r3], 5
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000005
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -789,16 +784,15 @@ p8 4 @0
 ar r2
 ar r3
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000005
+EOF
 RUN
 
 NAME=str r2, [r3], r1
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000006
-0x00000002
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -812,16 +806,16 @@ ar r2
 ar r3
 ar r1
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000006
+0x00000002
+EOF
 RUN
 
 NAME=str r1, [r2], r3, lsl 1
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000008
-0x00000002
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -835,16 +829,16 @@ ar r1
 ar r2
 ar r3
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000008
+0x00000002
+EOF
 RUN
 
 NAME=str r1, [r2], r3, lsr 1
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000005
-0x00000002
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -858,16 +852,16 @@ ar r1
 ar r2
 ar r3
 EOF
-RUN
-
-NAME=str r1, [r2], r3, asr 1
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000005
 0x00000002
 EOF
+RUN
+
+NAME=str r1, [r2], r3, asr 1
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -881,16 +875,16 @@ ar r1
 ar r2
 ar r3
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000005
+0x00000002
+EOF
 RUN
 
 NAME=str r1, [r2], r3, ror 23
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000084
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -904,15 +898,16 @@ ar r1
 ar r2
 ar r3
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000084
+0x00000001
+EOF
 RUN
 
 NAME=str r2, [r3, 5]!
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000005
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -924,15 +919,15 @@ p8 4 @5
 ar r2
 ar r3
 EOF
-RUN
-
-NAME=str r2, [r3, -5]!
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000005
 EOF
+RUN
+
+NAME=str r2, [r3, -5]!
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -944,16 +939,15 @@ p8 4 @5
 ar r2
 ar r3
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000005
+EOF
 RUN
 
 NAME=str r2, [r3, r1]!
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000006
-0x00000002
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -967,16 +961,16 @@ ar r2
 ar r3
 ar r1
 EOF
-RUN
-
-NAME=str r2, [r3, r1]! (negative r1)
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000006
-0xfffffffe
+0x00000002
 EOF
+RUN
+
+NAME=str r2, [r3, r1]! (negative r1)
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -990,16 +984,16 @@ ar r2
 ar r3
 ar r1
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000006
+0xfffffffe
+EOF
 RUN
 
 NAME=str r1, [r2, r3, lsl 1]!
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000008
-0x00000002
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1013,16 +1007,16 @@ ar r1
 ar r2
 ar r3
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000008
+0x00000002
+EOF
 RUN
 
 NAME=str r1, [r2, r3, lsr 1]!
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000005
-0x00000002
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1036,16 +1030,16 @@ ar r1
 ar r2
 ar r3
 EOF
-RUN
-
-NAME=str r1, [r2, r3, asr 1]!
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000005
 0x00000002
 EOF
+RUN
+
+NAME=str r1, [r2, r3, asr 1]!
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1059,16 +1053,16 @@ ar r1
 ar r2
 ar r3
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000005
+0x00000002
+EOF
 RUN
 
 NAME=str r1, [r2, r3, ror 23]!
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000084
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1082,15 +1076,16 @@ ar r1
 ar r2
 ar r3
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000084
+0x00000001
+EOF
 RUN
 
 NAME=streq r5, [r6, 5]
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1102,16 +1097,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=streq r5, [r6, 5] zf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1124,15 +1119,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
 RUN
 
 NAME=strne r5, [r6, 5]
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1144,16 +1139,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strne r5, [r6, 5] zf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1166,15 +1161,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
 RUN
 
 NAME=strhs r5, [r6, 5]
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1186,16 +1181,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strhs r5, [r6, 5] cf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1208,15 +1203,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
 RUN
 
 NAME=strlo r5, [r6, 5]
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1228,16 +1223,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strlo r5, [r6, 5] cf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1250,15 +1245,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
 RUN
 
 NAME=strmi r5, [r6, 5]
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1270,16 +1265,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strmi r5, [r6, 5] nf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1292,15 +1287,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
 RUN
 
 NAME=strpl r5, [r6, 5]
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1312,16 +1307,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strpl r5, [r6, 5] nf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1334,15 +1329,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
 RUN
 
 NAME=strvs r5, [r6, 5]
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1354,16 +1349,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strvs r5, [r6, 5] vf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1376,15 +1371,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
 RUN
 
 NAME=strvc r5, [r6, 5]
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1396,16 +1391,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strvc r5, [r6, 5] vf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1418,15 +1413,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
-RUN
-
-NAME=strhi r5, [r6, 5] cf==0, zf==0
-FILE=malloc://0x200
 EXPECT=<<EOF
 ccddeeff
 0xdeadbeef
 0x00000001
 EOF
+RUN
+
+NAME=strhi r5, [r6, 5] cf==0, zf==0
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1439,16 +1434,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strhi r5, [r6, 5] cf==0, zf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1461,16 +1456,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strhi r5, [r6, 5] cf==1, zf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1483,16 +1478,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strhi r5, [r6, 5] zf==0 cf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1506,15 +1501,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
-RUN
-
-NAME=strls r5, [r6, 5] zf==1 cf==0
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000001
 EOF
+RUN
+
+NAME=strls r5, [r6, 5] zf==1 cf==0
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1527,16 +1522,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strls r5, [r6, 5] cf==0, zf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1550,15 +1545,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
-RUN
-
-NAME=strls r5, [r6, 5] cf==1, zf==0
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000001
 EOF
+RUN
+
+NAME=strls r5, [r6, 5] cf==1, zf==0
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1571,16 +1566,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strls r5, [r6, 5] cf==1, zf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1594,15 +1589,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
-RUN
-
-NAME=strge r5, [r6, 5] nf==1, vf==0
-FILE=malloc://0x200
 EXPECT=<<EOF
 ccddeeff
 0xdeadbeef
 0x00000001
 EOF
+RUN
+
+NAME=strge r5, [r6, 5] nf==1, vf==0
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1615,16 +1610,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strge r5, [r6, 5] nf==0, vf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1637,16 +1632,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strge r5, [r6, 5] nf==1 vf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1659,16 +1654,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strge r5, [r6, 5] nf==0 vf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1682,15 +1677,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
-RUN
-
-NAME=strlt r5, [r6, 5] nf==1 vf==0
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000001
 EOF
+RUN
+
+NAME=strlt r5, [r6, 5] nf==1 vf==0
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1703,16 +1698,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strlt r5, [r6, 5] nf==0 vf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1725,16 +1720,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strlt r5, [r6, 5] nf==0, vf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1747,16 +1742,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strlt r5, [r6, 5] nf==1, vf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1770,15 +1765,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
-RUN
-
-NAME=strgt r5, [r6, 5] zf==1 nf==1, vf==1
-FILE=malloc://0x200
 EXPECT=<<EOF
 ccddeeff
 0xdeadbeef
 0x00000001
 EOF
+RUN
+
+NAME=strgt r5, [r6, 5] zf==1 nf==1, vf==1
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1792,16 +1787,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strgt r5, [r6, 5] zf==1 nf==0, vf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1815,16 +1810,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strgt r5, [r6, 5] zf==1 nf==0, vf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1838,16 +1833,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strgt r5, [r6, 5] zf==0 nf==0, vf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1861,16 +1856,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strgt r5, [r6, 5] zf==0 nf==1, vf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1884,16 +1879,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strgt r5, [r6, 5] zf==0 nf==0, vf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1907,16 +1902,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strgt r5, [r6, 5] zf==0 nf==1, vf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1931,15 +1926,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
-RUN
-
-NAME=strle r5, [r6, 5] zf==1 nf==1, vf==1
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000001
 EOF
+RUN
+
+NAME=strle r5, [r6, 5] zf==1 nf==1, vf==1
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1953,16 +1948,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strle r5, [r6, 5] zf==1 nf==0, vf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1977,15 +1972,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
 RUN
 
 NAME=strle r5, [r6, 5] zf==0 nf==0, vf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-ccddeeff
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2000,15 +1995,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
+EXPECT=<<EOF
+ccddeeff
+0xdeadbeef
+0x00000001
+EOF
 RUN
 
 NAME=strle r5, [r6, 5] zf==0 nf==0, vf==1
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2023,15 +2018,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
-RUN
-
-NAME=strle r5, [r6, 5] zf==0 nf==0, vf==1
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000001
 EOF
+RUN
+
+NAME=strle r5, [r6, 5] zf==0 nf==0, vf==1
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2045,16 +2040,16 @@ aes
 p8 4 @6
 ar r5
 ar r6
+EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
 EOF
 RUN
 
 NAME=strle r5, [r6, 5] zf==1 nf==1, vf==0
 FILE=malloc://0x200
-EXPECT=<<EOF
-efbeadde
-0xdeadbeef
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2069,15 +2064,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
-RUN
-
-NAME=strle r5, [r6, 5] zf==1 nf==0, vf==1
-FILE=malloc://0x200
 EXPECT=<<EOF
 efbeadde
 0xdeadbeef
 0x00000001
 EOF
+RUN
+
+NAME=strle r5, [r6, 5] zf==1 nf==0, vf==1
+FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2092,13 +2087,15 @@ p8 4 @6
 ar r5
 ar r6
 EOF
+EXPECT=<<EOF
+efbeadde
+0xdeadbeef
+0x00000001
+EOF
 RUN
 
 NAME=add reg
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000003
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2108,13 +2105,13 @@ wv 0xe0810002
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000003
+EOF
 RUN
 
 NAME=add reg in place
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000003
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2124,13 +2121,13 @@ wv 0xe0800001
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000003
+EOF
 RUN
 
 NAME=add reg shifted
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000003
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2140,13 +2137,13 @@ wv 0xe08100a2
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000003
+EOF
 RUN
 
 NAME=add reg asr
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2156,13 +2153,13 @@ wv 0xe08100c2
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000001
+EOF
 RUN
 
 NAME=add imm
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000003
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2171,13 +2168,13 @@ wv 0xe2810002
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000003
+EOF
 RUN
 
 NAME=add imm rotated
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000003
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2186,13 +2183,13 @@ wv 0xe2810104
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000003
+EOF
 RUN
 
 NAME=sub imm rotated
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000009
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2201,13 +2198,13 @@ wv 0xe2410104
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000009
+EOF
 RUN
 
 NAME=mul reg
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000014
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2217,13 +2214,13 @@ wv 0xe0000291
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000014
+EOF
 RUN
 
 NAME=and imm rotated
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000001
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2232,13 +2229,13 @@ wv 0xe2010104
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000001
+EOF
 RUN
 
 NAME=orr imm rotated
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000003
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2247,13 +2244,13 @@ wv 0xe3810104
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000003
+EOF
 RUN
 
 NAME=eor imm rotated
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x0000000e
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2262,13 +2259,13 @@ wv 0xe2210104
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x0000000e
+EOF
 RUN
 
 NAME=lsr reg
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000002
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2278,13 +2275,13 @@ wv 0xe1a00231
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000002
+EOF
 RUN
 
 NAME=lsl reg
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x00000028
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2294,13 +2291,13 @@ wv 0xe1a00211
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x00000028
+EOF
 RUN
 
 NAME=add pc op1
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x0000000a
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2308,13 +2305,13 @@ wv 0xe28f0002
 aes
 ar r0
 EOF
+EXPECT=<<EOF
+0x0000000a
+EOF
 RUN
 
 NAME=add pc op2
 FILE=malloc://0x200
-EXPECT=<<EOF
-0x0000000a
-EOF
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2322,6 +2319,9 @@ ar r1=0x2
 wv 0xe081000f
 aes
 ar r0
+EOF
+EXPECT=<<EOF
+0x0000000a
 EOF
 RUN
 

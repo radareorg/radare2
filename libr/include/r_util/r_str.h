@@ -66,6 +66,7 @@ R_API int r_str_rwx(const char *str);
 R_API int r_str_replace_ch(char *s, char a, char b, bool g);
 R_API int r_str_replace_char(char *s, int a, int b);
 R_API int r_str_replace_char_once(char *s, int a, int b);
+R_API void r_str_remove_char(char *str, char c);
 R_API const char *r_str_rwx_i(int rwx);
 R_API int r_str_fmtargs(const char *fmt);
 R_API char *r_str_arg_escape(const char *arg);
@@ -155,6 +156,7 @@ R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciid
 R_API char *r_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
 R_API char *r_str_escape_utf32be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
 R_API void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash);
+R_API char *r_str_format_msvc_argv(size_t argc, const char **argv);
 R_API void r_str_uri_decode(char *buf);
 R_API char *r_str_uri_encode(const char *buf);
 R_API char *r_str_utf16_decode(const ut8 *s, int len);
@@ -194,6 +196,8 @@ R_API char *r_str_list_join(RList *str, const char *sep);
 R_API const char *r_str_sep(const char *base, const char *sep);
 R_API const char *r_str_rsep(const char *base, const char *p, const char *sep);
 R_API char *r_str_donut(int size);
+R_API char *r_str_version(const char *program);
+
 #ifdef __cplusplus
 }
 #endif

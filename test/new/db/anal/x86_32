@@ -1,8 +1,6 @@
 NAME=ao 10~bytes
 FILE=../bins/pe/15004.file
-CMDS=<<EOF
-ao 10~bytes
-EOF
+CMDS=ao 10~bytes
 EXPECT=<<EOF
 bytes: e8d8170000
 bytes: 8d642444
@@ -76,6 +74,14 @@ RUN
 
 NAME=a2f 8 bbs 4 ret and some jumps
 FILE=malloc://512
+CMDS=<<EOF
+e anal.hasnext=0
+e asm.arch=x86
+e asm.bits=32
+wx 85c0740585c07405c385c0eb01c385c07401c3b8efbeaddec3
+a2f
+afb
+EOF
 EXPECT=<<EOF
 0x00000000 0x00000004 00:0000 4 j 0x00000009 f 0x00000004
 0x00000004 0x00000008 00:0000 4 j 0x0000000d f 0x00000008
@@ -86,23 +92,10 @@ EXPECT=<<EOF
 0x00000012 0x00000013 00:0000 1
 0x00000013 0x00000019 00:0000 6
 EOF
-CMDS=<<EOF
-e anal.hasnext=0
-e asm.arch=x86
-e asm.bits=32
-wx 85c0740585c07405c385c0eb01c385c07401c3b8efbeaddec3
-a2f
-afb
-EOF
 RUN
 
 NAME=a2f 3bbs with entry in the middle of the function
 FILE=malloc://512
-EXPECT=<<EOF
-0x00000000 0x0000000a 00:0000 10 j 0x0000000a
-0x0000000a 0x0000000e 00:0000 4 j 0x00000000 f 0x0000000e
-0x0000000e 0x00000014 00:0000 6
-EOF
 CMDS=<<EOF
 e anal.hasnext=0
 e asm.arch=x86
@@ -112,18 +105,15 @@ s 0xa
 a2f
 afb
 EOF
+EXPECT=<<EOF
+0x00000000 0x0000000a 00:0000 10 j 0x0000000a
+0x0000000a 0x0000000e 00:0000 4 j 0x00000000 f 0x0000000e
+0x0000000e 0x00000014 00:0000 6
+EOF
 RUN
 
 NAME=a2f 6 bbs with entry at the end of the function
 FILE=malloc://512
-EXPECT=<<EOF
-0x00000000 0x0000000a 00:0000 10 j 0x00000012 f 0x0000000a
-0x0000000a 0x00000012 00:0000 8 j 0x00000012
-0x00000012 0x0000001c 00:0000 10 j 0x00000000 f 0x0000001c
-0x0000001c 0x00000026 00:0000 10 j 0x00000028 f 0x00000026
-0x00000026 0x00000028 00:0000 2 j 0x00000000
-0x00000028 0x0000002b 00:0000 3
-EOF
 CMDS=<<EOF
 e anal.hasnext=0
 e asm.arch=x86
@@ -133,15 +123,18 @@ s 0x26
 a2f
 afb
 EOF
+EXPECT=<<EOF
+0x00000000 0x0000000a 00:0000 10 j 0x00000012 f 0x0000000a
+0x0000000a 0x00000012 00:0000 8 j 0x00000012
+0x00000012 0x0000001c 00:0000 10 j 0x00000000 f 0x0000001c
+0x0000001c 0x00000026 00:0000 10 j 0x00000028 f 0x00000026
+0x00000026 0x00000028 00:0000 2 j 0x00000000
+0x00000028 0x0000002b 00:0000 3
+EOF
 RUN
 
 NAME=a2f cjmp
 FILE=malloc://0x5000
-EXPECT=<<EOF
-0x00000000 0x00000004 00:0000 4 j 0x00000005 f 0x00000004
-0x00000004 0x00000005 00:0000 1 j 0x00000005
-0x00000005 0x00000006 00:0000 1
-EOF
 CMDS=<<EOF
 e asm.arch = x86
 e anal.arch = x86
@@ -151,28 +144,33 @@ wx 31c0740140c3
 a2f
 afb
 EOF
+EXPECT=<<EOF
+0x00000000 0x00000004 00:0000 4 j 0x00000005 f 0x00000004
+0x00000004 0x00000005 00:0000 1 j 0x00000005
+0x00000005 0x00000006 00:0000 1
+EOF
 RUN
 
 NAME=aaa with axt
 FILE=../bins/pe/keygen.exe
-EXPECT=<<EOF
-(nofunc) 0x4bfe53 [DATA] mov edx, 0x4bffb0
-EOF
 CMDS=<<EOF
 aar
 axt 0x4bffb0
+EOF
+EXPECT=<<EOF
+(nofunc) 0x4bfe53 [DATA] mov edx, 0x4bffb0
 EOF
 RUN
 
 NAME=aaa with maxbbsz
 FILE=../bins/pe/flare_notepad.ex
-EXPECT=<<EOF
-1
-EOF
 CMDS=<<EOF
 e anal.bb.maxsize = 2048
 aaa
 pdf~ret?
+EOF
+EXPECT=<<EOF
+1
 EOF
 RUN
 
@@ -223,34 +221,35 @@ RUN
 
 NAME=bug-cjmp
 FILE=../bins/mach0/bug-cjmp
+CMDS=<<EOF
+af
+afb
+EOF
 EXPECT=<<EOF
 0x100000f30 0x100000f4c 00:0000 28 j 0x100000f61 f 0x100000f4c
 0x100000f4c 0x100000f61 00:0000 21 j 0x100000f79
 0x100000f61 0x100000f70 00:0000 15
 0x100000f79 0x100000f82 00:0000 9
 EOF
-CMDS=<<EOF
-af
-afb
-EOF
 RUN
 
 NAME=bug-cjmp-ok
 FILE=../bins/mach0/bug-cjmp-ok
+CMDS=<<EOF
+af
+afb
+EOF
 EXPECT=<<EOF
 0x100000f30 0x100000f4c 00:0000 28 j 0x100000f61 f 0x100000f4c
 0x100000f4c 0x100000f61 00:0000 21 j 0x100000f79
 0x100000f61 0x100000f79 00:0000 24 j 0x100000f79
 0x100000f79 0x100000f82 00:0000 9
 EOF
-CMDS=<<EOF
-af
-afb
-EOF
 RUN
 
 NAME=x86: fastcall argument analysis
 FILE=../bins/elf/analysis/fast
+CMDS=aa ; s sym.fastcaslled ; afc fastcall ; afva ; ?e ; pdf~arg,var
 EXPECT=<<EOF
 / 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
 |           ; var int32_t var_20h @ ebp-0x20
@@ -273,29 +272,18 @@ EXPECT=<<EOF
 |           0x0804843e      ff75f0         push dword [var_10h]
 |           0x08048441      ff75f4         push dword [var_ch]
 EOF
-CMDS=aa ; s sym.fastcaslled ; afc fastcall ; afva ; ?e ; pdf~arg,var
 RUN
 
 NAME=adf bug #16215
 FILE=-
+CMDS=adf
 EXPECT=<<EOF
-EOF
-CMDS=<<EOF
-adf
 EOF
 RUN
 
 NAME=adf analysis on an obfuscated executable
 FILE=../bins/pe/cmd_adf_sample0.exe
 BROKEN=1
-EXPECT=<<EOF
-0x00560e67      push esi
-0x00560e68      jmp 0x560e7d
-0x00560e6d hex length=16 delta=0
-0x00560e6d  51e5 d61d 31ea ce05 063b d4d4 1b00 8596  Q...1....;......
-
-0x00560e7d      pop esi
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -324,36 +312,52 @@ adf @ 0x00560e67
 .adf @ 0x00560e67
 pd 4 @ 0x00560e67
 EOF
+EXPECT=<<EOF
+0x00560e67      push esi
+0x00560e68      jmp 0x560e7d
+0x00560e6d hex length=16 delta=0
+0x00560e6d  51e5 d61d 31ea ce05 063b d4d4 1b00 8596  Q...1....;......
+
+0x00560e7d      pop esi
+EOF
 RUN
 
 NAME=af anal.endsize
 FILE=../bins/elf/echo-bin
-EXPECT=<<EOF
-name: main
-EOF
 CMDS=<<EOF
 e anal.endsize=0
 aaa
 s 0x1144
 afi~name
 EOF
+EXPECT=<<EOF
+name: main
+EOF
 RUN
 
 NAME=af anal.endsize
 FILE=../bins/elf/echo-bin
-EXPECT=<<EOF
-name: main
-EOF
 CMDS=<<EOF
 e anal.endsize=1
 aaa
 s 0x1144
 afi~name
 EOF
+EXPECT=<<EOF
+name: main
+EOF
 RUN
 
 NAME=af 8 bbs 4 ret and some jumps
 FILE=malloc://512
+CMDS=<<EOF
+e anal.hasnext=0
+e asm.arch=x86
+e asm.bits=32
+wx 85c0740585c07405c385c0eb01c385c07401c3b8efbeaddec3
+af
+afb
+EOF
 EXPECT=<<EOF
 0x00000000 0x00000004 00:0000 4 j 0x00000009 f 0x00000004
 0x00000004 0x00000008 00:0000 4 j 0x0000000d f 0x00000008
@@ -364,23 +368,10 @@ EXPECT=<<EOF
 0x00000012 0x00000013 00:0000 1
 0x00000013 0x00000019 00:0000 6
 EOF
-CMDS=<<EOF
-e anal.hasnext=0
-e asm.arch=x86
-e asm.bits=32
-wx 85c0740585c07405c385c0eb01c385c07401c3b8efbeaddec3
-af
-afb
-EOF
 RUN
 
 NAME=af 3bbs with entry in the middle of the function
 FILE=malloc://512
-EXPECT=<<EOF
-0x00000000 0x0000000a 00:0000 10 j 0x0000000a
-0x0000000a 0x0000000e 00:0000 4 j 0x00000000 f 0x0000000e
-0x0000000e 0x00000014 00:0000 6
-EOF
 CMDS=<<EOF
 e anal.hasnext=0
 e asm.arch=x86
@@ -390,18 +381,15 @@ s 0xa
 af
 afb
 EOF
+EXPECT=<<EOF
+0x00000000 0x0000000a 00:0000 10 j 0x0000000a
+0x0000000a 0x0000000e 00:0000 4 j 0x00000000 f 0x0000000e
+0x0000000e 0x00000014 00:0000 6
+EOF
 RUN
 
 NAME=af 6 bbs with entry at the end of the function
 FILE=malloc://512
-EXPECT=<<EOF
-0x00000000 0x0000000a 00:0000 10 j 0x00000012 f 0x0000000a
-0x0000000a 0x00000012 00:0000 8 j 0x00000012
-0x00000012 0x0000001c 00:0000 10 j 0x00000000 f 0x0000001c
-0x0000001c 0x00000026 00:0000 10 j 0x00000028 f 0x00000026
-0x00000026 0x00000028 00:0000 2 j 0x00000000
-0x00000028 0x0000002b 00:0000 3
-EOF
 CMDS=<<EOF
 e anal.hasnext=0
 e asm.arch=x86
@@ -411,10 +399,23 @@ s 0x26
 af
 afb
 EOF
+EXPECT=<<EOF
+0x00000000 0x0000000a 00:0000 10 j 0x00000012 f 0x0000000a
+0x0000000a 0x00000012 00:0000 8 j 0x00000012
+0x00000012 0x0000001c 00:0000 10 j 0x00000000 f 0x0000001c
+0x0000001c 0x00000026 00:0000 10 j 0x00000028 f 0x00000026
+0x00000026 0x00000028 00:0000 2 j 0x00000000
+0x00000028 0x0000002b 00:0000 3
+EOF
 RUN
 
 NAME=af+afl on pe/test
 FILE=../bins/pe/test.exe
+CMDS=<<EOF
+s 0x401000
+af
+afl
+EOF
 EXPECT=<<EOF
 0x00401000    1 59           main
 0x004010e4    4 148          fcn.004010e4
@@ -424,15 +425,16 @@ EXPECT=<<EOF
 0x00401335    3 262          loc.00401335
 0x00404ad7    1 8            fcn.00404ad7
 EOF
-CMDS=<<EOF
-s 0x401000
-af
-afl
-EOF
 RUN
 
 NAME=anal.fcnprefix
 FILE=../bins/pe/test.exe
+CMDS=<<EOF
+s 0x401000
+e anal.fcnprefix=root
+af
+afl
+EOF
 EXPECT=<<EOF
 0x00401000    1 59           main
 0x004010e4    4 148          root.004010e4
@@ -442,20 +444,10 @@ EXPECT=<<EOF
 0x00401335    3 262          loc.00401335
 0x00404ad7    1 8            root.00404ad7
 EOF
-CMDS=<<EOF
-s 0x401000
-e anal.fcnprefix=root
-af
-afl
-EOF
 RUN
 
 NAME=syscall emu
 FILE=../bins/elf/analysis/hello.raw
-EXPECT=<<EOF
-  0x00000014      int 0x80 ; 4 = write (1, "Hello, world!.", 14)
-  0x0000001b      int 0x80 ; 1 = exit (1)
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -466,14 +458,14 @@ e asm.cmt.col=20
 e asm.lines.bb=false
 pd 20~write,exit
 EOF
+EXPECT=<<EOF
+  0x00000014      int 0x80 ; 4 = write (1, "Hello, world!.", 14)
+  0x0000001b      int 0x80 ; 1 = exit (1)
+EOF
 RUN
 
 NAME=Windows Function EMU printf
 FILE=../bins/pe/standard.exe
-EXPECT=<<EOF
-  0x00402ae8      call dword [sym.imp.msvcrt.dll_printf] ; 0x402d48 ; esp=0x177ff8 ; eip=0x2d08 reloc.msvcrt.dll_printf
-                    ; int printf("  - RT_MANIFEST resource located\n")
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -487,18 +479,29 @@ aeim
 s 0x00402ade
 pd 4~printf
 EOF
+EXPECT=<<EOF
+  0x00402ae8      call dword [sym.imp.msvcrt.dll_printf] ; 0x402d48 ; esp=0x177ff8 ; eip=0x2d08 reloc.msvcrt.dll_printf
+                    ; int printf("  - RT_MANIFEST resource located\n")
+EOF
 RUN
 
 NAME=af- bug
 FILE=-
+CMDS=af+ $$ foo; af- $$;afl~?
 EXPECT=<<EOF
 0
 EOF
-CMDS=af+ $$ foo; af- $$;afl~?
 RUN
 
 NAME=anal.recont=true
 FILE=../bins/pe/bcc1.ex
+CMDS=<<EOF
+e anal.recont=true
+af
+afb
+afb @ 0x401012
+afb @ 0x40dfd0
+EOF
 EXPECT=<<EOF
 0x00401000 0x00401002 00:0000 2
 0x00401012 0x00401059 00:0000 71
@@ -528,17 +531,17 @@ EXPECT=<<EOF
 0x0040e12b 0x0040e14c 00:0000 33 j 0x0040e14c
 0x0040e14c 0x0040e153 00:0000 7
 EOF
-CMDS=<<EOF
-e anal.recont=true
-af
-afb
-afb @ 0x401012
-afb @ 0x40dfd0
-EOF
 RUN
 
 NAME=afb twice
 FILE=../bins/pe/bcc1.ex
+CMDS=<<EOF
+e anal.recont=true
+e anal.depth=100
+e anal.hasnext=true
+af @ 0x40dfd0
+af;afb;afb @ 0x40dfd0
+EOF
 EXPECT=<<EOF
 0x00401000 0x00401002 00:0000 2 j 0x00401012
 0x00401012 0x00401059 00:0000 71 j 0x0040dfd0
@@ -568,24 +571,10 @@ EXPECT=<<EOF
 0x0040e12b 0x0040e14c 00:0000 33 j 0x0040e14c
 0x0040e14c 0x0040e153 00:0000 7
 EOF
-CMDS=<<EOF
-e anal.recont=true
-e anal.depth=100
-e anal.hasnext=true
-af @ 0x40dfd0
-af;afb;afb @ 0x40dfd0
-EOF
 RUN
 
 NAME=./followbrokenfcnsrefs
 FILE=../bins/pe/bdc1.ex
-EXPECT=<<EOF
-fcn.004068e8
-fcn.0045a708
-fcn.0045a720
-fcn.0045a7a0
-fcn.004043d8
-EOF
 CMDS=<<EOF
 e anal.brokenrefs=true
 af
@@ -600,13 +589,17 @@ fd
 s 0x4043d8
 fd
 EOF
+EXPECT=<<EOF
+fcn.004068e8
+fcn.0045a708
+fcn.0045a720
+fcn.0045a7a0
+fcn.004043d8
+EOF
 RUN
 
 NAME=function address from operand
 FILE=../bins/pe/test.exe
-EXPECT=<<EOF
-fcn.00401880
-EOF
 CMDS=<<EOF
 e anal.datarefs=true
 s 0x401820
@@ -614,13 +607,13 @@ af
 s 0x401880
 fd
 EOF
+EXPECT=<<EOF
+fcn.00401880
+EOF
 RUN
 
 NAME=function address from data structure
 FILE=../bins/pe/test.exe
-EXPECT=<<EOF
-fcn.00401441
-EOF
 CMDS=<<EOF
 e anal.datarefs=true
 e anal.recont=true
@@ -629,91 +622,100 @@ af
 s 0x401441
 fd
 EOF
+EXPECT=<<EOF
+fcn.00401441
+EOF
 RUN
 
 
 NAME=ensure jump within a function is added to the basic block
 FILE=../bins/elf/echo
-EXPECT=<<EOF
-0x00000f34 0x00000f4b 01:0159 23 j 0x00001144
-EOF
 CMDS=<<EOF
 aaa
 s 0xf34
 afb.
 EOF
+EXPECT=<<EOF
+0x00000f34 0x00000f4b 01:0159 23 j 0x00001144
+EOF
 RUN
 
 NAME=Main in disassembly
 FILE=../bins/elf/analysis/ls2
-EXPECT=<<EOF
-mov rdi, main
-EOF
 CMDS=<<EOF
 aa
 pi 1 @ 0x0040488d
+EOF
+EXPECT=<<EOF
+mov rdi, main
 EOF
 RUN
 
 NAME=Main in disassembly
 FILE=../bins/elf/analysis/ls_main_bug
-EXPECT=<<EOF
-offset: 0x000038b0
-EOF
 CMDS=<<EOF
 aa
 afi @ main ~offset
+EOF
+EXPECT=<<EOF
+offset: 0x000038b0
 EOF
 RUN
 
 NAME=calc switch table
 FILE=../bins/elf/calc.file
-EXPECT=<<EOF
-7
-EOF
 CMDS=<<EOF
 af@0x8049203
 f~?switch
+EOF
+EXPECT=<<EOF
+7
 EOF
 RUN
 
 NAME=mac-ls switch count
 FILE=../bins/mach0/mac-ls
-EXPECT=<<EOF
-3
-EOF
 CMDS=<<EOF
 aaa
 f~?switch
+EOF
+EXPECT=<<EOF
+3
 EOF
 RUN
 
 NAME=mac-ls main switch
 FILE=../bins/mach0/mac-ls
-EXPECT=<<EOF
-0x1000011b5 1 switch.0x1000011b5
-73
-EOF
 CMDS=<<EOF
 s main;af
 f~switch
 f~?case
 EOF
+EXPECT=<<EOF
+0x1000011b5 1 switch.0x1000011b5
+73
+EOF
 RUN
 
 NAME=mac-ls switch count2
 FILE=../bins/mach0/mac-ls
-EXPECT=<<EOF
-90
-EOF
 CMDS=<<EOF
 aaa
 f~?case
+EOF
+EXPECT=<<EOF
+90
 EOF
 RUN
 
 NAME=mac-ls switch count3
 FILE=../bins/pe/test.exe
+CMDS=<<EOF
+e anal.jmp.tbl=true
+s 0x402cb6
+af
+afb
+EOF
 EXPECT=<<EOF
 0x00402cb6 0x00402d2c 00:0000 118 j 0x00402d57 f 0x00402d2c
 0x00402d2c 0x00402d45 00:0000 25 j 0x00402d4f f 0x00402d45
@@ -953,17 +955,17 @@ EXPECT=<<EOF
 0x00403888 0x0040388e 00:0000 6 j 0x0040388e
 0x0040388e 0x0040389d 00:0000 15
 EOF
-CMDS=<<EOF
-e anal.jmp.tbl=true
-s 0x402cb6
-af
-afb
-EOF
 RUN
 
 
 NAME=mac-ls switch count4
 FILE=../bins/pe/ConsoleApplication1.exe
+CMDS=<<EOF
+e anal.jmp.tbl=true
+s 0x401090
+af
+afb
+EOF
 EXPECT=<<EOF
 0x00401090 0x004010d2 00:0000 66 j 0x004010e8 f 0x004010d2
 0x004010d2 0x004010e8 00:0000 22
@@ -993,16 +995,14 @@ EXPECT=<<EOF
 0x004011e2 0x004011e5 00:0000 3 j 0x004011e5
 0x004011e5 0x00401249 00:0000 100
 EOF
-CMDS=<<EOF
-e anal.jmp.tbl=true
-s 0x401090
-af
-afb
-EOF
 RUN
 
 NAME=ls_amd64 all switches
 FILE=../bins/jmptbl/ls_amd64
+CMDS=<<EOF
+aaa
+CC. @@ switch
+EOF
 EXPECT=<<EOF
 switch table (275 cases) at 0x4140b0
 switch table (121 cases) at 0x413cc0
@@ -1017,16 +1017,17 @@ switch table (54 cases) at 0x41a048
 switch table (54 cases) at 0x41a268
 switch table (54 cases) at 0x41a418
 EOF
-CMDS=<<EOF
-aaa
-CC. @@ switch
-EOF
 RUN
 
 
 
 NAME=clang_3.8_32 switch/case flags
 FILE=../bins/jmptbl/test_clang_3.8_32.out
+CMDS=<<EOF
+aaa
+f~switch
+f~case.
+EOF
 EXPECT=<<EOF
 0x080483fd 1 switch.0x080483fd
 0x08048404 1 case.0x80483fd.1
@@ -1043,17 +1044,17 @@ EXPECT=<<EOF
 0x08048443 1 case.0x80483fd.10
 0x0804844c 1 case.0x80483fd.11
 0x08048455 1 case.0x80483fd.12
-EOF
-CMDS=<<EOF
-aaa
-f~switch
-f~case.
 EOF
 RUN
 
 
 NAME=clang_5.0_32 switch/case flags
 FILE=../bins/jmptbl/test_clang_5.0_32.out
+CMDS=<<EOF
+aaa
+f~switch
+f~case.
+EOF
 EXPECT=<<EOF
 0x080483fd 1 switch.0x080483fd
 0x08048404 1 case.0x80483fd.1
@@ -1071,16 +1072,16 @@ EXPECT=<<EOF
 0x0804844c 1 case.0x80483fd.11
 0x08048455 1 case.0x80483fd.12
 EOF
-CMDS=<<EOF
-aaa
-f~switch
-f~case.
-EOF
 RUN
 
 
 NAME=msvc_1900_32 switch/case flags
 FILE=../bins/jmptbl/test_msvc_1900_32.exe
+CMDS=<<EOF
+aaa
+f~switch
+f~case.
+EOF
 EXPECT=<<EOF
 0x0040100e 1 switch.0x0040100e
 0x0040be85 1 switch.0x0040be85
@@ -1116,16 +1117,16 @@ EXPECT=<<EOF
 0x0040c074 1 case.default.0x40bf68
 0x0040c15b 1 case.default.0x40beb5
 EOF
-CMDS=<<EOF
-aaa
-f~switch
-f~case.
-EOF
 RUN
 
 
 NAME=msvc_1913_32 switch/case flags
 FILE=../bins/jmptbl/test_msvc_1913_32.exe
+CMDS=<<EOF
+aaa
+f~switch
+f~case.
+EOF
 EXPECT=<<EOF
 0x0040100e 1 switch.0x0040100e
 0x00402875 1 switch.0x00402875
@@ -1161,15 +1162,15 @@ EXPECT=<<EOF
 0x00402a64 1 case.default.0x402958
 0x00402b4b 1 case.default.0x4028a5
 EOF
-CMDS=<<EOF
-aaa
-f~switch
-f~case.
-EOF
 RUN
 
 NAME=cmu_binary_bomb switch case detection
 FILE=../bins/jmptbl/cmu_binary_bomb
+CMDS=<<EOF
+aa
+f~switch
+f~case
+EOF
 EXPECT=<<EOF
 0x08048bd6 1 switch.0x08048bd6
 0x08048be0 1 case.0x8048bd6.0
@@ -1182,28 +1183,29 @@ EXPECT=<<EOF
 0x08048c76 1 case.0x8048bd6.7
 0x08048c88 1 case.default.0x8048bd6
 EOF
-CMDS=<<EOF
-aa
-f~switch
-f~case
-EOF
 RUN
 
 NAME=./nojmpabove
 FILE=../bins/pe/test.exe
-EXPECT=<<EOF
-0x0040132b 0x00401335 00:0000 10
-EOF
 CMDS=<<EOF
 e anal.jmp.above=false
 af
 afb
+EOF
+EXPECT=<<EOF
+0x0040132b 0x00401335 00:0000 10
 EOF
 RUN
 
 
 NAME=./searchstringrefs
 FILE=../bins/pe/test.exe
+CMDS=<<EOF
+e anal.refstr=true
+s 0x401000
+af
+afx
+EOF
 EXPECT=<<EOF
 d 0x00401006 -> 0x0040d004
 s 0x00401010 -> 0x0040b9a0
@@ -1212,19 +1214,10 @@ d 0x0040101e -> 0x0040b9a8
 C 0x00401023 -> 0x004010c7
 C 0x00401032 -> 0x0040103b
 EOF
-CMDS=<<EOF
-e anal.refstr=true
-s 0x401000
-af
-afx
-EOF
 RUN
 
 NAME=16bit segment bounds - capstone
 FILE=malloc://1024k
-EXPECT=<<EOF
-jmp 0xf0070
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e anal.arch=x86
@@ -1234,14 +1227,13 @@ wx e9c300 @ f000:ffaa
 s f000:ffaa
 pi 1
 EOF
+EXPECT=<<EOF
+jmp 0xf0070
+EOF
 RUN
 
 NAME=16bit segment bounds 2
 FILE=malloc://1024k
-EXPECT=<<EOF
-description: jump
-jump: 0x000f008e
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
@@ -1250,17 +1242,14 @@ wx e97ae7 @ f000:1911
 s f000:1911
 ao 1~jump
 EOF
+EXPECT=<<EOF
+description: jump
+jump: 0x000f008e
+EOF
 RUN
 
 NAME=sar on x86-32
 FILE=-
-EXPECT=<<EOF
-0xfffffffc
-0xfffffffe
-0xffffffff
-0xffffffff
-0xffffffff
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1280,13 +1269,17 @@ dr?eax
 aes
 dr?eax
 EOF
+EXPECT=<<EOF
+0xfffffffc
+0xfffffffe
+0xffffffff
+0xffffffff
+0xffffffff
+EOF
 RUN
 
 NAME=int 0x80 doesn t terminate a function
 FILE=-
-EXPECT=<<EOF
-size: 19
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1295,27 +1288,25 @@ wx 5589d8b900000000b885000000cd8089c35dc3
 af
 afi~size
 EOF
+EXPECT=<<EOF
+size: 19
+EOF
 RUN
 
 NAME=mnemonic - repe/cmpsb
 FILE=-
-EXPECT=<<EOF
-cmpsb
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 a8 f3a6~mnemonic[1]
 EOF
+EXPECT=<<EOF
+cmpsb
+EOF
 RUN
 
 NAME=ao 4~bytes
 FILE=-
-EXPECT=<<EOF
-bytes: 55
-bytes: 48
-bytes: 89e5
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1323,14 +1314,15 @@ e anal.hasnext=0
 wx 554889e5415741564155
 ao 3~bytes
 EOF
+EXPECT=<<EOF
+bytes: 55
+bytes: 48
+bytes: 89e5
+EOF
 RUN
 
 NAME=af fwd-jmp
 FILE=-
-EXPECT=<<EOF
-0x00000000 0x00000012 00:0000 18 j 0x0000001f
-0x0000001f 0x00000030 00:0000 17
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1338,25 +1330,25 @@ wx 558bec6800304000e86300000083c404eb0d6808304000e85400000083c4046814304000e8470
 af
 afb
 EOF
+EXPECT=<<EOF
+0x00000000 0x00000012 00:0000 18 j 0x0000001f
+0x0000001f 0x00000030 00:0000 17
+EOF
 RUN
 
 NAME=af fwd-jmp 2
 FILE=../bins/elf/license_1.out
-EXPECT=<<EOF
-9
-EOF
 CMDS=<<EOF
 af @ main
 afb @ main~?
+EOF
+EXPECT=<<EOF
+9
 EOF
 RUN
 
 NAME=./x86_32_cs
 FILE=-
-EXPECT=<<EOF
-32
-78
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1367,13 +1359,14 @@ af
 pif~?
 afi $$~size[1]
 EOF
+EXPECT=<<EOF
+32
+78
+EOF
 RUN
 
 NAME=./x86_32_cs2
 FILE=-
-EXPECT=<<EOF
-7
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1384,14 +1377,13 @@ af
 # count basic blocks
 pdr~true?
 EOF
+EXPECT=<<EOF
+7
+EOF
 RUN
 
 NAME=./x86_32_cs3
 FILE=-
-EXPECT=<<EOF
-3
-1
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1403,76 +1395,81 @@ af
 pdr~true?
 pdr~false?
 EOF
+EXPECT=<<EOF
+3
+1
+EOF
 RUN
 
 NAME=./x86_win
 FILE=../bins/pe/standard.exe
-EXPECT=<<EOF
-name: fcn.00402b2d
-EOF
 CMDS=<<EOF
 aaa
 afi @ fcn.00402b2d~name
+EOF
+EXPECT=<<EOF
+name: fcn.00402b2d
 EOF
 RUN
 
 NAME=./x86_win2
 FILE=../bins/pe/ioli/w32/crackme0x00.exe
-EXPECT=<<EOF
-1
-EOF
 CMDS=<<EOF
 aaa
 pd 1 @ sym.imp.msvcrt.dll_strlen~?dword
+EOF
+EXPECT=<<EOF
+1
 EOF
 RUN
 
 NAME=./x86_win3
 FILE=../bins/pe/testx64.exe
-EXPECT=<<EOF
-1
-EOF
 CMDS=<<EOF
 aaa
 pd 1 @ sym.imp.VCRUNTIME140.dll_memset~?qword
+EOF
+EXPECT=<<EOF
+1
 EOF
 RUN
 
 NAME=./x86_win4
 FILE=../bins/pe/96workingsections.exe
-EXPECT=<<EOF
-EOF
 CMDS=<<EOF
 aaa
 afb @ sym.imp.kernel32.dll_ExitProcess
+EOF
+EXPECT=<<EOF
 EOF
 RUN
 
 NAME=xref aar on op.val
 FILE=../bins/elf/analysis/ch2.bin
-EXPECT=<<EOF
-main 0x804831a [DATA] mov dword [var_ch], str.john
-EOF
 CMDS=<<EOF
 af@main
 aar
 axt @ str.john
 EOF
+EXPECT=<<EOF
+main 0x804831a [DATA] mov dword [var_ch], str.john
+EOF
 RUN
 
 NAME=resolve reloc symbols 1
 FILE=../bins/elf/libc.so.6
-EXPECT=<<EOF
-            0x0003a4af      ff15f33a1800   call qword [reloc.free]     ; [0x1bdfa8:8]=0
-EOF
 CMDS=<<EOF
 s 0x0003a4af
 pd 1
+EOF
+EXPECT=<<EOF
+            0x0003a4af      ff15f33a1800   call qword [reloc.free]     ; [0x1bdfa8:8]=0
 EOF
 RUN
 
 NAME=resolve reloc symbols 2
 FILE=../bins/elf/libc.so.6
+CMDS=ir~0x[3]
 EXPECT=<<EOF
 0x001bf3c0
 _res
@@ -2827,7 +2824,6 @@ _IO_2_1_stdout_
 _IO_2_1_stdin_
 0x00024480
 EOF
-CMDS=ir~0x[3]
 RUN
 
 NAME=get function in, node before entry
@@ -2870,22 +2866,19 @@ RUN
 
 NAME=arj x86 32 bits
 FILE=malloc://0x100
-EXPECT=<<EOF
-{"oeax":0,"eax":0,"ebx":0,"ecx":0,"edx":0,"esi":0,"edi":0,"esp":0,"ebp":0,"eip":0,"eflags":0}
-EOF
 CMDS=<<EOF
 e asm.arch = x86
 e anal.arch = x86
 e asm.bits=32
 arj
 EOF
+EXPECT=<<EOF
+{"oeax":0,"eax":0,"ebx":0,"ecx":0,"edx":0,"esi":0,"edi":0,"esp":0,"ebp":0,"eip":0,"eflags":0}
+EOF
 RUN
 
 NAME=af x86-32..
 FILE=malloc://1024
-EXPECT=<<EOF
-6
-EOF
 CMDS=<<EOF
 e anal.hasnext=0
 e anal.eobjmp=false
@@ -2895,13 +2888,13 @@ wx 6a00 4889e5 c3
 af
 afl~[2]
 EOF
+EXPECT=<<EOF
+6
+EOF
 RUN
 
 NAME=af x86-32 ujmp eobjmp=true
 FILE=malloc://1024
-EXPECT=<<EOF
-11
-EOF
 CMDS=<<EOF
 e anal.hasnext=0
 e asm.arch=x86
@@ -2911,13 +2904,13 @@ wx 6a00 4889e5 ff25f8120000 ff25f8120000ffe0c3
 af
 afl~[2]
 EOF
+EXPECT=<<EOF
+11
+EOF
 RUN
 
 NAME=af x86-32 ujmp eobjmp=false
 FILE=malloc://1024
-EXPECT=<<EOF
-11
-EOF
 CMDS=<<EOF
 e anal.hasnext=0
 e asm.arch=x86
@@ -2927,40 +2920,13 @@ wx 6a00 4889e5 ff25f8120000 ff25f8120000ffe0c3
 af
 afl~[2]
 EOF
+EXPECT=<<EOF
+11
+EOF
 RUN
 
 NAME=af bug
 FILE=malloc://1024
-EXPECT=<<EOF
-push 0
-dec eax
-mov ebp, esp
-dec eax
-and esp, 0xfffffff0
-dec eax
-mov edi, dword [arg_8h]
-dec eax
-lea esi, [arg_10h]
-mov edx, edi
-add edx, 1
-shl edx, 3
-dec eax
-add edx, esi
-dec eax
-mov ecx, edx
-jmp 0x25
-dec eax
-add ecx, 8
-dec eax
-cmp dword [ecx], 0
-jne 0x21
-dec eax
-add ecx, 8
-call 0xf8c
-mov edi, eax
-call 0x3956
-ret
-EOF
 CMDS=<<EOF
 e anal.hasnext=0
 e asm.arch=x86
@@ -2974,10 +2940,6 @@ af
 b 0x80
 pIf
 EOF
-RUN
-
-NAME=disasm bug
-FILE=malloc://1024
 EXPECT=<<EOF
 push 0
 dec eax
@@ -3008,6 +2970,10 @@ mov edi, eax
 call 0x3956
 ret
 EOF
+RUN
+
+NAME=disasm bug
+FILE=malloc://1024
 CMDS=<<EOF
 e anal.hasnext=0
 e anal.eobjmp=false
@@ -3021,14 +2987,40 @@ b 0x100
 af
 pIf @0
 EOF
+EXPECT=<<EOF
+push 0
+dec eax
+mov ebp, esp
+dec eax
+and esp, 0xfffffff0
+dec eax
+mov edi, dword [arg_8h]
+dec eax
+lea esi, [arg_10h]
+mov edx, edi
+add edx, 1
+shl edx, 3
+dec eax
+add edx, esi
+dec eax
+mov ecx, edx
+jmp 0x25
+dec eax
+add ecx, 8
+dec eax
+cmp dword [ecx], 0
+jne 0x21
+dec eax
+add ecx, 8
+call 0xf8c
+mov edi, eax
+call 0x3956
+ret
+EOF
 RUN
 
 NAME=af afF
 FILE=malloc://1024
-EXPECT=<<EOF
-/ (fcn) test
-\           0x00000000 (6 byte folded function)
-EOF
 CMDS=<<EOF
 e anal.hasnext=0
 e anal.eobjmp=false
@@ -3039,18 +3031,14 @@ af test
 afF
 pd 1 @ test
 EOF
+EXPECT=<<EOF
+/ (fcn) test
+\           0x00000000 (6 byte folded function)
+EOF
 RUN
 
 NAME=af afF graph
 FILE=malloc://1024
-EXPECT=<<EOF
-[0x00000000]>  # test ();
- --------------------------.
-|  0x0                     |
-| / (fcn) test             |
-| (6 byte folded function) |
-`--------------------------'
-EOF
 CMDS=<<EOF
 e anal.hasnext=0
 e anal.eobjmp=false
@@ -3061,16 +3049,18 @@ af test
 afF
 agf
 EOF
+EXPECT=<<EOF
+[0x00000000]>  # test ();
+ --------------------------.
+|  0x0                     |
+| / (fcn) test             |
+| (6 byte folded function) |
+`--------------------------'
+EOF
 RUN
 
 NAME=ahc
 FILE=malloc://16
-EXPECT=<<EOF
-jump
-5
-0x00000025
-0x00000025
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -3080,13 +3070,16 @@ ahc 0x25
 ahf 0x25
 ao 1~jump,fail,size[1]
 EOF
+EXPECT=<<EOF
+jump
+5
+0x00000025
+0x00000025
+EOF
 RUN
 
 NAME=ahi S
 FILE=malloc://16
-EXPECT=<<EOF
-mov eax, exit()
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -3095,26 +3088,35 @@ wx b801000000
 ahi S
 pi 1
 EOF
+EXPECT=<<EOF
+mov eax, exit()
+EOF
 RUN
 
 NAME=ao cjmp
 FILE=-
-EXPECT=<<EOF
-description: jump short if below or equal/not above (cf=1 or zf=1)
-size: 2
-jump: 0x0000001d
-fail: 0x00000002
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 wx 761b
 ao~jump,fail,size
 EOF
+EXPECT=<<EOF
+description: jump short if below or equal/not above (cf=1 or zf=1)
+size: 2
+jump: 0x0000001d
+fail: 0x00000002
+EOF
 RUN
 
 NAME=aoj 31c0
 FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 31c0
+aoj~{}
+EOF
 EXPECT=<<EOF
 [
   {
@@ -3159,16 +3161,16 @@ EXPECT=<<EOF
   }
 ]
 EOF
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=32
-wx 31c0
-aoj~{}
-EOF
 RUN
 
 NAME=aoj pushf
 FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 669c
+aoj~{}
+EOF
 EXPECT=<<EOF
 [
   {
@@ -3206,12 +3208,6 @@ EXPECT=<<EOF
     "family": "cpu"
   }
 ]
-EOF
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=32
-wx 669c
-aoj~{}
 EOF
 RUN
 
@@ -3349,9 +3345,6 @@ RUN
 
 NAME=no string on jmp
 FILE=malloc://8096
-EXPECT=<<EOF
-        ,=< 0x00000000      e9fb000000     jmp 0x100
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -3360,10 +3353,25 @@ wa jmp 0x100
 w hello @ 0x100
 pd 1
 EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      e9fb000000     jmp 0x100
+EOF
 RUN
 
 NAME=afva for esp based vars
 FILE=malloc://1024
+CMDS=<<EOF
+e asm.bits=32
+e asm.arch = x86
+e anal.arch = x86
+e asm.calls=false
+wx 83ec108b44241899f77c241c8b44241401d08944240c8b44242099f77c24288b44240c01d0894424088b5424148b44240c8d0c028b44242c99f7f98b44240801d0894424048b54240c8b44240801c28b44240401d083c410c38d4c240483e4f0ff71fc5589e55183ec046a076a066a056a046a036a026a01e883ffffff83c41c83ec08506844850408e847feffff83c410b8000000008b4dfcc98d61fcc36690669066909055575653e887feffff81c3371b000083ec0c8b6c24208db30cffffffe8d3fdffff8d8308ffffff29c6c1fe0285f6742531ff8db60000000083ec04ff74242cff74242c55ff94bb08ffffff83c70183c41039f775e383c40c5b5e5f
+e asm.bits=32
+e asm.comments=false
+aa
+afva
+pdf
+EOF
 EXPECT=<<EOF
 / (fcn) fcn.00000000 89
 // void fcn.00000000 (int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch);
@@ -3406,22 +3414,18 @@ EXPECT=<<EOF
 |           0x00000055      83c410         add esp, 0x10
 \           0x00000058      c3             ret
 EOF
-CMDS=<<EOF
-e asm.bits=32
-e asm.arch = x86
-e anal.arch = x86
-e asm.calls=false
-wx 83ec108b44241899f77c241c8b44241401d08944240c8b44242099f77c24288b44240c01d0894424088b5424148b44240c8d0c028b44242c99f7f98b44240801d0894424048b54240c8b44240801c28b44240401d083c410c38d4c240483e4f0ff71fc5589e55183ec046a076a066a056a046a036a026a01e883ffffff83c41c83ec08506844850408e847feffff83c410b8000000008b4dfcc98d61fcc36690669066909055575653e887feffff81c3371b000083ec0c8b6c24208db30cffffffe8d3fdffff8d8308ffffff29c6c1fe0285f6742531ff8db60000000083ec04ff74242cff74242c55ff94bb08ffffff83c70183c41039f775e383c40c5b5e5f
-e asm.bits=32
-e asm.comments=false
-aa
-afva
-pdf
-EOF
 RUN
 
 NAME=af x86-32
 FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 9090
+ao 1~?
+ao 1
+p8 1
+EOF
 EXPECT=<<EOF
 16
 address: 0x0
@@ -3441,14 +3445,6 @@ cycles: 1
 esil: ,
 family: cpu
 90
-EOF
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=32
-wx 9090
-ao 1~?
-ao 1
-p8 1
 EOF
 RUN
 

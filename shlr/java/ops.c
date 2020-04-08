@@ -4,7 +4,7 @@
 #include "code.h"
 #include "ops.h"
 
-R_IPI struct java_op JAVA_OPS[JAVA_OPS_COUNT] = {
+R_API struct java_op JAVA_OPS[JAVA_OPS_COUNT] = {
 	{ "nop"            , 0x00, 1, R_ANAL_JAVA_NOP },
 	{ "aconst_null"    , 0x01, 1, R_ANAL_JAVA_LDST_LOAD_FROM_CONST_REF_TO_STACK },
 	{ "iconst_m1"      , 0x02, 1, R_ANAL_JAVA_LDST_LOAD_FROM_CONST_TO_STACK },

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - ret2libc, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -42,6 +42,7 @@ static st64 buf_read(RBuffer *b, ut8 *buf, size_t len) {
 
 static st64 buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 	r_return_val_if_fail (b && b->methods, -1);
+	R_FREE (b->whole_buf);
 	return b->methods->write? b->methods->write (b, buf, len): -1;
 }
 
@@ -190,7 +191,7 @@ R_API RBuffer *r_buf_new(void) {
 	return new_buffer (R_BUFFER_BYTES, &u);
 }
 
-R_API const ut8 *r_buf_data(RBuffer *b, ut64 *size) {
+R_DEPRECATE R_API const ut8 *r_buf_data(RBuffer *b, ut64 *size) {
 	r_return_val_if_fail (b, NULL);
 	b->whole_buf = get_whole_buf (b, size);
 	return b->whole_buf;
@@ -424,7 +425,7 @@ R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
 
 R_API st64 r_buf_read(RBuffer *b, ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf, -1);
-	ut64 r = buf_read (b, buf, len);
+	st64 r = buf_read (b, buf, len);
 	if (r >= 0 && r < len) {
 		memset (buf + r, b->Oxff_priv, len - r);
 	}
@@ -537,11 +538,14 @@ R_API st64 r_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n) {
 
 R_API st64 r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
 	r_return_val_if_fail (b && buf && fmt, -1);
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	int r = r_buf_seek (b, addr, R_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
-	return r_buf_fread (b, buf, fmt, n);
+	r = r_buf_fread (b, buf, fmt, n);
+	r_buf_seek (b, o_addr, R_BUF_SET);
+	return r;
 }
 
 R_API st64 r_buf_fwrite(RBuffer *b, const ut8 *buf, const char *fmt, int n) {
@@ -555,31 +559,40 @@ R_API st64 r_buf_fwrite(RBuffer *b, const ut8 *buf, const char *fmt, int n) {
 
 R_API st64 r_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *fmt, int n) {
 	r_return_val_if_fail (b && buf && fmt && !b->readonly, -1);
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	st64 r = r_buf_seek (b, addr, R_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
-	return r_buf_fwrite (b, buf, fmt, n);
+	r = r_buf_fwrite (b, buf, fmt, n);
+	r_buf_seek (b, o_addr, R_BUF_SET);
+	return r;
 }
 
 R_API st64 r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf, -1);
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	st64 r = r_buf_seek (b, addr, R_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
 
-	return r_buf_read (b, buf, len);
+	r = r_buf_read (b, buf, len);
+	r_buf_seek (b, o_addr, R_BUF_SET);
+	return r;
 }
 
 R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf && !b->readonly, -1);
+	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	st64 r = r_buf_seek (b, addr, R_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
 
-	return r_buf_write (b, buf, len);
+	r = r_buf_write (b, buf, len);
+	r_buf_seek (b, o_addr, R_BUF_SET);
+	return r;
 }
 
 R_API bool r_buf_fini(RBuffer *b) {

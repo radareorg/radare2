@@ -1,14 +1,14 @@
 NAME=PE: corkami d_nonnull.dll - open
 FILE=../bins/pe/d_nonnull.dll
+CMDS=q!
 EXPECT=<<EOF
 EOF
-CMDS=q!
 RUN
 
 NAME=PE: corkami d_nonnull.dll - entrypoint
 FILE=../bins/pe/d_nonnull.dll
+CMDS=s
 EXPECT=<<EOF
 0x1111
 EOF
-CMDS=s
 RUN

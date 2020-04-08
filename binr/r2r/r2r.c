@@ -7,10 +7,12 @@
 #define RADARE2_CMD_DEFAULT    "radare2"
 #define RASM2_CMD_DEFAULT      "rasm2"
 #define JSON_TEST_FILE_DEFAULT "../bins/elf/crackme0x00b"
+#define TIMEOUT_DEFAULT        960
 
 #define STRV(x) #x
 #define STR(x) STRV(x)
 #define WORKERS_DEFAULT_STR STR(WORKERS_DEFAULT)
+#define TIMEOUT_DEFAULT_STR STR(TIMEOUT_DEFAULT)
 
 typedef struct r2r_state_t {
 	R2RRunConfig run_config;
@@ -34,19 +36,22 @@ static void print_state(R2RState *state, ut64 prev_completed);
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
 
 static int help(bool verbose) {
-	printf ("Usage: r2r [-vh] [-j threads] [test file/dir | @test-type]\n");
+	printf ("Usage: r2r [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		printf (
 		" -h           print this help\n"
 		" -v           show version\n"
+		" -q           quiet\n"
 		" -V           verbose\n"
 		" -n           do nothing (don't run any test, just load/parse them)\n"
 		" -L           log mode (better printing for CI, logfiles, etc.)"
+		" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
 		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
 		" -m [rasm2]   path to rasm2 executable (default is "RASM2_CMD_DEFAULT")\n"
 		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
 		" -C [dir]     chdir before running r2r (default follows executable symlink + test/new\n"
+		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
 		"\n"
 		"Supported test types: @json @unit @fuzz @cmds\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
@@ -129,15 +134,18 @@ int main(int argc, char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
 	bool nothing = false;
+	bool quiet = false;
 	bool log_mode = false;
 	char *radare2_cmd = NULL;
 	char *rasm2_cmd = NULL;
 	char *json_test_file = NULL;
+	char *fuzz_dir = NULL;
 	const char *r2r_dir = NULL;
+	ut64 timeout_sec = TIMEOUT_DEFAULT;
 	int ret = 0;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hvj:r:m:f:C:LnV");
+	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:");
 
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -145,14 +153,27 @@ int main(int argc, char **argv) {
 		case 'h':
 			ret = help (true);
 			goto beach;
+		case 'q':
+			quiet = true;
+			break;
 		case 'v':
-			printf (R2_VERSION "\n");
+			if (quiet) {
+				printf (R2_VERSION "\n");
+			} else {
+				char *s = r_str_version ("r2r");
+				printf ("%s\n", s);
+				free (s);
+			}
 			return 0;
 		case 'V':
 			verbose = true;
 			break;
 		case 'L':
 			log_mode = true;
+			break;
+		case 'F':
+			free (fuzz_dir);
+			fuzz_dir = strdup (opt.arg);
 			break;
 		case 'j':
 			workers_count = atoi (opt.arg);
@@ -180,6 +201,12 @@ int main(int argc, char **argv) {
 			free (json_test_file);
 			json_test_file = strdup (opt.arg);
 			break;
+		case 't':
+			timeout_sec = strtoull (opt.arg, NULL, 0);
+			if (!timeout_sec) {
+				timeout_sec = UT64_MAX;
+			}
+			break;
 		default:
 			ret = help (false);
 			goto beach;
@@ -196,8 +223,13 @@ int main(int argc, char **argv) {
 		if (!dir_found) {
 			eprintf ("Cannot find db/ directory related to the given test.\n");
 			return -1;
-
 		}
+	}
+
+	if (fuzz_dir) {
+		char *tmp = fuzz_dir;
+		fuzz_dir = r_file_abspath_rel (cwd, fuzz_dir);
+		free (tmp);
 	}
 
 	if (!r2r_subprocess_init ()) {
@@ -211,6 +243,7 @@ int main(int argc, char **argv) {
 	state.run_config.r2_cmd = radare2_cmd ? radare2_cmd : RADARE2_CMD_DEFAULT;
 	state.run_config.rasm2_cmd = rasm2_cmd ? rasm2_cmd : RASM2_CMD_DEFAULT;
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
+	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
 	state.verbose = verbose;
 	state.db = r2r_test_database_new ();
 	if (!state.db) {
@@ -240,7 +273,13 @@ int main(int argc, char **argv) {
 					r2r_test_run_unit ();
 					continue;
 				} else if (!strcmp (arg, "fuzz")) {
-					eprintf (".fuzz: TODO\n");
+					if (!fuzz_dir) {
+						eprintf ("No fuzz dir given. Use -F [dir]\n");
+						return -1;
+					}
+					if (!r2r_test_database_load_fuzz (state.db, fuzz_dir)) {
+						eprintf ("Failed to load fuzz tests from \"%s\"\n", fuzz_dir);
+					}
 					continue;
 				} else if (!strcmp (arg, "json")) {
 					arg = "db/json";
@@ -252,9 +291,8 @@ int main(int argc, char **argv) {
 					arg = r_str_newf ("db/%s", arg + 1);
 				}
 			}
-			char *tf = (*arg == '/')? strdup (arg)
-				: r_str_newf ("%s"R_SYS_DIR"%s", cwd, arg);
-			if (!r2r_test_database_load (state.db, tf)) {
+			char *tf = r_file_abspath_rel (cwd, arg);
+			if (!tf || !r2r_test_database_load (state.db, tf)) {
 				eprintf ("Failed to load tests from \"%s\"\n", tf);
 				r2r_test_database_free (state.db);
 				free (tf);
@@ -268,6 +306,9 @@ int main(int argc, char **argv) {
 			eprintf ("Failed to load tests from ./db\n");
 			r2r_test_database_free (state.db);
 			return -1;
+		}
+		if (fuzz_dir && !r2r_test_database_load_fuzz (state.db, fuzz_dir)) {
+			eprintf ("Failed to load fuzz tests from \"%s\"\n", fuzz_dir);
 		}
 	}
 
@@ -380,6 +421,7 @@ beach:
 	free (radare2_cmd);
 	free (rasm2_cmd);
 	free (json_test_file);
+	free (fuzz_dir);
 	return ret;
 }
 
@@ -473,7 +515,7 @@ static void print_diff(const char *actual, const char *expected) {
 }
 
 static R2RProcessOutput *print_runner(const char *file, const char *args[], size_t args_size,
-		const char *envvars[], const char *envvals[], size_t env_size) {
+		const char *envvars[], const char *envvals[], size_t env_size, void *user) {
 	size_t i;
 	for (i = 0; i < env_size; i++) {
 		printf ("%s=%s ", envvars[i], envvals[i]);
@@ -492,9 +534,13 @@ static R2RProcessOutput *print_runner(const char *file, const char *args[], size
 }
 
 static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
+	if (result->run_failed) {
+		printf (Color_RED "RUN FAILED (e.g. wrong radare2 path)" Color_RESET "\n");
+		return;
+	}
 	switch (result->test->type) {
 	case R2R_TEST_TYPE_CMD: {
-		r2r_run_cmd_test (config, result->test->cmd_test, print_runner);
+		r2r_run_cmd_test (config, result->test->cmd_test, print_runner, NULL);
 		const char *expect = result->test->cmd_test->expect.value;
 		if (expect && strcmp (result->proc_out->out, expect)) {
 			printf ("-- stdout\n");
@@ -517,6 +563,12 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 		// TODO
 		break;
 	case R2R_TEST_TYPE_JSON:
+		break;
+	case R2R_TEST_TYPE_FUZZ:
+		r2r_run_fuzz_test (config, result->test->fuzz_test, print_runner, NULL);
+		printf ("-- stdout\n%s\n", result->proc_out->out);
+		printf ("-- stderr\n%s\n", result->proc_out->err);
+		printf ("-- exit status: "Color_RED"%d"Color_RESET"\n", result->proc_out->ret);
 		break;
 	}
 }
@@ -547,6 +599,9 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 		case R2R_TEST_RESULT_FIXED:
 			printf (Color_CYAN"[FX]"Color_RESET);
 			break;
+		}
+		if (result->timeout) {
+			printf (Color_CYAN" TIMEOUT"Color_RESET);
 		}
 		printf (" %s "Color_YELLOW"%s"Color_RESET"\n", result->test->path, name);
 		if (result->result == R2R_TEST_RESULT_FAILED || (state->verbose && result->result == R2R_TEST_RESULT_BROKEN)) {

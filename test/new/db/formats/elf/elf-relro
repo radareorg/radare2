@@ -1,22 +1,26 @@
 NAME=ELF: corkami elf-relro - sections
 FILE=../bins/elf/analysis/elf-relro
+CMDS=iS~rel
 EXPECT=<<EOF
 9   0x0000027c    0x8 0x0804827c    0x8 -r-- .rel.dyn
 10  0x00000284   0x10 0x08048284   0x10 -r-- .rel.plt
 EOF
-CMDS=iS~rel
 RUN
 
 NAME=ELF: corkami elf-relro - relro enabled
 FILE=../bins/elf/analysis/elf-relro
+CMDS=ik ***~relro
 EXPECT=<<EOF
 info/elf.relro=partial
 EOF
-CMDS=ik ***~relro
 RUN
 
 NAME=ELF: imports partial
 FILE=../bins/elf/vim
+CMDS=<<EOF
+ik ***~relro
+ii
+EOF
 EXPECT=<<EOF
 info/elf.relro=full
 [Imports]
@@ -233,9 +237,5 @@ nth vaddr      bind   type   lib name
 210 0x000525b8 GLOBAL FUNC       __sprintf_chk
 211 0x000525c0 GLOBAL FUNC       socket
 
-EOF
-CMDS=<<EOF
-ik ***~relro
-ii
 EOF
 RUN

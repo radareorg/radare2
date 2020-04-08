@@ -300,9 +300,7 @@ RUN
 
 NAME=escaped chars 2
 BROKEN=1
-CMDS=<<EOF
-?e Hello\n\x3bWorld~\;
-EOF
+CMDS=?e Hello\n\x3bWorld~\;
 EXPECT=<<EOF
 ;World
 EOF

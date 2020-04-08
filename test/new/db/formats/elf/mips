@@ -9,6 +9,11 @@ RUN
 
 NAME=ELF: mipsbe-ubusd
 FILE=../bins/elf/analysis/mipsbe-ubusd
+CMDS=<<EOF
+af
+e asm.var.sub=false
+pif
+EOF
 EXPECT=<<EOF
 lui gp, 0x42
 addiu gp, gp, -0x4770
@@ -29,15 +34,15 @@ sw v0, 0x14(sp)
 jal sym.imp.__uClibc_main
 sw sp, 0x18(sp)
 EOF
+RUN
+
+NAME=ELF: mipsbe-busybox
+FILE=../bins/elf/analysis/mipsbe-busybox
 CMDS=<<EOF
 af
 e asm.var.sub=false
 pif
 EOF
-RUN
-
-NAME=ELF: mipsbe-busybox
-FILE=../bins/elf/analysis/mipsbe-busybox
 EXPECT=<<EOF
 lui gp, 0x48
 addiu gp, gp, 0xb40
@@ -57,10 +62,5 @@ sw t0, 0x10(sp)
 sw v0, 0x14(sp)
 jal sym.imp.__uClibc_main
 sw sp, 0x18(sp)
-EOF
-CMDS=<<EOF
-af
-e asm.var.sub=false
-pif
 EOF
 RUN

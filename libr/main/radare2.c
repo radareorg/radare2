@@ -118,6 +118,7 @@ static int main_help(int line) {
 		" -M           do not demangle symbol names\n"
 		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
 		" -N           do not load user settings and scripts\n"
+		" -NN          do not load any script or plugin\n"
 		" -q           quiet mode (no prompt) and quit after -i\n"
 		" -qq          quit after running all -c and -i\n"
 		" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
@@ -427,6 +428,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 
 	set_color_default (r);
+	bool load_l = true;
 
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
@@ -542,7 +544,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "file.info", "false");
 			break;
 		case 'N':
-			run_rc = false;
+			if (run_rc) {
+				run_rc = false;
+			} else {
+				load_l = false;
+			}
 			break;
 		case 'p':
 			if (!strcmp (opt.arg, "?")) {
@@ -733,7 +739,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 
-	if ((tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
+	tmp = NULL;
+	if (!load_l || (tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
 		r_config_set_i (r->config, "cfg.plugins", 0);
 		free (tmp);
 	}

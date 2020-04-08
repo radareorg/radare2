@@ -109,6 +109,14 @@
 >6	byte&0x10	0				single-block stream
 >6	byte&0x10	0x10			multi-block stream
 
+## Classic LZMA signature
+0        byte >0x5a
+>0        byte <0x5e
+>>5        belong 0xffffffff
+>>>1        belong    >0
+>>>>1        belong    <0xfffff
+>>>>>1        belong    x        LZMA BE compressed data dictionary size: %d bytes,
+
 #0	string	\xff\x06\x00\x00\x73\x4e\x61\x50\x70\x59	Snappy compression, stream identifier
 
 #0   string	\x1f\x9d\x90	compress'd data, 16 bits

@@ -42,11 +42,18 @@ CB (bin, bin)
 CB (egg, egg)
 CB (fs, fs)
 
-static void __openPluginsAt(RCore *core, const char *arg) {
-	char *pdir = r_str_r2_prefix (arg);
-	if (pdir) {
-		r_lib_opendir (core->lib, pdir);
-		free (pdir);
+static void __openPluginsAt(RCore *core, const char *arg, const char *user_path) {
+	if (arg && *arg) {
+		if (user_path) {
+			if (r_str_endswith (user_path, arg)) {
+				return;
+			}
+		}
+		char *pdir = r_str_r2_prefix (arg);
+		if (pdir) {
+			r_lib_opendir (core->lib, pdir);
+			free (pdir);
+		}
 	}
 }
 
@@ -58,8 +65,9 @@ static void __loadSystemPlugins(RCore *core, int where, const char *path) {
 	if (path) {
 		r_lib_opendir (core->lib, path);
 	}
+	const char *dir_plugins = r_config_get (core->config, "dir.plugins");
 	if (where & R_CORE_LOADLIBS_CONFIG) {
-		r_lib_opendir (core->lib, r_config_get (core->config, "dir.plugins"));
+		r_lib_opendir (core->lib, dir_plugins);
 	}
 	if (where & R_CORE_LOADLIBS_ENV) {
 		char *p = r_sys_getenv (R_LIB_ENV);
@@ -76,9 +84,9 @@ static void __loadSystemPlugins(RCore *core, int where, const char *path) {
 		}
 	}
 	if (where & R_CORE_LOADLIBS_SYSTEM) {
-		__openPluginsAt (core, R2_PLUGINS);
-		__openPluginsAt (core, R2_EXTRAS);
-		__openPluginsAt (core, R2_BINDINGS);
+		__openPluginsAt (core, R2_PLUGINS, dir_plugins);
+		__openPluginsAt (core, R2_EXTRAS, dir_plugins);
+		__openPluginsAt (core, R2_BINDINGS, dir_plugins);
 	}
 #endif
 }

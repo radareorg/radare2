@@ -1056,6 +1056,10 @@ do_decl:
 			prevbt = VT_INT32;
 			bit_pos = 0;
 			offset = 0;
+
+			const char *ctype = (a == TOK_UNION)? "union": "struct";
+			tcc_appendf ("%s=%s\n", name, ctype);
+
 			while (tok != '}') {
 				if (!parse_btype (&btype, &ad)) {
 					expect ("bracket");
@@ -1172,10 +1176,8 @@ do_decl:
 						char *varstr = get_tok_str (v, NULL);
 						type_to_str (b, sizeof(b), &type1, NULL);
 						{
-							const char *ctype = (a == TOK_UNION)? "union": "struct";
 							int type_bt = type1.t & VT_BTYPE;
 							//eprintf("2: %s.%s = %s\n", ctype, name, varstr);
-							tcc_appendf ("%s=%s\n", name, ctype);
 							tcc_appendf ("[+]%s.%s=%s\n",
 								ctype, name, varstr);
 							tcc_appendf ("%s.%s.%s.meta=%d\n",

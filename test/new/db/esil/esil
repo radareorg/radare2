@@ -87,9 +87,7 @@ RUN
 
 NAME=sub
 FILE=-
-CMDS=<<EOF
-ae 3,1,-
-EOF
+CMDS=ae 3,1,-
 EXPECT=<<EOF
 0xfffffffffffffffe
 EOF
@@ -118,39 +116,36 @@ RUN
 NAME=memory write (MIPS little endian)
 FILE=-
 ARGS=-a mips
-EXPECT=<<EOF
-fghi
-EOF
 CMDS=<<EOF
 e cfg.bigendian=false
 aeim
 e io.cache=true
 "ae 0x69686766,0x00100000,=[4]"
 psz @0x00100000
+EOF
+EXPECT=<<EOF
+fghi
 EOF
 RUN
 
 NAME=memory write (MIPS big endian)
 FILE=-
 ARGS=-a mips
-EXPECT=<<EOF
-ihgf
-EOF
 CMDS=<<EOF
 e cfg.bigendian=true
 aeim
 e io.cache=true
 "ae 0x69686766,0x00100000,=[4]"
 psz @0x00100000
+EOF
+EXPECT=<<EOF
+ihgf
 EOF
 RUN
 
 NAME=memory write (non-MIPS big endian)
 FILE=-
 BROKEN=1
-EXPECT=<<EOF
-ihgf
-EOF
 CMDS=<<EOF
 e cfg.bigendian=true
 aeim
@@ -158,14 +153,14 @@ e io.cache=true
 "ae 0x69686766,0x00100000,=[4]"
 psz @0x00100000
 EOF
+EXPECT=<<EOF
+ihgf
+EOF
 RUN
 
 NAME=esil poke some (32-bits ARM big endian)
 FILE=
 ARGS=-a arm -b 32
-EXPECT=<<EOF
-69686766
-EOF
 CMDS=<<EOF
 e cfg.bigendian=true
 aeim
@@ -174,15 +169,15 @@ ar r0=0x00100000
 ar r1=0x69686766
 "ae r1,1,r0,=[*]"
 p8 4@0x00100000
+EOF
+EXPECT=<<EOF
+69686766
 EOF
 RUN
 
 NAME=esil poke some (64-bits ARM big endian)
 FILE=-
 ARGS=-a arm -b 64
-EXPECT=<<EOF
-0000000069686766
-EOF
 CMDS=<<EOF
 e cfg.bigendian=true
 aeim
@@ -192,14 +187,14 @@ ar x1=0x69686766
 "ae x1,1,x0,=[*]"
 p8 8@0x00100000
 EOF
+EXPECT=<<EOF
+0000000069686766
+EOF
 RUN
 
 NAME=esil poke some (32-bits ARM little endian)
 FILE=-
 ARGS=-a arm -b 32
-EXPECT=<<EOF
-66676869
-EOF
 CMDS=<<EOF
 e cfg.bigendian=false
 aeim
@@ -209,14 +204,14 @@ ar r1=0x69686766
 "ae r1,1,r0,=[*]"
 p8 4@0x00100000
 EOF
+EXPECT=<<EOF
+66676869
+EOF
 RUN
 
 NAME=esil poke some (64-bits ARM little endian)
 FILE=-
 ARGS=-a arm -b 64
-EXPECT=<<EOF
-6667686900000000
-EOF
 CMDS=<<EOF
 e cfg.bigendian=false
 aeim
@@ -226,14 +221,14 @@ ar x1=0x69686766
 "ae x1,1,x0,=[*]"
 p8 8@0x00100000
 EOF
+EXPECT=<<EOF
+6667686900000000
+EOF
 RUN
 
 NAME=esil poke some (count too long)
 FILE=-
 ARGS=-a arm -b 64
-EXPECT=<<EOF
-6667686900000000
-EOF
 CMDS=<<EOF
 e cfg.bigendian=false
 aeim
@@ -243,13 +238,13 @@ ar x1=0x69686766
 "ae x1,0xffffffff,x0,=[*]"
 p8 8@0x00100000
 EOF
+EXPECT=<<EOF
+6667686900000000
+EOF
 RUN
 
 NAME=rol
 FILE=-
-EXPECT=<<EOF
-0x00000021
-EOF
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch=x86
@@ -258,13 +253,13 @@ ar eax=0x80000010
 "ae 0x1,eax,<<<,eax,="
 ar eax
 EOF
+EXPECT=<<EOF
+0x00000021
+EOF
 RUN
 
 NAME=ror
 FILE=-
-EXPECT=<<EOF
-0x81000000
-EOF
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch=x86
@@ -273,13 +268,13 @@ ar eax=0x02000001
 "ae 0x1,eax,>>>,eax,="
 ar eax
 EOF
+EXPECT=<<EOF
+0x81000000
+EOF
 RUN
 
 NAME=or-mem-dst
 FILE=-
-EXPECT=<<EOF
-0xff
-EOF
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch=x86
@@ -288,6 +283,9 @@ ar eax=0x0000000b
 "ae 0xf,eax,=[4]"
 "ae 0xf0,eax,|=[4]"
 "ae eax,[4]"
+EOF
+EXPECT=<<EOF
+0xff
 EOF
 RUN
 

@@ -69,7 +69,7 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 	ut64 var64 = 0;
 	const ut8* buffer = start;
 	const proto_head_t *h = NULL;
-	while(buffer >= start && buffer < end) {
+	while (buffer >= start && buffer < end) {
 		if (!*buffer) {
 			return;
 		}
@@ -91,7 +91,7 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 				r_strbuf_appendf (sb, "%u", h->number);
 			}
 		}
-		switch(h->wire) {
+		switch (h->wire) {
 		case WIRE_VARINT:
 			{
 				st64* i = (st64*) &var64;

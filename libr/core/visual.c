@@ -231,11 +231,8 @@ static bool __core_visual_gogo (RCore *core, int ch) {
 	case 'g':
 		if (core->io->va) {
 			RIOMap *map = r_io_map_get (core->io, core->offset);
-			if (!map) {
-				SdbListIter *i = ls_tail (core->io->maps);
-				if (i) {
-					map = ls_iter_get (i);
-				}
+			if (!map && !r_pvector_empty (&core->io->maps)) {
+				map = r_pvector_at (&core->io->maps, r_pvector_len (&core->io->maps) - 1);
 			}
 			if (map) {
 				r_core_seek (core, r_itv_begin (map->itv), 1);
@@ -247,11 +244,8 @@ static bool __core_visual_gogo (RCore *core, int ch) {
 		return true;
 	case 'G':
 		map = r_io_map_get (core->io, core->offset);
-		if (!map) {
-			SdbListIter *i = ls_head (core->io->maps);
-			if (i) {
-				map = ls_iter_get (i);
-			}
+		if (!map && !r_pvector_empty (&core->io->maps)) {
+			map = r_pvector_at (&core->io->maps, 0);
 		}
 		if (map) {
 			RPrint *p = core->print;
@@ -2131,6 +2125,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		" _  hud mode (V_)\n"
 		" 1  bit editor (vd1)\n"
 		" b  blocks\n"
+		" a  anal classes\n"
 		" c  classes\n"
 		" C  comments\n"
 		" d  debug traces\n"
@@ -2211,6 +2206,9 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 			break;
 		case 'c': // "vbc"
 			r_core_visual_classes (core);
+			break;
+		case 'a': // "vba"
+			r_core_visual_anal_classes (core);
 			break;
 		case 'C': // "vbC"
 			r_core_visual_comments (core);
@@ -3427,13 +3425,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						if (s) {
 							entry = s->vaddr;
 						} else {
-							RIOMap *map = ls_pop (core->io->maps);
+							RIOMap *map = r_pvector_pop (&core->io->maps);
 							if (map) {
 								entry = map->itv.addr;
 							} else {
 								entry = r_config_get_i (core->config, "bin.baddr");
 							}
-							ls_prepend (core->io->maps, map);
+							r_pvector_push_front (&core->io->maps, map);
 						}
 					}
 					if (entry != UT64_MAX) {

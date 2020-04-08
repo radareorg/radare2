@@ -1,5 +1,6 @@
 NAME=NE Symbols
 FILE=../bins/ne/anim8.exe
+CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
@@ -10,11 +11,11 @@ nth paddr       vaddr      bind   type size lib name
 2    0x00002b5a 0x00002b5a GLOBAL NONE 0        DIAL_ABOUT
 0    0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
 EOF
-CMDS=is
 RUN
 
 NAME=NE Segments
 FILE=../bins/ne/anim8.exe
+CMDS=iSS
 EXPECT=<<EOF
 [Segments]
 
@@ -24,11 +25,11 @@ nth paddr         size vaddr        vsize perm name
 1   0x00007600  0x3ec4 0x00007600  0x3ec4 -rwx MOVEABLE.30208
 
 EOF
-CMDS=iSS
 RUN
 
 NAME=NE Module imports
 FILE=../bins/ne/anim8.exe
+CMDS=ii
 EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type lib name
@@ -39,19 +40,22 @@ nth vaddr      bind type lib name
 4   0x00000000 NONE NONE     WIN87EM
 
 EOF
-CMDS=ii
 RUN
 
 NAME=NE Relocs
 FILE=../bins/ne/anim8.exe
+CMDS=ir~0x?
 EXPECT=<<EOF
 718
 EOF
-CMDS=ir~0x?
 RUN
 
 NAME=NE Relocs and resolve function ordinal names
 FILE=../bins/ne/anim8.exe
+CMDS=<<EOF
+ir~WIN87EM
+ir~:0..10
+EOF
 EXPECT=<<EOF
 0x00004c98 0x00004c98 SET_32 WIN87EM.__FPMATH
 0x00004cb2 0x00004cb2 SET_16 WIN87EM.__FPMATH
@@ -72,9 +76,5 @@ vaddr      paddr      type   name
 0x00000a74 0x00000a74 SET_32 KERNEL.GETWINFLAGS
 0x00000ad0 0x00000ad0 SET_32 KERNEL.UNLOCKSEGMENT
 0x00000f5e 0x00000f5e SET_32 USER.SETTIMER
-EOF
-CMDS=<<EOF
-ir~WIN87EM
-ir~:0..10
 EOF
 RUN

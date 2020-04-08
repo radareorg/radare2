@@ -4,9 +4,6 @@ version: git-{build}
 # Skip Github tags
 skip_tags: true
 
-# Clone depth
-clone_depth: 1
-
 # Branches to clone
 branches:
   only:
@@ -14,7 +11,6 @@ branches:
 
 # Environment variables
 environment:
-  nodejs_version: "Stable"
   NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip
   VSVARSALLPATH2017: 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat'
   VSVARSALLPATH2019: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat'
@@ -26,24 +22,40 @@ environment:
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
+      RUN_TESTS: false
     # VS2019 64
     - builder: vs2019_64
       PYTHON: 'C:\\Python38-x64'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       BUILD_DIR: build
+      RUN_TESTS: true
     # VS2017 64 (Dynamic linking)
     - builder: vs2017_64_dyn
       PYTHON: 'C:\\Python37'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
+      RUN_TESTS: false
     # Clang-cl 64 (Dynamic linking)
     - builder: clang_cl_64_dyn
       PYTHON: 'C:\\Python38'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       BUILD_DIR: build
+      RUN_TESTS: true
+
+# Skip changes affecting only other CI services
+skip_commits:
+  files:
+    - .builds/*
+    - .github/*
+    - .travis.yml
+    - .lgtm.yml
+    - snapcraft.yaml
+    - '*.md'
+    - travis-*
+    - Vagrant*
 
 # Init
 init:
@@ -72,26 +84,29 @@ build_script:
 
   - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && set CC=clang-cl && python sys\meson.py --release --shared --install="%DIST_FOLDER%" --webui && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-test_script:
-  - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\msys64\mingw64\bin;%PATH%
-  - echo %PATH%
-  - where radare2
-  - radare2 -v
-  - ps: Install-Product node $env:nodejs_version
-  - node --version
-  - cd test
-  - git clone -q --depth 1 https://github.com/radareorg/radare2-testbins bins
-  - cd new
-  - npm install
-  - set NOOK=1
-  - node_modules/.bin/r2r
-  - cd ../..
+# Run tests only conditionally
+for:
+-
+    matrix:
+        only:
+            - RUN_TESTS: true
 
-after_test:
-  - git clone --depth 1 https://github.com/radare/radare2-win-installer
-  - set PATH=%PATH%;%INNO_SETUP%
-  - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=%R2_VERSION%
-  - move radare2-win-installer\Output\radare2.exe radare2_installer-%builder%.exe
+    test_script:
+      - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\msys64\mingw64\bin;%PATH%
+      - echo %PATH%
+      - where radare2
+      - radare2 -v
+      - cd test
+      - git clone -q --depth 1 https://github.com/radareorg/radare2-testbins bins
+      - cd new
+      - r2r -L db
+      - cd ../..
+
+    after_test:
+      - git clone --depth 1 https://github.com/radare/radare2-win-installer
+      - set PATH=%PATH%;%INNO_SETUP%
+      - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=%R2_VERSION%
+      - move radare2-win-installer\Output\radare2.exe radare2_installer-%builder%.exe
 
 # Artifacts
 artifacts:

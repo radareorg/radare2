@@ -128,7 +128,7 @@ Look at [CONTRIBUTING.md](https://github.com/radareorg/radare2/blob/master/CONTR
 
 ## Tests
 
-Running `make tests` will fetch the test binaries 
+Running `make tests` will fetch the test binaries
 repository and run all the tests in order to verify that no changes break any functionality.
 
 We run those tests on every commit, and they are also executed with ASAN

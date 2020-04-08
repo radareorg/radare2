@@ -1,46 +1,43 @@
 NAME=tn symbol
 FILE=../bins/elf/analysis/hello-objc-linux
-EXPECT=<<EOF
-size: 33
-EOF
 CMDS=<<EOF
 tn-*
 tn sym.imp.__libc_start_main
 af
 afi~size
 EOF
+EXPECT=<<EOF
+size: 33
+EOF
 RUN
 
 NAME=tn 0x08048550
 FILE=../bins/elf/analysis/hello-objc-linux
-EXPECT=<<EOF
-size: 33
-EOF
 CMDS=<<EOF
 tn-*
 tn 0x08048550
 af
 afi~size
 EOF
+EXPECT=<<EOF
+size: 33
+EOF
 RUN
 
 NAME=tn 0x00048550
 FILE=../bins/elf/analysis/hello-objc-linux
-EXPECT=<<EOF
-size: 34
-EOF
 CMDS=<<EOF
 tn-*
 af
 afi~size
 EOF
+EXPECT=<<EOF
+size: 34
+EOF
 RUN
 
 NAME=tn- symbol1 symbol2
 FILE=../bins/elf/analysis/hello-objc-linux
-EXPECT=<<EOF
-size: 34
-EOF
 CMDS=<<EOF
 tn-*
 tn __libc_start_main
@@ -48,44 +45,52 @@ tn- abc __libc_start_main
 af
 afi~size
 EOF
+EXPECT=<<EOF
+size: 34
+EOF
 RUN
 
 NAME=without noreturn
 FILE=../bins/elf/analysis/hello-objc-linux
-EXPECT=<<EOF
-size: 34
-EOF
 CMDS=<<EOF
 tn-*
 af
 afi~size
 EOF
+EXPECT=<<EOF
+size: 34
+EOF
 RUN
 
 NAME=no no return
 FILE=../bins/elf/analysis/hello-objc-linux
-EXPECT=<<EOF
-EOF
 CMDS=<<EOF
 af
 af-
 afi~size
 EOF
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=no no return 2
 FILE=../bins/elf/analysis/hello-objc-linux
-EXPECT=<<EOF
-EOF
 CMDS=<<EOF
 af
 af-*
 afi~size
 EOF
+EXPECT=<<EOF
+EOF
 RUN
 
 NAME=noreturn real test
 FILE=../bins/elf/analysis/noreturn
+CMDS=<<EOF
+aa
+s main
+pdf
+EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40048d
 / 41: int main (int argc, char **argv, char **envp);
@@ -103,18 +108,10 @@ EXPECT=<<EOF
 |           0x0040058d      c9             leave
 \           0x0040058e      c3             ret
 EOF
-CMDS=<<EOF
-aa
-s main
-pdf
-EOF
 RUN
 
 NAME=noreturn address
 FILE=-
-EXPECT=<<EOF
-call fcn.00000010
-EOF
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -122,5 +119,8 @@ e asm.bits=32
 tna 0x10
 af
 pif
+EOF
+EXPECT=<<EOF
+call fcn.00000010
 EOF
 RUN

@@ -72,8 +72,6 @@ static bool _map_skyline_push(RPVector *map_skyline, ut64 from, ut64 to, RIOMap 
 
 // Store map parts that are not covered by others into io->map_skyline
 void io_map_calculate_skyline(RIO *io) {
-	SdbListIter *iter;
-	RIOMap *map;
 	RPVector events;
 	RBinHeap heap;
 	struct map_event_t *ev;
@@ -81,15 +79,17 @@ void io_map_calculate_skyline(RIO *io) {
 	r_pvector_clear (&io->map_skyline);
 	r_pvector_clear (&io->map_skyline_shadow);
 	r_pvector_init (&events, free);
-	if (!r_pvector_reserve (&events, ls_length (io->maps) * 2) ||
-			!(deleted = calloc (ls_length (io->maps), 1))) {
+	if (!r_pvector_reserve (&events, r_pvector_len (&io->maps) * 2) ||
+			!(deleted = calloc (r_pvector_len (&io->maps), 1))) {
 		goto out;
 	}
 
 	int i = 0;
 	// Last map has highest priority (it shadows previous maps),
 	// we assign 0 to its event id.
-	ls_foreach_prev (io->maps, iter, map) {
+	void **it;
+	r_pvector_foreach_prev (&io->maps, it) {
+		RIOMap *map = *it;
 		if (!(ev = R_NEW (struct map_event_t))) {
 			goto out;
 		}
@@ -126,7 +126,7 @@ void io_map_calculate_skyline(RIO *io) {
 			r_binheap_pop (&heap);
 		}
 		ut64 to = ev->addr;
-		map = r_binheap_empty (&heap) ? NULL : ((struct map_event_t *)r_binheap_top (&heap))->map;
+		RIOMap *map = r_binheap_empty (&heap) ? NULL : ((struct map_event_t *)r_binheap_top (&heap))->map;
 		if (!i) {
 			last = to;
 			last_map = map;
@@ -196,7 +196,7 @@ out:
 }
 
 RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size, bool do_skyline) {
-	if (!size || !io || !io->maps || !io->map_ids) {
+	if (!size || !io || !io->map_ids) {
 		return NULL;
 	}
 	RIOMap* map = R_NEW0 (RIOMap);
@@ -216,7 +216,7 @@ RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size, 
 	map->perm = perm;
 	map->delta = delta;
 	// new map lives on the top, being top the list's tail
-	ls_append (io->maps, map);
+	r_pvector_push (&io->maps, map);
 	if (do_skyline) {
 		io_map_calculate_skyline (io);
 	}
@@ -266,23 +266,20 @@ static void _map_free(void* p) {
 }
 
 R_API void r_io_map_init(RIO* io) {
-	if (io && !io->maps) {
-		io->maps = ls_newf ((SdbListFree)_map_free);
-		if (io->map_ids) {
-			r_id_pool_free (io->map_ids);
-		}
-		io->map_ids = r_id_pool_new (1, END_OF_MAP_IDS);
+	r_return_if_fail (io);
+	r_pvector_init (&io->maps, _map_free);
+	if (io->map_ids) {
+		r_id_pool_free (io->map_ids);
 	}
+	io->map_ids = r_id_pool_new (1, END_OF_MAP_IDS);
 }
 
 // check if a map with exact the same properties exists
-R_API bool r_io_map_exists(RIO* io, RIOMap* map) {
-	SdbListIter* iter;
-	RIOMap* m;
-	if (!io || !io->maps || !map) {
-		return false;
-	}
-	ls_foreach (io->maps, iter, m) {
+R_API bool r_io_map_exists(RIO *io, RIOMap *map) {
+	r_return_val_if_fail (io && map, false);
+	void **it;
+	r_pvector_foreach (&io->maps, it) {
+		RIOMap *m = *it;
 		if (!memcmp (m, map, sizeof (RIOMap))) {
 			return true;
 		}
@@ -295,13 +292,11 @@ R_API bool r_io_map_exists_for_id(RIO* io, ut32 id) {
 	return r_io_map_resolve (io, id) != NULL;
 }
 
-R_API RIOMap* r_io_map_resolve(RIO* io, ut32 id) {
-	SdbListIter* iter;
-	RIOMap* map;
-	if (!io || !io->maps || !id) {
-		return NULL;
-	}
-	ls_foreach (io->maps, iter, map) {
+R_API RIOMap* r_io_map_resolve(RIO *io, ut32 id) {
+	r_return_val_if_fail (io && id, false);
+	void **it;
+	r_pvector_foreach (&io->maps, it) {
+		RIOMap *map = *it;
 		if (map->id == id) {
 			return map;
 		}
@@ -334,9 +329,9 @@ R_API void r_io_update(RIO *io) {
 
 R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
 	r_return_val_if_fail (io, NULL);
-	RIOMap* map;
-	SdbListIter* iter;
-	ls_foreach_prev (io->maps, iter, map) {
+	void **it;
+	r_pvector_foreach_prev (&io->maps, it) {
+		RIOMap *map = *it;
 		if (map->delta <= paddr && paddr <= map->delta + map->itv.size - 1) {
 			return map;
 		}
@@ -345,11 +340,11 @@ R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
 }
 
 // gets first map where addr fits in
-R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
+R_API RIOMap *r_io_map_get(RIO* io, ut64 addr) {
 	r_return_val_if_fail (io, NULL);
-	RIOMap* map;
-	SdbListIter* iter;
-	ls_foreach_prev (io->maps, iter, map) {
+	void **it;
+	r_pvector_foreach_prev (&io->maps, it) {
+		RIOMap *map = *it;
 		if (r_itv_contain (map->itv, addr)) {
 			return map;
 		}
@@ -378,13 +373,14 @@ R_API void r_io_map_reset(RIO* io) {
 	io_map_calculate_skyline (io);
 }
 
-R_API bool r_io_map_del(RIO* io, ut32 id) {
+R_API bool r_io_map_del(RIO *io, ut32 id) {
 	r_return_val_if_fail (io, false);
-	RIOMap* map;
-	SdbListIter* iter;
-	ls_foreach (io->maps, iter, map) {
+	size_t i;
+	for (i = 0; i < r_pvector_len (&io->maps); i++) {
+		RIOMap *map = r_pvector_at (&io->maps, i);
 		if (map->id == id) {
-			ls_delete (io->maps, iter);
+			r_pvector_remove_at (&io->maps, i);
+			_map_free (map);
 			r_id_pool_kick_id (io->map_ids, id);
 			io_map_calculate_skyline (io);
 			return true;
@@ -396,17 +392,20 @@ R_API bool r_io_map_del(RIO* io, ut32 id) {
 //delete all maps with specified fd
 R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 	r_return_val_if_fail (io, false);
-	SdbListIter* iter, * ator;
-	RIOMap* map;
 	bool ret = false;
-	ls_foreach_safe (io->maps, iter, ator, map) {
+	size_t i;
+	for (i = 0; i < r_pvector_len (&io->maps);) {
+		RIOMap *map = r_pvector_at (&io->maps, i);
 		if (!map) {
-			ls_delete (io->maps, iter);
+			r_pvector_remove_at (&io->maps, i);
 		} else if (map->fd == fd) {
 			r_id_pool_kick_id (io->map_ids, map->id);
 			//delete iter and map
-			ls_delete (io->maps, iter);
+			r_pvector_remove_at (&io->maps, i);
+			_map_free (map);
 			ret = true;
+		} else {
+			i++;
 		}
 	}
 	if (ret) {
@@ -419,15 +418,14 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 //return a boolean denoting whether is was possible to priorized
 R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 	r_return_val_if_fail (io, false);
-	RIOMap *map;
-	SdbListIter *iter;
-	ls_foreach (io->maps, iter, map) {
+	size_t i;
+	for (i = 0; i < r_pvector_len (&io->maps); i++) {
+		RIOMap *map = r_pvector_at (&io->maps, i);
 		// search for iter with the correct map
 		if (map->id == id) {
-			ls_split_iter (io->maps, iter);
-			ls_append (io->maps, map);
+			r_pvector_remove_at (&io->maps, i);
+			r_pvector_push (&io->maps, map);
 			io_map_calculate_skyline (io);
-			free (iter);
 			return true;
 		}
 	}
@@ -436,55 +434,45 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 
 R_API bool r_io_map_depriorize(RIO* io, ut32 id) {
 	r_return_val_if_fail (io, false);
-	RIOMap *map;
-	SdbListIter *iter;
-	ls_foreach (io->maps, iter, map) {
+	size_t i;
+	for (i = 0; i < r_pvector_len (&io->maps); i++) {
+		RIOMap *map = r_pvector_at (&io->maps, i);
 		// search for iter with the correct map
 		if (map->id == id) {
-			ls_split_iter (io->maps, iter);
-			ls_prepend (io->maps, map);
+			r_pvector_remove_at (&io->maps, i);
+			r_pvector_push_front (&io->maps, map);
 			io_map_calculate_skyline (io);
-			free (iter);
 			return true;
 		}
 	}
 	return false;
 }
 
-R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
-	SdbListIter* iter, * ator;
-	RIOMap *map;
-	SdbList* list;
-	if (!io || !io->maps) {
-		return false;
-	}
-	if (!(list = ls_new ())) {
-		return false;
-	}
+R_API bool r_io_map_priorize_for_fd(RIO *io, int fd) {
+	r_return_val_if_fail (io, false);
 	//we need a clean list for this, or this becomes a segfault-field
 	r_io_map_cleanup (io);
-	//temporary set to avoid free the map and to speed up ls_delete a bit
-	io->maps->free = NULL;
-	ls_foreach_safe (io->maps, iter, ator, map) {
+	RPVector temp;
+	r_pvector_init (&temp, NULL);
+	size_t i;
+	for (i = 0; i < r_pvector_len (&io->maps);) {
+		RIOMap *map = r_pvector_at (&io->maps, i);
 		if (map->fd == fd) {
-			ls_prepend (list, map);
-			ls_delete (io->maps, iter);
+			r_pvector_push (&temp, map);
+			r_pvector_remove_at (&io->maps, i);
+			continue;
 		}
+		i++;
 	}
-	ls_join (io->maps, list);
-	ls_free (list);
-	io->maps->free = _map_free;
+	r_pvector_insert_range (&io->maps, r_pvector_len (&io->maps), temp.v.a, r_pvector_len (&temp));
+	r_pvector_clear (&temp);
 	io_map_calculate_skyline (io);
 	return true;
 }
 
 //may fix some inconsistencies in io->maps
 R_API void r_io_map_cleanup(RIO* io) {
-	SdbListIter* iter, * ator;
-	RIOMap* map;
-	if (!io || !io->maps) {
-		return;
-	}
+	r_return_if_fail (io);
 	//remove all maps if no descs exist
 	if (!io->files) {
 		r_io_map_fini (io);
@@ -492,16 +480,20 @@ R_API void r_io_map_cleanup(RIO* io) {
 		return;
 	}
 	bool del = false;
-	ls_foreach_safe (io->maps, iter, ator, map) {
+	size_t i;
+	for (i = 0; i < r_pvector_len (&io->maps);) {
+		RIOMap *map = r_pvector_at (&io->maps, i);
 		//remove iter if the map is a null-ptr, this may fix some segfaults
 		if (!map) {
-			ls_delete (io->maps, iter);
+			r_pvector_remove_at (&io->maps, i);
 			del = true;
 		} else if (!r_io_desc_get (io, map->fd)) {
 			//delete map and iter if no desc exists for map->fd in io->files
 			r_id_pool_kick_id (io->map_ids, map->id);
-			ls_delete (io->maps, iter);
+			r_pvector_remove_at (&io->maps, i);
 			del = true;
+		} else {
+			i++;
 		}
 	}
 	if (del) {
@@ -511,8 +503,7 @@ R_API void r_io_map_cleanup(RIO* io) {
 
 R_API void r_io_map_fini(RIO* io) {
 	r_return_if_fail (io);
-	ls_free (io->maps);
-	io->maps = NULL;
+	r_pvector_clear (&io->maps);
 	r_id_pool_free (io->map_ids);
 	io->map_ids = NULL;
 	r_pvector_clear (&io->map_skyline);
@@ -538,11 +529,11 @@ R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_alig
 	if (load_align == 0) {
 		load_align = 1;
 	}
-	RIOMap* map;
-	SdbListIter* iter;
 	ut64 next_addr = addr,
 	end_addr = next_addr + size;
-	ls_foreach (io->maps, iter, map) {
+	void **it;
+	r_pvector_foreach (&io->maps, it) {
+		RIOMap *map = *it;
 		ut64 to = r_itv_end (map->itv);
 		next_addr = R_MAX (next_addr, to + (load_align - (to % load_align)) % load_align);
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
@@ -559,11 +550,10 @@ R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_alig
 
 // TODO: very similar to r_io_map_next_available. decide which one to use
 R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
-	RIOMap* map;
-	SdbListIter* iter;
 	ut64 lowest = UT64_MAX;
-
-	ls_foreach (io->maps, iter, map) {
+	void **it;
+	r_pvector_foreach (&io->maps, it) {
+		RIOMap *map = *it;
 		ut64 from = r_itv_begin (map->itv);
 		if (from > addr && addr < lowest) {
 			lowest = from;
@@ -578,12 +568,12 @@ R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
 
 R_API RList* r_io_map_get_for_fd(RIO* io, int fd) {
 	RList* map_list = r_list_newf (NULL);
-	SdbListIter* iter;
-	RIOMap* map;
 	if (!map_list) {
 		return NULL;
 	}
-	ls_foreach (io->maps, iter, map) {
+	void **it;
+	r_pvector_foreach (&io->maps, it) {
+		RIOMap *map = *it;
 		if (map && map->fd == fd) {
 			r_list_append (map_list, map);
 		}

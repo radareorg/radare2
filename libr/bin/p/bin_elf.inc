@@ -848,9 +848,8 @@ static RList* patch_relocs(RBin *b) {
 	RIO *io = NULL;
 	RBinObject *obj = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
-	RIOMap *g = NULL, *s = NULL;
+	RIOMap *g = NULL;
 	HtUU *relocs_by_sym;
-	SdbListIter *iter;
 	RBinElfReloc *relcs = NULL;
 	RBinInfo *info;
 	int cdsz;
@@ -878,10 +877,12 @@ static RList* patch_relocs(RBin *b) {
 	info = obj ? obj->info: NULL;
 	cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 
-	ls_foreach (io->maps, iter, s) {
-		if (s->itv.addr > offset) {
-			offset = s->itv.addr;
-			g = s;
+	void **it;
+	r_pvector_foreach (&io->maps, it) {
+		RIOMap *map = *it;
+		if (map->itv.addr > offset) {
+			offset = map->itv.addr;
+			g = map;
 		}
 	}
 	if (!g) {

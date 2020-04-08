@@ -1,14 +1,8 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake */
+/* radare - LGPL - Copyright 2007-2020 - pancake */
 
-#include "r_anal.h"
-#include "r_cons.h"
-#include "r_util.h"
-#include "r_util/r_print.h"
-#include "r_core.h"
+#include <r_core.h>
 
 #define DFLT_ROWS 16
-
-#define IS_ALPHA(C) (((C) >= 'a' && (C) <= 'z') || ((C) >= 'A' && (C) <= 'Z'))
 
 static const char hex[16] = "0123456789ABCDEF";
 
@@ -70,7 +64,7 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 	p->cb_printf ("]\n");
 }
 
-R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
+R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	int i, j, cols = 78;
 	int rows = height > 0 ? height : 10;
 	// int realrows = rows * 2;
@@ -105,7 +99,7 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 		return;
 	}
 
-	for (i = 0; i<rows; i++) {
+	for (i = 0; i < rows; i++) {
 		int threshold = i * (0xff / rows);
 		for (j = 0; j < cols; j++) {
 			int realJ = j * len / cols;
@@ -239,16 +233,14 @@ static int r_print_stereogram_private(const char *bump, int w, int h, char *out,
 }
 
 R_API char* r_print_stereogram(const char *bump, int w, int h) {
-	ut64 size;
-	char *out;
 	if (w < 1 || h < 1) {
 		return NULL;
 	}
-	size = w * (ut64) h * 2;
+	ut64 size = w * (ut64) h * 2;
 	if (size > UT32_MAX) {
 		return NULL;
 	}
-	out = calloc (1, size * 2);
+	char *out = calloc (1, size * 2);
 	if (!out) {
 		return NULL;
 	}
@@ -1393,11 +1385,10 @@ static const char* getchardiff(RPrint *p, char *fmt, ut8 a, ut8 b) {
 
 static ut8* M(const ut8 *b, int len) {
 	ut8 *r = malloc (len + 16);
-	if (!r) {
-		return NULL;
+	if (r) {
+		memset (r, 0xff, len + 16);
+		memcpy (r, b, len);
 	}
-	memset (r, 0xff, len + 16);
-	memcpy (r, b, len);
 	return r;
 }
 
@@ -1708,7 +1699,6 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
 	int i = 0, j;
 
-
 #define INC 5
 #if TOPLINE
 	if (arr[0] > 1) {
@@ -1962,7 +1952,7 @@ static bool issymbol(char c) {
 static bool check_arg_name (RPrint *print, char *p, ut64 func_addr) {
 	if (func_addr && print->exists_var) {
 		int z;
-		for (z = 0; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++) {
+		for (z = 0; p[z] && (isalpha (p[z]) || isdigit (p[z]) || p[z] == '_'); z++) {
 			;
 		}
 		char tmp = p[z];

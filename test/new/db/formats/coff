@@ -1,5 +1,9 @@
 NAME=tifdir imports and sections
 FILE=../bins/coff/tif_dir.obj
+CMDS=<<EOF
+ii
+iS
+EOF
 EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type lib name
@@ -75,14 +79,11 @@ nth paddr         size vaddr        vsize perm name
 10  0x0000e97b     0x4 0x0000e97b     0x4 -r-- .rdata_10
 
 EOF
-CMDS=<<EOF
-ii
-iS
-EOF
 RUN
 
 NAME=tiny coff
 FILE=../bins/coff/coff.obj
+CMDS=om;is;ir
 EXPECT=<<EOF
  3 fd: 3 +0x00000000 0x00000000 - 0x00000144 r-x 
  2 fd: 3 +0x00000064 0x00000064 - 0x0000008a r-x fmap..text_0
@@ -108,11 +109,16 @@ vaddr      paddr      type    name
 
 4 relocations
 EOF
-CMDS=om;is;ir
 RUN
 
 NAME=tiny coff2
 FILE=../bins/coff/coff2.obj
+CMDS=<<EOF
+om
+is~text
+s sym.__1FooBar__QAE_XZ
+pd 2
+EOF
 EXPECT=<<EOF
 10 fd: 3 +0x00000000 0x00000000 - 0x000012f7 r-x 
  9 fd: 3 +0x0000017c 0x0000017c - 0x0000026a --- fmap..drectve_0
@@ -131,11 +137,5 @@ EXPECT=<<EOF
             ;-- ??1FooBar@@QAE@XZ:
             0x00000ec2      55             push ebp                    ; [05] -r-x section size 42 named .text_mn_5
             0x00000ec3      8bec           mov ebp, esp
-EOF
-CMDS=<<EOF
-om
-is~text
-s sym.__1FooBar__QAE_XZ
-pd 2
 EOF
 RUN

@@ -3727,7 +3727,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	case 'F': // 0xff bytes
 	case 'p': // printable chars
 	case 'z': // zero terminated strings
-	if (blocksize > 0) {
+	{
 		ut8 *p;
 		ut64 i, j, k;
 		ptr = calloc (1, nblocks);
@@ -3781,8 +3781,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		free (p);
 		print_bars = true;
-	} else {
-		eprintf ("Invalid blocksize\n");
 	}
 	break;
 	case 'b': // bytes
@@ -5872,14 +5870,12 @@ l = use_blocksize;
 				"| /m           # search for magic signatures\n"
 				);
 		} else if (input[1] == 'j') { // "pmj"
-			if (l > 0) {
-				r_core_magic (core, input + 2, true, true);
-			}
+			const char *filename = r_str_trim_head_ro (input + 2);
+			r_core_magic (core, filename, true, true);
 		} else {
 			// XXX: need cmd_magic header for r_core_magic
-			if (l > 0) {
-				r_core_magic (core, input + 1, true, false);
-			}
+			const char *filename = r_str_trim_head_ro (input + 1);
+			r_core_magic (core, filename, true, false);
 		}
 		break;
 	case 'u': // "pu"

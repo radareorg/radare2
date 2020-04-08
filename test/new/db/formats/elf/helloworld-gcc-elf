@@ -32,27 +32,29 @@ push {r7, lr}
 add ip, pc, 0, 12
 push {r3, lr}
 add ip, pc, 0, 12
+str lr, [sp, -4]!
 EOF
 RUN
 
 NAME=x86 - init_array detection
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=aa;afl~0x080482e0[3]
 EXPECT=<<EOF
 loc.imp.__gmon_start
 EOF
-CMDS=aa;afl~0x080482e0[3]
 RUN
 
 NAME=x86 - init_array detection2
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=iS~init_array
 EXPECT=<<EOF
 18  0x0000059c    0x4 0x0804959c    0x4 -rw- .init_array
 EOF
-CMDS=iS~init_array
 RUN
 
 NAME=metadata
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=C
 EXPECT=<<EOF
 0x00000000 CCu "[29] ---- section size 599 named .strtab"
 0x08048134 CCu "[01] -r-- section size 19 named .interp"
@@ -91,11 +93,11 @@ EXPECT=<<EOF
 0x080496a8 data Cd 4
 0x080484b0 ascii[13] "Hello world!"
 EOF
-CMDS=C
 RUN
 
 NAME=base64 metadata commands
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=C*
 EXPECT=<<EOF
 CCu base64:WzI5XSAtLS0tIHNlY3Rpb24gc2l6ZSA1OTkgbmFtZWQgLnN0cnRhYg== @ 0x00000000
 CCu base64:WzAxXSAtci0tIHNlY3Rpb24gc2l6ZSAxOSBuYW1lZCAuaW50ZXJw @ 0x08048134
@@ -134,11 +136,11 @@ Cd 4 @ 0x080496a4
 Cd 4 @ 0x080496a8
 Cs 13 @ 0x080484b0 # Hello world!
 EOF
-CMDS=C*
 RUN
 
 NAME=flags spaces
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=fs
 EXPECT=<<EOF
     0 * classes
     3 * imports
@@ -149,11 +151,14 @@ EXPECT=<<EOF
    34 * symbols
    26 * symbols.sections
 EOF
-CMDS=fs
 RUN
 
 NAME=flags spaces after analysis
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+aa;fs *;fs
+afl~?
+EOF
 EXPECT=<<EOF
     0 * classes
     0 * functions
@@ -166,14 +171,11 @@ EXPECT=<<EOF
    26 * symbols.sections
 14
 EOF
-CMDS=<<EOF
-aa;fs *;fs
-afl~?
-EOF
 RUN
 
 NAME=flags spaces after analysis again
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=s entry0+4; af;fs *;fs
 EXPECT=<<EOF
     0 * classes
     1 * functions
@@ -185,32 +187,27 @@ EXPECT=<<EOF
    34 * symbols
    26 * symbols.sections
 EOF
-CMDS=s entry0+4; af;fs *;fs
 RUN
 
 NAME=pb 4
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=pb 4
 EXPECT=<<EOF
 0011
 EOF
-CMDS=pb 4
 RUN
 
 NAME=pxW 10
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=pxW 10
 EXPECT=<<EOF
 0x08048300 0x895eed31
 0x08048304 0xf0e483e1
 EOF
-CMDS=pxW 10
 RUN
 
 NAME=p-
 FILE=../bins/elf/analysis/x86-helloworld-gcc
-EXPECT=<<EOF
-0x08048000 [^._______ss_s__s_sss_ssssss_ss_ss__sz_s____] 0x0804859c
-0x08048000 [^_sssssszss_____________________________sss] 0x080496b8
-EOF
 CMDS=<<EOF
 0x8048000
 e search.in=io.map
@@ -218,18 +215,26 @@ p-
 e search.in=io.maps
 p-
 EOF
+EXPECT=<<EOF
+0x08048000 [^._______ss_s__s_sss_ssssss_ss_ss__sz_s____] 0x0804859c
+0x08048000 [^_sssssszss_____________________________sss] 0x080496b8
+EOF
 RUN
 
 NAME=pu 10
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=pu 10
 EXPECT=<<EOF
 %31%ed%5e%89%e1%83%e4%f0%50%54
 EOF
-CMDS=pu 10
 RUN
 
 NAME=pdn 10
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+e scr.color = 0
+pDi 10
+EOF
 EXPECT=<<EOF
 0x08048300   sym._start:
 0x08048300                 31ed  xor ebp, ebp
@@ -239,14 +244,11 @@ EXPECT=<<EOF
 0x08048308                   50  push eax
 0x08048309                   54  push esp
 EOF
-CMDS=<<EOF
-e scr.color = 0
-pDi 10
-EOF
 RUN
 
 NAME=pi 12
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=pi 12
 EXPECT=<<EOF
 xor ebp, ebp
 pop esi
@@ -261,11 +263,11 @@ push ecx
 push esi
 push main
 EOF
-CMDS=pi 12
 RUN
 
 NAME=pc C
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=pc
 EXPECT=<<EOF
 #define _BUFFER_SIZE 256
 const uint8_t buffer[_BUFFER_SIZE] = {
@@ -297,19 +299,19 @@ const uint8_t buffer[_BUFFER_SIZE] = {
   0xff, 0xff, 0xff, 0x66, 0x90, 0x90
 };
 EOF
-CMDS=pc
 RUN
 
 NAME=flags (total)
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=f~?
 EXPECT=<<EOF
 106
 EOF
-CMDS=f~?
 RUN
 
 NAME=flags
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=f
 EXPECT=<<EOF
 0x00000000 0 section.
 0x00000000 17 section..comment
@@ -418,11 +420,14 @@ EXPECT=<<EOF
 0x080496b4 0 obj.__TMC_END
 0x080496b8 0 loc._end
 EOF
-CMDS=f
 RUN
 
 NAME=x86 - pdj 4
 FILE=../bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+pdj 4~{}
+?e
+EOF
 EXPECT=<<EOF
 [
   {
@@ -500,9 +505,5 @@ EXPECT=<<EOF
 ]
 
 
-EOF
-CMDS=<<EOF
-pdj 4~{}
-?e
 EOF
 RUN

@@ -1,0 +1,108 @@
+name: Radare2 CI
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [linux-acr-gcc, linux-acr-clang, linux-meson-gcc, linux-meson-newshell, macos-clang]
+        include:
+          - name: linux-acr-gcc
+            os: ubuntu-latest
+            build_system: acr
+            compiler: gcc
+          - name: linux-acr-clang
+            os: ubuntu-latest
+            build_system: acr
+            compiler: clang
+          - name: linux-meson-gcc
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Db_coverage=true
+            coverage: 1
+          - name: linux-meson-newshell
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Duse_treesitter=true
+            newshell: newshell
+          - name: macos-clang
+            os: macos-latest
+            build_system: acr
+            compiler: clang
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install pkg-config with Homebrew
+      if: matrix.os == 'macos-latest'
+      run: brew install pkg-config
+    - name: Install meson and ninja
+      if: matrix.build_system == 'meson'
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools && pip3 install --user meson ninja
+    - name: Install clang
+      if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest'
+      run: sudo apt-get --assume-yes install clang
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v2
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+    - name: Configure with ACR and build
+      if: matrix.build_system == 'acr'
+      run: ./configure --prefix=${HOME} && make
+      env:
+        CC: ${{ matrix.compiler }}
+    - name: Build with Meson
+      if: matrix.build_system == 'meson'
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        meson ${{ matrix.meson_options }} --prefix=${HOME} build && ninja -C build
+      env:
+        CC: ${{ matrix.compiler }}
+    - name: Install with make
+      if: matrix.build_system == 'acr'
+      run: |
+        # Install the radare2
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        make install
+    - name: Install with meson
+      if: matrix.build_system == 'meson'
+      run: |
+        # Install the radare2
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        ninja -C build install
+    - name: Run tests
+      if: matrix.newshell != 'newshell'
+      run: |
+        # Running the test suite
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        cd test
+        make
+    - name: Run tests with newshell
+      if: matrix.newshell == 'newshell'
+      continue-on-error: true
+      run: |
+        # Running the test suite
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        export R2_CFG_NEWSHELL=1
+        cd test
+        make
+    - name: Upload coverage info
+      uses: codecov/codecov-action@v1
+      if: matrix.coverage == '1'
