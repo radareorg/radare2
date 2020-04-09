@@ -1,3 +1,11 @@
+NAME=ELF: endbr-main-mov
+FILE=../bins/elf/endbr-main
+CMDS=?v main
+EXPECT=<<EOF
+0x401126
+EOF
+RUN
+
 NAME=ELF: main
 FILE=../bins/elf/analysis/main
 CMDS=?v main
