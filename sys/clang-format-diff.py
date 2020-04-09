@@ -83,7 +83,7 @@ def main():
     match = re.search('^\+\+\+\ (.*?/){%s}(\S*)' % args.p, line)
     if match:
       filename = match.group(2)
-    if filename == None:
+    if filename is None:
       continue
 
     if args.regex is not None:
@@ -101,8 +101,6 @@ def main():
         line_count = int(match.group(3))
       if line_count == 0:
         continue
-      end_line = start_line + line_count - 1
-      ranges = []
       range_start, range_end = None, None
       range_line = -1
       debug(line_count)
