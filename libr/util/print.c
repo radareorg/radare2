@@ -808,11 +808,12 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 	}
 }
 
-R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, int zoomsz) {
-	PrintfCallback printfmt = (PrintfCallback) printf;
+R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
+	PrintfCallback printfmt = (PrintfCallback)printf;
 	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
 	const char *color_title = c? (Pal (p, offset): Color_MAGENTA): "";
-	int i, j, k, inc = p? p->cols : 16;
+	int inc = p? p->cols : 16;
+	size_t i, j, k;
 	int sparse_char = 0;
 	int stride = 0;
 	int col = 0; // selected column (0=none, 1=hex, 2=ascii)
