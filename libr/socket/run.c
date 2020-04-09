@@ -168,7 +168,7 @@ static char *getstr(const char *src) {
 				rep = strtol (src + 1, NULL, 10);
 				len = strlen (pat);
 				if (rep > 0) {
-					char *buf = malloc (rep * sizeof(char));
+					char *buf = malloc (rep * sizeof (char));
 					if (buf) {
 						for (i = 0; i < rep; i++) {
 							buf[i] = pat[i % len];
