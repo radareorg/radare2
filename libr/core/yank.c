@@ -223,10 +223,6 @@ R_API int r_core_yank_to(RCore *core, const char *_arg) {
 		pos = r_num_math (core->num, str + 1);
 		str[0] = ' ';
 	}
-	if (len < 1) {
-		free (arg);
-		return res;
-	}
 	if (!str || pos == -1 || len == 0) {
 		eprintf ("Usage: yt [len] [dst-addr]\n");
 		free (arg);
