@@ -13,3 +13,19 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=ELF: ld-uclibc
+FILE=../bins/elf/ld-uClibc-0.9.33.2.so
+CMDS=<<EOF
+ii
+iij
+EOF
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type lib name
+---------------------------------
+0   0x00000000 NONE NONE     
+
+[{"ordinal":0,"name":"","plt":0}]
+EOF
+RUN
