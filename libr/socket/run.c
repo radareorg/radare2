@@ -162,15 +162,16 @@ static char *getstr(const char *src) {
 		{
 			char *pat = strchr (src + 1, '@');
 			if (pat) {
-				int i, len, rep;
+				size_t len;
+				long rep;
 				*pat++ = 0;
-				rep = atoi (src + 1);
+				rep = strtol (src + 1, NULL, 10);
 				len = strlen (pat);
 				if (rep > 0) {
-					char *buf = malloc (rep);
+					char *buf = malloc (rep * sizeof(char));
 					if (buf) {
-						for (i = 0; i < rep; i++) {
-							buf[i] = pat[i%len];
+						for (long i = 0; i < rep; i++) {
+							buf[i] = pat[i % len];
 						}
 					}
 					return buf;
