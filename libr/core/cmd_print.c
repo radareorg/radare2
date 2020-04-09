@@ -3338,8 +3338,8 @@ static inline void matchBar(ut8 *ptr, int i) {
 	}
 }
 
-static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skipblocks, ut64 from) {
-	int j, i = 0;
+static ut8 *analBars(RCore *core, size_t type, size_t nblocks, size_t blocksize, size_t skipblocks, ut64 from) {
+	size_t j, i = 0;
 	ut8 *ptr = calloc (1, nblocks);
 	if (!ptr) {
 		eprintf ("Error: failed to malloc memory");
@@ -4671,7 +4671,7 @@ static int cmd_print(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	ut64 n, off, from, to, at, ate, piece;
 	ut64 tmpseek = UT64_MAX;
-	const int addrbytes = core->io->addrbytes;
+	const size_t addrbytes = core->io->addrbytes;
 	i = l = len = ret = 0;
 	n = off = from = to = at = ate = piece = 0;
 	PJ *pj = NULL;
@@ -5432,7 +5432,7 @@ static int cmd_print(void *data, const char *input) {
 					pj_a (pj);
 					r_list_sort (f->bbs, bb_cmpaddr);
 					r_list_foreach (f->bbs, locs_it, b) {
-				
+
 						ut8 *buf = malloc (b->size);
 						if (buf) {
 							r_io_read_at (core->io, b->addr, buf, b->size);
@@ -5590,7 +5590,7 @@ l = use_blocksize;
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json, NULL, NULL);
 					} else {
-						eprintf ("Cannot allocate %d byte(s)\n", addrbytes * l);
+						eprintf ("Cannot allocate %ld byte(s)\n", addrbytes * l);
 					}
 				} else {
 					ut8 *buf = core->block;
