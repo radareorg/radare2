@@ -197,7 +197,7 @@ static void inferior_abort_handler(int pid) {
 }
 #endif
 
-static void trace_me (void) {
+static void trace_me(void) {
 #if __APPLE__
 	r_sys_signal (SIGTRAP, SIG_IGN); //NEED BY STEP
 #endif

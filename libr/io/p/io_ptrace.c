@@ -210,7 +210,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 	// Safely check if the PID has already been attached to avoid printing errors
 	// and attempt attaching on failure
-	if (!is_pid_already_attached(io, pid, &sig)) {
+	if (!is_pid_already_attached (io, pid, &sig)) {
 		ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 		if (ret == -1) {
 #ifdef __ANDROID__
@@ -220,14 +220,19 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			case EPERM:
 				ret = pid;
 				eprintf ("ptrace_attach: Operation not permitted\n");
-				break;
+				return NULL;
 			case EINVAL:
 				perror ("ptrace: Cannot attach");
 				eprintf ("ERRNO: %d (EINVAL)\n", errno);
+				return NULL;
+			case EBUSY:
+				/* Means that the child called ptrace-me already */
+				/* this fixes fork+attach on OpenBSD */
 				break;
+			default:
+				return NULL;
 			}
 #endif
-			return NULL;
 		} else if (__waitpid (pid)) {
 			ret = pid;
 		} else {
