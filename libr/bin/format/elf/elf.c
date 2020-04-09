@@ -1277,113 +1277,6 @@ ut64 Elf_(r_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name)
 	return section? section->rva + section->size: UT64_MAX;
 }
 
-#define REL_OFFSET (rel->is_rela? rel->r.rela.r_offset: rel->r.rel.r_offset)
-#define REL_INFO (rel->is_rela? rel->r.rela.r_info: rel->r.rel.r_info)
-#define REL_SYM (ELF_R_SYM (REL_INFO))
-#define REL_TYPE (ELF_R_TYPE (REL_INFO))
-
-struct ht_rel_t {
-	union {
-		Elf_(Rel) rel;
-		Elf_(Rela) rela;
-	} r;
-	bool is_rela;
-	int k;
-};
-
-static RBinElfSection *get_rel_sec(ELFOBJ *bin, const char **sects) {
-	RBinElfSection *rel_sec = NULL;
-	int j = 0;
-	while (!rel_sec && sects[j]) {
-		rel_sec = get_section_by_name (bin, sects[j++]);
-	}
-	return rel_sec;
-}
-
-static void read_rel(ELFOBJ *bin, Elf_(Rel) *rel, ut8 *rl) {
-	int l = 0;
-	rel->r_offset = READWORD (rl, l);
-	rel->r_info = READWORD (rl, l);
-}
-
-static void read_rela(ELFOBJ *bin, Elf_(Rela) *rela, ut8 *rl) {
-	int l = 0;
-	rela->r_offset = READWORD (rl, l);
-	rela->r_info = READWORD (rl, l);
-	rela->r_addend = READWORD (rl, l);
-}
-
-static struct ht_rel_t *read_ht_rel(ELFOBJ *bin, ut8 *rl, int k) {
-	struct ht_rel_t *rel = R_NEW0 (struct ht_rel_t);
-	if (!rel) {
-		return NULL;
-	}
-
-	rel->is_rela = bin->is_rela == DT_RELA;
-	rel->k = k;
-	if (rel->is_rela) {
-		read_rela (bin, &rel->r.rela, rl);
-	} else {
-		read_rel (bin, &rel->r.rel, rl);
-	}
-	return rel;
-}
-
-static void rel_cache_free(HtUPKv *kv) {
-	free (kv->value);
-}
-
-static HtUP *rel_cache_new(ELFOBJ *bin) {
-	ut8 rl[MAX_REL_RELA_SZ] = { 0 };
-	RBinElfSection *rel_sec = NULL;
-	int j, k, tsize, nrel;
-	const char *rel_sect[] = { ".rel.plt", ".rela.plt", ".rel.dyn", ".rela.dyn", NULL };
-	const char *rela_sect[] = { ".rela.plt", ".rel.plt", ".rela.dyn", ".rel.dyn", NULL };
-	HtUP *rel_cache;
-
-	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
-		return NULL;
-	}
-
-	if (bin->is_rela == DT_REL) {
-		rel_sec = get_rel_sec (bin, rel_sect);
-		tsize = sizeof (Elf_(Rel));
-	} else if (bin->is_rela == DT_RELA) {
-		rel_sec = get_rel_sec (bin, rela_sect);
-		tsize = sizeof (Elf_(Rela));
-	}
-	if (!rel_sec || rel_sec->size < 1) {
-		return NULL;
-	}
-
-	nrel = (ut32) ((int)rel_sec->size / (int)tsize);
-	if (nrel < 1) {
-		return NULL;
-	}
-
-	const int htsize = R_MIN (nrel, 1024);
-	rel_cache = ht_up_new_size (htsize, NULL, rel_cache_free, NULL);
-
-	for (j = k = 0; j < rel_sec->size && k < nrel; j += tsize, k++) {
-		int len = r_buf_read_at (bin->b, rel_sec->offset + j, rl, tsize);
-		if (len != tsize) {
-			break;
-		}
-		struct ht_rel_t *rel = read_ht_rel (bin, rl, k);
-		if (!rel) {
-			goto out;
-		}
-
-		if (!ht_up_insert (rel_cache, REL_SYM, rel)) {
-			free (rel);
-		}
-	}
-	return rel_cache;
-out:
-	ht_up_free (rel_cache);
-	return NULL;
-}
-
 static ut64 get_dyn_entry(ELFOBJ *bin, int dyn_entry) {
 	int i;
 	for (i = 0; i < bin->dyn_entries; i++) {
@@ -1691,7 +1584,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	}
 
 	// lookup the right rel/rela entry
-	struct ht_rel_t *rel = ht_up_find (bin->rel_cache, sym, NULL);
+	RBinElfReloc *rel = ht_up_find (bin->rel_cache, sym, NULL);
 	if (!rel) {
 		return UT64_MAX;
 	}
@@ -1719,12 +1612,12 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		return get_import_addr_mips (bin, rel, plt_section);
 	default:
 		eprintf ("Unsupported relocs type %" PFMT64u " for arch %d\n",
-			(ut64) REL_TYPE, bin->ehdr.e_machine);
+			(ut64)REL_TYPE, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
 }
 
-int Elf_(r_bin_elf_has_nx)(ELFOBJ *bin) {
+int Elf_(r_bin_elf_has_nx) (ELFOBJ *bin) {
 	int i;
 	if (bin && bin->phdr) {
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
@@ -1736,7 +1629,7 @@ int Elf_(r_bin_elf_has_nx)(ELFOBJ *bin) {
 	return 0;
 }
 
-int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
+int Elf_(r_bin_elf_has_relro) (ELFOBJ *bin) {
 	int i;
 	bool haveBindNow = false;
 	bool haveGnuRelro = false;
@@ -1747,7 +1640,7 @@ int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
 				haveBindNow = true;
 				break;
 			case DT_FLAGS:
-				for (i++; i < bin->dyn_entries ; i++) {
+				for (i++; i < bin->dyn_entries; i++) {
 					ut32 dTag = bin->dyn_buf[i].d_tag;
 					if (!dTag) {
 						break;
@@ -2907,7 +2800,31 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 	return ret;
 }
 
-RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
+static void rel_cache_free(HtUPKv *kv) {
+	free (kv->value);
+}
+
+static HtUP *rel_cache_new(ELFOBJ *bin) {
+	RBinElfReloc *relocs = Elf_(r_bin_elf_get_relocs) (ELFOBJ * bin);
+	const int htsize = R_MIN (bin->num_relocs, 1024);
+	HtUp *rel_cache = ht_up_new_size (htsize, NULL, rel_cache_free, NULL);
+	size_t i;
+
+	for (i = 0; i < bin->num_relocs; ++i) {
+		RBinElfReloc *tmp = R_NEW (RBinElfReloc);
+		memcpy (tmp, relocs + i; sizeof (RBinElfReloc));
+		if (!ht_up_insert (rel_cache, REL_SYM, rel)) {
+			free (rel);
+		}
+	}
+	free (relocs);
+	return rel_cache;
+out:
+	ht_up_free (rel_cache);
+	return NULL;
+}
+
+RBinElfLib *Elf_(r_bin_elf_get_libs) (ELFOBJ *bin) {
 	RBinElfLib *ret = NULL;
 	int j, k;
 
