@@ -163,14 +163,14 @@ static char *getstr(const char *src) {
 			char *pat = strchr (src + 1, '@');
 			if (pat) {
 				size_t len;
-				long rep;
+				long i, rep;
 				*pat++ = 0;
 				rep = strtol (src + 1, NULL, 10);
 				len = strlen (pat);
 				if (rep > 0) {
 					char *buf = malloc (rep * sizeof(char));
 					if (buf) {
-						for (long i = 0; i < rep; i++) {
+						for (i = 0; i < rep; i++) {
 							buf[i] = pat[i % len];
 						}
 					}
