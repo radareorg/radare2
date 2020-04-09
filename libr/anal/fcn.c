@@ -1060,16 +1060,16 @@ repeat:
 				} else if (is_arm) {
 					if (op.ptrsize == 1) { // TBB
 						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op.ireg);
-						int tablesize = 0;
+						ut64 table_size = 0;
 						if (pred_cmpval != UT64_MAX) {
-							tablesize += pred_cmpval;
+							table_size += pred_cmpval;
 						} else {
-							tablesize += cmpval;
+							table_size += cmpval;
 						}
 						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op.addr, op.addr + op.size,
-							op.addr + 4, 1, tablesize, UT64_MAX, ret);
+							op.addr + 4, 1, table_size, UT64_MAX, ret);
 						// skip inlined jumptable
-						idx += (tablesize);
+						idx += table_size;
 					}
 					if (op.ptrsize == 2) { // LDRH on thumb/arm
 						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op.ireg);
