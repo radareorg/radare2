@@ -2767,19 +2767,20 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
 	struct dynamic_relocation_section *info, RBinElfReloc *relocs, size_t pos) {
 	size_t size = get_size_rel_mode(info->plt_mode);
 
-	for (size_t offset = 0; offset < info->rela_size; offset += info->relaent) {
+	size_t offset;
+	for (offset = 0; offset < info->rela_size; offset += info->relaent) {
 		read_reloc (bin, relocs + pos, DT_RELA, info->addr_rela + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
 		pos++;
 	}
 
-	for (size_t offset = 0; offset < info->rel_size; offset += info->relent) {
+	for (offset = 0; offset < info->rel_size; offset += info->relent) {
 		read_reloc (bin, relocs + pos, DT_REL, info->addr_rel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
 		pos++;
 	}
 
-	for (size_t offset = 0; offset < info->jmprel_size; offset += size) {
+	for (offset = 0; offset < info->jmprel_size; offset += size) {
 		read_reloc (bin, relocs + pos, info->plt_mode, info->addr_jmprel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
 		pos++;
@@ -2858,7 +2859,8 @@ static RBinElfReloc *populate_relocs_record(ELFOBJ *bin, struct dynamic_relocati
 static struct dynamic_relocation_section *get_dynamic_info(ELFOBJ *bin) {
 	struct dynamic_relocation_section *res = calloc (1, sizeof (struct dynamic_relocation_section));
 
-	for (size_t i = 0; i < bin->dyn_entries; i++) {
+	size_t i;
+	for (i = 0; i < bin->dyn_entries; i++) {
 		Elf_(Dyn) *dyn_struct = bin->dyn_buf + i;
 
 		switch (dyn_struct->d_tag) {
