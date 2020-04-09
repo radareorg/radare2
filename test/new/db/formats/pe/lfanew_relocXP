@@ -1,6 +1,0 @@
-NAME=PE: corkami lfanew_relocXP.exe - open
-FILE=../bins/pe/lfanew_relocXP.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

@@ -1,0 +1,18 @@
+NAME=dbg.trace.loop.hwstep
+FILE=bins/elf/analysis/x64-loop
+ARGS=-d
+CMDS=<<EOF
+e scr.color=0
+e dbg.swstep=false
+db sym.called_in_loop
+dbc sym.called_in_loop dr PC
+dbte sym.called_in_loop
+dc
+dk 9
+EOF
+EXPECT=<<EOF
+0x004004ed
+0x004004ed
+0x004004ed
+EOF
+RUN

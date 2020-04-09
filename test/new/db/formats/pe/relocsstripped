@@ -1,6 +1,0 @@
-NAME=PE: corkami relocsstripped.exe - open
-FILE=../bins/pe/relocsstripped.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

@@ -1,0 +1,16 @@
+NAME=noreturn 0
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+aaa
+tn~0x
+afi@0x1000013d8~noret[1]
+afi@0x1000044bd~noret[1]
+EOF
+EXPECT=<<EOF
+0x1000013d8
+0x1000044bd
+true
+true
+EOF
+RUN
+

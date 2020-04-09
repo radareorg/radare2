@@ -1,0 +1,7 @@
+NAME=Test 32-bit arm
+FILE=bins/zimg/arm32
+CMDS=iI~arch
+EXPECT=<<EOF
+arch     arm
+EOF
+RUN

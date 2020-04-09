@@ -1,7 +1,0 @@
-NAME=PE: corkami maxsecXP.exe - open
-FILE=../bins/pe/maxsecXP.exe
-ARGS=-A
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

@@ -1,0 +1,22 @@
+NAME=PE: FSG 2.0- open
+FILE=bins/pe/base_FSG.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PE: FSG 2.0- pi 1
+FILE=bins/pe/base_FSG.exe
+CMDS=<<EOF
+e asm.functions = false
+e asm.comments = false
+e asm.bytes = false
+e asm.offset = false
+e asm.calls = false
+s entry0
+pi 1
+EOF
+EXPECT=<<EOF
+xchg dword [0x446494], esp
+EOF
+RUN

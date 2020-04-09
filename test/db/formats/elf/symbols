@@ -1,0 +1,200 @@
+NAME=entrypoint on object
+FILE=bins/elf/pngrutil_o
+CMDS=ie
+EXPECT=<<EOF
+[Entrypoints]
+
+0 entrypoints
+EOF
+RUN
+
+
+NAME=symbols non common LD script
+FILE=bins/elf/analysis/custom_ldscript
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr       vaddr      bind   type   size lib name
+------------------------------------------------------
+1    0x00000200 0x00400200 LOCAL  SECT   0        .interp
+2    0x0000022c 0x0040022c LOCAL  SECT   0        .note.ABI-tag
+3    0x00000250 0x00400250 LOCAL  SECT   0        .hash
+4    0x00000278 0x00400278 LOCAL  SECT   0        .dynsym
+5    0x000002f0 0x004002f0 LOCAL  SECT   0        .dynstr
+6    0x00000334 0x00400334 LOCAL  SECT   0        .gnu.version
+7    0x00000340 0x00400340 LOCAL  SECT   0        .gnu.version_r
+8    0x00000360 0x00400360 LOCAL  SECT   0        .rela.got
+9    0x00000378 0x00400378 LOCAL  SECT   0        .rela.plt
+10   0x000003d8 0x004003d8 LOCAL  SECT   0        .init
+11   0x00000400 0x00400400 LOCAL  SECT   0        .plt
+12   0x00000450 0x00400450 LOCAL  SECT   0        .text
+13   0x00000524 0x00400524 LOCAL  SECT   0        .fini
+14   0x00000530 0x00400530 LOCAL  SECT   0        .rodata
+15   0x00000550 0x00400550 LOCAL  SECT   0        .eh_frame
+16   0x00000660 0x00600660 LOCAL  SECT   0        .dynamic
+17   0x000007f0 0x006007f0 LOCAL  SECT   0        .got
+18   0x000007f8 0x006007f8 LOCAL  SECT   0        .got.plt
+19   0x00000830 0x00600830 LOCAL  SECT   0        .data
+20   0x00000838 0x01a00838 LOCAL  SECT   0        .custom_sect
+21   0x00200840 0x01c00840 LOCAL  SECT   0        .custom_sect2
+22   0x00200844 0x01c00844 LOCAL  SECT   0        .custom_text
+23   ---------- 0x00000000 LOCAL  SECT   0        .comment
+24   ---------- 0x00000000 LOCAL  FILE   0        custom_ldscript.c
+25   ---------- 0x00000000 LOCAL  FILE   0        
+26   0x00000660 0x00600660 LOCAL  NOTYPE 0        __init_array_end
+27   0x00000660 0x00600660 LOCAL  OBJ    0        _DYNAMIC
+28   0x00000660 0x00600660 LOCAL  NOTYPE 0        __init_array_start
+29   0x000007f8 0x006007f8 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
+30   0x00000520 0x00400520 GLOBAL FUNC   2        __libc_csu_fini
+31   0x00000830 0x00600830 WEAK   NOTYPE 0        data_start
+32   ---------- 0x00600834 GLOBAL NOTYPE 0        _edata
+33   0x00000524 0x00400524 GLOBAL FUNC   0        _fini
+35   0x00000450 0x00400450 GLOBAL FUNC   49       process
+37   0x00000830 0x00600830 GLOBAL NOTYPE 0        __data_start
+39   0x00000548 0x00400548 GLOBAL OBJ    4        _IO_stdin_used
+40   0x000004b0 0x004004b0 GLOBAL FUNC   101      __libc_csu_init
+41   ---------- 0x00600838 GLOBAL NOTYPE 0        _end
+42   0x00000481 0x00400481 GLOBAL FUNC   0        _start
+43   ---------- 0x00600834 GLOBAL NOTYPE 0        __bss_start
+44   0x00200844 0x01c00844 GLOBAL FUNC   128      main
+45   0x00000838 0x01a00838 GLOBAL OBJ    8        obj
+47   0x00200840 0x01c00840 GLOBAL OBJ    4        glob
+48   0x000003d8 0x004003d8 GLOBAL FUNC   0        _init
+1    0x00000410 0x00400410 GLOBAL FUNC   16       imp.printf
+2    0x00000420 0x00400420 GLOBAL FUNC   16       imp.__libc_start_main
+3    0x00000430 0x00400430 WEAK   NOTYPE 16       imp.__gmon_start__
+4    0x00000440 0x00400440 GLOBAL FUNC   16       imp.atoi
+EOF
+RUN
+
+NAME=symbols with no sections header information
+FILE=bins/elf/analysis/main_nosect
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr       vaddr      bind   type   size lib name
+------------------------------------------------------
+1    0x000003e0 0x004003e0 GLOBAL FUNC   16       imp.puts
+2    0x000003f0 0x004003f0 GLOBAL FUNC   16       imp.__libc_start_main
+3    0x00000400 0x00400400 WEAK   NOTYPE 16       imp.__gmon_start__
+EOF
+RUN
+
+NAME=symbols with no sections header information 2
+FILE=bins/elf/analysis/clark
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr       vaddr      bind   type   size lib name
+------------------------------------------------------
+8    0x000007dc 0x080487dc GLOBAL OBJ    4        _IO_stdin_used
+1    0x00000370 0x08048370 GLOBAL FUNC   16       imp.mprotect
+2    0x00000380 0x08048380 GLOBAL FUNC   16       imp.puts
+3    0x00000390 0x08048390 WEAK   NOTYPE 16       imp.__gmon_start__
+4    0x000003a0 0x080483a0 GLOBAL FUNC   16       imp.exit
+5    0x000003b0 0x080483b0 GLOBAL FUNC   16       imp.__libc_start_main
+6    0x000003c0 0x080483c0 GLOBAL FUNC   16       imp.ptrace
+7    0x000003d0 0x080483d0 GLOBAL FUNC   16       imp.calloc
+EOF
+RUN
+
+NAME=symbols with no sections header information 3
+FILE=bins/elf/libmemalloc-dump-mem
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr       vaddr      bind   type   size lib name
+------------------------------------------------------
+3    0x00002dd0 0x00003dd0 WEAK   OBJ    36       vtable for gralloc::IMemAlloc
+6    0x00001210 0x00001210 GLOBAL FUNC   68       gralloc::IonAlloc::unmap_buffer(void*, unsigned int, int)
+11   0x00001254 0x00001254 GLOBAL FUNC   96       gralloc::IonAlloc::open_device()
+13   0x000012b4 0x000012b4 GLOBAL FUNC   240      gralloc::IonAlloc::clean_buffer(void*, unsigned int, int, int, int)
+15   0x000013a4 0x000013a4 GLOBAL FUNC   84       gralloc::IonAlloc::map_buffer(void**, unsigned int, int, int)
+17   0x000013f8 0x000013f8 GLOBAL FUNC   68       gralloc::IonAlloc::free_buffer(void*, unsigned int, int, int)
+21   0x0000143c 0x0000143c GLOBAL FUNC   304      gralloc::IonAlloc::alloc_buffer(gralloc::alloc_data&)
+22   0x0000156c 0x0000156c GLOBAL FUNC   22       gralloc::IonAlloc::close_device()
+24   0x00002df8 0x00003df8 GLOBAL OBJ    36       vtable for gralloc::IonAlloc
+26   0x00002e20 0x00003e20 WEAK   OBJ    24       vtable for gralloc::IAllocController
+27   0x00001614 0x00001614 GLOBAL FUNC   48       gralloc::IonController::getAllocator(int)
+28   0x00001644 0x00001644 GLOBAL FUNC   452      gralloc::IonController::allocate(gralloc::alloc_data&, int)
+36   0x00001808 0x00001808 GLOBAL FUNC   40       AdrenoMemInfo::AdrenoMemInfo()
+39   0x00001808 0x00001808 GLOBAL FUNC   40       AdrenoMemInfo::AdrenoMemInfo()
+40   0x00001830 0x00001830 GLOBAL FUNC   16       AdrenoMemInfo::~AdrenoMemInfo()
+42   0x00001830 0x00001830 GLOBAL FUNC   16       AdrenoMemInfo::~AdrenoMemInfo()
+43   0x00001840 0x00001840 GLOBAL FUNC   288      AdrenoMemInfo::getStride(int, int)
+45   0x00001960 0x00001960 GLOBAL FUNC   68       gralloc::IonController::IonController()
+47   0x00001960 0x00001960 GLOBAL FUNC   68       gralloc::IonController::IonController()
+48   0x000019a4 0x000019a4 GLOBAL FUNC   40       gralloc::IAllocController::getInstance()
+49   0x000019cc 0x000019cc GLOBAL FUNC   60       free_buffer(private_handle_t*)
+50   0x00001a08 0x00001a08 WEAK   FUNC   56       android::Singleton<AdrenoMemInfo>::getInstance()
+51   0x00001a40 0x00001a40 GLOBAL FUNC   636      getBufferSizeAndDimensions(int, int, int, int&, int&)
+52   0x00001cbc 0x00001cbc GLOBAL FUNC   244      alloc_buffer(private_handle_t**, int, int, int, int)
+54   0x00001db0 0x00001db0 WEAK   FUNC   44       android::Singleton<AdrenoMemInfo>::hasInstance()
+55   0x00001ddc 0x00001ddc WEAK   FUNC   2        android::Singleton<AdrenoMemInfo>::~Singleton()
+56   0x00001ddc 0x00001ddc WEAK   FUNC   2        android::Singleton<AdrenoMemInfo>::~Singleton()
+57   0x00001ddc 0x00001ddc WEAK   FUNC   2        android::Singleton<AdrenoMemInfo>::Singleton()
+58   0x00001ddc 0x00001ddc WEAK   FUNC   2        android::Singleton<AdrenoMemInfo>::Singleton()
+60   0x00002e38 0x00003e38 GLOBAL OBJ    24       vtable for gralloc::IonController
+61   ---------- 0x0000400c GLOBAL OBJ    4        gralloc::IAllocController::sController
+62   ---------- 0x00004004 GLOBAL OBJ    4        android::Singleton<AdrenoMemInfo>::sInstance
+63   ---------- 0x00004008 GLOBAL OBJ    4        android::Singleton<AdrenoMemInfo>::sLock
+64   ---------- 0x00004004 GLOBAL NOTYPE 0        _edata
+65   ---------- 0x00004004 GLOBAL NOTYPE 0        __bss_start
+66   ---------- 0x00004010 GLOBAL NOTYPE 0        _end
+1    0x00000000 0x00000000 GLOBAL FUNC   16       imp.__cxa_finalize
+2    0x00000000 0x00000000 GLOBAL FUNC   16       imp.__cxa_atexit
+4    0x00000000 0x00000000 GLOBAL FUNC   16       imp.__aeabi_unwind_cpp_pr0
+5    0x00000000 0x00000000 GLOBAL FUNC   16       imp._ZdlPv
+7    0x00000000 0x00000000 GLOBAL FUNC   16       imp.munmap
+8    0x00000000 0x00000000 GLOBAL FUNC   16       imp.__errno
+9    0x00000000 0x00000000 GLOBAL FUNC   16       imp.strerror
+10   0x00000000 0x00000000 GLOBAL FUNC   16       imp.__android_log_print
+12   0x00000000 0x00000000 GLOBAL FUNC   16       imp.open
+14   0x00000000 0x00000000 GLOBAL FUNC   16       imp.ioctl
+16   0x00000000 0x00000000 GLOBAL FUNC   16       imp.mmap
+18   0x00000000 0x00000000 GLOBAL FUNC   16       imp.pthread_mutex_lock
+19   0x00000000 0x00000000 GLOBAL FUNC   16       imp.close
+20   0x00000000 0x00000000 GLOBAL FUNC   16       imp.pthread_mutex_unlock
+23   0x00000000 0x00000000 GLOBAL FUNC   16       imp.pthread_mutex_destroy
+25   0x00000000 0x00000000 GLOBAL FUNC   16       imp.__cxa_pure_virtual
+29   0x00000000 0x00000000 GLOBAL FUNC   16       imp._Znwj
+30   0x00000000 0x00000000 GLOBAL FUNC   16       imp.property_get
+31   0x00000000 0x00000000 GLOBAL FUNC   16       imp.strncmp
+32   0x00000000 0x00000000 GLOBAL FUNC   16       imp.__stack_chk_fail
+33   0x00000000 0x00000000 GLOBAL OBJ    16       imp.__stack_chk_guard
+34   0x00000000 0x00000000 GLOBAL OBJ    16       imp._ZN7android9SingletonIN7qdutils17QCCompositionTypeEE5sLockE
+35   0x00000000 0x00000000 GLOBAL OBJ    16       imp._ZN7android9SingletonIN7qdutils17QCCompositionTypeEE9sInstanceE
+37   0x00000000 0x00000000 GLOBAL FUNC   16       imp.dlopen
+38   0x00000000 0x00000000 GLOBAL FUNC   16       imp.dlsym
+41   0x00000000 0x00000000 GLOBAL FUNC   16       imp.dlclose
+44   0x00000000 0x00000000 GLOBAL FUNC   16       imp.strncasecmp
+46   0x00000000 0x00000000 GLOBAL FUNC   16       imp.pthread_mutex_init
+53   0x00000000 0x00000000 GLOBAL OBJ    16       imp.__page_size
+59   0x00000000 0x00000000 GLOBAL FUNC   16       imp.__aeabi_atexit
+EOF
+RUN
+
+NAME=special ARM symbols with dot
+FILE=bins/elf/special-sym-with-dot.bin
+CMDS=pd 5 @ 0x464
+EXPECT=<<EOF
+            ;-- main:
+            0x00000464      80b5           push {r7, lr}
+            0x00000466      6f46           mov r7, sp
+            0x00000468      82b0           sub sp, 8
+            0x0000046a      69ec1623       stcl p3, c2, [sb], -0x58
+            0x0000046e      0548           ldr r0, [0x00000484]        ; [0x484:4]=28 ; 1156
+EOF
+RUN
+
+NAME=symname just before end of dynstr section of size 1
+FILE=bins/elf/switch-hello-world.elf
+CMDS=isq~?
+EXPECT=<<EOF
+1732
+EOF
+RUN

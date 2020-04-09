@@ -1,8 +1,0 @@
-NAME=ELF: elf-nx - nx enabled
-FILE=../bins/elf/analysis/elf-nx
-ARGS=-A
-CMDS=iI~^nx
-EXPECT=<<EOF
-nx       true
-EOF
-RUN

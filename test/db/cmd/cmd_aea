@@ -1,0 +1,118 @@
+NAME=aea 5
+FILE=-
+ARGS=-a x86 -b64
+CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aea 5
+EXPECT=<<EOF
+ I: rsp eax edx
+ A: rsp rbp rax eax rdx cf edx zf pf sf of
+ R: rsp eax edx
+ W: rbp rax rdx cf edx zf pf sf eax of
+ V: 0 65535 1
+ N: rsp
+EOF
+RUN
+
+NAME=aeaj 5
+FILE=-
+ARGS=-a x86 -b64
+CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aeaj 5~{}
+EXPECT=<<EOF
+{
+  "A": [
+    "rsp",
+    "rbp",
+    "rax",
+    "eax",
+    "rdx",
+    "cf",
+    "edx",
+    "zf",
+    "pf",
+    "sf",
+    "of"
+  ],
+  "I": [
+    "rsp",
+    "eax",
+    "edx"
+  ],
+  "R": [
+    "rsp",
+    "eax",
+    "edx"
+  ],
+  "W": [
+    "rbp",
+    "rax",
+    "rdx",
+    "cf",
+    "edx",
+    "zf",
+    "pf",
+    "sf",
+    "eax",
+    "of"
+  ],
+  "V": [
+    "0",
+    "65535",
+    "1"
+  ],
+  "N": [
+    "rsp"
+  ]
+}
+EOF
+RUN
+
+NAME=aeA 15
+FILE=-
+ARGS=-a x86 -b64
+CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aeA 15
+EXPECT=<<EOF
+ I: rsp eax edx
+ A: rsp rbp rax eax rdx cf edx zf pf sf of
+ R: rsp eax edx
+ W: rbp rax rdx cf edx zf pf sf eax of
+ V: 0 65535 1
+ N: rsp
+EOF
+RUN
+
+NAME=aes delay slot
+FILE=bins/elf/mipsloop
+CMDS=<<EOF
+s main
+aeim
+28aes
+ar?v0
+ar?a1
+sr PC
+pi 2
+EOF
+EXPECT=<<EOF
+0x0000000a
+0x00007a62
+lw a0, -0x7fc4(gp)
+lw t9, -0x7fbc(gp)
+EOF
+RUN
+
+NAME=aes delay slot2
+FILE=bins/elf/mipsloop
+CMDS=<<EOF
+s main
+aeim
+aesu 0x000804d8
+ar?v0
+ar?a1
+sr PC
+pi 2
+EOF
+EXPECT=<<EOF
+0x0000000a
+0x00007a62
+lw a0, -0x7fc4(gp)
+lw t9, -0x7fbc(gp)
+EOF
+RUN

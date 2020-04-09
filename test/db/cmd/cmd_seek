@@ -1,0 +1,346 @@
+NAME=seekop
+FILE=bins//mach0/ired-arm64
+CMDS=<<EOF
+s
+so+3
+s
+so-3
+s
+so+2
+s
+so-2
+s
+EOF
+EXPECT=<<EOF
+0x100005864
+0x100005870
+0x100005864
+0x10000586c
+0x100005864
+EOF
+RUN
+
+NAME=s0x
+FILE=-
+CMDS=<<EOF
+s0x33
+s
+EOF
+EXPECT=<<EOF
+0x33
+EOF
+RUN
+
+NAME=seek far offset
+FILE=-
+CMDS=<<EOF
+s 0x7fffff8000b54000 ; ?v $$
+s 0x8fffff8000b54000 ; ?v $$
+EOF
+EXPECT=<<EOF
+0x7fffff8000b54000
+0x8fffff8000b54000
+EOF
+RUN
+
+NAME=seek math (symbol addition)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+s sym._start + 8
+s
+EOF
+EXPECT=<<EOF
+0x400418
+EOF
+RUN
+
+NAME=seek opcodes
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 4883c668
+s 0; so   ; ?v $$
+s 0; so 1 ; ?v $$
+EOF
+EXPECT=<<EOF
+0x4
+0x4
+EOF
+RUN
+
+NAME=seek line
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+sl 1; ?v $$
+e lines.from=0x100002000
+e lines.to=0x100004000
+sl 9
+sl
+sl+1
+sl
+sl-2
+sl
+sl 999999999999
+sl
+sl 0
+sl
+sl 1; ?v $$
+EOF
+EXPECT=<<EOF
+0x100001058
+9
+10
+8
+8
+8
+0x1000025a3
+EOF
+RUN
+
+NAME=seek local flag
+FILE=bins/elf/analysis/main
+CMDS=<<EOF
+af@main
+f.foo@main+4
+s main+.foo
+s
+s main+.foo
+s
+EOF
+EXPECT=<<EOF
+0x40050a
+0x40050a
+EOF
+RUN
+
+NAME=Redodups
+FILE=malloc://512
+CMDS=<<EOF
+s $$
+s $$
+s $$
+s $$
+s*~?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=seek backwards
+FILE=malloc://0x4000
+CMDS=<<EOF
+s 0
+b 64
+wb 38
+s 64
+wb deadbeef
+s-32
+px
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000020  3838 3838 3838 3838 3838 3838 3838 3838  8888888888888888
+0x00000030  3838 3838 3838 3838 3838 3838 3838 3838  8888888888888888
+0x00000040  dead beef dead beef dead beef dead beef  ................
+0x00000050  dead beef dead beef dead beef dead beef  ................
+EOF
+RUN
+
+NAME=seek silent
+FILE=-
+CMDS=<<EOF
+s 0x100
+s
+s*
+?e
+s 0x200
+s
+s*
+?e
+ss 0x300
+s
+s*
+EOF
+EXPECT=<<EOF
+0x100
+f undo_0 @ 0x0
+
+0x200
+f undo_1 @ 0x0
+f undo_0 @ 0x100
+
+0x300
+f undo_1 @ 0x0
+f undo_0 @ 0x100
+EOF
+RUN
+
+NAME=seek silent to register
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+dr eax=0x200
+dr ebx=0x300
+s 0x100
+s
+s*
+?e
+sr eax
+s
+s*
+?e
+ssr ebx
+s
+s*
+EOF
+EXPECT=<<EOF
+0x100
+f undo_0 @ 0x0
+
+0x200
+f undo_1 @ 0x0
+f undo_0 @ 0x100
+
+0x300
+f undo_1 @ 0x0
+f undo_0 @ 0x100
+EOF
+RUN
+
+NAME=so -N, pd -N
+FILE=bins/pe/cmd_adf_sample0.exe
+CMDS=<<EOF
+"(test_so_pd addr; ?e; ?e --- From $0 ---; ?e; ?e -- 1 --; s $0; pd -1; so -1; s; pd 1; ?e; ?e -- 2 --; s $0; pd -2; so -2; s; pd 2)"
+.(test_so_pd 0x0)  # Special case
+.(test_so_pd 0x401000)
+s 0x560e67
+af
+.(test_so_pd 0x560e7d)
+.(test_so_pd 0x560e7c)
+.(test_so_pd 0x560e7a)
+.(test_so_pd 0x560e79)
+.(test_so_pd 0x560e97)
+.(test_so_pd 0x560e96)
+EOF
+EXPECT=<<EOF
+
+--- From 0x0 ---
+
+-- 1 --
+            0x00000000      ff             invalid
+0x0
+            0x00000000      ff             invalid
+
+-- 2 --
+            0x00000000      ff             invalid
+            0x00000001      ff             invalid
+0x0
+            0x00000000      ff             invalid
+            0x00000001      ff             invalid
+
+--- From 0x401000 ---
+
+-- 1 --
+            0x00400fff  ~   ffcc           dec esp
+0x400fff
+            0x00400fff  ~   ffcc           dec esp
+
+-- 2 --
+            0x00400ffe      ff             invalid
+            0x00400fff  ~   ffcc           dec esp
+0x400ffe
+            0x00400ffe      ff             invalid
+            0x00400fff  ~   ffcc           dec esp
+
+--- From 0x560e7d ---
+
+-- 1 --
+            0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
+0x560e7a
+            0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
+
+-- 2 --
+            0x00560e78      d41b           aam 0x1b
+            0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
+0x560e78
+            0x00560e78      d41b           aam 0x1b
+            0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
+
+--- From 0x560e7c ---
+
+-- 1 --
+            0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
+0x560e7a
+            0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
+
+-- 2 --
+            0x00560e78      d41b           aam 0x1b
+            0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
+0x560e78
+            0x00560e78      d41b           aam 0x1b
+            0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
+
+--- From 0x560e7a ---
+
+-- 1 --
+            0x00560e78      d41b           aam 0x1b
+0x560e78
+            0x00560e78      d41b           aam 0x1b
+
+-- 2 --
+            0x00560e76      3bd4           cmp edx, esp
+            0x00560e78      d41b           aam 0x1b
+0x560e76
+            0x00560e76      3bd4           cmp edx, esp
+            0x00560e78      d41b           aam 0x1b
+
+--- From 0x560e79 ---
+
+-- 1 --
+            0x00560e78      d41b           aam 0x1b
+0x560e78
+            0x00560e78      d41b           aam 0x1b
+
+-- 2 --
+            0x00560e76      3bd4           cmp edx, esp
+            0x00560e78      d41b           aam 0x1b
+0x560e76
+            0x00560e76      3bd4           cmp edx, esp
+            0x00560e78      d41b           aam 0x1b
+
+--- From 0x560e97 ---
+
+-- 1 --
+|           ; CODE XREF from fcn.00560e67 @ 0x560e80
+|           0x00560e96      0f31           rdtsc
+0x560e96
+|           ; CODE XREF from fcn.00560e67 @ 0x560e80
+|           0x00560e96      0f31           rdtsc
+
+-- 2 --
+            0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
+|           ; CODE XREF from fcn.00560e67 @ 0x560e80
+|           0x00560e96      0f31           rdtsc
+0x560e95
+            0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
+|           ; CODE XREF from fcn.00560e67 @ 0x560e80
+|           0x00560e96      0f31           rdtsc
+
+--- From 0x560e96 ---
+
+-- 1 --
+            0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
+0x560e95
+            0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
+
+-- 2 --
+            0x00560e94      9e             sahf
+            0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
+0x560e94
+            0x00560e94      9e             sahf
+            0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
+EOF
+RUN

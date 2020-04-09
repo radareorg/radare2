@@ -1,7 +1,0 @@
-NAME=PE: corkami maxvals.exe - open
-FILE=../bins/pe/maxvals.exe
-ARGS=-A
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

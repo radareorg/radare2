@@ -1,6 +1,0 @@
-NAME=PE: corkami dump_imports.exe - open
-FILE=../bins/pe/dump_imports.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

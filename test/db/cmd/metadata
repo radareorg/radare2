@@ -1,0 +1,706 @@
+NAME=CC-*
+FILE=bins/mach0/FileDP
+CMDS=<<EOF
+C*~?
+CC~?
+CC-*
+CC~?
+C*~?
+EOF
+EXPECT=<<EOF
+39
+13
+0
+26
+EOF
+RUN
+
+NAME=CCf-*
+FILE=bins/mach0/FileDP
+CMDS=<<EOF
+af
+CCf-*~?
+CC hello
+CC world @ $$ + 32
+CCf~?
+CCf-*
+CCf~?
+EOF
+EXPECT=<<EOF
+0
+2
+0
+EOF
+RUN
+
+NAME=Cs
+FILE=malloc://1024
+CMDS=<<EOF
+w hello world
+Cs @ $$
+C*~[1]
+EOF
+EXPECT=<<EOF
+12
+EOF
+RUN
+
+NAME=Cs 5
+FILE=malloc://1024
+CMDS=<<EOF
+w hello world
+Cs 5
+C*~[1]
+EOF
+EXPECT=<<EOF
+5
+EOF
+RUN
+
+NAME=Cz
+FILE=malloc://1024
+CMDS=<<EOF
+w hello world
+Cz
+C*~[1]
+EOF
+EXPECT=<<EOF
+12
+EOF
+RUN
+
+NAME=Cd : data
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+w 909090
+Cd 3
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      hex length=3 delta=0
+0x00000000  3930 39                                  909
+
+            0x00000003      3039           xor byte [ecx], bh
+EOF
+RUN
+
+NAME=Cd : data + align
+FILE=malloc://1024
+BROKEN=1
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+w 909090
+Cd 3
+s 1
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000001 hex length=3 delta=1
+0x00000001  30 39                                    09
+
+            0x00000003      3039           xor byte [ecx], bh
+EOF
+RUN
+
+NAME=Cs : convert to string
+FILE=malloc://1024
+CMDS=<<EOF
+w hello
+Cs 6
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000     .string "hello" ; len=6
+EOF
+RUN
+
+NAME=Cs : concatenated strings bug
+FILE=malloc://1024
+CMDS=<<EOF
+w hello\x00world
+Cs 6
+Cs 6@6
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000     .string "hello" ; len=6
+            0x00000006     .string "world" ; len=6
+EOF
+RUN
+
+NAME=Cs : concatenated strings bug
+FILE=malloc://1024
+CMDS=<<EOF
+w hello\x00world
+Cs 6
+Cs 6@6
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000     .string "hello" ; len=6
+            0x00000006     .string "world" ; len=6
+EOF
+RUN
+
+NAME=Cs : string count bug
+FILE=malloc://128
+CMDS=<<EOF
+w hello
+Cs 6
+C*~?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=Ch : hide bytes in pd
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e scr.color=false
+wx 554889e54883c768
+Ch 2
+pd 2
+Ch-
+EOF
+EXPECT=<<EOF
+            0x00000000 (2 bytes hidden)
+            0x00000002      89e5           mov ebp, esp
+EOF
+RUN
+
+NAME=Ch : add/del hide bytes
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=false
+wx 554889e54883c768
+Ch 2@0x100
+C*~?
+Ch-@0x100
+C*~?
+EOF
+EXPECT=<<EOF
+1
+0
+EOF
+RUN
+
+NAME=Cf should be silent
+FILE=-
+CMDS=Cf 32 2xx
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=format memory metadata
+FILE=-
+CMDS=<<EOF
+wx 41424344
+Cf 4 x
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000 pf x # size=4
+0x00000000 = 0x44434241
+EOF
+RUN
+
+NAME=arm1.bin dword pointers with Cd
+FILE=bins/elf/arm1.bin
+CMDS=<<EOF
+s 0xdb98
+Cd 4[3]
+pd 3
+EOF
+EXPECT=<<EOF
+            0x0000db98      .dword 0x00085038 ; obj.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
+EOF
+RUN
+
+NAME=arm1.bin dword pointers with Cd and ahi 1
+FILE=bins/elf/arm1.bin
+CMDS=<<EOF
+s 0xdb98
+Cd 4[3]
+ahi 1
+pd 3
+EOF
+EXPECT=<<EOF
+            0x0000db98      .int32 00111000010100000000100000000000b ; obj.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
+EOF
+RUN
+
+NAME=arm1.bin dword pointers with Cd and ahi 8
+FILE=bins/elf/arm1.bin
+CMDS=<<EOF
+s 0xdb98
+Cd 4[3]
+ahi 8
+pd 3
+EOF
+EXPECT=<<EOF
+            0x0000db98      .int32 2050070o ; obj.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
+EOF
+RUN
+
+NAME=arm1.bin dword pointers with Cd and ahi 10
+FILE=bins/elf/arm1.bin
+CMDS=<<EOF
+s 0xdb98
+Cd 4[3]
+ahi 10
+pd 3
+EOF
+EXPECT=<<EOF
+            0x0000db98      .int32 544824 ; obj.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
+EOF
+RUN
+
+NAME=arm1.bin dword pointers with Cd and ahi 16
+FILE=bins/elf/arm1.bin
+CMDS=<<EOF
+s 0xdb98
+Cd 4[3]
+ahi 16
+pd 3
+EOF
+EXPECT=<<EOF
+            0x0000db98      .dword 0x00085038 ; obj.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
+EOF
+RUN
+
+NAME=Ch and CCu on instr with potential LEA cmt
+FILE=bins/pe/ConsoleApplication1.exe
+CMDS=<<EOF
+Ch 6 @ 0x004010fa
+CCu get error @ 0x004010fa
+pd 1 @ 0x004010fa
+EOF
+EXPECT=<<EOF
+            0x004010fa (6 bytes hidden)                                ; get error
+EOF
+RUN
+
+NAME=C[Chsdmf][*j] without arguments
+FILE=malloc://1024
+CMDS=<<EOF
+k anal/meta/range.0x5=0x5120
+w hello world
+Cs @ $$
+s 0x100
+e asm.arch=x86
+e asm.bits=32
+w 909090
+Cd 3
+s 0x200
+wx 554889e54883c768
+Ch 2
+s 0x300
+wx 41424344
+Cf 4 x
+s 0x0
+CCu Hello!
+s 0x380
+wx cafebabe00000032
+Cm 8 wwww
+Cs
+?e ----
+Cd
+?e ----
+Ch
+?e ----
+Cf
+?e ----
+CC
+?e ----
+Cm
+?e ----
+C
+?e ----
+Cs*
+?e ----
+Cd*
+?e ----
+Ch*
+?e ----
+Cf*
+?e ----
+CC*
+?e ----
+Cm*
+?e ----
+C*
+?e ----
+Csj
+?e ----
+Cdj
+?e ----
+Chj
+?e ----
+Cfj
+?e ----
+CCj
+?e ----
+Cmj
+?e ----
+Cj
+EOF
+EXPECT=<<EOF
+0x00000000 ascii[12] "hello world"
+----
+0x00000100 data Cd 3
+----
+0x00000200 hidden Ch 2
+----
+0x00000300 format 4 x
+----
+0x00000000 CCu "Hello!"
+----
+0x00000380 magic 8 wwww
+----
+0x00000000 CCu "Hello!"
+0x00000100 data Cd 3
+0x00000300 format 4 x
+0x00000200 hidden Ch 2
+0x00000380 magic 8 wwww
+0x00000000 ascii[12] "hello world"
+----
+Cs 12 @ 0x00000000 # hello world
+----
+Cd 3 @ 0x00000100
+----
+Ch 2 @ 0x00000200
+----
+Cf 4 x @ 0x00000300
+----
+CCu base64:SGVsbG8h @ 0x00000000
+----
+Cm 8 wwww @ 0x00000380
+----
+CCu base64:SGVsbG8h @ 0x00000000
+Cd 3 @ 0x00000100
+Cf 4 x @ 0x00000300
+Ch 2 @ 0x00000200
+Cm 8 wwww @ 0x00000380
+Cs 12 @ 0x00000000 # hello world
+----
+[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true}]
+----
+[{"offset":256,"type":"Cd","name":"3","size":3}]
+----
+[{"offset":512,"type":"Ch","name":"2"}]
+----
+[{"offset":768,"type":"Cf","name":"x"}]
+----
+[{"offset":0,"type":"CCu","name":"Hello!"}]
+----
+[{"offset":896,"type":"Cm","name":"wwww"}]
+----
+[{"offset":0,"type":"CCu","name":"Hello!"},{"offset":256,"type":"Cd","name":"3","size":3},{"offset":768,"type":"Cf","name":"x"},{"offset":512,"type":"Ch","name":"2"},{"offset":896,"type":"Cm","name":"wwww"},{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true}]
+EOF
+RUN
+
+NAME=Cs ascii/latin1
+FILE=bins/pe/testapp-msvc64.exe
+CMDS=<<EOF
+Csa @ 0x1400160a0
+Cs~gate
+Cs~ANSI
+EOF
+EXPECT=<<EOF
+0x1400160a0 latin1[18] "latin1 gate: \xce\xbb\xab\xce"
+0x1400160b8 ascii[50] "  -- in ConEmu, run `chcp 28591` to see the gate."
+0x140016000 ascii[19] "\tANSI\\esc: \e[33m\r\n"
+EOF
+RUN
+
+NAME=Csj ascii/latin1
+FILE=bins/pe/testapp-msvc64.exe
+ARGS=-z
+CMDS=<<EOF
+Csa @ 0x1400160a0
+Csg @ 0x1400160b8
+Csj
+EOF
+EXPECT=<<EOF
+[{"offset":5368799392,"type":"Cs","name":"bGF0aW4xIGdhdGU6IM67q84=","enc":"latin1","ascii":false},{"offset":5368799416,"type":"Cs","name":"ICAtLSBpbiBDb25FbXUsIHJ1biBgY2hjcCAyODU5MWAgdG8gc2VlIHRoZSBnYXRlLg==","enc":"latin1","ascii":true}]
+EOF
+RUN
+
+NAME=Csg, Csa, Cs. and Cs..
+FILE=bins/pe/testapp-msvc64.exe
+CMDS=<<EOF
+e str.escbslash=true
+s 0x140016018
+Csa
+Cs*~`s:`
+Cs.
+Cs..
+pd 1
+Csg
+Cs*~`s:`
+Cs.
+Cs..
+pd 1
+Csa 4
+Cs..
+Cs.. @ 0x14001601c  # should print nothing
+Csg 4
+Cs..
+Cs.. @ 0x14001601c  # should print nothing
+EOF
+EXPECT=<<EOF
+Csa 2 @ 0x140016018 # \t
+"\t"
+ascii[2] "\t"
+            ;-- str.wide__esc:__e_0m:
+            0x140016018     .string "\t" ; len=2
+Cs 19 @ 0x140016018 # \twide\\esc: \x1b[0m\xa1\r\n
+"\twide\\esc: \x1b[0m\xa1\r\n"
+latin1[19] "\twide\\esc: \x1b[0m\xa1\r\n"
+            ;-- str.wide__esc:__e_0m:
+            0x140016018     .string "\twide\\esc: \x1b[0m\xa1\r\n" ; len=19
+ascii[4] "\t"
+ascii[4] "\twid"
+EOF
+RUN
+
+NAME=Csg, Csa and Csj
+FILE=bins/pe/testapp-msvc64.exe
+ARGS=-e bin.str.purge=all,!0x140016018
+CMDS=<<EOF
+s 0x140016018
+Csj
+Csa
+Csj
+Csg
+Csj
+EOF
+EXPECT=<<EOF
+[{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"iz","ascii":true}]
+[{"offset":5368799256,"type":"Cs","name":"CQ==","enc":"latin1","ascii":true}]
+[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtoQ0K","enc":"latin1","ascii":false}]
+EOF
+RUN
+
+NAME=Cs8
+FILE=bins/elf/strenc
+CMDS=<<EOF
+e str.escbslash=true
+s 0x004021ff
+Cs*~`s:`
+Cs.
+Cs..
+pd 1
+Cs8
+Cs*~`s:`
+Cs.
+Cs..
+pd 1
+EOF
+EXPECT=<<EOF
+Cs 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n
+"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
+latin1[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
+            ;-- str.utf8____u00a2__u20ac__U00010348_in_yellow:_e_33m____________e_0m:
+            0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n" ; len=61
+Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n
+"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
+utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
+            ;-- str.utf8____u00a2__u20ac__U00010348_in_yellow:_e_33m____________e_0m:
+            0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n" ; len=61
+EOF
+RUN
+
+NAME=Cs8 and Csj
+FILE=bins/elf/strenc
+ARGS=-e bin.str.purge=all,!0x004021ff
+CMDS=<<EOF
+s 0x004021ff
+Csj
+Cs8
+Csj
+EOF
+EXPECT=<<EOF
+[{"offset":4203007,"type":"Cs","name":"dXRmOD4gXFx1MDBhMlxcdTIwYWNcXFUwMDAxMDM0OCBpbiB5ZWxsb3c6XGVbMzNtIMKi4oKs8JCNiCBcZVswbVxu","enc":"iz","ascii":false}]
+[{"offset":4203007,"type":"Cs","name":"dXRmOD4gXHUwMGEyXHUyMGFjXFUwMDAxMDM0OCBpbiB5ZWxsb3c6G1szM20gwqLigqzwkI2IIBtbMG0K","enc":"utf8","ascii":false}]
+EOF
+RUN
+
+NAME=str.escbslash and Cs
+FILE=bins/pe/testapp-msvc64.exe
+CMDS=<<EOF
+s 0x140016000
+Csa
+e str.escbslash=true
+Cs.
+Cs..
+pd 1
+e str.escbslash=false
+Cs.
+Cs..
+pd 1
+EOF
+EXPECT=<<EOF
+"\tANSI\\esc: \x1b[33m\r\n"
+ascii[19] "\tANSI\\esc: \x1b[33m\r\n"
+            ;-- str.ANSI__esc:__e_33m:
+            ;-- section..data:
+            0x140016000     .string "\tANSI\\esc: \x1b[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
+"\tANSI\esc: \x1b[33m\r\n"
+ascii[19] "\tANSI\esc: \x1b[33m\r\n"
+            ;-- str.ANSI__esc:__e_33m:
+            ;-- section..data:
+            0x140016000     .string "\tANSI\esc: \x1b[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
+EOF
+RUN
+
+NAME=Cd- <size> <repeat>
+FILE=-
+CMDS=<<EOF
+s 0x100
+Cd 4 5
+Cd
+?e ----
+Cd- 4 3
+Cd
+?e ----
+s 0x10c
+Cd- 0 2
+Cd
+EOF
+EXPECT=<<EOF
+0x00000100 data Cd 4
+0x00000104 data Cd 4
+0x00000108 data Cd 4
+0x0000010c data Cd 4
+0x00000110 data Cd 4
+----
+0x0000010c data Cd 4
+0x00000110 data Cd 4
+----
+0x0000010c data Cd 4
+0x00000110 data Cd 4
+EOF
+RUN
+
+NAME=delete specific type of metadata from addr
+FILE=-
+CMDS=<<EOF
+s 0x100
+w abcd
+Csa 4
+Cf 8 xx
+C
+?e ----
+Cs-
+C
+?e ----
+Cf-
+C
+EOF
+EXPECT=<<EOF
+0x00000100 format 8 xx
+0x00000100 ascii[4] "abcd"
+----
+0x00000100 format 8 xx
+----
+EOF
+RUN
+
+NAME=C-
+FILE=-
+CMDS=<<EOF
+s 0x100
+w abcd
+Csa 4
+Cf 8 xx
+CCu a string
+C
+?e ----
+C-
+C
+EOF
+EXPECT=<<EOF
+0x00000100 CCu "a string"
+0x00000100 format 8 xx
+0x00000100 ascii[4] "abcd"
+----
+EOF
+RUN
+
+NAME=Cd- and C- in issue #8648
+FILE=-
+CMDS=<<EOF
+s 0x100
+Cd 4 1
+C*~Cd
+?e --1--
+Cd- 4 1
+C*~Cd
+?e --2--
+Cd 4 1
+Cd-
+C*~Cd
+?e --3--
+Cd 4 1
+C-
+C*~Cd
+?e --4--
+Cd 4 1
+C- 4
+C*~Cd
+EOF
+EXPECT=<<EOF
+Cd 4 @ 0x00000100
+--1--
+--2--
+--3--
+--4--
+EOF
+RUN
+
+NAME=Cd. (#10856)
+FILE=-
+CMDS=<<EOF
+s 0x50
+Cd 4 2
+Cd.
+s 0x100
+Cd. @ 0x50
+EOF
+EXPECT=<<EOF
+4
+4
+EOF
+RUN
+
+NAME=C.
+FILE=bins/elf/arm1.bin
+CMDS=<<EOF
+s 0x0007a23c
+C.
+s 0x00083fc4 
+C.
+EOF
+EXPECT=<<EOF
+0x0007a23c ascii[13] "match_symbol"
+0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
+0x00083fc4 data Cd 4
+EOF
+RUN

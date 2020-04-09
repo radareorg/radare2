@@ -1,6 +1,0 @@
-NAME=PE: corkami imports_multidesc.exe - open
-FILE=../bins/pe/imports_multidesc.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

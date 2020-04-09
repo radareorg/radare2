@@ -1,6 +1,0 @@
-NAME=PE: corkami imports_apimsW7.exe - open
-FILE=../bins/pe/imports_apimsW7.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

@@ -1,0 +1,6 @@
+NAME=PE: corkami manifest_bsod.exe - open
+FILE=bins/pe/manifest_bsod.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

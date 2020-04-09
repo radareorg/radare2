@@ -1,6 +1,0 @@
-NAME=PE: corkami footer.exe - open
-FILE=../bins/pe/footer.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

@@ -1,0 +1,7 @@
+NAME=PE: corkami tls_virtEP.exe - open
+FILE=bins/pe/tls_virtEP.exe
+ARGS=-A
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

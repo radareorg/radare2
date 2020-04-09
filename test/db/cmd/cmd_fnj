@@ -1,0 +1,27 @@
+NAME=fnj shows demangled symbols
+FILE=bins/elf/demangle-test-cpp
+CMDS=<<EOF
+aaa
+fj~{268}
+fnj~{268}
+EOF
+EXPECT=<<EOF
+{"name":"reloc.operator_delete_void","realname":"reloc.operator delete(void*)","size":8,"offset":16432}
+{"name":"reloc.operator_delete_void","realname":"reloc.operator delete(void*)","size":8,"offset":16432}
+EOF
+RUN
+
+NAME=fn.j fnj.
+FILE=bins/elf/demangle-test-cpp
+CMDS=<<EOF
+fn.j
+fnj.
+EOF
+EXPECT=<<EOF
+[{"name":"entry0","realname":"entry0","offset":4304,"size":1},{"name":"section..text","realname":"section..text","offset":4304,"size":3717},{"name":"sym..text","realname":".text","offset":4304,"size":0},{"name":"sym._start","realname":"_start","offset":4304,"size":47}]
+entry0
+section..text
+sym..text
+sym._start
+EOF
+RUN

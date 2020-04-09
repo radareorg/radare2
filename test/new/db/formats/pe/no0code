@@ -1,6 +1,0 @@
-NAME=PE: corkami no0code.exe - open
-FILE=../bins/pe/no0code.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

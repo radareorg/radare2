@@ -1,0 +1,22 @@
+NAME=noreturn errno
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+e emu.str=1
+s 0x100011130
+pd 2~addChild
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=adrp string
+FILE=bins/mach0/SwiftUITest
+CMDS=<<EOF
+e emu.str=1
+s..886c
+pds 10
+EOF
+EXPECT=<<EOF
+0x100008870 str.Hello_World
+EOF
+RUN

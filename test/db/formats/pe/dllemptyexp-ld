@@ -1,0 +1,25 @@
+NAME=PE: corkami dllemptyexp-ld.exe - open
+FILE=bins/pe/dllemptyexp-ld.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PE: corkami dllemptyexp-ld.exe - entrypoint
+FILE=bins/pe/dllemptyexp-ld.exe
+CMDS=s
+EXPECT=<<EOF
+0x401000
+EOF
+RUN
+
+NAME=PE: corkami dllemptyexp-ld.exe - pi 1
+FILE=bins/pe/dllemptyexp-ld.exe
+CMDS=<<EOF
+e asm.filter=false
+pi 1
+EOF
+EXPECT=<<EOF
+call dword [0x4010a0]
+EOF
+RUN

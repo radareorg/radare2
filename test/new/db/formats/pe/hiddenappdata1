@@ -1,6 +1,0 @@
-NAME=PE: corkami hiddenappdata1.exe - open
-FILE=../bins/pe/hiddenappdata1.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

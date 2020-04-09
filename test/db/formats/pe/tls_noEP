@@ -1,0 +1,34 @@
+NAME=PE: corkami tls_noEP.exe - open
+FILE=bins/pe/tls_noEP.exe
+ARGS=-A
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=1: PE: tls_noEP - entrypoint
+FILE=bins/pe/tls_noEP.exe
+CMDS=ieee
+EXPECT=<<EOF
+[Constructors]
+vaddr=0x00401000 paddr=0x00000200 hpaddr=0x00000384 type=tls
+
+1 entrypoints
+[Entrypoints]
+vaddr=0x00401000 paddr=0x00000200 haddr=0x00000068 type=program
+
+1 entrypoints
+EOF
+RUN
+
+NAME=2: PE: tls_noEP - entrypoint
+FILE=bins/pe/tls_noEP.exe
+CMDS=pi 5
+EXPECT=<<EOF
+push 0x401024
+call dword [sym.imp.msvcrt.dll_printf]
+add esp, 4
+nop
+mov dword [0x401184], 0x401070
+EOF
+RUN
