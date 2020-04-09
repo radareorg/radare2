@@ -1030,8 +1030,8 @@ static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
 	if (method_idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
 	}
-	int cid = bin->methods[method_idx].class_id;
-	if (cid < 0 || cid >= bin->header.types_size) {
+	ut16 cid = bin->methods[method_idx].class_id;
+	if (cid >= bin->header.types_size) {
 		return NULL;
 	}
 	const char *name = dex_method_name (bin, method_idx);
