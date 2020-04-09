@@ -73,6 +73,24 @@ typedef struct r_bin_elf_string_t {
 	int last;
 } RBinElfString;
 
+typedef struct r_bin_elf_dynamic_info {
+	Elf64_Xword dt_pltrelsz;
+	Elf64_Addr dt_pltgot;
+	Elf64_Addr dt_hash;
+	Elf64_Addr dt_strtab;
+	Elf64_Addr dt_symtab;
+	Elf64_Addr dt_rela;
+	Elf64_Xword dt_relasz;
+	Elf64_Xword dt_relaent;
+	Elf64_Xword dt_strsz;
+	Elf64_Xword dt_syment;
+	Elf64_Addr dt_rel;
+	Elf64_Xword dt_relsz;
+	Elf64_Xword dt_relent;
+	Elf64_Xword dt_pltrel;
+	Elf64_Addr dt_jmprel;
+} RBinElfDynamicInfo;
+
 typedef struct r_bin_elf_lib_t {
 	char name[ELF_STRING_LENGTH];
 	int last;
@@ -81,7 +99,7 @@ typedef struct r_bin_elf_lib_t {
 struct Elf_(r_bin_elf_obj_t) {
 	Elf_(Ehdr) ehdr;
 	Elf_(Phdr)* phdr;
-	Elf_(Shdr)* shdr;
+	Elf_(Shdr) * shdr;
 
 	Elf_(Shdr) *strtab_section;
 	ut64 strtab_size;
@@ -89,11 +107,11 @@ struct Elf_(r_bin_elf_obj_t) {
 
 	Elf_(Shdr) *shstrtab_section;
 	ut64 shstrtab_size;
-	char* shstrtab;
+	char *shstrtab;
 
 	Elf_(Dyn) *dyn_buf;
+	RBinElfDynamicInfo *dyn_info;
 	int dyn_entries;
-	int is_rela;
 	ut32 reloc_num;
 
 	ut64 version_info[DT_VERSIONTAGNUM];
