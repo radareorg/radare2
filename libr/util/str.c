@@ -3670,7 +3670,7 @@ R_API char *r_str_version(const char *program) {
 			(R_SYS_BITS & 8)? 64: 32,
 			*R2_GITTAP ? R2_GITTAP: "");
 	if (*R2_GITTIP) {
-		s = r_str_appendf (s, "commit: "R2_GITTIP" build: "R2_BIRTH"\n");
+		s = r_str_appendf (s, "commit: "R2_GITTIP" build: "R2_BIRTH);
 	}
 	return s;
 }
