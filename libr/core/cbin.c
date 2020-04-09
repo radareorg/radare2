@@ -1849,13 +1849,16 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			str = r_str_replace (str, "\"", "\\\"", 1);
 
 			pj_ki (pj, "ordinal", import->ordinal);
-			pj_ks (pj, "bind", import->bind);
-			pj_ks (pj, "type", import->type);
+			if (import->bind) {
+				pj_ks (pj, "bind", import->bind);
+			}
+			if (import->type) {
+				pj_ks (pj, "type", import->type);
+			}
 			if (import->classname && import->classname[0]) {
 				pj_ks (pj, "classname", import->classname);
 				pj_ks (pj, "descriptor", import->descriptor);
 			}
-
 			pj_ks (pj, "name", str);
 			if (libname) {
 				pj_ks (pj, "libname", libname);
