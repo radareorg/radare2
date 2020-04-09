@@ -353,7 +353,7 @@ SDB_API bool Ht_(delete)(HtName_(Ht)* ht, const KEY_TYPE key) {
 SDB_API void Ht_(foreach)(HtName_(Ht) *ht, HT_(ForeachCallback) cb, void *user) {
 	ut32 i;
 
-	for (i = 0; i < ht->size; i++) {
+	for (i = 0; i < ht->size; ++i) {
 		HT_(Bucket) *bt = &ht->table[i];
 		HT_(Kv) *kv;
 		ut32 j, count;
