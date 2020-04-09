@@ -2934,6 +2934,11 @@ static int cmd_search(void *data, const char *input) {
 	// {.addr = UT64_MAX, .size = 0} means search range is unspecified
 	RInterval search_itv = {search_from, search_to - search_from};
 	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
+	if (empty_search_itv) {
+		eprintf ("WARNING from == to?\n");
+		ret = false;
+		goto beach;
+	}
 	// TODO full address cannot be represented, shrink 1 byte to [0, UT64_MAX)
 	if (search_from == UT64_MAX && search_to == UT64_MAX) {
 		search_itv.addr = 0;
@@ -2963,21 +2968,8 @@ static int cmd_search(void *data, const char *input) {
 	core->search->maxhits = r_config_get_i (core->config, "search.maxhits");
 	searchprefix = r_config_get (core->config, "search.prefix");
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
-	if (!core->io->va) {
-		RInterval itv = {0, r_io_size (core->io)};
-		if (!r_itv_overlap (search_itv, itv)) {
-			empty_search_itv = true;
-		} else {
-			search_itv = r_itv_intersect (search_itv, itv);
-		}
-	}
 	core->search->bckwrds = false;
 
-	if (empty_search_itv) {
-		eprintf ("WARNING from == to?\n");
-		ret = false;
-		goto beach;
-	}
 	/* Quick & dirty check for json output */
 	if (input[0] && (input[1] == 'j') && (input[0] != ' ')) {
 		param.outmode = R_MODE_JSON;
