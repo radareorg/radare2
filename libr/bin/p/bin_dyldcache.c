@@ -673,7 +673,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 		}
 
 		if (slide_info.entries_count > 0) {
-			ut64 size = slide_info.entries_count * slide_info.entries_size;
+			ut64 size = (ut64) slide_info.entries_count * (ut64) slide_info.entries_size;
 			ut64 at = cache->hdr->slideInfoOffset + slide_info.entries_offset;
 			tmp_buf_2 = malloc (size);
 			if (!tmp_buf_2) {
