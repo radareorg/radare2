@@ -276,6 +276,10 @@ static int __close(RIODesc *desc) {
 	RIOPtrace *riop = desc->data;
 	desc->data = NULL;
 	long ret = r_io_ptrace (desc->io, PTRACE_DETACH, pid, 0, 0);
+	if (errno == ESRCH) {
+		// process does not exist, may have been killed earlier -- continue as normal
+		ret = 0;
+	}
 	free (riop);
 	return ret;
 }
