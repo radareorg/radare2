@@ -4579,13 +4579,14 @@ repeat:
 	}
 	if (ret) {
 		r_anal_esil_set_pc (esil, addr);
+		const char *e = R_STRBUF_SAFEGET (&op.esil);
 		if (core->dbg->trace->enabled) {
 			RReg *reg = core->dbg->reg;
 			core->dbg->reg = core->anal->reg;
 			r_debug_trace_pc (core->dbg, addr);
 			core->dbg->reg = reg;
-		} else if (R_STR_ISNOTEMPTY (R_STRBUF_SAFEGET (&op.esil))) {
-			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
+		} else if (R_STR_ISNOTEMPTY (e)) {
+			r_anal_esil_parse (esil, e);
 			if (core->anal->cur && core->anal->cur->esil_post_loop) {
 				core->anal->cur->esil_post_loop (esil, &op);
 			}
@@ -4622,7 +4623,10 @@ repeat:
 					return_tail (1);
 					break;
 				}
-				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op2.esil));
+				const char *e = R_STRBUF_SAFEGET (&op2.esil);
+				if (R_STR_ISNOTEMPTY (e)) {
+					r_anal_esil_parse (esil, e);
+				}
 			} else {
 				eprintf ("Invalid instruction at 0x%08"PFMT64x"\n", naddr);
 			}
