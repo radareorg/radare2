@@ -109,6 +109,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (s, core->bin->demanglercmd); break;
 	case R_BIN_NM_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
 	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc (s); break;
+	case R_BIN_NM_RUST: res = r_bin_demangle_rust (core->bin->cur, s, 0); break;
 	default:
 		r_bin_demangle_list (core->bin);
 		return true;
@@ -317,14 +318,14 @@ static void r_core_file_info(RCore *core, int mode) {
 			pair ("blksz", sdb_fmt ("0x%"PFMT64x, (ut64) core->io->desc->obsz));
 		}
 		pair ("block", sdb_fmt ("0x%x", core->blocksize));
-		
+
 		if (binfile && binfile->curxtr) {
 			pair ("packet", binfile->curxtr->name);
 		}
 		if (desc && desc->referer && *desc->referer) {
 			pair ("referer", desc->referer);
 		}
-		
+
 		if (info) {
 			pair ("type", info->type);
 		}
