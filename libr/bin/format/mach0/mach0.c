@@ -2826,7 +2826,8 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 }
 
 static int parse_import_ptr(struct MACH0_(obj_t) *bin, struct reloc_t *reloc, int idx) {
-	int i, j, sym, wordsize;
+	int i, j;
+	size_t sym, wordsize;
 	ut32 stype;
 	wordsize = MACH0_(get_bits)(bin) / 8;
 	if (idx < 0 || idx >= bin->nsymtab) {
