@@ -112,6 +112,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 	ut8 e_ident[EI_NIDENT];
 	ut8 ehdr[sizeof (Elf_(Ehdr))] = { 0 };
 	int i, len;
+
 	if (r_buf_read_at (bin->b, 0, e_ident, EI_NIDENT) == -1) {
 		bprintf ("read (magic)\n");
 		return false;
@@ -651,6 +652,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	bin->strtab_size = strsize;
 	bin->dyn_info = dyn_info;
 	init_dynamic_section_sdb (bin, strtabaddr, strsize);
+
 	return true;
 beach:
 	free (dyn);
@@ -1569,11 +1571,32 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 
 	// lookup the right rel/rela entry
 	RBinElfReloc *rel = ht_up_find (bin->rel_cache, sym, NULL);
+
 	if (!rel) {
 		return UT64_MAX;
 	}
 
-	return 0x42424242;
+    if (!rel->is_lazy) {
+	    return 0;
+    }
+
+    ut64 got_addr = bin->dyn_info->dt_pltgot - bin->baddr;
+    eprintf ("got offset: %llx\n", got_addr);
+    ut64 first_lazy_entry = got_addr + 3 * 0x8;
+    eprintf ("first lazy got: %llx\n", first_lazy_entry);
+
+    ut8 buf[0x8];
+
+    // TODO only x86_64
+    int res = r_buf_read_at (bin->b, first_lazy_entry, buf, 0x8);
+    eprintf ("%d\n", res);
+    ut64 addr = r_read_ble64 (buf, bin->endian);
+    eprintf ("plt: %llx\n", addr);
+
+    const size_t size_ins_entrie = 0x10;
+    const size_t size_jmp_ins = 0x6;
+
+    return 0x42424242;
 }
 
 int Elf_(r_bin_elf_has_nx) (ELFOBJ *bin) {
