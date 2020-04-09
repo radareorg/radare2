@@ -581,9 +581,6 @@ static int init_dynamic_section(ELFOBJ *bin) {
 		case DT_STRSZ:
 			strsize = dyn[i].d_un.d_val;
 			break;
-		case DT_PLTREL:
-			bin->is_rela = dyn[i].d_un.d_val;
-			break;
 		case DT_RELAENT:
 			relentry = dyn[i].d_un.d_val;
 			break;
@@ -593,9 +590,6 @@ static int init_dynamic_section(ELFOBJ *bin) {
 			}
 			break;
 		}
-	}
-	if (!bin->is_rela) {
-		bin->is_rela = sizeof (Elf_(Rela)) == relentry? DT_RELA: DT_REL;
 	}
 	if (strtabaddr == UT64_MAX || strtabaddr > bin->size || strsize > ST32_MAX || !strsize || strsize > bin->size || strtabaddr + strsize > bin->size) {
 		if (!strtabaddr) {
@@ -1277,30 +1271,6 @@ ut64 Elf_(r_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name)
 	return section? section->rva + section->size: UT64_MAX;
 }
 
-static ut64 get_dyn_entry(ELFOBJ *bin, int dyn_entry) {
-	int i;
-	for (i = 0; i < bin->dyn_entries; i++) {
-		if (bin->dyn_buf[i].d_tag == dyn_entry) {
-			switch (bin->dyn_buf[i].d_tag) {
-			case DT_REL:
-			case DT_RELA:
-			case DT_PLTGOT:
-			case DT_JMPREL:
-				return bin->dyn_buf[i].d_un.d_ptr;
-			case DT_RELSZ:
-			case DT_RELASZ:
-			case DT_PLTRELSZ:
-				return bin->dyn_buf[i].d_un.d_val;
-			default:
-				r_warn_if_reached ();
-				break;
-			}
-		}
-	}
-
-	return -1;
-}
-
 static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
 	return bin->g_sections[pos].info < bin->ehdr.e_shnum && bin->shdr;
 }
@@ -1351,7 +1321,7 @@ static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, size_t rel_mode, ut64 offse
 		r->addend = reloc_info.r_addend;
 	}
 
-	r->is_rela = rel_mode;
+	r->rel_mode = rel_mode;
 	r->last = 0;
 	r->offset = reloc_info.r_offset;
 	r->sym = ELF_R_SYM (reloc_info.r_info);
@@ -1441,7 +1411,8 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
 	for (size_t offset = 0; offset < info->jmprel_size; offset += size) {
 		read_reloc (bin, relocs + pos, info->plt_mode, info->addr_jmprel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		pos++;
+        relocs[pos].is_lazy = true;
+	pos++;
 	}
 
 	return pos;

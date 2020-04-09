@@ -49,13 +49,14 @@ typedef struct r_bin_elf_symbol_t {
 typedef struct r_bin_elf_reloc_t {
 	int sym;
 	int type;
-	int is_rela;
+	int rel_mode;
 	st64 addend;
 	ut64 offset;
 	ut64 rva;
 	ut16 section;
 	int last;
 	ut64 sto;
+    bool is_lazy;
 } RBinElfReloc;
 
 typedef struct r_bin_elf_field_t {
