@@ -1600,7 +1600,7 @@ static int cmd_open(void *data, const char *input) {
 			{
 				int fd = (int)r_num_math (core->num, input + 1);
 				if (!r_core_file_close_fd (core, fd)) {
-					eprintf ("Unable to find filedescriptor %d\n", fd);
+					eprintf ("Unable to find file descriptor %d\n", fd);
 				}
 			}
 			break;
