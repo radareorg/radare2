@@ -242,39 +242,25 @@ typedef struct r_anal_fcn_meta_t {
 	int numcallrefs;    // number of calls
 } RAnalFcnMeta;
 
-/* Store various function information,
- * variables, arguments, refs and even
- * description */
 typedef struct r_anal_function_t {
-	char* name;
-	char* dsc; // For producing nice listings
+	char *name;
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
-	/*item_list *rets; // Type of return value */
-	char *rets;
-	short fmod; //  static, inline or volatile?
 	const char *cc; // calling convention, should come from RAnal.constpool
-	char* attr; // __attribute__(()) list
 	ut64 addr;
-	ut64 rb_max_addr; // maximum of meta.min + _size - 1 in the subtree, for fcn interval tree
 	int stack; //stack frame size
 	int maxstack;
 	int ninstr;
-	int nargs; // Function arguments counter
-	int depth;
 	bool folded;
 	bool is_pure;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
 	bool bp_frame;
 	bool is_noreturn; // true if function does not return
-	RAnalType *args; // list of arguments
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
 	RAnalDiff *diff;
-	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs; // TODO: should be RPVector
 	RAnalFcnMeta meta;
-	RBNode addr_rb;
 	RList *imports; // maybe bound to class?
 	struct r_anal_t *anal; // this function is associated with this instance
 } RAnalFunction;

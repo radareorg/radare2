@@ -193,9 +193,6 @@ R_API void r_core_print_func_args(RCore *core) {
 				argcnt++;
 			}
 		} else {
-			if (fcn) {
-				nargs = fcn->nargs;
-			}
 			if (nargs > 0) {
 				for (i = 0; i < nargs; i++) {
 					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
