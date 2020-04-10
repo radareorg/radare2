@@ -162,8 +162,6 @@ R_API void r_core_print_func_args(RCore *core) {
 	if (op->type == R_ANAL_OP_TYPE_CALL) {
 		RAnalFunction *fcn;
 		RAnalFuncArg *arg;
-		int i;
-		int nargs = 0;
 		bool onstack = false;
 		const char *fcn_name = NULL;
 		ut64 pcv = op->jump;
@@ -193,16 +191,7 @@ R_API void r_core_print_func_args(RCore *core) {
 				argcnt++;
 			}
 		} else {
-			if (nargs > 0) {
-				for (i = 0; i < nargs; i++) {
-					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
-					print_arg_str (i, "", color);
-					r_cons_printf ("0x%08" PFMT64x, v);
-					r_cons_newline ();
-				}
-			} else {
-				print_arg_str (0, "void", color);
-			}
+			print_arg_str (0, "void", color);
 		}
 	}
 	r_anal_op_fini (op);
