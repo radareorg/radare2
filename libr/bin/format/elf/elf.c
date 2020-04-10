@@ -1435,25 +1435,29 @@ static size_t get_num_relocs_approx(ELFOBJ *bin) {
 }
 
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos) {
-	size_t size = get_size_rel_mode (bin->dyn_info->dt_pltrel);
+    size_t i = 0;
+    size_t size = get_size_rel_mode (bin->dyn_info->dt_pltrel);
 
-	for (size_t offset = 0; offset < bin->dyn_info->dt_relasz; offset += bin->dyn_info->dt_relaent) {
-		read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info->dt_rela + offset - bin->baddr);
-		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		pos++;
-	}
+    for (size_t offset = 0; offset < bin->dyn_info->dt_relasz; offset += bin->dyn_info->dt_relaent) {
+	    read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info->dt_rela + offset - bin->baddr);
+	    fix_rva_and_offset_exec_file (bin, relocs + pos);
+	    relocs[pos].pos_plt = -1;
+	    pos++;
+    }
 
 	for (size_t offset = 0; offset < bin->dyn_info->dt_relsz; offset += bin->dyn_info->dt_relent) {
 		read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info->dt_rel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		pos++;
+        relocs[pos].pos_plt = -1;
+	pos++;
 	}
 
 	for (size_t offset = 0; offset < bin->dyn_info->dt_pltrelsz; offset += size) {
 		read_reloc (bin, relocs + pos, bin->dyn_info->dt_pltrel, bin->dyn_info->dt_jmprel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		relocs[pos].is_lazy = true;
+		relocs[pos].pos_plt = i;
 		pos++;
+		++i;
 	}
 
 	return pos;
@@ -1556,6 +1560,33 @@ static HtUP *rel_cache_new(ELFOBJ *bin) {
 	return rel_cache;
 }
 
+static ut64 get_plt_addr(ELFOBJ *bin) {
+	ut64 got_addr = bin->dyn_info->dt_pltgot;
+	ut64 got_offset = Elf_(r_bin_elf_v2p_new) (bin, got_addr);
+
+	if (got_offset == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	// TODO only x86_64
+	ut64 first_lazy_entry = got_offset + 3 * 0x8;
+
+	ut8 buf[0x8];
+
+	int res = r_buf_read_at (bin->b, first_lazy_entry, buf, 0x8);
+
+	if (res != 0x8) {
+		return UT64_MAX;
+	}
+
+	ut64 addr = r_read_ble64 (buf, bin->endian);
+
+	const size_t size_ins_entrie = 0x10;
+	const size_t size_jmp_ins = 0x6;
+
+	return addr - size_ins_entrie - size_jmp_ins;
+}
+
 static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
 		return UT64_MAX;
@@ -1576,27 +1607,20 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		return UT64_MAX;
 	}
 
-    if (!rel->is_lazy) {
+    if (rel->pos_plt < 0) {
 	    return 0;
     }
 
-    ut64 got_addr = bin->dyn_info->dt_pltgot - bin->baddr;
-    eprintf ("got offset: %llx\n", got_addr);
-    ut64 first_lazy_entry = got_addr + 3 * 0x8;
-    eprintf ("first lazy got: %llx\n", first_lazy_entry);
+    ut64 plt_addr = get_plt_addr(bin);
 
-    ut8 buf[0x8];
+    if (plt_addr == UT64_MAX) {
+	    return UT64_MAX;
+    }
 
-    // TODO only x86_64
-    int res = r_buf_read_at (bin->b, first_lazy_entry, buf, 0x8);
-    eprintf ("%d\n", res);
-    ut64 addr = r_read_ble64 (buf, bin->endian);
-    eprintf ("plt: %llx\n", addr);
+    eprintf("0x%llx\n", plt_addr);
+    eprintf ("nth: 0x%lx\n", rel->pos_plt);
 
-    const size_t size_ins_entrie = 0x10;
-    const size_t size_jmp_ins = 0x6;
-
-    return 0x42424242;
+    return plt_addr + (rel->pos_plt + 1) * 0x10;
 }
 
 int Elf_(r_bin_elf_has_nx) (ELFOBJ *bin) {
