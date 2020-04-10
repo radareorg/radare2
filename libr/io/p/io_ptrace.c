@@ -178,7 +178,7 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return false;
 }
 
-static inline bool is_pid_already_attached (RIO *io, int pid, void *data) {
+static inline bool is_pid_already_attached(RIO *io, int pid, void *data) {
 #if defined(__linux__)
 	siginfo_t *sig = (siginfo_t *)data;
 	return -1 != r_io_ptrace (io, PTRACE_GETSIGINFO, pid, NULL, sig);
@@ -186,6 +186,10 @@ static inline bool is_pid_already_attached (RIO *io, int pid, void *data) {
 	struct ptrace_lwpinfo *info = (struct ptrace_lwpinfo *)data;
 	int len = (int)sizeof (*info);
 	return -1 != r_io_ptrace (io, PT_LWPINFO, pid, info, len);
+#elif __OpenBSD__
+	ptrace_state_t *state = data;
+	int len = (int)sizeof (*state);
+	return -1 != r_io_ptrace (io, PT_GET_PROCESS_STATE, pid, state, len);
 #else
 	return false;
 #endif
@@ -198,6 +202,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	siginfo_t sig = { 0 };
 #elif defined(__FreeBSD__)
 	struct ptrace_lwpinfo sig = { 0 };
+#elif __OpenBSD__
+	ptrace_state_t sig = { 0 };
 #else
 	int sig = 0;
 #endif
@@ -225,10 +231,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				perror ("ptrace: Cannot attach");
 				eprintf ("ERRNO: %d (EINVAL)\n", errno);
 				return NULL;
-			case EBUSY:
-				/* Means that the child called ptrace-me already */
-				/* this fixes fork+attach on OpenBSD */
-				break;
 			default:
 				return NULL;
 			}
