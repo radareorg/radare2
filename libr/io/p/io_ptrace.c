@@ -178,18 +178,18 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return false;
 }
 
-static inline bool is_pid_already_attached(RIO *io, int pid, void *data) {
+static inline bool is_pid_already_attached(RIO *io, int pid) {
 #if defined(__linux__)
-	siginfo_t *sig = (siginfo_t *)data;
-	return -1 != r_io_ptrace (io, PTRACE_GETSIGINFO, pid, NULL, sig);
+	siginfo_t sig = { 0 };
+	return r_io_ptrace (io, PTRACE_GETSIGINFO, pid, NULL, &sig) != -1;
 #elif defined(__FreeBSD__)
-	struct ptrace_lwpinfo *info = (struct ptrace_lwpinfo *)data;
-	int len = (int)sizeof (*info);
-	return -1 != r_io_ptrace (io, PT_LWPINFO, pid, info, len);
+	struct ptrace_lwpinfo info = { 0 };
+	int len = (int)sizeof (info);
+	return r_io_ptrace (io, PT_LWPINFO, pid, &info, len) != -1;
 #elif __OpenBSD__
-	ptrace_state_t *state = data;
-	int len = (int)sizeof (*state);
-	return -1 != r_io_ptrace (io, PT_GET_PROCESS_STATE, pid, state, len);
+	ptrace_state_t state = { 0 };
+	int len = (int)sizeof (state);
+	return r_io_ptrace (io, PT_GET_PROCESS_STATE, pid, &state, len) != -1;
 #else
 	return false;
 #endif
@@ -198,15 +198,6 @@ static inline bool is_pid_already_attached(RIO *io, int pid, void *data) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *desc = NULL;
 	int ret = -1;
-#if defined(__linux__)
-	siginfo_t sig = { 0 };
-#elif defined(__FreeBSD__)
-	struct ptrace_lwpinfo sig = { 0 };
-#elif __OpenBSD__
-	ptrace_state_t sig = { 0 };
-#else
-	int sig = 0;
-#endif
 
 	if (!__plugin_open (io, file, 0)) {
 		return NULL;
@@ -216,7 +207,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 	// Safely check if the PID has already been attached to avoid printing errors
 	// and attempt attaching on failure
-	if (!is_pid_already_attached (io, pid, &sig)) {
+	if (!is_pid_already_attached (io, pid)) {
 		ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 		if (ret == -1) {
 #ifdef __ANDROID__
@@ -226,14 +217,15 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			case EPERM:
 				ret = pid;
 				eprintf ("ptrace_attach: Operation not permitted\n");
-				return NULL;
+				break;
 			case EINVAL:
 				perror ("ptrace: Cannot attach");
 				eprintf ("ERRNO: %d (EINVAL)\n", errno);
-				return NULL;
+				break;
 			default:
-				return NULL;
+				break;
 			}
+			return NULL;
 #endif
 		} else if (__waitpid (pid)) {
 			ret = pid;
