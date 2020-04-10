@@ -46,6 +46,7 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
 	RBinSymbol *ptr = *sym;
 	struct coff_symbol *s = NULL;
+	struct coff_scn_hdr *sc_hdr = NULL;
 	if (idx < 0 || idx > bin->hdr.f_nsyms) {
 		return false;
 	}
@@ -61,6 +62,11 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 	ptr->forwarder = "NONE";
 	ptr->bind = R_BIN_BIND_LOCAL_STR;
 	ptr->is_imported = false;
+	if (s->n_scnum < bin->hdr.f_nscns + 1 && s->n_scnum > 0) {
+		//first index is 0 that is why -1
+		sc_hdr = &bin->scn_hdrs[s->n_scnum - 1];
+		ptr->paddr = sc_hdr->s_scnptr + s->n_value;
+	}
 
 	switch (s->n_sclass) {
 	case COFF_SYM_CLASS_FUNCTION:
@@ -73,24 +79,39 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		ptr->type = R_BIN_TYPE_SECTION_STR;
 		break;
 	case COFF_SYM_CLASS_EXTERNAL:
-		ptr->is_imported = !s->n_scnum;
-		ptr->bind = ptr->is_imported? "NONE": R_BIN_BIND_GLOBAL_STR;
+		if (s->n_scnum == COFF_SYM_SCNUM_UNDEF) {
+			ptr->is_imported = true;
+			ptr->paddr = UT64_MAX;
+			ptr->bind = "NONE";
+		}
+		else {
+			ptr->bind = R_BIN_BIND_GLOBAL_STR;
+		}
 		ptr->type = (DTYPE_IS_FUNCTION (s->n_type) || !strcmp (coffname, "main"))
 			? R_BIN_TYPE_FUNC_STR
 			: R_BIN_TYPE_UNKNOWN_STR;
 		break;
 	case COFF_SYM_CLASS_STATIC:
-		ptr->type = DTYPE_IS_FUNCTION (s->n_type)
-			? R_BIN_TYPE_FUNC_STR
-			: R_BIN_TYPE_UNKNOWN_STR;
+		if (s->n_scnum == COFF_SYM_SCNUM_ABS) {
+			ptr->type = "ABS";
+			ptr->paddr = UT64_MAX;
+			ptr->name = r_str_newf ("%s-0x%08x", coffname, s->n_value);
+			if (ptr->name) {
+				R_FREE (coffname);
+			} else {
+				ptr->name = coffname;
+			}
+		} else if (sc_hdr && !memcmp (sc_hdr->s_name, s->n_name, 8)) {
+			ptr->type = R_BIN_TYPE_SECTION_STR;
+		} else {
+			ptr->type = DTYPE_IS_FUNCTION (s->n_type)
+				? R_BIN_TYPE_FUNC_STR
+				: R_BIN_TYPE_UNKNOWN_STR;
+		}
 		break;
 	default:
 		ptr->type = r_str_constpool_get (&rbin->constpool, sdb_fmt ("%i", s->n_sclass));
 		break;
-	}
-	if (s->n_scnum < bin->hdr.f_nscns + 1 && s->n_scnum > 0) {
-		//first index is 0 that is why -1
-		ptr->paddr = bin->scn_hdrs[s->n_scnum - 1].s_scnptr + s->n_value;
 	}
 	ptr->size = 4;
 	ptr->ordinal = 0;
@@ -104,7 +125,7 @@ static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 		return NULL;
 	}
 	struct coff_symbol *s = &bin->symbols[idx];
-	if (s->n_scnum || s->n_sclass != COFF_SYM_CLASS_EXTERNAL) {
+	if (s->n_scnum != COFF_SYM_SCNUM_UNDEF || s->n_sclass != COFF_SYM_CLASS_EXTERNAL) {
 		free (ptr);
 		return NULL;
 	}

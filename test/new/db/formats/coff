@@ -6,34 +6,34 @@ iS
 EOF
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type lib name
----------------------------------
-0   0x00000000 NONE FUNC     __TIFFmalloc
-1   0x00000000 NONE FUNC     __TIFFrealloc
-2   0x00000000 NONE FUNC     __TIFFmemset
-3   0x00000000 NONE FUNC     __TIFFmemcpy
-4   0x00000000 NONE FUNC     __TIFFfree
-5   0x00000000 NONE FUNC     _TIFFFindField
-6   0x00000000 NONE FUNC     _TIFFFieldWithTag
-7   0x00000000 NONE FUNC     _TIFFReadDirectory
-8   0x00000000 NONE FUNC     _TIFFErrorExt
-9   0x00000000 NONE FUNC     _TIFFWarningExt
-10  0x00000000 NONE FUNC     _TIFFSwabShort
-11  0x00000000 NONE FUNC     _TIFFSwabLong
-12  0x00000000 NONE FUNC     _TIFFSwabLong8
-13  0x00000000 NONE FUNC     __TIFFGetFields
-14  0x00000000 NONE FUNC     __TIFFGetExifFields
-15  0x00000000 NONE FUNC     __TIFFSetupFields
-16  0x00000000 NONE FUNC     __TIFFFillStriles
-17  0x00000000 NONE FUNC     __TIFFNoPostDecode
-18  0x00000000 NONE FUNC     sym.imp.BitData
-19  0x00000000 NONE FUNC     sym.imp.BitData
-20  0x00000000 NONE FUNC     sym.imp.BitData
-21  0x00000000 NONE FUNC     sym.imp.BitData
-22  0x00000000 NONE FUNC     _TIFFSetCompressionScheme
-23  0x00000000 NONE FUNC     __TIFFDataSize
-24  0x00000000 NONE FUNC     __TIFFCheckMalloc
-25  0x00000000 NONE UNK      __fltused
+nth vaddr bind type lib name
+----------------------------
+0   -1    NONE FUNC     __TIFFmalloc
+1   -1    NONE FUNC     __TIFFrealloc
+2   -1    NONE FUNC     __TIFFmemset
+3   -1    NONE FUNC     __TIFFmemcpy
+4   -1    NONE FUNC     __TIFFfree
+5   -1    NONE FUNC     _TIFFFindField
+6   -1    NONE FUNC     _TIFFFieldWithTag
+7   -1    NONE FUNC     _TIFFReadDirectory
+8   -1    NONE FUNC     _TIFFErrorExt
+9   -1    NONE FUNC     _TIFFWarningExt
+10  -1    NONE FUNC     _TIFFSwabShort
+11  -1    NONE FUNC     _TIFFSwabLong
+12  -1    NONE FUNC     _TIFFSwabLong8
+13  -1    NONE FUNC     __TIFFGetFields
+14  -1    NONE FUNC     __TIFFGetExifFields
+15  -1    NONE FUNC     __TIFFSetupFields
+16  -1    NONE FUNC     __TIFFFillStriles
+17  -1    NONE FUNC     __TIFFNoPostDecode
+18  -1    NONE FUNC     sym.imp.BitData
+19  -1    NONE FUNC     sym.imp.BitData
+20  -1    NONE FUNC     sym.imp.BitData
+21  -1    NONE FUNC     sym.imp.BitData
+22  -1    NONE FUNC     _TIFFSetCompressionScheme
+23  -1    NONE FUNC     __TIFFDataSize
+24  -1    NONE FUNC     __TIFFCheckMalloc
+25  -1    NONE UNK      __fltused
 
 [Sections]
 
@@ -65,11 +65,11 @@ EXPECT=<<EOF
 
 nth paddr       vaddr      bind   type size lib name
 ----------------------------------------------------
-0    0x00000000 0x00000000 NONE   UNK  4        imp.MessageBoxA
-0    0x00000000 0x00000000 NONE   UNK  4        imp.ExitProcess
-0    0x00000064 0x00000064 LOCAL  UNK  4        .text
+0    ---------- 0x00000000 NONE   UNK  4        imp.MessageBoxA
+0    ---------- 0x00000000 NONE   UNK  4        imp.ExitProcess
+0    0x00000064 0x00000064 LOCAL  SECT 4        .text
 0    0x00000064 0x00000064 GLOBAL FUNC 4        main
-0    0x0000008b 0x0000008b LOCAL  UNK  4        .data
+0    0x0000008b 0x0000008b LOCAL  SECT 4        .data
 [Relocations]
 
 vaddr      paddr      type    name
@@ -103,8 +103,8 @@ EXPECT=<<EOF
  3 fd: 3 +0x00000eec 0x00000eec - 0x00000fbf r-- fmap..debug_S_6
  2 fd: 3 +0x00000ff2 0x00000ff2 - 0x00000ff5 r-- fmap..rtc_IMZ_7
  1 fd: 3 +0x00001000 0x00001000 - 0x00001003 r-- fmap..rtc_TMZ_8
-0    0x00000d8f 0x00000d8f LOCAL  UNK  4        .text$mn
-0    0x00000ec2 0x00000ec2 LOCAL  UNK  4        .text$mn
+0    0x00000d8f 0x00000d8f LOCAL  SECT 4        .text$mn
+0    0x00000ec2 0x00000ec2 LOCAL  SECT 4        .text$mn
             ;-- section..text_mn_5:
             ;-- .text$mn:
             ;-- ??1FooBar@@QAE@XZ:
