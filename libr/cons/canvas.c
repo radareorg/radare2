@@ -212,7 +212,7 @@ R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	if (x < c->blen[y] && x >= 0) {
 		c->x = x;
 	}
-	if (y < c->h && y >= 0) {
+	if (y < c->h) {
 		c->y = y;
 	}
 	return ret;
