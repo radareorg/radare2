@@ -18,7 +18,7 @@ keystone: bins
 	${RUNTEST} db/extras/asm/x86.ks_
 
 swf: bins
-	${RUNTEST} db/extras/asm/swf
+	${RUNTEST} db/extras/cmd/swf
 
 m68k-extras: bins
 	${RUNTEST} db/extras/asm/m68k
