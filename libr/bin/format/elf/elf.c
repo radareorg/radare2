@@ -1441,7 +1441,6 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *rel
 	for (size_t offset = 0; offset < bin->dyn_info->dt_pltrelsz; offset += size) {
 		read_reloc (bin, relocs + pos, bin->dyn_info->dt_pltrel, bin->dyn_info->dt_jmprel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		relocs[pos].pos_plt = i;
 		pos++;
 		++i;
 	}
@@ -1449,14 +1448,12 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *rel
 	for (size_t offset = 0; offset < bin->dyn_info->dt_relasz; offset += bin->dyn_info->dt_relaent) {
 		read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info->dt_rela + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		relocs[pos].pos_plt = -1;
 		pos++;
 	}
 
 	for (size_t offset = 0; offset < bin->dyn_info->dt_relsz; offset += bin->dyn_info->dt_relent) {
 		read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info->dt_rel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		relocs[pos].pos_plt = -1;
 		pos++;
 	}
 
@@ -1508,7 +1505,6 @@ static size_t populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *rel
 			}
 
 			fix_rva_and_offset (bin, relocs + pos, i);
-			relocs[pos].pos_plt = -1;
 			++pos;
 		}
 	}
@@ -1628,10 +1624,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		return UT64_MAX;
 	}
 
-	if (rel->pos_plt < 0) {
-		return UT64_MAX;
-	}
-
 	ut64 p_sym_got_addr = Elf_(r_bin_elf_v2p_new) (bin, rel->rva);
 
 	ut8 buf[WORDSIZE];
@@ -1643,6 +1635,10 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 
 	size_t i = 0;
 	ut64 addr = READWORD (buf, i);
+
+	if (!addr) {
+		return UT64_MAX;
+	}
 
 	return addr - 0x6;
 }

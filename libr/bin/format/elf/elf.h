@@ -56,7 +56,6 @@ typedef struct r_bin_elf_reloc_t {
 	ut16 section;
 	int last;
 	ut64 sto;
-    ssize_t pos_plt;
 } RBinElfReloc;
 
 typedef struct r_bin_elf_field_t {
