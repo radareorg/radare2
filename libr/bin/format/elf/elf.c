@@ -1760,10 +1760,68 @@ static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
 	return plt_addr + MIPS_PLT_OFFSET + pos * 0x10;
 }
 
+// FIXME use section name (couldn't find any info in .dynamic)
+static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
+	ut64 got_addr = bin->dyn_info->dt_pltgot;
+	if (!got_addr) {
+		return UT64_MAX;
+	}
+
+	ut64 got_offset = Elf_(r_bin_elf_v2p_new) (bin, got_addr);
+	if (got_offset == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	//XXX HACK ALERT!!!! full relro?? try to fix it
+	//will there always be .plt.got, what would happen if is .got.plt?
+	RBinElfSection *s = get_section_by_name (bin, ".plt.got");
+	if (Elf_(r_bin_elf_has_relro) (bin) < R_ELF_PART_RELRO || !s) {
+		return UT64_MAX;
+	}
+
+	ut8 buf[sizeof (Elf_(Addr))] = { 0 };
+
+	ut64 plt_addr = s->offset;
+	ut64 plt_sym_addr;
+
+	while (plt_addr + 2 + 4 < s->offset + s->size) {
+		/*we try to locate the plt entry that correspond with the relocation
+		  since got does not point back to .plt. In this case it has the following
+		  form
+		  ff253a152000   JMP QWORD [RIP + 0x20153A]
+		  6690		     NOP
+		  ----
+		  ff25ec9f0408   JMP DWORD [reloc.puts_236]
+		  plt_addr + 2 to remove jmp opcode and get the imm reading 4
+		  and if RIP (plt_addr + 6) + imm == rel->offset
+		  return plt_addr, that will be our sym addr
+		  perhaps this hack doesn't work on 32 bits
+		  */
+		int res = r_buf_read_at (bin->b, plt_addr + 2, buf, 4);
+		if (res < 0) {
+			return UT64_MAX;
+		}
+
+		size_t i = 0;
+		plt_sym_addr = READWORD (buf, i);
+
+		//relative address
+		if ((plt_addr + 6 + Elf_(r_bin_elf_v2p) (bin, plt_sym_addr)) == rel->rva) {
+			return plt_addr;
+		}
+		if (plt_sym_addr == rel->rva) {
+			return plt_addr;
+		}
+		plt_addr += 8;
+	}
+
+	return UT64_MAX;
+}
+
 static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 tmp = get_got_entrie (bin, rel);
 	if (tmp == UT64_MAX) {
-		return UT64_MAX;
+		return get_import_addr_x86_manual (bin, rel);
 	}
 
 	// FIXME shouldn't use section name
