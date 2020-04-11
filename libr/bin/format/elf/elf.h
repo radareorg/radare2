@@ -73,21 +73,22 @@ typedef struct r_bin_elf_string_t {
 } RBinElfString;
 
 typedef struct r_bin_elf_dynamic_info {
-	Elf64_Xword dt_pltrelsz;
-	Elf64_Addr dt_pltgot;
-	Elf64_Addr dt_hash;
-	Elf64_Addr dt_strtab;
-	Elf64_Addr dt_symtab;
-	Elf64_Addr dt_rela;
-	Elf64_Xword dt_relasz;
-	Elf64_Xword dt_relaent;
-	Elf64_Xword dt_strsz;
-	Elf64_Xword dt_syment;
-	Elf64_Addr dt_rel;
-	Elf64_Xword dt_relsz;
-	Elf64_Xword dt_relent;
-	Elf64_Xword dt_pltrel;
-	Elf64_Addr dt_jmprel;
+	Elf_(Xword) dt_pltrelsz;
+	Elf_(Addr) dt_pltgot;
+	Elf_(Addr) dt_hash;
+	Elf_(Addr) dt_strtab;
+	Elf_(Addr) dt_symtab;
+	Elf_(Addr) dt_rela;
+	Elf_(Xword) dt_relasz;
+	Elf_(Xword) dt_relaent;
+	Elf_(Xword) dt_strsz;
+	Elf_(Xword) dt_syment;
+	Elf_(Addr) dt_rel;
+	Elf_(Xword) dt_relsz;
+	Elf_(Xword) dt_relent;
+	Elf_(Xword) dt_pltrel;
+	Elf_(Addr) dt_jmprel;
+	Elf_(Addr) dt_mips_pltgot;
 } RBinElfDynamicInfo;
 
 typedef struct r_bin_elf_lib_t {

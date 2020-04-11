@@ -624,6 +624,9 @@ static int init_dynamic_section(ELFOBJ *bin) {
 		case DT_JMPREL:
 			bin->dyn_info->dt_jmprel = dyn[i].d_un.d_ptr;
 			break;
+		case DT_MIPS_PLTGOT:
+			bin->dyn_info->dt_mips_pltgot = dyn[i].d_un.d_ptr;
+			break;
 		default:
 			if ((dyn[i].d_tag >= DT_VERSYM) && (dyn[i].d_tag <= DT_VERNEEDNUM)) {
 				bin->version_info[DT_VERSIONTAGIDX (dyn[i].d_tag)] = dyn[i].d_un.d_val;
@@ -1609,6 +1612,30 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 }
 # endif
 
+static ut64 get_got_entrie(ELFOBJ *bin, RBinElfReloc *rel) {
+	if (!rel->rva) {
+		return UT64_MAX;
+	}
+
+	ut64 p_sym_got_addr = Elf_(r_bin_elf_v2p_new) (bin, rel->rva);
+
+	ut8 buf[WORDSIZE];
+	int res = r_buf_read_at (bin->b, p_sym_got_addr, buf, WORDSIZE);
+
+	if (res != WORDSIZE) {
+		return UT64_MAX;
+	}
+
+	size_t i = 0;
+	ut64 addr = READWORD (buf, i);
+
+	if (!addr) {
+		return UT64_MAX;
+	}
+
+	return addr;
+}
+
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 plt_addr = bin->dyn_info->dt_pltgot;
 	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
@@ -1637,30 +1664,6 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	base -= (nrel * 12) + 20;
 	base += (pos * 8);
 	return base;
-}
-
-static ut64 get_got_entrie(ELFOBJ *bin, RBinElfReloc *rel) {
-	if (!rel->rva) {
-		return UT64_MAX;
-	}
-
-	ut64 p_sym_got_addr = Elf_(r_bin_elf_v2p_new) (bin, rel->rva);
-
-	ut8 buf[WORDSIZE];
-	int res = r_buf_read_at (bin->b, p_sym_got_addr, buf, WORDSIZE);
-
-	if (res != WORDSIZE) {
-		return UT64_MAX;
-	}
-
-	size_t i = 0;
-	ut64 addr = READWORD (buf, i);
-
-	if (!addr) {
-		return UT64_MAX;
-	}
-
-	return addr;
 }
 
 static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
@@ -1692,6 +1695,18 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 	return UT64_MAX;
+}
+
+static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
+	ut64 addr_jmprel = bin->dyn_info->dt_jmprel;
+	ut64 addr_got = bin->dyn_info->dt_mips_pltgot;
+	if (!addr_jmprel || !addr_got) {
+		return UT64_MAX;
+	}
+
+	ut64 pos = (rel->rva - addr_got - 0x2 * WORDSIZE) / WORDSIZE;
+
+	return 42;
 }
 
 static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
@@ -1730,9 +1745,11 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	case EM_ARM:
 	case EM_AARCH64:
 		return get_import_addr_arm (bin, rel);
-	default:
-		return get_import_addr_x86 (bin, rel);
-	}
+    case EM_MIPS: // MIPS32 BIG ENDIAN relocs
+	    return get_import_addr_mips (bin, rel);
+    default:
+	    return get_import_addr_x86 (bin, rel);
+    }
 }
 
 int Elf_(r_bin_elf_has_nx) (ELFOBJ *bin) {
