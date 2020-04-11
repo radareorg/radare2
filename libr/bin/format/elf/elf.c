@@ -1557,6 +1557,7 @@ static HtUP *rel_cache_new(ELFOBJ *bin) {
 	return rel_cache;
 }
 
+# if 0
 static ut64 get_plt_addr(ELFOBJ *bin) {
 	ut64 got_addr = bin->dyn_info->dt_pltgot;
 	ut64 got_offset = Elf_(r_bin_elf_v2p_new) (bin, got_addr);
@@ -1603,6 +1604,61 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 
 	return UT64_MAX;
 }
+# endif
+
+static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
+	ut64 plt_addr = bin->dyn_info->dt_pltgot;
+	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
+
+	ut8 buf[4] = { 0 };
+	if (p_plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 nrel = get_num_relocs_dynamic (bin);
+	ut64 pos = (rel->rva - plt_addr) / 4 + 2;
+
+	int res = r_buf_read_at (bin->b, p_plt_addr, buf, sizeof (buf));
+	if (res < 4) {
+		return UT64_MAX;
+	}
+
+	if (pos != 44) {
+		return UT64_MAX;
+	}
+
+	if (bin->endian) {
+		ut64 base = r_read_be32 (buf);
+		base -= (nrel * 16);
+		base += (pos * 16);
+		return base;
+	}
+
+	ut64 base = r_read_le32 (buf);
+	base -= (nrel * 12) + 20;
+	base += (pos * 8);
+	return base;
+}
+
+static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
+	ut64 p_sym_got_addr = Elf_(r_bin_elf_v2p_new) (bin, rel->rva);
+
+	ut8 buf[WORDSIZE];
+	int res = r_buf_read_at (bin->b, p_sym_got_addr, buf, WORDSIZE);
+
+	if (res != WORDSIZE) {
+		return UT64_MAX;
+	}
+
+	size_t i = 0;
+	ut64 addr = READWORD (buf, i);
+
+	if (!addr) {
+		return UT64_MAX;
+	}
+
+	return addr - 0x6;
+}
 
 static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
@@ -1624,23 +1680,13 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		return UT64_MAX;
 	}
 
-	ut64 p_sym_got_addr = Elf_(r_bin_elf_v2p_new) (bin, rel->rva);
-
-	ut8 buf[WORDSIZE];
-	int res = r_buf_read_at (bin->b, p_sym_got_addr, buf, WORDSIZE);
-
-	if (res != WORDSIZE) {
-		return UT64_MAX;
+	switch (bin->ehdr.e_machine) {
+	case EM_PPC:
+	case EM_PPC64:
+		return get_import_addr_ppc (bin, rel);
+	default:
+		return get_import_addr_x86 (bin, rel);
 	}
-
-	size_t i = 0;
-	ut64 addr = READWORD (buf, i);
-
-	if (!addr) {
-		return UT64_MAX;
-	}
-
-	return addr - 0x6;
 }
 
 int Elf_(r_bin_elf_has_nx) (ELFOBJ *bin) {
