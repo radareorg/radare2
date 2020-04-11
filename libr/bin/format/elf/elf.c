@@ -1639,7 +1639,11 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	return base;
 }
 
-static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
+static ut64 get_got_entrie(ELFOBJ *bin, RBinElfReloc *rel) {
+	if (!rel->rva) {
+		return UT64_MAX;
+	}
+
 	ut64 p_sym_got_addr = Elf_(r_bin_elf_v2p_new) (bin, rel->rva);
 
 	ut8 buf[WORDSIZE];
@@ -1656,7 +1660,47 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	return addr - 0x6;
+	return addr;
+}
+
+static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
+	ut64 got_addr = bin->dyn_info->dt_pltgot;
+	if (!got_addr) {
+		return UT64_MAX;
+	}
+
+	ut64 plt_addr = get_got_entrie (bin, rel);
+	if (plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 pos = (rel->rva - got_addr - 0x3 * WORDSIZE) / WORDSIZE;
+
+	switch (rel->type) {
+	case R_ARM_JUMP_SLOT: {
+		plt_addr += pos * 12 + 20;
+		// thumb symbol
+		if (plt_addr & 1) {
+			plt_addr--;
+		}
+		return plt_addr;
+	}
+	case R_AARCH64_JUMP_SLOT:
+		return plt_addr + pos * 16 + 32;
+	default:
+		bprintf ("Unsupported relocation type for imports %d\n", rel->type);
+		return UT64_MAX;
+	}
+	return UT64_MAX;
+}
+
+static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
+	ut64 tmp = get_got_entrie (bin, rel);
+	if (tmp == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	return tmp - 0x6;
 }
 
 static ut64 get_import_addr(ELFOBJ *bin, int sym) {
@@ -1683,6 +1727,9 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	case EM_PPC:
 	case EM_PPC64:
 		return get_import_addr_ppc (bin, rel);
+	case EM_ARM:
+	case EM_AARCH64:
+		return get_import_addr_arm (bin, rel);
 	default:
 		return get_import_addr_x86 (bin, rel);
 	}
