@@ -89,8 +89,12 @@ R_API void r_anal_function_free(void *_fcn) {
 	r_list_free (fcn->bbs);
 
 	RAnal *anal = fcn->anal;
-	ht_up_delete (anal->ht_addr_fun, fcn->addr);
-	ht_pp_delete (anal->ht_name_fun, fcn->name);
+	if (ht_up_find (anal->ht_addr_fun, fcn->addr, NULL) == _fcn) {
+		ht_up_delete (anal->ht_addr_fun, fcn->addr);
+	}
+	if (ht_pp_find (anal->ht_name_fun, fcn->name, NULL) == _fcn) {
+		ht_pp_delete (anal->ht_name_fun, fcn->name);
+	}
 
 	free (fcn->name);
 	free (fcn->attr);

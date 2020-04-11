@@ -338,3 +338,22 @@ arg int arg2 @ xmm1
 diff: type: new
 EOF
 RUN
+
+NAME=duplicate af+
+FILE=-
+CMDS=<<EOF
+af+ 0x1337 func
+af+ 0x1337 func
+af+ 0x1337 func
+afl
+EOF
+EXPECT=<<EOF
+0x00001337    0 0            func
+EOF
+EXPECT_ERR=<<EOF
+Invalid function name 'func' at 0x00001337
+Cannot add function (duplicated)
+Invalid function name 'func' at 0x00001337
+Cannot add function (duplicated)
+EOF
+RUN
