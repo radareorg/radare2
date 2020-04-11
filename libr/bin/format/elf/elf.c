@@ -1372,6 +1372,13 @@ static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, size_t rel_mode, ut64 offse
 	return true;
 }
 
+static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
+	if (bin->dyn_info->dt_pltrelsz) {
+		return bin->dyn_info->dt_pltrelsz / get_size_rel_mode (bin->dyn_info->dt_pltrel);
+	}
+	return 0;
+}
+
 static size_t get_num_relocs_dynamic(ELFOBJ *bin) {
 	size_t res = 0;
 
@@ -1383,11 +1390,7 @@ static size_t get_num_relocs_dynamic(ELFOBJ *bin) {
 		res += bin->dyn_info->dt_relsz / bin->dyn_info->dt_relent;
 	}
 
-	if (bin->dyn_info->dt_pltrelsz) {
-		res += bin->dyn_info->dt_pltrelsz / get_size_rel_mode (bin->dyn_info->dt_pltrel);
-	}
-
-	return res;
+	return res + get_num_relocs_dynamic_plt (bin);
 }
 
 static bool sectionIsInvalid(ELFOBJ *bin, RBinElfSection *sect) {
@@ -1615,15 +1618,11 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 nrel = get_num_relocs_dynamic (bin);
-	ut64 pos = (rel->rva - plt_addr) / 4 + 2;
+	ut64 nrel = get_num_relocs_dynamic_plt (bin);
+	ut64 pos = (rel->rva - plt_addr) / 4;
 
 	int res = r_buf_read_at (bin->b, p_plt_addr, buf, sizeof (buf));
 	if (res < 4) {
-		return UT64_MAX;
-	}
-
-	if (pos != 44) {
 		return UT64_MAX;
 	}
 
