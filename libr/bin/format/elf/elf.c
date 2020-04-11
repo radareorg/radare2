@@ -16,7 +16,7 @@
 #define IFDBG if (DO_THE_DBG)
 #define IFINT if (0)
 
-#define MIPS_PLT_OFFSET 108
+#define MIPS_PLT_OFFSET 0x20
 #define RISCV_PLT_OFFSET 40
 
 #define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000LL
@@ -26,14 +26,24 @@
 #define R_ELF_PART_RELRO 1
 #define R_ELF_FULL_RELRO 2
 
-#define bprintf if(bin->verbose) R_LOG_WARN
+#define bprintf           \
+	if (bin->verbose) \
+	R_LOG_WARN
 
 #define MAX_REL_RELA_SZ (sizeof (Elf_(Rel)) > sizeof (Elf_(Rela))? sizeof (Elf_(Rel)): sizeof (Elf_(Rela)))
 
-#define READ8(x, i) r_read_ble8((x) + (i)); (i) += 1
-#define READ16(x, i) r_read_ble16((x) + (i), bin->endian); (i) += 2
-#define READ32(x, i) r_read_ble32((x) + (i), bin->endian); (i) += 4
-#define READ64(x, i) r_read_ble64((x) + (i), bin->endian); (i) += 8
+#define READ8(x, i)              \
+	r_read_ble8 ((x) + (i)); \
+	(i) += 1
+#define READ16(x, i)                           \
+	r_read_ble16 ((x) + (i), bin->endian); \
+	(i) += 2
+#define READ32(x, i)                           \
+	r_read_ble32 ((x) + (i), bin->endian); \
+	(i) += 4
+#define READ64(x, i)                           \
+	r_read_ble64 ((x) + (i), bin->endian); \
+	(i) += 8
 
 #if R_BIN_ELF64
 #define READWORD(x, i) READ64 (x, i)
@@ -43,12 +53,20 @@
 #define READWORD(x, i) READ32 (x, i)
 #endif
 
-#define BREAD8(x, i) r_buf_read_ble8_at(x, i); (i) += 1
-#define BREAD16(x, i) r_buf_read_ble16_at(x, i, bin->endian); (i) += 2
-#define BREAD32(x, i) r_buf_read_ble32_at(x, i, bin->endian); (i) += 4
-#define BREAD64(x, i) r_buf_read_ble64_at(x, i, bin->endian); (i) += 8
+#define BREAD8(x, i)               \
+	r_buf_read_ble8_at (x, i); \
+	(i) += 1
+#define BREAD16(x, i)                            \
+	r_buf_read_ble16_at (x, i, bin->endian); \
+	(i) += 2
+#define BREAD32(x, i)                            \
+	r_buf_read_ble32_at (x, i, bin->endian); \
+	(i) += 4
+#define BREAD64(x, i)                            \
+	r_buf_read_ble64_at (x, i, bin->endian); \
+	(i) += 8
 
-#define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize)+(entrysize)-1)/(entrysize))
+#define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
 
 #if R_BIN_ELF64
 static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
@@ -1636,36 +1654,6 @@ static ut64 get_got_entrie(ELFOBJ *bin, RBinElfReloc *rel) {
 	return addr;
 }
 
-static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
-	ut64 plt_addr = bin->dyn_info->dt_pltgot;
-	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
-
-	ut8 buf[4] = { 0 };
-	if (p_plt_addr == UT64_MAX) {
-		return UT64_MAX;
-	}
-
-	ut64 nrel = get_num_relocs_dynamic_plt (bin);
-	ut64 pos = (rel->rva - plt_addr) / 4;
-
-	int res = r_buf_read_at (bin->b, p_plt_addr, buf, sizeof (buf));
-	if (res < 4) {
-		return UT64_MAX;
-	}
-
-	if (bin->endian) {
-		ut64 base = r_read_be32 (buf);
-		base -= (nrel * 16);
-		base += (pos * 16);
-		return base;
-	}
-
-	ut64 base = r_read_le32 (buf);
-	base -= (nrel * 12) + 20;
-	base += (pos * 8);
-	return base;
-}
-
 static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info->dt_pltgot;
 	if (!got_addr) {
@@ -1727,6 +1715,51 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 	return plt_addr;
 }
 
+static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
+	ut64 plt_addr = bin->dyn_info->dt_pltgot;
+	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
+
+	ut8 buf[4] = { 0 };
+	if (p_plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 nrel = get_num_relocs_dynamic_plt (bin);
+	ut64 pos = (rel->rva - plt_addr) / 4;
+
+	int res = r_buf_read_at (bin->b, p_plt_addr, buf, sizeof (buf));
+	if (res < 4) {
+		return UT64_MAX;
+	}
+
+	if (bin->endian) {
+		ut64 base = r_read_be32 (buf);
+		base -= (nrel * 16);
+		base += (pos * 16);
+		return base;
+	}
+
+	ut64 base = r_read_le32 (buf);
+	base -= (nrel * 12) + 20;
+	base += (pos * 8);
+	return base;
+}
+
+static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
+	ut64 got_addr = bin->dyn_info->dt_pltgot;
+	if (!got_addr) {
+		return UT64_MAX;
+	}
+
+	ut64 plt_addr = get_got_entrie (bin, rel);
+	if (plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 pos = (rel->rva - got_addr - 0x2 * WORDSIZE) / WORDSIZE;
+	return plt_addr + MIPS_PLT_OFFSET + pos * 0x10;
+}
+
 static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 tmp = get_got_entrie (bin, rel);
 	if (tmp == UT64_MAX) {
@@ -1757,17 +1790,19 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	}
 
 	switch (bin->ehdr.e_machine) {
-	case EM_PPC:
-	case EM_PPC64:
-		return get_import_addr_ppc (bin, rel);
 	case EM_ARM:
 	case EM_AARCH64:
 		return get_import_addr_arm (bin, rel);
-    case EM_MIPS: // MIPS32 BIG ENDIAN relocs
-	    return get_import_addr_mips (bin, rel);
-    default:
-	    return get_import_addr_x86 (bin, rel);
-    }
+	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
+		return get_import_addr_mips (bin, rel);
+	case EM_PPC:
+	case EM_PPC64:
+		return get_import_addr_ppc (bin, rel);
+	case EM_RISCV:
+		return get_import_addr_riscv (bin, rel);
+	default:
+		return get_import_addr_x86 (bin, rel);
+	}
 }
 
 int Elf_(r_bin_elf_has_nx) (ELFOBJ *bin) {
