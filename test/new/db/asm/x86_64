@@ -729,6 +729,8 @@ aB "mov qword[r12], rsp" 49892424
 aB "mov qword[r8 + 0x20], rax" 49894020
 aB "mov r12, qword[r12]" 4d8b2424
 a "mov eax,r12d" 4489e0
+ad "movabs rax, 0xdeadbeef" 48b8efbeadde00000000
+ad "movabs r12, 1" 49bc0100000000000000
 a "inc al" fec0
 a "inc BYTE PTR [r12]" 41fe0424
 a "inc BYTE PTR [rbx+0x18]" fe4318
