@@ -1700,13 +1700,31 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 addr_jmprel = bin->dyn_info->dt_jmprel;
 	ut64 addr_got = bin->dyn_info->dt_mips_pltgot;
+
 	if (!addr_jmprel || !addr_got) {
 		return UT64_MAX;
 	}
 
 	ut64 pos = (rel->rva - addr_got - 0x2 * WORDSIZE) / WORDSIZE;
 
-	return 42;
+	ut8 buf[1024];
+	const ut8 *base;
+	ut64 plt_addr = addr_jmprel + bin->dyn_info->dt_pltrelsz;
+	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
+	int res = r_buf_read_at (bin->b, p_plt_addr, buf, sizeof (buf));
+	if (res != sizeof (buf)) {
+		return UT64_MAX;
+	}
+
+	base = r_mem_mem_aligned (buf, sizeof (buf), (const ut8 *)"\x3c\x0f\x00", 3, 4);
+	if (base) {
+		plt_addr += (int)(size_t) (base - buf);
+	} else {
+		plt_addr += MIPS_PLT_OFFSET + 8; // HARDCODED HACK
+	}
+	plt_addr += pos * 16;
+
+	return plt_addr;
 }
 
 static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
