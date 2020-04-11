@@ -2008,7 +2008,8 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	char *color = "";
 	char *colorend = "";
-	int use_colors = r_config_get_i (core->config, "scr.color");
+	int had_colors = r_config_get_i (core->config, "scr.color");
+	bool use_colors = had_colors != 0;
 	int delta = 0;
 	ut64 diff, value;
 	int bits = core->assembler->bits;
@@ -2017,14 +2018,17 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	RListIter *iter;
 	RRegItem *r;
 	RTable *t = r_core_table (core);
+
+	if (mode == 'j') {
+		r_config_set_i (core->config, "scr.color", false);
+		use_colors = 0;
+	}
+
 	if (use_colors) {
 #undef ConsP
 #define ConsP(x) (core->cons && core->cons->context->pal.x) ? core->cons->context->pal.x
 		color = ConsP(creg): Color_BWHITE;
-	}
-
-	if (mode == 'j') {
-		r_config_set_i (core->config, "scr.color", false);
+		colorend = Color_RESET;
 	}
 
 	r_table_set_columnsf (t, "ssss", "role", "reg", "value", "ref");
@@ -2043,8 +2047,6 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			r_reg_arena_swap (core->dbg->reg, false);
 			delta = value-diff;
 		}
-		color = (delta && use_colors)? color: "";
-		colorend = (delta && use_colors)? Color_RESET: "";
 
 		const char *role = "";
 		int i;
@@ -2055,13 +2057,19 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			}
 		}
 
-		char *namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
-		char *valuestr = r_str_newf ("%s%"PFMT64x"%s", color, value, colorend);
+		char *namestr = NULL;
+		char *valuestr = NULL;
+		if (delta && use_colors) {
+			namestr = r_str_newf ("%s%s%s", color, r->name, colorend);
+			valuestr = r_str_newf ("%s%"PFMT64x"%s", color, value, colorend);
+		} else {
+			namestr = r_str_new (r->name);
+			valuestr = r_str_newf ("%"PFMT64x, value);
+		}
 
-		char *rrstr = strdup ("");
-		char *refs = r_core_anal_hasrefs (core, value, true);
-		if (refs) {
-			rrstr = refs;
+		char *rrstr = r_core_anal_hasrefs (core, value, true);
+		if (!rrstr) {
+			rrstr = strdup ("");
 		}
 
 		r_table_add_rowf (t, "ssss", role, namestr, valuestr, rrstr);
@@ -2075,8 +2083,8 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	free (s);
 	r_table_free (t);
 
-	if (use_colors) {
-		r_config_set_i (core->config, "scr.color", use_colors);
+	if (had_colors) {
+		r_config_set_i (core->config, "scr.color", had_colors);
 	}
 }
 
