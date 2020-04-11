@@ -2284,6 +2284,28 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+// Only for MOV r64, imm64
+static int opmovabs(RAsm *a, ut8 *data, const Opcode *op) {
+	if (!(a->bits == 64 && (op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY) &&
+	      (op->operands[0].type & OT_QWORD) && (op->operands[1].type & OT_CONSTANT))) {
+		return -1;
+	}
+	int l = 0;
+	int byte_shift;
+	ut64 immediate;
+	if (op->operands[0].extended) {
+		data[l++] = 0x49;
+	} else {
+		data[l++] = 0x48;
+	}
+	data[l++] = 0xb8 | op->operands[0].reg;
+	immediate = op->operands[1].immediate * op->operands[1].sign;
+	for (byte_shift = 0; byte_shift < 8; byte_shift++) {
+		data[l++] = immediate >> (byte_shift * 8);
+	}
+	return l;
+}
+
 static int opmul(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
@@ -4339,6 +4361,7 @@ LookupTable oplookup[] = {
 	{"movsw", 0, NULL, 0x66a5, 2},
 	{"movzx", 0, &opmovx, 0},
 	{"movsx", 0, &opmovx, 0},
+	{"movabs", 0, &opmovabs, 0},
 	{"mul", 0, &opmul, 0},
 	{"mwait", 0, NULL, 0x0f01c9, 3},
 	{"neg", 0, &opneg, 0},
