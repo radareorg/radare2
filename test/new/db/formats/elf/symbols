@@ -41,7 +41,7 @@ nth paddr       vaddr      bind   type   size lib name
 22   0x00200844 0x01c00844 LOCAL  SECT   0        .custom_text
 23   ---------- 0x00000000 LOCAL  SECT   0        .comment
 24   ---------- 0x00000000 LOCAL  FILE   0        custom_ldscript.c
-25   ---------- 0x00000000 LOCAL  FILE   0
+25   ---------- 0x00000000 LOCAL  FILE   0        
 26   0x00000660 0x00600660 LOCAL  NOTYPE 0        __init_array_end
 27   0x00000660 0x00600660 LOCAL  OBJ    0        _DYNAMIC
 28   0x00000660 0x00600660 LOCAL  NOTYPE 0        __init_array_start

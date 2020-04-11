@@ -1766,6 +1766,15 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
+	// FIXME shouldn't use section name
+	RBinElfSection *pltsec_section = get_section_by_name (bin, ".plt.sec");
+
+	if (pltsec_section) {
+		ut64 got_addr = bin->dyn_info->dt_pltgot;
+		ut64 pos = (rel->rva - got_addr - 0x3 * WORDSIZE) / WORDSIZE;
+		return pltsec_section->rva + pos * 0x10;
+	}
+
 	return tmp - 0x6;
 }
 
