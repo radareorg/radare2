@@ -1549,7 +1549,7 @@ static HtUP *rel_cache_new(ELFOBJ *bin) {
 	HtUP *rel_cache = ht_up_new_size (htsize, NULL, rel_cache_free, NULL);
 	size_t i;
 
-	for (i = 0; i < bin->reloc_num; ++i) {
+	for (i = 0; i < bin->reloc_num; i++) {
 		RBinElfReloc *tmp = R_NEW (RBinElfReloc);
 		memcpy (tmp, relocs + i, sizeof (RBinElfReloc));
 		if (!ht_up_insert (rel_cache, tmp->sym, tmp)) {
