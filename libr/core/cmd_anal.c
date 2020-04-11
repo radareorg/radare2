@@ -4003,12 +4003,14 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	if (mode == '=') {
 		int pcbits = 0;
 		const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-		RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
-		if (bits != reg->size) {
-			pcbits = reg->size;
-		}
-		if (pcbits) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, mode, use_color); // XXX detect which one is current usage
+		if (pcname) {
+			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
+			if (reg && bits != reg->size) {
+				pcbits = reg->size;
+			}
+			if (pcbits) {
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, mode, use_color); // XXX detect which one is current usage
+			}
 		}
 	}
 	r_debug_reg_list (core->dbg, type, bits, mode2, use_color);
@@ -9952,9 +9954,9 @@ static int cmd_anal(void *data, const char *input) {
 	case 'C': // "aC"
 		cmd_anal_aC (core, input + 1);
 		break;
-	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
-	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
-	case 'e': cmd_anal_esil (core, input + 1); break; // "ae"
+	case 'i': cmd_anal_info (core, r_str_trim_head_ro (input + 1)); break; // "ai"
+	case 'r': cmd_anal_reg (core, r_str_trim_head_ro (input + 1)); break;  // "ar"
+	case 'e': cmd_anal_esil (core, r_str_trim_head_ro (input + 1)); break; // "ae"
 	case 'L': return r_core_cmd0 (core, "e asm.arch=??"); break;
 	case 'o': cmd_anal_opcode (core, input + 1); break; // "ao"
 	case 'O': cmd_anal_bytes (core, input + 1); break; // "aO"
@@ -10024,7 +10026,7 @@ static int cmd_anal(void *data, const char *input) {
 		switch (input[1]) {
 		case 'f': // "adf"
 			if (input[2] == 'g') {
-				anal_fcn_data_gaps (core, input + 1);
+				anal_fcn_data_gaps (core, r_str_trim_head_ro (input + 1));
 			} else {
 				anal_fcn_data (core, input + 1);
 			}
