@@ -5,6 +5,7 @@ r_socket_sources = [
   'socket_serial.c',
   'socket_proc.c',
   'r2pipe.c',
+  'socket_rap_client.c',
   'socket_rap_server.c',
   'run.c',
 ]
