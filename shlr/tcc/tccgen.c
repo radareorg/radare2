@@ -1181,13 +1181,10 @@ do_decl:
 						if (is_named) {
 							int type_bt = type1.t & VT_BTYPE;
 							//eprintf("2: %s.%s = %s\n", ctype, name, varstr);
-							tcc_appendf ("[+]%s.%s=%s\n",
-								ctype, name, varstr);
-							tcc_appendf ("%s.%s.%s.meta=%d\n",
-								ctype, name, varstr, type_bt);
+							tcc_appendf ("[+]%s.%s=%s\n", ctype, name, varstr);
+							tcc_appendf ("%s.%s.%s.meta=%d\n", ctype, name, varstr, type_bt);
 							/* compact form */
-							tcc_appendf ("%s.%s.%s=%s,%d,%d\n",
-								ctype, name, varstr, b, offset, arraysize);
+							tcc_appendf ("%s.%s.%s=%s,%d,%d\n", ctype, name, varstr, b, offset, arraysize);
 #if 0
 							eprintf ("%s.%s.%s.type=%s\n", ctype, name, varstr, b);
 							eprintf ("%s.%s.%s.offset=%d\n", ctype, name, varstr, offset);
@@ -3185,8 +3182,13 @@ func_error1:
 					char buf[500];
 					alias = get_tok_str(v, NULL);
 					type_to_str(buf, sizeof(buf), &sym->type, NULL);
-					tcc_appendf("%s=typedef\n",alias);
-					tcc_appendf("typedef.%s=%s\n",alias, buf);
+					bool isnumstru = !strncmp (buf, "struct ", 7) && isdigit (buf[7]);
+					if (isnumstru) {
+						tcc_appendf("%s=struct\n", alias);
+					} else {
+						tcc_appendf("%s=typedef\n",alias);
+						tcc_appendf("typedef.%s=%s\n",alias, buf);
+					}
 				} else {
 					r = 0;
 					if ((type.t & VT_BTYPE) == VT_FUNC) {
