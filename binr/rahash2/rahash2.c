@@ -2,6 +2,6 @@
 
 #include <r_main.h>
 
-int main(int argc, char **argv) {
+int main(int argc, const char **argv) {
 	return r_main_rahash2(argc, argv);
 }
