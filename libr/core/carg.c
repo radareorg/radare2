@@ -191,7 +191,18 @@ R_API void r_core_print_func_args(RCore *core) {
 				argcnt++;
 			}
 		} else {
-			print_arg_str (0, "void", color);
+			int nargs = 4; // TODO: use a correct value here when available
+			//if (nargs > 0) {
+				int i;
+				for (i = 0; i < nargs; i++) {
+					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+					print_arg_str (i, "", color);
+					r_cons_printf ("0x%08" PFMT64x, v);
+					r_cons_newline ();
+				}
+			//} else {
+			//	print_arg_str (0, "void", color);
+			//}
 		}
 	}
 	r_anal_op_fini (op);
