@@ -1,3 +1,14 @@
+NAME=td anonymous struct in typedef
+FILE=--
+CMDS=<<EOF
+"td typedef struct {int a;} Foo;"
+ts~0,Foo
+EOF
+EXPECT=<<EOF
+Foo
+EOF
+RUN
+
 NAME=typelinks
 FILE=-
 CMDS=<<EOF
