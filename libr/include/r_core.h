@@ -79,10 +79,6 @@ R_LIB_VERSION_HEADER(r_core);
 #define RTR_PROTOCOL_HTTP 3
 #define RTR_PROTOCOL_UNIX 4
 
-#define RTR_RAP_OPEN   0x01
-#define RTR_RAP_CMD    0x07
-#define RTR_RAP_REPLY  0x80
-
 #define RTR_MAX_HOSTS 255
 
 /* visual mode */

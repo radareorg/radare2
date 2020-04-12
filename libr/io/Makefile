@@ -6,7 +6,7 @@ DEPS+=r_socket
 DEPS+=r_cons
 STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS}
-OBJS+=io.o io_plugin.o map.o desc.o io_cache.o p_cache.o undo.o ioutils.o fd.o
+OBJS+=io.o io_plugin.o io_map.o io_desc.o io_cache.o p_cache.o undo.o ioutils.o io_fd.o
 
 CFLAGS+=-Wall -DR2_PLUGIN_INCORE
 

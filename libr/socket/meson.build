@@ -1,12 +1,13 @@
 r_socket_sources = [
-  'http.c',
-  'http_server.c',
-  'proc.c',
-  'r2pipe.c',
-  'rap_server.c',
-  'run.c',
   'socket.c',
-  'serial.c',
+  'socket_http.c',
+  'socket_http_server.c',
+  'socket_serial.c',
+  'socket_proc.c',
+  'r2pipe.c',
+  'socket_rap_client.c',
+  'socket_rap_server.c',
+  'run.c',
 ]
 
 dependencies = [utl, r_util_dep, platform_deps]

@@ -109,11 +109,8 @@ typedef struct r_io_t {
 	struct w32dbg_wrap_instance_t *w32dbg_wrap;
 #endif
 	char *args;
-	void *user;
 	PrintfCallback cb_printf;
-	int (*cb_core_cmd)(void *user, const char *str);
-	char* (*cb_core_cmdstr)(void *user, const char *str);
-	void (*cb_core_post_write)(void *user, ut64 maddr, ut8 *orig_bytes, int orig_len);
+	RCoreBind corebind;
 } RIO;
 
 typedef struct r_io_desc_t {
@@ -136,22 +133,12 @@ typedef struct {
 	void *data;
 } RIODescData;
 
-// #warning move RIORap somewhere else
+// Move somewhere else?
 typedef struct {
 	RSocket *fd;
 	RSocket *client;
-	int listener;
+	bool listener;
 } RIORap;
-
-#define RMT_MAX    4096
-#define RMT_OPEN   0x01
-#define RMT_READ   0x02
-#define RMT_WRITE  0x03
-#define RMT_SEEK   0x04
-#define RMT_CLOSE  0x05
-#define RMT_SYSTEM 0x06
-#define RMT_CMD    0x07
-#define RMT_REPLY  0x80
 
 typedef struct r_io_plugin_t {
 	const char *name;
