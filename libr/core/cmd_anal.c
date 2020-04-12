@@ -4357,7 +4357,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				int role = r_reg_get_name_idx (regname);
 				if (role != -1) {
 					const char *alias = r_reg_get_name (core->dbg->reg, role);
-					r = r_reg_get (core->dbg->reg, alias, -1);
+					if (alias) {
+						r = r_reg_get (core->dbg->reg, alias, -1);
+					}
 				}
 			}
 			if (r) {
@@ -9954,9 +9956,9 @@ static int cmd_anal(void *data, const char *input) {
 	case 'C': // "aC"
 		cmd_anal_aC (core, input + 1);
 		break;
-	case 'i': cmd_anal_info (core, r_str_trim_head_ro (input + 1)); break; // "ai"
-	case 'r': cmd_anal_reg (core, r_str_trim_head_ro (input + 1)); break;  // "ar"
-	case 'e': cmd_anal_esil (core, r_str_trim_head_ro (input + 1)); break; // "ae"
+	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
+	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
+	case 'e': cmd_anal_esil (core, input + 1); break; // "ae"
 	case 'L': return r_core_cmd0 (core, "e asm.arch=??"); break;
 	case 'o': cmd_anal_opcode (core, input + 1); break; // "ao"
 	case 'O': cmd_anal_bytes (core, input + 1); break; // "aO"

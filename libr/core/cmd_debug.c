@@ -2385,7 +2385,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 'C': // "drC"
 		{
 			const bool json_out = str[1] == 'j';
-			name = json_out ? str + 3 : str + 2;
+			name = r_str_trim_head_ro (json_out ? str + 3 : str + 2);
 			if (name) {
 				r = r_reg_get (core->dbg->reg, name , -1);
 				if (r) {
