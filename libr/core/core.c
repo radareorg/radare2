@@ -1836,7 +1836,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		if (!strncmp (buf->data, "afvn ", 5)) {
 			vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
 		} else {
-			vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
+			vars = r_list_new (); // TODO wtf r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
 		}
 		const char *f_ptr, *l_ptr;
 		RAnalVar *var;

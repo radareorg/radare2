@@ -987,7 +987,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 R_API RList *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn) {
 	// r_anal_var_list if there are not vars with that kind returns a list with
 	// zero element.. which is an unnecessary loss of cpu time
-	RList *list = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_ARG);
+	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
 	}

@@ -738,11 +738,11 @@ typedef struct r_anal_bind_t {
 
 typedef const char *(*RAnalLabelAt) (RAnal *a, RAnalFunction *fcn, ut64);
 
-#define R_ANAL_VAR_KIND_ANY 0
-#define R_ANAL_VAR_KIND_ARG 'a'
-#define R_ANAL_VAR_KIND_REG 'r'
-#define R_ANAL_VAR_KIND_BPV 'b'
-#define R_ANAL_VAR_KIND_SPV 's'
+typedef enum {
+	R_ANAL_VAR_KIND_REG = 'r',
+	R_ANAL_VAR_KIND_BPV = 'b',
+	R_ANAL_VAR_KIND_SPV = 's'
+} RAnalVarKind;
 
 #define VARPREFIX "var"
 #define ARGPREFIX "arg"
@@ -752,15 +752,12 @@ typedef struct r_anal_var_t {
 	char *name; // name of the variable
 	char *regname; // name of the register
 	char *type; // cparse type of the variable
-	char kind; // reg , stack ...
+	RAnalVarKind kind;
 	int size;
 	bool isarg;
 	int argnum;
 	int delta;   /* delta offset inside stack frame */
 	int scope;   /* global, local... | in, out... */
-	/* probably dupped or so */
-	RList/*RAnalVarAccess*/ *accesses; /* list of accesses for this var */
-	RList/*RAnalValue*/ *stores;   /* where this */
 } RAnalVar;
 
 // mul*value+regbase+regidx+delta
