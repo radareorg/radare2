@@ -112,7 +112,7 @@ EXPECT=<<EOF
 0x00f00490    1 4            sym.__x86.get_pc_thunk.bx
 0x00f004a0    4 61           sym.deregister_tm_clones
 0x00f004e0    4 71           sym.register_tm_clones
-0x00f00530    5 71           entry.fini0
+0x00f00530    5 71           sym.__do_global_dtors_aux
 0x00f00580    4 69   -> 60   entry.init0
 0x00f005c5    1 4            main
 0x00f005d0    4 97           sym.__libc_csu_init

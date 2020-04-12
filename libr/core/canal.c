@@ -741,6 +741,10 @@ static void set_fcn_name_from_flag(RAnalFunction *fcn, RFlagItem *f, const char 
 	}
 }
 
+static bool is_entry_flag(RFlagItem *f) {
+	return f->space && !strcmp (f->space->name, R_FLAGS_FS_SYMBOLS) && r_str_startswith (f->name, "entry.");
+}
+
 static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (depth < 0) {
 //		printf ("Too deep for 0x%08"PFMT64x"\n", at);
@@ -819,8 +823,22 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
 			if (f && f->name && strncmp (f->name, "sect", 4)) { /* Check if it's already flagged */
-				R_FREE (fcn->name);
-				fcn->name = strdup (f->name);
+				const char *new_name = strdup (f->name);
+				if (is_entry_flag (f)) {
+					RListIter *iter;
+					RBinSymbol *sym;
+					const RList *syms = r_bin_get_symbols (core->bin);
+					ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+					r_list_foreach (syms, iter, sym) {
+						if ((sym->paddr + baddr) == fcn->addr && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
+							free (new_name);
+							new_name = r_str_newf ("sym.%s", sym->name);
+							break;
+						}
+					}
+				}
+				free (fcn->name);
+				fcn->name = new_name;
 			} else {
 				R_FREE (fcn->name);
 				const char *fcnpfx = r_anal_fcntype_tostring (fcn->type);
