@@ -138,7 +138,7 @@ R_API void r_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb);
 
 /* ... */
 R_API char *r_print_hexpair(RPrint *p, const char *str, int idx);
-R_API void r_print_hex_from_bin (RPrint *p, char *bin_str);
+R_API void r_print_hex_from_bin(RPrint *p, char *bin_str);
 R_API RPrint *r_print_new(void);
 R_API RPrint *r_print_free(RPrint *p);
 R_API bool r_print_mute(RPrint *p, int x);
@@ -146,9 +146,9 @@ R_API void r_print_set_flags(RPrint *p, int _flags);
 R_API void r_print_unset_flags(RPrint *p, int flags);
 R_API void r_print_addr(RPrint *p, ut64 addr);
 R_API void r_print_section(RPrint *p, ut64 at);
-R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height);
+R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height);
 R_API void r_print_hexii(RPrint *p, ut64 addr, const ut8 *buf, int len, int step);
-R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, int zoomsz);
+R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
 R_API void r_print_hexdump_simple(const ut8 *buf, int len);
 R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize);
 R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len);

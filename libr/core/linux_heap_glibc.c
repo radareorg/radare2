@@ -152,7 +152,7 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 }
 
 static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, int format) {
-	int i, j, k, start;
+	size_t i, j, k, start;
 	GHT align = 12 * SZ + sizeof (int) * 2;
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;

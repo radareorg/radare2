@@ -254,7 +254,7 @@ static bool __core_visual_gogo (RCore *core, int ch) {
 				break;
 			}
 			(void)p->consbind.get_size (&scr_rows);
-			int scols = r_config_get_i (core->config, "hex.cols");
+			ut64 scols = r_config_get_i (core->config, "hex.cols");
 			ret = r_core_seek (core, r_itv_end (map->itv) - (scr_rows - 2) * scols, 1);
 		}
 		if (ret != -1) {

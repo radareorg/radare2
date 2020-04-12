@@ -81,7 +81,7 @@ typedef struct r_io_t {
 	int va;		//all of this config stuff must be in 1 int
 	int ff;
 	int Oxff;
-	int addrbytes;
+	size_t addrbytes;
 	int aslr;
 	int autofd;
 	int cached;
