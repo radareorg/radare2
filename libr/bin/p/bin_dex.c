@@ -1521,6 +1521,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	cls->fields = r_list_new ();
 	if (!cls->fields) {
 		r_list_free (cls->methods);
+		free (cls);
 		goto beach;
 	}
 	const char *str = createAccessFlagStr (c->access_flags, kAccessForClass);
@@ -1622,7 +1623,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	}
 	cls = NULL;
 beach:
-	r_bin_class_free (cls);
+	return;
 }
 
 static bool is_class_idx_in_code_classes(RBinDexObj *bin, int class_idx) {

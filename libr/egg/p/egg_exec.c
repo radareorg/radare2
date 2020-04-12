@@ -110,7 +110,8 @@ static RBuffer *build (REgg *egg) {
 					if (!shell) {
 						break;
 					}
-					r_str_ncpy (shell, &b, sizeof (st64) + 1);
+					r_str_ncpy (shell, (char *)&b, sizeof (st64));
+					shell[sizeof (st64)] = 0;
 					cd = 4;
 					r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
 					r_buf_write_at (buf, cd, (const ut8 *)shell, sizeof (st64));
