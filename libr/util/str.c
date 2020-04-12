@@ -2243,7 +2243,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 	int args_current = 0; // Current character index in  args
 	int arg_begin = 0; // Index of the first character of the current argument in args
 
-	if (!cmdline || argv_len < 1) {
+	if (!cmdline) {
 		return NULL;
 	}
 
