@@ -38,6 +38,17 @@ a "mov rax, 0x1122334455667788" 48b88877665544332211
 aB "mov rax, 0x112233445566778899" 00
 a "mov rax, 3" 48c7c003000000
 a "mov rax, 33" 48c7c021000000
+ad "mov rax, 0x7fffffff" 48c7c0ffffff7f
+ad "mov rax, 0" 48c7c000000000
+a "mov rax, -1" 48c7c0ffffffff
+adB "mov rax, 0xffffffffffffffff" 48c7c0ffffffff
+a "mov rax, -2" 48c7c0feffffff
+a "mov rax, -0x2" 48c7c0feffffff
+ad "mov rax, 0xfffffffffffffffe" 48c7c0feffffff
+a "mov rax, -0x80000000" 48c7c000000080
+ad "mov rax, 0xffffffff80000000" 48c7c000000080
+a "mov rax, -0x80000001" 48b8ffffff7fffffffff
+ad "movabs rax, 0xffffffff7fffffff" 48b8ffffff7fffffffff
 a "mov rax, [rax+0]" 488b00
 a "mov rax, [rax+1]" 488b4001
 a "mov rax, [rax-0]" 488b00
