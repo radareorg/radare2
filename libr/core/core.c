@@ -3418,7 +3418,7 @@ reaccept:
 						r_socket_close (c);
 					}
 				} else {
-					eprintf ("[r2p] unknown command 0x%02x\n", cmd);
+					eprintf ("[rap] unknown command 0x%02x\n", cmd);
 					r_socket_close (c);
 					R_FREE (ptr);
 				}
