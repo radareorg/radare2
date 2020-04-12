@@ -1058,7 +1058,10 @@ do_decl:
 			offset = 0;
 
 			const char *ctype = (a == TOK_UNION)? "union": "struct";
-			tcc_appendf ("%s=%s\n", name, ctype);
+			bool is_named = !isalnum (*name);
+			if (is_named) {
+				tcc_appendf ("%s=%s\n", name, ctype);
+			}
 
 			while (tok != '}') {
 				if (!parse_btype (&btype, &ad)) {
@@ -1175,7 +1178,7 @@ do_decl:
 						char b[1024];
 						char *varstr = get_tok_str (v, NULL);
 						type_to_str (b, sizeof(b), &type1, NULL);
-						{
+						if (is_named) {
 							int type_bt = type1.t & VT_BTYPE;
 							//eprintf("2: %s.%s = %s\n", ctype, name, varstr);
 							tcc_appendf ("[+]%s.%s=%s\n",
