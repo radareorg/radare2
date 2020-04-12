@@ -206,10 +206,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				} else if (!regexp) {
 					matches = strstr (opst, tokens[matchcount]) != NULL;
 				} else {
-					rx = r_regex_new (tokens[matchcount], "");
-					if (r_regex_comp (rx, tokens[matchcount], R_REGEX_EXTENDED|R_REGEX_NOSUB) == 0) {
-						matches = r_regex_exec (rx, opst, 0, 0, 0) == 0;
-					}
+					rx = r_regex_new (tokens[matchcount], "es");
+					matches = r_regex_exec (rx, opst, 0, 0, 0) == 0;
 					r_regex_free (rx);
 				}
 			}
