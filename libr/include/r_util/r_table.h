@@ -3,6 +3,10 @@
 
 #include <r_util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	const char *name;
 	RListComparator cmp;
@@ -85,5 +89,9 @@ R_API void r_table_transpose(RTable *t);
 R_API void r_table_format(RTable *t, int nth, RTableColumnType *type);
 R_API ut64 r_table_reduce(RTable *t, int nth);
 R_API void r_table_columns(RTable *t, RList *cols); // const char *name, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

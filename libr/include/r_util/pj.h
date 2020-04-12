@@ -4,6 +4,10 @@
 
 #include <r_util/r_strbuf.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct pj_t {
 	RStrBuf sb;
 	bool is_first;
@@ -49,5 +53,10 @@ R_API PJ *pj_d(PJ *j, double d);
 R_API PJ *pj_f(PJ *j, float d);
 R_API PJ *pj_i(PJ *j, int d);
 R_API PJ *pj_j(PJ *j, const char *k);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 
