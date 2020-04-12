@@ -1058,7 +1058,7 @@ do_decl:
 			offset = 0;
 
 			const char *ctype = (a == TOK_UNION)? "union": "struct";
-			bool is_named = !isalnum (*name);
+			bool is_named = !isdigit (*name);
 			if (is_named) {
 				tcc_appendf ("%s=%s\n", name, ctype);
 			}
