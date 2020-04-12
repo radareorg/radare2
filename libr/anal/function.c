@@ -58,10 +58,6 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 		return NULL;
 	}
 	fcn->anal = anal;
-	/* Function qualifier: static/volatile/inline/naked/virtual */
-	fcn->fmod = R_ANAL_FQUALIFIER_NONE;
-	/* Function calling convention: cdecl/stdcall/fastcall/etc */
-	/* Function attributes: weak/noreturn/format/etc */
 	fcn->addr = UT64_MAX;
 	fcn->cc = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 	fcn->bits = anal->bits;
@@ -97,11 +93,9 @@ R_API void r_anal_function_free(void *_fcn) {
 	}
 
 	free (fcn->name);
-	free (fcn->attr);
 	fcn->bbs = NULL;
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
-	free (fcn->args);
 	free (fcn);
 }
 

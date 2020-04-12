@@ -1829,9 +1829,6 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		sdb_set (DB, "name", fcn->name, 0);
 		sdb_set (DB, "ename", ename, 0);
 		free (ename);
-		if (fcn->nargs > 0) {
-			sdb_num_set (DB, "nargs", fcn->nargs, 0);
-		}
 		sdb_num_set (DB, "size", r_anal_function_linear_size (fcn), 0);
 		if (fcn->maxstack > 0) {
 			sdb_num_set (DB, "stack", fcn->maxstack, 0);
@@ -1857,9 +1854,6 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		pj_kn (pj, "size", r_anal_function_linear_size (fcn));
 		pj_ki (pj, "stack", fcn->maxstack);
 		pj_ks (pj, "type", r_anal_fcntype_tostring (fcn->type));
-		if (fcn->dsc) {
-			pj_ks (pj, "signature", fcn->dsc);
-		}
 		pj_k (pj, "blocks");
 		pj_a (pj);
 	}
