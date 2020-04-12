@@ -2765,6 +2765,8 @@ static size_t get_num_relocs_approx(ELFOBJ *bin, struct dynamic_relocation_secti
 
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
 	struct dynamic_relocation_section *info, RBinElfReloc *relocs, size_t pos) {
+
+	size_t num_relocs = get_num_relocs_approx (bin, info);
 	size_t size = get_size_rel_mode(info->plt_mode);
 
 	size_t offset;
@@ -2772,18 +2774,27 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin,
 		read_reloc (bin, relocs + pos, DT_RELA, info->addr_rela + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
 		pos++;
+		if (pos >= num_relocs) {
+			return pos;
+		}
 	}
 
 	for (offset = 0; offset < info->rel_size; offset += info->relent) {
 		read_reloc (bin, relocs + pos, DT_REL, info->addr_rel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
 		pos++;
+		if (pos >= num_relocs) {
+			return pos;
+		}
 	}
 
 	for (offset = 0; offset < info->jmprel_size; offset += size) {
 		read_reloc (bin, relocs + pos, info->plt_mode, info->addr_jmprel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
 		pos++;
+		if (pos >= num_relocs) {
+			return pos;
+		}
 	}
 
 	return pos;
@@ -2796,14 +2807,13 @@ static size_t get_next_not_analysed_offset(size_t section_offset, size_t offset,
 	size_t diff;
 
 	if (info->addr_rela - base_addr <= g_offset && g_offset < info->addr_rela + info->rela_size - base_addr) {
-		diff = info->addr_rela + info->rela_size - g_offset - base_addr;
-		return diff;
-	} else if (info->addr_rel - base_addr <= g_offset && g_offset < info->addr_rel + info->rel_size - base_addr) {
-		diff = info->addr_rel + info->rel_size - g_offset - base_addr;
-		return diff;
-	} else if (info->addr_jmprel - base_addr <= g_offset && g_offset < info->addr_jmprel + info->jmprel_size - base_addr) {
-		diff = info->addr_jmprel + info->jmprel_size - g_offset - base_addr;
-		return diff;
+		return info->addr_rela + info->rela_size - g_offset - base_addr;
+	}
+	if (info->addr_rel - base_addr <= g_offset && g_offset < info->addr_rel + info->rel_size - base_addr) {
+		return info->addr_rel + info->rel_size - g_offset - base_addr;
+	}
+	if (info->addr_jmprel - base_addr <= g_offset && g_offset < info->addr_jmprel + info->jmprel_size - base_addr) {
+		return info->addr_jmprel + info->jmprel_size - g_offset - base_addr;
 	}
 
 	return offset;
@@ -2811,6 +2821,7 @@ static size_t get_next_not_analysed_offset(size_t section_offset, size_t offset,
 
 static size_t populate_relocs_record_from_section(ELFOBJ *bin,
 	struct dynamic_relocation_section *info, RBinElfReloc *relocs, size_t pos) {
+	size_t num_relocs = get_num_relocs_approx (bin, info);
 	size_t size, rel_mode, i, j;
 
 	if (!bin->g_sections) {
@@ -2827,15 +2838,18 @@ static size_t populate_relocs_record_from_section(ELFOBJ *bin,
 		size = get_size_rel_mode (rel_mode);
 
 		for (j = get_next_not_analysed_offset (bin->g_sections[i].offset, 0, info, bin->baddr);
-			j < bin->g_sections[i].size;
-			j = get_next_not_analysed_offset (bin->g_sections[i].offset, j + size, info, bin->baddr)) {
+				j < bin->g_sections[i].size;
+				j = get_next_not_analysed_offset (bin->g_sections[i].offset, j + size, info, bin->baddr)) {
+			if (pos >= num_relocs) {
+				return pos;
+			}
 
 			if (!read_reloc (bin, relocs + pos, rel_mode, bin->g_sections[i].offset + j)) {
 				break;
 			}
 
 			fix_rva_and_offset (bin, relocs + pos, i);
-			++pos;
+			pos++;
 		}
 	}
 
