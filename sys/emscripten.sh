@@ -24,3 +24,6 @@ cp -f plugins.emscripten.cfg plugins.cfg
 
 ./configure ${CFGFLAGS} --host=emscripten && \
 	make -s -j ${MAKE_JOBS} DEBUG=0
+
+rm -f r2js.zip
+zip r2js.zip binr/*/*.js binr/*/*/*.wasm
