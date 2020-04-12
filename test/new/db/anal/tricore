@@ -45,3 +45,71 @@ EXPECT=<<EOF
 arch     tricore
 EOF
 RUN
+
+NAME=TriCore return_0.elf
+FILE=../bins/tricore/return_0.elf
+CMDS=drp
+EXPECT=<<EOF
+=PC	pc
+=SP	a10
+gpr	p0	.64	0	0
+gpr	a0	.32	0	0
+gpr	a1	.32	4	0
+gpr	p2	.64	8	0
+gpr	a2	.32	8	0
+gpr	a3	.32	12	0
+gpr	p4	.64	16	0
+gpr	a4	.32	16	0
+gpr	a5	.32	20	0
+gpr	p6	.64	24	0
+gpr	a6	.32	24	0
+gpr	a7	.32	28	0
+gpr	p8	.64	32	0
+gpr	a8	.32	32	0
+gpr	a9	.32	36	0
+gpr	p10	.64	40	0
+gpr	a10	.32	40	0
+gpr	a11	.32	44	0
+gpr	p12	.64	48	0
+gpr	a12	.32	48	0
+gpr	a13	.32	52	0
+gpr	p14	.64	56	0
+gpr	a14	.32	56	0
+gpr	a15	.32	60	0
+gpr	e0	.64	64	0
+gpr	d0	.32	64	0
+gpr	d1	.32	68	0
+gpr	e2	.64	72	0
+gpr	d2	.32	72	0
+gpr	d3	.32	76	0
+gpr	e4	.64	80	0
+gpr	d4	.32	80	0
+gpr	d5	.32	84	0
+gpr	e6	.64	88	0
+gpr	d6	.32	88	0
+gpr	d7	.32	92	0
+gpr	e8	.64	96	0
+gpr	d8	.32	96	0
+gpr	d9	.32	100	0
+gpr	e10	.64	104	0
+gpr	d10	.32	104	0
+gpr	d11	.32	108	0
+gpr	e12	.64	112	0
+gpr	d12	.32	112	0
+gpr	d13	.32	114	0
+gpr	e14	.64	118	0
+gpr	d14	.32	118	0
+gpr	d15	.32	120	0
+gpr	PSW	.32	124	0
+gpr	PCXI	.32	128	0
+gpr	FCX	.32	132	0
+gpr	LCX	.32	136	0
+gpr	ISP	.32	140	0
+gpr	ICR	.32	144	0
+gpr	PIPN	.32	148	0
+gpr	BIV	.32	152	0
+gpr	BTV	.32	156	0
+gpr	pc	.32	160	0
+
+EOF
+RUN

@@ -2020,6 +2020,7 @@ extern RAnalPlugin r_anal_plugin_sparc_gnu;
 extern RAnalPlugin r_anal_plugin_sysz;
 extern RAnalPlugin r_anal_plugin_tms320;
 extern RAnalPlugin r_anal_plugin_tms320c64x;
+extern RAnalPlugin r_anal_plugin_tricore;
 extern RAnalPlugin r_anal_plugin_v810;
 extern RAnalPlugin r_anal_plugin_v850;
 extern RAnalPlugin r_anal_plugin_vax;
