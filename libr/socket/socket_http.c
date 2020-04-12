@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake */
+/* radare - LGPL - Copyright 2011-2020 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
@@ -81,7 +81,7 @@ fail:
 	return res;
 }
 
-R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
+R_API char *r_socket_http_get(const char *url, int *code, int *rlen) {
 	char *curl_env = r_sys_getenv ("R2_CURL");
 	if (curl_env && *curl_env) {
 		char *encoded_url = r_str_escape (url);
@@ -100,7 +100,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 	}
 	free (curl_env);
 	RSocket *s;
-	int ssl = !memcmp (url, "https://", 8);
+	int ssl = r_str_startswith (url, "https://");
 	char *response, *host, *path, *port = "80";
 	char *uri = strdup (url);
 	if (!uri) {
@@ -122,7 +122,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 	host += 3;
 	port = strchr (host, ':');
 	if (!port) {
-		port = (ssl)?"443":"80";
+		port = ssl? "443": "80";
 		path = host;
 	} else {
 		*port++ = 0;
@@ -159,7 +159,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 
 R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen) {
 	RSocket *s;
-	bool ssl = !memcmp (url, "https://", 8);
+	bool ssl = r_str_startswith (url, "https://");
 	char *uri = strdup (url);
 	if (!uri) {
 		return NULL;

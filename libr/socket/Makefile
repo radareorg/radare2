@@ -1,8 +1,13 @@
 include ../config.mk
 
 NAME=r_socket
-OBJS=socket.o proc.o http.o http_server.o
-OBJS+=rap_server.o run.o r2pipe.o serial.o
+OBJS=socket.o
+OBJS+=socket_proc.o
+OBJS+=socket_http.o # TODO: rename to socket_http_client.o
+OBJS+=socket_http_server.o
+OBJS+=socket_rap_server.o
+OBJS+=socket_rap_client.o
+OBJS+=run.o r2pipe.o socket_serial.o
 DEPS=r_util
 
 include deps.mk

@@ -526,7 +526,7 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 
 #include <r_core.h>
 static int get_pid_of(RIO *io, const char *procname) {
-	RCore *c = io->user;
+	RCore *c = io->corebind.core;
 	if (c && c->dbg && c->dbg->h) {
 		RListIter *iter;
 		RDebugPid *proc;
@@ -592,7 +592,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				RIOW32Dbg *w32 = (RIOW32Dbg *)ret->data;
 				w32->winbase = winbase;
 				w32->pi.dwThreadId = wintid;
-				*(RIOW32Dbg *)((RCore *)io->user)->dbg->user = *w32;
+				*(RIOW32Dbg *)(core->dbg->user) = *w32;
 			}
 #elif __APPLE__
 			sprintf (uri, "smach://%d", pid);		//s is for spawn
@@ -620,7 +620,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 #if __WINDOWS__
 			if (ret) {
 				RIOW32Dbg *w32 = (RIOW32Dbg *)ret->data;
-				*(RIOW32Dbg *)((RCore *)io->user)->dbg->user = *w32;
+				*(RIOW32Dbg *)(core->dbg->user) = *w32;
 			}
 #endif
 		}
