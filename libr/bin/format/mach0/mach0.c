@@ -2931,7 +2931,7 @@ static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
 }
 
 static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs, ut32 offset, ut32 num) {
-	if (!num || !offset) {
+	if (!num || !offset || (st32)num < 0) {
 		return;
 	}
 
@@ -2946,7 +2946,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs,
 		return;
 	}
 
-	int i;
+	size_t i;
 	for (i = 0; i < num; i++) {
 		struct relocation_info a_info = info[i];
 		ut32 sym_num = a_info.r_symbolnum;
