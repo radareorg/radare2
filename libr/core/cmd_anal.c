@@ -1000,7 +1000,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	}
 	const char *typestr = type == 'R'?"reads":"writes";
 	if (name && *name) {
-		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
+		var = r_anal_function_get_var_byname (fcn, name);
 		if (var) {
 			r_cons_printf ("%10s  ", var->name);
 			var_accesses_list (core->anal, fcn, var->delta, typestr);
@@ -1033,7 +1033,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 	if (op.var) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 		if (fcn) {
-			RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn->addr, op.var->name);
+			RAnalVar *bar = r_anal_function_get_var_byname (fcn, op.var->name);
 			if (bar) {
 				if (name) {
 					ret = r_anal_var_rename (core->anal, fcn->addr, bar->scope,
@@ -1244,7 +1244,7 @@ static int var_cmd(RCore *core, const char *str) {
 				r_str_trim (old_name);
 			}
 			if (fcn) {
-				v1 = r_anal_var_get_byname (core->anal, fcn->addr, old_name);
+				v1 = r_anal_function_get_var_byname (fcn, old_name);
 				if (v1) {
 					r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
 							v1->kind, old_name, new_name, true);
@@ -1279,7 +1279,7 @@ static int var_cmd(RCore *core, const char *str) {
 				return false;
 			}
 			r_str_trim (p);
-			v1 = r_anal_var_get_byname (core->anal, fcn->addr, p);
+			v1 = r_anal_function_get_var_byname (fcn, p);
 			if (!v1) {
 				free (ostr);
 				return false;
@@ -1320,7 +1320,7 @@ static int var_cmd(RCore *core, const char *str) {
 				return false;
 			}
 			*type++ = 0;
-			v1 = r_anal_var_get_byname (core->anal, fcn->addr, p);
+			v1 = r_anal_function_get_var_byname (fcn, p);
 			if (!v1) {
 				eprintf ("Cant find get by name %s\n", p);
 				free (ostr);
@@ -7166,7 +7166,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			*tmp = '\0';
 			RAnalFunction *fcn = r_anal_get_function_byname (core->anal, name);
 			if (fcn) {
-				RAnalVar *var = r_anal_var_get_byname (core->anal, fcn->addr, varname);
+				RAnalVar *var = r_anal_function_get_var_byname (fcn, varname);
 				if (var) {
 					const char *rvar = var_ref_list (fcn->addr, var->delta, 'R');
 					const char *wvar = var_ref_list (fcn->addr, var->delta, 'W');

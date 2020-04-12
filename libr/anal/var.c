@@ -312,7 +312,7 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 		return false;
 	}
 	bool ret = false;
-	RAnalVar *var = r_anal_var_get_byname (a, fcn->addr, name);
+	RAnalVar *var = r_anal_function_get_var_byname (fcn, name);
 	if (var) {
 		ret = r_anal_var_delete (a, fcn->addr, var->kind, 1, var->delta);
 		r_anal_var_free (var);
@@ -320,22 +320,14 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 	return ret;
 }
 
-R_API RAnalVar *r_anal_var_get_byname(RAnal *a, ut64 addr, const char *name) {
-	if (!a || !name) {
-		// eprintf ("No something\n");
-		return NULL;
-	}
-	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, 1, name);
-	const char *name_value = sdb_const_get (DB, name_key, 0);
-	if (!name_value) {
-		// eprintf ("Can't find key for %s\n", name_key);
-		return NULL;
-	}
-	const char *comma = strchr (name_value, ',');
-	if (comma && *comma) {
-		int delta = r_num_math (NULL, comma + 1);
-		RAnalVar *res = r_anal_var_get (a, addr, *name_value, 1, delta);
-		return res;
+R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name) {
+	r_return_val_if_fail (fcn && name, NULL);
+	void **it;
+	r_pvector_foreach (&fcn->vars, it) {
+		RAnalVar *var = *it;
+		if (!strcmp (var->name, name)) {
+			return var;
+		}
 	}
 	return NULL;
 }
@@ -395,13 +387,14 @@ R_API void r_anal_var_free(RAnalVar *av) {
 	}
 }
 
+// TODO: This should be just r_anal_var_addr(RAnalVar *) without querying by name
 R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name) {
 	const char *regname = NULL;
 	ut64 ret = UT64_MAX;
 	if (!a || !fcn) {
 		return ret;
 	}
-	RAnalVar *v1 = r_anal_var_get_byname (a, fcn->addr, name);
+	RAnalVar *v1 = r_anal_function_get_var_byname (fcn, name);
 	if (v1) {
 		if (v1->kind == R_ANAL_VAR_KIND_BPV) {
 			regname = r_reg_get_name (a->reg, R_REG_NAME_BP);
@@ -424,14 +417,18 @@ R_API bool r_anal_var_check_name(const char *name) {
 	return !isdigit (*name) && strcspn (name, "., =/");
 }
 
-// afvn local_48 counter
+// TODO: should be just r_anal_function_rename_var(RAnalVar *var, const char *new_name)
 R_API int r_anal_var_rename(RAnal *a, ut64 addr, int scope, char kind, const char *old_name, const char *new_name, bool verbose) {
 	char key[128];
 
 	if (!r_anal_var_check_name (new_name)) {
 		return 0;
 	}
-	RAnalVar *v1 = r_anal_var_get_byname (a, addr, new_name);
+	RAnalFunction *fcn = r_anal_get_function_at (a, addr);
+	if (!fcn) {
+		return 0;
+	}
+	RAnalVar *v1 = r_anal_function_get_var_byname (fcn, new_name);
 	if (v1) {
 		r_anal_var_free (v1);
 		if (verbose) {

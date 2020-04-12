@@ -4033,7 +4033,7 @@ onemoretime:
 //			q = r_str_newf ("?i Rename variable %s to;afvn %s `yp`", op.var->name, op.var->name);
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
-				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn->addr, op.var->name);
+				RAnalVar *bar = r_anal_function_get_var_byname (fcn, op.var->name);
 				if (bar) {
 					char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", bar->name));
 					if (newname && *newname) {
@@ -4317,7 +4317,7 @@ onemoretime:
 		if (found) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
-				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn->addr, op->var->name);
+				RAnalVar *bar = r_anal_function_get_var_byname (fcn, op->var->name);
 				if (bar) {
 					char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", bar->name));
 					if (newname && *newname) {

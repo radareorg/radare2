@@ -248,6 +248,7 @@ typedef struct r_anal_function_t {
 	int type;
 	const char *cc; // calling convention, should come from RAnal.constpool
 	ut64 addr;
+	RPVector vars;
 	int stack; //stack frame size
 	int maxstack;
 	int ninstr;
@@ -463,29 +464,8 @@ typedef enum {
 } _RAnalCond;
 
 typedef enum {
-	R_ANAL_VAR_SCOPE_NULL   = 0,
-	R_ANAL_VAR_SCOPE_GLOBAL = 0x00,
-	R_ANAL_VAR_SCOPE_LOCAL  = 0x01,
-	R_ANAL_VAR_SCOPE_ARG    = 0x04,
-	R_ANAL_VAR_SCOPE_ARGREG = 0x08,
-	R_ANAL_VAR_SCOPE_RET    = 0x10,
+	R_ANAL_VAR_SCOPE_LOCAL  = 0x01
 } _RAnalVarScope;
-
-typedef enum {
-	R_ANAL_VAR_DIR_NONE = 0,
-	R_ANAL_VAR_DIR_IN   = 0x100,
-	R_ANAL_VAR_DIR_OUT  = 0x200
-} _RAnalVarDir;
-
-typedef enum {
-	R_ANAL_DATA_NULL = 0,
-	R_ANAL_DATA_HEX,      /* hex byte pairs */
-	R_ANAL_DATA_STR,      /* ascii string */
-	R_ANAL_DATA_CODE,     /* plain assembly code */
-	R_ANAL_DATA_FUN,      /* plain assembly code */
-	R_ANAL_DATA_STRUCT,   /* memory */
-	R_ANAL_DATA_LAST
-} _RAnalData;
 
 typedef enum {
 	R_ANAL_STACK_NULL = 0,
@@ -1613,7 +1593,7 @@ R_API bool r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind,
 R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int index);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
-R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, ut64 addr, const char* name);
+R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
 
