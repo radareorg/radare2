@@ -2831,6 +2831,7 @@ static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) * bin) {
 		if (!tmp) {
 			return false;
 		}
+		security_directory->certificates = tmp;
 		Pe_certificate *cert = R_NEW0 (Pe_certificate);
 		if (!cert) {
 			return false;
@@ -2855,7 +2856,6 @@ static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) * bin) {
 			bin->spcinfo = r_pkcs7_parse_spcinfo (bin->cms);
 		}
 
-		security_directory->certificates = tmp;
 		security_directory->certificates[security_directory->length] = cert;
 		security_directory->length++;
 		offset += cert->dwLength;
@@ -2882,9 +2882,9 @@ static void free_security_directory(Pe_image_security_directory *security_direct
 	if (!security_directory) {
 		return;
 	}
-	ut64 numCert = 0;
+	size_t numCert = 0;
 	for (; numCert < security_directory->length; numCert++) {
-		R_FREE (security_directory->certificates[numCert]);
+		free (security_directory->certificates[numCert]);
 	}
 	free (security_directory->certificates);
 	free (security_directory);
@@ -3805,8 +3805,8 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 			int idx = atoi ((const char *)shdr[i].Name + 1);
 			ut64 sym_tbl_off = bin->nt_headers->file_header.PointerToSymbolTable;
 			int num_symbols = bin->nt_headers->file_header.NumberOfSymbols;
-			int off = num_symbols * COFF_SYMBOL_SIZE;
-			if (sym_tbl_off &&
+			st64 off = num_symbols * COFF_SYMBOL_SIZE;
+			if (off > 0 && sym_tbl_off &&
 			    sym_tbl_off + off + idx < bin->size &&
 			    sym_tbl_off + off + idx > off) {
 				int sz = PE_IMAGE_SIZEOF_SHORT_NAME * 3;
