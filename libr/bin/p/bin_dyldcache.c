@@ -1092,10 +1092,8 @@ static void rebase_bytes(RDyldRebaseInfo *rebase_info, ut8 *buf, ut64 offset, in
 }
 
 static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	if (!io) {
-		return -1;
-	}
-	RCore *core = (RCore*) io->user;
+	r_return_val_if_fail (io, -1);
+	RCore *core = (RCore*) io->corebind.core;
 
 	if (!core || !core->bin || !core->bin->binfiles) {
 		return -1;

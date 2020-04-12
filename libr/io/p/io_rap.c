@@ -149,7 +149,7 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		if (i > 0) {
 			eprintf ("rap connection was successful. open %d\n", i);
-			// io->cb_core_cmd (io->user, "e io.va=0");
+			io->corebind.cmd (io->corebind.core, "e io.va=0");
 			io->corebind.cmd (io->corebind.core, ".=!i*");
 			io->corebind.cmd (io->corebind.core, ".=!f*");
 			io->corebind.cmd (io->corebind.core, ".=!om*");
