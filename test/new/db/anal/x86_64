@@ -597,7 +597,7 @@ aac
 afl~?
 EOF
 EXPECT=<<EOF
-1279
+1268
 EOF
 RUN
 
