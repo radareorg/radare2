@@ -101,7 +101,6 @@ static int getreloc_tree(const void *user, const RBNode *n, void *user2) {
         if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
                 return 0;
         }
-
         if (gr->vaddr > r->vaddr) {
                 return 1;
         }
@@ -339,48 +338,6 @@ R_API RCore *r_core_ncast(ut64 p) {
 
 R_API RCore *r_core_cast(void *p) {
 	return (RCore*)p;
-}
-
-static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt) {
-	RCore *core = (RCore *)user;
-	RBinSection *sec;
-	ut64 vaddr;
-
-	if (!r_config_get_i (core->config, "asm.cmt.patch")) {
-		return;
-	}
-
-	char *hex_pairs = r_hex_bin2strdup (bytes, cnt);
-	if (!hex_pairs) {
-		eprintf ("core_post_write_callback: Cannot obtain hex pairs\n");
-		return;
-	}
-
-	char *comment = r_str_newf ("patch: %d byte(s) (%s)", cnt, hex_pairs);
-	free (hex_pairs);
-	if (!comment) {
-		eprintf ("core_post_write_callback: Cannot create comment\n");
-		return;
-	}
-
-	if ((sec = r_bin_get_section_at (r_bin_cur_object (core->bin), maddr, false))) {
-		vaddr = maddr + sec->vaddr - sec->paddr;
-	} else {
-		vaddr = maddr;
-	}
-
-	r_meta_add (core->anal, R_META_TYPE_COMMENT, vaddr, vaddr, comment);
-	free (comment);
-}
-
-static int core_cmd_callback (void *user, const char *cmd) {
-    RCore *core = (RCore *)user;
-    return r_core_cmd0 (core, cmd);
-}
-
-static char *core_cmdstr_callback (void *user, const char *cmd) {
-	RCore *core = (RCore *)user;
-	return r_core_cmd_str (core, cmd);
 }
 
 static ut64 getref (RCore *core, int n, char t, int type) {
