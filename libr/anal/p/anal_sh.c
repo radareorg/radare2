@@ -1110,7 +1110,7 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, 
 }
 
 /* Set the profile register */
-static int sh_set_reg_profile(RAnal* anal) {
+static bool sh_set_reg_profile(RAnal* anal) {
 	//TODO Add system ( ssr, spc ) + fpu regs
 	const char *p =
 		"=PC	pc\n"

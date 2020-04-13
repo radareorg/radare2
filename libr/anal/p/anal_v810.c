@@ -391,7 +391,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	return ret;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r3\n"

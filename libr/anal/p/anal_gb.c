@@ -1496,7 +1496,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	the mbc can be seen as a register but it isn't. For the Gameboy the mbc is invisble.
 */
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	mpc\n"
 		"=SP	sp\n"

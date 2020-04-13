@@ -908,7 +908,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return op->size;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"

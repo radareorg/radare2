@@ -203,7 +203,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 #define ARG(n) getarg2(&gop, n, "")
 #define ARG2(n,m) getarg2(&gop, n, m)
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p = NULL;
 	if (anal->bits == 32) {
 		p =

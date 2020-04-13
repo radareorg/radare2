@@ -1217,7 +1217,7 @@ typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 // TODO: rm data + len
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 
-typedef int (*RAnalRegProfCallback)(RAnal *a);
+typedef bool (*RAnalRegProfCallback)(RAnal *a);
 typedef char*(*RAnalRegProfGetCallback)(RAnal *a);
 typedef int (*RAnalFPBBCallback)(RAnal *a, RAnalBlock *bb);
 typedef int (*RAnalFPFcnCallback)(RAnal *a, RAnalFunction *fcn);
