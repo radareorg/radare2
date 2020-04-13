@@ -3,10 +3,9 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../../asm/arch/tricore/gnu/tricore-opc.c"
+//#include "../../asm/arch/tricore/gnu/tricore-opc.c"
 
 static bool set_reg_profile(RAnal *anal) {
-
 	const char *p =
 		"=PC	pc\n"
 		"=SP	a10\n"
@@ -68,11 +67,10 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr	BIV	.32	152	0\n"
 		"gpr	BTV	.32	156	0\n"
 		"gpr	pc	.32	160	0\n";
-
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-struct r_anal_plugin_t r_anal_plugin_tricore = {
+RAnalPlugin r_anal_plugin_tricore = {
 	.name = "tricore",
 	.desc = "TRICORE analysis plugin",
 	.license = "LGPL3",
@@ -88,4 +86,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-
