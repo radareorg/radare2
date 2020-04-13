@@ -18,6 +18,8 @@
 #include "linux_heap_jemalloc.c"
 #endif
 
+void cmd_anal_reg (RCore *core, const char *str);
+
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
 	"db", "[?]", "Breakpoints commands",
@@ -5138,7 +5140,6 @@ static int cmd_debug(void *data, const char *input) {
 		if (core->io->debug || input[1] == '?') {
 			cmd_debug_reg (core, input + 1);
 		} else {
-			void cmd_anal_reg (RCore *core, const char *str);
 			cmd_anal_reg (core, input + 1);
 		}
 		//r_core_cmd (core, "|reg", 0);
