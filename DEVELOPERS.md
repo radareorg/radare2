@@ -331,6 +331,26 @@ You may use directory-local variables by putting
 
 into `.dir-locals.el`.
 
+## Packed structures
+
+Due to the various differences between platforms and compilers radare2
+has a special helper macro - `R_PACKED()`. Instead of non-portable
+`#pragma pack` or `__attribute__((packed))` it is advised to use this macro
+instead. To wrap the code inside of it you just need to write:
+```c
+R_PACKED (union mystruct {
+	int a;
+	char b;
+})
+```
+or in case of typedef:
+```c
+R_PACKED (typedef structmystruct {
+	int a;
+	char b;
+})
+```
+
 ## Modules
 
 The radare2 code base is modularized into different libraries that are
