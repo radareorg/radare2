@@ -823,7 +823,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
 			if (f && f->name && strncmp (f->name, "sect", 4)) { /* Check if it's already flagged */
-				const char *new_name = strdup (f->name);
+				char *new_name = strdup (f->name);
 				if (is_entry_flag (f)) {
 					RListIter *iter;
 					RBinSymbol *sym;
@@ -5254,6 +5254,9 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 	}
 	r_cons_break_push (NULL, NULL);
 
+	if (!r_io_is_valid_offset (core->io, from, 0)) {
+		return -1;
+	}
 	while (from < to) {
 		size = R_MIN (to - from, sizeof (buf));
 		memset (buf, 0xff, sizeof (buf)); // probably unnecessary
