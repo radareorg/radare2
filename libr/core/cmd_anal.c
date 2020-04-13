@@ -2,6 +2,8 @@
 
 #include <r_core.h>
 
+#define MAX_SCAN_SIZE 0x7ffffff
+
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"a", "", "alias for aai - analysis information",
@@ -8742,7 +8744,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define geti(x) r_config_get_i(core->config, x);
 	r_return_if_fail (*input == 'v');
 	ut64 o_align = geti ("search.align");
-	const char *analin =  r_config_get (core->config, "anal.in");
+	const char *analin = r_config_get (core->config, "anal.in");
 	char *tmp = strdup (analin);
 	bool asterisk = strchr (input, '*');
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
@@ -8796,6 +8798,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			from = r_itv_begin (map2->itv);
 			to = r_itv_end (map2->itv);
 			oldstr = r_print_rowlog (core->print, sdb_fmt ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x " (aav)", from, to));
+			if ((to - from) > MAX_SCAN_SIZE) {
+				eprintf ("Warning: Skipping large region\n");
+				continue;
+			}
 			r_print_rowlog_done (core->print, oldstr);
 			r_list_foreach (list, iter, map) {
 				ut64 begin = map->itv.addr;
