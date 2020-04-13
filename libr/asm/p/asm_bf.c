@@ -114,7 +114,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	} else if (!strncmp (buf, "loop", 4))        {
 		opbuf[0] = ']';
 		n = 1;
-	} else if (!strncmp (buf, "in", 4))        {
+	} else if (!strncmp (buf, "in", 2))        {
 		if (arg) {
 			n = atoi (arg + 1);
 			memset (opbuf, ',', n);
@@ -122,7 +122,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			opbuf[0] = ',';
 			n = 1;
 		}
-	} else if (!strncmp (buf, "out", 4))        {
+	} else if (!strncmp (buf, "out", 3))        {
 		if (arg) {
 			n = atoi (arg + 1);
 			memset (opbuf, '.', n);
