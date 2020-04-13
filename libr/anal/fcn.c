@@ -521,6 +521,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			gotoBeach (R_ANAL_RET_END);
 		}
 	}
+	if (maxlen - (addrbytes * idx)) {
+		eprintf ("Warning: Skipping large memory region.\n");
+		maxlen = 0;
+	}
 
 	while (addrbytes * idx < maxlen) {
 		if (!last_is_reg_mov_lea) {
