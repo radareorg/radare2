@@ -291,7 +291,7 @@ const char *msg =
 "flg	rf	.1	.202	0\n"\
 "flg	vm	.1	.203	0\n";
 		return strdup (msg);
-	} else if (!strncmp (cmd, "dr*", 2)) {
+	} else if (!strncmp (cmd, "dr*", 3)) {
 		struct winedbg_x86_32 r = regState ();
 		io->cb_printf ("f eip = 0x%08x\n", r.eip);
 		io->cb_printf ("f esp = 0x%08x\n", r.esp);
