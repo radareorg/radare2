@@ -41,6 +41,7 @@ anal_plugins = [
   'sysz',
   'tms320',
   #'tms320c64x',
+  'tricore',
   'v810',
   'v850',
   'vax',
