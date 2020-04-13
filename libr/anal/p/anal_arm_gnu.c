@@ -414,7 +414,7 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 	return arm_op32 (anal, op, addr, data, len);
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	// TODO: support 64bit profile
 	const char *p32 =
 		"=PC	r15\n"

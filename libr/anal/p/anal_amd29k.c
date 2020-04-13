@@ -1,11 +1,11 @@
-/* radare2 - LGPL - Copyright 2013-2019 - pancake */
+/* radare2 - LGPL - Copyright 2013-2020 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
 #include "../../asm/arch/amd29k/amd29k.h"
 
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 			"=PC	pc\n"
 			"=SP	gp1\n"

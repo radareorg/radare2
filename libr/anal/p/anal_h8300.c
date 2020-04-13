@@ -684,7 +684,7 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	return ret;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	r7\n"
