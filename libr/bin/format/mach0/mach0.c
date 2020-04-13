@@ -2878,10 +2878,10 @@ static int parse_import_ptr(struct MACH0_(obj_t) *bin, struct reloc_t *reloc, in
 }
 
 struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) *bin) {
-	int i, j, idx, stridx;
+	r_return_val_if_fail (bin, NULL);
 
-	r_return_val_if_fail (bin && bin->sects, NULL);
-	if (!bin->symtab || !bin->symstr || !bin->indirectsyms) {
+	int i, j, idx, stridx;
+	if (!bin->sects || !bin->symtab || !bin->symstr || !bin->indirectsyms) {
 		return NULL;
 	}
 
@@ -3923,6 +3923,9 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			eprintf ("Invalid size for a load command\n");
 			break;
 		}
+		if (word == 0) {
+			break;
+		}
 		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
 			r_list_append (ret, r_bin_field_new (addr, addr, 1, sdb_fmt ("load_command_%d_%s", n, cmd_to_string (lcType)), pf_definition, pf_definition, true));
@@ -3952,6 +3955,9 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 					off += 68;
 				}
 			}
+			break;
+		default:
+			// TODO
 			break;
 		}
 		}
