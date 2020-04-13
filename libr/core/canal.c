@@ -4924,6 +4924,9 @@ repeat:
 			break;
 		}
 		cur = addr + i;
+		if (!r_io_is_valid_offset (core->io, cur, 0)) {
+			break;
+		}
 		{
 			RList *list = r_meta_find_list_in (core->anal, cur, -1, 4);
 			RListIter *iter;
