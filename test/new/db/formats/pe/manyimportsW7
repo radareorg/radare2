@@ -1,6 +1,0 @@
-NAME=PE: corkami manyimportsW7.exe - open
-FILE=../bins/pe/manyimportsW7.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

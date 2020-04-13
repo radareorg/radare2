@@ -1,7 +1,0 @@
-NAME=Plan9: Open/iI
-FILE=../bins/plan9/bin
-CMDS=iI~?plan9
-EXPECT=<<EOF
-1
-EOF
-RUN

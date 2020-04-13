@@ -1,6 +1,0 @@
-NAME=PE: corkami ibnullXP.exe - open
-FILE=../bins/pe/ibnullXP.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

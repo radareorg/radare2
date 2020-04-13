@@ -1,6 +1,0 @@
-NAME=PE: corkami nullSOH-XP.exe - open
-FILE=../bins/pe/nullSOH-XP.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

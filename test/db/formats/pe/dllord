@@ -1,0 +1,6 @@
+NAME=PE: corkami dllord.dll - open
+FILE=bins/pe/dllord.dll
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

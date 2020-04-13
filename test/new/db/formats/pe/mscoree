@@ -1,6 +1,0 @@
-NAME=PE: corkami mscoree.exe - open
-FILE=../bins/pe/mscoree.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

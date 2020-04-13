@@ -1,0 +1,32 @@
+NAME=MZ: unzip.exe - open
+FILE=bins/mz/unzip.exe
+ARGS=-A
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=MZ: unzip.exe - entrypoint
+FILE=bins/mz/unzip.exe
+CMDS=s
+EXPECT=<<EOF
+0x156a0
+EOF
+RUN
+
+NAME=MZ: unzip.exe - pi 1
+FILE=bins/mz/unzip.exe
+CMDS=pi 1
+EXPECT=<<EOF
+mov bp, ax
+EOF
+RUN
+
+NAME=MZ: unzip.exe segments
+FILE=bins/mz/unzip.exe
+CMDS=iS*
+EXPECT=<<EOF
+fs sections
+"f section.seg_000 1 0x00000000"
+EOF
+RUN

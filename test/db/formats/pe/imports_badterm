@@ -1,0 +1,6 @@
+NAME=PE: corkami imports_badterm.exe - open
+FILE=bins/pe/imports_badterm.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

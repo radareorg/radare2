@@ -1,0 +1,68 @@
+NAME=debug continue back from callee
+FILE=bins/elf/analysis/calls_x64
+ARGS=-d
+CMDS=<<EOF
+db main
+db 0x0040052f
+dc
+dts+
+dc
+dcb
+dr rip
+dk 9
+EOF
+EXPECT=<<EOF
+0x00400574
+EOF
+RUN
+
+NAME=debug continue back from caller
+FILE=bins/elf/analysis/calls_x64
+ARGS=-d
+CMDS=<<EOF
+db main
+db 0x0040057c
+dc
+dts+
+dc
+dcb
+dr rip
+dk 9
+EOF
+EXPECT=<<EOF
+0x00400574
+EOF
+RUN
+
+NAME=dbg.manycontback
+FILE=bins/elf/analysis/ls-linux-x86_64-zlul
+ARGS=-d
+CMDS=<<EOF
+db main
+db 0x004028ca
+db 0x004028d1
+db 0x0040290d
+db 0x0040294b
+dc
+dts+
+dc
+dc
+dc
+dc
+dcb
+dr rip
+dcb
+dr rip
+dcb
+dr rip
+dcb
+dr rip
+dk 9
+EOF
+EXPECT=<<EOF
+0x0040290d
+0x004028d1
+0x004028ca
+0x004028a0
+EOF
+RUN

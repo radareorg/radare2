@@ -1,0 +1,37 @@
+NAME=PE: corkami nosectionW7.exe - open
+FILE=bins/pe/nosectionW7.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=1: PE: nosectionW7 - entrypoint
+FILE=bins/pe/nosectionW7.exe
+CMDS=om
+EXPECT=<<EOF
+ 1 fd: 3 +0x00000138 0x00400138 - 0x0040023f r-x fmap.blob
+EOF
+RUN
+
+NAME=2: PE: nosectionW7 - entrypoint
+FILE=bins/pe/nosectionW7.exe
+CMDS=ie
+EXPECT=<<EOF
+[Entrypoints]
+vaddr=0x00400138 paddr=0x00000138 haddr=0x00000068 type=program
+
+1 entrypoints
+EOF
+RUN
+
+NAME=3: PE: nosectionW7 - entrypoint
+FILE=bins/pe/nosectionW7.exe
+CMDS=pi 5
+EXPECT=<<EOF
+push 0x400150
+call dword [sym.imp.msvcrt.dll_printf]
+add esp, 4
+nop
+push 0
+EOF
+RUN

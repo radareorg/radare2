@@ -1,0 +1,10 @@
+NAME=dbg_aslr
+FILE=bins/elf/analysis/pie
+ARGS=-d
+CMDS=pi 3 @ entry0
+EXPECT=<<EOF
+xor ebp, ebp
+pop esi
+mov ecx, esp
+EOF
+RUN

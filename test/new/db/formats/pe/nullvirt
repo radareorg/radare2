@@ -1,6 +1,0 @@
-NAME=PE: corkami nullvirt.exe - open
-FILE=../bins/pe/nullvirt.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

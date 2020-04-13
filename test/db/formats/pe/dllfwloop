@@ -1,0 +1,6 @@
+NAME=PE: corkami dllfwloop.dll - open
+FILE=bins/pe/dllfwloop.dll
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

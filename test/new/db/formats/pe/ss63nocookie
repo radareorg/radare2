@@ -1,6 +1,0 @@
-NAME=PE: corkami ss63nocookie.exe - open
-FILE=../bins/pe/ss63nocookie.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

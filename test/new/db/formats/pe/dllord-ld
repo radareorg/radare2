@@ -1,6 +1,0 @@
-NAME=PE: corkami dllord-ld.exe - open
-FILE=../bins/pe/dllord-ld.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

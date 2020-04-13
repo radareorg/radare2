@@ -1,0 +1,28 @@
+NAME=PE: hello cxx - entry dis
+FILE=bins/pe/hellocxx-mingw32.exe
+CMDS=?v entry0;pid 4
+EXPECT=<<EOF
+0x401280
+0x00401280   entry0:
+0x00401280                   55  push ebp
+0x00401281                 89e5  mov ebp, esp
+0x00401283               83ec08  sub esp, 8
+0x00401286       c7042401000000  mov dword [esp], 1
+EOF
+RUN
+
+NAME=PE: hello cxx - sections
+FILE=bins/pe/hellocxx-mingw32.exe
+CMDS=om
+EXPECT=<<EOF
+ 9 fd: 3 +0x00000400 0x00401000 - 0x00440bff r-x fmap..text
+ 8 fd: 6 +0x00000000 0x00440c00 - 0x00440fff r-- mmap..text
+ 7 fd: 3 +0x00040000 0x00441000 - 0x004411ff r-- fmap..data
+ 6 fd: 7 +0x00000000 0x00441200 - 0x00441fff rw- mmap..data
+ 5 fd: 3 +0x00040200 0x00442000 - 0x00444bff r-- fmap..rdata
+ 4 fd: 6 +0x00000000 0x00444c00 - 0x00444fff r-- mmap..rdata
+ 3 fd: 5 +0x00000000 0x00445000 - 0x00446fff rw- mmap..bss
+ 2 fd: 3 +0x00042e00 0x00447000 - 0x004477ff r-- fmap..idata
+ 1 fd: 4 +0x00000000 0x00447800 - 0x00447fff rw- mmap..idata
+EOF
+RUN

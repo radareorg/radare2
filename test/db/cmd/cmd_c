@@ -1,0 +1,74 @@
+NAME=cmd_c
+FILE=bins/elf/ls
+CMDS=c 1234567890
+EXPECT=<<EOF
+0x00005ae0 (byte=01)   f3 ' '  ->  31 '1'
+0x00005ae1 (byte=02)   0f ' '  ->  32 '2'
+0x00005ae2 (byte=03)   1e ' '  ->  33 '3'
+0x00005ae3 (byte=04)   fa ' '  ->  34 '4'
+0x00005ae4 (byte=05)   31 '1'  ->  35 '5'
+0x00005ae5 (byte=06)   ed ' '  ->  36 '6'
+0x00005ae6 (byte=07)   49 'I'  ->  37 '7'
+0x00005ae7 (byte=08)   89 ' '  ->  38 '8'
+0x00005ae8 (byte=09)   d1 ' '  ->  39 '9'
+0x00005ae9 (byte=10)   5e '^'  ->  30 '0'
+EOF
+RUN
+
+NAME=cmd_c*
+FILE=bins/elf/ls
+CMDS=c* 1234567890
+EXPECT=<<EOF
+wx 31 @ 0x00005ae0
+wx 32 @ 0x00005ae1
+wx 33 @ 0x00005ae2
+wx 34 @ 0x00005ae3
+wx 35 @ 0x00005ae4
+wx 36 @ 0x00005ae5
+wx 37 @ 0x00005ae6
+wx 38 @ 0x00005ae7
+wx 39 @ 0x00005ae8
+wx 30 @ 0x00005ae9
+wx 00 @ 0x00005aea
+EOF
+RUN
+
+NAME=cmd_c1
+FILE=bins/elf/ls
+CMDS=c1 0x00005ae1
+EXPECT=<<EOF
+- offset -  7 6 5 4 3 2 1 0
+0x00005ae0  1 1 1 1 0 0 1 1 
+0x00005ae1  0 0 0 0 1 1 1 1 
+EOF
+RUN
+
+NAME=cmd_c2
+FILE=bins/elf/ls
+CMDS=c2 0xf3f3
+EXPECT=<<EOF
+0x00005ae1 (byte=02)   0f ' '  ->  f3 ' '
+EOF
+RUN
+
+NAME=cmd_c4
+FILE=bins/elf/ls
+CMDS=c4 0xfa1e0ff2
+EXPECT=<<EOF
+0x00005ae0 (byte=01)   f3 ' '  ->  f2 ' '
+EOF
+RUN
+
+NAME=cmd_c8
+FILE=bins/elf/ls
+CMDS=c8 0x8989898989898989
+EXPECT=<<EOF
+0x00005ae0 (byte=01)   f3 ' '  ->  89 ' '
+0x00005ae1 (byte=02)   0f ' '  ->  89 ' '
+0x00005ae2 (byte=03)   1e ' '  ->  89 ' '
+0x00005ae3 (byte=04)   fa ' '  ->  89 ' '
+0x00005ae4 (byte=05)   31 '1'  ->  89 ' '
+0x00005ae5 (byte=06)   ed ' '  ->  89 ' '
+0x00005ae6 (byte=07)   49 'I'  ->  89 ' '
+EOF
+RUN

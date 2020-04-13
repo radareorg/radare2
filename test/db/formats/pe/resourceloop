@@ -1,0 +1,6 @@
+NAME=PE: corkami resourceloop.exe - open
+FILE=bins/pe/resourceloop.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

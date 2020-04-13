@@ -1,6 +1,0 @@
-NAME=PE: corkami reshdr.exe - open
-FILE=../bins/pe/reshdr.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

@@ -1,0 +1,6 @@
+NAME=PE: corkami multiss_drv.sys - open
+FILE=bins/pe/multiss_drv.sys
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

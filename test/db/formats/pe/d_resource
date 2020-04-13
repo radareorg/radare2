@@ -1,0 +1,6 @@
+NAME=PE: corkami d_resource.dll - open
+FILE=bins/pe/d_resource.dll
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

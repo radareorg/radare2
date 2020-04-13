@@ -1,0 +1,86 @@
+NAME=PE: a2 - symbols
+FILE=bins/pe/a2.exe
+CMDS=isq
+EXPECT=<<EOF
+0x00401000 0 ___mingw_CRTStartup
+0x00401110 0 __gnu_exception_handler@4
+0x00401280 0 _mainCRTStartup
+0x004012a0 0 _WinMainCRTStartup
+0x004012c0 0 _atexit
+0x004012d0 0 __onexit
+0x004012e0 0 ___gcc_register_frame
+0x00401370 0 ___gcc_deregister_frame
+0x004013c0 0 _main
+0x00401410 0 ___dyn_tls_dtor@12
+0x00401460 0 ___dyn_tls_init@12
+0x004014f0 0 ___tlregdtor
+0x00401500 0 ___cpu_features_init
+0x004015e0 0 __fpreset
+0x004015e0 0 _fpreset
+0x004015f0 0 ___report_error
+0x00401650 0 ___write_memory.part.0
+0x00401760 0 __pei386_runtime_relocator
+0x00401940 0 ___do_global_dtors
+0x00401970 0 ___do_global_ctors
+0x004019c0 0 ___main
+0x004019e0 0 ___mingwthr_run_key_dtors.part.0
+0x00401a40 0 ____w64_mingwthr_add_key_dtor
+0x00401ad0 0 ____w64_mingwthr_remove_key_dtor
+0x00401b60 0 ___mingw_TLScallback
+0x00401cd0 0 _register_frame_ctor
+0x00401c20 0 __cexit
+0x00401c90 0 _VirtualProtect@16
+0x00401c60 0 _free
+0x00401c10 0 ___p__fmode
+0x00401c68 0 _SetUnhandledExceptionFilter@4
+0x00401cb8 0 _DeleteCriticalSection@4
+0x00401ca8 0 _GetLastError@0
+0x00401c88 0 _VirtualQuery@12
+0x00401c78 0 _GetModuleHandleA@4
+0x00401c18 0 ___p__environ
+0x00401c80 0 _GetProcAddress@8
+0x00401c38 0 _fwrite
+0x00401c50 0 _memcpy
+0x00401c70 0 _ExitProcess@4
+0x00401c00 0 ___getmainargs
+0x00401c58 0 _calloc
+0x00401c28 0 _signal
+0x00401c98 0 _EnterCriticalSection@4
+0x00401c48 0 _abort
+0x00401cc0 0 _InitializeCriticalSection@4
+0x00401c08 0 __setmode
+0x00401ca0 0 _TlsGetValue@4
+0x00401cb0 0 _LeaveCriticalSection@4
+0x00401c30 0 _printf
+0x00401c40 0 _vfprintf
+0x004060b8 0 KERNEL32.dll imp.DeleteCriticalSection
+0x004060bc 0 KERNEL32.dll imp.EnterCriticalSection
+0x004060c0 0 KERNEL32.dll imp.ExitProcess
+0x004060c4 0 KERNEL32.dll imp.GetLastError
+0x004060c8 0 KERNEL32.dll imp.GetModuleHandleA
+0x004060cc 0 KERNEL32.dll imp.GetProcAddress
+0x004060d0 0 KERNEL32.dll imp.InitializeCriticalSection
+0x004060d4 0 KERNEL32.dll imp.LeaveCriticalSection
+0x004060d8 0 KERNEL32.dll imp.SetUnhandledExceptionFilter
+0x004060dc 0 KERNEL32.dll imp.TlsGetValue
+0x004060e0 0 KERNEL32.dll imp.VirtualProtect
+0x004060e4 0 KERNEL32.dll imp.VirtualQuery
+0x004060ec 0 msvcrt.dll imp.__getmainargs
+0x004060f0 0 msvcrt.dll imp.__p__environ
+0x004060f4 0 msvcrt.dll imp.__p__fmode
+0x004060f8 0 msvcrt.dll imp.__set_app_type
+0x004060fc 0 msvcrt.dll imp._cexit
+0x00406100 0 msvcrt.dll imp._iob
+0x00406104 0 msvcrt.dll imp._onexit
+0x00406108 0 msvcrt.dll imp._setmode
+0x0040610c 0 msvcrt.dll imp.abort
+0x00406110 0 msvcrt.dll imp.atexit
+0x00406114 0 msvcrt.dll imp.calloc
+0x00406118 0 msvcrt.dll imp.free
+0x0040611c 0 msvcrt.dll imp.fwrite
+0x00406120 0 msvcrt.dll imp.memcpy
+0x00406124 0 msvcrt.dll imp.printf
+0x00406128 0 msvcrt.dll imp.signal
+0x0040612c 0 msvcrt.dll imp.vfprintf
+EOF
+RUN

@@ -1,0 +1,6 @@
+NAME=PE: corkami importshint.exe - open
+FILE=bins/pe/importshint.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

@@ -1,0 +1,95 @@
+NAME=dbg.aslr
+FILE=bins/elf/analysis/pie
+ARGS=-d
+CMDS=pi 3 @ entry0
+EXPECT=<<EOF
+xor ebp, ebp
+pop esi
+mov ecx, esp
+EOF
+RUN
+
+NAME=function rebase
+FILE=bins/elf/analysis/pie
+ARGS=-d
+CMDS=<<EOF
+?v main-`dmm~pie[0]`
+doc
+?v main-`dmm~pie[0]`
+EOF
+EXPECT=<<EOF
+0x5c5
+0x5c5
+EOF
+RUN
+
+NAME=bp rebase
+FILE=bins/elf/analysis/pie
+ARGS=-d
+CMDS=<<EOF
+aa
+db main
+?v main-`db~main[0]`
+doc
+?v main-`db~main[0]`
+EOF
+EXPECT=<<EOF
+0x0
+0x0
+EOF
+RUN
+
+NAME=ref rebase
+FILE=bins/elf/hello_world
+ARGS=-d
+CMDS=<<EOF
+aa
+?v `axt main~entry0[1]`-`e bin.baddr`
+doc
+?v `axt main~entry0[1]`-`e bin.baddr`
+EOF
+EXPECT=<<EOF
+0x6bd
+0x6bd
+EOF
+RUN
+
+NAME=flag rebase
+FILE=bins/elf/analysis/pie
+ARGS=-d
+CMDS=<<EOF
+aa
+fs test
+f testflag @ main+10
+?v `f~testflag[0]`-`e bin.baddr`
+doc
+?v `f~testflag[0]`-`e bin.baddr`
+EOF
+EXPECT=<<EOF
+0x5cf
+0x5cf
+EOF
+RUN
+
+NAME=var rebase
+FILE=bins/elf/hello_world
+ARGS=-d
+CMDS=<<EOF
+aa
+afv @ main
+doc
+afv @ main
+EOF
+EXPECT=<<EOF
+var int64_t var_20h @ rbp-0x20
+var int64_t var_1ch @ rbp-0x1c
+var int64_t var_18h @ rbp-0x18
+var int64_t var_10h @ rbp-0x10
+var int64_t var_8h @ rbp-0x8
+var int64_t var_20h @ rbp-0x20
+var int64_t var_1ch @ rbp-0x1c
+var int64_t var_18h @ rbp-0x18
+var int64_t var_10h @ rbp-0x10
+var int64_t var_8h @ rbp-0x8
+EOF
+RUN

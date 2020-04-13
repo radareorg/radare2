@@ -96,7 +96,7 @@ The JSON tests `db/new/json` are executed on 3 standard files (1 ELF, 1 MachO, 1
 Example commands tests for the other `new/` folders:
 
 	NAME=test_db
-	FILE=/../bins/elf/ls
+	FILE=bins/elf/ls
 	CMDS=<<EXPECT
 	pd 4
 	EXPECT=<<RUN

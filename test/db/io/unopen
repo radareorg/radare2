@@ -1,0 +1,31 @@
+NAME=unopen read issue
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+p8 1 @ entry0
+f fd=`o malloc://128`
+p8 1 @ 0
+o-fd
+p8 1 @ entry0
+EOF
+EXPECT=<<EOF
+31
+00
+31
+EOF
+RUN
+
+NAME=unopen read issue 2
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+p8 1 @ entry0
+f fd=`o malloc://128`
+p8 1 @ entry0
+o-fd
+p8 1 @ entry0
+EOF
+EXPECT=<<EOF
+31
+31
+31
+EOF
+RUN

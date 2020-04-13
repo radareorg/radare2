@@ -1,0 +1,13 @@
+NAME=t/utf32
+FILE=bins/elf/crackme0x00b
+CMDS=iz
+EXPECT=<<EOF
+[Strings]
+nth paddr      vaddr      len size section type    string
+---------------------------------------------------------
+0   0x000005d0 0x080485d0 16  17   .rodata ascii   Enter password: 
+1   0x000005e5 0x080485e5 9   10   .rodata ascii   Congrats!
+2   0x000005ef 0x080485ef 6   7    .rodata ascii   Wrong!
+0   0x00001040 0x0804a040 8   36   .data   utf32le w0wgreat
+EOF
+RUN

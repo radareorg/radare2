@@ -1,0 +1,18 @@
+NAME=pD@x:90~str~?
+FILE=bins/mach0/bin_longstring
+ARGS=-e asm.cmt.right=true
+BROKEN=1
+CMDS=s 0x10000088a; pd 3~string~?
+EXPECT=<<EOF
+4
+EOF
+RUN
+
+NAME=pD@x:90
+FILE=bins/mach0/bin_longstring
+ARGS=-e asm.cmt.right=false
+CMDS=s 0x10000088a; pd 3~?string
+EXPECT=<<EOF
+3
+EOF
+RUN

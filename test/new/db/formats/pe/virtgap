@@ -1,7 +1,0 @@
-NAME=PE: corkami virtgap.exe - open
-FILE=../bins/pe/virtgap.exe
-ARGS=-A
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

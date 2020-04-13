@@ -1,0 +1,190 @@
+NAME=dbg.maps.count/
+FILE=bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=<<EOF
+dm~?/
+dk 9
+EOF
+EXPECT=<<EOF
+4
+EOF
+RUN
+
+NAME=dbg.maps.count
+FILE=bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=<<EOF
+dm~?
+dk 9
+EOF
+EXPECT=<<EOF
+7
+EOF
+RUN
+
+NAME=dbg.maps.count.after.map
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS=<<EOF
+dm~?
+db sym.imp.puts
+dc~?
+dm~?
+dc
+EOF
+EXPECT=<<EOF
+7
+0
+14
+Hello world!
+EOF
+RUN
+
+NAME=dbg.modules.count
+FILE=bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=dmm~?
+EXPECT=<<EOF
+2
+EOF
+RUN
+
+NAME=dbg.curmod.count
+BROKEN=1
+FILE=bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=dmm.~?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=db.maps.symbols.after.map.complete
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+BROKEN=1
+CMDS=<<EOF
+dm~?
+db sym.imp.puts
+dc~?
+dmi libc~?
+dmi libc~libc|wc -l
+EOF
+EXPECT=<<EOF
+7
+0
+2392
+45
+Hello world!
+EOF
+RUN
+
+NAME=dbg.maps.sections.after.map.only_filtered
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+BROKEN=1
+CMDS=<<EOF
+dm~?
+db sym.imp.puts
+dc~?
+dmS libc~?
+dmS libc~libc|wc -l
+dmS* libc~?
+dmS* libc~libc|wc -l
+EOF
+EXPECT=<<EOF
+7
+0
+80
+78
+314
+312
+Hello world!
+EOF
+RUN
+
+
+NAME=dbg.maps.sections.after.map.complete
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+BROKEN=1
+CMDS=<<EOF
+dm~?
+db sym.imp.puts
+dc~?
+dmS libc~?
+dmS libc~libc|wc -l
+dmS* libc~?
+dmS* libc~libc|wc -l
+dmS~?
+dmS*~?
+dmS~libc|wc -l
+dmS*~libc|wc -l
+EOF
+EXPECT=<<EOF
+7
+0
+80
+78
+314
+312
+154
+598
+78
+312
+Hello world!
+EOF
+RUN
+
+NAME=db.maps.sections.are.singletons
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+BROKEN=1
+CMDS=<<EOF
+dmm~?
+db sym.imp.puts
+dc~?
+dmm~?
+S~.text|wc -l
+dmS hello~.text|wc -l
+dmS~x86-helloworld-gcc..text|wc -l
+dmS~libc-2.19.so..text|wc -l
+dmS~ld-2.19.so..text|wc -l
+EOF
+EXPECT=<<EOF
+2
+0
+3
+1
+1
+1
+1
+1
+Hello world!
+EOF
+RUN
+
+NAME=db.maps.current.section.after.dmS
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+BROKEN=1
+CMDS=<<EOF
+dmm~?
+db sym.imp.puts
+dc~?
+dmm~?
+s map._lib_i386_linux_gnu_ld_2.19.so._r_x
+S.~?
+.dmS*~?
+S.~libc-2.19.so..text|wc -l
+EOF
+EXPECT=<<EOF
+2
+0
+3
+0
+3
+1
+Hello world!
+EOF
+RUN

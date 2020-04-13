@@ -1,0 +1,131 @@
+NAME=pxw cfg.bigendian=true (elf64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+e cfg.bigendian=true
+pxw 16
+EOF
+EXPECT=<<EOF
+0x00400410  0x31ed4989 0xd15e4889 0xe24883e4 0xf0505449  1.I..^H..H...PTI
+EOF
+RUN
+
+NAME=pxw cfg.bigendian=false (elf64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+e cfg.bigendian=false
+pxw 16
+EOF
+EXPECT=<<EOF
+0x00400410  0x8949ed31 0x89485ed1 0xe48348e2 0x495450f0  1.I..^H..H...PTI
+EOF
+RUN
+
+NAME=pxw cfg.bigendian=false (pe32)
+FILE=bins/pe/hello-mingw32
+CMDS=<<EOF
+e cfg.bigendian=false
+pxw 16
+EOF
+EXPECT=<<EOF
+0x00401280  0x83e58955 0x04c708ec 0x00000124 0xc815ff00  U.......$.......
+EOF
+RUN
+
+NAME=pxw cfg.bigendian=true (pe32)
+FILE=bins/pe/hello-mingw32
+CMDS=<<EOF
+e cfg.bigendian=true
+pxw 16
+EOF
+EXPECT=<<EOF
+0x00401280  0x5589e583 0xec08c704 0x24010000 0x00ff15c8  U.......$.......
+EOF
+RUN
+
+NAME=pxw offsets 16
+FILE=bins/pe/hello-mingw32
+CMDS=<<EOF
+e hex.cols=16
+pxw 32~[0]
+EOF
+EXPECT=<<EOF
+0x00401280
+0x00401290
+EOF
+RUN
+
+NAME=pxw offsets 12
+FILE=bins/pe/hello-mingw32
+CMDS=<<EOF
+e hex.cols=12
+pxw 32~[0]
+EOF
+EXPECT=<<EOF
+0x00401280
+0x0040128c
+0x00401298
+EOF
+RUN
+
+NAME=pxw offsets 10
+FILE=bins/pe/hello-mingw32
+CMDS=<<EOF
+e hex.cols=10
+pxw 32~[0]
+EOF
+EXPECT=<<EOF
+0x00401280
+0x0040128a
+0x00401294
+0x0040129e
+EOF
+RUN
+
+NAME=pxw offsets
+FILE=bins/pe/hello-mingw32
+CMDS=<<EOF
+e hex.cols=8
+pxw 32~[0]
+EOF
+EXPECT=<<EOF
+0x00401280
+0x00401288
+0x00401290
+0x00401298
+EOF
+RUN
+
+NAME=pxw bytes < 4
+FILE=bins/pe/hello-mingw32
+CMDS=<<EOF
+e hex.cols=8
+pxw 2~[1]
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pxw bytes between 4 and 8
+FILE=bins/pe/hello-mingw32
+CMDS=<<EOF
+e hex.cols=8
+pxw 7~[1]
+pxw 7~[2]
+EOF
+EXPECT=<<EOF
+0x83e58955
+U...
+EOF
+RUN
+
+NAME=pxq foo-bar
+FILE=-
+CMDS=<<EOF
+f foo=10
+f bar=2
+pxq foo-bar~?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN

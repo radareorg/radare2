@@ -1,6 +1,0 @@
-NAME=PE: corkami dupsec.exe - open
-FILE=../bins/pe/dupsec.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

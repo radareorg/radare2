@@ -1,0 +1,25 @@
+NAME=PE: corkami dllcfgdup-dynld.exe - open
+FILE=bins/pe/dllcfgdup-dynld.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PE: corkami dllcfgdup-dynld.exe - entrypoint
+FILE=bins/pe/dllcfgdup-dynld.exe
+CMDS=s
+EXPECT=<<EOF
+0x401000
+EOF
+RUN
+
+NAME=PE: corkami dllcfgdup-dynld.exe - pi 1
+FILE=bins/pe/dllcfgdup-dynld.exe
+CMDS=<<EOF
+e asm.filter=false
+pi 1
+EOF
+EXPECT=<<EOF
+push 0x401064
+EOF
+RUN

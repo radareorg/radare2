@@ -1,6 +1,0 @@
-NAME=PE: corkami skippeddynbase.exe - open
-FILE=../bins/pe/skippeddynbase.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

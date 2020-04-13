@@ -1,0 +1,6 @@
+NAME=PE: corkami mini.exe - open
+FILE=bins/pe/mini.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
