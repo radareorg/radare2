@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, maijin, thestr4ng3r */
+/* radare - LGPL - Copyright 2009-2020 - pancake, maijin, thestr4ng3r */
 
 #include "r_util.h"
 #include "r_anal.h"
@@ -22,9 +22,6 @@ VTABLE_READ_ADDR_FUNC (vtable_read_addr_be8, r_read_be8, 1)
 VTABLE_READ_ADDR_FUNC (vtable_read_addr_be16, r_read_be16, 2)
 VTABLE_READ_ADDR_FUNC (vtable_read_addr_be32, r_read_be32, 4)
 VTABLE_READ_ADDR_FUNC (vtable_read_addr_be64, r_read_be64, 8)
-
-
-
 
 R_API void r_anal_vtable_info_free(RVTableInfo *vtable) {
 	if (!vtable) {
@@ -114,7 +111,7 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 		// section in which currenct xref lies
 		if (vtable_addr_in_text_section (context, xref->addr)) {
 			ut8 buf[VTABLE_BUFF_SIZE];
-			context->anal->iob.read_at (context->anal->iob.io, xref->addr, buf, sizeof(buf));
+			int res = context->anal->iob.read_at (context->anal->iob.io, xref->addr, buf, sizeof(buf));
 
 			RAnalOp analop = { 0 };
 			r_anal_op (context->anal, &analop, xref->addr, buf, sizeof(buf), R_ANAL_OP_MASK_BASIC);
@@ -191,13 +188,19 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 			continue;
 		}
 
-		// ut8 *segBuff = calloc (1, section->vsize);
-		// r_io_read_at (core->io, section->vaddr, segBuff, section->vsize);
-
 		ut64 startAddress = section->vaddr;
 		ut64 endAddress = startAddress + (section->vsize) - context->word_size;
+		ut64 ss = endAddress - startAddress;
+		if (ss > ST32_MAX) {
+			eprintf ("Warning: Skipping %" PFMT64d " section\n", ss);
+			break;
+		}
 		while (startAddress <= endAddress) {
 			if (r_cons_is_breaked ()) {
+				break;
+			}
+			if (!anal->iob.is_valid_offset (anal->iob.io, startAddress, 0)) {
+				eprintf ("Invalid address 0x%08"PFMT64x"\n", startAddress);
 				break;
 			}
 
@@ -212,7 +215,8 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 					}
 				}
 			}
-			startAddress += 1;
+			// XXX should be 4 or 8, always using aligned addresses
+			startAddress ++;
 		}
 	}
 
