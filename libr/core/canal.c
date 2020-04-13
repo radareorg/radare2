@@ -16,6 +16,8 @@ enum {
 	R2_ARCH_ARM64,
 	R2_ARCH_MIPS
 };
+// 128M
+#define MAX_SCAN_SIZE 0x7ffffff
 
 static void loganal(ut64 from, ut64 to, int depth) {
 	r_cons_clear_line (1);
@@ -4859,6 +4861,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 
 	iend = end - addr;
 	if (iend < 0) {
+		return;
+	}
+	if (iend > MAX_SCAN_SIZE) {
+		eprintf ("Warning: Not going to analyze 0x%08"PFMT64x" bytes.\n", (ut64)iend);
 		return;
 	}
 	buf = malloc (iend + 2);
