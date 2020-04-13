@@ -8,6 +8,8 @@
 #include "r_types.h"
 #include "sdb/sdb.h"
 
+char *getcommapath(RCore *core);
+
 static const char *help_msg_C[] = {
 	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
 	"C", "", "list meta info in human friendly form",
@@ -365,7 +367,6 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			if (comment && *comment) {
 				char *cmtfile = r_str_between (comment, ",(", ")");
 				if (cmtfile && *cmtfile) {
-					char *getcommapath(RCore *core);
 					char *cwd = getcommapath (core);
 					r_cons_printf ("%s"R_SYS_DIR"%s\n", cwd, cmtfile);
 					free (cwd);
