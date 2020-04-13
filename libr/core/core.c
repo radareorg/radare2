@@ -1087,7 +1087,7 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 	}
 	list= r_fs_dir (core->fs, dirname);
 	n = strlen (basename);
-	bool chgdir = !strncmp (str, "cd  ", 3);
+	bool chgdir = !strncmp (str, "cd ", 3);
 	if (list) {
 		r_list_foreach (list, iter, file) {
 			if (!file) {
