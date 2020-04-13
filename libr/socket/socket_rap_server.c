@@ -110,17 +110,18 @@ R_API bool r_socket_rap_server_continue(RSocketRapServer *s) {
 	case RAP_PACKET_CMD:
 		r_socket_read_block (s->fd, &s->buf[1], 4);
 		i = r_read_be32 (&s->buf[1]);
-		r_socket_read_block (s->fd, &s->buf[5], i);
-		ptr = s->cmd (s->user, (const char *)&s->buf[5]);
-		i = (ptr)? strlen (ptr) + 1: 0;
-		r_write_be32 (&s->buf[1], i);
-		s->buf[0] = RAP_PACKET_CMD | RAP_PACKET_REPLY;
-		r_socket_write (s->fd, s->buf, 5);
-		if (i) {
-			r_socket_write (s->fd, ptr, i);
+		if (r_socket_read_block (s->fd, &s->buf[5], i) > 0) {
+			ptr = s->cmd (s->user, (const char *)s->buf + 5);
+			i = (ptr)? strlen (ptr) + 1: 0;
+			r_write_be32 (&s->buf[1], i);
+			s->buf[0] = RAP_PACKET_CMD | RAP_PACKET_REPLY;
+			r_socket_write (s->fd, s->buf, 5);
+			if (i) {
+				r_socket_write (s->fd, ptr, i);
+			}
+			r_socket_flush (s->fd);
+			R_FREE (ptr);
 		}
-		r_socket_flush (s->fd);
-		R_FREE (ptr);
 		break;
 	case RAP_PACKET_CLOSE:
 		r_socket_read_block (s->fd, &s->buf[1], 4);

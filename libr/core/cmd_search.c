@@ -3278,11 +3278,9 @@ reread:
 						eprintf ("Cannot allocate memory.\n");
 					}
 					ret = true;
-					goto beach;
 				} else {
 					eprintf ("Usage: /cc [hashname] [hexpairhashvalue]\n");
 					eprintf ("Usage: /CC to search ascii collisions\n");
-					goto beach;
 				}
 				free (s);
 				goto beach;
