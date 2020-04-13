@@ -11,6 +11,7 @@
 
 | Service | Badge |
 |----------|---------------------------------------------------------------------|
+| **GithubCI**  | [![Tests Status](https://github.com/radareorg/radare2/workflows/Radare2%20CI/badge.svg)|
 | **TravisCI** 	| [![Build Status](https://travis-ci.com/radareorg/radare2.svg?branch=master)](https://travis-ci.com/radareorg/radare2)|
 | **AppVeyor**  | [![Build status](https://ci.appveyor.com/api/projects/status/9cgkgxkc3203fm1o/branch/master?svg=true)](https://ci.appveyor.com/project/radareorg/radare2/branch/master)|
 | **FreeBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/radare2/freebsd.yml.svg)](https://builds.sr.ht/~xvilka/radare2/freebsd.yml?)|
