@@ -152,8 +152,8 @@ static RList *relocs(RBinFile *bf) {
 	if (obj->hdr->flags & FLAT_FLAG_GOTPIC) {
 		n_got = get_ngot_entries (obj);
 		if (n_got) {
-			amount = n_got * sizeof (ut32);
-			if (amount < n_got || amount > UT32_MAX) {
+			amount = n_got * sizeof(ut32);
+			if (amount / sizeof(ut32) != n_got) {
 				goto out_error;
 			}
 			struct reloc_struct_t *got_table = calloc (
@@ -183,16 +183,16 @@ static RList *relocs(RBinFile *bf) {
 	if (obj->hdr->reloc_count > 0) {
 		int n_reloc = obj->hdr->reloc_count;
 
-		amount = n_reloc * sizeof (struct reloc_struct_t);
-		if (amount < n_reloc || amount > UT32_MAX) {
+		amount = n_reloc * sizeof(struct reloc_struct_t);
+		if (amount / sizeof(struct reloc_struct_t) != n_reloc) {
 			goto out_error;
 		}
 		struct reloc_struct_t *reloc_table = calloc (1, amount + 1);
 		if (!reloc_table) {
 			goto out_error;
 		}
-		amount = n_reloc * sizeof (ut32);
-		if (amount < n_reloc || amount > UT32_MAX) {
+		amount = n_reloc * sizeof(ut32);
+		if (amount / sizeof(ut32) != n_reloc) {
 			free (reloc_table);
 			goto out_error;
 		}
