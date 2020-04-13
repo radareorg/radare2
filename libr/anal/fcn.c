@@ -12,6 +12,7 @@
 #define JMPTBL_LEA_SEARCH_SZ 64
 #define JMPTBL_MAXFCNSIZE 4096
 #define BB_ALIGN 0x10
+#define MAX_SCAN_SIZE 0x7ffffff
 
 /* speedup analysis by removing some function overlapping checks */
 #define JAYRO_04 1
@@ -521,7 +522,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			gotoBeach (R_ANAL_RET_END);
 		}
 	}
-	if (maxlen - (addrbytes * idx)) {
+	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
 		eprintf ("Warning: Skipping large memory region.\n");
 		maxlen = 0;
 	}
