@@ -2288,7 +2288,7 @@ static int cmd_system(void *data, const char *input) {
 	return ret;
 }
 
-static char *unescape_special_chars(char *s, const char *special_chars) {
+static char *unescape_special_chars(const char *s, const char *special_chars) {
 	char *dst = R_NEWS (char, strlen (s) + 1);
 	int i, j = 0;
 
@@ -3771,7 +3771,9 @@ fuji:
 	}
 beach:
 	if (grep) {
-		grep = unescape_special_chars (grep, SPECIAL_CHARS_REGULAR);
+		char *old_grep = grep;
+		grep = unescape_special_chars (old_grep, SPECIAL_CHARS_REGULAR);
+		free (old_grep);
 	}
 	r_cons_grep_process (grep);
 	if (scr_html != -1) {
