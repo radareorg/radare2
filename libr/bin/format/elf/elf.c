@@ -596,54 +596,54 @@ static int init_dynamic_section(ELFOBJ *bin) {
 
 		switch (dyn[i].d_tag) {
 		case DT_PLTRELSZ:
-			bin->dyn_info->dt_pltrelsz = dyn[i].d_un.d_val;
+			bin->dyn_info.dt_pltrelsz = dyn[i].d_un.d_val;
 			break;
 		case DT_PLTGOT:
-			bin->dyn_info->dt_pltgot = dyn[i].d_un.d_ptr;
+			bin->dyn_info.dt_pltgot = dyn[i].d_un.d_ptr;
 			break;
 		case DT_HASH:
-			bin->dyn_info->dt_hash = dyn[i].d_un.d_ptr;
+			bin->dyn_info.dt_hash = dyn[i].d_un.d_ptr;
 			break;
 		case DT_STRTAB:
 			strtabaddr = Elf_(r_bin_elf_v2p_new) (bin, dyn[i].d_un.d_ptr);
-			bin->dyn_info->dt_strtab = dyn[i].d_un.d_ptr;
+			bin->dyn_info.dt_strtab = dyn[i].d_un.d_ptr;
 			break;
 		case DT_SYMTAB:
-			bin->dyn_info->dt_symtab = dyn[i].d_un.d_ptr;
+			bin->dyn_info.dt_symtab = dyn[i].d_un.d_ptr;
 			break;
 		case DT_RELA:
-			bin->dyn_info->dt_rela = dyn[i].d_un.d_ptr;
+			bin->dyn_info.dt_rela = dyn[i].d_un.d_ptr;
 			break;
 		case DT_RELASZ:
-			bin->dyn_info->dt_relasz = dyn[i].d_un.d_val;
+			bin->dyn_info.dt_relasz = dyn[i].d_un.d_val;
 			break;
 		case DT_RELAENT:
-			bin->dyn_info->dt_relaent = dyn[i].d_un.d_val;
+			bin->dyn_info.dt_relaent = dyn[i].d_un.d_val;
 			break;
 		case DT_STRSZ:
 			strsize = dyn[i].d_un.d_val;
-			bin->dyn_info->dt_strsz = dyn[i].d_un.d_val;
+			bin->dyn_info.dt_strsz = dyn[i].d_un.d_val;
 			break;
 		case DT_SYMENT:
-			bin->dyn_info->dt_syment = dyn[i].d_un.d_val;
+			bin->dyn_info.dt_syment = dyn[i].d_un.d_val;
 			break;
 		case DT_REL:
-			bin->dyn_info->dt_rel = dyn[i].d_un.d_ptr;
+			bin->dyn_info.dt_rel = dyn[i].d_un.d_ptr;
 			break;
 		case DT_RELSZ:
-			bin->dyn_info->dt_relsz = dyn[i].d_un.d_val;
+			bin->dyn_info.dt_relsz = dyn[i].d_un.d_val;
 			break;
 		case DT_RELENT:
-			bin->dyn_info->dt_relent = dyn[i].d_un.d_val;
+			bin->dyn_info.dt_relent = dyn[i].d_un.d_val;
 			break;
 		case DT_PLTREL:
-			bin->dyn_info->dt_pltrel = dyn[i].d_un.d_val;
+			bin->dyn_info.dt_pltrel = dyn[i].d_un.d_val;
 			break;
 		case DT_JMPREL:
-			bin->dyn_info->dt_jmprel = dyn[i].d_un.d_ptr;
+			bin->dyn_info.dt_jmprel = dyn[i].d_un.d_ptr;
 			break;
 		case DT_MIPS_PLTGOT:
-			bin->dyn_info->dt_mips_pltgot = dyn[i].d_un.d_ptr;
+			bin->dyn_info.dt_mips_pltgot = dyn[i].d_un.d_ptr;
 			break;
 		default:
 			if ((dyn[i].d_tag >= DT_VERSYM) && (dyn[i].d_tag <= DT_VERNEEDNUM)) {
@@ -1300,7 +1300,6 @@ static bool elf_init(ELFOBJ *bin) {
 			bprintf ("Cannot initialize dynamic strings\n");
 		}
 		bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
-		bin->dyn_info = R_NEW0 (RBinElfDynamicInfo);
 		if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_is_static) (bin) && !is_bin_etrel (bin)) {
 			bprintf ("Cannot initialize dynamic section\n");
 		}
@@ -1394,8 +1393,8 @@ static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, size_t rel_mode, ut64 offse
 }
 
 static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
-	if (bin->dyn_info->dt_pltrelsz) {
-		return bin->dyn_info->dt_pltrelsz / get_size_rel_mode (bin->dyn_info->dt_pltrel);
+	if (bin->dyn_info.dt_pltrelsz) {
+		return bin->dyn_info.dt_pltrelsz / get_size_rel_mode (bin->dyn_info.dt_pltrel);
 	}
 	return 0;
 }
@@ -1403,12 +1402,12 @@ static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
 static size_t get_num_relocs_dynamic(ELFOBJ *bin) {
 	size_t res = 0;
 
-	if (bin->dyn_info->dt_relaent) {
-		res += bin->dyn_info->dt_relasz / bin->dyn_info->dt_relaent;
+	if (bin->dyn_info.dt_relaent) {
+		res += bin->dyn_info.dt_relasz / bin->dyn_info.dt_relaent;
 	}
 
-	if (bin->dyn_info->dt_relent) {
-		res += bin->dyn_info->dt_relsz / bin->dyn_info->dt_relent;
+	if (bin->dyn_info.dt_relent) {
+		res += bin->dyn_info.dt_relsz / bin->dyn_info.dt_relent;
 	}
 
 	return res + get_num_relocs_dynamic_plt (bin);
@@ -1460,23 +1459,23 @@ static size_t get_num_relocs_approx(ELFOBJ *bin) {
 
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos) {
 	size_t i = 0;
-	size_t size = get_size_rel_mode (bin->dyn_info->dt_pltrel);
+	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
 
-	for (size_t offset = 0; offset < bin->dyn_info->dt_pltrelsz; offset += size) {
-		read_reloc (bin, relocs + pos, bin->dyn_info->dt_pltrel, bin->dyn_info->dt_jmprel + offset - bin->baddr);
+	for (size_t offset = 0; offset < bin->dyn_info.dt_pltrelsz; offset += size) {
+		read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
 		pos++;
 		++i;
 	}
 
-	for (size_t offset = 0; offset < bin->dyn_info->dt_relasz; offset += bin->dyn_info->dt_relaent) {
-		read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info->dt_rela + offset - bin->baddr);
+	for (size_t offset = 0; offset < bin->dyn_info.dt_relasz; offset += bin->dyn_info.dt_relaent) {
+		read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info.dt_rela + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
 		pos++;
 	}
 
-	for (size_t offset = 0; offset < bin->dyn_info->dt_relsz; offset += bin->dyn_info->dt_relent) {
-		read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info->dt_rel + offset - bin->baddr);
+	for (size_t offset = 0; offset < bin->dyn_info.dt_relsz; offset += bin->dyn_info.dt_relent) {
+		read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info.dt_rel + offset - bin->baddr);
 		fix_rva_and_offset_exec_file (bin, relocs + pos);
 		pos++;
 	}
@@ -1490,14 +1489,14 @@ static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_offset,
 	size_t g_offset = section_offset + offset;
 	size_t diff;
 
-	if (bin->dyn_info->dt_rela - base_addr <= g_offset && g_offset < bin->dyn_info->dt_rela + bin->dyn_info->dt_relasz - base_addr) {
-		diff = bin->dyn_info->dt_rela + bin->dyn_info->dt_relasz - g_offset - base_addr;
+	if (bin->dyn_info.dt_rela - base_addr <= g_offset && g_offset < bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - base_addr) {
+		diff = bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - g_offset - base_addr;
 		return diff;
-	} else if (bin->dyn_info->dt_rel - base_addr <= g_offset && g_offset < bin->dyn_info->dt_rel + bin->dyn_info->dt_relsz - base_addr) {
-		diff = bin->dyn_info->dt_rel + bin->dyn_info->dt_relsz - g_offset - base_addr;
+	} else if (bin->dyn_info.dt_rel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - base_addr) {
+		diff = bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - g_offset - base_addr;
 		return diff;
-	} else if (bin->dyn_info->dt_jmprel - base_addr <= g_offset && g_offset < bin->dyn_info->dt_jmprel + bin->dyn_info->dt_pltrelsz - base_addr) {
-		diff = bin->dyn_info->dt_jmprel + bin->dyn_info->dt_pltrelsz - g_offset - base_addr;
+	} else if (bin->dyn_info.dt_jmprel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - base_addr) {
+		diff = bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - g_offset - base_addr;
 		return diff;
 	}
 
@@ -1583,7 +1582,7 @@ static HtUP *rel_cache_new(ELFOBJ *bin) {
 
 # if 0
 static ut64 get_plt_addr(ELFOBJ *bin) {
-	ut64 got_addr = bin->dyn_info->dt_pltgot;
+	ut64 got_addr = bin->dyn_info.dt_pltgot;
 	ut64 got_offset = Elf_(r_bin_elf_v2p_new) (bin, got_addr);
 
 	if (got_offset == UT64_MAX) {
@@ -1611,7 +1610,7 @@ static ut64 get_plt_addr(ELFOBJ *bin) {
 }
 
 static ut64 get_got_addr(ELFOBJ *bin) {
-	ut64 ret = bin->dyn_info->dt_pltgot;
+	ut64 ret = bin->dyn_info.dt_pltgot;
 	if (!ret) {
 		return ret;
 	}
@@ -1654,8 +1653,12 @@ static ut64 get_got_entrie(ELFOBJ *bin, RBinElfReloc *rel) {
 	return addr;
 }
 
+static bool is_thumb_symbol(ut64 plt_addr) {
+	return plt_addr & 1;
+}
+
 static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
-	ut64 got_addr = bin->dyn_info->dt_pltgot;
+	ut64 got_addr = bin->dyn_info.dt_pltgot;
 	if (!got_addr) {
 		return UT64_MAX;
 	}
@@ -1670,8 +1673,7 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 	switch (rel->type) {
 	case R_ARM_JUMP_SLOT: {
 		plt_addr += pos * 12 + 20;
-		// thumb symbol
-		if (plt_addr & 1) {
+		if (is_thumb_symbol (plt_addr)) {
 			plt_addr--;
 		}
 		return plt_addr;
@@ -1686,8 +1688,8 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
-	ut64 addr_jmprel = bin->dyn_info->dt_jmprel;
-	ut64 addr_got = bin->dyn_info->dt_mips_pltgot;
+	ut64 addr_jmprel = bin->dyn_info.dt_jmprel;
+	ut64 addr_got = bin->dyn_info.dt_mips_pltgot;
 
 	if (!addr_jmprel || !addr_got) {
 		return UT64_MAX;
@@ -1697,7 +1699,7 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 
 	ut8 buf[1024];
 	const ut8 *base;
-	ut64 plt_addr = addr_jmprel + bin->dyn_info->dt_pltrelsz;
+	ut64 plt_addr = addr_jmprel + bin->dyn_info.dt_pltrelsz;
 	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
 	int res = r_buf_read_at (bin->b, p_plt_addr, buf, sizeof (buf));
 	if (res != sizeof (buf)) {
@@ -1716,7 +1718,7 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
-	ut64 plt_addr = bin->dyn_info->dt_pltgot;
+	ut64 plt_addr = bin->dyn_info.dt_pltgot;
 	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
 
 	ut8 buf[4] = { 0 };
@@ -1746,7 +1748,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
-	ut64 got_addr = bin->dyn_info->dt_pltgot;
+	ut64 got_addr = bin->dyn_info.dt_pltgot;
 	if (!got_addr) {
 		return UT64_MAX;
 	}
@@ -1762,7 +1764,7 @@ static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
 
 // FIXME use section name (couldn't find any info in .dynamic)
 static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
-	ut64 got_addr = bin->dyn_info->dt_pltgot;
+	ut64 got_addr = bin->dyn_info.dt_pltgot;
 	if (!got_addr) {
 		return UT64_MAX;
 	}
@@ -1828,7 +1830,7 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
 	RBinElfSection *pltsec_section = get_section_by_name (bin, ".plt.sec");
 
 	if (pltsec_section) {
-		ut64 got_addr = bin->dyn_info->dt_pltgot;
+		ut64 got_addr = bin->dyn_info.dt_pltgot;
 		ut64 pos = (rel->rva - got_addr - 0x3 * WORDSIZE) / WORDSIZE;
 		return pltsec_section->rva + pos * 0x10;
 	}

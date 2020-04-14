@@ -98,19 +98,19 @@ typedef struct r_bin_elf_lib_t {
 
 struct Elf_(r_bin_elf_obj_t) {
 	Elf_(Ehdr) ehdr;
-	Elf_(Phdr)* phdr;
-	Elf_(Shdr) * shdr;
+	Elf_(Phdr) *phdr;
+	Elf_(Shdr) *shdr;
 
 	Elf_(Shdr) *strtab_section;
 	ut64 strtab_size;
-	char* strtab;
+	char *strtab;
 
 	Elf_(Shdr) *shstrtab_section;
 	ut64 shstrtab_size;
 	char *shstrtab;
 
 	Elf_(Dyn) *dyn_buf;
-	RBinElfDynamicInfo *dyn_info;
+	RBinElfDynamicInfo dyn_info;
 	int dyn_entries;
 	ut32 reloc_num;
 
