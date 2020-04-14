@@ -11,22 +11,22 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        name: [linux-acr-gcc, linux-acr-clang, linux-meson-gcc, macos-clang]
+        name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-meson-gcc-build, macos-clang-tests]
         include:
-          - name: linux-acr-gcc
+          - name: linux-acr-gcc-tests
             os: ubuntu-latest
             build_system: acr
             compiler: gcc
             run_tests: true
-          - name: linux-acr-clang
+          - name: linux-acr-clang-build
             os: ubuntu-latest
             build_system: acr
             compiler: clang
-          - name: linux-meson-gcc
+          - name: linux-meson-gcc-build
             os: ubuntu-latest
             build_system: meson
             compiler: gcc
-          - name: macos-clang
+          - name: macos-clang-tests
             os: macos-latest
             build_system: acr
             compiler: clang
