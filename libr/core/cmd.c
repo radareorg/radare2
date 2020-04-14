@@ -5171,7 +5171,6 @@ DEFINE_HANDLE_TS_FCN(tmp_fromto_command) {
 	TSNode to = ts_node_named_child (node, 2);
 	char *from_str = ts_node_handle_arg (state, node, from, 1);
 	char *to_str = ts_node_handle_arg (state, node, to, 2);
-	R_LOG_DEBUG ("tmp_fromto_command, changing fromto to (%s, %s)\n", from_str, to_str);
 
 	const char *fromvars[] = { "anal.from", "diff.from", "graph.from",
 		"io.buffer.from", "lines.from", "search.from", "zoom.from", NULL };
@@ -5179,6 +5178,7 @@ DEFINE_HANDLE_TS_FCN(tmp_fromto_command) {
 		"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
 	ut64 from_val = r_num_math (core->num, from_str);
 	ut64 to_val = r_num_math (core->num, to_str);
+	R_LOG_DEBUG ("tmp_fromto_command, changing fromto to (%" PFMT64x ", %" PFMT64x ")\n", from_val, to_val);
 
 	RConfigHold *hc = r_config_hold_new (core->config);
 	int i;
