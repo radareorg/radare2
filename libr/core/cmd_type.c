@@ -348,7 +348,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '-': // "tn-"
 		if (input[1] == '*') {
-			r_core_cmd0 (core, "tn-`tn`");
+			r_core_cmd0 (core, "tn- `tn`");
 		} else {
 			char *s = strdup (r_str_trim_head_ro (input + 1));
 			RListIter *iter;
