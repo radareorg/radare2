@@ -32,18 +32,10 @@
 
 #define MAX_REL_RELA_SZ (sizeof (Elf_(Rel)) > sizeof (Elf_(Rela))? sizeof (Elf_(Rel)): sizeof (Elf_(Rela)))
 
-#define READ8(x, i)              \
-	r_read_ble8 ((x) + (i)); \
-	(i) += 1
-#define READ16(x, i)                           \
-	r_read_ble16 ((x) + (i), bin->endian); \
-	(i) += 2
-#define READ32(x, i)                           \
-	r_read_ble32 ((x) + (i), bin->endian); \
-	(i) += 4
-#define READ64(x, i)                           \
-	r_read_ble64 ((x) + (i), bin->endian); \
-	(i) += 8
+#define READ8(x, i) r_read_ble8 ((x) + (i)); (i) += 1
+#define READ16(x, i) r_read_ble16 ((x) + (i), bin->endian); (i) += 2
+#define READ32(x, i) r_read_ble32 ((x) + (i), bin->endian); (i) += 4
+#define READ64(x, i) r_read_ble64 ((x) + (i), bin->endian); (i) += 8
 
 #if R_BIN_ELF64
 #define READWORD(x, i) READ64 (x, i)
@@ -53,18 +45,10 @@
 #define READWORD(x, i) READ32 (x, i)
 #endif
 
-#define BREAD8(x, i)               \
-	r_buf_read_ble8_at (x, i); \
-	(i) += 1
-#define BREAD16(x, i)                            \
-	r_buf_read_ble16_at (x, i, bin->endian); \
-	(i) += 2
-#define BREAD32(x, i)                            \
-	r_buf_read_ble32_at (x, i, bin->endian); \
-	(i) += 4
-#define BREAD64(x, i)                            \
-	r_buf_read_ble64_at (x, i, bin->endian); \
-	(i) += 8
+#define BREAD8(x, i) r_buf_read_ble8_at (x, i); (i) += 1
+#define BREAD16(x, i) r_buf_read_ble16_at (x, i, bin->endian); (i) += 2
+#define BREAD32(x, i) r_buf_read_ble32_at (x, i, bin->endian); (i) += 4
+#define BREAD64(x, i) r_buf_read_ble64_at (x, i, bin->endian); (i) += 8
 
 #define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
 
