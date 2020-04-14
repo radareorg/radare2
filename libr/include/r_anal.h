@@ -753,8 +753,6 @@ typedef struct r_anal_var_t {
 	char *regname; // name of the register
 	char *type; // cparse type of the variable
 	char kind; // reg , stack ...
-	ut64 addr; // not used correctly?
-	ut64 eaddr; // not used correctly?
 	int size;
 	bool isarg;
 	int argnum;

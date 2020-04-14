@@ -377,7 +377,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	}
 	r_list_foreach (spargs, iter, var) {
 		if (p->get_ptr_at) {
-			var->delta = p->get_ptr_at (p->user, var, addr);
+			var->delta = p->get_ptr_at (p->user, f, var, addr);
 		}
 		if (var->delta > -10 && var->delta < 10) {
 			oldstr = r_str_newf ("[sp, %d]", var->delta);
