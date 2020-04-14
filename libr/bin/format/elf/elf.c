@@ -1580,55 +1580,6 @@ static HtUP *rel_cache_new(ELFOBJ *bin) {
 	return rel_cache;
 }
 
-# if 0
-static ut64 get_plt_addr(ELFOBJ *bin) {
-	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	ut64 got_offset = Elf_(r_bin_elf_v2p_new) (bin, got_addr);
-
-	if (got_offset == UT64_MAX) {
-		return UT64_MAX;
-	}
-
-	ut64 first_lazy_entry = got_offset + 3 * WORDSIZE;
-	ut8 buf[WORDSIZE];
-
-	int res = r_buf_read_at (bin->b, first_lazy_entry, buf, WORDSIZE);
-
-	if (res != WORDSIZE) {
-		return UT64_MAX;
-	}
-
-	size_t i = 0;
-	ut64 addr = READWORD (buf, i);
-
-	if (!addr) {
-		return UT64_MAX;
-	}
-
-	// horrible hack
-	return (addr & ~(1024 - 1)) + 0x20;
-}
-
-static ut64 get_got_addr(ELFOBJ *bin) {
-	ut64 ret = bin->dyn_info.dt_pltgot;
-	if (!ret) {
-		return ret;
-	}
-
-	ret = Elf_(r_bin_elf_get_section_addr) (bin, ".got");
-	if (ret) {
-		return ret;
-	}
-
-	ret = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt");
-	if (ret) {
-		return ret;
-	}
-
-	return UT64_MAX;
-}
-# endif
-
 static ut64 get_got_entrie(ELFOBJ *bin, RBinElfReloc *rel) {
 	if (!rel->rva) {
 		return UT64_MAX;
