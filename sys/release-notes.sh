@@ -31,12 +31,16 @@ echo "Release Notes"
 echo "-------------"
 echo
 echo "Version: ${VERS}"
-echo "From: ${PREV}"
-echo "To: ${VERS}"
+# echo "From: ${PREV}"
+echo "Previous: ${VERS}"
 printf "Commits: "
 cat .l |grep ^commit |wc -l |xargs echo
 echo "Contributors: `wc -l .A | awk '{print $1}'`"
 echo
+echo "Highlights"
+echo "----------"
+
+echo "<details><summary>More details</summary><p>"
 echo "Authors"
 echo "-------"
 echo
@@ -61,3 +65,5 @@ cat .x | grep -v '##' | sed -e 's,^ *,,g' | grep -v "^$" | \
 	perl -ne 'if (/^\*/) { print "$_"; } else { print "* $_";}'
 echo
 rm -f .x .y .l .A
+
+echo '</p></details>'
