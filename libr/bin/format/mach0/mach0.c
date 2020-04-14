@@ -2663,6 +2663,11 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				bin->dysymtab.nlocalsym + \
 				bin->dysymtab.nundefsym );
 		symbols_count += bin->nsymtab;
+		if (symbols_count < 0 || ((st64)symbols_count * 2) > ST32_MAX) {
+			eprintf ("Symbols count overflow\n");
+			ht_pp_free (hash);
+			return NULL;
+		}
 		symbols_size = (symbols_count + 1) * 2 * sizeof (struct symbol_t);
 
 		if (symbols_size < 1) {
@@ -2826,7 +2831,8 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 }
 
 static int parse_import_ptr(struct MACH0_(obj_t) *bin, struct reloc_t *reloc, int idx) {
-	int i, j, sym, wordsize;
+	int i, j, sym;
+	size_t wordsize;
 	ut32 stype;
 	wordsize = MACH0_(get_bits)(bin) / 8;
 	if (idx < 0 || idx >= bin->nsymtab) {
@@ -2872,10 +2878,10 @@ static int parse_import_ptr(struct MACH0_(obj_t) *bin, struct reloc_t *reloc, in
 }
 
 struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) *bin) {
-	int i, j, idx, stridx;
+	r_return_val_if_fail (bin, NULL);
 
-	r_return_val_if_fail (bin && bin->sects, NULL);
-	if (!bin->symtab || !bin->symstr || !bin->indirectsyms) {
+	int i, j, idx, stridx;
+	if (!bin->sects || !bin->symtab || !bin->symstr || !bin->indirectsyms) {
 		return NULL;
 	}
 
@@ -2925,8 +2931,8 @@ static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
 	return a->addr - b->addr;
 }
 
-static void parse_relocation_info (struct MACH0_(obj_t) *bin, RSkipList * relocs, ut32 offset, ut32 num) {
-	if (!num || !offset) {
+static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs, ut32 offset, ut32 num) {
+	if (!num || !offset || (st32)num < 0) {
 		return;
 	}
 
@@ -2941,7 +2947,7 @@ static void parse_relocation_info (struct MACH0_(obj_t) *bin, RSkipList * relocs
 		return;
 	}
 
-	int i;
+	size_t i;
 	for (i = 0; i < num; i++) {
 		struct relocation_info a_info = info[i];
 		ut32 sym_num = a_info.r_symbolnum;
@@ -2967,8 +2973,7 @@ static void parse_relocation_info (struct MACH0_(obj_t) *bin, RSkipList * relocs
 		reloc->external = a_info.r_extern;
 		reloc->pc_relative = a_info.r_pcrel;
 		reloc->size = a_info.r_length;
-		r_str_ncpy (reloc->name, sym_name, 256);
-
+		r_str_ncpy (reloc->name, sym_name, sizeof (reloc->name) - 1);
 		r_skiplist_insert (relocs, reloc);
 	}
 }
@@ -3220,14 +3225,7 @@ beach:
 }
 
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
-	r_return_val_if_fail (bin && bin->sects, NULL);
-
-#if 0
-	/* it's probably a dylib */
-	if (!bin->entry) {
-		return NULL;
-	}
-#endif
+	r_return_val_if_fail (bin, NULL);
 
 	struct addr_t *entry = R_NEW0 (struct addr_t);
 	if (!entry) {
@@ -3239,7 +3237,7 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
 	sdb_num_set (bin->kv, "mach0.entry.vaddr", entry->addr, 0);
 	sdb_num_set (bin->kv, "mach0.entry.paddr", bin->entry, 0);
 
-	if (entry->offset == 0) {
+	if (entry->offset == 0 && !bin->sects) {
 		int i;
 		for (i = 0; i < bin->nsects; i++) {
 			// XXX: section name shoudnt matter .. just check for exec flags
@@ -3925,6 +3923,9 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			eprintf ("Invalid size for a load command\n");
 			break;
 		}
+		if (word == 0) {
+			break;
+		}
 		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
 			r_list_append (ret, r_bin_field_new (addr, addr, 1, sdb_fmt ("load_command_%d_%s", n, cmd_to_string (lcType)), pf_definition, pf_definition, true));
@@ -3954,6 +3955,9 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 					off += 68;
 				}
 			}
+			break;
+		default:
+			// TODO
 			break;
 		}
 		}

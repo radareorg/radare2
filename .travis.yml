@@ -125,6 +125,7 @@ before_install:
 
 after_success:
   - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+  - compgen -G "r2js.zip" > /dev/null && bash upload.sh r2js.zip
   - compgen -G "*.deb" > /dev/null && bash upload.sh *.deb
   - compgen -G "/tmp/*.pkg" > /dev/null && bash upload.sh /tmp/*.pkg
 

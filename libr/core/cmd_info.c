@@ -477,7 +477,7 @@ static int cmd_info(void *data, const char *input) {
 		if (strlen (input + 1 + suffix_shift) > 1) {
 			is_array = 1;
 		}
-		if (!strncmp (input, "zzz", 2)) {
+		if (!strncmp (input, "zzz", 3)) {
 			is_izzzj = true;
 		}
 	}

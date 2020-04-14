@@ -44,7 +44,7 @@ static void cons_stack_free(void *ptr) {
 	free (s->buf);
 	if (s->grep) {
 		R_FREE (s->grep->str);
-		CTX(grep.str) = NULL;
+		CTX (grep.str) = NULL;
 	}
 	free (s->grep);
 	free (s);
@@ -80,6 +80,7 @@ static RConsStack *cons_stack_dump(bool recreate) {
 }
 
 static void cons_stack_load(RConsStack *data, bool free_current) {
+	r_return_if_fail (data);
 	if (free_current) {
 		free (I.context->buffer);
 	}
@@ -87,7 +88,6 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 	data->buf = NULL;
 	I.context->buffer_len = data->buf_len;
 	I.context->buffer_sz = data->buf_size;
-
 	if (data->grep) {
 		free (I.context->grep.str);
 		memcpy (&I.context->grep, data->grep, sizeof (RConsGrep));
@@ -122,7 +122,9 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 
 static void cons_context_deinit(RConsContext *context) {
 	r_stack_free (context->cons_stack);
+	context->cons_stack = NULL;
 	r_stack_free (context->break_stack);
+	context->break_stack = NULL;
 	r_cons_pal_free (context);
 }
 

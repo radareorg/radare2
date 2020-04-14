@@ -16,6 +16,8 @@ enum {
 	R2_ARCH_ARM64,
 	R2_ARCH_MIPS
 };
+// 128M
+#define MAX_SCAN_SIZE 0x7ffffff
 
 static void loganal(ut64 from, ut64 to, int depth) {
 	r_cons_clear_line (1);
@@ -741,6 +743,10 @@ static void set_fcn_name_from_flag(RAnalFunction *fcn, RFlagItem *f, const char 
 	}
 }
 
+static bool is_entry_flag(RFlagItem *f) {
+	return f->space && !strcmp (f->space->name, R_FLAGS_FS_SYMBOLS) && r_str_startswith (f->name, "entry.");
+}
+
 static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (depth < 0) {
 //		printf ("Too deep for 0x%08"PFMT64x"\n", at);
@@ -819,8 +825,22 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
 			if (f && f->name && strncmp (f->name, "sect", 4)) { /* Check if it's already flagged */
-				R_FREE (fcn->name);
-				fcn->name = strdup (f->name);
+				char *new_name = strdup (f->name);
+				if (is_entry_flag (f)) {
+					RListIter *iter;
+					RBinSymbol *sym;
+					const RList *syms = r_bin_get_symbols (core->bin);
+					ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+					r_list_foreach (syms, iter, sym) {
+						if ((sym->paddr + baddr) == fcn->addr && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
+							free (new_name);
+							new_name = r_str_newf ("sym.%s", sym->name);
+							break;
+						}
+					}
+				}
+				free (fcn->name);
+				fcn->name = new_name;
 			} else {
 				R_FREE (fcn->name);
 				const char *fcnpfx = r_anal_fcntype_tostring (fcn->type);
@@ -1829,9 +1849,6 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		sdb_set (DB, "name", fcn->name, 0);
 		sdb_set (DB, "ename", ename, 0);
 		free (ename);
-		if (fcn->nargs > 0) {
-			sdb_num_set (DB, "nargs", fcn->nargs, 0);
-		}
 		sdb_num_set (DB, "size", r_anal_function_linear_size (fcn), 0);
 		if (fcn->maxstack > 0) {
 			sdb_num_set (DB, "stack", fcn->maxstack, 0);
@@ -1857,9 +1874,6 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		pj_kn (pj, "size", r_anal_function_linear_size (fcn));
 		pj_ki (pj, "stack", fcn->maxstack);
 		pj_ks (pj, "type", r_anal_fcntype_tostring (fcn->type));
-		if (fcn->dsc) {
-			pj_ks (pj, "signature", fcn->dsc);
-		}
 		pj_k (pj, "blocks");
 		pj_a (pj);
 	}
@@ -4849,6 +4863,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	if (iend < 0) {
 		return;
 	}
+	if (iend > MAX_SCAN_SIZE) {
+		eprintf ("Warning: Not going to analyze 0x%08"PFMT64x" bytes.\n", (ut64)iend);
+		return;
+	}
 	buf = malloc (iend + 2);
 	if (!buf) {
 		perror ("malloc");
@@ -4912,6 +4930,9 @@ repeat:
 			break;
 		}
 		cur = addr + i;
+		if (!r_io_is_valid_offset (core->io, cur, 0)) {
+			break;
+		}
 		{
 			RList *list = r_meta_find_list_in (core->anal, cur, -1, 4);
 			RListIter *iter;
@@ -5242,6 +5263,9 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 	}
 	r_cons_break_push (NULL, NULL);
 
+	if (!r_io_is_valid_offset (core->io, from, 0)) {
+		return -1;
+	}
 	while (from < to) {
 		size = R_MIN (to - from, sizeof (buf));
 		memset (buf, 0xff, sizeof (buf)); // probably unnecessary

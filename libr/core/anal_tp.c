@@ -202,14 +202,14 @@ static _RAnalCond cond_invert(RAnal *anal, _RAnalCond cond) {
 #define RKEY(a,k,d) sdb_fmt ("var.range.0x%"PFMT64x ".%c.%d", a, k, d)
 #define ADB a->sdb_fcns
 
-static void var_add_range(RAnal *a, RAnalVar *var, _RAnalCond cond, ut64 val) {
-	const char *key = RKEY (var->addr, var->kind, var->delta);
+static void var_add_range(RAnal *a, RAnalFunction *fcn, RAnalVar *var, _RAnalCond cond, ut64 val) {
+	const char *key = RKEY (fcn->addr, var->kind, var->delta);
 	sdb_array_append_num (ADB, key, cond, 0);
 	sdb_array_append_num (ADB, key, val, 0);
 }
 
-R_API RStrBuf *var_get_constraint(RAnal *a, RAnalVar *var) {
-	const char *key = RKEY (var->addr, var->kind, var->delta);
+R_API RStrBuf *var_get_constraint(RAnal *a, RAnalFunction *fcn, RAnalVar *var) {
+	const char *key = RKEY (fcn->addr, var->kind, var->delta);
 	int i, n = sdb_array_length (ADB, key);
 
 	if (n < 2) {
@@ -706,7 +706,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						r_anal_op_free (jmp_op);
 					}
 					_RAnalCond cond = jmp? cond_invert (anal, next_op->cond): next_op->cond;
-					var_add_range (anal, var, cond, aop.val);
+					var_add_range (anal, fcn, var, cond, aop.val);
 				}
 			}
 			prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ);

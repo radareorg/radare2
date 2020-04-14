@@ -3,7 +3,7 @@ name: Radare2 CI newshell
 on:
   pull_request:
     branches:
-    - 'newshell-*'
+    - master
   push:
     branches:
     - master
@@ -48,6 +48,7 @@ jobs:
         ninja -C build install
     - name: Run tests
       continue-on-error: true
+      if: startswith(github.event.pull_request.head.ref, 'newshell-') || github.event_name == 'push'
       run: |
         # Running the test suite
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}

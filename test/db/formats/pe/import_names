@@ -1,0 +1,7 @@
+NAME=dll import function names bug for ws2_32.dll
+FILE=bins/pe/Lab05-01.dll
+CMDS=ii~&WS2_32,52
+EXPECT=<<EOF
+52  0x100163cc NONE FUNC WS2_32.dll   gethostbyname
+EOF
+RUN

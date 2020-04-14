@@ -1,7 +1,0 @@
-NAME=Search hex in current map (PE)
-FILE=../bins/pe/hex_search.exe
-CMDS=/x 48~?0x004014f0
-EXPECT=<<EOF
-1
-EOF
-RUN

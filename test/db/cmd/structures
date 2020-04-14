@@ -1,0 +1,70 @@
+NAME=structure variable delete shadowed
+FILE=bins/elf/analysis/main_structure
+CMDS=<<EOF
+aaa
+s main
+afvb*
+"td struct S1 { int a; int b; int c; char d[256]; short e; }"
+afvn s1 var_110h
+afvt s1 S1
+afvb*
+EOF
+EXPECT=<<EOF
+afvb -288 var_120h char ** @ 0x4004a6
+afvb -276 var_114h int64_t @ 0x4004a6
+afvb -272 var_110h int64_t @ 0x4004a6
+afvb -268 var_10ch int64_t @ 0x4004a6
+afvb -264 var_108h int64_t @ 0x4004a6
+afvb -4 var_4h int64_t @ 0x4004a6
+afvb -288 var_120h char ** @ 0x4004a6
+afvb -276 var_114h int64_t @ 0x4004a6
+afvb -272 s1 S1 @ 0x4004a6
+EOF
+RUN
+
+NAME=structure offset in disassembly
+FILE=bins/elf/analysis/main_structure
+CMDS=<<EOF
+aaa
+s main
+"td struct S1 { int a; int b; int c; char d[256]; short e; }"
+afvn s1 var_110h
+pd 4 @ 0x004004be~[2-4]
+afvt s1 S1
+pd 4 @ 0x004004be~[2-4]
+EOF
+EXPECT=<<EOF
+mov dword [s1]
+mov dword [var_10ch]
+mov dword [var_108h]
+lea rax [s1]
+mov dword [s1.a]
+mov dword [s1.b]
+mov dword [s1.c]
+lea rax [s1.a]
+EOF
+RUN
+
+NAME=structure field rename reflects immediately
+FILE=bins/elf/analysis/main_structure
+CMDS=<<EOF
+aaa
+s main
+"td struct S1 { int a; int b; int c; char d[256]; short e; }"
+afvn s1 var_110h
+afvt s1 S1
+pd 4 @ 0x004004be~[2-4]
+"td struct S1 { int x; int y; int c; char d[256]; short e; }"
+pd 4 @ 0x004004be~[2-4]
+EOF
+EXPECT=<<EOF
+mov dword [s1.a]
+mov dword [s1.b]
+mov dword [s1.c]
+lea rax [s1.a]
+mov dword [s1.x]
+mov dword [s1.y]
+mov dword [s1.c]
+lea rax [s1.x]
+EOF
+RUN

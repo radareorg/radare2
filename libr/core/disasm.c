@@ -974,12 +974,12 @@ static char *get_op_ireg (void *user, ut64 addr) {
 	return res;
 }
 
-static int get_ptr_at(void *user, RAnalVar *var, ut64 addr) {
+static int get_ptr_at(void *user, RAnalFunction *fcn, RAnalVar *var, ut64 addr) {
 	RCore *core = (RCore *)user;
 	const char *var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access",
-			var->addr, 1, var->delta);
+			fcn->addr, 1, var->delta);
 	char *vars = sdb_get (core->anal->sdb_fcns, var_access, NULL);
-	const ut64 offset = addr - var->addr;
+	const ut64 offset = addr - fcn->addr;
 	if (vars) {
 		char *next = NULL, *ptr = vars;
 		sdb_anext (vars, &next);
@@ -1650,13 +1650,13 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 	return (size > 0) ? size : r_anal_function_linear_size (f);
 }
 
-static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char *base, bool is_var, char sign) {
+static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnalVar *var, const char *base, bool is_var, char sign) {
 	int delta = sign == '+' ? var->delta : -var->delta;
 	const char *pfx = is_var ? "var" : "arg", *constr = NULL;
 	RStrBuf *constr_buf = NULL;
 	bool cond = false;
 	if (ds->core && ds->core->anal) {
-		constr_buf = var_get_constraint (ds->core->anal, var);
+		constr_buf = var_get_constraint (ds->core->anal, fcn, var);
 		if (constr_buf) {
 			constr = r_strbuf_get (constr_buf);
 			if (constr[0]) {
@@ -1937,7 +1937,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				case R_ANAL_VAR_KIND_BPV: {
 					char sign = var->delta > 0 ? '+' : '-';
 					bool is_var = !var->isarg;
-					ds_show_functions_argvar (ds, var,
+					ds_show_functions_argvar (ds, f, var,
 						anal->reg->name[R_REG_NAME_BP], is_var, sign);
 					}
 					break;
@@ -1965,7 +1965,7 @@ static void ds_show_functions(RDisasmState *ds) {
 					bool is_var = !var->isarg;
 					int saved_delta = var->delta;
 					var->delta = f->maxstack + var->delta;
-					ds_show_functions_argvar (ds, var,
+					ds_show_functions_argvar (ds, f, var,
 						anal->reg->name[R_REG_NAME_SP],
 						is_var, '+');
 					var->delta = saved_delta;

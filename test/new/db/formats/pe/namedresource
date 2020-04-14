@@ -1,6 +1,0 @@
-NAME=PE: corkami namedresource.exe - open
-FILE=../bins/pe/namedresource.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

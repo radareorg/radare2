@@ -1,0 +1,7 @@
+NAME=Gameboy: Open/iI
+FILE=bins/gbc/a.gb
+CMDS=iI~?Gameboy
+EXPECT=<<EOF
+1
+EOF
+RUN

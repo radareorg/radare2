@@ -1,0 +1,7 @@
+NAME=PE: corkami maxsec_lowaligW7.exe - open
+FILE=bins/pe/maxsec_lowaligW7.exe
+ARGS=-A
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

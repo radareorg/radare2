@@ -1,0 +1,6 @@
+NAME=PE: corkami multiss_gui.exe - open
+FILE=bins/pe/multiss_gui.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN

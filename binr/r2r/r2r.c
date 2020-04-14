@@ -7,7 +7,7 @@
 #define WORKERS_DEFAULT        8
 #define RADARE2_CMD_DEFAULT    "radare2"
 #define RASM2_CMD_DEFAULT      "rasm2"
-#define JSON_TEST_FILE_DEFAULT "../bins/elf/crackme0x00b"
+#define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
 #define TIMEOUT_DEFAULT        960
 
 #define STRV(x) #x
@@ -81,7 +81,7 @@ static bool r2r_chdir(const char *argv0) {
 		char *p = strstr (src_path, R_SYS_DIR "binr"R_SYS_DIR"r2r"R_SYS_DIR"r2r");
 		if (p) {
 			*p = 0;
-			strcat (src_path, R_SYS_DIR"test"R_SYS_DIR"new");
+			strcat (src_path, R_SYS_DIR"test"R_SYS_DIR);
 			if (r_file_is_directory (src_path)) {
 				(void)chdir (src_path);
 				eprintf ("Running from %s\n", src_path);

@@ -242,39 +242,25 @@ typedef struct r_anal_fcn_meta_t {
 	int numcallrefs;    // number of calls
 } RAnalFcnMeta;
 
-/* Store various function information,
- * variables, arguments, refs and even
- * description */
 typedef struct r_anal_function_t {
-	char* name;
-	char* dsc; // For producing nice listings
+	char *name;
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
-	/*item_list *rets; // Type of return value */
-	char *rets;
-	short fmod; //  static, inline or volatile?
 	const char *cc; // calling convention, should come from RAnal.constpool
-	char* attr; // __attribute__(()) list
 	ut64 addr;
-	ut64 rb_max_addr; // maximum of meta.min + _size - 1 in the subtree, for fcn interval tree
 	int stack; //stack frame size
 	int maxstack;
 	int ninstr;
-	int nargs; // Function arguments counter
-	int depth;
 	bool folded;
 	bool is_pure;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
 	bool bp_frame;
 	bool is_noreturn; // true if function does not return
-	RAnalType *args; // list of arguments
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
 	RAnalDiff *diff;
-	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs; // TODO: should be RPVector
 	RAnalFcnMeta meta;
-	RBNode addr_rb;
 	RList *imports; // maybe bound to class?
 	struct r_anal_t *anal; // this function is associated with this instance
 } RAnalFunction;
@@ -609,7 +595,6 @@ typedef struct r_anal_t {
 	HtUP *ht_addr_fun; // address => function
 	HtPP *ht_name_fun; // name => function
 	RList *refs;
-	RList *vartypes;
 	RReg *reg;
 	ut8 *last_disasm_reg;
 	RSyscall *syscall;
@@ -742,11 +727,6 @@ typedef struct r_anal_hint_t {
 	ut64 stackframe;
 } RAnalHint;
 
-typedef struct r_anal_var_access_t {
-	ut64 addr;
-	int set;
-} RAnalVarAccess;
-
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
 typedef RAnalHint *(* RAnalGetHint)(RAnal *anal, ut64 addr);
 
@@ -773,8 +753,6 @@ typedef struct r_anal_var_t {
 	char *regname; // name of the register
 	char *type; // cparse type of the variable
 	char kind; // reg , stack ...
-	ut64 addr; // not used correctly?
-	ut64 eaddr; // not used correctly?
 	int size;
 	bool isarg;
 	int argnum;
@@ -1237,7 +1215,7 @@ typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 // TODO: rm data + len
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 
-typedef int (*RAnalRegProfCallback)(RAnal *a);
+typedef bool (*RAnalRegProfCallback)(RAnal *a);
 typedef char*(*RAnalRegProfGetCallback)(RAnal *a);
 typedef int (*RAnalFPBBCallback)(RAnal *a, RAnalBlock *bb);
 typedef int (*RAnalFPFcnCallback)(RAnal *a, RAnalFunction *fcn);
@@ -1555,12 +1533,6 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn);
 
 
 #define R_ANAL_FCN_VARKIND_LOCAL 'v'
-#define R_ANAL_FCN_VARKIND_ARG 'a'
-#define R_ANAL_FCN_VARKIND_FASTARG 'A'
-
-#define r_anal_fcn_local_del_index(x,y,z) r_anal_fcn_var_del_byindex(x, y,\
-R_ANAL_FCN_VARKIND_LOCAL, z)
-#define r_anal_fcn_local_del_name(x,y,z) error
 
 
 R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta);
@@ -1589,7 +1561,7 @@ R_API bool r_anal_function_purity(RAnalFunction *fcn);
 
 typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
 R_API RList *r_anal_ref_list_new(void);
-R_API int r_anal_xrefs_count(RAnal *anal);
+R_API ut64 r_anal_xrefs_count(RAnal *anal);
 R_API const char *r_anal_xrefs_type_tostring(RAnalRefType type);
 R_API RAnalRefType r_anal_xrefs_type(char ch);
 R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to);
@@ -1603,8 +1575,7 @@ R_API int r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType t
 R_API int r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
 R_API int r_anal_xref_del(RAnal *anal, ut64 at, ut64 addr);
 
-R_API RList* r_anal_fcn_get_vars(RAnalFunction *anal);
-R_API RList* r_anal_get_fcns(RAnal *anal);
+R_API RList *r_anal_get_fcns(RAnal *anal);
 
 /* type.c */
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name);
@@ -1613,29 +1584,20 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 /* var.c */
 R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int index);
 R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int delta, int ptr, int xs_type, ut64 xs_addr);
-R_API RAnalVar *r_anal_var_new(void);
 R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind,
 		const char *old_name, const char *new_name, bool verbose);
 R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff);
 R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kind,
 		const char *type, int size, bool isarg, const char *name);
-R_API RAnalVarAccess *r_anal_var_access_new(void);
-R_API RList *r_anal_var_list_new(void);
-R_API RList *r_anal_var_access_list_new(void);
 R_API void r_anal_var_free(RAnalVar *var);
-R_API void r_anal_var_access_free(void *access);
 R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind);
 R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope, int delta);
 R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int type, const char *name);
 R_API bool r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind,
 		const char *type, int size, bool isarg, const char *name);
-R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int scope);
 R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int index);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
-R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set);
-R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);
-R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);
 R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, ut64 addr, const char* name);
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
@@ -1693,7 +1655,7 @@ R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 
 // TODO: should be renamed
 R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case);
-R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, int jmptbl_size, ut64 default_case, bool ret0);
+R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0);
 R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case);
 R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0);
 
@@ -2034,6 +1996,7 @@ extern RAnalPlugin r_anal_plugin_sparc_gnu;
 extern RAnalPlugin r_anal_plugin_sysz;
 extern RAnalPlugin r_anal_plugin_tms320;
 extern RAnalPlugin r_anal_plugin_tms320c64x;
+extern RAnalPlugin r_anal_plugin_tricore;
 extern RAnalPlugin r_anal_plugin_v810;
 extern RAnalPlugin r_anal_plugin_v850;
 extern RAnalPlugin r_anal_plugin_vax;

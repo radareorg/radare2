@@ -12,6 +12,7 @@
 #define JMPTBL_LEA_SEARCH_SZ 64
 #define JMPTBL_MAXFCNSIZE 4096
 #define BB_ALIGN 0x10
+#define MAX_SCAN_SIZE 0x7ffffff
 
 /* speedup analysis by removing some function overlapping checks */
 #define JAYRO_04 1
@@ -520,6 +521,12 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			ret = 0;
 			gotoBeach (R_ANAL_RET_END);
 		}
+	}
+	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
+		if (anal->verbose) {
+			eprintf ("Warning: Skipping large memory region.\n");
+		}
+		maxlen = 0;
 	}
 
 	while (addrbytes * idx < maxlen) {
@@ -1060,16 +1067,16 @@ repeat:
 				} else if (is_arm) {
 					if (op.ptrsize == 1) { // TBB
 						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op.ireg);
-						int tablesize = 0;
+						ut64 table_size = 0;
 						if (pred_cmpval != UT64_MAX) {
-							tablesize += pred_cmpval;
+							table_size += pred_cmpval;
 						} else {
-							tablesize += cmpval;
+							table_size += cmpval;
 						}
 						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op.addr, op.addr + op.size,
-							op.addr + 4, 1, tablesize, UT64_MAX, ret);
+							op.addr + 4, 1, table_size, UT64_MAX, ret);
 						// skip inlined jumptable
-						idx += (tablesize);
+						idx += table_size;
 					}
 					if (op.ptrsize == 2) { // LDRH on thumb/arm
 						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op.ireg);

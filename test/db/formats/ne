@@ -1,0 +1,80 @@
+NAME=NE Symbols
+FILE=bins/ne/anim8.exe
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr       vaddr      bind   type size lib name
+----------------------------------------------------
+0    0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
+1    0x00000d8e 0x00000d8e GLOBAL NONE 0        WNDPROC
+2    0x00002b5a 0x00002b5a GLOBAL NONE 0        DIAL_ABOUT
+0    0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
+EOF
+RUN
+
+NAME=NE Segments
+FILE=bins/ne/anim8.exe
+CMDS=iSS
+EXPECT=<<EOF
+[Segments]
+
+nth paddr         size vaddr        vsize perm name
+---------------------------------------------------
+0   0x00000a00  0x54ee 0x00000a00  0x54ee ---x MOVEABLE.2560
+1   0x00007600  0x3ec4 0x00007600  0x3ec4 -rwx MOVEABLE.30208
+
+EOF
+RUN
+
+NAME=NE Module imports
+FILE=bins/ne/anim8.exe
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type lib name
+---------------------------------
+1   0x00000000 NONE NONE     KERNEL
+2   0x00000000 NONE NONE     USER
+3   0x00000000 NONE NONE     GDI
+4   0x00000000 NONE NONE     WIN87EM
+
+EOF
+RUN
+
+NAME=NE Relocs
+FILE=bins/ne/anim8.exe
+CMDS=ir~0x?
+EXPECT=<<EOF
+718
+EOF
+RUN
+
+NAME=NE Relocs and resolve function ordinal names
+FILE=bins/ne/anim8.exe
+CMDS=<<EOF
+ir~WIN87EM
+ir~:0..10
+EOF
+EXPECT=<<EOF
+0x00004c98 0x00004c98 SET_32 WIN87EM.__FPMATH
+0x00004cb2 0x00004cb2 SET_16 WIN87EM.__FPMATH
+0x00004cb8 0x00004cb8 SET_16 WIN87EM.__FPMATH
+0x00004cbd 0x00004cbd SET_32 WIN87EM.__FPMATH
+0x00004ccb 0x00004ccb SET_32 WIN87EM.__FPMATH
+0x0000569a 0x0000569a ADD_16 WIN87EM.0
+0x000056a0 0x000056a0 ADD_16 WIN87EM.0
+0x000056b3 0x000056b3 ADD_16 WIN87EM.0
+0x00005891 0x00005891 ADD_16 WIN87EM.0
+[Relocations]
+vaddr      paddr      type   name
+---------------------------------
+0x00000a01 0x00000a01 SET_32 KERNEL.INITTASK
+0x00000a25 0x00000a25 SET_32 KERNEL.LOCKSEGMENT
+0x00000a3c 0x00000a3c SET_32 KERNEL.WAITEVENT
+0x00000a45 0x00000a45 SET_32 USER.INITAPP
+0x00000a74 0x00000a74 SET_32 KERNEL.GETWINFLAGS
+0x00000ad0 0x00000ad0 SET_32 KERNEL.UNLOCKSEGMENT
+0x00000f5e 0x00000f5e SET_32 USER.SETTIMER
+EOF
+RUN

@@ -1,0 +1,18 @@
+NAME=PE: corkami bigalign.exe - open
+FILE=bins/pe/bigalign.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PE: corkami bigalign.exe - entrypoint
+FILE=bins/pe/bigalign.exe
+CMDS=<<EOF
+s
+pi 1
+EOF
+EXPECT=<<EOF
+0x20010000
+push 0x20010018
+EOF
+RUN

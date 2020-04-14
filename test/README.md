@@ -8,7 +8,7 @@ Originally based on work by and now in collaboration with pancake.
 Directory Hierarchy
 -------------------
 
- * new/:         The tests sources
+ * db/:          The tests sources
  * unit/:        Unit tests (written in C, using minunit).
  * fuzz/:        Fuzzing helper scripts
  * bins/:        Sample binaries (fetched from the [external repository](https://github.com/radareorg/radare2-testbins))
@@ -88,15 +88,15 @@ Example tests for `db/asm/*`:
 Writing JSON tests
 ----------
 
-The JSON tests `db/new/json` are executed on 3 standard files (1 ELF, 1 MachO, 1 PE). The tests need to be working on the 3 files to pass.
+The JSON tests `db/json` are executed on 3 standard files (1 ELF, 1 MachO, 1 PE). The tests need to be working on the 3 files to pass.
 
 # Commands tests
 ----------------
 
-Example commands tests for the other `new/` folders:
+Example commands tests for the other `db/` folders:
 
 	NAME=test_db
-	FILE=/../bins/elf/ls
+	FILE=bins/elf/ls
 	CMDS=<<EXPECT
 	pd 4
 	EXPECT=<<RUN

@@ -86,10 +86,13 @@ R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff) {
 	RList *var_list = r_anal_var_all_list (a, fcn);
 	r_return_val_if_fail (var_list, false);
 
+	ut64 from_addr = fcn->addr;
+	ut64 to_addr = from_addr + diff;
+
 	r_list_foreach (var_list, it, var) {
-		const char *var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", var->addr, 1, var->delta);
+		const char *var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", from_addr, 1, var->delta);
 		char *access = sdb_get (a->sdb_fcns, var_access, NULL);
-		r_anal_var_delete (a, var->addr, var->kind, 1, var->delta);
+		r_anal_var_delete (a, from_addr, var->kind, 1, var->delta);
 
 		// Resync delta in case the registers list changed
 		if (var->isarg && var->kind == 'r') {
@@ -101,10 +104,8 @@ R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff) {
 			}
 		}
 
-		var->addr += diff;
-
-		r_anal_var_add (a, var->addr, 1, var->delta, var->kind, var->type, var->size, var->isarg, var->name);
-		var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", var->addr, 1, var->delta);
+		r_anal_var_add (a, to_addr, 1, var->delta, var->kind, var->type, var->size, var->isarg, var->name);
+		var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", to_addr, 1, var->delta);
 		sdb_set (a->sdb_fcns, var_access, access, 0);
 		free (access);
 	}
@@ -369,7 +370,6 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 		sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 		return NULL;
 	}
-	av->addr = fcn->addr;
 	av->scope = scope;
 	av->delta = delta;
 	av->isarg = vt.isarg;
@@ -482,9 +482,9 @@ R_API int r_anal_var_rename(RAnal *a, ut64 addr, int scope, char kind, const cha
 }
 
 // Used for linking reg based arg and local-var like "mov [local_8h], rsi"
-static void r_anal_var_link(RAnal *a, ut64 addr, RAnalVar *var) {
+static void r_anal_var_link(RAnal *a, ut64 addr, RAnalFunction *fcn, RAnalVar *var) {
 	const char *inst_key = sdb_fmt ("inst.0x%" PFMT64x ".lvar", addr);
-	const char *var_def = sdb_fmt ("0x%" PFMT64x ",%c,0x%x,0x%x", var->addr,
+	const char *var_def = sdb_fmt ("0x%" PFMT64x ",%c,0x%x,0x%x", fcn->addr,
 		var->kind, var->scope, var->delta);
 	sdb_set (DB, inst_key, var_def, 0);
 }
@@ -821,7 +821,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, type,
 						anal->bits / 8, 1, vname);
 				if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
-					r_anal_var_link (anal, op->addr, op->var);
+					r_anal_var_link (anal, op->addr, fcn, op->var);
 				}
 				r_anal_var_access (anal, fcn->addr, R_ANAL_VAR_KIND_REG, 1, delta, 0, 0, op->addr);
 				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
@@ -853,7 +853,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, 0,
 					anal->bits / 8, 1, vname);
 			if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
-				r_anal_var_link (anal, op->addr, op->var);
+				r_anal_var_link (anal, op->addr, fcn, op->var);
 			}
 			r_anal_var_access (anal, fcn->addr, R_ANAL_VAR_KIND_REG, 1, delta, 0, 0, op->addr);
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
@@ -879,7 +879,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, 0,
 					anal->bits / 8, 1, vname);
 			if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
-				r_anal_var_link (anal, op->addr, op->var);
+				r_anal_var_link (anal, op->addr, fcn, op->var);
 			}
 			r_anal_var_access (anal, fcn->addr, R_ANAL_VAR_KIND_REG, 1, delta, 0, 0, op->addr);
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
@@ -940,7 +940,6 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 					free (av);
 					continue;
 				}
-				av->addr = fcn->addr;
 				av->delta = delta;
 				av->kind = kind;
 				av->name = strdup (vt.name);

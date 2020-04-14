@@ -1,6 +1,0 @@
-NAME=PE: corkami importsdotXP.exe - open
-FILE=../bins/pe/importsdotXP.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

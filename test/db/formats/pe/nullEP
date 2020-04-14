@@ -1,0 +1,21 @@
+NAME=PE: corkami nullEP.exe - open
+FILE=bins/pe/nullEP.exe
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PE: corkami nullEP.exe - pi 1
+FILE=bins/pe/nullEP.exe
+CMDS=pi 1
+EXPECT=<<EOF
+dec ebp
+EOF
+RUN
+
+NAME=PE: corkami nullEP.exe - Expect error Null entry
+FILE=bins/pe/nullEP.exe
+CMDS=q
+EXPECT=<<EOF
+EOF
+RUN

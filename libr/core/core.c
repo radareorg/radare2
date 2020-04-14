@@ -101,7 +101,6 @@ static int getreloc_tree(const void *user, const RBNode *n, void *user2) {
         if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
                 return 0;
         }
-
         if (gr->vaddr > r->vaddr) {
                 return 1;
         }
@@ -339,48 +338,6 @@ R_API RCore *r_core_ncast(ut64 p) {
 
 R_API RCore *r_core_cast(void *p) {
 	return (RCore*)p;
-}
-
-static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt) {
-	RCore *core = (RCore *)user;
-	RBinSection *sec;
-	ut64 vaddr;
-
-	if (!r_config_get_i (core->config, "asm.cmt.patch")) {
-		return;
-	}
-
-	char *hex_pairs = r_hex_bin2strdup (bytes, cnt);
-	if (!hex_pairs) {
-		eprintf ("core_post_write_callback: Cannot obtain hex pairs\n");
-		return;
-	}
-
-	char *comment = r_str_newf ("patch: %d byte(s) (%s)", cnt, hex_pairs);
-	free (hex_pairs);
-	if (!comment) {
-		eprintf ("core_post_write_callback: Cannot create comment\n");
-		return;
-	}
-
-	if ((sec = r_bin_get_section_at (r_bin_cur_object (core->bin), maddr, false))) {
-		vaddr = maddr + sec->vaddr - sec->paddr;
-	} else {
-		vaddr = maddr;
-	}
-
-	r_meta_add (core->anal, R_META_TYPE_COMMENT, vaddr, vaddr, comment);
-	free (comment);
-}
-
-static int core_cmd_callback (void *user, const char *cmd) {
-    RCore *core = (RCore *)user;
-    return r_core_cmd0 (core, cmd);
-}
-
-static char *core_cmdstr_callback (void *user, const char *cmd) {
-	RCore *core = (RCore *)user;
-	return r_core_cmd_str (core, cmd);
 }
 
 static ut64 getref (RCore *core, int n, char t, int type) {
@@ -1130,7 +1087,7 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 	}
 	list= r_fs_dir (core->fs, dirname);
 	n = strlen (basename);
-	bool chgdir = !strncmp (str, "cd  ", 3);
+	bool chgdir = !strncmp (str, "cd ", 3);
 	if (list) {
 		r_list_foreach (list, iter, file) {
 			if (!file) {
@@ -2695,10 +2652,6 @@ R_API bool r_core_init(RCore *core) {
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();
 	core->io->ff = 1;
-	core->io->user = (void *)core;
-	core->io->cb_core_cmd = core_cmd_callback;
-	core->io->cb_core_cmdstr = core_cmdstr_callback;
-	core->io->cb_core_post_write = core_post_write_callback;
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->fs = r_fs_new ();
@@ -2746,6 +2699,7 @@ R_API bool r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->dbg->bp->iob));
 	r_core_bind (core, &core->dbg->corebind);
 	r_core_bind (core, &core->dbg->bp->corebind);
+	r_core_bind (core, &core->io->corebind);
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
 // XXX pushing uninitialized regstate results in trashed reg values
@@ -3161,6 +3115,7 @@ static void rap_break (void *u) {
 // TODO: PLEASE move into core/io/rap? */
 // TODO: use static buffer instead of mallocs all the time. it's network!
 R_API bool r_core_serve(RCore *core, RIODesc *file) {
+	// TODO: use r_socket_rap_server API instead of duplicating the logic
 	ut8 cmd, flg, *ptr = NULL, buf[1024];
 	int i, pipefd = -1;
 	ut64 x;
@@ -3190,7 +3145,7 @@ reaccept:
 		}
 		eprintf ("rap: client connected\n");
 		for (;!r_cons_is_breaked ();) {
-			if (!r_socket_read (c, &cmd, 1)) {
+			if (!r_socket_read_block (c, &cmd, 1)) {
 				eprintf ("rap: connection closed\n");
 				if (r_config_get_i (core->config, "rap.loop")) {
 					eprintf ("rap: waiting for new connection\n");
@@ -3200,13 +3155,13 @@ reaccept:
 				goto out_of_function;
 			}
 			switch ((ut8)cmd) {
-			case RMT_OPEN:
+			case RAP_PACKET_OPEN:
 				r_socket_read_block (c, &flg, 1); // flags
 				eprintf ("open (%d): ", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
 				ptr = malloc (cmd + 1);
-				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX)
+				//XXX cmd is ut8..so <256 if (cmd<RAP_PACKET_MAX)
 				if (!ptr) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
@@ -3240,21 +3195,21 @@ reaccept:
 						goto out_of_function; //XXX: Close connection and goto accept
 					}
 				}
-				buf[0] = RMT_OPEN | RMT_REPLY;
+				buf[0] = RAP_PACKET_OPEN | RAP_PACKET_REPLY;
 				r_write_be32 (buf + 1, pipefd);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
 				R_FREE (ptr);
 				break;
-			case RMT_READ:
+			case RAP_PACKET_READ:
 				r_socket_read_block (c, (ut8*)&buf, 4);
 				i = r_read_be32 (buf);
 				ptr = (ut8 *)malloc (i + core->blocksize + 5);
 				if (ptr) {
 					r_core_block_read (core);
-					ptr[0] = RMT_READ | RMT_REPLY;
-					if (i > RMT_MAX) {
-						i = RMT_MAX;
+					ptr[0] = RAP_PACKET_READ | RAP_PACKET_REPLY;
+					if (i > RAP_PACKET_MAX) {
+						i = RAP_PACKET_MAX;
 					}
 					if (i > core->blocksize) {
 						r_core_block_size (core, i);
@@ -3274,7 +3229,7 @@ reaccept:
 					goto out_of_function;
 				}
 				break;
-			case RMT_CMD:
+			case RAP_PACKET_CMD:
 				{
 				char *cmd = NULL, *cmd_output = NULL;
 				char bufr[8], *bufw = NULL;
@@ -3284,7 +3239,7 @@ reaccept:
 				/* read */
 				r_socket_read_block (c, (ut8*)&bufr, 4);
 				i = r_read_be32 (bufr);
-				if (i > 0 && i < RMT_MAX) {
+				if (i > 0 && i < RAP_PACKET_MAX) {
 					if ((cmd = malloc (i + 1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
@@ -3313,20 +3268,20 @@ reaccept:
 					const char *cmd = "pd 4";
 					int cmd_len = strlen (cmd) + 1;
 					ut8 *b = malloc (cmd_len + 5);
-					b[0] = RMT_CMD;
+					b[0] = RAP_PACKET_CMD;
 					r_write_be32 (b + 1, cmd_len);
 					strcpy ((char *)b+ 5, cmd);
 					r_socket_write (c, b, 5 + cmd_len);
 					r_socket_flush (c);
 
 					/* read response */
-					r_socket_read (c, b, 5);
-					if (b[0] == (RMT_CMD | RMT_REPLY)) {
+					r_socket_read_block (c, b, 5);
+					if (b[0] == (RAP_PACKET_CMD | RAP_PACKET_REPLY)) {
 						ut32 n = r_read_be32 (b + 1);
 						eprintf ("REPLY %d\n", n);
 						if (n > 0) {
 							ut8 *res = calloc (1, n);
-							r_socket_read (c, res, n);
+							r_socket_read_block (c, res, n);
 							eprintf ("RESPONSE(%s)\n", (const char *)res);
 							free (res);
 						}
@@ -3337,7 +3292,7 @@ reaccept:
 				}
 #endif
 				bufw = malloc (cmd_len + 5);
-				bufw[0] = (ut8) (RMT_CMD | RMT_REPLY);
+				bufw[0] = (ut8) (RAP_PACKET_CMD | RAP_PACKET_REPLY);
 				r_write_be32 (bufw + 1, cmd_len);
 				memcpy (bufw + 5, cmd_output, cmd_len);
 				r_socket_write (c, bufw, cmd_len+5);
@@ -3346,19 +3301,19 @@ reaccept:
 				free (cmd_output);
 				break;
 				}
-			case RMT_WRITE:
-				r_socket_read (c, buf, 4);
+			case RAP_PACKET_WRITE:
+				r_socket_read_block (c, buf, 4);
 				x = r_read_at_be32 (buf, 0);
 				ptr = malloc (x);
-				r_socket_read (c, ptr, x);
+				r_socket_read_block (c, ptr, x);
 				int ret = r_core_write_at (core, core->offset, ptr, x);
-				buf[0] = RMT_WRITE | RMT_REPLY;
+				buf[0] = RAP_PACKET_WRITE | RAP_PACKET_REPLY;
 				r_write_be32 (buf + 1, ret);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
 				R_FREE (ptr);
 				break;
-			case RMT_SEEK:
+			case RAP_PACKET_SEEK:
 				r_socket_read_block (c, buf, 9);
 				x = r_read_at_be64 (buf, 1);
 				if (buf[0] == 2) {
@@ -3373,12 +3328,12 @@ reaccept:
 					}
 					x = core->offset;
 				}
-				buf[0] = RMT_SEEK | RMT_REPLY;
+				buf[0] = RAP_PACKET_SEEK | RAP_PACKET_REPLY;
 				r_write_be64 (buf + 1, x);
 				r_socket_write (c, buf, 9);
 				r_socket_flush (c);
 				break;
-			case RMT_CLOSE:
+			case RAP_PACKET_CLOSE:
 				// XXX : proper shutdown
 				r_socket_read_block (c, buf, 4);
 				i = r_read_be32 (buf);
@@ -3386,7 +3341,7 @@ reaccept:
 				//FIXME: Use r_socket_close
 				int ret = close (i);
 				r_write_be32 (buf + 1, ret);
-				buf[0] = RMT_CLOSE | RMT_REPLY;
+				buf[0] = RAP_PACKET_CLOSE | RAP_PACKET_REPLY;
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
 				}
@@ -3396,7 +3351,7 @@ reaccept:
 					// silly http emulation over rap://
 					char line[256] = {0};
 					char *cmd = line;
-					r_socket_read (c, (ut8*)line, sizeof (line));
+					r_socket_read_block (c, (ut8*)line, sizeof (line));
 					if (!strncmp (line, "ET /cmd/", 8)) {
 						cmd = line + 8;
 						char *http = strstr (cmd, "HTTP");
@@ -3420,7 +3375,7 @@ reaccept:
 						r_socket_close (c);
 					}
 				} else {
-					eprintf ("[r2p] unknown command 0x%02x\n", cmd);
+					eprintf ("[rap] unknown command 0x%02x\n", cmd);
 					r_socket_close (c);
 					R_FREE (ptr);
 				}
@@ -3442,31 +3397,31 @@ out_of_function:
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb) {
 	int ret, len = core->blocksize;
-	ut8 *buf;
-	if ((buf = malloc (len))) {
-		while (from < to) {
-			ut64 delta = to-from;
-			if (delta < len) {
-				len = (int)delta;
-			}
-			if (!r_io_read_at (core->io, from, buf, len)) {
-				eprintf ("Cannot read at 0x%"PFMT64x"\n", from);
-				break;
-			}
-			for (ret = 0; ret < len;) {
-				int done = cb (core, from, buf+ret, len-ret);
-				if (done < 1) { /* interrupted */
-					free (buf);
-					return false;
-				}
-				ret += done;
-			}
-			from += len;
-		}
-		free (buf);
-	} else {
+	ut8 *buf = malloc (len);
+	if (!buf) {
 		eprintf ("Cannot allocate blocksize\n");
+		return false;
 	}
+	while (from < to) {
+		ut64 delta = to-from;
+		if (delta < len) {
+			len = (int)delta;
+		}
+		if (!r_io_read_at (core->io, from, buf, len)) {
+			eprintf ("Cannot read at 0x%"PFMT64x"\n", from);
+			break;
+		}
+		for (ret = 0; ret < len;) {
+			int done = cb (core, from, buf+ret, len-ret);
+			if (done < 1) { /* interrupted */
+				free (buf);
+				return false;
+			}
+			ret += done;
+		}
+		from += len;
+	}
+	free (buf);
 	return true;
 }
 

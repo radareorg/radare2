@@ -369,7 +369,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	return ilen;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	mpc\n"
 		"=SP	sp\n"

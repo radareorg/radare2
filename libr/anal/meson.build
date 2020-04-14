@@ -81,6 +81,7 @@ r_anal_sources = [
   'p/anal_tms320.c',
   'p/anal_tms320_c55x_plus.c',
   #'p/anal_tms320c64x.c',
+  'p/anal_tricore.c',
   'p/anal_v810.c',
   'p/anal_v850.c',
   'p/anal_vax.c',

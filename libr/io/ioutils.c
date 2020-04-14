@@ -49,7 +49,6 @@ R_API bool r_io_read_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	return true;
 }
 
-
 R_API bool r_io_write_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	ut8 buf[8];
 	r_return_val_if_fail (io && val, false);

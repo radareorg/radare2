@@ -231,7 +231,7 @@ static inline void **r_pvector_shrink(RPVector *vec) {
 
 // like r_pvector_foreach() but inverse
 #define r_pvector_foreach_prev(vec, it) \
-	for (it = (void **)(vec)->v.a + (vec)->v.len - 1; it != (void **)(vec)->v.a - 1; it--)
+	for (it = ((vec)->v.len == 0 ? NULL : (void **)(vec)->v.a + (vec)->v.len - 1); it != NULL && it != (void **)(vec)->v.a - 1; it--)
 
 /*
  * example:

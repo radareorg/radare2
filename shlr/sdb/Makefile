@@ -131,7 +131,6 @@ symstall: install-dirs
 	ln -fs ${PWD}/src/ht_uu.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/ht_up.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/ht_pp.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/ht_inc.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/types.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/ls.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/cdb_make.h ${DESTDIR}${INCDIR}/sdb

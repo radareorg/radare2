@@ -79,10 +79,6 @@ R_LIB_VERSION_HEADER(r_core);
 #define RTR_PROTOCOL_HTTP 3
 #define RTR_PROTOCOL_UNIX 4
 
-#define RTR_RAP_OPEN   0x01
-#define RTR_RAP_CMD    0x07
-#define RTR_RAP_REPLY  0x80
-
 #define RTR_MAX_HOSTS 255
 
 /* visual mode */
@@ -614,7 +610,7 @@ R_API RList *r_core_anal_fcn_get_calls (RCore *core, RAnalFunction *fcn); // get
 
 /*tp.c*/
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn);
-R_API RStrBuf *var_get_constraint (RAnal *a, RAnalVar *var);
+R_API RStrBuf *var_get_constraint(RAnal *a, RAnalFunction *fcn, RAnalVar *var);
 
 /* asm.c */
 #define R_MIDFLAGS_SHOW 1

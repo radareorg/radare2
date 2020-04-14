@@ -1,0 +1,36 @@
+NAME=MZ: chkdsk.exe - open
+FILE=bins/mz/chkdsk.exe
+ARGS=-A
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=MZ: chkdsk.exe - entrypoint
+FILE=bins/mz/chkdsk.exe
+CMDS=s
+EXPECT=<<EOF
+0x0
+EOF
+RUN
+
+NAME=MZ: chkdsk.exe - pi 1
+FILE=bins/mz/chkdsk.exe
+CMDS=pi 1
+EXPECT=<<EOF
+mov cx, 0x515e
+EOF
+RUN
+
+NAME=MZ: chkdsk.exe segments
+BROKEN=1
+FILE=bins/mz/chkdsk.exe
+CMDS=iS*
+EXPECT=<<EOF
+fs sections
+S 0x00000020 0x00000020 0x0000a312 0x0000a312 seg_000 23
+f section.seg_000 41746 0x00000020
+f section_end.seg_000 1 0x0000a332
+CC section 0 va=0x00000020 pa=0x00000020 sz=41746 vsz=41746 rwx=-rwx seg_000 @ 0x00000020
+EOF
+RUN

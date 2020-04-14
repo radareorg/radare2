@@ -370,7 +370,7 @@ R_API int r_asm_set_bits(RAsm *a, int bits) {
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 	r_return_val_if_fail (a && a->cur, false);
-	a->big_endian = false; //little endian by default
+	a->big_endian = false; // little endian by default
 	switch (a->cur->endian) {
 	case R_SYS_ENDIAN_NONE:
 	case R_SYS_ENDIAN_BI:
@@ -617,8 +617,8 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	ut64 pc = a->pc;
 	RAsmOp op;
 	ut64 idx;
-	int ret, slen;
-	const int addrbytes = a->user ? ((RCore *)a->user)->io->addrbytes : 1;
+	size_t ret, slen;
+	const size_t addrbytes = a->user? ((RCore *)a->user)->io->addrbytes: 1;
 
 	if (!(acode = r_asm_code_new ())) {
 		return NULL;

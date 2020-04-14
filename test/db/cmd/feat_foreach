@@ -1,0 +1,62 @@
+NAME=@@= 10 20 30
+FILE=-
+CMDS=?v $$ @@= 10 20 30
+EXPECT=<<EOF
+0xa
+0x14
+0x1e
+EOF
+RUN
+
+NAME=@@c:/c fs:
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+e search.in = bin.sections
+?v $$ @@c:/ad fs:[ra
+EOF
+EXPECT=<<EOF
+0x100005078
+EOF
+RUN
+
+NAME=@@c:/c/a fs:
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+e search.in = bin.sections
+?v $$ @@c:/ao fs:[ra
+EOF
+EXPECT=<<EOF
+0x100004cd7
+0x100004d95
+0x100004e1d
+0x100005078
+EOF
+RUN
+
+NAME=@@= 10   20   30
+FILE=-
+CMDS=?v $$ @@= 10   20   30
+EXPECT=<<EOF
+0xa
+0x14
+0x1e
+EOF
+RUN
+
+NAME=@@= `prz` fix
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wz 1 2 3 4
+pd 1 @@= `prz`
+EOF
+EXPECT=<<EOF
+            0x00000001      2032           and byte [rdx], dh
+            0x00000002      3220           xor ah, byte [rax]
+            0x00000003      2033           and byte [rbx], dh
+            0x00000004      3320           xor esp, dword [rax]
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN

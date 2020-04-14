@@ -1,6 +1,0 @@
-NAME=PE: corkami imports_noext.exe - open
-FILE=../bins/pe/imports_noext.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

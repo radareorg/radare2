@@ -1,0 +1,25 @@
+NAME=ELF: bomb - open
+FILE=bins/elf/bomb
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=ELF: bomb - entrypoint
+FILE=bins/elf/bomb
+CMDS=s
+EXPECT=<<EOF
+0x400c90
+EOF
+RUN
+
+NAME=ELF: bomb - pi 1
+FILE=bins/elf/bomb
+CMDS=<<EOF
+e asm.filter=false
+pi 1
+EOF
+EXPECT=<<EOF
+xor ebp, ebp
+EOF
+RUN

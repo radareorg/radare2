@@ -246,11 +246,11 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 #else
 	const bool is_elf64 = false;
 #endif
-
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		ut8 phdr[sizeof (Elf_(Phdr))] = { 0 };
 		int j = 0;
-		int len = r_buf_read_at (bin->b, bin->ehdr.e_phoff + i * sizeof (Elf_(Phdr)), phdr, sizeof (Elf_(Phdr)));
+		const size_t rsize = bin->ehdr.e_phoff + i * sizeof (Elf_(Phdr));
+		int len = r_buf_read_at (bin->b, rsize, phdr, sizeof (Elf_(Phdr)));
 		if (len < 1) {
 			bprintf ("read (phdr)\n");
 			R_FREE (bin->phdr);

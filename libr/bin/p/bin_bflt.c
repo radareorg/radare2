@@ -117,13 +117,13 @@ static RList *patch_relocs(RBin *b) {
 	return list;
 }
 
-static int get_ngot_entries(struct r_bin_bflt_obj *obj) {
+static ut32 get_ngot_entries(struct r_bin_bflt_obj *obj) {
 	ut32 data_size = obj->hdr->data_end - obj->hdr->data_start;
-	int i = 0, n_got = 0;
+	ut32 i = 0, n_got = 0;
 	if (data_size > obj->size) {
 		return 0;
 	}
-	for (i = 0, n_got = 0; i < data_size; i += 4, n_got++) {
+	for (; i < data_size; i += 4, n_got++) {
 		ut32 entry, offset = obj->hdr->data_start;
 		if (offset + i + sizeof (ut32) > obj->size ||
 		    offset + i + sizeof (ut32) < offset) {
@@ -144,7 +144,7 @@ static int get_ngot_entries(struct r_bin_bflt_obj *obj) {
 static RList *relocs(RBinFile *bf) {
 	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) bf->o->bin_obj;
 	RList *list = r_list_newf ((RListFree) free);
-	int i, len, n_got, amount;
+	ut32 i, len, n_got, amount;
 	if (!list || !obj) {
 		r_list_free (list);
 		return NULL;
@@ -152,12 +152,11 @@ static RList *relocs(RBinFile *bf) {
 	if (obj->hdr->flags & FLAT_FLAG_GOTPIC) {
 		n_got = get_ngot_entries (obj);
 		if (n_got) {
-			amount = n_got * sizeof (ut32);
-			if (amount < n_got || amount > UT32_MAX) {
+			if (n_got > UT32_MAX / sizeof (struct reloc_struct_t)) {
 				goto out_error;
 			}
-			struct reloc_struct_t *got_table = calloc (
-				1, n_got * sizeof (struct reloc_struct_t));
+			amount = n_got * sizeof (struct reloc_struct_t);
+			struct reloc_struct_t *got_table = calloc (1, amount);
 			if (got_table) {
 				ut32 offset = 0;
 				for (i = 0; i < n_got; offset += 4, i++) {
@@ -181,22 +180,17 @@ static RList *relocs(RBinFile *bf) {
 	}
 
 	if (obj->hdr->reloc_count > 0) {
-		int n_reloc = obj->hdr->reloc_count;
-
-		amount = n_reloc * sizeof (struct reloc_struct_t);
-		if (amount < n_reloc || amount > UT32_MAX) {
+		ut32 n_reloc = obj->hdr->reloc_count;
+		if (n_reloc > UT32_MAX / sizeof (struct reloc_struct_t)) {
 			goto out_error;
 		}
-		struct reloc_struct_t *reloc_table = calloc (1, amount + 1);
+		amount = n_reloc * sizeof (struct reloc_struct_t);
+		struct reloc_struct_t *reloc_table = calloc (1, amount);
 		if (!reloc_table) {
 			goto out_error;
 		}
 		amount = n_reloc * sizeof (ut32);
-		if (amount < n_reloc || amount > UT32_MAX) {
-			free (reloc_table);
-			goto out_error;
-		}
-		ut32 *reloc_pointer_table = calloc (1, amount + 1);
+		ut32 *reloc_pointer_table = calloc (1, amount);
 		if (!reloc_pointer_table) {
 			free (reloc_table);
 			goto out_error;

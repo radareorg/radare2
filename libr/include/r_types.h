@@ -480,6 +480,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_SYS_ARCH "arc"
 #define R_SYS_BITS R_SYS_BITS_32
 #define R_SYS_ENDIAN 0
+#elif __s390x__
+#define R_SYS_ARCH "sysz"
+#define R_SYS_BITS R_SYS_BITS_64
+#define R_SYS_ENDIAN 1
 #elif __sparc__
 #define R_SYS_ARCH "sparc"
 #define R_SYS_BITS R_SYS_BITS_32

@@ -2,6 +2,8 @@
 
 #include <r_core.h>
 
+#define MAX_SCAN_SIZE 0x7ffffff
+
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"a", "", "alias for aai - analysis information",
@@ -4003,12 +4005,14 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	if (mode == '=') {
 		int pcbits = 0;
 		const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-		RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
-		if (bits != reg->size) {
-			pcbits = reg->size;
-		}
-		if (pcbits) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, mode, use_color); // XXX detect which one is current usage
+		if (pcname) {
+			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
+			if (reg && bits != reg->size) {
+				pcbits = reg->size;
+			}
+			if (pcbits) {
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, mode, use_color); // XXX detect which one is current usage
+			}
 		}
 	}
 	r_debug_reg_list (core->dbg, type, bits, mode2, use_color);
@@ -4355,7 +4359,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				int role = r_reg_get_name_idx (regname);
 				if (role != -1) {
 					const char *alias = r_reg_get_name (core->dbg->reg, role);
-					r = r_reg_get (core->dbg->reg, alias, -1);
+					if (alias) {
+						r = r_reg_get (core->dbg->reg, alias, -1);
+					}
 				}
 			}
 			if (r) {
@@ -4579,13 +4585,14 @@ repeat:
 	}
 	if (ret) {
 		r_anal_esil_set_pc (esil, addr);
+		const char *e = R_STRBUF_SAFEGET (&op.esil);
 		if (core->dbg->trace->enabled) {
 			RReg *reg = core->dbg->reg;
 			core->dbg->reg = core->anal->reg;
 			r_debug_trace_pc (core->dbg, addr);
 			core->dbg->reg = reg;
-		} else if (R_STR_ISNOTEMPTY (R_STRBUF_SAFEGET (&op.esil))) {
-			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
+		} else if (R_STR_ISNOTEMPTY (e)) {
+			r_anal_esil_parse (esil, e);
 			if (core->anal->cur && core->anal->cur->esil_post_loop) {
 				core->anal->cur->esil_post_loop (esil, &op);
 			}
@@ -4622,7 +4629,10 @@ repeat:
 					return_tail (1);
 					break;
 				}
-				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op2.esil));
+				const char *e = R_STRBUF_SAFEGET (&op2.esil);
+				if (R_STR_ISNOTEMPTY (e)) {
+					r_anal_esil_parse (esil, e);
+				}
 			} else {
 				eprintf ("Invalid instruction at 0x%08"PFMT64x"\n", naddr);
 			}
@@ -8734,7 +8744,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define geti(x) r_config_get_i(core->config, x);
 	r_return_if_fail (*input == 'v');
 	ut64 o_align = geti ("search.align");
-	const char *analin =  r_config_get (core->config, "anal.in");
+	const char *analin = r_config_get (core->config, "anal.in");
 	char *tmp = strdup (analin);
 	bool asterisk = strchr (input, '*');
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
@@ -8788,6 +8798,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			from = r_itv_begin (map2->itv);
 			to = r_itv_end (map2->itv);
 			oldstr = r_print_rowlog (core->print, sdb_fmt ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x " (aav)", from, to));
+			if ((to - from) > MAX_SCAN_SIZE) {
+				eprintf ("Warning: Skipping large region\n");
+				continue;
+			}
 			r_print_rowlog_done (core->print, oldstr);
 			r_list_foreach (list, iter, map) {
 				ut64 begin = map->itv.addr;
@@ -10020,7 +10034,7 @@ static int cmd_anal(void *data, const char *input) {
 		switch (input[1]) {
 		case 'f': // "adf"
 			if (input[2] == 'g') {
-				anal_fcn_data_gaps (core, input + 1);
+				anal_fcn_data_gaps (core, r_str_trim_head_ro (input + 1));
 			} else {
 				anal_fcn_data (core, input + 1);
 			}

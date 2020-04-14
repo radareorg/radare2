@@ -1849,13 +1849,16 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			str = r_str_replace (str, "\"", "\\\"", 1);
 
 			pj_ki (pj, "ordinal", import->ordinal);
-			pj_ks (pj, "bind", import->bind);
-			pj_ks (pj, "type", import->type);
+			if (import->bind) {
+				pj_ks (pj, "bind", import->bind);
+			}
+			if (import->type) {
+				pj_ks (pj, "type", import->type);
+			}
 			if (import->classname && import->classname[0]) {
 				pj_ks (pj, "classname", import->classname);
 				pj_ks (pj, "descriptor", import->descriptor);
 			}
-
 			pj_ks (pj, "name", str);
 			if (libname) {
 				pj_ks (pj, "libname", libname);
@@ -1868,7 +1871,6 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		} else {
 			const char *bind = import->bind? import->bind: "NONE";
 			const char *type = import->type? import->type: "NONE";
-			eprintf ("nth: %d, %s\n", import->ordinal, symname);
 			if (import->classname && import->classname[0]) {
 				r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, libname ? libname : "", sdb_fmt ("%s.%s", import->classname, symname));
 			} else {

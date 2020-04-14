@@ -1,6 +1,0 @@
-NAME=PE: corkami foldedhdr.exe - open
-FILE=../bins/pe/foldedhdr.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

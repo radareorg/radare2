@@ -1,0 +1,37 @@
+NAME=search count
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+ph crc32 @ $$+10
+/h crc32 83618b8a
+EOF
+EXPECT=<<EOF
+83618b8a
+f hash.crc32.83618b8a = 0x804830a
+EOF
+RUN
+
+NAME=cmd.hit for /h
+FILE=malloc://1024
+BROKEN=1
+CMDS=<<EOF
+e cmd.hit = p8 1
+e search.in =raw
+/h md5 348a9791dc41b89796ec3808b5b5262f
+EOF
+EXPECT=<<EOF
+f hash.md5.348a9791dc41b89796ec3808b5b5262f = 0x0
+00
+EOF
+RUN
+
+NAME=cmd.hit for /h sha256
+FILE=bins/firmware/main.bin
+CMDS=<<EOF
+e cmd.hit = p8 1
+e search.in =raw
+/h sha256 83264abaf298b9238ca63cb2fd9ff0f41a7a1520ee2a17c56df459fc806de1d6 512
+EOF
+EXPECT=<<EOF
+f hash.sha256.83264abaf298b9238ca63cb2fd9ff0f41a7a1520ee2a17c56df459fc806de1d6 = 0x64
+EOF
+RUN

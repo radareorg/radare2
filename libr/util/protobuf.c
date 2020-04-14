@@ -13,7 +13,7 @@ typedef double ft64;
 #define WIRE_END_GRP   4 // groups (deprecated)
 #define WIRE_32_BIT    5 // fixed32, sfixed32, float
 
-typedef R_PACKED (struct _proto_head {
+R_PACKED (typedef struct _proto_head {
 	ut8 wire   : 3;
 	ut8 number : 5;
 }) proto_head_t;

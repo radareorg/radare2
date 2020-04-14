@@ -1,7 +1,0 @@
-NAME=PE: corkami tls_reloc.exe - open
-FILE=../bins/pe/tls_reloc.exe
-ARGS=-A
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

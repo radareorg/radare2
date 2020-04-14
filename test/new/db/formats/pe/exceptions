@@ -1,6 +1,0 @@
-NAME=PE: corkami exceptions.exe - open
-FILE=../bins/pe/exceptions.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

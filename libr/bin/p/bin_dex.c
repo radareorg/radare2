@@ -1030,8 +1030,8 @@ static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
 	if (method_idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
 	}
-	int cid = bin->methods[method_idx].class_id;
-	if (cid < 0 || cid >= bin->header.types_size) {
+	ut16 cid = bin->methods[method_idx].class_id;
+	if (cid >= bin->header.types_size) {
 		return NULL;
 	}
 	const char *name = dex_method_name (bin, method_idx);
@@ -1521,6 +1521,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	cls->fields = r_list_new ();
 	if (!cls->fields) {
 		r_list_free (cls->methods);
+		free (cls);
 		goto beach;
 	}
 	const char *str = createAccessFlagStr (c->access_flags, kAccessForClass);
@@ -1622,7 +1623,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	}
 	cls = NULL;
 beach:
-	r_bin_class_free (cls);
+	return;
 }
 
 static bool is_class_idx_in_code_classes(RBinDexObj *bin, int class_idx) {

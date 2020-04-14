@@ -1,0 +1,7 @@
+NAME=SMS: Open/iI
+FILE=bins/sms/demo.sms
+CMDS=iI~?SEGA
+EXPECT=<<EOF
+1
+EOF
+RUN

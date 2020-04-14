@@ -1,6 +1,0 @@
-NAME=PE: corkami nothing-ld.exe - open
-FILE=../bins/pe/nothing-ld.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN

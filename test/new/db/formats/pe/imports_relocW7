@@ -1,6 +1,0 @@
-NAME=PE: corkami imports_relocW7.exe - open
-FILE=../bins/pe/imports_relocW7.exe
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN
