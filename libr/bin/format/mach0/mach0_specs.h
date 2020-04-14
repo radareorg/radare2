@@ -227,6 +227,14 @@ typedef struct {
 	uint64_t imagesTextCount;
 } cache_hdr_t;
 
+typedef struct
+{
+	uint8_t uuid[16];
+	uint64_t loadAddress;
+	uint32_t textSegmentSize;
+	uint32_t pathOffset;
+} cache_text_info_t;
+
 typedef struct {
 	uint64_t address;
 	uint64_t size;
