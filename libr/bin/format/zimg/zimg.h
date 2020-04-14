@@ -1,3 +1,6 @@
+#ifndef ZIMG_H
+#define ZIMG_H
+
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -36,3 +39,5 @@ struct r_bin_zimg_str_t {
 
 struct r_bin_zimg_obj_t *r_bin_zimg_new_buf(RBuffer *buf);
 struct r_bin_zimg_str_t *r_bin_zimg_get_strings (struct r_bin_zimg_obj_t *bin);
+
+#endif
