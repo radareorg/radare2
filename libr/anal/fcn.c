@@ -523,7 +523,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		}
 	}
 	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
-		eprintf ("Warning: Skipping large memory region.\n");
+		if (anal->verbose) {
+			eprintf ("Warning: Skipping large memory region.\n");
+		}
 		maxlen = 0;
 	}
 
