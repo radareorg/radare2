@@ -34,8 +34,13 @@ a "lea rdi,[rip+0x1011]" 488d3d11100000
 aB "lea rax, [0x803]" 488d042503080000
 aB "lea rax, 0x803" 488d042503080000
 a "mov [rsi], rbx" 48891e
+ad "mov eax, 0" b800000000
+ad "mov ecx, 0x7fffffff" b9ffffff7f
+aB "mov esi, -0x80000000" be00000080
+ad "mov esi, 0x80000000" be00000080
+aB "mov edi, -1" bfffffffff
+ad "mov edi, 0xffffffff" bfffffffff
 a "mov rax, 0x1122334455667788" 48b88877665544332211
-aB "mov rax, 0x112233445566778899" 00
 a "mov rax, 3" 48c7c003000000
 a "mov rax, 33" 48c7c021000000
 ad "mov rax, 0x7fffffff" 48c7c0ffffff7f
