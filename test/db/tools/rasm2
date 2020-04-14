@@ -183,6 +183,16 @@ invalid
 EOF
 RUN
 
+NAME=rasm2 x86_64 overlarge operand
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 "mov rax, 0x112233445566778899"
+EXPECT=
+EXPECT_ERR=<<EOF
+Cannot assemble 'mov rax, 0x112233445566778899' at line 3
+invalid
+EOF
+RUN
+
 NAME=rasm2 #9197
 FILE=-
 CMDS=!rasm2 -a arm -b 64 "ldur x1, [x29, -8]" 
