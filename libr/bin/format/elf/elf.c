@@ -17,7 +17,7 @@
 #define IFINT if (0)
 
 #define MIPS_PLT_OFFSET 0x20
-#define RISCV_PLT_OFFSET 40
+#define RISCV_PLT_OFFSET 0x20
 
 #define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000LL
 #define ELF_PAGE_SIZE 12
@@ -138,6 +138,8 @@ static bool init_ehdr(ELFOBJ *bin) {
 			" EM_ARC_COMPACT=93, EM_XTENSA=94, EM_VIDEOCORE=95, EM_TMM_GPP=96, EM_NS32K=97,"
 			" EM_TPC=98, EM_SNP1K=99, EM_ST200=100, EM_IP2K=101, EM_MAX=102, EM_CR=103,"
 			" EM_F2MC16=104, EM_MSP430=105, EM_BLACKFIN=106, EM_SE_C33=107, EM_SEP=108,"
+			" EM_CRX=114, EM_XGATE=115, EM_C166=116, EM_M16C=117, EM_DSPIC30F=118, EM_CE=119,"
+			" EM_ARCA=109, EM_UNICORE=110, EM_EXCESS=111, EM_DXP=112, EM_ALTERA_NIOS2=113,"
 			" EM_M32C=120, EM_TSK3000=131, EM_RS08=132, EM_SHARC=133, EM_ECOG2=134,"
 			" EM_SCORE7=135, EM_DSP24=136, EM_VIDEOCORE3=137, EM_LATTICEMICO32=138,"
 			" EM_SE_C17=139, EM_TI_C6000=140, EM_TI_C2000=141, EM_TI_C5500=142,"
@@ -1543,7 +1545,7 @@ static HtUP *rel_cache_new(ELFOBJ *bin) {
 	return rel_cache;
 }
 
-static ut64 get_got_entrie(ELFOBJ *bin, RBinElfReloc *rel) {
+static ut64 get_got_entry(ELFOBJ *bin, RBinElfReloc *rel) {
 	if (!rel->rva) {
 		return UT64_MAX;
 	}
@@ -1577,7 +1579,7 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 plt_addr = get_got_entrie (bin, rel);
+	ut64 plt_addr = get_got_entry (bin, rel);
 	if (plt_addr == UT64_MAX) {
 		return UT64_MAX;
 	}
@@ -1667,13 +1669,13 @@ static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 plt_addr = get_got_entrie (bin, rel);
+	ut64 plt_addr = get_got_entry (bin, rel);
 	if (plt_addr == UT64_MAX) {
 		return UT64_MAX;
 	}
 
 	ut64 pos = (rel->rva - got_addr - 0x2 * WORDSIZE) / WORDSIZE;
-	return plt_addr + MIPS_PLT_OFFSET + pos * 0x10;
+	return plt_addr + RISCV_PLT_OFFSET + pos * 0x10;
 }
 
 // FIXME use section name (couldn't find any info in .dynamic)
@@ -1735,7 +1737,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
-	ut64 tmp = get_got_entrie (bin, rel);
+	ut64 tmp = get_got_entry (bin, rel);
 	if (tmp == UT64_MAX) {
 		return get_import_addr_x86_manual (bin, rel);
 	}
