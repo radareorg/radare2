@@ -110,7 +110,7 @@ R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff) {
 	return true;
 }
 
-R_API RAnalVar *r_anal_function_add_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name) {
+R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name) {
 	r_return_val_if_fail (fcn && name, NULL);
 	RRegItem *reg = NULL;
 	if (!kind) {
@@ -141,9 +141,13 @@ R_API RAnalVar *r_anal_function_add_var(RAnalFunction *fcn, int delta, char kind
 			return NULL;
 		}
 	}
-	RAnalVar *var = R_NEW0 (RAnalVar);
+	RAnalVar *var = r_anal_function_get_var (fcn, kind, delta);
 	if (!var) {
-		return NULL;
+		var = R_NEW0 (RAnalVar);
+		if (!var) {
+			return NULL;
+		}
+		r_pvector_push (&fcn->vars, var);
 	}
 	var->name = strdup (name);
 	var->regname = reg ? strdup (reg->name) : NULL; // TODO: no strdup here? pool?
@@ -152,7 +156,6 @@ R_API RAnalVar *r_anal_function_add_var(RAnalFunction *fcn, int delta, char kind
 	var->size = size;
 	var->isarg = isarg;
 	var->delta = delta;
-	r_pvector_push (&fcn->vars, var);
 	return var;
 
 	// const char *var_def = sdb_fmt ("%d,%s,%d,%s,%s", isarg, type, size, name, reg? reg->name : NULL);
@@ -498,14 +501,14 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		char *varname = get_varname (anal, fcn, type, pfx, bp_off);
 		if (varname) {
-			r_anal_function_add_var (fcn, bp_off, type, NULL, anal->bits / 8, isarg, varname);
+			r_anal_function_set_var (fcn, bp_off, type, NULL, anal->bits / 8, isarg, varname);
 			r_anal_var_access (anal, fcn->addr, type, 1, bp_off, ptr, rw, op->addr);
 			free (varname);
 		}
 	} else {
 		char *varname = get_varname (anal, fcn, type, VARPREFIX, -ptr);
 		if (varname) {
-			r_anal_function_add_var (fcn, -ptr, type, NULL, anal->bits / 8, 0, varname);
+			r_anal_function_set_var (fcn, -ptr, type, NULL, anal->bits / 8, 0, varname);
 			r_anal_var_access (anal, fcn->addr, type, 1, -ptr, -ptr, rw, op->addr);
 			free (varname);
 		}
@@ -610,7 +613,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 					name = r_str_newf ("arg%d", i + 1);
 					vname = name;
 				}
-				r_anal_function_add_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, anal->bits / 8, 1, vname);
+				r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, anal->bits / 8, 1, vname);
 				if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
 					r_anal_var_link (anal, op->addr, fcn, op->var);
 				}
@@ -641,7 +644,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			if (ri) {
 				delta = ri->index;
 			}
-			r_anal_function_add_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, anal->bits / 8, 1, vname);
+			r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, anal->bits / 8, 1, vname);
 			if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
 				r_anal_var_link (anal, op->addr, fcn, op->var);
 			}
@@ -666,7 +669,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			if (ri) {
 				delta = ri->index;
 			}
-			r_anal_function_add_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, anal->bits / 8, 1, vname);
+			r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, anal->bits / 8, 1, vname);
 			if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
 				r_anal_var_link (anal, op->addr, fcn, op->var);
 			}

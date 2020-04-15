@@ -1443,7 +1443,7 @@ static int var_cmd(RCore *core, const char *str) {
 			isarg = true;
 		}
 		if (fcn) {
-			r_anal_function_add_var (fcn, delta, type, vartype, size, isarg, name);
+			r_anal_function_set_var (fcn, delta, type, vartype, size, isarg, name);
 		} else {
 			eprintf ("Missing function at 0x%08"PFMT64x"\n", core->offset);
 		}
