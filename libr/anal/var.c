@@ -110,6 +110,33 @@ R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff) {
 	return true;
 }
 
+// If the type of var is a struct,
+// remove all other vars that are overlapped by var and are at the offset of one of its struct members
+static void shadow_var_struct_members(RAnalFunction *fcn, RAnalVar *var) {
+	Sdb *TDB = fcn->anal->sdb_types;
+	const char *type_kind = sdb_const_get (TDB, var->type, 0);
+	if (type_kind && r_str_startswith (type_kind, "struct")) {
+		char *field;
+		int field_n;
+		char *type_key = r_str_newf ("%s.%s", type_kind, var->type);
+		for (field_n = 0; (field = sdb_array_get (TDB, type_key, field_n, NULL)); field_n++) {
+			char *field_key = r_str_newf ("%s.%s", type_key, field);
+			char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
+			ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
+			if (field_offset != 0) { // delete variables which are overlaid by structure
+				RAnalVar *other = r_anal_function_get_var (fcn, var->kind, var->delta + field_offset);
+				if (other && other != var) {
+					r_anal_function_delete_var (fcn, other);
+				}
+			}
+			free (field_type);
+			free (field_key);
+			free (field);
+		}
+		free (type_key);
+	}
+}
+
 R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name) {
 	r_return_val_if_fail (fcn && name, NULL);
 	RRegItem *reg = NULL;
@@ -156,32 +183,18 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 	var->size = size;
 	var->isarg = isarg;
 	var->delta = delta;
+	shadow_var_struct_members (fcn, var);
 	return var;
-
-	// const char *var_def = sdb_fmt ("%d,%s,%d,%s,%s", isarg, type, size, name, reg? reg->name : NULL);
-	// const char *sign = "";
-	// /* local variable */
-	// const char *fcn_key = sdb_fmt ("fcn.0x%"PFMT64x ".%c", addr, kind);
-	// const char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
-	// const char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, scope, name);
-	// const char *shortvar = sdb_fmt ("%d.%s%d", scope, sign, delta);
-	// sdb_array_add (DB, fcn_key, shortvar, 0);
-	// sdb_set (DB, var_key, var_def, 0);
-	// if (*sign) {
-	// 	delta = -delta;
-	// }
-	// char *name_val = r_str_newf ("%c,%d", kind, delta);
-	// sdb_set (DB, name_key, name_val, 0);
-	// free (name_val);
 }
 
-R_API void r_anal_function_var_set_type(RAnalVar *var, const char *type) {
+R_API void r_anal_function_var_set_type(RAnalFunction *fcn, RAnalVar *var, const char *type) {
 	char *nt = strdup (type);
 	if (!nt) {
 		return;
 	}
 	free (var->type);
 	var->type = nt;
+	shadow_var_struct_members (fcn, var);
 }
 
 // not static because used in function.c, but also not public API

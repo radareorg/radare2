@@ -1320,7 +1320,7 @@ static int var_cmd(RCore *core, const char *str) {
 				free (ostr);
 				return false;
 			}
-			r_anal_function_var_set_type (v1, type);
+			r_anal_function_var_set_type (fcn, v1, type);
 			free (ostr);
 			return true;
 		} else {

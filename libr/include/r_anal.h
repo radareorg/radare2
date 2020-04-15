@@ -806,7 +806,8 @@ typedef struct r_anal_op_t {
 	int ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr;  /* stack pointer */
 	int refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
-	RAnalVar *var;  /* local var/arg used by this instruction */
+	R_DEPRECATE RAnalFunction *fcn; // The function that contains var
+	R_DEPRECATE RAnalVar *var;  /* local var/arg used by this instruction, TODO: remove this, same instruction could be part of multiple fcns with completely different vars! */
 	RAnalValue *src[3];
 	RAnalValue *dst;
 	RStrBuf esil;
@@ -1454,7 +1455,7 @@ R_API RAnalOp *r_anal_op_new(void);
 R_API void r_anal_op_free(void *op);
 R_API void r_anal_op_init(RAnalOp *op);
 R_API bool r_anal_op_fini(RAnalOp *op);
-R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var);
+R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var, RAnalFunction **fcn);
 R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name);
 R_API bool r_anal_op_is_eob(RAnalOp *op);
 R_API RList *r_anal_op_list_new(void);
@@ -1587,7 +1588,7 @@ R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int inde
 R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int delta, int ptr, int xs_type, ut64 xs_addr);
 R_API bool r_anal_function_var_rename(RAnalFunction *fcn, RAnalVar *var, const char *new_name, bool verbose);
 R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff);
-R_API void r_anal_function_var_set_type(RAnalVar *var, const char *type);
+R_API void r_anal_function_var_set_type(RAnalFunction *fcn, RAnalVar *var, const char *type);
 R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
 R_API void r_anal_function_delete_all_vars_of_kind(RAnalFunction *fcn, RAnalVarKind kind);
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
