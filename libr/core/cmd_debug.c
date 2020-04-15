@@ -3249,7 +3249,7 @@ static void static_debug_stop(void *u) {
 	r_debug_stop (dbg);
 }
 
-static void core_cmd_dbi (RCore *core, const char *input, const ut64 idx) {
+static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 	int i;
 	char *p;
 	RBreakpointItem *bpi;
