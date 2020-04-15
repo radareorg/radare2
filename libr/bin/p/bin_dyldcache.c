@@ -799,7 +799,7 @@ static HtPP * create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_h
 	if (!path_to_idx) {
 		return NULL;
 	}
-	int i;
+	ut64 i;
 	for (i = 0; i != hdr->imagesCount; i++) {
 		char file[256];
 		if (r_buf_read_at (cache_buf, img[i].pathFileOffset, (ut8*) &file, sizeof (file)) != sizeof (file)) {
@@ -807,7 +807,7 @@ static HtPP * create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_h
 		}
 		file[255] = 0;
 		const char *key = sdb_fmt ("%s", file);
-		ht_pp_insert (path_to_idx, key, i);
+		ht_pp_insert (path_to_idx, key, (void*) i);
 	}
 
 	return path_to_idx;
@@ -841,8 +841,8 @@ static void carve_deps_at_address(RBuffer *cache_buf, cache_img_t *img, cache_hd
 				cmd == LC_LOAD_UPWARD_DYLIB) {
 			bool found;
 			const char *key = sdb_fmt ("%s", cursor + 24);
-			int dep_index = ht_pp_find (path_to_idx, key, &found);
-			if (!found) {
+			ut64 dep_index = (ut64) ht_pp_find (path_to_idx, key, &found);
+			if (!found || dep_index >= hdr->imagesCount) {
 				eprintf ("WARNING: alien dep '%s'\n", key);
 				continue;
 			}
