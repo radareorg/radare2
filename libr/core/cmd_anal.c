@@ -1036,8 +1036,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			RAnalVar *bar = r_anal_function_get_var_byname (fcn, op.var->name);
 			if (bar) {
 				if (name) {
-					ret = r_anal_var_rename (core->anal, fcn->addr, 1,
-						      bar->kind, bar->name, name, true)
+					ret = r_anal_function_var_rename (fcn, bar, name, true)
 						? 0
 						: -1;
 				} else if (!use_json) {
@@ -1244,8 +1243,7 @@ static int var_cmd(RCore *core, const char *str) {
 			if (fcn) {
 				v1 = r_anal_function_get_var_byname (fcn, old_name);
 				if (v1) {
-					r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-							v1->kind, old_name, new_name, true);
+					r_anal_function_var_rename (fcn, v1, new_name, true);
 				} else {
 					eprintf ("Cant find var by name\n");
 				}

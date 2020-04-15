@@ -1529,7 +1529,6 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn);
 #define R_ANAL_FCN_VARKIND_LOCAL 'v'
 
 
-R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta);
 R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind, int scope, ut32 idx);
 /* args */
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
@@ -1578,8 +1577,7 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 /* var.c */
 R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int index);
 R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int delta, int ptr, int xs_type, ut64 xs_addr);
-R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind,
-		const char *old_name, const char *new_name, bool verbose);
+R_API bool r_anal_function_var_rename(RAnalFunction *fcn, RAnalVar *var, const char *new_name, bool verbose);
 R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff);
 R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kind,
 		const char *type, int size, bool isarg, const char *name);

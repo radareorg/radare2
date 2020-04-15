@@ -352,65 +352,24 @@ R_API bool r_anal_var_check_name(const char *name) {
 	return !isdigit (*name) && strcspn (name, "., =/");
 }
 
-// TODO: should be just r_anal_function_rename_var(RAnalVar *var, const char *new_name)
-R_API int r_anal_var_rename(RAnal *a, ut64 addr, int scope, char kind, const char *old_name, const char *new_name, bool verbose) {
-	char key[128];
-
+R_API bool r_anal_function_var_rename(RAnalFunction *fcn, RAnalVar *var, const char *new_name, bool verbose) {
 	if (!r_anal_var_check_name (new_name)) {
-		return 0;
-	}
-	RAnalFunction *fcn = r_anal_get_function_at (a, addr);
-	if (!fcn) {
 		return 0;
 	}
 	RAnalVar *v1 = r_anal_function_get_var_byname (fcn, new_name);
 	if (v1) {
-		r_anal_var_free (v1);
 		if (verbose) {
 			eprintf ("variable or arg with name `%s` already exist\n", new_name);
 		}
 		return false;
 	}
-	// XXX: This is hardcoded because ->kind seems to be 0
-	scope = 1;
-	// XXX. this is pretty weak, because oldname may not exist  too and error returned.
-	if (scope > 0) { // local
-		const char *sign = "";
-		SETKEY ("var.0x%"PFMT64x ".%d.%s", addr, scope, old_name);
-		char *name_val = sdb_get (DB, key, 0);
-		if (!name_val) {
-			return 0;
-		}
-		char *comma = strchr (name_val, ',');
-		if (comma) {
-			int delta = r_num_math (NULL, comma + 1);
-			sdb_unset (DB, key, 0);
-			SETKEY ("var.0x%"PFMT64x ".%d.%s", addr, scope, new_name);
-			sdb_set_owned (DB, key, name_val, 0);
-			if (delta < 0) {
-				delta = -delta;
-				sign = "_";
-			}
-			SETKEY ("var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
-			sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, new_name, 0);
-		}
-	} else { // global
-		SETKEY ("var.0x%"PFMT64x, addr);
-		char *stored_name = sdb_array_get (DB, key, R_ANAL_VAR_SDB_NAME, 0);
-		if (!stored_name) {
-			return 0;
-		}
-		if (!old_name) {
-			old_name = stored_name;
-		}
-		if (strcmp (stored_name, old_name)) {
-			return 0;
-		}
-		sdb_unset (DB, key, 0);
-		SETKEY ("var.0x%"PFMT64x, addr);
-		sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, new_name, 0);
+	char *nn = strdup (new_name);
+	if (!nn) {
+		return false;
 	}
-	return 1;
+	free (var->name);
+	var->name = nn;
+	return true;
 }
 
 // Used for linking reg based arg and local-var like "mov [local_8h], rsi"
@@ -456,20 +415,6 @@ R_API void r_anal_var_access_clear(RAnal *a, ut64 var_addr, int scope, int delta
 	}
 	sdb_unset (DB, key, 0);
 	sdb_unset (DB, key2, 0);
-}
-
-R_API int r_anal_fcn_var_del_bydelta(RAnal *a, ut64 fna, const char kind, int scope, ut32 delta) {
-	int idx;
-	char key[128], val[128], *v;
-	SETKEY ("fcn.0x%08"PFMT64x ".%c", fna, kind);
-	v = sdb_itoa (delta, val, 10);
-	idx = sdb_array_indexof (DB, key, v, 0);
-	if (idx != -1) {
-		sdb_array_delete (DB, key, idx, 0);
-		SETKEY ("fcn.0x%08"PFMT64x ".%c.%d", fna, kind, delta);
-		sdb_unset (DB, key, 0);
-	}
-	return false;
 }
 
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
