@@ -1376,8 +1376,8 @@ static size_t get_num_relocs_dynamic(ELFOBJ *bin) {
 	return res + get_num_relocs_dynamic_plt (bin);
 }
 
-static bool sectionIsInvalid(ELFOBJ *bin, RBinElfSection *sect) {
-	return (sect->offset + sect->size > bin->size);
+static bool sectionIsValid(ELFOBJ *bin, RBinElfSection *sect) {
+	return (sect->offset + sect->size <= bin->size);
 }
 
 static size_t get_section_mode(ELFOBJ *bin, size_t pos) {
@@ -1402,7 +1402,7 @@ static size_t get_num_relocs_sections(ELFOBJ *bin) {
 	}
 
 	for (i = 0; !bin->g_sections[i].last; i++) {
-		if (sectionIsInvalid (bin, &bin->g_sections[i])) {
+		if (!sectionIsValid (bin, &bin->g_sections[i])) {
 			continue;
 		}
 		rel_mode = get_section_mode (bin, i);
