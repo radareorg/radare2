@@ -5,6 +5,7 @@
 #include "r_util/r_str_util.h"
 #include <r_userconf.h>
 #include <stddef.h>
+#include <assert.h>
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
@@ -653,5 +654,18 @@ static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, v
 #  define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ptr} - offsetof(type, member)))
 # endif
 #endif
+
+// reference counter
+typedef int RRef;
+
+#define R_REF_NAME refcount
+#define r_ref(x) x->R_REF_NAME++;
+#define r_ref_init(x) x->R_REF_NAME = 1
+#define r_unref(x,f) { assert (x->R_REF_NAME> 0); if (!--(x->R_REF_NAME)) { f(x); } }
+
+#define R_REF_TYPE RRef refcount;
+#define R_REF_FUNCTIONS(s, n) \
+static inline void n##_ref(s *x) { x->R_REF_NAME++; } \
+static inline void n##_unref(s *x) { r_unref (x, n##_free); }
 
 #endif // R2_TYPES_H
