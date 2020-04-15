@@ -150,7 +150,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 		r_pvector_push (&fcn->vars, var);
 	}
 	var->name = strdup (name);
-	var->regname = reg ? strdup (reg->name) : NULL; // TODO: no strdup here? pool?
+	var->regname = reg ? strdup (reg->name) : NULL; // TODO: no strdup here? pool? or not keep regname at all?
 	var->type = strdup (type);
 	var->kind = kind;
 	var->size = size;
@@ -214,6 +214,7 @@ R_API void r_anal_function_delete_all_vars_of_kind(RAnalFunction *fcn, RAnalVarK
 		if (var->kind == kind) {
 			r_pvector_remove_at (&fcn->vars, i);
 			r_anal_var_free (var);
+			continue;
 		}
 		i++;
 	}
