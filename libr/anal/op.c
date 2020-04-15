@@ -167,7 +167,6 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			//free the previous var in op->var
 			RAnalVar *tmp = get_used_var (anal, op);
 			if (tmp) {
-				r_anal_var_free (op->var);
 				op->var = tmp;
 			}
 		}

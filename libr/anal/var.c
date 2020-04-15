@@ -270,22 +270,6 @@ void r_anal_var_free(RAnalVar *av) {
 	}
 }
 
-R_API int r_anal_var_delete_all(RAnal *a, ut64 addr, const char kind) {
-	r_return_val_if_fail (a, 0);
-	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
-	if (fcn) {
-		RAnalVar *v;
-		RListIter *iter;
-		RList *list = r_anal_var_list (a, fcn, kind);
-		r_list_foreach (list, iter, v) {
-			r_anal_function_delete_var (fcn, v);
-		}
-		// XXX: i don't think we want to allocate and free by hand. r_anal_var_delete should be the list->free already
-		r_list_free (list);
-	}
-	return 0;
-}
-
 R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
 	size_t i;
 	for (i = 0; i < r_pvector_len (&fcn->vars); i++) {
@@ -296,6 +280,23 @@ R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
 			return;
 		}
 	}
+}
+
+R_API void r_anal_function_delete_all_vars_of_kind(RAnalFunction *fcn, RAnalVarKind kind) {
+	r_return_if_fail (fcn);
+	size_t i;
+	for (i = 0; i < r_pvector_len (&fcn->vars);) {
+		RAnalVar *var = r_pvector_at (&fcn->vars, i);
+		if (var->kind == kind) {
+			r_pvector_remove_at (&fcn->vars, i);
+			r_anal_var_free (var);
+		}
+		i++;
+	}
+}
+
+R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn) {
+	r_pvector_clear (&fcn->vars);
 }
 
 R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name) {

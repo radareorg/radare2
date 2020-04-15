@@ -1210,9 +1210,7 @@ static int var_cmd(RCore *core, const char *str) {
 		}
 	case 'a': // "afva"
 		if (fcn) {
-			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
-			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
-			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
+			r_anal_function_delete_all_vars (fcn);
 			r_core_recover_vars (core, fcn, false);
 			free (p);
 			return true;
@@ -1356,7 +1354,7 @@ static int var_cmd(RCore *core, const char *str) {
 			return false;
 		}
 		if (str[2] == '*') {
-			r_anal_var_delete_all (core->anal, fcn->addr, type);
+			r_anal_function_delete_all_vars_of_kind (fcn, type);
 		} else {
 			RAnalVar *var = NULL;
 			if (IS_DIGIT (str[2])) {
