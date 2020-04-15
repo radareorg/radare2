@@ -12,23 +12,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [linux-acr-gcc-tests, linux-acr-clang-tests, linux-meson-gcc-tests, macos-clang-tests]
+        name: [linux-acr-gcc, linux-acr-clang, linux-meson-gcc, linux-meson-newshell, macos-clang]
         include:
-          - name: linux-acr-gcc-tests
+          - name: linux-acr-gcc
             os: ubuntu-latest
             build_system: acr
             compiler: gcc
-          - name: linux-acr-clang-tests
+          - name: linux-acr-clang
             os: ubuntu-latest
             build_system: acr
             compiler: clang
-          - name: linux-meson-gcc-tests
+          - name: linux-meson-gcc
             os: ubuntu-latest
             build_system: meson
             compiler: gcc
             meson_options: -Db_coverage=true
             coverage: 1
-          - name: macos-clang-tests
+          - name: linux-meson-newshell
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Duse_treesitter=true
+            newshell: newshell
+          - name: macos-clang
             os: macos-latest
             build_system: acr
             compiler: clang
@@ -78,11 +84,23 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
     - name: Run tests
+      if: matrix.newshell != 'newshell'
       run: |
         # Running the test suite
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        cd test
+        make
+    - name: Run tests with newshell
+      if: matrix.newshell == 'newshell'
+      continue-on-error: true
+      run: |
+        # Running the test suite
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        export R2_CFG_NEWSHELL=1
         cd test
         make
     - name: Upload coverage info
