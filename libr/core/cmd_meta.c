@@ -994,7 +994,7 @@ void r_comment_vars(RCore *core, const char *input) {
 			break;
 		}
 		r_anal_var_free (var);
-		if (!r_anal_var_get (core->anal, fcn->addr, input[0], 1, idx)) {
+		if (!r_anal_var_get (core->anal, fcn->addr, input[0], idx)) {
 			eprintf ("can't find variable at given offset\n");
 		} else {
 			oldcomment = r_meta_get_var_comment (core->anal, input[0], idx, fcn->addr);
@@ -1027,7 +1027,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		}
 		r_anal_var_free (var);
 		//XXX TODO here we leak a var
-		if (!r_anal_var_get (core->anal, fcn->addr, input[0],1,idx)) {
+		if (!r_anal_var_get (core->anal, fcn->addr, input[0], idx)) {
 			eprintf ("can't find variable at given offset\n");
 			break;
 		}

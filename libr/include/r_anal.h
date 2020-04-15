@@ -737,7 +737,6 @@ typedef struct r_anal_var_t {
 	bool isarg;
 	int argnum;
 	int delta;   /* delta offset inside stack frame */
-	int scope;   /* global, local... | in, out... */
 } RAnalVar;
 
 // mul*value+regbase+regidx+delta
@@ -1588,10 +1587,9 @@ R_API void r_anal_var_free(RAnalVar *var);
 R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind);
 R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope, int delta);
 R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int type, const char *name);
-R_API bool r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind,
-		const char *type, int size, bool isarg, const char *name);
+R_API RAnalVar *r_anal_function_add_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
 R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name);
-R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int index);
+R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int index);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
 R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);

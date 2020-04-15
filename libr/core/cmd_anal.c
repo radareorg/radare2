@@ -1036,7 +1036,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			RAnalVar *bar = r_anal_function_get_var_byname (fcn, op.var->name);
 			if (bar) {
 				if (name) {
-					ret = r_anal_var_rename (core->anal, fcn->addr, bar->scope,
+					ret = r_anal_var_rename (core->anal, fcn->addr, 1,
 						      bar->kind, bar->name, name, true)
 						? 0
 						: -1;
@@ -1396,8 +1396,7 @@ static int var_cmd(RCore *core, const char *str) {
 			if ((vaddr = strchr (p , ' '))) {
 				addr = r_num_math (core->num, vaddr);
 			}
-			RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
-							str[0], R_ANAL_VAR_SCOPE_LOCAL, idx);
+			RAnalVar *var = r_anal_var_get (core->anal, fcn->addr, str[0], idx);
 			if (!var) {
 				eprintf ("Cannot find variable with delta %d\n", idx);
 				res = false;
@@ -1417,7 +1416,6 @@ static int var_cmd(RCore *core, const char *str) {
 		char *vartype;
 		bool isarg = false;
 		int size = 4;
-		int scope = 1;
 		for (str++; *str == ' ';) str++;
 		p = strchr (str, ' ');
 		if (!p) {
@@ -1453,9 +1451,7 @@ static int var_cmd(RCore *core, const char *str) {
 			isarg = true;
 		}
 		if (fcn) {
-			r_anal_var_add (core->anal, fcn->addr,scope,
-					delta, type, vartype,
-					size, isarg, name);
+			r_anal_function_add_var (fcn, delta, type, vartype, size, isarg, name);
 		} else {
 			eprintf ("Missing function at 0x%08"PFMT64x"\n", core->offset);
 		}

@@ -85,7 +85,7 @@ R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
 	struct VarUsedType vut;
 	RAnalVar *res = NULL;
 	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
-		res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
+		res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.delta);
 		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	}
 	free (inst_key);
@@ -98,7 +98,7 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	struct VarUsedType vut;
 	RAnalVar *res = NULL;
 	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
-		res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
+		res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.delta);
 		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	}
 	free (inst_key);
