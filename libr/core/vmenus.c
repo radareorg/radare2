@@ -3086,7 +3086,7 @@ static int variable_option = 0;
 static int printMode = 0;
 static bool selectPanel = false;
 #define lastPrintMode 6
-static const char *cmd, *printCmds[lastPrintMode] = {
+static const char *printCmds[lastPrintMode] = {
 	"pdf", "pd $r", "afi", "pdsf", "pdc", "pdr"
 };
 
@@ -3098,6 +3098,7 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 	int h, w = r_cons_get_size (&h);
 	// int sz = (fcn)? R_MIN (r_anal_fcn_size (fcn), h * 15) : 16; // max instr is 15 bytes.
 
+	const char *cmd;
 	if (printMode > 0 && printMode < lastPrintMode) {
 		cmd = printCmds[printMode];
 	} else {
