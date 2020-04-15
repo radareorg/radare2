@@ -4768,6 +4768,10 @@ static bool is_arg(TSNode args) {
 	return is_ts_arg (args) || is_ts_pf_arg (args);
 }
 
+static bool is_handled_args(TSNode args) {
+	return is_group_of_args (args) || is_arg (args) || is_ts_cmd_substitution_arg (args);
+}
+
 static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, RList *edits) {
 	if (is_group_of_args (args)) {
 		uint32_t n_children = ts_node_named_child_count (args);
@@ -4908,7 +4912,7 @@ static bool substitute_args_do(struct tsr2cmd_state *state, RList *edits, TSNode
 static bool substitute_args(struct tsr2cmd_state *state, TSNode args, TSNode *new_command) {
 	RList *edits = r_list_newf ((RListFree)free_tsr2cmd_edit);
 
-	if (is_ts_args (args) || is_ts_arg (args) || is_ts_pf_dot_cmd_args (args) || is_ts_pf_new_args (args) || is_ts_pf_args (args)) {
+	if (is_handled_args (args)) {
 		handle_substitution_args (state, args, edits);
 	}
 
