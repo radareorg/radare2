@@ -379,7 +379,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 	return count[type];
 }
 
-static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char *base_name, int delta, RList *list) {
+static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list) {
 	/* ATTENTION: av->name might be freed and reassigned */
 	Sdb *TDB = a->sdb_types;
 	const char *type_kind = sdb_const_get (TDB, av->type, 0);
@@ -392,11 +392,13 @@ static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char 
 			char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
 			ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
 			int field_count = sdb_array_get_num (TDB, field_key, 2, NULL);
-			int field_size = r_type_get_bitsize (TDB, field_type) * (field_count? field_count: 1);
-			new_name = r_str_newf ( "%s.%s", base_name, field_name);
-			if (field_offset == 0) {
-				free (av->name);
-				av->name = new_name;
+			//int field_size = r_type_get_bitsize (TDB, field_type) * (field_count? field_count: 1);
+			new_name = r_str_newf ( "%s.%s", av->name, field_name);
+			RAnalVarField *field = R_NEW0 (RAnalVarField);
+			field->name = new_name;
+			field->delta = av->delta + field_offset;
+			r_list_append (list, field);
+			/*if (field_offset == 0) {
 			} else {
 				RAnalVar *fav = R_NEW0 (RAnalVar);
 				if (!fav) {
@@ -404,20 +406,21 @@ static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char 
 					free (new_name);
 					continue;
 				}
-				fav->delta = delta + field_offset;
+				fav->delta = av->delta + field_offset;
 				fav->kind = av->kind;
 				fav->name = new_name;
-				fav->regname = strdup (av->regname);
+				fav->regname = av->regname ? strdup (av->regname) : NULL;
 				fav->size = field_size;
 				fav->type = strdup (field_type);
-				r_list_append (list, fav);
-			}
+			}*/
 			free (field_type);
 			free (field_key);
 			free (field_name);
 		}
 		free (type_key);
+		return true;
 	}
+	return false;
 }
 
 
@@ -717,7 +720,7 @@ R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	extract_arg (anal, fcn, op, SP, "+", R_ANAL_VAR_KIND_SPV);
 }
 
-static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dynamicVars) {
+static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind) {
 	if (!a || !fcn) {
 		return NULL;
 	}
@@ -730,10 +733,6 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 		RAnalVar *var = *it;
 		if (var->kind == kind) {
 			r_list_push (list, var);
-			if (dynamicVars) { // make dynamic variables like structure fields
-				// TODO: this probably leaks hard
-				var_add_structure_fields_to_list (a, var, var->name, var->delta, list);
-			}
 		}
 	}
 	return list;
@@ -759,11 +758,48 @@ R_API RList *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn) {
 }
 
 R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
-	return var_generate_list (a, fcn, kind, false);
+	return var_generate_list (a, fcn, kind);
 }
 
-R_API RList *r_anal_var_list_dynamic(RAnal *a, RAnalFunction *fcn, int kind) {
-	return var_generate_list (a, fcn, kind, true);
+static void var_field_free(RAnalVarField *field) {
+	if (!field) {
+		return;
+	}
+	free (field->name);
+	free (field);
+}
+
+R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
+	if (!fcn) {
+		return NULL;
+	}
+	RList *list = r_list_newf ((RListFree)var_field_free);
+	if (kind < 1) {
+		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
+	}
+	void **it;
+	r_pvector_foreach (&fcn->vars, it) {
+		RAnalVar *var = *it;
+		if (var->kind != kind) {
+			continue;
+		}
+		if (var_add_structure_fields_to_list (fcn->anal, var, list)) {
+			// this var is a struct and var_add_structure_fields_to_list added all the fields
+			continue;
+		}
+		RAnalVarField *field = R_NEW0 (RAnalVarField);
+		if (!field) {
+			break;
+		}
+		field->name = strdup (var->name);
+		if (!field->name) {
+			var_field_free (field);
+			break;
+		}
+		field->delta = var->delta;
+		r_list_push (list, field);
+	}
+	return list;
 }
 
 static int var_comparator(const RAnalVar *a, const RAnalVar *b){

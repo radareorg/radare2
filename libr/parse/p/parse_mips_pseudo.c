@@ -251,7 +251,6 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	RAnalVar *var;
 	RListIter *iter;
 	char *oldstr;
 	char *tstr = strdup (data);
@@ -261,12 +260,13 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		free (tstr);
 		return false;
 	}
-	RList *bpargs = p->varlist (anal, f, 'b');
-	RList *spargs = p->varlist (anal, f, 's');
+	RList *bpargs = p->varlist (f, 'b');
+	RList *spargs = p->varlist (f, 's');
 	const bool ucase = IS_UPPER (*tstr);
+	RAnalVarField *var;
 	r_list_foreach (spargs, iter, var) {
 		if (p->get_ptr_at) {
-			var->delta = p->get_ptr_at (p->user, f, var, addr);
+			var->delta = p->get_ptr_at (p->user, f, var->delta, addr);
 		}
 		char *tmpf;
 		//TODO: honor asm pseudo

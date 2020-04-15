@@ -338,7 +338,6 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RList *bpargs, *spargs;
 	RAnal *anal = p->analb.anal;
-	RAnalVar *bparg, *sparg;
 	RListIter *bpargiter, *spiter;
 	char oldstr[64], newstr[64];
 	char *tstr = strdup (data);
@@ -402,8 +401,8 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		free (tstr);
 		return false;
 	}
-	bpargs = p->varlist (anal, f, 'b');
-	spargs = p->varlist (anal, f, 's');
+	bpargs = p->varlist (f, 'b');
+	spargs = p->varlist (f, 's');
 	/* Iterate over stack pointer arguments/variables */
 	bool ucase = *tstr >= 'A' && *tstr <= 'Z';
 	if (ucase && tstr[1]) {
@@ -413,11 +412,12 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	if (p->get_op_ireg) {
 		ireg = p->get_op_ireg(p->user, addr);
 	}
+	RAnalVarField *bparg, *sparg;
 	r_list_foreach (spargs, spiter, sparg) {
 		// assuming delta always positive?
 		int delta = sparg->delta;
 		if (p->get_ptr_at) {
-			delta = p->get_ptr_at (p->user, f, sparg, addr);
+			delta = p->get_ptr_at (p->user, f, sparg->delta, addr);
 		}
 		mk_reg_str (anal->reg->name[R_REG_NAME_SP], delta, true, att, ireg, oldstr, sizeof (oldstr));
 

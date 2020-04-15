@@ -741,6 +741,12 @@ typedef struct r_anal_var_t {
 	char *regname; // name of the register
 } RAnalVar;
 
+// Refers to a variable or a struct field inside a variable, only for varsub
+R_DEPRECATE typedef struct r_anal_var_field_t {
+	char *name;
+	int delta;
+} RAnalVarField;
+
 // mul*value+regbase+regidx+delta
 typedef struct r_anal_value_t {
 	int absolute; // if true, unsigned cast is used
@@ -1660,8 +1666,8 @@ R_API void r_anal_reflines_str_free(RAnalRefStr *refstr);
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ* pj);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
-R_API R_DEPRECATE RList *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
-R_API RList *r_anal_var_list_dynamic(RAnal *anal, RAnalFunction *fcn, int kind);
+R_API R_DEPRECATE RList/*<RAnalVar *>*/ *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
+R_API R_DEPRECATE RList/*<RAnalVarField *>*/ *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind);
 
 // calling conventions API
 R_API bool r_anal_cc_exist(RAnal *anal, const char *convention);

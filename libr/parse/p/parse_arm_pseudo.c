@@ -280,7 +280,6 @@ static int parse(RParse *p, const char *data, char *str) {
 static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RList *spargs = NULL;
 	RList *bpargs = NULL;
-	RAnalVar *var;
 	RListIter *iter;
 	RAnal *anal = p->analb.anal;
 	char *oldstr, *newstr;
@@ -320,9 +319,10 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		}
 	}
 
-	bpargs = p->varlist (anal, f, 'b');
-	spargs = p->varlist (anal, f, 's');
+	bpargs = p->varlist (f, 'b');
+	spargs = p->varlist (f, 's');
 	bool ucase = IS_UPPER (*tstr);
+	RAnalVarField *var;
 	r_list_foreach (bpargs, iter, var) {
 		char *reg = anal->reg->name[R_REG_NAME_BP];
 		char *tmplt = NULL;
@@ -377,7 +377,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	}
 	r_list_foreach (spargs, iter, var) {
 		if (p->get_ptr_at) {
-			var->delta = p->get_ptr_at (p->user, f, var, addr);
+			var->delta = p->get_ptr_at (p->user, f, var->delta, addr);
 		}
 		if (var->delta > -10 && var->delta < 10) {
 			oldstr = r_str_newf ("[sp, %d]", var->delta);
