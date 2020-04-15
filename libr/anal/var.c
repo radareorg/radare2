@@ -172,92 +172,13 @@ R_API RAnalVar *r_anal_function_add_var(RAnalFunction *fcn, int delta, char kind
 	// free (name_val);
 }
 
-R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size,
-		bool isarg, const char *name) {
-	RRegItem *reg = NULL;
-	if (!a) {
-		return false;
+R_API void r_anal_function_var_set_type(RAnalVar *var, const char *type) {
+	char *nt = strdup (type);
+	if (!nt) {
+		return;
 	}
-	if (kind < 1) {
-		kind = R_ANAL_VAR_KIND_BPV;
-	}
-	if (!type) {
-		type = "int";
-	}
-	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
-	if (!fcn) {
-		return false;
-	}
-	if ((size == -1) && (delta == -1)) {
-		// TODO: use hashtable here
-		RList *list = r_anal_var_list (a, fcn, kind);
-		RListIter *iter;
-		RAnalVar *var;
-		r_list_foreach (list, iter, var) {
-			if (!strcmp (var->name, name)) {
-				delta = var->delta;
-				size = var->size;
-				break;
-			}
-		}
-		r_list_free (list);
-	}
-	switch (kind) {
-	case R_ANAL_VAR_KIND_REG:
-	case R_ANAL_VAR_KIND_BPV:
-	case R_ANAL_VAR_KIND_SPV:
-		break;
-	default:
-		eprintf ("Invalid var kind '%c'\n", kind);
-		return false;
-	}
-	if (kind == 'r') {
-		reg = r_reg_index_get (a->reg, R_ABS (delta));
-		if (!reg) {
-			eprintf ("Register wasn't found at the given delta\n");
-			return false;
-		}
-	}
-	const char *var_def = sdb_fmt ("%d,%s,%d,%s,%s", isarg, type, size, name, reg ? reg->name : NULL);
-	if (scope > 0) {
-		char *sign = delta >= 0 ? "": "_";
-		/* local variable */
-		const char *fcn_key = sdb_fmt ("fcn.0x%"PFMT64x ".%c", fcn->addr, kind);
-		const char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", fcn->addr, kind, scope, sign, R_ABS (delta));
-		const char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, scope, name);
-		const char *shortvar = sdb_fmt ("%d.%s%d", scope, sign, R_ABS (delta));
-		const char *name_val = sdb_fmt ("%c,%d", kind, delta);
-		sdb_array_add (DB, fcn_key, shortvar, 0);
-		sdb_set (DB, var_key, var_def, 0);
-		sdb_set (DB, name_key, name_val, 0);
-		Sdb *TDB = a->sdb_types;
-		const char *type_kind = sdb_const_get (TDB, type, 0);
-		if (type_kind && r_str_startswith (type_kind, "struct")) {
-			char *field;
-			int field_n;
-			char *type_key = r_str_newf ("%s.%s", type_kind, type);
-			for (field_n = 0; (field = sdb_array_get (TDB, type_key, field_n, NULL)); field_n++) {
-				char *field_key = r_str_newf ("%s.%s", type_key, field);
-				char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
-				ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
-				if (field_offset != 0) { // delete variables which are overlaid by structure
-					RAnalVar *var = r_anal_function_get_var (fcn, kind, delta + field_offset);
-					if (var) {
-						r_anal_function_delete_var (fcn, var);
-					}
-				}
-				free (field_type);
-				free (field_key);
-				free (field);
-			}
-			free (type_key);
-		}
-	} else {
-		/* global variable */
-		const char *var_global = sdb_fmt ("var.0x%"PFMT64x, fcn->addr);
-		sdb_array_add (DB, var_global, var_def, 0);
-	}
-	return true;
+	free (var->type);
+	var->type = nt;
 }
 
 // not static because used in function.c, but also not public API

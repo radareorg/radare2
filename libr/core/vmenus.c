@@ -2936,8 +2936,7 @@ static void variable_set_type (RCore *core, ut64 addr, int vindex, const char *t
 
 	r_list_foreach (list, iter, var) {
 		if (vindex == 0) {
-			r_anal_var_retype (core->anal, fcn->addr,
-				R_ANAL_VAR_SCOPE_LOCAL, -1, var->kind, type, -1, var->isarg, var->name);
+			r_anal_function_var_set_type (var, type);
 			break;
 		}
 		vindex--;

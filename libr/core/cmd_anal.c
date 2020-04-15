@@ -1320,7 +1320,7 @@ static int var_cmd(RCore *core, const char *str) {
 				free (ostr);
 				return false;
 			}
-			r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, v1->isarg, p);
+			r_anal_function_var_set_type (v1, type);
 			free (ostr);
 			return true;
 		} else {

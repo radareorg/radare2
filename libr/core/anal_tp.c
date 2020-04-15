@@ -138,7 +138,7 @@ static void __var_retype(RAnal *anal, RAnalVar *var, const char *vname, const ch
 	} else if (r_str_startswith (tmp1, "int")) {
 		r_strbuf_set (sb, "int32_t");
 	}
-	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, r_strbuf_get (sb), var->size, var->isarg, var->name);
+	r_anal_function_var_set_type (var, r_strbuf_get (sb));
 	r_strbuf_free (sb);
 }
 
