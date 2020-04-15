@@ -1583,10 +1583,8 @@ R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind,
 R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff);
 R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kind,
 		const char *type, int size, bool isarg, const char *name);
-R_API void r_anal_var_free(RAnalVar *var);
-R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind);
-R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope, int delta);
-R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int type, const char *name);
+R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
+R_API int r_anal_var_delete_all(RAnal *a, ut64 addr, const char kind);
 R_API RAnalVar *r_anal_function_add_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
 R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta) ;

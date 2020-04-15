@@ -785,7 +785,6 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			}
 		}
 		free (type);
-		r_anal_var_free (lvar);
 	}
 	r_list_free (list);
 	// Type propgation from caller to callee function for stack based arguments

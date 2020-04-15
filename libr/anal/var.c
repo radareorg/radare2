@@ -241,7 +241,10 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 				char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
 				ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
 				if (field_offset != 0) { // delete variables which are overlaid by structure
-					r_anal_var_delete (a, addr, kind, scope, delta + field_offset);
+					RAnalVar *var = r_anal_function_get_var (fcn, kind, delta + field_offset);
+					if (var) {
+						r_anal_function_delete_var (fcn, var);
+					}
 				}
 				free (field_type);
 				free (field_key);
@@ -257,6 +260,16 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 	return true;
 }
 
+// not static because used in function.c, but also not public API
+void r_anal_var_free(RAnalVar *av) {
+	if (av) {
+		free (av->name);
+		free (av->regname);
+		free (av->type);
+		free (av);
+	}
+}
+
 R_API int r_anal_var_delete_all(RAnal *a, ut64 addr, const char kind) {
 	r_return_val_if_fail (a, 0);
 	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
@@ -265,8 +278,7 @@ R_API int r_anal_var_delete_all(RAnal *a, ut64 addr, const char kind) {
 		RListIter *iter;
 		RList *list = r_anal_var_list (a, fcn, kind);
 		r_list_foreach (list, iter, v) {
-			// r_anal_var_delete (a, addr, kind, v->scope, v->delta);
-			r_anal_var_delete (a, addr, kind, 1, v->delta);
+			r_anal_function_delete_var (fcn, v);
 		}
 		// XXX: i don't think we want to allocate and free by hand. r_anal_var_delete should be the list->free already
 		r_list_free (list);
@@ -274,52 +286,16 @@ R_API int r_anal_var_delete_all(RAnal *a, ut64 addr, const char kind) {
 	return 0;
 }
 
-R_API int r_anal_var_delete(RAnal *a, ut64 addr, const char kind, int scope, int delta) {
-	RAnalFunction *fcn = r_anal_get_function_at (a, addr);
-	if (!fcn) {
-		return false;
-	}
-	RAnalVar *av = r_anal_function_get_var (fcn, kind, delta);
-	if (!av) {
-		return false;
-	}
-	if (scope > 0) {
-		char *sign = "";
-		if (delta < 0) {
-			delta = -delta;
-			sign = "_";
+R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
+	size_t i;
+	for (i = 0; i < r_pvector_len (&fcn->vars); i++) {
+		RAnalVar *v = r_pvector_at (&fcn->vars, i);
+		if (v == var) {
+			r_pvector_remove_at (&fcn->vars, i);
+			r_anal_var_free (v);
+			return;
 		}
-		char *fcn_key = sdb_fmt ("fcn.0x%"PFMT64x ".%c", addr, kind);
-		char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
-		char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, scope, av->name);
-		char *shortvar = sdb_fmt ("%d.%s%d", scope, sign, delta);
-		sdb_array_remove (DB, fcn_key, shortvar, 0);
-		sdb_unset (DB, var_key, 0);
-		sdb_unset (DB, name_key, 0);
-		if (*sign) {
-			delta = -delta;
-		}
-	} else {
-		const char *var_global = sdb_fmt ("var.0x%"PFMT64x, addr);
-		const char *var_def = sdb_fmt ("%c.%s,%d,%s", kind, av->type, av->size, av->name);
-		sdb_array_remove (DB, var_global, var_def, 0);
 	}
-	r_anal_var_free (av);
-	r_anal_var_access_clear (a, addr, scope, delta);
-	return true;
-}
-
-R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, const char *name) {
-	if (!a || !fcn) {
-		return false;
-	}
-	bool ret = false;
-	RAnalVar *var = r_anal_function_get_var_byname (fcn, name);
-	if (var) {
-		ret = r_anal_var_delete (a, fcn->addr, var->kind, 1, var->delta);
-		r_anal_var_free (var);
-	}
-	return ret;
 }
 
 R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name) {
@@ -343,15 +319,6 @@ R_API RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta
 		}
 	}
 	return NULL;
-}
-
-R_API void r_anal_var_free(RAnalVar *av) {
-	if (av) {
-		free (av->name);
-		free (av->regname);
-		free (av->type);
-		free (av);
-	}
 }
 
 // TODO: This should be just r_anal_var_addr(RAnalVar *) without querying by name

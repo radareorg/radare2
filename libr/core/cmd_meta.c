@@ -993,7 +993,6 @@ void r_comment_vars(RCore *core, const char *input) {
 			free (heap_comment);
 			break;
 		}
-		r_anal_var_free (var);
 		if (!r_anal_function_get_var (fcn, input[0], idx)) {
 			eprintf ("can't find variable at given offset\n");
 		} else {
@@ -1025,7 +1024,6 @@ void r_comment_vars(RCore *core, const char *input) {
 			eprintf ("can't find variable named `%s`\n",name);
 			break;
 		}
-		r_anal_var_free (var);
 		if (!r_anal_function_get_var (fcn, input[0], idx)) {
 			eprintf ("can't find variable at given offset\n");
 			break;
@@ -1046,7 +1044,6 @@ void r_comment_vars(RCore *core, const char *input) {
 			r_meta_set_var_comment (core->anal, input[0], var->delta, fcn->addr, comment);
 			free (comment);
 		}
-		r_anal_var_free (var);
 		}
 		break;
 	}

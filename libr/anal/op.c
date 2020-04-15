@@ -43,7 +43,6 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 	if (!op) {
 		return false;
 	}
-	r_anal_var_free (op->var);
 	op->var = NULL;
 	r_anal_value_free (op->src[0]);
 	r_anal_value_free (op->src[1]);

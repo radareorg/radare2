@@ -4118,7 +4118,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					ds_begin_comment (ds);
 					if (v) {
 						ds_comment (ds, true, "; var %s", v->name);
-						r_anal_var_free (v);
 					} else {
 						ds_comment (ds, true, "; var %d", -(int)refaddr);
 					}

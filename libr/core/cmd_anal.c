@@ -1248,7 +1248,6 @@ static int var_cmd(RCore *core, const char *str) {
 				if (v1) {
 					r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
 							v1->kind, old_name, new_name, true);
-					r_anal_var_free (v1);
 				} else {
 					eprintf ("Cant find var by name\n");
 				}
@@ -1285,7 +1284,6 @@ static int var_cmd(RCore *core, const char *str) {
 				return false;
 			}
 			r_anal_var_display (core->anal, v1->delta, v1->kind, v1->type);
-			r_anal_var_free (v1);
 			free (ostr);
 		} else {
 			RListIter *iter;
@@ -1326,9 +1324,7 @@ static int var_cmd(RCore *core, const char *str) {
 				free (ostr);
 				return false;
 			}
-			r_anal_var_retype (core->anal, fcn->addr,
-					R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, v1->isarg, p);
-			r_anal_var_free (v1);
+			r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, v1->isarg, p);
 			free (ostr);
 			return true;
 		} else {
@@ -1362,15 +1358,17 @@ static int var_cmd(RCore *core, const char *str) {
 		if (str[2] == '*') {
 			r_anal_var_delete_all (core->anal, fcn->addr, type);
 		} else {
+			RAnalVar *var = NULL;
 			if (IS_DIGIT (str[2])) {
-				r_anal_var_delete (core->anal, fcn->addr,
-						type, 1, (int)r_num_math (core->num, str + 1));
+				var = r_anal_function_get_var (fcn, type, (int)r_num_math (core->num, str + 1));
 			} else {
 				char *name = r_str_trim_dup (str + 2);
 				if (name) {
-					r_anal_var_delete_byname (core->anal, fcn, type, name);
-					free (name);
+					var = r_anal_function_get_var_byname (fcn, name);
 				}
+			}
+			if (var) {
+				r_anal_function_delete_var (fcn, var);
 			}
 		}
 		break;
@@ -1404,9 +1402,7 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			rw = (str[1] == 'g')? 0: 1;
 			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
-			r_anal_var_access (core->anal, fcn->addr, str[0],
-					R_ANAL_VAR_SCOPE_LOCAL, idx, ptr, rw, addr);
-			r_anal_var_free (var);
+			r_anal_var_access (core->anal, fcn->addr, str[0], R_ANAL_VAR_SCOPE_LOCAL, idx, ptr, rw, addr);
 		} else {
 			eprintf ("Missing argument\n");
 		}
@@ -7182,7 +7178,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					free (res);
 					free (res1);
 					R_FREE (name);
-					r_anal_var_free (var);
 					r_list_free (list);
 					r_list_free (list1);
 					break;
