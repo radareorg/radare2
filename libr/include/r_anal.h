@@ -730,13 +730,15 @@ typedef enum {
 // generic for args and locals
 typedef struct r_anal_var_t {
 	char *name; // name of the variable
-	char *regname; // name of the register
 	char *type; // cparse type of the variable
 	RAnalVarKind kind;
 	int size;
 	bool isarg;
-	int argnum;
 	int delta;   /* delta offset inside stack frame */
+
+	// below members are just for caching, TODO: remove them and do it better
+	int argnum;
+	char *regname; // name of the register
 } RAnalVar;
 
 // mul*value+regbase+regidx+delta
@@ -1588,6 +1590,7 @@ R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
 R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
+R_API int r_anal_function_var_get_argnum(RAnalFunction *fcn, RAnalVar *var);
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
 

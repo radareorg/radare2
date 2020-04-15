@@ -290,6 +290,30 @@ R_API bool r_anal_function_var_rename(RAnalFunction *fcn, RAnalVar *var, const c
 	return true;
 }
 
+R_API int r_anal_function_var_get_argnum(RAnalFunction *fcn, RAnalVar *var) {
+	r_return_val_if_fail (fcn && var, -1);
+	RAnal *anal = fcn->anal;
+	if (!var->isarg || var->kind != R_ANAL_VAR_KIND_REG) { // TODO: support bp and sp too
+		return -1;
+	}
+	if (!var->regname) {
+		return -1;
+	}
+	RRegItem *reg = r_reg_get (anal->reg, var->regname, -1);
+	if (!reg) {
+		return -1;
+	}
+	int i;
+	int arg_max = fcn->cc ? r_anal_cc_max_arg (anal, fcn->cc) : 0;
+	for (i = 0; i < arg_max; i++) {
+		const char *reg_arg = r_anal_cc_arg (anal, fcn->cc, i);
+		if (reg_arg && !strcmp (reg->name, reg_arg)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 // Used for linking reg based arg and local-var like "mov [local_8h], rsi"
 static void r_anal_var_link(RAnal *a, ut64 addr, RAnalFunction *fcn, RAnalVar *var) {
 	const char *inst_key = sdb_fmt ("inst.0x%" PFMT64x ".lvar", addr);
@@ -913,6 +937,11 @@ R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAn
 	cache->rvars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
 	cache->svars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_SPV);
 	r_list_sort (cache->bvars, (RListComparator)var_comparator);
+	RListIter *it;
+	RAnalVar *var;
+	r_list_foreach (cache->rvars, it, var) {
+		var->argnum = r_anal_function_var_get_argnum (fcn, var);
+	}
 	r_list_sort (cache->rvars, (RListComparator)regvar_comparator);
 	r_list_sort (cache->svars, (RListComparator)var_comparator);
 }
