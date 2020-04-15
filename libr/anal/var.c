@@ -342,12 +342,6 @@ R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name) {
 	return ret;
 }
 
-/* (columns) elements in the array value */
-#define R_ANAL_VAR_SDB_KIND 0 /* char */
-#define R_ANAL_VAR_SDB_TYPE 1 /* string */
-#define R_ANAL_VAR_SDB_SIZE 2 /* number */
-#define R_ANAL_VAR_SDB_NAME 3 /* string */
-
 R_API bool r_anal_var_check_name(const char *name) {
 	return !isdigit (*name) && strcspn (name, "., =/");
 }
@@ -778,83 +772,21 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 	if (!a || !fcn) {
 		return NULL;
 	}
-	RList *list = r_list_newf ((RListFree) r_anal_var_free);
+	RList *list = r_list_new ();
 	if (kind < 1) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
 	}
-	char *varlist = sdb_get (DB, sdb_fmt ("fcn.0x%"PFMT64x ".%c", fcn->addr, kind), 0);
-	if (varlist && *varlist) {
-		char *next, *ptr = varlist;
-		do {
-			char *word = sdb_anext (ptr, &next);
-			if (r_str_nlen (word, 3) < 3) {
-				return NULL;
+	void **it;
+	r_pvector_foreach (&fcn->vars, it) {
+		RAnalVar *var = *it;
+		if (var->kind == kind) {
+			r_list_push (list, var);
+			if (dynamicVars) { // make dynamic variables like structure fields
+				// TODO: this probably leaks hard
+				var_add_structure_fields_to_list (a, var, var->name, var->delta, list);
 			}
-			const char *vardef = sdb_const_get (DB, sdb_fmt (
-				"var.0x%"PFMT64x ".%c.%s",
-				fcn->addr, kind, word), 0);
-			if (word[2] == '_') {
-				word[2] = '-';
-			}
-			int delta = atoi (word + 2);
-			if (vardef) {
-				struct VarType vt = { 0 };
-				sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
-				sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
-				RAnalVar *av = R_NEW0 (RAnalVar);
-				if (!av) {
-					free (varlist);
-					r_list_free (list);
-					return NULL;
-				}
-				if (!vt.name || !vt.type) {
-					// This should be properly fixed
-					eprintf ("Warning null var in fcn.0x%"PFMT64x ".%c.%s\n",
-						fcn->addr, kind, word);
-					free (av);
-					continue;
-				}
-				av->delta = delta;
-				av->kind = kind;
-				av->name = strdup (vt.name);
-				av->isarg = vt.isarg;
-				av->regname = strdup (vt.regname);
-				av->size = vt.size;
-				av->type = strdup (vt.type);
-				if (av->isarg && kind == R_ANAL_VAR_KIND_REG) {
-					bool found = false;
-					RRegItem *reg = r_reg_get (a->reg, vt.regname, -1);
-					if (reg) {
-						int i;
-						int arg_max = fcn->cc ? r_anal_cc_max_arg (a, fcn->cc) : 0;
-						for (i = 0; i < arg_max; i++) {
-							const char *reg_arg = r_anal_cc_arg (a, fcn->cc, i);
-							if (reg_arg && !strcmp (reg->name, reg_arg)) {
-								if (delta != reg->index) {
-									delta = reg->index;
-								}
-								av->argnum = i;
-								found = true;
-								break;
-							}
-						}
-					}
-					if (!found) {
-						av->argnum = delta;
-					}
-				}
-				r_list_append (list, av);
-				if (dynamicVars) { // make dynamic variables like structure fields
-					var_add_structure_fields_to_list (a, av, vt.name, delta, list);
-				}
-				sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
-			} else {
-				eprintf ("Cannot find var definition for '%s'\n", word);
-			}
-			ptr = next;
-		} while (next);
+		}
 	}
-	free (varlist);
 	return list;
 }
 

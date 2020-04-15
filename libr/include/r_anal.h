@@ -1658,7 +1658,7 @@ R_API void r_anal_reflines_str_free(RAnalRefStr *refstr);
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ* pj);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
-R_API RList *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
+R_API R_DEPRECATE RList *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
 R_API RList *r_anal_var_list_dynamic(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API
