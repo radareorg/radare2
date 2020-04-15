@@ -1,3 +1,6 @@
+#ifndef HEXAGON_INSN_H
+#define HEXAGON_INSN_H
+
 enum HEX_INS {
 	HEX_INS_UNKNOWN,
 	HEX_INS_IMMEXT,
@@ -2800,3 +2803,5 @@ enum HEX_INS {
 	HEX_INS_DUPLEX_P0___CMP_EQ__RU___U2____MEMW__RS____U4_2____RT,
 	HEX_INS_DUPLEX_P0___CMP_EQ__RU___U2____P0___CMP_EQ__RS___U2_,
 };
+
+#endif
