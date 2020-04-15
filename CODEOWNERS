@@ -26,6 +26,9 @@ libr/reg/ @XVilka @radare
 libr/socket/ @XVilka @yossizap
 libr/syscall/ @ret2libc @radare
 libr/util/ @ret2libc @thestr4ng3r
+shlr/gdb/ @yossizap
 shlr/ptrace-wrap/ @thestr4ng3r
 shlr/radare2-shell-parser/ @ret2libc
 shlr/tcc/ @XVilka @radare
+shlr/w32dbg_wrap/ @yossizap
+shlr/windbg/ @yossizap
