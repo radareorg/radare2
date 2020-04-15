@@ -275,7 +275,11 @@ R_API int r_anal_var_delete_all(RAnal *a, ut64 addr, const char kind) {
 }
 
 R_API int r_anal_var_delete(RAnal *a, ut64 addr, const char kind, int scope, int delta) {
-	RAnalVar *av = r_anal_var_get (a, addr, kind, delta);
+	RAnalFunction *fcn = r_anal_get_function_at (a, addr);
+	if (!fcn) {
+		return false;
+	}
+	RAnalVar *av = r_anal_function_get_var (fcn, kind, delta);
 	if (!av) {
 		return false;
 	}
@@ -330,49 +334,15 @@ R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *n
 	return NULL;
 }
 
-R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int delta) {
-	struct VarType vt = {
-		0
-	};
-	char *sign = "";
-	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
-	if (!fcn) {
-		return NULL;
+R_API RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta) {
+	void **it;
+	r_pvector_foreach (&fcn->vars, it) {
+		RAnalVar *var = *it;
+		if (var->kind == kind && var->delta == delta) {
+			return var;
+		}
 	}
-	if (delta < 0) {
-		delta = -delta;
-		sign = "_";
-	}
-	const char *varkey = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d",
-			fcn->addr, kind, 1, sign, delta);
-	const char *vardef = sdb_const_get (DB, varkey, 0);
-	if (!vardef) {
-		return NULL;
-	}
-	if (*sign) {
-		delta = -delta;
-	}
-	sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
-	sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
-
-	RAnalVar *av = R_NEW0 (RAnalVar);
-	if (!av) {
-		sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
-		return NULL;
-	}
-	av->delta = delta;
-	av->isarg = vt.isarg;
-	av->name = strdup (vt.name ? vt.name : "unkown_var");
-	av->size = vt.size;
-	av->type = strdup (vt.type ? vt.type : "unkown_type");
-	av->regname = strdup (vt.regname ? vt.regname : "unkown_regname");
-	av->kind = kind;
-	sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
-	// TODO:
-	// get name from sdb
-	// get size from sdb
-	// get type from sdb
-	return av;
+	return NULL;
 }
 
 R_API void r_anal_var_free(RAnalVar *av) {
