@@ -4,14 +4,6 @@
 #include <r_util.h>
 #include <r_list.h>
 
-#define SDB_VARUSED_FMT "qzdq"
-struct VarUsedType {
-	ut64 fcn_addr;
-	char *type;
-	ut32 scope;
-	st64 delta;
-};
-
 R_API RAnalOp *r_anal_op_new() {
 	RAnalOp *op = R_NEW (RAnalOp);
 	r_anal_op_init (op);
@@ -43,7 +35,6 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 	if (!op) {
 		return false;
 	}
-	op->var = NULL;
 	r_anal_value_free (op->src[0]);
 	r_anal_value_free (op->src[1]);
 	r_anal_value_free (op->src[2]);
@@ -67,47 +58,6 @@ R_API void r_anal_op_free(void *_op) {
 	r_anal_op_fini (_op);
 	memset (_op, 0, sizeof (RAnalOp));
 	free (_op);
-}
-
-R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var, RAnalFunction **fcn) {
-	const char *var_local = sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s",
-			faddr, 1, var->delta, "reads");
-	const char *xss = sdb_const_get (anal->sdb_fcns, var_local, 0);
-	ut64 addr = r_num_math (NULL, xss);
-	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".lvar", addr);
-	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
-
-	if (!var_def) {
-		free (inst_key);
-		return NULL;
-	}
-	struct VarUsedType vut;
-	RAnalVar *res = NULL;
-	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
-		*fcn = r_anal_get_function_at (anal, vut.fcn_addr);
-		if (*fcn) {
-			res = r_anal_function_get_var (*fcn, vut.type[0], vut.delta);
-		}
-		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
-	}
-	free (inst_key);
-	return res;
-}
-
-static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op, RAnalFunction **fcn) {
-	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".vars", op->addr);
-	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
-	struct VarUsedType vut;
-	RAnalVar *res = NULL;
-	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
-		*fcn = r_anal_get_function_at (anal, vut.fcn_addr);
-		if (*fcn) {
-			res = r_anal_function_get_var (*fcn, vut.type[0], vut.delta);
-		}
-		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
-	}
-	free (inst_key);
-	return res;
 }
 
 static int defaultCycles(RAnalOp *op) {
@@ -162,15 +112,6 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		/* consider at least 1 byte to be part of the opcode */
 		if (op->nopcode < 1) {
 			op->nopcode = 1;
-		}
-		if (mask & R_ANAL_OP_MASK_VAL) {
-			//free the previous var in op->var
-			RAnalFunction *fcn;
-			RAnalVar *tmp = get_used_var (anal, op, &fcn);
-			if (tmp) {
-				op->var = tmp;
-				op->fcn = fcn;
-			}
 		}
 	} else if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
 		op->type = R_ANAL_OP_TYPE_ILL;

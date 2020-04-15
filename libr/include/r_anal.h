@@ -806,8 +806,6 @@ typedef struct r_anal_op_t {
 	int ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr;  /* stack pointer */
 	int refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
-	R_DEPRECATE RAnalFunction *fcn; // The function that contains var
-	R_DEPRECATE RAnalVar *var;  /* local var/arg used by this instruction, TODO: remove this, same instruction could be part of multiple fcns with completely different vars! */
 	RAnalValue *src[3];
 	RAnalValue *dst;
 	RStrBuf esil;
@@ -1455,7 +1453,6 @@ R_API RAnalOp *r_anal_op_new(void);
 R_API void r_anal_op_free(void *op);
 R_API void r_anal_op_init(RAnalOp *op);
 R_API bool r_anal_op_fini(RAnalOp *op);
-R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var, RAnalFunction **fcn);
 R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name);
 R_API bool r_anal_op_is_eob(RAnalOp *op);
 R_API RList *r_anal_op_list_new(void);
@@ -1600,6 +1597,8 @@ R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *n
 R_API int r_anal_function_var_get_argnum(RAnalFunction *fcn, RAnalVar *var);
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
+R_API RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 op_addr, R_NULLABLE RAnalFunction **fcn_out);
+R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *var, R_NULLABLE RAnalFunction **fcn_out);
 
 typedef struct r_anal_fcn_vars_cache {
 	RList *bvars;

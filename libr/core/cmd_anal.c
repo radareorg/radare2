@@ -1013,8 +1013,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	}
 }
 
-static int cmd_an(RCore *core, bool use_json, const char *name)
-{
+static int cmd_an(RCore *core, bool use_json, const char *name) {
 	int ret = 0;
 	ut64 off = core->offset;
 	RAnalOp op;
@@ -1028,31 +1027,23 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 
 	r_anal_op (core->anal, &op, off,
 			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
+	RAnalFunction *varfcn;
+	RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr, &varfcn);
 
 	tgt_addr = op.jump != UT64_MAX? op.jump: op.ptr;
-	if (op.var) {
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
-		if (fcn) {
-			RAnalVar *bar = r_anal_function_get_var_byname (fcn, op.var->name);
-			if (bar) {
-				if (name) {
-					ret = r_anal_function_var_rename (fcn, bar, name, true)
-						? 0
-						: -1;
-				} else if (!use_json) {
-					r_cons_println (bar->name);
-				} else {
-					pj_o (pj);
-					pj_ks (pj, "name", bar->name);
-					pj_ks (pj, "type", "var");
-					pj_kn (pj, "offset", tgt_addr);
-					pj_end (pj);
-				}
-			} else {
-				eprintf ("Cannot find variable\n");
-			}
+	if (var) {
+		if (name) {
+			ret = r_anal_function_var_rename (varfcn, var, name, true)
+				? 0
+				: -1;
+		} else if (!use_json) {
+			r_cons_println (var->name);
 		} else {
-			eprintf ("Cannot find function\n");
+			pj_o (pj);
+			pj_ks (pj, "name", var->name);
+			pj_ks (pj, "type", "var");
+			pj_kn (pj, "offset", tgt_addr);
+			pj_end (pj);
 		}
 	} else if (tgt_addr != UT64_MAX) {
 		RAnalFunction *fcn = r_anal_get_function_at (core->anal, tgt_addr);
@@ -1228,8 +1219,9 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			char *old_name = strchr (new_name, ' ');
 			if (!old_name) {
-				if (op && op->var) {
-					old_name = op->var->name;
+				RAnalVar *var = op ? r_anal_get_used_function_var (core->anal, op->addr, NULL) : NULL;
+				if (var) {
+					old_name = var->name;
 				} else {
 					eprintf ("Cannot find var @ 0x%08"PFMT64x"\n", core->offset);
 					r_anal_op_free (op);
