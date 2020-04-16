@@ -65,6 +65,7 @@ R_API void r_vector_clear(RVector *vec);
 
 // frees the vector and calls vec->free on every element if set.
 R_API void r_vector_free(RVector *vec);
+R_API void r_vector_fini(RVector *vec);
 
 // the returned vector will have the same capacity as vec.
 R_API RVector *r_vector_clone(RVector *vec);

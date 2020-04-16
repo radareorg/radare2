@@ -213,12 +213,27 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 }
 
 R_API char *r_anal_get_reg_profile(RAnal *anal) {
-	return (anal && anal->cur && anal->cur->get_reg_profile)
+	r_return_val_if_fail (anal, NULL);
+	if (anal->arch && anal->arch->cur && anal->arch->cur->registers) {
+		return anal->arch->cur->registers (anal->arch);
+	}
+	return (anal->cur && anal->cur->get_reg_profile)
 		? anal->cur->get_reg_profile (anal) : NULL;
 }
 
 // deprecate.. or at least reuse get_reg_profile...
 R_API bool r_anal_set_reg_profile(RAnal *anal) {
+	if (anal->arch && anal->arch->cur && anal->arch->cur->registers) {
+		char *r = anal->arch->cur->registers (anal->arch);
+		if (r) {
+			if (*r) {
+				r_reg_set_profile_string (anal->reg, r);
+			}
+			free (r);
+			return true;
+		}
+		return false;
+	}
 	bool ret = false;
 	if (anal && anal->cur && anal->cur->set_reg_profile) {
 		ret = anal->cur->set_reg_profile (anal);

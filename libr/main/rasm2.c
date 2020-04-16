@@ -2,6 +2,7 @@
 
 #include <r_anal.h>
 #include <r_asm.h>
+#include <r_arch.h>
 #include <r_lib.h>
 #include <r_types.h>
 #include <r_util.h>
@@ -13,6 +14,7 @@ typedef struct {
 	RLib *l;
 	RAsm *a;
 	RAnal *anal;
+	RArch *arch;
 	bool oneliner;
 	bool coutput;
 	bool json;
@@ -22,11 +24,16 @@ typedef struct {
 static void __load_plugins(RAsmState *as);
 
 static void __as_set_archbits(RAsmState *as) {
+	int sysbits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
+#if 1
 	r_asm_use (as->a, R_SYS_ARCH);
 	r_anal_use (as->anal, R_SYS_ARCH);
-	int sysbits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
 	r_asm_set_bits (as->a, sysbits);
 	r_anal_set_bits (as->anal, sysbits);
+#else
+	r_arch_use (as->arch, R_SYS_ARCH);
+	r_arch_set_bits (as->arch, sys_bits);
+#endif
 }
 
 static RAsmState *__as_new() {
@@ -35,6 +42,9 @@ static RAsmState *__as_new() {
 		as->l = r_lib_new (NULL, NULL);
 		as->a = r_asm_new ();
 		as->anal = r_anal_new ();
+		as->arch = r_arch_new ();
+		as->a->arch = as->arch;
+		as->anal->arch = as->arch;
 		__load_plugins (as);
 		__as_set_archbits (as);
 	}
@@ -44,6 +54,7 @@ static RAsmState *__as_new() {
 static void __as_free(RAsmState *as) {
 	r_asm_free (as->a);
 	r_anal_free (as->anal);
+	r_arch_free (as->arch);
 	r_lib_free (as->l);
     	free (as);
 }
@@ -306,7 +317,7 @@ static int rasm_show_help(int v) {
 	return 0;
 }
 
-static int rasm_disasm(RAsmState *as, char *buf, ut64 offset, int len, int bits, int ascii, int bin, int hex) {
+static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int bits, int bin, int hex) {
 	RAsmCode *acode;
 	ut8 *data = NULL;
 	int ret = 0;
@@ -320,9 +331,6 @@ static int rasm_disasm(RAsmState *as, char *buf, ut64 offset, int len, int bits,
 		}
 		clen = len; // XXX
 		data = (ut8 *)buf;
-	} else if (ascii) {
-		clen = strlen (buf);
-		data = (ut8 *)buf;
 	} else {
 		clen = r_hex_str2bin (buf, NULL);
 		if ((int)clen < 1 || !(data = malloc (clen))) {
@@ -330,6 +338,7 @@ static int rasm_disasm(RAsmState *as, char *buf, ut64 offset, int len, int bits,
 			goto beach;
 		}
 		r_hex_str2bin (buf, data);
+		len = clen;
 	}
 
 	if (!len || clen <= len) {
@@ -340,7 +349,7 @@ static int rasm_disasm(RAsmState *as, char *buf, ut64 offset, int len, int bits,
 		RAnalOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
-			if (r_anal_op (as->anal, &aop, offset, data + ret, len - ret, R_ANAL_OP_MASK_ESIL) > 0) {
+			if (r_anal_op (as->anal, &aop, addr, data + ret, len - ret, R_ANAL_OP_MASK_ESIL) > 0) {
 				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
 			}
 			if (aop.size < 1) {
@@ -352,7 +361,7 @@ static int rasm_disasm(RAsmState *as, char *buf, ut64 offset, int len, int bits,
 		}
 	} else if (hex) {
 		RAsmOp op;
-		r_asm_set_pc (as->a, offset);
+		r_asm_set_pc (as->a, addr);
 		while ((len - ret) > 0) {
 			int dr = r_asm_disassemble (as->a, &op, data + ret, len - ret);
 			if (dr == -1 || op.size < 1) {
@@ -365,10 +374,10 @@ static int rasm_disasm(RAsmState *as, char *buf, ut64 offset, int len, int bits,
 				r_asm_op_get_asm (&op));
 			free (op_hex);
 			ret += op.size;
-			r_asm_set_pc (as->a, offset + ret);
+			r_asm_set_pc (as->a, addr+ ret);
 		}
 	} else {
-		r_asm_set_pc (as->a, offset);
+		r_asm_set_pc (as->a, addr);
 		if (!(acode = r_asm_mdisassemble (as->a, data, len))) {
 			goto beach;
 		}
@@ -476,6 +485,14 @@ static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
+/* arch callback */
+static int __lib_arch_cb(RLibPlugin *pl, void *user, void *data) {
+	RArchPlugin *hand = (RArchPlugin *)data;
+	RAsmState *as = (RAsmState *)user;
+	r_arch_add (as->arch, hand);
+	return true;
+}
+
 static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits,
                                  int bin, bool use_spp, bool rad, bool hexwords, const char *arch) {
 	if (rad) {
@@ -503,6 +520,7 @@ static void __load_plugins(RAsmState *as) {
 	}
 	r_lib_add_handler (as->l, R_LIB_TYPE_ASM, "(dis)assembly plugins", &__lib_asm_cb, NULL, as);
 	r_lib_add_handler (as->l, R_LIB_TYPE_ANAL, "analysis/emulation plugins", &__lib_anal_cb, NULL, as);
+	r_lib_add_handler (as->l, R_LIB_TYPE_ARCH, "unified architeture plugins", &__lib_arch_cb, NULL, as);
 
 	char *path = r_sys_getenv (R_LIB_ENV);
 	if (path && *path) {
@@ -542,7 +560,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	bool use_spp = false;
 	bool hexwords = false;
 	ut64 offset = 0;
-	int fd = -1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
+	int fd = -1, dis = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	int help = 0;
 	ut64 len = 0, idx = 0, skip = 0;
 	bool analinfo = false;
@@ -687,9 +705,6 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			goto beach;
 		}
 		r_anal_use (as->anal, arch);
-		if (!strcmp (arch, "bf")) {
-			ascii = 1;
-		}
 	} else if (env_arch) {
 		if (!r_asm_use (as->a, env_arch)) {
 			eprintf ("rasm2: Unknown asm plugin '%s'\n", env_arch);
@@ -760,7 +775,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 						length -= skip;
 					}
 				}
-				ret = rasm_disasm (as, (char *)buf, offset, len, as->a->bits, ascii, bin, dis - 1);
+				ret = rasm_disasm (as, offset, (char *)buf, len, as->a->bits, bin, dis - 1);
 			} else if (analinfo) {
 				ret = show_analinfo (as, (const char *)buf, offset);
 			} else {
@@ -787,8 +802,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 						}
 					}
 					if (dis) {
-						ret = rasm_disasm (as, content, offset,
-								length, as->a->bits, ascii, bin, dis - 1);
+						ret = rasm_disasm (as, offset, content,
+								length, as->a->bits, bin, dis - 1);
 					} else if (analinfo) {
 						ret = show_analinfo (as, (const char *)content, offset);
 					} else {
@@ -832,7 +847,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 					}
 				}
 				if (dis) {
-					ret = rasm_disasm (as, (char *)buf, offset, length, as->a->bits, ascii, bin, dis - 1);
+					ret = rasm_disasm (as, offset, (char *)buf, length, as->a->bits, bin, dis - 1);
 				} else if (analinfo) {
 					ret = show_analinfo (as, (const char *)buf, offset);
 				} else {
@@ -867,8 +882,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 				printf ("e asm.bits=%d\n", bits);
 				printf ("\"wa ");
 			}
-			ret = rasm_disasm (as, (char *)usrstr, offset, len,
-					as->a->bits, ascii, bin, dis - 1);
+			ret = rasm_disasm (as, offset, (char *)usrstr, len,
+					as->a->bits, bin, dis - 1);
 			free (usrstr);
 		} else if (analinfo) {
 			ret = show_analinfo (as, (const char *)opt.argv[opt.ind], offset);

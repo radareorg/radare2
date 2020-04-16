@@ -2624,12 +2624,15 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
+	core->arch = r_arch_new ();
 	core->assembler = r_asm_new ();
+	core->assembler->arch = core->arch;
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;
+	core->anal->arch = core->arch;
 	core->anal->log = r_core_anal_log;
 	core->anal->read_at = r_core_anal_read_at;
 	core->anal->flag_get = r_core_flag_get_by_spaces;
@@ -2671,6 +2674,7 @@ R_API bool r_core_init(RCore *core) {
 	r_bin_bind (core->bin, &(core->anal->binb));
 	r_bin_bind (core->bin, &(core->anal->binb));
 
+	r_io_bind (core->io, &(core->arch->iob));
 	r_io_bind (core->io, &(core->search->iob));
 	r_io_bind (core->io, &(core->print->iob));
 	r_io_bind (core->io, &(core->anal->iob));

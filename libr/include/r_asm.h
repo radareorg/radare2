@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -8,6 +8,7 @@
 #include <r_util.h>
 #include <r_parse.h>
 #include <r_bind.h>
+#include <r_arch.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,6 +118,7 @@ typedef struct r_asm_t {
 	HtPP *flags;
 	int seggrn;
 	bool pseudo;
+	RArch *arch;
 } RAsm;
 
 typedef bool (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
@@ -151,14 +153,14 @@ R_API int r_asm_mnemonics_byname(RAsm *a, const char *name);
 R_API void r_asm_set_user_ptr(RAsm *a, void *user);
 R_API bool r_asm_add(RAsm *a, RAsmPlugin *foo);
 R_API bool r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian);
-R_API int r_asm_is_valid(RAsm *a, const char *name);
+R_API bool r_asm_is_valid(RAsm *a, const char *name);
 R_API bool r_asm_use(RAsm *a, const char *name);
 R_API bool r_asm_use_assembler(RAsm *a, const char *name);
 R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits);
 R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu);
 R_API bool r_asm_set_big_endian(RAsm *a, bool big_endian);
-R_API int r_asm_set_syntax(RAsm *a, int syntax);
+R_API bool r_asm_set_syntax(RAsm *a, int syntax);
 R_API int r_asm_syntax_from_string(const char *name);
 R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
