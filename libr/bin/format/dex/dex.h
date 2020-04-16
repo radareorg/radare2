@@ -1,3 +1,6 @@
+#ifndef DEX_H
+#define DEX_H
+
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -160,3 +163,5 @@ struct r_bin_dex_str_t *r_bin_dex_get_strings (struct r_bin_dex_obj_t *bin);
 int dex_read_uleb128 (const ut8 *ptr, int size);
 int dex_read_sleb128 (const char *ptr, int size);
 int dex_uleb128_len (const ut8 *ptr, int size);
+
+#endif

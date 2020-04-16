@@ -32,6 +32,7 @@
 //       whitespaces, because we let cmd_substitution_arg create
 //       new arguments
 static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
+static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>";
 
 #if USE_TREESITTER
 #include <tree_sitter/api.h>
@@ -4626,6 +4627,11 @@ DEFINE_IS_TS_FCN(cmd_substitution_arg)
 DEFINE_IS_TS_FCN(args)
 DEFINE_IS_TS_FCN(arg)
 DEFINE_IS_TS_FCN(arg_identifier)
+DEFINE_IS_TS_FCN(pf_arg)
+DEFINE_IS_TS_FCN(pf_args)
+DEFINE_IS_TS_FCN(pf_dot_cmd_args)
+DEFINE_IS_TS_FCN(pf_new_args)
+DEFINE_IS_TS_FCN(pf_concatenation)
 DEFINE_IS_TS_FCN(double_quoted_arg)
 DEFINE_IS_TS_FCN(single_quoted_arg)
 DEFINE_IS_TS_FCN(concatenation)
@@ -4741,6 +4747,8 @@ static void handle_cmd_substitution_arg(struct tsr2cmd_state *state, TSNode arg,
 	const char *special_chars;
 	if (is_ts_double_quoted_arg (ts_node_parent (arg))) {
 		special_chars = SPECIAL_CHARS_DOUBLE_QUOTED;
+	} else if (is_ts_pf_arg (ts_node_parent (arg))) {
+		special_chars = SPECIAL_CHARS_PF;
 	} else {
 		special_chars = SPECIAL_CHARS_REGULAR;
 	}
@@ -4749,8 +4757,23 @@ static void handle_cmd_substitution_arg(struct tsr2cmd_state *state, TSNode arg,
 	r_list_append (edits, e);
 }
 
+static bool is_group_of_args(TSNode args) {
+	return is_ts_args (args) || is_ts_concatenation (args) ||
+		is_ts_double_quoted_arg (args) ||
+		is_ts_pf_concatenation (args) || is_ts_pf_args (args) ||
+		is_ts_pf_dot_cmd_args (args) || is_ts_pf_new_args (args);
+}
+
+static bool is_arg(TSNode args) {
+	return is_ts_arg (args) || is_ts_pf_arg (args);
+}
+
+static bool is_handled_args(TSNode args) {
+	return is_group_of_args (args) || is_arg (args) || is_ts_cmd_substitution_arg (args);
+}
+
 static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, RList *edits) {
-	if (is_ts_args (args) || is_ts_concatenation (args) || is_ts_double_quoted_arg (args)) {
+	if (is_group_of_args (args)) {
 		uint32_t n_children = ts_node_named_child_count (args);
 		uint32_t i;
 		for (i = 0; i < n_children; i++) {
@@ -4759,7 +4782,7 @@ static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, R
 		}
 	} else if (is_ts_cmd_substitution_arg (args)) {
 		handle_cmd_substitution_arg (state, args, edits);
-	} else if (is_ts_arg (args)) {
+	} else if (is_arg (args)) {
 		TSNode arg = ts_node_named_child (args, 0);
 		handle_substitution_args (state, arg, edits);
 	}
@@ -4889,7 +4912,7 @@ static bool substitute_args_do(struct tsr2cmd_state *state, RList *edits, TSNode
 static bool substitute_args(struct tsr2cmd_state *state, TSNode args, TSNode *new_command) {
 	RList *edits = r_list_newf ((RListFree)free_tsr2cmd_edit);
 
-	if (is_ts_args (args) || is_ts_arg (args)) {
+	if (is_handled_args (args)) {
 		handle_substitution_args (state, args, edits);
 	}
 
@@ -5171,7 +5194,6 @@ DEFINE_HANDLE_TS_FCN(tmp_fromto_command) {
 	TSNode to = ts_node_named_child (node, 2);
 	char *from_str = ts_node_handle_arg (state, node, from, 1);
 	char *to_str = ts_node_handle_arg (state, node, to, 2);
-	R_LOG_DEBUG ("tmp_fromto_command, changing fromto to (%s, %s)\n", from_str, to_str);
 
 	const char *fromvars[] = { "anal.from", "diff.from", "graph.from",
 		"io.buffer.from", "lines.from", "search.from", "zoom.from", NULL };
@@ -5179,6 +5201,7 @@ DEFINE_HANDLE_TS_FCN(tmp_fromto_command) {
 		"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
 	ut64 from_val = r_num_math (core->num, from_str);
 	ut64 to_val = r_num_math (core->num, to_str);
+	R_LOG_DEBUG ("tmp_fromto_command, changing fromto to (%" PFMT64x ", %" PFMT64x ")\n", from_val, to_val);
 
 	RConfigHold *hc = r_config_hold_new (core->config);
 	int i;
@@ -6155,6 +6178,10 @@ static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lines, bo
 	if (state.log) {
 		r_line_hist_add (state.input);
 	}
+
+	char *ts_str = ts_node_string (root);
+	R_LOG_DEBUG("s-expr %s\n", ts_str);
+	free (ts_str);
 
 	if (is_ts_commands (root) && !ts_node_has_error (root)) {
 		res = handle_ts_commands (&state, root);

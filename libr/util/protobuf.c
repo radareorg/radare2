@@ -13,11 +13,6 @@ typedef double ft64;
 #define WIRE_END_GRP   4 // groups (deprecated)
 #define WIRE_32_BIT    5 // fixed32, sfixed32, float
 
-R_PACKED (typedef struct _proto_head {
-	ut8 wire   : 3;
-	ut8 number : 5;
-}) proto_head_t;
-
 static const char* s_wire(const ut8 byte) {
 	switch (byte) {
 	case WIRE_VARINT:
@@ -68,30 +63,30 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 	ut32 var32 = 0;
 	ut64 var64 = 0;
 	const ut8* buffer = start;
-	const proto_head_t *h = NULL;
 	while (buffer >= start && buffer < end) {
 		if (!*buffer) {
 			return;
 		}
 		//ut8 byte = *buffer;
-		h = (proto_head_t*) buffer;
+		ut8 number = buffer[0] >> 3;
+		ut8 wire = buffer[0] & 0x3;
 		buffer++;
 		if (buffer < start || buffer >= end) {
 			eprintf ("\ninvalid buffer pointer.\n");
 			break;
-		} else if (h->wire > WIRE_32_BIT) {
-			eprintf ("\nunknown wire id (%u).\n", h->wire);
+		} else if (wire > WIRE_32_BIT) {
+			eprintf ("\nunknown wire id (%u).\n", wire);
 			return;
 		}
-		if (h->wire != WIRE_END_GRP) {
+		if (wire != WIRE_END_GRP) {
 			pad (sb, padcnt);
 			if (debug) {
-				r_strbuf_appendf (sb, "%u %-13s", h->number, s_wire(h->wire));
+				r_strbuf_appendf (sb, "%u %-13s", number, s_wire(wire));
 			} else {
-				r_strbuf_appendf (sb, "%u", h->number);
+				r_strbuf_appendf (sb, "%u", number);
 			}
 		}
-		switch (h->wire) {
+		switch (wire) {
 		case WIRE_VARINT:
 			{
 				st64* i = (st64*) &var64;

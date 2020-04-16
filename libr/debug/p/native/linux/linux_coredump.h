@@ -1,5 +1,8 @@
 /* coredump api */
 
+#ifndef LINUX_COREDUMP_H
+#define LINUX_COREDUMP_H
+
 #include "elf_specs.h"
 #include <sys/procfs.h>
 
@@ -210,3 +213,5 @@ extern ssize_t process_vm_readv(pid_t pid, const struct iovec *local_iov,
 
 bool linux_generate_corefile (RDebug *dbg, RBuffer *dest);
 int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
+
+#endif

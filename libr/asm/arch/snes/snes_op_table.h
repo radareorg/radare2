@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2013 - condret@runas-racer.com */
 
+#ifndef SNES_OP_TABLE_H
+#define SNES_OP_TABLE_H
+
 #include <r_types.h>
 
 enum {
@@ -284,3 +287,5 @@ static snes_op_t snes_op[]={
 {"inc 0x%04x,x",	SNES_OP_24BIT},
 {"sbc 0x%06x,x",	SNES_OP_32BIT}
 };
+
+#endif

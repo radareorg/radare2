@@ -1799,8 +1799,8 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		immediate = op->operands[1].immediate * op->operands[1].sign;
 		if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
 			bool imm32in64 = false;
-			if (a->bits == 64 && ((op->operands[0].type & OT_QWORD) | (op->operands[1].type & OT_QWORD))) {
-				if (!(op->operands[1].type & OT_CONSTANT) && op->operands[1].extended) {
+			if (a->bits == 64 && (op->operands[0].type & OT_QWORD)) {
+				if (op->operands[0].extended) {
 					data[l++] = 0x49;
 				} else {
 					data[l++] = 0x48;
@@ -1817,11 +1817,8 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				data[l++] = 0xb0 | op->operands[0].reg;
 				data[l++] = immediate;
 			} else {
-				if (a->bits == 64 &&
-				    ((!(op->operands[0].type & OT_QWORD) && (op->operands[1].type & OT_QWORD) &&
-				      immediate < UT32_MAX) ||
-				     ((op->operands[0].type & OT_QWORD) &&
-				      (immediate <= ST32_MAX || immediate >= 0xffffffff80000000LL /* -0x80000000 */)))) {
+				if (a->bits == 64 && (op->operands[0].type & OT_QWORD) &&
+				    (immediate <= ST32_MAX || immediate >= 0xffffffff80000000ULL /* -0x80000000 */)) {
 					data[l++] = 0xc7;
 					data[l++] = 0xc0 | op->operands[0].reg;
 					imm32in64 = true;

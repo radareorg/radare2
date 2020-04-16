@@ -3249,17 +3249,16 @@ static void static_debug_stop(void *u) {
 	r_debug_stop (dbg);
 }
 
-static void core_cmd_dbi (RCore *core, const char *input, ut64 idx) {
+static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 	int i;
 	char *p;
 	RBreakpointItem *bpi;
 	switch (input[2]) {
 	case ' ': // "dbi."
 		{
-			ut64 addr = idx;
-			int idx = r_bp_get_index_at (core->dbg->bp, addr);
-			if (idx != -1) {
-				r_cons_printf ("%d\n", idx);
+			const int index = r_bp_get_index_at (core->dbg->bp, idx);
+			if (index != -1) {
+				r_cons_printf ("%d\n", index);
 			}
 		}
 		break;
@@ -3272,9 +3271,9 @@ static void core_cmd_dbi (RCore *core, const char *input, ut64 idx) {
 		break;
 	case '.': // "dbi."
 		{
-			int idx = r_bp_get_index_at (core->dbg->bp, core->offset);
-			if (idx != -1) {
-				r_cons_printf ("%d\n", idx);
+			const int index = r_bp_get_index_at (core->dbg->bp, core->offset);
+			if (index != -1) {
+				r_cons_printf ("%d\n", index);
 			}
 		}
 		break;
