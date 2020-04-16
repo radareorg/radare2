@@ -2109,17 +2109,18 @@ static void show_drpi(RCore *core) {
 
 static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp" and "drp"
 	const char *ptr;
+	RReg *r = r_config_get_i (core->config, "cfg.debug")? core->dbg->reg: core->anal->reg;
 	switch (str[1]) {
 	case '\0': // "drp"
-		if (core->dbg->reg->reg_profile_str) {
-			r_cons_println (core->dbg->reg->reg_profile_str);
+		if (r->reg_profile_str) {
+			r_cons_println (r->reg_profile_str);
 		} else {
 			eprintf ("No register profile defined. Try 'dr.'\n");
 		}
 		break;
 	case 'c': // drpc
 		if (core->dbg->reg->reg_profile_cmt) {
-			r_cons_println (core->dbg->reg->reg_profile_cmt);
+			r_cons_println (r->reg_profile_cmt);
 		}
 		break;
 	case ' ': // "drp "
@@ -2131,11 +2132,11 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 			r_reg_parse_gdb_profile (ptr + 4);
 			break;
 		}
-		r_reg_set_profile (core->dbg->reg, str + 2);
+		r_reg_set_profile (r, str + 2);
 		r_debug_plugin_set_reg_profile (core->dbg, str + 2);
 		break;
 	case '.': { // "drp."
-		RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+		RRegSet *rs = r_reg_regset_get (r, R_REG_TYPE_GPR);
 		if (rs) {
 			eprintf ("size = %d\n", rs->arena->size);
 		}

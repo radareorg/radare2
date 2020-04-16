@@ -33,6 +33,29 @@ static void set_options(RConfigNode *node, ...) {
 	va_end (argp);
 }
 
+static bool set_arch(RCore *c, const char *name) {
+	RArch *a = c->arch;
+	RArchPlugin *ap = r_arch_get_plugin (a, name);
+	if (ap) {
+		RArchSetup setup = {
+			.bits = r_config_get_i (c->config, "asm.bits"),
+			.cpu = strdup (r_config_get (c->config, "asm.cpu")),
+			.endian = r_config_get_i (c->config, "cfg.bigendian")? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE,
+			.syntax = r_config_get_i (c->config, "asm.syntax"),
+		};
+		RArchSession *as = r_arch_session_new (a, ap, &setup);
+		if (as) {
+			c->assembler->asd = as;
+			c->assembler->asa = as;
+			c->anal->as = as;
+			// c->assembler->asd = as;
+			return true;
+		}
+	}
+	return false;
+}
+
+
 static bool isGdbPlugin(RCore *core) {
 	if (core->io && core->io->desc && core->io->desc->plugin) {
 		if (core->io->desc->plugin->name && !strcmp (core->io->desc->plugin->name, "gdb")) {
@@ -563,9 +586,11 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 
-	if (!r_asm_use (core->assembler, node->value)) {
-		eprintf ("asm.arch: cannot find (%s)\n", node->value);
-		return false;
+	if (!set_arch (core, node->value)) {
+		if (!r_asm_use (core->assembler, node->value)) {
+			eprintf ("asm.arch: cannot find (%s)\n", node->value);
+			return false;
+		}
 	}
 	//we should strdup here otherwise will crash if any r_config_set
 	//free the old value
@@ -730,12 +755,33 @@ static bool cb_asmbits(void *user, void *data) {
 #endif
 #endif
 				char *rp = core->dbg->h->reg_profile (core->dbg);
-				r_reg_set_profile_string (core->dbg->reg, rp);
-				r_reg_set_profile_string (core->anal->reg, rp);
+				if (!r_reg_set_profile_string (core->dbg->reg, rp)) {
+					eprintf ("Failed to set the debug regprofile\n");
+				}
+				if (!r_reg_set_profile_string (core->anal->reg, rp)) {
+					eprintf ("Failed to set the anal regprofile\n");
+				}
 				free (rp);
 			}
 		} else {
-			(void)r_anal_set_reg_profile (core->anal);
+			//  Create a new instance if needed
+			set_arch (core, r_config_get (core->config, "asm.arch"));
+			if (core->assembler->asd) {
+				// TODO: we should pick the profile from the anal->arch-session
+				const char *rp = core->assembler->asd->info.regprofile;
+				if (rp) {
+					if (!r_reg_set_profile_string (core->anal->reg, rp)) {
+						eprintf ("Failed to set the anal regprofile\n");
+					}
+					if (!r_reg_set_profile_string (core->dbg->reg, rp)) {
+						eprintf ("Failed to set the debug regprofile\n");
+					}
+				} else {
+					eprintf ("No regprofile provided by this pugin\n");
+				}
+			} else {
+				(void)r_anal_set_reg_profile (core->anal);
+			}
 		}
 	}
 	r_core_anal_cc_init (core);
@@ -753,8 +799,10 @@ static bool cb_asmbits(void *user, void *data) {
 			r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
 		}
 		/* set pcalign */
-		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
+		int v = core->assembler->asd
+			? core->assembler->asd->info.align
+			: r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		r_config_set_i (core->config, "asm.pcalign", v);
 	}
 	return ret;
 }

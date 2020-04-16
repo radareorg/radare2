@@ -3,6 +3,7 @@
 #include <r_core.h>
 #include <r_socket.h>
 #include <config.h>
+#include <r_arch.h>
 #include <r_util.h>
 #if __UNIX__
 #include <signal.h>
@@ -2528,6 +2529,11 @@ static int win_eprintf(const char *format, ...) {
 }
 #endif
 
+static int cb_arch_read_at(void *user, ut64 addr, R_OUT ut8 *buf, size_t len) {
+	RCore *core = (RCore *)user;
+	return r_io_read_at (core->io, addr, buf, len);
+}
+
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -2624,6 +2630,16 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
+	{
+		core->arch = r_arch_new ();
+		// just move this into RCore
+		RArchCallbacks *cbs = &core->arch->cbs;
+		cbs->user = core;
+		cbs->read_at = cb_arch_read_at;
+		// .get_offset
+		// .get_name
+	}
+		
 	core->assembler = r_asm_new ();
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);

@@ -26,8 +26,6 @@
 		vec->a = new_a; \
 		vec->capacity = new_capacity; \
 	} while (0)
-		
-		
 
 R_API void r_vector_init(RVector *vec, size_t elem_size, RVectorFree free, void *free_user) {
 	vec->a = NULL;
@@ -62,9 +60,15 @@ R_API void r_vector_clear(RVector *vec) {
 	vec->capacity = 0;
 }
 
+R_API void r_vector_fini(RVector *vec) {
+	if (vec) {
+		vector_free_elems (vec);
+		free (vec->a);
+	}
+}
+
 R_API void r_vector_free(RVector *vec) {
-	vector_free_elems (vec);
-	free (vec->a);
+	r_vector_fini (vec);
 	free (vec);
 }
 
@@ -99,6 +103,9 @@ R_API RVector *r_vector_clone(RVector *vec) {
 }
 
 R_API void *r_vector_index_ptr(RVector *vec, size_t index) {
+	if (index >= vec->capacity) {
+		return NULL;
+	}
 	return (char *)vec->a + vec->elem_size * index;
 }
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include "r_core.h"
 #include "config.h"
@@ -35,6 +35,7 @@ CB (debug, dbg)
 #define r_bp_add r_bp_plugin_add
 CB (bp, dbg->bp)
 CB (lang, lang)
+CB (arch, arch)
 CB (anal, anal)
 CB (asm, assembler)
 CB (parse, parser)
@@ -102,6 +103,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (LANG, "language plugins", lang);
 	DF (ANAL, "analysis plugins", anal);
 	DF (ASM, "(dis)assembler plugins", asm);
+	DF (ARCH, "unified architecture plugins", arch);
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
@@ -136,8 +138,7 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	RListIter *iter;
 	char *file;
 	r_list_foreach (files, iter, file) {
-		bool isScript = __isScriptFilename (file);
-		if (isScript) {
+		if (__isScriptFilename (file)) {
 			r_core_cmdf (core, ". %s/%s", homeplugindir, file);
 		}
 	}

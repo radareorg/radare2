@@ -94,6 +94,7 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 		sb->buf[l] = 0;
 	}
 	sb->len = l;
+	sb->ro = false;
 	return true;
 }
 
@@ -116,6 +117,17 @@ R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len) {
 	}
 	r_strbuf_set (sb, r);
 	free (r);
+	return true;
+}
+
+R_API bool r_strbuf_setptr(RStrBuf *sb, char *s, int len) {
+	r_return_val_if_fail (sb, false);
+	if (len < 0) {
+		len = strlen (s);
+	}
+	sb->ptr = s;
+	sb->ptrlen = len;
+	sb->ro = true;
 	return true;
 }
 
@@ -206,6 +218,9 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 	if (l == 0) {
 		return true;
 	}
+	if (sb->ro) {
+		return false;
+	}
 
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l);
@@ -259,6 +274,9 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 
 	r_return_val_if_fail (sb && fmt, -1);
 
+	if (sb->ro) {
+		return false;
+	}
 	va_copy (ap2, ap);
 	ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret >= sizeof (string)) {
@@ -293,16 +311,25 @@ R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {
 	return (ut8 *)(sb->ptr ? sb->ptr : sb->buf);
 }
 
+// TODO: expose aa r_strbuf_getdup() ?
+static inline char *get_strdup(RStrBuf *sb) {
+	return sb->ptr
+		? sb->ro
+			? r_mem_dup (sb->ptr, sb->len)
+			: sb->ptr
+		: strdup (sb->buf);
+}
+
 R_API char *r_strbuf_drain(RStrBuf *sb) {
 	r_return_val_if_fail (sb, NULL);
-	char *ret = sb->ptr ? sb->ptr : strdup (sb->buf);
+	char *ret = get_strdup (sb);
 	free (sb);
 	return ret;
 }
 
 R_API char *r_strbuf_drain_nofree(RStrBuf *sb) {
 	r_return_val_if_fail (sb, NULL);
-	char *ret = sb->ptr ? sb->ptr : strdup (sb->buf);
+	char *ret = get_strdup (sb);
 	sb->ptr = NULL;
 	sb->len = 0;
 	sb->buf[0] = '\0';
@@ -315,7 +342,7 @@ R_API void r_strbuf_free(RStrBuf *sb) {
 }
 
 R_API void r_strbuf_fini(RStrBuf *sb) {
-	if (sb) {
+	if (sb && !sb->ro) {
 		R_FREE (sb->ptr);
 		sb->len = 0;
 		sb->buf[0] = '\0';
