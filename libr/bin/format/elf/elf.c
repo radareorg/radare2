@@ -1420,6 +1420,34 @@ static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
 	return 0;
 }
 
+static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
+	ut64 got_addr = bin->dyn_info.dt_pltgot;
+	if (!got_addr) {
+		return UT64_MAX;
+	}
+
+	ut64 plt_addr = get_got_entry (bin, rel);
+	if (plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 pos = (rel->rva - got_addr - 0x2 * WORDSIZE) / WORDSIZE;
+	return plt_addr + RISCV_PLT_OFFSET + pos * 0x10;
+}
+
+static ut64 get_import_addr_sparc(ELFOBJ *bin, RBinElfReloc *rel) {
+	if (rel->type != R_SPARC_JMP_SLOT) {
+		bprintf ("Unknown sparc reloc type %d\n", rel->type);
+		return UT64_MAX;
+	}
+	ut64 tmp = get_got_entry (bin, rel);
+	if (tmp == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	return tmp - 0x6;
+}
+
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 plt_addr = bin->dyn_info.dt_pltgot;
 	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
@@ -1448,21 +1476,6 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	base -= (nrel * 12) + 20;
 	base += (pos * 8);
 	return base;
-}
-
-static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
-	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (!got_addr) {
-		return UT64_MAX;
-	}
-
-	ut64 plt_addr = get_got_entry (bin, rel);
-	if (plt_addr == UT64_MAX) {
-		return UT64_MAX;
-	}
-
-	ut64 pos = (rel->rva - got_addr - 0x2 * WORDSIZE) / WORDSIZE;
-	return plt_addr + RISCV_PLT_OFFSET + pos * 0x10;
 }
 
 // FIXME use section name (couldn't find any info in .dynamic)
@@ -1567,13 +1580,22 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		return get_import_addr_arm (bin, rel);
 	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
 		return get_import_addr_mips (bin, rel);
+	case EM_RISCV:
+		return get_import_addr_riscv (bin, rel);
+	case EM_SPARC:
+	case EM_SPARCV9:
+	case EM_SPARC32PLUS:
+		return get_import_addr_sparc (bin, rel);
 	case EM_PPC:
 	case EM_PPC64:
 		return get_import_addr_ppc (bin, rel);
-	case EM_RISCV:
-		return get_import_addr_riscv (bin, rel);
-	default:
+	case EM_386:
+	case EM_X86_64:
 		return get_import_addr_x86 (bin, rel);
+	default:
+		eprintf ("Unsupported relocs type %" PFMT64u " for arch %d\n",
+				(ut64) rel->type, bin->ehdr.e_machine);
+		return UT64_MAX;
 	}
 }
 
