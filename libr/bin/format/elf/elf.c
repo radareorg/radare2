@@ -35,13 +35,6 @@
 #define READ32(x, i) r_read_ble32((x) + (i), bin->endian); (i) += 4
 #define READ64(x, i) r_read_ble64((x) + (i), bin->endian); (i) += 8
 
-#define BREAD8(x, i) r_buf_read_ble8_at (x, i); (i) += 1
-#define BREAD16(x, i) r_buf_read_ble16_at (x, i, bin->endian); (i) += 2
-#define BREAD32(x, i) r_buf_read_ble32_at (x, i, bin->endian); (i) += 4
-#define BREAD64(x, i) r_buf_read_ble64_at (x, i, bin->endian); (i) += 8
-
-#define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
-
 #if R_BIN_ELF64
 #define READWORD(x, i) READ64 (x, i)
 #define WORDSIZE 0x8
@@ -49,6 +42,13 @@
 #define WORDSIZE 0x4
 #define READWORD(x, i) READ32 (x, i)
 #endif
+
+#define BREAD8(x, i) r_buf_read_ble8_at (x, i); (i) += 1
+#define BREAD16(x, i) r_buf_read_ble16_at (x, i, bin->endian); (i) += 2
+#define BREAD32(x, i) r_buf_read_ble32_at (x, i, bin->endian); (i) += 4
+#define BREAD64(x, i) r_buf_read_ble64_at (x, i, bin->endian); (i) += 8
+
+#define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
 
 #if R_BIN_ELF64
 static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
@@ -165,15 +165,15 @@ static bool init_ehdr(ELFOBJ *bin) {
 	sdb_num_set (bin->kv, "elf_header.offset", 0, 0);
 	sdb_num_set (bin->kv, "elf_header.size", sizeof (Elf_(Ehdr)), 0);
 	sdb_set (bin->kv, "elf_ident.format", "[4]z[1]E[1]E[1]E.::"
-			" magic (elf_class)class (elf_data)data (elf_hdr_version)version", 0);
+	              " magic (elf_class)class (elf_data)data (elf_hdr_version)version", 0);
 #if R_BIN_ELF64
 	sdb_set (bin->kv, "elf_header.format", "?[2]E[2]E[4]Eqqqxwwwwww"
-			" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
-			" entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx", 0);
+		" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
+		" entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx", 0);
 #else
 	sdb_set (bin->kv, "elf_header.format", "?[2]E[2]E[4]Exxxxwwwwww"
-			" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
-			" entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx", 0);
+		" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
+		" entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx", 0);
 #endif
 	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB)? 1: 0;
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
@@ -310,8 +310,9 @@ static int init_phdr(ELFOBJ *bin) {
 	sdb_num_set (bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0);
 	sdb_num_set (bin->kv, "elf_phdr.size", sizeof (Elf_(Phdr)), 0);
 	sdb_set (bin->kv, "elf_p_type.cparse", "enum elf_p_type {PT_NULL=0,PT_LOAD=1,PT_DYNAMIC=2,"
-			"PT_INTERP=3,PT_NOTE=4,PT_SHLIB=5,PT_PHDR=6,PT_LOOS=0x60000000,"
-			"PT_HIOS=0x6fffffff,PT_LOPROC=0x70000000,PT_HIPROC=0x7fffffff};", 0);
+		"PT_INTERP=3,PT_NOTE=4,PT_SHLIB=5,PT_PHDR=6,PT_LOOS=0x60000000,"
+		"PT_HIOS=0x6fffffff,PT_LOPROC=0x70000000,PT_HIPROC=0x7fffffff};",
+		0);
 	sdb_set (bin->kv, "elf_p_flags.cparse", "enum elf_p_flags {PF_None=0,PF_Exec=1,"
 			"PF_Write=2,PF_Write_Exec=3,PF_Read=4,PF_Read_Exec=5,PF_Read_Write=6,"
 			"PF_Read_Write_Exec=7};", 0);
@@ -644,7 +645,7 @@ beach:
 	return false;
 }
 
-static RBinElfSection *get_section_by_name(ELFOBJ *bin, const char *section_name) {
+static RBinElfSection* get_section_by_name(ELFOBJ *bin, const char *section_name) {
 	int i;
 	if (bin->g_sections) {
 		for (i = 0; !bin->g_sections[i].last; i++) {
@@ -1790,7 +1791,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	}
 }
 
-int Elf_(r_bin_elf_has_nx) (ELFOBJ *bin) {
+int Elf_(r_bin_elf_has_nx)(ELFOBJ *bin) {
 	int i;
 	if (bin && bin->phdr) {
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
@@ -1813,7 +1814,7 @@ int Elf_(r_bin_elf_has_relro)(ELFOBJ *bin) {
 				haveBindNow = true;
 				break;
 			case DT_FLAGS:
-				for (i++; i < bin->dyn_entries; i++) {
+				for (i++; i < bin->dyn_entries ; i++) {
 					ut32 dTag = bin->dyn_buf[i].d_tag;
 					if (!dTag) {
 						break;
