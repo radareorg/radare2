@@ -1799,8 +1799,8 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		immediate = op->operands[1].immediate * op->operands[1].sign;
 		if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
 			bool imm32in64 = false;
-			if (a->bits == 64 && ((op->operands[0].type & OT_QWORD) | (op->operands[1].type & OT_QWORD))) {
-				if (!(op->operands[1].type & OT_CONSTANT) && op->operands[1].extended) {
+			if (a->bits == 64 && (op->operands[0].type & OT_QWORD)) {
+				if (op->operands[0].extended) {
 					data[l++] = 0x49;
 				} else {
 					data[l++] = 0x48;
