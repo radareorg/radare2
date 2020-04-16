@@ -3108,11 +3108,16 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	}
 }
 
-static int cmd_print_blocks(RCore *core, const char *input) {
+static bool cmd_print_blocks(RCore *core, const char *input) {
+	bool result = false;
 	char mode = input[0];
+	RList *list = NULL;
+	RCoreAnalStats *as = NULL;
+	RTable *t = NULL;
+	PJ *pj = NULL;
 	if (mode == '?') {
 		r_core_cmd_help (core, help_msg_p_minus);
-		return 0;
+		return false;
 	}
 
 	if (mode && mode != ' ') {
@@ -3125,18 +3130,18 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 
 	if (w == 0) {
 		r_core_cmd_help (core, help_msg_p_minus);
-		return 0;
+		return false;
 	}
 	int cols = r_config_get_i (core->config, "hex.cols");
 	//int cols = r_cons_get_size (NULL) - 30;
 	ut64 off = core->offset;
 	ut64 from = UT64_MAX;
 	ut64 to = 0;
-	RTable *t = r_core_table (core);
-	t->showSum = true;
-	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
+
+	list = r_core_get_boundaries_prot (core, -1, NULL, "search");
 	if (!list) {
-		return 1;
+		result = true;
+		goto cleanup;
 	}
 	RListIter *iter;
 	RIOMap *map;
@@ -3153,17 +3158,17 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	r_list_free (list);
 	list = NULL;
 	ut64 piece = R_MAX ((to - from) / R_MAX (cols, w), 1);
-	RCoreAnalStats *as = r_core_anal_get_stats (core, from, to, piece);
+	as = r_core_anal_get_stats (core, from, to, piece);
 	if (!as) {
-		return 0;
+		goto cleanup;
 	}
 
-	PJ *pj = pj_new ();
-	if (!pj) {
-		return 0;
-	}
 	switch (mode) {
 	case 'j': // "p-j"
+		pj = pj_new ();
+		if (!pj) {
+			goto cleanup;
+		}
 		pj_o (pj);
 		pj_kn (pj, "from", from);
 		pj_kn (pj, "to", to);
@@ -3171,10 +3176,15 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		pj_k (pj, "blocks");
 		pj_a (pj);
 		break;
-	case 'h': {	// "p-h"
+	case 'h': { // "p-h"
+		t = r_core_table (core);
+		if (!t) {
+			goto cleanup;
+		}
+		t->showSum = true;
 		r_table_set_columnsf (t, "sddddd", "offset", "flags", "funcs", "cmts", "syms", "str");
-	}
 		break;
+	}
 	case 'e':
 	default:
 		r_cons_printf ("0x%08"PFMT64x " [", from);
@@ -3273,26 +3283,35 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		}
 	}
 	switch (mode) {
-		case 'j':
-			pj_end (pj);
-			pj_end (pj);
-			r_cons_println (pj_string (pj));
-			pj_free (pj);
-			break;
-		case 'h': {
-			r_cons_printf ("\n%s\n", r_table_tofancystring (t));
-			r_table_free (t);
-			break;
+	case 'j':
+		pj_end (pj);
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		break;
+	case 'h': {
+		char *table_string = r_table_tofancystring (t);
+		if (!table_string) {
+			goto cleanup;
 		}
-		case 'e':
-		default:
-			if (use_color) {
-				r_cons_print (Color_RESET);
-			}
-			r_cons_printf ("] 0x%08"PFMT64x "\n", to);
+		r_cons_printf ("\n%s\n", table_string);
+		free (table_string);
+		break;
 	}
+	case 'e':
+	default:
+		if (use_color) {
+			r_cons_print (Color_RESET);
+		}
+		r_cons_printf ("] 0x%08"PFMT64x "\n", to);
+		break;
+	}
+	result = true;
+cleanup:
+	pj_free (pj);
+	r_table_free (t);
+	r_list_free (list);
 	r_core_anal_stats_free (as);
-	return len;
+	return result;
 }
 
 
