@@ -165,7 +165,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 	sdb_num_set (bin->kv, "elf_header.offset", 0, 0);
 	sdb_num_set (bin->kv, "elf_header.size", sizeof (Elf_(Ehdr)), 0);
 	sdb_set (bin->kv, "elf_ident.format", "[4]z[1]E[1]E[1]E.::"
-	              " magic (elf_class)class (elf_data)data (elf_hdr_version)version", 0);
+		" magic (elf_class)class (elf_data)data (elf_hdr_version)version", 0);
 #if R_BIN_ELF64
 	sdb_set (bin->kv, "elf_header.format", "?[2]E[2]E[4]Eqqqxwwwwww"
 		" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
@@ -1299,231 +1299,6 @@ ut64 Elf_(r_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name)
 	return section? section->rva + section->size: UT64_MAX;
 }
 
-static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
-	return bin->g_sections[pos].info < bin->ehdr.e_shnum && bin->shdr;
-}
-
-static void fix_rva_and_offset_relocable_file(ELFOBJ *bin, RBinElfReloc *r, size_t pos) {
-	if (has_valid_section_header (bin, pos)) {
-		r->rva = bin->shdr[bin->g_sections[pos].info].sh_offset + r->offset;
-		r->rva = Elf_(r_bin_elf_p2v) (bin, r->rva);
-	} else {
-		r->rva = r->offset;
-	}
-}
-
-static void fix_rva_and_offset_exec_file(ELFOBJ *bin, RBinElfReloc *r) {
-	r->rva = r->offset;
-	r->offset = Elf_(r_bin_elf_v2p) (bin, r->offset);
-}
-
-static void fix_rva_and_offset(ELFOBJ *bin, RBinElfReloc *r, size_t pos) {
-	if (is_bin_etrel (bin)) {
-		fix_rva_and_offset_relocable_file (bin, r, pos);
-	} else {
-		fix_rva_and_offset_exec_file (bin, r);
-	}
-}
-
-static size_t get_size_rel_mode(size_t rel_mode) {
-	return rel_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
-}
-
-static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, size_t rel_mode, ut64 offset) {
-	size_t size_struct = get_size_rel_mode (rel_mode);
-
-	ut8 buf[sizeof (Elf_(Rela))] = { 0 };
-	int res = r_buf_read_at (bin->b, offset, buf, size_struct);
-	if (res != size_struct) {
-		return false;
-	}
-
-	size_t i = 0;
-	Elf_(Rela) reloc_info;
-
-	reloc_info.r_offset = READWORD (buf, i);
-	reloc_info.r_info = READWORD (buf, i);
-
-	if (rel_mode == DT_RELA) {
-		reloc_info.r_addend = READWORD (buf, i);
-		r->addend = reloc_info.r_addend;
-	}
-
-	r->rel_mode = rel_mode;
-	r->last = 0;
-	r->offset = reloc_info.r_offset;
-	r->sym = ELF_R_SYM (reloc_info.r_info);
-	r->type = ELF_R_TYPE (reloc_info.r_info);
-
-	return true;
-}
-
-static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
-	if (bin->dyn_info.dt_pltrelsz) {
-		return bin->dyn_info.dt_pltrelsz / get_size_rel_mode (bin->dyn_info.dt_pltrel);
-	}
-	return 0;
-}
-
-static size_t get_num_relocs_dynamic(ELFOBJ *bin) {
-	size_t res = 0;
-
-	if (bin->dyn_info.dt_relaent) {
-		res += bin->dyn_info.dt_relasz / bin->dyn_info.dt_relaent;
-	}
-
-	if (bin->dyn_info.dt_relent) {
-		res += bin->dyn_info.dt_relsz / bin->dyn_info.dt_relent;
-	}
-
-	return res + get_num_relocs_dynamic_plt (bin);
-}
-
-static bool sectionIsValid(ELFOBJ *bin, RBinElfSection *sect) {
-	return (sect->offset + sect->size <= bin->size);
-}
-
-static size_t get_section_mode(ELFOBJ *bin, size_t pos) {
-	if (r_str_startswith (bin->g_sections[pos].name, ".rela.")) {
-		return DT_RELA;
-	} else if (r_str_startswith (bin->g_sections[pos].name, ".rel.")) {
-		return DT_REL;
-	}
-
-	return 0;
-}
-
-static bool is_reloc_section(size_t rel_mode) {
-	return rel_mode == DT_REL || rel_mode == DT_RELA;
-}
-
-static size_t get_num_relocs_sections(ELFOBJ *bin) {
-	size_t i, rel_mode, size, ret = 0;
-
-	if (!bin->g_sections) {
-		return 0;
-	}
-
-	for (i = 0; !bin->g_sections[i].last; i++) {
-		if (!sectionIsValid (bin, &bin->g_sections[i])) {
-			continue;
-		}
-		rel_mode = get_section_mode (bin, i);
-		if (!is_reloc_section (rel_mode)) {
-			continue;
-		}
-		size = get_size_rel_mode (rel_mode);
-		ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, size);
-	}
-
-	return ret;
-}
-
-static size_t get_num_relocs_approx(ELFOBJ *bin) {
-	return get_num_relocs_dynamic (bin) + get_num_relocs_sections (bin);
-}
-
-static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos) {
-	size_t i = 0;
-	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
-
-	for (size_t offset = 0; offset < bin->dyn_info.dt_pltrelsz; offset += size) {
-		read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset - bin->baddr);
-		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		pos++;
-		++i;
-	}
-
-	for (size_t offset = 0; offset < bin->dyn_info.dt_relasz; offset += bin->dyn_info.dt_relaent) {
-		read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info.dt_rela + offset - bin->baddr);
-		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		pos++;
-	}
-
-	for (size_t offset = 0; offset < bin->dyn_info.dt_relsz; offset += bin->dyn_info.dt_relent) {
-		read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info.dt_rel + offset - bin->baddr);
-		fix_rva_and_offset_exec_file (bin, relocs + pos);
-		pos++;
-	}
-
-	return pos;
-}
-
-static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_offset,
-	size_t offset, size_t base_addr) {
-
-	size_t g_offset = section_offset + offset;
-	size_t diff;
-
-	if (bin->dyn_info.dt_rela - base_addr <= g_offset && g_offset < bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - base_addr) {
-		diff = bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - g_offset - base_addr;
-		return diff;
-	} else if (bin->dyn_info.dt_rel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - base_addr) {
-		diff = bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - g_offset - base_addr;
-		return diff;
-	} else if (bin->dyn_info.dt_jmprel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - base_addr) {
-		diff = bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - g_offset - base_addr;
-		return diff;
-	}
-
-	return offset;
-}
-
-static size_t populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos) {
-	size_t size, rel_mode, i, j;
-
-	if (!bin->g_sections) {
-		return pos;
-	}
-
-	for (i = 0; !bin->g_sections[i].last; i++) {
-		rel_mode = get_section_mode (bin, i);
-
-		if (!is_reloc_section (rel_mode) || bin->g_sections[i].size > bin->size || bin->g_sections[i].offset > bin->size) {
-			continue;
-		}
-
-		size = get_size_rel_mode (rel_mode);
-
-		for (j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, 0, bin->baddr);
-			j < bin->g_sections[i].size;
-			j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, j + size, bin->baddr)) {
-
-			if (!read_reloc (bin, relocs + pos, rel_mode, bin->g_sections[i].offset + j)) {
-				break;
-			}
-
-			fix_rva_and_offset (bin, relocs + pos, i);
-			++pos;
-		}
-	}
-
-	return pos;
-}
-
-static RBinElfReloc *populate_relocs_record(ELFOBJ *bin) {
-	size_t i = 0;
-	size_t num_relocs = get_num_relocs_approx (bin);
-	RBinElfReloc *relocs = calloc (num_relocs + 1, sizeof (RBinElfReloc));
-
-	i = populate_relocs_record_from_dynamic (bin, relocs, i);
-	i = populate_relocs_record_from_section (bin, relocs, i);
-	relocs[i].last = 1;
-
-	bin->reloc_num = i;
-
-	return relocs;
-}
-
-RBinElfReloc *Elf_(r_bin_elf_get_relocs) (ELFOBJ *bin) {
-	if (!bin || !bin->g_sections) {
-		return NULL;
-	}
-
-	RBinElfReloc *ret = populate_relocs_record (bin);
-
-	return ret;
-}
 
 static void rel_cache_free(HtUPKv *kv) {
 	free (kv->value);
@@ -1632,6 +1407,17 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 	plt_addr += pos * 16;
 
 	return plt_addr;
+}
+
+static size_t get_size_rel_mode(size_t rel_mode) {
+	return rel_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
+}
+
+static size_t get_num_relocs_dynamic_plt(ELFOBJ *bin) {
+	if (bin->dyn_info.dt_pltrelsz) {
+		return bin->dyn_info.dt_pltrelsz / get_size_rel_mode (bin->dyn_info.dt_pltrel);
+	}
+	return 0;
 }
 
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
@@ -2706,6 +2492,221 @@ char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 			break;
 		}
 	}
+	return ret;
+}
+
+static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
+	return bin->g_sections[pos].info < bin->ehdr.e_shnum && bin->shdr;
+}
+
+static void fix_rva_and_offset_relocable_file(ELFOBJ *bin, RBinElfReloc *r, size_t pos) {
+	if (has_valid_section_header (bin, pos)) {
+		r->rva = bin->shdr[bin->g_sections[pos].info].sh_offset + r->offset;
+		r->rva = Elf_(r_bin_elf_p2v) (bin, r->rva);
+	} else {
+		r->rva = r->offset;
+	}
+}
+
+static void fix_rva_and_offset_exec_file(ELFOBJ *bin, RBinElfReloc *r) {
+	r->rva = r->offset;
+	r->offset = Elf_(r_bin_elf_v2p) (bin, r->offset);
+}
+
+static void fix_rva_and_offset(ELFOBJ *bin, RBinElfReloc *r, size_t pos) {
+	if (is_bin_etrel (bin)) {
+		fix_rva_and_offset_relocable_file (bin, r, pos);
+	} else {
+		fix_rva_and_offset_exec_file (bin, r);
+	}
+}
+
+static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, size_t rel_mode, ut64 offset) {
+	size_t size_struct = get_size_rel_mode (rel_mode);
+
+	ut8 buf[sizeof (Elf_(Rela))] = { 0 };
+	int res = r_buf_read_at (bin->b, offset, buf, size_struct);
+	if (res != size_struct) {
+		return false;
+	}
+
+	size_t i = 0;
+	Elf_(Rela) reloc_info;
+
+	reloc_info.r_offset = READWORD (buf, i);
+	reloc_info.r_info = READWORD (buf, i);
+
+	if (rel_mode == DT_RELA) {
+		reloc_info.r_addend = READWORD (buf, i);
+		r->addend = reloc_info.r_addend;
+	}
+
+	r->rel_mode = rel_mode;
+	r->last = 0;
+	r->offset = reloc_info.r_offset;
+	r->sym = ELF_R_SYM (reloc_info.r_info);
+	r->type = ELF_R_TYPE (reloc_info.r_info);
+
+	return true;
+}
+
+static size_t get_num_relocs_dynamic(ELFOBJ *bin) {
+	size_t res = 0;
+
+	if (bin->dyn_info.dt_relaent) {
+		res += bin->dyn_info.dt_relasz / bin->dyn_info.dt_relaent;
+	}
+
+	if (bin->dyn_info.dt_relent) {
+		res += bin->dyn_info.dt_relsz / bin->dyn_info.dt_relent;
+	}
+
+	return res + get_num_relocs_dynamic_plt (bin);
+}
+
+static bool sectionIsValid(ELFOBJ *bin, RBinElfSection *sect) {
+	return (sect->offset + sect->size <= bin->size);
+}
+
+static size_t get_section_mode(ELFOBJ *bin, size_t pos) {
+	if (r_str_startswith (bin->g_sections[pos].name, ".rela.")) {
+		return DT_RELA;
+	} else if (r_str_startswith (bin->g_sections[pos].name, ".rel.")) {
+		return DT_REL;
+	}
+
+	return 0;
+}
+
+static bool is_reloc_section(size_t rel_mode) {
+	return rel_mode == DT_REL || rel_mode == DT_RELA;
+}
+
+static size_t get_num_relocs_sections(ELFOBJ *bin) {
+	size_t i, rel_mode, size, ret = 0;
+
+	if (!bin->g_sections) {
+		return 0;
+	}
+
+	for (i = 0; !bin->g_sections[i].last; i++) {
+		if (!sectionIsValid (bin, &bin->g_sections[i])) {
+			continue;
+		}
+		rel_mode = get_section_mode (bin, i);
+		if (!is_reloc_section (rel_mode)) {
+			continue;
+		}
+		size = get_size_rel_mode (rel_mode);
+		ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, size);
+	}
+
+	return ret;
+}
+
+static size_t get_num_relocs_approx(ELFOBJ *bin) {
+	return get_num_relocs_dynamic (bin) + get_num_relocs_sections (bin);
+}
+
+static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos) {
+	size_t i = 0;
+	size_t size = get_size_rel_mode (bin->dyn_info.dt_pltrel);
+
+	for (size_t offset = 0; offset < bin->dyn_info.dt_pltrelsz; offset += size) {
+		read_reloc (bin, relocs + pos, bin->dyn_info.dt_pltrel, bin->dyn_info.dt_jmprel + offset - bin->baddr);
+		fix_rva_and_offset_exec_file (bin, relocs + pos);
+		pos++;
+		++i;
+	}
+
+	for (size_t offset = 0; offset < bin->dyn_info.dt_relasz; offset += bin->dyn_info.dt_relaent) {
+		read_reloc (bin, relocs + pos, DT_RELA, bin->dyn_info.dt_rela + offset - bin->baddr);
+		fix_rva_and_offset_exec_file (bin, relocs + pos);
+		pos++;
+	}
+
+	for (size_t offset = 0; offset < bin->dyn_info.dt_relsz; offset += bin->dyn_info.dt_relent) {
+		read_reloc (bin, relocs + pos, DT_REL, bin->dyn_info.dt_rel + offset - bin->baddr);
+		fix_rva_and_offset_exec_file (bin, relocs + pos);
+		pos++;
+	}
+
+	return pos;
+}
+
+static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_offset,
+	size_t offset, size_t base_addr) {
+
+	size_t g_offset = section_offset + offset;
+	size_t diff;
+
+	if (bin->dyn_info.dt_rela - base_addr <= g_offset && g_offset < bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - base_addr) {
+		diff = bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - g_offset - base_addr;
+		return diff;
+	} else if (bin->dyn_info.dt_rel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - base_addr) {
+		diff = bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - g_offset - base_addr;
+		return diff;
+	} else if (bin->dyn_info.dt_jmprel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - base_addr) {
+		diff = bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - g_offset - base_addr;
+		return diff;
+	}
+
+	return offset;
+}
+
+static size_t populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos) {
+	size_t size, rel_mode, i, j;
+
+	if (!bin->g_sections) {
+		return pos;
+	}
+
+	for (i = 0; !bin->g_sections[i].last; i++) {
+		rel_mode = get_section_mode (bin, i);
+
+		if (!is_reloc_section (rel_mode) || bin->g_sections[i].size > bin->size || bin->g_sections[i].offset > bin->size) {
+			continue;
+		}
+
+		size = get_size_rel_mode (rel_mode);
+
+		for (j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, 0, bin->baddr);
+			j < bin->g_sections[i].size;
+			j = get_next_not_analysed_offset (bin, bin->g_sections[i].offset, j + size, bin->baddr)) {
+
+			if (!read_reloc (bin, relocs + pos, rel_mode, bin->g_sections[i].offset + j)) {
+				break;
+			}
+
+			fix_rva_and_offset (bin, relocs + pos, i);
+			++pos;
+		}
+	}
+
+	return pos;
+}
+
+static RBinElfReloc *populate_relocs_record(ELFOBJ *bin) {
+	size_t i = 0;
+	size_t num_relocs = get_num_relocs_approx (bin);
+	RBinElfReloc *relocs = calloc (num_relocs + 1, sizeof (RBinElfReloc));
+
+	i = populate_relocs_record_from_dynamic (bin, relocs, i);
+	i = populate_relocs_record_from_section (bin, relocs, i);
+	relocs[i].last = 1;
+
+	bin->reloc_num = i;
+
+	return relocs;
+}
+
+RBinElfReloc *Elf_(r_bin_elf_get_relocs) (ELFOBJ *bin) {
+	if (!bin || !bin->g_sections) {
+		return NULL;
+	}
+
+	RBinElfReloc *ret = populate_relocs_record (bin);
+
 	return ret;
 }
 
