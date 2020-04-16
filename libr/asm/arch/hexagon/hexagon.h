@@ -1,4 +1,8 @@
 // Predicates - declare the predicate state
+
+#ifndef HEXAGON_H
+#define HEXAGON_H
+
 typedef enum {
 	HEX_NOPRED, // no conditional execution
 	HEX_PRED_TRUE, // if (Pd) ...
@@ -275,3 +279,4 @@ void hex_op_extend(HexOp *op);
 void hex_op_extend_off(HexOp *op, int offset);
 int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr);
 
+#endif

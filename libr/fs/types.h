@@ -1,3 +1,6 @@
+#ifndef FS_TYPES_H
+#define FS_TYPES_H
+
 typedef struct r_fs_type_t {
 	const char *name;
 	int bufoff;
@@ -18,3 +21,5 @@ static RFSType fstypes[] = {
 	{ "iso9660", 0x8000, "\x01" "CD0", 4, 0, 0, 0x8000 },
 	{ NULL }
 };
+
+#endif
