@@ -141,7 +141,7 @@ static void rebase_info_free(RDyldRebaseInfo *rebase_info) {
 
 	if (version == 1) {
 		rebase_info1_free ((RDyldRebaseInfo1*) rebase_info);
-	} else if (version == 2) {
+	} else if (version == 2 || version == 4) {
 		rebase_info2_free ((RDyldRebaseInfo2*) rebase_info);
 	} else if (version == 3) {
 		rebase_info3_free ((RDyldRebaseInfo3*) rebase_info);
@@ -568,7 +568,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 		}
 
 		return (RDyldRebaseInfo*) rebase_info;
-	} else if (slide_info_version == 2) {
+	} else if (slide_info_version == 2 || slide_info_version == 4) {
 		cache_slide2_t slide_info;
 		ut64 size = sizeof (cache_slide2_t);
 		if (r_buf_fread_at (cache_buf, offset, (ut8*) &slide_info, "6i2l", 1) != size) {
@@ -623,7 +623,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 			goto beach;
 		}
 
-		rebase_info->version = 2;
+		rebase_info->version = slide_info_version;
 		rebase_info->start_of_data = start_of_data;
 		rebase_info->page_starts = (ut16*) tmp_buf_1;
 		rebase_info->page_starts_count = slide_info.page_starts_count;
@@ -794,6 +794,72 @@ static int string_contains(const void *a, const void *b) {
 	return !strstr ((const char*) a, (const char*) b);
 }
 
+static HtPP * create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr) {
+	HtPP *path_to_idx = ht_pp_new0 ();
+	if (!path_to_idx) {
+		return NULL;
+	}
+	size_t i;
+	for (i = 0; i != hdr->imagesCount; i++) {
+		char file[256];
+		if (r_buf_read_at (cache_buf, img[i].pathFileOffset, (ut8*) &file, sizeof (file)) != sizeof (file)) {
+			continue;
+		}
+		file[255] = 0;
+		const char *key = sdb_fmt ("%s", file);
+		ht_pp_insert (path_to_idx, key, (void*) i);
+	}
+
+	return path_to_idx;
+}
+
+static void carve_deps_at_address(RBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr, cache_map_t *maps, HtPP *path_to_idx, ut64 address, int *deps) {
+	ut64 pa = va2pa (address, hdr, maps, cache_buf, 0, NULL, NULL);
+	if (pa == UT64_MAX) {
+		return;
+	}
+	struct MACH0_(mach_header) mh;
+	if (r_buf_fread_at (cache_buf, pa, (ut8*) &mh, "8i", 1) != sizeof (struct MACH0_(mach_header))) {
+		return;
+	}
+	if (mh.magic != MH_MAGIC_64 || mh.sizeofcmds == 0) {
+		return;
+	}
+	ut64 cmds_at = pa + sizeof (struct MACH0_(mach_header));
+	ut8 *cmds = malloc (mh.sizeofcmds + 1);
+	if (!cmds || r_buf_read_at (cache_buf, cmds_at, cmds, mh.sizeofcmds) != mh.sizeofcmds) {
+		goto beach;
+	}
+	cmds[mh.sizeofcmds] = 0;
+	ut8 *cursor = cmds;
+	ut8 *end = cmds + mh.sizeofcmds;
+	while (cursor < end) {
+		ut32 cmd = r_read_le32 (cursor);
+		ut32 cmdsize = r_read_le32 (cursor + sizeof (ut32));
+		if (cmd == LC_LOAD_DYLIB ||
+				cmd == LC_LOAD_WEAK_DYLIB ||
+				cmd == LC_REEXPORT_DYLIB ||
+				cmd == LC_LOAD_UPWARD_DYLIB) {
+			bool found;
+			if (cursor + 24 >= end) {
+				break;
+			}
+			const char *key = (const char *) cursor + 24;
+			size_t dep_index = (size_t) ht_pp_find (path_to_idx, key, &found);
+			if (!found || dep_index >= hdr->imagesCount) {
+				eprintf ("WARNING: alien dep '%s'\n", key);
+				continue;
+			}
+			deps[dep_index]++;
+			eprintf ("-> %s\n", key);
+		}
+		cursor += cmdsize;
+	}
+
+beach:
+	free (cmds);
+}
+
 static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps, cache_accel_t *accel) {
 	RList *bins = r_list_newf ((RListFree)free_bin);
 	if (!bins) {
@@ -824,6 +890,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			goto error;
 		}
 
+		HtPP *path_to_idx = NULL;
 		if (accel) {
 			depArray = R_NEWS0 (ut16, accel->depListCount);
 			if (!depArray) {
@@ -839,11 +906,17 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 				goto error;
 			}
 		} else {
-			eprintf ("Missing accelerator info, deps of filter can't be auto resolved.\n");
+			path_to_idx = create_path_to_index (cache_buf, img, hdr);
 		}
 
 		for (i = 0; i < hdr->imagesCount; i++) {
 			char *lib_name = get_lib_name (cache_buf, &img[i]);
+			if (!lib_name) {
+				break;
+			}
+			if (strstr (lib_name, "libobjc.A.dylib")) {
+				deps[i]++;
+			}
 			if (!r_list_find (target_lib_names, lib_name, string_contains)) {
 				R_FREE (lib_name);
 				continue;
@@ -855,19 +928,22 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			if (extras && depArray) {
 				ut32 j;
 				for (j = extras[i].dependentsStartArrayIndex; depArray[j] != 0xffff; j++) {
-					bool upward = depArray[j] & 0x8000;
 					ut16 dep_index = depArray[j] & 0x7fff;
-					if (!upward) {
-						deps[dep_index]++;
+					deps[dep_index]++;
 
-						char *dep_name = get_lib_name (cache_buf, &img[dep_index]);
-						eprintf ("-> %s\n", dep_name);
-						free (dep_name);
+					char *dep_name = get_lib_name (cache_buf, &img[dep_index]);
+					if (!dep_name) {
+						break;
 					}
+					eprintf ("-> %s\n", dep_name);
+					free (dep_name);
 				}
+			} else if (path_to_idx) {
+				carve_deps_at_address (cache_buf, img, hdr, maps, path_to_idx, img[i].address, deps);
 			}
 		}
 
+		ht_pp_free (path_to_idx);
 		R_FREE (depArray);
 		R_FREE (extras);
 		R_FREE (target_libs);
@@ -1084,7 +1160,7 @@ static void rebase_bytes(RDyldRebaseInfo *rebase_info, ut8 *buf, ut64 offset, in
 
 	if (rebase_info->version == 3) {
 		rebase_bytes_v3 ((RDyldRebaseInfo3*) rebase_info, buf, offset, count, start_of_write);
-	} else if (rebase_info->version == 2) {
+	} else if (rebase_info->version == 2 || rebase_info->version == 4) {
 		rebase_bytes_v2 ((RDyldRebaseInfo2*) rebase_info, buf, offset, count, start_of_write);
 	} else if (rebase_info->version == 1) {
 		rebase_bytes_v1 ((RDyldRebaseInfo1*) rebase_info, buf, offset, count, start_of_write);
@@ -1680,68 +1756,129 @@ static void header(RBinFile *bf) {
 	ut64 slide = cache->rebase_info->slide;
 	PrintfCallback p = bin->cb_printf;
 
-	p ("dyld cache header:\n");
-	p ("magic: %s\n", cache->hdr->magic);
-	p ("mappingOffset: 0x%"PFMT64x"\n", cache->hdr->mappingOffset);
-	p ("mappingCount: 0x%"PFMT64x"\n", cache->hdr->mappingCount);
-	p ("imagesOffset: 0x%"PFMT64x"\n", cache->hdr->imagesOffset);
-	p ("imagesCount: 0x%"PFMT64x"\n", cache->hdr->imagesCount);
-	p ("dyldBaseAddress: 0x%"PFMT64x"\n", cache->hdr->dyldBaseAddress);
-	p ("codeSignatureOffset: 0x%"PFMT64x"\n", cache->hdr->codeSignatureOffset);
-	p ("codeSignatureSize: 0x%"PFMT64x"\n", cache->hdr->codeSignatureSize);
-	p ("slideInfoOffset: 0x%"PFMT64x"\n", cache->hdr->slideInfoOffset);
-	p ("slideInfoSize: 0x%"PFMT64x"\n", cache->hdr->slideInfoSize);
-	p ("localSymbolsOffset: 0x%"PFMT64x"\n", cache->hdr->localSymbolsOffset);
-	p ("localSymbolsSize: 0x%"PFMT64x"\n", cache->hdr->localSymbolsSize);
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+
+	pj_o (pj);
+	pj_k (pj, "header");
+	pj_o (pj);
+	pj_ks (pj, "magic", cache->hdr->magic);
+	pj_kn (pj, "mappingOffset", cache->hdr->mappingOffset);
+	pj_kn (pj, "mappingCount", cache->hdr->mappingCount);
+	pj_kn (pj, "imagesOffset", cache->hdr->imagesOffset);
+	pj_kn (pj, "imagesCount", cache->hdr->imagesCount);
+	pj_kn (pj, "dyldBaseAddress", cache->hdr->dyldBaseAddress);
+	pj_kn (pj, "codeSignatureOffset", cache->hdr->codeSignatureOffset);
+	pj_kn (pj, "codeSignatureSize", cache->hdr->codeSignatureSize);
+	pj_kn (pj, "slideInfoOffset", cache->hdr->slideInfoOffset);
+	pj_kn (pj, "slideInfoSize", cache->hdr->slideInfoSize);
+	pj_kn (pj, "localSymbolsOffset", cache->hdr->localSymbolsOffset);
+	pj_kn (pj, "localSymbolsSize", cache->hdr->localSymbolsSize);
 	char uuidstr[128];
 	r_hex_bin2str ((ut8*)cache->hdr->uuid, 16, uuidstr);
-	p ("uuid: %s\n", uuidstr);
-	p ("cacheType: 0x%"PFMT64x"\n", cache->hdr->cacheType);
-	p ("branchPoolsOffset: 0x%"PFMT64x"\n", cache->hdr->branchPoolsOffset);
-	p ("branchPoolsCount: 0x%"PFMT64x"\n", cache->hdr->branchPoolsCount);
-	p ("accelerateInfoAddr: 0x%"PFMT64x"\n", cache->hdr->accelerateInfoAddr + slide);
-	p ("accelerateInfoSize: 0x%"PFMT64x"\n", cache->hdr->accelerateInfoSize);
-	p ("imagesTextOffset: 0x%"PFMT64x"\n", cache->hdr->imagesTextOffset);
-	p ("imagesTextCount: 0x%"PFMT64x"\n", cache->hdr->imagesTextCount);
+	pj_ks (pj, "uuid", uuidstr);
+	pj_ks (pj, "cacheType", (cache->hdr->cacheType == 0) ? "development" : "production");
+	pj_kn (pj, "branchPoolsOffset", cache->hdr->branchPoolsOffset);
+	pj_kn (pj, "branchPoolsCount", cache->hdr->branchPoolsCount);
+	pj_kn (pj, "accelerateInfoAddr", cache->hdr->accelerateInfoAddr + slide);
+	pj_kn (pj, "accelerateInfoSize", cache->hdr->accelerateInfoSize);
+	pj_kn (pj, "imagesTextOffset", cache->hdr->imagesTextOffset);
+	pj_kn (pj, "imagesTextCount", cache->hdr->imagesTextCount);
+	pj_end (pj);
 
 	if (cache->accel) {
-		p ("\nacceleration info:\n");
-		p ("version: 0x%"PFMT64x"\n", cache->accel->version);
-		p ("imageExtrasCount: 0x%"PFMT64x"\n", cache->accel->imageExtrasCount);
-		p ("imagesExtrasOffset: 0x%"PFMT64x"\n", cache->accel->imagesExtrasOffset);
-		p ("bottomUpListOffset: 0x%"PFMT64x"\n", cache->accel->bottomUpListOffset);
-		p ("dylibTrieOffset: 0x%"PFMT64x"\n", cache->accel->dylibTrieOffset);
-		p ("dylibTrieSize: 0x%"PFMT64x"\n", cache->accel->dylibTrieSize);
-		p ("initializersOffset: 0x%"PFMT64x"\n", cache->accel->initializersOffset);
-		p ("initializersCount: 0x%"PFMT64x"\n", cache->accel->initializersCount);
-		p ("dofSectionsOffset: 0x%"PFMT64x"\n", cache->accel->dofSectionsOffset);
-		p ("dofSectionsCount: 0x%"PFMT64x"\n", cache->accel->dofSectionsCount);
-		p ("reExportListOffset: 0x%"PFMT64x"\n", cache->accel->reExportListOffset);
-		p ("reExportCount: 0x%"PFMT64x"\n", cache->accel->reExportCount);
-		p ("depListOffset: 0x%"PFMT64x"\n", cache->accel->depListOffset);
-		p ("depListCount: 0x%"PFMT64x"\n", cache->accel->depListCount);
-		p ("rangeTableOffset: 0x%"PFMT64x"\n", cache->accel->rangeTableOffset);
-		p ("rangeTableCount: 0x%"PFMT64x"\n", cache->accel->rangeTableCount);
-		p ("dyldSectionAddr: 0x%"PFMT64x"\n", cache->accel->dyldSectionAddr + slide);
+		pj_k (pj, "accelerator");
+		pj_o (pj);
+		pj_kn (pj, "version", cache->accel->version);
+		pj_kn (pj, "imageExtrasCount", cache->accel->imageExtrasCount);
+		pj_kn (pj, "imagesExtrasOffset", cache->accel->imagesExtrasOffset);
+		pj_kn (pj, "bottomUpListOffset", cache->accel->bottomUpListOffset);
+		pj_kn (pj, "dylibTrieOffset", cache->accel->dylibTrieOffset);
+		pj_kn (pj, "dylibTrieSize", cache->accel->dylibTrieSize);
+		pj_kn (pj, "initializersOffset", cache->accel->initializersOffset);
+		pj_kn (pj, "initializersCount", cache->accel->initializersCount);
+		pj_kn (pj, "dofSectionsOffset", cache->accel->dofSectionsOffset);
+		pj_kn (pj, "dofSectionsCount", cache->accel->dofSectionsCount);
+		pj_kn (pj, "reExportListOffset", cache->accel->reExportListOffset);
+		pj_kn (pj, "reExportCount", cache->accel->reExportCount);
+		pj_kn (pj, "depListOffset", cache->accel->depListOffset);
+		pj_kn (pj, "depListCount", cache->accel->depListCount);
+		pj_kn (pj, "rangeTableOffset", cache->accel->rangeTableOffset);
+		pj_kn (pj, "rangeTableCount", cache->accel->rangeTableCount);
+		pj_kn (pj, "dyldSectionAddr", cache->accel->dyldSectionAddr + slide);
+		pj_end (pj);
 	}
 
+	pj_k (pj, "slideInfo");
+	pj_o (pj);
 	ut8 version = cache->rebase_info->version;
-	p ("\nslide info (v%d):\n", version);
-	p ("slide: 0x%"PFMT64x"\n", slide);
-	if (version == 2) {
+	pj_kn (pj, "version", version);
+	pj_kn (pj, "slide", slide);
+	if (version == 3) {
+		RDyldRebaseInfo3 *info3 = (RDyldRebaseInfo3*) cache->rebase_info;
+		pj_kn (pj, "page_starts_count", info3->page_starts_count);
+		pj_kn (pj, "page_size", info3->page_size);
+		pj_kn (pj, "auth_value_add", info3->auth_value_add);
+	} else if (version == 2 || version == 4) {
 		RDyldRebaseInfo2 *info2 = (RDyldRebaseInfo2*) cache->rebase_info;
-		p ("page_starts_count: 0x%"PFMT64x"\n", info2->page_starts_count);
-		p ("page_extras_count: 0x%"PFMT64x"\n", info2->page_extras_count);
-		p ("delta_mask: 0x%"PFMT64x"\n", info2->delta_mask);
-		p ("value_mask: 0x%"PFMT64x"\n", info2->value_mask);
-		p ("delta_shift: 0x%"PFMT64x"\n", info2->delta_shift);
-		p ("page_size: 0x%"PFMT64x"\n", info2->page_size);
+		pj_kn (pj, "page_starts_count", info2->page_starts_count);
+		pj_kn (pj, "page_extras_count", info2->page_extras_count);
+		pj_kn (pj, "delta_mask", info2->delta_mask);
+		pj_kn (pj, "value_mask", info2->value_mask);
+		pj_kn (pj, "delta_shift", info2->delta_shift);
+		pj_kn (pj, "page_size", info2->page_size);
 	} else if (version == 1) {
 		RDyldRebaseInfo1 *info1 = (RDyldRebaseInfo1*) cache->rebase_info;
-		p ("toc_count: 0x%"PFMT64x"\n", info1->toc_count);
-		p ("entries_size: 0x%"PFMT64x"\n", info1->entries_size);
-		p ("page_size: 0x%"PFMT64x"\n", 4096);
+		pj_kn (pj, "toc_count", info1->toc_count);
+		pj_kn (pj, "entries_size", info1->entries_size);
+		pj_kn (pj, "page_size", 4096);
 	}
+	pj_end (pj);
+
+	if (cache->hdr->imagesTextCount) {
+		pj_k (pj, "images");
+		pj_a (pj);
+		ut64 total_size = cache->hdr->imagesTextCount * sizeof (cache_text_info_t);
+		cache_text_info_t * text_infos = malloc (total_size);
+		if (!text_infos) {
+			goto beach;
+		}
+		if (r_buf_fread_at (cache->buf, cache->hdr->imagesTextOffset, (ut8*)text_infos, "16clii", cache->hdr->imagesTextCount) != total_size) {
+			free (text_infos);
+			goto beach;
+		}
+		size_t i;
+		for (i = 0; i != cache->hdr->imagesTextCount; i++) {
+			cache_text_info_t * text_info = &text_infos[i];
+			r_hex_bin2str ((ut8*)text_info->uuid, 16, uuidstr);
+			pj_o (pj);
+			pj_ks (pj, "uuid", uuidstr);
+			pj_kn (pj, "address", text_info->loadAddress + slide);
+			pj_kn (pj, "textSegmentSize", text_info->textSegmentSize);
+			char file[256];
+			if (r_buf_read_at (cache->buf, text_info->pathOffset, (ut8*) &file, sizeof (file)) == sizeof (file)) {
+				file[255] = 0;
+				pj_ks (pj, "path", file);
+				char *last_slash = strrchr (file, '/');
+				if (last_slash && *last_slash) {
+					pj_ks (pj, "name", last_slash + 1);
+				} else {
+					pj_ks (pj, "name", file);
+				}
+			}
+			pj_end (pj);
+		}
+		pj_end (pj);
+		free (text_infos);
+	}
+
+	pj_end (pj);
+	p (pj_string (pj));
+
+beach:
+	pj_free (pj);
 }
 
 RBinPlugin r_bin_plugin_dyldcache = {
