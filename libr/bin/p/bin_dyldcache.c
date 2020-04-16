@@ -799,7 +799,7 @@ static HtPP * create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_h
 	if (!path_to_idx) {
 		return NULL;
 	}
-	ut64 i;
+	size_t i;
 	for (i = 0; i != hdr->imagesCount; i++) {
 		char file[256];
 		if (r_buf_read_at (cache_buf, img[i].pathFileOffset, (ut8*) &file, sizeof (file)) != sizeof (file)) {
@@ -826,10 +826,11 @@ static void carve_deps_at_address(RBuffer *cache_buf, cache_img_t *img, cache_hd
 		return;
 	}
 	ut64 cmds_at = pa + sizeof (struct MACH0_(mach_header));
-	ut8 *cmds = malloc (mh.sizeofcmds);
+	ut8 *cmds = malloc (mh.sizeofcmds + 1);
 	if (!cmds || r_buf_read_at (cache_buf, cmds_at, cmds, mh.sizeofcmds) != mh.sizeofcmds) {
 		goto beach;
 	}
+	cmds[mh.sizeofcmds] = 0;
 	ut8 *cursor = cmds;
 	ut8 *end = cmds + mh.sizeofcmds;
 	while (cursor < end) {
@@ -840,8 +841,11 @@ static void carve_deps_at_address(RBuffer *cache_buf, cache_img_t *img, cache_hd
 				cmd == LC_REEXPORT_DYLIB ||
 				cmd == LC_LOAD_UPWARD_DYLIB) {
 			bool found;
-			const char *key = sdb_fmt ("%s", cursor + 24);
-			ut64 dep_index = (ut64) ht_pp_find (path_to_idx, key, &found);
+			if (cursor + 24 >= end) {
+				break;
+			}
+			const char *key = (const char *) cursor + 24;
+			size_t dep_index = (size_t) ht_pp_find (path_to_idx, key, &found);
 			if (!found || dep_index >= hdr->imagesCount) {
 				eprintf ("WARNING: alien dep '%s'\n", key);
 				continue;
@@ -907,6 +911,9 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 
 		for (i = 0; i < hdr->imagesCount; i++) {
 			char *lib_name = get_lib_name (cache_buf, &img[i]);
+			if (!lib_name) {
+				break;
+			}
 			if (strstr (lib_name, "libobjc.A.dylib")) {
 				deps[i]++;
 			}
@@ -925,6 +932,9 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 					deps[dep_index]++;
 
 					char *dep_name = get_lib_name (cache_buf, &img[dep_index]);
+					if (!dep_name) {
+						break;
+					}
 					eprintf ("-> %s\n", dep_name);
 					free (dep_name);
 				}
@@ -933,9 +943,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			}
 		}
 
-		if (path_to_idx) {
-			ht_pp_free (path_to_idx);
-		}
+		ht_pp_free (path_to_idx);
 		R_FREE (depArray);
 		R_FREE (extras);
 		R_FREE (target_libs);
@@ -1841,7 +1849,7 @@ static void header(RBinFile *bf) {
 			free (text_infos);
 			goto beach;
 		}
-		int i;
+		size_t i;
 		for (i = 0; i != cache->hdr->imagesTextCount; i++) {
 			cache_text_info_t * text_info = &text_infos[i];
 			r_hex_bin2str ((ut8*)text_info->uuid, 16, uuidstr);
@@ -1862,7 +1870,7 @@ static void header(RBinFile *bf) {
 			}
 			pj_end (pj);
 		}
-		pj_end(pj);
+		pj_end (pj);
 		free (text_infos);
 	}
 

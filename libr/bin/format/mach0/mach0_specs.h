@@ -227,8 +227,7 @@ typedef struct {
 	uint64_t imagesTextCount;
 } cache_hdr_t;
 
-typedef struct
-{
+typedef struct {
 	uint8_t uuid[16];
 	uint64_t loadAddress;
 	uint32_t textSegmentSize;
@@ -251,8 +250,7 @@ typedef struct {
 	uint32_t pad;
 } cache_img_t;
 
-typedef struct
-{
+typedef struct {
 	uint32_t version;
 	uint32_t page_size;
 	uint32_t page_starts_count;
@@ -280,8 +278,7 @@ typedef struct {
 	uint32_t entries_size;
 } cache_slide1_t;
 
-typedef struct
-{
+typedef struct {
 	uint32_t version;
 	uint32_t imageExtrasCount;
 	uint32_t imagesExtrasOffset;
@@ -301,8 +298,7 @@ typedef struct
 	uint64_t dyldSectionAddr;
 } cache_accel_t;
 
-typedef struct
-{
+typedef struct {
 	uint64_t exportsTrieAddr;
 	uint64_t weakBindingsAddr;
 	uint32_t exportsTrieSize;
@@ -311,8 +307,7 @@ typedef struct
 	uint32_t reExportsStartArrayIndex;
 } cache_imgxtr_t;
 
-typedef struct
-{
+typedef struct {
 	uint32_t nlistOffset;
 	uint32_t nlistCount;
 	uint32_t stringsOffset;
@@ -321,8 +316,7 @@ typedef struct
 	uint32_t entriesCount;
 } cache_locsym_info_t;
 
-typedef struct
-{
+typedef struct {
 	uint32_t dylibOffset;
 	uint32_t nlistStartIndex;
 	uint32_t nlistCount;
