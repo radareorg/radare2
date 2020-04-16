@@ -36,9 +36,9 @@ aB "lea rax, 0x803" 488d042503080000
 a "mov [rsi], rbx" 48891e
 ad "mov eax, 0" b800000000
 ad "mov ecx, 0x7fffffff" b9ffffff7f
-aB "mov esi, -0x80000000" be00000080
+a "mov esi, -0x80000000" be00000080
 ad "mov esi, 0x80000000" be00000080
-aB "mov edi, -1" bfffffffff
+a "mov edi, -1" bfffffffff
 ad "mov edi, 0xffffffff" bfffffffff
 a "mov rax, 0x1122334455667788" 48b88877665544332211
 a "mov rax, 3" 48c7c003000000
