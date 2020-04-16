@@ -1356,6 +1356,14 @@ R_API R_NULLABLE RList/*<RAnalBlock *>*/ *r_anal_block_shortest_path(RAnalBlock 
 // If block->switch_op is NULL, it will be created with the given switch_addr.
 R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut64 case_addr);
 
+// Chop off the block at the specified address and remove all destinations.
+// Blocks that have become unreachable after this operation will be automatically removed from all functions of block.
+// addr must be the address directly AFTER the noreturn call!
+R_API void r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr);
+
+// return true iff an instruction in the given basic block starts at the given address
+R_API bool r_anal_block_op_starts_at(RAnalBlock *block, ut64 addr);
+
 // ---------------------------------------
 
 /* function.c */
@@ -1443,7 +1451,6 @@ R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v);
 R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_i(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
-R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr);
 R_API ut64 r_anal_bb_size_i(RAnalBlock *bb, int i);
 
 /* op.c */

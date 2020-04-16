@@ -543,3 +543,98 @@ beach:
 	return ret;
 }
 
+typedef struct {
+	RAnalBlock *block;
+	bool reachable;
+} NoreturnSuccessor;
+
+static void noreturn_successor_free(HtUPKv *kv) {
+	NoreturnSuccessor *succ = kv->value;
+	r_anal_block_unref (succ->block);
+	free (succ);
+}
+
+static bool noreturn_successors_cb(RAnalBlock *block, void *user) {
+	HtUP *succs = user;
+	NoreturnSuccessor *succ = R_NEW0 (NoreturnSuccessor);
+	if (!succ) {
+		return false;
+	}
+	r_anal_block_ref (block);
+	succ->block = block;
+	succ->reachable = false; // reset for first iteration
+	ht_up_insert (succs, block->addr, succ);
+	return true;
+}
+
+static bool noreturn_successors_reachable_cb(RAnalBlock *block, void *user) {
+	HtUP *succs = user;
+	NoreturnSuccessor *succ = ht_up_find (succs, block->addr, NULL);
+	if (!succ) {
+		return true;
+	}
+	succ->reachable = true;
+	return true;
+}
+
+static bool noreturn_remove_unreachable_cb(void *user, const ut64 k, const void *v) {
+	RAnalFunction *fcn = user;
+	NoreturnSuccessor *succ = (NoreturnSuccessor *)v;
+	if (!succ->reachable && r_list_contains (succ->block->fcns, fcn)) {
+		r_anal_function_remove_block (fcn, succ->block);
+	}
+	succ->reachable = false; // reset for next iteration
+	return true;
+}
+
+R_API void r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
+	if (!r_anal_block_contains (block, addr) || addr == block->addr) {
+		return;
+	}
+	r_anal_block_ref (block);
+
+	// Cache all recursive successors of block here.
+	// These are the candidates that we might have to remove from functions later.
+	HtUP *succs = ht_up_new (NULL, noreturn_successor_free, NULL); // maps block addr (ut64) => NoreturnSuccessor *
+	if (!succs) {
+		return;
+	}
+	r_anal_block_recurse (block, noreturn_successors_cb, succs);
+
+	// Chop the block. Resize and remove all destination addrs
+	r_anal_block_set_size (block, addr - block->addr);
+	block->jump = UT64_MAX;
+	block->fail = UT64_MAX;
+	r_anal_switch_op_free (block->switch_op);
+	block->switch_op = NULL;
+
+	// Now, for each fcn, check which of our successors are still reachable in the function remove and the ones that are not.
+	RListIter *it;
+	RAnalFunction *fcn;
+	r_list_foreach (block->fcns, it, fcn) {
+		RAnalBlock *entry = r_anal_get_block_at (block->anal, fcn->addr);
+		if (entry && r_list_contains (entry->fcns, fcn)) {
+			r_anal_block_recurse (entry, noreturn_successors_reachable_cb, succs);
+		}
+		ht_up_foreach (succs, noreturn_remove_unreachable_cb, fcn);
+	}
+
+	r_anal_block_unref (block);
+	ht_up_free (succs);
+}
+
+R_API bool r_anal_block_op_starts_at(RAnalBlock *bb, ut64 addr) {
+	int i;
+
+	if (!r_anal_block_contains (bb, addr)) {
+		return false;
+	}
+	ut16 off = addr - bb->addr;
+	for (i = 0; i < bb->ninstr; i++) {
+		ut16 inst_off = r_anal_bb_offset_inst (bb, i);
+		if (off == inst_off) {
+			return true;
+		}
+	}
+	return false;
+}
