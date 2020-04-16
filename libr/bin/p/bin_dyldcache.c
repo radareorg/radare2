@@ -248,7 +248,7 @@ static void r_dyld_locsym_entries_by_offset(RDyldCache *cache, RList *symbols, H
 		}
 
 		if (entry->nlistStartIndex >= locsym->nlists_count ||
-				entry->nlistStartIndex + entry->nlistCount >= locsym->nlists_count) {
+				entry->nlistStartIndex + entry->nlistCount > locsym->nlists_count) {
 			eprintf ("dyldcache: malformed local symbol entry\n");
 			break;
 		}
