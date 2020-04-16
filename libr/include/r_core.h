@@ -236,6 +236,7 @@ typedef struct r_core_tasks_t {
 
 typedef struct r_core_t {
 	RBin *bin;
+	RArch *arch;
 	RConfig *config;
 	ut64 offset; // current seek
 	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks

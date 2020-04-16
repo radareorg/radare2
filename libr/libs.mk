@@ -4,7 +4,7 @@ ifeq ($(LIBS0),)
 LIBS0=util
 LIBS1=socket hash reg cons magic bp search config
 LIBS2=syscall lang io crypto flag
-LIBS3=fs parse bin
+LIBS3=fs parse bin arch
 LIBS4=asm
 LIBS5=anal egg
 LIBS6=debug
