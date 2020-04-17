@@ -1,7 +1,7 @@
 include ../../global.mk
 
 NAME=r_arch
-DEPS=r_util r_parse
+DEPS=r_util
 DEPS+=r_flag r_cons r_reg
 CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch -I../../shlr
 CURDIR=p/
