@@ -570,7 +570,7 @@ static int r_cmd_java_get_cp_bytes_and_write(RCore *core, RBinJavaObj *obj, ut16
 	}
 
 	if (n_sz > 0 && bytes) {
-		res = r_core_write_at (core, addr, (const ut8 *)bytes, n_sz) && r_core_seek (core, addr, 1);
+		res = r_core_write_at (core, addr, (const ut8 *)bytes, n_sz) && r_core_seek (core, addr, true);
 	}
 
 	if (res == false) {
@@ -1343,7 +1343,7 @@ static int r_cmd_java_handle_flags_str_at(RCore *core, const char *cmd) {
 		r_io_read_at (core->io, flag_value_addr, (ut8 *)&flag_value, 2);
 		IFDBG r_cons_printf ("r_cmd_java_handle_flags_str_at: read = 0x%04x\n", flag_value);
 		if (cur_offset != core->offset) {
-			r_core_seek (core, cur_offset - 2, 1);
+			r_core_seek (core, cur_offset - 2, true);
 		}
 		flag_value = R_BIN_JAVA_USHORT (((ut8 *)&flag_value), 0);
 	}
@@ -1708,24 +1708,16 @@ static int r_cmd_java_print_method_access_flags_value(const char *flags) {
 
 static int r_cmd_java_set_acc_flags(RCore *core, ut64 addr, ut16 num_acc_flag) {
 	char cmd_buf[50];
-	//const char * fmt = "wx %04x @ 0x%"PFMT64x;
 
 	int res = false;
-	//ut64 cur_offset = core->offset;
 	num_acc_flag = R_BIN_JAVA_USHORT (((ut8 *)&num_acc_flag), 0);
 	res = r_core_write_at (core, addr, (const ut8 *)&num_acc_flag, 2);
 	if (!res) {
 		eprintf ("[X] r_cmd_java_set_acc_flags: Failed to write.\n");
 		return res;
 	}
-	//snprintf (cmd_buf, 50, fmt, num_acc_flag, addr);
-	//res = r_core_cmd0(core, cmd_buf);
 	res = true;
 	IFDBG r_cons_printf ("Executed cmd: %s == %d\n", cmd_buf, res);
-	/*if (cur_offset != core->offset) {
-		IFDBG eprintf ("Ooops, write advanced the cursor, moving it back.");
-		r_core_seek (core, cur_offset-2, 1);
-	}*/
 	return res;
 }
 static int r_cmd_java_print_field_num_name(RBinJavaObj *obj) {

@@ -27,9 +27,9 @@ static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	if (cmd && *cmd) {
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		r_core_cmd0 (core, cmd);
-		r_core_seek (core, oaddr, 1);
+		r_core_seek (core, oaddr, true);
 	}
 	return 0;
 }
@@ -40,9 +40,9 @@ static int on_fcn_delete (RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	if (cmd && *cmd) {
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		r_core_cmd0 (core, cmd);
-		r_core_seek (core, oaddr, 1);
+		r_core_seek (core, oaddr, true);
 	}
 	return 0;
 }
@@ -54,9 +54,9 @@ static int on_fcn_rename(RAnal *_anal, void* _user, RAnalFunction *fcn, const ch
 		// XXX: wat do with old name here?
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		r_core_cmd0 (core, cmd);
-		r_core_seek (core, oaddr, 1);
+		r_core_seek (core, oaddr, true);
 	}
 	return 0;
 }
@@ -3082,7 +3082,7 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
 	if (diff < 0 && -diff > seek) {
 		seek = diff = 0;
 	}
-	return r_core_seek (core, seek + diff, 1);
+	return r_core_seek (core, seek + diff, true);
 }
 
 R_API char *r_core_op_str(RCore *core, ut64 addr) {
@@ -3324,7 +3324,7 @@ reaccept:
 					}
 				} else {
 					if (buf[0] == 0) {
-						r_core_seek (core, x, 1); //buf[0]);
+						r_core_seek (core, x, true); //buf[0]);
 					}
 					x = core->offset;
 				}

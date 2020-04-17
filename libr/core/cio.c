@@ -58,7 +58,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 
 R_API int r_core_seek_base (RCore *core, const char *hex) {
 	ut64 addr = r_num_tail (core->num, core->offset, hex);
-	return r_core_seek (core, addr, 1);
+	return r_core_seek (core, addr, true);
 }
 
 R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append) {
@@ -405,7 +405,7 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 		}
 	}
 	core->offset = addr;
-	return r_core_seek (core, addr, 1);
+	return r_core_seek (core, addr, true);
 }
 
 // TODO: kill this wrapper
@@ -501,7 +501,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 		r_io_write_at (core->io, addr + dist, shift_buf, b_size);
 		res = true;
 	}
-	r_core_seek (core, addr, 1);
+	r_core_seek (core, addr, true);
 	free (shift_buf);
 	return res;
 }

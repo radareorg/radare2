@@ -6587,13 +6587,13 @@ toro:
 		i += ret;
 	}
 	if (nb_opcodes > 0 && j < nb_opcodes) {
-		r_core_seek (core, core->offset + i, 1);
+		r_core_seek (core, core->offset + i, true);
 		i = 0;
 		goto toro;
 	}
 	r_config_set_i (core->config, "asm.marks", asmmarks);
 	r_meta_item_free (meta);
 	r_cons_break_pop ();
-	r_core_seek (core, old_offset, 1);
+	r_core_seek (core, old_offset, true);
 	return err;
 }

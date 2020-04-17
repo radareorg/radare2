@@ -1735,7 +1735,7 @@ void __handleComment(RCore *core) {
 		addr = orig = core->offset;
 		if (core->print->cur_enabled) {
 			addr += core->print->cur;
-			r_core_seek (core, addr, 0);
+			r_core_seek (core, addr, false);
 			r_core_cmdf (core, "s 0x%"PFMT64x, addr);
 		}
 		if (!strcmp (buf + i, "-")) {
@@ -1770,7 +1770,7 @@ void __handleComment(RCore *core) {
 		}
 		r_core_cmd (core, buf, 1);
 		if (core->print->cur_enabled) {
-			r_core_seek (core, orig, 1);
+			r_core_seek (core, orig, true);
 		}
 	}
 	__set_refresh_by_type (core, p->model->cmd, true);
@@ -2089,7 +2089,7 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 		const ut64 addr = r_num_math (core->num, word);
 		if (__check_panel_type (panel, PANEL_CMD_FUNCTION) &&
 				__check_if_addr (word, strlen (word))) {
-			r_core_seek (core, addr, 1);
+			r_core_seek (core, addr, true);
 			__set_addr_by_type (core, PANEL_CMD_DISASSEMBLY, addr);
 		}
 		r_flag_set (core->flags, "panel.addr", addr, 1);
@@ -3874,7 +3874,7 @@ void __direction_disassembly_cb(void *user, int direction) {
 		} else {
 			RAsmOp op;
 			r_core_visual_disasm_down (core, &op, &cols);
-			r_core_seek (core, core->offset + cols, 1);
+			r_core_seek (core, core->offset + cols, true);
 			__set_panel_addr (core, cur, core->offset);
 		}
 		return;
@@ -4185,7 +4185,7 @@ void __print_disassembly_cb(void *user, void *p) {
 	panel->model->cmd = r_str_newf ("%s %d", panel->model->cmd, panel->view->pos.h - 3);
 	ut64 o_offset = core->offset;
 	core->offset = panel->model->addr;
-	r_core_seek (core, panel->model->addr, 1);
+	r_core_seek (core, panel->model->addr, true);
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		r_core_cmd (core, ".dr*", 0);
 	}
@@ -4240,7 +4240,7 @@ void __print_hexdump_cb(void *user, void *p) {
 		ut64 o_offset = core->offset;
 		if (!panel->model->cache) {
 			core->offset = panel->model->addr;
-			r_core_seek (core, core->offset, 1);
+			r_core_seek (core, core->offset, true);
 			r_core_block_read (core);
 		}
 		char *base = hexdump_rotate[R_ABS(panel->model->rotate) % COUNT (hexdump_rotate)];
@@ -6775,11 +6775,11 @@ repeat:
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 			ut64 addr = r_debug_reg_get (core->dbg, "PC");
 			if (addr && addr != UT64_MAX) {
-				r_core_seek (core, addr, 1);
+				r_core_seek (core, addr, true);
 			} else {
 				addr = r_num_get (core->num, "entry0");
 				if (addr && addr != UT64_MAX) {
-					r_core_seek (core, addr, 1);
+					r_core_seek (core, addr, true);
 				}
 			}
 			__set_panel_addr (core, cur, core->offset);

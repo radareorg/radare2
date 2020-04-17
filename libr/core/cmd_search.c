@@ -1895,7 +1895,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		}
 	}
 beach:
-	r_core_seek (core, oldoff, 1);
+	r_core_seek (core, oldoff, true);
 	r_anal_esil_free (esil);
 	r_cons_break_pop ();
 	free (buf);
@@ -2604,9 +2604,9 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, int count, vo
 	const char *cmdHit = r_config_get (core->config, "cmd.hit");
 	if (cmdHit && *cmdHit) {
 		ut64 addr = core->offset;
-		r_core_seek (core, from, 1);
+		r_core_seek (core, from, true);
 		r_core_cmd (core, cmdHit, 0);
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 	}
 }
 
@@ -3123,13 +3123,13 @@ reread:
 					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 					ut64 refptr = r_num_math (core->num, input + 2);
 					ut64 curseek = core->offset;
-					r_core_seek (core, map->itv.addr, 1);
+					r_core_seek (core, map->itv.addr, true);
 					char *arg = r_str_newf (" %"PFMT64d, r_itv_end (map->itv) - map->itv.addr);
 					char *trg = refptr? r_str_newf (" %"PFMT64d, refptr): strdup ("");
 					r_core_anal_esil (core, arg, trg);
 					free (arg);
 					free (trg);
-					r_core_seek (core, curseek, 1);
+					r_core_seek (core, curseek, true);
 				}
 			}
 			break;
