@@ -52,7 +52,7 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 	return false;
 }
 
-void r_anal_var_free(RAnalVar *av);
+R_IPI void r_anal_var_free(RAnalVar *av);
 
 R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);

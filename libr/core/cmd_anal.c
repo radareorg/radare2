@@ -1036,14 +1036,14 @@ static int cmd_an(RCore *core, bool use_json, const char *name) {
 			ret = r_anal_function_var_rename (varfcn, var, name, true)
 				? 0
 				: -1;
-		} else if (!use_json) {
-			r_cons_println (var->name);
-		} else {
+		} else if (use_json) {
 			pj_o (pj);
 			pj_ks (pj, "name", var->name);
 			pj_ks (pj, "type", "var");
 			pj_kn (pj, "offset", tgt_addr);
 			pj_end (pj);
+		} else {
+			r_cons_println (var->name);
 		}
 	} else if (tgt_addr != UT64_MAX) {
 		RAnalFunction *fcn = r_anal_get_function_at (core->anal, tgt_addr);
@@ -1344,7 +1344,7 @@ static int var_cmd(RCore *core, const char *str) {
 			return false;
 		}
 		if (str[2] == '*') {
-			r_anal_function_delete_all_vars_of_kind (fcn, type);
+			r_anal_function_delete_vars_by_kind (fcn, type);
 		} else {
 			RAnalVar *var = NULL;
 			if (IS_DIGIT (str[2])) {

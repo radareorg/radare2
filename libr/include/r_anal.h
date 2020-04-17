@@ -1587,7 +1587,7 @@ R_API bool r_anal_function_var_rename(RAnalFunction *fcn, RAnalVar *var, const c
 R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff);
 R_API void r_anal_function_var_set_type(RAnalFunction *fcn, RAnalVar *var, const char *type);
 R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
-R_API void r_anal_function_delete_all_vars_of_kind(RAnalFunction *fcn, RAnalVarKind kind);
+R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind);
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
 R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
 R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name);

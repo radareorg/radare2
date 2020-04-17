@@ -120,7 +120,10 @@ static void shadow_var_struct_members(RAnalFunction *fcn, RAnalVar *var) {
 		int field_n;
 		char *type_key = r_str_newf ("%s.%s", type_kind, var->type);
 		for (field_n = 0; (field = sdb_array_get (TDB, type_key, field_n, NULL)); field_n++) {
-			char *field_key = r_str_newf ("%s.%s", type_key, field);
+			char field_key[0x300];
+			if (snprintf (field_key, sizeof (field_key), "%s.%s", type_key, field) < 0) {
+				continue;
+			}
 			char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
 			ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
 			if (field_offset != 0) { // delete variables which are overlaid by structure
@@ -130,7 +133,6 @@ static void shadow_var_struct_members(RAnalFunction *fcn, RAnalVar *var) {
 				}
 			}
 			free (field_type);
-			free (field_key);
 			free (field);
 		}
 		free (type_key);
@@ -198,7 +200,7 @@ R_API void r_anal_function_var_set_type(RAnalFunction *fcn, RAnalVar *var, const
 }
 
 // not static because used in function.c, but also not public API
-void r_anal_var_free(RAnalVar *av) {
+R_IPI void r_anal_var_free(RAnalVar *av) {
 	if (av) {
 		free (av->name);
 		free (av->regname);
@@ -219,7 +221,7 @@ R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
 	}
 }
 
-R_API void r_anal_function_delete_all_vars_of_kind(RAnalFunction *fcn, RAnalVarKind kind) {
+R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind) {
 	r_return_if_fail (fcn);
 	size_t i;
 	for (i = 0; i < r_pvector_len (&fcn->vars);) {
@@ -452,10 +454,9 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 }
 
 static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list) {
-	/* ATTENTION: av->name might be freed and reassigned */
 	Sdb *TDB = a->sdb_types;
 	const char *type_kind = sdb_const_get (TDB, av->type, 0);
-	if (type_kind && r_str_startswith (type_kind, "struct")) {
+	if (type_kind && !strcmp (type_kind, "struct")) {
 		char *field_name, *new_name;
 		int field_n;
 		char *type_key = r_str_newf ("%s.%s", type_kind, av->type);
@@ -463,7 +464,7 @@ static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list
 			char *field_key = r_str_newf ("%s.%s", type_key, field_name);
 			char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
 			ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
-			new_name = r_str_newf ( "%s.%s", av->name, field_name);
+			new_name = r_str_newf ("%s.%s", av->name, field_name);
 			RAnalVarField *field = R_NEW0 (RAnalVarField);
 			field->name = new_name;
 			field->delta = av->delta + field_offset;
