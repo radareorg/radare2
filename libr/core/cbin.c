@@ -3676,7 +3676,7 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 			r_cons_printf ("{\"section_name\":\"%s\",\"address\":%"PFMT64u",\"offset\":%"PFMT64u",",
 					section_name, (ut64)addr, (ut64)offset);
 			r_cons_printf ("\"link\":%"PFMT64u",\"link_section_name\":\"%s\",\"entries\":[",
-					(ut32)link, link_section_name);
+					link, link_section_name);
 		} else {
 			r_cons_printf ("Version symbols section '%s' contains %"PFMT64u" entries:\n", section_name, num_entries);
 			r_cons_printf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
