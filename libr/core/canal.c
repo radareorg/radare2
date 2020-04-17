@@ -9,6 +9,8 @@
 
 #include <string.h>
 
+HEAPTYPE (ut64);
+
 // used to speedup strcmp with rconfig.get in loops
 enum {
 	R2_ARCH_THUMB,
@@ -5625,8 +5627,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 	RAnalFunction *f;
 	r_list_foreach (core->anal->fcns, iter, f) {
 		if (f->is_noreturn) {
-			ut64 *n = malloc (sizeof (ut64));
-			*n = f->addr;
+			ut64 *n = ut64_new (f->addr);
 			r_list_append (todo, n);
 		}
 	}

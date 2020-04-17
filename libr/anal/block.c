@@ -466,7 +466,10 @@ R_API bool r_anal_block_op_starts_at(RAnalBlock *bb, ut64 addr) {
 	if (!r_anal_block_contains (bb, addr)) {
 		return false;
 	}
-	ut16 off = addr - bb->addr;
+	ut64 off = addr - bb->addr;
+	if (off > UT16_MAX) {
+		return false;
+	}
 	size_t i;
 	for (i = 0; i < bb->ninstr; i++) {
 		ut16 inst_off = r_anal_bb_offset_inst (bb, i);
@@ -585,10 +588,9 @@ static bool noreturn_successors_cb(RAnalBlock *block, void *user) {
 static bool noreturn_successors_reachable_cb(RAnalBlock *block, void *user) {
 	HtUP *succs = user;
 	NoreturnSuccessor *succ = ht_up_find (succs, block->addr, NULL);
-	if (!succ) {
-		return true;
+	if (succ) {
+		succ->reachable = true;
 	}
-	succ->reachable = true;
 	return true;
 }
 
@@ -611,6 +613,7 @@ static bool noreturn_get_blocks_cb(void *user, const ut64 k, const void *v) {
 }
 
 R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
+	r_return_val_if_fail (block, NULL);
 	if (!r_anal_block_contains (block, addr) || addr == block->addr) {
 		return block;
 	}
@@ -692,16 +695,14 @@ static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 	}
 	bool found;
 	RAnalBlock *pred = ht_up_find (ctx->predecessors, (ut64)block, &found);
-	if (!found) {
-		// no predecessor found yet, this is the only one until now
-		ht_up_insert (ctx->predecessors, (ut64)block, ctx->cur_pred);
-	} else {
+	if (found) {
 		if (pred) {
 			// only one predecessor found so far, but we are the second so there are multiple now
-			ht_up_update (ctx->predecessors, (ut64)block, NULL);
-		} else {
-			// already found multiple predecessors, nothing to do
-		}
+			ht_up_update (ctx->predecessors, (ut64) block, NULL);
+		} // else: already found multiple predecessors, nothing to do
+	} else {
+		// no predecessor found yet, this is the only one until now
+		ht_up_insert (ctx->predecessors, (ut64) block, ctx->cur_pred);
 	}
 	return true;
 }
@@ -728,6 +729,7 @@ static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *
 // Try to find the contiguous predecessors of all given blocks and merge them if possible,
 // i.e. if there are no other blocks that have this block as one of their successors
 R_API void r_anal_block_automerge(RList *blocks) {
+	r_return_if_fail (blocks);
 	AutomergeCtx ctx = {
 		.predecessors = ht_up_new0 (),
 		.visited_blocks = ht_up_new0 (),

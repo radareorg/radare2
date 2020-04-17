@@ -1317,7 +1317,7 @@ static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr);
 
 static inline bool r_anal_block_is_contiguous(RAnalBlock *a, RAnalBlock *b) {
-	return a->addr + a->size == b->addr;
+	return (a->addr + a->size) == b->addr;
 }
 
 // Merge block b into a.
