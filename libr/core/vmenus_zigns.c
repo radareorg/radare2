@@ -119,9 +119,9 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 		case '\r':
 		case '\n':
 			if (status.pos) {
-				r_core_seek (core, status.faddr, 1);
+				r_core_seek (core, status.faddr, true);
 			} else {
-				r_core_seek (core, status.addr, 1);
+				r_core_seek (core, status.addr, true);
 			}
 			return true;
 			break;

@@ -420,12 +420,12 @@ static bool lastcmd_repeat(RCore *core, int next) {
 			}
 		} else {
 			if (next) {
-				r_core_seek (core, core->offset + core->blocksize, 1);
+				r_core_seek (core, core->offset + core->blocksize, true);
 			} else {
 				if (core->blocksize > core->offset) {
-					r_core_seek (core, 0, 1);
+					r_core_seek (core, 0, true);
 				} else {
-					r_core_seek (core, core->offset - core->blocksize, 1);
+					r_core_seek (core, core->offset - core->blocksize, true);
 				}
 			}
 		}
@@ -735,7 +735,7 @@ static int cmd_alias(void *data, const char *input) {
 		} else {
 			ut64 at = r_num_get (core->num, buf + 1);
 			if (at != UT64_MAX) {
-				r_core_seek (core, at, 1);
+				r_core_seek (core, at, true);
 			} else {
 				eprintf ("Unknown alias '%s'\n", buf + 1);
 			}
@@ -2704,7 +2704,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	r_cons_break_pop ();
 
 	if (tmpseek) {
-		r_core_seek (core, orig_offset, 1);
+		r_core_seek (core, orig_offset, true);
 		core->tmpseek = original_tmpseek;
 	}
 	if (core->print) {
@@ -2863,7 +2863,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					}
 					haveQuote = q != NULL;
 					oseek = core->offset;
-					r_core_seek (core, r_num_math (core->num, p + 2), 1);
+					r_core_seek (core, r_num_math(core->num, p + 2), true);
 					if (q) {
 						*p = '"';
 						p = q;
@@ -2892,7 +2892,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			}
 			free (line);
 			if (oseek != UT64_MAX) {
-				r_core_seek (core, oseek, 1);
+				r_core_seek (core, oseek, true);
 			}
 			if (pipefd != -1) {
 				r_cons_flush ();
@@ -3353,7 +3353,7 @@ repeat_arroba:
 					goto fuji;
 				} else {
 					addr = r_num_tail (core->num, core->offset, ptr + 3);
-					r_core_seek (core, addr, 1);
+					r_core_seek (core, addr, true);
 					cmd_tmpseek = core->tmpseek = true;
 					goto fuji;
 				}
@@ -3378,7 +3378,7 @@ repeat_arroba:
 
 						if (index >= 0 && index < bb->ninstr) {
 							ut16 inst_off = r_anal_bb_offset_inst (bb, index);
-							r_core_seek (core, bb->addr + inst_off, 1);
+							r_core_seek (core, bb->addr + inst_off, true);
 							cmd_tmpseek = core->tmpseek = true;
 						} else {
 							eprintf ("The current basic block has %d instructions\n", bb->ninstr);
@@ -3426,7 +3426,7 @@ repeat_arroba:
 					} else {
 						regval = r_debug_reg_get (core->dbg, ptr + 2);
 					}
-					r_core_seek (core, regval, 1);
+					r_core_seek (core, regval, true);
 					cmd_tmpseek = core->tmpseek = true;
 					free (mander);
 				}
@@ -3439,7 +3439,6 @@ repeat_arroba:
 					ut64 addr = r_num_math (core->num, ptr + 2);
 					if (addr) {
 						r_core_cmdf (core, "so %s", ptr + 2);
-				//		r_core_seek (core, core->offset, 1);
 						cmd_tmpseek = core->tmpseek = true;
 					}
 				}
@@ -3523,7 +3522,7 @@ repeat_arroba:
 				 {
 					char *out = sdb_querys (core->sdb, NULL, 0, ptr + ((ptr[1])? 2: 1));
 					if (out) {
-						r_core_seek (core, r_num_math (core->num, out), 1);
+						r_core_seek (core, r_num_math(core->num, out), true);
 						free (out);
 						usemyblock = true;
 					}
@@ -3707,7 +3706,7 @@ next_arroba:
 			} else {
 				if (addr_is_set) {
 					if (ptr[1]) {
-						r_core_seek (core, addr, 1);
+						r_core_seek (core, addr, true);
 						r_core_block_read (core);
 					}
 				}
@@ -3842,7 +3841,7 @@ static void foreach_pairs(RCore *core, const char *cmd, const char *each) {
 				r_core_block_size (core, n);
 				r_core_cmd0 (core, cmd);
 			} else {
-				r_core_seek (core, n, 1);
+				r_core_seek (core, n, true);
 			}
 			pair++;
 		}
@@ -3892,7 +3891,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			if (maps) {
 				RListIter *iter;
 				r_list_foreach (maps, iter, map) {
-					r_core_seek (core, map->itv.addr, 1);
+					r_core_seek (core, map->itv.addr, true);
 					r_core_block_size (core, map->itv.size);
 					r_core_cmd0 (core, cmd);
 				}
@@ -3904,7 +3903,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		if (dbg && dbg->h && dbg->maps) {
 			RDebugMap *map;
 			r_list_foreach (dbg->maps, iter, map) {
-				r_core_seek (core, map->addr, 1);
+				r_core_seek (core, map->addr, true);
 				//r_core_block_size (core, map->size);
 				r_core_cmd0 (core, cmd);
 			}
@@ -3951,13 +3950,13 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				const char *item_name;
 				r_list_foreach (list, iter, item_name) {
 					value = r_reg_getv (core->dbg->reg, item_name);
-					r_core_seek (core, value, 1);
+					r_core_seek (core, value, true);
 					r_cons_printf ("%s: ", item_name);
 					r_core_cmd0 (core, cmd);
 				}
 				r_list_free (list);
 			}
-			r_core_seek (core, offorig, 1);
+			r_core_seek (core, offorig, true);
 		}
 		break;
 	case 'i': // @@@i
@@ -3978,11 +3977,11 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			r_list_foreach (lost, iter, naddr) {
 				ut64 addr = *naddr;
 				if (addr && addr != UT64_MAX) {
-					r_core_seek (core, addr, 1);
+					r_core_seek (core, addr, true);
 					r_core_cmd0 (core, cmd);
 				}
 			}
-			r_core_seek (core, offorig, 1);
+			r_core_seek (core, offorig, true);
 			r_list_free (lost);
 		}
 		break;
@@ -3995,12 +3994,12 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				RBinSection *sec;
 				RListIter *iter;
 				r_list_foreach (obj->sections, iter, sec) {
-					r_core_seek (core, sec->vaddr, 1);
+					r_core_seek (core, sec->vaddr, true);
 					r_core_block_size (core, sec->vsize);
 					r_core_cmd0 (core, cmd);
 				}
 				r_core_block_size (core, bszorig);
-				r_core_seek (core, offorig, 1);
+				r_core_seek (core, offorig, true);
 			}
 		}
 #if ATTIC
@@ -4037,11 +4036,11 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				}
 				r_list_foreach (lost, iter, s) {
 					r_core_block_size (core, s->size);
-					r_core_seek (core, s->vaddr, 1);
+					r_core_seek (core, s->vaddr, true);
 					r_core_cmd0 (core, cmd);
 				}
 				r_core_block_size (core, obs);
-				r_core_seek (core, offorig, 1);
+				r_core_seek (core, offorig, true);
 				r_list_free (lost);
 			}
 		} else {
@@ -4061,13 +4060,13 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					break;
 				}
 				r_core_block_size (core, sym->size);
-				r_core_seek (core, sym->vaddr, 1);
+				r_core_seek (core, sym->vaddr, true);
 				r_core_cmd0 (core, cmd);
 			}
 			r_cons_break_pop ();
 			r_list_free (lost);
 			r_core_block_size (core, obs);
-			r_core_seek (core, offorig, 1);
+			r_core_seek (core, offorig, true);
 		}
 		break;
 	case 'f': // flags
@@ -4082,10 +4081,10 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			RFlagItem *f;
 			r_list_foreach (flags, iter, f) {
 				r_core_block_size (core, f->size);
-				r_core_seek (core, f->offset, 1);
+				r_core_seek (core, f->offset, true);
 				r_core_cmd0 (core, cmd);
 			}
-			r_core_seek (core, off, 0);
+			r_core_seek (core, off, false);
 			r_core_block_size (core, obs);
 			free (glob);
 		}
@@ -4102,14 +4101,14 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					break;
 				}
 				if (!filter || r_str_glob (fcn->name, filter)) {
-					r_core_seek (core, fcn->addr, 1);
+					r_core_seek (core, fcn->addr, true);
 					r_core_block_size (core, r_anal_function_linear_size (fcn));
 					r_core_cmd0 (core, cmd);
 				}
 			}
 			r_cons_break_pop ();
 			r_core_block_size (core, obs);
-			r_core_seek (core, offorig, 1);
+			r_core_seek (core, offorig, true);
 		}
 		break;
 	case 'b':
@@ -4121,12 +4120,12 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				RListIter *iter;
 				RAnalBlock *bb;
 				r_list_foreach (fcn->bbs, iter, bb) {
-					r_core_seek (core, bb->addr, 1);
+					r_core_seek (core, bb->addr, true);
 					r_core_block_size (core, bb->size);
 					r_core_cmd0 (core, cmd);
 				}
 				r_core_block_size (core, obs);
-				r_core_seek (core, offorig, 1);
+				r_core_seek (core, offorig, true);
 			}
 		}
 		break;
@@ -4180,7 +4179,7 @@ static void foreachOffset(RCore *core, const char *_cmd, const char *each) {
 				addr = r_num_math (core->num, each);
 				each = NULL;
 			}
-			r_core_seek (core, addr, 1);
+			r_core_seek (core, addr, true);
 			r_core_cmd (core, cmd, 0);
 			r_cons_flush ();
 		}
@@ -4229,7 +4228,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_list_sort (fcn->bbs, bb_cmp);
 				r_list_foreach (fcn->bbs, iter, bb) {
 					r_core_block_size (core, bb->size);
-					r_core_seek (core, bb->addr, 1);
+					r_core_seek (core, bb->addr, true);
 					r_core_cmd (core, cmd, 0);
 					if (r_cons_is_breaked ()) {
 						break;
@@ -4253,7 +4252,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				ut64 to = r_num_math (core->num, r_str_word_get0 (str, 1));
 				ut64 step = r_num_math (core->num, r_str_word_get0 (str, 2));
 				for (cur = from; cur < to; cur += step) {
-					(void)r_core_seek (core, cur, 1);
+					(void) r_core_seek (core, cur, true);
 					r_core_cmd (core, cmd, 0);
 					if (r_cons_is_breaked ()) {
 						break;
@@ -4276,7 +4275,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_list_foreach (fcn->bbs, iter, bb) {
 					for (i = 0; i < bb->op_pos_size; i++) {
 						ut64 addr = bb->addr + bb->op_pos[i];
-						r_core_seek (core, addr, 1);
+						r_core_seek (core, addr, true);
 						r_core_cmd (core, cmd, 0);
 						if (r_cons_is_breaked ()) {
 							break;
@@ -4294,7 +4293,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			if (core->anal) {
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					if (each[2] && strstr (fcn->name, each + 2)) {
-						r_core_seek (core, fcn->addr, 1);
+						r_core_seek (core, fcn->addr, true);
 						r_core_cmd (core, cmd, 0);
 						if (r_cons_is_breaked ()) {
 							break;
@@ -4310,7 +4309,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				RConsGrep grep = core->cons->context->grep;
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					char *buf;
-					r_core_seek (core, fcn->addr, 1);
+					r_core_seek (core, fcn->addr, true);
 					r_cons_push ();
 					r_core_cmd (core, cmd, 0);
 					buf = (char *)r_cons_get_buffer ();
@@ -4370,21 +4369,21 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			r_list_foreach (list, iter, frame) {
 				switch (each[3]) {
 				case 'b':
-					r_core_seek (core, frame->bp, 1);
+					r_core_seek (core, frame->bp, true);
 					break;
 				case 's':
-					r_core_seek (core, frame->sp, 1);
+					r_core_seek (core, frame->sp, true);
 					break;
 				default:
 				case 'a':
-					r_core_seek (core, frame->addr, 1);
+					r_core_seek (core, frame->addr, true);
 					break;
 				}
 				r_core_cmd (core, cmd, 0);
 				r_cons_newline ();
 				i++;
 			}
-			r_core_seek (core, oseek, 0);
+			r_core_seek (core, oseek, false);
 			r_list_free (list);
 		} else {
 			eprintf("Invalid for-each statement. Use @@=dbt[abs]\n");
@@ -4413,7 +4412,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				}
 				//eprintf ("; 0x%08"PFMT64x":\n", addr);
 				each = str + 1;
-				r_core_seek (core, addr, 1);
+				r_core_seek (core, addr, true);
 				r_core_cmd (core, cmd, 0);
 				r_cons_flush ();
 			} while (str != NULL);
@@ -4437,7 +4436,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				addr = core->rcmd->macro._brk_value;
 				sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
 				eprintf ("0x%08"PFMT64x" (%s)\n", addr, cmd2);
-				r_core_seek (core, addr, 1);
+				r_core_seek (core, addr, true);
 				r_core_cmd (core, cmd2, 0);
 				i++;
 			}
@@ -4455,7 +4454,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					addr = r_num_math (core->num, buf);
 					eprintf ("0x%08"PFMT64x": %s\n", addr, cmd);
 					sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
-					r_core_seek (core, addr, 1); // XXX
+					r_core_seek (core, addr, true); // XXX
 					r_core_cmd (core, cmd2, 0);
 					core->rcmd->macro.counter++;
 				}
@@ -4511,7 +4510,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 
 					char *buf = NULL;
 					const char *tmp = NULL;
-					r_core_seek (core, flag->offset, 1);
+					r_core_seek (core, flag->offset, true);
 					r_cons_push ();
 					r_core_cmd (core, cmd, 0);
 					tmp = r_cons_get_buffer ();
@@ -4661,7 +4660,7 @@ static int foreach_comment_newshell(void *user, const char *k, const char *v) {
 		char *cmt = (char *)sdb_decode (ptr + 1, 0);
 		if (cmt) {
 			ut64 k_addr = r_num_math (state->core->num, k + 7);
-			r_core_seek (core, k_addr, 0);
+			r_core_seek (core, k_addr, false);
 			handle_ts_command (state, *cmd);
 			free (cmt);
 		}
@@ -5200,9 +5199,9 @@ DEFINE_HANDLE_TS_FCN(tmp_seek_command) {
 	char *offset_string = ts_node_handle_arg (state, node, offset, 1);
 	ut64 orig_offset = state->core->offset;
 	R_LOG_DEBUG ("tmp_seek_command, changing offset to %s\n", offset_string);
-	r_core_seek (state->core, r_num_math (state->core->num, offset_string), 1);
+	r_core_seek (state->core, r_num_math(state->core->num, offset_string), true);
 	bool res = handle_ts_command (state, command);
-	r_core_seek (state->core, orig_offset, 1);
+	r_core_seek (state->core, orig_offset, true);
 	free (offset_string);
 	return res;
 }
@@ -5337,7 +5336,7 @@ DEFINE_HANDLE_TS_FCN(tmp_nthi_command) {
 
 		if (index >= 0 && index < bb->ninstr) {
 			ut16 inst_off = r_anal_bb_offset_inst (bb, index);
-			r_core_seek (core, bb->addr + inst_off, 1);
+			r_core_seek (core, bb->addr + inst_off, true);
 		} else {
 			eprintf ("The current basic block has just %d instructions\n", bb->ninstr);
 		}
@@ -5347,7 +5346,7 @@ DEFINE_HANDLE_TS_FCN(tmp_nthi_command) {
 
 	bool res = handle_ts_command (state, command);
 
-	r_core_seek (core, orig_offset, 1);
+	r_core_seek (core, orig_offset, true);
 
 	free (arg_str);
 	return res;
@@ -5405,7 +5404,7 @@ DEFINE_HANDLE_TS_FCN(tmp_reli_command) {
 		r_core_cmdf (core, "so %d", addr);
 	}
 	bool res = handle_ts_command (state, command);
-	r_core_seek (state->core, orig_offset, 1);
+	r_core_seek (state->core, orig_offset, true);
 	free (arg_str);
 	return res;
 }
@@ -5418,11 +5417,11 @@ DEFINE_HANDLE_TS_FCN(tmp_kuery_command) {
 	ut64 orig_offset = state->core->offset;
 	char *out = sdb_querys (core->sdb, NULL, 0, arg_str);
 	if (out) {
-		r_core_seek (core, r_num_math (core->num, out), 1);
+		r_core_seek (core, r_num_math(core->num, out), true);
 		free (out);
 	}
 	bool res = handle_ts_command (state, command);
-	r_core_seek (state->core, orig_offset, 1);
+	r_core_seek (state->core, orig_offset, true);
 	free (arg_str);
 	return res;
 }
@@ -5448,9 +5447,9 @@ DEFINE_HANDLE_TS_FCN(tmp_reg_command) {
 	ut64 orig_offset = state->core->offset;
 	// TODO: add support for operations (e.g. @r:PC+10)
 	ut64 regval = r_debug_reg_get (core->dbg, arg_str);
-	r_core_seek (core, regval, 1);
+	r_core_seek (core, regval, true);
 	bool res = handle_ts_command (state, command);
-	r_core_seek (core, orig_offset, 1);
+	r_core_seek (core, orig_offset, true);
 	free (arg_str);
 	return res;
 }
@@ -5573,7 +5572,7 @@ DEFINE_HANDLE_TS_FCN(iter_flags_command) {
 		char *buf = NULL;
 		const char *tmp = NULL;
 		R_LOG_DEBUG ("iter_flags_command: seek to %" PFMT64x "\n", flag->offset);
-		r_core_seek (core, flag->offset, 1);
+		r_core_seek (core, flag->offset, true);
 		r_cons_push ();
 		ret &= handle_ts_command(state, command);
 		tmp = r_cons_get_buffer ();
@@ -5607,13 +5606,13 @@ static bool iter_dbt_commands(struct tsr2cmd_state *state, TSNode node, enum dbt
 	r_list_foreach (list, iter, frame) {
 		switch (mode) {
 		case DBT_COMMANDS_MODE_ADDR:
-			r_core_seek (core, frame->addr, 1);
+			r_core_seek (core, frame->addr, true);
 			break;
 		case DBT_COMMANDS_MODE_SP:
-			r_core_seek (core, frame->sp, 1);
+			r_core_seek (core, frame->sp, true);
 			break;
 		case DBT_COMMANDS_MODE_BP:
-			r_core_seek (core, frame->bp, 1);
+			r_core_seek (core, frame->bp, true);
 			break;
 		default:
 			r_warn_if_reached ();
@@ -5622,7 +5621,7 @@ static bool iter_dbt_commands(struct tsr2cmd_state *state, TSNode node, enum dbt
 		res &= handle_ts_command (state, command);
 		r_cons_newline ();
 	}
-	r_core_seek (core, orig_offset, 1);
+	r_core_seek (core, orig_offset, true);
 	r_list_free (list);
 	return res;
 }
@@ -5661,11 +5660,11 @@ DEFINE_HANDLE_TS_FCN(iter_file_lines_command) {
 			break;
 		}
 		ut64 addr = r_num_math (core->num, buf);
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		res &= handle_ts_command (state, command);
 		core->rcmd->macro.counter++;
 	}
-	r_core_seek (core, orig_offset, 1);
+	r_core_seek (core, orig_offset, true);
 	fclose (fd);
 
 arg_out:
@@ -5711,12 +5710,12 @@ DEFINE_HANDLE_TS_FCN(iter_offsets_command) {
 	for (i = 0; i < a->argc; i++) {
 		ut64 addr = r_num_math (core->num, a->argv[i]);
 		R_LOG_DEBUG ("iter_offsets_command: seek to %" PFMT64x "\n", addr);
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		res &= handle_ts_command (state, command);
 		r_cons_flush ();
 	}
 
-	r_core_seek (core, orig_offset, 1);
+	r_core_seek (core, orig_offset, true);
 	parsed_args_free (a);
 	return res;
 }
@@ -5751,11 +5750,11 @@ DEFINE_HANDLE_TS_FCN(iter_sdbquery_command) {
 			addr = r_num_math (core->num, each);
 		}
 		each = str + 1;
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		res &= handle_ts_command (state, command);
 		r_cons_flush ();
 	} while (str != NULL);
-	r_core_seek (core, orig_offset, 1);
+	r_core_seek (core, orig_offset, true);
 	free (out);
 	free (arg_str);
 	return res;
@@ -5800,14 +5799,14 @@ DEFINE_HANDLE_TS_FCN(iter_bbs_command) {
 	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, bb) {
 		r_core_block_size (core, bb->size);
-		r_core_seek (core, bb->addr, 1);
+		r_core_seek (core, bb->addr, true);
 		res &= handle_ts_command (state, command);
 		if (r_cons_is_breaked ()) {
 			break;
 		}
 	}
 	r_core_block_size (core, bs);
-	r_core_seek (core, orig_offset, 1);
+	r_core_seek (core, orig_offset, true);
 	return res;
 }
 
@@ -5831,7 +5830,7 @@ DEFINE_HANDLE_TS_FCN(iter_instrs_command) {
 			ut64 addr = bb->addr + r_anal_bb_offset_inst (bb, i);
 			int sz = r_anal_bb_size_i (bb, i);
 			r_core_block_size (core, sz);
-			r_core_seek (core, addr, 1);
+			r_core_seek (core, addr, true);
 			res &= handle_ts_command (state, command);
 			if (r_cons_is_breaked ()) {
 				break;
@@ -5840,7 +5839,7 @@ DEFINE_HANDLE_TS_FCN(iter_instrs_command) {
 	}
 
 	r_core_block_size (core, bs);
-	r_core_seek (core, orig_offset, 1);
+	r_core_seek (core, orig_offset, true);
 	return res;
 }
 
@@ -5865,7 +5864,7 @@ DEFINE_HANDLE_TS_FCN(iter_functions_command) {
 		}
 		char *buf;
 		r_core_block_size (core, r_anal_function_linear_size (fcn));
-		r_core_seek (core, fcn->addr, 1);
+		r_core_seek (core, fcn->addr, true);
 		r_cons_push ();
 		res &= handle_ts_command (state, command);
 		buf = (char *)r_cons_get_buffer ();
@@ -5881,7 +5880,7 @@ DEFINE_HANDLE_TS_FCN(iter_functions_command) {
 	}
 
 	r_core_block_size (core, bs);
-	r_core_seek (core, orig_offset, 1);
+	r_core_seek (core, orig_offset, true);
 	free (arg_str);
 	return res;
 }
@@ -5908,7 +5907,7 @@ DEFINE_HANDLE_TS_FCN(iter_step_command) {
 
 	ut64 cur;
 	for (cur = from; cur < to; cur += step) {
-		r_core_seek (core, cur, 1);
+		r_core_seek (core, cur, true);
 		r_core_block_size (core, step);
 		res &= handle_ts_command (state, command);
 		if (r_cons_is_breaked ()) {
@@ -5917,7 +5916,7 @@ DEFINE_HANDLE_TS_FCN(iter_step_command) {
 	}
 
 	r_core_block_size (core, bs);
-	r_core_seek (core, orig_offset, 1);
+	r_core_seek (core, orig_offset, true);
 	return res;
 }
 
@@ -5963,12 +5962,12 @@ DEFINE_HANDLE_TS_FCN(iter_interpret_command) {
 	for (i = 0; i < a->argc; i++) {
 		ut64 addr = r_num_math (core->num, a->argv[i]);
 		R_LOG_DEBUG ("iter_interpret_command: seek to %" PFMT64x "\n", addr);
-		r_core_seek (core, addr, 1);
+		r_core_seek (core, addr, true);
 		res &= handle_ts_command (state, command);
 		r_cons_flush ();
 	}
 
-	r_core_seek (core, orig_offset, 1);
+	r_core_seek (core, orig_offset, true);
 	parsed_args_free (a);
 	return res;
 }
@@ -6000,7 +5999,7 @@ DEFINE_HANDLE_TS_FCN(foreach_addrsize_command) {
 		ut64 blk_sz_val = r_num_get (NULL, blk_sz_str);
 		free (seek_addr_str);
 		free (blk_sz_str);
-		r_core_seek (core, seek_addr_val, 1);
+		r_core_seek (core, seek_addr_val, true);
 		r_core_block_size (core, blk_sz_val);
 		ret &= handle_ts_command (state, command);
 		i += 2;
@@ -6024,12 +6023,12 @@ DEFINE_HANDLE_TS_FCN(foreach_bb_command) {
 	RAnalBlock *bb;
 	bool ret = true;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		r_core_seek (core, bb->addr, 1);
+		r_core_seek (core, bb->addr, true);
 		r_core_block_size (core, bb->size);
 		ret &= handle_ts_command (state, command);
 	}
 	r_core_block_size (core, obs);
-	r_core_seek (core, offorig, 1);
+	r_core_seek (core, offorig, true);
 	return ret;
 }
 
@@ -6101,11 +6100,11 @@ DEFINE_HANDLE_TS_FCN(foreach_import_command) {
 	r_list_foreach (lost, iter, naddr) {
 		ut64 addr = *naddr;
 		if (addr && addr != UT64_MAX) {
-			r_core_seek (core, addr, 1);
+			r_core_seek (core, addr, true);
 			res &= handle_ts_command (state, command);
 		}
 	}
-	r_core_seek (core, offorig, 1);
+	r_core_seek (core, offorig, true);
 	r_list_free (lost);
 	return res;
 }
@@ -6137,13 +6136,13 @@ DEFINE_HANDLE_TS_FCN(foreach_register_command) {
 		const char *item_name;
 		r_list_foreach (list, iter, item_name) {
 			value = r_reg_getv (core->dbg->reg, item_name);
-			r_core_seek (core, value, 1);
+			r_core_seek (core, value, true);
 			r_cons_printf ("%s: ", item_name);
 			res &= handle_ts_command (state, command);
 		}
 		r_list_free (list);
 	}
-	r_core_seek (core, offorig, 1);
+	r_core_seek (core, offorig, true);
 	return res;
 }
 
@@ -6167,13 +6166,13 @@ DEFINE_HANDLE_TS_FCN(foreach_symbol_command) {
 			break;
 		}
 		r_core_block_size (core, sym->size);
-		r_core_seek (core, sym->vaddr, 1);
+		r_core_seek (core, sym->vaddr, true);
 		res &= handle_ts_command (state, command);
 	}
 	r_cons_break_pop ();
 	r_list_free (lost);
 	r_core_block_size (core, obs);
-	r_core_seek (core, offorig, 1);
+	r_core_seek (core, offorig, true);
 	return res;
 }
 
@@ -6194,11 +6193,11 @@ DEFINE_HANDLE_TS_FCN(foreach_string_command) {
 		}
 		r_list_foreach (lost, iter, s) {
 			r_core_block_size (core, s->size);
-			r_core_seek (core, s->vaddr, 1);
+			r_core_seek (core, s->vaddr, true);
 			res &= handle_ts_command (state, command);
 		}
 		r_core_block_size (core, obs);
-		r_core_seek (core, offorig, 1);
+		r_core_seek (core, offorig, true);
 		r_list_free (lost);
 	}
 	return res;
@@ -6217,12 +6216,12 @@ DEFINE_HANDLE_TS_FCN(foreach_section_command) {
 	RBinSection *sec;
 	RListIter *iter;
 	r_list_foreach (obj->sections, iter, sec) {
-		r_core_seek (core, sec->vaddr, 1);
+		r_core_seek (core, sec->vaddr, true);
 		r_core_block_size (core, sec->vsize);
 		res &= handle_ts_command (state, command);
 	}
 	r_core_block_size (core, bszorig);
-	r_core_seek (core, offorig, 1);
+	r_core_seek (core, offorig, true);
 	return res;
 }
 
@@ -6237,7 +6236,7 @@ DEFINE_HANDLE_TS_FCN(foreach_iomap_command) {
 	if (maps) {
 		RListIter *iter;
 		r_list_foreach (maps, iter, map) {
-			r_core_seek (core, map->itv.addr, 1);
+			r_core_seek (core, map->itv.addr, true);
 			r_core_block_size (core, map->itv.size);
 			res &= handle_ts_command (state, command);
 		}
@@ -6255,7 +6254,7 @@ DEFINE_HANDLE_TS_FCN(foreach_dbgmap_command) {
 		RDebugMap *map;
 		RListIter *iter;
 		r_list_foreach (dbg->maps, iter, map) {
-			r_core_seek (core, map->addr, 1);
+			r_core_seek (core, map->addr, true);
 			res &= handle_ts_command (state, command);
 		}
 	}
@@ -6279,10 +6278,10 @@ DEFINE_HANDLE_TS_FCN(foreach_flag_command) {
 	bool res = true;
 	r_list_foreach (flags, iter, f) {
 		r_core_block_size (core, f->size);
-		r_core_seek (core, f->offset, 1);
+		r_core_seek (core, f->offset, true);
 		res &= handle_ts_command (state, command);
 	}
-	r_core_seek (core, off, 0);
+	r_core_seek (core, off, false);
 	r_core_block_size (core, obs);
 	free (glob);
 	return res;
@@ -6308,14 +6307,14 @@ DEFINE_HANDLE_TS_FCN(foreach_function_command) {
 			break;
 		}
 		if (!filter || r_str_glob (fcn->name, filter)) {
-			r_core_seek (core, fcn->addr, 1);
+			r_core_seek (core, fcn->addr, true);
 			r_core_block_size (core, r_anal_function_linear_size (fcn));
 			res &= handle_ts_command (state, command);
 		}
 	}
 	r_cons_break_pop ();
 	r_core_block_size (core, obs);
-	r_core_seek (core, offorig, 1);
+	r_core_seek (core, offorig, true);
 	return res;
 }
 
@@ -6440,7 +6439,7 @@ DEFINE_HANDLE_TS_FCN(task_command) {
 
 DEFINE_HANDLE_TS_FCN(number_command) {
 	ut64 addr = r_num_math (state->core->num, node_string);
-	r_core_seek (state->core, addr, 1);
+	r_core_seek (state->core, addr, true);
 	return true;
 }
 

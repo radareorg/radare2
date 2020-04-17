@@ -937,7 +937,7 @@ static void find_refs(RCore *core, const char *glob) {
 	r_core_cmd0 (core, "(findstref;f here=$$;s entry0;/r here;f-here)");
 	r_core_cmd0 (core, cmd);
 	r_core_cmd0 (core, "(-findstref)");
-	r_core_seek (core, curseek, 1);
+	r_core_seek (core, curseek, true);
 }
 
 /* set flags for every function */
@@ -5030,7 +5030,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		esil->stack_size = size;
 	}
 	initialize_stack (core, addr, size);
-	r_core_seek (core, curoff, 0);
+	r_core_seek (core, curoff, false);
 }
 
 #if 0
@@ -5514,7 +5514,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int off) {
 		addr += ret; // aop.size;
 		r_anal_op_fini (&aop);
 	}
-	r_core_seek (core, oldoff, 1);
+	r_core_seek (core, oldoff, true);
 	r_reg_setv (core->dbg->reg, "SP", cursp);
 }
 
@@ -5547,14 +5547,14 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 	for (at = from; at < to ; at++) {
 		r_core_cmdf (core, "aepc 0x%08"PFMT64x, at);
 		r_core_cmd0 (core, "aeso");
-		r_core_seek (core, at, 1);
+		r_core_seek (core, at, true);
 		int delta = r_num_get (core->num, "$l");
 		if (delta < 1) {
 			break;
 		}
 		at += delta - 1;
 	}
-	r_core_seek (core, off, 1);
+	r_core_seek (core, off, true);
 
 	// the logic of identifying args by function types and
 	// show json format and arg name goes into arA
@@ -8065,7 +8065,7 @@ R_API void r_core_agraph_print (RCore *core, int use_utf, const char *input) {
 			r_cons_show_cursor (true);
 			r_cons_enable_mouse (false);
 			if (update_seek != -1) {
-				r_core_seek (core, oseek, 0);
+				r_core_seek (core, oseek, false);
 			}
 		} else {
 			eprintf ("This graph contains no nodes\n");
@@ -8944,13 +8944,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				break;
 			}
 			r_list_foreach (list, iter, map) {
-				r_core_seek (core, map->itv.addr, 1);
+				r_core_seek (core, map->itv.addr, true);
 				r_config_set_i (core->config, "anal.hasnext", 1);
 				r_core_cmd0 (core, "afr");
 				r_config_set_i (core->config, "anal.hasnext", hasnext);
 			}
 			r_list_free (list);
-			r_core_seek (core, cur, 1);
+			r_core_seek (core, cur, true);
 		} else if (input[1] == 't') { // "aaft"
 			cmd_anal_aaft (core);
 		} else if (input[1] == 0) { // "aaf"
@@ -9097,7 +9097,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 				oldstr = r_print_rowlog (core->print, "Analyze function calls (aac)");
 				(void)cmd_anal_calls (core, "", false, false); // "aac"
-				r_core_seek (core, curseek, 1);
+				r_core_seek (core, curseek, true);
 				// oldstr = r_print_rowlog (core->print, "Analyze data refs as code (LEA)");
 				// (void) cmd_anal_aad (core, NULL); // "aad"
 				r_print_rowlog_done (core->print, oldstr);
@@ -9218,7 +9218,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_task_yield (&core->tasks);
 				}
 			}
-			r_core_seek (core, curseek, 1);
+			r_core_seek (core, curseek, true);
 		jacuzzi:
 			// XXX this shouldnt be called. flags muts be created wheen the function is registered
 			flag_every_function (core);
@@ -9278,11 +9278,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				break;
 			}
 			r_list_foreach (list, iter, map) {
-				r_core_seek (core, map->itv.addr, 1);
+				r_core_seek (core, map->itv.addr, true);
 				r_core_anal_esil (core, "$SS", NULL);
 			}
 			r_list_free (list);
-			r_core_seek (core, at, 1);
+			r_core_seek (core, at, true);
 		}
 		break;
 	case 'r':

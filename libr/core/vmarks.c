@@ -58,6 +58,6 @@ R_API void r_core_visual_mark(RCore *core, ut8 ch) {
 
 R_API void r_core_visual_mark_seek(RCore *core, ut8 ch) {
 	if (marks_init && marks[ch] != UT64_MAX) {
-		r_core_seek (core, marks[ch], 1);
+		r_core_seek (core, marks[ch], true);
 	}
 }

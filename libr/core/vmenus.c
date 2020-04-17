@@ -1728,9 +1728,9 @@ R_API int r_core_visual_view_rop(RCore *core) {
 					break;
 				}
 				ut64 oseek = core->offset;
-				r_core_seek (core, addr + delta, 0);
+				r_core_seek (core, addr + delta, false);
 				r_core_cmd (core, cmd, 1);
-				r_core_seek (core, oseek, 0);
+				r_core_seek (core, oseek, false);
 				r_cons_flush ();
 			}
 			r_cons_set_raw (1);
@@ -1745,7 +1745,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				const char *line = r_line_readline ();
 				if (line && *line) {
 					ut64 off = r_num_math (core->num, line);
-					r_core_seek (core, off, 1);
+					r_core_seek (core, off, true);
 					addr = off;
 					forceaddr = true;
 					delta = 0;
@@ -3441,9 +3441,9 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		case ':':
 			{
 				ut64 orig = core->offset;
-				r_core_seek (core, addr, 0);
+				r_core_seek (core, addr, false);
 				while (r_core_visual_prompt (core));
-				r_core_seek (core, orig, 0);
+				r_core_seek (core, orig, false);
 			}
 			continue;
 		case '/':
@@ -3741,7 +3741,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 		r_flag_foreach (core->flags, seek_flag_offset, &u);
 	}
 	if (next != UT64_MAX) {
-		r_core_seek (core, next, 1);
+		r_core_seek (core, next, true);
 	}
 }
 
@@ -3768,7 +3768,7 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 		r_flag_foreach (core->flags, seek_flag_offset, &u);
 	}
 	if (next != 0) {
-		r_core_seek (core, next, 1);
+		r_core_seek (core, next, true);
 	}
 }
 

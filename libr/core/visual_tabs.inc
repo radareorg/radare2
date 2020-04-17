@@ -60,7 +60,7 @@ static char *__core_visual_tab_string(RCore *core, const char *kolor) {
 static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 	r_return_if_fail (core && tab);
 
-	r_core_seek (core, tab->offset, 1);
+	r_core_seek (core, tab->offset, true);
 	core->printidx = tab->printidx;
 	core->print->cur_enabled = tab->cur_enabled;
 	core->print->cur = tab->cur;

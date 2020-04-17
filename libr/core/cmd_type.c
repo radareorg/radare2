@@ -990,7 +990,7 @@ beach:
 	if (stack_set) {
 		r_core_cmd0 (core, "aeim-");
 	}
-	r_core_seek (core, oldoff, 1);
+	r_core_seek (core, oldoff, true);
 	r_anal_esil_free (esil);
 	r_reg_arena_pop (core->anal->reg);
 	r_core_cmd0 (core, ".ar*");

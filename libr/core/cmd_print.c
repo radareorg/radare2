@@ -850,7 +850,7 @@ static void cmd_pCd(RCore *core, const char *input) {
 		free (dis);
 	}
 	r_core_block_size (core, obsz);
-	r_core_seek (core, osek, 1);
+	r_core_seek (core, osek, true);
 
 	r_cons_pop ();
 	r_cons_canvas_print (c);
@@ -944,7 +944,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 		free (dis);
 	}
 	r_core_block_size (core, obsz);
-	r_core_seek (core, osek, 1);
+	r_core_seek (core, osek, true);
 
 	r_cons_pop ();
 	r_cons_canvas_print (c);
@@ -3012,7 +3012,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				  if (i > 0) {
 					  r_cons_printf (",");
 				  }
-				  r_core_seek (core, at, 0);
+				  r_core_seek (core, at, false);
 				  char *str = r_core_cmd_str (core, "ps");
 				  r_str_trim (str);
 				  char *p = str;
@@ -3053,7 +3053,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				  at += n;
 			  }
 			  r_cons_printf ("]\n");
-			  r_core_seek (core, oldAt, 0);
+			  r_core_seek (core, oldAt, false);
 			  break;
 		  }
 	case '?': // "pv?"

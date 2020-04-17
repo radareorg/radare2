@@ -643,12 +643,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		r_config_set (r->config, "file.type", info->rclass);
 		r_config_set (r->config, "cfg.bigendian",
 			      info->big_endian ? "true" : "false");
-		if (info->rclass && !strcmp (info->rclass, "fs")) {
-			// r_config_set (r->config, "asm.arch", info->arch);
-			// r_core_seek (r, 0, 1);
-			// eprintf ("m /root %s 0", info->arch);
-	//		r_core_cmdf (r, "m /root hfs @ 0", info->arch);
-		} else {
+		if (!info->rclass || strcmp (info->rclass, "fs")) {
 			if (info->lang) {
 				r_config_set (r->config, "bin.lang", info->lang);
 			}
@@ -1298,7 +1293,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	if (IS_MODE_SET (mode)) {
 		if (entry) {
 			ut64 at = rva (r->bin, entry->paddr, entry->vaddr, va);
-			r_core_seek (r, at, 0);
+			r_core_seek (r, at, false);
 		}
 	} else if (IS_MODE_JSON (mode)) {
 		r_cons_printf ("]");
