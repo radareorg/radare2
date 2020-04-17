@@ -1927,14 +1927,6 @@ static int cmd_debug_map(RCore *core, const char *input) {
 #include "windows_heap.c"
 #endif
 
-// move into basic_types.h
-
-#define HEAPTYPE(x) \
-	static x* x##_new(x n) {\
-		x *m = malloc(sizeof (x));\
-		return m? *m = n, m: m; \
-	}
-
 HEAPTYPE(ut64);
 
 static int regcmp(const void *a, const void *b) {

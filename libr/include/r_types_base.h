@@ -162,4 +162,10 @@ typedef struct _utX{
 #define DEBUGGER 0
 #endif
 
+#define HEAPTYPE(x) \
+	static x* x##_new(x n) {\
+		x *m = malloc(sizeof (x));\
+		return m? *m = n, m: m; \
+	}
+
 #endif // R2_TYPES_BASE_H

@@ -1620,11 +1620,17 @@ EXPECT=<<EOF
 int
 char **
 int64_t
+char *
 =
 uint32_t
 int64_t
 char *
+size_t *
+size_t
+void *
+wint_t
 =
 fcn.0000f770
+fcn.00011b90
 EOF
 RUN

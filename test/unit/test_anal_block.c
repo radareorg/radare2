@@ -566,6 +566,84 @@ bool test_r_anal_block_successors() {
 	mu_end;
 }
 
+bool test_r_anal_block_automerge() {
+	size_t i;
+	for (i = 0; i < SAMPLES; i++) {
+		RAnal *anal = r_anal_new ();
+		assert_invariants (anal);
+
+		RAnalBlock *a = r_anal_create_block (anal, 0x100, 0x10);
+
+		RAnalBlock *b = r_anal_create_block (anal, 0x110, 0x10);
+		a->jump = b->addr;
+
+		RAnalBlock *c = r_anal_create_block (anal, 0x120, 0x10);
+		b->jump = c->addr;
+		c->fail = b->addr;
+
+		RAnalBlock *d = r_anal_create_block (anal, 0x130, 0x10);
+		c->jump = d->addr;
+
+		RAnalBlock *e = r_anal_create_block (anal, 0x140, 0x10);
+		d->jump = e->addr;
+
+		RAnalBlock *f = r_anal_create_block (anal, 0x150, 0x10);
+		e->jump = f->addr;
+
+		RAnalFunction *fa = r_anal_create_function (anal, "fcn", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+		r_anal_function_add_block (fa, a);
+		r_anal_function_add_block (fa, c);
+		r_anal_function_add_block (fa, d);
+		r_anal_function_add_block (fa, e);
+		r_anal_function_add_block (fa, f);
+
+		RAnalFunction *fb = r_anal_create_function (anal, "fcn2", 0x110, R_ANAL_FCN_TYPE_FCN, NULL);
+		r_anal_function_add_block (fb, b);
+		r_anal_function_add_block (fb, c);
+		r_anal_function_add_block (fb, d);
+		r_anal_function_add_block (fb, e);
+		r_anal_function_add_block (fb, f);
+
+		RList *all_blocks = r_list_new ();
+		r_list_push (all_blocks, a);
+		r_list_push (all_blocks, b);
+		r_list_push (all_blocks, c);
+		r_list_push (all_blocks, d);
+		r_list_push (all_blocks, e);
+		r_list_push (all_blocks, f);
+
+		// Randomize the order in which we give the automerge the block.
+		// The outcome should always be the same but it can have some delicate implications on the algorithm inside.
+		RList *shuffled_blocks = r_list_newf ((RListFree)r_anal_block_unref);
+		while (!r_list_empty (all_blocks)) {
+			int n = rand () % r_list_length (all_blocks);
+			r_list_push (shuffled_blocks, r_list_get_n (all_blocks, n));
+			r_list_del_n (all_blocks, n);
+		}
+		r_list_free (all_blocks);
+
+		r_anal_block_automerge (shuffled_blocks);
+		assert_invariants (anal);
+		//mu_assert_eq (r_list_length (shuffled_blocks), 4, "length after automerge");
+		mu_assert ("remaining blocks a", r_list_contains (shuffled_blocks, a));
+		mu_assert ("remaining blocks b", r_list_contains (shuffled_blocks, b));
+		mu_assert ("remaining blocks c", r_list_contains (shuffled_blocks, c));
+		mu_assert ("remaining blocks d", r_list_contains (shuffled_blocks, d));
+		mu_assert_eq (blocks_count (anal), r_list_length (shuffled_blocks), "blocks in anal count");
+		RListIter *it;
+		RAnalBlock *block;
+		r_list_foreach (shuffled_blocks, it, block) {
+			mu_assert_ptreq (r_anal_get_block_at (anal, block->addr), block, "remaining blocks in anal");
+		}
+		r_list_free (shuffled_blocks);
+
+		assert_invariants (anal);
+		assert_leaks (anal);
+		r_anal_free (anal);
+	}
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_r_anal_block_create);
 	mu_run_test (test_r_anal_block_contains);
@@ -578,6 +656,7 @@ int all_tests() {
 	mu_run_test (test_r_anal_block_relocate);
 	mu_run_test (test_r_anal_block_query);
 	mu_run_test (test_r_anal_block_successors);
+	mu_run_test (test_r_anal_block_automerge);
 	return tests_passed != tests_run;
 }
 
