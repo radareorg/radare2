@@ -4649,16 +4649,17 @@ static int foreach_comment_newshell(void *user, const char *k, const char *v) {
 	struct tsr2cmd_state *state = cmt_t->state;
 	if (!strncmp (k, "meta.C.", 7)) {
 		char *ptr = strchr (v, ',');
-		if (!ptr || !*ptr) {
+		if (R_STR_ISEMPTY (ptr)) {
 			return 1;
 		}
 		ptr = strchr (ptr + 1, ',');
-		if (!ptr || !*ptr) {
+		if (R_STR_ISEMPTY (ptr)) {
 			return 1;
 		}
 		char *cmt = (char *)sdb_decode (ptr + 1, 0);
 		if (cmt) {
-			r_core_cmdf (core, "s %s", k + 7);
+			ut64 k_addr = r_num_math (state->core->num, k + 7);
+			r_core_seek (core, k_addr, 0);
 			handle_ts_command (state, *cmd);
 			free (cmt);
 		}
@@ -6037,6 +6038,10 @@ DEFINE_HANDLE_TS_FCN(foreach_cmd_command) {
 	substitute_args_init (state, node);
 
 	RList *edits = r_list_newf ((RListFree)free_tsr2cmd_edit);
+	if (!edits) {
+		substitute_args_fini (state);
+		return false;
+	}
 
 	char *in_cmd_out = do_handle_substitution_cmd (state, in_cmd);
 	in_cmd_out = escape_special_chars (in_cmd_out, SPECIAL_CHARS_REGULAR);
@@ -6048,8 +6053,7 @@ DEFINE_HANDLE_TS_FCN(foreach_cmd_command) {
 	r_list_append (edits, e);
 
 	TSNode new_command;
-	bool ok = substitute_args_do (state, edits, &new_command);
-	if (!ok) {
+	if (!substitute_args_do (state, edits, &new_command)) {
 		r_list_free (edits);
 		substitute_args_fini (state);
 		return false;
@@ -6076,6 +6080,10 @@ DEFINE_HANDLE_TS_FCN(foreach_import_command) {
 	RBinImport *imp;
 	ut64 offorig = core->offset;
 	RList *list = r_bin_get_imports (core->bin);
+	if (!list) {
+		return true;
+	}
+
 	RList *lost = r_list_newf (free);
 	RListIter *iter;
 	r_list_foreach (list, iter, imp) {
@@ -6315,7 +6323,7 @@ DEFINE_HANDLE_TS_FCN(foreach_thread_command) {
 	RDebug *dbg = core->dbg;
 	bool res = true;
 	if (dbg && dbg->h && dbg->h->threads) {
-		int origpid = dbg->pid;
+		int origtid = dbg->tid;
 		RDebugPid *p;
 		RList *list = dbg->h->threads (dbg, dbg->pid);
 		if (!list) {
@@ -6323,11 +6331,11 @@ DEFINE_HANDLE_TS_FCN(foreach_thread_command) {
 		}
 		RListIter *iter;
 		r_list_foreach (list, iter, p) {
-			r_core_cmdf (core, "dp %d", p->pid);
+			r_debug_select (dbg, dbg->pid, p->pid);
 			r_cons_printf ("PID %d\n", p->pid);
 			res &= handle_ts_command (state, command);
 		}
-		r_core_cmdf (core, "dp %d", origpid);
+		r_debug_select (dbg, dbg->pid, origtid);
 		r_list_free (list);
 	}
 	return res;
