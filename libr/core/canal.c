@@ -5675,17 +5675,19 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 				continue;
 			}
 
+			RList *block_fcns = r_list_clone (block->fcns);
 			if (request_fcn) {
 				// specific function requested, check if it contains the bb
 				if (!r_list_contains (block->fcns, request_fcn)) {
 					goto kontinue;
 				}
 			} else {
-				r_anal_block_chop_noreturn (block, chop_addr);
+				// r_anal_block_chop_noreturn() might free the block!
+				block = r_anal_block_chop_noreturn (block, chop_addr);
 			}
 
 			RListIter *fit;
-			r_list_foreach (block->fcns, fit, f) {
+			r_list_foreach (block_fcns, fit, f) {
 				bool found = false;
 				found = ht_uu_find (done, f->addr, &found);
 				if (f->addr && !found && analyze_noreturn_function (core, f)) {
@@ -5698,7 +5700,10 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 				}
 			}
 kontinue:
-			r_anal_block_unref (block);
+			if (block) {
+				r_anal_block_unref (block);
+			}
+			r_list_free (block_fcns);
 		}
 		r_list_free (xrefs);
 	}

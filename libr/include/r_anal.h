@@ -1316,6 +1316,10 @@ static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
 // The returned block will always be refd, i.e. it is necessary to always call r_anal_block_unref() on the return value!
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr);
 
+static inline bool r_anal_block_is_contiguous(RAnalBlock *a, RAnalBlock *b) {
+	return a->addr + a->size == b->addr;
+}
+
 // Merge block b into a.
 // b will be FREED (not just unrefd) and is NOT VALID anymore if this function is successful!
 // This only works if b follows directly after a and their function lists are identical.
@@ -1359,7 +1363,14 @@ R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut6
 // Chop off the block at the specified address and remove all destinations.
 // Blocks that have become unreachable after this operation will be automatically removed from all functions of block.
 // addr must be the address directly AFTER the noreturn call!
-R_API void r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr);
+// After the chopping, an r_anal_block_automerge() is performed on the touched blocks.
+// IMPORTANT: The automerge might also FREE block! This function returns block iff it is still valid afterwards.
+// If this function returns NULL, the pointer to block MUST not be touched anymore!
+R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr);
+
+// Merge every block in blocks with their contiguous predecessor, if possible.
+// IMPORTANT: Merged blocks will be FREED! The blocks list will be updated to contain only the survived blocks.
+R_API void r_anal_block_automerge(RList *blocks);
 
 // return true iff an instruction in the given basic block starts at the given address
 R_API bool r_anal_block_op_starts_at(RAnalBlock *block, ut64 addr);
