@@ -183,12 +183,27 @@ invalid
 EOF
 RUN
 
+NAME=rasm2 x86_32 overlarge operand
+FILE=-
+CMDS=!rasm2 -a x86 -b 32 "mov eax, 0x1122334455"
+EXPECT=
+EXPECT_ERR=<<EOF
+Cannot assemble 'mov eax, 0x1122334455' at line 3
+invalid
+EOF
+RUN
+
 NAME=rasm2 x86_64 overlarge operand
 FILE=-
-CMDS=!rasm2 -a x86 -b 64 "mov rax, 0x112233445566778899"
+CMDS=<<EOF
+!rasm2 -a x86 -b 64 "mov rax, 0x112233445566778899"
+!rasm2 -a x86 -b 64 "mov eax, 0x1122334455"
+EOF
 EXPECT=
 EXPECT_ERR=<<EOF
 Cannot assemble 'mov rax, 0x112233445566778899' at line 3
+invalid
+Cannot assemble 'mov eax, 0x1122334455' at line 3
 invalid
 EOF
 RUN

@@ -1798,6 +1798,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 		immediate = op->operands[1].immediate * op->operands[1].sign;
 		if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
+			if ((op->operands[0].type & OT_DWORD) &&
+			    immediate > UT32_MAX && immediate < 0xffffffff80000000ULL /* -0x80000000 */) {
+				return -1;
+			}
 			bool imm32in64 = false;
 			if (a->bits == 64 && (op->operands[0].type & OT_QWORD)) {
 				if (op->operands[0].extended) {
