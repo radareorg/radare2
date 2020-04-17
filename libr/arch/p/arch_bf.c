@@ -81,10 +81,11 @@ static bool decode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
 						if (new_buf) {
 							if (use_buf_heap) {
 								free ((void*)buf);
+							} else {
+								free (data);
 							}
 							(void)a->iob.read_at (a->iob.io, ins->addr, new_buf, new_buf_len);
 							buf = new_buf;
-							free (data);
 							data = (char *)buf;
 							p = (char *)buf + i;
 							len += BUFSIZE_INC;
