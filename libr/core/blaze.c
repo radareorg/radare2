@@ -250,11 +250,9 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	}
 
 	Sdb *sdb = NULL;
-	ut64 cur = 0;
 	const ut64 start = core->offset;
 	ut64 size = input[0] ? r_num_math (core->num, input + 1) : core->blocksize;
 	ut64 b_start = start;
-	RAnalOp *op;
 	RListIter *iter;
 	int block_score = 0;
 	RList *block_list;
@@ -272,7 +270,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
 		eprintf ("Creating basic blocks\b");
 	}
-	ut64 base = cur;
+	ut64 cur = 0, base = 0;
 	while (cur >= base && cur < size) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -286,12 +284,13 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 			// fix underflow issue
 			break;
 		}
+		base = cur;
 		int dsize = __isdata (core, dst);
 		if (dsize > 0) {
 			cur += dsize;
 			continue;
 		}
-		op = r_core_anal_op (core, dst, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+		RAnalOp *const op = r_core_anal_op (core, dst, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;
@@ -308,9 +307,9 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		}
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_NOP:
-				if (nopskip && b_start == dst) {
-					b_start = dst + op->size;
-				}
+			if (nopskip && b_start == dst) {
+				b_start = dst + op->size;
+			}
 			break;
 		case R_ANAL_OP_TYPE_CALL:
 			if (r_anal_noreturn_at (core->anal, op->jump)) {
@@ -353,7 +352,6 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		}
 		cur += op->size;
 		r_anal_op_free (op);
-		op = NULL;
 	}
 
 	if (debug) {
