@@ -682,7 +682,7 @@ typedef struct {
 	size_t cur_succ_count;
 } AutomergeCtx;
 
-static bool noreturn_successor_cb(ut64 addr, void *user) {
+static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 	AutomergeCtx *ctx = user;
 	ctx->cur_succ_count++;
 	RAnalBlock *block = ht_up_find (ctx->blocks, addr, NULL);
@@ -706,7 +706,7 @@ static bool noreturn_successor_cb(ut64 addr, void *user) {
 	return true;
 }
 
-static bool noreturn_get_predecessors_cb(void *user, const ut64 k, const void *v) {
+static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *v) {
 	AutomergeCtx *ctx = user;
 	const RAnalFunction *fcn = (const RAnalFunction *)k;
 	RListIter *it;
@@ -719,7 +719,7 @@ static bool noreturn_get_predecessors_cb(void *user, const ut64 k, const void *v
 		}
 		ctx->cur_pred = block;
 		ctx->cur_succ_count = 0;
-		r_anal_block_successor_addrs_foreach (block, noreturn_successor_cb, ctx);
+		r_anal_block_successor_addrs_foreach (block, automerge_predecessor_successor_cb, ctx);
 		ht_up_insert (ctx->visited_blocks, (ut64)block, (void *)ctx->cur_succ_count);
 	}
 	return true;
@@ -753,7 +753,7 @@ R_API void r_anal_block_automerge(RList *blocks) {
 	}
 
 	// Get the single predecessors we might want to merge with
-	ht_up_foreach (relevant_fcns, noreturn_get_predecessors_cb, &ctx);
+	ht_up_foreach (relevant_fcns, automerge_get_predecessors_cb, &ctx);
 
 	// Now finally do the merging
 	RListIter *tmp;
@@ -774,7 +774,7 @@ R_API void r_anal_block_automerge(RList *blocks) {
 		RListIter *bit;
 		RAnalBlock *clock;
 		for (bit = it->n; bit && (clock = bit->data, 1); bit = bit->n) {
-			RAnalBlock *fixup_pred = ht_up_find (ctx.predecessors, (ut64)block, NULL);
+			RAnalBlock *fixup_pred = ht_up_find (ctx.predecessors, (ut64)clock, NULL);
 			if (fixup_pred == block) {
 				r_list_push (fixup_candidates, clock);
 			}
