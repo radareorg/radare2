@@ -5688,8 +5688,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 
 			RListIter *fit;
 			r_list_foreach (block_fcns, fit, f) {
-				bool found = false;
-				found = ht_uu_find (done, f->addr, &found);
+				bool found = ht_uu_find (done, f->addr, NULL) != 0;
 				if (f->addr && !found && analyze_noreturn_function (core, f)) {
 					f->is_noreturn = true;
 					r_anal_noreturn_add (core->anal, NULL, f->addr);
