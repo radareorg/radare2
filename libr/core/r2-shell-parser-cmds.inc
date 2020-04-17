@@ -73,5 +73,6 @@ RULE_OP (pf_concatenation)
 RULE_OP (double_quoted_arg)
 RULE_OP (single_quoted_arg)
 RULE_OP (concatenation)
+RULE_OP (grep_specifier)
 #undef RULE_OP
 #undef HANDLER_RULE_OP
