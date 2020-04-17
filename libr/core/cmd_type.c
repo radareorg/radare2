@@ -941,7 +941,8 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 				dst_addr = r_reg_getv (esil->anal->reg, aop.dst->reg->name) + index;
 				dst_imm = aop.dst->delta;
 			}
-			RAnalVar *var = aop.var;
+			RAnalFunction *varfcn;
+			RAnalVar *var = r_anal_get_used_function_var (core->anal, aop.addr, &varfcn);
 			if (false) { // src_addr != UT64_MAX || dst_addr != UT64_MAX) {
 			//  if (src_addr == UT64_MAX && dst_addr == UT64_MAX) {
 				r_anal_op_fini (&aop);
@@ -961,10 +962,8 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 				// var int local_e0h --> var struct foo
 				if (strcmp (var->name , vlink) && !resolved) {
 					resolved = true;
-					r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-							-1, var->kind, varpfx, -1, var->isarg, var->name);
-					r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-							var->kind, var->name, vlink, false);
+					r_anal_function_var_set_type (varfcn, var, varpfx);
+					r_anal_function_var_rename (varfcn, var, vlink, false);
 				}
 			} else if (slink) {
 				set_offset_hint (core, &aop, slink, src_addr, at - ret, src_imm);

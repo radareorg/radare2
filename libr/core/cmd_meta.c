@@ -981,7 +981,7 @@ void r_comment_vars(RCore *core, const char *input) {
 				comment = heap_comment;
 			}
 		}
-		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
+		var = r_anal_function_get_var_byname (fcn, name);
 		if (var) {
 			idx = var->delta;
 		} else if (!strncmp (name, "0x", 2))  {
@@ -993,8 +993,7 @@ void r_comment_vars(RCore *core, const char *input) {
 			free (heap_comment);
 			break;
 		}
-		r_anal_var_free (var);
-		if (!r_anal_var_get (core->anal, fcn->addr, input[0], 1, idx)) {
+		if (!r_anal_function_get_var (fcn, input[0], idx)) {
 			eprintf ("can't find variable at given offset\n");
 		} else {
 			oldcomment = r_meta_get_var_comment (core->anal, input[0], idx, fcn->addr);
@@ -1014,7 +1013,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		}
 		break;
 	case '-': // "Cv-"
-		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
+		var = r_anal_function_get_var_byname(fcn, name);
 		if (var) {
 			idx = var->delta;
 		} else if (!strncmp (name, "0x", 2)) {
@@ -1025,9 +1024,7 @@ void r_comment_vars(RCore *core, const char *input) {
 			eprintf ("can't find variable named `%s`\n",name);
 			break;
 		}
-		r_anal_var_free (var);
-		//XXX TODO here we leak a var
-		if (!r_anal_var_get (core->anal, fcn->addr, input[0],1,idx)) {
+		if (!r_anal_function_get_var (fcn, input[0], idx)) {
 			eprintf ("can't find variable at given offset\n");
 			break;
 		}
@@ -1035,7 +1032,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		break;
 	case '!': { // "Cv!"
 		char *comment;
-		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
+		var = r_anal_function_get_var_byname (fcn, name);
 		if (!var) {
 			eprintf ("can't find variable named `%s`\n",name);
 			break;
@@ -1047,7 +1044,6 @@ void r_comment_vars(RCore *core, const char *input) {
 			r_meta_set_var_comment (core->anal, input[0], var->delta, fcn->addr, comment);
 			free (comment);
 		}
-		r_anal_var_free (var);
 		}
 		break;
 	}

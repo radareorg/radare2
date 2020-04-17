@@ -1836,7 +1836,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		if (!strncmp (buf->data, "afvn ", 5)) {
 			vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
 		} else {
-			vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
+			vars = r_list_new (); // TODO wtf r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
 		}
 		const char *f_ptr, *l_ptr;
 		RAnalVar *var;
@@ -2642,7 +2642,7 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->cb_printf = (void *) r_cons_printf;
 	core->parser = r_parse_new ();
 	r_anal_bind (core->anal, &(core->parser->analb));
-	core->parser->varlist = r_anal_var_list;
+	core->parser->varlist = r_anal_function_get_var_fields;
 	/// XXX shouhld be using coreb
 	r_parse_set_user_ptr (core->parser, core);
 	core->bin = r_bin_new ();

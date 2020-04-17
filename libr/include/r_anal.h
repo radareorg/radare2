@@ -248,6 +248,7 @@ typedef struct r_anal_function_t {
 	int type;
 	const char *cc; // calling convention, should come from RAnal.constpool
 	ut64 addr;
+	RPVector vars;
 	int stack; //stack frame size
 	int maxstack;
 	int ninstr;
@@ -463,29 +464,8 @@ typedef enum {
 } _RAnalCond;
 
 typedef enum {
-	R_ANAL_VAR_SCOPE_NULL   = 0,
-	R_ANAL_VAR_SCOPE_GLOBAL = 0x00,
-	R_ANAL_VAR_SCOPE_LOCAL  = 0x01,
-	R_ANAL_VAR_SCOPE_ARG    = 0x04,
-	R_ANAL_VAR_SCOPE_ARGREG = 0x08,
-	R_ANAL_VAR_SCOPE_RET    = 0x10,
+	R_ANAL_VAR_SCOPE_LOCAL  = 0x01
 } _RAnalVarScope;
-
-typedef enum {
-	R_ANAL_VAR_DIR_NONE = 0,
-	R_ANAL_VAR_DIR_IN   = 0x100,
-	R_ANAL_VAR_DIR_OUT  = 0x200
-} _RAnalVarDir;
-
-typedef enum {
-	R_ANAL_DATA_NULL = 0,
-	R_ANAL_DATA_HEX,      /* hex byte pairs */
-	R_ANAL_DATA_STR,      /* ascii string */
-	R_ANAL_DATA_CODE,     /* plain assembly code */
-	R_ANAL_DATA_FUN,      /* plain assembly code */
-	R_ANAL_DATA_STRUCT,   /* memory */
-	R_ANAL_DATA_LAST
-} _RAnalData;
 
 typedef enum {
 	R_ANAL_STACK_NULL = 0,
@@ -738,11 +718,11 @@ typedef struct r_anal_bind_t {
 
 typedef const char *(*RAnalLabelAt) (RAnal *a, RAnalFunction *fcn, ut64);
 
-#define R_ANAL_VAR_KIND_ANY 0
-#define R_ANAL_VAR_KIND_ARG 'a'
-#define R_ANAL_VAR_KIND_REG 'r'
-#define R_ANAL_VAR_KIND_BPV 'b'
-#define R_ANAL_VAR_KIND_SPV 's'
+typedef enum {
+	R_ANAL_VAR_KIND_REG = 'r',
+	R_ANAL_VAR_KIND_BPV = 'b',
+	R_ANAL_VAR_KIND_SPV = 's'
+} RAnalVarKind;
 
 #define VARPREFIX "var"
 #define ARGPREFIX "arg"
@@ -750,18 +730,22 @@ typedef const char *(*RAnalLabelAt) (RAnal *a, RAnalFunction *fcn, ut64);
 // generic for args and locals
 typedef struct r_anal_var_t {
 	char *name; // name of the variable
-	char *regname; // name of the register
 	char *type; // cparse type of the variable
-	char kind; // reg , stack ...
+	RAnalVarKind kind;
 	int size;
 	bool isarg;
-	int argnum;
 	int delta;   /* delta offset inside stack frame */
-	int scope;   /* global, local... | in, out... */
-	/* probably dupped or so */
-	RList/*RAnalVarAccess*/ *accesses; /* list of accesses for this var */
-	RList/*RAnalValue*/ *stores;   /* where this */
+
+	// below members are just for caching, TODO: remove them and do it better
+	int argnum;
+	char *regname; // name of the register
 } RAnalVar;
+
+// Refers to a variable or a struct field inside a variable, only for varsub
+R_DEPRECATE typedef struct r_anal_var_field_t {
+	char *name;
+	int delta;
+} RAnalVarField;
 
 // mul*value+regbase+regidx+delta
 typedef struct r_anal_value_t {
@@ -822,7 +806,6 @@ typedef struct r_anal_op_t {
 	int ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr;  /* stack pointer */
 	int refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
-	RAnalVar *var;  /* local var/arg used by this instruction */
 	RAnalValue *src[3];
 	RAnalValue *dst;
 	RStrBuf esil;
@@ -1470,7 +1453,6 @@ R_API RAnalOp *r_anal_op_new(void);
 R_API void r_anal_op_free(void *op);
 R_API void r_anal_op_init(RAnalOp *op);
 R_API bool r_anal_op_fini(RAnalOp *op);
-R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var);
 R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name);
 R_API bool r_anal_op_is_eob(RAnalOp *op);
 R_API RList *r_anal_op_list_new(void);
@@ -1553,7 +1535,6 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn);
 #define R_ANAL_FCN_VARKIND_LOCAL 'v'
 
 
-R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta);
 R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind, int scope, ut32 idx);
 /* args */
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
@@ -1602,23 +1583,22 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 /* var.c */
 R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int index);
 R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int delta, int ptr, int xs_type, ut64 xs_addr);
-R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind,
-		const char *old_name, const char *new_name, bool verbose);
+R_API bool r_anal_function_var_rename(RAnalFunction *fcn, RAnalVar *var, const char *new_name, bool verbose);
 R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff);
-R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kind,
-		const char *type, int size, bool isarg, const char *name);
-R_API void r_anal_var_free(RAnalVar *var);
-R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind);
-R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope, int delta);
-R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int type, const char *name);
-R_API bool r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind,
-		const char *type, int size, bool isarg, const char *name);
+R_API void r_anal_function_var_set_type(RAnalFunction *fcn, RAnalVar *var, const char *type);
+R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
+R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind);
+R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
+R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
 R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name);
-R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int index);
+R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
-R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, ut64 addr, const char* name);
+R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
+R_API int r_anal_function_var_get_argnum(RAnalFunction *fcn, RAnalVar *var);
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
+R_API RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 op_addr, R_NULLABLE RAnalFunction **fcn_out);
+R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *var, R_NULLABLE RAnalFunction **fcn_out);
 
 typedef struct r_anal_fcn_vars_cache {
 	RList *bvars;
@@ -1686,8 +1666,8 @@ R_API void r_anal_reflines_str_free(RAnalRefStr *refstr);
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ* pj);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
-R_API RList *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
-R_API RList *r_anal_var_list_dynamic(RAnal *anal, RAnalFunction *fcn, int kind);
+R_API R_DEPRECATE RList/*<RAnalVar *>*/ *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
+R_API R_DEPRECATE RList/*<RAnalVarField *>*/ *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind);
 
 // calling conventions API
 R_API bool r_anal_cc_exist(RAnal *anal, const char *convention);

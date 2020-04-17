@@ -2936,8 +2936,7 @@ static void variable_set_type (RCore *core, ut64 addr, int vindex, const char *t
 
 	r_list_foreach (list, iter, var) {
 		if (vindex == 0) {
-			r_anal_var_retype (core->anal, fcn->addr,
-				R_ANAL_VAR_SCOPE_LOCAL, -1, var->kind, type, -1, var->isarg, var->name);
+			r_anal_function_var_set_type (fcn, var, type);
 			break;
 		}
 		vindex--;
@@ -4029,25 +4028,14 @@ onemoretime:
 			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
 
 		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
-		if (op.var) {
+		RAnalFunction *varfcn;
+		RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr, &varfcn);
+		if (var) {
 //			q = r_str_newf ("?i Rename variable %s to;afvn %s `yp`", op.var->name, op.var->name);
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
-			if (fcn) {
-				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn->addr, op.var->name);
-				if (bar) {
-					char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", bar->name));
-					if (newname && *newname) {
-						r_anal_var_rename (core->anal, fcn->addr, bar->scope,
-								bar->kind, bar->name, newname, true);
-						free (newname);
-					}
-				} else {
-					eprintf ("Cannot find variable\n");
-					r_sys_sleep (1);
-				}
-			} else {
-				eprintf ("Cannot find function\n");
-				r_sys_sleep (1);
+			char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
+			if (newname && *newname) {
+				r_anal_function_var_rename (varfcn, var, newname, true);
+				free (newname);
 			}
 		} else if (tgt_addr != UT64_MAX) {
 			RAnalFunction *fcn = r_anal_get_function_at (core->anal, tgt_addr);
@@ -4300,38 +4288,26 @@ onemoretime:
 		}
 
 		ut64 try_off;
-		bool found = false;
 		RAnalOp *op = NULL;
+		RAnalFunction *fcn = NULL;
+		RAnalVar *var = NULL;
 		for (try_off = start_off; try_off < start_off + incr*16; try_off += incr) {
 			r_anal_op_free (op);
 			op = r_core_anal_op (core, try_off, R_ANAL_OP_MASK_ALL);
 			if (!op) {
 				break;
 			}
-			if (op->var) {
-				found = true;
+			var = r_anal_get_used_function_var (core->anal, op->addr, &fcn);
+			if (var) {
 				break;
 			}
 		}
 
-		if (found) {
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
-			if (fcn) {
-				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn->addr, op->var->name);
-				if (bar) {
-					char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", bar->name));
-					if (newname && *newname) {
-						r_anal_var_rename (core->anal, fcn->addr, bar->scope,
-								bar->kind, bar->name, newname, true);
-						free (newname);
-					}
-				} else {
-					eprintf ("Cannot find variable\n");
-					r_cons_any_key (NULL);
-				}
-			} else {
-				eprintf ("Cannot find function\n");
-				r_cons_any_key (NULL);
+		if (var) {
+			char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
+			if (newname && *newname) {
+				r_anal_function_var_rename (fcn, var, newname, true);
+				free (newname);
 			}
 		} else {
 			eprintf ("Cannot find instruction with a variable\n");

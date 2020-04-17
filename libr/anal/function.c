@@ -52,6 +52,8 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 	return false;
 }
 
+R_IPI void r_anal_var_free(RAnalVar *av);
+
 R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
 	if (!fcn) {
@@ -67,6 +69,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->bp_frame = true;
 	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
+	r_pvector_init (&fcn->vars, (RPVectorFree)r_anal_var_free);
 	return fcn;
 }
 
@@ -91,6 +94,8 @@ R_API void r_anal_function_free(void *_fcn) {
 	if (ht_pp_find (anal->ht_name_fun, fcn->name, NULL) == _fcn) {
 		ht_pp_delete (anal->ht_name_fun, fcn->name);
 	}
+
+	r_pvector_clear (&fcn->vars);
 
 	free (fcn->name);
 	fcn->bbs = NULL;
