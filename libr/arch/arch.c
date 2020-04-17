@@ -12,10 +12,10 @@ static void plugin_free(RArchPlugin *p) {
 	}
 }
 
-static bool is_valid(RArch *a, const char *name) {
+static bool is_plugin_registered(RArch *a, const char *name) {
         RArchPlugin *h;
         RListIter *iter;
-        if (!name || !*name) {
+        if (R_STR_ISEMPTY (name)) {
                 return false;
         }
         r_list_foreach (a->plugins, iter, h) {
@@ -28,17 +28,20 @@ static bool is_valid(RArch *a, const char *name) {
 
 R_API RArch *r_arch_new() {
 	RArch *a = R_NEW0 (RArch);
+	if (!a) {
+		return NULL;
+	}
 	a->setup.bits = R_SYS_BITS;
 	a->setup.endian = R_SYS_ENDIAN_LITTLE;
-        a->plugins = r_list_newf ((RListFree)plugin_free);
-        if (!a->plugins) {
-                free (a);
-                return NULL;
-        }
+	a->plugins = r_list_newf ((RListFree)plugin_free);
+	if (!a->plugins) {
+		free (a);
+		return NULL;
+	}
 	size_t i;
-        for (i = 0; arch_static_plugins[i]; i++) {
-                r_arch_add (a, arch_static_plugins[i]);
-        }
+	for (i = 0; arch_static_plugins[i]; i++) {
+		r_arch_add (a, arch_static_plugins[i]);
+	}
 	return a;
 }
 
@@ -63,9 +66,10 @@ R_API bool r_arch_set_cpu(RArch *a, const char *cpu) {
 
 R_API bool r_arch_setup(RArch *a, const char *arch, RArchBits bits, RArchEndian endian) {
 	r_return_val_if_fail (a && arch, false);
-	bool ret = !r_arch_use (a, arch);
-	r_arch_set_endian (a, endian);
-	return ret | !r_arch_set_bits (a, bits);
+	bool ret = r_arch_use (a, arch);
+	ret &= r_arch_set_endian (a, endian);
+ 	ret &= r_arch_set_bits (a, bits);
+	return ret;
 }
 
 R_API bool r_arch_set_syntax(RArch *a, int syntax) {
@@ -85,6 +89,9 @@ R_API bool r_arch_set_syntax(RArch *a, int syntax) {
 
 R_API bool r_arch_set_endian(RArch *a, RArchEndian endian) {
 	r_return_val_if_fail (a, false);
+	if (a->cur && !(a->setup.endian & endian)) {
+		return false;
+	}
 	switch (endian) {
 	case R_SYS_ENDIAN_LITTLE:
 	case R_SYS_ENDIAN_BIG:
@@ -96,7 +103,7 @@ R_API bool r_arch_set_endian(RArch *a, RArchEndian endian) {
 	return false;
 }
 
-R_API bool r_arch_set_bits(RArch *a, int bits) {
+R_API bool r_arch_set_bits(RArch *a, RArchBits bits) {
 	r_return_val_if_fail (a, false);
 	if (has_bits (a->cur, bits)) {
 		a->setup.bits = bits;
@@ -110,7 +117,7 @@ R_API bool r_arch_set_bits(RArch *a, int bits) {
 R_API bool r_arch_use(RArch *a, const char *name) {
 	r_return_val_if_fail (a && a->plugins, false);
 
-	if (!name || !*name) {
+	if (R_STR_ISEMPTY (name)) {
 		a->cur = NULL;
 		return true;
 	}
@@ -143,10 +150,10 @@ R_API bool r_arch_decode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
 
 R_API bool r_arch_add(RArch *a, RArchPlugin *foo) {
 	r_return_val_if_fail (a && foo, false);
-        if (foo->init) {
-                foo->init (a);
-        }
-	if (!is_valid (a, foo->name)) {
+	if (foo->init) {
+		foo->init (a);
+	}
+	if (!is_plugin_registered (a, foo->name)) {
 		r_list_append (a->plugins, foo);
 		return true;
 	}
@@ -158,4 +165,3 @@ R_API bool r_arch_del(RArch *a, const char *name) {
 	/* TODO: Implement r_arch_del */
 	return false;
 }
-

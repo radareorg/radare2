@@ -963,7 +963,7 @@ static void __replaceImports(RDisasmState *ds) {
 	}
 }
 
-static char *get_op_ireg (void *user, ut64 addr) {
+static char *get_op_ireg(void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	char *res = NULL;
 	RAnalOp *op = r_core_anal_op (core, addr, 0);
@@ -976,8 +976,7 @@ static char *get_op_ireg (void *user, ut64 addr) {
 
 static int get_ptr_at(void *user, RAnalFunction *fcn, int delta, ut64 addr) {
 	RCore *core = (RCore *)user;
-	const char *var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access",
-			fcn->addr, 1, delta);
+	const char *var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", fcn->addr, 1, delta);
 	char *vars = sdb_get (core->anal->sdb_fcns, var_access, NULL);
 	const ut64 offset = addr - fcn->addr;
 	if (vars) {
