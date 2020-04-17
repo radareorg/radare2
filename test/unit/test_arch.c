@@ -1,6 +1,23 @@
 #include <r_arch.h>
 #include "minunit.h"
 
+bool test_arch(void) {
+#if 0
+	RArch *a = r_arch_new ();
+	mu_assert_notnull (a, "r_arch_new");
+	RArchSetup setup = {
+		.arch = "x86",
+		.endian = R_SYS_ENDIAN_LITTLE,
+		.bits = 32,
+	};
+	RArchInstance *ai = r_arch_instance (a, &setup);
+	RArchInstruction ins = {
+		
+	};
+	r_arch_instance_encode (ai, 
+#endif
+}
+
 bool test_arch_bf(void) {
 	RArchInstruction ins;
 	bool res;
@@ -10,6 +27,7 @@ bool test_arch_bf(void) {
 
 	res = r_arch_use (a, "bf");
 	mu_assert ("r_arch_use", res);
+
 
 	r_arch_instruction_init (&ins);
 
@@ -35,6 +53,7 @@ bool test_arch_bf(void) {
 
 int all_tests() {
 	mu_run_test (test_arch_bf);
+	mu_run_test (test_arch);
 	return tests_passed != tests_run;
 }
 

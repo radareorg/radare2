@@ -9,6 +9,7 @@
 
 typedef int RArchBits;
 typedef int RArchEndian;
+typedef int RArchSyntax;
 
 typedef enum r_arch_decode_options_t {
 	R_ARCH_OPTION_CODE = 1 << 0, // 1,
@@ -22,7 +23,7 @@ typedef enum r_arch_decode_options_t {
 typedef struct r_arch_setup_t {
 	RArchEndian endian;
 	RArchBits bits;
-	size_t syntax;
+	RArchSyntax syntax;
 	char *cpu;
 } RArchSetup;
 
@@ -49,7 +50,7 @@ typedef struct r_arch_instruction_t {
 	RStrBuf data; // bytes
 	RStrBuf esil; // emulation
 	RStrBuf opex; // analysis
-	size_t syntax; // used for disasm
+	RArchSyntax syntax; // used for disasm
 	RVector dest; // array of destinations
 } RArchInstruction;
 
@@ -84,6 +85,11 @@ typedef struct r_arch_plugin_t {
 	bool (*fini)(void *user);
 } RArchPlugin;
 
+typedef struct r_arch_instance {
+	RArchPlugin *cur;
+	RArchSetup setup;
+} RArchInstance;
+
 R_API RArchInstruction *r_arch_instruction_new();
 R_API void r_arch_instruction_free(RArchInstruction *ins);
 R_API void r_arch_instruction_init(RArchInstruction *ins);
@@ -94,14 +100,17 @@ R_API void r_arch_instruction_fini(RArchInstruction *ins);
 R_API RArch *r_arch_new();
 R_API void r_arch_free(RArch *arch);
 
+R_API RArchInstance *r_arch_instance(RArch *a);
+
 R_API bool r_arch_encode(RArch *a, RArchInstruction *ins, RArchOptions opt);
 R_API bool r_arch_decode(RArch *a, RArchInstruction *ins, RArchOptions opt);
 
 R_API bool r_arch_setup(RArch *a, const char *arch, RArchBits bits, RArchEndian endian);
-R_API bool r_arch_set_syntax(RArch *a, int syntax);
+// R_API bool r_arch_setup(RArch *a, RArchSetup *s);
+R_API bool r_arch_set_syntax(RArch *a, RArchSyntax syntax);
 R_API bool r_arch_set_cpu(RArch *a, const char *cpu);
 R_API bool r_arch_set_endian(RArch *a, RArchEndian endian);
-R_API bool r_arch_set_bits(RArch *a, int bits);
+R_API bool r_arch_set_bits(RArch *a, RArchBits bits);
 R_API bool r_arch_use(RArch *a, const char *name);
 R_API bool r_arch_add(RArch *a, RArchPlugin *foo);
 R_API bool r_arch_del(RArch *a, const char *name);
