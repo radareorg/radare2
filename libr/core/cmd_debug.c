@@ -4931,7 +4931,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (op) {
 					r_anal_esil_trace (core->anal->esil, op);
 				}
-				r_anal_op_free (op);
+				//r_anal_op_free (op);
 			} break;
 			case '-': // "dte-"
 				if (!strcmp (input + 3, "*")) {

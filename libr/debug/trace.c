@@ -49,20 +49,20 @@ R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
  */
 R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	ut8 buf[32];
-	RAnalOp op = {0};
+	RAnalOp *op = r_anal_op_new ();
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (!dbg->iob.is_valid_offset (dbg->iob.io, pc, 0)) {
 		eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", pc);
 		return false;
 	}
 	(void)dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ESIL) < 1) {
+	if (r_anal_op (dbg->anal, op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL) < 1) {
 		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
 		return false;
 	}
 	if (dbg->trace->enabled) {
 		if (dbg->anal->esil) {
-			r_anal_esil_trace (dbg->anal->esil, &op);
+			r_anal_esil_trace (dbg->anal->esil, op);
 		} else {
 			if (dbg->verbose) {
 				eprintf ("Run aeim to get dbg->anal->esil initialized\n");
@@ -70,10 +70,10 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 		}
 	}
 	if (oldpc != UT64_MAX) {
-		r_debug_trace_add (dbg, oldpc, op.size); //XXX review what this line really do
+		r_debug_trace_add (dbg, oldpc, op->size); //XXX review what this line really do
 	}
 	oldpc = pc;
-	r_anal_op_fini (&op);
+	//r_anal_op_fini (&op);
 	return true;
 }
 
