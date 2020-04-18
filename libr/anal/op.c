@@ -88,6 +88,7 @@ static int defaultCycles(RAnalOp *op) {
 
 static int mask_anal_to_arch (int m) {
 	int r = R_ARCH_OPTION_SIZE; // R_ANAL_OP_MASK_BASIC
+	r |= R_ARCH_OPTION_ANAL;
 	if (m & R_ANAL_OP_MASK_ESIL) {
 		r |= R_ARCH_OPTION_ESIL;
 	}
@@ -109,7 +110,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 	int ret = R_MIN (2, len);
 	RAnal *a = anal;
-	if (a->arch && a->arch->cur && a->arch->cur->decode) {
+	if (r_arch_can_decode (a->arch)) {
 		RArchInstruction ins = {0};
 		r_arch_instruction_init_data (&ins, addr, data, len);
 		int flags = mask_anal_to_arch (mask);
@@ -120,6 +121,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else {
 			/* RArchInstruction -> RAnalOp */
 			r_strbuf_copy (&op->esil, &ins.esil);
+			op->addr = ins.addr;
 			op->type = ins.type;
 			op->jump = op->fail = UT64_MAX;
 			op->id = ins.opid;

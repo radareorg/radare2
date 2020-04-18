@@ -165,3 +165,12 @@ R_API bool r_arch_del(RArch *a, const char *name) {
 	/* TODO: Implement r_arch_del */
 	return false;
 }
+
+R_API bool r_arch_can_decode(RArch *a) {
+	return a && a->cur && a->cur->decode;
+}
+
+R_API bool r_arch_can_encode(RArch *a) {
+	return a && a->cur && a->cur->encode;
+}
+
