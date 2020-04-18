@@ -199,6 +199,7 @@ R_API RAsm *r_asm_new() {
 	}
 	a->num = r_num_new (NULL, NULL, NULL);
 	if (!a->num) {
+		free (a);
 		return NULL;
 	}
 	a->dataalign = 1;
