@@ -1409,7 +1409,7 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 	return plt_addr;
 }
 
-static size_t get_size_rel_mode(size_t rel_mode) {
+static size_t get_size_rel_mode(Elf_(Xword) rel_mode) {
 	return rel_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
 }
 
@@ -2538,7 +2538,7 @@ static void fix_rva_and_offset(ELFOBJ *bin, RBinElfReloc *r, size_t pos) {
 	}
 }
 
-static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, size_t rel_mode, ut64 offset) {
+static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 offset) {
 	size_t size_struct = get_size_rel_mode (rel_mode);
 
 	ut8 buf[sizeof (Elf_(Rela))] = { 0 };
@@ -2585,7 +2585,7 @@ static bool sectionIsValid(ELFOBJ *bin, RBinElfSection *sect) {
 	return (sect->offset + sect->size <= bin->size);
 }
 
-static size_t get_section_mode(ELFOBJ *bin, size_t pos) {
+static Elf_(Xword) get_section_mode(ELFOBJ *bin, size_t pos) {
 	if (r_str_startswith (bin->g_sections[pos].name, ".rela.")) {
 		return DT_RELA;
 	} else if (r_str_startswith (bin->g_sections[pos].name, ".rel.")) {
@@ -2595,12 +2595,13 @@ static size_t get_section_mode(ELFOBJ *bin, size_t pos) {
 	return 0;
 }
 
-static bool is_reloc_section(size_t rel_mode) {
+static bool is_reloc_section(Elf_(Xword) rel_mode) {
 	return rel_mode == DT_REL || rel_mode == DT_RELA;
 }
 
 static size_t get_num_relocs_sections(ELFOBJ *bin) {
-	size_t i, rel_mode, size, ret = 0;
+	size_t i, size, ret = 0;
+	Elf_(Xword) rel_mode;
 
 	if (!bin->g_sections) {
 		return 0;
@@ -2675,7 +2676,8 @@ static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_offset, s
 }
 
 static size_t populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos) {
-	size_t size, rel_mode, i, j;
+	size_t size, i, j;
+	Elf_(Xword) rel_mode;
 
 	if (!bin->g_sections) {
 		return pos;
