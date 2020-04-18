@@ -2,7 +2,7 @@ NAME=t/sugar
 FILE=-
 CMDS=<<EOF
 ph md5@s:hello
-ph md5 @ s:hello
+ph md5 @s:hello
 ph md5@x:01020304
 EOF
 EXPECT=<<EOF

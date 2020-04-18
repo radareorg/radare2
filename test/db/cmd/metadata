@@ -21,7 +21,7 @@ CMDS=<<EOF
 af
 CCf-*~?
 CC hello
-CC world @ $$ + 32
+CC world @ $$+32
 CCf~?
 CCf-*
 CCf~?

@@ -4618,6 +4618,7 @@ static char *ts_node_sub_parent_string(TSNode parent, TSNode node, const char *c
 	static bool handle_ts_##name##_internal(struct tsr2cmd_state *state, TSNode node, char *node_string)
 
 static bool handle_ts_command(struct tsr2cmd_state *state, TSNode node);
+static bool handle_ts_command_tmpseek(struct tsr2cmd_state *state, TSNode node);
 static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lines, bool log);
 
 DEFINE_IS_TS_FCN(fdn_redirect_operator)
@@ -4636,6 +4637,7 @@ DEFINE_IS_TS_FCN(pf_concatenation)
 DEFINE_IS_TS_FCN(double_quoted_arg)
 DEFINE_IS_TS_FCN(single_quoted_arg)
 DEFINE_IS_TS_FCN(concatenation)
+DEFINE_IS_TS_FCN(grep_specifier)
 
 struct foreach_comment_newshell_t {
 	TSNode *command;
@@ -4661,7 +4663,7 @@ static int foreach_comment_newshell(void *user, const char *k, const char *v) {
 		if (cmt) {
 			ut64 k_addr = r_num_math (state->core->num, k + 7);
 			r_core_seek (core, k_addr, false);
-			handle_ts_command (state, *cmd);
+			handle_ts_command_tmpseek (state, *cmd);
 			free (cmt);
 		}
 	}
@@ -4793,7 +4795,8 @@ static bool is_group_of_args(TSNode args) {
 	return is_ts_args (args) || is_ts_concatenation (args) ||
 		is_ts_double_quoted_arg (args) ||
 		is_ts_pf_concatenation (args) || is_ts_pf_args (args) ||
-		is_ts_pf_dot_cmd_args (args) || is_ts_pf_new_args (args);
+		is_ts_pf_dot_cmd_args (args) || is_ts_pf_new_args (args) ||
+		is_ts_grep_specifier (args);
 }
 
 static bool is_arg(TSNode args) {
@@ -4801,7 +4804,8 @@ static bool is_arg(TSNode args) {
 }
 
 static bool is_handled_args(TSNode args) {
-	return is_group_of_args (args) || is_arg (args) || is_ts_cmd_substitution_arg (args);
+	return is_group_of_args (args) || is_arg (args) ||
+		is_ts_cmd_substitution_arg (args) || is_ts_grep_specifier (args);
 }
 
 static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, RList *edits) {
@@ -5200,7 +5204,7 @@ DEFINE_HANDLE_TS_FCN(tmp_seek_command) {
 	ut64 orig_offset = state->core->offset;
 	R_LOG_DEBUG ("tmp_seek_command, changing offset to %s\n", offset_string);
 	r_core_seek (state->core, r_num_math(state->core->num, offset_string), true);
-	bool res = handle_ts_command (state, command);
+	bool res = handle_ts_command_tmpseek (state, command);
 	r_core_seek (state->core, orig_offset, true);
 	free (offset_string);
 	return res;
@@ -5344,7 +5348,7 @@ DEFINE_HANDLE_TS_FCN(tmp_nthi_command) {
 		eprintf ("Can't find a basic block for 0x%08" PFMT64x "\n", core->offset);
 	}
 
-	bool res = handle_ts_command (state, command);
+	bool res = handle_ts_command_tmpseek (state, command);
 
 	r_core_seek (core, orig_offset, true);
 
@@ -5403,7 +5407,7 @@ DEFINE_HANDLE_TS_FCN(tmp_reli_command) {
 	if (addr) {
 		r_core_cmdf (core, "so %d", addr);
 	}
-	bool res = handle_ts_command (state, command);
+	bool res = handle_ts_command_tmpseek (state, command);
 	r_core_seek (state->core, orig_offset, true);
 	free (arg_str);
 	return res;
@@ -5420,7 +5424,7 @@ DEFINE_HANDLE_TS_FCN(tmp_kuery_command) {
 		r_core_seek (core, r_num_math(core->num, out), true);
 		free (out);
 	}
-	bool res = handle_ts_command (state, command);
+	bool res = handle_ts_command_tmpseek (state, command);
 	r_core_seek (state->core, orig_offset, true);
 	free (arg_str);
 	return res;
@@ -5448,7 +5452,7 @@ DEFINE_HANDLE_TS_FCN(tmp_reg_command) {
 	// TODO: add support for operations (e.g. @r:PC+10)
 	ut64 regval = r_debug_reg_get (core->dbg, arg_str);
 	r_core_seek (core, regval, true);
-	bool res = handle_ts_command (state, command);
+	bool res = handle_ts_command_tmpseek (state, command);
 	r_core_seek (core, orig_offset, true);
 	free (arg_str);
 	return res;
@@ -5574,7 +5578,7 @@ DEFINE_HANDLE_TS_FCN(iter_flags_command) {
 		R_LOG_DEBUG ("iter_flags_command: seek to %" PFMT64x "\n", flag->offset);
 		r_core_seek (core, flag->offset, true);
 		r_cons_push ();
-		ret &= handle_ts_command(state, command);
+		ret &= handle_ts_command_tmpseek (state, command);
 		tmp = r_cons_get_buffer ();
 		buf = tmp? strdup (tmp): NULL;
 		r_cons_pop ();
@@ -5618,7 +5622,7 @@ static bool iter_dbt_commands(struct tsr2cmd_state *state, TSNode node, enum dbt
 			r_warn_if_reached ();
 			return false;
 		}
-		res &= handle_ts_command (state, command);
+		res &= handle_ts_command_tmpseek (state, command);
 		r_cons_newline ();
 	}
 	r_core_seek (core, orig_offset, true);
@@ -5661,7 +5665,7 @@ DEFINE_HANDLE_TS_FCN(iter_file_lines_command) {
 		}
 		ut64 addr = r_num_math (core->num, buf);
 		r_core_seek (core, addr, true);
-		res &= handle_ts_command (state, command);
+		res &= handle_ts_command_tmpseek (state, command);
 		core->rcmd->macro.counter++;
 	}
 	r_core_seek (core, orig_offset, true);
@@ -5711,7 +5715,7 @@ DEFINE_HANDLE_TS_FCN(iter_offsets_command) {
 		ut64 addr = r_num_math (core->num, a->argv[i]);
 		R_LOG_DEBUG ("iter_offsets_command: seek to %" PFMT64x "\n", addr);
 		r_core_seek (core, addr, true);
-		res &= handle_ts_command (state, command);
+		res &= handle_ts_command_tmpseek (state, command);
 		r_cons_flush ();
 	}
 
@@ -5751,7 +5755,7 @@ DEFINE_HANDLE_TS_FCN(iter_sdbquery_command) {
 		}
 		each = str + 1;
 		r_core_seek (core, addr, true);
-		res &= handle_ts_command (state, command);
+		res &= handle_ts_command_tmpseek (state, command);
 		r_cons_flush ();
 	} while (str != NULL);
 	r_core_seek (core, orig_offset, true);
@@ -5800,7 +5804,7 @@ DEFINE_HANDLE_TS_FCN(iter_bbs_command) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		r_core_block_size (core, bb->size);
 		r_core_seek (core, bb->addr, true);
-		res &= handle_ts_command (state, command);
+		res &= handle_ts_command_tmpseek (state, command);
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -5831,7 +5835,7 @@ DEFINE_HANDLE_TS_FCN(iter_instrs_command) {
 			int sz = r_anal_bb_size_i (bb, i);
 			r_core_block_size (core, sz);
 			r_core_seek (core, addr, true);
-			res &= handle_ts_command (state, command);
+			res &= handle_ts_command_tmpseek (state, command);
 			if (r_cons_is_breaked ()) {
 				break;
 			}
@@ -5866,7 +5870,7 @@ DEFINE_HANDLE_TS_FCN(iter_functions_command) {
 		r_core_block_size (core, r_anal_function_linear_size (fcn));
 		r_core_seek (core, fcn->addr, true);
 		r_cons_push ();
-		res &= handle_ts_command (state, command);
+		res &= handle_ts_command_tmpseek (state, command);
 		buf = (char *)r_cons_get_buffer ();
 		if (buf) {
 			buf = strdup (buf);
@@ -5909,7 +5913,7 @@ DEFINE_HANDLE_TS_FCN(iter_step_command) {
 	for (cur = from; cur < to; cur += step) {
 		r_core_seek (core, cur, true);
 		r_core_block_size (core, step);
-		res &= handle_ts_command (state, command);
+		res &= handle_ts_command_tmpseek (state, command);
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -5963,7 +5967,7 @@ DEFINE_HANDLE_TS_FCN(iter_interpret_command) {
 		ut64 addr = r_num_math (core->num, a->argv[i]);
 		R_LOG_DEBUG ("iter_interpret_command: seek to %" PFMT64x "\n", addr);
 		r_core_seek (core, addr, true);
-		res &= handle_ts_command (state, command);
+		res &= handle_ts_command_tmpseek (state, command);
 		r_cons_flush ();
 	}
 
@@ -6001,7 +6005,7 @@ DEFINE_HANDLE_TS_FCN(foreach_addrsize_command) {
 		free (blk_sz_str);
 		r_core_seek (core, seek_addr_val, true);
 		r_core_block_size (core, blk_sz_val);
-		ret &= handle_ts_command (state, command);
+		ret &= handle_ts_command_tmpseek (state, command);
 		i += 2;
 		seek_addr_node = ts_node_named_child (node, i);
 		blk_sz_node = ts_node_named_child (node, i + 1);
@@ -6025,7 +6029,7 @@ DEFINE_HANDLE_TS_FCN(foreach_bb_command) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		r_core_seek (core, bb->addr, true);
 		r_core_block_size (core, bb->size);
-		ret &= handle_ts_command (state, command);
+		ret &= handle_ts_command_tmpseek (state, command);
 	}
 	r_core_block_size (core, obs);
 	r_core_seek (core, offorig, true);
@@ -6101,7 +6105,7 @@ DEFINE_HANDLE_TS_FCN(foreach_import_command) {
 		ut64 addr = *naddr;
 		if (addr && addr != UT64_MAX) {
 			r_core_seek (core, addr, true);
-			res &= handle_ts_command (state, command);
+			res &= handle_ts_command_tmpseek (state, command);
 		}
 	}
 	r_core_seek (core, offorig, true);
@@ -6138,7 +6142,7 @@ DEFINE_HANDLE_TS_FCN(foreach_register_command) {
 			value = r_reg_getv (core->dbg->reg, item_name);
 			r_core_seek (core, value, true);
 			r_cons_printf ("%s: ", item_name);
-			res &= handle_ts_command (state, command);
+			res &= handle_ts_command_tmpseek (state, command);
 		}
 		r_list_free (list);
 	}
@@ -6167,7 +6171,7 @@ DEFINE_HANDLE_TS_FCN(foreach_symbol_command) {
 		}
 		r_core_block_size (core, sym->size);
 		r_core_seek (core, sym->vaddr, true);
-		res &= handle_ts_command (state, command);
+		res &= handle_ts_command_tmpseek (state, command);
 	}
 	r_cons_break_pop ();
 	r_list_free (lost);
@@ -6194,7 +6198,7 @@ DEFINE_HANDLE_TS_FCN(foreach_string_command) {
 		r_list_foreach (lost, iter, s) {
 			r_core_block_size (core, s->size);
 			r_core_seek (core, s->vaddr, true);
-			res &= handle_ts_command (state, command);
+			res &= handle_ts_command_tmpseek (state, command);
 		}
 		r_core_block_size (core, obs);
 		r_core_seek (core, offorig, true);
@@ -6218,7 +6222,7 @@ DEFINE_HANDLE_TS_FCN(foreach_section_command) {
 	r_list_foreach (obj->sections, iter, sec) {
 		r_core_seek (core, sec->vaddr, true);
 		r_core_block_size (core, sec->vsize);
-		res &= handle_ts_command (state, command);
+		res &= handle_ts_command_tmpseek (state, command);
 	}
 	r_core_block_size (core, bszorig);
 	r_core_seek (core, offorig, true);
@@ -6238,7 +6242,7 @@ DEFINE_HANDLE_TS_FCN(foreach_iomap_command) {
 		r_list_foreach (maps, iter, map) {
 			r_core_seek (core, map->itv.addr, true);
 			r_core_block_size (core, map->itv.size);
-			res &= handle_ts_command (state, command);
+			res &= handle_ts_command_tmpseek (state, command);
 		}
 		r_list_free (maps);
 	}
@@ -6255,7 +6259,7 @@ DEFINE_HANDLE_TS_FCN(foreach_dbgmap_command) {
 		RListIter *iter;
 		r_list_foreach (dbg->maps, iter, map) {
 			r_core_seek (core, map->addr, true);
-			res &= handle_ts_command (state, command);
+			res &= handle_ts_command_tmpseek (state, command);
 		}
 	}
 	return res;
@@ -6279,7 +6283,7 @@ DEFINE_HANDLE_TS_FCN(foreach_flag_command) {
 	r_list_foreach (flags, iter, f) {
 		r_core_block_size (core, f->size);
 		r_core_seek (core, f->offset, true);
-		res &= handle_ts_command (state, command);
+		res &= handle_ts_command_tmpseek (state, command);
 	}
 	r_core_seek (core, off, false);
 	r_core_block_size (core, obs);
@@ -6309,7 +6313,7 @@ DEFINE_HANDLE_TS_FCN(foreach_function_command) {
 		if (!filter || r_str_glob (fcn->name, filter)) {
 			r_core_seek (core, fcn->addr, true);
 			r_core_block_size (core, r_anal_function_linear_size (fcn));
-			res &= handle_ts_command (state, command);
+			res &= handle_ts_command_tmpseek (state, command);
 		}
 	}
 	r_cons_break_pop ();
@@ -6361,7 +6365,7 @@ DEFINE_HANDLE_TS_FCN(last_command) {
 DEFINE_HANDLE_TS_FCN(grep_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 	TSNode arg = ts_node_child_by_field_name (node, "specifier", strlen ("specifier"));
-	char *arg_str = ts_node_sub_string (arg, state->input);
+	char *arg_str = ts_node_handle_arg (state, node, arg, 1);
 	bool res = handle_ts_command (state, command);
 	R_LOG_DEBUG ("grep_command specifier: '%s'\n", arg_str);
 	RStrBuf *sb = r_strbuf_new (arg_str);
@@ -6463,6 +6467,15 @@ static bool handle_ts_command(struct tsr2cmd_state *state, TSNode node) {
 	return ret;
 }
 
+static bool handle_ts_command_tmpseek(struct tsr2cmd_state *state, TSNode node) {
+	RCore *core = state->core;
+	bool saved_tmpseek = core->tmpseek;
+	core->tmpseek = true;
+	bool ret = handle_ts_command (state, node);
+	core->tmpseek = saved_tmpseek;
+	return ret;
+}
+
 DEFINE_HANDLE_TS_FCN(commands) {
 	ut32 child_count = ts_node_named_child_count (node);
 	bool res = true;
@@ -6545,6 +6558,15 @@ static void ts_symbols_init(RCmd *cmd) {
 }
 
 static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lines, bool log) {
+	if (core->cons->context->cmd_depth < 1) {
+		eprintf ("r_core_cmd: That was too deep (%s)...\n", cstr);
+		return false;
+	}
+	core->cons->context->cmd_depth--;
+	if (core->max_cmd_depth - core->cons->context->cmd_depth == 1) {
+		core->prompt_offset = core->offset;
+	}
+
 	char *input = strdup (r_str_trim_head_ro (cstr));
 
 	ts_symbols_init (core->rcmd);
@@ -6583,6 +6605,7 @@ static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lines, bo
 	ts_tree_delete (tree);
 	ts_parser_delete (parser);
 	free (input);
+	core->cons->context->cmd_depth++;
 	return res;
 }
 #endif
