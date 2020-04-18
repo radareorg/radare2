@@ -6,29 +6,28 @@
 
 static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 	char *red = strchr (msg, '>');
-	if (red) {
-		*red++ = 0;
-		r_str_trim (msg);
-		red = r_str_trim_dup (red);
-		if (*red != '/') {
-			char *blu = r_str_newf ("%s/%s", cwd, red);
-			free (red);
-			red = blu;
-		} else {
-		}
-		RFSFile *f = r_fs_open (fs, red, true);
-		if (!f) {
-			eprintf ("Cannot open %s for writing\n", red);
-			free (red);
-			return true;
-		}
-		r_fs_write (fs, f, 0, data == NULL ? (const ut8 *) msg : data, strlen (msg));
+	if (!red) {
+		return false;
+	}
+	*red++ = 0;
+	r_str_trim (msg);
+	red = r_str_trim_dup (red);
+	if (*red != '/') {
+		char *blu = r_str_newf ("%s/%s", cwd, red);
 		free (red);
-		r_fs_close (fs, f);
-		r_fs_file_free (f);
+		red = blu;
+	}
+	RFSFile *f = r_fs_open (fs, red, true);
+	if (!f) {
+		eprintf ("Cannot open %s for writing\n", red);
+		free (red);
 		return true;
 	}
-	return false;
+	r_fs_write (fs, f, 0, data ? data : msg, strlen (data ? data : msg));
+	free (red);
+	r_fs_close (fs, f);
+	r_fs_file_free (f);
+	return true;
 }
 
 R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
@@ -191,11 +190,11 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			r_list_free (list);
 			list = r_fs_dir (fs, path);
 			if (r_list_empty (list)) {
-				RFSRoot *root;
+				RFSRoot *r;
 				RListIter *iter;
-				r_list_foreach (fs->roots, iter, root) {
-					if (!strcmp (path, root->path)) {
-						r_list_append (list, root->path);
+				r_list_foreach (fs->roots, iter, r) {
+					if (!strcmp (path, r->path)) {
+						r_list_append (list, r->path);
 					}
 				}
 			}
