@@ -2,7 +2,7 @@
 #include "minunit.h"
 
 static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
-	RPVector *vec = v;
+	RPVector *vec = (RPVector *)v;
 	void **it;
 	r_pvector_foreach (vec, it) {
 		RAnalVar *var = *it;

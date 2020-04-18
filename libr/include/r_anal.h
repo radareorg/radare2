@@ -1596,11 +1596,15 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 /* var.c */
 R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
 R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
-R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
+R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind);
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn);
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, int delta, ut64 addr);
+R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
+
+// There could be multiple vars used in multiple functions. Use r_anal_get_functions_in()+r_anal_function_get_vars_used_at() instead.
+R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr);
 
 R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose);
 R_API void r_anal_var_set_type(RAnalVar *var, const char *type);
@@ -1612,7 +1616,6 @@ R_API int r_anal_var_get_argnum(RAnalVar *var);
 
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
-R_API RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 op_addr);
 R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *var);
 
 typedef struct r_anal_fcn_vars_cache {

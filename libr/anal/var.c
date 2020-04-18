@@ -236,7 +236,7 @@ R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn) {
 	r_pvector_clear (&fcn->vars);
 }
 
-R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name) {
+R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name) {
 	r_return_val_if_fail (fcn && name, NULL);
 	void **it;
 	r_pvector_foreach (&fcn->vars, it) {
@@ -366,17 +366,28 @@ struct VarUsedType {
 	st64 delta;
 };
 
-// TODO: this access-tracking should be per-function and also probably not in sdb
-R_API RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 op_addr) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (anal, op_addr, -1);
-	if (!fcn) {
+R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr) {
+	r_return_val_if_fail (fcn, NULL);
+	return ht_up_find (fcn->inst_vars, (st64)op_addr - (st64)fcn->addr, NULL);
+}
+
+R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr) {
+	RList *fcns = r_anal_get_functions_in (anal, addr);
+	if (!fcns) {
 		return NULL;
 	}
-	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, (st64)op_addr - (st64)fcn->addr, NULL);
-	if (!inst_accesses || r_pvector_empty (inst_accesses)) {
-		return NULL;
+	RAnalVar *var = NULL;
+	RListIter *it;
+	RAnalFunction *fcn;
+	r_list_foreach (fcns, it, fcn) {
+		RPVector *used_vars = r_anal_function_get_vars_used_at (fcn, addr);
+		if (used_vars && !r_pvector_empty (used_vars)) {
+			var = r_pvector_at (used_vars, 0);
+			break;
+		}
 	}
-	return r_pvector_at (inst_accesses, 0);
+	r_list_free (fcns);
+	return var;
 }
 
 R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
@@ -711,7 +722,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 		argc = r_type_func_args_count (TDB, fname);
 	}
-	RAnalVar *var = r_anal_get_used_function_var (anal, op->addr);
+	RPVector *used_vars = r_anal_function_get_vars_used_at (fcn, op->addr);
+	RAnalVar *var = used_vars && !r_pvector_empty (used_vars) ? r_pvector_at (used_vars, 0) : NULL;
 	for (i = 0; i < max_count; i++) {
 		const char *regname = r_anal_cc_arg (anal, fcn->cc, i);
 		if (regname) {
