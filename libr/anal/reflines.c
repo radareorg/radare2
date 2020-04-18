@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_util.h>
@@ -162,7 +162,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				goto sten_err;
 			}
 			// add false branch in case its set and its not a call, useful for bf, maybe others
-			if (op.fail != UT64_MAX && op.fail != addr + op.size) {
+			if (!op.delay && op.fail != UT64_MAX && op.fail != addr + op.size) {
 				if (!(res = add_refline (list, sten, addr, op.fail, &count))) {
 					r_anal_op_fini (&op);
 					goto sten_err;
