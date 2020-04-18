@@ -971,15 +971,20 @@ static void var_help(RCore *core, char ch) {
 	}
 }
 
-static void var_accesses_list(RAnal *a, RAnalFunction *fcn, int delta, const char *typestr) {
-	const char *var_local = sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s",
-			fcn->addr, 1, delta, typestr);
-	const char *xss = sdb_const_get (a->sdb_fcns, var_local, 0);
-	if (xss && *xss) {
-		r_cons_printf ("%s\n", xss);
-	} else {
-		r_cons_newline ();
+static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type) {
+	RAnalVarAccess *acc;
+	bool first = true;
+	r_vector_foreach (&var->accesses, acc) {
+		if (!(acc->type & access_type)) {
+			continue;
+		}
+		if (!first) {
+			r_cons_print (",");
+		}
+		first = false;
+		r_cons_printf ("0x%"PFMT64x, (ut64)((st64)fcn->addr + acc->offset));
 	}
+	r_cons_newline ();
 }
 
 static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *name) {
@@ -998,17 +1003,17 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	if (type != 'W' && type != 'R') {
 		return;
 	}
-	const char *typestr = type == 'R'?"reads":"writes";
+	int access_type = type == 'R' ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
 	if (name && *name) {
 		var = r_anal_function_get_var_byname (fcn, name);
 		if (var) {
 			r_cons_printf ("%10s  ", var->name);
-			var_accesses_list (core->anal, fcn, var->delta, typestr);
+			var_accesses_list (fcn, var, access_type);
 		}
 	} else {
 		r_list_foreach (list, iter, var) {
 			r_cons_printf ("%10s  ", var->name);
-			var_accesses_list (core->anal, fcn, var->delta, typestr);
+			var_accesses_list (fcn, var, access_type);
 		}
 	}
 }
