@@ -1475,7 +1475,6 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	return base;
 }
 
-// FIXME use section name (couldn't find any info in .dynamic)
 static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 got_addr = bin->dyn_info.dt_pltgot;
 	if (!got_addr) {
@@ -1539,7 +1538,6 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
 		return get_import_addr_x86_manual (bin, rel);
 	}
 
-	// FIXME shouldn't use section name
 	RBinElfSection *pltsec_section = get_section_by_name (bin, ".plt.sec");
 
 	if (pltsec_section) {
