@@ -214,44 +214,8 @@ R_API void r_anal_var_delete(RAnalVar *var) {
 	}
 }
 
-#include <assert.h>
-
-static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
-	RPVector *vec = v;
-	void **it;
-	r_pvector_foreach (vec, it) {
-		RAnalVar *var = *it;
-		RAnalVarAccess *acc;
-		bool found = false;
-		r_vector_foreach (&var->accesses, acc) {
-			if (acc->offset == (st64)k) {
-				found = true;
-				break;
-			}
-		}
-		assert (found);
-	}
-	return true;
-}
-
-static void sanitize(RAnalFunction *fcn) {
-	return;
-	ht_up_foreach (fcn->inst_vars, sanitize_instr_acc, NULL);
-
-	void **it;
-	r_pvector_foreach (&fcn->vars, it) {
-		RAnalVar *var = *it;
-		RAnalVarAccess *acc;
-		r_vector_foreach (&var->accesses, acc) {
-			RPVector *iaccs = ht_up_find (fcn->inst_vars, acc->offset, NULL);
-			assert (r_pvector_contains (iaccs, var));
-		}
-	}
-}
-
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind) {
 	r_return_if_fail (fcn);
-	sanitize (fcn);
 	size_t i;
 	for (i = 0; i < r_pvector_len (&fcn->vars);) {
 		RAnalVar *var = r_pvector_at (&fcn->vars, i);
@@ -262,7 +226,6 @@ R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind 
 		}
 		i++;
 	}
-	sanitize (fcn);
 }
 
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn) {
@@ -296,23 +259,16 @@ R_API RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta
 	return NULL;
 }
 
-// TODO: This should be just r_anal_var_addr(RAnalVar *) without querying by name
-R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name) {
+R_API ut64 r_anal_var_addr(RAnalVar *var) {
+	r_return_val_if_fail (var, UT64_MAX);
+	RAnal *anal = var->fcn->anal;
 	const char *regname = NULL;
-	ut64 ret = UT64_MAX;
-	if (!a || !fcn) {
-		return ret;
+	if (var->kind == R_ANAL_VAR_KIND_BPV) {
+		regname = r_reg_get_name (anal->reg, R_REG_NAME_BP);
+	} else if (var->kind == R_ANAL_VAR_KIND_SPV) {
+		regname = r_reg_get_name (anal->reg, R_REG_NAME_SP);
 	}
-	RAnalVar *v1 = r_anal_function_get_var_byname (fcn, name);
-	if (v1) {
-		if (v1->kind == R_ANAL_VAR_KIND_BPV) {
-			regname = r_reg_get_name (a->reg, R_REG_NAME_BP);
-		} else if (v1->kind == R_ANAL_VAR_KIND_SPV) {
-			regname = r_reg_get_name (a->reg, R_REG_NAME_SP);
-		}
-		ret = r_reg_getv (a->reg, regname) + v1->delta;
-	}
-	return ret;
+	return r_reg_getv (anal->reg, regname) + var->delta;
 }
 
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, int delta, ut64 addr) {
@@ -416,7 +372,6 @@ R_API RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 op_addr) {
 	if (!fcn) {
 		return NULL;
 	}
-	sanitize (fcn);
 	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, (st64)op_addr - (st64)fcn->addr, NULL);
 	if (!inst_accesses || r_pvector_empty (inst_accesses)) {
 		return NULL;
@@ -463,7 +418,6 @@ R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *
 }
 
 R_API void r_anal_var_set_access(RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr) {
-	sanitize (var->fcn);
 	st64 offset = (st64)access_addr - (st64)var->fcn->addr;
 
 	// accesses are stored ordered by offset, use binary search to get the matching existing or the index to insert a new one
@@ -498,7 +452,6 @@ R_API void r_anal_var_set_access(RAnalVar *var, ut64 access_addr, int access_typ
 R_API void r_anal_var_clear_accesses(RAnalVar *var) {
 	RAnalFunction *fcn = var->fcn;
 	if (fcn->inst_vars) {
-		sanitize (fcn);
 		// remove all inverse references to the var's accesses
 		RAnalVarAccess *acc;
 		r_vector_foreach (&var->accesses, acc) {

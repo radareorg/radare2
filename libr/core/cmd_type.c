@@ -1627,7 +1627,12 @@ static int cmd_type(void *data, const char *input) {
 					ut64 original_addr = addr;
 					if (!addr && arg) {
 						RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-						addr = r_anal_var_addr (core->anal, fcn, arg);
+						if (fcn) {
+							RAnalVar *var = r_anal_function_get_var_byname (fcn, arg);
+							if (var) {
+								addr = r_anal_var_addr (var);
+							}
+						}
 					}
 					if (addr != UT64_MAX) {
 						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, addr);

@@ -2843,55 +2843,6 @@ R_API void r_core_visual_mounts(RCore *core) {
 	}
 }
 
-#if 0
-static void var_index_show(RAnal *anal, RAnalFunction *fcn, ut64 addr, int idx) {
-	int i = 0;
-	RAnalVar *v;
-	RAnalVarAccess *x;
-	RListIter *iter, *iter2;
-	int window ;
-
-	// Adjust the windows size automaticaly
-	(void)r_cons_get_size (&window);
-	window-=5; // Size of printed things
-
-	int wdelta = (idx>5)?idx-5:0;
-	if (!fcn) return;
-	r_list_foreach(fcn->vars, iter, v) {
-		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
-			if (i>=wdelta) {
-				if (i>window+wdelta) {
-					r_cons_printf("...\n");
-					break;
-				}
-				if (idx == i) r_cons_printf (" * ");
-				else r_cons_printf ("   ");
-#if 0
-				if (v->type->type == R_ANAL_TYPE_ARRAY) {
-eprintf ("TODO: support for arrays\n");
-					r_cons_printf ("0x%08llx - 0x%08llx scope=%s type=%s name=%s delta=%d array=%d\n",
-						v->addr, v->eaddr, r_anal_var_scope_to_str (anal, v->scope),
-						r_anal_type_to_str (anal, v->type, ""),
-						v->name, v->delta, v->type->custom.a->count);
-				} else
-#endif
-				{
-					char *s = r_anal_type_to_str (anal, v->type);
-					if (!s) s = strdup ("<unk>");
-					r_cons_printf ("0x%08llx - 0x%08llx scope=%d type=%s name=%s delta=%d\n",
-						v->addr, v->eaddr, v->scope, s, v->name, v->delta);
-					free (s);
-				}
-				r_list_foreach (v->accesses, iter2, x) {
-					r_cons_printf ("  0x%08llx %s\n", x->addr, x->set?"set":"get");
-				}
-			}
-			i++;
-		}
-	}
-}
-#endif
-
 // helper
 static void function_rename(RCore *core, ut64 addr, const char *name) {
 	RListIter *iter;
