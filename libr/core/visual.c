@@ -468,11 +468,11 @@ static void printFormat(RCore *core, const int next) {
 }
 
 static inline void nextPrintFormat(RCore *core) {
-	printFormat(core, 1);
+	printFormat (core, 1);
 }
 
 static inline void prevPrintFormat(RCore *core) {
-	printFormat(core, -1);
+	printFormat (core, -1);
 }
 
 static int color = 1;
