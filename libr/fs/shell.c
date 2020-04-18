@@ -23,7 +23,7 @@ static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 		free (red);
 		return true;
 	}
-	r_fs_write (fs, f, 0, data == NULL ? (const ut8 *) msg : data, strlen (msg));
+	r_fs_write (fs, f, 0, data ? data : msg, strlen (data ? data : msg));
 	free (red);
 	r_fs_close (fs, f);
 	r_fs_file_free (f);
