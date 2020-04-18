@@ -2661,10 +2661,14 @@ static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_offset, s
 	if (bin->dyn_info.dt_rela - base_addr <= g_offset && g_offset < bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - base_addr) {
 		diff = bin->dyn_info.dt_rela + bin->dyn_info.dt_relasz - g_offset - base_addr;
 		return diff;
-	} else if (bin->dyn_info.dt_rel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - base_addr) {
+	}
+
+	if (bin->dyn_info.dt_rel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - base_addr) {
 		diff = bin->dyn_info.dt_rel + bin->dyn_info.dt_relsz - g_offset - base_addr;
 		return diff;
-	} else if (bin->dyn_info.dt_jmprel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - base_addr) {
+	}
+
+	if (bin->dyn_info.dt_jmprel - base_addr <= g_offset && g_offset < bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - base_addr) {
 		diff = bin->dyn_info.dt_jmprel + bin->dyn_info.dt_pltrelsz - g_offset - base_addr;
 		return diff;
 	}
