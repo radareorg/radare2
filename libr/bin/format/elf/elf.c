@@ -1512,7 +1512,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
 		  return plt_addr, that will be our sym addr
 		  perhaps this hack doesn't work on 32 bits
 		  */
-		int res = r_buf_read_at (bin->b, plt_addr + 2, buf, sizeof(Elf_(Addr)));
+		int res = r_buf_read_at (bin->b, plt_addr + 2, buf, sizeof (ut32));
 		if (res < 0) {
 			return UT64_MAX;
 		}
