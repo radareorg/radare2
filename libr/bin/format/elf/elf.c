@@ -2653,8 +2653,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *rel
 	return pos;
 }
 
-static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_offset,
-	size_t offset, size_t base_addr) {
+static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_offset, size_t offset, size_t base_addr) {
 
 	size_t g_offset = section_offset + offset;
 	size_t diff;
