@@ -136,17 +136,16 @@ R_API void *r_vector_shrink(RVector *vec);
  *
  * RVector *v = ...; // contains {(st64)0, (st64)2, (st64)4, (st64)6, (st64)8};
  * size_t l;
- * st64 ref = 3;
- * #define CMP(other) ref - (*(st64 *)other)
- * r_vector_lower_bound (v, l, CMP);
+ * #define CMP(x, y) x - (*(st64 *)y)
+ * r_vector_lower_bound (v, 3, l, CMP);
  * // l == 2
  */
-#define r_vector_lower_bound(vec, i, cmp) \
+#define r_vector_lower_bound(vec, x, i, cmp) \
 	do { \
 		size_t h = (vec)->len, m; \
 		for (i = 0; i < h; ) { \
 			m = i + ((h - i) >> 1); \
-			if ((cmp (((char *)(vec)->a + (vec)->elem_size * m))) > 0) { \
+			if ((cmp (x, ((char *)(vec)->a + (vec)->elem_size * m))) > 0) { \
 				i = m + 1; \
 			} else { \
 				h = m; \

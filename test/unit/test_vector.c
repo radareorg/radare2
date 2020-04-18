@@ -603,26 +603,16 @@ static bool test_vector_lower_bound() {
 	r_vector_insert_range (&v, 0, a, 5);
 
 	size_t l;
-#define CMP(other) ref - (*(st64 *)other)
-
-	st64 ref = 3;
-	r_vector_lower_bound (&v, l, CMP);
+#define CMP(x, y) x - (*(st64 *)y)
+	r_vector_lower_bound (&v, 3, l, CMP);
 	mu_assert_eq (l, 2, "lower_bound");
-
-	ref = -1;
-	r_vector_lower_bound (&v, l, CMP);
+	r_vector_lower_bound (&v, -1, l, CMP);
 	mu_assert_eq (l, 0, "lower_bound");
-
-	ref = 0;
-	r_vector_lower_bound (&v, l, CMP);
+	r_vector_lower_bound (&v, 0, l, CMP);
 	mu_assert_eq (l, 0, "lower_bound");
-
-	ref = 2;
-	r_vector_lower_bound (&v, l, CMP);
+	r_vector_lower_bound (&v, 2, l, CMP);
 	mu_assert_eq (l, 1, "lower_bound");
-
-	ref = 42;
-	r_vector_lower_bound (&v, l, CMP);
+	r_vector_lower_bound (&v, 42, l, CMP);
 	mu_assert_eq (l, 5, "lower_bound");
 #undef CMP
 	r_vector_clear (&v);
