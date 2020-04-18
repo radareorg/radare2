@@ -2701,7 +2701,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *bin, RBinElfReloc *rel
 			}
 
 			fix_rva_and_offset (bin, relocs + pos, i);
-			++pos;
+			pos++;
 		}
 	}
 
