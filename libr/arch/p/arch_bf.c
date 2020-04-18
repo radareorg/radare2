@@ -25,8 +25,6 @@ static int getid(const char ch) {
 }
 
 static bool decode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
-	bool use_buf_heap = false;
-	ut64 dst = 0LL;
 	r_return_val_if_fail (a && ins, false);
 	int len;
 	const ut8 *buf = r_strbuf_getbin (&ins->data, &len);
@@ -35,18 +33,22 @@ static bool decode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
 	ins->opid = getid (buf[0]);
 	const char ch = buf[0];
 
+	if (opt == R_ARCH_OPTION_SIZE) {
+		ins->size = countChar (buf, len, *buf);
+		return true;
+	}
 	const char *buf_asm = "nop"; // invalid instructions do nothing in bfvm
 	switch (ch) {
 	case '[':
-		{
-			ins->type = R_ANAL_OP_TYPE_CJMP;
-			buf_asm = "while [ptr]";
-			char *data = r_mem_dup ((void *)buf, len);
-			if (!data) {
-				break;
-			}
+		ins->type = R_ANAL_OP_TYPE_CJMP;
+		buf_asm = "while [ptr]";
+		// TODO: split the esil from the anal logic. the esil string should find the [ by itself
+		if (true) { // has (ANAL) || has (ESIL)) {
+			ut8 mydata[512] = {0};
+			const char *data = (const char *)buf;
 			const char *p = data + 1;
 			int lev = 0, i = 1;
+			bool tried = false;
 			len--;
 			while (i < len && *p) {
 				if (*p == '[') {
@@ -55,7 +57,7 @@ static bool decode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
 				if (*p == ']') {
 					lev--;
 					if (lev == -1) {
-						dst = ins->addr + (size_t)(p - data) + 1;
+						ut64 dst = ins->addr + i + 1;
 						ut64 jump = ins->addr + 1;
 						ut64 fail = dst;
 						ut64 *jumps = r_vector_reserve (&ins->dest, 2);
@@ -66,7 +68,7 @@ static bool decode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
 									"$$,brk,=[1],brk,++=,"
 									"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
 						}
-						goto beach;
+						break;
 					}
 				}
 				if (!*p || *p == -1) {
@@ -74,42 +76,63 @@ static bool decode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
 					break;
 				}
 				if (i == len - 1) {
-					// instruction truncated we need access to io to pull data to make this work
+					if (tried) {
+						break;
+					}
 					if (a->iob.io) {
-						int new_buf_len = len + 1 + BUFSIZE_INC;
-						ut8 *new_buf = calloc (new_buf_len, 1);
-						if (new_buf) {
-							if (use_buf_heap) {
-								free ((void*)buf);
-							} else {
-								free (data);
-							}
-							(void)a->iob.read_at (a->iob.io, ins->addr, new_buf, new_buf_len);
-							buf = new_buf;
-							data = (char *)buf;
-							p = (char *)buf + i;
-							len += BUFSIZE_INC;
-							use_buf_heap = true;
-						}
-						
+						size_t d = p - data;
+						memset (mydata, 0, sizeof (mydata));
+						(void)a->iob.read_at (a->iob.io, ins->addr + d, mydata, sizeof (mydata) - 1);
+						data = (const char *)mydata;
+						tried = true;
+						p = data;
+						len += sizeof (mydata);
+						continue;
 					}
 				}
 				p++;
 				i++;
 			}
-beach:
-			if (use_buf_heap) {
-				//free ((void*)buf);
-			}
-			free (data);
 		}
 		break;
 	case ']':
 		buf_asm = "loop";
 		ins->type = R_ANAL_OP_TYPE_UJMP;
-		// XXX This is wrong esil
+		// XXX This ESIL experssion should walk backward until the matching [ is found
 		if (has (ESIL)) {
 			r_strbuf_set (&ins->esil, "brk,--=,brk,[1],pc,=");
+		}
+		if (true) { // has (ANAL)) {
+			if (a->iob.io) {
+				char rew[512] = {0};
+				int rew_len = R_MIN (ins->addr, sizeof (rew));
+				ut64 addr = (ins->addr > sizeof (rew))? ins->addr - sizeof (rew): 0;
+				(void)a->iob.read_at (a->iob.io, addr, (ut8*)rew, rew_len);
+				rew[rew_len - 1] = 0;
+				int nest = 1;
+				char *last = rew + strlen (rew);
+				while (last > rew) {
+					if (*last == '[') {
+						nest--;
+						if (nest == 0) {
+							break;
+						}
+					}
+					if (*last == ']') {
+						nest++;
+					}
+					last--;
+				}
+				if (nest == 0) {
+					const char *p = last;
+					if (p) {
+						ins->type = R_ANAL_OP_TYPE_JMP;
+						ut64 *jumps = r_vector_reserve (&ins->dest, 1);
+						size_t dst = p - rew;
+						jumps[0] = dst;
+					}
+				}
+			}
 		}
 		break;
 	case '>':
@@ -174,14 +197,15 @@ beach:
 		}
 		break;
 	}
-	if (ins->size > 1) {
-		/* Note: snprintf's source and destination buffers may not
-		* overlap. */
-		const char *fmt = strchr (buf_asm, ' ')? "%s, %d": "%s %d";
-		buf_asm = sdb_fmt (fmt, buf_asm, ins->size);
+	if (has (CODE)) {
+		if (ins->size > 1) {
+			/* Note: snprintf's source and destination buffers may not
+			* overlap. */
+			const char *fmt = strchr (buf_asm, ' ')? "%s, %d": "%s %d";
+			buf_asm = sdb_fmt (fmt, buf_asm, ins->size);
+		}
+		r_strbuf_set (&ins->code, buf_asm);
 	}
-
-	r_strbuf_set (&ins->code, buf_asm);
 	return true;
 }
 

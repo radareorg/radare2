@@ -7,6 +7,10 @@
 #include <r_bind.h>
 #include <r_io.h> // Just for RIOBind which is needed for some plugins
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef int RArchBits;
 typedef int RArchEndian;
 typedef int RArchSyntax;
@@ -115,6 +119,13 @@ R_API bool r_arch_use(RArch *a, const char *name);
 R_API bool r_arch_add(RArch *a, RArchPlugin *foo);
 R_API bool r_arch_del(RArch *a, const char *name);
 
+R_API bool r_arch_can_decode(RArch *a);
+R_API bool r_arch_can_encode(RArch *a);
+
 extern RArchPlugin r_arch_plugin_bf;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
