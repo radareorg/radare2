@@ -2936,7 +2936,7 @@ static void variable_set_type (RCore *core, ut64 addr, int vindex, const char *t
 
 	r_list_foreach (list, iter, var) {
 		if (vindex == 0) {
-			r_anal_function_var_set_type (var, type);
+			r_anal_var_set_type (var, type);
 			break;
 		}
 		vindex--;
@@ -4033,7 +4033,7 @@ onemoretime:
 //			q = r_str_newf ("?i Rename variable %s to;afvn %s `yp`", op.var->name, op.var->name);
 			char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
 			if (newname && *newname) {
-				r_anal_function_var_rename (var, newname, true);
+				r_anal_var_rename (var, newname, true);
 				free (newname);
 			}
 		} else if (tgt_addr != UT64_MAX) {
@@ -4304,7 +4304,7 @@ onemoretime:
 		if (var) {
 			char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
 			if (newname && *newname) {
-				r_anal_function_var_rename (var, newname, true);
+				r_anal_var_rename (var, newname, true);
 				free (newname);
 			}
 		} else {

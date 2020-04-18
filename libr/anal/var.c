@@ -75,7 +75,7 @@ static const char *__int_type_from_size(int size) {
 	}
 }
 
-R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn) {
+R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, false);
 	RListIter *it;
 	RAnalVar *var;
@@ -117,7 +117,7 @@ static void shadow_var_struct_members(RAnalVar *var) {
 			if (field_offset != 0) { // delete variables which are overlaid by structure
 				RAnalVar *other = r_anal_function_get_var (var->fcn, var->kind, var->delta + field_offset);
 				if (other && other != var) {
-					r_anal_function_delete_var (other);
+					r_anal_var_delete (other);
 				}
 			}
 			free (field_type);
@@ -179,7 +179,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 	return var;
 }
 
-R_API void r_anal_function_var_set_type(RAnalVar *var, const char *type) {
+R_API void r_anal_var_set_type(RAnalVar *var, const char *type) {
 	char *nt = strdup (type);
 	if (!nt) {
 		return;
@@ -193,14 +193,14 @@ static void var_free(RAnalVar *var) {
 	if (!var) {
 		return;
 	}
-	r_anal_function_var_clear_accesses (var);
+	r_anal_var_clear_accesses (var);
 	free (var->name);
 	free (var->regname);
 	free (var->type);
 	free (var);
 }
 
-R_API void r_anal_function_delete_var(RAnalVar *var) {
+R_API void r_anal_var_delete(RAnalVar *var) {
 	r_return_if_fail (var);
 	RAnalFunction *fcn = var->fcn;
 	size_t i;
@@ -350,7 +350,7 @@ R_API bool r_anal_var_check_name(const char *name) {
 	return !isdigit (*name) && strcspn (name, "., =/");
 }
 
-R_API bool r_anal_function_var_rename(RAnalVar *var, const char *new_name, bool verbose) {
+R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose) {
 	r_return_val_if_fail (var, false);
 	if (!r_anal_var_check_name (new_name)) {
 		return false;
@@ -371,7 +371,7 @@ R_API bool r_anal_function_var_rename(RAnalVar *var, const char *new_name, bool 
 	return true;
 }
 
-R_API int r_anal_function_var_get_argnum(RAnalVar *var) {
+R_API int r_anal_var_get_argnum(RAnalVar *var) {
 	r_return_val_if_fail (var, -1);
 	RAnal *anal = var->fcn->anal;
 	if (!var->isarg || var->kind != R_ANAL_VAR_KIND_REG) { // TODO: support bp and sp too
@@ -462,7 +462,7 @@ R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *
 	return res;
 }
 
-R_API void r_anal_function_var_set_access(RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr) {
+R_API void r_anal_var_set_access(RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr) {
 	sanitize (var->fcn);
 	st64 offset = (st64)access_addr - (st64)var->fcn->addr;
 
@@ -495,7 +495,7 @@ R_API void r_anal_function_var_set_access(RAnalVar *var, ut64 access_addr, int a
 	}
 }
 
-R_API void r_anal_function_var_clear_accesses(RAnalVar *var) {
+R_API void r_anal_var_clear_accesses(RAnalVar *var) {
 	RAnalFunction *fcn = var->fcn;
 	if (fcn->inst_vars) {
 		sanitize (fcn);
@@ -665,7 +665,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		if (varname) {
 			RAnalVar *var = r_anal_function_set_var (fcn, bp_off, type, NULL, anal->bits / 8, isarg, varname);
 			if (var) {
-				r_anal_function_var_set_access (var, op->addr, rw, ptr);
+				r_anal_var_set_access (var, op->addr, rw, ptr);
 			}
 			free (varname);
 		}
@@ -674,7 +674,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		if (varname) {
 			RAnalVar *var = r_anal_function_set_var (fcn, -ptr, type, NULL, anal->bits / 8, 0, varname);
 			if (var) {
-				r_anal_function_var_set_access (var, op->addr, rw, -ptr);
+				r_anal_var_set_access (var, op->addr, rw, -ptr);
 			}
 			free (varname);
 		}
@@ -782,7 +782,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				}
 				RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, anal->bits / 8, 1, vname);
 				if (newvar) {
-					r_anal_function_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
+					r_anal_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
 				}
 				if (var && var->kind != R_ANAL_VAR_KIND_REG) {
 					r_anal_var_link (anal, op->addr, var);
@@ -815,7 +815,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			}
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, anal->bits / 8, 1, vname);
 			if (newvar) {
-				r_anal_function_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
+				r_anal_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
 			}
 			if (var && var->kind != R_ANAL_VAR_KIND_REG) {
 				r_anal_var_link (anal, op->addr, var);
@@ -842,7 +842,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			}
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, anal->bits / 8, 1, vname);
 			if (newvar) {
-				r_anal_function_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
+				r_anal_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
 			}
 			if (var && var->kind != R_ANAL_VAR_KIND_REG) {
 				r_anal_var_link (anal, op->addr, var);
@@ -1122,7 +1122,7 @@ R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAn
 	RListIter *it;
 	RAnalVar *var;
 	r_list_foreach (cache->rvars, it, var) {
-		var->argnum = r_anal_function_var_get_argnum (var);
+		var->argnum = r_anal_var_get_argnum (var);
 	}
 	r_list_sort (cache->rvars, (RListComparator)regvar_comparator);
 	r_list_sort (cache->svars, (RListComparator)var_comparator);
