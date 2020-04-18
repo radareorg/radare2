@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #endif
 
+#include <errno.h>
 #include <math.h>  /* for ceill */
 #include <r_util.h>
 #define R_NUM_USE_CALC 1
@@ -226,6 +227,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	} else if (!strncmp (str, "0xf..", 5) || !strncmp (str, "0xF..", 5)) {
 		ret = r_num_tailff (num, str + 5);
 	} else if (str[0] == '0' && tolower (str[1]) == 'x') {
+		errno = 0;
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
 			// Support 0x1000_f000_4000
@@ -239,6 +241,9 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		} else {
 			ret = strtoull (str + 2, NULL, 16);
 			// sscanf (str+2, "%"PFMT64x, &ret);
+		}
+		if (errno == ERANGE) {
+			error (num, "number won't fit into 64 bits");
 		}
 	} else {
 		char *endptr;
@@ -365,7 +370,11 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			ret = _strtoui64 (str, &endptr, 10);
 #endif
 #endif
+			errno = 0;
 			ret = strtoull (str, &endptr, 10);
+			if (errno == ERANGE) {
+				error (num, "number won't fit into 64 bits");
+			}
 			if (!IS_DIGIT (*str) || (*endptr && *endptr != lch)) {
 				error (num, "unknown symbol");
 			}

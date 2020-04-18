@@ -197,6 +197,10 @@ R_API RAsm *r_asm_new() {
 	if (!a) {
 		return NULL;
 	}
+	a->num = r_num_new (NULL, NULL, NULL);
+	if (!a->num) {
+		return NULL;
+	}
 	a->dataalign = 1;
 	a->bits = R_SYS_BITS;
 	a->bitshift = 0;
@@ -248,6 +252,7 @@ R_API void r_asm_free(RAsm *a) {
 	if (!a) {
 		return;
 	}
+	r_num_free (a->num);
 	if (a->cur && a->cur->fini) {
 		a->cur->fini (a->cur->user);
 	}

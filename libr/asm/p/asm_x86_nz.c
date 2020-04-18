@@ -1793,7 +1793,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		if (!op->operands[1].is_good_flag) {
 			return -1;
 		}
-		if (op->operands[1].immediate == -1) {
+		if (op->operands[1].immediate == -1 && a->num && a->num->nc.errors > 0) {
 			return -1;
 		}
 		immediate = op->operands[1].immediate * op->operands[1].sign;
