@@ -596,6 +596,29 @@ static bool test_vector_foreach() {
 	mu_end;
 }
 
+static bool test_vector_lower_bound() {
+	RVector v;
+	r_vector_init (&v, sizeof (st64), NULL, NULL);
+	st64 a[] = {0, 2, 4, 6, 8};
+	r_vector_insert_range (&v, 0, a, 5);
+
+	size_t l;
+#define CMP(x, y) x - (*(st64 *)y)
+	r_vector_lower_bound (&v, 3, l, CMP);
+	mu_assert_eq (l, 2, "lower_bound");
+	r_vector_lower_bound (&v, -1, l, CMP);
+	mu_assert_eq (l, 0, "lower_bound");
+	r_vector_lower_bound (&v, 0, l, CMP);
+	mu_assert_eq (l, 0, "lower_bound");
+	r_vector_lower_bound (&v, 2, l, CMP);
+	mu_assert_eq (l, 1, "lower_bound");
+	r_vector_lower_bound (&v, 42, l, CMP);
+	mu_assert_eq (l, 5, "lower_bound");
+#undef CMP
+	r_vector_clear (&v);
+	mu_end;
+}
+
 static bool test_pvector_init() {
 	RPVector v;
 	r_pvector_init (&v, (void *)1337);
@@ -1002,7 +1025,7 @@ static bool test_pvector_foreach() {
 	mu_end;
 }
 
-static bool test_pvector_upper_lower_bound() {
+static bool test_pvector_lower_bound() {
 	void *a[] = {(void*)0, (void*)2, (void*)4, (void*)6, (void*)8};
 	RPVector s;
 	r_pvector_init (&s, NULL);
@@ -1021,14 +1044,6 @@ static bool test_pvector_upper_lower_bound() {
 	mu_assert_eq_fmt (r_pvector_at (&s, l), (void *)6, "lower_bound 3", "%p");
 	r_pvector_lower_bound (&s, (void *)9, l, CMP);
 	mu_assert_eq_fmt (l, s.v.len, "lower_bound 3", "%lu");
-
-	r_pvector_upper_bound (&s, (void *)4, l, CMP);
-	mu_assert_eq_fmt (r_pvector_at (&s, l), (void *)6, "upper_bound", "%p");
-	r_pvector_upper_bound (&s, (void *)5, l, CMP);
-
-	mu_assert_eq_fmt (r_pvector_at (&s, l), (void *)6, "upper_bound 2", "%p");
-	r_pvector_upper_bound (&s, (void *)6, l, CMP);
-	mu_assert_eq_fmt (r_pvector_at (&s, l), (void *)8, "upper_bound 3", "%p");
 #undef CMP
 
 	r_pvector_clear (&s);
@@ -1053,6 +1068,7 @@ static int all_tests() {
 	mu_run_test (test_vector_reserve);
 	mu_run_test (test_vector_shrink);
 	mu_run_test (test_vector_foreach);
+	mu_run_test (test_vector_lower_bound);
 
 	mu_run_test (test_pvector_init);
 	mu_run_test (test_pvector_new);
@@ -1070,7 +1086,7 @@ static int all_tests() {
 	mu_run_test (test_pvector_push_front);
 	mu_run_test (test_pvector_sort);
 	mu_run_test (test_pvector_foreach);
-	mu_run_test (test_pvector_upper_lower_bound);
+	mu_run_test (test_pvector_lower_bound);
 
 	return tests_passed != tests_run;
 }
