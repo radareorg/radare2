@@ -1032,13 +1032,12 @@ static int cmd_an(RCore *core, bool use_json, const char *name) {
 
 	r_anal_op (core->anal, &op, off,
 			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
-	RAnalFunction *varfcn;
-	RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr, &varfcn);
+	RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr);
 
 	tgt_addr = op.jump != UT64_MAX? op.jump: op.ptr;
 	if (var) {
 		if (name) {
-			ret = r_anal_function_var_rename (varfcn, var, name, true)
+			ret = r_anal_function_var_rename (var, name, true)
 				? 0
 				: -1;
 		} else if (use_json) {
@@ -1224,7 +1223,7 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			char *old_name = strchr (new_name, ' ');
 			if (!old_name) {
-				RAnalVar *var = op ? r_anal_get_used_function_var (core->anal, op->addr, NULL) : NULL;
+				RAnalVar *var = op ? r_anal_get_used_function_var (core->anal, op->addr) : NULL;
 				if (var) {
 					old_name = var->name;
 				} else {
@@ -1240,7 +1239,7 @@ static int var_cmd(RCore *core, const char *str) {
 			if (fcn) {
 				v1 = r_anal_function_get_var_byname (fcn, old_name);
 				if (v1) {
-					r_anal_function_var_rename (fcn, v1, new_name, true);
+					r_anal_function_var_rename (v1, new_name, true);
 				} else {
 					eprintf ("Cant find var by name\n");
 				}
@@ -1317,7 +1316,7 @@ static int var_cmd(RCore *core, const char *str) {
 				free (ostr);
 				return false;
 			}
-			r_anal_function_var_set_type (fcn, v1, type);
+			r_anal_function_var_set_type (v1, type);
 			free (ostr);
 			return true;
 		} else {
@@ -1361,7 +1360,7 @@ static int var_cmd(RCore *core, const char *str) {
 				}
 			}
 			if (var) {
-				r_anal_function_delete_var (fcn, var);
+				r_anal_function_delete_var (var);
 			}
 		}
 		break;
@@ -1394,7 +1393,7 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			int rw = (str[1] == 'g') ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
 			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
-			r_anal_function_var_set_access (fcn, var, addr, rw, ptr);
+			r_anal_function_var_set_access (var, addr, rw, ptr);
 		} else {
 			eprintf ("Missing argument\n");
 		}

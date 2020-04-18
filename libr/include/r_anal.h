@@ -741,6 +741,7 @@ typedef struct r_anal_var_access_t {
 
 // generic for args and locals
 typedef struct r_anal_var_t {
+	RAnalFunction *fcn;
 	char *name; // name of the variable
 	char *type; // cparse type of the variable
 	RAnalVarKind kind;
@@ -1593,25 +1594,25 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name);
 R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 
 /* var.c */
-R_API bool r_anal_function_var_rename(RAnalFunction *fcn, RAnalVar *var, const char *new_name, bool verbose);
+R_API bool r_anal_function_var_rename(RAnalVar *var, const char *new_name, bool verbose);
 R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn);
-R_API void r_anal_function_var_set_type(RAnalFunction *fcn, RAnalVar *var, const char *type);
-R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
+R_API void r_anal_function_var_set_type(RAnalVar *var, const char *type);
+R_API void r_anal_function_delete_var(RAnalVar *var);
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind);
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
 R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, int delta, ut64 addr);
 R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
-R_API void r_anal_function_var_set_access(RAnalFunction *fcn, RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr);
-R_API void r_anal_function_var_clear_accesses(RAnalFunction *fcn, RAnalVar *var);
+R_API void r_anal_function_var_set_access(RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr);
+R_API void r_anal_function_var_clear_accesses(RAnalVar *var);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
 R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
-R_API int r_anal_function_var_get_argnum(RAnalFunction *fcn, RAnalVar *var);
+R_API int r_anal_function_var_get_argnum(RAnalVar *var);
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
-R_API RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 op_addr, R_NULLABLE RAnalFunction **fcn_out);
-R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *var, R_NULLABLE RAnalFunction **fcn_out);
+R_API RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 op_addr);
+R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *var);
 
 typedef struct r_anal_fcn_vars_cache {
 	RList *bvars;

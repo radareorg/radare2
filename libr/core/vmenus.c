@@ -2936,7 +2936,7 @@ static void variable_set_type (RCore *core, ut64 addr, int vindex, const char *t
 
 	r_list_foreach (list, iter, var) {
 		if (vindex == 0) {
-			r_anal_function_var_set_type (fcn, var, type);
+			r_anal_function_var_set_type (var, type);
 			break;
 		}
 		vindex--;
@@ -4028,13 +4028,12 @@ onemoretime:
 			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
 
 		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
-		RAnalFunction *varfcn;
-		RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr, &varfcn);
+		RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr);
 		if (var) {
 //			q = r_str_newf ("?i Rename variable %s to;afvn %s `yp`", op.var->name, op.var->name);
 			char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
 			if (newname && *newname) {
-				r_anal_function_var_rename (varfcn, var, newname, true);
+				r_anal_function_var_rename (var, newname, true);
 				free (newname);
 			}
 		} else if (tgt_addr != UT64_MAX) {
@@ -4289,7 +4288,6 @@ onemoretime:
 
 		ut64 try_off;
 		RAnalOp *op = NULL;
-		RAnalFunction *fcn = NULL;
 		RAnalVar *var = NULL;
 		for (try_off = start_off; try_off < start_off + incr*16; try_off += incr) {
 			r_anal_op_free (op);
@@ -4297,7 +4295,7 @@ onemoretime:
 			if (!op) {
 				break;
 			}
-			var = r_anal_get_used_function_var (core->anal, op->addr, &fcn);
+			var = r_anal_get_used_function_var (core->anal, op->addr);
 			if (var) {
 				break;
 			}
@@ -4306,7 +4304,7 @@ onemoretime:
 		if (var) {
 			char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
 			if (newname && *newname) {
-				r_anal_function_var_rename (fcn, var, newname, true);
+				r_anal_function_var_rename (var, newname, true);
 				free (newname);
 			}
 		} else {
