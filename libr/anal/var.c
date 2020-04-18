@@ -15,12 +15,8 @@ struct VarType {
 	char *regname;
 };
 
-#define SDB_VARTYPE_FMT "bzdzz"
+#define ACCESS_CMP(x, y) ((x) - ((RAnalVarAccess *)y)->offset)
 
-#define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
-#define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
-#define SETKEY2(x, ...) snprintf (key2, sizeof (key) - 1, x, ## __VA_ARGS__);
-#define SETVAL(x, ...) snprintf (val, sizeof (val) - 1, x, ## __VA_ARGS__);
 R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type) {
 	char *fmt = r_type_format (anal->sdb_types, type);
 	RRegItem *i;
@@ -79,19 +75,14 @@ static const char *__int_type_from_size(int size) {
 	}
 }
 
-R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff) {
+R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, false);
 	RListIter *it;
 	RAnalVar *var;
 	RList *var_list = r_anal_var_all_list (a, fcn);
 	r_return_val_if_fail (var_list, false);
 
-	ut64 from_addr = fcn->addr;
-	ut64 to_addr = from_addr + diff;
-
 	r_list_foreach (var_list, it, var) {
-		const char *var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", from_addr, 1, var->delta);
-		char *access = sdb_get (a->sdb_fcns, var_access, NULL);
 		// Resync delta in case the registers list changed
 		if (var->isarg && var->kind == 'r') {
 			RRegItem *reg = r_reg_get (a->reg, var->regname, -1);
@@ -101,9 +92,6 @@ R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff) {
 				}
 			}
 		}
-		var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access", to_addr, 1, var->delta);
-		sdb_set (a->sdb_fcns, var_access, access, 0);
-		free (access);
 	}
 
 	r_list_free (var_list);
@@ -284,6 +272,37 @@ R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name) {
 	return ret;
 }
 
+R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, int delta, ut64 addr) {
+	st64 offset = (st64)addr - (st64)fcn->addr;
+	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
+	if (!inst_accesses) {
+		return INT_MAX;
+	}
+	RAnalVar *found_var = NULL;
+	void **it;
+	r_pvector_foreach (inst_accesses, it) {
+		RAnalVar *var = *it;
+		if (var->delta == delta) {
+			found_var = var;
+			break;
+		}
+	}
+	if (!found_var) {
+		return INT_MAX;
+	}
+	RAnalVar *var = r_pvector_at (inst_accesses, 0);
+	size_t index;
+	r_vector_lower_bound (&var->accesses, offset, index, ACCESS_CMP);
+	RAnalVarAccess *acc = NULL;
+	if (index < var->accesses.len) {
+		acc = r_vector_index_ptr (&var->accesses, index);
+	}
+	if (!acc || acc->offset != offset) {
+		return INT_MAX;
+	}
+	return acc->stackptr;
+}
+
 R_API bool r_anal_var_check_name(const char *name) {
 	return !isdigit (*name) && strcspn (name, "., =/");
 }
@@ -398,8 +417,6 @@ R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *
 	}
 	return res;
 }
-
-#define ACCESS_CMP(x, y) ((x) - ((RAnalVarAccess *)y)->offset)
 
 R_API void r_anal_function_var_set_access(RAnalFunction *fcn, RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr) {
 	st64 offset = (st64)access_addr - (st64)fcn->addr;

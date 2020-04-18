@@ -201,9 +201,14 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 			acc->offset -= delta;
 		}
 	}
-	HtUP *inst_vars_new = ht_up_new0 ();
-	if (inst_vars_new) {
-		ht_up_foreach (fcn->inst_vars, inst_vars_relocate_cb, inst_vars_new);
+	InstVarsRelocateCtx ctx = {
+		.inst_vars_new  = ht_up_new0 (),
+		.delta = delta
+	};
+	if (ctx.inst_vars_new) {
+		ht_up_foreach (fcn->inst_vars, inst_vars_relocate_cb, &ctx);
+		ht_up_free (fcn->inst_vars);
+		fcn->inst_vars = ctx.inst_vars_new;
 	}
 
 	fcn->addr = addr;

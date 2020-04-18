@@ -1594,12 +1594,13 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 
 /* var.c */
 R_API bool r_anal_function_var_rename(RAnalFunction *fcn, RAnalVar *var, const char *new_name, bool verbose);
-R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff);
+R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn);
 R_API void r_anal_function_var_set_type(RAnalFunction *fcn, RAnalVar *var, const char *type);
 R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind);
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
 R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
+R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, int delta, ut64 addr);
 R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
 R_API void r_anal_function_var_set_access(RAnalFunction *fcn, RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr);

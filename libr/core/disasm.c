@@ -975,6 +975,7 @@ static char *get_op_ireg (void *user, ut64 addr) {
 }
 
 static int get_ptr_at(void *user, RAnalFunction *fcn, int delta, ut64 addr) {
+	return (int)r_anal_function_get_var_stackptr_at (fcn, delta, addr);
 	RCore *core = (RCore *)user;
 	const char *var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access",
 			fcn->addr, 1, delta);
