@@ -165,6 +165,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 			return NULL;
 		}
 		r_pvector_push (&fcn->vars, var);
+		r_vector_init (&var->accesses, sizeof (RAnalVarAccess), NULL, NULL);
 	}
 	var->name = strdup (name);
 	var->regname = reg ? strdup (reg->name) : NULL; // TODO: no strdup here? pool? or not keep regname at all?
@@ -173,7 +174,6 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 	var->size = size;
 	var->isarg = isarg;
 	var->delta = delta;
-	r_vector_init (&var->accesses, sizeof (st64), NULL, NULL);
 	shadow_var_struct_members (fcn, var);
 	return var;
 }
@@ -188,15 +188,15 @@ R_API void r_anal_function_var_set_type(RAnalFunction *fcn, RAnalVar *var, const
 	shadow_var_struct_members (fcn, var);
 }
 
-// not static because used in function.c, but also not public API
-R_IPI void r_anal_var_free(RAnalVar *av) {
-	if (av) {
-		free (av->name);
-		free (av->regname);
-		free (av->type);
-		r_vector_clear (&av->accesses);
-		free (av);
+static void var_free(RAnalFunction *fcn, RAnalVar *var) {
+	if (!var) {
+		return;
 	}
+	r_anal_function_var_clear_accesses (fcn, var);
+	free (var->name);
+	free (var->regname);
+	free (var->type);
+	free (var);
 }
 
 R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
@@ -205,27 +205,68 @@ R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
 		RAnalVar *v = r_pvector_at (&fcn->vars, i);
 		if (v == var) {
 			r_pvector_remove_at (&fcn->vars, i);
-			r_anal_var_free (v);
+			var_free (fcn, v);
 			return;
+		}
+	}
+}
+
+#include <assert.h>
+
+static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
+	RPVector *vec = v;
+	void **it;
+	r_pvector_foreach (vec, it) {
+		RAnalVar *var = *it;
+		RAnalVarAccess *acc;
+		bool found = false;
+		r_vector_foreach (&var->accesses, acc) {
+			if (acc->offset == (st64)k) {
+				found = true;
+				break;
+			}
+		}
+		assert (found);
+	}
+	return true;
+}
+
+static void sanitize(RAnalFunction *fcn) {
+	return;
+	ht_up_foreach (fcn->inst_vars, sanitize_instr_acc, NULL);
+
+	void **it;
+	r_pvector_foreach (&fcn->vars, it) {
+		RAnalVar *var = *it;
+		RAnalVarAccess *acc;
+		r_vector_foreach (&var->accesses, acc) {
+			RPVector *iaccs = ht_up_find (fcn->inst_vars, acc->offset, NULL);
+			assert (r_pvector_contains (iaccs, var));
 		}
 	}
 }
 
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind) {
 	r_return_if_fail (fcn);
+	sanitize (fcn);
 	size_t i;
 	for (i = 0; i < r_pvector_len (&fcn->vars);) {
 		RAnalVar *var = r_pvector_at (&fcn->vars, i);
 		if (var->kind == kind) {
 			r_pvector_remove_at (&fcn->vars, i);
-			r_anal_var_free (var);
+			var_free (fcn, var);
 			continue;
 		}
 		i++;
 	}
+	sanitize (fcn);
 }
 
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn) {
+	void **it;
+	r_pvector_foreach (&fcn->vars, it) {
+		var_free (fcn, *it);
+	}
 	r_pvector_clear (&fcn->vars);
 }
 
@@ -268,7 +309,6 @@ R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name) {
 		}
 		ret = r_reg_getv (a->reg, regname) + v1->delta;
 	}
-	r_anal_var_free (v1);
 	return ret;
 }
 
@@ -369,7 +409,20 @@ struct VarUsedType {
 
 // TODO: this access-tracking should be per-function and also probably not in sdb
 R_API RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 op_addr, R_NULLABLE RAnalFunction **fcn_out) {
-	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".vars", op_addr);
+	RAnalFunction *fcn = r_anal_get_fcn_in (anal, op_addr, -1);
+	if (fcn_out) {
+		*fcn_out = fcn;
+	}
+	if (!fcn) {
+		return NULL;
+	}
+	sanitize (fcn);
+	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, (st64)op_addr - (st64)fcn->addr, NULL);
+	if (!inst_accesses || r_pvector_empty (inst_accesses)) {
+		return NULL;
+	}
+	return r_pvector_at (inst_accesses, 0);
+	/*char *inst_key = r_str_newf ("inst.0x%"PFMT64x".vars", op_addr);
 	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
 	struct VarUsedType vut;
 	RAnalVar *res = NULL;
@@ -385,13 +438,27 @@ R_API RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 op_addr, R_NULLAB
 	if (fcn_out) {
 		*fcn_out = fcn;
 	}
-	return res;
+	return res;*/
 }
 
 R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *var, R_NULLABLE RAnalFunction **fcn_out) {
-	const char *var_local = sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s", faddr, 1, var->delta, "reads");
-	const char *xss = sdb_const_get (anal->sdb_fcns, var_local, 0);
-	ut64 addr = r_num_math (NULL, xss);
+	//const char *var_local = sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s", faddr, 1, var->delta, "reads");
+	//const char *xss = sdb_const_get (anal->sdb_fcns, var_local, 0);
+	//ut64 addr = r_num_math (NULL, xss);
+
+	RAnalVarAccess *found_acc = NULL;
+	RAnalVarAccess *acc;
+	r_vector_foreach (&var->accesses, acc) {
+		if (acc->type & R_ANAL_VAR_ACCESS_TYPE_READ) {
+			found_acc = acc;
+			break;
+		}
+	}
+	if (!found_acc) {
+		return NULL;
+	}
+	ut64 addr = faddr + found_acc->offset;
+
 	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".lvar", addr);
 	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
 	if (!var_def) {
@@ -419,6 +486,7 @@ R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *
 }
 
 R_API void r_anal_function_var_set_access(RAnalFunction *fcn, RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr) {
+	sanitize (fcn);
 	st64 offset = (st64)access_addr - (st64)fcn->addr;
 
 	// accesses are stored ordered by offset, use binary search to get the matching existing or the index to insert a new one
@@ -452,6 +520,7 @@ R_API void r_anal_function_var_set_access(RAnalFunction *fcn, RAnalVar *var, ut6
 
 R_API void r_anal_function_var_clear_accesses(RAnalFunction *fcn, RAnalVar *var) {
 	if (fcn->inst_vars) {
+		sanitize (fcn);
 		// remove all inverse references to the var's accesses
 		RAnalVarAccess *acc;
 		r_vector_foreach (&var->accesses, acc) {

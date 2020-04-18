@@ -69,7 +69,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->bp_frame = true;
 	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
-	r_pvector_init (&fcn->vars, (RPVectorFree)r_anal_var_free);
+	r_pvector_init (&fcn->vars, NULL);
 	fcn->inst_vars = ht_up_new0 ();
 	return fcn;
 }
