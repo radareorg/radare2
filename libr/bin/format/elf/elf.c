@@ -1441,11 +1441,8 @@ static ut64 get_import_addr_sparc(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 	ut64 tmp = get_got_entry (bin, rel);
-	if (tmp == UT64_MAX) {
-		return UT64_MAX;
-	}
 
-	return tmp - 0x6;
+	return (tmp == UT64_MAX) ? UT64_MAX : tmp - 0x6;
 }
 
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
