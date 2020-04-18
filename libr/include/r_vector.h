@@ -131,6 +131,28 @@ R_API void *r_vector_shrink(RVector *vec);
 	if (!r_vector_empty (vec)) \
 		for (it = (void *)(vec)->a, i = 0; i < (vec)->len; it = (void *)((char *)it + (vec)->elem_size), i++)
 
+/*
+ * example:
+ *
+ * RVector *v = ...; // contains {(st64)0, (st64)2, (st64)4, (st64)6, (st64)8};
+ * size_t l;
+ * st64 ref = 3;
+ * #define CMP(other) ref - (*(st64 *)other)
+ * r_vector_lower_bound (v, l, CMP);
+ * // l == 2
+ */
+#define r_vector_lower_bound(vec, i, cmp) \
+	do { \
+		size_t h = (vec)->len, m; \
+		for (i = 0; i < h; ) { \
+			m = i + ((h - i) >> 1); \
+			if ((cmp (((char *)(vec)->a + (vec)->elem_size * m))) > 0) { \
+				i = m + 1; \
+			} else { \
+				h = m; \
+			} \
+		} \
+	} while (0) \
 
 // RPVector
 
@@ -237,31 +259,17 @@ static inline void **r_pvector_shrink(RPVector *vec) {
  * example:
  *
  * RPVector *v = ...; // contains {(void*)0, (void*)2, (void*)4, (void*)6, (void*)8};
- * size_t l;
+ * size_t index;
  * #define CMP(x, y) x - y
- * r_pvector_lower_bound (v, (void *)3, l, CMP);
- * // l == 2
+ * r_pvector_lower_bound (v, (void *)3, index, CMP);
+ * // index == 2
  */
 #define r_pvector_lower_bound(vec, x, i, cmp) \
 	do { \
-		int h = (vec)->v.len, m; \
+		size_t h = (vec)->v.len, m; \
 		for (i = 0; i < h; ) { \
 			m = i + ((h - i) >> 1); \
 			if ((cmp (x, ((void **)(vec)->v.a)[m])) > 0) { \
-				i = m + 1; \
-			} else { \
-				h = m; \
-			} \
-		} \
-	} while (0) \
-
-// see r_pvector_lower_bound
-#define r_pvector_upper_bound(vec, x, i, cmp) \
-	do { \
-		int h = (vec)->v.len, m; \
-		for (i = 0; i < h; ) { \
-			m = i + ((h - i) >> 1); \
-			if (!((cmp (x, ((void **)(vec)->v.a)[m])) < 0)) { \
 				i = m + 1; \
 			} else { \
 				h = m; \
