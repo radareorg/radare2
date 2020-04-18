@@ -16,6 +16,7 @@ bool test_arch(void) {
 	};
 	r_arch_instance_encode (ai, 
 #endif
+	mu_end;
 }
 
 bool test_arch_bf(void) {
