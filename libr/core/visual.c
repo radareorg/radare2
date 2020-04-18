@@ -434,64 +434,45 @@ R_API void r_core_visual_showcursor(RCore *core, int x) {
 	r_cons_flush ();
 }
 
-static void nextPrintFormat(RCore *core) {
+static void printFormat(RCore *core, const int next) {
 	switch (core->printidx) {
 	case R_CORE_VISUAL_MODE_PX: // 0 // xc
-		r_core_visual_applyHexMode (core, ++hexMode);
+		hexMode += next;
+		r_core_visual_applyHexMode (core, hexMode);
 		printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 		break;
 	case R_CORE_VISUAL_MODE_PD: // pd
-		r_core_visual_applyDisMode (core, ++disMode);
+		disMode += next;
+		r_core_visual_applyDisMode (core, disMode);
 		printfmtSingle[1] = rotateAsmemu (core);
 		break;
 	case R_CORE_VISUAL_MODE_DB: // debugger
-		r_core_visual_applyDisMode (core, ++disMode);
+		disMode += next;
+		r_core_visual_applyDisMode (core, disMode);
 		printfmtSingle[1] = rotateAsmemu (core);
-		current3format++;
+		current3format += next;
 		currentFormat = R_ABS (current3format) % PRINT_3_FORMATS;
 		printfmtSingle[2] = print3Formats[currentFormat];
 		break;
 	case R_CORE_VISUAL_MODE_OV: // overview
-		current4format++;
+		current4format += next;
 		currentFormat = R_ABS (current4format) % PRINT_4_FORMATS;
 		printfmtSingle[3] = print4Formats[currentFormat];
 		break;
 	case R_CORE_VISUAL_MODE_CD: // code
-		current5format++;
+		current5format += next;
 		currentFormat = R_ABS (current5format) % PRINT_5_FORMATS;
 		printfmtSingle[4] = print5Formats[currentFormat];
 		break;
 	}
 }
 
-static void prevPrintFormat(RCore *core) {
-	switch (core->printidx) {
-	case R_CORE_VISUAL_MODE_PX: // 0 // xc
-		r_core_visual_applyHexMode (core, --hexMode);
-		printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
-		break;
-	case R_CORE_VISUAL_MODE_PD: // pd
-		r_core_visual_applyDisMode (core, --disMode);
-		printfmtSingle[1] = rotateAsmemu (core);
-		break;
-	case R_CORE_VISUAL_MODE_DB: // debugger
-		r_core_visual_applyDisMode (core, --disMode);
-		printfmtSingle[1] = rotateAsmemu (core);
-		current3format--;
-		currentFormat = R_ABS (current3format) % PRINT_3_FORMATS;
-		printfmtSingle[2] = print3Formats[currentFormat];
-		break;
-	case R_CORE_VISUAL_MODE_OV: // overview
-		current4format--;
-		currentFormat = R_ABS (current4format) % PRINT_4_FORMATS;
-		printfmtSingle[3] = print4Formats[currentFormat];
-		break;
-	case R_CORE_VISUAL_MODE_CD: // code
-		current5format--;
-		currentFormat = R_ABS (current5format) % PRINT_5_FORMATS;
-		printfmtSingle[4] = print5Formats[currentFormat];
-		break;
-	}
+static inline void nextPrintFormat(RCore *core) {
+	printFormat (core, 1);
+}
+
+static inline void prevPrintFormat(RCore *core) {
+	printFormat (core, -1);
 }
 
 static int color = 1;
@@ -4352,5 +4333,5 @@ R_API void r_listinfo_free (RListInfo *info) {
 	}
 	free (info->name);
 	free (info->extra);
-	R_FREE (info);
+	free (info);
 }
