@@ -801,3 +801,23 @@ PUB_FUNC void tcc_appendf(const char *fmt, ...) {
 	tcc_cb (b, tcc_cb_ptr);
 	va_end (ap);
 }
+
+PUB_FUNC void tcc_typedef_appendf(const char *fmt, ...) {
+	char **typedefs_start;
+	if (!tcc_typedefs) {
+		tcc_typedefs = (char **)malloc (100);
+		typedefs_start = tcc_typedefs;
+	} else {
+		typedefs_start = tcc_typedefs;
+		while (*tcc_typedefs) {
+			tcc_typedefs++;
+		}
+	}
+	char typedefs_tail[1024];
+	va_list ap;
+	va_start (ap, fmt);
+	vsnprintf (typedefs_tail, sizeof (typedefs_tail), fmt, ap);
+	*tcc_typedefs = strdup (typedefs_tail);
+	tcc_typedefs = typedefs_start;
+	va_end (ap);
+}

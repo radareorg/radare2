@@ -26,6 +26,7 @@
 } while (0)
 /* callback pointer */
 ST_DATA char **tcc_cb_ptr;
+ST_DATA char **tcc_typedefs;
 
 /********************************************************/
 /* global variables */
@@ -763,9 +764,7 @@ add_tstr:
 		}
 		pstrcat (buf, buf_size, tstr);
 		v = type->ref->v & ~SYM_STRUCT;
-		if (v >= SYM_FIRST_ANOM) {
-			strcat_printf (buf, buf_size, "%u", v - SYM_FIRST_ANOM);
-		} else {
+		if (v < SYM_FIRST_ANOM) {
 			pstrcat (buf, buf_size, get_tok_str (v, NULL));
 		}
 		break;
@@ -1184,9 +1183,9 @@ do_decl:
 							int type_bt = type1.t & VT_BTYPE;
 							//eprintf("2: %s.%s = %s\n", ctype, name, varstr);
 							if (is_typedef && autonamed) {
-								tcc_appendf ("[+]typedef.%%1$s.fields=%s\n", varstr);
-								tcc_appendf ("typedef.%%1$s.%s.meta=%d\n", varstr, type_bt);
-								tcc_appendf ("typedef.%%1$s.%s=%s,%d,%d\n", varstr, b, offset, arraysize);
+								tcc_typedef_appendf ("[+]typedef.%%1$s.fields=%s\n", varstr);
+								tcc_typedef_appendf ("typedef.%%1$s.%s.meta=%d\n", varstr, type_bt);
+								tcc_typedef_appendf ("typedef.%%1$s.%s=%s,%d,%d\n", varstr, b, offset, arraysize);
 							} else {
 								tcc_appendf ("[+]%s.%s=%s\n",
 									ctype, name, varstr);
@@ -3195,7 +3194,13 @@ func_error1:
 					type_to_str(buf, sizeof(buf), &sym->type, NULL);
 					tcc_appendf ("%s=typedef\n", alias);
 					tcc_appendf ("typedef.%s=%s\n", alias, buf);
-					tcc_appendf (tcc_cb_ptr[0], alias);
+					if (tcc_typedefs) {
+						while (*tcc_typedefs != NULL) { // XXX it should not enter here
+							tcc_appendf (*tcc_typedefs, alias);
+							free (*tcc_typedefs);
+							tcc_typedefs++;
+						}
+					}
 				} else {
 					r = 0;
 					if ((type.t & VT_BTYPE) == VT_FUNC) {
