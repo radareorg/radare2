@@ -95,14 +95,61 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 !rabin2 -S ${R2_FILE}|wc -l|awk "{print \$1}"
 !rabin2 -SS ${R2_FILE}|wc -l|awk "{print \$1}"
-!env RABIN2_PREFIX=prixfixe rabin2 -S ${R2_FILE} |grep prixfixe. |wc -l |awk "{print \$1}"
-!env RABIN2_PREFIX=prixfixe rabin2 -SS ${R2_FILE} |grep prixfixe. |wc -l |awk "{print \$1}"
+!env RABIN2_PREFIX=prixfixe rabin2 -S ${R2_FILE}
+!env RABIN2_PREFIX=prixfixe rabin2 -SS ${R2_FILE}
 EOF
 EXPECT=<<EOF
 35
 14
-30
-9
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x00000000    0x0 0x00000000    0x0 ---- prixfixe.
+1   0x00000134   0x13 0x08048134   0x13 -r-- prixfixe..interp
+2   0x00000148   0x20 0x08048148   0x20 -r-- prixfixe..note.ABI_tag
+3   0x00000168   0x24 0x08048168   0x24 -r-- prixfixe..note.gnu.build_id
+4   0x0000018c   0x20 0x0804818c   0x20 -r-- prixfixe..gnu.hash
+5   0x000001ac   0x50 0x080481ac   0x50 -r-- prixfixe..dynsym
+6   0x000001fc   0x4a 0x080481fc   0x4a -r-- prixfixe..dynstr
+7   0x00000246    0xa 0x08048246    0xa -r-- prixfixe..gnu.version
+8   0x00000250   0x20 0x08048250   0x20 -r-- prixfixe..gnu.version_r
+9   0x00000270    0x8 0x08048270    0x8 -r-- prixfixe..rel.dyn
+10  0x00000278   0x18 0x08048278   0x18 -r-- prixfixe..rel.plt
+11  0x00000290   0x23 0x08048290   0x23 -r-x prixfixe..init
+12  0x000002c0   0x40 0x080482c0   0x40 -r-x prixfixe..plt
+13  0x00000300  0x194 0x08048300  0x194 -r-x prixfixe..text
+14  0x00000494   0x14 0x08048494   0x14 -r-x prixfixe..fini
+15  0x000004a8   0x15 0x080484a8   0x15 -r-- prixfixe..rodata
+16  0x000004c0   0x2c 0x080484c0   0x2c -r-- prixfixe..eh_frame_hdr
+17  0x000004ec   0xb0 0x080484ec   0xb0 -r-- prixfixe..eh_frame
+18  0x0000059c    0x4 0x0804959c    0x4 -rw- prixfixe..init_array
+19  0x000005a0    0x4 0x080495a0    0x4 -rw- prixfixe..fini_array
+20  0x000005a4    0x4 0x080495a4    0x4 -rw- prixfixe..jcr
+21  0x000005a8   0xe8 0x080495a8   0xe8 -rw- prixfixe..dynamic
+22  0x00000690    0x4 0x08049690    0x4 -rw- prixfixe..got
+23  0x00000694   0x18 0x08049694   0x18 -rw- prixfixe..got.plt
+24  0x000006ac    0x8 0x080496ac    0x8 -rw- prixfixe..data
+25  0x000006b4    0x0 0x080496b4    0x4 -rw- prixfixe..bss
+26  0x000006b4   0x11 0x00000000   0x11 ---- prixfixe..comment
+27  0x000006c5  0x106 0x00000000  0x106 ---- prixfixe..shstrtab
+28  0x00000c7c  0x450 0x00000000  0x450 ---- prixfixe..symtab
+29  0x000010cc  0x257 0x00000000  0x257 ---- prixfixe..strtab
+
+[Segments]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x00000034  0x100 0x08048034  0x100 -r-x prixfixe.PHDR
+1   0x00000134   0x13 0x08048134   0x13 -r-- prixfixe.INTERP
+2   0x00000000  0x59c 0x08048000  0x59c -r-x prixfixe.LOAD0
+3   0x0000059c  0x118 0x0804959c  0x11c -rw- prixfixe.LOAD1
+4   0x000005a8   0xe8 0x080495a8   0xe8 -rw- prixfixe.DYNAMIC
+5   0x00000148   0x44 0x08048148   0x44 -r-- prixfixe.NOTE
+6   0x000004c0   0x2c 0x080484c0   0x2c -r-- prixfixe.GNU_EH_FRAME
+7   0x00000000    0x0 0x00000000    0x0 -rw- prixfixe.GNU_STACK
+8   0x00000000   0x34 0x08048000   0x34 -rw- prixfixe.ehdr
+
 EOF
 RUN
 
