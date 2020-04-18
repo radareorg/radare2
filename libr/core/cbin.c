@@ -3649,7 +3649,7 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 }
 
 static void bin_elf_versioninfo(RCore *r, int mode) {
-	const char *const format = "bin/cur/info/versioninfo/%s%d";
+	const char *format = "bin/cur/info/versioninfo/%s%d";
 	int num_versym;
 	int num_verneed = 0;
 	int num_version = 0;
@@ -3658,11 +3658,14 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 	PJ *pj;
 	if (IS_MODE_JSON (mode)) {
 		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
 		pj_o (pj);
 		pj_ka (pj, "versym");
 	}
 	for (num_versym = 0;; num_versym++) {
-		const char *const versym_path = sdb_fmt (format, "versym", num_versym);
+		const char *versym_path = sdb_fmt (format, "versym", num_versym);
 		if (!(sdb = sdb_ns_path (r->sdb, versym_path, 0))) {
 			break;
 		}
