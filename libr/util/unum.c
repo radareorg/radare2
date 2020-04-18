@@ -227,7 +227,6 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	} else if (!strncmp (str, "0xf..", 5) || !strncmp (str, "0xF..", 5)) {
 		ret = r_num_tailff (num, str + 5);
 	} else if (str[0] == '0' && tolower (str[1]) == 'x') {
-		errno = 0;
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
 			// Support 0x1000_f000_4000
@@ -235,10 +234,12 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			char *s = strdup (str + 2);
 			if (s) {
 				r_str_replace_char (s, '_', 0);
+				errno = 0;
 				ret = strtoull (s, NULL, 16);
 				free (s);
 			}
 		} else {
+			errno = 0;
 			ret = strtoull (str + 2, NULL, 16);
 			// sscanf (str+2, "%"PFMT64x, &ret);
 		}
