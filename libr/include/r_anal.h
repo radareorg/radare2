@@ -249,6 +249,7 @@ typedef struct r_anal_function_t {
 	const char *cc; // calling convention, should come from RAnal.constpool
 	ut64 addr;
 	RPVector vars;
+	HtUP/*<st64, RPVector<RAnalVar *>>*/ *inst_vars; // offset of instructions => the variables they access
 	int stack; //stack frame size
 	int maxstack;
 	int ninstr;
@@ -727,6 +728,17 @@ typedef enum {
 #define VARPREFIX "var"
 #define ARGPREFIX "arg"
 
+typedef enum {
+	R_ANAL_VAR_ACCESS_TYPE_READ = (1 << 0),
+	R_ANAL_VAR_ACCESS_TYPE_WRITE = (1 << 1)
+} RAnalVarAccessType;
+
+typedef struct r_anal_var_access_t {
+	st64 offset; // relative to the function's entrypoint
+	st64 stackptr;
+	ut8 type; // RAnalVarAccessType bits
+} RAnalVarAccess;
+
 // generic for args and locals
 typedef struct r_anal_var_t {
 	char *name; // name of the variable
@@ -735,6 +747,7 @@ typedef struct r_anal_var_t {
 	int size;
 	bool isarg;
 	int delta;   /* delta offset inside stack frame */
+	RVector/*<RAnalVarAccess>*/ accesses; // ordered by offset, touch this only through API or expect uaf
 
 	// below members are just for caching, TODO: remove them and do it better
 	int argnum;
@@ -1544,7 +1557,6 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 
 R_API int r_anal_function_complexity(RAnalFunction *fcn);
 R_API int r_anal_function_loops(RAnalFunction *fcn);
-R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);
 R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API char *r_anal_function_get_json(RAnalFunction *function);
@@ -1581,8 +1593,6 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name);
 R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 
 /* var.c */
-R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int index);
-R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int delta, int ptr, int xs_type, ut64 xs_addr);
 R_API bool r_anal_function_var_rename(RAnalFunction *fcn, RAnalVar *var, const char *new_name, bool verbose);
 R_API bool r_anal_var_rebase(RAnal *a, RAnalFunction *fcn, ut64 diff);
 R_API void r_anal_function_var_set_type(RAnalFunction *fcn, RAnalVar *var, const char *type);
@@ -1592,6 +1602,8 @@ R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
 R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
 R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
+R_API void r_anal_function_var_set_access(RAnalFunction *fcn, RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr);
+R_API void r_anal_function_var_clear_accesses(RAnalFunction *fcn, RAnalVar *var);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
 R_API RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
 R_API int r_anal_function_var_get_argnum(RAnalFunction *fcn, RAnalVar *var);

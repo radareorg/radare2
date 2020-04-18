@@ -1369,7 +1369,6 @@ static int var_cmd(RCore *core, const char *str) {
 	case 's':
 	case 'g':
 		if (str[2] != '\0') {
-			int rw = 0; // 0 = read, 1 = write
 			int idx = r_num_math (core->num, str + 2);
 			char *vaddr;
 			char *p = strchr (ostr, ' ');
@@ -1388,9 +1387,9 @@ static int var_cmd(RCore *core, const char *str) {
 				res = false;
 				break;
 			}
-			rw = (str[1] == 'g')? 0: 1;
+			int rw = (str[1] == 'g') ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
 			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
-			r_anal_var_access (core->anal, fcn->addr, str[0], R_ANAL_VAR_SCOPE_LOCAL, idx, ptr, rw, addr);
+			r_anal_function_var_set_access (fcn, var, addr, rw, ptr);
 		} else {
 			eprintf ("Missing argument\n");
 		}
