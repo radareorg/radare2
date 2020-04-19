@@ -199,6 +199,7 @@ R_API RAsm *r_asm_new(RNum *num) {
 	}
 	if (num) {
 		a->num = num;
+		r_num_ref (num);
 	} else {
 		a->num = r_num_new (NULL, NULL, NULL);
 		if (!a->num) {
