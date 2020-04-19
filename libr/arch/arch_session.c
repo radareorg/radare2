@@ -28,7 +28,10 @@ R_API bool r_arch_session_can_xxcode(RArchSession *ai, RArchInputOptions inopt, 
 
 R_API bool r_arch_session_xxcode(RArchSession *ai, RArchInstruction *ins, RArchInputOptions inopt, RArchOutputOptions outopt) {
 	r_return_val_if_fail (ai && ai->cur, false);
-	return ai->cur->xxcode (ai, ins, inopt, outopt);
+	if (r_arch_session_can_xxcode (ai, inopt, outopt)) {
+		return ai->cur->xxcode (ai, ins, inopt, outopt);
+	}
+	return false;
 }
 
 R_API void r_arch_session_free(RArchSession *as) {

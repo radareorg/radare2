@@ -113,6 +113,10 @@ bool test_data2code(void) {
 	bool res = r_arch_session_xxcode (as, &ins, R_ARCH_INOPT_DATA, R_ARCH_OUTOPT_CODE);
 	mu_assert ("invalid instruction returns false", !res);
 
+	r_arch_instruction_init_data (&ins, 0xdeadbeef, (const ut8 *)"\x00", 1);
+	res = r_arch_session_xxcode (as, &ins, R_ARCH_INOPT_DATA, R_ARCH_OUTOPT_ESIL);
+	mu_assert ("invalid mode returns false", !res);
+
 	r_arch_instruction_init_data (&ins, 0xdeadbeef, (const ut8 *)"\x90", 1);
 	res = r_arch_session_xxcode (as, &ins, R_ARCH_INOPT_DATA, R_ARCH_OUTOPT_CODE);
 	mu_assert ("valid instruction returns true", res);
