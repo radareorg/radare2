@@ -753,8 +753,10 @@ static bool cb_asmbits(void *user, void *data) {
 			r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
 		}
 		/* set pcalign */
-		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
+		int v = core->assembler->as
+			? core->assembler->as->info.align
+			: r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		r_config_set_i (core->config, "asm.pcalign", v);
 	}
 	return ret;
 }

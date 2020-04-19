@@ -2,7 +2,7 @@ include ../../global.mk
 
 NAME=r_arch
 DEPS=r_util
-DEPS+=r_flag r_cons r_reg
+# DEPS+=r_flag r_cons r_reg
 CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch -I../../shlr
 CURDIR=p/
 
@@ -30,7 +30,7 @@ plugins: ${LIBSO} ${LIBAR}
 
 include ${STATIC_ARCH_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst arch_,p/arch_,$(STATIC_OBJ)))
-OBJS=${STATIC_OBJS} arch.o arch_instruction.o
+OBJS=${STATIC_OBJS} arch.o arch_instruction.o arch_session.o
 # hack to b
 OBJS+=${SHARED2_OBJ}
 

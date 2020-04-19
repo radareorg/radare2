@@ -43,8 +43,8 @@ static RAsmState *__as_new() {
 		as->a = r_asm_new ();
 		as->anal = r_anal_new ();
 		as->arch = r_arch_new ();
-		as->a->arch = as->arch;
-		as->anal->arch = as->arch;
+	//	as->a->arch = as->arch;
+	//	as->anal->arch = as->arch;
 		__load_plugins (as);
 		__as_set_archbits (as);
 	}
