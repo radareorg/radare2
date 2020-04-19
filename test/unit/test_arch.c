@@ -21,6 +21,9 @@ static bool test_xxcode(RArchSession *as, RArchInstruction *ins, RArchInputOptio
 	if (outopt & R_ARCH_OUTOPT_CODE) {
 		r_strbuf_set (&ins->code, "nop");
 	}
+	if (outopt & R_ARCH_OUTOPT_SIZE) {
+		ins->size = 1;
+	}
 	return true;
 }
 
@@ -36,6 +39,45 @@ static RArchPlugin test_plugin = {
 	.inopts = R_ARCH_INOPT_DATA,
 	.outopts = R_ARCH_OUTOPT_CODE,
 	.xxcode = test_xxcode,
+};
+
+static bool test_xxcode2(RArchSession *as, RArchInstruction *ins, RArchInputOptions inopt, RArchOutputOptions outopt) {
+	if (inopt & R_ARCH_INOPT_DATA) {
+		int data_len;
+		ut8 *data = r_strbuf_getbin (&ins->data, &data_len);
+		if (data_len != 1 || data[0] != 0x90) {
+			return false;
+		}
+	} else if (inopt & R_ARCH_INOPT_CODE) {
+		char *code = r_strbuf_get (&ins->code);
+		if (strcmp (code, "nop")) {
+			return false;
+		}
+	}
+	if (outopt & R_ARCH_OUTOPT_DATA) {
+		r_strbuf_setbin (&ins->data, (ut8 *)"\x90", 1);
+	}
+	if (outopt & R_ARCH_OUTOPT_CODE) {
+		r_strbuf_set (&ins->code, "nop");
+	}
+	if (outopt & R_ARCH_OUTOPT_SIZE) {
+		ins->size = 1;
+	}
+	return true;
+}
+
+static RArchPlugin test_plugin2 = {
+	.name = "test_plugin2",
+	.arch = "test",
+	.author = "radare2",
+	.desc = "Example RArch plugin 2",
+	.endian = R_ARCH_ENDIAN_LITTLE | R_ARCH_ENDIAN_BIG,
+	.bits = 8 | 32,
+	.cpus = "test_cpu,radare2_cpu",
+	.default_setup = test_default_setup,
+	.inopts = R_ARCH_INOPT_DATA | R_ARCH_INOPT_CODE,
+	.outopts = R_ARCH_OUTOPT_CODE | R_ARCH_OUTOPT_DATA,
+	.xxcode = test_xxcode2,
 };
 
 bool test_register_plugin(void) {
@@ -123,6 +165,10 @@ bool test_data2code(void) {
 
 	mu_assert_streq (r_strbuf_get (&ins.code), "nop", "0x90 is nop");
 	mu_assert_eq (ins.addr, 0xdeadbeef, "address is right");
+	mu_assert_eq (ins.size, 0, "size has not been initialized, because not requested");
+
+	r_arch_instruction_init_data (&ins, 0xdeadbeef, (const ut8 *)"\x90", 1);
+	res = r_arch_session_xxcode (as, &ins, R_ARCH_INOPT_DATA, R_ARCH_OUTOPT_CODE | R_ARCH_OUTOPT_SIZE);
 	mu_assert_eq (ins.size, 1, "size is 1");
 
 	r_arch_session_unref (as);
@@ -132,11 +178,17 @@ bool test_data2code(void) {
 
 bool test_code2data(void) {
 	RArch *a = r_arch_new ();
-	r_arch_add (a, &test_plugin);
-	RArchPlugin *ap = r_arch_get_plugin (a, "test_plugin");
+	r_arch_add (a, &test_plugin2);
+	RArchPlugin *ap = r_arch_get_plugin (a, "test_plugin2");
 	RArchSession *as = r_arch_session_new (a, ap, NULL);
 
-	// TODO: implement me
+	RArchInstruction ins;
+	r_arch_instruction_init_code (&ins, 0xdeadbeef, "nop");
+	bool res = r_arch_session_xxcode (as, &ins, R_ARCH_INOPT_CODE, R_ARCH_OUTOPT_DATA | R_ARCH_OUTOPT_SIZE);
+	mu_assert ("valid instruction returns true", res);
+	mu_assert_eq (ins.addr, 0xdeadbeef, "address is right");
+	mu_assert_eq (ins.size, 1, "size is 1");
+	mu_assert_memeq ((const ut8 *)r_strbuf_get (&ins.data), (ut8 *)"\x90", 1, "nop is 0x90");
 
 	r_arch_session_unref (as);
 	r_arch_free (a);
