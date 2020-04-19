@@ -35,8 +35,15 @@ R_API void r_arch_free(RArch *arch) {
 	free (arch);
 }
 
+static bool is_plugin_valid(RArchPlugin *p) {
+	return p->name && p->author && (p->encode || p->decode) && p->default_setup;
+}
+
 R_API bool r_arch_add(RArch *a, RArchPlugin *foo) {
 	r_return_val_if_fail (a && foo, false);
+	if (!is_plugin_valid (foo)) {
+		return false;
+	}
 	if (foo->init) {
 		foo->init (a);
 	}
