@@ -974,30 +974,8 @@ static char *get_op_ireg (void *user, ut64 addr) {
 	return res;
 }
 
-static int get_ptr_at(void *user, RAnalFunction *fcn, int delta, ut64 addr) {
-	RCore *core = (RCore *)user;
-	const char *var_access = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.access",
-			fcn->addr, 1, delta);
-	char *vars = sdb_get (core->anal->sdb_fcns, var_access, NULL);
-	const ut64 offset = addr - fcn->addr;
-	if (vars) {
-		char *next = NULL, *ptr = vars;
-		sdb_anext (vars, &next);
-		while (ptr) {
-			ut64 off = r_num_math (NULL, ptr);
-			if (offset == off) {
-				int ret = atoi (strchr (ptr, '.') + 1);
-				free (vars);
-				return ret;
-			}
-			if (!next) {
-				break;
-			}
-			ptr = sdb_anext (next, &next);
-		}
-	}
-	free (vars);
-	return INT_MAX;
+static st64 get_ptr_at(void *user, RAnalFunction *fcn, st64 delta, ut64 addr) {
+	return r_anal_function_get_var_stackptr_at (fcn, delta, addr);
 }
 
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {

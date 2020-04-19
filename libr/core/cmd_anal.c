@@ -971,15 +971,20 @@ static void var_help(RCore *core, char ch) {
 	}
 }
 
-static void var_accesses_list(RAnal *a, RAnalFunction *fcn, int delta, const char *typestr) {
-	const char *var_local = sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s",
-			fcn->addr, 1, delta, typestr);
-	const char *xss = sdb_const_get (a->sdb_fcns, var_local, 0);
-	if (xss && *xss) {
-		r_cons_printf ("%s\n", xss);
-	} else {
-		r_cons_newline ();
+static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, int access_type) {
+	RAnalVarAccess *acc;
+	bool first = true;
+	r_vector_foreach (&var->accesses, acc) {
+		if (!(acc->type & access_type)) {
+			continue;
+		}
+		if (!first) {
+			r_cons_print (",");
+		}
+		first = false;
+		r_cons_printf ("0x%"PFMT64x, (ut64)((st64)fcn->addr + acc->offset));
 	}
+	r_cons_newline ();
 }
 
 static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *name) {
@@ -998,17 +1003,17 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	if (type != 'W' && type != 'R') {
 		return;
 	}
-	const char *typestr = type == 'R'?"reads":"writes";
+	int access_type = type == 'R' ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
 	if (name && *name) {
 		var = r_anal_function_get_var_byname (fcn, name);
 		if (var) {
 			r_cons_printf ("%10s  ", var->name);
-			var_accesses_list (core->anal, fcn, var->delta, typestr);
+			var_accesses_list (fcn, var, access_type);
 		}
 	} else {
 		r_list_foreach (list, iter, var) {
 			r_cons_printf ("%10s  ", var->name);
-			var_accesses_list (core->anal, fcn, var->delta, typestr);
+			var_accesses_list (fcn, var, access_type);
 		}
 	}
 }
@@ -1027,13 +1032,12 @@ static int cmd_an(RCore *core, bool use_json, const char *name) {
 
 	r_anal_op (core->anal, &op, off,
 			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
-	RAnalFunction *varfcn;
-	RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr, &varfcn);
+	RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr);
 
 	tgt_addr = op.jump != UT64_MAX? op.jump: op.ptr;
 	if (var) {
 		if (name) {
-			ret = r_anal_function_var_rename (varfcn, var, name, true)
+			ret = r_anal_var_rename (var, name, true)
 				? 0
 				: -1;
 		} else if (use_json) {
@@ -1219,7 +1223,7 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			char *old_name = strchr (new_name, ' ');
 			if (!old_name) {
-				RAnalVar *var = op ? r_anal_get_used_function_var (core->anal, op->addr, NULL) : NULL;
+				RAnalVar *var = op ? r_anal_get_used_function_var (core->anal, op->addr) : NULL;
 				if (var) {
 					old_name = var->name;
 				} else {
@@ -1235,7 +1239,7 @@ static int var_cmd(RCore *core, const char *str) {
 			if (fcn) {
 				v1 = r_anal_function_get_var_byname (fcn, old_name);
 				if (v1) {
-					r_anal_function_var_rename (fcn, v1, new_name, true);
+					r_anal_var_rename (v1, new_name, true);
 				} else {
 					eprintf ("Cant find var by name\n");
 				}
@@ -1312,7 +1316,7 @@ static int var_cmd(RCore *core, const char *str) {
 				free (ostr);
 				return false;
 			}
-			r_anal_function_var_set_type (fcn, v1, type);
+			r_anal_var_set_type (v1, type);
 			free (ostr);
 			return true;
 		} else {
@@ -1356,7 +1360,7 @@ static int var_cmd(RCore *core, const char *str) {
 				}
 			}
 			if (var) {
-				r_anal_function_delete_var (fcn, var);
+				r_anal_var_delete (var);
 			}
 		}
 		break;
@@ -1369,7 +1373,6 @@ static int var_cmd(RCore *core, const char *str) {
 	case 's':
 	case 'g':
 		if (str[2] != '\0') {
-			int rw = 0; // 0 = read, 1 = write
 			int idx = r_num_math (core->num, str + 2);
 			char *vaddr;
 			char *p = strchr (ostr, ' ');
@@ -1388,9 +1391,9 @@ static int var_cmd(RCore *core, const char *str) {
 				res = false;
 				break;
 			}
-			rw = (str[1] == 'g')? 0: 1;
+			int rw = (str[1] == 'g') ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
 			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
-			r_anal_var_access (core->anal, fcn->addr, str[0], R_ANAL_VAR_SCOPE_LOCAL, idx, ptr, rw, addr);
+			r_anal_var_set_access (var, addr, rw, ptr);
 		} else {
 			eprintf ("Missing argument\n");
 		}

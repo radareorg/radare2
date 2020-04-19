@@ -2843,55 +2843,6 @@ R_API void r_core_visual_mounts(RCore *core) {
 	}
 }
 
-#if 0
-static void var_index_show(RAnal *anal, RAnalFunction *fcn, ut64 addr, int idx) {
-	int i = 0;
-	RAnalVar *v;
-	RAnalVarAccess *x;
-	RListIter *iter, *iter2;
-	int window ;
-
-	// Adjust the windows size automaticaly
-	(void)r_cons_get_size (&window);
-	window-=5; // Size of printed things
-
-	int wdelta = (idx>5)?idx-5:0;
-	if (!fcn) return;
-	r_list_foreach(fcn->vars, iter, v) {
-		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
-			if (i>=wdelta) {
-				if (i>window+wdelta) {
-					r_cons_printf("...\n");
-					break;
-				}
-				if (idx == i) r_cons_printf (" * ");
-				else r_cons_printf ("   ");
-#if 0
-				if (v->type->type == R_ANAL_TYPE_ARRAY) {
-eprintf ("TODO: support for arrays\n");
-					r_cons_printf ("0x%08llx - 0x%08llx scope=%s type=%s name=%s delta=%d array=%d\n",
-						v->addr, v->eaddr, r_anal_var_scope_to_str (anal, v->scope),
-						r_anal_type_to_str (anal, v->type, ""),
-						v->name, v->delta, v->type->custom.a->count);
-				} else
-#endif
-				{
-					char *s = r_anal_type_to_str (anal, v->type);
-					if (!s) s = strdup ("<unk>");
-					r_cons_printf ("0x%08llx - 0x%08llx scope=%d type=%s name=%s delta=%d\n",
-						v->addr, v->eaddr, v->scope, s, v->name, v->delta);
-					free (s);
-				}
-				r_list_foreach (v->accesses, iter2, x) {
-					r_cons_printf ("  0x%08llx %s\n", x->addr, x->set?"set":"get");
-				}
-			}
-			i++;
-		}
-	}
-}
-#endif
-
 // helper
 static void function_rename(RCore *core, ut64 addr, const char *name) {
 	RListIter *iter;
@@ -2936,7 +2887,7 @@ static void variable_set_type (RCore *core, ut64 addr, int vindex, const char *t
 
 	r_list_foreach (list, iter, var) {
 		if (vindex == 0) {
-			r_anal_function_var_set_type (fcn, var, type);
+			r_anal_var_set_type (var, type);
 			break;
 		}
 		vindex--;
@@ -4028,13 +3979,12 @@ onemoretime:
 			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
 
 		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
-		RAnalFunction *varfcn;
-		RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr, &varfcn);
+		RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr);
 		if (var) {
 //			q = r_str_newf ("?i Rename variable %s to;afvn %s `yp`", op.var->name, op.var->name);
 			char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
 			if (newname && *newname) {
-				r_anal_function_var_rename (varfcn, var, newname, true);
+				r_anal_var_rename (var, newname, true);
 				free (newname);
 			}
 		} else if (tgt_addr != UT64_MAX) {
@@ -4289,7 +4239,6 @@ onemoretime:
 
 		ut64 try_off;
 		RAnalOp *op = NULL;
-		RAnalFunction *fcn = NULL;
 		RAnalVar *var = NULL;
 		for (try_off = start_off; try_off < start_off + incr*16; try_off += incr) {
 			r_anal_op_free (op);
@@ -4297,7 +4246,7 @@ onemoretime:
 			if (!op) {
 				break;
 			}
-			var = r_anal_get_used_function_var (core->anal, op->addr, &fcn);
+			var = r_anal_get_used_function_var (core->anal, op->addr);
 			if (var) {
 				break;
 			}
@@ -4306,7 +4255,7 @@ onemoretime:
 		if (var) {
 			char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
 			if (newname && *newname) {
-				r_anal_function_var_rename (fcn, var, newname, true);
+				r_anal_var_rename (var, newname, true);
 				free (newname);
 			}
 		} else {
