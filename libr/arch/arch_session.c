@@ -69,6 +69,7 @@ R_API bool r_arch_session_can_encode(RArchSession *ai) {
 	r_return_val_if_fail (ai && ai->cur, false);
 	return ai->cur->encode;
 }
+
 R_API bool r_arch_session_encode(RArchSession *ai, RArchInstruction *ins, RArchOptions opt) {
 	r_return_val_if_fail (ai && ai->cur, false);
 	if (ai->cur->encode) {
@@ -92,9 +93,20 @@ R_API void r_arch_session_free(RArchSession *as) {
 
 //RArchPlugin *ap = r_arch_get_plugin (a, name);
 R_API RArchSession *r_arch_session_new(RArch *a, RArchPlugin *ap, RArchSetup *setup) {
+	r_return_val_if_fail (a && ap, NULL);
 	RArchSession *ai = R_NEW0 (RArchSession);
 	if (ai) {
-		memcpy (&ai->setup, setup, sizeof (RArchSetup));
+		ai->cur = ap;
+		if (!setup) {
+			RArchSetup _setup = {
+				.endian = R_SYS_ENDIAN,
+				.bits = R_SYS_BITS
+			};
+			memcpy (&ai->setup, &_setup, sizeof (RArchSetup));
+			setup = &ai->setup;
+		} else {
+			memcpy (&ai->setup, setup, sizeof (RArchSetup));
+		}
 		if (ap && ap->init) {
 			ap->init_session (ai);
 		}
