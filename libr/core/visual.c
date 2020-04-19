@@ -673,7 +673,6 @@ repeat:
 	r_strbuf_free (p);
 	r_strbuf_free (q);
 	goto repeat;
-	return ret;
 }
 
 static void prompt_read(const char *p, char *buf, int buflen) {

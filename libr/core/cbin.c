@@ -2848,7 +2848,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			} else {
 				str[0] = 0;
 			}
-			const char *name = (r->bin->prefix)
+			const char *section_name = (r->bin->prefix)
 				? sdb_fmt ("%s.%s", r->bin->prefix, section->name)
 				: section->name;
 			// seems like asm.bits is a bitmask that seems to be always 32,64
@@ -2857,12 +2857,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				r_table_add_rowf (table, "dXxXxsss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, hashstr, name);
+					perms, hashstr, section_name);
 			} else {
 				r_table_add_rowf (table, "dXxXxss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, name);
+					perms, section_name);
 			}
 			free (hashstr);
 		}
