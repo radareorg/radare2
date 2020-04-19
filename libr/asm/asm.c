@@ -258,7 +258,7 @@ R_API void r_asm_free(RAsm *a) {
 	if (!a) {
 		return;
 	}
-	// r_num_free (a->num);
+	r_num_free (a->num);
 	if (a->cur && a->cur->fini) {
 		a->cur->fini (a->cur->user);
 	}
