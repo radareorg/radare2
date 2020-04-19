@@ -266,7 +266,10 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	RAnalVarField *var;
 	r_list_foreach (spargs, iter, var) {
 		if (p->get_ptr_at) {
-			var->delta = p->get_ptr_at (p->user, f, var->delta, addr);
+			st64 delta = p->get_ptr_at (p->user, f, var->delta, addr);
+			if (delta != ST64_MAX) {
+				var->delta = delta;
+			}
 		}
 		char *tmpf;
 		//TODO: honor asm pseudo

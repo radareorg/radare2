@@ -7,14 +7,6 @@
 
 #define DB a->sdb_fcns
 
-struct VarType {
-	bool isarg;
-	char *type;
-	int size;
-	char *name;
-	char *regname;
-};
-
 #define ACCESS_CMP(x, y) ((x) - ((RAnalVarAccess *)y)->offset)
 
 R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type) {
@@ -271,11 +263,11 @@ R_API ut64 r_anal_var_addr(RAnalVar *var) {
 	return r_reg_getv (anal->reg, regname) + var->delta;
 }
 
-R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, int delta, ut64 addr) {
+R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 	st64 offset = (st64)addr - (st64)fcn->addr;
 	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
 	if (!inst_accesses) {
-		return INT_MAX;
+		return ST64_MAX;
 	}
 	RAnalVar *found_var = NULL;
 	void **it;
@@ -287,7 +279,7 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, int delta, ut
 		}
 	}
 	if (!found_var) {
-		return INT_MAX;
+		return ST64_MAX;
 	}
 	RAnalVar *var = r_pvector_at (inst_accesses, 0);
 	size_t index;
@@ -297,7 +289,7 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, int delta, ut
 		acc = r_vector_index_ptr (&var->accesses, index);
 	}
 	if (!acc || acc->offset != offset) {
-		return INT_MAX;
+		return ST64_MAX;
 	}
 	return acc->stackptr;
 }
@@ -391,10 +383,6 @@ R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr)
 }
 
 R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
-	//const char *var_local = sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s", faddr, 1, var->delta, "reads");
-	//const char *xss = sdb_const_get (anal->sdb_fcns, var_local, 0);
-	//ut64 addr = r_num_math (NULL, xss);
-
 	RAnalVarAccess *found_acc = NULL;
 	RAnalVarAccess *acc;
 	r_vector_foreach (&var->accesses, acc) {

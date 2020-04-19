@@ -32,7 +32,7 @@ typedef struct r_parse_t {
 	// RAnal *anal; // weak anal ref XXX do not use. use analb.anal
 	RList *parsers;
 	RAnalVarList varlist;
-	int (*get_ptr_at)(void *user, RAnalFunction *fcn, int delta, ut64 addr);
+	st64 (*get_ptr_at)(void *user, RAnalFunction *fcn, st64 delta, ut64 addr);
 	char* (*get_op_ireg)(void *user, ut64 addr);
 	RAnalBind analb;
 	RFlagGetAtAddr flag_get; // XXX

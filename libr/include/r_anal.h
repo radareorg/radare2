@@ -758,7 +758,7 @@ typedef struct r_anal_var_t {
 // Refers to a variable or a struct field inside a variable, only for varsub
 R_DEPRECATE typedef struct r_anal_var_field_t {
 	char *name;
-	int delta;
+	st64 delta;
 } RAnalVarField;
 
 // mul*value+regbase+regidx+delta
@@ -1600,7 +1600,7 @@ R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, cons
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind);
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn);
-R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, int delta, ut64 addr);
+R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
 
 // There could be multiple vars used in multiple functions. Use r_anal_get_functions_in()+r_anal_function_get_vars_used_at() instead.
