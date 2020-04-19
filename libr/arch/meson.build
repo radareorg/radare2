@@ -1,5 +1,6 @@
 r_arch_sources = [
   'arch.c',
+  'arch_session.c',
   'arch_instruction.c',
   'p/arch_bf.c'
 ]

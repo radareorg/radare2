@@ -24,7 +24,7 @@ static int getid(const char ch) {
 	return cidx? cidx - keys + 1: 0;
 }
 
-static bool decode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
+static bool decode(RArchSession *a, RArchInstruction *ins, RArchOptions opt) {
 	r_return_val_if_fail (a && ins, false);
 	int len;
 	const ut8 *buf = r_strbuf_getbin (&ins->data, &len);
@@ -79,10 +79,10 @@ static bool decode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
 					if (tried) {
 						break;
 					}
-					if (a->iob.io) {
+					if (a->arch->iob.io) {
 						size_t d = p - data;
 						memset (mydata, 0, sizeof (mydata));
-						(void)a->iob.read_at (a->iob.io, ins->addr + d, mydata, sizeof (mydata) - 1);
+						(void)a->arch->iob.read_at (a->arch->iob.io, ins->addr + d, mydata, sizeof (mydata) - 1);
 						data = (const char *)mydata;
 						tried = true;
 						p = data;
@@ -103,11 +103,11 @@ static bool decode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
 			r_strbuf_set (&ins->esil, "brk,--=,brk,[1],pc,=");
 		}
 		if (true) { // has (ANAL)) {
-			if (a->iob.io) {
+			if (a->arch->iob.io) {
 				char rew[512] = {0};
 				int rew_len = R_MIN (ins->addr, sizeof (rew));
 				ut64 addr = (ins->addr > sizeof (rew))? ins->addr - sizeof (rew): 0;
-				(void)a->iob.read_at (a->iob.io, addr, (ut8*)rew, rew_len);
+				(void)a->arch->iob.read_at (a->arch->iob.io, addr, (ut8*)rew, rew_len);
 				rew[rew_len - 1] = 0;
 				int nest = 1;
 				char *last = rew + strlen (rew);
@@ -209,7 +209,7 @@ static bool decode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
 	return true;
 }
 
-static bool assemble(RArch *a, RArchInstruction *ins) {
+static bool assemble(RArchSession *a, RArchInstruction *ins) {
 	const char *asmstr = r_strbuf_get (&ins->code);
 	int n = 0;
 	if (asmstr[0] && asmstr[1] == ' ') {
@@ -288,7 +288,7 @@ static bool assemble(RArch *a, RArchInstruction *ins) {
 	return true;
 }
 
-static bool encode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
+static bool encode(RArchSession *a, RArchInstruction *ins, RArchOptions opt) {
 	bool ret = false;
 	// encode the disasm into bytes?
 	if (opt & R_ARCH_OPTION_CODE) {
@@ -297,8 +297,8 @@ static bool encode(RArch *a, RArchInstruction *ins, RArchOptions opt) {
 	return ret;
 }
 
-static char *registers(RArch *a) {
-	return strdup (
+static bool init_session(RArchSession *as) {
+	char *rp = strdup (
 		"=PC	pc\n"
 		"=BP	brk\n"
 		"=SP	ptr\n"
@@ -309,6 +309,15 @@ static char *registers(RArch *a) {
 		"gpr	scr	.32	12	0\n" // screen
 		"gpr	kbd	.32	16	0\n" // keyboard
 	);
+	RArchInfo info = {
+		.minisz = 1,
+		.maxisz = 256,
+		.align = 1,
+		.dataalign = 1,
+		.regprofile = rp
+	};
+	as->info = info;
+	return true;
 }
 
 RArchPlugin r_arch_plugin_bf = {
@@ -322,7 +331,7 @@ RArchPlugin r_arch_plugin_bf = {
 	.desc = "Brainfuck",
 	.decode = decode,
 	.encode = encode,
-	.registers = registers 
+	.init_session = init_session
 };
 
 #ifndef R2_PLUGIN_INCORE

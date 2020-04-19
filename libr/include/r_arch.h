@@ -32,8 +32,6 @@ typedef struct r_arch_setup_t {
 } RArchSetup;
 
 typedef struct r_arch_t {
-	struct r_arch_plugin_t *cur;
-	RArchSetup setup;
 	RList *plugins;
 	RIOBind iob;
 } RArch;
@@ -42,8 +40,11 @@ typedef struct r_arch_info_t {
 	size_t minisz;
 	size_t maxisz;
 	size_t align;
+	size_t dataalign;
+	char *regprofile;
 	// size_t payload;
 } RArchInfo;
+
 
 typedef struct r_arch_instruction_t {
 	ut64 addr;
@@ -59,22 +60,46 @@ typedef struct r_arch_instruction_t {
 } RArchInstruction;
 
 
-typedef bool (*RArchEncodeCallback)(RArch *a, RArchInstruction *ins, RArchOptions options);
-typedef bool (*RArchDecodeCallback)(RArch *a, RArchInstruction *ins, RArchOptions options);
-typedef char * (*RArchRegistersCallback)(RArch *a);
-typedef void (*RArchInfoCallback)(RArch *a);
+typedef struct r_arch_plugin_t *RArchPluginP;
+
+typedef struct r_arch_callbacks_t {
+	int (*read_at)(void *user, ut64 addr, R_OUT ut8 *buf, size_t len);
+	ut64 (*get_offset)(void *user, const char *name);
+	const char *(*get_name)(void *user, ut64 addr);
+} RArchCallbacks;
+
+typedef struct r_arch_session {
+	RArch *arch;
+	RArchPluginP cur;
+	RArchSetup setup;
+	RArchInfo info;
+	RArchCallbacks *cbs;
+	R_REF_TYPE;
+} RArchSession;
+
+
+typedef bool (*RArchPluginCallback)(RArch *a);
+typedef bool (*RArchSessionCallback)(RArchSession *a);
+typedef bool (*RArchEncodeCallback)(RArchSession *a, RArchInstruction *ins, RArchOptions options);
+typedef bool (*RArchDecodeCallback)(RArchSession *a, RArchInstruction *ins, RArchOptions options);
+
+R_API RArchSession *r_arch_session_new(RArch *a, RArchPluginP ap, RArchSetup *setup);
+R_API void r_arch_session_free(RArchSession *as);
+R_API bool r_arch_session_can_decode(RArchSession *ai);
+R_API bool r_arch_session_can_encode(RArchSession *ai);
+R_API bool r_arch_session_encode(RArchSession *ai, RArchInstruction *ins, RArchOptions opt);
+R_API bool r_arch_session_decode(RArchSession *ai, RArchInstruction *ins, RArchOptions opt);
+R_REF_FUNCTIONS(RArchSession, r_arch_session);
 
 typedef struct r_arch_plugin_t {
+	// RArchInfo setup;
 	const char *name;
 	const char *arch;
 	const char *cpus;
 	const char *features;
-#if 1
+	// RArchSetup setup;
 	RArchBits bits;
 	RArchEndian endian;
-#else
-	RArchSetup setup;
-#endif
 	// copyright
 	const char *author;
 	const char *desc;
@@ -83,16 +108,11 @@ typedef struct r_arch_plugin_t {
 	// callbacks
 	RArchEncodeCallback encode;
 	RArchDecodeCallback decode;
-	RArchRegistersCallback registers;
-	RArchInfoCallback info; // dynamic info
-	bool (*init)(void *user);
-	bool (*fini)(void *user);
+	RArchPluginCallback init;
+	RArchPluginCallback fini;
+	RArchSessionCallback init_session;
+	RArchSessionCallback fini_session;
 } RArchPlugin;
-
-typedef struct r_arch_instance {
-	RArchPlugin *cur;
-	RArchSetup setup;
-} RArchInstance;
 
 R_API RArchInstruction *r_arch_instruction_new();
 R_API void r_arch_instruction_free(RArchInstruction *ins);
@@ -100,27 +120,30 @@ R_API void r_arch_instruction_init(RArchInstruction *ins);
 R_API void r_arch_instruction_init_data(RArchInstruction *ins, ut64 addr, const ut8 *buf, size_t len);
 R_API void r_arch_instruction_init_code(RArchInstruction *ins, ut64 addr, const char *opstr);
 R_API void r_arch_instruction_fini(RArchInstruction *ins);
+R_API RArchPlugin *r_arch_get_plugin(RArch *a, const char *name);
 
 R_API RArch *r_arch_new();
 R_API void r_arch_free(RArch *arch);
 
-R_API RArchInstance *r_arch_instance(RArch *a);
+R_API RArchSession *r_arch_session(RArch *a, const char *name, RArchSetup *setup);
 
 R_API bool r_arch_encode(RArch *a, RArchInstruction *ins, RArchOptions opt);
 R_API bool r_arch_decode(RArch *a, RArchInstruction *ins, RArchOptions opt);
 
+R_API bool r_arch_session_encode(RArchSession *a, RArchInstruction *ins, RArchOptions opt);
+R_API bool r_arch_session_decode(RArchSession *a, RArchInstruction *ins, RArchOptions opt);
+
+R_API bool r_arch_can_decode(RArch *a);
+R_API bool r_arch_can_encode(RArch *a);
+
 R_API bool r_arch_setup(RArch *a, const char *arch, RArchBits bits, RArchEndian endian);
 // R_API bool r_arch_setup(RArch *a, RArchSetup *s);
 R_API bool r_arch_set_syntax(RArch *a, RArchSyntax syntax);
-R_API bool r_arch_set_cpu(RArch *a, const char *cpu);
 R_API bool r_arch_set_endian(RArch *a, RArchEndian endian);
 R_API bool r_arch_set_bits(RArch *a, RArchBits bits);
 R_API bool r_arch_use(RArch *a, const char *name);
 R_API bool r_arch_add(RArch *a, RArchPlugin *foo);
-R_API bool r_arch_del(RArch *a, const char *name);
-
-R_API bool r_arch_can_decode(RArch *a);
-R_API bool r_arch_can_encode(RArch *a);
+R_API bool r_arch_del(RArch *a, RArchPlugin *ap);
 
 extern RArchPlugin r_arch_plugin_bf;
 

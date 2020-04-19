@@ -21,6 +21,26 @@ static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 
 extern bool r_core_is_project (RCore *core, const char *name);
 
+static bool set_arch(RCore *c, const char *name) {
+	RArch *a = c->arch;
+	RArchPlugin *ap = r_arch_get_plugin (a, name);
+	if (ap) {
+		RArchSetup setup = {
+			.bits = r_config_get_i (c->config, "asm.bits"),
+			.endian = r_config_get_i (c->config, "cfg.bigendian"),
+			.cpu = strdup (r_config_get (c->config, "asm.cpu")),
+		};
+		RArchSession *as = r_arch_session_new (a, ap, &setup);
+		if (as) {
+			c->assembler->as = as;
+			// c->assembler->asd = as;
+			// c->anal->as = as;
+			return true;
+		}
+	}
+	return false;
+}
+
 static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
 	const char *cmd = r_config_get (core->config, "cmd.fcn.new");
@@ -2626,13 +2646,11 @@ R_API bool r_core_init(RCore *core) {
 	r_lang_set_user_ptr (core->lang, core);
 	core->arch = r_arch_new ();
 	core->assembler = r_asm_new ();
-	core->assembler->arch = core->arch;
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;
-	core->anal->arch = core->arch;
 	core->anal->log = r_core_anal_log;
 	core->anal->read_at = r_core_anal_read_at;
 	core->anal->flag_get = r_core_flag_get_by_spaces;
