@@ -441,6 +441,7 @@ R_API void r_anal_var_set_access(RAnalVar *var, ut64 access_addr, int access_typ
 	if (!acc || acc->offset != offset) {
 		acc = r_vector_insert (&var->accesses, index, NULL);
 		acc->offset = offset;
+		acc->type = 0;
 	}
 
 	acc->type |= (ut8)access_type;
