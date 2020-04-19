@@ -122,8 +122,8 @@ static void shadow_var_struct_members(RAnalVar *var) {
 R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name) {
 	r_return_val_if_fail (fcn && name, NULL);
 	RAnalVar *existing = r_anal_function_get_var_byname (fcn, name);
-	if (existing) {
-		// var name already exists
+	if (existing && (existing->kind != kind || existing->delta != delta)) {
+		// var name already exists at a different kind+delta
 		return NULL;
 	}
 	RRegItem *reg = NULL;
