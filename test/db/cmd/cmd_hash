@@ -41,21 +41,3 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
-
-NAME=hash_subcommands_not_noop
-FILE=-
-CMDS=<<EOF
-?! `#! ~?`
-?v
-?! `#? ~? `
-?v
-?! `#a ~? `
-?v
-EOF
-EXPECT=<<EOF
-0
-0
-0x0
-0
-EOF
-RUN

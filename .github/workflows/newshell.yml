@@ -47,7 +47,6 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
     - name: Run tests
-      continue-on-error: true
       if: startswith(github.event.pull_request.head.ref, 'newshell-') || github.event_name == 'push'
       run: |
         # Running the test suite
