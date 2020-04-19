@@ -331,9 +331,12 @@ R_API void r_asm_arch(RAsm *a, RArchSession *as) {
 }
 
 R_API bool r_asm_use(RAsm *a, const char *name) {
-	r_return_val_if_fail (a && name, false);
+	r_return_val_if_fail (a, false);
 	RAsmPlugin *h;
 	RListIter *iter;
+	if (!name) {
+		return false;
+	}
 	if (a->asa || a->asd) {
 		// pull info from arch into asm
 		return true;
