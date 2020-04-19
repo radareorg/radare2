@@ -4317,11 +4317,11 @@ dodo:
 R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra) {
 	RListInfo *info = R_NEW (RListInfo);
 	if (info) {
-		info->name = strdup (name);
+		info->name = name ? strdup (name) : NULL;
 		info->pitv = pitv;
 		info->vitv = vitv;
 		info->perm = perm;
-		info->extra = strdup (extra);
+		info->extra = extra ? strdup (extra) : NULL;
 	}
 	return info;
 }
