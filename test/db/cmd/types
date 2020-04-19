@@ -471,14 +471,6 @@ func.foo.ret=int32_t
 EOF
 RUN
 
-NAME=tk - crash
-FILE=-
-CMDS=tk -!!!! d'B%CCCC!9!!!!_
-EXPECT=<<EOF
-0x0
-EOF
-RUN
-
 NAME=struct of struct with ts and pf
 FILE=-
 CMDS=<<EOF
