@@ -33,7 +33,7 @@ static RAsmState *__as_new() {
 	RAsmState *as = R_NEW0 (RAsmState);
 	if (as) {
 		as->l = r_lib_new (NULL, NULL);
-		as->a = r_asm_new ();
+		as->a = r_asm_new (NULL);
 		as->anal = r_anal_new ();
 		__load_plugins (as);
 		__as_set_archbits (as);

@@ -2624,8 +2624,7 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
-	core->assembler = r_asm_new ();
-	core->assembler->num = core->num;
+	core->assembler = r_asm_new (core->num);
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);

@@ -143,7 +143,7 @@ typedef struct r_asm_plugin_t {
 
 #ifdef R_API
 /* asm.c */
-R_API RAsm *r_asm_new(void);
+R_API RAsm *r_asm_new(RNum *num);
 R_API void r_asm_free(RAsm *a);
 R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json);
