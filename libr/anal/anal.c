@@ -309,7 +309,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 		if (anal->bits != bits) {
 			anal->bits = bits;
 			r_anal_set_fcnsign (anal, NULL);
-			r_anal_set_reg_profile (anal);
+			(void)r_anal_set_reg_profile (anal);
 		}
 		return true;
 	}

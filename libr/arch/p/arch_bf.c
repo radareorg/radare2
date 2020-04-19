@@ -79,7 +79,7 @@ static bool decode(RArchSession *a, RArchInstruction *ins, RArchOptions opt) {
 					if (tried) {
 						break;
 					}
-					if (a->arch->iob.io) {
+					if (a->arch && a->arch->iob.io) {
 						size_t d = p - data;
 						memset (mydata, 0, sizeof (mydata));
 						(void)a->arch->iob.read_at (a->arch->iob.io, ins->addr + d, mydata, sizeof (mydata) - 1);
@@ -103,7 +103,7 @@ static bool decode(RArchSession *a, RArchInstruction *ins, RArchOptions opt) {
 			r_strbuf_set (&ins->esil, "brk,--=,brk,[1],pc,=");
 		}
 		if (true) { // has (ANAL)) {
-			if (a->arch->iob.io) {
+			if (a->arch && a->arch->iob.io) {
 				char rew[512] = {0};
 				int rew_len = R_MIN (ins->addr, sizeof (rew));
 				ut64 addr = (ins->addr > sizeof (rew))? ins->addr - sizeof (rew): 0;

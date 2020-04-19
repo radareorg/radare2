@@ -303,7 +303,7 @@ R_API bool r_asm_is_valid(RAsm *a, const char *name) {
 R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
-	if (a->as) {
+	if (a->asa) {
 		// pull info from arch into asm
 		return true;
 	}
@@ -322,16 +322,19 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 }
 
 R_API void r_asm_arch(RAsm *a, RArchSession *as) {
-	r_arch_session_unref (a->as);
+	r_arch_session_unref (a->asa);
 	r_arch_session_ref (as);
-	a->as = as;
+	r_arch_session_unref (a->asd);
+	r_arch_session_ref (as);
+	a->asd = as;
+	a->asa = as;
 }
 
 R_API bool r_asm_use(RAsm *a, const char *name) {
 	r_return_val_if_fail (a && name, false);
 	RAsmPlugin *h;
 	RListIter *iter;
-	if (a->as) {
+	if (a->asa || a->asd) {
 		// pull info from arch into asm
 		return true;
 	}
@@ -425,10 +428,10 @@ static bool isInvalid (RAsmOp *op) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, size_t len) {
 	int ret = 0;
-	if (a->as && r_arch_session_can_decode (a->as)) {
+	if (a->asd && r_arch_session_can_decode (a->asd)) {
 		RArchInstruction ins = {0};
 		r_arch_instruction_init_data (&ins, a->pc, buf, len);
-		if (r_arch_session_decode (a->as, &ins, R_ARCH_OPTION_CODE)) {
+		if (r_arch_session_decode (a->asd, &ins, R_ARCH_OPTION_CODE)) {
 			/* RArchInstruction -> RAsmOp */
 			memcpy (&op->buf_asm, &ins.code, sizeof (RStrBuf));
 			op->size = ins.size;
@@ -609,11 +612,11 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	}
 	r_str_case (b, 0); // to-lower
 	memset (op, 0, sizeof (RAsmOp));
-	if (a->as && r_arch_session_can_encode (a->as)) {
+	if (a->asa && r_arch_session_can_encode (a->asa)) {
 		/* RArchInstruction -> RAsmOp */
 		RArchInstruction ins = {0};
 		r_strbuf_setf (&ins.code, buf);
-		if (r_arch_session_encode (a->as, &ins, R_ARCH_OPTION_CODE)) {
+		if (r_arch_session_encode (a->asa, &ins, R_ARCH_OPTION_CODE)) {
 			ret = ins.size;
 		}
 		memcpy (&op->buf, &ins.data, sizeof (RStrBuf));

@@ -107,7 +107,7 @@ R_API RArchSession *r_arch_session_new(RArch *a, RArchPlugin *ap, RArchSetup *se
 		} else {
 			memcpy (&ai->setup, setup, sizeof (RArchSetup));
 		}
-		if (ap && ap->init) {
+		if (ap && ap->init_session) {
 			ap->init_session (ai);
 		}
 		r_arch_session_set_syntax (ai, setup->syntax);
