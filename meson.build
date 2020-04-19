@@ -216,10 +216,16 @@ r2_zsh_compdir = join_paths(r2_datdir, 'zsh', 'site-functions')
 # load plugin configuration
 subdir('libr')
 
+arch_plugins_str = []
+foreach arch_plugin : arch_plugins
+  arch_plugins_str += ['r_arch_plugin_' + arch_plugin]
+endforeach
+
 conf_data = configuration_data()
 conf_data.set('plugins_core', '&r_core_plugin_' + ', &r_core_plugin_'.join(core_plugins) + ', 0')
 conf_data.set('plugins_anal', '&r_anal_plugin_' + ', &r_anal_plugin_'.join(anal_plugins) + ', 0')
 conf_data.set('plugins_asm', '&r_asm_plugin_' + ', &r_asm_plugin_'.join(asm_plugins) + ', 0')
+conf_data.set('plugins_arch', ','.join(arch_plugins_str + ['NULL']))
 conf_data.set('plugins_bp', '&r_bp_plugin_' + ', &r_bp_plugin_'.join(bp_plugins) + ', 0')
 conf_data.set('plugins_bin', '&r_bin_plugin_' + ', &r_bin_plugin_'.join(bin_plugins) + ', 0')
 conf_data.set('plugins_bin_ldr', '&r_bin_ldr_plugin_' + ', &r_bin_ldr_plugin_'.join(bin_ldr_plugins) + ', 0')
@@ -404,6 +410,7 @@ subdir('libr/util')
 subdir('libr/hash')
 subdir('libr/crypto')
 subdir('libr/socket')
+subdir('libr/arch')
 subdir('libr/cons')
 subdir('shlr/gdb')
 subdir('libr/io')
@@ -451,6 +458,7 @@ else
   libr2_dep = declare_dependency(
     dependencies: [
       r_anal_dep,
+      r_arch_dep,
       r_asm_dep,
       r_bin_dep,
       r_bp_dep,

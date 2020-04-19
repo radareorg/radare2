@@ -6,6 +6,7 @@ if get_option('enable_tests')
     'anal_function',
     'anal_hints',
     'anal_xrefs',
+    'arch',
     'base64',
     'bin',
     'bitmap',
@@ -45,6 +46,7 @@ if get_option('enable_tests')
       include_directories: [platform_inc],
       dependencies: [
         r_util_dep,
+        r_arch_dep,
         r_main_dep,
         r_socket_dep,
         r_core_dep,

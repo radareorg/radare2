@@ -300,6 +300,9 @@ if host_machine.system() == 'windows'
   ]
 endif
 
+arch_plugins = [
+]
+
 lang_plugins = [
   'c',
   'cpipe',
@@ -330,6 +333,7 @@ include_files =[
   'include/r_agraph.h',
   'include/r_anal.h',
   'include/r_asm.h',
+  'include/r_arch.h',
   'include/r_bind.h',
   'include/r_getopt.h',
   'include/r_bin_dwarf.h',
