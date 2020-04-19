@@ -191,21 +191,16 @@ static void plugin_free(RAsmPlugin *p) {
 	}
 }
 
-R_API RAsm *r_asm_new(RNum *num) {
+R_API RAsm *r_asm_new() {
 	int i;
 	RAsm *a = R_NEW0 (RAsm);
 	if (!a) {
 		return NULL;
 	}
-	if (num) {
-		a->num = num;
-		r_num_ref (num);
-	} else {
-		a->num = r_num_new (NULL, NULL, NULL);
-		if (!a->num) {
-			free (a);
-			return NULL;
-		}
+	a->num = r_num_new (NULL, NULL, NULL);
+	if (!a->num) {
+		free (a);
+		return NULL;
 	}
 	a->dataalign = 1;
 	a->bits = R_SYS_BITS;
@@ -258,7 +253,7 @@ R_API void r_asm_free(RAsm *a) {
 	if (!a) {
 		return;
 	}
-	r_num_free (a->num);
+	r_num_unref (a->num);
 	if (a->cur && a->cur->fini) {
 		a->cur->fini (a->cur->user);
 	}

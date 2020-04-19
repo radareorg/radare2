@@ -48,7 +48,7 @@ R_API REgg *r_egg_new() {
 	if (!egg->syscall) {
 		goto beach;
 	}
-	egg->rasm = r_asm_new (NULL);
+	egg->rasm = r_asm_new ();
 	if (!egg->rasm) {
 		goto beach;
 	}
