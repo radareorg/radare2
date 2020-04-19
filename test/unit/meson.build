@@ -6,6 +6,7 @@ if get_option('enable_tests')
     'anal_function',
     'anal_hints',
     'anal_xrefs',
+    'arch',
     'base64',
     'bin',
     'bitmap',
