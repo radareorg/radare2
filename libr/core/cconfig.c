@@ -563,9 +563,21 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 
-	if (!r_asm_use (core->assembler, node->value)) {
-		eprintf ("asm.arch: cannot find (%s)\n", node->value);
-		return false;
+	RArchPlugin *ap = r_arch_get_plugin (core->arch, node->value);
+	if (ap) {
+		RArchSetup setup = {
+			.bits = bits,
+			.endian = r_config_get_i (core->config, "cfg.bigendian")? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE,
+			.syntax = r_config_get_i (core->config, "asm.syntax"),
+		};
+		RArchSession *as = r_arch_session_new (core->arch, ap, &setup);
+		core->assembler->asa = as;
+		core->assembler->asd = as;
+	} else {
+		if (!r_asm_use (core->assembler, node->value)) {
+			eprintf ("asm.arch: cannot find (%s)\n", node->value);
+			return false;
+		}
 	}
 	//we should strdup here otherwise will crash if any r_config_set
 	//free the old value
@@ -753,8 +765,8 @@ static bool cb_asmbits(void *user, void *data) {
 			r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
 		}
 		/* set pcalign */
-		int v = core->assembler->as
-			? core->assembler->as->info.align
+		int v = core->assembler->asd
+			? core->assembler->asd->info.align
 			: r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 		r_config_set_i (core->config, "asm.pcalign", v);
 	}

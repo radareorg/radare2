@@ -204,7 +204,21 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		} else {
 			r_config_set (r->config, "anal.cpu", arch);
 		}
-		r_asm_use (r->assembler, arch);
+		if (arch) {
+			RArchPlugin *ap = r_arch_get_plugin (r->arch, arch);
+			if (ap) {
+				RArchSetup setup = {
+					.bits = bits,
+					.endian = r_config_get_i (r->config, "cfg.bigendian")? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE,
+					.syntax = r_config_get_i (r->config, "asm.syntax"),
+				};
+				RArchSession *as = r_arch_session_new (r->arch, ap, &setup);
+				r->assembler->asa = as;
+				r->assembler->asd = as;
+			} else {
+				r_asm_use (r->assembler, arch);
+			}
+		}
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_MODE_SET, va, NULL, NULL);
 		r_core_bin_set_cur (r, binfile);
 		return true;
@@ -219,9 +233,9 @@ R_API int r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 	if (!binfile) {
 		// Find first available binfile
 		ut32 fd = r_core_file_cur_fd (core);
-		binfile = fd != (ut32)-1
-				  ? r_bin_file_find_by_fd (core->bin, fd)
-				  : NULL;
+		binfile = fd != UT32_MAX
+			  ? r_bin_file_find_by_fd (core->bin, fd)
+			  : NULL;
 		if (!binfile) {
 			return false;
 		}

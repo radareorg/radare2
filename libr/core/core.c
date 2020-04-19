@@ -32,7 +32,8 @@ static bool set_arch(RCore *c, const char *name) {
 		};
 		RArchSession *as = r_arch_session_new (a, ap, &setup);
 		if (as) {
-			c->assembler->as = as;
+			c->assembler->asd = as;
+			c->assembler->asa = as;
 			// c->assembler->asd = as;
 			// c->anal->as = as;
 			return true;

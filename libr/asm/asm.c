@@ -303,6 +303,10 @@ R_API bool r_asm_is_valid(RAsm *a, const char *name) {
 R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
+	if (a->as) {
+		// pull info from arch into asm
+		return true;
+	}
 	if (a) {
 		if (name && *name) {
 			r_list_foreach (a->plugins, iter, h) {
@@ -327,13 +331,6 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	r_return_val_if_fail (a && name, false);
 	RAsmPlugin *h;
 	RListIter *iter;
-	if (a->cur) {
-		if (!strcmp (name, a->as->cur->arch)) {
-			r_asm_arch (a, NULL);
-		}
-		return true;
-	}
-	// overriden by RArchSession set with r_asm_arch();
 	if (a->as) {
 		// pull info from arch into asm
 		return true;

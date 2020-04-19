@@ -118,7 +118,8 @@ typedef struct r_asm_t {
 	HtPP *flags;
 	int seggrn;
 	bool pseudo;
-	RArchSession *as;
+	RArchSession *asa; // assembler
+	RArchSession *asd; // disassembler
 	bool dirtybit; // if set, the session must be invalidated . uh we cant create new instances from here.. or we do?
 } RAsm;
 
