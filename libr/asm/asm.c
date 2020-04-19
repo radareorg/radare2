@@ -144,8 +144,8 @@ static inline int r_asm_pseudo_fill(RAsmOp *op, char *input) {
 	if (size > 0) {
 		ut8 *buf = malloc (size);
 		if (buf) {
-			for (i = 0; i < size; i += sizeof(value)) {
-				memcpy (&buf[i], &value, sizeof(value));
+			for (i = 0; i < size; i += sizeof (value)) {
+				memcpy (&buf[i], &value, sizeof (value));
 			}
 			r_asm_op_set_buf (op, buf, size);
 			free (buf);

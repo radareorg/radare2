@@ -45,9 +45,17 @@ static bool set_arch(RCore *c, const char *name) {
 		};
 		RArchSession *as = r_arch_session_new (a, ap, &setup);
 		if (as) {
+			r_arch_session_unref (c->assembler->asd);
 			c->assembler->asd = as;
+			r_arch_session_ref (c->assembler->asd);
+			//
+			r_arch_session_unref (c->assembler->asd);
 			c->assembler->asa = as;
+			r_arch_session_ref (c->assembler->asd);
+			//
+			r_arch_session_unref (c->anal->as);
 			c->anal->as = as;
+			r_arch_session_ref (c->anal->as);
 			// c->assembler->asd = as;
 			return true;
 		}
