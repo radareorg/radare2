@@ -111,8 +111,7 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 		// section in which currenct xref lies
 		if (vtable_addr_in_text_section (context, xref->addr)) {
 			ut8 buf[VTABLE_BUFF_SIZE];
-			int res = context->anal->iob.read_at (context->anal->iob.io, xref->addr, buf, sizeof (buf));
-			if (res != sizeof (buf)) {
+			if (!context->anal->iob.read_at (context->anal->iob.io, xref->addr, buf, sizeof (buf))) {
 				continue;
 			}
 
