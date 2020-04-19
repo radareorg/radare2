@@ -21,30 +21,14 @@ static bool is_valid_setup (RArchSetup *setup, RArchPlugin *ap) {
 		is_valid_cpu (setup->cpu, ap);
 }
 
-R_API bool r_arch_session_can_decode(RArchSession *ai) {
+R_API bool r_arch_session_can_xxcode(RArchSession *ai, RArchInputOptions inopt, RArchOutputOptions outopt) {
 	r_return_val_if_fail (ai && ai->cur, false);
-	return ai->cur->decode;
+	return (inopt & ai->cur->inopts) && (outopt & ai->cur->outopts);
 }
 
-R_API bool r_arch_session_can_encode(RArchSession *ai) {
+R_API bool r_arch_session_xxcode(RArchSession *ai, RArchInstruction *ins, RArchInputOptions inopt, RArchOutputOptions outopt) {
 	r_return_val_if_fail (ai && ai->cur, false);
-	return ai->cur->encode;
-}
-
-R_API bool r_arch_session_encode(RArchSession *ai, RArchInstruction *ins, RArchOptions opt) {
-	r_return_val_if_fail (ai && ai->cur, false);
-	if (ai->cur->encode) {
-		return ai->cur->encode (ai, ins, opt);
-	}
-	return false;
-}
-
-R_API bool r_arch_session_decode(RArchSession *ai, RArchInstruction *ins, RArchOptions opt) {
-	r_return_val_if_fail (ai && ai->cur, false);
-	if (ai->cur->decode) {
-		return ai->cur->decode (ai, ins, opt);
-	}
-	return false;
+	return ai->cur->xxcode (ai, ins, inopt, outopt);
 }
 
 R_API void r_arch_session_free(RArchSession *as) {

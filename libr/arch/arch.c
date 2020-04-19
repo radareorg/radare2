@@ -36,7 +36,7 @@ R_API void r_arch_free(RArch *arch) {
 }
 
 static bool is_plugin_valid(RArchPlugin *p) {
-	return p->name && p->author && (p->encode || p->decode) && p->default_setup;
+	return p->name && p->author && p->xxcode && p->default_setup && p->inopts && p->outopts;
 }
 
 R_API bool r_arch_add(RArch *a, RArchPlugin *foo) {

@@ -20,14 +20,21 @@ typedef enum r_arch_endian_t {
 	R_ARCH_ENDIAN_BI = 1 << 3,
 } RArchEndian;
 
-typedef enum r_arch_decode_options_t {
-	R_ARCH_OPTION_CODE = 1 << 0, // 1,
-	R_ARCH_OPTION_SIZE = 1 << 1, // 2,
-	R_ARCH_OPTION_ANAL = 1 << 2, //4,
-	R_ARCH_OPTION_ESIL = 1 << 3, //8,
-	R_ARCH_OPTION_OPEX = 1 << 4, //16,
-	R_ARCH_OPTION_DESC = 1 << 5, // 32, // instruction description
-} RArchOptions;
+typedef enum r_arch_output_options_t {
+	R_ARCH_OUTOPT_CODE = 1 << 0,
+	R_ARCH_OUTOPT_SIZE = 1 << 1,
+	R_ARCH_OUTOPT_ANAL = 1 << 2,
+	R_ARCH_OUTOPT_ESIL = 1 << 3,
+	R_ARCH_OUTOPT_OPEX = 1 << 4,
+	R_ARCH_OUTOPT_DESC = 1 << 5,
+	R_ARCH_OUTOPT_DATA = 1 << 6,
+} RArchOutputOptions;
+
+typedef enum r_arch_input_options_t {
+	R_ARCH_INOPT_CODE = 1 << 0,
+	R_ARCH_INOPT_DATA = 1 << 1,
+	R_ARCH_INOPT_ESIL = 1 << 3,
+} RArchInputOptions;
 
 typedef enum r_arch_syntax_t {
 	R_ARCH_SYNTAX_NONE = 0,
@@ -93,16 +100,13 @@ typedef struct r_arch_session {
 
 typedef bool (*RArchPluginCallback)(RArch *a);
 typedef bool (*RArchSessionCallback)(RArchSession *a);
-typedef bool (*RArchEncodeCallback)(RArchSession *a, RArchInstruction *ins, RArchOptions options);
-typedef bool (*RArchDecodeCallback)(RArchSession *a, RArchInstruction *ins, RArchOptions options);
+typedef bool (*RArchXXcodeCallback)(RArchSession *a, RArchInstruction *ins, RArchInputOptions inopt, RArchOutputOptions outopt);
 typedef bool (*RArchDefaultSetupCallback)(RArchSetup *as);
 
 R_API RArchSession *r_arch_session_new(RArch *a, RArchPlugin *ap, RArchSetup *setup);
 R_API void r_arch_session_free(RArchSession *as);
-R_API bool r_arch_session_can_decode(RArchSession *ai);
-R_API bool r_arch_session_can_encode(RArchSession *ai);
-R_API bool r_arch_session_encode(RArchSession *ai, RArchInstruction *ins, RArchOptions opt);
-R_API bool r_arch_session_decode(RArchSession *ai, RArchInstruction *ins, RArchOptions opt);
+R_API bool r_arch_session_can_xxcode(RArchSession *ai, RArchInputOptions inopt, RArchOutputOptions outopt);
+R_API bool r_arch_session_xxcode(RArchSession *ai, RArchInstruction *ins, RArchInputOptions inopt, RArchOutputOptions outopt);
 R_REF_FUNCTIONS(RArchSession, r_arch_session);
 
 typedef struct r_arch_plugin_t {
@@ -111,6 +115,8 @@ typedef struct r_arch_plugin_t {
 	const char *arch;
 	const char *cpus;
 	const char *features;
+	RArchInputOptions inopts;
+	RArchOutputOptions outopts;
 	// RArchSetup setup;
 	RArchBits bits;
 	RArchEndian endian;
@@ -120,8 +126,7 @@ typedef struct r_arch_plugin_t {
 	const char *license;
 	const char *version;
 	// callbacks
-	RArchEncodeCallback encode;
-	RArchDecodeCallback decode;
+	RArchXXcodeCallback xxcode;
 	RArchPluginCallback init;
 	RArchPluginCallback fini;
 	RArchSessionCallback init_session;

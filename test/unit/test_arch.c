@@ -9,17 +9,16 @@ static bool test_default_setup(RArchSetup *setup) {
 	return true;
 }
 
-static bool test_encode(RArchSession *as, RArchInstruction *ins, RArchOptions options) {
-	return false;
-}
-
-static bool test_decode(RArchSession *as, RArchInstruction *ins, RArchOptions options) {
+static bool test_xxcode(RArchSession *as, RArchInstruction *ins, RArchInputOptions inopt, RArchOutputOptions outopt) {
 	int data_len;
+	if (!(inopt & R_ARCH_INOPT_DATA)) {
+		return false;
+	}
 	ut8 *data = r_strbuf_getbin (&ins->data, &data_len);
 	if (data_len != 1 || data[0] != 0x90) {
 		return false;
 	}
-	if (options & R_ARCH_OPTION_CODE) {
+	if (outopt & R_ARCH_OUTOPT_CODE) {
 		r_strbuf_set (&ins->code, "nop");
 	}
 	return true;
@@ -34,8 +33,9 @@ static RArchPlugin test_plugin = {
 	.bits = 8 | 32,
 	.cpus = "test_cpu,radare2_cpu",
 	.default_setup = test_default_setup,
-	.encode = test_encode,
-	.decode = test_decode,
+	.inopts = R_ARCH_INOPT_DATA,
+	.outopts = R_ARCH_OUTOPT_CODE,
+	.xxcode = test_xxcode,
 };
 
 bool test_register_plugin(void) {
@@ -89,8 +89,12 @@ bool test_session(void) {
 	mu_assert_eq (as->setup.syntax, R_ARCH_SYNTAX_INTEL, "my_setup syntax");
 	mu_assert_null (as->setup.cpu, "my_setup cpu");
 
-	mu_assert ("test_plugin can encode", r_arch_session_can_encode (as));
-	mu_assert ("test_plugin can decode", r_arch_session_can_decode (as));
+	bool can_xxcode = r_arch_session_can_xxcode (as, R_ARCH_INOPT_DATA, R_ARCH_OUTOPT_CODE);
+	mu_assert ("data2code is supported", can_xxcode);
+	can_xxcode = r_arch_session_can_xxcode (as, R_ARCH_INOPT_DATA, R_ARCH_OUTOPT_ESIL);
+	mu_assert ("data2esil is not supported", !can_xxcode);
+	can_xxcode = r_arch_session_can_xxcode (as, R_ARCH_INOPT_CODE, R_ARCH_OUTOPT_DATA);
+	mu_assert ("code2data is not supported", !can_xxcode);
 
 	r_arch_session_unref (as);
 
@@ -106,11 +110,11 @@ bool test_data2code(void) {
 
 	RArchInstruction ins;
 	r_arch_instruction_init_data (&ins, 0xdeadbeef, (const ut8 *)"\x00", 1);
-	bool res = r_arch_session_decode (as, &ins, R_ARCH_OPTION_CODE);
+	bool res = r_arch_session_xxcode (as, &ins, R_ARCH_INOPT_DATA, R_ARCH_OUTOPT_CODE);
 	mu_assert ("invalid instruction returns false", !res);
 
 	r_arch_instruction_init_data (&ins, 0xdeadbeef, (const ut8 *)"\x90", 1);
-	res = r_arch_session_decode (as, &ins, R_ARCH_OPTION_CODE);
+	res = r_arch_session_xxcode (as, &ins, R_ARCH_INOPT_DATA, R_ARCH_OUTOPT_CODE);
 	mu_assert ("valid instruction returns true", res);
 
 	mu_assert_streq (r_strbuf_get (&ins.code), "nop", "0x90 is nop");
