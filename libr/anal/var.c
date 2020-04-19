@@ -121,6 +121,11 @@ static void shadow_var_struct_members(RAnalVar *var) {
 
 R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name) {
 	r_return_val_if_fail (fcn && name, NULL);
+	RAnalVar *existing = r_anal_function_get_var_byname (fcn, name);
+	if (existing) {
+		// var name already exists
+		return NULL;
+	}
 	RRegItem *reg = NULL;
 	if (!kind) {
 		kind = R_ANAL_VAR_KIND_BPV;
@@ -269,19 +274,18 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, u
 	if (!inst_accesses) {
 		return ST64_MAX;
 	}
-	RAnalVar *found_var = NULL;
+	RAnalVar *var = NULL;
 	void **it;
 	r_pvector_foreach (inst_accesses, it) {
-		RAnalVar *var = *it;
-		if (var->delta == delta) {
-			found_var = var;
+		RAnalVar *v = *it;
+		if (v->delta == delta) {
+			var = v;
 			break;
 		}
 	}
-	if (!found_var) {
+	if (!var) {
 		return ST64_MAX;
 	}
-	RAnalVar *var = r_pvector_at (inst_accesses, 0);
 	size_t index;
 	r_vector_lower_bound (&var->accesses, offset, index, ACCESS_CMP);
 	RAnalVarAccess *acc = NULL;
