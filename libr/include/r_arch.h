@@ -31,9 +31,17 @@ typedef struct r_arch_setup_t {
 	char *cpu;
 } RArchSetup;
 
+typedef struct r_arch_callbacks_t {
+	void *user;
+	int (*read_at)(void *user, ut64 addr, R_OUT ut8 *buf, size_t len);
+	ut64 (*get_offset)(void *user, const char *name);
+	const char *(*get_name)(void *user, ut64 addr);
+} RArchCallbacks;
+
 typedef struct r_arch_t {
 	RList *plugins;
-	RIOBind iob;
+	RArchCallbacks cbs;
+	RIOBind iob; //  deprecate
 } RArch;
 
 typedef struct r_arch_info_t {
@@ -61,12 +69,6 @@ typedef struct r_arch_instruction_t {
 
 
 typedef struct r_arch_plugin_t *RArchPluginP;
-
-typedef struct r_arch_callbacks_t {
-	int (*read_at)(void *user, ut64 addr, R_OUT ut8 *buf, size_t len);
-	ut64 (*get_offset)(void *user, const char *name);
-	const char *(*get_name)(void *user, ut64 addr);
-} RArchCallbacks;
 
 typedef struct r_arch_session {
 	RArch *arch;

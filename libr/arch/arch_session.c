@@ -110,6 +110,7 @@ R_API RArchSession *r_arch_session_new(RArch *a, RArchPlugin *ap, RArchSetup *se
 		if (ap && ap->init_session) {
 			ap->init_session (ai);
 		}
+		ai->cbs = &a->cbs; // use ref maybe
 		r_arch_session_set_syntax (ai, setup->syntax);
 		r_arch_session_set_bits (ai, setup->bits);
 		r_arch_session_set_endian (ai, setup->endian);

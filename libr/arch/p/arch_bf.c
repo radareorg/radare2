@@ -79,10 +79,10 @@ static bool decode(RArchSession *a, RArchInstruction *ins, RArchOptions opt) {
 					if (tried) {
 						break;
 					}
-					if (a->arch && a->arch->iob.io) {
+					if (a->cbs && a->cbs->read_at) {
 						size_t d = p - data;
 						memset (mydata, 0, sizeof (mydata));
-						(void)a->arch->iob.read_at (a->arch->iob.io, ins->addr + d, mydata, sizeof (mydata) - 1);
+						(void)a->cbs->read_at (a->cbs->user, ins->addr + d, mydata, sizeof (mydata) - 1);
 						data = (const char *)mydata;
 						tried = true;
 						p = data;
@@ -107,7 +107,7 @@ static bool decode(RArchSession *a, RArchInstruction *ins, RArchOptions opt) {
 				char rew[512] = {0};
 				int rew_len = R_MIN (ins->addr, sizeof (rew));
 				ut64 addr = (ins->addr > sizeof (rew))? ins->addr - sizeof (rew): 0;
-				(void)a->arch->iob.read_at (a->arch->iob.io, addr, (ut8*)rew, rew_len);
+				(void)a->cbs->read_at (a->cbs->user, addr, (ut8*)rew, rew_len);
 				rew[rew_len - 1] = 0;
 				int nest = 1;
 				char *last = rew + strlen (rew);

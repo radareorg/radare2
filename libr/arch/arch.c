@@ -18,7 +18,6 @@ R_API RArch *r_arch_new() {
 		return NULL;
 	}
 	a->plugins = r_list_newf ((RListFree)plugin_free);
-	// a->plugins->user = a;
 	if (!a->plugins) {
 		free (a);
 		return NULL;
