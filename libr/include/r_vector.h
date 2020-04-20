@@ -61,7 +61,7 @@ R_API void r_vector_init(RVector *vec, size_t elem_size, RVectorFree free, void 
 R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user);
 
 // clears the vector and calls vec->free on every element if set.
-R_API void r_vector_clear(RVector *vec);
+R_API void r_vector_fini(RVector *vec);
 
 // frees the vector and calls vec->free on every element if set.
 R_API void r_vector_free(RVector *vec);
@@ -72,6 +72,11 @@ R_API RVector *r_vector_clone(RVector *vec);
 static inline bool r_vector_empty(const RVector *vec) {
 	r_return_val_if_fail (vec, false);
 	return vec->len == 0;
+}
+
+// backward compat
+R_DEPRECATE static inline void r_vector_clear(RVector *vec) {
+	r_vector_fini (vec);
 }
 
 // returns a pointer to the offset inside the array where the element of the index lies.

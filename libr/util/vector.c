@@ -54,16 +54,11 @@ static void vector_free_elems(RVector *vec) {
 	}
 }
 
-R_API void r_vector_clear(RVector *vec) {
-	vector_free_elems (vec);
-	R_FREE (vec->a);
-	vec->capacity = 0;
-}
-
 R_API void r_vector_fini(RVector *vec) {
 	if (vec) {
 		vector_free_elems (vec);
 		free (vec->a);
+		vec->capacity = 0;
 	}
 }
 
