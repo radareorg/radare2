@@ -1,28 +1,5 @@
 // XXX we should use r_util apis only
 
-// Move to r_util ??
-int dex_read_uleb128(const ut8 *ptr, int size) {
-	ut8 len = dex_uleb128_len (ptr, size);
-	if (len > size) {
-		return 0;
-	}
-	const ut8 *in = ptr + len - 1;
-	ut32 result = 0;
-	ut8 shift = 0;
-	ut8 byte;
-
-	while(shift < 29 && len > 0) {
-		byte = *(in--);
-		result |= (byte & 0x7f << shift);
-		if (byte > 0x7f) {
-			break;
-		}
-		shift += 7;
-		len--;
-	}
-	return result;
-}
-
 #define LEB_MAX_SIZE 6
 int dex_uleb128_len(const ut8 *ptr, int size) {
 	int i = 1, result = *(ptr++);
