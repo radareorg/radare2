@@ -906,7 +906,7 @@ static RList *strings(RBinFile *bf) {
 			if (!ptr->string) {
 				goto out_error;
 			}
-			off = bin->strings[i] + dex_uleb128_len (buf, sizeof (buf));
+			off = bin->strings[i] + r_uleb128_len (buf, sizeof (buf));
 			if (off + len >= bin->size || off + len < len) {
 				free (ptr->string);
 				goto out_error;
