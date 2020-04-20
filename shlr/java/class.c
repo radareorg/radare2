@@ -955,7 +955,8 @@ R_API char *get_type_value_str(const char *arg_str, ut8 array_cnt) {
 	char *str = malloc (str_len + 1);
 	ut32 bytes_written = snprintf (str, str_len + 1, "%s", arg_str);
 	while (array_cnt > 0) {
-		bytes_written = snprintf (str + bytes_written, str_len - bytes_written, "[]");
+		strcpy (str + bytes_written, "[]");
+		bytes_written += 2;
 		array_cnt--;
 	}
 	return str;
@@ -4372,8 +4373,8 @@ R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz
 		IFDBG eprintf("r_bin_java_stack_map_frame_new: Parsing R_BIN_JAVA_STACK_FRAME_APPEND.\n");
 		// 1. Calculate the max index we want to copy from the list of the
 		// previous frames locals
-		ut16 k = stack_frame->tag - 251,
-		i = 0;
+		ut16 k = stack_frame->tag - 251;
+		ut32 i = 0;
 		// 2. Read the uoffset
 		stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
