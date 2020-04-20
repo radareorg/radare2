@@ -1455,7 +1455,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	}
 
 	ut64 nrel = get_num_relocs_dynamic_plt (bin);
-	ut64 pos = (rel->rva - plt_addr) / 4;
+	ut64 pos = (rel->rva - plt_addr) / WORDSIZE;
 
 	int res = r_buf_read_at (bin->b, p_plt_addr, buf, sizeof (buf));
 	if (res < 4) {
