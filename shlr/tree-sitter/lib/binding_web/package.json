@@ -1,0 +1,33 @@
+{
+  "name": "web-tree-sitter",
+  "version": "0.16.0",
+  "description": "Tree-sitter bindings for the web",
+  "main": "tree-sitter.js",
+  "types": "tree-sitter-web.d.ts",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha",
+    "prepublishOnly": "node check-artifacts-fresh.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tree-sitter/tree-sitter.git"
+  },
+  "keywords": [
+    "incremental",
+    "parsing"
+  ],
+  "author": "Max Brunsfeld",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tree-sitter/tree-sitter/issues"
+  },
+  "homepage": "https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_web",
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4",
+    "terser": "^3.17.0"
+  }
+}

@@ -22,7 +22,6 @@ DEBUGGER=1
 USE_MAGIC=0
 CSNEXT=0
 LOADLIBS=1
-USE_TREESITTER=0
 HAVE_FORK=1
 WANT_PTRACE_WRAP=1
 WITH_LIBR=0
@@ -168,13 +167,11 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "
-Optional Features:
+printf "\nOptional Features:
   --disable-debugger     disable native debugger features
   --with-sysmagic        force to use system's magic
   --with-capstone5       build next branch of the capstone repository
   --disable-loadlibs     disable loading plugins
-  --with-shell-parser    Compile with radare2-shell-parser experimental support
   --without-fork         disable fork
   --without-ptrace-wrap  disable ptrace-wrap build
   --with-libr            build libr.a and libr.dylib
@@ -189,10 +186,8 @@ Optional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku ) (USEROSTYPE=auto)
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
-  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)
-"
-printf "
-Some influential environment variables:
+  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)\n"
+printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPPFLAGS    C preprocessor flags
@@ -200,10 +195,8 @@ Some influential environment variables:
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor
-"
-printf "
-Report bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor\n"
+printf "\nReport bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -245,7 +238,7 @@ echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
 echo "PKG-CONFIG:  capstone openssl libuv"
-echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-loadlibs --with-shell-parser --without-fork --without-ptrace-wrap --with-libr --with-syscapstone --with-syszip --with-sysxxhash --without-gpl --with-openssl --without-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2"
+echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-loadlibs --without-fork --without-ptrace-wrap --with-libr --with-syscapstone --with-syszip --with-sysxxhash --without-gpl --with-openssl --without-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2"
 	exit 0
 	;;
 --cache-file)
@@ -295,7 +288,6 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-l
 "--with-sysmagic") USE_MAGIC="1"; ;;
 "--with-capstone5") CSNEXT="1"; ;;
 "--disable-loadlibs") LOADLIBS="0"; ;;
-"--with-shell-parser") USE_TREESITTER="1"; ;;
 "--without-fork") HAVE_FORK="0"; ;;
 "--without-ptrace-wrap") WANT_PTRACE_WRAP="0"; ;;
 "--with-libr") WITH_LIBR="1"; ;;
@@ -328,7 +320,7 @@ parse_options "$1"
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS HAVE_PATCH PATCH HAVE_GIT GIT HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC CSNEXT LOADLIBS USE_TREESITTER HAVE_FORK WANT_PTRACE_WRAP WITH_LIBR WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE_SIGACTION HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV WANT_LIBUV USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS HAVE_PATCH PATCH HAVE_GIT GIT HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC CSNEXT LOADLIBS HAVE_FORK WANT_PTRACE_WRAP WITH_LIBR WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE_SIGACTION HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV WANT_LIBUV USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL"
 
 create_environ
 
@@ -696,7 +688,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  R_CHECKS_LEVEL PREFIX HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIBUV USE_CAPSTONE HAVE_PTRACE USE_PTRACE_WRAP HAVE_FORK USE_TREESITTER VERSION USE_LIB_ZIP USE_LIB_MAGIC USE_LIB_XXHASH DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET USEROSTYPE LIBVERSION BUILD HOST TARGET ; do # REPORT
+for A in  R_CHECKS_LEVEL PREFIX HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIBUV USE_CAPSTONE HAVE_PTRACE USE_PTRACE_WRAP HAVE_FORK VERSION USE_LIB_ZIP USE_LIB_MAGIC USE_LIB_XXHASH DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET USEROSTYPE LIBVERSION BUILD HOST TARGET ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"

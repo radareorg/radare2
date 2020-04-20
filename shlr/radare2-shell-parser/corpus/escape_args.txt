@@ -1,0 +1,40 @@
+============================
+Escape special command chars
+============================
+
+pd 10\@test\>name
+
+---
+
+(commands
+  (arged_command
+    command: (cmd_identifier)
+    args: (args (arg (arg_identifier)))))
+
+
+====================
+Use newlines in echo
+====================
+
+?e "Hello\nWorld"
+
+---
+
+(commands
+  (arged_command
+    command: (cmd_identifier)
+    args: (args (arg (double_quoted_arg)))))
+
+
+===========
+Escape hash
+===========
+
+?e Hello\#World
+
+---
+
+(commands
+  (arged_command
+    command: (cmd_identifier)
+    args: (args (arg (arg_identifier)))))

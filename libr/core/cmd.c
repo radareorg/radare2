@@ -34,13 +34,11 @@
 static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
 static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>";
 
-#if USE_TREESITTER
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_r2cmd ();
 
 static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"";
 static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
-#endif
 
 R_API void r_save_panels_layout(RCore *core, const char *_name);
 R_API bool r_load_panels_layout(RCore *core, const char *_name);
@@ -4542,8 +4540,6 @@ out_finish:
 
 static int run_cmd_depth(RCore *core, char *cmd);
 
-#if USE_TREESITTER
-
 struct tsr2cmd_state {
 	TSParser *parser;
 	RCore *core;
@@ -6608,7 +6604,6 @@ static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lines, bo
 	core->cons->context->cmd_depth++;
 	return res;
 }
-#endif
 
 static int run_cmd_depth(RCore *core, char *cmd) {
 	char *rcmd;
@@ -6640,11 +6635,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
-#if USE_TREESITTER
 		return core_cmd_tsr2cmd (core, cstr, false, log)? 0: 1;
-#else
-		R_LOG_WARN ("No compilation support for radare2-shell-parser\n");
-#endif
 	}
 
 	int ret = false, i;

@@ -1,0 +1,53 @@
+=============
+Simple search
+=============
+
+/ "foo\x00"
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (double_quoted_arg)))))
+
+
+==============
+Not matching
+==============
+
+/! ff
+/!x 00
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))
+
+
+=======
+Reg exp
+=======
+
+/e /E.F/i
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))
+
+
+===================
+Search with nibbles
+===================
+
+/x ff..33
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))

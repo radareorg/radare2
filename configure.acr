@@ -26,8 +26,6 @@ ARG_WITH CSNEXT capstone5 build next branch of the capstone repository ;
 (( useful for static builds . see sys/static.sh ))
 ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
-ARG_WITH USE_TREESITTER shell-parser Compile with radare2-shell-parser experimental support ;
-
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap disable ptrace-wrap build ;
 
@@ -216,7 +214,7 @@ IFEQ WANT_PTRACE_WRAP 0 ; {
 ARG_WITH R_CHECKS_LEVEL=2 checks-level value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) ;
 
 REPORT R_CHECKS_LEVEL PREFIX HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIBUV USE_CAPSTONE HAVE_PTRACE USE_PTRACE_WRAP HAVE_FORK
-	USE_TREESITTER VERSION USE_LIB_ZIP USE_LIB_MAGIC USE_LIB_XXHASH DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM
+	VERSION USE_LIB_ZIP USE_LIB_MAGIC USE_LIB_XXHASH DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM
 	HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET USEROSTYPE LIBVERSION BUILD HOST TARGET ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
