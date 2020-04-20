@@ -2722,7 +2722,7 @@ static RBinElfReloc *populate_relocs_record(ELFOBJ *bin) {
 	return relocs;
 }
 
-RBinElfReloc *Elf_(r_bin_elf_get_relocs) (ELFOBJ *bin) {
+RBinElfReloc* Elf_(r_bin_elf_get_relocs) (ELFOBJ *bin) {
 	if (!bin || !bin->g_sections) {
 		return NULL;
 	}
