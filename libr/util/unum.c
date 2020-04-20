@@ -7,7 +7,6 @@
 #include <errno.h>
 #include <math.h>  /* for ceill */
 #include <r_util.h>
-#include <r_types.h>
 #define R_NUM_USE_CALC 1
 
 static ut64 r_num_tailff(RNum *num, const char *hex);
@@ -67,7 +66,6 @@ R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr) {
 	if (!num) {
 		return NULL;
 	}
-	r_ref_init (num);
 	num->value = 0LL;
 	num->callback = cb;
 	num->cb_from_value = cb2;

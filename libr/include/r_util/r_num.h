@@ -1,8 +1,6 @@
 #ifndef R_NUM_H
 #define R_NUM_H
 
-#include <r_types.h>
-
 #define R_NUMCALC_STRSZ 1024
 
 #ifdef __cplusplus
@@ -45,7 +43,6 @@ typedef struct r_num_t {
 	void *userptr;
 	int dbz; /// division by zero happened
 	RNumCalc nc;
-	R_REF_TYPE
 } RNum;
 
 typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, int *ok);
@@ -53,7 +50,6 @@ typedef const char *(*RNumCallback2)(struct r_num_t *self, ut64, int *ok);
 
 R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr);
 R_API void r_num_free(RNum *num);
-R_REF_FUNCTIONS (RNum, r_num)
 R_API char *r_num_units(char *buf, size_t len, ut64 number);
 R_API int r_num_conditional(RNum *num, const char *str);
 R_API ut64 r_num_calc(RNum *num, const char *str, const char **err);
