@@ -2625,9 +2625,7 @@ R_API bool r_core_init(RCore *core) {
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
 	core->assembler = r_asm_new ();
-	r_num_unref (core->assembler->num);
 	core->assembler->num = core->num;
-	r_num_ref (core->num);
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
@@ -2790,7 +2788,7 @@ R_API void r_core_fini(RCore *c) {
 
 	r_list_free (c->gadgets);
 	r_list_free (c->undos);
-	r_num_unref (c->num);
+	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
 	//r_core_file_free (c->file);
