@@ -55,9 +55,13 @@ static void vector_free_elems(RVector *vec) {
 }
 
 R_API void r_vector_fini(RVector *vec) {
+	r_vector_clear (vec);
+}
+
+R_API void r_vector_clear(RVector *vec) {
 	if (vec) {
 		vector_free_elems (vec);
-		free (vec->a);
+		R_FREE (vec->a);
 		vec->capacity = 0;
 	}
 }
@@ -226,11 +230,15 @@ R_API void r_pvector_clear(RPVector *vec) {
 	r_vector_clear (&vec->v);
 }
 
+R_API void r_pvector_fini(RPVector *vec) {
+	r_vector_clear (&vec->v);
+}
+
 R_API void r_pvector_free(RPVector *vec) {
 	if (!vec) {
 		return;
 	}
-	r_vector_clear (&vec->v);
+	r_vector_fini (&vec->v);
 	free (vec);
 }
 

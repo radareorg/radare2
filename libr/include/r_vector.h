@@ -74,10 +74,7 @@ static inline bool r_vector_empty(const RVector *vec) {
 	return vec->len == 0;
 }
 
-// backward compat
-R_DEPRECATE static inline void r_vector_clear(RVector *vec) {
-	r_vector_fini (vec);
-}
+R_API void r_vector_clear(RVector *vec);
 
 // returns a pointer to the offset inside the array where the element of the index lies.
 R_API void *r_vector_index_ptr(RVector *vec, size_t index);
