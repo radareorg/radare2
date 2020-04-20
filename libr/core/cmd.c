@@ -32,9 +32,9 @@
 //       whitespaces, because we let cmd_substitution_arg create
 //       new arguments
 static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
-static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>";
 
 #if USE_TREESITTER
+static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>";
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_r2cmd ();
 
