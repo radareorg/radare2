@@ -386,14 +386,16 @@ static void cmd_write_op (RCore *core, const char *input) {
 					printf ("  %s\n", name);
 				}
 				eprintf ("Available Encoders/Decoders: \n");
-				// TODO: do not hardcode
-				eprintf ("  base64\n");
-				eprintf ("  base91\n");
-				eprintf ("  punycode\n");
+				for (i = 0; ; i++) {
+					bits = ((ut64)1) << i;
+					const char *name = r_crypto_codec_name ((const RCryptoSelector)bits);
+					if (!name || !*name) break;
+					printf ("  %s\n", name);
+				}
 				eprintf ("Currently supported crypto algos:\n");
 				for (i = 0; ; i++) {
 					bits = ((ut64)1) << i;
-					const char *name = r_crypto_name (bits);
+					const char *name = r_crypto_name ((const RCryptoSelector)bits);
 					if (!name || !*name) break;
 					printf ("  %s\n", name);
 				}
