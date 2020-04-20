@@ -5,8 +5,6 @@
 #include <r_cons.h>
 #include <r_list.h>
 
-#define DB a->sdb_fcns
-
 #define ACCESS_CMP(x, y) ((x) - ((RAnalVarAccess *)y)->offset)
 
 R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type) {
@@ -347,21 +345,6 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 	return -1;
 }
 
-// Used for linking reg based arg and local-var like "mov [local_8h], rsi"
-static void r_anal_var_link(RAnal *a, ut64 addr, RAnalVar *var) {
-	const char *inst_key = sdb_fmt ("inst.0x%" PFMT64x ".lvar", addr);
-	const char *var_def = sdb_fmt ("0x%" PFMT64x ",%c,0x%x,0x%x", var->fcn->addr, var->kind, 1, var->delta);
-	sdb_set (DB, inst_key, var_def, 0);
-}
-
-#define SDB_VARUSED_FMT "qzdq"
-struct VarUsedType {
-	ut64 fcn_addr;
-	char *type;
-	ut32 scope;
-	st64 delta;
-};
-
 R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr) {
 	r_return_val_if_fail (fcn, NULL);
 	return ht_up_find (fcn->inst_vars, (st64)op_addr - (st64)fcn->addr, NULL);
@@ -386,38 +369,27 @@ R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr)
 	return var;
 }
 
-R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
-	RAnalVarAccess *found_acc = NULL;
+R_API RAnalVar *r_anal_var_get_dst_var(RAnalVar *var) {
 	RAnalVarAccess *acc;
 	r_vector_foreach (&var->accesses, acc) {
-		if (acc->type & R_ANAL_VAR_ACCESS_TYPE_READ) {
-			found_acc = acc;
-			break;
+		if (!(acc->type & R_ANAL_VAR_ACCESS_TYPE_READ)) {
+			continue;
+		}
+		ut64 addr = var->fcn->addr + acc->offset;
+		RPVector *used_vars = r_anal_function_get_vars_used_at (var->fcn, addr);
+		void **it;
+		r_pvector_foreach (used_vars, it) {
+			RAnalVar *used_var = *it;
+			if (used_var == var) {
+				continue;
+			}
+			RAnalVarAccess *other_acc = r_anal_var_get_access_at (used_var, addr);
+			if (other_acc && other_acc->type & R_ANAL_VAR_ACCESS_TYPE_WRITE) {
+				return used_var;
+			}
 		}
 	}
-	if (!found_acc) {
-		return NULL;
-	}
-	ut64 addr = faddr + found_acc->offset;
-
-	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".lvar", addr);
-	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
-	if (!var_def) {
-		free (inst_key);
-		return NULL;
-	}
-	struct VarUsedType vut;
-	RAnalVar *res = NULL;
-	RAnalFunction *fcn = NULL;
-	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
-		fcn = r_anal_get_function_at (anal, vut.fcn_addr);
-		if (fcn) {
-			res = r_anal_function_get_var (fcn, vut.type[0], vut.delta);
-		}
-		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
-	}
-	free (inst_key);
-	return res;
+	return NULL;
 }
 
 R_API void r_anal_var_set_access(RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr) {
@@ -467,6 +439,20 @@ R_API void r_anal_var_clear_accesses(RAnalVar *var) {
 		}
 	}
 	r_vector_clear (&var->accesses);
+}
+
+R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr) {
+	st64 offset = (st64)addr - (st64)var->fcn->addr;
+	size_t index;
+	r_vector_lower_bound (&var->accesses, offset, index, ACCESS_CMP);
+	if (index >= var->accesses.len) {
+		return NULL;
+	}
+	RAnalVarAccess *acc = r_vector_index_ptr (&var->accesses, index);
+	if (acc->offset == offset) {
+		return acc;
+	}
+	return NULL;
 }
 
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
@@ -715,8 +701,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 		argc = r_type_func_args_count (TDB, fname);
 	}
-	RPVector *used_vars = r_anal_function_get_vars_used_at (fcn, op->addr);
-	RAnalVar *var = used_vars && !r_pvector_empty (used_vars) ? r_pvector_at (used_vars, 0) : NULL;
 	for (i = 0; i < max_count; i++) {
 		const char *regname = r_anal_cc_arg (anal, fcn->cc, i);
 		if (regname) {
@@ -741,9 +725,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, anal->bits / 8, 1, vname);
 				if (newvar) {
 					r_anal_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
-				}
-				if (var && var->kind != R_ANAL_VAR_KIND_REG) {
-					r_anal_var_link (anal, op->addr, var);
 				}
 				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
 				free (name);
@@ -775,9 +756,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			if (newvar) {
 				r_anal_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
 			}
-			if (var && var->kind != R_ANAL_VAR_KIND_REG) {
-				r_anal_var_link (anal, op->addr, var);
-			}
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
 			free (vname);
 			(*count)++;
@@ -801,9 +779,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, anal->bits / 8, 1, vname);
 			if (newvar) {
 				r_anal_var_set_access (newvar, op->addr, R_ANAL_VAR_ACCESS_TYPE_READ, 0);
-			}
-			if (var && var->kind != R_ANAL_VAR_KIND_REG) {
-				r_anal_var_link (anal, op->addr, var);
 			}
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
 			free (vname);
