@@ -56,14 +56,14 @@ R_API bool r_arch_del(RArch *a, RArchPlugin *ap) {
 
 R_API RArchPlugin *r_arch_get_plugin(RArch *a, const char *name) {
 	r_return_val_if_fail (a && a->plugins, false);
-        RArchPlugin *h;
-        RListIter *iter;
-        r_list_foreach (a->plugins, iter, h) {
-                if (!strcmp (h->name, name) && h->arch) {
+	RArchPlugin *h;
+	RListIter *iter;
+	r_list_foreach (a->plugins, iter, h) {
+		if (!strcmp (h->name, name) && h->arch) {
 			return h;
-                }
-        }
-        return NULL;
+		}
+	}
+	return NULL;
 }
 
 // arch_info.c

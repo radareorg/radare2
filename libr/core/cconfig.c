@@ -40,20 +40,28 @@ static bool set_arch(RCore *c, const char *name) {
 		RArchSetup setup = {
 			.bits = r_config_get_i (c->config, "asm.bits"),
 			.cpu = strdup (r_config_get (c->config, "asm.cpu")),
-			.endian = r_config_get_i (c->config, "cfg.bigendian")? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE,
+			.endian = r_config_get_i (c->config, "cfg.bigendian")
+				? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE,
 			.syntax = r_config_get_i (c->config, "asm.syntax"),
 		};
 		RArchSession *as = r_arch_session_new (a, ap, &setup);
 		if (as) {
-			r_arch_session_unref (c->assembler->asd);
+			// asd
+			if (c->assembler->asd) {
+				r_arch_session_unref (c->assembler->asd);
+			}
 			c->assembler->asd = as;
 			r_arch_session_ref (c->assembler->asd);
-			//
-			r_arch_session_unref (c->assembler->asd);
+			// asa
+			if (c->assembler->asa) {
+				r_arch_session_unref (c->assembler->asa);
+			}
 			c->assembler->asa = as;
-			r_arch_session_ref (c->assembler->asd);
+			r_arch_session_ref (c->assembler->asa);
 			//
-			r_arch_session_unref (c->anal->as);
+			if (c->anal->as) {
+				r_arch_session_unref (c->anal->as);
+			}
 			c->anal->as = as;
 			r_arch_session_ref (c->anal->as);
 			// c->assembler->asd = as;
