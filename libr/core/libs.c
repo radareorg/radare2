@@ -103,7 +103,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (LANG, "language plugins", lang);
 	DF (ANAL, "analysis plugins", anal);
 	DF (ASM, "(dis)assembler plugins", asm);
-	DF (ARCH, "unified architecture plugins", arch);
+	DF (ARCH, "architecture plugins", arch);
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
