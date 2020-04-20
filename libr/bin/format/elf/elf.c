@@ -2732,7 +2732,7 @@ RBinElfReloc *Elf_(r_bin_elf_get_relocs) (ELFOBJ *bin) {
 	return ret;
 }
 
-RBinElfLib *Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
+RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 	RBinElfLib *ret = NULL;
 	int j, k;
 
