@@ -30,6 +30,7 @@ jobs:
             os: ubuntu-latest
             build_system: meson
             compiler: gcc
+            run_tests: true
             env:
               R2_CFG_NEWSHELL: 1
           - name: macos-clang-tests
