@@ -7,9 +7,10 @@ extern "C" {
 
 typedef struct {
 	char buf[32];
-	int len;
+	size_t len;
 	char *ptr;
-	int ptrlen;
+	size_t ptrlen;
+	bool ro;
 } RStrBuf;
 
 #define R_STRBUF_SAFEGET(sb) (r_strbuf_get (sb) ? r_strbuf_get (sb) : "")
