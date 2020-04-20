@@ -372,7 +372,7 @@ As mentioned in README.md, the API itself is maintained in a different
 repository. The API function definitions in C header files are derived
 from and documented in the radare2-bindings repository, found at:
 ```sh
-   git clone git://github.com/radare/radare2-bindings
+   git clone git://github.com/radareorg/radare2-bindings
 ```
 
 Currently the process of updating the header files from changed API
@@ -406,7 +406,7 @@ linux-arm and others, but the procedure is like this:
 
 The source of radare2 can be found in the following GitHub repository.
 ```sh
-   git clone git://github.com/radare/radare2
+   git clone git://github.com/radareorg/radare2
 ```
 Other packages radare2 depends on, such as Capstone, are pulled from
 their git repository as required.

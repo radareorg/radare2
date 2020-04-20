@@ -320,7 +320,7 @@ ifneq (${EXT_AR},a)
 endif
 endif
 ../../radare2-webui:
-	cd ../.. ; git clone --depth 1 https://github.com/radare/radare2-webui
+	cd ../.. ; git clone --depth 1 https://github.com/radareorg/radare2-webui
 
 ../../radare2-webui/dist/m: ../../radare2-webui
 ifeq ($(WITHOUT_PULL),1)
