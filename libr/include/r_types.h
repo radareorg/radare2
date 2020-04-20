@@ -663,7 +663,7 @@ typedef int RRef;
 #define r_ref_init(x) x->R_REF_NAME = 1
 #define r_unref(x,f) { assert (x->R_REF_NAME> 0); if (!--(x->R_REF_NAME)) { f(x); } }
 
-#define R_REF_TYPE RRef refcount;
+#define R_REF_TYPE RRef R_REF_NAME
 #define R_REF_FUNCTIONS(s, n) \
 static inline void n##_ref(s *x) { x->R_REF_NAME++; } \
 static inline void n##_unref(s *x) { r_unref (x, n##_free); }

@@ -42,7 +42,7 @@ if [ 1 = "${DOCFG}" ]; then
 	./configure --prefix="$PREFIX" --without-gpl --with-libr --without-libuv || exit 1
 fi
 ${MAKE} -j 8 || exit 1
-BINS="rarun2 rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 r2agent radiff2"
+BINS="rarun2 rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 r2agent radiff2 r2r"
 # shellcheck disable=SC2086
 for a in ${BINS} ; do
 (
