@@ -92,6 +92,7 @@ jobs:
       if: newshell
       run: |
         export R2_CFG_NEWSHELL=1
+
       run: |
         cd test
         radare2 -N -Qc 'e cfg.newshell' -
