@@ -576,7 +576,6 @@ module.exports = grammar({
 	    $.double_quoted_arg,
 	    $.single_quoted_arg,
 	    $.cmd_substitution_arg,
-	    $.math_arg,
 	    seq(
 		alias('(', $.arg_identifier),
 		$.args,
@@ -641,13 +640,6 @@ module.exports = grammar({
 
 	arg_identifier: $ => token(repeat1(ARG_IDENTIFIER_BASE)),
 	arg_identifier_brace: $ => token(repeat1(ARG_IDENTIFIER_BRACE)),
-	math_arg: $ => prec(2, choice(
-	    prec(2, seq($.arg_identifier, '+', $.arg_identifier)),
-	    prec(2, seq($.arg_identifier, '-', $.arg_identifier)),
-	    prec(2, seq($.arg_identifier, '*', $.arg_identifier)),
-	    prec(2, seq($.arg_identifier, '/', $.arg_identifier)),
-	    prec(3, seq('-', $.arg_identifier)),
-	)),
 	double_quoted_arg: $ => seq(
 	    '"',
 	    repeat(choice(

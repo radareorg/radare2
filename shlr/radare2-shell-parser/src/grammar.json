@@ -3316,10 +3316,6 @@
           "name": "cmd_substitution_arg"
         },
         {
-          "type": "SYMBOL",
-          "name": "math_arg"
-        },
-        {
           "type": "SEQ",
           "members": [
             {
@@ -3715,116 +3711,6 @@
             }
           ]
         }
-      }
-    },
-    "math_arg": {
-      "type": "PREC",
-      "value": 2,
-      "content": {
-        "type": "CHOICE",
-        "members": [
-          {
-            "type": "PREC",
-            "value": 2,
-            "content": {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "arg_identifier"
-                },
-                {
-                  "type": "STRING",
-                  "value": "+"
-                },
-                {
-                  "type": "SYMBOL",
-                  "name": "arg_identifier"
-                }
-              ]
-            }
-          },
-          {
-            "type": "PREC",
-            "value": 2,
-            "content": {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "arg_identifier"
-                },
-                {
-                  "type": "STRING",
-                  "value": "-"
-                },
-                {
-                  "type": "SYMBOL",
-                  "name": "arg_identifier"
-                }
-              ]
-            }
-          },
-          {
-            "type": "PREC",
-            "value": 2,
-            "content": {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "arg_identifier"
-                },
-                {
-                  "type": "STRING",
-                  "value": "*"
-                },
-                {
-                  "type": "SYMBOL",
-                  "name": "arg_identifier"
-                }
-              ]
-            }
-          },
-          {
-            "type": "PREC",
-            "value": 2,
-            "content": {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "arg_identifier"
-                },
-                {
-                  "type": "STRING",
-                  "value": "/"
-                },
-                {
-                  "type": "SYMBOL",
-                  "name": "arg_identifier"
-                }
-              ]
-            }
-          },
-          {
-            "type": "PREC",
-            "value": 3,
-            "content": {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "STRING",
-                  "value": "-"
-                },
-                {
-                  "type": "SYMBOL",
-                  "name": "arg_identifier"
-                }
-              ]
-            }
-          }
-        ]
       }
     },
     "double_quoted_arg": {

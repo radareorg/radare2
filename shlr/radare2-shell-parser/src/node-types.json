@@ -28,10 +28,6 @@
           "named": true
         },
         {
-          "type": "math_arg",
-          "named": true
-        },
-        {
           "type": "single_quoted_arg",
           "named": true
         }
@@ -852,10 +848,6 @@
         },
         {
           "type": "double_quoted_arg",
-          "named": true
-        },
-        {
-          "type": "math_arg",
           "named": true
         },
         {
@@ -8864,21 +8856,6 @@
     }
   },
   {
-    "type": "math_arg",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "arg_identifier",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "number",
     "named": true,
     "fields": {}
@@ -13873,19 +13850,7 @@
     "named": false
   },
   {
-    "type": "*",
-    "named": false
-  },
-  {
-    "type": "+",
-    "named": false
-  },
-  {
     "type": ",",
-    "named": false
-  },
-  {
-    "type": "-",
     "named": false
   },
   {
@@ -13898,10 +13863,6 @@
   },
   {
     "type": "./",
-    "named": false
-  },
-  {
-    "type": "/",
     "named": false
   },
   {
