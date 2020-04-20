@@ -261,7 +261,8 @@ if get_option('tree-sitter-sync')
 
   message('Copying files from @0@ to @1@'.format(tree_sitter_vc_path, tree_sitter_path))
   res = run_command('mkdir',  '-p @0@/lib'.format(tree_sitter_path).split())
-  res = run_command('cp',  '-r @0@/lib @1@/'.format(tree_sitter_vc_path, tree_sitter_path).split())
+  res = run_command('cp',  '-r @0@/lib/src @1@/lib'.format(tree_sitter_vc_path, tree_sitter_path).split())
+  res = run_command('cp',  '-r @0@/lib/include @1@/lib'.format(tree_sitter_vc_path, tree_sitter_path).split())
   message('Deleting @0@'.format(tree_sitter_vc_path))
   res = run_command('rm', '-rf @0@'.format(tree_sitter_vc_path).split())
 endif

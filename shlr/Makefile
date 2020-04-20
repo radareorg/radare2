@@ -336,8 +336,9 @@ tree-sitter/lib/src/lib.o:
 tree-sitter-sync:
 	rm -rf tree-sitter tree-sitter.vc
 	"$(SHELL)" clone_3rd_repo.sh tree-sitter.vc "${TS_URL}" "${TS_BRA}" "${TS_TIP}"
-	mkdir -p tree-sitter
-	cp -rf ./tree-sitter.vc/lib ./tree-sitter/
+	mkdir -p tree-sitter/lib
+	cp -rf ./tree-sitter.vc/lib/src ./tree-sitter/lib
+	cp -rf ./tree-sitter.vc/lib/include ./tree-sitter/lib
 	rm -rf tree-sitter.vc
 
 radare2-shell-parser-build: radare2-shell-parser/libshell-parser.$(EXT_AR)
