@@ -31,8 +31,7 @@ jobs:
             build_system: meson
             compiler: gcc
             run_tests: true
-            env:
-              R2_CFG_NEWSHELL: 1
+            newshell: true
           - name: macos-clang-tests
             os: macos-latest
             build_system: acr
@@ -90,6 +89,10 @@ jobs:
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+      if: newshell
+      run: |
+        export R2_CFG_NEWSHELL=1
+      run: |
         cd test
         radare2 -N -Qc 'e cfg.newshell' -
         make
