@@ -10,7 +10,7 @@ typedef struct {
 	size_t len;
 	char *ptr;
 	size_t ptrlen;
-	bool ro;
+	bool weakref;
 } RStrBuf;
 
 #define R_STRBUF_SAFEGET(sb) (r_strbuf_get (sb) ? r_strbuf_get (sb) : "")

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2019 - pancake */
+/* radare - LGPL - Copyright 2013-2020 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -94,7 +94,7 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 		sb->buf[l] = 0;
 	}
 	sb->len = l;
-	sb->ro = false;
+	sb->weakref = false;
 	return true;
 }
 
@@ -127,7 +127,7 @@ R_API bool r_strbuf_setptr(RStrBuf *sb, char *s, int len) {
 	}
 	sb->ptr = s;
 	sb->ptrlen = len;
-	sb->ro = true;
+	sb->weakref = true;
 	return true;
 }
 
@@ -218,7 +218,7 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 	if (l == 0) {
 		return true;
 	}
-	if (sb->ro) {
+	if (sb->weakref) {
 		return false;
 	}
 
@@ -274,7 +274,7 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 
 	r_return_val_if_fail (sb && fmt, -1);
 
-	if (sb->ro) {
+	if (sb->weakref) {
 		return false;
 	}
 	va_copy (ap2, ap);
@@ -314,7 +314,7 @@ R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {
 // TODO: expose aa r_strbuf_getdup() ?
 static inline char *get_strdup(RStrBuf *sb) {
 	return sb->ptr
-		? sb->ro
+		? sb->weakref
 			? r_mem_dup (sb->ptr, sb->len)
 			: sb->ptr
 		: strdup (sb->buf);
@@ -342,7 +342,7 @@ R_API void r_strbuf_free(RStrBuf *sb) {
 }
 
 R_API void r_strbuf_fini(RStrBuf *sb) {
-	if (sb && !sb->ro) {
+	if (sb && !sb->weakref) {
 		R_FREE (sb->ptr);
 		sb->len = 0;
 		sb->buf[0] = '\0';
