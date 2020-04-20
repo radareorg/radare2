@@ -62,6 +62,18 @@
 static int (*dyn_openpty)(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp) = NULL;
 static int (*dyn_login_tty)(int fd) = NULL;
 static id_t (*dyn_forkpty)(int *amaster, char *name, struct termios *termp, struct winsize *winp) = NULL;
+static void dyn_init(void) {
+	if (!dyn_openpty) {
+		dyn_openpty = r_lib_dl_sym (NULL, "openpty");
+	}
+	if (!dyn_login_tty) {
+		dyn_openpty = r_lib_dl_sym (NULL, "login_tty");
+	}
+	if (!dyn_forkpty) {
+		dyn_openpty = r_lib_dl_sym (NULL, "forkpty");
+	}
+}
+
 #endif
 
 #if EMSCRIPTEN
@@ -769,27 +781,12 @@ static int redirect_socket_to_pty(RSocket *sock) {
 #endif
 }
 
-
-
-#if HAVE_PTY
-
-static void dyn_init(void) {
-	if (!dyn_openpty) {
-		dyn_openpty = r_lib_dl_sym (NULL, "openpty");
-	}
-	if (!dyn_login_tty) {
-		dyn_openpty = r_lib_dl_sym (NULL, "login_tty");
-	}
-	if (!dyn_forkpty) {
-		dyn_openpty = r_lib_dl_sym (NULL, "forkpty");
-	}
-}
-#endif
-
 R_API int r_run_config_env(RRunProfile *p) {
 	int ret;
 
+#if HAVE_PTY
 	dyn_init ();
+#endif
 
 	if (!p->_program && !p->_system && !p->_runlib) {
 		printf ("No program, system or runlib rule defined\n");
