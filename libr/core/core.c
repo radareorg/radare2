@@ -3439,8 +3439,11 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		name = strdup (file);
 		fd = r_sandbox_open (file, O_RDWR, 0644);
 		if (fd == -1) {
-			fd = r_sandbox_open (file, O_RDONLY, 0644);
-			readonly = true;
+			fd = r_sandbox_open (file, O_RDWR | O_CREAT, 0644);
+			if (fd == -1) {
+				fd = r_sandbox_open (file, O_RDONLY, 0644);
+				readonly = true;
+			}
 		}
 	} else {
 		fd = r_file_mkstemp (file, &name);
