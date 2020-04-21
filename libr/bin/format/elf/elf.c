@@ -48,10 +48,12 @@
 
 #if R_BIN_ELF64
 #define WORDSIZE 0x8
+#define WORD_MAX UT64_MAX
 #define READWORD(x, i) READ64 (x, i)
 #define BREADWORD(x, i) BREAD64 (x, i)
 #else
 #define WORDSIZE 0x4
+#define WORD_MAX UT32_MAX
 #define READWORD(x, i) READ32 (x, i)
 #define BREADWORD(x, i) BREAD32 (x, i)
 #endif
@@ -1339,7 +1341,7 @@ static ut64 get_got_entry(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 p_sym_got_addr = Elf_(r_bin_elf_v2p_new) (bin, rel->rva);
 	ut64 addr = BREADWORD (bin->b, p_sym_got_addr);
 
-	return (!addr || addr == UT64_MAX) ? UT64_MAX : addr;
+	return (!addr || addr == WORD_MAX) ? UT64_MAX : addr;
 }
 
 static bool is_thumb_symbol(ut64 plt_addr) {
@@ -1450,7 +1452,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	}
 
 	ut64 base = r_buf_read_ble32_at (bin->b, p_plt_addr, bin->endian);
-	if (base == UT64_MAX) {
+	if (base == UT32_MAX) {
 		return UT64_MAX;
 	}
 
