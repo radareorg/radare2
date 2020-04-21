@@ -7,6 +7,7 @@
 
 R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v);
 R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v);
+R_API int r_uleb128_len (const ut8 *data, int size);
 R_API ut8 *r_uleb128_encode(const ut64 s, int *len);
 R_API const ut8 *r_leb128(const ut8 *data, st64 *v);
 R_API st64 r_sleb128(const ut8 **data, const ut8 *end);

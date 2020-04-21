@@ -1612,11 +1612,19 @@ R_API void r_anal_var_delete(RAnalVar *var);
 R_API ut64 r_anal_var_addr(RAnalVar *var);
 R_API void r_anal_var_set_access(RAnalVar *var, ut64 access_addr, int access_type, st64 stackptr);
 R_API void r_anal_var_clear_accesses(RAnalVar *var);
+
+// Get the access to var at exactly addr if there is one
+R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr);
+
 R_API int r_anal_var_get_argnum(RAnalVar *var);
 
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
-R_API RAnalVar *r_anal_get_link_function_var(RAnal *anal, ut64 faddr, RAnalVar *var);
+
+// Get the variable that var is written to at one of its accesses
+// Useful for cases where a register-based argument is written away into a stack variable,
+// so if var is the reg arg then this will return the stack var.
+R_API RAnalVar *r_anal_var_get_dst_var(RAnalVar *var);
 
 typedef struct r_anal_fcn_vars_cache {
 	RList *bvars;

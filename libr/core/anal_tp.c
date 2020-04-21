@@ -755,7 +755,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	RAnalVar *rvar, *bp_var;
 	RListIter *iter , *iter2;
 	r_list_foreach (list, iter, rvar) {
-		RAnalVar *lvar = r_anal_get_link_function_var (anal, fcn->addr, rvar);
+		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		RRegItem *i = r_reg_index_get (anal->reg, rvar->delta);
 		if (!i) {
 			continue;
