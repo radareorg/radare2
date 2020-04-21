@@ -53,8 +53,8 @@ R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
 	return true;
 }
 
-R_API bool r_strbuf_reserve(RStrBuf *sb, int len) {
-	r_return_val_if_fail (sb && len > 0, false);
+R_API bool r_strbuf_reserve(RStrBuf *sb, size_t len) {
+	r_return_val_if_fail (sb, false);
 
 	if ((sb->ptr && len < sb->ptrlen) || (!sb->ptr && len < sizeof (sb->buf))) {
 		return true;
