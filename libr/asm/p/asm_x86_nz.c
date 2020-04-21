@@ -4914,7 +4914,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 			op->is_good_flag = false;
 			char *num_str = r_str_trim_dup (str);
 			if (num_str) {
-				op->is_good_flag = !strcmp (num_str, "0xffffffffffffffff");
+				op->is_good_flag = !r_str_casecmp (num_str, "0xffffffffffffffff");
 				free (num_str);
 			}
 		}
