@@ -884,8 +884,10 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		if (col == -1) {
 			if (columnName == NULL && strcmp (operation, "uniq")) {
 				eprintf ("Invalid column name (%s) for (%s)\n", columnName, query);
-			} else if (*columnName == '[') {
-				col = atoi (columnName + 1);
+			} else if (columnName) {
+				if (*columnName == '[') {
+					col = atoi (columnName + 1);
+				}
 			}
 		}
 		if (!operation) {
