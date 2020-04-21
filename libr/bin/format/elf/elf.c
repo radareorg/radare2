@@ -2723,9 +2723,7 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs) (ELFOBJ *bin) {
 		return NULL;
 	}
 
-	RBinElfReloc *ret = populate_relocs_record (bin);
-
-	return ret;
+	return populate_relocs_record (bin);
 }
 
 RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
