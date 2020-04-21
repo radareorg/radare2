@@ -7,7 +7,7 @@ extern "C" {
 
 typedef struct {
 	char buf[32];
-	size_t len; // string length in chars
+	size_t len; // string length in chars or binary buffer size
 	char *ptr; // ptr replacing buf in case strlen > sizeof(buf)
 	size_t ptrlen; // string length + 1 or binary buffer size
 	bool weakref; // ptr is not owned
@@ -17,12 +17,12 @@ typedef struct {
 R_API RStrBuf *r_strbuf_new(const char *s);
 R_API bool r_strbuf_set(RStrBuf *sb, const char *s);
 R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len);
-R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int len);
+R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t len);
 R_API ut8* r_strbuf_getbin(RStrBuf *sb, int *len);
 R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...);
 R_API bool r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap);
 R_API bool r_strbuf_append(RStrBuf *sb, const char *s);
-R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, int l);
+R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l);
 R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s);
 R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...);
 R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap);

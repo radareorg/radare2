@@ -22,31 +22,41 @@ bool test_r_strbuf_append(void) {
 	mu_end;
 }
 
-bool test_r_strbuf_ptr(void) {
+bool test_r_strbuf_strong_string(void) {
+	// small string
 	RStrBuf *sa = r_strbuf_new ("");
-	RStrBuf *sb = r_strbuf_new (NULL);
-
 	r_strbuf_set (sa, "food");
-	mu_assert_eq (r_strbuf_length (sa), 5, "r_strbuf_set:food");
-	char *a = sa->ptr;
+	mu_assert_eq (r_strbuf_length (sa), 4, "r_strbuf_set:food");
+	mu_assert_eq (sa->len, 4, "len of string");
+	// ptrlen not used here
+	r_strbuf_free (sa);
+
+	// long string
+	sa = r_strbuf_new ("");
 	r_strbuf_set (sa, "VERYLONGTEXTTHATDOESNTFITINSIDETHESTRUCTBUFFER");
-	mu_assert_eq (r_strbuf_length (sa), 47, "r_strbuf_set:food");
-	mu_assert_eq (sa->len, 47, "r_strbuf_set:food");
-	mu_assert_eq (sa->ptrlen, 47, "r_strbuf_set:food");
-	char *b = sa->ptr;
-	mu_assert_neq ((ut64)(size_t)a, (ut64)(size_t)b, "sa->ptr after setbin");
-	bool res = r_strbuf_setbin (sa, (const ut8*)"food", -1);
-	mu_assert_eq (res, true, "setbin-1");
-	r_strbuf_set (sa, "food");
-	mu_assert_eq (r_strbuf_length (sa), 5, "r_srtbuf_setbin-1");
-	r_strbuf_setbin (sa, (const ut8*)"food", 4);
-	mu_assert_eq (r_strbuf_length (sa), 4, "r_srtbuf_setbin");
-	r_strbuf_setbin (sa, (const ut8*)"food", 5);
-	mu_assert_eq (r_strbuf_length (sa), 5, "r_srtbuf_setbin5");
-	r_strbuf_setptr (sa, "food", 5);
-	mu_assert_eq (r_strbuf_length (sa), 5, "r_srtbuf_setbin5");
+	mu_assert_eq (r_strbuf_length (sa), 46, "length from api");
+	mu_assert_eq (sa->len, 46, "len of string");
+	mu_assert_eq (sa->ptrlen, 47, "ptrlen of string");
+	r_strbuf_free (sa);
 
-	r_strbuf_fini (sa);
+	mu_end;
+}
+
+bool test_r_strbuf_strong_binary(void) {
+	RStrBuf *sa = r_strbuf_new ("");
+	bool res = r_strbuf_setbin (sa, (const ut8 *)"food", 4);
+	mu_assert ("setbin success", res);
+	mu_assert_memeq ((const ut8 *)r_strbuf_get (sa), (const ut8 *)"food", 4, "small binary data");
+	mu_assert_eq (sa->len, 4, "len of binary data");
+	mu_assert_eq (sa->ptrlen, 4, "ptrlen of binary data");
+	r_strbuf_free (sa);
+
+	sa = r_strbuf_new ("");
+	res = r_strbuf_setbin (sa, (const ut8 *)"VERYLONGTEXTTHATDOESNTFITINSIDETHESTRUCTBUFFER", 46);
+	mu_assert ("setbin success", res);
+	mu_assert_memeq ((const ut8 *)r_strbuf_get (sa), (const ut8 *)"VERYLONGTEXTTHATDOESNTFITINSIDETHESTRUCTBUFFER", 46, "big binary data");
+	mu_assert_eq (sa->len, 46, "len of binary data");
+	mu_assert_eq (sa->ptrlen, 46, "ptrlen of binary data");
 	r_strbuf_free (sa);
 
 	mu_end;
@@ -67,9 +77,11 @@ bool test_r_strbuf(void) {
 }
 
 bool all_tests() {
-	mu_run_test(test_r_strbuf);
-	mu_run_test(test_r_strbuf_ptr);
-	mu_run_test(test_r_strbuf_slice);
+	mu_run_test (test_r_strbuf);
+	mu_run_test (test_r_strbuf_append);
+	mu_run_test (test_r_strbuf_strong_string);
+	mu_run_test (test_r_strbuf_strong_binary);
+	mu_run_test (test_r_strbuf_slice);
 	return tests_passed != tests_run;
 }
 

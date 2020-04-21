@@ -71,17 +71,10 @@ R_API bool r_strbuf_reserve(RStrBuf *sb, int len) {
 	return true;
 }
 
-R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
+R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
 	r_return_val_if_fail (sb && s, false);
-	if (l < 0) {
-		l = strlen ((const char *)s);
-		sb->len = l;
-		sb->ptrlen = l + 1;
-	} else {
-		sb->len = l;
-		sb->ptrlen = l;
-	}
-
+	sb->len = l;
+	sb->ptrlen = l;
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
 		if (!ptr || l + 1 > sb->ptrlen) {
@@ -148,7 +141,12 @@ R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
 		r_strbuf_init (sb);
 		return true;
 	}
-	return r_strbuf_setbin (sb, (const ut8*)s, strlen (s) + 1);
+	size_t len = strlen (s);
+	if (!r_strbuf_setbin (sb, (const ut8*)s, len + 1)) {
+		return false;
+	}
+	sb->len = len;
+	return true;
 }
 
 R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
@@ -220,16 +218,16 @@ R_API bool r_strbuf_append(RStrBuf *sb, const char *s) {
 	return r_strbuf_append_n (sb, s, l);
 }
 
-R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
-	r_return_val_if_fail (sb, false);
-	r_return_val_if_fail (s && l >= 0, false);
+R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
+	r_return_val_if_fail (sb && s, false);
+
+	if (sb->weakref) {
+		return false;
+	}
 
 	// fast path if no chars to append
 	if (l == 0) {
 		return true;
-	}
-	if (sb->weakref) {
-		return false;
 	}
 
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
@@ -321,25 +319,24 @@ R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {
 	return (ut8 *)(sb->ptr ? sb->ptr : sb->buf);
 }
 
-// TODO: expose aa r_strbuf_getdup() ?
-static inline char *get_strdup(RStrBuf *sb) {
+static inline char *drain(RStrBuf *sb) {
 	return sb->ptr
 		? sb->weakref
-			? r_mem_dup (sb->ptr, sb->len)
+			? r_mem_dup (sb->ptr, sb->ptrlen)
 			: sb->ptr
 		: strdup (sb->buf);
 }
 
 R_API char *r_strbuf_drain(RStrBuf *sb) {
 	r_return_val_if_fail (sb, NULL);
-	char *ret = get_strdup (sb);
+	char *ret = drain (sb);
 	free (sb);
 	return ret;
 }
 
 R_API char *r_strbuf_drain_nofree(RStrBuf *sb) {
 	r_return_val_if_fail (sb, NULL);
-	char *ret = get_strdup (sb);
+	char *ret = drain (sb);
 	sb->ptr = NULL;
 	sb->len = 0;
 	sb->buf[0] = '\0';
