@@ -51,6 +51,8 @@
 #endif
 
 #define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
+#define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
+	((rel->rva - pltgot_addr - n_initial_unused_entries * WORDSIZE) / WORDSIZE)
 
 #if R_BIN_ELF64
 static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
@@ -1349,7 +1351,7 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = (rel->rva - got_addr - 0x3 * WORDSIZE) / WORDSIZE;
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
 
 	switch (rel->type) {
 	case R_ARM_JUMP_SLOT: {
@@ -1369,18 +1371,18 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
-	ut64 addr_jmprel = bin->dyn_info.dt_jmprel;
-	ut64 addr_got = bin->dyn_info.dt_mips_pltgot;
+	ut64 jmprel_addr = bin->dyn_info.dt_jmprel;
+	ut64 got_addr = bin->dyn_info.dt_mips_pltgot;
 
-	if (!addr_jmprel || !addr_got) {
+	if (!jmprel_addr || !got_addr) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = (rel->rva - addr_got - 0x2 * WORDSIZE) / WORDSIZE;
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x2);
 
 	ut8 buf[1024];
 	const ut8 *base;
-	ut64 plt_addr = addr_jmprel + bin->dyn_info.dt_pltrelsz;
+	ut64 plt_addr = jmprel_addr + bin->dyn_info.dt_pltrelsz;
 	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
 	int res = r_buf_read_at (bin->b, p_plt_addr, buf, sizeof (buf));
 	if (res != sizeof (buf)) {
@@ -1420,7 +1422,7 @@ static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = (rel->rva - got_addr - 0x2 * WORDSIZE) / WORDSIZE;
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x2);
 	return plt_addr + RISCV_PLT_OFFSET + pos * 0x10;
 }
 
@@ -1447,7 +1449,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	}
 
 	ut64 nrel = get_num_relocs_dynamic_plt (bin);
-	ut64 pos = (rel->rva - plt_addr) / WORDSIZE;
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, plt_addr, 0x0);
 
 	if (bin->endian) {
 		base -= (nrel * 16);
@@ -1527,7 +1529,7 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
 
 	if (pltsec_section) {
 		ut64 got_addr = bin->dyn_info.dt_pltgot;
-		ut64 pos = (rel->rva - got_addr - 0x3 * WORDSIZE) / WORDSIZE;
+		ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
 		return pltsec_section->rva + pos * 0x10;
 	}
 
