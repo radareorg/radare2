@@ -73,7 +73,9 @@ R_API bool r_strbuf_reserve(RStrBuf *sb, int len) {
 
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 	r_return_val_if_fail (sb && s, false);
-	r_return_val_if_fail (l >= 0, false);
+	if (l < 0) {
+		l = strlen ((const char *)s) + 1;
+	}
 
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
@@ -123,7 +125,7 @@ R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len) {
 R_API bool r_strbuf_setptr(RStrBuf *sb, char *s, int len) {
 	r_return_val_if_fail (sb, false);
 	if (len < 0) {
-		len = strlen (s);
+		len = strlen (s) + 1;
 	}
 	sb->ptr = s;
 	sb->ptrlen = len;
@@ -133,12 +135,11 @@ R_API bool r_strbuf_setptr(RStrBuf *sb, char *s, int len) {
 
 R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
 	r_return_val_if_fail (sb, false);
-
 	if (!s) {
 		r_strbuf_init (sb);
 		return true;
 	}
-	return r_strbuf_setbin (sb, (const ut8*)s, strlen (s));
+	return r_strbuf_setbin (sb, (const ut8*)s, strlen (s) + 1);
 }
 
 R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
@@ -337,8 +338,10 @@ R_API char *r_strbuf_drain_nofree(RStrBuf *sb) {
 }
 
 R_API void r_strbuf_free(RStrBuf *sb) {
-	r_strbuf_fini (sb);
-	free (sb);
+	if (sb) {
+		r_strbuf_fini (sb);
+		free (sb);
+	}
 }
 
 R_API void r_strbuf_fini(RStrBuf *sb) {
