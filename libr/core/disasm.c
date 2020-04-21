@@ -5536,7 +5536,7 @@ toro:
 
 			ds_cdiv_optimization (ds);
 			if (ds->show_bytes_right && ds->show_bytes) {
-				ds_comment (ds, true, "; ");
+				ds_comment (ds, true, "");
 				ds_print_show_bytes (ds);
 			}
 			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
