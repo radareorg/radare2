@@ -74,7 +74,12 @@ R_API bool r_strbuf_reserve(RStrBuf *sb, int len) {
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 	r_return_val_if_fail (sb && s, false);
 	if (l < 0) {
-		l = strlen ((const char *)s) + 1;
+		l = strlen ((const char *)s);
+		sb->len = l;
+		sb->ptrlen = l + 1;
+	} else {
+		sb->len = l;
+		sb->ptrlen = l;
 	}
 
 	if (l >= sizeof (sb->buf)) {
@@ -96,6 +101,7 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 		sb->buf[l] = 0;
 	}
 	sb->len = l;
+	sb->ptrlen = l;
 	sb->weakref = false;
 	return true;
 }
@@ -125,10 +131,13 @@ R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len) {
 R_API bool r_strbuf_setptr(RStrBuf *sb, char *s, int len) {
 	r_return_val_if_fail (sb, false);
 	if (len < 0) {
-		len = strlen (s) + 1;
+		sb->len = strlen (s);
+		sb->ptrlen = sb->len + 1;
+	} else {
+		sb->ptrlen = len;
+		sb->len = len;
 	}
 	sb->ptr = s;
-	sb->ptrlen = len;
 	sb->weakref = true;
 	return true;
 }

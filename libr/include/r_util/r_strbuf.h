@@ -7,10 +7,10 @@ extern "C" {
 
 typedef struct {
 	char buf[32];
-	size_t len;
-	char *ptr;
-	size_t ptrlen;
-	bool weakref;
+	size_t len; // string length in chars
+	char *ptr; // ptr replacing buf in case strlen > sizeof(buf)
+	size_t ptrlen; // string length + 1 or binary buffer size
+	bool weakref; // ptr is not owned
 } RStrBuf;
 
 #define R_STRBUF_SAFEGET(sb) (r_strbuf_get (sb) ? r_strbuf_get (sb) : "")
@@ -30,6 +30,7 @@ R_API char *r_strbuf_get(RStrBuf *sb);
 R_API char *r_strbuf_drain(RStrBuf *sb);
 R_API char *r_strbuf_drain_nofree(RStrBuf *sb);
 R_API int r_strbuf_length(RStrBuf *sb);
+R_API int r_strbuf_size(RStrBuf *sb);
 R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);
 R_API void r_strbuf_init(RStrBuf *sb);

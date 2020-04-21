@@ -28,11 +28,13 @@ bool test_r_strbuf_ptr(void) {
 
 	r_strbuf_set (sa, "food");
 	mu_assert_eq (r_strbuf_length (sa), 5, "r_strbuf_set:food");
-	r_strbuf_set (sa, "VERYLONGTEXTTHATDOESNTFITINSIDETHESTRUCTBUFFER");
 	char *a = sa->ptr;
+	r_strbuf_set (sa, "VERYLONGTEXTTHATDOESNTFITINSIDETHESTRUCTBUFFER");
 	mu_assert_eq (r_strbuf_length (sa), 47, "r_strbuf_set:food");
+	mu_assert_eq (sa->len, 47, "r_strbuf_set:food");
+	mu_assert_eq (sa->ptrlen, 47, "r_strbuf_set:food");
 	char *b = sa->ptr;
-	mu_assert_eq (a, b, "sa->ptr after setbin");
+	mu_assert_neq ((ut64)(size_t)a, (ut64)(size_t)b, "sa->ptr after setbin");
 	bool res = r_strbuf_setbin (sa, (const ut8*)"food", -1);
 	mu_assert_eq (res, true, "setbin-1");
 	r_strbuf_set (sa, "food");
