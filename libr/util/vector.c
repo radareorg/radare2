@@ -56,11 +56,10 @@ static void vector_free_elems(RVector *vec) {
 }
 
 R_API void r_vector_fini(RVector *vec) {
-	if (vec) {
-		r_vector_clear (vec);
-		vec->free = NULL;
-		vec->free_user = NULL;
-	}
+	r_return_if_fail (vec);
+	r_vector_clear (vec);
+	vec->free = NULL;
+	vec->free_user = NULL;
 }
 
 R_API void r_vector_clear(RVector *vec) {
@@ -71,9 +70,10 @@ R_API void r_vector_clear(RVector *vec) {
 }
 
 R_API void r_vector_free(RVector *vec) {
-	r_return_if_fail (vec);
-	r_vector_fini (vec);
-	free (vec);
+	if (vec) {
+		r_vector_fini (vec);
+		free (vec);
+	}
 }
 
 static bool vector_clone(RVector *dst, RVector *src) {
