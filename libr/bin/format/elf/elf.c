@@ -35,18 +35,20 @@
 #define READ32(x, i) r_read_ble32((x) + (i), bin->endian); (i) += 4
 #define READ64(x, i) r_read_ble64((x) + (i), bin->endian); (i) += 8
 
-#if R_BIN_ELF64
-#define READWORD(x, i) READ64 (x, i)
-#define WORDSIZE 0x8
-#else
-#define WORDSIZE 0x4
-#define READWORD(x, i) READ32 (x, i)
-#endif
-
 #define BREAD8(x, i) r_buf_read_ble8_at (x, i); (i) += 1
 #define BREAD16(x, i) r_buf_read_ble16_at (x, i, bin->endian); (i) += 2
 #define BREAD32(x, i) r_buf_read_ble32_at (x, i, bin->endian); (i) += 4
 #define BREAD64(x, i) r_buf_read_ble64_at (x, i, bin->endian); (i) += 8
+
+#if R_BIN_ELF64
+#define WORDSIZE 0x8
+#define READWORD(x, i) READ64 (x, i)
+#define BREADWORD(x, i) BREAD64 (x, i)
+#else
+#define WORDSIZE 0x4
+#define READWORD(x, i) READ32 (x, i)
+#define BREADWORD(x, i) BREAD32 (x, i)
+#endif
 
 #define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
 
@@ -1327,22 +1329,9 @@ static ut64 get_got_entry(ELFOBJ *bin, RBinElfReloc *rel) {
 	}
 
 	ut64 p_sym_got_addr = Elf_(r_bin_elf_v2p_new) (bin, rel->rva);
+	ut64 addr = BREADWORD (bin->b, p_sym_got_addr);
 
-	ut8 buf[WORDSIZE];
-	int res = r_buf_read_at (bin->b, p_sym_got_addr, buf, WORDSIZE);
-
-	if (res != WORDSIZE) {
-		return UT64_MAX;
-	}
-
-	size_t i = 0;
-	ut64 addr = READWORD (buf, i);
-
-	if (!addr) {
-		return UT64_MAX;
-	}
-
-	return addr;
+	return (!addr || addr == UT64_MAX) ? UT64_MAX : addr;
 }
 
 static bool is_thumb_symbol(ut64 plt_addr) {
@@ -1448,28 +1437,24 @@ static ut64 get_import_addr_sparc(ELFOBJ *bin, RBinElfReloc *rel) {
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
 	ut64 plt_addr = bin->dyn_info.dt_pltgot;
 	ut64 p_plt_addr = Elf_(r_bin_elf_v2p_new) (bin, plt_addr);
-
-	ut8 buf[4] = { 0 };
 	if (p_plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 base = r_buf_read_ble32_at (bin->b, p_plt_addr, bin->endian);
+	if (base == UT64_MAX) {
 		return UT64_MAX;
 	}
 
 	ut64 nrel = get_num_relocs_dynamic_plt (bin);
 	ut64 pos = (rel->rva - plt_addr) / WORDSIZE;
 
-	int res = r_buf_read_at (bin->b, p_plt_addr, buf, sizeof (buf));
-	if (res < 4) {
-		return UT64_MAX;
-	}
-
 	if (bin->endian) {
-		ut64 base = r_read_be32 (buf);
 		base -= (nrel * 16);
 		base += (pos * 16);
 		return base;
 	}
 
-	ut64 base = r_read_le32 (buf);
 	base -= (nrel * 12) + 20;
 	base += (pos * 8);
 	return base;
