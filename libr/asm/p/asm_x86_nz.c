@@ -4912,9 +4912,8 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		op->immediate = getnum (a, str);
 		if (op->immediate == -1) {
 			op->is_good_flag = false;
-			char *num_str = strdup (str);
+			char *num_str = r_str_trim_dup (str);
 			if (num_str) {
-				r_str_trim (num_str);
 				op->is_good_flag = !strcmp (num_str, "0xffffffffffffffff");
 				free (num_str);
 			}
