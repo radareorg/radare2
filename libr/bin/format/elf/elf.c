@@ -19,6 +19,12 @@
 #define MIPS_PLT_OFFSET 0x20
 #define RISCV_PLT_OFFSET 0x20
 
+#define RISCV_PLT_ENTRY_SIZE 0x10
+#define X86_PLT_ENTRY_SIZE 0x10
+
+#define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
+#define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
+
 #define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000LL
 #define ELF_PAGE_SIZE 12
 
@@ -1423,7 +1429,7 @@ static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
 	}
 
 	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x2);
-	return plt_addr + RISCV_PLT_OFFSET + pos * 0x10;
+	return plt_addr + RISCV_PLT_OFFSET + pos * RISCV_PLT_ENTRY_SIZE;
 }
 
 static ut64 get_import_addr_sparc(ELFOBJ *bin, RBinElfReloc *rel) {
@@ -1433,7 +1439,7 @@ static ut64 get_import_addr_sparc(ELFOBJ *bin, RBinElfReloc *rel) {
 	}
 	ut64 tmp = get_got_entry (bin, rel);
 
-	return (tmp == UT64_MAX) ? UT64_MAX : tmp - 0x6;
+	return (tmp == UT64_MAX) ? UT64_MAX : tmp + SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR;
 }
 
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RBinElfReloc *rel) {
@@ -1530,10 +1536,10 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RBinElfReloc *rel) {
 	if (pltsec_section) {
 		ut64 got_addr = bin->dyn_info.dt_pltgot;
 		ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
-		return pltsec_section->rva + pos * 0x10;
+		return pltsec_section->rva + pos * X86_PLT_ENTRY_SIZE;
 	}
 
-	return tmp - 0x6;
+	return tmp + X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR;
 }
 
 static ut64 get_import_addr(ELFOBJ *bin, int sym) {
