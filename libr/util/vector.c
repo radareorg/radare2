@@ -56,6 +56,8 @@ static void vector_free_elems(RVector *vec) {
 
 R_API void r_vector_fini(RVector *vec) {
 	r_vector_clear (vec);
+	vec->free = NULL;
+	vec->free_user = NULL;
 }
 
 R_API void r_vector_clear(RVector *vec) {
@@ -231,7 +233,7 @@ R_API void r_pvector_clear(RPVector *vec) {
 }
 
 R_API void r_pvector_fini(RPVector *vec) {
-	r_vector_clear (&vec->v);
+	r_vector_fini (&vec->v);
 }
 
 R_API void r_pvector_free(RPVector *vec) {

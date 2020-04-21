@@ -63,28 +63,28 @@ static bool _init_test_pvector2(RPVector *v, size_t len, size_t padding) {
 
 static bool test_vector_fini() {
 	RVector v;
-	r_vector_init (&v, sizeof (void *), NULL, NULL);
+	r_vector_init (&v, sizeof (void *), NULL, free);
 	r_vector_push (&v, &v);
 	mu_assert_eq_fmt (v.elem_size, 8UL, "init elem_size", "%lu");
-	mu_assert_eq_fmt (v.len, 1UL, "init len", "%lu");
+	mu_assert_eq (v.len, 1, "init len");
 	mu_assert_eq_fmt ((void*)(size_t)!v.a, NULL, "init a", "%p");
-	mu_assert_eq_fmt (v.capacity, 4UL, "init capacity", "%lu");
-	mu_assert_eq_fmt (v.free, (void *)0, "init free", "%p");
-	mu_assert_eq_fmt (v.free_user, (void *)0, "init free_user", "%p");
+	mu_assert_eq (v.capacity, 4, "init capacity");
+	mu_assert_null (v.free, "init free");
+	mu_assert_eq (v.free_user, (void*)free, "init free_user");
 	r_vector_clear (&v);
-	mu_assert_eq_fmt (v.elem_size, 8UL, "init elem_size", "%lu");
-	mu_assert_eq_fmt (v.len, 0UL, "init len", "%lu");
+	mu_assert_eq (v.elem_size, 8UL, "init elem_size");
+	mu_assert_eq (v.len, 0, "init len");
 	mu_assert_eq_fmt ((void*)(size_t)v.a, NULL, "init a", "%p");
-	mu_assert_eq_fmt (v.capacity, 0UL, "init capacity", "%lu");
-	mu_assert_eq_fmt (v.free, (void *)0, "init free", "%p");
-	mu_assert_eq_fmt (v.free_user, (void *)0, "init free_user", "%p");
+	mu_assert_eq (v.capacity, 0, "init capacity");
+	mu_assert_null (v.free, "init free");
+	mu_assert_eq (v.free_user, (void*)free, "init free_user");
 	r_vector_fini (&v);
 	mu_assert_eq_fmt (v.elem_size, 8UL, "init elem_size", "%lu");
-	mu_assert_eq_fmt (v.len, 0UL, "init len", "%lu");
+	mu_assert_eq (v.len, 0, "init len");
 	mu_assert_eq_fmt ((void*)(size_t)v.a, NULL, "init a", "%p");
-	mu_assert_eq_fmt (v.capacity, 0UL, "init capacity", "%lu");
+	mu_assert_eq (v.capacity, 0, "init capacity");
 	mu_assert_eq_fmt (v.free, (void *)0, "init free", "%p");
-	mu_assert_eq_fmt (v.free_user, (void *)0, "init free_user", "%p");
+	mu_assert_null (v.free_user, "init free_user");
 	mu_end;
 }
 
