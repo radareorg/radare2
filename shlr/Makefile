@@ -31,11 +31,6 @@ TS_URL=https://github.com/tree-sitter/tree-sitter.git
 TS_BRA=master
 TS_TIP=f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3
 
-# NOTE: when you update SHELLPARSER_TIP or SHELLPARSER_BRA, also update them in shlr/meson.build
-SHELLPARSER_URL=https://github.com/ret2libc/radare2-shell-parser.git
-SHELLPARSER_BRA=master
-SHELLPARSER_TIP=3d82cad9d865cb6e65364f66f038d1d1d4d8818a
-
 ifeq ($(CS_RELEASE),1)
 CS_VER=4.0.1
 CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
@@ -65,7 +60,7 @@ CS_REV=
 CS_PATCHES=1
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync radare2-shell-parser-sync
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs tree-sitter-sync
 
 HOST_CC?=gcc
 SHLR?=$(shell pwd)
@@ -329,37 +324,37 @@ else
 	cd ../../radare2-webui/www/m && git pull ; npm i ; $(MAKE) release
 endif
 
-ifeq ($(USE_TREESITTER),1)
 tree-sitter-build: tree-sitter/libtree-sitter.$(EXT_AR)
 
 tree-sitter/libtree-sitter.$(EXT_AR): tree-sitter/lib/src/lib.o
 	$(AR) rvs $@ $<
 	$(RANLIB) $@
 
-tree-sitter/lib/src/lib.o: tree-sitter-sync
+tree-sitter/lib/src/lib.o:
 	$(CC) -std=c99 -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
 
 tree-sitter-sync:
-	"$(SHELL)" clone_3rd_repo.sh tree-sitter "${TS_URL}" "${TS_BRA}" "${TS_TIP}"
+	rm -rf tree-sitter tree-sitter.vc
+	"$(SHELL)" clone_3rd_repo.sh tree-sitter.vc "${TS_URL}" "${TS_BRA}" "${TS_TIP}"
+	mkdir -p tree-sitter/lib
+	cp -rf ./tree-sitter.vc/lib/src ./tree-sitter/lib
+	cp -rf ./tree-sitter.vc/lib/include ./tree-sitter/lib
+	rm -rf tree-sitter.vc
 
 radare2-shell-parser-build: radare2-shell-parser/libshell-parser.$(EXT_AR)
 
-radare2-shell-parser/libshell-parser.$(EXT_AR): radare2-shell-parser/src/parser.o
-	$(AR) rvs $@ $<
+radare2-shell-parser/libshell-parser.$(EXT_AR): radare2-shell-parser/src/parser.o radare2-shell-parser/src/scanner.o
+	$(AR) rvs $@ radare2-shell-parser/src/parser.o radare2-shell-parser/src/scanner.o
 	$(RANLIB) $@
 
-radare2-shell-parser/src/parser.o: radare2-shell-parser-sync
+radare2-shell-parser/src/parser.o: radare2-shell-parser/src/parser.c
 	$(CC) -c radare2-shell-parser/src/parser.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
 
-radare2-shell-parser-sync: tree-sitter-sync
-	"$(SHELL)" clone_3rd_repo.sh radare2-shell-parser "${SHELLPARSER_URL}" "${SHELLPARSER_BRA}" "${SHELLPARSER_TIP}"
+radare2-shell-parser/src/scanner.o: radare2-shell-parser/src/scanner.c
+	$(CC) -c radare2-shell-parser/src/scanner.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
 
 SHLRS+=tree-sitter/libtree-sitter.a
 SHLRS+=radare2-shell-parser/libshell-parser.a
-else
-tree-sitter-build:
-radare2-shell-parser-build:
-endif
 
 www-sync-m sync-www-m: ../../radare2-webui/dist/m
 	cp -rf ../../radare2-webui/dist/m www/m.tmp

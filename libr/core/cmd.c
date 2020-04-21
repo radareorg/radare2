@@ -27,20 +27,17 @@
 #include <sys/utsname.h>
 #endif
 
+#include <tree_sitter/api.h>
+TSLanguage *tree_sitter_r2cmd ();
+
 // NOTE: this should be in sync with SPECIAL_CHARACTERS in
 //       radare2-shell-parser grammar, except for ", ' and
 //       whitespaces, because we let cmd_substitution_arg create
 //       new arguments
 static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
-
-#if USE_TREESITTER
 static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>";
-#include <tree_sitter/api.h>
-TSLanguage *tree_sitter_r2cmd ();
-
 static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"";
 static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
-#endif
 
 R_API void r_save_panels_layout(RCore *core, const char *_name);
 R_API bool r_load_panels_layout(RCore *core, const char *_name);
@@ -4542,8 +4539,6 @@ out_finish:
 
 static int run_cmd_depth(RCore *core, char *cmd);
 
-#if USE_TREESITTER
-
 struct tsr2cmd_state {
 	TSParser *parser;
 	RCore *core;
@@ -5085,6 +5080,7 @@ DEFINE_HANDLE_TS_FCN(redirect_command) {
 
 	TSNode redirect_op = ts_node_child_by_field_name (node, "redirect_operator", strlen ("redirect_operator"));
 	if (is_ts_fdn_redirect_operator (redirect_op)) {
+		// this is the default operation, no html and no append
 	} else if (is_ts_fdn_append_operator (redirect_op)) {
 		is_append = true;
 	} else if (is_ts_html_redirect_operator (redirect_op)) {
@@ -5405,7 +5401,7 @@ DEFINE_HANDLE_TS_FCN(tmp_reli_command) {
 	ut64 orig_offset = state->core->offset;
 	ut64 addr = r_num_math (core->num, arg_str);
 	if (addr) {
-		r_core_cmdf (core, "so %d", addr);
+		r_core_cmdf (core, "so %" PFMT64d, addr);
 	}
 	bool res = handle_ts_command_tmpseek (state, command);
 	r_core_seek (state->core, orig_offset, true);
@@ -5435,7 +5431,7 @@ DEFINE_HANDLE_TS_FCN(tmp_fd_command) {
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode arg = ts_node_named_child (node, 1);
 	char *arg_str = ts_node_handle_arg (state, node, arg, 1);
-	int tmpfd = core->io->desc ? core->io->desc->fd : -1;
+	int tmpfd = core->io->desc? core->io->desc->fd: -1;
 	r_io_use_fd (core->io, atoi (arg_str));
 	bool res = handle_ts_command (state, command);
 	r_io_use_fd (core->io, tmpfd);
@@ -6522,7 +6518,7 @@ DEFINE_HANDLE_TS_FCN(commands) {
 #define HANDLER_RULE_OP(name) { #name, handle_ts_##name },
 #define RULE_OP(name)
 
-struct ts_data_symbol_map map[] = {
+struct ts_data_symbol_map map_ts_command_handlers[] = {
 	#include "r2-shell-parser-cmds.inc"
 	{ NULL, NULL },
 };
@@ -6530,7 +6526,7 @@ struct ts_data_symbol_map map[] = {
 #define RULE_OP(name) { #name, &ts_##name##_symbol },
 #define HANDLER_RULE_OP(name) RULE_OP(name)
 
-struct ts_data_symbol_map map_symbols[] = {
+struct ts_data_symbol_map map_ts_symbols[] = {
 	#include "r2-shell-parser-cmds.inc"
 	{ NULL, NULL },
 };
@@ -6542,14 +6538,14 @@ static void ts_symbols_init(RCmd *cmd) {
 	TSLanguage *lang = tree_sitter_r2cmd ();
 	cmd->language = lang;
 	cmd->ts_symbols_ht = ht_up_new0 ();
-	struct ts_data_symbol_map *entry = map;
+	struct ts_data_symbol_map *entry = map_ts_command_handlers;
 	while (entry->name) {
 		TSSymbol symbol = ts_language_symbol_for_name (lang, entry->name, strlen (entry->name), true);
 		ht_up_insert (cmd->ts_symbols_ht, symbol, entry->data);
 		entry++;
 	}
 
-	entry = map_symbols;
+	entry = map_ts_symbols;
 	while (entry->name) {
 		TSSymbol *sym_ptr = entry->data;
 		*sym_ptr = ts_language_symbol_for_name (lang, entry->name, strlen (entry->name), true);
@@ -6608,7 +6604,6 @@ static bool core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lines, bo
 	core->cons->context->cmd_depth++;
 	return res;
 }
-#endif
 
 static int run_cmd_depth(RCore *core, char *cmd) {
 	char *rcmd;
@@ -6640,11 +6635,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
-#if USE_TREESITTER
 		return core_cmd_tsr2cmd (core, cstr, false, log)? 0: 1;
-#else
-		R_LOG_WARN ("No compilation support for radare2-shell-parser\n");
-#endif
 	}
 
 	int ret = false, i;

@@ -58,8 +58,6 @@ libr/include/r_userconf.h
 libr/include/r_version.h
 libr/include/r_version.h.tmp
 shlr/capstone/
-shlr/tree-sitter/
-shlr/radare2-shell-parser/
 shlr/java/out
 shlr/java/out.exe
 shlr/sdb/sdb
