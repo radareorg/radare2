@@ -260,6 +260,7 @@ R_API bool r_core_project_is_saved(RCore *core);
 
 struct r_core_t {
 	RBin *bin;
+	RArch *arch;
 	RConfig *config;
 	RProject *prj;
 	ut64 offset; // current seek

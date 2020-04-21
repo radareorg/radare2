@@ -3,7 +3,7 @@
 #include <r_core.h>
 #include <r_socket.h>
 #include <config.h>
-#include <r_config.h>
+#include <r_arch.h>
 #include <r_util.h>
 #if __UNIX__
 #include <signal.h>
@@ -2754,6 +2754,11 @@ static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 	}
 }
 
+static int cb_arch_read_at(void *user, ut64 addr, R_OUT ut8 *buf, size_t len) {
+	RCore *core = (RCore *)user;
+	return r_io_read_at (core->io, addr, buf, len);
+}
+
 R_API bool r_core_init(RCore *core) {
 	r_w32_init ();
 	core->blocksize = R_CORE_BLOCKSIZE;
@@ -2859,9 +2864,19 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
+	{
+		core->arch = r_arch_new ();
+		// just move this into RCore
+		RArchCallbacks *cbs = &core->arch->cbs;
+		cbs->user = core;
+		cbs->read_at = cb_arch_read_at;
+		// .get_offset
+		// .get_name
+	}
 	core->rasm = r_asm_new ();
 	core->rasm->num = core->num;
 	r_asm_set_user_ptr (core->rasm, core);
+		
 	core->anal = r_anal_new ();
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;

@@ -131,7 +131,6 @@ anal_plugins += [
   'arc',
   'arm_cs',
   'avr',
-  'bf',
   'chip8',
   'cr16',
   'cris',
@@ -183,7 +182,6 @@ asm_plugins += [
   'arm_cs',
   'arm_winedbg',
   'avr',
-  'bf',
   'chip8',
   'cr16',
   'dalvik',
@@ -433,12 +431,21 @@ endif
 
 lang_plugins += [
   'v',
+]
+arch_plugins = [
+  'bf',
+]
+
+lang_plugins = [
+  'c',
+  'cpipe',
   'lib',
   'spp',
   'rust',
   'go',
   'zig',
   'c',
+  'v',
   'vala'
 ]
 
@@ -475,6 +482,7 @@ include_files = [
   'include/r_anal.h',
   'include/r_codemeta.h',
   'include/r_asm.h',
+  'include/r_arch.h',
   'include/r_bind.h',
   'include/r_getopt.h',
   'include/r_bin_dwarf.h',

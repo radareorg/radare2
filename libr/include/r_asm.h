@@ -117,6 +117,8 @@ typedef struct r_asm_t {
 	HtPP *flags;
 	int seggrn;
 	bool pseudo;
+	RArchSession *asa;
+	RArchSession *asd;
 } RAsm;
 
 typedef bool (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
