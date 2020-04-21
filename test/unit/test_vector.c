@@ -712,7 +712,7 @@ static bool test_pvector_set() {
 	r_pvector_set (&v, 3, (void *)1337);
 	mu_assert_eq (((void **)v.v.a)[3], (void *)1337, "set");
 	r_pvector_set (&v, 3, NULL);
-	mu_assert_eq (((void **)v.v.a)[3], NULL, "set");
+	mu_assert_null (((void **)v.v.a)[3], "set");
 	r_pvector_clear (&v);
 	mu_end;
 }
@@ -724,7 +724,7 @@ static bool test_pvector_contains() {
 	void **p = r_pvector_contains (&v, e);
 	mu_assert_eq (p, (void **)v.v.a + 3, "contains");
 	p = r_pvector_contains (&v, 0);
-	mu_assert_eq (p, NULL, "!contains");
+	mu_assert_null (p, "!contains");
 	r_pvector_clear (&v);
 	mu_end;
 }
@@ -752,7 +752,7 @@ static bool test_pvector_insert() {
 	e = *r_pvector_insert (&v, 1, e);
 	mu_assert_eq (v.v.len, 5UL, "insert => len");
 	mu_assert_eq (e, (void *)1337, "insert => content at returned ptr");
-	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 0)), (void *)0, "insert => old content");
+	mu_assert_null (*((void **)r_vector_index_ptr (&v.v, 0)), "insert => old content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 1)), (void *)1337, "insert => content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 2)), (void *)1, "insert => old content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 3)), (void *)2, "insert => old content");
@@ -765,7 +765,7 @@ static bool test_pvector_insert() {
 	mu_assert ("insert (resize) => capacity", v.v.capacity >= 5);
 	mu_assert_eq (v.v.len, 5UL, "insert (resize) => len");
 	mu_assert_eq (e, (void *)1337, "insert (resize) => content at returned ptr");
-	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 0)), (void *)0, "insert (resize) => old content");
+	mu_assert_null (*((void **)r_vector_index_ptr (&v.v, 0)), "insert (resize) => old content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 1)), (void *)1337, "insert => content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 2)), (void *)1, "insert => old content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 3)), (void *)2, "insert => old content");
@@ -777,7 +777,7 @@ static bool test_pvector_insert() {
 	e = *r_pvector_insert (&v, 4, e);
 	mu_assert_eq (v.v.len, 5UL, "insert (end) => len");
 	mu_assert_eq (e, (void *)1337, "insert (end) => content at returned ptr");
-	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 0)), (void *)0, "insert (end) => old content");
+	mu_assert_null (*((void **)r_vector_index_ptr (&v.v, 0)), "insert (end) => old content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 1)), (void *)1, "insert (end) => old content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 2)), (void *)2, "insert (end) => old content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 3)), (void *)3, "insert (end) => old content");
@@ -790,7 +790,7 @@ static bool test_pvector_insert() {
 	mu_assert ("r_vector_insert (resize, resize) => capacity", v.v.capacity >= 5);
 	mu_assert_eq (v.v.len, 5UL, "r_vector_insert (end, resize) => len");
 	mu_assert_eq (e, (void *)1337, "r_vector_insert (end, resize) => content at returned ptr");
-	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 0)), (void *)0, "r_vector_insert (end, resize) => old content");
+	mu_assert_null (*((void **)r_vector_index_ptr (&v.v, 0)), "r_vector_insert (end, resize) => old content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 1)), (void *)1, "r_vector_insert (end, resize) => old content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 2)), (void *)2, "r_vector_insert (end, resize) => old content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 3)), (void *)3, "r_vector_insert (end, resize) => old content");
@@ -881,7 +881,7 @@ static bool test_pvector_pop_front() {
 	init_test_pvector2 (&v, 3, 0);
 
 	void *e = r_pvector_pop_front (&v);
-	mu_assert_eq (e, (void *)0, "pop_front into");
+	mu_assert_null (e, "pop_front into");
 	mu_assert_eq (v.v.len, 2UL, "pop_front => len");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 0)), (void *)1, "pop_front => remaining content");
 	mu_assert_eq (*((void **)r_vector_index_ptr (&v.v, 1)), (void *)2, "pop_front => remaining content");
