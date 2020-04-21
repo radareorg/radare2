@@ -675,6 +675,7 @@ static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const
 	}
 	fuzz_test->file = strdup (file);
 	if (!fuzz_test->file) {
+		free (fuzz_test);
 		return;
 	}
 	R2RTest *test = R_NEW (R2RTest);
