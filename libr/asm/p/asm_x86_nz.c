@@ -1793,9 +1793,6 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		if (!op->operands[1].is_good_flag) {
 			return -1;
 		}
-		if (op->operands[1].immediate == -1 && a->num && a->num->nc.errors > 0) {
-			return -1;
-		}
 		immediate = op->operands[1].immediate * op->operands[1].sign;
 		if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
 			if ((op->operands[0].type & OT_DWORD) &&
@@ -4913,6 +4910,15 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 			str = ++p;
 		}
 		op->immediate = getnum (a, str);
+		if (op->immediate == -1) {
+			op->is_good_flag = false;
+			char *num_str = strdup (str);
+			if (num_str) {
+				r_str_trim (num_str);
+				op->is_good_flag = !strcmp (num_str, "0xffffffffffffffff");
+				free (num_str);
+			}
+		}
 	}
 
 	return nextpos;
