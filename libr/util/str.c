@@ -2468,7 +2468,7 @@ R_API int r_str_len_utf8_ansi(const char *str) {
 }
 
 // XXX must find across the ansi tags, as well as support utf8
-R_API const char *r_strstr_ansi (const char *a, const char *b) {
+R_API const char *r_strstr_ansi(const char *a, const char *b) {
 	const char *ch, *p = a;
 	do {
 		ch = strchr (p, '\x1b');
