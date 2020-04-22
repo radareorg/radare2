@@ -915,31 +915,18 @@ EOF
 EXPECT=<<EOF
 pf dF num num2
 pf c ch
+pf
 ----
-0=struct
-1=struct
-struct.0=num,num2
-struct.0.!size=96
-struct.0.num=int32_t,0,0
-struct.0.num.meta=0
-struct.0.num2=double,8,0
-struct.0.num2.meta=10
-struct.1=ch
-struct.1.!size=8
-struct.1.ch=char,0,0
-struct.1.ch.meta=2
 struct.A=num
 struct.A.num=float,0,0
 struct.A.num.meta=9
 struct.O=ptr
 struct.O.ptr=char *,0,0
 struct.O.ptr.meta=4
-typedef.A=struct 0
-typedef.B=struct 1
+typedef.A=struct
+typedef.B=struct
 typedef.O=struct O
 
-0
-1
 A
 B
 O
