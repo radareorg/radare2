@@ -138,6 +138,7 @@ typedef struct {
 	bool show_flags;
 	bool bblined;
 	bool show_bytes;
+	bool show_bytes_right;
 	bool show_reloff;
 	bool show_reloff_flags;
 	bool show_comments;
@@ -704,6 +705,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
+	ds->show_bytes_right = r_config_get_i (core->config, "asm.bytes.right");
 	ds->show_optype = r_config_get_i (core->config, "asm.optype");
 	ds->asm_meta = r_config_get_i (core->config, "asm.meta");
 	ds->asm_xrefs_code = r_config_get_i (core->config, "asm.xrefs.code");
@@ -756,7 +758,7 @@ static RDisasmState * ds_init(RCore *core) {
 	} else {
 		ds->strenc = R_STRING_ENC_GUESS;
 	}
-	core->print->bytespace = r_config_get_i (core->config, "asm.bytespace");
+	core->print->bytespace = r_config_get_i (core->config, "asm.bytes.space");
 	ds->cursor = 0;
 	ds->nb = 0;
 	ds->flagspace_ports = r_flag_space_get (core->flags, "ports");
@@ -5507,7 +5509,9 @@ toro:
 		} else {
 			/* show cursor */
 			ds_print_show_cursor (ds);
-			ds_print_show_bytes (ds);
+			if (!ds->show_bytes_right) {
+				ds_print_show_bytes (ds);
+			}
 			ds_print_lines_right (ds);
 			ds_print_optype (ds);
 			ds_build_op_str (ds, true);
@@ -5524,6 +5528,10 @@ toro:
 				r_asm_disassemble (core->assembler, &ao, buf + addrbytes * idx,
 					len - addrbytes * idx + 5);
 				r_asm_set_syntax (core->assembler, os);
+			}
+			if (ds->show_bytes_right && ds->show_bytes) {
+				ds_comment (ds, true, "");
+				ds_print_show_bytes (ds);
 			}
 			if (ds->asm_hint_pos > 0) {
 				ds_print_core_vmode (ds, ds->asm_hint_pos);
@@ -6296,8 +6304,8 @@ static inline bool pdi_check_end(int nb_opcodes, int nb_bytes, int i, int j) {
 }
 
 R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
-	int show_offset = r_config_get_i (core->config, "asm.offset");
-	int show_bytes = r_config_get_i (core->config, "asm.bytes");
+	bool show_offset = r_config_get_i (core->config, "asm.offset");
+	bool show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int decode = r_config_get_i (core->config, "asm.decode");
 	int filter = r_config_get_i (core->config, "asm.filter");
 	int show_color = r_config_get_i (core->config, "scr.color");
@@ -6314,7 +6322,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	const int addrbytes = core->io->addrbytes;
 
 	if (fmt == 'e') {
-		show_bytes = 0;
+		show_bytes = false;
 		decode = 1;
 	}
 	if (!nb_opcodes && !nb_bytes) {
