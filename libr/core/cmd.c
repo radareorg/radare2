@@ -4645,7 +4645,7 @@ DEFINE_IS_TS_FCN(grep_specifier)
 static RCoreCmdStatus int2cmdstatus(int v) {
 	if (v == R_CORE_CMD_EXIT) {
 		return R_CORE_CMD_STATUS_EXIT;
-	} else if (v <= 0) {
+	} else if (v < 0) {
 		return R_CORE_CMD_STATUS_INVALID;
 	} else {
 		return R_CORE_CMD_STATUS_OK;
@@ -4657,7 +4657,7 @@ static int cmdstatus2int(RCoreCmdStatus s) {
 	case R_CORE_CMD_STATUS_OK:
 		return 0;
 	case R_CORE_CMD_STATUS_INVALID:
-		return 1;
+		return -1;
 	case R_CORE_CMD_STATUS_EXIT:
 	default:
 		return R_CORE_CMD_EXIT;
@@ -6567,7 +6567,7 @@ DEFINE_HANDLE_TS_FCN(commands) {
 			return R_CORE_CMD_STATUS_INVALID;
 		}
 		if (!core->cmdrepeat) {
-			return R_CORE_CMD_STATUS_INVALID;
+			return R_CORE_CMD_STATUS_OK;
 		}
 		return lastcmd_repeat (core, true)? R_CORE_CMD_STATUS_OK: R_CORE_CMD_STATUS_INVALID;
 	}
