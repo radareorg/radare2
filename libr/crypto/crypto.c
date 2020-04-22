@@ -7,7 +7,7 @@ R_LIB_VERSION (r_crypto);
 
 static const struct {
 	const char *name;
-	const RCryptoSelector bit;
+	RCryptoSelector bit;
 } crypto_name_bytes[] = {
 	{ "all", UT64_MAX },
 	{ "rc2", R_CRYPTO_RC2 },
@@ -28,7 +28,7 @@ static const struct {
 
 static const struct {
 	const char *name;
-	const RCryptoSelector bit;
+	RCryptoSelector bit;
 } codec_name_bytes[] = {
 	{ "all", UT64_MAX },
 	{ "base64", R_CODEC_B64 },
