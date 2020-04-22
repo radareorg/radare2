@@ -695,7 +695,8 @@ static void __r_debug_lstLibAdd(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, cha
 		R_LOG_ERROR ("Failed to allocate memory");
 		return;
 	}
-	for (int x = 0; x < PLIB_MAX; x++) {
+	int x;
+	for (x = 0; x < PLIB_MAX; x++) {
 		if (lstLibPtr->hFile == hFile) {
 			return;
 		}

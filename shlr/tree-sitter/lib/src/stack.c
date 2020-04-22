@@ -171,7 +171,8 @@ static bool stack__subtree_is_equivalent(Subtree left, Subtree right) {
 static void stack_node_add_link(StackNode *self, StackLink link, SubtreePool *subtree_pool) {
   if (link.node == self) return;
 
-  for (int i = 0; i < self->link_count; i++) {
+  int i;
+  for (i = 0; i < self->link_count; i++) {
     StackLink *existing_link = &self->links[i];
     if (stack__subtree_is_equivalent(existing_link->subtree, link.subtree)) {
       // In general, we preserve ambiguities until they are removed from the stack
@@ -195,7 +196,8 @@ static void stack_node_add_link(StackNode *self, StackLink link, SubtreePool *su
       // If the previous nodes are mergeable, merge them recursively.
       if (existing_link->node->state == link.node->state &&
           existing_link->node->position.bytes == link.node->position.bytes) {
-        for (int j = 0; j < link.node->link_count; j++) {
+        int j;
+        for (j = 0; j < link.node->link_count; j++) {
           stack_node_add_link(existing_link->node, link.node->links[j], subtree_pool);
         }
         int32_t dynamic_precedence = link.node->dynamic_precedence;
@@ -793,7 +795,8 @@ bool ts_stack_print_dot_graph(Stack *self, const TSLanguage *language, FILE *f) 
         node->dynamic_precedence
       );
 
-      for (int j = 0; j < node->link_count; j++) {
+      int j;
+      for (j = 0; j < node->link_count; j++) {
         StackLink link = node->links[j];
         fprintf(f, "node_%p -> node_%p [", node, link.node);
         if (link.is_pending) fprintf(f, "style=dashed ");

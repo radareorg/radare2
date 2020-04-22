@@ -5065,7 +5065,8 @@ DEFINE_HANDLE_TS_FCN(repeat_command) {
 	}
 
 	bool res = true;
-	for (int i = 0; i < rep; i++) {
+	int i;
+	for (i = 0; i < rep; i++) {
 		res &= handle_ts_command (state, command);
 	}
 	return res;
