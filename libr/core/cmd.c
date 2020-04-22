@@ -5030,7 +5030,7 @@ DEFINE_HANDLE_TS_FCN(arged_command) {
 		char *exec_string = r_str_newf (".%s", cmd_str);
 		free (cmd_str);
 		free (command_str);
-		res = r_core_cmd (state->core, exec_string, false) != -1;
+		res = core_cmd_tsr2cmd (state->core, exec_string, state->split_lines, false);
 		free (exec_string);
 		return res;
 	}
@@ -6723,12 +6723,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
-		RCoreCmdStatus status = core_cmd_tsr2cmd (core, cstr, false, log);
-		if (status == R_CORE_CMD_STATUS_EXIT) {
-			return R_CORE_CMD_EXIT;
-		} else {
-			return true;
-		}
+		return cmdstatus2int(core_cmd_tsr2cmd (core, cstr, false, log));
 	}
 
 	int ret = false, i;
