@@ -1313,7 +1313,6 @@ NAME=pdJ string
 FILE=malloc://128
 CMDS=<<EOF
 w Snoo"ping as" usual,
-\I see...
 Cs 30
 pdJ 1
 EOF

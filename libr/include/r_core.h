@@ -36,7 +36,10 @@ extern "C" {
 #endif
 R_LIB_VERSION_HEADER(r_core);
 
+#define R_CORE_CMD_OK 0
+#define R_CORE_CMD_INVALID -1
 #define R_CORE_CMD_EXIT -2
+
 #define R_CORE_BLOCKSIZE 0x100
 #define R_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
@@ -80,6 +83,12 @@ R_LIB_VERSION_HEADER(r_core);
 #define RTR_PROTOCOL_UNIX 4
 
 #define RTR_MAX_HOSTS 255
+
+typedef enum {
+	R_CORE_CMD_STATUS_OK = R_CORE_CMD_OK,
+	R_CORE_CMD_STATUS_INVALID = R_CORE_CMD_INVALID,
+	R_CORE_CMD_STATUS_EXIT = R_CORE_CMD_EXIT
+} RCoreCmdStatus;
 
 /* visual mode */
 typedef enum {
