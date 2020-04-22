@@ -4642,6 +4642,28 @@ DEFINE_IS_TS_FCN(single_quoted_arg)
 DEFINE_IS_TS_FCN(concatenation)
 DEFINE_IS_TS_FCN(grep_specifier)
 
+static RCoreCmdStatus int2cmdstatus(int v) {
+	if (v == R_CORE_CMD_EXIT) {
+		return R_CORE_CMD_STATUS_EXIT;
+	} else if (v <= 0) {
+		return R_CORE_CMD_STATUS_INVALID;
+	} else {
+		return R_CORE_CMD_STATUS_OK;
+	}
+}
+
+static int cmdstatus2int(RCoreCmdStatus s) {
+	switch (s) {
+	case R_CORE_CMD_STATUS_OK:
+		return 0;
+	case R_CORE_CMD_STATUS_INVALID:
+		return 1;
+	case R_CORE_CMD_STATUS_EXIT:
+	default:
+		return R_CORE_CMD_EXIT;
+	}
+}
+
 struct foreach_comment_newshell_t {
 	TSNode *command;
 	struct tsr2cmd_state *state;
@@ -5042,7 +5064,7 @@ DEFINE_HANDLE_TS_FCN(arged_command) {
 	bool command_arg_space = !ts_node_is_null (args) && ts_node_end_byte (command) < ts_node_start_byte (args);
 	char *exec_string = create_exec_string (command_str, pr_args, command_arg_space);
 	R_LOG_DEBUG ("arged_command exec_string = '%s'\n", exec_string);
-	res = r_cmd_call (state->core->rcmd, exec_string);
+	res = int2cmdstatus(r_cmd_call (state->core->rcmd, exec_string));
 	free (exec_string);
 
 err:
@@ -5055,8 +5077,7 @@ DEFINE_HANDLE_TS_FCN(legacy_quoted_command) {
 	// legacy handlers mess a bit with the status (not always clear whether
 	// they return 0 to indicate success or not), so everything is
 	// considered as STATUS_OK apart from R_CORE_CMD_EXIT
-	int res = run_cmd_depth (state->core, node_string);
-	return res == R_CORE_CMD_EXIT? R_CORE_CMD_STATUS_EXIT: R_CORE_CMD_STATUS_OK;
+	return int2cmdstatus(run_cmd_depth (state->core, node_string));
 }
 
 DEFINE_HANDLE_TS_FCN(repeat_command) {
@@ -5201,7 +5222,7 @@ DEFINE_HANDLE_TS_FCN(help_command) {
 		recursive_help (state->core, detail, node_string);
 		return R_CORE_CMD_STATUS_OK;
 	} else {
-		return r_cmd_call (state->core->rcmd, node_string);
+		return int2cmdstatus(r_cmd_call (state->core->rcmd, node_string));
 	}
 	return R_CORE_CMD_STATUS_OK;
 }
