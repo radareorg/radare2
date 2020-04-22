@@ -234,6 +234,9 @@ static RList* sections(RBinFile *bf) {
 				ptr->perm |= R_PERM_R;
 				found_load = 1;
 				ptr->add = true;
+				if (!(phdr[i].p_flags & PF_X)) {
+					ptr->is_data = true;
+				}
 				break;
 			case PT_INTERP:
 				ptr->name = strdup ("INTERP");
