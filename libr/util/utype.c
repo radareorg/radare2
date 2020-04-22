@@ -379,16 +379,15 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	char *fields = r_str_newf("%s.fields", var);
 	char *nfields = (is_typedef) ? fields : var;
 	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
-		char *type;
 		char *struct_name;
 		const char *tfmt = NULL;
 		bool isStruct = false;
 		bool isEnum = false;
 		bool isfp = false;
 		snprintf (var2, sizeof (var2), "%s.%s", var, p);
-		type = sdb_array_get (TDB, var2, 0, NULL);
 		int alen = sdb_array_size (TDB, var2);
 		int elements = sdb_array_get_num (TDB, var2, alen - 1, NULL);
+		char *type = sdb_array_get (TDB, var2, 0, NULL);
 		if (type) {
 			char var3[128] = {0};
 			// Handle general pointers except for char *
@@ -477,7 +476,7 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 		const char *type = sdb_const_get (TDB, var2, NULL);
 		// only supports struct atm
 		if (type && r_str_startswith (type, "struct ")) {
-			return fmt_struct_union(TDB, var, true);
+			return fmt_struct_union (TDB, var, true);
 		}
 	}
 	return NULL;

@@ -3195,7 +3195,7 @@ func_error1:
 					tcc_appendf ("%s=typedef\n", alias);
 					tcc_appendf ("typedef.%s=%s\n", alias, buf);
 					if (tcc_typedefs) {
-						while (*tcc_typedefs != NULL) { // XXX it should not enter here
+						while (*tcc_typedefs) { // XXX it should not enter here
 							tcc_appendf (*tcc_typedefs, alias);
 							free (*tcc_typedefs);
 							tcc_typedefs++;

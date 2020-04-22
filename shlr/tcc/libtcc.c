@@ -805,7 +805,7 @@ PUB_FUNC void tcc_appendf(const char *fmt, ...) {
 PUB_FUNC void tcc_typedef_appendf(const char *fmt, ...) {
 	char **typedefs_start;
 	if (!tcc_typedefs) {
-		tcc_typedefs = (char **)malloc (100);
+		tcc_typedefs = (char **)calloc (50, 1024);
 		typedefs_start = tcc_typedefs;
 	} else {
 		typedefs_start = tcc_typedefs;
