@@ -4613,11 +4613,9 @@ static char *ts_node_sub_parent_string(TSNode parent, TSNode node, const char *c
 	static RCoreCmdStatus handle_ts_##name##_internal(struct tsr2cmd_state *state, TSNode node, char *node_string)
 
 #define UPDATE_CMD_STATUS_RES(res, cmd_res, label) \
-	if ((cmd_res) == R_CORE_CMD_STATUS_EXIT) { \
+	if ((cmd_res) == R_CORE_CMD_STATUS_EXIT || (cmd_res) == R_CORE_CMD_STATUS_INVALID) { \
 		res = cmd_res; \
 		goto label; \
-	} else if ((cmd_res) == R_CORE_CMD_STATUS_INVALID) { \
-		res = cmd_res; \
 	}
 
 static RCoreCmdStatus handle_ts_command(struct tsr2cmd_state *state, TSNode node);
