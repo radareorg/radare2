@@ -4901,7 +4901,13 @@ static struct parsed_args *handle_ts_unescape_arg(struct tsr2cmd_state *state, T
 }
 
 static struct parsed_args *parse_args(struct tsr2cmd_state *state, TSNode args) {
-	r_return_val_if_fail (!ts_node_is_null (args), NULL);
+	if (ts_node_is_null (args)) {
+		struct parsed_args *a = R_NEW0 (struct parsed_args);
+		a->argc = 0;
+		a->argv = NULL;
+		a->argv_str = NULL;
+		return a;
+	}
 	if (is_ts_args (args)) {
 		uint32_t n_children = ts_node_named_child_count (args);
 		uint32_t i;
@@ -5006,7 +5012,7 @@ static char *ts_node_handle_arg(struct tsr2cmd_state *state, TSNode command, TSN
 
 static char *create_exec_string(char *cmd_str, struct parsed_args *pr_args, bool command_arg_space) {
 	RStrBuf *sb = r_strbuf_new (cmd_str);
-	if (pr_args) {
+	if (pr_args && pr_args->argc > 0) {
 		if (command_arg_space) {
 			r_strbuf_append (sb, " ");
 		}
