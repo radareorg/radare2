@@ -6703,7 +6703,12 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
-		return (int)core_cmd_tsr2cmd (core, cstr, false, log);
+		RCoreCmdStatus status = core_cmd_tsr2cmd (core, cstr, false, log);
+		if (status == R_CORE_CMD_STATUS_EXIT) {
+			return R_CORE_CMD_EXIT;
+		} else {
+			return true;
+		}
 	}
 
 	int ret = false, i;
@@ -6770,11 +6775,14 @@ beach:
 }
 
 R_API int r_core_cmd_lines(RCore *core, const char *lines) {
-	// FIXME: when cfg.newshell=true, just use core_cmd_tsr2cmd, which is
-	// able to work on a full script and does not need to split lines. For
-	// now, we avoid it because some commands still don't work with the new
-	// parser and if a script contains even a single invalid line, it is not
-	// parsed at all.
+	if (core->use_tree_sitter_r2cmd) {
+		RCoreCmdStatus status = core_cmd_tsr2cmd (core, lines, true, false);
+		if (status == R_CORE_CMD_STATUS_EXIT) {
+			return R_CORE_CMD_EXIT;
+		} else {
+			return true;
+		}
+	}
 	int r, ret = true;
 	char *nl, *data, *odata;
 
