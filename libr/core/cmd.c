@@ -5080,9 +5080,6 @@ err:
 }
 
 DEFINE_HANDLE_TS_FCN(legacy_quoted_command) {
-	// legacy handlers mess a bit with the status (not always clear whether
-	// they return 0 to indicate success or not), so everything is
-	// considered as STATUS_OK apart from R_CORE_CMD_EXIT
 	return int2cmdstatus(run_cmd_depth (state->core, node_string));
 }
 
