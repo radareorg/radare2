@@ -42,7 +42,7 @@ nth vaddr      bind   type   lib name
 15  0x00051fc8 GLOBAL FUNC       unlink
 16  0x00051fd0 GLOBAL FUNC       strncpy
 17  0x00051fd8 GLOBAL FUNC       strncmp
-18  0x00443a32 WEAK   NOTYPE     _ITM_deregisterTMCloneTable
+18  0x00000000 WEAK   NOTYPE     _ITM_deregisterTMCloneTable
 19  0x00051fe0 GLOBAL FUNC       _exit
 20  0x00051fe8 GLOBAL FUNC       strcpy
 21  0x00051ff0 GLOBAL FUNC       mkdir
@@ -110,7 +110,7 @@ nth vaddr      bind   type   lib name
 83  0x000521e0 GLOBAL FUNC       ftello64
 84  0x000521e8 GLOBAL FUNC       acos
 85  0x000521f0 GLOBAL FUNC       read
-86  0x00443a32 GLOBAL FUNC       __libc_start_main
+86  0x00000000 GLOBAL FUNC       __libc_start_main
 87  0x000521f8 GLOBAL FUNC       srand
 88  0x00052200 GLOBAL FUNC       memcmp
 89  0x00052208 GLOBAL FUNC       fgets
@@ -131,7 +131,7 @@ nth vaddr      bind   type   lib name
 104 0x00052280 GLOBAL FUNC       sigemptyset
 105 0x00052288 GLOBAL FUNC       ftell
 106 0x00052290 GLOBAL FUNC       feof
-107 0x00443a32 WEAK   NOTYPE     __gmon_start__
+107 0x00000000 WEAK   NOTYPE     __gmon_start__
 108 0x00052298 GLOBAL FUNC       umask
 109 0x000522a0 GLOBAL FUNC       fopen64
 110 0x000522a8 GLOBAL FUNC       strtol
@@ -193,7 +193,7 @@ nth vaddr      bind   type   lib name
 166 0x00052468 GLOBAL FUNC       perror
 167 0x00052470 GLOBAL FUNC       strtok
 168 0x00052478 GLOBAL FUNC       sysconf
-169 0x00443a32 WEAK   NOTYPE     _Jv_RegisterClasses
+169 0x00000000 WEAK   NOTYPE     _Jv_RegisterClasses
 170 0x00052480 GLOBAL FUNC       towlower
 171 0x00052488 GLOBAL FUNC       rename
 172 0x00052490 GLOBAL FUNC       tgetstr
@@ -215,7 +215,7 @@ nth vaddr      bind   type   lib name
 188 0x00052510 GLOBAL FUNC       fwrite
 189 0x00052518 GLOBAL FUNC       lseek64
 190 0x00052520 GLOBAL FUNC       __fprintf_chk
-191 0x00443a32 WEAK   NOTYPE     _ITM_registerTMCloneTable
+191 0x00000000 WEAK   NOTYPE     _ITM_registerTMCloneTable
 192 0x00052528 GLOBAL FUNC       sqrt
 193 0x00052530 GLOBAL FUNC       sigaltstack
 194 0x00052538 GLOBAL FUNC       strerror

@@ -145,36 +145,36 @@ nth paddr       vaddr      bind   type   size lib name
 64   ---------- 0x00004004 GLOBAL NOTYPE 0        _edata
 65   ---------- 0x00004004 GLOBAL NOTYPE 0        __bss_start
 66   ---------- 0x00004010 GLOBAL NOTYPE 0        _end
-1    0x00000000 0x00000000 GLOBAL FUNC   16       imp.__cxa_finalize
-2    0x00000000 0x00000000 GLOBAL FUNC   16       imp.__cxa_atexit
+1    0x00001050 0x00001050 GLOBAL FUNC   16       imp.__cxa_finalize
+2    0x0000105c 0x0000105c GLOBAL FUNC   16       imp.__cxa_atexit
 4    0x00000000 0x00000000 GLOBAL FUNC   16       imp.__aeabi_unwind_cpp_pr0
-5    0x00000000 0x00000000 GLOBAL FUNC   16       imp._ZdlPv
-7    0x00000000 0x00000000 GLOBAL FUNC   16       imp.munmap
-8    0x00000000 0x00000000 GLOBAL FUNC   16       imp.__errno
-9    0x00000000 0x00000000 GLOBAL FUNC   16       imp.strerror
-10   0x00000000 0x00000000 GLOBAL FUNC   16       imp.__android_log_print
-12   0x00000000 0x00000000 GLOBAL FUNC   16       imp.open
-14   0x00000000 0x00000000 GLOBAL FUNC   16       imp.ioctl
-16   0x00000000 0x00000000 GLOBAL FUNC   16       imp.mmap
-18   0x00000000 0x00000000 GLOBAL FUNC   16       imp.pthread_mutex_lock
-19   0x00000000 0x00000000 GLOBAL FUNC   16       imp.close
-20   0x00000000 0x00000000 GLOBAL FUNC   16       imp.pthread_mutex_unlock
-23   0x00000000 0x00000000 GLOBAL FUNC   16       imp.pthread_mutex_destroy
-25   0x00000000 0x00000000 GLOBAL FUNC   16       imp.__cxa_pure_virtual
-29   0x00000000 0x00000000 GLOBAL FUNC   16       imp._Znwj
-30   0x00000000 0x00000000 GLOBAL FUNC   16       imp.property_get
-31   0x00000000 0x00000000 GLOBAL FUNC   16       imp.strncmp
-32   0x00000000 0x00000000 GLOBAL FUNC   16       imp.__stack_chk_fail
+5    0x00001068 0x00001068 GLOBAL FUNC   16       operator delete(void*)
+7    0x00001074 0x00001074 GLOBAL FUNC   16       imp.munmap
+8    0x00001080 0x00001080 GLOBAL FUNC   16       imp.__errno
+9    0x0000108c 0x0000108c GLOBAL FUNC   16       imp.strerror
+10   0x00001098 0x00001098 GLOBAL FUNC   16       imp.__android_log_print
+12   0x000010a4 0x000010a4 GLOBAL FUNC   16       imp.open
+14   0x000010b0 0x000010b0 GLOBAL FUNC   16       imp.ioctl
+16   0x000010bc 0x000010bc GLOBAL FUNC   16       imp.mmap
+18   0x000010c8 0x000010c8 GLOBAL FUNC   16       imp.pthread_mutex_lock
+19   0x000010d4 0x000010d4 GLOBAL FUNC   16       imp.close
+20   0x000010e0 0x000010e0 GLOBAL FUNC   16       imp.pthread_mutex_unlock
+23   0x000010ec 0x000010ec GLOBAL FUNC   16       imp.pthread_mutex_destroy
+25   0x000010f8 0x000010f8 GLOBAL FUNC   16       imp.__cxa_pure_virtual
+29   0x00001104 0x00001104 GLOBAL FUNC   16       operator new(unsigned int)
+30   0x00001110 0x00001110 GLOBAL FUNC   16       imp.property_get
+31   0x0000111c 0x0000111c GLOBAL FUNC   16       imp.strncmp
+32   0x00001128 0x00001128 GLOBAL FUNC   16       imp.__stack_chk_fail
 33   0x00000000 0x00000000 GLOBAL OBJ    16       imp.__stack_chk_guard
 34   0x00000000 0x00000000 GLOBAL OBJ    16       imp._ZN7android9SingletonIN7qdutils17QCCompositionTypeEE5sLockE
 35   0x00000000 0x00000000 GLOBAL OBJ    16       imp._ZN7android9SingletonIN7qdutils17QCCompositionTypeEE9sInstanceE
-37   0x00000000 0x00000000 GLOBAL FUNC   16       imp.dlopen
-38   0x00000000 0x00000000 GLOBAL FUNC   16       imp.dlsym
-41   0x00000000 0x00000000 GLOBAL FUNC   16       imp.dlclose
-44   0x00000000 0x00000000 GLOBAL FUNC   16       imp.strncasecmp
-46   0x00000000 0x00000000 GLOBAL FUNC   16       imp.pthread_mutex_init
+37   0x00001134 0x00001134 GLOBAL FUNC   16       imp.dlopen
+38   0x00001140 0x00001140 GLOBAL FUNC   16       imp.dlsym
+41   0x0000114c 0x0000114c GLOBAL FUNC   16       imp.dlclose
+44   0x00001158 0x00001158 GLOBAL FUNC   16       imp.strncasecmp
+46   0x00001164 0x00001164 GLOBAL FUNC   16       imp.pthread_mutex_init
 53   0x00000000 0x00000000 GLOBAL OBJ    16       imp.__page_size
-59   0x00000000 0x00000000 GLOBAL FUNC   16       imp.__aeabi_atexit
+59   0x00001170 0x00001170 GLOBAL FUNC   16       imp.__aeabi_atexit
 EOF
 RUN
 
