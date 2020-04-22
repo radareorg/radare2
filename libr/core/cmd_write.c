@@ -655,6 +655,7 @@ static bool cmd_wfs(RCore *core, const char *input) {
 	}
 	ut8 *buf = calloc (1, sz);
 	if (!buf) {
+		free (str);
 		return false;
 	}
 	r_io_read_at (core->io, addr, buf, sz);

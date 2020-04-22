@@ -902,6 +902,7 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 		free (editor);
 		editor = strdup ("vim");
 		if (!editor) {
+			free (name);
 			return;
 		}
 	}
@@ -911,6 +912,7 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 	char *newcmds = r_file_slurp (name, NULL);
 	if (!newcmds) {
 		eprintf ("Failed to read edited command file\n");
+		free (name);
 		return;
 	}
 	r_str_trim (newcmds);
@@ -921,10 +923,12 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 		newcmds = r_str_newf ("%s\n", newcmds);
 		free (tmp);
 		if (!newcmds) {
+			free (name);
 			return;
 		}
 	}
 
 	replace_cmd_kv (result->test->path, test->cmds.line_begin, test->cmds.line_end, "CMDS", newcmds, fixup_results);
+	free (name);
 	free (newcmds);
 }

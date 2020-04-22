@@ -1474,6 +1474,7 @@ show_help:
 			}
 			break;
 		default:
+			pj_free (pj);
 			r_list_free (list);
 			goto show_help;
 			/* not reached */
@@ -1483,8 +1484,8 @@ beach:
 	if (mode == 'j') {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
 	}
+	pj_free (pj);
 	r_list_free (list);
 }
 
