@@ -5052,14 +5052,11 @@ err:
 }
 
 DEFINE_HANDLE_TS_FCN(legacy_quoted_command) {
+	// legacy handlers mess a bit with the status (not always clear whether
+	// they return 0 to indicate success or not), so everything is
+	// considered as STATUS_OK apart from R_CORE_CMD_EXIT
 	int res = run_cmd_depth (state->core, node_string);
-	if (res == R_CORE_CMD_OK) {
-		return R_CORE_CMD_STATUS_OK;
-	} else if (res == R_CORE_CMD_EXIT) {
-		return R_CORE_CMD_STATUS_EXIT;
-	} else {
-		return R_CORE_CMD_STATUS_INVALID;
-	}
+	return res == R_CORE_CMD_EXIT? R_CORE_CMD_STATUS_EXIT: R_CORE_CMD_STATUS_OK;
 }
 
 DEFINE_HANDLE_TS_FCN(repeat_command) {
