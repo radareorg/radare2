@@ -6534,53 +6534,62 @@ static RCoreCmdStatus handle_ts_command_tmpseek(struct tsr2cmd_state *state, TSN
 }
 
 DEFINE_HANDLE_TS_FCN(commands) {
+	RCore *core = state->core;
+	RCoreCmdStatus res = R_CORE_CMD_STATUS_OK;
 	ut32 child_count = ts_node_named_child_count (node);
 	int i;
 
 	R_LOG_DEBUG ("commands with %d childs\n", child_count);
 	if (child_count == 0 && !*state->input) {
-		if (state->core->cons->context->breaked) {
-			state->core->cons->context->breaked = false;
+		if (core->cons->context->breaked) {
+			core->cons->context->breaked = false;
 			return R_CORE_CMD_STATUS_INVALID;
 		}
-		if (!state->core->cmdrepeat) {
+		if (!core->cmdrepeat) {
 			return R_CORE_CMD_STATUS_INVALID;
 		}
-		return lastcmd_repeat (state->core, true)? R_CORE_CMD_STATUS_OK: R_CORE_CMD_STATUS_INVALID;
+		return lastcmd_repeat (core, true)? R_CORE_CMD_STATUS_OK: R_CORE_CMD_STATUS_INVALID;
 	}
 	if (state->split_lines) {
 		r_cons_break_push (NULL, NULL);
 	}
 	for (i = 0; i < child_count; i++) {
-		if (state->split_lines && r_cons_is_breaked ()) {
-			r_cons_break_pop ();
+		if (core->cons->context->cmd_depth < 1) {
+			R_LOG_ERROR ("handle_ts_commands: That was too deep...\n");
 			return R_CORE_CMD_STATUS_INVALID;
 		}
+		core->cons->context->cmd_depth--;
+		if (core->max_cmd_depth - core->cons->context->cmd_depth == 1) {
+			core->prompt_offset = core->offset;
+		}
+
+		if (state->split_lines && r_cons_is_breaked ()) {
+			r_cons_break_pop ();
+			return res;
+		}
 		TSNode command = ts_node_named_child (node, i);
-		RCoreCmdStatus res = handle_ts_command (state, command);
-		if (res == R_CORE_CMD_STATUS_INVALID) {
-			if (state->split_lines) {
-				r_cons_break_pop ();
-			}
+		RCoreCmdStatus cmd_res = handle_ts_command (state, command);
+		if (state->split_lines) {
+			r_cons_flush ();
+			r_core_task_yield (&core->tasks);
+		}
+		core->cons->context->cmd_depth++;
+		if (cmd_res == R_CORE_CMD_STATUS_INVALID) {
 			char *command_str = ts_node_sub_string (command, state->input);
 			eprintf ("Error while executing command: %s\n", command_str);
 			free (command_str);
-			return R_CORE_CMD_STATUS_INVALID;
-		} else if (res == R_CORE_CMD_STATUS_EXIT) {
-			if (state->split_lines) {
-				r_cons_break_pop ();
-			}
-			return R_CORE_CMD_STATUS_EXIT;
-		}
-		if (state->split_lines) {
-			r_cons_flush ();
-			r_core_task_yield (&state->core->tasks);
+			res = cmd_res;
+			goto err;
+		} else if (cmd_res == R_CORE_CMD_STATUS_EXIT) {
+			res = cmd_res;
+			goto err;
 		}
 	}
+err:
 	if (state->split_lines) {
 		r_cons_break_pop ();
 	}
-	return R_CORE_CMD_STATUS_OK;
+	return res;
 }
 
 #define HANDLER_RULE_OP(name) { #name, handle_ts_##name },
@@ -6622,15 +6631,6 @@ static void ts_symbols_init(RCmd *cmd) {
 }
 
 static RCoreCmdStatus core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split_lines, bool log) {
-	if (core->cons->context->cmd_depth < 1) {
-		eprintf ("r_core_cmd: That was too deep (%s)...\n", cstr);
-		return R_CORE_CMD_STATUS_INVALID;
-	}
-	core->cons->context->cmd_depth--;
-	if (core->max_cmd_depth - core->cons->context->cmd_depth == 1) {
-		core->prompt_offset = core->offset;
-	}
-
 	char *input = strdup (r_str_trim_head_ro (cstr));
 
 	ts_symbols_init (core->rcmd);
@@ -6669,7 +6669,6 @@ static RCoreCmdStatus core_cmd_tsr2cmd(RCore *core, const char *cstr, bool split
 	ts_tree_delete (tree);
 	ts_parser_delete (parser);
 	free (input);
-	core->cons->context->cmd_depth++;
 	return res;
 }
 
@@ -6775,14 +6774,11 @@ beach:
 }
 
 R_API int r_core_cmd_lines(RCore *core, const char *lines) {
-	if (core->use_tree_sitter_r2cmd) {
-		RCoreCmdStatus status = core_cmd_tsr2cmd (core, lines, true, false);
-		if (status == R_CORE_CMD_STATUS_EXIT) {
-			return R_CORE_CMD_EXIT;
-		} else {
-			return true;
-		}
-	}
+	// FIXME: when cfg.newshell=true, just use core_cmd_tsr2cmd, which is
+	// able to work on a full script and does not need to split lines. For
+	// now, we avoid it because some commands still don't work with the new
+	// parser and if a script contains even a single invalid line, it is not
+	// parsed at all.
 	int r, ret = true;
 	char *nl, *data, *odata;
 

@@ -243,3 +243,33 @@ Arg with (...)
 	  (arg_identifier)
 	  (args (arg (arg_identifier)))
 	  (arg_identifier))))))
+
+
+==========
+Arg with $
+==========
+
+?v $$
+s $
+?v $*
+?v $$$ test
+?v $alias
+?e test
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))
