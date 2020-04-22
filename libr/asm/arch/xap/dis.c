@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <string.h>
-#define assert(x) if (!(x)) { eprintf("assert ##x##\n"); return; }
+#define assertx(x) if (!(x)) { eprintf("assert ##x##\n"); return; }
 #include <stdarg.h>
 #include <stdint.h>
 #include "dis.h"
@@ -521,7 +521,7 @@ static void own(struct state *s)
 		}
 
 		if (s->s_nop) {
-			assert(!s->s_nopd);
+			assertx(!s->s_nopd);
 			s->s_nopd = d;
 		} else {
 			last->d_next = d;
@@ -561,7 +561,7 @@ static void own(struct state *s)
 	}
 	if (l) {
 		print_label(s, l);
-		assert(!l->l_next);
+		assertx(!l->l_next);
 	}
 
 	output(s, "\n\tENDMOD\n");
