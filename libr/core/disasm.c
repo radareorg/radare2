@@ -5529,16 +5529,16 @@ toro:
 					len - addrbytes * idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
+			if (ds->show_bytes_right && ds->show_bytes) {
+				ds_comment (ds, true, "");
+				ds_print_show_bytes (ds);
+			}
 			if (ds->asm_hint_pos > 0) {
 				ds_print_core_vmode (ds, ds->asm_hint_pos);
 			}
 			// ds_print_cc_update (ds);
 
 			ds_cdiv_optimization (ds);
-			if (ds->show_bytes_right && ds->show_bytes) {
-				ds_comment (ds, true, "");
-				ds_print_show_bytes (ds);
-			}
 			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 				if (ds->show_cmtesil) {
 					const char *esil = R_STRBUF_SAFEGET (&ds->analop.esil);
