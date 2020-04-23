@@ -173,22 +173,6 @@ R_API int r_cmd_set_data(RCmd *cmd, void *data) {
 	return 1;
 }
 
-R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const char *desc) {
-	RCmdLongItem *item = R_NEW (RCmdLongItem);
-	if (!item) {
-		return false;
-	}
-	strncpy (item->cmd, lcmd, sizeof (item->cmd)-1);
-	strncpy (item->cmd_short, scmd, sizeof (item->cmd_short)-1);
-	item->cmd_len = strlen (lcmd);
-	strncpy (item->desc, desc, sizeof (item->desc)-1);
-	if (!r_list_append (cmd->lcmds, item)){
-		free (item);
-		return false;
-	}
-	return true;
-}
-
 R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(cb)) {
 	int idx = (ut8)cmd[0];
 	RCmdItem *item = c->cmds[idx];
