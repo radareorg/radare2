@@ -4942,25 +4942,31 @@ static bool substitute_args(struct tsr2cmd_state *state, TSNode args, TSNode *ne
 	return res;
 }
 
-static char *ts_node_handle_arg(struct tsr2cmd_state *state, TSNode command, TSNode arg, uint32_t child_idx) {
+static RCmdParsedArgs *ts_node_handle_arg_prargs(struct tsr2cmd_state *state, TSNode command, TSNode arg, uint32_t child_idx) {
+	RCmdParsedArgs *res = NULL;
 	TSNode new_command;
 	substitute_args_init (state, command);
 	bool ok = substitute_args (state, arg, &new_command);
 	if (!ok) {
 		R_LOG_ERROR ("Error while substituting arguments\n");
-		substitute_args_fini (state);
-		return NULL;
+		goto err;
 	}
 
 	arg = ts_node_named_child (new_command, child_idx);
-	RCmdParsedArgs *a = parse_args (state, arg);
-	if (a == NULL) {
+	res = parse_args (state, arg);
+	if (res == NULL) {
 		R_LOG_ERROR ("Cannot parse arg\n");
-		return NULL;
+		goto err;
 	}
+err:
+	substitute_args_fini (state);
+	return res;
+}
+
+static char *ts_node_handle_arg(struct tsr2cmd_state *state, TSNode command, TSNode arg, uint32_t child_idx) {
+	RCmdParsedArgs *a = ts_node_handle_arg_prargs (state, command, arg, child_idx);
 	char *str = r_cmd_parsed_args_argstr (a);
 	r_cmd_parsed_args_free (a);
-	substitute_args_fini (state);
 	return str;
 }
 
@@ -4986,39 +4992,26 @@ DEFINE_HANDLE_TS_FCN(arged_command) {
 
 	RCmdParsedArgs *pr_args = NULL;
 	if (!ts_node_is_null (args)) {
-		TSNode new_command, new_args;
-		substitute_args_init (state, node);
-		bool ok = substitute_args (state, args, &new_command);
-		if (!ok) {
-			R_LOG_ERROR ("Error while substituting arguments\n");
-			substitute_args_fini (state);
-			res = R_CORE_CMD_STATUS_INVALID;
-			goto err;
-		}
-		new_args = ts_node_named_child (new_command, 1);
-		pr_args = parse_args (state, new_args);
+		pr_args = ts_node_handle_arg_prargs (state, node, args, 1);
 		if (!pr_args) {
-			res = R_CORE_CMD_STATUS_INVALID;
 			goto err;
 		}
-
-		substitute_args_fini (state);
 		r_cmd_parsed_args_setcmd (pr_args, command_str);
-
-		int i;
-		const char *s;
-		r_cmd_parsed_args_foreach_arg (pr_args, i, s) {
-			R_LOG_DEBUG ("parsed_arg %d: '%s'\n", i, s);
-		}
 	} else {
 		pr_args = r_cmd_parsed_args_newcmd (command_str);
+		if (!pr_args) {
+			goto err;
+		}
+	}
+
+	int i;
+	const char *s;
+	r_cmd_parsed_args_foreach_arg (pr_args, i, s) {
+		R_LOG_DEBUG ("parsed_arg %d: '%s'\n", i, s);
 	}
 
 	pr_args->has_space_after_cmd = !ts_node_is_null (args) && ts_node_end_byte (command) < ts_node_start_byte (args);
-	char *exec_string = r_cmd_parsed_args_execstr (pr_args);
-	R_LOG_DEBUG ("arged_command exec_string = '%s'\n", exec_string);
-	res = int2cmdstatus(r_cmd_call (state->core->rcmd, exec_string));
-	free (exec_string);
+	res = int2cmdstatus (r_cmd_call_parsed_args (state->core->rcmd, pr_args));
 
 err:
 	r_cmd_parsed_args_free (pr_args);
@@ -5027,7 +5020,7 @@ err:
 }
 
 DEFINE_HANDLE_TS_FCN(legacy_quoted_command) {
-	return int2cmdstatus(run_cmd_depth (state->core, node_string));
+	return int2cmdstatus (run_cmd_depth (state->core, node_string));
 }
 
 DEFINE_HANDLE_TS_FCN(repeat_command) {
@@ -5172,7 +5165,27 @@ DEFINE_HANDLE_TS_FCN(help_command) {
 		recursive_help (state->core, detail, node_string);
 		return R_CORE_CMD_STATUS_OK;
 	} else {
-		return int2cmdstatus(r_cmd_call (state->core->rcmd, node_string));
+		TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
+		char *command_str = ts_node_sub_string (command, state->input);
+		TSNode args = ts_node_child_by_field_name (node, "args", strlen ("args"));
+		RCmdParsedArgs *pr_args = NULL;
+		int res = -1;
+		if (!ts_node_is_null (args)) {
+			pr_args = ts_node_handle_arg_prargs (state, node, args, 1);
+			if (!pr_args) {
+				goto err_else;
+			}
+			r_cmd_parsed_args_setcmd (pr_args, command_str);
+		} else {
+			pr_args = r_cmd_parsed_args_newcmd (command_str);
+			if (!pr_args) {
+				goto err_else;
+			}
+		}
+		res = r_cmd_call_parsed_args (state->core->rcmd, pr_args);
+	err_else:
+		free (command_str);
+		return int2cmdstatus (res);
 	}
 	return R_CORE_CMD_STATUS_OK;
 }
@@ -5673,27 +5686,11 @@ DEFINE_HANDLE_TS_FCN(iter_offsets_command) {
 	TSNode args = ts_node_named_child (node, 1);
 	ut64 orig_offset = core->offset;
 
-	TSNode new_command;
-	substitute_args_init (state, node);
-	bool ok = substitute_args (state, args, &new_command);
-	if (!ok) {
-		R_LOG_ERROR ("Error while substituting arguments\n");
-		substitute_args_fini (state);
-		return R_CORE_CMD_STATUS_INVALID;
-	}
-	args = ts_node_named_child (new_command, 1);
-	if (ts_node_is_null (args)) {
-		// after replacing cmd substitution, no args are provided.
-		substitute_args_fini (state);
-		return R_CORE_CMD_STATUS_INVALID;
-	}
-
-	RCmdParsedArgs *a = parse_args (state, args);
-	if (a == NULL) {
+	RCmdParsedArgs *a = ts_node_handle_arg_prargs (state, node, args, 1);
+	if (!a) {
 		R_LOG_ERROR ("Cannot parse args\n");
 		return R_CORE_CMD_STATUS_INVALID;
 	}
-	substitute_args_fini (state);
 
 	const char *s;
 	int i;

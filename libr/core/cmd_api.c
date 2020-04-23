@@ -236,6 +236,14 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	return ret;
 }
 
+R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
+	char *exec_string = r_cmd_parsed_args_execstr (args);
+	R_LOG_DEBUG ("r_cmd_call_parsed_args exec_string = '%s'\n", exec_string);
+	int res = r_cmd_call (cmd, exec_string);
+	free (exec_string);
+	return res;
+}
+
 /** macro.c **/
 
 R_API RCmdMacroItem *r_cmd_macro_item_new() {

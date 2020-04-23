@@ -120,6 +120,7 @@ R_API int r_cmd_set_data(RCmd *cmd, void *data);
 R_API int r_cmd_add(RCmd *cmd, const char *command, const char *desc, r_cmd_callback(callback));
 R_API int r_core_del(RCmd *cmd, const char *command);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
+R_API int r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args);
 
 /* RCmdParsedArgs */
 R_API RCmdParsedArgs *r_cmd_parsed_args_new(const char *cmd, int n_args, char **args);
