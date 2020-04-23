@@ -523,6 +523,27 @@ static int compute_dyn_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size)
 	return res;
 }
 
+static void rel_cache_free(HtUPKv *kv) {
+	free (kv->value);
+}
+
+static HtUP *rel_cache_new(ELFOBJ *bin) {
+	RBinElfReloc *relocs = Elf_(r_bin_elf_get_relocs) (bin);
+	const int htsize = R_MIN (bin->reloc_num, 1024);
+	HtUP *rel_cache = ht_up_new_size (htsize, NULL, rel_cache_free, NULL);
+	size_t i;
+
+	for (i = 0; i < bin->reloc_num; i++) {
+		RBinElfReloc *tmp = R_NEW (RBinElfReloc);
+		memcpy (tmp, relocs + i, sizeof (RBinElfReloc));
+		if (!ht_up_insert (rel_cache, tmp->sym, tmp)) {
+			free (tmp);
+		}
+	}
+	free (relocs);
+	return rel_cache;
+}
+
 static int init_dynamic_section(ELFOBJ *bin) {
 	Elf_(Dyn) *dyn = NULL;
 	ut64 strtabaddr = 0;
@@ -1289,6 +1310,7 @@ static bool elf_init(ELFOBJ *bin) {
 	bin->symbols_by_ord = NULL;
 	bin->g_sections = Elf_(r_bin_elf_get_sections) (bin);
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
+	bin->rel_cache = rel_cache_new (bin);
 	sdb_ns_set (bin->kv, "versioninfo", store_versioninfo (bin));
 	return true;
 }
@@ -1309,28 +1331,6 @@ ut64 Elf_(r_bin_elf_get_section_addr)(ELFOBJ *bin, const char *section_name) {
 ut64 Elf_(r_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name) {
 	RBinElfSection *section = get_section_by_name (bin, section_name);
 	return section? section->rva + section->size: UT64_MAX;
-}
-
-
-static void rel_cache_free(HtUPKv *kv) {
-	free (kv->value);
-}
-
-static HtUP *rel_cache_new(ELFOBJ *bin) {
-	RBinElfReloc *relocs = Elf_(r_bin_elf_get_relocs) (bin);
-	const int htsize = R_MIN (bin->reloc_num, 1024);
-	HtUP *rel_cache = ht_up_new_size (htsize, NULL, rel_cache_free, NULL);
-	size_t i;
-
-	for (i = 0; i < bin->reloc_num; i++) {
-		RBinElfReloc *tmp = R_NEW (RBinElfReloc);
-		memcpy (tmp, relocs + i, sizeof (RBinElfReloc));
-		if (!ht_up_insert (rel_cache, tmp->sym, tmp)) {
-			free (tmp);
-		}
-	}
-	free (relocs);
-	return rel_cache;
 }
 
 static ut64 get_got_entry(ELFOBJ *bin, RBinElfReloc *rel) {
@@ -1549,12 +1549,8 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		return UT64_MAX;
 	}
 
-	// create rel/rela cache if not already there
 	if (!bin->rel_cache) {
-		bin->rel_cache = rel_cache_new (bin);
-		if (!bin->rel_cache) {
-			return UT64_MAX;
-		}
+		return UT64_MAX;
 	}
 
 	// lookup the right rel/rela entry
