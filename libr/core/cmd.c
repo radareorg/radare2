@@ -1872,6 +1872,10 @@ static int cmd_panels(void *data, const char *input) {
 		eprintf ("vi ...    # launch 'cfg.editor'\n");
 		return false;
 	}
+	if (!r_cons_is_interactive ()) {
+		eprintf ("Panel mode requires scr.interactive=true.\n");
+		return false;
+	}
 	if (*input == ' ') {
 		if (core->panels) {
 			r_load_panels_layout (core, input + 1);
@@ -1907,6 +1911,7 @@ static int cmd_visual(void *data, const char *input) {
 		return false;
 	}
 	if (!r_cons_is_interactive ()) {
+		eprintf ("Visual mode requires scr.interactive=true.\n");
 		return false;
 	}
 	return r_core_visual ((RCore *)data, input);
