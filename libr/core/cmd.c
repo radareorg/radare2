@@ -4561,12 +4561,6 @@ struct tsr2cmd_edit {
 	TSPoint end_point;
 };
 
-struct parsed_args {
-	char *argv_str;
-	int argc;
-	char **argv;
-};
-
 typedef RCoreCmdStatus (*ts_handler)(struct tsr2cmd_state *state, TSNode node);
 
 struct ts_data_symbol_map {
@@ -4750,20 +4744,6 @@ void free_tsr2cmd_edit(struct tsr2cmd_edit *edit) {
 	free (edit);
 }
 
-static void parsed_args_free(struct parsed_args *a) {
-	if (!a) {
-		return;
-	}
-
-	int i;
-	for (i = 0; i < a->argc; i++) {
-		free (a->argv[i]);
-	}
-	free (a->argv);
-	free (a->argv_str);
-	free (a);
-}
-
 static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_cmd) {
 	RCore *core = state->core;
 	char *inn_str = ts_node_sub_parent_string (state->substitute_cmd, inn_cmd, state->input);
@@ -4877,51 +4857,27 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) 
 	}
 }
 
-static char *create_argv_str(struct parsed_args *a) {
-	RStrBuf *sb = r_strbuf_new (NULL);
-	int i;
-	for (i = 0; i < a->argc; i++) {
-		if (i > 0) {
-			r_strbuf_append (sb, " ");
-		}
-		r_strbuf_append (sb, a->argv[i]);
-	}
-	return r_strbuf_drain (sb);
-}
-
-static struct parsed_args *handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg) {
-	struct parsed_args *a = R_NEW0 (struct parsed_args);
-	a->argc = 1;
-	a->argv = R_NEWS (char *, a->argc);
-	a->argv[0] = do_handle_ts_unescape_arg (state, arg);
-	a->argv_str = create_argv_str (a);
-	return a;
-}
-
-static struct parsed_args *parse_args(struct tsr2cmd_state *state, TSNode args) {
+static RCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args) {
 	if (ts_node_is_null (args)) {
-		struct parsed_args *a = R_NEW0 (struct parsed_args);
-		a->argc = 0;
-		a->argv = NULL;
-		a->argv_str = NULL;
-		return a;
-	}
-	if (is_ts_args (args)) {
+		return r_cmd_parsed_args_newargs (0, NULL);
+	} else if (is_ts_args (args)) {
 		uint32_t n_children = ts_node_named_child_count (args);
 		uint32_t i;
-		struct parsed_args *a = R_NEW0 (struct parsed_args);
-		a->argc = n_children;
-		a->argv = R_NEWS (char *, a->argc);
+		char **unescaped_args = R_NEWS0 (char *, n_children);
 		for (i = 0; i < n_children; i++) {
 			TSNode arg = ts_node_named_child (args, i);
-			a->argv[i] = do_handle_ts_unescape_arg (state, arg);
+			unescaped_args[i] = do_handle_ts_unescape_arg (state, arg);
 		}
-		a->argv_str = create_argv_str (a);
-		return a;
+		RCmdParsedArgs *res = r_cmd_parsed_args_newargs (n_children, unescaped_args);
+		for (i = 0; i < n_children; i++) {
+			free (unescaped_args[i]);
+		}
+		free (unescaped_args);
+		return res;
 	} else {
-		return handle_ts_unescape_arg (state, args);
+		char *unescaped_args[] = { do_handle_ts_unescape_arg (state, args) };
+		return r_cmd_parsed_args_newargs (1, unescaped_args);
 	}
-	return NULL;
 }
 
 static TSTree *apply_edits(struct tsr2cmd_state *state, RList *edits) {
@@ -4997,26 +4953,15 @@ static char *ts_node_handle_arg(struct tsr2cmd_state *state, TSNode command, TSN
 	}
 
 	arg = ts_node_named_child (new_command, child_idx);
-	struct parsed_args *a = parse_args (state, arg);
+	RCmdParsedArgs *a = parse_args (state, arg);
 	if (a == NULL) {
 		R_LOG_ERROR ("Cannot parse arg\n");
 		return NULL;
 	}
-	char *str = strdup (a->argv_str);
-	parsed_args_free (a);
+	char *str = r_cmd_parsed_args_argstr (a);
+	r_cmd_parsed_args_free (a);
 	substitute_args_fini (state);
 	return str;
-}
-
-static char *create_exec_string(char *cmd_str, struct parsed_args *pr_args, bool command_arg_space) {
-	RStrBuf *sb = r_strbuf_new (cmd_str);
-	if (pr_args && pr_args->argc > 0) {
-		if (command_arg_space) {
-			r_strbuf_append (sb, " ");
-		}
-		r_strbuf_append (sb, pr_args->argv_str);
-	}
-	return r_strbuf_drain (sb);
 }
 
 DEFINE_HANDLE_TS_FCN(arged_command) {
@@ -5039,7 +4984,7 @@ DEFINE_HANDLE_TS_FCN(arged_command) {
 		return res;
 	}
 
-	struct parsed_args *pr_args = NULL;
+	RCmdParsedArgs *pr_args = NULL;
 	if (!ts_node_is_null (args)) {
 		TSNode new_command, new_args;
 		substitute_args_init (state, node);
@@ -5058,21 +5003,25 @@ DEFINE_HANDLE_TS_FCN(arged_command) {
 		}
 
 		substitute_args_fini (state);
+		r_cmd_parsed_args_setcmd (pr_args, command_str);
 
 		int i;
-		for (i = 0; i < pr_args->argc; i++) {
-			R_LOG_DEBUG ("parsed_arg %d: '%s'\n", i, pr_args->argv[i]);
+		const char *s;
+		r_cmd_parsed_args_foreach_arg (pr_args, i, s) {
+			R_LOG_DEBUG ("parsed_arg %d: '%s'\n", i, s);
 		}
+	} else {
+		pr_args = r_cmd_parsed_args_newcmd (command_str);
 	}
 
-	bool command_arg_space = !ts_node_is_null (args) && ts_node_end_byte (command) < ts_node_start_byte (args);
-	char *exec_string = create_exec_string (command_str, pr_args, command_arg_space);
+	pr_args->has_space_after_cmd = !ts_node_is_null (args) && ts_node_end_byte (command) < ts_node_start_byte (args);
+	char *exec_string = r_cmd_parsed_args_execstr (pr_args);
 	R_LOG_DEBUG ("arged_command exec_string = '%s'\n", exec_string);
 	res = int2cmdstatus(r_cmd_call (state->core->rcmd, exec_string));
 	free (exec_string);
 
 err:
-	parsed_args_free (pr_args);
+	r_cmd_parsed_args_free (pr_args);
 	free (command_str);
 	return res;
 }
@@ -5739,16 +5688,17 @@ DEFINE_HANDLE_TS_FCN(iter_offsets_command) {
 		return R_CORE_CMD_STATUS_INVALID;
 	}
 
-	struct parsed_args *a = parse_args (state, args);
+	RCmdParsedArgs *a = parse_args (state, args);
 	if (a == NULL) {
 		R_LOG_ERROR ("Cannot parse args\n");
 		return R_CORE_CMD_STATUS_INVALID;
 	}
 	substitute_args_fini (state);
 
+	const char *s;
 	int i;
-	for (i = 0; i < a->argc; i++) {
-		ut64 addr = r_num_math (core->num, a->argv[i]);
+	r_cmd_parsed_args_foreach_arg (a, i, s) {
+		ut64 addr = r_num_math (core->num, s);
 		R_LOG_DEBUG ("iter_offsets_command: seek to %" PFMT64x "\n", addr);
 		r_core_seek (core, addr, true);
 		RCoreCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
@@ -5758,7 +5708,7 @@ DEFINE_HANDLE_TS_FCN(iter_offsets_command) {
 
 err:
 	r_core_seek (core, orig_offset, true);
-	parsed_args_free (a);
+	r_cmd_parsed_args_free (a);
 	return res;
 }
 
@@ -6000,7 +5950,7 @@ DEFINE_HANDLE_TS_FCN(iter_interpret_command) {
 	}
 	TSNode args = ts_node_named_child (new_command, 1);
 
-	struct parsed_args *a = parse_args (state, args);
+	RCmdParsedArgs *a = parse_args (state, args);
 	if (!a) {
 		r_list_free (edits);
 		substitute_args_fini (state);
@@ -6010,11 +5960,12 @@ DEFINE_HANDLE_TS_FCN(iter_interpret_command) {
 	r_list_free (edits);
 	substitute_args_fini (state);
 
+	const char *s;
 	int i;
 	ut64 orig_offset = core->offset;
 	RCoreCmdStatus res = R_CORE_CMD_STATUS_OK;
-	for (i = 0; i < a->argc; i++) {
-		ut64 addr = r_num_math (core->num, a->argv[i]);
+	r_cmd_parsed_args_foreach_arg (a, i, s) {
+		ut64 addr = r_num_math (core->num, s);
 		R_LOG_DEBUG ("iter_interpret_command: seek to %" PFMT64x "\n", addr);
 		r_core_seek (core, addr, true);
 		RCoreCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
@@ -6023,7 +5974,7 @@ DEFINE_HANDLE_TS_FCN(iter_interpret_command) {
 	}
 err:
 	r_core_seek (core, orig_offset, true);
-	parsed_args_free (a);
+	r_cmd_parsed_args_free (a);
 	return res;
 }
 
