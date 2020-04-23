@@ -1260,6 +1260,10 @@ static bool init_dynstr(ELFOBJ *bin) {
 }
 
 static HtUP *rel_cache_new(RBinElfReloc *relocs, ut32 reloc_num) {
+	if (!relocs || reloc_num == 0) {
+		return NULL;
+	}
+
 	const int htsize = R_MIN (reloc_num, 1024);
 	HtUP *rel_cache = ht_up_new_size (htsize, NULL, NULL, NULL);
 	ut32 i;
