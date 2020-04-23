@@ -688,7 +688,7 @@ static RList* relocs(RBinFile *bf) {
 		}
 	}
 	if (bf->o) {
-		if (!(relocs = Elf_(r_bin_elf_get_relocs) (bin))) {
+		if (!(relocs = bin->relocs)) {
 			return ret;
 		}
 		for (i = 0; !relocs[i].last; i++) {
@@ -697,7 +697,6 @@ static RList* relocs(RBinFile *bf) {
 			}
 			r_list_append (ret, ptr);
 		}
-		free (relocs);
 	}
 	return ret;
 }
@@ -904,7 +903,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 	gotr2map->name = strdup (".got.r2");
 
-	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin))) {
+	if (!(relcs = bin->relocs)) {
 		return NULL;
 	}
 	if (!(ret = r_list_newf ((RListFree)free))) {
@@ -944,7 +943,6 @@ static RList* patch_relocs(RBin *b) {
 		r_list_append (ret, ptr);
 	}
 	ht_uu_free (relocs_by_sym);
-	free (relcs);
 	return ret;
 }
 
