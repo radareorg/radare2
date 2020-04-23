@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [linux-acr-gcc-tests, linux-acr-clang-tests, linux-meson-gcc-tests, macos-clang-tests]
+        name: [linux-acr-gcc-tests, linux-acr-clang-tests, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests]
         include:
           - name: linux-acr-gcc-tests
             os: ubuntu-latest
@@ -28,6 +28,12 @@ jobs:
             compiler: gcc
             meson_options: -Db_coverage=true
             coverage: 1
+          - name: linux-meson-gcc-newshell-tests
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            run_tests: true
+            newshell: true
           - name: macos-clang-tests
             os: macos-latest
             build_system: acr
@@ -83,8 +89,14 @@ jobs:
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        if [ "$NEWSHELL" == "true" ]; then
+          export R2_CFG_NEWSHELL=1
+        fi
         cd test
+        radare2 -N -Qc 'e cfg.newshell' -
         make
+      env:
+        NEWSHELL: ${{ matrix.newshell }}
     - name: Upload coverage info
       uses: codecov/codecov-action@v1
       if: matrix.coverage == '1'
