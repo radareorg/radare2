@@ -110,8 +110,9 @@ struct Elf_(r_bin_elf_obj_t) {
 	char *shstrtab;
 
 	Elf_(Dyn) *dyn_buf;
-	RBinElfDynamicInfo dyn_info;
 	int dyn_entries;
+	RBinElfDynamicInfo dyn_info;
+	RBinElfReloc *relocs;
 	ut32 reloc_num;
 
 	ut64 version_info[DT_VERSIONTAGNUM];

@@ -523,27 +523,6 @@ static int compute_dyn_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size)
 	return res;
 }
 
-static void rel_cache_free(HtUPKv *kv) {
-	free (kv->value);
-}
-
-static HtUP *rel_cache_new(ELFOBJ *bin) {
-	RBinElfReloc *relocs = Elf_(r_bin_elf_get_relocs) (bin);
-	const int htsize = R_MIN (bin->reloc_num, 1024);
-	HtUP *rel_cache = ht_up_new_size (htsize, NULL, rel_cache_free, NULL);
-	size_t i;
-
-	for (i = 0; i < bin->reloc_num; i++) {
-		RBinElfReloc *tmp = R_NEW (RBinElfReloc);
-		memcpy (tmp, relocs + i, sizeof (RBinElfReloc));
-		if (!ht_up_insert (rel_cache, tmp->sym, tmp)) {
-			free (tmp);
-		}
-	}
-	free (relocs);
-	return rel_cache;
-}
-
 static int init_dynamic_section(ELFOBJ *bin) {
 	Elf_(Dyn) *dyn = NULL;
 	ut64 strtabaddr = 0;
@@ -1280,6 +1259,19 @@ static bool init_dynstr(ELFOBJ *bin) {
 	return false;
 }
 
+static HtUP *rel_cache_new(RBinElfReloc *relocs, ut32 reloc_num) {
+	const int htsize = R_MIN (reloc_num, 1024);
+	HtUP *rel_cache = ht_up_new_size (htsize, NULL, NULL, NULL);
+	ut32 i;
+
+	for (i = 0; i < reloc_num; i++) {
+		RBinElfReloc *tmp = relocs + i;
+		ht_up_insert (rel_cache, tmp->sym, tmp);
+	}
+
+	return rel_cache;
+}
+
 static bool elf_init(ELFOBJ *bin) {
 	/* bin is not an ELF */
 	if (!init_ehdr (bin)) {
@@ -1310,7 +1302,8 @@ static bool elf_init(ELFOBJ *bin) {
 	bin->symbols_by_ord = NULL;
 	bin->g_sections = Elf_(r_bin_elf_get_sections) (bin);
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
-	bin->rel_cache = rel_cache_new (bin);
+	bin->relocs = Elf_(r_bin_elf_get_relocs) (bin);
+	bin->rel_cache = rel_cache_new (bin->relocs, bin->reloc_num);
 	sdb_ns_set (bin->kv, "versioninfo", store_versioninfo (bin));
 	return true;
 }
@@ -3696,6 +3689,7 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	R_FREE (bin->g_sections);
 	R_FREE (bin->g_symbols);
 	R_FREE (bin->g_imports);
+	R_FREE (bin->relocs);
 	ht_up_free (bin->rel_cache);
 	bin->rel_cache = NULL;
 	free (bin);
