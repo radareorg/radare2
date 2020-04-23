@@ -233,56 +233,62 @@ sdb_gen_cmd = [
 ]
 
 # handle tree-sitter
-tree_sitter_path = join_paths(meson.current_source_dir(), 'tree-sitter')
-tree_sitter_vc_path = join_paths(meson.current_source_dir(), 'tree-sitter.vc')
-if get_option('tree-sitter-sync')
-  if not git_exe.found()
-    error('Cannot sync tree-sitter library. Either provide tree-sitter in ./shlr/tree-sitter or install git, so it can be downloaded')
+tree_sitter_dep = dependency('tree-sitter', required: false)
+if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
+  message('Use bundled tree-sitter')
+  tree_sitter_path = join_paths(meson.current_source_dir(), 'tree-sitter')
+  tree_sitter_vc_path = join_paths(meson.current_source_dir(), 'tree-sitter.vc')
+  if get_option('tree-sitter-sync')
+    if not git_exe.found()
+      error('Cannot sync tree-sitter library. Either provide tree-sitter in ./shlr/tree-sitter or install git, so it can be downloaded')
+    endif
+
+    # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/Makefile
+    TS_TIP = 'f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3'
+    TS_BRA = 'master'
+
+    message('Deleting existing directories @0@ and @1@'.format(tree_sitter_vc_path, tree_sitter_path))
+    res = run_command('rm', '-rf @0@ @1@'.format(tree_sitter_vc_path, tree_sitter_path).split())
+    message('Cloning tree-sitter ' + TS_BRA + ' branch, commit ' + TS_TIP + ', into ' + tree_sitter_vc_path)
+    git_cmd = 'clone -b @0@ https://github.com/tree-sitter/tree-sitter.git @1@'.format(TS_BRA, tree_sitter_vc_path)
+    clone_cmd = run_command(git_exe, git_cmd.split())
+    if clone_cmd.returncode() != 0
+      error('Cannot execute git clone command')
+    endif
+
+    reset_cmd_str = '-C @0@ reset --hard @1@'.format(tree_sitter_vc_path, TS_TIP)
+    reset_cmd = run_command(git_exe, reset_cmd_str.split())
+    if reset_cmd.returncode() != 0
+      error('Cannot execute git reset command')
+    endif
+
+    message('Copying files from @0@ to @1@'.format(tree_sitter_vc_path, tree_sitter_path))
+    res = run_command('mkdir',  '-p @0@/lib'.format(tree_sitter_path).split())
+    res = run_command('cp',  '-r @0@/lib/src @1@/lib'.format(tree_sitter_vc_path, tree_sitter_path).split())
+    res = run_command('cp',  '-r @0@/lib/include @1@/lib'.format(tree_sitter_vc_path, tree_sitter_path).split())
+    message('Deleting @0@'.format(tree_sitter_vc_path))
+    res = run_command('rm', '-rf @0@'.format(tree_sitter_vc_path).split())
   endif
 
-  # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/Makefile
-  TS_TIP = 'f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3'
-  TS_BRA = 'master'
+  tree_sitter_files = [
+    join_paths(tree_sitter_path, 'lib/src/lib.c'),
+  ]
 
-  message('Deleting existing directories @0@ and @1@'.format(tree_sitter_vc_path, tree_sitter_path))
-  res = run_command('rm', '-rf @0@ @1@'.format(tree_sitter_vc_path, tree_sitter_path).split())
-  message('Cloning tree-sitter ' + TS_BRA + ' branch, commit ' + TS_TIP + ', into ' + tree_sitter_vc_path)
-  git_cmd = 'clone -b @0@ https://github.com/tree-sitter/tree-sitter.git @1@'.format(TS_BRA, tree_sitter_vc_path)
-  clone_cmd = run_command(git_exe, git_cmd.split())
-  if clone_cmd.returncode() != 0
-    error('Cannot execute git clone command')
-  endif
+  tree_sitter_inc = [platform_inc, include_directories('tree-sitter/lib/src'), include_directories('tree-sitter/lib/include')]
 
-  reset_cmd_str = '-C @0@ reset --hard @1@'.format(tree_sitter_vc_path, TS_TIP)
-  reset_cmd = run_command(git_exe, reset_cmd_str.split())
-  if reset_cmd.returncode() != 0
-    error('Cannot execute git reset command')
-  endif
+  libtree_sitter = static_library('tree_sitter', tree_sitter_files,
+    include_directories: tree_sitter_inc,
+    implicit_include_directories: false,
+    c_args: ['-std=c99']
+  )
 
-  message('Copying files from @0@ to @1@'.format(tree_sitter_vc_path, tree_sitter_path))
-  res = run_command('mkdir',  '-p @0@/lib'.format(tree_sitter_path).split())
-  res = run_command('cp',  '-r @0@/lib/src @1@/lib'.format(tree_sitter_vc_path, tree_sitter_path).split())
-  res = run_command('cp',  '-r @0@/lib/include @1@/lib'.format(tree_sitter_vc_path, tree_sitter_path).split())
-  message('Deleting @0@'.format(tree_sitter_vc_path))
-  res = run_command('rm', '-rf @0@'.format(tree_sitter_vc_path).split())
+  tree_sitter_dep = declare_dependency(
+    link_with: libtree_sitter,
+    include_directories: tree_sitter_inc
+  )
+else
+  message('Use system-provided tree-sitter library')
 endif
-
-tree_sitter_files = [
-  join_paths(tree_sitter_path, 'lib/src/lib.c'),
-]
-
-tree_sitter_inc = [platform_inc, include_directories('tree-sitter/lib/src'), include_directories('tree-sitter/lib/include')]
-
-libtree_sitter = static_library('tree_sitter', tree_sitter_files,
-  include_directories: tree_sitter_inc,
-  implicit_include_directories: false,
-  c_args: ['-std=c99']
-)
-
-tree_sitter_dep = declare_dependency(
-  link_with: libtree_sitter,
-  include_directories: tree_sitter_inc
-)
 
 
 # new radare2 shell parser
@@ -295,7 +301,8 @@ shell_parser_files = [
 shell_parser_inc = [platform_inc, include_directories('radare2-shell-parser/src/tree_sitter')]
 
 libshell_parser = static_library('shell_parser', shell_parser_files,
-  include_directories: shell_parser_inc + tree_sitter_inc,
+  include_directories: shell_parser_inc,
+  dependencies: tree_sitter_dep.partial_dependency(includes: true),
   implicit_include_directories: true
 )
 
