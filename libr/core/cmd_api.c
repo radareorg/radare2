@@ -747,7 +747,7 @@ R_API void r_cmd_parsed_args_free(RCmdParsedArgs *a) {
 
 static void free_array(char **arr, int n) {
 	int i;
-	for (i = 0; i < n; ++i) {
+	for (i = 0; i < n; i++) {
 		free (arr[i]);
 	}
 	free (arr);
