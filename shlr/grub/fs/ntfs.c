@@ -21,7 +21,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <grub/fshelp.h>
 #include <grub/ntfs.h>
 #include <grub/charset.h>
@@ -29,8 +28,6 @@
 
 GRUB_EXPORT(grub_ntfscomp_func);
 GRUB_EXPORT(grub_ntfs_read_run_list);
-
-static grub_dl_t my_mod;
 
 ntfscomp_func_t grub_ntfscomp_func;
 
@@ -940,8 +937,6 @@ grub_ntfs_dir (grub_device_t device, const char *path,
   struct grub_fshelp_node *fdiro = 0;
   struct grub_ntfs_dir_closure c;
 
-  grub_dl_ref (my_mod);
-
   data = grub_ntfs_mount (device->disk);
   if (!data)
     goto fail;
@@ -969,8 +964,6 @@ fail:
       grub_free (data);
     }
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -979,8 +972,6 @@ grub_ntfs_open (grub_file_t file, const char *name)
 {
   struct grub_ntfs_data *data = 0;
   struct grub_fshelp_node *mft = 0;
-
-  grub_dl_ref (my_mod);
 
   data = grub_ntfs_mount (file->device->disk);
   if (!data)
@@ -1018,8 +1009,6 @@ fail:
       grub_free (data);
     }
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -1051,8 +1040,6 @@ grub_ntfs_close (grub_file_t file)
       grub_free (data);
     }
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -1062,8 +1049,6 @@ grub_ntfs_label (grub_device_t device, char **label)
   struct grub_ntfs_data *data = 0;
   struct grub_fshelp_node *mft = 0;
   char *pa;
-
-  grub_dl_ref (my_mod);
 
   *label = 0;
 
@@ -1115,8 +1100,6 @@ fail:
       grub_free (data);
     }
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -1126,8 +1109,6 @@ grub_ntfs_uuid (grub_device_t device, char **uuid)
   struct grub_ntfs_data *data;
   grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
-
   data = grub_ntfs_mount (disk);
   if (data)
     {
@@ -1135,8 +1116,6 @@ grub_ntfs_uuid (grub_device_t device, char **uuid)
     }
   else
     *uuid = NULL;
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 

@@ -22,7 +22,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <grub/charset.h>
@@ -373,8 +372,6 @@ struct grub_fshelp_node
   };
   int part_ref;
 };
-
-static grub_dl_t my_mod;
 
 static grub_uint32_t
 grub_udf_get_block (struct grub_udf_data *data,
@@ -849,8 +846,6 @@ grub_udf_dir (grub_device_t device, const char *path,
   struct grub_fshelp_node *foundnode;
   struct grub_udf_dir_closure c;
 
-  grub_dl_ref (my_mod);
-
   data = grub_udf_mount (device->disk);
   if (!data)
     goto fail;
@@ -875,8 +870,6 @@ grub_udf_dir (grub_device_t device, const char *path,
 fail:
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -886,8 +879,6 @@ grub_udf_open (struct grub_file *file, const char *name)
   struct grub_udf_data *data;
   struct grub_fshelp_node rootnode;
   struct grub_fshelp_node *foundnode;
-
-  grub_dl_ref (my_mod);
 
   data = grub_udf_mount (file->device->disk);
   if (!data)
@@ -908,8 +899,6 @@ grub_udf_open (struct grub_file *file, const char *name)
   return 0;
 
 fail:
-  grub_dl_unref (my_mod);
-
   grub_free (data);
 
   return grub_errno;
@@ -934,8 +923,6 @@ grub_udf_close (grub_file_t file)
       grub_free (node->data);
       grub_free (node);
     }
-
-  grub_dl_unref (my_mod);
 
   return GRUB_ERR_NONE;
 }

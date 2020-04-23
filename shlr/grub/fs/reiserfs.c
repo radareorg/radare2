@@ -35,7 +35,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <r_types.h>
@@ -56,8 +55,6 @@
 
 #undef S_IFLNK
 #define S_IFLNK 0xA000
-
-static grub_dl_t my_mod;
 
 #define assertx(boolean) real_assert (boolean, GRUB_FILE, __LINE__)
 static inline void
@@ -999,7 +996,6 @@ grub_reiserfs_open (struct grub_file *file, const char *name)
   grub_uint32_t block_number;
   grub_uint16_t entry_version, block_size, entry_location;
 
-  grub_dl_ref (my_mod);
   data = grub_reiserfs_mount (file->device->disk);
   if (! data)
     goto fail;
@@ -1072,7 +1068,6 @@ grub_reiserfs_open (struct grub_file *file, const char *name)
   assertx (grub_errno != GRUB_ERR_NONE);
   grub_free (found);
   grub_free (data);
-  grub_dl_unref (my_mod);
   return grub_errno;
 }
 
@@ -1267,7 +1262,6 @@ grub_reiserfs_close (grub_file_t file)
 
   grub_free (data);
   grub_free (node);
-  grub_dl_unref (my_mod);
   return GRUB_ERR_NONE;
 }
 
@@ -1306,7 +1300,6 @@ grub_reiserfs_dir (grub_device_t device, const char *path,
   struct grub_reiserfs_key root_key;
   struct grub_reiserfs_dir_closure c;
 
-  grub_dl_ref (my_mod);
   data = grub_reiserfs_mount (device->disk);
   if (! data)
     goto fail;
@@ -1330,12 +1323,10 @@ grub_reiserfs_dir (grub_device_t device, const char *path,
   c.closure = closure;
   grub_reiserfs_iterate_dir (found, iterate, &c);
   grub_free (data);
-  grub_dl_unref (my_mod);
   return GRUB_ERR_NONE;
 
  fail:
   grub_free (data);
-  grub_dl_unref (my_mod);
   return grub_errno;
 }
 
@@ -1362,8 +1353,6 @@ grub_reiserfs_uuid (grub_device_t device, char **uuid)
   struct grub_reiserfs_data *data;
   grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
-
   data = grub_reiserfs_mount (disk);
   if (data)
     {
@@ -1379,8 +1368,6 @@ grub_reiserfs_uuid (grub_device_t device, char **uuid)
     }
   else
     *uuid = NULL;
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 

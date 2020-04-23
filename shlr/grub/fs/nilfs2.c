@@ -31,7 +31,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <r_types.h>
@@ -279,9 +278,6 @@ struct grub_nilfs2_data
 
 static grub_uint64_t
 grub_nilfs2_dat_translate (struct grub_nilfs2_data *data, grub_uint64_t key);
-static grub_dl_t my_mod;
-
-
 
 static inline unsigned long
 grub_nilfs2_palloc_entries_per_group (struct grub_nilfs2_data *data)
@@ -919,8 +915,6 @@ grub_nilfs2_open (struct grub_file *file, const char *name)
   struct grub_nilfs2_data *data = NULL;
   struct grub_fshelp_node *fdiro = 0;
 
-  grub_dl_ref (my_mod);
-
   data = grub_nilfs2_mount (file->device->disk);
   if (!data)
     goto fail;
@@ -952,8 +946,6 @@ fail:
     grub_free (fdiro);
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -961,8 +953,6 @@ static grub_err_t
 grub_nilfs2_close (grub_file_t file)
 {
   grub_free (file->data);
-
-  grub_dl_unref (my_mod);
 
   return GRUB_ERR_NONE;
 }
@@ -1024,8 +1014,6 @@ grub_nilfs2_dir (grub_device_t device, const char *path,
   struct grub_fshelp_node *fdiro = 0;
   struct grub_nilfs2_dir_closure c;
 
-  grub_dl_ref (my_mod);
-
   data = grub_nilfs2_mount (device->disk);
   if (!data)
     goto fail;
@@ -1046,8 +1034,6 @@ fail:
     grub_free (fdiro);
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -1057,15 +1043,11 @@ grub_nilfs2_label (grub_device_t device, char **label)
   struct grub_nilfs2_data *data;
   grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
-
   data = grub_nilfs2_mount (disk);
   if (data)
     *label = grub_strndup (data->sblock.s_volume_name, 14);
   else
     *label = NULL;
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 
@@ -1077,8 +1059,6 @@ grub_nilfs2_uuid (grub_device_t device, char **uuid)
 {
   struct grub_nilfs2_data *data;
   grub_disk_t disk = device->disk;
-
-  grub_dl_ref (my_mod);
 
   data = grub_nilfs2_mount (disk);
   if (data)
@@ -1098,8 +1078,6 @@ grub_nilfs2_uuid (grub_device_t device, char **uuid)
   else
     *uuid = NULL;
 
-  grub_dl_unref (my_mod);
-
   grub_free (data);
 
   return grub_errno;
@@ -1112,15 +1090,11 @@ grub_nilfs2_mtime (grub_device_t device, grub_int32_t * tm)
   struct grub_nilfs2_data *data;
   grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
-
   data = grub_nilfs2_mount (disk);
   if (!data)
     *tm = 0;
   else
     *tm = (grub_int32_t) grub_le_to_cpu64 (data->sblock.s_mtime);
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 

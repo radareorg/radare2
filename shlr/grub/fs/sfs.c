@@ -22,7 +22,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <r_types.h>
@@ -143,9 +142,6 @@ struct grub_sfs_data
   /* Label of the filesystem.  */
   char *label;
 };
-
-static grub_dl_t my_mod;
-
 
 /* Lookup the extent starting with BLOCK in the filesystem described
    by DATA.  Return the extent size in SIZE and the following extent
@@ -465,8 +461,6 @@ grub_sfs_open (struct grub_file *file, const char *name)
   struct grub_sfs_data *data;
   struct grub_fshelp_node *fdiro = 0;
 
-  grub_dl_ref (my_mod);
-
   data = grub_sfs_mount (file->device->disk);
   if (!data)
     goto fail;
@@ -492,8 +486,6 @@ grub_sfs_open (struct grub_file *file, const char *name)
     grub_free (data->label);
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -502,8 +494,6 @@ static grub_err_t
 grub_sfs_close (grub_file_t file)
 {
   grub_free (file->data);
-
-  grub_dl_unref (my_mod);
 
   return GRUB_ERR_NONE;
 }
@@ -555,8 +545,6 @@ grub_sfs_dir (grub_device_t device, const char *path,
   struct grub_fshelp_node *fdiro = 0;
   struct grub_sfs_dir_closure c;
 
-  grub_dl_ref (my_mod);
-
   data = grub_sfs_mount (device->disk);
   if (!data)
     goto fail;
@@ -576,8 +564,6 @@ grub_sfs_dir (grub_device_t device, const char *path,
   if (data)
     grub_free (data->label);
   grub_free (data);
-
-  grub_dl_unref (my_mod);
 
   return grub_errno;
 }

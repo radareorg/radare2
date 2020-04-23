@@ -48,7 +48,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
 
@@ -317,10 +316,6 @@ struct grub_ext2_data
   struct grub_ext2_inode *inode;
   struct grub_fshelp_node diropen;
 };
-
-static grub_dl_t my_mod;
-
-
 
 /* Read into BLKGRP the blockgroup descriptor of blockgroup GROUP of
    the mounted filesystem DATA.  */
@@ -772,8 +767,6 @@ grub_ext2_open (struct grub_file *file, const char *name)
   struct grub_ext2_data *data;
   struct grub_fshelp_node *fdiro = 0;
 
-  grub_dl_ref (my_mod);
-
   data = grub_ext2_mount (file->device->disk);
   if (! data)
     goto fail;
@@ -804,8 +797,6 @@ grub_ext2_open (struct grub_file *file, const char *name)
     grub_free (fdiro);
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -813,8 +804,6 @@ static grub_err_t
 grub_ext2_close (grub_file_t file)
 {
   grub_free (file->data);
-
-  grub_dl_unref (my_mod);
 
   return GRUB_ERR_NONE;
 }
@@ -875,8 +864,6 @@ grub_ext2_dir (grub_device_t device, const char *path,
   struct grub_fshelp_node *fdiro = 0;
   struct grub_ext2_dir_closure c;
 
-  grub_dl_ref (my_mod);
-
   data = grub_ext2_mount (device->disk);
   if (! data)
     goto fail;
@@ -896,8 +883,6 @@ grub_ext2_dir (grub_device_t device, const char *path,
     grub_free (fdiro);
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -907,15 +892,11 @@ grub_ext2_label (grub_device_t device, char **label)
   struct grub_ext2_data *data;
   grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
-
   data = grub_ext2_mount (disk);
   if (data)
     *label = grub_strndup (data->sblock.volume_name, 14);
   else
     *label = NULL;
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 
@@ -927,8 +908,6 @@ grub_ext2_uuid (grub_device_t device, char **uuid)
 {
   struct grub_ext2_data *data;
   grub_disk_t disk = device->disk;
-
-  grub_dl_ref (my_mod);
 
   data = grub_ext2_mount (disk);
   if (data)
@@ -946,8 +925,6 @@ grub_ext2_uuid (grub_device_t device, char **uuid)
   else
     *uuid = NULL;
 
-  grub_dl_unref (my_mod);
-
   grub_free (data);
 
   return grub_errno;
@@ -960,15 +937,11 @@ grub_ext2_mtime (grub_device_t device, grub_int32_t *tm)
   struct grub_ext2_data *data;
   grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
-
   data = grub_ext2_mount (disk);
   if (!data)
     *tm = 0;
   else
     *tm = grub_le_to_cpu32 (data->sblock.utime);
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 

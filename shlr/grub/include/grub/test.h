@@ -19,7 +19,6 @@
 #ifndef GRUB_TEST_HEADER
 #define GRUB_TEST_HEADER
 
-#include <grub/dl.h>
 #include <grub/list.h>
 #include <grub/misc.h>
 #include <grub/types.h>

@@ -16,7 +16,6 @@
  *  along with BURG.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <grub/dl.h>
 #include <grub/fs.h>
 #include <grub/mm.h>
 #include <grub/disk.h>

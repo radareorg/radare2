@@ -22,7 +22,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <grub/types.h>
 #include <r_types.h>
 
@@ -236,8 +235,6 @@ grub_num_to_cpu64 (grub_uint64_t num, int be)
 {
   return (be) ? grub_be_to_cpu64 (num) : grub_le_to_cpu64 (num);
 }
-
-static grub_dl_t my_mod;
 
 /* Forward declaration.  */
 static grub_err_t grub_ufs_find_file (struct grub_ufs_data *data,
@@ -793,15 +790,11 @@ grub_ufs_label (grub_device_t device, char **label)
 {
   struct grub_ufs_data *data = 0;
 
-  grub_dl_ref (my_mod);
-
   *label = 0;
 
   data = grub_ufs_mount (device->disk);
   if (data)
     *label = grub_strdup ((char *) data->sblock.volume_name);
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 
@@ -815,8 +808,6 @@ grub_ufs_uuid (grub_device_t device, char **uuid)
   struct grub_ufs_data *data;
   grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
-
   data = grub_ufs_mount (disk);
   if (data && (data->sblock.uuidhi != 0 || data->sblock.uuidlow != 0))
     *uuid = grub_xasprintf ("%08x%08x",
@@ -824,8 +815,6 @@ grub_ufs_uuid (grub_device_t device, char **uuid)
 			   (unsigned) grub_le_to_cpu32 (data->sblock.uuidlow));
   else
     *uuid = NULL;
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 
@@ -839,8 +828,6 @@ grub_ufs_mtime (grub_device_t device, grub_int32_t *tm)
 {
   struct grub_ufs_data *data = 0;
 
-  grub_dl_ref (my_mod);
-
   data = grub_ufs_mount (device->disk);
   if (!data)
     *tm = 0;
@@ -850,8 +837,6 @@ grub_ufs_mtime (grub_device_t device, grub_int32_t *tm)
 #else
     *tm = grub_num_to_cpu32 (data->sblock.mtime, data->be);
 #endif
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 

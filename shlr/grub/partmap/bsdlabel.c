@@ -22,7 +22,6 @@
 #include <grub/disk.h>
 #include <grub/mm.h>
 #include <grub/misc.h>
-#include <grub/dl.h>
 
 struct grub_partition_map grub_bsdlabel_partition_map;
 

@@ -22,7 +22,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include "r_types.h"
@@ -106,9 +105,6 @@ struct grub_affs_data
   /* The number of entries in the hashtable.  */
   int htsize;
 };
-
-static grub_dl_t my_mod;
-
 
 static grub_disk_addr_t
 grub_affs_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
@@ -415,8 +411,6 @@ grub_affs_open (struct grub_file *file, const char *name)
   struct grub_affs_data *data;
   struct grub_fshelp_node *fdiro = 0;
 
-  grub_dl_ref (my_mod);
-
   data = grub_affs_mount (file->device->disk);
   if (!data)
     goto fail;
@@ -440,8 +434,6 @@ grub_affs_open (struct grub_file *file, const char *name)
     grub_free (fdiro);
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -450,8 +442,6 @@ static grub_err_t
 grub_affs_close (grub_file_t file)
 {
   grub_free (file->data);
-
-  grub_dl_unref (my_mod);
 
   return GRUB_ERR_NONE;
 }
@@ -502,8 +492,6 @@ grub_affs_dir (grub_device_t device, const char *path,
   struct grub_fshelp_node *fdiro = 0;
   struct grub_affs_dir_closure c;
 
-  grub_dl_ref (my_mod);
-
   data = grub_affs_mount (device->disk);
   if (!data)
     goto fail;
@@ -522,8 +510,6 @@ grub_affs_dir (grub_device_t device, const char *path,
     grub_free (fdiro);
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -534,8 +520,6 @@ grub_affs_label (grub_device_t device, char **label)
   struct grub_affs_data *data;
   struct grub_affs_file file;
   grub_disk_t disk = device->disk;
-
-  grub_dl_ref (my_mod);
 
   data = grub_affs_mount (disk);
   if (data)
@@ -553,8 +537,6 @@ grub_affs_label (grub_device_t device, char **label)
     }
   else
     *label = 0;
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 

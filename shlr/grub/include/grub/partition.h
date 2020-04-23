@@ -19,7 +19,6 @@
 #ifndef GRUB_PART_HEADER
 #define GRUB_PART_HEADER	1
 
-#include <grub/dl.h>
 #include <grub/list.h>
 
 struct grub_disk;

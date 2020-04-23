@@ -24,7 +24,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <grub/hfs.h>
@@ -246,9 +245,6 @@ struct grub_hfsplus_data
   int embedded_offset;
   int case_sensitive;
 };
-
-static grub_dl_t my_mod;
-
 
 /* Return the offset of the record with the index INDEX, in the node
    NODE which is part of the B+ tree BTREE.  */
@@ -875,8 +871,6 @@ grub_hfsplus_open (struct grub_file *file, const char *name)
   struct grub_hfsplus_data *data;
   struct grub_fshelp_node *fdiro = 0;
 
-  grub_dl_ref (my_mod);
-
   data = grub_hfsplus_mount (file->device->disk);
   if (!data)
     goto fail;
@@ -901,8 +895,6 @@ grub_hfsplus_open (struct grub_file *file, const char *name)
     grub_free (fdiro);
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -911,8 +903,6 @@ static grub_err_t
 grub_hfsplus_close (grub_file_t file)
 {
   grub_free (file->data);
-
-  grub_dl_unref (my_mod);
 
   return GRUB_ERR_NONE;
 }
@@ -967,8 +957,6 @@ grub_hfsplus_dir (grub_device_t device, const char *path,
   struct grub_fshelp_node *fdiro = 0;
   struct grub_hfsplus_dir_closure c;
 
-  grub_dl_ref (my_mod);
-
   data = grub_hfsplus_mount (device->disk);
   if (!data)
     goto fail;
@@ -989,8 +977,6 @@ grub_hfsplus_dir (grub_device_t device, const char *path,
   if (data && fdiro != &data->dirroot)
     grub_free (fdiro);
   grub_free (data);
-
-  grub_dl_unref (my_mod);
 
   return grub_errno;
 }
@@ -1013,15 +999,11 @@ grub_hfsplus_mtime (grub_device_t device, grub_int32_t *tm)
   struct grub_hfsplus_data *data;
   grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
-
   data = grub_hfsplus_mount (disk);
   if (!data)
     *tm = 0;
   else
     *tm = grub_be_to_cpu32 (data->volheader.utime) - 2082844800;
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 
@@ -1035,8 +1017,6 @@ grub_hfsplus_uuid (grub_device_t device, char **uuid)
   struct grub_hfsplus_data *data;
   grub_disk_t disk = device->disk;
 
-  grub_dl_ref (my_mod);
-
   data = grub_hfsplus_mount (disk);
   if (data)
     {
@@ -1046,8 +1026,6 @@ grub_hfsplus_uuid (grub_device_t device, char **uuid)
     }
   else
     *uuid = NULL;
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 
