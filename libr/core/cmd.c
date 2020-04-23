@@ -4876,7 +4876,9 @@ static RCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args) {
 		return res;
 	} else {
 		char *unescaped_args[] = { do_handle_ts_unescape_arg (state, args) };
-		return r_cmd_parsed_args_newargs (1, unescaped_args);
+		RCmdParsedArgs *res = r_cmd_parsed_args_newargs (1, unescaped_args);
+		free (unescaped_args[0]);
+		return res;
 	}
 }
 

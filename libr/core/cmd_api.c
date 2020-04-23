@@ -745,23 +745,40 @@ R_API void r_cmd_parsed_args_free(RCmdParsedArgs *a) {
 	free (a);
 }
 
+static void free_array(char **arr, int n) {
+	int i;
+	for (i = 0; i < n; ++i) {
+		free (arr[i]);
+	}
+	free (arr);
+}
+
 R_API bool r_cmd_parsed_args_setargs(RCmdParsedArgs *a, int n_args, char **args) {
-	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
-	char **tmp = realloc (a->argv, (n_args + 1) * sizeof (char *));
+	r_return_val_if_fail (a && a->argv && a->argv[0], false);
+	char **tmp = R_NEWS0 (char *, n_args + 1);
 	if (!tmp) {
 		return false;
 	}
-	a->argc = n_args + 1;
-	a->argv = tmp;
+	tmp[0] = strdup (a->argv[0]);
 	int i;
-	for (i = 0; i < n_args; i++) {
-		a->argv[i + 1] = strdup (args[i]);
+	for (i = 1; i < n_args + 1; i++) {
+		tmp[i] = strdup (args[i - 1]);
+		if (!tmp[i]) {
+			goto err;
+		}
 	}
+	free_array (a->argv, a->argc);
+	a->argv = tmp;
+	a->argc = n_args + 1;
 	return true;
+err:
+	free_array (tmp, n_args + 1);
+	free (tmp);
+	return false;
 }
 
 R_API bool r_cmd_parsed_args_setcmd(RCmdParsedArgs *a, const char *cmd) {
-	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
+	r_return_val_if_fail (a && a->argv && a->argv[0], false);
 	char *tmp = strdup (cmd);
 	if (!tmp) {
 		return false;
@@ -783,7 +800,7 @@ static void parsed_args_iterateargs(RCmdParsedArgs *a, RStrBuf *sb) {
 
 R_API char *r_cmd_parsed_args_argstr(RCmdParsedArgs *a) {
 	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
-	RStrBuf *sb = r_strbuf_new (NULL);
+	RStrBuf *sb = r_strbuf_new ("");
 	parsed_args_iterateargs (a, sb);
 	return r_strbuf_drain (sb);
 }
