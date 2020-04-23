@@ -5210,6 +5210,8 @@ DEFINE_HANDLE_TS_FCN(help_command) {
 		r_core_cmd_help (state->core, help_msg_vertical_bar);
 	} else if (!strcmp (node_string, "~?")) {
 		r_cons_grep_help ();
+	} else if (!strcmp (node_string, ">?")) {
+		r_core_cmd_help (state->core, help_msg_greater_sign);
 	} else if (!strcmp (node_string + strlen (node_string) - 2, "?*")) {
 		size_t node_len = strlen (node_string);
 		int detail = 0;
