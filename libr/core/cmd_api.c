@@ -252,31 +252,6 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	return ret;
 }
 
-R_API int r_cmd_call_long(RCmd *cmd, const char *input) {
-	char *inp;
-	RListIter *iter;
-	RCmdLongItem *c;
-	int ret, inplen = strlen (input)+1;
-
-	r_list_foreach (cmd->lcmds, iter, c) {
-		if (inplen >= c->cmd_len && !r_str_cmp (input, c->cmd, c->cmd_len)) {
-			int lcmd = strlen (c->cmd_short);
-			int linp = strlen (input+c->cmd_len);
-			/// SLOW malloc on most situations. use stack
-			inp = malloc (lcmd+linp+2); // TODO: use static buffer with R_CMD_MAXLEN
-			if (!inp) {
-				return -1;
-			}
-			memcpy (inp, c->cmd_short, lcmd);
-			memcpy (inp + lcmd, input + c->cmd_len, linp + 1);
-			ret = r_cmd_call (cmd, inp);
-			free (inp);
-			return ret;
-		}
-	}
-	return -1;
-}
-
 /** macro.c **/
 
 R_API RCmdMacroItem *r_cmd_macro_item_new() {
