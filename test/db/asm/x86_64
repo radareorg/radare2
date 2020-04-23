@@ -54,9 +54,12 @@ a "mov rax, 0x100000000" 48b80000000001000000
 ad "movabs rax, 0x100000000" 48b80000000001000000
 ad "mov rax, 0" 48c7c000000000
 a "mov rax, -1" 48c7c0ffffffff
-adB "mov rax, 0xffffffffffffffff" 48c7c0ffffffff
+a "mov rax, -0x1" 48c7c0ffffffff
+ad "mov rax, 0xffffffffffffffff" 48c7c0ffffffff
+a "mov rax, 0xFfFFffFFFFffffff" 48c7c0ffffffff
+a "mov rax, -1U" 48c7c0ffffffff
+a "mov rax, 0xffffffffffffffffU" 48c7c0ffffffff
 a "mov rax, -2" 48c7c0feffffff
-a "mov rax, -0x2" 48c7c0feffffff
 ad "mov rax, 0xfffffffffffffffe" 48c7c0feffffff
 a "mov rax, -0x80000000" 48c7c000000080
 ad "mov rax, 0xffffffff80000000" 48c7c000000080
