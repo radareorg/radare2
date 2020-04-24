@@ -2360,6 +2360,9 @@ static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 			data[l++] = base + (8 * op->operands[0].reg);
 		} else {
+			if (op->operands[0].extended && a->bits == 64) {
+				data[l++] = 0x41;
+			}
 			ut8 base = 0x58;
 			data[l++] = base + op->operands[0].reg;
 		}
