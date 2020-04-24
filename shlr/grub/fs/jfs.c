@@ -22,7 +22,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/charset.h>
 #include <r_types.h>
@@ -245,9 +244,6 @@ struct grub_jfs_diropen
   char name[255];
   grub_uint32_t ino;
 });
-
-
-static grub_dl_t my_mod;
 
 static grub_err_t grub_jfs_lookup_symlink (struct grub_jfs_data *data,
 					   int ino);
@@ -778,8 +774,6 @@ grub_jfs_dir (grub_device_t device, const char *path,
   struct grub_jfs_data *data = 0;
   struct grub_jfs_diropen *diro = 0;
 
-  grub_dl_ref (my_mod);
-
   data = grub_jfs_mount (device->disk);
   if (!data)
     goto fail;
@@ -816,8 +810,6 @@ grub_jfs_dir (grub_device_t device, const char *path,
   grub_jfs_closedir (diro);
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -827,8 +819,6 @@ static grub_err_t
 grub_jfs_open (struct grub_file *file, const char *name)
 {
   struct grub_jfs_data *data;
-
-  grub_dl_ref (my_mod);
 
   data = grub_jfs_mount (file->device->disk);
   if (!data)
@@ -852,9 +842,6 @@ grub_jfs_open (struct grub_file *file, const char *name)
   return 0;
 
  fail:
-
-  grub_dl_unref (my_mod);
-
   grub_free (data);
 
   return grub_errno;
@@ -877,8 +864,6 @@ grub_jfs_close (grub_file_t file)
 {
   grub_free (file->data);
 
-  grub_dl_unref (my_mod);
-
   return GRUB_ERR_NONE;
 }
 
@@ -887,8 +872,6 @@ grub_jfs_uuid (grub_device_t device, char **uuid)
 {
   struct grub_jfs_data *data;
   grub_disk_t disk = device->disk;
-
-  grub_dl_ref (my_mod);
 
   data = grub_jfs_mount (disk);
   if (data)
@@ -906,8 +889,6 @@ grub_jfs_uuid (grub_device_t device, char **uuid)
     }
   else
     *uuid = NULL;
-
-  grub_dl_unref (my_mod);
 
   grub_free (data);
 

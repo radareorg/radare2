@@ -23,7 +23,6 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <grub/charset.h>
@@ -159,9 +158,6 @@ struct grub_fshelp_node
   unsigned int dir_blk;
   unsigned int dir_off;
 };
-
-static grub_dl_t my_mod;
-
 
 static char *
 load_sua (struct grub_iso9660_data *data, int sua_block, int sua_pos,
@@ -745,8 +741,6 @@ grub_iso9660_dir (grub_device_t device, const char *path,
   struct grub_fshelp_node *foundnode;
   struct grub_iso9660_dir_closure c;
 
-  grub_dl_ref (my_mod);
-
   data = grub_iso9660_mount (device->disk);
   if (! data)
     goto fail;
@@ -774,8 +768,6 @@ grub_iso9660_dir (grub_device_t device, const char *path,
  fail:
   grub_free (data);
 
-  grub_dl_unref (my_mod);
-
   return grub_errno;
 }
 
@@ -787,8 +779,6 @@ grub_iso9660_open (struct grub_file *file, const char *name)
   struct grub_iso9660_data *data;
   struct grub_fshelp_node rootnode;
   struct grub_fshelp_node *foundnode;
-
-  grub_dl_ref (my_mod);
 
   data = grub_iso9660_mount (file->device->disk);
   if (!data)
@@ -815,8 +805,6 @@ grub_iso9660_open (struct grub_file *file, const char *name)
   return 0;
 
  fail:
-  grub_dl_unref (my_mod);
-
   grub_free (data);
 
   return grub_errno;
@@ -850,8 +838,6 @@ grub_iso9660_close (grub_file_t file)
 {
   grub_free (file->data);
 
-  grub_dl_unref (my_mod);
-
   return GRUB_ERR_NONE;
 }
 
@@ -883,8 +869,6 @@ grub_iso9660_uuid (grub_device_t device, char **uuid)
 {
   struct grub_iso9660_data *data;
   grub_disk_t disk = device->disk;
-
-  grub_dl_ref (my_mod);
 
   data = grub_iso9660_mount (disk);
   if (data)
@@ -924,8 +908,6 @@ grub_iso9660_uuid (grub_device_t device, char **uuid)
     }
   else
     *uuid = NULL;
-
-	grub_dl_unref (my_mod);
 
   grub_free (data);
 
