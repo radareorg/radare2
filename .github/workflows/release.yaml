@@ -1,4 +1,4 @@
-name: Radare2 Pre-Release checks
+name: release checks
 
 on:
   pull_requests:
